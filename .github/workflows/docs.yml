@@ -41,7 +41,6 @@ jobs:
           fetch-depth: 0
 
       # Detect which file groups actually changed in this push.
-      # workflow_dispatch always rebuilds everything (lean-changed defaults to true).
       - name: Detect changed file groups
         id: filter
         uses: dorny/paths-filter@v3
@@ -55,46 +54,47 @@ jobs:
               - 'lake-manifest.json'
               - 'Scripts/**'
 
-      # Cache the built Lean docs so website-only pushes skip the 45-min build.
-      - name: Restore Lean docs cache
-        id: docs-cache
+      # Cache the final prepared docs site (site/docs/) keyed on Lean source hashes.
+      # Website-only pushes restore this and skip the entire Lean build.
+      # Lean-source pushes rebuild docs, overwrite site/docs/, and re-save the cache.
+      - name: Restore docs site cache
         uses: actions/cache@v4
         with:
-          path: .lake/build/doc
-          key: lean-docs-${{ hashFiles('lean-toolchain', 'lakefile.lean', 'lake-manifest.json') }}
-          restore-keys: lean-docs-
+          path: site/docs
+          key: site-docs-${{ hashFiles('lean-toolchain', 'lakefile.lean', 'lake-manifest.json') }}
+          restore-keys: site-docs-
 
-      # All Lean steps are skipped when only website files changed AND a cached
-      # doc build exists. Manual workflow_dispatch always rebuilds.
+      # ── Lean steps: only run when Lean sources changed or manually triggered ──
       - name: Install elan
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Show Lean version
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lean --version
 
       - name: Update Lake dependencies (fetch doc-gen4)
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lake -Kenv=dev update
 
       - name: Fetch Mathlib cache
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lake exe cache get || true
 
       - name: Build project
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lake build
 
       - name: Build documentation
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lake -Kenv=dev build AsymptoticStatistics:docs
 
       - name: Generate dependency graphs
-        if: steps.filter.outputs.lean == 'true' || steps.docs-cache.outputs.cache-hit != 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.lean == 'true' || github.event_name == 'workflow_dispatch'
         run: lake exe deps || echo "deps extraction failed; site will fall back to doc-gen4 links"
+      # ─────────────────────────────────────────────────────────────────────────
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -112,12 +112,13 @@ jobs:
       - name: Prepare GitHub Pages site
         run: |
           mkdir -p site/docs site/website
-          # Copy Lean docs only when they were built or restored from cache.
+          # Overwrite cached docs with freshly built ones when Lean was rebuilt.
           if [ -d ".lake/build/doc" ] && [ "$(ls -A .lake/build/doc 2>/dev/null)" ]; then
             cp -r .lake/build/doc/* site/docs/
           fi
+          # site/docs/ is now either restored from cache or freshly built.
           cp -r website/dist/* site/website/
-          # Root redirects visitors to the interactive Asymptotica website.
+          # Root landing page redirects visitors to the interactive website.
           cat > site/index.html <<'EOF'
           <!doctype html>
           <html lang="en">
@@ -138,9 +139,9 @@ jobs:
             </head>
             <body>
               <h1>Asymptotic Statistical Theory in Lean 4</h1>
-              <p class="muted">Redirecting to the interactive <strong>Asymptotica</strong> atlas&hellip;</p>
+              <p class="muted">Redirecting to the Stat-Lean website&hellip;</p>
               <p>
-                <a class="btn" href="./website/">Open the atlas &rarr;</a>
+                <a class="btn" href="./website/">Open the website &rarr;</a>
                 <a class="btn alt" href="./docs/">API documentation</a>
               </p>
               <p class="muted">Source:
