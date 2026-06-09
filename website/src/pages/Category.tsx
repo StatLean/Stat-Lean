@@ -5,6 +5,7 @@ import { resultsByCategory } from "../lib/data";
 import type { CategoryId, ResultKind } from "../lib/types";
 import { TheoremCard } from "../components/TheoremCard";
 import { ConvergenceMark } from "../components/ConvergenceMark";
+import { Logo } from "../components/Logo";
 
 const KIND_ORDER: ResultKind[] = [
   "definition",
@@ -55,19 +56,22 @@ export function Category() {
           rings={7}
           className="pointer-events-none absolute -right-16 -top-20 w-96 h-96 accent opacity-[0.09]"
         />
-        <div className="max-w-page mx-auto px-5 sm:px-8 py-14 relative">
-          <div className="flex items-center gap-2 text-sm font-sans text-ink-faint mb-4">
-            <Link to="/" className="ulink">Topics</Link>
-            <span>/</span>
-            <span className="accent">{meta.name}</span>
+        <div className="max-w-page mx-auto px-5 sm:px-8 py-14 relative flex items-center gap-12">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-sm font-sans text-ink-faint mb-4">
+              <Link to="/" className="ulink">Topics</Link>
+              <span>/</span>
+              <span className="accent">{meta.name}</span>
+            </div>
+            <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">
+              {meta.name}
+            </h1>
+            <p className="mt-2 font-sans accent">{meta.tagline}</p>
+            <p className="mt-4 max-w-2xl font-serif text-lg text-ink-soft leading-relaxed">
+              {meta.blurb}
+            </p>
           </div>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">
-            {meta.name}
-          </h1>
-          <p className="mt-2 font-sans accent">{meta.tagline}</p>
-          <p className="mt-4 max-w-2xl font-serif text-lg text-ink-soft leading-relaxed">
-            {meta.blurb}
-          </p>
+          <Logo className="hidden lg:block shrink-0 w-40 h-40 text-ink opacity-80" />
         </div>
       </section>
 

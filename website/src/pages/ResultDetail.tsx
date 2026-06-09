@@ -6,6 +6,7 @@ import { renderLean } from "../lib/render";
 import { docUrl, sourceUrl } from "../lib/site";
 import { MathText } from "../components/MathText";
 import { ConvergenceMark } from "../components/ConvergenceMark";
+import { Logo } from "../components/Logo";
 
 export function ResultDetail() {
   const { resultId } = useParams<{ resultId: string }>();
@@ -62,36 +63,39 @@ export function ResultDetail() {
           rings={6}
           className="pointer-events-none absolute -right-12 -top-16 w-72 h-72 accent opacity-[0.08]"
         />
-        <div className="max-w-page mx-auto px-5 sm:px-8 py-10 relative">
-          <div className="flex items-center gap-2 text-sm font-sans text-ink-faint mb-4 flex-wrap">
-            <Link to="/" className="ulink">Topics</Link>
-            <span>/</span>
-            <Link to={`/category/${r.category}`} className="ulink accent">
-              {meta.name}
-            </Link>
-          </div>
+        <div className="max-w-page mx-auto px-5 sm:px-8 py-10 relative flex items-center gap-12">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-sm font-sans text-ink-faint mb-4 flex-wrap">
+              <Link to="/" className="ulink">Topics</Link>
+              <span>/</span>
+              <Link to={`/category/${r.category}`} className="ulink accent">
+                {meta.name}
+              </Link>
+            </div>
 
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-[0.65rem] font-sans font-semibold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full bg-accent/15 accent">
-              {r.kind}
-            </span>
-          </div>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[0.65rem] font-sans font-semibold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full bg-accent/15 accent">
+                {r.kind}
+              </span>
+            </div>
 
-          <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-4xl">
-            {r.title}
-          </h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-4xl">
+              {r.title}
+            </h1>
 
-          <div className="mt-5 flex flex-wrap gap-2.5 font-sans text-sm">
-            <a href={docUrl(r)} className="btn-action">
-              <span>↗</span> doc-gen4 reference
-            </a>
-            <a href={sourceUrl(r)} className="btn-action">
-              <span>⟨⟩</span> Lean source
-            </a>
-            <Link to={`/result/${r.id}/graph`} className="btn-action border-accent/50 accent">
-              <span>◈</span> Show dependency graph
-            </Link>
+            <div className="mt-5 flex flex-wrap gap-2.5 font-sans text-sm">
+              <a href={docUrl(r)} className="btn-action">
+                <span>↗</span> doc-gen4 reference
+              </a>
+              <a href={sourceUrl(r)} className="btn-action">
+                <span>⟨⟩</span> Lean source
+              </a>
+              <Link to={`/result/${r.id}/graph`} className="btn-action border-accent/50 accent">
+                <span>◈</span> Show dependency graph
+              </Link>
+            </div>
           </div>
+          <Logo className="hidden lg:block shrink-0 w-32 h-32 text-ink opacity-75" />
         </div>
       </section>
 
@@ -160,9 +164,10 @@ export function ResultDetail() {
             <h3 className="font-sans text-xs uppercase tracking-widest accent mb-2">
               Note on the formalization
             </h3>
-            <p className="font-serif text-[0.98rem] text-ink-soft leading-relaxed">
-              {r.formalizationNotes}
-            </p>
+            <MathText
+              html={r.formalizationNotes}
+              className="font-serif text-[0.98rem] text-ink-soft leading-relaxed"
+            />
           </div>
         )}
 

@@ -1,15 +1,18 @@
 import { Link } from "react-router-dom";
 import { REPO_URL, DOCS_BASE } from "../lib/site";
-import { RESULTS } from "../lib/data";
+import { Logo } from "./Logo";
 
 export function SiteFooter() {
   return (
     <footer className="border-t hairline mt-24">
       <div className="max-w-page mx-auto px-5 sm:px-8 py-12 grid gap-8 sm:grid-cols-3 text-sm">
         <div>
-          <div className="font-display text-lg font-semibold">Stat-Lean</div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <Logo className="w-8 h-8 text-ink shrink-0" />
+            <span className="font-display text-lg font-semibold">Stat-Lean</span>
+          </div>
           <p className="text-ink-soft mt-2 leading-relaxed font-serif">
-            {RESULTS.length} results of asymptotic statistical theory, each
+            Formalized results from asymptotic statistical theory, each
             informal statement aligned with its machine-checked Lean&nbsp;4 /
             Mathlib formalization.
           </p>

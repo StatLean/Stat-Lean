@@ -2,7 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useTheme } from "../lib/theme";
 import { REPO_URL, DOCS_BASE } from "../lib/site";
 import { prefetchDependencies } from "../lib/prefetch";
-import { ConvergenceMark } from "./ConvergenceMark";
+import { Logo } from "./Logo";
 
 const NAV = [
   { to: "/search", label: "Search" },
@@ -16,7 +16,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-parchment/80 border-b hairline">
       <div className="max-w-page mx-auto px-5 sm:px-8 h-16 flex items-center gap-6">
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <ConvergenceMark className="w-7 h-7 text-ink group-hover:text-param transition-colors" />
+          <Logo className="w-8 h-8 text-ink group-hover:text-param transition-colors" />
           <span className="font-display text-xl font-semibold tracking-tight">
             Stat-Lean
           </span>

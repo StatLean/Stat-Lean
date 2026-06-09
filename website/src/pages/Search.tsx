@@ -50,7 +50,7 @@ export function Search() {
             Search
           </h1>
           <p className="mt-3 max-w-2xl font-serif text-lg text-ink-soft leading-relaxed">
-            All {RESULTS.length} formalized results. Filter by topic and kind, or
+            Formalized results from asymptotic statistical theory. Filter by topic and kind, or
             search by name.
           </p>
         </div>
@@ -68,7 +68,7 @@ export function Search() {
               className="flex-1 min-w-[12rem] bg-parchment-sunk border hairline rounded-full px-4 py-2 text-sm font-sans outline-none focus:border-ink/40 transition-colors"
             />
             <span className="text-xs font-sans text-ink-faint">
-              {filtered.length} / {RESULTS.length}
+              {filtered.length} shown
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-sans text-xs">

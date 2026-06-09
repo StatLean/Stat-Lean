@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./lib/theme";
 import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
@@ -17,11 +17,18 @@ const Dependencies = lazy(() =>
   prefetchDependencies().then((m) => ({ default: m.Dependencies })),
 );
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 export default function App() {
   useEffect(warmGraphChunks, []);
   return (
     <ThemeProvider>
       <div className="min-h-screen flex flex-col">
+        <ScrollToTop />
         <SiteHeader />
         <main className="flex-1">
           <Routes>

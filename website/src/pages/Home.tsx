@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { CATEGORIES } from "../lib/categories";
 import { RESULTS } from "../lib/data";
 import { ConvergenceMark } from "../components/ConvergenceMark";
+import { Logo } from "../components/Logo";
 import { TheoremCard } from "../components/TheoremCard";
 import { TopicIcon } from "../components/TopicIcon";
 
@@ -24,46 +25,59 @@ export function Home() {
       <section className="relative overflow-hidden border-b hairline">
         <ConvergenceMark
           rings={9}
-          className="pointer-events-none absolute -right-24 -top-24 w-[34rem] h-[34rem] text-ink opacity-[0.06]"
+          className="pointer-events-none absolute -right-24 -top-24 w-[34rem] h-[34rem] text-ink opacity-[0.04]"
         />
-        <div className="max-w-page mx-auto px-5 sm:px-8 pt-20 pb-20 relative">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="font-sans text-xs uppercase tracking-[0.3em] text-ink-faint mb-6"
-          >
-            Formalization proofs meet with informal statements
-          </motion.p>
+        <div className="max-w-page mx-auto px-5 sm:px-8 pt-20 pb-20 relative flex items-center gap-16">
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="font-sans text-xs uppercase tracking-[0.3em] text-ink-faint mb-6"
+            >
+              Formalization proofs meet with informal statements
+            </motion.p>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.05 }}
-            className="font-display font-semibold tracking-tight leading-[0.98] text-5xl sm:text-6xl md:text-7xl max-w-4xl"
-          >
-            Lean&nbsp;4 Formalization of{" "}
-            <span className="italic text-param">Asymptotic Statistical Theory</span>
-          </motion.h1>
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.05 }}
+              className="font-display font-semibold tracking-tight leading-[0.98] text-5xl sm:text-6xl md:text-7xl max-w-4xl"
+            >
+              Lean&nbsp;4 Formalization of{" "}
+              <span className="italic text-param">Asymptotic Statistical Theory</span>
+            </motion.h1>
 
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.18 }}
+              className="mt-10 flex flex-wrap gap-3"
+            >
+              <Link
+                to="/search"
+                className="px-5 py-2.5 rounded-full bg-ink text-parchment font-sans text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Browse the results →
+              </Link>
+              <Link
+                to="/dependencies"
+                className="px-5 py-2.5 rounded-full border hairline font-sans text-sm text-ink-soft hover:text-ink hover:border-ink/40 transition-colors"
+              >
+                Dependency graph
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Logo — visible on large screens only */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.18 }}
-            className="mt-10 flex flex-wrap gap-3"
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="hidden lg:flex shrink-0 items-center justify-center"
           >
-            <Link
-              to="/search"
-              className="px-5 py-2.5 rounded-full bg-ink text-parchment font-sans text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              Browse the results →
-            </Link>
-            <Link
-              to="/dependencies"
-              className="px-5 py-2.5 rounded-full border hairline font-sans text-sm text-ink-soft hover:text-ink hover:border-ink/40 transition-colors"
-            >
-              Dependency graph
-            </Link>
+            <Logo className="w-56 h-56 text-ink opacity-90" />
           </motion.div>
         </div>
       </section>

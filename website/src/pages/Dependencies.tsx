@@ -276,7 +276,7 @@ export function Dependencies() {
         <div className="flex items-baseline gap-3 flex-wrap">
           <h1 className="font-display text-xl font-semibold">Dependency graph</h1>
           <span className="font-sans text-xs text-ink-faint">
-            {RESULTS.length} results and their supporting lemmas, definitions &amp;
+            Formalized results and their supporting lemmas, definitions &amp;
             Mathlib dependencies · hover a node for its name · click a result to open it
           </span>
         </div>
