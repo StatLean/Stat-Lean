@@ -6,6 +6,8 @@ export const REPO_URL =
 export const DOCS_BASE =
   "https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/docs/";
 
+const MATHLIB_DOCS_BASE = "https://leanprover-community.github.io/mathlib4_docs/";
+
 /** Absolute doc-gen4 URL for a result (robust in dev and prod). */
 export function docUrl(r: ResultEntry): string {
   // stored as "../docs/AsymptoticStatistics/<path>.html#<fullName>"
@@ -19,13 +21,14 @@ export function sourceUrl(r: ResultEntry): string {
 }
 
 /**
- * doc-gen4 URL for any declaration, keyed by its *defining module* (not its
- * namespace). The project's doc-gen4 site hosts both repo and Mathlib pages, so
- * this resolves for every node. Example:
- *   module "Mathlib.Analysis.InnerProductSpace.Projection.Basic",
- *   full   "Submodule.sub_starProjection_mem_orthogonal"
- *   → …/docs/Mathlib/Analysis/InnerProductSpace/Projection/Basic.html#Submodule.sub_starProjection_mem_orthogonal
+ * doc-gen4 URL for any declaration, keyed by its defining module.
+ * Mathlib and Batteries declarations are hosted at leanprover-community.github.io;
+ * project declarations are hosted at the project's own doc-gen4 site.
  */
 export function docUrlForNode(module: string, full: string): string {
-  return DOCS_BASE + module.split(".").join("/") + ".html#" + full;
+  const base =
+    module.startsWith("Mathlib") || module.startsWith("Batteries")
+      ? MATHLIB_DOCS_BASE
+      : DOCS_BASE;
+  return base + module.split(".").join("/") + ".html#" + full;
 }
