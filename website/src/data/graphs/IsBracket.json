@@ -1,0 +1,10 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.IsBracket",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsBracket","label":"IsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsBracket","kind":"root","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsBracket","target":"Real"}
+  ]
+}

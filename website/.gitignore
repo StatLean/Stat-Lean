@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.local
+tsconfig.tsbuildinfo
+
+# local QA artifacts
+qa-*.png
+qa-shot.mjs

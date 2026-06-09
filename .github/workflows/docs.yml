@@ -43,10 +43,28 @@ jobs:
       - name: Build documentation
         run: lake -Kenv=dev build AsymptoticStatistics:docs
 
+      - name: Generate dependency graphs
+        run: lake exe deps || echo "deps extraction failed; site will fall back to doc-gen4 links"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Build the Asymptotica website
+        working-directory: website
+        run: |
+          npm ci
+          npm run build
+
       - name: Prepare GitHub Pages site
         run: |
-          mkdir -p site/docs
+          mkdir -p site/docs site/website
           cp -r .lake/build/doc/* site/docs/
+          cp -r website/dist/* site/website/
+          # Root redirects visitors to the interactive Asymptotica website.
           cat > site/index.html <<'EOF'
           <!doctype html>
           <html lang="en">
@@ -54,19 +72,24 @@ jobs:
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>Asymptotic Statistical Theory in Lean 4</title>
+              <meta http-equiv="refresh" content="0; url=./website/">
+              <link rel="canonical" href="./website/">
               <style>
                 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 46rem; margin: 4rem auto; padding: 0 1.25rem; line-height: 1.6; color: #1b1b1b; }
                 h1 { font-size: 1.9rem; margin-bottom: 0.25rem; }
-                a { color: #0b65c2; }
-                .btn { display: inline-block; margin-top: 1.25rem; padding: 0.6rem 1.1rem; background: #0b65c2; color: #fff; border-radius: 6px; text-decoration: none; }
+                a { color: #b07414; }
+                .btn { display: inline-block; margin-top: 1rem; margin-right: 0.5rem; padding: 0.6rem 1.1rem; background: #1b1b1b; color: #fff; border-radius: 999px; text-decoration: none; }
+                .btn.alt { background: transparent; color: #1b1b1b; border: 1px solid #ccc; }
                 .muted { color: #555; }
               </style>
             </head>
             <body>
               <h1>Asymptotic Statistical Theory in Lean 4</h1>
-              <p class="muted">A Lean 4 / Mathlib formalization of asymptotic statistical theory:
-              local asymptotic normality, empirical processes, efficiency bounds, and more.</p>
-              <p><a class="btn" href="./docs/">Browse the API documentation &rarr;</a></p>
+              <p class="muted">Redirecting to the interactive <strong>Asymptotica</strong> atlas&hellip;</p>
+              <p>
+                <a class="btn" href="./website/">Open the atlas &rarr;</a>
+                <a class="btn alt" href="./docs/">API documentation</a>
+              </p>
               <p class="muted">Source:
               <a href="https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory">github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory</a></p>
             </body>

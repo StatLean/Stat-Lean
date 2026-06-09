@@ -1,0 +1,22 @@
+{
+  "root": "AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom",
+  "nodes": [
+    {"id":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","label":"IsCoarseningAtRandom","full":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","kind":"root","decl":"def","module":"AsymptoticStatistics.Operators.CAR"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"MeasureTheory.Measure.bind","label":"bind","full":"MeasureTheory.Measure.bind","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
+    {"id":"MeasureTheory.Measure.map","label":"map","full":"MeasureTheory.Measure.map","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Map"},
+    {"id":"Filter.Eventually","label":"Eventually","full":"Filter.Eventually","kind":"mathlib","decl":"def","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"MeasureTheory.ae","label":"ae","full":"MeasureTheory.ae","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.OuterMeasure.AE"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"MeasurableSpace"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"MeasureTheory.Measure"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"ProbabilityTheory.Kernel"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"MeasureTheory.Measure.bind"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"MeasureTheory.Measure.map"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"Filter.Eventually"},
+    {"source":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","target":"MeasureTheory.ae"}
+  ]
+}

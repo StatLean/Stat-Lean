@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Parchment (light) — warm scholarly paper */
+  --bg: 246 241 230;
+  --panel: 252 249 242;
+  --sunk: 239 232 218;
+  --ink: 28 27 24;
+  --ink-soft: 78 73 64;
+  --ink-faint: 138 130 116;
+  --rule: 214 205 188;
+
+  /* category accents (light) */
+  --c-param: 176 116 20;   /* amber gold */
+  --c-semi: 22 124 112;    /* teal */
+  --c-emp: 188 70 64;      /* terracotta */
+  --c-prob: 78 78 168;     /* indigo */
+  --c-ext: 214 178 38;     /* yellow — Mathlib / external */
+
+  --grain-opacity: 0.04;
+}
+
+[data-theme="dark"] {
+  /* Midnight observatory */
+  --bg: 18 19 24;
+  --panel: 26 28 34;
+  --sunk: 14 15 19;
+  --ink: 232 230 222;
+  --ink-soft: 176 173 162;
+  --ink-faint: 120 118 110;
+  --rule: 49 52 60;
+
+  --c-param: 226 176 78;
+  --c-semi: 86 200 182;
+  --c-emp: 232 132 124;
+  --c-prob: 158 158 240;
+  --c-ext: 232 206 96;     /* yellow — Mathlib / external */
+
+  --grain-opacity: 0.05;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: rgb(var(--bg));
+  color: rgb(var(--ink));
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* subtle paper grain over the whole page */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgb(var(--ink) / 0.14);
+}
+
+/* ---- category theming helper ---- */
+:root { --accent: var(--c-param); }
+[data-cat="parametric"] { --accent: var(--c-param); }
+[data-cat="semiparametric"] { --accent: var(--c-semi); }
+[data-cat="empirical"] { --accent: var(--c-emp); }
+[data-cat="probability"] { --accent: var(--c-prob); }
+
+/* bare `accent` className = active-accent text color (not a Tailwind utility) */
+.accent { color: rgb(var(--accent)); }
+
+/* ---- Lean code block ---- */
+.lean-code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.825rem;
+  line-height: 1.7;
+  white-space: pre;
+  tab-size: 2;
+}
+.lean-kw { color: rgb(var(--c-prob)); font-weight: 500; }
+.lean-name { color: rgb(var(--ink)); }
+.lean-type { color: rgb(var(--c-semi)); }
+.lean-comment { color: rgb(var(--ink-faint)); font-style: italic; }
+.lean-lit { color: rgb(var(--c-emp)); }
+
+/* hover-link highlight states */
+.hl-token {
+  border-radius: 3px;
+  padding: 0 1px;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+  cursor: help;
+}
+.hl-active {
+  background: rgb(var(--accent) / 0.22);
+  box-shadow: 0 0 0 1px rgb(var(--accent) / 0.5) inset;
+}
+.hl-span {
+  border-radius: 3px;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+  cursor: help;
+  border-bottom: 1px dotted rgb(var(--accent) / 0.55);
+}
+.hl-span.hl-active {
+  background: rgb(var(--accent) / 0.18);
+  border-bottom-color: transparent;
+}
+
+/* KaTeX inherits ink color */
+.katex { color: rgb(var(--ink)); font-size: 1.02em; }
+
+/* thin scrollbars in code */
+.lean-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.lean-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--ink-faint) / 0.4);
+  border-radius: 8px;
+}
+
+.hairline { border-color: rgb(var(--rule)); }
+
+/* informal-statement hypothesis spans (data-link) get the dotted-underline look */
+.informal-body [data-link] {
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: help;
+  border-bottom: 1.5px dotted rgb(var(--accent) / 0.55);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.informal-body [data-link].hl-active {
+  background: rgb(var(--accent) / 0.18);
+  border-bottom-color: transparent;
+}
+.informal-body p { margin: 0 0 0.75rem; }
+.informal-body p:last-child { margin-bottom: 0; }
+
+@layer components {
+  .btn-action {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border hairline
+      text-ink-soft hover:text-ink hover:border-ink/40 transition-colors;
+  }
+  .nav-card {
+    @apply flex flex-col gap-1 rounded-xl border hairline bg-parchment-panel
+      px-5 py-4 hover:border-accent/50 transition-colors;
+  }
+}
+
+/* link underline animation */
+.ulink {
+  background-image: linear-gradient(rgb(var(--accent)), rgb(var(--accent)));
+  background-size: 0% 1.5px;
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  transition: background-size 240ms ease;
+}
+.ulink:hover { background-size: 100% 1.5px; }

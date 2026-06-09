@@ -25,3 +25,8 @@ require "leanprover-community" / "mathlib" @ git "v4.29.1"
 @[default_target]
 lean_lib «AsymptoticStatistics» where
   -- add any library configuration options here
+
+-- Dependency-graph extractor for the website (see `Scripts/ExtractDeps.lean`).
+-- Run with `lake exe deps` after `lake build`.
+lean_exe deps where
+  root := `Scripts.ExtractDeps

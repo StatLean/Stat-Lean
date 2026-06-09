@@ -1,0 +1,40 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","label":"empiricalProcess_param_estimation","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.ParameterEstimation"},
+    {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"Real.isBoundedSMul","label":"isBoundedSMul","full":"Real.isBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
+    {"id":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","label":"L2ZeroMean","full":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","label":"Theorem19_23Hyp","full":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.ParameterEstimation"},
+    {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"AsymptoticStatistics.Core.Hilbert.integralL2","label":"integralL2","full":"AsymptoticStatistics.Core.Hilbert.integralL2","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"},
+    {"id":"AsymptoticStatistics.Core.Hilbert.oneL2","label":"oneL2","full":"AsymptoticStatistics.Core.Hilbert.oneL2","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"Real.isBoundedSMul"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"BorelSpace.opensMeasurable"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess_param_estimation","target":"Real.borelSpace"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","target":"Real.isBoundedSMul"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","target":"AsymptoticStatistics.Core.Hilbert.integralL2"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","target":"Real.isBoundedSMul"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","target":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.Theorem19_23Hyp","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.integralL2","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.integralL2","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.integralL2","target":"Real.isBoundedSMul"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.integralL2","target":"AsymptoticStatistics.Core.Hilbert.oneL2"},
+    {"source":"AsymptoticStatistics.Core.Hilbert.oneL2","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"}
+  ]
+}

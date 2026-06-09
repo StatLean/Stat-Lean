@@ -1,0 +1,22 @@
+{
+  "root": "AsymptoticStatistics.BowlShaped",
+  "nodes": [
+    {"id":"AsymptoticStatistics.BowlShaped","label":"BowlShaped","full":"AsymptoticStatistics.BowlShaped","kind":"root","decl":"def","module":"AsymptoticStatistics.ForMathlib.BowlShaped"},
+    {"id":"AddCommGroup","label":"AddCommGroup","full":"AddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Module","label":"Module","full":"Module","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Module.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Real.semiring","label":"semiring","full":"Real.semiring","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"AddCommGroup.toAddCommMonoid","label":"toAddCommMonoid","full":"AddCommGroup.toAddCommMonoid","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.BowlShaped","target":"AddCommGroup"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"Module"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"Real"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"Real.semiring"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"AddCommGroup.toAddCommMonoid"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"MeasurableSpace"},
+    {"source":"AsymptoticStatistics.BowlShaped","target":"ENNReal"}
+  ]
+}

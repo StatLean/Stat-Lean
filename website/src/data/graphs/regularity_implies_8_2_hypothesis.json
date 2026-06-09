@@ -1,0 +1,27 @@
+{
+  "root": "AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis",
+  "nodes": [
+    {"id":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","label":"regularity_implies_8_2_hypothesis","full":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","kind":"root","decl":"thm","module":"AsymptoticStatistics.Efficiency.HajekLeCamConvolution"},
+    {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"AsymptoticStatistics.ParametricFamily.Defs"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.Θ","label":"Θ","full":"AsymptoticStatistics.AsymptoticRepresentation.Θ","kind":"repo","decl":"def","module":"AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.𝓨","label":"𝓨","full":"AsymptoticStatistics.AsymptoticRepresentation.𝓨","kind":"repo","decl":"def","module":"AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"},
+    {"id":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","label":"RegularEstimatorSequence","full":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","kind":"repo","decl":"def","module":"AsymptoticStatistics.ParametricFamily.RegularEstimator"},
+    {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"AsymptoticStatistics.ForMathlib.Contiguity"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","label":"productMeasure","full":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","kind":"repo","decl":"def","module":"AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.AsymptoticRepresentation.𝓨"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.WeakConverges"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"fact_one_le_two_ennreal"},
+    {"source":"AsymptoticStatistics.HajekLeCamConvolution.regularity_implies_8_2_hypothesis","target":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure"},
+    {"source":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"},
+    {"source":"AsymptoticStatistics.ParametricFamily.RegularEstimatorSequence","target":"AsymptoticStatistics.AsymptoticRepresentation.𝓨"},
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.AsymptoticRepresentation.productMeasure","target":"AsymptoticStatistics.AsymptoticRepresentation.Θ"}
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","label":"donsker_random_function_consistency","full":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.RandomFunctions"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","label":"IsPDonsker","full":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
+    {"id":"Measurable.comp","label":"comp","full":"Measurable.comp","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"measurable_snd","label":"measurable_snd","full":"measurable_snd","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous","label":"asymptoticallyEquicontinuous","full":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous","kind":"repo","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT","label":"IsMarginalCLT","full":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","label":"IsAsymptoticallyEquicontinuous","full":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","target":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","target":"Measurable.comp"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","target":"measurable_snd"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.donsker_random_function_consistency","target":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","target":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","target":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","target":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous","target":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous","target":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker.asymptoticallyEquicontinuous","target":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"}
+  ]
+}

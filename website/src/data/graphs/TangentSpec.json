@@ -1,0 +1,14 @@
+{
+  "root": "AsymptoticStatistics.Core.TangentAbstract.TangentSpec",
+  "nodes": [
+    {"id":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec","label":"TangentSpec","full":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec","kind":"root","decl":"def","module":"AsymptoticStatistics.Core.TangentAbstract"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.IsProbabilityMeasure","label":"IsProbabilityMeasure","full":"MeasureTheory.IsProbabilityMeasure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec","target":"MeasurableSpace"},
+    {"source":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec","target":"MeasureTheory.Measure"},
+    {"source":"AsymptoticStatistics.Core.TangentAbstract.TangentSpec","target":"MeasureTheory.IsProbabilityMeasure"}
+  ]
+}

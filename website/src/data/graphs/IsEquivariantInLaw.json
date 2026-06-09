@@ -1,0 +1,24 @@
+{
+  "root": "AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","label":"IsEquivariantInLaw","full":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","kind":"root","decl":"def","module":"AsymptoticStatistics.Experiment.EquivariantInLaw"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"EuclideanSpace","label":"EuclideanSpace","full":"EuclideanSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"WithLp.measurableSpace","label":"measurableSpace","full":"WithLp.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"MeasurableSpace.pi","label":"pi","full":"MeasurableSpace.pi","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Matrix","label":"Matrix","full":"Matrix","kind":"mathlib","decl":"def","module":"Mathlib.LinearAlgebra.Matrix.Defs"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"ProbabilityTheory.Kernel"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"EuclideanSpace"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"Real"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"WithLp.measurableSpace"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"ENNReal"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"MeasurableSpace.pi"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"Real.measurableSpace"},
+    {"source":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","target":"Matrix"}
+  ]
+}

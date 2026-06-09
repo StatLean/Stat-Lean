@@ -1,0 +1,31 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","label":"isPDonsker_of_finite_bracketing_entropy_integral","full":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.DonskerBracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.bracketingEntropyIntegral","label":"bracketingEntropyIntegral","full":"AsymptoticStatistics.EmpiricalProcess.bracketingEntropyIntegral","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.supNormOver","label":"supNormOver","full":"AsymptoticStatistics.EmpiricalProcess.supNormOver","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","label":"IsPDonsker","full":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.bracketingNumber","label":"bracketingNumber","full":"AsymptoticStatistics.EmpiricalProcess.bracketingNumber","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT","label":"IsMarginalCLT","full":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","label":"IsAsymptoticallyEquicontinuous","full":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Donsker"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","label":"IsEpsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsBracket","label":"IsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsBracket","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","target":"AsymptoticStatistics.EmpiricalProcess.bracketingEntropyIntegral"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","target":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","target":"AsymptoticStatistics.EmpiricalProcess.supNormOver"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.isPDonsker_of_finite_bracketing_entropy_integral","target":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingEntropyIntegral","target":"AsymptoticStatistics.EmpiricalProcess.bracketingNumber"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","target":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","target":"AsymptoticStatistics.EmpiricalProcess.IsMarginalCLT"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsPDonsker","target":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bracketingNumber","target":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsAsymptoticallyEquicontinuous","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","target":"AsymptoticStatistics.EmpiricalProcess.IsBracket"}
+  ]
+}

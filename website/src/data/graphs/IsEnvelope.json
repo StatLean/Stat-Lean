@@ -1,0 +1,16 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.IsEnvelope",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"root","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"abs","label":"abs","full":"abs","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"Real.lattice","label":"lattice","full":"Real.lattice","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","target":"Set"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","target":"Real"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","target":"abs"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","target":"Real.lattice"}
+  ]
+}

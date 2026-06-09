@@ -1,0 +1,14 @@
+{
+  "root": "AsymptoticStatistics.Core.QMDPath.QMDPath",
+  "nodes": [
+    {"id":"AsymptoticStatistics.Core.QMDPath.QMDPath","label":"QMDPath","full":"AsymptoticStatistics.Core.QMDPath.QMDPath","kind":"root","decl":"def","module":"AsymptoticStatistics.Core.QMDPath"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.IsProbabilityMeasure","label":"IsProbabilityMeasure","full":"MeasureTheory.IsProbabilityMeasure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.Core.QMDPath.QMDPath","target":"MeasurableSpace"},
+    {"source":"AsymptoticStatistics.Core.QMDPath.QMDPath","target":"MeasureTheory.Measure"},
+    {"source":"AsymptoticStatistics.Core.QMDPath.QMDPath","target":"MeasureTheory.IsProbabilityMeasure"}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.bernstein_inequality",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality","label":"bernstein_inequality","full":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.Maximal"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality_aux","label":"bernstein_inequality_aux","full":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality_aux","kind":"repo","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.MaximalBernstein"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality","target":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality_aux"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","target":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.bernstein_inequality_aux","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"}
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "root": "AsymptoticStatistics.EmpiricalProcess.finite_sup_bound",
+  "nodes": [
+    {"id":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","label":"finite_sup_bound","full":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.Maximal"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","label":"finite_sup_bound_aux","full":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","kind":"repo","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.MaximalOrlicz"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound","target":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","target":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","target":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","target":"RCLike.charZero_rclike"},
+    {"source":"AsymptoticStatistics.EmpiricalProcess.finite_sup_bound_aux","target":"Nat.cast_zero"}
+  ]
+}

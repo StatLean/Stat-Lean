@@ -1,0 +1,23 @@
+{
+  "root": "AsymptoticStatistics.DifferentiableQuadraticMean",
+  "nodes": [
+    {"id":"AsymptoticStatistics.DifferentiableQuadraticMean","label":"DifferentiableQuadraticMean","full":"AsymptoticStatistics.DifferentiableQuadraticMean","kind":"root","decl":"def","module":"AsymptoticStatistics.DQM.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"NormedAddCommGroup","label":"NormedAddCommGroup","full":"NormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"InnerProductSpace","label":"InnerProductSpace","full":"InnerProductSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"AsymptoticStatistics.ParametricFamily","label":"ParametricFamily","full":"AsymptoticStatistics.ParametricFamily","kind":"repo","decl":"def","module":"AsymptoticStatistics.ParametricFamily.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"MeasurableSpace"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"NormedAddCommGroup"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"InnerProductSpace"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"Real"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"AsymptoticStatistics.ParametricFamily"},
+    {"source":"AsymptoticStatistics.DifferentiableQuadraticMean","target":"MeasureTheory.Measure"},
+    {"source":"AsymptoticStatistics.ParametricFamily","target":"MeasurableSpace"}
+  ]
+}

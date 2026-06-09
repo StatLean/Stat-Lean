@@ -1,0 +1,24 @@
+{
+  "root": "AsymptoticStatistics.GaussianShift.IsGaussianShift",
+  "nodes": [
+    {"id":"AsymptoticStatistics.GaussianShift.IsGaussianShift","label":"IsGaussianShift","full":"AsymptoticStatistics.GaussianShift.IsGaussianShift","kind":"root","decl":"def","module":"AsymptoticStatistics.Experiment.GaussianShift"},
+    {"id":"EuclideanSpace","label":"EuclideanSpace","full":"EuclideanSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"WithLp.measurableSpace","label":"measurableSpace","full":"WithLp.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"MeasurableSpace.pi","label":"pi","full":"MeasurableSpace.pi","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
+    {"id":"Real.measurableSpace","label":"measurableSpace","full":"Real.measurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Matrix","label":"Matrix","full":"Matrix","kind":"mathlib","decl":"def","module":"Mathlib.LinearAlgebra.Matrix.Defs"}
+  ],
+  "edges": [
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"EuclideanSpace"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"Real"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"MeasureTheory.Measure"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"WithLp.measurableSpace"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"ENNReal"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"MeasurableSpace.pi"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"Real.measurableSpace"},
+    {"source":"AsymptoticStatistics.GaussianShift.IsGaussianShift","target":"Matrix"}
+  ]
+}
