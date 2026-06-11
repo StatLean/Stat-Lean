@@ -3,7 +3,7 @@
 A React + Vite + Tailwind front-end that aligns informal mathematical statements
 with their Lean 4 / Mathlib formalizations, organized across four categories of
 asymptotic statistical theory. Deployed to GitHub Pages at
-`https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/website/`.
+`https://statlean.github.io/website/`.
 
 ## Develop
 
@@ -61,7 +61,7 @@ Results are organized into four categories (defined in `src/lib/categories.ts`):
   textbook statement.
 - **Dependency graphs** — Cytoscape + fcose, lazy-loaded on demand.
 - **doc-gen4 + source links** per result, pointing to
-  `https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/docs/`.
+  `https://statlean.github.io/docs/`.
 - **Team page** — linked from the top navigation bar.
 - Light / dark dual theme (defaults to light) with a per-category accent system.
 

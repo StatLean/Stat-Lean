@@ -48,7 +48,7 @@ The interactive atlas lives in `website/`. See
 
 ### Bug reports and suggestions
 
-Open a [GitHub issue](https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory/issues)
+Open a [GitHub issue](https://github.com/StatLean/Stat-Lean/issues)
 describing the problem or suggestion.
 
 ## Pull request guidelines
