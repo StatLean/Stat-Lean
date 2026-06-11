@@ -6,13 +6,13 @@
 
 
   <p>
-    <a href="https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory/actions/workflows/docs.yml">
-      <img src="https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory/actions/workflows/docs.yml/badge.svg" alt="GitHub CI" />
+    <a href="https://github.com/StatLean/statlean.github.io/actions/workflows/deploy.yml">
+      <img src="https://github.com/StatLean/statlean.github.io/actions/workflows/deploy.yml/badge.svg" alt="GitHub CI" />
     </a>
-    <a href="https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/website/">
+    <a href="https://statlean.github.io/website/">
       <img src="https://img.shields.io/badge/website-Stat--Lean%20Website-orange?logo=github" alt="Website" />
     </a>
-    <a href="https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/docs/">
+    <a href="https://statlean.github.io/docs/">
       <img src="https://img.shields.io/badge/docs-API%20Documents-blueviolet?logo=readthedocs&logoColor=white" alt="API Docs" />
     </a>
     <a href="https://leanprover.github.io/">
@@ -29,7 +29,7 @@
 
 ## Website
 
-**[https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/website/](https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/website/)**
+**[https://statlean.github.io/website/](https://statlean.github.io/website/)**
 
 The interactive website lets you browse every formalized result and compare its
 informal mathematical statement side-by-side with the Lean 4 proof signature.
@@ -58,7 +58,7 @@ informal mathematical statement side-by-side with the Lean 4 proof signature.
     </td>
     <td>
       <strong>📝 Note on Informalization</strong><br />
-      Each result includes a formalization note explaining design choices, typeclass decisions, and how the Lean encoding relates to the textbook statement. Links to the <a href="https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/docs/">doc-gen4 API reference</a> for every result.
+      Each result includes a formalization note explaining design choices, typeclass decisions, and how the Lean encoding relates to the textbook statement. Links to the <a href="https://statlean.github.io/docs/">doc-gen4 API reference</a> for every result.
     </td>
   </tr>
 </table>
@@ -108,7 +108,7 @@ lake --version
 ### 2. Clone
 
 ```bash
-git clone https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory.git
+git clone https://github.com/StatLean/Stat-Lean.git
 cd Lean-Asymptotic-Statistical-Theory
 ```
 
@@ -132,7 +132,7 @@ Add to your `lakefile.lean`:
 
 ```lean
 require AsymptoticStatistics from git
-  "https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory.git" @ "main"
+  "https://github.com/StatLean/Stat-Lean.git" @ "main"
 ```
 
 then run `lake update && lake exe cache get && lake build`. Your project must use the same toolchain version as this repository's `lean-toolchain` file.

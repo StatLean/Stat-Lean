@@ -1,10 +1,10 @@
 import type { ResultEntry } from "./types";
 
 export const REPO_URL =
-  "https://github.com/junwei-lu/Lean-Asymptotic-Statistical-Theory";
+  "https://github.com/StatLean/Stat-Lean";
 
 export const DOCS_BASE =
-  "https://junwei-lu.github.io/Lean-Asymptotic-Statistical-Theory/docs/";
+  "https://statlean.github.io/docs/";
 
 const MATHLIB_DOCS_BASE = "https://leanprover-community.github.io/mathlib4_docs/";
 
