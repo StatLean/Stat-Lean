@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package "AsymptoticStatistics" where
+package "StatLean" where
   version := v!"0.1.0"
   keywords := #["math"]
   leanOptions := #[
@@ -23,7 +23,7 @@ meta if get_config? env = some "dev" then
 require "leanprover-community" / "mathlib" @ git "v4.29.1"
 
 @[default_target]
-lean_lib «AsymptoticStatistics» where
+lean_lib «StatLean» where
   -- add any library configuration options here
 
 -- Dependency-graph extractor for the website (see `Scripts/ExtractDeps.lean`).
