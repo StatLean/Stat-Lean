@@ -4,6 +4,7 @@ import StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 import StatLean.ConcentrationInequalities.SubGaussian.Chernoff
 import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubExponential.Defs
+import StatLean.ConcentrationInequalities.SubExponential.TailBounds
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
