@@ -38,7 +38,7 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
 | max-finmax          | Maximal/FiniteMaximal.lean                                | sg-tailbounds                         | IN_FLIGHT | A  | conc/maximal-finitemaximal     | 1       | —       | —                           |
 | max-covball         | Maximal/CoveringBall.lean                                 | max-covnum                            | BLOCKED | A    | conc/maximal-coveringball      | 0       | —       | card_le_of_isSeparated_ball |
 | max-l2              | Maximal/L2Maximal.lean                                    | max-finmax, max-covball               | BLOCKED | A    | conc/maximal-l2maximal         | 0       | —       | —                           |
-| mcd-condhoeff       | McDiarmid/CondHoeffding.lean                              | sg-defs                               | READY   | B    | conc/mcdiarmid-condhoeffding   | 0       | —       | condExp_hoeffding_mgf       |
+| mcd-condhoeff       | McDiarmid/CondHoeffding.lean                              | sg-defs                               | MERGED  | B    | (merged)                       | 1       | 0       | condExp_hoeffding_mgf PROVEN 0-sorry (audited: not laundered, derives HasCondSubgaussianMGF via condExpKernel). HARD LEMMA #1 CLOSED. |
 | mcd-doob            | McDiarmid/DoobDecomposition.lean                         | mcd-condhoeff                         | BLOCKED | B    | conc/mcdiarmid-doob            | 0       | —       | —                           |
 | mcd-mcdiarmid       | McDiarmid/McDiarmid.lean                                  | mcd-doob                              | BLOCKED | A    | conc/mcdiarmid-mcdiarmid       | 0       | —       | —                           |
 
