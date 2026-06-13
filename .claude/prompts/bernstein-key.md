@@ -9,7 +9,18 @@ Mathlib-infrastructure gap.
 `sorry` (line ~82). READ the file's module header — it contains the full math sketch. Close
 `bernstein_key` to ZERO sorry. Do NOT change any statement; do NOT touch the main theorem.
 
-# IMPORTANT — SIGNATURE FIX FIRST (a prior session correctly escalated this):
+# DEFS NOW FIXED (laptop just changed it): `Bernstein/Defs.lean`'s `moment_le` field now uses the
+# LOWER LEBESGUE integral:
+#   `moment_le : ∀ k ≥ 3, ∫⁻ ω, ENNReal.ofReal (|X ω|^k) ∂μ ≤ ENNReal.ofReal ((σ2/2)·k!·b^(k-2))`
+# (Bochner `∫|X|^k` returned junk 0 for heavy-tailed X, making bernstein_key false — that is now
+# resolved.) Rework MGFBound.lean to consume this `∫⁻` form. A prior session reported: "after this
+# change, the `lintegral_tsum` + geometric-series path closes cleanly" — i.e. integrability (A) of
+# `exp(l·X)` follows from `∫⁻ exp(|l|·|X|) = ∑ₖ |l|^k/k! ∫⁻|X|^k ≤ ∑ₖ |l|^k/k!·ofReal(...) < ∞`
+# (`MeasureTheory.lintegral_tsum`, monotone `∫⁻`, `ENNReal` geometric series), giving
+# `HasFiniteIntegral`/`Integrable`; then the MGF bound (B) as before. NOTE the file also already had
+# `Measurable X` added to both `bernstein_key` and `isSubExponential_of_hasBernsteinCondition` — keep it.
+
+# IMPORTANT — SIGNATURE FIX (already applied by a prior session — keep it):
 `bernstein_key` as currently stated is FALSE without a measurability assumption on `X` (the
 `HasBernsteinCondition` moment fields are Bochner integrals that are junk `0` for non-measurable `X`,
 so the MGF/integrability conclusions fail). You MUST add `(hX : Measurable X)` (or `AEMeasurable X μ`
