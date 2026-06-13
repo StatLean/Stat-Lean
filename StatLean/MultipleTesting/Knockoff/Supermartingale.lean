@@ -67,12 +67,46 @@ lemma Yproc_nonneg (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) 
       linarith
   · exact le_refl _
 
+omit mΩ in
 /-- `Yproc 0 ω = V₊(0)/(1+V₋(0))`: the threshold `θ 0 ω` = min null magnitude is ≤ |W j ω| for
 all j ∈ H₀ (since it is the minimum), so V₊/V₋ at threshold θ₀ equals V₊/V₋ at threshold 0.
 - **USER-INPUT**: equality of counts at threshold θ₀ vs 0; Lu-BDA §19. -/
 lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     Yproc W H₀ 0 ω = (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) := by
-  sorry
+  unfold Yproc
+  by_cases h : 0 < H₀.card
+  · simp only [h, ↓reduceDIte]
+    -- Key: θ₀ = min null magnitude ≤ |W j ω| for all j ∈ H₀, so Vplus/Vminus agree at θ₀ and 0.
+    haveI hNZ : NeZero H₀.card := ⟨h.ne'⟩
+    have hmin : ∀ j : Fin H₀.card, θ W H₀ ⟨0, h⟩ ω ≤ |W (H₀.orderEmbOfFin rfl j) ω| := by
+      intro j
+      let v := fun i : Fin H₀.card => |W (H₀.orderEmbOfFin rfl i) ω|
+      change orderStat v ⟨0, h⟩ ≤ v j
+      calc orderStat v ⟨0, h⟩
+          ≤ orderStat v ((Tuple.sort v).symm j) := orderStat_monotone v (Fin.zero_le _)
+        _ = v ((Tuple.sort v) ((Tuple.sort v).symm j)) := rfl
+        _ = v j := by simp [Equiv.apply_symm_apply]
+    have hH₀ : ∀ j ∈ H₀, θ W H₀ ⟨0, h⟩ ω ≤ |W j ω| := by
+      intro j hj
+      obtain ⟨i, rfl⟩ : j ∈ Set.range (H₀.orderEmbOfFin rfl) := by
+        rw [Finset.range_orderEmbOfFin]; exact Finset.mem_coe.mpr hj
+      exact hmin i
+    have hSplus : (Splus W (θ W H₀ ⟨0, h⟩ ω) ω) ∩ H₀ = (Splus W 0 ω) ∩ H₀ := by
+      ext j
+      simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
+      exact ⟨fun ⟨⟨_, hpos⟩, hmem⟩ => ⟨⟨abs_nonneg _, hpos⟩, hmem⟩,
+             fun ⟨⟨_, hpos⟩, hmem⟩ => ⟨⟨hH₀ j hmem, hpos⟩, hmem⟩⟩
+    have hSminus : (Sminus W (θ W H₀ ⟨0, h⟩ ω) ω) ∩ H₀ = (Sminus W 0 ω) ∩ H₀ := by
+      ext j
+      simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
+      exact ⟨fun ⟨⟨_, hneg⟩, hmem⟩ => ⟨⟨abs_nonneg _, hneg⟩, hmem⟩,
+             fun ⟨⟨_, hneg⟩, hmem⟩ => ⟨⟨hH₀ j hmem, hneg⟩, hmem⟩⟩
+    simp only [Vplus, Vminus, hSplus, hSminus]
+  · have h0 : H₀.card = 0 := by omega
+    have hH₀ : H₀ = ∅ := Finset.card_eq_zero.mp h0
+    subst hH₀
+    simp only [h, ↓reduceDIte]
+    simp [Vplus, Vminus]
 
 /-! ## 3. Filtration (𝒢rev) -/
 
