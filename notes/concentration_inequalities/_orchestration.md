@@ -8,8 +8,8 @@
 run_id:           2026-06-12-batch1-closure
 concurrency_cap:  4        # raise to 6 after two consecutive first-try gate passes; never exceed 6
 max_attempts:     3
-total_spawns:     0        # hard-stop if > 50 (≈ 2× item count)
-run_budget_usd:   0.0      # hard-stop at 600.0
+total_spawns:     1        # cluster-claude proof sessions launched; hard-stop if > 50
+run_budget_usd:   0.0      # hard-stop at 600.0  (update from each session's reported cost)
 cap_routine_usd:  12
 cap_hard_usd:     25
 ```
@@ -24,9 +24,9 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
 |---------------------|------------------------------------------------------------|---------------------------------------|---------|------|--------------------------------|---------|---------|-----------------------------|
 | sg-defs             | SubGaussian/Defs.lean                                      | —                                     | MERGED  | L    | (merged)                       | 0       | 0       | —                           |
 | classical-limits    | ClassicalLimits.lean                                       | —                                     | READY   | A    | conc/classical-limits          | 0       | —       | —                           |
-| sg-bounded          | SubGaussian/Bounded.lean                                   | sg-defs                               | READY   | A    | conc/subgaussian-bounded       | 0       | —       | —                           |
+| sg-bounded          | SubGaussian/Bounded.lean                                   | sg-defs                               | IN_FLIGHT | L  | conc/subgaussian-bounded       | 1       | —       | — (laptop-proved; gate build running) |
 | sg-chernoff         | SubGaussian/Chernoff.lean                                  | sg-defs                               | READY   | A    | conc/subgaussian-chernoff      | 0       | —       | —                           |
-| sg-tailbounds       | SubGaussian/TailBounds.lean                               | sg-defs                               | READY   | A    | conc/subgaussian-tailbounds    | 0       | —       | —                           |
+| sg-tailbounds       | SubGaussian/TailBounds.lean                               | sg-defs                               | IN_FLIGHT | A  | conc/subgaussian-tailbounds    | 1       | —       | — (subagent-cycle validation) |
 | sg-hoeffding        | SubGaussian/Hoeffding.lean                                 | sg-defs                               | READY   | A    | conc/subgaussian-hoeffding     | 0       | —       | —                           |
 | subexp-defs         | SubExponential/Defs.lean                                   | —                                     | READY   | L    | conc/subexp-defs               | 0       | —       | —                           |
 | subexp-tail         | SubExponential/TailBounds.lean                            | subexp-defs                           | BLOCKED | A    | conc/subexp-tailbounds         | 0       | —       | —                           |
