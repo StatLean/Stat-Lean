@@ -31,6 +31,7 @@ then reuse the regime-optimization algebra. ZERO sorry. Independence + common me
 `-- USER-INPUT: …; Lu-BDA §3.2`; integrability/measurability regularity is `-- LEAN-ONLY`.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/SubExponential/SampleMean.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 0:50:00 lake build StatLean.ConcentrationInequalities.SubExponential.SampleMean
+# BUILD (you are ALREADY inside an srun allocation — run lake DIRECTLY, do NOT nest srun/sbatch):
+#   lake build StatLean.ConcentrationInequalities.SubExponential.SampleMean
 # DONE = build exits 0; ZERO sorries; §2 tags; commit
 (`conc(subexp): sample-mean two-regime concentration (Lu-BDA §3.2)`). Report build + sorry count + constants.
