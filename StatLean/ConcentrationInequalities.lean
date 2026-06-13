@@ -7,6 +7,7 @@ import StatLean.ConcentrationInequalities.SubExponential.Defs
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
+import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 
 /-!
 # ConcentrationInequalities — area umbrella
