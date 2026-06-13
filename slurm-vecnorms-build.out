@@ -1,0 +1,13 @@
+[2026-06-13T10:38:18-04:00] host=holy7c04107.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/hds-vecnorms-r2 target=StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
+--- git status ---
+e776ee8c55d2dd640e5039ed9fbf2a1c645ef579
+ M StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean
+?? build-vecnorms.sbatch
+?? slurm-vecnorms-build.err
+?? slurm-vecnorms-build.out
+--- lake build StatLean.HighDimensionalStatistics.ForMathlib.VecNorms ---
+✔ [2318/2318] Built StatLean.HighDimensionalStatistics.ForMathlib.VecNorms (63s)
+Build completed successfully (2318 jobs).
+--- post-build ---
+exit_code=0
+wallclock_seconds=119
