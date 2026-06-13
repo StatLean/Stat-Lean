@@ -11,7 +11,7 @@ import StatLean.MultipleTesting.Knockoff
 # MultipleTesting — area umbrella
 
 Multiple hypothesis testing: false discovery rate and family-wise error rate control, formalized
-from Lu, *Big Data Analysis*, ch. 18–19 (Holm–Bonferroni from Holm 1979 — see `HolmBonferroni.lean`):
+from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
 
 * **Concepts**: `FDP` / `FDR` / `FWER` (`FDP/Defs.lean`); `SuperUniform` null p-values
   (`PValues/Defs.lean`); `KnockoffScore` (`Knockoff/Defs.lean`).
