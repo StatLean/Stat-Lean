@@ -13,9 +13,11 @@ MGF bound: `∀ λ, E[exp(λ(f(X) − E[f(X)]))] ≤ exp(λ² ∑ₖ cₖ²/8)`.
 
 **Architecture:**
 1. `allVars`, `natFiltration`, `doobMartingale`, `doobIncrement` — the core objects.
-2. `increment_hasCondSubgaussianMGF` — ONE named sorry capturing the missing Mathlib lemma
-   `iIndepFun X μ → condDistrib(tail, head, μ) = const(μ.map tail)`.
-3. `mgf_sub_expectation_le` — proved rigorously via
+2. `increment_bounded_of_bounded_differences` — ONE named sorry for the missing Mathlib
+   independence factorization lemma. See ESCALATE note there.
+3. `increment_hasCondSubgaussianMGF` — proved by wrapping `condExp_hoeffding_mgf`
+   (CondHoeffding.lean) fiber-by-fiber, using the sorry'd bound.
+4. `mgf_sub_expectation_le` — proved rigorously via
    `HasSubgaussianMGF.sum_of_hasCondSubgaussianMGF`.
 -/
 
@@ -66,9 +68,9 @@ private lemma natFiltration_zero_eq_bot
     (natFiltration X hX) 0 = ⊥ := by
   show (⨆ j : {j : Fin n // (j : ℕ) < 0},
         MeasurableSpace.comap (X j.1) inferInstance) = ⊥
-  haveI : IsEmpty {j : Fin n // (j : ℕ) < 0} :=
-    ⟨fun ⟨j, hj⟩ => absurd hj (Nat.not_lt_zero _)⟩
-  exact iSup_of_isEmpty _
+  exact le_antisymm
+    (iSup_le (fun ⟨_, hj⟩ => absurd hj (Nat.not_lt_zero _)))
+    bot_le
 
 private lemma natFiltration_n_stronglyMeasurable
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i))
@@ -118,7 +120,7 @@ private lemma sum_doobIncrement_telescope
   | zero => simp [doobIncrement]
   | succ k ih =>
     rw [Finset.sum_range_succ, ih]
-    simp only [doobIncrement]
+    simp only [doobIncrement, Pi.sub_apply]
     ring
 
 private lemma doobIncrement_stronglyAdapted
@@ -153,27 +155,49 @@ private lemma sum_doobCY_eq (c : Fin n → ℝ) :
   -- sum_fin_eq_sum_range rewrites ∑_{k:Fin n} = ∑_{i<n} if h:i<n then f⟨i,h⟩ else 0.
   rw [Finset.sum_fin_eq_sum_range]
   -- Both sums now over range n; each term equals doobCY c (i+1) = if h:i<n then ... else 0.
-  congr 1; ext i; simp [doobCY]
+  -- congr 1 closes by definitional equality of doobCY.
+  congr 1
 
-/-! ### §4 The one sorry: conditional sub-Gaussianity of each increment -/
+/-! ### §4 Conditional sub-Gaussianity of each increment -/
 
-/-- **[SORRY]** Each Doob increment Δₖ₊₁ satisfies `HasCondSubgaussianMGF` w.r.t. Fₖ with
-    parameter `(‖cₖ‖₊/2)²`.
+/-- **[SORRY]** Under `iIndepFun X μ` and the bounded-differences condition, the Doob
+    increment `Δₖ₊₁ = Mₖ₊₁ − Mₖ` is globally a.e. bounded in `[−cₖ, cₖ]` and fiber-wise
+    a.e. bounded in an interval of length exactly `cₖ`.
 
-    **Missing Mathlib lemma:** Under `iIndepFun X μ`, the conditional kernel of `X k` given
-    `σ(X₀,...,Xₖ₋₁)` equals `const (μ.map (X k))` a.s., i.e.
-    `∀ᵐ ω' ∂(μ.trim hm_k), condExpKernel μ (natFiltration k) ω' =
-      (μ.map (X k)).map (fun y => Function.update x_prefix k y)`
-    (where `x_prefix` is the fiber-fixed prefix). Tried: `IndepFun.condDistrib_eq`,
-    `ProbabilityTheory.condDistrib_eq_const_of_measurable`, `Kernel.iIndepFun`.
+    **ESCALATE:** Both bounds require the independence factorization
+    `condDistrib(Xₖ | σ(X₀,...,Xₖ₋₁), μ) = const(μ.map Xₖ)` under `iIndepFun`,
+    which is not yet in Mathlib. The global bound follows from the oscillation bound
+    `sup_y g(y) − inf_y g(y) ≤ cₖ` (bounded differences) applied to the conditional mean
+    `g(y) = E[f(x₀,...,y,...) | remaining]`; the fiber-wise bound uses the same `g` to
+    identify the specific interval `[inf_y g(y) − E[g(Xₖ)], sup_y g(y) − E[g(Xₖ)]]`. -/
+private lemma increment_bounded_of_bounded_differences
+    {μ : Measure Ω} [IsProbabilityMeasure μ]
+    (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i))
+    (f : (Π i : Fin n, β i) → ℝ) (hf : Measurable f)
+    (hf_int : Integrable (f ∘ allVars X) μ)
+    (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
+    -- USER-INPUT: bounded differences Dᵢf ≤ cᵢ; Lu-BDA §3.1.
+    (hbd : ∀ k : Fin n, ∀ x : Π i : Fin n, β i, ∀ y : β k,
+        |f x - f (Function.update x k y)| ≤ c k)
+    -- USER-INPUT: independence of (X i); Lu-BDA §3.1.
+    (hX_indep : iIndepFun X μ)
+    (k : ℕ) (hk : k < n) :
+    -- Global a.e. bound (used for integrable_exp_mul).
+    (∀ᵐ ω ∂μ, doobIncrement X hX f μ (k + 1) ω ∈ Set.Icc (-(c ⟨k, hk⟩)) (c ⟨k, hk⟩)) ∧
+    -- Fiber-wise bound of length cₖ (used for the tight MGF constant).
+    (∀ᵐ ω' ∂(μ.trim ((natFiltration X hX).le k)),
+      ∃ a : ℝ, ∀ᵐ ω ∂(condExpKernel μ ((natFiltration X hX) k) ω'),
+        doobIncrement X hX f μ (k + 1) ω ∈ Set.Icc a (a + c ⟨k, hk⟩)) := by
+  -- ESCALATE: condDistrib(Xₖ | σ(X₀,...,Xₖ₋₁), μ) = const(μ.map Xₖ) under iIndepFun
+  -- is absent from Mathlib; both parts of this conjunction require it.
+  sorry
 
-    **Proof sketch:** Fix fiber ω' ∈ σ(X₀,...,Xₖ₋₁). Let
-    `g(y) = E[f(X₀(ω'),...,y,...,Xₙ₋₁) | remaining X]`.
-    By bounded differences: `sup_y g(y) − inf_y g(y) ≤ c k`. So
-    `Δₖ₊₁ ∈ [inf g − E g, sup g − E g]` with `b − a ≤ c k` a.s. on the fiber.
-    Per-fiber zero mean holds since `E[Δₖ₊₁ | Fₖ] = Mₖ − Mₖ = 0`.
-    Apply `hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero` fiber-by-fiber as in
-    `CondHoeffding.lean`, assembling via `Kernel.HasSubgaussianMGF.{integrable_exp_mul, mgf_le}`. -/
+/-- Each Doob increment `Δₖ₊₁ = Mₖ₊₁ − Mₖ` satisfies `HasCondSubgaussianMGF` w.r.t. `Fₖ`
+    with parameter `(‖cₖ‖₊/2)²`.
+
+    **Proof:** The tower property `E[Mₖ₊₁|Fₖ] = Mₖ` gives zero conditional mean.
+    The bounded-differences bound gives the fiber-wise range. Apply
+    `hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero` fiber-by-fiber. -/
 lemma increment_hasCondSubgaussianMGF
     {μ : Measure Ω} [IsProbabilityMeasure μ]
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i))
@@ -188,7 +212,79 @@ lemma increment_hasCondSubgaussianMGF
     (k : ℕ) (hk : k < n) :
     HasCondSubgaussianMGF ((natFiltration X hX) k) ((natFiltration X hX).le k)
       (doobIncrement X hX f μ (k + 1)) ((‖c ⟨k, hk⟩‖₊ / 2) ^ 2) μ := by
-  sorry
+  -- hm_k is a proof term, not a MeasurableSpace instance; safe to use `have`.
+  have hm_k : (natFiltration X hX) k ≤ mΩ := (natFiltration X hX).le k
+  -- Δ : Ω → ℝ, not a typeclass — `let` is fine.
+  let Δ := doobIncrement X hX f μ (k + 1)
+  -- Integrability: Δ = Mₖ₊₁ − Mₖ, both integrable as conditional expectations.
+  have h_int_k1 : Integrable (doobMartingale X hX f μ (k + 1)) μ := integrable_condExp
+  have h_int_k : Integrable (doobMartingale X hX f μ k) μ := integrable_condExp
+  have hΔ_int : Integrable Δ μ := h_int_k1.sub h_int_k
+  have hΔ_aem : AEMeasurable Δ μ := hΔ_int.1.aemeasurable
+  -- Tower: μ[Δ | Fₖ] = 0 a.e.
+  -- condExp_sub gives μ[Mₖ₊₁ − Mₖ | Fₖ] = μ[Mₖ₊₁|Fₖ] − μ[Mₖ|Fₖ].
+  have h_sub : μ[Δ | (natFiltration X hX) k] =ᵐ[μ]
+      μ[doobMartingale X hX f μ (k + 1) | (natFiltration X hX) k] -
+      μ[doobMartingale X hX f μ k | (natFiltration X hX) k] :=
+    condExp_sub h_int_k1 h_int_k ((natFiltration X hX) k)
+  -- Tower: μ[Mₖ₊₁ | Fₖ] = μ[μ[f∘X|Fₖ₊₁] | Fₖ] = μ[f∘X|Fₖ] = Mₖ.
+  have htower :
+      μ[doobMartingale X hX f μ (k + 1) | (natFiltration X hX) k] =ᵐ[μ]
+      doobMartingale X hX f μ k :=
+    Filtration.condExp_condExp (f ∘ allVars X) (natFiltration X hX) (Nat.le_succ k)
+  -- Mₖ is Fₖ-measurable, so μ[Mₖ | Fₖ] = Mₖ (plain eq, lifted to ae).
+  have hMk :
+      μ[doobMartingale X hX f μ k | (natFiltration X hX) k] =ᵐ[μ]
+      doobMartingale X hX f μ k :=
+    ae_of_all μ (congr_fun
+      (condExp_of_stronglyMeasurable hm_k stronglyMeasurable_condExp h_int_k))
+  have h_condExp_zero : μ[Δ | (natFiltration X hX) k] =ᵐ[μ] (0 : Ω → ℝ) := by
+    filter_upwards [h_sub, htower, hMk] with ω h1 h2 h3
+    simp only [Pi.sub_apply, Pi.zero_apply] at *
+    linarith
+  -- Disintegration: condExp via kernel integral.
+  have hμ_eq :
+      condExpKernel μ ((natFiltration X hX) k) ∘ₘ μ.trim hm_k = μ :=
+    condExpKernel_comp_trim hm_k
+  have h_condExp_zero_trim :
+      μ[Δ | (natFiltration X hX) k] =ᵐ[μ.trim hm_k] (0 : Ω → ℝ) :=
+    stronglyMeasurable_condExp.ae_eq_trim_of_stronglyMeasurable hm_k
+      stronglyMeasurable_zero h_condExp_zero
+  have h_disint :
+      μ[Δ | (natFiltration X hX) k] =ᵐ[μ.trim hm_k]
+      fun ω' => ∫ y, Δ y ∂(condExpKernel μ ((natFiltration X hX) k) ω') :=
+    condExp_ae_eq_trim_integral_condExpKernel hm_k hΔ_int
+  -- Per-fiber zero mean.
+  have h_fiber_zero : ∀ᵐ ω' ∂(μ.trim hm_k),
+      ∫ y, Δ y ∂(condExpKernel μ ((natFiltration X hX) k) ω') = 0 := by
+    filter_upwards [h_disint.symm.trans h_condExp_zero_trim] with ω' h
+    simpa using h
+  -- Per-fiber AEMeasurable.
+  have h_fiber_aem : ∀ᵐ ω' ∂(μ.trim hm_k),
+      AEMeasurable Δ (condExpKernel μ ((natFiltration X hX) k) ω') := by
+    have h1 : Integrable Δ (condExpKernel μ ((natFiltration X hX) k) ∘ₘ μ.trim hm_k) := by
+      rw [hμ_eq]; exact hΔ_int
+    filter_upwards [Measure.ae_integrable_of_integrable_comp h1] with ω' hI
+    exact hI.aestronglyMeasurable.aemeasurable
+  -- Bounded differences → global bound + fiber-wise bound (the one sorry).
+  obtain ⟨h_global, h_fiber_bound⟩ :=
+    increment_bounded_of_bounded_differences X hX f hf hf_int c hc hbd hX_indep k hk
+  -- Build HasCondSubgaussianMGF = Kernel.HasSubgaussianMGF.
+  refine ⟨?_, ?_⟩
+  · -- integrable_exp_mul: use global bound [−cₖ, cₖ].
+    intro t
+    rw [hμ_eq]
+    exact integrable_exp_mul_of_mem_Icc hΔ_aem h_global
+  · -- mgf_le: fiber-by-fiber, tight interval [a, a + cₖ].
+    filter_upwards [h_fiber_bound, h_fiber_zero, h_fiber_aem] with ω' h_bd_ex h_mean h_aem
+    obtain ⟨a, h_bd⟩ := h_bd_ex
+    intro t
+    -- Apply Hoeffding fiber-by-fiber; interval length exactly cₖ.
+    have h_subg : HasSubgaussianMGF Δ ((‖c ⟨k, hk⟩‖₊ / 2) ^ 2)
+        (condExpKernel μ ((natFiltration X hX) k) ω') := by
+      have h' := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero h_aem h_bd h_mean
+      rwa [show ‖(a + c ⟨k, hk⟩) - a‖₊ = ‖c ⟨k, hk⟩‖₊ from by congr 1; ring] at h'
+    exact h_subg.mgf_le t
 
 /-! ### §5 Main theorem: McDiarmid MGF bound -/
 
@@ -203,7 +299,7 @@ bounded-differences condition with constants `c : Fin n → ℝ`, the centered e
 MGF bound: `∀ λ, E[exp(λ(f(X) − E[f(X)]))] ≤ exp((∑ₖ cₖ²/4) · λ²/2) = exp(λ² ∑ₖ cₖ²/8)`.
 
 The proof uses Mathlib's `HasSubgaussianMGF.sum_of_hasCondSubgaussianMGF` (Azuma tower
-theorem), feeding the `increment_hasCondSubgaussianMGF` sorry for each step. -/
+theorem), feeding `increment_hasCondSubgaussianMGF` for each step. -/
 theorem mgf_sub_expectation_le
     {μ : Measure Ω} [IsProbabilityMeasure μ]
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i))
@@ -239,7 +335,7 @@ theorem mgf_sub_expectation_le
     -- M_n = f ∘ allVars X (a.e., here pointwise via condExp_of_stronglyMeasurable).
     have hn := congr_fun (doobMartingale_n_eq_f X hX f hf hf_int) ω
     -- M_0 = fun _ => E[f(X)].
-    have h0 := congr_fun (doobMartingale_zero_eq_mean X hX f) ω
+    have h0 := congr_fun (doobMartingale_zero_eq_mean (μ := μ) X hX f) ω
     simp only [Function.comp] at hn
     simp only [h0, hn]
   rwa [h_eq] at h_sum
