@@ -3,6 +3,7 @@ import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # ℓ²-Norm Maximal Inequality — Lu-BDA §4.2 (`thm:l2`)
@@ -282,26 +283,92 @@ theorem l2_max_expectation
     _ = 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) := by ring
 
 /-!
-### Tail bound — numerical algebra lemma (named sorry, ESCALATE)
+### Tail bound — numerical algebra lemma
 
 The tail bound requires showing `k · exp(-(t/2)²/(2σ²)) ≤ δ` for
 `t = 4σ√d + 2σ√(2 log(1/δ))` and `k ≤ 5^d`.  The proof proceeds by:
 - `5^d ≤ exp(2d)` (from `log 5 ≤ 2`)
-- `(t/2)² / (2σ²) = 2d + cross + log(1/δ) ≥ 2d + log(1/δ)` (cross term ≥ 0)
+- `(t/2)² / (2σ²) = (A+B)²/2 ≥ 2d + log(1/δ)` where A=2√d, B=√(2log(1/δ)), cross≥0
 - So `5^d · exp(-(t/2)²/(2σ²)) ≤ exp(2d) · exp(-2d) · δ = δ`
-The `σ² = 0` corner case needs separate treatment (X = 0 a.s. gives μ-measure 0).
+The `σ² = 0` corner case is handled in `l2_max_tail` directly.
 -/
 
-/-- Numerical core of `l2_max_tail`: the exponential product is ≤ δ.
-**ESCALATE**: requires algebraic manipulation of exponentials + two corner cases
-(`σ² = 0`, `log(1/δ) ≤ 0`). -/
+/-- Numerical core of `l2_max_tail` for `σ² > 0`: the exponential product is ≤ δ. -/
 private lemma l2_tail_numerical
     {d : ℕ} [NeZero d] {σ2 : ℝ≥0} {k : ℕ} {δ : ℝ} (hδ : 0 < δ)
+    -- LEAN-ONLY: σ² > 0 required for (t/2)²/(2σ²) algebra; σ²=0 handled in l2_max_tail
+    (hσ : 0 < (σ2 : ℝ))
     (hk_pos : 0 < k) (hk_le : k ≤ 5 ^ d)
     (t : ℝ) (ht : t = 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
                        2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))) :
     (k : ℝ) * Real.exp (-(t / 2) ^ 2 / (2 * (σ2 : ℝ))) ≤ δ := by
-  sorry
+  -- Let s = √σ², A = 2√d, B = √(2·log(1/δ)), so t/2 = s·(A+B)
+  set s := Real.sqrt (σ2 : ℝ) with hs_def
+  have hs_pos : 0 < s := Real.sqrt_pos.mpr hσ
+  have hs_sq : s ^ 2 = (σ2 : ℝ) := Real.sq_sqrt hσ.le
+  set A := 2 * Real.sqrt (d : ℝ) with hA_def
+  set B := Real.sqrt (2 * Real.log (1 / δ)) with hB_def
+  have hA_nn : 0 ≤ A := by positivity
+  have hB_nn : 0 ≤ B := Real.sqrt_nonneg _
+  -- Step 1: -(t/2)²/(2σ²) = -((A+B)²/2)
+  have ht2 : t / 2 = s * (A + B) := by rw [ht, hA_def, hB_def, hs_def]; ring
+  have h_arg : (t / 2) ^ 2 / (2 * (σ2 : ℝ)) = (A + B) ^ 2 / 2 := by
+    rw [ht2, mul_pow, hs_sq]
+    field_simp [hσ.ne']
+  -- The goal has -(t/2)²/(2σ²); use neg_div to expose (t/2)²/(2σ²) for h_arg
+  rw [show -(t / 2) ^ 2 / (2 * (σ2 : ℝ)) = -((A + B) ^ 2 / 2) from by rw [neg_div, h_arg]]
+  -- Step 2: B²/2 ≥ log(1/δ)  (holds trivially when log(1/δ) < 0 since B = 0)
+  have hB2 : B ^ 2 / 2 ≥ Real.log (1 / δ) := by
+    simp only [hB_def]
+    by_cases hlog : 0 ≤ Real.log (1 / δ)
+    · have hBsq : Real.sqrt (2 * Real.log (1 / δ)) ^ 2 = 2 * Real.log (1 / δ) :=
+        Real.sq_sqrt (by linarith)
+      linarith
+    · push Not at hlog
+      have hB0 : Real.sqrt (2 * Real.log (1 / δ)) = 0 :=
+        Real.sqrt_eq_zero'.mpr (by linarith)
+      have hzero : Real.sqrt (2 * Real.log (1 / δ)) ^ 2 / 2 = 0 := by
+        rw [hB0]; norm_num
+      linarith
+  -- Step 3: (A+B)²/2 ≥ 2d + log(1/δ)  (A²/2 = 2d, cross term A·B ≥ 0)
+  have h_sum_ge : (A + B) ^ 2 / 2 ≥ 2 * (d : ℝ) + Real.log (1 / δ) := by
+    have hAB_expand : (A + B) ^ 2 / 2 = A ^ 2 / 2 + A * B + B ^ 2 / 2 := by ring
+    rw [hAB_expand]
+    have hA2 : A ^ 2 / 2 = 2 * (d : ℝ) := by
+      have : A ^ 2 = 4 * (d : ℝ) := by
+        simp only [hA_def, mul_pow, Real.sq_sqrt (Nat.cast_nonneg d)]
+        norm_num
+      linarith
+    linarith [mul_nonneg hA_nn hB_nn, hB2]
+  -- Step 4: exp(-((A+B)²/2)) ≤ exp(-2d) · δ
+  have h_exp_le : Real.exp (-((A + B) ^ 2 / 2)) ≤ Real.exp (-(2 * (d : ℝ))) * δ := by
+    rw [show Real.exp (-(2 * (d : ℝ))) * δ = Real.exp (-(2 * (d : ℝ)) + Real.log δ) from by
+      rw [Real.exp_add, Real.exp_log hδ]]
+    apply Real.exp_le_exp.mpr
+    have h_log1d : Real.log (1 / δ) = -Real.log δ := by rw [one_div, Real.log_inv]
+    linarith [h_sum_ge]
+  -- Step 5: k ≤ 5^d ≤ exp(2d)  (since log 5 ≤ 2 → 5 ≤ exp 2 → 5^d ≤ exp(2d))
+  have h_k_exp : (k : ℝ) ≤ Real.exp (2 * (d : ℝ)) := by
+    have h5 : (5 : ℝ) ≤ Real.exp 2 := by
+      rw [← Real.exp_log (by norm_num : (0 : ℝ) < 5)]
+      exact Real.exp_le_exp.mpr log_five_le_two
+    have h5d : (5 : ℝ) ^ d ≤ Real.exp (2 * (d : ℝ)) :=
+      calc (5 : ℝ) ^ d
+          ≤ (Real.exp 2) ^ d := by gcongr
+        _ = Real.exp (2 * (d : ℝ)) := by
+              rw [← Real.rpow_natCast, ← Real.exp_mul]
+    calc (k : ℝ) ≤ ((5 ^ d : ℕ) : ℝ) := by exact_mod_cast hk_le
+      _ = (5 : ℝ) ^ d := by push_cast; norm_num
+      _ ≤ Real.exp (2 * (d : ℝ)) := h5d
+  -- Step 6: Combine: k · exp(-((A+B)²/2)) ≤ exp(2d) · exp(-2d) · δ = δ
+  calc (k : ℝ) * Real.exp (-((A + B) ^ 2 / 2))
+      ≤ Real.exp (2 * (d : ℝ)) * (Real.exp (-(2 * (d : ℝ))) * δ) :=
+          mul_le_mul h_k_exp h_exp_le (Real.exp_pos _).le (Real.exp_pos _).le
+    _ = δ := by
+          calc Real.exp (2 * (d : ℝ)) * (Real.exp (-(2 * (d : ℝ))) * δ)
+              = Real.exp (2 * (d : ℝ)) * Real.exp (-(2 * (d : ℝ))) * δ := by ring
+            _ = Real.exp (2 * (d : ℝ) + -(2 * (d : ℝ))) * δ := by rw [← Real.exp_add]
+            _ = δ := by simp
 
 /-- **ℓ²-Norm Maximal Inequality — high-probability tail bound** (Lu-BDA §4.2, `thm:l2`).
 
@@ -378,16 +445,60 @@ theorem l2_max_tail
       have hbdd : BddAbove (Set.range (fun j => Y j ω)) := Finite.bddAbove_range _
       linarith [le_ciSup hbdd j₀, show Y j₀ ω = inner ℝ v (X ω) from by simp [Y, he_j₀],
                 h_inner_v]
-  -- *** Step 4: Apply tail_max_le + numerical bound ***
-  set t := 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
-           2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))
-  have h_subset : {ω | t < ‖X ω‖} ⊆ {ω | t / 2 < ⨆ j, Y j ω} := by
-    intro ω hω; simp only [Set.mem_setOf_eq] at hω ⊢; linarith [hdiscr ω]
-  calc μ {ω | t < ‖X ω‖}
-      ≤ μ {ω | t / 2 < ⨆ j, Y j ω} := measure_mono h_subset
-    _ ≤ ENNReal.ofReal ((k : ℝ) * Real.exp (-(t / 2) ^ 2 / (2 * ↑σ2))) :=
-          tail_max_le hcenter_Y hY_sg (by positivity)
-    _ ≤ ENNReal.ofReal δ :=
-          ENNReal.ofReal_le_ofReal (l2_tail_numerical hδ hk_pos net.hF_card_le t rfl)
+  -- *** Step 4: Split on σ² = 0 vs σ² > 0 ***
+  by_cases hσ0 : σ2 = 0
+  · -- σ² = 0: threshold t = 0, Y j = 0 a.e., so X = 0 a.e. and event has measure 0
+    have hσ_zero : (σ2 : ℝ) = 0 := NNReal.coe_eq_zero.mpr hσ0
+    -- Simplify the threshold to 0
+    have ht0 : 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
+               2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ)) = 0 := by
+      rw [hσ_zero, Real.sqrt_zero]; ring
+    -- Get HasSubgaussianMGF (Y j) 0 μ from IsSubGaussian (Y j) 0 μ + centeredness
+    have hsg_zero : ∀ j : Fin k, HasSubgaussianMGF (Y j) 0 μ := fun j => by
+      have h := isSubGaussian_iff.mp (hσ0 ▸ hY_sg j)
+      simp only [hcenter_Y j, sub_zero] at h
+      exact h
+    -- Y j = 0 a.e. for each j
+    have hY0 : ∀ j : Fin k, Y j =ᵐ[μ] 0 := fun j =>
+      HasSubgaussianMGF.ae_eq_zero_of_hasSubgaussianMGF_zero (hsg_zero j)
+    -- ⨆ j, Y j ω = 0 a.e.
+    have hsupr0 : ∀ᵐ ω ∂μ, ⨆ j : Fin k, Y j ω = 0 := by
+      have hall : ∀ᵐ ω ∂μ, ∀ j : Fin k, Y j ω = 0 := ae_all_iff.mpr hY0
+      filter_upwards [hall] with ω hω
+      simp_rw [hω]; exact ciSup_const
+    -- μ {threshold < ‖X‖} ≤ μ {0 < ‖X‖} = 0 ≤ ENNReal.ofReal δ
+    -- (threshold = 0 when σ² = 0, so the two sets are equal)
+    have hme : μ {ω | (0 : ℝ) < ‖X ω‖} = 0 := by
+      apply measure_mono_null _ (ae_iff.mp hsupr0)
+      intro ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      intro heq
+      have h := hdiscr ω
+      rw [heq, mul_zero] at h
+      linarith
+    calc μ {ω | 4 * Real.sqrt (↑σ2) * Real.sqrt (↑d) +
+               2 * Real.sqrt (↑σ2) * Real.sqrt (2 * Real.log (1 / δ)) < ‖X ω‖}
+        ≤ μ {ω | (0 : ℝ) < ‖X ω‖} := by
+            apply measure_mono
+            intro ω hω
+            simp only [Set.mem_setOf_eq] at hω ⊢
+            simp only [ht0] at hω
+            exact hω
+      _ = 0 := hme
+      _ ≤ ENNReal.ofReal δ := zero_le _
+  · -- σ² > 0: use tail_max_le + l2_tail_numerical
+    have hσ_pos : 0 < (σ2 : ℝ) :=
+      NNReal.coe_pos.mpr (lt_of_le_of_ne (zero_le σ2) (Ne.symm hσ0))
+    set t := 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
+             2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ))
+    have h_subset : {ω | t < ‖X ω‖} ⊆ {ω | t / 2 < ⨆ j, Y j ω} := by
+      intro ω hω; simp only [Set.mem_setOf_eq] at hω ⊢; linarith [hdiscr ω]
+    calc μ {ω | t < ‖X ω‖}
+        ≤ μ {ω | t / 2 < ⨆ j, Y j ω} := measure_mono h_subset
+      _ ≤ ENNReal.ofReal ((k : ℝ) * Real.exp (-(t / 2) ^ 2 / (2 * ↑σ2))) :=
+            tail_max_le hcenter_Y hY_sg (by positivity)
+      _ ≤ ENNReal.ofReal δ :=
+            ENNReal.ofReal_le_ofReal
+              (l2_tail_numerical hδ hσ_pos hk_pos net.hF_card_le t rfl)
 
 end StatLean.ConcentrationInequalities
