@@ -95,23 +95,23 @@ theorem acceleratedProximalGradient_rate
   -- Lyapunov monotonicity (Lemma 12.2).
   have hΦdec : ∀ s, Φ (s + 1) ≤ Φ s := by
     intro s
-    have hλ1 : (0 : ℝ) < lam (s + 1) := hlampos (s + 1)
-    have hλ1ne : lam (s + 1) ≠ 0 := ne_of_gt hλ1
-    have hλ2pos : (0 : ℝ) < lam (s + 1) ^ 2 := by positivity
-    have hλ1ge1 : (1 : ℝ) ≤ lam (s + 1) := by
+    have hlam_1 : (0 : ℝ) < lam (s + 1) := hlampos (s + 1)
+    have hlam_1ne : lam (s + 1) ≠ 0 := ne_of_gt hlam_1
+    have hlam_2pos : (0 : ℝ) < lam (s + 1) ^ 2 := by positivity
+    have hlam_1ge1 : (1 : ℝ) ≤ lam (s + 1) := by
       have := nesterov_lambda_lower lam hlam0 hlamrec (s + 1); push_cast at this ⊢; linarith
     set xc : E := lam (s + 1)⁻¹ • xstar + (1 - lam (s + 1)⁻¹) • x (s + 1) with hxc
     -- momentum identity: λ_{s+1}•y_{s+1} - (x* + (λ_{s+1}-1)•x_{s+1}) = u s
     have hmom : lam (s + 1) • y (s + 1) - (xstar + (lam (s + 1) - 1) • x (s + 1)) = u s := by
-      rw [hyrec s, hu, smul_add, smul_smul, mul_div_cancel₀ _ hλ1ne]; module
+      rw [hyrec s, hu, smul_add, smul_smul, mul_div_cancel₀ _ hlam_1ne]; module
     -- λ_{s+1} • xc = x* + (λ_{s+1}-1)•x_{s+1}
-    have hλxc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
-      rw [hxc, smul_add, smul_smul, smul_smul, mul_inv_cancel₀ hλ1ne, one_smul]; module
+    have hlam_xc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
+      rw [hxc, smul_add, smul_smul, smul_smul, mul_inv_cancel₀ hlam_1ne, one_smul]; module
     -- scaled distances to `u`
     have hsc_y : lam (s + 1) • (xc - y (s + 1)) = -u s := by
-      rw [smul_sub, hλxc, ← hmom]; abel
+      rw [smul_sub, hlam_xc, ← hmom]; abel
     have hsc_x : lam (s + 1) • (xc - x (s + 2)) = -u (s + 1) := by
-      rw [smul_sub, hλxc, hu]; abel
+      rw [smul_sub, hlam_xc, hu]; abel
     have hnorm_y : lam (s + 1) ^ 2 * ‖xc - y (s + 1)‖ ^ 2 = ‖u s‖ ^ 2 := by
       have h := congrArg (fun z => ‖z‖ ^ 2) hsc_y
       simpa [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, norm_neg] using h
@@ -123,18 +123,18 @@ theorem acceleratedProximalGradient_rate
         ≤ lam (s + 1)⁻¹ * (f xstar + h xstar)
           + (1 - lam (s + 1)⁻¹) * (f (x (s + 1)) + h (x (s + 1))) := by
       have hw1 : (0 : ℝ) ≤ 1 - lam (s + 1)⁻¹ := by
-        have : lam (s + 1)⁻¹ ≤ 1 := (inv_le_one₀ hλ1).mpr hλ1ge1
+        have : lam (s + 1)⁻¹ ≤ 1 := (inv_le_one₀ hlam_1).mpr hlam_1ge1
         linarith
       have hcv := hFconv.2 (Set.mem_univ xstar) (Set.mem_univ (x (s + 1)))
         (by positivity) hw1 (by ring)
       simpa [hxc] using hcv
     -- pillar at the combination
     have hp := pillar hf hdiff hL hsmooth hh (x := xc) (hxrec (s + 1))
-    have hλsq := lam_sq_sub lam hlamrec s
-    have hp' := mul_le_mul_of_nonneg_left hp hλ2pos.le
-    have hconv' := mul_le_mul_of_nonneg_left hconv hλ2pos.le
+    have hlam_sq := lam_sq_sub lam hlamrec s
+    have hp' := mul_le_mul_of_nonneg_left hp hlam_2pos.le
+    have hconv' := mul_le_mul_of_nonneg_left hconv hlam_2pos.le
     rw [hΦ]
-    nlinarith [hp', hconv', hnorm_y, hnorm_x, hλsq, hλ1, hλ2pos, mul_pos hLpos hλ2pos]
+    nlinarith [hp', hconv', hnorm_y, hnorm_x, hlam_sq, hlam_1, hlam_2pos, mul_pos hLpos hlam_2pos]
   -- assembly
   have hΦanti : Antitone Φ := antitone_nat_of_succ_le hΦdec
   have hΦ0 : Φ 0 ≤ ‖x 0 - xstar‖ ^ 2 := by
@@ -148,16 +148,16 @@ theorem acceleratedProximalGradient_rate
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : t ≠ 0)
   have hΦm := le_trans (hΦanti (Nat.zero_le m)) hΦ0
   rw [hΦ] at hΦm
-  have hλm : ((m : ℝ) + 2) / 2 ≤ lam m := nesterov_lambda_lower lam hlam0 hlamrec m
-  have hλmpos : (0 : ℝ) < lam m := hlampos m
+  have hlam_m : ((m : ℝ) + 2) / 2 ≤ lam m := nesterov_lambda_lower lam hlam0 hlamrec m
+  have hlam_mpos : (0 : ℝ) < lam m := hlampos m
   have hgap : (0 : ℝ) ≤ f (x (m + 1)) + h (x (m + 1)) - (f xstar + h xstar) := by
     linarith [hmin (x (m + 1))]
   have hbound : 2 / L * lam m ^ 2 * (f (x (m + 1)) + h (x (m + 1)) - (f xstar + h xstar))
       ≤ ‖x 0 - xstar‖ ^ 2 := by nlinarith [hΦm, sq_nonneg ‖u m‖]
-  have hλmsq : ((m : ℝ) + 2) ^ 2 / 4 ≤ lam m ^ 2 := by nlinarith [hλm, hλmpos]
+  have hlam_msq : ((m : ℝ) + 2) ^ 2 / 4 ≤ lam m ^ 2 := by nlinarith [hlam_m, hlam_mpos]
   push_cast
   rw [le_div_iff₀ (by positivity : (0 : ℝ) < ((m : ℝ) + 1 + 1) ^ 2)]
-  nlinarith [hbound, hλmsq, hgap, hLpos, hλmpos, mul_pos hλmpos hλmpos,
+  nlinarith [hbound, hlam_msq, hgap, hLpos, hlam_mpos, mul_pos hlam_mpos hlam_mpos,
     mul_nonneg hgap (sq_nonneg ((m : ℝ) + 2))]
 
 end StatLean.Optimization
