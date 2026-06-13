@@ -43,7 +43,7 @@ value is unconditionally a real number; the range `Set.range (fun i => |x.ofLp i
 is finite and hence `BddAbove`, so `iSup` agrees with the finite maximum
 whenever `Fin d` is nonempty. For `d = 0` the value is
 `sSup ∅ = 0` (Mathlib convention on ℝ). -/
-def linfNorm (x : EuclideanSpace ℝ (Fin d)) : ℝ := ⨆ i, |x.ofLp i|
+noncomputable def linfNorm (x : EuclideanSpace ℝ (Fin d)) : ℝ := ⨆ i, |x.ofLp i|
 
 @[simp] lemma l1Norm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ l1Norm x :=
   Finset.sum_nonneg fun _ _ => abs_nonneg _
@@ -51,25 +51,25 @@ def linfNorm (x : EuclideanSpace ℝ (Fin d)) : ℝ := ⨆ i, |x.ofLp i|
 /-- Each coordinate is dominated by the ℓ∞ norm. -/
 lemma abs_le_linfNorm (x : EuclideanSpace ℝ (Fin d)) (i : Fin d) :
     |x.ofLp i| ≤ linfNorm x :=
-  le_ciSup (Finite.bddAbove_range _) i
+  le_ciSup (Set.finite_range _).bddAbove i
 
 lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
   by_cases h : Nonempty (Fin d)
   · obtain ⟨i⟩ := h
     exact (abs_nonneg _).trans (abs_le_linfNorm x i)
   · rw [not_nonempty_iff] at h
-    unfold linfNorm
-    rw [ciSup_of_empty, Real.sSup_empty]
+    haveI : IsEmpty (Fin d) := h
+    have heq : linfNorm x = 0 := by
+      change sSup (Set.range (fun i : Fin d => |x.ofLp i|)) = 0
+      rw [Set.range_eq_empty_iff.mpr ‹_›, Real.sSup_empty]
+    linarith
 
 /-- Hölder / ℓ¹–ℓ∞ duality (Lu-BDA ch.8): for `x y : EuclideanSpace ℝ (Fin d)`,
 `|⟪x, y⟫_ℝ| ≤ ‖x‖₁ · ‖y‖∞`. -/
 theorem abs_inner_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |⟪x, y⟫_ℝ| ≤ l1Norm x * linfNorm y := by
   have hinner : (⟪x, y⟫_ℝ : ℝ) = ∑ i, x.ofLp i * y.ofLp i := by
-    rw [PiLp.inner_apply]
-    refine Finset.sum_congr rfl ?_
-    intro i _
-    exact Real.inner_apply (x.ofLp i) (y.ofLp i)
+    simp [PiLp.inner_apply, RCLike.inner_apply']
   rw [hinner]
   calc |∑ i, x.ofLp i * y.ofLp i|
       ≤ ∑ i, |x.ofLp i * y.ofLp i| := Finset.abs_sum_le_sum_abs _ _
@@ -88,9 +88,7 @@ theorem abs_sum_mul_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |∑ i, x.ofLp i * y.ofLp i| ≤ (∑ i, |x.ofLp i|) * ⨆ i, |y.ofLp i| := by
   have h := abs_inner_le_l1Norm_mul_linfNorm x y
   have hinner : (⟪x, y⟫_ℝ : ℝ) = ∑ i, x.ofLp i * y.ofLp i := by
-    rw [PiLp.inner_apply]
-    refine Finset.sum_congr rfl ?_
-    intro i _; exact Real.inner_apply (x.ofLp i) (y.ofLp i)
+    simp [PiLp.inner_apply, RCLike.inner_apply']
   rw [hinner] at h
   exact h
 
@@ -127,7 +125,7 @@ lemma l1Norm_restrict_eq_sum (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d
     rw [restrict_ofLp_apply]
     split_ifs <;> simp
   simp_rw [h1]
-  exact Finset.sum_ite_mem_eq Finset.univ _
+  exact Fintype.sum_ite_mem S _
 
 /-- √s ℓ¹–ℓ² bound on the support (Lu-BDA ch.8):
 `‖x|_S‖₁ ≤ √|S| · ‖x‖₂`. Proof: Cauchy–Schwarz with the all-ones vector on `S`
