@@ -123,8 +123,9 @@ theorem acceleratedProximalGradient_rate
       have hw1 : (0 : ℝ) ≤ 1 - (lam (s + 1))⁻¹ := by
         have : (lam (s + 1))⁻¹ ≤ 1 := (inv_le_one₀ hpos1).mpr hge1
         linarith
-      have hcv := hFconv.2 (Set.mem_univ xstar) (Set.mem_univ (x (s + 1)))
-        (a := (lam (s + 1))⁻¹) (b := 1 - (lam (s + 1))⁻¹) (by positivity) hw1 (by ring)
+      have ha0 : (0 : ℝ) ≤ (lam (s + 1))⁻¹ := by positivity
+      have hab1 : (lam (s + 1))⁻¹ + (1 - (lam (s + 1))⁻¹) = 1 := by ring
+      have hcv := hFconv.2 (Set.mem_univ xstar) (Set.mem_univ (x (s + 1))) ha0 hw1 hab1
       simpa [hxc] using hcv
     have hp := pillar hf hdiff hL hsmooth hh (x := xc) (hxrec (s + 1))
     have hlamsq := lam_sq_sub lam hlamrec s
@@ -140,7 +141,7 @@ theorem acceleratedProximalGradient_rate
             + (1 - (lam (s + 1))⁻¹) * (f (x (s + 1)) + h (x (s + 1))))
           = lam (s + 1) * (f xstar + h xstar)
             + (lam (s + 1) ^ 2 - lam (s + 1)) * (f (x (s + 1)) + h (x (s + 1))) := by
-        field_simp; ring
+        field_simp
       rw [he, hlamsq] at hm
       exact hm
     have hlsF : (lam (s + 1) ^ 2 - lam (s + 1)) * (f xstar + h xstar)
