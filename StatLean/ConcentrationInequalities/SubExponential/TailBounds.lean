@@ -38,7 +38,7 @@ private lemma IsSubExponential.isFiniteMeasure
     IsFiniteMeasure μ := by
   have h0 : |(0 : ℝ)| ≤ 1 / (α : ℝ) := by
     rw [abs_zero]
-    exact div_nonneg one_nonneg (NNReal.coe_nonneg α)
+    exact div_nonneg zero_le_one (NNReal.coe_nonneg α)
   have h := hX.integrable_exp_mul 0 h0
   simp only [zero_mul, Real.exp_zero] at h
   exact (integrable_const_iff_isFiniteMeasure (one_ne_zero)).mp h
@@ -102,9 +102,13 @@ theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
           mul_le_mul_of_nonneg_left hmgf (Real.exp_pos _).le
       _ = Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2)) := hexp_eq
   -- Lift from μ.real to μ (strict ⊆ non-strict; ENNReal bridge)
+  have hsub : {ω | t < X ω - ∫ x, X x ∂μ}
+      ⊆ {ω | t ≤ X ω - ∫ x, X x ∂μ} := by
+    intro ω hω
+    have hω' : t < X ω - ∫ x, X x ∂μ := hω
+    exact hω'.le
   calc μ {ω | t < X ω - ∫ x, X x ∂μ}
-      ≤ μ {ω | t ≤ X ω - ∫ x, X x ∂μ} :=
-        measure_mono (fun ω hω => le_of_lt hω)
+      ≤ μ {ω | t ≤ X ω - ∫ x, X x ∂μ} := measure_mono hsub
     _ ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
           rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
           exact ENNReal.ofReal_le_ofReal hbrick
@@ -133,14 +137,14 @@ theorem IsSubExponential.measure_sub_integral_lt_le_linear
   have ht : 0 ≤ t := le_trans hα.le htα
   -- Chernoff parameter: λ = 1/α  (clamped at the boundary of the valid range)
   set s := 1 / (α : ℝ) with hs_def
-  have hs_nn : 0 ≤ s := div_nonneg one_nonneg hα.le
+  have hs_nn : 0 ≤ s := div_nonneg zero_le_one hα.le
   have hs_le : s ≤ 1 / (α : ℝ) := le_refl _
   -- Chernoff brick: μ.real {t ≤ Y} ≤ exp(−λt) · mgf Y λ
   have hchernoff :
       μ.real {ω | t ≤ X ω - ∫ x, X x ∂μ}
         ≤ Real.exp (-s * t) * mgf (fun ω => X ω - ∫ x, X x ∂μ) μ s :=
     measure_ge_le_exp_mul_mgf t hs_nn
-      (hX.integrable_exp_mul s (by rwa [abs_of_nonneg hs_nn]))
+      (hX.integrable_exp_mul s (by rw [abs_of_nonneg hs_nn]))
   -- MGF bound: mgf Y λ ≤ exp(λ²α²/2) = exp(1/2)
   have hmgf : mgf (fun ω => X ω - ∫ x, X x ∂μ) μ s
       ≤ Real.exp (s ^ 2 * (α : ℝ) ^ 2 / 2) :=
@@ -161,7 +165,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_linear
     -- Goal: −(t/α) + 1/2 ≤ −(t/α)/2
     -- Equivalently: 1/2 ≤ (t/α)/2, i.e., 1 ≤ t/α
     have htdivα : 1 ≤ t / (α : ℝ) := by
-      rw [le_div_iff hα]; linarith
+      rw [le_div_iff₀ hα]; linarith
     linarith
   -- Combine: μ.real {t ≤ Y} ≤ exp(−t/(2α))
   have hbrick : μ.real {ω | t ≤ X ω - ∫ x, X x ∂μ}
@@ -172,9 +176,13 @@ theorem IsSubExponential.measure_sub_integral_lt_le_linear
           mul_le_mul_of_nonneg_left hmgf (Real.exp_pos _).le
       _ ≤ Real.exp (-t / (2 * (α : ℝ))) := hexp_le
   -- Lift from μ.real to μ (strict ⊆ non-strict; ENNReal bridge)
+  have hsub : {ω | t < X ω - ∫ x, X x ∂μ}
+      ⊆ {ω | t ≤ X ω - ∫ x, X x ∂μ} := by
+    intro ω hω
+    have hω' : t < X ω - ∫ x, X x ∂μ := hω
+    exact hω'.le
   calc μ {ω | t < X ω - ∫ x, X x ∂μ}
-      ≤ μ {ω | t ≤ X ω - ∫ x, X x ∂μ} :=
-        measure_mono (fun ω hω => le_of_lt hω)
+      ≤ μ {ω | t ≤ X ω - ∫ x, X x ∂μ} := measure_mono hsub
     _ ≤ ENNReal.ofReal (Real.exp (-t / (2 * (α : ℝ)))) := by
           rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
           exact ENNReal.ofReal_le_ofReal hbrick
