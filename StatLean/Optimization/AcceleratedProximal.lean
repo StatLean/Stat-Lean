@@ -31,7 +31,18 @@ theorem nesterov_lambda_lower
     (hlamrec : ∀ t, lam (t + 1) = (1 + Real.sqrt (1 + 4 * lam t ^ 2)) / 2)
     (t : ℕ) :
     ((t : ℝ) + 2) / 2 ≤ lam t := by
-  sorry
+  induction t with
+  | zero => rw [hlam0]; norm_num
+  | succ k ih =>
+    have hk_nonneg : (0 : ℝ) ≤ lam k := le_trans (by positivity) ih
+    rw [hlamrec k]
+    have hsqrt : ((k : ℝ) + 2) ≤ Real.sqrt (1 + 4 * lam k ^ 2) := by
+      rw [show ((k : ℝ) + 2) = Real.sqrt (((k : ℝ) + 2) ^ 2) from
+        (Real.sqrt_sq (by positivity)).symm]
+      apply Real.sqrt_le_sqrt
+      nlinarith [ih, hk_nonneg]
+    push_cast
+    linarith [hsqrt]
 
 /-- Lu-BDA Thm 12.2 (accelerated proximal-gradient convergence rate). `f` convex
 `L`-smooth (`0 < L`), `h` convex, `F = f + h`, step `1/L`, Nesterov momentum:
