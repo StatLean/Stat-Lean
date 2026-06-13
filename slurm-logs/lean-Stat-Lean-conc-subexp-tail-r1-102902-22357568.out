@@ -1,0 +1,37 @@
+[2026-06-13T10:29:13-04:00] host=holy7c04312.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1 target=StatLean.ConcentrationInequalities.SubExponential.TailBounds cpus=8 mem=24G
+--- git status ---
+ed17b1d5d2070ae5d93d2ecc390e36a3cb0184bb
+?? slurm-logs/
+--- lake env ---
+leanprover/lean4:v4.29.1 (overridden by '/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/lean-toolchain')
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lake version 5.0.0-src+f72c35b (Lean version 4.29.1)
+--- lake build StatLean.ConcentrationInequalities.SubExponential.TailBounds ---
+✔ [2849/2850] Built StatLean.ConcentrationInequalities.SubExponential.Defs (63s)
+✖ [2850/2850] Building StatLean.ConcentrationInequalities.SubExponential.TailBounds (9.7s)
+trace: .> LEAN_PATH=/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/Cli/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/batteries/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/Qq/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/aesop/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/proofwidgets/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/importGraph/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/packages/plausible/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/lake-shared/mathlib/5e932f97dd25535344f80f9dd8da3aab83df0fe6/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/build/lib/lean /n/holylabs/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/bin/lean /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean -o /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/build/lib/lean/StatLean/ConcentrationInequalities/SubExponential/TailBounds.olean -i /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/build/lib/lean/StatLean/ConcentrationInequalities/SubExponential/TailBounds.ilean -c /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/build/ir/StatLean/ConcentrationInequalities/SubExponential/TailBounds.c --setup /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-subexp-tail-r1/.lake/build/ir/StatLean/ConcentrationInequalities/SubExponential/TailBounds.setup.json --json
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:41:21: Unknown identifier `one_nonneg`
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:107:34: Type mismatch
+  le_of_lt ?m.615
+has type
+  ?m.613 ≤ ?m.614
+but is expected to have type
+  ω ∈ {ω | t ≤ X ω - ∫ (x : Ω), X x ∂μ}
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:136:35: Unknown identifier `one_nonneg`
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:143:35: No goals to be solved
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:164:10: Unknown identifier `le_div_iff`
+error: StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean:177:34: Type mismatch
+  le_of_lt ?m.670
+has type
+  ?m.668 ≤ ?m.669
+but is expected to have type
+  ω ∈ {ω | t ≤ X ω - ∫ (x : Ω), X x ∂μ}
+error: Lean exited with code 1
+Some required targets logged failures:
+- StatLean.ConcentrationInequalities.SubExponential.TailBounds
+--- post-build ---
+exit_code=1
+wallclock_seconds=96
+sorry_uses_in_err=0
+0
