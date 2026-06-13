@@ -268,18 +268,17 @@ private lemma gd_inv_gap_bound
         have h_geom :
             1 / (f (x k) - f xstar) + ω
               ≤ 1 / ((f (x k) - f xstar) * (1 - ω * (f (x k) - f xstar))) := by
-          rw [← sub_nonneg]
-          have hk_ne : f (x k) - f xstar ≠ 0 := ne_of_gt hk_pos
-          have hone_ne : 1 - ω * (f (x k) - f xstar) ≠ 0 := ne_of_gt h_one_minus_pos
-          have hf_eq :
+          have hsplit :
               1 / ((f (x k) - f xstar) * (1 - ω * (f (x k) - f xstar)))
-                - (1 / (f (x k) - f xstar) + ω)
-              = (ω ^ 2 * (f (x k) - f xstar))
-                / (1 - ω * (f (x k) - f xstar)) := by
-            field_simp [hk_ne, hone_ne]
+                = 1 / (f (x k) - f xstar) + ω / (1 - ω * (f (x k) - f xstar)) := by
+            rw [div_add_div _ _ (ne_of_gt hk_pos) (ne_of_gt h_one_minus_pos)]
+            congr 1
             ring
-          rw [hf_eq]
-          exact div_nonneg (by positivity) h_one_minus_pos.le
+          rw [hsplit]
+          have hω_le : ω ≤ ω / (1 - ω * (f (x k) - f xstar)) := by
+            rw [le_div_iff₀ h_one_minus_pos]
+            nlinarith [mul_pos (mul_pos hω_pos hω_pos) hk_pos]
+          linarith
         -- Combine: ω (k+1) = ω k + ω ≤ 1/δ_k + ω ≤ 1/(δ_k(1-ω δ_k)) ≤ 1/δ_{k+1}.
         have hcast : ((k + 1 : ℕ) : ℝ) = (k : ℝ) + 1 := by push_cast; ring
         have hsplit : ω * ((k : ℝ) + 1) = ω * (k : ℝ) + ω := by ring
