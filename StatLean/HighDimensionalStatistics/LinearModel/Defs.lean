@@ -18,7 +18,7 @@ These are concept-layer, theorem-agnostic definitions consumed by
 `OLS/MSEExpectation.lean` and `OLS/MSEHighProb.lean`.
 -/
 
-open Matrix MeasureTheory
+open Matrix
 
 namespace StatLean.HighDimensionalStatistics
 
