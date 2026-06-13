@@ -115,11 +115,11 @@ theorem hoeffding {n : ℕ} {X : ℕ → Ω → ℝ} {σ2 : ℝ≥0} {μ : Measu
   · -- σ² = 0: both sides collapse to `0` via `x / 0 = 0`.
     rw [hs]
     simp
-  · -- σ² > 0: clear denominators and close by `ring`.
+  · -- σ² > 0: clear denominators (field_simp closes the resulting goal; see
+    -- CLAUDE.md §7.10 — a trailing `ring` would raise "no goals").
     have heq : -((n : ℝ) * t) ^ 2 / (2 * (n : ℝ) * (σ2 : ℝ))
                 = -(n : ℝ) * t ^ 2 / (2 * (σ2 : ℝ)) := by
       field_simp
-      ring
     exact le_of_eq heq
 
 end StatLean.ConcentrationInequalities
