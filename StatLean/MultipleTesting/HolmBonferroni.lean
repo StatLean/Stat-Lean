@@ -31,22 +31,19 @@ namespace StatLean.MultipleTesting
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
-open scoped Classical in
 /-- Number of hypotheses Holm rejects: the largest prefix length `k` of the sorted p-values such
 that `p₍ᵢ₎ ≤ α/(N−i)` for every `0 ≤ i < k` (0-indexed step-down cutoffs). -/
 noncomputable def holmCount {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : ℕ :=
   ((Finset.range (N + 1)).filter
-    (fun k => ∀ i : Fin N, (i : ℕ) < k →
+    (fun (k : ℕ) => ∀ i : Fin N, (i : ℕ) < k →
       orderStat (fun j => p j ω) i ≤ α / ((N : ℝ) - (i : ℝ)))).sup id
 
-open scoped Classical in
 /-- Holm rejection set: the `holmCount` smallest p-values, i.e. those whose rank (number of
 strictly smaller p-values) is below the step-down length. -/
 noncomputable def holmRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : Finset (Fin N) :=
   Finset.univ.filter
     (fun j => (Finset.univ.filter (fun j' => p j' ω < p j ω)).card < holmCount α p ω)
 
-open scoped Classical in
 /-- Bonferroni rejection set (Lu-BDA §17): reject `{ j : pⱼ ≤ α/N }`. -/
 noncomputable def bonferroniRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : Finset (Fin N) :=
   Finset.univ.filter (fun j => p j ω ≤ α / (N : ℝ))
