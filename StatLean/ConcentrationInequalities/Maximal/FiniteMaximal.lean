@@ -104,18 +104,18 @@ private lemma integrable_ciSup_fin
   · exact (AEMeasurable.iSup
       (fun j => (hX j).aestronglyMeasurable.aemeasurable)).aestronglyMeasurable
   · filter_upwards with ω
-    rw [Real.norm_eq_abs]
+    simp only [Real.norm_eq_abs]
     have hbdd : BddAbove (Set.range (fun j => X j ω)) := Finite.bddAbove_range _
     have h1 : ⨆ j, X j ω ≤ ∑ j : Fin d, |X j ω| :=
       ciSup_le fun j =>
         (le_abs_self _).trans
-          (Finset.single_le_sum (fun k _ => abs_nonneg _) (Finset.mem_univ j))
+          (Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ j))
     have h2 : -(⨆ j, X j ω) ≤ ∑ j : Fin d, |X j ω| :=
       calc -(⨆ j, X j ω)
           ≤ -(X 0 ω) := neg_le_neg (le_ciSup hbdd 0)
         _ ≤ |X 0 ω| := by rw [← abs_neg]; exact le_abs_self _
         _ ≤ ∑ j : Fin d, |X j ω| :=
-            Finset.single_le_sum (fun k _ => abs_nonneg _) (Finset.mem_univ 0)
+            Finset.single_le_sum (f := fun k => |X k ω|) (fun _ _ => abs_nonneg _) (Finset.mem_univ 0)
     exact abs_le.mpr ⟨by linarith, h1⟩
 
 /-- For `lam > 0` and any function `f : Fin d → ℝ`, `exp(lam · sup_j f j) ≤ ∑_j exp(lam · f j)`.
@@ -129,7 +129,7 @@ private lemma exp_mul_ciSup_le_sum_exp
     (ciSup_le fun j => hj0 j (Finset.mem_univ j))
     (le_ciSup (Finite.bddAbove_range _) j0)
   rw [hmax]
-  exact Finset.single_le_sum (fun j _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
+  exact Finset.single_le_sum (f := fun j => Real.exp (lam * f j)) (fun _ _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
 
 /-! ### Expectation bound -/
 
@@ -184,7 +184,7 @@ theorem expectation_max_le
     have hd_le_one : (d : ℝ) ≤ 1 := by
       rwa [← Real.log_le_log_iff hd_pos one_pos, Real.log_one]
     have hd1 : d = 1 :=
-      Nat.le_antisymm (Nat.cast_le.mp hd_le_one) (Nat.one_le_iff_ne_zero.mpr (NeZero.ne d))
+      Nat.le_antisymm (by exact_mod_cast hd_le_one) (Nat.one_le_iff_ne_zero.mpr (NeZero.ne d))
     subst hd1
     simp only [Nat.cast_one, Real.log_one, mul_zero, Real.sqrt_zero, mul_zero]
     have : ∀ ω, ⨆ j : Fin 1, X j ω = X 0 ω := fun ω => by
@@ -225,16 +225,15 @@ theorem expectation_max_le
   have hJensen : Real.exp (lam * ∫ ω, ⨆ j, X j ω ∂μ) ≤
       ∫ ω, Real.exp (lam * ⨆ j, X j ω) ∂μ := by
     have h := convexOn_exp.map_integral_le Real.continuousOn_exp isClosed_univ
-      (Filter.eventually_of_forall fun ω => Set.mem_univ _)
+      (Filter.Eventually.of_forall fun ω => Set.mem_univ _)
       (hint_max.const_mul lam) hint_exp_max
-    simp only [Function.comp] at h
-    rwa [integral_mul_left] at h
+    rwa [integral_const_mul] at h
   -- ** Step 2: max ≤ sum bound ** E[exp(lam · max)] ≤ ∑_j E[exp(lam · X_j)]
   have h_int_bound : ∫ ω, Real.exp (lam * ⨆ j, X j ω) ∂μ ≤
       ∑ j : Fin d, ∫ ω, Real.exp (lam * X j ω) ∂μ := by
     rw [← integral_finset_sum _ (fun j _ => hint_exp_Xj j)]
     exact integral_mono hint_exp_max hint_sum_exp
-      (Filter.eventually_of_forall fun ω => exp_mul_ciSup_le_sum_exp hlam_pos _)
+      (fun ω => exp_mul_ciSup_le_sum_exp hlam_pos (fun j => X j ω))
   -- ** Step 3: MGF bound ** ∑_j E[exp(lam · X_j)] ≤ d · exp(σ² lam² / 2)
   have h_mgf : ∀ j, ∫ ω, Real.exp (lam * X j ω) ∂μ ≤
       Real.exp ((σ2 : ℝ) * lam ^ 2 / 2) := fun j => (hsg j).mgf_le lam
@@ -260,8 +259,8 @@ theorem expectation_max_le
       Real.log (d : ℝ) / lam + (σ2 : ℝ) * lam / 2 := by
     rw [show Real.log (d : ℝ) / lam + (σ2 : ℝ) * lam / 2 =
         (Real.log (d : ℝ) + (σ2 : ℝ) * lam ^ 2 / 2) / lam from by
-      field_simp; ring]
-    exact (le_div_iff hlam_pos).mpr (by linarith [mul_comm lam (∫ ω, ⨆ j, X j ω ∂μ)])
+      field_simp [hlam_pos.ne']]
+    exact (le_div_iff₀ hlam_pos).mpr (by linarith [mul_comm lam (∫ ω, ⨆ j, X j ω ∂μ)])
   -- ** Step 6: Algebra ** log d / lam + σ² lam / 2 = a · b = √σ² · √(2 log d)
   -- With lam = b/a: log d/(b/a) + σ²·(b/a)/2 = (b²/2)·a/b + a²·(b/a)/2 = ab/2+ab/2 = ab.
   have h_alg : Real.log (d : ℝ) / lam + (σ2 : ℝ) * lam / 2 = a * b := by
