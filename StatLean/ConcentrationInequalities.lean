@@ -2,6 +2,7 @@ import StatLean.ConcentrationInequalities.SubGaussian.Defs
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 import StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 import StatLean.ConcentrationInequalities.SubGaussian.Chernoff
+import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubExponential.Defs
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 
