@@ -40,9 +40,10 @@ theorem nesterov_lambda_lower
       rw [show ((k : ℝ) + 2) = Real.sqrt (((k : ℝ) + 2) ^ 2) from
         (Real.sqrt_sq (by positivity)).symm]
       apply Real.sqrt_le_sqrt
+      have hk0 : (0 : ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
       have h2 : (k : ℝ) + 2 ≤ 2 * lam k := by linarith [ih]
       have hsq : ((k : ℝ) + 2) ^ 2 ≤ (2 * lam k) ^ 2 :=
-        sq_le_sq' (by nlinarith [hk_nonneg, Nat.cast_nonneg k]) h2
+        sq_le_sq' (by linarith [hk_nonneg, hk0]) h2
       nlinarith [hsq]
     push_cast
     linarith [hsqrt]
