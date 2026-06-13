@@ -21,6 +21,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 theorem gradient_mem_subdifferential
     {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f) (x : E) :
     gradient f x ∈ subdifferential f x := by
-  sorry
+  rw [mem_subdifferential]
+  intro y
+  have h := inner_gradient_le_sub_of_convexOn hf hdiff x y
+  linarith
 
 end StatLean.Optimization
