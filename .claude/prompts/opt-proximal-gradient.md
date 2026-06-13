@@ -36,4 +36,4 @@ Constant `L‖x0-x*‖²/(2t)` is standard and should be provable as stated. Use
 # TOUCH-SET — modify ONLY `StatLean/Optimization/ProximalGradient.lean`. Nothing else. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:50:00 lake build StatLean.Optimization.ProximalGradient
+  lake build StatLean.Optimization.ProximalGradient

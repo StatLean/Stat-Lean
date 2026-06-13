@@ -31,7 +31,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/SubGaussian/Chernoff.lean
 `notes/`. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.ConcentrationInequalities.SubGaussian.Chernoff
+  lake build StatLean.ConcentrationInequalities.SubGaussian.Chernoff
 
 # DONE = build exits 0; ZERO sorries; §2 tags; small commits
 (`conc(subgaussian): Markov + Chernoff (Lu-BDA §2.2 Markov, thm:chernoff)`). Finish by printing

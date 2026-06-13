@@ -19,7 +19,7 @@ If a helper lemma is structurally wrong, you may rewrite that helper (but keep
 `expectation_max_le`'s statement intact).
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 0:45:00 lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
+# BUILD: lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 # DONE = build exits 0, ZERO sorries (whole file). Commit
 (`conc(maximal): fix expectation_max_le proof — E[max] ≤ σ√(2 log d) (Lu-BDA §4.2)`). Report build +
 sorry count (must be 0).

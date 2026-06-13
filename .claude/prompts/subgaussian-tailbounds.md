@@ -39,7 +39,7 @@ Do NOT touch any `Defs.lean`, the area umbrella `StatLean/ConcentrationInequalit
 Never run `lake update`.
 
 # BUILD to verify (you are inside the cluster worktree)
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.ConcentrationInequalities.SubGaussian.TailBounds
+  lake build StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 (if you are already inside an srun allocation, just `lake build StatLean.ConcentrationInequalities.SubGaussian.TailBounds`).
 
 # DEFINITION OF DONE (all required)

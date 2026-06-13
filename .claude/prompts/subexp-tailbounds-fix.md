@@ -23,6 +23,6 @@ ERRORS:
    `measure_ge_le_exp_mul_mgf`; the mgf bound comes from `IsSubExponential.mgf_le_of_mem_Icc`.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/SubExponential/TailBounds.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.ConcentrationInequalities.SubExponential.TailBounds
+# BUILD: lake build StatLean.ConcentrationInequalities.SubExponential.TailBounds
 # DONE = build exits 0, ZERO sorries. Commit (`conc(subexp): fix two-regime tail build (Lu-BDA §3.2)`).
 # Report build status + sorry count (must be 0).

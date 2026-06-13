@@ -41,7 +41,7 @@ prove everything else on top; report the sorry status prominently for escalation
 §2 tags: `0 < ε`, `ε < 1` are USER-INPUT (Lu §4.2); measurability/finiteness regularity is LEAN-ONLY.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/Maximal/CoveringBall.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 1:00:00 lake build StatLean.ConcentrationInequalities.Maximal.CoveringBall
+# BUILD: lake build StatLean.ConcentrationInequalities.Maximal.CoveringBall
 # DONE = build exits 0; ZERO sorries (or exactly one named card_le_of_isSeparated_ball if truly
 # blocked); §2 tags; commit (`conc(maximal): covering number of ℓ²-ball ≤ (1+2/ε)^d (Lu-BDA §4.2 lm:covering-num)`).
 # Report build status, exact sorry status, constant deviations. Independently re-verified.

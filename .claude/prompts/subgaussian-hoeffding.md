@@ -33,7 +33,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/SubGaussian/Hoeffding.lea
 `notes/`. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
+  lake build StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 
 # DONE = build exits 0; ZERO sorries; §2 tags; small commits
 (`conc(subgaussian): Hoeffding sample-mean inequality + weighted-sum (Lu-BDA §2.2 thm:hoefdding)`).

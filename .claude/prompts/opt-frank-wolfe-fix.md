@@ -32,5 +32,5 @@ the base case `t = 1` follows from `frankWolfe_step` at `t = 0` (where `η₀ = 
 # TOUCH-SET — modify ONLY `StatLean/Optimization/FrankWolfe.lean`. Never `lake update`.
 
 # BUILD (inside the worktree, repeat until green)
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.Optimization.FrankWolfe
+  lake build StatLean.Optimization.FrankWolfe
 Commit only a compiling, 0-sorry state.

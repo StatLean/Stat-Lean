@@ -45,4 +45,4 @@ rate, prove steps 1–3 as named lemmas and leave step 4 as a single named `sorr
 # TOUCH-SET — modify ONLY `StatLean/Optimization/GradientDescent.lean`. Nothing else. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:50:00 lake build StatLean.Optimization.GradientDescent
+  lake build StatLean.Optimization.GradientDescent

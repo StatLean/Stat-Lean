@@ -33,7 +33,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/Maximal/CoveringNumbers.l
 the umbrella, `StatLean.lean`, lakefile/manifest/toolchain, `notes/`.
 
 # BUILD
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
+  lake build StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 
 # DONE = build exits 0; ZERO sorries; docstrings; small commit
 (`conc(maximal): ε-net + covering number defs (Lu-BDA §4.2)`). Print declaration names, build

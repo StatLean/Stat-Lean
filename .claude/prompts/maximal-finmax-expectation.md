@@ -41,7 +41,7 @@ If the Jensen step `exp(∫) ≤ ∫ exp` is genuinely missing from Mathlib (unl
 leave `expectation_max_le` itself sorried.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 0:45:00 lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
+# BUILD: lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 # DONE = build exits 0, ZERO sorries (the whole file). Commit
 (`conc(maximal): close expectation_max_le — E[max] ≤ σ√(2 log d) (Lu-BDA §4.2)`). Report build status
 + exact sorry count (must be 0) + any constant deviation. Independently re-verified.

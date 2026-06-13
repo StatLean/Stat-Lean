@@ -37,7 +37,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lea
 `Defs.lean`, the umbrella, `StatLean.lean`, lakefile/manifest/toolchain, `notes/`.
 
 # BUILD
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
+  lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 
 # DONE = build exits 0; ZERO sorries; §2 tags; small commit
 (`conc(maximal): finite maximal inequality (Lu-BDA §4.2 thm:finite-maximal)`). Print declaration

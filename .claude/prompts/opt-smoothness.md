@@ -72,5 +72,5 @@ Do NOT touch any `Defs.lean`, `FirstOrderConvex.lean` (sibling branch owns it), 
 under `StatLean/ConcentrationInequalities/` or `StatLean/AsymptoticStatistics/`. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.Optimization.ForMathlib.GradientCalc StatLean.Optimization.Smoothness.CoCoercive
+  lake build StatLean.Optimization.ForMathlib.GradientCalc StatLean.Optimization.Smoothness.CoCoercive
 Goal: zero `sorry` in these two files, no errors.

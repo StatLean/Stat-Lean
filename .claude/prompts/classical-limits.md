@@ -36,7 +36,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/ClassicalLimits.lean`. Do
 `lakefile.lean`, `lake-manifest.json`, `lean-toolchain`, `notes/`. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.ConcentrationInequalities.ClassicalLimits
+  lake build StatLean.ConcentrationInequalities.ClassicalLimits
 
 # DONE = build exits 0; ZERO sorries; §2 tags on new hypotheses; small commits
 (`conc(classical): LLN (in prob) + CLT wrappers (Lu-BDA §2.1)`). Finish by printing the declaration

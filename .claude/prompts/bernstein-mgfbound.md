@@ -50,7 +50,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/Bernstein/MGFBound.lean`.
 `Defs.lean`, the umbrella, `StatLean.lean`, lakefile/manifest/toolchain, `notes/`.
 
 # BUILD
-  srun -p shared -c 8 --mem=24G -t 1:00:00 lake build StatLean.ConcentrationInequalities.Bernstein.MGFBound
+  lake build StatLean.ConcentrationInequalities.Bernstein.MGFBound
 
 # DONE = build exits 0; ZERO sorries (or exactly one named, if truly blocked); §2 tags; small commit
 (`conc(bernstein): Bernstein ⇒ sub-exponential, α=2(σ²∨b) (Lu-BDA §4.1)`). Print declaration names,

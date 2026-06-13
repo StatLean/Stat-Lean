@@ -52,4 +52,4 @@ Constant `2L‖x0-x*‖²/(t+1)²` is standard FISTA — provable as stated. Use
 Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 1:10:00 lake build StatLean.Optimization.AcceleratedProximal
+  lake build StatLean.Optimization.AcceleratedProximal

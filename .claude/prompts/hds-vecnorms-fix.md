@@ -29,6 +29,6 @@ files can rely on them. Do NOT weaken any statement (the √s support bound and 
 exact constants). Keep all docstrings.
 
 # TOUCH-SET: ONLY `StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
+# BUILD: lake build StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 # DONE = build exits 0, ZERO sorries. Commit (`hds(vecnorms): fix build — noncomputable linfNorm,
 #   real inner_apply, import (Lu-BDA ch8)`). Print final declaration names + build status.

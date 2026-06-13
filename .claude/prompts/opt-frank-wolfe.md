@@ -46,4 +46,4 @@ induction as one named `sorry`.
 # TOUCH-SET — modify ONLY `StatLean/Optimization/FrankWolfe.lean`. Nothing else. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:50:00 lake build StatLean.Optimization.FrankWolfe
+  lake build StatLean.Optimization.FrankWolfe

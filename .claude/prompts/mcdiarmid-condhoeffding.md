@@ -43,7 +43,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/McDiarmid/CondHoeffding.l
 any `Defs.lean`, the umbrella, `StatLean.lean`, lakefile/manifest/toolchain, `notes/`.
 
 # BUILD
-  srun -p shared -c 8 --mem=24G -t 1:00:00 lake build StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
+  lake build StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 
 # DONE = build exits 0; ZERO sorries (or exactly one named `condExp_hoeffding_mgf` if truly blocked);
 §2 tags; small commits (`conc(mcdiarmid): conditional Hoeffding MGF (Lu-BDA §3.1)`). Final report

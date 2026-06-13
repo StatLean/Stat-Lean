@@ -39,7 +39,7 @@ umbrella (`StatLean/HighDimensionalStatistics.lean` does not exist yet — do NO
 `StatLean.lean`, `lakefile.lean`, `lake-manifest.json`, `lean-toolchain`, `notes/`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
+  lake build StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 
 # DONE = build exits 0; ZERO sorries; docstrings on defs; small commits
 (`hds(formathlib): ℓ¹/ℓ∞ norms, Hölder, √s support bound (Lu-BDA ch8)`). Finish by printing the

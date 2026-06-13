@@ -39,7 +39,8 @@ hypothesis — DERIVE it.
 (Lu §3.1); filtration/integrability regularity is LEAN-ONLY.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/McDiarmid/DoobDecomposition.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 1:10:00 lake build StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition
+# BUILD (you are ALREADY inside an srun allocation — run lake DIRECTLY, do NOT nest srun/sbatch):
+#   lake build StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition
 # DONE = build exits 0; ZERO sorries (or exactly one named, if truly blocked); §2 tags; commit
 (`conc(mcdiarmid): Doob martingale MGF bound (Lu-BDA §3.1)`). Report build status, exact sorry
 status, and whether Mathlib's Azuma machinery was reused. Independently re-verified.

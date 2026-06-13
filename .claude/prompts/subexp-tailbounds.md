@@ -41,7 +41,7 @@ Create/modify ONLY `StatLean/ConcentrationInequalities/SubExponential/TailBounds
 `Defs.lean`, the umbrella, `StatLean.lean`, lakefile/manifest/toolchain, `notes/`.
 
 # BUILD
-  srun -p shared -c 8 --mem=24G -t 0:30:00 lake build StatLean.ConcentrationInequalities.SubExponential.TailBounds
+  lake build StatLean.ConcentrationInequalities.SubExponential.TailBounds
 
 # DONE = build exits 0; ZERO sorries; §2 tags; small commit
 (`conc(subexp): two-regime tail (Lu-BDA §3.2 thm:sub-exp)`). Print declaration names, build status,

@@ -67,7 +67,7 @@ Do NOT touch any `Defs.lean`, the umbrella `StatLean/Optimization.lean`, `StatLe
 `StatLean/ConcentrationInequalities/` or `StatLean/AsymptoticStatistics/`. Never `lake update`.
 
 # BUILD (inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.Optimization.ForMathlib.FirstOrderConvex StatLean.Optimization.Convex.Subgradient StatLean.Optimization.LocalGlobal
+  lake build StatLean.Optimization.ForMathlib.FirstOrderConvex StatLean.Optimization.Convex.Subgradient StatLean.Optimization.LocalGlobal
 Then a final umbrella check:
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.Optimization
+  lake build StatLean.Optimization
 Goal: zero `sorry` in these three files, no errors. Leave other files' sorries untouched.

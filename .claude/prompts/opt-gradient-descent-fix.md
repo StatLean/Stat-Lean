@@ -40,6 +40,6 @@ hypotheses or variables.
 # TOUCH-SET — modify ONLY `StatLean/Optimization/GradientDescent.lean`. Never `lake update`.
 
 # BUILD (run repeatedly until green, inside the worktree)
-  srun -p shared -c 8 --mem=24G -t 0:40:00 lake build StatLean.Optimization.GradientDescent
+  lake build StatLean.Optimization.GradientDescent
 A clean result prints "Build completed successfully" with NO `error:` lines and NO `sorry`
 warnings for this file. Commit only a compiling state.
