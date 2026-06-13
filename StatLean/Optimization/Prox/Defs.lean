@@ -23,8 +23,9 @@ open scoped InnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The proximal objective `proxObj h x z = ½‖z - x‖² + h z`, whose minimizer
-over `z` defines `prox_h(x)` (Lu-BDA §12.1). -/
-def proxObj (h : E → ℝ) (x z : E) : ℝ := (1 / 2) * ‖z - x‖ ^ 2 + h z
+over `z` defines `prox_h(x)` (Lu-BDA §12.1). `noncomputable` as it uses real
+division. -/
+noncomputable def proxObj (h : E → ℝ) (x z : E) : ℝ := (1 / 2) * ‖z - x‖ ^ 2 + h z
 
 /-- `IsProxMinimizer h x z`: `z` attains the minimum of `proxObj h x`, i.e.
 `z = prox_h(x)` (Lu-BDA §12.1). Characterizing the prox point by its
