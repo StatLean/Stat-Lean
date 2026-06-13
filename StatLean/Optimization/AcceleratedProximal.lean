@@ -87,77 +87,76 @@ theorem acceleratedProximalGradient_rate
   have hLpos : (0 : ℝ) < L := hL
   have hFconv : ConvexOn ℝ Set.univ (fun z => f z + h z) := hf.add hh
   have hlampos : ∀ s, (0 : ℝ) < lam s := fun s => lam_pos lam hlam0 hlamrec s
-  -- `u s` = book `u_{s+1}`; `Φ s` = book Lyapunov `L_{s+1}`.
+  -- `u s` = book `u_{s+1}`; `Φ s` = `(L/2)·` book Lyapunov `L_{s+1}` (division-free).
   set u : ℕ → E := fun s => lam s • x (s + 1) - (xstar + (lam s - 1) • x s) with hu
   set Φ : ℕ → ℝ := fun s =>
-      ‖u s‖ ^ 2 + 2 / L * lam s ^ 2 *
+      L / 2 * ‖u s‖ ^ 2 + lam s ^ 2 *
         (f (x (s + 1)) + h (x (s + 1)) - (f xstar + h xstar)) with hΦ
   -- Lyapunov monotonicity (Lemma 12.2).
   have hΦdec : ∀ s, Φ (s + 1) ≤ Φ s := by
     intro s
-    have hlam_1 : (0 : ℝ) < lam (s + 1) := hlampos (s + 1)
-    have hlam_1ne : lam (s + 1) ≠ 0 := ne_of_gt hlam_1
-    have hlam_2pos : (0 : ℝ) < lam (s + 1) ^ 2 := by positivity
-    have hlam_1ge1 : (1 : ℝ) ≤ lam (s + 1) := by
-      have := nesterov_lambda_lower lam hlam0 hlamrec (s + 1); push_cast at this ⊢; linarith
-    set xc : E := lam (s + 1)⁻¹ • xstar + (1 - lam (s + 1)⁻¹) • x (s + 1) with hxc
-    -- momentum identity: λ_{s+1}•y_{s+1} - (x* + (λ_{s+1}-1)•x_{s+1}) = u s
+    have hpos1 : (0 : ℝ) < lam (s + 1) := hlampos (s + 1)
+    have hne1 : lam (s + 1) ≠ 0 := ne_of_gt hpos1
+    have hpos2 : (0 : ℝ) < lam (s + 1) ^ 2 := by positivity
+    have hge1 : (1 : ℝ) ≤ lam (s + 1) := by
+      have hnl := nesterov_lambda_lower lam hlam0 hlamrec (s + 1)
+      have hs0 : (0 : ℝ) ≤ (s : ℝ) := Nat.cast_nonneg s
+      push_cast at hnl; linarith
+    set xc : E := (lam (s + 1))⁻¹ • xstar + (1 - (lam (s + 1))⁻¹) • x (s + 1) with hxc
     have hmom : lam (s + 1) • y (s + 1) - (xstar + (lam (s + 1) - 1) • x (s + 1)) = u s := by
-      rw [hyrec s, hu, smul_add, smul_smul, mul_div_cancel₀ _ hlam_1ne]; module
-    -- λ_{s+1} • xc = x* + (λ_{s+1}-1)•x_{s+1}
-    have hlam_xc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
-      rw [hxc, smul_add, smul_smul, smul_smul, mul_inv_cancel₀ hlam_1ne, one_smul]; module
-    -- scaled distances to `u`
+      simp only [hu, hyrec s]; match_scalars <;> field_simp
+    have hlamxc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
+      simp only [hxc]; match_scalars <;> field_simp
     have hsc_y : lam (s + 1) • (xc - y (s + 1)) = -u s := by
-      rw [smul_sub, hlam_xc, ← hmom]; abel
+      rw [smul_sub, hlamxc, ← hmom]; abel
     have hsc_x : lam (s + 1) • (xc - x (s + 2)) = -u (s + 1) := by
-      rw [smul_sub, hlam_xc, hu]; abel
+      rw [smul_sub, hlamxc]; simp only [hu]; abel
     have hnorm_y : lam (s + 1) ^ 2 * ‖xc - y (s + 1)‖ ^ 2 = ‖u s‖ ^ 2 := by
-      have h := congrArg (fun z => ‖z‖ ^ 2) hsc_y
-      simpa [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, norm_neg] using h
+      have hcg := congrArg (fun z => ‖z‖ ^ 2) hsc_y
+      simpa [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs] using hcg
     have hnorm_x : lam (s + 1) ^ 2 * ‖xc - x (s + 2)‖ ^ 2 = ‖u (s + 1)‖ ^ 2 := by
-      have h := congrArg (fun z => ‖z‖ ^ 2) hsc_x
-      simpa [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, norm_neg] using h
-    -- convexity of F = f+h at the combination
+      have hcg := congrArg (fun z => ‖z‖ ^ 2) hsc_x
+      simpa [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs] using hcg
     have hconv : f xc + h xc
-        ≤ lam (s + 1)⁻¹ * (f xstar + h xstar)
-          + (1 - lam (s + 1)⁻¹) * (f (x (s + 1)) + h (x (s + 1))) := by
-      have hw1 : (0 : ℝ) ≤ 1 - lam (s + 1)⁻¹ := by
-        have : lam (s + 1)⁻¹ ≤ 1 := (inv_le_one₀ hlam_1).mpr hlam_1ge1
+        ≤ (lam (s + 1))⁻¹ * (f xstar + h xstar)
+          + (1 - (lam (s + 1))⁻¹) * (f (x (s + 1)) + h (x (s + 1))) := by
+      have hw1 : (0 : ℝ) ≤ 1 - (lam (s + 1))⁻¹ := by
+        have : (lam (s + 1))⁻¹ ≤ 1 := (inv_le_one₀ hpos1).mpr hge1
         linarith
       have hcv := hFconv.2 (Set.mem_univ xstar) (Set.mem_univ (x (s + 1)))
         (by positivity) hw1 (by ring)
-      simpa [hxc] using hcv
-    -- pillar at the combination
+      simpa using hcv
     have hp := pillar hf hdiff hL hsmooth hh (x := xc) (hxrec (s + 1))
-    have hlam_sq := lam_sq_sub lam hlamrec s
-    have hp' := mul_le_mul_of_nonneg_left hp hlam_2pos.le
-    have hconv' := mul_le_mul_of_nonneg_left hconv hlam_2pos.le
-    rw [hΦ]
-    nlinarith [hp', hconv', hnorm_y, hnorm_x, hlam_sq, hlam_1, hlam_2pos, mul_pos hLpos hlam_2pos]
-  -- assembly
+    have hlamsq := lam_sq_sub lam hlamrec s
+    -- the book inequality, with the λ_{s+1}²-scaled pillar and the norm identities
+    have hpil : lam (s + 1) ^ 2 * (f (x (s + 2)) + h (x (s + 2)) - (f xc + h xc))
+        ≤ L / 2 * ‖u s‖ ^ 2 - L / 2 * ‖u (s + 1)‖ ^ 2 := by
+      have hm := mul_le_mul_of_nonneg_left hp hpos2.le
+      rw [← hnorm_y, ← hnorm_x]; nlinarith [hm]
+    have hcv2 := mul_le_mul_of_nonneg_left hconv hpos2.le
+    simp only [hΦ]
+    nlinarith [hpil, hcv2, hlamsq, hpos1, hne1, mul_inv_cancel₀ hne1]
   have hΦanti : Antitone Φ := antitone_nat_of_succ_le hΦdec
-  have hΦ0 : Φ 0 ≤ ‖x 0 - xstar‖ ^ 2 := by
+  have hΦ0 : Φ 0 ≤ L / 2 * ‖x 0 - xstar‖ ^ 2 := by
     have hp0 := pillar hf hdiff hL hsmooth hh (x := xstar) (hxrec 0)
-    have hu0 : u 0 = x 1 - xstar := by rw [hu, hlam0]; module
-    rw [hΦ, hu0, hlam0, hxy0]
-    have e2 : ‖xstar - x 1‖ ^ 2 = ‖x 1 - xstar‖ ^ 2 := by rw [norm_sub_rev]
-    have e1 : ‖xstar - x 0‖ ^ 2 = ‖x 0 - xstar‖ ^ 2 := by rw [norm_sub_rev]
     rw [hxy0] at hp0
+    have hu0 : u 0 = x 1 - xstar := by simp only [hu, hlam0]; module
+    simp only [hΦ, hu0, hlam0]
+    have e1 : ‖xstar - x 0‖ ^ 2 = ‖x 0 - xstar‖ ^ 2 := by rw [norm_sub_rev]
+    have e2 : ‖xstar - x 1‖ ^ 2 = ‖x 1 - xstar‖ ^ 2 := by rw [norm_sub_rev]
     nlinarith [hp0, e1, e2, hLpos]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : t ≠ 0)
   have hΦm := le_trans (hΦanti (Nat.zero_le m)) hΦ0
-  rw [hΦ] at hΦm
-  have hlam_m : ((m : ℝ) + 2) / 2 ≤ lam m := nesterov_lambda_lower lam hlam0 hlamrec m
-  have hlam_mpos : (0 : ℝ) < lam m := hlampos m
+  simp only [hΦ] at hΦm
+  have hlb : ((m : ℝ) + 2) / 2 ≤ lam m := nesterov_lambda_lower lam hlam0 hlamrec m
+  have hmpos : (0 : ℝ) < lam m := hlampos m
   have hgap : (0 : ℝ) ≤ f (x (m + 1)) + h (x (m + 1)) - (f xstar + h xstar) := by
     linarith [hmin (x (m + 1))]
-  have hbound : 2 / L * lam m ^ 2 * (f (x (m + 1)) + h (x (m + 1)) - (f xstar + h xstar))
-      ≤ ‖x 0 - xstar‖ ^ 2 := by nlinarith [hΦm, sq_nonneg ‖u m‖]
-  have hlam_msq : ((m : ℝ) + 2) ^ 2 / 4 ≤ lam m ^ 2 := by nlinarith [hlam_m, hlam_mpos]
+  have hmsq : ((m : ℝ) + 2) ^ 2 / 4 ≤ lam m ^ 2 := by
+    have h0 : (0 : ℝ) ≤ ((m : ℝ) + 2) / 2 := by positivity
+    nlinarith [mul_le_mul hlb hlb h0 hmpos.le]
   push_cast
   rw [le_div_iff₀ (by positivity : (0 : ℝ) < ((m : ℝ) + 1 + 1) ^ 2)]
-  nlinarith [hbound, hlam_msq, hgap, hLpos, hlam_mpos, mul_pos hlam_mpos hlam_mpos,
-    mul_nonneg hgap (sq_nonneg ((m : ℝ) + 2))]
+  nlinarith [hΦm, mul_le_mul_of_nonneg_right hmsq hgap, hgap, hLpos, sq_nonneg ‖u m‖]
 
 end StatLean.Optimization
