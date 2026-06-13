@@ -4,7 +4,21 @@ session mid-edit and `lake build StatLean.ConcentrationInequalities.Maximal.Fini
 Fix ALL errors to a clean ZERO-error, ZERO-sorry build. Do NOT touch `tail_max_le`. Do NOT change
 the `expectation_max_le` STATEMENT. Obey CLAUDE.md §7. Keep the proof approach (Jensen + optimize λ).
 
-CURRENT BUILD ERRORS:
+IMPORTANT: build with plain `lake build <target>` and ITERATE until 0 errors — do NOT submit an
+async job and stop. The remaining errors are mostly Mathlib renames:
+- `Filter.eventually_of_forall` → `Filter.Eventually.of_forall` (or `eventually_of_forall`) — check.
+- `integral_mul_left` → `MeasureTheory.integral_const_mul` (or `integral_mul_left` in a different
+  namespace) — `./tools/check.sh`.
+- `le_div_iff` → `le_div_iff₀`.
+- a `No goals to be solved` (drop the stray trailing tactic, §7.10).
+- a few `Application type mismatch` / `Type mismatch` (wrong arg arity on `Finset.*`/`ciSup` helpers).
+
+CURRENT BUILD ERRORS (from the latest gate):
+- 112:10 Application type mismatch; 132:2 Type mismatch; 187:38 Application type mismatch;
+  228 & 237 Unknown constant `Filter.eventually_of_forall`; 231 Unknown identifier `integral_mul_left`;
+  263:18 No goals to be solved; 264:11 Unknown identifier `le_div_iff`.
+
+EARLIER ERRORS (already partially addressed):
 - line ~112: `Function expected at` + `Type mismatch` — likely a misplaced application / wrong
   argument arity in a helper (`exp_mul_ciSup_le_sum_exp` or the abs-bound helper). Inspect and fix.
 - line ~132: `Function expected at` — same kind.
