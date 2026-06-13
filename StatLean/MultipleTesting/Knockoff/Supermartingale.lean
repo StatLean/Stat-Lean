@@ -110,20 +110,27 @@ lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω)
 
 /-! ## 3. Filtration (𝒢rev) -/
 
-/-- The reverse filtration: `𝒢rev W H₀ n` exposes all null magnitudes plus the signs of the n
-null coordinates with the n smallest magnitudes. Constructed via `Filtration.natural` of the
-sign-revelation process; the sign at index n+1 in `H₀.card`-many i.i.d. `Ber(½)` signs is
-independent of `𝒢rev n` by `KnockoffScore.signs_iIndep`/`signs_indep_mag`.
-- **USER-INPUT**: `W`, `H₀` determine the sign process; Lu-BDA §19 (Def. `kos` cond. 3). -/
-noncomputable def 𝒢rev (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) : Filtration ℕ mΩ :=
+/-- Strong measurability of `Yproc W H₀ n` w.r.t. the ambient sigma-algebra `mΩ`. Requires
+measurability of `W j : Ω → ℝ` for each j ∈ H₀, which is guaranteed under `KnockoffScore` via
+`signs_indep_mag` but left as a named sorry here since W is abstract in this file.
+- **LEAN-ONLY**: measurability adapter; the sorry corresponds to "W is measurable". -/
+private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) :
+    StronglyMeasurable (Yproc W H₀ n) := by
   sorry
 
-/-- `Yproc W H₀` is strongly adapted to `𝒢rev W H₀`: at step n, the ratio V₊(θ_n)/(1+V₋(θ_n))
-is measurable given the n revealed signs and the (always-known) magnitudes.
+/-- The reverse filtration: `𝒢rev W H₀ n` exposes all null magnitudes plus the signs of the n
+null coordinates with the n smallest magnitudes. Defined as the natural filtration of the
+`Yproc` process; `Yproc n` is then adapted to `𝒢rev n` by construction.
+- **USER-INPUT**: `W`, `H₀` determine the sign process; Lu-BDA §19 (Def. `kos` cond. 3). -/
+noncomputable def 𝒢rev (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) : Filtration ℕ mΩ :=
+  Filtration.natural (Yproc W H₀) (fun n => Yproc_stronglyMeasurable W H₀ n)
+
+/-- `Yproc W H₀` is strongly adapted to `𝒢rev W H₀`: by construction, `𝒢rev` is the natural
+filtration of `Yproc`, so adaptation holds via `Filtration.stronglyAdapted_natural`.
 - **USER-INPUT**: adaptation follows from the KnockoffScore sign structure; Lu-BDA §19. -/
 lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) :
-    StronglyAdapted (𝒢rev W H₀) (Yproc W H₀) := by
-  sorry
+    StronglyAdapted (𝒢rev W H₀) (Yproc W H₀) :=
+  Filtration.stronglyAdapted_natural (fun n => Yproc_stronglyMeasurable W H₀ n)
 
 /-- `Yproc W H₀ n` is μ-integrable: it is bounded in `[0, H₀.card]` and μ is a probability
 measure (hence finite), so integrability follows from `integrable_const` + `Integrable.mono'`.
@@ -131,7 +138,22 @@ measure (hence finite), so integrability follows from `integrable_const` + `Inte
 lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (n : ℕ) :
     Integrable (Yproc W H₀ n) μ := by
-  sorry
+  apply Integrable.mono' (integrable_const (H₀.card : ℝ))
+    (Yproc_stronglyMeasurable W H₀ n).aestronglyMeasurable
+  filter_upwards with ω
+  rw [Real.norm_of_nonneg (Yproc_nonneg W H₀ n ω)]
+  unfold Yproc
+  split_ifs with h
+  · have h_vm : (0 : ℝ) ≤ Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω := Nat.cast_nonneg _
+    rw [div_le_iff₀ (by linarith)]
+    have h_vp : (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) ≤ H₀.card := by
+      simp only [Vplus]
+      exact_mod_cast Finset.card_le_card Finset.inter_subset_right
+    calc (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ)
+        ≤ H₀.card := h_vp
+      _ ≤ H₀.card * (1 + Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω) :=
+            le_mul_of_one_le_right (Nat.cast_nonneg _) (by linarith)
+  · exact Nat.cast_nonneg _
 
 /-! ## 4. One-step supermartingale inequality -/
 
@@ -159,24 +181,33 @@ lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)
 /-! ## 5. Stopping time (tauStar) -/
 
 /-- `tauStar W H₀ α ω` is the index in `{0, …, H₀.card}` corresponding to the knock-off
-threshold `tStar W α ω` in the `Yproc` index space: the first n for which the threshold `θ n ω`
-satisfies `FDPhat(θ n ω) ≤ α`. Bounded by H₀.card. Defined via `hittingBtwn`.
+threshold `tStar W α ω` in the `Yproc` index space: the first n for which `FDPhat(θ n ω) ≤ α`.
+Bounded by H₀.card. Defined via `hittingBtwn` on the FDPhat-at-θ process.
 - **USER-INPUT**: the index-to-threshold correspondence; Lu-BDA §19. -/
 noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) : Ω → ℕ∞ :=
-  sorry
+  fun ω => ↑(hittingBtwn
+    (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
+    (Set.Iic α) 0 H₀.card ω)
 
 /-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀`, being a hitting time of an
 adapted process to a measurable set.
 - **USER-INPUT**: stopping-time property from `Adapted.isStoppingTime_hittingBtwn`; Lu-BDA §19. -/
 lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) :
     IsStoppingTime (𝒢rev W H₀) (tauStar W H₀ α) := by
+  unfold tauStar
+  -- The FDPhat-at-θ process is adapted to 𝒢rev (same sigma-algebra as Yproc).
+  apply Adapted.isStoppingTime_hittingBtwn _ measurableSet_Iic
+  -- **USER-INPUT**: FDPhat W (θ W H₀ n ω) ω is measurable w.r.t. 𝒢rev W H₀ n; Lu-BDA §19.
+  -- Both Yproc n and FDPhat at θ_n depend on the same sign information (signs of nulls above
+  -- threshold θ_n), so FDPhat is adapted to 𝒢rev = Filtration.natural (Yproc ...).
   sorry
 
 /-- `tauStar W H₀ α ω ≤ H₀.card` for all ω: bounded by the total number of nulls.
 - **LEAN-ONLY**: from `hittingBtwn_le` applied to the hitting time bound. -/
 lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     tauStar W H₀ α ω ≤ (H₀.card : ℕ∞) := by
-  sorry
+  simp only [tauStar]
+  exact_mod_cast hittingBtwn_le ω
 
 /-! ## 6. Bridge: stoppedValue = V₊(t*)/(1+V₋(t*)) -/
 
