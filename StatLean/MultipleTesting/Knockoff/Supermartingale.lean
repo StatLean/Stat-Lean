@@ -189,18 +189,25 @@ noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α
     (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
     (Set.Iic α) 0 H₀.card ω)
 
+/-- The FDPhat-at-θ process `n ↦ FDPhat W (θ W H₀ n ω) ω` is adapted to `𝒢rev W H₀`.
+The adaptation requires measurability of `FDPhat W (θ_n ω) ω` w.r.t. the natural filtration of
+`Yproc`, i.e., that FDPhat at the n-th null magnitude is a Borel function of `(Yproc k ω)_{k≤n}`.
+This holds because FDPhat(θ_n) depends on the sign information at level n (the same information
+that `Yproc n` aggregates), but the formal proof requires measurable-space comap analysis.
+- **USER-INPUT**: adaptedness from sign structure; Lu-BDA §19 (Def. `kos` cond. 3). -/
+private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) :
+    Adapted (𝒢rev W H₀)
+      (fun (n : ℕ) (ω : Ω) =>
+        if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1) := by
+  sorry
+
 /-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀`, being a hitting time of an
 adapted process to a measurable set.
 - **USER-INPUT**: stopping-time property from `Adapted.isStoppingTime_hittingBtwn`; Lu-BDA §19. -/
 lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) :
     IsStoppingTime (𝒢rev W H₀) (tauStar W H₀ α) := by
   unfold tauStar
-  -- The FDPhat-at-θ process is adapted to 𝒢rev (same sigma-algebra as Yproc).
-  apply Adapted.isStoppingTime_hittingBtwn _ measurableSet_Iic
-  -- **USER-INPUT**: FDPhat W (θ W H₀ n ω) ω is measurable w.r.t. 𝒢rev W H₀ n; Lu-BDA §19.
-  -- Both Yproc n and FDPhat at θ_n depend on the same sign information (signs of nulls above
-  -- threshold θ_n), so FDPhat is adapted to 𝒢rev = Filtration.natural (Yproc ...).
-  sorry
+  exact Adapted.isStoppingTime_hittingBtwn (FDPhat_atTheta_adapted W H₀ α) measurableSet_Iic
 
 /-- `tauStar W H₀ α ω ≤ H₀.card` for all ω: bounded by the total number of nulls.
 - **LEAN-ONLY**: from `hittingBtwn_le` applied to the hitting time bound. -/
@@ -211,14 +218,33 @@ lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (
 
 /-! ## 6. Bridge: stoppedValue = V₊(t*)/(1+V₋(t*)) -/
 
+/-- Order-statistic bridge: the V₊/V₋ ratio at `tStar` equals `Yproc` at the hitting index.
+The argument: FDPhat is a step-function of all magnitudes; its minimum over `{|W j|}` with
+FDPhat ≤ α falls in the same half-open interval `[θ_k, θ_{k+1})` as the first null index k
+found by `hittingBtwn`. In that interval V₊ and V₋ (null-restricted counts) are constant, so
+`V₊(tStar)/(1+V₋(tStar)) = V₊(θ_k)/(1+V₋(θ_k)) = Yproc k ω`.
+- **USER-INPUT**: order-statistic analysis; Lu-BDA §19.  -/
+private lemma ratio_eq_Yproc_hittingIdx
+    (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
+    (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
+    Yproc W H₀
+      (hittingBtwn
+        (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
+        (Set.Iic α) 0 H₀.card ω) ω := by
+  sorry
+
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio
-`V₊(tStar W α ω)/(1+V₋(tStar W α ω))`: the `hittingBtwn`-based stopping time lands on the
-index whose `θ`-threshold matches `tStar W α ω`.
+`V₊(tStar W α ω)/(1+V₋(tStar W α ω))`: unfolding `stoppedValue` and `tauStar` reduces the
+claim to `ratio_eq_Yproc_hittingIdx` via `(↑k : ℕ∞).untopA = k` (`WithTop.untopD_coe`).
 - **USER-INPUT**: bridge between the Yproc index space and the tStar threshold value; Lu-BDA §19. -/
 lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
     stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω := by
-  sorry
+  -- stoppedValue u τ ω = u (τ ω).untopA ω; tauStar ω = ↑(hittingBtwn ... ω);
+  -- (↑k : ℕ∞).untopA = k since untopA = untopD (Classical.arbitrary _) and untopD_coe is rfl.
+  unfold stoppedValue tauStar
+  simp only [WithTop.untopD_coe]
+  exact ratio_eq_Yproc_hittingIdx W H₀ α ω
 
 /-! ## 7. Master theorem -/
 
