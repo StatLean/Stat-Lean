@@ -11,6 +11,7 @@ import StatLean.Optimization.GradientDescent
 import StatLean.Optimization.FrankWolfe
 import StatLean.Optimization.ProximalGradient
 import StatLean.Optimization.AcceleratedProximal
+import StatLean.Optimization.AcceleratedGradient
 
 /-!
 # Optimization — area umbrella
