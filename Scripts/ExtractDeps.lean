@@ -16,10 +16,10 @@ open Lean
 def maxNodes : Nat := 46
 
 /-- A declaration is "from this repository" iff its defining module is under
-the `AsymptoticStatistics` namespace. Everything else (Mathlib, Init, Std, Lean)
+the `StatLean` namespace. Everything else (Mathlib, Init, Std, Lean)
 is treated as an external leaf. -/
 def isRepoModule (mod : Name) : Bool :=
-  (`AsymptoticStatistics).isPrefixOf mod
+  (`StatLean).isPrefixOf mod
 
 /-- Modules whose declarations are tactic/meta plumbing (e.g. the `ring` and
 `norm_num` proof-construction lemmas) rather than real mathematical results. -/
@@ -179,8 +179,8 @@ def graphJson (root : Name) (nodes : Array Node) (edges : Array (Name × Name)) 
 
 def main : IO Unit := do
   initSearchPath (← findSysroot)
-  IO.println "Importing AsymptoticStatistics environment…"
-  let env ← importModules #[{ module := `AsymptoticStatistics }] {} (trustLevel := 1024)
+  IO.println "Importing StatLean environment…"
+  let env ← importModules #[{ module := `StatLean }] {} (trustLevel := 1024)
   let targetsFile := "website/targets.txt"
   let content ← IO.FS.readFile targetsFile
   let outDir : System.FilePath := "website/src/data/graphs"
