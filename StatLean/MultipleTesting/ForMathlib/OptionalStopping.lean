@@ -1,0 +1,44 @@
+import Mathlib.Probability.Martingale.OptionalStopping
+
+/-!
+# Optional stopping for supermartingales — `ForMathlib` layer (the `thm:optstop` discharge)
+
+Theorem-agnostic bricks (pure math, Mathlib-only). Lu, *Big Data Analysis* §19 states the
+**Optimal Stopping Theorem** (`thm:optstop`): for a bounded stopping time `τ`,
+`E[Xτ] = E[X₀]` if `X` is a martingale, and `E[Xτ] ≤ E[X₀]` if `X` is a supermartingale.
+
+Mathlib already proves the submartingale optional-stopping inequality
+`MeasureTheory.Submartingale.expected_stoppedValue_mono`
+(`∫ stoppedValue f τ ≤ ∫ stoppedValue f π` for stopping times `τ ≤ π` with `π` bounded). We
+**bridge**, not reprove: dualizing to supermartingales (via `Supermartingale.neg`) and
+specializing the earlier stopping time to the constant `0` gives the two book statements below,
+in the exact form the knock-off proof (`Knockoff.lean`) consumes.
+-/
+
+open MeasureTheory
+
+namespace StatLean.MultipleTesting
+
+variable {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : MeasureTheory.Measure Ω}
+  {𝒢 : Filtration ℕ m0} [SigmaFiniteFiltration μ 𝒢] {f : ℕ → Ω → ℝ}
+
+/-- Optional stopping, supermartingale monotonicity: for stopping times `τ ≤ π` with `π` bounded,
+the *later* stopped value has the *smaller* integral. Dual of
+`MeasureTheory.Submartingale.expected_stoppedValue_mono`. -/
+theorem supermartingale_expected_stoppedValue_antitone
+    {τ π : Ω → ℕ∞} (hf : Supermartingale f 𝒢 μ)
+    (hτ : IsStoppingTime 𝒢 τ) (hπ : IsStoppingTime 𝒢 π) (hle : τ ≤ π)
+    {N : ℕ} (hbdd : ∀ ω, π ω ≤ (N : ℕ∞)) :
+    ∫ x, stoppedValue f π x ∂μ ≤ ∫ x, stoppedValue f τ x ∂μ := by
+  sorry
+
+/-- Optimal Stopping Theorem, supermartingale half (Lu-BDA §19, `thm:optstop`):
+`E[Xτ] ≤ E[X₀]` for a bounded stopping time `τ`. Specialization of
+`supermartingale_expected_stoppedValue_antitone` with the earlier stopping time `≡ 0`. -/
+theorem supermartingale_integral_stoppedValue_le
+    {τ : Ω → ℕ∞} (hf : Supermartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ)
+    {N : ℕ} (hbdd : ∀ ω, τ ω ≤ (N : ℕ∞)) :
+    ∫ x, stoppedValue f τ x ∂μ ≤ ∫ x, f 0 x ∂μ := by
+  sorry
+
+end StatLean.MultipleTesting
