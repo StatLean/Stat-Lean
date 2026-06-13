@@ -1,4 +1,6 @@
 import StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
+import StatLean.HighDimensionalStatistics.LinearModel.Defs
+import StatLean.HighDimensionalStatistics.Lasso.Defs
 
 /-!
 # HighDimensionalStatistics — area umbrella
