@@ -23,6 +23,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 theorem gradient_eq_zero_of_forall_le
     {f : E → ℝ} (hdiff : Differentiable ℝ f) {x : E} (hmin : ∀ y, f x ≤ f y) :
     gradient f x = 0 := by
-  sorry
+  have hMinOn : IsMinOn f Set.univ x := isMinOn_univ_iff.mpr hmin
+  have hLocalMin : IsLocalMin f x := hMinOn.isLocalMin Filter.univ_mem
+  have hfderiv : fderiv ℝ f x = 0 := hLocalMin.fderiv_eq_zero
+  have hfd : HasFDerivAt f ((InnerProductSpace.toDual ℝ E) (gradient f x)) x :=
+    hasGradientAt_iff_hasFDerivAt.mp (hdiff x).hasGradientAt
+  have hEq : (InnerProductSpace.toDual ℝ E) (gradient f x) = 0 := by
+    rw [← hfd.fderiv, hfderiv]
+  exact (InnerProductSpace.toDual ℝ E).map_eq_zero_iff.mp hEq
 
 end StatLean.Optimization
