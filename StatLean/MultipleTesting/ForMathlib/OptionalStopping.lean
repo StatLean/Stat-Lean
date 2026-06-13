@@ -30,7 +30,13 @@ theorem supermartingale_expected_stoppedValue_antitone
     (hτ : IsStoppingTime 𝒢 τ) (hπ : IsStoppingTime 𝒢 π) (hle : τ ≤ π)
     {N : ℕ} (hbdd : ∀ ω, π ω ≤ (N : ℕ∞)) :
     ∫ x, stoppedValue f π x ∂μ ≤ ∫ x, stoppedValue f τ x ∂μ := by
-  sorry
+  have hmono := hf.neg.expected_stoppedValue_mono hτ hπ hle hbdd
+  -- stoppedValue (-f) σ ω = -(stoppedValue f σ ω) by unfolding Pi.neg and stoppedValue
+  have h1 : ∀ ω, stoppedValue (-f) τ ω = -(stoppedValue f τ ω) := fun _ => rfl
+  have h2 : ∀ ω, stoppedValue (-f) π ω = -(stoppedValue f π ω) := fun _ => rfl
+  simp_rw [h1, h2] at hmono
+  rw [integral_neg, integral_neg] at hmono
+  linarith
 
 /-- Optimal Stopping Theorem, supermartingale half (Lu-BDA §19, `thm:optstop`):
 `E[Xτ] ≤ E[X₀]` for a bounded stopping time `τ`. Specialization of
@@ -39,6 +45,9 @@ theorem supermartingale_integral_stoppedValue_le
     {τ : Ω → ℕ∞} (hf : Supermartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ)
     {N : ℕ} (hbdd : ∀ ω, τ ω ≤ (N : ℕ∞)) :
     ∫ x, stoppedValue f τ x ∂μ ≤ ∫ x, f 0 x ∂μ := by
-  sorry
+  have h0 : IsStoppingTime 𝒢 (fun _ : Ω => (0 : ℕ∞)) := isStoppingTime_const 𝒢 (0 : ℕ)
+  have hle : (fun _ : Ω => (0 : ℕ∞)) ≤ τ := fun _ => zero_le _
+  -- stoppedValue_const is proved by rfl, so stoppedValue f (fun _ => 0) = f 0 definitionally.
+  exact supermartingale_expected_stoppedValue_antitone hf h0 hτ hle hbdd
 
 end StatLean.MultipleTesting
