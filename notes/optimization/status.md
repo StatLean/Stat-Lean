@@ -24,6 +24,7 @@ All 8 TODO targets + supporting lemmas proven on branch `opt/area` (pushed to
 | Lemma 12.1 pillar | `prox_variational_inequality`, `pillar` | ✓ |
 | Thm 12.1 proximal | `proximalGradient_rate` | ✓ |
 | Lemma 12.2 Lyapunov + Thm 12.2 APGD | `nesterov_lambda_lower`, `acceleratedProximalGradient_rate` (t ≥ 1) | ✓ |
+| Thm 11.3 AGD (`thm:cvg-agd`) | `acceleratedGradientDescent_rate` (t ≥ 1) — h=0 corollary of Thm 12.2 | ✓ |
 
 Constants/hypothesis deviations (documented in docstrings): GD `2L‖·‖²/t`; FW & APGD stated for
 `t ≥ 1` (t=0 is the trivial initial gap, not provable for the constrained/accelerated base from
