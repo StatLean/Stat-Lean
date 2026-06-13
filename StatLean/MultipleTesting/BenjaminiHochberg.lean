@@ -242,30 +242,102 @@ theorem bh_count_eq_leaveOneOut {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
   rw [bhRejects_loo_eq α hα p i ω hmem]
   exact hR
 
-/-! ## Measurability lemmas (sorry'd — measure-theoretic infrastructure) -/
+/-! ## Measurability helpers and proofs -/
+
+/-- The BH count function is measurable in ω. -/
+private lemma measurable_bhCount {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
+    (hmeas : ∀ j, Measurable (p j)) (m : ℕ) :
+    Measurable (fun ω => bhCount α p m ω) := by
+  simp only [bhCount]
+  rw [show (fun ω => (Finset.univ.filter (fun j : Fin N =>
+          p j ω ≤ (m : ℝ) * α / (N : ℝ))).card) =
+      fun ω => ∑ j : Fin N, if p j ω ≤ (m : ℝ) * α / (N : ℝ) then 1 else 0 from by
+    ext ω
+    have h := @Finset.sum_boole (Fin N) ℕ _ Finset.univ
+        (fun j => p j ω ≤ (m : ℝ) * α / (N : ℝ)) _
+    simp only [Nat.cast_id] at h
+    exact h.symm]
+  exact Finset.measurable_sum Finset.univ fun j _ =>
+    Measurable.ite (measurableSet_le (hmeas j) measurable_const)
+      measurable_const measurable_const
+
+/-- `bhKmax α p ω ≤ k` iff every BH count strictly above `k` is below threshold. -/
+private lemma bhKmax_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) {k : ℕ} :
+    bhKmax α p ω ≤ k ↔ ∀ m ∈ Finset.Ioc k N, bhCount α p m ω < m := by
+  constructor
+  · intro hle m hm
+    rw [Finset.mem_Ioc] at hm
+    exact bhCount_lt_of_gt_kmax α p ω m (Nat.lt_of_lt_of_le hm.1 hle) hm.2
+  · intro h
+    simp only [bhKmax]
+    apply Finset.sup_le
+    intro m hm
+    simp only [Finset.mem_filter, Finset.mem_range, id] at hm
+    by_contra hgt
+    push_neg at hgt
+    have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
+    omega
+
+/-- The `bhKmax` function is measurable. -/
+private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
+    (hmeas : ∀ j, Measurable (p j)) :
+    Measurable (fun ω => bhKmax α p ω) := by
+  have hmeas_le : ∀ k : ℕ, MeasurableSet {ω | bhKmax α p ω ≤ k} := fun k => by
+    rw [show {ω | bhKmax α p ω ≤ k} =
+        ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} from by
+      ext ω
+      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe, Finset.mem_Ioc]
+      exact bhKmax_le_iff α p ω]
+    exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
+      measurableSet_lt (measurable_bhCount α p hmeas m) measurable_const
+  apply measurable_to_countable'
+  intro k
+  rw [show {ω | bhKmax α p ω = k} =
+      {ω | bhKmax α p ω ≤ k} ∩ {ω | k ≤ bhKmax α p ω} from by
+    ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
+  apply MeasurableSet.inter (hmeas_le k)
+  cases k with
+  | zero => simp
+  | succ k =>
+    rw [show {ω | k + 1 ≤ bhKmax α p ω} = ({ω | bhKmax α p ω ≤ k})ᶜ from by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]; omega]
+    exact (hmeas_le k).compl
 
 /-- Measurability of the set `{ω | i ∈ bhRejects α p ω}`. -/
 private lemma measurableSet_bhRejects_mem {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     (hmeas : ∀ j, Measurable (p j)) (i : Fin N) :
     MeasurableSet {ω | i ∈ bhRejects α p ω} := by
-  sorry
+  simp only [bhRejects_eq_filter, Finset.mem_filter, Finset.mem_univ, true_and]
+  exact measurableSet_le (hmeas i)
+    ((measurable_natCast.comp (measurable_bhKmax α p hmeas)).mul_const α |>.div_const (N : ℝ))
 
 /-- Measurability of `numRejections (bhRejects α p)` as a function of ω. -/
 private lemma measurable_numRejections_bhRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     (hmeas : ∀ j, Measurable (p j)) :
     Measurable (fun ω => numRejections (bhRejects α p) ω) := by
-  sorry
+  simp only [numRejections]
+  rw [show (fun ω => (bhRejects α p ω).card) =
+      fun ω => ∑ j : Fin N, if j ∈ bhRejects α p ω then 1 else 0 from by
+    ext ω
+    have h := @Finset.sum_boole (Fin N) ℕ _ Finset.univ (fun j => j ∈ bhRejects α p ω) _
+    simp only [Nat.cast_id,
+               show Finset.univ.filter (fun j : Fin N => j ∈ bhRejects α p ω) =
+                   bhRejects α p ω from by ext j; simp] at h
+    exact h.symm]
+  exact Finset.measurable_sum Finset.univ fun j _ =>
+    Measurable.ite (measurableSet_bhRejects_mem α p hmeas j)
+      measurable_const measurable_const
 
 /-- The BH per-null summand is measurable. -/
 private lemma measurable_bh_summand {N : ℕ} (α : ℝ) (hα : 0 < α)
     (p : Fin N → Ω → ℝ) (hmeas : ∀ j, Measurable (p j)) (i : Fin N) :
     Measurable (fun ω => (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
         max (numRejections (bhRejects α p) ω : ℝ) 1) := by
-  -- Measurability follows from measurability of the indicator and numRejections.
-  -- The indicator is measurable (measurableSet_bhRejects_mem, sorry'd).
-  -- The denominator max(R, 1) is measurable (measurable_numRejections_bhRejects, sorry'd).
-  -- Division of measurable functions over ℝ is measurable since the denominator ≥ 1 > 0.
-  sorry
+  apply Measurable.div
+  · exact Measurable.ite (measurableSet_bhRejects_mem α p hmeas i)
+      measurable_const measurable_const
+  · exact (measurable_natCast.comp
+        (measurable_numRejections_bhRejects α p hmeas)).max measurable_const
 
 /-- The BH per-null summand is pointwise bounded by 1. -/
 private lemma bh_summand_le_one {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (i : Fin N) (ω : Ω) :
