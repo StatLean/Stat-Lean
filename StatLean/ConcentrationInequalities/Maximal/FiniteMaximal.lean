@@ -109,13 +109,13 @@ private lemma integrable_ciSup_fin
     have h1 : ⨆ j, X j ω ≤ ∑ j : Fin d, |X j ω| :=
       ciSup_le fun j =>
         (le_abs_self _).trans
-          (Finset.single_le_sum (fun k _ => abs_nonneg _) _ (Finset.mem_univ j))
+          (Finset.single_le_sum (fun k _ => abs_nonneg _) (Finset.mem_univ j))
     have h2 : -(⨆ j, X j ω) ≤ ∑ j : Fin d, |X j ω| :=
       calc -(⨆ j, X j ω)
           ≤ -(X 0 ω) := neg_le_neg (le_ciSup hbdd 0)
         _ ≤ |X 0 ω| := by rw [← abs_neg]; exact le_abs_self _
         _ ≤ ∑ j : Fin d, |X j ω| :=
-            Finset.single_le_sum (fun k _ => abs_nonneg _) _ (Finset.mem_univ 0)
+            Finset.single_le_sum (fun k _ => abs_nonneg _) (Finset.mem_univ 0)
     exact abs_le.mpr ⟨by linarith, h1⟩
 
 /-- For `lam > 0` and any function `f : Fin d → ℝ`, `exp(lam · sup_j f j) ≤ ∑_j exp(lam · f j)`.
@@ -129,7 +129,7 @@ private lemma exp_mul_ciSup_le_sum_exp
     (ciSup_le fun j => hj0 j (Finset.mem_univ j))
     (le_ciSup (Finite.bddAbove_range _) j0)
   rw [hmax]
-  exact Finset.single_le_sum (fun j _ => (Real.exp_pos _).le) _ (Finset.mem_univ j0)
+  exact Finset.single_le_sum (fun j _ => (Real.exp_pos _).le) (Finset.mem_univ j0)
 
 /-! ### Expectation bound -/
 
@@ -174,12 +174,12 @@ theorem expectation_max_le
       simp_rw [hω]
       exact ciSup_const
     simp only [hσ0, NNReal.coe_zero, Real.sqrt_zero, zero_mul]
-    have : ∫ ω, ⨆ j : Fin d, X j ω ∂μ = 0 := by
-      rw [integral_congr_ae hsupr0]; exact integral_zero
+    have : ∫ ω, ⨆ j : Fin d, X j ω ∂μ = 0 :=
+      integral_eq_zero_of_ae hsupr0
     linarith
   -- *** Corner case B: log d ≤ 0 (i.e., d = 1) ***
   -- Max over Fin 1 equals X 0, whose mean is 0. RHS = σ · √(2·0) = 0.
-  rcases le_or_lt (Real.log (d : ℝ)) 0 with hlog | hlog
+  rcases le_or_gt (Real.log (d : ℝ)) 0 with hlog | hlog
   · have hd_pos : (0 : ℝ) < (d : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_neZero d)
     have hd_le_one : (d : ℝ) ≤ 1 := by
       rwa [← Real.log_le_log_iff hd_pos one_pos, Real.log_one]
