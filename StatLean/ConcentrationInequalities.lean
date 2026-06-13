@@ -12,6 +12,7 @@ import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 import StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
+import StatLean.ConcentrationInequalities.Maximal.L2Maximal
 
 /-!
 # ConcentrationInequalities — area umbrella
