@@ -224,9 +224,8 @@ theorem holm_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Meas
       ≤ μ (⋃ j ∈ H₀, {ω | p j ω ≤ α / (H₀.card : ℝ)}) := by
           apply measure_mono
           intro ω hω
-          rw [Set.mem_iUnion₂]
-          simp only [Set.mem_setOf_eq]
-          exact holm_rejects_true_null_imp α p H₀ ω (Set.mem_setOf.mp hω)
+          obtain ⟨j, hjH₀, hjp⟩ := holm_rejects_true_null_imp α p H₀ ω (Set.mem_setOf.mp hω)
+          exact Set.mem_biUnion hjH₀ hjp
     _ ≤ ∑ j ∈ H₀, μ {ω | p j ω ≤ α / (H₀.card : ℝ)} :=
           measure_biUnion_finset_le H₀ _
     _ ≤ ∑ j ∈ H₀, ENNReal.ofReal (α / (H₀.card : ℝ)) :=
