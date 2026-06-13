@@ -61,3 +61,6 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
 
 ## Event log (append each pass)
 - 2026-06-12: ledger seeded (~25 items). Frontier: classical-limits, sg-bounded, sg-chernoff, sg-tailbounds, sg-hoeffding, max-covnum, hd-vecnorms, subexp-defs(L), mcd-condhoeff(B). Validating pipeline on sg-bounded solo first.
+- 2026-06-12 (overnight autonomous reconcile): user set bar=ZERO-sorry (close all 3 named debts), end=merge-to-fork-main (hold upstream PR), drive=autonomous loop to closure.
+  RECONCILE FINDING: ledger's "IN_FLIGHT (4)" was overstated. After `git fetch cannon --prune`, branches classical-limits / subgaussian-chernoff / subgaussian-hoeffding have ZERO diff vs main (empty placeholder worktrees @2233e85, no tmux session alive) → relaunched from scratch. Only conc/subgaussian-tailbounds (@9546a89) has real work: TailBounds.lean +138, no sorry in bodies → gate build launched.
+  LAUNCHED (background, SRUN=1, --max-usd 25): gate-build tailbounds; cluster-claude sg-chernoff, sg-hoeffding, classical-limits. Concurrency 3/4 claude sessions.
