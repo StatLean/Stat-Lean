@@ -3,3 +3,9 @@
 site/
 # tools/check.sh writes a throwaway #check buffer at the repo root.
 scratch.lean
+# Cluster build artifacts (sbatch scripts + SLURM logs) created by cluster-claude
+# proof sessions when they build via sbatch; never part of the library.
+slurm-logs/
+*.sbatch
+slurm-*.out
+slurm-*.err
