@@ -16,14 +16,12 @@ The diameter enters only through the per-step bound `‖y_t - x_t‖² ≤ D`
 `Δ_{t+1} ≤ (1 - η_t) Δ_t + (L/2) η_t² D`, closed by induction with
 `η_t = 2/(t+2)`.
 
-Architecture: the proof factors through
-* `frankWolfe_step`: the one-step recursion (proved here);
-* `frankWolfe_base`: the `t = 0` bound `Δ_0 ≤ L D` (lifted as a named `sorry`,
-  see the docstring for the missing ingredient — the current `hdiam` bounds
-  only `‖y_t - x_t‖²`, while the base case needs either a diameter bound
-  `‖x_0 - x*‖² ≤ D` or constrained first-order optimality from `hmin`).
-
-The main theorem `frankWolfe_rate` then closes by induction on `t`.
+Architecture: `frankWolfe_step` proves the one-step recursion; `frankWolfe_rate`
+then closes by `Nat.le_induction` for `t ≥ 1`, with base case `t = 1` coming from
+one FW step at `t = 0` (`η_0 = 1 ⇒ Δ_1 ≤ (L/2)D ≤ 2LD/3`). The theorem is stated
+for `t ≥ 1`: the `t = 0` case would assert the trivial initial gap `Δ_0 ≤ L D`,
+not provable from the per-step diameter bound alone for a *constrained* minimizer
+(CLAUDE.md §1 documented deviation).
 -/
 
 namespace StatLean.Optimization
