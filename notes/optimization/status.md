@@ -5,20 +5,33 @@ Reference: Lu, *Big Data Analysis* ch. 10 (`chapter10.tex`), ch. 11
 (`chapter11.tex` — note TODO.md mis-cites these as ch10), ch. 12
 (`chapter12.tex`).
 
-## Waves
+## STATUS: COMPLETE — area builds 0-sorry, 0-error (full umbrella, 2414 jobs).
 
-* **Wave 0 — `opt/scaffold`** (laptop): DONE. Stub-gate green (2400 jobs, 14 sorries).
-* **Wave 1 — concept layer**: DONE, merged into `opt/area`, verified green (2414 jobs,
-  7 sorries remaining). `opt/convex-core` (FirstOrderConvex, Subgradient, LocalGlobal/Prop 10.1)
-  + `opt/smoothness` (GradientCalc ∇=0-at-min, CoCoercive/Lem 11.1). Laptop fixed 2 trivial
-  post-preemption errors (open scoped Topology; dropped redundant `ring` after field_simp).
-* **Wave 2 — first-order methods** (IN FLIGHT, based on `opt/area`):
-  * `opt/gradient-descent`: GradientDescent (Thm 11.1).
-  * `opt/frank-wolfe`: FrankWolfe (Thm 11.2).
-* **Wave 3 — proximal track** (queued):
-  * `opt/prox-pillar`: Prox/Pillar (Lem 12.1) — first.
-  * `opt/proximal-gradient`: ProximalGradient (Thm 12.1).
-  * `opt/accelerated-proximal`: AcceleratedProximal (Thm 12.2).
+All 8 TODO targets + supporting lemmas proven on branch `opt/area` (pushed to
+`cannon/opt/area`). Final integration: `git merge --no-ff cannon/opt/area` into `main`
+(clean — diff vs main's merge-base is purely `StatLean/Optimization/**` + `notes/optimization/`;
+`main` already carries the scaffold stubs, which the merge replaces with proofs).
+
+| Result | Decl | Status |
+|---|---|---|
+| Def convex (10.1) | Mathlib `ConvexOn` | reused |
+| Subgradient (10.2) | `IsSubgradient`, `subdifferential` | def |
+| Prop 10.1 local⇒global | `forall_le_of_isLocalMin`, `isGlobalMin_iff_zero_mem_subdifferential` | ✓ |
+| L-smooth (11.1) | `IsLSmooth` | def |
+| Lemma 11.1 co-coercivity | `cocoercive`, `inner_gradient_sub_nonneg` | ✓ |
+| Thm 11.1 GD | `gradientDescent_rate` | ✓ |
+| Thm 11.2 Frank–Wolfe | `frankWolfe_rate` (t ≥ 1) | ✓ |
+| Lemma 12.1 pillar | `prox_variational_inequality`, `pillar` | ✓ |
+| Thm 12.1 proximal | `proximalGradient_rate` | ✓ |
+| Lemma 12.2 Lyapunov + Thm 12.2 APGD | `nesterov_lambda_lower`, `acceleratedProximalGradient_rate` (t ≥ 1) | ✓ |
+
+Constants/hypothesis deviations (documented in docstrings): GD `2L‖·‖²/t`; FW & APGD stated for
+`t ≥ 1` (t=0 is the trivial initial gap, not provable for the constrained/accelerated base from
+the per-step bound); co-coercivity adds `ConvexOn` to the book's "L-smooth f".
+
+**Auth note:** Waves 2–3 + all fixes were completed BY HAND on the laptop (verified via
+`lean-fasrc-build`, which needs no API auth) because the cluster `claude` credential expired
+mid-run (401). Re-auth the cluster `claude` to restore proof delegation for future work.
 
 ## Integration model (revised — Batch-1 co-edits the shared working copy)
 
