@@ -65,16 +65,17 @@ theorem law_of_large_numbers_in_probability
     -- USER-INPUT: identical distributions (book: "i.i.d."); Lu-BDA §2.1
     (hident : ∀ i, IdentDistrib (X i) (X 0) P P) :
     TendstoInMeasure P
-      (fun n ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) atTop
+      (fun (n : ℕ) ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) atTop
       (fun _ => ∫ x, X 0 x ∂P) := by
   have hpair : Pairwise (Function.onFun (fun x y => IndepFun x y P) X) :=
     fun _ _ hij => hindep.indepFun hij
   have hae := ProbabilityTheory.strong_law_ae X hint hpair hident
   have hX_ae : ∀ i, AEStronglyMeasurable (X i) P :=
     fun i => (hident i).aestronglyMeasurable_fst
-  have hf_ae : ∀ n, AEStronglyMeasurable
-      (fun ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) P := fun n =>
-    (Finset.aestronglyMeasurable_sum (Finset.range n) (fun i _ => hX_ae i)).const_smul _
+  have hf_ae : ∀ (n : ℕ), AEStronglyMeasurable
+      (fun ω => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) P := fun (n : ℕ) =>
+    ((Finset.aestronglyMeasurable_sum (Finset.range n) (fun i _ => hX_ae i)).congr
+        (Filter.Eventually.of_forall fun ω => Finset.sum_apply ω _ X)).const_smul' _
   exact MeasureTheory.tendstoInMeasure_of_tendsto_ae hf_ae hae
 
 /-- **Central Limit Theorem** (Lu BDA §2.1).
@@ -109,8 +110,8 @@ theorem central_limit_theorem
     -- USER-INPUT: identical distributions (book: "i.i.d."); Lu-BDA §2.1
     (hident : ∀ i, IdentDistrib (X i) (X 0) P P) :
     TendstoInDistribution
-      (fun n ω => (Real.sqrt n)⁻¹ *
-        (∑ k ∈ Finset.range n, X k ω - n * ∫ x, X 0 x ∂P))
+      (fun (n : ℕ) ω => (Real.sqrt n)⁻¹ *
+        (∑ k ∈ Finset.range n, X k ω - (n : ℝ) * ∫ x, X 0 x ∂P))
       atTop Y (fun _ => P) P' :=
   ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub hY hX hindep hident
 
