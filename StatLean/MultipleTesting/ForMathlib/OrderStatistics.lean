@@ -24,6 +24,7 @@ noncomputable def orderStat (v : Fin n → ℝ) (i : Fin n) : ℝ := v (Tuple.so
 /-- The map `i ↦ orderStat v i` is monotone: `orderStat` lists the entries in non-decreasing
 order. -/
 theorem orderStat_monotone (v : Fin n → ℝ) : Monotone (orderStat v) := by
-  sorry
+  unfold orderStat
+  exact Tuple.monotone_sort v
 
 end StatLean.MultipleTesting
