@@ -50,8 +50,9 @@ noncomputable def linfNorm (x : EuclideanSpace ℝ (Fin d)) : ℝ := ⨆ i, |x.o
 
 /-- Each coordinate is dominated by the ℓ∞ norm. -/
 lemma abs_le_linfNorm (x : EuclideanSpace ℝ (Fin d)) (i : Fin d) :
-    |x.ofLp i| ≤ linfNorm x :=
-  le_ciSup (Set.finite_range _).bddAbove i
+    |x.ofLp i| ≤ linfNorm x := by
+  unfold linfNorm
+  exact le_ciSup (Set.finite_range (fun j : Fin d => |x.ofLp j|)).bddAbove i
 
 lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
   by_cases h : Nonempty (Fin d)
@@ -69,7 +70,11 @@ lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
 theorem abs_inner_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |⟪x, y⟫_ℝ| ≤ l1Norm x * linfNorm y := by
   have hinner : (⟪x, y⟫_ℝ : ℝ) = ∑ i, x.ofLp i * y.ofLp i := by
-    simp [PiLp.inner_apply, RCLike.inner_apply']
+    simp only [PiLp.inner_apply]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    -- ⟪a, b⟫_ℝ = b * conj a = b * a defeq (RCLike.inner_apply is rfl)
+    change y.ofLp i * x.ofLp i = x.ofLp i * y.ofLp i
+    ring
   rw [hinner]
   calc |∑ i, x.ofLp i * y.ofLp i|
       ≤ ∑ i, |x.ofLp i * y.ofLp i| := Finset.abs_sum_le_sum_abs _ _
@@ -88,7 +93,11 @@ theorem abs_sum_mul_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |∑ i, x.ofLp i * y.ofLp i| ≤ (∑ i, |x.ofLp i|) * ⨆ i, |y.ofLp i| := by
   have h := abs_inner_le_l1Norm_mul_linfNorm x y
   have hinner : (⟪x, y⟫_ℝ : ℝ) = ∑ i, x.ofLp i * y.ofLp i := by
-    simp [PiLp.inner_apply, RCLike.inner_apply']
+    simp only [PiLp.inner_apply]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    -- ⟪a, b⟫_ℝ = b * conj a = b * a defeq (RCLike.inner_apply is rfl)
+    change y.ofLp i * x.ofLp i = x.ofLp i * y.ofLp i
+    ring
   rw [hinner] at h
   exact h
 
