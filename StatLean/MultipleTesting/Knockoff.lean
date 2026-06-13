@@ -22,7 +22,7 @@ applied at the stopping time `t*` gives `E[·] ≤ E[V₊(0)/(1+V₋(0))] ≤ 1`
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Classical
+open scoped ENNReal
 
 namespace StatLean.MultipleTesting
 

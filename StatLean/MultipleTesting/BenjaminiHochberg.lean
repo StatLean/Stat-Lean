@@ -29,14 +29,14 @@ namespace StatLean.MultipleTesting
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
-open scoped Classical in
 /-- Benjamini–Hochberg rejection set at level `α` (Lu-BDA §18): reject `{ j : pⱼ ≤ k̂·α/N }`,
 where `k̂ = max{ k ≤ N : #{ j : pⱼ ≤ kα/N } ≥ k }` (the sort-free form of `iₘₐₓ`). With no `k ≥ 1`
 satisfying the count condition, `k̂ = 0` and nothing is rejected. -/
 noncomputable def bhRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : Finset (Fin N) :=
-  let kmax := ((Finset.range (N + 1)).filter
-    (fun m => m ≤ (Finset.univ.filter (fun j => p j ω ≤ (m : ℝ) * α / N)).card)).sup id
-  Finset.univ.filter (fun j => p j ω ≤ (kmax : ℝ) * α / N)
+  let kmax : ℕ := ((Finset.range (N + 1)).filter
+    (fun (m : ℕ) => m ≤ (Finset.univ.filter
+      (fun j => p j ω ≤ (m : ℝ) * α / (N : ℝ))).card)).sup id
+  Finset.univ.filter (fun j => p j ω ≤ (kmax : ℝ) * α / (N : ℝ))
 
 /-- Leave-one-out invariance (Lu-BDA §18, BH proof, "second key observation"): if hypothesis `i`
 is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the constant `0`
