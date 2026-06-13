@@ -1,0 +1,52 @@
+[2026-06-13T03:27:33-04:00] host=holy7c04104.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits target=StatLean.ConcentrationInequalities.ClassicalLimits cpus=8 mem=24G
+--- git status ---
+08aea3b58ec573ec755f5ef33a363bda2fc22f05
+?? slurm-logs/
+--- lake env ---
+leanprover/lean4:v4.29.1 (overridden by '/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/lean-toolchain')
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lake version 5.0.0-src+f72c35b (Lean version 4.29.1)
+--- lake build StatLean.ConcentrationInequalities.ClassicalLimits ---
+✖ [2888/2888] Building StatLean.ConcentrationInequalities.ClassicalLimits (69s)
+trace: .> LEAN_PATH=/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/Cli/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/batteries/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/Qq/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/aesop/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/proofwidgets/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/importGraph/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/packages/plausible/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/lake-shared/mathlib/5e932f97dd25535344f80f9dd8da3aab83df0fe6/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/build/lib/lean /n/holylabs/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/bin/lean /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/StatLean/ConcentrationInequalities/ClassicalLimits.lean -o /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/build/lib/lean/StatLean/ConcentrationInequalities/ClassicalLimits.olean -i /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/build/lib/lean/StatLean/ConcentrationInequalities/ClassicalLimits.ilean -c /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/build/ir/StatLean/ConcentrationInequalities/ClassicalLimits.c --setup /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-classical-limits/.lake/build/ir/StatLean/ConcentrationInequalities/ClassicalLimits.setup.json --json
+error: StatLean/ConcentrationInequalities/ClassicalLimits.lean:68:49: Application type mismatch: The argument
+  n
+has type
+  ℝ
+but is expected to have type
+  ℕ
+in the application
+  Finset.range n
+error: StatLean/ConcentrationInequalities/ClassicalLimits.lean:76:47: Application type mismatch: The argument
+  n
+has type
+  ℝ
+but is expected to have type
+  ℕ
+in the application
+  Finset.range n
+error: StatLean/ConcentrationInequalities/ClassicalLimits.lean:77:51: Application type mismatch: The argument
+  n
+has type
+  ℝ
+but is expected to have type
+  ℕ
+in the application
+  Finset.range n
+error: StatLean/ConcentrationInequalities/ClassicalLimits.lean:113:28: Application type mismatch: The argument
+  n
+has type
+  ℝ
+but is expected to have type
+  ℕ
+in the application
+  Finset.range n
+error: Lean exited with code 1
+Some required targets logged failures:
+- StatLean.ConcentrationInequalities.ClassicalLimits
+--- post-build ---
+exit_code=1
+wallclock_seconds=98
+sorry_uses_in_err=0
+0
