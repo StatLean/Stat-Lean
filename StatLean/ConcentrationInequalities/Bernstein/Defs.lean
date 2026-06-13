@@ -40,8 +40,16 @@ structure HasBernsteinCondition (X : Ω → ℝ) (σ2 b : ℝ≥0)
   /-- Constitutive (Lu-BDA §4.1): the defining moment bound
   `E |X|ᵏ ≤ (σ2/2)·k!·bᵏ⁻²` for all `k ≥ 3`. Removing it makes the object not
   the book's Bernstein-condition variable. (`k - 2` is `ℕ`-subtraction; harmless
-  since `k ≥ 3`.) -/
+  since `k ≥ 3`.)
+
+  Stated with the **lower Lebesgue integral** `∫⁻ |X|ᵏ` rather than the Bochner
+  `∫ |X|ᵏ`: for a heavy-tailed `X` (in `L²` but not `Lᵏ`, `k ≥ 3`) the Bochner
+  integral returns Mathlib's junk value `0`, which would make the bound hold
+  *vacuously* while `exp(λX)` is not integrable — breaking the
+  Bernstein-⇒-sub-exponential implication. `∫⁻` records the genuine moment
+  (`= ∞` when the moment is infinite), so the bound is a real constraint. -/
   moment_le : ∀ k : ℕ, 3 ≤ k →
-    ∫ ω, |X ω| ^ k ∂μ ≤ (σ2 : ℝ) / 2 * (k.factorial : ℝ) * (b : ℝ) ^ (k - 2)
+    ∫⁻ ω, ENNReal.ofReal (|X ω| ^ k) ∂μ
+      ≤ ENNReal.ofReal ((σ2 : ℝ) / 2 * (k.factorial : ℝ) * (b : ℝ) ^ (k - 2))
 
 end StatLean.ConcentrationInequalities
