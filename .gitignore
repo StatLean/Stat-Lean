@@ -1,3 +1,5 @@
 .lake
 .DS_Store
 site/
+# tools/check.sh writes a throwaway #check buffer at the repo root.
+scratch.lean
