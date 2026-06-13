@@ -1,0 +1,58 @@
+[2026-06-13T12:33:28-04:00] host=holy7c04404.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation target=StatLean.ConcentrationInequalities.Maximal.FiniteMaximal cpus=8 mem=24G
+--- git status ---
+f541cdce0302d60ae75ed9cc5c0a5d3f4733c5e7
+?? slurm-logs/lean-Stat-Lean-conc-finmax-expectation-123314-22389590.err
+?? slurm-logs/lean-Stat-Lean-conc-finmax-expectation-123314-22389590.out
+?? slurm-logs/lean-Stat-Lean-conc-finmax-expectation-123314.sbatch
+--- lake env ---
+leanprover/lean4:v4.29.1 (overridden by '/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/lean-toolchain')
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lake version 5.0.0-src+f72c35b (Lean version 4.29.1)
+--- lake build StatLean.ConcentrationInequalities.Maximal.FiniteMaximal ---
+✔ [2852/2854] Built StatLean.ConcentrationInequalities.SubGaussian.Defs (70s)
+✔ [2853/2854] Built StatLean.ConcentrationInequalities.SubGaussian.TailBounds (11s)
+✖ [2854/2854] Building StatLean.ConcentrationInequalities.Maximal.FiniteMaximal (10s)
+trace: .> LEAN_PATH=/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/Cli/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/batteries/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/Qq/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/aesop/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/proofwidgets/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/importGraph/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/packages/plausible/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/lake-shared/mathlib/5e932f97dd25535344f80f9dd8da3aab83df0fe6/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/build/lib/lean /n/holylabs/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/bin/lean /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean -o /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/build/lib/lean/StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.olean -i /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/build/lib/lean/StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.ilean -c /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/build/ir/StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.c --setup /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/conc-finmax-expectation/.lake/build/ir/StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.setup.json --json
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:112:10: Application type mismatch: The argument
+  Finset.single_le_sum (fun k x ↦ ?m.174) (Finset.mem_univ j)
+has type
+  ?m.163 j ≤ ∑ x, ?m.163 x
+but is expected to have type
+  |X j ω| ≤ ∑ j, |X j ω|
+in the application
+  LE.le.trans (le_abs_self (X j ω)) (Finset.single_le_sum (fun k x ↦ ?m.174) (Finset.mem_univ j))
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:132:2: Type mismatch
+  Finset.single_le_sum (fun j x ↦ LT.lt.le (exp_pos (?m.110 j))) (Finset.mem_univ j0)
+has type
+  rexp (?m.110 j0) ≤ ∑ x, rexp (?m.110 x)
+but is expected to have type
+  rexp (lam * f j0) ≤ ∑ j, rexp (lam * f j)
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:187:38: Application type mismatch: The argument
+  hd_le_one
+has type
+  ↑d ≤ 1
+but is expected to have type
+  ↑d ≤ ↑1
+in the application
+  Nat.cast_le.mp hd_le_one
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:228:7: Unknown constant `Filter.eventually_of_forall`
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:231:9: Unknown identifier `integral_mul_left`
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:237:7: Unknown constant `Filter.eventually_of_forall`
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:263:18: No goals to be solved
+error: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:264:11: Unknown identifier `le_div_iff`
+warning: StatLean/ConcentrationInequalities/Maximal/FiniteMaximal.lean:230:15: This simp argument is unused:
+  Function.comp
+
+Hint: Omit it from the simp argument list.
+  simp only [̵F̵u̵n̵c̵t̵i̵o̵n̵.̵c̵o̵m̵p̵]̵ ̵at h
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+error: Lean exited with code 1
+Some required targets logged failures:
+- StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
+--- post-build ---
+exit_code=1
+wallclock_seconds=115
+sorry_uses_in_err=0
+0
