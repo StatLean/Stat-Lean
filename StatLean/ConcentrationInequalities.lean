@@ -1,5 +1,6 @@
 import StatLean.ConcentrationInequalities.SubGaussian.Defs
 import StatLean.ConcentrationInequalities.SubGaussian.Bounded
+import StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 
 /-!
 # ConcentrationInequalities — area umbrella
