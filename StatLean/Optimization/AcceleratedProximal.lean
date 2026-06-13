@@ -104,7 +104,7 @@ theorem acceleratedProximalGradient_rate
       push_cast at hnl; linarith
     set xc : E := (lam (s + 1))⁻¹ • xstar + (1 - (lam (s + 1))⁻¹) • x (s + 1) with hxc
     have hmom : lam (s + 1) • y (s + 1) - (xstar + (lam (s + 1) - 1) • x (s + 1)) = u s := by
-      simp only [hu, hyrec s]; match_scalars <;> field_simp
+      simp only [hu, hyrec s]; match_scalars <;> field_simp <;> ring
     have hlamxc : lam (s + 1) • xc = xstar + (lam (s + 1) - 1) • x (s + 1) := by
       simp only [hxc]; match_scalars <;> field_simp
     have hsc_y : lam (s + 1) • (xc - y (s + 1)) = -u s := by
@@ -124,8 +124,8 @@ theorem acceleratedProximalGradient_rate
         have : (lam (s + 1))⁻¹ ≤ 1 := (inv_le_one₀ hpos1).mpr hge1
         linarith
       have hcv := hFconv.2 (Set.mem_univ xstar) (Set.mem_univ (x (s + 1)))
-        (by positivity) hw1 (by ring)
-      simpa using hcv
+        (a := (lam (s + 1))⁻¹) (b := 1 - (lam (s + 1))⁻¹) (by positivity) hw1 (by ring)
+      simpa [hxc] using hcv
     have hp := pillar hf hdiff hL hsmooth hh (x := xc) (hxrec (s + 1))
     have hlamsq := lam_sq_sub lam hlamrec s
     -- the book inequality, with the λ_{s+1}²-scaled pillar and the norm identities
@@ -133,9 +133,20 @@ theorem acceleratedProximalGradient_rate
         ≤ L / 2 * ‖u s‖ ^ 2 - L / 2 * ‖u (s + 1)‖ ^ 2 := by
       have hm := mul_le_mul_of_nonneg_left hp hpos2.le
       rw [← hnorm_y, ← hnorm_x]; nlinarith [hm]
-    have hcv2 := mul_le_mul_of_nonneg_left hconv hpos2.le
+    have hcv2 : lam (s + 1) ^ 2 * (f xc + h xc)
+        ≤ lam (s + 1) * (f xstar + h xstar) + lam s ^ 2 * (f (x (s + 1)) + h (x (s + 1))) := by
+      have hm := mul_le_mul_of_nonneg_left hconv hpos2.le
+      have he : lam (s + 1) ^ 2 * ((lam (s + 1))⁻¹ * (f xstar + h xstar)
+            + (1 - (lam (s + 1))⁻¹) * (f (x (s + 1)) + h (x (s + 1))))
+          = lam (s + 1) * (f xstar + h xstar)
+            + (lam (s + 1) ^ 2 - lam (s + 1)) * (f (x (s + 1)) + h (x (s + 1))) := by
+        field_simp; ring
+      rw [he, hlamsq] at hm
+      exact hm
+    have hlsF : (lam (s + 1) ^ 2 - lam (s + 1)) * (f xstar + h xstar)
+        = lam s ^ 2 * (f xstar + h xstar) := by rw [hlamsq]
     simp only [hΦ]
-    nlinarith [hpil, hcv2, hlamsq, hpos1, hne1, mul_inv_cancel₀ hne1]
+    nlinarith [hpil, hcv2, hlsF]
   have hΦanti : Antitone Φ := antitone_nat_of_succ_le hΦdec
   have hΦ0 : Φ 0 ≤ L / 2 * ‖x 0 - xstar‖ ^ 2 := by
     have hp0 := pillar hf hdiff hL hsmooth hh (x := xstar) (hxrec 0)
