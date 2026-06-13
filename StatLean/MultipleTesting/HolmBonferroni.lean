@@ -66,6 +66,7 @@ private lemma holmCount_le_N {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω
   · apply Finset.sup_le
     intro k hk
     simp only [Finset.mem_filter, Finset.mem_range] at hk
+    simp only [id_eq]
     omega
   · exact Nat.zero_le _
 
@@ -224,6 +225,7 @@ theorem holm_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Meas
           apply measure_mono
           intro ω hω
           rw [Set.mem_iUnion₂]
+          simp only [Set.mem_setOf_eq]
           exact holm_rejects_true_null_imp α p H₀ ω (Set.mem_setOf.mp hω)
     _ ≤ ∑ j ∈ H₀, μ {ω | p j ω ≤ α / (H₀.card : ℝ)} :=
           measure_biUnion_finset_le H₀ _
