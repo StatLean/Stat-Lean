@@ -9,7 +9,18 @@ Mathlib-infrastructure gap.
 `sorry` (line ~82). READ the file's module header — it contains the full math sketch. Close
 `bernstein_key` to ZERO sorry. Do NOT change any statement; do NOT touch the main theorem.
 
-# THE LEMMA (already stated)
+# IMPORTANT — SIGNATURE FIX FIRST (a prior session correctly escalated this):
+`bernstein_key` as currently stated is FALSE without a measurability assumption on `X` (the
+`HasBernsteinCondition` moment fields are Bochner integrals that are junk `0` for non-measurable `X`,
+so the MGF/integrability conclusions fail). You MUST add `(hX : Measurable X)` (or `AEMeasurable X μ`
+if that is all the `mgf`/integrability lemmas need) as a hypothesis to BOTH `bernstein_key` AND the
+main theorem `isSubExponential_of_hasBernsteinCondition`, tagged `-- USER-INPUT: X measurable
+(random variable); Lu-BDA §4.1` (the book tacitly assumes `X` is a random variable). Propagate it
+through the two `where`/proof sites in the main theorem. This is a legitimate regularity hypothesis,
+NOT laundering — do NOT instead make it a field of `HasBernsteinCondition` (regularity ⇒ hypothesis,
+per CLAUDE.md). Then close the `bernstein_key` proof to ZERO sorry.
+
+# THE LEMMA (already stated, BEFORE the measurability fix)
   `bernstein_key [IsProbabilityMeasure μ] (hB : HasBernsteinCondition X σ2 b μ) {l : ℝ}
      (hl : |l| ≤ 1 / ((2*(NNReal.sqrt σ2 ⊔ b) : ℝ≥0):ℝ)) :
      Integrable (fun ω => Real.exp (l*X ω)) μ ∧ mgf X μ l ≤ Real.exp (l^2 * α^2 / 2)`
@@ -42,7 +53,8 @@ lemma tried + why) and report PROMINENTLY "ESCALATE: bernstein_key unclosable, <
 any other sorry.
 
 # TOUCH-SET: ONLY `StatLean/ConcentrationInequalities/Bernstein/MGFBound.lean`.
-# BUILD: srun -p shared -c 8 --mem=24G -t 1:10:00 lake build StatLean.ConcentrationInequalities.Bernstein.MGFBound
+# BUILD (you are ALREADY inside an srun allocation — run lake DIRECTLY, do NOT nest srun/sbatch):
+#   lake build StatLean.ConcentrationInequalities.Bernstein.MGFBound
 # DONE = build exits 0; ZERO sorries (or 1 named bernstein_key + ESCALATE note); commit
 (`conc(bernstein): close bernstein_key — MGF power-series bound (Lu-BDA §4.1)`). Report build + exact
 sorry status. Independently re-verified.
