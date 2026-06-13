@@ -12,7 +12,6 @@ Area reference: Lu, *Big Data Analysis*, ch. 2–4 (`ref/Lu_Big-Data-Analysis/la
 | `subexponential_bernstein/` | ch3: sub-exponential def, two-regime tail (`thm:sub-exp`), sub-exp sample mean. ch4: Bernstein condition def, Bernstein inequality |
 | `mcdiarmid/` | ch3: McDiarmid bounded-differences (`McDiarmid`) — not in Mathlib; build via Doob martingale + Mathlib conditional-sub-Gaussian Azuma |
 | `maximal_covering/` | ch4: finite maximal (`thm:finite-maximal`); ε-net def; covering number of ℓ²-ball (`lm:covering-num`, `(1+2/ε)^d`); ℓ²-norm maximal (`thm:l2`) |
-| `kde_uniform_rate/` | ch3/ch4: uniform rate of kernel density estimator (promoted example→theorem) |
 
 ## Layout (`StatLean/ConcentrationInequalities/`, namespace `StatLean.ConcentrationInequalities`)
 
@@ -24,7 +23,6 @@ ConcentrationInequalities/
 ├── McDiarmid/{CondHoeffding,DoobDecomposition,McDiarmid}.lean
 ├── Bernstein/{Defs,MGFBound,Bernstein}.lean
 └── Maximal/{FiniteMaximal,CoveringNumbers,CoveringBall,L2Maximal}.lean
-└── KDE/{Defs,Bias,SupConcentration,ExpectedSup,UniformRate}.lean
 ```
 
 Key design decisions:
@@ -35,6 +33,5 @@ Key design decisions:
 ## Hardest items (time-box + named-sorry fallback)
 - `McDiarmid/CondHoeffding` → `DoobDecomposition` (conditional Hoeffding on `Measure.pi`). Fallback sorry: `condExp_hoeffding_mgf`.
 - `Maximal/CoveringBall` (Zorn-maximal separated set + Haar volume count). Fallback sorry: `card_le_of_isSeparated_ball`. **Do not** substitute a coordinate grid — it corrupts the √d rate in `thm:l2`.
-- `KDE/ExpectedSup` + `UniformRate` (sup measurability, grid bookkeeping, constants). Fallback sorry: `kde_expected_sup_bound`; still land the headline `UniformRate` theorem with explicit debt.
 
-DAG: `ForMathlib(AS) → SubGaussian → {SubExponential, Bernstein, Maximal, McDiarmid} → KDE`. Cross-area: `HighDimensionalStatistics` consumes `SubGaussian` (Hoeffding, tails) and `Maximal` (`thm:l2`).
+DAG: `ForMathlib(AS) → SubGaussian → {SubExponential, Bernstein, Maximal, McDiarmid}`. Cross-area: `HighDimensionalStatistics` consumes `SubGaussian` (Hoeffding, tails) and `Maximal` (`thm:l2`).
