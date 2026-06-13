@@ -50,7 +50,6 @@ theorem cocoercive
       (L / 2) * ‖y - z‖ ^ 2 = (1 / (2 * L)) * ‖gradient f x - gradient f y‖ ^ 2 := by
     rw [hyz_eq, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_pos hL_inv_pos]
     field_simp
-    ring
   -- Inner-product expansions of the two RHS pieces.
   have h_inner_xz :
       ⟪gradient f x, x - z⟫_ℝ

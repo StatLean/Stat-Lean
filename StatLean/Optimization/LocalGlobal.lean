@@ -18,7 +18,7 @@ The second statement is essentially definitional via `IsSubgradient`
 
 namespace StatLean.Optimization
 
-open scoped InnerProductSpace
+open scoped InnerProductSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
