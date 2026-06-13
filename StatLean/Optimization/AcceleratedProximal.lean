@@ -48,9 +48,28 @@ theorem nesterov_lambda_lower
     push_cast
     linarith [hsqrt]
 
+/-- The Nesterov sequence is strictly positive. -/
+private theorem lam_pos (lam : ℕ → ℝ) (hlam0 : lam 0 = 1)
+    (hlamrec : ∀ t, lam (t + 1) = (1 + Real.sqrt (1 + 4 * lam t ^ 2)) / 2) (s : ℕ) :
+    0 < lam s := by
+  have h := nesterov_lambda_lower lam hlam0 hlamrec s
+  have : (0 : ℝ) < ((s : ℝ) + 2) / 2 := by positivity
+  linarith
+
+/-- The Nesterov-sequence identity `λ_{s+1}² - λ_{s+1} = λ_s²` (Lu-BDA §12.2,
+from `(2λ_{s+1} - 1)² = 1 + 4λ_s²`). -/
+private theorem lam_sq_sub (lam : ℕ → ℝ)
+    (hlamrec : ∀ t, lam (t + 1) = (1 + Real.sqrt (1 + 4 * lam t ^ 2)) / 2) (s : ℕ) :
+    lam (s + 1) ^ 2 - lam (s + 1) = lam s ^ 2 := by
+  have hsq : Real.sqrt (1 + 4 * lam s ^ 2) ^ 2 = 1 + 4 * lam s ^ 2 :=
+    Real.sq_sqrt (by positivity)
+  rw [hlamrec s]
+  linear_combination (1 / 4 : ℝ) * hsq
+
 /-- Lu-BDA Thm 12.2 (accelerated proximal-gradient convergence rate). `f` convex
 `L`-smooth (`0 < L`), `h` convex, `F = f + h`, step `1/L`, Nesterov momentum:
-`F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`. -/
+`F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`. Stated for `t ≥ 1` (the `t = 0` case
+is the trivial initial gap), per CLAUDE.md §1 documented deviation. -/
 theorem acceleratedProximalGradient_rate
     {f h : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f)
     {L : ℝ} (hL : 0 < L) (hsmooth : IsLSmooth f L) (hh : ConvexOn ℝ Set.univ h)
@@ -62,7 +81,7 @@ theorem acceleratedProximalGradient_rate
         (y t - (1 / L) • gradient f (y t)) (x (t + 1)))
     (hyrec : ∀ t, y (t + 1) = x (t + 1) + ((lam t - 1) / lam (t + 1)) • (x (t + 1) - x t))
     {xstar : E} (hmin : ∀ z, f xstar + h xstar ≤ f z + h z)
-    (t : ℕ) :
+    (t : ℕ) (ht : 1 ≤ t) :
     (f (x t) + h (x t)) - (f xstar + h xstar)
       ≤ 2 * L * ‖x 0 - xstar‖ ^ 2 / ((t : ℝ) + 1) ^ 2 := by
   sorry
