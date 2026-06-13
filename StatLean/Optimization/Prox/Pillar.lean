@@ -76,7 +76,8 @@ theorem prox_variational_inequality
           calc min 1 (ε / ‖w - z‖ ^ 2) * ‖w - z‖ ^ 2
               ≤ (ε / ‖w - z‖ ^ 2) * ‖w - z‖ ^ 2 :=
                 mul_le_mul_of_nonneg_right hle hKpos.le
-            _ = ε := by field_simp [hKpos.ne']
+            _ = ε := by
+                rw [div_mul_eq_mul_div, mul_div_assoc, div_self hKpos.ne', mul_one]
         nlinarith [h1, hε]
     calc h z - h w - ⟪z - x, w - z⟫_ℝ ≤ t / 2 * ‖w - z‖ ^ 2 := key t ht0 ht1
       _ ≤ ε := htK
