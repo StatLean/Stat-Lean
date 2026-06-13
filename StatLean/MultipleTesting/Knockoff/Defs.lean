@@ -47,5 +47,9 @@ structure KnockoffScore (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (μ :
   `Ber(½)` given `|W|`". -/
   signs_indep_mag :
     IndepFun (fun ω (j : H₀) => sgnReal W (j : Fin d) ω) (fun ω (j : Fin d) => |W j ω|) μ
+  /-- Constitutive (Lu-BDA §19, Def. `kos`): a knock-off *score* is a statistic, so each `Wⱼ` is
+  measurable. Needed for the martingale construction (natural filtration, adaptedness,
+  integrability, conditional expectation) in `Knockoff/Supermartingale.lean`. -/
+  meas : ∀ j, Measurable (W j)
 
 end StatLean.MultipleTesting
