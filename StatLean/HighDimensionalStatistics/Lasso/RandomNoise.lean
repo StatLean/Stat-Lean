@@ -110,7 +110,7 @@ private lemma colInner_isSubGaussian
   have hsum_up : HasSubgaussianMGF
       (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ :=
     ⟨hsum_mg.integrable_exp_mul, fun t => (hsum_mg.mgf_le t).trans (by
-      apply Real.exp_le_exp.mpr; gcongr; exact_mod_cast NNReal.coe_le_coe.mpr hproxy_le)⟩
+      apply Real.exp_le_exp.mpr; gcongr)⟩
   -- ── Step 6: conclude IsSubGaussian using zero mean ────────────────────────────
   have hsum_mean : ∫ ω, ∑ i : Fin n, X i j * ε i ω ∂μ = 0 := by
     rw [integral_finset_sum Finset.univ (fun i _ => (hε_int i).const_mul (X i j))]
@@ -160,8 +160,6 @@ private lemma linfNorm_noise_tail
   have hcoord : ∀ ω j, (designMap Xᵀ (noiseVec ω)).ofLp j = ∑ i, X i j * ε i ω := by
     intro ω j
     rw [designMap_trans_coord]
-    congr 1; ext i
-    simp [noiseVec, WithLp.ofLp_toLp]
   -- ── Step 3: per-column sub-Gaussian tail bound ───────────────────────────────
   have hcol_sg : ∀ j : Fin d,
       IsSubGaussian (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ :=
@@ -274,42 +272,78 @@ theorem lasso_random_rate
   set t_star := (n : ℝ) * lam / 2
   have hGc_eq : Gᶜ = {ω | t_star < linfNorm (designMap Xᵀ (noiseVec ω))} := by
     ext ω
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le]
-    have hn' : (n : ℝ) ≠ 0 := ne_of_gt hn_pos
+    -- Unfold G (a let-binding from `set`) via Iff.rfl, then simplify
+    have hG_mem : ω ∈ G ↔ lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) :=
+      Iff.rfl
+    simp only [Set.mem_compl_iff, hG_mem, Set.mem_setOf_eq, ge_iff_le, not_le]
+    -- Unfold t_star (also a let-binding) via rfl
+    rw [show t_star = (n : ℝ) * lam / 2 from rfl]
     constructor
     · intro h
       -- h : lam < (2/n) * L; want: n*lam/2 < L
-      have key := mul_lt_mul_of_pos_right h hn_pos
-      have h2 : (2 / ↑n) * linfNorm (designMap Xᵀ (noiseVec ω)) * ↑n =
+      have hk := mul_lt_mul_of_pos_right h hn_pos
+      have heq : (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) * (n : ℝ) =
                  2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by field_simp
-      unfold_let t_star; linarith
+      linarith
     · intro h
-      -- h : n*lam/2 < L; want: lam < (2/n) * L
-      have key2 : (2 / ↑n) * linfNorm (designMap Xᵀ (noiseVec ω)) =
-                  2 * linfNorm (designMap Xᵀ (noiseVec ω)) / ↑n := by field_simp
-      rw [key2, lt_div_iff hn_pos]
-      unfold_let t_star at h; linarith
+      -- h : n*lam/2 < L; want: lam < (2/n)*L
+      -- By contrapositive: if (2/n)*L ≤ lam, multiply by n to get 2*L ≤ n*lam,
+      -- contradicting hmul.
+      have hmul : (n : ℝ) * lam < 2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by linarith
+      by_contra hle
+      push_neg at hle
+      have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hn_pos)
+      have heq : (2 / (n : ℝ)) * linfNorm (designMap Xᵀ (noiseVec ω)) * (n : ℝ) =
+                 2 * linfNorm (designMap Xᵀ (noiseVec ω)) := by field_simp
+      nlinarith
   -- ── Step 3: exp bound ─────────────────────────────────────────────────────────
   have hlog_pos : 0 < Real.log (2 * d / δ) := by
     apply Real.log_pos
-    rw [gt_iff_lt, lt_div_iff hδ_pos]
+    -- goal: 1 < 2 * d / δ. By contrapositive: 2*d/δ ≤ 1 → 2*d ≤ δ < 1 ≤ d,
+    -- contradicting d ≥ 1.
     have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast hd
-    linarith
+    by_contra hle
+    push_neg at hle
+    have hstep := mul_le_mul_of_nonneg_right hle (le_of_lt hδ_pos)
+    have heq : (2 * (d : ℝ) / δ) * δ = 2 * d := by field_simp [ne_of_gt hδ_pos]
+    nlinarith
   have ht_star_sq : t_star ^ 2 ≥ 2 * (σ2 : ℝ) * n * Real.log (2 * d / δ) := by
     have hsq := Real.sq_sqrt (by positivity : 0 ≤ 2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n)
-    have : t_star ^ 2 = (n : ℝ) ^ 2 * lam ^ 2 / 4 := by unfold_let t_star; ring
-    rw [this]
-    nlinarith [sq_nonneg (lam - 2 * Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n)),
-               Real.sqrt_nonneg (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n)]
+    have ht : t_star ^ 2 = (n : ℝ) ^ 2 * lam ^ 2 / 4 := by ring
+    rw [ht]
+    set s := Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n)
+    have hs_nn : 0 ≤ s := Real.sqrt_nonneg _
+    -- lam^2 ≥ 4*s^2 follows from lam ≥ 2*s (hlam_ge after set) via (lam-2s)^2 + 4*(lam-2s)*s ≥ 0
+    have h_lam_sq : lam ^ 2 ≥ 4 * s ^ 2 := by
+      nlinarith [sq_nonneg (lam - 2 * s),
+                 mul_nonneg (by linarith : (0 : ℝ) ≤ lam - 2 * s) hs_nn]
+    -- n^2 * s^2 = 2*σ2*n*log by clearing the /n in s^2 = 2*σ2*log/n
+    have hns : (n : ℝ) ^ 2 * s ^ 2 = 2 * (σ2 : ℝ) * ↑n * Real.log (2 * ↑d / δ) := by
+      rw [hsq]; field_simp [ne_of_gt hn_pos]
+    nlinarith [h_lam_sq, hns, sq_nonneg (n : ℝ)]
   have hexp_le : 2 * d * Real.exp (-t_star ^ 2 / (2 * (n * (σ2 : ℝ)))) ≤ δ := by
     have harg : -t_star ^ 2 / (2 * (n * (σ2 : ℝ))) ≤ -Real.log (2 * d / δ) := by
-      rw [neg_div, neg_le_neg_iff, div_le_div_iff (by positivity) (by positivity)]
-      linarith [ht_star_sq]
+      rw [neg_div, neg_le_neg_iff]
+      -- Goal: Real.log (2*d/δ) ≤ t_star^2 / (2*n*σ2).
+      -- By contrapositive: if t_star^2/(2*n*σ2) < log, multiply by 2*n*σ2 to get
+      -- t_star^2 < log*(2*n*σ2) ≤ t_star^2 via key, contradiction.
+      have hpos : (0 : ℝ) < 2 * ((n : ℝ) * ↑σ2) := by positivity
+      have key : Real.log (2 * ↑d / δ) * (2 * ((n : ℝ) * ↑σ2)) ≤ t_star ^ 2 := by
+        linarith [show Real.log (2 * ↑d / δ) * (2 * ((n : ℝ) * ↑σ2)) =
+                  2 * (σ2 : ℝ) * ↑n * Real.log (2 * ↑d / δ) from by ring]
+      by_contra hlt
+      push_neg at hlt
+      have hstep := mul_lt_mul_of_pos_right hlt hpos
+      have heq : t_star ^ 2 / (2 * ((n : ℝ) * ↑σ2)) * (2 * ((n : ℝ) * ↑σ2)) = t_star ^ 2 := by
+        field_simp [ne_of_gt hpos]
+      linarith
     calc 2 * d * Real.exp (-t_star ^ 2 / (2 * (n * (σ2 : ℝ))))
         ≤ 2 * d * Real.exp (-Real.log (2 * d / δ)) :=
             mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr harg) (by positivity)
       _ = 2 * d * (δ / (2 * d)) := by
-            rw [Real.exp_neg, Real.exp_log (by positivity), inv_eq_one_div]
+            rw [Real.exp_neg, Real.exp_log (by positivity)]
+            have hd_ne : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
+            field_simp [hd_ne, ne_of_gt hδ_pos]
       _ = δ := by field_simp
   -- ── Step 4: P(Gᶜ) ≤ δ ────────────────────────────────────────────────────────
   have hPGc_le : μ Gᶜ ≤ ENNReal.ofReal δ := by
@@ -325,9 +359,9 @@ theorem lasso_random_rate
         _ ≤ μ G + μ Gᶜ := measure_union_le G Gᶜ
     rw [measure_univ] at hcover
     have h_lower2 : 1 ≤ μ G + ENNReal.ofReal δ :=
-      hcover.trans (add_le_add_left hPGc_le _)
+      hcover.trans (add_le_add le_rfl hPGc_le)
     have h1delt : ENNReal.ofReal (1 - δ) = 1 - ENNReal.ofReal δ := by
-      rw [← ENNReal.ofReal_one, ← ENNReal.ofReal_sub (by linarith)]
+      rw [ENNReal.ofReal_sub 1 (le_of_lt hδ_pos), ENNReal.ofReal_one]
     rw [h1delt]
     exact tsub_le_iff_right.mpr h_lower2
   -- ── Step 6: conclude ─────────────────────────────────────────────────────────
