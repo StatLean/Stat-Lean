@@ -11,6 +11,25 @@ It states that the Doob increment `Δₖ = μ[f∘X | Fₖ] − μ[f∘X | Fₖ�
 `f` (with `Dᵢf ≤ cᵢ`) over INDEPENDENT coordinates `X` lies in an interval of length `≤ cₖ` given
 `Fₖ₋₁` (the conditional range bound), which feeds `condExp_hoeffding_mgf`.
 
+# CONFIRMED (twice): the RANGE bound on the increment needs the DISTRIBUTION-level fact
+#   `IndepFun X Y μ → condDistrib Y X μ =ᵐ[μ.map X] Kernel.const _ (μ.map Y)`
+# (the condExp/mean version below is NOT enough for a sup−inf range bound). This is genuinely absent
+# from Mathlib — so PROVE IT as a `private` lemma in this file (do NOT create new files), via
+# DISINTEGRATION UNIQUENESS:
+#   1. Under independence, the joint law factorises: `μ.map (fun ω => (X ω, Y ω)) = (μ.map X).prod (μ.map Y)`
+#      — search `IndepFun.map_prod_eq_prod` / `IndepFun` ⇒ `μ.map (X,Y) = (μ.map X).prod (μ.map Y)`
+#      (`./tools/loogle.sh '"IndepFun"' '"map"'`, `'"indepFun_iff_map_prod_eq_prod"'`).
+#   2. `condDistrib Y X μ` is THE (a.e.-unique) disintegrating kernel: `(μ.map X) ⊗ₖ condDistrib Y X μ
+#      = μ.map (X,Y)` (`ProbabilityTheory.compProd_condDistrib` / `condDistrib_compProd`). The constant
+#      kernel `Kernel.const _ (μ.map Y)` ALSO disintegrates the product: `(μ.map X) ⊗ₖ const _ (μ.map Y)
+#      = (μ.map X).prod (μ.map Y)` (`Kernel.compProd_const` / `Measure.compProd_const`).
+#   3. By a.e.-uniqueness of disintegration (`ProbabilityTheory.Kernel.apply_eq_…`/`eq_condDistrib_of_…`,
+#      or `Measure.ext` on the compProd + `Kernel.ext_ae`), conclude `condDistrib Y X μ =ᵐ const _ (μ.map Y)`.
+#   Needs `[StandardBorelSpace]`/`IsFiniteMeasure` instances — supply them (the McDiarmid setup has them).
+# Then the increment range bound: `μ[f|Fₖ] − μ[f|Fₖ₋₁]` integrates `Xₖ` against `μ.map Xₖ` in both
+# terms, so the difference is bounded by `sup_{xₖ,xₖ'} |f(…xₖ…) − f(…xₖ'…)| ≤ Dₖf ≤ cₖ` pointwise.
+
+# (LEGACY note — the condExp/mean version, insufficient alone:)
 # THE LEMMA EXISTS IN MATHLIB (a prior session searched `condDistrib` and missed the `condExp`
 # formulation). USE THESE — do NOT re-search from scratch, do NOT escalate:
 #   • `MeasureTheory.condExp_indep_eq (hle₁ : m₁ ≤ m) (hle₂ : m₂ ≤ m) [SigmaFinite (μ.trim hle₂)]

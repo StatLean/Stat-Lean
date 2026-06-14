@@ -94,3 +94,6 @@ LAUNCH ENVELOPE that survives preemption best: PARTITION=hsph,sapphire (drop sha
 
 ## 2026-06-14 ~00:30 ET — SWITCHED CLUSTER TO OPUS (xhigh effort)
 Sonnet WEEKLY quota exhausted (resets Jun 20). Per user, switched cluster claude to Opus: added to cluster env.Stat-Lean.sh `export ANTHROPIC_MODEL=claude-opus-4-8` + `export MAX_THINKING_TOKENS=31999` (max thinking = xhigh effort). Verified: Opus has quota (test READY; sessions show model=claude-opus-4-8, no Sonnet/Opus limit). Relaunched hard tail on Opus/hsph,sapphire/3h: bernstein-key-r11, mcd-increment-r4, ols-exp-r1. Opus quota on Max is tighter than Sonnet — be efficient.
+
+## increment_bounded — CONFIRMED genuine Mathlib gap (Opus, twice)
+The Doob-increment RANGE bound needs the DISTRIBUTION-level fact `IndepFun X Y → condDistrib Y X μ =ᵐ μ.map Y` (condExp/mean version condExp_indep_eq is insufficient for a sup−inf range bound). Genuinely absent from Mathlib. Retargeted closer to PROVE it inline via disintegration uniqueness (joint law factorises under indep; condDistrib is the unique disintegrating kernel; const kernel disintegrates the product; conclude by a.e.-uniqueness). Prompt: mcdiarmid-increment-bounded.md. This is the single hardest residual; if it doesn't close it is the documented Batch-1 debt (a real ForMathlib contribution).
