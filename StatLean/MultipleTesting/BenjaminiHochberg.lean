@@ -476,7 +476,7 @@ private lemma bhKmax_le_numRej {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (
   · rw [h]; exact Nat.zero_le _
   · have hcnt : numRejections (bhRejects α p) ω = bhCount α p (bhKmax α p ω) ω := by
       change (bhRejects α p ω).card = bhCount α p (bhKmax α p ω) ω
-      rw [bhRejects_eq_filter]
+      rw [bhRejects_eq_filter]; simp only [bhCount]
     rw [hcnt]; exact bhKmax_le_count α p ω h
 
 /-- Forward (easy) half of the BH crux: a rejected null has `pᵢ ≤ R·α/N`, where `R` is the
@@ -572,11 +572,7 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
       · exact Measurable.ite (hLOO_meas (measurableSet_singleton k))
           measurable_const measurable_const
     · rw [Real.norm_of_nonneg (by apply mul_nonneg <;> (split_ifs <;> norm_num))]
-      calc (if p i ω ≤ (k : ℝ) * α / N then (1 : ℝ) else 0) *
-            (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k then (1 : ℝ)
-              else 0) ≤ 1 * 1 := by
-              apply mul_le_mul <;> first | (split_ifs <;> norm_num) | norm_num
-        _ = ‖(1 : ℝ)‖ := by norm_num
+      split_ifs <;> norm_num
   -- per-term bound: ∫ (1/k)·𝟙·𝟙 ≤ (α/N)·μ{R(LOO)=k}.
   have hαN : (0 : ℝ) ≤ α / N := div_nonneg hα.le (Nat.cast_nonneg N)
   have bound_each : ∀ k ∈ Finset.Icc 1 N,
