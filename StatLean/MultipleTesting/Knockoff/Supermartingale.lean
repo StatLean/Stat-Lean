@@ -157,34 +157,49 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
           (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card :=
       fun j ω => orderStat_le_iff_card_lt
         (fun k : Fin H₀.card => |W (H₀.orderEmbOfFin rfl k) ω|) ⟨n, h⟩ _
-    -- Rewrite Vplus/Vminus via rank condition, then prove measurability as outer sum of indicators
+    -- Rewrite Vplus/Vminus via rank condition, then prove measurability as outer sum of indicators.
+    -- heq converts Vplus/Vminus directly to sum form while preserving the inner count as .card,
+    -- so that hCL j (which has .card type) unifies correctly in the final Measurable.ite call.
+    -- simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter] would also rewrite inner .card to sum
+    -- form, breaking the type match with hCL j — so we bake the conversion into heq instead.
     have hVpMeas : Measurable (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-      have heq : ∀ ω, Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-          (H₀.filter (fun j => n <
-            ((Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
-            0 < W j ω)).card := fun ω => by
-        unfold Vplus Splus; congr 1; ext j
-        simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
-        exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
-               fun ⟨hmem, hrk, hpos⟩ => ⟨⟨(hRk j ω).mpr hrk, hpos⟩, hmem⟩⟩
-      simp_rw [heq, Finset.card_eq_sum_ones, Finset.sum_filter]
+      have heq : ∀ ω, (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
+          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
+                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              0 < W j ω) then (1 : ℕ) else 0 := fun ω => by
+        have hstep : Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+            (H₀.filter (fun j => n <
+              ((Finset.univ : Finset (Fin H₀.card)).filter
+                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              0 < W j ω)).card := by
+          unfold Vplus Splus; congr 1; ext j
+          simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+          exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
+                 fun ⟨hmem, hrk, hpos⟩ => ⟨⟨(hRk j ω).mpr hrk, hpos⟩, hmem⟩⟩
+        -- Convert outer .card to sum; nth_rw 1 avoids rewriting the inner .card in the predicate
+        rw [hstep]; nth_rw 1 [Finset.card_eq_sum_ones]; rw [Finset.sum_filter]
+      simp_rw [heq]
       exact Finset.measurable_sum _ fun j _ =>
         Measurable.ite (MeasurableSet.inter
           (measurableSet_lt measurable_const (hCL j))
           (measurableSet_lt measurable_const (hWmeas j)))
           measurable_const measurable_const
     have hVmMeas : Measurable (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-      have heq : ∀ ω, Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-          (H₀.filter (fun j => n <
-            ((Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
-            W j ω < 0)).card := fun ω => by
-        unfold Vminus Sminus; congr 1; ext j
-        simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
-        exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
-               fun ⟨hmem, hrk, hneg⟩ => ⟨⟨(hRk j ω).mpr hrk, hneg⟩, hmem⟩⟩
-      simp_rw [heq, Finset.card_eq_sum_ones, Finset.sum_filter]
+      have heq : ∀ ω, (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
+          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
+                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              W j ω < 0) then (1 : ℕ) else 0 := fun ω => by
+        have hstep : Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+            (H₀.filter (fun j => n <
+              ((Finset.univ : Finset (Fin H₀.card)).filter
+                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              W j ω < 0)).card := by
+          unfold Vminus Sminus; congr 1; ext j
+          simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+          exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
+                 fun ⟨hmem, hrk, hneg⟩ => ⟨⟨(hRk j ω).mpr hrk, hneg⟩, hmem⟩⟩
+        rw [hstep]; nth_rw 1 [Finset.card_eq_sum_ones]; rw [Finset.sum_filter]
+      simp_rw [heq]
       exact Finset.measurable_sum _ fun j _ =>
         Measurable.ite (MeasurableSet.inter
           (measurableSet_lt measurable_const (hCL j))
