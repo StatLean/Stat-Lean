@@ -76,4 +76,30 @@ theorem binom_ratio_sum_le_one (N : ℕ) :
     field_simp
   linarith [hN, hN1]
 
+/-- **Knock-off supermartingale step** (the finite core, Lu-BDA §19 / Barber–Candès): with null
+positive/negative counts `a, b` among the remaining nulls (`k = a+b`), revealing the next removed
+sign uniformly (`+` w.p. `a/k`, `−` w.p. `b/k`) does not increase the ratio `a/(1+b)`:
+`(a/k)·(a−1)/(1+b) + (b/k)·(a/b) ≤ a/(1+b)`. Equality for `b ≥ 1`; strict at `b = 0` (`a−1 ≤ a`).
+Division uses Lean's `x/0 = 0` convention. This is the finite inequality the one-step
+conditional-expectation bound `step_condExp_le` reduces to (see `notes/.../construction_audit.md`). -/
+lemma step_ratio_le (a b : ℕ) :
+    (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b)) +
+      (b : ℝ) / (a + b) * ((a : ℝ) / b) ≤ (a : ℝ) / (1 + b) := by
+  rcases Nat.eq_zero_or_pos b with hb | hb
+  · -- b = 0: the `−` branch vanishes, leaving `a − 1 ≤ a`.
+    subst hb
+    rcases Nat.eq_zero_or_pos a with ha | ha
+    · subst ha; norm_num
+    · have ha0 : (a : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr ha.ne'
+      simp only [Nat.cast_zero, add_zero, div_one, zero_div, zero_mul, mul_zero]
+      rw [div_self ha0, one_mul]
+      linarith
+  · -- b ≥ 1: equality (martingale).
+    have hb0 : (b : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hb.ne'
+    have hab0 : (a : ℝ) + b ≠ 0 := by positivity
+    have h1b0 : (1 : ℝ) + b ≠ 0 := by positivity
+    apply le_of_eq
+    field_simp
+    ring
+
 end StatLean.MultipleTesting
