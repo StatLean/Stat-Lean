@@ -165,6 +165,20 @@ private lemma measurable_Vminus0 (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
   exact Finset.measurable_sum _ fun j _ =>
     Measurable.ite (measurableSet_lt (hW j) measurable_const) measurable_const measurable_const
 
+/-- `V₊(0)` is measurable. -/
+private lemma measurable_Vplus0 (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hW : ∀ j, Measurable (W j)) : Measurable (fun ω => Vplus W H₀ 0 ω) := by
+  have heq : (fun ω => Vplus W H₀ 0 ω) =
+      fun ω => ∑ j ∈ H₀, if 0 < W j ω then 1 else 0 := by
+    funext ω
+    have hf : Vplus W H₀ 0 ω = (H₀.filter (fun j => 0 < W j ω)).card := by
+      unfold Vplus; rw [Splus_zero]; congr 1; ext j
+      simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]; tauto
+    rw [hf, Finset.card_filter]
+  rw [heq]
+  exact Finset.measurable_sum _ fun j _ =>
+    Measurable.ite (measurableSet_lt measurable_const (hW j)) measurable_const measurable_const
+
 /-- The sign-configuration cell for a candidate negative set `T ⊆ H₀`. -/
 private def signCell (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (T : Finset (Fin d)) : Set Ω :=
   ⋂ i ∈ (Finset.univ : Finset H₀),
@@ -195,8 +209,8 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
       ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
       exact (hsgnneg ω).symm
     have h12 : (1 : ℝ≥0∞) - 1 / 2 = 1 / 2 := by
-      have hsum : (1 : ℝ≥0∞) / 2 + 1 / 2 = 1 := by rw [ENNReal.div_add_div_same]; norm_num
-      rw [← hsum, ENNReal.add_sub_cancel_left (by simp)]
+      calc (1 : ℝ≥0∞) - 1 / 2 = (1 / 2 + 1 / 2) - 1 / 2 := by rw [ENNReal.add_halves]
+        _ = 1 / 2 := ENNReal.add_sub_cancel_left (by simp)
     split_ifs with h
     · rw [← hlt]
       have hcompl : {ω | W (i : Fin d) ω < 0} = {ω | (0 : ℝ) ≤ W (i : Fin d) ω}ᶜ := by
@@ -286,9 +300,94 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
-  -- Assembly (integral partition over the V₋(0) distribution + reindex) — written after the
-  -- distribution helper `prob_Vminus0_eq` is verified.
-  sorry
+  classical
+  set N₀ := H₀.card with hN₀
+  set g : ℕ → ℝ := fun m => ((N₀ : ℝ) - m) / (1 + m) with hgdef
+  have hmVm : Measurable (fun ω => Vminus W H₀ 0 ω) := measurable_Vminus0 W H₀ hW.meas
+  have hmVp : Measurable (fun ω => Vplus W H₀ 0 ω) := measurable_Vplus0 W H₀ hW.meas
+  have hVm_le : ∀ ω, Vminus W H₀ 0 ω ≤ N₀ := fun ω => Vminus0_le W H₀ ω
+  have hVp_le : ∀ ω, Vplus W H₀ 0 ω ≤ N₀ := fun ω => by
+    show (Splus W 0 ω ∩ H₀).card ≤ H₀.card
+    exact Finset.card_le_card Finset.inter_subset_right
+  -- Step 1: pointwise `V₊/(1+V₋) ≤ g(V₋)` (since `V₊ ≤ N₀ − V₋`).
+  have hpt : ∀ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ≤ g (Vminus W H₀ 0 ω) := by
+    intro ω
+    have hnum : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) - (Vminus W H₀ 0 ω : ℝ) := by
+      have hc : (Vplus W H₀ 0 ω : ℝ) + (Vminus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by
+        rw [hN₀]; exact_mod_cast vplus_add_vminus_le W H₀ ω
+      linarith
+    simp only [hgdef]
+    rw [div_le_div_iff₀ (by positivity) (by positivity)]
+    exact mul_le_mul_of_nonneg_right hnum (by positivity)
+  -- Integrability of both integrands (bounded by `N₀`).
+  have hInt_low : Integrable (fun ω => (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ))) μ := by
+    apply Integrable.mono' (integrable_const (N₀ : ℝ))
+      ((measurable_from_top.comp hmVp).div
+        (measurable_const.add (measurable_from_top.comp hmVm))).aestronglyMeasurable
+    filter_upwards with ω
+    rw [Real.norm_of_nonneg (by positivity),
+      div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
+    have hVp : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVp_le ω
+    nlinarith [hVp, Nat.cast_nonneg (Vminus W H₀ 0 ω), Nat.cast_nonneg N₀]
+  have hInt_up : Integrable (fun ω => g (Vminus W H₀ 0 ω)) μ := by
+    apply Integrable.mono' (integrable_const (N₀ : ℝ))
+    · simp only [hgdef]
+      exact ((measurable_const.sub (measurable_from_top.comp hmVm)).div
+        (measurable_const.add (measurable_from_top.comp hmVm))).aestronglyMeasurable
+    · filter_upwards with ω
+      have hVm : (Vminus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVm_le ω
+      simp only [hgdef]
+      rw [Real.norm_of_nonneg (div_nonneg (by linarith) (by positivity)),
+        div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
+      nlinarith [hVm, Nat.cast_nonneg (Vminus W H₀ 0 ω), Nat.cast_nonneg N₀]
+  -- Helper: each per-value measure equals `C(N₀,m)/2^{N₀}`.
+  have htoReal : ∀ m, (μ {ω | Vminus W H₀ 0 ω = m}).toReal = (N₀.choose m : ℝ) / 2 ^ N₀ := by
+    intro m
+    rw [prob_Vminus0_eq μ W H₀ hW m, ENNReal.toReal_mul, ENNReal.toReal_natCast,
+      ENNReal.toReal_pow,
+      show ((1 : ℝ≥0∞) / 2).toReal = 1 / 2 by rw [one_div, ENNReal.toReal_inv,
+        ENNReal.toReal_ofNat]; norm_num]
+    rw [div_pow, one_pow]
+  -- Step 2: integrate monotonically, expand over the distribution, reindex `m = N₀ − k`.
+  calc ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ
+      ≤ ∫ ω, g (Vminus W H₀ 0 ω) ∂μ := integral_mono hInt_low hInt_up hpt
+    _ = ∑ m ∈ Finset.range (N₀ + 1), g m * (μ {ω | Vminus W H₀ 0 ω = m}).toReal := by
+        have hpart : (fun ω => g (Vminus W H₀ 0 ω)) =
+            fun ω => ∑ m ∈ Finset.range (N₀ + 1),
+              g m * (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0) := by
+          funext ω
+          rw [Finset.sum_eq_single (Vminus W H₀ 0 ω)
+            (fun m _ hm => by rw [if_neg (fun h => hm h.symm), mul_zero])
+            (fun hc => absurd (Finset.mem_range.mpr (Nat.lt_succ_of_le (hVm_le ω))) hc),
+            if_pos rfl, mul_one]
+        rw [hpart, integral_finset_sum _ (fun m _ => by
+          apply Integrable.const_mul
+          apply Integrable.mono' (integrable_const (1 : ℝ))
+            (Measurable.aestronglyMeasurable (Measurable.ite (hmVm (measurableSet_singleton m))
+              measurable_const measurable_const))
+          filter_upwards with ω
+          rw [Real.norm_of_nonneg (by split_ifs <;> norm_num)]
+          split_ifs <;> norm_num)]
+        apply Finset.sum_congr rfl
+        intro m _
+        rw [integral_const_mul]
+        congr 1
+        rw [show (fun ω => (if Vminus W H₀ 0 ω = m then (1 : ℝ) else 0)) =
+          {ω | Vminus W H₀ 0 ω = m}.indicator 1 from by
+            funext ω; by_cases h : Vminus W H₀ 0 ω = m <;>
+              simp [Set.indicator_apply, Set.mem_setOf_eq, h],
+          integral_indicator_one (hmVm (measurableSet_singleton m))]
+    _ = ∑ m ∈ Finset.range (N₀ + 1), g m * ((N₀.choose m : ℝ) / 2 ^ N₀) := by
+        apply Finset.sum_congr rfl; intro m _; rw [htoReal m]
+    _ = ∑ k ∈ Finset.range (N₀ + 1),
+          (N₀.choose k : ℝ) / 2 ^ N₀ * ((k : ℝ) / (1 + ((N₀ : ℝ) - k))) := by
+        rw [← Finset.sum_range_reflect (fun m => g m * ((N₀.choose m : ℝ) / 2 ^ N₀)) (N₀ + 1)]
+        apply Finset.sum_congr rfl
+        intro j hj
+        have hj' : j ≤ N₀ := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+        simp only [hgdef, Nat.add_sub_cancel]
+        rw [Nat.choose_symm hj', Nat.cast_sub hj']
+        ring
 
 /-- Initial bound (Lu-BDA §19): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
 `V₊(0)` are `Binomial(N₀, ½)`-distributed (the null signs are i.i.d. fair coins), and the
