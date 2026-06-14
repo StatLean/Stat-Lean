@@ -84,6 +84,55 @@ path 2 (retag + document, leaving the 3 as honest research debts). Phase 1 (the 
 `knockoff_initial_integral_le_binom_sum`) is **closed** regardless — it never depended on the
 filtration.
 
+## RESOLUTION (the correct construction — 2026-06-14)
+
+The tension dissolves with the **count filtration** (not `Filtration.natural Yproc`, not the
+sign-revealing fine filtration):
+
+`𝒢rev n := σ( |W| (all magnitudes), the non-null signs, and the null split-counts
+(V₊(θ_k), V₋(θ_k)) for k ≤ n )`.
+
+Under `𝒢rev n`:
+* `Yproc n = V₊(θ_n)/(1+V₋(θ_n))` is adapted (the split-counts are exposed). ✓
+* `FDPhat(θ_n) = (#S⁻(θ_n)+1)/(#S⁺(θ_n)∨1)` is adapted: `#S±(θ_n) = (non-null ± above θ_n,
+  known from magnitudes + non-null signs) + V±(θ_n)` (known). ⇒ **`FDPhat_atTheta_adapted` is
+  PROVABLE** w.r.t. `𝒢rev`. ✓
+* `Yproc` is a **supermartingale** — the genuine, correct statement.
+
+**Why it is a supermartingale (the exact computation).** Going `n → n+1` raises the threshold past
+the `(n+1)`-th smallest null; by **exchangeability** of the i.i.d. `Ber(½)` null signs, conditional
+on `𝒢rev n` (which fixes only the *counts* `A := V₊(θ_n)`, `B := V₋(θ_n)`, `k := A+B` among the
+`N₀−n` remaining), the removed null's sign is **uniform among the remaining**:
+`E[𝟙(removed = +) | 𝒢rev n] = A/k`, `E[𝟙(removed = −) | 𝒢rev n] = B/k`. The removal is then
+deterministic given which sign: `+ ⇒ (A−1)/(1+B)`, `− ⇒ A/B`. Hence
+```
+E[Yproc(n+1) | 𝒢rev n] = (A/k)·(A−1)/(1+B) + (B/k)·(A/B)
+                       = (A/k)·[ (A−1)/(1+B) + 1 ] = (A/k)·(A+B)/(1+B) = A/(1+B) = Yproc n
+```
+(a martingale equality when `B ≥ 1`; at `B = 0` the `−` branch has probability 0 and the value is
+`A−1 ≤ A`, a strict supermartingale). So `E[Yproc(n+1)|𝒢rev n] ≤ Yproc n` — `step_condExp_le` is
+**TRUE** w.r.t. the count filtration (it was the *one-step/fresh-coin* reading, and the
+`Filtration.natural Yproc` reading, that were wrong).
+
+**This re-bases the scaffold and pins the lone research brick.** `supermartingale_nat` is still
+usable (the one-step inequality now holds), but `step_condExp_le` decomposes as:
+1. `count_condExp` *(the research brick — no Mathlib support)*:
+   `E[𝟙(sign of the (n+1)-th smallest null = +) | 𝒢rev n] =ᵐ V₊(θ_n)/(V₊(θ_n)+V₋(θ_n))`
+   — the conditional expectation of an exchangeable indicator given the count filtration =
+   empirical fraction (sampling-without-replacement / Pólya). This is the genuine nugget.
+2. `step_removal_eq` *(deterministic counting)*: `Yproc(n+1) = 𝟙(+)·(V₊−1)/(1+V₋) + 𝟙(−)·V₊/V₋`.
+3. `step_ratio_le` *(finite inequality, `nlinarith`)*:
+   `(A/k)·(A−1)/(1+B) + (B/k)·(A/B) ≤ A/(1+B)` (`/0 = 0` conventions; `B=0` edge gives `A−1 ≤ A`).
+
+**Reconstruction work-list (Phases 3–4, revised):**
+- (Defs/Procedure, laptop-only) redefine `𝒢rev` as the count filtration; expose `V₊,V₋` as the
+  measurable count process; re-prove `Yproc_adapted` (trivial under the new `𝒢rev`).
+- `FDPhat_atTheta_adapted`: now provable (`FDPhat` = Borel fn of magnitudes + non-null signs + null
+  counts) — Phase 3.
+- `ratio_eq_Yproc_hittingIdx`: unchanged (deterministic order-stat ↔ hitting; Phase 3).
+- `step_condExp_le`: assemble from `count_condExp` (brick) + `step_removal_eq` + `step_ratio_le`
+  (Phase 4). `step_ratio_le` provable now; `count_condExp` is the single documented research brick.
+
 ## State
 
 `mt/area`: green, **3 sorries**, all `Supermartingale.lean` (`step_condExp_le:261`,
