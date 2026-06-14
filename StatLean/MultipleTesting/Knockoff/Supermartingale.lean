@@ -144,12 +144,13 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
     have cfs : ∀ {α : Type*} {s : Finset α} {p : α → Prop} [DecidablePred p],
         (s.filter p).card = ∑ k ∈ s, if p k then (1 : ℕ) else 0 := by
       intros; rw [Finset.card_eq_sum_ones, Finset.sum_filter]
-    -- Inner count measurability: k ↦ #{null k with |W k'| ≤ |W j ω|} is measurable in ω
+    -- Inner count measurability: j ↦ #{k : Fin H₀.card | |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|}
+    -- is measurable in ω. Use explicit parens for .card (|> has lower precedence than <).
     have hCL : ∀ j : Fin d, Measurable (fun ω =>
-        (Finset.univ : Finset (Fin H₀.card)).filter
-          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card) := fun j => by
-      rw [show (fun ω => (Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card) =
+        ((Finset.univ : Finset (Fin H₀.card)).filter
+          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) := fun j => by
+      rw [show (fun ω => ((Finset.univ : Finset (Fin H₀.card)).filter
+            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) =
           fun ω => ∑ k ∈ (Finset.univ : Finset (Fin H₀.card)),
             if |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω| then (1 : ℕ) else 0 from
         funext fun ω => cfs]
@@ -159,25 +160,25 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
     -- Rank condition: θ_n ω ≤ |W j ω| ↔ n < (inner count for j) ω
     have hRk : ∀ (j : Fin d) (ω : Ω),
         θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
-        n < (Finset.univ : Finset (Fin H₀.card)).filter
-          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card :=
+        n < ((Finset.univ : Finset (Fin H₀.card)).filter
+          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card :=
       fun j ω => orderStat_le_iff_card_lt
         (fun k : Fin H₀.card => |W (H₀.orderEmbOfFin rfl k) ω|) ⟨n, h⟩ _
     -- Rewrite Vplus/Vminus via rank condition, then prove measurability as outer sum of indicators
     have hVpMeas : Measurable (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
       have heq : ∀ ω, Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-          (H₀.filter fun j => n <
-            (Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
-            0 < W j ω).card := fun ω => by
+          (H₀.filter (fun j => n <
+            ((Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+            0 < W j ω)).card := fun ω => by
         unfold Vplus Splus; congr 1; ext j
         simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
         exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
                fun ⟨hmem, hrk, hpos⟩ => ⟨⟨(hRk j ω).mpr hrk, hpos⟩, hmem⟩⟩
       rw [show (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
           fun ω => ∑ j ∈ H₀, if (n <
-            (Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            ((Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
             0 < W j ω) then (1 : ℕ) else 0 from
         funext fun ω => by rw [heq ω, cfs]]
       exact Finset.measurable_sum _ fun j _ =>
@@ -187,18 +188,18 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
           measurable_const measurable_const
     have hVmMeas : Measurable (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
       have heq : ∀ ω, Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-          (H₀.filter fun j => n <
-            (Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
-            W j ω < 0).card := fun ω => by
+          (H₀.filter (fun j => n <
+            ((Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+            W j ω < 0)).card := fun ω => by
         unfold Vminus Sminus; congr 1; ext j
         simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
         exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
                fun ⟨hmem, hrk, hneg⟩ => ⟨⟨(hRk j ω).mpr hrk, hneg⟩, hmem⟩⟩
       rw [show (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
           fun ω => ∑ j ∈ H₀, if (n <
-            (Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            ((Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
             W j ω < 0) then (1 : ℕ) else 0 from
         funext fun ω => by rw [heq ω, cfs]]
       exact Finset.measurable_sum _ fun j _ =>
@@ -208,7 +209,7 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
           measurable_const measurable_const
     exact (measurable_from_nat.comp hVpMeas).div
       (measurable_const.add (measurable_from_nat.comp hVmMeas))
-  · simp only [not_lt] at h; simp only [h, ↓reduceDIte]; exact measurable_const
+  · simp only [h, ↓reduceDIte]; exact measurable_const
 
 /-- The reverse filtration: `𝒢rev W H₀ hWmeas n` exposes all null magnitudes plus the signs of
 the n null coordinates with the n smallest magnitudes. Defined as the natural filtration of the
@@ -311,7 +312,7 @@ lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) 
 lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     tauStar W H₀ α ω ≤ (H₀.card : ℕ∞) := by
   simp only [tauStar]
-  exact_mod_cast hittingBtwn_le ω
+  exact WithTop.coe_le_coe.mpr (hittingBtwn_le ω)
 
 /-! ## 6. Bridge: stoppedValue = V₊(t*)/(1+V₋(t*)) -/
 
@@ -320,7 +321,7 @@ The argument: FDPhat is a step-function of all magnitudes; its minimum over `{|W
 FDPhat ≤ α falls in the same half-open interval `[θ_k, θ_{k+1})` as the first null index k
 found by `hittingBtwn`. In that interval V₊ and V₋ (null-restricted counts) are constant, so
 `V₊(tStar)/(1+V₋(tStar)) = V₊(θ_k)/(1+V₋(θ_k)) = Yproc k ω`.
-- **USER-INPUT**: order-statistic analysis; Lu-BDA §19.  -/
+- **USER-INPUT**: order-statistic analysis; Lu-BDA §19. -/
 private lemma ratio_eq_Yproc_hittingIdx
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
