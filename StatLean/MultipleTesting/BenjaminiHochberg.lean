@@ -631,7 +631,7 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
           exact mul_le_mul_of_nonneg_right hAle hBnn
       _ = (α / N) *
             (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal := by
-          field_simp; ring
+          field_simp
   -- the LOO-count events are disjoint, so their measures sum to ≤ 1.
   have sum1 : ∑ k ∈ Finset.Icc 1 N,
       (μ {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k}).toReal ≤ 1 := by
@@ -647,7 +647,7 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
     calc (μ (⋃ k ∈ Finset.Icc 1 N,
           {ω | numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k})).toReal
         ≤ (1 : ℝ≥0∞).toReal :=
-          ENNReal.toReal_mono one_ne_top (le_trans (measure_mono (Set.subset_univ _))
+          ENNReal.toReal_mono ENNReal.one_ne_top (le_trans (measure_mono (Set.subset_univ _))
             (le_of_eq measure_univ))
       _ = 1 := ENNReal.toReal_one
   -- assemble.
