@@ -1,9 +1,13 @@
 # MultipleTesting area — status
 
 ## STATUS: milestone — `mt/area` **green, 0 errors, 3 named sorries** (BH + Holm complete; knockoff
-*assembly* `knockoff_fdr_le` + the **binomial initial reduction** complete; the 3 knockoff
-supermartingale-core residuals remain — and the **construction audit** ([construction_audit.md](construction_audit.md))
-shows they are entangled in a filtration-soundness issue, not mere bookkeeping).
+*assembly* `knockoff_fdr_le` + the **binomial initial reduction** complete). The 3 remaining
+knockoff supermartingale-core residuals are now **unblocked**: the **construction audit**
+([construction_audit.md](construction_audit.md)) found the correct martingale (the **count-filtration
+supermartingale** via exchangeability), and its finite core `step_ratio_le` is **proven**
+(`ForMathlib/BinomialRatio`). Remaining = a filtration re-base + `FDPhat_atTheta_adapted` +
+`ratio_eq_Yproc_hittingIdx` + the lone research brick `count_condExp` (exchangeable conditional
+expectation = empirical fraction; no Mathlib support). See the audit's RESOLUTION + work-list.
 
 Branch `mt/area` (worktree `../Stat-Lean-mt`). Reference: Lu, *Big Data Analysis* ch. 18–19;
 Holm–Bonferroni from Holm (1979).
