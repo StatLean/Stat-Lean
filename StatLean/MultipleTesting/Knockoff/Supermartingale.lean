@@ -3,6 +3,7 @@ import StatLean.MultipleTesting.Knockoff.Defs
 import StatLean.MultipleTesting.Knockoff.Initial
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
+import Mathlib.MeasureTheory.Order.Group.Lattice
 
 /-!
 # Knock-off master inequality (Lu-BDA §19) — the supermartingale core
