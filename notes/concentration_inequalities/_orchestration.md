@@ -91,3 +91,6 @@ REMAINING (hard tail, fighting heavy preemption + intermittent subscription sess
 - ols-hp (thm:mse-ols high-prob, needs subGaussian_coords + max-l2[done]) — not started.
 - bernstein-ineq, mcd-mcdiarmid — assembly theorems, blocked on the above closers.
 LAUNCH ENVELOPE that survives preemption best: PARTITION=hsph,sapphire (drop shared), TIME=2-3h, no --max-usd, MEM=24G, stream-json. rm-worktree+fresh-branch to relaunch. Gate-before-trust always. Per-item prompts in .claude/prompts/. A 4am routine (trig_01T3ZsnHW9nKH9aEhhcu9rDX) reminds user to re-auth + say "continue".
+
+## 2026-06-14 ~00:30 ET — SWITCHED CLUSTER TO OPUS (xhigh effort)
+Sonnet WEEKLY quota exhausted (resets Jun 20). Per user, switched cluster claude to Opus: added to cluster env.Stat-Lean.sh `export ANTHROPIC_MODEL=claude-opus-4-8` + `export MAX_THINKING_TOKENS=31999` (max thinking = xhigh effort). Verified: Opus has quota (test READY; sessions show model=claude-opus-4-8, no Sonnet/Opus limit). Relaunched hard tail on Opus/hsph,sapphire/3h: bernstein-key-r11, mcd-increment-r4, ols-exp-r1. Opus quota on Max is tighter than Sonnet — be efficient.
