@@ -45,11 +45,11 @@ noncomputable def bhRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω 
 /-! ## Helper definitions for the BH proof -/
 
 /-- The BH count: number of p-values at or below `m * α / N`. -/
-private def bhCount {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (m : ℕ) (ω : Ω) : ℕ :=
+private noncomputable def bhCount {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (m : ℕ) (ω : Ω) : ℕ :=
   (Finset.univ.filter (fun j => p j ω ≤ (m : ℝ) * α / (N : ℝ))).card
 
 /-- The BH kmax: the maximum `k ≤ N` with `bhCount ≥ k`. -/
-private def bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : ℕ :=
+private noncomputable def bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : ℕ :=
   ((Finset.range (N + 1)).filter (fun m => m ≤ bhCount α p m ω)).sup id
 
 /-- The BH rejection set expressed via `bhKmax`. -/
@@ -63,7 +63,7 @@ private lemma bhKmax_le {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω
   simp only [bhKmax]
   apply Finset.sup_le
   intro m hm
-  simp only [Finset.mem_filter, Finset.mem_range] at hm
+  simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
   omega
 
 /-- `bhKmax` is in `Finset.range (N + 1)`. -/
@@ -86,7 +86,7 @@ private lemma bhKmax_le_count {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (�
   have hne : S.Nonempty := by
     rw [Finset.nonempty_iff_ne_empty]
     intro h
-    simp only [S, bhKmax, h, Finset.sup_empty] at hK
+    simp [S, bhKmax, h, Finset.sup_empty] at hK
   -- bhKmax = S.sup id ∈ id '' ↑S = ↑S (as a set), so bhKmax ∈ S as finset
   have hmem_S : bhKmax α p ω ∈ S := by
     have h := Finset.sup_mem_of_nonempty (f := id) hne
@@ -105,7 +105,7 @@ private lemma bhCount_lt_of_gt_kmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
     simp only [Finset.mem_filter, Finset.mem_range]
     exact ⟨Nat.lt_succ_of_le hm', h⟩
   have hle : m ≤ ((Finset.range (N + 1)).filter (fun k => k ≤ bhCount α p k ω)).sup id :=
-    Finset.le_sup hmem
+    Finset.le_sup (f := id) hmem
   simp only [bhKmax] at hm
   omega
 
@@ -130,8 +130,8 @@ private lemma bhCount_loo_eq_of_ge {N : ℕ} (α : ℝ) (p : Fin N → Ω → �
 
 /-- For LOO at `i`: when `m * α / N < p i ω` (and `m * α / N ≥ 0`),
 the LOO count exceeds original count by 1. -/
-private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → Ω → ℝ) (i : Fin N)
-    (m : ℕ) (ω : Ω) (hm : ¬ (p i ω ≤ (m : ℝ) * α / (N : ℝ))) :
+private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → Ω → ℝ)
+    (i : Fin N) (m : ℕ) (ω : Ω) (hm : ¬ (p i ω ≤ (m : ℝ) * α / (N : ℝ))) :
     bhCount α (Function.update p i (0 : Ω → ℝ)) m ω = bhCount α p m ω + 1 := by
   push_neg at hm
   -- 0 ≤ m * α / N since m ≥ 0, α > 0, N ≥ 0
@@ -150,13 +150,10 @@ private lemma bhCount_loo_eq_succ_of_lt {N : ℕ} (α : ℝ) (hα : 0 < α) (p :
     simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert]
     by_cases hji : j = i
     · subst hji
-      simp only [Function.update_self]
-      -- 0 ≤ m * α / N (hpos), so LOO includes i; insert means i is in LHS iff (i = i ∨ ...)
-      constructor
-      · intro; left; rfl
-      · intro; exact hpos
-    · simp only [Function.update_of_ne hji, or_iff_right (Ne.symm hji)]
-  rw [hset_eq, Finset.card_insert_of_not_mem hi_not_mem]
+      -- (0 : Ω → ℝ) i_val ω = 0 ≤ m*α/N; and i = i, so i ∈ insert i (filter)
+      simp [Function.update_self, Pi.zero_apply, hpos]
+    · simp only [Function.update_of_ne hji, or_iff_right hji]
+  rw [hset_eq, Finset.card_insert_of_notMem hi_not_mem]
 
 /-- The BH kmax is unchanged by replacing `p i` with `0` when `i ∈ bhRejects α p ω`. -/
 private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → Ω → ℝ)
@@ -173,11 +170,12 @@ private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → �
     simp only [bhKmax]
     apply Finset.sup_le
     intro m hm
-    simp only [Finset.mem_filter, Finset.mem_range] at hm
+    simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     obtain ⟨hmN, hm_count⟩ := hm
     -- We need m ≤ K. Suppose m > K.
     by_contra h
     push_neg at h
+    -- h : K < m (push_neg on ¬(m ≤ K) gives K < m in ℕ)
     have hmN' : m ≤ N := Nat.lt_succ_iff.mp hmN
     -- For m > K, bhCount p m < m
     have hc_lt : bhCount α p m ω < m := bhCount_lt_of_gt_kmax α p ω m h hmN'
@@ -187,7 +185,20 @@ private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → �
         apply div_nonneg (mul_nonneg (Nat.cast_nonneg m) (le_of_lt hα))
         exact Nat.cast_nonneg N
       rw [bhCount_loo_eq_of_ge α p i m ω hge hpos] at hm_count; omega
-    · rw [bhCount_loo_eq_succ_of_lt α hα p i m ω hge] at hm_count; omega
+    · -- p i ω > m*α/N but p i ω ≤ K*α/N (hmem), so m < K; contradicts h : K < m
+      have hge' : (m : ℝ) * α / N < p i ω := not_le.mp hge
+      -- N > 0: m ≤ N and m > K (from h ≥ 0 forcing m ≥ 1)
+      have hN_pos : (0 : ℝ) < (N : ℝ) := by
+        have hm_pos : 0 < m := by omega
+        exact_mod_cast Nat.lt_of_lt_of_le hm_pos hmN'
+      have haN : (0 : ℝ) < α / N := div_pos hα hN_pos
+      -- m * α/N < p i ω ≤ K * α/N implies m * (α/N) < K * (α/N)
+      have hlt : (m : ℝ) * (α / N) < (K : ℝ) * (α / N) := by
+        have hmid : (m : ℝ) * α / N < (K : ℝ) * α / N := lt_of_lt_of_le hge' hmem
+        linarith [show (m : ℝ) * (α / N) = m * α / N from by ring,
+                  show (K : ℝ) * (α / N) = K * α / N from by ring]
+      have hmK : m < K := by exact_mod_cast (mul_lt_mul_right haN).mp hlt
+      omega
   · -- K ≤ bhKmax loo: K is in the loo filter
     by_cases hK0 : K = 0
     · simp [hK0]
@@ -204,7 +215,7 @@ private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → �
           (fun m => m ≤ bhCount α (Function.update p i (0 : Ω → ℝ)) m ω)) := by
         simp only [Finset.mem_filter, Finset.mem_range]
         exact ⟨Nat.lt_succ_of_le (bhKmax_le α p ω), hloo_K⟩
-      exact le_trans (Finset.le_sup hK_mem) le_rfl
+      exact Finset.le_sup (f := id) hK_mem
 
 /-- The rejection set is unchanged by LOO replacement when `i ∈ bhRejects α p ω`. -/
 private lemma bhRejects_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → Ω → ℝ)
@@ -249,14 +260,12 @@ private lemma measurable_bhCount {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     (hmeas : ∀ j, Measurable (p j)) (m : ℕ) :
     Measurable (fun ω => bhCount α p m ω) := by
   simp only [bhCount]
-  rw [show (fun ω => (Finset.univ.filter (fun j : Fin N =>
+  have heq : (fun ω => (Finset.univ.filter (fun j : Fin N =>
           p j ω ≤ (m : ℝ) * α / (N : ℝ))).card) =
-      fun ω => ∑ j : Fin N, if p j ω ≤ (m : ℝ) * α / (N : ℝ) then 1 else 0 from by
+      fun ω => ∑ j : Fin N, if p j ω ≤ (m : ℝ) * α / (N : ℝ) then 1 else 0 := by
     ext ω
-    have h := @Finset.sum_boole (Fin N) ℕ _ Finset.univ
-        (fun j => p j ω ≤ (m : ℝ) * α / (N : ℝ)) _
-    simp only [Nat.cast_id] at h
-    exact h.symm]
+    simp only [Finset.sum_boole, Nat.cast_id]
+  rw [heq]
   exact Finset.measurable_sum Finset.univ fun j _ =>
     Measurable.ite (measurableSet_le (hmeas j) measurable_const)
       measurable_const measurable_const
@@ -267,12 +276,12 @@ private lemma bhKmax_le_iff {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω 
   constructor
   · intro hle m hm
     rw [Finset.mem_Ioc] at hm
-    exact bhCount_lt_of_gt_kmax α p ω m (Nat.lt_of_lt_of_le hm.1 hle) hm.2
+    exact bhCount_lt_of_gt_kmax α p ω m (Nat.lt_of_le_of_lt hle hm.1) hm.2
   · intro h
     simp only [bhKmax]
     apply Finset.sup_le
     intro m hm
-    simp only [Finset.mem_filter, Finset.mem_range, id] at hm
+    simp only [Finset.mem_filter, Finset.mem_range, id] at hm ⊢
     by_contra hgt
     push_neg at hgt
     have hlt := h m (Finset.mem_Ioc.mpr ⟨hgt, Nat.lt_succ_iff.mp hm.1⟩)
@@ -283,15 +292,17 @@ private lemma measurable_bhKmax {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     (hmeas : ∀ j, Measurable (p j)) :
     Measurable (fun ω => bhKmax α p ω) := by
   have hmeas_le : ∀ k : ℕ, MeasurableSet {ω | bhKmax α p ω ≤ k} := fun k => by
-    rw [show {ω | bhKmax α p ω ≤ k} =
-        ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} from by
+    have heq : {ω | bhKmax α p ω ≤ k} =
+        ⋂ m ∈ (Finset.Ioc k N : Set ℕ), {ω | bhCount α p m ω < m} := by
       ext ω
-      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe, Finset.mem_Ioc]
-      exact bhKmax_le_iff α p ω]
+      simp only [Set.mem_setOf_eq, Set.mem_iInter₂, Finset.mem_coe]
+      exact bhKmax_le_iff α p ω
+    rw [heq]
     exact MeasurableSet.biInter (Finset.countable_toSet _) fun m _ =>
       measurableSet_lt (measurable_bhCount α p hmeas m) measurable_const
   apply measurable_to_countable'
   intro k
+  change MeasurableSet {ω | bhKmax α p ω = k}
   rw [show {ω | bhKmax α p ω = k} =
       {ω | bhKmax α p ω ≤ k} ∩ {ω | k ≤ bhKmax α p ω} from by
     ext ω; simp only [Set.mem_inter_iff, Set.mem_setOf_eq]; exact le_antisymm_iff]
@@ -308,22 +319,25 @@ private lemma measurableSet_bhRejects_mem {N : ℕ} (α : ℝ) (p : Fin N → Ω
     (hmeas : ∀ j, Measurable (p j)) (i : Fin N) :
     MeasurableSet {ω | i ∈ bhRejects α p ω} := by
   simp only [bhRejects_eq_filter, Finset.mem_filter, Finset.mem_univ, true_and]
-  exact measurableSet_le (hmeas i)
-    ((measurable_natCast.comp (measurable_bhKmax α p hmeas)).mul_const α |>.div_const (N : ℝ))
+  -- Nat.cast : ℕ → ℝ is measurable since ℕ has the discrete (⊤) measurable space
+  have h_cast : Measurable (fun ω => (bhKmax α p ω : ℝ)) :=
+    measurable_from_top.comp (measurable_bhKmax α p hmeas)
+  have h_mul : Measurable (fun ω => (bhKmax α p ω : ℝ) * α) := h_cast.mul_const α
+  have h_div : Measurable (fun ω => (bhKmax α p ω : ℝ) * α / (N : ℝ)) := h_mul.div_const N
+  exact measurableSet_le (hmeas i) h_div
 
 /-- Measurability of `numRejections (bhRejects α p)` as a function of ω. -/
 private lemma measurable_numRejections_bhRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ)
     (hmeas : ∀ j, Measurable (p j)) :
     Measurable (fun ω => numRejections (bhRejects α p) ω) := by
   simp only [numRejections]
-  rw [show (fun ω => (bhRejects α p ω).card) =
-      fun ω => ∑ j : Fin N, if j ∈ bhRejects α p ω then 1 else 0 from by
+  have heq : (fun ω => (bhRejects α p ω).card) =
+      fun ω => ∑ j : Fin N, if j ∈ bhRejects α p ω then 1 else 0 := by
     ext ω
-    have h := @Finset.sum_boole (Fin N) ℕ _ Finset.univ (fun j => j ∈ bhRejects α p ω) _
-    simp only [Nat.cast_id,
-               show Finset.univ.filter (fun j : Fin N => j ∈ bhRejects α p ω) =
-                   bhRejects α p ω from by ext j; simp] at h
-    exact h.symm]
+    have hfilt : Finset.univ.filter (fun j : Fin N => j ∈ bhRejects α p ω) =
+        bhRejects α p ω := by ext j; simp
+    simp only [Finset.sum_boole, Nat.cast_id, hfilt]
+  rw [heq]
   exact Finset.measurable_sum Finset.univ fun j _ =>
     Measurable.ite (measurableSet_bhRejects_mem α p hmeas j)
       measurable_const measurable_const
@@ -336,14 +350,15 @@ private lemma measurable_bh_summand {N : ℕ} (α : ℝ) (hα : 0 < α)
   apply Measurable.div
   · exact Measurable.ite (measurableSet_bhRejects_mem α p hmeas i)
       measurable_const measurable_const
-  · exact (measurable_natCast.comp
-        (measurable_numRejections_bhRejects α p hmeas)).max measurable_const
+  · have h_cast : Measurable (fun ω => (numRejections (bhRejects α p) ω : ℝ)) :=
+      measurable_from_top.comp (measurable_numRejections_bhRejects α p hmeas)
+    exact Measurable.max h_cast measurable_const
 
 /-- The BH per-null summand is pointwise bounded by 1. -/
 private lemma bh_summand_le_one {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (i : Fin N) (ω : Ω) :
     ‖(if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
         max (numRejections (bhRejects α p) ω : ℝ) 1‖ ≤ ‖(1 : ℝ)‖ := by
-  simp only [Real.norm_one]
+  simp only [norm_one]
   have hd_pos : 0 < max (numRejections (bhRejects α p) ω : ℝ) 1 :=
     lt_of_lt_of_le one_pos (le_max_right _ _)
   rw [Real.norm_of_nonneg (div_nonneg (by split_ifs <;> simp) (le_of_lt hd_pos))]
@@ -358,7 +373,7 @@ private lemma integrable_bh_summand {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 <
     Integrable (fun ω => (if i ∈ bhRejects α p ω then (1 : ℝ) else 0) /
         max (numRejections (bhRejects α p) ω : ℝ) 1) μ := by
   -- Bounded by the constant 1, which is integrable on a probability space.
-  apply Integrable.mono (integrable_const 1)
+  apply Integrable.mono (integrable_const (1 : ℝ))
   · exact (measurable_bh_summand α hα p hmeas i).aestronglyMeasurable
   · exact Filter.Eventually.of_forall (bh_summand_le_one α p i)
 
