@@ -140,24 +140,17 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
   unfold Yproc
   by_cases h : n < H₀.card
   · simp only [h, ↓reduceDIte]
-    -- General helper: (s.filter p).card = ∑ k ∈ s, if p k then 1 else 0
-    have cfs : ∀ {α : Type*} {s : Finset α} {p : α → Prop} [DecidablePred p],
-        (s.filter p).card = ∑ k ∈ s, if p k then (1 : ℕ) else 0 := by
-      intros; rw [Finset.card_eq_sum_ones, Finset.sum_filter]
     -- Inner count measurability: j ↦ #{k : Fin H₀.card | |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|}
-    -- is measurable in ω. Use explicit parens for .card (|> has lower precedence than <).
+    -- Use simp_rw (rewrites under binders) to convert .card to a sum of indicators,
+    -- avoiding universe-polymorphic `cfs` helper that leaks universe variables.
     have hCL : ∀ j : Fin d, Measurable (fun ω =>
         ((Finset.univ : Finset (Fin H₀.card)).filter
           (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) := fun j => by
-      rw [show (fun ω => ((Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) =
-          fun ω => ∑ k ∈ (Finset.univ : Finset (Fin H₀.card)),
-            if |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω| then (1 : ℕ) else 0 from
-        funext fun ω => cfs]
+      simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
       exact Finset.measurable_sum _ fun k _ =>
         Measurable.ite (measurableSet_le ((hWmeas _).abs) ((hWmeas j).abs))
           measurable_const measurable_const
-    -- Rank condition: θ_n ω ≤ |W j ω| ↔ n < (inner count for j) ω
+    -- Rank condition: θ_n ω ≤ |W j ω| ↔ n < (inner count for j at ω)
     have hRk : ∀ (j : Fin d) (ω : Ω),
         θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
         n < ((Finset.univ : Finset (Fin H₀.card)).filter
@@ -175,12 +168,7 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
         simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
         exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
                fun ⟨hmem, hrk, hpos⟩ => ⟨⟨(hRk j ω).mpr hrk, hpos⟩, hmem⟩⟩
-      rw [show (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
-          fun ω => ∑ j ∈ H₀, if (n <
-            ((Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
-            0 < W j ω) then (1 : ℕ) else 0 from
-        funext fun ω => by rw [heq ω, cfs]]
+      simp_rw [heq, Finset.card_eq_sum_ones, Finset.sum_filter]
       exact Finset.measurable_sum _ fun j _ =>
         Measurable.ite (MeasurableSet.inter
           (measurableSet_lt measurable_const (hCL j))
@@ -196,12 +184,7 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
         simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
         exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
                fun ⟨hmem, hrk, hneg⟩ => ⟨⟨(hRk j ω).mpr hrk, hneg⟩, hmem⟩⟩
-      rw [show (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
-          fun ω => ∑ j ∈ H₀, if (n <
-            ((Finset.univ : Finset (Fin H₀.card)).filter
-              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
-            W j ω < 0) then (1 : ℕ) else 0 from
-        funext fun ω => by rw [heq ω, cfs]]
+      simp_rw [heq, Finset.card_eq_sum_ones, Finset.sum_filter]
       exact Finset.measurable_sum _ fun j _ =>
         Measurable.ite (MeasurableSet.inter
           (measurableSet_lt measurable_const (hCL j))
@@ -307,6 +290,7 @@ lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) 
   unfold tauStar
   exact Adapted.isStoppingTime_hittingBtwn (FDPhat_atTheta_adapted W H₀ α hWmeas) measurableSet_Iic
 
+omit mΩ in
 /-- `tauStar W H₀ α ω ≤ H₀.card` for all ω: bounded by the total number of nulls.
 - **LEAN-ONLY**: from `hittingBtwn_le` applied to the hitting time bound. -/
 lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
