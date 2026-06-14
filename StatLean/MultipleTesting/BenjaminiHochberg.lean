@@ -197,7 +197,7 @@ private lemma bhKmax_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N → �
         have hmid : (m : ℝ) * α / N < (K : ℝ) * α / N := lt_of_lt_of_le hge' hmem
         linarith [show (m : ℝ) * (α / N) = m * α / N from by ring,
                   show (K : ℝ) * (α / N) = K * α / N from by ring]
-      have hmK : m < K := by exact_mod_cast (mul_lt_mul_right haN).mp hlt
+      have hmK : m < K := by exact_mod_cast lt_of_mul_lt_mul_right hlt haN.le
       omega
   · -- K ≤ bhKmax loo: K is in the loo filter
     by_cases hK0 : K = 0
@@ -362,7 +362,7 @@ private lemma bh_summand_le_one {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) 
   have hd_pos : 0 < max (numRejections (bhRejects α p) ω : ℝ) 1 :=
     lt_of_lt_of_le one_pos (le_max_right _ _)
   rw [Real.norm_of_nonneg (div_nonneg (by split_ifs <;> simp) (le_of_lt hd_pos))]
-  apply div_le_one_of_le
+  apply div_le_one_of_le₀
   · split_ifs <;> simp
   · exact le_of_lt hd_pos
 
