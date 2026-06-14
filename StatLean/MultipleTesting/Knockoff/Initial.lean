@@ -1,6 +1,10 @@
 import StatLean.MultipleTesting.Knockoff.Procedure
 import StatLean.MultipleTesting.Knockoff.Defs
 import StatLean.MultipleTesting.ForMathlib.BinomialRatio
+import Mathlib.Probability.Independence.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.Data.Finset.Powerset
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Knock-off initial bound (Lu-BDA §19)
@@ -128,13 +132,143 @@ private lemma binom_ratio_sum_le_one_local (N : ℕ) :
     field_simp
   linarith [hN, hN1]
 
+/-! ## Distribution of `V₋(0)`: the i.i.d. fair-sign / Binomial(N₀,½) reduction -/
+
+/-- `V₋(0) ω` counts the negative nulls. -/
+private lemma Vminus0_eq_filter_card (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
+    Vminus W H₀ 0 ω = (H₀.filter (fun j => W j ω < 0)).card := by
+  unfold Vminus
+  rw [Sminus_zero]
+  congr 1
+  ext j
+  simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+  tauto
+
+omit mΩ in
+private lemma Vminus0_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
+    Vminus W H₀ 0 ω ≤ H₀.card := by
+  rw [Vminus0_eq_filter_card]; exact Finset.card_filter_le _ _
+
+/-- `sgnReal W j` is measurable. -/
+private lemma measurable_sgnReal (W : Fin d → Ω → ℝ) (hW : ∀ j, Measurable (W j)) (j : Fin d) :
+    Measurable (fun ω => sgnReal W j ω) :=
+  Measurable.ite (measurableSet_le measurable_const (hW j)) measurable_const measurable_const
+
+/-- `V₋(0)` is measurable. -/
+private lemma measurable_Vminus0 (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hW : ∀ j, Measurable (W j)) : Measurable (fun ω => Vminus W H₀ 0 ω) := by
+  have heq : (fun ω => Vminus W H₀ 0 ω) =
+      fun ω => ∑ j ∈ H₀, if W j ω < 0 then 1 else 0 := by
+    funext ω; rw [Vminus0_eq_filter_card, Finset.card_filter]
+  rw [heq]
+  exact Finset.measurable_sum _ fun j _ =>
+    Measurable.ite (measurableSet_lt (hW j) measurable_const) measurable_const measurable_const
+
+/-- The sign-configuration cell for a candidate negative set `T ⊆ H₀`. -/
+private def signCell (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (T : Finset (Fin d)) : Set Ω :=
+  ⋂ i ∈ (Finset.univ : Finset H₀),
+    (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' (if (i : Fin d) ∈ T then {(-1 : ℝ)} else {(1 : ℝ)})
+
+/-- Each cell has probability `2^{-N₀}` (i.i.d. fair signs). -/
+private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : Fin d → Ω → ℝ)
+    (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) (T : Finset (Fin d)) :
+    μ (signCell W H₀ T) = (1 / 2) ^ H₀.card := by
+  rw [signCell, hW.signs_iIndep.measure_inter_preimage_eq_mul Finset.univ
+      (fun i _ => by split_ifs <;> exact measurableSet_singleton _)]
+  have hfac : ∀ i : H₀,
+      μ ((fun ω => sgnReal W (i : Fin d) ω) ⁻¹'
+        (if (i : Fin d) ∈ T then {(-1 : ℝ)} else {(1 : ℝ)})) = 1 / 2 := by
+    intro i
+    have hge : {ω | (0 : ℝ) ≤ W (i : Fin d) ω} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {1} := by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, sgnReal]
+      split_ifs with h <;> simp_all
+    have hlt : {ω | W (i : Fin d) ω < 0} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {-1} := by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, sgnReal]
+      split_ifs with h <;> simp_all <;> linarith
+    split_ifs with h
+    · rw [← hlt]
+      have hcompl : {ω | W (i : Fin d) ω < 0} = {ω | (0 : ℝ) ≤ W (i : Fin d) ω}ᶜ := by
+        ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+      rw [hcompl, prob_compl_eq_one_sub
+        (measurableSet_le measurable_const (hW.meas (i : Fin d))), hW.signs_fair _ i.2]
+      rw [show (1 : ℝ≥0∞) = 1 / 2 + 1 / 2 by rw [ENNReal.div_add_div_same]; norm_num,
+        ENNReal.add_sub_cancel_left (by simp)]
+    · rw [← hge]; exact hW.signs_fair _ i.2
+  rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ,
+    Fintype.card_coe]
+
+/-- The negative-null count has the Binomial(N₀,½) law. -/
+private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : Fin d → Ω → ℝ)
+    (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) (m : ℕ) :
+    μ {ω | Vminus W H₀ 0 ω = m} = (H₀.card.choose m : ℝ≥0∞) * (1 / 2) ^ H₀.card := by
+  classical
+  -- membership in a cell ⟺ negative-null set equals T
+  have hcell_iff : ∀ (T : Finset (Fin d)), T ⊆ H₀ → ∀ ω,
+      ω ∈ signCell W H₀ T ↔ H₀.filter (fun j => W j ω < 0) = T := by
+    intro T hT ω
+    rw [signCell]
+    simp only [Set.mem_iInter, Finset.mem_univ, forall_true_left, Set.mem_preimage,
+      Subtype.forall]
+    constructor
+    · intro h
+      ext j
+      simp only [Finset.mem_filter]
+      constructor
+      · rintro ⟨hjH, hjlt⟩
+        by_contra hjT
+        have := h j hjH
+        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal] at this
+        rw [if_neg (not_le.mpr hjlt)] at this; norm_num at this
+      · intro hjT
+        have hjH := hT hjT
+        refine ⟨hjH, ?_⟩
+        have := h j hjH
+        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal] at this
+        by_contra hjnlt
+        rw [if_pos (not_lt.mp hjnlt)] at this; norm_num at this
+    · intro hfilt j hjH
+      by_cases hjT : j ∈ T
+      · have hjlt : W j ω < 0 := by
+          have : j ∈ H₀.filter (fun j => W j ω < 0) := hfilt ▸ hjT
+          exact (Finset.mem_filter.mp this).2
+        simp only [hjT, if_true, Set.mem_singleton_iff, sgnReal, if_neg (not_le.mpr hjlt)]
+      · have hjnlt : ¬ W j ω < 0 := by
+          intro hlt
+          exact hjT (hfilt ▸ Finset.mem_filter.mpr ⟨hjH, hlt⟩)
+        simp only [hjT, if_false, Set.mem_singleton_iff, sgnReal, if_pos (not_lt.mp hjnlt)]
+  -- decompose the event as a disjoint union of cells over T ∈ powersetCard m H₀
+  have hdecomp : {ω | Vminus W H₀ 0 ω = m} =
+      ⋃ T ∈ H₀.powersetCard m, signCell W H₀ T := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_powersetCard, exists_prop]
+    rw [Vminus0_eq_filter_card]
+    constructor
+    · intro hcard
+      exact ⟨H₀.filter (fun j => W j ω < 0), ⟨Finset.filter_subset _ _, hcard⟩,
+        (hcell_iff _ (Finset.filter_subset _ _) ω).mpr rfl⟩
+    · rintro ⟨T, ⟨hTsub, hTcard⟩, hmem⟩
+      rw [(hcell_iff T hTsub ω).mp hmem]; exact hTcard
+  rw [hdecomp]
+  rw [measure_biUnion_finset]
+  · rw [Finset.sum_congr rfl (fun T _ => signCell_measure μ W H₀ hW T), Finset.sum_const,
+      Finset.card_powersetCard, nsmul_eq_mul]
+  · -- disjointness
+    intro T hT T' hT' hne
+    rw [Function.onFun, Set.disjoint_left]
+    intro ω hω hω'
+    apply hne
+    rw [← (hcell_iff T (Finset.mem_powersetCard.mp hT).1 ω).mp hω,
+      ← (hcell_iff T' (Finset.mem_powersetCard.mp hT').1 ω).mp hω']
+  · -- measurability of each cell
+    intro T _
+    apply MeasurableSet.biInter (Finset.countable_toSet _)
+    intro i _
+    exact (measurable_sgnReal W hW.meas _) (by split_ifs <;> exact measurableSet_singleton _)
+
 /-- The integral `E[V₊(0)/(1+V₋(0))]` is bounded by the binomial ratio sum (Lu-BDA §19).
-Proof outline: `V₊(0) ≤ N₀ − V₋(0)` pointwise (`vplus_add_vminus_le`), so
-`E[V₊(0)/(1+V₋(0))] ≤ E[(N₀−V₋(0))/(1+V₋(0))]` by monotone integration. Since
-`sgnReal W j ω = −1 ↔ W j ω < 0`, we have `V₋(0) = #{j ∈ H₀ : sgnReal = −1}`, which
-is the sum of i.i.d. fair coins by `signs_iIndep`/`signs_fair`, i.e., `V₋(0) ~ Bin(N₀, ½)`.
-The expectation then expands as `∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals
-`∑_k C(N₀,k)/2^{N₀} · k/(1+(N₀−k))` via the substitution `k = N₀−m`. -/
+`V₊(0) ≤ N₀ − V₋(0)` pointwise (`vplus_add_vminus_le`), and `V₋(0) ~ Bin(N₀, ½)` (the null signs
+are i.i.d. fair coins, `prob_Vminus0_eq`), so the expectation expands to
+`∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals the claimed sum via `k = N₀−m`. -/
 lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMeasure μ]
     (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §19, Def. kos
     (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §19
@@ -142,11 +276,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
-  -- Key sub-steps (hard probability half; see docstring for proof plan):
-  -- 1. Pointwise: V₊(0)/(1+V₋(0)) ≤ (N₀−V₋(0))/(1+V₋(0)) via vplus_add_vminus_le
-  -- 2. Monotone integral: ∫ V₊/(1+V₋) ∂μ ≤ ∫ (N₀−V₋)/(1+V₋) ∂μ
-  -- 3. Distribution: V₋(0) ~ Bin(N₀,½) from i.i.d. signs (signs_iIndep + signs_fair)
-  --    → ∫ (N₀−V₋)/(1+V₋) ∂μ = ∑_m C(N₀,m)/2^{N₀}·(N₀−m)/(1+m) = binom_sum
+  -- Assembly (integral partition over the V₋(0) distribution + reindex) — written after the
+  -- distribution helper `prob_Vminus0_eq` is verified.
   sorry
 
 /-- Initial bound (Lu-BDA §19): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
