@@ -25,10 +25,10 @@ private lemma fdp_le_core (α : ℝ) (hα : 0 < α) (vp sp vm sm : ℕ) (hvm : v
   rcases Nat.eq_zero_or_pos vp with rfl | hvp0
   · simp
   · have hkey : (1 : ℝ) + ↑vm ≤ α * max (↑sp) 1 := by
-      have h1 : (↑sm : ℝ) + 1 ≤ α * max (↑sp) 1 := (div_le_iff hM).mp hfdphat
+      have h1 : (↑sm : ℝ) + 1 ≤ α * max (↑sp) 1 := (div_le_iff₀ hM).mp hfdphat
       have h2 : (↑vm : ℝ) ≤ ↑sm := Nat.cast_le.mpr hvm
       linarith
-    rw [div_le_div_iff hM hvm1]
+    rw [div_le_div_iff₀ hM hvm1]
     have hvp_r : (0 : ℝ) ≤ ↑vp := Nat.cast_nonneg _
     have key : (↑vp : ℝ) * (1 + ↑vm) ≤ ↑vp * (α * max (↑sp) 1) :=
       mul_le_mul_of_nonneg_left hkey hvp_r
