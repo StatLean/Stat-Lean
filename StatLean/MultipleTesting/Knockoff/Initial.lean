@@ -325,7 +325,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
       ((measurable_from_top.comp hmVp).div
         (measurable_const.add (measurable_from_top.comp hmVm))).aestronglyMeasurable
     filter_upwards with ω
-    rw [Real.norm_of_nonneg (by positivity),
+    rw [Real.norm_of_nonneg (div_nonneg (Nat.cast_nonneg _) (by positivity)),
       div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
     have hVp : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVp_le ω
     nlinarith [hVp, Nat.cast_nonneg (Vminus W H₀ 0 ω), Nat.cast_nonneg N₀]
@@ -345,9 +345,9 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     intro m
     rw [prob_Vminus0_eq μ W H₀ hW m, ENNReal.toReal_mul, ENNReal.toReal_natCast,
       ENNReal.toReal_pow,
-      show ((1 : ℝ≥0∞) / 2).toReal = 1 / 2 by rw [one_div, ENNReal.toReal_inv,
-        ENNReal.toReal_ofNat]; norm_num]
-    rw [div_pow, one_pow]
+      (show ((1 : ℝ≥0∞) / 2).toReal = 1 / 2 by
+        rw [one_div, ENNReal.toReal_inv, ENNReal.toReal_ofNat]; norm_num)]
+    rw [div_pow, one_pow, mul_one_div]
   -- Step 2: integrate monotonically, expand over the distribution, reindex `m = N₀ − k`.
   calc ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ
       ≤ ∫ ω, g (Vminus W H₀ 0 ω) ∂μ := integral_mono hInt_low hInt_up hpt
