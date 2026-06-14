@@ -325,6 +325,7 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
       ((measurable_from_top.comp hmVp).div
         (measurable_const.add (measurable_from_top.comp hmVm))).aestronglyMeasurable
     filter_upwards with ω
+    change ‖(Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ))‖ ≤ (N₀ : ℝ)
     have hnn : (0 : ℝ) ≤ (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) :=
       div_nonneg (Nat.cast_nonneg _) (by positivity)
     rw [Real.norm_of_nonneg hnn,
@@ -360,8 +361,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
         Set.indicator {ω | Vminus W H₀ 0 ω = m} (fun _ => 1) := by
       funext ω; by_cases h : Vminus W H₀ 0 ω = m <;>
         simp [Set.indicator_apply, Set.mem_setOf_eq, h]
-    rw [h1, integral_indicator_const (1 : ℝ) (hmVm (measurableSet_singleton m)), smul_eq_mul,
-      mul_one]
+    have hms : MeasurableSet {ω | Vminus W H₀ 0 ω = m} := hmVm (measurableSet_singleton m)
+    rw [h1, integral_indicator_const (1 : ℝ) hms, smul_eq_mul, mul_one]
     rfl
   -- Step 2: integrate monotonically, expand over the distribution, reindex `m = N₀ − k`.
   calc ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ
