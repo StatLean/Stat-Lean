@@ -1,0 +1,11 @@
+[2026-06-13T19:58:58-04:00] host=holy7c04103.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-init target=StatLean.MultipleTesting.Knockoff.Initial cpus=4 mem=24G
+--- git status ---
+770b7b7f3e9e604b6891cac119a889b1f87a619f
+?? slurm-logs/
+--- lake env ---
+leanprover/lean4:v4.29.1 (overridden by '/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-init/lean-toolchain')
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
+Lake version 5.0.0-src+f72c35b (Lean version 4.29.1)
+--- lake build StatLean.MultipleTesting.Knockoff.Initial ---
+✔ [2439/2443] Built StatLean.MultipleTesting.FDP.Defs (47s)
