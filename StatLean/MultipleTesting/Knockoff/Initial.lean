@@ -22,6 +22,7 @@ i.i.d. fair-sign distribution of `V₋(0)` — is left as a named sorry.
 -/
 
 open MeasureTheory ProbabilityTheory
+open scoped ENNReal
 
 namespace StatLean.MultipleTesting
 
@@ -179,20 +180,29 @@ private lemma signCell_measure (μ : Measure Ω) [IsProbabilityMeasure μ] (W : 
       μ ((fun ω => sgnReal W (i : Fin d) ω) ⁻¹'
         (if (i : Fin d) ∈ T then {(-1 : ℝ)} else {(1 : ℝ)})) = 1 / 2 := by
     intro i
+    have hsgn1 : ∀ ω, sgnReal W (i : Fin d) ω = 1 ↔ 0 ≤ W (i : Fin d) ω := by
+      intro ω; unfold sgnReal; constructor
+      · intro h; by_contra hc; rw [if_neg hc] at h; norm_num at h
+      · intro h; rw [if_pos h]
+    have hsgnneg : ∀ ω, sgnReal W (i : Fin d) ω = -1 ↔ W (i : Fin d) ω < 0 := by
+      intro ω; unfold sgnReal; constructor
+      · intro h; by_contra hc; rw [if_pos (not_lt.mp hc)] at h; norm_num at h
+      · intro h; rw [if_neg (not_le.mpr h)]
     have hge : {ω | (0 : ℝ) ≤ W (i : Fin d) ω} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, sgnReal]
-      split_ifs with h <;> simp_all
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      exact (hsgn1 ω).symm
     have hlt : {ω | W (i : Fin d) ω < 0} = (fun ω => sgnReal W (i : Fin d) ω) ⁻¹' {-1} := by
-      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff, sgnReal]
-      split_ifs with h <;> simp_all <;> linarith
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      exact (hsgnneg ω).symm
+    have h12 : (1 : ℝ≥0∞) - 1 / 2 = 1 / 2 := by
+      have hsum : (1 : ℝ≥0∞) / 2 + 1 / 2 = 1 := by rw [ENNReal.div_add_div_same]; norm_num
+      rw [← hsum, ENNReal.add_sub_cancel_left (by simp)]
     split_ifs with h
     · rw [← hlt]
       have hcompl : {ω | W (i : Fin d) ω < 0} = {ω | (0 : ℝ) ≤ W (i : Fin d) ω}ᶜ := by
         ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
       rw [hcompl, prob_compl_eq_one_sub
-        (measurableSet_le measurable_const (hW.meas (i : Fin d))), hW.signs_fair _ i.2]
-      rw [show (1 : ℝ≥0∞) = 1 / 2 + 1 / 2 by rw [ENNReal.div_add_div_same]; norm_num,
-        ENNReal.add_sub_cancel_left (by simp)]
+        (measurableSet_le measurable_const (hW.meas (i : Fin d))), hW.signs_fair _ i.2, h12]
     · rw [← hge]; exact hW.signs_fair _ i.2
   rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ,
     Fintype.card_coe]
