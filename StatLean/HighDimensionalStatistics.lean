@@ -2,6 +2,7 @@ import StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 import StatLean.HighDimensionalStatistics.LinearModel.Defs
 import StatLean.HighDimensionalStatistics.Lasso.Defs
 import StatLean.HighDimensionalStatistics.Lasso.DeterministicRate
+import StatLean.HighDimensionalStatistics.Lasso.RandomNoise
 
 /-!
 # HighDimensionalStatistics — area umbrella
