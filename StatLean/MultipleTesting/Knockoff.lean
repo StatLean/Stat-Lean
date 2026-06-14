@@ -44,7 +44,7 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     rw [heq] at hstop_neg
     -- hstop_neg : Integrable (-(stoppedValue Yproc ...)) μ; negate twice
     simpa only [neg_neg] using hstop_neg.neg
-  exact hstop.const_smul α
+  exact Integrable.const_mul hstop α
 
 /-- **Knock-off FDR control** (Lu-BDA §19, Theorem `thm:knockoff`). For a knock-off score `W`, the
 knock-off procedure at level `α` controls the false discovery rate: `FDR ≤ α`. -/
@@ -69,7 +69,7 @@ theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (
       -- Step 2: factor α out of the integral
     _ = α * ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) /
                  (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ := by
-        simp_rw [mul_div_assoc]; exact integral_mul_left α _
+        simp_rw [mul_div_assoc]; exact integral_const_mul α _
       -- Step 3: ∫ ratio ≤ 1, so α · ∫ ratio ≤ α · 1 = α
     _ ≤ α * 1 :=
         mul_le_mul_of_nonneg_left (knockoff_ratio_stopped_le_one μ α W H₀ hW) hα.le
