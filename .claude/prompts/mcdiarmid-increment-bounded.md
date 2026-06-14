@@ -11,7 +11,21 @@ It states that the Doob increment `Δₖ = μ[f∘X | Fₖ] − μ[f∘X | Fₖ�
 `f` (with `Dᵢf ≤ cᵢ`) over INDEPENDENT coordinates `X` lies in an interval of length `≤ cₖ` given
 `Fₖ₋₁` (the conditional range bound), which feeds `condExp_hoeffding_mgf`.
 
-# KEY FACT TO ESTABLISH (the flagged gap)
+# THE LEMMA EXISTS IN MATHLIB (a prior session searched `condDistrib` and missed the `condExp`
+# formulation). USE THESE — do NOT re-search from scratch, do NOT escalate:
+#   • `MeasureTheory.condExp_indep_eq (hle₁ : m₁ ≤ m) (hle₂ : m₂ ≤ m) [SigmaFinite (μ.trim hle₂)]
+#       (hf : StronglyMeasurable[m₁] f) (hindp : Indep m₁ m₂ μ) : μ[f | m₂] =ᵐ[μ] fun _ => μ[f]`
+#     — conditioning an `m₁`-measurable `f` on an INDEPENDENT σ-algebra `m₂` gives the unconditional mean.
+#   • `ProbabilityTheory.iIndepFun.condExp_natural_ae_eq_of_lt (hf : ∀ i, StronglyMeasurable (f i))
+#       (hfi : iIndepFun f μ) (hij : i < j) : μ[f j | Filtration.natural f hf i] =ᵐ[μ] fun _ => μ[f j]`
+#     — the EXACT filtration version: `Xⱼ` conditioned on the natural filtration of the past `= E[Xⱼ]`.
+# `./tools/check.sh 'MeasureTheory.condExp_indep_eq'` and
+# `./tools/check.sh 'ProbabilityTheory.iIndepFun.condExp_natural_ae_eq_of_lt'` to confirm, then build
+# the increment range bound on top: the `Xₖ`-fibre of `μ[f∘X|Fₖ₋₁]` integrates out `Xₖ` against its
+# marginal (by the above), so `Δₖ = μ[f|Fₖ] − μ[f|Fₖ₋₁]` differs only in the `Xₖ` coordinate and its
+# range is `≤ Dₖf ≤ cₖ` by the bounded-difference hypothesis applied pointwise.
+
+# KEY FACT (now resolved — see above):
 Under `iIndepFun X`, the conditional law of `Xₖ` given `Fₖ₋₁ = σ(X₀,…,Xₖ₋₁)` is the MARGINAL law:
 `condDistrib Xₖ (Fₖ₋₁-measurable data) μ = μ.map Xₖ` a.e. — i.e. conditioning on the past does not
 change `Xₖ`'s distribution. SEARCH HARD before concluding it's missing:
