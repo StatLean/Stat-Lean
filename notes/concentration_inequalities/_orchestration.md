@@ -52,7 +52,7 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
 | hd-ols-hp           | OLS/MSEHighProb.lean                                       | hd-ols-exp, max-l2                    | BLOCKED | A    | hds/ols-msehighprob            | 0       | —       | subGaussian_coords_of_orthonormal |
 | hd-lasso-defs       | Lasso/Defs.lean                                            | hd-vecnorms                           | MERGED  | L    | (on main, wired) | 1 | 0 | reCone/RestrictedEigenvalue/lassoObjective/IsLassoEstimator; gated green 2324 jobs 0 sorry |
 | hd-lasso-det        | Lasso/DeterministicRate.lean                              | hd-lasso-defs                         | MERGED  | A    | hds/lasso-det-r1 (merged+wired) | 1 | 0 | thm:re ‖β̂−β*‖≤3√s·λ/κ PROVEN gated green 2338 jobs 0 sorry |
-| hd-lasso-rand       | Lasso/RandomNoise.lean                                    | hd-lasso-det, sg-hoeffding, sg-tailbounds | BLOCKED | A | hds/lasso-randomnoise          | 0       | —       | —                                |
+| hd-lasso-rand       | Lasso/RandomNoise.lean                                    | hd-lasso-det, sg-hoeffding, sg-tailbounds | MERGED | A | hds/lasso-rand-r2 (merged+wired) | 3 | 0 | cor:lasso-rate O_P(√(s log d/n)) PROVEN gated green 2861 jobs 0 sorry. Lasso chapter COMPLETE. |
 
 ## Closure = all items MERGED/ACCEPTED_DEBT AND fresh full `lean-fasrc-build` on main rc==0 AND sorry count == exactly these 3 named debts:
 - `condExp_hoeffding_mgf` (mcd-condhoeff)
