@@ -331,7 +331,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
     rw [Real.norm_of_nonneg hnn,
       div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
     have hVp : (Vplus W H₀ 0 ω : ℝ) ≤ (N₀ : ℝ) := by exact_mod_cast hVp_le ω
-    nlinarith [hVp, Nat.cast_nonneg (Vminus W H₀ 0 ω), Nat.cast_nonneg N₀]
+    nlinarith [hVp, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
+      (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
   have hInt_up : Integrable (fun ω => g (Vminus W H₀ 0 ω)) μ := by
     apply Integrable.mono' (integrable_const (N₀ : ℝ))
     · simp only [hgdef]
@@ -344,7 +345,8 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
         div_nonneg (by linarith) (by positivity)
       rw [Real.norm_of_nonneg hnn,
         div_le_iff₀ (by positivity : (0 : ℝ) < 1 + (Vminus W H₀ 0 ω : ℝ))]
-      nlinarith [hVm, Nat.cast_nonneg (Vminus W H₀ 0 ω), Nat.cast_nonneg N₀]
+      nlinarith [hVm, (Nat.cast_nonneg (Vminus W H₀ 0 ω) : (0:ℝ) ≤ _),
+        (Nat.cast_nonneg N₀ : (0:ℝ) ≤ _)]
   -- Helper: each per-value measure equals `C(N₀,m)/2^{N₀}`.
   have htoReal : ∀ m, (μ {ω | Vminus W H₀ 0 ω = m}).toReal = (N₀.choose m : ℝ) / 2 ^ N₀ := by
     intro m
