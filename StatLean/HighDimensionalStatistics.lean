@@ -3,6 +3,7 @@ import StatLean.HighDimensionalStatistics.LinearModel.Defs
 import StatLean.HighDimensionalStatistics.Lasso.Defs
 import StatLean.HighDimensionalStatistics.Lasso.DeterministicRate
 import StatLean.HighDimensionalStatistics.Lasso.RandomNoise
+import StatLean.HighDimensionalStatistics.OLS.MSEExpectation
 
 /-!
 # HighDimensionalStatistics — area umbrella
