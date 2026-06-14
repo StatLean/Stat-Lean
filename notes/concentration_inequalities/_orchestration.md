@@ -81,3 +81,13 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
   INTEGRATION CHECK pass 5: `lean-fasrc-build StatLean.ConcentrationInequalities` (umbrella, all 8 wired modules) = GREEN, 2857 jobs, 0 sorry. The merged CI area compiles together cleanly. (Build pipeline confirmed working despite claude-auth blocker.)
   AUTH RESTORED pass 6: user provided a `claude setup-token` OAuth token (subscription = Max Pro, NOT per-token API). Installed as CLAUDE_CODE_OAUTH_TOKEN in cluster env.Stat-Lean.sh + `unset ANTHROPIC_API_KEY` (force subscription). Verified: `claude -p` returns READY, no 401. stream-json shows sessions doing real tool calls. See [[cluster-claude-launch-conventions]] for refresh procedure.
   WAVE RELAUNCHED pass 6 (full envelope, no --max-usd, 24G, hsph/sapphire/shared, 1:30 walltime, stream-json): conc/max-finmax-r1, conc/max-covnum-r1, conc/bernstein-mgf-r1, hds/vecnorms-r1 — all 4 confirmed authenticating + working via stream. Next queue: subexp-tail(fix), classical-limits(fix), mcd-doob (dep mcd-condhoeff MERGED), subexp-mean, then downstream max-covball/max-l2/bernstein-ineq + HDS linmodel/lasso/ols chain.
+
+## Overnight checkpoint 2026-06-14 ~00:00 ET
+21 modules MERGED 0-sorry + both umbrellas green. Lasso/Maximal/SubExp/SubGaussian/classical chapters COMPLETE. 2/3 hard lemmas done (condExp_hoeffding_mgf, card_le_of_isSeparated_ball).
+REMAINING (hard tail, fighting heavy preemption + intermittent subscription session-limit; SSH/Duo also expires):
+- bernstein_key (Bernstein MGF power-series core) — 9 attempts, reaches ~170 turns then preempted before commit. Attempt 10 on hsph,sapphire + 3h walltime. The 1 sorry blocking Bernstein/MGFBound; also gates bernstein-ineq.
+- increment_bounded_of_bounded_differences (McDiarmid Doob) — NOT a Mathlib gap; lemma = ProbabilityTheory.iIndepFun.condExp_natural_ae_eq_of_lt. Re-closer (r3) running 135+ turns. Gates mcd-doob full → mcd-mcdiarmid.
+- ols-exp (thm:mse-ols expectation, incl subGaussian_coords) — partial, relaunched.
+- ols-hp (thm:mse-ols high-prob, needs subGaussian_coords + max-l2[done]) — not started.
+- bernstein-ineq, mcd-mcdiarmid — assembly theorems, blocked on the above closers.
+LAUNCH ENVELOPE that survives preemption best: PARTITION=hsph,sapphire (drop shared), TIME=2-3h, no --max-usd, MEM=24G, stream-json. rm-worktree+fresh-branch to relaunch. Gate-before-trust always. Per-item prompts in .claude/prompts/. A 4am routine (trig_01T3ZsnHW9nKH9aEhhcu9rDX) reminds user to re-auth + say "continue".
