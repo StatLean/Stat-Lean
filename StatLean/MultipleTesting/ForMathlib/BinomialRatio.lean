@@ -74,7 +74,6 @@ theorem binom_ratio_sum_le_one (N : ℕ) :
     have h2N1 : (2 : ℝ) ^ (N + 1) = 2 * 2 ^ N := by ring
     rw [h2N1]
     field_simp
-    ring
   linarith [hN, hN1]
 
 end StatLean.MultipleTesting
