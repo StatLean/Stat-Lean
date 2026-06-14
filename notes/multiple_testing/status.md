@@ -1,7 +1,9 @@
 # MultipleTesting area — status
 
-## STATUS: milestone — `mt/area` **green, 0 errors, 4 named sorries** (BH + Holm complete; the
-knockoff *assembly* `knockoff_fdr_le` complete; only the 4 knockoff probabilistic cores remain).
+## STATUS: milestone — `mt/area` **green, 0 errors, 3 named sorries** (BH + Holm complete; knockoff
+*assembly* `knockoff_fdr_le` + the **binomial initial reduction** complete; the 3 knockoff
+supermartingale-core residuals remain — and the **construction audit** ([construction_audit.md](construction_audit.md))
+shows they are entangled in a filtration-soundness issue, not mere bookkeeping).
 
 Branch `mt/area` (worktree `../Stat-Lean-mt`). Reference: Lu, *Big Data Analysis* ch. 18–19;
 Holm–Bonferroni from Holm (1979).
