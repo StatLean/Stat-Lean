@@ -1,0 +1,33 @@
+[2026-06-13T21:50:24-04:00] host=holy8a26304.rc.fas.harvard.edu wt=/n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super target=StatLean.MultipleTesting.Knockoff.Supermartingale
+--- git status ---
+a9c0a760f75984afed81d1faa1cd335432027ff6
+?? build-supermartingale.sbatch
+?? slurm-ko-super-build.err
+?? slurm-ko-super-build.out
+--- lake build StatLean.MultipleTesting.Knockoff.Supermartingale ---
+⚠ [2463/2501] Replayed StatLean.MultipleTesting.Knockoff.Initial
+warning: StatLean/MultipleTesting/Knockoff/Initial.lean:23:8: declaration uses `sorry`
+✖ [2547/2547] Building StatLean.MultipleTesting.Knockoff.Supermartingale (15s)
+trace: .> LEAN_PATH=/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/Cli/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/batteries/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/Qq/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/aesop/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/proofwidgets/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/importGraph/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/packages/plausible/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/lake-shared/mathlib/5e932f97dd25535344f80f9dd8da3aab83df0fe6/.lake/build/lib/lean:/n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/build/lib/lean /n/holylabs/junweil_lab/Lab/Users/junweil/elan/toolchains/leanprover--lean4---v4.29.1/bin/lean /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/StatLean/MultipleTesting/Knockoff/Supermartingale.lean -o /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/build/lib/lean/StatLean/MultipleTesting/Knockoff/Supermartingale.olean -i /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/build/lib/lean/StatLean/MultipleTesting/Knockoff/Supermartingale.ilean -c /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/build/ir/StatLean/MultipleTesting/Knockoff/Supermartingale.c --setup /n/holylabs/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.worktrees/mt-ko-super/.lake/build/ir/StatLean/MultipleTesting/Knockoff/Supermartingale.setup.json --json
+error: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:151:53: Invalid field `abs`: The environment does not contain `Function.abs`, so it is not possible to project the field `abs` from an expression
+  hWmeas ?m.100
+of type
+  ∀ ⦃t : Set ℝ⦄, MeasurableSet t → MeasurableSet (W ?m.100 ⁻¹' t)
+error: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:151:70: Invalid field `abs`: The environment does not contain `Function.abs`, so it is not possible to project the field `abs` from an expression
+  hWmeas j
+of type
+  ∀ ⦃t : Set ℝ⦄, MeasurableSet t → MeasurableSet (W j ⁻¹' t)
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:260:6: declaration uses `sorry`
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:292:14: declaration uses `sorry`
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:324:14: declaration uses `sorry`
+error: Lean exited with code 1
+Some required targets logged failures:
+- StatLean.MultipleTesting.Knockoff.Supermartingale
+--- post-build ---
+exit_code=1
+wallclock_seconds=31
+--- sorry inventory ---
+warning: StatLean/MultipleTesting/Knockoff/Initial.lean:23:8: declaration uses `sorry`
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:260:6: declaration uses `sorry`
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:292:14: declaration uses `sorry`
+warning: StatLean/MultipleTesting/Knockoff/Supermartingale.lean:324:14: declaration uses `sorry`
