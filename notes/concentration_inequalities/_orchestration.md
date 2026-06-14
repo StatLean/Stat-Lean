@@ -40,7 +40,7 @@ Target prefix: `StatLean.ConcentrationInequalities.*` (CI) / `StatLean.HighDimen
 | max-l2              | Maximal/L2Maximal.lean                                    | max-finmax, max-covball               | MERGED  | A    | conc/l2-tail-r2 (merged+wired) | 2 | 0 | thm:l2 E‖X‖≤4σ√d + high-prob bound BOTH proven 0-sorry (l2_max_tail closed); wired. Maximal chapter COMPLETE. |
 | mcd-condhoeff       | McDiarmid/CondHoeffding.lean                              | sg-defs                               | MERGED  | B    | (merged)                       | 1       | 0       | condExp_hoeffding_mgf PROVEN 0-sorry (audited: not laundered, derives HasCondSubgaussianMGF via condExpKernel). HARD LEMMA #1 CLOSED. |
 | mcd-doob            | McDiarmid/DoobDecomposition.lean                         | mcd-condhoeff                         | MERGED-PARTIAL | B | conc/mcd-doob-r2 (merged,UNWIRED) | 2 | 1 | Doob martingale+telescope+mgf_sub_expectation_le PROVEN; increment_hasCondSubgaussianMGF CLOSED via condExp_hoeffding_mgf. REMAINING sorry: increment_bounded_of_bounded_differences (line 193) — needs 'iIndepFun ⇒ condDistrib(Xₖ|Fₖ₋₁)=μ.map Xₖ', possible Mathlib gap, ESCALATE-candidate. |
-| mcd-mcdiarmid       | McDiarmid/McDiarmid.lean                                  | mcd-doob                              | BLOCKED | A    | conc/mcdiarmid-mcdiarmid       | 0       | —       | —                           |
+| mcd-mcdiarmid       | McDiarmid/McDiarmid.lean                                  | mcd-doob                              | MERGED  | A    | conc/mcd-mcdiarmid-r1 (merged,UNWIRED) | 1 | 0(new) | McDiarmid bounded-diff inequality PROVEN 0-NEW-sorry (Chernoff on Doob MGF); UNWIRED pending increment_bounded. |
 
 ## HighDimensionalStatistics (Lu ch5, ch8)
 
