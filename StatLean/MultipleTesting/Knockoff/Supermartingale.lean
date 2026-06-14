@@ -110,36 +110,131 @@ lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω)
 
 /-! ## 3. Filtration (𝒢rev) -/
 
-/-- Strong measurability of `Yproc W H₀ n` w.r.t. the ambient sigma-algebra `mΩ`. Requires
-measurability of `W j : Ω → ℝ` for each j ∈ H₀, which is guaranteed under `KnockoffScore` via
-`signs_indep_mag` but left as a named sorry here since W is abstract in this file.
-- **LEAN-ONLY**: measurability adapter; the sorry corresponds to "W is measurable". -/
-private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) :
-    StronglyMeasurable (Yproc W H₀ n) := by
-  sorry
+/-- Rank condition: `orderStat v n ≤ a` iff the count of entries of `v` that are `≤ a` is `> n`.
+Uses `Tuple.lt_card_le_iff_apply_le_of_monotone` (the sorted-tuple characterization) plus
+bijectivity of the sorting permutation `Tuple.sort v`.
+- **LEAN-ONLY**: bridges the order-statistic definition to a measurable count formula. -/
+private lemma orderStat_le_iff_card_lt {m : ℕ} (v : Fin m → ℝ) (n : Fin m) (a : ℝ) :
+    orderStat v n ≤ a ↔ n.val < (Finset.univ.filter (fun k => v k ≤ a)).card := by
+  have h_card : (Finset.univ.filter (fun i : Fin m => orderStat v i ≤ a)).card =
+                (Finset.univ.filter (fun k : Fin m => v k ≤ a)).card :=
+    Finset.card_bij' (fun i _ => Tuple.sort v i) (fun k _ => (Tuple.sort v).symm k)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢; exact hi)
+      (fun k hk => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
+        simp only [orderStat, Equiv.apply_symm_apply]; exact hk)
+      (fun i _ => by simp [Equiv.symm_apply_apply])
+      (fun k _ => by simp [Equiv.apply_symm_apply])
+  rw [show orderStat v n ≤ a ↔ n < (Finset.univ.filter (fun i => orderStat v i ≤ a)).card from
+    (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort v)).symm, h_card]
 
-/-- The reverse filtration: `𝒢rev W H₀ n` exposes all null magnitudes plus the signs of the n
-null coordinates with the n smallest magnitudes. Defined as the natural filtration of the
+/-- Strong measurability of `Yproc W H₀ n` w.r.t. the ambient sigma-algebra `mΩ`. Proved via
+the order-statistic rank condition: `θ_n ≤ |W j|` iff the null-magnitude rank of `|W j|` is `> n`,
+which rewrites `Vplus`/`Vminus` as finite sums of measurable indicators.
+- **LEAN-ONLY**: measurability adapter; requires `hWmeas : ∀ j, Measurable (W j)`. -/
+private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) :
+    StronglyMeasurable (Yproc W H₀ n) := by
+  apply Measurable.stronglyMeasurable
+  unfold Yproc
+  by_cases h : n < H₀.card
+  · simp only [h, ↓reduceDIte]
+    -- General helper: (s.filter p).card = ∑ k ∈ s, if p k then 1 else 0
+    have cfs : ∀ {α : Type*} {s : Finset α} {p : α → Prop} [DecidablePred p],
+        (s.filter p).card = ∑ k ∈ s, if p k then (1 : ℕ) else 0 := by
+      intros; rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+    -- Inner count measurability: k ↦ #{null k with |W k'| ≤ |W j ω|} is measurable in ω
+    have hCL : ∀ j : Fin d, Measurable (fun ω =>
+        (Finset.univ : Finset (Fin H₀.card)).filter
+          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card) := fun j => by
+      rw [show (fun ω => (Finset.univ : Finset (Fin H₀.card)).filter
+            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card) =
+          fun ω => ∑ k ∈ (Finset.univ : Finset (Fin H₀.card)),
+            if |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω| then (1 : ℕ) else 0 from
+        funext fun ω => cfs]
+      exact Finset.measurable_sum _ fun k _ =>
+        Measurable.ite (measurableSet_le ((hWmeas _).abs) ((hWmeas j).abs))
+          measurable_const measurable_const
+    -- Rank condition: θ_n ω ≤ |W j ω| ↔ n < (inner count for j) ω
+    have hRk : ∀ (j : Fin d) (ω : Ω),
+        θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
+        n < (Finset.univ : Finset (Fin H₀.card)).filter
+          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card :=
+      fun j ω => orderStat_le_iff_card_lt
+        (fun k : Fin H₀.card => |W (H₀.orderEmbOfFin rfl k) ω|) ⟨n, h⟩ _
+    -- Rewrite Vplus/Vminus via rank condition, then prove measurability as outer sum of indicators
+    have hVpMeas : Measurable (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
+      have heq : ∀ ω, Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+          (H₀.filter fun j => n <
+            (Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            0 < W j ω).card := fun ω => by
+        unfold Vplus Splus; congr 1; ext j
+        simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+        exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
+               fun ⟨hmem, hrk, hpos⟩ => ⟨⟨(hRk j ω).mpr hrk, hpos⟩, hmem⟩⟩
+      rw [show (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
+          fun ω => ∑ j ∈ H₀, if (n <
+            (Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            0 < W j ω) then (1 : ℕ) else 0 from
+        funext fun ω => by rw [heq ω, cfs]]
+      exact Finset.measurable_sum _ fun j _ =>
+        Measurable.ite (MeasurableSet.inter
+          (measurableSet_lt measurable_const (hCL j))
+          (measurableSet_lt measurable_const (hWmeas j)))
+          measurable_const measurable_const
+    have hVmMeas : Measurable (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
+      have heq : ∀ ω, Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+          (H₀.filter fun j => n <
+            (Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            W j ω < 0).card := fun ω => by
+        unfold Vminus Sminus; congr 1; ext j
+        simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+        exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
+               fun ⟨hmem, hrk, hneg⟩ => ⟨⟨(hRk j ω).mpr hrk, hneg⟩, hmem⟩⟩
+      rw [show (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) =
+          fun ω => ∑ j ∈ H₀, if (n <
+            (Finset.univ : Finset (Fin H₀.card)).filter
+              (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|) |>.card ∧
+            W j ω < 0) then (1 : ℕ) else 0 from
+        funext fun ω => by rw [heq ω, cfs]]
+      exact Finset.measurable_sum _ fun j _ =>
+        Measurable.ite (MeasurableSet.inter
+          (measurableSet_lt measurable_const (hCL j))
+          (measurableSet_lt (hWmeas j) measurable_const))
+          measurable_const measurable_const
+    exact (measurable_from_nat.comp hVpMeas).div
+      (measurable_const.add (measurable_from_nat.comp hVmMeas))
+  · simp only [not_lt] at h; simp only [h, ↓reduceDIte]; exact measurable_const
+
+/-- The reverse filtration: `𝒢rev W H₀ hWmeas n` exposes all null magnitudes plus the signs of
+the n null coordinates with the n smallest magnitudes. Defined as the natural filtration of the
 `Yproc` process; `Yproc n` is then adapted to `𝒢rev n` by construction.
 - **USER-INPUT**: `W`, `H₀` determine the sign process; Lu-BDA §19 (Def. `kos` cond. 3). -/
-noncomputable def 𝒢rev (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) : Filtration ℕ mΩ :=
-  Filtration.natural (Yproc W H₀) (fun n => Yproc_stronglyMeasurable W H₀ n)
+noncomputable def 𝒢rev (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) : Filtration ℕ mΩ :=
+  Filtration.natural (Yproc W H₀) (fun n => Yproc_stronglyMeasurable W H₀ hWmeas n)
 
-/-- `Yproc W H₀` is strongly adapted to `𝒢rev W H₀`: by construction, `𝒢rev` is the natural
-filtration of `Yproc`, so adaptation holds via `Filtration.stronglyAdapted_natural`.
+/-- `Yproc W H₀` is strongly adapted to `𝒢rev W H₀ hWmeas`: by construction, `𝒢rev` is the
+natural filtration of `Yproc`, so adaptation holds via `Filtration.stronglyAdapted_natural`.
 - **USER-INPUT**: adaptation follows from the KnockoffScore sign structure; Lu-BDA §19. -/
-lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) :
-    StronglyAdapted (𝒢rev W H₀) (Yproc W H₀) :=
-  Filtration.stronglyAdapted_natural (fun n => Yproc_stronglyMeasurable W H₀ n)
+lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) :
+    StronglyAdapted (𝒢rev W H₀ hWmeas) (Yproc W H₀) :=
+  Filtration.stronglyAdapted_natural (fun n => Yproc_stronglyMeasurable W H₀ hWmeas n)
 
 /-- `Yproc W H₀ n` is μ-integrable: it is bounded in `[0, H₀.card]` and μ is a probability
 measure (hence finite), so integrability follows from `integrable_const` + `Integrable.mono'`.
 - **LEAN-ONLY**: integrability from the finiteness of μ and the bound H₀.card on Yproc. -/
 lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (n : ℕ) :
     Integrable (Yproc W H₀ n) μ := by
   apply Integrable.mono' (integrable_const (H₀.card : ℝ))
-    (Yproc_stronglyMeasurable W H₀ n).aestronglyMeasurable
+    (Yproc_stronglyMeasurable W H₀ hWmeas n).aestronglyMeasurable
   filter_upwards with ω
   rw [Real.norm_of_nonneg (Yproc_nonneg W H₀ n ω)]
   unfold Yproc
@@ -165,17 +260,17 @@ integrating out via `iIndepFun.condExp_natural_ae_eq_of_lt`, the ratio decreases
   Lu-BDA §19 (Def. `kos` cond. 3). -/
 lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) (n : ℕ) :
-    μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ n] ≤ᵐ[μ] Yproc W H₀ n := by
+    μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
   sorry
 
-/-- `Yproc W H₀` is a supermartingale w.r.t. `𝒢rev W H₀`. Assembled from `supermartingale_nat`
-applied to the sorry'd `step_condExp_le`; all hypotheses of `supermartingale_nat` are in scope. -/
+/-- `Yproc W H₀` is a supermartingale w.r.t. `𝒢rev W H₀ hW.meas`. Assembled from
+`supermartingale_nat` applied to the sorry'd `step_condExp_le`; all hypotheses are in scope. -/
 lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) :
-    Supermartingale (Yproc W H₀) (𝒢rev W H₀) μ :=
+    Supermartingale (Yproc W H₀) (𝒢rev W H₀ hW.meas) μ :=
   supermartingale_nat
-    (Yproc_adapted W H₀)
-    (fun n => Yproc_integrable W H₀ μ n)
+    (Yproc_adapted W H₀ hW.meas)
+    (fun n => Yproc_integrable W H₀ hW.meas μ n)
     (fun n => step_condExp_le W H₀ μ hW n)
 
 /-! ## 5. Stopping time (tauStar) -/
@@ -189,25 +284,27 @@ noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α
     (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
     (Set.Iic α) 0 H₀.card ω)
 
-/-- The FDPhat-at-θ process `n ↦ FDPhat W (θ W H₀ n ω) ω` is adapted to `𝒢rev W H₀`.
+/-- The FDPhat-at-θ process `n ↦ FDPhat W (θ W H₀ n ω) ω` is adapted to `𝒢rev W H₀ hWmeas`.
 The adaptation requires measurability of `FDPhat W (θ_n ω) ω` w.r.t. the natural filtration of
 `Yproc`, i.e., that FDPhat at the n-th null magnitude is a Borel function of `(Yproc k ω)_{k≤n}`.
 This holds because FDPhat(θ_n) depends on the sign information at level n (the same information
 that `Yproc n` aggregates), but the formal proof requires measurable-space comap analysis.
 - **USER-INPUT**: adaptedness from sign structure; Lu-BDA §19 (Def. `kos` cond. 3). -/
-private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) :
-    Adapted (𝒢rev W H₀)
+private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
+    (hWmeas : ∀ j, Measurable (W j)) :
+    Adapted (𝒢rev W H₀ hWmeas)
       (fun (n : ℕ) (ω : Ω) =>
         if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1) := by
   sorry
 
-/-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀`, being a hitting time of an
+/-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀ hWmeas`, being a hitting time of an
 adapted process to a measurable set.
 - **USER-INPUT**: stopping-time property from `Adapted.isStoppingTime_hittingBtwn`; Lu-BDA §19. -/
-lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) :
-    IsStoppingTime (𝒢rev W H₀) (tauStar W H₀ α) := by
+lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
+    (hWmeas : ∀ j, Measurable (W j)) :
+    IsStoppingTime (𝒢rev W H₀ hWmeas) (tauStar W H₀ α) := by
   unfold tauStar
-  exact Adapted.isStoppingTime_hittingBtwn (FDPhat_atTheta_adapted W H₀ α) measurableSet_Iic
+  exact Adapted.isStoppingTime_hittingBtwn (FDPhat_atTheta_adapted W H₀ α hWmeas) measurableSet_Iic
 
 /-- `tauStar W H₀ α ω ≤ H₀.card` for all ω: bounded by the total number of nulls.
 - **LEAN-ONLY**: from `hittingBtwn_le` applied to the hitting time bound. -/
@@ -241,9 +338,8 @@ lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
     stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω := by
   -- stoppedValue u τ ω = u (τ ω).untopA ω; tauStar ω = ↑(hittingBtwn ... ω);
-  -- (↑k : ℕ∞).untopA = k since untopA = untopD (Classical.arbitrary _) and untopD_coe is rfl.
+  -- (↑k : ℕ∞).untopA = k is definitional (untopA = untopD arbitary; match on `some k` = k).
   unfold stoppedValue tauStar
-  simp only [WithTop.untopD_coe]
   exact ratio_eq_Yproc_hittingIdx W H₀ α ω
 
 /-! ## 7. Master theorem -/
@@ -255,7 +351,7 @@ initial bound `knockoff_initial_le`. -/
 theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) :
     ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ ≤ 1 := by
-  haveI : SigmaFiniteFiltration μ (𝒢rev W H₀) := IsFiniteMeasure.sigmaFiniteFiltration μ _
+  haveI : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
   have h_ratio_eq :
       ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ =
       ∫ ω, stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω ∂μ :=
@@ -265,7 +361,7 @@ theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ
       ≤ ∫ ω, Yproc W H₀ 0 ω ∂μ :=
           supermartingale_integral_stoppedValue_le
             (knockoff_supermartingale W H₀ μ hW)
-            (tauStar_isStoppingTime W H₀ α)
+            (tauStar_isStoppingTime W H₀ α hW.meas)
             (tauStar_le W H₀ α)
     _ = ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ :=
           integral_congr_ae (Filter.Eventually.of_forall (Yproc_zero_eq W H₀))
