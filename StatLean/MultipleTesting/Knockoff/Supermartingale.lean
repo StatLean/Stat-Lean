@@ -381,19 +381,23 @@ lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
 - **USER-INPUT**: sign exchangeability from `hW.signs_iIndep`/`signs_fair`/`signs_indep_outer`;
   Lu-BDA §19. -/
 lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
-    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) (n : ℕ) :
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §19.
+    -- Needed so each threshold step removes exactly one coordinate (the single-null exchangeable step).
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) :
     μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
   sorry
 
 /-- `Yproc W H₀` is a supermartingale w.r.t. `𝒢rev W H₀ hW.meas`. Assembled from
 `supermartingale_nat` applied to the sorry'd `step_condExp_le`; all hypotheses are in scope. -/
 lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
-    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) :
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     Supermartingale (Yproc W H₀) (𝒢rev W H₀ hW.meas) μ :=
   supermartingale_nat
     (Yproc_adapted W H₀ hW.meas)
     (fun n => Yproc_integrable W H₀ hW.meas μ n)
-    (fun n => step_condExp_le W H₀ μ hW n)
+    (fun n => step_condExp_le W H₀ μ hW hmag n)
 
 /-! ## 5. Stopping time (tauStar) -/
 
@@ -699,7 +703,8 @@ threshold-indexed ratio as a supermartingale (one-step inequality from the excha
 field) and applying optional stopping (`supermartingale_integral_stoppedValue_le`) plus the
 initial bound `knockoff_initial_le`. -/
 theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ)
-    (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) :
+    (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     ∫ ω, (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) ∂μ ≤ 1 := by
   haveI : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
   have h_ratio_eq :
@@ -710,7 +715,7 @@ theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ
   calc ∫ ω, stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω ∂μ
       ≤ ∫ ω, Yproc W H₀ 0 ω ∂μ :=
           supermartingale_integral_stoppedValue_le
-            (knockoff_supermartingale W H₀ μ hW)
+            (knockoff_supermartingale W H₀ μ hW hmag)
             (tauStar_isStoppingTime W H₀ α hW.meas)
             (tauStar_le W H₀ α)
     _ = ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ :=
