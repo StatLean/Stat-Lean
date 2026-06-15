@@ -519,8 +519,9 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
       push_cast
       ring
     · simp only [h, ↓reduceDIte, if_false]
-  rw [hval]
-  exact (hGmeas.comp hc.measurable).stronglyMeasurable
+  have hsm := (hGmeas.comp hc.measurable).stronglyMeasurable
+  rw [← hval] at hsm
+  exact hsm
 
 /-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀ hWmeas`, being a hitting time of an
 adapted process to a measurable set.
