@@ -12,7 +12,8 @@ proof consumes — as three fields on `KnockoffScore`:
 
 * `signs_iIndep`     — the null signs `{sign Wⱼ : j ∈ H₀}` are jointly independent;
 * `signs_fair`       — each null sign is fair, `P(Wⱼ ≥ 0) = ½`;
-* `signs_indep_mag`  — the null sign vector is independent of the magnitude vector `|W₊|`.
+* `signs_indep_outer` — the null sign vector is independent of the *outer data* (the magnitudes
+  `|W₁|,…,|W_d|` together with the non-null signs), the data the count filtration conditions on.
 
 Together these say: *conditional on the magnitudes, the null signs are i.i.d. `Ber(½)`* — Def.
 `kos` condition 3. The book's antisymmetry (condition 1) is an upstream property of the

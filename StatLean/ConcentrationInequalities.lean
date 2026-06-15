@@ -11,6 +11,8 @@ import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.Bernstein.MGFBound
 import StatLean.ConcentrationInequalities.Bernstein.Bernstein
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
+import StatLean.ConcentrationInequalities.McDiarmid.DoobDecomposition
+import StatLean.ConcentrationInequalities.McDiarmid.McDiarmid
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 import StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
