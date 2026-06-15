@@ -131,9 +131,11 @@ usable (the one-step inequality now holds), but `step_condExp_le` decomposes as:
   all downstream (`knockoff_supermartingale`, `tauStar_isStoppingTime`, `knockoff_ratio_stopped_le_one`)
   recompiled unchanged against the new `𝒢rev`.
 - ✅ `step_ratio_le` proven (`ForMathlib/BinomialRatio`).
-- ⬜ `FDPhat_atTheta_adapted`: now provable — `FDPhat(θ_n) = h(cproc n)` (decompose `#S±(θ_n)` into
-  the non-null part [Borel fn of magnitudes + non-null signs] + the null count `V±(θ_n)`); the
-  hardest remaining bookkeeping (~100 lines).
+- ✅ **DONE (builds green).** `FDPhat_atTheta_adapted` — `FDPhat(θ_n) = G(cproc n)` via the
+  `#S±(θ_n) = V±(θ_n) + (non-null count)` decomposition (`Splus_card_decomp`/`Sminus_card_decomp`),
+  the rank condition for the threshold, and the sign equivalences `0<W_j ↔ sgnReal=1∧|W_j|≠0`,
+  `W_j<0 ↔ sgnReal=-1` on non-nulls; `G` Borel-measurable on the product. (Note: `Adapted` is
+  `Measurable`-based here.)
 - ⬜ `ratio_eq_Yproc_hittingIdx`: deterministic order-stat ↔ hitting (~80 lines).
 - ⬜ `step_condExp_le`: assemble from `count_condExp` (brick, sorry) + `step_removal_eq` (counting:
   removing the boundary null shifts `V₊` or `V₋` by 1) + `step_ratio_le` (✅), via `condExp_add`
