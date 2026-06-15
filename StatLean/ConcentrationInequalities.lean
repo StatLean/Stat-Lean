@@ -9,6 +9,7 @@ import StatLean.ConcentrationInequalities.SubExponential.TailBounds
 import StatLean.ConcentrationInequalities.SubExponential.SampleMean
 import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.Bernstein.MGFBound
+import StatLean.ConcentrationInequalities.Bernstein.Bernstein
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
