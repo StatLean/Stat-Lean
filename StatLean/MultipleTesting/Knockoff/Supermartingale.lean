@@ -558,6 +558,24 @@ lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (
 
 /-! ## 6. Bridge: stoppedValue = V₊(t*)/(1+V₋(t*)) -/
 
+omit mΩ in
+/-- Every magnitude `|W j ω|` is realised as some order statistic `θ W m ω`: take `m` to be the
+inverse sorting permutation applied to `j`.
+- **LEAN-ONLY**: surjectivity of the order-statistic indexing onto the magnitude multiset. -/
+private lemma exists_orderStat_eq_abs (W : Fin d → Ω → ℝ) (ω : Ω) (j : Fin d) :
+    ∃ m : Fin d, θ W m ω = |W j ω| := by
+  refine ⟨(Tuple.sort (fun i => |W i ω|)).symm j, ?_⟩
+  change orderStat (fun i => |W i ω|) ((Tuple.sort (fun i => |W i ω|)).symm j) = |W j ω|
+  simp only [orderStat, Equiv.apply_symm_apply]
+
+omit mΩ in
+/-- `θ W ⟨n, h⟩ ω` is one of the magnitudes `{|W j ω|}` (it is `|W·ω|` at the sorted index).
+- **LEAN-ONLY**: the order statistic is a value of the magnitude tuple. -/
+private lemma theta_mem_image (W : Fin d → Ω → ℝ) (ω : Ω) (n : ℕ) (h : n < d) :
+    θ W ⟨n, h⟩ ω ∈ (Finset.univ : Finset (Fin d)).image (fun j => |W j ω|) := by
+  rw [Finset.mem_image]
+  exact ⟨Tuple.sort (fun i => |W i ω|) ⟨n, h⟩, Finset.mem_univ _, rfl⟩
+
 /-- Order-statistic bridge: the V₊/V₋ ratio at `tStar` equals `Yproc` at the hitting index.
 The argument: FDPhat is a step-function of all magnitudes; its minimizer over `{|W j|}` with
 FDPhat ≤ α (the threshold `tStar`) is itself one of the order statistics `θ_k` (now ranging over
@@ -572,7 +590,95 @@ private lemma ratio_eq_Yproc_hittingIdx
       (hittingBtwn
         (fun (n : ℕ) (ω : Ω) => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
         (Set.Iic α) 0 d ω) ω := by
-  sorry
+  -- The FDPhat-at-θ process `P` and its hitting index `k` over the magnitude order statistics.
+  set P : ℕ → Ω → ℝ :=
+    (fun (n : ℕ) (ω : Ω) => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1) with hP_def
+  set k : ℕ := hittingBtwn P (Set.Iic α) 0 d ω with hk_def
+  -- The candidate magnitudes `tStar` minimises over.
+  obtain ⟨cands, hcands⟩ :
+      ∃ c : Finset ℝ, c = ((Finset.univ : Finset (Fin d)).image (fun j => |W j ω|)).filter
+        (fun t => FDPhat W t ω ≤ α) := ⟨_, rfl⟩
+  have mem_cands : ∀ x, x ∈ cands ↔
+      x ∈ (Finset.univ : Finset (Fin d)).image (fun j => |W j ω|) ∧ FDPhat W x ω ≤ α := fun x => by
+    rw [hcands]; exact Finset.mem_filter
+  have htStar_eq : tStar W α ω =
+      if h : cands.Nonempty then cands.min' h else 1 + ∑ j, |W j ω| := by
+    rw [hcands]; rfl
+  -- `P` evaluated on the two branches of its dependent `if`.
+  have hPval : ∀ (n : ℕ) (h : n < d), P n ω = FDPhat W (θ W ⟨n, h⟩ ω) ω := fun n h => by
+    simp only [hP_def]; exact dif_pos h
+  have hPd : P d ω = α - 1 := by simp only [hP_def]; exact dif_neg (lt_irrefl d)
+  -- There is always a hit (at `n = d`, where `P d ω = α - 1 ≤ α`); hence `k ≤ d` and `P k ω ≤ α`.
+  have hExists : ∃ j ∈ Set.Icc (0 : ℕ) d, P j ω ∈ Set.Iic α := by
+    refine ⟨d, Set.mem_Icc.mpr ⟨Nat.zero_le d, le_refl d⟩, ?_⟩
+    rw [Set.mem_Iic, hPd]; linarith
+  have hk_le : k ≤ d := by rw [hk_def]; exact hittingBtwn_le ω
+  have hPk_le : P k ω ≤ α := by
+    have h := hittingBtwn_mem_set hExists
+    rw [← hk_def] at h
+    exact Set.mem_Iic.mp h
+  by_cases hne : cands.Nonempty
+  · -- Non-degenerate: `tStar = min cands`; show the hitting index `k < d` and `θ_k = tStar`.
+    obtain ⟨j₁, -, hj₁⟩ :
+        ∃ j ∈ (Finset.univ : Finset (Fin d)), |W j ω| = cands.min' hne :=
+      Finset.mem_image.mp ((mem_cands _).mp (Finset.min'_mem cands hne)).1
+    obtain ⟨m₁, hθm₁⟩ := exists_orderStat_eq_abs W ω j₁
+    have hθm₁' : θ W m₁ ω = cands.min' hne := hθm₁.trans hj₁
+    -- `FDPhat(θ_{m₁}) = FDPhat(tStar) ≤ α`, so `m₁` is in the hitting set ⇒ `k ≤ m₁ < d`.
+    have hPm₁mem : P m₁.val ω ∈ Set.Iic α := by
+      rw [Set.mem_Iic, hPval m₁.val m₁.isLt,
+        show θ W ⟨m₁.val, m₁.isLt⟩ ω = cands.min' hne from hθm₁']
+      exact ((mem_cands _).mp (Finset.min'_mem cands hne)).2
+    have hk_m₁ : k ≤ m₁.val := by
+      rw [hk_def]
+      exact hittingBtwn_le_of_mem (Nat.zero_le m₁.val) (le_of_lt m₁.isLt) hPm₁mem
+    have hk_lt : k < d := lt_of_le_of_lt hk_m₁ m₁.isLt
+    -- `tStar ≤ θ_k`: `θ_k` is a candidate (magnitude with `FDPhat ≤ α`), and `tStar = min cands`.
+    have hFDPk : FDPhat W (θ W ⟨k, hk_lt⟩ ω) ω ≤ α := by rw [← hPval k hk_lt]; exact hPk_le
+    have hθk_cands : θ W ⟨k, hk_lt⟩ ω ∈ cands :=
+      (mem_cands _).mpr ⟨theta_mem_image W ω k hk_lt, hFDPk⟩
+    have h1 : cands.min' hne ≤ θ W ⟨k, hk_lt⟩ ω := Finset.min'_le cands _ hθk_cands
+    -- `θ_k ≤ tStar = θ_{m₁}` by monotonicity of the order statistics (`k ≤ m₁`).
+    have hfin_le : (⟨k, hk_lt⟩ : Fin d) ≤ m₁ := by rw [Fin.le_iff_val_le_val]; exact hk_m₁
+    have h2 : θ W ⟨k, hk_lt⟩ ω ≤ cands.min' hne := by
+      rw [← hθm₁']; exact orderStat_monotone (fun i => |W i ω|) hfin_le
+    have key : cands.min' hne = θ W ⟨k, hk_lt⟩ ω := le_antisymm h1 h2
+    rw [htStar_eq, dif_pos hne, key]
+    have hRHS : Yproc W H₀ k ω =
+        (Vplus W H₀ (θ W ⟨k, hk_lt⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨k, hk_lt⟩ ω) ω : ℝ)) := by
+      unfold Yproc; rw [dif_pos hk_lt]
+    rw [hRHS]
+  · -- Degenerate: no candidate, `tStar = 1 + ∑|W|` exceeds every magnitude, `k = d`, both sides 0.
+    have hk_eq_d : k = d := by
+      rcases hk_le.lt_or_eq with hlt | heq
+      · exact absurd ⟨θ W ⟨k, hlt⟩ ω,
+          (mem_cands _).mpr ⟨theta_mem_image W ω k hlt,
+            by rw [← hPval k hlt]; exact hPk_le⟩⟩ hne
+      · exact heq
+    -- `tStar = 1 + ∑|W|` strictly exceeds every magnitude `|W j ω|`.
+    have htStar_gt : ∀ j : Fin d, |W j ω| < 1 + ∑ i, |W i ω| := fun j => by
+      have hle : |W j ω| ≤ ∑ i, |W i ω| :=
+        Finset.single_le_sum (fun i _ => abs_nonneg (W i ω)) (Finset.mem_univ j)
+      linarith
+    have hSplus_empty : Splus W (1 + ∑ j, |W j ω|) ω = ∅ := by
+      unfold Splus
+      rw [Finset.eq_empty_iff_forall_notMem]
+      intro j hj
+      rw [Finset.mem_filter] at hj
+      exact absurd hj.2.1 (not_le.mpr (htStar_gt j))
+    have hSminus_empty : Sminus W (1 + ∑ j, |W j ω|) ω = ∅ := by
+      unfold Sminus
+      rw [Finset.eq_empty_iff_forall_notMem]
+      intro j hj
+      rw [Finset.mem_filter] at hj
+      exact absurd hj.2.1 (not_le.mpr (htStar_gt j))
+    have hVplus0 : Vplus W H₀ (1 + ∑ j, |W j ω|) ω = 0 := by
+      unfold Vplus; rw [hSplus_empty, Finset.empty_inter, Finset.card_empty]
+    have hVminus0 : Vminus W H₀ (1 + ∑ j, |W j ω|) ω = 0 := by
+      unfold Vminus; rw [hSminus_empty, Finset.empty_inter, Finset.card_empty]
+    have hYd : Yproc W H₀ d ω = 0 := by simp [Yproc]
+    rw [htStar_eq, dif_neg hne, hk_eq_d, hYd, hVplus0, hVminus0]
+    norm_num
 
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio
 `V₊(tStar W α ω)/(1+V₋(tStar W α ω))`: unfolding `stoppedValue` and `tauStar` reduces the
