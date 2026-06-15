@@ -44,10 +44,17 @@ structure KnockoffScore (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (μ :
   `P(Wⱼ ≥ 0) = ½` (with a probability measure). -/
   signs_fair : ∀ j ∈ H₀, μ {ω | 0 ≤ W j ω} = 1 / 2
   /-- Constitutive (Lu-BDA §19, Def. `kos` cond. 3): the null sign vector is independent of the
-  magnitude vector `(|Wⱼ|)ⱼ`; together with the two fields above this is exactly "signs i.i.d.
-  `Ber(½)` given `|W|`". -/
-  signs_indep_mag :
-    IndepFun (fun ω (j : H₀) => sgnReal W (j : Fin d) ω) (fun ω (j : Fin d) => |W j ω|) μ
+  *outer data* — the magnitude vector `(|Wⱼ|)ⱼ` **together with the non-null signs** (encoded, as in
+  `cproc`, by the padded vector `fun j => if j ∈ H₀ then 0 else sgn Wⱼ`). This is the data the count
+  filtration `𝒢rev` conditions on; with `signs_iIndep`/`signs_fair` it gives: conditional on the
+  magnitudes and non-null signs, the null signs are i.i.d. `Ber(½)` — exactly what the exchangeable
+  supermartingale step (`count_condExp`) consumes. Strengthens the former `signs_indep_mag` (⊥
+  magnitudes only); ⊥ (magnitudes ⊕ non-null signs) is the genuine model-X knock-off property (null
+  signs are fresh fair coins independent of all observed data). -/
+  signs_indep_outer :
+    IndepFun (fun ω (j : H₀) => sgnReal W (j : Fin d) ω)
+      (fun ω => ((fun j => |W j ω|), (fun j => if j ∈ H₀ then (0 : ℝ) else sgnReal W j ω)))
+      μ
   /-- Constitutive (Lu-BDA §19, Def. `kos`): a knock-off *score* is a statistic, so each `Wⱼ` is
   measurable. Needed for the martingale construction (natural filtration, adaptedness,
   integrability, conditional expectation) in `Knockoff/Supermartingale.lean`. -/

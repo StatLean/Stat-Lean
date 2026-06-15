@@ -44,12 +44,15 @@ noncomputable def Vminus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (t :
 noncomputable def FDPhat (W : Fin d → Ω → ℝ) (t : ℝ) (ω : Ω) : ℝ :=
   ((Sminus W t ω).card + 1 : ℝ) / max ((Splus W t ω).card : ℝ) 1
 
-/-- The knock-off threshold `t* = min{ t ∈ {|Wⱼ|} : FDPhat(t) ≤ α }` (Lu-BDA §19); `0` in the
-degenerate case where no candidate threshold achieves `FDPhat ≤ α` (then nothing is rejected,
-see `knockoffRejects`). -/
+/-- The knock-off threshold `t* = min{ t ∈ {|Wⱼ|} : FDPhat(t) ≤ α }` (Lu-BDA §19). In the
+degenerate case (no candidate magnitude achieves `FDPhat ≤ α`) we return a value strictly **above
+every magnitude**, `1 + ∑ⱼ |Wⱼ|`, so that `S⁺(t*) = S⁻(t*) = ∅` — i.e. nothing is rejected, matching
+`knockoffRejects`, and the null ratio `V₊(t*)/(1+V₋(t*)) = 0`. (The former `0` convention left
+`knockoffRejects = ∅` while `V₊(0)/(1+V₋(0)) ≠ 0`, an inconsistency that broke the order-statistic
+bridge `ratio_eq_Yproc_hittingIdx`.) -/
 noncomputable def tStar (W : Fin d → Ω → ℝ) (α : ℝ) (ω : Ω) : ℝ :=
   let cands := (Finset.univ.image (fun j => |W j ω|)).filter (fun t => FDPhat W t ω ≤ α)
-  if h : cands.Nonempty then cands.min' h else 0
+  if h : cands.Nonempty then cands.min' h else 1 + ∑ j, |W j ω|
 
 /-- Knock-off rejection set: `S⁺(t*)` (Lu-BDA §19). In the degenerate case (no candidate
 threshold achieves `FDPhat ≤ α`) nothing is rejected. -/
