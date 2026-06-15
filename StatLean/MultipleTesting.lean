@@ -4,6 +4,7 @@ import StatLean.MultipleTesting.Knockoff.Defs
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
 import StatLean.MultipleTesting.ForMathlib.BinomialRatio
+import StatLean.MultipleTesting.ForMathlib.SymmetricCondExp
 import StatLean.MultipleTesting.BenjaminiHochberg
 import StatLean.MultipleTesting.HolmBonferroni
 import StatLean.MultipleTesting.Knockoff.Procedure
@@ -21,7 +22,9 @@ from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
 * **Concepts**: `FDP` / `FDR` / `FWER` (`FDP/Defs.lean`); `SuperUniform` null p-values
   (`PValues/Defs.lean`); `KnockoffScore` (`Knockoff/Defs.lean`).
 * **ForMathlib**: order statistics of a real tuple (`OrderStatistics.lean`); the optional
-  stopping theorem `thm:optstop` as a supermartingale bridge to Mathlib (`OptionalStopping.lean`).
+  stopping theorem `thm:optstop` as a supermartingale bridge to Mathlib (`OptionalStopping.lean`);
+  the binomial-ratio inequalities (`BinomialRatio.lean`); the exchangeable conditional expectation
+  `E[𝟙(σᵢ)|count] = count/k` for i.i.d. fair Bool variables (`SymmetricCondExp.lean`).
 * **Benjamini–Hochberg** (§18): `benjamini_hochberg_fdr_le` — `FDR ≤ (N₀/N)·α`.
 * **Holm–Bonferroni** (Holm 1979; §17 Bonferroni): `holm_fwer_le`, `bonferroni_fwer_le` —
   `FWER ≤ α`.
