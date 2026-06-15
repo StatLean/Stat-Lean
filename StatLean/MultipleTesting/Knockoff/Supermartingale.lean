@@ -519,7 +519,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
       push_cast
       ring
     · simp only [h, ↓reduceDIte, if_false]
-  have hsm := (hGmeas.comp hc.measurable).stronglyMeasurable
+  have hsm := hGmeas.comp hc.measurable
   rw [← hval] at hsm
   exact hsm
 
