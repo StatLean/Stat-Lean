@@ -27,7 +27,8 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {d : ℕ}
 `α * stoppedValue (Yproc W H₀) (tauStar W H₀ α)`, and the stopped value is integrable from
 `Submartingale.integrable_stoppedValue` applied to the negated supermartingale. -/
 private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ)
-    (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) :
+    (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     Integrable (fun ω =>
       α * (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ))) μ := by
   haveI : SigmaFiniteFiltration μ (𝒢rev W H₀ hW.meas) := inferInstance
@@ -35,7 +36,7 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
   simp_rw [mul_div_assoc, ratio_eq_stoppedValue]
   -- Integrability from the negated supermartingale (= submartingale)
   have hstop_neg : Integrable (stoppedValue (-(Yproc W H₀)) (tauStar W H₀ α)) μ :=
-    (knockoff_supermartingale W H₀ μ hW).neg.integrable_stoppedValue
+    (knockoff_supermartingale W H₀ μ hW hmag).neg.integrable_stoppedValue
       (tauStar_isStoppingTime W H₀ α hW.meas) (tauStar_le W H₀ α)
   have hstop : Integrable (stoppedValue (Yproc W H₀) (tauStar W H₀ α)) μ := by
     have heq : stoppedValue (-(Yproc W H₀)) (tauStar W H₀ α) =
@@ -65,7 +66,7 @@ theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (
           (Filter.Eventually.of_forall fun ω =>
             div_nonneg (Nat.cast_nonneg _) (le_trans zero_le_one (le_max_right _ _)))
           -- α · ratio integrable
-          (ratio_integrable μ α W H₀ hW)
+          (ratio_integrable μ α W H₀ hW hmag)
           -- FDP ≤ α · ratio a.e. (deterministic, pointwise)
           (Filter.Eventually.of_forall fun ω => knockoff_fdp_le α hα W H₀ ω)
       -- Step 2: factor α out of the integral
