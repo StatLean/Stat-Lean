@@ -469,7 +469,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
     · simp only [h, if_true]
       apply Measurable.div
       · apply Measurable.add
-        · apply Measurable.add (measurable_fst.comp (measurable_snd.comp measurable_snd))
+        · apply Measurable.add (measurable_snd.comp (measurable_snd.comp measurable_snd))
           exact hcnt_meas _ fun j => (measurableSet_lt measurable_const (hrank_meas j)).inter
             (measurableSet_eq_fun ((measurable_pi_apply j).comp
               (measurable_fst.comp measurable_snd)) measurable_const)
@@ -492,29 +492,32 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
       have hrankθ : ∀ j, θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔ n < rank (fun j => |W j ω|) j := by
         intro j; exact orderStat_le_iff_card_lt _ ⟨n, h⟩ _
       have hpos : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
-          (n < rank (fun j => |W j ω|) j ∧ sgnReal W j ω = 1 ∧ |W j ω| ≠ 0) := by
-        intro j _
-        rw [hrankθ j]
+          (n < rank (fun j => |W j ω|) j ∧
+            (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = 1 ∧ |W j ω| ≠ 0) := by
+        intro j hj
+        rw [Finset.mem_compl] at hj
+        rw [hrankθ j, if_neg hj]
         refine and_congr_right (fun _ => ?_)
         constructor
-        · intro hpos; exact ⟨if_pos hpos.le, by positivity⟩
+        · intro hp; exact ⟨if_pos hp.le, by positivity⟩
         · rintro ⟨hs, hne⟩
-          have : 0 ≤ W j ω := by by_contra hc; rw [sgnReal, if_neg hc] at hs; norm_num at hs
-          rcases lt_or_eq_of_le this with hlt | heq
+          have h0 : 0 ≤ W j ω := by by_contra hc; rw [sgnReal, if_neg hc] at hs; norm_num at hs
+          rcases lt_or_eq_of_le h0 with hlt | heq
           · exact hlt
           · exact absurd (by rw [← heq]; simp) hne
       have hneg : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ W j ω < 0) ↔
-          (n < rank (fun j => |W j ω|) j ∧ sgnReal W j ω = -1) := by
-        intro j _
-        rw [hrankθ j]
+          (n < rank (fun j => |W j ω|) j ∧ (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = -1) := by
+        intro j hj
+        rw [Finset.mem_compl] at hj
+        rw [hrankθ j, if_neg hj, sgnReal]
         refine and_congr_right (fun _ => ?_)
-        rw [sgnReal]; constructor
+        constructor
         · intro hlt; rw [if_neg (not_le.mpr hlt)]
         · intro hs; by_contra hc; rw [if_pos (not_lt.mp hc)] at hs; norm_num at hs
-      rw [FDPhat, Splus_card_decomp W H₀ _ ω, Sminus_card_decomp W H₀ _ ω]
-      rw [Finset.filter_congr hpos, Finset.filter_congr hneg]
+      rw [FDPhat, Splus_card_decomp W H₀ _ ω, Sminus_card_decomp W H₀ _ ω,
+        Finset.filter_congr hpos, Finset.filter_congr hneg]
       push_cast
-      ring_nf
+      ring
     · simp only [h, ↓reduceDIte, if_false]
   rw [hval]
   exact (hGmeas.comp hc.measurable).stronglyMeasurable
