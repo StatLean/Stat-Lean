@@ -2,6 +2,7 @@ import StatLean.AsymptoticStatistics
 import StatLean.ConcentrationInequalities
 import StatLean.HighDimensionalStatistics
 import StatLean.Optimization
+import StatLean.MultipleTesting
 
 /-!
 # StatLean
@@ -17,6 +18,9 @@ theory, organized into per-area sublibraries.
 * `StatLean.Optimization` — convex optimization: subgradients, gradient descent,
   Frank–Wolfe, proximal / accelerated proximal gradient (Lu, *Big Data Analysis*
   ch. 10–12).
+* `StatLean.MultipleTesting` — multiple hypothesis testing: Benjamini–Hochberg
+  and knock-off FDR control, Holm–Bonferroni FWER control (Lu, *Big Data
+  Analysis* ch. 18–19; Holm 1979).
 
 Per-area umbrellas are imported above as each area lands.
 -/
