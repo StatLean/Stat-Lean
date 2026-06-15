@@ -13,11 +13,16 @@ import Mathlib.MeasureTheory.Order.Group.Lattice
 Strategy (maximizing Mathlib reuse — this file is where the martingale construction lives, so the
 process/filtration definitions co-evolve with their proofs):
 
-* Reveal the null coordinates in **increasing `|W|`** order; the forward process
-  `Yproc n = V₊/(1+V₋)` over the `N₀−n` largest-magnitude nulls is a forward supermartingale,
-  with `Yproc 0` = the all-nulls ratio (`knockoff_initial_le`) and `Yproc N₀ = 0`.
-* `𝒢rev = Filtration.natural` of `(magnitudes, revealed signs)`; the next sign is independent of
-  the past (`KnockoffScore.signs_*`), so `μ[next sign | 𝒢rev n] = ½`.
+* Reveal the coordinates in **increasing `|W|`** order over **all `d` magnitudes**; the forward
+  process `Yproc n = V₊/(1+V₋)` indexed by the order statistics of `{|W j| : j : Fin d}` is a
+  forward supermartingale, with `Yproc 0` = the all-nulls ratio (`knockoff_initial_le`,
+  via `Yproc_zero_eq`) and `Yproc d = 0`. Indexing over **all `d`** magnitudes (Candès STATS-300C
+  Lecture 11 §11.5) is what aligns the hitting time `tauStar` over `θ` with the procedure's
+  threshold `tStar = min{ t ∈ {|W_j|} : FDPhat ≤ α }`, which ranges over *all* magnitudes.
+* `𝒢rev = Filtration.natural` of `(magnitudes, revealed non-null signs, null split-counts)`; the
+  null counts `V₊, V₋` still count only `H₀`, so at a step crossing a *non-null* coordinate the
+  counts are unchanged (trivial step) and at a *null* step the removed null's sign is uniform among
+  the remaining (`KnockoffScore.signs_*`), so the ratio decreases in expectation.
 * `supermartingale_nat` reduces the supermartingale to the one-step inequality `step_condExp_le`
   (the single high-risk lemma); `tauStar` is a bounded `IsStoppingTime`; the proven
   `supermartingale_integral_stoppedValue_le` gives `E[Y_{t*}] ≤ E[Y₀] ≤ 1`.
@@ -35,23 +40,22 @@ variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {d : ℕ}
 
 /-! ## 1. Process construction -/
 
-/-- The n-th smallest magnitude among the null coordinates `{|W j ω| : j ∈ H₀}`, via
-`orderStat` on the `H₀`-indexed absolute-value tuple. Uses `Finset.orderEmbOfFin` to enumerate
-`H₀`'s elements as `Fin H₀.card → Fin d` (0-indexed: `θ ⟨0,h⟩ ω` = minimum null magnitude).
-- **USER-INPUT**: `W`, `H₀` determine the null magnitudes; Lu-BDA §19. -/
-noncomputable def θ (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
-    (n : Fin H₀.card) (ω : Ω) : ℝ :=
-  orderStat (fun (i : Fin H₀.card) => |W (H₀.orderEmbOfFin rfl i) ω|) n
+/-- The n-th smallest magnitude among ALL `d` coordinates `{|W j ω| : j : Fin d}`, via `orderStat`
+on the absolute-value tuple (0-indexed: `θ W ⟨0,h⟩ ω` = minimum magnitude over all coordinates).
+- **USER-INPUT**: `W` determines all `d` magnitudes; Lu-BDA §19 (Candès STATS-300C §11.5). -/
+noncomputable def θ (W : Fin d → Ω → ℝ) (n : Fin d) (ω : Ω) : ℝ :=
+  orderStat (fun (i : Fin d) => |W i ω|) n
 
-/-- `Yproc n ω = V₊(θ_n ω)/(1 + V₋(θ_n ω))`, the V₊/V₋ ratio at the n-th null-magnitude
-threshold. For n = 0, `θ_0 ω` is the smallest null magnitude, so all nulls are above threshold
-and `Yproc 0 = V₊(0)/(1+V₋(0))` (the initial ratio). For n ≥ H₀.card, `Yproc n = 0`.
+/-- `Yproc n ω = V₊(θ_n ω)/(1 + V₋(θ_n ω))`, the V₊/V₋ ratio at the n-th magnitude threshold over
+all `d` coordinates. For n = 0, `θ_0 ω` is the smallest magnitude (over **all** coordinates), so
+every coordinate — in particular every null — is above threshold and `Yproc 0 = V₊(0)/(1+V₋(0))`
+(the initial ratio). For n ≥ d, `Yproc n = 0`.
 - **USER-INPUT**: `W`, `H₀` supply the knock-off scores and null set; Lu-BDA §19.
-- **LEAN-ONLY**: the ℕ-indexed extension with `Yproc n = 0` for n ≥ H₀.card pads the process for
+- **LEAN-ONLY**: the ℕ-indexed extension with `Yproc n = 0` for n ≥ d pads the process for
   `supermartingale_nat`; the supermartingale property holds on the non-trivial range. -/
 noncomputable def Yproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (ω : Ω) : ℝ :=
-  if h : n < H₀.card
-  then (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ))
+  if h : n < d
+  then (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
   else 0
 
 /-! ## 2. Elementary bounds -/
@@ -64,47 +68,47 @@ lemma Yproc_nonneg (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) 
   split_ifs with h
   · apply div_nonneg
     · exact_mod_cast Nat.zero_le _
-    · have : (0 : ℝ) ≤ (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) := by exact_mod_cast Nat.zero_le _
+    · have : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by exact_mod_cast Nat.zero_le _
       linarith
   · exact le_refl _
 
 omit mΩ in
-/-- `Yproc 0 ω = V₊(0)/(1+V₋(0))`: the threshold `θ 0 ω` = min null magnitude is ≤ |W j ω| for
-all j ∈ H₀ (since it is the minimum), so V₊/V₋ at threshold θ₀ equals V₊/V₋ at threshold 0.
+/-- `Yproc 0 ω = V₊(0)/(1+V₋(0))`: the threshold `θ 0 ω` = the global minimum magnitude is ≤ |W j ω|
+for **all** j (since it is the minimum over all `d` coordinates), so in particular ≤ |W j ω| for
+every null j ∈ H₀, and hence V₊/V₋ at threshold θ₀ equals V₊/V₋ at threshold 0.
 - **USER-INPUT**: equality of counts at threshold θ₀ vs 0; Lu-BDA §19. -/
 lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     Yproc W H₀ 0 ω = (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) := by
   unfold Yproc
-  by_cases h : 0 < H₀.card
+  by_cases h : 0 < d
   · simp only [h, ↓reduceDIte]
-    -- Key: θ₀ = min null magnitude ≤ |W j ω| for all j ∈ H₀, so Vplus/Vminus agree at θ₀ and 0.
-    haveI hNZ : NeZero H₀.card := ⟨h.ne'⟩
-    have hmin : ∀ j : Fin H₀.card, θ W H₀ ⟨0, h⟩ ω ≤ |W (H₀.orderEmbOfFin rfl j) ω| := by
+    -- Key: θ₀ = global min magnitude ≤ |W j ω| for all j, so Vplus/Vminus agree at θ₀ and 0.
+    haveI hNZ : NeZero d := ⟨h.ne'⟩
+    have hmin : ∀ j : Fin d, θ W ⟨0, h⟩ ω ≤ |W j ω| := by
       intro j
-      let v := fun i : Fin H₀.card => |W (H₀.orderEmbOfFin rfl i) ω|
+      let v := fun i : Fin d => |W i ω|
       change orderStat v ⟨0, h⟩ ≤ v j
       calc orderStat v ⟨0, h⟩
           ≤ orderStat v ((Tuple.sort v).symm j) := orderStat_monotone v (Fin.zero_le _)
         _ = v ((Tuple.sort v) ((Tuple.sort v).symm j)) := rfl
         _ = v j := by simp [Equiv.apply_symm_apply]
-    have hH₀ : ∀ j ∈ H₀, θ W H₀ ⟨0, h⟩ ω ≤ |W j ω| := by
-      intro j hj
-      obtain ⟨i, rfl⟩ : j ∈ Set.range (H₀.orderEmbOfFin rfl) := by
-        rw [Finset.range_orderEmbOfFin]; exact Finset.mem_coe.mpr hj
-      exact hmin i
-    have hSplus : (Splus W (θ W H₀ ⟨0, h⟩ ω) ω) ∩ H₀ = (Splus W 0 ω) ∩ H₀ := by
+    have hH₀ : ∀ j ∈ H₀, θ W ⟨0, h⟩ ω ≤ |W j ω| := fun j _ => hmin j
+    have hSplus : (Splus W (θ W ⟨0, h⟩ ω) ω) ∩ H₀ = (Splus W 0 ω) ∩ H₀ := by
       ext j
       simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun ⟨⟨_, hpos⟩, hmem⟩ => ⟨⟨abs_nonneg _, hpos⟩, hmem⟩,
              fun ⟨⟨_, hpos⟩, hmem⟩ => ⟨⟨hH₀ j hmem, hpos⟩, hmem⟩⟩
-    have hSminus : (Sminus W (θ W H₀ ⟨0, h⟩ ω) ω) ∩ H₀ = (Sminus W 0 ω) ∩ H₀ := by
+    have hSminus : (Sminus W (θ W ⟨0, h⟩ ω) ω) ∩ H₀ = (Sminus W 0 ω) ∩ H₀ := by
       ext j
       simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun ⟨⟨_, hneg⟩, hmem⟩ => ⟨⟨abs_nonneg _, hneg⟩, hmem⟩,
              fun ⟨⟨_, hneg⟩, hmem⟩ => ⟨⟨hH₀ j hmem, hneg⟩, hmem⟩⟩
     simp only [Vplus, Vminus, hSplus, hSminus]
-  · have h0 : H₀.card = 0 := by omega
-    have hH₀ : H₀ = ∅ := Finset.card_eq_zero.mp h0
+  · -- d = 0: `Fin d` is empty, so H₀ = ∅ and both sides vanish.
+    have hcard : H₀.card ≤ d := by
+      calc H₀.card ≤ Finset.univ.card := Finset.card_le_univ H₀
+        _ = d := by rw [Finset.card_univ, Fintype.card_fin]
+    have hH₀ : H₀ = ∅ := Finset.card_eq_zero.mp (by omega)
     subst hH₀
     simp only [h, ↓reduceDIte]
     simp [Vplus, Vminus]
@@ -130,31 +134,31 @@ private lemma orderStat_le_iff_card_lt {m : ℕ} (v : Fin m → ℝ) (n : Fin m)
   rw [show orderStat v n ≤ a ↔ n < (Finset.univ.filter (fun i => orderStat v i ≤ a)).card from
     (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort v)).symm, h_card]
 
-/-- Inner count `j ↦ #{ k : Fin N₀ | |W (orderEmb k)| ≤ |W j| }` is measurable. -/
+/-- Inner count `j ↦ #{ k : Fin d | |W k| ≤ |W j| }` is measurable. -/
 private lemma measurable_innerCount (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (j : Fin d) :
-    Measurable (fun ω => ((Finset.univ : Finset (Fin H₀.card)).filter
-      (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) := by
+    Measurable (fun ω => ((Finset.univ : Finset (Fin d)).filter
+      (fun k => |W k ω| ≤ |W j ω|)).card) := by
   simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
   exact Finset.measurable_sum _ fun k _ =>
     Measurable.ite (measurableSet_le ((hWmeas _).abs) ((hWmeas j).abs))
       measurable_const measurable_const
 
-/-- `V₊(θ_n)` (the null-positive count at the n-th null-magnitude threshold) is measurable. -/
+/-- `V₊(θ_n)` (the null-positive count at the n-th magnitude threshold) is measurable. -/
 private lemma measurable_Vplus_theta (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
-    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < H₀.card) :
-    Measurable (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-  have hRk : ∀ (j : Fin d) (ω : Ω), θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
-      n < ((Finset.univ : Finset (Fin H₀.card)).filter
-        (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card :=
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) :
+    Measurable (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ)) := by
+  have hRk : ∀ (j : Fin d) (ω : Ω), θ W ⟨n, h⟩ ω ≤ |W j ω| ↔
+      n < ((Finset.univ : Finset (Fin d)).filter
+        (fun k => |W k ω| ≤ |W j ω|)).card :=
     fun j ω => orderStat_le_iff_card_lt _ ⟨n, h⟩ _
-  have heq : ∀ ω, (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
-      ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧ 0 < W j ω)
+  have heq : ∀ ω, (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ) =
+      ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin d)).filter
+            (fun k => |W k ω| ≤ |W j ω|)).card ∧ 0 < W j ω)
           then (1 : ℕ) else 0 := fun ω => by
-    have hstep : Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-        (H₀.filter (fun j => n < ((Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧ 0 < W j ω)).card := by
+    have hstep : Vplus W H₀ (θ W ⟨n, h⟩ ω) ω =
+        (H₀.filter (fun j => n < ((Finset.univ : Finset (Fin d)).filter
+            (fun k => |W k ω| ≤ |W j ω|)).card ∧ 0 < W j ω)).card := by
       unfold Vplus Splus; congr 1; ext j
       simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun ⟨⟨hle, hpos⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hpos⟩,
@@ -167,21 +171,21 @@ private lemma measurable_Vplus_theta (W : Fin d → Ω → ℝ) (H₀ : Finset (
       (measurableSet_lt measurable_const (hWmeas j)))
       measurable_const measurable_const
 
-/-- `V₋(θ_n)` (the null-negative count at the n-th null-magnitude threshold) is measurable. -/
+/-- `V₋(θ_n)` (the null-negative count at the n-th magnitude threshold) is measurable. -/
 private lemma measurable_Vminus_theta (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
-    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < H₀.card) :
-    Measurable (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-  have hRk : ∀ (j : Fin d) (ω : Ω), θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
-      n < ((Finset.univ : Finset (Fin H₀.card)).filter
-        (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card :=
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) :
+    Measurable (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ)) := by
+  have hRk : ∀ (j : Fin d) (ω : Ω), θ W ⟨n, h⟩ ω ≤ |W j ω| ↔
+      n < ((Finset.univ : Finset (Fin d)).filter
+        (fun k => |W k ω| ≤ |W j ω|)).card :=
     fun j ω => orderStat_le_iff_card_lt _ ⟨n, h⟩ _
-  have heq : ∀ ω, (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
-      ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧ W j ω < 0)
+  have heq : ∀ ω, (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ) =
+      ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin d)).filter
+            (fun k => |W k ω| ≤ |W j ω|)).card ∧ W j ω < 0)
           then (1 : ℕ) else 0 := fun ω => by
-    have hstep : Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
-        (H₀.filter (fun j => n < ((Finset.univ : Finset (Fin H₀.card)).filter
-            (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧ W j ω < 0)).card := by
+    have hstep : Vminus W H₀ (θ W ⟨n, h⟩ ω) ω =
+        (H₀.filter (fun j => n < ((Finset.univ : Finset (Fin d)).filter
+            (fun k => |W k ω| ≤ |W j ω|)).card ∧ W j ω < 0)).card := by
       unfold Vminus Sminus; congr 1; ext j
       simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun ⟨⟨hle, hneg⟩, hmem⟩ => ⟨hmem, (hRk j ω).mp hle, hneg⟩,
@@ -195,47 +199,47 @@ private lemma measurable_Vminus_theta (W : Fin d → Ω → ℝ) (H₀ : Finset 
       measurable_const measurable_const
 
 /-- Strong measurability of `Yproc W H₀ n` w.r.t. the ambient sigma-algebra `mΩ`. Proved via
-the order-statistic rank condition: `θ_n ≤ |W j|` iff the null-magnitude rank of `|W j|` is `> n`,
-which rewrites `Vplus`/`Vminus` as finite sums of measurable indicators.
+the order-statistic rank condition: `θ_n ≤ |W j|` iff the magnitude rank of `|W j|` among all `d`
+coordinates is `> n`, which rewrites `Vplus`/`Vminus` as finite sums of measurable indicators.
 - **LEAN-ONLY**: measurability adapter; requires `hWmeas : ∀ j, Measurable (W j)`. -/
 private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) :
     StronglyMeasurable (Yproc W H₀ n) := by
   apply Measurable.stronglyMeasurable
   unfold Yproc
-  by_cases h : n < H₀.card
+  by_cases h : n < d
   · simp only [h, ↓reduceDIte]
-    -- Inner count measurability: j ↦ #{k : Fin H₀.card | |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|}
+    -- Inner count measurability: j ↦ #{k : Fin d | |W k ω| ≤ |W j ω|}
     -- Use simp_rw (rewrites under binders) to convert .card to a sum of indicators,
     -- avoiding universe-polymorphic `cfs` helper that leaks universe variables.
     have hCL : ∀ j : Fin d, Measurable (fun ω =>
-        ((Finset.univ : Finset (Fin H₀.card)).filter
-          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card) := fun j => by
+        ((Finset.univ : Finset (Fin d)).filter
+          (fun k => |W k ω| ≤ |W j ω|)).card) := fun j => by
       simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
       exact Finset.measurable_sum _ fun k _ =>
         Measurable.ite (measurableSet_le ((hWmeas _).abs) ((hWmeas j).abs))
           measurable_const measurable_const
     -- Rank condition: θ_n ω ≤ |W j ω| ↔ n < (inner count for j at ω)
     have hRk : ∀ (j : Fin d) (ω : Ω),
-        θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔
-        n < ((Finset.univ : Finset (Fin H₀.card)).filter
-          (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card :=
+        θ W ⟨n, h⟩ ω ≤ |W j ω| ↔
+        n < ((Finset.univ : Finset (Fin d)).filter
+          (fun k => |W k ω| ≤ |W j ω|)).card :=
       fun j ω => orderStat_le_iff_card_lt
-        (fun k : Fin H₀.card => |W (H₀.orderEmbOfFin rfl k) ω|) ⟨n, h⟩ _
+        (fun k : Fin d => |W k ω|) ⟨n, h⟩ _
     -- Rewrite Vplus/Vminus via rank condition, then prove measurability as outer sum of indicators.
     -- heq converts Vplus/Vminus directly to sum form while preserving the inner count as .card,
     -- so that hCL j (which has .card type) unifies correctly in the final Measurable.ite call.
     -- simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter] would also rewrite inner .card to sum
     -- form, breaking the type match with hCL j — so we bake the conversion into heq instead.
-    have hVpMeas : Measurable (fun ω => (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-      have heq : ∀ ω, (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
-          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
-                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+    have hVpMeas : Measurable (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ)) := by
+      have heq : ∀ ω, (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ) =
+          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin d)).filter
+                (fun k => |W k ω| ≤ |W j ω|)).card ∧
               0 < W j ω) then (1 : ℕ) else 0 := fun ω => by
-        have hstep : Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+        have hstep : Vplus W H₀ (θ W ⟨n, h⟩ ω) ω =
             (H₀.filter (fun j => n <
-              ((Finset.univ : Finset (Fin H₀.card)).filter
-                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              ((Finset.univ : Finset (Fin d)).filter
+                (fun k => |W k ω| ≤ |W j ω|)).card ∧
               0 < W j ω)).card := by
           unfold Vplus Splus; congr 1; ext j
           simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
@@ -249,15 +253,15 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
           (measurableSet_lt measurable_const (hCL j))
           (measurableSet_lt measurable_const (hWmeas j)))
           measurable_const measurable_const
-    have hVmMeas : Measurable (fun ω => (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ)) := by
-      have heq : ∀ ω, (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℕ) =
-          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin H₀.card)).filter
-                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+    have hVmMeas : Measurable (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ)) := by
+      have heq : ∀ ω, (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℕ) =
+          ∑ j ∈ H₀, if (n < ((Finset.univ : Finset (Fin d)).filter
+                (fun k => |W k ω| ≤ |W j ω|)).card ∧
               W j ω < 0) then (1 : ℕ) else 0 := fun ω => by
-        have hstep : Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω =
+        have hstep : Vminus W H₀ (θ W ⟨n, h⟩ ω) ω =
             (H₀.filter (fun j => n <
-              ((Finset.univ : Finset (Fin H₀.card)).filter
-                (fun k => |W (H₀.orderEmbOfFin rfl k) ω| ≤ |W j ω|)).card ∧
+              ((Finset.univ : Finset (Fin d)).filter
+                (fun k => |W k ω| ≤ |W j ω|)).card ∧
               W j ω < 0)).card := by
           unfold Vminus Sminus; congr 1; ext j
           simp only [Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
@@ -284,8 +288,8 @@ noncomputable def cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : 
     (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ :=
   (fun j => |W j ω|,
    fun j => if j ∈ H₀ then 0 else sgnReal W j ω,
-   (if h : n < H₀.card then (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) else 0),
-   (if h : n < H₀.card then (Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) else 0))
+   (if h : n < d then (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) else 0),
+   (if h : n < d then (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) else 0))
 
 private lemma measurable_cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) : Measurable (cproc W H₀ n) := by
@@ -297,11 +301,11 @@ private lemma measurable_cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)
     · simp only [hj, if_false]
       exact Measurable.ite (measurableSet_le measurable_const (hWmeas j))
         measurable_const measurable_const
-  · by_cases h : n < H₀.card
+  · by_cases h : n < d
     · simp only [h, ↓reduceDIte]
       exact measurable_from_top.comp (measurable_Vplus_theta W H₀ hWmeas n h)
     · simp only [h, ↓reduceDIte]; exact measurable_const
-  · by_cases h : n < H₀.card
+  · by_cases h : n < d
     · simp only [h, ↓reduceDIte]
       exact measurable_from_top.comp (measurable_Vminus_theta W H₀ hWmeas n h)
     · simp only [h, ↓reduceDIte]; exact measurable_const
@@ -321,17 +325,17 @@ lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     Filtration.stronglyAdapted_natural
       (fun n => (measurable_cproc W H₀ hWmeas n).stronglyMeasurable) n
   have hg : Measurable (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
-      if n < H₀.card then x.2.2.1 / (1 + x.2.2.2) else 0) := by
-    by_cases h : n < H₀.card
+      if n < d then x.2.2.1 / (1 + x.2.2.2) else 0) := by
+    by_cases h : n < d
     · simp only [h, if_true]
       exact (measurable_fst.comp (measurable_snd.comp measurable_snd)).div
         (measurable_const.add (measurable_snd.comp (measurable_snd.comp measurable_snd)))
     · simp only [h, if_false]; exact measurable_const
   have heq : Yproc W H₀ n = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
-      if n < H₀.card then x.2.2.1 / (1 + x.2.2.2) else 0) ∘ (cproc W H₀ n) := by
+      if n < d then x.2.2.1 / (1 + x.2.2.2) else 0) ∘ (cproc W H₀ n) := by
     funext ω
     simp only [Function.comp_apply, Yproc, cproc]
-    by_cases h : n < H₀.card <;> simp [h]
+    by_cases h : n < d <;> simp [h]
   rw [heq]
   exact (hg.comp hcproc.measurable).stronglyMeasurable
 
@@ -348,25 +352,34 @@ lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
   rw [Real.norm_of_nonneg (Yproc_nonneg W H₀ n ω)]
   unfold Yproc
   split_ifs with h
-  · have h_vm : (0 : ℝ) ≤ Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω := Nat.cast_nonneg _
+  · have h_vm : (0 : ℝ) ≤ Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := Nat.cast_nonneg _
     rw [div_le_iff₀ (by linarith)]
-    have h_vp : (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ) ≤ H₀.card := by
+    have h_vp : (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) ≤ H₀.card := by
       simp only [Vplus]
       exact_mod_cast Finset.card_le_card Finset.inter_subset_right
-    calc (Vplus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω : ℝ)
+    calc (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
         ≤ H₀.card := h_vp
-      _ ≤ H₀.card * (1 + Vminus W H₀ (θ W H₀ ⟨n, h⟩ ω) ω) :=
+      _ ≤ H₀.card * (1 + Vminus W H₀ (θ W ⟨n, h⟩ ω) ω) :=
             le_mul_of_one_le_right (Nat.cast_nonneg _) (by linarith)
   · exact Nat.cast_nonneg _
 
 /-! ## 4. One-step supermartingale inequality -/
 
 /-- **One-step conditional expectation inequality** (the high-risk core lemma):
-`μ[Yproc (n+1) | 𝒢rev n] ≤ᵐ[μ] Yproc n`. Revealing the (n+1)-th null's sign adds a fresh
-`Ber(½)` independent of `𝒢rev n` (by `KnockoffScore.signs_iIndep`/`signs_indep_mag`); after
-integrating out via `iIndepFun.condExp_natural_ae_eq_of_lt`, the ratio decreases in expectation.
-- **USER-INPUT**: sign independence from `hW.signs_iIndep`, `hW.signs_fair`, `hW.signs_indep_mag`;
-  Lu-BDA §19 (Def. `kos` cond. 3). -/
+`μ[Yproc (n+1) | 𝒢rev n] ≤ᵐ[μ] Yproc n`. The step is a supermartingale by the **count filtration**
+/ exchangeability, not a "fresh independent coin":
+
+* At a step `n → n+1` whose crossed coordinate `θ_n → θ_{n+1}` is a **non-null** coordinate, the
+  null counts `V₊, V₋` (which count only `H₀`) are unchanged, so `Yproc (n+1) = Yproc n` — a trivial
+  (deterministic) martingale step.
+* At a **null** step, the removed null's sign is uniform among the remaining nulls (exchangeability
+  of the i.i.d. fair null signs given the outer data, `count_condExp`): with `A = V₊(θ_n)`,
+  `B = V₋(θ_n)` and `k = A + B`, the crossed null is positive with probability `A/k` (then
+  `V₊ → A−1`, `V₋ → B`) and negative with probability `B/k` (then `V₊ → A`, `V₋ → B−1`), so
+  `E[Yproc (n+1) | 𝒢rev n] = (A/k)·(A−1)/(1+B) + (B/k)·A/B = A/(1+B) = Yproc n`.
+
+- **USER-INPUT**: sign exchangeability from `hW.signs_iIndep`/`signs_fair`/`signs_indep_outer`;
+  Lu-BDA §19. -/
 lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) (n : ℕ) :
     μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
@@ -384,14 +397,16 @@ lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)
 
 /-! ## 5. Stopping time (tauStar) -/
 
-/-- `tauStar W H₀ α ω` is the index in `{0, …, H₀.card}` corresponding to the knock-off
-threshold `tStar W α ω` in the `Yproc` index space: the first n for which `FDPhat(θ n ω) ≤ α`.
-Bounded by H₀.card. Defined via `hittingBtwn` on the FDPhat-at-θ process.
+/-- `tauStar W H₀ α ω` is the index in `{0, …, d}` corresponding to the knock-off threshold
+`tStar W α ω` in the `Yproc` index space: the first n for which `FDPhat(θ n ω) ≤ α`, where `θ`
+ranges over the order statistics of **all `d`** magnitudes. Bounded by `d`. Defined via
+`hittingBtwn` on the FDPhat-at-θ process. Re-indexing over all `d` magnitudes (Candès §11.5) is
+what makes `tauStar` align with `tStar = min{ t ∈ {|W_j|} : FDPhat ≤ α }`.
 - **USER-INPUT**: the index-to-threshold correspondence; Lu-BDA §19. -/
 noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) : Ω → ℕ∞ :=
   fun ω => ↑(hittingBtwn
-    (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
-    (Set.Iic α) 0 H₀.card ω)
+    (fun (n : ℕ) (ω : Ω) => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
+    (Set.Iic α) 0 d ω)
 
 /-- `#S⁺(t)` splits into the null count `V₊(t)` plus the non-null positives above `t`. -/
 private lemma Splus_card_decomp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (t : ℝ) (ω : Ω) :
@@ -422,21 +437,22 @@ private lemma Sminus_card_decomp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
 /-- The FDPhat-at-θ process is adapted to the count filtration `𝒢rev`: `FDPhat(θ_n)` is a Borel
 function of `cproc n`. `#S±(θ_n) = V±(θ_n) + (non-null count above θ_n)`, where `V±(θ_n)` are the
 count components of `cproc n` and the non-null counts are functions of the magnitudes + non-null
-signs (also in `cproc n`); the threshold `θ_n ≤ |W_j|` is the rank condition `n < #{k | …}`.
+signs (also in `cproc n`); the threshold `θ_n ≤ |W_j|` is the rank condition `n < #{k | …}` over all
+`d` coordinates.
 - **USER-INPUT**: adaptedness from the count-filtration structure; Lu-BDA §19. -/
 private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
     (hWmeas : ∀ j, Measurable (W j)) :
     Adapted (𝒢rev W H₀ hWmeas)
       (fun (n : ℕ) (ω : Ω) =>
-        if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1) := by
+        if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1) := by
   intro n
-  -- The non-null rank predicate, as a function of a magnitude vector `m`.
+  -- The rank predicate, as a function of a magnitude vector `m`, over all `d` coordinates.
   let rank : (Fin d → ℝ) → Fin d → ℕ := fun m j =>
-    ((Finset.univ : Finset (Fin H₀.card)).filter
-      (fun k => m (H₀.orderEmbOfFin rfl k) ≤ m j)).card
+    ((Finset.univ : Finset (Fin d)).filter
+      (fun k => m k ≤ m j)).card
   -- The Borel function `G` of `cproc n` computing the process value.
   let G : ((Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ) → ℝ := fun x =>
-    if n < H₀.card then
+    if n < d then
       (x.2.2.2 + ((H₀ᶜ.filter (fun j => n < rank x.1 j ∧ x.2.1 j = -1)).card : ℝ) + 1)
         / max (x.2.2.1 + ((H₀ᶜ.filter
             (fun j => n < rank x.1 j ∧ x.2.1 j = 1 ∧ x.1 j ≠ 0)).card : ℝ)) 1
@@ -465,7 +481,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
       Measurable.ite (hP j) measurable_const measurable_const
   have hGmeas : Measurable G := by
     simp only [G]
-    by_cases h : n < H₀.card
+    by_cases h : n < d
     · simp only [h, if_true]
       apply Measurable.div
       · apply Measurable.add
@@ -483,15 +499,15 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
               measurable_const).compl)
     · simp only [h, if_false]; exact measurable_const
   -- The process value equals `G (cproc n)`.
-  have hval : (fun ω => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
+  have hval : (fun ω => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
       = G ∘ cproc W H₀ n := by
     funext ω
     simp only [Function.comp_apply, G, cproc]
-    by_cases h : n < H₀.card
+    by_cases h : n < d
     · simp only [h, ↓reduceDIte, if_true]
-      have hrankθ : ∀ j, θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔ n < rank (fun j => |W j ω|) j := by
+      have hrankθ : ∀ j, θ W ⟨n, h⟩ ω ≤ |W j ω| ↔ n < rank (fun j => |W j ω|) j := by
         intro j; exact orderStat_le_iff_card_lt _ ⟨n, h⟩ _
-      have hpos : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
+      have hpos : ∀ j ∈ H₀ᶜ, (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
           (n < rank (fun j => |W j ω|) j ∧
             (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = 1 ∧ |W j ω| ≠ 0) := by
         intro j hj
@@ -505,7 +521,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
           rcases lt_or_eq_of_le h0 with hlt | heq
           · exact hlt
           · exact absurd (by rw [← heq]; simp) hne
-      have hneg : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ W j ω < 0) ↔
+      have hneg : ∀ j ∈ H₀ᶜ, (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ W j ω < 0) ↔
           (n < rank (fun j => |W j ω|) j ∧ (if j ∈ H₀ then (0:ℝ) else sgnReal W j ω) = -1) := by
         intro j hj
         rw [Finset.mem_compl] at hj
@@ -533,28 +549,29 @@ lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) 
   exact Adapted.isStoppingTime_hittingBtwn (FDPhat_atTheta_adapted W H₀ α hWmeas) measurableSet_Iic
 
 omit mΩ in
-/-- `tauStar W H₀ α ω ≤ H₀.card` for all ω: bounded by the total number of nulls.
+/-- `tauStar W H₀ α ω ≤ d` for all ω: bounded by the total number of coordinates.
 - **LEAN-ONLY**: from `hittingBtwn_le` applied to the hitting time bound. -/
 lemma tauStar_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
-    tauStar W H₀ α ω ≤ (H₀.card : ℕ∞) := by
+    tauStar W H₀ α ω ≤ (d : ℕ∞) := by
   simp only [tauStar]
   exact WithTop.coe_le_coe.mpr (hittingBtwn_le ω)
 
 /-! ## 6. Bridge: stoppedValue = V₊(t*)/(1+V₋(t*)) -/
 
 /-- Order-statistic bridge: the V₊/V₋ ratio at `tStar` equals `Yproc` at the hitting index.
-The argument: FDPhat is a step-function of all magnitudes; its minimum over `{|W j|}` with
-FDPhat ≤ α falls in the same half-open interval `[θ_k, θ_{k+1})` as the first null index k
-found by `hittingBtwn`. In that interval V₊ and V₋ (null-restricted counts) are constant, so
+The argument: FDPhat is a step-function of all magnitudes; its minimizer over `{|W j|}` with
+FDPhat ≤ α (the threshold `tStar`) is itself one of the order statistics `θ_k` (now ranging over
+**all `d`** magnitudes), and is exactly the magnitude at the first hitting index `k` found by
+`hittingBtwn`. There `V₊(tStar) = V₊(θ_k)` and `V₋(tStar) = V₋(θ_k)`, so
 `V₊(tStar)/(1+V₋(tStar)) = V₊(θ_k)/(1+V₋(θ_k)) = Yproc k ω`.
-- **USER-INPUT**: order-statistic analysis; Lu-BDA §19. -/
+- **USER-INPUT**: order-statistic analysis; Lu-BDA §19 (Candès STATS-300C §11.5). -/
 private lemma ratio_eq_Yproc_hittingIdx
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
     Yproc W H₀
       (hittingBtwn
-        (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
-        (Set.Iic α) 0 H₀.card ω) ω := by
+        (fun (n : ℕ) (ω : Ω) => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
+        (Set.Iic α) 0 d ω) ω := by
   sorry
 
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio
@@ -572,8 +589,8 @@ lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (
 /-! ## 7. Master theorem -/
 
 /-- **Master inequality** (Lu-BDA §19): `E[V₊(t*)/(1+V₋(t*))] ≤ 1`, by exhibiting the
-threshold-indexed ratio as a supermartingale (one-step inequality from the conditional `Ber(½)`
-sign field) and applying optional stopping (`supermartingale_integral_stoppedValue_le`) plus the
+threshold-indexed ratio as a supermartingale (one-step inequality from the exchangeable null-sign
+field) and applying optional stopping (`supermartingale_integral_stoppedValue_le`) plus the
 initial bound `knockoff_initial_le`. -/
 theorem knockoff_ratio_stopped_le_one (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ) :
