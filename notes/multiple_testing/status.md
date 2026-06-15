@@ -1,13 +1,15 @@
 # MultipleTesting area — status
 
-## STATUS: milestone — `mt/area` **green, 0 errors, 3 named sorries** (BH + Holm complete; knockoff
-*assembly* `knockoff_fdr_le` + the **binomial initial reduction** complete). The 3 remaining
-knockoff supermartingale-core residuals are now **unblocked**: the **construction audit**
-([construction_audit.md](construction_audit.md)) found the correct martingale (the **count-filtration
-supermartingale** via exchangeability), and its finite core `step_ratio_le` is **proven**
-(`ForMathlib/BinomialRatio`). Remaining = a filtration re-base + `FDPhat_atTheta_adapted` +
-`ratio_eq_Yproc_hittingIdx` + the lone research brick `count_condExp` (exchangeable conditional
-expectation = empirical fraction; no Mathlib support). See the audit's RESOLUTION + work-list.
+## STATUS: milestone — `mt/area` **green, 0 errors, 2 named sorries** (BH + Holm complete; knockoff
+*assembly* `knockoff_fdr_le` + **binomial initial reduction** complete). Reconstruction progress:
+the **count-filtration re-base** (`𝒢rev`, `Yproc_adapted`) and **`FDPhat_atTheta_adapted`** are
+**proven green**, and the finite supermartingale core `step_ratio_le` is proven. The 2 remaining
+sorries (`step_condExp_le`, `ratio_eq_Yproc_hittingIdx`) are entangled in a **second reconstruction
+pass** the audit uncovered: `ratio_eq` is **false as stated** because `tStar` ranges over all `d`
+magnitudes while the martingale is indexed by null order stats (and `FDPhat` is non-monotone) — the
+fix is to **re-index the martingale over all `d` magnitudes**, which also re-states `step_condExp_le`;
+the lone research brick `count_condExp` (exchangeable conditional expectation) then closes it. See
+[construction_audit.md](construction_audit.md) (RESOLUTION + work-list + the `tStar` finding).
 
 Branch `mt/area` (worktree `../Stat-Lean-mt`). Reference: Lu, *Big Data Analysis* ch. 18–19;
 Holm–Bonferroni from Holm (1979).

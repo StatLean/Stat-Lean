@@ -136,12 +136,38 @@ usable (the one-step inequality now holds), but `step_condExp_le` decomposes as:
   the rank condition for the threshold, and the sign equivalences `0<W_j ↔ sgnReal=1∧|W_j|≠0`,
   `W_j<0 ↔ sgnReal=-1` on non-nulls; `G` Borel-measurable on the product. (Note: `Adapted` is
   `Measurable`-based here.)
-- ⬜ `ratio_eq_Yproc_hittingIdx`: deterministic order-stat ↔ hitting (~80 lines).
-- ⬜ `step_condExp_le`: assemble from `count_condExp` (brick, sorry) + `step_removal_eq` (counting:
-  removing the boundary null shifts `V₊` or `V₋` by 1) + `step_ratio_le` (✅), via `condExp_add`
-  + `condExp_mul_of_stronglyMeasurable_*` to pull the count factors out and `count_condExp` for the
-  indicator. `count_condExp` (`E[𝟙(removed=+)|𝒢rev n] = V₊/(V₊+V₋)`) is the single documented
-  research brick (no Mathlib sampling-without-replacement conditional-expectation support).
+- ⚠️ `ratio_eq_Yproc_hittingIdx`: **DEEPER ISSUE FOUND (pushing it surfaced a construction
+  mismatch, not just a hard proof).** `tStar` = min over **all `d` magnitudes** `{|W_j|}` with
+  `FDPhat ≤ α`; but `tauStar = hittingBtwn` runs over the **null order-statistics `θ_n`** only.
+  Because `FDPhat(t) = (#S⁻+1)/(#S⁺∨1)` is **not monotone** in `t` (both counts shrink as `t↑`),
+  the all-magnitude minimizer `tStar` can sit in a different `V₊/V₋` constancy cell than the
+  null-index `θ_k`, so `V₊(tStar)/(1+V₋(tStar)) ≠ Yproc(k)` in general. Two concrete failure modes:
+  (a) **degenerate** — if no magnitude has `FDPhat ≤ α`, `tStar = 0` (the `Procedure.tStar` else
+  branch) but `hittingBtwn = H₀.card` ⇒ LHS `= V₊(0)/(1+V₋(0)) ≠ 0 =` RHS; (b) **non-monotone** —
+  a non-null magnitude below `θ_k` can dip `FDPhat ≤ α`, making `tStar < θ_k` in a higher
+  `V₊`-cell. **So the lemma is false as stated; it cannot be proved against the current scaffold.**
+  **Fix (next session): re-index the martingale over ALL `d` magnitudes** (`θ` = order stats of the
+  full `|W|` vector over `Fin d`, `Yproc`/`cproc`/`tauStar` correspondingly), so `tauStar` aligns
+  with `tStar`. `Yproc` stays a supermartingale: revealing a *non-null* sign leaves the null counts
+  `V±` unchanged (a trivial martingale step), and null reveals are the exchangeable ones — so
+  `step_ratio_le`/`count_condExp` still apply at the null-reveal steps. This ripples through `θ`,
+  `Yproc_stronglyMeasurable`, `cproc`, `𝒢rev`, `FDPhat_atTheta_adapted`, `knockoff_supermartingale`,
+  `knockoff_initial_le` (now `Yproc 0` over all-mag min). Substantial — a second reconstruction pass.
+- ⬜ `step_condExp_le`: TRUE and provable (unlike `ratio_eq` it is not affected by the `tStar`
+  mismatch — it is purely the supermartingale step). Assemble from `count_condExp` (brick, sorry) +
+  `step_removal_eq` (counting: removing the boundary null shifts `V₊` or `V₋` by 1 — **needs
+  tie-handling**, `|W_j|` ties give `θ_n = θ_{n+1}` and a no-op step) + `step_ratio_le` (✅), via
+  `condExp_add` + `condExp_mul_of_stronglyMeasurable_*` to pull the count factors out and
+  `count_condExp` for the indicator. `count_condExp` (`E[𝟙(removed=+)|𝒢rev n] = V₊/(V₊+V₋)`) is the
+  single documented research brick (no Mathlib sampling-without-replacement conditional-expectation
+  support). NB: under the **all-`d`-magnitude re-index** (needed for `ratio_eq`), this lemma is
+  re-stated over all-magnitude indices — non-null reveal steps are trivial martingale steps, so the
+  assembly is unchanged at the null-reveal steps.
+
+**Net:** the two remaining sorries are entangled in a **second reconstruction pass** — re-index the
+martingale over all `d` magnitudes (the book's `t*` ranges over `{|W_j|}`, not null order stats) —
+plus the `count_condExp` research brick. The FDPhat-adaptedness technique (`#S±` decomposition +
+`G∘cproc`) transfers to the re-indexed construction. Substantial, but precisely scoped.
 
 ## State
 
