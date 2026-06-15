@@ -125,13 +125,21 @@ usable (the one-step inequality now holds), but `step_condExp_le` decomposes as:
    `(A/k)·(A−1)/(1+B) + (B/k)·(A/B) ≤ A/(1+B)` (`/0 = 0` conventions; `B=0` edge gives `A−1 ≤ A`).
 
 **Reconstruction work-list (Phases 3–4, revised):**
-- (Defs/Procedure, laptop-only) redefine `𝒢rev` as the count filtration; expose `V₊,V₋` as the
-  measurable count process; re-prove `Yproc_adapted` (trivial under the new `𝒢rev`).
-- `FDPhat_atTheta_adapted`: now provable (`FDPhat` = Borel fn of magnitudes + non-null signs + null
-  counts) — Phase 3.
-- `ratio_eq_Yproc_hittingIdx`: unchanged (deterministic order-stat ↔ hitting; Phase 3).
-- `step_condExp_le`: assemble from `count_condExp` (brick) + `step_removal_eq` + `step_ratio_le`
-  (Phase 4). `step_ratio_le` provable now; `count_condExp` is the single documented research brick.
+- ✅ **DONE (Step A, builds green).** `𝒢rev` re-based as the count filtration `Filtration.natural
+  cproc` (`cproc` = magnitudes ⊕ non-null signs ⊕ `(V₊(θ_n),V₋(θ_n))`); `measurable_cproc`,
+  `measurable_Vplus_theta`/`measurable_Vminus_theta`, and `Yproc_adapted` (via `g ∘ cproc`) proven;
+  all downstream (`knockoff_supermartingale`, `tauStar_isStoppingTime`, `knockoff_ratio_stopped_le_one`)
+  recompiled unchanged against the new `𝒢rev`.
+- ✅ `step_ratio_le` proven (`ForMathlib/BinomialRatio`).
+- ⬜ `FDPhat_atTheta_adapted`: now provable — `FDPhat(θ_n) = h(cproc n)` (decompose `#S±(θ_n)` into
+  the non-null part [Borel fn of magnitudes + non-null signs] + the null count `V±(θ_n)`); the
+  hardest remaining bookkeeping (~100 lines).
+- ⬜ `ratio_eq_Yproc_hittingIdx`: deterministic order-stat ↔ hitting (~80 lines).
+- ⬜ `step_condExp_le`: assemble from `count_condExp` (brick, sorry) + `step_removal_eq` (counting:
+  removing the boundary null shifts `V₊` or `V₋` by 1) + `step_ratio_le` (✅), via `condExp_add`
+  + `condExp_mul_of_stronglyMeasurable_*` to pull the count factors out and `count_condExp` for the
+  indicator. `count_condExp` (`E[𝟙(removed=+)|𝒢rev n] = V₊/(V₊+V₋)`) is the single documented
+  research brick (no Mathlib sampling-without-replacement conditional-expectation support).
 
 ## State
 
