@@ -107,3 +107,12 @@ ALL theorems proven & merged EXCEPT the single increment_bounded lemma. All 3 ha
 FINAL PUSH on increment_bounded: found the exact Mathlib bricks the prior ~6 sessions missed —
   condDistrib_ae_eq_of_measure_eq_compProd (disintegration UNIQUENESS) + indepFun_iff_map_prod_eq_prod_map_map + Measure.compProd_const.
 Path: prove `IndepFun W Z → condDistrib Z W μ =ᵐ const(μ.map Z)` from those 3, add [StandardBorelSpace (β i)] [Nonempty (β i)] instances (thread through DoobDecomposition + McDiarmid), bridge condExpKernel↔condDistrib, then bounded-difference range. Prompt: increment-bounded-final.md. Closer conc/increment-final-r1 running (Opus xhigh, 32G, stable SSH).
+
+## ★★★ 2026-06-14 — BATCH 1 CLOSURE: ZERO SORRY ★★★
+increment_bounded CLOSED (Opus xhigh) via private `condDistrib_eq_const_of_indepFun` (indepFun_iff_map_prod_eq_prod_map_map + compProd_const + condDistrib_ae_eq_of_measure_eq_compProd) + [StandardBorelSpace (β i)] [Nonempty (β i)] threaded through DoobDecomposition + McDiarmid. Full library build 3372 jobs, exit 0, ZERO sorry project-wide, clean #print axioms.
+ALL Batch-1 theorems formalized 0-sorry:
+- CI ch2: classical LLN/CLT; sub-Gaussian def/bounded/Markov/Chernoff/two-sided-tail/Hoeffding.
+- CI ch3: sub-exponential def/two-regime-tail/sample-mean; McDiarmid (CondHoeffding→Doob→inequality).
+- CI ch4: Bernstein def/MGF(bernstein_key)/inequality; covering numbers/ball; finite-maximal; ℓ²-maximal.
+- HDS ch5: thm:mse-ols (expectation + high-prob).  HDS ch8: thm:re; cor:lasso-rate.
+All 3 originally-hard fallback lemmas PROVEN: condExp_hoeffding_mgf, card_le_of_isSeparated_ball, subGaussian_coords_of_orthonormal. Plus the analytic bernstein_key and the condDistrib gap — NO accepted debt remaining.
