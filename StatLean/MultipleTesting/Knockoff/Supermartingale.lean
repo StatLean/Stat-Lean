@@ -3,7 +3,10 @@ import StatLean.MultipleTesting.Knockoff.Defs
 import StatLean.MultipleTesting.Knockoff.Initial
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
+import StatLean.MultipleTesting.ForMathlib.BinomialRatio
+import StatLean.MultipleTesting.ForMathlib.SymmetricCondExp
 import Mathlib.MeasureTheory.Order.Group.Lattice
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
 # Knock-off master inequality (Lu-BDA §19) — the supermartingale core
@@ -364,6 +367,214 @@ lemma Yproc_integrable (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
   · exact Nat.cast_nonneg _
 
 /-! ## 4. One-step supermartingale inequality -/
+
+/-- The additive form of the exchangeable-step inequality (`step_ratio_le` rearranged): writing the
+post-step ratio as `A/(1+B)` plus the positive/negative sign corrections weighted by the conditional
+sign probabilities `A/(A+B)`, `B/(A+B)`, the result does not exceed `A/(1+B)`. Pure ℝ, reduces to
+`step_ratio_le`.
+- **LEAN-ONLY**: algebraic repackaging of `step_ratio_le` for the conditional-expectation assembly. -/
+private lemma step_ratio_le' (a b : ℕ) :
+    (a : ℝ) / (1 + b)
+      + (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b))
+      + (b : ℝ) / (a + b) * ((a : ℝ) / b - (a : ℝ) / (1 + b)) ≤ (a : ℝ) / (1 + b) := by
+  rcases Nat.eq_zero_or_pos (a + b) with hk | hk
+  · have ha : a = 0 := by omega
+    have hb : b = 0 := by omega
+    subst ha; subst hb; norm_num
+  · have hk0 : (a : ℝ) + b ≠ 0 := by
+      have : (0 : ℝ) < (a : ℝ) + b := by exact_mod_cast hk
+      linarith
+    have hsum : (a : ℝ) / (a + b) + (b : ℝ) / (a + b) = 1 := by
+      rw [← add_div, div_self hk0]
+    have hrw : (a : ℝ) / (1 + b)
+        + (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b))
+        + (b : ℝ) / (a + b) * ((a : ℝ) / b - (a : ℝ) / (1 + b))
+        = (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b)) + (b : ℝ) / (a + b) * ((a : ℝ) / b)
+          + (a : ℝ) / (1 + b) * (1 - ((a : ℝ) / (a + b) + (b : ℝ) / (a + b))) := by ring
+    rw [hrw, hsum]
+    have h0 : (a : ℝ) / (1 + b) * (1 - 1) = 0 := by ring
+    rw [h0, add_zero]
+    exact step_ratio_le a b
+
+/-- The "rank-`n` coordinate": the index achieving the `n`-th magnitude order statistic
+`θ_n ω = |W (cIdx ω) ω|` (the coordinate crossed when the threshold rises `θ_n → θ_{n+1}`). -/
+private noncomputable def cIdx (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (ω : Ω) : Fin d :=
+  Tuple.sort (fun i => |W i ω|) ⟨n, h⟩
+
+omit mΩ in
+/-- `θ_n ω` is the magnitude of the rank-`n` coordinate. -/
+private lemma cIdx_spec (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (ω : Ω) :
+    θ W ⟨n, h⟩ ω = |W (cIdx W n h ω) ω| := rfl
+
+omit mΩ in
+/-- An injective tuple has strictly monotone order statistics. -/
+private lemma orderStat_strictMono_of_injective {m : ℕ} (v : Fin m → ℝ)
+    (hv : Function.Injective v) : StrictMono (orderStat v) :=
+  (orderStat_monotone v).strictMono_of_injective (fun a b hab => by
+    have hvv : v (Tuple.sort v a) = v (Tuple.sort v b) := hab
+    exact (Tuple.sort v).injective (hv hvv))
+
+omit mΩ in
+/-- **Threshold step (positives).** Under a.s.-distinct magnitudes, raising the threshold from `θ_n`
+to `θ_{n+1}` deletes exactly the rank-`n` coordinate from `S⁺`. -/
+private lemma Splus_theta_succ (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (h1 : n + 1 < d)
+    (ω : Ω) (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
+    Splus W (θ W ⟨n + 1, h1⟩ ω) ω = (Splus W (θ W ⟨n, h⟩ ω) ω).erase (cIdx W n h ω) := by
+  have hinj : Function.Injective (fun i => |W i ω|) := by
+    intro i j hij
+    by_contra hne
+    exact hmagω i j hne hij
+  have hSM : StrictMono (orderStat (fun i => |W i ω|)) :=
+    orderStat_strictMono_of_injective _ hinj
+  have key : ∀ j : Fin d, θ W ⟨n + 1, h1⟩ ω ≤ |W j ω| ↔
+      (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ j ≠ cIdx W n h ω) := by
+    intro j
+    have hvj : |W j ω| =
+        orderStat (fun i => |W i ω|) ((Tuple.sort (fun i => |W i ω|)).symm j) := by
+      simp only [orderStat, Equiv.apply_symm_apply]
+    have e1 : θ W ⟨n + 1, h1⟩ ω = orderStat (fun i => |W i ω|) ⟨n + 1, h1⟩ := rfl
+    have e2 : θ W ⟨n, h⟩ ω = orderStat (fun i => |W i ω|) ⟨n, h⟩ := rfl
+    rw [e1, e2, hvj, hSM.le_iff_le, hSM.le_iff_le]
+    have hcn : (j ≠ cIdx W n h ω) ↔
+        ((Tuple.sort (fun i => |W i ω|)).symm j ≠ (⟨n, h⟩ : Fin d)) := by
+      rw [ne_eq, ne_eq, not_iff_not]
+      constructor
+      · intro hj; rw [hj]; simp only [cIdx, Equiv.symm_apply_apply]
+      · intro hr
+        have hcong := congrArg (Tuple.sort (fun i => |W i ω|)) hr
+        rw [Equiv.apply_symm_apply] at hcong
+        exact hcong
+    rw [hcn, Fin.le_def, Fin.le_def, ne_eq, Fin.ext_iff]
+    have en1 : (⟨n + 1, h1⟩ : Fin d).val = n + 1 := rfl
+    have en : (⟨n, h⟩ : Fin d).val = n := rfl
+    rw [en1, en]
+    omega
+  ext j
+  simp only [Splus, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase]
+  constructor
+  · rintro ⟨hle, hpos⟩
+    obtain ⟨hle', hne⟩ := (key j).mp hle
+    exact ⟨hne, hle', hpos⟩
+  · rintro ⟨hne, hle', hpos⟩
+    exact ⟨(key j).mpr ⟨hle', hne⟩, hpos⟩
+
+omit mΩ in
+/-- **Threshold step (negatives).** Under a.s.-distinct magnitudes, raising the threshold from `θ_n`
+to `θ_{n+1}` deletes exactly the rank-`n` coordinate from `S⁻`. -/
+private lemma Sminus_theta_succ (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (h1 : n + 1 < d)
+    (ω : Ω) (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
+    Sminus W (θ W ⟨n + 1, h1⟩ ω) ω = (Sminus W (θ W ⟨n, h⟩ ω) ω).erase (cIdx W n h ω) := by
+  have hinj : Function.Injective (fun i => |W i ω|) := by
+    intro i j hij
+    by_contra hne
+    exact hmagω i j hne hij
+  have hSM : StrictMono (orderStat (fun i => |W i ω|)) :=
+    orderStat_strictMono_of_injective _ hinj
+  have key : ∀ j : Fin d, θ W ⟨n + 1, h1⟩ ω ≤ |W j ω| ↔
+      (θ W ⟨n, h⟩ ω ≤ |W j ω| ∧ j ≠ cIdx W n h ω) := by
+    intro j
+    have hvj : |W j ω| =
+        orderStat (fun i => |W i ω|) ((Tuple.sort (fun i => |W i ω|)).symm j) := by
+      simp only [orderStat, Equiv.apply_symm_apply]
+    have e1 : θ W ⟨n + 1, h1⟩ ω = orderStat (fun i => |W i ω|) ⟨n + 1, h1⟩ := rfl
+    have e2 : θ W ⟨n, h⟩ ω = orderStat (fun i => |W i ω|) ⟨n, h⟩ := rfl
+    rw [e1, e2, hvj, hSM.le_iff_le, hSM.le_iff_le]
+    have hcn : (j ≠ cIdx W n h ω) ↔
+        ((Tuple.sort (fun i => |W i ω|)).symm j ≠ (⟨n, h⟩ : Fin d)) := by
+      rw [ne_eq, ne_eq, not_iff_not]
+      constructor
+      · intro hj; rw [hj]; simp only [cIdx, Equiv.symm_apply_apply]
+      · intro hr
+        have hcong := congrArg (Tuple.sort (fun i => |W i ω|)) hr
+        rw [Equiv.apply_symm_apply] at hcong
+        exact hcong
+    rw [hcn, Fin.le_def, Fin.le_def, ne_eq, Fin.ext_iff]
+    have en1 : (⟨n + 1, h1⟩ : Fin d).val = n + 1 := rfl
+    have en : (⟨n, h⟩ : Fin d).val = n := rfl
+    rw [en1, en]
+    omega
+  ext j
+  simp only [Sminus, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_erase]
+  constructor
+  · rintro ⟨hle, hneg⟩
+    obtain ⟨hle', hne⟩ := (key j).mp hle
+    exact ⟨hne, hle', hneg⟩
+  · rintro ⟨hne, hle', hneg⟩
+    exact ⟨(key j).mpr ⟨hle', hne⟩, hneg⟩
+
+omit mΩ in
+/-- **Deterministic step (counting).** Under a.s.-distinct magnitudes, raising the threshold
+`θ_n → θ_{n+1}` deletes exactly the rank-`n` coordinate `cn`. Writing `A = V₊(θ_n)`, `B = V₋(θ_n)`,
+`A' = V₊(θ_{n+1})`, `B' = V₋(θ_{n+1})`, the post-step ratio `Yproc (n+1) = A'/(1+B')` equals
+`Yproc n = A/(1+B)` plus the positive correction `((A-1)/(1+B) - A/(1+B))·(A-A')` and the negative
+correction `(A/B - A/(1+B))·(B-B')`. (`A-A'` and `B-B'` are the `{0,1}` indicators of "`cn` is a
+positive/negative null"; the `cn ∉ H₀` and degenerate `W cn = 0` cases give `A'=A`, `B'=B`.) -/
+private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (h1 : n + 1 < d) (ω : Ω)
+    (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
+    Yproc W H₀ (n + 1) ω =
+      (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
+      + (((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - 1) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
+          - (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)))
+        * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ))
+      + ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          - (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)))
+        * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) := by
+  have hSp : Splus W (θ W ⟨n + 1, h1⟩ ω) ω = (Splus W (θ W ⟨n, h⟩ ω) ω).erase (cIdx W n h ω) :=
+    Splus_theta_succ W n h h1 ω hmagω
+  have hSm : Sminus W (θ W ⟨n + 1, h1⟩ ω) ω = (Sminus W (θ W ⟨n, h⟩ ω) ω).erase (cIdx W n h ω) :=
+    Sminus_theta_succ W n h h1 ω hmagω
+  have hVp' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω =
+      ((Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀).erase (cIdx W n h ω)).card := by
+    unfold Vplus; rw [hSp, Finset.erase_inter]
+  have hVm' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω =
+      ((Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀).erase (cIdx W n h ω)).card := by
+    unfold Vminus; rw [hSm, Finset.erase_inter]
+  have hcn_mag : θ W ⟨n, h⟩ ω = |W (cIdx W n h ω) ω| := cIdx_spec W n h ω
+  have hmemSp : cIdx W n h ω ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ ↔
+      (cIdx W n h ω ∈ H₀ ∧ 0 < W (cIdx W n h ω) ω) := by
+    simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨⟨_, hpos⟩, hmem⟩; exact ⟨hmem, hpos⟩
+    · rintro ⟨hmem, hpos⟩; exact ⟨⟨le_of_eq hcn_mag, hpos⟩, hmem⟩
+  have hmemSm : cIdx W n h ω ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ ↔
+      (cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0) := by
+    simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
+    constructor
+    · rintro ⟨⟨_, hneg⟩, hmem⟩; exact ⟨hmem, hneg⟩
+    · rintro ⟨hmem, hneg⟩; exact ⟨⟨le_of_eq hcn_mag, hneg⟩, hmem⟩
+  by_cases hP : cIdx W n h ω ∈ H₀ ∧ 0 < W (cIdx W n h ω) ω
+  · -- positive null: A' = A - 1, B' = B
+    have hmemP : cIdx W n h ω ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := hmemSp.mpr hP
+    have hnotSm : cIdx W n h ω ∉ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by
+      rw [hmemSm]; rintro ⟨_, hneg⟩; linarith [hP.2]
+    have hA1 : 1 ≤ Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      unfold Vplus; exact Finset.card_pos.mpr ⟨cIdx W n h ω, hmemP⟩
+    have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
+      rw [hVp']; unfold Vplus; rw [Finset.card_erase_of_mem hmemP]
+    have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
+    unfold Yproc; rw [dif_pos h1, hA', hB', Nat.cast_sub hA1]; push_cast; ring
+  · by_cases hM : cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0
+    · -- negative null: A' = A, B' = B - 1
+      have hmemM : cIdx W n h ω ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := hmemSm.mpr hM
+      have hnotSp : cIdx W n h ω ∉ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by
+        rw [hmemSp]; rintro ⟨_, hpos⟩; linarith [hM.2]
+      have hB1 : 1 ≤ Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+        unfold Vminus; exact Finset.card_pos.mpr ⟨cIdx W n h ω, hmemM⟩
+      have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+        rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
+      have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
+        rw [hVm']; unfold Vminus; rw [Finset.card_erase_of_mem hmemM]
+      unfold Yproc; rw [dif_pos h1, hA', hB', Nat.cast_sub hB1]; push_cast; ring
+    · -- cn ∉ H₀ or W cn = 0: counts unchanged
+      have hnotSp : cIdx W n h ω ∉ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSp]; exact hP
+      have hnotSm : cIdx W n h ω ∉ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSm]; exact hM
+      have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+        rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
+      have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+        rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
+      unfold Yproc; rw [dif_pos h1, hA', hB']; ring
 
 /-- **One-step conditional expectation inequality** (the high-risk core lemma):
 `μ[Yproc (n+1) | 𝒢rev n] ≤ᵐ[μ] Yproc n`. The step is a supermartingale by the **count filtration**
