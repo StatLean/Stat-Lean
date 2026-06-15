@@ -51,7 +51,9 @@ knock-off procedure at level `α` controls the false discovery rate: `FDR ≤ α
 theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (hα : 0 < α)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
     -- LEAN-ONLY: no ties on null scores (`Wⱼ ≠ 0` a.s.), so the sign is well-defined; Lu-BDA §19
-    (hties : ∀ j ∈ H₀, ∀ᵐ ω ∂μ, W j ω ≠ 0) :
+    (hties : ∀ j ∈ H₀, ∀ᵐ ω ∂μ, W j ω ≠ 0)
+    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §19
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     FDR H₀ (knockoffRejects W α) μ ≤ α := by
   simp only [FDR]
   calc ∫ ω, FDP H₀ (knockoffRejects W α) ω ∂μ
@@ -72,7 +74,7 @@ theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (
         simp_rw [mul_div_assoc]; exact integral_const_mul α _
       -- Step 3: ∫ ratio ≤ 1, so α · ∫ ratio ≤ α · 1 = α
     _ ≤ α * 1 :=
-        mul_le_mul_of_nonneg_left (knockoff_ratio_stopped_le_one μ α W H₀ hW) hα.le
+        mul_le_mul_of_nonneg_left (knockoff_ratio_stopped_le_one μ α W H₀ hW hmag) hα.le
     _ = α := mul_one α
 
 end StatLean.MultipleTesting
