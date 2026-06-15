@@ -289,7 +289,7 @@ noncomputable def cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : 
 
 private lemma measurable_cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) : Measurable (cproc W H₀ n) := by
-  refine Measurable.prod_mk ?_ (Measurable.prod_mk ?_ (Measurable.prod_mk ?_ ?_))
+  refine Measurable.prodMk ?_ (Measurable.prodMk ?_ (Measurable.prodMk ?_ ?_))
   · exact measurable_pi_iff.mpr fun j => (hWmeas j).abs
   · refine measurable_pi_iff.mpr fun j => ?_
     by_cases hj : j ∈ H₀
@@ -333,7 +333,7 @@ lemma Yproc_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     simp only [Function.comp_apply, Yproc, cproc]
     by_cases h : n < H₀.card <;> simp [h]
   rw [heq]
-  exact hg.comp_stronglyMeasurable hcproc
+  exact (hg.comp hcproc.measurable).stronglyMeasurable
 
 /-- `Yproc W H₀ n` is μ-integrable: it is bounded in `[0, H₀.card]` and μ is a probability
 measure (hence finite), so integrability follows from `integrable_const` + `Integrable.mono'`.
