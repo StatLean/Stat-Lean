@@ -27,8 +27,8 @@ match Mathlib's brick, giving a strictly stronger statement (the `t = 0` case is
 The strict inequality `<` on the event is faithful to the book; the brick gives `≤`, and
 the slack is absorbed via the inclusion `{t < y} ⊆ {t ≤ y}`.
 
-This file rests transitively on `DoobDecomposition`'s single open named debt
-`increment_bounded_of_bounded_differences`; it introduces no new `sorry`.
+This file rests on the fully proved `mgf_sub_expectation_le` (DoobDecomposition); the whole
+McDiarmid chain is `sorry`-free.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -40,6 +40,8 @@ section McDiarmid
 
 variable {n : ℕ} {Ω : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace Ω]
   {β : Fin n → Type*} [(i : Fin n) → MeasurableSpace (β i)]
+  -- LEAN-ONLY: standard-Borel coordinate spaces; threaded to `mgf_sub_expectation_le`.
+  [∀ i, StandardBorelSpace (β i)] [∀ i, Nonempty (β i)]
 
 /-- The Doob sub-Gaussian proxy `∑ₖ (‖cₖ‖₊/2)²` (an `ℝ≥0`) coerces to `(∑ₖ cₖ²)/4` as a real,
 using `‖cₖ‖ = |cₖ| = cₖ` for the nonnegative constants `cₖ`. -/
