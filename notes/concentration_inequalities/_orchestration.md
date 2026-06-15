@@ -101,3 +101,9 @@ The Doob-increment RANGE bound needs the DISTRIBUTION-level fact `IndepFun X Y �
 ## increment_bounded = ACCEPTED_DEBT (1 of 1 residual). To close later: add [StandardBorelSpace (β i)] [Nonempty (β i)] to the McDiarmid coordinate spaces, then prove `IndepFun X Y → condDistrib Y X = const(μ.map Y)` via disintegration uniqueness (a ForMathlib contribution). Everything in the McDiarmid chain is proven on top of this one lemma.
 
 ## 2026-06-14 — bernstein_key CLOSED (attempt 17, Opus xhigh + stable SSH). ALL hard analytic lemmas done. Only remaining sorry in ENTIRE CI+HDS = increment_bounded (ACCEPTED_DEBT, genuine Mathlib gap). Final theorem bernstein-ineq launched. After it: Batch 1 = fully proven except the 1 documented ForMathlib-gap lemma.
+
+## 2026-06-14 — BERNSTEIN CHAPTER COMPLETE (bernstein-ineq MERGED 0-sorry). Batch-1 status:
+ALL theorems proven & merged EXCEPT the single increment_bounded lemma. All 3 hard fallback lemmas + bernstein_key proven. HDS area 100% complete.
+FINAL PUSH on increment_bounded: found the exact Mathlib bricks the prior ~6 sessions missed —
+  condDistrib_ae_eq_of_measure_eq_compProd (disintegration UNIQUENESS) + indepFun_iff_map_prod_eq_prod_map_map + Measure.compProd_const.
+Path: prove `IndepFun W Z → condDistrib Z W μ =ᵐ const(μ.map Z)` from those 3, add [StandardBorelSpace (β i)] [Nonempty (β i)] instances (thread through DoobDecomposition + McDiarmid), bridge condExpKernel↔condDistrib, then bounded-difference range. Prompt: increment-bounded-final.md. Closer conc/increment-final-r1 running (Opus xhigh, 32G, stable SSH).
