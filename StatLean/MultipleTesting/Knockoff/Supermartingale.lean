@@ -393,18 +393,131 @@ noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α
     (fun (n : ℕ) (ω : Ω) => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
     (Set.Iic α) 0 H₀.card ω)
 
-/-- The FDPhat-at-θ process `n ↦ FDPhat W (θ W H₀ n ω) ω` is adapted to `𝒢rev W H₀ hWmeas`.
-The adaptation requires measurability of `FDPhat W (θ_n ω) ω` w.r.t. the natural filtration of
-`Yproc`, i.e., that FDPhat at the n-th null magnitude is a Borel function of `(Yproc k ω)_{k≤n}`.
-This holds because FDPhat(θ_n) depends on the sign information at level n (the same information
-that `Yproc n` aggregates), but the formal proof requires measurable-space comap analysis.
-- **USER-INPUT**: adaptedness from sign structure; Lu-BDA §19 (Def. `kos` cond. 3). -/
+/-- `#S⁺(t)` splits into the null count `V₊(t)` plus the non-null positives above `t`. -/
+private lemma Splus_card_decomp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (t : ℝ) (ω : Ω) :
+    (Splus W t ω).card =
+      Vplus W H₀ t ω + (H₀ᶜ.filter (fun j => t ≤ |W j ω| ∧ 0 < W j ω)).card := by
+  have key := Finset.card_inter_add_card_sdiff (Splus W t ω) H₀
+  have hsd : Splus W t ω \ H₀ = H₀ᶜ.filter (fun j => t ≤ |W j ω| ∧ 0 < W j ω) := by
+    ext j
+    simp only [Finset.mem_sdiff, Splus, Finset.mem_filter, Finset.mem_univ, true_and,
+      Finset.mem_compl]
+    tauto
+  rw [hsd] at key
+  simp only [Vplus]; omega
+
+/-- `#S⁻(t)` splits into the null count `V₋(t)` plus the non-null negatives above `t`. -/
+private lemma Sminus_card_decomp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (t : ℝ) (ω : Ω) :
+    (Sminus W t ω).card =
+      Vminus W H₀ t ω + (H₀ᶜ.filter (fun j => t ≤ |W j ω| ∧ W j ω < 0)).card := by
+  have key := Finset.card_inter_add_card_sdiff (Sminus W t ω) H₀
+  have hsd : Sminus W t ω \ H₀ = H₀ᶜ.filter (fun j => t ≤ |W j ω| ∧ W j ω < 0) := by
+    ext j
+    simp only [Finset.mem_sdiff, Sminus, Finset.mem_filter, Finset.mem_univ, true_and,
+      Finset.mem_compl]
+    tauto
+  rw [hsd] at key
+  simp only [Vminus]; omega
+
+/-- The FDPhat-at-θ process is adapted to the count filtration `𝒢rev`: `FDPhat(θ_n)` is a Borel
+function of `cproc n`. `#S±(θ_n) = V±(θ_n) + (non-null count above θ_n)`, where `V±(θ_n)` are the
+count components of `cproc n` and the non-null counts are functions of the magnitudes + non-null
+signs (also in `cproc n`); the threshold `θ_n ≤ |W_j|` is the rank condition `n < #{k | …}`.
+- **USER-INPUT**: adaptedness from the count-filtration structure; Lu-BDA §19. -/
 private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
     (hWmeas : ∀ j, Measurable (W j)) :
     Adapted (𝒢rev W H₀ hWmeas)
       (fun (n : ℕ) (ω : Ω) =>
         if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1) := by
-  sorry
+  intro n
+  -- The non-null rank predicate, as a function of a magnitude vector `m`.
+  let rank : (Fin d → ℝ) → Fin d → ℕ := fun m j =>
+    ((Finset.univ : Finset (Fin H₀.card)).filter
+      (fun k => m (H₀.orderEmbOfFin rfl k) ≤ m j)).card
+  -- The Borel function `G` of `cproc n` computing the process value.
+  let G : ((Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ) → ℝ := fun x =>
+    if n < H₀.card then
+      (x.2.2.2 + ((H₀ᶜ.filter (fun j => n < rank x.1 j ∧ x.2.1 j = -1)).card : ℝ) + 1)
+        / max (x.2.2.1 + ((H₀ᶜ.filter
+            (fun j => n < rank x.1 j ∧ x.2.1 j = 1 ∧ x.1 j ≠ 0)).card : ℝ)) 1
+    else α - 1
+  have hc : StronglyMeasurable[𝒢rev W H₀ hWmeas n] (cproc W H₀ n) :=
+    Filtration.stronglyAdapted_natural
+      (fun n => (measurable_cproc W H₀ hWmeas n).stronglyMeasurable) n
+  -- `G` is measurable.
+  have hrank_meas : ∀ j, Measurable (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ => rank x.1 j) :=
+    fun j => by
+      simp only [rank]
+      simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+      exact Finset.measurable_sum _ fun k _ =>
+        Measurable.ite (measurableSet_le
+          ((measurable_pi_apply _).comp measurable_fst)
+          ((measurable_pi_apply j).comp measurable_fst)) measurable_const measurable_const
+  have hcnt_meas : ∀ (P : Fin d → (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ → Prop)
+      [∀ j x, Decidable (P j x)],
+      (∀ j, MeasurableSet {x | P j x}) →
+      Measurable (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
+        ((H₀ᶜ.filter (fun j => P j x)).card : ℝ)) := by
+    intro P _ hP
+    apply measurable_from_top.comp
+    simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+    exact Finset.measurable_sum _ fun j _ =>
+      Measurable.ite (hP j) measurable_const measurable_const
+  have hGmeas : Measurable G := by
+    simp only [G]
+    by_cases h : n < H₀.card
+    · simp only [h, if_true]
+      apply Measurable.div
+      · apply Measurable.add
+        · apply Measurable.add (measurable_fst.comp (measurable_snd.comp measurable_snd))
+          exact hcnt_meas _ fun j => (measurableSet_lt measurable_const (hrank_meas j)).inter
+            (measurableSet_eq_fun ((measurable_pi_apply j).comp
+              (measurable_fst.comp measurable_snd)) measurable_const)
+        · exact measurable_const
+      · refine Measurable.max (Measurable.add
+          (measurable_fst.comp (measurable_snd.comp measurable_snd)) ?_) measurable_const
+        exact hcnt_meas _ fun j => (measurableSet_lt measurable_const (hrank_meas j)).inter
+          ((measurableSet_eq_fun ((measurable_pi_apply j).comp
+            (measurable_fst.comp measurable_snd)) measurable_const).inter
+            (measurableSet_eq_fun ((measurable_pi_apply j).comp measurable_fst)
+              measurable_const).compl)
+    · simp only [h, if_false]; exact measurable_const
+  -- The process value equals `G (cproc n)`.
+  have hval : (fun ω => if h : n < H₀.card then FDPhat W (θ W H₀ ⟨n, h⟩ ω) ω else α - 1)
+      = G ∘ cproc W H₀ n := by
+    funext ω
+    simp only [Function.comp_apply, G, cproc]
+    by_cases h : n < H₀.card
+    · simp only [h, ↓reduceDIte, if_true]
+      have hrankθ : ∀ j, θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ↔ n < rank (fun j => |W j ω|) j := by
+        intro j; exact orderStat_le_iff_card_lt _ ⟨n, h⟩ _
+      have hpos : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ 0 < W j ω) ↔
+          (n < rank (fun j => |W j ω|) j ∧ sgnReal W j ω = 1 ∧ |W j ω| ≠ 0) := by
+        intro j _
+        rw [hrankθ j]
+        refine and_congr_right (fun _ => ?_)
+        constructor
+        · intro hpos; exact ⟨if_pos hpos.le, by positivity⟩
+        · rintro ⟨hs, hne⟩
+          have : 0 ≤ W j ω := by by_contra hc; rw [sgnReal, if_neg hc] at hs; norm_num at hs
+          rcases lt_or_eq_of_le this with hlt | heq
+          · exact hlt
+          · exact absurd (by rw [← heq]; simp) hne
+      have hneg : ∀ j ∈ H₀ᶜ, (θ W H₀ ⟨n, h⟩ ω ≤ |W j ω| ∧ W j ω < 0) ↔
+          (n < rank (fun j => |W j ω|) j ∧ sgnReal W j ω = -1) := by
+        intro j _
+        rw [hrankθ j]
+        refine and_congr_right (fun _ => ?_)
+        rw [sgnReal]; constructor
+        · intro hlt; rw [if_neg (not_le.mpr hlt)]
+        · intro hs; by_contra hc; rw [if_pos (not_lt.mp hc)] at hs; norm_num at hs
+      rw [FDPhat, Splus_card_decomp W H₀ _ ω, Sminus_card_decomp W H₀ _ ω]
+      rw [Finset.filter_congr hpos, Finset.filter_congr hneg]
+      push_cast
+      ring_nf
+    · simp only [h, ↓reduceDIte, if_false]
+  rw [hval]
+  exact (hGmeas.comp hc.measurable).stronglyMeasurable
 
 /-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀ hWmeas`, being a hitting time of an
 adapted process to a measurable set.
