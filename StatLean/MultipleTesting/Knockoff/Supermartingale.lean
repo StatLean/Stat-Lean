@@ -990,6 +990,134 @@ private lemma indep_nsign_outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (F
   rw [heq]
   exact hW.signs_indep_outer.comp hG measurable_id
 
+omit mΩ in
+/-- Subtype-vs-`Fin d` count bridge: filtering the null subtype by a predicate on the underlying
+`Fin d` index has the same cardinality as filtering `H₀` directly. -/
+private lemma card_filter_subtype (H₀ : Finset (Fin d)) (Q : Fin d → Prop) [DecidablePred Q] :
+    ((Finset.univ : Finset {x // x ∈ H₀}).filter (fun m => Q m.val)).card
+      = (H₀.filter Q).card := by
+  rw [← Finset.card_image_of_injective _ Subtype.coe_injective]
+  congr 1
+  ext x
+  constructor
+  · intro hx
+    rw [Finset.mem_image] at hx
+    obtain ⟨m, hm, rfl⟩ := hx
+    rw [Finset.mem_filter] at hm ⊢
+    exact ⟨m.2, hm.2⟩
+  · intro hx
+    rw [Finset.mem_filter] at hx
+    rw [Finset.mem_image]
+    exact ⟨⟨x, hx.1⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hx.2⟩, rfl⟩
+
+/-- The reconstruction of the count process `cproc 0..n` from `(outerData, nsign⃗)`: the above-`θ_k`
+null set is recovered from the magnitudes (`outerData.1`), and the counts `V₊(θ_k)`, `V₋(θ_k)` are
+the `true`/`false` subcounts of the `nsign` vector over it. Off the null set `⋃_{m∈H₀}{W m = 0}` it
+agrees with `fun k => cproc k`. -/
+private noncomputable def reconCproc (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d)
+    (p : ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool)) :
+    Fin (n + 1) → (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ :=
+  fun k =>
+    (p.1.1, p.1.2,
+      (((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat p.1.1 ⟨k.val, Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h⟩
+          ≤ p.1.1 m.val ∧ p.2 m = true)).card : ℝ),
+      (((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat p.1.1 ⟨k.val, Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h⟩
+          ≤ p.1.1 m.val ∧ p.2 m = false)).card : ℝ))
+
+omit mΩ in
+private lemma measurable_subcount (H₀ : Finset (Fin d)) (r : Fin d) (target : Bool) :
+    Measurable (fun p : ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool) =>
+      (((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat p.1.1 r ≤ p.1.1 m.val ∧ p.2 m = target)).card : ℝ)) := by
+  have heq : (fun p : ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool) =>
+        (((Finset.univ : Finset {x // x ∈ H₀}).filter
+          (fun m => orderStat p.1.1 r ≤ p.1.1 m.val ∧ p.2 m = target)).card : ℝ))
+      = fun p => ∑ m : {x // x ∈ H₀},
+          if (orderStat p.1.1 r ≤ p.1.1 m.val ∧ p.2 m = target) then (1 : ℝ) else 0 := by
+    funext p
+    simp only [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+  rw [heq]
+  refine Finset.measurable_sum _ fun m _ => Measurable.ite (MeasurableSet.inter ?_ ?_)
+    measurable_const measurable_const
+  · exact measurableSet_le
+      ((measurable_orderStat_eval r.val r.isLt).comp (measurable_fst.comp measurable_fst))
+      ((measurable_pi_apply m.val).comp (measurable_fst.comp measurable_fst))
+  · have hpm : Measurable (fun p : ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool) => p.2 m) :=
+      (measurable_pi_apply m).comp measurable_snd
+    exact hpm (measurableSet_singleton target)
+
+omit mΩ in
+private lemma measurable_reconCproc (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d) :
+    Measurable (reconCproc H₀ n h) := by
+  refine measurable_pi_iff.mpr fun k => ?_
+  refine Measurable.prodMk (measurable_fst.comp measurable_fst)
+    (Measurable.prodMk (measurable_snd.comp measurable_fst) (Measurable.prodMk ?_ ?_))
+  · exact measurable_subcount H₀ ⟨k.val, Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h⟩ true
+  · exact measurable_subcount H₀ ⟨k.val, Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h⟩ false
+
+omit mΩ in
+/-- Off the null set, the reconstruction is exact: `reconCproc (outerData, nsign⃗) = fun k => cproc k`. -/
+private lemma reconCproc_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d) (ω : Ω)
+    (hω : ∀ m ∈ H₀, W m ω ≠ 0) :
+    reconCproc H₀ n h (outerData W H₀ ω, fun m => nsign W H₀ m ω)
+      = fun k : Fin (n + 1) => cproc W H₀ k.val ω := by
+  funext k
+  have hkd : k.val < d := Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h
+  -- The above-`θ_k` predicate, recovered from `outerData.1 = |W ·|`.
+  have hVp : (((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ ≤ (outerData W H₀ ω).1 m.val
+          ∧ nsign W H₀ m ω = true)).card : ℝ)
+      = (Vplus W H₀ (θ W ⟨k.val, hkd⟩ ω) ω : ℝ) := by
+    congr 1
+    rw [Vplus_eq_aboveNulls_filter]
+    have hcongr : ((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ ≤ (outerData W H₀ ω).1 m.val
+          ∧ nsign W H₀ m ω = true))
+        = (Finset.univ : Finset {x // x ∈ H₀}).filter
+          (fun m => θ W ⟨k.val, hkd⟩ ω ≤ |W m.val ω| ∧ 0 < W m.val ω) := by
+      apply Finset.filter_congr
+      intro m _
+      have h1 : orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ = θ W ⟨k.val, hkd⟩ ω := rfl
+      have h2 : (outerData W H₀ ω).1 m.val = |W m.val ω| := rfl
+      rw [h1, h2, nsign_true_iff]
+      have hne := hω m.val m.2
+      constructor
+      · rintro ⟨ha, hb⟩; exact ⟨ha, lt_of_le_of_ne hb (Ne.symm hne)⟩
+      · rintro ⟨ha, hb⟩; exact ⟨ha, le_of_lt hb⟩
+    rw [hcongr, card_filter_subtype H₀ (fun m => θ W ⟨k.val, hkd⟩ ω ≤ |W m ω| ∧ 0 < W m ω)]
+    unfold aboveNulls
+    rw [Finset.filter_filter]
+  have hVm : (((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ ≤ (outerData W H₀ ω).1 m.val
+          ∧ nsign W H₀ m ω = false)).card : ℝ)
+      = (Vminus W H₀ (θ W ⟨k.val, hkd⟩ ω) ω : ℝ) := by
+    congr 1
+    rw [Vminus_eq_aboveNulls_filter]
+    have hcongr : ((Finset.univ : Finset {x // x ∈ H₀}).filter
+        (fun m => orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ ≤ (outerData W H₀ ω).1 m.val
+          ∧ nsign W H₀ m ω = false))
+        = (Finset.univ : Finset {x // x ∈ H₀}).filter
+          (fun m => θ W ⟨k.val, hkd⟩ ω ≤ |W m.val ω| ∧ W m.val ω < 0) := by
+      apply Finset.filter_congr
+      intro m _
+      have h1 : orderStat (outerData W H₀ ω).1 ⟨k.val, hkd⟩ = θ W ⟨k.val, hkd⟩ ω := rfl
+      have h2 : (outerData W H₀ ω).1 m.val = |W m.val ω| := rfl
+      have hnsf : (nsign W H₀ m ω = false) ↔ W m.val ω < 0 := by
+        unfold nsign; split_ifs with hpos
+        · simp only [Bool.true_eq_false, false_iff, not_lt]; exact hpos
+        · simp only [not_le] at hpos; simp [hpos]
+      rw [h1, h2, hnsf]
+    rw [hcongr, card_filter_subtype H₀ (fun m => θ W ⟨k.val, hkd⟩ ω ≤ |W m ω| ∧ W m ω < 0)]
+    unfold aboveNulls
+    rw [Finset.filter_filter]
+  show (_, _, _, _) = cproc W H₀ k.val ω
+  rw [cproc]
+  refine Prod.ext rfl (Prod.ext rfl (Prod.ext ?_ ?_))
+  · simp only; rw [dif_pos hkd]; exact hVp
+  · simp only; rw [dif_pos hkd]; exact hVm
+
 /-- **Extraction (the remaining measure-theoretic core).** A `𝒢rev n`-measurable event `F` on which
 the two nulls `l, j` are above `θ_n` is, modulo a null set, the pre-image under `(outerData, nsign⃗)`
 of a measurable set `C` that is invariant under transposing the two sign coordinates `l, j`.
