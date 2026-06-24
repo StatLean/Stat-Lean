@@ -179,4 +179,34 @@ theorem l1Norm_restrict_le_sqrt_card_mul_norm
   rw [h_normsq]
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt h_sub) (Real.sqrt_nonneg _)
 
+/-! ## Additional bricks for compressed sensing (Lu-BDA ch.6–7) -/
+
+/-- ℓ¹ triangle inequality: `‖x + y‖₁ ≤ ‖x‖₁ + ‖y‖₁`. -/
+theorem l1Norm_add_le (x y : EuclideanSpace ℝ (Fin d)) :
+    l1Norm (x + y) ≤ l1Norm x + l1Norm y := by
+  sorry
+
+/-- **Support split of the ℓ¹ norm** (Lu-BDA ch.6, eq:cone-ineq workhorse):
+`‖x‖₁ = ‖x|_S‖₁ + ‖x|_{Sᶜ}‖₁`. -/
+theorem l1Norm_split (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    l1Norm x = l1Norm (restrict S x) + l1Norm (restrict Sᶜ x) := by
+  sorry
+
+/-- A vector is the sum of its restriction to `S` and to the complement `Sᶜ`. -/
+theorem restrict_add_restrict_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    restrict S x + restrict Sᶜ x = x := by
+  sorry
+
+/-- **ℓ²–ℓ∞ bound on a block** (Lu-BDA ch.7, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse
+vectors): `‖x|_S‖₂ ≤ √|S| · ‖x|_S‖∞`. -/
+theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    ‖restrict S x‖ ≤ Real.sqrt (S.card : ℝ) * linfNorm (restrict S x) := by
+  sorry
+
+/-- The ℓ² norm of a restriction is monotone in the index set: `S ⊆ T ⟹
+‖x|_S‖₂ ≤ ‖x|_T‖₂`. -/
+theorem norm_restrict_le_of_subset {S T : Finset (Fin d)} (h : S ⊆ T)
+    (x : EuclideanSpace ℝ (Fin d)) : ‖restrict S x‖ ≤ ‖restrict T x‖ := by
+  sorry
+
 end StatLean.HighDimensionalStatistics
