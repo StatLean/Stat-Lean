@@ -593,6 +593,295 @@ private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
       unfold Yproc; rw [dif_pos h1, hA', hB']; ring
 
+/-! ### Helpers for the exchangeable disintegration (`count_condExp`) -/
+
+omit mΩ in
+/-- Under a.s.-distinct magnitudes, the rank-`n` coordinate equals `j` iff `j` realises the `n`-th
+order statistic, i.e. `θ_n = |W j|`. (`→` always; `←` uses injectivity of `|W·ω|`.)
+- **LEAN-ONLY**: order-statistic identification of the crossed coordinate. -/
+private lemma cIdx_eq_iff (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (ω : Ω)
+    (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (j : Fin d) :
+    cIdx W n h ω = j ↔ θ W ⟨n, h⟩ ω = |W j ω| := by
+  constructor
+  · rintro rfl; exact cIdx_spec W n h ω
+  · intro hj
+    have hinj : Function.Injective (fun i => |W i ω|) := fun a b hab => by
+      by_contra hne; exact hmagω a b hne hab
+    exact hinj (show |W (cIdx W n h ω) ω| = |W j ω| by rw [← cIdx_spec W n h ω, hj])
+
+/-- `m ↦ orderStat m ⟨n,h⟩` is measurable: each sub-level set is a count condition. -/
+private lemma measurable_orderStat_eval (n : ℕ) (h : n < d) :
+    Measurable (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) := by
+  apply measurable_of_Iic
+  intro a
+  have hset : (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) ⁻¹' Set.Iic a
+      = {m | n < ((Finset.univ : Finset (Fin d)).filter (fun k => m k ≤ a)).card} := by
+    ext m
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    exact orderStat_le_iff_card_lt m ⟨n, h⟩ a
+  rw [hset]
+  apply measurableSet_lt measurable_const
+  simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+  exact Finset.measurable_sum _ fun k _ =>
+    Measurable.ite (measurableSet_le (measurable_pi_apply k) measurable_const)
+      measurable_const measurable_const
+
+/-- Ambient a.e.-strong-measurability of the rank-`n` selector `𝟙(cIdx = j)`, via the genuinely
+measurable magnitude proxy `𝟙(θ_n = |W j|)` (a.e. equal under distinct magnitudes). -/
+private lemma aesm_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) (hWmeas : ∀ j, Measurable (W j))
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) :
+    AEStronglyMeasurable (fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) μ := by
+  have hθmeas : Measurable (fun ω => θ W ⟨n, h⟩ ω) := by
+    unfold θ
+    exact (measurable_orderStat_eval n h).comp (measurable_pi_iff.mpr fun i => (hWmeas i).abs)
+  have hpmeas : Measurable (fun ω => if θ W ⟨n, h⟩ ω = |W j ω| then (1 : ℝ) else 0) :=
+    Measurable.ite (measurableSet_eq_fun hθmeas (hWmeas j).abs) measurable_const measurable_const
+  refine ⟨_, hpmeas.stronglyMeasurable, ?_⟩
+  filter_upwards [hmag] with ω hω
+  have hiff := cIdx_eq_iff W n h ω hω j
+  by_cases hc : cIdx W n h ω = j
+  · rw [if_pos hc, if_pos (hiff.mp hc)]
+  · rw [if_neg hc, if_neg (fun hh => hc (hiff.mpr hh))]
+
+/-- `𝒢rev n`-a.e.-strong-measurability of `𝟙(cIdx = j)`: the proxy `𝟙(θ_n = |W j|)` factors through
+the magnitude component of `cproc n`, hence is `𝒢rev n`-measurable. -/
+private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) :
+    AEStronglyMeasurable[𝒢rev W H₀ hW.meas n]
+      (fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) μ := by
+  have hGmeas : Measurable (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ =>
+      if orderStat x.1 ⟨n, h⟩ = x.1 j then (1 : ℝ) else 0) :=
+    Measurable.ite (measurableSet_eq_fun ((measurable_orderStat_eval n h).comp measurable_fst)
+      ((measurable_pi_apply j).comp measurable_fst)) measurable_const measurable_const
+  have hcproc : StronglyMeasurable[𝒢rev W H₀ hW.meas n] (cproc W H₀ n) :=
+    Filtration.stronglyAdapted_natural
+      (fun k => (measurable_cproc W H₀ hW.meas k).stronglyMeasurable) n
+  refine ⟨_, (hGmeas.comp hcproc.measurable).stronglyMeasurable, ?_⟩
+  filter_upwards [hmag] with ω hω
+  have hiff := cIdx_eq_iff W n h ω hω j
+  simp only [Function.comp_apply, cproc]
+  by_cases hc : cIdx W n h ω = j
+  · rw [if_pos hc, if_pos]; exact hiff.mp hc
+  · rw [if_neg hc, if_neg]; exact fun hh => hc (hiff.mpr hh)
+
+/-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
+`sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
+(`signs_fair`), so `μ{W j = 0} = μ{0 ≤ W j} · μ{W j = 0} = ½ · μ{W j = 0}`, forcing `μ{W j = 0} = 0`.
+- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §19 (consequence of Def. `kos` cond. 3). -/
+private lemma null_ne_zero (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (j : Fin d) (hj : j ∈ H₀) : ∀ᵐ ω ∂μ, W j ω ≠ 0 := by
+  have hindep : IndepFun (fun ω => sgnReal W j ω) (fun ω => |W j ω|) μ :=
+    hW.signs_indep_outer.comp (measurable_pi_apply (⟨j, hj⟩ : H₀))
+      ((measurable_pi_apply j).comp measurable_fst)
+  have hkey := hindep.measure_inter_preimage_eq_mul {1} {0}
+    (measurableSet_singleton 1) (measurableSet_singleton 0)
+  have hpre1 : (fun ω => sgnReal W j ω) ⁻¹' {1} = {ω | 0 ≤ W j ω} := by
+    ext ω
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_setOf_eq]
+    constructor
+    · intro hs; by_contra hh; rw [sgnReal, if_neg hh] at hs; norm_num at hs
+    · intro hh; rw [sgnReal, if_pos hh]
+  have hpre0 : (fun ω => |W j ω|) ⁻¹' {0} = {ω | W j ω = 0} := by
+    ext ω; simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_setOf_eq, abs_eq_zero]
+  have hinter : (fun ω => sgnReal W j ω) ⁻¹' {1} ∩ (fun ω => |W j ω|) ⁻¹' {0}
+      = {ω | W j ω = 0} := by
+    rw [hpre1, hpre0]; ext ω
+    simp only [Set.mem_inter_iff, Set.mem_setOf_eq]
+    exact ⟨fun hpair => hpair.2, fun h0 => ⟨le_of_eq h0.symm, h0⟩⟩
+  rw [hinter, hpre1, hpre0, hW.signs_fair j hj] at hkey
+  have hfin : μ {ω | W j ω = 0} ≠ ⊤ := measure_ne_top μ _
+  have htr : (μ {ω | W j ω = 0}).toReal = 0 := by
+    have h2 := congrArg ENNReal.toReal hkey
+    rw [ENNReal.toReal_mul] at h2
+    have hhalf : ((1 : ℝ≥0∞) / 2).toReal = 1 / 2 := by
+      rw [ENNReal.toReal_div]; norm_num
+    rw [hhalf] at h2
+    nlinarith [ENNReal.toReal_nonneg (a := μ {ω | W j ω = 0})]
+  have hzero : μ {ω | W j ω = 0} = 0 :=
+    (ENNReal.toReal_eq_zero_iff _).mp htr |>.resolve_right hfin
+  rw [ae_iff]; simp only [not_not]; exact hzero
+
+omit mΩ in
+/-- **Positive increment is a sign indicator.** Under a.s.-distinct magnitudes,
+`V₊(θ_n) − V₊(θ_{n+1})` is the `{0,1}`-indicator that the crossed coordinate `cIdx` is a positive
+null. (`Splus_theta_succ` + `card_erase`.) -/
+private lemma dPlus_eq_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (h1 : n + 1 < d) (ω : Ω)
+    (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
+    (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)
+      = if (cIdx W n h ω ∈ H₀ ∧ 0 < W (cIdx W n h ω) ω) then (1 : ℝ) else 0 := by
+  have hVp' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω
+      = ((Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀).erase (cIdx W n h ω)).card := by
+    unfold Vplus; rw [Splus_theta_succ W n h h1 ω hmagω, Finset.erase_inter]
+  have hcn_mag : θ W ⟨n, h⟩ ω = |W (cIdx W n h ω) ω| := cIdx_spec W n h ω
+  have hmemSp : cIdx W n h ω ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ ↔
+      (cIdx W n h ω ∈ H₀ ∧ 0 < W (cIdx W n h ω) ω) := by
+    simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨fun ⟨⟨_, hpos⟩, hmem⟩ => ⟨hmem, hpos⟩,
+           fun ⟨hmem, hpos⟩ => ⟨⟨le_of_eq hcn_mag, hpos⟩, hmem⟩⟩
+  by_cases hP : cIdx W n h ω ∈ H₀ ∧ 0 < W (cIdx W n h ω) ω
+  · have hmemP : cIdx W n h ω ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := hmemSp.mpr hP
+    have hA1 : 1 ≤ Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      unfold Vplus; exact Finset.card_pos.mpr ⟨_, hmemP⟩
+    have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
+      rw [hVp']; unfold Vplus; rw [Finset.card_erase_of_mem hmemP]
+    rw [if_pos hP, hA', Nat.cast_sub hA1]; push_cast; ring
+  · have hnotSp : cIdx W n h ω ∉ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSp]; exact hP
+    have hA' : Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      rw [hVp']; unfold Vplus; rw [Finset.erase_eq_of_notMem hnotSp]
+    rw [if_neg hP, hA']; ring
+
+omit mΩ in
+/-- **Negative increment is a sign indicator.** The `V₋` mirror of `dPlus_eq_indicator`. -/
+private lemma dMinus_eq_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (h1 : n + 1 < d) (ω : Ω)
+    (hmagω : ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
+    (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)
+      = if (cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0) then (1 : ℝ) else 0 := by
+  have hVm' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω
+      = ((Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀).erase (cIdx W n h ω)).card := by
+    unfold Vminus; rw [Sminus_theta_succ W n h h1 ω hmagω, Finset.erase_inter]
+  have hcn_mag : θ W ⟨n, h⟩ ω = |W (cIdx W n h ω) ω| := cIdx_spec W n h ω
+  have hmemSm : cIdx W n h ω ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ ↔
+      (cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0) := by
+    simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨fun ⟨⟨_, hneg⟩, hmem⟩ => ⟨hmem, hneg⟩,
+           fun ⟨hmem, hneg⟩ => ⟨⟨le_of_eq hcn_mag, hneg⟩, hmem⟩⟩
+  by_cases hM : cIdx W n h ω ∈ H₀ ∧ W (cIdx W n h ω) ω < 0
+  · have hmemM : cIdx W n h ω ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := hmemSm.mpr hM
+    have hB1 : 1 ≤ Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      unfold Vminus; exact Finset.card_pos.mpr ⟨_, hmemM⟩
+    have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω - 1 := by
+      rw [hVm']; unfold Vminus; rw [Finset.card_erase_of_mem hmemM]
+    rw [if_pos hM, hB', Nat.cast_sub hB1]; push_cast; ring
+  · have hnotSm : cIdx W n h ω ∉ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by rw [hmemSm]; exact hM
+    have hB' : Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω = Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := by
+      rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
+    rw [if_neg hM, hB']; ring
+
+/-- Integrability of the `{0,1}`-bounded selector products used in the disintegration. -/
+private lemma integrable_sel_mul (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hWmeas : ∀ j, Measurable (W j))
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) (g : Ω → ℝ) (hg : Measurable g) (hgb : ∀ ω, |g ω| ≤ 1) :
+    Integrable (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * g ω) μ := by
+  refine (integrable_const (1 : ℝ)).mono'
+    ((aesm_cIdx_indicator W H₀ μ hWmeas hmag n h j).mul hg.aestronglyMeasurable) ?_
+  filter_upwards with ω
+  rw [Real.norm_eq_abs, abs_mul]
+  have h1 : |if cIdx W n h ω = j then (1 : ℝ) else 0| ≤ 1 := by split_ifs <;> norm_num
+  calc |if cIdx W n h ω = j then (1 : ℝ) else 0| * |g ω|
+      ≤ 1 * 1 := mul_le_mul h1 (hgb ω) (abs_nonneg _) zero_le_one
+    _ = 1 := one_mul 1
+
+/-- Integrability of the bare selector `𝟙(cIdx = j)`. -/
+private lemma integrable_sel (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hWmeas : ∀ j, Measurable (W j))
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) :
+    Integrable (fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) μ := by
+  refine (integrable_const (1 : ℝ)).mono'
+    (aesm_cIdx_indicator W H₀ μ hWmeas hmag n h j) ?_
+  filter_upwards with ω
+  rw [Real.norm_eq_abs]; split_ifs <;> norm_num
+
+/-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §19). Fix a null
+`j`. Restricted to the event `{cIdx = j}` (where `j` is the rank-`n` coordinate, hence one of the
+`A + B` above-`θ_n` nonzero nulls), the conditional sign probability is the
+sampling-without-replacement ratio `A/(A+B)`:
+`μ[𝟙(cIdx=j)·𝟙(0<W j) | 𝒢rev n] =ᵐ 𝟙(cIdx=j)·A/(A+B)`. The conditioning data `𝒢rev n` fixes the
+magnitudes (hence `cIdx`, the above-`θ_n` null set `S_n` and `k = A+B`) and the count `A`, while the
+individual above-`θ_n` null signs are i.i.d. fair and exchangeable (`signs_iIndep`/`signs_fair`)
+and independent of the outer data + below-`θ_n` signs (`signs_indep_outer`); the per-cell identity is
+`condExp_coord_eq_count_div`. The `count_condExp_minus` analogue is derived algebraically from this.
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) (hj : j ∈ H₀) :
+    μ[(fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0))
+        | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+          * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+              / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  sorry
+
+/-- **The exchangeable per-coordinate core, negative sign.** Derived from `core_condExp_plus` via
+`𝟙(W j < 0) =ᵐ 1 − 𝟙(0 < W j)` (nulls are a.s. nonzero, `null_ne_zero`) and `condExp` linearity,
+using that on `{cIdx = j}` the denominator `A + B ≥ 1` (the crossed null is one of the nonzero
+above-`θ_n` nulls). -/
+private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (j : Fin d) (hj : j ∈ H₀) :
+    μ[(fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0))
+        | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+          * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+              / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  have hle : 𝒢rev W H₀ hW.meas n ≤ mΩ := (𝒢rev W H₀ hW.meas).le n
+  -- integrabilities
+  have hej_int := integrable_sel W H₀ μ hW.meas hmag n h j
+  have hfj_int := integrable_sel_mul W H₀ μ hW.meas hmag n h j
+    (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
+    (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
+      measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+  -- condExp of the bare selector equals itself (𝒢rev-measurable a.e.)
+  have hcej : μ[(fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0 :=
+    condExp_of_aestronglyMeasurable' hle (aesm'_cIdx_indicator W H₀ μ hW hmag n h j) hej_int
+  -- f'j =ᵐ ej - fj
+  have hfmj_eq : (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+        * (if W j ω < 0 then (1 : ℝ) else 0))
+      =ᵐ[μ] (fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0)
+        - (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)) := by
+    filter_upwards [null_ne_zero W H₀ μ hW j hj] with ω hω
+    simp only [Pi.sub_apply]
+    by_cases hpos : 0 < W j ω
+    · have hnn : ¬ W j ω < 0 := by linarith
+      simp [hnn, hpos]
+    · have hneg : W j ω < 0 := lt_of_le_of_ne (not_lt.mp hpos) hω
+      simp [hneg, hpos]
+  -- condExp linearity
+  have step : μ[(fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+        * (if W j ω < 0 then (1 : ℝ) else 0)) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] μ[(fun ω => if cIdx W n h ω = j then (1 : ℝ) else 0) | 𝒢rev W H₀ hW.meas n]
+        - μ[(fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+            * (if 0 < W j ω then (1 : ℝ) else 0)) | 𝒢rev W H₀ hW.meas n] :=
+    (condExp_congr_ae hfmj_eq).trans (condExp_sub hej_int hfj_int _)
+  have hcfj := core_condExp_plus W H₀ μ hW hmag n h j hj
+  filter_upwards [step, hcej, hcfj, null_ne_zero W H₀ μ hW j hj, hmag]
+    with ω hstep hcejω hcfjω hω hmagω
+  rw [hstep]; simp only [Pi.sub_apply]; rw [hcejω, hcfjω]
+  by_cases hc : cIdx W n h ω = j
+  · have hθ : θ W ⟨n, h⟩ ω = |W j ω| := (cIdx_eq_iff W n h ω hmagω j).mp hc
+    have hAB : 0 < (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by
+      rcases lt_or_gt_of_ne hω with hneg | hpos
+      · have hmemM : j ∈ Sminus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by
+          simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
+          exact ⟨⟨le_of_eq hθ, hneg⟩, hj⟩
+        have hB1 : (1 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by
+          have : 1 ≤ Vminus W H₀ (θ W ⟨n, h⟩ ω) ω := Finset.card_pos.mpr ⟨j, hmemM⟩
+          exact_mod_cast this
+        have := (Nat.cast_nonneg (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0:ℝ) ≤ _); linarith
+      · have hmemP : j ∈ Splus W (θ W ⟨n, h⟩ ω) ω ∩ H₀ := by
+          simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
+          exact ⟨⟨le_of_eq hθ, hpos⟩, hj⟩
+        have hA1 : (1 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := by
+          have : 1 ≤ Vplus W H₀ (θ W ⟨n, h⟩ ω) ω := Finset.card_pos.mpr ⟨j, hmemP⟩
+          exact_mod_cast this
+        have := (Nat.cast_nonneg (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω) : (0:ℝ) ≤ _); linarith
+    simp only [if_pos hc, one_mul]
+    rw [sub_eq_iff_eq_add, ← add_div, eq_div_iff hAB.ne', one_mul]
+    ring
+  · rw [if_neg hc]; ring
+
 /-- **Exchangeable conditional expectation of the positive-null removal** (`count_condExp`, the
 crux, Lu-BDA §19). The increment `ΔV₊ = V₊(θ_n) − V₊(θ_{n+1})` is the indicator that the rank-`n`
 coordinate `cIdx` is a *positive null*. Conditioned on the count filtration `𝒢rev n`, the crossed
@@ -609,13 +898,47 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
-  -- ISOLATED NUGGET: the exchangeable disintegration. Route: condition on the outer data
-  -- `D = (magnitudes, non-null signs)` (which fixes the sort order, hence `cIdx`, the above-`θ_n`
-  -- null set `S_n`, and `k = A+B`); partition `Ω` over the finitely many sort orders so that on each
-  -- cell `S_n, cIdx, k` are constant; on each cell the `S_n`-signs are i.i.d. fair and ⊥ `D`
-  -- (`hW.signs_iIndep`/`signs_fair`/`signs_indep_outer`), so `condExp_coord_eq_count_div` gives
-  -- `A/k`; the extra `𝒢rev n` info (below-`θ_n` removed signs) is ⊥ the `S_n`-signs and drops out.
-  sorry
+  -- ΔV₊ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(0<Wj); push through condExp via `condExp_finset_sum` and the
+  -- per-coordinate core `core_condExp_plus`; reassemble the sum to `𝟙(cIdx∈H₀)·A/(A+B)`.
+  have hfint : ∀ j ∈ H₀, Integrable
+      (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)) μ :=
+    fun j _ => integrable_sel_mul W H₀ μ hW.meas hmag n h j
+      (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
+      (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
+        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+  have hdP : (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ))
+      =ᵐ[μ] ∑ j ∈ H₀, fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0) := by
+    filter_upwards [hmag] with ω hω
+    have hterm : ∀ j : Fin d,
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)
+          = if cIdx W n h ω = j then (if 0 < W j ω then (1 : ℝ) else 0) else 0 :=
+      fun j => by split_ifs <;> norm_num
+    rw [dPlus_eq_indicator W H₀ n h h1 ω hω, Finset.sum_apply]
+    simp_rw [hterm]
+    rw [Finset.sum_ite_eq H₀ (cIdx W n h ω) (fun j => if 0 < W j ω then (1 : ℝ) else 0)]
+    by_cases hm : cIdx W n h ω ∈ H₀
+    · by_cases hp : 0 < W (cIdx W n h ω) ω <;> simp [hm, hp]
+    · simp [hm]
+  calc μ[(fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] μ[∑ j ∈ H₀, fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)
+        | 𝒢rev W H₀ hW.meas n] := condExp_congr_ae hdP
+    _ =ᵐ[μ] ∑ j ∈ H₀, μ[fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if 0 < W j ω then (1 : ℝ) else 0)
+        | 𝒢rev W H₀ hW.meas n] := condExp_finset_sum hfint _
+    _ =ᵐ[μ] ∑ j ∈ H₀, fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+        * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) :=
+        eventuallyEq_sum (fun j hj => core_condExp_plus W H₀ μ hW hmag n h j hj)
+    _ =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+        * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+      filter_upwards with ω
+      simp only [Finset.sum_apply]
+      rw [← Finset.sum_mul, Finset.sum_ite_eq H₀ (cIdx W n h ω) (fun _ => (1 : ℝ))]
 
 /-- **Exchangeable conditional expectation of the negative-null removal** (`count_condExp`, Lu-BDA
 §19); the `V₋` analogue of `count_condExp_plus`, with conditional probability `B/(A+B)`. -/
@@ -627,9 +950,47 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
-  -- ISOLATED NUGGET: sign-symmetric image of `count_condExp_plus` (conditional probability `B/k`);
-  -- same disintegration route, applied to the negative-sign coordinate indicator.
-  sorry
+  -- ΔV₋ =ᵐ ∑_{j∈H₀} 𝟙(cIdx=j)·𝟙(Wj<0); push through condExp via `condExp_finset_sum` and the
+  -- per-coordinate core `core_condExp_minus`; reassemble to `𝟙(cIdx∈H₀)·B/(A+B)`.
+  have hfint : ∀ j ∈ H₀, Integrable
+      (fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)) μ :=
+    fun j _ => integrable_sel_mul W H₀ μ hW.meas hmag n h j
+      (fun ω => if W j ω < 0 then (1 : ℝ) else 0)
+      (Measurable.ite (measurableSet_lt (hW.meas j) measurable_const) measurable_const
+        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+  have hdM : (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ))
+      =ᵐ[μ] ∑ j ∈ H₀, fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0) := by
+    filter_upwards [hmag] with ω hω
+    have hterm : ∀ j : Fin d,
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)
+          = if cIdx W n h ω = j then (if W j ω < 0 then (1 : ℝ) else 0) else 0 :=
+      fun j => by split_ifs <;> norm_num
+    rw [dMinus_eq_indicator W H₀ n h h1 ω hω, Finset.sum_apply]
+    simp_rw [hterm]
+    rw [Finset.sum_ite_eq H₀ (cIdx W n h ω) (fun j => if W j ω < 0 then (1 : ℝ) else 0)]
+    by_cases hm : cIdx W n h ω ∈ H₀
+    · by_cases hp : W (cIdx W n h ω) ω < 0 <;> simp [hm, hp]
+    · simp [hm]
+  calc μ[(fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] μ[∑ j ∈ H₀, fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)
+        | 𝒢rev W H₀ hW.meas n] := condExp_congr_ae hdM
+    _ =ᵐ[μ] ∑ j ∈ H₀, μ[fun ω =>
+        (if cIdx W n h ω = j then (1 : ℝ) else 0) * (if W j ω < 0 then (1 : ℝ) else 0)
+        | 𝒢rev W H₀ hW.meas n] := condExp_finset_sum hfint _
+    _ =ᵐ[μ] ∑ j ∈ H₀, fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+        * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) :=
+        eventuallyEq_sum (fun j hj => core_condExp_minus W H₀ μ hW hmag n h j hj)
+    _ =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+        * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+      filter_upwards with ω
+      simp only [Finset.sum_apply]
+      rw [← Finset.sum_mul, Finset.sum_ite_eq H₀ (cIdx W n h ω) (fun _ => (1 : ℝ))]
 
 /-- **One-step conditional expectation inequality** (the high-risk core lemma):
 `μ[Yproc (n+1) | 𝒢rev n] ≤ᵐ[μ] Yproc n`. The step is a supermartingale by the **count filtration**
