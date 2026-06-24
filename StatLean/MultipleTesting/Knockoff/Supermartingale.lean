@@ -1185,7 +1185,8 @@ lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     exact ae_of_all _ fun ω => Yproc_nonneg W H₀ n ω
 
 /-- `Yproc W H₀` is a supermartingale w.r.t. `𝒢rev W H₀ hW.meas`. Assembled from
-`supermartingale_nat` applied to the sorry'd `step_condExp_le`; all hypotheses are in scope. -/
+`supermartingale_nat` applied to `step_condExp_le`; all hypotheses are in scope. (The only
+remaining debt in the chain is the isolated exchangeable core `core_condExp_plus`.) -/
 lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
