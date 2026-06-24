@@ -14,7 +14,7 @@ This concept-layer file gives the four book-facing predicates:
 * `IsSparse s x`        — `x` has at most `s` nonzero coordinates (`‖x‖₀ ≤ s`, Lu §6).
 * `IsBasisPursuit`      — `β̂` is feasible and ℓ¹-minimal (the basis-pursuit estimator, Lu §6).
 * `IsUniqueBasisPursuit`— `β̂` is the *unique* basis-pursuit minimiser.
-* `IsRIP X s δ`         — `X` satisfies the `s`-RIP with constant `δ` (Lu §7, `Restricted isometry property`).
+* `IsRIP X s δ`         — `X` satisfies the `s`-RIP with constant `δ` (Lu §7, RIP definition).
 
 Reuses `l1Norm` / `EuclideanSpace` from `ForMathlib/VecNorms.lean` and the design
 map `designMap X : β ↦ X β` from `LinearModel/Defs.lean`. The cone `C(S)` is the
