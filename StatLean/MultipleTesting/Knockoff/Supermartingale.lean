@@ -929,6 +929,13 @@ private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
     (hFl : F ⊆ {ω | l ∈ aboveNulls W H₀ n h ω})
     (hFj : F ⊆ {ω | j ∈ aboveNulls W H₀ n h ω}) :
     μ (F ∩ {ω | 0 < W l ω}) = μ (F ∩ {ω | 0 < W j ω}) := by
+  -- REMAINS: the sole gap. `F = (cproc 0..n)⁻¹(B)` is a function of `(null-sign vector, outer data)`
+  -- and is invariant under transposing the signs of `l, j` (both above `θ_n` on `F`, so every
+  -- count `V₊(θ_k)`, `k ≤ n`, sees them symmetrically). Pushing forward by the i.i.d.-fair
+  -- `signs_indep_outer` product law and applying that transposition (a measure-preserving coordinate
+  -- swap of the uniform Bernoulli vector) gives the equality. The two missing Mathlib bricks are
+  -- `iIndepFun → product-measure permutation-invariance` and `condExp` under an independent extra
+  -- σ-algebra; the fixed-subset kernel `condExp_coord_eq_subsetCount_div` is the per-cell input.
   sorry
 
 /-- Set-integral of a product of two `{0,1}`-indicators is the measure of the triple intersection. -/
