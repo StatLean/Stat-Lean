@@ -1058,7 +1058,8 @@ private lemma measurable_reconCproc (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d
   · exact measurable_subcount H₀ ⟨k.val, Nat.lt_of_le_of_lt (Nat.lt_succ_iff.mp k.isLt) h⟩ false
 
 omit mΩ in
-/-- Off the null set, the reconstruction is exact: `reconCproc (outerData, nsign⃗) = fun k => cproc k`. -/
+/-- Off the null set, the reconstruction is exact:
+`reconCproc (outerData, nsign⃗) = fun k => cproc k`. -/
 private lemma reconCproc_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d) (ω : Ω)
     (hω : ∀ m ∈ H₀, W m ω ≠ 0) :
     reconCproc H₀ n h (outerData W H₀ ω, fun m => nsign W H₀ m ω)
@@ -1106,28 +1107,82 @@ private lemma reconCproc_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (
       have h2 : (outerData W H₀ ω).1 m.val = |W m.val ω| := rfl
       have hnsf : (nsign W H₀ m ω = false) ↔ W m.val ω < 0 := by
         unfold nsign; split_ifs with hpos
-        · simp only [Bool.true_eq_false, false_iff, not_lt]; exact hpos
+        · simp only [false_iff, not_lt]; exact hpos
         · simp only [not_le] at hpos; simp [hpos]
       rw [h1, h2, hnsf]
     rw [hcongr, card_filter_subtype H₀ (fun m => θ W ⟨k.val, hkd⟩ ω ≤ |W m ω| ∧ W m ω < 0)]
     unfold aboveNulls
     rw [Finset.filter_filter]
-  show (_, _, _, _) = cproc W H₀ k.val ω
+  simp only [reconCproc]
   rw [cproc]
   refine Prod.ext rfl (Prod.ext rfl (Prod.ext ?_ ?_))
   · simp only; rw [dif_pos hkd]; exact hVp
   · simp only; rw [dif_pos hkd]; exact hVm
 
-/-- **Extraction (the remaining measure-theoretic core).** A `𝒢rev n`-measurable event `F` on which
-the two nulls `l, j` are above `θ_n` is, modulo a null set, the pre-image under `(outerData, nsign⃗)`
-of a measurable set `C` that is invariant under transposing the two sign coordinates `l, j`.
+/-- A subcount over a `swap i₀ j₀`-stable finset is invariant under precomposing the sample by
+`swap i₀ j₀` (relabelling two present coordinates leaves the count unchanged). -/
+private lemma subcount_swap {ι : Type*} [DecidableEq ι] (i₀ j₀ : ι) (T : Finset ι)
+    (hi : i₀ ∈ T) (hj : j₀ ∈ T) (b : ι → Bool) (target : Bool) :
+    (T.filter (fun m => b (Equiv.swap i₀ j₀ m) = target)).card
+      = (T.filter (fun m => b m = target)).card := by
+  have hstab : ∀ x ∈ T, Equiv.swap i₀ j₀ x ∈ T := by
+    intro x hx
+    rcases eq_or_ne x i₀ with rfl | hxi
+    · rwa [Equiv.swap_apply_left]
+    · rcases eq_or_ne x j₀ with rfl | hxj
+      · rwa [Equiv.swap_apply_right]
+      · rwa [Equiv.swap_apply_of_ne_of_ne hxi hxj]
+  refine Finset.card_bij (fun m _ => Equiv.swap i₀ j₀ m) ?_ ?_ ?_
+  · intro m hm
+    rw [Finset.mem_filter] at hm ⊢
+    exact ⟨hstab m hm.1, hm.2⟩
+  · intro a _ a' _ hab; exact (Equiv.swap i₀ j₀).injective hab
+  · intro m' hm'
+    rw [Finset.mem_filter] at hm'
+    refine ⟨Equiv.swap i₀ j₀ m', ?_, Equiv.swap_apply_self _ _ _⟩
+    rw [Finset.mem_filter]
+    exact ⟨hstab m' hm'.1, by rw [Equiv.swap_apply_self]; exact hm'.2⟩
+
+omit mΩ in
+/-- The reconstruction is invariant under transposing the signs of two nulls `l, j` both above
+`θ_n` (hence above `θ_k` for all `k ≤ n` by `orderStat` monotonicity): each count sees `l, j`
+symmetrically, so `reconCproc (z, b ∘ swap l j) = reconCproc (z, b)`. -/
+private lemma reconCproc_swap (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d)
+    (l j : Fin d) (hl : l ∈ H₀) (hj : j ∈ H₀)
+    (z : (Fin d → ℝ) × (Fin d → ℝ)) (b : {x // x ∈ H₀} → Bool)
+    (hz : orderStat z.1 ⟨n, h⟩ ≤ z.1 l ∧ orderStat z.1 ⟨n, h⟩ ≤ z.1 j) :
+    reconCproc H₀ n h (z, b ∘ Equiv.swap (⟨l, hl⟩ : {x // x ∈ H₀}) ⟨j, hj⟩)
+      = reconCproc H₀ n h (z, b) := by
+  funext k
+  have hkle : k.val ≤ n := Nat.lt_succ_iff.mp k.isLt
+  have hmono : orderStat z.1 (⟨k.val, Nat.lt_of_le_of_lt hkle h⟩ : Fin d)
+      ≤ orderStat z.1 ⟨n, h⟩ := by
+    apply orderStat_monotone; simp only [Fin.le_def]; exact hkle
+  have hiT : (⟨l, hl⟩ : {x // x ∈ H₀}) ∈ (Finset.univ : Finset {x // x ∈ H₀}).filter
+      (fun m => orderStat z.1 (⟨k.val, Nat.lt_of_le_of_lt hkle h⟩ : Fin d) ≤ z.1 m.val) :=
+    Finset.mem_filter.mpr ⟨Finset.mem_univ _, le_trans hmono hz.1⟩
+  have hjT : (⟨j, hj⟩ : {x // x ∈ H₀}) ∈ (Finset.univ : Finset {x // x ∈ H₀}).filter
+      (fun m => orderStat z.1 (⟨k.val, Nat.lt_of_le_of_lt hkle h⟩ : Fin d) ≤ z.1 m.val) :=
+    Finset.mem_filter.mpr ⟨Finset.mem_univ _, le_trans hmono hz.2⟩
+  simp only [reconCproc, Prod.mk.injEq]
+  refine ⟨trivial, trivial, ?_, ?_⟩
+  · congr 1
+    rw [← Finset.filter_filter, ← Finset.filter_filter]
+    exact subcount_swap _ _ _ hiT hjT b true
+  · congr 1
+    rw [← Finset.filter_filter, ← Finset.filter_filter]
+    exact subcount_swap _ _ _ hiT hjT b false
+
+/-- **Extraction (the assembled measure-theoretic core).** A `𝒢rev n`-measurable event `F`
+on which the two nulls `l, j` are above `θ_n` is, modulo a null set, the pre-image under
+`(outerData, nsign⃗)` of a measurable `C` invariant under transposing the sign coordinates `l, j`.
 
 Reason: `𝒢rev n = ⨆_{k ≤ n} σ(cproc k)`, and each `cproc k` is — off the null set
 `⋃_{m ∈ H₀} {W m = 0}` — a measurable function of `(outerData, nsign⃗)` (the counts `V₊(θ_k)`,
-`V₋(θ_k)` are the `nsign`-subcounts of the magnitude-determined above-`θ_k` null set). Folding in the
-`𝒢rev`-measurable constraint `l, j ∈ S_n` (true on `F`) makes the resulting `C` invariant under the
-`l ↔ j` sign transposition, because `l, j` are then above `θ_k` for every `k ≤ n` (θ monotone), so
-swapping their signs preserves every count.
+`V₋(θ_k)` are the `nsign`-subcounts of the magnitude-determined above-`θ_k` null set,
+`reconCproc`). Folding in the `𝒢rev`-measurable constraint `l, j ∈ S_n` (true on `F`) makes `C`
+invariant under the `l ↔ j` sign transposition, because `l, j` are then above `θ_k` for every
+`k ≤ n` (θ monotone), so swapping their signs preserves every count.
 - **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
 private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
@@ -1138,16 +1193,81 @@ private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Fins
     ∃ C : Set (((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool)), MeasurableSet C ∧
       (∀ z b, (z, b) ∈ C ↔ (z, b ∘ Equiv.swap (⟨l, hl⟩ : {x // x ∈ H₀}) ⟨j, hj⟩) ∈ C) ∧
       F =ᵐ[μ] (fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C := by
-  sorry
+  classical
+  -- bundle the count process over `k ≤ n`
+  set cprocLE : Ω → (Fin (n + 1) → (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ) :=
+    fun ω k => cproc W H₀ k.val ω with hcprocLE
+  -- Step 1: `𝒢rev n ≤ comap cprocLE`, so `F` is a pre-image of a measurable `B`.
+  have hle : (𝒢rev W H₀ hW.meas) n ≤ MeasurableSpace.comap cprocLE inferInstance := by
+    have hgrev : (𝒢rev W H₀ hW.meas) n
+        = ⨆ k, ⨆ (_ : k ≤ n), MeasurableSpace.comap (cproc W H₀ k) inferInstance := rfl
+    rw [hgrev]
+    refine iSup₂_le fun m hm => ?_
+    have hcl : Measurable[MeasurableSpace.comap cprocLE inferInstance] cprocLE :=
+      measurable_iff_comap_le.mpr le_rfl
+    exact measurable_iff_comap_le.mp
+      ((measurable_pi_apply (⟨m, Nat.lt_succ_of_le hm⟩ : Fin (n + 1))).comp hcl)
+  obtain ⟨B, hBmeas, hBpre⟩ := hle F hF
+  -- Step 2: off the null set `N`, `cprocLE = reconCproc ∘ M`.
+  have hN : ∀ᵐ ω ∂μ, ∀ m ∈ H₀, W m ω ≠ 0 :=
+    (ae_ball_iff H₀.countable_toSet).mpr (fun m hm => null_ne_zero W H₀ μ hW m hm)
+  set M : Ω → ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool) :=
+    fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω) with hM
+  -- the `z`-only above-`θ_n` constraint
+  have hC₀meas : MeasurableSet {p : ((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool) |
+      orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l ∧ orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 j} := by
+    apply MeasurableSet.inter
+    · exact measurableSet_le
+        ((measurable_orderStat_eval n h).comp (measurable_fst.comp measurable_fst))
+        ((measurable_pi_apply l).comp (measurable_fst.comp measurable_fst))
+    · exact measurableSet_le
+        ((measurable_orderStat_eval n h).comp (measurable_fst.comp measurable_fst))
+        ((measurable_pi_apply j).comp (measurable_fst.comp measurable_fst))
+  refine ⟨reconCproc H₀ n h ⁻¹' B ∩ {p | orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l
+      ∧ orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 j},
+    (measurable_reconCproc H₀ n h hBmeas).inter hC₀meas, ?_, ?_⟩
+  · -- swap-invariance of `C`
+    intro z b
+    constructor
+    · rintro ⟨hrec, hc0⟩
+      have hz : orderStat z.1 ⟨n, h⟩ ≤ z.1 l ∧ orderStat z.1 ⟨n, h⟩ ≤ z.1 j := hc0
+      refine ⟨?_, hz⟩
+      rw [Set.mem_preimage] at hrec ⊢
+      rwa [reconCproc_swap H₀ n h l j hl hj z b hz]
+    · rintro ⟨hrec, hc0⟩
+      have hz : orderStat z.1 ⟨n, h⟩ ≤ z.1 l ∧ orderStat z.1 ⟨n, h⟩ ≤ z.1 j := hc0
+      refine ⟨?_, hz⟩
+      rw [Set.mem_preimage] at hrec ⊢
+      rwa [← reconCproc_swap H₀ n h l j hl hj z b hz]
+  · -- `F =ᵐ M⁻¹' C`
+    have hrec : F =ᵐ[μ] (fun ω => reconCproc H₀ n h (M ω)) ⁻¹' B := by
+      rw [← hBpre]
+      filter_upwards [hN] with ω hω
+      change (ω ∈ cprocLE ⁻¹' B) = (ω ∈ (fun ω => reconCproc H₀ n h (M ω)) ⁻¹' B)
+      simp only [Set.mem_preimage]
+      rw [show cprocLE ω = reconCproc H₀ n h (M ω) from (reconCproc_eq W H₀ n h ω hω).symm]
+    have hFC0 : F ⊆ M ⁻¹' {p | orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l
+        ∧ orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 j} := by
+      intro ω hωF
+      have hlm := hFl hωF
+      have hjm := hFj hωF
+      rw [Set.mem_setOf_eq, mem_aboveNulls] at hlm hjm
+      exact ⟨hlm.2, hjm.2⟩
+    have hFeq : F ∩ M ⁻¹' {p | orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 l
+        ∧ orderStat p.1.1 ⟨n, h⟩ ≤ p.1.1 j} = F := Set.inter_eq_left.mpr hFC0
+    rw [Set.preimage_inter, ← hFeq]
+    exact hrec.inter (Filter.EventuallyEq.refl _ _)
 
 /-- **The exchangeable sign-swap (the single research nugget, Lu-BDA §19).** For any
 `𝒢rev n`-measurable event `F` on which two nulls `l, j` are both above `θ_n`, the events
 `F ∩ {0 < W l}` and `F ∩ {0 < W j}` have equal measure. This is the exchangeability of the
 above-`θ_n` null signs: `F`'s defining data (magnitudes, non-null signs, the below-`θ_n` null signs,
 and the above-count `A`) is invariant under swapping the signs of `l` and `j` (both above `θ_n`),
-which preserves the i.i.d.-fair joint law (`signs_iIndep`/`signs_fair`/`signs_indep_outer`). The
-proven subset kernel `condExp_coord_eq_subsetCount_div` discharges the fixed-subset case; this lifts
-it through the random above-set and the independent outer/below conditioning.
+which preserves the i.i.d.-fair joint law (`signs_iIndep`/`signs_fair`/`signs_indep_outer`).
+
+Proof: `grev_event_outer_invariant` represents `F` (mod null) as `(outerData, nsign⃗)⁻¹' C` for a
+`swap l j`-invariant measurable `C`, and the abstract `measure_inter_swap_outer` discharges the
+swap equality from independence of the null signs from the outer data + their i.i.d. fairness.
 - **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
 private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
