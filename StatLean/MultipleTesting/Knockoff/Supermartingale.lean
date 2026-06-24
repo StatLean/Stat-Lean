@@ -790,6 +790,178 @@ private lemma integrable_sel (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
   filter_upwards with ω
   rw [Real.norm_eq_abs]; split_ifs <;> norm_num
 
+/-! ### The above-`θ_n` null set `S_n` and the disintegration wiring -/
+
+/-- `S_n = {l ∈ H₀ : θ_n ≤ |W l|}`, the above-`θ_n` null set (a `𝒢rev n`-measurable, magnitude-only
+function of `ω`). On `{cIdx = j}` we have `j ∈ S_n`; `A = V₊(θ_n)` is the positive-sign subcount of
+`S_n`, and `A + B = |S_n|` a.e. (nulls are nonzero). -/
+private noncomputable def aboveNulls (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (ω : Ω) : Finset (Fin d) :=
+  H₀.filter (fun l => θ W ⟨n, h⟩ ω ≤ |W l ω|)
+
+omit mΩ in
+private lemma mem_aboveNulls (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d)
+    (ω : Ω) (l : Fin d) :
+    l ∈ aboveNulls W H₀ n h ω ↔ (l ∈ H₀ ∧ θ W ⟨n, h⟩ ω ≤ |W l ω|) := by
+  simp [aboveNulls]
+
+omit mΩ in
+private lemma aboveNulls_subset (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (h : n < d)
+    (ω : Ω) : aboveNulls W H₀ n h ω ⊆ H₀ := Finset.filter_subset _ _
+
+omit mΩ in
+/-- `V₊(θ_n)` is the positive-sign subcount of `S_n`. -/
+private lemma Vplus_eq_aboveNulls_filter (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (ω : Ω) :
+    Vplus W H₀ (θ W ⟨n, h⟩ ω) ω
+      = ((aboveNulls W H₀ n h ω).filter (fun l => 0 < W l ω)).card := by
+  unfold Vplus aboveNulls
+  congr 1
+  ext l
+  simp only [Finset.mem_inter, Splus, Finset.mem_filter, Finset.mem_univ, true_and]
+  tauto
+
+omit mΩ in
+/-- `V₋(θ_n)` is the negative-sign subcount of `S_n`. -/
+private lemma Vminus_eq_aboveNulls_filter (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (ω : Ω) :
+    Vminus W H₀ (θ W ⟨n, h⟩ ω) ω
+      = ((aboveNulls W H₀ n h ω).filter (fun l => W l ω < 0)).card := by
+  unfold Vminus aboveNulls
+  congr 1
+  ext l
+  simp only [Finset.mem_inter, Sminus, Finset.mem_filter, Finset.mem_univ, true_and]
+  tauto
+
+omit mΩ in
+/-- `A + B = |S_n|` whenever every null is nonzero at `ω` (a.e.). -/
+private lemma Vplus_add_Vminus_eq_card (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ)
+    (h : n < d) (ω : Ω) (hnz : ∀ l ∈ H₀, W l ω ≠ 0) :
+    Vplus W H₀ (θ W ⟨n, h⟩ ω) ω + Vminus W H₀ (θ W ⟨n, h⟩ ω) ω
+      = (aboveNulls W H₀ n h ω).card := by
+  rw [Vplus_eq_aboveNulls_filter, Vminus_eq_aboveNulls_filter]
+  have hneg : (aboveNulls W H₀ n h ω).filter (fun l => W l ω < 0)
+      = (aboveNulls W H₀ n h ω).filter (fun l => ¬ 0 < W l ω) := by
+    apply Finset.filter_congr
+    intro l hl
+    have hlH : l ∈ H₀ := (mem_aboveNulls W H₀ n h ω l).mp hl |>.1
+    have : W l ω ≠ 0 := hnz l hlH
+    constructor
+    · intro hlt; linarith
+    · intro hnlt; exact lt_of_le_of_ne (not_lt.mp hnlt) this
+  rw [hneg, Finset.filter_card_add_filter_neg_card_eq_card]
+
+/-! 𝒢rev-measurability of magnitude-only quantities. -/
+
+private lemma gmeas_cproc_fst (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) :
+    Measurable[𝒢rev W H₀ hWmeas n] (fun ω => (cproc W H₀ n ω).1) :=
+  measurable_fst.comp (Filtration.stronglyAdapted_natural
+    (fun k => (measurable_cproc W H₀ hWmeas k).stronglyMeasurable) n).measurable
+
+private lemma gmeas_abs (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (l : Fin d) :
+    Measurable[𝒢rev W H₀ hWmeas n] (fun ω => |W l ω|) := by
+  have := (measurable_pi_apply l).comp (gmeas_cproc_fst W H₀ hWmeas n)
+  simpa [cproc] using this
+
+private lemma gmeas_theta (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) :
+    Measurable[𝒢rev W H₀ hWmeas n] (fun ω => θ W ⟨n, h⟩ ω) := by
+  have := (measurable_orderStat_eval n h).comp (gmeas_cproc_fst W H₀ hWmeas n)
+  simpa [cproc, θ] using this
+
+private lemma measurableSet'_theta_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) (l : Fin d) :
+    MeasurableSet[𝒢rev W H₀ hWmeas n] {ω | θ W ⟨n, h⟩ ω ≤ |W l ω|} :=
+  measurableSet_le (gmeas_theta W H₀ hWmeas n h) (gmeas_abs W H₀ hWmeas n l)
+
+private lemma measurableSet'_cev (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) (j : Fin d) :
+    MeasurableSet[𝒢rev W H₀ hWmeas n] {ω | θ W ⟨n, h⟩ ω = |W j ω|} :=
+  measurableSet_eq_fun (gmeas_theta W H₀ hWmeas n h) (gmeas_abs W H₀ hWmeas n j)
+
+private lemma measurableSet'_mem_aboveNulls (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) (l : Fin d) :
+    MeasurableSet[𝒢rev W H₀ hWmeas n] {ω | l ∈ aboveNulls W H₀ n h ω} := by
+  by_cases hl : l ∈ H₀
+  · have hset : {ω | l ∈ aboveNulls W H₀ n h ω} = {ω | θ W ⟨n, h⟩ ω ≤ |W l ω|} := by
+      ext ω; rw [Set.mem_setOf_eq, mem_aboveNulls]; simp [hl]
+    rw [hset]; exact measurableSet'_theta_le W H₀ hWmeas n h l
+  · have hset : {ω | l ∈ aboveNulls W H₀ n h ω} = (∅ : Set Ω) := by
+      ext ω; rw [Set.mem_setOf_eq, mem_aboveNulls]; simp [hl]
+    rw [hset]; exact @MeasurableSet.empty Ω (𝒢rev W H₀ hWmeas n)
+
+private lemma measurableSet'_aboveNulls_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (n : ℕ) (h : n < d) (T : Finset (Fin d)) :
+    MeasurableSet[𝒢rev W H₀ hWmeas n] {ω | aboveNulls W H₀ n h ω = T} := by
+  have hset : {ω | aboveNulls W H₀ n h ω = T}
+      = ⋂ l, {ω | (l ∈ aboveNulls W H₀ n h ω) ↔ (l ∈ T)} := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff]
+  rw [hset]
+  apply MeasurableSet.iInter
+  intro l
+  by_cases hlT : l ∈ T
+  · have : {ω | (l ∈ aboveNulls W H₀ n h ω) ↔ (l ∈ T)}
+        = {ω | l ∈ aboveNulls W H₀ n h ω} := by
+      ext ω; simp [hlT]
+    rw [this]; exact measurableSet'_mem_aboveNulls W H₀ hWmeas n h l
+  · have : {ω | (l ∈ aboveNulls W H₀ n h ω) ↔ (l ∈ T)}
+        = {ω | l ∈ aboveNulls W H₀ n h ω}ᶜ := by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, hlT, iff_false]
+    rw [this]; exact (measurableSet'_mem_aboveNulls W H₀ hWmeas n h l).compl
+
+/-- **The exchangeable sign-swap (the single research nugget, Lu-BDA §19).** For any
+`𝒢rev n`-measurable event `F` on which two nulls `l, j` are both above `θ_n`, the events
+`F ∩ {0 < W l}` and `F ∩ {0 < W j}` have equal measure. This is the exchangeability of the
+above-`θ_n` null signs: `F`'s defining data (magnitudes, non-null signs, the below-`θ_n` null signs,
+and the above-count `A`) is invariant under swapping the signs of `l` and `j` (both above `θ_n`),
+which preserves the i.i.d.-fair joint law (`signs_iIndep`/`signs_fair`/`signs_indep_outer`). The
+proven subset kernel `condExp_coord_eq_subsetCount_div` discharges the fixed-subset case; this lifts
+it through the random above-set and the independent outer/below conditioning.
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
+    (n : ℕ) (h : n < d) (l j : Fin d) (hl : l ∈ H₀) (hj : j ∈ H₀)
+    (F : Set Ω) (hF : MeasurableSet[𝒢rev W H₀ hW.meas n] F)
+    (hFl : F ⊆ {ω | l ∈ aboveNulls W H₀ n h ω})
+    (hFj : F ⊆ {ω | j ∈ aboveNulls W H₀ n h ω}) :
+    μ (F ∩ {ω | 0 < W l ω}) = μ (F ∩ {ω | 0 < W j ω}) := by
+  sorry
+
+/-- Set-integral of a product of two `{0,1}`-indicators is the measure of the triple intersection. -/
+private lemma setIntegral_ite_mul_ite (μ : Measure Ω) (s : Set Ω) (P Q : Ω → Prop)
+    [DecidablePred P] [DecidablePred Q]
+    (hP : MeasurableSet {ω | P ω}) (hQ : MeasurableSet {ω | Q ω}) :
+    ∫ ω in s, (if P ω then (1 : ℝ) else 0) * (if Q ω then (1 : ℝ) else 0) ∂μ
+      = (μ (s ∩ {ω | P ω} ∩ {ω | Q ω})).toReal := by
+  have hrw : (fun ω => (if P ω then (1 : ℝ) else 0) * (if Q ω then (1 : ℝ) else 0))
+      = ({ω | P ω} ∩ {ω | Q ω}).indicator (fun _ => (1 : ℝ)) := by
+    funext ω; rw [Set.indicator_apply]
+    by_cases hP' : P ω <;> by_cases hQ' : Q ω <;>
+      simp [hP', hQ', Set.mem_inter_iff, Set.mem_setOf_eq]
+  rw [hrw, setIntegral_indicator (hP.inter hQ), setIntegral_const, smul_eq_mul, mul_one,
+    ← Set.inter_assoc]
+  rfl
+
+/-- Integrability of a product of two `{0,1}`-indicators with measurable predicate sets. -/
+private lemma integrable_ite_mul_ite (μ : Measure Ω) [IsProbabilityMeasure μ] (P Q : Ω → Prop)
+    [DecidablePred P] [DecidablePred Q]
+    (hP : MeasurableSet {ω | P ω}) (hQ : MeasurableSet {ω | Q ω}) :
+    Integrable (fun ω => (if P ω then (1 : ℝ) else 0) * (if Q ω then (1 : ℝ) else 0)) μ := by
+  refine (integrable_const (1 : ℝ)).mono'
+    ((Measurable.ite hP measurable_const measurable_const).mul
+      (Measurable.ite hQ measurable_const measurable_const)).aestronglyMeasurable
+    (Filter.Eventually.of_forall (fun ω => ?_))
+  rw [Real.norm_eq_abs, abs_mul]
+  have h1 : |if P ω then (1 : ℝ) else 0| ≤ 1 := by split_ifs <;> norm_num
+  have h2 : |if Q ω then (1 : ℝ) else 0| ≤ 1 := by split_ifs <;> norm_num
+  calc |if P ω then (1 : ℝ) else 0| * |if Q ω then (1 : ℝ) else 0|
+      ≤ 1 * 1 := mul_le_mul h1 h2 (abs_nonneg _) zero_le_one
+    _ = 1 := one_mul 1
+
 /-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §19). Fix a null
 `j`. Restricted to the event `{cIdx = j}` (where `j` is the rank-`n` coordinate, hence one of the
 `A + B` above-`θ_n` nonzero nulls), the conditional sign probability is the
@@ -823,7 +995,223 @@ private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d
       =ᵐ[μ] fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
           * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
-  sorry
+  have hle : (𝒢rev W H₀ hW.meas n) ≤ mΩ := (𝒢rev W H₀ hW.meas).le n
+  set f : Ω → ℝ := fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+      * (if 0 < W j ω then (1 : ℝ) else 0) with hfdef
+  set g : Ω → ℝ := fun ω => (if cIdx W n h ω = j then (1 : ℝ) else 0)
+      * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) with hgdef
+  -- ambient measurability of the magnitude proxy `{θ_n = |W j|}`
+  have hθamb : Measurable (fun ω => θ W ⟨n, h⟩ ω) := by
+    unfold θ
+    exact (measurable_orderStat_eval n h).comp (measurable_pi_iff.mpr fun i => (hW.meas i).abs)
+  have hcevamb : MeasurableSet {ω | θ W ⟨n, h⟩ ω = |W j ω|} :=
+    measurableSet_eq_fun hθamb (hW.meas j).abs
+  -- a.e. nonzero nulls
+  have hnz_ae : ∀ᵐ ω ∂μ, ∀ l ∈ H₀, W l ω ≠ 0 :=
+    (ae_ball_iff H₀.countable_toSet).mpr (fun l hl => null_ne_zero W H₀ μ hW l hl)
+  -- f integrable
+  have hf_int : Integrable f μ := by
+    rw [hfdef]
+    exact integrable_sel_mul W H₀ μ hW.meas hmag n h j
+      (fun ω => if 0 < W j ω then (1 : ℝ) else 0)
+      (Measurable.ite (measurableSet_lt measurable_const (hW.meas j)) measurable_const
+        measurable_const) (fun ω => by dsimp only; split_ifs <;> norm_num)
+  -- A, B as `𝒢rev`-measurable reals (count components of `cproc`)
+  have hcproc : StronglyMeasurable[𝒢rev W H₀ hW.meas n] (cproc W H₀ n) :=
+    Filtration.stronglyAdapted_natural
+      (fun k => (measurable_cproc W H₀ hW.meas k).stronglyMeasurable) n
+  have hAm : Measurable[𝒢rev W H₀ hW.meas n]
+      (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+    have h1 : Measurable[𝒢rev W H₀ hW.meas n] (fun ω => (cproc W H₀ n ω).2.2.1) :=
+      (measurable_fst.comp (measurable_snd.comp measurable_snd)).comp hcproc.measurable
+    have h2 : (fun ω => (cproc W H₀ n ω).2.2.1)
+        = (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+      funext ω; dsimp only [cproc]; rw [dif_pos h]
+    rwa [h2] at h1
+  have hBm : Measurable[𝒢rev W H₀ hW.meas n]
+      (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+    have h1 : Measurable[𝒢rev W H₀ hW.meas n] (fun ω => (cproc W H₀ n ω).2.2.2) :=
+      (measurable_snd.comp (measurable_snd.comp measurable_snd)).comp hcproc.measurable
+    have h2 : (fun ω => (cproc W H₀ n ω).2.2.2)
+        = (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+      funext ω; dsimp only [cproc]; rw [dif_pos h]
+    rwa [h2] at h1
+  have hg_aesm' : AEStronglyMeasurable[𝒢rev W H₀ hW.meas n] g μ := by
+    rw [hgdef]
+    exact (aesm'_cIdx_indicator W H₀ μ hW hmag n h j).mul
+      (hAm.div (hAm.add hBm)).stronglyMeasurable.aestronglyMeasurable
+  -- g integrable (bounded by 1)
+  have hAamb : Measurable (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) :=
+    measurable_from_nat.comp (measurable_Vplus_theta W H₀ hW.meas n h)
+  have hBamb : Measurable (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) :=
+    measurable_from_nat.comp (measurable_Vminus_theta W H₀ hW.meas n h)
+  have hg_int : Integrable g μ := by
+    rw [hgdef]
+    refine (integrable_const (1 : ℝ)).mono'
+      ((aesm_cIdx_indicator W H₀ μ hW.meas hmag n h j).mul
+        (hAamb.div (hAamb.add hBamb)).aestronglyMeasurable) ?_
+    filter_upwards with ω
+    rw [Real.norm_eq_abs, abs_mul]
+    have h1 : |if cIdx W n h ω = j then (1 : ℝ) else 0| ≤ 1 := by split_ifs <;> norm_num
+    have hVpnn : (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+    have hVmnn : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+    have h2 : |(Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))| ≤ 1 := by
+      rw [abs_div, abs_of_nonneg hVpnn, abs_of_nonneg (by linarith)]
+      rcases eq_or_lt_of_le (show (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) from by linarith) with he | hpos
+      · rw [← he, div_zero]; norm_num
+      · rw [div_le_one hpos]; linarith
+    calc |if cIdx W n h ω = j then (1 : ℝ) else 0|
+          * |(Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+              / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))|
+        ≤ 1 * 1 := mul_le_mul h1 h2 (abs_nonneg _) zero_le_one
+      _ = 1 := one_mul 1
+  -- main: reduce to set-integral identity, then partition over `S_n = T`
+  refine (ae_eq_condExp_of_forall_setIntegral_eq hle hf_int
+    (fun s _ _ => hg_int.integrableOn) ?_ hg_aesm').symm
+  intro s hs _
+  -- partition-of-unity over the finite values `T` of `S_n`
+  have hpart : ∀ (φ : Ω → ℝ), Integrable φ μ →
+      ∫ ω in s, φ ω ∂μ
+        = ∑ T ∈ H₀.powerset, ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, φ ω ∂μ := by
+    intro φ hφ
+    have hpt : ∀ ω, φ ω
+        = ∑ T ∈ H₀.powerset, ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω := by
+      intro ω
+      symm
+      calc (∑ T ∈ H₀.powerset, ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω)
+          = ∑ T ∈ H₀.powerset, (if aboveNulls W H₀ n h ω = T then φ ω else 0) := by
+            apply Finset.sum_congr rfl; intro T _
+            simp only [Set.indicator_apply, Set.mem_setOf_eq]
+        _ = φ ω := by
+            rw [Finset.sum_ite_eq H₀.powerset (aboveNulls W H₀ n h ω) (fun _ => φ ω)]
+            exact if_pos (Finset.mem_powerset.mpr (aboveNulls_subset W H₀ n h ω))
+    calc ∫ ω in s, φ ω ∂μ
+        = ∫ ω in s, ∑ T ∈ H₀.powerset,
+            ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω ∂μ :=
+          setIntegral_congr_fun (hle s hs) (fun ω _ => hpt ω)
+      _ = ∑ T ∈ H₀.powerset,
+            ∫ ω in s, ({ω' | aboveNulls W H₀ n h ω' = T}.indicator φ) ω ∂μ :=
+          integral_finset_sum _ (fun T _ =>
+            (hφ.indicator (hle _ (measurableSet'_aboveNulls_eq W H₀ hW.meas n h T))).integrableOn)
+      _ = ∑ T ∈ H₀.powerset, ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, φ ω ∂μ := by
+          apply Finset.sum_congr rfl; intro T _
+          rw [setIntegral_indicator (hle _ (measurableSet'_aboveNulls_eq W H₀ hW.meas n h T))]
+  rw [hpart g hg_int, hpart f hf_int]
+  apply Finset.sum_congr rfl
+  intro T hT
+  have hTsub : T ⊆ H₀ := Finset.mem_powerset.mp hT
+  have hsTmeas : MeasurableSet (s ∩ {ω | aboveNulls W H₀ n h ω = T}) :=
+    (hle s hs).inter (hle _ (measurableSet'_aboveNulls_eq W H₀ hW.meas n h T))
+  by_cases hjT : j ∈ T
+  · -- `j ∈ T`: the exchangeable cell
+    have hTpos : 0 < T.card := Finset.card_pos.mpr ⟨j, hjT⟩
+    have hTne : (T.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hTpos.ne'
+    -- the `𝒢rev`-measurable conditioning event of the cell
+    have hFmeas' : MeasurableSet[𝒢rev W H₀ hW.meas n]
+        ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}) :=
+      (hs.inter (measurableSet'_aboveNulls_eq W H₀ hW.meas n h T)).inter
+        (measurableSet'_cev W H₀ hW.meas n h j)
+    have hFj : ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|})
+        ⊆ {ω | j ∈ aboveNulls W H₀ n h ω} := by
+      intro ω hωF
+      have hAT : aboveNulls W H₀ n h ω = T := hωF.1.2
+      rw [Set.mem_setOf_eq, hAT]; exact hjT
+    have hFl : ∀ l ∈ T, ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|})
+        ⊆ {ω | l ∈ aboveNulls W H₀ n h ω} := by
+      intro l hl ω hωF
+      have hAT : aboveNulls W H₀ n h ω = T := hωF.1.2
+      rw [Set.mem_setOf_eq, hAT]; exact hl
+    -- f-side: `∫ = μ(F ∩ {0 < W j})`
+    have hfside : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, f ω ∂μ
+        = (μ ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}
+            ∩ {ω | 0 < W j ω})).toReal := by
+      have hfeq : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, f ω ∂μ
+          = ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T},
+              (if θ W ⟨n, h⟩ ω = |W j ω| then (1 : ℝ) else 0)
+                * (if 0 < W j ω then (1 : ℝ) else 0) ∂μ := by
+        apply setIntegral_congr_ae hsTmeas
+        filter_upwards [hmag] with ω hω _
+        rw [hfdef]; dsimp only; congr 1
+        by_cases hc : cIdx W n h ω = j
+        · rw [if_pos hc, if_pos ((cIdx_eq_iff W n h ω hω j).mp hc)]
+        · rw [if_neg hc, if_neg (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
+      rw [hfeq, setIntegral_ite_mul_ite μ _ _ _ hcevamb
+        (measurableSet_lt measurable_const (hW.meas j))]
+    -- g-side: `∫ = (∑_{l∈T} μ(F ∩ {0 < W l}))/|T|`
+    have hgside : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, g ω ∂μ
+        = (∑ l ∈ T, (μ ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}
+            ∩ {ω | 0 < W l ω})).toReal) / (T.card : ℝ) := by
+      have hgeq : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, g ω ∂μ
+          = ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T},
+              (∑ l ∈ T, (if θ W ⟨n, h⟩ ω = |W j ω| then (1 : ℝ) else 0)
+                * (if 0 < W l ω then (1 : ℝ) else 0)) / (T.card : ℝ) ∂μ := by
+        apply setIntegral_congr_ae hsTmeas
+        filter_upwards [hmag, hnz_ae] with ω hω hnz hωsT
+        have hAT : aboveNulls W H₀ n h ω = T := hωsT.2
+        rw [hgdef]; dsimp only
+        have hcidxeq : (if cIdx W n h ω = j then (1 : ℝ) else 0)
+            = (if θ W ⟨n, h⟩ ω = |W j ω| then (1 : ℝ) else 0) := by
+          by_cases hc : cIdx W n h ω = j
+          · rw [if_pos hc, if_pos ((cIdx_eq_iff W n h ω hω j).mp hc)]
+          · rw [if_neg hc, if_neg (fun he => hc ((cIdx_eq_iff W n h ω hω j).mpr he))]
+        have hVp : (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            = ((T.filter (fun l => 0 < W l ω)).card : ℝ) := by
+          rw [Vplus_eq_aboveNulls_filter, hAT]
+        have hAB : (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            = (T.card : ℝ) := by
+          rw [← Nat.cast_add, Vplus_add_Vminus_eq_card W H₀ n h ω (fun l hl => hnz l hl), hAT]
+        have hcard : ((T.filter (fun l => 0 < W l ω)).card : ℝ)
+            = ∑ l ∈ T, (if 0 < W l ω then (1 : ℝ) else 0) := by
+          rw [Finset.card_filter, Nat.cast_sum]
+          apply Finset.sum_congr rfl; intro l _; split_ifs <;> simp
+        rw [hcidxeq, hAB, hVp, hcard, ← mul_div_assoc, Finset.mul_sum]
+      rw [hgeq, integral_div,
+        integral_finset_sum T (fun l _ =>
+          (integrable_ite_mul_ite μ _ _ hcevamb
+            (measurableSet_lt measurable_const (hW.meas l))).integrableOn)]
+      congr 1
+      apply Finset.sum_congr rfl
+      intro l _
+      exact setIntegral_ite_mul_ite μ _ _ _ hcevamb
+        (measurableSet_lt measurable_const (hW.meas l))
+    -- combine via the exchangeable swap
+    rw [hgside, hfside]
+    have hswap : ∀ l ∈ T,
+        (μ ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}
+            ∩ {ω | 0 < W l ω})).toReal
+          = (μ ((s ∩ {ω | aboveNulls W H₀ n h ω = T}) ∩ {ω | θ W ⟨n, h⟩ ω = |W j ω|}
+              ∩ {ω | 0 < W j ω})).toReal := by
+      intro l hl
+      congr 1
+      exact aboveNulls_sign_swap W H₀ μ hW hmag n h l j (hTsub hl) hj _ hFmeas' (hFl l hl) hFj
+    rw [Finset.sum_congr rfl hswap, Finset.sum_const, nsmul_eq_mul, mul_comm, mul_div_assoc,
+      div_self hTne, mul_one]
+  · -- `j ∉ T`: the cell selector `𝟙(cIdx = j)` vanishes a.e.
+    have hcidx0 : ∀ᵐ ω ∂μ,
+        ω ∈ s ∩ {ω | aboveNulls W H₀ n h ω = T} → (if cIdx W n h ω = j then (1 : ℝ) else 0) = 0 := by
+      filter_upwards [hmag] with ω hω hωsT
+      have hAT : aboveNulls W H₀ n h ω = T := hωsT.2
+      rw [if_neg]; intro hc
+      have he : θ W ⟨n, h⟩ ω = |W j ω| := (cIdx_eq_iff W n h ω hω j).mp hc
+      have hjmem : j ∈ aboveNulls W H₀ n h ω :=
+        (mem_aboveNulls W H₀ n h ω j).mpr ⟨hj, le_of_eq he⟩
+      rw [hAT] at hjmem; exact hjT hjmem
+    have hf0 : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, f ω ∂μ = 0 := by
+      rw [show (∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, f ω ∂μ)
+          = ∫ _ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, (0 : ℝ) ∂μ from ?_, integral_zero]
+      apply setIntegral_congr_ae hsTmeas
+      filter_upwards [hcidx0] with ω hω hωsT
+      rw [hfdef]; dsimp only; rw [hω hωsT, zero_mul]
+    have hg0 : ∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, g ω ∂μ = 0 := by
+      rw [show (∫ ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, g ω ∂μ)
+          = ∫ _ω in s ∩ {ω | aboveNulls W H₀ n h ω = T}, (0 : ℝ) ∂μ from ?_, integral_zero]
+      apply setIntegral_congr_ae hsTmeas
+      filter_upwards [hcidx0] with ω hω hωsT
+      rw [hgdef]; dsimp only; rw [hω hωsT, zero_mul]
+    rw [hg0, hf0]
 
 /-- **The exchangeable per-coordinate core, negative sign.** Derived from `core_condExp_plus` via
 `𝟙(W j < 0) =ᵐ 1 − 𝟙(0 < W j)` (nulls are a.s. nonzero, `null_ne_zero`) and `condExp` linearity,
