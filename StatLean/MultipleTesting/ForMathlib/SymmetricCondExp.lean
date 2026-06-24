@@ -51,18 +51,18 @@ lemma measurable_signCount {k : ℕ} (σ : Fin k → Ω → Bool)
 
 /-- The "type vector": the set of coordinates that are `true` for the sample `ω`.
 By construction `signCount σ ω = (typeVec σ ω).card`. -/
-def typeVec {k : ℕ} (σ : Fin k → Ω → Bool) (ω : Ω) : Finset (Fin k) :=
+def typeVec {ι : Type*} [Fintype ι] (σ : ι → Ω → Bool) (ω : Ω) : Finset ι :=
   Finset.univ.filter (fun i => σ i ω = true)
 
-private lemma mem_typeVec {k : ℕ} (σ : Fin k → Ω → Bool) (ω : Ω) (i : Fin k) :
+private lemma mem_typeVec {ι : Type*} [Fintype ι] (σ : ι → Ω → Bool) (ω : Ω) (i : ι) :
     i ∈ typeVec σ ω ↔ σ i ω = true := by
   simp [typeVec]
 
 /-- The event "the sample's true-coordinates are exactly `T`". -/
-def evtSet {k : ℕ} (σ : Fin k → Ω → Bool) (T : Finset (Fin k)) : Set Ω :=
+def evtSet {ι : Type*} (σ : ι → Ω → Bool) (T : Finset ι) : Set Ω :=
   ⋂ i, (σ i) ⁻¹' (if i ∈ T then ({true} : Set Bool) else {false})
 
-private lemma mem_evtSet {k : ℕ} (σ : Fin k → Ω → Bool) (T : Finset (Fin k)) (ω : Ω) :
+private lemma mem_evtSet {ι : Type*} [Fintype ι] (σ : ι → Ω → Bool) (T : Finset ι) (ω : Ω) :
     ω ∈ evtSet σ T ↔ typeVec σ ω = T := by
   simp only [evtSet, Set.mem_iInter, Set.mem_preimage]
   rw [Finset.ext_iff]
@@ -70,20 +70,20 @@ private lemma mem_evtSet {k : ℕ} (σ : Fin k → Ω → Bool) (T : Finset (Fin
   rw [mem_typeVec]
   by_cases hi : i ∈ T <;> simp [hi, Set.mem_singleton_iff, Bool.not_eq_true]
 
-private lemma measurableSet_evtSet {k : ℕ} {σ : Fin k → Ω → Bool}
-    (hσ : ∀ i, Measurable (σ i)) (T : Finset (Fin k)) : MeasurableSet (evtSet σ T) := by
+private lemma measurableSet_evtSet {ι : Type*} [Fintype ι] {σ : ι → Ω → Bool}
+    (hσ : ∀ i, Measurable (σ i)) (T : Finset ι) : MeasurableSet (evtSet σ T) := by
   unfold evtSet
   apply MeasurableSet.iInter
   intro i
   apply hσ i
   exact MeasurableSet.of_discrete
 
-/-- Each cell of the type-vector partition has measure `(1/2)^k`: this is independence + fairness
+/-- Each cell of the type-vector partition has measure `(1/2)^|ι|`: this is independence + fairness
 (`μ(σ i = true) = μ(σ i = false) = 1/2`). -/
-private lemma measure_evtSet {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasure μ]
-    {σ : Fin k → Ω → Bool} (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)
-    (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (T : Finset (Fin k)) :
-    μ (evtSet σ T) = (1 / 2 : ℝ≥0∞) ^ k := by
+private lemma measure_evtSet {ι : Type*} [Fintype ι] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)
+    (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (T : Finset ι) :
+    μ (evtSet σ T) = (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) := by
   have hAi : ∀ i, MeasurableSet {ω | σ i ω = true} :=
     fun i => hσ i (measurableSet_singleton true)
   have hcomap : ∀ i, MeasurableSet[(inferInstance : MeasurableSpace Bool).comap (σ i)]
@@ -104,16 +104,15 @@ private lemma measure_evtSet {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasure �
           Set.mem_setOf_eq, Bool.not_eq_true]
       rw [hc, prob_compl_eq_one_sub (hAi i), hfair i]
       exact ENNReal.sub_eq_of_eq_add (by simp) (ENNReal.add_halves 1).symm
-  rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ,
-    Fintype.card_fin]
+  rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ]
 
 /-- **Master measure computation.** The measure of any event described by a property `Q` of the
 type vector is `(#allowed type vectors) · (1/2)^k`. -/
-private lemma measure_setOf_typeVec {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasure μ]
-    {σ : Fin k → Ω → Bool} (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)
-    (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (Q : Finset (Fin k) → Prop) :
+private lemma measure_setOf_typeVec {ι : Type*} [Fintype ι] (μ : Measure Ω) [IsProbabilityMeasure μ]
+    {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)
+    (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (Q : Finset ι → Prop) :
     μ {ω | Q (typeVec σ ω)}
-      = ((Finset.univ.powerset.filter Q).card) • (1 / 2 : ℝ≥0∞) ^ k := by
+      = ((Finset.univ.powerset.filter Q).card) • (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) := by
   have hset : {ω | Q (typeVec σ ω)}
       = ⋃ T ∈ (Finset.univ.powerset.filter Q), evtSet σ T := by
     ext ω
@@ -122,7 +121,7 @@ private lemma measure_setOf_typeVec {k : ℕ} (μ : Measure Ω) [IsProbabilityMe
     constructor
     · intro hQ; exact ⟨typeVec σ ω, hQ, rfl⟩
     · rintro ⟨T, hQT, rfl⟩; exact hQT
-  have hdisj : (↑(Finset.univ.powerset.filter Q) : Set (Finset (Fin k))).PairwiseDisjoint
+  have hdisj : (↑(Finset.univ.powerset.filter Q) : Set (Finset ι)).PairwiseDisjoint
       (evtSet σ) := by
     intro T _ T' _ hne
     change Disjoint (evtSet σ T) (evtSet σ T')
@@ -133,6 +132,127 @@ private lemma measure_setOf_typeVec {k : ℕ} (μ : Measure Ω) [IsProbabilityMe
     fun T _ => measurableSet_evtSet hσ T
   rw [hset, measure_biUnion_finset hdisj hmeas,
     Finset.sum_congr rfl (fun T _ => measure_evtSet μ hσ hindep hfair T), Finset.sum_const]
+
+/-- The `{0,1}`-pattern indicator of a finset `P`: `signPat P i = true ↔ i ∈ P`. -/
+private noncomputable def signPat {ι : Type*} (P : Finset ι) : ι → Bool := fun x => decide (x ∈ P)
+
+private lemma signPat_eq_true {ι : Type*} (P : Finset ι) (x : ι) :
+    signPat P x = true ↔ x ∈ P := by simp [signPat]
+
+/-- **Outer-data exchangeable swap.** The lift of `measure_inter_swap` carrying an independent outer
+random element `Z : Ω → α`. Let `σ : ι → Ω → Bool` be i.i.d. fair, with the sign vector
+`fun ω i => σ i ω` **independent of** `Z`. Let `C : Set (α × (ι → Bool))` be a measurable event that
+is **invariant under transposing the two coordinates `i, j` of the sign argument**
+(`(z, b) ∈ C ↔ (z, b ∘ swap i j) ∈ C`). Then the event `(Z, σ⃗) ⁻¹' C` intersected with `{σ i = true}`
+and with `{σ j = true}` has equal measure.
+
+This is the abstract content of the knock-off above-`θ_n` null-sign exchangeability: `Z` is the outer
+data (magnitudes + non-null signs), `C` encodes the `𝒢rev n`-event `F` (whose dependence on the null
+signs is, by `θ` monotonicity, invariant under swapping two signs both above `θ_n`), and `i, j` are the
+two above-`θ_n` nulls. No conditional expectation, no `StandardBorelSpace`. -/
+private lemma measure_inter_swap_outer {ι : Type*} [Fintype ι]
+    {α : Type*} {_mα : MeasurableSpace α}
+    (μ : Measure Ω) [IsProbabilityMeasure μ]
+    {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i))
+    (hindep : iIndepFun σ μ) (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2)
+    (Z : Ω → α) (hZ : Measurable Z)
+    (hZindep : IndepFun (fun ω => (fun i => σ i ω : ι → Bool)) Z μ)
+    (C : Set (α × (ι → Bool))) (hC : MeasurableSet C) (i j : ι)
+    (hCinv : ∀ (z : α) (b : ι → Bool), (z, b) ∈ C ↔ (z, b ∘ Equiv.swap i j) ∈ C) :
+    μ ((fun ω => (Z ω, fun i => σ i ω)) ⁻¹' C ∩ {ω | σ i ω = true})
+      = μ ((fun ω => (Z ω, fun i => σ i ω)) ⁻¹' C ∩ {ω | σ j ω = true}) := by
+  classical
+  have hσvec : Measurable (fun ω => (fun i => σ i ω : ι → Bool)) := measurable_pi_iff.mpr hσ
+  -- `Z`-fibre of `C` over a fixed sign-pattern `P`, and its measurability.
+  have hCPmeas : ∀ P : Finset ι, MeasurableSet (Z ⁻¹' {z | (z, signPat P) ∈ C}) := by
+    intro P
+    exact hZ ((measurable_id.prodMk measurable_const) hC)
+  -- The code set for `evtSet σ P` in the sign space, and its measurability.
+  have hBPmeas : ∀ P : Finset ι,
+      MeasurableSet {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P} := by
+    intro P
+    have : {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P}
+        = ⋂ x, {b : ι → Bool | (b x = true ↔ x ∈ P)} := by
+      ext b
+      simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
+        Finset.mem_univ, true_and]
+    rw [this]
+    refine MeasurableSet.iInter (fun x => ?_)
+    by_cases hx : x ∈ P
+    · have : {b : ι → Bool | (b x = true ↔ x ∈ P)} = (fun b : ι → Bool => b x) ⁻¹' {true} := by
+        ext b; simp [hx]
+      rw [this]; exact (measurable_pi_apply x) MeasurableSet.of_discrete
+    · have : {b : ι → Bool | (b x = true ↔ x ∈ P)} = (fun b : ι → Bool => b x) ⁻¹' {false} := by
+        ext b; simp [hx, Bool.not_eq_true]
+      rw [this]; exact (measurable_pi_apply x) MeasurableSet.of_discrete
+  -- The type-vector event as a preimage of the sign vector.
+  have hevt : ∀ P : Finset ι, evtSet σ P
+      = (fun ω => (fun i => σ i ω : ι → Bool)) ⁻¹'
+          {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P} := by
+    intro P; ext ω
+    rw [mem_evtSet]
+    simp only [Set.mem_preimage, Set.mem_setOf_eq, typeVec]
+  -- On `evtSet σ P` the sign vector equals `signPat (typeVec σ ω)`.
+  have hsig : ∀ ω, (fun i => σ i ω : ι → Bool) = signPat (typeVec σ ω) := by
+    intro ω; funext x
+    show σ x ω = decide (x ∈ typeVec σ ω)
+    have h := mem_typeVec σ ω x
+    by_cases hb : σ x ω = true
+    · rw [hb]; exact (decide_eq_true (h.mpr hb)).symm
+    · have hf : σ x ω = false := by simpa using hb
+      rw [hf]
+      exact (decide_eq_false (fun hm => hb (h.mp hm))).symm
+  -- Per-coordinate decomposition into a sum over allowed sign patterns.
+  have key : ∀ c : ι, μ ((fun ω => (Z ω, fun i => σ i ω)) ⁻¹' C ∩ {ω | σ c ω = true})
+      = ∑ P ∈ Finset.univ.powerset.filter (fun P => c ∈ P),
+          (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) * μ (Z ⁻¹' {z | (z, signPat P) ∈ C}) := by
+    intro c
+    have hdecomp : (fun ω => (Z ω, fun i => σ i ω)) ⁻¹' C ∩ {ω | σ c ω = true}
+        = ⋃ P ∈ (Finset.univ.powerset.filter (fun P => c ∈ P)),
+            (Z ⁻¹' {z | (z, signPat P) ∈ C}) ∩ evtSet σ P := by
+      ext ω
+      simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_setOf_eq, Set.mem_iUnion,
+        Finset.mem_filter, Finset.mem_powerset, Finset.subset_univ, true_and, exists_prop]
+      constructor
+      · rintro ⟨hC', hc⟩
+        refine ⟨typeVec σ ω, (mem_typeVec σ ω c).mpr hc, ?_, (mem_evtSet σ _ ω).mpr rfl⟩
+        rw [← hsig ω]; exact hC'
+      · rintro ⟨P, hcP, hZP, hevtP⟩
+        have hP : typeVec σ ω = P := (mem_evtSet σ P ω).mp hevtP
+        refine ⟨?_, (mem_typeVec σ ω c).mp (hP ▸ hcP)⟩
+        rw [hsig ω, hP]; exact hZP
+    rw [hdecomp]
+    rw [measure_biUnion_finset]
+    · apply Finset.sum_congr rfl
+      intro P _
+      have hmul := hZindep.measure_inter_preimage_eq_mul
+        {b : ι → Bool | Finset.univ.filter (fun x => b x = true) = P}
+        {z | (z, signPat P) ∈ C} (hBPmeas P) ((measurable_id.prodMk measurable_const) hC)
+      rw [Set.inter_comm, hevt P, hmul, ← hevt P, measure_evtSet μ hσ hindep hfair P]
+    · -- pairwise disjoint
+      intro P _ P' _ hne
+      refine Disjoint.mono Set.inter_subset_right Set.inter_subset_right ?_
+      rw [Set.disjoint_left]
+      intro ω hω hω'
+      exact hne (((mem_evtSet σ P ω).mp hω).symm.trans ((mem_evtSet σ P' ω).mp hω'))
+    · intro P _
+      exact (hCPmeas P).inter (measurableSet_evtSet hσ P)
+  rw [key i, key j]
+  refine Finset.sum_equiv (Equiv.swap i j).finsetCongr ?_ ?_
+  · intro P
+    simp only [Finset.mem_filter, Finset.mem_powerset, Finset.subset_univ, true_and,
+      Equiv.finsetCongr_apply, Finset.mem_map_equiv, Equiv.symm_swap, Equiv.swap_apply_right]
+  · intro P hP
+    have hpat : signPat ((Equiv.swap i j).finsetCongr P) = signPat P ∘ Equiv.swap i j := by
+      funext x
+      simp only [signPat, Function.comp_apply, Equiv.finsetCongr_apply, Finset.mem_map_equiv,
+        Equiv.symm_swap]
+    have hCeq : {z | (z, signPat ((Equiv.swap i j).finsetCongr P)) ∈ C}
+        = {z | (z, signPat P) ∈ C} := by
+      ext z
+      simp only [Set.mem_setOf_eq, hpat]
+      exact (hCinv z (signPat P)).symm
+    rw [hCeq]
 
 /-- **Exchangeability.** For any set in the count σ-algebra, `μ(s ∩ {σ i = true})` is independent of
 the coordinate `i`. -/
