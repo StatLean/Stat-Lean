@@ -10,7 +10,10 @@ assembly; prove in named pieces. 0 errors / 0 sorries at the end.
 now-PROVED `CompressedSensing/GaussianChiSquared.lean` and `ConcentrationInequalities/Maximal/CoveringBall.lean`.
 READ the merged `GaussianChiSquared.lean` for the EXACT conclusion constant of
 `gaussian_quadratic_form_tail` (it is `μ {ω | δ < |‖designMap (X ω) β‖²/‖β‖² − 1|} ≤
-   ENNReal.ofReal (2 * Real.exp (−(n)·δ²/C))` for some proved constant `C` — likely 32). Use that `C`.
+   ENNReal.ofReal (2 * Real.exp (−(n)·δ²/C))`. The merged file proves the **CONFIRMED constant `C = 32`**
+(α=4). Use `C = 32`: the per-net-event tail at `δ/2` is `2·exp(−nδ²/128)`, and the matching `hn` lower
+bound is `n ≥ (C'/δ²)·s·log(18d/ε)` with `C' ≈ 384` (derive the exact value; document the deviation
+from the book's `96`, which assumed the sharp `/8`).
 Available bricks:
 * `gaussian_quadratic_form_tail` (fixed `β ≠ 0`, `0<δ≤1`) — the per-vector tail above.
 * `Defs.lean`: `IsRIP X s δ = ∀ β, IsSparse s β → (1−δ)‖β‖² ≤ ‖designMap X β‖² ≤ (1+δ)‖β‖²`.
