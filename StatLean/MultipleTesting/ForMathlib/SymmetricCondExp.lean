@@ -141,15 +141,15 @@ private lemma signPat_eq_true {ι : Type*} (P : Finset ι) (x : ι) :
 
 /-- **Outer-data exchangeable swap.** The lift of `measure_inter_swap` carrying an independent outer
 random element `Z : Ω → α`. Let `σ : ι → Ω → Bool` be i.i.d. fair, with the sign vector
-`fun ω i => σ i ω` **independent of** `Z`. Let `C : Set (α × (ι → Bool))` be a measurable event that
-is **invariant under transposing the two coordinates `i, j` of the sign argument**
-(`(z, b) ∈ C ↔ (z, b ∘ swap i j) ∈ C`). Then the event `(Z, σ⃗) ⁻¹' C` intersected with `{σ i = true}`
+`fun ω i => σ i ω` **independent of** `Z`. Let `C : Set (α × (ι → Bool))` be a measurable event
+**invariant under transposing the two coordinates `i, j` of the sign argument**
+(`(z, b) ∈ C ↔ (z, b ∘ swap i j) ∈ C`). Then `(Z, σ⃗) ⁻¹' C` intersected with `{σ i = true}`
 and with `{σ j = true}` has equal measure.
 
-This is the abstract content of the knock-off above-`θ_n` null-sign exchangeability: `Z` is the outer
-data (magnitudes + non-null signs), `C` encodes the `𝒢rev n`-event `F` (whose dependence on the null
-signs is, by `θ` monotonicity, invariant under swapping two signs both above `θ_n`), and `i, j` are the
-two above-`θ_n` nulls. No conditional expectation, no `StandardBorelSpace`. -/
+This is the abstract content of the knock-off above-`θ_n` null-sign exchangeability: `Z` is the
+outer data (magnitudes + non-null signs), `C` encodes the `𝒢rev n`-event `F` (whose dependence on
+the null signs is, by `θ` monotonicity, invariant under swapping two signs both above `θ_n`), and
+`i, j` are the two above-`θ_n` nulls. No conditional expectation, no `StandardBorelSpace`. -/
 lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
     {α : Type*} {_mα : MeasurableSpace α}
     (μ : Measure Ω) [IsProbabilityMeasure μ]
