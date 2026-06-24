@@ -609,6 +609,12 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  -- ISOLATED NUGGET: the exchangeable disintegration. Route: condition on the outer data
+  -- `D = (magnitudes, non-null signs)` (which fixes the sort order, hence `cIdx`, the above-`θ_n`
+  -- null set `S_n`, and `k = A+B`); partition `Ω` over the finitely many sort orders so that on each
+  -- cell `S_n, cIdx, k` are constant; on each cell the `S_n`-signs are i.i.d. fair and ⊥ `D`
+  -- (`hW.signs_iIndep`/`signs_fair`/`signs_indep_outer`), so `condExp_coord_eq_count_div` gives
+  -- `A/k`; the extra `𝒢rev n` info (below-`θ_n` removed signs) is ⊥ the `S_n`-signs and drops out.
   sorry
 
 /-- **Exchangeable conditional expectation of the negative-null removal** (`count_condExp`, Lu-BDA
@@ -621,6 +627,8 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
       =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
           * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
               / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  -- ISOLATED NUGGET: sign-symmetric image of `count_condExp_plus` (conditional probability `B/k`);
+  -- same disintegration route, applied to the negative-sign coordinate indicator.
   sorry
 
 /-- **One-step conditional expectation inequality** (the high-risk core lemma):
