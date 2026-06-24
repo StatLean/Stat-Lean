@@ -912,6 +912,106 @@ private lemma measurableSet'_aboveNulls_eq (W : Fin d → Ω → ℝ) (H₀ : Fi
       ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, hlT, iff_false]
     rw [this]; exact (measurableSet'_mem_aboveNulls W H₀ hWmeas n h l).compl
 
+/-! ### Null-sign Bool vector and outer data (for the exchangeable swap) -/
+
+/-- The `Bool`-valued sign of the null coordinate `m ∈ H₀`: `true ↔ 0 ≤ W m`. The i.i.d.-fair
+exchangeable family that the swap acts on. -/
+private noncomputable def nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (m : {x // x ∈ H₀}) (ω : Ω) : Bool := if 0 ≤ W (m : Fin d) ω then true else false
+
+omit mΩ in
+private lemma nsign_true_iff (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (m : {x // x ∈ H₀}) (ω : Ω) : nsign W H₀ m ω = true ↔ 0 ≤ W (m : Fin d) ω := by
+  unfold nsign; split_ifs with h <;> simp [h]
+
+private lemma measurable_nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) (m : {x // x ∈ H₀}) : Measurable (nsign W H₀ m) :=
+  Measurable.ite (measurableSet_le measurable_const (hWmeas m.val)) measurable_const measurable_const
+
+omit mΩ in
+/-- `nsign` factors through `sgnReal`: `nsign m = (· ≥ 1) ∘ sgnReal m`, the bridge that transports
+`signs_iIndep`/`signs_indep_outer` (stated for `sgnReal`) to the `Bool` family. -/
+private lemma nsign_eq_comp (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (m : {x // x ∈ H₀}) (ω : Ω) :
+    nsign W H₀ m ω = (if (1 : ℝ) ≤ sgnReal W (m : Fin d) ω then true else false) := by
+  unfold nsign sgnReal
+  by_cases h : 0 ≤ W (m : Fin d) ω
+  · simp [h]
+  · simp only [h, if_false]; norm_num
+
+/-- The outer data the count filtration conditions on: magnitudes together with non-null signs
+(padded `0` on the nulls). This is exactly `(cproc · ).1` × `(cproc ·).2.1` and the right component
+of `signs_indep_outer`. -/
+private noncomputable def outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
+    (Fin d → ℝ) × (Fin d → ℝ) :=
+  (fun i => |W i ω|, fun i => if i ∈ H₀ then (0 : ℝ) else sgnReal W i ω)
+
+private lemma measurable_outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (hWmeas : ∀ j, Measurable (W j)) : Measurable (outerData W H₀) := by
+  refine Measurable.prodMk (measurable_pi_iff.mpr fun i => (hWmeas i).abs)
+    (measurable_pi_iff.mpr fun i => ?_)
+  by_cases hi : i ∈ H₀
+  · simp only [hi, if_true]; exact measurable_const
+  · simp only [hi, if_false]
+    exact Measurable.ite (measurableSet_le measurable_const (hWmeas i))
+      measurable_const measurable_const
+
+private lemma iIndepFun_nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) :
+    iIndepFun (fun (m : {x // x ∈ H₀}) ω => nsign W H₀ m ω) μ := by
+  have hcomp := hW.signs_iIndep.comp
+    (fun (_ : {x // x ∈ H₀}) (r : ℝ) => if (1 : ℝ) ≤ r then true else false)
+    (fun _ => Measurable.ite (measurableSet_le measurable_const measurable_id)
+      measurable_const measurable_const)
+  have heq : (fun (m : {x // x ∈ H₀}) => (fun r : ℝ => if (1 : ℝ) ≤ r then true else false)
+      ∘ (fun ω => sgnReal W (m : Fin d) ω)) = (fun m ω => nsign W H₀ m ω) := by
+    funext m ω; simp only [Function.comp_apply]; exact (nsign_eq_comp W H₀ m ω).symm
+  rwa [heq] at hcomp
+
+private lemma fair_nsign (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (m : {x // x ∈ H₀}) : μ {ω | nsign W H₀ m ω = true} = 1 / 2 := by
+  have hset : {ω | nsign W H₀ m ω = true} = {ω | 0 ≤ W (m : Fin d) ω} := by
+    ext ω; rw [Set.mem_setOf_eq, Set.mem_setOf_eq, nsign_true_iff]
+  rw [hset]; exact hW.signs_fair (m : Fin d) m.2
+
+private lemma indep_nsign_outerData (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ) :
+    IndepFun (fun ω => (fun m => nsign W H₀ m ω : {x // x ∈ H₀} → Bool)) (outerData W H₀) μ := by
+  have hG : Measurable (fun v : {x // x ∈ H₀} → ℝ =>
+      (fun m => if (1 : ℝ) ≤ v m then true else false : {x // x ∈ H₀} → Bool)) :=
+    measurable_pi_iff.mpr fun m => Measurable.ite
+      (measurableSet_le measurable_const (measurable_pi_apply m)) measurable_const measurable_const
+  have heq : (fun ω => (fun m => nsign W H₀ m ω : {x // x ∈ H₀} → Bool))
+      = (fun v : {x // x ∈ H₀} → ℝ =>
+          (fun m => if (1 : ℝ) ≤ v m then true else false : {x // x ∈ H₀} → Bool))
+        ∘ (fun ω (j : {x // x ∈ H₀}) => sgnReal W (j : Fin d) ω) := by
+    funext ω m; simp only [Function.comp_apply]; exact nsign_eq_comp W H₀ m ω
+  rw [heq]
+  exact hW.signs_indep_outer.comp hG measurable_id
+
+/-- **Extraction (the remaining measure-theoretic core).** A `𝒢rev n`-measurable event `F` on which
+the two nulls `l, j` are above `θ_n` is, modulo a null set, the pre-image under `(outerData, nsign⃗)`
+of a measurable set `C` that is invariant under transposing the two sign coordinates `l, j`.
+
+Reason: `𝒢rev n = ⨆_{k ≤ n} σ(cproc k)`, and each `cproc k` is — off the null set
+`⋃_{m ∈ H₀} {W m = 0}` — a measurable function of `(outerData, nsign⃗)` (the counts `V₊(θ_k)`,
+`V₋(θ_k)` are the `nsign`-subcounts of the magnitude-determined above-`θ_k` null set). Folding in the
+`𝒢rev`-measurable constraint `l, j ∈ S_n` (true on `F`) makes the resulting `C` invariant under the
+`l ↔ j` sign transposition, because `l, j` are then above `θ_k` for every `k ≤ n` (θ monotone), so
+swapping their signs preserves every count.
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (n : ℕ) (h : n < d) (l j : Fin d) (hl : l ∈ H₀) (hj : j ∈ H₀)
+    (F : Set Ω) (hF : MeasurableSet[𝒢rev W H₀ hW.meas n] F)
+    (hFl : F ⊆ {ω | l ∈ aboveNulls W H₀ n h ω})
+    (hFj : F ⊆ {ω | j ∈ aboveNulls W H₀ n h ω}) :
+    ∃ C : Set (((Fin d → ℝ) × (Fin d → ℝ)) × ({x // x ∈ H₀} → Bool)), MeasurableSet C ∧
+      (∀ z b, (z, b) ∈ C ↔ (z, b ∘ Equiv.swap (⟨l, hl⟩ : {x // x ∈ H₀}) ⟨j, hj⟩) ∈ C) ∧
+      F =ᵐ[μ] (fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C := by
+  sorry
+
 /-- **The exchangeable sign-swap (the single research nugget, Lu-BDA §19).** For any
 `𝒢rev n`-measurable event `F` on which two nulls `l, j` are both above `θ_n`, the events
 `F ∩ {0 < W l}` and `F ∩ {0 < W j}` have equal measure. This is the exchangeability of the
@@ -929,14 +1029,31 @@ private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
     (hFl : F ⊆ {ω | l ∈ aboveNulls W H₀ n h ω})
     (hFj : F ⊆ {ω | j ∈ aboveNulls W H₀ n h ω}) :
     μ (F ∩ {ω | 0 < W l ω}) = μ (F ∩ {ω | 0 < W j ω}) := by
-  -- REMAINS: the sole gap. `F = (cproc 0..n)⁻¹(B)` is a function of `(null-sign vector, outer data)`
-  -- and is invariant under transposing the signs of `l, j` (both above `θ_n` on `F`, so every
-  -- count `V₊(θ_k)`, `k ≤ n`, sees them symmetrically). Pushing forward by the i.i.d.-fair
-  -- `signs_indep_outer` product law and applying that transposition (a measure-preserving coordinate
-  -- swap of the uniform Bernoulli vector) gives the equality. The two missing Mathlib bricks are
-  -- `iIndepFun → product-measure permutation-invariance` and `condExp` under an independent extra
-  -- σ-algebra; the fixed-subset kernel `condExp_coord_eq_subsetCount_div` is the per-cell input.
-  sorry
+  -- Extract the outer-invariant pre-image representation of `F`, then apply the abstract swap.
+  obtain ⟨C, hCmeas, hCinv, hFC⟩ :=
+    grev_event_outer_invariant W H₀ μ hW n h l j hl hj F hF hFl hFj
+  have hswap := measure_inter_swap_outer μ (measurable_nsign W H₀ hW.meas)
+    (iIndepFun_nsign W H₀ μ hW) (fair_nsign W H₀ μ hW) (outerData W H₀)
+    (measurable_outerData W H₀ hW.meas) (indep_nsign_outerData W H₀ μ hW) C hCmeas
+    (⟨l, hl⟩ : {x // x ∈ H₀}) ⟨j, hj⟩ hCinv
+  -- Bridge `μ(F ∩ {0 < W c}) = μ((outerData,nsign⃗)⁻¹C ∩ {nsign ⟨c⟩ = true})`.
+  have hbridge : ∀ (c : Fin d) (hc : c ∈ H₀),
+      μ (F ∩ {ω | 0 < W c ω})
+        = μ ((fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C
+            ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) := by
+    intro c hc
+    have h0 : {ω | 0 < W c ω} =ᵐ[μ] {ω | nsign W H₀ ⟨c, hc⟩ ω = true} := by
+      filter_upwards [null_ne_zero W H₀ μ hW c hc] with ω hω
+      show (0 < W c ω) = (nsign W H₀ ⟨c, hc⟩ ω = true)
+      rw [eq_iff_iff, nsign_true_iff]
+      exact ⟨fun hlt => le_of_lt hlt, fun hle => lt_of_le_of_ne hle (Ne.symm hω)⟩
+    calc μ (F ∩ {ω | 0 < W c ω})
+        = μ (F ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
+          measure_congr ((Filter.EventuallyEq.refl _ F).inter h0)
+      _ = μ ((fun ω => (outerData W H₀ ω, fun m => nsign W H₀ m ω)) ⁻¹' C
+            ∩ {ω | nsign W H₀ ⟨c, hc⟩ ω = true}) :=
+          measure_congr (hFC.inter (Filter.EventuallyEq.refl _ _))
+  exact (hbridge l hl).trans (hswap.trans (hbridge j hj).symm)
 
 /-- Set-integral of a product of two `{0,1}`-indicators is the measure of the triple intersection. -/
 private lemma setIntegral_ite_mul_ite (μ : Measure Ω) (s : Set Ω) (P Q : Ω → Prop)

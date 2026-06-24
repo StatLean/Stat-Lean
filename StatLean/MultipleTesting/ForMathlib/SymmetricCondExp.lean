@@ -150,7 +150,7 @@ This is the abstract content of the knock-off above-`θ_n` null-sign exchangeabi
 data (magnitudes + non-null signs), `C` encodes the `𝒢rev n`-event `F` (whose dependence on the null
 signs is, by `θ` monotonicity, invariant under swapping two signs both above `θ_n`), and `i, j` are the
 two above-`θ_n` nulls. No conditional expectation, no `StandardBorelSpace`. -/
-private lemma measure_inter_swap_outer {ι : Type*} [Fintype ι]
+lemma measure_inter_swap_outer {ι : Type*} [Fintype ι] [DecidableEq ι]
     {α : Type*} {_mα : MeasurableSpace α}
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i))
@@ -195,13 +195,8 @@ private lemma measure_inter_swap_outer {ι : Type*} [Fintype ι]
   -- On `evtSet σ P` the sign vector equals `signPat (typeVec σ ω)`.
   have hsig : ∀ ω, (fun i => σ i ω : ι → Bool) = signPat (typeVec σ ω) := by
     intro ω; funext x
-    show σ x ω = decide (x ∈ typeVec σ ω)
-    have h := mem_typeVec σ ω x
-    by_cases hb : σ x ω = true
-    · rw [hb]; exact (decide_eq_true (h.mpr hb)).symm
-    · have hf : σ x ω = false := by simpa using hb
-      rw [hf]
-      exact (decide_eq_false (fun hm => hb (h.mp hm))).symm
+    show σ x ω = signPat (typeVec σ ω) x
+    rw [Bool.eq_iff_iff, signPat_eq_true, mem_typeVec]
   -- Per-coordinate decomposition into a sum over allowed sign patterns.
   have key : ∀ c : ι, μ ((fun ω => (Z ω, fun i => σ i ω)) ⁻¹' C ∩ {ω | σ c ω = true})
       = ∑ P ∈ Finset.univ.powerset.filter (fun P => c ∈ P),
@@ -245,8 +240,8 @@ private lemma measure_inter_swap_outer {ι : Type*} [Fintype ι]
   · intro P hP
     have hpat : signPat ((Equiv.swap i j).finsetCongr P) = signPat P ∘ Equiv.swap i j := by
       funext x
-      simp only [signPat, Function.comp_apply, Equiv.finsetCongr_apply, Finset.mem_map_equiv,
-        Equiv.symm_swap]
+      rw [Function.comp_apply, Bool.eq_iff_iff, signPat_eq_true, signPat_eq_true,
+        Equiv.finsetCongr_apply, Finset.mem_map_equiv, Equiv.symm_swap]
     have hCeq : {z | (z, signPat ((Equiv.swap i j).finsetCongr P)) ∈ C}
         = {z | (z, signPat P) ∈ C} := by
       ext z
