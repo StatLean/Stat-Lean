@@ -396,6 +396,23 @@ private lemma step_ratio_le' (a b : ℕ) :
     rw [h0, add_zero]
     exact step_ratio_le a b
 
+/-- The post-condExp inequality in **coefficient-first** product order (matching the form produced
+by pulling the `𝒢rev n`-measurable coefficients out of `μ[·|𝒢rev n]`): same content as
+`step_ratio_le'`, with each product written `coeff * prob` instead of `prob * coeff`.
+- **LEAN-ONLY**: `mul_comm` repackaging of `step_ratio_le'` for the conditional-expectation assembly. -/
+private lemma step_ratio_le'' (a b : ℕ) :
+    (a : ℝ) / (1 + b)
+      + (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b)) * ((a : ℝ) / (a + b))
+      + ((a : ℝ) / b - (a : ℝ) / (1 + b)) * ((b : ℝ) / (a + b)) ≤ (a : ℝ) / (1 + b) := by
+  have h := step_ratio_le' a b
+  have e : (a : ℝ) / (1 + b)
+      + (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b)) * ((a : ℝ) / (a + b))
+      + ((a : ℝ) / b - (a : ℝ) / (1 + b)) * ((b : ℝ) / (a + b))
+      = (a : ℝ) / (1 + b)
+        + (a : ℝ) / (a + b) * (((a : ℝ) - 1) / (1 + b) - (a : ℝ) / (1 + b))
+        + (b : ℝ) / (a + b) * ((a : ℝ) / b - (a : ℝ) / (1 + b)) := by ring
+  rw [e]; exact h
+
 /-- The "rank-`n` coordinate": the index achieving the `n`-th magnitude order statistic
 `θ_n ω = |W (cIdx ω) ω|` (the coordinate crossed when the threshold rises `θ_n → θ_{n+1}`). -/
 private noncomputable def cIdx (W : Fin d → Ω → ℝ) (n : ℕ) (h : n < d) (ω : Ω) : Fin d :=
@@ -576,6 +593,36 @@ private lemma step_removal_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
         rw [hVm']; unfold Vminus; rw [Finset.erase_eq_of_notMem hnotSm]
       unfold Yproc; rw [dif_pos h1, hA', hB']; ring
 
+/-- **Exchangeable conditional expectation of the positive-null removal** (`count_condExp`, the
+crux, Lu-BDA §19). The increment `ΔV₊ = V₊(θ_n) − V₊(θ_{n+1})` is the indicator that the rank-`n`
+coordinate `cIdx` is a *positive null*. Conditioned on the count filtration `𝒢rev n`, the crossed
+null is positive with the sampling-without-replacement probability `A/(A+B)` (`A = V₊(θ_n)`,
+`B = V₋(θ_n)`), restricted to the event that `cIdx` is a null at all:
+`μ[ΔV₊ | 𝒢rev n] =ᵐ 𝟙(cIdx ∈ H₀) · A/(A+B)`.
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs (`hW.signs_iIndep`/`signs_fair`/
+  `signs_indep_outer`); Lu-BDA §19. -/
+private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
+    μ[(fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+          * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+              / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  sorry
+
+/-- **Exchangeable conditional expectation of the negative-null removal** (`count_condExp`, Lu-BDA
+§19); the `V₋` analogue of `count_condExp_plus`, with conditional probability `B/(A+B)`. -/
+private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
+    (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
+    (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
+    μ[(fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+          - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) | 𝒢rev W H₀ hW.meas n]
+      =ᵐ[μ] fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+          * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+              / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+  sorry
+
 /-- **One-step conditional expectation inequality** (the high-risk core lemma):
 `μ[Yproc (n+1) | 𝒢rev n] ≤ᵐ[μ] Yproc n`. The step is a supermartingale by the **count filtration**
 / exchangeability, not a "fresh independent coin":
@@ -597,7 +644,176 @@ lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     -- Needed so each threshold step removes exactly one coordinate (the single-null exchangeable step).
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) :
     μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
-  sorry
+  by_cases h1 : n + 1 < d
+  · -- The non-trivial step `n → n+1` (both indices in range).
+    have h : n < d := by omega
+    have hle : 𝒢rev W H₀ hW.meas n ≤ mΩ := (𝒢rev W H₀ hW.meas).le n
+    -- mΩ-measurability of the four count values.
+    have hAfμ : Measurable (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) :=
+      measurable_from_nat.comp (measurable_Vplus_theta W H₀ hW.meas n h)
+    have hApμ : Measurable (fun ω => (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) :=
+      measurable_from_nat.comp (measurable_Vplus_theta W H₀ hW.meas (n + 1) h1)
+    have hBfμ : Measurable (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) :=
+      measurable_from_nat.comp (measurable_Vminus_theta W H₀ hW.meas n h)
+    have hBpμ : Measurable (fun ω => (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ)) :=
+      measurable_from_nat.comp (measurable_Vminus_theta W H₀ hW.meas (n + 1) h1)
+    -- Counts are bounded by `H₀.card`.
+    have hVp_card : ∀ (t : ℝ) (ω : Ω), (Vplus W H₀ t ω : ℝ) ≤ (H₀.card : ℝ) := fun t ω => by
+      simp only [Vplus]; exact_mod_cast Finset.card_le_card Finset.inter_subset_right
+    have hVm_card : ∀ (t : ℝ) (ω : Ω), (Vminus W H₀ t ω : ℝ) ≤ (H₀.card : ℝ) := fun t ω => by
+      simp only [Vminus]; exact_mod_cast Finset.card_le_card Finset.inter_subset_right
+    -- `𝒢rev n`-strong measurability of the count values (components of `cproc n`).
+    have hcproc : StronglyMeasurable[𝒢rev W H₀ hW.meas n] (cproc W H₀ n) :=
+      Filtration.stronglyAdapted_natural
+        (fun k => (measurable_cproc W H₀ hW.meas k).stronglyMeasurable) n
+    have hAf_sm : StronglyMeasurable[𝒢rev W H₀ hW.meas n]
+        (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+      have he : (fun ω => (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
+          = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ => x.2.2.1) ∘ (cproc W H₀ n) := by
+        funext ω; simp only [Function.comp_apply, cproc]; rw [dif_pos h]
+      rw [he]
+      exact ((measurable_fst.comp (measurable_snd.comp measurable_snd)).comp
+        hcproc.measurable).stronglyMeasurable
+    have hBf_sm : StronglyMeasurable[𝒢rev W H₀ hW.meas n]
+        (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) := by
+      have he : (fun ω => (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
+          = (fun x : (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ => x.2.2.2) ∘ (cproc W H₀ n) := by
+        funext ω; simp only [Function.comp_apply, cproc]; rw [dif_pos h]
+      rw [he]
+      exact ((measurable_snd.comp (measurable_snd.comp measurable_snd)).comp
+        hcproc.measurable).stronglyMeasurable
+    -- Named coefficient (`cZero, cP, cM`), increment (`dP, dM`), probability (`gP, gM`) functions.
+    set cZero : Ω → ℝ := fun ω =>
+      (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) with hcZero
+    set cP : Ω → ℝ := fun ω =>
+      ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - 1) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))
+        - (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) with hcP
+    set cM : Ω → ℝ := fun ω =>
+      (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        - (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) with hcM
+    set dP : Ω → ℝ := fun ω =>
+      (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ) with hdP
+    set dM : Ω → ℝ := fun ω =>
+      (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) - (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ) with hdM
+    set gP : Ω → ℝ := fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+        * ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) with hgP
+    set gM : Ω → ℝ := fun ω => (if cIdx W n h ω ∈ H₀ then (1 : ℝ) else 0)
+        * ((Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+            / ((Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) with hgM
+    -- `𝒢rev n`-strong measurability of the coefficients.
+    have hcZero_sm : StronglyMeasurable[𝒢rev W H₀ hW.meas n] cZero := by
+      rw [hcZero]; exact hAf_sm.div (stronglyMeasurable_const.add hBf_sm)
+    have hcP_sm : StronglyMeasurable[𝒢rev W H₀ hW.meas n] cP := by
+      rw [hcP]
+      exact ((hAf_sm.sub stronglyMeasurable_const).div
+        (stronglyMeasurable_const.add hBf_sm)).sub
+        (hAf_sm.div (stronglyMeasurable_const.add hBf_sm))
+    have hcM_sm : StronglyMeasurable[𝒢rev W H₀ hW.meas n] cM := by
+      rw [hcM]
+      exact (hAf_sm.div hBf_sm).sub (hAf_sm.div (stronglyMeasurable_const.add hBf_sm))
+    -- Integrability via boundedness on the probability measure `μ`.
+    have hfin : ∀ (f : Ω → ℝ) (C : ℝ), AEStronglyMeasurable f μ → (∀ ω, |f ω| ≤ C) →
+        Integrable f μ := fun f C hf hb => (integrable_const C).mono' hf
+      (ae_of_all _ fun ω => by rw [Real.norm_eq_abs]; exact hb ω)
+    have hiZero : Integrable cZero μ := by
+      refine hfin cZero (H₀.card : ℝ) (hcZero_sm.mono hle).aestronglyMeasurable (fun ω => ?_)
+      simp only [hcZero]
+      have hb0 : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      rw [abs_of_nonneg (by positivity)]
+      exact le_trans (div_le_self (Nat.cast_nonneg _) (by linarith)) (hVp_card _ _)
+    have hidP : Integrable dP μ := by
+      refine hfin dP (H₀.card : ℝ) (hAfμ.sub hApμ).aestronglyMeasurable (fun ω => ?_)
+      simp only [hdP]
+      have h1' : (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      have h2' : (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      have h3' := hVp_card (θ W ⟨n, h⟩ ω) ω
+      have h4' := hVp_card (θ W ⟨n + 1, h1⟩ ω) ω
+      rw [abs_le]; constructor <;> linarith
+    have hidM : Integrable dM μ := by
+      refine hfin dM (H₀.card : ℝ) (hBfμ.sub hBpμ).aestronglyMeasurable (fun ω => ?_)
+      simp only [hdM]
+      have h1' : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      have h2' : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      have h3' := hVm_card (θ W ⟨n, h⟩ ω) ω
+      have h4' := hVm_card (θ W ⟨n + 1, h1⟩ ω) ω
+      rw [abs_le]; constructor <;> linarith
+    have hiuP : Integrable (cP * dP) μ := by
+      refine hfin (cP * dP) (H₀.card : ℝ)
+        ((hcP_sm.mono hle).aestronglyMeasurable.mul (hAfμ.sub hApμ).aestronglyMeasurable)
+        (fun ω => ?_)
+      rw [Pi.mul_apply, abs_mul]
+      have hb0 : (0 : ℝ) ≤ (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+      have hbcP : |cP ω| ≤ 1 := by
+        have hcPeq : cP ω = -(1 / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ))) := by
+          simp only [hcP]; ring
+        rw [hcPeq, abs_neg, abs_of_nonneg (by positivity)]
+        rw [div_le_one (by linarith)]; linarith
+      have hbdP : |dP ω| ≤ (H₀.card : ℝ) := by
+        simp only [hdP]
+        have h1' : (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+        have h2' : (0 : ℝ) ≤ (Vplus W H₀ (θ W ⟨n + 1, h1⟩ ω) ω : ℝ) := Nat.cast_nonneg _
+        have h3' := hVp_card (θ W ⟨n, h⟩ ω) ω
+        have h4' := hVp_card (θ W ⟨n + 1, h1⟩ ω) ω
+        rw [abs_le]; constructor <;> linarith
+      calc |cP ω| * |dP ω| ≤ 1 * (H₀.card : ℝ) :=
+            mul_le_mul hbcP hbdP (abs_nonneg _) zero_le_one
+        _ = (H₀.card : ℝ) := one_mul _
+    have hiuM : Integrable (cM * dM) μ := by
+      have hbig := ((Yproc_integrable W H₀ hW.meas μ (n + 1)).sub hiZero).sub hiuP
+      refine hbig.congr ?_
+      filter_upwards [hmag] with ω hω
+      have hsr := step_removal_eq W H₀ n h h1 ω hω
+      simp only [Pi.sub_apply, Pi.mul_apply, hcZero, hcP, hdP, hcM, hdM]
+      linear_combination hsr
+    -- The exchangeable conditional expectations of the increments.
+    have hPc : μ[dP | 𝒢rev W H₀ hW.meas n] =ᵐ[μ] gP := by
+      rw [hdP, hgP]; exact count_condExp_plus W H₀ μ hW hmag n h h1
+    have hMc : μ[dM | 𝒢rev W H₀ hW.meas n] =ᵐ[μ] gM := by
+      rw [hdM, hgM]; exact count_condExp_minus W H₀ μ hW hmag n h h1
+    -- Pull the `𝒢rev n`-measurable coefficients out of the conditional expectation.
+    have huP : μ[cP * dP | 𝒢rev W H₀ hW.meas n] =ᵐ[μ] cP * gP := by
+      have h2 := condExp_mul_of_stronglyMeasurable_left hcP_sm hiuP hidP
+      filter_upwards [h2, hPc] with ω ha hb
+      rw [ha]; simp only [Pi.mul_apply]; rw [hb]
+    have huM : μ[cM * dM | 𝒢rev W H₀ hW.meas n] =ᵐ[μ] cM * gM := by
+      have h2 := condExp_mul_of_stronglyMeasurable_left hcM_sm hiuM hidM
+      filter_upwards [h2, hMc] with ω ha hb
+      rw [ha]; simp only [Pi.mul_apply]; rw [hb]
+    -- Combine: `μ[Yproc(n+1)|𝒢rev n] =ᵐ cZero + cP·gP + cM·gM`.
+    have e1 : μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n]
+        =ᵐ[μ] μ[cZero + cP * dP + cM * dM | 𝒢rev W H₀ hW.meas n] := by
+      apply condExp_congr_ae
+      filter_upwards [hmag] with ω hω
+      have hsr := step_removal_eq W H₀ n h h1 ω hω
+      simp only [Pi.add_apply, Pi.mul_apply, hcZero, hcP, hdP, hcM, hdM]
+      linear_combination hsr
+    have e2 := condExp_add (hiZero.add hiuP) hiuM (𝒢rev W H₀ hW.meas n)
+    have e3 := condExp_add hiZero hiuP (𝒢rev W H₀ hW.meas n)
+    have e0 : μ[cZero | 𝒢rev W H₀ hW.meas n] = cZero :=
+      condExp_of_stronglyMeasurable hle hcZero_sm hiZero
+    have hce : μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n]
+        =ᵐ[μ] (fun ω => cZero ω + cP ω * gP ω + cM ω * gM ω) := by
+      filter_upwards [e1, e2, e3, huP, huM] with ω q1 q2 q3 qp qm
+      have e0ω : μ[cZero | 𝒢rev W H₀ hW.meas n] ω = cZero ω := congrFun e0 ω
+      simp only [Pi.add_apply, Pi.mul_apply] at q2 q3 qp qm ⊢
+      rw [q1, q2, q3, e0ω, qp, qm]
+    -- Pointwise bound: `cZero + cP·gP + cM·gM ≤ Yproc n` (= `cZero`), by `step_ratio_le''`.
+    refine hce.trans_le ?_
+    filter_upwards [hmag] with ω hω
+    rw [show Yproc W H₀ n ω = (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)
+        / (1 + (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω : ℝ)) from by simp only [Yproc]; rw [dif_pos h]]
+    by_cases hcase : cIdx W n h ω ∈ H₀
+    · simp only [hcZero, hcP, hcM, hgP, hgM, if_pos hcase, one_mul]
+      exact step_ratio_le'' (Vplus W H₀ (θ W ⟨n, h⟩ ω) ω) (Vminus W H₀ (θ W ⟨n, h⟩ ω) ω)
+    · simp only [hcZero, hgP, hgM, if_neg hcase, zero_mul, mul_zero, add_zero, le_refl]
+  · -- Boundary: `n+1 ≥ d`, so `Yproc (n+1) = 0` and `μ[0|𝒢rev n] = 0 ≤ Yproc n`.
+    have hz : μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] = (0 : Ω → ℝ) := by
+      have h0 : Yproc W H₀ (n + 1) = (0 : Ω → ℝ) := by
+        funext ω; simp only [Yproc, Pi.zero_apply]; rw [dif_neg h1]
+      rw [h0, condExp_zero]
+    rw [hz]
+    exact ae_of_all _ fun ω => Yproc_nonneg W H₀ n ω
 
 /-- `Yproc W H₀` is a supermartingale w.r.t. `𝒢rev W H₀ hW.meas`. Assembled from
 `supermartingale_nat` applied to the sorry'd `step_condExp_le`; all hypotheses are in scope. -/
