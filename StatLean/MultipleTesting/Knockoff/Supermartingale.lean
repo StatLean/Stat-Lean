@@ -799,6 +799,20 @@ magnitudes (hence `cIdx`, the above-`θ_n` null set `S_n` and `k = A+B`) and the
 individual above-`θ_n` null signs are i.i.d. fair and exchangeable (`signs_iIndep`/`signs_fair`)
 and independent of the outer data + below-`θ_n` signs (`signs_indep_outer`); the per-cell identity is
 `condExp_coord_eq_count_div`. The `count_condExp_minus` analogue is derived algebraically from this.
+
+The proven **subset kernel** `condExp_coord_eq_subsetCount_div` (`ForMathlib/SymmetricCondExp`)
+discharges the exchangeable core for a *fixed* subset `T` and the count σ-algebra
+`σ(#{i∈T : σ i})`: `μ[𝟙(σ i₀) | σ(subsetCount σ T)] =ᵐ subsetCount/|T|`. Closing this lemma from
+that kernel still requires two genuinely Mathlib-absent steps, both research-grade:
+  1. **Random subset.** Lift the fixed-`T` kernel to the `𝒢rev n`-measurable random subset
+     `S_n = {l ∈ H₀ : θ_n ≤ |W l|}`, by partitioning `Ω` over the finite values `T` of `S_n`.
+  2. **Accumulated count filtration.** `𝒢rev n = ⨆_{k≤n} comap(cproc k)` carries the *whole* count
+     process `(A_k,B_k)_{k≤n}`, not just `(A_n,B_n)`; the earlier counts reveal the individual
+     below-`θ_n` null signs. Reducing the `𝒢rev n`-conditioning to the `S_n`-count σ-algebra is a
+     conditional-independence statement (the below-signs ⊥ `σ_j` given the `S_n`-count). Mathlib's
+     `CondIndepFun` route needs `[StandardBorelSpace Ω]`, which is unavailable here, so this must be
+     done by an explicit `ae_eq_condExp_of_forall_setIntegral_eq` set-integral derivation in the
+     style of `SymmetricCondExp` — a sizeable from-scratch development.
 - **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
 private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
