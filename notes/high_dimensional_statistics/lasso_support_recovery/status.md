@@ -4,11 +4,14 @@ Integration branch: `hds/lasso-support-recovery` (off `main` @ `a6a1a26`).
 Reference: Wainwright §7.5 — Theorem 7.21, Corollary 7.22. See `outline.md` for the full
 interface contract (signatures + sub-lemma tables + DAG).
 
-**State: Wave 0 COMPLETE — full scaffold stub-gated green-with-sorries on cluster.**
-Foundation gate (F1+F2+C0): `Build completed successfully (2336 jobs)`, exit 0.
-Full assembly gate (all 7): `Build completed successfully (2877 jobs)`, exit 0, 28 sorries.
-After shared-bridge + KKT-sufficiency additions: 31 named sorry debts (see per-unit counts below);
-umbrella `StatLean.HighDimensionalStatistics` re-gate in progress. 6 cluster prompts written.
+**State: ✅ COMPLETE — Batch 5 fully proved, 0-sorry, verified.**
+All 7 units merged into `hds/lasso-support-recovery`. Full HDS umbrella build green:
+`Build completed successfully (3113 jobs)`, exit 0, **0 sorries** across all of
+HighDimensionalStatistics (no regressions). **Axiom audit:** all five main theorems
+(`lasso_support_recovery_{unique,no_false_inclusion,linf,no_false_exclusion}`,
+`lasso_support_recovery_subgaussian`) depend only on `[propext, Classical.choice, Quot.sound]` —
+**no `sorryAx`**. (History: foundation gate 2336 jobs; full assembly stub-gate 2877 jobs / 28
+sorries; closed via 7 cluster proof subagents across 4 waves.)
 
 ## Unit ledger
 
@@ -18,9 +21,22 @@ umbrella `StatLean.HighDimensionalStatistics` re-gate in progress. 6 cluster pro
 | F2 | `hds/sr-gram` | `ForMathlib/GramMatrix.lean` | 10 | ✅ real (merged, verified) |
 | C0 | (laptop) | `Lasso/SupportRecovery/Defs.lean` | defs | ✅ real |
 | A1 | `hds/sr-subgrad` | `Lasso/SupportRecovery/Subgradient.lean` | 8 | ✅ real (merged, verified) |
-| A2 | `hds/sr-dualcert` | `Lasso/SupportRecovery/DualCertificate.lean` | 1 | 🔵 proof in progress |
-| A3 | `hds/sr-thm721` | `Lasso/SupportRecovery/Theorem7_21.lean` | 4 | 🟡 stub-gated |
-| A4 | `hds/sr-cor722` | `Lasso/SupportRecovery/Corollary7_22.lean` | 1 | 🟡 stub-gated |
+| A2 | `hds/sr-dualcert` | `Lasso/SupportRecovery/DualCertificate.lean` | 1 (+helpers) | ✅ real (merged, verified) |
+| A3 | `hds/sr-thm721` | `Lasso/SupportRecovery/Theorem7_21.lean` | 4 | ✅ real (merged, verified) |
+| A4 | `hds/sr-cor722` | `Lasso/SupportRecovery/Corollary7_22.lean` | 1 (+helpers) | ✅ real (merged, verified) |
+
+**Book-vs-Lean constants (final, all provable as stated):**
+| Result | Book | Lean (proved) | Note |
+|---|---|---|---|
+| λ lower constant (7.44) | `2/(1−α)` | `2/(1−α)` | exact |
+| strict feasibility | `½(1+α)<1` | `½(1+α)<1` | exact (needs `α<1`) |
+| Cor 7.22 prob (7.47) | `1−4e^{−nδ²/2}` | `1−4e^{−nδ²/2}` | **exact** (2 over `d−s` + 2 over `s`) |
+| (A3) form | `γ_min(XₛᵀXₛ/n)≥cmin` | quadratic-form (≡) | Courant–Fischer |
+
+**Accepted deviations (tagged in code):** A1 added `USER-INPUT: 0 < λ` to `pdw_unique` /
+`pdw_every_minimizer_supported` (false without it). A2 realized the oracle via a `zeroOffCols`
+device (reuses A1, avoids `↥S` re-index) and its steps 4–9 as named `have`s. No signature drift in
+the 5 main theorems; no constant weakened vs the book.
 
 **Waves 1–2 landed (verified):** F1, A1, F2 merged into `hds/lasso-support-recovery`; the
 `Subgradient` target builds green 0-sorry on the integration branch (covers F1+F2+C0+A1).
