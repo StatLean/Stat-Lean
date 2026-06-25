@@ -171,6 +171,93 @@ theorem good_event_highProb (M : GLMExpFamily n d μ) [IsProbabilityMeasure μ]
     (hlam : 4 * M.B * C * (Real.sqrt (Real.log d / n) + δ) ≤ lam) :
     ENNReal.ofReal (1 - 2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) ≤
       μ {ω | linfNorm (scoreVec M ω) ≤ lam / 2} := by
-  sorry
+  have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
+  have hn_ne : (n : ℝ) ≠ 0 := ne_of_gt hn_pos
+  have hd_pos : (0 : ℝ) < d := Nat.cast_pos.mpr hd
+  have hd1 : (1 : ℝ) ≤ d := by exact_mod_cast hd
+  have hσ : 0 < M.B ^ 2 * C ^ 2 / n := by positivity
+  have hlog_nn : 0 ≤ Real.log d := Real.log_nonneg hd1
+  have hlogn_nn : 0 ≤ Real.log d / n := div_nonneg hlog_nn hn_pos.le
+  -- λ > 0 (the lower bound `4BC(√(log d/n)+δ)` is positive since `B,C,δ > 0`, `√ ≥ 0`).
+  have hRHS_pos : 0 < 4 * M.B * C * (Real.sqrt (Real.log d / n) + δ) := by positivity
+  have hlam_pos : 0 < lam := lt_of_lt_of_le hRHS_pos hlam
+  -- per-coordinate union tail at `t = λ/2`
+  have htail := score_linfNorm_tail M C hC hn hσ (lam / 2) (by positivity)
+  -- ── exponent inequality: `2d·exp(-(λ/2)²/(2σ²)) ≤ 2·exp(-2nδ²)` ─────────────────
+  -- `(√(log d/n)+δ)² ≥ log d/n + δ²` (drop the nonnegative cross term `2√·δ`).
+  have hab : Real.log d / n + δ ^ 2 ≤ (Real.sqrt (Real.log d / n) + δ) ^ 2 := by
+    have hsq := Real.sq_sqrt hlogn_nn
+    nlinarith [hsq, mul_nonneg (Real.sqrt_nonneg (Real.log d / n)) hδ_pos.le]
+  have hbase_nn : 0 ≤ 4 * M.B * C * (Real.sqrt (Real.log d / n) + δ) := le_of_lt hRHS_pos
+  have hsqle : (4 * M.B * C * (Real.sqrt (Real.log d / n) + δ)) ^ 2 ≤ lam ^ 2 := by
+    have h := mul_le_mul hlam hlam hbase_nn (le_trans hbase_nn hlam)
+    simpa [pow_two] using h
+  have key_t2 : 4 * M.B ^ 2 * C ^ 2 * (Real.log d / n + δ ^ 2) ≤ (lam / 2) ^ 2 := by
+    have h1 : 16 * M.B ^ 2 * C ^ 2 * (Real.log d / n + δ ^ 2) ≤ lam ^ 2 := by
+      calc 16 * M.B ^ 2 * C ^ 2 * (Real.log d / n + δ ^ 2)
+          ≤ 16 * M.B ^ 2 * C ^ 2 * (Real.sqrt (Real.log d / n) + δ) ^ 2 :=
+            mul_le_mul_of_nonneg_left hab (by positivity)
+        _ = (4 * M.B * C * (Real.sqrt (Real.log d / n) + δ)) ^ 2 := by ring
+        _ ≤ lam ^ 2 := hsqle
+    nlinarith [h1]
+  -- `d · exp(-2 log d) = d · d⁻² = 1/d ≤ 1`.
+  have hexp2 : Real.exp (2 * Real.log d) = (d : ℝ) ^ 2 := by
+    rw [show (2 : ℝ) * Real.log d = Real.log d + Real.log d from by ring,
+        Real.exp_add, Real.exp_log hd_pos]
+    ring
+  have hkey_le : (d : ℝ) * Real.exp (-2 * Real.log d) ≤ 1 := by
+    rw [show (-2 : ℝ) * Real.log d = -(2 * Real.log d) from by ring, Real.exp_neg, hexp2,
+        show ((d : ℝ) ^ 2)⁻¹ = 1 / (d : ℝ) ^ 2 from (one_div _).symm, mul_one_div,
+        div_le_one (by positivity)]
+    nlinarith [hd1, hd_pos.le]
+  have h2σ2_pos : 0 < 2 * (M.B ^ 2 * C ^ 2 / n) := by positivity
+  have harg : -(lam / 2) ^ 2 / (2 * (M.B ^ 2 * C ^ 2 / n)) ≤
+      -2 * Real.log d - 2 * (n : ℝ) * δ ^ 2 := by
+    have heq : (2 * Real.log d + 2 * (n : ℝ) * δ ^ 2) * (2 * (M.B ^ 2 * C ^ 2 / n))
+        = 4 * M.B ^ 2 * C ^ 2 * (Real.log d / n + δ ^ 2) := by
+      field_simp
+      ring
+    have hge : 2 * Real.log d + 2 * (n : ℝ) * δ ^ 2 ≤
+        (lam / 2) ^ 2 / (2 * (M.B ^ 2 * C ^ 2 / n)) := by
+      rw [le_div_iff₀ h2σ2_pos, heq]
+      exact key_t2
+    rw [neg_div]
+    linarith [hge]
+  have hexp_le : 2 * (d : ℝ) * Real.exp (-(lam / 2) ^ 2 / (2 * (M.B ^ 2 * C ^ 2 / n)))
+      ≤ 2 * Real.exp (-2 * (n : ℝ) * δ ^ 2) := by
+    calc 2 * (d : ℝ) * Real.exp (-(lam / 2) ^ 2 / (2 * (M.B ^ 2 * C ^ 2 / n)))
+        ≤ 2 * (d : ℝ) * Real.exp (-2 * Real.log d - 2 * (n : ℝ) * δ ^ 2) :=
+          mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr harg) (by positivity)
+      _ = 2 * ((d : ℝ) * Real.exp (-2 * Real.log d)) * Real.exp (-2 * (n : ℝ) * δ ^ 2) := by
+          rw [show (-2 * Real.log d - 2 * (n : ℝ) * δ ^ 2)
+                = (-2 * Real.log d) + (-2 * (n : ℝ) * δ ^ 2) from by ring, Real.exp_add]
+          ring
+      _ ≤ 2 * 1 * Real.exp (-2 * (n : ℝ) * δ ^ 2) := by
+          apply mul_le_mul_of_nonneg_right _ (by positivity)
+          exact mul_le_mul_of_nonneg_left hkey_le (by norm_num)
+      _ = 2 * Real.exp (-2 * (n : ℝ) * δ ^ 2) := by ring
+  -- ── bad-event split (verbatim `lasso_random_rate` Steps 4–6) ───────────────────
+  set G := {ω | linfNorm (scoreVec M ω) ≤ lam / 2} with hGdef
+  have hGc_eq : Gᶜ = {ω | lam / 2 < linfNorm (scoreVec M ω)} := by
+    ext ω
+    simp only [hGdef, Set.mem_compl_iff, Set.mem_setOf_eq, not_le]
+  have hPGc_le : μ Gᶜ ≤ ENNReal.ofReal (2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) := by
+    rw [hGc_eq]
+    calc μ {ω | lam / 2 < linfNorm (scoreVec M ω)}
+        ≤ ENNReal.ofReal (2 * d * Real.exp (-(lam / 2) ^ 2 / (2 * (M.B ^ 2 * C ^ 2 / n)))) :=
+          htail
+      _ ≤ ENNReal.ofReal (2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) :=
+          ENNReal.ofReal_le_ofReal hexp_le
+  have hcover : μ Set.univ ≤ μ G + μ Gᶜ := by
+    calc μ Set.univ = μ (G ∪ Gᶜ) := by simp [Set.union_compl_self]
+      _ ≤ μ G + μ Gᶜ := measure_union_le G Gᶜ
+  rw [measure_univ] at hcover
+  have h_lower2 : 1 ≤ μ G + ENNReal.ofReal (2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) :=
+    hcover.trans (add_le_add le_rfl hPGc_le)
+  have h1delt : ENNReal.ofReal (1 - 2 * Real.exp (-2 * (n : ℝ) * δ ^ 2))
+      = 1 - ENNReal.ofReal (2 * Real.exp (-2 * (n : ℝ) * δ ^ 2)) := by
+    rw [ENNReal.ofReal_sub 1 (by positivity), ENNReal.ofReal_one]
+  rw [h1delt]
+  exact tsub_le_iff_right.mpr h_lower2
 
 end StatLean.HighDimensionalStatistics.MEstimator
