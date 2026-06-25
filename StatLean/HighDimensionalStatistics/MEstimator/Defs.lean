@@ -92,13 +92,21 @@ def errorCone (dr : DecomposableReg E) (θstar : E) : Set E :=
   {Δ : E | dr.Φ ((dr.Mbar)ᗮ.starProjection Δ) ≤
       3 * dr.Φ (dr.Mbar.starProjection Δ) + 4 * dr.Φ ((dr.M)ᗮ.starProjection θstar)}
 
-/-- The error quantity `εₙ²(M̄, Mᗮ)` of Wainwright eq 9.47, governing the `ℓ₂` rate in Thm 9.19(b):
-`9(λ²/κ²)·Ψ²(M̄) + (8/κ){λ·Φ(θ*_{Mᗮ}) + 16τ²·Φ(θ*_{Mᗮ})²}` — an estimation-error term plus an
+/-- The error quantity `εₙ²(M̄, Mᗮ)` governing the `ℓ₂` rate in Thm 9.19(b):
+`72(λ²/κ²)·Ψ²(M̄) + (16/κ){λ·Φ(θ*_{Mᗮ}) + 16τ²·Φ(θ*_{Mᗮ})²}` — an estimation-error term plus an
 approximation-error term. The `θ*` projection is onto `Mᗮ` (the proof projects `θ*` onto the model
-subspace `M`, as decomposability requires; the εₙ² argument label `(M̄, M^⊥)` confirms this). -/
+subspace `M`, as decomposability requires; the εₙ² argument label `(M̄, M^⊥)` confirms this).
+
+**Book-constant deviation (Wainwright eq 9.47).** The book states the leading constant as `9` and the
+slack as `(8/κ)`, under `τ²Ψ² ≤ κ/64`. Those constants are only achievable in the limit `τ → 0`: the
+RSC lower bound is `ℱ(Δ) ≥ (κ/2 − 32τ²Ψ²)‖Δ‖² − (3λ/2)Ψ‖Δ‖ − …`, so the effective curvature is
+`c = κ/2 − 32τ²Ψ² < κ/2`, and at `‖Δ‖² = 9(λ/κ)²Ψ²` one gets `ℱ < 0` for any `τ > 0` (Lemma 9.21's
+`ℱ > 0` requirement fails). The provable bound keeps `c` (requires `τ²Ψ² ≤ κ/128`, so `c ≥ κ/4`) and
+uses the threshold `‖Δ̂‖² ≤ 2(2β/c)²/... ` clean over-estimate, giving leading `72` and slack `(16/κ)`.
+Same rate `s·λ²/κ²`; only the constants differ. -/
 noncomputable def epsilonSq (dr : DecomposableReg E) (θstar : E) (lam κ τSq : ℝ) : ℝ :=
-  9 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 +
-    8 / κ * (lam * dr.Φ ((dr.M)ᗮ.starProjection θstar) +
+  72 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 +
+    16 / κ * (lam * dr.Φ ((dr.M)ᗮ.starProjection θstar) +
       16 * τSq * (dr.Φ ((dr.M)ᗮ.starProjection θstar)) ^ 2)
 
 /-- The **`Φ*`-norm curvature condition** (Wainwright Def 9.22, eq 9.55):
