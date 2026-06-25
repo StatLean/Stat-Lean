@@ -149,15 +149,13 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
         * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
       ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
     refine NNReal.coe_le_coe.mp ?_
-    trace_state
-    simp only [NNReal.coe_mul, NNReal.coe_sum, NNReal.coe_mk]
-    have hsumB : ∑ i, M.B ^ 2 * M.X i j ^ 2 = M.B ^ 2 * ∑ i, M.X i j ^ 2 :=
-      (Finset.mul_sum _ _ _).symm
-    rw [hsumB,
-        show (1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ∑ i, M.X i j ^ 2)
-            = M.B ^ 2 * (∑ i, M.X i j ^ 2) / (n : ℝ) ^ 2 by ring,
-        div_le_div_iff₀ (by positivity) hn_pos]
-    nlinarith [mul_le_mul_of_nonneg_left (hC j) hB2, hn_pos]
+    push_cast
+    calc (1 / (n : ℝ)) ^ 2 * ∑ i, M.B ^ 2 * M.X i j ^ 2
+        ≤ (1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2)) := by
+          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+          calc ∑ i, M.B ^ 2 * M.X i j ^ 2 = M.B ^ 2 * ∑ i, M.X i j ^ 2 := by rw [Finset.mul_sum]
+            _ ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2) := mul_le_mul_of_nonneg_left (hC j) hB2
+      _ = M.B ^ 2 * C ^ 2 / (n : ℝ) := by field_simp; ring
   have hup : HasSubgaussianMGF (fun ω => (1 / (n : ℝ)) * ∑ i, V i ω)
       (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) μ :=
     ⟨hscaled.integrable_exp_mul, fun t => (hscaled.mgf_le t).trans
