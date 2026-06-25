@@ -67,6 +67,22 @@ theorem kkt_of_isLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
     ∃ z, IsL1Subgradient z θhat ∧ IsKKT X Y lam θhat z := by
   sorry
 
+/-- **KKT ⇒ global optimum** (convex sufficiency, converse of `kkt_of_isLassoEstimator`): a
+point with a KKT subgradient certificate minimizes the Lasso objective. Used to identify the
+primal–dual witness as the (unique) Lasso minimizer. -/
+theorem lassoEstimator_of_kkt (X : Matrix (Fin n) (Fin d) ℝ)
+    (Y : EuclideanSpace ℝ (Fin n)) (lam : ℝ) (θ z : EuclideanSpace ℝ (Fin d))
+    -- USER-INPUT: 0 < n; Wainwright §7.5.2
+    (hn : 0 < n)
+    -- USER-INPUT: 0 < λ; Wainwright §7.5.2
+    (hlam : 0 < lam)
+    -- USER-INPUT: z ∈ ∂‖θ‖₁; Wainwright §7.5.2
+    (hsub : IsL1Subgradient z θ)
+    -- USER-INPUT: KKT (7.48) holds for (θ, z); Wainwright §7.5.2
+    (hkkt : IsKKT X Y lam θ z) :
+    IsLassoEstimator X Y lam θ := by
+  sorry
+
 /-- **Lemma 7.23 (b)** (Wainwright §7.5.2): if the primal–dual witness `(θ̂, ẑ)` satisfies
 the KKT condition with `θ̂` supported on `S` and *strict* dual feasibility off `S`
 (`|ẑ_j| < 1` for `j ∉ S`), then **every** Lasso minimizer `θ̃` is supported on `S`. -/
