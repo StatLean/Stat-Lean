@@ -148,9 +148,29 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
   have hproxy : (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩
         * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
       ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
-    -- TODO(me): the ℝ inequality `(1/n)²·∑ᵢ(B²xᵢⱼ²) ≤ B²C²/n` holds from `hC j` + `hn` + `hB2`;
-    -- blocked on distributing `↑(⟨_⟩ * ∑ ⟨_⟩)` (resists rw/simp/push_cast). Lifted to a cluster fix.
-    sorry
+    -- Bound the sum by `B²·(n·C²)` entirely within `ℝ≥0` (cast termwise via the sum coercion).
+    have hreal : ∑ i, M.B ^ 2 * M.X i j ^ 2 ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2) := by
+      rw [← Finset.mul_sum]
+      exact mul_le_mul_of_nonneg_left (hC j) hB2
+    have hsum_le : (∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
+        ≤ (⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ : ℝ≥0) := by
+      apply NNReal.coe_le_coe.mp
+      rw [NNReal.coe_mk]
+      refine le_trans (le_of_eq ?_) hreal
+      refine (NNReal.coe_sum _ _).trans ?_
+      simp only [NNReal.coe_mk]
+    calc (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
+            * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0)
+          ≤ (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
+            * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩ :=
+            mul_le_mul_of_nonneg_left hsum_le (zero_le _)
+      _ = ⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ := by
+            rw [show (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩ : ℝ≥0)
+                  * ⟨M.B ^ 2 * ((n : ℝ) * C ^ 2), by positivity⟩
+                = ⟨(1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2)), by positivity⟩ from rfl]
+            apply NNReal.coe_injective
+            simp only [NNReal.coe_mk]
+            field_simp
   have hup : HasSubgaussianMGF (fun ω => (1 / (n : ℝ)) * ∑ i, V i ω)
       (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) μ :=
     ⟨hscaled.integrable_exp_mul, fun t => (hscaled.mgf_le t).trans
