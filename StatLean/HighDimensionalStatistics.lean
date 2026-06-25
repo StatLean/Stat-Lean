@@ -20,6 +20,7 @@ import StatLean.HighDimensionalStatistics.MEstimator.Bound
 import StatLean.HighDimensionalStatistics.MEstimator.DualBound
 import StatLean.HighDimensionalStatistics.MEstimator.GLMDefs
 import StatLean.HighDimensionalStatistics.MEstimator.L1Decomposable
+import StatLean.HighDimensionalStatistics.MEstimator.ScoreSubGaussian
 
 /-!
 # HighDimensionalStatistics — area umbrella
