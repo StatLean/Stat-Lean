@@ -55,12 +55,13 @@ theorem mestimator_reg_bound (dr : DecomposableReg E) (L : E → ℝ)
   sorry
 
 /-- **Theorem 9.19(b)** — squared-error bound (eq 9.48b). Under RSC `(κ, R, τ²)`, conditioned on the
-good event, and provided `τ²·Ψ²(M̄) ≤ κ/64` and `εₙ² ≤ R²`, any optimum satisfies
+good event, and provided `τ²·Ψ²(M̄) ≤ κ/128` and `εₙ² ≤ R²`, any optimum satisfies
 `‖θ̂ − θ*‖² ≤ εₙ²(M̄, Mᗮ)`. Proof: the quadratic-form argument (eqs 9.50–9.53) shows `ℱ > 0` on the
 sphere of radius `εₙ`, then Lemma 9.21 applies.
 
-Book-constant note: the book states the slack condition as `τ²Ψ²(M̄) ≤ κ/64`; the provable constant
-may differ by a small factor (to be documented in the proof). -/
+Book-constant deviation: the book uses slack `τ²Ψ² ≤ κ/64` and `εₙ²` with leading `9`; rigorously the
+effective curvature is `c = κ/2 − 32τ²Ψ²`, so `κ/128` (giving `c ≥ κ/4`) and the inflated `εₙ²`
+constants (`72`, `16/κ`, see `epsilonSq`) are what is provable. Same rate. -/
 theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
     -- USER-INPUT: cost `L` convex (A1); Wainwright §9.4.1.
     (hL : ConvexOn ℝ Set.univ L)
@@ -75,14 +76,15 @@ theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
     -- USER-INPUT: good event `𝔾(λ)`; Wainwright eq 9.46.
     (hG : GoodEvent dr.Φstar (gradient L θstar) lam)
     -- USER-INPUT: curvature dominates tolerance·Lipschitz, `τ²Ψ²(M̄) ≤ κ/64`; Wainwright Thm 9.19(b).
-    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 64)
+    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 128)
     -- USER-INPUT: `εₙ ≤ R` so the RSC ball contains the error; Wainwright Thm 9.19(b).
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2) :
     ‖θhat - θstar‖ ^ 2 ≤ epsilonSq dr θstar lam κ τSq := by
   sorry
 
 /-- **Corollary 9.20**, eq (9.49b) — squared-error bound when `θ* ∈ M`. The approximation error
-vanishes (`θ*_{Mᗮ} = 0`), so `‖θ̂ − θ*‖² ≤ 9(λ²/κ²)·Ψ²(M̄)`. -/
+vanishes (`θ*_{Mᗮ} = 0`), so `‖θ̂ − θ*‖² ≤ 36(λ²/κ²)·Ψ²(M̄)`. (Book: leading `9`; with the rigorous
+effective curvature `c ≥ κ/4`, the sharp `D=0` threshold `(β/c)²` gives `36`. Same rate.) -/
 theorem cor_l2_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hL : ConvexOn ℝ Set.univ L) (hdiff : Differentiable ℝ L)
     (θstar θhat : E) (lam κ R τSq : ℝ)
@@ -90,15 +92,16 @@ theorem cor_l2_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hRSC : RSC L θstar dr.Φ κ R τSq)
     (hopt : ∀ θ, L θhat + lam * dr.Φ θhat ≤ L θ + lam * dr.Φ θ)
     (hG : GoodEvent dr.Φstar (gradient L θstar) lam)
-    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 64)
+    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 128)
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2)
     -- USER-INPUT: target lies in the model subspace `θ* ∈ M`; Wainwright Cor 9.20.
     (hmem : θstar ∈ dr.M) :
-    ‖θhat - θstar‖ ^ 2 ≤ 9 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
+    ‖θhat - θstar‖ ^ 2 ≤ 36 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
   sorry
 
 /-- **Corollary 9.20**, eq (9.49a) — regularizer bound when `θ* ∈ M`:
-`Φ(θ̂ − θ*) ≤ 6(λ/κ)·Ψ²(M̄)`. -/
+`Φ(θ̂ − θ*) ≤ 24(λ/κ)·Ψ²(M̄)`. From (9.48a) `Φ(θ̂−θ*) ≤ 4Ψ‖θ̂−θ*‖` (θ*∈M) and
+`‖θ̂−θ*‖ ≤ 6(λ/κ)Ψ` (from 9.49b). (Book: `6`; rigorous: `4·6 = 24`. Same rate.) -/
 theorem cor_reg_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hL : ConvexOn ℝ Set.univ L) (hdiff : Differentiable ℝ L)
     (θstar θhat : E) (lam κ R τSq : ℝ)
@@ -106,10 +109,10 @@ theorem cor_reg_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hRSC : RSC L θstar dr.Φ κ R τSq)
     (hopt : ∀ θ, L θhat + lam * dr.Φ θhat ≤ L θ + lam * dr.Φ θ)
     (hG : GoodEvent dr.Φstar (gradient L θstar) lam)
-    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 64)
+    (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 128)
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2)
     (hmem : θstar ∈ dr.M) :
-    dr.Φ (θhat - θstar) ≤ 6 * (lam / κ) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
+    dr.Φ (θhat - θstar) ≤ 24 * (lam / κ) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
   sorry
 
 end StatLean.HighDimensionalStatistics.MEstimator
