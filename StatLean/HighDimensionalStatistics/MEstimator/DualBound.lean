@@ -1,4 +1,5 @@
 import StatLean.HighDimensionalStatistics.MEstimator.Deviation
+import StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip
 import StatLean.Optimization.Convex.Subgradient
 
 /-!

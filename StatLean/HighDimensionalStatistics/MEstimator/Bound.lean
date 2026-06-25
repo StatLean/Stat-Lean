@@ -1,4 +1,5 @@
 import StatLean.HighDimensionalStatistics.MEstimator.Deviation
+import StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip
 
 /-!
 # Estimation-error bounds for general M-estimators (Wainwright Theorem 9.19, Corollary 9.20)
