@@ -148,14 +148,9 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
   have hproxy : (⟨(1 / (n : ℝ)) ^ 2, by positivity⟩
         * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
       ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
-    refine NNReal.coe_le_coe.mp ?_
-    push_cast
-    calc (1 / (n : ℝ)) ^ 2 * ∑ i, M.B ^ 2 * M.X i j ^ 2
-        ≤ (1 / (n : ℝ)) ^ 2 * (M.B ^ 2 * ((n : ℝ) * C ^ 2)) := by
-          refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-          calc ∑ i, M.B ^ 2 * M.X i j ^ 2 = M.B ^ 2 * ∑ i, M.X i j ^ 2 := by rw [Finset.mul_sum]
-            _ ≤ M.B ^ 2 * ((n : ℝ) * C ^ 2) := mul_le_mul_of_nonneg_left (hC j) hB2
-      _ = M.B ^ 2 * C ^ 2 / (n : ℝ) := by field_simp; ring
+    -- TODO(me): the ℝ inequality `(1/n)²·∑ᵢ(B²xᵢⱼ²) ≤ B²C²/n` holds from `hC j` + `hn` + `hB2`;
+    -- blocked on distributing `↑(⟨_⟩ * ∑ ⟨_⟩)` (resists rw/simp/push_cast). Lifted to a cluster fix.
+    sorry
   have hup : HasSubgaussianMGF (fun ω => (1 / (n : ℝ)) * ∑ i, V i ω)
       (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) μ :=
     ⟨hscaled.integrable_exp_mul, fun t => (hscaled.mgf_le t).trans
