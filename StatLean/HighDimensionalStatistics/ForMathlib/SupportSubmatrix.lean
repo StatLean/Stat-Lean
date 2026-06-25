@@ -81,4 +81,20 @@ lemma col_eq_designMap_single (X : Matrix (Fin n) (Fin d) ℝ) (j : Fin d) :
     col X j = designMap X (EuclideanSpace.single j (1 : ℝ)) := by
   sorry
 
+/-- **Full-space ↔ support bridge**: applying the full design to a vector supported on `S`
+equals applying the support design to its `↥S`-restriction. (Shared by the uniqueness and
+dual-certificate proofs.) -/
+lemma designMap_restrict_eq_designSub (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
+    (θ : EuclideanSpace ℝ (Fin d)) :
+    designMap X (restrict S θ)
+      = designSub X S (WithLp.toLp 2 (fun i : {x // x ∈ S} => θ.ofLp i.val)) := by
+  sorry
+
+/-- **Design-map adjoint identity** `⟪Xθ, u⟫ = ⟪θ, Xᵀu⟫` (the transpose is the adjoint of
+the design map). Shared by the KKT / subgradient and dual-certificate proofs. -/
+lemma inner_designMap_transpose (X : Matrix (Fin n) (Fin d) ℝ)
+    (θ : EuclideanSpace ℝ (Fin d)) (u : EuclideanSpace ℝ (Fin n)) :
+    ⟪designMap X θ, u⟫_ℝ = ⟪θ, designMap Xᵀ u⟫_ℝ := by
+  sorry
+
 end StatLean.HighDimensionalStatistics

@@ -12,6 +12,13 @@ import StatLean.HighDimensionalStatistics.CompressedSensing.ConeTheorem
 import StatLean.HighDimensionalStatistics.CompressedSensing.RIPRecovery
 import StatLean.HighDimensionalStatistics.CompressedSensing.GaussianChiSquared
 import StatLean.HighDimensionalStatistics.CompressedSensing.RandomRIP
+import StatLean.HighDimensionalStatistics.ForMathlib.SupportSubmatrix
+import StatLean.HighDimensionalStatistics.ForMathlib.GramMatrix
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Defs
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Subgradient
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.DualCertificate
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Theorem7_21
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Corollary7_22
 
 /-!
 # HighDimensionalStatistics — area umbrella
