@@ -12,6 +12,10 @@ import StatLean.HighDimensionalStatistics.CompressedSensing.ConeTheorem
 import StatLean.HighDimensionalStatistics.CompressedSensing.RIPRecovery
 import StatLean.HighDimensionalStatistics.CompressedSensing.GaussianChiSquared
 import StatLean.HighDimensionalStatistics.CompressedSensing.RandomRIP
+import StatLean.HighDimensionalStatistics.MEstimator.Defs
+import StatLean.HighDimensionalStatistics.MEstimator.Deviation
+import StatLean.HighDimensionalStatistics.MEstimator.Bound
+import StatLean.HighDimensionalStatistics.MEstimator.DualBound
 
 /-!
 # HighDimensionalStatistics — area umbrella
