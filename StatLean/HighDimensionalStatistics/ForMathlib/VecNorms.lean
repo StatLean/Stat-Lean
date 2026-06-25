@@ -179,4 +179,119 @@ theorem l1Norm_restrict_le_sqrt_card_mul_norm
   rw [h_normsq]
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt h_sub) (Real.sqrt_nonneg _)
 
+/-! ## Additional bricks for compressed sensing (Lu-BDA ch.6–7) -/
+
+/-- The ℓ² norm as the square root of the sum of squared `.ofLp` coordinates. -/
+private lemma norm_eq_sqrt_sum_ofLp (v : EuclideanSpace ℝ (Fin d)) :
+    ‖v‖ = Real.sqrt (∑ i, (v.ofLp i) ^ 2) := by
+  rw [EuclideanSpace.norm_eq]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simp [Real.norm_eq_abs, sq_abs]
+
+/-- ℓ¹ triangle inequality: `‖x + y‖₁ ≤ ‖x‖₁ + ‖y‖₁`. -/
+theorem l1Norm_add_le (x y : EuclideanSpace ℝ (Fin d)) :
+    l1Norm (x + y) ≤ l1Norm x + l1Norm y := by
+  unfold l1Norm
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_le_sum fun i _ => ?_
+  simp only [WithLp.ofLp_add, Pi.add_apply]
+  exact abs_add_le _ _
+
+/-- ℓ¹ norm is invariant under negation: `‖-x‖₁ = ‖x‖₁`. -/
+theorem l1Norm_neg (x : EuclideanSpace ℝ (Fin d)) : l1Norm (-x) = l1Norm x := by
+  unfold l1Norm
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simp only [WithLp.ofLp_neg, Pi.neg_apply, abs_neg]
+
+/-- Reverse triangle inequality for the ℓ¹ norm: `‖a‖₁ - ‖b‖₁ ≤ ‖a + b‖₁`. -/
+theorem l1Norm_sub_le (a b : EuclideanSpace ℝ (Fin d)) :
+    l1Norm a - l1Norm b ≤ l1Norm (a + b) := by
+  have h := l1Norm_add_le (a + b) (-b)
+  rw [add_neg_cancel_right, l1Norm_neg] at h
+  linarith
+
+/-- The restriction operator is additive: `(x + y)|_S = x|_S + y|_S`. -/
+theorem restrict_add (S : Finset (Fin d)) (x y : EuclideanSpace ℝ (Fin d)) :
+    restrict S (x + y) = restrict S x + restrict S y := by
+  apply WithLp.ofLp_injective 2
+  funext i
+  simp only [WithLp.ofLp_add, Pi.add_apply, restrict_ofLp_apply]
+  split_ifs <;> simp
+
+/-- If `x` is supported on `S` (`xᵢ = 0` off `S`) then `x|_S = x`. -/
+theorem restrict_eq_self (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d))
+    (h : ∀ i ∉ S, x.ofLp i = 0) : restrict S x = x := by
+  apply WithLp.ofLp_injective 2
+  funext i
+  rw [restrict_ofLp_apply]
+  split_ifs with hi
+  · rfl
+  · exact (h i hi).symm
+
+/-- The ℓ¹ norm of the zero vector is `0`. -/
+@[simp] theorem l1Norm_zero : l1Norm (0 : EuclideanSpace ℝ (Fin d)) = 0 := by
+  unfold l1Norm
+  simp
+
+/-- If `x` is supported on `S` then its restriction to the complement vanishes. -/
+theorem restrict_compl_eq_zero (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d))
+    (h : ∀ i ∉ S, x.ofLp i = 0) : restrict Sᶜ x = 0 := by
+  apply WithLp.ofLp_injective 2
+  funext i
+  rw [restrict_ofLp_apply, show ((0 : EuclideanSpace ℝ (Fin d)).ofLp i) = (0 : ℝ) from by simp]
+  split_ifs with hi
+  · exact h i (Finset.mem_compl.mp hi)
+  · rfl
+
+/-- **Support split of the ℓ¹ norm** (Lu-BDA ch.6, eq:cone-ineq workhorse):
+`‖x‖₁ = ‖x|_S‖₁ + ‖x|_{Sᶜ}‖₁`. -/
+theorem l1Norm_split (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    l1Norm x = l1Norm (restrict S x) + l1Norm (restrict Sᶜ x) := by
+  rw [l1Norm_restrict_eq_sum, l1Norm_restrict_eq_sum]
+  exact (Finset.sum_add_sum_compl S (fun i => |x.ofLp i|)).symm
+
+/-- A vector is the sum of its restriction to `S` and to the complement `Sᶜ`. -/
+theorem restrict_add_restrict_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    restrict S x + restrict Sᶜ x = x := by
+  apply WithLp.ofLp_injective 2
+  funext i
+  simp only [WithLp.ofLp_add, Pi.add_apply, restrict_ofLp_apply, Finset.mem_compl]
+  split_ifs <;> simp_all
+
+/-- **ℓ²–ℓ∞ bound on a block** (Lu-BDA ch.7, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse
+vectors): `‖x|_S‖₂ ≤ √|S| · ‖x|_S‖∞`. -/
+theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    ‖restrict S x‖ ≤ Real.sqrt (S.card : ℝ) * linfNorm (restrict S x) := by
+  rw [norm_eq_sqrt_sum_ofLp]
+  set c := linfNorm (restrict S x) with hc
+  have hcnn : 0 ≤ c := linfNorm_nonneg _
+  rw [show Real.sqrt (S.card : ℝ) * c = Real.sqrt ((S.card : ℝ) * c ^ 2) by
+        rw [Real.sqrt_mul (Nat.cast_nonneg _), Real.sqrt_sq hcnn]]
+  apply Real.sqrt_le_sqrt
+  rw [← Finset.sum_subset (Finset.subset_univ S)
+      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+  calc ∑ i ∈ S, ((restrict S x).ofLp i) ^ 2
+      ≤ ∑ _i ∈ S, c ^ 2 := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        have h1 := abs_le_linfNorm (restrict S x) i
+        nlinarith [sq_abs ((restrict S x).ofLp i), abs_nonneg ((restrict S x).ofLp i), h1]
+    _ = (S.card : ℝ) * c ^ 2 := by rw [Finset.sum_const, nsmul_eq_mul]
+
+/-- The full sum of squared coordinates of a restriction collapses to the sum over `S`. -/
+private lemma sum_sq_restrict (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
+    ∑ i, ((restrict S x).ofLp i) ^ 2 = ∑ i ∈ S, (x.ofLp i) ^ 2 := by
+  rw [← Finset.sum_subset (Finset.subset_univ S)
+      (fun i _ hi => by simp only [restrict_ofLp_apply, if_neg hi]; ring)]
+  refine Finset.sum_congr rfl fun i hi => ?_
+  rw [restrict_ofLp_apply, if_pos hi]
+
+/-- The ℓ² norm of a restriction is monotone in the index set: `S ⊆ T ⟹
+‖x|_S‖₂ ≤ ‖x|_T‖₂`. -/
+theorem norm_restrict_le_of_subset {S T : Finset (Fin d)} (h : S ⊆ T)
+    (x : EuclideanSpace ℝ (Fin d)) : ‖restrict S x‖ ≤ ‖restrict T x‖ := by
+  rw [norm_eq_sqrt_sum_ofLp, norm_eq_sqrt_sum_ofLp, sum_sq_restrict, sum_sq_restrict]
+  exact Real.sqrt_le_sqrt
+    (Finset.sum_le_sum_of_subset_of_nonneg h (fun i _ _ => sq_nonneg _))
+
 end StatLean.HighDimensionalStatistics
