@@ -12,15 +12,22 @@ umbrella `StatLean.HighDimensionalStatistics` re-gate in progress. 6 cluster pro
 
 ## Unit ledger
 
-| Unit | Branch | File | Sorries | Status |
+| Unit | Branch | File | Lemmas | Status |
 |---|---|---|---|---|
-| F1 | `hds/sr-submatrix` | `ForMathlib/SupportSubmatrix.lean` | 7 | 🟡 stub-gated |
-| F2 | `hds/sr-gram` | `ForMathlib/GramMatrix.lean` | 10 | 🟡 stub-gated |
-| C0 | (laptop) | `Lasso/SupportRecovery/Defs.lean` | 0 (defs) | ✅ real |
-| A1 | `hds/sr-subgrad` | `Lasso/SupportRecovery/Subgradient.lean` | 8 | 🟡 stub-gated |
-| A2 | `hds/sr-dualcert` | `Lasso/SupportRecovery/DualCertificate.lean` | 1 | 🟡 stub-gated |
+| F1 | `hds/sr-submatrix` | `ForMathlib/SupportSubmatrix.lean` | 7 | ✅ real (merged, verified) |
+| F2 | `hds/sr-gram` | `ForMathlib/GramMatrix.lean` | 10 | ✅ real (merged, verified) |
+| C0 | (laptop) | `Lasso/SupportRecovery/Defs.lean` | defs | ✅ real |
+| A1 | `hds/sr-subgrad` | `Lasso/SupportRecovery/Subgradient.lean` | 8 | ✅ real (merged, verified) |
+| A2 | `hds/sr-dualcert` | `Lasso/SupportRecovery/DualCertificate.lean` | 1 | 🔵 proof in progress |
 | A3 | `hds/sr-thm721` | `Lasso/SupportRecovery/Theorem7_21.lean` | 4 | 🟡 stub-gated |
 | A4 | `hds/sr-cor722` | `Lasso/SupportRecovery/Corollary7_22.lean` | 1 | 🟡 stub-gated |
+
+**Waves 1–2 landed (verified):** F1, A1, F2 merged into `hds/lasso-support-recovery`; the
+`Subgradient` target builds green 0-sorry on the integration branch (covers F1+F2+C0+A1).
+**Deviation accepted:** A1 added a tagged `USER-INPUT: 0 < λ` to `pdw_unique` /
+`pdw_every_minimizer_supported` (false without it; Wainwright assumes λ>0). A3 supplies via `hlampos`
+(prompt `sr-thm721.md` updated). **Cluster note:** primary-worktree verify builds intermittently hit a
+transient networked-FS `ENOENT`; re-run clears it (code is fine — subagent fresh-worktree builds were green).
 
 Legend: ⬜ stub · 🟡 stub-gated green-with-sorries · 🔵 proof in progress (cluster) · ✅ real (0-sorry, verified at laptop gate).
 
