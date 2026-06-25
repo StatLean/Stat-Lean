@@ -131,7 +131,7 @@ lemma projPerp_idempotent (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
   sorry
 
 /-- **Matrix ℓ∞ operator bound** `‖A v‖_∞ ≤ |||A|||_∞ · ‖v‖_∞` (coordinatewise form). -/
-lemma matLinftyNorm_mulVec_le {p q : Type*} [Fintype p] [Fintype q] [Nonempty p]
+lemma matLinftyNorm_mulVec_le {p q : Type*} [Finite p] [Fintype q] [Nonempty p]
     (A : Matrix p q ℝ) (v : q → ℝ) :
     (⨆ i, |(A.mulVec v) i|) ≤ matLinftyNorm A * (⨆ j, |v j|) := by
   sorry

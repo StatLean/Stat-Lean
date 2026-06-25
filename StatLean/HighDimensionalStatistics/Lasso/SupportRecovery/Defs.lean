@@ -77,4 +77,11 @@ noncomputable def supportRecoveryBound (X : Matrix (Fin n) (Fin d) ℝ)
         ((1 / (n : ℝ)) • (Xsub X S)ᵀ.mulVec w.ofLp)) i|)
   + matLinftyNorm (gramInvNorm X S) * lam
 
+/-- The quantity `‖Xₛᶜᵀ Π_{S⊥}(X) (w/n)‖_∞` appearing on the RHS of the regularization
+condition (7.44). The condition is `λ ≥ (2/(1−α)) · projNoiseLinf X S w`. -/
+noncomputable def projNoiseLinf (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
+    (w : EuclideanSpace ℝ (Fin n)) : ℝ :=
+  ⨆ j : {x // x ∈ Sᶜ},
+    |((Xsub X Sᶜ)ᵀ.mulVec ((1 / (n : ℝ)) • (projPerp X S).mulVec w.ofLp)) j|
+
 end StatLean.HighDimensionalStatistics
