@@ -22,8 +22,8 @@ sorries; closed via 7 cluster proof subagents across 4 waves.)
 | C0 | (laptop) | `Lasso/SupportRecovery/Defs.lean` | defs | ✅ real |
 | A1 | `hds/sr-subgrad` | `Lasso/SupportRecovery/Subgradient.lean` | 8 | ✅ real (merged, verified) |
 | A2 | `hds/sr-dualcert` | `Lasso/SupportRecovery/DualCertificate.lean` | 1 (+helpers) | ✅ real (merged, verified) |
-| A3 | `hds/sr-thm721` | `Lasso/SupportRecovery/Theorem7_21.lean` | 4 | ✅ real (merged, verified) |
-| A4 | `hds/sr-cor722` | `Lasso/SupportRecovery/Corollary7_22.lean` | 1 (+helpers) | ✅ real (merged, verified) |
+| A3 | `hds/sr-thm721` | `Lasso/SupportRecovery/DeterministicGuarantee.lean` | 4 | ✅ real (merged, verified) |
+| A4 | `hds/sr-cor722` | `Lasso/SupportRecovery/SubGaussianNoise.lean` | 1 (+helpers) | ✅ real (merged, verified) |
 
 **Book-vs-Lean constants (final, all provable as stated):**
 | Result | Book | Lean (proved) | Note |

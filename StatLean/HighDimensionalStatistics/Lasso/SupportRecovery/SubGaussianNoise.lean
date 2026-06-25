@@ -1,4 +1,4 @@
-import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Theorem7_21
+import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.DeterministicGuarantee
 import StatLean.ConcentrationInequalities.SubGaussian.Defs
 import StatLean.ConcentrationInequalities.SubGaussian.Hoeffding
 import StatLean.ConcentrationInequalities.SubGaussian.TailBounds

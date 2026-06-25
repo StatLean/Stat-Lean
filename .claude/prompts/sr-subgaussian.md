@@ -6,7 +6,7 @@ blueprint (good-event decomposition, per-coordinate sub-Gaussian via `isSubGauss
 `HasSubgaussianMGF.sum_of_iIndepFun`, union-bound tail, `ENNReal.ofReal (1−δ) ≤ μ {good}`). Mirror it.
 
 # CONTEXT (do NOT modify other files; all imports PROVED by now)
-`Lasso/SupportRecovery/Corollary7_22.lean` has ONE sorried theorem `lasso_support_recovery_subgaussian`.
+`Lasso/SupportRecovery/SubGaussianNoise.lean` has ONE sorried theorem `lasso_support_recovery_subgaussian`.
 `noiseVec ω := WithLp.toLp 2 (fun i => w i ω) : E^n`; `Y ω = designMap X θstar + noiseVec ω`.
 Available:
 * `ConcentrationInequalities`: `IsSubGaussian`, `isSubGaussian_const_mul`,
@@ -16,7 +16,7 @@ Available:
   `matLinftyNorm`, `gramInvNorm`.
 * C0: `projNoiseLinf X S w` (= ‖Xₛᶜᵀ Π w/n‖_∞), `supportRecoveryBound X S w lam` (= B(λ;X)),
   `ColumnNormalized X C`.
-* A3 `Theorem7_21`: `lasso_support_recovery_no_false_inclusion`, `lasso_support_recovery_linf`.
+* A3 `DeterministicGuarantee`: `lasso_support_recovery_no_false_inclusion`, `lasso_support_recovery_linf`.
 
 # GOAL
 `ENNReal.ofReal (1 − 4·exp(−nδ²/2)) ≤ μ {ω | (∀ j∉S, (βhatω)ⱼ=0) ∧ linfNorm(restrict S (βhatω−θstar))
@@ -56,7 +56,7 @@ THIS file only. Do not touch other files / umbrella / build config. If a constan
 (e.g. `4` → larger, or the `(a+b)²≥a²+b²` step needs adjusting), document it in the report and in a
 docstring `Deviation:` note (book constant vs provable).
 
-# TOUCH-SET: ONLY  StatLean/HighDimensionalStatistics/Lasso/SupportRecovery/Corollary7_22.lean
-# BUILD: lake build StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Corollary7_22
+# TOUCH-SET: ONLY  StatLean/HighDimensionalStatistics/Lasso/SupportRecovery/SubGaussianNoise.lean
+# BUILD: lake build StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.SubGaussianNoise
 # DONE = build exits 0; 0 sorries; commit (`sr(cor722): support recovery under sub-Gaussian noise (Wainwright §7.5)`).
   Report build status, sorry count, named private lemmas, and any constant deviation from `4·exp(−nδ²/2)`.

@@ -1,7 +1,7 @@
 Read CLAUDE.md (repo root) first — §2, §6, §7, §9, §10. Use search tools/`exact?`. Never `lake update`. Inside an srun allocation — `lake build`, ITERATE to 0 errors / 0 sorries. This is pure assembly (wiring A1 + A2); should be short.
 
 # CONTEXT (do NOT modify other files; all imports PROVED by now)
-`Lasso/SupportRecovery/Theorem7_21.lean` has 4 sorried theorems (parts a–d of Wainwright 7.21).
+`Lasso/SupportRecovery/DeterministicGuarantee.lean` has 4 sorried theorems (parts a–d of Wainwright 7.21).
 All share hypotheses: `hn:0<n`, `hsupp:∀j∉S,θstarⱼ=0`, `hA3:LowerEigenvalue X S cmin`, `hcmin:0<cmin`,
 `hA4:MutualIncoherence X S α`, `hα0:0≤α`, `hα1:α<1`, `hlampos:0<lam`,
 `hlam: lam ≥ (2/(1−α))*projNoiseLinf X S w`; with `Y = designMap X θstar + w`.
@@ -38,7 +38,7 @@ Close all 4 sorries to 0-sorry. Keep signatures + `-- USER-INPUT` tags verbatim.
 ZERO sorry. Keep the 4 signatures + tags. Add `private` helpers in THIS file only if needed. Do not
 touch other files / umbrella / build config.
 
-# TOUCH-SET: ONLY  StatLean/HighDimensionalStatistics/Lasso/SupportRecovery/Theorem7_21.lean
-# BUILD: lake build StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Theorem7_21
+# TOUCH-SET: ONLY  StatLean/HighDimensionalStatistics/Lasso/SupportRecovery/DeterministicGuarantee.lean
+# BUILD: lake build StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.DeterministicGuarantee
 # DONE = build exits 0; 0 sorries; commit (`sr(thm721): Theorem 7.21 (a)-(d) assembly (Wainwright §7.5)`).
   Report build status, sorry count, any wiring that needed adjustment.

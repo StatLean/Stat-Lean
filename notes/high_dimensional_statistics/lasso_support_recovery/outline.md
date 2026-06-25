@@ -66,7 +66,7 @@ explicitly or note `(G/n)⁻¹ = n • G⁻¹`. Finalize during F2.)
 ```
 VecNorms, LinearModel/Defs (existing)
    └─ F1 SupportSubmatrix ─┬─ F2 GramMatrix ─┬─ A2 DualCertificate ─┐
-                           │                 └─ A4 Corollary7_22    ├─ A3 Theorem7_21 ─ A4(final)
+                           │                 └─ A4 SubGaussianNoise    ├─ A3 DeterministicGuarantee ─ A4(final)
    C0 Defs (imports F1,F2) ┘                 A1 Subgradient ────────┘
 SubGaussian/*, Maximal/FiniteMaximal (existing) ─ A4
 ```
@@ -118,7 +118,7 @@ SubGaussian/*, Maximal/FiniteMaximal (existing) ─ A4
 | `strict_dual_feasibility` | `… → linfNorm (restrict Sᶜ z) < 1` (= `½(1+α)<1`) | S |
 | `linf_error_bound` (7.54) | `… → linfNorm (restrict S (θ̂−θ*)) ≤ supportRecoveryBound X S w λ` | S |
 
-### A3 Theorem7_21.lean  (branch `hds/sr-thm721`, after A1,A2)  — **main**
+### A3 DeterministicGuarantee.lean  (branch `hds/sr-thm721`, after A1,A2)  — **main**
 | name | statement | st |
 |---|---|---|
 | `lasso_support_recovery_unique` (a) | `…(A3)(A4)(λ≥7.44)(y=Xθ*+w)→ ∃! β̂, IsLassoEstimator X y λ β̂` | S |
@@ -126,7 +126,7 @@ SubGaussian/*, Maximal/FiniteMaximal (existing) ─ A4
 | `lasso_support_recovery_linf` (c) | `…→ IsLassoEstimator X y λ β̂ → linfNorm (restrict S (β̂−θ*)) ≤ supportRecoveryBound X S w λ` | S |
 | `lasso_support_recovery_no_false_exclusion` (d) | `…→ IsLassoEstimator → ∀ i∈S, supportRecoveryBound X S w λ < |θ*.ofLp i| → β̂.ofLp i ≠ 0` | S |
 
-### A4 Corollary7_22.lean  (branch `hds/sr-cor722`, after F2+Maximal; finalize after A3)  — **main**
+### A4 SubGaussianNoise.lean  (branch `hds/sr-cor722`, after F2+Maximal; finalize after A3)  — **main**
 | name | statement | st |
 |---|---|---|
 | `proj_noise_col_isSubGaussian` | `Zⱼ = ⟨projPerp Xⱼ, w⟩/n` sub-Gaussian proxy ≤ C²σ²/n (uses `projPerp_apply_norm_le`+`ColumnNormalized`+`isSubGaussian_const_mul`/`sum_of_iIndepFun`) | S |
