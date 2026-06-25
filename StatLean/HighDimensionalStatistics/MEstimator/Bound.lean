@@ -246,7 +246,7 @@ theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
     (hG : GoodEvent dr.Φstar (gradient L θstar) lam)
     -- USER-INPUT: squared tolerance `τ² = τ_n² ≥ 0` (constitutive, Def 9.15); Wainwright eq 9.38.
     (hτSq : 0 ≤ τSq)
-    -- USER-INPUT: curvature dominates tolerance, `τ²Ψ²(M̄) ≤ κ/64`; Wainwright Thm 9.19(b).
+    -- USER-INPUT: curvature dominates tolerance, `τ²Ψ²(M̄) ≤ κ/128`; Wainwright Thm 9.19(b).
     (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 128)
     -- USER-INPUT: `εₙ ≤ R` so the RSC ball contains the error; Wainwright Thm 9.19(b).
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2) :
