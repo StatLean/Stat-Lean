@@ -149,8 +149,7 @@ theorem score_coord_isSubGaussian (M : GLMExpFamily n d μ) [IsProbabilityMeasur
         * ∑ i, (⟨M.B ^ 2 * M.X i j ^ 2, by positivity⟩ : ℝ≥0))
       ≤ (⟨M.B ^ 2 * C ^ 2 / n, by positivity⟩ : ℝ≥0) := by
     refine NNReal.coe_le_coe.mp ?_
-    rw [NNReal.coe_mul, NNReal.coe_sum]
-    simp only [NNReal.coe_mk]
+    simp only [NNReal.coe_mul, NNReal.coe_sum, NNReal.coe_mk]
     have hsumB : ∑ i, M.B ^ 2 * M.X i j ^ 2 = M.B ^ 2 * ∑ i, M.X i j ^ 2 :=
       (Finset.mul_sum _ _ _).symm
     rw [hsumB,
