@@ -9,8 +9,8 @@ witness construction (`DualCertificate.lean`) and the uniqueness lemma 7.23
 (`Subgradient.lean`). Parts (a)–(d) of the boxed Theorem 7.21:
 
 * (a) `lasso_support_recovery_unique` — a **unique** optimal solution.
-* (b) `lasso_support_recovery_no_false_inclusion` — `supp(θ̂) ⊆ S`.
-* (c) `lasso_support_recovery_linf` — `‖θ̂_S − θ*_S‖_∞ ≤ B(λ;X)` (7.45).
+* (b) `lasso_support_recovery_no_false_inclusion` — `supp(β̂) ⊆ S`.
+* (c) `lasso_support_recovery_linf` — `‖β̂_S − θ*_S‖_∞ ≤ B(λ;X)` (7.45).
 * (d) `lasso_support_recovery_no_false_exclusion` — every large coordinate is recovered.
 
 Parts (b)–(d) are stated in the strong ∀-form (over *every* Lasso minimizer); combined with
@@ -49,7 +49,10 @@ theorem lasso_support_recovery_unique (X : Matrix (Fin n) (Fin d) ℝ)
     -- USER-INPUT: regularization condition (7.44); Wainwright §7.5
     (hlam : lam ≥ (2 / (1 - α)) * projNoiseLinf X S w) :
     ∃! βhat, IsLassoEstimator X (designMap X θstar + w) lam βhat := by
-  sorry
+  obtain ⟨thHat, zHat, hsp, hsub, hkkt, hstrict, _⟩ :=
+    pdw_witness_exists X S θstar w lam α cmin hn hsupp hA3 hcmin hA4 hα0 hα1 hlampos hlam
+  exact pdw_unique X (designMap X θstar + w) S lam cmin thHat zHat
+    hlampos hn hsp hsub hkkt hstrict hA3 hcmin
 
 /-- **Theorem 7.21 (b) — no false inclusion** (Wainwright §7.5): every Lasso minimizer has
 its support contained in `S`. -/
@@ -64,7 +67,10 @@ theorem lasso_support_recovery_no_false_inclusion (X : Matrix (Fin n) (Fin d) �
     -- USER-INPUT: β̂ is a Lasso minimizer; Wainwright §7.5
     (hopt : IsLassoEstimator X (designMap X θstar + w) lam βhat) :
     ∀ j ∉ S, βhat.ofLp j = 0 := by
-  sorry
+  obtain ⟨thHat, zHat, hsp, hsub, hkkt, hstrict, _⟩ :=
+    pdw_witness_exists X S θstar w lam α cmin hn hsupp hA3 hcmin hA4 hα0 hα1 hlampos hlam
+  exact pdw_every_minimizer_supported X (designMap X θstar + w) S lam thHat zHat βhat
+    hlampos hn hsp hsub hkkt hstrict hopt
 
 /-- **Theorem 7.21 (c) — ℓ∞ error bound** (Wainwright 7.45): every Lasso minimizer satisfies
 `‖β̂_S − θ*_S‖_∞ ≤ B(λ;X)`. -/
@@ -78,7 +84,14 @@ theorem lasso_support_recovery_linf (X : Matrix (Fin n) (Fin d) ℝ)
     (βhat : EuclideanSpace ℝ (Fin d))
     (hopt : IsLassoEstimator X (designMap X θstar + w) lam βhat) :
     linfNorm (restrict S (βhat - θstar)) ≤ supportRecoveryBound X S w lam := by
-  sorry
+  obtain ⟨thHat, zHat, hsp, hsub, hkkt, hstrict, hbound⟩ :=
+    pdw_witness_exists X S θstar w lam α cmin hn hsupp hA3 hcmin hA4 hα0 hα1 hlampos hlam
+  have hthHatmin := lassoEstimator_of_kkt X (designMap X θstar + w) lam thHat zHat
+    hn hlampos hsub hkkt
+  have huniq := pdw_unique X (designMap X θstar + w) S lam cmin thHat zHat
+    hlampos hn hsp hsub hkkt hstrict hA3 hcmin
+  have hβeq : βhat = thHat := huniq.unique hopt hthHatmin
+  rw [hβeq]; exact hbound
 
 /-- **Theorem 7.21 (d) — no false exclusion** (Wainwright §7.5): the Lasso recovers every
 support coordinate whose magnitude exceeds the bound; hence variable-selection consistency
@@ -96,6 +109,18 @@ theorem lasso_support_recovery_no_false_exclusion (X : Matrix (Fin n) (Fin d) �
     -- USER-INPUT: the coordinate exceeds the bound, |θ*_i| > B(λ;X); Wainwright §7.5 (d)
     (hbig : supportRecoveryBound X S w lam < |θstar.ofLp i|) :
     βhat.ofLp i ≠ 0 := by
-  sorry
+  have hlinf := lasso_support_recovery_linf X S θstar w lam α cmin hn hsupp hA3 hcmin hA4 hα0 hα1
+    hlampos hlam βhat hopt
+  -- |β̂ᵢ − θ*ᵢ| ≤ ‖(β̂ − θ*)|_S‖_∞ ≤ B
+  have hcoord : |(βhat - θstar).ofLp i| ≤ supportRecoveryBound X S w lam := by
+    have h1 := abs_le_linfNorm (restrict S (βhat - θstar)) i
+    rw [restrict_ofLp_apply, if_pos hiS] at h1
+    exact h1.trans hlinf
+  intro hzero
+  -- with β̂ᵢ = 0, |β̂ᵢ − θ*ᵢ| = |θ*ᵢ| > B, contradiction
+  have hsub : (βhat - θstar).ofLp i = βhat.ofLp i - θstar.ofLp i := by
+    simp
+  rw [hsub, hzero, zero_sub, abs_neg] at hcoord
+  exact absurd (lt_of_le_of_lt hcoord hbig) (lt_irrefl _)
 
 end StatLean.HighDimensionalStatistics
