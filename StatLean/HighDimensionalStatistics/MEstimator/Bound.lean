@@ -61,7 +61,7 @@ sphere of radius `εₙ`, then Lemma 9.21 applies.
 
 Book-constant deviation: the book uses slack `τ²Ψ² ≤ κ/64` and `εₙ²` with leading `9`; rigorously the
 effective curvature is `c = κ/2 − 32τ²Ψ²`, so `κ/128` (giving `c ≥ κ/4`) and the inflated `εₙ²`
-constants (`72`, `16/κ`, see `epsilonSq`) are what is provable. Same rate. -/
+constants (`144`, `32/κ`, see `epsilonSq`) are what is provable. Same rate. -/
 theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
     -- USER-INPUT: cost `L` convex (A1); Wainwright §9.4.1.
     (hL : ConvexOn ℝ Set.univ L)
@@ -83,8 +83,8 @@ theorem mestimator_l2_bound (dr : DecomposableReg E) (L : E → ℝ)
   sorry
 
 /-- **Corollary 9.20**, eq (9.49b) — squared-error bound when `θ* ∈ M`. The approximation error
-vanishes (`θ*_{Mᗮ} = 0`), so `‖θ̂ − θ*‖² ≤ 36(λ²/κ²)·Ψ²(M̄)`. (Book: leading `9`; with the rigorous
-effective curvature `c ≥ κ/4`, the sharp `D=0` threshold `(β/c)²` gives `36`. Same rate.) -/
+vanishes (`θ*_{Mᗮ} = 0`), so `‖θ̂ − θ*‖² ≤ 144(λ²/κ²)·Ψ²(M̄)` (= `epsilonSq` with `Φ(θ*_{Mᗮ}) = 0`,
+i.e. Theorem 9.19(b) specialized). Book: leading `9`; provable inflated constant, same rate. -/
 theorem cor_l2_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hL : ConvexOn ℝ Set.univ L) (hdiff : Differentiable ℝ L)
     (θstar θhat : E) (lam κ R τSq : ℝ)
@@ -96,12 +96,12 @@ theorem cor_l2_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2)
     -- USER-INPUT: target lies in the model subspace `θ* ∈ M`; Wainwright Cor 9.20.
     (hmem : θstar ∈ dr.M) :
-    ‖θhat - θstar‖ ^ 2 ≤ 36 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
+    ‖θhat - θstar‖ ^ 2 ≤ 144 * (lam ^ 2 / κ ^ 2) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
   sorry
 
 /-- **Corollary 9.20**, eq (9.49a) — regularizer bound when `θ* ∈ M`:
-`Φ(θ̂ − θ*) ≤ 24(λ/κ)·Ψ²(M̄)`. From (9.48a) `Φ(θ̂−θ*) ≤ 4Ψ‖θ̂−θ*‖` (θ*∈M) and
-`‖θ̂−θ*‖ ≤ 6(λ/κ)Ψ` (from 9.49b). (Book: `6`; rigorous: `4·6 = 24`. Same rate.) -/
+`Φ(θ̂ − θ*) ≤ 48(λ/κ)·Ψ²(M̄)`. From (9.48a) `Φ(θ̂−θ*) ≤ 4Ψ‖θ̂−θ*‖` (θ*∈M) and
+`‖θ̂−θ*‖ ≤ 12(λ/κ)Ψ` (from 9.49b, `√144 = 12`). (Book: `6`; rigorous `4·12 = 48`. Same rate.) -/
 theorem cor_reg_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hL : ConvexOn ℝ Set.univ L) (hdiff : Differentiable ℝ L)
     (θstar θhat : E) (lam κ R τSq : ℝ)
@@ -112,7 +112,7 @@ theorem cor_reg_bound_of_mem (dr : DecomposableReg E) (L : E → ℝ)
     (hτ : τSq * (subspaceLip dr.Φ dr.Mbar) ^ 2 ≤ κ / 128)
     (hεR : epsilonSq dr θstar lam κ τSq ≤ R ^ 2)
     (hmem : θstar ∈ dr.M) :
-    dr.Φ (θhat - θstar) ≤ 24 * (lam / κ) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
+    dr.Φ (θhat - θstar) ≤ 48 * (lam / κ) * (subspaceLip dr.Φ dr.Mbar) ^ 2 := by
   sorry
 
 end StatLean.HighDimensionalStatistics.MEstimator
