@@ -3,6 +3,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
 import StatLean.AsymptoticStatistics.EmpiricalProcess.DonskerBracketing
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Probability.CDF
 
 /-!
 # Higher Criticism and the detection boundary (Candès, Lecture 3, §3.3.3, Theorem 3)
@@ -52,6 +53,7 @@ residual gaps for Theorem 3 are (i) the empirical-process LIL threshold calibrat
 
 open MeasureTheory
 open AsymptoticStatistics.EmpiricalProcess
+open ProbabilityTheory
 open scoped ENNReal
 
 namespace StatLean.MultipleTesting
@@ -123,29 +125,6 @@ of the measurable set `Set.Iic t` of a measurable (constant) function. -/
 theorem halfLineClass_measurable {f : ℝ → ℝ} (hf : f ∈ halfLineClass) : Measurable f := by
   obtain ⟨t, rfl⟩ := hf
   exact measurable_const.indicator measurableSet_Iic
-
-/-- **Bracketing-entropy bound for the empirical-CDF class** (vdV §19.2 Example
-19.6): the half-line class has bracketing number `N_[](ε, F_cdf, L²(P)) ≲ 1/ε²`,
-so the Donsker entropy integral `J_[](1, F_cdf, L²(P)) = ∫₀¹ √(log N_[](ε)) dε`
-is finite.
-
-**Proof (the one remaining named debt, `sorry` below).** Fix `ε ∈ (0,1]`. Let
-`F = cdf P` (monotone, right-continuous, `F(−∞)=0`, `F(+∞)=1`). Choose grid points
-`−∞ = t₀ < t₁ < … < t_m = +∞` with `m ≤ ⌈1/ε²⌉ + 1` and `P((t_{i−1}, t_i]) ≤ ε²`
-for every `i` (a `P`-mass partition; atoms of mass `> ε²` are placed as their own
-grid points, which only adds the `+1`). The brackets are
-`[𝟙_{(−∞,t_{i−1}]}, 𝟙_{(−∞,t_i]}]`: for any `t ∈ [t_{i−1}, t_i)` we have pointwise
-`𝟙_{(−∞,t_{i−1}]} ≤ 𝟙_{(−∞,t]} ≤ 𝟙_{(−∞,t_i]}`, and the `L²(P)`-size is
-`‖𝟙_{(−∞,t_i]} − 𝟙_{(−∞,t_{i−1}]}‖_{L²(P)} = √(P((t_{i−1}, t_i]})) ≤ ε`. Hence
-`N_[](ε) ≤ ⌈1/ε²⌉ + 1`, giving `√(log N_[](ε)) ≲ √(2 log(1/ε))`, which is Lebesgue-
-integrable on `(0,1]`; therefore `J_[](1) < ⊤`. The quantile-grid construction (a
-measure-theoretic partition of `ℝ` into `P`-mass-`≤ ε²` pieces, valid for any law
-including atomic ones) plus the `√log(1/ε)` integrability estimate are the content
-deferred to this named lemma. -/
-theorem halfLineClass_bracketingEntropyIntegral_lt_top
-    (P : Measure ℝ) [IsProbabilityMeasure P] :
-    bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
-  sorry
 
 /-! ### Helper lemmas for the half-line bracketing analysis -/
 
@@ -319,6 +298,65 @@ private theorem halfLineClass_chain_bound (P : Measure ℝ) [IsProbabilityMeasur
                 (ENNReal.ofReal (Real.sqrt n)
                   * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                       * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
+  sorry
+
+/-! ### Crux 1: finite bracketing-entropy integral via a CDF-quantile grid
+
+We build, for each scale `ε ∈ (0,1]`, a finite `ε`-bracketing cover of the half-line
+class of size `≤ ⌈1/ε²⌉ + 1`, by partitioning `ℝ` into `P`-mass-`≤ ε²` pieces at the
+quantiles `hlQ P (j/N)` of the CDF `F = cdf P` (`N = ⌈1/ε²⌉ + 1`). The atom-robust
+brackets are `[𝟙_{(−∞, q_{j}]}, 𝟙_{(−∞, q_{j+1})}]` (upper open), whose `L²(P)`-size
+is `√(P((q_j, q_{j+1}))) = √(leftLim F q_{j+1} − F q_j) ≤ √(1/N) < ε`. -/
+
+/-- The `v`-quantile of `P`: the least `x` with `cdf P x ≥ v`. -/
+private noncomputable def hlQ (P : Measure ℝ) (v : ℝ) : ℝ :=
+  sInf {x : ℝ | v ≤ (cdf P) x}
+
+private lemma hlQ_nonempty (P : Measure ℝ) (v : ℝ) (hv1 : v < 1) :
+    {x : ℝ | v ≤ (cdf P) x}.Nonempty := by
+  obtain ⟨x, hx⟩ := ((tendsto_cdf_atTop P).eventually_const_lt hv1).exists
+  exact ⟨x, hx.le⟩
+
+private lemma hlQ_bddBelow (P : Measure ℝ) (v : ℝ) (hv0 : 0 < v) :
+    BddBelow {x : ℝ | v ≤ (cdf P) x} := by
+  have h := (tendsto_cdf_atBot P).eventually_lt_const hv0
+  rw [Filter.eventually_atBot] at h
+  obtain ⟨b, hb⟩ := h
+  refine ⟨b, fun x hx => ?_⟩
+  by_contra hxb
+  exact absurd (hb x (not_le.1 hxb).le) (not_lt.2 hx)
+
+private lemma hlQ_mono (P : Measure ℝ) {v w : ℝ} (hv0 : 0 < v) (hw1 : w < 1)
+    (hvw : v ≤ w) : hlQ P v ≤ hlQ P w := by
+  apply csInf_le_csInf (hlQ_bddBelow P v hv0) (hlQ_nonempty P w hw1)
+  exact fun x hx => le_trans hvw hx
+
+private lemma cdf_hlQ_ge (P : Measure ℝ) {v : ℝ} (hv0 : 0 < v) (hv1 : v < 1) :
+    v ≤ (cdf P) (hlQ P v) := by
+  have hgt : ∀ y, hlQ P v < y → v ≤ (cdf P) y := by
+    intro y hy
+    obtain ⟨x, hx, hxy⟩ := exists_lt_of_csInf_lt (hlQ_nonempty P v hv1) hy
+    exact le_trans hx ((monotone_cdf P) hxy.le)
+  have htend : Filter.Tendsto (cdf P)
+      (nhdsWithin (hlQ P v) (Set.Ioi (hlQ P v))) (nhds ((cdf P) (hlQ P v))) :=
+    ((cdf P).right_continuous (hlQ P v)).tendsto.mono_left
+      (nhdsWithin_mono _ Set.Ioi_subset_Ici_self)
+  refine ge_of_tendsto htend ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy using hgt y hy
+
+private lemma leftLim_cdf_hlQ_le (P : Measure ℝ) {v : ℝ} (hv0 : 0 < v) :
+    Function.leftLim (cdf P) (hlQ P v) ≤ v := by
+  have hlt : ∀ y, y < hlQ P v → (cdf P) y < v := by
+    intro y hy
+    by_contra h
+    push_neg at h
+    exact absurd (csInf_le (hlQ_bddBelow P v hv0) h) (not_le.2 hy)
+  refine le_of_tendsto ((monotone_cdf P).tendsto_leftLim (hlQ P v)) ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy using (hlt y hy).le
+
+theorem halfLineClass_bracketingEntropyIntegral_lt_top
+    (P : Measure ℝ) [IsProbabilityMeasure P] :
+    bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
   sorry
 
 /-- **The empirical-CDF class is `P`-Donsker** (the H₀ half of the Donoho–Jin
