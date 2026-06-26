@@ -32,7 +32,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | ✅ real (merged, 0-sorry) |
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | ✅ real (merged, 0-sorry) |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
-| U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | ✅ 4 lemmas real (merged); **law = 1 named debt** (complexMGF route viable → follow-up) |
+| U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` (+GaussianSquareMGF) | GAUSS,GAMMA | ◆ | ✅ FULLY real (merged, 0-sorry incl. exact law) |
 | U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | ✅ real (merged, 0-sorry) — T8 |
 | U-CONF | `mt/conformal` | `Conformal/Coverage` | RANK | ● | ✅ real (merged, 0-sorry) — T7 |
 | U-CHI | `mt/chisq-test` | `ChiSquaredTest/Distribution` | GAUSS,CHISQ | ● | ✅ real (merged, 0-sorry) |
