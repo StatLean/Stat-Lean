@@ -520,7 +520,70 @@ private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbability
             ≤ ((m : ℝ) + 1) / N - (m : ℝ) / N := by linarith [hcdfm, hleft]
           _ = 1 / N := hdiff
   · -- the blocks cover the half-line class
-    sorry
+    intro f hf
+    obtain ⟨τ, rfl⟩ := hf
+    set Fτ : ℝ := (cdf P) τ with hFτdef
+    have hFτ0 : (0 : ℝ) ≤ Fτ := cdf_nonneg P τ
+    set j : ℕ := min (Nat.floor (N * Fτ)) (N - 1) with hjdef
+    have hjlt : j < N := by omega
+    refine ⟨⟨j, hjlt⟩, fun x => ?_⟩
+    simp only [hloN, hupN]
+    -- `j ≤ ⌊N·Fτ⌋ ≤ N·Fτ`, giving `q j = hlQ(j/N) ≤ τ` via duality
+    have hmle : (j : ℝ) ≤ N * Fτ := by
+      have h1 : j ≤ Nat.floor (N * Fτ) := by omega
+      calc (j : ℝ) ≤ (Nat.floor (N * Fτ) : ℝ) := by exact_mod_cast h1
+        _ ≤ N * Fτ := Nat.floor_le (by positivity)
+    by_cases hj0 : j = 0
+    · -- left end-block covers `τ < q₁`
+      rw [if_pos hj0, if_neg (show ¬ (j + 1 = N) by omega), if_pos hj0]
+      have hFτlt : Fτ < 1 / N := by
+        have hf0 : Nat.floor (N * Fτ) = 0 := by omega
+        have : N * Fτ < 1 := Nat.floor_eq_zero.1 hf0
+        rw [lt_div_iff₀ hNR]; nlinarith
+      have hq1 : q 1 = hlQ P ((1 : ℝ) / N) := by simp [hq]
+      have hτq1 : τ < q 1 := by
+        rw [hq1]
+        have hduality := hlQ_le_iff P (v := (1 : ℝ) / N) (τ := τ) (by positivity)
+          (by rw [div_lt_one hNR]; exact_mod_cast hN2)
+        rw [← hFτdef] at hduality
+        exact not_le.1 (fun h => absurd (hduality.1 h) (not_le.2 hFτlt))
+      refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) x,
+        Set.indicator_le_indicator_of_subset
+          (fun y hy => lt_of_le_of_lt hy hτq1) (fun _ => zero_le_one) x⟩
+    · have hv0 : (0 : ℝ) < (j : ℝ) / N := div_pos (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hj0) hNR
+      have hv1 : (j : ℝ) / N < 1 := by rw [div_lt_one hNR]; exact_mod_cast hjlt
+      have hqj : q j = hlQ P ((j : ℝ) / N) := by simp [hq]
+      have hτqj : q j ≤ τ := by
+        rw [hqj]
+        refine (hlQ_le_iff P hv0 hv1).2 ?_
+        rw [← hFτdef, div_le_iff₀ hNR]; nlinarith [hmle]
+      by_cases hjL : j + 1 = N
+      · -- right end-block covers `q_{N-1} ≤ τ`
+        rw [if_neg hj0, if_pos hjL]
+        refine ⟨Set.indicator_le_indicator_of_subset
+            (Set.Iic_subset_Iic.2 hτqj) (fun _ => zero_le_one) x,
+          by by_cases hx : x ∈ Set.Iic τ <;> simp [Set.indicator_apply, hx]⟩
+      · -- middle block covers `q_j ≤ τ < q_{j+1}`
+        rw [if_neg hj0, if_neg hjL, if_neg hj0]
+        have hfloorj : Nat.floor (N * Fτ) = j := by omega
+        have hFτlt : Fτ < ((j : ℝ) + 1) / N := by
+          have : N * Fτ < (j : ℝ) + 1 := by
+            have h := Nat.lt_floor_add_one (N * Fτ)
+            rw [hfloorj] at h; push_cast at h; linarith
+          rw [lt_div_iff₀ hNR]; nlinarith
+        have hqj1 : q (j + 1) = hlQ P (((j : ℝ) + 1) / N) := by
+          simp only [hq]; push_cast; ring_nf
+        have hτqj1 : τ < q (j + 1) := by
+          rw [hqj1]
+          have hduality := hlQ_le_iff P (v := ((j : ℝ) + 1) / N) (τ := τ) (by positivity)
+            (by rw [div_lt_one hNR]; exact_mod_cast (show j + 1 < N by omega))
+          rw [← hFτdef] at hduality
+          exact not_le.1 (fun h => absurd (hduality.1 h) (not_le.2 hFτlt))
+        refine ⟨Set.indicator_le_indicator_of_subset
+            (Set.Iic_subset_Iic.2 hτqj) (fun _ => zero_le_one) x,
+          Set.indicator_le_indicator_of_subset
+            (fun y hy => Set.mem_union_right _ (lt_of_le_of_lt hy hτqj1))
+            (fun _ => zero_le_one) x⟩
 
 theorem halfLineClass_bracketingEntropyIntegral_lt_top
     (P : Measure ℝ) [IsProbabilityMeasure P] :
