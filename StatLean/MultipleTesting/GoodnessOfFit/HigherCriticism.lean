@@ -1,5 +1,5 @@
 import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
-import Mathlib.Analysis.SpecialFunctions.Pow.NNRpow
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Higher Criticism and the detection boundary (Candès, Lecture 3, §3.3.3, Theorem 3)
