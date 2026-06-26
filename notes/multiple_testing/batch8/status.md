@@ -32,7 +32,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | todo |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | todo |
-| U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | gated green → closure running |
+| U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | ✅ real (merged, 0-sorry) — T8 |
 | U-CONF | `mt/conformal` | `Conformal/{Defs,Coverage}` | RANK | ● | todo |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
 | U-BHM | `mt/bh-martingale` | `BHMartingale` | EMPCDF,REVMG | ◆ | todo |
