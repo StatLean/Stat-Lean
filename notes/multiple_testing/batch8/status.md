@@ -42,9 +42,9 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
 | U-BHM | `mt/bh-martingale` | `BHMartingale` | BH (leave-one-out) | ◆ | ✅ real (merged, 0-sorry) — T5 |
 | U-STO | `mt/storey` | `Storey` | reverse-MG,BinomialRatio | ◆ | ⚠ stated + 2 documented debts (reverse-MG OST core) — T6 |
-| U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | ✅ union bound real (merged); **sharp = 1 debt** |
+| U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | ✅ union bound + reduction real; sharp crux isolated → `countLE_reflection_bound` (1 debt) |
 | U-KS | `mt/ks-test` | `GoodnessOfFit/KolmogorovSmirnov` | EMPCDF,MASSART | ● | ✅ real (merged, 0-sorry) |
-| U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` | EMPCDF | ◆◆ | ⚠ boundary+statistic real (0-sorry); full theorem honestly deferred |
+| U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` | EMPCDF,Donsker | ◆◆ | ✅ boundary+statistic+H₀ Donsker (`halfLine_isPDonsker`) real; detection theorem deferred (LIL+H₁), 3 framework debts |
 
 Concept `Defs.lean` (laptop-only, no sorry): `EValues/Defs` ✓ written;
 `ChiSquaredTest/Defs`, `GoodnessOfFit/Defs`, `EmpiricalBayes/Defs`, `Conformal/Defs` — todo.
@@ -73,22 +73,26 @@ two orphaned-closure poll-harvests.
   cluster gate on U-EV — `IsEVariable.expectation_le_one` switched Bochner→lintegral; both
   conversion theorems were false under the Bochner form (counterexample `E ω = 2/ω` on `(0,1)`).
 
-## Residual named debts (final)
-- ✅ **χ² exact law `map_sum_sq_eq_chiSquared` — RETIRED** (closed by U-CHISQ-LAW via the complexMGF
-  route; full chi-squared infrastructure now 0-sorry).
-- **`massart_inequality`** (`ForMathlib/EmpiricalProcessSup.lean`) — the *sharp* DKW constant
-  `2·e^{−2nu²}` (Massart 1990 reflection argument, Mathlib-absent). The union-bound `n·e^{−2nu²}` is
-  proved real and is what U-KS consumes; the sharp constant is the only outstanding goodness-of-fit debt.
-- **U-STO (`Storey.lean`), 2 sorries** — `storey_reverseMG_ost` (the backwards-martingale optional
-  stopping; Mathlib lacks continuous-time backwards MGs — needs the discrete uniform-null reformulation,
-  a self-contained development) and `storey_fdr_le` (the FDRhat-attainment + joint-factor-OST + null-count
-  `Bin(n₀,½)` assembly atop it). The FDP→counting-process reduction is proved real.
-- **U-HC (`GoodnessOfFit/HigherCriticism.lean`)** — `rhoStar` boundary + `hcStat` formalized (boundary
-  properties closing on `mt/higher-criticism`); the full Donoho–Jin detection theorem is **honestly
-  deferred in prose, NOT laundered**. *Correction (user):* the project HAS Donsker
-  (`AsymptoticStatistics.EmpiricalProcess.IsPDonsker` + `isPDonsker_of_finite_bracketing_entropy_integral`),
-  so the H₀ empirical-process convergence is reachable; remaining gaps are the empirical-process LIL
-  (`√(2 log log n)` calibration) and the H₁ sparse-mixture large deviations.
+## Residual named debts (after the debt-closing pass)
+Each remaining debt is now a single, precisely-characterized named lemma with the surrounding
+structure proved real (the project's planned-debt ideal).
+- ✅ **χ² exact law — RETIRED** (closed by U-CHISQ-LAW via the complexMGF route).
+- **Massart sharp constant** → isolated to **`countLE_reflection_bound`** (`EmpiricalProcessSup.lean`).
+  `massart_inequality` is now PROVED *modulo* this one lemma: the sup-event→union-of-count-events
+  reduction + `n=0` edge are real; the only gap is the `n`-fold-union→sharp-`2` collapse (Massart-1990
+  exponential-supermartingale first-passage). Documented rigorously (why union-bound/McDiarmid/maximal-
+  inequalities each fail; the cross-term `e^{4nuE}` blows up the McDiarmid route). Needs an
+  exponential-supermartingale optional-stopping development for the empirical process. 1 debt.
+- **U-HC H₀ — NOW FORMALIZED**: `halfLine_isPDonsker` (the empirical-CDF class is P-Donsker, the H₀
+  empirical-process convergence) STATED + assembled from `isPDonsker_of_finite_bracketing_entropy_integral`;
+  `halfLineClass_measurable` proved 0-sorry. 3 named framework debts:
+  `halfLineClass_bracketingEntropyIntegral_lt_top` (the half-line entropy `N_[](ε)≲1/ε²` ⇒ integral `<∞`,
+  the key one) + `halfLineClass_J_pos` + `halfLineClass_chain_bound` (generic Donsker-framework
+  regularity inputs). The full Donoho–Jin **detection** theorem stays honestly deferred (residual = the
+  empirical-process **LIL** `√(2 log log n)` calibration + the **H₁** sparse-mixture large deviations).
+- **U-STO (`Storey.lean`)** — closing attempt `mt/storey-close` (the discrete reverse-MG via the
+  uniform-null condExp) **in progress**; if it lands, the OST core is real and `storey_fdr_le` follows.
+  Until then: `storey_reverseMG_ost` + `storey_fdr_le` (FDP→counting reduction already proved real).
 
 ## Book-vs-Lean constants
 (populated as units land.)
