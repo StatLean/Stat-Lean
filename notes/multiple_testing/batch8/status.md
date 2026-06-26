@@ -46,15 +46,19 @@ Concept `Defs.lean` (laptop-only, no sorry): `EValues/Defs` ✓ written;
 
 ## Waves (dependency-respecting, ≤3 concurrent)
 
-- Wave 0: Defs + stubs + prompts + umbrella; stub-gate green-with-sorries. **← here**
-- A1: GAUSS · GAMMA · EMPCDF   A2: EV · RANK · BHD
-- B1: CHISQ · EB · CONF   B2: CHI · REVMG   B3: BHM · STO
-- C1: MASSART   C2: KS · HC
+- Wave 0 ✅ · A1 ✅ (GAUSS·GAMMA·EMPCDF) · A2 ✅ (EV·BHD; **RANK left**) · B1 partial (EB ✅; **CHISQ·CONF left**)
+- **Integration GREEN (2026-06-26):** full `StatLean.MultipleTesting` umbrella builds 0-sorry with all
+  6 merged units (EV, EMPCDF, GAUSS, GAMMA, BHD/T4, EB/T8) + existing BH/Holm/Knockoff area.
+- Remaining: **A2** RANK · **B1** CHISQ, CONF · **B2** REVMG · **B3** BHM, STO · **C1** MASSART · **C2** KS, HC.
+  RANK/CONF need a self-defined `Exchangeable`; REVMG is the BH-martingale/Storey core; MASSART/HC are
+  research-hard (documented-`sorry` fallbacks per the plan).
 
-## Vertical-slice de-risk (current)
+## Pipeline de-risk (done)
 
-U-EV taken end-to-end first (Defs + assembly stub + umbrella + prompt) to validate the pipeline
-(conventions compile, cluster stub-gate, worktree mechanics) before mass-producing the rest.
+U-EV taken end-to-end first to validate the pipeline; the full per-unit protocol (stub → cluster
+stub-gate → cluster-claude closure → laptop verification gate → `--no-ff` merge → worktree cleanup)
+has now run cleanly 6×, including a caught soundness bug, an SSH-expiry recovery (`fasrc-fix`), and
+two orphaned-closure poll-harvests.
 
 ## Lessons / gotchas
 - **Bochner `∫ f ∂μ ≤ C` is unsound for "expectation ≤ C" predicates.** Mathlib's Bochner integral
