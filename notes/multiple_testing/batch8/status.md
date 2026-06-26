@@ -37,10 +37,10 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-CONF | `mt/conformal` | `Conformal/Coverage` | RANK | ● | ✅ real (merged, 0-sorry) — T7 |
 | U-CHI | `mt/chisq-test` | `ChiSquaredTest/Distribution` | GAUSS,CHISQ | ● | ✅ real (merged, 0-sorry) |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
-| U-BHM | `mt/bh-martingale` | `BHMartingale` | EMPCDF,REVMG | ◆ | todo |
+| U-BHM | `mt/bh-martingale` | `BHMartingale` | BH (leave-one-out) | ◆ | closure running |
 | U-STO | `mt/storey` | `Storey` | REVMG,BinomialRatio | ● | todo |
-| U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | todo |
-| U-KS | `mt/ks-test` | `GoodnessOfFit/KolmogorovSmirnov` | EMPCDF,MASSART | ● | todo |
+| U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | ✅ union bound real (merged); **sharp = 1 debt** |
+| U-KS | `mt/ks-test` | `GoodnessOfFit/KolmogorovSmirnov` | EMPCDF,MASSART | ● | closure running (orphaned → poll-harvest) |
 | U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` + `ForMathlib/BrownianBridgeLIL` | MASSART | ◆◆ | todo |
 
 Concept `Defs.lean` (laptop-only, no sorry): `EValues/Defs` ✓ written;
