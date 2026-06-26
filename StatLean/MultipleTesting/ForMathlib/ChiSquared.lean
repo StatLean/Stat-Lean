@@ -34,23 +34,38 @@ noncomputable def chiSquared (k : ℕ) : Measure ℝ := gammaMeasure ((k : ℝ) 
 /-- `χ²ₖ` is a probability measure for `k ≥ 1`. -/
 instance isProbabilityMeasure_chiSquared (k : ℕ) [NeZero k] :
     IsProbabilityMeasure (chiSquared k) := by
-  sorry
+  have hk : (0 : ℝ) < k := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne k)
+  unfold chiSquared
+  exact isProbabilityMeasure_gammaMeasure (by linarith) (by norm_num)
 
 /-- **MGF of `χ²ₖ`**: `E[e^{tX}] = ((1/2)/((1/2)−t))^{k/2}` for `t < 1/2` (`k ≥ 1`) — the
 χ² moment generating function `(1−2t)^{−k/2}`. From `mgf_gammaMeasure`. -/
 theorem mgf_chiSquared {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : t < 1 / 2) :
     ∫ x, Real.exp (t * x) ∂(chiSquared k) = ((1 / 2) / ((1 / 2) - t)) ^ ((k : ℝ) / 2) := by
-  sorry
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  unfold chiSquared
+  exact mgf_gammaMeasure (by linarith) (by norm_num) ht
 
 /-- **Mean of `χ²ₖ`**: `E[X] = k` (`k ≥ 1`). From the Gamma mean `a/r` at `a=k/2`, `r=1/2`. -/
 theorem integral_id_chiSquared {k : ℕ} (hk : 0 < k) :
     ∫ x, x ∂(chiSquared k) = (k : ℝ) := by
-  sorry
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  unfold chiSquared
+  rw [integral_id_gammaMeasure (by linarith) (by norm_num)]
+  ring
 
 /-- **Variance of `χ²ₖ`**: `E[(X−k)²] = 2k` (`k ≥ 1`). From the Gamma variance `a/r²`. -/
 theorem variance_chiSquared {k : ℕ} (hk : 0 < k) :
     ∫ x, (x - (k : ℝ)) ^ 2 ∂(chiSquared k) = 2 * (k : ℝ) := by
-  sorry
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  have ha : (0 : ℝ) < (k : ℝ) / 2 := by linarith
+  have hr : (0 : ℝ) < (1 : ℝ) / 2 := by norm_num
+  have hcenter : ((k : ℝ) / 2) / (1 / 2) = (k : ℝ) := by ring
+  have hvar := variance_gammaMeasure ha hr
+  rw [hcenter] at hvar
+  unfold chiSquared
+  rw [hvar]
+  ring
 
 /-- **Sum-of-squares law** (Candès L2 §2.3): for i.i.d. `Zᵢ ∼ N(0,1)`, `∑ᵢ Zᵢ² ∼ χ²ₙ`.
 The exact distributional identity behind the chi-squared test statistic `Tₙ = ‖Y‖²` under `H₀`. -/
