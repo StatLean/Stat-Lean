@@ -41,7 +41,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-CHI | `mt/chisq-test` | `ChiSquaredTest/Distribution` | GAUSS,CHISQ | ● | ✅ real (merged, 0-sorry) |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
 | U-BHM | `mt/bh-martingale` | `BHMartingale` | BH (leave-one-out) | ◆ | ✅ real (merged, 0-sorry) — T5 |
-| U-STO | `mt/storey` | `Storey` | reverse-MG,BinomialRatio | ◆ | ⚠ stated + 2 documented debts (reverse-MG OST core) — T6 |
+| U-STO | `mt/storey` | `Storey` | reverse-MG,BinomialRatio | ◆ | ✅ FDR≤q assembled real, modulo 3 isolated cruxes (reverseMG-OST, binom-law, threshold-attain) — T6 |
 | U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | ✅ union bound + reduction real; sharp crux isolated → `countLE_reflection_bound` (1 debt) |
 | U-KS | `mt/ks-test` | `GoodnessOfFit/KolmogorovSmirnov` | EMPCDF,MASSART | ● | ✅ real (merged, 0-sorry) |
 | U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` | EMPCDF,Donsker | ◆◆ | ✅ boundary+statistic+H₀ Donsker (`halfLine_isPDonsker`) real; detection theorem deferred (LIL+H₁), 3 framework debts |
