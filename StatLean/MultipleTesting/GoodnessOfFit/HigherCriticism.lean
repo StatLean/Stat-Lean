@@ -52,6 +52,7 @@ residual gaps for Theorem 3 are (i) the empirical-process LIL threshold calibrat
 
 open MeasureTheory
 open AsymptoticStatistics.EmpiricalProcess
+open scoped ENNReal
 
 namespace StatLean.MultipleTesting
 
@@ -146,17 +147,158 @@ theorem halfLineClass_bracketingEntropyIntegral_lt_top
     bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
   sorry
 
+/-! ### Helper lemmas for the half-line bracketing analysis -/
+
+/-- The integrand of `bracketingEntropyIntegral` for the half-line class at scale
+`ε`: `√(log N_[](ε))`, with the `⊤` convention when `N_[](ε) = ⊤`. -/
+private noncomputable def bracketIntegrand (P : Measure ℝ) (ε : ℝ) : ℝ≥0∞ :=
+  ENat.recTopCoe (⊤ : ℝ≥0∞)
+    (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (n : ℝ))))
+    (bracketingNumber ε halfLineClass 2 P)
+
+private lemma bracketingEntropyIntegral_eq (P : Measure ℝ) (δ : ℝ) :
+    bracketingEntropyIntegral δ halfLineClass P
+      = ∫⁻ ε in Set.Ioc (0 : ℝ) δ, bracketIntegrand P ε ∂volume := rfl
+
+
+/-- The difference of two half-line indicators is the indicator of the in-between
+half-open interval: `𝟙_{(−∞,t]} − 𝟙_{(−∞,s]} = 𝟙_{(s,t]}` for `s ≤ t`. -/
+private lemma indicator_Iic_sub (s t : ℝ) (h : s ≤ t) :
+    (Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)))
+        - (Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)))
+      = Set.indicator (Set.Ioc s t) (fun _ => (1 : ℝ)) := by
+  funext x
+  simp only [Pi.sub_apply, Set.indicator_apply, Set.mem_Iic, Set.mem_Ioc]
+  by_cases hxt : x ≤ t
+  · by_cases hxs : x ≤ s
+    · simp [hxt, hxs, not_lt.2 hxs]
+    · simp [hxt, hxs, not_le.1 hxs]
+  · have hns : ¬ x ≤ s := fun hxs => hxt (hxs.trans h)
+    simp [hxt, hns]
+
+/-- The `L²(P)`-size of the half-line bracket `[𝟙_{(−∞,s]}, 𝟙_{(−∞,t]}]` is the
+square root of the `P`-mass of the in-between interval: `√(P((s,t]))`. -/
+private lemma eLpNorm_indicator_Iic_diff (P : Measure ℝ) {s t : ℝ} (hst : s ≤ t) :
+    eLpNorm (fun x => Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                    - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x) 2 P
+      = (P (Set.Ioc s t)) ^ (1 / 2 : ℝ) := by
+  have hfun : (fun x => Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                      - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x)
+            = -(Set.indicator (Set.Ioc s t) (fun _ => (1 : ℝ))) := by
+    funext x
+    have := congrFun (indicator_Iic_sub s t hst) x
+    simp only [Pi.sub_apply, Pi.neg_apply] at this ⊢
+    linarith [this]
+  rw [hfun, eLpNorm_neg,
+      eLpNorm_indicator_const measurableSet_Ioc (by norm_num) (by norm_num)]
+  simp
+
+/-- There exist `s < t` with `P((s,t]) > 0`: a probability measure on `ℝ` cannot be
+null on every bounded half-open interval (they exhaust `ℝ`). -/
+private lemma exists_Ioc_pos (P : Measure ℝ) [IsProbabilityMeasure P] :
+    ∃ s t : ℝ, s < t ∧ 0 < P (Set.Ioc s t) := by
+  have huniv : (⋃ n : ℕ, Set.Ioc (-(n : ℝ) - 1) ((n : ℝ) + 1)) = Set.univ := by
+    ext x
+    simp only [Set.mem_iUnion, Set.mem_Ioc, Set.mem_univ, iff_true]
+    obtain ⟨n, hn⟩ := exists_nat_ge |x|
+    refine ⟨n, ?_, ?_⟩
+    · have : -x ≤ (n : ℝ) := (neg_le_abs x).trans hn
+      linarith
+    · exact (le_abs_self x).trans (hn.trans (by linarith))
+  have hne : P (⋃ n : ℕ, Set.Ioc (-(n : ℝ) - 1) ((n : ℝ) + 1)) ≠ 0 := by
+    rw [huniv, measure_univ]; exact one_ne_zero
+  obtain ⟨n, hn⟩ := exists_measure_pos_of_not_measure_iUnion_null hne
+  exact ⟨_, _, by linarith [Nat.cast_nonneg (α := ℝ) n], hn⟩
+
+/-- **Lower bound on the bracketing number.** If `P((s,t]) > 0` and
+`ε ≤ √(P((s,t]))` (so the indicators `𝟙_{(−∞,s]}` and `𝟙_{(−∞,t]}` are
+`ε`-separated in `L²(P)`), then no single `ε`-bracket can cover both, forcing
+`N_[](ε, F_cdf, L²(P)) ≥ 2`. -/
+private lemma two_le_bracketingNumber_of_Ioc_pos
+    (P : Measure ℝ) {ε : ℝ} {s t : ℝ} (hst : s < t)
+    (hsep : ENNReal.ofReal ε ≤ (P (Set.Ioc s t)) ^ (1 / 2 : ℝ)) :
+    2 ≤ bracketingNumber ε halfLineClass 2 P := by
+  rw [bracketingNumber]
+  refine le_iInf fun k => le_iInf fun hk => ?_
+  obtain ⟨l, u, hbr, hcov⟩ := hk
+  rcases Nat.lt_or_ge k 2 with hk2 | hk2
+  · exfalso
+    obtain ⟨i, hi⟩ := hcov _ ⟨s, rfl⟩
+    obtain ⟨j, hj⟩ := hcov _ ⟨t, rfl⟩
+    have hij : i = j := by
+      have h1 := i.isLt; have h2 := j.isLt; exact Fin.ext (by omega)
+    subst hij
+    have hbnd : ∀ x, ‖Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                      - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x‖ₑ
+                 ≤ ‖u i x - l i x‖ₑ := by
+      intro x
+      obtain ⟨hls, hsu⟩ := hi x
+      obtain ⟨hlt, htu⟩ := hj x
+      rw [Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs]
+      apply ENNReal.ofReal_le_ofReal
+      rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ u i x - l i x)]
+      exact abs_le.2 ⟨by linarith, by linarith⟩
+    have hmono := eLpNorm_mono_enorm (p := 2) (μ := P) hbnd
+    rw [eLpNorm_indicator_Iic_diff P hst.le] at hmono
+    have hsize := (hbr i).size_lt
+    exact absurd (lt_of_le_of_lt (hsep.trans hmono) hsize) (lt_irrefl _)
+  · exact_mod_cast hk2
+
 /-- **Bracketing-integral positivity for the empirical-CDF class** (inherited
 framework regularity input of `isPDonsker_of_finite_bracketing_entropy_integral`,
-vdV §19.2). For the half-line class this is genuinely *true* (not vacuous): for any
-`ε ≤ 1` the two extreme indicators `𝟙_∅`-like and `𝟙_ℝ`-like differ pointwise by
-`1`, so no single `ε`-bracket can cover both and `N_[](ε) ≥ 2`, whence the
-integrand `√(log N_[](ε)) ≥ √(log 2) > 0` on `(0, δ']` and the integral is
-positive. Lifted to a named debt: the `N_[](ε) ≥ 2` lower bound and the resulting
-positive-Lebesgue-integral estimate. -/
+vdV §19.2). For the half-line class this is genuinely *true* (not vacuous): pick
+`s < t` with `P((s,t]) > 0`; then for `ε ≤ √(P((s,t]))` no single `ε`-bracket can
+cover both `𝟙_{(−∞,s]}` and `𝟙_{(−∞,t]}`, so `N_[](ε) ≥ 2`, whence the integrand
+`√(log N_[](ε)) ≥ √(log 2) > 0` on a sub-interval of positive Lebesgue measure and
+the integral is positive. -/
 private theorem halfLineClass_J_pos (P : Measure ℝ) [IsProbabilityMeasure P] :
     ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' halfLineClass P := by
-  sorry
+  intro δ' hδ'
+  obtain ⟨s, t, hst, hpos⟩ := exists_Ioc_pos P
+  set c : ℝ≥0∞ := P (Set.Ioc s t) with hc
+  have hc_top : c ≠ ⊤ := measure_ne_top P _
+  set cr : ℝ := c.toReal with hcr
+  have hcr_pos : 0 < cr := ENNReal.toReal_pos hpos.ne' hc_top
+  set ε₀ : ℝ := min δ' (Real.sqrt cr) with hε₀
+  have hε₀_pos : 0 < ε₀ := lt_min hδ' (Real.sqrt_pos.2 hcr_pos)
+  have hε₀_le : ε₀ ≤ δ' := min_le_left _ _
+  have hkey : ∀ ε : ℝ, ε ≤ ε₀ → ENNReal.ofReal ε ≤ c ^ (1 / 2 : ℝ) := by
+    intro ε hε
+    have h2 : ENNReal.ofReal (Real.sqrt cr) = c ^ (1 / 2 : ℝ) := by
+      rw [Real.sqrt_eq_rpow, ← ENNReal.ofReal_rpow_of_nonneg hcr_pos.le (by norm_num),
+          hcr, ENNReal.ofReal_toReal hc_top]
+    rw [← h2]; exact ENNReal.ofReal_le_ofReal (hε.trans (min_le_right _ _))
+  have hlb : ∀ ε ∈ Set.Ioc (0 : ℝ) ε₀,
+      ENNReal.ofReal (Real.sqrt (Real.log 2)) ≤ bracketIntegrand P ε := by
+    intro ε hε
+    have h2 := two_le_bracketingNumber_of_Ioc_pos P hst (hkey ε hε.2)
+    unfold bracketIntegrand
+    generalize hm : bracketingNumber ε halfLineClass 2 P = m at h2 ⊢
+    induction m using ENat.recTopCoe with
+    | top => simp
+    | coe n =>
+      simp only [ENat.recTopCoe_coe]
+      have hn2 : (2 : ℕ) ≤ n := by exact_mod_cast h2
+      exact ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt
+        (Real.log_le_log (by norm_num) (by exact_mod_cast hn2)))
+  have hpos2 : (0 : ℝ) < Real.sqrt (Real.log 2) :=
+    Real.sqrt_pos.2 (Real.log_pos (by norm_num))
+  rw [bracketingEntropyIntegral_eq]
+  calc (0 : ℝ≥0∞)
+      < ENNReal.ofReal (Real.sqrt (Real.log 2)) * volume (Set.Ioc (0 : ℝ) ε₀) := by
+        apply ENNReal.mul_pos
+        · exact (ENNReal.ofReal_pos.2 hpos2).ne'
+        · rw [Real.volume_Ioc]
+          simp only [sub_zero]
+          exact (ENNReal.ofReal_pos.2 hε₀_pos).ne'
+    _ = ∫⁻ _ε in Set.Ioc (0 : ℝ) ε₀, ENNReal.ofReal (Real.sqrt (Real.log 2)) ∂volume :=
+        (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) ε₀, bracketIntegrand P ε ∂volume := by
+        apply lintegral_mono_ae
+        exact (ae_restrict_mem measurableSet_Ioc).mono fun ε hε => hlb ε hε
+    _ ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) δ', bracketIntegrand P ε ∂volume :=
+        lintegral_mono' (Measure.restrict_mono (Set.Ioc_subset_Ioc_right hε₀_le) le_rfl)
+          (fun _ => le_rfl)
 
 /-- **Maximal/chaining inequality for the empirical-CDF class** — the vdV
 Lemma 19.34 sup-norm bound, the framework input `hChainBound_outer` of
