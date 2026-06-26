@@ -10,7 +10,11 @@ and do NOT add a laundered detection theorem.
 - `StatLean/MultipleTesting/GoodnessOfFit/HigherCriticism.lean`
 
 The 3 `sorry`s are `halfLineClass_bracketingEntropyIntegral_lt_top`, `halfLineClass_J_pos`,
-`halfLineClass_chain_bound`. **READ the project's empirical-process library FIRST** — the exact
+`halfLineClass_chain_bound`. **⚠ A prior pass left 3 tactic errors in the `J_pos` proof (≈ lines
+197/202/267: "No goals", `linarith` fail, `rewrite` no-match) by not re-building at the end — ALWAYS
+finish on `lake build … ` exit 0; a `sorry` is acceptable, a tactic error is NOT.** `J_pos` is
+elementary (do it carefully and verify it compiles); the genuine crux is
+`bracketingEntropyIntegral_lt_top`. **READ the project's empirical-process library FIRST** — the exact
 definitions of bracketing number / entropy integral / the chaining hypotheses live there, and you
 must match them precisely:
 `./tools/api.sh StatLean/AsymptoticStatistics/EmpiricalProcess/DonskerBracketing.lean`,
