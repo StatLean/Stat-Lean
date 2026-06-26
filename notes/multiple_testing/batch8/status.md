@@ -1,12 +1,16 @@
 # Batch 8 — Candès STAT 300C — status
 
-**STATE: BATCH 8 COMPLETE** — all targets formalized on `mt/batch8` (off `main` @ `f043f2a`).
-**14 units fully 0-sorry** (incl. main theorems T4 BH-dependence, T5 BH-exact, T7 conformal,
-T8 empirical-Bayes; χ² exact law; KS test; goodness-of-fit). **3 documented debts only**: sharp
-Massart constant; U-STO's 2 (reverse-martingale OST core + the assembly atop it, T6 stated); U-HC's
-full Donoho–Jin detection theorem (honestly deferred in prose — boundary + statistic are 0-sorry).
-U-REVMG folded (BHM done via leave-one-out; STO's reverse-MG is the documented sorry). Reference:
-Candès STAT 300C. NOT yet merged to `main` / pushed to `origin`. See `outline.md`, ledger below.
+**STATE: BATCH 8 COMPLETE + debt-closing pass done** — all targets on `mt/batch8` (off `main` @
+`f043f2a`); `StatLean.MultipleTesting` builds with **7 precisely-isolated named-crux sorries**, all
+else 0-sorry. **14 units fully 0-sorry** (T4 BH-dependence, T5 BH-exact, T7 conformal, T8 empirical-
+Bayes; χ² exact law; KS test; e-values; goodness-of-fit). After the debt pass, the 3 remaining debts'
+**main theorems are now PROVED MODULO** named cruxes (the surrounding reductions/assemblies are real):
+`massart_inequality` modulo `countLE_reflection_bound` (1); `storey_fdr_le` modulo 3
+(`storey_reverseMG_ost`, `storey_binom_bound`, `storey_threshold_attained`); `halfLine_isPDonsker`
+(new H₀ Donsker theorem) modulo 3 framework lemmas. The 7 cruxes
+are the irreducible Mathlib-absent pieces (empirical-process exponential-supermartingale, backwards-MG/
+uniform-null disintegration, half-line bracketing entropy). HC's full Donoho–Jin *detection* theorem
+stays honestly deferred (LIL + H₁ large deviations). NOT merged to `main` / pushed to `origin`.
 
 **API correction:** `ProbabilityTheory.Exchangeable` is **NOT** in Mathlib v4.29.1 (loogle 0 hits —
 the Batch-8 exploration agent was wrong). U-RANK / U-CONF must **define exchangeability ourselves**
