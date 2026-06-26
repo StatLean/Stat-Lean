@@ -57,15 +57,22 @@ noncomputable def rhoStar (β : ℝ) : ℝ :=
 (`3/4 − 1/2 = 1/4 = (1 − √(1/4))²`): the boundary is continuous there. -/
 theorem rhoStar_continuous_at_junction :
     (3 / 4 : ℝ) - 1 / 2 = (1 - Real.sqrt (1 - 3 / 4)) ^ 2 := by
-  sorry
+  have h : Real.sqrt (1 - 3 / 4) = 1 / 2 := by
+    rw [show (1 - 3 / 4 : ℝ) = (1 / 2) ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  rw [h]; norm_num
 
 /-- The detection boundary is nonnegative on the sparse range `1/2 < β ≤ 1`. -/
 theorem rhoStar_nonneg {β : ℝ} (hβ0 : 1 / 2 < β) (hβ1 : β ≤ 1) : 0 ≤ rhoStar β := by
-  sorry
+  unfold rhoStar
+  split_ifs
+  · linarith
+  · exact sq_nonneg _
 
 /-- At the densest sparse endpoint `β = 1`, `ρ*(1) = 1` (the Bonferroni detection threshold). -/
 theorem rhoStar_one : rhoStar 1 = 1 := by
-  sorry
+  unfold rhoStar
+  rw [if_neg (by norm_num), show (1 - 1 : ℝ) = 0 by norm_num, Real.sqrt_zero]
+  norm_num
 
 /-- The **Higher-Criticism statistic** `HC*ₙ = max_{0<α≤α₀} (F̂ₙ(α) − α)/√(α(1−α)/n)` (Candès,
 Lecture 3, §3.3.3; `F̂ₙ` is the empirical CDF `empiricalCDF p`). -/
