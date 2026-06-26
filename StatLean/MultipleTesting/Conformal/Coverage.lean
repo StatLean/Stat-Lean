@@ -31,12 +31,30 @@ theorem conformal_coverage {n : ℕ} {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1)
     (S : Fin (n + 1) → Ω → ℝ) (μ : Measure Ω) [IsProbabilityMeasure μ]
     -- USER-INPUT: each score is measurable; Candès L9 §9.6
     (hmeas : ∀ i, Measurable (S i))
-    -- USER-INPUT: the scores are exchangeable (calibration + test i.i.d./exchangeable); Candès L9 §9.6
+    -- USER-INPUT: the scores are exchangeable (calibration + test exchangeable); Candès L9 §9.6
     (hExch : Exchangeable S μ)
     -- USER-INPUT: the scores are a.s. pairwise distinct; Candès L9 §9.6
     (hdistinct : ∀ᵐ ω ∂μ, Function.Injective (fun i => S i ω)) :
     (ENNReal.ofReal (1 - α)) ≤
       μ {ω | rankOf S (Fin.last n) ω ≤ ⌈((n : ℝ) + 1) * (1 - α)⌉₊} := by
-  sorry
+  set k : ℕ := ⌈((n : ℝ) + 1) * (1 - α)⌉₊ with hkdef
+  -- Step 1: `k ≤ n+1`, since `(n+1)(1−α) ≤ n+1` as `1−α ≤ 1`.
+  have hk : k ≤ n + 1 := by
+    rw [hkdef]
+    refine Nat.ceil_le.mpr ?_
+    push_cast
+    nlinarith [hα0]
+  -- Step 2: rank uniformity gives `μ{rankOf ≤ k} = k/(n+1)`.
+  rw [measure_rankOf_le S μ hmeas hExch hdistinct (Fin.last n) hk]
+  -- Step 3: bridge `k/(n+1) = ofReal (k/(n+1)) ≥ ofReal (1−α)`.
+  have hnpos : (0 : ℝ) < ((n + 1 : ℕ) : ℝ) := by positivity
+  rw [← ENNReal.ofReal_natCast k, ← ENNReal.ofReal_natCast (n + 1),
+    ← ENNReal.ofReal_div_of_pos hnpos]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [le_div_iff₀ hnpos]
+  have hceil : ((n : ℝ) + 1) * (1 - α) ≤ (k : ℝ) := by
+    rw [hkdef]; exact Nat.le_ceil _
+  push_cast at hceil ⊢
+  nlinarith [hceil]
 
 end StatLean.MultipleTesting
