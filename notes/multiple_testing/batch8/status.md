@@ -1,7 +1,13 @@
 # Batch 8 — Candès STAT 300C — status
 
-**STATE:** Wave 0 in progress. Integration branch `mt/batch8` (off `main` @ `f043f2a`).
-Reference: Candès STAT 300C lecture notes. See `outline.md` for targets, DAG, reuse, constants.
+**STATE:** Phase A nearly complete — 5/6 merged 0-sorry (U-EV, U-EMPCDF, U-GAUSS, U-GAMMA, U-BHD/T4);
+U-EB (Phase B) closing; U-RANK remaining in Phase A. Integration branch `mt/batch8` (off `main` @
+`f043f2a`). Reference: Candès STAT 300C. See `outline.md` for targets, DAG, reuse, constants.
+
+**API correction:** `ProbabilityTheory.Exchangeable` is **NOT** in Mathlib v4.29.1 (loogle 0 hits —
+the Batch-8 exploration agent was wrong). U-RANK / U-CONF must **define exchangeability ourselves**
+(permutation-invariance of the joint law, `Measure.map (S∘σ) = Measure.map S`) and prove
+rank-uniformity from that symmetry. `IdentDistrib` + `iIndepFun` are available for the iid pieces.
 
 **Pipeline validated (2026-06-26):** U-EV vertical slice stub-gated GREEN on cluster —
 `StatLean.MultipleTesting.EValues.Conversion` builds (2421 jobs, exit 0), `EValues.Defs` 0-sorry,
@@ -26,7 +32,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | todo |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | todo |
-| U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | stub written (local; awaiting sync+gate) |
+| U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | gated green → closure running |
 | U-CONF | `mt/conformal` | `Conformal/{Defs,Coverage}` | RANK | ● | todo |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
 | U-BHM | `mt/bh-martingale` | `BHMartingale` | EMPCDF,REVMG | ◆ | todo |
