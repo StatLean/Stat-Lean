@@ -31,7 +31,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | ✅ real (merged, 0-sorry) |
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | gated green → closure running |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
-| U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | gated green → closure running (law=hard core) |
+| U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | ✅ 4 lemmas real (merged); **law = 1 named debt** (complexMGF route viable → follow-up) |
 | U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | ✅ real (merged, 0-sorry) — T8 |
 | U-CONF | `mt/conformal` | `Conformal/{Defs,Coverage}` | RANK | ● | todo |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
@@ -69,8 +69,14 @@ two orphaned-closure poll-harvests.
   conversion theorems were false under the Bochner form (counterexample `E ω = 2/ω` on `(0,1)`).
 
 ## Residual named debts
-(none yet — populated as units land; U-MASSART sharp-constant and U-HC Donsker/LIL are the
-anticipated documented-`sorry` debts.)
+- **`map_sum_sq_eq_chiSquared`** (`ForMathlib/ChiSquared.lean`) — the exact law `∑Zᵢ²~χ²ₙ`. 4 χ²
+  distributional lemmas closed 0-sorry; the law is 1 named sorry. **Viable route recorded in the
+  proof**: `eqOn_complexMGF_of_mgf` + `complexMGF_mul_I` + `ext_of_charFun` reduce it to two real
+  obligations — (A) global MGF equality `∑Zᵢ² mgf = χ²ₖ mgf` (from the squared-Gaussian real MGF
+  `∫exp(lz²)dN(0,1)=(1−2l)^{−1/2}` in CompressedSensing/GaussianChiSquared — promote to ForMathlib —
+  + `iIndepFun.mgf_sum` + rpow algebra), (B) integrability neighborhood `0 ∈ interior(integrableExpSet)`.
+  **Follow-up unit `U-CHISQ-LAW`** to close it (the user requested the exact law). Anticipated:
+  U-MASSART sharp-constant, U-HC Donsker/LIL.
 
 ## Book-vs-Lean constants
 (populated as units land.)
