@@ -16,7 +16,6 @@ import StatLean.MultipleTesting.ForMathlib.EmpiricalProcessSup
 import StatLean.MultipleTesting.BenjaminiHochberg
 import StatLean.MultipleTesting.BHDependence
 import StatLean.MultipleTesting.BHMartingale
-import StatLean.MultipleTesting.Storey
 import StatLean.MultipleTesting.HolmBonferroni
 import StatLean.MultipleTesting.Knockoff.Procedure
 import StatLean.MultipleTesting.Knockoff.FdpBound
