@@ -19,7 +19,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 
 | Unit | Branch | File(s) | Dep | Diff | Status |
 |---|---|---|---|---|---|
-| U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | gated green; closing |
+| U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | Defs bug fixed (lintegral); re-closing |
 | U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | todo |
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ● | todo |
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | stub written |
@@ -49,6 +49,14 @@ Concept `Defs.lean` (laptop-only, no sorry): `EValues/Defs` ✓ written;
 
 U-EV taken end-to-end first (Defs + assembly stub + umbrella + prompt) to validate the pipeline
 (conventions compile, cluster stub-gate, worktree mechanics) before mass-producing the rest.
+
+## Lessons / gotchas
+- **Bochner `∫ f ∂μ ≤ C` is unsound for "expectation ≤ C" predicates.** Mathlib's Bochner integral
+  of a *non-integrable* function is `0` (`integral_undef`), so a nonneg non-integrable `f` satisfies
+  `∫ f ≤ C` vacuously with infinite true expectation. Use the **lintegral** `∫⁻ ofReal(f) ∂μ ≤ C`
+  (genuine expectation for nonneg `f`; bound forces finiteness ⇒ integrability). Caught by the
+  cluster gate on U-EV — `IsEVariable.expectation_le_one` switched Bochner→lintegral; both
+  conversion theorems were false under the Bochner form (counterexample `E ω = 2/ω` on `(0,1)`).
 
 ## Residual named debts
 (none yet — populated as units land; U-MASSART sharp-constant and U-HC Donsker/LIL are the
