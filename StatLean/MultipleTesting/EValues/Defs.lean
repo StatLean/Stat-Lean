@@ -32,10 +32,15 @@ structure IsEVariable (E : Ω → ℝ) (μ : Measure Ω) : Prop where
   /-- Constitutive (Candès, L15, Def. 3): an e-variable is a *nonnegative* random variable. -/
   nonneg : ∀ ω, 0 ≤ E ω
   /-- Constitutive (Candès, L15, Def. 3): `E` is a statistic, hence measurable — needed for the
-  expectation in `integral_le_one` to be the genuine null expectation. -/
+  expectation in `expectation_le_one` to be the genuine null expectation. -/
   measurable : Measurable E
-  /-- Constitutive (Candès, L15, Def. 3): the defining inequality `Eμ[E] ≤ 1`. -/
-  integral_le_one : ∫ ω, E ω ∂μ ≤ 1
+  /-- Constitutive (Candès, L15, Def. 3): the defining inequality `Eμ[E] ≤ 1`, stated as the
+  **lower integral** of `ofReal ∘ E`. For a nonnegative measurable `E` this `∫⁻` is the genuine
+  (possibly `∞`) expectation, so bounding it by `1` both encodes `Eμ[E] ≤ 1` *and* witnesses
+  finiteness — forcing integrability of `E`. (The Bochner form `∫ E ∂μ ≤ 1` is unsound here: a
+  non-integrable nonneg `E` has Bochner integral `0 ≤ 1` *vacuously*, so it would qualify with
+  infinite true expectation and break the e→p conversion.) -/
+  expectation_le_one : ∫⁻ ω, ENNReal.ofReal (E ω) ∂μ ≤ 1
 
 /-- `IsPVariable P μ`: the statistic `P : Ω → ℝ` is a **p-variable** for the simple null `μ`
 (Candès, Lecture 15, Def. 4, STAT 300C) — `μ{P ≤ α} ≤ α` for every `α ∈ (0,1)`. This is the
