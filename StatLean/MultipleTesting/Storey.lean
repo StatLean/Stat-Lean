@@ -244,6 +244,22 @@ private lemma storey_nulls_pos (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀
   convert h0 using 2
   ext ω; simp [not_lt]
 
+/-- The real-arithmetic core of the pointwise FDP bound: from the threshold attainment
+`c·τ ≤ q·MR` and `2·den ≤ c` (with `MR, den, τ > 0`, `V ≥ 0`), conclude
+`V/MR ≤ q·(V/τ)·(1/2)/den`. Here `c = π̂₀·n`, `MR = R(τ)∨1`, `den = 1+n₀−V(1/2)`. -/
+private lemma storey_arith (V MR den τ q c : ℝ)
+    (hV : 0 ≤ V) (hMR : 0 < MR) (hden : 0 < den) (hτ : 0 < τ)
+    (hc2 : 2 * den ≤ c) (hatt : c * τ ≤ q * MR) :
+    V / MR ≤ q * (V / τ * (1 / 2 / den)) := by
+  have h2 : 2 * den * τ ≤ q * MR := le_trans (mul_le_mul_of_nonneg_right hc2 hτ.le) hatt
+  have hkey : V * (2 * den * τ) ≤ q * V * MR := by
+    nlinarith [mul_le_mul_of_nonneg_left h2 hV]
+  rw [div_le_iff₀ hMR]
+  have hRHS : q * (V / τ * (1 / 2 / den)) * MR = q * V * MR / (2 * den * τ) := by
+    field_simp [hτ.ne', hden.ne']
+  rw [hRHS, le_div_iff₀ (by positivity)]
+  exact hkey
+
 /-- **Pointwise FDP bound** (threshold attainment, in counting-process form): a.e.,
 `V(τ)/(R(τ)∨1) ≤ q · (V(τ)/τ) · (1/2)/(1+n₀−V(1/2))`. The `τ = 0` branch uses
 `storey_nulls_pos` (then `V(0) = 0`); the `τ > 0` branch combines `storey_threshold_attained`
@@ -254,7 +270,49 @@ private lemma storey_FDP_le_bound (μ : Measure Ω) [IsProbabilityMeasure μ] (H
     ∀ᵐ ω ∂μ, (nullCountLE H₀ p (storeyThreshold p q ω) ω : ℝ)
         / max (countLE p (storeyThreshold p q ω) ω : ℝ) 1
       ≤ q * storeyLHSint H₀ p q ω := by
-  sorry
+  filter_upwards [storey_nulls_pos μ H₀ p hnull] with ω hpos
+  simp only [storeyLHSint]
+  have hMR0 : (0 : ℝ) < max (countLE p (storeyThreshold p q ω) ω : ℝ) 1 :=
+    lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hden0 : 0 < storeyDenom H₀ p ω := storeyDenom_pos H₀ p ω
+  have hτnn : 0 ≤ storeyThreshold p q ω := storeyThreshold_nonneg p hq0 ω
+  by_cases hVz : nullCountLE H₀ p (storeyThreshold p q ω) ω = 0
+  · rw [hVz]; simp
+  · -- V(τ) > 0
+    have hVpos : (0 : ℝ) < (nullCountLE H₀ p (storeyThreshold p q ω) ω : ℝ) := by
+      have := Nat.pos_of_ne_zero hVz; exact_mod_cast this
+    -- V(τ) > 0 forces n > 0
+    have hnpos : 0 < n := by
+      rcases Nat.eq_zero_or_pos n with h | h
+      · subst h
+        exact absurd (by simp [Finset.eq_empty_of_isEmpty H₀, nullCountLE]) hVz
+      · exact h
+    have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hnpos.ne'
+    -- τ > 0 (else V(τ)=V(0)=0 by nulls positive)
+    rcases eq_or_lt_of_le hτnn with hτ0 | hτpos
+    · exfalso
+      apply hVz
+      have h0 : nullCountLE H₀ p 0 ω = 0 := by
+        unfold nullCountLE
+        rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+        intro j hj; exact not_le.mpr (hpos j hj)
+      rw [← hτ0]; exact h0
+    · -- main branch: apply the arithmetic core
+      set c : ℝ := storeyPiZero p ω * (n : ℝ) with hcdef
+      have hc_eq : c = 2 * (1 + (n : ℝ) - (countLE p (1 / 2) ω : ℝ)) := by
+        rw [hcdef]; unfold storeyPiZero; field_simp
+      have hcast : (countLE p (1 / 2) ω : ℝ) + (H₀.card : ℝ)
+          ≤ (nullCountLE H₀ p (1 / 2) ω : ℝ) + (n : ℝ) := by
+        exact_mod_cast countLE_add_card_le H₀ p (1 / 2) ω
+      have hc2 : 2 * storeyDenom H₀ p ω ≤ c := by
+        rw [hc_eq]; unfold storeyDenom; linarith
+      have hatt0 := storey_threshold_attained p hq0 ω
+      simp only [storeyFDRhat] at hatt0
+      rw [div_le_iff₀ hMR0] at hatt0
+      have hatt : c * storeyThreshold p q ω
+          ≤ q * max (countLE p (storeyThreshold p q ω) ω : ℝ) 1 := by
+        rw [hcdef]; exact hatt0
+      exact storey_arith _ _ _ _ q c hVpos.le hMR0 hden0 hτpos hc2 hatt
 
 /-- **Storey's procedure controls FDR** (Candès, Lecture 7, §7.4, Theorem 3, STAT 300C). For
 independent uniform null p-values, `FDR ≤ q`.
