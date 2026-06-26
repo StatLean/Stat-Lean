@@ -3,6 +3,7 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.Donsker
 import StatLean.AsymptoticStatistics.EmpiricalProcess.DonskerBracketing
 import StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Probability.CDF
 
 /-!
 # Higher Criticism and the detection boundary (Candès, Lecture 3, §3.3.3, Theorem 3)
@@ -52,6 +53,8 @@ residual gaps for Theorem 3 are (i) the empirical-process LIL threshold calibrat
 
 open MeasureTheory
 open AsymptoticStatistics.EmpiricalProcess
+open ProbabilityTheory
+open scoped ENNReal
 
 namespace StatLean.MultipleTesting
 
@@ -123,40 +126,158 @@ theorem halfLineClass_measurable {f : ℝ → ℝ} (hf : f ∈ halfLineClass) : 
   obtain ⟨t, rfl⟩ := hf
   exact measurable_const.indicator measurableSet_Iic
 
-/-- **Bracketing-entropy bound for the empirical-CDF class** (vdV §19.2 Example
-19.6): the half-line class has bracketing number `N_[](ε, F_cdf, L²(P)) ≲ 1/ε²`,
-so the Donsker entropy integral `J_[](1, F_cdf, L²(P)) = ∫₀¹ √(log N_[](ε)) dε`
-is finite.
+/-! ### Helper lemmas for the half-line bracketing analysis -/
 
-**Proof (the one remaining named debt, `sorry` below).** Fix `ε ∈ (0,1]`. Let
-`F = cdf P` (monotone, right-continuous, `F(−∞)=0`, `F(+∞)=1`). Choose grid points
-`−∞ = t₀ < t₁ < … < t_m = +∞` with `m ≤ ⌈1/ε²⌉ + 1` and `P((t_{i−1}, t_i]) ≤ ε²`
-for every `i` (a `P`-mass partition; atoms of mass `> ε²` are placed as their own
-grid points, which only adds the `+1`). The brackets are
-`[𝟙_{(−∞,t_{i−1}]}, 𝟙_{(−∞,t_i]}]`: for any `t ∈ [t_{i−1}, t_i)` we have pointwise
-`𝟙_{(−∞,t_{i−1}]} ≤ 𝟙_{(−∞,t]} ≤ 𝟙_{(−∞,t_i]}`, and the `L²(P)`-size is
-`‖𝟙_{(−∞,t_i]} − 𝟙_{(−∞,t_{i−1}]}‖_{L²(P)} = √(P((t_{i−1}, t_i]})) ≤ ε`. Hence
-`N_[](ε) ≤ ⌈1/ε²⌉ + 1`, giving `√(log N_[](ε)) ≲ √(2 log(1/ε))`, which is Lebesgue-
-integrable on `(0,1]`; therefore `J_[](1) < ⊤`. The quantile-grid construction (a
-measure-theoretic partition of `ℝ` into `P`-mass-`≤ ε²` pieces, valid for any law
-including atomic ones) plus the `√log(1/ε)` integrability estimate are the content
-deferred to this named lemma. -/
-theorem halfLineClass_bracketingEntropyIntegral_lt_top
-    (P : Measure ℝ) [IsProbabilityMeasure P] :
-    bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
-  sorry
+/-- The integrand of `bracketingEntropyIntegral` for the half-line class at scale
+`ε`: `√(log N_[](ε))`, with the `⊤` convention when `N_[](ε) = ⊤`. -/
+private noncomputable def bracketIntegrand (P : Measure ℝ) (ε : ℝ) : ℝ≥0∞ :=
+  ENat.recTopCoe (⊤ : ℝ≥0∞)
+    (fun n : ℕ => ENNReal.ofReal (Real.sqrt (Real.log (n : ℝ))))
+    (bracketingNumber ε halfLineClass 2 P)
+
+private lemma bracketingEntropyIntegral_eq (P : Measure ℝ) (δ : ℝ) :
+    bracketingEntropyIntegral δ halfLineClass P
+      = ∫⁻ ε in Set.Ioc (0 : ℝ) δ, bracketIntegrand P ε ∂volume := rfl
+
+
+/-- The difference of two half-line indicators is the indicator of the in-between
+half-open interval: `𝟙_{(−∞,t]} − 𝟙_{(−∞,s]} = 𝟙_{(s,t]}` for `s ≤ t`. -/
+private lemma indicator_Iic_sub (s t : ℝ) (h : s ≤ t) :
+    (Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)))
+        - (Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)))
+      = Set.indicator (Set.Ioc s t) (fun _ => (1 : ℝ)) := by
+  funext x
+  simp only [Pi.sub_apply, Set.indicator_apply, Set.mem_Iic, Set.mem_Ioc]
+  by_cases hxt : x ≤ t
+  · by_cases hxs : x ≤ s
+    · simp [hxt, hxs, not_lt.2 hxs]
+    · simp [hxt, hxs, not_le.1 hxs]
+  · have hns : ¬ x ≤ s := fun hxs => hxt (hxs.trans h)
+    simp [hxt, hns]
+
+/-- The `L²(P)`-size of the half-line bracket `[𝟙_{(−∞,s]}, 𝟙_{(−∞,t]}]` is the
+square root of the `P`-mass of the in-between interval: `√(P((s,t]))`. -/
+private lemma eLpNorm_indicator_Iic_diff (P : Measure ℝ) {s t : ℝ} (hst : s ≤ t) :
+    eLpNorm (fun x => Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                    - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x) 2 P
+      = (P (Set.Ioc s t)) ^ (1 / 2 : ℝ) := by
+  have hfun : (fun x => Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                      - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x)
+            = -(Set.indicator (Set.Ioc s t) (fun _ => (1 : ℝ))) := by
+    funext x
+    have := congrFun (indicator_Iic_sub s t hst) x
+    simp only [Pi.sub_apply, Pi.neg_apply] at this ⊢
+    linarith [this]
+  rw [hfun, eLpNorm_neg,
+      eLpNorm_indicator_const measurableSet_Ioc (by norm_num) (by norm_num)]
+  simp
+
+/-- There exist `s < t` with `P((s,t]) > 0`: a probability measure on `ℝ` cannot be
+null on every bounded half-open interval (they exhaust `ℝ`). -/
+private lemma exists_Ioc_pos (P : Measure ℝ) [IsProbabilityMeasure P] :
+    ∃ s t : ℝ, s < t ∧ 0 < P (Set.Ioc s t) := by
+  have huniv : (⋃ n : ℕ, Set.Ioc (-(n : ℝ) - 1) ((n : ℝ) + 1)) = Set.univ := by
+    ext x
+    simp only [Set.mem_iUnion, Set.mem_Ioc, Set.mem_univ, iff_true]
+    obtain ⟨n, hn⟩ := exists_nat_ge |x|
+    refine ⟨n, ?_, ?_⟩
+    · have : -x ≤ (n : ℝ) := (neg_le_abs x).trans hn
+      linarith
+    · exact (le_abs_self x).trans (hn.trans (by linarith))
+  have hne : P (⋃ n : ℕ, Set.Ioc (-(n : ℝ) - 1) ((n : ℝ) + 1)) ≠ 0 := by
+    rw [huniv, measure_univ]; exact one_ne_zero
+  obtain ⟨n, hn⟩ := exists_measure_pos_of_not_measure_iUnion_null hne
+  exact ⟨_, _, by linarith [Nat.cast_nonneg (α := ℝ) n], hn⟩
+
+/-- **Lower bound on the bracketing number.** If `P((s,t]) > 0` and
+`ε ≤ √(P((s,t]))` (so the indicators `𝟙_{(−∞,s]}` and `𝟙_{(−∞,t]}` are
+`ε`-separated in `L²(P)`), then no single `ε`-bracket can cover both, forcing
+`N_[](ε, F_cdf, L²(P)) ≥ 2`. -/
+private lemma two_le_bracketingNumber_of_Ioc_pos
+    (P : Measure ℝ) {ε : ℝ} {s t : ℝ} (hst : s < t)
+    (hsep : ENNReal.ofReal ε ≤ (P (Set.Ioc s t)) ^ (1 / 2 : ℝ)) :
+    2 ≤ bracketingNumber ε halfLineClass 2 P := by
+  rw [bracketingNumber]
+  refine le_iInf fun k => le_iInf fun hk => ?_
+  obtain ⟨l, u, hbr, hcov⟩ := hk
+  rcases Nat.lt_or_ge k 2 with hk2 | hk2
+  · exfalso
+    obtain ⟨i, hi⟩ := hcov _ ⟨s, rfl⟩
+    obtain ⟨j, hj⟩ := hcov _ ⟨t, rfl⟩
+    have hij : i = j := by
+      have h1 := i.isLt; have h2 := j.isLt; exact Fin.ext (by omega)
+    subst hij
+    have hbnd : ∀ x, ‖Set.indicator (Set.Iic s) (fun _ => (1 : ℝ)) x
+                      - Set.indicator (Set.Iic t) (fun _ => (1 : ℝ)) x‖ₑ
+                 ≤ ‖u i x - l i x‖ₑ := by
+      intro x
+      obtain ⟨hls, hsu⟩ := hi x
+      obtain ⟨hlt, htu⟩ := hj x
+      rw [Real.enorm_eq_ofReal_abs, Real.enorm_eq_ofReal_abs]
+      apply ENNReal.ofReal_le_ofReal
+      rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ u i x - l i x)]
+      exact abs_le.2 ⟨by linarith, by linarith⟩
+    have hmono := eLpNorm_mono_enorm (p := 2) (μ := P) hbnd
+    rw [eLpNorm_indicator_Iic_diff P hst.le] at hmono
+    have hsize := (hbr i).size_lt
+    exact absurd (lt_of_le_of_lt (hsep.trans hmono) hsize) (lt_irrefl _)
+  · exact_mod_cast hk2
 
 /-- **Bracketing-integral positivity for the empirical-CDF class** (inherited
 framework regularity input of `isPDonsker_of_finite_bracketing_entropy_integral`,
-vdV §19.2). For the half-line class this is genuinely *true* (not vacuous): for any
-`ε ≤ 1` the two extreme indicators `𝟙_∅`-like and `𝟙_ℝ`-like differ pointwise by
-`1`, so no single `ε`-bracket can cover both and `N_[](ε) ≥ 2`, whence the
-integrand `√(log N_[](ε)) ≥ √(log 2) > 0` on `(0, δ']` and the integral is
-positive. Lifted to a named debt: the `N_[](ε) ≥ 2` lower bound and the resulting
-positive-Lebesgue-integral estimate. -/
+vdV §19.2). For the half-line class this is genuinely *true* (not vacuous): pick
+`s < t` with `P((s,t]) > 0`; then for `ε ≤ √(P((s,t]))` no single `ε`-bracket can
+cover both `𝟙_{(−∞,s]}` and `𝟙_{(−∞,t]}`, so `N_[](ε) ≥ 2`, whence the integrand
+`√(log N_[](ε)) ≥ √(log 2) > 0` on a sub-interval of positive Lebesgue measure and
+the integral is positive. -/
 private theorem halfLineClass_J_pos (P : Measure ℝ) [IsProbabilityMeasure P] :
     ∀ δ' : ℝ, 0 < δ' → 0 < bracketingEntropyIntegral δ' halfLineClass P := by
-  sorry
+  intro δ' hδ'
+  obtain ⟨s, t, hst, hpos⟩ := exists_Ioc_pos P
+  set c : ℝ≥0∞ := P (Set.Ioc s t) with hc
+  have hc_top : c ≠ ⊤ := measure_ne_top P _
+  set cr : ℝ := c.toReal with hcr
+  have hcr_pos : 0 < cr := ENNReal.toReal_pos hpos.ne' hc_top
+  set ε₀ : ℝ := min δ' (Real.sqrt cr) with hε₀
+  have hε₀_pos : 0 < ε₀ := lt_min hδ' (Real.sqrt_pos.2 hcr_pos)
+  have hε₀_le : ε₀ ≤ δ' := min_le_left _ _
+  have hkey : ∀ ε : ℝ, ε ≤ ε₀ → ENNReal.ofReal ε ≤ c ^ (1 / 2 : ℝ) := by
+    intro ε hε
+    have h2 : ENNReal.ofReal (Real.sqrt cr) = c ^ (1 / 2 : ℝ) := by
+      rw [Real.sqrt_eq_rpow, ← ENNReal.ofReal_rpow_of_nonneg hcr_pos.le (by norm_num),
+          hcr, ENNReal.ofReal_toReal hc_top]
+    rw [← h2]; exact ENNReal.ofReal_le_ofReal (hε.trans (min_le_right _ _))
+  have hlb : ∀ ε ∈ Set.Ioc (0 : ℝ) ε₀,
+      ENNReal.ofReal (Real.sqrt (Real.log 2)) ≤ bracketIntegrand P ε := by
+    intro ε hε
+    have h2 := two_le_bracketingNumber_of_Ioc_pos P hst (hkey ε hε.2)
+    unfold bracketIntegrand
+    generalize hm : bracketingNumber ε halfLineClass 2 P = m at h2 ⊢
+    induction m using ENat.recTopCoe with
+    | top => simp
+    | coe n =>
+      simp only [ENat.recTopCoe_coe]
+      have hn2 : (2 : ℕ) ≤ n := by exact_mod_cast h2
+      exact ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt
+        (Real.log_le_log (by norm_num) (by exact_mod_cast hn2)))
+  have hpos2 : (0 : ℝ) < Real.sqrt (Real.log 2) :=
+    Real.sqrt_pos.2 (Real.log_pos (by norm_num))
+  rw [bracketingEntropyIntegral_eq]
+  calc (0 : ℝ≥0∞)
+      < ENNReal.ofReal (Real.sqrt (Real.log 2)) * volume (Set.Ioc (0 : ℝ) ε₀) := by
+        apply ENNReal.mul_pos
+        · exact (ENNReal.ofReal_pos.2 hpos2).ne'
+        · rw [Real.volume_Ioc]
+          simp only [sub_zero]
+          exact (ENNReal.ofReal_pos.2 hε₀_pos).ne'
+    _ = ∫⁻ _ε in Set.Ioc (0 : ℝ) ε₀, ENNReal.ofReal (Real.sqrt (Real.log 2)) ∂volume :=
+        (setLIntegral_const _ _).symm
+    _ ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) ε₀, bracketIntegrand P ε ∂volume := by
+        apply lintegral_mono_ae
+        exact (ae_restrict_mem measurableSet_Ioc).mono fun ε hε => hlb ε hε
+    _ ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) δ', bracketIntegrand P ε ∂volume :=
+        lintegral_mono' (Measure.restrict_mono (Set.Ioc_subset_Ioc_right hε₀_le) le_rfl)
+          (fun _ => le_rfl)
 
 /-- **Maximal/chaining inequality for the empirical-CDF class** — the vdV
 Lemma 19.34 sup-norm bound, the framework input `hChainBound_outer` of
@@ -178,6 +299,374 @@ private theorem halfLineClass_chain_bound (P : Measure ℝ) [IsProbabilityMeasur
                   * ∫⁻ ω, ENNReal.ofReal (|Φ ω|)
                       * Set.indicator {x | δq * Real.sqrt n < |Φ x|} 1 ω ∂P) := by
   sorry
+
+/-! ### Crux 1: finite bracketing-entropy integral via a CDF-quantile grid
+
+We build, for each scale `ε ∈ (0,1]`, a finite `ε`-bracketing cover of the half-line
+class of size `≤ ⌈1/ε²⌉ + 1`, by partitioning `ℝ` into `P`-mass-`≤ ε²` pieces at the
+quantiles `hlQ P (j/N)` of the CDF `F = cdf P` (`N = ⌈1/ε²⌉ + 1`). The atom-robust
+brackets are `[𝟙_{(−∞, q_{j}]}, 𝟙_{(−∞, q_{j+1})}]` (upper open), whose `L²(P)`-size
+is `√(P((q_j, q_{j+1}))) = √(leftLim F q_{j+1} − F q_j) ≤ √(1/N) < ε`. -/
+
+/-- The `v`-quantile of `P`: the least `x` with `cdf P x ≥ v`. -/
+private noncomputable def hlQ (P : Measure ℝ) (v : ℝ) : ℝ :=
+  sInf {x : ℝ | v ≤ (cdf P) x}
+
+private lemma hlQ_nonempty (P : Measure ℝ) (v : ℝ) (hv1 : v < 1) :
+    {x : ℝ | v ≤ (cdf P) x}.Nonempty := by
+  obtain ⟨x, hx⟩ := ((tendsto_cdf_atTop P).eventually_const_lt hv1).exists
+  exact ⟨x, hx.le⟩
+
+private lemma hlQ_bddBelow (P : Measure ℝ) (v : ℝ) (hv0 : 0 < v) :
+    BddBelow {x : ℝ | v ≤ (cdf P) x} := by
+  have h := (tendsto_cdf_atBot P).eventually_lt_const hv0
+  rw [Filter.eventually_atBot] at h
+  obtain ⟨b, hb⟩ := h
+  refine ⟨b, fun x hx => ?_⟩
+  by_contra hxb
+  exact absurd (hb x (not_le.1 hxb).le) (not_lt.2 hx)
+
+private lemma hlQ_mono (P : Measure ℝ) {v w : ℝ} (hv0 : 0 < v) (hw1 : w < 1)
+    (hvw : v ≤ w) : hlQ P v ≤ hlQ P w := by
+  apply csInf_le_csInf (hlQ_bddBelow P v hv0) (hlQ_nonempty P w hw1)
+  exact fun x hx => le_trans hvw hx
+
+private lemma cdf_hlQ_ge (P : Measure ℝ) {v : ℝ} (hv0 : 0 < v) (hv1 : v < 1) :
+    v ≤ (cdf P) (hlQ P v) := by
+  have hgt : ∀ y, hlQ P v < y → v ≤ (cdf P) y := by
+    intro y hy
+    obtain ⟨x, hx, hxy⟩ := exists_lt_of_csInf_lt (hlQ_nonempty P v hv1) hy
+    exact le_trans hx ((monotone_cdf P) hxy.le)
+  have htend : Filter.Tendsto (cdf P)
+      (nhdsWithin (hlQ P v) (Set.Ioi (hlQ P v))) (nhds ((cdf P) (hlQ P v))) :=
+    ((cdf P).right_continuous (hlQ P v)).tendsto.mono_left
+      (nhdsWithin_mono _ Set.Ioi_subset_Ici_self)
+  refine ge_of_tendsto htend ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy using hgt y hy
+
+private lemma leftLim_cdf_hlQ_le (P : Measure ℝ) {v : ℝ} (hv0 : 0 < v) :
+    Function.leftLim (cdf P) (hlQ P v) ≤ v := by
+  have hlt : ∀ y, y < hlQ P v → (cdf P) y < v := by
+    intro y hy
+    by_contra h
+    push_neg at h
+    exact absurd (csInf_le (hlQ_bddBelow P v hv0) h) (not_le.2 hy)
+  refine le_of_tendsto ((monotone_cdf P).tendsto_leftLim (hlQ P v)) ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy using (hlt y hy).le
+
+/-- Quantile/CDF duality: `hlQ P v ≤ τ ↔ v ≤ cdf P τ` (for `0 < v < 1`). -/
+private lemma hlQ_le_iff (P : Measure ℝ) {v τ : ℝ} (hv0 : 0 < v) (hv1 : v < 1) :
+    hlQ P v ≤ τ ↔ v ≤ (cdf P) τ := by
+  constructor
+  · intro h; exact le_trans (cdf_hlQ_ge P hv0 hv1) ((monotone_cdf P) h)
+  · intro h; exact csInf_le (hlQ_bddBelow P v hv0) h
+
+/-- `L²(P)`-norm of a `{0,1}`-indicator is the square root of the set's `P`-mass. -/
+private lemma eLpNorm_indicator_one (P : Measure ℝ) {A : Set ℝ} (hA : MeasurableSet A) :
+    eLpNorm (Set.indicator A (fun _ => (1 : ℝ))) 2 P = (P A) ^ (1 / 2 : ℝ) := by
+  rw [eLpNorm_indicator_const hA (by norm_num) (by norm_num)]; simp
+
+private lemma measure_Iio_cdf (P : Measure ℝ) [IsProbabilityMeasure P] (b : ℝ) :
+    P (Set.Iio b) = ENNReal.ofReal (Function.leftLim (cdf P) b) := by
+  have h := StieltjesFunction.measure_Iio (cdf P) (tendsto_cdf_atBot P) b
+  rw [measure_cdf] at h
+  rw [h, sub_zero]
+
+private lemma measure_Ioo_cdf (P : Measure ℝ) [IsProbabilityMeasure P] (a b : ℝ) :
+    P (Set.Ioo a b) = ENNReal.ofReal (Function.leftLim (cdf P) b - (cdf P) a) := by
+  have h := StieltjesFunction.measure_Ioo (cdf P) (a := a) (b := b)
+  rw [measure_cdf] at h
+  rw [h]
+
+private lemma measure_Ioi_cdf (P : Measure ℝ) [IsProbabilityMeasure P] (a : ℝ) :
+    P (Set.Ioi a) = ENNReal.ofReal (1 - (cdf P) a) := by
+  have h := StieltjesFunction.measure_Ioi (cdf P) (tendsto_cdf_atTop P) a
+  rw [measure_cdf] at h
+  rw [h]
+
+/-- If `P A ≤ 1/N` and `1/N < ε²`, the indicator of `A` is a strict `ε`-small bracket size. -/
+private lemma eLpNorm_indicator_lt (P : Measure ℝ) {A : Set ℝ} (hA : MeasurableSet A)
+    {ε : ℝ} (hε : 0 < ε) {N : ℕ} (hN : (1 : ℝ) / N < ε ^ 2)
+    (hmass : P A ≤ ENNReal.ofReal (1 / N)) :
+    eLpNorm (Set.indicator A (fun _ => (1 : ℝ))) 2 P < ENNReal.ofReal ε := by
+  rw [eLpNorm_indicator_one P hA]
+  have hNnn : (0 : ℝ) ≤ 1 / N := by positivity
+  calc (P A) ^ (1 / 2 : ℝ)
+      ≤ (ENNReal.ofReal (1 / N)) ^ (1 / 2 : ℝ) := ENNReal.rpow_le_rpow hmass (by norm_num)
+    _ = ENNReal.ofReal (Real.sqrt (1 / N)) := by
+        rw [ENNReal.ofReal_rpow_of_nonneg hNnn (by norm_num), ← Real.sqrt_eq_rpow]
+    _ < ENNReal.ofReal ε := by
+        rw [ENNReal.ofReal_lt_ofReal_iff hε]
+        exact (Real.sqrt_lt' hε).2 hN
+
+/-- The difference `1 − 𝟙_{(−∞,a]} = 𝟙_{(a,∞)}` (upper end-block size). -/
+private lemma one_sub_indicator_Iic (a : ℝ) :
+    (fun x => (1 : ℝ) - Set.indicator (Set.Iic a) (fun _ => (1 : ℝ)) x)
+      = Set.indicator (Set.Ioi a) (fun _ => (1 : ℝ)) := by
+  funext x
+  simp only [Set.indicator_apply, Set.mem_Iic, Set.mem_Ioi]
+  by_cases hx : x ≤ a
+  · simp [hx, not_lt.2 hx]
+  · simp [hx, not_le.1 hx]
+
+/-- The difference `𝟙_{(−∞,a]∪(−∞,b)} − 𝟙_{(−∞,a]} = 𝟙_{(a,b)}` (middle-block size, `a ≤ b`). -/
+private lemma indicator_union_sub_Iic (a b : ℝ) :
+    (fun x => Set.indicator (Set.Iic a ∪ Set.Iio b) (fun _ => (1 : ℝ)) x
+            - Set.indicator (Set.Iic a) (fun _ => (1 : ℝ)) x)
+      = Set.indicator (Set.Ioo a b) (fun _ => (1 : ℝ)) := by
+  funext x
+  simp only [Set.indicator_apply, Set.mem_union, Set.mem_Iic, Set.mem_Iio, Set.mem_Ioo]
+  by_cases hxa : x ≤ a
+  · simp [hxa]
+  · by_cases hxb : x < b
+    · simp [hxa, hxb, not_le.1 hxa]
+    · simp [hxa, hxb]
+
+/-- **Half-line bracketing-number bound** (vdV §19.2 Example 19.6):
+`N_[](ε, F_cdf, L²(P)) ≤ ⌈1/ε²⌉ + 1` for `0 < ε ≤ 1`. The cover uses the CDF
+quantiles `q_j = hlQ P (j/N)` (`N = ⌈1/ε²⌉ + 1`), with atom-robust brackets
+`[𝟙_{(−∞,q_j]}, 𝟙_{(−∞,q_j]∪(−∞,q_{j+1})}]` of `L²(P)`-size `√(P((q_j,q_{j+1}))) < ε`. -/
+private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbabilityMeasure P]
+    {ε : ℝ} (hε0 : 0 < ε) :
+    bracketingNumber ε halfLineClass 2 P ≤ ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℕ∞) := by
+  set N : ℕ := Nat.ceil (1 / ε ^ 2) + 1 with hN
+  have hεsq : (0 : ℝ) < ε ^ 2 := by positivity
+  have hceil : 1 ≤ Nat.ceil (1 / ε ^ 2) := Nat.one_le_ceil_iff.2 (by positivity)
+  have hN2 : 2 ≤ N := by omega
+  have hNpos : 0 < N := by omega
+  have hNR : (0 : ℝ) < N := by exact_mod_cast hNpos
+  have hNε : (1 : ℝ) / N < ε ^ 2 := by
+    have h1 : (1 : ℝ) / ε ^ 2 ≤ Nat.ceil (1 / ε ^ 2) := Nat.le_ceil _
+    have h2 : (1 : ℝ) / ε ^ 2 < N := by rw [hN]; push_cast; linarith
+    rw [div_lt_iff₀ hNR]
+    rw [div_lt_iff₀ hεsq] at h2
+    nlinarith [h2]
+  set q : ℕ → ℝ := fun j => hlQ P ((j : ℝ) / (N : ℝ)) with hq
+  set loN : ℕ → ℝ → ℝ := fun m =>
+    if m = 0 then (fun _ => 0) else Set.indicator (Set.Iic (q m)) (fun _ => 1) with hloN
+  set upN : ℕ → ℝ → ℝ := fun m =>
+    if m + 1 = N then (fun _ => 1)
+    else if m = 0 then Set.indicator (Set.Iio (q 1)) (fun _ => 1)
+    else Set.indicator (Set.Iic (q m) ∪ Set.Iio (q (m + 1))) (fun _ => 1) with hupN
+  rw [bracketingNumber]
+  refine iInf_le_of_le N (iInf_le_of_le
+    ⟨fun i => loN i.val, fun i => upN i.val, ?_, ?_⟩ le_rfl)
+  · -- every block is an ε-bracket
+    intro i
+    obtain ⟨m, hmN⟩ := i
+    simp only [hloN, hupN]
+    by_cases hm0 : m = 0
+    · -- left end-block: [0, 𝟙_{(−∞, q₁)}]
+      subst hm0
+      rw [if_pos rfl, if_neg (by omega : ¬ (0 + 1 = N)), if_pos rfl]
+      refine ⟨fun x => Set.indicator_nonneg (fun _ _ => zero_le_one) x, measurable_const,
+        measurable_const.indicator measurableSet_Iio, memLp_const 0,
+        MemLp.indicator measurableSet_Iio (memLp_const 1), ?_⟩
+      have hsize : (fun x => Set.indicator (Set.Iio (q 1)) (fun _ => (1 : ℝ)) x
+                          - (fun _ => (0 : ℝ)) x)
+                 = Set.indicator (Set.Iio (q 1)) (fun _ => (1 : ℝ)) := by funext x; simp
+      rw [hsize]
+      refine eLpNorm_indicator_lt P measurableSet_Iio hε0 hNε ?_
+      rw [measure_Iio_cdf]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have hqeq : q 1 = hlQ P ((1 : ℝ) / N) := by simp [hq]
+      rw [hqeq]
+      exact leftLim_cdf_hlQ_le P (by positivity)
+    · by_cases hmL : m + 1 = N
+      · -- right end-block: [𝟙_{(−∞, q_{N-1}]}, 1]
+        rw [if_neg hm0, if_pos hmL]
+        refine ⟨fun x => by by_cases hx : x ∈ Set.Iic (q m) <;> simp [hx],
+          measurable_const.indicator measurableSet_Iic, measurable_const,
+          MemLp.indicator measurableSet_Iic (memLp_const 1), memLp_const 1, ?_⟩
+        have hsize : (fun x => (fun _ => (1 : ℝ)) x
+                            - Set.indicator (Set.Iic (q m)) (fun _ => (1 : ℝ)) x)
+                   = Set.indicator (Set.Ioi (q m)) (fun _ => (1 : ℝ)) := by
+          rw [← one_sub_indicator_Iic (q m)]
+        rw [hsize]
+        refine eLpNorm_indicator_lt P measurableSet_Ioi hε0 hNε ?_
+        rw [measure_Ioi_cdf]
+        refine ENNReal.ofReal_le_ofReal ?_
+        have hqeq : q m = hlQ P ((m : ℝ) / N) := by simp [hq]
+        rw [hqeq]
+        have hm1 : 1 ≤ m := Nat.one_le_iff_ne_zero.2 hm0
+        have hv0 : (0 : ℝ) < (m : ℝ) / N := div_pos (by exact_mod_cast hm1) hNR
+        have hv1 : (m : ℝ) / N < 1 := by rw [div_lt_one hNR]; exact_mod_cast hmN
+        have hcdf := cdf_hlQ_ge P hv0 hv1
+        have hmeq : (m : ℝ) + 1 = N := by exact_mod_cast hmL
+        have hkey : (1 : ℝ) - (m : ℝ) / N = 1 / N := by field_simp; linarith
+        rw [← hkey]; linarith [hcdf]
+      · -- middle block: [𝟙_{(−∞, q_m]}, 𝟙_{(−∞, q_m]∪(−∞, q_{m+1})}]
+        rw [if_neg hm0, if_neg hmL, if_neg hm0]
+        refine ⟨fun x => Set.indicator_le_indicator_of_subset Set.subset_union_left
+            (fun _ => zero_le_one) x,
+          measurable_const.indicator measurableSet_Iic,
+          measurable_const.indicator (measurableSet_Iic.union measurableSet_Iio),
+          MemLp.indicator measurableSet_Iic (memLp_const 1),
+          MemLp.indicator (measurableSet_Iic.union measurableSet_Iio) (memLp_const 1), ?_⟩
+        rw [indicator_union_sub_Iic]
+        refine eLpNorm_indicator_lt P measurableSet_Ioo hε0 hNε ?_
+        rw [measure_Ioo_cdf]
+        refine ENNReal.ofReal_le_ofReal ?_
+        have hqm : q m = hlQ P ((m : ℝ) / N) := by simp [hq]
+        have hqm1 : q (m + 1) = hlQ P (((m : ℝ) + 1) / N) := by simp only [hq]; push_cast; ring_nf
+        rw [hqm, hqm1]
+        have hm1 : 1 ≤ m := Nat.one_le_iff_ne_zero.2 hm0
+        have hv0m : (0 : ℝ) < (m : ℝ) / N := div_pos (by exact_mod_cast hm1) hNR
+        have hv1m : (m : ℝ) / N < 1 := by rw [div_lt_one hNR]; exact_mod_cast hmN
+        have hcdfm := cdf_hlQ_ge P hv0m hv1m
+        have hleft := leftLim_cdf_hlQ_le P (show (0 : ℝ) < ((m : ℝ) + 1) / N by positivity)
+        have hdiff : ((m : ℝ) + 1) / N - (m : ℝ) / N = 1 / N := by field_simp; ring
+        calc Function.leftLim (cdf P) (hlQ P (((m : ℝ) + 1) / N)) - cdf P (hlQ P ((m : ℝ) / N))
+            ≤ ((m : ℝ) + 1) / N - (m : ℝ) / N := by linarith [hcdfm, hleft]
+          _ = 1 / N := hdiff
+  · -- the blocks cover the half-line class
+    intro f hf
+    obtain ⟨τ, rfl⟩ := hf
+    set Fτ : ℝ := (cdf P) τ with hFτdef
+    have hFτ0 : (0 : ℝ) ≤ Fτ := cdf_nonneg P τ
+    set j : ℕ := min (Nat.floor (N * Fτ)) (N - 1) with hjdef
+    have hjlt : j < N := by omega
+    refine ⟨⟨j, hjlt⟩, fun x => ?_⟩
+    simp only [hloN, hupN]
+    -- `j ≤ ⌊N·Fτ⌋ ≤ N·Fτ`, giving `q j = hlQ(j/N) ≤ τ` via duality
+    have hmle : (j : ℝ) ≤ N * Fτ := by
+      have h1 : j ≤ Nat.floor (N * Fτ) := by omega
+      calc (j : ℝ) ≤ (Nat.floor (N * Fτ) : ℝ) := by exact_mod_cast h1
+        _ ≤ N * Fτ := Nat.floor_le (by positivity)
+    by_cases hj0 : j = 0
+    · -- left end-block covers `τ < q₁`
+      rw [if_pos hj0, if_neg (show ¬ (j + 1 = N) by omega), if_pos hj0]
+      have hFτlt : Fτ < 1 / N := by
+        have hf0 : Nat.floor (N * Fτ) = 0 := by omega
+        have : N * Fτ < 1 := Nat.floor_eq_zero.1 hf0
+        rw [lt_div_iff₀ hNR]; nlinarith
+      have hq1 : q 1 = hlQ P ((1 : ℝ) / N) := by simp [hq]
+      have hτq1 : τ < q 1 := by
+        rw [hq1]
+        have hduality := hlQ_le_iff P (v := (1 : ℝ) / N) (τ := τ) (by positivity)
+          (by rw [div_lt_one hNR]; exact_mod_cast hN2)
+        rw [← hFτdef] at hduality
+        exact not_le.1 (fun h => absurd (hduality.1 h) (not_le.2 hFτlt))
+      refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) x,
+        Set.indicator_le_indicator_of_subset
+          (fun y hy => lt_of_le_of_lt hy hτq1) (fun _ => zero_le_one) x⟩
+    · have hv0 : (0 : ℝ) < (j : ℝ) / N :=
+        div_pos (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hj0) hNR
+      have hv1 : (j : ℝ) / N < 1 := by rw [div_lt_one hNR]; exact_mod_cast hjlt
+      have hqj : q j = hlQ P ((j : ℝ) / N) := by simp [hq]
+      have hτqj : q j ≤ τ := by
+        rw [hqj]
+        refine (hlQ_le_iff P hv0 hv1).2 ?_
+        rw [← hFτdef, div_le_iff₀ hNR]; nlinarith [hmle]
+      by_cases hjL : j + 1 = N
+      · -- right end-block covers `q_{N-1} ≤ τ`
+        rw [if_neg hj0, if_pos hjL]
+        refine ⟨Set.indicator_le_indicator_of_subset
+            (Set.Iic_subset_Iic.2 hτqj) (fun _ => zero_le_one) x,
+          by by_cases hx : x ∈ Set.Iic τ <;> simp [hx]⟩
+      · -- middle block covers `q_j ≤ τ < q_{j+1}`
+        rw [if_neg hj0, if_neg hjL, if_neg hj0]
+        have hfloorj : Nat.floor (N * Fτ) = j := by omega
+        have hFτlt : Fτ < ((j : ℝ) + 1) / N := by
+          have : N * Fτ < (j : ℝ) + 1 := by
+            have h := Nat.lt_floor_add_one (N * Fτ)
+            rw [hfloorj] at h; push_cast at h; linarith
+          rw [lt_div_iff₀ hNR]; nlinarith
+        have hqj1 : q (j + 1) = hlQ P (((j : ℝ) + 1) / N) := by
+          simp only [hq]; push_cast; ring_nf
+        have hτqj1 : τ < q (j + 1) := by
+          rw [hqj1]
+          have hduality := hlQ_le_iff P (v := ((j : ℝ) + 1) / N) (τ := τ) (by positivity)
+            (by rw [div_lt_one hNR]; exact_mod_cast (show j + 1 < N by omega))
+          rw [← hFτdef] at hduality
+          exact not_le.1 (fun h => absurd (hduality.1 h) (not_le.2 hFτlt))
+        refine ⟨Set.indicator_le_indicator_of_subset
+            (Set.Iic_subset_Iic.2 hτqj) (fun _ => zero_le_one) x,
+          Set.indicator_le_indicator_of_subset
+            (fun y hy => Set.mem_union_right _ (lt_of_le_of_lt hy hτqj1))
+            (fun _ => zero_le_one) x⟩
+
+/-- The integrand is dominated by `√(log(⌈1/ε²⌉+1))` (the bracketing-number bound). -/
+private lemma bracketIntegrand_le (P : Measure ℝ) [IsProbabilityMeasure P] {ε : ℝ} (hε0 : 0 < ε) :
+    bracketIntegrand P ε
+      ≤ ENNReal.ofReal (Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))) := by
+  have hb := halfLineClass_bracketingNumber_le P hε0
+  unfold bracketIntegrand
+  generalize hnum : bracketingNumber ε halfLineClass 2 P = num at hb ⊢
+  induction num using ENat.recTopCoe with
+  | top => exact absurd (top_le_iff.1 hb) (ENat.coe_ne_top _)
+  | coe m =>
+    simp only [ENat.recTopCoe_coe]
+    have hmM : m ≤ Nat.ceil (1 / ε ^ 2) + 1 := by exact_mod_cast hb
+    refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt ?_)
+    rcases Nat.eq_zero_or_pos m with hm0 | hmpos
+    · rw [hm0]; simp only [Nat.cast_zero, Real.log_zero]
+      exact Real.log_nonneg (by exact_mod_cast Nat.le_add_left 1 _)
+    · exact Real.log_le_log (by exact_mod_cast hmpos) (by exact_mod_cast hmM)
+
+/-- Subadditivity of `√·`: `√(a+b) ≤ √a + √b`. -/
+private lemma sqrt_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    Real.sqrt (a + b) ≤ Real.sqrt a + Real.sqrt b := by
+  have hsa := Real.sqrt_nonneg a
+  have hsb := Real.sqrt_nonneg b
+  have hsab := Real.sqrt_nonneg (a + b)
+  nlinarith [Real.sq_sqrt ha, Real.sq_sqrt hb, Real.sq_sqrt (add_nonneg ha hb),
+    mul_nonneg hsa hsb, mul_nonneg (add_nonneg hsa hsb) hsab]
+
+/-- The integrand envelope `√(log(⌈1/ε²⌉+1)) ≤ √(log 3) + √2·ε^{−1/2}` on `(0,1]`. -/
+private lemma sqrt_log_ceil_le {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε ≤ 1) :
+    Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))
+      ≤ Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) := by
+  have hεsq : (0 : ℝ) < ε ^ 2 := by positivity
+  have hMpos : (0 : ℝ) < ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ) := by positivity
+  have hMle : ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ) ≤ 3 / ε ^ 2 := by
+    have h1 : (Nat.ceil (1 / ε ^ 2) : ℝ) < 1 / ε ^ 2 + 1 := Nat.ceil_lt_add_one (by positivity)
+    have h3 : (2 : ℝ) ≤ 2 / ε ^ 2 := by rw [le_div_iff₀ hεsq]; nlinarith
+    have hdiv : (3 : ℝ) / ε ^ 2 = 1 / ε ^ 2 + 2 / ε ^ 2 := by ring
+    push_cast; linarith
+  have hlogM : Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ)
+      ≤ Real.log 3 + 2 * Real.log (1 / ε) := by
+    have hle := Real.log_le_log hMpos hMle
+    have heq : Real.log (3 / ε ^ 2) = Real.log 3 + 2 * Real.log (1 / ε) := by
+      rw [show (3 : ℝ) / ε ^ 2 = 3 * (1 / ε) ^ 2 by ring,
+          Real.log_mul (by norm_num) (by positivity), Real.log_pow]
+      push_cast; ring
+    linarith
+  have hloginv : 0 ≤ Real.log (1 / ε) :=
+    Real.log_nonneg (by rw [le_div_iff₀ hε0]; linarith)
+  have hlogle : Real.log (1 / ε) ≤ 1 / ε := by
+    have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 1 / ε by positivity); linarith
+  have hconv : ε ^ (-(1 / 2) : ℝ) = Real.sqrt (1 / ε) := by
+    rw [Real.rpow_neg_eq_inv_rpow, Real.sqrt_eq_rpow, one_div ε]
+  calc Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))
+      ≤ Real.sqrt (Real.log 3 + 2 * Real.log (1 / ε)) := Real.sqrt_le_sqrt hlogM
+    _ ≤ Real.sqrt (Real.log 3) + Real.sqrt (2 * Real.log (1 / ε)) :=
+        sqrt_add_le (Real.log_nonneg (by norm_num)) (by positivity)
+    _ = Real.sqrt (Real.log 3) + Real.sqrt 2 * Real.sqrt (Real.log (1 / ε)) := by
+        rw [Real.sqrt_mul (by norm_num)]
+    _ ≤ Real.sqrt (Real.log 3) + Real.sqrt 2 * Real.sqrt (1 / ε) := by
+        gcongr
+    _ = Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) := by rw [hconv]
+
+theorem halfLineClass_bracketingEntropyIntegral_lt_top
+    (P : Measure ℝ) [IsProbabilityMeasure P] :
+    bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
+  rw [bracketingEntropyIntegral_eq]
+  set E : ℝ → ℝ := fun ε => Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) with hE
+  have hEint : IntegrableOn E (Set.Ioc (0 : ℝ) 1) volume := by
+    apply MeasureTheory.Integrable.add
+    · exact integrableOn_const (hs := by rw [Real.volume_Ioc]; exact ENNReal.ofReal_ne_top)
+    · apply MeasureTheory.Integrable.const_mul
+      have hIoo : IntegrableOn (fun ε : ℝ => ε ^ (-(1 / 2) : ℝ)) (Set.Ioo (0 : ℝ) 1) volume :=
+        (intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num)).2 (by norm_num)
+      exact hIoo.congr_set_ae MeasureTheory.Ioo_ae_eq_Ioc.symm
+  calc ∫⁻ ε in Set.Ioc (0 : ℝ) 1, bracketIntegrand P ε ∂volume
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (E ε) ∂volume := by
+        apply lintegral_mono_ae
+        refine (ae_restrict_mem measurableSet_Ioc).mono fun ε hε => ?_
+        exact le_trans (bracketIntegrand_le P hε.1)
+          (ENNReal.ofReal_le_ofReal (sqrt_log_ceil_le hε.1 hε.2))
+    _ < ⊤ := hEint.lintegral_lt_top
 
 /-- **The empirical-CDF class is `P`-Donsker** (the H₀ half of the Donoho–Jin
 detection program; vdV §19.2 Thm 19.5, Candès Lecture 3 §3.3.3). The class of
