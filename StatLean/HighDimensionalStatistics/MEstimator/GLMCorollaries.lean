@@ -54,7 +54,8 @@ theorem subspaceLip_l1_suppSubmodule (S : Finset (Fin d)) :
     rintro a ⟨v, ⟨hv, hv0⟩, rfl⟩
     have hv0' : v ≠ 0 := by simpa using hv0
     have hvnorm : 0 < ‖v‖ := norm_pos_iff.mpr hv0'
-    rw [hcoe, div_le_iff₀ hvnorm]
+    change l1Norm v / ‖v‖ ≤ Real.sqrt S.card
+    rw [div_le_iff₀ hvnorm]
     have hres : restrict S v = v := restrict_eq_self S v (fun i hi => hv i hi)
     calc l1Norm v = l1Norm (restrict S v) := by rw [hres]
       _ ≤ Real.sqrt S.card * ‖v‖ := l1Norm_restrict_le_sqrt_card_mul_norm S v
@@ -66,7 +67,7 @@ theorem subspaceLip_l1_suppSubmodule (S : Finset (Fin d)) :
     rw [show ((fun u => (l1Seminorm d) u / ‖u‖) ''
           ((↑(suppSubmodule (∅ : Finset (Fin d))) :
             Set (EuclideanSpace ℝ (Fin d))) \ {0})) = ∅ from ?_, Real.sSup_empty]
-    rw [Set.eq_empty_iff_forall_not_mem]
+    rw [Set.eq_empty_iff_forall_notMem]
     rintro a ⟨u, ⟨hu, hu0⟩, rfl⟩
     refine hu0 ?_
     rw [Set.mem_singleton_iff]
@@ -96,8 +97,6 @@ theorem subspaceLip_l1_suppSubmodule (S : Finset (Fin d)) :
     have hnorm : ‖u‖ = Real.sqrt S.card := by
       rw [EuclideanSpace.norm_eq, ← hnorm_sq]
       congr 1
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [Real.norm_eq_abs, sq_abs]
     have hcard_pos : 0 < (S.card : ℝ) := by
       exact_mod_cast Finset.card_pos.mpr ⟨j0, hj0⟩
     have hratio : (l1Seminorm d) u / ‖u‖ = Real.sqrt S.card := by
@@ -263,7 +262,6 @@ theorem glmCost_gradient_eq_scoreVec (M : GLMExpFamily n d μ) (ω : Ω) :
     rw [scoreVec_ofLp, scoreCoord]
     simp only [WithLp.ofLp_smul, Pi.smul_apply, WithLp.ofLp_sum, Finset.sum_apply,
       rowVec_ofLp, smul_eq_mul]
-    rw [Finset.mul_sum]
   -- The Fréchet derivative CLM equals the dual of the score vector.
   have hCLM : (1 / (n : ℝ)) • ∑ i, ((M.ψ' (⟪rowVec M i, M.θstar⟫_ℝ) •
           InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin d)) (rowVec M i))
