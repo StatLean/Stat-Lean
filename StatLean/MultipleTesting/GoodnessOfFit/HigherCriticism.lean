@@ -42,7 +42,7 @@ So with the project's Donsker the `H₀` half is now within reach; the full Theo
 calibration + the `H₁` large-deviation analysis. Recorded as the TODO §"Batch 8" research target.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 
 namespace StatLean.MultipleTesting
 
