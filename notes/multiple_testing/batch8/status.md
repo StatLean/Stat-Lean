@@ -41,7 +41,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-STO | `mt/storey` | `Storey` | reverse-MG,BinomialRatio | ◆ | ⚠ stated + 2 documented debts (reverse-MG OST core) — T6 |
 | U-MASSART | `mt/massart` | `ForMathlib/EmpiricalProcessSup` | EMPCDF | ◆◆ | ✅ union bound real (merged); **sharp = 1 debt** |
 | U-KS | `mt/ks-test` | `GoodnessOfFit/KolmogorovSmirnov` | EMPCDF,MASSART | ● | ✅ real (merged, 0-sorry) |
-| U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` + `ForMathlib/BrownianBridgeLIL` | MASSART | ◆◆ | todo |
+| U-HC | `mt/higher-criticism` | `GoodnessOfFit/HigherCriticism` | EMPCDF | ◆◆ | ⚠ boundary+statistic real (0-sorry); full theorem honestly deferred |
 
 Concept `Defs.lean` (laptop-only, no sorry): `EValues/Defs` ✓ written;
 `ChiSquaredTest/Defs`, `GoodnessOfFit/Defs`, `EmpiricalBayes/Defs`, `Conformal/Defs` — todo.
