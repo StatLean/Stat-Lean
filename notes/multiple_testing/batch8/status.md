@@ -1,8 +1,9 @@
 # Batch 8 — Candès STAT 300C — status
 
-**STATE:** Phase A nearly complete — 5/6 merged 0-sorry (U-EV, U-EMPCDF, U-GAUSS, U-GAMMA, U-BHD/T4);
-U-EB (Phase B) closing; U-RANK remaining in Phase A. Integration branch `mt/batch8` (off `main` @
-`f043f2a`). Reference: Candès STAT 300C. See `outline.md` for targets, DAG, reuse, constants.
+**STATE:** **Phase A complete (6/6 0-sorry)**; Phase B underway. Merged: U-EV, U-EMPCDF, U-GAUSS,
+U-GAMMA, U-BHD (T4), U-EB (T8) [all 0-sorry], U-CHISQ [4 lemmas real; law=1 debt]. Closing: U-CONF,
+U-CHI. Remaining: U-REVMG → U-BHM/U-STO; U-MASSART → U-KS; U-HC; + U-CHISQ-LAW follow-up. Integration
+branch `mt/batch8` (off `main` @ `f043f2a`). Reference: Candès STAT 300C. See `outline.md`.
 
 **API correction:** `ProbabilityTheory.Exchangeable` is **NOT** in Mathlib v4.29.1 (loogle 0 hits —
 the Batch-8 exploration agent was wrong). U-RANK / U-CONF must **define exchangeability ourselves**
@@ -33,7 +34,8 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | ✅ 4 lemmas real (merged); **law = 1 named debt** (complexMGF route viable → follow-up) |
 | U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | ✅ real (merged, 0-sorry) — T8 |
-| U-CONF | `mt/conformal` | `Conformal/{Defs,Coverage}` | RANK | ● | todo |
+| U-CONF | `mt/conformal` | `Conformal/Coverage` | RANK | ● | gated green → closure running |
+| U-CHI | `mt/chisq-test` | `ChiSquaredTest/Distribution` | GAUSS,CHISQ | ● | gated green → closure running |
 | U-REVMG | `mt/reverse-martingale` | `ForMathlib/ReverseMartingale` | EMPCDF,OptStop | ◆ | todo |
 | U-BHM | `mt/bh-martingale` | `BHMartingale` | EMPCDF,REVMG | ◆ | todo |
 | U-STO | `mt/storey` | `Storey` | REVMG,BinomialRatio | ● | todo |
