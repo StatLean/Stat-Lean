@@ -1,16 +1,22 @@
 # Batch 8 — Candès STAT 300C — status
 
-**STATE: BATCH 8 COMPLETE + debt-closing pass done** — all targets on `mt/batch8` (off `main` @
-`f043f2a`); `StatLean.MultipleTesting` builds with **7 precisely-isolated named-crux sorries**, all
-else 0-sorry. **14 units fully 0-sorry** (T4 BH-dependence, T5 BH-exact, T7 conformal, T8 empirical-
-Bayes; χ² exact law; KS test; e-values; goodness-of-fit). After the debt pass, the 3 remaining debts'
-**main theorems are now PROVED MODULO** named cruxes (the surrounding reductions/assemblies are real):
-`massart_inequality` modulo `countLE_reflection_bound` (1); `storey_fdr_le` modulo 3
-(`storey_reverseMG_ost`, `storey_binom_bound`, `storey_threshold_attained`); `halfLine_isPDonsker`
-(new H₀ Donsker theorem) modulo 3 framework lemmas. The 7 cruxes
-are the irreducible Mathlib-absent pieces (empirical-process exponential-supermartingale, backwards-MG/
-uniform-null disintegration, half-line bracketing entropy). HC's full Donoho–Jin *detection* theorem
-stays honestly deferred (LIL + H₁ large deviations). NOT merged to `main` / pushed to `origin`.
+**STATE: BATCH 8 — Massart closed, Storey removed, HC = 3 framework cruxes.** `mt/batch8` (off `main`
+@ `f043f2a`); `StatLean.MultipleTesting` builds with **3 named-crux sorries** (all HC framework), all
+else 0-sorry. **Fully 0-sorry main results:** T4 BH-dependence, T5 BH-exact, T7 conformal, T8
+empirical-Bayes; χ² exact law; **KS test + Massart (provable union bound)**; e-values; goodness-of-fit
+boundary/statistic + H₀ Donsker.
+* **Massart** — CLOSED 0-sorry: stated the provable union bound `n·e^{−2nu²}` as Massart's inequality
+  (deleted the sorry'd reflection lemma + unconsumed sharp theorem) with a CLAUDE.md §1 deviation note;
+  the KS test consumes this form. (User chose this over building the Mathlib-absent exp-supermartingale.)
+* **Storey (T6)** — REMOVED ENTIRELY (user decision): `Storey.lean` + umbrella import + the 6 closure
+  prompts deleted. The leave-one-out (reusing BHMartingale's `bh_loo_indep_mul`) is feasible — the
+  indicator-identity obstruction resolves — but 3 cluster attempts all reverted to the backwards-MG
+  instead of completing the ~200-line factorization, so the unit was cut. Shared helpers stay.
+* **HC** — `halfLine_isPDonsker` (H₀ Donsker) assembled modulo 3 framework cruxes
+  (`bracketingEntropyIntegral_lt_top`, `J_pos`, `chain_bound`); `chain_bound` is a **laundered
+  hypothesis in the project's own `isPDonsker_of_finite_bracketing_entropy_integral`** (upstream
+  AsymptoticStatistics fix needed). Full Donoho–Jin *detection* theorem deferred (LIL + H₁ large dev).
+NOT merged to `main` / pushed to `origin`.
 
 **API correction:** `ProbabilityTheory.Exchangeable` is **NOT** in Mathlib v4.29.1 (loogle 0 hits —
 the Batch-8 exploration agent was wrong). U-RANK / U-CONF must **define exchangeability ourselves**
