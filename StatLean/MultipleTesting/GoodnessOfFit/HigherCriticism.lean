@@ -475,7 +475,7 @@ private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbability
     · by_cases hmL : m + 1 = N
       · -- right end-block: [𝟙_{(−∞, q_{N-1}]}, 1]
         rw [if_neg hm0, if_pos hmL]
-        refine ⟨fun x => by by_cases hx : x ∈ Set.Iic (q m) <;> simp [Set.indicator_apply, hx],
+        refine ⟨fun x => by by_cases hx : x ∈ Set.Iic (q m) <;> simp [hx],
           measurable_const.indicator measurableSet_Iic, measurable_const,
           MemLp.indicator measurableSet_Iic (memLp_const 1), memLp_const 1, ?_⟩
         have hsize : (fun x => (fun _ => (1 : ℝ)) x
@@ -550,7 +550,8 @@ private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbability
       refine ⟨Set.indicator_nonneg (fun _ _ => zero_le_one) x,
         Set.indicator_le_indicator_of_subset
           (fun y hy => lt_of_le_of_lt hy hτq1) (fun _ => zero_le_one) x⟩
-    · have hv0 : (0 : ℝ) < (j : ℝ) / N := div_pos (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hj0) hNR
+    · have hv0 : (0 : ℝ) < (j : ℝ) / N :=
+        div_pos (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hj0) hNR
       have hv1 : (j : ℝ) / N < 1 := by rw [div_lt_one hNR]; exact_mod_cast hjlt
       have hqj : q j = hlQ P ((j : ℝ) / N) := by simp [hq]
       have hτqj : q j ≤ τ := by
@@ -562,7 +563,7 @@ private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbability
         rw [if_neg hj0, if_pos hjL]
         refine ⟨Set.indicator_le_indicator_of_subset
             (Set.Iic_subset_Iic.2 hτqj) (fun _ => zero_le_one) x,
-          by by_cases hx : x ∈ Set.Iic τ <;> simp [Set.indicator_apply, hx]⟩
+          by by_cases hx : x ∈ Set.Iic τ <;> simp [hx]⟩
       · -- middle block covers `q_j ≤ τ < q_{j+1}`
         rw [if_neg hj0, if_neg hjL, if_neg hj0]
         have hfloorj : Nat.floor (N * Fτ) = j := by omega
@@ -585,10 +586,87 @@ private lemma halfLineClass_bracketingNumber_le (P : Measure ℝ) [IsProbability
             (fun y hy => Set.mem_union_right _ (lt_of_le_of_lt hy hτqj1))
             (fun _ => zero_le_one) x⟩
 
+/-- The integrand is dominated by `√(log(⌈1/ε²⌉+1))` (the bracketing-number bound). -/
+private lemma bracketIntegrand_le (P : Measure ℝ) [IsProbabilityMeasure P] {ε : ℝ} (hε0 : 0 < ε) :
+    bracketIntegrand P ε
+      ≤ ENNReal.ofReal (Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))) := by
+  have hb := halfLineClass_bracketingNumber_le P hε0
+  unfold bracketIntegrand
+  generalize hnum : bracketingNumber ε halfLineClass 2 P = num at hb ⊢
+  induction num using ENat.recTopCoe with
+  | top => exact absurd (top_le_iff.1 hb) (ENat.coe_ne_top _)
+  | coe m =>
+    simp only [ENat.recTopCoe_coe]
+    have hmM : m ≤ Nat.ceil (1 / ε ^ 2) + 1 := by exact_mod_cast hb
+    refine ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt ?_)
+    rcases Nat.eq_zero_or_pos m with hm0 | hmpos
+    · rw [hm0]; simp only [Nat.cast_zero, Real.log_zero]
+      exact Real.log_nonneg (by exact_mod_cast Nat.le_add_left 1 _)
+    · exact Real.log_le_log (by exact_mod_cast hmpos) (by exact_mod_cast hmM)
+
+/-- Subadditivity of `√·`: `√(a+b) ≤ √a + √b`. -/
+private lemma sqrt_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    Real.sqrt (a + b) ≤ Real.sqrt a + Real.sqrt b := by
+  have hsa := Real.sqrt_nonneg a
+  have hsb := Real.sqrt_nonneg b
+  have hsab := Real.sqrt_nonneg (a + b)
+  nlinarith [Real.sq_sqrt ha, Real.sq_sqrt hb, Real.sq_sqrt (add_nonneg ha hb),
+    mul_nonneg hsa hsb, mul_nonneg (add_nonneg hsa hsb) hsab]
+
+/-- The integrand envelope `√(log(⌈1/ε²⌉+1)) ≤ √(log 3) + √2·ε^{−1/2}` on `(0,1]`. -/
+private lemma sqrt_log_ceil_le {ε : ℝ} (hε0 : 0 < ε) (hε1 : ε ≤ 1) :
+    Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))
+      ≤ Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) := by
+  have hεsq : (0 : ℝ) < ε ^ 2 := by positivity
+  have hMpos : (0 : ℝ) < ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ) := by positivity
+  have hMle : ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ) ≤ 3 / ε ^ 2 := by
+    have h1 : (Nat.ceil (1 / ε ^ 2) : ℝ) < 1 / ε ^ 2 + 1 := Nat.ceil_lt_add_one (by positivity)
+    have h3 : (2 : ℝ) ≤ 2 / ε ^ 2 := by rw [le_div_iff₀ hεsq]; nlinarith
+    have hdiv : (3 : ℝ) / ε ^ 2 = 1 / ε ^ 2 + 2 / ε ^ 2 := by ring
+    push_cast; linarith
+  have hlogM : Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ)
+      ≤ Real.log 3 + 2 * Real.log (1 / ε) := by
+    have hle := Real.log_le_log hMpos hMle
+    have heq : Real.log (3 / ε ^ 2) = Real.log 3 + 2 * Real.log (1 / ε) := by
+      rw [show (3 : ℝ) / ε ^ 2 = 3 * (1 / ε) ^ 2 by ring,
+          Real.log_mul (by norm_num) (by positivity), Real.log_pow]
+      push_cast; ring
+    linarith
+  have hloginv : 0 ≤ Real.log (1 / ε) :=
+    Real.log_nonneg (by rw [le_div_iff₀ hε0]; linarith)
+  have hlogle : Real.log (1 / ε) ≤ 1 / ε := by
+    have := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 1 / ε by positivity); linarith
+  have hconv : ε ^ (-(1 / 2) : ℝ) = Real.sqrt (1 / ε) := by
+    rw [Real.rpow_neg_eq_inv_rpow, Real.sqrt_eq_rpow, one_div ε]
+  calc Real.sqrt (Real.log ((Nat.ceil (1 / ε ^ 2) + 1 : ℕ) : ℝ))
+      ≤ Real.sqrt (Real.log 3 + 2 * Real.log (1 / ε)) := Real.sqrt_le_sqrt hlogM
+    _ ≤ Real.sqrt (Real.log 3) + Real.sqrt (2 * Real.log (1 / ε)) :=
+        sqrt_add_le (Real.log_nonneg (by norm_num)) (by positivity)
+    _ = Real.sqrt (Real.log 3) + Real.sqrt 2 * Real.sqrt (Real.log (1 / ε)) := by
+        rw [Real.sqrt_mul (by norm_num)]
+    _ ≤ Real.sqrt (Real.log 3) + Real.sqrt 2 * Real.sqrt (1 / ε) := by
+        gcongr
+    _ = Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) := by rw [hconv]
+
 theorem halfLineClass_bracketingEntropyIntegral_lt_top
     (P : Measure ℝ) [IsProbabilityMeasure P] :
     bracketingEntropyIntegral 1 halfLineClass P < ⊤ := by
-  sorry
+  rw [bracketingEntropyIntegral_eq]
+  set E : ℝ → ℝ := fun ε => Real.sqrt (Real.log 3) + Real.sqrt 2 * ε ^ (-(1 / 2) : ℝ) with hE
+  have hEint : IntegrableOn E (Set.Ioc (0 : ℝ) 1) volume := by
+    apply MeasureTheory.Integrable.add
+    · exact integrableOn_const (hs := by rw [Real.volume_Ioc]; exact ENNReal.ofReal_ne_top)
+    · apply MeasureTheory.Integrable.const_mul
+      have hIoo : IntegrableOn (fun ε : ℝ => ε ^ (-(1 / 2) : ℝ)) (Set.Ioo (0 : ℝ) 1) volume :=
+        (intervalIntegral.integrableOn_Ioo_rpow_iff (by norm_num)).2 (by norm_num)
+      exact hIoo.congr_set_ae MeasureTheory.Ioo_ae_eq_Ioc.symm
+  calc ∫⁻ ε in Set.Ioc (0 : ℝ) 1, bracketIntegrand P ε ∂volume
+      ≤ ∫⁻ ε in Set.Ioc (0 : ℝ) 1, ENNReal.ofReal (E ε) ∂volume := by
+        apply lintegral_mono_ae
+        refine (ae_restrict_mem measurableSet_Ioc).mono fun ε hε => ?_
+        exact le_trans (bracketIntegrand_le P hε.1)
+          (ENNReal.ofReal_le_ofReal (sqrt_log_ceil_le hε.1 hε.2))
+    _ < ⊤ := hEint.lintegral_lt_top
 
 /-- **The empirical-CDF class is `P`-Donsker** (the H₀ half of the Donoho–Jin
 detection program; vdV §19.2 Thm 19.5, Candès Lecture 3 §3.3.3). The class of
