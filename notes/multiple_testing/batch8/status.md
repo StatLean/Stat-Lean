@@ -24,7 +24,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ◆ | ✅ real (merged, 0-sorry, incl. MGF) |
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | ✅ real (merged, 0-sorry) |
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | todo |
-| U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | todo |
+| U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | stub written |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | todo |
 | U-EB | `mt/empirical-bayes` | `EmpiricalBayes/{Defs,BayesRisk}` | GAUSS | ● | todo |
 | U-CONF | `mt/conformal` | `Conformal/{Defs,Coverage}` | RANK | ● | todo |
