@@ -18,6 +18,7 @@ import StatLean.MultipleTesting.Knockoff.Initial
 import StatLean.MultipleTesting.Knockoff.Supermartingale
 import StatLean.MultipleTesting.Knockoff
 import StatLean.MultipleTesting.EValues.Conversion
+import StatLean.MultipleTesting.EmpiricalBayes.BayesRisk
 
 /-!
 # MultipleTesting — area umbrella
