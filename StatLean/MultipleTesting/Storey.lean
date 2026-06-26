@@ -2,6 +2,7 @@ import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
 import StatLean.MultipleTesting.FDP.Defs
 import StatLean.MultipleTesting.PValues.Defs
+import Mathlib.Probability.Independence.Basic
 
 /-!
 # Storey's q-value procedure — FDR control (Candès, Lecture 7, §7.4, Theorem 3)
