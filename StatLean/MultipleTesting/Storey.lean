@@ -19,14 +19,23 @@ With the rejection count `R(t) = countLE p t` and false-rejection count `V(t) = 
 **Main result** (`storey_fdr_le`, Candès L7 §7.4, Theorem 3): for independent uniform null p-values,
 `FDR ≤ q`.
 
-*Proof.* By the definition of `τ`, `FDP(τ) = q · V(τ)/τ · (1/2)/(1+n₀−V(1/2))`; Doob's optional
-stopping on the backwards martingale `{V(t)/t}` over `[0,1/2]` gives
-`E[V(τ)/τ] = E[V(1/2)/(1/2)]`, whence `E[FDP(τ)] ≤ q · E[V(1/2)/(1+n₀−V(1/2))] = q·(1−2^{−n₀}) ≤ q`
-(the binomial identity, `V(1/2) ∼ Bin(n₀,1/2)`). The optional-stopping step
-(`storey_reverseMG_ost`) is the genuinely martingale-theoretic ingredient — the uniform-null
-backwards-martingale property, for which Mathlib has no continuous-time backwards-martingale support
-— and is recorded here as a documented named `sorry`; the binomial identity reuses
-`ForMathlib/BinomialRatio`.
+*Proof.* The pointwise bound `FDP(τ) ≤ q · (V(τ)/τ) · (1/2)/(1+n₀−V(1/2))` (`storey_FDP_le_bound`,
+**fully proved** from threshold attainment + the count split `R(1/2)+n₀ ≤ V(1/2)+n`) integrates to
+`E[FDP(τ)] ≤ q · ∫ (V(τ)/τ)·w`; the reverse-MG optional-stopping identity gives
+`∫ (V(τ)/τ)·w = ∫ V(1/2)/(1+n₀−V(1/2))`, which the binomial null-count law bounds by
+`1 − 2^{−n₀} ≤ 1`, whence `E[FDP(τ)] ≤ q`. **The assembly (`storey_fdr_le`) and the pointwise bound
+are verified here**; the irreducible probabilistic content is isolated into three sharp, correctly
+stated, documented named `sorry`s:
+
+* `storey_reverseMG_ost` — the reverse-martingale optional-stopping identity (integrability of
+  `(V(τ)/τ)·w` plus `∫ (V(τ)/τ)·w = ∫ V(1/2)/(1+n₀−V(1/2))`); Mathlib lacks continuous-time
+  backwards-martingale support, and the faithful discrete reformulation over the null order
+  statistics (the uniform analogue of the knock-off `condExp_coord_eq_count_div`) is a
+  self-contained development of its own (cf. `Knockoff/Supermartingale.lean`).
+* `storey_binom_bound` — the binomial null-count law `∫ V(1/2)/(1+n₀−V(1/2)) ≤ 1`; the finite-sum
+  algebra reuses `ForMathlib/BinomialRatio` (`binom_ratio_sum_le_one`), the missing piece being the
+  law `V(1/2) ∼ Bin(n₀,1/2)`.
+* `storey_threshold_attained` — the right-continuity attainment `storeyFDRhat τ ≤ q` at the `sSup`.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -44,7 +53,8 @@ noncomputable def storeyPiZero (p : Fin n → Ω → ℝ) (ω : Ω) : ℝ :=
 noncomputable def storeyFDRhat (p : Fin n → Ω → ℝ) (t : ℝ) (ω : Ω) : ℝ :=
   storeyPiZero p ω * (n : ℝ) * t / (max (countLE p t ω : ℝ) 1)
 
-/-- Storey's data-dependent threshold `τ = sup{ t ≤ 1/2 : storeyFDRhat q t ≤ q }` (Candès L7 §7.4). -/
+/-- Storey's data-dependent threshold `τ = sup{ t ≤ 1/2 : storeyFDRhat q t ≤ q }`
+(Candès L7 §7.4). -/
 noncomputable def storeyThreshold (p : Fin n → Ω → ℝ) (q : ℝ) (ω : Ω) : ℝ :=
   sSup {t : ℝ | t ∈ Set.Icc (0 : ℝ) (1 / 2) ∧ storeyFDRhat p t ω ≤ q}
 
@@ -91,8 +101,9 @@ private noncomputable def storeyLHSint (H₀ : Finset (Fin n)) (p : Fin n → Ω
   ((nullCountLE H₀ p (storeyThreshold p q ω) ω : ℝ) / storeyThreshold p q ω)
     * ((1 / 2) / storeyDenom H₀ p ω)
 
-/-- The top-of-filtration value `V(1/2)/(1+n₀−V(1/2))`, equal to `(V(1/2)/(1/2))·w`. Bounded by `n₀`,
-hence integrable; its integral is `≤ 1` by the binomial null-count law (`storey_binom_bound`). -/
+/-- The top-of-filtration value `V(1/2)/(1+n₀−V(1/2))`, equal to `(V(1/2)/(1/2))·w`. Bounded by
+`n₀`, hence integrable; its integral is `≤ 1` by the binomial null-count law (`storey_binom_bound`).
+-/
 private noncomputable def storeyRHSint (H₀ : Finset (Fin n)) (p : Fin n → Ω → ℝ) (ω : Ω) : ℝ :=
   (nullCountLE H₀ p (1 / 2) ω : ℝ) / storeyDenom H₀ p ω
 
@@ -199,9 +210,10 @@ private lemma storeyThreshold_nonneg (p : Fin n → Ω → ℝ) {q : ℝ} (hq0 :
 
 /-- **Threshold attainment** (the right-continuity ingredient of Theorem 3): the estimated FDR at
 the data-dependent threshold `τ = storeyThreshold p q ω` does not exceed `q`. `storeyFDRhat p · ω`
-is right-continuous in `t` (continuous numerator `π̂₀·n·t` over the right-continuous step denominator
-`R(·)∨1`); at the `sSup`, either `τ` is not an order statistic (continuity gives the left-limit `≤ q`)
-or `R(·)` jumps up at `τ` (so the value drops below the left-limit `≤ q`). Either way `≤ q`.
+is right-continuous in `t` (continuous numerator `π̂₀·n·t` over the right-continuous step
+denominator `R(·)∨1`); at the `sSup`, either `τ` is not an order statistic (continuity gives the
+left-limit `≤ q`) or `R(·)` jumps up at `τ` (so the value drops below the left-limit `≤ q`). Either
+way `≤ q`.
 
 **Documented named `sorry`.** The sublevel set of a right-continuous step function is not closed
 under the naive topology; the attainment needs the order-statistic jump analysis of `countLE`, not
@@ -219,7 +231,7 @@ private lemma countLE_add_card_le (H₀ : Finset (Fin n)) (p : Fin n → Ω → 
   have hcount : countLE p t ω
       = (H₀.filter P).card + (H₀ᶜ.filter P).card := by
     unfold countLE
-    rw [← Finset.filter_card_add_filter_neg_card_eq_card (p := fun j => j ∈ H₀)]
+    rw [← Finset.card_filter_add_card_filter_not (p := fun j => j ∈ H₀)]
     congr 1
     · rw [Finset.filter_filter]; congr 1; ext j; simp [hP, and_comm]
     · rw [Finset.filter_filter]; congr 1; ext j; simp [hP, and_comm, Finset.mem_compl]
