@@ -451,7 +451,10 @@ private lemma bh_summand_eq_sum {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
       Finset.sum_eq_single (numRejections (bhRejects α p) ω)]
     · rw [if_pos hpi, if_pos hRloo, mul_one, mul_one]
     · intro k _ hk_ne
-      rw [hRloo, if_neg (fun h => hk_ne h.symm), mul_zero, mul_zero]
+      have hz : (if numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k
+          then (1 : ℝ) else 0) = 0 := by
+        rw [hRloo]; exact if_neg (fun h => hk_ne h.symm)
+      rw [hz, mul_zero, mul_zero]
     · intro h_not
       exact absurd (Finset.mem_Icc.mpr ⟨hR1, hRN⟩) h_not
   · -- Not rejected: LHS = 0, and every summand vanishes by the converse crux.
@@ -539,7 +542,7 @@ private theorem bh_claim_eq {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (h�
       funext ω
       by_cases hA : p i ω ≤ (k : ℝ) * α / N <;>
         by_cases hB : numRejections (bhRejects α (Function.update p i (0 : Ω → ℝ))) ω = k <;>
-        simp [Set.indicator_apply, Set.mem_inter_iff, Set.mem_setOf_eq, hA, hB]
+        simp [Set.mem_inter_iff, Set.mem_setOf_eq, hA, hB]
     rw [integral_const_mul, hprod_eq, integral_indicator_one (hAmeas.inter hBmeas)]
     have hAeq : (μ {ω | p i ω ≤ (k : ℝ) * α / N}).toReal = (k : ℝ) * α / N := by
       rw [hi ((k : ℝ) * α / N) htk hk_le1, ENNReal.toReal_ofReal htk]
