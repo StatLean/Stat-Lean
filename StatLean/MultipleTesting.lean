@@ -1,5 +1,6 @@
 import StatLean.MultipleTesting.FDP.Defs
 import StatLean.MultipleTesting.PValues.Defs
+import StatLean.MultipleTesting.EValues.Defs
 import StatLean.MultipleTesting.Knockoff.Defs
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
@@ -12,6 +13,7 @@ import StatLean.MultipleTesting.Knockoff.FdpBound
 import StatLean.MultipleTesting.Knockoff.Initial
 import StatLean.MultipleTesting.Knockoff.Supermartingale
 import StatLean.MultipleTesting.Knockoff
+import StatLean.MultipleTesting.EValues.Conversion
 
 /-!
 # MultipleTesting — area umbrella
@@ -29,6 +31,13 @@ from Lu, *Big Data Analysis* ch. 18–19 (Holm–Bonferroni from Holm 1979):
 * **Holm–Bonferroni** (Holm 1979; §17 Bonferroni): `holm_fwer_le`, `bonferroni_fwer_le` —
   `FWER ≤ α`.
 * **Knock-off** (§19): `knockoff_fdr_le` — `FDR ≤ α`.
+
+**Batch 8 — Candès STAT 300C** (large-scale inference; this area is the library's catch-all
+testing area). Landing incrementally:
+
+* **E-values** (Candès L15, Defs. 3–4, Prop. 3): `IsEVariable` / `IsPVariable`
+  (`EValues/Defs.lean`); `isPVariable_inv_of_isEVariable`, `superUniform_inv_of_isEVariable`
+  (`EValues/Conversion.lean`) — `1/E` is a (super-uniform) p-value.
 
 Modules are imported above as each lands.
 -/
