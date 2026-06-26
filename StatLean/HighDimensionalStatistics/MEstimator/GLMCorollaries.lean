@@ -73,7 +73,7 @@ theorem subspaceLip_l1_suppSubmodule (S : Finset (Fin d)) :
     rw [Set.mem_singleton_iff]
     apply WithLp.ofLp_injective 2
     funext j
-    simpa using hu j (Finset.not_mem_empty j)
+    simpa using hu j (Finset.notMem_empty j)
   · -- `S ≠ ∅`: the indicator vector `∑_{j∈S} eⱼ` achieves the ratio `√s`.
     obtain ⟨j0, hj0⟩ := hSne
     set u : EuclideanSpace ℝ (Fin d) :=
