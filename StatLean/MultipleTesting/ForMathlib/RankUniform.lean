@@ -29,7 +29,7 @@ namespace StatLean.MultipleTesting
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {m : ℕ}
 
 /-- The rank of `Sᵢ` among `S₀, …, S_{m-1}`: `#{ j : Sⱼ(ω) ≤ Sᵢ(ω) }` (1-indexed). -/
-def rankOf (S : Fin m → Ω → ℝ) (i : Fin m) (ω : Ω) : ℕ :=
+noncomputable def rankOf (S : Fin m → Ω → ℝ) (i : Fin m) (ω : Ω) : ℕ :=
   (Finset.univ.filter (fun j => S j ω ≤ S i ω)).card
 
 /-- `Exchangeable S μ`: the joint law of `(S₀,…,S_{m-1})` is invariant under index permutations —
