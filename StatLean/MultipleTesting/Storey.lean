@@ -1,5 +1,7 @@
 import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import StatLean.MultipleTesting.ForMathlib.OptionalStopping
+import StatLean.MultipleTesting.ForMathlib.SymmetricCondExp
+import StatLean.MultipleTesting.ForMathlib.BinomialRatio
 import StatLean.MultipleTesting.FDP.Defs
 import StatLean.MultipleTesting.PValues.Defs
 import Mathlib.Probability.Independence.Basic
@@ -134,13 +136,102 @@ theorem storey_reverseMG_ost (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ :
       ∫ ω, storeyLHSint H₀ p q ω ∂μ = ∫ ω, storeyRHSint H₀ p ω ∂μ := by
   sorry
 
+/-! ## Binomial law of the null-count `V(1/2)` (the missing piece of `storey_binom_bound`)
+
+For an i.i.d. fair `Bool` family `σ : ι → Ω → Bool` (here `ι = {j // j ∈ H₀}`, `σ j = 𝟙(pⱼ ≤ 1/2)`),
+the Hamming-weight law is `μ{ #{i : σ i} = k } = C(|ι|,k)·(1/2)^{|ι|}`. This is the type-vector
+partition computation of `ForMathlib/SymmetricCondExp` (`measure_setOf_typeVec`), reproduced here
+because that lemma is `private`. -/
+
+open scoped Classical in
+/-- Membership in `evtSet σ T`: the sample's true-coordinates are exactly `T`. -/
+private lemma storey_mem_evtSet {ι : Type*} [Fintype ι] (σ : ι → Ω → Bool) (T : Finset ι) (ω : Ω) :
+    ω ∈ evtSet σ T ↔ typeVec σ ω = T := by
+  simp only [evtSet, Set.mem_iInter, Set.mem_preimage]
+  rw [Finset.ext_iff]
+  refine forall_congr' (fun i => ?_)
+  simp only [typeVec, Finset.mem_filter, Finset.mem_univ, true_and]
+  by_cases hi : i ∈ T <;> simp [hi, Set.mem_singleton_iff, Bool.not_eq_true]
+
+private lemma storey_measurableSet_evtSet {ι : Type*} [Fintype ι] {σ : ι → Ω → Bool}
+    (hσ : ∀ i, Measurable (σ i)) (T : Finset ι) : MeasurableSet (evtSet σ T) := by
+  unfold evtSet
+  refine MeasurableSet.iInter (fun i => ?_)
+  exact hσ i MeasurableSet.of_discrete
+
+open scoped Classical in
+/-- Each cell of the type-vector partition has measure `(1/2)^|ι|` (independence + fairness). -/
+private lemma storey_measure_evtSet {ι : Type*} [Fintype ι] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i))
+    (hindep : iIndepFun σ μ) (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (T : Finset ι) :
+    μ (evtSet σ T) = (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) := by
+  have hAi : ∀ i, MeasurableSet {ω | σ i ω = true} :=
+    fun i => hσ i (measurableSet_singleton true)
+  have hcomap : ∀ i, MeasurableSet[(inferInstance : MeasurableSpace Bool).comap (σ i)]
+      ((σ i) ⁻¹' (if i ∈ T then ({true} : Set Bool) else {false})) :=
+    fun i => ⟨_, MeasurableSet.of_discrete, rfl⟩
+  have hprod : μ (evtSet σ T)
+      = ∏ i, μ ((σ i) ⁻¹' (if i ∈ T then ({true} : Set Bool) else {false})) :=
+    iIndepFun.meas_iInter hindep hcomap
+  rw [hprod]
+  have hfac : ∀ i, μ ((σ i) ⁻¹' (if i ∈ T then ({true} : Set Bool) else {false})) = 1 / 2 := by
+    intro i
+    by_cases hi : i ∈ T
+    · rw [if_pos hi]; exact hfair i
+    · rw [if_neg hi]
+      have hc : (σ i) ⁻¹' ({false} : Set Bool) = {ω | σ i ω = true}ᶜ := by
+        ext ω
+        simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_compl_iff,
+          Set.mem_setOf_eq, Bool.not_eq_true]
+      rw [hc, prob_compl_eq_one_sub (hAi i), hfair i]
+      exact ENNReal.sub_eq_of_eq_add (by simp) (ENNReal.add_halves 1).symm
+  rw [Finset.prod_congr rfl (fun i _ => hfac i), Finset.prod_const, Finset.card_univ]
+
+/-- **Master measure computation.** The measure of any event described by a property `Q` of the
+type vector is `(#allowed type vectors)·(1/2)^{|ι|}`. -/
+private lemma storey_measure_setOf_typeVec {ι : Type*} [Fintype ι] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i))
+    (hindep : iIndepFun σ μ) (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2)
+    (Q : Finset ι → Prop) [DecidablePred Q] :
+    μ {ω | Q (typeVec σ ω)}
+      = ((Finset.univ.powerset.filter Q).card) • (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) := by
+  have hset : {ω | Q (typeVec σ ω)}
+      = ⋃ T ∈ (Finset.univ.powerset.filter Q), evtSet σ T := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_iUnion, Finset.mem_filter, Finset.mem_powerset,
+      Finset.subset_univ, true_and, storey_mem_evtSet, exists_prop]
+    constructor
+    · intro hQ; exact ⟨typeVec σ ω, hQ, rfl⟩
+    · rintro ⟨T, hQT, rfl⟩; exact hQT
+  have hdisj : (↑(Finset.univ.powerset.filter Q) : Set (Finset ι)).PairwiseDisjoint
+      (evtSet σ) := by
+    intro T _ T' _ hne
+    change Disjoint (evtSet σ T) (evtSet σ T')
+    rw [Set.disjoint_left]
+    intro ω hω hω'
+    exact hne (((storey_mem_evtSet σ T ω).mp hω).symm.trans ((storey_mem_evtSet σ T' ω).mp hω'))
+  have hmeas : ∀ T ∈ Finset.univ.powerset.filter Q, MeasurableSet (evtSet σ T) :=
+    fun T _ => storey_measurableSet_evtSet hσ T
+  rw [hset, measure_biUnion_finset hdisj hmeas,
+    Finset.sum_congr rfl (fun T _ => storey_measure_evtSet μ hσ hindep hfair T), Finset.sum_const]
+
+/-- **Binomial Hamming-weight law.** `μ{ #{i : σ i = true} = k } = C(|ι|,k)·(1/2)^{|ι|}`. -/
+private lemma storey_typeVec_card_law {ι : Type*} [Fintype ι] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {σ : ι → Ω → Bool} (hσ : ∀ i, Measurable (σ i))
+    (hindep : iIndepFun σ μ) (hfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2) (k : ℕ) :
+    μ {ω | (typeVec σ ω).card = k}
+      = ((Fintype.card ι).choose k : ℕ) • (1 / 2 : ℝ≥0∞) ^ (Fintype.card ι) := by
+  rw [storey_measure_setOf_typeVec μ hσ hindep hfair (fun T => T.card = k)]
+  congr 1
+  rw [← Finset.card_univ (α := ι), ← Finset.card_powersetCard k (Finset.univ : Finset ι),
+    Finset.powersetCard_eq_filter]
+
 /-- **Binomial null-count bound** (Candès L7 §7.4): `∫ V(1/2)/(1+n₀−V(1/2)) ≤ 1`. For independent
 uniform nulls, `V(1/2) ∼ Bin(n₀, 1/2)`, so the integral equals
 `∑ₖ C(n₀,k)·2^{−n₀}·k/(1+(n₀−k)) = 1 − 2^{−n₀} ≤ 1` via `binom_ratio_sum_le_one`.
 
-**Documented named `sorry`.** The algebra (`binom_ratio_sum_le_one`) is fully proved; the missing
-piece is the *law* `V(1/2) ∼ Bin(n₀,1/2)` (a sum of `n₀` i.i.d. `Bernoulli(1/2)` indicators
-`𝟙(Uⱼ ≤ 1/2)`), which turns the integral into that finite sum. -/
+The law `V(1/2) ∼ Bin(n₀,1/2)` (`storey_typeVec_card_law`) turns the integral into that finite sum
+by LOTUS over the finite range of `V`. -/
 theorem storey_binom_bound (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ : Finset (Fin n))
     (p : Fin n → Ω → ℝ)
     -- USER-INPUT: p-values measurable; Candès L7 §7.4
@@ -150,7 +241,93 @@ theorem storey_binom_bound (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ : F
     -- USER-INPUT: each null exactly uniform on [0,1]; Candès L7 §7.4
     (hnull : ∀ j ∈ H₀, ∀ t : ℝ, 0 ≤ t → t ≤ 1 → μ {ω | p j ω ≤ t} = ENNReal.ofReal t) :
     ∫ ω, storeyRHSint H₀ p ω ∂μ ≤ 1 := by
-  sorry
+  classical
+  -- The null-indicator family `σ j = 𝟙(pⱼ ≤ 1/2)`, indexed by the nulls `ι = {j // j ∈ H₀}`.
+  set V : Ω → ℕ := fun ω => nullCountLE H₀ p (1 / 2) ω with hVdef
+  set σ : {j // j ∈ H₀} → Ω → Bool :=
+    fun i => (fun x : ℝ => if x ≤ 1 / 2 then true else false) ∘ p i.val with hσdef
+  have hbf : Measurable (fun x : ℝ => if x ≤ 1 / 2 then true else false) :=
+    Measurable.ite (measurableSet_le measurable_id measurable_const) measurable_const
+      measurable_const
+  have hσtrue : ∀ (i : {j // j ∈ H₀}) (ω : Ω), σ i ω = true ↔ p i.val ω ≤ 1 / 2 := by
+    intro i ω
+    simp only [hσdef, Function.comp_apply]
+    by_cases hc : p i.val ω ≤ 1 / 2 <;> simp [hc]
+  have hσmeas : ∀ i, Measurable (σ i) := fun i => hbf.comp (hmeas i.val)
+  have hσindep : iIndepFun σ μ :=
+    (hindep.precomp Subtype.val_injective).comp _ (fun _ => hbf)
+  have hσfair : ∀ i, μ {ω | σ i ω = true} = 1 / 2 := by
+    intro i
+    have hset : {ω | σ i ω = true} = {ω | p i.val ω ≤ 1 / 2} := by
+      ext ω; simp only [Set.mem_setOf_eq, hσtrue i ω]
+    rw [hset, hnull i.val i.property (1 / 2) (by norm_num) (by norm_num),
+      ENNReal.ofReal_div_of_pos (by norm_num : (0:ℝ) < 2)]
+    simp
+  -- `V ω = #{i : σ i ω = true} = (typeVec σ ω).card`, and `Fintype.card {j // j ∈ H₀} = H₀.card`.
+  have hcard : Fintype.card {j // j ∈ H₀} = H₀.card := Fintype.card_coe H₀
+  have hcount : ∀ ω, (typeVec σ ω).card = V ω := by
+    intro ω
+    simp only [hVdef, typeVec, nullCountLE]
+    refine Finset.card_bij (fun i _ => (i : Fin n)) ?_ ?_ ?_
+    · intro i hi
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
+      simp only [Finset.mem_filter]
+      exact ⟨i.property, (hσtrue i ω).mp hi⟩
+    · intro a _ b _ hab; exact Subtype.ext hab
+    · intro j hj
+      simp only [Finset.mem_filter] at hj
+      refine ⟨⟨j, hj.1⟩, ?_, rfl⟩
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      exact (hσtrue ⟨j, hj.1⟩ ω).mpr hj.2
+  -- The binomial law of `V`, transported to reals.
+  have hsk : ∀ k, MeasurableSet {ω | V ω = k} := by
+    intro k
+    exact measurable_nullCountLE H₀ p hmeas (1 / 2) (measurableSet_singleton k)
+  have hlaw_real : ∀ k, (μ {ω | V ω = k}).toReal
+      = (H₀.card.choose k : ℝ) / 2 ^ H₀.card := by
+    intro k
+    have hset : {ω | V ω = k} = {ω | (typeVec σ ω).card = k} := by
+      ext ω; simp only [Set.mem_setOf_eq, hcount ω]
+    rw [hset, storey_typeVec_card_law μ hσmeas hσindep hσfair k, hcard,
+      nsmul_eq_mul, ENNReal.toReal_mul, ENNReal.toReal_natCast, ENNReal.toReal_pow]
+    have h12 : (1 / 2 : ℝ≥0∞).toReal = 1 / 2 := by
+      rw [one_div, ENNReal.toReal_inv, ENNReal.toReal_ofNat]; norm_num
+    rw [h12, div_pow, one_pow, mul_one_div]
+  -- LOTUS: `storeyRHSint ω = h(V ω)` and `h(V ω) = ∑_{k≤n₀} 𝟙(V=k)·h(k)`.
+  have hVle : ∀ ω, V ω ≤ H₀.card := fun ω => nullCountLE_le_card H₀ p (1 / 2) ω
+  have hpt : ∀ ω, storeyRHSint H₀ p ω
+      = ∑ k ∈ Finset.range (H₀.card + 1),
+          (if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0) := by
+    intro ω
+    rw [Finset.sum_ite_eq (Finset.range (H₀.card + 1)) (V ω)
+      (fun k => (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))))]
+    rw [if_pos (Finset.mem_range.mpr (Nat.lt_succ_of_le (hVle ω)))]
+    simp only [storeyRHSint, storeyDenom, hVdef]
+    ring
+  have hterm : ∀ k, ∫ ω, (if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0) ∂μ
+      = (μ {ω | V ω = k}).toReal * ((k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ)))) := by
+    intro k
+    have hind : (fun ω => if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0)
+        = {ω | V ω = k}.indicator (fun _ => (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ)))) := by
+      funext ω; rw [Set.indicator_apply]; simp only [Set.mem_setOf_eq]
+    rw [hind, integral_indicator_const _ (hsk k), measureReal_def, smul_eq_mul]
+  calc ∫ ω, storeyRHSint H₀ p ω ∂μ
+      = ∫ ω, (∑ k ∈ Finset.range (H₀.card + 1),
+          (if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0)) ∂μ := by
+        exact integral_congr_ae (Filter.Eventually.of_forall hpt)
+    _ = ∑ k ∈ Finset.range (H₀.card + 1),
+          ∫ ω, (if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0) ∂μ := by
+        refine integral_finset_sum _ (fun k _ => ?_)
+        have hind : (fun ω => if V ω = k then (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ))) else 0)
+            = {ω | V ω = k}.indicator (fun _ => (k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ)))) := by
+          funext ω; rw [Set.indicator_apply]; simp only [Set.mem_setOf_eq]
+        rw [hind]
+        exact (integrable_const _).indicator (hsk k)
+    _ = ∑ k ∈ Finset.range (H₀.card + 1),
+          (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - (k : ℝ)))) := by
+        refine Finset.sum_congr rfl (fun k _ => ?_)
+        rw [hterm k, hlaw_real k]
+    _ ≤ 1 := binom_ratio_sum_le_one H₀.card
 
 /-! ## Rewriting the Storey FDP into the counting-process form
 
