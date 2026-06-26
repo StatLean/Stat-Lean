@@ -29,7 +29,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | ✅ real (merged, 0-sorry) |
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ◆ | ✅ real (merged, 0-sorry, incl. MGF) |
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | ✅ real (merged, 0-sorry) |
-| U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | gated green → closure running |
+| U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | ✅ real (merged, 0-sorry) |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | ✅ real (merged, 0-sorry) — T4 |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | ✅ 4 lemmas real (merged); **law = 1 named debt** (complexMGF route viable → follow-up) |
 | U-EB | `mt/empirical-bayes` | `EmpiricalBayes/BayesRisk` | gaussian 2nd-moment | ● | ✅ real (merged, 0-sorry) — T8 |
