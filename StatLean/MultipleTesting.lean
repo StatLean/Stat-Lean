@@ -9,6 +9,7 @@ import StatLean.MultipleTesting.ForMathlib.SymmetricCondExp
 import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import StatLean.MultipleTesting.ForMathlib.GaussianMoments
 import StatLean.MultipleTesting.ForMathlib.GammaMoments
+import StatLean.MultipleTesting.ForMathlib.GaussianSquareMGF
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.MultipleTesting.ForMathlib.RankUniform
 import StatLean.MultipleTesting.ForMathlib.EmpiricalProcessSup
