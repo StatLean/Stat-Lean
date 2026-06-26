@@ -3,6 +3,12 @@
 **STATE:** Wave 0 in progress. Integration branch `mt/batch8` (off `main` @ `f043f2a`).
 Reference: Candès STAT 300C lecture notes. See `outline.md` for targets, DAG, reuse, constants.
 
+**Pipeline validated (2026-06-26):** U-EV vertical slice stub-gated GREEN on cluster —
+`StatLean.MultipleTesting.EValues.Conversion` builds (2421 jobs, exit 0), `EValues.Defs` 0-sorry,
+`EValues.Conversion` exactly 2 named sorries. Cluster worktree + sbatch + shared-Mathlib cache all
+confirmed working. Worktree-add must precede `--worktree` builds; run cluster wrappers from inside
+`Stat-Lean/` (cwd resets to the non-repo parent otherwise).
+
 Protocol per unit (CLAUDE.md §10): Frame → Stubs (laptop) → Stub gate (cluster, green-with-sorries)
 → Proof closure (`lean-fasrc-cluster-claude`) → Verification gate (laptop: fresh build + sorry
 inventory + diff ⊆ touch-set, no laundering) → Merge `--no-ff` into `mt/batch8` + umbrella update.
@@ -13,7 +19,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 
 | Unit | Branch | File(s) | Dep | Diff | Status |
 |---|---|---|---|---|---|
-| U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | stub written |
+| U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | gated green; closing |
 | U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | todo |
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ● | todo |
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | todo |
