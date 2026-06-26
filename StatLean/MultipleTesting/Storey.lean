@@ -71,8 +71,63 @@ theorem storey_reverseMG_ost (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ :
       = ∫ ω, (nullCountLE H₀ p (1 / 2) ω : ℝ) / (1 / 2) ∂μ := by
   sorry
 
+/-! ## Rewriting the Storey FDP into the counting-process form
+
+The rejection set `storeyRejects p q ω = {i : pᵢ(ω) ≤ τ}` (with `τ = storeyThreshold p q ω`) makes
+the rejection / false-rejection counts coincide with the threshold counting processes at `t = τ`:
+`numRejections = R(τ) = countLE p τ` and `numFalseRejections = V(τ) = nullCountLE H₀ p τ`. Hence
+`FDP = V(τ)/(R(τ)∨1)`. These are pure `Finset` rewrites (no probability) and are the bridge between
+the `FDP/Defs` layer and the `EmpiricalCDF` counting processes that the martingale argument runs on.
+-/
+
+/-- The Storey rejection set intersected with the nulls is exactly the null counting filter at
+`t = τ`: `{i : pᵢ ≤ τ} ∩ H₀ = {j ∈ H₀ : pⱼ ≤ τ}`. -/
+private lemma storeyRejects_inter_eq (p : Fin n → Ω → ℝ) (q : ℝ) (H₀ : Finset (Fin n)) (ω : Ω) :
+    storeyRejects p q ω ∩ H₀
+      = H₀.filter (fun j => p j ω ≤ storeyThreshold p q ω) := by
+  ext j
+  simp only [storeyRejects, Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and]
+  tauto
+
+/-- `numRejections (storeyRejects p q) = R(τ) = countLE p τ` (`τ = storeyThreshold p q ω`). -/
+private lemma storey_numRejections_eq (p : Fin n → Ω → ℝ) (q : ℝ) (ω : Ω) :
+    numRejections (storeyRejects p q) ω = countLE p (storeyThreshold p q ω) ω := rfl
+
+/-- `numFalseRejections H₀ (storeyRejects p q) = V(τ) = nullCountLE H₀ p τ`. -/
+private lemma storey_numFalseRejections_eq (p : Fin n → Ω → ℝ) (q : ℝ) (H₀ : Finset (Fin n))
+    (ω : Ω) :
+    numFalseRejections H₀ (storeyRejects p q) ω
+      = nullCountLE H₀ p (storeyThreshold p q ω) ω := by
+  unfold numFalseRejections nullCountLE
+  rw [storeyRejects_inter_eq]
+
+/-- The Storey FDP in counting-process form: `FDP = V(τ)/(R(τ)∨1)`. -/
+private lemma storey_FDP_eq (p : Fin n → Ω → ℝ) (q : ℝ) (H₀ : Finset (Fin n)) (ω : Ω) :
+    FDP H₀ (storeyRejects p q) ω
+      = (nullCountLE H₀ p (storeyThreshold p q ω) ω : ℝ)
+          / max (countLE p (storeyThreshold p q ω) ω : ℝ) 1 := by
+  unfold FDP
+  rw [storey_numFalseRejections_eq, storey_numRejections_eq]
+
 /-- **Storey's procedure controls FDR** (Candès, Lecture 7, §7.4, Theorem 3, STAT 300C). For
-independent uniform null p-values, `FDR ≤ q`. -/
+independent uniform null p-values, `FDR ≤ q`.
+
+The verified content here reduces `FDR = E[FDP]` to the counting-process form
+`E[ V(τ)/(R(τ)∨1) ]` (via `storey_FDP_eq`). The remaining `sorry` is the analytic + probabilistic
+core, blocked on machinery not packaged as merged bricks:
+
+* **Threshold attainment** `storeyFDRhat q τ ≤ q` at the `sSup` (with `τ > 0`), giving the pointwise
+  bound `FDP(τ) ≤ q·(V(τ)/τ)·1/(2(1+n−R(1/2)))`. `storeyFDRhat` is a step function (jumps at the
+  order statistics), so the constraint set is not closed under the naive topology — this needs the
+  right-continuity of `R(·)` rather than a continuity-of-the-objective argument.
+* **Joint-factor optional stopping.** `storey_reverseMG_ost` (the documented martingale debt) gives
+  `E[V(τ)/τ] = 2·E[V(1/2)]`, but the FDP bound carries the *random* weight
+  `1/(2(1+n−R(1/2)))` correlated with the path; bridging needs a joint form of the backwards-MG
+  optional-stopping statement.
+* **Null-count law** `V(1/2) ∼ Bin(n₀,1/2)` (independent uniform nulls, `n₀ = H₀.card`), which turns
+  `E[V(1/2)/(1+n₀−V(1/2))]` into `∑ₖ C(n₀,k)·2^{−n₀}·k/(1+(n₀−k))`. That finite sum is then bounded
+  by `1 − 2^{−n₀} ≤ 1` via `binom_ratio_sum_le_one`; the missing piece is the distribution of the
+  null count, not the algebra. -/
 theorem storey_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ : Finset (Fin n))
     (p : Fin n → Ω → ℝ) {q : ℝ} (hq0 : 0 < q) (hq1 : q < 1)
     -- USER-INPUT: p-values measurable; Candès L7 §7.4
@@ -82,6 +137,11 @@ theorem storey_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ : Finset
     -- USER-INPUT: each null exactly uniform on [0,1]; Candès L7 §7.4
     (hnull : ∀ j ∈ H₀, ∀ t : ℝ, 0 ≤ t → t ≤ 1 → μ {ω | p j ω ≤ t} = ENNReal.ofReal t) :
     FDR H₀ (storeyRejects p q) μ ≤ q := by
+  -- Reduce `FDR = E[FDP]` to the counting-process form `E[ V(τ)/(R(τ)∨1) ]`.
+  rw [FDR]
+  simp_rw [storey_FDP_eq]
+  -- Remaining: threshold-attainment + joint-factor `storey_reverseMG_ost` + null-count law
+  -- `V(1/2) ∼ Bin(n₀,1/2)`, then `binom_ratio_sum_le_one`. See docstring for blocking steps.
   sorry
 
 end StatLean.MultipleTesting
