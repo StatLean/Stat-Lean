@@ -22,7 +22,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | gated green; closing |
 | U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | todo |
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ● | todo |
-| U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | todo |
+| U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | stub written |
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | todo |
 | U-BHD | `mt/bh-dependent` | `BHDependence` | FDP,PValues,harmonic | ◆ | todo |
 | U-CHISQ | `mt/chisquared-dist` | `ForMathlib/ChiSquared` | GAUSS,GAMMA | ◆ | todo |
