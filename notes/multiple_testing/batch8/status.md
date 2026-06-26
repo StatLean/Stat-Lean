@@ -20,7 +20,7 @@ Diff: ◐ easy · ● moderate · ◆ hard · ◆◆ research-hard. Status: stub
 | Unit | Branch | File(s) | Dep | Diff | Status |
 |---|---|---|---|---|---|
 | U-EV | `mt/evalues` | `EValues/{Defs,Conversion}` | PValues | ◐ | ✅ real (merged, 0-sorry) |
-| U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | stub written |
+| U-GAUSS | `mt/gauss-moments` | `ForMathlib/GaussianMoments` | — | ● | ✅ real (merged, 0-sorry) |
 | U-GAMMA | `mt/gamma-moments` | `ForMathlib/GammaMoments` | — | ◆ | stub written |
 | U-EMPCDF | `mt/empirical-cdf` | `ForMathlib/EmpiricalCDF` | — | ● | ✅ real (merged, 0-sorry) |
 | U-RANK | `mt/rank-uniform` | `ForMathlib/RankUniform` | — | ● | todo |
