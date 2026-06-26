@@ -1,5 +1,6 @@
 import StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 import StatLean.HighDimensionalStatistics.ForMathlib.TopK
+import StatLean.HighDimensionalStatistics.ForMathlib.PsiTaylor
 import StatLean.HighDimensionalStatistics.LinearModel.Defs
 import StatLean.HighDimensionalStatistics.Lasso.Defs
 import StatLean.HighDimensionalStatistics.Lasso.DeterministicRate
@@ -19,6 +20,16 @@ import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Subgradient
 import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.DualCertificate
 import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.DeterministicGuarantee
 import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.SubGaussianNoise
+import StatLean.HighDimensionalStatistics.MEstimator.Defs
+import StatLean.HighDimensionalStatistics.MEstimator.Deviation
+import StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip
+import StatLean.HighDimensionalStatistics.MEstimator.Bound
+import StatLean.HighDimensionalStatistics.MEstimator.DualBound
+import StatLean.HighDimensionalStatistics.MEstimator.GLMDefs
+import StatLean.HighDimensionalStatistics.MEstimator.L1Decomposable
+import StatLean.HighDimensionalStatistics.MEstimator.ScoreSubGaussian
+import StatLean.HighDimensionalStatistics.MEstimator.GoodEvent
+import StatLean.HighDimensionalStatistics.MEstimator.GLMCorollaries
 
 /-!
 # HighDimensionalStatistics — area umbrella

@@ -14,6 +14,8 @@ Area reference: Lu, *Big Data Analysis*, ch. 5 and ch. 8. Tag with `Lu-BDA §X.Y
 |---|---|
 | `ols_mse/` | ch5 `thm:mse-ols` (expectation + high-prob halves) |
 | `lasso_rate/` | ch8 `thm:re` (deterministic) + `cor:lasso-rate` (random noise) |
+| `compressed_sensing/` | Lu ch6–7: cone theorem `thm:cone`, RIP recovery `thm:rip`, random-Gaussian RIP `thm:3s-rip` |
+| `m_estimator/` | Wainwright ch9: decomposable regularizers + RSC (Thm 9.19/9.24), GLM Lasso rates (Cor 9.26/9.27) |
 
 ## Layout (`StatLean/HighDimensionalStatistics/`, namespace `StatLean.HighDimensionalStatistics`)
 
