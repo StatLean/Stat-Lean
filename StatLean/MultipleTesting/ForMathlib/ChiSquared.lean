@@ -78,6 +78,25 @@ theorem map_sum_sq_eq_chiSquared {n : ℕ} (hn : 0 < n) (μ : Measure Ω) [IsPro
     -- USER-INPUT: the Zᵢ are jointly independent; Candès L2 §2.3
     (hindep : iIndepFun Z μ) :
     Measure.map (fun ω => ∑ i, (Z i ω) ^ 2) μ = chiSquared n := by
+  -- ROUTE (verified Mathlib bricks; left as a single named `sorry` per task scope).
+  -- Reduce to the imaginary axis via the complex MGF / characteristic-function bridge:
+  --   `MeasureTheory.Measure.ext_of_charFun` ⇐ `charFun (μ.map X) = charFun (chiSquared n)`,
+  -- and on each point `t·I`,
+  --   `ProbabilityTheory.complexMGF_mul_I hX : complexMGF X μ (t·I) = charFun (μ.map X) t`,
+  --   `ProbabilityTheory.complexMGF_id_mul_I : complexMGF id (chiSquared n) (t·I) = charFun … t`,
+  -- so it suffices to match the two `complexMGF`s at `t·I` (re = 0).  Mathlib's identity-theorem
+  --   `ProbabilityTheory.eqOn_complexMGF_of_mgf : mgf X μ = mgf id (chiSquared n) →
+  --      EqOn (complexMGF X μ) (complexMGF id (chiSquared n)) (strip {z.re ∈ interior expSet})`
+  -- closes it once `0 ∈ interior (integrableExpSet X μ)`.
+  -- The two REAL obligations are the remaining work (no Gamma `charFun`, measure convolution, nor
+  -- mgf-uniqueness-near-0 exist in Mathlib, so this real-analysis route is the tractable one):
+  --   (A) `mgf X μ = mgf id (chiSquared n)` globally on ℝ — from `mgf_chiSquared` here, the real
+  --       squared-Gaussian mgf `∫ exp(l z²) dN(0,1) = (1−2l)^{−1/2}` (cf. the `private`
+  --       `integral_exp_mul_sq_stdGaussian` in CompressedSensing/GaussianChiSquared.lean; promote
+  --       it to a `ForMathlib` brick), the product-of-mgf identity under `iIndepFun`, and rpow
+  --       algebra `((1/2)/((1/2)−l))^{n/2} = ((1−2l)^{−1/2})^n`; plus non-integrability for l ≥ 1/2
+  --       on both sides (`mgf = 0`).
+  --   (B) `0 ∈ interior (integrableExpSet X μ)` — a Gaussian-tail integrability neighborhood.
   sorry
 
 end StatLean.MultipleTesting
