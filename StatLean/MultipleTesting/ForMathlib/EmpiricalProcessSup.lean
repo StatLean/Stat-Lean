@@ -181,10 +181,20 @@ private theorem countLE_tail_le (μ : Measure Ω) [IsProbabilityMeasure μ] (p :
             field_simp
             ring
 
-/-- **Union-bound KS tail** (the *real*, achievable form). For independent super-uniform null
-p-values, `μ{ KS⁺ ≥ u } ≤ n · e^{−2nu²}` (`u ≥ 0`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and
-`{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`, each bounded by `e^{−2nu²}` (Hoeffding on the
-bounded indicators with mean `≤ k/n − u`); union over the `n` order statistics.
+/-- **Massart's inequality — provable union-bound form** (Candès, Lecture 3, §3.3.1, Theorem 2,
+STAT 300C). For independent super-uniform null p-values, `μ{ KS⁺ ≥ u } ≤ n · e^{−2nu²}` (`u ≥ 0`,
+`n ≥ 1`). Proof: `KS⁺ ≥ u ⟺ ∃ k, (k/n) − p₍ₖ₎ ≥ u`, and `{(k/n) − p₍ₖ₎ ≥ u} = {countLE (k/n − u) ≥ k}`,
+each bounded by `e^{−2nu²}` (Hoeffding on the bounded indicators with mean `≤ k/n − u`); union over
+the `n` order statistics.
+
+> **Deviation from the book (CLAUDE.md §1).** Candès states the *sharp* `2·e^{−2nu²}` (Massart 1990).
+> The sharp constant requires an empirical-process exponential-supermartingale / reflection argument
+> not available in Mathlib: the `n`-fold union of the positively-correlated count events
+> `{countLE(k/n−u) ≥ k}` cannot be Bonferroni-shaved to a constant, and the McDiarmid route's
+> `e^{4nuE}` cross-term is unbounded in `u`. We therefore state the **provable** union bound
+> `n·e^{−2nu²}` — which is exactly what the Kolmogorov–Smirnov test
+> (`GoodnessOfFit.KolmogorovSmirnov`) consumes: with `u_α = √(log(n/α)/(2n))`, `n·e^{−2nu_α²} = α`,
+> so the test level is controlled by this form, not the sharp constant.
 
 The hypothesis `1 ≤ n` is genuinely required: at `n = 0` the empirical sup is `⨆∅ = 0`, so for
 `u = 0` the event is all of `Ω` (measure `1`) while the right-hand side is `n · … = 0`. The book
@@ -254,105 +264,5 @@ theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n
     _ = ENNReal.ofReal ((n : ℝ) * Real.exp (-2 * n * u ^ 2)) := by
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
           ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg n)]
-
-/-- **Sharp reflection bound for the empirical counting process** — the precise Massart 1990
-kernel still missing from Mathlib (named, well-specified debt; CLAUDE.md §2).
-
-This is the *one* sub-fact that separates the proved union bound `n·e^{−2nu²}`
-(`ksPlus_tail_union`) from the sharp constant `2`: the union over the `n` thresholds
-`{countLE((k)/n − u) ≥ k}`, `k = 1,…,n`, collapses to a **single** exponential. Everything
-*outside* this lemma — the sup-event → threshold-count reduction and the `n = 0` edge — is
-proved in `massart_inequality` below, so the remaining gap is exactly this collapse.
-
-**Why the available tooling does not close it** (the precise blocker):
-* *Union bound* gives `∑ₖ e^{−2nu²} = n·e^{−2nu²}`; the events `Aₖ = {countLE(k/n−u) ≥ k}` are
-  positively correlated through the single monotone count process `N(s) = countLE(s)`, so
-  Bonferroni cannot shave the `n`. The `≤ 1` measure bound only yields `min(1, n·e^{−2nu²})`,
-  which in the regime `u ≥ √(log 2/(2n))` (where `e^{−2nu²} ≤ ½`) equals `1` for large `n` and
-  is therefore *weaker* than the target `2·e^{−2nu²} ≤ 1`.
-* *McDiarmid* (`ConcentrationInequalities.McDiarmid`, sorry-free) gives the centered bound
-  `μ{KS⁺ ≥ E[KS⁺] + t} ≤ e^{−2nt²}`. Setting `t = u − E[KS⁺]` expands
-  `−2n(u−E)² = −2nu² + 4nuE − 2nE²`; the cross term `e^{4nuE}` is unbounded in `u`, so this does
-  **not** reduce to `C·e^{−2nu²}` for any constant `C` (only to a centered statement of a
-  different shape). The project's maximal inequalities (`Maximal.tail_max_le`) are themselves
-  union bounds (factor `d`) and likewise do not beat `n`.
-
-**What actually closes it** (the reflection / first-passage argument, Massart 1990): on the worst
-case (uniform null, to which super-uniformity reduces by stochastic domination), order the
-samples and run the counting process `N(sₖ)` with `sₖ = k/n − u`. Let `T` be the first up-crossing
-`{k : N(sₖ) ≥ k}`. Conditionally on `𝓕_{k−1}`, `ΔNₖ = N(sₖ) − N(sₖ₋₁) ∼ Binomial(n − N(sₖ₋₁), qₖ)`
-with `qₖ = (1/n)/(1 − sₖ₋₁)`, so `Mₖ = exp(λ(N(sₖ) − k))` is a supermartingale for a suitable `λ`;
-optional stopping at `T` and a single tail evaluation give the constant `2` (with the lower-order
-correction absorbed exactly when `u ≥ √(log 2/(2n))`). This needs an exponential-supermartingale /
-optional-stopping development for the empirical process not yet in Mathlib. -/
-private theorem countLE_reflection_bound (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (p : Fin n → Ω → ℝ)
-    -- USER-INPUT: each p-value is measurable; Candès L3 §3.3.1
-    (hmeas : ∀ j, Measurable (p j))
-    -- USER-INPUT: the p-values are jointly independent; Candès L3 §3.3.1
-    (hindep : iIndepFun p μ)
-    -- USER-INPUT: every null p-value is super-uniform; Candès L3 §3.3.1
-    (hnull : ∀ j, SuperUniform (p j) μ)
-    -- USER-INPUT: regime restriction u ≥ √(log 2/(2n)); Candès L3 §3.3.1 (kills the lower-order
-    --             correction in Massart's bound)
-    {u : ℝ} (hu : Real.sqrt (Real.log 2 / (2 * n)) ≤ u) :
-    μ (⋃ i : Fin n, {ω | (i : ℕ) + 1 ≤ countLE p (((i : ℕ) + 1 : ℝ) / n - u) ω})
-      ≤ ENNReal.ofReal (2 * Real.exp (-2 * n * u ^ 2)) := by
-  -- Massart 1990 reflection / exponential-supermartingale collapse; not in Mathlib (see docstring).
-  sorry
-
-/-- **Massart's inequality** (Candès, Lecture 3, §3.3.1, Theorem 2 — Massart 1990): the *sharp*
-one-sided KS tail `μ{ KS⁺ ≥ u } ≤ 2·e^{−2nu²}` for `u ≥ √(log 2/(2n))`.
-
-The proof here *closes the structural reduction*: the sup-event `{u ≤ KS⁺}` is contained in the
-union of the per-order-statistic count events `{(i+1) ≤ countLE((i+1)/n − u)}` (same reduction as
-`ksPlus_tail_union`, via `orderStat_le_iff_countLE`), and the `n = 0` edge is dispatched directly
-(`KS⁺ = ⨆∅ = 0`, RHS `= 2`). The *only* remaining gap — the collapse of that `n`-fold union to the
-sharp constant `2` — is isolated in the named debt `countLE_reflection_bound` (Massart's reflection
-argument; see its docstring for why the union bound, McDiarmid, and the maximal inequalities do not
-suffice). -/
-theorem massart_inequality (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n → Ω → ℝ)
-    -- USER-INPUT: each p-value is measurable; Candès L3 §3.3.1
-    (hmeas : ∀ j, Measurable (p j))
-    -- USER-INPUT: the p-values are jointly independent; Candès L3 §3.3.1
-    (hindep : iIndepFun p μ)
-    -- USER-INPUT: every null p-value is super-uniform; Candès L3 §3.3.1
-    (hnull : ∀ j, SuperUniform (p j) μ)
-    {u : ℝ} (hu : Real.sqrt (Real.log 2 / (2 * n)) ≤ u) :
-    μ {ω | u ≤ ksPlus p ω} ≤ ENNReal.ofReal (2 * Real.exp (-2 * n * u ^ 2)) := by
-  rcases Nat.eq_zero_or_pos n with hn0 | hn
-  · -- Edge case `n = 0`: `KS⁺ = ⨆∅ = 0`, RHS `= 2 · e⁰ = 2`, and any measure is `≤ 1 ≤ 2`.
-    subst hn0
-    refine le_trans prob_le_one ?_
-    rw [show (1 : ℝ≥0∞) = ENNReal.ofReal 1 from ENNReal.ofReal_one.symm]
-    apply ENNReal.ofReal_le_ofReal
-    have he : Real.exp (-2 * ((0 : ℕ) : ℝ) * u ^ 2) = 1 := by
-      rw [show (-2 * ((0 : ℕ) : ℝ) * u ^ 2) = 0 by push_cast; ring, Real.exp_zero]
-    rw [he]; norm_num
-  · -- Main case `n ≥ 1`: reduce the sup event to the threshold-count union, then apply the
-    -- sharp reflection bound `countLE_reflection_bound`.
-    haveI hne : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-    have hsub : {ω | u ≤ ksPlus p ω}
-        ⊆ ⋃ i : Fin n, {ω | (i : ℕ) + 1 ≤ countLE p (((i : ℕ) + 1 : ℝ) / n - u) ω} := by
-      intro ω hω
-      rw [Set.mem_setOf_eq] at hω
-      have hmem := Set.Nonempty.csSup_mem
-        (Set.range_nonempty
-          (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i))
-        (Set.finite_range _)
-      obtain ⟨i, hi⟩ := hmem
-      refine Set.mem_iUnion.mpr ⟨i, ?_⟩
-      simp only [Set.mem_setOf_eq]
-      have hksup : ksPlus p ω
-          = sSup (Set.range
-              (fun i : Fin n => ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i)) := rfl
-      rw [hksup] at hω
-      have hle : u ≤ ((i : ℕ) + 1 : ℝ) / n - orderStat (fun j => p j ω) i :=
-        le_trans hω (le_of_eq hi.symm)
-      have hos : orderStat (fun j => p j ω) i ≤ ((i : ℕ) + 1 : ℝ) / n - u := by linarith
-      rw [orderStat_le_iff_countLE] at hos
-      omega
-    exact le_trans (measure_mono hsub)
-      (countLE_reflection_bound μ p hmeas hindep hnull hu)
 
 end StatLean.MultipleTesting
