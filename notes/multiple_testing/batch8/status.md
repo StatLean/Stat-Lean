@@ -1,9 +1,12 @@
 # Batch 8 — Candès STAT 300C — status
 
-**STATE:** **Phase A complete (6/6 0-sorry)**; Phase B underway. Merged: U-EV, U-EMPCDF, U-GAUSS,
-U-GAMMA, U-BHD (T4), U-EB (T8) [all 0-sorry], U-CHISQ [4 lemmas real; law=1 debt]. Closing: U-CONF,
-U-CHI. Remaining: U-REVMG → U-BHM/U-STO; U-MASSART → U-KS; U-HC; + U-CHISQ-LAW follow-up. Integration
-branch `mt/batch8` (off `main` @ `f043f2a`). Reference: Candès STAT 300C. See `outline.md`.
+**STATE: BATCH 8 COMPLETE** — all targets formalized on `mt/batch8` (off `main` @ `f043f2a`).
+**14 units fully 0-sorry** (incl. main theorems T4 BH-dependence, T5 BH-exact, T7 conformal,
+T8 empirical-Bayes; χ² exact law; KS test; goodness-of-fit). **3 documented debts only**: sharp
+Massart constant; U-STO's 2 (reverse-martingale OST core + the assembly atop it, T6 stated); U-HC's
+full Donoho–Jin detection theorem (honestly deferred in prose — boundary + statistic are 0-sorry).
+U-REVMG folded (BHM done via leave-one-out; STO's reverse-MG is the documented sorry). Reference:
+Candès STAT 300C. NOT yet merged to `main` / pushed to `origin`. See `outline.md`, ledger below.
 
 **API correction:** `ProbabilityTheory.Exchangeable` is **NOT** in Mathlib v4.29.1 (loogle 0 hits —
 the Batch-8 exploration agent was wrong). U-RANK / U-CONF must **define exchangeability ourselves**
