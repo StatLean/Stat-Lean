@@ -392,12 +392,55 @@ denominator `R(·)∨1`); at the `sSup`, either `τ` is not an order statistic (
 left-limit `≤ q`) or `R(·)` jumps up at `τ` (so the value drops below the left-limit `≤ q`). Either
 way `≤ q`.
 
-**Documented named `sorry`.** The sublevel set of a right-continuous step function is not closed
-under the naive topology; the attainment needs the order-statistic jump analysis of `countLE`, not
-a continuity-of-the-objective argument. -/
+The sublevel set is in fact closed, but rather than topology we argue by monotonicity of `countLE`:
+if `g(τ) = π̂₀·n·τ/(R(τ)∨1) > q` then, because `R(·)` is monotone, every `s ∈ (a, τ]` with
+`a = q·(R(τ)∨1)/(π̂₀·n)` has `g(s) ≥ π̂₀·n·s/(R(τ)∨1) > q`, so `a` would be a strictly smaller upper
+bound of the sublevel set than its supremum `τ` — contradiction. -/
 private theorem storey_threshold_attained (p : Fin n → Ω → ℝ) {q : ℝ} (hq0 : 0 < q) (ω : Ω) :
     storeyFDRhat p (storeyThreshold p q ω) ω ≤ q := by
-  sorry
+  set S := {t : ℝ | t ∈ Set.Icc (0 : ℝ) (1 / 2) ∧ storeyFDRhat p t ω ≤ q} with hS
+  set τ := storeyThreshold p q ω with hτdef
+  have hbdd : BddAbove S := storeyThreshold_set_bddAbove p q ω
+  have hne : S.Nonempty := ⟨0, storeyThreshold_zero_mem p hq0 ω⟩
+  have hτnn : 0 ≤ τ := storeyThreshold_nonneg p hq0 ω
+  by_contra hcon
+  rw [not_le] at hcon
+  set C := storeyPiZero p ω * (n : ℝ) with hC
+  have hMpos : ∀ t : ℝ, (0 : ℝ) < max (countLE p t ω : ℝ) 1 :=
+    fun t => lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hgτ : storeyFDRhat p τ ω = C * τ / max (countLE p τ ω : ℝ) 1 := rfl
+  rw [hgτ, lt_div_iff₀ (hMpos τ)] at hcon
+  have hqM : 0 < q * max (countLE p τ ω : ℝ) 1 := mul_pos hq0 (hMpos τ)
+  have hCτpos : 0 < C * τ := lt_trans hqM hcon
+  have hτpos : 0 < τ := by
+    rcases lt_or_eq_of_le hτnn with h | h
+    · exact h
+    · exfalso; rw [← h, mul_zero] at hCτpos; exact lt_irrefl _ hCτpos
+  have hCpos : 0 < C := by nlinarith [hCτpos, hτpos]
+  set a := q * max (countLE p τ ω : ℝ) 1 / C with ha
+  have haτ : a < τ := by rw [ha, div_lt_iff₀ hCpos]; nlinarith [hcon]
+  have hapos : 0 < a := by rw [ha]; positivity
+  have hub : ∀ s ∈ S, s ≤ a := by
+    intro s hs
+    by_contra hsa
+    rw [not_le] at hsa
+    have hsτ : s ≤ τ := le_csSup hbdd hs
+    have hRs : (countLE p s ω : ℝ) ≤ (countLE p τ ω : ℝ) := by
+      exact_mod_cast countLE_mono p ω hsτ
+    have hden : max (countLE p s ω : ℝ) 1 ≤ max (countLE p τ ω : ℝ) 1 := by
+      gcongr
+    have hsnn : 0 ≤ s := le_of_lt (lt_trans hapos hsa)
+    have hCsnn : 0 ≤ C * s := mul_nonneg hCpos.le hsnn
+    rw [ha, div_lt_iff₀ hCpos] at hsa
+    have hchain : q < storeyFDRhat p s ω := by
+      have hgs : storeyFDRhat p s ω = C * s / max (countLE p s ω : ℝ) 1 := rfl
+      rw [hgs]
+      refine lt_of_lt_of_le ?_ (div_le_div_of_nonneg_left hCsnn (hMpos s) hden)
+      rw [lt_div_iff₀ (hMpos τ)]
+      nlinarith [hsa]
+    exact absurd hs.2 (not_le.mpr hchain)
+  have hτa : τ ≤ a := csSup_le hne hub
+  linarith [haτ]
 
 /-- Splitting the rejection count over nulls and non-nulls: `R(t) + n₀ ≤ V(t) + n` (`n₀ = H₀.card`).
 The non-null rejections `R(t) − V(t) = #{j ∉ H₀ : pⱼ ≤ t}` are at most the `n − n₀` non-nulls. -/
