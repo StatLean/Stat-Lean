@@ -70,15 +70,22 @@ two orphaned-closure poll-harvests.
   cluster gate on U-EV — `IsEVariable.expectation_le_one` switched Bochner→lintegral; both
   conversion theorems were false under the Bochner form (counterexample `E ω = 2/ω` on `(0,1)`).
 
-## Residual named debts
-- **`map_sum_sq_eq_chiSquared`** (`ForMathlib/ChiSquared.lean`) — the exact law `∑Zᵢ²~χ²ₙ`. 4 χ²
-  distributional lemmas closed 0-sorry; the law is 1 named sorry. **Viable route recorded in the
-  proof**: `eqOn_complexMGF_of_mgf` + `complexMGF_mul_I` + `ext_of_charFun` reduce it to two real
-  obligations — (A) global MGF equality `∑Zᵢ² mgf = χ²ₖ mgf` (from the squared-Gaussian real MGF
-  `∫exp(lz²)dN(0,1)=(1−2l)^{−1/2}` in CompressedSensing/GaussianChiSquared — promote to ForMathlib —
-  + `iIndepFun.mgf_sum` + rpow algebra), (B) integrability neighborhood `0 ∈ interior(integrableExpSet)`.
-  **Follow-up unit `U-CHISQ-LAW`** to close it (the user requested the exact law). Anticipated:
-  U-MASSART sharp-constant, U-HC Donsker/LIL.
+## Residual named debts (final)
+- ✅ **χ² exact law `map_sum_sq_eq_chiSquared` — RETIRED** (closed by U-CHISQ-LAW via the complexMGF
+  route; full chi-squared infrastructure now 0-sorry).
+- **`massart_inequality`** (`ForMathlib/EmpiricalProcessSup.lean`) — the *sharp* DKW constant
+  `2·e^{−2nu²}` (Massart 1990 reflection argument, Mathlib-absent). The union-bound `n·e^{−2nu²}` is
+  proved real and is what U-KS consumes; the sharp constant is the only outstanding goodness-of-fit debt.
+- **U-STO (`Storey.lean`), 2 sorries** — `storey_reverseMG_ost` (the backwards-martingale optional
+  stopping; Mathlib lacks continuous-time backwards MGs — needs the discrete uniform-null reformulation,
+  a self-contained development) and `storey_fdr_le` (the FDRhat-attainment + joint-factor-OST + null-count
+  `Bin(n₀,½)` assembly atop it). The FDP→counting-process reduction is proved real.
+- **U-HC (`GoodnessOfFit/HigherCriticism.lean`)** — `rhoStar` boundary + `hcStat` formalized (boundary
+  properties closing on `mt/higher-criticism`); the full Donoho–Jin detection theorem is **honestly
+  deferred in prose, NOT laundered**. *Correction (user):* the project HAS Donsker
+  (`AsymptoticStatistics.EmpiricalProcess.IsPDonsker` + `isPDonsker_of_finite_bracketing_entropy_integral`),
+  so the H₀ empirical-process convergence is reachable; remaining gaps are the empirical-process LIL
+  (`√(2 log log n)` calibration) and the H₁ sparse-mixture large deviations.
 
 ## Book-vs-Lean constants
 (populated as units land.)
