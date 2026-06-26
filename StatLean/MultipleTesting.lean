@@ -10,6 +10,7 @@ import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import StatLean.MultipleTesting.ForMathlib.GaussianMoments
 import StatLean.MultipleTesting.ForMathlib.GammaMoments
 import StatLean.MultipleTesting.BenjaminiHochberg
+import StatLean.MultipleTesting.BHDependence
 import StatLean.MultipleTesting.HolmBonferroni
 import StatLean.MultipleTesting.Knockoff.Procedure
 import StatLean.MultipleTesting.Knockoff.FdpBound
