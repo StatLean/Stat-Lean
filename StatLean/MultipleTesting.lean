@@ -7,6 +7,7 @@ import StatLean.MultipleTesting.ForMathlib.OptionalStopping
 import StatLean.MultipleTesting.ForMathlib.BinomialRatio
 import StatLean.MultipleTesting.ForMathlib.SymmetricCondExp
 import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
+import StatLean.MultipleTesting.ForMathlib.GaussianMoments
 import StatLean.MultipleTesting.BenjaminiHochberg
 import StatLean.MultipleTesting.HolmBonferroni
 import StatLean.MultipleTesting.Knockoff.Procedure
