@@ -31,7 +31,7 @@ variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace 
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3. -/
-theorem minimax_local_packing [PseudoEMetricSpace Ω]
+theorem minimax_local_packing [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
     (Φ : ℝ≥0∞ → ℝ≥0∞) (g : Θ → Ω) (P : Kernel Θ 𝓧) [IsMarkovKernel P]
     {M : ℕ} [NeZero M] (θfam : Fin M → Θ) (hθ : Measurable θfam) (δ : ℝ≥0∞) (c n : ℝ)
     -- USER-INPUT: the distortion `Φ` is increasing; Wainwright §15.3.3.

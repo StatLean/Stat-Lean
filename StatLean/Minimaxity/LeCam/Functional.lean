@@ -92,6 +92,9 @@ theorem minimax_functional_modulus
     (Φ : ℝ≥0∞ → ℝ≥0∞)
     -- USER-INPUT: the distortion `Φ` is increasing; Wainwright §15.2.1, Cor 15.6.
     (hΦ : Monotone Φ)
+    -- LEAN-ONLY: `Φ` is lower-semicontinuous (needed for the `Φ(½·⨆d) ≤ ⨆Φ(½·d)` modulus-sup
+    -- interchange that `Monotone Φ` alone cannot give); satisfied by the examples' `Φ = (·)²`.
+    (hΦlsc : LowerSemicontinuous Φ)
     -- USER-INPUT: `Pn` is the `n`-fold i.i.d. product of the family `P`; Wainwright §15.2.1.
     (hPn : ∀ i, Pn i = Measure.pi fun _ : Fin n => P i) :
     4⁻¹ * Φ (2⁻¹ * hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n))))

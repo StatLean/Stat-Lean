@@ -120,7 +120,7 @@ of the induced sub-model `j ↦ P_{θfam j}`.
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.2, Eq. (15.3). -/
 theorem minimax_ge_testing_error
-    [PseudoEMetricSpace Ω] {M : ℕ} [NeZero M]
+    [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] {M : ℕ} [NeZero M]
     (Φ : ℝ≥0∞ → ℝ≥0∞) (g : Θ → Ω) (P : Kernel Θ 𝓧) [IsMarkovKernel P]
     (θfam : Fin M → Θ) (hθ : Measurable θfam) (δ : ℝ≥0∞)
     -- USER-INPUT: the distortion `Φ` is increasing; Wainwright §15.1.2, Prop 15.1.
