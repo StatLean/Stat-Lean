@@ -260,22 +260,223 @@ private lemma discrete_fano_pointwise {M : ℕ} (hM : 2 ≤ M) (p : Fin M → �
     _ = Real.binEntropy (1 - m) + (1 - m) * Real.log ((M : ℝ) - 1) := by rw [← hbin]; ring
     _ ≤ Real.log 2 + (1 - m) * Real.log (M : ℝ) := by linarith [hb2, hprod]
 
+/-- **Pointwise MAP/Bayes-error bound.** For a posterior pmf `p` on `Fin M` (`∑ⱼ pⱼ = 1`, each
+`pⱼ < ∞`) and any sub-probability decision weights `b` with `∑ⱼ bⱼ = 1`, `bⱼ ≤ 1` (the test mass
+`bⱼ = κ(z){j}`), the pointwise MAP error `1 − maxⱼ pⱼ` is at most the posterior-weighted `0–1` loss
+`∑ⱼ pⱼ(1 − bⱼ)`. This is the per-`z` core of `mapError_integral_le`: the MAP test (which always
+guesses `argmaxⱼ pⱼ`) attains the smallest possible posterior error, so any test's error dominates
+it. The bound is `∑ⱼ pⱼ bⱼ ≤ (maxⱼ pⱼ)·∑ⱼ bⱼ = maxⱼ pⱼ`. -/
+private lemma map_error_pointwise {M : ℕ} (hM : 0 < M)
+    (p b : Fin M → ℝ≥0∞) (hp_top : ∀ j, p j ≠ ⊤) (hp_sum : ∑ j, p j = 1)
+    (hb_le : ∀ j, b j ≤ 1) (hb_sum : ∑ j, b j = 1) :
+    ENNReal.ofReal (1 - ⨆ j, (p j).toReal) ≤ ∑ j, p j * (1 - b j) := by
+  haveI : Nonempty (Fin M) := ⟨⟨0, hM⟩⟩
+  obtain ⟨js, hjs⟩ := Finite.exists_max (fun j => (p j).toReal)
+  have hbdd : BddAbove (Set.range fun j => (p j).toReal) :=
+    Set.Finite.bddAbove (Set.finite_range _)
+  have hsup : (⨆ j, (p j).toReal) = (p js).toReal :=
+    le_antisymm (ciSup_le hjs) (le_ciSup hbdd js)
+  have hpjs1 : p js ≤ 1 :=
+    (Finset.single_le_sum (f := p) (fun i _ => zero_le _) (Finset.mem_univ js)).trans hp_sum.le
+  have hpj_le : ∀ j, p j ≤ p js := fun j =>
+    (ENNReal.toReal_le_toReal (hp_top j) (hp_top js)).mp (hjs j)
+  have hLHS : ENNReal.ofReal (1 - ⨆ j, (p j).toReal) = 1 - p js := by
+    rw [hsup]
+    have h1 : ((1 : ℝ≥0∞) - p js).toReal = 1 - (p js).toReal := by
+      rw [ENNReal.toReal_sub_of_le hpjs1 ENNReal.one_ne_top, ENNReal.toReal_one]
+    rw [← h1, ENNReal.ofReal_toReal (ne_top_of_le_ne_top ENNReal.one_ne_top tsub_le_self)]
+  rw [hLHS, tsub_le_iff_right]
+  have expand : ∀ j, p j * (1 - b j) + p j * b j = p j := fun j => by
+    rw [← mul_add, tsub_add_cancel_of_le (hb_le j), mul_one]
+  calc (1 : ℝ≥0∞) = ∑ j, p j := hp_sum.symm
+    _ = ∑ j, (p j * (1 - b j) + p j * b j) := Finset.sum_congr rfl (fun j _ => (expand j).symm)
+    _ = ∑ j, p j * (1 - b j) + ∑ j, p j * b j := Finset.sum_add_distrib
+    _ ≤ ∑ j, p j * (1 - b j) + p js := by
+        gcongr
+        calc ∑ j, p j * b j ≤ ∑ j, p js * b j :=
+              Finset.sum_le_sum (fun j _ => by gcongr; exact hpj_le j)
+          _ = p js * ∑ j, b j := (Finset.mul_sum _ _ _).symm
+          _ = p js := by rw [hb_sum, mul_one]
+
 /-- **MAP / Bayes-risk identity** (the genuinely information-theoretic crux of the
 conditional-entropy Fano bound). The integral over the mixture of the pointwise Bayes/MAP error
 `e(z) = 1 − maxⱼ ℙ(J = j | Z = z) = 1 − maxⱼ M⁻¹ rⱼ(z)` is at most the M-ary testing error, i.e. the
 Bayes risk of the `0–1` loss under the uniform prior. (Equality holds — the MAP test attains the
 Bayes risk — but only the `≤` direction is needed for the entropy bound.)
 
-TODO(mmx, named debt — strictly smaller than `condEntropy_le_fano`): prove `∫ e(z) ∂(mixture Q) ≤
-multiwayTestingError Q`. Route: reduce `bayesRisk` to its `iInf` form
-(`Probability/Decision/Risk/Defs.lean`); for any Markov `κ : 𝓧 → Fin M`, the posterior-weighted
-`0–1` loss `avgRisk` dominates `∫ e` pointwise (`∑ⱼ M⁻¹rⱼ(z)·κ(z){≠j} ≥ 1 − maxⱼ M⁻¹rⱼ(z) = e(z)`),
-hence `∫ e ≤ ⨅κ avgRisk = multiwayTestingError Q`. Mathlib has no `bayesRisk_zeroOne_eq`. -/
+Proof. Reduce `bayesRisk` to its `iInf` form: for any Markov `κ : 𝓧 → Fin M`, the posterior-weighted
+`0–1` loss `avgRisk (zeroOneLoss M) Q κ (uniformPrior M) = ∫⁻ z, ∑ⱼ M⁻¹rⱼ(z)·κ(z){j}ᶜ ∂(mixture Q)`
+dominates `∫⁻ ENNReal.ofReal e` pointwise (`map_error_pointwise`), hence `∫ e ≤ ⨅κ avgRisk =
+multiwayTestingError Q`. The `0–1` Bayes risk is `≤ 1 ≠ ⊤`, supplying the `toReal` conversion. -/
 private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
     (hM : 2 ≤ M) :
     ∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ∂(mixture Q)
       ≤ (multiwayTestingError Q).toReal := by
-  sorry
+  classical
+  haveI hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+  have hMr : (M : ℝ) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+  have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+  have hMtop : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top M
+  have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.mpr hMtop
+  haveI : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
+  -- each component is absolutely continuous w.r.t. the mixture
+  have hac : ∀ j, Q j ≪ mixture Q := fun j => by
+    rw [mixture_eq_inv_smul_sum]
+    exact (Measure.absolutelyContinuous_of_le
+      (Finset.single_le_sum (f := fun k => Q k) (fun i _ => Measure.zero_le _)
+        (Finset.mem_univ j))).smul_right hMinv_ne
+  -- the component densities sum to `M` a.e. against the mixture (ℝ≥0∞ form), and are finite a.e.
+  have hsum_ennreal : (fun z => ∑ k, (Q k).rnDeriv (mixture Q) z)
+      =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+    have hS : (M : ℝ≥0∞) • mixture Q = ∑ k, Q k := by
+      rw [mixture_eq_inv_smul_sum, smul_smul, ENNReal.mul_inv_cancel hMne hMtop, one_smul]
+    have h1 := rnDeriv_finset_sum_ae (Finset.univ : Finset (Fin M)) (fun k => Q k) (mixture Q)
+    have h2 : (∑ k, Q k).rnDeriv (mixture Q) =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+      rw [← hS]
+      filter_upwards [Measure.rnDeriv_smul_left_of_ne_top (mixture Q) (mixture Q) hMtop,
+        Measure.rnDeriv_self (mixture Q)] with x hx hx2
+      simp [hx, Pi.smul_apply, hx2]
+    filter_upwards [h1, h2] with z e1 e2
+    rw [← Finset.sum_apply, ← e1, e2]
+  have htop : ∀ᵐ z ∂(mixture Q), ∀ k, (Q k).rnDeriv (mixture Q) z ≠ ∞ := by
+    rw [ae_all_iff]; intro k; exact Measure.rnDeriv_ne_top (Q k) (mixture Q)
+  have hsumR : (fun z => ∑ j, ((Q j).rnDeriv (mixture Q) z).toReal) =ᵐ[mixture Q]
+      fun _ => (M : ℝ) := by
+    filter_upwards [hsum_ennreal, htop] with z hz hzt
+    rw [← ENNReal.toReal_sum (fun k _ => hzt k), hz, ENNReal.toReal_natCast]
+  -- a.e. the maximal posterior mass lies in `[0, 1]`, so the MAP error `e(z)` is in `[0, 1]`
+  have hp_ae : ∀ᵐ z ∂(mixture Q),
+      ∑ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal = 1 := by
+    filter_upwards [hsumR] with z hz
+    rw [← Finset.mul_sum, hz, inv_mul_cancel₀ hMr]
+  have hsup_ae : ∀ᵐ z ∂(mixture Q),
+      (0 ≤ ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)
+        ∧ (⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ≤ 1 := by
+    filter_upwards [hp_ae] with z hz
+    have hp0 : ∀ j, 0 ≤ (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal := fun j => by positivity
+    have hbdd : BddAbove (Set.range fun j => (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) :=
+      Set.Finite.bddAbove (Set.finite_range _)
+    refine ⟨le_trans (hp0 ⟨0, by omega⟩) (le_ciSup hbdd ⟨0, by omega⟩), ?_⟩
+    refine ciSup_le fun j => ?_
+    calc (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal
+        ≤ ∑ k, (M : ℝ)⁻¹ * ((Q k).rnDeriv (mixture Q) z).toReal :=
+          Finset.single_le_sum (fun k _ => hp0 k) (Finset.mem_univ j)
+      _ = 1 := hz
+  -- measurability and integrability of the MAP error `e(z) = 1 − maxⱼ M⁻¹rⱼ(z)`
+  have h_meas_sup : Measurable fun z =>
+      ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal :=
+    Measurable.iSup fun j =>
+      ((Measure.measurable_rnDeriv (Q j) (mixture Q)).ennreal_toReal).const_mul _
+  have h_sup_int : Integrable
+      (fun z => ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) (mixture Q) := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) h_meas_sup.aestronglyMeasurable ?_
+    filter_upwards [hsup_ae] with z hz
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [hz.1, hz.2], hz.2⟩
+  have h_ebar_int : Integrable
+      (fun z => 1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) (mixture Q) :=
+    (integrable_const (1 : ℝ)).sub h_sup_int
+  have h_ebar_nonneg : (0 : 𝓧 → ℝ) ≤ᵐ[mixture Q]
+      fun z => 1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal := by
+    filter_upwards [hsup_ae] with z hz
+    simp only [Pi.zero_apply]
+    linarith [hz.2]
+  -- the per-index uniform-prior mass is `M⁻¹`
+  have hpt : ∀ k : Fin M, (uniformPrior M) {k} = (M : ℝ≥0∞)⁻¹ := by
+    intro k
+    rw [uniformPrior, PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton k),
+      PMF.uniformOfFintype_apply, Fintype.card_fin]
+  -- the `0–1` Bayes risk is `≤ 1`, hence finite
+  have hq1 : multiwayTestingError Q ≤ 1 := by
+    rw [multiwayTestingError]
+    refine (bayesRisk_le_avgRisk (zeroOneLoss M) Q
+      (Kernel.const 𝓧 (Measure.dirac (Classical.arbitrary (Fin M)))) (uniformPrior M)).trans ?_
+    set κ0 := Kernel.const 𝓧 (Measure.dirac (Classical.arbitrary (Fin M))) with hκ0
+    haveI : IsMarkovKernel (κ0 ∘ₖ Q) := by infer_instance
+    rw [avgRisk]
+    calc ∫⁻ j, ∫⁻ y, zeroOneLoss M j y ∂((κ0 ∘ₖ Q) j) ∂(uniformPrior M)
+        ≤ ∫⁻ _j, 1 ∂(uniformPrior M) := by
+          refine lintegral_mono fun j => ?_
+          calc ∫⁻ y, zeroOneLoss M j y ∂((κ0 ∘ₖ Q) j)
+              ≤ ∫⁻ _y, 1 ∂((κ0 ∘ₖ Q) j) := by
+                refine lintegral_mono fun y => ?_
+                unfold zeroOneLoss; split <;> simp
+            _ = 1 := by rw [lintegral_one, measure_univ]
+      _ = 1 := by rw [lintegral_one, measure_univ]
+  have hqne : multiwayTestingError Q ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top hq1
+  -- avgRisk of any Markov test, in mixture-integral form
+  have havg : ∀ (κ : Kernel 𝓧 (Fin M)), IsMarkovKernel κ →
+      avgRisk (zeroOneLoss M) Q κ (uniformPrior M)
+        = ∫⁻ z, ∑ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹
+            ∂(mixture Q) := by
+    intro κ hκ
+    haveI := hκ
+    have hmeas : ∀ j, Measurable fun z => (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ :=
+      fun j => (Measure.measurable_rnDeriv (Q j) (mixture Q)).mul
+        (Kernel.measurable_coe κ (measurableSet_singleton j).compl)
+    have hinner : ∀ j : Fin M, ∫⁻ y, zeroOneLoss M j y ∂((κ ∘ₖ Q) j)
+        = ∫⁻ z, (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ ∂(mixture Q) := by
+      intro j
+      have hmc : Measurable fun z => (κ z) ({j}ᶜ) :=
+        Kernel.measurable_coe κ (measurableSet_singleton j).compl
+      have e1 : ∀ z, ∫⁻ y, zeroOneLoss M j y ∂(κ z) = (κ z) {j}ᶜ := by
+        intro z
+        have hind : (fun y => zeroOneLoss M j y) = Set.indicator {j}ᶜ (1 : Fin M → ℝ≥0∞) := by
+          funext y
+          by_cases h : j = y
+          · subst h
+            simp [zeroOneLoss, Set.mem_compl_iff, Set.mem_singleton_iff]
+          · simp [zeroOneLoss, Set.mem_compl_iff, Set.mem_singleton_iff, h, Ne.symm h]
+        rw [hind, lintegral_indicator_one (measurableSet_singleton j).compl]
+      rw [Kernel.comp_apply,
+        Measure.lintegral_bind κ.aemeasurable (measurable_of_countable _).aemeasurable]
+      simp_rw [e1]
+      exact (lintegral_rnDeriv_mul (hac j) hmc.aemeasurable).symm
+    have step : ∀ j, (∫⁻ z, (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ ∂(mixture Q)) * (M : ℝ≥0∞)⁻¹
+        = ∫⁻ z, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹ ∂(mixture Q) :=
+      fun j => (lintegral_mul_const _ (hmeas j)).symm
+    unfold avgRisk
+    calc ∫⁻ j, ∫⁻ y, zeroOneLoss M j y ∂((κ ∘ₖ Q) j) ∂(uniformPrior M)
+        = ∫⁻ j, (∫⁻ z, (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ ∂(mixture Q))
+            ∂(uniformPrior M) := lintegral_congr hinner
+      _ = ∑ j, (∫⁻ z, (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ ∂(mixture Q))
+            * (uniformPrior M) {j} := lintegral_fintype _
+      _ = ∑ j, (∫⁻ z, (Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ ∂(mixture Q)) * (M : ℝ≥0∞)⁻¹ := by
+          simp_rw [hpt]
+      _ = ∑ j, ∫⁻ z, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹ ∂(mixture Q) := by
+          simp_rw [step]
+      _ = ∫⁻ z, ∑ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹ ∂(mixture Q) :=
+          (lintegral_finset_sum _ (fun j _ => (hmeas j).mul_const _)).symm
+  -- `ENNReal.ofReal (∫ e) ≤ ⨅κ avgRisk = multiwayTestingError Q`
+  have hkey : ENNReal.ofReal
+      (∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ∂(mixture Q))
+        ≤ multiwayTestingError Q := by
+    rw [ofReal_integral_eq_lintegral_ofReal h_ebar_int h_ebar_nonneg, multiwayTestingError,
+      bayesRisk]
+    refine le_iInf₂ (fun κ hκ => ?_)
+    haveI := hκ
+    rw [havg κ hκ]
+    refine lintegral_mono_ae ?_
+    filter_upwards [hsum_ennreal, htop] with z hz hzt
+    haveI : IsProbabilityMeasure (κ z) := inferInstance
+    have hp_top : ∀ j, (M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z ≠ ⊤ :=
+      fun j => ENNReal.mul_ne_top (ENNReal.inv_ne_top.mpr hMne) (hzt j)
+    have hp_sum : ∑ j, (M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z = 1 := by
+      rw [← Finset.mul_sum, hz, ENNReal.inv_mul_cancel hMne hMtop]
+    have hb_le : ∀ j, (κ z) {j} ≤ 1 := fun _ => prob_le_one
+    have hb_sum : ∑ j, (κ z) {j} = 1 := by
+      rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
+    have hpconv : ∀ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal
+        = ((M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z).toReal := by
+      intro j; rw [ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast]
+    have hRHSconv : ∀ j, ((Q j).rnDeriv (mixture Q) z * (κ z) {j}ᶜ) * (M : ℝ≥0∞)⁻¹
+        = ((M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z) * (1 - (κ z) {j}) := by
+      intro j; rw [prob_compl_eq_one_sub (measurableSet_singleton j)]; ring
+    simp_rw [hpconv, hRHSconv]
+    exact map_error_pointwise (by omega)
+      (fun j => (M : ℝ≥0∞)⁻¹ * (Q j).rnDeriv (mixture Q) z)
+      (fun j => (κ z) {j}) hp_top hp_sum hb_le hb_sum
+  exact (ENNReal.ofReal_le_iff_le_toReal hqne).mp hkey
 
 /-- **Conditional-entropy Fano inequality** (Wainwright Eq. (15.61), the genuinely-deep
 information-theoretic half): the posterior entropy `H(J | Z)` is controlled by the testing error,
