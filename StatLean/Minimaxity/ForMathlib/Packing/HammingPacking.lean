@@ -28,7 +28,8 @@ at least `e^{m/10}` — equivalently a set `T` with `log |T| ≥ m/10` whose ele
 Hamming distance `≥ m/4`.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.3, Eq. (5.3). -/
+Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses),
+Example 5.3, Eq. (5.3). -/
 theorem exists_hamming_packing (m : ℕ) :
     ∃ T : Finset (Fin m → Bool),
       (m / 10 : ℝ) ≤ Real.log T.card ∧
