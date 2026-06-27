@@ -10,6 +10,7 @@ import StatLean.Minimaxity.ForMathlib.GaussianMaxEntropy
 import StatLean.Minimaxity.ForMathlib.Packing.HammingPacking
 import StatLean.Minimaxity.ForMathlib.Packing.SpherePacking
 import StatLean.Minimaxity.ForMathlib.Packing.SparsePacking
+import StatLean.Minimaxity.ForMathlib.Packing.SobolevEntropy
 import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.LeCam.TwoPoint
 import StatLean.Minimaxity.LeCam.Functional
@@ -20,6 +21,12 @@ import StatLean.Minimaxity.Fano.LocalPacking
 import StatLean.Minimaxity.Fano.YangBarron
 import StatLean.Minimaxity.Examples.GaussianLocation
 import StatLean.Minimaxity.Examples.UniformLocation
+import StatLean.Minimaxity.Examples.LinearRegression
+import StatLean.Minimaxity.Examples.PCA
+import StatLean.Minimaxity.Examples.LipschitzDensity
+import StatLean.Minimaxity.Examples.QuadraticFunctional
+import StatLean.Minimaxity.Examples.DensityEstimation
+import StatLean.Minimaxity.Examples.Sobolev
 
 /-!
 # Minimaxity — area umbrella
