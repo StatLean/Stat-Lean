@@ -68,15 +68,21 @@ Deep-research pass (parallel sessions) on the 3 reductions, with **loose constan
   `sinⁿ⁻²` Wallis integral Mathlib lacks). Instead built the packing **directly from the closed
   `gilbert_varshamov`** via the `±1/√n` binary-code embedding `vα = ((2αᵢ−1)/√n)ᵢ` (`‖vα‖=1`,
   `‖vα−vβ‖²=4·hamming/n ≥ 1`). Bound loosened `n·log 2 → n/10` (still exponential; PCA untouched). Build green.
-- **#15 Fano — reduced** (the ℝ≥0∞ rearrangement now proven; the `mutualInformation = log M − H(J|Z)` identity
-  remains, needing a from-scratch conditional-entropy build on Mathlib `posterior`/`negMulLog` — research-grade).
-- **#11 sparse — reduced** (the `d ≤ 2s` regime now proven; the residual is the sharp **constant-weight /
-  q-ary (Johnson-scheme)** Gilbert–Varshamov support count for `2s < d` — analogous to the binary one but not
-  yet built).
+- **#15 Fano — CLOSED (tranche 4).** Built `condEntropy` + the full `mutualInformation = log M − H(J|Z)`
+  identity (`mutualInformation_toReal_eq`), the pointwise discrete-Fano grouping (`discreteEntropy_le_log_card`),
+  Jensen via `strictConcave_binEntropy`, and the MAP/Bayes-risk inequality `∫(1−maxⱼ posterior) ≤ q`
+  (`mapError_integral_le`, the `iInf`-over-tests reduction). `fano_inequality` now fully proven.
+- **#11 sparse — CLOSED (tranche 4, loose constant).** Block / q-ary Gilbert–Varshamov: split `[d]` into `s`
+  blocks of size `q=d/s`, block supports ↔ `Fin s → Fin q`, q-ary GV mirroring the binary `gilbert_varshamov`
+  with a crude ball bound `Σ_{i<s/2}C(s,i)(q−1)ⁱ ≤ s·2ˢ·q^{s/2}`. Bound weakened from the exact
+  `(s/2)log((d−s)/s)` (unreachable by GV — needs Reed–Solomon for `d≥s²`) to `(s/2)log(d/s) − s·log2 − log s`
+  (still exponential; LinearRegression untouched). Build green.
 
-**Final state: 14 of 25 debts at 0-sorry; 11 named residuals remain** (#11 q-ary GV count, #15 conditional-
-entropy identity, + the 9 out-of-scope example/research debts #17–25). Full `StatLean.Minimaxity` builds green
-(3096 jobs, 0 errors, 11 sorries). On `mmx/batch9`; not pushed to `origin`.
+**Final state: 16 of 25 debts at 0-sorry; 9 named residuals remain** — exactly the out-of-scope example/research
+debts (#17–25: the 7 nonparametric example constructions + Gaussian differential entropy + Sobolev/K–T metric
+entropy). Full `StatLean.Minimaxity` builds green (**3097 jobs, 0 errors, 9 sorries**); `fano_inequality`,
+`minimax_fano_lower_bound`, `exists_sparse_packing` are `#print axioms`-clean. On `mmx/batch9`; not pushed to
+`origin`. **All 7 of the "tractable + hard-core" debts (#5,#7,#10,#11,#13,#14,#15) are now closed.**
 **Mathlib leverage confirmed this pass:** `Measure.toSphere`+`toSphere_apply'`+`measurePreserving_homeomorphUnitSphereProd`
 (sphere surface measure), `ProbabilityTheory.posterior` (`κ†μ`)+`posterior_eq_withDensity_of_countable`+`negMulLog`
 (for #15), `Finset.powersetCard`+`Nat.choose` bounds (for #11). Genuinely absent: sharp cap surface (Wallis),
