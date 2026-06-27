@@ -11,6 +11,22 @@ precise Lean statement with a full book citation; every public theorem is either
 (0-sorry)** or **structurally proven, reduced to a single named `private` analytic crux** — there are
 **no bare public-theorem sorries**.
 
+### Debt-closure campaign (4 waves, cluster fan-out) — 8 of 25 debts driven to 0-sorry
+
+A subsequent campaign closed the most tractable debts. Full `StatLean.Minimaxity` build stays **green**
+(3090 jobs, 0 errors); sorry inventory **25 → 17**. **Closed (0-sorry):** `klDiv_mixture_minimizes` (#1,
+Gibbs identity), `tvDist_eq_half_lintegral` (#2), `one_sub_tvDist_eq_iInf` (#3), `sqHellinger_pi_le_nsmul`
+(#4, eLpNorm bridge to `HellingerProduct`), `klDiv_le_avg` (#6, via Mathlib `convexOn_klFun`),
+`lecam_half_lintegral` (#8, Cauchy–Schwarz), `gilbert_varshamov` (#9, Hamming maximal-packing), and
+`yang_barron` (#16, log-N mixture step). (Pinsker's scalar Bernoulli sub-core also closed, but its
+KL-2cell DPI core #7 remains.) **Remaining 17 debts** (17 sorries) split:
+*tractable-but-stuck* — Pinsker KL-2cell DPI (#7, blocked by absence of a Mathlib `klDiv` data-processing
+lemma) and binary Bayes=TV (#12); *hard cores* — measurable-Borel selector (#5), sphere/sparse packing
+volume (#10/#11), Le Cam convex-hull/functional cruxes (#13/#14), Fano continuous-`Z` disintegration (#15,
+`condDistrib` route scoped); *research-grade infrastructure* — the 7 example constructions (#17–23, the
+nonparametric-perturbation toolkit), Gaussian differential entropy (#24), Sobolev/Kolmogorov–Tikhomirov
+metric entropy (#25). Closing these needs new `ForMathlib` theory, not prompt-and-harvest.
+
 Two completeness tiers (confirmed by `#print axioms`):
 
 * **Axiom-clean** (`[propext, Classical.choice, Quot.sound]`, no transitive `sorryAx`) — genuinely
