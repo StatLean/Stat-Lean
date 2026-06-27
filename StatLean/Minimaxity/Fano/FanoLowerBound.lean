@@ -29,6 +29,39 @@ namespace StatLean.Minimaxity
 variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace Ω]
   [m𝓧 : MeasurableSpace 𝓧]
 
+/-- **Real-valued entropy form of Fano's inequality** (Wainwright Eq. (15.61)), the genuinely-hard
+analytic content isolated as a single named residual. Writing `I = (I(Z;J)).toReal`,
+`q = (multiwayTestingError Q).toReal`, this is the standard Fano chain
+`H(J|Z) ≤ h(q) + q·log(M−1) ≤ log 2 + q·log M` combined with the mutual-information identity
+`I = H(J) − H(J|Z) = log M − H(J|Z)`, rearranged into
+```
+log M ≤ I + log 2 + q · log M.
+```
+It is stated over `ℝ` (the two `ℝ≥0∞` quantities pushed through `ENNReal.toReal`), so it carries no
+truncated-subtraction / division bookkeeping — that surrounding `ℝ≥0∞` arithmetic is discharged in
+`fano_entropy_continuous` below.
+
+TODO(mmx, named debt — strictly smaller than the former whole-crux `fano_entropy_continuous`):
+build the discrete posterior `J | Z` by disintegrating the joint law `ρ = uniformPrior M ⊗ₘ Q`
+on `Fin M × 𝓧` (whose `Z`-marginal is `mixture Q` and whose Bayesian inverse is the posterior
+kernel `post := Q † uniformPrior M`, via `ProbabilityTheory.posterior` /
+`compProd_posterior_eq_map_swap` / `posterior_eq_withDensity_of_countable`). Let
+`condEntropy = ∫ z, ∑ j, negMulLog ((post z {j}).toReal) ∂(mixture Q)`. Then:
+* (MI identity) `(mutualInformation Q).toReal = Real.log M − condEntropy`, expanding
+  `M⁻¹ Σ_j klDiv (Q j) (mixture Q)` via `klDiv_eq_integral_llr` and the posterior density
+  `M · (Q j).rnDeriv (mixture Q)`, reorganising the double integral over `(j,z)` against `ρ` and
+  using `discreteEntropy` of the uniform prior `= Real.log M`;
+* (Fano core) `condEntropy ≤ Real.log 2 + q · Real.log M`, applying the discrete
+  `discreteCondEntropy_le_entropy` + `discreteEntropy_le_log_card` of `ForMathlib/Entropy.lean` to
+  the posterior, with `Real.binEntropy_le_log_two` and `log (M−1) ≤ log M`.
+Subtracting gives the claim. -/
+private lemma fano_real {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
+    (hM : 2 ≤ M) :
+    Real.log (M : ℝ)
+      ≤ (mutualInformation Q).toReal + Real.log 2
+          + (multiwayTestingError Q).toReal * Real.log (M : ℝ) := by
+  sorry
+
 /-- **Entropy form of Fano's inequality** (Wainwright Eq. (15.61)), packaged in the kernel-KL /
 Bayes-risk encodings used by this module. Writing `L = log M`, `I = I(Z; J)`,
 `q = multiwayTestingError Q` and `c = log 2`, the standard Fano chain
@@ -37,23 +70,41 @@ rearranges to
 ```
 log M ≤ I(Z; J) + log 2 + q · log M.
 ```
-This is the single genuinely-hard crux of `fano_inequality`: it bridges `mutualInformation`
-(the kernel-KL encoding) and `multiwayTestingError` (the Bayes-risk encoding) to the discrete
-Shannon-entropy machinery of `ForMathlib/Entropy.lean` (`discreteMutualInfo`,
-`discreteCondEntropy_le_entropy`) via the discrete posterior of `J` given the continuous
-observation `Z` (built through `ProbabilityTheory.condDistrib` / disintegration of the joint
-`(Z, J)` law). The surrounding `ℝ≥0∞` rearrangement (division and truncated subtraction) is
-discharged in `fano_inequality` below. -/
+The genuinely-hard real-analytic content is isolated in `fano_real`; this wrapper discharges only
+the `ℝ≥0∞` bookkeeping (the `⊤` cases and the `ENNReal.ofReal` push-through). The surrounding
+`ℝ≥0∞` rearrangement into `1 − (I+c)/L ≤ q` (division and truncated subtraction) is discharged in
+`fano_inequality` below. -/
 private lemma fano_entropy_continuous {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
     (hM : 2 ≤ M) :
     ENNReal.ofReal (Real.log (M : ℝ))
       ≤ mutualInformation Q + ENNReal.ofReal (Real.log 2)
           + multiwayTestingError Q * ENNReal.ofReal (Real.log (M : ℝ)) := by
-  -- TODO(mmx): entropy Fano (Eq. (15.61)). Disintegrate the joint `(Z, J)` law to get the
-  -- discrete posterior `J | Z`, apply `discreteCondEntropy_le_entropy` to bound
-  -- `H(J|Z) ≤ h(q) + q·log(M−1)`, use `discreteEntropy_le_log_card` for `h(q) ≤ log 2`, and
-  -- `I = log M − H(J|Z)`. Named debt.
-  sorry
+  -- `ℝ≥0∞` wrapper around the real-valued Fano bound `fano_real`: handle the `⊤` cases and then
+  -- push everything through `ENNReal.ofReal`.
+  have hlogM_pos : 0 < Real.log (M : ℝ) :=
+    Real.log_pos (by exact_mod_cast (show 1 < M by omega))
+  have hlogM_nonneg : (0 : ℝ) ≤ Real.log (M : ℝ) := hlogM_pos.le
+  have hlog2_nonneg : (0 : ℝ) ≤ Real.log 2 := Real.log_nonneg (by norm_num)
+  -- If the mutual information is infinite the RHS is `⊤`.
+  by_cases hItop : mutualInformation Q = ⊤
+  · rw [hItop]; simp
+  -- If the testing error is infinite, then `q · log M = ⊤` (since `log M > 0`) and the RHS is `⊤`.
+  by_cases hqtop : multiwayTestingError Q = ⊤
+  · have hne : ENNReal.ofReal (Real.log (M : ℝ)) ≠ 0 := (ENNReal.ofReal_pos.mpr hlogM_pos).ne'
+    rw [hqtop, ENNReal.top_mul hne]; simp
+  -- Both quantities finite: rewrite the RHS as a single `ENNReal.ofReal` and apply `fano_real`.
+  have hReal := fano_real Q hM
+  have hsum_eq : mutualInformation Q + ENNReal.ofReal (Real.log 2)
+        + multiwayTestingError Q * ENNReal.ofReal (Real.log (M : ℝ))
+      = ENNReal.ofReal ((mutualInformation Q).toReal + Real.log 2
+          + (multiwayTestingError Q).toReal * Real.log (M : ℝ)) := by
+    rw [ENNReal.ofReal_add (add_nonneg ENNReal.toReal_nonneg hlog2_nonneg)
+          (mul_nonneg ENNReal.toReal_nonneg hlogM_nonneg),
+        ENNReal.ofReal_add ENNReal.toReal_nonneg hlog2_nonneg,
+        ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+        ENNReal.ofReal_toReal hItop, ENNReal.ofReal_toReal hqtop]
+  rw [hsum_eq]
+  exact ENNReal.ofReal_le_ofReal hReal
 
 /-- **Fano's inequality** (Wainwright Eq. (15.31)): the error probability of the M-ary test is
 lower bounded by `1 − (I(Z; J) + log 2)/log M`, where `I(Z; J)` is the mutual information.
