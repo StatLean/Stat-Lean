@@ -61,6 +61,22 @@ counting; a Shannon conditional-entropy theory) — not prompt-and-harvest.
 plus the 9 out-of-scope example/research debts (#17–25). Full `StatLean.Minimaxity` builds green (3099 jobs);
 the 4 tranche-2 headline closures are `#print axioms`-clean (`propext, Classical.choice, Quot.sound`).
 
+### Tranche 3 (the 3 reduced residuals: #10/#11/#15) — #10 closed → 14 of 25; build green 12 → 11
+
+Deep-research pass (parallel sessions) on the 3 reductions, with **loose constants permitted**.
+- **#10 sphere — CLOSED (0-sorry).** Abandoned the `Measure.toSphere` cap-fraction route (sharp `2ⁿ` needs the
+  `sinⁿ⁻²` Wallis integral Mathlib lacks). Instead built the packing **directly from the closed
+  `gilbert_varshamov`** via the `±1/√n` binary-code embedding `vα = ((2αᵢ−1)/√n)ᵢ` (`‖vα‖=1`,
+  `‖vα−vβ‖²=4·hamming/n ≥ 1`). Bound loosened `n·log 2 → n/10` (still exponential; PCA untouched). Build green.
+- **#15 Fano — reduced** (the ℝ≥0∞ rearrangement now proven; the `mutualInformation = log M − H(J|Z)` identity
+  remains, needing a from-scratch conditional-entropy build on Mathlib `posterior`/`negMulLog` — research-grade).
+- **#11 sparse — open** (the constant-weight residual genuinely needs a **q-ary / Johnson-scheme** Gilbert–
+  Varshamov support count, analogous to the binary one but not yet built; block-construction retry in progress).
+**Mathlib leverage confirmed this pass:** `Measure.toSphere`+`toSphere_apply'`+`measurePreserving_homeomorphUnitSphereProd`
+(sphere surface measure), `ProbabilityTheory.posterior` (`κ†μ`)+`posterior_eq_withDensity_of_countable`+`negMulLog`
+(for #15), `Finset.powersetCard`+`Nat.choose` bounds (for #11). Genuinely absent: sharp cap surface (Wallis),
+Shannon conditional entropy, q-ary GV count.
+
 **Signature changes (laptop-coordinated, all justified + tagged):** `[OpensMeasurableSpace Ω]` on the 5
 generic method theorems + the 2 generic examples (`DensityEstimation`, `Sobolev`); `[Nonempty ι]` +
 `[∀ i, IsProbabilityMeasure …]` + `LowerSemicontinuous Φ` on `minimax_functional_modulus` and its
