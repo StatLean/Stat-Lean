@@ -49,10 +49,17 @@ Full `StatLean.Minimaxity` builds **green** (3099 jobs, 0 errors). **Closed (0-s
 - **#13 Le Cam convex-hull** (`LeCam/ConvexHull`) — used `Metric.infEDist` + `continuous_infEDist.measurable`
   for the two-class decision regions (cleaner than the argmin selector).
 
-**Reduced to a single named research-grade residual (2):** **#10 sphere packing** (the `2ⁿ` lower bound
+**Reduced to a single named research-grade residual (3):** **#10 sphere packing** (the `2ⁿ` lower bound
 genuinely needs spherical-cap *surface* measure — ambient ball volume tops out at `~(3/2)ⁿ`; isolated to a
-`Measure.toSphere` cap-measure lemma) and **#15 Fano** (Mathlib has *no* conditional entropy / mutual
-information; the `I = log M − H(J|Z)` identity isolated as the residual). **#11 sparse packing** depends on #10.
+`Measure.toSphere` cap-measure lemma); **#11 sparse packing** (the support-enumeration / embedding /
+separation are proven; the support count reduced to a single binomial-volume estimate); and **#15 Fano**
+(Mathlib has *no* conditional entropy / mutual information; the `I = log M − H(J|Z)` identity isolated as the
+residual). Closing these three needs new `ForMathlib` infrastructure (cap Hausdorff measure; binomial volume
+counting; a Shannon conditional-entropy theory) — not prompt-and-harvest.
+
+**Net after both campaigns: 13 of 25 debts at 0-sorry; the other 12 are 12 named residuals** — the 3 above
+plus the 9 out-of-scope example/research debts (#17–25). Full `StatLean.Minimaxity` builds green (3099 jobs);
+the 4 tranche-2 headline closures are `#print axioms`-clean (`propext, Classical.choice, Quot.sound`).
 
 **Signature changes (laptop-coordinated, all justified + tagged):** `[OpensMeasurableSpace Ω]` on the 5
 generic method theorems + the 2 generic examples (`DensityEstimation`, `Sobolev`); `[Nonempty ι]` +
