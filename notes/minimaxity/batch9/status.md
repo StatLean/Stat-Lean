@@ -34,6 +34,31 @@ for #1/#6), `bayesBinaryRisk` + `_eq_tv` (binary testing, used for #12), `Probab
 scoped for #10/#11). **Absent (must build): ** a `klDiv` data-processing inequality (`klDiv_map_le`),
 differential entropy of measures (#24), metric entropy of smoothness classes (#25).
 
+### Tranche 2 (hard-core debts) — 4 more closed → 13 of 25; build green, sorry inventory 16 → 12
+
+A second campaign targeted the 7 "tractable-but-blocked" + "hard-core" debts (#5, #7, #10, #11, #13, #14, #15).
+Full `StatLean.Minimaxity` builds **green** (3099 jobs, 0 errors). **Closed (0-sorry, 4):**
+- **#7 Pinsker DPI** — built the reusable `klDiv_map_le` (`ForMathlib/KLDataProcessing.lean`): a genuine
+  data-processing inequality `klDiv (μ.map f)(ν.map f) ≤ klDiv μ ν` via conditional Jensen
+  (`convexOn_klFun.map_condExp_le` over the comap σ-algebra). Then `klDiv_ge_two_mul_tvDist_sq` closes.
+- **#5 measurable selector** (`EstimationToTesting`) — `exists_measurable_nearestPoint` via `Measurable.find`
+  + `measurableSet_le` + `Finite.exists_min`, needing the added `[OpensMeasurableSpace Ω]` instance.
+- **#14 functional modulus** (`LeCam/Functional`) — added `[Nonempty ι]`, `[∀ i, IsProbabilityMeasure (P i)]`
+  (genuinely *not* derivable from `IsMarkovKernel Pn` without `SigmaFinite`), `(hΦlsc : LowerSemicontinuous Φ)`
+  for the `Φ(½·⨆d) ≤ ⨆Φ(½·d)` interchange (own `map_iSup_le_of_lsc` via `lowerSemicontinuous_iff_isOpen_preimage`).
+- **#13 Le Cam convex-hull** (`LeCam/ConvexHull`) — used `Metric.infEDist` + `continuous_infEDist.measurable`
+  for the two-class decision regions (cleaner than the argmin selector).
+
+**Reduced to a single named research-grade residual (2):** **#10 sphere packing** (the `2ⁿ` lower bound
+genuinely needs spherical-cap *surface* measure — ambient ball volume tops out at `~(3/2)ⁿ`; isolated to a
+`Measure.toSphere` cap-measure lemma) and **#15 Fano** (Mathlib has *no* conditional entropy / mutual
+information; the `I = log M − H(J|Z)` identity isolated as the residual). **#11 sparse packing** depends on #10.
+
+**Signature changes (laptop-coordinated, all justified + tagged):** `[OpensMeasurableSpace Ω]` on the 5
+generic method theorems + the 2 generic examples (`DensityEstimation`, `Sobolev`); `[Nonempty ι]` +
+`[∀ i, IsProbabilityMeasure …]` + `LowerSemicontinuous Φ` on `minimax_functional_modulus` and its
+`LipschitzDensity` callers. New `ForMathlib/KLDataProcessing.lean` added to the umbrella.
+
 Two completeness tiers (confirmed by `#print axioms`):
 
 * **Axiom-clean** (`[propext, Classical.choice, Quot.sound]`, no transitive `sorryAx`) — genuinely
