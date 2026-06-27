@@ -121,6 +121,19 @@ private lemma klFun_le_avg_real {M : ℕ} (hM : 0 < M) {A : ℝ} (hA : 0 ≤ A)
       rw [Finset.sum_congr rfl (fun k _ => hterm0 k), hsumB, inv_mul_cancel₀ hMr.ne']
     exact le_of_eq (hL.trans hR.symm)
 
+/-- Radon–Nikodym derivative of a finite sum of (finite) measures splits over the sum, a.e. with
+respect to a common dominating measure. Proved by induction from the two-term `rnDeriv_add'`. -/
+private lemma rnDeriv_finsetSum_ae {ι : Type*} (s : Finset ι) (P : ι → Measure 𝓧)
+    (ξ : Measure 𝓧) [SigmaFinite ξ] [∀ i, IsFiniteMeasure (P i)] :
+    (∑ i ∈ s, P i).rnDeriv ξ =ᵐ[ξ] ∑ i ∈ s, (P i).rnDeriv ξ := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | @insert i s hi ih =>
+      rw [Finset.sum_insert hi]
+      filter_upwards [Measure.rnDeriv_add' (P i) (∑ k ∈ s, P k) ξ, ih] with x h1 h2
+      rw [Finset.sum_insert hi, Pi.add_apply, h1, Pi.add_apply, h2]
+
 /-- **Convexity of the KL divergence in its second argument** (Jensen): the divergence from a
 fixed component `Q j` to the uniform mixture `Q̄ = (1/M) Σₖ Q k` is at most the average of the
 divergences to the components, `D(Q j ‖ Q̄) ≤ (1/M) Σₖ D(Q j ‖ Q k)`. This is the analytic core of
@@ -135,10 +148,85 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
     (j : Fin M) :
     klDiv (Q j) (mixture Q) ≤ (M : ℝ≥0∞)⁻¹ * ∑ k, klDiv (Q j) (Q k) := by
   by_cases hAC : ∀ k, Q j ≪ Q k
-  · -- TODO(mmx): absolutely-continuous case — lift `klFun_le_avg_real` to the lintegral form via
-    -- `klDiv_eq_lintegral_klFun_of_ac` (reference `mixture Q`) + `Measure.rnDeriv_mul_rnDeriv`
-    -- + `mixture_eq_inv_smul_sum`; Wainwright Eq. (15.34).
-    sorry
+  · -- absolutely-continuous case: lift `klFun_le_avg_real` to the lintegral form.
+    have hMpos : 0 < M := Nat.pos_of_ne_zero (NeZero.ne M)
+    have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+    have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
+      ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
+    haveI : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+    -- absolute continuity of each component (and of `Q j`) w.r.t. the mixture
+    have hjξ : Q j ≪ mixture Q := by
+      rw [mixture_eq_inv_smul_sum]
+      exact (Measure.absolutelyContinuous_of_le
+        (Finset.single_le_sum (f := fun k => Q k) (fun i _ => Measure.zero_le _)
+          (Finset.mem_univ j))).smul_right hMinv_ne
+    have hkξ : ∀ k, Q k ≪ mixture Q := fun k => by
+      rw [mixture_eq_inv_smul_sum]
+      exact (Measure.absolutelyContinuous_of_le
+        (Finset.single_le_sum (f := fun k => Q k) (fun i _ => Measure.zero_le _)
+          (Finset.mem_univ k))).smul_right hMinv_ne
+    -- the components' rnDerivs sum to `M`, a.e. w.r.t. the mixture
+    have hsum_ae : (fun x => ∑ k, (Q k).rnDeriv (mixture Q) x)
+        =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+      have hS : (M : ℝ≥0∞) • mixture Q = ∑ k, Q k := by
+        rw [mixture_eq_inv_smul_sum, smul_smul,
+          ENNReal.mul_inv_cancel hMne (ENNReal.natCast_ne_top M), one_smul]
+      have h1 := rnDeriv_finsetSum_ae Finset.univ (fun k => Q k) (mixture Q)
+      have h2 : (∑ k, Q k).rnDeriv (mixture Q) =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+        rw [← hS]
+        filter_upwards [Measure.rnDeriv_smul_left_of_ne_top (mixture Q) (mixture Q)
+            (ENNReal.natCast_ne_top M), Measure.rnDeriv_self (mixture Q)] with x hx hx2
+        simp [hx, Pi.smul_apply, hx2]
+      filter_upwards [h1, h2] with x e1 e2
+      rw [← Finset.sum_apply, ← e1, e2]
+    -- the Radon–Nikodym chain rule, simultaneously for all components
+    have hchain_ae : ∀ᵐ x ∂(mixture Q), ∀ k,
+        (Q j).rnDeriv (Q k) x * (Q k).rnDeriv (mixture Q) x
+          = (Q j).rnDeriv (mixture Q) x := by
+      rw [ae_all_iff]
+      intro k
+      filter_upwards [Measure.rnDeriv_mul_rnDeriv (hAC k)] with x hx
+      rwa [Pi.mul_apply] at hx
+    have hktop_ae : ∀ᵐ x ∂(mixture Q), ∀ k, (Q k).rnDeriv (mixture Q) x ≠ ∞ := by
+      rw [ae_all_iff]; intro k; exact Measure.rnDeriv_ne_top (Q k) (mixture Q)
+    -- rewrite both sides as single lintegrals against the mixture
+    rw [klDiv_eq_lintegral_klFun_of_ac hjξ]
+    have hRHS : ∀ k, klDiv (Q j) (Q k)
+        = ∫⁻ x, (Q k).rnDeriv (mixture Q) x
+            * ENNReal.ofReal (klFun ((Q j).rnDeriv (Q k) x).toReal) ∂(mixture Q) := by
+      intro k
+      rw [klDiv_eq_lintegral_klFun_of_ac (hAC k),
+        ← lintegral_rnDeriv_mul (hkξ k) (by fun_prop)]
+    rw [Finset.sum_congr rfl (fun k _ => hRHS k),
+      ← lintegral_finset_sum _ (fun k _ => by fun_prop),
+      ← lintegral_const_mul _ (Finset.measurable_sum _ (fun k _ => by fun_prop))]
+    refine lintegral_mono_ae ?_
+    filter_upwards [hsum_ae, hchain_ae, hktop_ae,
+      Measure.rnDeriv_ne_top (Q j) (mixture Q)] with x hsum hchain hktop hjtop
+    -- pointwise: apply the real convexity lemma `klFun_le_avg_real`
+    set A := ((Q j).rnDeriv (mixture Q) x).toReal with hA_def
+    set B := fun k => ((Q k).rnDeriv (mixture Q) x).toReal with hB_def
+    set D := fun k => ((Q j).rnDeriv (Q k) x).toReal with hD_def
+    have hBD : ∀ k, D k * B k = A := fun k => by
+      simp only [hD_def, hB_def, hA_def, ← ENNReal.toReal_mul, hchain k]
+    have hsumB : ∑ k, B k = (M : ℝ) := by
+      simp only [hB_def]
+      rw [← ENNReal.toReal_sum (fun k _ => hktop k), hsum, ENNReal.toReal_natCast]
+    have hbase := klFun_le_avg_real hMpos (A := A) ENNReal.toReal_nonneg
+      (B := B) (D := D) (fun _ => ENNReal.toReal_nonneg) hBD hsumB
+    have hRnonneg : ∀ k, 0 ≤ B k * klFun (D k) := fun k =>
+      mul_nonneg ENNReal.toReal_nonneg (klFun_nonneg ENNReal.toReal_nonneg)
+    calc ENNReal.ofReal (klFun A)
+        ≤ ENNReal.ofReal ((M : ℝ)⁻¹ * ∑ k, B k * klFun (D k)) :=
+          ENNReal.ofReal_le_ofReal hbase
+      _ = (M : ℝ≥0∞)⁻¹ * ∑ k, (Q k).rnDeriv (mixture Q) x
+            * ENNReal.ofReal (klFun (D k)) := by
+          rw [ENNReal.ofReal_mul (by positivity),
+            ENNReal.ofReal_inv_of_pos (by exact_mod_cast hMpos), ENNReal.ofReal_natCast,
+            ENNReal.ofReal_sum_of_nonneg (fun k _ => hRnonneg k)]
+          refine congrArg _ (Finset.sum_congr rfl (fun k _ => ?_))
+          simp only [hB_def, ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+            ENNReal.ofReal_toReal (hktop k)]
   · rw [not_forall] at hAC
     obtain ⟨k₀, hk₀⟩ := hAC
     have htop : klDiv (Q j) (Q k₀) = ⊤ := klDiv_of_not_ac hk₀
