@@ -84,6 +84,133 @@ theorem sqHellinger_le_two (μ ν : Measure α) [IsProbabilityMeasure μ] [IsPro
   rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from (ENNReal.ofReal_ofNat 2).symm]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
+/-- The squared-Hellinger lintegral against an *arbitrary* common dominating reference `ξ`
+(`sqHellinger μ ν` is the special case `ξ = μ + ν`). Introduced only as scaffolding for the
+dominating-measure-invariance lemma `sqHellWith_transfer`. -/
+private noncomputable def sqHellWith (A B ξ : Measure α) : ℝ≥0∞ :=
+  ∫⁻ x, ENNReal.ofReal
+    ((Real.sqrt (A.rnDeriv ξ x).toReal - Real.sqrt (B.rnDeriv ξ x).toReal) ^ 2) ∂ξ
+
+/-- **Dominating-measure invariance.** If `ξ' ≪ ξ` (all σ-finite) with `A ≪ ξ'`, `B ≪ ξ'`, the
+squared-Hellinger lintegral against `ξ'` equals the one against `ξ`. The squared `L²`-distance
+between square-root densities does not depend on the choice of common dominating measure; we prove
+it from the Radon–Nikodym chain rule `Measure.rnDeriv_mul_rnDeriv` together with the
+change-of-reference identity `ξ' = ξ.withDensity (ξ'.rnDeriv ξ)`. -/
+private theorem sqHellWith_transfer (A B ξ' ξ : Measure α)
+    [SigmaFinite A] [SigmaFinite B] [SigmaFinite ξ'] [SigmaFinite ξ]
+    (hAξ' : A ≪ ξ') (hBξ' : B ≪ ξ') (hξ'ξ : ξ' ≪ ξ) :
+    sqHellWith A B ξ' = sqHellWith A B ξ := by
+  unfold sqHellWith
+  set w := ξ'.rnDeriv ξ with hw
+  have hw_meas : Measurable w := Measure.measurable_rnDeriv _ _
+  have hξ'eq : ξ' = ξ.withDensity w := (Measure.withDensity_rnDeriv_eq _ _ hξ'ξ).symm
+  set F : α → ℝ≥0∞ := fun x => ENNReal.ofReal
+      ((Real.sqrt (A.rnDeriv ξ' x).toReal - Real.sqrt (B.rnDeriv ξ' x).toReal) ^ 2) with hF
+  have hF_meas : Measurable F := by
+    apply ENNReal.measurable_ofReal.comp
+    apply Measurable.pow _ measurable_const
+    exact ((((Measure.measurable_rnDeriv A ξ').ennreal_toReal).sqrt).sub
+      (((Measure.measurable_rnDeriv B ξ').ennreal_toReal).sqrt))
+  rw [hξ'eq, lintegral_withDensity_eq_lintegral_mul ξ hw_meas hF_meas]
+  refine lintegral_congr_ae ?_
+  filter_upwards [Measure.rnDeriv_mul_rnDeriv (κ := ξ) hAξ',
+    Measure.rnDeriv_mul_rnDeriv (κ := ξ) hBξ',
+    Measure.rnDeriv_lt_top ξ' ξ] with x hAx hBx hwx
+  rw [Pi.mul_apply] at hAx hBx
+  set wr := (w x).toReal with hwr
+  have hwr_nn : 0 ≤ wr := ENNReal.toReal_nonneg
+  set a' := (A.rnDeriv ξ' x).toReal with ha'
+  set b' := (B.rnDeriv ξ' x).toReal with hb'
+  have ha_eq : (A.rnDeriv ξ x).toReal = wr * a' := by
+    rw [← hAx, ENNReal.toReal_mul, hwr, ha']; ring
+  have hb_eq : (B.rnDeriv ξ x).toReal = wr * b' := by
+    rw [← hBx, ENNReal.toReal_mul, hwr, hb']; ring
+  change (w x * F x) = ENNReal.ofReal
+      ((Real.sqrt (A.rnDeriv ξ x).toReal - Real.sqrt (B.rnDeriv ξ x).toReal) ^ 2)
+  rw [hF]
+  simp only []
+  rw [show w x = ENNReal.ofReal wr from (ENNReal.ofReal_toReal hwx.ne).symm,
+    ← ENNReal.ofReal_mul hwr_nn]
+  congr 1
+  rw [ha_eq, hb_eq, Real.sqrt_mul hwr_nn, Real.sqrt_mul hwr_nn]
+  have hsq : Real.sqrt wr ^ 2 = wr := Real.sq_sqrt hwr_nn
+  have hexp : (Real.sqrt wr * Real.sqrt a' - Real.sqrt wr * Real.sqrt b') ^ 2
+       = Real.sqrt wr ^ 2 * (Real.sqrt a' - Real.sqrt b') ^ 2 := by ring
+  rw [hexp, hsq]
+
+open AsymptoticStatistics.ForMathlib.HellingerProduct in
+/-- **Absolute continuity of i.i.d. products** under coordinatewise domination
+`μ ≪ μ + ν`. Proved from the product Radon–Nikodym factorisation
+`MeasureTheory.PiWithDensity.pi_withDensity_prod`. -/
+private theorem pi_absCont_add (n : ℕ) (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    (Measure.pi fun _ : Fin n => μ) ≪ (Measure.pi fun _ : Fin n => (μ + ν)) := by
+  have hμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  set ξ : Measure α := μ + ν with hξ
+  have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
+  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
+    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
+  have hpiμ : (Measure.pi fun _ : Fin n => μ)
+      = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
+    rw [pi_withDensity_prod (fun _ => hfμ)]
+    congr 1; ext i; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]
+  rw [hpiμ]
+  exact withDensity_absolutelyContinuous _ _
+
+open AsymptoticStatistics.ForMathlib.HellingerProduct in
+/-- **Product factorisation.** The squared-Hellinger lintegral of the products, taken against the
+common dominating reference `Measure.pi (μ + ν)`, equals `ENNReal.ofReal` of the
+per-coordinate-product residual integral. Proved from the product Radon–Nikodym factorisation
+`pi_withDensity_prod` (giving `(Measure.pi μ).rnDeriv (Measure.pi ξ) =ᵃᵉ ∏ⱼ μ.rnDeriv ξ`) and the
+Bochner bridge `ofReal_integral_eq_lintegral_ofReal`. -/
+private theorem sqHellinger_pi_factor (n : ℕ) (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    sqHellWith (Measure.pi fun _ : Fin n => μ) (Measure.pi fun _ : Fin n => ν)
+        (Measure.pi fun _ : Fin n => (μ + ν))
+      = ENNReal.ofReal
+          (∫ X : Fin n → α,
+            ((∏ j, Real.sqrt (μ.rnDeriv (μ + ν) (X j)).toReal)
+              - ∏ j, Real.sqrt (ν.rnDeriv (μ + ν) (X j)).toReal) ^ 2
+            ∂(Measure.pi fun _ : Fin n => (μ + ν))) := by
+  have hμ : μ ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  have hν : ν ≪ μ + ν := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  set ξ : Measure α := μ + ν with hξ
+  have hfμ : Measurable (μ.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
+  have hfν : Measurable (ν.rnDeriv ξ) := Measure.measurable_rnDeriv _ _
+  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (μ.rnDeriv ξ)) := by
+    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]; infer_instance
+  haveI : ∀ _ : Fin n, SigmaFinite ((ξ).withDensity (ν.rnDeriv ξ)) := by
+    intro _; rw [Measure.withDensity_rnDeriv_eq _ _ hν]; infer_instance
+  have hpiμ : (Measure.pi fun _ : Fin n => μ)
+      = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
+    rw [pi_withDensity_prod (fun _ => hfμ)]
+    congr 1; ext i; rw [Measure.withDensity_rnDeriv_eq _ _ hμ]
+  have hpiν : (Measure.pi fun _ : Fin n => ν)
+      = (Measure.pi fun _ : Fin n => ξ).withDensity (fun x => ∏ j, ν.rnDeriv ξ (x j)) := by
+    rw [pi_withDensity_prod (fun _ => hfν)]
+    congr 1; ext i; rw [Measure.withDensity_rnDeriv_eq _ _ hν]
+  have hrnμ : (Measure.pi fun _ : Fin n => μ).rnDeriv (Measure.pi fun _ : Fin n => ξ)
+      =ᵐ[Measure.pi fun _ : Fin n => ξ] (fun x => ∏ j, μ.rnDeriv ξ (x j)) := by
+    conv_lhs => rw [hpiμ]
+    exact Measure.rnDeriv_withDensity _
+      (Finset.measurable_prod _ (fun j _ => hfμ.comp (measurable_pi_apply j)))
+  have hrnν : (Measure.pi fun _ : Fin n => ν).rnDeriv (Measure.pi fun _ : Fin n => ξ)
+      =ᵐ[Measure.pi fun _ : Fin n => ξ] (fun x => ∏ j, ν.rnDeriv ξ (x j)) := by
+    conv_lhs => rw [hpiν]
+    exact Measure.rnDeriv_withDensity _
+      (Finset.measurable_prod _ (fun j _ => hfν.comp (measurable_pi_apply j)))
+  unfold sqHellWith
+  rw [show (Measure.pi fun _ : Fin n => (μ + ν)) = (Measure.pi fun _ : Fin n => ξ) from rfl]
+  rw [lintegral_congr_ae (g := fun X => ENNReal.ofReal
+      (((∏ j, Real.sqrt (μ.rnDeriv ξ (X j)).toReal)
+        - ∏ j, Real.sqrt (ν.rnDeriv ξ (X j)).toReal) ^ 2))]
+  · rw [← ofReal_integral_eq_lintegral_ofReal]
+    · exact (hellinger_product_residual_memLp_two_perCoord (μ := μ) (ν := ν) (ξ := ξ)
+        (n := n) hμ hν).integrable_sq
+    · exact Filter.Eventually.of_forall (fun _ => sq_nonneg _)
+  · filter_upwards [hrnμ, hrnν] with x hx hy
+    rw [hx, hy, ← prod_sqrt_eq_sqrt_prod_toReal, ← prod_sqrt_eq_sqrt_prod_toReal]
+
 /-- **Bridge to the StatLean product form.** The squared Hellinger distance of the `n`-fold
 i.i.d. products, against its canonical dominating measure `Measure.pi μ + Measure.pi ν`, equals
 `ENNReal.ofReal` of the per-coordinate-product residual integral against `Measure.pi (μ + ν)`
@@ -95,9 +222,10 @@ This packages two standard measure-theoretic facts about the squared Hellinger f
 (ii) the squared Hellinger integral is invariant under the choice of common dominating measure
 (here switching `Measure.pi μ + Measure.pi ν` for `Measure.pi (μ + ν)`).
 
--- TODO(mmx, Wainwright Eq. (15.12)): discharge the product-rnDeriv factorisation and
--- dominating-measure invariance. Genuine measure-theoretic lemma (no Mathlib `rnDeriv_pi`),
--- lifted per CLAUDE.md §2 as a named, well-defined sub-lemma. -/
+This is discharged via two helper lemmas below: `sqHellWith_transfer` (dominating-measure
+invariance of the squared-Hellinger lintegral, proved from the Radon–Nikodym chain rule
+`Measure.rnDeriv_mul_rnDeriv`) and `sqHellinger_pi_factor` (the product factorisation, proved
+from `MeasureTheory.PiWithDensity.pi_withDensity_prod`). -/
 private theorem sqHellinger_pi_eq_ofReal_product_integral (n : ℕ) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     sqHellinger (Measure.pi fun _ : Fin n => μ) (Measure.pi fun _ : Fin n => ν)
@@ -106,7 +234,23 @@ private theorem sqHellinger_pi_eq_ofReal_product_integral (n : ℕ) (μ ν : Mea
             ((∏ j, Real.sqrt (μ.rnDeriv (μ + ν) (X j)).toReal)
               - ∏ j, Real.sqrt (ν.rnDeriv (μ + ν) (X j)).toReal) ^ 2
             ∂(Measure.pi fun _ : Fin n => (μ + ν))) := by
-  sorry
+  set A := Measure.pi fun _ : Fin n => μ with hA
+  set B := Measure.pi fun _ : Fin n => ν with hB
+  set P := Measure.pi fun _ : Fin n => (μ + ν) with hP
+  have hAP : A ≪ P := pi_absCont_add n μ ν
+  have hBP : B ≪ P := by
+    have := pi_absCont_add n ν μ
+    rwa [add_comm ν μ] at this
+  have hAAB : A ≪ A + B := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  have hBAB : B ≪ A + B := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  set ζ := (A + B) + P with hζ
+  have hABζ : (A + B) ≪ ζ := Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+  have hPζ : P ≪ ζ := Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+  -- `sqHellinger A B` is by definition `sqHellWith A B (A + B)`.
+  change sqHellWith A B (A + B) = _
+  rw [sqHellWith_transfer A B (A + B) ζ hAAB hBAB hABζ,
+      ← sqHellWith_transfer A B P ζ hAP hBP hPζ]
+  exact sqHellinger_pi_factor n μ ν
 
 /-- **I.i.d. tensorization bound for the squared Hellinger distance** (Wainwright Eq. (15.12b)):
 `H²(ℙ^{1:n} ‖ ℚ^{1:n}) ≤ n · H²(ℙ ‖ ℚ)`, obtained from the affinity-product identity (Eq. (15.12a))
