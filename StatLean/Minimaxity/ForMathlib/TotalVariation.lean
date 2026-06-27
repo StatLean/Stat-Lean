@@ -37,9 +37,33 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, E
 noncomputable def tvDist (μ ν : Measure α) : ℝ≥0∞ :=
   ⨆ (s : Set α) (_ : MeasurableSet s), μ s - ν s
 
+/-- For `a, b ≤ 1` in `ℝ≥0∞` (truncated subtraction), `a − b = (1 − b) − (1 − a)`. This is the
+"flip by complement" identity used to show symmetry of the total variation distance. -/
+private lemma tsub_eq_one_tsub_tsub {a b : ℝ≥0∞} (ha : a ≤ 1) (hb : b ≤ 1) :
+    a - b = (1 - b) - (1 - a) := by
+  rcases le_total a b with h | h
+  · rw [tsub_eq_zero_of_le h, tsub_eq_zero_of_le (tsub_le_tsub_left h 1)]
+  · have e : (1 : ℝ≥0∞) - a + (a - b) = 1 - b := tsub_add_tsub_cancel ha h
+    rw [← e, (ENNReal.cancel_of_ne (ENNReal.sub_ne_top ENNReal.one_ne_top)).add_tsub_cancel_left]
+
+/-- For probability measures and measurable `s`, `μ s − ν s = ν sᶜ − μ sᶜ`. -/
+private lemma measure_tsub_eq_compl (μ ν : Measure α) [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] {s : Set α} (hs : MeasurableSet s) :
+    μ s - ν s = ν sᶜ - μ sᶜ := by
+  rw [prob_compl_eq_one_sub hs, prob_compl_eq_one_sub hs]
+  exact tsub_eq_one_tsub_tsub prob_le_one prob_le_one
+
+/-- One inequality of the symmetry of total variation: reindexing the supremum by complements. -/
+private lemma tvDist_le_swap (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν ≤ tvDist ν μ := by
+  refine iSup_le fun s => iSup_le fun hs => ?_
+  rw [measure_tsub_eq_compl μ ν hs]
+  exact le_iSup₂ (f := fun t (_ : MeasurableSet t) => ν t - μ t) sᶜ hs.compl
+
 /-- Total variation distance is symmetric. -/
-theorem tvDist_comm (μ ν : Measure α) : tvDist μ ν = tvDist ν μ := by
-  sorry
+theorem tvDist_comm (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν = tvDist ν μ :=
+  le_antisymm (tvDist_le_swap μ ν) (tvDist_le_swap ν μ)
 
 /-- For probability measures, `tvDist ℙ ℚ ≤ 1`.
 
@@ -47,7 +71,21 @@ theorem tvDist_comm (μ ν : Measure α) : tvDist μ ν = tvDist ν μ := by
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3. -/
 theorem tvDist_le_one (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     tvDist μ ν ≤ 1 := by
-  sorry
+  refine iSup_le fun s => iSup_le fun _ => ?_
+  calc μ s - ν s ≤ μ s := tsub_le_self
+    _ ≤ μ Set.univ := measure_mono (Set.subset_univ s)
+    _ = 1 := measure_univ
+
+-- Crux of Eq. (15.6): the supremum defining `tvDist` is attained on `{p ≥ q}` and there
+-- `μ s − ν s = ∫_s (p − q) dξ`, giving `tvDist = ½ ∫ |p − q| dξ`. This requires the
+-- Radon–Nikodym density calculus on the common dominating measure `ξ = μ + ν`, which
+-- Mathlib does not yet assemble into a usable lemma here.
+private lemma tvDist_eq_half_lintegral_aux (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν
+      = 2⁻¹ * ∫⁻ x, ENNReal.ofReal
+          |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν) := by
+  sorry -- TODO(mmx): Eq. (15.6) — density form of TV via RN derivatives on ξ = μ + ν
 
 /-- **Density (one-half `L¹`) form of total variation** (Wainwright Eq. (15.6)):
 `‖ℙ − ℚ‖_TV = ½ ∫ |p − q| dν`, here with the common dominating measure `ξ = ℙ + ℚ` and
@@ -59,8 +97,19 @@ theorem tvDist_eq_half_lintegral (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     tvDist μ ν
       = 2⁻¹ * ∫⁻ x, ENNReal.ofReal
-          |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν) := by
-  sorry
+          |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν) :=
+  tvDist_eq_half_lintegral_aux μ ν
+
+-- Crux of Exercise 15.1: the variational/indicator-optimum representation of `1 − tvDist`.
+-- `≤` from any feasible `(f₀, f₁)`; `≥` by the indicator choice `f₀ = 𝟙_{q>p}`, `f₁ = 𝟙_{p≥q}`.
+-- Requires the density form (Eq. (15.6)) and is left as a named debt.
+private lemma one_sub_tvDist_eq_iInf_aux (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    1 - tvDist μ ν
+      = ⨅ (f₀ : α → ℝ≥0∞) (f₁ : α → ℝ≥0∞) (_ : Measurable f₀) (_ : Measurable f₁)
+          (_ : ∀ x, 1 ≤ f₀ x + f₁ x),
+          (∫⁻ x, f₀ x ∂μ + ∫⁻ x, f₁ x ∂ν) := by
+  sorry -- TODO(mmx): Ex 15.1 — variational form via indicator optimum on {p ≥ q}
 
 /-- **Variational representation of total variation** (Wainwright Exercise 15.1):
 `1 − ‖ℙ − ℚ‖_TV = inf { ∫ f₀ dℙ + ∫ f₁ dℚ : f₀, f₁ ≥ 0 measurable, f₀ + f₁ ≥ 1 pointwise }`.
@@ -73,7 +122,7 @@ theorem one_sub_tvDist_eq_iInf (μ ν : Measure α)
     1 - tvDist μ ν
       = ⨅ (f₀ : α → ℝ≥0∞) (f₁ : α → ℝ≥0∞) (_ : Measurable f₀) (_ : Measurable f₁)
           (_ : ∀ x, 1 ≤ f₀ x + f₁ x),
-          (∫⁻ x, f₀ x ∂μ + ∫⁻ x, f₁ x ∂ν) := by
-  sorry
+          (∫⁻ x, f₀ x ∂μ + ∫⁻ x, f₁ x ∂ν) :=
+  one_sub_tvDist_eq_iInf_aux μ ν
 
 end StatLean.Minimaxity
