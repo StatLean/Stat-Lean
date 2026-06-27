@@ -26,7 +26,7 @@ risk (squared Hellinger, encoded as `edist²`) of at least `½ · n^{-4/5}`.
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3, Example 15.15. -/
 theorem density_estimation_hellinger_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [MeasurableSpace 𝓧]
-    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] (n : ℕ) (hn : 1 ≤ n)
+    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] (n : ℕ) (hn : 1 ≤ n)
     (g : ι → Ω) (P : Kernel ι 𝓧) [IsMarkovKernel P]
     {M : ℕ} [NeZero M] (θfam : Fin M → ι) (hθ : Measurable θfam) (c : ℝ) (hM : 2 ≤ M)
     -- USER-INPUT: a Hamming-separated subfamily with separation `δₙ = n^{-2/5}`; Wainwright §15.3, Ex 15.15.
