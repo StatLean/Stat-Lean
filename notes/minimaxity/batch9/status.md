@@ -11,21 +11,28 @@ precise Lean statement with a full book citation; every public theorem is either
 (0-sorry)** or **structurally proven, reduced to a single named `private` analytic crux** — there are
 **no bare public-theorem sorries**.
 
-### Debt-closure campaign (4 waves, cluster fan-out) — 8 of 25 debts driven to 0-sorry
+### Debt-closure campaign (cluster fan-out) — 9 of 25 debts driven to 0-sorry
 
 A subsequent campaign closed the most tractable debts. Full `StatLean.Minimaxity` build stays **green**
-(3090 jobs, 0 errors); sorry inventory **25 → 17**. **Closed (0-sorry):** `klDiv_mixture_minimizes` (#1,
-Gibbs identity), `tvDist_eq_half_lintegral` (#2), `one_sub_tvDist_eq_iInf` (#3), `sqHellinger_pi_le_nsmul`
-(#4, eLpNorm bridge to `HellingerProduct`), `klDiv_le_avg` (#6, via Mathlib `convexOn_klFun`),
-`lecam_half_lintegral` (#8, Cauchy–Schwarz), `gilbert_varshamov` (#9, Hamming maximal-packing), and
-`yang_barron` (#16, log-N mixture step). (Pinsker's scalar Bernoulli sub-core also closed, but its
-KL-2cell DPI core #7 remains.) **Remaining 17 debts** (17 sorries) split:
+(3090 jobs, 0 errors); sorry inventory **25 → 16**. **Closed (0-sorry, 9):** `klDiv_mixture_minimizes`
+(#1, Gibbs identity), `tvDist_eq_half_lintegral` (#2), `one_sub_tvDist_eq_iInf` (#3),
+`sqHellinger_pi_le_nsmul` (#4, eLpNorm bridge to `HellingerProduct`), `klDiv_le_avg` (#6, via Mathlib
+`convexOn_klFun`), `lecam_half_lintegral` (#8, Cauchy–Schwarz), `gilbert_varshamov` (#9, Hamming
+maximal-packing), `binary_testingError_eq_tvDist` (#12, Eq 15.13 — via Mathlib `bayesBinaryRisk`; makes
+`minimax_two_point` fully proven), and `yang_barron` (#16, log-N mixture step). (Pinsker's scalar Bernoulli
+sub-core also closed, but its KL-2cell DPI core #7 remains.) **Remaining 16 debts** (16 sorries) split:
 *tractable-but-stuck* — Pinsker KL-2cell DPI (#7, blocked by absence of a Mathlib `klDiv` data-processing
-lemma) and binary Bayes=TV (#12); *hard cores* — measurable-Borel selector (#5), sphere/sparse packing
-volume (#10/#11), Le Cam convex-hull/functional cruxes (#13/#14), Fano continuous-`Z` disintegration (#15,
-`condDistrib` route scoped); *research-grade infrastructure* — the 7 example constructions (#17–23, the
+lemma); *hard cores* — measurable-Borel selector (#5), sphere/sparse packing volume (#10/#11), Le Cam
+convex-hull/functional cruxes (#13/#14), Fano continuous-`Z` disintegration (#15, `condDistrib` route
+scoped); *research-grade infrastructure* — the 7 example constructions (#17–23, the
 nonparametric-perturbation toolkit), Gaussian differential entropy (#24), Sobolev/Kolmogorov–Tikhomirov
 metric entropy (#25). Closing these needs new `ForMathlib` theory, not prompt-and-harvest.
+
+**Mathlib leverage found (for future closure):** `convexOn_klFun`/`strictConvexOn_klFun` (KL convexity, used
+for #1/#6), `bayesBinaryRisk` + `_eq_tv` (binary testing, used for #12), `ProbabilityTheory.condDistrib`
+(conditional distribution, scoped for #15), `Measure.addHaar_ball`/`addHaar_closedBall` (ball volumes,
+scoped for #10/#11). **Absent (must build): ** a `klDiv` data-processing inequality (`klDiv_map_le`),
+differential entropy of measures (#24), metric entropy of smoothness classes (#25).
 
 Two completeness tiers (confirmed by `#print axioms`):
 
