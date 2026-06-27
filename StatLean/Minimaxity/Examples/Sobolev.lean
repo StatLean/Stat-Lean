@@ -53,7 +53,7 @@ theorem sobolev_regression_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [Measu
       (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))).toReal ^ 2 + Real.log 2)
       ≤ Real.log (M : ℝ) := by rw [hδtoReal]; exact h35b
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
-    (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))) c (n : ℝ) hΦ hsep h35a' h35b'
+    (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))) c (n : ℝ) hΦ hsep (by positivity) h35a' h35b'
   have harith : ENNReal.ofReal (2⁻¹ * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2)
       = 2⁻¹ * (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))) ^ 2 := by
     rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2⁻¹), ENNReal.ofReal_pow hx0,

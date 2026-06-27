@@ -50,7 +50,7 @@ theorem density_estimation_hellinger_rate {ι 𝓧 Ω : Type*} [MeasurableSpace 
       (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))).toReal ^ 2 + Real.log 2) ≤ Real.log (M : ℝ) := by
     rw [hδtoReal]; exact h35b
   have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
-    (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))) c (n : ℝ) hΦ hsep h35a' h35b'
+    (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))) c (n : ℝ) hΦ hsep (by positivity) h35a' h35b'
   have harith : ENNReal.ofReal (2⁻¹ * ((n : ℝ) ^ (-(2 : ℝ) / 5)) ^ 2)
       = 2⁻¹ * (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))) ^ 2 := by
     rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2⁻¹), ENNReal.ofReal_pow hx0,
