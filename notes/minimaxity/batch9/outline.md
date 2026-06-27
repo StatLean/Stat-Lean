@@ -84,7 +84,35 @@ Defs[laptop]
 `minimax_fano_lower_bound` (15.12), `minimax_local_packing` (15.35), `minimax_yang_barron` (15.21),
 + each example rate theorem.
 
-## Status
+## Status (Wave 0 — stubbing)
 
-Wave 0 in progress. `Defs.lean` written; stub-gating on cluster. Per-unit stub tables added
-to this file as each stub lands.
+Umbrella `StatLean.Minimaxity` stub-gates **green** on `mmx/batch9` (pin v4.29.1). 14 files drafted;
+11 confirmed green (`Build completed successfully`, 16 sorries), 3 gating:
+
+| File | Stub-gate | Headline decls |
+|---|---|---|
+| `Defs` | ✅ 0 sorry | `minimaxRiskDist`, `multiwayTestingError`, `mixture`, `IsSeparatedFamily` |
+| `ForMathlib/KLDivergence` | ✅ | `klDiv_prod_eq_add`, `klDiv_pi_eq_nsmul`, `sum_klDiv_mixture_le` |
+| `ForMathlib/TotalVariation` | ✅ | `tvDist`, `tvDist_eq_half_lintegral`, `one_sub_tvDist_eq_iInf` |
+| `ForMathlib/HellingerDivergence` | ✅ | `sqHellinger`, `sqHellinger_le_two`, `sqHellinger_pi_le_nsmul` |
+| `ForMathlib/PinskerInequality` | ✅ | `pinsker_tv_le_kl` (15.2) |
+| `ForMathlib/LeCamInequality` | ✅ | `lecam_tv_le_hellinger` (15.3) |
+| `ForMathlib/Packing/HammingPacking` | ✅ | `exists_hamming_packing` (Ex 5.3) |
+| `ForMathlib/Packing/SpherePacking` | ✅ | `exists_sphere_packing` (Ex 5.8) |
+| `EstimationToTesting` | ✅ | `minimax_ge_testing_error` (Prop 15.1) |
+| `Fano/MutualInformation` | ✅ | `mutualInformation`, `mutualInformation_le_avg_pairwise_kl` |
+| `ForMathlib/Packing/SparsePacking` | ⏳ | `exists_sparse_packing` (Ex 5.8) |
+| `LeCam/TwoPoint` | ⏳ | `binary_testingError_eq_tvDist` (15.13), `minimax_two_point` (15.14) |
+| `Fano/FanoLowerBound` | ⏳ | `fano_inequality` (15.31), `minimax_fano_lower_bound` (Prop 15.12) |
+
+**Validated reuse:** `ProbabilityTheory.minimaxRisk`/`bayesRisk` (+ `bayesRisk_le_minimaxRisk`, DPI),
+`klDiv` (arg-order matches Wainwright `D(Q‖P)`), StatLean `HellingerProduct.*`, `PMF.uniformOfFintype`.
+
+**Encoding decisions locked:** measurable-space binders are **instance-implicit** `[…]` (so
+`minimaxRiskDist`'s `Ω` measurable space resolves by synthesis — regular implicit `{…}` was
+unsynthesizable). `Fano/FanoLowerBound` carries `fano_inequality` (KL-MI form); `ForMathlib/Entropy`
+will hold the appendix (Def 15.24/25, 15.60a-e) used by its proof.
+
+**Remaining to stub (Wave 0):** `ForMathlib/Entropy` (appendix), `ForMathlib/GaussianKL` (Ex 15.13),
+`ForMathlib/GaussianMaxEntropy` ◆◆ (15.17), `ForMathlib/Packing/SobolevEntropy` ◆◆ (Ex 5.12),
+`LeCam/{ConvexHull,Functional}`, `Fano/{LocalPacking,YangBarron}`, `Examples/*` (8).
