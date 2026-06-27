@@ -5,7 +5,23 @@ Source of truth = `lake build` sorry inventory; this doc tracks intent/progress.
 
 ## State
 
-**Wave 0 (stubbing) — core complete.** Umbrella `StatLean.Minimaxity` stub-gates **green** (0 errors,
+**Wave 0 (stubbing) — DONE.** Full 29-file umbrella `StatLean.Minimaxity` stub-gates green (0 errors,
+40 sorries). **Proof closure — IN PROGRESS.** First concurrent wave launched (4 cluster-claude
+sessions off `mmx/batch9`):
+
+| Branch | Files | Status |
+|---|---|---|
+| `mmx/p-divergences` | KLDivergence, TotalVariation, HellingerDivergence | running |
+| `mmx/p-entropy` | Entropy (Eq 15.60, Ex 15.2) | running |
+| `mmx/p-comparisons` | PinskerInequality (15.2), LeCamInequality (15.3) | running |
+| `mmx/p-reduction` | EstimationToTesting (Prop 15.1), MutualInformation (15.34), GaussianKL (Ex 15.13) | running |
+
+Next waves: methods (LeCam ×3, Fano ×3) → packing + GaussianMaxEntropy + SobolevEntropy → examples.
+Each session lifts genuinely-hard cruxes to named `private` debts (reported back), per CLAUDE.md §2.
+
+---
+
+(historical) **Wave 0 (stubbing) — core complete.** Umbrella `StatLean.Minimaxity` stub-gates **green** (0 errors,
 32 sorries). **22/29 files** drafted and cluster-green (the plan's 30 minus the `FanoInequality`
 merge into `FanoLowerBound`). The entire core theory — keystone risk encoding, all Le Cam / Fano /
 local-packing / Yang–Barron method theorems, the three divergences + Pinsker + Le Cam inequality, the

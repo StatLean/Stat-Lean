@@ -64,7 +64,8 @@ noncomputable def discreteMutualInfo {ι κ : Type*} [Fintype ι] [Fintype κ] (
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.6, Exercise 15.2. -/
 theorem discreteEntropy_nonneg {ι : Type*} [Fintype ι] (p : ι → ℝ)
     (h0 : ∀ i, 0 ≤ p i) (h1 : ∀ i, p i ≤ 1) : 0 ≤ discreteEntropy p := by
-  sorry
+  rw [discreteEntropy]
+  exact Finset.sum_nonneg fun i _ => Real.negMulLog_nonneg (h0 i) (h1 i)
 
 /-- **Discrete entropy is bounded by `log|𝒳|`** (Wainwright Exercise 15.2b), with equality at the
 uniform distribution.
@@ -74,7 +75,48 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.6, Exe
 theorem discreteEntropy_le_log_card {ι : Type*} [Fintype ι] [Nonempty ι] (p : ι → ℝ)
     (h0 : ∀ i, 0 ≤ p i) (hsum : ∑ i, p i = 1) :
     discreteEntropy p ≤ Real.log (Fintype.card ι) := by
-  sorry
+  have hncard : 0 < Fintype.card ι := Fintype.card_pos
+  have hnpos : (0 : ℝ) < (Fintype.card ι : ℝ) := by exact_mod_cast hncard
+  have hne : (Fintype.card ι : ℝ) ≠ 0 := ne_of_gt hnpos
+  -- Jensen for the concave function `negMulLog`, with uniform weights `1/n`.
+  have hjensen := Real.concaveOn_negMulLog.le_map_sum
+    (t := (Finset.univ : Finset ι)) (w := fun _ => 1 / (Fintype.card ι : ℝ)) (p := p)
+    (fun i _ => by positivity)
+    (by rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]; field_simp)
+    (fun i _ => h0 i)
+  have hLHS : (∑ i, (1 / (Fintype.card ι : ℝ)) • Real.negMulLog (p i))
+      = (1 / (Fintype.card ι : ℝ)) * discreteEntropy p := by
+    rw [discreteEntropy, Finset.mul_sum]
+    simp [smul_eq_mul]
+  have hRHS : (∑ i, (1 / (Fintype.card ι : ℝ)) • p i) = 1 / (Fintype.card ι : ℝ) := by
+    simp only [smul_eq_mul, ← Finset.mul_sum, hsum, mul_one]
+  rw [hLHS, hRHS] at hjensen
+  have hlog : Real.negMulLog (1 / (Fintype.card ι : ℝ))
+      = (1 / (Fintype.card ι : ℝ)) * Real.log (Fintype.card ι) := by
+    simp only [Real.negMulLog_def, one_div, Real.log_inv]; ring
+  rw [hlog] at hjensen
+  exact le_of_mul_le_mul_left hjensen (div_pos one_pos hnpos)
+
+/-- Per-term Gibbs bound underlying subadditivity of entropy: for nonnegative `p ≤ a` and `p ≤ b`,
+`p log a + p log b − p log p ≤ a·b − p`. Summed over a joint pmf (with `a`, `b` the marginal
+masses) this gives `H(X,Y) ≤ H(X) + H(Y)`, i.e. `I(X;Y) ≥ 0`. -/
+private lemma negMulLog_term_bound {p a b : ℝ} (hp : 0 ≤ p) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (hpa : p ≤ a) (hpb : p ≤ b) :
+    p * Real.log a + p * Real.log b - p * Real.log p ≤ a * b - p := by
+  rcases eq_or_lt_of_le hp with hp0 | hp0
+  · subst hp0; simpa using mul_nonneg ha hb
+  · have hapos : 0 < a := lt_of_lt_of_le hp0 hpa
+    have hbpos : 0 < b := lt_of_lt_of_le hp0 hpb
+    have habpos : 0 < a * b := mul_pos hapos hbpos
+    have hlog : Real.log (a * b / p) ≤ a * b / p - 1 :=
+      Real.log_le_sub_one_of_pos (by positivity)
+    have hmul : p * Real.log (a * b / p) ≤ p * (a * b / p - 1) :=
+      mul_le_mul_of_nonneg_left hlog (le_of_lt hp0)
+    rw [Real.log_div (ne_of_gt habpos) (ne_of_gt hp0),
+        Real.log_mul (ne_of_gt hapos) (ne_of_gt hbpos)] at hmul
+    have hrhs : p * (a * b / p - 1) = a * b - p := by field_simp
+    rw [hrhs, mul_sub, mul_add] at hmul
+    linarith [hmul]
 
 /-- **Conditioning reduces entropy** (Wainwright Eq. (15.60a)): `H(X | Y) ≤ H(X)`, equivalently the
 mutual information is nonnegative (`I(X;Y) ≥ 0`).
@@ -84,6 +126,54 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4, Eq.
 theorem discreteCondEntropy_le_entropy {ι κ : Type*} [Fintype ι] [Fintype κ] (p : ι × κ → ℝ)
     (h0 : ∀ x, 0 ≤ p x) (hsum : ∑ x, p x = 1) :
     discreteCondEntropy p ≤ discreteEntropy (fun i : ι => ∑ k, p (i, k)) := by
-  sorry
+  -- Reduce to subadditivity `H(X,Y) ≤ H(X) + H(Y)`, then abbreviate the two marginals.
+  rw [discreteCondEntropy, sub_le_iff_le_add]
+  set a : ι → ℝ := fun i => ∑ k, p (i, k) with ha_def
+  set b : κ → ℝ := fun k => ∑ i, p (i, k) with hb_def
+  -- Nonnegativity of marginals, and the `p ≤ marginal` domination facts.
+  have ha0 : ∀ i, 0 ≤ a i := fun i => Finset.sum_nonneg fun k _ => h0 (i, k)
+  have hb0 : ∀ k, 0 ≤ b k := fun k => Finset.sum_nonneg fun i _ => h0 (i, k)
+  have hpa : ∀ x : ι × κ, p x ≤ a x.1 := fun x =>
+    Finset.single_le_sum (f := fun k => p (x.1, k)) (fun k _ => h0 (x.1, k)) (Finset.mem_univ x.2)
+  have hpb : ∀ x : ι × κ, p x ≤ b x.2 := fun x =>
+    Finset.single_le_sum (f := fun i => p (i, x.2)) (fun i _ => h0 (i, x.2)) (Finset.mem_univ x.1)
+  -- Rewrite each entropy as a single sum over `ι × κ`.
+  have hEp : discreteEntropy p = ∑ x : ι × κ, (- p x * Real.log (p x)) := by
+    rw [discreteEntropy]; simp_rw [Real.negMulLog_def]
+  have hEa : discreteEntropy a = ∑ x : ι × κ, (- p x * Real.log (a x.1)) := by
+    rw [discreteEntropy, Fintype.sum_prod_type]
+    dsimp only
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    simp only [Real.negMulLog_def]
+    rw [← Finset.sum_mul]
+    congr 1
+    exact (Finset.sum_neg_distrib _).symm
+  have hEb : discreteEntropy b = ∑ x : ι × κ, (- p x * Real.log (b x.2)) := by
+    rw [discreteEntropy, Fintype.sum_prod_type_right]
+    dsimp only
+    refine Finset.sum_congr rfl (fun k _ => ?_)
+    simp only [Real.negMulLog_def]
+    rw [← Finset.sum_mul]
+    congr 1
+    exact (Finset.sum_neg_distrib _).symm
+  -- The marginal masses are total mass `1`.
+  have hA : (∑ i, a i) = 1 := by rw [ha_def, ← Fintype.sum_prod_type]; exact hsum
+  have hB : (∑ k, b k) = 1 := by rw [hb_def, ← Fintype.sum_prod_type_right]; exact hsum
+  have hab : (∑ x : ι × κ, a x.1 * b x.2) = 1 := by
+    rw [Fintype.sum_prod_type]
+    dsimp only
+    simp_rw [← Finset.mul_sum]
+    rw [← Finset.sum_mul, hA, hB, mul_one]
+  rw [hEp, hEa, hEb, ← Finset.sum_add_distrib]
+  -- Termwise the joint term is below the marginal term plus slack `a·b − p`, which sums to `0`.
+  refine le_trans (Finset.sum_le_sum (g := fun x : ι × κ =>
+      (- p x * Real.log (a x.1) + - p x * Real.log (b x.2)) + (a x.1 * b x.2 - p x))
+    (fun x _ => ?_)) ?_
+  · have hterm := negMulLog_term_bound (h0 x) (ha0 x.1) (hb0 x.2) (hpa x) (hpb x)
+    nlinarith [hterm]
+  · rw [Finset.sum_add_distrib]
+    have hzero : (∑ x : ι × κ, (a x.1 * b x.2 - p x)) = 0 := by
+      rw [Finset.sum_sub_distrib, hab, hsum]; norm_num
+    rw [hzero, add_zero]
 
 end StatLean.Minimaxity
