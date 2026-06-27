@@ -70,8 +70,13 @@ Deep-research pass (parallel sessions) on the 3 reductions, with **loose constan
   `‖vα−vβ‖²=4·hamming/n ≥ 1`). Bound loosened `n·log 2 → n/10` (still exponential; PCA untouched). Build green.
 - **#15 Fano — reduced** (the ℝ≥0∞ rearrangement now proven; the `mutualInformation = log M − H(J|Z)` identity
   remains, needing a from-scratch conditional-entropy build on Mathlib `posterior`/`negMulLog` — research-grade).
-- **#11 sparse — open** (the constant-weight residual genuinely needs a **q-ary / Johnson-scheme** Gilbert–
-  Varshamov support count, analogous to the binary one but not yet built; block-construction retry in progress).
+- **#11 sparse — reduced** (the `d ≤ 2s` regime now proven; the residual is the sharp **constant-weight /
+  q-ary (Johnson-scheme)** Gilbert–Varshamov support count for `2s < d` — analogous to the binary one but not
+  yet built).
+
+**Final state: 14 of 25 debts at 0-sorry; 11 named residuals remain** (#11 q-ary GV count, #15 conditional-
+entropy identity, + the 9 out-of-scope example/research debts #17–25). Full `StatLean.Minimaxity` builds green
+(3096 jobs, 0 errors, 11 sorries). On `mmx/batch9`; not pushed to `origin`.
 **Mathlib leverage confirmed this pass:** `Measure.toSphere`+`toSphere_apply'`+`measurePreserving_homeomorphUnitSphereProd`
 (sphere surface measure), `ProbabilityTheory.posterior` (`κ†μ`)+`posterior_eq_withDensity_of_countable`+`negMulLog`
 (for #15), `Finset.powersetCard`+`Nat.choose` bounds (for #11). Genuinely absent: sharp cap surface (Wallis),
