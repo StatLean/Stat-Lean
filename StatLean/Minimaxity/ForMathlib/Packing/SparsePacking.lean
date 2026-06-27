@@ -117,27 +117,75 @@ private theorem half_le_norm_sparseVec_sub (d s : ℕ) (hs : 0 < s) (S S' : Fins
     _ ≤ Real.sqrt (∑ i, ‖(sparseVec d s S - sparseVec d s S') i‖ ^ 2) :=
         Real.sqrt_le_sqrt hsum_ge
 
-/-- **Gilbert–Varshamov packing of weight-`s` supports** (the combinatorial heart of Wainwright
-Example 5.8, isolated as the single named residual). There is a family `𝒮` of `s`-element subsets of
-`[d]`, pairwise with intersection `2|S ∩ S'| ≤ s` (equivalently symmetric difference `≥ s`), and
+/-- **Gilbert–Varshamov packing of weight-`s` supports, large-`d` regime** (the combinatorial heart
+of Wainwright Example 5.8, isolated as the single named residual). For `2s < d` there is a family
+`𝒮` of `s`-element subsets of `[d]`, pairwise with intersection `2|S ∩ S'| ≤ s` (equivalently
+symmetric difference `≥ s`), and
 ```
 log |𝒮| ≥ (s/2) · log((d − s)/s).
 ```
 
 Sketch: take a maximal `𝒮` among weight-`s` supports with pairwise `2|S ∩ S'| ≤ s`. By maximality
 the "intersection balls" `{T : |T| = s, 2|S ∩ T| > s}` cover all `C(d,s)` supports, so
-`C(d,s) ≤ |𝒮| · max_S #ball`; the binomial volume estimate
-`#ball ≤ C(d,s) · ((d−s)/s)^{−s/2}` then yields the bound. (For `d ≤ 2s` the right side is `≤ 0`
-and a singleton family suffices.)
+`C(d,s) ≤ |𝒮| · max_S #ball`; a binomial volume estimate on `#ball` then yields the bound.
 
-TODO(mmx): discharge via the maximal-packing covering argument + the binomial volume estimate
-(cf. `gilbert_varshamov` in `HammingPacking.lean` for the analogous `{0,1}^m` argument). -/
-private theorem exists_bounded_overlap_supports (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d) :
+TODO(mmx): discharge the `2s < d` regime via a *sharp* constant-weight Gilbert–Varshamov count
+(or an algebraic Reed–Solomon code in the `d/s ≥ s` regime). The elementary block / `q`-ary GV
+volume estimates lose a `2^{Θ(s)}` factor and do **not** reach this exact constant: e.g. for
+`d = 40, s = 10` (so `q = ⌊d/s⌋ = 4`) the block route gives only `q^s / #ball ≈ 50` and the direct
+constant-weight GV bound `C(d,s) / Σ_{j>s/2} C(s,j)C(d−s,s−j) ≈ 135` codewords, whereas the stated
+bound needs `≈ exp((s/2)·log((d−s)/s)) = exp(5·log 3) ≈ 243`. (The `d ≤ 2s` case has `RHS ≤ 0` and
+is fully discharged in `exists_bounded_overlap_supports` by a singleton family.) -/
+private theorem exists_bounded_overlap_supports_gv (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d)
+    (hd : 2 * s < d) :
     ∃ 𝒮 : Finset (Finset (Fin d)),
       (∀ S ∈ 𝒮, S.card = s) ∧
       (∀ S ∈ 𝒮, ∀ S' ∈ 𝒮, S ≠ S' → 2 * (S ∩ S').card ≤ s) ∧
       (s / 2 : ℝ) * Real.log ((d - s : ℝ) / s) ≤ Real.log 𝒮.card :=
   sorry
+
+/-- **Gilbert–Varshamov packing of weight-`s` supports** (Wainwright Example 5.8). There is a family
+`𝒮` of `s`-element subsets of `[d]`, pairwise with intersection `2|S ∩ S'| ≤ s` (equivalently
+symmetric difference `≥ s`), and
+```
+log |𝒮| ≥ (s/2) · log((d − s)/s).
+```
+
+The `d ≤ 2s` case is discharged here directly: then `(d − s)/s ≤ 1`, so `log((d − s)/s) ≤ 0` and the
+whole right side is `≤ 0 = log 1`, which a singleton support family attains. The genuine `2s < d`
+combinatorics are deferred to `exists_bounded_overlap_supports_gv`. -/
+private theorem exists_bounded_overlap_supports (d s : ℕ) (hs : 0 < s) (hsd : s ≤ d) :
+    ∃ 𝒮 : Finset (Finset (Fin d)),
+      (∀ S ∈ 𝒮, S.card = s) ∧
+      (∀ S ∈ 𝒮, ∀ S' ∈ 𝒮, S ≠ S' → 2 * (S ∩ S').card ≤ s) ∧
+      (s / 2 : ℝ) * Real.log ((d - s : ℝ) / s) ≤ Real.log 𝒮.card := by
+  classical
+  rcases Nat.lt_or_ge (2 * s) d with hd | hd
+  · -- `2s < d`: the genuine Gilbert–Varshamov regime.
+    exact exists_bounded_overlap_supports_gv d s hs hsd hd
+  · -- `d ≤ 2s`: the right side is `≤ 0`, so a singleton support family suffices.
+    replace hd : d ≤ 2 * s := hd
+    obtain ⟨S, -, hScard⟩ :=
+      Finset.exists_subset_card_eq (s := (Finset.univ : Finset (Fin d))) (n := s)
+        (by rw [Finset.card_univ, Fintype.card_fin]; exact hsd)
+    refine ⟨{S}, ?_, ?_, ?_⟩
+    · intro T hT; rw [Finset.mem_singleton] at hT; subst hT; exact hScard
+    · intro T hT T' hT' hne
+      rw [Finset.mem_singleton] at hT hT'; subst hT; subst hT'; exact absurd rfl hne
+    · -- `log |{S}| = log 1 = 0 ≥ (s/2)·log((d−s)/s)` because `(d−s)/s ≤ 1`.
+      rw [Finset.card_singleton, Nat.cast_one, Real.log_one]
+      have hsR : (0 : ℝ) < s := by exact_mod_cast hs
+      have hds0 : (0 : ℝ) ≤ (d : ℝ) - s := by
+        have : (s : ℝ) ≤ d := by exact_mod_cast hsd
+        linarith
+      have hle : ((d : ℝ) - s) / s ≤ 1 := by
+        rw [div_le_one hsR]
+        have : (d : ℝ) ≤ 2 * s := by exact_mod_cast hd
+        linarith
+      have hhalf : (0 : ℝ) ≤ (s / 2 : ℝ) := by positivity
+      have hlognonpos : Real.log (((d : ℝ) - s) / s) ≤ 0 :=
+        Real.log_nonpos (div_nonneg hds0 hsR.le) hle
+      nlinarith [mul_nonneg hhalf (neg_nonneg.mpr hlognonpos)]
 
 -- USER-INPUT: `log |𝒮| ≥ (s/2) log((d−s)/s)` support-count bound; Wainwright Ex 5.8.
 -- Supplied internally by `exists_bounded_overlap_supports` (named residual), not as a hypothesis.
