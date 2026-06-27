@@ -31,16 +31,20 @@ weighted hypotheses `Q 0, Q 1`, the optimal (Bayes) error probability is `½(1 �
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1, Eq. (15.13). -/
--- Crux of Eq. (15.13): the Bayes error of the binary test is attained at the likelihood-ratio
--- test, where it equals `½(1 − ‖Q 0 − Q 1‖_TV)`. This is the binary optimal-test identity
--- (Neyman–Pearson), which Mathlib does not yet package as a usable lemma; left as a named debt.
-private lemma binary_testingError_eq_tvDist_aux (Q : Kernel (Fin 2) 𝓧) [IsMarkovKernel Q] :
-    multiwayTestingError Q = 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := by
-  sorry -- TODO(mmx): Eq. (15.13) — binary Bayes error = ½(1 − TV) via likelihood-ratio test
-
 theorem binary_testingError_eq_tvDist (Q : Kernel (Fin 2) 𝓧) [IsMarkovKernel Q] :
-    multiwayTestingError Q = 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) :=
-  binary_testingError_eq_tvDist_aux Q
+    multiwayTestingError Q = 2⁻¹ * (1 - tvDist (Q 0) (Q 1)) := by
+  -- Unfolding `bayesRisk (zeroOneLoss 2) Q (uniformPrior 2)`, a Markov test `κ : Kernel 𝓧 (Fin 2)`
+  -- is encoded by the acceptance function `a x = κ x {1} ∈ [0,1]`, and its average 0–1 risk is
+  --   ½ (Q0[{1}] + Q1[{0}]) = ½ (∫ a dQ0 + 1 − ∫ a dQ1) = ½ (1 − (∫ a dQ1 − ∫ a dQ0)).
+  -- Taking the infimum over `0 ≤ a ≤ 1` turns the bracket into a supremum:
+  --   inf_a ½(1 − ∫ a d(Q1 − Q0)) = ½(1 − sup_a ∫ a d(Q1 − Q0)) = ½(1 − ‖Q1 − Q0‖_TV),
+  -- the supremum being attained by `a = 𝟙[dQ1/dQ0 > 1]` (the likelihood-ratio test), which realizes
+  -- `tvDist (Q 0) (Q 1)` by the supremum form `tvDist = ⨆ s, μ s − ν s`.
+  --
+  -- TODO(mmx): formalize the kernel-↔-acceptance-function correspondence and the identity
+  -- `⨆_{0 ≤ a ≤ 1, measurable} ∫⁻ a d(Q1 − Q0) = tvDist (Q 0) (Q 1)`; the latter is the variational
+  -- characterization of total variation (companion to `one_sub_tvDist_eq_iInf`).
+  sorry
 
 /-- **Le Cam's two-point lower bound** (Wainwright Eq. (15.14)): for an increasing distortion `Φ`
 and a pair `θ₀, θ₁` whose functional values are `2δ`-separated,
@@ -57,20 +61,21 @@ theorem minimax_two_point [PseudoEMetricSpace Ω]
     (hsep : 2 * δ ≤ edist (g θ₀) (g θ₁)) :
     Φ δ / 2 * (1 - tvDist (P θ₀) (P θ₁)) ≤ minimaxRiskDist Φ g P := by
   classical
-  -- The two-point family `θfam = ![θ₀, θ₁] : Fin 2 → Θ`.
-  have hθ : Measurable (![θ₀, θ₁] : Fin 2 → Θ) := measurable_from_top
-  -- The pair is `2δ`-separated as a (two-element) separated family.
-  have hsepfam : IsSeparatedFamily g (![θ₀, θ₁] : Fin 2 → Θ) δ := by
+  -- The two-point sub-family `θfam = ![θ₀, θ₁]`.
+  set θfam : Fin 2 → Θ := ![θ₀, θ₁] with hfam
+  have hθ : Measurable θfam := measurable_of_countable _
+  haveI : IsMarkovKernel (P.comap θfam hθ) := Kernel.IsMarkovKernel.comap P hθ
+  have h01 : 2 * δ ≤ edist (g (θfam 0)) (g (θfam 1)) := by simpa [θfam] using hsep
+  have hsepf : IsSeparatedFamily g θfam δ := by
     intro j k hjk
-    fin_cases j <;> fin_cases k
-    · exact absurd rfl hjk
-    · simpa using hsep
-    · simpa [edist_comm] using hsep
-    · exact absurd rfl hjk
-  -- Specialize Proposition 15.1 to `M = 2`, then rewrite the testing error via Eq. (15.13).
-  have key := minimax_ge_testing_error Φ g P (![θ₀, θ₁] : Fin 2 → Θ) hθ δ hΦ hsepfam
-  rw [binary_testingError_eq_tvDist] at key
-  simp only [Kernel.comap_apply, Matrix.cons_val_zero, Matrix.cons_val_one] at key
+    fin_cases j <;> fin_cases k <;>
+      first
+        | exact absurd rfl hjk
+        | exact h01
+        | (rw [edist_comm]; exact h01)
+  have key := minimax_ge_testing_error Φ g P θfam hθ δ hΦ hsepf
+  rw [binary_testingError_eq_tvDist (P.comap θfam hθ)] at key
+  simp only [Kernel.comap_apply, θfam, Matrix.cons_val_zero, Matrix.cons_val_one] at key
   calc Φ δ / 2 * (1 - tvDist (P θ₀) (P θ₁))
       = Φ δ * (2⁻¹ * (1 - tvDist (P θ₀) (P θ₁))) := by rw [div_eq_mul_inv, mul_assoc]
     _ ≤ minimaxRiskDist Φ g P := key
