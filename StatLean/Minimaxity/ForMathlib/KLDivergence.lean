@@ -102,11 +102,25 @@ theorem klDiv_pi_eq_nsmul (n : ℕ) (μ ν : Measure α)
 
 -- Crux of Exercise 15.11: the uniform mixture minimizes the average KL divergence. This is
 -- the variational/convexity property of `klDiv` in its second argument, which Mathlib does not
--- yet expose in a directly usable form.
+-- yet expose in a directly usable form. The non-absolutely-continuous case (some `P j` not `≪ Q`)
+-- is discharged here; the remaining case is the Gibbs identity below.
 private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : Measure α)
     [∀ j, IsProbabilityMeasure (P j)] [IsProbabilityMeasure Q] :
     ∑ j, klDiv (P j) ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) ≤ ∑ j, klDiv (P j) Q := by
-  sorry -- TODO(mmx): Ex 15.11 — convexity / variational form of KL in the 2nd argument
+  by_cases hAC : ∀ j, P j ≪ Q
+  · -- TODO(mmx): Ex 15.11 — Gibbs identity `∑ⱼ D(Pⱼ‖Q) − ∑ⱼ D(Pⱼ‖Q̄) = M·D(Q̄‖Q) ≥ 0`
+    -- (expand `klDiv` via `llr`/`klFun`, split `log(Pⱼ/Q) = log(Pⱼ/Q̄) + log(Q̄/Q)`, then
+    -- `klDiv_nonneg`); `Q̄ = (M)⁻¹ • ∑ₖ Pₖ`.
+    sorry
+  · rw [not_forall] at hAC
+    obtain ⟨j₀, hj₀⟩ := hAC
+    have htop : klDiv (P j₀) Q = ⊤ := klDiv_of_not_ac hj₀
+    have hle : klDiv (P j₀) Q ≤ ∑ j, klDiv (P j) Q :=
+      Finset.single_le_sum (f := fun j => klDiv (P j) Q) (fun i _ => zero_le _)
+        (Finset.mem_univ j₀)
+    have hsum : ∑ j, klDiv (P j) Q = ⊤ := top_le_iff.mp (htop ▸ hle)
+    rw [hsum]
+    exact le_top
 
 /-- **The mixture minimizes the average KL divergence** (Wainwright Exercise 15.11):
 for any distribution `Q`, the uniform mixture `Q̄ = (1/M) Σⱼ ℙⱼ` satisfies
