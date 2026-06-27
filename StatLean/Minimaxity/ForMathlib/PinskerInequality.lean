@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.ForMathlib.TotalVariation
 import StatLean.Minimaxity.ForMathlib.KLDivergence
+import StatLean.Minimaxity.ForMathlib.KLDataProcessing
 
 /-!
 # Pinsker–Csiszár–Kullback inequality — Lemma 15.2 (Wainwright §15.1.3)
@@ -156,6 +157,216 @@ private lemma bernoulli_pinsker_scalar {a b : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
   simp only [hg_def] at hga
   linarith
 
+/-- Boundary case of the scalar Bernoulli–Pinsker inequality: `2 c² ≤ −log(1 − c)` on `[0, 1)`.
+This is `bernoulli_pinsker_scalar` at the degenerate value `a = 0` (or, by symmetry, `a = 1`),
+where one Bernoulli mass vanishes. The function `H(c) = −log(1 − c) − 2c²` satisfies `H(0) = 0`
+and `H'(c) = 1/(1 − c) − 4c = (2c − 1)²/(1 − c) ≥ 0`, hence is monotone. -/
+private lemma two_sq_le_neg_log_one_sub {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) :
+    2 * c ^ 2 ≤ - Real.log (1 - c) := by
+  set H : ℝ → ℝ := fun x => - Real.log (1 - x) - 2 * x ^ 2 with hH
+  have hderiv : ∀ x ∈ Set.Icc (0:ℝ) c, HasDerivAt H ((1 - x)⁻¹ - 4 * x) x := by
+    intro x hx
+    have hx1 : (1 - x) ≠ 0 := by have := hx.2; linarith
+    have h1 : HasDerivAt (fun y => (1:ℝ) - y) (-1) x := by
+      simpa using (hasDerivAt_const x (1:ℝ)).sub (hasDerivAt_id x)
+    have hlog : HasDerivAt (fun y => -Real.log (1 - y)) ((1 - x)⁻¹) x := by
+      have h := (Real.hasDerivAt_log hx1).comp x h1
+      have h2 := h.neg
+      convert h2 using 1; field_simp
+    have hsq : HasDerivAt (fun y => 2 * y ^ 2) (4 * x) x := by
+      have h := (hasDerivAt_id x).pow 2
+      have h2 := h.const_mul (2 : ℝ)
+      convert h2 using 1; simp only [id_eq]; ring
+    have hsum := hlog.sub hsq
+    convert hsum using 1
+  have hH0 : H 0 = 0 := by simp [hH]
+  have hmono : MonotoneOn H (Set.Icc 0 c) := by
+    apply monotoneOn_of_deriv_nonneg (convex_Icc 0 c)
+    · exact fun x hx => (hderiv x hx).continuousAt.continuousWithinAt
+    · intro x hx
+      exact (hderiv x (interior_subset hx)).differentiableAt.differentiableWithinAt
+    · intro x hx
+      have hxin : x ∈ Set.Icc (0:ℝ) c := interior_subset hx
+      have h1x : (0:ℝ) < 1 - x := by have := hxin.2; linarith
+      rw [(hderiv x hxin).deriv]
+      have : 4 * x ≤ (1 - x)⁻¹ := by
+        rw [inv_eq_one_div, le_div_iff₀ h1x]; nlinarith [sq_nonneg (2 * x - 1)]
+      linarith
+  have hle := hmono (left_mem_Icc.mpr hc0) (right_mem_Icc.mpr hc0) hc0
+  rw [hH0] at hle
+  simp only [hH] at hle; linarith
+
+/-- Scalar core after pushing forward to the two-cell partition: with masses `a = ℚ A`, `c = ℙ A`
+(densities `dℚ/dξ ≤ dℙ/dξ` on `A`, so `c ∈ (0, 1)`), the binary KL divergence
+`klFun(a/c)·c + klFun((1−a)/(1−c))·(1−c)` dominates `2(a − c)²`. The interior case is
+`bernoulli_pinsker_scalar`; the two endpoints `a ∈ {0, 1}` use `two_sq_le_neg_log_one_sub`. -/
+private lemma two_sq_le_klFun_combo {a c : ℝ} (ha0 : 0 ≤ a) (ha1 : a ≤ 1)
+    (hc0 : 0 < c) (hc1 : c < 1) :
+    2 * (a - c) ^ 2 ≤ klFun (a / c) * c + klFun ((1 - a) / (1 - c)) * (1 - c) := by
+  have hc' : (1 - c) ≠ 0 := by linarith
+  have hcne : c ≠ 0 := hc0.ne'
+  rcases lt_or_eq_of_le ha0 with ha0pos | ha0eq
+  · rcases lt_or_eq_of_le ha1 with ha1lt | rfl
+    · -- interior: `0 < a < 1`
+      have e1 : klFun (a / c) * c = a * Real.log (a / c) + c - a := by
+        have h : a / c * c = a := by field_simp
+        rw [klFun_apply,
+          show (a / c * Real.log (a / c) + 1 - a / c) * c
+              = (a / c * c) * Real.log (a / c) + c - (a / c * c) from by ring, h]
+      have e2 : klFun ((1 - a) / (1 - c)) * (1 - c)
+          = (1 - a) * Real.log ((1 - a) / (1 - c)) + (1 - c) - (1 - a) := by
+        have h : (1 - a) / (1 - c) * (1 - c) = (1 - a) := by field_simp
+        rw [klFun_apply,
+          show ((1 - a) / (1 - c) * Real.log ((1 - a) / (1 - c)) + 1 - (1 - a) / (1 - c)) * (1 - c)
+              = ((1 - a) / (1 - c) * (1 - c)) * Real.log ((1 - a) / (1 - c)) + (1 - c)
+                - ((1 - a) / (1 - c) * (1 - c)) from by ring, h]
+      rw [e1, e2]
+      have := bernoulli_pinsker_scalar ha0pos ha1lt hc0 hc1
+      linarith
+    · -- endpoint `a = 1`
+      have h : (1:ℝ) / c * c = 1 := by field_simp
+      have hlog : Real.log (1 / c) = - Real.log c := by rw [one_div, Real.log_inv]
+      have e1 : klFun (1 / c) * c = -Real.log c + c - 1 := by
+        rw [klFun_apply,
+          show (1 / c * Real.log (1 / c) + 1 - 1 / c) * c
+              = (1 / c * c) * Real.log (1 / c) + c - (1 / c * c) from by ring, h, one_mul, hlog]
+      have e0 : klFun ((1 - 1) / (1 - c)) * (1 - c) = (1 - c) := by simp [klFun_apply]
+      rw [e1, e0]
+      have hd := two_sq_le_neg_log_one_sub (c := 1 - c) (by linarith) (by linarith)
+      rw [show (1:ℝ) - (1 - c) = c from by ring] at hd
+      nlinarith [hd]
+  · -- endpoint `a = 0`
+    rw [← ha0eq]
+    have e0 : klFun (0 / c) * c = c := by simp [klFun_apply]
+    have h : (1 - 0:ℝ) / (1 - c) * (1 - c) = 1 := by rw [sub_zero]; field_simp
+    have hlog : Real.log ((1 - 0) / (1 - c)) = - Real.log (1 - c) := by
+      rw [sub_zero, one_div, Real.log_inv]
+    have e2 : klFun ((1 - 0) / (1 - c)) * (1 - c) = -Real.log (1 - c) + (1 - c) - 1 := by
+      rw [klFun_apply,
+        show ((1 - 0) / (1 - c) * Real.log ((1 - 0) / (1 - c)) + 1 - (1 - 0) / (1 - c)) * (1 - c)
+            = ((1 - 0) / (1 - c) * (1 - c)) * Real.log ((1 - 0) / (1 - c)) + (1 - c)
+              - ((1 - 0) / (1 - c) * (1 - c)) from by ring, h, one_mul, hlog]
+    rw [e0, e2]
+    have hd := two_sq_le_neg_log_one_sub (c := c) hc0.le hc1
+    nlinarith [hd]
+
+/-- **Pinsker on the two-point space.** For probability measures `P, Q` on `Bool`,
+`2 (P{true} − Q{true})² ≤ D(P ‖ Q)` (with the convention `D = ⊤` when `P ⋘̸ Q`). This is the
+push-forward target of the data-processing reduction: the two atoms carry the Bernoulli masses
+and the bound follows from `two_sq_le_klFun_combo`. -/
+private lemma klDiv_bool_ge (P Q : Measure Bool)
+    [IsProbabilityMeasure P] [IsProbabilityMeasure Q] :
+    ENNReal.ofReal (2 * ((P {true}).toReal - (Q {true}).toReal) ^ 2) ≤ klDiv P Q := by
+  by_cases hac : P ≪ Q
+  · have hPt_top : P {true} ≠ ⊤ := measure_ne_top _ _
+    have hQt_top : Q {true} ≠ ⊤ := measure_ne_top _ _
+    have hQf_top : Q {false} ≠ ⊤ := measure_ne_top _ _
+    by_cases hQt0 : Q {true} = 0
+    · have hPt0 : P {true} = 0 := hac hQt0
+      have hz : ((P {true}).toReal - (Q {true}).toReal) = 0 := by rw [hPt0, hQt0]; simp
+      rw [hz]; simp
+    · by_cases hQf0 : Q {false} = 0
+      · have hPf0 : P {false} = 0 := hac hQf0
+        have hPt1 : P {true} = 1 := by
+          have h := prob_compl_eq_one_sub (μ := P) (measurableSet_singleton false)
+          rw [Bool.compl_singleton, Bool.not_false] at h
+          rw [h, hPf0, tsub_zero]
+        have hQt1 : Q {true} = 1 := by
+          have h := prob_compl_eq_one_sub (μ := Q) (measurableSet_singleton false)
+          rw [Bool.compl_singleton, Bool.not_false] at h
+          rw [h, hQf0, tsub_zero]
+        have hz : ((P {true}).toReal - (Q {true}).toReal) = 0 := by rw [hPt1, hQt1]; simp
+        rw [hz]; simp
+      · -- interior: both atoms of `Q` are positive
+        have hQf_eq : (Q {false}).toReal = 1 - (Q {true}).toReal := by
+          have h : Q {false} = 1 - Q {true} := by
+            have := prob_compl_eq_one_sub (μ := Q) (measurableSet_singleton true)
+            rwa [Bool.compl_singleton, Bool.not_true] at this
+          rw [h, ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one]
+        have hPf_eq : (P {false}).toReal = 1 - (P {true}).toReal := by
+          have h : P {false} = 1 - P {true} := by
+            have := prob_compl_eq_one_sub (μ := P) (measurableSet_singleton true)
+            rwa [Bool.compl_singleton, Bool.not_true] at this
+          rw [h, ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one]
+        -- pointwise Radon–Nikodym identity on each atom
+        have key : ∀ b : Bool, P.rnDeriv Q b * Q {b} = P {b} := by
+          intro b
+          have h1 := Measure.setLIntegral_rnDeriv' hac (measurableSet_singleton b)
+          rwa [lintegral_singleton (P.rnDeriv Q) b] at h1
+        have hrt : P.rnDeriv Q true = P {true} / Q {true} :=
+          (ENNReal.eq_div_iff hQt0 hQt_top).mpr (by rw [mul_comm]; exact key true)
+        have hrf : P.rnDeriv Q false = P {false} / Q {false} :=
+          (ENNReal.eq_div_iff hQf0 hQf_top).mpr (by rw [mul_comm]; exact key false)
+        have hrt_tr : (P.rnDeriv Q true).toReal = (P {true}).toReal / (Q {true}).toReal := by
+          rw [hrt, ENNReal.toReal_div]
+        have hrf_tr : (P.rnDeriv Q false).toReal
+            = (1 - (P {true}).toReal) / (1 - (Q {true}).toReal) := by
+          rw [hrf, ENNReal.toReal_div, hPf_eq, hQf_eq]
+        have hQt_of : Q {true} = ENNReal.ofReal ((Q {true}).toReal) :=
+          (ENNReal.ofReal_toReal hQt_top).symm
+        have hQf_of : Q {false} = ENNReal.ofReal (1 - (Q {true}).toReal) := by
+          rw [← hQf_eq]; exact (ENNReal.ofReal_toReal hQf_top).symm
+        -- numeric facts about the masses
+        have ha0 : (0:ℝ) ≤ (P {true}).toReal := ENNReal.toReal_nonneg
+        have ha1 : (P {true}).toReal ≤ 1 := by
+          rw [← ENNReal.toReal_one]; exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
+        have hc_pos : (0:ℝ) < (Q {true}).toReal := ENNReal.toReal_pos hQt0 hQt_top
+        have hc_lt1 : (Q {true}).toReal < 1 := by
+          have hpos : (0:ℝ) < (Q {false}).toReal := ENNReal.toReal_pos hQf0 hQf_top
+          rw [hQf_eq] at hpos; linarith
+        -- freeze the real masses so that `Q {true}` only occurs as the atom multiplier
+        set a := (P {true}).toReal with ha_def
+        set c := (Q {true}).toReal with hc_def
+        rw [klDiv_eq_lintegral_klFun_of_ac hac, lintegral_fintype, Fintype.sum_bool,
+          hrt_tr, hrf_tr, hQt_of, hQf_of]
+        rw [← ENNReal.ofReal_mul (klFun_nonneg (div_nonneg ha0 hc_pos.le)),
+          ← ENNReal.ofReal_mul (klFun_nonneg (div_nonneg (by linarith) (by linarith))),
+          ← ENNReal.ofReal_add
+              (mul_nonneg (klFun_nonneg (div_nonneg ha0 hc_pos.le)) ENNReal.toReal_nonneg)
+              (mul_nonneg (klFun_nonneg (div_nonneg (by linarith) (by linarith))) (by linarith))]
+        exact ENNReal.ofReal_le_ofReal (two_sq_le_klFun_combo ha0 ha1 hc_pos hc_lt1)
+  · rw [klDiv_of_not_ac hac]; exact le_top
+
+/-- The total-variation supremum is attained on the binary partition `A = {q ≤ p}`
+(densities `p = dℙ/dξ`, `q = dℚ/dξ` against `ξ = ℙ + ℚ`): `‖ℙ − ℚ‖_TV = ℙ A − ℚ A`. Reproves
+the optimal-set identity (the private `TotalVariation` brick is not exported), via
+`Measure.setLIntegral_rnDeriv`. -/
+private lemma tvDist_eq_measure_sub (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    tvDist μ ν = μ {x | ν.rnDeriv (μ + ν) x ≤ μ.rnDeriv (μ + ν) x}
+                  - ν {x | ν.rnDeriv (μ + ν) x ≤ μ.rnDeriv (μ + ν) x} := by
+  have hμξ : μ ≪ μ + ν := rfl.absolutelyContinuous.add_right _
+  have hνξ : ν ≪ μ + ν := rfl.absolutelyContinuous.add_right' _
+  have hpm : Measurable (μ.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  have hqm : Measurable (ν.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  set A : Set α := {x | ν.rnDeriv (μ + ν) x ≤ μ.rnDeriv (μ + ν) x} with hA
+  have hAm : MeasurableSet A := measurableSet_le hqm hpm
+  have hle : ν.rnDeriv (μ + ν) ≤ᵐ[(μ + ν).restrict A] μ.rnDeriv (μ + ν) :=
+    ae_restrict_of_forall_mem hAm (fun x hx => hx)
+  have hfin : ∫⁻ x in A, ν.rnDeriv (μ + ν) x ∂(μ + ν) ≠ ∞ := by
+    rw [Measure.setLIntegral_rnDeriv hνξ A]; exact measure_ne_top ν A
+  have hAsub : ∫⁻ x in A, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = μ A - ν A := by
+    rw [lintegral_sub hqm hfin hle, Measure.setLIntegral_rnDeriv hμξ A,
+        Measure.setLIntegral_rnDeriv hνξ A]
+  have hcompl : ∫⁻ x in Aᶜ, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = 0 := by
+    refine setLIntegral_eq_zero hAm.compl (fun x hx => ?_)
+    rw [hA, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+    exact tsub_eq_zero_of_le hx.le
+  have hDA : ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) = μ A - ν A := by
+    rw [← lintegral_add_compl _ hAm, hcompl, add_zero, hAsub]
+  refine le_antisymm ?_ ?_
+  · refine iSup_le fun s => iSup_le fun _ => ?_
+    calc μ s - ν s
+        = ∫⁻ x in s, μ.rnDeriv (μ + ν) x ∂(μ + ν)
+            - ∫⁻ x in s, ν.rnDeriv (μ + ν) x ∂(μ + ν) := by
+          rw [Measure.setLIntegral_rnDeriv hμξ s, Measure.setLIntegral_rnDeriv hνξ s]
+      _ ≤ ∫⁻ x in s, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) :=
+          lintegral_sub_le _ _ hqm
+      _ ≤ ∫⁻ x, (μ.rnDeriv (μ + ν) x - ν.rnDeriv (μ + ν) x) ∂(μ + ν) :=
+          lintegral_mono' Measure.restrict_le_self le_rfl
+      _ = μ A - ν A := hDA
+  · exact le_iSup₂ (f := fun s (_ : MeasurableSet s) => μ s - ν s) A hAm
+
 /-- **Data-processing core of Pinsker's inequality** (Wainwright Exercise 15.6).
 
 The KL divergence dominates `2 · ‖ℙ − ℚ‖²_TV`. By the data-processing inequality for KL under
@@ -166,10 +377,37 @@ the binary partition `A = {q ≤ p}` (densities `p = dℙ/dξ`, `q = dℚ/dξ` a
 private lemma klDiv_ge_two_mul_tvDist_sq (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     ENNReal.ofReal (2 * (tvDist μ ν).toReal ^ 2) ≤ klDiv ν μ := by
-  sorry -- TODO(mmx, Wainwright Ex 15.6): KL data-processing under the 2-cell partition
-        -- A = {q ≤ p} (klDiv monotone under the indicator pushforward), the optimal-set
-        -- identity tvDist = ℙ A − ℚ A (cf. `tvDist_eq_lintegral_tsub`), then
-        -- `bernoulli_pinsker_scalar` with a = (ν A).toReal, b = (μ A).toReal.
+  have hpm : Measurable (μ.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  have hqm : Measurable (ν.rnDeriv (μ + ν)) := Measure.measurable_rnDeriv _ _
+  set A : Set α := {x | ν.rnDeriv (μ + ν) x ≤ μ.rnDeriv (μ + ν) x} with hA
+  have hAm : MeasurableSet A := measurableSet_le hqm hpm
+  have hμξ : μ ≪ μ + ν := rfl.absolutelyContinuous.add_right _
+  have hνξ : ν ≪ μ + ν := rfl.absolutelyContinuous.add_right' _
+  -- on the optimal set the densities satisfy `q ≤ p`, hence `ν A ≤ μ A`
+  have hνμA : ν A ≤ μ A := by
+    have hle : ν.rnDeriv (μ + ν) ≤ᵐ[(μ + ν).restrict A] μ.rnDeriv (μ + ν) :=
+      ae_restrict_of_forall_mem hAm (fun x hx => hx)
+    calc ν A = ∫⁻ x in A, ν.rnDeriv (μ + ν) x ∂(μ + ν) :=
+          (Measure.setLIntegral_rnDeriv hνξ A).symm
+      _ ≤ ∫⁻ x in A, μ.rnDeriv (μ + ν) x ∂(μ + ν) := lintegral_mono_ae hle
+      _ = μ A := Measure.setLIntegral_rnDeriv hμξ A
+  -- the indicator of `A` as a measurable map to `Bool`
+  set f : α → Bool := fun x => decide (x ∈ A) with hf_def
+  have hpre : f ⁻¹' {true} = A := by ext x; simp [hf_def]
+  have hfm : Measurable f := measurable_to_bool (by rw [hpre]; exact hAm)
+  have hPt : (ν.map f) {true} = ν A := by
+    rw [Measure.map_apply hfm (measurableSet_singleton true), hpre]
+  have hQt : (μ.map f) {true} = μ A := by
+    rw [Measure.map_apply hfm (measurableSet_singleton true), hpre]
+  have htv_tr : (tvDist μ ν).toReal = (μ A).toReal - (ν A).toReal := by
+    rw [tvDist_eq_measure_sub μ ν, ENNReal.toReal_sub_of_le hνμA (measure_ne_top μ A)]
+  haveI : IsProbabilityMeasure (ν.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  haveI : IsProbabilityMeasure (μ.map f) := Measure.isProbabilityMeasure_map hfm.aemeasurable
+  calc ENNReal.ofReal (2 * (tvDist μ ν).toReal ^ 2)
+      = ENNReal.ofReal (2 * (((ν.map f) {true}).toReal - ((μ.map f) {true}).toReal) ^ 2) := by
+        rw [htv_tr, hPt, hQt]; congr 1; ring
+    _ ≤ klDiv (ν.map f) (μ.map f) := klDiv_bool_ge (ν.map f) (μ.map f)
+    _ ≤ klDiv ν μ := klDiv_map_le hfm ν μ
 
 /-- **Bernoulli crux of Pinsker's inequality** (Wainwright Exercise 15.6).
 
