@@ -22,6 +22,21 @@ open scoped ENNReal
 
 namespace StatLean.Minimaxity
 
+/-- **Residual Kolmogorov–Tikhomirov construction** (named debt) for the Sobolev packing bound.
+Restricting the ellipsoid to its first `k ≍ (1/δ)^{1/α}` coordinates gives a Euclidean ball of
+radius `≍ 1` whose `δ`-packing number is `exp(c · k)` by a volume argument; embedding such a packing
+back into `ℓ²(ℕ)` yields the separated set. Formalizing it needs the volume-ratio packing bound and
+the coordinate-truncation estimate, neither of which is in Mathlib/StatLean. -/
+private lemma sobolev_packing_lower_bound_aux (α : ℝ) (hα : 1 / 2 < α) (δ : ℝ) (hδ : 0 < δ) :
+    ∃ (c : ℝ) (_ : 0 < c) (T : Finset (lp (fun _ : ℕ => ℝ) 2)),
+      c * (1 / δ) ^ (1 / α) ≤ Real.log T.card ∧
+      (∀ x ∈ T, ∑' j : ℕ, ((j : ℝ) + 1) ^ (2 * α) * (x j) ^ 2 ≤ 1) ∧
+      ∀ x ∈ T, ∀ y ∈ T, x ≠ y → δ ≤ ‖x - y‖ := by
+  -- TODO(mmx): volume-ratio packing of the truncated ellipsoid `ℰ_α ∩ ℝ^k`, `k ≍ (1/δ)^{1/α}`,
+  -- giving `exp(c·k)` `δ`-separated points; Kolmogorov–Tikhomirov metric entropy (Wainwright
+  -- Ex 5.12).
+  sorry
+
 /-- **Packing lower bound for the Sobolev ellipsoid** (Wainwright Example 5.12): for `α > 1/2` and
 `0 < δ`, the ellipsoid `ℰ_α ⊂ ℓ²(ℕ)` contains a `δ`-separated set `T` with
 `log |T| ≳ (1/δ)^{1/α}`.
@@ -32,7 +47,7 @@ theorem sobolev_packing_lower_bound (α : ℝ) (hα : 1 / 2 < α) (δ : ℝ) (h�
     ∃ (c : ℝ) (_ : 0 < c) (T : Finset (lp (fun _ : ℕ => ℝ) 2)),
       c * (1 / δ) ^ (1 / α) ≤ Real.log T.card ∧
       (∀ x ∈ T, ∑' j : ℕ, ((j : ℝ) + 1) ^ (2 * α) * (x j) ^ 2 ≤ 1) ∧
-      ∀ x ∈ T, ∀ y ∈ T, x ≠ y → δ ≤ ‖x - y‖ := by
-  sorry
+      ∀ x ∈ T, ∀ y ∈ T, x ≠ y → δ ≤ ‖x - y‖ :=
+  sobolev_packing_lower_bound_aux α hα δ hδ
 
 end StatLean.Minimaxity

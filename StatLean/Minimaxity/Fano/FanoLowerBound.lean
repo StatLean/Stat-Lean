@@ -39,6 +39,11 @@ theorem fano_inequality {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkov
     (hM : 2 ≤ M) :
     1 - (mutualInformation Q + ENNReal.ofReal (Real.log 2)) / ENNReal.ofReal (Real.log (M : ℝ))
       ≤ multiwayTestingError Q := by
+  -- TODO(mmx): genuinely-hard crux. Fano's inequality (Eq. (15.31)) is proved through the
+  -- Shannon-entropy form (Eq. (15.61)); bridging `mutualInformation`/`multiwayTestingError` (the
+  -- kernel-KL / Bayes-risk encodings) to the discrete entropy machinery in
+  -- `ForMathlib/Entropy.lean` (`discreteMutualInfo`, `discreteCondEntropy_le_entropy`) is
+  -- research-grade plumbing. Named debt.
   sorry
 
 /-- **Fano minimax lower bound** (Wainwright Proposition 15.12, Eq. (15.32)): for an increasing
@@ -59,7 +64,14 @@ theorem minimax_fano_lower_bound [PseudoEMetricSpace Ω]
     (hsep : IsSeparatedFamily g θfam δ) :
     Φ δ * (1 - (mutualInformation (P.comap θfam hθ) + ENNReal.ofReal (Real.log 2))
                 / ENNReal.ofReal (Real.log (M : ℝ)))
-      ≤ minimaxRiskDist Φ g P := by
-  sorry
+      ≤ minimaxRiskDist Φ g P :=
+  -- `Φ δ · (Fano bound) ≤ Φ δ · (testing error) ≤ minimax risk`: Fano's inequality (15.31) bounds
+  -- the bracket by the M-ary testing error, and the estimation-to-testing reduction (Prop 15.1)
+  -- turns that into the minimax risk.
+  calc Φ δ * (1 - (mutualInformation (P.comap θfam hθ) + ENNReal.ofReal (Real.log 2))
+                  / ENNReal.ofReal (Real.log (M : ℝ)))
+      ≤ Φ δ * multiwayTestingError (P.comap θfam hθ) :=
+        mul_le_mul_left' (fano_inequality (P.comap θfam hθ) hM) _
+    _ ≤ minimaxRiskDist Φ g P := minimax_ge_testing_error Φ g P θfam hθ δ hΦ hsep
 
 end StatLean.Minimaxity

@@ -36,6 +36,11 @@ theorem yang_barron {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKern
     -- USER-INPUT: `{γ k}` is an `ε`-cover of `{Q j}` in √KL; Wainwright §15.3.5.
     (hcover : ∀ j, ∃ k, klDiv (Q j) (γ k) ≤ ε ^ 2) :
     mutualInformation Q ≤ ε ^ 2 + ENNReal.ofReal (Real.log (N : ℝ)) := by
+  -- TODO(mmx): genuinely-hard crux. The Yang–Barron bound (Lemma 15.21, Eq. (15.51)) rewrites the
+  -- mutual information `I = (1/M) Σⱼ D(Qⱼ ‖ Q̄)` against an arbitrary `ε`-cover `{γₖ}` and splits it
+  -- into the cover-radius term `ε²` and the log-cardinality term `log N` via the variational
+  -- (Donsker–Varadhan) form of KL plus a chain-rule/convexity argument over the cover. This needs
+  -- information-theoretic machinery not yet available in `ForMathlib/`. Named debt.
   sorry
 
 end StatLean.Minimaxity
