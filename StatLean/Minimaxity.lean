@@ -4,7 +4,10 @@ import StatLean.Minimaxity.ForMathlib.TotalVariation
 import StatLean.Minimaxity.ForMathlib.HellingerDivergence
 import StatLean.Minimaxity.ForMathlib.PinskerInequality
 import StatLean.Minimaxity.ForMathlib.LeCamInequality
+import StatLean.Minimaxity.ForMathlib.Packing.HammingPacking
+import StatLean.Minimaxity.ForMathlib.Packing.SpherePacking
 import StatLean.Minimaxity.EstimationToTesting
+import StatLean.Minimaxity.Fano.MutualInformation
 
 /-!
 # Minimaxity — area umbrella
