@@ -29,6 +29,32 @@ namespace StatLean.Minimaxity
 variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace Ω]
   [m𝓧 : MeasurableSpace 𝓧]
 
+/-- **Entropy form of Fano's inequality** (Wainwright Eq. (15.61)), packaged in the kernel-KL /
+Bayes-risk encodings used by this module. Writing `L = log M`, `I = I(Z; J)`,
+`q = multiwayTestingError Q` and `c = log 2`, the standard Fano chain
+`H(J|Z) ≤ h(q) + q·log(M−1) ≤ log 2 + q·log M` together with `I = H(J) − H(J|Z) = log M − H(J|Z)`
+rearranges to
+```
+log M ≤ I(Z; J) + log 2 + q · log M.
+```
+This is the single genuinely-hard crux of `fano_inequality`: it bridges `mutualInformation`
+(the kernel-KL encoding) and `multiwayTestingError` (the Bayes-risk encoding) to the discrete
+Shannon-entropy machinery of `ForMathlib/Entropy.lean` (`discreteMutualInfo`,
+`discreteCondEntropy_le_entropy`) via the discrete posterior of `J` given the continuous
+observation `Z` (built through `ProbabilityTheory.condDistrib` / disintegration of the joint
+`(Z, J)` law). The surrounding `ℝ≥0∞` rearrangement (division and truncated subtraction) is
+discharged in `fano_inequality` below. -/
+private lemma fano_entropy_continuous {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
+    (hM : 2 ≤ M) :
+    ENNReal.ofReal (Real.log (M : ℝ))
+      ≤ mutualInformation Q + ENNReal.ofReal (Real.log 2)
+          + multiwayTestingError Q * ENNReal.ofReal (Real.log (M : ℝ)) := by
+  -- TODO(mmx): entropy Fano (Eq. (15.61)). Disintegrate the joint `(Z, J)` law to get the
+  -- discrete posterior `J | Z`, apply `discreteCondEntropy_le_entropy` to bound
+  -- `H(J|Z) ≤ h(q) + q·log(M−1)`, use `discreteEntropy_le_log_card` for `h(q) ≤ log 2`, and
+  -- `I = log M − H(J|Z)`. Named debt.
+  sorry
+
 /-- **Fano's inequality** (Wainwright Eq. (15.31)): the error probability of the M-ary test is
 lower bounded by `1 − (I(Z; J) + log 2)/log M`, where `I(Z; J)` is the mutual information.
 
@@ -39,12 +65,26 @@ theorem fano_inequality {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkov
     (hM : 2 ≤ M) :
     1 - (mutualInformation Q + ENNReal.ofReal (Real.log 2)) / ENNReal.ofReal (Real.log (M : ℝ))
       ≤ multiwayTestingError Q := by
-  -- TODO(mmx): genuinely-hard crux. Fano's inequality (Eq. (15.31)) is proved through the
-  -- Shannon-entropy form (Eq. (15.61)); bridging `mutualInformation`/`multiwayTestingError` (the
-  -- kernel-KL / Bayes-risk encodings) to the discrete entropy machinery in
-  -- `ForMathlib/Entropy.lean` (`discreteMutualInfo`, `discreteCondEntropy_le_entropy`) is
-  -- research-grade plumbing. Named debt.
-  sorry
+  -- `ℝ≥0∞` rearrangement of the entropy-form bound `L ≤ I + c + q·L` into `1 − (I+c)/L ≤ q`,
+  -- using `0 < L < ∞` (since `log M > 0` for `M ≥ 2`).
+  have hbound := fano_entropy_continuous Q hM
+  have hMr : (1 : ℝ) < (M : ℝ) := by exact_mod_cast (show 1 < M by omega)
+  have hLpos : 0 < ENNReal.ofReal (Real.log (M : ℝ)) :=
+    ENNReal.ofReal_pos.mpr (Real.log_pos hMr)
+  have hLtop : ENNReal.ofReal (Real.log (M : ℝ)) ≠ ⊤ := ENNReal.ofReal_ne_top
+  set L := ENNReal.ofReal (Real.log (M : ℝ)) with hL
+  set I := mutualInformation Q with hI
+  set c := ENNReal.ofReal (Real.log 2) with hc
+  set q := multiwayTestingError Q with hq
+  -- goal: `1 - (I + c) / L ≤ q`
+  rw [tsub_le_iff_right]
+  -- goal: `1 ≤ q + (I + c) / L`
+  calc (1 : ℝ≥0∞)
+      = L / L := (ENNReal.div_self hLpos.ne' hLtop).symm
+    _ ≤ (I + c + q * L) / L := by gcongr
+    _ = (I + c) / L + q * L / L := by rw [ENNReal.add_div]
+    _ = (I + c) / L + q := by rw [mul_div_assoc, ENNReal.div_self hLpos.ne' hLtop, mul_one]
+    _ = q + (I + c) / L := add_comm _ _
 
 /-- **Fano minimax lower bound** (Wainwright Proposition 15.12, Eq. (15.32)): for an increasing
 distortion `Φ` and a `2δ`-separated family `θfam : Fin M → Θ`,

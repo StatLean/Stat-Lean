@@ -100,6 +100,51 @@ theorem klDiv_pi_eq_nsmul (n : ℕ) (μ ν : Measure α)
       (Measure.pi fun _ : Fin (n + 1) => μ) (Measure.pi fun _ : Fin (n + 1) => ν),
       hμ, hν, klDiv_prod_eq_add, ih, succ_nsmul, add_comm]
 
+open Real in
+/-- **Compensation identity, pointwise form.** For weight `W ≥ 0`, components `R k ≥ 0`, masses
+`Q k = R k · W` summing to `M · W`, the perspective inequality
+`∑ₖ W · klFun (R k) ≤ ∑ₖ klFun (Q k)` holds, with deficit exactly `M · klFun W ≥ 0`. This is the
+per-point heart of the Gibbs/compensation identity `∑ⱼ D(Pⱼ‖Q) = ∑ⱼ D(Pⱼ‖Q̄) + M·D(Q̄‖Q)`. -/
+private lemma klFun_compensation_le {M : ℕ} (_hM : 0 < M) {W : ℝ} (hW : 0 ≤ W)
+    {Q R : Fin M → ℝ} (_hQ : ∀ k, 0 ≤ Q k) (hR : ∀ k, 0 ≤ R k)
+    (hQR : ∀ k, Q k = R k * W) (hsum : ∑ k, Q k = (M : ℝ) * W) :
+    ∑ k, W * klFun (R k) ≤ ∑ k, klFun (Q k) := by
+  have hterm : ∀ k, klFun (Q k) - W * klFun (R k) = Q k * Real.log W + 1 - W := by
+    intro k
+    rw [klFun_apply, klFun_apply]
+    rcases eq_or_lt_of_le (hR k) with h0 | hRpos
+    · have hQk : Q k = 0 := by rw [hQR k, ← h0, zero_mul]
+      rw [hQk, ← h0]; simp
+    · rcases eq_or_lt_of_le hW with hw0 | hWpos
+      · have hQk : Q k = 0 := by rw [hQR k, ← hw0, mul_zero]
+        rw [hQk, ← hw0]; simp
+      · have hlog : Real.log (Q k) = Real.log (R k) + Real.log W := by
+          rw [hQR k, Real.log_mul hRpos.ne' hWpos.ne']
+        linear_combination (Real.log (R k) - 1) * (hQR k) + Q k * hlog
+  have key : ∑ k, (klFun (Q k) - W * klFun (R k)) = (M : ℝ) * klFun W := by
+    rw [Finset.sum_congr rfl (fun k _ => hterm k), klFun_apply,
+      Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.sum_mul, hsum,
+      Finset.sum_const, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, nsmul_eq_mul]
+    ring
+  have hnn : 0 ≤ (M : ℝ) * klFun W :=
+    mul_nonneg (Nat.cast_nonneg M) (klFun_nonneg hW)
+  rw [Finset.sum_sub_distrib] at key
+  linarith
+
+/-- Radon–Nikodym derivative of a finite sum of (finite) measures splits over the sum, a.e. with
+respect to a common dominating measure. Proved by induction from the two-term `rnDeriv_add'`. -/
+private lemma rnDeriv_finsetSum_ae {ι : Type*} (s : Finset ι) (P : ι → Measure α)
+    (ξ : Measure α) [SigmaFinite ξ] [∀ i, IsFiniteMeasure (P i)] :
+    (∑ i ∈ s, P i).rnDeriv ξ =ᵐ[ξ] ∑ i ∈ s, (P i).rnDeriv ξ := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | @insert i s hi ih =>
+      rw [Finset.sum_insert hi]
+      filter_upwards [Measure.rnDeriv_add' (P i) (∑ k ∈ s, P k) ξ, ih] with x h1 h2
+      rw [Finset.sum_insert hi, Pi.add_apply, h1, Pi.add_apply, h2]
+
 -- Crux of Exercise 15.11: the uniform mixture minimizes the average KL divergence. This is
 -- the variational/convexity property of `klDiv` in its second argument, which Mathlib does not
 -- yet expose in a directly usable form. The non-absolutely-continuous case (some `P j` not `≪ Q`)
@@ -107,11 +152,97 @@ theorem klDiv_pi_eq_nsmul (n : ℕ) (μ ν : Measure α)
 private lemma klDiv_mixture_minimizes {M : ℕ} (P : Fin M → Measure α) (Q : Measure α)
     [∀ j, IsProbabilityMeasure (P j)] [IsProbabilityMeasure Q] :
     ∑ j, klDiv (P j) ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) ≤ ∑ j, klDiv (P j) Q := by
+  rcases eq_or_ne M 0 with rfl | hM0
+  · simp
+  haveI : NeZero M := ⟨hM0⟩
   by_cases hAC : ∀ j, P j ≪ Q
-  · -- TODO(mmx): Ex 15.11 — Gibbs identity `∑ⱼ D(Pⱼ‖Q) − ∑ⱼ D(Pⱼ‖Q̄) = M·D(Q̄‖Q) ≥ 0`
-    -- (expand `klDiv` via `llr`/`klFun`, split `log(Pⱼ/Q) = log(Pⱼ/Q̄) + log(Q̄/Q)`, then
-    -- `klDiv_nonneg`); `Q̄ = (M)⁻¹ • ∑ₖ Pₖ`.
-    sorry
+  · -- absolutely-continuous case: lift the pointwise compensation inequality to lintegrals,
+    -- integrating both averages against the common reference `Q`.
+    have hMpos : 0 < M := Nat.pos_of_ne_zero (NeZero.ne M)
+    have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+    have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 :=
+      ENNReal.inv_ne_zero.mpr (ENNReal.natCast_ne_top M)
+    haveI hfin : IsFiniteMeasure ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) := by
+      constructor
+      rw [Measure.smul_apply, smul_eq_mul]
+      exact ENNReal.mul_lt_top (ENNReal.inv_ne_top.mpr hMne).lt_top (measure_lt_top _ _)
+    -- `Q̄ ≪ Q`, and each `P j ≪ Q̄`
+    have hSQ : (∑ k, P k) ≪ Q := by
+      refine Finset.sum_induction _ (· ≪ Q) (fun _ _ => Measure.AbsolutelyContinuous.add_left)
+        (Measure.AbsolutelyContinuous.zero Q) (fun k _ => hAC k)
+    have hQbarQ : ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) ≪ Q :=
+      (Measure.smul_absolutelyContinuous).trans hSQ
+    have hPjQbar : ∀ j, P j ≪ (M : ℝ≥0∞)⁻¹ • ∑ k, P k := fun j =>
+      (Measure.absolutelyContinuous_of_le
+        (Finset.single_le_sum (f := fun k => P k) (fun i _ => Measure.zero_le _)
+          (Finset.mem_univ j))).smul_right hMinv_ne
+    -- the components' rnDerivs sum to `M · (dQ̄/dQ)`, a.e. w.r.t. `Q`
+    have hsum_ae : (fun x => ∑ k, (P k).rnDeriv Q x)
+        =ᵐ[Q] (fun x => (M : ℝ≥0∞) * ((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x) := by
+      have hS : (M : ℝ≥0∞) • ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) = ∑ k, P k := by
+        rw [smul_smul, ENNReal.mul_inv_cancel hMne (ENNReal.natCast_ne_top M), one_smul]
+      have h1 := rnDeriv_finsetSum_ae Finset.univ (fun k => P k) Q
+      have h2 : (∑ k, P k).rnDeriv Q
+          =ᵐ[Q] (fun x => (M : ℝ≥0∞) * ((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x) := by
+        nth_rewrite 1 [← hS]
+        filter_upwards [Measure.rnDeriv_smul_left_of_ne_top
+          ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) Q (ENNReal.natCast_ne_top M)] with x hx
+        rw [hx, Pi.smul_apply, smul_eq_mul]
+      filter_upwards [h1, h2] with x e1 e2
+      rw [← Finset.sum_apply, ← e1, e2]
+    -- the Radon–Nikodym chain rule, simultaneously for all components
+    have hchain_ae : ∀ᵐ x ∂Q, ∀ j,
+        (P j).rnDeriv ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) x * ((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x
+          = (P j).rnDeriv Q x := by
+      rw [ae_all_iff]
+      intro j
+      filter_upwards [Measure.rnDeriv_mul_rnDeriv (hPjQbar j)] with x hx
+      rwa [Pi.mul_apply] at hx
+    have hPktop : ∀ᵐ x ∂Q, ∀ k, (P k).rnDeriv Q x ≠ ∞ := by
+      rw [ae_all_iff]; intro k; exact Measure.rnDeriv_ne_top (P k) Q
+    -- rewrite both averages as single lintegrals against `Q`
+    have hLHS : ∀ j, klDiv (P j) ((M : ℝ≥0∞)⁻¹ • ∑ k, P k)
+        = ∫⁻ x, ((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x
+            * ENNReal.ofReal (klFun ((P j).rnDeriv ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) x).toReal) ∂Q := by
+      intro j
+      rw [klDiv_eq_lintegral_klFun_of_ac (hPjQbar j),
+        ← lintegral_rnDeriv_mul hQbarQ (by fun_prop)]
+    have hRHS : ∀ j, klDiv (P j) Q
+        = ∫⁻ x, ENNReal.ofReal (klFun ((P j).rnDeriv Q x).toReal) ∂Q :=
+      fun j => klDiv_eq_lintegral_klFun_of_ac (hAC j)
+    rw [Finset.sum_congr rfl (fun j _ => hLHS j),
+      Finset.sum_congr rfl (fun j _ => hRHS j),
+      ← lintegral_finset_sum _ (fun j _ => by fun_prop),
+      ← lintegral_finset_sum _ (fun j _ => by fun_prop)]
+    refine lintegral_mono_ae ?_
+    filter_upwards [hsum_ae, hchain_ae, hPktop,
+      Measure.rnDeriv_ne_top ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) Q] with x hsum hchain hktop hWtop
+    -- pointwise: apply the real compensation lemma
+    set W := (((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x).toReal with hW_def
+    set Qr := fun k => ((P k).rnDeriv Q x).toReal with hQr_def
+    set Rr := fun k => ((P k).rnDeriv ((M : ℝ≥0∞)⁻¹ • ∑ k, P k) x).toReal with hRr_def
+    have hQR : ∀ k, Qr k = Rr k * W := fun k => by
+      simp only [hQr_def, hRr_def, hW_def, ← ENNReal.toReal_mul, hchain k]
+    have hsumB : ∑ k, Qr k = (M : ℝ) * W := by
+      simp only [hQr_def, hW_def]
+      rw [← ENNReal.toReal_sum (fun k _ => hktop k), hsum, ENNReal.toReal_mul,
+        ENNReal.toReal_natCast]
+    have hbase := klFun_compensation_le hMpos (W := W) ENNReal.toReal_nonneg
+      (Q := Qr) (R := Rr) (fun _ => ENNReal.toReal_nonneg) (fun _ => ENNReal.toReal_nonneg)
+      hQR hsumB
+    have hRnonneg : ∀ k, 0 ≤ W * klFun (Rr k) := fun k =>
+      mul_nonneg ENNReal.toReal_nonneg (klFun_nonneg ENNReal.toReal_nonneg)
+    calc ∑ k, ((M : ℝ≥0∞)⁻¹ • ∑ k, P k).rnDeriv Q x
+            * ENNReal.ofReal (klFun (Rr k))
+        = ENNReal.ofReal (∑ k, W * klFun (Rr k)) := by
+          rw [ENNReal.ofReal_sum_of_nonneg (fun k _ => hRnonneg k)]
+          refine Finset.sum_congr rfl (fun k _ => ?_)
+          simp only [hW_def, ENNReal.ofReal_mul ENNReal.toReal_nonneg,
+            ENNReal.ofReal_toReal hWtop]
+      _ ≤ ENNReal.ofReal (∑ k, klFun (Qr k)) := ENNReal.ofReal_le_ofReal hbase
+      _ = ∑ k, ENNReal.ofReal (klFun (Qr k)) :=
+          ENNReal.ofReal_sum_of_nonneg
+            (fun k _ => klFun_nonneg ENNReal.toReal_nonneg)
   · rw [not_forall] at hAC
     obtain ⟨j₀, hj₀⟩ := hAC
     have htop : klDiv (P j₀) Q = ⊤ := klDiv_of_not_ac hj₀
