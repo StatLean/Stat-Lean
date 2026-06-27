@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.Fano.MutualInformation
+import Mathlib.Analysis.SpecialFunctions.BinaryEntropy
 
 /-!
 # Fano's method for minimax lower bounds (Wainwright §15.3.2)
@@ -166,6 +167,116 @@ private lemma mutualInformation_toReal_eq {M : ℕ} [NeZero M] (Q : Kernel (Fin 
       Finset.sum_congr rfl (fun j _ => (hklj j).symm)]
   rw [hMItoReal, hcond]; ring
 
+/-- **Sub-probability entropy bound.** For nonnegative weights `p` on a nonempty finite set `s` with
+total mass `S = ∑ᵢ pᵢ`, the unnormalised entropy is bounded by `negMulLog S + S·log|s|`. This is the
+`log|𝒳|` entropy bound (Wainwright Exercise 15.2b) in sub-probability form: dividing by `S` to make
+`p/S` a pmf on `s` and using Jensen for `negMulLog` (concave on `[0,∞)`) with uniform weights
+`1/|s|`. Used to control the conditional entropy on the `M−1` non-maximal outcomes in the pointwise
+discrete Fano inequality. -/
+private lemma negMulLog_sum_le_card {ι : Type*} (s : Finset ι) (p : ι → ℝ)
+    (hp : ∀ i ∈ s, 0 ≤ p i) (hs : s.Nonempty) :
+    ∑ i ∈ s, Real.negMulLog (p i)
+      ≤ Real.negMulLog (∑ i ∈ s, p i) + (∑ i ∈ s, p i) * Real.log (s.card) := by
+  classical
+  have hNpos : (0 : ℝ) < (s.card : ℝ) := by exact_mod_cast Finset.card_pos.mpr hs
+  have hNne : (s.card : ℝ) ≠ 0 := ne_of_gt hNpos
+  set S := ∑ i ∈ s, p i with hS
+  -- Jensen for `negMulLog` with uniform weights `1/|s|`.
+  have hjensen := Real.concaveOn_negMulLog.le_map_sum
+    (t := s) (w := fun _ => 1 / (s.card : ℝ)) (p := p)
+    (fun i _ => by positivity)
+    (by rw [Finset.sum_const, nsmul_eq_mul]; field_simp)
+    (fun i hi => hp i hi)
+  have hsum_w : ∑ i ∈ s, (1 / (s.card : ℝ)) • p i = (1 / (s.card : ℝ)) * S := by
+    simp only [smul_eq_mul, ← Finset.mul_sum, ← hS]
+  have hsum_L : ∑ i ∈ s, (1 / (s.card : ℝ)) • Real.negMulLog (p i)
+      = (1 / (s.card : ℝ)) * ∑ i ∈ s, Real.negMulLog (p i) := by
+    simp only [smul_eq_mul, ← Finset.mul_sum]
+  rw [hsum_w, hsum_L] at hjensen
+  -- Multiply through by `|s|`.
+  have key : ∑ i ∈ s, Real.negMulLog (p i)
+      ≤ (s.card : ℝ) * Real.negMulLog ((1 / (s.card : ℝ)) * S) := by
+    have h2 := mul_le_mul_of_nonneg_left hjensen hNpos.le
+    rwa [← mul_assoc, mul_one_div, div_self hNne, one_mul] at h2
+  refine le_trans key (le_of_eq ?_)
+  rcases eq_or_lt_of_le (Finset.sum_nonneg (fun i hi => hp i hi) : (0 : ℝ) ≤ S) with hS0 | hS0
+  · rw [show S = 0 from hS0.symm]; simp [Real.negMulLog_def]
+  · have hNne' : (1 : ℝ) / (s.card : ℝ) ≠ 0 := by positivity
+    simp only [Real.negMulLog_def]
+    rw [Real.log_mul hNne' (ne_of_gt hS0), one_div, Real.log_inv]
+    field_simp
+    ring
+
+/-- **Pointwise discrete Fano inequality.** For a probability mass function `p` on `Fin M`
+(`M ≥ 2`), the Shannon entropy is bounded by `log 2 + (1 − maxⱼ pⱼ)·log M`. This is the crude form
+of Wainwright's Fano chain `H(p) ≤ h(e) + e·log(M−1)` with `e = 1 − maxⱼ pⱼ`: split off the maximal
+outcome `j*` (giving the binary entropy `binEntropy e = negMulLog (p j*) + negMulLog e`), bound the
+conditional entropy of the remaining `M−1` outcomes by `e·log(M−1)` via `negMulLog_sum_le_card`, and
+relax `binEntropy e ≤ log 2` (`Real.binEntropy_le_log_two`) and `log(M−1) ≤ log M`. -/
+private lemma discrete_fano_pointwise {M : ℕ} (hM : 2 ≤ M) (p : Fin M → ℝ)
+    (hp0 : ∀ j, 0 ≤ p j) (hp1 : ∑ j, p j = 1) :
+    ∑ j, Real.negMulLog (p j) ≤ Real.log 2 + (1 - ⨆ j, p j) * Real.log (M : ℝ) := by
+  classical
+  haveI : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
+  obtain ⟨js, hjs⟩ := Finite.exists_max p
+  have hbdd : BddAbove (Set.range p) := Set.Finite.bddAbove (Set.finite_range p)
+  have hsup : (⨆ j, p j) = p js := le_antisymm (ciSup_le hjs) (le_ciSup hbdd js)
+  rw [hsup]
+  set m := p js with hm
+  have hm1 : m ≤ 1 := by
+    rw [hm, ← hp1]; exact Finset.single_le_sum (fun k _ => hp0 k) (Finset.mem_univ js)
+  have he0 : (0 : ℝ) ≤ 1 - m := by linarith
+  have hsplit : ∑ j, Real.negMulLog (p j)
+      = Real.negMulLog m + ∑ j ∈ Finset.univ.erase js, Real.negMulLog (p j) := by
+    rw [hm]
+    exact (Finset.add_sum_erase Finset.univ (fun j => Real.negMulLog (p j))
+      (Finset.mem_univ js)).symm
+  have hSe : ∑ j ∈ Finset.univ.erase js, p j = 1 - m := by
+    have h := Finset.add_sum_erase Finset.univ p (Finset.mem_univ js)
+    rw [hp1] at h; rw [hm]; linarith [h]
+  have hcard : (Finset.univ.erase js).card = M - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ js), Finset.card_univ, Fintype.card_fin]
+  have hne : (Finset.univ.erase js).Nonempty := by
+    rw [← Finset.card_pos, hcard]; omega
+  have hsub := negMulLog_sum_le_card (Finset.univ.erase js) p (fun i _ => hp0 i) hne
+  rw [hSe, hcard] at hsub
+  have hcast : ((M - 1 : ℕ) : ℝ) = (M : ℝ) - 1 := by
+    rw [Nat.cast_sub (by omega)]; norm_num
+  rw [hcast] at hsub
+  have hbin : Real.negMulLog m + Real.negMulLog (1 - m) = Real.binEntropy (1 - m) := by
+    rw [Real.binEntropy_eq_negMulLog_add_negMulLog_one_sub (1 - m),
+      show (1 : ℝ) - (1 - m) = m from by ring]
+    ring
+  have hb2 : Real.binEntropy (1 - m) ≤ Real.log 2 := Real.binEntropy_le_log_two
+  have hMge : (2 : ℝ) ≤ (M : ℝ) := by exact_mod_cast hM
+  have hlogle : Real.log ((M : ℝ) - 1) ≤ Real.log (M : ℝ) :=
+    Real.log_le_log (by linarith) (by linarith)
+  have hprod : (1 - m) * Real.log ((M : ℝ) - 1) ≤ (1 - m) * Real.log (M : ℝ) :=
+    mul_le_mul_of_nonneg_left hlogle he0
+  rw [hsplit]
+  calc Real.negMulLog m + ∑ j ∈ Finset.univ.erase js, Real.negMulLog (p j)
+      ≤ Real.negMulLog m + (Real.negMulLog (1 - m) + (1 - m) * Real.log ((M : ℝ) - 1)) := by
+        linarith [hsub]
+    _ = Real.binEntropy (1 - m) + (1 - m) * Real.log ((M : ℝ) - 1) := by rw [← hbin]; ring
+    _ ≤ Real.log 2 + (1 - m) * Real.log (M : ℝ) := by linarith [hb2, hprod]
+
+/-- **MAP / Bayes-risk identity** (the genuinely information-theoretic crux of the
+conditional-entropy Fano bound). The integral over the mixture of the pointwise Bayes/MAP error
+`e(z) = 1 − maxⱼ ℙ(J = j | Z = z) = 1 − maxⱼ M⁻¹ rⱼ(z)` is at most the M-ary testing error, i.e. the
+Bayes risk of the `0–1` loss under the uniform prior. (Equality holds — the MAP test attains the
+Bayes risk — but only the `≤` direction is needed for the entropy bound.)
+
+TODO(mmx, named debt — strictly smaller than `condEntropy_le_fano`): prove `∫ e(z) ∂(mixture Q) ≤
+multiwayTestingError Q`. Route: reduce `bayesRisk` to its `iInf` form
+(`Probability/Decision/Risk/Defs.lean`); for any Markov `κ : 𝓧 → Fin M`, the posterior-weighted
+`0–1` loss `avgRisk` dominates `∫ e` pointwise (`∑ⱼ M⁻¹rⱼ(z)·κ(z){≠j} ≥ 1 − maxⱼ M⁻¹rⱼ(z) = e(z)`),
+hence `∫ e ≤ ⨅κ avgRisk = multiwayTestingError Q`. Mathlib has no `bayesRisk_zeroOne_eq`. -/
+private lemma mapError_integral_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
+    (hM : 2 ≤ M) :
+    ∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ∂(mixture Q)
+      ≤ (multiwayTestingError Q).toReal := by
+  sorry
+
 /-- **Conditional-entropy Fano inequality** (Wainwright Eq. (15.61), the genuinely-deep
 information-theoretic half): the posterior entropy `H(J | Z)` is controlled by the testing error,
 ```
@@ -188,7 +299,96 @@ the `0–1` loss); (iv) close with `Real.binEntropy_le_log_two` and `log (M−1)
 private lemma condEntropy_le_fano {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
     (hM : 2 ≤ M) (hq : multiwayTestingError Q ≠ ⊤) :
     condEntropy Q ≤ Real.log 2 + (multiwayTestingError Q).toReal * Real.log (M : ℝ) := by
-  sorry
+  classical
+  haveI hμprob : IsProbabilityMeasure (mixture Q) := by unfold mixture; infer_instance
+  have hMr : (M : ℝ) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+  have hMne : (M : ℝ≥0∞) ≠ 0 := by exact_mod_cast (NeZero.ne M)
+  have hMtop : (M : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top M
+  have hMinv_ne : (M : ℝ≥0∞)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.mpr hMtop
+  -- each component is absolutely continuous w.r.t. the mixture (so the densities sum to `M` a.e.)
+  have hac : ∀ j, Q j ≪ mixture Q := fun j => by
+    rw [mixture_eq_inv_smul_sum]
+    exact (Measure.absolutelyContinuous_of_le
+      (Finset.single_le_sum (f := fun k => Q k) (fun i _ => Measure.zero_le _)
+        (Finset.mem_univ j))).smul_right hMinv_ne
+  have hsum_ennreal : (fun z => ∑ k, (Q k).rnDeriv (mixture Q) z)
+      =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+    have hS : (M : ℝ≥0∞) • mixture Q = ∑ k, Q k := by
+      rw [mixture_eq_inv_smul_sum, smul_smul, ENNReal.mul_inv_cancel hMne hMtop, one_smul]
+    have h1 := rnDeriv_finset_sum_ae (Finset.univ : Finset (Fin M)) (fun k => Q k) (mixture Q)
+    have h2 : (∑ k, Q k).rnDeriv (mixture Q) =ᵐ[mixture Q] (fun _ => (M : ℝ≥0∞)) := by
+      rw [← hS]
+      filter_upwards [Measure.rnDeriv_smul_left_of_ne_top (mixture Q) (mixture Q) hMtop,
+        Measure.rnDeriv_self (mixture Q)] with x hx hx2
+      simp [hx, Pi.smul_apply, hx2]
+    filter_upwards [h1, h2] with z e1 e2
+    rw [← Finset.sum_apply, ← e1, e2]
+  have htop : ∀ᵐ z ∂(mixture Q), ∀ k, (Q k).rnDeriv (mixture Q) z ≠ ∞ := by
+    rw [ae_all_iff]; intro k; exact Measure.rnDeriv_ne_top (Q k) (mixture Q)
+  have hsumR : (fun z => ∑ j, ((Q j).rnDeriv (mixture Q) z).toReal) =ᵐ[mixture Q]
+      fun _ => (M : ℝ) := by
+    filter_upwards [hsum_ennreal, htop] with z hz hzt
+    rw [← ENNReal.toReal_sum (fun k _ => hzt k), hz, ENNReal.toReal_natCast]
+  -- pointwise: the posterior masses `M⁻¹ rⱼ(z)` form a pmf a.e.
+  have hp_ae : ∀ᵐ z ∂(mixture Q),
+      ∑ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal = 1 := by
+    filter_upwards [hsumR] with z hz
+    rw [← Finset.mul_sum, hz, inv_mul_cancel₀ hMr]
+  -- a.e. the maximal posterior mass lies in `[0, 1]`
+  have hsup_ae : ∀ᵐ z ∂(mixture Q),
+      (0 ≤ ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)
+        ∧ (⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) ≤ 1 := by
+    filter_upwards [hp_ae] with z hz
+    have hp0 : ∀ j, 0 ≤ (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal := fun j => by positivity
+    have hbdd : BddAbove (Set.range fun j => (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) :=
+      Set.Finite.bddAbove (Set.finite_range _)
+    have j0 : Fin M := ⟨0, by omega⟩
+    refine ⟨le_trans (hp0 j0) (le_ciSup hbdd j0), ?_⟩
+    refine ciSup_le fun j => ?_
+    calc (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal
+        ≤ ∑ k, (M : ℝ)⁻¹ * ((Q k).rnDeriv (mixture Q) z).toReal :=
+          Finset.single_le_sum (fun k _ => hp0 k) (Finset.mem_univ j)
+      _ = 1 := hz
+  -- measurability and integrability of the maximal posterior mass
+  have h_meas_sup : Measurable fun z =>
+      ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal :=
+    Measurable.iSup fun j =>
+      ((Measure.measurable_rnDeriv (Q j) (mixture Q)).ennreal_toReal).const_mul _
+  have h_sup_int : Integrable
+      (fun z => ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) (mixture Q) := by
+    refine Integrable.mono' (integrable_const (1 : ℝ)) h_meas_sup.aestronglyMeasurable ?_
+    filter_upwards [hsup_ae] with z hz
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [hz.1, hz.2], hz.2⟩
+  have h_ebar_int : Integrable
+      (fun z => 1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) (mixture Q) :=
+    (integrable_const (1 : ℝ)).sub h_sup_int
+  have hlogM_nonneg : (0 : ℝ) ≤ Real.log (M : ℝ) :=
+    Real.log_nonneg (by exact_mod_cast (show 1 ≤ M by omega))
+  have hRHS_nonneg : 0 ≤ Real.log 2 + (multiwayTestingError Q).toReal * Real.log (M : ℝ) :=
+    add_nonneg (Real.log_nonneg (by norm_num)) (mul_nonneg ENNReal.toReal_nonneg hlogM_nonneg)
+  rw [condEntropy]
+  by_cases hF : Integrable
+      (fun z => ∑ j, Real.negMulLog ((M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)) (mixture Q)
+  · have hFG : (fun z => ∑ j, Real.negMulLog ((M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal))
+        ≤ᵐ[mixture Q]
+        fun z => Real.log 2 + (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)
+          * Real.log (M : ℝ) := by
+      filter_upwards [hp_ae] with z hz
+      exact discrete_fano_pointwise hM
+        (fun j => (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal) (fun j => by positivity) hz
+    calc ∫ z, (∑ j, Real.negMulLog ((M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)) ∂(mixture Q)
+        ≤ ∫ z, (Real.log 2 + (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)
+            * Real.log (M : ℝ)) ∂(mixture Q) :=
+          integral_mono_ae hF ((integrable_const _).add (h_ebar_int.mul_const _)) hFG
+      _ = Real.log 2 + (∫ z, (1 - ⨆ j, (M : ℝ)⁻¹ * ((Q j).rnDeriv (mixture Q) z).toReal)
+            ∂(mixture Q)) * Real.log (M : ℝ) := by
+          rw [integral_add (integrable_const _) (h_ebar_int.mul_const _), integral_mul_const,
+            integral_const, probReal_univ, one_smul]
+      _ ≤ Real.log 2 + (multiwayTestingError Q).toReal * Real.log (M : ℝ) := by
+          gcongr
+          exact mapError_integral_le Q hM
+  · rw [integral_undef hF]; exact hRHS_nonneg
 
 /-- **Real-valued entropy form of Fano's inequality** (Wainwright Eq. (15.61)). Writing
 `I = (I(Z;J)).toReal`, `q = (multiwayTestingError Q).toReal`, the mutual-information identity
