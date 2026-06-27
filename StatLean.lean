@@ -3,6 +3,7 @@ import StatLean.ConcentrationInequalities
 import StatLean.HighDimensionalStatistics
 import StatLean.Optimization
 import StatLean.MultipleTesting
+import StatLean.Minimaxity
 
 /-!
 # StatLean
@@ -21,6 +22,9 @@ theory, organized into per-area sublibraries.
 * `StatLean.MultipleTesting` — multiple hypothesis testing: Benjamini–Hochberg
   and knock-off FDR control, Holm–Bonferroni FWER control (Lu, *Big Data
   Analysis* ch. 18–19; Holm 1979).
+* `StatLean.Minimaxity` — minimax lower bounds: divergences, Le Cam / Fano /
+  local-packing / Yang–Barron methods (Wainwright, *High-Dimensional Statistics*,
+  ch. 15).
 
 Per-area umbrellas are imported above as each area lands.
 -/
