@@ -4,6 +4,7 @@ import StatLean.Minimaxity.ForMathlib.TotalVariation
 import StatLean.Minimaxity.ForMathlib.HellingerDivergence
 import StatLean.Minimaxity.ForMathlib.PinskerInequality
 import StatLean.Minimaxity.ForMathlib.LeCamInequality
+import StatLean.Minimaxity.ForMathlib.GaussianKL
 import StatLean.Minimaxity.ForMathlib.Packing.HammingPacking
 import StatLean.Minimaxity.ForMathlib.Packing.SpherePacking
 import StatLean.Minimaxity.ForMathlib.Packing.SparsePacking
@@ -11,6 +12,8 @@ import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.LeCam.TwoPoint
 import StatLean.Minimaxity.Fano.MutualInformation
 import StatLean.Minimaxity.Fano.FanoLowerBound
+import StatLean.Minimaxity.Fano.LocalPacking
+import StatLean.Minimaxity.Fano.YangBarron
 
 /-!
 # Minimaxity — area umbrella
