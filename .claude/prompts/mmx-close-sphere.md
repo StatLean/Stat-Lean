@@ -15,13 +15,19 @@ ratio gives `|T| ≥ 2^n`.
 KEY Mathlib: `EuclideanSpace.volume_ball (x) (r) : volume (Metric.ball x r) = (ofReal r)^n * (ofReal (√π^n/Γ(n/2+1)))`
 — the constant CANCELS in the ratio. Also `Measure.addHaar_ball`, `addHaar_closedBall_eq_addHaar_ball`,
 `MeasureTheory.measure_iUnion_le`/`measure_biUnion_finset` (disjoint), `Metric.ball_subset_ball`.
-- Disjoint `1/4`-balls in `B(0,5/4)`: `|T|·(1/4)^n·C ≤ (5/4)^n·C` gives an UPPER bound (not needed).
-- For the LOWER bound `2^n`: use that maximal-separated ⇒ `1/2`-cover, so `vol(B(0,1)) ≤ |T|·vol(B(·,1/2))`,
-  i.e. `1 ≤ |T|·(1/2)^n`, hence `|T| ≥ 2^n`. (Cover the unit ball `B(0,1)` ⊃ unit sphere by the `1/2`-balls.)
-You MAY adjust the separation/radius constants (e.g. work with the closed unit ball, or `1/2`→`1/2`) to make a
-clean `2^n` provable; **document any deviation in the docstring** per CLAUDE.md §1. Isolate the volume-ratio
-step as ONE `private` lemma; if the maximal-set existence is the sticking point, isolate THAT as the single
-named residual.
+**IMPORTANT — ambient ball volume is NOT enough for `2^n`.** The annulus argument
+`A_h={1-h≤‖x‖≤1+h} ⊆ ⋃ B(t,1/2+h)` only gives `|T| ≥ (3/2)^n`-ish (< `2^n`); the genuine `2^n` needs the
+**sphere SURFACE measure**, which Mathlib HAS:
+- `Mathlib/MeasureTheory/Constructions/HaarToSphere.lean` — the surface measure `μ_S` on the unit sphere
+  from the Lebesgue/Haar polar disintegration (`volume = ∫_{r} rⁿ⁻¹ dr ⊗ μ_S`-style). Search it for
+  `Measure.toSphere`, `volume_eq_…sphere…`, and the cap-measure relation.
+- `Mathlib/Analysis/Normed/Module/Ball/RadialEquiv.lean` — `homeomorphUnitSphereProd` (polar coords).
+LOWER bound `2^n`: maximal `1/2`-separated ⇒ `1/2`-COVER of the sphere ⇒ `μ_S(S) ≤ |T|·μ_S(cap(t,1/2))`,
+and the cap surface `μ_S(cap(·,1/2)) ≤ (1/2)^{n-1}·μ_S(S)`-style bound gives `|T| ≥ 2^{n-1}` (adjust to `2^n`
+by tuning the separation/radius constant — **document any deviation in the docstring** per CLAUDE.md §1).
+FALLBACK (this is genuinely hard): if the cap-surface-measure estimate is too heavy, prove everything around it
+and isolate the single inequality `μ_S(cap(t, 1/2)) ≤ c·μ_S(S)` as ONE named `private` lemma (one sorry +
+precise `-- TODO(mmx)`). Do NOT bare-sorry the public theorem; ≤ 1 named residual.
 
 ## DONE: `lake build StatLean.Minimaxity.ForMathlib.Packing.SpherePacking` green (0 sorry, or ≤1 named residual).
 `git add` ONLY that file; commit. Report the volume argument + any constant deviation.
