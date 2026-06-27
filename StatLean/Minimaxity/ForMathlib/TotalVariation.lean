@@ -1,5 +1,4 @@
-import Mathlib.MeasureTheory.Measure.RegularityCompacts
-import Mathlib.MeasureTheory.Decomposition.RadonNikodym
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # Total variation distance between probability measures (Wainwright §15.1.3)
