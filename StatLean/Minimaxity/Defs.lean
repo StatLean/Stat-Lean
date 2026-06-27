@@ -33,8 +33,8 @@ open scoped ENNReal
 
 namespace StatLean.Minimaxity
 
-variable {Θ Ω 𝓧 : Type*} {mΘ : MeasurableSpace Θ} {mΩ : MeasurableSpace Ω}
-  {m𝓧 : MeasurableSpace 𝓧}
+variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace Ω]
+  [m𝓧 : MeasurableSpace 𝓧]
 
 /-- The **distortion loss** `ℓ θ y = Φ(ρ(θ(P_θ), y))` of Wainwright's minimax-risk setup:
 an increasing distortion `Φ : ℝ≥0∞ → ℝ≥0∞` of the semimetric `ρ = edist` between the

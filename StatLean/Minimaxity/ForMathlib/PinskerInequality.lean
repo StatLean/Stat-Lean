@@ -8,8 +8,8 @@ The total variation distance is controlled by the Kullback–Leibler divergence:
 `‖ℙ − ℚ‖_TV ≤ √(½ D(ℚ ‖ ℙ))`  (Eq. (15.8)).
 
 Wainwright outlines the proof in Exercise 15.6: reduce to the Bernoulli case via the partition
-`A = {p ≥ q}` and Jensen's inequality. We state it with the `ℝ≥0∞` square root (`rpow (1/2)`), so the
-bound is vacuously true when the KL divergence is infinite.
+`A = {p ≥ q}` and Jensen's inequality. We state it with the `ℝ≥0∞` square root (`rpow (1/2)`),
+so the bound is vacuously true when the KL divergence is infinite.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Lemma 15.2.

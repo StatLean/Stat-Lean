@@ -28,8 +28,8 @@ open scoped ENNReal
 
 namespace StatLean.Minimaxity
 
-variable {Θ Ω 𝓧 : Type*} {mΘ : MeasurableSpace Θ} {mΩ : MeasurableSpace Ω}
-  {m𝓧 : MeasurableSpace 𝓧}
+variable {Θ Ω 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [mΩ : MeasurableSpace Ω]
+  [m𝓧 : MeasurableSpace 𝓧]
 
 /-- **From estimation to testing** (Wainwright Proposition 15.1, Eq. (15.3)): for any increasing
 distortion `Φ` and any `2δ`-separated family `θfam : Fin M → Θ` in the semimetric `ρ = edist` on
