@@ -43,6 +43,40 @@ private lemma minimaxRisk_precomp_le {𝓨 ι : Type*} [MeasurableSpace 𝓨] [M
     rw [Kernel.comp_apply, Kernel.comp_apply, Kernel.comap_apply]
   rw [hcomp]
 
+/-- **Measurable nearest-point selector.** On a pseudo-EMetric space carrying its Borel structure
+(`[OpensMeasurableSpace Ω]`), the index `ℓ ∈ Fin M` minimizing `edist (g (θfam ℓ)) y` can be chosen
+measurably in `y`. Each distance `y ↦ edist (g (θfam ℓ)) y` is continuous, hence measurable; the
+argmin is built via `Nat.find` over `ℕ` (cast into `Fin M`), whose minimizer-predicate has a
+measurable witness set (a finite intersection of `{y | dₗ y ≤ d_k y}`), so `measurable_find` applies.
+Reused by `LeCam/ConvexHull.lean`. -/
+private lemma exists_measurable_nearestPoint
+    [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] {M : ℕ} [NeZero M]
+    (g : Θ → Ω) (θfam : Fin M → Θ) :
+    ∃ T : Ω → Fin M, Measurable T ∧
+      ∀ y ℓ, edist (g (θfam (T y))) y ≤ edist (g (θfam ℓ)) y := by
+  classical
+  -- Each distance `dₗ : y ↦ edist (g (θfam ℓ)) y` is continuous, hence measurable.
+  have hmeas : ∀ ℓ : Fin M, Measurable (fun y => edist (g (θfam ℓ)) y) :=
+    fun ℓ => (continuous_const.edist continuous_id).measurable
+  -- Predicate: `n` (cast into `Fin M`) is a minimizer of the distance at `y`.
+  set p : Ω → ℕ → Prop :=
+    fun y n => ∀ j : Fin M, edist (g (θfam (Fin.ofNat M n))) y ≤ edist (g (θfam j)) y with hp
+  -- A minimizer always exists (`Fin M` is finite and nonempty).
+  have hex : ∀ y, ∃ n, p y n := by
+    intro y
+    obtain ⟨ℓ₀, hℓ₀⟩ := Finite.exists_min (fun ℓ => edist (g (θfam ℓ)) y)
+    refine ⟨ℓ₀.val, fun j => ?_⟩
+    have hval : Fin.ofNat M ℓ₀.val = ℓ₀ := Fin.ext (Nat.mod_eq_of_lt ℓ₀.isLt)
+    rw [hval]
+    exact hℓ₀ j
+  -- The minimizer-witness set is a finite intersection of measurable `≤`-sets.
+  have hpmeas : ∀ n, MeasurableSet {y | p y n} := by
+    intro n
+    simp only [hp, Set.setOf_forall]
+    exact MeasurableSet.iInter fun j => measurableSet_le (hmeas _) (hmeas j)
+  refine ⟨fun y => Fin.ofNat M (Nat.find (hex y)), ?_, fun y ℓ => Nat.find_spec (hex y) ℓ⟩
+  exact (measurable_from_nat (f := Fin.ofNat M)).comp (measurable_find hex hpmeas)
+
 /-- **Geometric core of Proposition 15.1 given a measurable nearest-point selector.** If the test
 `T : Ω → Fin M` is measurable and its value at `y` realizes the nearest functional value
 `g (θfam (T y))` to `y`, then `Φ(δ)` times the M-ary testing error of the sub-model is at most the
@@ -130,13 +164,10 @@ theorem minimax_ge_testing_error
     Φ δ * multiwayTestingError (P.comap θfam hθ) ≤ minimaxRiskDist Φ g P := by
   unfold minimaxRiskDist
   refine le_trans ?_ (minimaxRisk_precomp_le (distortionLoss Φ g) P θfam hθ)
-  -- It remains to supply a *measurable* nearest-point selector `T : Ω → Fin M`.
-  -- TODO(mmx): constructing a measurable `argmin`-test requires Borel / second-countable structure
-  -- on `Ω` (so that `y ↦ edist (g (θfam ℓ)) y` is measurable), which the current public signature
-  -- does not provide; given `⟨T, hT, hTmin⟩` the bound closes via `mul_multiwayTestingError_le`.
-  obtain ⟨T, hT, hTmin⟩ : ∃ T : Ω → Fin M, Measurable T ∧
-      ∀ y ℓ, edist (g (θfam (T y))) y ≤ edist (g (θfam ℓ)) y := by
-    sorry
+  -- Supply a *measurable* nearest-point selector `T : Ω → Fin M`; the `[OpensMeasurableSpace Ω]`
+  -- instance makes each distance `y ↦ edist (g (θfam ℓ)) y` measurable, so the `argmin`-test is
+  -- measurable. Given `⟨T, hT, hTmin⟩` the bound closes via `mul_multiwayTestingError_le`.
+  obtain ⟨T, hT, hTmin⟩ := exists_measurable_nearestPoint g θfam
   exact mul_multiwayTestingError_le P hθ hΦ hsep hT hTmin
 
 end StatLean.Minimaxity
