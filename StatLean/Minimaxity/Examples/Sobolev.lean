@@ -28,7 +28,7 @@ smoothness-`α` Sobolev family with separation `δₙ = (σ²/n)^{α/(2α+1)}` a
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Example 15.23. -/
 theorem sobolev_regression_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [MeasurableSpace 𝓧]
-    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] (n : ℕ) (hn : 1 ≤ n) (α σ : ℝ)
+    [MeasurableSpace Ω] [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω] (n : ℕ) (hn : 1 ≤ n) (α σ : ℝ)
     (hα : 1 / 2 < α) (hσ : 0 < σ)
     (g : ι → Ω) (P : Kernel ι 𝓧) [IsMarkovKernel P]
     {M : ℕ} [NeZero M] (θfam : Fin M → ι) (hθ : Measurable θfam) (c : ℝ) (hM : 2 ≤ M)
