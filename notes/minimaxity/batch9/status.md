@@ -11,15 +11,19 @@ precise Lean statement with a full book citation; every public theorem is either
 (0-sorry)** or **structurally proven, reduced to a single named `private` analytic crux** — there are
 **no bare public-theorem sorries**.
 
-* ~16 theorems **fully 0-sorry**, including: the entropy appendix (`discreteEntropy_nonneg/le_log_card`,
-  `discreteCondEntropy_le_entropy`), `klDiv_gaussianReal` (Ex 15.13), KL tensorization
-  (`klDiv_prod_eq_add`, `klDiv_pi_eq_nsmul`), TV/Hellinger basics, **`minimax_local_packing` (Eq 15.35,
-  fully closed)**, and the density-estimation / Sobolev example rates (`density_estimation_hellinger_rate`,
-  `sobolev_regression_rate`).
-* Headline method theorems proven *structurally* (public closed, one named crux): `minimax_ge_testing_error`
-  (Prop 15.1), `minimax_two_point` (15.14), `minimax_le_cam_convex_hull` (15.9), `minimax_fano_lower_bound`
-  (Prop 15.12), `minimax_yang_barron` (15.21), `pinsker_tv_le_kl` (15.2), `lecam_tv_le_hellinger` (15.3),
-  plus all 8 worked-example rate theorems.
+Two completeness tiers (confirmed by `#print axioms`):
+
+* **Axiom-clean** (`[propext, Classical.choice, Quot.sound]`, no transitive `sorryAx`) — genuinely
+  complete foundational lemmas: `klDiv_gaussianReal` (Ex 15.13), `klDiv_prod_eq_add`/`klDiv_pi_eq_nsmul`
+  (15.11), `discreteEntropy_nonneg`/`discreteEntropy_le_log_card`/`discreteCondEntropy_le_entropy`,
+  `tvDist_comm`/`tvDist_le_one`, `sqHellinger_comm`/`sqHellinger_le_two`. (~10 theorems.)
+* **Structurally complete** (0 `sorry` in their own file, clean proof skeleton, but **transitively
+  depend on a named debt** so `#print axioms` shows `sorryAx`): the headline method theorems
+  `minimax_ge_testing_error` (Prop 15.1), `minimax_two_point` (15.14), `minimax_le_cam_convex_hull`
+  (15.9), `minimax_fano_lower_bound` (15.12), `minimax_local_packing` (15.35), `minimax_yang_barron`
+  (15.21), `pinsker_tv_le_kl` (15.2), `lecam_tv_le_hellinger` (15.3), and all 8 worked-example rate
+  theorems (incl. `density_estimation_hellinger_rate`, `sobolev_regression_rate`). Each reduces to one
+  or more of the 25 named debts below.
 
 Built via cluster fan-out (`lean-on-fasrc`, `SRUN=1` detached tmux): Wave 1 (foundations, 8 units) +
 methods (6) + packing (3) + examples (8) + Gaussian-max-entropy/Sobolev (2), harvested file-by-file
