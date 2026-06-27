@@ -9,15 +9,24 @@ Source of truth = `lake build` sorry inventory; this doc tracks intent/progress.
 40 sorries). **Proof closure — IN PROGRESS.** First concurrent wave launched (4 cluster-claude
 sessions off `mmx/batch9`):
 
-| Branch | Files | Status |
-|---|---|---|
-| `mmx/p-divergences` | KLDivergence, TotalVariation, HellingerDivergence | running |
-| `mmx/p-entropy` | Entropy (Eq 15.60, Ex 15.2) | running |
-| `mmx/p-comparisons` | PinskerInequality (15.2), LeCamInequality (15.3) | running |
-| `mmx/p-reduction` | EstimationToTesting (Prop 15.1), MutualInformation (15.34), GaussianKL (Ex 15.13) | running |
+**Wave 1 harvest (merged to `mmx/batch9`, each fresh-verified green):**
 
-Next waves: methods (LeCam ×3, Fano ×3) → packing + GaussianMaxEntropy + SobolevEntropy → examples.
-Each session lifts genuinely-hard cruxes to named `private` debts (reported back), per CLAUDE.md §2.
+| Unit | Closed 0-sorry | Named debts (private + TODO) |
+|---|---|---|
+| `Entropy` | nonneg, le_log_card (Jensen), condEntropy_le (Gibbs) | — (fully closed) |
+| `GaussianKL` | `klDiv_gaussianReal` (Ex 15.13) | — (fully closed) |
+| `KLDivergence` | `klDiv_prod_eq_add`, `klDiv_pi_eq_nsmul` (prod_swap + piFinSuccAbove induction) | `klDiv_mixture_minimizes` (Ex 15.11 convexity) |
+| `TotalVariation` | `tvDist_comm` (complement-flip), `tvDist_le_one` | density form (15.6), variational (Ex 15.1) |
+| `HellingerDivergence` | `sqHellinger_comm`, `sqHellinger_le_two` | eLpNorm tensorization bridge (15.12b) |
+| `EstimationToTesting` | (partial) | 2 (Prop 15.1 reduction sub-steps) |
+| `MutualInformation` | (partial) | 2 (15.34 convexity) |
+| `comparisons` (Pinsker 15.2, LeCam 15.3) | — | running |
+
+Closed so far: ~12 theorems 0-sorry; ~9 named debts (all `private` + `-- TODO(mmx)`).
+Refinement: `tvDist_comm` gained `[IsProbabilityMeasure]` (symmetry genuinely needs it — correct).
+
+Next: wave 2 = methods (LeCam ×3, Fano ×3) + packing (independent) → GaussianMaxEntropy/Sobolev →
+examples. Then full-build + axioms audit + debt enumeration.
 
 ---
 
