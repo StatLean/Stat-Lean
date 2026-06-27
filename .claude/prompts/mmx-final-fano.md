@@ -39,3 +39,6 @@ Do NOT bare-sorry the public lemma; ≤ 1 named residual, SMALLER than the curre
 
 ## DONE: `lake build StatLean.Minimaxity.Fano.FanoLowerBound` green (0 sorry, or 1 smaller named residual).
 `git add` ONLY that file; commit. Report exactly what closed + the bridge lemmas used.
+
+## DIRECTIVE
+Do NOT ask the user questions. Continue from the committed reduction (the ENNReal wrapper is already proven; the conditional-entropy MI identity is the remaining core). Either reach 0 sorry or leave EXACTLY ONE smaller named private residual and COMMIT. Never leave the file unchanged.

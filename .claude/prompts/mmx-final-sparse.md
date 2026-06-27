@@ -1,33 +1,30 @@
-# Close #11: constant-weight Gilbert–Varshamov (SparsePacking.lean) — MOST TRACTABLE
+# Close #11: sparse packing via BLOCK / q-ary Gilbert–Varshamov (SparsePacking.lean)
 
-Lean 4 / Mathlib engineer on **StatLean** (CLAUDE.md §2,§6,§7). Pin v4.29.1. ON cluster, srun. FOREGROUND `lake build` (lake on PATH; NOT lean-fasrc-build). Goal 0 sorry.
+Lean 4 / Mathlib engineer on **StatLean** (CLAUDE.md §2,§6,§7). Pin v4.29.1. ON cluster, srun. FOREGROUND `lake build` (lake on PATH; NOT lean-fasrc-build).
+**DIRECTIVE: do NOT ask the user questions. Either reach 0 sorry, or leave EXACTLY ONE smaller named `private`
+residual (one sorry + precise `-- TODO(mmx)`) and COMMIT. Never leave the file unchanged.**
 
 ## Touch-set (edit ONLY) — `StatLean/Minimaxity/ForMathlib/Packing/SparsePacking.lean`
-Close `exists_bounded_overlap_supports (d s) (hs : 0 < s) (hsd : s ≤ d)`:
-`∃ 𝒮 : Finset (Finset (Fin d)), (∀ S∈𝒮, S.card=s) ∧ (∀ S∈𝒮 S'∈𝒮, S≠S' → 2*(S∩S').card ≤ s) ∧
-(s/2 : ℝ)*log((d-s)/s) ≤ log 𝒮.card`. Everything else in the file (sparseVec geometry, norm, separation,
-injectivity) is PROVEN — only this combinatorial core remains. Keep signature UNCHANGED; helpers `private`.
+Close `exists_bounded_overlap_supports (d s) (hs : 0 < s) (hsd : s ≤ d)`. The sparseVec geometry / norm /
+separation / injectivity in the file are PROVEN — only this support-count residual remains. Loose constants OK.
 
-## Strategy — Johnson-scheme GV, mirror the CLOSED `gilbert_varshamov` (HammingPacking.lean)
-Read `StatLean/Minimaxity/ForMathlib/Packing/HammingPacking.lean`'s `gilbert_varshamov` proof FIRST — it is
-the analogous `{0,1}^m` argument and the template. Adapt to weight-`s` supports:
-1. Work inside `(Finset.univ.powersetCard s : Finset (Finset (Fin d)))` — the weight-`s` supports;
-   `Finset.card_powersetCard : (univ.powersetCard s).card = (Fintype.card (Fin d)).choose s = d.choose s`.
-2. Take a **maximal** `𝒮 ⊆ powersetCard s univ` with the pairwise property `2*(S∩S').card ≤ s` (extract via
-   a maximum-cardinality argument over the finite `powersetCard`, like `gilbert_varshamov`). By maximality,
-   every weight-`s` support `T` has some `S∈𝒮` with `2*(S∩T).card > s` (else `𝒮∪{T}` is larger).
-3. So `powersetCard s univ ⊆ ⋃_{S∈𝒮} ball(S)` where `ball(S) = {T ∈ powersetCard s univ : 2*(S∩T).card > s}`.
-   Hence `d.choose s ≤ 𝒮.card · max_S |ball(S)|` (`Finset.card_le_card_biUnion`-style / `card_le_sum`).
-4. **Intersection-ball count**: `|ball(S)| = Σ_{j : s/2 < j ≤ s} (s.choose j)*((d-s).choose (s-j))` (choose `j`
-   coords of `S` to keep, `s-j` from the complement). Bound `|ball(S)| ≤ d.choose s · ((d-s)/s)^{-s/2}`
-   (the genuine combinatorial estimate — bound each term's ratio to `d.choose s`; `Nat.choose` ratio lemmas,
-   `Nat.choose_le_choose`, `Nat.choose_mul_le...`). Take `log`: `log|ball| ≤ log(d.choose s) − (s/2)log((d-s)/s)`.
-5. Combine 3+4: `log(d.choose s) ≤ log 𝒮.card + log|ball|` ⇒ `(s/2)log((d-s)/s) ≤ log 𝒮.card`.
-For `d ≤ 2s` the RHS `(s/2)log((d-s)/s) ≤ 0` (since `(d-s)/s ≤ 1`), so a singleton `𝒮={any support}` works —
-handle that branch first. Mathlib: `Finset.powersetCard`, `Finset.card_powersetCard`, `Nat.choose` bounds,
-`Real.log_le_log`, `Real.log_div`, `Real.log_pow`, `Finset.card_biUnion_le`.
+## NEW route — BLOCK construction (a q-ary GV, generalizing the CLOSED binary `gilbert_varshamov`)
+Read `HammingPacking.lean`'s `gilbert_varshamov` (binary, `q=2`) — generalize its maximal-code argument to `q`-ary:
+1. Split `[d] = Fin d` into `s` disjoint blocks `B_0,…,B_{s-1}`, each of size `q := d/s ≥ 1` (e.g.
+   `B_k = {i : k*q ≤ i.val < (k+1)*q}`; handle the remainder coords by ignoring them). A **block support** picks
+   ONE coordinate from each block: `S(f) = {f 0, …, f (s-1)}` for `f : Fin s → Fin d` with `f k ∈ B_k`. Then
+   `|S(f)| = s` (distinct blocks ⇒ distinct coords).
+2. Two block supports `S(f), S(g)` satisfy `|S(f) ∩ S(g)| = #{k : f k = g k}` (agreement count). So
+   `2|S(f)∩S(g)| ≤ s  ⟺  #{k : f k = g k} ≤ s/2  ⟺  hammingDist f g ≥ s/2` (in the `Fin s → block` alphabet).
+3. **q-ary GV**: take a maximal `C ⊆ (block-choice functions)` with pairwise block-`hammingDist ≥ s/2`. By
+   maximality the radius-`(s/2)` Hamming balls cover all `q^s` choice functions, so `q^s ≤ |C|·maxBall`, with
+   `maxBall = Σ_{i < s/2} C(s,i)(q−1)^i`. Bound `maxBall ≤ q^{s/2}` (or `log maxBall ≤ (s/2)·log q` — a clean
+   `Nat.choose`/`(q-1)^i` estimate; for `q ≥ 2`, `Σ_{i<s/2} C(s,i)(q-1)^i ≤ q^{s/2}` by comparing to the full
+   `q^s = Σ C(s,i)(q-1)^i` and the tail/head split). Hence `log|C| ≥ (s/2) log q ≥ (s/2) log((d-s)/s)` (since
+   `q = d/s ≥ (d-s)/s`). Map `f ↦ S(f)` (injective on `C` since distinct ⇒ disjoint-enough) to get `𝒮`.
+4. `d ≤ 2s` branch: `(d-s)/s ≤ 1` ⇒ RHS `≤ 0`, a singleton `𝒮` works — do this first.
+Mathlib: `Finset.image`, `hammingDist`, `Finset.card_image_of_injOn`, `Nat.choose` bounds, `Real.log_pow`,
+`Real.log_le_log`, and the maximal-set extremal argument from `gilbert_varshamov`. Isolate the `maxBall ≤ q^{s/2}`
+inequality as ONE `private` lemma if it is the only hard step.
 
-If the intersection-ball count `|ball(S)| ≤ d.choose s · ((d-s)/s)^{-s/2}` is the only hard step, isolate it as
-ONE `private` lemma; prove the maximal-cover assembly around it. GOAL 0 sorry.
-
-## DONE: `lake build StatLean.Minimaxity.ForMathlib.Packing.SparsePacking` green 0 sorry. `git add` ONLY that file; commit.
+## DONE: `lake build StatLean.Minimaxity.ForMathlib.Packing.SparsePacking` green (0 sorry, or 1 smaller named residual). `git add` SparsePacking.lean; COMMIT.
