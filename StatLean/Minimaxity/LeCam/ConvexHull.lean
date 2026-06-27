@@ -34,7 +34,7 @@ subfamilies `{P_{a₀ i}}`, `{P_{a₁ i}}` and any mixing priors `π₀, π₁`,
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.2, Lemma 15.9. -/
-theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω]
+theorem minimax_le_cam_convex_hull [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
     (Φ : ℝ≥0∞ → ℝ≥0∞) (g : Θ → Ω) (P : Kernel Θ 𝓧) [IsMarkovKernel P]
     (δ : ℝ≥0∞) {ι₀ ι₁ : Type*} [MeasurableSpace ι₀] [MeasurableSpace ι₁]
     (a₀ : ι₀ → Θ) (a₁ : ι₁ → Θ) (ha₀ : Measurable a₀) (ha₁ : Measurable a₁)

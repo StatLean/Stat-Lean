@@ -155,7 +155,7 @@ and a pair `θ₀, θ₁` whose functional values are `2δ`-separated,
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1, Eq. (15.14). -/
-theorem minimax_two_point [PseudoEMetricSpace Ω]
+theorem minimax_two_point [PseudoEMetricSpace Ω] [OpensMeasurableSpace Ω]
     (Φ : ℝ≥0∞ → ℝ≥0∞) (g : Θ → Ω) (P : Kernel Θ 𝓧) [IsMarkovKernel P]
     (θ₀ θ₁ : Θ) (δ : ℝ≥0∞)
     -- USER-INPUT: the distortion `Φ` is increasing; Wainwright §15.2.1, Eq. (15.14).

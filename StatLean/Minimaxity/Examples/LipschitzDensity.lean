@@ -51,9 +51,11 @@ theorem lipschitz_density_pointwise_rate {ι : Type*} [MeasurableSpace ι] (n : 
   obtain ⟨c, hc, hbound⟩ := lipschitz_pointwise_modulus_bound n hn f θfunc hθ hclass
   refine ⟨c, hc, ?_⟩
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
+  have hΦlsc : LowerSemicontinuous (fun x : ℝ≥0∞ => x ^ 2) :=
+    (ENNReal.continuous_pow 2).lowerSemicontinuous
   have key := minimax_functional_modulus θfunc
     (fun i => volume.withDensity fun x => ENNReal.ofReal (f i x)) n Pn
-    (fun x : ℝ≥0∞ => x ^ 2) hΦ hPn
+    (fun x : ℝ≥0∞ => x ^ 2) hΦ hΦlsc hPn
   exact le_trans hbound key
 
 /-- **Lower bound for a quadratic functional** (Wainwright Example 15.8): estimating
@@ -80,9 +82,11 @@ theorem quadratic_functional_two_point_rate {ι : Type*} [MeasurableSpace ι] (n
   obtain ⟨c, hc, hbound⟩ := quadratic_two_point_modulus_bound n hn f θfunc hclass
   refine ⟨c, hc, ?_⟩
   have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
+  have hΦlsc : LowerSemicontinuous (fun x : ℝ≥0∞ => x ^ 2) :=
+    (ENNReal.continuous_pow 2).lowerSemicontinuous
   have key := minimax_functional_modulus θfunc
     (fun i => volume.withDensity fun x => ENNReal.ofReal (f i x)) n Pn
-    (fun x : ℝ≥0∞ => x ^ 2) hΦ hPn
+    (fun x : ℝ≥0∞ => x ^ 2) hΦ hΦlsc hPn
   exact le_trans hbound key
 
 end StatLean.Minimaxity

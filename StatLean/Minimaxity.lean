@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.Defs
 import StatLean.Minimaxity.ForMathlib.KLDivergence
+import StatLean.Minimaxity.ForMathlib.KLDataProcessing
 import StatLean.Minimaxity.ForMathlib.TotalVariation
 import StatLean.Minimaxity.ForMathlib.HellingerDivergence
 import StatLean.Minimaxity.ForMathlib.PinskerInequality
