@@ -170,7 +170,6 @@ private lemma yang_barron_sum_le {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) 
       intro s
       rw [Measure.smul_apply, Measure.smul_apply, smul_eq_mul, smul_eq_mul]
       gcongr
-      exact Measure.le_iff'.mp hsub s
     calc klDiv (Q j) G ≤ klDiv (Q j) (γ k) + ENNReal.ofReal (Real.log (N : ℝ)) :=
           klDiv_le_cover_mixture hN (Q j) (γ k) G hle
       _ ≤ ε ^ 2 + ENNReal.ofReal (Real.log (N : ℝ)) := by gcongr
