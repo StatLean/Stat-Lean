@@ -40,6 +40,17 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.1, E
 noncomputable def mutualInformation {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) : ℝ≥0∞ :=
   (M : ℝ≥0∞)⁻¹ * ∑ j, klDiv (Q j) (mixture Q)
 
+/-- **Convexity of the KL divergence in its second argument** (Jensen): the divergence from a
+fixed component `Q j` to the uniform mixture `Q̄ = (1/M) Σₖ Q k` is at most the average of the
+divergences to the components, `D(Q j ‖ Q̄) ≤ (1/M) Σₖ D(Q j ‖ Q k)`. This is the analytic core of
+Wainwright Eq. (15.34); it follows from the joint convexity of `(p, q) ↦ q · klFun(p/q)` (the
+perspective of the strictly convex `klFun`), which Mathlib does not yet package for `klDiv`. -/
+private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMarkovKernel Q]
+    (j : Fin M) :
+    klDiv (Q j) (mixture Q) ≤ (M : ℝ≥0∞)⁻¹ * ∑ k, klDiv (Q j) (Q k) := by
+  -- TODO(mmx): convexity of `klDiv` in the 2nd argument (Jensen); Wainwright Eq. (15.34).
+  sorry
+
 /-- **Convexity bound on the mutual information** (Wainwright Eq. (15.34)):
 `I(Z; J) ≤ (1/M²) Σⱼ Σₖ D(P_{θʲ} ‖ P_{θᵏ})`. Obtained from the convexity of the KL divergence in its
 second argument (the mixture minimizes the average divergence).
@@ -49,6 +60,16 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.2, E
 theorem mutualInformation_le_avg_pairwise_kl {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧)
     [IsMarkovKernel Q] :
     mutualInformation Q ≤ ((M : ℝ≥0∞) ^ 2)⁻¹ * ∑ j, ∑ k, klDiv (Q j) (Q k) := by
-  sorry
+  unfold mutualInformation
+  calc (M : ℝ≥0∞)⁻¹ * ∑ j, klDiv (Q j) (mixture Q)
+      ≤ (M : ℝ≥0∞)⁻¹ * ∑ j, ((M : ℝ≥0∞)⁻¹ * ∑ k, klDiv (Q j) (Q k)) := by
+        gcongr with j
+        exact klDiv_le_avg Q j
+    _ = (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞)⁻¹ * ∑ j, ∑ k, klDiv (Q j) (Q k)) := by
+        rw [← Finset.mul_sum]
+    _ = ((M : ℝ≥0∞) ^ 2)⁻¹ * ∑ j, ∑ k, klDiv (Q j) (Q k) := by
+        rw [← mul_assoc, sq,
+          ENNReal.mul_inv (Or.inr (ENNReal.natCast_ne_top M))
+            (Or.inl (ENNReal.natCast_ne_top M))]
 
 end StatLean.Minimaxity
