@@ -38,8 +38,13 @@ has minimax squared-error risk at least `c · n^{-2/3}`.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.7. -/
-theorem lipschitz_density_pointwise_rate {ι : Type*} [MeasurableSpace ι] (n : ℕ) (hn : 1 ≤ n)
-    (f : ι → ℝ → ℝ) (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) [IsMarkovKernel Pn]
+theorem lipschitz_density_pointwise_rate {ι : Type*} [MeasurableSpace ι] [Nonempty ι] (n : ℕ) (hn : 1 ≤ n)
+    (f : ι → ℝ → ℝ)
+    -- USER-INPUT: each density `f i` integrates to one, i.e. `volume.withDensity (f i)` is a
+    -- probability measure (the per-pair Le Cam bound is stated for probability measures, and this is
+    -- not derivable from `IsMarkovKernel Pn` without `SigmaFinite`); Wainwright §15.2, Example 15.7.
+    [∀ i, IsProbabilityMeasure (volume.withDensity fun x => ENNReal.ofReal (f i x))]
+    (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) [IsMarkovKernel Pn]
     -- USER-INPUT: the functional is the density value at 0; Wainwright §15.2, Example 15.7.
     (hθ : ∀ i, θfunc i = f i 0)
     -- USER-INPUT: each `f i` is a `1`-Lipschitz density bounded below; Wainwright §15.2, Example 15.7.
@@ -72,8 +77,12 @@ private lemma quadratic_two_point_modulus_bound {ι : Type*} [MeasurableSpace ι
           (ENNReal.ofReal (1 / (2 * Real.sqrt n)))) := by
   sorry -- TODO(mmx): two-point Hellinger-modulus bound for the quadratic functional (ω(ε) ≍ ε^{1/2})
 
-theorem quadratic_functional_two_point_rate {ι : Type*} [MeasurableSpace ι] (n : ℕ) (hn : 1 ≤ n)
-    (f : ι → ℝ → ℝ) (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) [IsMarkovKernel Pn]
+theorem quadratic_functional_two_point_rate {ι : Type*} [MeasurableSpace ι] [Nonempty ι] (n : ℕ) (hn : 1 ≤ n)
+    (f : ι → ℝ → ℝ)
+    -- USER-INPUT: each density `f i` integrates to one (`volume.withDensity (f i)` a probability
+    -- measure); not derivable from `IsMarkovKernel Pn` without `SigmaFinite`; Wainwright §15.2, Ex 15.8.
+    [∀ i, IsProbabilityMeasure (volume.withDensity fun x => ENNReal.ofReal (f i x))]
+    (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) [IsMarkovKernel Pn]
     -- USER-INPUT: `θ(f) = ∫(f')²`, over twice-smooth densities; Wainwright §15.2, Example 15.8.
     (hclass : ∀ i, ∀ x, (1 / 2 : ℝ) ≤ f i x)
     (hPn : ∀ i, Pn i = Measure.pi fun _ : Fin n => volume.withDensity fun x => ENNReal.ofReal (f i x)) :
