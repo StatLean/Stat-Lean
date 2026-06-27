@@ -22,6 +22,7 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, E
 
 open MeasureTheory
 open scoped ENNReal
+open AsymptoticStatistics.ForMathlib.HellingerProduct
 
 namespace StatLean.Minimaxity
 
@@ -42,9 +43,33 @@ noncomputable def sqHellinger (μ ν : Measure α) : ℝ≥0∞ :=
 theorem sqHellinger_comm (μ ν : Measure α) : sqHellinger μ ν = sqHellinger ν μ := by
   unfold sqHellinger
   rw [add_comm ν μ]
-  refine lintegral_congr fun x => ?_
+  refine lintegral_congr (fun x => ?_)
   congr 1
   ring
+
+/-- Common absolute-continuity facts for the canonical dominating measure `ξ = μ + ν`. -/
+private theorem absCont_left (μ ν : Measure α) : μ ≪ μ + ν :=
+  Measure.absolutelyContinuous_of_le (Measure.le_add_right le_rfl)
+
+private theorem absCont_right (μ ν : Measure α) : ν ≪ μ + ν :=
+  Measure.absolutelyContinuous_of_le (Measure.le_add_left le_rfl)
+
+/-- **Bridge to the Bochner form.** The `ℝ≥0∞`-valued definition of `sqHellinger` equals
+`ENNReal.ofReal` of the real `L²`-residual integral `∫ (√p − √q)² dξ` (with `ξ = μ + ν`),
+since the integrand is nonnegative and integrable (the square-root density residual is in
+`L²(ξ)`). This lets us reuse the real-valued StatLean affinity machinery. -/
+private theorem sqHellinger_eq_ofReal_integral (μ ν : Measure α)
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    sqHellinger μ ν = ENNReal.ofReal
+      (∫ ω, (Real.sqrt (μ.rnDeriv (μ + ν) ω).toReal
+              - Real.sqrt (ν.rnDeriv (μ + ν) ω).toReal) ^ 2 ∂(μ + ν)) := by
+  have hμ := absCont_left μ ν
+  have hν := absCont_right μ ν
+  have hint :=
+    (hellinger_per_sample_residual_memLp_two hμ hν).integrable_sq
+  unfold sqHellinger
+  exact (ofReal_integral_eq_lintegral_ofReal hint
+    (Filter.Eventually.of_forall fun _ => sq_nonneg _)).symm
 
 /-- **The squared Hellinger distance lies in `[0, 2]`** (Wainwright Eq. (15.9)).
 
@@ -52,40 +77,36 @@ theorem sqHellinger_comm (μ ν : Measure α) : sqHellinger μ ν = sqHellinger 
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Eq. (15.9). -/
 theorem sqHellinger_le_two (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     sqHellinger μ ν ≤ 2 := by
-  have hμ : μ ≪ μ + ν := (Measure.le_add_right le_rfl).absolutelyContinuous
-  have hν : ν ≪ μ + ν := by rw [add_comm]; exact (Measure.le_add_right le_rfl).absolutelyContinuous
-  calc sqHellinger μ ν
-      ≤ ∫⁻ x, (μ.rnDeriv (μ + ν) x + ν.rnDeriv (μ + ν) x) ∂(μ + ν) := by
-        refine lintegral_mono_ae ?_
-        filter_upwards [μ.rnDeriv_ne_top (μ + ν), ν.rnDeriv_ne_top (μ + ν)] with x hp hq
-        set P := μ.rnDeriv (μ + ν) x
-        set Q := ν.rnDeriv (μ + ν) x
-        have hp0 : 0 ≤ P.toReal := ENNReal.toReal_nonneg
-        have hq0 : 0 ≤ Q.toReal := ENNReal.toReal_nonneg
-        have h2 : (Real.sqrt P.toReal - Real.sqrt Q.toReal) ^ 2 ≤ P.toReal + Q.toReal := by
-          have e1 := Real.sq_sqrt hp0
-          have e2 := Real.sq_sqrt hq0
-          nlinarith [Real.sqrt_nonneg P.toReal, Real.sqrt_nonneg Q.toReal,
-            mul_nonneg (Real.sqrt_nonneg P.toReal) (Real.sqrt_nonneg Q.toReal)]
-        calc ENNReal.ofReal ((Real.sqrt P.toReal - Real.sqrt Q.toReal) ^ 2)
-            ≤ ENNReal.ofReal (P.toReal + Q.toReal) := ENNReal.ofReal_le_ofReal h2
-          _ = ENNReal.ofReal P.toReal + ENNReal.ofReal Q.toReal := ENNReal.ofReal_add hp0 hq0
-          _ = P + Q := by rw [ENNReal.ofReal_toReal hp, ENNReal.ofReal_toReal hq]
-    _ = ∫⁻ x, μ.rnDeriv (μ + ν) x ∂(μ + ν) + ∫⁻ x, ν.rnDeriv (μ + ν) x ∂(μ + ν) :=
-        lintegral_add_left (Measure.measurable_rnDeriv _ _) _
-    _ = 2 := by
-        rw [Measure.lintegral_rnDeriv hμ, Measure.lintegral_rnDeriv hν, measure_univ, measure_univ,
-          one_add_one_eq_two]
+  have hμ := absCont_left μ ν
+  have hν := absCont_right μ ν
+  rw [sqHellinger_eq_ofReal_integral, integral_per_sample_residual_sq_eq hμ hν]
+  have hA := integral_sqrt_mul_sqrt_nonneg μ ν (μ + ν)
+  rw [show (2 : ℝ≥0∞) = ENNReal.ofReal 2 from (ENNReal.ofReal_ofNat 2).symm]
+  exact ENNReal.ofReal_le_ofReal (by linarith)
 
--- Crux of Eq. (15.12b): bridge `sqHellinger` to the StatLean `eLpNorm` form and reuse
--- `HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample` together with
--- `1 − (1 − x)ⁿ ≤ n x`. This is non-trivial coercion/`eLpNorm`-squaring work across the
--- two Hellinger encodings and is left as a named debt.
-private lemma sqHellinger_pi_le_nsmul_aux (n : ℕ) (μ ν : Measure α)
+/-- **Bridge to the StatLean product form.** The squared Hellinger distance of the `n`-fold
+i.i.d. products, against its canonical dominating measure `Measure.pi μ + Measure.pi ν`, equals
+`ENNReal.ofReal` of the per-coordinate-product residual integral against `Measure.pi (μ + ν)`
+(the dominating measure used by `StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct`).
+
+This packages two standard measure-theoretic facts about the squared Hellinger functional:
+(i) the Radon–Nikodym derivative of a product measure factorises coordinatewise,
+`(Measure.pi μ).rnDeriv (Measure.pi ξ) =ᵃᵉ ∏ⱼ μ.rnDeriv ξ`, and
+(ii) the squared Hellinger integral is invariant under the choice of common dominating measure
+(here switching `Measure.pi μ + Measure.pi ν` for `Measure.pi (μ + ν)`).
+
+-- TODO(mmx, Wainwright Eq. (15.12)): discharge the product-rnDeriv factorisation and
+-- dominating-measure invariance. Genuine measure-theoretic lemma (no Mathlib `rnDeriv_pi`),
+-- lifted per CLAUDE.md §2 as a named, well-defined sub-lemma. -/
+private theorem sqHellinger_pi_eq_ofReal_product_integral (n : ℕ) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     sqHellinger (Measure.pi fun _ : Fin n => μ) (Measure.pi fun _ : Fin n => ν)
-      ≤ n • sqHellinger μ ν := by
-  sorry -- TODO(mmx): Eq. (15.12b) — bridge to eLpNorm Hellinger product + 1-(1-x)ⁿ ≤ n·x
+      = ENNReal.ofReal
+          (∫ X : Fin n → α,
+            ((∏ j, Real.sqrt (μ.rnDeriv (μ + ν) (X j)).toReal)
+              - ∏ j, Real.sqrt (ν.rnDeriv (μ + ν) (X j)).toReal) ^ 2
+            ∂(Measure.pi fun _ : Fin n => (μ + ν))) := by
+  sorry
 
 /-- **I.i.d. tensorization bound for the squared Hellinger distance** (Wainwright Eq. (15.12b)):
 `H²(ℙ^{1:n} ‖ ℚ^{1:n}) ≤ n · H²(ℙ ‖ ℚ)`, obtained from the affinity-product identity (Eq. (15.12a))
@@ -96,7 +117,13 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, E
 theorem sqHellinger_pi_le_nsmul (n : ℕ) (μ ν : Measure α)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     sqHellinger (Measure.pi fun _ : Fin n => μ) (Measure.pi fun _ : Fin n => ν)
-      ≤ n • sqHellinger μ ν :=
-  sqHellinger_pi_le_nsmul_aux n μ ν
+      ≤ n • sqHellinger μ ν := by
+  have hμ := absCont_left μ ν
+  have hν := absCont_right μ ν
+  rw [sqHellinger_pi_eq_ofReal_product_integral, sqHellinger_eq_ofReal_integral,
+      ← ENNReal.ofReal_nsmul]
+  apply ENNReal.ofReal_le_ofReal
+  rw [nsmul_eq_mul]
+  exact hellinger_product_residual_sq_le_n_per_sample hμ hν
 
 end StatLean.Minimaxity
