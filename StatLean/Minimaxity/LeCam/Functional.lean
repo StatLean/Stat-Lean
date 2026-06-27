@@ -35,6 +35,22 @@ Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1, E
 noncomputable def hellingerModulus (θfunc : ι → ℝ) (P : ι → Measure 𝓧) (ε : ℝ≥0∞) : ℝ≥0∞ :=
   ⨆ (i : ι) (j : ι) (_ : sqHellinger (P i) (P j) ≤ ε ^ 2), ENNReal.ofReal |θfunc i - θfunc j|
 
+-- Crux of Corollary 15.6. The per-pair core is honest two-point + Hellinger tensorization: for a
+-- pair `(i, j)` with `H²(Pᵢ ‖ Pⱼ) ≤ 1/(4n)`, `minimax_two_point` with `δ = ½|θ(i) − θ(j)|` plus
+-- `‖Pⁿᵢ − Pⁿⱼ‖_TV ≤ √(n·H²) ≤ ½` (via `lecam_tv_le_hellinger` and `sqHellinger_pi_le_nsmul`) gives
+-- `¼ Φ(½|θ(i) − θ(j)|) ≤ M`. Two steps resist a fully general assembly here: (a) taking the
+-- supremum over admissible pairs commutes `Φ` past the `⨆` defining the modulus only when `Φ` is
+-- left-continuous/the sup is attained — the bare `Monotone Φ` hypothesis is too weak; and (b) the
+-- tensorization `sqHellinger_pi_le_nsmul` needs `IsProbabilityMeasure (P i)`, which the (frozen)
+-- signature does not provide. Both are left as a single named debt.
+private lemma minimax_functional_modulus_aux
+    (θfunc : ι → ℝ) (P : ι → Measure 𝓧) (n : ℕ) (Pn : Kernel ι (Fin n → 𝓧)) [IsMarkovKernel Pn]
+    (Φ : ℝ≥0∞ → ℝ≥0∞) (hΦ : Monotone Φ)
+    (hPn : ∀ i, Pn i = Measure.pi fun _ : Fin n => P i) :
+    4⁻¹ * Φ (2⁻¹ * hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n))))
+      ≤ minimaxRiskDist Φ θfunc Pn := by
+  sorry -- TODO(mmx): Cor 15.6 — sup-over-pairs (Φ past ⨆) + Hellinger tensorization (prob inst)
+
 /-- **Le Cam's bound for functionals** (Wainwright Corollary 15.6, Eq. (15.18)): for the `n`-sample
 i.i.d. model `Pn i = (P i)^{⊗n}` and an increasing distortion `Φ`,
 `inf_θ̂ sup_i 𝔼[Φ(|θ̂ − θ(i)|)] ≥ ¼ Φ(½ ω(1/(2√n); θ, ℱ))`.
@@ -49,7 +65,7 @@ theorem minimax_functional_modulus
     -- USER-INPUT: `Pn` is the `n`-fold i.i.d. product of the family `P`; Wainwright §15.2.1.
     (hPn : ∀ i, Pn i = Measure.pi fun _ : Fin n => P i) :
     4⁻¹ * Φ (2⁻¹ * hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n))))
-      ≤ minimaxRiskDist Φ θfunc Pn := by
-  sorry
+      ≤ minimaxRiskDist Φ θfunc Pn :=
+  minimax_functional_modulus_aux θfunc P n Pn Φ hΦ hPn
 
 end StatLean.Minimaxity

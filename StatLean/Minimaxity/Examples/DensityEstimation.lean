@@ -37,6 +37,25 @@ theorem density_estimation_hellinger_rate {ι 𝓧 Ω : Type*} [MeasurableSpace 
     -- USER-INPUT: packing cardinality (15.35b); Wainwright §15.3.
     (h35b : 2 * (c ^ 2 * n * ((n : ℝ) ^ (-(2 : ℝ) / 5)) ^ 2 + Real.log 2) ≤ Real.log (M : ℝ)) :
     ENNReal.ofReal (2⁻¹ * ((n : ℝ) ^ (-(2 : ℝ) / 5)) ^ 2) ≤ minimaxRiskDist (· ^ 2) g P := by
-  sorry
+  have hx0 : (0 : ℝ) ≤ (n : ℝ) ^ (-(2 : ℝ) / 5) := by positivity
+  have hδtoReal : (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))).toReal = (n : ℝ) ^ (-(2 : ℝ) / 5) :=
+    ENNReal.toReal_ofReal hx0
+  have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
+  have h35a' : ∀ j k, j ≠ k →
+      klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
+        ≤ ENNReal.ofReal (c ^ 2 * (n : ℝ) *
+            (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))).toReal ^ 2) := by
+    intro j k hjk; rw [hδtoReal]; exact h35a j k hjk
+  have h35b' : 2 * (c ^ 2 * (n : ℝ) *
+      (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))).toReal ^ 2 + Real.log 2) ≤ Real.log (M : ℝ) := by
+    rw [hδtoReal]; exact h35b
+  have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
+    (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))) c (n : ℝ) hΦ hsep h35a' h35b'
+  have harith : ENNReal.ofReal (2⁻¹ * ((n : ℝ) ^ (-(2 : ℝ) / 5)) ^ 2)
+      = 2⁻¹ * (ENNReal.ofReal ((n : ℝ) ^ (-(2 : ℝ) / 5))) ^ 2 := by
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2⁻¹), ENNReal.ofReal_pow hx0,
+        ENNReal.ofReal_inv_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat]
+  rw [harith]
+  exact key
 
 end StatLean.Minimaxity

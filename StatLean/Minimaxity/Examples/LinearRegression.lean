@@ -28,6 +28,30 @@ open scoped ENNReal NNReal
 
 namespace StatLean.Minimaxity
 
+open InformationTheory in
+/-- **Crux: local packing data for fixed-design linear regression.** A `rank(A)`-dimensional packing
+of the range of `A` (Wainwright Example 5.8, `exists_sparse_packing`), pulled back through the
+normalized design map `g θ = Aθ/√n`, gives a `δ`-separated family with `δ = √(v·r/(64n))` whose
+pairwise KL divergences satisfy the (15.35a) bound (via `klDiv_gaussianReal` / the multivariate
+Gaussian KL) and whose cardinality satisfies (15.35b). -/
+private lemma linreg_local_packing_data {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) (hv : v ≠ 0) (r : ℕ)
+    (A : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n))
+    (g : EuclideanSpace ℝ (Fin d) → EuclideanSpace ℝ (Fin n))
+    (P : Kernel (EuclideanSpace ℝ (Fin d)) (EuclideanSpace ℝ (Fin n))) [IsMarkovKernel P]
+    (hg : ∀ θ, g θ = (Real.sqrt n)⁻¹ • A θ)
+    (hP : ∀ θ, P θ = multivariateGaussian (A θ) ((v : ℝ) • (1 : Matrix (Fin n) (Fin n) ℝ)))
+    (hr : r = Module.finrank ℝ (LinearMap.range A)) :
+    ∃ (M : ℕ) (_ : NeZero M) (θfam : Fin M → EuclideanSpace ℝ (Fin d)) (hθ : Measurable θfam)
+      (c : ℝ),
+      IsSeparatedFamily g θfam (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n)))) ∧
+      (∀ j k, j ≠ k → klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
+        ≤ ENNReal.ofReal (c ^ 2 * (n : ℝ) *
+            (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n)))).toReal ^ 2)) ∧
+      2 * (c ^ 2 * (n : ℝ) *
+          (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n)))).toReal ^ 2 + Real.log 2)
+        ≤ Real.log (M : ℝ) := by
+  sorry -- TODO(mmx): build the rank(A) range-packing (exists_sparse_packing), pull back via g; KL via multivariateGaussian
+
 /-- **Minimax risk for fixed-design linear regression** (Wainwright Example 15.14): for the Gaussian
 model with design map `A : ℝᵈ → ℝⁿ` and noise variance `v`, the minimax risk in the prediction
 (semi)norm `ρ_X(θ,θ') = ‖A(θ−θ')‖/√n` is at least `(v/128)·rank(A)/n`, where `g θ = A θ/√n` realizes
@@ -46,6 +70,24 @@ theorem linear_regression_minimax_rate {n d : ℕ} (hn : 1 ≤ n) (v : ℝ≥0) 
     -- USER-INPUT: `r = rank(A)`; Wainwright §15.3.3, Ex 15.14.
     (hr : r = Module.finrank ℝ (LinearMap.range A)) :
     ENNReal.ofReal ((v : ℝ) * r / (128 * n)) ≤ minimaxRiskDist (· ^ 2) g P := by
-  sorry
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hnne : (n : ℝ) ≠ 0 := hn0.ne'
+  have hx0 : (0 : ℝ) ≤ Real.sqrt ((v : ℝ) * r / (64 * n)) := Real.sqrt_nonneg _
+  have hΦ : Monotone (fun x : ℝ≥0∞ => x ^ 2) := fun a b hab => pow_le_pow_left' hab 2
+  obtain ⟨M, hMne, θfam, hθ, c, hsep, h35a, h35b⟩ :=
+    linreg_local_packing_data hn v hv r A g P hg hP hr
+  haveI := hMne
+  have key := minimax_local_packing (fun x : ℝ≥0∞ => x ^ 2) g P θfam hθ
+    (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n)))) c (n : ℝ) hΦ hsep h35a h35b
+  have hΦδ : (fun x : ℝ≥0∞ => x ^ 2) (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n))))
+      = ENNReal.ofReal ((v : ℝ) * r / (64 * n)) := by
+    change (ENNReal.ofReal (Real.sqrt ((v : ℝ) * r / (64 * n)))) ^ 2 = _
+    rw [← ENNReal.ofReal_pow hx0, Real.sq_sqrt (by positivity)]
+  rw [hΦδ] at key
+  refine le_trans ?_ key
+  have h2inv : (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal 2⁻¹ := by
+    rw [ENNReal.ofReal_inv_of_pos (by norm_num : (0 : ℝ) < 2), ENNReal.ofReal_ofNat]
+  rw [h2inv, ← ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2⁻¹)]
+  apply le_of_eq; congr 1; field_simp; ring
 
 end StatLean.Minimaxity
