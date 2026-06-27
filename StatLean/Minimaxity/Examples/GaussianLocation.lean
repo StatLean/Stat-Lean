@@ -1,5 +1,6 @@
 import StatLean.Minimaxity.LeCam.TwoPoint
 import StatLean.Minimaxity.ForMathlib.GaussianKL
+import StatLean.Minimaxity.ForMathlib.PinskerInequality
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
@@ -18,7 +19,7 @@ the convex-hull (Example 15.10) and Fano (Example 15.13) routes give the same `�
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.4.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory InformationTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.Minimaxity
@@ -31,7 +32,36 @@ private lemma gaussian_two_point_tvDist_le (n : ℕ) (hn : 1 ≤ n) (v : ℝ≥0
     (P : Kernel ℝ (Fin n → ℝ)) [IsMarkovKernel P]
     (hP : ∀ θ : ℝ, P θ = Measure.pi fun _ : Fin n => gaussianReal θ v) :
     tvDist (P 0) (P (Real.sqrt ((v : ℝ) / n))) ≤ 2⁻¹ := by
-  sorry -- TODO(mmx): tensorize KL over the n-fold product (D = 1/2) then Pinsker (15.2); klDiv_gaussianReal
+  set θ₁ : ℝ := Real.sqrt ((v : ℝ) / n) with hθ₁
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  have hv' : (0 : ℝ) < (v : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
+  have hnne : (n : ℝ) ≠ 0 := hn0.ne'
+  have hvne : (v : ℝ) ≠ 0 := hv'.ne'
+  -- the `n`-fold product KL equals `1/2`
+  have hkl : klDiv (P θ₁) (P 0) = ENNReal.ofReal (1 / 2) := by
+    rw [hP θ₁, hP 0, klDiv_pi_eq_nsmul, klDiv_gaussianReal _ _ _ hv, sub_zero, nsmul_eq_mul,
+        ← ENNReal.ofReal_natCast n, ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    have hθsq : θ₁ ^ 2 = (v : ℝ) / n := Real.sq_sqrt (by positivity)
+    rw [hθsq]
+    field_simp
+  -- Pinsker (reversed argument order): the KL on the RHS is `klDiv (P θ₁) (P 0)`
+  calc tvDist (P 0) (P θ₁)
+      ≤ (2⁻¹ * klDiv (P θ₁) (P 0)) ^ (1 / 2 : ℝ) := pinsker_tv_le_kl (P 0) (P θ₁)
+    _ = 2⁻¹ := by
+        rw [hkl,
+            show (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 2) by
+              rw [show (1 / 2 : ℝ) = (2 : ℝ)⁻¹ by norm_num,
+                  ENNReal.ofReal_inv_of_pos (by norm_num), ENNReal.ofReal_ofNat],
+            ← ENNReal.ofReal_mul (by norm_num),
+            show (1 / 2 : ℝ) * (1 / 2) = 1 / 4 by norm_num,
+            ENNReal.ofReal_rpow_of_nonneg (by norm_num)
+              (by norm_num : (0 : ℝ) ≤ 1 / 2),
+            show ((1 / 4 : ℝ)) ^ (1 / 2 : ℝ) = 1 / 2 by
+              rw [← Real.sqrt_eq_rpow, show (1 / 4 : ℝ) = (1 / 2) ^ 2 by norm_num,
+                  Real.sqrt_sq (by norm_num)],
+            show (1 / 2 : ℝ) = (2 : ℝ)⁻¹ by norm_num,
+            ENNReal.ofReal_inv_of_pos (by norm_num), ENNReal.ofReal_ofNat]
 
 /-- **Minimax rate for the Gaussian location family** (Wainwright Example 15.4, Eq. (15.16b)): for
 the `n`-sample model `P θ = 𝒩(θ, v)^{⊗n}`, the minimax risk for estimating the mean under squared
