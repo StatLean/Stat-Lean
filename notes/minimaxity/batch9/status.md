@@ -5,9 +5,20 @@ Source of truth = `lake build` sorry inventory; this doc tracks intent/progress.
 
 ## State
 
-**Wave 0 (stubbing) — in progress.** Umbrella `StatLean.Minimaxity` stub-gates **green**.
-17/30 files drafted; 14 confirmed green on cluster, 3 gating. No errors; all debts are named
-`sorry` statement-stubs awaiting proof closure.
+**Wave 0 (stubbing) — core complete.** Umbrella `StatLean.Minimaxity` stub-gates **green** (0 errors,
+32 sorries). **22/29 files** drafted and cluster-green (the plan's 30 minus the `FanoInequality`
+merge into `FanoLowerBound`). The entire core theory — keystone risk encoding, all Le Cam / Fano /
+local-packing / Yang–Barron method theorems, the three divergences + Pinsker + Le Cam inequality, the
+entropy appendix, Gaussian KL + max-entropy, three Chapter-5 packing bricks, and the two parametric
+examples — is stated, cited, and type-checking.
+
+**Remaining stubs (7), all hard nonparametric / custom-construction — draft with focused design,
+do NOT hypothesis-launder:** `ForMathlib/Packing/SobolevEntropy` (Ex 5.12, ◆◆ infinite-dim ellipsoid)
+and the 6 examples `Examples/{LinearRegression (prediction semimetric via Ω = pred-space),
+PCA (spiked covariance), LipschitzDensity, QuadraticFunctional, DensityEstimation, Sobolev}`.
+
+**Then:** proof closure — fan out the 32 `sorry`s 4+ concurrent via `lean-fasrc-cluster-claude`,
+verify each (fresh build + `#print axioms` + diff ⊆ touch-set + six-check), merge to `main`.
 
 ## Unit ledger
 
