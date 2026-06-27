@@ -1,40 +1,45 @@
+import StatLean.Minimaxity.Fano.LocalPacking
 import StatLean.Minimaxity.Fano.YangBarron
 import StatLean.Minimaxity.ForMathlib.Packing.SobolevEntropy
 
 /-!
 # Example: minimax risks for generalized Sobolev families (Wainwright Example 15.23)
 
-For nonparametric regression `yᵢ = f*(xᵢ) + σ wᵢ` over a Sobolev ellipsoid `ℱ_α` of smoothness
-`α > 1/2`, the Yang–Barron method (Lemma 15.21) with the metric entropy of `ℱ_α` (Example 5.12)
-gives the minimax risk in squared `L²(ℙ)`-norm
-```
-inf_f̂ sup_{f ∈ ℱ_α} 𝔼[‖f̂ − f‖₂²] ≳ (σ²/n)^{2α/(2α+1)}        (Example 15.23).
-```
+For nonparametric regression over a smoothness-`α` Sobolev ellipsoid `ℱ_α`, the Yang–Barron method
+(Lemma 15.21) with the metric entropy of `ℱ_α` (Example 5.12) gives the minimax risk in squared
+`L²`-norm `≳ (σ²/n)^{2α/(2α+1)}` (Example 15.23). We state the local-packing form: a separation
+`δₙ ≍ (σ²/n)^{α/(2α+1)}` with controlled pairwise KL yields, via `minimax_local_packing`, the rate
+`δₙ² ≍ (σ²/n)^{2α/(2α+1)}`.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Example 15.23.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory InformationTheory
 open scoped ENNReal
 
 namespace StatLean.Minimaxity
 
-/-- **Minimax risk for Sobolev regression** (Wainwright Example 15.23): for the smoothness-`α`
-Sobolev family `ℱ_α` and `n` i.i.d. observations with noise variance `σ²`, the minimax risk in
-squared `L²`-norm is at least `c · (σ²/n)^{2α/(2α+1)}`, via the Yang–Barron bound.
+/-- **Minimax risk for Sobolev regression** (Wainwright Example 15.23): from a packing of the
+smoothness-`α` Sobolev family with separation `δₙ = (σ²/n)^{α/(2α+1)}` and pairwise KL control,
+`minimax_local_packing` gives a minimax risk (squared `L²`, encoded as `edist²`) of at least
+`½ · (σ²/n)^{2α/(2α+1)}`.
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Example 15.23. -/
 theorem sobolev_regression_rate {ι 𝓧 Ω : Type*} [MeasurableSpace ι] [MeasurableSpace 𝓧]
     [MeasurableSpace Ω] [PseudoEMetricSpace Ω] (n : ℕ) (hn : 1 ≤ n) (α σ : ℝ)
     (hα : 1 / 2 < α) (hσ : 0 < σ)
-    (g : ι → Ω) (Pn : Kernel ι 𝓧) [IsMarkovKernel Pn]
-    -- USER-INPUT: `g i` records `fᵢ ∈ ℱ_α` (squared `L²` loss as `edist`); Wainwright §15.3.5, Ex 15.23.
-    (hclass : ∀ i, True) :
-    ∃ c : ℝ, 0 < c ∧
-      ENNReal.ofReal (c * (σ ^ 2 / n) ^ (2 * α / (2 * α + 1)))
-        ≤ minimaxRiskDist (· ^ 2) g Pn := by
+    (g : ι → Ω) (P : Kernel ι 𝓧) [IsMarkovKernel P]
+    {M : ℕ} [NeZero M] (θfam : Fin M → ι) (hθ : Measurable θfam) (c : ℝ) (hM : 2 ≤ M)
+    -- USER-INPUT: separation `δₙ = (σ²/n)^{α/(2α+1)}`; Wainwright §15.3.5, Example 15.23.
+    (hsep : IsSeparatedFamily g θfam (ENNReal.ofReal ((σ ^ 2 / n) ^ (α / (2 * α + 1)))))
+    -- USER-INPUT: pairwise KL control (15.35a) for the Sobolev construction; Wainwright §15.3.5.
+    (h35a : ∀ j k, j ≠ k → klDiv ((P.comap θfam hθ) j) ((P.comap θfam hθ) k)
+      ≤ ENNReal.ofReal (c ^ 2 * n * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2))
+    -- USER-INPUT: packing cardinality (15.35b); Wainwright §15.3.5.
+    (h35b : 2 * (c ^ 2 * n * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2 + Real.log 2) ≤ Real.log (M : ℝ)) :
+    ENNReal.ofReal (2⁻¹ * ((σ ^ 2 / n) ^ (α / (2 * α + 1))) ^ 2) ≤ minimaxRiskDist (· ^ 2) g P := by
   sorry
 
 end StatLean.Minimaxity
