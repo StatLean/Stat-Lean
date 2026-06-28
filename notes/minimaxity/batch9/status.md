@@ -163,3 +163,42 @@ local packing `½Φ(δ)` (15.35); Pinsker `√(½ KL)`; example pre-factors `v/2
 * Parallel sessions can diverge on a shared interface signature (here `+hn`); reconcile at integration.
 * Major reuse: Mathlib `ProbabilityTheory.{minimaxRisk,bayesRisk}` + DPI; `klDiv` + chain rule;
   StatLean `HellingerProduct`.
+
+## Final closure campaign — `StatLean.Minimaxity` is 0-SORRY, full build GREEN (3097 jobs)
+
+A final campaign closed all remaining example/infra debts (#17–25) plus the two gating residuals
+(#11, #15, closed by the parallel session). **Full `StatLean.Minimaxity` builds green with 0 sorries.**
+
+**Closed & full-build-verified:**
+* `#11` sparse-packing q-ary GV, `#15` Fano `condEntropy`/`mapError_integral_le` — parallel session.
+* `#17` `lipschitz_density_pointwise_rate` (Ex 15.7, `n^{-2/3}`) — existential witness on `[-1/2,1/2]`.
+* `#18` `quadratic_functional_two_point_rate` (Ex 15.8, `n^{-1/2}`) — **faithful: absolute loss `Φ=id`,
+  genuine functional `θ=∫(f')²`** (the earlier `(·²)`/decoupled stub conflated abs vs squared loss).
+* `#20` Gaussian, `#21` uniform location (`+n≥2`); `#25` Sobolev metric entropy (`+δ≤1/2`, reuses `#10`).
+* `#22` linear regression — range-isometry sphere-packing + multivariate Gaussian KL; `+r≥40`, loose `2560⁻¹`.
+* `#23` PCA spiked covariance — **pairwise-KL route** (`mutualInformation_le_avg_pairwise_kl` + Sherman–
+  Morrison), eliminating the block-diagonal/symmetric-packing machinery; `+d≥40`, loose `2048⁻¹`.
+* `#24` `gaussian_mutualInfo_le` (Lemma 15.17) — via the **matched-Gaussian KL** + `sum_klDiv_mixture_le`
+  (NO differential-entropy theory needed) + trace identity; `+Σʲ PosDef`.
+* **New `ForMathlib/GaussianKLMulti.lean`**: `klDiv_multivariateGaussian_zero` (Ex 15.13b) — multivariate
+  zero-mean Gaussian KL via KL map-invariance + linear pushforward + spectral diagonalization + 1-D
+  unequal-variance KL; plus public mean-shift corollary `klDiv_multivariateGaussian_smul_one`.
+
+**Removed:** `Examples/QuadraticFunctional.lean` (`#19`, optimal quadratic functional Ex 15.11, `n^{-4/9}`).
+The genuine `n^{-4/9}` needs the sign-vector/χ² mixture (uniform constant), a research-grade
+χ²-over-product-measure formalization with no Mathlib precedent; the only 0-sorry closure found exploited
+the per-`n` existential-constant loophole (a fixed two-point family ⇒ vacuous rate). Removed per user
+decision rather than ship a vacuous proof or a lingering debt.
+
+**Authorized statement repairs (CLAUDE.md §1/§2; all tagged):** existential restructuring of the
+density-family examples (true witnessing sub-experiment vs the false universal-family form); minimal forced
+hypotheses `n≥2`/`δ≤1/2`/`d≥40`/`r≥40`/`Σʲ PosDef`; loose constants (`2048⁻¹`,`2560⁻¹`); domains restricted
+to the book intervals (`[-1/2,1/2]`,`[0,1]`) where the unrestricted-`volume` form was vacuous.
+
+**Process lessons (this campaign):** cluster-claude **wrappers** can be reaped by the local harness mid-run,
+but the **srun job survives** and commits to its worktree — harvest by `git push origin <branch>` from the
+cluster worktree + a fresh `lean-fasrc-build` verify before merge. **Always fresh-build-verify before
+merging** (an orphaned auto-commit of a faithful-`#18` draft did NOT compile — missing `deriv` imports — and
+merging it un-verified broke the area build; caught by the full build, reverted, redone). Existential-`c`
+rate statements (`∃ c>0, c·n^{-r} ≤ risk` with `c` after `n`) are gameable — prefer explicit constants or a
+uniform-`c` form for genuine rate claims.
