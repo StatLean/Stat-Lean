@@ -27,7 +27,6 @@ import StatLean.MultipleTesting.EmpiricalBayes.BayesRisk
 import StatLean.MultipleTesting.ChiSquaredTest.Distribution
 import StatLean.MultipleTesting.Conformal.Coverage
 import StatLean.MultipleTesting.GoodnessOfFit.KolmogorovSmirnov
-import StatLean.MultipleTesting.GoodnessOfFit.HigherCriticism
 
 /-!
 # MultipleTesting — area umbrella
