@@ -4,6 +4,10 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # Examples: pointwise density estimation and quadratic functionals (Wainwright Examples 15.7, 15.8)
@@ -595,7 +599,8 @@ private lemma qbump_integral_zero (δ a : ℝ) (hδ : 0 < δ) (h4δ : 4 * δ ≤
   have hint1 : IntegrableOn (fun x => tent δ (x - δ)) (Set.Icc (0:ℝ) 1) volume :=
     ((tent_continuous δ).comp (continuous_id.sub continuous_const)).integrableOn_Icc
   have hint2 : IntegrableOn (fun x => tent δ (x - δ - 2 * δ)) (Set.Icc (0:ℝ) 1) volume :=
-    ((tent_continuous δ).comp (continuous_id.sub continuous_const)).integrableOn_Icc
+    ((tent_continuous δ).comp
+      ((continuous_id.sub continuous_const).sub continuous_const)).integrableOn_Icc
   unfold qbump
   rw [integral_const_mul]
   have hzero : ∫ x in Set.Icc (0:ℝ) 1, hatφ δ (x - δ) ∂volume = 0 := by
