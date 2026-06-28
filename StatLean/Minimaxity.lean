@@ -26,7 +26,6 @@ import StatLean.Minimaxity.Examples.UniformLocation
 import StatLean.Minimaxity.Examples.LinearRegression
 import StatLean.Minimaxity.Examples.PCA
 import StatLean.Minimaxity.Examples.LipschitzDensity
-import StatLean.Minimaxity.Examples.QuadraticFunctional
 import StatLean.Minimaxity.Examples.DensityEstimation
 import StatLean.Minimaxity.Examples.Sobolev
 
