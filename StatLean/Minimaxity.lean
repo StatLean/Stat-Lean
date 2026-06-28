@@ -7,6 +7,7 @@ import StatLean.Minimaxity.ForMathlib.PinskerInequality
 import StatLean.Minimaxity.ForMathlib.LeCamInequality
 import StatLean.Minimaxity.ForMathlib.Entropy
 import StatLean.Minimaxity.ForMathlib.GaussianKL
+import StatLean.Minimaxity.ForMathlib.GaussianKLMulti
 import StatLean.Minimaxity.ForMathlib.GaussianMaxEntropy
 import StatLean.Minimaxity.ForMathlib.Packing.HammingPacking
 import StatLean.Minimaxity.ForMathlib.Packing.SpherePacking
