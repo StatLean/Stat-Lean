@@ -256,6 +256,7 @@ private lemma sparse_linreg_local_packing_data {n d s : ℕ} (hn : 1 ≤ n)
         _ = (n : ℝ) * (γ : ℝ) ^ 2 * (64 * δ0 ^ 2) := by
             rw [show (Real.sqrt n * (γ : ℝ) * (8 * δ0)) * (Real.sqrt n * (γ : ℝ) * (8 * δ0))
                 = (Real.sqrt n * Real.sqrt n) * ((γ : ℝ) ^ 2 * (64 * δ0 ^ 2)) from by ring, hsqn]
+            ring
     rw [div_le_iff₀ (by positivity : (0 : ℝ) < 2 * (v : ℝ))]
     have hrhseq : c ^ 2 * (n : ℝ) * δ0 ^ 2 * (2 * (v : ℝ))
         = (n : ℝ) * (γ : ℝ) ^ 2 * (64 * δ0 ^ 2) := by
