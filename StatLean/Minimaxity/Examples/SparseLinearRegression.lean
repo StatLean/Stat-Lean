@@ -45,7 +45,11 @@ cardinality satisfies (15.35b).
 
 The separation/rate constant is loosened (CLAUDE.md §1) to fit the `(s/2)log((d−s)/s) − s·log2`
 Gilbert–Varshamov sparse-packing brick. -/
-private lemma sparse_linreg_local_packing_data {n d s : ℕ} (hn : 1 ≤ n) (hs : 0 < s) (hds : 8 * s ≤ d)
+private lemma sparse_linreg_local_packing_data {n d s : ℕ} (hn : 1 ≤ n)
+    -- LEAN-ONLY: 10 ≤ s — the local-packing/Fano cardinality (15.35b) is vacuous for small s; the book's range is 10 ≤ s ≤ d/2.
+    (hs0 : 10 ≤ s)
+    -- LEAN-ONLY: 8s ≤ d — stronger than the book's s ≤ d/2, to absorb the −s·log2 slack in the sparse-packing brick.
+    (hds : 8 * s ≤ d)
     (v : ℝ≥0) (hv : v ≠ 0) (γ : ℝ≥0) (hγ : γ ≠ 0)
     (A : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n))
     -- USER-INPUT: `γ` is the `2s`-restricted singular value `γ₂ₛ = max_{|T|=2s} σ_max(X_T)/√n`; Wainwright Ex 15.16.
@@ -80,7 +84,11 @@ slack is absorbed).
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Example 15.16. -/
-theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n) (hs : 0 < s) (hds : 8 * s ≤ d)
+theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n)
+    -- LEAN-ONLY: 10 ≤ s — the local-packing/Fano cardinality (15.35b) is vacuous for small s; the book's range is 10 ≤ s ≤ d/2.
+    (hs0 : 10 ≤ s)
+    -- LEAN-ONLY: 8s ≤ d — stronger than the book's s ≤ d/2, to absorb the −s·log2 slack in the sparse-packing brick.
+    (hds : 8 * s ≤ d)
     (v : ℝ≥0) (hv : v ≠ 0) (γ : ℝ≥0) (hγ : γ ≠ 0)
     (A : EuclideanSpace ℝ (Fin d) →ₗ[ℝ] EuclideanSpace ℝ (Fin n))
     -- USER-INPUT: `γ` is the `2s`-restricted singular value `γ₂ₛ = max_{|T|=2s} σ_max(X_T)/√n`; Wainwright Ex 15.16.
@@ -93,7 +101,7 @@ theorem sparse_linear_regression_minimax_rate {n d s : ℕ} (hn : 1 ≤ n) (hs :
     ENNReal.ofReal ((v : ℝ) * (s : ℝ) * Real.log (((d : ℝ) - s) / s) / (20480 * (γ : ℝ) ^ 2 * n))
       ≤ minimaxRiskDist (· ^ 2) Subtype.val P := by
   obtain ⟨M, hMne, θfam, hθ, c, hsep, h35a, h35b⟩ :=
-    sparse_linreg_local_packing_data hn hs hds v hv γ hγ A hγbd P hP
+    sparse_linreg_local_packing_data hn hs0 hds v hv γ hγ A hγbd P hP
   sorry
 
 end StatLean.Minimaxity
