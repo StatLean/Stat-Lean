@@ -24,6 +24,7 @@ import StatLean.Minimaxity.Fano.YangBarron
 import StatLean.Minimaxity.Examples.GaussianLocation
 import StatLean.Minimaxity.Examples.UniformLocation
 import StatLean.Minimaxity.Examples.LinearRegression
+import StatLean.Minimaxity.Examples.SparseLinearRegression
 import StatLean.Minimaxity.Examples.PCA
 import StatLean.Minimaxity.Examples.LipschitzDensity
 import StatLean.Minimaxity.Examples.DensityEstimation
