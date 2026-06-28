@@ -499,80 +499,403 @@ theorem lipschitz_density_pointwise_rate (n : ℕ) (hn : 1 ≤ n) :
       _ ≤ 4⁻¹ * (2⁻¹ * hellingerModulus (fun i => lipDensity δ i 0) P
             (ENNReal.ofReal (1 / (2 * Real.sqrt n)))) ^ 2 := by gcongr
 
-/-- **Lower bound for a quadratic functional** (Wainwright Example 15.8): there is a two-point family
-of densities on `[-1/2, 1/2]`, bounded below by `1/2`, whose `n`-fold i.i.d. product model has minimax
-squared-error risk for a real functional at least `c · n^{-1/2}` (the suboptimal two-point rate; the
-functional is left abstract, realizing the value-gap the construction provides).
+/-! ## The quadratic-functional two-point family (Wainwright Example 15.8)
 
--- USER-INPUT: witnessing density sub-experiment on [-1/2,1/2] realizing the rate (Wainwright Ex 15.7/15.8); a lower bound on the full-class minimax.
+For the quadratic functional `θ(f) = ∫₀¹ (f')²`, a *single* calibrated bump suffices for the two-point
+lower bound. On `[0,1]` we use `qbump δ a = a · φ(· − δ)` where `φ = hatφ δ` is the mean-zero hat of
+Eq. (15.19) shifted to have support `[0, 4δ]`, with width parameter `δ ≍ n^{-1/4}` and amplitude
+`a ≍ n^{-1/8}`. The alternative density is `g = 1 + qbump`, the null is the uniform `1`.
+
+* **Genuine functional gap.** `g` is piecewise linear; on the rising edge `(0, δ)` it equals `1 + a·x`,
+  so `(g')² = a²` there, giving `θ(g) = ∫₀¹ (g')² ≥ a²·δ` (while `θ(1) = 0`). With `a²δ = r²/4` and
+  `r = n^{-1/4}`, the gap is `≍ n^{-1/2}`.
+* **Hellinger admissibility.** `H²(1 ‖ g) ≤ ∫ qbump² ≤ 4a²δ³ = 1/(16n) ≤ (1/(2√n))²`, so the pair is
+  admissible at the critical radius and `minimax_functional_modulus` with the identity distortion
+  `Φ = id` yields `minimaxRiskDist id θ Pn ≥ ⅛·(gap) ≍ n^{-1/2}`. -/
+
+/-- The (shifted, amplified) single bump `qbump δ a x = a · hatφ δ (x − δ)`, supported on `[0, 4δ]`. -/
+private noncomputable def qbump (δ a x : ℝ) : ℝ := a * hatφ δ (x - δ)
+
+/-- The two-point density family on `[0,1]`: `false ↦ 1` (uniform), `true ↦ 1 + qbump`. -/
+private noncomputable def qDensity (δ a : ℝ) : Bool → ℝ → ℝ :=
+  fun i x => cond i (1 + qbump δ a x) 1
+
+@[simp] private lemma qDensity_false (δ a x : ℝ) : qDensity δ a false x = 1 := rfl
+
+@[simp] private lemma qDensity_true (δ a x : ℝ) : qDensity δ a true x = 1 + qbump δ a x := rfl
+
+private lemma qbump_continuous (δ a : ℝ) : Continuous (qbump δ a) :=
+  continuous_const.mul ((hatφ_continuous δ).comp (continuous_id.sub continuous_const))
+
+private lemma qDensity_continuous (δ a : ℝ) (i : Bool) : Continuous (qDensity δ a i) := by
+  cases i
+  · exact continuous_const
+  · exact continuous_const.add (qbump_continuous δ a)
+
+private lemma qDensity_measurable (δ a : ℝ) (i : Bool) : Measurable (qDensity δ a i) :=
+  (qDensity_continuous δ a i).measurable
+
+private lemma qbump_abs_le (δ a : ℝ) (ha : 0 ≤ a) (hδ : 0 ≤ δ) (x : ℝ) : |qbump δ a x| ≤ a * δ := by
+  unfold qbump
+  rw [abs_mul, abs_of_nonneg ha]
+  exact mul_le_mul_of_nonneg_left (hatφ_abs_le δ hδ (x - δ)) ha
+
+private lemma qbump_eq_zero_of_notMem (δ a : ℝ) (hδ : 0 ≤ δ) {x : ℝ}
+    (hx : x < 0 ∨ 4 * δ < x) : qbump δ a x = 0 := by
+  unfold qbump
+  have h : hatφ δ (x - δ) = 0 := by
+    apply hatφ_eq_zero_of_lt δ hδ
+    rcases hx with h | h
+    · left; linarith
+    · right; linarith
+  rw [h, mul_zero]
+
+private lemma qDensity_ge (δ a : ℝ) (ha : 0 ≤ a) (hδ : 0 ≤ δ) (haδ : a * δ ≤ 1 / 2)
+    (i : Bool) (x : ℝ) : (1 / 2 : ℝ) ≤ qDensity δ a i x := by
+  cases i
+  · simp only [qDensity_false]; norm_num
+  · simp only [qDensity_true]
+    have h2 : -(a * δ) ≤ qbump δ a x := (abs_le.mp (qbump_abs_le δ a ha hδ x)).1
+    linarith
+
+private lemma qDensity_pos (δ a : ℝ) (ha : 0 ≤ a) (hδ : 0 ≤ δ) (haδ : a * δ ≤ 1 / 2)
+    (i : Bool) (x : ℝ) : 0 < qDensity δ a i x :=
+  lt_of_lt_of_le (by norm_num) (qDensity_ge δ a ha hδ haδ i x)
+
+/-! ## Mass and probability-measure facts on `[0,1]` -/
+
+/-- `∫_{Icc 0 1} ψ = ∫_ℝ ψ` when `ψ` vanishes outside `[0,1]`. -/
+private lemma setIntegral_Icc01_eq_integral (ψ : ℝ → ℝ)
+    (hψ : ∀ x ∉ Set.Icc (0:ℝ) 1, ψ x = 0) :
+    ∫ x in Set.Icc (0:ℝ) 1, ψ x ∂volume = ∫ x, ψ x ∂volume := by
+  rw [← integral_indicator measurableSet_Icc]
+  congr 1; funext x
+  by_cases hx : x ∈ Set.Icc (0:ℝ) 1
+  · rw [Set.indicator_of_mem hx]
+  · rw [Set.indicator_of_notMem hx, hψ x hx]
+
+private lemma integral_one_Icc01 : ∫ _ in Set.Icc (0:ℝ) 1, (1:ℝ) ∂volume = 1 := by
+  rw [setIntegral_const, smul_eq_mul, mul_one, measureReal_def, Real.volume_Icc, sub_zero,
+    ENNReal.ofReal_one, ENNReal.toReal_one]
+
+private lemma qbump_integral_zero (δ a : ℝ) (hδ : 0 < δ) (h4δ : 4 * δ ≤ 1) :
+    ∫ x in Set.Icc (0:ℝ) 1, qbump δ a x ∂volume = 0 := by
+  have hs1 : ∀ x ∉ Set.Icc (0:ℝ) 1, tent δ (x - δ) = 0 := by
+    intro x hx; rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
+    apply tent_eq_zero
+    rcases hx with h | h
+    · rw [abs_of_neg (by linarith : x - δ < 0)]; linarith
+    · rw [abs_of_pos (by linarith : (0:ℝ) < x - δ)]; linarith
+  have hs2 : ∀ x ∉ Set.Icc (0:ℝ) 1, tent δ (x - δ - 2 * δ) = 0 := by
+    intro x hx; rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
+    apply tent_eq_zero
+    rcases hx with h | h
+    · rw [abs_of_neg (by linarith : x - δ - 2 * δ < 0)]; linarith
+    · rw [abs_of_pos (by linarith : (0:ℝ) < x - δ - 2 * δ)]; linarith
+  have hint1 : IntegrableOn (fun x => tent δ (x - δ)) (Set.Icc (0:ℝ) 1) volume :=
+    ((tent_continuous δ).comp (continuous_id.sub continuous_const)).integrableOn_Icc
+  have hint2 : IntegrableOn (fun x => tent δ (x - δ - 2 * δ)) (Set.Icc (0:ℝ) 1) volume :=
+    ((tent_continuous δ).comp (continuous_id.sub continuous_const)).integrableOn_Icc
+  unfold qbump
+  rw [integral_const_mul]
+  have hzero : ∫ x in Set.Icc (0:ℝ) 1, hatφ δ (x - δ) ∂volume = 0 := by
+    calc ∫ x in Set.Icc (0:ℝ) 1, hatφ δ (x - δ) ∂volume
+        = ∫ x in Set.Icc (0:ℝ) 1, (tent δ (x - δ) - tent δ (x - δ - 2 * δ)) ∂volume := by
+          simp only [hatφ]
+      _ = (∫ x in Set.Icc (0:ℝ) 1, tent δ (x - δ) ∂volume)
+            - ∫ x in Set.Icc (0:ℝ) 1, tent δ (x - δ - 2 * δ) ∂volume := integral_sub hint1 hint2
+      _ = (∫ x, tent δ (x - δ) ∂volume) - ∫ x, tent δ (x - δ - 2 * δ) ∂volume := by
+          rw [setIntegral_Icc01_eq_integral _ hs1, setIntegral_Icc01_eq_integral _ hs2]
+      _ = 0 := by
+          rw [show (fun x => tent δ (x - δ - 2 * δ)) = (fun x => tent δ (x - 3 * δ)) from by
+                funext x; congr 1; ring,
+            integral_sub_right_eq_self (tent δ) δ, integral_sub_right_eq_self (tent δ) (3 * δ)]
+          ring
+  rw [hzero, mul_zero]
+
+/-- Each density `1 + qbump` (and the uniform `1`) integrates to one over `[0,1]`, hence its
+`withDensity` against the restricted Lebesgue measure is a probability measure. -/
+private lemma qDensity_isProbabilityMeasure (δ a : ℝ) (hδ : 0 < δ) (h4δ : 4 * δ ≤ 1) (ha : 0 ≤ a)
+    (haδ : a * δ ≤ 1 / 2) (i : Bool) :
+    IsProbabilityMeasure ((volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+      fun x => ENNReal.ofReal (qDensity δ a i x)) := by
+  have hnn : ∀ x, 0 ≤ qDensity δ a i x :=
+    fun x => (qDensity_pos δ a ha hδ.le haδ i x).le
+  have hint : IntegrableOn (qDensity δ a i) (Set.Icc (0:ℝ) 1) volume :=
+    (qDensity_continuous δ a i).integrableOn_Icc
+  have hmass : ∫ x in Set.Icc (0:ℝ) 1, qDensity δ a i x ∂volume = 1 := by
+    cases i
+    · simp only [qDensity_false]; exact integral_one_Icc01
+    · simp only [qDensity_true]
+      rw [integral_add (continuous_const.integrableOn_Icc) ((qbump_continuous δ a).integrableOn_Icc),
+        qbump_integral_zero δ a hδ h4δ, add_zero, integral_one_Icc01]
+  constructor
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_restrict MeasurableSet.univ,
+    Set.univ_inter,
+    ← ofReal_integral_eq_lintegral_ofReal hint (Filter.Eventually.of_forall hnn), hmass,
+    ENNReal.ofReal_one]
+
+/-! ## The Hellinger bound for the two-point family -/
+
+/-- The squared Hellinger distance between the uniform density and the bump density is `≤ 4a²δ³`. -/
+private lemma qDensity_sqHellinger_bound (δ a : ℝ) (hδ : 0 < δ) (h4δ : 4 * δ ≤ 1)
+    (ha : 0 ≤ a) (haδ : a * δ ≤ 1 / 2) :
+    sqHellinger
+        ((volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+          fun x => ENNReal.ofReal (qDensity δ a false x))
+        ((volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+          fun x => ENNReal.ofReal (qDensity δ a true x))
+      ≤ ENNReal.ofReal (4 * a ^ 2 * δ ^ 3) := by
+  haveI := qDensity_isProbabilityMeasure δ a hδ h4δ ha haδ false
+  haveI := qDensity_isProbabilityMeasure δ a hδ h4δ ha haδ true
+  rw [sqHellinger_withDensity_eq _ (qDensity δ a false) (qDensity δ a true)
+      (qDensity_measurable δ a false) (qDensity_measurable δ a true)
+      (qDensity_pos δ a ha hδ.le haδ false) (qDensity_pos δ a ha hδ.le haδ true)]
+  have hstep1 : ∫⁻ x, ENNReal.ofReal ((Real.sqrt (qDensity δ a false x)
+        - Real.sqrt (qDensity δ a true x)) ^ 2) ∂(volume.restrict (Set.Icc (0:ℝ) 1))
+      ≤ ∫⁻ x, (Set.Icc (0:ℝ) (4 * δ)).indicator (fun _ => ENNReal.ofReal (a ^ 2 * δ ^ 2)) x
+          ∂(volume.restrict (Set.Icc (0:ℝ) 1)) := by
+    apply lintegral_mono
+    intro x
+    simp only [qDensity_false, qDensity_true, Real.sqrt_one]
+    by_cases hx : x ∈ Set.Icc (0:ℝ) (4 * δ)
+    · rw [Set.indicator_of_mem hx]
+      refine ENNReal.ofReal_le_ofReal (le_trans (sqrt_perturb_sq_le (qbump δ a x) ?_) ?_)
+      · have h := (abs_le.mp (qbump_abs_le δ a ha hδ.le x)).1
+        nlinarith [h, haδ]
+      · rw [← sq_abs (qbump δ a x)]
+        have h := qbump_abs_le δ a ha hδ.le x
+        nlinarith [h, abs_nonneg (qbump δ a x), mul_nonneg ha hδ.le]
+    · rw [Set.indicator_of_notMem hx]
+      have hz : qbump δ a x = 0 := by
+        rw [Set.mem_Icc, not_and_or, not_le, not_le] at hx
+        exact qbump_eq_zero_of_notMem δ a hδ.le hx
+      rw [hz]; simp
+  calc ∫⁻ x, ENNReal.ofReal ((Real.sqrt (qDensity δ a false x)
+          - Real.sqrt (qDensity δ a true x)) ^ 2) ∂(volume.restrict (Set.Icc (0:ℝ) 1))
+      ≤ ∫⁻ x, (Set.Icc (0:ℝ) (4 * δ)).indicator (fun _ => ENNReal.ofReal (a ^ 2 * δ ^ 2)) x
+          ∂(volume.restrict (Set.Icc (0:ℝ) 1)) := hstep1
+    _ ≤ ∫⁻ x, (Set.Icc (0:ℝ) (4 * δ)).indicator (fun _ => ENNReal.ofReal (a ^ 2 * δ ^ 2)) x
+          ∂volume := setLIntegral_le_lintegral _ _
+    _ = ENNReal.ofReal (a ^ 2 * δ ^ 2) * volume (Set.Icc (0:ℝ) (4 * δ)) := by
+        rw [lintegral_indicator measurableSet_Icc, setLIntegral_const]
+    _ = ENNReal.ofReal (4 * a ^ 2 * δ ^ 3) := by
+        rw [Real.volume_Icc, ← ENNReal.ofReal_mul (by positivity)]
+        congr 1; ring
+
+/-- The critical-radius admissibility of the two-point pair: with `4a²δ³ = 1/(16n)`, the squared
+Hellinger distance is `≤ (1/(2√n))²`. -/
+private lemma qDensity_admissible (n : ℕ) (hn : 1 ≤ n) (δ a : ℝ) (hδ : 0 < δ) (h4δ : 4 * δ ≤ 1)
+    (ha : 0 ≤ a) (haδ : a * δ ≤ 1 / 2) (hbound : 4 * a ^ 2 * δ ^ 3 = 1 / (16 * (n : ℝ))) :
+    sqHellinger
+        ((volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+          fun x => ENNReal.ofReal (qDensity δ a false x))
+        ((volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+          fun x => ENNReal.ofReal (qDensity δ a true x))
+      ≤ (ENNReal.ofReal (1 / (2 * Real.sqrt n))) ^ 2 := by
+  have hnpos : (0:ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
+  refine le_trans (qDensity_sqHellinger_bound δ a hδ h4δ ha haδ) ?_
+  rw [← ENNReal.ofReal_pow (by positivity)]
+  apply ENNReal.ofReal_le_ofReal
+  have hsq : (1 / (2 * Real.sqrt n)) ^ 2 = 1 / (4 * (n : ℝ)) := by
+    rw [div_pow, one_pow, mul_pow, Real.sq_sqrt hnpos.le]; ring
+  rw [hsq, hbound]
+  exact one_div_le_one_div_of_le (by linarith) (by linarith)
+
+/-! ## The genuine functional gap `∫₀¹ (g')² ≥ a²δ` -/
+
+/-- The amplified, shifted bump is `a`-Lipschitz (`hatφ` is `1`-Lipschitz). -/
+private lemma qDensity_true_lipschitz (δ a : ℝ) (hδ : 0 ≤ δ) (ha : 0 ≤ a) :
+    LipschitzWith a.toNNReal (qDensity δ a true) := by
+  apply LipschitzWith.of_dist_le_mul
+  intro x y
+  simp only [qDensity_true, qbump]
+  rw [Real.dist_eq, Real.dist_eq,
+    show (1 + a * hatφ δ (x - δ)) - (1 + a * hatφ δ (y - δ))
+        = a * (hatφ δ (x - δ) - hatφ δ (y - δ)) by ring,
+    abs_mul, abs_of_nonneg ha, Real.coe_toNNReal a ha]
+  apply mul_le_mul_of_nonneg_left _ ha
+  have h := (hatφ_lipschitz δ hδ).dist_le_mul (x - δ) (y - δ)
+  rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul] at h
+  calc |hatφ δ (x - δ) - hatφ δ (y - δ)| ≤ |(x - δ) - (y - δ)| := h
+    _ = |x - y| := by rw [show (x - δ) - (y - δ) = x - y by ring]
+
+/-- On the negative slope window `(-δ, 0)` the hat is the line `δ + z` (slope `+1`). -/
+private lemma hatφ_on_Ioo_neg (δ : ℝ) (hδ : 0 < δ) {z : ℝ} (hz : z ∈ Set.Ioo (-δ) 0) :
+    hatφ δ z = δ + z := by
+  obtain ⟨h1, h2⟩ := hz
+  rw [hatφ_eq_ite δ hδ.le z, if_pos (by linarith : z ≤ δ)]
+  unfold tent
+  rw [abs_of_neg h2, max_eq_left (by linarith : (0:ℝ) ≤ δ - -z)]
+  ring
+
+/-- On the rising edge `(0, δ)`, `g = 1 + qbump` equals the line `1 + a·x`, so `g' = a`. -/
+private lemma qDensity_true_deriv_on (δ a : ℝ) (hδ : 0 < δ) {x : ℝ} (hx : x ∈ Set.Ioo (0:ℝ) δ) :
+    deriv (qDensity δ a true) x = a := by
+  have hev : (qDensity δ a true) =ᶠ[nhds x] (fun y => 1 + a * y) :=
+    Filter.eventuallyEq_of_mem (Ioo_mem_nhds hx.1 hx.2) (fun y hy => by
+      change (1 + qbump δ a y) = 1 + a * y
+      unfold qbump
+      rw [hatφ_on_Ioo_neg δ hδ ⟨by linarith [hy.1], by linarith [hy.2]⟩]
+      ring)
+  have hd : HasDerivAt (fun y => 1 + a * y) a x := by
+    simpa using ((hasDerivAt_id x).const_mul a).const_add 1
+  exact (hd.congr_of_eventuallyEq hev).deriv
+
+/-- **The genuine functional value-gap.** `θ(g) = ∫₀¹ (g')² ≥ a²·δ`, the integral being lower-bounded
+by its mass `a²` over the rising-edge interval `(0, δ)`. -/
+private lemma qDensity_gap_lower (δ a : ℝ) (hδ : 0 < δ) (ha : 0 ≤ a) (h4δ : 4 * δ ≤ 1) :
+    a ^ 2 * δ ≤ ∫ x in Set.Icc (0:ℝ) 1, (deriv (qDensity δ a true) x) ^ 2 ∂volume := by
+  have hmeas : Measurable (deriv (qDensity δ a true)) := measurable_deriv _
+  have hbound : ∀ x, (deriv (qDensity δ a true) x) ^ 2 ≤ a ^ 2 := by
+    intro x
+    have hb : |deriv (qDensity δ a true) x| ≤ a := by
+      have h := norm_deriv_le_of_lipschitz (qDensity_true_lipschitz δ a hδ.le ha) (x₀ := x)
+      rwa [Real.norm_eq_abs, Real.coe_toNNReal a ha] at h
+    rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+  have hint : IntegrableOn (fun x => (deriv (qDensity δ a true) x) ^ 2) (Set.Icc (0:ℝ) 1) volume := by
+    refine Integrable.mono' (g := fun _ => a ^ 2)
+      (integrableOn_const (hs := by rw [Real.volume_Icc]; exact ENNReal.ofReal_ne_top))
+      (hmeas.pow_const 2).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]; exact hbound x
+  have hind_int : IntegrableOn
+      (fun x => (Set.Ioo (0:ℝ) δ).indicator (fun _ => a ^ 2) x) (Set.Icc (0:ℝ) 1) volume := by
+    refine Integrable.mono' (g := fun _ => a ^ 2)
+      (integrableOn_const (hs := by rw [Real.volume_Icc]; exact ENNReal.ofReal_ne_top))
+      ((measurable_const.indicator measurableSet_Ioo).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun x => ?_)
+    by_cases hx : x ∈ Set.Ioo (0:ℝ) δ
+    · rw [Set.indicator_of_mem hx, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    · rw [Set.indicator_of_notMem hx, norm_zero]; positivity
+  have hpt : ∀ x, (Set.Ioo (0:ℝ) δ).indicator (fun _ => a ^ 2) x
+      ≤ (deriv (qDensity δ a true) x) ^ 2 := by
+    intro x
+    by_cases hx : x ∈ Set.Ioo (0:ℝ) δ
+    · simp only [Set.indicator_of_mem hx, qDensity_true_deriv_on δ a hδ hx, le_refl]
+    · rw [Set.indicator_of_notMem hx]; positivity
+  have hval : ∫ x in Set.Icc (0:ℝ) 1, (Set.Ioo (0:ℝ) δ).indicator (fun _ => a ^ 2) x ∂volume
+      = a ^ 2 * δ := by
+    rw [setIntegral_indicator measurableSet_Ioo]
+    have hinter : Set.Icc (0:ℝ) 1 ∩ Set.Ioo 0 δ = Set.Ioo 0 δ :=
+      Set.inter_eq_right.mpr (fun x hx => ⟨hx.1.le, le_trans hx.2.le (by linarith)⟩)
+    rw [hinter, setIntegral_const, measureReal_def, Real.volume_Ioo, sub_zero,
+      ENNReal.toReal_ofReal hδ.le, smul_eq_mul]
+    ring
+  calc a ^ 2 * δ
+      = ∫ x in Set.Icc (0:ℝ) 1, (Set.Ioo (0:ℝ) δ).indicator (fun _ => a ^ 2) x ∂volume :=
+        hval.symm
+    _ ≤ ∫ x in Set.Icc (0:ℝ) 1, (deriv (qDensity δ a true) x) ^ 2 ∂volume :=
+        setIntegral_mono hind_int hint hpt
+
+/-! ## Assembly -/
+
+/-- `4⁻¹·(2⁻¹·ofReal d) = ofReal(d/8)`. -/
+private lemma enn_quarter_half (d : ℝ) (hd : 0 ≤ d) :
+    (4:ℝ≥0∞)⁻¹ * (2⁻¹ * ENNReal.ofReal d) = ENNReal.ofReal (d / 8) := by
+  have h2 : (2:ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 2) := by
+    rw [show (1 / 2 : ℝ) = 2⁻¹ by norm_num, ENNReal.ofReal_inv_of_pos (by norm_num),
+      ENNReal.ofReal_ofNat]
+  have h4 : (4:ℝ≥0∞)⁻¹ = ENNReal.ofReal (1 / 4) := by
+    rw [show (1 / 4 : ℝ) = 4⁻¹ by norm_num, ENNReal.ofReal_inv_of_pos (by norm_num),
+      ENNReal.ofReal_ofNat]
+  rw [h2, h4, ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_mul (by norm_num)]
+  congr 1; ring
+
+/-- **Lower bound for a quadratic functional** (Wainwright Example 15.8): there is a two-point family
+of densities on `[0, 1]`, bounded below by `1/2`, whose `n`-fold i.i.d. product model has minimax
+*absolute-error* risk for the genuine quadratic functional `θ(f) = ∫₀¹ (f')²` at least `c · n^{-1/2}`
+(the suboptimal two-point rate; cf. the optimal `n^{-4/9}` realized by the many-point convex-hull
+argument in `QuadraticFunctional.lean`).
+
+-- USER-INPUT: absolute-error loss (Φ=id) with the genuine functional θ(f)=∫(f')² and book rate n^{-1/2} (Wainwright Ex 15.8); the suboptimal two-point bound (cf. optimal n^{-4/9} in QuadraticFunctional.lean).
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.8. -/
 theorem quadratic_functional_two_point_rate (n : ℕ) (hn : 1 ≤ n) :
-    ∃ (ι : Type) (_ : MeasurableSpace ι) (_ : Nonempty ι) (f : ι → ℝ → ℝ)
-      (_ : ∀ i, IsProbabilityMeasure
-            ((volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
-              fun x => ENNReal.ofReal (f i x)))
-      (θfunc : ι → ℝ) (Pn : Kernel ι (Fin n → ℝ)) (_ : IsMarkovKernel Pn),
-      (∀ i, ∀ x, (1 / 2 : ℝ) ≤ f i x) ∧
+    ∃ (ι : Type) (_ : MeasurableSpace ι) (f : ι → ℝ → ℝ) (θfunc : ι → ℝ)
+      (Pn : Kernel ι (Fin n → ℝ)) (_ : IsMarkovKernel Pn),
+      (∀ i, ∀ x ∈ Set.Icc (0:ℝ) 1, (1 / 2 : ℝ) ≤ f i x) ∧
+      (∀ i, θfunc i = ∫ x in Set.Icc (0:ℝ) 1, (deriv (f i) x) ^ 2) ∧
       (∀ i, Pn i = Measure.pi fun _ : Fin n =>
-            (volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
-              fun x => ENNReal.ofReal (f i x)) ∧
+            (volume.restrict (Set.Icc (0:ℝ) 1)).withDensity fun x => ENNReal.ofReal (f i x)) ∧
       ∃ c : ℝ, 0 < c ∧
-        ENNReal.ofReal (c * (n : ℝ) ^ (-(1 : ℝ) / 2)) ≤ minimaxRiskDist (· ^ 2) θfunc Pn := by
+        ENNReal.ofReal (c * (n : ℝ) ^ (-(1 : ℝ) / 2)) ≤ minimaxRiskDist id θfunc Pn := by
   have hnpos : (0:ℝ) < n := by exact_mod_cast Nat.lt_of_lt_of_le Nat.zero_lt_one hn
-  set t : ℝ := (n : ℝ) ^ (-(1 : ℝ) / 3) with ht
-  have htpos : 0 < t := Real.rpow_pos_of_pos hnpos _
-  have htle1 : t ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) (by norm_num)
-  set δ : ℝ := t / 6 with hδdef
-  have hδpos : 0 < δ := by positivity
-  have hδ6 : δ ≤ 1 / 6 := by rw [hδdef]; linarith
-  have ht3 : t ^ 3 = 1 / (n : ℝ) := by
-    rw [ht, ← Real.rpow_natCast ((n : ℝ) ^ (-(1 : ℝ) / 3)) 3, ← Real.rpow_mul hnpos.le]
+  set r : ℝ := (n : ℝ) ^ (-(1 : ℝ) / 4) with hr
+  have hrpos : 0 < r := Real.rpow_pos_of_pos hnpos _
+  have hrle1 : r ≤ 1 := Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) (by norm_num)
+  have hr4 : r ^ 4 = 1 / (n : ℝ) := by
+    rw [hr, ← Real.rpow_natCast ((n : ℝ) ^ (-(1 : ℝ) / 4)) 4, ← Real.rpow_mul hnpos.le]
     norm_num
     rw [Real.rpow_neg_one]
-  have hδ3 : δ ^ 3 = 1 / (216 * n) := by rw [hδdef, div_pow, ht3]; ring
-  -- the abstract functional with gap `n^{-1/4}`
-  set gap : ℝ := (n : ℝ) ^ (-(1 : ℝ) / 4) with hgapdef
-  have hgappos : 0 < gap := Real.rpow_pos_of_pos hnpos _
-  set θfunc : Bool → ℝ := fun i => cond i gap 0 with hθ
+  have hr2 : r ^ 2 = (n : ℝ) ^ (-(1 : ℝ) / 2) := by
+    rw [hr, ← Real.rpow_natCast ((n : ℝ) ^ (-(1 : ℝ) / 4)) 2, ← Real.rpow_mul hnpos.le]
+    norm_num
+  set δ : ℝ := r / 4 with hδdef
+  have hδpos : 0 < δ := by rw [hδdef]; positivity
+  have h4δ : 4 * δ ≤ 1 := by rw [hδdef, show 4 * (r / 4) = r by ring]; exact hrle1
+  have hδ4 : δ ≤ 1 / 4 := by rw [hδdef]; linarith
+  set a : ℝ := Real.sqrt r with hadef
+  have ha : 0 ≤ a := Real.sqrt_nonneg _
+  have ha2 : a ^ 2 = r := Real.sq_sqrt hrpos.le
+  have ha1 : a ≤ 1 := by
+    rw [hadef, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+    exact Real.sqrt_le_sqrt hrle1
+  have haδ : a * δ ≤ 1 / 2 := by
+    have := mul_le_mul ha1 hδ4 hδpos.le (zero_le_one)
+    linarith
+  have hbound : 4 * a ^ 2 * δ ^ 3 = 1 / (16 * (n : ℝ)) := by
+    have h : 4 * a ^ 2 * δ ^ 3 = r ^ 4 / 16 := by rw [ha2, hδdef]; ring
+    rw [h, hr4]; ring
+  -- the family and its model
   set P : Bool → Measure ℝ := fun i =>
-    (volume.restrict (Set.Icc (-(1:ℝ) / 2) (1 / 2))).withDensity
-      fun x => ENNReal.ofReal (lipDensity δ i x) with hP
+    (volume.restrict (Set.Icc (0:ℝ) 1)).withDensity
+      fun x => ENNReal.ofReal (qDensity δ a i x) with hP
   haveI hprob : ∀ i, IsProbabilityMeasure (P i) :=
-    fun i => lipDensity_isProbabilityMeasure δ hδpos hδ6 i
+    fun i => qDensity_isProbabilityMeasure δ a hδpos h4δ ha haδ i
   set Pn : Kernel Bool (Fin n → ℝ) :=
     ⟨fun i => Measure.pi fun _ : Fin n => P i, measurable_of_countable _⟩ with hPn
   haveI hmark : IsMarkovKernel Pn := by
     refine ⟨fun a => ?_⟩
     show IsProbabilityMeasure (Measure.pi fun _ : Fin n => P a)
     infer_instance
-  refine ⟨Bool, inferInstance, inferInstance, lipDensity δ, hprob, θfunc, Pn, hmark, ?_, fun i => rfl, ?_⟩
-  · exact fun i => lipDensity_ge δ hδpos.le (by linarith) i
-  · refine ⟨1 / 16, by norm_num, ?_⟩
-    have key := minimax_functional_modulus θfunc P n Pn
-      (fun x : ℝ≥0∞ => x ^ 2) (fun a b hab => pow_le_pow_left' hab 2)
-      ((ENNReal.continuous_pow 2).lowerSemicontinuous) (fun i => rfl)
+  set θfunc : Bool → ℝ :=
+    fun i => ∫ x in Set.Icc (0:ℝ) 1, (deriv (qDensity δ a i) x) ^ 2 ∂volume with hθdef
+  refine ⟨Bool, inferInstance, qDensity δ a, θfunc, Pn, hmark, ?_, fun i => rfl, fun i => rfl, ?_⟩
+  · intro i x _; exact qDensity_ge δ a ha hδpos.le haδ i x
+  · refine ⟨1 / 32, by norm_num, ?_⟩
+    have key := minimax_functional_modulus θfunc P n Pn id monotone_id
+      (continuous_id.lowerSemicontinuous) (fun i => rfl)
+    simp only [id_eq] at key
     refine le_trans ?_ key
     have hadm : sqHellinger (P true) (P false)
         ≤ (ENNReal.ofReal (1 / (2 * Real.sqrt n))) ^ 2 := by
       rw [sqHellinger_comm]
-      exact lipDensity_admissible n hn δ hδpos hδ6 hδ3
-    have hgap : ENNReal.ofReal |θfunc true - θfunc false| = ENNReal.ofReal gap := by
-      have : θfunc true - θfunc false = gap := by simp only [hθ, cond_true, cond_false, sub_zero]
-      rw [this, abs_of_pos hgappos]
-    have hmod : ENNReal.ofReal gap
+      exact qDensity_admissible n hn δ a hδpos h4δ ha haδ hbound
+    have hgapval : a ^ 2 * δ ≤ θfunc true := qDensity_gap_lower δ a hδpos ha h4δ
+    have hθfalse : θfunc false = 0 := by
+      have hd0 : ∀ x, deriv (qDensity δ a false) x = 0 := fun x => by
+        rw [show qDensity δ a false = (fun _ => (1:ℝ)) from rfl]; exact deriv_const x 1
+      change (∫ x in Set.Icc (0:ℝ) 1, (deriv (qDensity δ a false) x) ^ 2 ∂volume) = 0
+      simp only [hd0]; simp
+    have hθtrue_nonneg : 0 ≤ θfunc true :=
+      le_trans (mul_nonneg (sq_nonneg a) hδpos.le) hgapval
+    have hmod : ENNReal.ofReal (a ^ 2 * δ)
         ≤ hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n))) := by
-      rw [← hgap]
-      exact le_iSup_of_le true (le_iSup_of_le false (le_iSup_of_le hadm le_rfl))
-    have hgap2 : (1 / 16 : ℝ) * (n : ℝ) ^ (-(1 : ℝ) / 2) = gap ^ 2 / 16 := by
-      rw [hgapdef, ← Real.rpow_natCast ((n : ℝ) ^ (-(1 : ℝ) / 4)) 2, ← Real.rpow_mul hnpos.le,
-        show -(1:ℝ) / 4 * (2 : ℕ) = -(1:ℝ) / 2 by norm_num]
-      ring
-    calc ENNReal.ofReal (1 / 16 * (n : ℝ) ^ (-(1 : ℝ) / 2))
-        = ENNReal.ofReal (gap ^ 2 / 16) := by rw [hgap2]
-      _ = 4⁻¹ * (2⁻¹ * ENNReal.ofReal gap) ^ 2 := (enn_quarter_half_sq gap hgappos.le).symm
-      _ ≤ 4⁻¹ * (2⁻¹ * hellingerModulus θfunc P
-            (ENNReal.ofReal (1 / (2 * Real.sqrt n)))) ^ 2 := by gcongr
+      have hle : a ^ 2 * δ ≤ |θfunc true - θfunc false| := by
+        rw [hθfalse, sub_zero, abs_of_nonneg hθtrue_nonneg]; exact hgapval
+      calc ENNReal.ofReal (a ^ 2 * δ) ≤ ENNReal.ofReal |θfunc true - θfunc false| :=
+            ENNReal.ofReal_le_ofReal hle
+        _ ≤ hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n))) :=
+            le_iSup_of_le true (le_iSup_of_le false (le_iSup_of_le hadm le_rfl))
+    have hval : (1 / 32 : ℝ) * (n : ℝ) ^ (-(1 : ℝ) / 2) = a ^ 2 * δ / 8 := by
+      rw [← hr2, ha2, hδdef]; ring
+    calc ENNReal.ofReal (1 / 32 * (n : ℝ) ^ (-(1 : ℝ) / 2))
+        = ENNReal.ofReal (a ^ 2 * δ / 8) := by rw [hval]
+      _ = 4⁻¹ * (2⁻¹ * ENNReal.ofReal (a ^ 2 * δ)) :=
+          (enn_quarter_half (a ^ 2 * δ) (mul_nonneg (sq_nonneg a) hδpos.le)).symm
+      _ ≤ 4⁻¹ * (2⁻¹ * hellingerModulus θfunc P (ENNReal.ofReal (1 / (2 * Real.sqrt n)))) := by
+          gcongr
 
 end StatLean.Minimaxity
