@@ -47,7 +47,7 @@ namespace StatLean.Minimaxity
 /-- KL divergence is invariant under a measurable map admitting a measurable left inverse.
 Both push-forwards are probability measures; equality follows by applying the data-processing
 inequality `klDiv_map_le` to `f` and to its inverse `g`. -/
-private lemma klDiv_map_eq_of_comp {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+lemma klDiv_map_eq_of_comp {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     {f : α → β} {g : β → α} (hf : Measurable f) (hg : Measurable g) (hgf : g ∘ f = id)
     (μ ν : Measure α) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     klDiv (μ.map f) (ν.map f) = klDiv μ ν := by
@@ -195,7 +195,7 @@ private lemma map_multivariateGaussian_clm {d : ℕ} (M S : Matrix (Fin d) (Fin 
 
 /-- **Additivity of KL over a finite product** (non-i.i.d. chain rule):
 `D(∏ᵢ μᵢ ‖ ∏ᵢ νᵢ) = ∑ᵢ D(μᵢ ‖ νᵢ)`. -/
-private lemma klDiv_pi_eq_sum : ∀ {d : ℕ} (μ ν : Fin d → Measure ℝ)
+lemma klDiv_pi_eq_sum : ∀ {d : ℕ} (μ ν : Fin d → Measure ℝ)
     [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)],
     klDiv (Measure.pi μ) (Measure.pi ν) = ∑ i, klDiv (μ i) (ν i)
   | 0, μ, ν, _, _ => by
@@ -213,11 +213,12 @@ private lemma klDiv_pi_eq_sum : ∀ {d : ℕ} (μ ν : Fin d → Measure ℝ)
 
 /-! ### A diagonal centered Gaussian is a product of one-dimensional Gaussians -/
 
-/-- The centered multivariate Gaussian with diagonal covariance `diag Λ` is the product of the
-one-dimensional Gaussians `𝒩(0, Λᵢ)`. -/
-private lemma multivariateGaussian_diagonal_eq_pi {d : ℕ} (Λ : Fin d → ℝ) (hΛ : ∀ i, 0 ≤ Λ i) :
-    multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (Matrix.diagonal Λ)
-      = (Measure.pi (fun i => gaussianReal 0 (Λ i).toNNReal)).map (toLp 2) := by
+/-- The multivariate Gaussian with mean `m` and diagonal covariance `diag Λ` is the product of the
+one-dimensional Gaussians `𝒩(mᵢ, Λᵢ)`. -/
+lemma multivariateGaussian_diagonal_eq_pi {d : ℕ} (m : EuclideanSpace ℝ (Fin d))
+    (Λ : Fin d → ℝ) (hΛ : ∀ i, 0 ≤ Λ i) :
+    multivariateGaussian m (Matrix.diagonal Λ)
+      = (Measure.pi (fun i => gaussianReal (m i) (Λ i).toNNReal)).map (toLp 2) := by
   have hdiag : (Matrix.diagonal Λ).PosSemidef := Matrix.PosSemidef.diagonal (fun i => hΛ i)
   refine Measure.ext_of_charFun ?_
   ext t
@@ -227,23 +228,23 @@ private lemma multivariateGaussian_diagonal_eq_pi {d : ℕ} (Λ : Fin d → ℝ)
     unfold dotProduct
     simp only [Matrix.vecMul_diagonal]
     exact Finset.sum_congr rfl (fun i _ => by ring)
-  have hterm : ∀ i, charFun (gaussianReal 0 (Λ i).toNNReal) (t i)
-      = Complex.exp (-((Λ i : ℂ) * (t i : ℂ) ^ 2) / 2) := by
+  have hinner : (inner ℝ t m : ℝ) = ∑ i, t i * m i := by
+    have h : (inner ℝ t m : ℝ) = ofLp m ⬝ᵥ star (ofLp t) := rfl
+    rw [h]
+    unfold dotProduct
+    exact Finset.sum_congr rfl fun i _ => by simp [mul_comm]
+  have hterm : ∀ i, charFun (gaussianReal (m i) (Λ i).toNNReal) (t i)
+      = Complex.exp ((t i : ℂ) * (m i : ℂ) * Complex.I - (Λ i : ℂ) * (t i : ℂ) ^ 2 / 2) := by
     intro i
     rw [charFun_gaussianReal]
     push_cast [hcoe i]
     ring_nf
-  have hneg : ∀ (g : Fin d → ℂ), (∑ i, -(g i) / 2) = -(∑ i, g i) / 2 := fun g => by
-    rw [← Finset.sum_div]; simp
   rw [charFun_multivariateGaussian hdiag, charFun_pi]
   simp_rw [hterm, ← Complex.exp_sum]
   congr 1
-  rw [inner_zero_right, hquad, Complex.ofReal_zero, zero_mul, zero_sub, Complex.ofReal_sum,
-    hneg (fun i => (Λ i : ℂ) * (t i : ℂ) ^ 2), neg_div]
-  refine congrArg (fun z => -(z / 2)) ?_
-  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rw [hquad, hinner]
   push_cast
-  ring
+  rw [Finset.sum_mul, Finset.sum_div, ← Finset.sum_sub_distrib]
 
 /-! ### Main theorem -/
 
@@ -348,12 +349,13 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   -- Step 3: tensorization
   have htensor : klDiv (multivariateGaussian 0 (Matrix.diagonal Λ)) (multivariateGaussian 0 1)
       = ∑ i, klDiv (gaussianReal 0 (Λ i).toNNReal) (gaussianReal 0 1) := by
-    rw [multivariateGaussian_diagonal_eq_pi Λ hΛnonneg,
+    rw [multivariateGaussian_diagonal_eq_pi 0 Λ hΛnonneg,
       show (multivariateGaussian (0 : EuclideanSpace ℝ (Fin d)) (1 : Matrix (Fin d) (Fin d) ℝ))
           = (Measure.pi (fun _ => gaussianReal 0 1)).map (toLp 2) by
         rw [multivariateGaussian_zero_one, ← map_pi_eq_stdGaussian],
       klDiv_map_eq_of_comp (f := toLp 2) (g := ofLp) (by fun_prop) (by fun_prop)
         (by funext x; rfl), klDiv_pi_eq_sum]
+    simp only [WithLp.ofLp_zero, Pi.zero_apply]
   -- Step 4 + 5: one-dimensional KL and assembly
   have hterm : ∀ i, klDiv (gaussianReal 0 (Λ i).toNNReal) (gaussianReal 0 1)
       = ENNReal.ofReal (2⁻¹ * (Λ i - 1 - Real.log (Λ i))) := by
@@ -374,5 +376,42 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
   rw [← Finset.mul_sum, Finset.sum_sub_distrib, Finset.sum_sub_distrib, Finset.sum_const,
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, hsumΛ, hsumlog]
   ring
+
+/-! ### Mean-shift, equal-covariance corollary -/
+
+/-- KL between two `c·I`-covariance Gaussians differing only in mean:
+`D(𝒩(μ,cI) ‖ 𝒩(ν,cI)) = ‖μ-ν‖²/(2c)`. This is the multivariate analogue of the equal-variance
+one-dimensional formula `klDiv_gaussianReal`, specialised to a scalar covariance `c • I`; used in
+the linear-regression minimax example (Wainwright Ex 15.14). -/
+theorem klDiv_multivariateGaussian_smul_one {d : ℕ} (μ ν : EuclideanSpace ℝ (Fin d)) (c : ℝ≥0)
+    (hc : c ≠ 0) :
+    klDiv (multivariateGaussian μ (c • (1 : Matrix (Fin d) (Fin d) ℝ)))
+          (multivariateGaussian ν (c • (1 : Matrix (Fin d) (Fin d) ℝ)))
+      = ENNReal.ofReal (‖μ - ν‖ ^ 2 / (2 * (c : ℝ))) := by
+  classical
+  have hcpos : (0 : ℝ) < (c : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hc)
+  -- `c • I = diag (fun _ => c)`
+  have hdiageq : (c • (1 : Matrix (Fin d) (Fin d) ℝ)) = Matrix.diagonal (fun _ => (c : ℝ)) := by
+    ext i j
+    by_cases h : i = j <;> simp [NNReal.smul_def, h]
+  have hΛnonneg : ∀ i : Fin d, (0 : ℝ) ≤ (fun _ => (c : ℝ)) i := fun _ => hcpos.le
+  rw [hdiageq, multivariateGaussian_diagonal_eq_pi μ _ hΛnonneg,
+    multivariateGaussian_diagonal_eq_pi ν _ hΛnonneg,
+    klDiv_map_eq_of_comp (f := toLp 2) (g := ofLp) (by fun_prop) (by fun_prop)
+      (by funext x; rfl),
+    klDiv_pi_eq_sum]
+  -- each coordinate: equal-variance one-dimensional KL
+  have hterm : ∀ i : Fin d,
+      klDiv (gaussianReal (μ i) ((c : ℝ)).toNNReal) (gaussianReal (ν i) ((c : ℝ)).toNNReal)
+        = ENNReal.ofReal ((μ i - ν i) ^ 2 / (2 * (c : ℝ))) := by
+    intro i
+    rw [Real.toNNReal_coe, klDiv_gaussianReal (μ i) (ν i) c hc]
+  rw [Finset.sum_congr rfl (fun i _ => hterm i),
+    ← ENNReal.ofReal_sum_of_nonneg (fun i _ => by positivity)]
+  congr 1
+  rw [← Finset.sum_div]
+  congr 1
+  rw [EuclideanSpace.real_norm_sq_eq]
+  exact Finset.sum_congr rfl (fun i _ => by rw [PiLp.sub_apply])
 
 end StatLean.Minimaxity
