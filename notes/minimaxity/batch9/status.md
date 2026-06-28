@@ -202,3 +202,26 @@ merging** (an orphaned auto-commit of a faithful-`#18` draft did NOT compile —
 merging it un-verified broke the area build; caught by the full build, reverted, redone). Existential-`c`
 rate statements (`∃ c>0, c·n^{-r} ≤ risk` with `c` after `n`) are gameable — prefer explicit constants or a
 uniform-`c` form for genuine rate claims.
+
+## Addendum — Example 15.16 (sparse linear regression), added after the campaign
+
+`Examples/SparseLinearRegression.lean` — `sparse_linear_regression_minimax_rate` (Wainwright Ex 15.16),
+**0-sorry, full `StatLean.Minimaxity` build green (3098 jobs)**. The minimax risk over the `s`-sparse unit
+ball `S_d(s) = {θ : ‖θ‖₀ ≤ s, ‖θ‖₂ ≤ 1}` (Eq. 15.40) in squared Euclidean error:
+`M(S_d(s); ‖·‖₂) ≥ 4096⁻¹·min(v·s·log((d−s)/s)/(γ₂ₛ²·n), 1)`.
+
+* **Faithful framing (subtype-indexed, like PCA #23):** kernel indexed by the `SparseBall d s` subtype,
+  `g = Subtype.val`, `Φ = (·²)` — directly the book's constrained `S_d(s)` minimax. The bounded ball
+  forces the `min(·,1)` cap (unlike the unbounded dense case Ex 15.14).
+* **Construction (mirrors dense Ex 15.14):** the closed `exists_sparse_packing` (`#11`) `1/2`-packing of
+  `S_d(s)`, rescaled by `ρ = 4δ0 ≤ 1` into the ball; differences are `≤ 2s`-sparse (`card_filter_sub_le`),
+  so the `2s`-restricted singular value `γ₂ₛ` (USER-INPUT `hγbd`) bounds `‖A(θⱼ−θₖ)‖`; the equal-cov KL
+  `klDiv_multivariateGaussian_smul_one` evaluates it; `minimax_local_packing` assembles. `c² = 32γ₂ₛ²/v`,
+  `δ² = 2048⁻¹·min(t,1)`.
+* **Guards (tagged):** `10 ≤ s` (Fano cardinality vacuous below; book range `10 ≤ s ≤ d/2`) and `8s ≤ d`
+  (absorbs the `−s·log2` sparse-packing slack). Constants loosened per §1; the `s = 10` cardinality is the
+  tight case and holds.
+* **Process note:** the cluster session exited `rc=255` one `ring` short of done, auto-committing a draft
+  with a single unsolved-goals residual (`n·(γ²·64δ0²) = n·γ²·64δ0²` associativity). A targeted verify
+  *cache-hit a stale `.olean`* and falsely passed; the **cold full build** caught it — reinforcing
+  "truly fresh build before trust". One-line fix, then green.
