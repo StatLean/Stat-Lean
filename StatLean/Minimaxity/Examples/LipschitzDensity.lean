@@ -810,10 +810,10 @@ private lemma enn_quarter_half (d : ℝ) (hd : 0 ≤ d) :
 /-- **Lower bound for a quadratic functional** (Wainwright Example 15.8): there is a two-point family
 of densities on `[0, 1]`, bounded below by `1/2`, whose `n`-fold i.i.d. product model has minimax
 *absolute-error* risk for the genuine quadratic functional `θ(f) = ∫₀¹ (f')²` at least `c · n^{-1/2}`
-(the suboptimal two-point rate; cf. the optimal `n^{-4/9}` realized by the many-point convex-hull
-argument in `QuadraticFunctional.lean`).
+(the suboptimal two-point rate; the optimal `n^{-4/9}` convex-hull rate of Wainwright Ex 15.11 is
+out of scope — its genuine proof needs a sign-vector/χ² mixture not yet in Mathlib/StatLean).
 
--- USER-INPUT: absolute-error loss (Φ=id) with the genuine functional θ(f)=∫(f')² and book rate n^{-1/2} (Wainwright Ex 15.8); the suboptimal two-point bound (cf. optimal n^{-4/9} in QuadraticFunctional.lean).
+-- USER-INPUT: absolute-error loss (Φ=id) with the genuine functional θ(f)=∫(f')² and book rate n^{-1/2} (Wainwright Ex 15.8); the suboptimal two-point bound (the optimal n^{-4/9} rate of Ex 15.11 is out of scope).
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.8. -/
