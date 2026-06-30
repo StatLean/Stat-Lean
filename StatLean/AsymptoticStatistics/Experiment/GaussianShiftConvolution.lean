@@ -11,29 +11,74 @@ import Mathlib.Probability.Independence.CharacteristicFunction
 import Mathlib.Probability.Kernel.Composition.CompNotation
 
 /-!
-# Convolution structure of equivariant-in-law estimators (vdV §8.4 Proposition 8.4)
+# Convolution structure of equivariant-in-law estimators
 
-The null distribution `L` of any randomized equivariant-in-law estimator of `A·h`
-in the Gaussian shift experiment decomposes as `L = N(0, A·Σ·Aᵀ) ∗ M` for some
-probability measure `M`. Headline declaration:
-`equivariant_in_law_convolution_decomposition`.
+Consider the Gaussian shift (Gaussian location) experiment: a single observation
+$X \sim N(h, \Sigma)$ on $\mathbb{R}^k$ with unknown mean $h$ and known,
+nonsingular covariance matrix $\Sigma$. One wishes to estimate $A h$ for a fixed
+matrix $A$. A (possibly randomized) estimator $T$ is *equivariant-in-law* for
+$A h$ if the distribution of $T - A h$ under parameter $h$ does not depend on
+$h$; this common law is the estimator's *invariant* (or *null*) law $L$.
 
-The proof follows vdV §8.4 in three steps:
+The convolution theorem asserts that the invariant law of every such estimator
+is a smearing of the law of the canonical estimator $A X$: there is a
+probability measure $M$ with
+$$ L \;=\; N\!\bigl(0,\, A\Sigma A^{\mathsf T}\bigr) \,*\, M, $$
+the convolution of the centered Gaussian $N(0, A\Sigma A^{\mathsf T})$ — the
+invariant law of $A X$ — with $M$. Intuitively $M$ is the law of an independent
+noise term added to $A X$, so $A X$ is the most concentrated equivariant-in-law
+estimator. The headline Lean declaration is
+`equivariant_in_law_convolution_decomposition`; the covariance is supplied as a
+positive-definite matrix $\Sigma$ (the book's "known and nonsingular"
+assumption), $A$ is the linear map, the randomized estimator is encoded as a
+Markov kernel $T$, and `hT_equiv` is the equivariance-in-law hypothesis. The
+conclusion uses Mathlib's convolution-of-measures notation $\mu * \nu$.
 
-* **Step 1 (Bayes setup)**: place a `N(0, Λ)` prior on the parameter `h`; the
-  posterior `H | X` is `N(posteriorMean J τ X, posteriorCov J τ)` with `Λ = τ²·I`,
-  `J = Σ⁻¹`. The key Bayesian fact is `gaussianShift_innovations_repr`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.4 (Estimating Normal Means),
+Proposition 8.4.
 
-* **Step 2 (Innovations decomposition)**: define
-    `G_Λ := A · (H − posteriorMean J τ X)`     (Gaussian innovation)
-    `W_Λ := T(X, U) − A · posteriorMean J τ X` (residual)
-  Then `G_Λ + W_Λ = T − A·H`, and `G_Λ ⟂ W_Λ` (key independence).
+**Proof formalization notes.** The proof follows vdV §8.4 in three steps:
 
-* **Step 3 (Lévy continuity assembly)**: equivariance ⇒ `T − A·H ∼ L` for
-  every Λ; charFun factorization ⇒ `Ĝ_Λ · Ŵ_Λ = L̂`; `Ĝ_Λ → Ĝ` (continuity
-  in covariance); `Ĝ` nowhere zero ⇒ `Ŵ_Λ → L̂ / Ĝ` continuous ⇒ (Lévy)
-  `W_Λ ⇝ W`; joint weak conv with independence + continuous mapping ⇒
-  `G + W ∼ L`; set `M := law(W)`.
+* **Step 1 (Bayes setup)**: place a $N(0, \Lambda)$ prior on the parameter $h$;
+  the posterior $H \mid X$ is $N\bigl(\mathrm{posteriorMean}\,J\,\tau\,X,\,
+  \mathrm{posteriorCov}\,J\,\tau\bigr)$ with $\Lambda = \tau^2 I$ and
+  $J = \Sigma^{-1}$. The key Bayesian fact is `gaussianShift_innovations_repr`.
+
+* **Step 2 (Innovations decomposition)**: define the Gaussian innovation
+  $G_\Lambda := A\,(H - \mathrm{posteriorMean}\,J\,\tau\,X)$ and the residual
+  $W_\Lambda := T(X, U) - A\,\mathrm{posteriorMean}\,J\,\tau\,X$. Then
+  $G_\Lambda + W_\Lambda = T - A H$ and $G_\Lambda \perp W_\Lambda$ (the key
+  independence). Note the sign convention: vdV literally writes
+  $G_\Lambda := A(H - \mu(X))$, but direct algebra with that sign gives
+  $G + W = T + AH - 2A\mu$, not $T - AH$; the corrected sign
+  $G_\Lambda := A(\mu(X) - H)$ makes $G + W = T - AH$ hold and leaves both the
+  (centered, symmetric) Gaussian conditional law of $G_\Lambda$ and the
+  independence with $W_\Lambda$ unchanged. See the docstring of `G_Lambda_law`.
+
+* **Step 3 (Lévy continuity assembly)**: equivariance gives $T - A H \sim L$ for
+  every $\Lambda$; the characteristic-function factorization gives
+  $\hat G_\Lambda \cdot \hat W_\Lambda = \hat L$; as $\Lambda \to \infty$,
+  $\hat G_\Lambda \to \hat G$ (continuity in the covariance) with $\hat G$
+  nowhere zero, so $\hat W_\Lambda \to \hat L / \hat G$ continuous, whence (Lévy
+  continuity) $W_\Lambda \rightsquigarrow W$; joint weak convergence with
+  independence plus the continuous mapping theorem yields $G + W \sim L$, and one
+  sets $M := \mathrm{law}(W)$.
+
+**Bibliographic comments.** The convolution theorem originates with
+J. Hájek, "A characterization of limiting distributions of regular estimates",
+*Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970),
+323–330, with a closely related contemporaneous result by N. Inagaki, "On the
+limiting distribution of a sequence of estimators with uniformity property",
+*Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. Hájek
+proved the general (locally asymptotically normal) form for regular estimator
+sequences; the abstract decision-theoretic version is due to L. Le Cam. The
+finite-sample statement formalized here — the convolution structure of
+equivariant-in-law estimators in the exact Gaussian shift experiment — is vdV's
+Proposition 8.4, the simplest (non-asymptotic, single-observation) instance from
+which the asymptotic convolution theorem is obtained by the LAN limit-experiment
+reduction.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Complex

@@ -2,30 +2,44 @@ import StatLean.ConcentrationInequalities.Bernstein.Defs
 import StatLean.ConcentrationInequalities.SubExponential.Defs
 
 /-!
-# Bernstein condition ⇒ sub-exponential MGF bound  (Lu-BDA §4.1, Step 1)
+# Bernstein condition implies a sub-exponential moment generating function bound
 
-A random variable satisfying the Bernstein moment condition is sub-exponential:
-`HasBernsteinCondition X σ2 b μ → IsSubExponential X (2 * (NNReal.sqrt σ2 ⊔ b)) μ`.
+Let $X$ be a mean-zero random variable on a probability space satisfying the **Bernstein
+moment condition** with variance proxy $\sigma^2$ and scale parameter $b$, i.e. there exist
+constants such that the centered moments are controlled by
+$$\mathbb{E}\,|X|^m \;\le\; \tfrac{1}{2}\,\sigma^2\, m!\, b^{\,m-2}, \qquad m \ge 3,$$
+together with $\mathbb{E}[X] = 0$ and $\operatorname{Var}(X) = \sigma^2$. Then $X$ is
+**sub-exponential** with parameter $\alpha = 2\,(\sigma \vee b)$: for every $\lambda$ with
+$|\lambda| \le 1/\alpha$, the random variable $e^{\lambda X}$ is integrable and the moment
+generating function obeys
+$$\mathbb{E}\,e^{\lambda X} \;\le\; \exp\!\bigl(\tfrac{1}{2}\,\lambda^2\,\alpha^2\bigr).$$
+Here $\sigma \vee b = \max(\sigma, b)$ and $\sigma = \sqrt{\sigma^2}$ is the standard deviation.
 
-## Constant deviation from the stated task
-The original task asks for `α = 2 * (σ2 ⊔ b)`, where `σ2 = Var(X)` is the **variance**
-and `b` is the Bernstein tail scale.  This formula mixes units: `σ2` is quadratic while
-`b` is linear.  The formula fails when `σ2 > 2 * (σ2 ⊔ b)^2`; for example, with
-`σ2 = 0.01` and the minimal admissible `b = 1/30`, we get `2*(σ2⊔b)^2 ≈ 0.0022 < 0.01`.
+**Deviation from the originally stated constant.** A naive transcription asks for
+$\alpha = 2\,(\sigma^2 \vee b)$, mixing the *variance* $\sigma^2$ (quadratic units) with the
+linear scale $b$. That formula fails whenever $\sigma^2 > 2\,(\sigma^2 \vee b)^2$ — e.g. with
+$\sigma^2 = 0.01$ and the minimal admissible $b = 1/30$ one gets
+$2\,(\sigma^2 \vee b)^2 \approx 0.0022 < 0.01$. The provable parameter uses the **standard
+deviation**, $\alpha = 2\,(\sigma \vee b)$ (Lu-BDA §6.1 implicitly works with the standard
+deviation in the geometric-series range condition). Writing $s := \sigma \vee b$:
+* **Range** — $|\lambda| \le 1/\alpha = 1/(2s)$ implies $|\lambda| \le 1/(2b)$ (since
+  $s \ge b$), so $|\lambda|\,b \le 1/2$ and the Bernstein geometric series converges.
+* **Variance bound** — $\sigma^2 = (\sqrt{\sigma^2})^2 \le s^2 \le 2s^2 = \alpha^2/2$, so
+  $\exp(\lambda^2 \sigma^2) \le \exp(\lambda^2 \alpha^2/2)$.
 
-The provable parameter is **`α = 2 * (NNReal.sqrt σ2 ⊔ b)`**, which uses the standard
-deviation `NNReal.sqrt σ2` (Lu-BDA §4.1 implicitly works with the standard deviation in the
-geometric-series range condition).  With `s := NNReal.sqrt σ2 ⊔ b`:
-* **Range** — `|λ| ≤ 1/α = 1/(2s)` implies `|λ| ≤ 1/(2b)` (since `s ≥ b`), so
-  `|λ|·b ≤ 1/2` and the Bernstein geometric series converges.
-* **Variance bound** — `σ2 = (NNReal.sqrt σ2)^2 ≤ s^2 ≤ 2s^2 = α^2/2`, so
-  `exp(λ²·σ2) ≤ exp(λ²·α^2/2)`.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities), §6.1,
+Theorem 6.1 (Bernstein Inequality), Step 1 (Bernstein condition, Definition 6.1, ⇒
+sub-exponential moment generating function).
+Compare M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge
+University Press, 2019, Chapter 2 (Basic tail and concentration bounds), §2.1.3 (sub-exponential
+variables and Bernstein's condition), Eq. (2.16)–(2.17).
 
-## Proof route (no `hasFPowerSeriesAt_mgf`)
-`bernstein_key` below covers both the integrability of `exp(l·X)` and the MGF bound.  Rather
-than fight the `FormalMultilinearSeries.radius` bookkeeping of `hasFPowerSeriesAt_mgf`, we use
-the elementary monotone-convergence route enabled by the `∫⁻` form of the moment bound
-(`Bernstein/Defs.lean`):
+**Proof formalization notes.**
+The proof route avoids `hasFPowerSeriesAt_mgf`. `bernstein_key` below covers both the
+integrability of $e^{\lambda X}$ and the MGF bound. Rather than fight the
+`FormalMultilinearSeries.radius` bookkeeping of `hasFPowerSeriesAt_mgf`, we use the elementary
+monotone-convergence route enabled by the `∫⁻` form of the moment bound (`Bernstein/Defs.lean`):
 
 * Expand `exp(|l|·|X|) - 1 - |l|·|X| = ∑_{k≥0} (|l|·|X|)^{k+2}/(k+2)!` pointwise, push through
   `MeasureTheory.lintegral_tsum` (Tonelli), pull constants out with `lintegral_const_mul`, and
@@ -40,6 +54,18 @@ the elementary monotone-convergence route enabled by the `∫⁻` form of the mo
 Key Mathlib lemmas: `MeasureTheory.lintegral_tsum`, `ENNReal.ofReal_tsum_of_nonneg`,
 `lintegral_const_mul`, `ENNReal.tsum_geometric`, `NormedSpace.exp_eq_tsum_div`,
 `Summable.sum_add_tsum_nat_add`, `integral_eq_lintegral_of_nonneg_ae`.
+
+**Bibliographic comments.**
+This is textbook folklore with no single seminal paper. The moment ("Bernstein") condition and
+its use to bound the moment generating function trace back to S. N. Bernstein's work on
+probability inequalities in the 1920s–1930s (S. N. Bernstein, *The Theory of Probabilities*,
+Moscow–Leningrad, 1927; reprinted in his collected works). The modern packaging — that the
+Bernstein moment condition is equivalent to sub-exponentiality and yields the bound
+$\mathbb{E}\,e^{\lambda X} \le \exp(\lambda^2 \alpha^2/2)$ on the range $|\lambda| \le 1/\alpha$
+— is standard and appears, with the constants used here up to the variance-vs-standard-deviation
+convention, in Wainwright (2019, §2.1.3) and in R. Vershynin, *High-Dimensional Probability: An
+Introduction with Applications in Data Science*, Cambridge University Press, 2018, §2.7–2.8. It
+is reproduced as Step 1 of Lu-BDA §6.1; no original research-paper theorem number is attached.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -65,7 +91,7 @@ geometric series, which converges because `|l|·b ≤ 1/2` on the allowed range.
 (`maxHeartbeats` is raised because the whole closed-form proof is long; no single step is
 expensive.) -/
 private lemma bernstein_key [IsProbabilityMeasure μ]
-    -- USER-INPUT: `X` measurable (random variable); Lu-BDA §4.1 (the book tacitly assumes `X`
+    -- USER-INPUT: `X` measurable (random variable); Lu-BDA §6.1 (the book tacitly assumes `X`
     -- is a random variable; without it the Bochner-integral hypotheses are junk `0`).
     (hX : Measurable X)
     (hB : HasBernsteinCondition X σ2 b μ)
@@ -310,7 +336,7 @@ private lemma bernstein_key [IsProbabilityMeasure μ]
 
 /-! ### Main theorem -/
 
-/-- A random variable satisfying the Bernstein condition (Lu-BDA §4.1) is sub-exponential
+/-- A random variable satisfying the Bernstein condition (Lu-BDA §6.1) is sub-exponential
 with parameter `α = 2 · (√σ2 ⊔ b)`.
 
 **Proof**: from `bernstein_key` plus the mean-zero centering. For `|l| ≤ 1/α`:
@@ -321,14 +347,14 @@ with parameter `α = 2 · (√σ2 ⊔ b)`.
 See the module header for why this is incorrect and `α = 2*(NNReal.sqrt σ2 ⊔ b)` is the
 provable form.
 
--- USER-INPUT: `X` (random variable), `σ2`, `b` (Bernstein parameters); Lu-BDA §4.1.
--- LEAN-ONLY: `[IsProbabilityMeasure μ]`; Lu-BDA §4.1 works on a probability space
+-- USER-INPUT: `X` (random variable), `σ2`, `b` (Bernstein parameters); Lu-BDA §6.1.
+-- LEAN-ONLY: `[IsProbabilityMeasure μ]`; Lu-BDA §6.1 works on a probability space
    (tacit from the book context). -/
 theorem isSubExponential_of_hasBernsteinCondition
     [IsProbabilityMeasure μ]
-    -- USER-INPUT: `X` measurable (random variable); Lu-BDA §4.1.
+    -- USER-INPUT: `X` measurable (random variable); Lu-BDA §6.1.
     (hX : Measurable X)
-    -- USER-INPUT: Bernstein condition for X; Lu-BDA §4.1.
+    -- USER-INPUT: Bernstein condition for X; Lu-BDA §6.1.
     (hB : HasBernsteinCondition X σ2 b μ) :
     IsSubExponential X (2 * (NNReal.sqrt σ2 ⊔ b)) μ where
   mgf_le l hl := by

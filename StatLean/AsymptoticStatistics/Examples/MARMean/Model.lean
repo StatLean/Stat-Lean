@@ -3,14 +3,49 @@ import StatLean.AsymptoticStatistics.Core.MassMethod
 /-!
 # The MAR observation type and the MAR-mean parameter functional
 
-The model-setup half of the concrete-EIF verification template. This file defines
-the `(X, R, RY)` observation tuple for missing-at-random data and the
-inverse-probability-weighted (IPW) mean functional `marMean_Ψ`.
+This file is the model-setup half of the concrete-EIF verification template. It
+fixes the data model for a missing-at-random (MAR) problem and the target
+parameter whose efficient influence function is verified elsewhere.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.6 (CAR / MAR);
-the observation tuple appears in lem:25.41 and ex:25.43.
+A single unit is observed as the tuple $(X, R, RY)$, where $X$ is an
+always-observed covariate, $R \in \{0, 1\}$ is the response indicator (with
+$R = 1$ meaning the outcome is recorded), and $RY$ is the partial response that
+equals the outcome $Y$ when $R = 1$ and is unused otherwise. Writing
+$\pi(x) = P(R = 1 \mid X = x)$ for the propensity score, the target functional
+is the inverse-probability-weighted (IPW) mean
+$$\Psi(Q) = \int \frac{R\,Y}{\pi(X)}\,dQ.$$
+Under MAR (equivalently, coarsening-at-random, CAR), this estimand identifies
+the marginal outcome mean $E_Q[Y]$; the present file only commits to the IPW
+form, which is well defined for every probability measure $Q$ regardless of
+whether the identification holds.
 
-Headline declarations: `MARObs`, `marMean_Ψ`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.6 (coarsening at random / missing at
+random). The $(X, \Delta, \Delta Y)$ observation tuple and the IPW mean
+estimand appear at Lemma 25.41 and Example 25.43 (vdV's $\Delta \in \{0, 1\}$ is
+the missingness indicator written here as $R$).
+
+**Proof formalization notes.** This module contributes only definitions, no
+theorems. The structure `MARObs X` carries the three fields `x`, `r`, `ry`; the
+helper `ind : Bool → ℝ` lifts the Boolean indicator `r` to the real weight used
+in the IPW formula (`ind true = 1`, `ind false = 0`); and `marMean_Ψ π` is the
+functional `Q ↦ ∫ (ind R · RY / π X) ∂Q`. The σ-algebra on `MARObs X` is the
+pullback of the product σ-algebra on `X × Bool × ℝ`, so the field accessors are
+measurable. The MAR identification $\Psi(Q) = E_Q[Y]$ is not assumed here: the
+IPW form is taken as the definition because it is well-posed for arbitrary `Q`,
+and the identification is supplied separately by the caller when needed.
+
+**Bibliographic comments.** The IPW estimand and its semiparametric efficiency
+theory originate with J. M. Robins, A. Rotnitzky and L. P. Zhao, "Estimation of
+regression coefficients when some regressors are not always observed", *Journal
+of the American Statistical Association* **89** (427), 1994, 846–866, which
+introduced inverse-probability-of-observation weighting and the augmented-IPW
+class of estimating equations for data missing at random. van der Vaart §25.6
+presents the same construction within the CAR/MAR coarsening framework as a
+worked example of the efficient-influence-function calculus; the underlying
+coarsening-at-random condition is due to D. F. Heitjan and D. B. Rubin, "Ignorability
+and coarse data", *Annals of Statistics* **19** (4), 1991, 2244–2253.
 -/
 
 open MeasureTheory

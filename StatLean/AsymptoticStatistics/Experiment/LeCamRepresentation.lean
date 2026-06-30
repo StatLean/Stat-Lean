@@ -4,23 +4,83 @@ import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Kernel.Composition.Prod
 
 /-!
-# Le Cam's representation theorem in kernel form (vdV §8.5)
+# Le Cam's asymptotic representation theorem in kernel (randomized-statistic) form
 
-This file isolates the kernel-form variant of vdV's asymptotic representation
-theorem. It is the asymptotic backbone of Theorem 8.11's Bayes-risk lower
-bound: the deterministic-T form `AsymptoticRepresentation.LAN_representation` is structurally
-insufficient for a Bayes-near-optimal sequence of statistics, which is naturally
-Markov-kernel valued (the Bayes posterior decision rule is a *randomised*
-statistic, not a deterministic function of the sample). The kernel-form replaces
+Consider a parametric model that is differentiable in quadratic mean at a point
+$\theta_0$ with nonsingular Fisher information matrix $J$, and let
+$\kappa_n$ be a sequence of *randomized* statistics — Markov kernels mapping the
+$n$-fold sample $(X_1,\dots,X_n)$ to a (possibly randomized) decision/estimate in
+$\mathbb{R}^d$. Suppose that under each local alternative
+$\theta_0 + h/\sqrt{n}$ the law of $\kappa_n$ applied to the sample converges
+weakly to a limit law $L_h$, for every local parameter $h \in \mathbb{R}^k$.
+Then there is a single Markov kernel (a randomized statistic) $\tilde\kappa$ on
+the parameter space such that, for every $h$,
+$$ L_h \;=\; N(h,\,J^{-1}) \;\circ\; \tilde\kappa, $$
+i.e. $L_h$ is the law obtained by drawing $X \sim N(h, J^{-1})$ from the Gaussian
+shift limit experiment and then applying the randomized rule $\tilde\kappa$ to $X$.
+Equivalently, every weak limit of a sequence of (randomized) statistics in a
+locally asymptotically normal model is *representable* as a randomized statistic
+in the Gaussian shift experiment $\{N(h, J^{-1}) : h \in \mathbb{R}^k\}$.
+
+This is the kernel-valued refinement of the deterministic-statistic representation
+theorem. Relative to the book statement, the deterministic estimator $T_n$ is
+replaced by a Markov kernel $\kappa_n$ (the limit randomized statistic
+$\tilde\kappa$ is intrinsically randomized — a deterministic function does not
+suffice for a Bayes-near-optimal sequence), the book's translation by
+$\dot\psi_\theta h$ is specialized to the identity (estimating $h$ directly), and
+the Le Cam transfer runs on the *contiguity* footing supplied by differentiability
+in quadratic mean together with a density-regularity hypothesis, so that no
+common-support assumption is required. The headline declarations are
+`LAN_representation_kernel` and its subsequence-form variant
+`LAN_representation_along_subseq`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.3 (Lower Bound for Experiments),
+Theorem 8.3 — the representation theorem for estimator sequences ("there exists a
+randomized statistic $T$ in the experiment $\{N(h, I_\theta^{-1})\}$ such that
+$T - \dot\psi_\theta h$ has distribution $L_{\theta,h}$"), which specializes the
+general Asymptotic Representation Theorem of Chapter 7 (Local Asymptotic
+Normality), Theorem 7.10. The result is the asymptotic backbone of the Local
+Asymptotic Minimax / Bayes-risk lower bound, vdV Theorem 8.11. (The repository's
+historical tag for this file is `vdV §8.5`; the verified book coordinates for the
+representation statement formalized here are Theorem 8.3 / Theorem 7.10. §8.5 in
+the book is the Convolution Theorem.)
+
+**Proof formalization notes.** This file isolates the kernel-form variant of the
+asymptotic representation theorem. It is the asymptotic backbone of Theorem 8.11's
+Bayes-risk lower bound: the deterministic-`T` form
+`AsymptoticRepresentation.LAN_representation` is structurally insufficient for a
+Bayes-near-optimal sequence of statistics, which is naturally Markov-kernel valued
+(the Bayes posterior decision rule is a *randomised* statistic, not a
+deterministic function of the sample). The kernel-form replaces
 `T : ∀n, (Fin n → 𝓧) → 𝓨 d` (deterministic) with
 `κ : ∀n, Kernel (Fin n → 𝓧) (𝓨 d)` (Markov), and replaces the pushforward
 `(productMeasure ...).map (T n)` with `(productMeasure ...).bind (κ n)`.
 
-The proof mirrors the eight-step proof of vdV §7.10 (`AsymptoticRepresentation.lean`),
-replacing each `T n`-pushforward with a kernel `bind`.
+The proof mirrors the eight-step proof of the deterministic representation
+theorem (`AsymptoticRepresentation.lean`, vdV Theorem 7.10 (§7.3)): score CLT + LAN expansion +
+Le Cam's third lemma + Prohorov tightness + the Urysohn subsequence principle +
+`condDistrib`-based representation-kernel construction, replacing each
+`T n`-pushforward with a kernel `bind`. Step 7 (representation-kernel
+construction) requires the kernel-form Girsanov / Cameron–Martin tilt applied to
+the joint law of `(δ, κ_n(ω))` rather than `(δ, T_n(ω))`.
 
 Headline declarations: `LAN_representation_kernel` and the subsequence-form
 variant `LAN_representation_along_subseq`.
+
+**Bibliographic comments.** The representation of limits of statistical
+experiments by randomized procedures in the limit (Gaussian shift) experiment
+originates with Lucien Le Cam's theory of weak convergence of experiments:
+L. Le Cam, "Limits of experiments," in *Proceedings of the Sixth Berkeley
+Symposium on Mathematical Statistics and Probability* (Vol. 1: Theory of
+Statistics), University of California Press, 1972, pp. 245–261. The companion
+convolution theorem for regular estimator sequences (vdV §8.5, Theorem 8.8) is due
+to J. Hájek, "A characterization of limiting distributions of regular estimates,"
+*Z. Wahrscheinlichkeitstheorie verw. Gebiete* 14 (1970), 323–330, and Le Cam.
+van der Vaart's Theorem 8.3 / Theorem 7.10 are the textbook synthesis of Le Cam's
+asymptotic representation theorem specialized to the locally asymptotically normal
+case.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -613,7 +673,7 @@ theorem joint_kernel_snd_eq_scoreSum_pushforward
 /-- **Limit law via Le Cam 3, kernel form** (Step 5 analogue of
 `AsymptoticRepresentation.limit_law_under_h`).
 
-The kernel analogue of vdV §7.10 Step 5: given joint weak convergence of
+The kernel analogue of vdV Theorem 7.10 (§7.3) Step 5: given joint weak convergence of
 `(κ_n, logLikelihood_n)` and the auxiliary integrability/MGF conditions on the
 tilted joint, the law of `(P^n_{θ₀+h/√n}).bind (κ n)` equals the first marginal
 of the tilted joint `(π.withDensity (exp ∘ affineTilt)).map fst`. -/
@@ -1039,7 +1099,7 @@ theorem limit_law_under_h_kernel
   rw [MeasureTheory.Measure.map_map measurable_fst h_tilt_meas']
   rfl
 
-/-! ## Main theorem: `LAN_representation_kernel` (kernel-form vdV §8.5)
+/-! ## Main theorem: `LAN_representation_kernel` (kernel-form vdV Theorem 8.3 / Theorem 7.10)
 
 Given DQM at `θ₀`, non-singular Fisher information `J`, and a Markov-kernel
 family `κ_n : (Fin n → 𝓧) ⇝ 𝓨 d` whose `productMeasure`-bind under each
@@ -1075,7 +1135,7 @@ theorem LAN_representation_kernel
     (M : ParametricFamily 𝓧 (AsymptoticRepresentation.Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : AsymptoticRepresentation.Θ k) (ℓ : 𝓧 → AsymptoticRepresentation.Θ k) (hℓ : Measurable ℓ)
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
-    -- form (vdV §8.11 requires it non-singular = PosDef).
+    -- form (vdV Theorem 8.11 requires it non-singular = PosDef).
     (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : Matrix.PosDef J)
     (hJ : ∀ u v : AsymptoticRepresentation.Θ k, fisherInformation M μ θ₀ ℓ u v =
       ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)

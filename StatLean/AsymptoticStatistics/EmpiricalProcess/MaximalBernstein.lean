@@ -7,12 +7,71 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 /-!
 # Bernstein's inequality for the empirical process
 
-Bernstein's inequality for the empirical process `G_n f`, vdV §19.6 Lemma 19.32.
-The proof decomposes into a centered-moment bound (`centered_moment_bound_pow`),
-the power-series expansion of the moment generating function for bounded variables
-(`mgf_bounded_taylor`), a per-sample MGF bound (`bernstein_mgf_centered_bound`),
-the one-sided right-tail bound (`bernstein_one_sided`), and the two-sided assembly
-(`bernstein_two_sided`, exposed as `bernstein_inequality_aux`).
+Let $X_1, \dots, X_n$ be i.i.d. draws from a probability measure $P$ on a sample
+space, and let $f$ be a measurable function that is uniformly bounded,
+$|f| \le M$, with second-moment (variance proxy) bound $\int f^2 \, dP \le \sigma^2$.
+Write the empirical process indexed by $f$ as
+$$
+\mathbb{G}_n f \;=\; \frac{1}{\sqrt n} \sum_{i=1}^n \bigl(f(X_i) - Pf\bigr),
+\qquad Pf = \int f \, dP .
+$$
+Then for every $x > 0$ the empirical process obeys the two-sided exponential
+(Bernstein) tail bound
+$$
+P\bigl(\, |\mathbb{G}_n f| > x \,\bigr)
+\;\le\; 2 \exp\!\left( - \frac{x^2}{4\bigl(\sigma^2 + x M / \sqrt n\bigr)} \right).
+$$
+
+The right-tail (one-sided) version replaces the leading factor $2$ by $1$:
+$P(\mathbb{G}_n f > x) \le \exp\bigl(-x^2 / (4(\sigma^2 + xM/\sqrt n))\bigr)$.
+
+*Deviations from the book.* van der Vaart states the denominator with the
+second moment $Pf^2$ of the (centred) summand; here we expose it through the
+caller-supplied variance proxy $\sigma^2 \ge \int f^2 \, dP$, and the centring by
+$Pf$ is performed internally rather than assumed. The provable constant is
+$1/4$ in the exponent (matching the book), together with the factor $2$ from the
+union of the two one-sided tails.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.6, Lemma 19.32.
+
+**Proof formalization notes.** The development decomposes the two-sided bound into
+the following named steps:
+
+* `centered_moment_bound_pow` — a centered-moment bound: for $k \ge 2$,
+  $\bigl|\int (f - Pf)^k \, dP\bigr| \le (\int f^2 \, dP)\,(2M)^{k-2}$, via the
+  pointwise estimate $|f - Pf| \le 2M$ and $|{\int Y}| \le \int |Y|$.
+* `mgf_bounded_taylor` — the convergent power-series expansion of the moment
+  generating function of a bounded variable, $\mathbb{E}[e^{\lambda X}] =
+  \sum_{k\ge 0} (\lambda^k/k!)\,\mathbb{E}[X^k]$, by dominated convergence on the
+  partial sums with dominator $e^{|\lambda| M}$.
+* `bernstein_mgf_centered_bound` — the per-sample Bennett–Bernstein MGF bound: for
+  a centred variable with $|Y| \le 2M$, $\mathbb{E}Y = 0$ and the centred-moment
+  bound above, and $0 \le t$ with $2Mt < 1$,
+  $\mathbb{E}[e^{tY}] \le \exp\bigl(\sigma^2 t^2 / (2(1 - 2Mt))\bigr)$, obtained by
+  summing the geometric tail of the MGF series and upgrading via $1 + u \le e^u$.
+* `bernstein_one_sided` — the right-tail bound, assembled via Markov on the MGF,
+  i.i.d. factorisation (`iIndepFun.mgf_sum`), the per-sample bound, the optimal
+  choice $\lambda = (x/2)/(\sigma^2 + xM/\sqrt n)$, and $(1 + a/n)^n \le e^a$.
+  Includes the degenerate edge cases $M = 0$ (then $f \equiv 0$) and $\sigma = 0$
+  (then $f = 0$ a.e. $P$, so $\mathbb{G}_n f = 0$ a.e.).
+* `bernstein_two_sided` — combines `bernstein_one_sided` applied to $f$ and to
+  $-f$ (using `empiricalProcess_neg`: $\mathbb{G}_n(-f) = -\mathbb{G}_n f$) through
+  a union bound. Exposed publicly as `bernstein_inequality_aux`, which is the body
+  of `bernstein_inequality` (stated in `Maximal.lean` for import-DAG reasons).
+
+**Bibliographic comments.** The scalar exponential inequality underlying this
+result originates with S. N. Bernstein, *On a modification of Chebyshev's
+inequality and of the error formula of Laplace*, Ann. Sci. Inst. Sav. Ukraine,
+Sect. Math. **1** (1924), 38–49 (in Russian) — the first sub-exponential tail
+bound trading the variance against a one-sided boundedness (or moment-growth)
+condition. The empirical-process form stated here, with the explicit
+$\sigma^2 + xM/\sqrt n$ denominator, is textbook synthesis: it is the
+specialisation of Bernstein's bound to the centred, normalised sums $\mathbb{G}_n f$
+collected as Lemma 19.32 in van der Vaart (1998); there is no single seminal paper
+for this packaged empirical-process statement beyond Bernstein's original
+inequality and its standard maximal-inequality applications.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
@@ -980,7 +1039,9 @@ private lemma bernstein_two_sided
 
 /-- Public assembly of `bernstein_inequality` body — invoked from
 `Maximal.lean`. Identical statement; routes through the private
-`bernstein_two_sided`. -/
+`bernstein_two_sided`.
+
+**Reference.** van der Vaart, *Asymptotic Statistics* (1998), §19.6, Lemma 19.32. -/
 lemma bernstein_inequality_aux
     (P : Measure Ω) [IsProbabilityMeasure P]
     (f : Ω → ℝ) (hf_meas : Measurable f)

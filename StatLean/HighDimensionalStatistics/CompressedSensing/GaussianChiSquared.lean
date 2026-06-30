@@ -8,28 +8,64 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Probability.Moments.Variance
 
 /-!
-# χ²₁ sub-exponentiality and the fixed-`β` quadratic-form tail
+# χ²₁ sub-exponentiality and the fixed-`β` Gaussian quadratic-form tail
 
-The probabilistic core of the random-RIP theorem (Lu, *Big Data Analysis* §7,
-`thm:3s-rip`, eq:fix-b). Two results:
+The probabilistic core of the random-RIP theorem. Two results, stated in standard
+mathematical notation:
 
-* `chiSq1_centered_isSubExponential` — for `g ∼ N(0,1)`, the centered square `g² − 1`
-  is sub-exponential with parameter `α = 4`. Proof via the closed-form χ²₁ MGF
-  `E[exp(t(g²−1))] = e^{−t}(1−2t)^{-1/2} ≤ exp(8t²)` for `|t| ≤ 1/4`, computed from the
-  Gaussian integral `∫ exp(l x²) dN(0,1) = (1−2l)^{-1/2}` (`integral_gaussian`).
+* **Centered χ²₁ is sub-exponential.** If $g \sim N(0,1)$, then the centered square
+  $g^2 - 1$ is sub-exponential with parameter $\alpha = 4$: its centered moment generating
+  function satisfies $\mathbb{E}\,e^{t(g^2-1)} \le e^{t^2\alpha^2/2}$ for $|t| \le 1/\alpha$.
+  (`chiSq1_centered_isSubExponential`.)
 
-* `gaussian_quadratic_form_tail` — for an i.i.d. `N(0,1/n)` matrix `X` and a fixed
-  nonzero `β`, the normalised quadratic form concentrates:
-  `P(|‖Xβ‖²/‖β‖² − 1| > δ) ≤ 2·exp(−nδ²/32)`. Proof: `‖Xβ‖²/‖β‖² = (1/n)∑ᵢ gᵢ²` with
-  `gᵢ ∼ N(0,1)` i.i.d. (rows are Gaussian via the sum-of-independent-Gaussians lemma);
-  apply `chiSq1_centered_isSubExponential` and the sub-exponential sample-mean tail, two-sided.
+* **Fixed-vector quadratic-form tail.** Let $X \in \mathbb{R}^{n\times d}$ have i.i.d.
+  $N(0, 1/n)$ entries and fix a nonzero vector $\beta \in \mathbb{R}^d$. Then the normalised
+  quadratic form $\|X\beta\|^2/\|\beta\|^2$ concentrates around $1$:
+  $$\mathbb{P}\!\left(\left|\frac{\|X\beta\|^2}{\|\beta\|^2} - 1\right| > \delta\right)
+      \le 2\,e^{-n\delta^2/32}, \qquad 0 < \delta \le 1.$$
+  (`gaussian_quadratic_form_tail`.) This is exactly the fixed-$\beta$ step of the $3s$-RIP
+  construction theorem, where the ratio is recognised as a normalised $\chi^2_n$ variable:
+  $\|X\beta\|^2/\|\beta\|^2 = \tfrac1n\sum_{i=1}^n g_i^2$ with $g_i \sim N(0,1)$ i.i.d.
 
-**Deviation from book (constant).** The book (Lu §7, eq:fix-b) states the exponent `nδ²/8`,
-which corresponds to the sharp sub-exponential parameter `α = 2` for `g² − 1`. The constant
-that we actually *prove* for the χ²₁ MGF bound is `α = 4` (the bound
-`e^{−t}(1−2t)^{-1/2} ≤ exp(8t²)` on `|t| ≤ 1/4`), so the sample-mean tail produces
-`2·exp(−nδ²/(2α²)) = 2·exp(−nδ²/32)`. We therefore state the **provable** exponent `nδ²/32`
-in `gaussian_quadratic_form_tail`. Downstream consumers (`RandomRIP.lean`) must use `32`.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 9 (Restricted Isometry Property),
+§9.1 (Restricted Isometry Property), Theorem 9.2 and its fixed-$\beta$ tail Eq. (9.1).
+The book states the fixed-$\beta$ bound as $\mathbb{P}(|\,\|X\beta\|^2/\|\beta\|^2 - 1| >
+\delta) \le 2\,e^{-n\delta^2/8}$.
+
+**Proof formalization notes.**
+
+* `chiSq1_centered_isSubExponential`: via the closed-form χ²₁ MGF
+  $\mathbb{E}\,e^{l g^2} = (1-2l)^{-1/2}$ for $l < 1/2$ (from the Gaussian integral
+  $\int e^{l x^2}\,dN(0,1) = (1-2l)^{-1/2}$, `integral_gaussian`), giving the centered MGF
+  $e^{-l}(1-2l)^{-1/2}$, which is bounded by $e^{8 l^2}$ on $|l| \le 1/4$ (`exp_chiSq_mgf_bound`).
+* `gaussian_quadratic_form_tail`: write $\|X\beta\|^2/\|\beta\|^2 = \tfrac1n\sum_i g_i^2$
+  where each row contributes $g_i \sim N(0,1)$ i.i.d. — the rows are Gaussian by the
+  sum-of-independent-Gaussians lemma (`map_sum_gaussianReal`) plus a block-independence
+  argument over the matrix index $(i,j)$ (`iIndepFun_rows`). Then apply
+  `chiSq1_centered_isSubExponential` to $g_i^2 - 1$ and the sub-exponential sample-mean tail
+  (`measure_sampleMean_lt_le_quadratic`), once for $\sum (g_i^2 - 1)$ and once for its
+  negation, and union the two one-sided events.
+
+* **Deviation from book (constant).** The book exponent $n\delta^2/8$ corresponds to the
+  sharp sub-exponential parameter $\alpha = 2$ for $g^2 - 1$. The constant we actually
+  *prove* for the χ²₁ MGF bound is $\alpha = 4$ (the bound $e^{-l}(1-2l)^{-1/2} \le e^{8 l^2}$
+  on $|l| \le 1/4$), so the sample-mean tail yields $2\,e^{-n\delta^2/(2\alpha^2)} =
+  2\,e^{-n\delta^2/32}$. We therefore state the **provable** exponent $n\delta^2/32$ in
+  `gaussian_quadratic_form_tail`. Downstream consumers (`RandomRIP.lean`) must use $32$.
+
+**Bibliographic comments.** The χ²₁ moment generating function $(1-2t)^{-1/2}$ and the
+resulting sub-exponential / Bernstein-type tail for chi-square variables are classical
+folklore with no single seminal origin; the book itself attributes the fixed-$\beta$ bound
+to a standard $\chi^2_n$ concentration exercise. The use of this fixed-vector concentration
+inequality as the central lemma in a self-contained proof of the Restricted Isometry
+Property for Gaussian (and more general sub-Gaussian) random matrices is due to
+R. Baraniuk, M. Davenport, R. DeVore, and M. Wakin, "A Simple Proof of the Restricted
+Isometry Property for Random Matrices," *Constructive Approximation* 28(3):253–263, 2008
+(their Lemma 5.1 / concentration inequality $\mathbb{P}(|\,\|\Phi x\|^2 - \|x\|^2\,| \ge
+\epsilon\|x\|^2) \le 2 e^{-M c_0(\epsilon)}$), building on the Johnson–Lindenstrauss
+concentration tradition and the random-matrix RIP analysis of E. Candès and T. Tao,
+"Decoding by Linear Programming," *IEEE Trans. Inform. Theory* 51(12):4203–4215, 2005.
 
 Concept-layer for the compressed-sensing sub-area; consumed by `RandomRIP.lean`.
 -/
@@ -142,14 +178,14 @@ private lemma integral_sq_sub_one_eq_zero {μ : Measure Ω} [IsProbabilityMeasur
         rw [integral_sub hInt2 (integrable_const 1)]
     _ = 0 := by rw [hEsq, integral_const]; simp
 
-/-- **Centered χ²₁ is sub-exponential** (Lu §7, used for eq:fix-b). For `g ∼ N(0,1)`,
-`g² − 1` is sub-exponential with parameter `α = 4`. -/
+/-- **Centered χ²₁ is sub-exponential** (Lu §9.1, used for the fixed-`β` tail Eq. (9.1)).
+For `g ∼ N(0,1)`, `g² − 1` is sub-exponential with parameter `α = 4`. -/
 theorem chiSq1_centered_isSubExponential
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (g : Ω → ℝ)
-    -- USER-INPUT: g is measurable; Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: g is measurable; Lu-BDA §9.1, Theorem 9.2
     (hg_meas : Measurable g)
-    -- USER-INPUT: g ∼ N(0,1); Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: g ∼ N(0,1); Lu-BDA §9.1, Theorem 9.2
     (hg : Measure.map g μ = gaussianReal 0 1) :
     IsSubExponential (fun ω => g ω ^ 2 - 1) 4 μ := by
   have hmean := integral_sq_sub_one_eq_zero hg_meas hg
@@ -333,7 +369,7 @@ end Curry
 
 variable {n d : ℕ}
 
-/-- **Fixed-`β` quadratic-form tail** (Lu §7, eq:fix-b). If `X` has i.i.d. `N(0,1/n)`
+/-- **Fixed-`β` quadratic-form tail** (Lu §9.1, Eq. (9.1)). If `X` has i.i.d. `N(0,1/n)`
 entries then for any fixed `β ≠ 0`,
 `P(|‖Xβ‖²/‖β‖² − 1| > δ) ≤ 2·exp(−n δ²/32)`.
 
@@ -342,9 +378,9 @@ parameter is `α = 4`, giving the sample-mean exponent `2α² = 32`. See the mod
 theorem gaussian_quadratic_form_tail
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (X : Ω → Matrix (Fin n) (Fin d) ℝ)
-    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1, Theorem 9.2
     (hindep : iIndepFun (fun (p : Fin n × Fin d) ω => X ω p.1 p.2) μ)
-    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1, Theorem 9.2
     (hlaw : ∀ i j, Measure.map (fun ω => X ω i j) μ
               = gaussianReal 0 (⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ : ℝ≥0))
     (β : EuclideanSpace ℝ (Fin d)) (hβ : β ≠ 0)

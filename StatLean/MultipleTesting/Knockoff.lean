@@ -4,16 +4,58 @@ import StatLean.MultipleTesting.Knockoff.FdpBound
 import StatLean.MultipleTesting.Knockoff.Supermartingale
 
 /-!
-# Knock-off FDR control — final assembly (Lu-BDA §19, Theorem `thm:knockoff`)
+# Knock-off filter FDR control
 
-The knock-off filter at level `α` (procedure in `Knockoff/Procedure.lean`) controls the false
-discovery rate: `FDR ≤ α`. This file assembles the two halves:
+The **knock-off filter** at level $\alpha$ is a variable-selection procedure that, for a vector
+of *knock-off statistics* $W = (W_1, \dots, W_d)$ (large positive $W_j$ flags variable $j$ as a
+true signal, $W_j$ near zero or negative flags it as null), chooses a data-dependent threshold
+$t^\star$ and rejects exactly the variables with $W_j \ge t^\star$. The threshold is the smallest
+$t$ for which the estimated false discovery proportion stays at or below $\alpha$, using the
+sign-symmetry of null statistics to estimate the number of false rejections by the number of
+*negative* statistics that clear the threshold.
 
-* `knockoff_fdp_le` (`Knockoff/FdpBound.lean`, deterministic): `FDP(t*) ≤ α · V₊(t*)/(1+V₋(t*))`;
+**Main result.** Under the knock-off-score sign-symmetry assumption on $W$, the procedure controls
+the **false discovery rate** at level $\alpha$:
+$$
+  \mathrm{FDR} \;=\; \mathbb{E}\!\left[\mathrm{FDP}(t^\star)\right] \;\le\; \alpha .
+$$
+Here $\mathrm{FDP}(t) = \#\{j \in H_0 : W_j \ge t\} / \max(\#\{j : W_j \ge t\},\,1)$ is the
+proportion of rejections that are true nulls.
+
+The Lean statement adds two regularity hypotheses beyond the bare book statement, both of which
+hold automatically for continuous knock-off statistics:
+* `hties` — for every null coordinate $j \in H_0$, $W_j \ne 0$ almost surely, so the sign of a
+  null statistic is well defined;
+* `hmag` — almost surely the magnitudes $|W_i|$ are pairwise distinct, so the threshold ordering
+  is unambiguous (no ties to break).
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off).
+Companion treatment: E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford
+University, 2023, Lecture 11, §11.5.
+
+**Proof formalization notes.** This file assembles the two halves of the argument:
+
+* `knockoff_fdp_le` (`Knockoff/FdpBound.lean`, deterministic): the pointwise bound
+  $\mathrm{FDP}(t^\star) \le \alpha \cdot V_+(t^\star)/(1+V_-(t^\star))$, where $V_+$ counts null
+  statistics above the threshold and $V_-$ counts null statistics whose negation is above it;
 * `knockoff_ratio_stopped_le_one` (`Knockoff/Supermartingale.lean`, the supermartingale +
-  optional-stopping core): `E[V₊(t*)/(1+V₋(t*))] ≤ 1`.
+  optional-stopping core): $\mathbb{E}\!\left[V_+(t^\star)/(1+V_-(t^\star))\right] \le 1$, obtained
+  by showing the reverse-time ratio process is a supermartingale and applying optional stopping at
+  the data-dependent threshold $t^\star$.
 
-Then `FDR = ∫ FDP ≤ ∫ α·V₊/(1+V₋) = α·∫ V₊/(1+V₋) ≤ α` by integral monotonicity.
+Combining them, $\mathrm{FDR} = \int \mathrm{FDP} \le \int \alpha\,V_+/(1+V_-)
+= \alpha \int V_+/(1+V_-) \le \alpha$ by integral monotonicity, factoring out $\alpha$, and the
+ratio bound. The $1 + V_-$ in the denominator is the "$+1$" of the *knock-off$^+$* procedure,
+which is what yields exact $\mathrm{FDR} \le \alpha$ control (rather than only a modified FDR).
+
+**Bibliographic comments.** The knock-off filter originates with R. F. Barber and E. J. Candès,
+"Controlling the false discovery rate via knockoffs", *Annals of Statistics* 43(5):2055–2085, 2015
+(arXiv:1404.5609). That paper's Theorem 1 controls a *modified* FDR for the plain knock-off
+procedure, while its Theorem 2 establishes exact $\mathrm{FDR} \le q$ control for the knock-off$^+$
+procedure — the variant with the "$+1$" offset in the FDP estimate that is formalized here. The
+sign-symmetry / supermartingale-with-optional-stopping argument used in this file follows the
+structure of that paper's proof of Theorem 2.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -47,13 +89,13 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     simpa only [neg_neg] using hstop_neg.neg
   exact Integrable.const_mul hstop α
 
-/-- **Knock-off FDR control** (Lu-BDA §19, Theorem `thm:knockoff`). For a knock-off score `W`, the
+/-- **Knock-off FDR control** (Lu-BDA Ch. 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off)). For a knock-off score `W`, the
 knock-off procedure at level `α` controls the false discovery rate: `FDR ≤ α`. -/
 theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (hα : 0 < α)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)
-    -- LEAN-ONLY: no ties on null scores (`Wⱼ ≠ 0` a.s.), so the sign is well-defined; Lu-BDA §19
+    -- LEAN-ONLY: no ties on null scores (`Wⱼ ≠ 0` a.s.), so the sign is well-defined; Lu-BDA §21.3
     (hties : ∀ j ∈ H₀, ∀ᵐ ω ∂μ, W j ω ≠ 0)
-    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §19
+    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §21.3
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) :
     FDR H₀ (knockoffRejects W α) μ ≤ α := by
   simp only [FDR]

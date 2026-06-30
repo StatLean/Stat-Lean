@@ -2,7 +2,7 @@ import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Process.Filtration
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 
-/-! # Doob-martingale MGF bound (Lu-BDA §3.1, McDiarmid)
+/-! # Doob-martingale MGF bound (Lu-BDA §5.1, Theorem 5.1, McDiarmid Inequality)
 
 We prove that McDiarmid's bounded-differences function satisfies
 `HasSubgaussianMGF (f(X) − E[f(X)]) (∑ₖ (‖cₖ‖₊/2)²) μ`
@@ -13,12 +13,12 @@ MGF bound: `∀ λ, E[exp(λ(f(X) − E[f(X)]))] ≤ exp(λ² ∑ₖ cₖ²/8)`.
 
 **Architecture:**
 1. `allVars`, `natFiltration`, `doobMartingale`, `doobIncrement` — the core objects.
-2. Independence-factorization machinery (`§3.5`): `projVars`/`combineAt`/`condMean`,
+2. Independence-factorization machinery (`§5.1`): `projVars`/`combineAt`/`condMean`,
    `condDistrib_eq_const_of_indepFun` (independence ⇒ conditional law = marginal),
    `condExpKernel_ae_eq_const_of_measurable` (fiber-constancy), `increment_factorization`
    (`Mⱼ = condMean` of the prefix block), `condMean_update_le` (oscillation `≤ cₖ`).
 3. `increment_bounded_of_bounded_differences` — the per-increment `[−cₖ, cₖ]` / fiber-wise
-   `[a, a+cₖ]` bounds, assembled from the §3.5 machinery (zero `sorry`).
+   `[a, a+cₖ]` bounds, assembled from the §5.1 machinery (zero `sorry`).
 4. `increment_hasCondSubgaussianMGF` — proved by wrapping `condExp_hoeffding_mgf`
    (CondHoeffding.lean) fiber-by-fiber.
 5. `mgf_sub_expectation_le` — proved rigorously via
@@ -71,12 +71,12 @@ variable {n : ℕ} {Ω : Type*} [mΩ : MeasurableSpace Ω] [StandardBorelSpace �
 /-! ### §1 Objects -/
 
 /-- Pack `n` random variables into a product-valued map.
-    Constitutive (Lu-BDA §3.1): the joint observable. -/
+    Constitutive (Lu-BDA §5.1): the joint observable. -/
 def allVars (X : ∀ i : Fin n, Ω → β i) : Ω → Π i : Fin n, β i :=
   fun ω i => X i ω
 
 /-- Natural filtration Fₖ = σ(X₀,...,Xₖ₋₁).
-    Constitutive (Lu-BDA §3.1): reveals coordinates one at a time. -/
+    Constitutive (Lu-BDA §5.1): reveals coordinates one at a time. -/
 noncomputable def natFiltration
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i)) :
     Filtration ℕ mΩ where
@@ -195,7 +195,7 @@ private lemma sum_doobCY_eq (c : Fin n → ℝ) :
   -- congr 1 closes by definitional equality of doobCY.
   congr 1
 
-/-! ### §3.5 Independence factorization machinery -/
+/-! ### §5.1 Independence factorization machinery -/
 
 /-- Coordinates of `X` in the index set `S`, with coordinates outside `S` replaced by an
     arbitrary fixed value. LEAN-ONLY: packages the `σ(Xᵢ : i ∈ S)`-measurable "block" of
@@ -471,10 +471,10 @@ private lemma increment_bounded_of_bounded_differences
     (f : (Π i : Fin n, β i) → ℝ) (hf : Measurable f)
     (hf_int : Integrable (f ∘ allVars X) μ)
     (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
-    -- USER-INPUT: bounded differences Dᵢf ≤ cᵢ; Lu-BDA §3.1.
+    -- USER-INPUT: bounded differences Dᵢf ≤ cᵢ; Lu-BDA §5.1.
     (hbd : ∀ k : Fin n, ∀ x : Π i : Fin n, β i, ∀ y : β k,
         |f x - f (Function.update x k y)| ≤ c k)
-    -- USER-INPUT: independence of (X i); Lu-BDA §3.1.
+    -- USER-INPUT: independence of (X i); Lu-BDA §5.1.
     (hX_indep : iIndepFun X μ)
     (k : ℕ) (hk : k < n) :
     -- Global a.e. bound (used for integrable_exp_mul).
@@ -631,10 +631,10 @@ lemma increment_hasCondSubgaussianMGF
     (f : (Π i : Fin n, β i) → ℝ) (hf : Measurable f)
     (hf_int : Integrable (f ∘ allVars X) μ)
     (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
-    -- USER-INPUT: bounded differences; Lu-BDA §3.1.
+    -- USER-INPUT: bounded differences; Lu-BDA §5.1.
     (hbd : ∀ k : Fin n, ∀ x : Π i : Fin n, β i, ∀ y : β k,
         |f x - f (Function.update x k y)| ≤ c k)
-    -- USER-INPUT: independence of (X i); Lu-BDA §3.1.
+    -- USER-INPUT: independence of (X i); Lu-BDA §5.1.
     (hX_indep : iIndepFun X μ)
     (k : ℕ) (hk : k < n) :
     HasCondSubgaussianMGF ((natFiltration X hX) k) ((natFiltration X hX).le k)
@@ -715,7 +715,11 @@ lemma increment_hasCondSubgaussianMGF
 
 /-! ### §5 Main theorem: McDiarmid MGF bound -/
 
-/-- **Doob-martingale MGF bound for McDiarmid** (Lu-BDA §3.1).
+/-- **Doob-martingale MGF bound for McDiarmid** (Lu-BDA §5.1, Theorem 5.1 (McDiarmid
+Inequality)).
+
+Reference: Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0).
 
 For `n` independent random variables `X = (X₀,...,Xₙ₋₁)` and a function `f` satisfying the
 bounded-differences condition with constants `c : Fin n → ℝ`, the centered evaluation
@@ -732,12 +736,12 @@ theorem mgf_sub_expectation_le
     (X : ∀ i : Fin n, Ω → β i) (hX : ∀ i : Fin n, Measurable (X i))
     (f : (Π i : Fin n, β i) → ℝ) (hf : Measurable f)
     (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
-    -- USER-INPUT: bounded differences; Lu-BDA §3.1.
+    -- USER-INPUT: bounded differences; Lu-BDA §5.1.
     (hbd : ∀ k : Fin n, ∀ x : Π i : Fin n, β i, ∀ y : β k,
         |f x - f (Function.update x k y)| ≤ c k)
-    -- USER-INPUT: independence of (X i); Lu-BDA §3.1.
+    -- USER-INPUT: independence of (X i); Lu-BDA §5.1.
     (hX_indep : iIndepFun X μ)
-    -- USER-INPUT: f(X) integrable; Lu-BDA §3.1 (implicit regularity).
+    -- USER-INPUT: f(X) integrable; Lu-BDA §5.1 (implicit regularity).
     (hf_int : Integrable (f ∘ allVars X) μ) :
     HasSubgaussianMGF (fun ω => f (allVars X ω) - ∫ ω', f (allVars X ω') ∂μ)
       (∑ k : Fin n, (‖c k‖₊ / 2) ^ 2) μ := by

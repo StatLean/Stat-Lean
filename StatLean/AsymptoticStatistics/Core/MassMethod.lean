@@ -5,21 +5,125 @@ import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.ForMathlib.MassMethodUtilities
 
 /-!
-# The point-mass / mixture-Gâteaux-representer method for the EIF
+# Point-mass Gâteaux equivalence for the efficient influence function
 
-Verifies that a candidate raw influence function is the efficient influence
-function (EIF). The user computes a candidate EIF formula by symbolic
-differentiation of the point-mass-evaluated functional, then asserts in Lean
-that the formula is the **mixture Gâteaux representer** of the parameter
-functional `Ψ` along bounded-density mixture paths. The main theorem
-`gateaux_representer_eq_pathwise_derivative` bridges that representer assertion
-to the QMD-curve-based pathwise derivative, yielding the EIF claim directly.
+This file verifies that a candidate raw influence function is the **efficient
+influence function** (EIF) of a parameter functional, by way of the
+point-mass / mixture-Gâteaux heuristic that practitioners use to *guess* the
+influence function.
 
-Reference: `ref/mass/mass.tex` (Equivalence of the Point-Mass Gâteaux
-Derivative and the Efficient Influence Function). Its two supporting lemmas
-(QMD construction from `1+t·g` density, and density of bounded scores in
-`L²₀(P)`) are formalised here as `boundedDensityPath` and
-`bounded_score_span_dense` respectively.
+Setup and statement. Let $P$ be a probability measure and $\Psi$ a real-valued
+functional of probability measures, pathwise differentiable at $P$ over the
+full tangent space with derivative $\dot\psi$. A candidate influence function
+$\varphi$ lies in $L^2_0(P)$ — the square-integrable, mean-zero functions
+(i.e. $\int \varphi\,dP = 0$). Say $\varphi$ is the **mixture-Gâteaux
+representer** of $\Psi$ if, for every probability measure $Q \ll P$ with
+bounded density $dQ/dP$, the directional derivative along the convex mixture
+path $P_t := (1-t)P + tQ$ exists and equals the $Q$-mean of $\varphi$:
+$$
+  \left.\frac{d}{dt}\,\Psi\big((1-t)P + tQ\big)\right|_{t=0^+}
+    \;=\; \int \varphi \, dQ .
+$$
+The main theorem `gateaux_representer_eq_pathwise_derivative` shows that such a
+$\varphi$ is an influence function for $\dot\psi$: for every tangent direction
+$g$,
+$$
+  \langle \varphi, g\rangle_{L^2(P)} \;=\; \dot\psi(g),
+$$
+so $\varphi$ is precisely the efficient influence function. Operationally, the
+user computes a candidate EIF by symbolic differentiation of the point-mass-
+evaluated functional ($\frac{d}{dt}\Psi((1-t)P + t\delta_x)|_{t=0} = \varphi(x)$,
+extended linearly to $Q$ via $\int \varphi\,dQ$), asserts in Lean that the
+formula is the mixture-Gâteaux representer, and the library closes the EIF
+claim. Convenience wrappers (`eif_via_Gateaux`, `eif_via_TV_frechet`,
+`eif_via_Point_mass`) package the result for the different forms in which the
+user can supply the directional-derivative computation (mixture-Gâteaux
+representer, TV-Fréchet expansion, or a one-dimensional point-mass derivative).
+
+Two supporting lemmas carry the analytic content. `boundedDensityPath`
+constructs, for each essentially bounded mean-zero score $g$ bounded below by
+$-1$, a differentiable-in-quadratic-mean (QMD) curve from the affine density
+family $p_t = 1 + t\,g$ with score $g$; this realizes the convex mixture path
+as a QMD path, so the QMD-curve pathwise derivative and the mixture-Gâteaux
+limit refer to the same scalar. `bounded_score_span_dense` shows the linear
+span of these bounded scores is dense in $L^2_0(P)$, which extends the
+identity $\langle\varphi,g\rangle = \dot\psi(g)$ from the bounded class to all
+of $L^2_0(P)$ by inner-product continuity.
+
+The Lean statement matches the informal one with one explicit restriction: the
+mixture-Gâteaux representer hypothesis is stated only for $Q \ll P$ with
+*bounded* Radon–Nikodym derivative $dQ/dP$ (not for arbitrary signed-measure
+perturbations or point masses $\delta_x$, which would require the full
+TV-Fréchet machinery on the signed-measure Banach space). The point-mass
+formula $\frac{d}{dt}\Psi((1-t)P + t\delta_x)|_{t=0} = \varphi(x)$ is the
+heuristic motivation; the bounded-RN-mixture form is what the proof uses.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information).
+See also the project note `ref/mass/mass.tex` (Equivalence of the Point-Mass
+Gâteaux Derivative and the Efficient Influence Function), whose two supporting
+lemmas are formalised here as `boundedDensityPath` and
+`bounded_score_span_dense`.
+
+**Proof formalization notes.**
+
+`boundedDensityPath` (mass.tex Lemma 1, DQM of bounded mixture paths). For
+$g \in B$, the density family $p_t = 1 + t\,g$ defines a `QMDPath P` with
+score $g$:
+
+- Let $M$ be an essential bound for $g$; set $\delta := 1/(M+1)$. For
+  $t \in (-\delta, \delta)$, $1 + t\,g > 0$ a.e. (since $g \ge -1$ and
+  $|t\,g| < 1$). Define `curve t := if |t| < δ then P.withDensity (1 + t·g)
+  else P`; then `curve 0 = P`, each `curve t` is a probability measure (the
+  density integrates to $1 + t\int g\,dP = 1$ since $g \in L^2_0(P)$), and the
+  curve is absolutely continuous w.r.t. $P$.
+- `qmd_limit` is the substantive content: for $t \in (0,\delta)$ the pointwise
+  bound $\big|(\sqrt{1+t g}-1)/t - g/2\big|^2 \le t^2 g^4/4$ follows from
+  $\sqrt{1+u}-1 = u/(\sqrt{1+u}+1)$ with $u := t\,g$ and $\sqrt{1+u}+1 \ge 1$.
+  Integrating gives $\mathrm{eLpNorm}^2 \le t^2\|g\|_\infty^4/4$, hence
+  $\mathrm{eLpNorm}^2/t^2 \to 0$ as $t \to 0$. The $t<0$ case follows by
+  replacing $t$ with $|t|$; outside $(-\delta,\delta)$ the curve is $P$, so
+  only small-$t$ behavior matters for the `𝓝[≠] 0` limit. The algebraic
+  Lipschitz inequality is closed by `nlinarith` after `field_simp`; the
+  integral squeeze uses `tendsto_of_tendsto_of_tendsto_of_le_of_le`.
+
+`gateaux_representer_eq_pathwise_derivative` (mass.tex main theorem). For
+$g \in B$, `boundedDensityPath g hg` is a QMD path with score $g$ whose curve
+at $t \in (0,1)$ agrees with the convex mixture $(1-t)P + tQ$ for
+$Q := P.\mathrm{withDensity}(1+g)$. Therefore the QMD-curve limit
+(`PathwiseDifferentiableAt`) and the mixture-Gâteaux limit
+(`IsMixtureGateauxRepresenter`) are the same scalar. The Gâteaux side gives
+$\int \varphi\,dQ = \int \varphi(1+g)\,dP = \langle\varphi,g\rangle$ (using
+$\int\varphi\,dP = 0$); the QMD side gives $\dot\psi(g)$; equating yields
+$\langle\varphi,g\rangle = \dot\psi(g)$ for $g \in B$. By bilinearity this
+extends to $\mathrm{span}(B)$, and by `bounded_score_span_dense` plus
+inner-product continuity to all of $L^2_0(P) = \top$. Mechanically: both sides
+are continuous linear maps in $g$; `ContinuousLinearMap.ext_on` lets two CLMs
+agreeing on a dense set agree everywhere.
+
+The file also exposes intermediate definitions (`IsEssBoundedMixtureScore`,
+`IsBoundedMixtureScore`, `IsTangentBoundedDense`, `IsMixtureGateauxRepresenter`,
+`IsTVFrechetMixtureExpansion`, `IsTVFrechetExpansion`) and helper lemmas on the
+truncation radius and the curve's Radon–Nikodym derivative; their per-
+declaration docstrings record the precise book-vs-Lean correspondences,
+including the deliberate restriction to bounded-RN convex mixtures noted above.
+
+**Bibliographic comments.** This is textbook synthesis / folklore in
+semiparametric statistics, with no single seminal theorem to cite. The
+"influence function as a Gâteaux derivative" viewpoint originates in the
+von Mises calculus of differentiable statistical functionals — R. von Mises,
+"On the asymptotic distribution of differentiable statistical functions,"
+*Annals of Mathematical Statistics* 18 (1947), 309–348 — and in the influence
+curve of robust statistics, defined as the Gâteaux derivative of a functional
+in the direction of a point mass $\delta_x$: F. R. Hampel, "The influence
+curve and its role in robust estimation," *Journal of the American Statistical
+Association* 69 (1974), 383–393. The packaging as an *equivalence* between this
+point-mass Gâteaux derivative and the efficient influence function — via
+pathwise (QMD-path) differentiability over the tangent space — is the standard
+modern treatment of van der Vaart, *Asymptotic Statistics* (1998), Chapter 25;
+no original research paper states this exact equivalence under these
+hypotheses.
 -/
 
 open MeasureTheory Filter Topology

@@ -2,19 +2,32 @@ import Mathlib.Analysis.InnerProductSpace.Adjoint
 import StatLean.HighDimensionalStatistics.Lasso.Defs
 
 /-!
-# Deterministic ℓ² rate of the Lasso estimator (Lu §8, thm:re)
+# Deterministic ℓ² rate of the Lasso estimator
 
-This file proves the **deterministic** (noise-free) ℓ² rate bound
+Consider the fixed-design linear model $Y = X\beta^* + \varepsilon$ with design matrix
+$X \in \mathbb{R}^{n \times d}$ and a true coefficient vector $\beta^*$ supported on a set
+$S$ of cardinality $s = |S|$. Let $\hat\beta$ be any minimiser of the Lasso objective
+$\tfrac{1}{2n}\|Y - X\beta\|_2^2 + \lambda\|\beta\|_1$. Suppose the design satisfies the
+**restricted eigenvalue condition** $\mathrm{RE}(\kappa, 3)$, namely
+$\tfrac{1}{n}\|X\Delta\|_2^2 \ge \kappa\|\Delta\|_2^2$ for every $\Delta$ in the cone
+$\{\Delta : \|\Delta_{S^c}\|_1 \le 3\|\Delta_S\|_1\}$, and choose the regularisation
+parameter so that $\lambda \ge \tfrac{2}{n}\|X^\top\varepsilon\|_\infty$. Then the
+estimation error obeys the deterministic ℓ² bound
+$$ \|\hat\beta - \beta^*\|_2 \;\le\; \frac{3}{\kappa}\,\sqrt{s}\,\lambda. $$
+The statement is entirely deterministic: no distributional assumption is placed on the
+noise $\varepsilon$.
 
-  `‖β̂ − β*‖ ≤ (3/κ) · √s · λ`
+This matches the book statement verbatim. The Lean formalization additionally carries the
+mild regularity hypotheses $n > 0$, $\kappa > 0$, and $\lambda > 0$, which are implicit in
+the book (the conclusion is vacuous or ill-posed otherwise) and are used to divide through
+in the final steps. The restricted-eigenvalue constant $\kappa$, the cone parameter $3$, and
+the leading constant $3$ are exactly as in the book.
 
-for a Lasso estimator `β̂` satisfying `IsLassoEstimator X Y λ β̂` under the
-restricted eigenvalue condition `RE(κ, 3)` and the tuning condition
-`λ ≥ (2/n) · ‖Xᵀε‖∞`.  All hypotheses are deterministic; no probability
-appears.  The proof follows the standard basic-inequality argument from
-Lu, *Big Data Analysis* §8 (theorem tag `thm:re`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 10 (Statistical Properties of Lasso), §10.2 (Statistical
+Rate of Lasso), Theorem 10.1 (Rate of Lasso). (`Lu-BDA §10.2 Theorem 10.1`.)
 
-**Proof sketch.**
+**Proof formalization notes.**
 1. From `IsLassoEstimator` at `β = β*` derive the *basic inequality*
    `(1/2n)‖XΔ‖² ≤ (1/n)⟨ε, XΔ⟩ + λ(‖β*‖₁ − ‖β̂‖₁)` where `Δ = β̂ − β*`.
 2. Bound the noise term via the adjoint identity `⟨ε, XΔ⟩ = ⟨Xᵀε, Δ⟩` and
@@ -23,6 +36,19 @@ Lu, *Big Data Analysis* §8 (theorem tag `thm:re`).
    to show `Δ ∈ reCone S 3`.
 4. Apply `RestrictedEigenvalue` and Cauchy–Schwarz `‖·_S‖₁ ≤ √s·‖·‖₂` to
    close `κ‖Δ‖² ≤ 3λ√s·‖Δ‖ ⟹ ‖Δ‖ ≤ (3/κ)√s·λ`.
+This is the standard basic-inequality argument, following the book's proof line for line
+(zero-order optimality → basic inequality → cone membership → restricted eigenvalue →
+Cauchy–Schwarz).
+
+**Bibliographic comments.** The restricted eigenvalue condition and the corresponding ℓ²
+oracle bound for the Lasso originate with P. J. Bickel, Y. Ritov, and A. B. Tsybakov,
+"Simultaneous analysis of Lasso and Dantzig selector," *Annals of Statistics* 37(4):
+1705–1732 (2009), which introduces Assumption $\mathrm{RE}(s, c_0)$ and proves ℓ²/ℓ_q
+bounds for the Lasso (their Theorem 7.2). The textbook's Theorem 10.1 is a streamlined version
+of that result specialised to $c_0 = 3$ with simplified constants; closely related
+treatments appear in P. Bühlmann and S. van de Geer, *Statistics for High-Dimensional Data*
+(Springer, 2011), and in S. van de Geer and P. Bühlmann, "On the conditions used to prove
+oracle results for the Lasso," *Electronic Journal of Statistics* 3:1360–1392 (2009).
 -/
 
 open Matrix
@@ -110,7 +136,8 @@ private lemma l1Norm_support_decomp (S : Finset (Fin d))
 
 /-! ## Main theorem -/
 
-/-- **Deterministic ℓ² rate of the Lasso** (Lu, *Big Data Analysis* §8, `thm:re`).
+/-- **Deterministic ℓ² rate of the Lasso** (Lu, *Big Data Analysis* §10.2, Theorem 10.1
+(Rate of Lasso)).
 
 Given the fixed-design linear model `Y = Xβ* + ε`, a Lasso estimator `β̂`, the
 restricted eigenvalue condition `RE(κ, 3)`, and the tuning condition
@@ -124,21 +151,21 @@ theorem lasso_l2_rate
     (Y : EuclideanSpace ℝ (Fin n))
     (lam κ : ℝ)
     (βhat : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: n > 0; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: n > 0; Lu-BDA §10.2 Theorem 10.1
     (hn : 0 < n)
-    -- USER-INPUT: κ > 0; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: κ > 0; Lu-BDA §10.2 Theorem 10.1
     (hkappa : 0 < κ)
-    -- USER-INPUT: λ > 0; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: λ > 0; Lu-BDA §10.2 Theorem 10.1
     (hlam_pos : 0 < lam)
-    -- USER-INPUT: restricted eigenvalue RE(κ, 3) holds; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: restricted eigenvalue RE(κ, 3) holds; Lu-BDA §10.2 Theorem 10.1
     (hre : RestrictedEigenvalue X S κ 3)
-    -- USER-INPUT: β̂ minimises the Lasso objective; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: β̂ minimises the Lasso objective; Lu-BDA §10.2 Theorem 10.1
     (hLasso : IsLassoEstimator X Y lam βhat)
-    -- USER-INPUT: linear model Y = Xβ* + ε; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: linear model Y = Xβ* + ε; Lu-BDA §10.2 Theorem 10.1
     (hY : Y = designMap X βstar + ε)
-    -- USER-INPUT: β* supported on S (β*_j = 0 for j ∉ S); Lu-BDA §8 (thm:re)
+    -- USER-INPUT: β* supported on S (β*_j = 0 for j ∉ S); Lu-BDA §10.2 Theorem 10.1
     (hS : ∀ j ∉ S, βstar.ofLp j = 0)
-    -- USER-INPUT: tuning condition λ ≥ (2/n)·‖Xᵀε‖∞; Lu-BDA §8 (thm:re)
+    -- USER-INPUT: tuning condition λ ≥ (2/n)·‖Xᵀε‖∞; Lu-BDA §10.2 Theorem 10.1
     (hlam : lam ≥ (2 / (n : ℝ)) * linfNorm (designMap Xᵀ ε)) :
     ‖βhat - βstar‖ ≤ (3 / κ) * Real.sqrt (S.card : ℝ) * lam := by
   -- Abbreviations

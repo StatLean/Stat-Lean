@@ -6,8 +6,9 @@ import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 /-!
 # Prohorov-type tightness and subsequence extraction on probability measures
 
-Two Prohorov-flavoured results used in van der Vaart §7.10 ("marginal tight ⇒ joint
-tight, then pick a weak-convergent subsequence"):
+Two Prohorov-flavoured results used in van der Vaart's representation theorem
+(Theorem 7.10, §7.3 "Convergence to a Normal Experiment") — "marginal tight ⇒ joint
+tight, then pick a weak-convergent subsequence":
 
 * `tight_prod_of_tight_marginals` — tight marginals ⇒ tight joint;
 * `extract_weak_subseq` — in a Polish space, a tight sequence of probability measures

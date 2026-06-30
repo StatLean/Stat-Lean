@@ -8,14 +8,106 @@ import Mathlib.Probability.IdentDistrib
 /-!
 # Maximal inequalities for empirical processes
 
-The three core maximal inequalities of vdV §19.6 for the empirical process
-`G_n` over a class of measurable functions: Bernstein's inequality
-(`bernstein_inequality`, Lem 19.32), the finite-class supremum bound
-(`finite_sup_bound`, Lem 19.33), and the bracketing maximal inequality
-(`maximal_inequality_bracketing` and its tight variant
-`maximal_inequality_bracketing_tight`, Lem 19.34).
+The three core maximal inequalities for the empirical process
+$\mathbb{G}_n = \sqrt{n}\,(\mathbb{P}_n - P)$ indexed by a class $\mathcal{F}$ of
+measurable functions, drawn from an i.i.d. sample $X_1, \dots, X_n \sim P$.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
+1. **Bernstein's inequality.** For a measurable $f$ with $|f| \le M$ almost
+   surely and $Pf^2 \le \sigma^2$,
+   $$
+   P\bigl(|\mathbb{G}_n f| > x\bigr)
+     \;\le\; 2\,\exp\!\Bigl(-\tfrac{x^2}{4\,(\sigma^2 + xM/\sqrt{n})}\Bigr),
+     \qquad x > 0 .
+   $$
+
+2. **Finite-class supremum bound.** For a *finite* class $\mathcal{F}$ whose
+   members all satisfy $|f| \le M$ and $Pf^2 \le \sigma^2$,
+   $$
+   \mathbb{E}\,\|\mathbb{G}_n\|_{\mathcal{F}}
+     \;\le\; K\Bigl(\tfrac{M\,\log(1+|\mathcal{F}|)}{\sqrt{n}}
+        + \sigma\,\sqrt{\log(1+|\mathcal{F}|)}\Bigr)
+   $$
+   for a universal constant $K$.
+
+3. **Bracketing maximal inequality.** For a class $\mathcal{F}$ with
+   $Pf^2 \le \delta^2$ for every $f \in \mathcal{F}$, envelope function $\Phi$,
+   and bracketing entropy integral $J_{[\,]}(\delta, \mathcal{F}, L^2(P))$,
+   $$
+   \mathbb{E}^{*}\,\|\mathbb{G}_n\|_{\mathcal{F}}
+     \;\lesssim\; J_{[\,]}(\delta, \mathcal{F}, L^2(P))
+        + \sqrt{n}\, P^{*}\bigl(\Phi\,\mathbf{1}\{\Phi > \sqrt{n}\,a(\delta)\}\bigr),
+     \qquad a(\delta) = \frac{\delta}{\sqrt{\log N_{[\,]}(\delta, \mathcal{F}, L^2(P))}} .
+   $$
+
+The corresponding Lean statements are `bernstein_inequality`,
+`finite_sup_bound`, and `maximal_inequality_bracketing` (with the tight
+chaining variant assembled from the `tight_*` sub-aux lemmas). Notable
+deviations from the book are recorded in the per-declaration docstrings and in
+the proof-formalization notes below; the most significant is that the
+*formalized* `maximal_inequality_bracketing` is a **crude** variant in which the
+existential constant $K = 2n\delta + 2$ is allowed to depend on $(n, \delta)$,
+and the parenthesised factor carries an extra additive $1$ cushion. The genuine
+universal-constant statement is the target of the tight chaining sub-lemmas.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.6 (Maximal Inequalities), Lemma 19.32
+(Bernstein's inequality), Lemma 19.33 (finite-class maximal inequality), Lemma
+19.34 (bracketing maximal inequality).
+
+**Proof formalization notes.**
+The chaining strategy of §19.6 builds the infinite-supremum bound from two
+devices, exactly as in the book: an exponential tail inequality (Lemma 19.32) is
+turned into a bound on finite suprema (Lemma 19.33) via union bound plus a
+Jensen/Orlicz argument, and the latter is summed across dyadic scales by a
+chaining (telescoping) argument to give the bracketing inequality (Lemma 19.34).
+
+* `bernstein_inequality` (Lem 19.32) delegates to
+  `MaximalBernstein.bernstein_inequality_aux`, closing the two-sided bound from
+  the one-sided bound applied to `f` and `-f` (via `empiricalProcess_neg`), with
+  the analytic core `mgf_bounded_taylor` / `bernstein_one_sided`. The leading
+  constant $1/4$ is the *provable* value; vdV remarks the sharp constant is
+  $1/2$, obtainable by a finer argument.
+* `finite_sup_bound` (Lem 19.33) delegates to `MaximalOrlicz.finite_sup_bound_aux`
+  (truncation + Jensen via the Orlicz route); its existential witness is $K = 96$.
+* `maximal_inequality_bracketing` (Lem 19.34) is proved here as the **crude**
+  variant: rather than the full chaining argument, it bounds the supremum by an
+  envelope + triangle/Cauchy–Schwarz argument, yielding the *non-universal*
+  constant $K = 2n\delta + 2$. Concretely it bounds
+  $\int^{*} \|\mathbb{G}_n\|_{\mathcal{F}}$ by
+  $2n\delta + 2\sqrt{n}\,T$ with $T = \int |\Phi|\,\mathbf{1}\{|\Phi| > \delta\sqrt{n}\}\,dP$,
+  using the envelope inequality $|f| \le \Phi$, the lintegral bound
+  $\operatorname{ofReal}|\!\int f\,dP| \le \int |\Phi|\,dP$ (via
+  `norm_integral_le_lintegral_norm`), Fubini through `IdentDistrib`, and a
+  dyadic split of $\int |\Phi|\,dP$ at the threshold $\delta\sqrt{n}$. The extra
+  additive $1$ cushion and the $(n,\delta)$-dependence of $K$ are crude-bound
+  artifacts; vdV's sharper statement absorbs the cushion into $J_{[\,]}$ for
+  non-trivial classes.
+* The genuine **tight** (universal-constant) chaining argument is factored into
+  three private sub-aux lemmas — `tight_chain_level_bound` (per-level finite-class
+  sup bound at the truncation threshold $a(\delta)$), `tight_chain_telescope_bound`
+  (dyadic series $\to$ entropy integral), and `tight_envelope_truncation_bound`
+  (envelope-tail correction above $\delta\sqrt{n}$) — assembled by `_tight_core`.
+  This tight form is the input required for the equicontinuity half of the
+  Donsker theorem (vdV Theorem 19.5), where sending $\delta \downarrow 0$ along a
+  $1/\sqrt{n}$-summable sequence requires $K$ not to grow with $n$.
+
+**Bibliographic comments.**
+These maximal inequalities are part of the folklore of empirical-process theory
+and have no single seminal-paper origin; vdV §19.6 itself attributes the
+underlying chaining technique to R. M. Dudley ("The sizes of compact subsets of
+Hilbert space and continuity of Gaussian processes", *J. Functional Analysis*
+**1** (1967), 290–330) and D. Pollard, and notes that the bracketing central
+limit theorem they serve was obtained by M. Ossiander ("A central limit theorem
+under metric entropy with $L^2$ bracketing", *Ann. Probab.* **15** (1987),
+897–919). The systematic textbook treatment, including the bracketing maximal
+inequality with the entropy integral $J_{[\,]}$ and the truncation level
+$a(\delta)$, is A. W. van der Vaart and J. A. Wellner, *Weak Convergence and
+Empirical Processes: With Applications to Statistics*, Springer Series in
+Statistics, Springer, 1996, §2.14 (Bracketing), of which vdV Lemmas 19.32–19.34
+are a streamlined exposition. The exponential bound (Lemma 19.32) is the
+classical Bernstein inequality (S. N. Bernstein, 1924) applied to the centered
+empirical sum.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

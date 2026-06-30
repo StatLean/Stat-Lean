@@ -4,26 +4,81 @@ import StatLean.AsymptoticStatistics.Core.EfficiencyOperational
 /-!
 # Z-estimator semiparametric efficiency
 
-A Z-estimator solves an estimating equation `P_n ψ̂_n(·, θ̂_n) ≈ 0`
-where `ψ̂_n` is a sequence of estimators of the efficient score
-`ℓ̃_{θ₀, η₀}`. Under the no-bias condition (25.52) and the Donsker /
-asymptotic-equicontinuity condition (25.53), `θ̂_n` is asymptotically
-linear with influence function `(1 / Ĩ_{θ₀, η₀}) • ℓ̃_{θ₀, η₀}` and
-asymptotically efficient.
+A *Z-estimator* $\hat\theta_n$ solves the efficient score estimating
+equation $\sum_{i=1}^n \tilde\ell_{\hat\theta_n,\hat\eta_n}(X_i) = 0$ —
+equivalently, $\sqrt{n}\,\mathbb{P}_n\,\tilde\ell_{\hat\theta_n,\hat\eta_n}
+= o_P(1)$ — where $\tilde\ell_{\theta_0,\eta_0}$ is the efficient score
+function (the ordinary score for $\theta$ minus its $L^2(P)$-projection
+onto the nuisance tangent space) and $\hat\eta_n$ is a plug-in estimator
+of the nuisance parameter. Assume the efficient information
+$\tilde I_{\theta_0,\eta_0}$ is positive (the scalar analogue of "the
+efficient information matrix is nonsingular"). Then, under the no-bias
+condition (25.52) and the consistency / Donsker condition (25.53),
+$\hat\theta_n$ is asymptotically linear with influence function
+$\tilde I_{\theta_0,\eta_0}^{-1}\,\tilde\ell_{\theta_0,\eta_0}$ and is
+asymptotically efficient for $\theta$ at $(\theta_0,\eta_0)$.
 
-The empirical-process content of (25.52) and (25.53) is not formalized
-here: the bundled hypothesis `asympLinear_25_54` directly asserts the
-asymptotic-linear expansion that vdV §25.5 derives from those equations
-together with the estimating-equation `P_n ψ̂_n(·, θ̂_n) = o_P(n^{-1/2})`.
+The **bias-residual variant** drops the no-bias condition (25.52),
+retaining the bias term explicitly:
+$$\sqrt{n}\,(\hat\theta_n-\theta_0)
+  = \frac{1}{\sqrt{n}}\sum_{i=1}^n
+      \tilde I_{\theta_0,\eta_0}^{-1}\,\tilde\ell_{\theta_0,\eta_0}(X_i)
+    + \sqrt{n}\,P_{\hat\theta_n,\eta}\,\tilde\ell_{\hat\theta_n,\hat\eta_n}
+    + o_P(1).$$
+Combined with the operational characterization of efficiency, this
+formalizes the *necessity* of the no-bias condition (25.52): efficiency
+forces the bias residual to vanish at rate $\sqrt{n}$.
+
+Deviations from the book worth noting: the scope here is a **scalar
+parameter** (a one-dimensional score direction $v$), so the book's
+"nonsingular information matrix" hypothesis specializes to the positivity
+$\tilde I_{\theta_0,\eta_0} > 0$ needed to invert the EIF formula.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998. Chapter 25 (Semiparametric Models), §25.8 (Efficient Score
+Equations), Theorem 25.54 (Z-estimator semiparametric efficiency) and
+Theorem 25.59 (bias-residual expansion), Eqs (25.52) (no-bias condition)
+and (25.53) (consistency / Donsker condition). (All in-file tags cite
+§25.8; the equation and theorem numbers 25.52, 25.53, 25.54, 25.59 are
+as cited.)
+
+**Proof formalization notes.** The empirical-process content of (25.52)
+and (25.53) is *not* reproved here: the bundled hypothesis
+`asympLinear_25_54` directly asserts the asymptotic-linear expansion that
+vdV §25.8 derives from those two conditions together with the estimating
+equation $\sqrt{n}\,\mathbb{P}_n\,\tilde\ell_{\hat\theta_n,\hat\eta_n}
+= o_P(1)$ (operationally, `P_n ψ̂_n(·, θ̂_n) = o_P(n^{-1/2})`). Given that
+input, `zEstimator_semiparametricallyEfficient` (Thm 25.54) is a 3-step
+assembly: (Step A) construct the efficient influence function
+$\tilde I_{\theta_0,\eta_0}^{-1}\,\tilde\ell_{\theta_0,\eta_0}$ from the
+strict-model layer; (Step B) unwrap the bundled asymptotic-linear
+expansion modulo the centering rewrite $\psi(P)=\theta_0$; (Step C)
+combine via the operational efficiency lemma. The bias-residual variant
+`zEstimator_biasResidual_expansion` (Thm 25.59) is the direct unwrapping
+of `asympLinear_25_59`; the recovery direction (vanishing bias ⇒ Thm
+25.54) is shipped as `…toEfficientScoreEqAssumptions`.
 
 Scope: scalar parameter / 1-dim score direction `v : Θ`.
 
-Reference: vdV §25.5, eq:25.52 (no-bias condition), eq:25.53 (Donsker /
-asymptotic-equicontinuity), thm:25.54 (Z-estimator semiparametric
-efficiency), thm:25.59 (bias-residual variant).
-
 Headline declarations: `zEstimator_semiparametricallyEfficient`,
 `zEstimator_biasResidual_expansion`.
+
+**Bibliographic comments.** This is textbook synthesis with no single
+seminal paper. The efficient score function and efficient influence
+function are the central objects of the modern semiparametric efficiency
+theory developed in P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A.
+Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*,
+Johns Hopkins University Press, 1993 (republished Springer, 1998); the
+efficient-influence-function lower bound itself descends from the
+convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z.
+Wahrsch. Verw. Gebiete* 14, 1970, 323–330) and L. Le Cam, with the
+projection construction of the efficient score going back to C. Stein
+(*Proc. 3rd Berkeley Symp.*, 1956). The specific packaging as the
+"efficient score equation" method, with the no-bias condition (25.52),
+the Donsker condition (25.53), and the asymptotic-efficiency conclusions
+of Theorems 25.54 and 25.59, is van der Vaart's exposition in §25.8 of
+the cited text and is best regarded as folklore consolidated there.
 -/
 
 open MeasureTheory Filter Topology
@@ -46,11 +101,11 @@ The structure parameters carry the model identity (score operator
 target tangent space `T`, parameter derivative `dψ`, estimator
 sequence `estimator`, centering `θ₀`); the structure body bundles the
 EIF-construction hypotheses (`h_mem`, `h_dψ`, `hI_pos`) and the
-asymptotic-linear expansion (`asympLinear_25_54`) that vdV §25.5
+asymptotic-linear expansion (`asympLinear_25_54`) that vdV §25.8
 derives from (25.52) + (25.53) + the estimating-equation
 `P_n ψ̂_n(·, θ̂_n) = o_P(n^{-1/2})`.
 
-Reference: vdV §25.5, eqs:25.52, 25.53, thm:25.54.
+Reference: vdV §25.8, eqs:25.52, 25.53, thm:25.54.
 
 Edge behavior:
 * When `efficientInformation S_θ T_nuis v = 0` (i.e. `S_θ v ∈ T_nuis`,
@@ -84,13 +139,13 @@ structure EfficientScoreEqAssumptions
   non-degenerate at `v` (i.e. `S_θ v ∉ T_nuis`). Required to invert
   `Ĩ` in the EIF formula `(1 / Ĩ) • ℓ̃`. -/
   hI_pos : 0 < efficientInformation S_θ T_nuis v
-  /-- vdV §25.5 (eqs:25.52 + 25.53 + estimating-equation
+  /-- vdV §25.8 (eqs:25.52 + 25.53 + estimating-equation
   `P_n ψ̂_n(·, θ̂_n) = o_P(n^{-1/2})`):
 
   the Z-estimator `estimator` is asymptotically linear at `P` with
   influence function `(1 / Ĩ) • ℓ̃` and centering `θ₀`. Concrete model
   files prove this from Donsker / asymptotic-equicontinuity machinery
-  (vdV §25.5 proof of 25.54).
+  (vdV §25.8 proof of 25.54).
 
   Equivalent operational form (cf. vdV eq:25.22):
   `√n · (estimator_n − θ₀) − (1/√n) · Σ_i (1/Ĩ) ℓ̃(X_i) →_P 0`
@@ -109,7 +164,7 @@ estimator sequence `estimator`, and centering `θ₀ = ψ P`, then
 `estimator` is semiparametrically efficient at `P` for the parameter
 functional `ψ` relative to `T`.
 
-Reference: vdV §25.5, thm:25.54.
+Reference: vdV §25.8, thm:25.54.
 
 Proof (3-step):
 * **Step A** — produce the EIF via `eif_from_efficientScore`.
@@ -167,7 +222,7 @@ Differs from `EfficientScoreEqAssumptions` in two ways:
    rather than `AsymptoticallyLinearAt`, retaining the bias term in
    the conclusion.
 
-Reference: vdV §25.5, thm:25.59. -/
+Reference: vdV §25.8, thm:25.59. -/
 structure EfficientScoreEqBiasResidualAssumptions
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -189,14 +244,14 @@ structure EfficientScoreEqBiasResidualAssumptions
           * ⟪efficientScore S_θ T_nuis v, (g : ↥(L2ZeroMean P))⟫_ℝ
   /-- vdV §25.4 (lem:25.25): `Ĩ_{θ₀,η₀} > 0`. -/
   hI_pos : 0 < efficientInformation S_θ T_nuis v
-  /-- vdV §25.5 (eq:25.53 + estimating-equation
+  /-- vdV §25.8 (eq:25.53 + estimating-equation
   `√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} = o_P(1)`, **omitting** (25.52)):
 
   the Z-estimator's bias-residual expansion holds with the supplied
   `bias` sequence:
   `√n (estimator − θ₀) = (1/√n) Σ (1/Ĩ) ℓ̃(X_i) + bias_n + o_P(1)`
   under `Pⁿ`. Concrete model files prove this from Donsker /
-  Glivenko–Cantelli machinery applied to `ℓ̃_{θ̂_n,η̂_n}` (vdV §25.5
+  Glivenko–Cantelli machinery applied to `ℓ̃_{θ̂_n,η̂_n}` (vdV §25.8
   proof, with the (25.52) cancellation step omitted). -/
   asympLinear_25_59 :
     AsymptoticallyLinearWithBiasAt estimator P
@@ -221,7 +276,7 @@ bias-residual expansion forces `bias →_P 0` at rate `√n` — i.e.,
 separately as
 `EfficientScoreEqBiasResidualAssumptions.toEfficientScoreEqAssumptions`.
 
-Reference: vdV §25.5, thm:25.59.
+Reference: vdV §25.8, thm:25.59.
 
 Proof: unwrap `asympLinear_25_59` directly (Steps A and C of the
 `thm:25.54` template are not used — the conclusion is the AL-with-bias
@@ -246,7 +301,7 @@ bias-residual sequence is identically zero (i.e., (25.52) holds at
 the strongest rate), the bias-residual bundle reduces to the
 standard `EfficientScoreEqAssumptions`.
 
-Reference: vdV §25.5, the (25.52)-collapse step. -/
+Reference: vdV §25.8, the (25.52)-collapse step. -/
 def EfficientScoreEqBiasResidualAssumptions.toEfficientScoreEqAssumptions
     {P : Measure Ω} [IsProbabilityMeasure P]
     {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]

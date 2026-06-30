@@ -5,20 +5,84 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.Maximal
 /-!
 # Equicontinuity-side chaining brick for Theorem 19.5
 
-This file isolates the deepest textbook brick of the
-`isPDonsker_of_finite_bracketing_entropy_integral` proof: the
-strong-iid form of asymptotic equicontinuity under a finite bracketing
-entropy integral. It is the consumer-form chaining/maximal-inequality
-assembly described in the chaining proof of vdV §19.2 (`Theorem 19.5`'s
-equicontinuity half): chain construction `δ_q ↓ 0`, envelope extraction
-from the level-1 bracket cover, application of the tight maximal
-inequality `maximal_inequality_bracketing_tight`, Markov, and the
-diagonal limit driving the L²-vanishing back to a probability bound on
-the empirical-process gap.
+Let $\mathcal F$ be a class of measurable functions whose bracketing
+entropy integral up to scale $1$ is finite,
+$J_{[\,]}(1,\mathcal F,L_2(P)) = \int_0^1
+\sqrt{\log N_{[\,]}(\varepsilon,\mathcal F,L_2(P))}\,d\varepsilon < \infty$,
+and let $X_1, X_2, \dots$ be i.i.d.\ with law $P$, defining the empirical
+process $\mathbb G_n f = \sqrt n\,(P_n - P)f$. This file isolates the
+*asymptotic-equicontinuity* half of the chaining proof: for any random
+pair of functions $(\hat f_n, \hat g_n)$ taking values in $\mathcal F$
+whose $L_2(P)$-gap vanishes in mean,
+$\mathbb E\,\lVert \hat f_n - \hat g_n\rVert_{L_2(P)}^2 \to 0$, the
+empirical-process gap vanishes in probability:
+$$\Pr\bigl\{\,|\mathbb G_n(\hat f_n) - \mathbb G_n(\hat g_n)| > \eta\,\bigr\}
+\longrightarrow 0 \qquad\text{for every } \eta > 0.$$
+This is the key step behind the bracketing Donsker theorem
+$J_{[\,]}(1,\mathcal F,L_2(P)) < \infty \Rightarrow \mathcal F \in
+\mathrm{CLT}(P)$ (consumed by
+`isPDonsker_of_finite_bracketing_entropy_integral` via the headline
+declaration `equicontinuity_chaining_assembly_brick`).
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.2.
+*Deviations from the book statement.* The Lean signature carries three
+explicit inputs beyond the bare textbook hypothesis: (i) a strictly
+positive bracketing-entropy integral at every scale, $J_{[\,]}(\delta')
+> 0$ for $\delta' > 0$ (`hJ_pos`), excluding the statistically vacuous
+$L_2$-degenerate class; (ii) the per-scale supremum-norm chaining bound
+`hChainBound_outer`, the maximal-inequality output specialized to the
+empirical process; and (iii) integrability of the per-$\xi$ $L_2(P)$-gap
+(`h_l2_int`), a measurability regularity condition. The book treats
+these as implicit in the chaining construction.
 
-Headline declaration: `equicontinuity_chaining_assembly_brick`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge
+University Press, 1998. Chapter 19 (Empirical Processes), §19.2
+(Donsker classes), proof of Theorem 19.5 (the bracketing central limit
+theorem); the asymptotic-equicontinuity argument on pp. 270–271, built
+on the maximal inequality of Lemma 19.34.
+
+**Proof formalization notes.** The headline brick delegates in two
+steps:
+1. **Markov bridge** (`equi_chain_mean_l2_to_prob_l2`): converts the
+   mean-$L_2$ hypothesis $\mathbb E\,\lVert\hat f_n - \hat g_n
+   \rVert_{L_2(P)}^2 \to 0$ into the probabilistic-$L_2$ form
+   $\Pr\{\lVert\hat f_n - \hat g_n\rVert_{L_2(P)}^2 \ge \delta\} \to 0$
+   for every $\delta > 0$, via `meas_ge_le_lintegral_div` after bridging
+   the Bochner integral to its `lintegral` form with
+   `ofReal_integral_eq_lintegral_ofReal`.
+2. **Diagonal chaining assembly**
+   (`equi_chain_diagonal_assembly_with_prob_l2`), itself split into:
+   * **Chain-sequence extraction** (`equi_chain_chain_sequence_exists`):
+     produces scales $\delta_q = 1/(q+1) \downarrow 0$ with
+     $J_{[\,]}(\delta_q,\mathcal F,L_2(P)) \to 0$, using
+     `tendsto_setLIntegral_zero` (absolute continuity of the
+     bracketing-entropy integral w.r.t. the Lebesgue length of
+     $(0,\delta_q]$).
+   * **Per-$q$ chaining bound + diagonal limit**
+     (`equi_chain_assembly_given_chain_sequence`): envelope extraction
+     from the level-1 bracket cover, the tight maximal inequality
+     `maximal_inequality_bracketing_tight` applied to the difference
+     class $\mathcal F - \mathcal F$ at scale $\delta_q$, Markov on the
+     threshold, and a union bound splitting `badEvent` into its
+     $L_2$-good portion (controlled by $K\,J_{[\,]}(\delta_q)$) and its
+     $L_2$-bad portion (controlled by the probabilistic-$L_2$ branch),
+     each driven below $\varepsilon/2$.
+   The constant $K$ in the per-$q$ bound is the maximal-inequality
+   constant from `chaining_per_q_max_ineq_bound`; we state the bound that
+   is actually provable rather than tracking the book's implicit
+   constant.
+
+**Bibliographic comments.** The bracketing central limit theorem under
+an $L_2$-bracketing metric-entropy integral is due to M. Ossiander, *A
+central limit theorem under metric entropy with $L_2$ bracketing*,
+Annals of Probability **15** (1987), no. 3, 897–919 (Theorem 3.1), which
+established exactly the sufficiency of $\int_0^1
+\sqrt{\log N_{[\,]}(\varepsilon)}\,d\varepsilon < \infty$ for the
+empirical-process CLT and introduced the bracketing chaining argument
+formalized here. The textbook presentation in vdV §19.2 (Theorem 19.5)
+follows Ossiander, with the maximal inequality streamlined as in
+Pollard and in van der Vaart–Wellner, *Weak Convergence and Empirical
+Processes* (Springer, 1996), §2.5.2.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

@@ -4,18 +4,64 @@ import StatLean.AsymptoticStatistics.ForMathlib.L2
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Score-function lemmas: zero mean of the score
+# Zero mean of the score function
 
-This file proves that the score function `ℓ_θ` has zero mean under `P_θ`
-(vdV §7.2). The argument uses the inner-product identity in `L²(μ)`:
-`⟨√n (√p_n − √p), √p_n + √p⟩_{L²(μ)} = √n ∫ (p_n − p) dμ = 0`,
-because both densities integrate to 1.  Taking `n → ∞` and using DQM-induced L²
-convergence gives `⟨½ g √p, 2 √p⟩ = ∫ g p dμ = ⟨h, P_θ ℓ⟩`, hence the limit is
-zero and `P_θ ℓ = 0`.
+Let $(P_\theta : \theta \in \Theta)$ be a statistical model with densities
+$p_\theta$ with respect to a dominating measure $\mu$. Suppose the model is
+*differentiable in quadratic mean* at $\theta_0$ with score function
+$\ell_{\theta_0} : \mathcal X \to \Theta$; that is, the map
+$\theta \mapsto \sqrt{p_\theta}$ admits an $L^2(\mu)$ derivative
+$\tfrac12\,\langle \cdot, \ell_{\theta_0}\rangle\,\sqrt{p_{\theta_0}}$ at
+$\theta_0$. Then the score has **zero mean** under $P_{\theta_0}$: for every
+direction $u \in \Theta$,
+$$\int \langle u, \ell_{\theta_0}(x)\rangle\, p_{\theta_0}(x)\, d\mu(x) = 0,$$
+equivalently $P_{\theta_0}\,\ell_{\theta_0} = 0$.
 
 The headline declaration is `score_mean_zero`, assembled from the supporting
 lemmas `diff_sq_identity`, `inner_product_continuity`, `dqm_to_rescaled_l2`, and
 `sqrt_sum_convergence_of_rescaled`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 7 (Local Asymptotic Normality), §7.2 (Expanding the Likelihood),
+Theorem 7.2, differentiability-in-quadratic-mean condition Eq (7.1). Van der
+Vaart's Theorem 7.2 states that DQM at $\theta$ implies both
+$P_\theta\,\ell_\theta = 0$ and existence of the Fisher information
+$I_\theta = P_\theta\,\ell_\theta\ell_\theta^\top$; this file formalizes the
+zero-mean half.
+
+**Proof formalization notes.** The argument follows van der Vaart's proof of
+Theorem 7.2. It uses the inner-product identity in $L^2(\mu)$
+$$\big\langle \sqrt{n}\,(\sqrt{p_n} - \sqrt{p}),\ \sqrt{p_n} + \sqrt{p}\big\rangle_{L^2(\mu)}
+  = \sqrt{n}\int (p_n - p)\, d\mu = 0,$$
+which vanishes because both densities integrate to $1$ (`diff_sq_identity`).
+Taking the limit along a perturbation $\theta_0 + t\cdot u$ as $t \to 0$ and using
+the DQM-induced $L^2$ convergence (`dqm_to_rescaled_l2`,
+`sqrt_sum_convergence_of_rescaled`) together with continuity of the $L^2$ inner
+product (`inner_product_continuity`) gives
+$\langle \tfrac12\,\langle u, \ell\rangle\,\sqrt{p},\ 2\sqrt{p}\rangle
+  = \int \langle u, \ell\rangle\, p\, d\mu$,
+so the limit equals $0$ and the score has zero mean. The Lean statement carries a
+few hypotheses that van der Vaart treats as automatic consequences of DQM but that
+are supplied here as explicit regularity inputs: finiteness of the Fisher
+information along the chosen direction (`h_Fisher`), local $L^2$-membership of the
+DQM residual near $t = 0$ (`h_fminus_memLp`), and that each perturbed density
+integrates to $1$ and is integrable (`h_one_perturb`, `hint_perturb`).
+
+**Bibliographic comments.** The zero-mean identity for the score is classical
+folklore in mathematical statistics, tracing to R. A. Fisher's foundational work
+on maximum likelihood estimation and information (R. A. Fisher, "On the
+mathematical foundations of theoretical statistics," *Philosophical Transactions
+of the Royal Society A* **222** (1922), 309–368; "Theory of statistical
+estimation," *Proceedings of the Cambridge Philosophical Society* **22** (1925),
+700–725). It has no single seminal source as an isolated proposition. The
+specific derivation formalized here — obtaining $P_\theta\,\ell_\theta = 0$ from
+differentiability in quadratic mean *without* assuming pointwise differentiability
+— is due to the Le Cam–Hájek school of asymptotic decision theory (L. Le Cam,
+*Asymptotic Methods in Statistical Decision Theory*, Springer, 1986; J. Hájek,
+"Local asymptotic minimax and admissibility in estimation," *Proc. Sixth Berkeley
+Symp. on Math. Statist. and Prob.*, vol. 1, 1972, 175–194) and is presented in
+textbook form as van der Vaart's Theorem 7.2.
 -/
 
 open MeasureTheory Asymptotics Filter Topology

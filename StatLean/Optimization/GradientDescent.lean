@@ -3,25 +3,40 @@ import StatLean.Optimization.ForMathlib.FirstOrderConvex
 import StatLean.Optimization.ForMathlib.GradientCalc
 
 /-!
-# Convergence of gradient descent (Theorem 11.1)
+# Convergence of gradient descent (O(1/t) rate)
 
-Lu, *Big Data Analysis* §11.1, Theorem `thm:gd`: for a convex `L`-smooth `f`,
-the gradient-descent iterates `x_{t+1} = x_t - (1/L) ∇f(x_t)` satisfy an
-`O(1/t)` rate `f(x_t) - f(x*) ≤ C · ‖x_0 - x*‖² / t`.
+Let $f : E \to \mathbb{R}$ be a convex, $L$-smooth function on a real Hilbert
+space (its gradient is $L$-Lipschitz). Run gradient descent with the constant
+step size $1/L$, i.e. the iterates
+$$x_{t+1} = x_t - \tfrac{1}{L}\,\nabla f(x_t),$$
+and suppose $x^\*$ is a global minimizer of $f$. Then for every $t \ge 1$,
+$$f(x_t) - f(x^\*) \;\le\; \frac{2L\,\lVert x_0 - x^\*\rVert^2}{t},$$
+so the optimality gap decays at the rate $O(1/t)$.
 
-The iteration is supplied abstractly: `x : ℕ → E` with the recurrence `hrec`,
-and `x*` is a global minimizer (`hmin`), from which `∇f(x*) = 0` is derived
-(`gradient_eq_zero_of_forall_le`). The proof goes through co-coercivity
-(`cocoercive`, Lemma 11.1): the distance `‖x_t - x*‖` is non-increasing, and a
-telescoping/recursive bound on `δ_t = f(x_t) - f(x*)` yields the rate.
+The iteration is supplied abstractly: a sequence $x : \mathbb{N} \to E$ with the
+recurrence `hrec`, and $x^\*$ is a global minimizer (`hmin`), from which
+$\nabla f(x^\*) = 0$ is derived (`gradient_eq_zero_of_forall_le`). The proof
+goes through co-coercivity: the distance $\lVert x_t - x^\*\rVert$
+is non-increasing, and a telescoping/recursive bound on
+$\delta_t = f(x_t) - f(x^\*)$ yields the rate.
 
-**Constant.** The book writes `2L‖x_0 - x*‖²/t`. The constant `2L` is in fact
-**looser** than what our telescoping proves: setting `ω := 1/(2L‖x_0-x*‖²)`,
-the recursion `δ_{t+1} ≤ δ_t - ω δ_t²` together with `δ_0 ≥ 0` gives
-`1/δ_t ≥ ω t`, hence `δ_t ≤ 1/(ω t) = 2L‖x_0 - x*‖² / t`. We therefore keep
-the book constant `2L`; the bound stated here matches the book exactly.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 13 (Gradient Descent), §13.1
+(Gradient Descent), Theorem 13.1 (Convergence of Gradient Descent). The
+co-coercivity step is in §13.1 (Gradient Descent); the smoothness helper is
+Lemma 13.1.
 
-## Proof outline
+**Proof formalization notes.**
+
+*Constant.* The book writes the bound $2L\lVert x_0 - x^\*\rVert^2/t$. The
+constant $2L$ is in fact **looser** than what our telescoping proves: setting
+$\omega := 1/(2L\lVert x_0 - x^\*\rVert^2)$, the recursion
+$\delta_{t+1} \le \delta_t - \omega\,\delta_t^2$ together with $\delta_0 \ge 0$
+gives $1/\delta_t \ge \omega t$, hence
+$\delta_t \le 1/(\omega t) = 2L\lVert x_0 - x^\*\rVert^2 / t$. We therefore keep
+the book constant $2L$; the bound stated here matches the book exactly.
+
+*Outline.*
 
 * `gd_descent_step` — smoothness at consecutive iterates gives
   `f(x_{t+1}) ≤ f(x_t) - (1/(2L))‖∇f(x_t)‖²`.
@@ -33,6 +48,18 @@ the book constant `2L`; the bound stated here matches the book exactly.
 * `gd_iterate_eq_xstar_of_start` — handles the degenerate case `x_0 = x*`.
 * `gd_inv_gap_bound` — telescoping induction on the recursive bound
   `δ_{t+1} ≤ δ_t - ω δ_t²`.
+
+**Bibliographic comments.** This $O(1/t)$ rate for gradient descent on convex
+smooth functions is classical folklore in convex optimization with no single
+seminal paper; it is standard textbook material. The canonical modern reference
+is Y. Nesterov, *Introductory Lectures on Convex Optimization: A Basic Course*,
+Applied Optimization 87, Kluwer Academic Publishers, 2004 (cf. Corollary 2.1.2
+and the surrounding §2.1.5 analysis of the gradient method for the class
+$\mathcal{F}_L^{1,1}$ of convex $L$-smooth functions). The co-coercivity
+inequality underlying the distance-monotonicity step is itself attributed to
+the Baillon–Haddad theorem: J.-B. Baillon and G. Haddad, "Quelques propriétés
+des opérateurs angle-bornés et n-cycliquement monotones," *Israel Journal of
+Mathematics* 26 (1977), 137–150.
 -/
 
 namespace StatLean.Optimization
@@ -288,7 +315,7 @@ private lemma gd_inv_gap_bound
         left
         linarith [hk1, hδk1_nonneg]
 
-/-- Lu-BDA Thm 11.1 (gradient-descent convergence rate). Convex `L`-smooth `f`,
+/-- Lu-BDA Theorem 13.1 (Convergence of Gradient Descent). Convex `L`-smooth `f`,
 step `1/L`, global minimizer `x*`: `f(x_t) - f(x*) ≤ 2L‖x_0 - x*‖²/t` for
 `t ≥ 1`. The constant matches the book exactly (the proof goes through a
 slightly tighter pre-bound that is then loosened to match the book). -/

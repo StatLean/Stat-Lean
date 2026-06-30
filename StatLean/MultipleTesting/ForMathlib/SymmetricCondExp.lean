@@ -5,7 +5,7 @@ import Mathlib.Probability.Independence.Basic
 # Symmetric conditional expectation of an exchangeable Bool vector — `ForMathlib`
 
 The **exchangeable / sampling-without-replacement** identity behind the knock-off supermartingale
-step (Lu-BDA §19): for i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the conditional
+step (Lu-BDA Ch 21 (Knock-Off) §21.3): for i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the conditional
 expectation of the indicator of *one* coordinate `i₀`, given the **count** σ-algebra
 `σ(#{i : σ i = true})`, equals `count / k`.
 
@@ -277,7 +277,7 @@ private lemma measure_inter_swap {k : ℕ} (μ : Measure Ω) [IsProbabilityMeasu
 For i.i.d. fair `Bool` variables `σ : Fin k → Ω → Bool`, the conditional expectation of the
 indicator of coordinate `i₀` given the count σ-algebra `σ(signCount σ)` equals `signCount σ / k`.
 
-The brick the knock-off supermartingale step (`count_condExp`, Lu-BDA §19) consumes. -/
+The brick the knock-off supermartingale step (`count_condExp`, Lu-BDA Ch 21 (Knock-Off) §21.3) consumes. -/
 theorem condExp_coord_eq_count_div {k : ℕ} (hk : 0 < k)
     (μ : Measure Ω) [IsProbabilityMeasure μ] (σ : Fin k → Ω → Bool)
     (hσ : ∀ i, Measurable (σ i)) (hindep : iIndepFun σ μ)

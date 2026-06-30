@@ -4,29 +4,59 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
-# Finite Maximal Inequality — Lu-BDA §4.2, `thm:finite-maximal`
+# Finite Maximal Inequality for Sub-Gaussian Variables
 
-We formalize Lu, *Big Data Analysis* §4.2 for `d ≥ 1` centered sub-Gaussian random
-variables `X : Fin d → Ω → ℝ` (each with variance proxy `σ²` under `μ`, NOT
-necessarily independent).
+Let $X_1, \dots, X_d$ ($d \ge 1$) be (not necessarily independent) sub-Gaussian random
+variables with variance proxy $\sigma^2$ and mean zero, $\mathbb{E}[X_j] = 0$ for every
+$j$. Then:
 
-**Tail bound** (`tail_max_le`): for `t ≥ 0`,
-`μ {ω | t < ⨆ j, X j ω} ≤ ENNReal.ofReal (d · exp(−t²/(2σ²)))`.
+* **Tail bound.** For every $t \ge 0$,
+  $$\mathbb{P}\!\Big(\max_{1 \le j \le d} X_j > t\Big) \le d\, e^{-t^2/(2\sigma^2)}.$$
+* **Expectation bound.** Under a probability measure,
+  $$\mathbb{E}\!\Big[\max_{1 \le j \le d} X_j\Big] \le \sigma\sqrt{2\log d}.$$
 
-**Expectation bound** (`expectation_max_le`): under `IsProbabilityMeasure μ`,
-`E[⨆ j, X j] ≤ √σ² · √(2 log d)`.
+In the Lean statements the finite maximum is written as the supremum
+$\bigvee_{j} X_j$ over the index set $\{1, \dots, d\}$ (the supremum equals the
+pointwise maximum once $d \ge 1$), and $\sigma$ is recovered as $\sqrt{\sigma^2}$.
 
-The tail bound is fully proved via a union bound: the event `{max_j X_j > t}` is the
-union of `{X_j > t}`, each of which is bounded by `exp(−t²/(2σ²))` via
-`IsSubGaussian.measure_sub_integral_lt_le` (centeredness kills the `−∫ X_j` shift).
+**Deviation from the book.** The book states the tail bound for $t > 0$; we allow
+$t \ge 0$ throughout, which is strictly stronger. The book's high-probability form
+"$\max_j X_j \le \sigma\sqrt{2\log(d/\delta)}$ with probability at least $1-\delta$" is
+the same statement as the tail bound after substituting $\delta = d\,e^{-t^2/(2\sigma^2)}$.
 
-The expectation bound `expectation_max_le` uses the Jensen + MGF argument (Lu §4.2):
-for `lam > 0`, `exp(lam · E[max]) ≤ E[exp(lam · max)] ≤ ∑_j E[exp(lam · X_j)] ≤ d · exp(σ²lam²/2)`.
-Taking log and dividing by `lam`, then optimising at `lam* = √(2 log d / σ²)` gives
-`E[max] ≤ σ · √(2 log d)`.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 6 (Bernstein and Maximal Inequalities), §6.2,
+Theorem 6.2 (Finite Maximal Inequality).
+The expectation bound is the first display of the theorem; the tail bound is the union
+bound established in its proof.
 
-Deviation from the book: Lu states both bounds for `t > 0` (tail) and uses strict
-sub-Gaussianity; we allow `t ≥ 0` throughout, which is strictly stronger.
+**Proof formalization notes.**
+
+The tail bound (`tail_max_le`) is proved via a union bound: the event
+$\{\max_j X_j > t\}$ is the union of the events $\{X_j > t\}$, each bounded by
+$e^{-t^2/(2\sigma^2)}$ via `IsSubGaussian.measure_sub_integral_lt_le` (centeredness
+kills the $-\int X_j$ shift).
+
+The expectation bound (`expectation_max_le`) uses the Jensen + MGF argument: for
+$\lambda > 0$,
+$$e^{\lambda\,\mathbb{E}[\max]} \le \mathbb{E}[e^{\lambda\max}]
+  \le \sum_j \mathbb{E}[e^{\lambda X_j}] \le d\, e^{\sigma^2\lambda^2/2}.$$
+Taking logs and dividing by $\lambda$ gives
+$\mathbb{E}[\max] \le \tfrac{\log d}{\lambda} + \tfrac{\sigma^2\lambda}{2}$; optimising
+at $\lambda^\star = \sqrt{2\log d / \sigma^2}$ yields $\sigma\sqrt{2\log d}$. Two corner
+cases are handled separately: $\sigma^2 = 0$ forces each $X_j = 0$ a.e. (sub-Gaussian
+with proxy $0$), and $d = 1$ gives $\max = X_0$ with $\mathbb{E}[X_0] = 0$ and
+$\sqrt{2\log 1} = 0$; both reduce to $0 \le 0$.
+
+**Bibliographic comments.** This is a folklore result with no single seminal origin; it
+is the textbook prototype of the maximal-inequality-via-MGF argument. A standard modern
+reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities: A
+Nonasymptotic Theory of Independence*, Oxford University Press, 2013, §2.5 (the maximal
+inequality $\mathbb{E}[\max_j X_j] \le \sqrt{2v\log d}$ for sub-Gaussian variables with
+variance factor $v$). The same bound appears in P. Massart, *Concentration Inequalities
+and Model Selection*, Lecture Notes in Mathematics 1896, Springer, 2007. The argument
+goes back to the classical Cramér–Chernoff method applied to the maximum and is not
+attributable to a single research paper.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -38,7 +68,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-! ### Tail bound -/
 
-/-- **Finite Maximal Inequality — tail bound** (Lu-BDA §4.2, `thm:finite-maximal`).
+/-- **Finite Maximal Inequality — tail bound** (Lu-BDA §6.2, Theorem 6.2).
 
 Given `d ≥ 1` random variables, each sub-Gaussian with variance proxy `σ²` and
 centered (`E[X_j] = 0`), and `t ≥ 0`:
@@ -54,11 +84,11 @@ Proof: union bound (`measure_iUnion_fintype_le`) + per-`j` sub-Gaussian Chernoff
 theorem tail_max_le
     {d : ℕ} [NeZero d] {μ : Measure Ω} {σ2 : ℝ≥0}
     {X : Fin d → Ω → ℝ}
-    -- USER-INPUT: E[X_j] = 0; Lu-BDA §4.2 (thm:finite-maximal)
+    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2, Theorem 6.2
     (hcenter : ∀ j, ∫ x, X j x ∂μ = 0)
-    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §4.2 (thm:finite-maximal)
+    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2, Theorem 6.2
     (hX : ∀ j, IsSubGaussian (X j) σ2 μ)
-    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §4.2 (thm:finite-maximal)
+    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §6.2, Theorem 6.2
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < ⨆ j, X j ω}
       ≤ ENNReal.ofReal ((d : ℝ) * Real.exp (-t ^ 2 / (2 * ↑σ2))) := by
@@ -133,7 +163,7 @@ private lemma exp_mul_ciSup_le_sum_exp
 
 /-! ### Expectation bound -/
 
-/-- **Finite Maximal Inequality — expectation bound** (Lu-BDA §4.2, `thm:finite-maximal`).
+/-- **Finite Maximal Inequality — expectation bound** (Lu-BDA §6.2, Theorem 6.2).
 
 Given `d ≥ 1` centered sub-Gaussian random variables with variance proxy `σ²` under a
 probability measure `μ`:
@@ -141,7 +171,7 @@ probability measure `μ`:
 E[⨆ j : Fin d, X j] ≤ √σ² · √(2 log d)
 ```
 
-Proof (Lu §4.2): for any `lam > 0`, by Jensen (exp convex, μ probability):
+Proof (Lu §6.2): for any `lam > 0`, by Jensen (exp convex, μ probability):
 `exp(lam · E[max]) ≤ E[exp(lam · max)] ≤ E[∑_j exp(lam X_j)] = ∑_j mgf(X_j, lam)`;
 sub-Gaussian MGF gives `∑_j mgf(X_j, lam) ≤ d · exp(σ² lam²/2)`. Taking log and dividing by
 `lam` yields `E[max] ≤ log d / lam + σ² lam / 2`; optimising at `lam* = √(2 log d / σ²)` gives
@@ -152,9 +182,9 @@ Corner cases: `σ² = 0` → each `X_j = 0` a.e. (sub-Gaussian with proxy 0); `d
 theorem expectation_max_le
     {d : ℕ} [NeZero d] {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Fin d → Ω → ℝ}
-    -- USER-INPUT: E[X_j] = 0; Lu-BDA §4.2 (thm:finite-maximal)
+    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2, Theorem 6.2
     (hcenter : ∀ j, ∫ x, X j x ∂μ = 0)
-    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §4.2 (thm:finite-maximal)
+    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2, Theorem 6.2
     (hX : ∀ j, IsSubGaussian (X j) σ2 μ) :
     ∫ ω, ⨆ j, X j ω ∂μ ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log d) := by
   -- Convert IsSubGaussian to HasSubgaussianMGF (centering kills the mean shift).

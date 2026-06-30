@@ -8,11 +8,78 @@ import Mathlib.MeasureTheory.Measure.Dirac
 /-!
 # Vector-valued regular-estimator predicate
 
-The Hájek-style regular-estimator definition (vdV §25.3.2) extended to
-vector-valued functionals, together with a basic reduction lemma.
+This file formalizes the Hájek-style *regular-estimator* predicate for a
+vector-valued functional, the regularity hypothesis underlying the
+semiparametric convolution (Hájek–Le Cam) theorem.
 
-Main declarations: `IsRegularEstimator_broad_vec`,
+Fix a probability measure $P$ on the sample space, a tangent set
+$\dot{\mathcal P}_P$ (the closure of the score directions of the smooth
+submodels through $P$), and a functional
+$\psi : \mathcal P \to \mathbb R^k$ that is pathwise differentiable at $P$
+with efficient influence function $\tilde\psi_P$. A sequence of estimators
+$T_n : \Omega^n \to \mathbb R^k$ is **regular** at $P$ with limit law $L$ if,
+for every score direction $g$ in the linear span of the tangent set, there is a
+quadratic-mean-differentiable submodel $t \mapsto P_{t,g}$ with score $g$ along
+which the local-perturbation, recentered, rescaled estimator converges weakly to
+the **same** limit $L$, free of the direction:
+$$
+\sqrt n\,\bigl(T_n - \psi(P_{1/\sqrt n,\,g})\bigr)
+\ \overset{P_{1/\sqrt n,\,g}^{\,n}}{\rightsquigarrow}\ L .
+$$
+The local parametrization uses the $1/\sqrt n$ contiguity scale, so the
+$n$-fold product law is taken at the perturbed parameter
+$P_{1/\sqrt n,\,g}$ rather than at $P$ itself.
+
+Two forms are provided. The **canonical** form `IsRegularEstimator_vec` is the
+verbatim van der Vaart definition (one *selected* submodel per score direction,
+quantified by an existential over a chosen family). The **broad** /
+*all-paths* form `IsRegularEstimator_broad_vec` requires the same weak-convergence
+conclusion for **every** realising quadratic-mean path with the given score, and
+is therefore a strictly stronger hypothesis; it is retained as a labeled internal
+variant used in the convolution-theorem proof. The two are equivalent
+(`broad ⇒ canonical` trivially; `canonical ⇒ broad` via a Cramér–Wold reduction).
+This is the vector-codomain generalization of the scalar predicate in
+`RegularEstimator`; it differs only in the codomain
+($\mathbb R^k$ in place of $\mathbb R$, hence scalar action `•` for `*`) and the
+tuple-valued efficient influence function.
+
+Main declarations: `IsRegularEstimator_broad_vec`, `IsRegularEstimator_vec`,
 `IsRegularEstimator_broad_vec.shift`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information), §25.3.2
+(regular-estimator definition, the paragraph preceding Theorem 25.20),
+generalized here to a vector codomain.
+
+**Proof formalization notes.** The local parametrization is at scale
+$1/\sqrt n$, so the $n$-fold product law in the weak-convergence statement is
+taken at the perturbed parameter `curve.curve ((√n)⁻¹)` rather than at `P`. The
+canonical form quantifies over a *chosen family* of submodels (one per score
+direction), matching the book's "for every $g$, write $P_{t,g}$ for a submodel";
+the broad form replaces this with a universal quantifier over all
+quadratic-mean paths realising the score. `broad ⇒ canonical` is immediate
+(instantiate the chosen family at any realiser, e.g. `canonicalPath`); the
+converse `canonical ⇒ broad` is the Cramér–Wold reduction to the scalar
+chosen-family reverse direction (`isRegularEstimator_vec_implies_broad`). The
+headline convolution theorem `semiparametric_convolution_theorem_vec` consumes
+the canonical form, so the presented hypothesis matches the book.
+`IsRegularEstimator_broad_vec.shift` is a direct unfolding of the broad
+predicate. See the per-declaration docstrings for the precise correspondence.
+
+**Bibliographic comments.** The regular-estimator concept and the convolution
+theorem it feeds originate with J. Hájek, "A characterization of limiting
+distributions of regular estimates," *Zeitschrift für Wahrscheinlichkeitstheorie
+und verwandte Gebiete* **14** (1970), 323–330, building on the earlier
+asymptotic-minimax program of L. Le Cam ("On the asymptotic theory of estimation
+and testing hypotheses," *Proc. Third Berkeley Sympos. Math. Statist. Probab.*,
+1956). Hájek's theorem states that for a regular estimator the limit law is a
+convolution of an optimal Gaussian component with an arbitrary independent factor;
+the regularity condition formalized here is exactly the local-uniformity (free of
+the direction $g$) hypothesis of that theorem. van der Vaart §25.3 presents the
+semiparametric (infinite-dimensional tangent space) version; the vector-valued
+specialization here corresponds to a finite-dimensional functional
+$\psi : \mathcal P \to \mathbb R^k$.
 -/
 
 open MeasureTheory Filter Topology

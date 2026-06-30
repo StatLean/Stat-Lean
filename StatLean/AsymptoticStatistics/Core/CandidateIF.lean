@@ -1,21 +1,67 @@
 import StatLean.AsymptoticStatistics.Core.Hilbert
 
 /-!
-# Candidate influence function
+# Candidate influence function (a.e. mean-zero L² representative)
 
-A model-agnostic raw-`Ω→ℝ` wrapper that packages measurability,
-square-integrability, and mean-zero into a single object that lifts
-cleanly into `L2ZeroMean P`. Concrete examples specify the influence
-function pointwise as a raw function on the observation space; comparing
-two such formulas as *almost-everywhere* equalities is much easier than
-comparing them as elements of the quotient `Lp ℝ 2 P`. The
-`CandidateIF.toL2ZeroMean` constructor turns a candidate into an element
-of the target Hilbert space, and `CandidateIF.toL2ZeroMean_eq_of_aeEq`
-says two candidates that agree a.e. land at the same L²₀(P) element.
+An *influence function* for an estimator of a parameter on a model with
+distribution $P$ on the observation space $\Omega$ is, in the working
+definition of semiparametric efficiency theory, a real-valued function
+$\tilde\psi : \Omega \to \mathbb{R}$ that is square-integrable and
+centered, i.e. $\tilde\psi \in L^2(P)$ with $\int \tilde\psi \, dP = 0$.
+Such a function therefore lives in the mean-zero subspace
+$L^2_0(P) = \{ g \in L^2(P) : \int g \, dP = 0 \}$, the closed subspace
+of $L^2(P)$ orthogonal to the constants.
 
-Reference: van der Vaart, *Asymptotic Statistics* §25.3 — the working
-definition of an influence function as an a.e. defined real function on
-`Ω` with mean zero and finite second moment.
+This file packages that data model-agnostically. A *candidate influence
+function* bundles a raw measurable representative $\Omega \to \mathbb{R}$
+together with square-integrability under $P$ and the mean-zero
+constraint, into a single object that lifts cleanly into $L^2_0(P)$.
+Concrete examples specify the influence function pointwise as a raw
+function on the observation space; comparing two such formulas as
+*almost-everywhere* equalities is much easier than comparing them as
+elements of the quotient $L^2(P)$. The `CandidateIF.toL2ZeroMean`
+constructor turns a candidate into an element of the target Hilbert
+space $L^2_0(P)$, and `CandidateIF.toL2ZeroMean_eq_of_aeEq` says two
+candidates that agree almost everywhere land at the same $L^2_0(P)$
+element.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge
+University Press, 1998. Chapter 25 (Semiparametric Models), §25.3
+(Efficient Influence Functions): an influence function is an a.e.
+defined real function on $\Omega$ with mean zero and finite second
+moment, i.e. an element of $L^2_0(P)$. The structure here formalizes
+this working definition rather than a single numbered theorem.
+
+**Proof formalization notes.** The bundle has exactly three fields:
+`raw` (the raw measurable representative — without it the object is not
+a candidate function); `memLp2` (square-integrability under $P$, which
+bundles `AEStronglyMeasurable` via `MemLp.aestronglyMeasurable`, so a
+separate measurability field is unnecessary and is intentionally
+absent); and `mean_zero` (centering, required to land in the kernel of
+the integral functional `integralL2 P`). The lift `toL2ZeroMean` sends a
+candidate to `⟨memLp2.toLp raw, _⟩`, where membership in
+$L^2_0(P) = \ker(\text{integralL2}\,P)$ is discharged by
+`integralL2_toLp_eq_integral` (which identifies the abstract functional
+on an L² lift with the ordinary integral, via `L2.inner_def` and the
+real inner-product reduction `⟪a,b⟫_ℝ = b * a`) composed with the
+`mean_zero` field. The a.e.-equality interface
+`toL2ZeroMean_eq_of_aeEq` reduces equality of $L^2_0(P)$ elements to
+equality of underlying `Lp` elements via `MemLp.toLp_congr`.
+
+**Bibliographic comments.** The notion of an influence function
+originates in robust statistics: F. R. Hampel, "The Influence Curve and
+Its Role in Robust Estimation," *Journal of the American Statistical
+Association* 69 (1974), 383–393, introduced the *influence curve*. Its
+reinterpretation as the mean-zero, square-integrable element of $L^2(P)$
+representing the first-order behavior of an asymptotically linear
+estimator — the form used here and in §25.3 — is folklore of the
+semiparametric efficiency literature (cf. J. Pfanzagl, *Contributions to
+a General Asymptotic Statistical Theory*, Springer, 1982; P. J. Bickel,
+C. A. J. Klaassen, Y. Ritov, J. A. Wellner, *Efficient and Adaptive
+Estimation for Semiparametric Models*, Johns Hopkins University Press,
+1993). There is no single seminal source for the "$\tilde\psi \in
+L^2_0(P)$" packaging; it is textbook synthesis.
 -/
 
 open MeasureTheory

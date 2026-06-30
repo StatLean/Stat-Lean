@@ -2,19 +2,38 @@ import StatLean.Optimization.Smoothness.Defs
 import StatLean.Optimization.ForMathlib.FirstOrderConvex
 
 /-!
-# Convergence of the Frank–Wolfe algorithm (Theorem 11.2)
+# Convergence of the Frank–Wolfe algorithm (O(1/t) rate)
 
-Lu, *Big Data Analysis* §11.2, Theorem `thm:fw-rate`: for a convex `L`-smooth
-`f` minimized over a convex set `X` of squared diameter `≤ D`, the Frank–Wolfe
-iterates with step `η_t = 2/(t+2)` satisfy `f(x_t) - f(x*) ≤ 2 L D / (t+2)`.
+Let $f$ be a convex, $L$-smooth function minimized over a convex feasible set
+$X$ whose squared diameter is bounded by $D$ (i.e. $\|y - x\|^2 \le D$ for the
+relevant iterate–oracle pairs). The Frank–Wolfe (conditional-gradient) iterates,
+which at each step move toward the linear-minimization-oracle point with step
+size $\eta_t = \tfrac{2}{t+2}$, satisfy the $O(1/t)$ optimality-gap bound
+$$ f(x_t) - f(x^\*) \;\le\; \frac{2\,L\,D}{\,t+2\,}, \qquad t \ge 1. $$
 
-The linear-minimization oracle is a hypothesis (`hlmo`): each `y_t ∈ X`
-minimizes `z ↦ ⟪∇f(x_t), z⟫` over `X` — the genuine external input describing
-the per-step subproblem, avoiding any compactness / argmin-existence machinery.
-The diameter enters only through the per-step bound `‖y_t - x_t‖² ≤ D`
-(`hdiam`). The proof: smoothness + the oracle + convexity give the recursion
-`Δ_{t+1} ≤ (1 - η_t) Δ_t + (L/2) η_t² D`, closed by induction with
-`η_t = 2/(t+2)`.
+Here the linear-minimization oracle (LMO) is supplied as a hypothesis: at each
+step the point $y_t \in X$ minimizes $z \mapsto \langle \nabla f(x_t), z\rangle$
+over $X$. This is the genuine external input describing the per-step subproblem,
+and it lets the formalization avoid any compactness / argmin-existence
+machinery. The diameter enters only through the per-step squared bound
+$\|y_t - x_t\|^2 \le D$.
+
+**Note on scope (Lean vs book).** The Lean statement is proved for $t \ge 1$.
+The $t = 0$ case would assert the trivial initial gap $f(x_0) - f(x^\*) \le L D$,
+which is not provable from the per-step diameter bound alone for a *constrained*
+minimizer; the $O(1/t)$ rate is the meaningful regime. The book's curvature
+constant is here specialized to $L D$ (smoothness constant times squared
+diameter), the standard upper bound for the affine-invariant curvature.
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 13 (Gradient Descent), §13.2, Theorem 13.2
+(Convergence Rate of Frank-Wolfe Algorithm).
+
+**Proof formalization notes.**
+The argument: smoothness + the LMO + convexity give the one-step recursion
+$\Delta_{t+1} \le (1 - \eta_t)\,\Delta_t + \tfrac{L}{2}\,\eta_t^2\,D$, where
+$\Delta_t := f(x_t) - f(x^\*)$; this is closed by induction with
+$\eta_t = \tfrac{2}{t+2}$.
 
 Architecture: `frankWolfe_step` proves the one-step recursion; `frankWolfe_rate`
 then closes by `Nat.le_induction` for `t ≥ 1`, with base case `t = 1` coming from
@@ -22,6 +41,18 @@ one FW step at `t = 0` (`η_0 = 1 ⇒ Δ_1 ≤ (L/2)D ≤ 2LD/3`). The theorem i
 for `t ≥ 1`: the `t = 0` case would assert the trivial initial gap `Δ_0 ≤ L D`,
 not provable from the per-step diameter bound alone for a *constrained* minimizer
 (CLAUDE.md §1 documented deviation).
+
+**Bibliographic comments.**
+The Frank–Wolfe (conditional-gradient) method originates with M. Frank and
+P. Wolfe, "An algorithm for quadratic programming," *Naval Research Logistics
+Quarterly* **3** (1956), no. 1–2, 95–110, which introduced the projection-free
+scheme based on a linear oracle for quadratic objectives. The modern
+$O(1/t)$ convergence analysis with step size $\eta_t = \tfrac{2}{t+2}$ and the
+affine-invariant curvature constant — exactly the form formalized here — is due
+to M. Jaggi, "Revisiting Frank–Wolfe: Projection-Free Sparse Convex
+Optimization," *Proceedings of the 30th International Conference on Machine
+Learning (ICML)*, 2013, pp. 427–435 (the primal $O(1/t)$ rate is Theorem 1
+there). The textbook statement is a synthesis of this line of work.
 -/
 
 namespace StatLean.Optimization
@@ -30,7 +61,8 @@ open scoped InnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- **Frank–Wolfe one-step recursion** (step in Lu-BDA Thm 11.2). With
+/-- **Frank–Wolfe one-step recursion** (step in Lu-BDA Theorem 13.2,
+Convergence Rate of Frank-Wolfe Algorithm). With
 `η_t := 2 / ((t : ℝ) + 2)`, under convexity + L-smoothness + the
 linear-minimization oracle + the per-step diameter bound `‖y_t - x_t‖² ≤ D`,
 the optimality gap `Δ_t := f(x_t) - f(x*)` obeys
@@ -40,14 +72,14 @@ lemma frankWolfe_step
     {L : ℝ} (hL : 0 ≤ L) (hsmooth : IsLSmooth f L)
     {X : Set E} {D : ℝ}
     (x y : ℕ → E)
-    -- USER-INPUT: LMO output at each step; Lu-BDA §11.2
+    -- USER-INPUT: LMO output at each step; Lu-BDA §13.2
     (hlmo : ∀ t, y t ∈ X ∧ ∀ z ∈ X,
       ⟪gradient f (x t), y t⟫_ℝ ≤ ⟪gradient f (x t), z⟫_ℝ)
-    -- USER-INPUT: per-step squared diameter bound; Lu-BDA §11.2
+    -- USER-INPUT: per-step squared diameter bound; Lu-BDA §13.2
     (hdiam : ∀ t, ‖y t - x t‖ ^ 2 ≤ D)
-    -- USER-INPUT: FW iterate update with step `2/(t+2)`; Lu-BDA §11.2 Alg.
+    -- USER-INPUT: FW iterate update with step `2/(t+2)`; Lu-BDA §13.2 Alg.
     (hrec : ∀ t, x (t + 1) = x t + (2 / ((t : ℝ) + 2)) • (y t - x t))
-    -- USER-INPUT: reference minimizer in feasible set; Lu-BDA §11.2
+    -- USER-INPUT: reference minimizer in feasible set; Lu-BDA §13.2
     {xstar : E} (hxsX : xstar ∈ X) (t : ℕ) :
     f (x (t + 1)) - f xstar
       ≤ (1 - 2 / ((t : ℝ) + 2)) * (f (x t) - f xstar)
@@ -95,7 +127,7 @@ lemma frankWolfe_step
   -- Combine: `f(x(t+1)) ≤ f(x t) + η(f xstar - f(x t)) + (L/2) η² D` and rearrange.
   nlinarith [hsm, hη_step, hdiam_step]
 
-/-- Lu-BDA Thm 11.2 (Frank–Wolfe convergence rate). Convex `L`-smooth `f`,
+/-- Lu-BDA Theorem 13.2 (Convergence Rate of Frank-Wolfe Algorithm). Convex `L`-smooth `f`,
 convex feasible set `X` with squared diameter `≤ D`, linear-minimization oracle
 `hlmo`, step `η_t = 2/(t+2)`: `f(x_t) - f(x*) ≤ 2 L D / (t+2)`.
 

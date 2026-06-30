@@ -1,17 +1,44 @@
 import StatLean.Optimization.Prox.Pillar
 
 /-!
-# Convergence of proximal gradient descent (Theorem 12.1)
+# Convergence of proximal gradient descent (O(1/t) rate)
 
-Lu, *Big Data Analysis* §12.1, Theorem `thm:cvg-prox`: for `F = f + h` with `f`
-convex `L`-smooth and `h` convex, the proximal-gradient iterates
-`x_{t+1} = prox_{(1/L)h}(x_t - (1/L)∇f(x_t))` satisfy
-`F(x_t) - F(x*) ≤ L‖x_0 - x*‖² / (2t)`.
+Let $F = f + h$ be a composite objective on a real Hilbert space, where $f$ is
+convex and $L$-smooth (its gradient is $L$-Lipschitz, with $L > 0$) and $h$ is
+convex. Starting from $x_0$, the proximal-gradient method with constant step
+$1/L$ generates the iterates
+$$ x_{t+1} \;=\; \operatorname{prox}_{(1/L)\,h}\!\bigl(x_t - \tfrac{1}{L}\nabla f(x_t)\bigr), $$
+where $\operatorname{prox}_{(1/L)h}(z) = \arg\min_y \bigl\{ \tfrac1L h(y) + \tfrac12\|y - z\|^2 \bigr\}$.
+Then for every minimizer $x^\star$ of $F$ and every $t \ge 1$,
+$$ F(x_t) - F(x^\star) \;\le\; \frac{L\,\|x_0 - x^\star\|^2}{2\,t}, $$
+i.e. the objective gap decays at the $O(1/t)$ rate.
 
-Each step is given as a prox minimizer (`hrec`). The proof applies the pillar
-inequality (Lemma 12.1) twice: once with `x = y = x_t` to get monotone descent,
-once with `x = x*`, `y = x_t` to get a telescoping bound whose sum yields the
-`O(1/t)` rate.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 14 (Proximal Gradient Descent), §14.1,
+Theorem 14.1 (Convergence Rate of Proximal Gradient Descent).
+
+**Proof formalization notes.** Each iterate is supplied as a prox minimizer
+(hypothesis `hrec`), rather than evaluating the `prox` operator explicitly; this
+is the defining variational characterization of the step. The proof applies the
+pillar inequality (Lemma 14.1) twice: once with `x = y = x_t` to obtain monotone
+descent `F(x_{t+1}) ≤ F(x_t)`, and once with `x = x*`, `y = x_t` to obtain a
+per-step telescoping bound
+`F(x_{t+1}) - F(x*) ≤ (L/2)‖x* - x_t‖² - (L/2)‖x* - x_{t+1}‖²`.
+Summing the telescoping bound over `s = 0,…,t-1` collapses to `(L/2)‖x_0 - x*‖²`,
+and antitonicity of the gap gives `t · (F(x_t) - F(x*)) ≤ ∑_s (F(x_{s+1}) - F(x*))`,
+which combine to the stated `O(1/t)` rate. Constants match the book exactly.
+
+**Bibliographic comments.** The proximal-gradient (forward–backward splitting)
+method originates with P. L. Lions and B. Mercier, "Splitting algorithms for the
+sum of two nonlinear operators", *SIAM J. Numer. Anal.* 16 (1979), 964–979, and
+its modern signal-processing form is developed by P. L. Combettes and V. R. Wajs,
+"Signal recovery by proximal forward–backward splitting", *Multiscale Model.
+Simul.* 4 (2005), 1168–1200. The explicit $O(1/t)$ objective-gap bound
+$F(x_t) - F(x^\star) \le L\|x_0 - x^\star\|^2/(2t)$ formalized here is Theorem 3.1
+of A. Beck and M. Teboulle, "A fast iterative shrinkage-thresholding algorithm
+for linear inverse problems", *SIAM J. Imaging Sci.* 2 (2009), 183–202 (where it
+is stated for the ISTA instance; the accelerated FISTA variant in the same paper
+achieves $O(1/t^2)$). The textbook statement is a synthesis of this line of work.
 -/
 
 namespace StatLean.Optimization
@@ -20,7 +47,7 @@ open scoped InnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- Lu-BDA Thm 12.1 (proximal-gradient convergence rate). `f` convex `L`-smooth
+/-- Lu-BDA Theorem 14.1 (Convergence Rate of Proximal Gradient Descent). `f` convex `L`-smooth
 (`0 < L`), `h` convex, `F = f + h`, step `1/L`:
 `F(x_t) - F(x*) ≤ L‖x_0 - x*‖² / (2t)`. -/
 theorem proximalGradient_rate

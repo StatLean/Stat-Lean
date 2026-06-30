@@ -8,22 +8,50 @@ import Mathlib.Probability.Kernel.Composition.CompNotation
 /-!
 # Equivariant-in-law randomized estimators in the Gaussian shift experiment
 
-The defining notion `IsEquivariantInLaw` for vdV §8.4 Proposition 8.4
-("Convolution structure for equivariant-in-law estimators in the Gaussian
-shift experiment"): a randomized estimator `T` is equivariant-in-law for
-estimating `Ah` if the distribution of `T − Ah` under `h` does not depend on
-`h`.
+In the Gaussian shift experiment one observes $X \sim N(h, S)$ with unknown shift
+parameter $h \in \mathbb{R}^k$ and known covariance $S$, and wishes to estimate the
+linear functional $A h \in \mathbb{R}^d$. A (possibly randomized) estimator $T$ is
+called **equivariant-in-law** if the law of the centred error $T(X) - A h$ does not
+depend on the parameter $h$: there exists a single probability measure $L$ on
+$\mathbb{R}^d$ — the **null distribution** of $T$ — such that, for every
+$h \in \mathbb{R}^k$, the distribution of $T(X) - A h$ under $X \sim N(h, S)$ equals
+$L$. This invariance is the structural hypothesis behind the convolution theorem,
+which forces $L$ to be a convolution of the optimal Gaussian limit with an
+additional independent noise component.
 
-We encode `T` as a Markov kernel `Kernel ℝᵏ ℝᵈ`. Given `X ∼ N(h, Σ)` (modelled
-by `multivariateGaussian h Σ`) and randomization kernel `T`, the law of `T(X)`
-at parameter `h` is `T ∘ₘ (multivariateGaussian h Σ)`; the law of `T − Ah` is
-then this pushed forward by the deterministic translation by `−Ah`.
-Equivariance: this translated law is the same probability measure `L` for every
-`h`. `L` is the **null distribution** of `T`.
+This file states only the defining notion and its null-distribution accessor; the
+convolution conclusion itself is not formalized here.
 
-This file states only the definition plus the Skolemized accessor
-`IsEquivariantInLaw.nullDist` (characterised by
-`IsEquivariantInLaw.map_sub_eq_nullDist`).
+**Formalization notes.** We encode the randomized estimator $T$ as a Markov kernel
+`Kernel ℝᵏ ℝᵈ`. Given $X \sim N(h, S)$ (modelled by `multivariateGaussian h S`) and
+randomization kernel $T$, the law of $T(X)$ at parameter $h$ is the kernel
+composition `T ∘ₘ (multivariateGaussian h S)`; the law of $T(X) - A h$ is this
+pushed forward by the deterministic translation $y \mapsto y - A h$. Equivariance
+asserts that this translated law is one common probability measure $L$ for every
+$h$, and $L$ is the **null distribution** of $T$. The covariance matrix that vdV
+writes as $\Sigma$ is named `S` in Lean (`Σ` is reserved). The file provides the
+structure `IsEquivariantInLaw`, the Skolemized accessor
+`IsEquivariantInLaw.nullDist`, the instance establishing that the null distribution
+is a probability measure, and the characterising property
+`IsEquivariantInLaw.map_sub_eq_nullDist`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.4 (Estimating Normal Means),
+Proposition 8.4.
+
+**Bibliographic comments.** The notion of an equivariant-in-law (regular) estimator
+and the resulting convolution structure originate with the convolution theorem of
+J. Hájek, "A characterization of limiting distributions of regular estimates",
+*Zeitschrift für Wahrscheinlichkeitstheorie und Verwandte Gebiete* **14** (1970),
+323–330, with parallel contributions by L. Le Cam and by N. Inagaki, "On the
+limiting distribution of a sequence of estimators with uniformity property",
+*Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The
+finite-dimensional Gaussian-shift formulation used here — a randomized estimator
+whose centred error has a parameter-free law — is the standard textbook
+distillation of that line of work (vdV §8.4) and, as a stand-alone *definition*,
+carries no single seminal origin of its own; it is the device through which the
+Hájek–Le Cam convolution theorem is stated.
 -/
 
 open MeasureTheory ProbabilityTheory

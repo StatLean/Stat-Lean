@@ -6,17 +6,79 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
-# Theorem 19.5: Donsker via bracketing entropy integral
+# Donsker theorem via bracketing entropy integral
 
-Every class `F` of measurable functions with `J_{[]}(1, F, L_2(P)) < ∞` is
-`P`-Donsker. The proof splits `IsPDonsker = IsMarginalCLT ∧
-IsAsymptoticallyEquicontinuous`: the marginal-CLT half is provable from
-Mathlib's iid CLT; the equicontinuity half black-boxes Lemma 19.34
-(`maximal_inequality_bracketing`).
+Let $\mathcal{F}$ be a class of measurable functions $f : \Omega \to \mathbb{R}$ on a
+probability space $(\Omega, P)$. Define the $L_2(P)$-bracketing entropy integral
+$$
+J_{[\,]}(1, \mathcal{F}, L_2(P))
+  = \int_0^1 \sqrt{\log N_{[\,]}\!\big(\varepsilon, \mathcal{F}, L_2(P)\big)}\; d\varepsilon,
+$$
+where $N_{[\,]}(\varepsilon, \mathcal{F}, L_2(P))$ is the minimal number of
+$\varepsilon$-brackets in $L_2(P)$ needed to cover $\mathcal{F}$. If
+$J_{[\,]}(1, \mathcal{F}, L_2(P)) < \infty$, then $\mathcal{F}$ is $P$-Donsker: the
+empirical process $\{\mathbb{G}_n f : f \in \mathcal{F}\}$, with
+$\mathbb{G}_n f = \sqrt{n}\,(P_n - P)f$, converges in distribution in
+$\ell^\infty(\mathcal{F})$ to a tight, mean-zero Gaussian process with the
+$L_2(P)$ covariance of $\mathcal{F}$.
 
-vdV §19.2 Theorem 19.5.
+Being $P$-Donsker is decomposed here as the conjunction of two properties: the
+**marginal central limit theorem** (every finite-dimensional projection converges,
+which requires $f \in L_2(P)$ for each $f \in \mathcal{F}$) and **asymptotic
+equicontinuity** of the empirical process with respect to the $L_2(P)$ seminorm.
 
-Headline declaration: `isPDonsker_of_finite_bracketing_entropy_integral`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.2 (Donsker Theorems), Theorem 19.5.
+
+**Proof formalization notes.**
+The headline declaration is `isPDonsker_of_finite_bracketing_entropy_integral`.
+The proof splits `IsPDonsker = IsMarginalCLT ∧ IsAsymptoticallyEquicontinuous`:
+
+* **Marginal-CLT half.** From $J_{[\,]}(1, \mathcal{F}, L_2(P)) < \infty$ extract a
+  single $\varepsilon$-bracket from the finite cover at a scale where the bracketing
+  number is finite (`exists_finite_bracketingNumber_of_integral_lt_top`); for each
+  $f \in \mathcal{F}$ find a containing bracket $[l, u]$ and bound
+  $|f| \le |l| + |u|$ pointwise to deduce $f \in L_2(P)$ via `MemLp.of_le_mul`
+  from `IsEpsBracket.memLp_lower`/`memLp_upper`. This half is fully closed
+  (`marginalCLT_of_finite_bracketing_entropy_integral_aux`).
+* **Equicontinuity half.** The textbook chaining argument (vdV §19.2) controls
+  $\int^* \sup_{f \in \mathcal{F}_\delta} \mathbb{G}_n f$ via the bracketing maximal
+  inequality (Lemma 19.34, `maximal_inequality_bracketing`): for each $\delta$ the
+  bound is of the form $K\,(J_{[\,]}(\delta, \mathcal{F}, L_2) + \sqrt{n}\cdot
+  \text{envelope tail})$; the envelope tail vanishes after truncating at threshold
+  $\delta\sqrt{n}$, and a diagonal sequence $\delta_q \downarrow 0$ drives the bound
+  to $0$. Markov's inequality (`tendsto_meas_le_of_tendsto_integral_zero`) converts
+  the lintegral bound to a probability bound on
+  $\mu\{\xi : \eta < |\mathbb{G}_n(\hat f) - \mathbb{G}_n(\hat g)|\}$. The difference
+  class $\mathcal{F} - \mathcal{F}$ inherits finite bracketing entropy via vdV
+  Lemma 19.31 (`hasFiniteBracketingCover_difference_class`). The half
+  delegates the genuine chaining content (chain construction, envelope extraction,
+  Markov + diagonal limit) through
+  `asymptoticallyEquicontinuous_of_finite_bracketing_entropy_integral_aux` →
+  `equicontinuity_consumer_step_finite_entropy` →
+  `equicontinuity_consumer_step_strong_iid` to
+  `equicontinuity_chaining_assembly_brick` in
+  `EquicontinuityChaining.lean`. Mutual independence (`iIndepFun X μ`) is exposed
+  directly because the per-level variance factorisation in the chaining step
+  genuinely consumes it.
+
+The `hJ_pos` regularity hypothesis (positivity of $J_{[\,]}(\delta', \mathcal{F},
+L_2(P))$ at every scale $\delta' > 0$) covers the statistically vacuous degenerate
+case where $\mathcal{F}$ is $L_2$-trivial; the chaining assembly's $J = 0$ branch
+short-circuits it.
+
+**Bibliographic comments.**
+The bracketing-entropy Donsker theorem originates with M. Ossiander, "A Central
+Limit Theorem Under Metric Entropy with $L_2$ Bracketing," *The Annals of
+Probability* **15** (1987), no. 3, 897–919. Ossiander proved an empirical-process
+central limit theorem under exactly the integrability condition
+$\int_0^1 \sqrt{\log N_{[\,]}(\varepsilon, \mathcal{F}, L_2(P))}\,d\varepsilon
+< \infty$ on the $L_2$-bracketing metric entropy, generalizing earlier
+uniform-entropy results of Dudley (1978, 1981) and Jain–Marcus (1975); the
+tightness argument combined with Andersen–Dobrić (1987) yields the CLT. The form
+stated here is van der Vaart's Theorem 19.5, a textbook synthesis of Ossiander's
+result.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

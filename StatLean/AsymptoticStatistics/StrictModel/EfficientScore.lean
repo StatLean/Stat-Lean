@@ -5,15 +5,69 @@ import StatLean.AsymptoticStatistics.Core.EIF
 
 This file develops the ordinary score, nuisance tangent space, efficient
 score, and efficient information for classical `(θ, η)` semiparametric
-models, culminating in the 1-dimensional form of vdV lem:25.25: the
-normalized efficient score is an efficient influence function for a
-linear functional of `θ`.
+models, culminating in the 1-dimensional form of the efficient-score
+characterization of the efficient influence function (van der Vaart,
+Lemma 25.25): the normalized efficient score is an efficient influence
+function for a linear functional of `θ`.
 
-Reference: vdV §25.4. The 1-dim restriction (linear functional of `θ`
-in a single direction `v`) keeps the API inside the abstract EIF
-framework's `dψ : T →L[ℝ] ℝ` form.
+In standard notation, for a model `\{P_{\theta,\eta}\}` with finite-dimensional
+parameter `\theta` and infinite-dimensional nuisance `\eta`, let
+`\dot\ell_\theta` be the ordinary score for `\theta` and let `\dot{\mathcal P}_\eta`
+denote the nuisance tangent space (the closed linear span in `L^2_0(P)` of the
+nuisance scores). The **efficient score** in direction `v` is the residual of
+the ordinary score after projecting out the nuisance directions,
+`\tilde\ell_{\theta,v} = \dot\ell_\theta v - \Pi(\dot\ell_\theta v \mid \dot{\mathcal P}_\eta)`,
+and the **efficient information** is `\tilde I_v = \lVert \tilde\ell_{\theta,v}\rVert_{L^2(P)}^2`.
+The lemma states that, whenever `\tilde I_v \neq 0`, the function
+`\tilde I_v^{-1}\,\tilde\ell_{\theta,v}` is the efficient influence function for the
+real-valued functional `\psi(P_{\theta,\eta}) = \langle v, \theta\rangle`, i.e. the
+estimator achieving the semiparametric efficiency bound for that functional.
+
+The 1-dim restriction (a linear functional of `θ` in a single direction
+`v`) keeps the API inside the abstract EIF framework's derivative form
+`dψ : T →L[ℝ] ℝ`; the multivariate version replaces `\tilde I_v` by the
+efficient information matrix `\tilde I = \langle\tilde\ell_{\theta,i},\tilde\ell_{\theta,j}\rangle`
+and the candidate by `\tilde I^{-1}\tilde\ell_\theta`.
 
 Headline declaration: `eif_from_efficientScore`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press,
+1998, Chapter 25 (Semiparametric Models), §25.4 (Score and Information
+Operators), Lemma 25.25.
+
+**Proof formalization notes.** The 1-dim restriction (linear functional of
+`θ` in a single direction `v`) keeps the API inside the abstract EIF
+framework's `dψ : T →L[ℝ] ℝ` form. The headline theorem reduces to the
+abstract `eif_of_representation_and_membership` by checking two conditions on
+the candidate `IF := (1/I_eff(v)) • S_eff(v)`: (1) membership `IF ∈ T`,
+supplied as the hypothesis `h_mem` (assumes the ambient tangent space `T` is
+large enough to contain the efficient score residual); and (2) the
+influence-function representation, supplied as `h_dψ`, which passes `dψ`
+already evaluated as `dψ g = (1/I_eff(v)) ⟪S_eff(v), g⟫` for every `g ∈ T`.
+The orthogonality used in the informal derivation — `⟪S_eff(v), g_η⟫ = 0` for
+nuisance directions `g_η ∈ T_nuis`, since the efficient score is by
+construction the orthogonal residual of the ordinary score — is built into
+the definition of `efficientScore` via `starProjection`. Edge behavior: when
+the ordinary score `S_θ v` already lies in the nuisance tangent space the
+efficient score vanishes, `I_eff(v) = 0`, and the non-degeneracy needed for
+the conclusion fails.
+
+**Bibliographic comments.** The efficient score as the projection of the
+score onto the orthocomplement of the nuisance tangent space, and the
+resulting efficient influence function `\tilde I^{-1}\tilde\ell_\theta`, are the
+central organizing concepts of modern semiparametric efficiency theory; van
+der Vaart's Lemma 25.25 is a textbook synthesis rather than a single seminal
+result. The geometric/projection formulation traces back to C. Stein,
+"Efficient nonparametric testing and estimation," *Proc. Third Berkeley
+Symp. Math. Statist. Probab.*, vol. 1 (1956), 187–195, and was developed into
+a full tangent-space theory by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and
+J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*,
+Johns Hopkins University Press, 1993 (reprinted Springer, 1998) — see their
+Chapters 2–3, where the efficient score function and information bound for
+`(θ, η)` models are constructed exactly as the score residual orthogonal to
+the nuisance scores. Van der Vaart's §25.4 presents this material in the
+score/information-operator language adopted here.
 -/
 
 open MeasureTheory

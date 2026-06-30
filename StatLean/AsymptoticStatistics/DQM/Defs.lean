@@ -3,10 +3,54 @@ import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Analysis.Asymptotics.Defs
 
 /-!
-Asymptotic Statistics — Differentiability in Quadratic Mean (DQM).
+# Differentiability in Quadratic Mean (DQM)
 
-The central regularity condition of van der Vaart, §7.2 (Eq. 7.1). Consequences
-and discharges of DQM auxiliary hypotheses live in `DQM/Properties.lean`.
+A statistical model $\{P_\theta\}$ with densities $p_\theta$ relative to a
+dominating measure $\mu$ is **differentiable in quadratic mean** at the parameter
+$\theta$ if there is a (vector-valued) score function $\ell$ such that the
+Hellinger residual of $\sqrt{p_\theta}$ vanishes faster than $\|h\|$ in
+$L^2(\mu)$ as $h \to 0$:
+$$\int \left( \sqrt{p_{\theta+h}} - \sqrt{p_\theta}
+  - \tfrac12 \langle h, \ell\rangle \sqrt{p_\theta} \right)^2 \, d\mu
+  = o\!\left(\|h\|^2\right).$$
+This is the central regularity condition behind Local Asymptotic Normality (LAN):
+it is exactly the requirement that the root density map $h \mapsto \sqrt{p_{\theta+h}}$
+be Fréchet-differentiable in $L^2(\mu)$ at $h = 0$, with derivative
+$\tfrac12 \langle \cdot, \ell\rangle \sqrt{p_\theta}$.
+
+**Added hypothesis (deviation from the book).** Our formalisation states the
+condition as a *conjunction* of an $L^2$-membership clause and the little-$o$
+rate, rather than as the single integral condition printed in the book. This is
+not a strengthening: see the proof formalization notes below for why the
+membership clause is implicit in van der Vaart's Lebesgue-integral reading and
+must be made explicit once the Bochner integral is used.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 7 (Local Asymptotic Normality), §7.2 (Differentiable in Quadratic Mean),
+Eq. (7.1). Consequences and discharges of DQM auxiliary hypotheses live in
+`DQM/Properties.lean`.
+
+**Proof formalization notes.** In van der Vaart's definition the displayed
+integral is the Lebesgue integral of a non-negative function, where finiteness of
+the integral is *equivalent* to $L^2(\mu)$-membership of the residual. When
+formalising with Lean's Bochner integral, that equivalence breaks: a
+non-integrable non-negative function has Bochner integral $0$ by convention, so
+the $o(\|h\|^2)$ rate condition would be *trivially* satisfied for pathological
+models whose residual is never in $L^2(\mu)$. We therefore record the implicit
+"residual is eventually in $L^2(\mu)$" content of the book's definition as a
+separate conjunct (`mem`), so that the formal definition is *equivalent* to the
+book's informal one — no stronger, no weaker.
+
+**Bibliographic comments.** Differentiability in quadratic mean originates with
+L. Le Cam, "On the assumptions used to prove asymptotic normality of maximum
+likelihood estimates," *The Annals of Mathematical Statistics* 41 (1970), no. 3,
+802–828. Le Cam introduced this $L^2$/Hellinger differentiability of the root
+density as the minimal regularity replacing the classical pointwise
+smoothness-and-domination conditions, and used it to establish local asymptotic
+normality and the asymptotic normality of maximum likelihood estimators without
+the cumbersome third-derivative hypotheses of the Cramér–Wald approach. Van der
+Vaart's §7.2 (Eq. 7.1) is a textbook restatement of this notion.
 -/
 
 open MeasureTheory Asymptotics Filter Topology
