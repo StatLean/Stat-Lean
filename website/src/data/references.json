@@ -18,5 +18,585 @@
     "key": "candes-stat300c",
     "sortKey": "Candès",
     "html": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University."
+  },
+  {
+    "key": "vershynin2018",
+    "sortKey": "Vershynin",
+    "html": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018."
+  },
+  {
+    "key": "blm2013",
+    "sortKey": "Boucheron",
+    "html": "S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of Independence*, Oxford University Press, 2013."
+  },
+  {
+    "key": "hoeffding1963",
+    "sortKey": "Hoeffding",
+    "html": "W. Hoeffding, \"Probability inequalities for sums of bounded random variables,\" *Journal of the American Statistical Association* **58**(301), 1963, pp. 13–30."
+  },
+  {
+    "key": "chernoff1952",
+    "sortKey": "Chernoff",
+    "html": "H. Chernoff, \"A measure of asymptotic efficiency for tests of a hypothesis based on the sum of observations,\" *Annals of Mathematical Statistics* **23**(4), 1952, pp. 493–507."
+  },
+  {
+    "key": "chebyshev1867",
+    "sortKey": "Chebyshev",
+    "html": "P. L. Chebyshev, \"Des valeurs moyennes,\" *Journal de mathématiques pures et appliquées*, 1867."
+  },
+  {
+    "key": "bernstein1924",
+    "sortKey": "Bernstein",
+    "html": "S. N. Bernstein, \"On a modification of Chebyshev's inequality and of the error formula of Laplace\" (in Russian), *Annals of the Scientific Institutes of Savings of Ukraine, Mathematical Section* **1**, 1924, pp. 38–49; reprinted in *Collected Works*, Vol. IV, Nauka, Moscow, 1964."
+  },
+  {
+    "key": "bernstein1927",
+    "sortKey": "Bernstein",
+    "html": "S. N. Bernstein, *Theory of Probability* (Теория вероятностей), Gostekhizdat, Moscow–Leningrad, 1927."
+  },
+  {
+    "key": "mcdiarmid1989",
+    "sortKey": "McDiarmid",
+    "html": "C. McDiarmid, \"On the method of bounded differences,\" in *Surveys in Combinatorics, 1989*, London Mathematical Society Lecture Note Series **141**, Cambridge University Press, 1989, pp. 148–188."
+  },
+  {
+    "key": "azuma1967",
+    "sortKey": "Azuma",
+    "html": "K. Azuma, \"Weighted sums of certain dependent random variables,\" *Tôhoku Mathematical Journal* **19**, 1967, pp. 357–367."
+  },
+  {
+    "key": "kahane1960",
+    "sortKey": "Kahane",
+    "html": "J.-P. Kahane, \"Propriétés locales des fonctions à séries de Fourier aléatoires,\" *Studia Mathematica* **19**, 1960, pp. 1–25."
+  },
+  {
+    "key": "buldygin-kozachenko1980",
+    "sortKey": "Buldygin",
+    "html": "V. V. Buldygin and Yu. V. Kozachenko, \"Sub-Gaussian random variables,\" *Ukrainian Mathematical Journal* **32**, 1980, pp. 483–489."
+  },
+  {
+    "key": "kolmogorov-tikhomirov1959",
+    "sortKey": "Kolmogorov",
+    "html": "A. N. Kolmogorov and V. M. Tikhomirov, \"ε-entropy and ε-capacity of sets in function spaces,\" *Uspekhi Matematicheskikh Nauk* **14**(2), 1959, pp. 3–86."
+  },
+  {
+    "key": "massart2007",
+    "sortKey": "Massart",
+    "html": "P. Massart, *Concentration Inequalities and Model Selection*, Lecture Notes in Mathematics **1896**, Springer, 2007."
+  },
+  {
+    "key": "bernoulli1713",
+    "sortKey": "Bernoulli",
+    "html": "J. Bernoulli, *Ars Conjectandi*, Basel, 1713 (posthumous)."
+  },
+  {
+    "key": "khinchin1929",
+    "sortKey": "Khinchin",
+    "html": "A. Khinchin, \"Sur la loi des grands nombres,\" *Comptes Rendus de l'Académie des Sciences, Paris* **189**, 1929, pp. 477–479."
+  },
+  {
+    "key": "kolmogorov1933",
+    "sortKey": "Kolmogorov",
+    "html": "A. N. Kolmogorov, *Grundbegriffe der Wahrscheinlichkeitsrechnung*, Springer, 1933."
+  },
+  {
+    "key": "lindeberg1922",
+    "sortKey": "Lindeberg",
+    "html": "J. W. Lindeberg, \"Eine neue Herleitung des Exponentialgesetzes in der Wahrscheinlichkeitsrechnung,\" *Mathematische Zeitschrift* **15**, 1922, pp. 211–225."
+  },
+  {
+    "key": "levy1925",
+    "sortKey": "Lévy",
+    "html": "P. Lévy, *Calcul des probabilités*, Gauthier-Villars, Paris, 1925."
+  },
+  {
+    "key": "demoivre1733",
+    "sortKey": "de Moivre",
+    "html": "A. de Moivre, *Approximatio ad Summam Terminorum Binomii (a+b)ⁿ in Seriem Expansi*, 1733 (the de Moivre–Laplace theorem)."
+  },
+  {
+    "key": "laplace1812",
+    "sortKey": "Laplace",
+    "html": "P.-S. Laplace, *Théorie analytique des probabilités*, Paris, 1812."
+  },
+  {
+    "key": "bickel-ritov-tsybakov2009",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel, Y. Ritov, and A. B. Tsybakov, \"Simultaneous analysis of Lasso and Dantzig selector,\" *The Annals of Statistics* **37**(4), 2009, pp. 1705–1732."
+  },
+  {
+    "key": "buhlmann-vandegeer2011",
+    "sortKey": "Bühlmann",
+    "html": "P. Bühlmann and S. van de Geer, *Statistics for High-Dimensional Data: Methods, Theory and Applications*, Springer, 2011."
+  },
+  {
+    "key": "vandegeer-buhlmann2009",
+    "sortKey": "van de Geer",
+    "html": "S. van de Geer and P. Bühlmann, \"On the conditions used to prove oracle results for the Lasso,\" *Electronic Journal of Statistics* **3**, 2009, pp. 1360–1392."
+  },
+  {
+    "key": "wainwright2009",
+    "sortKey": "Wainwright",
+    "html": "M. J. Wainwright, \"Sharp thresholds for high-dimensional and noisy sparsity recovery using $\\ell_1$-constrained quadratic programming (Lasso),\" *IEEE Transactions on Information Theory* **55**(5), 2009, pp. 2183–2202."
+  },
+  {
+    "key": "zhao-yu2006",
+    "sortKey": "Zhao",
+    "html": "P. Zhao and B. Yu, \"On model selection consistency of Lasso,\" *Journal of Machine Learning Research* **7**, 2006, pp. 2541–2563."
+  },
+  {
+    "key": "meinshausen-buhlmann2006",
+    "sortKey": "Meinshausen",
+    "html": "N. Meinshausen and P. Bühlmann, \"High-dimensional graphs and variable selection with the Lasso,\" *The Annals of Statistics* **34**(3), 2006, pp. 1436–1462."
+  },
+  {
+    "key": "cohen-dahmen-devore2009",
+    "sortKey": "Cohen",
+    "html": "A. Cohen, W. Dahmen, and R. DeVore, \"Compressed sensing and best $k$-term approximation,\" *Journal of the American Mathematical Society* **22**(1), 2009, pp. 211–231."
+  },
+  {
+    "key": "donoho-huo2001",
+    "sortKey": "Donoho",
+    "html": "D. L. Donoho and X. Huo, \"Uncertainty principles and ideal atomic decomposition,\" *IEEE Transactions on Information Theory* **47**(7), 2001, pp. 2845–2862."
+  },
+  {
+    "key": "candes-tao2005",
+    "sortKey": "Candès",
+    "html": "E. J. Candès and T. Tao, \"Decoding by linear programming,\" *IEEE Transactions on Information Theory* **51**(12), 2005, pp. 4203–4215."
+  },
+  {
+    "key": "candes2008",
+    "sortKey": "Candès",
+    "html": "E. J. Candès, \"The restricted isometry property and its implications for compressed sensing,\" *Comptes Rendus de l'Académie des Sciences, Paris, Série I* **346**, 2008, pp. 589–592."
+  },
+  {
+    "key": "candes-romberg-tao2006",
+    "sortKey": "Candès",
+    "html": "E. J. Candès, J. Romberg, and T. Tao, \"Robust uncertainty principles: exact signal reconstruction from highly incomplete frequency information,\" *IEEE Transactions on Information Theory* **52**(2), 2006, pp. 489–509."
+  },
+  {
+    "key": "baraniuk-davenport-devore-wakin2008",
+    "sortKey": "Baraniuk",
+    "html": "R. Baraniuk, M. Davenport, R. DeVore, and M. Wakin, \"A simple proof of the restricted isometry property for random matrices,\" *Constructive Approximation* **28**(3), 2008, pp. 253–263."
+  },
+  {
+    "key": "negahban-ravikumar-wainwright-yu2012",
+    "sortKey": "Negahban",
+    "html": "S. N. Negahban, P. Ravikumar, M. J. Wainwright, and B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science* **27**(4), 2012, pp. 538–557."
+  },
+  {
+    "key": "benjamini-hochberg1995",
+    "sortKey": "Benjamini",
+    "html": "Y. Benjamini and Y. Hochberg, \"Controlling the false discovery rate: a practical and powerful approach to multiple testing,\" *Journal of the Royal Statistical Society, Series B* **57**(1), 1995, pp. 289–300."
+  },
+  {
+    "key": "benjamini-yekutieli2001",
+    "sortKey": "Benjamini",
+    "html": "Y. Benjamini and D. Yekutieli, \"The control of the false discovery rate in multiple testing under dependency,\" *Annals of Statistics* **29**(4), 2001, pp. 1165–1188."
+  },
+  {
+    "key": "storey-taylor-siegmund2004",
+    "sortKey": "Storey",
+    "html": "J. D. Storey, J. E. Taylor and D. Siegmund, \"Strong control, conservative point estimation and simultaneous conservative consistency of false discovery rates: a unified approach,\" *Journal of the Royal Statistical Society, Series B* **66**(1), 2004, pp. 187–205."
+  },
+  {
+    "key": "holm1979",
+    "sortKey": "Holm",
+    "html": "S. Holm, \"A simple sequentially rejective multiple test procedure,\" *Scandinavian Journal of Statistics* **6**(2), 1979, pp. 65–70."
+  },
+  {
+    "key": "bonferroni1936",
+    "sortKey": "Bonferroni",
+    "html": "C. E. Bonferroni, \"Teoria statistica delle classi e calcolo delle probabilità,\" *Pubblicazioni del R. Istituto Superiore di Scienze Economiche e Commerciali di Firenze* **8**, 1936, pp. 3–62."
+  },
+  {
+    "key": "dunn1961",
+    "sortKey": "Dunn",
+    "html": "O. J. Dunn, \"Multiple comparisons among means,\" *Journal of the American Statistical Association* **56**(293), 1961, pp. 52–64."
+  },
+  {
+    "key": "barber-candes2015",
+    "sortKey": "Barber",
+    "html": "R. F. Barber and E. J. Candès, \"Controlling the false discovery rate via knockoffs,\" *Annals of Statistics* **43**(5), 2015, pp. 2055–2085 (arXiv:1404.5609)."
+  },
+  {
+    "key": "smirnov1948",
+    "sortKey": "Smirnov",
+    "html": "N. V. Smirnov, \"Table for estimating the goodness of fit of empirical distributions,\" *Annals of Mathematical Statistics* **19**, 1948, pp. 279–281."
+  },
+  {
+    "key": "dvoretzky-kiefer-wolfowitz1956",
+    "sortKey": "Dvoretzky",
+    "html": "A. Dvoretzky, J. Kiefer, and J. Wolfowitz, \"Asymptotic minimax character of the sample distribution function and of the classical multinomial estimator,\" *Annals of Mathematical Statistics* **27**, 1956, pp. 642–669."
+  },
+  {
+    "key": "massart1990",
+    "sortKey": "Massart",
+    "html": "P. Massart, \"The tight constant in the Dvoretzky–Kiefer–Wolfowitz inequality,\" *Annals of Probability* **18**, 1990, pp. 1269–1283."
+  },
+  {
+    "key": "pearson1900",
+    "sortKey": "Pearson",
+    "html": "K. Pearson, \"On the criterion that a given system of deviations from the probable in the case of a correlated system of variables is such that it can be reasonably supposed to have arisen from random sampling,\" *Philosophical Magazine*, Series 5, **50**, 1900, pp. 157–175."
+  },
+  {
+    "key": "papadopoulos2002",
+    "sortKey": "Papadopoulos",
+    "html": "H. Papadopoulos, K. Proedrou, V. Vovk and A. Gammerman, \"Inductive Confidence Machines for Regression,\" *Machine Learning: ECML 2002*, LNCS **2430**, Springer, 2002, pp. 345–356."
+  },
+  {
+    "key": "vovk2005",
+    "sortKey": "Vovk",
+    "html": "V. Vovk, A. Gammerman and G. Shafer, *Algorithmic Learning in a Random World*, Springer, 2005."
+  },
+  {
+    "key": "lei2018",
+    "sortKey": "Lei",
+    "html": "J. Lei, M. G'Sell, A. Rinaldo, R. J. Tibshirani and L. Wasserman, \"Distribution-Free Predictive Inference for Regression,\" *Journal of the American Statistical Association* **113**(523), 2018, pp. 1094–1111."
+  },
+  {
+    "key": "vovk-wang2021",
+    "sortKey": "Vovk",
+    "html": "V. Vovk and R. Wang, \"E-values: Calibration, combination and applications,\" *The Annals of Statistics* **49**(3), 2021, pp. 1736–1754."
+  },
+  {
+    "key": "shafer2021",
+    "sortKey": "Shafer",
+    "html": "G. Shafer, \"Testing by betting: A strategy for statistical and scientific communication,\" *Journal of the Royal Statistical Society: Series A* **184**(2), 2021, pp. 407–431."
+  },
+  {
+    "key": "efron-morris1973",
+    "sortKey": "Efron",
+    "html": "B. Efron and C. Morris, \"Stein's Estimation Rule and Its Competitors—An Empirical Bayes Approach,\" *Journal of the American Statistical Association* **68**(341), 1973, pp. 117–130."
+  },
+  {
+    "key": "wald1950",
+    "sortKey": "Wald",
+    "html": "A. Wald, *Statistical Decision Functions*, Wiley, New York, 1950."
+  },
+  {
+    "key": "lecam1973",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"Convergence of estimates under dimensionality restrictions,\" *The Annals of Statistics* **1**(1), 1973, pp. 38–53."
+  },
+  {
+    "key": "lecam1986",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, New York, 1986."
+  },
+  {
+    "key": "assouad1983",
+    "sortKey": "Assouad",
+    "html": "P. Assouad, \"Deux remarques sur l'estimation,\" *Comptes Rendus de l'Académie des Sciences Paris* **296**, 1983, pp. 1021–1024."
+  },
+  {
+    "key": "ibragimov-hasminskii1981",
+    "sortKey": "Ibragimov",
+    "html": "I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*, Springer, New York, 1981."
+  },
+  {
+    "key": "yu1997",
+    "sortKey": "Yu",
+    "html": "B. Yu, \"Assouad, Fano, and Le Cam,\" in *Festschrift for Lucien Le Cam: Research Papers in Probability and Statistics* (D. Pollard, E. Torgersen, G. L. Yang, eds.), Springer, New York, 1997, pp. 423–435."
+  },
+  {
+    "key": "donoho-liu1991",
+    "sortKey": "Donoho",
+    "html": "D. L. Donoho and R. C. Liu, \"Geometrizing rates of convergence, II & III,\" *The Annals of Statistics* **19**(2), 1991, pp. 633–667 and 668–701."
+  },
+  {
+    "key": "tsybakov2009",
+    "sortKey": "Tsybakov",
+    "html": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009."
+  },
+  {
+    "key": "shannon1948",
+    "sortKey": "Shannon",
+    "html": "C. E. Shannon, \"A Mathematical Theory of Communication,\" *Bell System Technical Journal* **27**, 1948, pp. 379–423 and 623–656."
+  },
+  {
+    "key": "fano1961",
+    "sortKey": "Fano",
+    "html": "R. M. Fano, *Transmission of Information: A Statistical Theory of Communications*, MIT Press and Wiley, 1961."
+  },
+  {
+    "key": "hasminskii1978",
+    "sortKey": "Has'minskii",
+    "html": "R. Z. Has'minskii, \"A lower bound on the risks of nonparametric estimates of densities in the uniform metric,\" *Theory of Probability and Its Applications* **23**, 1978, pp. 794–798."
+  },
+  {
+    "key": "birge1983",
+    "sortKey": "Birgé",
+    "html": "L. Birgé, \"Approximation dans les espaces métriques et théorie de l'estimation,\" *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **65**, 1983, pp. 181–237."
+  },
+  {
+    "key": "cover-thomas2006",
+    "sortKey": "Cover",
+    "html": "T. M. Cover and J. A. Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006."
+  },
+  {
+    "key": "yang-barron1999",
+    "sortKey": "Yang",
+    "html": "Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *The Annals of Statistics* **27**(5), 1999, pp. 1564–1599."
+  },
+  {
+    "key": "pinsker1964",
+    "sortKey": "Pinsker",
+    "html": "M. S. Pinsker, *Information and Information Stability of Random Variables and Processes* (trans. A. Feinstein), Holden-Day, San Francisco, 1964."
+  },
+  {
+    "key": "csiszar1967",
+    "sortKey": "Csiszár",
+    "html": "I. Csiszár, \"Information-type measures of difference of probability distributions and indirect observations,\" *Studia Scientiarum Mathematicarum Hungarica* **2**, 1967, pp. 299–318."
+  },
+  {
+    "key": "kullback1967",
+    "sortKey": "Kullback",
+    "html": "S. Kullback, \"A lower bound for discrimination information in terms of variation,\" *IEEE Transactions on Information Theory* **13**(1), 1967, pp. 126–127."
+  },
+  {
+    "key": "ali-silvey1966",
+    "sortKey": "Ali",
+    "html": "S. M. Ali and S. D. Silvey, \"A general class of coefficients of divergence of one distribution from another,\" *Journal of the Royal Statistical Society, Series B* **28**, 1966, pp. 131–142."
+  },
+  {
+    "key": "raskutti-wainwright-yu2011",
+    "sortKey": "Raskutti",
+    "html": "G. Raskutti, M. J. Wainwright, and B. Yu, \"Minimax rates of estimation for high-dimensional linear regression over $\\ell_q$-balls,\" *IEEE Transactions on Information Theory* **57**(10), 2011, pp. 6976–6994."
+  },
+  {
+    "key": "johnstone2001",
+    "sortKey": "Johnstone",
+    "html": "I. M. Johnstone, \"On the distribution of the largest eigenvalue in principal components analysis,\" *The Annals of Statistics* **29**(2), 2001, pp. 295–327."
+  },
+  {
+    "key": "vu-lei2013",
+    "sortKey": "Vu",
+    "html": "V. Q. Vu and J. Lei, \"Minimax sparse principal subspace estimation in high dimensions,\" *The Annals of Statistics* **41**(6), 2013, pp. 2905–2947."
+  },
+  {
+    "key": "stone1980",
+    "sortKey": "Stone",
+    "html": "C. J. Stone, \"Optimal rates of convergence for nonparametric estimators,\" *The Annals of Statistics* **8**(6), 1980, pp. 1348–1360."
+  },
+  {
+    "key": "bickel-ritov1988",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel and Y. Ritov, \"Estimating integrated squared density derivatives: sharp best order of convergence estimates,\" *Sankhyā: The Indian Journal of Statistics, Series A* **50**(3), 1988, pp. 381–393."
+  },
+  {
+    "key": "nesterov2004",
+    "sortKey": "Nesterov",
+    "html": "Y. Nesterov, *Introductory Lectures on Convex Optimization: A Basic Course*, Applied Optimization **87**, Kluwer Academic Publishers, 2004."
+  },
+  {
+    "key": "nesterov2018",
+    "sortKey": "Nesterov",
+    "html": "Y. Nesterov, *Lectures on Convex Optimization*, 2nd ed., Springer Optimization and Its Applications **137**, Springer, 2018."
+  },
+  {
+    "key": "nesterov1983",
+    "sortKey": "Nesterov",
+    "html": "Yu. E. Nesterov, \"A method for solving the convex programming problem with convergence rate $O(1/k^2)$,\" *Doklady Akademii Nauk SSSR* **269**(3), 1983, pp. 543–547."
+  },
+  {
+    "key": "baillon-haddad1977",
+    "sortKey": "Baillon",
+    "html": "J.-B. Baillon and G. Haddad, \"Quelques propriétés des opérateurs angle-bornés et $n$-cycliquement monotones,\" *Israel Journal of Mathematics* **26**(2), 1977, pp. 137–150."
+  },
+  {
+    "key": "frank-wolfe1956",
+    "sortKey": "Frank",
+    "html": "M. Frank and P. Wolfe, \"An algorithm for quadratic programming,\" *Naval Research Logistics Quarterly* **3**(1–2), 1956, pp. 95–110."
+  },
+  {
+    "key": "jaggi2013",
+    "sortKey": "Jaggi",
+    "html": "M. Jaggi, \"Revisiting Frank–Wolfe: Projection-Free Sparse Convex Optimization,\" in *Proceedings of the 30th International Conference on Machine Learning (ICML)*, 2013, pp. 427–435."
+  },
+  {
+    "key": "lions-mercier1979",
+    "sortKey": "Lions",
+    "html": "P. L. Lions and B. Mercier, \"Splitting algorithms for the sum of two nonlinear operators,\" *SIAM Journal on Numerical Analysis* **16**(6), 1979, pp. 964–979."
+  },
+  {
+    "key": "combettes-wajs2005",
+    "sortKey": "Combettes",
+    "html": "P. L. Combettes and V. R. Wajs, \"Signal recovery by proximal forward–backward splitting,\" *Multiscale Modeling & Simulation* **4**(4), 2005, pp. 1168–1200."
+  },
+  {
+    "key": "beck-teboulle2009",
+    "sortKey": "Beck",
+    "html": "A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems,\" *SIAM Journal on Imaging Sciences* **2**(1), 2009, pp. 183–202."
+  },
+  {
+    "key": "rockafellar1970",
+    "sortKey": "Rockafellar",
+    "html": "R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series **28**, Princeton University Press, 1970."
+  },
+  {
+    "key": "boyd-vandenberghe2004",
+    "sortKey": "Boyd",
+    "html": "S. Boyd and L. Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004."
+  },
+  {
+    "key": "bauschke-combettes2017",
+    "sortKey": "Bauschke",
+    "html": "H. H. Bauschke and P. L. Combettes, *Convex Analysis and Monotone Operator Theory in Hilbert Spaces*, 2nd ed., CMS Books in Mathematics, Springer, 2017."
+  },
+  {
+    "key": "parikh-boyd2014",
+    "sortKey": "Parikh",
+    "html": "N. Parikh and S. Boyd, \"Proximal Algorithms,\" *Foundations and Trends in Optimization* **1**(3), 2014, pp. 127–239."
+  },
+  {
+    "key": "moreau1965",
+    "sortKey": "Moreau",
+    "html": "J.-J. Moreau, \"Proximité et dualité dans un espace hilbertien,\" *Bulletin de la Société Mathématique de France* **93**, 1965, pp. 273–299."
+  },
+  {
+    "key": "anderson1955",
+    "sortKey": "Anderson",
+    "html": "T. W. Anderson, \"The integral of a symmetric unimodal function over a symmetric convex set and some probability inequalities,\" *Proceedings of the American Mathematical Society* **6**(2), 1955, pp. 170–176."
+  },
+  {
+    "key": "begun-hall-huang-wellner1983",
+    "sortKey": "Begun",
+    "html": "J. M. Begun, W. J. Hall, W.-M. Huang and J. A. Wellner, \"Information and asymptotic efficiency in parametric–nonparametric models,\" *The Annals of Statistics* **11**(2), 1983, pp. 432–452."
+  },
+  {
+    "key": "bickel-klaassen-ritov-wellner1993",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, Baltimore, 1993 (reprinted Springer, 1998)."
+  },
+  {
+    "key": "bickel1982",
+    "sortKey": "Bickel",
+    "html": "P. J. Bickel, \"On adaptive estimation,\" *The Annals of Statistics* **10**(3), 1982, pp. 647–671."
+  },
+  {
+    "key": "cantelli1933",
+    "sortKey": "Cantelli",
+    "html": "F. P. Cantelli, \"Sulla determinazione empirica delle leggi di probabilità,\" *Giornale dell'Istituto Italiano degli Attuari* **4**, 1933, pp. 421–424."
+  },
+  {
+    "key": "cramer-wold1936",
+    "sortKey": "Cramér",
+    "html": "H. Cramér and H. Wold, \"Some theorems on distribution functions,\" *Journal of the London Mathematical Society* **s1-11**(4), 1936, pp. 290–294."
+  },
+  {
+    "key": "donsker1952",
+    "sortKey": "Donsker",
+    "html": "M. D. Donsker, \"Justification and extension of Doob's heuristic approach to the Kolmogorov–Smirnov theorems,\" *The Annals of Mathematical Statistics* **23**(2), 1952, pp. 277–281."
+  },
+  {
+    "key": "doob1949",
+    "sortKey": "Doob",
+    "html": "J. L. Doob, \"Heuristic approach to the Kolmogorov–Smirnov theorems,\" *The Annals of Mathematical Statistics* **20**(3), 1949, pp. 393–403."
+  },
+  {
+    "key": "doob1953",
+    "sortKey": "Doob",
+    "html": "J. L. Doob, *Stochastic Processes*, John Wiley & Sons, New York, 1953."
+  },
+  {
+    "key": "dudley1967",
+    "sortKey": "Dudley",
+    "html": "R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3), 1967, pp. 290–330."
+  },
+  {
+    "key": "gill-vanderlaan-robins1997",
+    "sortKey": "Gill",
+    "html": "R. D. Gill, M. J. van der Laan and J. M. Robins, \"Coarsening at random: characterizations, conjectures, counter-examples,\" in *Proceedings of the First Seattle Symposium in Biostatistics*, Springer Lecture Notes in Statistics **123**, 1997, pp. 255–294."
+  },
+  {
+    "key": "glivenko1933",
+    "sortKey": "Glivenko",
+    "html": "V. Glivenko, \"Sulla determinazione empirica delle leggi di probabilità,\" *Giornale dell'Istituto Italiano degli Attuari* **4**, 1933, pp. 92–99."
+  },
+  {
+    "key": "hajek1970",
+    "sortKey": "Hájek",
+    "html": "J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und Verwandte Gebiete* **14**, 1970, pp. 323–330."
+  },
+  {
+    "key": "hajek1972",
+    "sortKey": "Hájek",
+    "html": "J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" in *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972, pp. 175–194."
+  },
+  {
+    "key": "heitjan-rubin1991",
+    "sortKey": "Heitjan",
+    "html": "D. F. Heitjan and D. B. Rubin, \"Ignorability and coarse data,\" *The Annals of Statistics* **19**(4), 1991, pp. 2244–2253."
+  },
+  {
+    "key": "inagaki1970",
+    "sortKey": "Inagaki",
+    "html": "T. Inagaki, \"On the limiting distribution of a sequence of estimators with uniformity property,\" *Annals of the Institute of Statistical Mathematics* **22**, 1970, pp. 1–13."
+  },
+  {
+    "key": "lecam1953",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"On some asymptotic properties of maximum likelihood estimates and related Bayes' estimates,\" *University of California Publications in Statistics* **1**, 1953, pp. 277–330."
+  },
+  {
+    "key": "lecam1956",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"On the asymptotic theory of estimation and testing hypotheses,\" in *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1956, pp. 129–156."
+  },
+  {
+    "key": "lecam1960",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3**, 1960, pp. 37–98."
+  },
+  {
+    "key": "lecam1970",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"On the assumptions used to prove asymptotic normality of maximum likelihood estimates,\" *The Annals of Mathematical Statistics* **41**(3), 1970, pp. 802–828."
+  },
+  {
+    "key": "lecam1972",
+    "sortKey": "Le Cam",
+    "html": "L. Le Cam, \"Limits of experiments,\" in *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972, pp. 245–261."
+  },
+  {
+    "key": "leindler1972",
+    "sortKey": "Leindler",
+    "html": "L. Leindler, \"On a certain converse of Hölder's inequality II,\" *Acta Scientiarum Mathematicarum (Szeged)* **33**, 1972, pp. 217–223."
+  },
+  {
+    "key": "ossiander1987",
+    "sortKey": "Ossiander",
+    "html": "M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3), 1987, pp. 897–919."
+  },
+  {
+    "key": "prekopa1973",
+    "sortKey": "Prékopa",
+    "html": "A. Prékopa, \"On logarithmic concave measures and functions,\" *Acta Scientiarum Mathematicarum (Szeged)* **34**, 1973, pp. 335–343."
+  },
+  {
+    "key": "severini-wong1992",
+    "sortKey": "Severini",
+    "html": "T. A. Severini and W. H. Wong, \"Profile likelihood and conditionally parametric models,\" *The Annals of Statistics* **20**(4), 1992, pp. 1768–1802."
+  },
+  {
+    "key": "slutsky1925",
+    "sortKey": "Slutsky",
+    "html": "E. Slutsky, \"Über stochastische Asymptoten und Grenzwerte,\" *Metron* **5**(3), 1925, pp. 3–89."
+  },
+  {
+    "key": "stein1956",
+    "sortKey": "Stein",
+    "html": "C. Stein, \"Efficient nonparametric testing and estimation,\" in *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1956, pp. 187–195."
+  },
+  {
+    "key": "vandervaart-wellner1996",
+    "sortKey": "van der Vaart",
+    "html": "A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes: With Applications to Statistics*, Springer Series in Statistics, Springer-Verlag, New York, 1996."
+  },
+  {
+    "key": "vandervaart1991",
+    "sortKey": "van der Vaart",
+    "html": "A. W. van der Vaart, \"An asymptotic representation theorem,\" *International Statistical Review* **59**(1), 1991, pp. 97–121."
   }
 ]
