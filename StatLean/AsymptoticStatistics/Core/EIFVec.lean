@@ -1,3 +1,9 @@
+import StatLean.AsymptoticStatistics.Core.EIF
+import StatLean.AsymptoticStatistics.Core.PathwiseVec
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.GramMatrix
+import Mathlib.LinearAlgebra.Matrix.Hermitian
+
 /-!
 # Vector-valued efficient influence functions
 
@@ -38,11 +44,6 @@ Johns Hopkins University Press, Baltimore, 1993 (reprinted Springer, 1998), wher
 efficient influence function of a Euclidean parameter is characterized through its components
 and the projection onto the tangent space.
 -/
-import StatLean.AsymptoticStatistics.Core.EIF
-import StatLean.AsymptoticStatistics.Core.PathwiseVec
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.GramMatrix
-import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 open MeasureTheory
 open scoped InnerProductSpace ENNReal
