@@ -20,8 +20,9 @@ $$
 1 - \alpha \;\le\; \mathbb{P}\bigl(\operatorname{rank}(S_n) \le k\bigr).
 $$
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 19 (Multiple Hypotheses), §19.1
-(Conformal Inference). Also E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes,
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 19 (Multiple Hypotheses), §19.1 (Conformal Inference).
+Also E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes,
 Stanford University, 2023, Lecture 9, §9.6, Theorem 2.
 
 **Proof formalization notes.** By rank uniformity (`measure_rankOf_le`), the rank of the test score
@@ -52,8 +53,8 @@ namespace StatLean.MultipleTesting
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
-/-- **Conformal coverage** (Lu-BDA Ch 19, §19.1 Conformal Inference; also Candès, Lecture 9, §9.6,
-Theorem 2, STAT 300C). For `n+1` exchangeable,
+/-- **Conformal coverage** (Lu, *Big Data Analysis* (Springer, 2025), Ch 19, §19.1 Conformal
+Inference; also Candès, Lecture 9, §9.6, Theorem 2, STAT 300C). For `n+1` exchangeable,
 a.s. distinct scores, the split-conformal prediction set built from the `⌈(n+1)(1−α)⌉`-th smallest
 score covers the test point (the `rankOf S (last) ≤ k` event) with probability at least `1 − α`. -/
 theorem conformal_coverage {n : ℕ} {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1)

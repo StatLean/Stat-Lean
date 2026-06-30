@@ -14,7 +14,7 @@ and the prediction mean squared error of a fitted coefficient $\hat\beta$ is
 $$\mathrm{MSE}(X\hat\beta) = \tfrac{1}{n}\,\|X\hat\beta - X\beta^*\|^2.$$
 
 These definitions formalise the model setup behind the OLS MSE theorem
-(Lu-BDA §7.2, `thm:mse-ols`). Two deliberate choices, aligned with the Lean
+(Lu-BDA §7.2, Theorem 7.1). Two deliberate choices, aligned with the Lean
 statements below:
 
 * The OLS estimator is characterised by the **minimiser (zero-order)
@@ -23,9 +23,10 @@ statements below:
 * The degenerate case $n = 0$ yields $\mathrm{MSE} = 0$, since the factor
   $1/n$ is taken to be $0$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 7
-(Ordinary Least Squares), §7.2 (Ordinary Least Squares), Theorem 7.1
-(`thm:mse-ols`) (model $Y = X\beta^* + \varepsilon$; OLS as RSS minimiser;
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 7 (Ordinary Least Squares), §7.2,
+Theorem 7.1 (Mean Squared Error of Least Squares) (model
+$Y = X\beta^* + \varepsilon$; OLS as RSS minimiser;
 $\mathrm{MSE}(X\hat\beta) = \tfrac{1}{n}\|X\hat\beta - X\beta^*\|^2$).
 
 **Proof formalization notes.**
@@ -62,7 +63,7 @@ noncomputable def designMap (X : Matrix (Fin n) (Fin d) ℝ) :
   Matrix.toEuclideanLin X
 
 /-- **Prediction mean squared error** `MSE(X β̂) = (1/n) ‖X β̂ − X β*‖²`
-(Lu-BDA §7.2, `thm:mse-ols`). Degenerate `n = 0` gives `0` (the `1/n` factor is `0`). -/
+(Lu-BDA §7.2, Theorem 7.1). Degenerate `n = 0` gives `0` (the `1/n` factor is `0`). -/
 noncomputable def mse (X : Matrix (Fin n) (Fin d) ℝ)
     (β βstar : EuclideanSpace ℝ (Fin d)) : ℝ :=
   (1 / (n : ℝ)) * ‖designMap X β - designMap X βstar‖ ^ 2
@@ -81,7 +82,7 @@ noncomputable def columnSpace (X : Matrix (Fin n) (Fin d) ℝ) :
     Submodule ℝ (EuclideanSpace ℝ (Fin n)) :=
   LinearMap.range (designMap X)
 
-/-- The book's design rank `r = rank(X)` (Lu-BDA §7.2, `thm:mse-ols`). Equal to the
+/-- The book's design rank `r = rank(X)` (Lu-BDA §7.2, Theorem 7.1). Equal to the
 dimension of the column space; here taken as `Matrix.rank X`. -/
 noncomputable def designRank (X : Matrix (Fin n) (Fin d) ℝ) : ℕ :=
   X.rank

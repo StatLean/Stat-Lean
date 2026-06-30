@@ -20,8 +20,9 @@ Lean statement uses the weaker hypothesis $t \ge 0$, which is strictly stronger 
 case is trivial). Second, the bounded-differences constants are taken nonnegative; this is a
 harmless normalization, since a difference bound is vacuous for negative $c_k$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 5 (Sub-Exponential
-Random Variables), §5.1 (Concentration Beyond Average).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 5 (Sub-exponential Random Variables), §5.1,
+Theorem 5.1 (McDiarmid Inequality).
 
 **Proof formalization notes.** The proof is a pure Chernoff bound on the sub-Gaussian MGF
 already established in `McDiarmid/DoobDecomposition.lean`:
@@ -83,8 +84,8 @@ private lemma doob_exp_eq (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i) (t : ℝ) 
   rw [coe_doob_proxy c hc]
   ring
 
-/-- **McDiarmid's bounded-differences inequality** (Lu-BDA §5.1, `McDiarmid`), one-sided
-upper tail.
+/-- **McDiarmid's bounded-differences inequality** (Lu-BDA Ch5 §5.1, Theorem 5.1
+(McDiarmid Inequality)), one-sided upper tail.
 
 For `n` independent random variables `X = (X₀,…,Xₙ₋₁)` and `f` satisfying the
 bounded-differences condition with constants `c : Fin n → ℝ`, the centered evaluation has
@@ -128,8 +129,8 @@ theorem McDiarmid
         rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
         exact ENNReal.ofReal_le_ofReal hbrick
 
-/-- **McDiarmid's bounded-differences inequality** (Lu-BDA §5.1, `McDiarmid`), two-sided
-form.
+/-- **McDiarmid's bounded-differences inequality** (Lu-BDA Ch5 §5.1, Theorem 5.1
+(McDiarmid Inequality)), two-sided form.
 
 For `0 ≤ t`,
 

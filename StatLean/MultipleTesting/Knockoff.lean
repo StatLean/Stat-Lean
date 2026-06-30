@@ -29,8 +29,8 @@ hold automatically for continuous knock-off statistics:
 * `hmag` — almost surely the magnitudes $|W_i|$ are pairwise distinct, so the threshold ordering
   is unambiguous (no ties to break).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 21 (Knock-Off), §21.3
-(Knock-Off), Theorem 21.2 (`thm:knockoff`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off).
 Companion treatment: E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford
 University, 2023, Lecture 11, §11.5.
 
@@ -89,7 +89,7 @@ private lemma ratio_integrable (μ : Measure Ω) [IsProbabilityMeasure μ] (α :
     simpa only [neg_neg] using hstop_neg.neg
   exact Integrable.const_mul hstop α
 
-/-- **Knock-off FDR control** (Lu-BDA Ch. 21 (Knock-Off), §21.3, Theorem 21.2 `thm:knockoff`). For a knock-off score `W`, the
+/-- **Knock-off FDR control** (Lu-BDA Ch. 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off)). For a knock-off score `W`, the
 knock-off procedure at level `α` controls the false discovery rate: `FDR ≤ α`. -/
 theorem knockoff_fdr_le (μ : Measure Ω) [IsProbabilityMeasure μ] (α : ℝ) (hα : 0 < α)
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (hW : KnockoffScore W H₀ μ)

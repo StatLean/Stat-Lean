@@ -27,9 +27,9 @@ mathematical notation:
   construction theorem, where the ratio is recognised as a normalised $\chi^2_n$ variable:
   $\|X\beta\|^2/\|\beta\|^2 = \tfrac1n\sum_{i=1}^n g_i^2$ with $g_i \sim N(0,1)$ i.i.d.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 9 (Restricted Isometry Property),
-§9.1 (Restricted Isometry Property), Theorem 9.2 (`thm:3s-rip`) and its fixed-$\beta$ tail
-Eq. (9.1) (`eq:fix-b`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 9 (Restricted Isometry Property),
+§9.1 (Restricted Isometry Property), Theorem 9.2 and its fixed-$\beta$ tail Eq. (9.1).
 The book states the fixed-$\beta$ bound as $\mathbb{P}(|\,\|X\beta\|^2/\|\beta\|^2 - 1| >
 \delta) \le 2\,e^{-n\delta^2/8}$.
 
@@ -178,14 +178,14 @@ private lemma integral_sq_sub_one_eq_zero {μ : Measure Ω} [IsProbabilityMeasur
         rw [integral_sub hInt2 (integrable_const 1)]
     _ = 0 := by rw [hEsq, integral_const]; simp
 
-/-- **Centered χ²₁ is sub-exponential** (Lu §9.1, used for eq:fix-b). For `g ∼ N(0,1)`,
-`g² − 1` is sub-exponential with parameter `α = 4`. -/
+/-- **Centered χ²₁ is sub-exponential** (Lu §9.1, used for the fixed-`β` tail Eq. (9.1)).
+For `g ∼ N(0,1)`, `g² − 1` is sub-exponential with parameter `α = 4`. -/
 theorem chiSq1_centered_isSubExponential
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (g : Ω → ℝ)
-    -- USER-INPUT: g is measurable; Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: g is measurable; Lu-BDA §9.1, Theorem 9.2
     (hg_meas : Measurable g)
-    -- USER-INPUT: g ∼ N(0,1); Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: g ∼ N(0,1); Lu-BDA §9.1, Theorem 9.2
     (hg : Measure.map g μ = gaussianReal 0 1) :
     IsSubExponential (fun ω => g ω ^ 2 - 1) 4 μ := by
   have hmean := integral_sq_sub_one_eq_zero hg_meas hg
@@ -369,7 +369,7 @@ end Curry
 
 variable {n d : ℕ}
 
-/-- **Fixed-`β` quadratic-form tail** (Lu §9.1, eq:fix-b). If `X` has i.i.d. `N(0,1/n)`
+/-- **Fixed-`β` quadratic-form tail** (Lu §9.1, Eq. (9.1)). If `X` has i.i.d. `N(0,1/n)`
 entries then for any fixed `β ≠ 0`,
 `P(|‖Xβ‖²/‖β‖² − 1| > δ) ≤ 2·exp(−n δ²/32)`.
 
@@ -378,9 +378,9 @@ parameter is `α = 4`, giving the sample-mean exponent `2α² = 32`. See the mod
 theorem gaussian_quadratic_form_tail
     (μ : Measure Ω) [IsProbabilityMeasure μ]
     (X : Ω → Matrix (Fin n) (Fin d) ℝ)
-    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1, Theorem 9.2
     (hindep : iIndepFun (fun (p : Fin n × Fin d) ω => X ω p.1 p.2) μ)
-    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1, Theorem 9.2
     (hlaw : ∀ i j, Measure.map (fun ω => X ω i j) μ
               = gaussianReal 0 (⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ : ℝ≥0))
     (β : EuclideanSpace ℝ (Fin d)) (hβ : β ≠ 0)

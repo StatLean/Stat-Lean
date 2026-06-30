@@ -25,8 +25,9 @@ $$\mathrm{FDR} \;\le\; \frac{N_0}{N}\,\alpha \;\le\; \alpha,$$
 where $N_0 = |H_0|$ is the number of true nulls and the false discovery rate is the expected
 proportion of false rejections among all rejections, $\mathrm{FDR} = E[V/(R \vee 1)]$.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 20 (False Discovery Rate), §20.2 (False
-Discovery Rate: Independent P-values), Theorem 20.1 (`BH`). The same result
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025 (ISBN
+978-3-032-03160-0), Chapter 20 (False Discovery Rate), §20.2 (False Discovery Rate: Independent
+P-Values), Theorem 20.1. The same result
 appears as E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023, Lecture 7 (False Discovery Rate), §7.2 (Martingale Theory and FDR Control), Theorem 2,
 which states $E[\mathrm{FDP}(\tau_{BH})] = q\,n_0/n$ at level $q = \alpha$.
@@ -268,7 +269,7 @@ private lemma bhRejects_loo_eq {N : ℕ} (α : ℝ) (hα : 0 < α) (p : Fin N �
     exact ⟨fun _ => hi_le, fun _ => by positivity⟩
   · simp [Function.update_of_ne hji]
 
-/-- Leave-one-out invariance (Lu-BDA §20.2, BH proof, "second key observation"): if hypothesis `i`
+/-- Leave-one-out invariance (Lu-BDA §20.2, Theorem 20.1 proof, "second key observation"): if hypothesis `i`
 is rejected and the total number of rejections is `k`, then replacing `pᵢ` by the constant `0`
 leaves the number of rejections equal to `k`. The deterministic combinatorial crux. -/
 theorem bh_count_eq_leaveOneOut {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
@@ -569,10 +570,10 @@ theorem bh_claim {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure 
     (p : Fin N → Ω → ℝ)
     -- LEAN-ONLY: measurability of each p-value; needed for independence / integration
     (hmeas : ∀ j, Measurable (p j))
-    -- USER-INPUT: p-values independent; Lu-BDA §20.2 (BH)
+    -- USER-INPUT: p-values independent; Lu-BDA §20.2, Theorem 20.1
     (hindep : iIndepFun p μ)
     (i : Fin N)
-    -- USER-INPUT: null marginal super-uniform; Lu-BDA §20.2 (BH)
+    -- USER-INPUT: null marginal super-uniform; Lu-BDA §20.2, Theorem 20.1
     (hi : SuperUniform (p i) μ) :
     ∫ ω, (if i ∈ bhRejects α p ω then (1 : ℝ) else 0)
           / max (numRejections (bhRejects α p) ω : ℝ) 1 ∂μ ≤ α / N := by
@@ -721,16 +722,16 @@ private lemma fdp_eq_sum_div {N : ℕ} (α : ℝ) (H₀ : Finset (Fin N)) (p : F
   simp only [FDP]
   rw [numFalseRejections_eq_sum, Finset.sum_div]
 
-/-- **Benjamini–Hochberg FDR control** (Lu-BDA Ch20 §20.2, Theorem 20.1, `BH`). If the p-values are
+/-- **Benjamini–Hochberg FDR control** (Lu-BDA Ch20 §20.2, Theorem 20.1). If the p-values are
 independent and each null p-value is super-uniform, the BH procedure at level `α` controls the
 false discovery rate: `FDR ≤ (N₀/N)·α ≤ α`. -/
 theorem benjamini_hochberg_fdr_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α)
     (μ : Measure Ω) [IsProbabilityMeasure μ] (H₀ : Finset (Fin N)) (p : Fin N → Ω → ℝ)
     -- LEAN-ONLY: measurability of each p-value; needed for independence / integration
     (hmeas : ∀ j, Measurable (p j))
-    -- USER-INPUT: p-values independent; Lu-BDA §20.2 (BH)
+    -- USER-INPUT: p-values independent; Lu-BDA §20.2, Theorem 20.1
     (hindep : iIndepFun p μ)
-    -- USER-INPUT: null marginals super-uniform; Lu-BDA §20.2 (BH)
+    -- USER-INPUT: null marginals super-uniform; Lu-BDA §20.2, Theorem 20.1
     (hnull : ∀ j ∈ H₀, SuperUniform (p j) μ) :
     FDR H₀ (bhRejects α p) μ ≤ (H₀.card : ℝ) / N * α := by
   -- Step 1: Unfold FDR and rewrite FDP as sum of per-null indicators.

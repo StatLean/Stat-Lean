@@ -27,7 +27,8 @@ the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expec
 the finite binomial-ratio sum
 $$\sum_{k=0}^{N_0} \binom{N_0}{k} 2^{-N_0}\, \frac{k}{1 + (N_0 - k)} \;=\; 1 - 2^{-N_0} \;\le\; 1.$$
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 21 (Knock-Off), §21.3 (Knock-Off),
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3 (Knock-Off),
 Definition 21.1 (Knock-Off Score), condition 3 (i.i.d.\ fair signs); the bound
 `E[V₊(0)/(1+V₋(0))] ≤ 1` is the $t = 0$ base case of the super-martingale argument in the proof
 of Theorem 21.2 (Knock-Off).
@@ -334,9 +335,9 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
 are i.i.d. fair coins, `prob_Vminus0_eq`), so the expectation expands to
 `∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals the claimed sum via `k = N₀−m`. -/
 lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §21.3, Def. kos
+    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
     (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
@@ -443,9 +444,9 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
 `V₊(0)` are `Binomial(N₀, ½)`-distributed (the null signs are i.i.d. fair coins), and the
 expectation reduces to the binomial ratio sum ≤ 1 (proved algebraically via `choose_mul_succ_eq`). -/
 theorem knockoff_initial_le (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Def. kos
+    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)
     (H₀ : Finset (Fin d)) -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Definition 21.1 (Knock-Off Score) cond. 3; Lu-BDA §21.3
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤ 1 :=
   le_trans (knockoff_initial_integral_le_binom_sum μ W H₀ hW)
     (binom_ratio_sum_le_one_local H₀.card)

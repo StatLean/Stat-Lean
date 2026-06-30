@@ -21,8 +21,9 @@ companion facts of unconstrained convex optimization:
   $x^\star$ is a *local* minimizer, then $x^\star$ is in fact a global minimizer:
   $f(x^\star) \le f(y)$ for every $y$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 12 (Convexity
-and Subgradient), §12.2 (Subgradient), Proposition 12.1 (`prop:local-global`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 12 (Convexity and Subgradient), §12.2
+(Subgradient), Proposition 12.1 (Local Minima Are Global Minima).
 
 **Proof formalization notes.** The first-order optimality statement is essentially
 definitional via the subdifferential: $0 \in \partial f(x^\star)$ unfolds to
@@ -52,8 +53,8 @@ open scoped InnerProductSpace Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- Lu-BDA Prop 12.1 (first-order optimality, unconstrained): `x*` is a global
-minimizer of `f` iff `0 ∈ ∂f(x*)`. -/
+/-- Lu-BDA Proposition 12.2 (First-Order Optimality Condition, unconstrained): `x*`
+is a global minimizer of `f` iff `0 ∈ ∂f(x*)`. -/
 theorem isGlobalMin_iff_zero_mem_subdifferential (f : E → ℝ) (xstar : E) :
     (∀ y, f xstar ≤ f y) ↔ (0 : E) ∈ subdifferential f xstar := by
   constructor
@@ -66,8 +67,8 @@ theorem isGlobalMin_iff_zero_mem_subdifferential (f : E → ℝ) (xstar : E) :
     rw [inner_zero_left] at hy
     linarith
 
-/-- Lu-BDA Prop 12.1 (local minima are global minima): for convex `f`, any local
-minimizer is a global minimizer. -/
+/-- Lu-BDA Proposition 12.1 (Local Minima Are Global Minima): for convex `f`, any
+local minimizer is a global minimizer. -/
 theorem forall_le_of_isLocalMin
     {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) {xstar : E}
     (hloc : IsLocalMin f xstar) (y : E) :

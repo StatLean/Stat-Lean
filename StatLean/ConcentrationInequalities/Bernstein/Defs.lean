@@ -18,8 +18,9 @@ sub-exponential $\Rightarrow$ Bernstein inequality" (assembled in
 
 This is a concept-layer foundation; it is theorem-agnostic.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6
-(Maximal Inequality), §6.1 ("Bernstein Inequality").
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 6 (Bernstein and Maximal Inequalities), §6.1,
+Definition 6.1 (Bernstein Condition) and Theorem 6.1 (Bernstein Inequality).
 
 **Proof formalization notes.** This file states only the definition; there is no
 proof obligation. Two deviations from the bare book statement are deliberate:
@@ -63,7 +64,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 /-- `HasBernsteinCondition X σ2 b μ`: the centered random variable `X` (with
 `E X = 0` and `Var X = σ2` under `μ`) satisfies the Bernstein moment bound with
 parameter `b`, i.e. `E |X|ᵏ ≤ (σ2/2)·k!·bᵏ⁻²` for every `k ≥ 3`
-(Lu-BDA §6.1, "Bernstein Inequality"). -/
+(Lu-BDA §6.1, Definition 6.1, Bernstein Condition). -/
 structure HasBernsteinCondition (X : Ω → ℝ) (σ2 b : ℝ≥0)
     (μ : Measure Ω := by volume_tac) : Prop where
   /-- Constitutive (Lu-BDA §6.1): the book states the condition for a centered

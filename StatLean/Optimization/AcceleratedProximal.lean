@@ -27,14 +27,15 @@ method.
 $t = 0$ case is the trivial initial gap and is excluded, per CLAUDE.md §1
 (documented constant/scope deviation).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 14
-(Proximal Gradient Descent), §14.2 (Accelerated Proximal Gradient Descent),
-Theorem 14.2 (`thm:cvg-aprox`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 14 (Proximal Gradient Descent), §14.2
+(Accelerated Proximal Gradient Descent), Theorem 14.2 (Convergence Rate of
+Accelerated Proximal Gradient Descent).
 
 **Proof formalization notes.** The proof is *not* monotone in $F$. It combines:
 * the pillar inequality (Lemma 14.1, `pillar`), which controls one proximal step;
 * a Lyapunov energy $L_t = \lVert u_t\rVert^2 + \tfrac2L \lambda_{t-1}^2\,(F(x_t) - F(x^\star))$
-  (Lemma 14.2 below) shown to be non-increasing — in the Lean code this is the
+  (Lemma 14.2 (Lyapunov Function) below) shown to be non-increasing — in the Lean code this is the
   `Φ`/`hΦdec` antitone-energy argument, with `Φ s` equal to $L/2$ times the book
   $L_{s+1}$ (division-free) and `u s` the book $u_{s+1}$;
 * the Nesterov-sequence lower bound $\lambda_t \ge (t+2)/2$
@@ -104,7 +105,7 @@ private theorem lam_sq_sub (lam : ℕ → ℝ)
   rw [hlamrec s]
   linear_combination (1 / 4 : ℝ) * hsq
 
-/-- Lu-BDA Thm 14.2 (accelerated proximal-gradient convergence rate). `f` convex
+/-- Lu-BDA Theorem 14.2 (Convergence Rate of Accelerated Proximal Gradient Descent). `f` convex
 `L`-smooth (`0 < L`), `h` convex, `F = f + h`, step `1/L`, Nesterov momentum:
 `F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`. Stated for `t ≥ 1` (the `t = 0` case
 is the trivial initial gap), per CLAUDE.md §1 documented deviation. -/

@@ -19,8 +19,9 @@ In the formalization $\mathcal{C}(S)$ is `reCone S 1` and $\mathrm{Null}(X)$ is
 appears as the factor-`1` form $\lVert \Delta_{S^c} \rVert_1 \le 1 \cdot \lVert \Delta_S \rVert_1$
 of the general cone; no constants are changed relative to the book.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 8 (Compressive Sensing),
-§8.2 (Compressive Sensing), Theorem 8.1 (`thm:cone`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 8 (Compressive Sensing), §8.2, Theorem 8.1. The
+descent cone $\mathcal{C}(S)$ is Definition 8.3 (Cone Condition).
 
 **Proof formalization notes.**
 The sufficiency (`⟸`) is `unique_basisPursuit_of_cone_trivial` (`BasisPursuit.lean`).
@@ -49,7 +50,7 @@ namespace StatLean.HighDimensionalStatistics
 
 variable {n d : ℕ}
 
-/-- **Necessity** of the cone condition (Lu §8.2, `thm:cone` ⟹). If basis pursuit
+/-- **Necessity** of the cone condition (Lu-BDA §8.2, Theorem 8.1 ⟹). If basis pursuit
 uniquely recovers every `β*` supported on `S`, then `C(S) ∩ Null(X) = {0}`.
 
 Proof (book): suppose `0 ≠ v ∈ Null(X) ∩ C(S)`. Take `β* = restrict S v` (supported on
@@ -102,7 +103,8 @@ theorem cone_trivial_of_unique_basisPursuit
       rw [hr0, hr0]; simp
     · rw [SetLike.mem_coe, LinearMap.mem_ker, map_zero]
 
-/-- **Cone theorem** (Lu, *Big Data Analysis* §8.2, Theorem 8.1, `thm:cone`). Basis pursuit has `β*`
+/-- **Cone theorem** (Lu, *Big Data Analysis* §8.2, Theorem 8.1; the cone is Definition 8.3).
+Basis pursuit has `β*`
 as its unique solution for every `β*` supported on `S` **iff** `C(S) ∩ Null(X) = {0}`. -/
 theorem basisPursuit_unique_iff_cone_inter_ker
     (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d)) :

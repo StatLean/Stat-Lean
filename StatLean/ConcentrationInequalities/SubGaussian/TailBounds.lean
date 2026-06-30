@@ -22,9 +22,9 @@ weaker hypothesis $t \ge 0$, which yields a (formally) stronger statement (the
 $t = 0$ case is trivially true). The strict inequality $t < \cdot$ on the event is
 faithful to the book.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 4
-(Concentration Inequalities), §4.2 (Sub-Gaussian Random Variables),
-Theorem 4.5 (`thm:two-sided`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 4 (Concentration Inequalities),
+§4.2 (Sub-Gaussian Random Variables), Theorem 4.5 (Two-Sided Tail Probability).
 
 **Proof formalization notes.**
 Both theorems consume `IsSubGaussian X σ² μ` from
@@ -80,7 +80,7 @@ private lemma IsSubGaussian.isFiniteMeasure
   exact (integrable_const_iff_isFiniteMeasure (one_ne_zero)).mp h
 
 /-- **One-sided sub-Gaussian Chernoff tail** (Lu-BDA §4.2, the right-tail step
-used inside the proof of `thm:two-sided`).
+used inside the proof of Theorem 4.5 (Two-Sided Tail Probability)).
 
 If `X` is sub-Gaussian with variance proxy `σ²` under `μ`, then for `0 ≤ t`,
 `μ {ω | t < X ω − ∫ X dμ} ≤ exp(−t² / (2σ²))`.
@@ -93,7 +93,7 @@ the slack is absorbed via the inclusion `{t < y} ⊆ {t ≤ y}`. -/
 theorem IsSubGaussian.measure_sub_integral_lt_le
     {X : Ω → ℝ} {σ2 : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubGaussian X σ2 μ)
-    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §4.2 (thm:two-sided)
+    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §4.2 Theorem 4.5
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * σ2))) := by
@@ -115,7 +115,7 @@ theorem IsSubGaussian.measure_sub_integral_lt_le
         exact ENNReal.ofReal_le_ofReal hbrick
 
 /-- **Two-Sided Tail Probability** for sub-Gaussian variables
-(Lu-BDA §4.2, Theorem 4.5, `thm:two-sided`).
+(Lu-BDA §4.2, Theorem 4.5 (Two-Sided Tail Probability)).
 
 If `X` is sub-Gaussian with variance proxy `σ²` under `μ`, then for `0 ≤ t`,
 `μ {ω | t < |X ω − ∫ X dμ|} ≤ 2 · exp(−t² / (2σ²))`.
@@ -130,7 +130,7 @@ Deviation from the book: Lu states the bound for `t > 0`; we use the weaker
 theorem IsSubGaussian.measure_abs_sub_integral_lt_le
     {X : Ω → ℝ} {σ2 : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubGaussian X σ2 μ)
-    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §4.2 (thm:two-sided)
+    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §4.2 Theorem 4.5
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < |X ω - ∫ x, X x ∂μ|}
       ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * σ2))) := by

@@ -20,9 +20,11 @@ goes through co-coercivity: the distance $\lVert x_t - x^\*\rVert$
 is non-increasing, and a telescoping/recursive bound on
 $\delta_t = f(x_t) - f(x^\*)$ yields the rate.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 13
-(Gradient Descent), §13.1 (Gradient Descent), Theorem 13.1 (`thm:gd`). The
-co-coercivity step is in §13.1 (Gradient Descent).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 13 (Gradient Descent), §13.1
+(Gradient Descent), Theorem 13.1 (Convergence of Gradient Descent). The
+co-coercivity step is in §13.1 (Gradient Descent); the smoothness helper is
+Lemma 13.1.
 
 **Proof formalization notes.**
 
@@ -313,7 +315,7 @@ private lemma gd_inv_gap_bound
         left
         linarith [hk1, hδk1_nonneg]
 
-/-- Lu-BDA Thm 13.1 (gradient-descent convergence rate). Convex `L`-smooth `f`,
+/-- Lu-BDA Theorem 13.1 (Convergence of Gradient Descent). Convex `L`-smooth `f`,
 step `1/L`, global minimizer `x*`: `f(x_t) - f(x*) ≤ 2L‖x_0 - x*‖²/t` for
 `t ≥ 1`. The constant matches the book exactly (the proof goes through a
 slightly tighter pre-bound that is then loosened to match the book). -/

@@ -18,8 +18,9 @@ the unconstrained case $\mathcal{X} = E$ (the whole inner product space), which
 is what the targeted results (local-minimum-is-global, the proximal pillar
 lemma) require.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 12
-(Convexity and Subgradient), §12.2 (Subgradient), Definition "Subgradient".
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 12 (Convexity and Subgradient), §12.2
+(Subgradient), Definition 12.3 (Subgradient).
 
 **Proof formalization notes.** These are definitions, so there is no proof
 obligation here. Convexity of sets/functions is reused directly from Mathlib
@@ -48,13 +49,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- `IsSubgradient f x g`: `g` is a subgradient of `f : E → ℝ` at `x`, i.e. the
 supporting-hyperplane inequality `f y - f x ≥ ⟪g, y - x⟫` holds for every `y`
-(Lu-BDA §12.2, "Subgradient", specialized to the unconstrained domain `𝒳 = E`).
+(Lu-BDA §12.2, Definition 12.3 (Subgradient), specialized to the unconstrained domain `𝒳 = E`).
 For differentiable convex `f` the gradient `∇f x` is the canonical subgradient. -/
 def IsSubgradient (f : E → ℝ) (x g : E) : Prop :=
   ∀ y, ⟪g, y - x⟫_ℝ ≤ f y - f x
 
 /-- The subdifferential `∂f(x)`: the set of all subgradients of `f` at `x`
-(Lu-BDA §12.2). May be empty for nonconvex `f`; for convex `f` it is nonempty. -/
+(Lu-BDA §12.2, Definition 12.3 (Subgradient)). May be empty for nonconvex `f`;
+for convex `f` it is nonempty. -/
 def subdifferential (f : E → ℝ) (x : E) : Set E :=
   {g | IsSubgradient f x g}
 

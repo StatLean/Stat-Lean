@@ -26,8 +26,9 @@ Each is proved by a thin delegation to Mathlib: the LLN to `ProbabilityTheory.st
 (a.e. convergence, which implies convergence in measure on a probability space) and the CLT
 to `ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub`.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 4 (Concentration
-Inequalities), §4.1 (Asymptotic versus Non-Asymptotic).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities), §4.1
+(Asymptotic versus Non-Asymptotic).
 
 **Proof formalization notes.**
 

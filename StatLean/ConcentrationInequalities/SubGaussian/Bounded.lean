@@ -9,9 +9,10 @@ centered moment generating function satisfies
 $$\mathbb{E}\!\left[e^{\lambda (X - \mathbb{E} X)}\right] \le
   \exp\!\left(\frac{\lambda^2 (b - a)^2}{8}\right), \qquad \lambda \in \mathbb{R}.$$
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 4
-(Concentration Inequalities), §4.2 ("Sub-Gaussian Random Variables"); the variance
-proxy $(b-a)^2/4$ is the standard statement of Hoeffding's lemma in that section.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities), §4.2,
+Theorem 4.6 (Bounded Random Variables); the variance proxy $(b-a)^2/4$ is the
+standard statement of Hoeffding's lemma underlying that result.
 
 **Proof formalization notes.** The book's proxy $(b - a)^2 / 4$ is exactly
 Mathlib's `(‖b − a‖₊ / 2) ^ 2` (since `‖b − a‖₊ = |b − a|` and
@@ -39,7 +40,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-- A bounded random variable `a ≤ X ≤ b` (a.s.) is sub-Gaussian with variance
 proxy `(b − a)² / 4`, written `(‖b − a‖₊ / 2) ^ 2` (Lu-BDA §4.2,
-"Sub-Gaussian Random Variables"). -/
+Theorem 4.6 (Bounded Random Variables)). -/
 theorem isSubGaussian_of_mem_Icc {X : Ω → ℝ} {a b : ℝ} {μ : Measure Ω}
     [IsProbabilityMeasure μ]
     -- USER-INPUT: X is (a.e.-)measurable; Lu-BDA §4.2 (regularity, implicit in the book).

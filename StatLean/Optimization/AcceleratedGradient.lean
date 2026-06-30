@@ -25,9 +25,9 @@ inherited from the accelerated proximal gradient theorem it specializes (the
 $t = 0$ case is the trivial $f(x_0) - f(x^\*) \le 2L\lVert x_0 - x^\*\rVert^2/1$,
 not part of the formalized claim).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 13 (Gradient
-Descent), §13.3 (Accelerated Gradient Descent), Theorem 13.3 (`thm:cvg-agd`,
-Convergence of AGD).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 13 (Gradient Descent), §13.3 (Accelerated
+Gradient Descent), Theorem 13.3 (Convergence of AGD).
 
 **Proof formalization notes.** This is the `h = 0` special case of accelerated
 proximal gradient descent (Theorem 14.2, `acceleratedProximalGradient_rate`): the
@@ -53,7 +53,7 @@ open scoped InnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- Lu-BDA Thm 13.3 (`thm:cvg-agd`, convergence of AGD). For convex `L`-smooth `f`
+/-- Lu-BDA Theorem 13.3 (Convergence of AGD). For convex `L`-smooth `f`
 (`0 < L`) with step `1/L`, Nesterov's accelerated gradient descent satisfies
 `f(x_t) - f(x*) ≤ 2L‖x_0 - x*‖²/(t+1)²`. Stated for `t ≥ 1` (inherited from
 Theorem 14.2). Proved as the `h = 0` specialization of

@@ -24,9 +24,9 @@ $t \ge 0$ throughout, which is strictly stronger. The book's high-probability fo
 "$\max_j X_j \le \sigma\sqrt{2\log(d/\delta)}$ with probability at least $1-\delta$" is
 the same statement as the tail bound after substituting $\delta = d\,e^{-t^2/(2\sigma^2)}$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal
-Inequality), §6.2 (Maximal Inequality), Theorem 6.2 (`thm:finite-maximal`, "Finite
-Maximal Inequality").
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 6 (Bernstein and Maximal Inequalities), §6.2,
+Theorem 6.2 (Finite Maximal Inequality).
 The expectation bound is the first display of the theorem; the tail bound is the union
 bound established in its proof.
 
@@ -68,7 +68,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-! ### Tail bound -/
 
-/-- **Finite Maximal Inequality — tail bound** (Lu-BDA §6.2, `thm:finite-maximal`).
+/-- **Finite Maximal Inequality — tail bound** (Lu-BDA §6.2, Theorem 6.2).
 
 Given `d ≥ 1` random variables, each sub-Gaussian with variance proxy `σ²` and
 centered (`E[X_j] = 0`), and `t ≥ 0`:
@@ -84,11 +84,11 @@ Proof: union bound (`measure_iUnion_fintype_le`) + per-`j` sub-Gaussian Chernoff
 theorem tail_max_le
     {d : ℕ} [NeZero d] {μ : Measure Ω} {σ2 : ℝ≥0}
     {X : Fin d → Ω → ℝ}
-    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2 (thm:finite-maximal)
+    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2, Theorem 6.2
     (hcenter : ∀ j, ∫ x, X j x ∂μ = 0)
-    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2 (thm:finite-maximal)
+    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2, Theorem 6.2
     (hX : ∀ j, IsSubGaussian (X j) σ2 μ)
-    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §6.2 (thm:finite-maximal)
+    -- USER-INPUT: 0 ≤ t (book: t > 0); Lu-BDA §6.2, Theorem 6.2
     {t : ℝ} (ht : 0 ≤ t) :
     μ {ω | t < ⨆ j, X j ω}
       ≤ ENNReal.ofReal ((d : ℝ) * Real.exp (-t ^ 2 / (2 * ↑σ2))) := by
@@ -163,7 +163,7 @@ private lemma exp_mul_ciSup_le_sum_exp
 
 /-! ### Expectation bound -/
 
-/-- **Finite Maximal Inequality — expectation bound** (Lu-BDA §6.2, `thm:finite-maximal`).
+/-- **Finite Maximal Inequality — expectation bound** (Lu-BDA §6.2, Theorem 6.2).
 
 Given `d ≥ 1` centered sub-Gaussian random variables with variance proxy `σ²` under a
 probability measure `μ`:
@@ -182,9 +182,9 @@ Corner cases: `σ² = 0` → each `X_j = 0` a.e. (sub-Gaussian with proxy 0); `d
 theorem expectation_max_le
     {d : ℕ} [NeZero d] {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Fin d → Ω → ℝ}
-    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2 (thm:finite-maximal)
+    -- USER-INPUT: E[X_j] = 0; Lu-BDA §6.2, Theorem 6.2
     (hcenter : ∀ j, ∫ x, X j x ∂μ = 0)
-    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2 (thm:finite-maximal)
+    -- USER-INPUT: X_j is sub-Gaussian with variance proxy σ²; Lu-BDA §6.2, Theorem 6.2
     (hX : ∀ j, IsSubGaussian (X j) σ2 μ) :
     ∫ ω, ⨆ j, X j ω ∂μ ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log d) := by
   -- Convert IsSubGaussian to HasSubgaussianMGF (centering kills the mean shift).

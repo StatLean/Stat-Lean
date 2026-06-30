@@ -2,7 +2,7 @@ import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Process.Filtration
 import StatLean.ConcentrationInequalities.McDiarmid.CondHoeffding
 
-/-! # Doob-martingale MGF bound (Lu-BDA §5.1, McDiarmid)
+/-! # Doob-martingale MGF bound (Lu-BDA §5.1, Theorem 5.1, McDiarmid Inequality)
 
 We prove that McDiarmid's bounded-differences function satisfies
 `HasSubgaussianMGF (f(X) − E[f(X)]) (∑ₖ (‖cₖ‖₊/2)²) μ`
@@ -715,7 +715,11 @@ lemma increment_hasCondSubgaussianMGF
 
 /-! ### §5 Main theorem: McDiarmid MGF bound -/
 
-/-- **Doob-martingale MGF bound for McDiarmid** (Lu-BDA §5.1).
+/-- **Doob-martingale MGF bound for McDiarmid** (Lu-BDA §5.1, Theorem 5.1 (McDiarmid
+Inequality)).
+
+Reference: Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0).
 
 For `n` independent random variables `X = (X₀,...,Xₙ₋₁)` and a function `f` satisfying the
 bounded-differences condition with constants `c : Fin n → ℝ`, the centered evaluation

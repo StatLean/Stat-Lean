@@ -24,12 +24,14 @@ This file provides the shared **concept layer** of definitions (`Splus`, `Sminus
 `Vminus`, `FDPhat`, `tStar`, `knockoffRejects`) reused by the knock-off assembly files (`FdpBound`,
 `Initial`, `Supermartingale`, the final `Knockoff`). It is theorem-agnostic and laptop-owned.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 21 (Knock-Off), §21.3
-(Knock-Off): the "Knock-Off Score" definition, the display
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3 (Knock-Off): Definition 21.1
+(Knock-Off Score), the display
 $\widehat{\mathrm{FDP}}(t) = (\#S^-(t)+1)/(\#S^+(t)\vee 1)$, and the threshold rule
-$t^* = \arg\min_t \{ \widehat{\mathrm{FDP}}(t) \le \alpha \}$ with rejection set $S^+(t^*)$. (The
-declarations are tagged `Lu-BDA §21.3`; the source file `chapters/chapter19.tex` is scrambled and
-compiles to Chapter 21 of the book.)
+$t^* = \arg\min_t \{ \widehat{\mathrm{FDP}}(t) \le \alpha \}$ with rejection set $S^+(t^*)$, whose
+exact finite-sample FDR control is Theorem 21.2 (Knock-Off). (The declarations are tagged
+`Lu-BDA §21.3`; the source file `chapters/chapter19.tex` is scrambled and compiles to Chapter 21 of
+the book.)
 
 **Proof formalization notes.** This is a definitions-only concept file, so the "proof" content is
 the modeling fidelity of the encodings:

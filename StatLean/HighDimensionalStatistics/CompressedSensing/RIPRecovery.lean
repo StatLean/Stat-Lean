@@ -13,8 +13,9 @@ Then the basis-pursuit program ($\ell_1$-minimization subject to $X\beta = Y$) r
 $\beta^\star$ exactly: $\beta^\star$ is the **unique** minimizer, so $\hat\beta =
 \beta^\star$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 9 (Restricted
-Isometry Property), §9.1, Theorem 9.1 (Perfect recovery under RIP). The textbook states
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 9 (Restricted Isometry Property), §9.1, Theorem 9.1
+(Perfect Recovery Under RIP). The textbook states
 the threshold as $\delta_{3s} < 1/3$ on the $3s$-RIP constant; the Lean statement adds the
 positivity normalization $0 < \delta$ (a harmless side condition, since the RIP constant
 is nonnegative and the case $\delta = 0$ is degenerate).
@@ -157,19 +158,19 @@ private lemma restrict_head_add_tail (S : Finset (Fin d)) (x : EuclideanSpace �
 
 /-! ## The null-space-property core -/
 
-/-- **RIP ⟹ trivial cone–nullspace intersection** (Lu §9.1, `thm:rip` core). If
+/-- **RIP ⟹ trivial cone–nullspace intersection** (Lu-BDA §9.1, Theorem 9.1 core). If
 `S.card ≤ s` and `X` is `3s`-RIP with `0 < δ < 1/3`, then the cone `C(S) = reCone S 1`
 meets `Null(X)` only at `0`. This is the null-space property feeding
 `unique_basisPursuit_of_cone_trivial`. -/
 private lemma rip_cone_trivial
     (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d)) (s : ℕ) (δ : ℝ)
-    -- USER-INPUT: S contains the support, |S| ≤ s; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: S contains the support, |S| ≤ s; Lu-BDA §9.1, Theorem 9.1
     (hScard : S.card ≤ s)
-    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1, Theorem 9.1
     (hRIP : IsRIP X (3 * s) δ)
-    -- USER-INPUT: 0 < δ; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: 0 < δ; Lu-BDA §9.1, Theorem 9.1
     (hδ0 : 0 < δ)
-    -- USER-INPUT: δ < 1/3 (the contraction threshold); Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: δ < 1/3 (the contraction threshold); Lu-BDA §9.1, Theorem 9.1
     (hδ : δ < 1 / 3) :
     reCone S 1 ∩ (LinearMap.ker (designMap X) : Set (EuclideanSpace ℝ (Fin d))) = {0} := by
   rw [Set.eq_singleton_iff_unique_mem]
@@ -390,21 +391,21 @@ private lemma rip_cone_trivial
 
 /-! ## Main theorem -/
 
-/-- **Perfect recovery under RIP** (Lu §9.1, `thm:rip`). `3s`-RIP with `δ < 1/3` implies
+/-- **Perfect Recovery Under RIP** (Lu-BDA §9.1, Theorem 9.1). `3s`-RIP with `δ < 1/3` implies
 basis pursuit uniquely recovers every `s`-sparse `β*`.
 
 `δ < 1/3` is the constant on the `3s`-RIP constant `δ_{3s}`; it is exactly the
 threshold making the contraction ratio `√((1+δ)/(2(1−δ))) < 1`. -/
 theorem basisPursuit_recovers_of_rip
     (X : Matrix (Fin n) (Fin d) ℝ) (s : ℕ) (δ : ℝ)
-    -- USER-INPUT: 0 < δ; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: 0 < δ; Lu-BDA §9.1, Theorem 9.1
     (hδ0 : 0 < δ)
-    -- USER-INPUT: δ < 1/3 (the 3s-RIP constant threshold); Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: δ < 1/3 (the 3s-RIP constant threshold); Lu-BDA §9.1, Theorem 9.1
     (hδ : δ < 1 / 3)
-    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1, Theorem 9.1
     (hRIP : IsRIP X (3 * s) δ)
     (βstar : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: β* is s-sparse; Lu-BDA §9.1 (thm:rip)
+    -- USER-INPUT: β* is s-sparse; Lu-BDA §9.1, Theorem 9.1
     (hsp : IsSparse s βstar) :
     IsUniqueBasisPursuit X (designMap X βstar) βstar := by
   obtain ⟨S, hScard, hsupp⟩ := hsp

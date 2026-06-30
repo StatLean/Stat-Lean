@@ -14,8 +14,8 @@ p-value the bound holds with equality, $\mathbb{P}(p \le t) = t$.
 This is the only distributional assumption the Benjamini–Hochberg / Holm FWER arguments place
 on the null p-values; it is theorem-agnostic and consumed by the assembly files.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 19 (Multiple Hypotheses),
-§19.2 (Multiple Hypotheses). The
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 19 (Multiple Hypotheses), §19.2 (Multiple Hypotheses). The
 super-uniform / validity condition $\mathbb{P}(p \le t) \le t$ is the standing null assumption
 under which the FDR/FWER guarantees are stated. The book's Benjamini–Hochberg proof is written
 for the exact-uniform identity $\mathbb{P}(p \le t) = t$; the definition here is the honest
@@ -50,7 +50,7 @@ namespace StatLean.MultipleTesting
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
 /-- `SuperUniform p μ`: the p-value `p` is *super-uniform* under `μ`, i.e. `μ {p ≤ t} ≤ t` for
-every `t ≥ 0` (Lu-BDA Ch19 §19.2). The defining null assumption; for an exactly-uniform `p` it holds
+every `t ≥ 0` (Lu-BDA Ch19 (Multiple Hypotheses) §19.2). The defining null assumption; for an exactly-uniform `p` it holds
 with equality. -/
 def SuperUniform (p : Ω → ℝ) (μ : Measure Ω) : Prop :=
   ∀ t : ℝ, 0 ≤ t → μ {ω | p ω ≤ t} ≤ ENNReal.ofReal t

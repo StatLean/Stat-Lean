@@ -27,9 +27,10 @@ deviation in the geometric-series range condition). Writing $s := \sigma \vee b$
 * **Variance bound** — $\sigma^2 = (\sqrt{\sigma^2})^2 \le s^2 \le 2s^2 = \alpha^2/2$, so
   $\exp(\lambda^2 \sigma^2) \le \exp(\lambda^2 \alpha^2/2)$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal Inequality),
-§6.1 (Bernstein Inequality), Theorem 6.1, Step 1 (Bernstein condition ⇒ sub-exponential moment
-generating function).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities), §6.1,
+Theorem 6.1 (Bernstein Inequality), Step 1 (Bernstein condition, Definition 6.1, ⇒
+sub-exponential moment generating function).
 Compare M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge
 University Press, 2019, Chapter 2 (Basic tail and concentration bounds), §2.1.3 (sub-exponential
 variables and Bernstein's condition), Eq. (2.16)–(2.17).

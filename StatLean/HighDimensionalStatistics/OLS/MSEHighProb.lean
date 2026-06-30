@@ -40,12 +40,13 @@ deviation from the book; see `l2_max_tail`.) An extra hypothesis `0 < n` is
 required so that $1/n$ is well-defined and the bound is finite — implicit in the
 book's $n \to \infty$ framing.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 7 (Ordinary
-Least Squares), §7.2, Theorem 7.1 (Mean Squared Error of Least Squares),
-high-probability half; Eqs (7.1)–(7.2). The proof invokes the maximal inequality
-for the $\ell_2$-norm, Chapter 6 (Maximal Inequality), Theorem 6.3 (`l2_max_tail`,
-tagged `thm:l2`). (Project tags abbreviate these as `Lu-BDA §7.2 thm:mse-ols` and
-`Lu-BDA §6.2 thm:l2`.)
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 7 (Ordinary Least Squares), §7.2, Theorem 7.1
+(Mean Squared Error of Least Squares), high-probability half; Eqs (7.1)–(7.2). The
+proof invokes the maximal inequality for the $\ell_2$-norm, Chapter 6 (Bernstein
+and Maximal Inequalities), §6.2, Theorem 6.3 (Maximal Inequality for ℓ²-Norm)
+(`l2_max_tail`). (Project tags abbreviate these as `Lu-BDA §7.2 Theorem 7.1` and
+`Lu-BDA §6.2 Theorem 6.3`.)
 
 **Proof formalization notes.**
 1. As in the expectation half, the OLS minimiser gives `Xβ̂ = P_C Y` and prediction
@@ -54,7 +55,7 @@ tagged `thm:l2`). (Project tags abbreviate these as `Lu-BDA §7.2 thm:mse-ols` a
    random vector `Z ω = b.repr (P_C (ε ω)) ∈ E^r`. Then `‖Z ω‖ = ‖P_C ε‖`, each
    `⟨u, Z⟩ = ⟨w_u, ε⟩` is sub-Gaussian with proxy `σ²‖u‖²` (linear combination of
    independent sub-Gaussian coordinates), and `Z` is centered & integrable.
-3. The ℓ²-maximal tail bound `l2_max_tail` (Lu §6.2 `thm:l2`) gives, w.p. `≥ 1−δ`,
+3. The ℓ²-maximal tail bound `l2_max_tail` (Lu §6.2 Theorem 6.3) gives, w.p. `≥ 1−δ`,
    `‖Z ω‖ ≤ 4σ√r + 2σ√(2 log(1/δ))`.
 4. Squaring and dividing by `n`, with `(a+b)² ≤ 2a² + 2b²`:
    `MSE = ‖Z‖²/n ≤ 32 σ² r/n + 16 σ² log(1/δ)/n`.
@@ -139,8 +140,9 @@ private lemma eps_inner_mean0
 /-- **Linear combination of independent sub-Gaussian coordinates.**
 For a noise vector `ε` with jointly independent mean-0 coordinates each sub-Gaussian
 with proxy `σ²`, the linear functional `⟨w, ε⟩ = ∑ᵢ wᵢ εᵢ` is sub-Gaussian with
-proxy `σ²‖w‖²`.  This is the `subGaussian_coords` argument (Lu-BDA §4.2 Hoeffding /
-linear-combination rule), generalised from a unit ONB vector to an arbitrary `w`. -/
+proxy `σ²‖w‖²`.  This is the `subGaussian_coords` argument (Lu-BDA §4.2 Theorem 4.7
+(Hoeffding Inequality) / linear-combination rule), generalised from a unit ONB
+vector to an arbitrary `w`. -/
 private lemma eps_inner_subGaussian
     (hε_indep : iIndepFun (fun (i : Fin n) (ω : Ω) => (ε ω) i) μ)
     (hε_meanz : ∀ i : Fin n, ∫ ω, (ε ω) i ∂μ = 0)
@@ -194,7 +196,7 @@ private lemma ols_residual_orthogonal
     (X : Matrix (Fin n) (Fin d) ℝ)
     (Y : EuclideanSpace ℝ (Fin n))
     (βhat : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §7.2 Theorem 7.1
     (hols : IsOLSEstimator X Y βhat)
     {w : EuclideanSpace ℝ (Fin n)} (hw : w ∈ columnSpace X) :
     ⟪Y - designMap X βhat, w⟫_ℝ = 0 := by
@@ -255,7 +257,7 @@ private lemma designRank_eq_finrank_columnSpace (X : Matrix (Fin n) (Fin d) ℝ)
 
 /-! ### Main theorems -/
 
-/-- **High-probability MSE of OLS — tail form (Lu-BDA §7.2 `thm:mse-ols`).**
+/-- **High-probability MSE of OLS — tail form (Lu-BDA §7.2 Theorem 7.1).**
 
 For `Y ω = X β* + ε ω` with independent mean-0 sub-Gaussian (proxy `σ²`) noise
 coordinates and `δ ∈ (0,1)`, the bad event has measure `≤ δ`:
@@ -268,18 +270,18 @@ theorem mse_ols_highProb_tail
     (hn : 0 < n)
     {σ2 : ℝ≥0}
     {ε : Ω → EuclideanSpace ℝ (Fin n)}
-    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 Theorem 7.1
     (hε_indep : iIndepFun (fun (i : Fin n) (ω : Ω) => (ε ω) i) μ)
-    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 Theorem 7.1
     (hε_meanz : ∀ i : Fin n, ∫ ω, (ε ω) i ∂μ = 0)
-    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 Theorem 7.1
     (hε_subG : ∀ i : Fin n, IsSubGaussian (fun ω => (ε ω) i) σ2 μ)
-    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 Theorem 7.1
     (βstar : EuclideanSpace ℝ (Fin d))
     {βhat : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² for Y ω = Xβ* + ε ω; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² for Y ω = Xβ* + ε ω; Lu-BDA §7.2 Theorem 7.1
     (hβ_ols : ∀ ω, IsOLSEstimator X (designMap X βstar + ε ω) (βhat ω))
-    -- USER-INPUT: confidence level δ ∈ (0,1); Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: confidence level δ ∈ (0,1); Lu-BDA §7.2 Theorem 7.1
     {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1) :
     μ {ω | 32 * (σ2 : ℝ) * (designRank X : ℝ) / (n : ℝ)
             + 16 * ((σ2 : ℝ) / (n : ℝ)) * Real.log (1 / δ) < mse X (βhat ω) βstar}
@@ -418,7 +420,7 @@ theorem mse_ols_highProb_tail
         ≤ μ {ω | t < ‖Z ω‖} := measure_mono hsub
       _ ≤ ENNReal.ofReal δ := htail
 
-/-- **High-probability MSE of OLS — confidence form (Lu-BDA §7.2 `thm:mse-ols`).**
+/-- **High-probability MSE of OLS — confidence form (Lu-BDA §7.2 Theorem 7.1).**
 
 For `Y ω = X β* + ε ω` with independent mean-0 sub-Gaussian (proxy `σ²`) noise
 coordinates and `δ ∈ (0,1)`, with probability at least `1 − δ`:
@@ -434,18 +436,18 @@ theorem mse_ols_highProb_le
     (hn : 0 < n)
     {σ2 : ℝ≥0}
     {ε : Ω → EuclideanSpace ℝ (Fin n)}
-    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 Theorem 7.1
     (hε_indep : iIndepFun (fun (i : Fin n) (ω : Ω) => (ε ω) i) μ)
-    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 Theorem 7.1
     (hε_meanz : ∀ i : Fin n, ∫ ω, (ε ω) i ∂μ = 0)
-    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 Theorem 7.1
     (hε_subG : ∀ i : Fin n, IsSubGaussian (fun ω => (ε ω) i) σ2 μ)
-    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 Theorem 7.1
     (βstar : EuclideanSpace ℝ (Fin d))
     {βhat : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² for Y ω = Xβ* + ε ω; Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² for Y ω = Xβ* + ε ω; Lu-BDA §7.2 Theorem 7.1
     (hβ_ols : ∀ ω, IsOLSEstimator X (designMap X βstar + ε ω) (βhat ω))
-    -- USER-INPUT: confidence level δ ∈ (0,1); Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: confidence level δ ∈ (0,1); Lu-BDA §7.2 Theorem 7.1
     {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1) :
     ENNReal.ofReal (1 - δ)
       ≤ μ {ω | mse X (βhat ω) βstar ≤ 32 * (σ2 : ℝ) * (designRank X : ℝ) / (n : ℝ)

@@ -26,18 +26,19 @@ tuning parameter $\lambda > 0$:
   $\beta$ (a global-minimizer characterization, equivalent to
   $\hat\beta \in \arg\min_\beta L_n(\beta)$).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 10 (Statistical
-Properties of Lasso), §10.1 (Restricted Eigenvalue Condition), Eq (10.1), the
-restricted-eigenvalue definition `def:re`. The objective $L_n$, cone $C_\alpha(S)$, and condition
-$\mathrm{RE}(\kappa,\alpha)$ are the setup notation of that chapter.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 10 (Statistical Properties of Lasso), §10.1
+(Restricted Eigenvalue Condition), Definition 10.1 (Restricted Eigenvalue). The
+objective $L_n$, cone $C_\alpha(S)$, and condition $\mathrm{RE}(\kappa,\alpha)$
+are the setup notation of that chapter.
 
 **Proof formalization notes.** This is a concept (definition-only) file; there
 are no proofs to outline. It reuses the $\ell^1$ norm and support-restriction
 operators from `ForMathlib/VecNorms.lean` (`l1Norm`, `restrict`) and the design
 map from `LinearModel/Defs.lean` (`designMap`). It is theorem-agnostic and is
 consumed downstream by `Lasso/DeterministicRate.lean` (the deterministic
-Lasso rate, `thm:re`) and `Lasso/RandomNoise.lean` (the random-noise corollary,
-`cor:lasso-rate`). The $\ell^2$ norms in $\mathrm{RE}$ and in $L_n$ are the
+Lasso rate, Theorem 10.1) and `Lasso/RandomNoise.lean` (the random-noise
+corollary, Corollary 10.1). The $\ell^2$ norms in $\mathrm{RE}$ and in $L_n$ are the
 Euclidean norms of the underlying `EuclideanSpace ℝ (Fin _)` vectors.
 
 **Bibliographic comments.** The Lasso estimator originates with R. Tibshirani,
@@ -63,25 +64,27 @@ namespace StatLean.HighDimensionalStatistics
 
 variable {n d : ℕ}
 
-/-- The **restricted cone** `C_α(S) = {Δ : ‖Δ_{Sᶜ}‖₁ ≤ α ‖Δ_S‖₁}` (Lu §10.1):
+/-- The **restricted cone** `C_α(S) = {Δ : ‖Δ_{Sᶜ}‖₁ ≤ α ‖Δ_S‖₁}` (Lu-BDA §10.1,
+Definition 10.1 (Restricted Eigenvalue)):
 deviations whose mass off the support `S` is at most `α` times the mass on `S`.
 `Δ_S` is `restrict S Δ` and `Δ_{Sᶜ}` is `restrict Sᶜ Δ` from `VecNorms`. -/
 def reCone (S : Finset (Fin d)) (α : ℝ) : Set (EuclideanSpace ℝ (Fin d)) :=
   {Δ | l1Norm (restrict Sᶜ Δ) ≤ α * l1Norm (restrict S Δ)}
 
 /-- **Restricted eigenvalue condition** `RE(κ, α)` for design `X` and support `S`
-(Lu §10.1, `def:re`): the loss is `κ`-curved along the cone `C_α(S)`, i.e.
+(Lu-BDA §10.1, Definition 10.1 (Restricted Eigenvalue)): the loss is `κ`-curved
+along the cone `C_α(S)`, i.e.
 `(1/n)‖X Δ‖² ≥ κ ‖Δ‖²` for every `Δ ∈ C_α(S)`. -/
 def RestrictedEigenvalue (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))
     (κ α : ℝ) : Prop :=
   ∀ Δ ∈ reCone S α, (1 / (n : ℝ)) * ‖designMap X Δ‖ ^ 2 ≥ κ * ‖Δ‖ ^ 2
 
-/-- The **Lasso objective** `L_n(β) = (1/2n)‖Y − X β‖² + λ‖β‖₁` (Lu §10.2). -/
+/-- The **Lasso objective** `L_n(β) = (1/2n)‖Y − X β‖² + λ‖β‖₁` (Lu-BDA §10.2). -/
 noncomputable def lassoObjective (X : Matrix (Fin n) (Fin d) ℝ)
     (Y : EuclideanSpace ℝ (Fin n)) (lam : ℝ) (β : EuclideanSpace ℝ (Fin d)) : ℝ :=
   (1 / (2 * (n : ℝ))) * ‖Y - designMap X β‖ ^ 2 + lam * l1Norm β
 
-/-- **Lasso estimator predicate** (Lu §10.2): `β̂` minimises the Lasso objective at
+/-- **Lasso estimator predicate** (Lu-BDA §10.2): `β̂` minimises the Lasso objective at
 tuning parameter `λ` over all `β` (zero-order/minimiser characterisation). -/
 def IsLassoEstimator (X : Matrix (Fin n) (Fin d) ℝ)
     (Y : EuclideanSpace ℝ (Fin n)) (lam : ℝ) (βhat : EuclideanSpace ℝ (Fin d)) :

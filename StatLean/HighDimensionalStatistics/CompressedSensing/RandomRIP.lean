@@ -22,8 +22,9 @@ comes from the per-vector concentration bound we can actually prove (exponent $n
 instead of the book's sharp $n\delta^2/8$); see the proof notes below. A larger sample-size
 constant only strengthens the hypothesis, so the conclusion remains the book's.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 9 (Restricted Isometry
-Property), §9.1 (Restricted Isometry Property), Theorem 9.2 (`thm:3s-rip`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 9 (Restricted Isometry Property), §9.1 (Restricted Isometry
+Property), Theorem 9.2.
 
 **Proof formalization notes.**
 1. *Fixed `β`:* `‖Xβ‖²/‖β‖² ∼ (1/n)χ²_n` concentrates — `gaussian_quadratic_form_tail`
@@ -37,7 +38,7 @@ Property), §9.1 (Restricted Isometry Property), Theorem 9.2 (`thm:3s-rip`).
 4. *Sample size* (`sample_size_bound`): `log(18d/ε) = log(9d) + log(2/ε)` makes the union bound
    `≤ ε` once `n ≥ (384/δ²)·s·log(18d/ε)`, so `P(RIP) ≥ μ(¬RIP)ᶜ = 1 − μ(¬RIP) ≥ 1 − ε`.
 
-   *Constant deviation.* The book (Lu §9.1, `thm:3s-rip`) states `96/δ²` with the sharp per-vector
+   *Constant deviation.* The book (Lu §9.1, Theorem 9.2) states `96/δ²` with the sharp per-vector
    exponent `nδ²/8`. We prove only `nδ²/32` (factor `4`), so the provable sample size is
    `384/δ² = 4·96/δ²`. The multiplier `18` and the order `O(s·log(d/ε))` are unchanged; the only
    deviation is `96 → 384`.
@@ -65,7 +66,8 @@ variable {n d : ℕ}
 
 /-! ## Discretisation: a `1/4`-net controls the quadratic form on the whole ball
 
-The geometric core of `thm:3s-rip`: for a linear map `L` on a finite-dimensional Euclidean
+The geometric core of the random-RIP theorem (Lu §9.1, Theorem 9.2): for a linear map `L` on a
+finite-dimensional Euclidean
 space, the quadratic form `g(u) = ‖L u‖² − ‖u‖²` over the **whole** closed unit ball is
 controlled by its values on a `1/4`-net.  Concretely `sup_ball |g| ≤ 2 · sup_net |g|`.
 
@@ -287,7 +289,8 @@ private lemma exists_coordEmb_eq {m d : ℕ} (e : Fin m ↪ Fin d)
 /-! ## A finite `1/4`-net of the unit ball with `9^m` points -/
 
 /-- **Existence of a `1/4`-net** of the closed unit ball of `ℝ^m` with at most `9^m` points
-(Lu §4.2 packing bound at `ε = 1/4`, via `coveringNumber_closedBall_le`). -/
+(Lu §6.2, Lemma 6.1 (Covering Number), packing bound at `ε = 1/4`, via
+`coveringNumber_closedBall_le`). -/
 private lemma exists_quarter_net (m : ℕ) [NeZero m] :
     ∃ N : Finset (EuclideanSpace ℝ (Fin m)),
       (∀ v ∈ N, v ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin m)) 1) ∧
@@ -330,7 +333,7 @@ private lemma exists_quarter_net (m : ℕ) [NeZero m] :
 The union bound gives `μ(¬RIP) ≤ 2·(9d)^{3s}·exp(−nδ²/128)` (the `/128` is `(δ/2)²/32`, the
 provable per-vector exponent at `δ/2`).  With `n ≥ (384/δ²)·s·log(18d/ε)` this is `≤ ε`.
 
-**Constant deviation (Lu §9.1, `thm:3s-rip`).** The book states `96/δ²`, which corresponds to the
+**Constant deviation (Lu §9.1, Theorem 9.2).** The book states `96/δ²`, which corresponds to the
 sharp per-vector exponent `nδ²/8`.  Our `GaussianChiSquared.lean` proves the exponent `nδ²/32`
 (sub-exponential parameter `α = 4`, off the book's `α = 2` by a factor `2` in the standard
 deviation), so the per-net-point tail at `δ/2` is `2·exp(−nδ²/128)` instead of `2·exp(−nδ²/32)`,
@@ -380,23 +383,23 @@ private lemma sample_size_bound {s d n : ℕ} {δ ε : ℝ}
   rw [hLsplit] at hnlb
   nlinarith [hnlb, hgap]
 
-/-- **Random matrix is `3s`-RIP w.h.p.** (Lu, *Big Data Analysis* Ch. 9 §9.1, Theorem 9.2, `thm:3s-rip`).
+/-- **Random matrix is `3s`-RIP w.h.p.** (Lu, *Big Data Analysis* Ch. 9 §9.1, Theorem 9.2).
 For an i.i.d. `N(0,1/n)` matrix `X` and `n ≥ (96/δ²)·s·log(18d/ε)`,
 `P(X is 3s-RIP with constant δ) ≥ 1 − ε`. -/
 theorem prob_rip_of_iid_gaussian
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (μ : Measure Ω) [IsProbabilityMeasure μ]
     (s : ℕ) (δ ε : ℝ)
-    -- USER-INPUT: 0 < δ < 1 (target RIP constant); Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: 0 < δ < 1 (target RIP constant); Lu-BDA §9.1, Theorem 9.2
     (hδ0 : 0 < δ) (hδ1 : δ < 1)
-    -- USER-INPUT: 0 < ε (target failure probability); Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: 0 < ε (target failure probability); Lu-BDA §9.1, Theorem 9.2
     (hε0 : 0 < ε)
     (X : Ω → Matrix (Fin n) (Fin d) ℝ)
-    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1, Theorem 9.2
     (hindep : iIndepFun (fun (p : Fin n × Fin d) ω => X ω p.1 p.2) μ)
-    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1 (thm:3s-rip)
+    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1, Theorem 9.2
     (hlaw : ∀ i j, Measure.map (fun ω => X ω i j) μ
               = gaussianReal 0 (⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ : ℝ≥0))
-    -- USER-INPUT: sample-size lower bound n ≥ (384/δ²)·s·log(18d/ε); Lu-BDA §9.1 (thm:3s-rip).
+    -- USER-INPUT: sample-size lower bound n ≥ (384/δ²)·s·log(18d/ε); Lu-BDA §9.1, Theorem 9.2.
     -- Constant `384 = 4·96`: the book's `96` assumes the sharp per-vector exponent `nδ²/8`;
     -- `GaussianChiSquared.lean` proves only `nδ²/32` (α = 4), a factor 4, hence `96 → 384`.
     -- See `sample_size_bound`. A larger constant only strengthens this USER-INPUT hypothesis.

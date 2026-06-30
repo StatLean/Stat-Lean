@@ -31,8 +31,9 @@ strict $t > \alpha$); this yields the same value as the quadratic bound at the c
 point. The events use a strict inequality $t < Y$, faithful to the textbook; the Chernoff
 brick supplies the bound on $\{t \le Y\} \supseteq \{t < Y\}$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 5 (Sub-Exponential
-Random Variables), §5.2 "Sub-Exponential Random Variables", Theorem 5.2 (`thm:sub-exp`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 5 (Sub-exponential Random Variables), §5.2,
+Theorem 5.2 (Sub-exponential Tail Probability).
 
 **Proof formalization notes.** Both bounds follow from the one-sided Chernoff bound
   $\mu\{t < Y\} \le \exp(-\lambda t)\,\mathrm{MGF}_Y(\lambda) \le \exp(-\lambda t + \lambda^2\alpha^2/2)$
@@ -79,8 +80,8 @@ private lemma IsSubExponential.isFiniteMeasure
   simp only [zero_mul, Real.exp_zero] at h
   exact (integrable_const_iff_isFiniteMeasure (one_ne_zero)).mp h
 
-/-- **Quadratic-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2, `thm:sub-exp`,
-quadratic case).
+/-- **Quadratic-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2
+(Sub-exponential Tail Probability), quadratic case).
 
 If `X` is sub-exponential with parameter `α > 0` under `μ`, then for `0 ≤ t ≤ α`,
 `μ {ω | t < X ω − ∫ X dμ} ≤ exp(−t²/(2α²))`.
@@ -94,11 +95,11 @@ on the event is faithful; the Chernoff brick gives `≤`, absorbed via `{t < Y} 
 theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
     {X : Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubExponential X α μ)
-    -- USER-INPUT: α > 0; Lu-BDA §5.2 (thm:sub-exp)
+    -- USER-INPUT: α > 0; Lu-BDA §5.2 Theorem 5.2
     (hα : 0 < (α : ℝ))
-    -- USER-INPUT: 0 ≤ t; Lu-BDA §5.2 (thm:sub-exp)
+    -- USER-INPUT: 0 ≤ t; Lu-BDA §5.2 Theorem 5.2
     {t : ℝ} (ht : 0 ≤ t)
-    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §5.2 (thm:sub-exp)
+    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §5.2 Theorem 5.2
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
@@ -149,8 +150,8 @@ theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
           rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
           exact ENNReal.ofReal_le_ofReal hbrick
 
-/-- **Linear-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2, `thm:sub-exp`,
-linear case).
+/-- **Linear-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2
+(Sub-exponential Tail Probability), linear case).
 
 If `X` is sub-exponential with parameter `α > 0` under `μ`, then for `α ≤ t`,
 `μ {ω | t < X ω − ∫ X dμ} ≤ exp(−t/(2α))`.
@@ -163,9 +164,9 @@ the same bound as the quadratic regime at the crossing point). -/
 theorem IsSubExponential.measure_sub_integral_lt_le_linear
     {X : Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubExponential X α μ)
-    -- USER-INPUT: α > 0; Lu-BDA §5.2 (thm:sub-exp)
+    -- USER-INPUT: α > 0; Lu-BDA §5.2 Theorem 5.2
     (hα : 0 < (α : ℝ))
-    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §5.2 (thm:sub-exp)
+    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §5.2 Theorem 5.2
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t / (2 * (α : ℝ)))) := by

@@ -8,7 +8,7 @@ import Mathlib.Data.Prod.Lex
 
 The greedy decreasing-magnitude partition of the complement `Sᶜ` used in the RIP
 recovery proof (Lu, *Big Data Analysis* Chapter 9, Restricted Isometry Property,
-§9.1, Theorem 9.1, `thm:rip`): block `0` holds the `k`
+§9.1, Theorem 9.1 (Perfect Recovery Under RIP)): block `0` holds the `k`
 largest-`|·|` coordinates of `x` outside `S`, block `1` the next `k`, and so on.
 
 Mathlib has no packaged "top-`k` coordinates" selector; this file builds it from
