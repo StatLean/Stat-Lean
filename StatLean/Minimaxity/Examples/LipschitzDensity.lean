@@ -10,23 +10,72 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
-# Examples: pointwise density estimation and quadratic functionals (Wainwright Examples 15.7, 15.8)
+# Pointwise estimation of a Lipschitz density and a lower bound for the quadratic functional ∫(f′)²
 
-Two nonparametric applications of Le Cam's functional method (Corollary 15.6), realized by an
-explicit two-point sub-experiment on the interval `[-1/2, 1/2]`:
+Two nonparametric minimax lower bounds obtained from Le Cam's two-point/functional method,
+each realized by an explicit two-point sub-experiment built from a hat (wavelet) perturbation of
+the uniform density.
 
-* **Example 15.7** — estimating the value `f(0)` of a `1`-Lipschitz density yields the rate
-  `n^{-2/3}` (the Hellinger modulus scales as `ω(ε) ≍ ε^{2/3}`).
-* **Example 15.8** — estimating a quadratic functional `θ(f)` over densities bounded away from zero
-  yields the (suboptimal, two-point) rate `n^{-1/2}`.
+* **Example 15.7 — pointwise estimation of a Lipschitz density.** Over the class of densities on
+  the interval `[-1/2, 1/2]` that are `1`-Lipschitz and bounded below by `1/2`, any estimator of the
+  functional value `θ(f) = f(0)` has minimax squared-error risk at least `c · n^{-2/3}` for some
+  constant `c > 0` and all `n ≥ 1`. Equivalently, the Hellinger modulus of continuity scales as
+  `ω(ε) ≍ ε^{2/3}`, which is the optimal pointwise rate `n^{-β/(2β+1)}` at smoothness `β = 1`.
+* **Example 15.8 — quadratic functional `θ(f) = ∫₀¹ (f′)²`.** Over densities on `[0, 1]` bounded
+  below by `1/2`, any estimator of the genuine quadratic functional `θ(f) = ∫₀¹ (f′(x))² dx` has
+  minimax absolute-error risk at least `c · n^{-1/2}` for some `c > 0` and all `n ≥ 1`. This is the
+  *suboptimal two-point* rate: the optimal `n^{-4/9}` rate of Wainwright Example 15.11, which needs a
+  full sign-vector/χ² mixture, is out of scope here.
 
-Both public theorems are phrased *existentially*: they exhibit a finite (two-point) family of densities
-realizing the stated rate, together with the i.i.d. product model, and conclude a lower bound on the
-minimax squared-error risk. The witness is the hat (wavelet) perturbation of the uniform density
-(Wainwright Eq. (15.19)), `f = 1 + φ` with `φ = tent(·) − tent(· − 2δ)` of width `δ ≍ n^{-1/3}`.
+Both public theorems are phrased *existentially*: each exhibits a finite (two-point) family of
+densities realizing the stated rate, together with the `n`-fold i.i.d. product model, and concludes a
+lower bound on the minimax risk. The witness is the hat (wavelet) perturbation of the uniform density
+(Wainwright Eq. (15.19)), `f = 1 + φ` with `φ(x) = tent(x) − tent(x − 2δ)` a mean-zero bump and
+`tent(x) = max(δ − |x|, 0)` a triangular spike. For Example 15.7 the width scales as `δ ≍ n^{-1/3}`;
+for Example 15.8 a single calibrated, amplified bump of width `δ ≍ n^{-1/4}` and amplitude
+`a ≍ n^{-1/8}` is used.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Examples 15.7–15.8.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Examples 15.7–15.8,
+Eq. (15.19). Both reduce to Le Cam's two-point bound via the functional modulus (Corollary 15.6).
+
+**Proof formalization notes.**
+
+* *Common machinery.* The hat perturbation `φ = tent(·) − tent(· − 2δ)` is shown continuous,
+  `1`-Lipschitz, mean-zero on the reference interval, and bounded by `δ` in sup-norm; the two-point
+  family `{1, 1 + φ}` (resp. `{1, 1 + a·φ}`) gives genuine probability densities (each integrates to
+  one, bounded below by `1/2`). The squared-Hellinger distance between two strictly-positive
+  `withDensity` measures is reduced to `H²(ρ·f ‖ ρ·g) = ∫ (√f − √g)² dρ` (lemma
+  `sqHellinger_withDensity_eq`, via the Radon–Nikodym derivative of one `withDensity` against
+  another), and the integrand is controlled by the contractive bound `(1 − √(1+u))² ≤ u²`.
+* *Example 15.7.* Calibrating `δ = (1/6)·n^{-1/3}` gives `H² ≤ 4δ³ = 1/(54n) ≤ (1/(2√n))²`, so the
+  pair is admissible at the critical Hellinger radius; the value-gap is `f_true(0) − f_false(0) = δ`,
+  and `minimax_functional_modulus` with distortion `Φ(x) = x²` yields the `n^{-2/3}` lower bound with
+  provable constant `c = 1/576`.
+* *Example 15.8.* A single calibrated bump on `[0,1]` makes `g = 1 + a·φ` piecewise linear with slope
+  `a` on the rising edge `(0, δ)`, so `θ(g) = ∫₀¹ (g′)² ≥ a²·δ` (lower-bounded by the mass `a²` over
+  `(0, δ)`), while `θ(1) = 0`. With `4a²δ³ = 1/(16n)` the pair is admissible, and
+  `minimax_functional_modulus` with the identity distortion `Φ = id` yields the `n^{-1/2}` lower bound
+  with provable constant `c = 1/32`.
+* *Book-vs-Lean constants.* We state the constants that are actually provable from the two-point
+  construction (`c = 1/576` for Ex 15.7, `c = 1/32` for Ex 15.8) rather than asymptotic `≍` constants;
+  these are smaller than any sharp constant and only affect the multiplicative factor in the rate.
+
+**Bibliographic comments.**
+
+* The two-point reduction underlying both results is L. Le Cam's method; see L. Le Cam,
+  "Convergence of estimates under dimensionality restrictions," *Annals of Statistics* **1** (1973),
+  38–53.
+* The pointwise rate `n^{-β/(2β+1)}` for density estimation over Hölder/Lipschitz classes (here
+  `β = 1`, giving `n^{-1/3}` for the estimate and `n^{-2/3}` for squared error, as in Example 15.7) is
+  due to C. J. Stone, "Optimal rates of convergence for nonparametric estimators," *Annals of
+  Statistics* **8**(6) (1980), 1348–1360, which establishes these as the optimal nonparametric rates.
+* The quadratic functional `∫ (f′)²` of Example 15.8 originates with P. J. Bickel and Y. Ritov,
+  "Estimating integrated squared density derivatives: sharp best order of convergence estimates,"
+  *Sankhyā: The Indian Journal of Statistics, Series A* **50**(3) (1988), 381–393. That paper
+  established the optimal `n^{-4/9}` rate (and the "elbow" phenomenon) for this functional; the
+  `n^{-1/2}` bound formalized here is the simpler two-point bound of Wainwright Example 15.8, not the
+  sharp Bickel–Ritov rate (Wainwright Example 15.11).
 -/
 
 open MeasureTheory ProbabilityTheory

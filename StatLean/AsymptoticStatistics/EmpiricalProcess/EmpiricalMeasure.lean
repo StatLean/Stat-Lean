@@ -4,16 +4,51 @@ import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 /-!
 # Empirical measure of a finite sample
 
-The empirical measure `P_n = (1/n) · Σᵢ δ_{X i}` of a sample `X : Fin n → Ω`:
-the natural unbiased estimator of an underlying distribution `P`. All
-higher-level empirical-process objects (the centred empirical process `G_n`,
-the Glivenko–Cantelli predicate, the Donsker predicate) are stated in terms
-of integrals against this measure or, equivalently, against the
-empirical-average shorthand `empiricalAvg`.
+Given a sample $X_1, \dots, X_n$ taking values in a measurable space $\Omega$, the
+**empirical measure** is the discrete probability measure that places mass $1/n$ at
+each observation,
+$$\mathbb{P}_n \;=\; \frac{1}{n} \sum_{i=1}^{n} \delta_{X_i},$$
+where $\delta_x$ is the Dirac point mass at $x$. It is the natural (unbiased) estimator
+of an underlying distribution $P$: for any integrable $f$ the empirical average
+$$\mathbb{P}_n f \;=\; \int f \, d\mathbb{P}_n \;=\; \frac{1}{n}\sum_{i=1}^{n} f(X_i)$$
+estimates $P f = \int f \, dP$. When $n \ge 1$, $\mathbb{P}_n$ is a probability measure
+(total mass $1$). All higher-level empirical-process objects (the centred empirical
+process $\mathbb{G}_n$, the Glivenko–Cantelli predicate, the Donsker predicate) are
+stated in terms of integrals against this measure or, equivalently, against the
+real-valued empirical-average shorthand `empiricalAvg`.
 
 Main declarations: `empiricalMeasure`, `empiricalAvg`.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.1.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998. Chapter 19
+(Empirical Processes), §19.1. (The empirical measure $\mathbb{P}_n$ and the notation
+$\mathbb{P}_n f$ for $\frac1n\sum_i f(X_i)$ are introduced there as the basic objects of
+the chapter.)
+
+**Proof formalization notes.** The Lean definition `empiricalMeasure n X` is
+$(n : \mathbb{R}_{\ge 0}^{\infty})^{-1} \cdot \sum_i \mathrm{dirac}(X_i)$, a scalar
+multiple of a finite sum of Dirac measures. Edge behaviour: for $n = 0$ the index set
+`Fin 0` is empty, the sum is the zero measure, and the prefactor
+$(0 : \mathbb{R}_{\ge 0}^{\infty})^{-1} = \infty$ collapses against the zero measure to
+leave the zero measure; the `IsProbabilityMeasure` instance is therefore stated under the
+`[NeZero n]` hypothesis. The probability-measure proof evaluates total mass via
+`Measure.smul_apply` / `Measure.coe_finset_sum`, uses
+`Measure.dirac_apply_of_mem` to get each $\delta_{X_i}(\Omega) = 1$, sums to $n$, and
+closes with `ENNReal.inv_mul_cancel`. The real shorthand `empiricalAvg f n X` is
+$(n : \mathbb{R})^{-1} \cdot \sum_i f(X_i)$; here Lean's convention
+$(0 : \mathbb{R})^{-1} = 0$ makes the $n = 0$ case evaluate to $0$. The accompanying
+lemmas record that `empiricalAvg` is linear in $f$ (additivity `empiricalAvg_add`,
+scalar homogeneity `empiricalAvg_smul`) and vanishes on the zero function.
+
+**Bibliographic comments.** The empirical measure is textbook/folklore foundational
+material with no single seminal originating paper. Its scalar-CDF special case, the
+empirical distribution function $F_n(t) = \frac1n\#\{i : X_i \le t\}$, traces to the
+uniform-convergence results of V. Glivenko, "Sulla determinazione empirica delle leggi di
+probabilità," *Giornale dell'Istituto Italiano degli Attuari* 4 (1933), 92–99, and
+F. P. Cantelli, "Sulla determinazione empirica delle leggi di probabilità," same volume,
+421–424. The general empirical-measure-on-an-abstract-space viewpoint used here is the
+modern synthesis presented in van der Vaart (1998, Chapter 19) and in A. W. van der Vaart
+and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

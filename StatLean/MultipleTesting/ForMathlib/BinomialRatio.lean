@@ -76,7 +76,8 @@ theorem binom_ratio_sum_le_one (N : ℕ) :
     field_simp
   linarith [hN, hN1]
 
-/-- **Knock-off supermartingale step** (the finite core, Lu-BDA §19 / Barber–Candès): with null
+/-- **Knock-off supermartingale step** (the finite core, Lu-BDA Ch. 21 (Knock-Off), §21.3
+(Knock-Off), Theorem 21.2 / Barber–Candès): with null
 positive/negative counts `a, b` among the remaining nulls (`k = a+b`), revealing the next removed
 sign uniformly (`+` w.p. `a/k`, `−` w.p. `b/k`) does not increase the ratio `a/(1+b)`:
 `(a/k)·(a−1)/(1+b) + (b/k)·(a/b) ≤ a/(1+b)`. Equality for `b ≥ 1`; strict at `b = 0` (`a−1 ≤ a`).

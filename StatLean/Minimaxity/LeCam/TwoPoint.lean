@@ -2,20 +2,60 @@ import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.ForMathlib.TotalVariation
 
 /-!
-# Le Cam's two-point method (Wainwright §15.2.1)
+# Le Cam's two-point method and the Bayes-error / total-variation identity
 
-In a binary hypothesis test the Bayes error is expressed exactly by the total variation distance,
-```
-inf_ψ ℚ[ψ(Z) ≠ J] = ½ (1 − ‖ℙ₁ − ℙ₀‖_TV)            (Eq. (15.13)),
-```
-and combining this with the estimation-to-testing reduction (Proposition 15.1) gives Le Cam's
-two-point lower bound: for any `2δ`-separated pair `θ₀, θ₁`,
-```
-M(θ(𝒫); Φ∘ρ) ≥ (Φ(δ)/2) (1 − ‖P_{θ₀} − P_{θ₁}‖_TV)   (Eq. (15.14)).
-```
+Consider a binary hypothesis-testing problem in which a label $J \in \{0,1\}$ is drawn uniformly
+and, conditionally on $J = j$, the observation $Z$ is generated from $\mathbb{P}_j$. The **Bayes
+error** of the optimal (possibly randomized) test equals the total-variation distance between the
+two hypotheses:
+$$
+\inf_{\psi}\; \mathbb{Q}\bigl[\psi(Z) \neq J\bigr]
+  \;=\; \tfrac{1}{2}\bigl(1 - \|\mathbb{P}_1 - \mathbb{P}_0\|_{\mathrm{TV}}\bigr),
+$$
+where the infimum is over all tests and $\|\cdot\|_{\mathrm{TV}}$ is the total-variation distance.
+Combining this identity with the estimation-to-testing reduction yields **Le Cam's two-point lower
+bound**: for an increasing distortion function $\Phi$ and any pair $\theta_0, \theta_1$ whose
+functional values $g(\theta_0), g(\theta_1)$ are $2\delta$-separated (i.e.
+$\rho\bigl(g(\theta_0), g(\theta_1)\bigr) \geq 2\delta$), the minimax risk obeys
+$$
+\mathfrak{M}\bigl(\theta(\mathcal{P});\, \Phi \circ \rho\bigr)
+  \;\geq\; \frac{\Phi(\delta)}{2}\,
+    \bigl(1 - \|P_{\theta_0} - P_{\theta_1}\|_{\mathrm{TV}}\bigr).
+$$
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1.
+The Lean statements are over the extended nonnegative reals $[0,\infty]$, so the distortion
+$\Phi : [0,\infty] \to [0,\infty]$ is assumed only `Monotone` (increasing) and the separation and
+distance are measured by an extended pseudometric.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1, Eq. (15.13) (Bayes
+error = total variation) and Eq. (15.14) (the two-point bound); the underlying reduction is
+Proposition 15.1.
+
+**Proof formalization notes.**
+The Bayes-error / total-variation identity (`binary_testingError_eq_tvDist`, Eq. (15.13)) is proved
+by identifying the infimum over Markov-kernel tests defining `bayesRisk` with the variational
+representation `one_sub_tvDist_eq_iInf` of total variation:
+
+* *Lower bound* — every Markov test `κ` contributes the feasible pair $(\kappa(\cdot)\{1\},
+  \kappa(\cdot)\{0\})$, whose pointwise sum is $1$, to the variational infimum.
+* *Upper bound* — conversely each feasible pair $(f_0, f_1)$ is realized, up to a value-decreasing
+  truncation $a = \min(f_0, 1)$, by the explicit randomized test `binaryTest a`, which answers `1`
+  with probability $a(x)$ and `0` with probability $1 - a(x)$.
+
+The two-point bound (`minimax_two_point`, Eq. (15.14)) then specializes the general
+estimation-to-testing inequality `minimax_ge_testing_error` to the two-point sub-family
+$\theta\mathrm{fam} = [\theta_0, \theta_1]$ and rewrites its testing-error term via the identity
+above.
+
+**Bibliographic comments.**
+The reduction of estimation to two-point testing originates with L. Le Cam, "Convergence of
+Estimates Under Dimensionality Restrictions," *The Annals of Statistics* **1** (1973), no. 1,
+38–53 (DOI 10.1214/aos/1193342380), which introduced what is now called *Le Cam's method* (or the
+*two-point method*) for minimax lower bounds. The exact identification of the optimal binary-testing
+error with the total-variation distance is the classical Neyman–Pearson consequence (the optimal
+test thresholds the likelihood ratio), and is textbook folklore rather than attributable to a single
+paper; Wainwright Eq. (15.13)–(15.14) is the synthesis used here.
 -/
 
 open MeasureTheory ProbabilityTheory

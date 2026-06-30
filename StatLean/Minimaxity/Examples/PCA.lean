@@ -7,19 +7,63 @@ import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.LinearAlgebra.Matrix.RowCol
 
 /-!
-# Example: lower bounds for principal component analysis (Wainwright Example 15.19)
+# Minimax lower bound for principal component analysis in the spiked covariance model
 
-In the spiked covariance model `Z ∼ 𝒩(0, Iᵈ + ν θ*θ*ᵀ)` with leading eigenvector `θ*` on the unit
-sphere, the minimax risk for estimating `θ*` in squared Euclidean norm, from `n` i.i.d. samples, is
-lower bounded as
-```
-M(PCA; 𝕊ᵈ⁻¹, ‖·‖₂²) ≳ min{ (1 + ν)/ν² · d/n, 1 }            (Example 15.19),
-```
-proved by Fano's method with the Gaussian maximum-entropy mutual-information bound (Lemma 15.17) over
-a `1/2`-packing of the sphere (Example 5.8).
+In the spiked covariance model the observations are $n$ i.i.d. draws
+$Z \sim \mathcal{N}(0,\, I_d + \nu\, \theta^* (\theta^*)^\top)$, where the leading eigenvector
+$\theta^*$ lies on the unit sphere $\mathbb{S}^{d-1}$ and $\nu > 0$ is the signal strength. Estimating
+$\theta^*$ under squared Euclidean loss $\|\cdot\|_2^2$, the minimax risk is bounded below by
+$$
+\inf_{\widehat\theta}\ \sup_{\theta^* \in \mathbb{S}^{d-1}}\
+  \mathbb{E}\,\bigl\| \widehat\theta - \theta^* \bigr\|_2^2
+\ \gtrsim\ \min\!\left\{ \frac{1 + \nu}{\nu^2}\cdot\frac{d}{n},\ 1 \right\}.
+$$
+The bound is proved by Fano's method, combining the Gaussian maximum-entropy bound on the mutual
+information with a $1/2$-packing of the unit sphere of cardinality $2^{\Omega(d)}$.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.4, Example 15.19.
+Two deviations from the book are made explicit in the formalized statement:
+* The leading multiplicative constant is loosened from the book's $1/128$ to $1/2048$, the value
+  provable from the $\log M \ge d/10$ sphere-packing brick (`exists_sphere_packing`, Example 5.8).
+* A dimension floor $d \ge 40$ is imposed: Fano's method requires $e^{\Omega(d)}$ hypotheses, so the
+  small-$d$ regime (handled in the book by a separate two-point bound) is excluded; Example 15.19 is
+  stated as a large-$d$ rate.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.4, Example 15.19
+(the spiked covariance / PCA lower bound), using Lemma 15.17 (Gaussian maximum-entropy
+mutual-information bound) and Example 5.8 ($1/2$-packing of the unit sphere).
+
+**Proof formalization notes.** The chain mirrors the book's Fano argument:
+* **Spiked-covariance matrix algebra.** `spiked_posDef`, `spiked_det`, and `spiked_inv` establish
+  that $S = I + \nu u u^\top$ is positive definite with $\det S = 1 + \nu$ and Sherman–Morrison
+  inverse $S^{-1} = I - \tfrac{\nu}{1+\nu} u u^\top$ for a unit vector $u$.
+* **Pairwise KL divergence.** `trace_spiked_inv_mul`, `klDiv_spiked`, and `klDiv_pca_pair` compute the
+  single-sample KL between two spiked Gaussians as
+  $\tfrac12\,\nu^2 (1 - \langle u_a, u_b\rangle^2)/(1+\nu)$ — the equal determinants cancel the
+  log-det terms — and tensorize it to the $n$-fold product law.
+* **Sphere packing and tilting.** `pca_fano_config` builds the $2\delta$-separated hypothesis family
+  by tilting a $1/2$-packing of $\mathbb{S}^{m-1}$ ($d = m+1$) into the sphere via
+  $\theta_a = (s, \delta\, w_a)$ with $s^2 + \delta^2 = 1$, choosing
+  $\delta^2 \asymp \min\{(1+\nu)/\nu^2 \cdot d/n,\, 1\}$; the dot-product/norm bridge lemmas
+  (`euclid_self_dot`, `euclid_dot_le`, `tilt_dot`) convert between Euclidean norms and coordinate dot
+  products.
+* **Mutual-information bound.** The per-pair KL is bounded by $2 n \nu^2 \delta^2/(1+\nu)$, averaged
+  via `mutualInformation_le_avg_pairwise_kl`, and combined with $\log M \ge m/10$ so that Fano's
+  $(1 - \cdot)$ factor stays $\ge 1/2$.
+* **Assembly.** `pca_minimax_rate` feeds the configuration into `minimax_fano_lower_bound`.
+
+**Bibliographic comments.** The spiked covariance model originates with I. M. Johnstone, *On the
+distribution of the largest eigenvalue in principal components analysis*, Annals of Statistics 29
+(2001), 295–327, which introduced $\mathcal{N}(0, I + \nu\, \theta\theta^\top)$ as a stylized model
+for high-dimensional PCA. The minimax lower bound for estimating the leading eigenvector (and, more
+generally, the principal subspace) over the unit sphere is due to V. Q. Vu and J. Lei, *Minimax
+sparse principal subspace estimation in high dimensions*, Annals of Statistics 41 (2013), no. 6,
+2905–2947 (arXiv:1211.0373); the dense (non-sparse) special case of their Theorem 3.1 gives exactly
+the rate $\min\{(1+\nu)/\nu^2 \cdot d/n,\, 1\}$ formalized here, and Wainwright's Example 15.19 is a
+streamlined exposition of that argument. Related minimax analyses of the spiked model include
+A. Birnbaum, I. M. Johnstone, B. Nadler, and D. Paul, *Minimax bounds for sparse PCA with noisy
+high-dimensional data*, Annals of Statistics 41 (2013), 1055–1084, and T. T. Cai, Z. Ma, and Y. Wu,
+*Sparse PCA: optimal rates and adaptive estimation*, Annals of Statistics 41 (2013), 3074–3110.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory Matrix

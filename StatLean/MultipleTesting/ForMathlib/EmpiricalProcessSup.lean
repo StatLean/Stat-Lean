@@ -5,29 +5,75 @@ import StatLean.ConcentrationInequalities.SubGaussian.Bounded
 import Mathlib.Probability.Independence.Basic
 
 /-!
-# One-sided Kolmogorov–Smirnov statistic and Massart's inequality — ForMathlib brick
+# One-sided Kolmogorov–Smirnov statistic and Massart's inequality
 
-The one-sided KS statistic `KS⁺ = sup_t (F̂ₙ(t) − t)` and its tail bound (Candès, Lecture 3,
-§3.3.1, Theorem 2 — Massart's inequality). For `n` p-values `p : Fin n → Ω → ℝ`, the empirical
-process `F̂ₙ(t) − t` is right-continuous and decreasing between jumps, so its supremum over `[0,1]`
-is attained at the jumps, i.e. `KS⁺ = maxᵢ ( (i+1)/n − p₍ᵢ₊₁₎ )` (a finite max over the order
-statistics `p₍₁₎ ≤ … ≤ p₍ₙ₎`). We take that finite max as the definition.
+Let $p_1,\dots,p_n$ be $n$ p-values with empirical distribution function
+$\hat F_n(t) = \tfrac1n \#\{i : p_i \le t\}$, and define the **one-sided Kolmogorov–Smirnov
+statistic** as the supremum of the empirical process above the diagonal,
+$$ \mathrm{KS}^{+} \;=\; \sup_{t} \bigl(\hat F_n(t) - t\bigr). $$
+Since $\hat F_n(t) - t$ is right-continuous and strictly decreasing between jumps, its supremum
+over $[0,1]$ is attained at one of the $n$ jump points of $\hat F_n$, so it equals the finite
+maximum over the order statistics $p_{(1)} \le \dots \le p_{(n)}$,
+$$ \mathrm{KS}^{+} \;=\; \max_{1 \le i \le n} \Bigl( \tfrac{i}{n} - p_{(i)} \Bigr). $$
+We take that finite maximum as the definition. Under the global null the p-values are independent
+with super-uniform marginals (i.e. $\Pr(p_i \le t) \le t$), which is exactly the regime needed for
+the **upper** tail of $\hat F_n(t) - t$.
 
-* `ksPlus p ω` — `⨆ᵢ ((i+1)/n − orderStat (p·ω) i)`, the one-sided KS statistic;
-* `ksPlus_tail_union` — the **union-bound** tail `μ{KS⁺ ≥ u} ≤ n·e^{−2nu²}` (a *real* theorem:
-  order-stat reduction `{(k/n)−p₍ₖ₎ ≥ u} = {countLE(k/n−u) ≥ k}` + Hoeffding at each `k`);
-* `massart_inequality` — the **sharp** Massart bound `μ{KS⁺ ≥ u} ≤ 2·e^{−2nu²}` for
-  `u ≥ √(log 2/(2n))`. Its structural reduction (sup-event → per-threshold count union, plus the
-  `n = 0` edge) is fully proved here; the *only* remaining gap — the collapse of the `n`-fold
-  union to the sharp constant `2` — is isolated in the named debt `countLE_reflection_bound`,
-  which is exactly the empirical-process reflection / exponential-supermartingale argument
-  (Massart 1990) not yet in Mathlib. Its docstring records why the union bound, McDiarmid, and the
-  maximal inequalities do not suffice.
+**Massart's inequality** then controls the upper tail of $\mathrm{KS}^{+}$. The textbook (sharp)
+form is, for $u \ge \sqrt{\log 2 / (2n)}$,
+$$ \Pr\bigl(\mathrm{KS}^{+} \ge u\bigr) \;\le\; 2\,e^{-2 n u^2}. $$
+This file states the provable union-bound form (requiring $n \ge 1$; the $n = 0$ case is
+degenerate, see below):
 
-Under the global null the p-values are independent with super-uniform marginals; that suffices for
-the upper tail of `F̂ₙ(t) − t`. Theorem-agnostic; consumed by the goodness-of-fit assembly.
+* `ksPlus p ω` — the one-sided KS statistic $\max_{i}\bigl(\tfrac{i+1}{n} - p_{(i+1)}\bigr)$
+  (`Fin`-indexed, so the displayed indices are $0,\dots,n-1$).
+* `ksPlus_tail_union` — the **provable union-bound** form $\Pr(\mathrm{KS}^{+} \ge u) \le n\,e^{-2nu^2}$
+  for $u \ge 0$. Deviates from the book's sharp constant; see the deviation note below and on the
+  declaration.
 
-Reference: Candès, Lecture 3, §3.3.1, Theorem 2, STAT 300C Notes.
+This is a theorem-agnostic `ForMathlib` brick; it is consumed by the goodness-of-fit assembly
+(the Kolmogorov–Smirnov test in `GoodnessOfFit.KolmogorovSmirnov`).
+
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
+2023, Lecture 3 (Goodness-of-fit testing and the empirical process), §3.3.1, Theorem 2 (Massart's
+inequality).
+
+**Proof formalization notes.** The structural reduction: the sup-event
+$\{\mathrm{KS}^{+} \ge u\}$ decomposes into a union of per-order-statistic events
+$\{\tfrac{k}{n} - p_{(k)} \ge u\}$, and each of these equals the threshold-count event
+$\{\#\{j : p_j \le \tfrac{k}{n} - u\} \ge k\}$ via the order-statistic ↔ count duality. Each count
+event is bounded by $e^{-2nu^2}$ by Hoeffding on the bounded $[0,1]$-indicators (sub-Gaussian proxy
+$1/4$), whose mean is $\le \tfrac{k}{n} - u$ by super-uniformity; the $\tfrac{k}{n} - u < 0$ edge is
+a null event.
+
+* `ksPlus_tail_union` is a complete theorem: it takes the union over the $n$ order statistics,
+  giving the $n\,e^{-2nu^2}$ bound.
+* **Deviation from the book (CLAUDE.md §1).** Candès states the *sharp* constant $2$ (Massart 1990).
+  The sharp constant requires an empirical-process exponential-supermartingale / reflection argument
+  not available in Mathlib: the $n$-fold union of the positively-correlated count events cannot be
+  Bonferroni-shaved to a constant, and the McDiarmid route's $e^{4nuE}$ cross-term is unbounded in
+  $u$. The provable union bound $n\,e^{-2nu^2}$ is what the KS test actually consumes — with
+  $u_\alpha = \sqrt{\log(n/\alpha)/(2n)}$ it gives $n\,e^{-2nu_\alpha^2} = \alpha$, controlling the
+  test level.
+* The sharp constant $2$ (Massart 1990) is not formalized here: collapsing the $n$-fold union of
+  the positively-correlated count events to a constant requires an empirical-process reflection /
+  exponential-supermartingale argument not yet in Mathlib, for which neither the union bound,
+  McDiarmid, nor the maximal inequalities suffice.
+* The hypothesis $n \ge 1$ is genuinely required: at $n = 0$ the empirical sup is $\sup \emptyset = 0$,
+  so for $u = 0$ the event is all of $\Omega$ (measure $1$) while the right-hand side is $0$. The book
+  statement is implicitly about $n \ge 1$ samples.
+
+**Bibliographic comments.** The inequality originates with A. Dvoretzky, J. Kiefer and J. Wolfowitz,
+"Asymptotic minimax character of the sample distribution function and of the classical multinomial
+estimator," *Annals of Mathematical Statistics* **27** (1956), no. 3, 642–669, who proved the bound
+$\Pr(\sup_t |\hat F_n(t) - F(t)| > \varepsilon) \le C\, e^{-2 n \varepsilon^2}$ with an unspecified
+universal constant $C$. The tight constant was obtained by P. Massart, "The tight constant in the
+Dvoretzky–Kiefer–Wolfowitz inequality," *Annals of Probability* **18** (1990), no. 3, 1269–1283:
+the two-sided inequality holds with $C = 2$ for all $\varepsilon$, and the one-sided bound
+$\Pr(\sup_t (\hat F_n(t) - F(t)) > \varepsilon) \le e^{-2 n \varepsilon^2}$ holds for
+$e^{-2n\varepsilon^2} \le 1/2$ (the Birnbaum–McCarty conjecture). Candès's Theorem 2 states the
+one-sided statistic with the (looser but valid) two-sided constant $2$ under the same
+$u \ge \sqrt{\log 2/(2n)}$ threshold, which is the form formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

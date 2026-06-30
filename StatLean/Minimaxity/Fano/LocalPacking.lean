@@ -1,19 +1,51 @@
 import StatLean.Minimaxity.Fano.FanoLowerBound
 
 /-!
-# Lower bounds based on local packings (Wainwright §15.3.3)
+# Lower bounds based on local packings (generalized Fano method)
 
-The "generalized Fano" / local-packing method packages the Fano lower bound with the convexity
-bound on the mutual information (Eq. (15.34)). If a `2δ`-separated family can be found whose pairwise
-KL divergences are uniformly controlled and which is large enough, the minimax risk is bounded below
-by `½ Φ(δ)`:
+The "generalized Fano" / local-packing method packages the Fano minimax lower bound together with
+the convexity upper bound on the mutual information (Eq. (15.34)). Suppose we can exhibit a
+`2δ`-separated family of parameters `θ¹, …, θᴹ` (i.e. the induced points `g(θʲ)` are pairwise at
+distance more than `2δ` in the metric `ρ`) whose pairwise Kullback–Leibler divergences are
+uniformly controlled and whose cardinality `M` is large enough. Concretely, if both
 
-> In summary, if we can find a `2δ`-separated family of distributions such that conditions
-> (15.35a) `√(D(P_{θʲ} ‖ P_{θᵏ})) ≤ c √n δ` and (15.35b) `log M(2δ) ≥ 2{c²nδ² + log 2}` both hold,
-> then the minimax risk is lower bounded as `M(θ(𝒫); Φ∘ρ) ≥ ½ Φ(δ)`.
+* condition (15.35a): `√(D(P_{θʲ} ‖ P_{θᵏ})) ≤ c √n δ`  (equivalently `D(P_{θʲ} ‖ P_{θᵏ}) ≤ c² n δ²`), and
+* condition (15.35b): `log M ≥ 2{c² n δ² + log 2}`,
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3.
+then the minimax risk for estimating `θ(𝒫)` under the distortion `Φ ∘ ρ` is bounded below by half
+the distortion evaluated at the separation radius:
+
+> If we can find a `2δ`-separated family of distributions satisfying (15.35a) and (15.35b), then the
+> minimax risk is lower bounded as `𝔐(θ(𝒫); Φ∘ρ) ≥ ½ Φ(δ)`.
+
+Here `Φ : [0,∞] → [0,∞]` is an increasing distortion function, `n` is the sample size (entering
+through the `√n` factor in (15.35a)), and `c > 0` is a constant. No constants are changed relative
+to the book; the Lean statement carries `n ≥ 0` as an explicit hypothesis since the `√n` in the
+book's (15.35a) presupposes a nonnegative sample size, and uses the squared, divergence-level form
+`D(P_{θʲ} ‖ P_{θᵏ}) ≤ c² n δ²` in place of the square-root form (15.35a) (these are equivalent).
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3 ("The local packing
+approach"), conditions (15.35a)/(15.35b), building on the convexity bound (15.34) and the Fano lower
+bound (15.32).
+
+**Proof formalization notes.** The argument assembles four steps. Step 1 bounds the mutual
+information `I` of the packing by the cover radius `c² n δ²` via the convexity bound (15.34),
+realized here as `mutualInformation_le_avg_pairwise_kl` averaged against (15.35a). Step 2 deduces
+from (15.35b) that `log M > 0`, hence `M ≥ 2`, so the Fano denominator is nondegenerate. Step 3
+shows the Fano fraction `(I + log 2) / log M ≤ ½` by combining the Step-1 bound with (15.35b). Step 4
+feeds `M ≥ 2`, monotonicity of `Φ`, and the separation hypothesis into the Fano minimax lower bound
+`minimax_fano_lower_bound` (Eq. (15.32)) and uses `1 - ½ = ½` to conclude `½ Φ(δ) ≤ 𝔐`. All
+arithmetic is carried out over `ℝ≥0∞`, with `ENNReal.ofReal` used to inject the real-valued bounds.
+
+**Bibliographic comments.** The local-packing / generalized-Fano scheme — combining a Fano-type
+lower bound with the convexity (mixture) bound on mutual information — originates with Y. Yang and
+A. Barron, "Information-theoretic determination of minimax rates of convergence," *Annals of
+Statistics* 27(5) (1999), 1564–1599, which established the metric-entropy characterization of
+minimax rates and the key mutual-information bound used in Step 1. The broader Fano-method tradition
+for minimax lower bounds traces back to R. Z. Khas'minskii and to L. Birgé ("Approximation dans les
+espaces métriques et théorie de l'estimation," *Z. Wahrsch. Verw. Gebiete* 65 (1983), 181–237);
+Wainwright's §15.3.3 is a textbook synthesis of this line of work rather than an original result.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

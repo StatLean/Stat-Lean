@@ -6,23 +6,61 @@ import StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 import Mathlib.Probability.Independence.Basic
 
 /-!
-# Corollary 7.22 — Lasso support recovery under sub-Gaussian noise (Wainwright §7.5)
+# Lasso support recovery under i.i.d. sub-Gaussian noise (Corollary 7.22)
 
-The probabilistic specialization of Theorem 7.21: with i.i.d. zero-mean σ-sub-Gaussian noise,
-the C-column-normalization condition, and the explicit regularization choice (7.46)
-`λₙ = (2Cσ/(1−α))(√(2log(d−s)/n) + δ)`, the support-recovery guarantees hold with probability
-at least `1 − 4e^{−nδ²/2}`, with the ℓ∞ bound (7.47).
+This is the probabilistic specialization of the deterministic primal-dual witness guarantee
+(Theorem 7.21). Consider the sparse linear model $y = X\theta^\* + w$ with $S$-sparse signal
+$\theta^\*$ (support $S$, $|S| = s$, $s < d$), design $X \in \mathbb{R}^{n\times d}$, and noise
+vector $w = (w_1,\dots,w_n)$ whose components are independent, zero-mean, and
+$\sigma$-sub-Gaussian (variance proxy $\sigma^2$). Assume the lower-eigenvalue condition (A3),
+$\tfrac1n \lVert X_S v\rVert_2^2 \ge c_{\min}\lVert v\rVert_2^2$ with $c_{\min} > 0$; the mutual
+incoherence condition (A4) with parameter $\alpha < 1$; and the $C$-column-normalization
+$\lVert X_j\rVert_2 \le C\sqrt n$ for every column $j$.
 
-Proof shell (mirrors `Lasso/RandomNoise.lean`): the two random max-terms of (7.45)/(7.44) —
-`‖Xₛᶜᵀ Π_{S⊥}(X) w/n‖_∞` (max over `d−s` coordinates, each sub-Gaussian with proxy `≤ C²σ²/n`
-via projection contractivity + column normalization) and `‖(XₛᵀXₛ/n)⁻¹ Xₛᵀ w/n‖_∞` (max over
-`s` coordinates, each sub-Gaussian with proxy `≤ σ²/(c_min n)` via the inverse-Gram operator
-bound) — are controlled by the maximal inequality `tail_max_le`; the `λ` choice (7.46) makes
-the regularization condition (7.44) hold, and a union bound gives `4e^{−nδ²/2}`. On the good
-event, Theorem 7.21 (a)–(c) gives uniqueness, `supp ⊆ S`, and the bound (7.47).
+With the regularization choice (7.46)
+$$\lambda_n \;=\; \frac{2C\sigma}{1-\alpha}\left(\sqrt{\tfrac{2\log(d-s)}{n}} + \delta\right),
+\qquad \delta > 0,$$
+the following hold with probability at least $1 - 4e^{-n\delta^2/2}$: the Lasso solution
+$\hat\beta$ is unique, its support is contained in $S$ (no false inclusion), and it satisfies
+the $\ell_\infty$ bound (7.47)
+$$\bigl\lVert (\hat\beta - \theta^\*)_S \bigr\rVert_\infty
+  \;\le\; \frac{\sigma}{\sqrt{c_{\min}}}\left(\sqrt{\tfrac{2\log s}{n}} + \delta\right)
+        \;+\; \lVert (X_S^\top X_S / n)^{-1}\rVert_\infty \,\lambda_n .$$
+
+*Alignment with the Lean statement / added hypotheses.* The Lean conclusion is the lower bound
+$1 - 4e^{-n\delta^2/2}$ on the measure of the good event $\{\text{no false inclusion} \wedge
+\ell_\infty\text{ bound}\}$; uniqueness on this event is supplied separately by
+`lasso_support_recovery_unique`. Beyond the book hypotheses we add: $n > 0$ and $0 < s < d$ (so
+that $\log s$ and $\log(d-s)$ are well defined), and $\sigma^2 > 0$ as a `LEAN-ONLY` simplifier
+(the degenerate $\sigma^2 = 0$ case, where the noise is a.s. zero, is handled by a separate
+trivial path). The constants match the book exactly.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 7 (Sparse linear models in high dimensions), §7.5
+(Variable or model selection consistency), Corollary 7.22; regularization choice Eq (7.46),
+$\ell_\infty$ bound Eq (7.47). The deterministic backbone is Theorem 7.21.
+
+**Proof formalization notes.** Proof shell (mirrors `Lasso/RandomNoise.lean`): the two random
+max-terms of (7.45)/(7.44) — $\lVert X_{S^c}^\top \Pi_{S^\perp}(X)\, w/n\rVert_\infty$ (max over
+$d-s$ coordinates, each sub-Gaussian with proxy $\le C^2\sigma^2/n$ via projection contractivity
++ column normalization) and $\lVert (X_S^\top X_S/n)^{-1} X_S^\top\, w/n\rVert_\infty$ (max over
+$s$ coordinates, each sub-Gaussian with proxy $\le \sigma^2/(c_{\min} n)$ via the inverse-Gram
+operator bound) — are controlled by the maximal inequality `tail_max_le`; the $\lambda$ choice
+(7.46) makes the regularization condition (7.44) hold, and a union bound gives $4e^{-n\delta^2/2}$.
+On the good event, Theorem 7.21 (a)–(c) gives uniqueness, $\operatorname{supp}\subseteq S$, and
+the bound (7.47).
 
 Reuses: `IsSubGaussian`, `isSubGaussian_const_mul`, `HasSubgaussianMGF.sum_of_iIndepFun`,
 `tail_max_le`, `projPerp_apply_norm_le`, `norm_gramInv_mulVec_le`, and Theorem 7.21.
+
+**Bibliographic comments.** The primal-dual witness analysis of $\ell_1$-regularized least
+squares originates with M. J. Wainwright, "Sharp thresholds for high-dimensional and noisy
+sparsity recovery using $\ell_1$-constrained quadratic programming (Lasso)," *IEEE Transactions
+on Information Theory*, vol. 55, no. 5, pp. 2183–2202, 2009. That paper introduced the mutual
+incoherence and lower-eigenvalue conditions and established the support-recovery thresholds for
+Gaussian designs; Corollary 7.22 of Wainwright (2019) is the textbook restatement under the
+i.i.d. sub-Gaussian noise model with a fixed (deterministic) design satisfying the same
+conditions.
 -/
 
 open MeasureTheory ProbabilityTheory Real Matrix

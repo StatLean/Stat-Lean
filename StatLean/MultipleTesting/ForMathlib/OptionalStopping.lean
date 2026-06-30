@@ -3,7 +3,8 @@ import Mathlib.Probability.Martingale.OptionalStopping
 /-!
 # Optional stopping for supermartingales — `ForMathlib` layer (the `thm:optstop` discharge)
 
-Theorem-agnostic bricks (pure math, Mathlib-only). Lu, *Big Data Analysis* §19 states the
+Theorem-agnostic bricks (pure math, Mathlib-only). Lu, *Big Data Analysis* Chapter 21 (Knock-Off),
+§21.3 (Knock-Off), Theorem 21.1 states the
 **Optimal Stopping Theorem** (`thm:optstop`): for a bounded stopping time `τ`,
 `E[Xτ] = E[X₀]` if `X` is a martingale, and `E[Xτ] ≤ E[X₀]` if `X` is a supermartingale.
 
@@ -38,7 +39,7 @@ theorem supermartingale_expected_stoppedValue_antitone
   rw [integral_neg, integral_neg] at hmono
   linarith
 
-/-- Optimal Stopping Theorem, supermartingale half (Lu-BDA §19, `thm:optstop`):
+/-- Optimal Stopping Theorem, supermartingale half (Lu-BDA Ch21 §21.3, Theorem 21.1, `thm:optstop`):
 `E[Xτ] ≤ E[X₀]` for a bounded stopping time `τ`. Specialization of
 `supermartingale_expected_stoppedValue_antitone` with the earlier stopping time `≡ 0`. -/
 theorem supermartingale_integral_stoppedValue_le

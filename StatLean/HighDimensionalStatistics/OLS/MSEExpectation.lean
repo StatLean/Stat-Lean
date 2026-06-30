@@ -8,23 +8,56 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Expected MSE of OLS — Lu-BDA §5 `thm:mse-ols`, expectation half
+# Expected prediction MSE of the ordinary least squares estimator
 
-Main result `mse_ols_expectation_le`: for `Y ω = X β* + ε ω` with noise `ε` having
-independent mean-0 coordinates each sub-Gaussian proxy `σ²`, every OLS estimator `βhat`
-satisfies  `E[MSE(Xβ̂, Xβ*)] ≤ σ² · rank(X) / n`.
+Consider the linear model $Y = X\beta^* + \varepsilon$ with a fixed design matrix
+$X \in \mathbb{R}^{n \times d}$, an unknown coefficient vector $\beta^*$, and noise
+$\varepsilon$ whose coordinates are independent, mean-zero, and each sub-Gaussian with
+variance proxy $\sigma^2$. For any ordinary least squares (OLS) estimator $\hat\beta$
+— that is, any minimizer of $\lVert Y - X\beta\rVert^2$ — the expected in-sample
+prediction error satisfies
+$$
+\mathbb{E}\bigl[\mathrm{MSE}(X\hat\beta, X\beta^*)\bigr]
+  \;=\; \frac{1}{n}\,\mathbb{E}\bigl[\lVert X\hat\beta - X\beta^*\rVert^2\bigr]
+  \;\le\; \frac{\sigma^2 \, \mathrm{rank}(X)}{n}.
+$$
+The main result is `mse_ols_expectation_le`.
 
-Proof outline:
-1. OLS minimizer ⟹ `Xβ̂ = P_C(Y)` (orthogonal projection onto column space `C = C(X)`).
-2. Prediction error `Xβ̂ − Xβ* = P_C(ε)` (linearity + `Xβ* ∈ C`).
-3. Parseval: `‖P_C(ε)‖² = ∑_{k<r} ⟪e_k, ε⟫²` (ONB `{e_k}` of `C`).
-4. Each `⟪e_k, ε⟫ = ∑_i (e_k)_i · ε_i` is sub-Gaussian proxy `σ²`
-   (independent linear combination, unit-vector coefficient).
-5. Variance bound: `E[Z²] ≤ σ²` for a mean-0 `HasSubgaussianMGF Z σ² μ`
-   (proved in-file via the `cosh` expansion of the MGF and a derivative limit).
-6. Sum: `E[MSE] ≤ (1/n) · r · σ² = σ² · r / n`.
+**Deviations from the book.** The book states the bound up to an absolute constant
+($\lesssim$); here the constant is made explicit and equals exactly
+$\sigma^2 \,\mathrm{rank}(X)/n$. The hypotheses used are the genuine model inputs
+(independence, mean-zero, sub-Gaussian proxy per coordinate, and that $\hat\beta$ is an
+OLS minimizer); the only added hypothesis is $n > 0$, needed so the $1/n$ factor and the
+right-hand side are well-defined.
 
-The book states the bound with `≲`; here the explicit constant is `σ² · rank(X) / n`.
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 7 (Ordinary Least
+Squares), §7.2 (Ordinary Least Squares), Theorem 7.1 (`thm:mse-ols`, expectation half).
+
+**Proof formalization notes.**
+1. The OLS minimizer satisfies $X\hat\beta = P_C(Y)$, the orthogonal projection of $Y$
+   onto the column space $C = \mathcal{C}(X)$.
+2. Prediction error $X\hat\beta - X\beta^* = P_C(\varepsilon)$ (linearity of the
+   projection together with $X\beta^* \in C$).
+3. Parseval: $\lVert P_C(\varepsilon)\rVert^2 = \sum_{k<r} \langle e_k, \varepsilon\rangle^2$
+   for an orthonormal basis $\{e_k\}$ of $C$, where $r = \mathrm{rank}(X)$.
+4. Each $\langle e_k, \varepsilon\rangle = \sum_i (e_k)_i\,\varepsilon_i$ is sub-Gaussian
+   with proxy $\sigma^2$ (independent linear combination with a unit-norm coefficient
+   vector).
+5. Variance bound: $\mathbb{E}[Z^2] \le \sigma^2$ for a mean-zero sub-Gaussian variable
+   $Z$ (proved in-file via the $\cosh$ expansion of the moment generating function and a
+   derivative limit).
+6. Summation: $\mathbb{E}[\mathrm{MSE}] \le (1/n)\cdot r \cdot \sigma^2
+   = \sigma^2 r / n$.
+
+**Bibliographic comments.** This is the classical risk bound for the in-sample prediction
+error of least squares; it is folklore with no single seminal origin. The exact-variance
+version $\mathbb{E}[\lVert X\hat\beta - X\beta^*\rVert^2] = \sigma^2\,\mathrm{rank}(X)$
+holds when $\varepsilon$ has covariance $\sigma^2 I$ (Gaussian–Markov / projection
+trace identity); the sub-Gaussian inequality version stated here replaces the exact
+variance identity by the second-moment bound $\mathbb{E}[Z^2] \le \sigma^2$ and is
+standard in the high-dimensional statistics literature (see, e.g., M. J. Wainwright,
+*High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press,
+2019, Chapter 7).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -159,7 +192,7 @@ private lemma ols_residual_orthogonal
     (X : Matrix (Fin n) (Fin d) ℝ)
     (Y : EuclideanSpace ℝ (Fin n))
     (βhat : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §5 (thm:mse-ols)
+    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §7.2 (thm:mse-ols)
     (hols : IsOLSEstimator X Y βhat)
     {w : EuclideanSpace ℝ (Fin n)} (hw : w ∈ columnSpace X) :
     ⟪Y - designMap X βhat, w⟫_ℝ = 0 := by
@@ -227,17 +260,17 @@ private lemma designRank_eq_finrank_columnSpace (X : Matrix (Fin n) (Fin d) ℝ)
 
 /-! ### Main theorem -/
 
-/-- **Expected MSE of OLS — Lu-BDA §5 `thm:mse-ols`, expectation half.**
+/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (`thm:mse-ols`), expectation half.**
 
 For `Y ω = X β* + ε ω` with noise `ε` having independent mean-0 coordinates each
 sub-Gaussian proxy `σ²`, every OLS estimator `βhat` satisfies
   `E[MSE(Xβ̂, Xβ*)] ≤ σ² · rank(X) / n`.
 
 **Hypotheses:**
-- `hε_indep` (USER-INPUT; Lu-BDA §5 thm:mse-ols): joint independence of noise coordinates.
-- `hε_meanz` (USER-INPUT; Lu-BDA §5 thm:mse-ols): mean-0 noise coordinates.
-- `hε_subG` (USER-INPUT; Lu-BDA §5 thm:mse-ols): sub-Gaussian proxy σ² per coordinate.
-- `hβ_ols` (USER-INPUT; Lu-BDA §5 thm:mse-ols): βhat ω is OLS for Y ω = Xβ* + ε ω.
+- `hε_indep` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): joint independence of noise coordinates.
+- `hε_meanz` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): mean-0 noise coordinates.
+- `hε_subG` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): sub-Gaussian proxy σ² per coordinate.
+- `hβ_ols` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): βhat ω is OLS for Y ω = Xβ* + ε ω.
 - `hn` (LEAN-ONLY): `n > 0` so the `(1/n)` factor and the final bound are well-typed. -/
 theorem mse_ols_expectation_le
     {Ω : Type*} {mΩ : MeasurableSpace Ω}
@@ -247,16 +280,16 @@ theorem mse_ols_expectation_le
     (hn : 0 < n)
     {σ2 : ℝ≥0}
     {ε : Ω → EuclideanSpace ℝ (Fin n)}
-    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §5 thm:mse-ols
+    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 thm:mse-ols
     (hε_indep : iIndepFun (fun (i : Fin n) (ω : Ω) => (ε ω) i) μ)
-    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §5 thm:mse-ols
+    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 thm:mse-ols
     (hε_meanz : ∀ i : Fin n, ∫ ω, (ε ω) i ∂μ = 0)
-    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §5 thm:mse-ols
+    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 thm:mse-ols
     (hε_subG : ∀ i : Fin n, IsSubGaussian (fun ω => (ε ω) i) σ2 μ)
-    -- USER-INPUT: true coefficient vector; Lu-BDA §5 thm:mse-ols
+    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 thm:mse-ols
     (βstar : EuclideanSpace ℝ (Fin d))
     {βhat : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² over β; Lu-BDA §5 thm:mse-ols
+    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² over β; Lu-BDA §7.2 thm:mse-ols
     (hβ_ols : ∀ ω, IsOLSEstimator X (designMap X βstar + ε ω) (βhat ω)) :
     ∫ ω, mse X (βhat ω) βstar ∂μ ≤ ↑σ2 * ↑(designRank X) / ↑n := by
   -- Setup: column space C = range(X), finite-dimensional ⟹ complete ⟹ has orthogonal projection.

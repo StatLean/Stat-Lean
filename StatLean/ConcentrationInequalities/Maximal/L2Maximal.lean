@@ -6,23 +6,65 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# ℓ²-Norm Maximal Inequality — Lu-BDA §4.2 (`thm:l2`)
+# ℓ²-Norm Maximal Inequality
 
-For a centered sub-Gaussian random vector `X : Ω → EuclideanSpace ℝ (Fin d)` with
-variance proxy `σ²‖u‖₊²` for every direction `u`, we prove:
+Let $X$ be a random vector in $\mathbb{R}^d$ that is *sub-Gaussian as a vector*: for
+every direction $u \in \mathbb{R}^d$, the projection $\langle u, X\rangle$ is a
+sub-Gaussian random variable with variance proxy $\sigma^2\|u\|^2$. Then the Euclidean
+norm of $X$ obeys, in expectation,
+$$\mathbb{E}\,\|X\| \le 4\,\sigma\,\sqrt{d},$$
+and, as a high-probability tail bound, for every $\delta > 0$ with probability at
+least $1-\delta$,
+$$\|X\| \le 4\,\sigma\,\sqrt{d} + 2\,\sigma\,\sqrt{2\log(1/\delta)}.$$
 
-**Expectation bound** (`l2_max_expectation`):  `E[‖X‖] ≤ 4σ√d`
+Formalized as `l2_max_expectation` (expectation bound) and `l2_max_tail` (tail bound),
+where the tail statement is phrased equivalently as a bound on the measure of the event
+$\{\,4\sigma\sqrt{d} + 2\sigma\sqrt{2\log(1/\delta)} < \|X\|\,\}$.
 
-**High-probability bound** (`l2_max_tail`): for any `δ > 0`, with probability ≥ 1 − δ,
-`‖X‖ ≤ 4σ√d + 2σ√(2 log(1/δ))`
+*Added hypotheses (relative to the book statement).* The book states the result for a
+random vector $X$ without an explicit centering or integrability condition; the Lean
+formalization additionally assumes $\mathbb{E}[X] = 0$ (`hcenter`) and Bochner
+integrability of $X$ (`hX_int`). Centering is the assumption under which the underlying
+finite-maximum bounds (`expectation_max_le` / `tail_max_le`) hold; integrability is a
+Lean-side regularity input that is in fact implied by sub-Gaussianity in finite
+dimension. The conclusion's constants ($4\sigma\sqrt{d}$ and the additive
+$2\sigma\sqrt{2\log(1/\delta)}$) match the book exactly.
 
-Proof idea (Lu §4.2 discretization): take a 1/2-net `N` of `closedBall 0 1` with
-`|N| ≤ 5^d`.  The variational identity `‖x‖ = ⟨x/‖x‖, x⟩` and the net give
-`‖x‖ ≤ 2 max_{v∈N} ⟨v, x⟩`.  Each inner product `⟨v, X⟩` is sub-Gaussian with
-proxy `σ²` (since `‖v‖ ≤ 1`), so `expectation_max_le` / `tail_max_le` bound the
-finite max; using `log 5 ≤ 2` yields `2√(2d log 5) ≤ 4√d`.
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal
+Inequality), §6.2 (Maximal Inequality), Theorem 6.3 "Maximal inequality for
+$\ell_2$-norm" (`thm:l2`).
 
-Deviation from book: `log 5 ≤ 2` (i.e., `5 ≤ e²`) is used to relax `√(2d log 5) ≤ 2√d`.
+**Proof formalization notes.** Discretization trick (Lu §6.2). Take a $1/2$-net $N$ of
+the unit ball $\mathcal{B}_2^d = $ `closedBall 0 1`, with cardinality $|N| \le 5^d$
+(covering-number bound). For a unit vector $u = x/\|x\|$ pick $v \in N$ with
+$\|u - v\| \le 1/2$; the variational identity $\|x\| = \langle x/\|x\|, x\rangle$
+together with Cauchy–Schwarz on $\langle u - v, X\rangle$ gives the key reduction
+$\|x\| \le 2\max_{v \in N} \langle v, x\rangle$, turning a supremum over the infinite
+ball into a maximum over the finite net. Each projection $\langle v, X\rangle$ with
+$\|v\| \le 1$ is sub-Gaussian with proxy $\sigma^2$, so `expectation_max_le` and
+`tail_max_le` control the finite maximum. Using $\log 5 \le 2$ relaxes
+$\sqrt{2d\log 5} \le 2\sqrt{d}$, yielding the clean constants.
+
+Deviation from book: the constant uses $\log 5 \le 2$ (equivalently $5 \le e^2$) to
+relax $\sqrt{2d\log 5} \le 2\sqrt{d}$. The tail proof's numerical core
+(`l2_tail_numerical`) establishes $k\cdot\exp(-(t/2)^2/(2\sigma^2)) \le \delta$ for
+$t = 4\sigma\sqrt{d} + 2\sigma\sqrt{2\log(1/\delta)}$ and $k \le 5^d$, via
+$5^d \le \exp(2d)$ and the expansion $(A+B)^2/2 \ge 2d + \log(1/\delta)$ with
+$A = 2\sqrt{d}$, $B = \sqrt{2\log(1/\delta)}$ and nonnegative cross term; the
+$\sigma^2 = 0$ corner case (degenerate $X = 0$ a.e.) is handled separately in
+`l2_max_tail`.
+
+**Bibliographic comments.** This is a textbook/folklore result with no single seminal
+research-paper origin: it is the standard $\epsilon$-net (discretization) argument for
+the norm of a sub-Gaussian random vector, where the supremum $\|X\| = \max_{u\in
+\mathcal{B}_2}\langle u, X\rangle$ over the unit sphere is reduced to a maximum over a
+finite net and then controlled by a finite sub-Gaussian maximal inequality. The
+covering/net method goes back to classical metric-entropy arguments in geometric
+functional analysis (Kolmogorov–Tikhomirov $\epsilon$-entropy; Sudakov–Dudley
+chaining). For a modern textbook treatment of exactly this estimate see R. Vershynin,
+*High-Dimensional Probability: An Introduction with Applications in Data Science*,
+Cambridge University Press, 2018, §4.4 (nets, covering numbers, and the spectral/norm
+bounds derived from them).
 -/
 
 open MeasureTheory ProbabilityTheory Real Metric Set
@@ -159,7 +201,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
 
 /-! ### Main theorems -/
 
-/-- **ℓ²-Norm Maximal Inequality — expectation bound** (Lu-BDA §4.2, `thm:l2`).
+/-- **ℓ²-Norm Maximal Inequality — expectation bound** (Lu-BDA §6.2, `thm:l2`).
 
 For a centered sub-Gaussian random vector `X : Ω → EuclideanSpace ℝ (Fin d)` with
 variance proxy `σ²‖u‖₊²` for every direction `u`, under a probability measure `μ`:
@@ -167,7 +209,7 @@ variance proxy `σ²‖u‖₊²` for every direction `u`, under a probability m
 E[‖X‖] ≤ 4σ√d
 ```
 
-Proof (Lu §4.2): take a 1/2-net `N` of `closedBall 0 1` with `|N| ≤ 5^d`.  The
+Proof (Lu §6.2): take a 1/2-net `N` of `closedBall 0 1` with `|N| ≤ 5^d`.  The
 variational identity `‖x‖ = ⟨x/‖x‖, x⟩` and the net give `‖x‖ ≤ 2 max_{v∈N} ⟨v,x⟩`.
 Each `⟨v, X⟩` is sub-Gaussian with proxy `σ²`, so `expectation_max_le` gives
 `E[max ⟨v,X⟩] ≤ σ√(2 log|N|) ≤ σ√(2d log 5) ≤ 2σ√d`.  Combined: `E‖X‖ ≤ 4σ√d`.
@@ -177,9 +219,9 @@ theorem l2_max_expectation
     {d : ℕ} [NeZero d]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: E[X] = 0; Lu-BDA §4.2 (thm:l2)
+    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 (thm:l2)
     (hcenter : ∫ ω, X ω ∂μ = 0)
-    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §4.2 (thm:l2)
+    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 (thm:l2)
     (hX : ∀ u : EuclideanSpace ℝ (Fin d),
         IsSubGaussian (fun ω => inner ℝ u (X ω)) (σ2 * ‖u‖₊ ^ 2) μ)
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
@@ -370,7 +412,7 @@ private lemma l2_tail_numerical
             _ = Real.exp (2 * (d : ℝ) + -(2 * (d : ℝ))) * δ := by rw [← Real.exp_add]
             _ = δ := by simp
 
-/-- **ℓ²-Norm Maximal Inequality — high-probability tail bound** (Lu-BDA §4.2, `thm:l2`).
+/-- **ℓ²-Norm Maximal Inequality — high-probability tail bound** (Lu-BDA §6.2, `thm:l2`).
 
 For a centered sub-Gaussian random vector `X : Ω → EuclideanSpace ℝ (Fin d)` with
 variance proxy `σ²‖u‖₊²` for every direction `u`, and any `δ > 0`:
@@ -386,14 +428,14 @@ theorem l2_max_tail
     {d : ℕ} [NeZero d]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: E[X] = 0; Lu-BDA §4.2 (thm:l2)
+    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 (thm:l2)
     (hcenter : ∫ ω, X ω ∂μ = 0)
-    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §4.2 (thm:l2)
+    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 (thm:l2)
     (hX : ∀ u : EuclideanSpace ℝ (Fin d),
         IsSubGaussian (fun ω => inner ℝ u (X ω)) (σ2 * ‖u‖₊ ^ 2) μ)
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
     (hX_int : Integrable X μ)
-    -- USER-INPUT: δ > 0; Lu-BDA §4.2 (thm:l2)
+    -- USER-INPUT: δ > 0; Lu-BDA §6.2 (thm:l2)
     {δ : ℝ} (hδ : 0 < δ) :
     μ {ω | 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
            2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ)) < ‖X ω‖}

@@ -239,7 +239,7 @@ a density `f : β → ℝ≥0∞` and binding with `κ` equals marginalising the
 
 `(ν.withDensity f).bind κ = (π.withDensity (fun p ↦ f p.2)).map fst`.
 
-This is the measure-theoretic core of vdV §7.10 Step 7 — pushing a density through
+This is the measure-theoretic core of vdV Theorem 7.10 (§7.3) Step 7 — pushing a density through
 the second marginal of a joint law factors through the tilted joint + marginalisation.
 It sees use whenever a tilted Gaussian-shift law is re-expressed through a conditional
 distribution kernel. -/

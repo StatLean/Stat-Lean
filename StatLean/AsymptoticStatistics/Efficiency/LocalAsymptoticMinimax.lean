@@ -14,24 +14,93 @@ import Mathlib.Probability.Decision.Risk.Defs
 import Mathlib.Probability.Decision.Risk.Basic
 
 /-!
-# Theorem 8.11 — Local Asymptotic Minimax Bound
+# Local Asymptotic Minimax Bound (parametric)
 
-Reference: van der Vaart, *Asymptotic Statistics* §8.7.
+Consider a parametric family $\{P_\theta\}$ that is differentiable in quadratic
+mean at $\theta_0$ with non-singular Fisher information matrix $J$, a functional
+$\psi$ that is Fréchet differentiable at $\theta_0$ with derivative $\dot\psi$,
+and a bowl-shaped loss $L$ (nonnegative, symmetric, with convex sublevel sets).
+Then **every** estimator sequence $T_n$ obeys the local asymptotic minimax bound
 
-For a parametric family DQM at `θ₀` with non-singular Fisher information `J`,
-a Fréchet-differentiable functional `ψ` with derivative `ψ̇`, and a bowl-shaped
-loss `L`, every estimator sequence `T_n` satisfies the local asymptotic minimax
-bound
-
-    sup_{I ⊂ ℝᵏ, finite}  liminf_n  sup_{h ∈ I}
-        ∫ L(√n (T_n - ψ(θ₀ + h/√n))) dP^n_{θ₀ + h/√n}
-      ≥  ∫ L dN(0, ψ̇ · J⁻¹ · ψ̇ᵀ).
+$$
+\sup_{\substack{I \subset \mathbb{R}^k \\ I \text{ finite}}}\;
+  \liminf_{n\to\infty}\; \sup_{h \in I}\;
+  \int L\!\big(\sqrt{n}\,(T_n - \psi(\theta_0 + h/\sqrt{n}))\big)
+     \, dP^n_{\theta_0 + h/\sqrt{n}}
+\;\ge\;
+  \int L \, dN\!\big(0,\; \dot\psi\, J^{-1}\, \dot\psi^{\top}\big).
+$$
 
 The Gaussian integral on the right is the asymptotic minimax risk: no estimator
 sequence can do strictly better, locally, against the worst-case finite family
-of alternatives.
+of local alternatives $\theta_0 + h/\sqrt n$. The left-hand quantity is named
+`localAsymptoticRisk` in this file, and the limiting covariance
+$\dot\psi\, J^{-1}\, \dot\psi^{\top}$ appears in Lean as
+`ψDotMat * J⁻¹ * ψDotMat.transpose`.
 
-Headline declaration: `local_asymptotic_minimax_bound`.
+The headline declaration is `local_asymptotic_minimax_bound`.
+
+**Added/changed hypotheses vs the book.** Beyond the book's DQM + bowl-shaped
+loss + uniform tightness of $\sqrt n\,(T_n - \psi(\theta_0))$, the Lean statement
+adds purely technical regularity that does not change the scope: measurability of
+the score $\ell$ and of each estimator $T_n$; lower semicontinuity of $L$ (for a
+bowl-shaped loss this is just $L$ equal to its own lsc envelope, the case of
+interest, and is needed for the Portmanteau lower-semicontinuity step); the
+matrix form `ψDotMat` of the derivative $\dot\psi$ used to express the limiting
+covariance; and a dominating-measure / density bundle (`SigmaFinite μ`,
+`IsPDFOf M μ`) used to route the change-of-measure control through the
+DQM-derived asymptotic singular-mass estimate rather than an exact
+common-support identity.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.7 (Local Asymptotic Minimax Theorem),
+Theorem 8.11.
+
+**Proof formalization notes.** The proof is a Bayesian + truncation reduction to
+a Gaussian-shift limit experiment, assembled from the lemmas below:
+
+* **Step E — truncation** (`lam_truncation_of_bowl_shaped`): if the bound holds
+  for every bounded truncation $L_N := \min(L, N)$, monotone convergence on both
+  sides (pointwise $L_N \uparrow L$ on the risk integrand, and `lintegral_iSup`
+  on the Gaussian side) lifts it to the unbounded $L$.
+* **Step A — sup-vs-average** (`localAsymptoticRisk_ge_avg_lower_bound`): for any
+  finite $I$ and sub-probability weights $\pi$ with $\sum_{h\in I}\pi_h \le 1$,
+  the prior-averaged risk is bounded by $\sup_{h\in I}$ of the per-$h$ risk,
+  hence by `localAsymptoticRisk`.
+* **Bayes plumbing** (`avgRisk_lan_discretePrior_eq_sum`,
+  `localAsymptoticRisk_ge_liminf_lanBayesRisk`): wrap the LAN experiment into
+  Mathlib's `bayesRisk`/`avgRisk` API via a discrete prior
+  $\pi = \sum_{h\in I}\pi_h\,\delta_h$ and the deterministic estimator kernel.
+* **Gaussian-shift limit** (`bayesRisk_gaussianShift_le_bayesRiskAtTau`,
+  `bayesRiskAtTau_le_bayesRisk_gaussianShift`,
+  `avgRisk_gaussianShift_ge_bayesRiskAtTau`): in the limit experiment with
+  $N(0,\tau^2 I)$ prior on $h$ and likelihood $N(h, J^{-1})$, the posterior-mean
+  estimator attains, and no estimator beats, the value
+  $\int L\,dN(0,\dot\psi\,\Sigma_\tau\,\dot\psi^{\top})$; the hard direction uses
+  Anderson's lemma (`anderson_lemma_loss`, `lintegral_loss_translated_ge`) for
+  bowl-shaped $L$ together with a rectangular linear pushforward of a Gaussian.
+* **Limit passage** (Le Cam third-lemma / Portmanteau lsc machinery in the lower
+  half of the file: `le_cam_3_per_rational_h_weak_conv`, `F_lsc_in_h`,
+  `rational_bound_extends_via_lsc`, …): transfers the finite-$I$ liminf along the
+  LAN sequence to the Gaussian-shift value and lets $\tau \to \infty$ so that
+  $\Sigma_\tau \to J^{-1}$.
+
+Each step's per-declaration docstring carries its own proof outline and any
+book-vs-Lean deviation notes; those are the authoritative source for the details.
+
+**Bibliographic comments.** The local asymptotic minimax theorem originates with
+J. Hájek, *Local asymptotic minimax and admissibility in estimation*, in
+Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and
+Probability, Vol. 1 (Theory of Statistics), University of California Press, 1972,
+pp. 175–194. Hájek's theorem (the parametric local asymptotic minimax bound for
+bowl-shaped loss) is exactly the result formalized here; it builds on Le Cam's
+theory of local asymptotic normality and limits of experiments, and the
+Gaussian-shift lower bound rests on Anderson's lemma (T. W. Anderson,
+*The integral of a symmetric unimodal function over a symmetric convex set and
+some probability inequalities*, Proc. Amer. Math. Soc. 6 (1955), 170–176).
+van der Vaart's Theorem 8.11 is the textbook synthesis of Hájek's result within
+the LAN / convolution-theorem framework of Chapter 8.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -743,15 +812,15 @@ private theorem lanIntegrand_measurable_in_h
 
 
 
-/-! ## vdV §8.11 direct proof path
+/-! ## vdV §8.7 direct proof path
 
-The direct vdV §8.11 proof path: joint tightness of `(√n(T_n - ψθ₀), score sum)`
+The direct vdV §8.7 proof path: joint tightness of `(√n(T_n - ψθ₀), score sum)`
 under `P^n_θ₀`, Prokhorov subsequence + Le Cam shift via score CLT, lsc-Portmanteau
 on the limit Gaussian-shift integrand, rational sup-lift to recover the original
 `localAsymptoticRisk` from a countable approximation. The sub-lemmas are:
 
 * `joint_tightness_T_score_under_P_theta0` — joint tightness of the
-  estimator-and-score pair under the central measure. `hTight` (vdV §8.11)
+  estimator-and-score pair under the central measure. `hTight` (vdV §8.7)
   is the marginal-T half; the score-side tightness comes from
   `scoreSum_weakly_converges` (CLT-tight). Joint tightness =
   Mathlib `IsTightMeasureSet` of the product pushforward measure family.
@@ -856,10 +925,10 @@ theorem J_posSemidef_of_fisher_eq
 
 /-- **Joint tightness of `(√n (T_n - ψ θ₀), score sum_n)` under `P^n_θ₀`.**
 
-vdV §8.11 step 1 uses joint tightness of the estimator-score pair on the LAN
+vdV §8.7 step 1 uses joint tightness of the estimator-score pair on the LAN
 side as the bridge between LAN expansion (Theorem 7.2 (iii)) and the limit
 Gaussian-shift experiment. The marginal-`T` half is supplied by `hTight`
-(vdV §8.11); the score-side tightness follows from `scoreSum_weakly_converges`
+(vdV §8.7); the score-side tightness follows from `scoreSum_weakly_converges`
 (CLT under `P^n_θ₀`).
 
 Closed via the Prohorov product (`tight_prod_of_tight_marginals`):
@@ -878,7 +947,7 @@ theorem joint_tightness_T_score_under_P_theta0
     (ψ : Θ k → 𝓨 d)
     (T : ∀ n, (Fin n → 𝓧) → 𝓨 d) (hT_meas : ∀ n, Measurable (T n))
     -- sequence `√n (T_n - ψ θ₀)` is uniformly tight under `P^n_θ₀`. This is
-    -- the **consistency hypothesis** vdV makes verbatim at the head of §8.11.
+    -- the **consistency hypothesis** vdV makes verbatim at the head of §8.7.
     (hTight : MeasureTheory.IsTightMeasureSet
         (Set.range (fun n : ℕ =>
           (AsymptoticRepresentation.productMeasure M μ θ₀ n).map
@@ -1159,7 +1228,7 @@ theorem iSup_finite_le_iSup_rational_finite_via_lsc
 /-! ## Per-rational-`h` LHS bound via joint sub-sequence
 
 The substantive measure-theoretic core of the LHS witness. Given the standard
-vdV §8.11 setup, a Prokhorov subsequence `(φ, ψ_inner)` of the joint pushforward
+vdV §8.7 setup, a Prokhorov subsequence `(φ, ψ_inner)` of the joint pushforward
 and its joint weak limit `π`, the goal is, for each rational `h`, a bound
 `LHS_h(representationKernel J π) ≤ liminf_φ (consumer integrand at h)`.
 
@@ -2190,7 +2259,7 @@ extraction, so σ_h attainment holds. The downstream consumer
 `diagonal_subseq_kernel_lift` already uses only rational `h`, so this restriction
 propagates trivially.
 
-**Mathematical content** (vdV §8.11 along the subseq path):
+**Mathematical content** (vdV §8.7 along the subseq path):
 
 1. Joint tightness along φ inherits from `hTight` + the score CLT
    (`joint_tightness_T_score_under_P_theta0`).
@@ -2425,12 +2494,12 @@ theorem subseq_lan_per_h_liminf_along_diagonal
 
 /-- **Diagonal-subseq kernel lift.**
 
-The substantive vdV §8.11 chain. The only access route to the limit experiment
+The substantive vdV §8.7 chain. The only access route to the limit experiment
 is via a Prokhorov sub-sequence (`extract_weak_subseq` returns a `φ : ℕ → ℕ`,
 not a full-sequence weak limit), and the literal sup-swap-with-liminf upgrade is
 false in general; the proof therefore works along a diagonal sub-sequence.
 
-**Mathematical content** (vdV §8.11):
+**Mathematical content** (vdV §8.7):
 
 1. **Joint tightness** of `(√n(T_n - ψ θ₀), score_n)` under `P^n_θ₀`
    (from `joint_tightness_T_score_under_P_theta0`).
@@ -3015,7 +3084,7 @@ theorem rational_bound_extends_via_lsc
     exact Filter.Frequently.of_forall (fun n => hF_y_bound n)
   exact h_lsc_liminf.trans h_liminf_le_M
 
-/-- **`localAsymptoticRisk ≥ target` via the vdV §8.11 chain**.
+/-- **`localAsymptoticRisk ≥ target` via the vdV §8.7 chain**.
 
 The direct proof of Theorem 8.11 via the diagonal-subseq + lsc-density chain:
 
@@ -3030,7 +3099,7 @@ The direct proof of Theorem 8.11 via the diagonal-subseq + lsc-density chain:
    `target ≤ ⨆ h, ∫⁻ L(y - ψDot h) d((mvg h J⁻¹).bind κ)`.
 5. Chain: `target ≤ ⨆ h, (...) ≤ localAsymptoticRisk`.
 
-Relies on `hTight` (vdV §8.11). -/
+Relies on `hTight` (vdV §8.7). -/
 theorem localAsymptoticRisk_ge_target
     (M : ParametricFamily 𝓧 (Θ k)) (μ : Measure 𝓧) [SigmaFinite μ]
     (θ₀ : Θ k) (ℓ : 𝓧 → Θ k)
@@ -3105,7 +3174,7 @@ the **per-direction rescaled shift** is required,
 `√n·(ψ(θ₀ + h/√n) − ψ θ₀) → ψDot h` for each `h`. This is exactly what
 `PathwiseDifferentiableAt.derivative_spec` (Gateaux) supplies, with no common
 modulus / no Fréchet requirement and no continuity — the o(1/√n) is absorbed
-downstream by Slutsky + Portmanteau-lsc. vdV §8.11 only needs this
+downstream by Slutsky + Portmanteau-lsc. vdV §8.7 only needs this
 per-direction expansion (it reworks the bundled reduction to apply Prop 8.6 /
 Anderson to the finite-dim submodel). `local_asymptotic_minimax_bound` is the
 `HasFDerivAt` wrapper of this theorem.
@@ -3123,7 +3192,7 @@ theorem local_asymptotic_minimax_bound_of_pointwise_shift
     (ψDot : Θ k →L[ℝ] 𝓨 d)
     -- Per-direction functional shift: `√n·(ψ(θ₀+h/√n) − ψθ₀) →
     -- ψDot h` for each `h`. Weaker than `HasFDerivAt` (no Fréchet, no
-    -- continuity); vdV §8.11 reworks the reduction to use only this expansion.
+    -- continuity); vdV §8.7 reworks the reduction to use only this expansion.
     (hψ_shift : ∀ h : Θ k, Tendsto (fun n : ℕ =>
         (Real.sqrt n) • (ψ (θ₀ + (Real.sqrt n)⁻¹ • h) - ψ θ₀))
       atTop (𝓝 (ψDot h)))
@@ -3146,13 +3215,13 @@ theorem local_asymptotic_minimax_bound_of_pointwise_shift
     ψ ψDot hψ_shift ψDotMat h_ψDot_mat T hT_meas L hL_bowl hL_lsc
     hTight hPDF
 
-/-- ## **Theorem 8.11 — Local Asymptotic Minimax Bound** (van der Vaart §8.11).
+/-- ## **Theorem 8.11 — Local Asymptotic Minimax Bound** (van der Vaart §8.7).
 
 The hypotheses match vdV Thm 8.11 (§8.7). The remaining non-vdV parameters are
 pure encoding adapters (`hℓ`, `ψDotMat`/`h_ψDot_mat`, `[SigmaFinite μ]`) plus the
 §7 density setup `hPDF`.
 
-Hypotheses (per vdV §8.11):
+Hypotheses (per vdV §8.7):
 * `hDQM` — parametric family DQM at θ₀ with score ℓ.
 * `hJ`, `hJ_fisher` — Fisher information matrix non-singular.
 * `hψ_diff` — target functional ψ Fréchet differentiable at θ₀.
@@ -3184,13 +3253,13 @@ theorem local_asymptotic_minimax_bound
       ψDot h = (WithLp.equiv 2 _).symm (ψDotMat.mulVec ((WithLp.equiv 2 _) h)))
     -- Estimator sequence:
     (T : ∀ n, (Fin n → 𝓧) → 𝓨 d) (hT_meas : ∀ n, Measurable (T n))
-    -- Loss function: bowl-shaped (symmetric, convex sublevel sets); vdV §8.11.
+    -- Loss function: bowl-shaped (symmetric, convex sublevel sets); vdV §8.7.
     (L : 𝓨 d → ℝ≥0∞)
     (hL_bowl : BowlShaped L)
     -- lsc (the Portmanteau-lsc step requires it). For bowl-shaped `L` this is
     -- `L` already equal to its lsc envelope — the typical case of interest.
     (hL_lsc : LowerSemicontinuous L)
-    -- "the sequence √n(T_n − ψ(θ₀)) is uniformly tight under θ₀"; vdV §8.11.
+    -- "the sequence √n(T_n − ψ(θ₀)) is uniformly tight under θ₀"; vdV §8.7.
     (hTight : MeasureTheory.IsTightMeasureSet
         (Set.range (fun n : ℕ =>
           (AsymptoticRepresentation.productMeasure M μ θ₀ n).map

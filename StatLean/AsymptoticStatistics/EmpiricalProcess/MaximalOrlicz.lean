@@ -10,10 +10,45 @@ import Mathlib.MeasureTheory.Integral.Layercake
 import Mathlib.Probability.IdentDistrib
 
 /-!
-# Orlicz machinery for the finite-class supremum bound
+# Orlicz finite-class supremum bound (maximal inequality)
 
-Helper file for `Maximal.lean`'s `finite_sup_bound`, proving vdV §19.6 Lem 19.33.
+For a finite class of bounded, measurable, square-integrable functions
+`{f_i : i ∈ ι}` with `\sup_i \|f_i\|_\infty \le M` and
+`\sup_i \mathbb{E}_P[f_i^2] \le \sigma^2`, the empirical process
+`\mathbb{G}_n f = \sqrt{n}\,(\mathbb{P}_n f - P f)` formed from `n`
+i.i.d. observations satisfies the maximal inequality
 
+`\mathbb{E}\,\max_{i \in \iota} \bigl|\mathbb{G}_n f_i\bigr|
+  \;\le\; K\left(\frac{M\,\log(1 + |\iota|)}{\sqrt{n}}
+              + \sigma\,\sqrt{\log(1 + |\iota|)}\right)`
+
+for a universal constant `K`. The two terms reflect the sub-exponential
+(`M/\sqrt n` scale) and sub-Gaussian (`\sigma` scale) parts of the
+truncation. This is van der Vaart's Lemma 19.33.
+
+**Deviations from the book.** The book states the bound with an
+unspecified universal constant `K`; the Lean assembly produces the
+explicit value `K = 96` (witnessed in `finite_sup_bound_aux`), which is
+what the truncation-plus-Pisier route below actually yields. The
+informal `\log(1 + |\iota|)` uses `1 + |\iota|` rather than the book's
+`(1 + \log |\iota|)`-type bound so that the inequality is non-trivial
+already for a single function; this matches the Orlicz-inverse
+evaluations `\psi_1^{-1}(|\iota|)` and `\psi_2^{-1}(|\iota|)` used
+internally. The headline statements are over `\mathbb{E} = \int \cdot\,d\mu`
+expressed in the `ℝ≥0∞` layer-cake form `∫⁻ ω, ofReal(\sup_i |\mathbb{G}_n f_i|) dμ`.
+
+Headline declarations: `finite_sup_bound_aux` (public assembly,
+witnessing the existential `∃ K > 0, …`) and the private
+`finite_sup_bound_orlicz_core` (the full Orlicz-route content with the
+explicit constant).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998. Chapter 19 (Empirical Processes), §19.6 (Maximal
+Inequalities), Lemma 19.33. Bernstein's inequality used as the tail input
+is Lemma 19.32 of the same section.
+
+**Proof formalization notes.**
 The proof follows the tight Orlicz route rather than a naive union bound. Key ingredients:
 
 1. **Orlicz functions** `ψ₁(x) = exp x − 1`, `ψ₂(x) = exp(x²) − 1`, with
@@ -41,10 +76,21 @@ The proof follows the tight Orlicz route rather than a naive union bound. Key in
 5. **Assembly.** Triangle inequality gives
    `∫ ⨆_i |G_n f_i| dμ ≤ K · (M log(1+|ι|)/√n + σ √log(1+|ι|))`.
 
-Headline declarations: `finite_sup_bound_aux` (public assembly) and
-`finite_sup_bound_orlicz_core`.
-
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.6.
+**Bibliographic comments.**
+The finite-class maximal inequality via Orlicz norms is folklore of
+empirical-process theory rather than a result with a single seminal
+origin. Its core analytic device — the Orlicz-norm maximal inequality
+`\mathbb{E}\,\max_{i \le m} |Z_i| \le \psi^{-1}(m)\,\max_i \|Z_i\|_\psi`
+for a Young function `ψ` — is stated and proved as Lemma 2.2.2 in
+A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical
+Processes: With Applications to Statistics*, Springer Series in
+Statistics, Springer, 1996; the underlying exponential-moment argument is
+classically attributed to G. Pisier (see Pisier's work on Rademacher
+averages and Orlicz norms in Banach-space probability). The
+truncation-plus-Bernstein synthesis that turns this device into the
+two-term `(M\log/\sqrt n, \sigma\sqrt{\log})` finite-class bound is
+exactly the proof of Lemma 19.33 in van der Vaart (1998); there is no
+distinct journal article isolating this particular packaging.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

@@ -8,22 +8,60 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
-# The chi-squared distribution and the sum-of-squares law — ForMathlib brick
+# The chi-squared distribution and the sum-of-squares law
 
-The chi-squared distribution defined through Mathlib's Gamma, and the identity that a sum of squared
-i.i.d. standard Gaussians is chi-squared (Candès, Lecture 2, §2.3):
+This file defines the chi-squared distribution through Mathlib's Gamma family and proves the
+**exact distributional law**: if $Z_1, \dots, Z_n$ are independent standard Gaussian random
+variables, $Z_i \sim N(0,1)$, then their sum of squares follows a chi-squared distribution with
+$n$ degrees of freedom,
+$$ \sum_{i=1}^{n} Z_i^2 \;\sim\; \chi^2_n . $$
+Here $\chi^2_n$ is defined as the Gamma distribution with shape $n/2$ and rate $1/2$, i.e.
+$\chi^2_n := \mathrm{Gamma}(n/2,\, 1/2)$, which is a probability measure for $n \ge 1$. Alongside
+the law we record the basic functionals of $\chi^2_n$:
 
-* `chiSquared k := Gamma(k/2, 1/2)` (`def`; a probability measure for `k ≥ 1`);
-* `mgf_chiSquared` — `E[e^{tX}] = ((1/2)/((1/2)−t))^{k/2}` (the χ² MGF `(1−2t)^{−k/2}`), from the
-  merged Gamma MGF;
-* `integral_id_chiSquared` / `variance_chiSquared` — mean `k`, variance `2k` (from the Gamma
-  mean `a/r` and variance `a/r²` at `a=k/2`, `r=1/2`);
-* `map_sum_sq_eq_chiSquared` — **`∑ᵢ Zᵢ² ∼ χ²ₙ`** for i.i.d. `Zᵢ ∼ N(0,1)` (the exact law).
+* the moment generating function $\;\mathbb{E}\!\left[e^{tX}\right] = \left(\tfrac{1/2}{1/2 - t}\right)^{n/2} = (1 - 2t)^{-n/2}\;$ for $t < 1/2$ (`mgf_chiSquared`);
+* the mean $\;\mathbb{E}[X] = n\;$ (`integral_id_chiSquared`) and variance $\;\mathrm{Var}(X) = 2n\;$ (`variance_chiSquared`), obtained from the Gamma mean $a/r$ and variance $a/r^2$ evaluated at $a = n/2$, $r = 1/2$.
 
-The mean/variance feed the chi-squared test's `H₀` moments `E[Tₙ]=n`, `Var[Tₙ]=2n`
-(`ChiSquaredTest/Distribution.lean`). Theorem-agnostic.
+These moments feed the chi-squared test's null-hypothesis moments $\mathbb{E}[T_n] = n$,
+$\mathrm{Var}[T_n] = 2n$ (used in `ChiSquaredTest/Distribution.lean`). The result is
+theorem-agnostic and is placed in the `ForMathlib` layer.
 
-Reference: Candès, Lecture 2, §2.3, STAT 300C Notes.
+Note on hypotheses: the Lean statement requires $n \ge 1$ (so that $\chi^2_n$ is a genuine
+probability measure), and takes the three standard inputs of the i.i.d. setup explicitly —
+measurability of each $Z_i$, the marginal law $Z_i \sim N(0,1)$, and joint independence of the
+family. The book states the result for an i.i.d. standard Gaussian sample; these are exactly
+that hypothesis made precise.
+
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford
+University, 2023. Lecture 2, §2.3 (the chi-squared distribution and its connection to the squared
+norm of a Gaussian vector).
+
+**Proof formalization notes.** The proof is by matching moment generating functions and then
+appealing to the fact that equal MGFs on a neighbourhood of $0$ (equivalently, equal
+characteristic functions) determine the law.
+
+* By independence, the MGF of $\sum_i Z_i^2$ factors as the product of the per-coordinate MGFs of
+  $Z_i^2$. For $t < 1/2$ each squared-standard-Gaussian MGF equals $(1 - 2t)^{-1/2} = (\sqrt{1-2t})^{-1}$ (`mgf_exp_sq_stdGaussian`), so the product is $(\sqrt{1-2t})^{-n}$; the `rpow` bridge
+  `chiSq_mgf_rpow_bridge` reconciles this with the Gamma MGF $\left(\tfrac{1/2}{1/2-t}\right)^{n/2}$.
+* For $t \ge 1/2$ both MGFs vanish: the integrand $e^{t x^2}$ (resp. $e^{t x}$) is non-integrable
+  under $N(0,1)$ (resp. $\chi^2_n$), via the dedicated half-line integrability bricks
+  `integrable_exp_mul_gammaMeasure` / `not_integrable_exp_mul_gammaMeasure` and their $\chi^2$
+  specializations. This gives MGF equality on all of $\mathbb{R}$.
+* From MGF equality, $0$ lies in the interior of the integrable-exponent set of the statistic, the
+  complex MGFs agree on the imaginary axis, and `Measure.ext_of_charFun` concludes equality of the
+  two laws. The Gamma MGF and moment lemmas are imported from `GammaMoments.lean` and the
+  squared-Gaussian MGF from `GaussianSquareMGF.lean`.
+
+**Bibliographic comments.** This is a folklore result with no single seminal paper. The
+distribution of a sum of squared independent normal variates was derived by F. R. Helmert,
+"Über die Berechnung des wahrscheinlichen Fehlers aus einer endlichen Anzahl wahrer
+Beobachtungsfehler" (*Zeitschrift für Mathematik und Physik* 20, 1875, pp. 300–404), in the
+course of studying the distribution of the sample variance. The distribution and its central role
+in goodness-of-fit testing were independently popularized by K. Pearson, "On the criterion that a
+given system of deviations from the probable in the case of a correlated system of variables is
+such that it can be reasonably supposed to have arisen from random sampling" (*Philosophical
+Magazine*, Series 5, 50(302), 1900, pp. 157–175). The identity $\sum_i Z_i^2 \sim \chi^2_n$ is now
+standard textbook material and is not attributed to a single original theorem.
 -/
 
 open MeasureTheory ProbabilityTheory Real Set

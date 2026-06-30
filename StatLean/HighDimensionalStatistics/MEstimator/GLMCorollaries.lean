@@ -12,26 +12,56 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 /-!
 # GLM Lasso estimation-error rates (Wainwright Corollaries 9.26, 9.27)
 
-The payoff of the chapter for sparse generalized linear models. Combining the deterministic bounds
-(Corollary 9.20 for `ℓ₂`/`ℓ₁`, Theorem 9.24 for `ℓ∞`) — instantiated at the `ℓ₁/ℓ∞` decomposable
-regularizer `l1DecomposableReg S` with `Ψ(M(S)) = √s` — with the high-probability good event
-(`good_event_highProb`), the `ℓ₁`-regularized GLM Lasso `θ̂` satisfies, with probability
-`≥ 1 − 2e^{−2nδ²}`:
-* `‖θ̂ − θ*‖₂² ≲ s·λ²/κ²` and `‖θ̂ − θ*‖₁ ≲ s·λ/κ` (Corollary 9.26), and
-* `‖θ̂ − θ*‖∞ ≤ 3λ/κ` under an additional `ℓ∞`-curvature condition (Corollary 9.27),
-with `λ = 4BC{√(log d/n) + δ}`.
+Consider a sparse generalized linear model: the response `yᵢ` follows an exponential family with
+natural parameter `⟨xᵢ, θ*⟩`, where the true coefficient vector `θ* ∈ ℝ^d` is supported on a set
+`S` of size `s = |S|`. The GLM negative log-likelihood is `Lₙ(θ) = (1/n)∑ᵢ[ψ(⟨xᵢ,θ⟩) − yᵢ⟨xᵢ,θ⟩]`,
+where `ψ` is the cumulant (partition) function with `0 ≤ ψ'' ≤ B²`, and `θ̂` is the
+`ℓ₁`-regularized (Lasso) estimator minimizing `Lₙ(θ) + λ‖θ‖₁`.
 
-The RSC condition (9.62) and the `ℓ∞`-curvature condition (9.64) are `USER-INPUT` — the book
-establishes them separately (Theorem 9.36, for sub-Gaussian covariates), out of scope here.
+Assume the columns of the design are normalized at level `C`, the loss satisfies a restricted
+strong convexity (RSC) condition at `θ*` with curvature `κ`, and the regularization parameter is
+tuned at `λ = 4BC(√(log d / n) + δ)`. Then, with probability at least `1 − 2e^{−2nδ²}`:
 
-Constant note: the deterministic `ℓ₂`/`ℓ₁` constants are the provable `144`/`48` (see `Bound.lean`),
-vs. the book's `9/4`/`6`; same `s·λ²/κ²` rate.
+* **(Corollary 9.26, ℓ₂/ℓ₁ rates)**
+  `‖θ̂ − θ*‖₂² ≲ s λ² / κ²` and `‖θ̂ − θ*‖₁ ≲ s λ / κ`; and
+* **(Corollary 9.27, ℓ∞ rate)** under an additional `ℓ∞`-curvature condition,
+  `‖θ̂ − θ*‖∞ ≤ 3λ / κ`.
 
-Tuning note (Cor 9.27): the `ℓ∞` corollary reuses the SAME `λ = 4BC{√(log d/n) + δ}` as Cor 9.26,
-because the good-event high-probability bound `good_event_highProb` (which establishes
-`P(‖∇Lₙ(θ*)‖∞ ≤ λ/2) ≥ 1 − 2e^{−2nδ²}`) requires `λ ≥ 4BC{√(log d/n) + δ}`; the smaller `2BC`
-constant sometimes quoted alongside Thm 9.24 only governs the deterministic `ℓ∞` rate, not this
-probability level.
+The proof instantiates the deterministic decomposable-regularizer bounds (Corollary 9.20 for
+`ℓ₂`/`ℓ₁`, Theorem 9.24 for `ℓ∞`) at the `ℓ₁/ℓ∞` decomposable regularizer `l1DecomposableReg S`,
+whose subspace Lipschitz constant is `Ψ(M(S)) = √s`, and combines them with the high-probability
+good event (`good_event_highProb`) controlling `‖∇Lₙ(θ*)‖∞`.
+
+The RSC condition (9.62) and the `ℓ∞`-curvature condition (9.64) enter as `USER-INPUT` hypotheses —
+the book establishes them separately (Theorem 9.36, for sub-Gaussian covariates), which is out of
+scope for this file.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
+§9.5.1 (Generalized linear models with sparsity), Corollary 9.26 (`ℓ₂`/`ℓ₁` bounds) and
+Corollary 9.27 (`ℓ∞` bound, condition Eq (9.64)); RSC condition Eq (9.62); tuning
+`λ = 4BC(√(log d / n) + δ)`.
+
+**Proof formalization notes.**
+* Constant deviation: the deterministic `ℓ₂`/`ℓ₁` constants are the provable `144`/`48`
+  (see `Bound.lean`), vs. the book's `9/4`/`6`; the `s λ² / κ²` and `s λ / κ` rates are unchanged.
+* Tuning note (Cor 9.27): the `ℓ∞` corollary reuses the SAME `λ = 4BC(√(log d / n) + δ)` as
+  Cor 9.26, because the good-event high-probability bound `good_event_highProb` (which establishes
+  `P(‖∇Lₙ(θ*)‖∞ ≤ λ/2) ≥ 1 − 2e^{−2nδ²}`) requires `λ ≥ 4BC(√(log d / n) + δ)`; the smaller `2BC`
+  constant sometimes quoted alongside Thm 9.24 only governs the deterministic `ℓ∞` rate, not this
+  probability level.
+
+**Bibliographic comments.** These corollaries are the GLM specialization of the unified
+decomposable-regularizer M-estimation framework of S. N. Negahban, P. Ravikumar, M. J. Wainwright
+& B. Yu, "A unified framework for high-dimensional analysis of M-estimators with decomposable
+regularizers", *Statistical Science* **27**(4):538–557, 2012. That paper introduces decomposability
+of a regularizer relative to a subspace pair `(M, M̄^⊥)`, the restricted strong convexity
+condition, and the master deterministic bound (their Theorem 1), of which the `ℓ₂`/`ℓ₁` rates here
+are the `ℓ₁`-regularizer instance (their Corollary 5 specializes Theorem 1 to the Lasso, including
+the `√s` subspace constant for `s`-sparse vectors). The `ℓ∞` bound of Corollary 9.27 follows the
+later refinement using a primal-dual / curvature argument developed in Wainwright's textbook
+treatment rather than the original 2012 paper. Wainwright's Chapter 9 is the textbook synthesis of
+this line of work.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

@@ -5,30 +5,61 @@ import StatLean.ConcentrationInequalities.SubGaussian.TailBounds
 import StatLean.HighDimensionalStatistics.Lasso.DeterministicRate
 
 /-!
-# Lasso rate under sub-Gaussian noise (Lu-BDA §8, cor:lasso-rate)
+# Lasso ℓ² estimation rate under sub-Gaussian noise
 
-**Corollary** (Lu, *Big Data Analysis* §8): if the noises `ε₁,…,εₙ` are independent and
-each sub-Gaussian with variance proxy `σ²`, the design columns satisfy `(1/n)‖X_j‖² ≤ 1`
-(equivalently `∑ᵢ Xᵢⱼ² ≤ n`), the restricted eigenvalue condition `RE(κ, 3)` holds, and
-`δ ∈ (0,1)`, then choosing the tuning parameter
+Consider the high-dimensional linear model $Y = X\beta^\* + \varepsilon$ with fixed design
+$X \in \mathbb{R}^{n \times d}$ and an $s$-sparse target $\beta^\*$ supported on a set $S$ with
+$|S| = s$. Assume the noise coordinates $\varepsilon_1, \dots, \varepsilon_n$ are independent,
+centered, and each sub-Gaussian with variance proxy $\sigma^2$; the design columns are
+normalized so that $\tfrac{1}{n}\lVert X_j \rVert_2^2 \le 1$ (equivalently
+$\sum_{i} X_{ij}^2 \le n$) for every column $j$; and the restricted eigenvalue condition
+$\mathrm{RE}(\kappa, 3)$ holds. Fix a confidence level $\delta \in (0,1)$ and a number of
+features $d \ge 1$. Then, choosing the tuning parameter
 
-  `λ = 2√(2σ² log(2d/δ)/n)`
+$$\lambda \ge 2\sqrt{\frac{2\sigma^2 \log(2d/\delta)}{n}},$$
 
-with probability at least `1 − δ`, the Lasso estimator satisfies
+the Lasso estimator $\widehat{\beta}$ satisfies, with probability at least $1 - \delta$,
 
-  `‖β̂ − β*‖₂ ≤ (3/κ)·√s·λ = O_P(√(s·log d / n))`.
+$$\bigl\lVert \widehat{\beta} - \beta^\* \bigr\rVert_2 \le \frac{3}{\kappa}\sqrt{s}\,\lambda
+  = O_P\!\left(\sqrt{\frac{s \log d}{n}}\right).$$
 
-**Deviation from book:** Lu states `λ = σ√(log(2d/δ)/(2n))`, which is approximately 4× too
-small to satisfy the tuning condition `λ ≥ (2/n)‖Xᵀε‖∞` under the union-bound tail bound
-derived here. The provable constant is `λ = 2√(2σ² log(2d/δ)/n)`, preserving the same
-`O_P(√(s·log d/n))` rate order.
+**Changed constant.** The textbook states the tuning value $\lambda = \sigma\sqrt{\log(2d/\delta)/(2n)}$,
+which is approximately $4\times$ too small to satisfy the tuning condition
+$\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ under the union-bound tail
+bound derived here. We therefore state the provable constant
+$\lambda = 2\sqrt{2\sigma^2 \log(2d/\delta)/n}$, which preserves the same
+$O_P(\sqrt{s \log d / n})$ rate order. A nondegeneracy hypothesis $\sigma^2 > 0$ is also
+added (when $\sigma^2 = 0$ the noise is almost surely zero and the bound holds trivially via
+a separate path).
 
-**Proof structure:** The deterministic `lasso_l2_rate` (`thm:re`) reduces the probabilistic
-content to showing the tuning event `λ ≥ (2/n)·‖Xᵀε‖∞` holds w.p. ≥ 1 − δ. For each
-column j: `∑ᵢ Xᵢⱼεᵢ` is sub-Gaussian with proxy `σ² ∑ᵢ Xᵢⱼ² ≤ σ²n` via
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 10 (Statistical
+Properties of Lasso), §10.2 (Statistical Rate of Lasso), Corollary 10.1 (`cor:lasso-rate`).
+The deterministic core is the restricted-eigenvalue oracle inequality Theorem 10.1 (`thm:re`)
+of the same chapter.
+
+**Proof formalization notes.** The deterministic `lasso_l2_rate` (`thm:re`) reduces the
+probabilistic content to showing the tuning event
+$\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ holds with probability at
+least $1 - \delta$. For each column $j$, the inner product $\sum_i X_{ij}\varepsilon_i$ is
+sub-Gaussian with variance proxy $\sigma^2 \sum_i X_{ij}^2 \le \sigma^2 n$, obtained via
 `HasSubgaussianMGF.sum_of_iIndepFun` (heterogeneous-proxy Hoeffding). A two-sided sub-Gaussian
-tail + union bound over 2d events gives `P(‖Xᵀε‖∞ > t) ≤ 2d·exp(−t²/(2σ²n))`. Setting
-`t = n·λ/2 ≥ √(2σ²n·log(2d/δ))` makes this ≤ δ, establishing the good event.
+tail plus a union bound over the $2d$ events gives
+$P(\lVert X^\top\varepsilon \rVert_\infty > t) \le 2d\,\exp(-t^2/(2\sigma^2 n))$. Setting
+$t = n\lambda/2 \ge \sqrt{2\sigma^2 n \log(2d/\delta)}$ makes this $\le \delta$, establishing
+the good event; complementation then yields the claimed probability lower bound.
+
+**Bibliographic comments.** The restricted-eigenvalue route to ℓ² estimation bounds for the
+Lasso originates with P. J. Bickel, Y. Ritov and A. B. Tsybakov, "Simultaneous analysis of
+Lasso and Dantzig selector," *The Annals of Statistics* **37**(4) (2009), 1705–1732. The
+$\mathrm{RE}(\kappa, c_0)$ condition is their Assumption RE($s, c_0$), and the ℓ_p estimation
+bound ($1 \le p \le 2$) of the form $\lVert\widehat\beta - \beta^\*\rVert_2 \lesssim
+\sqrt{s}\,\lambda/\kappa^2$ under $\mathrm{RE}(s, 3)$ is their Theorem 7.2 (the cone constant
+$c_0 = 3$ matches the tuning $\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon\rVert_\infty$).
+The sub-Gaussian tuning calibration of $\lambda$ from a maximal/union-bound argument is
+standard and also appears in Bühlmann & van de Geer, *Statistics for High-Dimensional Data*
+(Springer, 2011) and Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*
+(Cambridge University Press, 2019, Ch. 7); the textbook corollary formalized here is a
+synthesis of these into a single high-probability ℓ² rate.
 -/
 
 open MeasureTheory ProbabilityTheory Real Matrix
@@ -62,13 +93,13 @@ private lemma colInner_isSubGaussian
     (ε : Fin n → Ω → ℝ)
     (σ2 : ℝ≥0)
     (μ : Measure Ω)
-    -- USER-INPUT: each εᵢ is sub-Gaussian with variance proxy σ²; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is sub-Gaussian with variance proxy σ²; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_sg : ∀ i : Fin n, IsSubGaussian (ε i) σ2 μ)
-    -- USER-INPUT: ε₀,…,εₙ₋₁ are jointly independent; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: ε₀,…,εₙ₋₁ are jointly independent; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_indep : iIndepFun ε μ)
-    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_zero : ∀ i : Fin n, ∫ ω, ε i ω ∂μ = 0)
-    -- USER-INPUT: column norms normalised, ∑ᵢ Xᵢⱼ² ≤ n; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: column norms normalised, ∑ᵢ Xᵢⱼ² ≤ n; Lu-BDA §10.2 (cor:lasso-rate)
     (hcolnorm : ∀ j : Fin d, ∑ i : Fin n, X i j ^ 2 ≤ n)
     (j : Fin d) :
     IsSubGaussian (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ := by
@@ -197,7 +228,9 @@ private lemma linfNorm_noise_tail
 
 /-! ## Main theorem: cor:lasso-rate -/
 
-/-- **Lasso rate under sub-Gaussian noise** (Lu, *Big Data Analysis* §8, `cor:lasso-rate`).
+/-- **Lasso rate under sub-Gaussian noise** (Lu, *Big Data Analysis* Chapter 10
+(Statistical Properties of Lasso), §10.2 (Statistical Rate of Lasso), Corollary 10.1,
+`cor:lasso-rate`).
 
 Given:
 - Fixed design `X ∈ ℝ^{n×d}`, true parameter `β*` supported on `S` (`|S| = s`).
@@ -222,33 +255,33 @@ theorem lasso_random_rate
     (μ : Measure Ω)
     (lam κ δ : ℝ)
     (βhat : Ω → EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: n > 0; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: n > 0; Lu-BDA §10.2 (cor:lasso-rate)
     (hn : 0 < n)
-    -- USER-INPUT: κ > 0; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: κ > 0; Lu-BDA §10.2 (cor:lasso-rate)
     (hkappa : 0 < κ)
-    -- USER-INPUT: λ > 0; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: λ > 0; Lu-BDA §10.2 (cor:lasso-rate)
     (hlam_pos : 0 < lam)
-    -- USER-INPUT: d ≥ 1 (needed for log(2d/δ) > 0); Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: d ≥ 1 (needed for log(2d/δ) > 0); Lu-BDA §10.2 (cor:lasso-rate)
     (hd : 0 < d)
-    -- USER-INPUT: δ ∈ (0,1); Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: δ ∈ (0,1); Lu-BDA §10.2 (cor:lasso-rate)
     (hδ_pos : 0 < δ)
     (hδ_lt : δ < 1)
-    -- USER-INPUT: restricted eigenvalue RE(κ,3); Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: restricted eigenvalue RE(κ,3); Lu-BDA §10.2 (cor:lasso-rate)
     (hre : RestrictedEigenvalue X S κ 3)
-    -- USER-INPUT: β* supported on S; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: β* supported on S; Lu-BDA §10.2 (cor:lasso-rate)
     (hS : ∀ j ∉ S, βstar.ofLp j = 0)
-    -- USER-INPUT: εᵢ are jointly independent; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: εᵢ are jointly independent; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_indep : iIndepFun ε μ)
-    -- USER-INPUT: each εᵢ is sub-Gaussian with proxy σ²; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is sub-Gaussian with proxy σ²; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_sg : ∀ i : Fin n, IsSubGaussian (ε i) σ2 μ)
-    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2 (cor:lasso-rate)
     (hε_zero : ∀ i : Fin n, ∫ ω, ε i ω ∂μ = 0)
-    -- USER-INPUT: column norms normalised, (1/n)‖X_j‖² ≤ 1; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: column norms normalised, (1/n)‖X_j‖² ≤ 1; Lu-BDA §10.2 (cor:lasso-rate)
     (hcolnorm : ∀ j : Fin d, ∑ i : Fin n, X i j ^ 2 ≤ n)
-    -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §10.2 (cor:lasso-rate)
     (hLasso : ∀ ω, IsLassoEstimator X
         (designMap X βstar + WithLp.toLp (p := 2) (fun i => ε i ω)) lam (βhat ω))
-    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §8 (cor:lasso-rate)
+    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2 (cor:lasso-rate)
     -- Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
     (hlam_ge : lam ≥ 2 * Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n))
     -- LEAN-ONLY: 0 < σ2; when σ2 = 0 the noise is a.s. 0 and the result holds trivially

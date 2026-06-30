@@ -3,18 +3,47 @@ import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.InformationTheory.KullbackLeibler.Basic
 
 /-!
-# Kullback–Leibler divergence between Gaussians (Wainwright Exercise 15.13)
+# Kullback–Leibler divergence between equal-variance Gaussians
 
-The explicit KL divergence between Gaussian distributions, used in the Gaussian-location and
-linear-regression minimax examples (15.4, 15.13, 15.14, 15.16). For equal variance the formula is
-```
-D(𝒩(m₁, σ²) ‖ 𝒩(m₂, σ²)) = (m₁ − m₂)² / (2σ²)        (Exercise 15.13, equal-covariance case),
-```
-the mean-shift term of the general multivariate formula
-`D(𝒩(μ₁,Σ)‖𝒩(μ₂,Σ)) = ½⟨μ₁−μ₂, Σ⁻¹(μ₁−μ₂)⟩`.
+For two real Gaussian distributions with the same variance $\sigma^2 > 0$ and means $m_1, m_2$,
+the Kullback–Leibler divergence is
+$$
+  D\bigl(\mathcal{N}(m_1, \sigma^2)\,\big\|\,\mathcal{N}(m_2, \sigma^2)\bigr)
+    = \frac{(m_1 - m_2)^2}{2\sigma^2}.
+$$
+This is the equal-covariance case of the general multivariate formula
+$D\bigl(\mathcal{N}(\mu_1, \Sigma) \,\|\, \mathcal{N}(\mu_2, \Sigma)\bigr)
+  = \tfrac12 \langle \mu_1 - \mu_2, \Sigma^{-1}(\mu_1 - \mu_2)\rangle$,
+in which only the mean-shift term survives. It is the divergence input to the Gaussian-location
+and linear-regression minimax lower-bound examples (Examples 15.4, 15.14, 15.16). The Lean
+statement is stated for a nonzero variance `v ≠ 0` and uses `ENNReal.ofReal` to land in the
+extended nonnegative reals that Mathlib's `klDiv` returns.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.6, Exercise 15.13.
+
+**Proof formalization notes.** The argument computes the divergence from first principles rather
+than invoking a packaged Gaussian-KL lemma (Mathlib has none). Steps:
+
+* `log_gaussianPDFReal` splits the log-density into the mean-independent normalising constant
+  `-log √(2πv)` and the quadratic exponent `-(x − m)²/(2v)`.
+* Absolute continuity `𝒩(m₁, v) ≪ 𝒩(m₂, v)` is obtained through the common dominating Lebesgue
+  measure, so `klDiv` reduces (via `klDiv_of_ac_of_integrable`) to the integral of the
+  log-likelihood ratio.
+* The log-likelihood ratio equals, `𝒩(m₁, v)`-almost everywhere, the affine surrogate
+  `F(x) = ((x − m₂)² − (x − m₁)²) / (2v)`: the equal-variance assumption cancels the quadratic
+  normalising constants, leaving a function linear in `x`.
+* Affineness gives both integrability (`IsGaussian.integrable_fun_id`) and the value
+  `∫ F d𝒩(m₁, v) = (m₁ − m₂)²/(2v)`, using `∫ x d𝒩(m₁, v) = m₁`.
+
+The book's constant is reproduced exactly; the only deviation from the book statement is the
+`ENNReal.ofReal` wrapper and the explicit `v ≠ 0` hypothesis, both Lean-side bookkeeping.
+
+**Bibliographic comments.** The closed-form KL divergence between Gaussian laws is folklore with
+no single seminal origin; the Kullback–Leibler divergence itself was introduced in S. Kullback and
+R. A. Leibler, "On Information and Sufficiency", *Annals of Mathematical Statistics* **22** (1951),
+no. 1, 79–86, and the Gaussian special case is a standard exercise (here Wainwright, Exercise
+15.13). No research-paper theorem number is attached because the formula is textbook material.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

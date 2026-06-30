@@ -2,12 +2,40 @@ import Mathlib.Probability.Decision.Risk.Basic
 import Mathlib.Probability.Distributions.Uniform
 
 /-!
-# Minimax lower bounds — core definitions (Wainwright Ch. 15)
+# Minimax lower bounds — core data model (minimax risk, M-ary testing, separated families)
 
-Laptop-only shared data model for the `Minimaxity` area (Wainwright,
-*High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge, 2019, Ch. 15).
+Shared data model for the `Minimaxity` area, formalizing the core objects of
+Wainwright's minimax lower-bound framework.
 
-We build directly on Mathlib's decision-theoretic risk framework
+Fix a class of distributions $\mathcal{P} = \{P_\theta\}$, a functional $\theta \mapsto \theta(P_\theta)$
+taking values in a space equipped with a *semimetric* $\rho$ (a distance allowed to vanish
+on distinct points, Wainwright's footnote 1), and an increasing distortion
+$\Phi : [0,\infty] \to [0,\infty]$. The associated **distortion loss** of a decision $y$ under
+parameter $\theta$ is
+$$\ell(\theta, y) \;=\; \Phi\bigl(\rho(\theta(P_\theta),\, y)\bigr),$$
+and the **minimax risk** of estimating the functional is
+$$\mathfrak{M}\bigl(\theta(\mathcal{P});\, \Phi\circ\rho\bigr)
+   \;=\; \inf_{\widehat{\theta}}\ \sup_{\theta}\ \mathbb{E}_{P_\theta}
+     \bigl[\Phi\bigl(\rho(\widehat{\theta},\, \theta(P_\theta))\bigr)\bigr],$$
+the infimum ranging over all (randomized) estimators (Eq. (15.2)).
+
+The standard reduction from estimation to testing (§15.1.2) replaces this by an
+$M$-ary hypothesis test: with the index $J$ drawn uniformly from $\{1,\dots,M\}$, the data
+$Z \sim P_{\theta^J}$, and the $0$–$1$ loss $\ell(j,k) = \mathbf{1}[j\neq k]$, the
+**$M$-ary testing error**
+$$\inf_{\psi}\ \mathbb{Q}\bigl[\psi(Z) \neq J\bigr]$$
+is the Bayes risk under the uniform prior, with the marginal of $Z$ given by the **mixture**
+$\overline{\mathbb{Q}} = \tfrac{1}{M}\sum_{j} P_{\theta^j}$ (Eq. (15.30)). A finite family
+$\{\theta^j\}$ is **$2\delta$-separated** when its functional values are pairwise at
+semimetric distance at least $2\delta$ (we adopt the milder $\ge 2\delta$ requirement rather
+than $> 2\delta$, per Wainwright's footnote 2).
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.1–§15.1.2,
+Eq. (15.2), (15.3); mixture distribution §15.3.1, Eq. (15.30).
+
+**Proof formalization notes.** This is a laptop-only shared data model — definitions only,
+no theorems. We build directly on Mathlib's decision-theoretic risk framework
 (`ProbabilityTheory.minimaxRisk` / `bayesRisk` / `avgRisk`, in
 `Mathlib/Probability/Decision/Risk/`):
 
@@ -26,6 +54,20 @@ This file adds the Wainwright-specific wiring on top:
   `inf_ψ ℚ[ψ(Z) ≠ J]` of §15.1.2 as a `bayesRisk` (0–1 loss, uniform prior);
 * `mixture` — the mixture distribution `Q̄ = (1/M) Σⱼ P_{θʲ}` (Eq. (15.30));
 * `IsSeparatedFamily g θ δ` — a `2δ`-separated finite family in the semimetric `ρ`.
+
+**Bibliographic comments.** These objects are textbook synthesis of the classical
+minimax decision-theory framework, with no single seminal origin. The decision-theoretic
+formulation of minimax risk over a family of distributions traces to A. Wald, *Statistical
+Decision Functions* (Wiley, 1950). The reduction of minimax estimation to $M$-ary
+hypothesis testing over a separated family — the engine behind the Le Cam, Fano, and
+Assouad lower-bound methods — is due to L. Le Cam (*Convergence of estimates under
+dimensionality restrictions*, Ann. Statist. 1 (1973), 38–53; and *Asymptotic Methods in
+Statistical Decision Theory*, Springer, 1986), with the multi-hypothesis / packing variants
+developed by Le Cam, P. Assouad (*Deux remarques sur l'estimation*, C. R. Acad. Sci. Paris
+296 (1983), 1021–1024), and the information-theoretic Fano bound (R. M. Fano, 1952; see
+also I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*,
+Springer, 1981). Chapter 15 of Wainwright collects this folklore into the unified
+$\mathfrak{M}(\theta(\mathcal{P}); \Phi\circ\rho)$ formulation used here.
 -/
 
 open MeasureTheory ProbabilityTheory

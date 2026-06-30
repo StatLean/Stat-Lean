@@ -9,20 +9,66 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 
 /-!
-Gaussian shift experiment: the parametric family `h ↦ N(h, Σ)` on `EuclideanSpace ℝ (Fin k)`.
+# Gaussian shift experiment (limit experiment) and its likelihood ratio
 
-In van der Vaart §7.10 this is the "limit experiment" to which the local LAN family
-`P^n_{θ + h/√n}` becomes weakly equivalent. The relevant facts for us are:
+The **Gaussian shift experiment** is the family of measurements indexed by a shift
+parameter $h \in \mathbb{R}^k$ in which one observes a single draw from the multivariate
+normal law $N(h, \Sigma)$, where $\Sigma$ is a fixed positive-definite covariance matrix.
+In the theory of local asymptotic normality this is the **limit experiment** to which a
+locally asymptotically normal sequence $P^n_{\theta_0 + h/\sqrt{n}}$ converges (in the
+sense of weak convergence of experiments): the localized parametric family becomes, in
+the limit, statistically equivalent to observing $X \sim N(h, \Sigma)$.
 
-1. It is a parametric family of probability measures on `Θ := EuclideanSpace ℝ (Fin k)`.
-2. Its log-likelihood ratio has the closed form
-   `log d N(h, Σ) / d N(0, Σ) (x) = ⟨h, Σ⁻¹ x⟩ - ½ ⟨h, Σ⁻¹ h⟩`.
+The two facts formalized here are:
 
-Mathlib at this commit does not yet provide a direct `multivariateGaussian` primitive
-(only `gaussianReal` and the abstract `IsGaussian` typeclass), so we package the family
-as a bundled existence predicate and keep the characterizing properties as separate
-`Prop`-valued predicates. When Mathlib gains a multivariate Gaussian, the existence
-result (`exists_gaussianShiftFamily`) becomes constructive.
+1. For every shift $h$, the law $N(h, \Sigma)$ is a probability Gaussian measure on
+   $\mathbb{R}^k$ (identified with the Euclidean space $\ell^2(\{1,\dots,k\})$) with mean
+   $h$ and covariance $\Sigma$; such a family exists for every positive-definite $\Sigma$
+   and is realized by Mathlib's `multivariateGaussian`.
+
+2. The log-likelihood ratio against the base measure $N(0, \Sigma)$ has the closed form
+   $$
+   \log \frac{dN(h,\Sigma)}{dN(0,\Sigma)}(x)
+     \;=\; \langle h,\ \Sigma^{-1} x\rangle \;-\; \tfrac12\,\langle h,\ \Sigma^{-1} h\rangle ,
+   $$
+   the affine-in-$x$ form characteristic of a Gaussian shift. A companion **tilted linear
+   pushforward** identity records that the pushforward of $N(h, J^{-1})$ under the linear
+   map $x \mapsto Jx$ equals the base Gaussian $N(0, J)$ reweighted by the exponential tilt
+   $\exp\!\big(\langle h, y\rangle - \tfrac12\langle h, Jh\rangle\big)$.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 7
+(Local Asymptotic Normality), §7.3 (Convergence to a Normal Experiment); the Gaussian
+limit experiment and its representation theorem (Theorem 7.10) live in that section.
+The likelihood-ratio form (2) is the multivariate analogue of the affine LAN expansion
+appearing throughout Chapter 7.
+
+**Proof formalization notes.**
+Mathlib at this commit does not provide a stand-alone multivariate-Gaussian density or
+linear-pushforward calculus (only `gaussianReal`, the abstract `IsGaussian` typeclass, and
+`multivariateGaussian`). We therefore package the experiment as the `Prop`-valued predicate
+`IsGaussianShift family cov` (each `family h` is a probability Gaussian with mean `h` and
+covariance `cov`), and keep the two analytic facts as separate predicates:
+`HasGaussianShiftLogLikelihoodRatio` (the closed-form LR above) and
+`HasTiltedLinearPushforward` (the linear-pushforward / change-of-base identity used in
+Theorem 7.10 Step 7). The existence result `exists_gaussianShift` and the witness
+`isGaussianShift_multivariateGaussian` are constructive via `multivariateGaussian`, and
+`IsGaussianShift.eq_multivariateGaussian` proves the experiment is determined uniquely at
+each parameter (two Gaussians with equal mean and covariance coincide, via
+`IsGaussian.ext`). The closed-form LR is not bundled into `exists_gaussianShift` because it
+is not consumed downstream and its derivation needs an explicit multivariate density;
+`hasTiltedLinearPushforward_of_isGaussianShift` discharges the tilt identity by showing both
+sides equal `multivariateGaussian (J h) J`.
+
+**Bibliographic comments.**
+The Gaussian shift experiment and its affine log-likelihood ratio are textbook folklore
+with no single seminal source; they are the canonical limit object of Le Cam's theory of
+asymptotic equivalence of experiments. The foundational reference is
+L. Le Cam, "Locally asymptotically normal families of distributions," *University of
+California Publications in Statistics* **3** (1960), 37–98, where local asymptotic normality
+and the Gaussian limit experiment are introduced; see also L. Le Cam, *Asymptotic Methods
+in Statistical Decision Theory*, Springer, 1986. The textbook synthesis used here follows
+van der Vaart (1998), Chapter 7.
 -/
 
 open MeasureTheory ProbabilityTheory

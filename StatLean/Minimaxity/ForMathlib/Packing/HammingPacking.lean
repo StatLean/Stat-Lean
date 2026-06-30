@@ -3,20 +3,56 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
-# Varshamov–Gilbert packing of the binary hypercube (Wainwright Example 5.3)
+# Gilbert–Varshamov packing of the binary hypercube
 
-A Chapter-5 metric-entropy prerequisite for the local-packing minimax lower bounds: there is a
-subset of the hypercube `{0,1}^m` that is `1/4`-separated in the rescaled Hamming metric and has
-exponentially large cardinality,
-```
-log M_H(1/4; {0,1}^m) ≥ m/10                          (Example 5.3, Eq. (5.3))
-```
-i.e. a set `T` with `log |T| ≥ m/10` and pairwise Hamming distance `≥ m/4`. This is the
+A Chapter-5 metric-entropy prerequisite for the local-packing minimax lower bounds: the binary
+hypercube $\{0,1\}^m$ contains a subset $T$ that is $1/4$-separated in the rescaled Hamming
+metric and has exponentially large cardinality. Concretely, there exists $T \subseteq \{0,1\}^m$
+whose elements are pairwise at Hamming distance at least $m/4$ and with
+$$\log |T| \;\ge\; \tfrac{m}{10},$$
+equivalently $\log M_H(1/4;\{0,1\}^m) \ge m/10$ for the $1/4$-packing number $M_H$. This is the
 Gilbert–Varshamov bound. It underlies the local packings used in Examples 15.11 and 15.15.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+The constant $1/10$ in the cardinality lower bound is the *provable slack* version of the bound;
+the textbook's Eq. (5.3) states the qualitative claim that the log-packing number grows linearly
+in $m$, and the binary-entropy heart of the argument is captured here through an explicit,
+machine-checkable constant rather than the asymptotic $H_2(1/4)$ form.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.3, Eq. (5.3)
 (used in Chapter 15, §15.2.2 / §15.3.3, Examples 15.11 and 15.15).
+
+**Proof formalization notes.** The argument is assembled from one combinatorial volume bound plus a
+maximal-set covering argument:
+
+* *Hamming-ball volume bound* (`hamming_ball_card_le`): the number of points of $\{0,1\}^m$ within
+  Hamming distance $< m/4$ of a fixed center is at most $\exp\!\big(\tfrac{59}{100}\,m\big)$. The
+  proof is a Chernoff bound on the binomial volume: with $k = \lfloor m/4\rfloor$, every point $y$
+  of the ball satisfies $1 \le 3^k (1/3)^{d_H(t,y)}$, and summing the right-hand side over the
+  whole cube factorises over coordinates to $3^k(1+1/3)^m = 3^k(4/3)^m$. The numeric bound
+  $3^k(4/3)^m \le \exp(\tfrac{59}{100} m)$ reduces, after taking logs, to
+  $2\log 2 - \tfrac34\log 3 \le \tfrac{59}{100}$, which holds since $\log 3 \ge \tfrac{23}{15}\log 2$
+  (from $2^{23} \le 3^{15}$) and $\log 2 \le 0.6931471808$. The constant $59/100$ is a provable
+  slack above the true binary entropy $H_2(1/4) \approx 0.5623$ nats.
+* *Covering / counting* (`gilbert_varshamov`, exported as `exists_hamming_packing`): take a
+  *maximal* $m/4$-separated subset $T$. By maximality its radius-$m/4$ Hamming balls cover the cube,
+  so $2^m \le |T|\cdot \mathrm{vol(ball)}$. Combined with the volume bound and $2^m = \exp(m\log 2)$
+  with $\log 2 \ge 69/100 = 1/10 + 59/100$, this yields $\exp(m/10) \le |T|$, hence
+  $m/10 \le \log|T|$. The $m=0$ edge case is handled separately with the singleton cube.
+
+The whole argument is discharged with no `sorry`; the only constant that deviates from the book is
+the explicit $1/10$ rate (vs. the book's asymptotic statement), chosen for machine-checkable
+numerics.
+
+**Bibliographic comments.** The bound originates independently with E. N. Gilbert, "A comparison of
+signalling alphabets", *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov,
+"Estimate of the number of signals in error correcting codes", *Doklady Akademii Nauk SSSR* **117**
+(1957), 739–741. Gilbert proved the existence of codes meeting the volume (sphere-covering) lower
+bound on the size of a code with prescribed minimum distance; Varshamov sharpened the construction
+to linear codes via a parity-check argument. The greedy/maximal-packing form used here (a maximal
+separated set whose balls cover the space) is the standard textbook rendering of Gilbert's covering
+argument; Wainwright's Example 5.3 specializes it to the rescaled Hamming metric on $\{0,1\}^m$ for
+use in minimax lower bounds.
 -/
 
 open scoped ENNReal

@@ -2,28 +2,57 @@ import StatLean.MultipleTesting.BenjaminiHochberg
 import Mathlib.NumberTheory.Harmonic.Defs
 
 /-!
-# Benjamini–Hochberg FDR control under arbitrary dependence — assembly
+# Benjamini–Hochberg FDR control under arbitrary dependence
 
-The Benjamini–Hochberg procedure `bhRejects α p` (defined in `BenjaminiHochberg.lean`: reject
-`{ j : pⱼ ≤ k̂α/N }` with `k̂ = max{ k : #{j : pⱼ ≤ kα/N} ≥ k }`) controls FDR **without any
-independence assumption** on the p-values, at the cost of a harmonic-number factor.
+The Benjamini–Hochberg procedure (reject the hypotheses indexed by
+$\{\, j : p_j \le \hat k\,\alpha/N \,\}$, where
+$\hat k = \max\{\, k : \#\{\, j : p_j \le k\alpha/N \,\} \ge k \,\}$) controls the false discovery
+rate **without any independence assumption** on the $p$-values, at the cost of a harmonic-number
+factor.
 
-**Main result** (`benjamini_hochberg_dependent_fdr_le`, Candès, Lecture 5 §5.5 / Lecture 6 §6.6,
-Theorem 3, STAT 300C — the Benjamini–Yekutieli bound): if every null p-value is super-uniform
-(and the p-values are otherwise **arbitrarily dependent**), then
-`FDR ≤ (N₀/N)·α·Hₙ`, where `Hₙ = ∑_{k=1}^N 1/k` is the `N`-th harmonic number and `N₀ = |H₀|`.
+**Informal statement.** Let $p_1,\dots,p_N$ be $p$-values with null index set $H_0$ of size
+$N_0 = |H_0|$, and suppose every null $p$-value is super-uniform, i.e.
+$\mathbb{P}(p_i \le t) \le t$ for all $t \ge 0$ and $i \in H_0$. Assume the $p$-values are otherwise
+**arbitrarily dependent** (no independence or PRDS condition). Then the Benjamini–Hochberg procedure
+run at level $\alpha$ satisfies
+$$\mathrm{FDR} \;\le\; \frac{N_0}{N}\,\alpha\,H_N, \qquad H_N = \sum_{k=1}^{N} \frac1k,$$
+where $H_N$ is the $N$-th harmonic number. Consequently, running BH at the deflated level
+$\alpha/H_N$ controls FDR at $(N_0/N)\,\alpha \le \alpha$ under arbitrary dependence — the
+Benjamini–Yekutieli correction.
 
-Running BH at level `α/Hₙ` therefore controls FDR at `(N₀/N)·α ≤ α` under arbitrary dependence —
-the Benjamini–Yekutieli correction.
+The Lean statement (`benjamini_hochberg_dependent_fdr_le`) matches this exactly, with two routine
+additions: each $p$-value is assumed measurable (needed to integrate the false-discovery proportion),
+and super-uniformity is the explicit hypothesis `SuperUniform (p j) μ` on every null index. The
+constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
 
-*Proof (Benjamini–Yekutieli layer-cake).* `FDP = ∑_{i∈H₀} ψᵢ/(R∨1)`; for each null `i`, expand
-`ψᵢ/(R∨1) = ∑_{k=1}^N (1/k)·𝟙(R=k)·ψᵢ` and use that on `{R=k}` a rejected `i` has `pᵢ ≤ kα/N`, then
-reorganize the double sum (bands `Cⱼ = {(j−1)α/N < pᵢ ≤ jα/N}` + Abel summation) so each null
-contributes `≤ (α/N)·Hₙ` using only super-uniformity `P(pᵢ ≤ kα/N) ≤ kα/N` — no factorization,
-hence no independence needed. Summing over `H₀` gives `(N₀/N)·α·Hₙ`.
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
+2023, Lecture 5 §5.5 and Lecture 6 §6.6, Theorem 3 (Benjamini–Yekutieli bound under arbitrary
+dependence); cross-referenced with Junwei Lu, *Big Data Analysis*, Chapter 21 (Knock-Off),
+§21.1 (False Discovery Rate: Dependent P-values).
 
-The combinatorial / measurability infrastructure for `bhRejects` is re-derived `private`ly here
-because the corresponding lemmas in `BenjaminiHochberg.lean` are `private` to that module.
+**Proof formalization notes.** *(Benjamini–Yekutieli layer-cake.)* Write
+$\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is rejected
+and $R$ is the total number of rejections. For each null $i$, expand
+$\psi_i/(R\vee 1) = \sum_{k=1}^{N} (1/k)\,\mathbf{1}(R=k)\,\psi_i$ and use that on $\{R=k\}$ a rejected
+$i$ satisfies $p_i \le k\alpha/N$. Reorganizing the double sum into bands
+$C_j = \{(j-1)\alpha/N < p_i \le j\alpha/N\}$ and applying Abel summation shows each null contributes
+at most $(\alpha/N)\,H_N$, using only super-uniformity $\mathbb{P}(p_i \le k\alpha/N) \le k\alpha/N$.
+No factorization is used, hence no independence is needed. Summing over $H_0$ gives
+$(N_0/N)\,\alpha\,H_N$.
+
+The combinatorial / measurability infrastructure for the BH rejection set is re-derived `private`ly
+here because the corresponding lemmas in `BenjaminiHochberg.lean` are `private` to that module.
+
+**Bibliographic comments.** The arbitrary-dependence bound is due to Y. Benjamini and D. Yekutieli,
+"The control of the false discovery rate in multiple testing under dependency," *Annals of
+Statistics* **29**(4) (2001), 1165–1188. Their Theorem 1.3 establishes
+$\mathrm{FDR} \le (m_0/m)\,q\,\sum_{i=1}^{m} 1/i$ for the linear step-up (BH) procedure under any
+joint distribution of the test statistics, and Theorem 1.4 gives the corresponding deflated-level
+correction; this is exactly the harmonic-factor result formalized here. The underlying BH procedure
+itself originates with Y. Benjamini and Y. Hochberg, "Controlling the false discovery rate: a
+practical and powerful approach to multiple testing," *Journal of the Royal Statistical Society,
+Series B* **57**(1) (1995), 289–300, where it was proved to control FDR at $(m_0/m)\,q$ under
+independence (later extended to PRDS positive dependence by Benjamini–Yekutieli, Theorem 1.2).
 -/
 
 open MeasureTheory ProbabilityTheory

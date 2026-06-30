@@ -9,22 +9,86 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 /-!
 # Finite-sample minimax risk lower bound via limit-experiment Bayes risk
 
-For any finite subset `I_0 ⊂ C_m`, prior `π` on `I_0`, and bounded
-uniformly continuous loss `ℓ`, the liminf of the per-`h` maximum risk is
-bounded below by the infimum over deterministic estimators of the
-prior-weighted Bayes risk in the Gaussian limit experiment:
-
-  liminf_n max_{h∈I_0} E_{P_{n,h}} ℓ(√n (T_n − ψ(P_{n,h})))
-  ≥ inf_T E_{X∼N(0,I)}
-       [ Σ_{h∈I_0} π(h) (dP_h/dP_0)(X) ℓ(T(X) − A_m h) ]
-
-where `dP_h/dP_0(X) = exp(hᵀ X − ‖h‖²/2)` is the Gaussian-shift Radon–
-Nikodym density and the infimum on the right is over all (deterministic)
-estimators `T : ℝᵐ → ℝᵏ` in the limit experiment.
+For any finite subset $I_0 \subset \mathbb{R}^m$ of score directions, a
+prior $\pi$ on $I_0$ (nonnegative weights summing to $1$), and a bounded,
+uniformly continuous loss function $\ell$, the limit inferior of the
+per-direction maximum risk along the LAN-perturbed submodels
+$P_{n,h} = \gamma_h\big(1/\sqrt{n}\big)$ is bounded below by the infimum,
+over deterministic estimators in the Gaussian limit experiment, of the
+prior-weighted Bayes risk:
+$$
+\liminf_{n} \ \max_{h \in I_0} \ \mathbb{E}_{P_{n,h}^{\,n}}
+  \Big[ \ell\big(\sqrt{n}\,(T_n - \psi(P_{n,h}))\big) \Big]
+\ \ge\
+\inf_{T} \ \mathbb{E}_{X \sim N(0, I_m)}
+  \Big[ \sum_{h \in I_0} \pi(h)\,
+    \exp\!\big(\langle h, X\rangle - \tfrac{1}{2}\|h\|^2\big)\,
+    \ell\big(T(X) - \langle \tilde\ell_{\mathrm{eff}}, \textstyle\sum_i h_i\, g_i\rangle\big) \Big].
+$$
+Here $\exp(\langle h, X\rangle - \tfrac{1}{2}\|h\|^2)$ is the Gaussian-shift
+Radon–Nikodym density $dP_h/dP_0$ relating the shifted Gaussian $N(h, I_m)$
+to the centred Gaussian $N(0, I_m)$, the centring term
+$\langle \tilde\ell_{\mathrm{eff}}, \sum_i h_i g_i\rangle$ is the
+limit-experiment estimand evaluated against the efficient influence
+function $\tilde\ell_{\mathrm{eff}}$ and the orthonormal score basis
+$(g_i)$, and the infimum is over all estimators $T : \mathbb{R}^m \to \mathbb{R}$
+in the limit experiment.
 
 The headline declaration is `bayes_risk_lower_bound`.
 
-Reference: vdV §25.3 (synthesis step in the proof of Theorem 25.21).
+*Deviation from the book.* The infimum on the right is taken over
+**measurable** estimators $T$ only (rather than all functions). This is a
+Lean-side regularity restriction: it makes the per-direction integrand
+$\exp(\cdot)\,\ell(T(\cdot) - c_h)$ AE-strongly-measurable (hence
+integrable), and does not change the infimum over any reasonable estimator
+class, since deterministic measurable estimators are dense in the natural
+topology. The book leaves this measurability implicit.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998, Chapter 25 (Semiparametric Models), §25.3, synthesis step in
+the proof of the local asymptotic minimax theorem (Theorem 25.21).
+
+**Proof formalization notes.** The argument is the synthesis step of the
+local asymptotic minimax bound, formalized in three stages (detailed in the
+docstring of `bayes_risk_lower_bound`).
+
+* *Step 1 (max ≥ Bayes; pure arithmetic):* for each $n$, the per-direction
+  maximum risk dominates the prior-weighted Bayes risk
+  $B_n(\pi) = \sum_{h \in I_0} \pi(h)\,\mathbb{E}_{P_{n,h}^n}[\ell(\cdots)]$,
+  via $\sum \pi = 1$ and $\pi \ge 0$.
+* *Step 2 (Le Cam passage; supplied as the hypothesis
+  `hBayes_n_to_limitBayes`):* the liminf of $B_n(\pi)$ dominates the
+  infimum over deterministic estimators of the prior-weighted Bayes risk in
+  the shifted limit experiment $N(h, I_m)$. This packages the deep
+  weak-convergence content of §25.3 (likelihood-ratio convergence under
+  contiguity, uniform integrability via tightness, the extended continuous
+  mapping theorem, and Le Cam's third lemma).
+* *Step 3 (Gaussian-shift density swap + Tonelli):* each shifted Gaussian
+  integral is rewritten as a centred-Gaussian integral against the
+  Gaussian-shift density $\exp(\langle h, X\rangle - \tfrac{1}{2}\|h\|^2)$
+  (`gaussianShift_change_of_measure`), and integral linearity
+  (`integral_finset_sum`) exchanges the finite sum over $h$ with the
+  integral, identifying the inner integrand with the goal's right-hand side.
+
+The boundedness and uniform continuity of $\ell$ supply the
+`IsBoundedUnder` / `IsCoboundedUnder` side-conditions for
+`Filter.liminf_le_liminf` and the integrability needed in Step 3.
+
+**Bibliographic comments.** The local asymptotic minimax theorem
+originates with J. Hájek, *Local asymptotic minimax and admissibility in
+estimation*, in Proceedings of the Sixth Berkeley Symposium on Mathematical
+Statistics and Probability, Vol. 1, University of California Press, 1972,
+pp. 175–194, which proved the asymptotic minimax lower bound for the
+maximum risk of estimators in locally asymptotically normal experiments
+(companion to Hájek's 1970 convolution theorem, *A characterization of
+limiting distributions of regular estimates*, Z. Wahrsch. Verw. Gebiete 14
+(1970), 323–330). The reduction of the asymptotic minimax problem to a
+Bayes-risk computation in the Gaussian limit experiment is due to L. Le Cam
+(see *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986).
+The formalization here follows van der Vaart's textbook synthesis (vdV
+§25.3, Theorem 25.21) of this Hájek–Le Cam theory for semiparametric
+models.
 -/
 
 open MeasureTheory Filter Topology

@@ -4,21 +4,67 @@ import StatLean.Minimaxity.ForMathlib.LeCamInequality
 import StatLean.Minimaxity.LeCam.TwoPoint
 
 /-!
-# Le Cam's method for functionals (Wainwright §15.2.1)
+# Le Cam's method for functionals (Hellinger modulus of continuity)
 
 For estimating a real functional `θ : ℱ → ℝ` of a density, Le Cam's two-point bound reduces to a
 geometric object: the **modulus of continuity** of the functional with respect to the Hellinger
-distance (Eq. (15.17)),
-```
-ω(ε; θ, ℱ) = sup { |θ(f) − θ(g)| : H²(f ‖ g) ≤ ε² }.
-```
-Corollary 15.6 then gives, for the `n`-sample model,
-```
-inf_θ̂ sup_f 𝔼[Φ(θ̂ − θ(f))] ≥ ¼ Φ( ½ ω(1/(2√n); θ, ℱ) )       (Eq. (15.18)).
-```
+distance. Writing `H²(f ‖ g)` for the squared Hellinger distance between densities `f` and `g`, the
+modulus at radius `ε` is
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1.
+  ω(ε; θ, ℱ) = sup { |θ(f) − θ(g)| : H²(f ‖ g) ≤ ε² }
+
+(Wainwright Eq. (15.17)). For the `n`-sample i.i.d. model in which each candidate `f` is observed
+through its product measure `f^{⊗n}`, and any nondecreasing distortion (loss-shaping) function `Φ`,
+the minimax risk is bounded below by
+
+  inf over estimators θ̂, sup over f ∈ ℱ of 𝔼[Φ(|θ̂ − θ(f)|)]
+      ≥ (1/4) · Φ( (1/2) · ω(1/(2√n); θ, ℱ) )
+
+(Wainwright Corollary 15.6, Eq. (15.18)).
+
+The critical Hellinger radius is `ε = 1/(2√n)`: at this radius the `n`-fold product squared
+Hellinger distance is at most `1/4`, which by Le Cam's inequality keeps the total-variation
+separation between the two product measures at most `1/2`, leaving a constant fraction of the
+two-point lower bound intact.
+
+This formalization tracks the book statement faithfully; the only departures are the two technical
+hypotheses flagged inline at `minimax_functional_modulus` (a nonempty index set, and lower
+semicontinuity of `Φ`), both of which hold for every concrete family and for the quadratic
+distortion `Φ = (·)²` used in the book's examples. The probability-measure hypothesis on the family
+is the book's standing assumption that `ℱ` is a class of densities.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.1, Corollary 15.6,
+Eq. (15.17), Eq. (15.18).
+
+**Proof formalization notes.** The argument is assembled bottom-up from four pieces:
+
+* `sqHellinger_pi_le_quarter` — i.i.d. tensorization at the critical radius: combining the
+  subadditivity bound `H²(μ^{⊗n} ‖ ν^{⊗n}) ≤ n · H²(μ ‖ ν)` with the identity
+  `n · (1/(2√n))² = 1/4` shows the product squared Hellinger distance is `≤ 1/4`.
+* `tvDist_le_half_of_sqHellinger` — Le Cam's inequality `‖ℙ−ℚ‖_TV ≤ √(H²)·√(1 − H²/4)` forces total
+  variation `≤ 1/2` once `H² ≤ 1/4` (first factor `≤ 1/2`, second `≤ 1`).
+* `minimax_functional_pair` — the per-pair two-point bound: for any Hellinger-admissible pair the
+  product TV separation `≤ 1/2` makes the two-point factor `1 − ‖·‖_TV ≥ 1/2`, yielding
+  `(1/4)·Φ((1/2)|θ(i) − θ(j)|) ≤` minimax risk.
+* `map_iSup_le_of_lsc` / `map_biSup_le_of_lsc` — lower semicontinuity of `Φ` pushes the supremum
+  inward, `Φ(½·⨆ d) ≤ ⨆ Φ(½·d)` (monotonicity alone gives only the reverse direction). The diagonal
+  pair `(i₀, i₀)` is always admissible since `H²(P i₀ ‖ P i₀) = 0`, so the modulus supremum is over a
+  nonempty index set, which is what activates the interchange.
+
+The main theorem then distributes the `2⁻¹` and `4⁻¹` factors through the modulus supremum and
+applies the per-pair bound termwise.
+
+**Bibliographic comments.** Le Cam's two-point (and multi-point) testing approach to minimax lower
+bounds originates with L. Le Cam, "Convergence of estimates under dimensionality restrictions,"
+*The Annals of Statistics* 1 (1973), 38–53. The reduction of functional estimation to the
+**modulus of continuity of the functional with respect to Hellinger distance** — the object
+`ω(ε; θ, ℱ)` here — is due to D. L. Donoho and R. C. Liu, "Geometrizing rates of convergence, II,"
+*The Annals of Statistics* 19 (1991), no. 2, 633–667, and its companion "Geometrizing rates of
+convergence, III," *The Annals of Statistics* 19 (1991), no. 2, 668–701. They show that for a
+linear functional over a convex class the minimax risk is equivalent, up to constants, to the loss
+evaluated at the Hellinger modulus at radius `n^{-1/2}`; Wainwright's Corollary 15.6 is the
+lower-bound half of that equivalence, which is what we formalize.
 -/
 
 open MeasureTheory ProbabilityTheory

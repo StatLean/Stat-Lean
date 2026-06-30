@@ -18,18 +18,51 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Inner
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 
 /-!
-# Theorem 7.10 — Asymptotic Representation (kernel form)
+# Asymptotic Representation Theorem (kernel form)
 
-Assembly layer for van der Vaart §7.10. Given a parametric family differentiable in
-quadratic mean at `θ₀` with score `ℓ_{θ₀}` and non-singular Fisher information `J`, and an
-`𝓨`-valued statistic `T_n` with `T_n ⇝ L_h` under each `P^n_{θ₀ + h/√n}`, there exists a
-Markov kernel `κ` such that `L_h = N(h, J⁻¹) >>= κ` for every `h`.
+Consider a parametric family $\{P_\theta\}$ that is differentiable in quadratic mean at
+$\theta_0$ with score function $\ell_{\theta_0}$ and non-singular Fisher information matrix
+$J$. Suppose $T_n$ is a sequence of estimators (more generally, statistics taking values in
+a Euclidean space $\mathcal{Y}$) whose law converges, for every local parameter $h$, under
+the contiguous alternatives $P^{\,n}_{\theta_0 + h/\sqrt{n}}$ to a limit law $L_h$. Then there
+exists a Markov transition kernel $\kappa$ such that, for every $h$,
+$$ L_h \;=\; N(h,\, J^{-1}) \,\ast\, \kappa, $$
+i.e. $L_h$ is the distribution obtained by drawing $X \sim N(h, J^{-1})$ and then drawing the
+output from $\kappa(\cdot \mid X)$. In other words, every limit distribution of the (local)
+sequence of estimators is the image, through a single $h$-free randomization $\kappa$, of the
+Gaussian shift experiment $N(h, J^{-1})$. The kernel $\kappa$ is the limit experiment's
+randomization that reproduces the estimator's behaviour.
 
-The eight-step proof wires together contiguity, the score CLT, the Gaussian shift family,
-Prohorov tightness, the Urysohn subsequence principle, and `LAN_expansion_iii` from
-Theorem 7.2. The headline declaration is `LAN_representation`, the vdV-literal
-normal-experiment statement. The auxiliary `LAN_representation_of_gaussianShift`
-keeps the more general Gaussian-shift parameterization used internally.
+The headline declaration is `LAN_representation`, the literal normal-experiment statement
+of van der Vaart's theorem. The auxiliary `LAN_representation_of_gaussianShift` keeps the
+more general Gaussian-shift parameterization used internally.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
+and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 7 (Local Asymptotic
+Normality), §7.3 (Convergence to a Normal Experiment), Theorem 7.10 (Asymptotic
+Representation Theorem).
+
+**Proof formalization notes.** This is the assembly layer for vdV Theorem 7.10 (§7.3). The eight-step proof
+wires together contiguity, the score CLT, the Gaussian shift family, Prohorov tightness, the
+Urysohn subsequence principle, and `LAN_expansion_iii` from Theorem 7.2. Step 1 establishes the
+score CLT under $P^{\,n}_{\theta_0}$ (`scoreSum_weakly_converges`); Step 2 extracts a weakly
+convergent subsequence of the joint sequence $(T_n, \Delta_n)$ via marginal tightness +
+Prohorov, identifying the second marginal as $N(0, J)$; Step 3 introduces the log-likelihood
+ratio via the LAN expansion and Slutsky; the remaining steps build the Gaussian-shift
+experiment and the randomization kernel. The headline `LAN_representation` is the vdV-literal
+normal-experiment statement; `LAN_representation_of_gaussianShift` keeps the more general
+Gaussian-shift parameterization used internally.
+
+**Bibliographic comments.** The result and the surrounding theory of *limit experiments*
+originate with L. Le Cam, "Limits of experiments," *Proceedings of the Sixth Berkeley Symposium
+on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972,
+pp. 245–261, where the general representation of limit distributions through a randomization of
+the limit (Gaussian shift) experiment is developed. Closely related convolution- and
+representation-theorem ideas were pioneered concurrently by J. Hájek, "Local asymptotic
+minimax and admissibility in estimation," in the same Proceedings (Vol. I, pp. 175–194, 1972),
+and later extended by A. W. van der Vaart, "An asymptotic representation theorem,"
+*International Statistical Review* **59** (1991), 97–121. The kernel form stated here is the
+textbook synthesis presented as vdV Theorem 7.10.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -2104,7 +2137,7 @@ multiplying by `J` maps `N(h, J⁻¹)` to `N(J h, J)`, matching the marginal sca
 that `condDistrib fst snd π` expects. This composed kernel is the one claimed by
 the main theorem.
 
-Matches vdV §7.10's `κ' := κ ∘ J`. Without the pre-composition, `(gauss h).bind κ`
+Matches vdV Theorem 7.10 (§7.3)'s `κ' := κ ∘ J`. Without the pre-composition, `(gauss h).bind κ`
 is type-correct but semantically wrong (it would pair J⁻¹-covariance arguments
 with a J-covariance kernel). -/
 
@@ -2458,7 +2491,7 @@ theorem LAN_representation_of_gaussianShift
   -- Step 7: rewrite the tilted-formula form as `(gauss h).bind κ`.
   exact gaussianShift_bind_eq_limit J hJ_pd gauss hGauss π h (L h) hTilt_π h_L_h_formula
 
-/-! ## Main theorem: `LAN_representation` (vdV §7.10, kernel form)
+/-! ## Main theorem: `LAN_representation` (vdV Theorem 7.10 (§7.3), kernel form)
 
 Specialises `LAN_representation_of_gaussianShift` to the concrete Gaussian family
 `multivariateGaussian h J⁻¹`, matching van der Vaart's statement:

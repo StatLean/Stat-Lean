@@ -11,30 +11,60 @@ import StatLean.Minimaxity.ForMathlib.KLDivergence
 import StatLean.Minimaxity.ForMathlib.GaussianKL
 
 /-!
-# KL divergence between centered multivariate Gaussians (Wainwright Ex 15.13(b))
+# KL divergence between centered multivariate Gaussians
 
-The closed form for the Kullback–Leibler divergence between two zero-mean multivariate Gaussian
-distributions on `EuclideanSpace ℝ (Fin d)`:
-```
-D(𝒩(0,A) ‖ 𝒩(0,B)) = ½ (log det B − log det A + tr(B⁻¹A) − d).
-```
+Closed form for the Kullback–Leibler divergence between two zero-mean multivariate Gaussian
+distributions on $\mathbb{R}^d$. For positive-definite covariance matrices $A, B \in
+\mathbb{R}^{d \times d}$,
+$$
+D\bigl(\mathcal{N}(0,A) \,\|\, \mathcal{N}(0,B)\bigr)
+  = \tfrac{1}{2}\Bigl(\log\det B - \log\det A + \operatorname{tr}(B^{-1}A) - d\Bigr).
+$$
 
-The proof is the standard reduction to one dimension:
+This is the special case (equal, zero means) of the general two-Gaussian KL formula
+$D(\mathcal{N}(\mu_0,\Sigma_0)\,\|\,\mathcal{N}(\mu_1,\Sigma_1)) = \tfrac12\bigl(\log\frac{\det
+\Sigma_1}{\det\Sigma_0} - d + \operatorname{tr}(\Sigma_1^{-1}\Sigma_0) +
+(\mu_1-\mu_0)^\top\Sigma_1^{-1}(\mu_1-\mu_0)\bigr)$ that underlies Wainwright's example.
+
+A companion corollary, the equal-(scalar)-covariance mean-shift formula
+$D\bigl(\mathcal{N}(\mu, cI) \,\|\, \mathcal{N}(\nu, cI)\bigr) = \|\mu-\nu\|^2/(2c)$ for $c>0$,
+is the multivariate analogue of the one-dimensional equal-variance KL and feeds the
+linear-regression minimax example.
+
+**Note on hypotheses.** The main theorem requires both $A$ and $B$ to be *positive definite*
+(not merely positive semidefinite); this is needed for $\det B \neq 0$, $B^{-1}$, and the
+whitening square root $B^{-1/2}$ to exist, and is implicit in the textbook's reference to
+$\operatorname{tr}(B^{-1}A)$ and $\log\det A$.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax lower bounds), §15.6, Example 15.13(a).
+The mean-shift corollary is Example 15.13(b).
+
+**Proof formalization notes.** The proof is the standard reduction to one dimension:
 
 1. KL divergence is invariant under an invertible linear push-forward (`klDiv_map_eq_of_comp`,
    from the data-processing inequality `klDiv_map_le` applied in both directions).
-2. **Whitening.** Push forward by `B^{-1/2}` (via `CFC.sqrt B⁻¹`); this sends `𝒩(0,B)↦𝒩(0,I)`
-   and `𝒩(0,A)↦𝒩(0,C)` with `C = B^{-1/2} A B^{-1/2}`.
-3. **Diagonalize.** Push forward by the orthogonal `Uᵀ` from the spectral theorem; this keeps
-   `𝒩(0,I)` fixed and turns `𝒩(0,C)` into `𝒩(0, diag Λ)`.
-4. **Tensorize.** `𝒩(0, diag Λ)` and `𝒩(0,I)` are products of one-dimensional Gaussians, so KL
-   tensorizes (`klDiv_pi_eq_sum`).
-5. **One dimension.** `D(𝒩(0,a) ‖ 𝒩(0,1)) = ½(a − 1 − log a)` (`klDiv_gaussianReal_zero`).
-6. **Assemble** using `tr C = ∑ Λᵢ`, `log det C = ∑ log Λᵢ`, `tr C = tr(B⁻¹A)`,
-   `det C = det A/det B`.
+2. **Whitening.** Push forward by $B^{-1/2}$ (via `CFC.sqrt B⁻¹`); this sends
+   $\mathcal{N}(0,B) \mapsto \mathcal{N}(0,I)$ and $\mathcal{N}(0,A) \mapsto \mathcal{N}(0,C)$
+   with $C = B^{-1/2} A B^{-1/2}$.
+3. **Diagonalize.** Push forward by the orthogonal $U^\top$ from the spectral theorem; this keeps
+   $\mathcal{N}(0,I)$ fixed and turns $\mathcal{N}(0,C)$ into $\mathcal{N}(0, \operatorname{diag}
+   \Lambda)$.
+4. **Tensorize.** $\mathcal{N}(0, \operatorname{diag}\Lambda)$ and $\mathcal{N}(0,I)$ are products
+   of one-dimensional Gaussians, so KL tensorizes (`klDiv_pi_eq_sum`).
+5. **One dimension.** $D(\mathcal{N}(0,a) \,\|\, \mathcal{N}(0,1)) = \tfrac12(a - 1 - \log a)$
+   (`klDiv_gaussianReal_zero`).
+6. **Assemble** using $\operatorname{tr} C = \sum_i \Lambda_i$, $\log\det C = \sum_i \log\Lambda_i$,
+   $\operatorname{tr} C = \operatorname{tr}(B^{-1}A)$, $\det C = \det A/\det B$.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.6, Exercise 15.13(b).
+**Bibliographic comments.** The Kullback–Leibler divergence originates with S. Kullback and
+R. A. Leibler, "On Information and Sufficiency," *Annals of Mathematical Statistics*, 22(1):79–86,
+1951. The closed-form expression for the KL divergence between two multivariate Gaussian
+distributions is textbook folklore with no single seminal source: it is a direct computation from
+the Gaussian density and is reproduced in standard references (e.g. Wainwright 2019, Example 15.13;
+C. M. Bishop, *Pattern Recognition and Machine Learning*, Springer, 2006; T. M. Cover and J. A.
+Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006). The centered, zero-mean case
+formalized here is the special case retaining only the determinant and trace terms.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory Matrix WithLp
@@ -248,7 +278,7 @@ lemma multivariateGaussian_diagonal_eq_pi {d : ℕ} (m : EuclideanSpace ℝ (Fin
 
 /-! ### Main theorem -/
 
-/-- KL divergence between two centered multivariate Gaussians (Wainwright Ex 15.13(b), μ=0):
+/-- KL divergence between two centered multivariate Gaussians (Wainwright Example 15.13(a), μ=0):
 `D(𝒩(0,A) ‖ 𝒩(0,B)) = ½ (log det B − log det A + tr(B⁻¹A) − d)`. -/
 theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) ℝ)
     (hA : A.PosDef) (hB : B.PosDef) :
@@ -382,7 +412,7 @@ theorem klDiv_multivariateGaussian_zero {d : ℕ} (A B : Matrix (Fin d) (Fin d) 
 /-- KL between two `c·I`-covariance Gaussians differing only in mean:
 `D(𝒩(μ,cI) ‖ 𝒩(ν,cI)) = ‖μ-ν‖²/(2c)`. This is the multivariate analogue of the equal-variance
 one-dimensional formula `klDiv_gaussianReal`, specialised to a scalar covariance `c • I`; used in
-the linear-regression minimax example (Wainwright Ex 15.14). -/
+the linear-regression minimax example (Wainwright Example 15.13(b)). -/
 theorem klDiv_multivariateGaussian_smul_one {d : ℕ} (μ ν : EuclideanSpace ℝ (Fin d)) (c : ℝ≥0)
     (hc : c ≠ 0) :
     klDiv (multivariateGaussian μ (c • (1 : Matrix (Fin d) (Fin d) ℝ)))

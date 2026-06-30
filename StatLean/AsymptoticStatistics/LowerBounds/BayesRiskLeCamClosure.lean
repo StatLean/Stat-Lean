@@ -16,14 +16,58 @@ Authors: Junwei Lu, Claude Opus 4.7
 This file provides `bayes_n_to_limitBayes_of_lecam`, a deriver matching
 the `hBayes_n_to_limitBayes` input consumed by `bayes_risk_lower_bound`
 and forwarded by the per-`m` Bayes bridge `perM_bayes_lower_bound_at_basis`.
+It formalizes the inner *Bayes-risk passage* of the lower-bound half of the
+semiparametric local asymptotic minimax (LAM) theorem.
+
+In words: let `T_n` be a regular estimator sequence of a parameter
+`ψ(P) ∈ ℝ`, differentiable at `P` relative to the tangent set with
+efficient influence function `ψ̃_P` (denoted `IF_eff`), and fix an
+orthonormal basis `g_1, …, g_m` of a finite-dimensional subspace of the
+tangent space together with submodels `t ↦ P_{γ(h),t}` whose score along
+direction `h` is `∑_i h_i g_i`. For a finite set `I_0` of directions and a
+prior `π` on `I_0` (nonnegative, summing to one), the limit inferior in
+`n` of the prior-weighted (Bayes) risk
+
+  `∑_{h ∈ I_0} π(h) · 𝔼_{P_{γ(h)}^n}[ ℓ( √n (T_n − ψ(P_{γ(h),n})) ) ]`
+
+is bounded below by the Bayes risk in the *Gaussian shift limit
+experiment*, namely the infimum over all measurable (deterministic)
+decision rules `T : ℝ^m → ℝ` of
+
+  `∑_{h ∈ I_0} π(h) · 𝔼_{N(h, I_m)}[ ℓ( T(X) − ⟨ψ̃_P, ∑_i h_i g_i⟩ ) ]`,
+
+where `X ∼ N(h, I_m)` and `ℓ` is a bounded, uniformly continuous loss.
+This is precisely the step in vdV's proof of Theorem 25.21 where the
+minimax risk over the tangent set is first bounded below by a
+prior-weighted Bayes risk over a finite subset `I_0` (the standard
+"minimax ≥ Bayes" reduction, vdV Proposition 8.6), and that Bayes risk is
+then passed to the limit experiment `(N_m(h, I_m) : h ∈ ℝ^m)`.
+
+**Deviation from the book statement.** vdV Theorem 25.21 states the bound
+for the running supremum over finite tangent subsets of the minimax risk
+`sup_I liminf_n sup_{g ∈ I} 𝔼 ℓ(√n(T_n − ψ))`. We work one level inside the
+proof, at the *fixed finite subset / fixed prior* Bayes risk, and the loss
+is taken bounded and uniformly continuous (rather than merely subconvex);
+boundedness is what powers the uniform-integrability and extended
+continuous-mapping steps below.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998, Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and
+Information), Theorem 25.21 (LAM) — the lower-bound (minimax) half, whose
+proof reduces to the parametric local asymptotic minimax theorem on
+finite-dimensional submodels (vdV §8, Proposition 8.6) via Lemma 25.14
+(local asymptotic normality of the one-dimensional submodels). The tag
+`vdV §25.3 Lemma 3 steps 1–4` records the internal step numbering of that
+proof.
+
+**Proof formalization notes.**
+
 The deriver internalises the regular-estimator + basis + LAN-expansion
 context, exposing only the deep Le Cam / extended-CMT argument through a
-single chained input `hLeCamBayesPassage`.
-
-## Strategy (vdV §25.3 Lemma 3 steps 1–4)
-
-The closure of `hLeCamBayesPassage` proceeds as in vdV §25.3 proof of
-Theorem 25.21 (lower bound):
+single chained input `hLeCamBayesPassage`. The closure of
+`hLeCamBayesPassage` proceeds as in vdV §25.3 proof of Theorem 25.21
+(lower bound):
 
 1. **Per-direction LR convergence**: for each `h ∈ I_0`, the
    log-likelihood ratio
@@ -55,14 +99,34 @@ Each step's brick is in `ForMathlib/Contiguity.lean` (Le Cam 3rd,
 contiguity), `ForMathlib/` (weak convergence machinery), and Mathlib
 (DCT / UI / measurable function spaces).
 
-## Public theorem
+**Public theorem.** `bayes_n_to_limitBayes_of_lecam` matches the
+`hBayes_n_to_limitBayes` shape consumed by `bayes_risk_lower_bound`. The
+body forwards a single chained input `hLeCamBayesPassage`, which carries
+the Le Cam content with the regular-estimator + basis + LAN-expansion
+context made internal. The per-prior universal variant
+`bayes_n_to_limitBayes_of_lecam_perPrior` quantifies the passage over all
+priors `(I_0, π)`, matching the per-`m` Bayes-bridge shape consumed by
+`PerMBayesBridge.perM_bayes_lower_bound_at_basis`.
 
-`bayes_n_to_limitBayes_of_lecam` matches the `hBayes_n_to_limitBayes`
-shape consumed by `bayes_risk_lower_bound`. The body forwards a single
-chained input `hLeCamBayesPassage`, which carries the Le Cam content with
-the regular-estimator + basis + LAN-expansion context made internal.
-
-Reference: vdV §25.3 Lemma 3 steps 1–4.
+**Bibliographic comments.** The local asymptotic minimax bound originates
+with J. Hájek, "Local asymptotic minimax and admissibility in
+estimation," *Proceedings of the Sixth Berkeley Symposium on Mathematical
+Statistics and Probability*, Vol. 1, pp. 175–194, University of California
+Press, 1972, building on the companion convolution theorem of J. Hájek,
+"A characterization of limiting distributions of regular estimates,"
+*Z. Wahrscheinlichkeitstheorie verw. Gebiete* 14 (1970), 323–330. The
+organising idea — that an i.i.d. experiment converges, in the sense of
+deficiency, to a Gaussian shift *limit experiment* in which the bound is
+computed — is due to L. Le Cam, "Limits of experiments," *Proceedings of
+the Sixth Berkeley Symposium on Mathematical Statistics and Probability*,
+Vol. 1, pp. 245–261, University of California Press, 1972 (and earlier
+L. Le Cam, "Locally asymptotically normal families of distributions,"
+*Univ. California Publ. Statist.* 3 (1960), 37–98, which also supplies the
+contiguity / "third lemma" used in step 4). vdV Theorem 25.21 is the
+semiparametric generalisation of these parametric results, obtained by
+reworking the argument over finite-dimensional submodels of the tangent
+set; the equation/theorem numbers above are verified against vdV (1998),
+§25.3.
 -/
 
 open MeasureTheory Filter Topology

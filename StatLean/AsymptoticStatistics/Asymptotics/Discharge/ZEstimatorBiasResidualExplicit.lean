@@ -22,7 +22,7 @@ directly.
 
 Headline declaration: `zEstimator_biasResidual_asympLinear_of_taylor_explicit`.
 
-Reference: vdV §25.5, Theorem 25.59.
+Reference: vdV §25.8, Theorem 25.59.
 -/
 
 open MeasureTheory Filter Topology
@@ -37,7 +37,7 @@ open AsymptoticStatistics.Asymptotics.ZEstimator
 
 variable {Ω : Type} [MeasurableSpace Ω]
 
-/-- *vdV §25.5, Theorem 25.59 explicit-bias hypothesis bundle (Taylor route).*
+/-- *vdV §25.8, Theorem 25.59 explicit-bias hypothesis bundle (Taylor route).*
 
 Extends `ZEstimatorTaylorCoreBase` (the no-bias-and-no-score_eq core) with three
 new fields encoding the bias-residual setup of Theorem 25.59:
@@ -49,7 +49,7 @@ new fields encoding the bias-residual setup of Theorem 25.59:
 - `sqrt_n_consistency`: `√n · (θ̂_n − θ₀) = O_P(1)`. The bootstrap from
   `score_eq` no longer applies, so concrete consumers supply this directly.
 
-Reference: vdV §25.5, Theorem 25.59. -/
+Reference: vdV §25.8, Theorem 25.59. -/
 structure ZEstimatorBiasResidualExplicitTaylorHyp
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -65,7 +65,7 @@ structure ZEstimatorBiasResidualExplicitTaylorHyp
     extends ZEstimatorTaylorCoreBase P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
             score_l_dot θ₀ where
-  /-- vdV §25.5, Theorem 25.59 (estimating-equation residual):
+  /-- vdV §25.8, Theorem 25.59 (estimating-equation residual):
   `√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} − bias_n →_P 0` under `Pⁿ`. Replaces the
   `score_eq` field of `ZEstimatorTaylorCore` (which would force the
   bias to be o_P(1)). Concrete consumers identify `bias_n` as
@@ -77,7 +77,7 @@ structure ZEstimatorBiasResidualExplicitTaylorHyp
               (∑ i : Fin n, score_func_seq n X (X i))
               - bias n X|})
     atTop (𝓝 0)
-  /-- vdV §25.5, Theorem 25.59 (prerequisite): the rescaled
+  /-- vdV §25.8, Theorem 25.59 (prerequisite): the rescaled
   estimator error `√n · (estimator − θ₀)` is bounded in `Pⁿ`-probability
   uniformly in `n` (i.e., `Δ_n = O_P(1)`). Required for the Taylor
   expansion's cross term `Δ_n · D_n` to vanish via `O_P × o_P → o_P`.
@@ -104,7 +104,7 @@ variable {score_l_dot : Lp ℝ 2 P}
 variable {θ₀ : ℝ}
 variable {bias : ∀ n, (Fin n → Ω) → ℝ}
 
-/-- *vdV §25.5, Theorem 25.59 — Z-estimator bias-residual expansion (explicit bias).*
+/-- *vdV §25.8, Theorem 25.59 — Z-estimator bias-residual expansion (explicit bias).*
 
 From the bundle `ZEstimatorBiasResidualExplicitTaylorHyp`, the Z-estimator
 satisfies the bias-residual asymptotic-linear expansion
@@ -151,7 +151,7 @@ following modifications:
    `Δ_n - (1/Ĩ) S_n + (1/Ĩ) bias_n →_P 0`, which is precisely the
    AL-with-bias form with bias parameter `-(1/Ĩ) * bias_n`.
 
-Reference: vdV §25.5, Theorem 25.59. -/
+Reference: vdV §25.8, Theorem 25.59. -/
 theorem zEstimator_biasResidual_asympLinear_of_taylor_explicit
     (h : ZEstimatorBiasResidualExplicitTaylorHyp P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -505,7 +505,7 @@ interface `zEstimator_biasResidual_expansion`.
 Mirrors `ZEstimatorBiasResidualTaylorHyp.toEfficientScoreEqBiasResidualAssumptions`
 for the bias=0 case.
 
-Reference: vdV §25.5, Theorem 25.59. -/
+Reference: vdV §25.8, Theorem 25.59. -/
 def toEfficientScoreEqBiasResidualAssumptions_explicit
     {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}
     (h : ZEstimatorBiasResidualExplicitTaylorHyp P Θ S_θ T_nuis v

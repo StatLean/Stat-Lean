@@ -1,23 +1,64 @@
 import StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct
 
 /-!
-# Squared Hellinger distance — book form and tensorization (Wainwright §15.1.3)
+# Squared Hellinger distance: book form, range [0, 2], and i.i.d. tensorization
 
-Wainwright's squared Hellinger distance (Eq. (15.9))
+For two probability measures $\mathbb{P}, \mathbb{Q}$ dominated by a common measure $\nu$ with
+densities $p = d\mathbb{P}/d\nu$ and $q = d\mathbb{Q}/d\nu$, the **squared Hellinger distance** is
+the squared $L^2(\nu)$-distance between the square-root densities,
+$$ H^2(\mathbb{P} \,\|\, \mathbb{Q}) \;=\; \int \bigl(\sqrt{p} - \sqrt{q}\bigr)^2 \, d\nu. $$
+This file establishes the two basic facts of the textbook account:
 
-`H²(ℙ ‖ ℚ) = ∫ (√p − √q)² dν ∈ [0, 2]`
+* **Range.** $0 \le H^2(\mathbb{P} \,\|\, \mathbb{Q}) \le 2$, with the upper bound a consequence of
+  expanding the square and using $\int p \, d\nu = \int q \, d\nu = 1$ together with the
+  nonnegativity of the affinity $\int \sqrt{p}\,\sqrt{q}\, d\nu \ge 0$.
+* **I.i.d. tensorization.** For the $n$-fold product measures,
+  $$ H^2\!\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes n}\bigr) \;\le\; n \cdot
+     H^2(\mathbb{P} \,\|\, \mathbb{Q}), $$
+  obtained from the product form of the affinity (the affinity of a product is the product of the
+  affinities) together with the elementary inequality $1 - (1 - x)^n \le n\,x$ for $x \in [0,1]$.
 
-is the squared `L²(ν)`-distance between the square-root densities. We define it with the
-canonical common dominating measure `ξ = ℙ + ℚ`, and reuse the StatLean Hellinger-product
-machinery (`StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct`, a cross-area
-`ForMathlib` import) for the tensorization properties:
+To make the definition canonical and free of an external choice of dominating measure, we take
+$\nu = \mathbb{P} + \mathbb{Q}$ throughout, with $p = d\mathbb{P}/d(\mathbb{P}+\mathbb{Q})$ and
+$q = d\mathbb{Q}/d(\mathbb{P}+\mathbb{Q})$; the value is independent of this choice (see
+`sqHellWith_transfer`). The tensorization properties reuse the StatLean Hellinger-product
+machinery (`StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct`, a cross-area `ForMathlib`
+import).
 
-* `sqHellinger_le_two` — `H²(ℙ ‖ ℚ) ≤ 2` (Eq. (15.9));
-* `sqHellinger_pi_le_nsmul` — the i.i.d. bound `H²(ℙ^{1:n} ‖ ℚ^{1:n}) ≤ n · H²(ℙ ‖ ℚ)`
-  (Eq. (15.12b)), via `1 − (1 − x)ⁿ ≤ n x`.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Eq. (15.9) (definition
+and the range $[0,2]$) and Eq. (15.12a)/(15.12b) (the affinity-product identity and the i.i.d.
+tensorization bound).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Eq. (15.9)/(15.12).
+**Proof formalization notes.** The headline results map to two theorems:
+
+* `sqHellinger_le_two` — the upper bound $H^2 \le 2$ (Wainwright Eq. (15.9)). Proved via the Bochner
+  bridge `sqHellinger_eq_ofReal_integral` (the `ℝ≥0∞`-valued lintegral equals `ENNReal.ofReal` of the
+  real $L^2$-residual integral, the integrand being nonnegative and integrable), then expanding the
+  square and discarding the nonnegative affinity term `integral_sqrt_mul_sqrt_nonneg`.
+* `sqHellinger_pi_le_nsmul` — the i.i.d. bound $H^2(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes
+  n}) \le n \cdot H^2(\mathbb{P} \,\|\, \mathbb{Q})$ (Wainwright Eq. (15.12b)), via
+  `1 - (1 - x)^n \le n x`.
+
+Two supporting facts about the squared Hellinger functional are packaged separately:
+`sqHellWith_transfer` (invariance of the squared-Hellinger lintegral under the choice of common
+dominating measure, proved from the Radon–Nikodym chain rule `Measure.rnDeriv_mul_rnDeriv`) and
+`sqHellinger_pi_factor` (coordinatewise factorisation of the product Radon–Nikodym derivative,
+proved from `MeasureTheory.PiWithDensity.pi_withDensity_prod`). The definition is taken against the
+canonical reference $\mathbb{P} + \mathbb{Q}$ rather than a user-supplied $\nu$; this is a
+presentation choice (no added hypotheses) and the value coincides with any other common dominating
+measure by `sqHellWith_transfer`.
+
+**Bibliographic comments.** The Hellinger distance is named after Ernst Hellinger, who introduced
+the underlying square-root-density geometry in E. Hellinger, "Neue Begründung der Theorie
+quadratischer Formen von unendlichvielen Veränderlichen", *Journal für die reine und angewandte
+Mathematik* **136** (1909), 210–271. Its modern use in statistics — the squared form, the range
+$[0,2]$, and the tensorization across i.i.d. coordinates — is textbook folklore with no single
+seminal statistical paper; the specific equation numbering followed here is that of Wainwright (2019,
+§15.1.3). The functional is closely related to (and a monotone transform of) the Bhattacharyya
+affinity / Bhattacharyya coefficient, A. Bhattacharyya, "On a measure of divergence between two
+statistical populations defined by their probability distributions", *Bulletin of the Calcutta
+Mathematical Society* **35** (1943), 99–109.
 -/
 
 open MeasureTheory

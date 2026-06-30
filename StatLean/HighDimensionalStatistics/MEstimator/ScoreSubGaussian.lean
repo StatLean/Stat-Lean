@@ -6,17 +6,49 @@ import Mathlib.Probability.Moments.MGFAnalytic
 import Mathlib.Probability.Moments.IntegrableExpMul
 
 /-!
-# Sub-Gaussianity of the GLM score (Wainwright Cor 9.26 proof, p. 288)
+# Sub-Gaussianity of the GLM score
 
-The probabilistic core of the GLM corollaries: each coordinate of the score
-`∇Lₙ(θ*) = (1/n)∑ᵢ Vᵢ`, namely `scoreCoord M j = (1/n)∑ᵢ (ψ'(ηᵢ) − yᵢ)·xᵢⱼ`, is sub-Gaussian with
-variance proxy `≤ B²C²/n` under conditions (G1) (column normalization) and (G2) (the GLM exp-family
-with `ψ'' ≤ B²`).
+The probabilistic core underlying the high-dimensional GLM corollaries. Consider a generalized
+linear model in canonical (exponential-family) form with cumulant function $\psi$, design matrix
+$X$, and true parameter $\theta^\star$, writing $\eta_i = \langle x_i, \theta^\star\rangle$ for the
+$i$-th linear predictor. Under
+  - (G1) **column normalization**: $\tfrac1n\sum_{i=1}^n x_{ij}^2 \le C^2$ for every column $j$, and
+  - (G2) the **bounded-curvature exponential family**: $0 \le \psi'' \le B^2$,
 
-The per-term variable `Vᵢⱼ = (ψ'(ηᵢ) − yᵢ)·xᵢⱼ` has MGF `exp(ψ(ηᵢ+s) − ψ(ηᵢ) − s·ψ'(ηᵢ))`
-(`s = −t·xᵢⱼ`) by the constitutive `hmgf` identity, which `psi_taylor_upper` bounds by `exp(B²xᵢⱼ²t²/2)` —
-so `Vᵢⱼ` is centered sub-Gaussian with proxy `B²xᵢⱼ²`. Summing over the independent `i` and rescaling
-by `1/n` (the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) + (G1) gives proxy `B²C²/n`.
+each coordinate of the score (negative log-likelihood gradient) evaluated at the truth,
+$$ \bigl(\nabla L_n(\theta^\star)\bigr)_j \;=\; \frac1n\sum_{i=1}^n \bigl(\psi'(\eta_i) - y_i\bigr)\,x_{ij}, $$
+is a centered sub-Gaussian random variable with variance proxy $\le B^2 C^2 / n$.
+
+This is the deviation bound for the empirical score that drives the choice of regularization
+parameter $\lambda_n \asymp B C\sqrt{(\log d)/n}$ in the GLM Lasso/M-estimator rate. The mean-zero
+property uses $\mathbb{E}[y_i] = \psi'(\eta_i)$, the standard exponential-family mean identity.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
+within the proof of Corollary 9.26 (p. 288). Conditions (G1)/(G2) and the per-term score
+$V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ follow the book's GLM setup. The variance proxy stated here,
+$B^2 C^2/n$, is the form provable from these hypotheses; the book quotes the corresponding
+sub-Gaussian tail with the same $B^2 C^2$ scale.
+
+**Proof formalization notes.** The per-term variable $V_{ij} = (\psi'(\eta_i) - y_i)\,x_{ij}$ has MGF
+$\exp\bigl(\psi(\eta_i + s) - \psi(\eta_i) - s\,\psi'(\eta_i)\bigr)$ with $s = -t\,x_{ij}$, obtained from
+the constitutive `hmgf` identity of the exponential family. `psi_taylor_upper` (Taylor remainder with
+$\psi'' \le B^2$) bounds this by $\exp(B^2 x_{ij}^2 t^2 / 2)$, so $V_{ij}$ is centered sub-Gaussian
+with proxy $B^2 x_{ij}^2$. Summing over the independent observations $i$ and rescaling by $1/n$
+(reusing the `Lasso/RandomNoise.lean` `colInner_isSubGaussian` pattern) and applying (G1) gives the
+final proxy $B^2 C^2 / n$. Mean-zero of each term comes from $\mathbb{E}[y_i] = \psi'(\eta_i)$, derived
+here as the derivative of the MGF at $0$.
+
+**Bibliographic comments.** High-dimensional analysis of the GLM Lasso originates with
+S. A. van de Geer, "High-dimensional generalized linear models and the lasso," *The Annals of
+Statistics* **36**(2), 614–645 (2008), which established prediction/estimation oracle inequalities
+for $\ell_1$-penalized GLMs. The unified treatment via decomposable regularizers and restricted
+strong convexity — the framework Wainwright's Chapter 9 follows — is due to S. Negahban,
+P. Ravikumar, M. J. Wainwright, and B. Yu, "A unified framework for high-dimensional analysis of
+$M$-estimators with decomposable regularizers," *Statistical Science* **27**(4), 538–557 (2012).
+The sub-Gaussian score deviation bound formalized here is a standard ingredient of these analyses
+(the empirical-process / concentration step controlling $\nabla L_n(\theta^\star)$); it is not a
+separately named theorem but the concentration sub-step of the GLM corollary.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

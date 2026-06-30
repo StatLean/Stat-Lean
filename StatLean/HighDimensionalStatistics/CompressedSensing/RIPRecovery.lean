@@ -2,18 +2,49 @@ import StatLean.HighDimensionalStatistics.CompressedSensing.ConeTheorem
 import StatLean.HighDimensionalStatistics.ForMathlib.TopK
 
 /-!
-# Perfect recovery under RIP (Lu, *Big Data Analysis* §7, `thm:rip`)
+# Perfect recovery under the Restricted Isometry Property
 
-**Theorem.** If `X` is `3s`-RIP with constant `δ < 1/3`, then basis pursuit perfectly
-recovers any `s`-sparse `β*`: the basis-pursuit problem for `Y = X β*` has `β*` as its
-unique solution.
+Let $X \in \mathbb{R}^{n \times d}$ be a design (measurement) matrix and let $\beta^\star
+\in \mathbb{R}^d$ be an $s$-sparse signal observed through $Y = X\beta^\star$. Suppose $X$
+satisfies the $3s$-Restricted Isometry Property (RIP) with constant $\delta_{3s} < 1/3$,
+i.e. for every $3s$-sparse vector $v$,
+$$ (1-\delta_{3s})\,\|v\|_2^2 \;\le\; \|Xv\|_2^2 \;\le\; (1+\delta_{3s})\,\|v\|_2^2 . $$
+Then the basis-pursuit program ($\ell_1$-minimization subject to $X\beta = Y$) recovers
+$\beta^\star$ exactly: $\beta^\star$ is the **unique** minimizer, so $\hat\beta =
+\beta^\star$.
 
-Proof (book): write `Δ = β̂ − β* ∈ Null(X)`. Optimality gives `Δ ∈ C(S)`
-(`deviation_mem_cone_of_basisPursuit`). Shell `Δ_{Sᶜ}` into `2s`-blocks
-(`orderedBlocks`, `TopK.lean`); applying `3s`-RIP to the head `S ∪ B₀` against the tail
-blocks and bridging ℓ²↔ℓ¹ (`‖block_{j+1}‖₂ ≤ (1/√(2s))‖block_j‖₁`) yields the
-contraction `‖Δ_S‖₁ ≤ √((1+δ)/(2(1−δ)))·‖Δ_{Sᶜ}‖₁` with ratio `< 1` exactly when
-`δ < 1/3`. With the cone bound `‖Δ_{Sᶜ}‖₁ ≤ ‖Δ_S‖₁` this forces `Δ = 0`, hence `β̂ = β*`.
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 9 (Restricted
+Isometry Property), §9.1, Theorem 9.1 (Perfect recovery under RIP). The textbook states
+the threshold as $\delta_{3s} < 1/3$ on the $3s$-RIP constant; the Lean statement adds the
+positivity normalization $0 < \delta$ (a harmless side condition, since the RIP constant
+is nonnegative and the case $\delta = 0$ is degenerate).
+
+**Proof formalization notes.** Write $\Delta = \hat\beta - \beta^\star \in \mathrm{Null}(X)$.
+Optimality of $\hat\beta$ gives the cone membership $\Delta \in C(S)$, i.e.
+$\|\Delta_{S^c}\|_1 \le \|\Delta_S\|_1$ (`deviation_mem_cone_of_basisPursuit`). Shell the
+tail $\Delta_{S^c}$ into ordered $2s$-blocks $B_0, B_1, B_2, \dots$ by decreasing absolute
+value (`orderedBlocks`, `TopK.lean`). Applying the $3s$-RIP to the head $S \cup B_0$
+against the tail blocks gives, in $\ell_2$,
+$\sqrt{1-\delta_{3s}}\,\|\Delta_{S\cup B_0}\|_2 \le \sqrt{1+\delta_{3s}}\sum_{j\ge 1}
+\|B_j\|_2$. Bridging $\ell_2 \leftrightarrow \ell_1$ via the block monotonicity
+$\|B_{j+1}\|_2 \le \tfrac{1}{\sqrt{2s}}\|B_j\|_1$ and $\|\Delta_S\|_1 \le \sqrt{s}\,
+\|\Delta_S\|_2$ yields the contraction
+$$ \|\Delta_S\|_1 \;\le\; \sqrt{\tfrac{1+\delta_{3s}}{2(1-\delta_{3s})}}\,\|\Delta_{S^c}\|_1 ,$$
+whose ratio is $< 1$ exactly when $\delta_{3s} < 1/3$. Combined with the cone bound
+$\|\Delta_{S^c}\|_1 \le \|\Delta_S\|_1$ this forces $\|\Delta_S\|_1 = 0$, hence $\Delta = 0$
+and $\hat\beta = \beta^\star$.
+
+**Bibliographic comments.** The Restricted Isometry Property and the idea of certifying
+$\ell_1$ recovery through restricted isometry constants originate with E. J. Candès and
+T. Tao, "Decoding by linear programming," *IEEE Transactions on Information Theory*,
+51(12):4203–4215, 2005 (which proves exact $\ell_1$ recovery under a condition on the
+restricted isometry constants, $\delta_{3S} + 3\delta_{4S} < 2$). The clean single-constant
+sufficient condition was sharpened by E. J. Candès, "The restricted isometry property and
+its implications for compressed sensing," *Comptes Rendus de l'Académie des Sciences,
+Paris, Série I*, 346:589–592, 2008, which obtains exact recovery under $\delta_{2s} <
+\sqrt 2 - 1$. The $3s$-RIP form with the threshold $\delta_{3s} < 1/3$ used here is a
+textbook variant of these results (the precise constant is presentation-dependent and not
+a verbatim theorem of either original paper).
 -/
 
 open Matrix
@@ -126,19 +157,19 @@ private lemma restrict_head_add_tail (S : Finset (Fin d)) (x : EuclideanSpace �
 
 /-! ## The null-space-property core -/
 
-/-- **RIP ⟹ trivial cone–nullspace intersection** (Lu §7, `thm:rip` core). If
+/-- **RIP ⟹ trivial cone–nullspace intersection** (Lu §9.1, `thm:rip` core). If
 `S.card ≤ s` and `X` is `3s`-RIP with `0 < δ < 1/3`, then the cone `C(S) = reCone S 1`
 meets `Null(X)` only at `0`. This is the null-space property feeding
 `unique_basisPursuit_of_cone_trivial`. -/
 private lemma rip_cone_trivial
     (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d)) (s : ℕ) (δ : ℝ)
-    -- USER-INPUT: S contains the support, |S| ≤ s; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: S contains the support, |S| ≤ s; Lu-BDA §9.1 (thm:rip)
     (hScard : S.card ≤ s)
-    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1 (thm:rip)
     (hRIP : IsRIP X (3 * s) δ)
-    -- USER-INPUT: 0 < δ; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: 0 < δ; Lu-BDA §9.1 (thm:rip)
     (hδ0 : 0 < δ)
-    -- USER-INPUT: δ < 1/3 (the contraction threshold); Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: δ < 1/3 (the contraction threshold); Lu-BDA §9.1 (thm:rip)
     (hδ : δ < 1 / 3) :
     reCone S 1 ∩ (LinearMap.ker (designMap X) : Set (EuclideanSpace ℝ (Fin d))) = {0} := by
   rw [Set.eq_singleton_iff_unique_mem]
@@ -359,21 +390,21 @@ private lemma rip_cone_trivial
 
 /-! ## Main theorem -/
 
-/-- **Perfect recovery under RIP** (Lu §7, `thm:rip`). `3s`-RIP with `δ < 1/3` implies
+/-- **Perfect recovery under RIP** (Lu §9.1, `thm:rip`). `3s`-RIP with `δ < 1/3` implies
 basis pursuit uniquely recovers every `s`-sparse `β*`.
 
 `δ < 1/3` is the constant on the `3s`-RIP constant `δ_{3s}`; it is exactly the
 threshold making the contraction ratio `√((1+δ)/(2(1−δ))) < 1`. -/
 theorem basisPursuit_recovers_of_rip
     (X : Matrix (Fin n) (Fin d) ℝ) (s : ℕ) (δ : ℝ)
-    -- USER-INPUT: 0 < δ; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: 0 < δ; Lu-BDA §9.1 (thm:rip)
     (hδ0 : 0 < δ)
-    -- USER-INPUT: δ < 1/3 (the 3s-RIP constant threshold); Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: δ < 1/3 (the 3s-RIP constant threshold); Lu-BDA §9.1 (thm:rip)
     (hδ : δ < 1 / 3)
-    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: X satisfies the 3s-RIP with constant δ; Lu-BDA §9.1 (thm:rip)
     (hRIP : IsRIP X (3 * s) δ)
     (βstar : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: β* is s-sparse; Lu-BDA §7 (thm:rip)
+    -- USER-INPUT: β* is s-sparse; Lu-BDA §9.1 (thm:rip)
     (hsp : IsSparse s βstar) :
     IsUniqueBasisPursuit X (designMap X βstar) βstar := by
   obtain ⟨S, hScard, hsupp⟩ := hsp

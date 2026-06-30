@@ -3,23 +3,71 @@ import StatLean.Minimaxity.Fano.MutualInformation
 import Mathlib.Analysis.SpecialFunctions.BinaryEntropy
 
 /-!
-# Fano's method for minimax lower bounds (Wainwright §15.3.2)
+# Fano's method for minimax lower bounds
 
-Fano's inequality lower bounds the error probability of an M-ary test by its mutual information,
-```
-inf_ψ ℚ[ψ(Z) ≠ J] ≥ 1 − (I(Z; J) + log 2)/log M           (Eq. (15.31)),
-```
-and combining it with the estimation-to-testing reduction (Proposition 15.1) yields the Fano
-minimax lower bound (Proposition 15.12),
-```
-M(θ(𝒫); Φ∘ρ) ≥ Φ(δ) (1 − (I(Z; J) + log 2)/log M)          (Eq. (15.32)).
-```
+**Fano's inequality.** Consider an $M$-ary hypothesis-testing problem in which an index
+$J$ is drawn uniformly from $\{1, \dots, M\}$ and an observation $Z$ is generated from the
+$J$-th distribution. For any test $\psi$ that guesses $J$ from $Z$, the error probability is
+lower bounded by the mutual information $I(Z; J)$ between the observation and the index:
+$$
+\inf_{\psi} \mathbb{P}\bigl[\psi(Z) \neq J\bigr]
+  \;\ge\; 1 - \frac{I(Z; J) + \log 2}{\log M}.
+$$
+Here $\log$ denotes the natural logarithm, and the bound is nontrivial when $M \ge 2$
+(so that $\log M > 0$).
 
-The proof of Fano's inequality (Eq. (15.31)) goes through the Shannon-entropy form (Eq. (15.61)) of
-the appendix `ForMathlib/Entropy.lean`.
+**Fano minimax lower bound.** Combining Fano's inequality with the estimation-to-testing
+reduction (the same Proposition 15.1 reduction used elsewhere in this module) gives a lower
+bound on the minimax risk. For an increasing distortion function $\Phi$ and a family of
+parameters $\theta_1, \dots, \theta_M$ that is $2\delta$-separated under the (pseudo)metric on
+the target space, the minimax risk for the distortion loss $\Phi \circ \rho$ satisfies
+$$
+\mathfrak{M}\bigl(\theta(\mathcal{P}); \Phi \circ \rho\bigr)
+  \;\ge\; \Phi(\delta)\left(1 - \frac{I(Z; J) + \log 2}{\log M}\right),
+$$
+where $I(Z; J)$ is the mutual information of the sub-model induced by restricting to the
+$M$ candidate parameters.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.2.
+This file formalizes both statements: `fano_inequality` (the $M$-ary error bound) and
+`minimax_fano_lower_bound` (the minimax consequence). Notation alignment with the Lean
+statements: the error probability $\inf_\psi \mathbb{P}[\psi(Z) \neq J]$ is the M-ary Bayes
+risk of the 0–1 loss under the uniform prior, written `multiwayTestingError Q`; the mutual
+information $I(Z; J)$ is `mutualInformation Q`; and the natural-log constants enter through
+`ENNReal.ofReal (Real.log ·)` to keep the inequality in the extended nonnegative reals.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.2,
+Eq. (15.31) (Fano's inequality), Proposition 15.12 with Eq. (15.32) (Fano minimax lower
+bound), via the Shannon-entropy form Eq. (15.61).
+
+**Proof formalization notes.** The proof of Fano's inequality (Eq. (15.31)) goes through the
+Shannon-entropy form (Eq. (15.61)) supported by the entropy appendix `ForMathlib/Entropy.lean`.
+The chain is assembled in stages: the mutual-information identity
+$I(Z; J) = \log M - H(J \mid Z)$ under the uniform prior (`mutualInformation_toReal_eq`, a pure
+Radon–Nikodym computation) and the conditional-entropy bound
+$H(J \mid Z) \le \log 2 + q\,\log M$ with $q$ the testing error (`condEntropy_le_fano`, the
+information-theoretic crux, built from the pointwise discrete Fano inequality
+`discrete_fano_pointwise`, the sub-probability entropy bound `negMulLog_sum_le_card`, and the
+MAP/Bayes-risk identity `mapError_integral_le`) combine in `fano_real` to the real-valued chain
+$\log M \le I + \log 2 + q\,\log M$. The wrapper `fano_entropy_continuous` discharges the
+`ℝ≥0∞` bookkeeping (the `⊤` cases and the `ENNReal.ofReal` push-through), and `fano_inequality`
+performs the division rearrangement into $1 - (I + \log 2)/\log M \le q$. The minimax bound
+multiplies through by $\Phi(\delta)$ and applies the estimation-to-testing reduction
+(`minimax_ge_testing_error`).
+
+**Bibliographic comments.** Fano's inequality is classical information theory, originating with
+R. M. Fano, *Transmission of Information: A Statistical Theory of Communications*, MIT Press and
+Wiley, 1961 (and standard in T. M. Cover and J. A. Thomas, *Elements of Information Theory*,
+Wiley). Its use as a device for statistical minimax lower bounds traces to R. Z. Has'minskii,
+"A lower bound on the risks of nonparametric estimates of densities in the uniform metric,"
+*Theory of Probability and Its Applications* 23 (1978), 794–798, and to the systematic
+development by L. Birgé, "Approximation dans les espaces métriques et théorie de l'estimation,"
+*Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* 65 (1983), 181–237. The
+synthesis of the Fano, Assouad, and Le Cam methods presented in Wainwright's §15.3 follows the
+influential survey of B. Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam:
+Research Papers in Probability and Statistics* (D. Pollard, E. Torgersen, G. L. Yang, eds.),
+Springer, New York, 1997, pp. 423–435, which is the standard reference for the testing-reduction
+formulation of Eq. (15.31)–(15.32) formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

@@ -2,11 +2,52 @@ import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Defs
 import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Subgradient
 
 /-!
-# Primal–dual witness construction and strict dual feasibility (Wainwright §7.5.2)
+# Primal–dual witness construction, strict dual feasibility, and the ℓ∞ error bound
 
-The deterministic heart of Theorem 7.21: construct the primal–dual witness `(θ̂, ẑ)` and
-prove **strict dual feasibility** plus the **ℓ∞ error bound**.
+This file proves the deterministic core of Lasso variable-selection consistency: the
+**primal–dual witness (PDW)** construction together with **strict dual feasibility** and the
+**ℓ∞ error bound** on the support.
 
+Consider the Lagrangian Lasso estimator
+$$ \hat\theta \;\in\; \arg\min_{\theta\in\mathbb{R}^d}\;
+   \Bigl\{ \tfrac{1}{2n}\,\lVert Y - X\theta\rVert_2^2 \;+\; \lambda\,\lVert\theta\rVert_1 \Bigr\}, $$
+with response $Y = X\theta^\* + w$, where the true parameter $\theta^\*$ is supported on a
+subset $S \subseteq \{1,\dots,d\}$ (i.e. $\theta^\*_j = 0$ for $j \notin S$). Assume:
+
+* **(A3) Lower eigenvalue.** The sub-Gram matrix satisfies a restricted lower-eigenvalue
+  bound with constant $c_{\min} > 0$ on $S$.
+* **(A4) Mutual incoherence.** With parameter $\alpha \in [0,1)$,
+  $\max_{j\notin S} \bigl\lVert (X_S^\top X_S)^{-1} X_S^\top X_j \bigr\rVert_1 \le \alpha$.
+* **Regularization condition (7.44).**
+  $\lambda \;\ge\; \dfrac{2}{1-\alpha}\,
+   \bigl\lVert \tfrac{1}{n}\, X_{S^c}^\top\, \Pi_{S^\perp}(X)\, w \bigr\rVert_\infty$,
+  where $\Pi_{S^\perp}(X)$ is the orthogonal projection onto the complement of the column
+  space of $X_S$.
+
+Then there exists a primal–dual witness pair $(\hat\theta, \hat z)$ such that:
+
+1. $\hat\theta$ is **supported on $S$**: $\hat\theta_j = 0$ for all $j \notin S$;
+2. $\hat z$ is a **subgradient of $\lVert\,\cdot\,\rVert_1$ at $\hat\theta$**, and the pair
+   $(\hat\theta, \hat z)$ satisfies the Lasso zero-subgradient (KKT) optimality condition;
+3. **strict dual feasibility**: $|\hat z_j| < 1$ for every $j \notin S$;
+4. the **ℓ∞ error bound** on the support,
+   $$ \bigl\lVert \hat\theta_S - \theta^\*_S \bigr\rVert_\infty
+      \;\le\; B(\lambda; X)
+      \;:=\; \bigl\lVert (\tfrac{1}{n}X_S^\top X_S)^{-1}\,\tfrac{1}{n}X_S^\top w
+              \bigr\rVert_\infty
+        \;+\; \lambda\,\bigl\lVert\!\lvert (\tfrac{1}{n}X_S^\top X_S)^{-1}
+              \bigr\rvert\!\bigr\rVert_\infty , $$
+   where $\lVert\!\lvert\,\cdot\,\rvert\!\rVert_\infty$ is the matrix $\ell_\infty$ operator
+   norm.
+
+Strict feasibility (item 3) follows from the block bound $\alpha + \tfrac{1}{2}(1-\alpha) < 1$.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 7 (Sparse linear models in high dimensions),
+§7.5.2 (Analysis under mutual incoherence), Theorem 7.21. Equations: PDW equations
+(7.52)–(7.54), the ℓ∞ bound (7.45), and the regularization condition (7.44).
+
+**Proof formalization notes.**
 `pdw_witness_exists` bundles, under conditions (A3),(A4) and the regularization condition
 (7.44), the witness consumed by `Subgradient.lean`'s Lemma 7.23:
 * `θ̂` supported on `S` (PDW steps 1–2: zero off `S`, oracle solve on `S`);
@@ -21,8 +62,7 @@ Internal proof roadmap (named `private` lemmas / `have`s, see cluster prompt):
 `strict_dual_feasibility`, `linf_error_bound`. Uses the Gram/inverse/projection bounds
 from `GramMatrix.lean`.
 
-## Deviation from the roadmap
-
+*Deviation from the roadmap.*
 The oracle `θ̂` (step 1) and its on-support subgradient `ẑ_S` (step 3) are obtained by
 applying the *existing* `lasso_minimizer_exists` / `kkt_of_isLassoEstimator` to the design
 `X'` obtained from `X` by **zeroing every column outside `S`** (`zeroOffCols`). Because `X'`
@@ -33,6 +73,18 @@ convex-analysis machinery of `Subgradient.lean` verbatim and avoids re-indexing 
 `Fin S.card`. Steps 4–9 are realized as named `have`s inside the main proof (rather than
 top-level `private` lemmas) because they share the constructed witness `(θ̂, ẑ)` and a long
 list of hypotheses; with `0` `sorry`s the gap structure is still fully explicit.
+
+**Bibliographic comments.** The primal–dual witness construction and the strict-dual-
+feasibility / mutual-incoherence analysis of the Lasso originate with M. J. Wainwright,
+"Sharp Thresholds for High-Dimensional and Noisy Sparsity Recovery Using ℓ1-Constrained
+Quadratic Programming (Lasso)," *IEEE Transactions on Information Theory*, vol. 55, no. 5,
+pp. 2183–2202, 2009. There the witness is built in the proof of that paper's main support-
+recovery theorem (Theorem 1), and the incoherence condition appears as the paper's mutual-
+incoherence assumption; Theorem 7.21 of the 2019 textbook is the streamlined deterministic
+restatement formalized here. Closely related sufficient conditions for exact support
+recovery were obtained independently by P. Zhao and B. Yu, "On Model Selection Consistency
+of Lasso," *Journal of Machine Learning Research*, vol. 7, pp. 2541–2563, 2006 (the
+"irrepresentable condition," which coincides with mutual incoherence).
 -/
 
 open Matrix

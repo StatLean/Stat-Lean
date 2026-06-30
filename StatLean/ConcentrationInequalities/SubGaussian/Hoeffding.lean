@@ -3,24 +3,67 @@ import StatLean.ConcentrationInequalities.SubGaussian.Defs
 /-!
 # Hoeffding's inequality for sums of independent sub-Gaussian variables
 
-Lu, *Big Data Analysis* §2.2 (Theorem "Hoeffding Inequality", label
-`thm:hoefdding`): if `X 0, …, X (n−1)` are **independent** and each is
-sub-Gaussian with variance proxy `σ²` (in the sense of our
-`IsSubGaussian` predicate from `…/SubGaussian/Defs.lean`), then for every
-`t > 0`,
+Let $X_1, \dots, X_n$ be independent random variables, each sub-Gaussian with
+variance proxy $\sigma^2$. Then for every threshold $t > 0$, the centered
+sample mean obeys the one-sided tail bound
+$$
+  \mathbb{P}\!\left( \frac{1}{n}\sum_{i=1}^{n}\bigl(X_i - \mathbb{E}X_i\bigr) > t \right)
+  \;\le\; \exp\!\left( -\frac{n\,t^2}{2\sigma^2} \right).
+$$
+Equivalently, the centered sum $\sum_{i=1}^{n}(X_i - \mathbb{E}X_i)$ exceeds
+$nt$ with the same bound; this is the form we state and prove directly, since
+it matches Mathlib's sum-tail lemma applied at threshold $\varepsilon := nt$ to
+the centered variables $X_i - \mathbb{E}X_i$. Sub-Gaussianity here is the
+`IsSubGaussian` predicate of `…/SubGaussian/Defs.lean`, whose engine is exactly
+the centered sub-Gaussian moment-generating-function bound that Mathlib's lemma
+consumes.
 
-  `P( (1/n) ∑_{i<n} (X i − E[X i])  >  t )  ≤  exp(− n t² / (2 σ²))`.
+**Deviation from the book statement.** We state the tail with the
+non-strict inequality $nt \le \sum_i (X_i - \mathbb{E}X_i)$ rather than the
+book's strict $>$; the strict event is contained in the non-strict one, so the
+non-strict bound is at least as strong. We also require $n \ge 1$ explicitly
+(the book's "$X_1, \dots, X_n$" presupposes at least one variable) and use a
+per-index sub-Gaussian hypothesis $X_i$ for $i < n$. The Lean statement
+additionally carries measurability of each $X_i$, a purely technical
+requirement of Mathlib's independence-transfer machinery and not a
+mathematical assumption of the book.
 
-Equivalently the centered sum `∑_{i<n} (X i − E[X i])` exceeds `n t` with the
-same bound; this is the form we state and prove directly, since it matches
-Mathlib's sum-tail lemma
-`ProbabilityTheory.HasSubgaussianMGF.measure_sum_range_ge_le_of_iIndepFun`
-applied at the threshold `ε := n t` to the centered variables
-`X i − E[X i]` — precisely the engine wrapped by `IsSubGaussian`.
+We additionally record the **scalar-multiple** closure rule used downstream in
+OLS / Lasso noise bounds: if $X$ is sub-Gaussian with variance proxy
+$\sigma^2$, then $c\,X$ is sub-Gaussian with proxy $c^2\sigma^2$.
 
-We additionally record the **scalar-multiple** rule used downstream in
-OLS / Lasso noise bounds: `c · X` is sub-Gaussian with proxy `c² σ²`
-(Lu-BDA §2.2), delegated to `ProbabilityTheory.HasSubgaussianMGF.const_mul`.
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 4
+(Concentration Inequalities), §4.2 (Sub-Gaussian Random Variables),
+Theorem 4.7 ("Hoeffding Inequality", `thm:hoefdding`). The scalar-multiple rule
+is the elementary closure property of sub-Gaussian variables recorded in the
+same section.
+
+**Proof formalization notes.** The centered-sum form is obtained directly from
+Mathlib's `ProbabilityTheory.HasSubgaussianMGF.measure_sum_range_ge_le_of_iIndepFun`
+applied at the threshold `ε := n t` to the centered variables `X i − E[X i]` —
+precisely the engine wrapped by `IsSubGaussian`. Independence of the original
+family is lifted to the centered family via `iIndepFun.comp`; each centered
+variable carries the sub-Gaussian MGF bound. The remaining step identifies
+Mathlib's RHS `exp(−(nt)² / (2 n σ²))` with the book's `exp(−n t² / (2 σ²))`:
+these agree as reals for `n ≥ 1`, including the degenerate corner `σ² = 0`
+where both collapse to `exp 0 = 1` via the `x / 0 = 0` convention. The
+scalar-multiple rule is delegated to `ProbabilityTheory.HasSubgaussianMGF.const_mul`,
+with centering passing through the scalar via `MeasureTheory.integral_const_mul`;
+the proxy `c² σ²` is encoded as the `ℝ≥0` element `⟨c², sq_nonneg c⟩ * σ²`,
+matching Mathlib's encoding of `const_mul`.
+
+**Bibliographic comments.** The seminal source is W. Hoeffding, "Probability
+inequalities for sums of bounded random variables", *Journal of the American
+Statistical Association* **58**(301), 1963, pp. 13–30, whose Theorem 2 gives the
+exponential tail bound for sums of bounded independent variables. The
+sub-Gaussian reformulation stated here replaces the boundedness hypothesis with
+a sub-Gaussian variance proxy and follows from the Chernoff bound together with
+the moment-generating-function (Hoeffding's lemma) control of each summand; in
+this generality it is textbook synthesis / folklore rather than a single
+seminal theorem, and is presented as such in modern references (e.g. Boucheron,
+Lugosi, Massart, *Concentration Inequalities*, 2013; Vershynin,
+*High-Dimensional Probability*, 2018; Wainwright, *High-Dimensional Statistics*,
+2019).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -30,7 +73,7 @@ namespace StatLean.ConcentrationInequalities
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 
-/-- **Scalar multiple of a sub-Gaussian variable, Lu-BDA §2.2.**
+/-- **Scalar multiple of a sub-Gaussian variable, Lu-BDA §4.2.**
 If `X` is sub-Gaussian with variance proxy `σ²`, then `c · X` (as
 `fun ω => c * X ω`) is sub-Gaussian with proxy `c² σ²`. Centering passes
 through the scalar via `MeasureTheory.integral_const_mul`, so this is a
@@ -57,7 +100,7 @@ theorem isSubGaussian_const_mul {X : Ω → ℝ} {σ2 : ℝ≥0} {μ : Measure �
   rw [heq]
   exact h'
 
-/-- **Hoeffding's inequality (centered-sum form), Lu-BDA §2.2 `thm:hoefdding`.**
+/-- **Hoeffding's inequality (centered-sum form), Lu-BDA §4.2 `thm:hoefdding`.**
 If `X 0, …, X (n−1)` are jointly independent and each is sub-Gaussian with
 variance proxy `σ²` under the probability measure `μ`, then for every `t > 0`,
 
@@ -79,14 +122,14 @@ theorem hoeffding {n : ℕ} {X : ℕ → Ω → ℝ} {σ2 : ℝ≥0} {μ : Measu
     --            lift independence of `X` to independence of the centered family
     --            `X i − E[X i]`.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: X 0, …, X (n-1) are jointly independent; Lu-BDA §2.2 thm:hoefdding.
+    -- USER-INPUT: X 0, …, X (n-1) are jointly independent; Lu-BDA §4.2 thm:hoefdding.
     (hX_indep : iIndepFun X μ)
-    -- USER-INPUT: each X i is sub-Gaussian with variance proxy σ²; Lu-BDA §2.2 thm:hoefdding.
+    -- USER-INPUT: each X i is sub-Gaussian with variance proxy σ²; Lu-BDA §4.2 thm:hoefdding.
     (hX_subG : ∀ i, i < n → IsSubGaussian (X i) σ2 μ)
     -- USER-INPUT: at least one variable in the family `X 0, …, X (n-1)`;
-    --             Lu-BDA §2.2 thm:hoefdding (implicit in "X 0, …, X (n−1)").
+    --             Lu-BDA §4.2 thm:hoefdding (implicit in "X 0, …, X (n−1)").
     (hn : 1 ≤ n)
-    -- USER-INPUT: t > 0; Lu-BDA §2.2 thm:hoefdding.
+    -- USER-INPUT: t > 0; Lu-BDA §4.2 thm:hoefdding.
     {t : ℝ} (ht : 0 < t) :
     μ.real {ω | (n : ℝ) * t ≤ ∑ i ∈ Finset.range n, (X i ω - ∫ x, X i x ∂μ)}
       ≤ Real.exp (-(n : ℝ) * t ^ 2 / (2 * (σ2 : ℝ))) := by

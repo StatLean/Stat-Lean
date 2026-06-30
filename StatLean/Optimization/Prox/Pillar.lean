@@ -3,22 +3,54 @@ import StatLean.Optimization.Smoothness.Defs
 import StatLean.Optimization.ForMathlib.FirstOrderConvex
 
 /-!
-# The pillar inequality (Lemma 12.1)
+# The pillar inequality for proximal-gradient steps
 
-The fundamental inequality behind both proximal-gradient convergence theorems
-(Lu, *Big Data Analysis* §12.1, Lemma `lm:pillar`): for convex `L`-smooth `f`,
-convex `h`, `F = f + h`, and a single proximal step
-`y⁺ = prox_{(1/L)h}(y - (1/L)∇f y)`,
-`F y⁺ - F x ≤ (L/2)‖x - y‖² - (L/2)‖x - y⁺‖²` for every `x`.
+Consider a composite objective $F = f + h$ on a real Hilbert space, where $f$
+is convex and $L$-smooth (its gradient is $L$-Lipschitz, $L > 0$) and $h$ is
+convex. Given a point $y$, take a single proximal-gradient step
+$$y^{+} \;=\; \operatorname{prox}_{(1/L)h}\!\bigl(y - \tfrac{1}{L}\nabla f(y)\bigr).$$
+Then for **every** point $x$,
+$$F(y^{+}) - F(x) \;\le\; \frac{L}{2}\,\lVert x - y\rVert^{2}
+  \;-\; \frac{L}{2}\,\lVert x - y^{+}\rVert^{2}.$$
+This "pillar" (descent/progress) inequality is the single estimate from which
+both proximal-gradient convergence theorems follow: setting $x = y$ gives the
+per-step descent of $F$, while summing over iterates with $x$ the minimizer
+gives the $O(1/k)$ rate.
 
-The proof combines:
-* L-smoothness of `f` at `y⁺` vs `y`;
-* convexity (gradient inequality) of `f` at `y` vs `x`;
+The Lean statement matches the book verbatim; no extra hypotheses or altered
+constants beyond making the inner-product space a `CompleteSpace` (a real
+Hilbert space) explicit, as the book assumes throughout.
+
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 14
+(Proximal Gradient Descent), §14.1 (Proximal Perspective), Lemma 14.1
+(`lm:pillar`).
+
+**Proof formalization notes.** The proof combines three ingredients:
+* $L$-smoothness of $f$ evaluated at $(y, y^{+})$:
+  $f(y^{+}) \le f(y) + \langle \nabla f(y),\, y^{+} - y\rangle + \tfrac{L}{2}\lVert y - y^{+}\rVert^{2}$;
+* convexity (the first-order gradient inequality) of $f$ at $(y, x)$:
+  $f(y) + \langle \nabla f(y),\, x - y\rangle \le f(x)$;
 * the variational inequality of the prox step (`prox_variational_inequality`
-  below), which plays the role of the subgradient optimality
-  `0 ∈ ∇f y + L(y⁺ - y) + ∂h(y⁺)` in the book, but is derived purely from
-  convexity of `h` and the minimization property — no subgradient existence
-  needed.
+  below). This plays the role of the subgradient optimality condition
+  $0 \in \nabla f(y) + L(y^{+} - y) + \partial h(y^{+})$ in the book, but is
+  derived purely from convexity of $h$ and the minimization property of the
+  prox subproblem — no existence of a subgradient is assumed. Concretely, for a
+  prox minimizer $z = \operatorname{prox}_h(x)$ with $h$ convex,
+  $\langle x - z,\, w - z\rangle \le h(w) - h(z)$ for all $w$, obtained from the
+  convex perturbation $z + t(w - z)$ as $t \to 0^{+}$.
+A polarization identity then reassembles the three pieces into the stated
+two-square bound.
+
+**Bibliographic comments.** This is a textbook synthesis / folklore result with
+no single seminal origin: it is the standard "sufficient-decrease" lemma at the
+heart of forward–backward (proximal-gradient) splitting and ISTA. The closest
+canonical references are A. Beck and M. Teboulle, "A Fast Iterative
+Shrinkage-Thresholding Algorithm for Linear Inverse Problems," *SIAM Journal on
+Imaging Sciences* 2(1):183–202, 2009 (the key progress estimate appears as
+Lemma 2.3), and N. Parikh and S. Boyd, "Proximal Algorithms," *Foundations and
+Trends in Optimization* 1(3):127–239, 2014 (§4.2, convergence of the proximal
+gradient method). The inequality itself predates these as part of the general
+forward–backward splitting analysis and is not attributable to a single paper.
 -/
 
 namespace StatLean.Optimization
@@ -86,7 +118,7 @@ theorem prox_variational_inequality
     rw [← inner_neg_left]; congr 1; abel
   rw [hflip]; linarith
 
-/-- Pillar inequality (Lu-BDA Lemma 12.1). For convex `L`-smooth `f` (`0 < L`),
+/-- Pillar inequality (Lu-BDA Lemma 14.1). For convex `L`-smooth `f` (`0 < L`),
 convex `h`, and the prox step `y⁺ = prox_{(1/L)h}(y - (1/L)∇f y)`,
 `(f y⁺ + h y⁺) - (f x + h x) ≤ (L/2)‖x - y‖² - (L/2)‖x - y⁺‖²`. -/
 theorem pillar

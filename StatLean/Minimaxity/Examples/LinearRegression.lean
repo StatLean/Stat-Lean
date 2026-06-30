@@ -5,23 +5,62 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
-# Example: minimax risks for linear regression (Wainwright Examples 15.14, 15.16)
+# Minimax risk for fixed-design linear regression
 
-For the Gaussian linear model `y = Xθ* + w`, `w ∼ 𝒩(0, σ²Iₙ)`, with the prediction semimetric
-`ρ_X(θ, θ') = ‖X(θ − θ')‖₂/√n`, the local-packing / Fano method gives
-```
-inf_θ̂ sup_θ 𝔼[(1/n)‖X(θ̂ − θ)‖₂²] ≥ (σ²/2560) · rank(X)/n          (Example 15.14),
-```
-and, restricting to `s`-sparse regression vectors,
-```
-M(𝕊ᵈ(s); ‖·‖₂) ≳ (σ²/γ²) · (s log(d/s))/n                        (Example 15.16).
-```
+For the Gaussian linear model $y = X\theta^* + w$ with noise $w \sim \mathcal{N}(0, \sigma^2 I_n)$,
+equipped with the prediction semimetric
+$$
+  \rho_X(\theta, \theta') = \frac{\lVert X(\theta - \theta')\rVert_2}{\sqrt{n}},
+$$
+the local-packing / Fano method lower-bounds the minimax prediction risk. For the unconstrained
+problem one obtains
+$$
+  \inf_{\hat\theta}\ \sup_{\theta}\ \mathbb{E}\!\left[\frac{1}{n}\lVert X(\hat\theta - \theta)\rVert_2^2\right]
+  \ \gtrsim\ \frac{\sigma^2}{2560}\cdot\frac{\operatorname{rank}(X)}{n},
+$$
+which is the formalized statement here (Example 15.14), and — restricting to $s$-sparse regression
+vectors — one obtains the sparse-rate variant
+$$
+  \mathfrak{M}\big(\mathbb{S}^d(s);\ \lVert\cdot\rVert_2\big)
+  \ \gtrsim\ \frac{\sigma^2}{\gamma^2}\cdot\frac{s\log(d/s)}{n}
+$$
+(Example 15.16).
 
-We realize the prediction semimetric as the Euclidean `edist` on the prediction space by taking
-`g θ = (1/√n)·(A θ)` where `A` is the design map, so `ρ(g θ, g θ') = ρ_X(θ, θ')`.
+We realize the prediction semimetric as the Euclidean distance on the prediction space by taking
+$g(\theta) = (1/\sqrt{n})\, A\theta$, where $A$ is the design map, so that
+$\rho\big(g(\theta), g(\theta')\big) = \rho_X(\theta, \theta')$.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Example 15.14.
+The leading constant is stated as the provable $1/2560$ rather than the book's $1/128$ (see the
+proof notes below), and the result is established for $\operatorname{rank}(A) = r \ge 40$.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Examples 15.14 and
+15.16 (local-packing conditions (15.35a)–(15.35b)).
+
+**Proof formalization notes.** We realize the prediction semimetric as the Euclidean `edist` on
+the prediction space by taking `g θ = (1/√n)·(A θ)`, where `A` is the design map, so
+`ρ(g θ, g θ') = ρ_X(θ, θ')`. The lower bound is assembled from a `rank(A)`-dimensional sphere
+packing (Wainwright Example 5.8, via `exists_sphere_packing`) spread across `range A` through a
+linear isometry and pulled back by the normalized design map; the pairwise Kullback–Leibler
+divergences are computed from the multivariate equal-covariance Gaussian KL formula
+(`klDiv_multivariateGaussian_smul_one`) and fed into the Fano local-packing bound
+(`minimax_local_packing`). The book's leading constant `1/128` is loosened to the provable
+`1/2560` (= `2·1280⁻¹`), forced by the `r/10` Gilbert–Varshamov sphere-packing brick; the
+separation radius is correspondingly `δ = √(v·r/(1280 n))`. The result requires `r = rank(A) ≥ 40`,
+since the local-packing/Fano cardinality condition (15.35b) needs `Ω(r)` packing hypotheses and
+small-rank designs are degenerate.
+
+**Bibliographic comments.** The fixed-design prediction-error minimax rates formalized here are
+the textbook (Examples 15.14, 15.16) presentation of results from G. Raskutti, M. J. Wainwright,
+and B. Yu, "Minimax rates of estimation for high-dimensional linear regression over $\ell_q$-balls,"
+*IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011 (DOI
+10.1109/TIT.2011.2165799; preprint arXiv:0910.2042). That paper derives matching minimax upper and
+lower bounds, under suitable design regularity, for both $\ell_2$-estimation loss and
+$\ell_2$-prediction loss over $\ell_q$-balls, with the sparse prediction rate scaling as
+$\frac{s\log(d/s)}{n}$; the lower bounds use exactly the Fano / local-packing argument reproduced
+here. The general local-packing (Hasminskii / Fano) machinery these examples instantiate is
+classical, but the specific high-dimensional linear-regression rates of Examples 15.14 and 15.16
+trace to that Raskutti–Wainwright–Yu paper.
 -/
 
 open MeasureTheory ProbabilityTheory Matrix

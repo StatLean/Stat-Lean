@@ -8,36 +8,79 @@ import StatLean.AsymptoticStatistics.Core.EIFVec
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
-# Theorem 25.21 — Local Asymptotic Minimax (LAM)
+# Semiparametric Local Asymptotic Minimax (LAM) Theorem (vector)
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3.
-
-Let the functional `ψ : 𝒫 → ℝᵏ` be differentiable at `P` relative to the
-tangent cone `𝒫̇_P` with **efficient influence function** `ψ̃_P`. If `𝒫̇_P`
-is a convex cone, then for any estimator sequence `{T_n}` and subconvex loss
-`ℓ : ℝᵏ → [0, ∞)`,
-
-`sup_I liminf_n sup_{g ∈ I} 𝔼_{P_{1/√n,g}} ℓ(√n (T_n − ψ(P_{1/√n,g})))`
-`≥ ∫ ℓ dN(0, P ψ̃_P ψ̃_Pᵀ)`,
-
-where the outer supremum ranges over all finite subsets `I` of the tangent
-set. No estimator can do asymptotically better than the Gaussian shift limit:
-the minimax risk over local perturbations is bounded below by the integral of
-`ℓ` against the optimal Gaussian.
+Let the functional $\psi : \mathcal{P} \to \mathbb{R}^k$ be differentiable at
+$P$ relative to the tangent cone $\dot{\mathcal{P}}_P$ with **efficient
+influence function** $\tilde\psi_P$. If $\dot{\mathcal{P}}_P$ is a convex cone,
+then for any estimator sequence $\{T_n\}$ and any nonnegative, subconvex
+(bowl-shaped) loss $\ell : \mathbb{R}^k \to [0, \infty]$,
+$$
+\sup_{I} \; \liminf_{n \to \infty} \; \sup_{g \in I} \;
+  \mathbb{E}_{P_{1/\sqrt{n},\,g}}\,
+    \ell\bigl(\sqrt{n}\,(T_n - \psi(P_{1/\sqrt{n},\,g}))\bigr)
+\;\ge\; \int \ell \; dN\bigl(0,\; P\,\tilde\psi_P\,\tilde\psi_P^{\top}\bigr),
+$$
+where the outer supremum ranges over all finite subsets $I$ of the tangent
+set. No estimator sequence can do asymptotically better than the Gaussian-shift
+limit: the local minimax risk over the perturbed submodels is bounded below by
+the integral of $\ell$ against the Gaussian with covariance
+$P\,\tilde\psi_P\,\tilde\psi_P^{\top}$ (the optimal limit distribution).
 
 This file states the headline vector theorem
 `semiparametric_local_asymptotic_minimax_theorem`
-(`ψ : Measure Ω → ℝᵈ`, limit `N(0, Matrix.gram ℝ IF_eff) = N(0, P ψ̃_P ψ̃_Pᵀ)`)
-and its scalar `d = 1` corollary
+($\psi : \mathrm{Measure}\,\Omega \to \mathbb{R}^d$, limit
+$N(0, \mathrm{Matrix.gram}\;\mathbb{R}\;\mathrm{IF\_eff}) =
+N(0, P\,\tilde\psi_P\,\tilde\psi_P^{\top})$)
+and its scalar $d = 1$ corollary
 `semiparametric_local_asymptotic_minimax_theorem_real`, where the book's
-covariance matrix `P ψ̃_P ψ̃_Pᵀ` collapses to the scalar `‖ψ̃_P‖²` and the
-limit to the one-dimensional Gaussian `N(0, ‖ψ̃_P‖²)`.
+covariance matrix $P\,\tilde\psi_P\,\tilde\psi_P^{\top}$ collapses to the
+scalar $\|\tilde\psi_P\|^2$ and the limit to the one-dimensional Gaussian
+$N(0, \|\tilde\psi_P\|^2)$.
 
-The proof forwards to `lam_semiparametric_unbounded`: the convex-cone +
-negation-closure tangent hypotheses are equivalent to a **linear subspace**
-(via `LAMLinearFromCone`), the perturbed submodel is the internal
-`canonicalPath g`, and the left-hand side is the canonical-path functional
-`LHS_canonical`. The minimax reduction itself rests on Theorem 8.11.
+**Lean-vs-book deviations.** The loss takes values in the extended nonnegative
+reals $[0,\infty]$ (so the risk integrals are unconditional `lintegral`s); the
+book's "bowl-shaped" / subconvexity requirement is carried by `BowlShaped` plus
+a per-truncation lower-semicontinuity hypothesis `hℓ_M_lsc` on $\ell \wedge M$
+needed for the Portmanteau lower-bound step. Root-$n$ consistency of $T_n$ at
+$P$ is supplied as a tightness hypothesis `hTight` (vdV Theorem 25.21 (§25.3), p. 367
+standing assumption). The outer supremum is taken with `Finset.sup` (total on
+$[0,\infty]$ with $\bot = 0$), so the empty finite subset contributes the
+zero-information baseline $0$ and no nonemptiness side condition is needed.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+Theorem 25.21 (local asymptotic minimax theorem).
+
+**Proof formalization notes.** The proof forwards to
+`lam_semiparametric_unbounded` (scalar) / `lam_semiparametric_unbounded_vec`
+(vector): the convex-cone + negation-closure tangent hypotheses
+(`hCone` / `hConvex` / `hNegClosed`) are equivalent to a **linear subspace**
+(via `LAMLinearFromCone`), the perturbed submodel $P_{1/\sqrt{n},\,g}$ is the
+internal `canonicalPath g`, and the written-out left-hand side is
+definitionally the canonical-path functional `LHS_canonical` (scalar) /
+`LHS_canonical_vec` (vector). Nonemptiness of the carrier
+(`hCarrier_nonempty`) is constitutive of vdV's tangent cone, which contains
+$0$ (the constant-path score); together with `hCone` it supplies
+$0 \in \mathrm{carrier}$ for the linear-space reduction. The minimax reduction
+itself rests on the convolution / minimax machinery (Theorem 8.11).
+
+**Bibliographic comments.** The local asymptotic minimax theorem originates
+with J. Hájek, "Local asymptotic minimax and admissibility in estimation,"
+*Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and
+Probability*, Vol. 1, University of California Press, 1972, pp. 175–194, which
+established that the local minimax risk of any estimator sequence is bounded
+below by the Gaussian-shift risk, the companion lower-bound result to Hájek's
+convolution theorem (J. Hájek, "A characterization of limiting distributions of
+regular estimates," *Z. Wahrscheinlichkeitstheorie verw. Gebiete* 14 (1970),
+323–330). L. Le Cam's local asymptotic normality theory underlies the
+parametric reduction. The semiparametric formulation stated here — efficient
+influence function relative to a tangent cone, with the information-bound
+covariance $P\,\tilde\psi_P\,\tilde\psi_P^{\top}$ — is the one developed in
+P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A. Wellner, *Efficient and
+Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press,
+1993, and presented as vdV §25.3, Theorem 25.21.
 -/
 
 open MeasureTheory Filter Topology
@@ -112,7 +155,7 @@ theorem semiparametric_local_asymptotic_minimax_theorem
     (hℓ_sub : BowlShaped ℓ)
     (hℓ_M_lsc : ∀ M : ℕ,
       LowerSemicontinuous (fun u : EuclideanSpace ℝ (Fin d) => ℓ u ⊓ (M : ℝ≥0∞)))
-    -- Root-n consistency: `√n(T_n − ψ(P))` is tight at `P` (vdV §25.21 p.367).
+    -- Root-n consistency: `√n(T_n − ψ(P))` is tight at `P` (vdV Theorem 25.21 (§25.3) p.367).
     (hTight : MeasureTheory.IsTightMeasureSet
         (Set.range (fun n : ℕ =>
           (MeasureTheory.Measure.pi (fun _ : Fin n => P)).map
@@ -215,7 +258,7 @@ theorem semiparametric_local_asymptotic_minimax_theorem_real
     (hℓ_sub : BowlShaped ℓ)
     (hℓ_M_lsc : ∀ M : ℕ,
       LowerSemicontinuous (fun u : ℝ => ℓ u ⊓ (M : ℝ≥0∞)))
-    -- Root-n consistency: `√n(T_n − ψ(P))` is tight at `P` (vdV §25.21 p.367).
+    -- Root-n consistency: `√n(T_n − ψ(P))` is tight at `P` (vdV Theorem 25.21 (§25.3) p.367).
     (hTight : MeasureTheory.IsTightMeasureSet
         (Set.range (fun n : ℕ =>
           (MeasureTheory.Measure.pi (fun _ : Fin n => P)).map

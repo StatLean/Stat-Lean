@@ -7,7 +7,8 @@ import Mathlib.Data.Prod.Lex
 # Top-`k` coordinate blocks ("shelling")
 
 The greedy decreasing-magnitude partition of the complement `Sᶜ` used in the RIP
-recovery proof (Lu, *Big Data Analysis* §7, `thm:rip`): block `0` holds the `k`
+recovery proof (Lu, *Big Data Analysis* Chapter 9, Restricted Isometry Property,
+§9.1, Theorem 9.1, `thm:rip`): block `0` holds the `k`
 largest-`|·|` coordinates of `x` outside `S`, block `1` the next `k`, and so on.
 
 Mathlib has no packaged "top-`k` coordinates" selector; this file builds it from
@@ -219,7 +220,8 @@ lemma linfNorm_le_of_forall {x : EuclideanSpace ℝ (Fin d)} {c : ℝ} (hc : 0 �
       rw [Set.range_eq_empty_iff.mpr ‹IsEmpty (Fin d)›, Real.sSup_empty]
     rw [heq]; exact hc
 
-/-- **Monotone-averaging** (Lu §7, the shelling estimate): the ℓ∞ norm of the next
+/-- **Monotone-averaging** (Lu, *Big Data Analysis* Chapter 9, §9.1, the shelling
+estimate): the ℓ∞ norm of the next
 block is bounded by the average ℓ¹ mass of the current block,
 `‖x|_{B_{j+1}}‖∞ ≤ (1/k)·‖x|_{B_j}‖₁`. -/
 theorem linfNorm_restrict_orderedBlocks_succ_le (S : Finset (Fin d))

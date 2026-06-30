@@ -5,18 +5,37 @@ import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.MeasureTheory.Measure.Dirac
 
 /-!
-# Hájek-style regular-estimator predicate
+# Hájek-style regular-estimator predicate (semiparametric)
 
-This file defines the thin user-facing predicate `IsRegularEstimator`
-(vdV §25.3.2, the paragraph preceding the convolution theorem 25.20) and
+This file defines the thin user-facing predicate `IsRegularEstimator` and
 its basic consumers.
 
-A sequence of estimators `T_n : (Fin n → Ω) → ℝ` is *regular* at `P`
-relative to a tangent set `T_set`, with limit law `L`, iff for every
-score direction `g ∈ tangentSpace T_set` realised by some QMD curve, the
-rescaled estimator computed under the local-perturbation curve and
-recentered at the perturbed truth converges weakly to the *same* limit
-law `L`, regardless of the direction `g` (shift-invariance).
+Let $P$ be the true distribution and $\psi : \mathcal{P} \to \mathbb{R}$ a
+functional that is pathwise differentiable at $P$ relative to a tangent set
+$\dot{\mathcal{P}}_P$. A sequence of scalar estimators $T_n = T_n(X_1,\dots,X_n)$
+is called *regular* at $P$ for estimating $\psi(P)$ (relative to
+$\dot{\mathcal{P}}_P$) if there exists a probability measure $L$ such that, for
+every score direction $g$ in the tangent set realised by a one-dimensional
+submodel $t \mapsto P_{t,g}$ with score $g$,
+$$
+\sqrt{n}\,\bigl(T_n - \psi(P_{1/\sqrt{n},\,g})\bigr) \;\rightsquigarrow\; L
+\qquad\text{under } P_{1/\sqrt{n},\,g},\quad\text{for every } g \in \dot{\mathcal{P}}_P,
+$$
+i.e. the rescaled estimator, computed under the local-perturbation law and
+*recentered at the perturbed truth* $\psi(P_{1/\sqrt{n},\,g})$, converges weakly
+to the **same** limit law $L$, independently of the direction $g$. This is the
+shift-invariance form of the regularity requirement: the limit $L$ does not
+depend on $g$.
+
+In the Lean formalization the one-dimensional submodel is supplied as a
+`QMDPath P` (differentiability in quadratic mean) whose score equals $g$, and
+the local perturbation $P_{1/\sqrt{n},\,g}$ is the curve evaluated at
+$(\sqrt{n})^{-1}$. Compared with the book statement, the Lean predicate carries
+two extra parameters that have no proof obligation: the pathwise-differentiability
+witness `hψ` and the efficient-influence-function witness `_hEIF`. They are
+included only so that the derived Hájek-shift form
+(`IsRegularEstimator.hajek_shift_form`) can be stated within the same predicate's
+data; they impose nothing on the definition itself.
 
 Headline declarations:
 
@@ -26,6 +45,55 @@ Headline declarations:
 * `IsRegularEstimator.hajek_shift_form` — the derived Hájek-shift form,
   recentering at the unperturbed truth `ψ(P)` and picking up the
   deterministic Slutsky shift `(dirac ⟪IF_eff, g⟫) ∗ L`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+definition of a *regular* estimator sequence (p. 365, the displayed equation
+immediately preceding Theorem 25.20). The associated convolution theorem is
+vdV Theorem 25.20; the local asymptotic minimax theorem is vdV Theorem 25.21.
+
+**Proof formalization notes.** The canonical definition recenters at the
+*perturbed* truth $\psi(P_{1/\sqrt{n},\,g})$, exactly as in vdV, so that the
+limit law $L$ is the same for every direction $g$ and the predicate's structural
+content is immediately visible.
+
+The **Hájek-shift form** (`IsRegularEstimator.hajek_shift_form`) is a *theorem*
+derived from this definition, not an alternative definition: recentering at the
+unperturbed truth $\psi(P)$ yields weak convergence of
+$\sqrt{n}\,(T_n - \psi(P))$ to $(\delta_{\langle \tilde\psi_P, g\rangle}) \ast L$,
+the limit law $L$ shifted by the deterministic Slutsky shift
+$\langle \mathrm{IF}_{\mathrm{eff}}, g\rangle$. The two forms are mathematically
+equivalent under pathwise differentiability of $\psi$. The derivation proceeds by:
+
+* taking the perturbed-truth convergence to $L$ from the regularity hypothesis;
+* identifying $\sqrt{n}\,(\psi(P_{1/\sqrt{n},g}) - \psi(P)) \to
+  \langle \mathrm{IF}_{\mathrm{eff}}, g\rangle$ via pathwise differentiability of
+  $\psi$ (the difference quotient $(\psi(P_t) - \psi(P))/t$ along the curve,
+  evaluated as $t = (\sqrt{n})^{-1} \to 0$);
+* continuous mapping of the deterministic shift on the weak limit; and
+* absorbing the vanishing deterministic gap via Slutsky
+  (`WeakConverges.slutsky_of_tendstoInMeasure_dist`), the pointwise distance
+  between the two recenterings being the deterministic, vanishing
+  $|\langle \mathrm{IF}_{\mathrm{eff}}, g\rangle - a_n|$.
+
+This Hájek-shift form is what Le Cam-bridge arguments need: a single fixed
+recentering at $\psi(P)$, independent of the local perturbation direction $g$.
+
+**Bibliographic comments.** The notion of a *regular* estimator and the
+accompanying convolution theorem (vdV Theorem 25.20) originate with
+J. Hájek, "A characterization of limiting distributions of regular estimates,"
+*Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970),
+323–330; the same characterization was obtained independently by
+T. Inagaki, "On the limiting distribution of a sequence of estimators with
+uniformity property," *Annals of the Institute of Statistical Mathematics* **22**
+(1970), 1–13. The companion local asymptotic minimax theorem (vdV Theorem 25.21)
+is due to J. Hájek, "Local asymptotic minimax and admissibility in estimation,"
+*Proc. Sixth Berkeley Symp. Math. Statist. Probab.*, vol. 1 (1972), 175–194,
+building on L. Le Cam's asymptotic decision theory. The semiparametric phrasing
+formalized here — regularity *relative to a tangent set* $\dot{\mathcal{P}}_P$
+with limit-law $L$ independent of the score direction — follows van der Vaart's
+synthesis in Chapter 25.
 -/
 
 open MeasureTheory Filter Topology

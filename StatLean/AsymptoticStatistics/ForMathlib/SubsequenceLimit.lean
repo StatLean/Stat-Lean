@@ -6,7 +6,7 @@ import Mathlib.Topology.Defs.Filter
 Subsequence limit uniqueness: if every subsequence of `x` has a sub-subsequence
 converging to `x_lim`, then the full sequence converges to `x_lim`.
 
-This is the "Urysohn-type" lemma used in van der Vaart §7.10 Step 8 to promote a
+This is the "Urysohn-type" lemma used in van der Vaart Theorem 7.10 (§7.3) Step 8 to promote a
 subsequence weak limit (extracted via Prohorov) to a full-sequence weak limit.
 
 Pure topology, theorem-agnostic; it is a thin wrapper around Mathlib's

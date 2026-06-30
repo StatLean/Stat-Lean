@@ -2,22 +2,48 @@ import StatLean.Minimaxity.EstimationToTesting
 import StatLean.Minimaxity.ForMathlib.TotalVariation
 
 /-!
-# Le Cam's convex-hull method — Lemma 15.9 (Wainwright §15.2.2)
+# Le Cam's convex-hull lower bound
 
 Le Cam's two-point method generalizes from single pairs to pairs of *classes*: if two subfamilies
-`𝒫₀, 𝒫₁ ⊆ 𝒫` are `2δ`-separated, then the minimax risk is controlled by the total variation distance
-measured over their **convex hulls** (mixtures), which can be far smaller than the pointwise
-separation:
-```
-sup_{P∈𝒫} 𝔼_P[ρ(θ̂, θ(P))] ≥ (δ/2) sup_{Q₀∈conv(𝒫₀), Q₁∈conv(𝒫₁)} (1 − ‖Q₁ − Q₀‖_TV)   (Eq. (15.26)).
-```
+$\mathcal{P}_0, \mathcal{P}_1 \subseteq \mathcal{P}$ are $2\delta$-separated in the loss-defining
+semimetric $\rho$, then the minimax risk is controlled by the total variation distance measured over
+their **convex hulls** (mixtures), which can be far smaller than the pointwise separation. With the
+distortion function $\Phi$ increasing, the bound reads
 
-We state it for given mixtures (the supremum over `conv` is recovered by quantifying over the mixing
-measures `π₀, π₁`): for any `2δ`-separated pair of subfamilies indexed by `a₀, a₁` and any priors
-`π₀, π₁`, the bound holds with the mixtures `Q̄₀ = ∫ P_{a₀} dπ₀`, `Q̄₁ = ∫ P_{a₁} dπ₁`.
+$$\sup_{P\in\mathcal{P}} \mathbb{E}_P\!\big[\Phi\big(\rho(\hat\theta, \theta(P))\big)\big]
+  \;\ge\; \tfrac{\Phi(\delta)}{2}\,
+  \sup_{Q_0\in\operatorname{conv}(\mathcal{P}_0),\,Q_1\in\operatorname{conv}(\mathcal{P}_1)}
+  \big(1 - \lVert Q_1 - Q_0\rVert_{\mathrm{TV}}\big).$$
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.2, Lemma 15.9.
+We state it for given mixtures (the supremum over the convex hulls is recovered by quantifying over
+the mixing measures $\pi_0, \pi_1$): for any $2\delta$-separated pair of subfamilies indexed by
+$a_0, a_1$ and any priors $\pi_0, \pi_1$, the bound holds with the mixtures
+$\bar Q_0 = \int P_{a_0}\,d\pi_0$ and $\bar Q_1 = \int P_{a_1}\,d\pi_1$. Compared with Wainwright's
+statement we make the constants and monotonicity explicit: $\Phi$ is assumed *monotone* (rather than
+specializing to a fixed power loss), and the conclusion carries the factor $\Phi(\delta)/2$.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2.2, Lemma 15.9,
+Eq. (15.26).
+
+**Proof formalization notes.** Against the two-class prior with mixing measures $\pi_0, \pi_1$, the
+nearest-class test built from any estimator reduces the minimax risk to binary testing error between
+the mixtures $\bar Q_0, \bar Q_1$, and `one_sub_tvDist_eq_iInf` rewrites $1 - \lVert\bar Q_1 - \bar
+Q_0\rVert_{\mathrm{TV}}$ as the optimal-test value. The crucial $\Omega$-measurability of the
+selector is supplied by `Metric.continuous_infEDist`: the distance to the (possibly uncountable)
+class of functional values is *continuous*, hence measurable. The per-class core
+(`mul_measure_mem_le_avg`) is the mixture analogue of the geometric Markov/triangle bound
+$\Phi(\delta)\cdot\mathbf{1}[\text{error}] \le \Phi(\rho)$ integrated against the prior, mirroring
+`mul_multiwayTestingError_le` in `EstimationToTesting.lean`. Assembly gives $\Phi(\delta)\cdot(1 -
+\mathrm{TV}) \le A_0 + A_1 \le 2\cdot\sup$, then halves.
+
+**Bibliographic comments.** The convex-hull (mixture) refinement of the two-point method originates
+with L. Le Cam, "Convergence of estimates under dimensionality restrictions," *The Annals of
+Statistics* **1** (1973), no. 1, 38–53, where the lower bound is expressed through the affinity /
+total-variation distance between mixtures over the two competing subfamilies. It is now standard as
+"Le Cam's method"; the form stated here follows Wainwright's textbook synthesis (Lemma 15.9), with
+related expositions in Yu, "Assouad, Fano, and Le Cam," in *Festschrift for Lucien Le Cam* (Springer,
+1997), 423–435, and Tsybakov, *Introduction to Nonparametric Estimation* (Springer, 2009), §2.
 -/
 
 open MeasureTheory ProbabilityTheory

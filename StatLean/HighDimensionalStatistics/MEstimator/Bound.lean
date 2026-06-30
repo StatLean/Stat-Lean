@@ -2,16 +2,79 @@ import StatLean.HighDimensionalStatistics.MEstimator.Deviation
 import StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip
 
 /-!
-# Estimation-error bounds for general M-estimators (Wainwright Theorem 9.19, Corollary 9.20)
+# Estimation-error bounds for general M-estimators (Theorem 9.19, Corollary 9.20)
 
-The central deterministic result of Chapter 9. Under restricted strong convexity (A1) and
-decomposability (A2), conditioned on the good event, any optimum `θ̂` of the regularized
-M-estimator (eq 9.3) satisfies the regularizer bound (9.48a) and the squared-error bound (9.48b).
-Specializing to `θ* ∈ M` (so the approximation error vanishes) gives Corollary 9.20.
+This is the central deterministic result of the decomposable-regularizer framework. Consider a
+regularized M-estimator
+$$ \hat\theta \in \arg\min_{\theta}\; \big\{ \mathcal{L}(\theta) + \lambda\,\Phi(\theta) \big\}, $$
+where the loss $\mathcal{L}$ is convex and differentiable, $\Phi$ is a decomposable norm-like
+regularizer relative to a subspace pair $(M, \overline{M})$, and $\lambda > 0$. Write
+$\theta^*$ for the target, $\Delta = \hat\theta - \theta^*$ for the estimation error,
+$\Psi(\overline{M})$ for the subspace-Lipschitz (compatibility) constant of $\Phi$ over
+$\overline{M}$, and $\Phi(\theta^*_{M^\perp})$ for the approximation error (the regularizer of the
+projection of $\theta^*$ onto $M^\perp$).
 
-The proof goes through Lemma 9.21 (sign control): if the objective increment `ℱ` is strictly
-positive on the sphere `{‖Δ‖ = δ} ∩ ℂ`, then `‖θ̂ − θ*‖ ≤ δ`, because `ℂ` is star-shaped, `ℱ` is
-convex with `ℱ(0) = 0`, `ℱ(θ̂−θ*) ≤ 0`, and `θ̂−θ* ∈ ℂ` (Proposition 9.13).
+Assume that the regularization weight dominates the dual norm of the loss gradient at $\theta^*$,
+i.e. the **good event** $\Phi^*(\nabla\mathcal{L}(\theta^*)) \le \lambda/2$ holds, and that
+$\mathcal{L}$ satisfies **restricted strong convexity** with curvature $\kappa$, radius $R$, and
+tolerance $\tau^2 \ge 0$. Then:
+
+* **Regularizer bound (Theorem 9.19(a), Eq 9.48a).**
+  $\Phi(\hat\theta - \theta^*) \le 4\big( \Psi(\overline{M})\,\|\hat\theta - \theta^*\| +
+  \Phi(\theta^*_{M^\perp}) \big).$ This requires only the good event and decomposability — no
+  restricted strong convexity.
+
+* **Squared-error bound (Theorem 9.19(b), Eq 9.48b).** Provided
+  $\tau^2\,\Psi^2(\overline{M}) \le \kappa/128$ and $\varepsilon_n^2 \le R^2$,
+  $$ \|\hat\theta - \theta^*\|^2 \le \varepsilon_n^2 :=
+  144\,\frac{\lambda^2}{\kappa^2}\,\Psi^2(\overline{M})
+  + \frac{32}{\kappa}\Big( \lambda\,\Phi(\theta^*_{M^\perp})
+  + 16\,\tau^2\,\Phi(\theta^*_{M^\perp})^2 \Big). $$
+
+Specializing to $\theta^* \in M$ makes the approximation error vanish
+($\Phi(\theta^*_{M^\perp}) = 0$), giving **Corollary 9.20**: the squared-error bound
+$\|\hat\theta - \theta^*\|^2 \le 144\,(\lambda^2/\kappa^2)\,\Psi^2(\overline{M})$ (Eq 9.49b) and
+the regularizer bound $\Phi(\hat\theta - \theta^*) \le 48\,(\lambda/\kappa)\,\Psi^2(\overline{M})$
+(Eq 9.49a).
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
+§9.4, Theorem 9.19 (Eqs 9.48a–9.48b), Corollary 9.20 (Eqs 9.49a–9.49b), via Lemma 9.21
+(Eqs 9.50–9.53). The restricted-strong-convexity definition is §9.4.1, Definition 9.15
+(Eq 9.38); the good event is Eq 9.46.
+
+**Proof formalization notes.**
+The proof goes through Lemma 9.21 (sign control): if the objective increment $\mathcal{F}$ is
+strictly positive on the sphere $\{\|\Delta\| = \delta\} \cap \mathbb{C}$, then
+$\|\hat\theta - \theta^*\| \le \delta$, because the error cone $\mathbb{C}$ is star-shaped about
+$0$, $\mathcal{F}$ is convex with $\mathcal{F}(0) = 0$, $\mathcal{F}(\hat\theta - \theta^*) \le 0$
+(optimality), and $\hat\theta - \theta^* \in \mathbb{C}$ (Proposition 9.13). Theorem 9.19(a) is
+immediate from $\hat\theta - \theta^* \in \mathbb{C}$ plus the subspace-Lipschitz bound and a
+non-expansive projection. For Theorem 9.19(b), the quadratic-form argument (Eqs 9.50–9.53) shows
+$\mathcal{F} > 0$ on the sphere of radius $\varepsilon_n$, and then Lemma 9.21 closes it.
+
+*Book-vs-Lean constant deviations.* The book states slack $\tau^2\Psi^2 \le \kappa/64$ and a
+leading constant $9$ in $\varepsilon_n^2$ (Eq 9.48b), and $6$ in the regularizer corollary
+(Eq 9.49a). Tracking the effective curvature rigorously gives $c = \kappa/2 - 32\tau^2\Psi^2$, so
+the provable conditions are $\tau^2\Psi^2 \le \kappa/128$ (ensuring $c \ge \kappa/4$) and the
+inflated $\varepsilon_n^2$ constants ($144$ in place of $9$, $32/\kappa$), with $4\cdot 12 = 48$ in
+place of $6$ in Corollary 9.20. These differ from the book only by fixed factors; the statistical
+rate is identical. One hypothesis is also added beyond the book's wording: $0 \le \tau^2$. The
+book's $\tau^2 = \tau_n^2$ is a *squared* tolerance, hence nonnegative, but the underlying
+`RSC` definition leaves it an unconstrained real; the conclusion is false without
+$\tau^2 \ge 0$ (a strongly-convex quadratic with $\tau^2 \to -\infty$ makes $\varepsilon_n^2 < 0$
+while $\|\hat\theta - \theta^*\|^2 > 0$), so it is the missing constitutive hypothesis.
+
+**Bibliographic comments.**
+The decomposable-regularizer framework and these bounds originate with S. N. Negahban,
+P. Ravikumar, M. J. Wainwright and B. Yu, "A unified framework for high-dimensional analysis of
+M-estimators with decomposable regularizers," *Statistical Science*, 27(4):538–557, 2012. The
+key result there is Theorem 1, which states exactly the squared-error bound $\|\hat\theta -
+\theta^*\|^2 \le 9\,(\lambda^2/\kappa^2)\,\Psi^2(\overline{M}) + \ldots$ under restricted strong
+convexity (their Definition 2) and the dual-norm condition $\lambda \ge 2\,\Phi^*(\nabla
+\mathcal{L}(\theta^*))$. Wainwright's Theorem 9.19 / Corollary 9.20 are the textbook
+presentation of that paper's Theorem 1 and its $\theta^* \in M$ corollary; the formalization here
+follows the textbook's notation and proof.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator
