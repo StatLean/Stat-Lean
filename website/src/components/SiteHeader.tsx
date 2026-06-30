@@ -7,6 +7,7 @@ import { Logo } from "./Logo";
 const NAV = [
   { to: "/search", label: "Search" },
   { to: "/dependencies", label: "Dependencies", prefetch: prefetchDependencies },
+  { to: "/references", label: "References" },
   { to: "/team", label: "Team" },
 ];
 

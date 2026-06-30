@@ -143,6 +143,13 @@ body::before {
 
 .hairline { border-color: rgb(var(--rule)); }
 
+/* reference page: flash the entry linked from a result's citation */
+.ref-flash {
+  background: rgb(var(--c-param) / 0.12);
+  border-color: rgb(var(--c-param) / 0.6);
+  box-shadow: 0 0 0 1px rgb(var(--c-param) / 0.4) inset;
+}
+
 /* informal-statement hypothesis spans (data-link) get the dotted-underline look */
 .informal-body [data-link] {
   border-radius: 3px;

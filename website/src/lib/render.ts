@@ -13,6 +13,25 @@ export function renderInformal(html: string): string {
   return display.replace(/\$([^$\n]+?)\$/g, (_m, tex) => safeKatex(tex, false));
 }
 
+/**
+ * Render a reference / bibliographic string: Markdown-ish `**bold**`, `*italic*`
+ * and `$…$` / `$$…$$` math → HTML. Math spans are protected before the emphasis
+ * pass so a `*` inside a formula (e.g. `a^*`) is never mistaken for emphasis.
+ */
+export function renderReference(text: string): string {
+  const math: string[] = [];
+  const sent = String.fromCharCode(0); // NUL — never present in citation text
+  const stash = (rendered: string) => {
+    math.push(rendered);
+    return sent + (math.length - 1) + sent;
+  };
+  let s = text.replace(/\$\$([\s\S]+?)\$\$/g, (_m, t) => stash(safeKatex(t, true)));
+  s = s.replace(/\$([^$\n]+?)\$/g, (_m, t) => stash(safeKatex(t, false)));
+  s = s.replace(/\*\*([^*]+?)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
+  return s.replace(new RegExp(sent + "(\\d+)" + sent, "g"), (_m, i) => math[Number(i)]);
+}
+
 function safeKatex(tex: string, displayMode: boolean): string {
   try {
     return katex.renderToString(tex.trim(), {
