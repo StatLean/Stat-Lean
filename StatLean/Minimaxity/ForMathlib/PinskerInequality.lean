@@ -3,17 +3,52 @@ import StatLean.Minimaxity.ForMathlib.KLDivergence
 import StatLean.Minimaxity.ForMathlib.KLDataProcessing
 
 /-!
-# Pinsker–Csiszár–Kullback inequality — Lemma 15.2 (Wainwright §15.1.3)
+# Pinsker–Csiszár–Kullback inequality
 
-The total variation distance is controlled by the Kullback–Leibler divergence:
-`‖ℙ − ℚ‖_TV ≤ √(½ D(ℚ ‖ ℙ))`  (Eq. (15.8)).
+The total variation distance between two probability distributions is controlled by their
+Kullback–Leibler divergence: for all distributions $\mathbb{P}$ and $\mathbb{Q}$,
+$$\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} \le \sqrt{\tfrac{1}{2}\, D(\mathbb{Q} \,\|\, \mathbb{P})},$$
+equivalently $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}^2 \le \tfrac{1}{2}\, D(\mathbb{Q} \,\|\, \mathbb{P})$.
+Here $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} = \sup_A (\mathbb{P}(A) - \mathbb{Q}(A))$ is the
+supremum form of total variation and $D(\cdot\,\|\,\cdot)$ is the KL divergence (in nats), with the
+convention $D = +\infty$ when the first argument is not absolutely continuous with respect to the
+second.
 
-Wainwright outlines the proof in Exercise 15.6: reduce to the Bernoulli case via the partition
-`A = {p ≥ q}` and Jensen's inequality. We state it with the `ℝ≥0∞` square root (`rpow (1/2)`),
-so the bound is vacuously true when the KL divergence is infinite.
+The Lean statement uses the extended-nonnegative-reals square root (`rpow (1/2)` on `ℝ≥0∞`), so
+the bound holds vacuously when the KL divergence is infinite; no absolute-continuity hypothesis is
+needed. This matches the book statement exactly (constant $\tfrac12$, no extra assumptions).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Lemma 15.2.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1, Lemma 15.2, Eq. (15.8);
+the proof is developed in Exercise 15.6.
+
+**Proof formalization notes.** We follow the route Wainwright outlines in Exercise 15.6.
+The argument reduces to the two-point (Bernoulli) case by the data-processing inequality for KL
+divergence applied to the binary partition `A = {q ≤ p}`, where `p = dℙ/dξ`, `q = dℚ/dξ` are
+densities against the dominating measure `ξ = ℙ + ℚ`. On this optimal set the total variation
+equals `ℙ(A) − ℚ(A)` (`tvDist_eq_measure_sub`). The Bernoulli crux is the elementary scalar
+inequality (Exercise 15.6(a))
+`2 (δ_p − δ_q)² ≤ δ_p log(δ_p/δ_q) + (1 − δ_p) log((1 − δ_p)/(1 − δ_q)) = D(Bern(δ_p) ‖ Bern(δ_q))`,
+proved in `bernoulli_pinsker_scalar` by a one-variable convexity argument: the difference
+`F(a) = D(Bern(a) ‖ Bern(b)) − 2(a − b)²` satisfies `F(b) = F'(b) = 0` and
+`F''(a) = 1/(a(1 − a)) − 4 ≥ 0` (since `a(1 − a) ≤ 1/4`), hence `F ≥ 0`. The degenerate endpoints
+`a ∈ {0, 1}` reduce to `2 c² ≤ −log(1 − c)` (`two_sq_le_neg_log_one_sub`). Pushing forward through
+the indicator map `f = 𝟙_A : α → Bool` and chaining `klDiv_bool_ge` with the KL data-processing
+inequality `klDiv_map_le` gives `2 ‖ℙ − ℚ‖²_TV ≤ D(ℚ ‖ ℙ)` (`klDiv_ge_two_mul_tvDist_sq`); taking
+square roots in `ℝ≥0∞` yields the public theorem `pinsker_tv_le_kl`. The constant `½` is exactly the
+book's; no deviation.
+
+**Bibliographic comments.** The inequality is jointly attributed to three independent works of the
+1960s, whence the triple name. M. S. Pinsker, *Information and Information Stability of Random
+Variables and Processes* (translated by A. Feinstein), Holden-Day, San Francisco, 1964, first
+established a bound of this form (with a non-optimal constant). The sharp constant `½` (in nats,
+giving `‖P − Q‖²_TV ≤ ½ D(Q ‖ P)`) was obtained independently by I. Csiszár,
+"Information-type measures of difference of probability distributions and indirect observations",
+*Studia Scientiarum Mathematicarum Hungarica* 2 (1967), 299–318, and by S. Kullback,
+"A lower bound for discrimination information in terms of variation", *IEEE Transactions on
+Information Theory* 13 (1) (1967), 126–127 (with a correction in 13 (4) (1967), 765). The result is
+now standard textbook material; the Bernoulli-reduction proof formalized here is the one in
+Wainwright's Exercise 15.6.
 -/
 
 open MeasureTheory InformationTheory Real Set

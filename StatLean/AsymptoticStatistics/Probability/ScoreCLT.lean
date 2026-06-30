@@ -8,23 +8,56 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 
 /-!
-Multivariate central limit theorem for iid vectors in `EuclideanSpace ℝ (Fin k)`.
+# Multivariate central limit theorem for iid vectors (Cramér–Wold via Lévy)
 
-Van der Vaart §7.10 Step 1 needs: given iid vectors `Y_i` with zero mean and finite
-covariance `cov`, the normalized sum `(1/√n) ∑ Y_i` converges in distribution to
-`multivariateGaussian 0 cov`.
+Let $Y_1, Y_2, \dots$ be independent and identically distributed random vectors taking
+values in $\mathbb{R}^k$, with mean zero and finite covariance matrix $\Sigma$ (positive
+semidefinite), so that $\mathbb{E}\langle u, Y_0\rangle = 0$ and
+$\mathbb{E}\big[\langle u, Y_0\rangle\,\langle v, Y_0\rangle\big] = u^{\top}\Sigma\, v$
+for all directions $u, v \in \mathbb{R}^k$. Then the normalized partial sum
+$\frac{1}{\sqrt{n}}\sum_{i=0}^{n-1} Y_i$ converges in distribution to the multivariate
+normal law $N(0, \Sigma)$.
 
-**Strategy (Cramér–Wold via Lévy continuity)**: for every test direction
-`t : EuclideanSpace ℝ (Fin k)`, the 1D projection `Z_i := ⟪t, Y_i⟫` is iid with
-zero mean (from `h_zero_mean`) and variance `t.ofLp ⬝ᵥ cov.mulVec t.ofLp` (from
-`h_cov`). Mathlib's 1D CLT
+This is the device invoked as Step 1 of the score-statistic argument in van der Vaart
+Theorem 7.10 (§7.3, Convergence to a Normal Experiment): the asymptotic normality of a
+sum of iid score contributions follows from the multivariate CLT applied to those
+contributions.
+
+Deviation from the textbook statement: the Lean formalization carries the moment data as
+explicit hypotheses on the projections $\langle u, Y_0\rangle$ — zero mean
+(`h_zero_mean`), the covariance identity $u^{\top}\Sigma\,v$ (`h_cov`), and a square
+integrability assumption `MemLp (Y 0) 2 P` (`hL2`) — rather than abstractly assuming
+"$Y_0$ has mean $0$ and covariance $\Sigma$". These together encode exactly the finite
+second-moment hypotheses of the classical statement.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 7
+(Local Asymptotic Normality), Theorem 7.10 (§7.3, Convergence to a Normal Experiment),
+Step 1 of the proof. The underlying classical result is the multivariate Lindeberg–Lévy
+CLT together with the Cramér–Wold device (van der Vaart, Chapter 2, §2.3 Characteristic
+Functions, Example 2.18 and the Cramér–Wold lemma, p. 16).
+
+**Proof formalization notes.** The proof uses the Cramér–Wold device implemented through
+Lévy's continuity theorem. For every test direction $t \in \mathbb{R}^k$, the scalar
+projection $Z_i := \langle t, Y_i\rangle$ is iid with zero mean (from `h_zero_mean`) and
+variance $t^{\top}\Sigma\, t$ (from `h_cov`). Mathlib's 1D CLT
 (`ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub`) gives
-`(√n)⁻¹ ∑ Z_i ⇝ gaussianReal 0 Var[Z_0; P]`. Its characteristic function at
-`s = 1` then converges to `exp(-Var[Z_0]/2)`, which equals
-`charFun (multivariateGaussian 0 cov) t`. Lévy's continuity theorem
-(`ProbabilityMeasure.tendsto_of_tendsto_charFun`) promotes pointwise charFun
-convergence to weak convergence in `ProbabilityMeasure`, which we unpack as
-`WeakConverges`.
+$\tfrac{1}{\sqrt{n}}\sum_i Z_i \rightsquigarrow N\!\big(0, \operatorname{Var}[Z_0]\big)$.
+Its characteristic function at the point $s = 1$ converges to
+$\exp(-\operatorname{Var}[Z_0]/2)$, which equals
+$\operatorname{charFun}\!\big(N(0,\Sigma)\big)(t)$. Lévy's continuity theorem
+(`ProbabilityMeasure.tendsto_of_tendsto_charFun`) promotes this pointwise
+characteristic-function convergence to weak convergence in `ProbabilityMeasure`, which
+is unpacked as `WeakConverges`.
+
+**Bibliographic comments.** The multivariate central limit theorem is classical folklore
+with no single seminal origin; it is the natural vector-valued extension of the
+Lindeberg–Lévy theorem. The reduction of multivariate weak convergence to the family of
+all one-dimensional projections — the key step here — is the Cramér–Wold device:
+H. Cramér and H. Wold, "Some theorems on distribution functions", *Journal of the London
+Mathematical Society* 11 (1936), 290–294. The continuity-theorem machinery that converts
+pointwise characteristic-function convergence into weak convergence is due to Paul Lévy
+(*Calcul des probabilités*, Gauthier-Villars, Paris, 1925).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

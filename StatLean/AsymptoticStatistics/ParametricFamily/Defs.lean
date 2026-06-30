@@ -3,11 +3,63 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-Asymptotic Statistics — Parametric family of densities.
+# Parametric family of densities
 
-Defines `ParametricFamily`, the measurable family of densities `θ ↦ p_θ`
-w.r.t. a dominating measure μ, and its square-root density `√p_θ` with
-the basic measurability / positivity / `L²(μ)` facts.
+A *parametric statistical model* is a family of probability densities
+$\{p_\theta : \theta \in \Theta\}$ on a sample space $\mathcal X$, each taken with
+respect to a common dominating $\sigma$-finite measure $\mu$. This file fixes the
+basic objects of such a model and the analytic structure used throughout the
+local-asymptotic-normality development.
+
+We package a parametric family as the data of a measurable, non-negative map
+$\theta \mapsto p_\theta$, where $p_\theta : \mathcal X \to \mathbb R$ is the density
+of the $\theta$-th member with respect to $\mu$. A family is a *probability-density
+family* (relative to $\mu$) when, for every $\theta$, the density is $\mu$-integrable
+and normalised, $\int_{\mathcal X} p_\theta \, d\mu = 1$.
+
+The central analytic object is the **square-root density**
+$$ s_\theta(x) \;=\; \sqrt{p_\theta(x)}, $$
+which is measurable and non-negative, satisfies $s_\theta^2 = p_\theta$ pointwise, and
+— precisely because $\int p_\theta \, d\mu = 1 < \infty$ — belongs to $L^2(\mu)$ with
+$\lVert s_\theta \rVert_{L^2(\mu)}^2 = 1$. Representing densities through their square
+roots is what turns the (nonlinear) statistical model into a curve in the Hilbert space
+$L^2(\mu)$, and is the foundation for differentiability in quadratic mean and the
+Hellinger geometry of vdV Chapter 7.
+
+This file contains no theorem with a numbered book counterpart; it sets up the
+definitions (`ParametricFamily`, `IsPDFOf`, `sqrtDensity`) and their elementary
+measurability / positivity / $L^2$ lemmas.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 7 (Local Asymptotic Normality), §7.2 (Expanding the Likelihood) —
+the parametric-model setup and the square-root-density / $L^2(\mu)$ representation
+underlying the differentiability-in-quadratic-mean definition.
+
+**Proof formalization notes.**
+* We bundle the joint measurability and non-negativity of $\theta \mapsto p_\theta$
+  into the `ParametricFamily` structure so downstream lemmas reuse them without
+  reproving.
+* `IsPDFOf` collects the two universal regularity conditions that otherwise recur as
+  separate hypotheses in LAN-style statements — per-$\theta$ normalisation
+  ($\int p_\theta \, d\mu = 1$) and per-$\theta$ $\mu$-integrability.
+* We deliberately do **not** bundle $\mu$-a.e. strict positivity of $p_\theta$ here.
+  vdV's Theorem 7.10 (and the LAN expansion it rests on) needs only the weaker
+  condition that the perturbed densities $p_{\theta_0 + t u}$ are strictly positive on
+  the support of $p_{\theta_0}$, i.e. $\nu$-a.e. with $\nu = \mu.\mathrm{withDensity}\,
+  p_{\theta_0}$. Consumers requiring positivity should take it as a separate
+  hypothesis in $\nu$-form rather than baking it into the structure.
+* The membership $s_\theta \in L^2(\mu)$ is obtained from $\mu$-integrability of
+  $p_\theta$ via `memLp_two_iff_integrable_sq`, using $s_\theta^2 = p_\theta$.
+
+**Bibliographic comments.** The square-root / Hilbert-space representation of a
+parametric model — and the resulting Hellinger and $L^2$ geometry — is classical
+statistical folklore with no single seminal origin. Its modern asymptotic use
+traces through L. Le Cam's work on differentiability in quadratic mean and contiguity
+(L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986) and
+the earlier C. R. Rao / J. Hájek tradition on regular parametric families; the
+textbook synthesis followed here is van der Vaart (1998), Chapter 7. No original
+research paper is attributed for these definitional objects.
 -/
 
 open MeasureTheory

@@ -1,26 +1,62 @@
 import StatLean.ConcentrationInequalities.SubExponential.Defs
 
 /-!
-# Sub-exponential tail bounds — Lu-BDA §3.2 (`thm:sub-exp`)
+# Sub-Exponential Tail Probability
 
-We formalize Lu, *Big Data Analysis* §3.2 "Sub-Exponential Tail Probability":
+Let $X$ be a sub-exponential random variable with parameter $\alpha > 0$, and write
+$Y = X - \mathbb{E}[X]$ for its centering. The sub-exponential tail probability exhibits
+two regimes governed by the deviation level $t$ relative to $\alpha$:
+
+* **Quadratic regime** (small deviations, $0 \le t \le \alpha$):
+  $$\mathbb{P}\bigl(Y > t\bigr) \le \exp\!\left(-\frac{t^2}{2\alpha^2}\right).$$
+* **Linear regime** (large deviations, $t \ge \alpha$):
+  $$\mathbb{P}\bigl(Y > t\bigr) \le \exp\!\left(-\frac{t}{2\alpha}\right).$$
+
+For small deviations the tail decays like that of a sub-Gaussian variable (Gaussian
+$\exp(-t^2/2\alpha^2)$ shape); for large deviations the lighter, purely exponential
+$\exp(-t/2\alpha)$ decay takes over. The crossover occurs at $t = \alpha$, where the two
+bounds agree.
+
+Formalized here as:
 
 * `IsSubExponential.measure_sub_integral_lt_le_quadratic` — quadratic regime
-  `μ {t < Y} ≤ exp(−t²/(2α²))` for `0 ≤ t ≤ α`, where `Y = X − E[X]`.
+  $\mu\{t < Y\} \le \exp(-t^2/2\alpha^2)$ for $0 \le t \le \alpha$.
 * `IsSubExponential.measure_sub_integral_lt_le_linear` — linear regime
-  `μ {t < Y} ≤ exp(−t/(2α))` for `α ≤ t`, where `Y = X − E[X]`.
+  $\mu\{t < Y\} \le \exp(-t/2\alpha)$ for $\alpha \le t$.
 
-Both follow from the one-sided Chernoff bound
-  `μ {t < Y} ≤ exp(−λt) · MGF_Y(λ)  ≤  exp(−λt + λ²α²/2)`
-using `mgf_le_of_mem_Icc`, then optimizing the free parameter `λ ∈ [0, 1/α]`:
-- Quadratic regime: optimal `λ = t/α²` lies in range when `t ≤ α`; gives `exp(−t²/(2α²))`.
-- Linear regime: clamp `λ = 1/α`; residual `1/2 ≤ t/(2α)` (from `α ≤ t`) absorbs the slack.
+**Added hypotheses / changed constants.** We require $\alpha > 0$ explicitly. In the
+quadratic regime we allow $t = 0$ (the book states $t > 0$); the bound is then the trivial
+$\mu(\cdot) \le 1$. In the linear regime we allow the equality $t = \alpha$ (the book uses
+strict $t > \alpha$); this yields the same value as the quadratic bound at the crossing
+point. The events use a strict inequality $t < Y$, faithful to the textbook; the Chernoff
+brick supplies the bound on $\{t \le Y\} \supseteq \{t < Y\}$.
+
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 5 (Sub-Exponential
+Random Variables), §5.2 "Sub-Exponential Random Variables", Theorem 5.2 (`thm:sub-exp`).
+
+**Proof formalization notes.** Both bounds follow from the one-sided Chernoff bound
+  $\mu\{t < Y\} \le \exp(-\lambda t)\,\mathrm{MGF}_Y(\lambda) \le \exp(-\lambda t + \lambda^2\alpha^2/2)$
+using `mgf_le_of_mem_Icc`, then optimizing the free parameter $\lambda \in [0, 1/\alpha]$:
+- Quadratic regime: the optimal $\lambda = t/\alpha^2$ lies in range when $t \le \alpha$; gives $\exp(-t^2/2\alpha^2)$.
+- Linear regime: clamp $\lambda = 1/\alpha$; the residual $1/2 \le t/(2\alpha)$ (from $\alpha \le t$) absorbs the slack.
 
 Mathlib brick: `ProbabilityTheory.measure_ge_le_exp_mul_mgf`
 (in `Mathlib.Probability.Moments.Basic`, transitively via `SubGaussian`).
 
 `IsFiniteMeasure μ` is derived privately from `integrable_exp_mul` at `l = 0`,
 mirroring the pattern in `SubGaussian/TailBounds.lean`.
+
+**Bibliographic comments.** The two-regime sub-exponential tail bound is textbook folklore
+with no single seminal origin; it is the standard packaging of the sub-exponential MGF
+condition into a deviation inequality via the Chernoff method. Standard modern references
+giving precisely this two-regime ($\exp(-ct^2)$ for small $t$, $\exp(-ct)$ for large $t$)
+statement are: R. Vershynin, *High-Dimensional Probability: An Introduction with
+Applications in Data Science*, Cambridge University Press, 2018, §2.8 (Proposition 2.7.1 /
+Theorem 2.8.1); and M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic
+Viewpoint*, Cambridge University Press, 2019, §2.1.3 (Proposition 2.9, sub-exponential tail
+bound). The underlying Chernoff bounding technique originates with H. Chernoff, "A measure
+of asymptotic efficiency for tests of a hypothesis based on the sum of observations,"
+*Annals of Mathematical Statistics* 23(4):493–507, 1952.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -43,7 +79,7 @@ private lemma IsSubExponential.isFiniteMeasure
   simp only [zero_mul, Real.exp_zero] at h
   exact (integrable_const_iff_isFiniteMeasure (one_ne_zero)).mp h
 
-/-- **Quadratic-regime sub-exponential tail bound** (Lu-BDA §3.2, `thm:sub-exp`,
+/-- **Quadratic-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2, `thm:sub-exp`,
 quadratic case).
 
 If `X` is sub-exponential with parameter `α > 0` under `μ`, then for `0 ≤ t ≤ α`,
@@ -58,11 +94,11 @@ on the event is faithful; the Chernoff brick gives `≤`, absorbed via `{t < Y} 
 theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
     {X : Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubExponential X α μ)
-    -- USER-INPUT: α > 0; Lu-BDA §3.2 (thm:sub-exp)
+    -- USER-INPUT: α > 0; Lu-BDA §5.2 (thm:sub-exp)
     (hα : 0 < (α : ℝ))
-    -- USER-INPUT: 0 ≤ t; Lu-BDA §3.2 (thm:sub-exp)
+    -- USER-INPUT: 0 ≤ t; Lu-BDA §5.2 (thm:sub-exp)
     {t : ℝ} (ht : 0 ≤ t)
-    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §3.2 (thm:sub-exp)
+    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §5.2 (thm:sub-exp)
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
@@ -113,7 +149,7 @@ theorem IsSubExponential.measure_sub_integral_lt_le_quadratic
           rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
           exact ENNReal.ofReal_le_ofReal hbrick
 
-/-- **Linear-regime sub-exponential tail bound** (Lu-BDA §3.2, `thm:sub-exp`,
+/-- **Linear-regime sub-exponential tail bound** (Lu-BDA §5.2, Theorem 5.2, `thm:sub-exp`,
 linear case).
 
 If `X` is sub-exponential with parameter `α > 0` under `μ`, then for `α ≤ t`,
@@ -127,9 +163,9 @@ the same bound as the quadratic regime at the crossing point). -/
 theorem IsSubExponential.measure_sub_integral_lt_le_linear
     {X : Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubExponential X α μ)
-    -- USER-INPUT: α > 0; Lu-BDA §3.2 (thm:sub-exp)
+    -- USER-INPUT: α > 0; Lu-BDA §5.2 (thm:sub-exp)
     (hα : 0 < (α : ℝ))
-    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §3.2 (thm:sub-exp)
+    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §5.2 (thm:sub-exp)
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < X ω - ∫ x, X x ∂μ}
       ≤ ENNReal.ofReal (Real.exp (-t / (2 * (α : ℝ)))) := by

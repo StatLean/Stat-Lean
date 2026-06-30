@@ -2,17 +2,44 @@ import StatLean.MultipleTesting.EValues.Defs
 import StatLean.MultipleTesting.PValues.Defs
 
 /-!
-# E-to-p conversion — assembly (Candès, Lecture 15, Prop. 3, STAT 300C Notes)
+# E-to-p conversion: the reciprocal of an e-value is a conservative p-value
 
-**Main result** (`isPVariable_inv_of_isEVariable`): if `E` is an e-variable for the simple null
-`μ`, then its reciprocal `1/E` is a p-variable (a *conservative* p-value):
-`μ{1/E ≤ α} ≤ α` for every `α ∈ (0,1)`.
+Let $E$ be an *e-variable* for a simple null hypothesis with law $\mu$ — a nonnegative random
+variable with $\mathbb{E}_\mu[E] \le 1$. Then its reciprocal $1/E$ is a (conservative) *p-variable*:
+for every level $\alpha \in (0,1)$,
+$$ \mu\{\,1/E \le \alpha\,\} \le \alpha. $$
+This is the simplest *calibrator* turning evidence measured on the e-value scale into a valid
+p-value, so e-values plug directly into p-value-based multiple-testing procedures.
 
-*Proof (Markov).* Fix `α ∈ (0,1)`. With `E > 0`, `1/E ≤ α ⟺ E ≥ 1/α`, so by Markov's inequality
-`μ{E ≥ 1/α} ≤ α · Eμ[E] ≤ α` (using `Eμ[E] ≤ 1`).
+The main result (`isPVariable_inv_of_isEVariable`) states exactly this. We also record the
+companion `superUniform_inv_of_isEVariable`, which says $1/E$ is *super-uniform*
+($\mu\{1/E \le t\} \le t$ for all $t \ge 0$, not only $t \in (0,1)$) — the form consumed by the
+Benjamini–Hochberg / Holm assembly files, so e-values feed directly into FDR control.
 
-We also record that `1/E` is [[`SuperUniform`]] (`superUniform_inv_of_isEVariable`), the form the
-Benjamini–Hochberg / Holm assembly files consume — so e-values feed directly into FDR control.
+**Added hypothesis (Lean-only).** Beyond the e-variable assumption, the formalization requires $E$
+to be strictly positive pointwise, $E(\omega) > 0$. This rules out Lean's `1/0 = 0` convention,
+which would otherwise map the no-evidence event $E = 0$ (intuitively p-value $1$) to $1/E = 0$ and
+spuriously inflate $\mu\{1/E \le \alpha\}$. E-variables arising as likelihood ratios are positive,
+so this is no loss of generality.
+
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
+2023, Lecture 15, Proposition 3 (e-to-p calibration).
+
+**Proof formalization notes.** Fix $\alpha \in (0,1)$. With $E > 0$ we have the equivalence
+$1/E \le \alpha \iff E \ge 1/\alpha$, so Markov's inequality gives
+$\mu\{E \ge 1/\alpha\} \le \alpha \cdot \mathbb{E}_\mu[E] \le \alpha$, using $\mathbb{E}_\mu[E] \le 1$.
+In Lean the event is rewritten in `ENNReal.ofReal` form and closed by the extended-nonnegative
+Markov bound `meas_ge_le_lintegral_div`, after which `ENNReal.div_le_div_right` together with the
+e-variable bound `hE.expectation_le_one` and `ENNReal.ofReal_inv_of_pos` finishes the calc. The
+super-uniform version extends the bound from $(0,1)$ to all $t \ge 0$ by separately handling $t = 0$
+(where $E > 0$ makes the event $\{1/E \le 0\}$ empty).
+
+**Bibliographic comments.** The reciprocal calibrator is due to Vladimir Vovk and Ruodu Wang,
+"E-values: Calibration, combination and applications", *The Annals of Statistics* **49**(3):
+1736–1754, 2021 (DOI 10.1214/20-AOS2020). There, calibrators from e-values to p-values are studied
+systematically (their §2); the map $e \mapsto \min(1, 1/e)$ — equivalently the bound used here,
+$\mu\{1/E \le \alpha\} \le \alpha$ — is the canonical such calibrator and follows from Markov's
+inequality. The Candès lecture notes present this as the standard e-to-p conversion.
 -/
 
 open MeasureTheory

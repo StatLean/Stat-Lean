@@ -1,9 +1,41 @@
 import StatLean.HighDimensionalStatistics.Lasso.SupportRecovery.Defs
 
 /-!
-# ℓ¹ subdifferential, convexity, and the PDW uniqueness lemma (Wainwright §7.5.2)
+# ℓ¹ subdifferential, KKT certificate, and the PDW uniqueness/support lemma
 
-The convex-analytic core of the primal–dual-witness proof of Theorem 7.21:
+This file assembles the convex-analytic core of the primal–dual-witness (PDW) proof of the
+Lasso variable-selection theorem. Write the (penalized least-squares) Lasso objective as
+$$ F_\lambda(\theta) \;=\; \tfrac{1}{2n}\,\|Y - X\theta\|_2^2 \;+\; \lambda\,\|\theta\|_1, $$
+and let $S$ denote the candidate active set. The results are:
+
+* **Subdifferential characterization of the ℓ¹ norm.** A vector $z$ belongs to the
+  subdifferential $\partial\|\theta\|_1$ if and only if it pairs to the norm and is dual-feasible:
+  $\langle z,\theta\rangle = \|\theta\|_1$ and $\|z\|_\infty \le 1$.
+* **KKT certificate (zero-subgradient condition).** Every Lasso minimizer $\hat\theta$ admits a
+  subgradient $z \in \partial\|\hat\theta\|_1$ satisfying the stationarity equation
+  $\tfrac{1}{n}X^\top(X\hat\theta - Y) + \lambda z = 0$, and conversely any point with such a
+  certificate is a global minimizer (convex sufficiency). A Lasso minimizer exists for every
+  $\lambda > 0$ by coercivity of the penalty.
+* **Lemma 7.23 (b) — support of every minimizer.** If the PDW pair $(\hat\theta,\hat z)$ satisfies
+  the KKT condition with $\hat\theta$ supported on $S$ and *strict* dual feasibility off $S$
+  ($|\hat z_j| < 1$ for $j \notin S$), then *every* Lasso minimizer $\tilde\theta$ is supported
+  on $S$.
+* **Lemma 7.23 (a) — uniqueness.** Under the lower-eigenvalue condition (A3) (a positive
+  lower bound $c_{\min} > 0$ on the restricted quadratic form $\|X_S v\|_2^2 / n$), a successful
+  PDW construction implies the Lasso has a *unique* optimal solution.
+
+Deviation from the book: the formalized Lemma 7.23 (a)/(b) carry an explicit hypothesis
+$\lambda > 0$, which Wainwright assumes implicitly throughout §7.5. Without it the support and
+uniqueness claims fail (e.g. $X = 0,\,Y = 0,\,\lambda = 0$ admits unsupported minimizers); see
+the per-declaration docstrings.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 7 (Sparse linear models in high dimensions), §7.5.2
+(Proof of Theorem 7.21), Lemma 7.23 (a) (uniqueness) and (b) (support), zero-subgradient /
+KKT condition Eq (7.48); lower-eigenvalue condition (A3), §7.5.1, Eq (7.43a).
+
+**Proof formalization notes.** The convex-analytic core of the primal–dual-witness proof of
+Theorem 7.21 is split as:
 
 * `l1_subgradient_iff` — `z ∈ ∂‖θ‖₁ ↔ (⟪z,θ⟫ = ‖θ‖₁ ∧ ‖z‖_∞ ≤ 1)` (dual pairing form).
 * `loss_convex_gradient` — the gradient inequality of the quadratic loss `(1/2n)‖Y−Xθ‖²`.
@@ -16,6 +48,15 @@ The convex-analytic core of the primal–dual-witness proof of Theorem 7.21:
 Matrix-free except `pdw_unique`, whose strict-convexity step uses the (A3) `LowerEigenvalue`
 quadratic-form bound on support-difference vectors. Reuses the Hölder bound
 `abs_inner_le_l1Norm_mul_linfNorm` (`ForMathlib/VecNorms.lean`).
+
+**Bibliographic comments.** The primal–dual-witness method formalized here originates with
+M. J. Wainwright, "Sharp thresholds for high-dimensional and noisy sparsity recovery using
+ℓ₁-constrained quadratic programming (Lasso)", *IEEE Transactions on Information Theory*,
+vol. 55, no. 5, pp. 2183–2202, 2009, which introduced the PDW construction (and its supporting
+lemmas, the analogues of Lemma 7.23) to establish sharp model-selection thresholds for the Lasso.
+The subdifferential/KKT machinery is standard convex analysis (the optimality conditions for the
+ℓ¹-penalized least-squares program); the book's Lemma 7.23 packages these classical facts in the
+form needed for the PDW witness argument.
 -/
 
 open Matrix

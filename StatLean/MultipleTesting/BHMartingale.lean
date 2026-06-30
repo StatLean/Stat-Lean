@@ -1,14 +1,32 @@
 import StatLean.MultipleTesting.BenjaminiHochberg
 
 /-!
-# Benjamini–Hochberg FDR — exact identity (Candès, Lecture 7, §7.2, Theorem 2)
+# Benjamini–Hochberg FDR — exact identity
 
-The Benjamini–Hochberg procedure `bhRejects α p` controls FDR with **equality** when the null
-p-values are exactly uniform: `FDR = (N₀/N)·α` (Candès, Lecture 7, §7.2, Theorem 2, with `q = α`,
-`N₀ = |H₀|`).
+Consider $N$ hypotheses tested with independent p-values $p_1, \dots, p_N$, of which the
+subset $H_0$ (with $N_0 = |H_0|$) are true nulls. The Benjamini–Hochberg (BH) procedure at level
+$\alpha$ rejects the hypotheses whose p-values fall at or below the adaptive threshold
+$k^\ast \alpha / N$, where $k^\ast$ is the largest index $k$ for which at least $k$ p-values are
+$\le k\alpha/N$. The false discovery proportion is $\mathrm{FDP} = V / (R \vee 1)$, where $V$ is the
+number of true nulls rejected and $R$ the total number of rejections, and the false discovery rate
+is $\mathrm{FDR} = \mathbb{E}[\mathrm{FDP}]$.
 
-**Main result** (`benjamini_hochberg_fdr_eq`): independent p-values, every null exactly uniform ⇒
-`FDR = (N₀/N)·α`.
+**Main result** (`benjamini_hochberg_fdr_eq`): if the p-values are jointly independent and every null
+p-value is **exactly** uniform on $[0,1]$ (i.e. $\mathbb{P}(p_i \le t) = t$ for $t \in [0,1]$, not
+merely the super-uniform domination $\mathbb{P}(p_i \le t) \le t$), then the BH procedure attains
+FDR control with **equality**:
+$$ \mathrm{FDR} = \frac{N_0}{N}\,\alpha. $$
+This is the exact-identity companion to the super-uniform inequality $\mathrm{FDR} \le (N_0/N)\alpha$
+formalized in `BenjaminiHochberg.lean`. We require $0 < \alpha \le 1$ and $N \ge 1$; the upper bound
+$\alpha \le 1$ ensures every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 20 (False Discovery Rate), §20.2 (False
+Discovery Rate: Independent P-values), Theorem 20.1; and
+E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University, 2023,
+Lecture 7, §7.2, Theorem 2 (BH attains $\mathrm{FDR} = (N_0/N)\,q$ under independent exactly-uniform
+nulls, with the level written $q = \alpha$).
+
+**Proof formalization notes.**
 
 *On the proof technique.* The lecture proves this via a backwards-martingale + Doob's optional
 stopping argument on `V(t)/t`. We obtain the **same identity** by the leave-one-out argument already
@@ -29,6 +47,18 @@ identity are:
   (`bh_summand_eq_sum`).
 * `numRej_loo_ge_one` — `R(pᵢ→0) ≥ 1` always (coordinate `i` is forced into the LOO rejection set
   since `pᵢ` is set to `0`), so `∑ₖ P(R(pᵢ→0)=k) = 1` exactly (not just `≤ 1`).
+
+**Bibliographic comments.** The BH procedure and the exact independent-null identity originate with
+Y. Benjamini and Y. Hochberg, "Controlling the false discovery rate: a practical and powerful
+approach to multiple testing", *Journal of the Royal Statistical Society, Series B* 57(1):289–300,
+1995; their Theorem 1 states $\mathrm{FDR} = (m_0/m)\,q$ for independent test statistics with the
+nulls uniformly distributed (and $\mathrm{FDR} \le (m_0/m)\,q$ in general). The martingale /
+optional-stopping reformulation underlying the lecture proof is due to J. D. Storey, J. E. Taylor and
+D. Siegmund, "Strong control, conservative point estimation and simultaneous conservative
+consistency of false discovery rates: a unified approach", *Journal of the Royal Statistical Society,
+Series B* 66(1):187–205, 2004 (their empirical-process / backwards-martingale treatment of the BH
+estimator $V(t)/t$). The leave-one-out argument formalized here is the discrete equivalent of that
+martingale identity and gives the same exact-equality conclusion.
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -4,21 +4,56 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
-# Gaussian maximum-entropy mutual-information bound — Lemma 15.17 (Wainwright §15.3.4)
+# Gaussian maximum-entropy mutual-information bound
 
 When the observation conditioned on the index is Gaussian, the mutual information admits a
-log-determinant bound coming from the maximum-entropy property of the multivariate Gaussian:
-```
-I(Z; J) ≤ ½ ( log det cov(Z) − (1/M) Σⱼ log det Σʲ )      (Lemma 15.17, Eq. (15.42)),
-```
-where `Σʲ = cov(Z | J = j)` and `cov(Z)` is the covariance of the mixture. This refines the
-convexity bound (Eq. (15.34)) and is the key tool for the PCA lower bound (Example 15.19).
+log-determinant bound coming from the maximum-entropy property of the multivariate Gaussian.
+Suppose the conditional law of the observation given the index is centered Gaussian,
+$Z \mid J = j \sim \mathcal{N}(0, \Sigma^j)$, for $j = 1, \dots, M$. Then the mutual information
+between $Z$ and the uniformly distributed index $J$ satisfies
+$$
+  I(Z; J) \;\le\; \tfrac12\Bigl( \log\det \operatorname{cov}(Z)
+    \;-\; \tfrac{1}{M}\sum_{j=1}^{M} \log\det \Sigma^j \Bigr),
+$$
+where $\Sigma^j = \operatorname{cov}(Z \mid J = j)$ is positive definite and
+$\operatorname{cov}(Z) = \tfrac{1}{M}\sum_{j=1}^{M}\Sigma^j$ is the covariance of the zero-mean
+Gaussian mixture. This refines the convexity bound (Eq. (15.34)) and is the key tool for the PCA
+lower bound (Example 15.19).
 
-⚠ **Research-grade (◆◆).** The proof rests on the Gaussian maximum-entropy theorem (Exercise 15.14)
-and concavity of `log det`. Time-boxed; if it resists, escalate (named-lemma debt) per CLAUDE.md §2.
+Added hypotheses relative to the book: each component covariance $\Sigma^j$ is assumed positive
+definite, and the means are taken to be zero (the relevant minimax constructions in §15.3.4 use
+centered Gaussian components), so $\operatorname{cov}(Z)$ is the average of the $\Sigma^j$ rather
+than carrying the between-means contribution.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.4, Lemma 15.17.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds),
+§15.3.4, Lemma 15.17, Eq. (15.42).
+
+**Proof formalization notes.** The proof avoids differential entropy entirely. The mixture
+distribution minimizes the average KL divergence over all candidate reference measures
+(`sum_klDiv_mixture_le`), so the average $\tfrac1M\sum_j D(\mathcal{N}(0,\Sigma^j) \,\|\, \text{mixture})$
+is bounded above by comparing against the matched zero-mean Gaussian $G = \mathcal{N}(0, \operatorname{cov}(Z))$.
+Each $D(\mathcal{N}(0,\Sigma^j) \,\|\, G)$ has the closed form
+$\tfrac12(\log\det\operatorname{cov}(Z) - \log\det\Sigma^j + \operatorname{tr}(\operatorname{cov}(Z)^{-1}\Sigma^j) - d)$
+(`klDiv_multivariateGaussian_zero`), and the trace terms average to
+$\operatorname{tr}\bigl(\operatorname{cov}(Z)^{-1}\cdot\tfrac1M\sum_j\Sigma^j\bigr) = \operatorname{tr}(I) = d$,
+cancelling the $-d$. Nonnegativity of each closed-form summand is the matrix Gibbs inequality
+(`logdet_trace_nonneg`): after whitening by $R = B^{-1/2}$, the expression diagonalizes to
+$\tfrac12\sum_i (\Lambda_i - 1 - \log\Lambda_i) \ge 0$ via $\log x \le x - 1$. This replaces the
+book's appeal to the Gaussian maximum-entropy theorem (Exercise 15.14) and concavity of
+$\log\det$ with an explicit KL computation. The auxiliary lemma `logdet_trace_nonneg` shares the
+same diagonalization as `klDiv_multivariateGaussian_zero` but exposes the *sign* rather than the
+value.
+
+**Bibliographic comments.** This is a folklore consequence of the Gaussian maximum-entropy
+principle and carries no single seminal origin. The maximum-entropy property of the multivariate
+Gaussian — that among all distributions with a fixed covariance the Gaussian maximizes differential
+entropy — originates with C. E. Shannon, "A Mathematical Theory of Communication," *Bell System
+Technical Journal* 27 (1948), 379–423 and 623–656. The standard modern reference is T. M. Cover and
+J. A. Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006 (the maximum-entropy
+characterization is Theorem 8.6.5). The mutual-information bound stated here is the packaging of that
+principle for minimax analysis given in Wainwright (2019), Lemma 15.17; we are not aware of a
+distinct primary-research source for this specific inequality.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory Matrix

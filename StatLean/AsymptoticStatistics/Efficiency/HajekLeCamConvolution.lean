@@ -6,15 +6,80 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Moments.Variance
 
 /-!
-# Theorem 8.8 — Hájek–Le Cam Convolution Theorem
+# Hájek–Le Cam Convolution Theorem (parametric)
 
-van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §8.5.
+Consider a parametric experiment $(P_\theta : \theta \in \Theta)$ that is differentiable
+in quadratic mean at $\theta_0$ with non-singular Fisher information matrix $I_{\theta_0}$,
+and a parameter of interest $\psi : \Theta \to \mathbb{R}^d$ that is (Fréchet-)differentiable
+at $\theta_0$ with derivative $\dot\psi_{\theta_0}$. Let $T_n$ be a *regular* estimator
+sequence for $\psi(\theta)$ at $\theta_0$: for every local direction $h$,
+$$\sqrt{n}\bigl(T_n - \psi(\theta_0 + h/\sqrt{n})\bigr) \rightsquigarrow L_{\theta_0}$$
+under $P_{\theta_0+h/\sqrt n}^{\,n}$, with a limit law $L_{\theta_0}$ that does **not** depend
+on $h$.
 
-This file proves the convolution theorem `hajek_le_cam_convolution_theorem`:
-the limit law of any regular estimator factors as a fixed Gaussian convolved
-with some probability measure. The covariance corollary
-`cov_psd_of_regular_estimator` derives the Cramér–Rao-style lower bound from it.
-Full statements and proof sketches are on the declarations below.
+**Convolution theorem.** There exists a probability measure $M_{\theta_0}$ on
+$\mathbb{R}^d$ such that the regular limit law factors as a fixed Gaussian convolved with
+$M_{\theta_0}$:
+$$L_{\theta_0} = N\!\bigl(0,\ \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf T}\bigr) * M_{\theta_0}.$$
+The Gaussian factor $N(0, \dot\psi_{\theta_0} I_{\theta_0}^{-1} \dot\psi_{\theta_0}^{\mathsf T})$
+is the smallest possible limit law in the concentration ordering; it is the best regular
+estimator's law.
+
+**Covariance corollary.** If, in addition, the limit law $L_{\theta_0}$ has a finite second
+moment with covariance matrix $\Sigma_{\theta_0}$, then
+$$\Sigma_{\theta_0} - \dot\psi_{\theta_0}\, I_{\theta_0}^{-1}\, \dot\psi_{\theta_0}^{\mathsf T}$$
+is positive semidefinite. This is the asymptotic analogue of the Cramér–Rao lower bound:
+no regular estimator can have asymptotic covariance smaller than the inverse Fisher
+information bound $\dot\psi_{\theta_0} I_{\theta_0}^{-1} \dot\psi_{\theta_0}^{\mathsf T}$.
+
+*Lean-specific deviations.* The book's $\dot\psi_{\theta_0}$ appears both as a continuous
+linear map (`ψDot`) and as its matrix `ψDotMat`; the two are tied by the hypothesis
+`h_ψDot_mat`, which the book leaves prose-implicit. The covariance corollary takes the
+finite-second-moment hypothesis (`MemLp 2`) and the covariance matrix `Σ_θ` (specified
+through its bilinear form) as explicit inputs — without them the covariance is undefined,
+so the PSD statement would be vacuous; this is the only addition over the main theorem's
+signature.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998, Chapter 8
+(Efficiency of Estimators), §8.5 (Convolution Theorem), Theorem 8.8 (Convolution); the
+covariance corollary is the closing "In particular …" clause of Theorem 8.8, and the
+equivariant-in-law characterization used in the proof is Eq (8.7).
+
+**Proof formalization notes.** This file proves the convolution theorem
+`hajek_le_cam_convolution_theorem` and the covariance corollary
+`cov_psd_of_regular_estimator`. The proof follows the book's three-step reduction:
+
+* *Step A* (`regularity_implies_8_2_hypothesis`): translate the regularity hypothesis into
+  the weak-convergence input (8.2) required by `lower_bound_for_experiments`, feeding it the
+  constant $h$-indexed family `fun _ => hReg.limitDist` (regularity says $L_{\theta,h}$ is
+  independent of $h$).
+* *Step B* (`randomized_kernel_is_equivariant_in_law`): the Markov kernel $\kappa$ produced
+  by `lower_bound_for_experiments` is an equivariant-in-law estimator of $\dot\psi_{\theta_0} h$
+  in the limit Gaussian-shift experiment $(N(h, I^{-1}) : h \in \mathbb{R}^k)$ — this is the
+  book's Theorem 8.3 + the property (8.7).
+* *Step C*: apply `equivariant_in_law_convolution_decomposition` (the convolution structure
+  of equivariant-in-law laws, vdV Proposition 8.4) with $A := \dot\psi_{\theta_0}$ matrix and
+  $\Sigma := I_{\theta_0}^{-1}$ to obtain the decomposition; identifying the null distribution
+  with `hReg.limitDist` (Step B at $h=0$) gives the stated factorization.
+
+The covariance corollary is the helper `cov_psd_from_conv_decomp`: variance is additive for
+independent sums, the multivariate Gaussian with covariance $V$ has covariance $V$, and any
+probability-measure covariance matrix is PSD, so $\Sigma_{\theta_0} = V + \mathrm{Cov}(M_{\theta_0})$
+with $\mathrm{Cov}(M_{\theta_0}) \succeq 0$.
+
+**Bibliographic comments.** The convolution theorem originates with J. Hájek, "A
+characterization of limiting distributions of regular estimates", *Zeitschrift für
+Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970), 323–330, which proves
+(its Theorem) that the limiting law of any regular estimator in a locally asymptotically
+normal family is a convolution of the optimal Gaussian with a residual measure. An
+essentially equivalent result was obtained independently by N. Inagaki, "On the limiting
+distribution of a sequence of estimators with uniformity property", *Annals of the
+Institute of Statistical Mathematics* **22** (1970), 1–13. The underlying local-asymptotic
+framework and an early form of the lower bound are due to L. Le Cam, "On some asymptotic
+properties of maximum likelihood estimates and related Bayes' estimates", *University of
+California Publications in Statistics* **1** (1953), 277–330 (hence the "Hájek–Le Cam"
+attribution); van der Vaart's Theorem 8.8 is the textbook synthesis of these results.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

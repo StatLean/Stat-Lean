@@ -1,26 +1,55 @@
 import StatLean.Minimaxity.Defs
 
 /-!
-# From estimation to testing — Proposition 15.1 (Wainwright §15.1.2)
+# From estimation to testing (Proposition 15.1)
 
 The fundamental reduction underlying every minimax lower bound in the chapter: the minimax
-risk is lower bounded by `Φ(δ)` times the error probability of an M-ary hypothesis test built
-from a `2δ`-separated family.
+risk is lower bounded by $\Phi(\delta)$ times the error probability of an $M$-ary hypothesis
+test built from a $2\delta$-separated family.
 
-For any increasing distortion `Φ` and any `2δ`-separated family `{θʲ}` (in the semimetric `ρ`),
-```
-M(θ(𝒫); Φ∘ρ) ≥ Φ(δ) · inf_ψ ℚ[ψ(Z) ≠ J]          (Eq. (15.3))
-```
-where `ℚ` is the joint law of `(Z, J)` with `J` uniform on `[M]` and `Z ∼ P_{θᴶ}`.
+Fix an increasing distortion function $\Phi$ and a finite family of parameters
+$\{\theta^1,\dots,\theta^M\}$ that is **$2\delta$-separated** in the semimetric $\rho$ on the
+functional values, i.e. $\rho\big(g(\theta^j), g(\theta^k)\big) \ge 2\delta$ for all $j \ne k$.
+Let $J$ be uniform on $\{1,\dots,M\}$ and, given $J$, draw $Z$ from $P_{\theta^J}$, and write
+$\mathbb{Q}$ for the joint law of $(Z, J)$. Then the minimax risk for estimating the functional
+$g(\theta)$ under the distortion loss $\Phi\circ\rho$ satisfies
+$$
+  \mathfrak{M}\big(g(\theta);\,\Phi\circ\rho\big)
+    \;\ge\; \Phi(\delta)\,\cdot\, \inf_{\psi}\; \mathbb{Q}\big[\psi(Z) \ne J\big],
+  \qquad (\text{Eq. } (15.3))
+$$
+where the infimum runs over all (randomized) tests $\psi$. In the Lean statement the right-hand
+testing error is `multiwayTestingError`, the loss is `distortionLoss Φ g`, the family is
+`θfam : Fin M → Θ`, separation is the hypothesis `IsSeparatedFamily g θfam δ`, and "increasing"
+is `Monotone Φ`; the semimetric $\rho$ is taken to be the extended distance `edist` on the
+functional values $g(\theta)$.
 
-**Proof (Wainwright §15.1.2).** Restricting the supremum over `𝒫` to the finite subfamily can only
-decrease it, and the maximum over the subfamily dominates the uniform average (the Bayes risk):
-this uses `bayesRisk_le_minimaxRisk`. The geometric core (Figure 15.1) is that the nearest-point
-test `ψ(Z) = argmin_ℓ ρ(θ̂, θ(P_{θˡ}))` errs only when `ρ(θ̂, θ(P_{θᴶ})) ≥ δ`, so by Markov's
-inequality and monotonicity of `Φ`, `𝔼[Φ(ρ(θ̂, θ(P_{θᴶ})))] ≥ Φ(δ)·ℙ[ψ ≠ J]`.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.2, Proposition 15.1,
+Eq. (15.3).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.2, Eq. (15.3).
+**Proof formalization notes.** Restricting the supremum over `𝒫` to the finite subfamily can only
+decrease it (`minimaxRisk_precomp_le`), and the maximum over the subfamily dominates the uniform
+average — the Bayes risk — via `bayesRisk_le_avgRisk`. The geometric core (Wainwright Figure 15.1)
+is that the nearest-point test $\psi(Z) = \arg\min_\ell \rho\big(\hat\theta, g(\theta^\ell)\big)$
+errs only when $\rho\big(\hat\theta, g(\theta^J)\big) \ge \delta$: by the triangle inequality and
+$2\delta$-separation, a wrong test answer forces $\rho \ge \delta$, so by monotonicity of $\Phi$,
+$\mathbb{E}\big[\Phi(\rho(\hat\theta, g(\theta^J)))\big] \ge \Phi(\delta)\,\mathbb{P}[\psi \ne J]$.
+Measurability of the $\arg\min$ selector is supplied by `exists_measurable_nearestPoint` under the
+`[OpensMeasurableSpace Ω]` instance, which makes each distance $y \mapsto \mathrm{edist}(g(\theta^\ell), y)$
+continuous, hence measurable.
+
+**Bibliographic comments.** This estimation-to-testing reduction is **folklore** with no single
+seminal origin: it is the common abstract scaffold behind the classical Le Cam, Assouad, and Fano
+lower-bound methods. The idea of reducing estimation to a multiple-hypothesis testing problem and
+bounding the minimax risk by a separation $\times$ testing-error product traces to L. Le Cam,
+*Convergence of estimates under dimensionality restrictions*, Annals of Statistics 1 (1973),
+38–53, and to I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*
+(Springer, 1981). The packaging used here — increasing distortion $\Phi$, $2\delta$-separated
+family, and the nearest-point test — follows Wainwright's Proposition 15.1 and the survey
+exposition of B. Yu, *Assouad, Fano, and Le Cam*, in *Festschrift for Lucien Le Cam* (Springer,
+1997), 423–435. No original research paper states exactly Eq. (15.3) in this form; it is textbook
+synthesis.
 -/
 
 open MeasureTheory ProbabilityTheory

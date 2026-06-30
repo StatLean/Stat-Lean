@@ -2,23 +2,38 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Basic
 
 /-!
-# L-smoothness
+# L-smoothness (quadratic upper bound)
 
-Concept-layer definition for the `Optimization` area: `L`-smoothness of a
-function `f : E → ℝ` (Lu, *Big Data Analysis* §11, Definition `def:lsmooth`,
-"`L`-smooth").
+A function $f : E \to \mathbb{R}$ on a real inner product space is **$L$-smooth** if
+it lies below its quadratic model around every point: for all $x, y$,
+$$ f(y) \;\le\; f(x) + \langle \nabla f(x),\, y - x\rangle + \frac{L}{2}\,\lVert x - y\rVert^2. $$
+For a continuously differentiable function this is equivalent to the gradient
+$\nabla f$ being $L$-Lipschitz; here we take the quadratic upper bound itself as
+the definition, since that is exactly the inequality consumed by the descent
+analyses (gradient descent, Frank–Wolfe, proximal gradient).
 
-The book gives the quadratic upper-bound form
-`f y ≤ f x + ⟪∇f x, y - x⟫ + (L/2)‖x - y‖²`
-as the primary definition and notes that, for `C¹` functions, it is equivalent to
-the gradient being `L`-Lipschitz. We take the upper bound itself as the
-definition — it is exactly the inequality consumed by the descent analyses
-(gradient descent, Frank–Wolfe, proximal gradient), so no separate "descent
-lemma" is needed.
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 13
+(Gradient Descent), §13.1 (Gradient Descent), Definition 13.1 (`def:lsmooth`,
+"`L`-smooth"). The book states the
+quadratic upper bound as the primary definition and records its equivalence, for
+$C^1$ functions, with $L$-Lipschitz continuity of the gradient.
 
-Here `gradient f x` is Mathlib's Riesz-representation gradient (`= 0` where `f`
-is not differentiable). Downstream theorems carry differentiability of `f`
-explicitly when they need `gradient f x` to be the genuine derivative.
+**Proof formalization notes.** This is a concept-layer definition, so there is no
+proof to outline. Two formalization choices to record:
+
+* We take the quadratic upper bound as *the* definition rather than the
+  $L$-Lipschitz-gradient form, because it is the inequality directly consumed by
+  the descent analyses, so no separate "descent lemma" is needed to derive it.
+* `gradient f x` is Mathlib's Riesz-representation gradient, which is `0` wherever
+  `f` is not differentiable. Downstream theorems therefore carry differentiability
+  of `f` explicitly whenever they need `gradient f x` to be the genuine derivative.
+
+**Bibliographic comments.** $L$-smoothness via the quadratic upper bound is
+classical folklore of smooth convex optimization with no single seminal origin;
+the modern textbook treatment is Y. Nesterov, *Lectures on Convex Optimization*,
+2nd ed., Springer, 2018 (and the earlier *Introductory Lectures on Convex
+Optimization*, Kluwer, 2004), where the equivalence between Lipschitz-continuous
+gradient and the quadratic bound appears as the standard "descent lemma."
 -/
 
 namespace StatLean.Optimization
@@ -29,8 +44,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 
 /-- `IsLSmooth f L`: the function `f : E → ℝ` is `L`-smooth, i.e. it lies below
 the quadratic model around every point,
-`f y ≤ f x + ⟪∇f x, y - x⟫ + (L/2)‖x - y‖²` for all `x y` (Lu-BDA §11,
-`def:lsmooth`). `gradient f x` is the Riesz gradient. -/
+`f y ≤ f x + ⟪∇f x, y - x⟫ + (L/2)‖x - y‖²` for all `x y` (Lu-BDA §13.1,
+Definition 13.1, `def:lsmooth`). `gradient f x` is the Riesz gradient. -/
 def IsLSmooth (f : E → ℝ) (L : ℝ) : Prop :=
   ∀ x y, f y ≤ f x + ⟪gradient f x, y - x⟫_ℝ + (L / 2) * ‖x - y‖ ^ 2
 

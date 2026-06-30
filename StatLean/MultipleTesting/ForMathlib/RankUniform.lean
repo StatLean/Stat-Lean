@@ -5,23 +5,63 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Exchangeability and rank uniformity — ForMathlib brick
+# Exchangeability and rank uniformity
 
-The probabilistic core of conformal coverage (Candès, Lecture 9, §9.6): for an **exchangeable**,
-almost-surely distinct family of real statistics `S₀, …, S_{m-1}`, the rank of any single `Sᵢ` is
-uniform on `{1, …, m}`.
+For an **exchangeable**, almost-surely pairwise-distinct family of real-valued statistics
+$S_0, \dots, S_{m-1}$, the rank of any single $S_i$ is uniformly distributed on $\{1, \dots, m\}$.
+Define the (1-indexed) rank of the $i$-th coordinate by
+$$ R_i(\omega) \;=\; \#\{\, j : S_j(\omega) \le S_i(\omega) \,\}, $$
+which always satisfies $1 \le R_i \le m$ (since $S_i \le S_i$), and is a bijection of the index set
+onto $\{1, \dots, m\}$ whenever the values are distinct. The result is the equality
+$$ \mathbb{P}\bigl(\{\, R_i \le k \,\}\bigr) \;=\; \frac{k}{m}, \qquad k \le m, $$
+i.e. $R_i$ is uniform on $\{1, \dots, m\}$. This is the precise statement of the textbook remark
+that, for exchangeable statistics $T_1, \dots, T_n$, "all rankings are equally likely."
 
-* `rankOf S i ω` — the rank `#{ j : Sⱼ(ω) ≤ Sᵢ(ω) }` of `Sᵢ` (1-indexed; `Sᵢ ≤ Sᵢ` always, so
-  `rankOf ≥ 1`, and with distinct values `i ↦ rankOf S i ω` is a bijection onto `{1,…,m}`);
-* `Exchangeable S μ` — the joint law of `(S₀,…,S_{m-1})` is invariant under permuting the indices
-  (Mathlib v4.29.1 has **no** `Exchangeable`, so we define it);
-* `measure_rankOf_le` — `μ{ rankOf S i ≤ k } = k/m` for `k ≤ m`.
+The formalization adds three regularity hypotheses beyond the bare textbook statement: each
+statistic $S_i$ is measurable, the family is exchangeable in the sense that the joint law of
+$(S_0, \dots, S_{m-1})$ is invariant under permuting the indices, and the values are almost surely
+pairwise distinct (the textbook works with continuous scores or assumes ties broken, which forces
+distinctness; here it is made explicit). The conclusion is stated for a probability measure $\mu$.
 
-In split-conformal prediction the calibration scores and the test score are exchangeable, so the
-test score's rank is uniform — this is exactly what yields the `1−α` coverage guarantee
-(`Conformal/Coverage.lean`). Theorem-agnostic.
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
+2023, Lecture 9, §9.6 ("A taste of conformal inference"). The rank-uniformity remark appears at the
+close of §9.6 (p. 9-7) as the engine behind the conformal-coverage result Theorem 2 (split-conformal
+$1 - \alpha$ coverage).
 
-Reference: Candès, Lecture 9, §9.6, STAT 300C Notes.
+**Proof formalization notes.** The argument is split into a purely combinatorial layer on a fixed
+real tuple $t : \mathrm{Fin}\, m \to \mathbb{R}$ and a measure-theoretic layer.
+
+* `rankOf S i ω` — the rank $\#\{\, j : S_j(\omega) \le S_i(\omega) \,\}$ of $S_i$ (1-indexed;
+  $S_i \le S_i$ always, so `rankOf ≥ 1`, and with distinct values `i ↦ rankOf S i ω` is a bijection
+  onto $\{1, \dots, m\}$).
+* `Exchangeable S μ` — the joint law of $(S_0, \dots, S_{m-1})$ is invariant under index
+  permutations, `Measure.map (fun ω i => S (σ i) ω) μ = Measure.map (fun ω i => S i ω) μ` for every
+  permutation `σ` (Mathlib has **no** `Exchangeable`, so we define it).
+* `measure_rankOf_le` — the headline result $\mu\{\, \mathrm{rankOf}\, S\, i \le k \,\} = k/m$ for
+  $k \le m$.
+
+Combinatorial core (`rk`, on a fixed tuple): rank is strictly monotone along values
+(`rk_lt_rk`), lies in $[1, m]$ (`rk_pos`, `rk_le`), is injective for an injective tuple
+(`rk_injective`), and is permutation-equivariant (`rk_comp_perm`: ranking a permuted tuple at $i$
+equals ranking the original at $\sigma(i)$). Hence for an injective tuple the ranks fill
+$\{1, \dots, m\}$ exactly (`rk_image_univ`), and exactly $k$ coordinates have rank $\le k$
+(`card_filter_rk_le`). Measure-theoretic assembly: (1) push $\mu$ forward along the tuple map
+$T(\omega) = (S_0(\omega), \dots)$; (2) exchangeability + equivariance show all $m$ rank
+probabilities $\mu\{R_j \le k\}$ are equal (using the transposition $\sigma = (i\, j)$); (3) summing
+the rank-event indicators pointwise gives $k$ almost surely (by `card_filter_rk_le` on the
+a.s.-injective sample); (4) therefore $m \cdot \mu\{R_i \le k\} = k$, and dividing by $m$ (nonzero
+since `Fin m` is inhabited) yields $k/m$.
+
+**Bibliographic comments.** The rank-uniformity statement is classical **folklore** of exchangeable
+sequences and has no single seminal origin: for exchangeable random variables with almost surely
+distinct values, the induced ranking is uniform over the symmetric group, an immediate consequence
+of permutation-invariance of the joint law. Its role as the foundation of distribution-free
+prediction was made explicit in the conformal-prediction program of V. Vovk, A. Gammerman, and
+collaborators — see V. Vovk, A. Gammerman, G. Shafer, *Algorithmic Learning in a Random World*,
+Springer, 2005 (2nd ed. 2022), and, for the split/inductive variant matching the calibration setup
+here, H. Papadopoulos, K. Proedrou, V. Vovk, A. Gammerman, "Inductive Confidence Machines for
+Regression," *Proc. ECML 2002*, LNCS 2430, Springer, 2002, pp. 345–356 (the source of the
+coverage Theorem 2 cited in Candès §9.6).
 -/
 
 open MeasureTheory

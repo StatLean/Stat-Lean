@@ -17,16 +17,56 @@ import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 /-!
 # Theorem 25.21 — Semiparametric Local Asymptotic Minimax
 
-This file states and proves `lam_semiparametric_unbounded`. The headline 25.21
-lower bound is obtained by feeding the **submodel functional** `ψ_param_unb`
-directly to the per-direction-shift form of Theorem 8.11,
+Let $\psi:\mathcal P\to\mathbb R$ be a functional that is pathwise differentiable
+at $P$ relative to a tangent set $\dot{\mathcal P}_P$, with efficient influence
+function $\tilde\psi_P$. For every direction $g$ in the tangent set, write
+$P_{t,g}$ for a one-dimensional submodel through $P$ with score $g$ along which
+$\psi$ is differentiable. Then for any estimator sequence $\{T_n\}$ and any
+subconvex loss $\ell:\mathbb R\to[0,\infty]$,
+$$
+\sup_{I}\ \liminf_{n\to\infty}\ \sup_{g\in I}\
+  \mathbb E_{P_{1/\sqrt n,\,g}}\,
+  \ell\!\bigl(\sqrt n\,(T_n-\psi(P_{1/\sqrt n,\,g}))\bigr)
+  \ \ge\ \int \ell\, dN\!\bigl(0,\ \|\tilde\psi_P\|^2\bigr),
+$$
+where the outer supremum runs over all finite subsets $I$ of the tangent set.
+No estimator sequence can do asymptotically better, in local-minimax risk, than
+the centered Gaussian whose variance is the squared $L^2(P)$ norm of the
+efficient influence function — this norm is the scalar specialization of the
+book's optimal asymptotic covariance $P\tilde\psi_P\tilde\psi_P^{\mathsf T}$.
+
+**Deviations from the book statement.** The Lean theorem
+`lam_semiparametric_unbounded` is the **scalar** ($k=1$) case: $\psi$ is
+real-valued, so the limiting covariance matrix collapses to the variance
+$\|\tilde\psi_P\|^2$ and the Gaussian is the one-dimensional
+$N(0,\|\tilde\psi_P\|^2)$. Compared with the book's hypotheses it (i) assumes the
+tangent set is a **linear space** (the book's convex-cone generality is not
+formalized), (ii) carries an explicit single tightness condition on the
+recentered, $\sqrt n$-scaled statistic under $P^{\otimes n}$ (the book's
+"sequence $\sqrt n(T_n-\psi(P))$ is tight" hypothesis, used so that the
+compactification argument can be bypassed), and (iii) makes the "subconvex loss"
+hypothesis precise as `BowlShaped ℓ` together with per-truncation lower
+semicontinuity of $u\mapsto \ell(u)\wedge M$, matching the book's notion of a
+subconvex function. The loss may take the value $+\infty$ (the `ℝ≥0∞` target).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+Theorem 25.21 (LAM). The optimal-asymptotic-covariance interpretation and the
+efficient-influence-function representation appear in the same section, Eq.
+(25.22).
+
+**Proof formalization notes.** This file states and proves
+`lam_semiparametric_unbounded`. The headline 25.21 lower bound is obtained by
+feeding the **submodel functional** `ψ_param_unb` directly to the
+per-direction-shift form of Theorem 8.11,
 `local_asymptotic_minimax_bound_of_pointwise_shift`, with the per-direction
 shift supplied by the pathwise Gateaux limit. The hypothesis set is a
 **linear-space tangent set**, a pathwise-differentiable `ψ` with efficient
 influence function, an estimator sequence, a subconvex loss, and a single
 tightness condition.
 
-**Reduction in three tiers.**
+*Reduction in three tiers.*
 
 1. **Inner per-`(M, m)`** : `local_asymptotic_minimax_bound_of_pointwise_shift`
    invoked on `unboundedParamSubmodel g_P h_orth` with the submodel functional
@@ -37,17 +77,33 @@ tightness condition.
 
 2. **Outer (Loewner, `m → ∞`)** : `proj_seq_to_eif` plus Bessel plus
    Gaussian-integral continuity
-   (`gaussianReal_integral_continuous_of_var_tendsto`).
+   (`gaussianReal_integral_continuous_of_var_tendsto`). This is the formalized
+   counterpart of the book's "choose `g_P` so that `AAᵀ` is arbitrarily close to
+   `P ψ̃_P ψ̃_Pᵀ` in Loewner order".
 
 3. **Outer (monotone convergence, `ℓ_M ↑ ℓ`)** : lifts the truncated bound to
    the full bound via `LHS_canonical_mono`.
 
-**Basis builder.** The in-file `basis_at_proj_m_pos_unbounded` builds the
+*Basis builder.* The in-file `basis_at_proj_m_pos_unbounded` builds the
 1-element bases from the projection sequence, needing only orthonormality,
 carrier-membership, linear-span membership, and the variance identity
 `∑ⱼ ⟨IF, gⱼ⟩² = ‖p_m‖²`.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3.
+**Bibliographic comments.** The local asymptotic minimax theorem originates with
+J. Hájek, "Local asymptotic minimax and admissibility in estimation,"
+*Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and
+Probability*, Vol. 1, University of California Press, 1972, pp. 175–194, where
+the parametric LAM bound (the $k$-dimensional analogue of vdV Theorem 8.11) is
+established; the companion convolution theorem is due to J. Hájek, "A
+characterization of limiting distributions of regular estimates," *Z.
+Wahrsch. Verw. Gebiete* 14 (1970), 323–330, and independently N. Inagaki (1970).
+The **semiparametric** generalization formalized here — passing the parametric
+bound to sufficiently rich finite-dimensional submodels and optimizing over the
+tangent set — is developed by J. M. Begun, W. J. Hall, W.-M. Huang, and J. A.
+Wellner, "Information and asymptotic efficiency in parametric–nonparametric
+models," *Annals of Statistics* 11 (1983), 432–452, building on earlier
+information-bound work of C. Stein, R. Beran, B. Ya. Levit, and others; van der
+Vaart's §25.3 is a textbook synthesis of this line.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

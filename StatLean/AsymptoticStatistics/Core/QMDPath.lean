@@ -6,20 +6,68 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 /-!
 # Quadratic-mean-differentiable paths (dominated case)
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3,
-`eq:25.13` (QMD condition via square-root density), `lem:25.14` (analytic
-part: score has mean zero and is square-integrable).
+A one-parameter curve $t \mapsto Q_t$ of probability measures through $P$
+(so $Q_0 = P$), all dominated by a fixed $\sigma$-finite measure $\mu$ with
+densities $p_t := \mathrm{d}Q_t/\mathrm{d}\mu$, is *differentiable in
+quadratic mean* (QMD) at $t = 0$ with *score function* $g$ when the
+square-root densities admit the first-order expansion
+$$
+  \frac{1}{|t|}\,
+  \Bigl\| \sqrt{p_t} - \sqrt{p_0} - \tfrac{t}{2}\, g \sqrt{p_0} \Bigr\|_{L^2(\mu)}
+  \;\longrightarrow\; 0
+  \qquad (t \to 0).
+$$
+The score $g$ then lies in $L^2_0(P)$: it has mean zero, $\int g \,\mathrm{d}P = 0$,
+and is square-integrable, $\int g^2 \,\mathrm{d}P < \infty$ (the analytic
+content of vdV Lemma 25.14). The companion lemma `score_in_L2ZeroMean`
+proves the converse direction for users carrying a bare measurable score:
+any measurable $g$ satisfying the QMD limit above agrees $P$-almost
+everywhere with an element of $L^2_0(P)$.
 
-We formalize the dominated specialisation: a fixed dominating measure `μ`,
-densities `pₜ := dQₜ/dμ`, and the QMD condition stated as L²(μ)
-convergence of `√pₜ - √p₀ - (t/2) g √p₀` to zero faster than `t`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998. Chapter 25 (Semiparametric Models), §25.3, Eq (25.13) (the QMD
+condition via square-root densities) and Lemma 25.14 (the score has mean
+zero and is square-integrable).
+
+**Proof formalization notes.**
+We formalize the *dominated specialisation*: a fixed dominating measure
+`μ`, densities `pₜ := dQₜ/dμ`, and the QMD condition stated as L²(μ)
+convergence of `√pₜ - √p₀ - (t/2) g √p₀` to zero faster than `t`. vdV
+§25.3 explicitly authorizes taking the model dominated "for simplicity";
+the canonical nondominated form of Eq (25.13) uses formal `dP^{1/2}`
+symbols, which Mathlib's RN-derivative + `eLpNorm` machinery cannot carry,
+so the nondominated form is deferred.
 
 The score field is typed `↥(L2ZeroMean P)`, so "mean zero +
-square-integrable" (the analytic content of vdV lem:25.14) is enforced by
+square-integrable" (the analytic content of vdV Lemma 25.14) is enforced by
 the Lean type system. The standalone `score_in_L2ZeroMean` lemma ships
-separately as a consistency result for users with bare-function scores.
+separately as a consistency result for users with bare-function scores; its
+proof outline (square-integrability via triangle inequality on the QMD
+remainder plus `‖√pₜ‖²_{L²(μ)} = 1`; mean zero via Cauchy–Schwarz against
+`√p₀` and the affinity bound `∫√pₜ√p₀ ≤ 1`) lives in that lemma's
+docstring, with the two analytic engines in `ForMathlib/QMDAnalytic.lean`.
+The QMD limit is stated in `ℝ≥0∞`-quotient form `eLpNorm … / ofReal |t| → 0`
+rather than the classical `.toReal²/t² → 0` form: the latter would be
+vacuously satisfied whenever the residual leaves `L²(μ)` (since
+`(⊤ : ℝ≥0∞).toReal = 0`), whereas the `ℝ≥0∞` form genuinely forces
+finiteness of the residual L²-norm near `t = 0`. The classical form and a
+`MemLp` witness are recovered as corollaries `QMDPath.qmd_limit_toReal_sq`
+and `QMDPath.residual_memLp_eventually`.
 
 Headline declarations: `QMDPath`, `score_in_L2ZeroMean`.
+
+**Bibliographic comments.** Differentiability in quadratic mean originates
+with L. Le Cam, "On the assumptions used to prove asymptotic normality of
+maximum likelihood estimates", *Annals of Mathematical Statistics* 41(3)
+(1970), 802–828. Le Cam introduced the square-root-density (DQM) condition
+precisely to replace the classical pointwise-differentiability and
+domination hypotheses of Cramér with a single quadratic-mean condition,
+under which asymptotic normality of the MLE still holds. van der Vaart's
+Chapter 25 develops this for the more general semiparametric setting of
+differentiable submodels (paths) and their score functions; the mean-zero
+property of the score (Lemma 25.14) is a direct consequence of the DQM
+expansion that Le Cam established for the parametric case.
 -/
 
 open MeasureTheory Filter Topology

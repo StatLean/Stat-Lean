@@ -3,12 +3,29 @@ import StatLean.HighDimensionalStatistics.CompressedSensing.Defs
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 
 /-!
-# Random Gaussian matrices are RIP with high probability (Lu §7, `thm:3s-rip`)
+# Random Gaussian matrices satisfy the Restricted Isometry Property with high probability
 
-**Theorem** (`prob_rip_of_iid_gaussian`). If `X ∈ ℝ^{n×d}` has i.i.d. `N(0,1/n)` entries and
-`n ≥ (384/δ²)·s·log(18d/ε)`, then `P(X is 3s-RIP with constant δ) ≥ 1 − ε`.
+Let $X \in \mathbb{R}^{n \times d}$ be a random matrix whose entries are independent and
+identically distributed as $N(0, 1/n)$. If the sample size satisfies
+$$ n \;\ge\; \frac{384}{\delta^2}\, s\, \log\!\Big(\frac{18 d}{\varepsilon}\Big), $$
+then, with probability at least $1 - \varepsilon$, the matrix $X$ satisfies the restricted
+isometry property of order $3s$ with constant $\delta$: for every $3s$-sparse vector $\beta$,
+$$ (1 - \delta)\,\|\beta\|^2 \;\le\; \|X\beta\|^2 \;\le\; (1 + \delta)\,\|\beta\|^2 . $$
+The result is formalized as `prob_rip_of_iid_gaussian` for $0 < \delta < 1$ and $0 < \varepsilon$,
+with the random matrix realized as $X : \Omega \to \mathbb{R}^{n \times d}$ over a probability
+space $(\Omega, \mu)$.
 
-Proof:
+**Added hypothesis / changed constant.** The leading constant is $384$ rather than the book's
+$96$ (a factor $4$). This is the only deviation from the textbook statement: the multiplier $18$
+inside the logarithm and the order $O\big(s \log(d/\varepsilon)\big)$ are unchanged. The factor $4$
+comes from the per-vector concentration bound we can actually prove (exponent $n\delta^2/32$
+instead of the book's sharp $n\delta^2/8$); see the proof notes below. A larger sample-size
+constant only strengthens the hypothesis, so the conclusion remains the book's.
+
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 9 (Restricted Isometry
+Property), §9.1 (Restricted Isometry Property), Theorem 9.2 (`thm:3s-rip`).
+
+**Proof formalization notes.**
 1. *Fixed `β`:* `‖Xβ‖²/‖β‖² ∼ (1/n)χ²_n` concentrates — `gaussian_quadratic_form_tail`
    (`GaussianChiSquared.lean`): `P(|‖Xβ‖²/‖β‖²−1| > δ) ≤ 2 exp(−nδ²/32)` (the provable `32`,
    off the book's `8` by the χ²₁ sub-exponential parameter `α = 4`).
@@ -20,11 +37,22 @@ Proof:
 4. *Sample size* (`sample_size_bound`): `log(18d/ε) = log(9d) + log(2/ε)` makes the union bound
    `≤ ε` once `n ≥ (384/δ²)·s·log(18d/ε)`, so `P(RIP) ≥ μ(¬RIP)ᶜ = 1 − μ(¬RIP) ≥ 1 − ε`.
 
-**Constant deviation.** The book (Lu §7, `thm:3s-rip`) states `96/δ²` with the sharp per-vector
-exponent `nδ²/8`. We prove only `nδ²/32` (factor `4`), so the provable sample size is
-`384/δ² = 4·96/δ²`. The multiplier `18` and the order `O(s·log(d/ε))` are unchanged; the only
-deviation is `96 → 384`. The random matrix is `X : Ω → Matrix (Fin n) (Fin d) ℝ` over a
-probability space `(Ω, μ)`.
+   *Constant deviation.* The book (Lu §9.1, `thm:3s-rip`) states `96/δ²` with the sharp per-vector
+   exponent `nδ²/8`. We prove only `nδ²/32` (factor `4`), so the provable sample size is
+   `384/δ² = 4·96/δ²`. The multiplier `18` and the order `O(s·log(d/ε))` are unchanged; the only
+   deviation is `96 → 384`.
+
+**Bibliographic comments.** The restricted isometry property was introduced by E. J. Candès and
+T. Tao, "Decoding by linear programming," *IEEE Transactions on Information Theory* 51(12):
+4203–4215 (2005), where (together with E. J. Candès, J. Romberg, T. Tao, "Robust uncertainty
+principles: exact signal reconstruction from highly incomplete frequency information," *IEEE
+Trans. Inf. Theory* 52(2):489–509, 2006) it is shown that suitably normalized Gaussian random
+matrices satisfy the RIP with high probability. The concentration-of-measure proof formalized
+here — a per-vector chi-squared tail bound combined with a covering/net argument over sparse
+coordinate subspaces and a union bound — follows R. Baraniuk, M. Davenport, R. DeVore and
+M. Wakin, "A simple proof of the restricted isometry property for random matrices,"
+*Constructive Approximation* 28(3):253–263 (2008), Lemma 5.1 and Theorem 5.2. The textbook
+statement (Lu §9.1) is a streamlined exposition of that argument.
 -/
 
 open MeasureTheory ProbabilityTheory Real Matrix
@@ -302,7 +330,7 @@ private lemma exists_quarter_net (m : ℕ) [NeZero m] :
 The union bound gives `μ(¬RIP) ≤ 2·(9d)^{3s}·exp(−nδ²/128)` (the `/128` is `(δ/2)²/32`, the
 provable per-vector exponent at `δ/2`).  With `n ≥ (384/δ²)·s·log(18d/ε)` this is `≤ ε`.
 
-**Constant deviation (Lu §7, `thm:3s-rip`).** The book states `96/δ²`, which corresponds to the
+**Constant deviation (Lu §9.1, `thm:3s-rip`).** The book states `96/δ²`, which corresponds to the
 sharp per-vector exponent `nδ²/8`.  Our `GaussianChiSquared.lean` proves the exponent `nδ²/32`
 (sub-exponential parameter `α = 4`, off the book's `α = 2` by a factor `2` in the standard
 deviation), so the per-net-point tail at `δ/2` is `2·exp(−nδ²/128)` instead of `2·exp(−nδ²/32)`,
@@ -352,23 +380,23 @@ private lemma sample_size_bound {s d n : ℕ} {δ ε : ℝ}
   rw [hLsplit] at hnlb
   nlinarith [hnlb, hgap]
 
-/-- **Random matrix is `3s`-RIP w.h.p.** (Lu, *Big Data Analysis* §7, `thm:3s-rip`).
+/-- **Random matrix is `3s`-RIP w.h.p.** (Lu, *Big Data Analysis* Ch. 9 §9.1, Theorem 9.2, `thm:3s-rip`).
 For an i.i.d. `N(0,1/n)` matrix `X` and `n ≥ (96/δ²)·s·log(18d/ε)`,
 `P(X is 3s-RIP with constant δ) ≥ 1 − ε`. -/
 theorem prob_rip_of_iid_gaussian
     {Ω : Type*} {mΩ : MeasurableSpace Ω} (μ : Measure Ω) [IsProbabilityMeasure μ]
     (s : ℕ) (δ ε : ℝ)
-    -- USER-INPUT: 0 < δ < 1 (target RIP constant); Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: 0 < δ < 1 (target RIP constant); Lu-BDA §9.1 (thm:3s-rip)
     (hδ0 : 0 < δ) (hδ1 : δ < 1)
-    -- USER-INPUT: 0 < ε (target failure probability); Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: 0 < ε (target failure probability); Lu-BDA §9.1 (thm:3s-rip)
     (hε0 : 0 < ε)
     (X : Ω → Matrix (Fin n) (Fin d) ℝ)
-    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: the entries Xᵢⱼ are jointly independent; Lu-BDA §9.1 (thm:3s-rip)
     (hindep : iIndepFun (fun (p : Fin n × Fin d) ω => X ω p.1 p.2) μ)
-    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §7 (thm:3s-rip)
+    -- USER-INPUT: each entry Xᵢⱼ ∼ N(0,1/n); Lu-BDA §9.1 (thm:3s-rip)
     (hlaw : ∀ i j, Measure.map (fun ω => X ω i j) μ
               = gaussianReal 0 (⟨1 / (n : ℝ), div_nonneg zero_le_one (Nat.cast_nonneg n)⟩ : ℝ≥0))
-    -- USER-INPUT: sample-size lower bound n ≥ (384/δ²)·s·log(18d/ε); Lu-BDA §7 (thm:3s-rip).
+    -- USER-INPUT: sample-size lower bound n ≥ (384/δ²)·s·log(18d/ε); Lu-BDA §9.1 (thm:3s-rip).
     -- Constant `384 = 4·96`: the book's `96` assumes the sharp per-vector exponent `nδ²/8`;
     -- `GaussianChiSquared.lean` proves only `nδ²/32` (α = 4), a factor 4, hence `96 → 384`.
     -- See `sample_size_bound`. A larger constant only strengthens this USER-INPUT hypothesis.

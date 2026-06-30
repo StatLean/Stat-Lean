@@ -2,15 +2,55 @@ import StatLean.HighDimensionalStatistics.MEstimator.Defs
 import StatLean.HighDimensionalStatistics.ForMathlib.VecNorms
 
 /-!
-# The ℓ₁/ℓ∞ decomposable regularizer instance (Wainwright Examples 9.1, 9.10; Table 9.1)
+# The ℓ₁/ℓ∞ decomposable regularizer instance
 
-The concrete `DecomposableReg` used by the GLM corollaries: regularizer `Φ = ℓ₁`, dual norm
-`Φ* = ℓ∞`, and model subspace `M = M̄ = M(S) = {θ : θⱼ = 0 for j ∉ S}` (vectors supported on `S`).
-This packages: the ℓ₁ and ℓ∞ seminorm bundles, the ℓ₁/ℓ∞ Hölder pairing and its tightness
-(sign-vector achievability), and ℓ₁-decomposability over `(M(S), M(S)ᗮ)` (disjoint supports).
+This file constructs the concrete decomposable regularizer underlying the Lasso and the GLM
+corollaries: the regularizer is the ℓ₁ norm `Φ(\theta) = \|\theta\|_1`, its dual norm is the
+ℓ∞ norm `Φ^*(v) = \|v\|_\infty`, and the model subspace is the support submodule
+`M(S) = M̄(S) = \{\theta : \theta_j = 0 \text{ for all } j \notin S\}` of vectors supported on a
+fixed index set `S`. The headline property is **decomposability**: for any `\alpha` supported on
+`S` and any `\beta` supported on the complement `S^c`,
+`\|\alpha + \beta\|_1 = \|\alpha\|_1 + \|\beta\|_1` (additivity of ℓ₁ across disjoint supports).
+The construction also records the supporting facts: the orthogonal complement of the support
+submodule is `M(S)^\perp = M(S^c)`; the ℓ₁/ℓ∞ Hölder pairing
+`\langle u, v\rangle \le \|u\|_1\,\|v\|_\infty`; and its tightness via sign-vector achievability,
+i.e. the variational characterization that `\|v\|_\infty \le c` whenever
+`\langle u, v\rangle \le c` for all `u` with `\|u\|_1 \le 1`.
 
-Provided to `GLMCorollaries` as `l1DecomposableReg S`. With this instance, `Ψ(M(S)) = √s`,
-the error cone is `reCone S 3`, and `Φ*(∇Lₙ(θ*)) = ‖∇Lₙ(θ*)‖∞`.
+The package is delivered to the GLM corollaries as `l1DecomposableReg S`. With this instance the
+subspace compatibility constant is `\Psi(M(S)) = \sqrt{s}` (where `s = |S|`), the resulting error
+set is the cone `reCone S 3`, and the regularizer-side curvature term reduces to the ℓ∞ norm of
+the empirical-loss gradient, `\Phi^*(\nabla L_n(\theta^*)) = \|\nabla L_n(\theta^*)\|_\infty`.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity),
+Examples 9.1 and 9.10, Table 9.1; support submodule `M(S)` is Eq (9.23).
+
+**Proof formalization notes.** The ℓ₁ and ℓ∞ norms are bundled as `Seminorm`s
+(`l1Seminorm`, `linfSeminorm`); the ℓ∞ triangle/scaling laws are reduced coordinatewise through
+the private helper `linfNorm_le_of_forall`, which upgrades a uniform coordinate bound
+`|v_j| \le c` (with `0 \le c` to cover the empty index set) to `\|v\|_\infty \le c`. The Hölder
+pairing is `l1_linf_holder`, inherited from `abs_inner_le_l1Norm_mul_linfNorm`. Tightness
+(`linf_tight`) is proved by the coordinate sign vectors `\pm e_j` (each of ℓ₁ norm one), which
+achieve `\langle \pm e_j, v\rangle = |v_j|`, forcing `c \ge |v_j|` for every `j` and hence
+`c \ge \|v\|_\infty`; nonnegativity of `c` is extracted by testing at `u = 0`. The complement
+identity `suppSubmodule_orthogonal` (`M(S)^\perp = M(S^c)`) reduces orthogonality to the
+single-coordinate inner product `inner_single_left_ofLp`. Decomposability (`l1_decomp`) is the
+disjoint-support sum split of the ℓ₁ definition; here `M = M̄`, the ideal/oracle case in which
+the model subspace and its decomposability subspace coincide. No book-versus-Lean constant
+deviations: all constants (the ℓ₁/ℓ∞ pairing, `\Psi = \sqrt{s}`, the factor-3 cone) match the
+reference exactly.
+
+**Bibliographic comments.** Decomposable regularizers and the subspace-pair framework
+`(M, M̄^\perp)` originate with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu,
+"A unified framework for high-dimensional analysis of M-estimators with decomposable
+regularizers," *Statistical Science* 27(4):538–557, 2012. In that paper decomposability is the
+defining condition (Definition 1, equation (5)): `\Phi(\alpha + \beta) = \Phi(\alpha) + \Phi(\beta)`
+for `\alpha \in M` and `\beta \in M̄^\perp`, and the ℓ₁ norm with the support pair
+`M(S) = M̄(S) = \{\theta : \theta_{S^c} = 0\}` is presented as their leading worked example (the
+Lasso / sparse-vector case). The textbook treatment formalized here (Wainwright 2019, Ch. 9)
+is the streamlined exposition of that framework; the ℓ₁/ℓ∞ dual pairing itself is classical
+(Hölder duality of `\ell_p`/`\ell_q` with `p = 1`, `q = \infty`).
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

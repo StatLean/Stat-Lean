@@ -12,38 +12,95 @@ import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
-# Theorem 25.20 — Semi-parametric Convolution Theorem
+# Semiparametric Convolution Theorem (scalar case)
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3.
+Let $\psi : \mathcal{P} \to \mathbb{R}$ be a real-valued functional that is
+differentiable at $P$ relative to the tangent set $\dot{\mathcal{P}}_P$, with
+efficient influence function $\tilde\psi_P$. Consider any *regular* sequence of
+estimators $T_n$ for $\psi(P)$, i.e. a sequence whose rescaled errors
+$\sqrt{n}\,(T_n - \psi(P_n))$ converge in distribution to one and the same limit
+law $L$ along every smooth one-dimensional submodel passing through $P$. The
+headline theorem `semiparametric_convolution_theorem` proves the scalar
+specialisation ($k = 1$) of the convolution theorem in two clauses:
 
-For a functional `ψ : 𝒫 → ℝ` differentiable at `P` relative to the tangent
-cone `𝒫̇_P` with efficient influence function `ψ̃_P`, the headline theorem
-`semiparametric_convolution_theorem` proves the scalar specialisation
-(`k = 1`) of vdV Theorem 25.20:
+* **Clause (a) — variance lower bound.** The asymptotic variance of every such
+  regular sequence is bounded below by the squared norm of the efficient
+  influence function,
+  $$\operatorname{Var}(L) \;\ge\; \lVert \tilde\psi_P \rVert^2 ,$$
+  which is the scalar form of the book's matrix lower bound
+  $P\,\tilde\psi_P\,\tilde\psi_P^{\mathsf T}$ (the Loewner order collapsing to
+  the usual order on $\mathbb{R}$ when $k = 1$). In the Lean statement the
+  variance is written explicitly as $\int (x - \int y\,\mathrm{d}L)^2\,\mathrm{d}L$.
+* **Clause (b) — convolution decomposition.** If in addition the tangent set
+  $\dot{\mathcal{P}}_P$ is a convex cone, then every limit distribution $L$ of a
+  regular sequence can be written as a convolution
+  $$L \;=\; N\!\bigl(0,\ \lVert \tilde\psi_P \rVert^2\bigr) * M$$
+  for some probability measure $M$. Thus the best attainable limit law is the
+  Gaussian $N(0, \lVert\tilde\psi_P\rVert^2)$, and any regular estimator's limit
+  is that Gaussian "smeared" by independent noise $M$.
 
-* **Clause (a) — variance lower bound.** The asymptotic variance of every
-  regular sequence of estimators is bounded below by `‖ψ̃_P‖²` (the scalar
-  form of the book's matrix `P ψ̃_P ψ̃_Pᵀ`, with the Loewner order
-  collapsing to `≤` on ℝ).
-* **Clause (b) — convolution decomposition.** If additionally `𝒫̇_P` is a
-  convex cone, then every limit distribution `L` of a regular sequence of
-  estimators can be written `L = N(0, ‖ψ̃_P‖²) ∗ M` for some probability
-  measure `M`.
+*Deviations from the book statement.* The formalization fixes the scalar case
+$k = 1$ (the book states the general $\mathbb{R}^k$ version with the asymptotic
+covariance matrix and the Loewner order). Clause (a) additionally carries a
+finite-second-moment hypothesis on $L$ (`hL_memLp`): the book's "asymptotic
+covariance matrix" notation presupposes that the limit law has a finite second
+moment, so the variance lower bound is otherwise vacuous. Clause (b) carries no
+moment hypothesis, matching the book verbatim — the convolution decomposition is
+well-defined for any limit law $L$ and the residual $M$ inherits whatever moments
+$L$ has.
 
-Proof of (a). Approximate `ψ̃_P` by its orthogonal projections `p_m` onto
-an increasing sequence of finite-dimensional subspaces `V_m ⊆ 𝒫̇_P` spanned
-by tangent directions. For each `m`, equip `V_m` with an orthonormal score
-basis; the per-`m` joint covariance block `[[varL, A_m]; [A_mᵀ, I_m]]` is
-PSD (a consequence of the parametric submodel induced by the basis), so
-Schur's complement gives `Σᵢ ⟨ψ̃_P, b_m_i⟩² ≤ varL`. The LHS is `‖p_m‖²`
-by Parseval; pass to `m → ∞` using `‖p_m - ψ̃_P‖ → 0`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+Theorem 25.20.
 
-Proof of (b). Apply the per-`m` parametric convolution theorem (vdV
-Prop. 8.4 restricted to the cone) to obtain `L = N(0, σ_m²) ⋆ M_m` for
-each `m`, with `σ_m² → ‖ψ̃_P‖²` by Parseval. Lévy's continuity theorem
-applied to the mixing-measure characteristic functions
-`φ_{M_m} → φ_M` extracts a final mixing measure `M` with
-`L = N(0, ‖ψ̃_P‖²) ⋆ M`.
+**Proof formalization notes.**
+
+Proof of (a). Approximate $\tilde\psi_P$ by its orthogonal projections $p_m$ onto
+an increasing sequence of finite-dimensional subspaces $V_m \subseteq
+\dot{\mathcal{P}}_P$ spanned by tangent directions. For each $m$, equip $V_m$ with
+an orthonormal score basis; the per-$m$ joint covariance block
+$\begin{psmallmatrix} \operatorname{Var}(L) & A_m \\ A_m^{\mathsf T} & I_m
+\end{psmallmatrix}$ is positive semidefinite (a consequence of the parametric
+submodel induced by the basis), so Schur's complement gives
+$\sum_i \langle \tilde\psi_P, b_{m,i}\rangle^2 \le \operatorname{Var}(L)$. The
+left-hand side equals $\lVert p_m\rVert^2$ by Parseval; passing to $m \to \infty$
+using $\lVert p_m - \tilde\psi_P\rVert \to 0$ yields the bound. The Lean proof of
+clause (a) actually bypasses the Schur extraction entirely: it specialises the
+$m$-dimensional Hájek-style decomposition (from
+`ConvolutionUnbounded.derived_convolution_decomp_unbounded` via the
+`unboundedParamSubmodel` route) to $m = 1$ along each unit span direction
+$b = \tilde\psi_P / \lVert\tilde\psi_P\rVert$, then applies
+`ForMathlib.VarianceOfConvolution.variance_id_le_variance_id_conv` to conclude
+$\operatorname{Var}(L) \ge \operatorname{Var}\bigl(N(0,\lVert\tilde\psi_P\rVert^2)\bigr)
+= \lVert\tilde\psi_P\rVert^2$.
+
+Proof of (b). Apply the per-$m$ parametric convolution theorem (vdV Theorem 8.8
+restricted to the cone) to obtain $L = N(0, \sigma_m^2) * M_m$ for each $m$, with
+$\sigma_m^2 \to \lVert\tilde\psi_P\rVert^2$ by Parseval. Lévy's continuity theorem
+applied to the mixing-measure characteristic functions $\varphi_{M_m} \to
+\varphi_M$ extracts a final mixing measure $M$ with
+$L = N(0, \lVert\tilde\psi_P\rVert^2) * M$. The combined endpoint
+`semiparametric_convolution_theorem` packages clauses (a) and (b); the two
+standalone forms `semiparametric_convolution_theorem_clause_a` and
+`semiparametric_convolution_theorem_clause_b`, and the variance-only corollary
+`efficient_bound_is_asympVar_lowerBound`, expose each clause separately.
+
+**Bibliographic comments.** The convolution theorem originates with J. Hájek,
+"A characterization of limiting distributions of regular estimates,"
+*Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970),
+323–330, where it is proved for parametric (locally asymptotically normal)
+models — every regular estimator's limit law is a convolution of the optimal
+Gaussian with an independent residual. The result is commonly called the
+*Hájek–Le Cam convolution theorem*: L. Le Cam, "Limits of experiments,"
+*Proc. Sixth Berkeley Symp. Math. Statist. Probab.* **1** (1972), 245–261,
+recast and generalized it within his theory of limits of experiments
+(see also Inagaki, *Ann. Inst. Statist. Math.* **22** (1970), 1–13, for an
+independent contemporaneous derivation). The semiparametric formulation
+formalized here — phrased in terms of a tangent set, the efficient influence
+function, and the abstract convolution decomposition — follows van der Vaart's
+Theorem 25.20, which lifts Hájek's parametric statement to infinite-dimensional
+models via finite-dimensional submodel approximation.
 -/
 
 open MeasureTheory Filter Topology

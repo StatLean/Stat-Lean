@@ -3,17 +3,38 @@ import Mathlib.Analysis.Normed.Lp.lpSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Metric entropy of the Sobolev ellipsoid (Wainwright Example 5.12)
+# Metric entropy / packing lower bound for the Sobolev ellipsoid
 
-A Chapter-5 metric-entropy prerequisite for the Sobolev minimax example (15.23). For smoothness
-`α > 1/2`, the Sobolev ellipsoid `ℰ_α = {θ ∈ ℓ²(ℕ) : Σⱼ j^{2α} θⱼ² ≤ 1}` has metric entropy
-```
-log N(δ; ℱ_α, ‖·‖₂) ≍ (1/δ)^{1/α}                       (Example 5.12),
-```
-the Kolmogorov–Tikhomirov rate. The minimax lower bounds need the packing (lower) direction.
+A Chapter-5 metric-entropy prerequisite for the Sobolev minimax example. Fix a smoothness index
+$\alpha > 1/2$ and consider the **Sobolev ellipsoid**
+$$\mathcal{E}_\alpha = \Bigl\{\, \theta \in \ell^2(\mathbb{N}) : \sum_{j} j^{2\alpha}\,\theta_j^2 \le 1 \,\Bigr\}.$$
+Its metric entropy — the logarithm of the smallest number of $\delta$-balls (in the $\ell^2$ norm)
+needed to cover it — obeys the Kolmogorov–Tikhomirov rate
+$$\log N(\delta;\, \mathcal{E}_\alpha,\, \lVert\cdot\rVert_2) \;\asymp\; \left(\tfrac{1}{\delta}\right)^{1/\alpha}.$$
+The minimax lower bounds use only the **packing (lower) direction**: for every
+$0 < \delta \le 1/2$ there is a constant $c > 0$ and a finite $\delta$-separated subset
+$T \subset \mathcal{E}_\alpha$ (every pair of distinct points at $\ell^2$-distance $\ge \delta$,
+every point in the ellipsoid) with
+$$c\,\left(\tfrac{1}{\delta}\right)^{1/\alpha} \;\le\; \log |T|.$$
 
-## Proof architecture
+Two deviations from the book statement are made explicit in the Lean formalization:
 
+* The membership constraint is written with the shifted weights $(j+1)^{2\alpha}$ over indices
+  $j \in \mathbb{N}$ starting at $0$, rather than $j^{2\alpha}$ starting at $1$; this is the same
+  ellipsoid under a re-indexing of coordinates.
+* The restriction $0 < \delta \le 1/2$ (`hδ2`) is added. It is forced rather than cosmetic: the
+  ellipsoid has $\ell^2$-diameter $\le 2$, so no $\delta$-separated pair can exist for large
+  $\delta$, and the metric-entropy rate is intrinsically a $\delta \to 0$ statement.
+
+The constant `c` is the *provable* one produced by the construction below, namely
+$c = (k/10)\big/(1/\delta)^{1/\alpha}$ with $k = \lfloor (1/(2\delta))^{1/\alpha}\rfloor$, not a
+named book constant.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.12
+(invoked in Chapter 15, §15.3.5, Example 15.23).
+
+**Proof formalization notes.**
 The lower bound is a volume-ratio packing routed through the **Euclidean sphere packing**
 (`exists_sphere_packing`, in `SpherePacking.lean`). Set `k := ⌊(1/(2δ))^{1/α}⌋` and take a
 `1/2`-separated set `S` of unit vectors on `𝕊^{k-1}` with `log |S| ≥ k/10`. Scale by
@@ -26,9 +47,16 @@ This embedding is linear, scales norms by `ρ` (`‖emb v‖ = ρ‖v‖`), land
 `ρ² k^{2α} = 1`), and keeps the points `δ`-separated (`‖emb u − emb v‖ = ρ‖u−v‖ ≥ ρ/2 ≥ δ`,
 because `k^α ≤ 1/(2δ)`). The image `T = emb(S)` then has `log |T| = log |S| ≥ k/10 ≍ (1/δ)^{1/α}`.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.12
-(used in Chapter 15, §15.3.5, Example 15.23).
+**Bibliographic comments.**
+The $\varepsilon$-entropy of smoothness (Sobolev/Lipschitz) classes, and in particular the
+$\varepsilon^{-1/\alpha}$ rate specialized here to the ellipsoid $\mathcal{E}_\alpha$, originates
+with A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets in function spaces"
+(in Russian), *Uspekhi Matematicheskikh Nauk* **14** (1959), no. 2(86), 3–86; English translation
+in *American Mathematical Society Translations*, Series 2, Vol. 17 (1961), 277–364. That paper
+introduced the now-standard definitions of metric entropy ($\varepsilon$-entropy) and capacity and
+computed them for the principal function classes. Wainwright's Example 5.12 is the textbook
+specialization to the Sobolev ellipsoid; the precise constants here are those provable by the
+sphere-packing construction above and are not asserted to match any constant in the original paper.
 -/
 
 open scoped ENNReal

@@ -2,16 +2,85 @@ import StatLean.AsymptoticStatistics.Core.EIF
 import StatLean.AsymptoticStatistics.StrictModel.EfficientScore
 
 /-!
-# Score-operator / adjoint calculus
+# Score-operator / adjoint calculus for efficient influence functions
 
-The abstract score operator `A : H →L[ℝ] ↥(L²₀(P))` from a parameter Hilbert
-space `H` into mean-zero `L²(P)`, and the calculus for producing efficient
-influence functions from it: the adjoint equation, the information-operator
-formula, and the semiparametric specialization.
+Let $\mathcal{P}$ be a statistical model indexed by an infinite-dimensional
+parameter, with a *score operator* $A : H \to L^2_0(P)$, a continuous linear
+map carrying directions in a parameter Hilbert space $H$ into the mean-zero
+square-integrable functions $L^2_0(P)$. The "calculus of scores" produces the
+efficient influence function $\tilde\psi_P$ of a differentiable functional
+$\psi$ from $A$ in three equivalent ways:
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.5
-— eq:25.29 (score operator), eq:25.30 (information-operator formula),
-thm:25.31 (adjoint equation), eq:25.33 (semiparametric specialization).
+* **Adjoint equation.** With $A^*$ the adjoint of $A$ and $\tilde\chi$ the
+  derivative-representing element, the efficient influence function solves
+  $A^*\tilde\psi_P = \tilde\chi$; equivalently, for every direction $g$ in the
+  tangent space $T$ one has $d\psi(g) = \langle \tilde\psi_P, g\rangle_{L^2_0(P)}$.
+* **Information-operator formula.** When $\tilde\chi$ lies in the range of the
+  *information operator* $A^*A$, the solution is $\tilde\psi_P = A(A^*A)^{-}\tilde\chi$,
+  where $(A^*A)^{-}$ is a generalized inverse. We encode the information
+  equation by its defining inner-product identity
+  $\langle A\kappa,\, Av\rangle_{L^2_0(P)} = \langle\chi, v\rangle_H$ for all
+  $v \in H$, so that $\kappa$ plays the role of $(A^*A)^{-}\tilde\chi$.
+* **Semiparametric specialization.** When the model splits into a $\theta$-part
+  and a nuisance $\eta$-part, the score operator splits accordingly and the
+  efficient score in a $\theta$-direction is the residual of the ordinary
+  $\theta$-score after orthogonal projection onto the closed linear span of
+  the nuisance scores.
+
+**Lean alignment / added hypotheses.** The Lean statements certify each
+conclusion through an *inner-product hypothesis* rather than through
+`ContinuousLinearMap.adjoint`: `eif_via_adjoint_equation` and
+`eif_via_information_operator` take the hypothesis that the parameter
+derivative `dψ` acts on the tangent space as the inner product against the
+candidate, which is exactly what the adjoint/information equation yields on
+the score range. This avoids requiring `CompleteSpace` on the
+`Submodule`-coerced $L^2_0(P)$ space (needed to synthesize the Mathlib adjoint
+through the sort coercion). The extension of the certification from the score
+range to the full tangent space $T = \overline{\operatorname{range}A}$ — a
+density/continuity argument in the book — is taken as the supplied hypothesis,
+not re-proved here.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.5 (Score and Information Operators),
+Theorem 25.31, Eqs (25.29), (25.30), (25.33).
+
+**Proof formalization notes.**
+* `ScoreOperator` packages the score operator $A : H \to L^2_0(P)$ as a
+  continuous linear map (vdV §25.5, the operator $A_\eta$ of Eq (25.29)). For
+  parametric models take `H := EuclideanSpace ℝ (Fin k)`; for
+  semiparametric/nonparametric models `H` may be any Hilbert space. Edge case:
+  for `H = 0` the only score operator is the zero map and the tangent range is
+  `⊥`.
+* `eif_via_adjoint_equation` (Theorem 25.31): the book conclusion is "$\phi$
+  solves the adjoint equation $A^*\phi = \chi$". On $g \in \operatorname{range}A$
+  the adjoint identity $\langle Av, \phi\rangle = \langle v, A^*\phi\rangle =
+  \langle v, \chi\rangle = d\psi(Av)$ recovers the inner-product hypothesis
+  `h_dψ_eq_inner` from $A^*\phi = \chi$. Reduces to
+  `eif_of_representation_and_membership`.
+* `eif_via_information_operator` (Eq (25.30)): the book conclusion is
+  $\phi = A(A^*A)^{-}\chi$. The information-operator inversion $(A^*A)\kappa = \chi$
+  is captured by the inner-product condition `h_information`,
+  $\langle A\kappa, Av\rangle = \langle\chi, v\rangle$ for all $v$, the defining
+  property of $A^*A$. Same reduction shape as the adjoint form.
+* `efficientScore_projection_formula` (Eq (25.33)): a vocabulary-alignment
+  lemma (`rfl`) identifying the operator-side residual
+  $A_\theta v - \Pi_{T_\eta}(A_\theta v)$ with the projection-side
+  `efficientScore`, so concrete model files move freely between the two
+  characterizations.
+
+**Bibliographic comments.** The score-operator / adjoint calculus for
+semiparametric efficiency originates with P. J. Bickel, C. A. J. Klaassen,
+Y. Ritov, and J. A. Wellner, *Efficient and Adaptive Estimation for
+Semiparametric Models*, Johns Hopkins University Press, Baltimore, 1993
+(reprinted Springer, 1998). That monograph develops the geometry of tangent
+spaces, score operators, and their adjoints (the "calculus of scores") of
+which van der Vaart's Chapter 25 is a condensed account; vdV §25.5 follows
+their treatment, and the information operator $A^*A$ and adjoint equation
+$A^*\tilde\psi = \tilde\chi$ are theirs. Earlier roots lie in C. Stein's
+heuristic for the hardest one-dimensional submodel (1956) and the
+projection/least-favorable-direction viewpoint of P. J. Bickel,
+*On adaptive estimation*, Annals of Statistics 10 (1982), 647–671.
 
 Headline declarations: `ScoreOperator`, `eif_via_adjoint_equation`,
 `eif_via_information_operator`, `efficientScore_projection_formula`.

@@ -6,15 +6,49 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 /-!
 # First-order characterization of convexity (gradient inequality)
 
-Theorem-agnostic brick (`ForMathlib` layer): a convex differentiable function
-lies above each of its tangents,
-`f x + ⟪∇f x, y - x⟫ ≤ f y`.
+Theorem-agnostic brick (`ForMathlib` layer): a convex differentiable function on
+a real inner-product space lies above each of its tangent hyperplanes. For all
+points $x, y$,
+$$ f(x) + \langle \nabla f(x),\, y - x\rangle \le f(y). $$
+Geometrically, the first-order Taylor approximation at $x$ underestimates $f$
+everywhere — the graph of $f$ never dips below any of its tangents. This is the
+differentiable specialization of the subgradient inequality: when $f$ is
+differentiable, the unique subgradient at $x$ is the gradient $\nabla f(x)$.
 
-This is the differentiable specialization of the subgradient inequality (the
-book derives it in Lu, *Big Data Analysis* §10.2 by taking `γ → 0` in the
-convexity inequality). Mathlib has the 1-D `deriv` version but not the
-inner-product-space gradient form; we prove it here for reuse across the
-gradient-descent, Frank–Wolfe, and proximal analyses.
+The Lean statement specializes the book's setting to a complete real
+inner-product space $E$ and assumes global convexity on the whole space
+(`Set.univ`) together with global differentiability of $f$; under these
+hypotheses the inequality holds for every pair of points, with no further
+regularity conditions or constant adjustments relative to the book.
+
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 12
+(Convexity and Subgradient), §12.2 (Subgradient). The book
+derives the inequality by taking $\gamma \to 0$ in the convexity inequality
+$f(x + \gamma(y - x)) \le (1-\gamma) f(x) + \gamma f(y)$.
+
+**Proof formalization notes.** Mathlib has the 1-D `deriv` version of the
+first-order convexity inequality but not the inner-product-space gradient form;
+we prove it here for reuse across the gradient-descent, Frank–Wolfe, and proximal
+analyses. The proof restricts $f$ to the line through $x$ and $y$ via
+$L = \mathrm{lineMap}\,x\,y$ (so $L(0) = x$, $L(1) = y$), notes that $f \circ L$ is
+convex on $\mathbb{R}$ (preimage of `univ` under an affine map is `univ`), and
+applies the 1-D inequality `ConvexOn.le_slope_of_hasDerivAt`: the derivative of
+$f \circ L$ at $0$ is bounded by the slope over $[0,1]$. The chain rule gives
+that derivative as $(\mathrm{D}f(x))(y - x)$, the slope equals $f(y) - f(x)$, and
+the Riesz bridge `inner_gradient_left` identifies $(\mathrm{D}f(x))(y-x)$ with
+$\langle \nabla f(x), y - x\rangle$.
+
+**Bibliographic comments.** This is classical convex-analysis folklore with no
+single seminal origin; it predates and underlies the modern theory of
+subdifferentials. The standard reference is R. T. Rockafellar, *Convex Analysis*,
+Princeton University Press, 1970 — the differentiable case is the specialization
+of the subgradient inequality $f(z) \ge f(x) + \langle x^\ast, z - x\rangle$ for
+$x^\ast \in \partial f(x)$ (Rockafellar, Thm 23.5 / §23), using that for a
+differentiable convex function the subdifferential is the singleton
+$\{\nabla f(x)\}$ (Rockafellar, Thm 25.1). The inequality is a textbook staple
+appearing in essentially all convex-optimization references (e.g. Boyd &
+Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §3.1.3,
+Eq. (3.2)); we do not attribute it to a single research paper.
 -/
 
 namespace StatLean.Optimization
@@ -24,7 +58,7 @@ open scoped InnerProductSpace Gradient
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 /-- Gradient inequality for convex differentiable functions:
-`f x + ⟪∇f x, y - x⟫ ≤ f y` for all `x y` (Lu-BDA §10.2). -/
+`f x + ⟪∇f x, y - x⟫ ≤ f y` for all `x y` (Lu-BDA §12.2). -/
 theorem inner_gradient_le_sub_of_convexOn
     {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f)
     (x y : E) :

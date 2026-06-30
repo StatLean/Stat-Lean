@@ -2,24 +2,68 @@ import Mathlib.InformationTheory.KullbackLeibler.ChainRule
 import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
-# Kullback–Leibler divergence — book form and tensorization (Wainwright §15.1.3)
+# Kullback–Leibler divergence — book form, tensorization, and mixture minimization
 
-Wainwright's KL divergence `D(ℚ ‖ ℙ) = ∫ q log(q/p) dν` (Eq. (15.7)) coincides with Mathlib's
-`InformationTheory.klDiv ℚ ℙ` on probability measures (the argument we integrate against — `q`,
-the density of `ℚ` — is the *first* argument in both conventions). We therefore reuse `klDiv`
-directly and add only the Wainwright-facing algebra:
+For probability measures $\mathbb{Q} \ll \mathbb{P}$ with densities $q, p$ relative to a common
+dominating measure $\nu$, the **Kullback–Leibler divergence** is
+$$D(\mathbb{Q} \,\|\, \mathbb{P}) \;=\; \int q \,\log\!\frac{q}{p}\, d\nu \;\ge\; 0,$$
+with the convention $D(\mathbb{Q}\,\|\,\mathbb{P}) = +\infty$ when $\mathbb{Q} \not\ll \mathbb{P}$
+(Wainwright Eq. (15.7); nonnegativity is Gibbs' inequality). This file aligns Wainwright's KL
+divergence with Mathlib's `InformationTheory.klDiv` and proves three book identities:
 
-* `klDiv_prod_eq_add` — additivity over products (Eq. (15.11a), two-factor), from the Mathlib
-  chain rule `klDiv_compProd_eq_add`.
-* `klDiv_pi_eq_nsmul` — the i.i.d. `n`-fold tensorization `D(ℙ^{1:n} ‖ ℚ^{1:n}) = n·D(ℙ ‖ ℚ)`
-  (Eq. (15.11b)).
-* `sum_klDiv_mixture_le` — the mixture `Q̄ = (1/M) Σⱼ ℙⱼ` minimizes the average KL divergence
-  `Q ↦ Σⱼ D(ℙⱼ ‖ Q)` (Exercise 15.11), used in the Yang–Barron bound (Eq. (15.52)).
+* **Additivity over products** (Eq. (15.11a), two-factor case): for product measures,
+  $$D(\mathbb{P}_1 \otimes \mathbb{P}_2 \,\|\, \mathbb{Q}_1 \otimes \mathbb{Q}_2)
+    \;=\; D(\mathbb{P}_1 \,\|\, \mathbb{Q}_1) + D(\mathbb{P}_2 \,\|\, \mathbb{Q}_2).$$
+* **I.i.d. tensorization** (Eq. (15.11b)): for the $n$-fold product measures,
+  $$D\bigl(\mathbb{P}^{\otimes n} \,\|\, \mathbb{Q}^{\otimes n}\bigr) \;=\; n \, D(\mathbb{P} \,\|\, \mathbb{Q}).$$
+* **The mixture minimizes the average KL divergence** (Exercise 15.11): for any distribution
+  $\mathbb{Q}$, the uniform mixture $\bar{\mathbb{Q}} = \frac{1}{M}\sum_{j} \mathbb{P}_j$ satisfies
+  $$\sum_{j} D(\mathbb{P}_j \,\|\, \bar{\mathbb{Q}}) \;\le\; \sum_{j} D(\mathbb{P}_j \,\|\, \mathbb{Q}),$$
+  which is the variational property underlying the Yang–Barron mutual-information bound (Eq. (15.52)).
 
-Nonnegativity (Gibbs, Eq. (15.7) discussion) is automatic since `klDiv` is `ℝ≥0∞`-valued.
+*Alignment with the Lean statement.* Wainwright's $D(\mathbb{Q}\,\|\,\mathbb{P})$ coincides with
+Mathlib's `klDiv ℚ ℙ` on probability measures: the integrated argument — $q$, the density of
+$\mathbb{Q}$ — is the *first* argument in both conventions, so no argument-swap is needed. KL
+divergence is `ℝ≥0∞`-valued in Mathlib, so nonnegativity is automatic and the
+$\mathbb{Q}\not\ll\mathbb{P}$ branch returns `⊤`. All three results carry probability-measure
+instance hypotheses on every factor; the mixture result is stated for an $M$-indexed family
+$\mathbb{P} : \mathrm{Fin}\,M \to \text{Measure}$.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Eq. (15.7),
+(15.11a), (15.11b); §15.6, Exercise 15.11.
+
+**Proof formalization notes.** We reuse Mathlib's `klDiv` directly and add only the
+Wainwright-facing algebra.
+
+* `klDiv_prod_eq_add` follows from the Mathlib chain rule `klDiv_compProd_eq_add` applied to each
+  product written as a composition–product with a constant kernel, using the auxiliary
+  `klDiv_prod_const_fst` (a common first factor collapses to the second-factor divergence, proved
+  by swapping coordinates via `Measure.prod_swap` and applying `klDiv_compProd_left`).
+* `klDiv_pi_eq_nsmul` is an induction on $n$: the base case uses `Measure.pi_of_empty` and
+  `klDiv_self`; the step peels off coordinate $0$ via `measurePreserving_piFinSuccAbove` and
+  `MeasurableEquiv.piFinSuccAbove`, reducing to `klDiv_prod_eq_add`. Both proofs rely on the
+  pushforward-invariance lemma `klDiv_map_measurableEquiv` (reparametrization invariance of the
+  $f$-divergence, from the log-likelihood-ratio integral form and `MeasurableEmbedding.rnDeriv_map`).
+* `sum_klDiv_mixture_le` is the crux of Exercise 15.11 (the variational/convexity property of
+  `klDiv` in its second argument, which Mathlib does not expose directly). The proof splits on
+  absolute continuity: if some $\mathbb{P}_{j_0} \not\ll \mathbb{Q}$ the right side is $\infty$;
+  otherwise it lifts a pointwise *compensation inequality* (`klFun_compensation_le`, deficit exactly
+  $M \cdot \mathrm{klFun}(W) \ge 0$, encoding the Gibbs identity
+  $\sum_j D(\mathbb{P}_j\,\|\,\mathbb{Q}) = \sum_j D(\mathbb{P}_j\,\|\,\bar{\mathbb{Q}}) + M\,D(\bar{\mathbb{Q}}\,\|\,\mathbb{Q})$)
+  to lintegrals against the common reference $\mathbb{Q}$, using the Radon–Nikodym chain rule and
+  the splitting `rnDeriv_finsetSum_ae` of the mixture density.
+
+**Bibliographic comments.** The KL divergence itself originates with S. Kullback and R. A. Leibler,
+"On Information and Sufficiency," *The Annals of Mathematical Statistics* **22** (1951), no. 1,
+79–86 (DOI 10.1214/aoms/1177729694), where Eq. (2.5) defines the mean information for
+discrimination. The additivity/tensorization identities and the mixture-minimization
+(compensation) property are textbook folklore with no single seminal origin — they follow from the
+chain rule for relative entropy and Gibbs' inequality, and are stated here in the form given by
+Wainwright (2019). The use of the mixture as the average-KL minimizer to control redundancy traces
+to Y. Yang and A. Barron, "Information-theoretic determination of minimax rates of convergence,"
+*The Annals of Statistics* **27** (1999), no. 5, 1564–1599, which is the source of the
+mutual-information minimax bound (Wainwright Eq. (15.52)).
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

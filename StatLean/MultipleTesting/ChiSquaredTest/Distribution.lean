@@ -4,30 +4,50 @@ import Mathlib.Probability.Independence.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Chi-squared test statistic — mean and variance under H₀ and H₁ (Candès L2 §2.3)
+# Chi-squared test statistic — mean and variance under H₀ and H₁
 
-The chi-squared goodness-of-fit test for the Gaussian sequence model `Yᵢ = θᵢ + zᵢ`,
-`zᵢ ∼ N(0,1)` i.i.d., with statistic `Tₙ = ∑ᵢ Yᵢ² = ‖Y‖²`. The mean and variance of `Tₙ` (Candès,
-Lecture 2, §2.3) — the inputs to the power analysis via the signal-to-noise ratio
-`θₙ = ‖θ‖/√(2n)`:
+For the Gaussian sequence model $Y_i = \theta_i + z_i$ with $z_i \sim N(0,1)$ i.i.d.
+($i = 1, \dots, n$), the chi-squared goodness-of-fit statistic is
+$T_n = \sum_{i=1}^n Y_i^2 = \lVert Y\rVert^2$. Its first two moments — the inputs to the
+power analysis through the signal-to-noise ratio $\theta_n = \lVert\theta\rVert/\sqrt{2n}$ — are:
 
-* **Under H₀** (`θ = 0`, `Tₙ = ∑ zᵢ²`): `E[Tₙ] = n`, `Var[Tₙ] = 2n`;
-* **Under H₁** (`Tₙ = ∑ (θᵢ+zᵢ)²`): `E[Tₙ] = n + ‖θ‖²`, `Var[Tₙ] = 2n + 4‖θ‖²`
-  (`‖θ‖² = ∑ᵢ θᵢ²`).
+* **Under the null $H_0$** ($\theta = 0$, so $T_n = \sum_i z_i^2$):
+  $\mathbb{E}[T_n] = n$ and $\operatorname{Var}[T_n] = 2n$;
+* **Under the alternative $H_1$** ($T_n = \sum_i (\theta_i + z_i)^2$):
+  $\mathbb{E}[T_n] = n + \lVert\theta\rVert^2$ and
+  $\operatorname{Var}[T_n] = 2n + 4\lVert\theta\rVert^2$, where
+  $\lVert\theta\rVert^2 = \sum_i \theta_i^2$.
 
-The per-coordinate moments `E[z²]=1, E[z³]=0, E[z⁴]=3, Var[z²]=2` come from the merged
-`ForMathlib/GaussianMoments.lean`; the sums use linearity and (for the variances) independence
-across coordinates, so the cross-covariances vanish. (The exact law `Tₙ ∼ χ²ₙ` under H₀ is
-`ForMathlib/ChiSquared.map_sum_sq_eq_chiSquared`; the `n→∞` CLT normal approximation is a separate
-asymptotic statement.)
+Equivalently, under $H_0$ the statistic follows the chi-squared law $T_n \sim \chi^2_n$
+(mean $n$, variance $2n$), and under $H_1$ it follows a noncentral chi-squared with
+noncentrality $\lVert\theta\rVert^2$.
+
+**Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford
+University, 2023, Lecture 2, §2.3 (the chi-squared test in the Gaussian sequence model and its
+power via the signal-to-noise ratio $\theta_n = \lVert\theta\rVert/\sqrt{2n}$).
+
+**Proof formalization notes.** The per-coordinate moments
+$\mathbb{E}[z^2]=1$, $\mathbb{E}[z^3]=0$, $\mathbb{E}[z^4]=3$, $\operatorname{Var}[z^2]=2$ come
+from the merged `ForMathlib/GaussianMoments.lean`; the sums use linearity and (for the variances)
+independence across coordinates, so the cross-covariances vanish. (The exact law $T_n \sim \chi^2_n$
+under $H_0$ is `ForMathlib/ChiSquared.map_sum_sq_eq_chiSquared`; the $n\to\infty$ CLT normal
+approximation is a separate asymptotic statement.)
 
 The variances are assembled from Mathlib's `ProbabilityTheory.IndepFun.variance_sum`
-(`Var[∑ Xᵢ] = ∑ Var[Xᵢ]` for pairwise-independent `Xᵢ`), with the per-coordinate variances
-`Var[zᵢ²] = 2` and `Var[(θᵢ+zᵢ)²] = 4θᵢ²+2` transported to the standard Gaussian via
-`ProbabilityTheory.variance_map`, so a `Var[∑]` lemma existed and no manual cross-term expansion
-was needed.
+($\operatorname{Var}[\sum X_i] = \sum \operatorname{Var}[X_i]$ for pairwise-independent $X_i$), with
+the per-coordinate variances $\operatorname{Var}[z_i^2] = 2$ and
+$\operatorname{Var}[(\theta_i+z_i)^2] = 4\theta_i^2+2$ transported to the standard Gaussian via
+`ProbabilityTheory.variance_map`, so a $\operatorname{Var}[\sum]$ lemma existed and no manual
+cross-term expansion was needed.
 
-Reference: Candès, Lecture 2, §2.3, STAT 300C Notes.
+**Bibliographic comments.** This is classical folklore with no single seminal source. The
+chi-squared goodness-of-fit statistic originates with K. Pearson, "On the criterion that a given
+system of deviations from the probable in the case of a correlated system of variables is such that
+it can be reasonably supposed to have arisen from random sampling," *Philosophical Magazine*,
+Series 5, **50** (1900), 157–175, where the $\chi^2$ limiting distribution was derived. The mean
+and variance of $\chi^2_n$ ($n$ and $2n$) and of the noncentral $\chi^2$ are standard moment
+computations found in any mathematical-statistics text; the Candès lecture notes apply them to the
+Gaussian-sequence power analysis used here.
 -/
 
 open MeasureTheory ProbabilityTheory

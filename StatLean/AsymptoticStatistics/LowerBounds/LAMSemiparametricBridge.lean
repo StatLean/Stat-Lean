@@ -8,18 +8,45 @@ import StatLean.AsymptoticStatistics.Core.Hilbert
 import StatLean.AsymptoticStatistics.Core.Pathwise
 
 /-!
-# Bridge: from orthonormal bounded basis to `local_asymptotic_minimax_bound`
+# Bridge: from orthonormal bounded basis to the parametric local asymptotic minimax bound
 
-This file builds the adapter pieces that let the semiparametric local
-asymptotic minimax bound (`lam_semiparametric`) be reduced to the parametric
-local asymptotic minimax bound
-`AsymptoticStatistics.LocalAsymptoticMinimax.local_asymptotic_minimax_bound`, following
-vdV §25.21's strategy of applying the parametric theorems to sufficiently rich
-finite-dimensional submodels.
+This file builds the adapter pieces that reduce the **semiparametric** local
+asymptotic minimax (LAM) bound to the **parametric** LAM bound by restricting to
+sufficiently rich finite-dimensional submodels. Given a scalar functional
+$\psi$ on a semiparametric model with tangent set $\dot{\mathcal P}$, a bounded
+orthonormal system $g_1,\dots,g_m$ in the tangent space, and the efficient
+influence function $\tilde\ell_\psi$, the construction does the following.
+
+It forms the $m$-dimensional submodel spanned by $g_1,\dots,g_m$ and the lifted
+parametric functional $\theta \mapsto \psi$ evaluated along that submodel
+(`ψ_param`). This parametric functional is Fréchet-differentiable at $0$, with
+derivative the row vector
+$A = \bigl(\langle \tilde\ell_\psi, g_1\rangle,\dots,\langle \tilde\ell_\psi, g_m\rangle\bigr)$
+of inner products of the efficient influence function against the basis
+(`ψ_param_HasFDerivAt`). Because every direction $h \in \mathbb R^m$ corresponds
+to the tangent vector $h^\top g = \sum_j h_j g_j$ — which lies in the tangent
+set whenever the latter is a linear space — the parametric LAM left-hand side
+(a supremum over finite subsets of $\mathbb R^m$) is dominated by the
+semiparametric LAM left-hand side (a supremum over finite subsets of the tangent
+set) (`paramLam_LHS_le_semiparametric_LHS`). Chaining the parametric LAM bound
+through these two facts produces the per-submodel lower bound
+$\int L\,\mathrm dN(0, A A^\top)$ needed for the semiparametric LAM theorem.
 
 The multi-parameter submodel construction from a bounded orthonormal basis is
 reused from `AsymptoticStatistics.ParametricFamily.SubmodelDQM` (`paramSubmodel`
-and its DQM / Fisher-information / support properties). The pieces added here:
+and its differentiability-in-quadratic-mean / Fisher-information / support
+properties).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information) and Theorem 25.21 (§25.3)
+(the local asymptotic minimax theorem for semiparametric models, reducing the
+semiparametric bound to parametric submodels). The submodel-reduction strategy
+formalized here is exactly the device by which the convolution / minimax
+theorems of §25.3 are applied to one-dimensional (and finite-dimensional)
+submodels through the tangent set.
+
+**Proof formalization notes.** The pieces added here:
 
 * `ψ_param` — the parametric functional `θ ↦ ψ(paramSubmodel-curve at θ)`
   built from a scalar semiparametric functional `ψ : Measure Ω → ℝ`.
@@ -31,6 +58,31 @@ and its DQM / Fisher-information / support properties). The pieces added here:
   argument: every `h ∈ ℝ^m` corresponds to `h^T g_P ∈ T_set.carrier`
   (linear-span case), so the parametric SUP-over-ℝ^m is a sub-SUP of the
   semiparametric SUP-over-T_set.
+
+Two book-vs-Lean deviations are made explicit as hypotheses rather than left
+implicit as vdV does. First, the differentiability argument carries a
+Hadamard-style uniform-in-tangent linear-approximation remainder
+(`_hψ_Hadamard_remainder`), which vdV folds into the standing regularity of
+§25. Second, `paramLam_LHS_le_semiparametric_LHS` requires the tangent set to be
+a linear space (not merely a cone) via `_h_linspan_in_tset`, and requires an
+explicit alignment hypothesis `_h_γ_aligns` identifying the abstract path family
+with the concrete `paramSubmodel`-density measures along basis-spanned
+directions — an equivalence vdV's Theorem 25.21 (§25.3) proof assumes silently.
+
+**Bibliographic comments.** The submodel-reduction technique for semiparametric
+efficiency lower bounds — bounding the semiparametric minimax risk below by the
+risk of richest finite-dimensional parametric submodels — originates with the
+systematic theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov & J. A. Wellner,
+*Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins
+University Press, 1993 (reprinted Springer, 1998); the tangent-space / efficient
+influence function calculus used here is developed there in Chapters 2–3. The
+local asymptotic minimax formulation and its reduction to least-favorable
+parametric submodels trace back to J. Hájek, "Local asymptotic minimax and
+admissibility in estimation", *Proc. Sixth Berkeley Symp. Math. Statist.
+Probab.* 1 (1972), 175–194, and to the convolution theorem of J. Hájek, "A
+characterization of limiting distributions of regular estimators",
+*Z. Wahrsch. Verw. Gebiete* 14 (1970), 323–330; the textbook synthesis of these
+into the semiparametric submodel argument is van der Vaart's §25.3 / Theorem 25.21 (§25.3).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -492,7 +544,7 @@ over the user's tangent set `T_set`, provided each basis element
 (linear-space case), and γ aligns with `paramSubmodel`-derived measures
 on basis-spanned directions.
 
-This is the key "reduction" step in vdV §25.21's proof: every `h ∈ ℝ^m`
+This is the key "reduction" step in vdV Theorem 25.21 (§25.3)'s proof: every `h ∈ ℝ^m`
 corresponds to `h^T g_P ∈ T_set.carrier`, so the parametric supremum
 over finite `I ⊂ ℝ^m` is a sub-supremum of the semiparametric supremum
 over `I ⊂ T_set.carrier`.
@@ -509,7 +561,7 @@ theorem paramLam_LHS_le_semiparametric_LHS
     (hg : IsBoundedMixtureScores g_P)
     (h_orth : Orthonormal ℝ (fun i : Fin m => (g_P i : Lp ℝ 2 P)))
     (_h_basis_in_tset : ∀ j, (g_P j : ↥(L2ZeroMean P)) ∈ T_set.carrier)
-    -- stays in `T_set.carrier`. vdV §25.21's "first" assumption (tangent
+    -- stays in `T_set.carrier`. vdV Theorem 25.21 (§25.3)'s "first" assumption (tangent
     -- set is a linear space, not just a cone).
     (_h_linspan_in_tset : ∀ (θ : Θ m),
       (∑ j : Fin m, ((WithLp.equiv 2 _ θ) j) • (g_P j) :
@@ -518,7 +570,7 @@ theorem paramLam_LHS_le_semiparametric_LHS
     -- basis-spanned directions. Formally: for each h ∈ ℝ^m and t ∈ ℝ,
     -- (γ (h^T g_P)).curve t = P.withDensity (paramSubmodel.density (t • h)).
     -- In concrete models this holds by construction; in abstract settings
-    -- this is an explicit caller obligation. vdV's proof of §25.21
+    -- this is an explicit caller obligation. vdV's proof of Theorem 25.21 (§25.3)
     -- silently assumes equivalent submodels for the reduction.
     (_h_γ_aligns :
       ∀ (h : Θ m) (t : ℝ),

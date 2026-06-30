@@ -10,20 +10,106 @@ import Mathlib.Probability.Kernel.Composition.Comp
 import Mathlib.MeasureTheory.Measure.LevyConvergence
 
 /-!
-# Semiparametric-to-parametric bridge
+# Semiparametric-to-parametric bridge (tangent set to LAN apparatus)
 
 This file holds named theorems encapsulating the semiparametric-to-parametric
-bridge content of vdV §25: the steps from a tangent set plus orthonormal score
-basis to the parametric LAN apparatus of earlier chapters (vdV Theorem 7.10's
-`LAN_representation`, Proposition 8.4 convolution-with-randomizer, and the
-cone-restriction argument).
+bridge content of van der Vaart's Chapter 25: the steps from a tangent set plus
+an orthonormal score basis to the parametric local asymptotic normality (LAN)
+apparatus of the earlier chapters.
+
+Informally, fix a probability measure $P$ and a convex-cone tangent set $T$ of
+score functions in $L^2_0(P)$ (mean-zero, square-integrable). Given an
+$L^2(P)$-orthonormal basis $g_1, \dots, g_m$ of a finite-dimensional subspace of
+$T$, one forms the finite-dimensional parametric submodel with densities
+$(1 + \langle h, g\rangle)\, dP$, which is differentiable in quadratic mean at
+$h = 0$ with Fisher information equal to the identity. The parametric efficiency
+machinery of Chapters 7-8 then transfers to the semiparametric limit:
+
+* **Per-$m$ convolution decomposition** (`perMConvDecomp`): the weak limit $L$ of
+  the standardized regular estimator factors as a Gaussian convolution
+  $L = N(0, \sigma_m^2) \star M_m$, where
+  $\sigma_m^2 = \sum_{i=1}^m \langle \tilde\psi_{\mathrm{eff}}, g_i\rangle^2$ is
+  the variance picked up along the efficient-influence-function direction inside
+  $\operatorname{span}(g_1,\dots,g_m)$.
+* **Lévy-continuity $m$-pass** (`levyMpass`): letting $m \to \infty$ so that
+  $\sigma_m^2 \to \|\tilde\psi_{\mathrm{eff}}\|^2$, a characteristic-function /
+  tightness argument produces a single mixing measure $M$ with
+  $L = N(0, \|\tilde\psi_{\mathrm{eff}}\|^2) \star M$ (the convolution theorem).
+* **Truncated Bayes-risk lower bound** (`bddInner`): for any bowl-shaped loss
+  $\ell$ and truncation level $M$, the local asymptotic minimax left-hand side
+  dominates $\int (\ell \wedge M)\, dN(0, \sigma_m^2)$.
+* **Joint covariance block PSD-ness** (`covBlockPSDAll`): the joint covariance
+  block of $(\tilde\psi_{\mathrm{eff}}, g_1, \dots, g_m)$, namely the matrix with
+  variance-of-$L$ corner, off-diagonal entries
+  $A_{m,i} = \langle \tilde\psi_{\mathrm{eff}}, g_i\rangle$, and identity
+  block $I_m$, is positive semidefinite.
 
 Headline declarations: `perMConvDecomp`, `levyMpass`, `bddInner`,
-`covBlockPSDAll`, and the §25.20 closure bridges
+`covBlockPSDAll`, and the §25 closure bridges
 (`pi_paramSubmodelQMDPath_curve_eq_productMeasure`,
 `productMeasure_paramSubmodel_pushforward_weakConverges`,
 `tangent_bounded_orthonormal_approx`,
 `orthonormal_to_bounded_mixture_via_tangent_dense`).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3, with Theorem 7.10 (local asymptotic
+normality representation, Chapter 7, Local Asymptotic Normality) and
+Proposition 8.4 (convolution-with-randomizer, Chapter 8, Efficiency of
+Estimators) supplying the parametric core that this file transfers to the
+semiparametric setting.
+
+**Proof formalization notes.** The four headline theorems are stated relative to
+the abstract tangent-set / efficient-influence-function infrastructure
+(`TangentSpec`, `IsEfficientInfluenceFunction`, `QMDPath`) and assemble the
+finite-dimensional submodel via `paramSubmodel` / `paramSubmodelQMDPath`. The
+Lévy-continuity $m$-pass (`levyMpass`) is fully proved internally: it forms the
+candidate target characteristic function
+$f(t) = \widehat{L}(t) / \widehat{N(0,\|\tilde\psi_{\mathrm{eff}}\|^2)}(t)$
+(the Gaussian characteristic function never vanishes, so the quotient is
+well-defined and continuous at $0$ with $f(0)=1$), shows the mixing-measure
+characteristic functions converge pointwise to $f$, invokes
+`isTightMeasureSet_of_tendsto_charFun` for tightness, extracts a weakly
+convergent subsequence by Prokhorov, identifies the limit's characteristic
+function with $f$ via `ext_of_charFun`, and reassembles the convolution through
+`charFun_conv`. The §25 closure bridges
+(`pi_paramSubmodelQMDPath_curve_eq_productMeasure` and the pushforward lemmas)
+transport `IsRegularEstimator.shift`'s `QMDPath`-based weak limits into the
+`productMeasure`-based form consumed by
+`AsymptoticRepresentation.LAN_representation`, justified by an eventually-in-$n$
+equality of the two product-measure families. Deviations from a fully
+self-contained derivation are confined to three caller-supplied book inputs that
+are not yet closed internally and are flagged in the corresponding declaration
+docstrings: `_hRegular` in `perMConvDecomp` (the Hájek-style per-$m$ convolution
+form of the regular-estimator limit law, vdV §25.3 + Thm 7.10),
+`_hBayesLowerBound` in `bddInner` (the per-$(M,m)$ limit-experiment Bayes-risk
+bound, vdV §25.3 Lemmas 3-4 plus the basis-selection / Riesz-pairing bridge),
+and `_hCovBlockPSD` in `covBlockPSDAll` (the joint-MGF differentiation +
+Anderson PSD-monotone covariance bound). Each is a named, well-defined
+downstream debt rather than an arbitrary assumption.
+
+**Bibliographic comments.** The conceptual origin is Lucien Le Cam's theory of
+limits of experiments — L. Le Cam, "Limits of experiments", in *Proceedings of
+the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I:
+Theory of Statistics, pp. 245-261, University of California Press, Berkeley,
+1972 — which justifies transferring efficiency bounds from a (Gaussian-shift)
+limit experiment back to the original sequence of experiments; this is exactly
+the device by which the parametric LAN apparatus is brought to bear on the
+semiparametric model here. The Gaussian-convolution structure of the limit law
+of regular estimators (the convolution theorem realized by `perMConvDecomp` /
+`levyMpass`) is due to J. Hájek, "A characterization of limiting distributions
+of regular estimates", *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte
+Gebiete* 14 (1970), 323-330, and the matching local asymptotic minimax bound
+(realized by `bddInner`) to J. Hájek, "Local asymptotic minimax and
+admissibility in estimation", in *Proceedings of the Sixth Berkeley Symposium on
+Mathematical Statistics and Probability*, Vol. I, pp. 175-194, University of
+California Press, Berkeley, 1972. The systematic tangent-set formulation of
+efficient influence functions for semiparametric models — the synthesis vdV §25
+follows — is developed in P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and
+J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*,
+Johns Hopkins University Press, 1993. The cone-restriction and basis-selection
+steps assembled in this file are textbook synthesis (vdV §25.3) of these
+sources rather than a single seminal result.
 -/
 
 open MeasureTheory Filter Topology

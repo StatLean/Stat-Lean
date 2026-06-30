@@ -2,25 +2,49 @@ import StatLean.Minimaxity.Defs
 import StatLean.Minimaxity.ForMathlib.KLDivergence
 
 /-!
-# Mutual information for M-ary testing (Wainwright §15.3.1)
+# Mutual information of the M-ary testing problem and its convexity (KL) bound
 
-For the M-ary testing problem (index `J` uniform on `[M]`, observation `Z ∼ P_{θᴶ}`), the mutual
-information `I(Z; J)` measures how much the observation reveals about the index. Wainwright defines
-it as the KL divergence between the joint law and the product of marginals (Eq. (15.29)),
-`I(Z, J) = D(ℚ_{Z,J} ‖ ℚ_Z ℚ_J)`, which (Eq. (15.30)) equals the average KL divergence between each
-component and the mixture:
-```
-I(Z; J) = (1/M) Σⱼ D(P_{θʲ} ‖ Q̄),     Q̄ = (1/M) Σⱼ P_{θʲ}.
-```
-We take Eq. (15.30) as the definition (it is the form used in the bounds) and prove the convexity
-upper bound (Eq. (15.34))
-```
-I(Z; J) ≤ (1/M²) Σⱼ Σₖ D(P_{θʲ} ‖ P_{θᵏ}),
-```
-which controls the mutual information by the pairwise KL divergences for local-packing arguments.
+Consider the $M$-ary testing problem: an index $J$ is drawn uniformly from $\{1,\dots,M\}$, and one
+observes $Z \sim P_{\theta^J}$. The **mutual information** $I(Z; J)$ measures how much the observation
+reveals about the index. It is defined as the Kullback–Leibler divergence between the joint law of
+$(Z, J)$ and the product of its marginals,
+$$ I(Z; J) = D\!\left(\mathbb{Q}_{Z,J} \,\big\|\, \mathbb{Q}_Z \otimes \mathbb{Q}_J\right), $$
+which equals the average KL divergence between each component and the uniform mixture,
+$$ I(Z; J) = \frac{1}{M} \sum_{j=1}^{M} D\!\left(P_{\theta^j} \,\big\|\, \bar Q\right),
+\qquad \bar Q = \frac{1}{M} \sum_{j=1}^{M} P_{\theta^j}. $$
+We take this averaged form as the definition (it is the expression used in the lower bounds) and
+prove the convexity upper bound
+$$ I(Z; J) \le \frac{1}{M^2} \sum_{j=1}^{M} \sum_{k=1}^{M}
+   D\!\left(P_{\theta^j} \,\big\|\, P_{\theta^k}\right), $$
+which controls the mutual information by the pairwise KL divergences and is the key ingredient for
+local-packing minimax lower bounds.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.1.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.1 and §15.3.3
+(Bounds based on local packings), Eq. (15.29), (15.30) (definition) and Eq. (15.34) (convexity bound).
+
+**Proof formalization notes.** The mutual information is *defined* here directly in its averaged
+form (Eq. (15.30)), `I(Z; J) = (1/M) Σⱼ D(P_{θʲ} ‖ Q̄)`, rather than via the joint-vs-product KL
+divergence (Eq. (15.29)); the two are equal, and the averaged form is what the bounds consume.
+The convexity bound (Eq. (15.34)) is obtained from convexity of the KL divergence in its second
+argument: `D(Q j ‖ Q̄) ≤ (1/M) Σₖ D(Q j ‖ Q k)` (lemma `klDiv_le_avg`), summed over `j`. Since
+Mathlib does not package the joint convexity of `klDiv`, that lemma is proved from scratch: the
+non-absolutely-continuous case gives an infinite right-hand side; the absolutely-continuous case
+reduces, via `klDiv_eq_lintegral_klFun_of_ac` against the reference `mixture Q` and the
+Radon–Nikodym chain rule `Measure.rnDeriv_mul_rnDeriv`, to the pointwise real inequality
+`klFun_le_avg_real`. The latter is the analytic heart — the perspective `(p, q) ↦ q · klFun(p/q)`
+is jointly convex — and, after expanding `klFun x = x log x + 1 - x`, follows from concavity of
+`log` (`Real.strictConcaveOn_log_Ioi`) via Jensen's inequality.
+
+**Bibliographic comments.** Mutual information originates with C. E. Shannon, "A Mathematical
+Theory of Communication," *Bell System Technical Journal* **27** (1948), 379–423 and 623–656, where
+it appears (in the entropy form `H(Z) - H(Z|J)`, equivalent to the KL form above) as the channel
+information rate. The convexity (KL) bound stated here is textbook synthesis / folklore: it is the
+standard "convexity of KL in the second argument" step underlying the local Fano / Hasminskii
+(1978) local-packing minimax machinery (the global metric-entropy method of Yang–Barron, 1999,
+belongs to Wainwright §15.3.5 and is not what Eq. (15.34) is), and has no single seminal origin
+beyond the joint convexity of the KL divergence
+itself. We follow Wainwright's presentation (Eq. (15.34)).
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory
@@ -242,7 +266,8 @@ private lemma klDiv_le_avg {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧) [IsMar
 second argument (the mixture minimizes the average divergence).
 
 **Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.2, Eq. (15.34). -/
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3
+(Bounds based on local packings), Eq. (15.34). -/
 theorem mutualInformation_le_avg_pairwise_kl {M : ℕ} [NeZero M] (Q : Kernel (Fin M) 𝓧)
     [IsMarkovKernel Q] :
     mutualInformation Q ≤ ((M : ℝ≥0∞) ^ 2)⁻¹ * ∑ j, ∑ k, klDiv (Q j) (Q k) := by

@@ -16,14 +16,14 @@ score (eq:25.53), the no-bias condition (eq:25.52), the estimating-equation
 `√n · 𝕡_n ℓ̃_{θ̂_n,η̂_n} →_P 0`, the consistency of `θ̂_n`, and the
 DQM-in-θ Taylor regularity for `θ ↦ ℓ̃_{θ,η}`.
 
-Strong-regularity / Taylor route. The book's proof (vdV §25.5) decomposes
+Strong-regularity / Taylor route. The book's proof (vdV §25.8) decomposes
 the residual into a random-index empirical-process step closed by Lemma 19.24,
 an algebraic rewrite using the no-bias condition (eq:25.52) and the estimating
 equation, and a second-order Taylor decomposition of
 `(P_{θ̂_n,η} − P) ℓ̃_{θ̂_n,η̂_n}` via the DQM-in-θ Taylor identity
 (vdV §7.2 Theorem 7.2 + Lemma 7.6).
 
-Reference: vdV §25.5, eq:25.52 (no-bias), eq:25.53 (Donsker / regularity),
+Reference: vdV §25.8 (Efficient Score Equations), eq:25.52 (no-bias), eq:25.53 (Donsker / regularity),
 thm:25.54 (Z-estimator semiparametric efficiency); Lemma 19.24; vdV §7.2
 Theorem 7.2 + Lemma 7.6 (DQM-Taylor). Headline declarations:
 `zEstimator_asympLinear_of_taylor` and `toEfficientScoreEqAssumptions`.
@@ -352,10 +352,10 @@ regularity hypothesis on the efficient score.
   `θ ↦ ℓ̃_{θ,η}` at θ₀ (vdV §7.2 Lemma 7.6 derivative; consumed by the
   Taylor remainder bound).
 
-Every field traces back to a primitive in vdV §25.5. See the docstring
+Every field traces back to a primitive in vdV §25.8. See the docstring
 on each field for the book reference.
 
-Reference: vdV §25.5, thm:25.54; eq:25.52, eq:25.53 (book primitives);
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.54; eq:25.52, eq:25.53 (book primitives);
 Lemma 19.24.
 
 The bundle is shipped in three layers:
@@ -517,11 +517,11 @@ structure ZEstimatorTaylorCore
 Extends `ZEstimatorTaylorCore` with the no-bias condition (25.52). The
 no-bias field is consumed only by the off-Taylor-path lemmas
 (`step1_random_index_oP`, `step2_score_eq_to_no_bias`) that document
-vdV's original §25.5 Donsker-route proof; the Taylor critical path
+vdV's original §25.8 Donsker-route proof; the Taylor critical path
 (Steps 3–6 + main theorem `zEstimator_asympLinear_of_taylor`) does not
 use it.
 
-Reference: vdV §25.5, thm:25.54; eq:25.52 (the no-bias condition added
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.54; eq:25.52 (the no-bias condition added
 by this extension).
 -/
 structure ZEstimatorTaylorHyp
@@ -544,7 +544,7 @@ structure ZEstimatorTaylorHyp
   Encoded here as the tightest local form: `√n · ∫ score_func_seq n X dP
   →_P 0` under `Pⁿ`. (The `+ √n‖θ̂_n − θ₀‖` slack is absorbed by combining
   with the consistency hypothesis at proof time.) Concrete model files
-  prove this from a model-specific bias control (vdV §25.5, eq:25.52). -/
+  prove this from a model-specific bias control (vdV §25.8, eq:25.52). -/
   no_bias : ∀ ε > 0, Tendsto
     (fun n : ℕ => (Measure.pi (fun _ : Fin n => P))
       {X : Fin n → Ω |
@@ -864,7 +864,7 @@ More precisely: combining Step 1 with the score equation (`h.score_eq`,
 (`h.no_bias`, `√n · ∫ score_func_seq dP →_P 0`), we get
 `√n · ∫ (score_func_seq − score_truth) dP + G_n(score_truth) →_P 0`,
 which is the operational statement of vdV's eq:25.52 + score-equation
-combination at the start of the §25.5 proof.
+combination at the start of the §25.8 proof.
 
 **Proof strategy.** Algebraic decomposition:
 `√n · ∫ score_func_seq dP = √n · 𝕡_n score_func_seq − G_n(score_func_seq)`
@@ -1031,8 +1031,8 @@ so `|(1/√n) Σ r_n| ≤ √(Σ r_n²)`. The hypothesis `score_l2_taylor`
 the conclusion via squeeze.
 
 This is the load-bearing substitution-via-Taylor step in the Taylor
-route of the proof (vdV §25.5 strong-regularity remark), playing the
-role of the book's "second-order term vanishes" in the §25.5 original
+route of the proof (vdV §25.8 strong-regularity remark), playing the
+role of the book's "second-order term vanishes" in the §25.8 original
 argument. Mirrors `oneStep_asympLinear_of_taylor`'s treatment of the
 empirical-Taylor remainder. -/
 lemma step3_taylor_remainder_oP
@@ -1402,7 +1402,7 @@ Invoke Step 3 (`(1/√n) Σ r_n(X_i) →_P 0`), Step 4
 `hI_pos` keeps `Ĩ` bounded away from zero, so
 `√n(estimator − θ₀) = O_P(1)`.
 
-This is the bootstrap step that the book's original §25.5 proof handles
+This is the bootstrap step that the book's original §25.8 proof handles
 via Lem 19.24 + Donsker (Step 1 / Step 2 above) and the Taylor route
 handles via direct Cauchy-Schwarz + boundedness arguments. -/
 private lemma step5_sqrt_n_consistency
@@ -2015,7 +2015,7 @@ Given the strong-regularity bundle `ZEstimatorTaylorHyp`, the Z-estimator
 `estimator` is asymptotically linear at `P` with influence function
 `(1/Ĩ_{θ₀,η₀}) • ℓ̃_{θ₀,η₀}` and centering `θ₀`.
 
-**Proof outline (Taylor route — vdV §25.5 strong-regularity remark):**
+**Proof outline (Taylor route — vdV §25.8 strong-regularity remark):**
 
 The score equation `score_eq` says `(1/√n) Σᵢ score_func_seq n X (X_i) →_P 0`.
 Substitute the empirical Taylor identity (encoded via `score_l2_taylor` and
@@ -2050,7 +2050,7 @@ The book's original Donsker route: Step 1 (`step1_random_index_oP`)
 invokes Lem 19.24 to produce `G_n(score_func_seq) − G_n(score_truth) →_P 0`;
 Step 2 (`step2_score_eq_to_no_bias`) produces an analogous algebraic
 rewrite using `no_bias`. Neither is on the Taylor-route critical path
-but both document the connection to vdV's §25.5 proof. -/
+but both document the connection to vdV's §25.8 proof. -/
 theorem zEstimator_asympLinear_of_taylor
     (h : ZEstimatorTaylorCore P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class

@@ -4,16 +4,47 @@ import StatLean.AsymptoticStatistics.ForMathlib.RnDerivSqrt
 import StatLean.AsymptoticStatistics.ForMathlib.L2
 
 /-!
-# Le Cam's inequality — Lemma 15.3 (Wainwright §15.1.3)
+# Le Cam's inequality (total variation controlled by Hellinger distance)
 
-The total variation distance is controlled by the Hellinger distance:
-`‖ℙ − ℚ‖_TV ≤ H(ℙ ‖ ℚ) · √(1 − H²(ℙ ‖ ℚ)/4)`  (Eq. (15.10)),
+For probability measures $\mathbb{P}, \mathbb{Q}$, the total variation distance is bounded above by
+the Hellinger distance through
+$$\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} \;\le\; H(\mathbb{P}\,\|\,\mathbb{Q})\,
+  \sqrt{1 - \tfrac{1}{4}\,H^2(\mathbb{P}\,\|\,\mathbb{Q})},$$
+where $H = \sqrt{H^2}$ is the (unsquared) Hellinger distance and $H^2(\mathbb{P}\,\|\,\mathbb{Q})
+= \int (\sqrt{p} - \sqrt{q})^2 \, d\xi$ is the squared Hellinger distance against a common
+dominating measure $\xi$. This is the upper half of the classical pair of Hellinger–total-variation
+inequalities.
 
-where `H = √(H²)` is the (unsquared) Hellinger distance. Wainwright works through the proof in
-Exercise 15.5 (Cauchy–Schwarz on `(√p − √q)(√p + √q)`). We use the `ℝ≥0∞` square root `rpow (1/2)`.
+In the Lean statement the squared Hellinger distance `sqHellinger μ ν` plays the role of $H^2$, the
+unsquared distance is its `ℝ≥0∞` square root `rpow (1/2)`, and the dominating measure is taken to be
+$\xi = \mu + \nu$.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Lemma 15.3.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Lemma 15.3,
+Eq. (15.10). Wainwright leaves the proof as Exercise 15.5.
+
+**Proof formalization notes.** The argument follows Exercise 15.5. Writing $p = d\mathbb{P}/d\xi$,
+$q = d\mathbb{Q}/d\xi$ for the densities against $\xi = \mu + \nu$, factor the integrand pointwise as
+$|p - q| = |\sqrt{p} - \sqrt{q}| \cdot (\sqrt{p} + \sqrt{q})$ and apply Cauchy–Schwarz:
+$$\tfrac{1}{2}\!\int |p - q|\, d\xi \;\le\; \tfrac{1}{2}\,
+  \sqrt{\textstyle\int (\sqrt{p} - \sqrt{q})^2 d\xi}\;\cdot\;
+  \sqrt{\textstyle\int (\sqrt{p} + \sqrt{q})^2 d\xi}.$$
+The "cross" integral is computed via the identity $\int (\sqrt{p} + \sqrt{q})^2 d\xi
+= 2 + 2\int \sqrt{pq}\, d\xi = 4 - H^2$, which turns the second factor into $2\sqrt{1 - H^2/4}$ and
+yields the stated bound. The development is layered: `lecam_real_bound` is the real-analytic core
+(Cauchy–Schwarz plus the $4 - H^2$ identity over `ℝ`); `lecam_half_lintegral_le` is the Cauchy–Schwarz
+crux transported to the `ℝ≥0∞` half-`L¹` form; and the public theorem `lecam_tv_le_hellinger`
+follows by the density form `tvDist_eq_half_lintegral`.
+
+**Bibliographic comments.** L. Le Cam, "Convergence of Estimates Under Dimensionality
+Restrictions," *The Annals of Statistics* **1**(1), 38–53, 1973. Le Cam introduced the Hellinger
+affinity / Hellinger distance as the controlling quantity for testing and estimation rates, and the
+two-sided comparison between total variation and Hellinger distance — of which the inequality
+formalized here ($\mathrm{TV} \le H\sqrt{1 - H^2/4}$) is the upper bound — originates in this line of
+work; the complementary lower bound $H^2/2 \le \mathrm{TV}$ is the other half. The sharp constants and
+the clean Cauchy–Schwarz derivation reproduced here are now standard textbook material (Wainwright
+§15.1.3); the result is commonly attributed to Le Cam rather than to a single equation in the
+original paper.
 -/
 
 open MeasureTheory

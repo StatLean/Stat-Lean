@@ -4,19 +4,54 @@ import StatLean.Minimaxity.ForMathlib.PinskerInequality
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
-# Example: Gaussian location family (Wainwright Examples 15.4, 15.10, 15.13)
+# Minimax rate for the Gaussian location family
 
 The archetypal parametric minimax lower bound. For the Gaussian location family
-`{𝒩(θ, σ²) : θ ∈ ℝ}` and `n` i.i.d. samples, the minimax risk for estimating the mean `θ` under
-squared error scales as `σ²/n`:
-```
-inf_θ̂ sup_θ 𝔼_θ[(θ̂ − θ)²] ≥ σ²/(24 n)            (Example 15.4, Eq. (15.16b)).
-```
-This is obtained from Le Cam's two-point bound (`minimax_two_point`) with the Gaussian KL/TV bound;
-the convex-hull (Example 15.10) and Fano (Example 15.13) routes give the same `σ²/n` order.
+$\{\mathcal{N}(\theta, \sigma^2) : \theta \in \mathbb{R}\}$ and $n$ i.i.d. samples, the minimax
+risk for estimating the mean $\theta$ under squared-error loss scales as $\sigma^2/n$. Concretely,
+$$
+\inf_{\widehat\theta}\ \sup_{\theta}\ \mathbb{E}_\theta\bigl[(\widehat\theta - \theta)^2\bigr]
+\ \ge\ \frac{\sigma^2}{24\,n}.
+$$
+Here $\sigma^2$ denotes the (fixed, nonzero) common variance and $n \ge 1$ the sample size.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.4.
+**Deviation from the book.** Wainwright's Example 15.4 (Eq. (15.16b)) states the lower bound at
+the order $\sigma^2/n$ up to a universal constant; the explicit constant is not pinned down in the
+text. The formalization proves the fully explicit constant $1/24$, i.e. the provable bound
+$\sigma^2/(24n)$. (Internally the two-point construction yields $\sigma^2/(16n)$; the looser
+$\sigma^2/(24n)$ is stated so the inequality holds verbatim.) Any constant $\le 1/16$ would be
+provable from the same construction; we record $1/24$ as the headline value.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.4,
+Eq. (15.16b).
+
+**Proof formalization notes.** The bound is obtained from Le Cam's two-point method
+(`minimax_two_point`) combined with the Gaussian Kullback–Leibler / total-variation bound:
+
+* With separation $\theta_1 = \sqrt{\sigma^2/n}$, the single-sample KL divergence is
+  $\theta_1^2/(2\sigma^2) = 1/(2n)$, so by KL tensorization the $n$-fold product KL equals
+  $n \cdot 1/(2n) = 1/2$. Pinsker's inequality (Wainwright Lemma 15.2) then gives
+  $\|P_0 - P_{\theta_1}\|_{\mathrm{TV}} \le \sqrt{\mathrm{KL}/2} = 1/2$
+  (lemma `gaussian_two_point_tvDist_le`, using `klDiv_gaussianReal` for the single-sample value
+  and `klDiv_pi_eq_nsmul` for tensorization).
+* Plugging the separation $\theta_1$ into `minimax_two_point` with the squared-error modulus
+  gives risk $\ge (\theta_1/2)^2 \cdot (1 - \mathrm{TV}) = \sigma^2/(4n) \cdot 1/2 = \sigma^2/(16n)$,
+  which dominates the stated $\sigma^2/(24n)$.
+
+The convex-hull route (Example 15.10) and the Fano route (Example 15.13) give the same $\sigma^2/n$
+order and are not separately formalized here.
+
+**Bibliographic comments.** The $\sigma^2/n$ minimax rate for estimating a Gaussian mean under
+squared-error loss is classical folklore with no single seminal origin: the sample mean is the
+minimax (indeed the unique minimax under quadratic loss, by the least-favorable-prior / Bayes-risk
+argument) estimator of a normal mean. The lower-bound *technique* used here is Le Cam's two-point
+method (L. Le Cam, "Convergence of estimates under dimensionality restrictions," *Annals of
+Statistics* 1 (1973), 38–53), which reduces estimation to a two-point hypothesis test and bounds
+the testing error via the total-variation affinity; Pinsker's inequality
+(M. S. Pinsker, *Information and Information Stability of Random Variables and Processes*,
+Holden-Day, 1964) converts the tractable KL divergence into the required TV bound. The packaging as
+a worked example, including the convex-hull and Fano variants, follows Wainwright (2019), §15.2.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

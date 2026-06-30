@@ -9,42 +9,96 @@ Authors: Junwei Lu, Claude Opus 4.7
 -/
 
 /-!
-# Anderson-Bayes inequality for the Gaussian shift experiment
+# Anderson–Bayes inequality for the Gaussian shift experiment
 
-For the Gaussian shift experiment with prior `N(0, τ²·I_m)` on parameter
-`h ∈ ℝ^m` and data `Δ ~ N(h, I_m)`, the Bayes risk under any measurable
-estimator `T` is bounded below by the Bayes risk of the optimal posterior-mean
-estimator. In LR-form:
-
-    `bayesRiskAtTau J A L τ`
-      ≤ `∫⁻ Δ ∫⁻ h gaussianShiftLR(h, Δ) · L(T Δ - (A h)) dN(0, τ²·I_m)(h) dN(0, I_m)(Δ)`
-
-where `gaussianShiftLR(h, Δ) = exp(⟨h, Δ⟩ - ½‖h‖²)` is the Radon-Nikodym
-derivative `dN(h, I_m) / dN(0, I_m)`.
-
-This is the **Anderson-Bayes inequality** (vdV §25.5 / Anderson 1955): the
-foundational result that the posterior mean is Bayes-optimal for bowl-shaped
-losses on Gaussian shift experiments. The proof has two main ingredients:
-
-1. **Tower + change-of-measure**: Tonelli (swap inner/outer integrals) plus
-   the change-of-measure identity `∫⁻ Δ gaussianShiftLR(h, Δ) F(Δ) dN(0, I_m)
-   = ∫⁻ Δ F(Δ) dN(h, I_m)` (RN-derivative property of the Gaussian shift).
-
-2. **Anderson optimality**: for the Gaussian conditional `h | Δ`, the
-   posterior-mean error `T_*(Δ) - Ah` has Gaussian distribution
-   `N(0, A · posteriorCov · Aᵀ)`, and is independent of `Δ` (projection
-   property). Then `anderson_lemma_independent` gives
-   `E[ℓ_M(T_*(Δ) - Ah)] ≤ E[ℓ_M(T(Δ) - Ah)]` for any measurable `T`.
+Consider the Gaussian shift experiment: a parameter $h \in \mathbb{R}^m$ is
+endowed with the prior $N(0, \tau^2 I_m)$, and conditionally on $h$ the data are
+$\Delta \sim N(h, I_m)$. Let $A$ be a $1 \times m$ matrix defining the scalar
+estimation target $Ah$, and let $L$ be any *bowl-shaped* loss on $\mathbb{R}$
+(nonnegative, symmetric about the origin, with convex sublevel sets). Then for
+every measurable estimator $T = T(\Delta)$, the Bayes risk of the optimal
+posterior-mean estimator is a lower bound for the Bayes risk of $T$:
+$$
+  \int L(y)\, dN\!\big(0,\, A\,\Sigma_\tau\, A^{\top}\big)(y)
+    \;\le\;
+  \int\!\!\int
+    \exp\!\Big(\langle h, \Delta\rangle - \tfrac12\|h\|^2\Big)\,
+    L\big(T(\Delta) - Ah\big)\,
+    dN(0, \tau^2 I_m)(h)\, dN(0, I_m)(\Delta),
+$$
+where $\Sigma_\tau = (I_m + \tau^{-2} I_m)^{-1}$ is the posterior covariance of
+$h$ given $\Delta$ (here the posterior covariance of the family `posteriorCov`),
+and the weight $\exp(\langle h, \Delta\rangle - \tfrac12\|h\|^2)$ is the
+likelihood ratio $dN(h, I_m)/dN(0, I_m)$, which lets the data integral be taken
+against the fixed reference measure $N(0, I_m)$ rather than against the
+parameter-dependent law $N(h, I_m)$. The left-hand side is exactly the Bayes
+risk attained by the posterior-mean estimator $T_*$, whose error
+$T_*(\Delta) - Ah$ is centered Gaussian with covariance $A\,\Sigma_\tau A^{\top}$
+and is independent of $\Delta$ (the projection/innovations property). This is
+the foundational fact that the posterior mean is Bayes-optimal for bowl-shaped
+losses on Gaussian shift experiments.
 
 The headline declaration is `anderson_bayes_inequality_gaussian_shift`; the
-specialization to the constant zero estimator is
+specialization to the constant zero estimator $T \equiv 0$ is
 `anderson_bayes_inequality_gaussian_shift_at_zero`.
 
-## Reference
+*Alignment with the Lean statement.* The formalization fixes the base
+noise/prior covariance to the identity $I_m$ (the book's matrix $J$ is taken to
+be $J = I_m$) and the target dimension to one ($A$ is $1 \times m$, so $Ah$ is a
+scalar). No book constants are changed; the LaTeX above matches the Lean
+`multivariateGaussian`/`posteriorCov` data verbatim.
 
-- vdV §25.5 (Anderson-Bayes inequality for Gaussian shift experiments)
-- Anderson, T. W. (1955). "The integral of a symmetric unimodal function".
-- `anderson_lemma_independent` (the abstract Anderson inequality this builds on).
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.4 (Estimating Normal Means) — the
+normal-means Bayes/minimax argument — invoking Anderson's Lemma 8.5 (stated in
+§8.4, Estimating Normal Means).
+
+**Proof formalization notes.** The proof of the general (arbitrary-$T$) version
+`anderson_bayes_inequality_gaussian_shift` has two main ingredients:
+
+1. **Tower + change-of-measure**: Tonelli (swap the inner/outer integrals) plus
+   the change-of-measure identity
+   $\int \exp(\langle h, \Delta\rangle - \tfrac12\|h\|^2)\, F(\Delta)\,
+   dN(0, I_m)(\Delta) = \int F(\Delta)\, dN(h, I_m)(\Delta)$
+   (the Radon–Nikodym derivative property of the Gaussian shift, supplied by
+   `multivariateGaussian_withDensity_exp_shift`).
+
+2. **Anderson optimality**: for the Gaussian conditional $h \mid \Delta$, the
+   posterior-mean error $T_*(\Delta) - Ah$ is Gaussian
+   $N(0,\, A\,\Sigma_\tau A^{\top})$ and independent of $\Delta$ (projection
+   property). The innovations representation
+   `GaussianShiftMinimax.gaussianShift_innovations_repr` exposes this split, and
+   the pushforward through $A$ (`multivariateGaussian_map_rectangular`) followed
+   by `anderson_lemma_loss` (the loss form of Anderson's lemma, shifting by the
+   data-dependent center) yields the stated lower bound for every measurable
+   $T$.
+
+The companion `anderson_bayes_inequality_gaussian_shift_at_zero` ($T \equiv 0$)
+bypasses the Gaussian-conditional machinery and uses only bowl symmetry, the
+Gaussian MGF-tilt identity (`gaussian_mgf_tilt_eq_one`), the rectangular
+pushforward, and Anderson PSD-monotonicity
+(`gaussian_lintegral_mono_of_psd_le`) from $\Sigma_\tau \preceq \tau^2 I_m$; its
+five-step outline and named sub-lemmas (`bowl_at_zero_simplify`,
+`mvgaussian_pushforward_at_zero`, `posteriorCov_le_tausq_after_conjugate`, …)
+are documented in the section comment preceding that theorem.
+
+**Bibliographic comments.** Anderson's lemma is T. W. Anderson, "The integral of
+a symmetric unimodal function over a symmetric convex set and some probability
+inequalities," *Proceedings of the American Mathematical Society* **6** (1955),
+170–176 (DOI 10.1090/S0002-9939-1955-0069229-1). Its main theorem and corollaries
+give, for a centered Gaussian $\nu$ and a symmetric convex set $C$, the
+translate inequality $\nu(C - y) \le \nu(C)$ for all $y$ — equivalently
+$\int L\, d\nu \le \int L(\cdot + y)\, d\nu$ for every bowl-shaped $L$. The
+Bayes-risk / posterior-mean optimality packaging for the Gaussian shift (limit)
+experiment, and the resulting convolution and local asymptotic minimax theorems,
+are due to J. Hájek ("A characterization of limiting distributions of regular
+estimates," *Z. Wahrscheinlichkeitstheorie verw. Gebiete* **14** (1970),
+323–330; "Local asymptotic minimax and admissibility in estimation," *Proc.
+Sixth Berkeley Symp. Math. Statist. Probab.* **1** (1972), 175–194) and L. Le
+Cam; see vdV §8.5–8.7. The specific name "Anderson–Bayes inequality" used here
+is van der Vaart's textbook synthesis of Anderson's lemma with the Bayes-risk
+optimality argument rather than a single separately titled theorem.
 -/
 
 open MeasureTheory ProbabilityTheory Filter

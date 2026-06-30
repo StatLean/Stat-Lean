@@ -2,23 +2,62 @@ import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
-# Shannon entropy and its basic properties (Wainwright §15.4 Appendix)
+# Shannon entropy, conditional entropy, mutual information and their basic inequalities
 
-The information-theoretic background of the appendix: Shannon entropy (Definition 15.24), conditional
-entropy (Definition 15.25), and the elementary properties (Eq. (15.60a)–(15.60e)) used in the proof
-of Fano's inequality.
+This file develops the information-theoretic background of the Minimaxity appendix used in the
+proof of Fano's inequality. For a probability distribution one defines the **Shannon entropy**
+$H(\mathbb{Q}) = -\int q \log q \, d\mu$, written via the density $q = d\mathbb{Q}/d\mu$ as
+$-\int \log(d\mathbb{Q}/d\mu)\, d\mathbb{Q}$, and in the discrete case
+$H(p) = -\sum_x p(x) \log p(x)$ for a probability mass function $p$ on a finite set. For a joint
+pmf on $\mathcal{X} \times \mathcal{Y}$ one defines the **conditional entropy**
+$H(X \mid Y) = H(X,Y) - H(Y)$ and the **mutual information**
+$I(X;Y) = H(X) + H(Y) - H(X,Y)$, where $H(X)$ and $H(Y)$ are the entropies of the marginals.
 
-* `shannonEntropy Q μ` — `H(ℚ) = −∫ log(dℚ/dμ) dℚ = −∫ q log q dμ` (Def. 15.24).
-* `discreteEntropy p` — `H(p) = −Σ p(x) log p(x) = Σ negMulLog(p x)` (Eq. (15.58)).
-* `discreteCondEntropy p` / `discreteMutualInfo p` — conditional entropy `H(X|Y) = H(X,Y) − H(Y)`
-  (Def. 15.25 / Eq. (15.60b)) and mutual information `I(X;Y) = H(X) + H(Y) − H(X,Y)` (Eq. (15.60d))
-  for a joint pmf on `ι × κ`.
+The elementary properties proved here are:
 
-Properties proved: `H ≥ 0` and `H ≤ log|𝒳|` (Exercise 15.2), conditioning reduces entropy
-`H(X|Y) ≤ H(X)` (Eq. (15.60a), equivalent to `I(X;Y) ≥ 0`).
+* nonnegativity $H(p) \ge 0$ for any pmf;
+* the maximal-entropy bound $H(p) \le \log |\mathcal{X}|$, with equality at the uniform distribution;
+* "conditioning reduces entropy", $H(X \mid Y) \le H(X)$, equivalent to nonnegativity of the
+  mutual information, $I(X;Y) \ge 0$ (equivalently subadditivity $H(X,Y) \le H(X) + H(Y)$).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4.
+In Lean terms: `shannonEntropy Q μ` is the measure-theoretic entropy; `discreteEntropy p`,
+`discreteCondEntropy p`, `discreteMutualInfo p` are the discrete versions on `ι`, `ι × κ`; and the
+three inequalities are `discreteEntropy_nonneg`, `discreteEntropy_le_log_card`,
+`discreteCondEntropy_le_entropy`. The nonnegativity lemma carries the extra normalization
+hypotheses (`0 ≤ p i`, `p i ≤ 1`) that pin down $p$ as a pmf; the bound and conditioning lemmas
+take the total-mass-one hypothesis `∑ p = 1` rather than leaving it implicit, matching the book's
+standing "p is a probability distribution" assumption.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.4 (information-theoretic
+appendix): Definition 15.24 (Shannon entropy, Eq. (15.57)), Eq. (15.58) (discrete entropy),
+Definition 15.25 and Eq. (15.60b) (conditional entropy), Eq. (15.60d) (mutual information),
+Eq. (15.60a) (conditioning reduces entropy), Exercise 15.2 (nonnegativity and the $\log|\mathcal{X}|$
+bound).
+
+**Proof formalization notes.** The discrete entropy is expressed through Mathlib's
+`Real.negMulLog`, so $H(p) = \sum_i \mathrm{negMulLog}(p_i)$. Nonnegativity is termwise from
+`Real.negMulLog_nonneg`. The maximal-entropy bound $H(p) \le \log|\mathcal{X}|$ is obtained from
+Jensen's inequality for the concave function `negMulLog` (`Real.concaveOn_negMulLog.le_map_sum`)
+with uniform weights $1/n$; the per-term and per-sum identities are bookkept explicitly so the
+$1/n$ factor cancels. Conditioning-reduces-entropy is reduced to subadditivity
+$H(X,Y) \le H(X) + H(Y)$, which in turn follows from the per-term Gibbs bound
+`negMulLog_term_bound`: for $0 \le p \le a$, $p \le b$ one has
+$p\log a + p\log b - p\log p \le ab - p$ (proved from $\log t \le t - 1$ applied to $t = ab/p$).
+Summing this over the joint pmf, the slack $\sum (a_{x_1} b_{x_2} - p_x)$ telescopes to $0$ because
+the marginals are normalized.
+
+**Bibliographic comments.** The entropy functional and all of these properties originate with
+C. E. Shannon, "A Mathematical Theory of Communication", *Bell System Technical Journal* **27**
+(1948), 379–423 and 623–656. Shannon introduces $H = -\sum p_i \log p_i$ in §6 ("Choice,
+Uncertainty and Entropy"); the maximal-entropy property ($H \le \log n$ with equality iff uniform)
+and the subadditivity / conditioning inequalities ($H(x,y) \le H(x) + H(y)$, $H_x(y) \le H(y)$,
+with equality iff independence) are listed there among his enumerated properties of $H$. The
+inequality $\log t \le t - 1$ underlying the Gibbs/subadditivity step is the elementary form of the
+nonnegativity of relative entropy (Kullback–Leibler divergence); see S. Kullback and R. A. Leibler,
+"On Information and Sufficiency", *Annals of Mathematical Statistics* **22** (1951), 79–86. The
+specific numbering (Definitions 15.24/15.25, Eqs. (15.57)–(15.60), Exercise 15.2) is Wainwright's
+textbook synthesis of this classical material.
 -/
 
 open MeasureTheory

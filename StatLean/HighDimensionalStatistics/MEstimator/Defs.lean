@@ -5,23 +5,76 @@ import Mathlib.Analysis.Calculus.Gradient.Basic
 /-!
 # Regularized M-estimators: decomposable regularizers and restricted strong convexity
 
-Concept-layer definitions for the `MEstimator` milestone (Wainwright, *High-Dimensional
-Statistics*, Chapter 9). These formalize the general regularized M-estimator
-`θ̂ ∈ argmin_θ { Lₙ(θ) + λₙ·Φ(θ) }` (eq 9.3) and the two structural ingredients of the
-estimation-error theory:
+Concept-layer definitions for the `MEstimator` milestone. Consider a regularized M-estimator
+of the form
+$$\hat\theta \in \arg\min_{\theta}\bigl\{\, \mathcal L_n(\theta) + \lambda_n\,\Phi(\theta)\,\bigr\},$$
+where $\mathcal L_n$ is an empirical cost (loss) and $\Phi$ is a norm acting as the regularizer.
+This file formalizes the two structural ingredients on which the general estimation-error
+theory rests, together with the auxiliary quantities (error cone, subspace Lipschitz constant,
+good event, objective increment, error radius) used to assemble the rates.
 
-* **decomposability** of the regularizer `Φ` with respect to a subspace pair `(M, M̄ᗮ)`
-  (Definition 9.9), bundled together with the dual norm `Φ*` in `DecomposableReg`;
-* **restricted strong convexity** (RSC, Definition 9.15) and the dual `Φ*`-norm curvature
-  condition (Definition 9.22) of the cost `Lₙ`.
+* **Decomposability.** A regularizer $\Phi$ is *decomposable* with respect to a subspace pair
+  $(M,\,\bar M^{\perp})$ (with $M\subseteq\bar M$) when
+  $\Phi(\alpha+\beta)=\Phi(\alpha)+\Phi(\beta)$ for every $\alpha\in M$ and $\beta\in\bar M^{\perp}$.
+  We bundle $\Phi$ together with its dual norm $\Phi^*$, the subspace pair, and the generalized
+  Hölder inequality $\langle u,v\rangle\le\Phi(u)\,\Phi^*(v)$ (with $\Phi^*$ pinned down as the
+  *smallest* norm satisfying Hölder) into the structure `DecomposableReg`.
+* **Restricted strong convexity (RSC).** Writing the first-order Taylor error as
+  $\mathcal E_n(\Delta)=\mathcal L_n(\theta+\Delta)-\mathcal L_n(\theta)-\langle\nabla\mathcal L_n(\theta),\Delta\rangle$,
+  the cost satisfies $\mathrm{RSC}(\kappa,R,\tau^2)$ when
+  $\mathcal E_n(\Delta)\ge\tfrac{\kappa}{2}\lVert\Delta\rVert^2-\tau^2\,\Phi(\Delta)^2$ for all
+  $\Delta$ with $\lVert\Delta\rVert\le R$, with curvature $\kappa$ and tolerance $\tau^2$.
+* **Dual $\Phi^*$-curvature.** The dual-norm analogue of RSC,
+  $\Phi^*\!\bigl(\nabla\mathcal L_n(\theta+\Delta)-\nabla\mathcal L_n(\theta)\bigr)\ge\kappa\,\Phi^*(\Delta)-\tau\,\Phi(\Delta)$
+  for all $\Delta$ with $\Phi^*(\Delta)\le R$, underlying the $\ell_\infty$ bound.
 
-The space `E` is a finite-dimensional real inner-product space; `‖·‖` is the inner-product
-norm and `Φ` is a *separate* regularizer norm (e.g. `ℓ₁` while `‖·‖ = ℓ₂`). All projections
-`Δ_M`, `Δ_{M̄}`, `θ*_{Mᗮ}`, … are **orthogonal** projections w.r.t. `⟨·,·⟩`, realized by
+The space $E$ is a finite-dimensional real inner-product space; $\lVert\cdot\rVert$ is the
+inner-product norm and $\Phi$ is a *separate* regularizer norm (e.g. $\ell_1$ while
+$\lVert\cdot\rVert=\ell_2$). All projections $\Delta_M$, $\Delta_{\bar M}$, $\theta^*_{M^{\perp}}$,
+… are **orthogonal** projections with respect to $\langle\cdot,\cdot\rangle$, realized by
 `Submodule.starProjection` (the `E`-valued orthogonal projection).
 
 Laptop-only shared data model: this file fixes the encodings consumed by the deterministic
 assembly (`Deviation`, `Bound`, `DualBound`) and the GLM assembly.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, Chapter 9 (Decomposability and restricted strong convexity).
+The regularized M-estimator is Eq (9.3); decomposability of $\Phi$ over $(M,\bar M^{\perp})$ is
+Definition 9.9, Eq (9.22); restricted strong convexity is Definition 9.15, Eq (9.38); the
+$\Phi^*$-curvature condition is Definition 9.22, Eq (9.55). Auxiliary objects: the subspace
+pair $\bar M\supseteq M$ is Eq (9.21); the dual norm and generalized Hölder inequality are
+Eq (9.27); the subspace Lipschitz constant $\Psi(\mathcal M)=\sup_{u\in\mathcal M\setminus\{0\}}\Phi(u)/\lVert u\rVert$
+is Definition 9.18, Eq (9.44); the good event $\Phi^*(\nabla\mathcal L_n(\theta^*))\le\lambda/2$ is
+Eq (9.28)/(9.46); the objective increment $\mathcal F(\Delta)$ is Eq (9.31); the error cone
+$\mathbb C(M,\bar M^{\perp})$ is Eq (9.29); the error radius $\varepsilon_n^2$ is Eq (9.47).
+
+**Proof formalization notes.** These are statement-level (concept) definitions consumed
+downstream; there are no proofs in this file. The one deliberate book-vs-Lean deviation is in
+the error-radius quantity `epsilonSq` (Wainwright Eq (9.47)). The book states leading constant
+$9$, slack $(8/\kappa)$, under $\tau^2\Psi^2\le\kappa/64$. Those are only achievable as
+$\tau\to 0$: the RSC lower bound is
+$\mathcal F(\Delta)\ge(\kappa/2-32\tau^2\Psi^2)\lVert\Delta\rVert^2-(3\lambda/2)\Psi\lVert\Delta\rVert-D$,
+so the effective curvature $c=\kappa/2-32\tau^2\Psi^2<\kappa/2$, and at
+$\lVert\Delta\rVert^2=9(\lambda/\kappa)^2\Psi^2$ one gets $\mathcal F<0$ for any $\tau>0$
+(the book's $\mathcal F>0$ argument fails). The provable bound requires $\tau^2\Psi^2\le\kappa/128$
+(so $c\ge\kappa/4$) and uses the `nlinarith`-friendly threshold $\delta^2>(2\beta/c)^2+2D/c$
+(with $\beta=(3\lambda/2)\Psi$, $D=2\lambda\Phi+32\tau^2\Phi^2$), giving leading constant $144$
+($\sqrt{\,\cdot\,}=12$) and slack $(32/\kappa)$, with strict margin. The estimation rate
+$s\cdot\lambda^2/\kappa^2$ is unchanged; only the constants differ. The $\theta^*$ projection in
+`epsilonSq`/`errorCone` is onto $M^{\perp}$, matching the $\varepsilon_n^2$ argument label
+$(\bar M,M^{\perp})$.
+
+**Bibliographic comments.** The decomposability + restricted-strong-convexity framework
+formalized here originates with S. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu,
+"A unified framework for high-dimensional analysis of $M$-estimators with decomposable
+regularizers," *Statistical Science* 27(4):538–557, 2012 (conference version: NIPS 22, 2009;
+preprint arXiv:1010.2731). There, decomposability of $\Phi$ relative to a subspace pair
+$(\mathcal M,\bar{\mathcal M}^{\perp})$ is **Definition 1** and restricted strong convexity of the
+loss is **Definition 2**; the error cone and the deterministic $\ell_2$-error bound on the good
+event are the paper's Theorem 1, which Wainwright's Chapter 9 reproduces and refines (the dual
+$\Phi^*$-curvature condition and $\ell_\infty$ bound are a later textbook addition). The cited
+equation/definition numbers (9.x) follow Wainwright (2019); the seminal-paper numbering (Def 1,
+Def 2, Thm 1) is given for cross-reference.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

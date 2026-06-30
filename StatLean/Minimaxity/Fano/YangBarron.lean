@@ -1,21 +1,50 @@
 import StatLean.Minimaxity.Fano.MutualInformation
 
 /-!
-# Yang–Barron mutual-information bound (Wainwright §15.3.5)
+# Yang–Barron mutual-information bound (Lemma 15.21)
 
-The Yang–Barron refinement bounds the mutual information directly by the global metric entropy of
-the family in the square-root KL divergence, with no need to construct a local packing:
-```
-I(Z; J) ≤ inf_{ε>0} { ε² + log N_KL(ε; 𝒫) }          (Lemma 15.21, Eq. (15.51)),
-```
-where `N_KL(ε; 𝒫)` is the `ε`-covering number of `𝒫` in the square-root KL pseudo-distance.
+The Yang–Barron refinement bounds the mutual information $I(Z; J)$ between a parameter index $J$
+(uniform over $\{1, \dots, M\}$) and the observation $Z$ directly by the *global* metric entropy of
+the family in the square-root Kullback–Leibler divergence, with no need to construct a local
+packing. If $N_{\mathrm{KL}}(\varepsilon; \mathcal{P})$ denotes the $\varepsilon$-covering number of
+the family $\mathcal{P}$ in the square-root KL pseudo-distance, then
+$$
+  I(Z; J) \;\le\; \inf_{\varepsilon > 0}\, \bigl\{\, \varepsilon^{2} \;+\; \log N_{\mathrm{KL}}(\varepsilon; \mathcal{P}) \,\bigr\},
+$$
+which is Lemma 15.21, Eq. (15.51).
 
-We state the per-cover form: given a finite set `{γₖ}` of size `N` that `ε`-covers the family in
-`√KL` (i.e. `D(P_{θʲ} ‖ γₖ) ≤ ε²` for some `k`, for each `j`), the mutual information is at most
-`ε² + log N`. The infimum form (Eq. (15.51)) follows by optimizing over covers.
+We formalize the **per-cover form**: given a finite family $\{\gamma_k\}_{k < N}$ of probability
+measures that $\varepsilon$-covers the model $\{Q_j\}_{j < M}$ in $\sqrt{\mathrm{KL}}$ — meaning for
+each $j$ there exists $k$ with $D(Q_j \,\|\, \gamma_k) \le \varepsilon^{2}$ — the mutual information
+satisfies $I(Z; J) \le \varepsilon^{2} + \log N$. The infimum form (Eq. (15.51)) follows by
+optimizing over covers. No constants are changed from the book; the cover components are taken to be
+probability measures, as in Wainwright §15.3.5.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Lemma 15.21.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.5, Lemma 15.21,
+Eqs. (15.51)–(15.52).
+
+**Proof formalization notes.** Writing $I(Z; J) = \tfrac{1}{M} \sum_j D(Q_j \,\|\, \bar{Q})$ for the
+uniform mixture $\bar{Q}$, the bound reduces to controlling the unnormalized sum
+$\sum_j D(Q_j \,\|\, \bar{Q}) \le M\,(\varepsilon^{2} + \log N)$, in two book steps (Eq. (15.52)):
+1. **Mixture minimization** — replace the data mixture $\bar{Q}$ by the *cover* mixture
+   $G = \tfrac{1}{N}\sum_k \gamma_k$, using $\sum_j D(Q_j \,\|\, \bar{Q}) \le \sum_j D(Q_j \,\|\, G)$
+   (`sum_klDiv_mixture_le`), since the mixture of the model minimizes the average divergence.
+2. **Drop the other terms** — for each $j$, pick a cover atom $\gamma_{k(j)}$ within $\varepsilon^2$
+   and bound $D(Q_j \,\|\, G) \le D(Q_j \,\|\, \gamma_{k(j)}) + \log N$ (`klDiv_le_cover_mixture`).
+   The key pointwise fact is $(1/N)\,\gamma_{k(j)} \le G$, which forces $d\gamma_{k(j)}/dG \le N$
+   a.e.; the log-likelihood-ratio decomposition then adds at most $\log N$. Integrability of the
+   resulting log-density is obtained by domination (positive part $\le \mathrm{llr} + \log N$,
+   negative part $\le dG/dQ_j - 1$). Each $D(Q_j \,\|\, \gamma_{k(j)}) \le \varepsilon^2$ by the
+   cover hypothesis. Combining and dividing by $M$ gives the bound. The helper lemmas
+   `klDiv_le_cover_mixture` and `yang_barron_sum_le` carry the detailed Lean proof obligations.
+
+**Bibliographic comments.** The result originates with Y. Yang and A. Barron,
+"Information-theoretic determination of minimax rates of convergence," *Annals of Statistics*,
+27(5):1564–1599, 1999 (see their Section 2 and the mutual-information / metric-entropy bounds used
+to derive minimax rates; the global-entropy device replacing local packings is the paper's central
+contribution). Wainwright's Lemma 15.21 is the textbook presentation of this device; the formalized
+statement follows Wainwright's notation and constants.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

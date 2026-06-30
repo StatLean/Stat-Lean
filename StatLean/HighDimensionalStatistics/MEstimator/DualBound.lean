@@ -3,18 +3,55 @@ import StatLean.HighDimensionalStatistics.MEstimator.SubspaceLip
 import StatLean.Optimization.Convex.Subgradient
 
 /-!
-# Dual-norm (`Φ*`) error bound for general M-estimators (Wainwright Theorem 9.24, Lemma 9.25)
+# Dual-norm error bound for general M-estimators
 
-The second, sharper error guarantee of Chapter 9: under the `Φ*`-norm curvature condition
-(Definition 9.22) instead of RSC, the error is controlled in the dual norm,
-`Φ*(θ̂ − θ*) ≤ 3λ/κ` (Theorem 9.24). For `ℓ₁`-regularization this is an `ℓ∞` bound, stronger than
-the `ℓ₂`/`ℓ₁` bounds of Theorem 9.19.
+The second, sharper error guarantee of the decomposable-regularizer framework. Write
+$\Phi$ for the (decomposable) regularizer, $\Phi^*$ for its dual norm, and $\Psi(\bar M)$
+for the subspace compatibility (Lipschitz) constant of $\Phi$ relative to the model subspace
+$\bar M$. Let $\hat\theta$ be any minimizer of the penalized objective $L(\theta) + \lambda\,\Phi(\theta)$.
 
+Under the *dual-norm curvature condition* with parameters $(\kappa,\tau;R)$ — the dual-norm
+analogue of restricted strong convexity, controlling the loss curvature in $\Phi^*$ rather
+than in the Euclidean norm — together with decomposability of $\Phi$, the target lying in the
+model subspace ($\theta^* \in M$), the slack condition $\tau\,\Psi^2(\bar M) < \kappa/32$, and the
+localization $\Phi^*(\hat\theta - \theta^*) \le R$, then conditioned on the good event
+$\mathcal G(\lambda) = \{\Phi^*(\nabla L(\theta^*)) \le \lambda/2\}$ every optimum satisfies
+$$ \Phi^*(\hat\theta - \theta^*) \;\le\; \frac{3\lambda}{\kappa}. $$
+For $\ell_1$-regularization this is an $\ell_\infty$ bound on the error, strictly stronger than the
+$\ell_2$/$\ell_1$ bounds of the basic decomposable-regularizer theorem (the analogue of
+Wainwright Theorem 9.19).
+
+The key auxiliary fact is the cone comparison
+$$ \Phi(\Delta) \;\le\; 16\,\Psi^2(\bar M)\,\Phi^*(\Delta) \qquad (\theta^* \in M,\ \Delta \in \mathbb C) $$
+relating the regularizer to its dual on the error cone (Lemma 9.25, eq 9.60).
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 9 (Decomposability and restricted strong convexity),
+§9.4, Theorem 9.24 (dual-norm error bound, eq 9.58), with the dual-norm curvature condition
+Definition 9.22 (eq 9.55), the good event eq 9.46, and Lemma 9.25 (eq 9.60).
+
+**Proof formalization notes.**
 Two ingredients beyond the deterministic machinery of `Bound.lean`:
 * the **stationarity** of the composite minimizer `θ̂` — there is a subgradient `z ∈ ∂Φ(θ̂)` with
   `∇L(θ̂) + λ·z = 0`. Mathlib has no subdifferential calculus, so this is hand-built from optimality
   via a directional-derivative argument (`exists_stationary_subgradient`);
 * **Lemma 9.25**, `Φ(Δ) ≤ 16·Ψ²(M̄)·Φ*(Δ)` on the cone when `θ* ∈ M` (eq 9.60).
+
+Theorem `mestimator_dual_bound` then proceeds: stationarity gives `∇L(θ̂) = −λz` with `Φ*(z) ≤ 1`;
+the good event yields `Φ*(∇L(θ̂)−∇L(θ*)) ≤ 3λ/2`; the dual-norm curvature condition together with
+Lemma 9.25 turns this into `(κ − 16τΨ²(M̄))·Φ*(θ̂−θ*) ≤ 3λ/2`, and the slack `τΨ²(M̄) < κ/32`
+finishes. The constants here (`3λ/κ`, the `16Ψ²` cone factor, the `κ/32` slack) are exactly those of
+Wainwright Thm 9.24 / Lemma 9.25; no book-vs-Lean deviation.
+
+**Bibliographic comments.**
+The decomposable-regularizer framework and its master M-estimator bound originate with
+S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, "A unified framework for high-dimensional
+analysis of M-estimators with decomposable regularizers", *Statistical Science* 27(4), 538–557 (2012)
+(see also the earlier NeurIPS 2009 version). That paper introduces decomposability and the subspace
+compatibility constant `Ψ(M̄)` and proves the Euclidean-norm oracle bound (its Theorem 1). The
+dual-norm refinement formalized here — controlling `Φ*(θ̂−θ*)` under a dual-norm curvature condition
+— is the book's synthesis (Wainwright 2019, Thm 9.24); the present statement and constants follow the
+book's treatment rather than a single equation in the Negahban et al. paper.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

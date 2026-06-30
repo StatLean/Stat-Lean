@@ -1,7 +1,7 @@
 import StatLean.AsymptoticStatistics.Asymptotics.Discharge.ZEstimator
 
 /-!
-# Z-estimator bias-residual expansion (vdV §25.5, thm:25.59)
+# Z-estimator bias-residual expansion (vdV §25.8, thm:25.59)
 
 Closes the bundled `asympLinear_25_59` field of
 `EfficientScoreEqBiasResidualAssumptions` from book-level primitives.
@@ -25,7 +25,7 @@ estimating-equation rate `√n 𝕡_n ℓ̃ →_P 0`).
 Headline declarations: `zEstimator_biasResidual_asympLinear_of_taylor`
 and `toEfficientScoreEqBiasResidualAssumptions`.
 
-Reference: vdV §25.5, thm:25.59.
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59.
 -/
 
 open MeasureTheory Filter Topology
@@ -48,8 +48,8 @@ condition (25.52). The aliasing makes the call site and downstream
 documentation read in vdV's thm:25.59 vocabulary while reusing the
 already-proved Taylor route from `Discharge/ZEstimator.lean`.
 
-Reference: vdV §25.5, thm:25.59 hypotheses (everything in thm:25.54
-except eq:25.52). -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59 hypotheses
+(everything in thm:25.54 except eq:25.52). -/
 abbrev ZEstimatorBiasResidualTaylorHyp
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -104,7 +104,7 @@ produced by this theorem), `asympLinearWithBiasAt_zero_iff_asympLinearAt`
 recovers `AsymptoticallyLinearAt` and hence `EfficientScoreEqAssumptions`
 via the existing thm:25.54 pipeline.
 
-Reference: vdV §25.5, thm:25.59. -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59. -/
 theorem zEstimator_biasResidual_asympLinear_of_taylor
     (h : ZEstimatorBiasResidualTaylorHyp P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -132,7 +132,7 @@ plug a Taylor-route bundle into the existing bundled interface
 
 Mirrors `ZEstimatorTaylorCore.toEfficientScoreEqAssumptions` for thm:25.54.
 
-Reference: vdV §25.5, thm:25.59. -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59. -/
 def toEfficientScoreEqBiasResidualAssumptions
     {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}
     (h : ZEstimatorBiasResidualTaylorHyp P Θ S_θ T_nuis v

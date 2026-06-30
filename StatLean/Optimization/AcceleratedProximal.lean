@@ -2,20 +2,58 @@ import StatLean.Optimization.Prox.Pillar
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
-# Convergence of accelerated proximal gradient descent (Theorem 12.2)
+# Convergence of accelerated proximal gradient descent (FISTA, $O(1/t^2)$ rate)
 
-Lu, *Big Data Analysis* §12.2, Theorem `thm:cvg-aprox`: with Nesterov momentum,
-the accelerated proximal-gradient iterates achieve the faster `O(1/t²)` rate
-`F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`.
+Consider the composite minimization of $F = f + h$, where $f$ is convex and
+$L$-smooth (its gradient is $L$-Lipschitz, $L > 0$) and $h$ is convex (possibly
+nonsmooth). The accelerated proximal-gradient method (FISTA) generates iterates
+with the constant step $1/L$ and Nesterov momentum: starting from
+$x_0 = y_0$, $\lambda_0 = 1$, and the extrapolation sequence
+$\lambda_{t+1} = \tfrac{1}{2}\bigl(1 + \sqrt{1 + 4\lambda_t^2}\bigr)$,
+$$
+x_{t+1} = \operatorname{prox}_{(1/L)h}\!\bigl(y_t - \tfrac1L \nabla f(y_t)\bigr),
+\qquad
+y_{t+1} = x_{t+1} + \frac{\lambda_t - 1}{\lambda_{t+1}}\,(x_{t+1} - x_t).
+$$
+Then for any minimizer $x^\star$ of $F$ the optimality gap decays at the
+accelerated rate
+$$
+F(x_t) - F(x^\star) \;\le\; \frac{2L\,\lVert x_0 - x^\star\rVert^2}{(t+1)^2}.
+$$
+This is faster than the $O(1/t)$ rate of the (non-accelerated) proximal gradient
+method.
 
-Algorithm (with `x_0 = y_0`, `λ_0 = 1`, `λ_{t+1} = (1 + √(1 + 4λ_t²))/2`):
-* `x_{t+1} = prox_{(1/L)h}(y_t - (1/L)∇f(y_t))`;
-* `y_{t+1} = x_{t+1} + ((λ_t - 1)/λ_{t+1})(x_{t+1} - x_t)`.
+*Deviation from the book.* The Lean statement is proved for $t \ge 1$; the
+$t = 0$ case is the trivial initial gap and is excluded, per CLAUDE.md §1
+(documented constant/scope deviation).
 
-The proof is not monotone in `F`; it uses the pillar inequality (Lemma 12.1)
-together with a Lyapunov energy `L_t = ‖u_t‖² + (2/L)λ_{t-1}²(F(x_t) - F(x*))`
-(Lemma 12.2 below) shown to be non-increasing, plus the Nesterov-sequence bound
-`λ_t ≥ (t+2)/2` (`nesterov_lambda_lower`).
+**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 14
+(Proximal Gradient Descent), §14.2 (Accelerated Proximal Gradient Descent),
+Theorem 14.2 (`thm:cvg-aprox`).
+
+**Proof formalization notes.** The proof is *not* monotone in $F$. It combines:
+* the pillar inequality (Lemma 14.1, `pillar`), which controls one proximal step;
+* a Lyapunov energy $L_t = \lVert u_t\rVert^2 + \tfrac2L \lambda_{t-1}^2\,(F(x_t) - F(x^\star))$
+  (Lemma 14.2 below) shown to be non-increasing — in the Lean code this is the
+  `Φ`/`hΦdec` antitone-energy argument, with `Φ s` equal to $L/2$ times the book
+  $L_{s+1}$ (division-free) and `u s` the book $u_{s+1}$;
+* the Nesterov-sequence lower bound $\lambda_t \ge (t+2)/2$
+  (`nesterov_lambda_lower`) and the identity
+  $\lambda_{s+1}^2 - \lambda_{s+1} = \lambda_s^2$ (`lam_sq_sub`, from
+  $(2\lambda_{s+1} - 1)^2 = 1 + 4\lambda_s^2$),
+which together turn the telescoped energy bound into the stated $O(1/t^2)$ rate.
+
+**Bibliographic comments.** The algorithm and its $O(1/t^2)$ convergence rate are
+due to A. Beck and M. Teboulle, "A Fast Iterative Shrinkage-Thresholding
+Algorithm for Linear Inverse Problems," *SIAM Journal on Imaging Sciences*
+**2**(1):183–202, 2009. The momentum recursion
+$\lambda_{t+1} = \tfrac12(1 + \sqrt{1 + 4\lambda_t^2})$ appears as Eq. (4.1)–(4.2)
+there, and the rate bound $F(x_t) - F(x^\star) \le 2L\lVert x_0 - x^\star\rVert^2/(t+1)^2$
+is their Theorem 4.4. The construction builds on Nesterov's accelerated
+gradient method (Yu. Nesterov, "A method for solving the convex programming
+problem with convergence rate $O(1/k^2)$," *Soviet Math. Dokl.* **27**:372–376,
+1983), extending the optimal first-order rate to the composite (nonsmooth $h$)
+setting via the proximal operator.
 -/
 
 namespace StatLean.Optimization
@@ -25,7 +63,7 @@ open scoped InnerProductSpace Gradient
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 /-- The Nesterov extrapolation sequence `λ_0 = 1`,
-`λ_{t+1} = (1 + √(1 + 4λ_t²))/2` satisfies `λ_t ≥ (t+2)/2` (Lu-BDA §12.2). -/
+`λ_{t+1} = (1 + √(1 + 4λ_t²))/2` satisfies `λ_t ≥ (t+2)/2` (Lu-BDA §14.2). -/
 theorem nesterov_lambda_lower
     (lam : ℕ → ℝ) (hlam0 : lam 0 = 1)
     (hlamrec : ∀ t, lam (t + 1) = (1 + Real.sqrt (1 + 4 * lam t ^ 2)) / 2)
@@ -56,7 +94,7 @@ private theorem lam_pos (lam : ℕ → ℝ) (hlam0 : lam 0 = 1)
   have : (0 : ℝ) < ((s : ℝ) + 2) / 2 := by positivity
   linarith
 
-/-- The Nesterov-sequence identity `λ_{s+1}² - λ_{s+1} = λ_s²` (Lu-BDA §12.2,
+/-- The Nesterov-sequence identity `λ_{s+1}² - λ_{s+1} = λ_s²` (Lu-BDA §14.2,
 from `(2λ_{s+1} - 1)² = 1 + 4λ_s²`). -/
 private theorem lam_sq_sub (lam : ℕ → ℝ)
     (hlamrec : ∀ t, lam (t + 1) = (1 + Real.sqrt (1 + 4 * lam t ^ 2)) / 2) (s : ℕ) :
@@ -66,7 +104,7 @@ private theorem lam_sq_sub (lam : ℕ → ℝ)
   rw [hlamrec s]
   linear_combination (1 / 4 : ℝ) * hsq
 
-/-- Lu-BDA Thm 12.2 (accelerated proximal-gradient convergence rate). `f` convex
+/-- Lu-BDA Thm 14.2 (accelerated proximal-gradient convergence rate). `f` convex
 `L`-smooth (`0 < L`), `h` convex, `F = f + h`, step `1/L`, Nesterov momentum:
 `F(x_t) - F(x*) ≤ 2L‖x_0 - x*‖² / (t+1)²`. Stated for `t ≥ 1` (the `t = 0` case
 is the trivial initial gap), per CLAUDE.md §1 documented deviation. -/
@@ -92,7 +130,7 @@ theorem acceleratedProximalGradient_rate
   set Φ : ℕ → ℝ := fun s =>
       L / 2 * ‖u s‖ ^ 2 + lam s ^ 2 *
         (f (x (s + 1)) + h (x (s + 1)) - (f xstar + h xstar)) with hΦ
-  -- Lyapunov monotonicity (Lemma 12.2).
+  -- Lyapunov monotonicity (Lemma 14.2).
   have hΦdec : ∀ s, Φ (s + 1) ≤ Φ s := by
     intro s
     have hpos1 : (0 : ℝ) < lam (s + 1) := hlampos (s + 1)

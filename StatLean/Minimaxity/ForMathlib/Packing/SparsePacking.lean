@@ -14,21 +14,22 @@ log M ≥ (s/2) · log((d − s)/s),
 i.e. a set `T` of `s`-sparse unit vectors, pairwise at Euclidean distance `≥ 1/2`, with
 `log |T| ≥ (s/2) log((d−s)/s)`. (Sparsity: at most `s` nonzero coordinates.)
 
-**Constant deviation (CLAUDE.md §1).** The combinatorial heart is proved with a *weakened* additive
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.8 /
+Exercise 5.8 (the sparse-vector packing), invoked in Chapter 15 (Minimax lower bounds), §15.3.3,
+Example 15.16 (minimax rate for sparse linear regression).
+
+**Proof formalization notes.**
+
+*Constant deviation (CLAUDE.md §1).* The combinatorial heart is proved with a *weakened* additive
 slack: `log |T| ≥ (s/2) log((d−s)/s) − s·log 2`. The sharp book constant is not reachable by an
 elementary Gilbert–Varshamov volume estimate (it needs the binary-entropy ball count / an algebraic
 Reed–Solomon code); the weakened bound is still exponentially large. See
 `exists_bounded_overlap_supports_gv`.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.8
-(used in Chapter 15, §15.3.3, Example 15.16).
-
-## Proof architecture
-
-The construction is **normalized support indicators**. To an `s`-element support `S ⊆ [d]` we attach
-the unit vector `v_S = s^{-1/2} · 𝟙_S` (value `s^{-1/2}` on `S`, `0` elsewhere): it has norm `1` and
-exactly `s` nonzero coordinates. For two supports `S, S'`,
+*Proof architecture.* The construction is **normalized support indicators**. To an `s`-element
+support `S ⊆ [d]` we attach the unit vector `v_S = s^{-1/2} · 𝟙_S` (value `s^{-1/2}` on `S`, `0`
+elsewhere): it has norm `1` and exactly `s` nonzero coordinates. For two supports `S, S'`,
 ```
 ‖v_S − v_S'‖² = (|S| + |S'| − 2|S ∩ S'|) / s = (2s − 2|S ∩ S'|)/s,
 ```
@@ -37,6 +38,17 @@ below. The **only** residual is the combinatorial support count `exists_bounded_
 Gilbert–Varshamov packing of the `C(d,s)` weight-`s` supports with pairwise intersection `≤ s/2` and
 `log |𝒮| ≥ (s/2) log((d−s)/s)`. Mapping `S ↦ v_S` (injective, since distinct supports give
 `≥ 1`-separated vectors) transports that count to the sparse-vector packing.
+
+**Bibliographic comments.** The packing argument is an instance of the **Gilbert–Varshamov bound**,
+the classical volume/greedy lower bound on the size of a maximal separated code. It originates in two
+independent works: E. N. Gilbert, "A comparison of signalling alphabets," *Bell System Technical
+Journal* 31 (3), 504–522 (1952); and R. R. Varshamov, "Estimate of the number of signals in error
+correcting codes," *Doklady Akademii Nauk SSSR* 117, 739–741 (1957). The specialization to packing
+`s`-sparse unit vectors (or, equivalently, weight-`s` supports of `[d]` with bounded pairwise
+overlap) is **folklore**: it is a standard textbook synthesis with no single seminal origin, recorded
+e.g. as Wainwright Example 5.8 / Exercise 5.8 and used pervasively in high-dimensional minimax theory.
+The `q`-ary alphabet variant proved here (blocks of size `q = ⌊d/s⌋`) is the routine extension of the
+binary Gilbert–Varshamov code to a non-binary alphabet.
 -/
 
 open scoped ENNReal

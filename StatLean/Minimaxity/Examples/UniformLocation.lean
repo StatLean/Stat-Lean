@@ -4,18 +4,66 @@ import StatLean.Minimaxity.ForMathlib.HellingerDivergence
 import StatLean.AsymptoticStatistics.ForMathlib.HellingerProduct
 
 /-!
-# Example: uniform location family (Wainwright Example 15.5)
+# Minimax rate for the uniform location family
 
-A non-regular parametric problem with a faster-than-`1/n` rate. For the uniform location family
-`{Uniform[θ, θ+1] : θ ∈ ℝ}` and `n` i.i.d. samples, the Kullback–Leibler divergence is infinite for
-distinct parameters, so Le Cam's two-point bound is applied via the **Hellinger** distance (Lemma
-15.3) instead of Pinsker. The resulting minimax risk scales as `n⁻²`:
-```
-inf_θ̂ sup_θ 𝔼_θ[(θ̂ − θ)²] ≥ (1 − 1/√2)/128 · 1/n²        (Example 15.5).
-```
+A non-regular parametric estimation problem exhibiting a faster-than-$1/n$ rate. Consider the
+uniform location family $\{\mathrm{Uniform}[\theta,\theta+1] : \theta\in\mathbb{R}\}$, and let
+$P_\theta = \mathrm{Uniform}[\theta,\theta+1]^{\otimes n}$ be the law of $n$ i.i.d. observations.
+Because two such distributions with distinct $\theta$ have infinite Kullback–Leibler divergence,
+the standard Pinsker route to Le Cam's two-point lower bound is unavailable; instead one bounds the
+total variation distance through the **squared Hellinger distance** (Le Cam's inequality, Wainwright
+Lemma 15.3). For the unit-interval shift one computes
+$$H^2\bigl(\mathrm{Uniform}[0,1]\,\Vert\,\mathrm{Uniform}[\theta,\theta+1]\bigr) = 2\theta
+  \qquad (0\le\theta\le 1),$$
+so the affinity of a single sample is $\rho = 1-\theta$ and tensorization gives the exact $n$-fold
+value $H^2(P_0\Vert P_\theta) = 2 - 2(1-\theta)^n$. Taking the separation $\theta = 1/n$ and using
+$(1-1/n)^n \ge 1/4$ for $n\ge 2$ yields a two-point bound whose induced minimax risk under squared
+error obeys
+$$\inf_{\hat\theta}\;\sup_{\theta}\;\mathbb{E}_\theta\bigl[(\hat\theta-\theta)^2\bigr]
+  \;\ge\; \frac{1-1/\sqrt{2}}{128}\cdot\frac{1}{n^2},$$
+the characteristic $n^{-2}$ rate of a non-regular problem (Example 15.5).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.5.
+The formalization restricts to $n \ge 2$: at $n=1$ the two shifted unit-uniforms $[0,1]$ and $[1,2]$
+are almost-everywhere disjoint, forcing total variation distance $1$ and making the two-point bound
+vacuous. This is no loss, since the textbook statement is an $n\to\infty$ rate. The explicit
+constant $\tfrac{1-1/\sqrt2}{128}$ is the provable constant produced by the chain of inequalities
+above; the book states only the order of the rate.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.2, Example 15.5
+(uniform shift family); the supporting tools are Le Cam's two-point inequality and the
+total-variation/Hellinger bound (Lemma 15.3).
+
+**Proof formalization notes.**
+* `one_sub_inv_pow_ge_quarter` (with helper `pow_le_four_mul`): the numeric fact
+  $(1-1/n)^n \ge 1/4$ for $n\ge 2$ (the minimum is attained at $n=2$, where it equals $1/4$),
+  reduced via Bernoulli's inequality `one_add_mul_le_pow`.
+* The `Bridge` section reproduces the exact $n$-fold squared-Hellinger tensorization
+  $H^2(\mathbb{P}^{\otimes n}\Vert\mathbb{Q}^{\otimes n}) = 2 - 2\rho^n$, which the public
+  `HellingerDivergence`/`HellingerProduct` API exposes only in the lossy form
+  $H^2(\otimes n)\le n\,H^2$. The `private` helpers `sqHellWith'`, `sqHellinger_eq_ofReal_integral'`,
+  `sqHellWith_transfer'` (dominating-measure invariance), `pi_absCont_add'`, `sqHellinger_pi_factor'`
+  and `sqHellinger_pi_eq_ofReal_product_integral'` assemble the product factorization against
+  `Measure.pi (μ + ν)` and combine with the public `integral_product_residual_sq_eq`.
+* `sqHellinger_unit_shift`: $H^2(\mathrm{Unif}[0,1]\Vert\mathrm{Unif}[\theta,\theta+1]) = 2\theta$,
+  obtained from the Lebesgue measure $2\theta$ of the symmetric difference of the two unit intervals.
+* `uniform_two_point_tvDist_bound`: Le Cam's inequality (`lecam_tv_le_hellinger`) on the $n$-fold
+  product with separation $\theta = 1/n$, giving $1 - \lVert\cdot\rVert_{\mathrm{TV}} \ge
+  (1-1/\sqrt2)/16$.
+* `uniform_location_minimax_rate`: the two-point minimax reduction (`minimax_two_point`) with the
+  above total-variation bound, delivering the final $n^{-2}$ rate.
+
+**Bibliographic comments.** This is a classical textbook example rather than a result with a single
+seminal source. The uniform shift (location) family is the canonical illustration of a *non-regular*
+parametric model whose minimax rate $n^{-2}$ is faster than the parametric $n^{-1}$, because the
+log-likelihood is not differentiable in quadratic mean and the densities have non-overlapping
+supports for separated parameters. The phenomenon and its analysis via Hellinger-based two-point
+bounds are folklore, treated as worked examples in standard references — e.g. Wainwright (2019),
+Example 15.5, and in the asymptotic-statistics literature on irregular/super-efficient estimation
+(cf. L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986; I. A.
+Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*, Springer, 1981, which
+treat the uniform/discontinuous-density case and its non-standard $n^{-1}$-in-$\theta$,
+$n^{-2}$-in-risk behavior). No single original paper is the source of the bound formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

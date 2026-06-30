@@ -1,24 +1,66 @@
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
-# Total variation distance between probability measures (Wainwright §15.1.3)
+# Total variation distance between probability measures
 
 Mathlib has the *signed-measure* (Jordan) total variation, but no total-variation **distance
-between two probability measures**. We define it via Wainwright's supremum form (Eq. (15.5)),
+between two probability measures**. For two probability measures $\mathbb{P}, \mathbb{Q}$ on a
+measurable space, the **total variation distance** is defined in supremum form as
+$$\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}
+  = \sup_{A \text{ measurable}} \bigl(\mathbb{P}(A) - \mathbb{Q}(A)\bigr),$$
+which equals $\sup_A |\mathbb{P}(A) - \mathbb{Q}(A)|$ since taking the complement flips the sign.
+This file establishes the three standard equivalent characterizations and the basic metric
+properties:
 
-`tvDist ℙ ℚ = sup_{A measurable} (ℙ(A) − ℚ(A))`  (truncated subtraction in `ℝ≥0∞`),
-
-which equals `sup_A |ℙ(A) − ℚ(A)|` (taking the complement flips the sign), and prove:
-
-* `tvDist_le_one` — `tvDist ℙ ℚ ≤ 1` for probability measures;
-* `tvDist_comm` — symmetry;
-* `tvDist_eq_half_lintegral` — the density form `tvDist ℙ ℚ = ½ ∫ |p − q| dν` (Eq. (15.6));
+* `tvDist_le_one` — for probability measures, $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} \le 1$;
+* `tvDist_comm` — symmetry, $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}
+  = \|\mathbb{Q} - \mathbb{P}\|_{\mathrm{TV}}$;
+* `tvDist_eq_half_lintegral` — the half-$L^1$ density form
+  $\|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}} = \tfrac12 \int |p - q|\,d\nu$, with common
+  dominating measure $\xi = \mathbb{P} + \mathbb{Q}$ and densities $p = d\mathbb{P}/d\xi$,
+  $q = d\mathbb{Q}/d\xi$;
 * `one_sub_tvDist_eq_iInf` — the variational representation
-  `1 − tvDist ℙ ℚ = inf_{f₀+f₁ ≥ 1} (∫ f₀ dℙ + ∫ f₁ dℚ)` (Exercise 15.1), used for Le Cam's
-  convex-hull bound (Lemma 15.9).
+  $1 - \|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}
+    = \inf \bigl\{ \int f_0\,d\mathbb{P} + \int f_1\,d\mathbb{Q}
+    : f_0, f_1 \ge 0 \text{ measurable},\ f_0 + f_1 \ge 1 \text{ pointwise} \bigr\}$,
+  used in the proof of Le Cam's convex-hull bound.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.1.3, Eq. (15.5)–(15.6).
+Implementation note: the supremum and integral forms are stated with truncated subtraction in
+$\mathbb{R}_{\ge 0}^\infty$ (so $\mathbb{P}(A) - \mathbb{Q}(A)$ means the positive part); this
+matches the standard real-valued statement on probability measures, where the supremum is always
+attained on the set $\{q \le p\}$.
+
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019. Chapter 15 (Minimax lower bounds), §15.1.3 and §15.6,
+Eq. (15.5)–(15.6), Exercise 15.1.
+
+**Proof formalization notes.**
+* `tvDist_comm` uses the "flip by complement" identity `tsub_eq_one_tsub_tsub` together with
+  `measure_tsub_eq_compl` ($\mathbb{P}(A) - \mathbb{Q}(A) = \mathbb{Q}(A^c) - \mathbb{P}(A^c)$
+  for probability measures), reindexing the supremum by complements.
+* `tvDist_eq_half_lintegral` goes through the positive-part identity
+  `tvDist_eq_lintegral_tsub`: the defining supremum is attained on $A = \{q \le p\}$ (with
+  $p = d\mathbb{P}/d\xi$, $q = d\mathbb{Q}/d\xi$, $\xi = \mathbb{P} + \mathbb{Q}$), where
+  $\mathbb{P}(A) - \mathbb{Q}(A) = \int_A (p - q)\,d\xi$ and the truncated $(p - q)$ vanishes off
+  $A$, so the supremum equals $\int (p - q)\,d\xi$. The pointwise bridge
+  $\mathrm{ofReal}\,|p - q| = (p - q) + (q - p)$ (lemma `ofReal_abs_toReal_sub`, valid where both
+  densities are finite) plus the symmetry $\int (p - q)\,d\xi = \int (q - p)\,d\xi$ then yields the
+  half-$L^1$ form.
+* `one_sub_tvDist_eq_iInf` first proves $1 - \|\mathbb{P} - \mathbb{Q}\|_{\mathrm{TV}}
+  = \int \min(p, q)\,d\xi$ (lemma `one_sub_tvDist_eq_lintegral_min`, via
+  $\min(p,q) + (p - q) = p$ and $\int p\,d\xi = 1$), then matches the infimum: the lower bound
+  $\ge$ holds for any feasible $(f_0, f_1)$ from $\min(p,q)(f_0 + f_1) \ge \min(p,q)$, and the
+  upper bound $\le$ is attained by the indicator choice $f_0 = \mathbf{1}_{\{p \le q\}}$,
+  $f_1 = \mathbf{1}_{\{q < p\}}$, which evaluates to $\int \min(p,q)\,d\xi$.
+
+**Bibliographic comments.** The total variation distance and its three equivalent forms
+(supremum over events, one-half of the $L^1$ distance between densities, and the
+$\min(p,q)$ / coupling-type variational representation) are classical folklore of statistical
+distances with no single seminal origin; they appear in standard references on the comparison of
+experiments and minimax theory. The variational form and its use to bound testing error trace to
+L. Le Cam's theory of statistical experiments — see L. Le Cam, *Asymptotic Methods in Statistical
+Decision Theory*, Springer, 1986 — but the elementary identities formalized here predate any
+specific attribution and are reproduced as textbook material in the Wainwright reference above.
 -/
 
 open MeasureTheory

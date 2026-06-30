@@ -3,44 +3,56 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Packing of the Euclidean unit sphere (Wainwright Example 5.8)
+# Exponentially large 1/2-packing of the Euclidean unit sphere
 
 A Chapter-5 metric-entropy prerequisite for the PCA minimax lower bound (Example 15.19): the unit
-sphere of `ℝⁿ` admits a `1/2`-separated set of exponentially large cardinality. Wainwright's
-statement is
-```
-log M(1/2; 𝕊ⁿ⁻¹, ‖·‖₂) ≥ n · log 2                    (Example 5.8)
-```
-i.e. a set `T` of unit vectors, pairwise at Euclidean distance `≥ 1/2`, with `log |T| ≥ n·log 2`.
+sphere $\mathbb{S}^{n-1}$ of $\mathbb{R}^n$ admits a $1/2$-separated set of exponentially large
+cardinality. Writing $M(1/2; \mathbb{S}^{n-1}, \|\cdot\|_2)$ for the $1/2$-packing number of the
+sphere in Euclidean distance, Wainwright's statement is
+$$\log M\!\left(\tfrac12;\ \mathbb{S}^{n-1},\ \|\cdot\|_2\right) \ \ge\ n\,\log 2,$$
+i.e. there exists a set $T$ of unit vectors, pairwise at Euclidean distance $\ge 1/2$, with
+$\log |T| \ge n\log 2$.
 
-**Constant deviation (documented per CLAUDE.md §1).** We prove the *exponential* bound
-`log |T| ≥ n/10` instead of the book's `n·log 2` (`log 2 ≈ 0.693`). The looser base is harmless:
-the PCA Fano argument (Example 15.19) only needs a packing of cardinality `2^{Ω(n)}`, and
-`e^{n/10}` is exponential in `n`. The slack comes from routing the construction through the
-Gilbert–Varshamov binary code (`exists_hamming_packing`, whose own constant `m/10` is a provable
-Chernoff slack below the true binary entropy) rather than a sharp spherical-cap surface bound.
+**Constant deviation (documented per CLAUDE.md §1).** This formalization proves the *exponential*
+bound $\log |T| \ge n/10$ instead of the book's $n\log 2$ ($\log 2 \approx 0.693$). The looser base
+is harmless: the PCA Fano argument (Example 15.19) only needs a packing of cardinality
+$2^{\Omega(n)}$, and $e^{n/10}$ is exponential in $n$. The slack comes from routing the construction
+through the Gilbert–Varshamov binary code (`exists_hamming_packing`, whose own constant $m/10$ is a
+provable Chernoff slack below the true binary entropy) rather than a sharp spherical-cap surface
+bound.
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
 Cambridge University Press, 2019. Chapter 5 (Metric entropy and its uses), Example 5.8
 (used in Chapter 15, §15.3.4, Example 15.19).
 
-## Proof architecture
+**Proof formalization notes.**
 
 The sphere packing is the image of a Gilbert–Varshamov **binary code** under the sign embedding
-```
-v α := (i ↦ (±1)/√n) ,  with sign `+` iff `α i = true`   (α : Fin n → Bool),
-```
-which lands every codeword on the unit sphere (each entry squared is `1/n`, summing to `1`). For two
-codewords the difference has entry `±2/√n` exactly on the Hamming-disagreement coordinates and `0`
-elsewhere, so
-```
-‖v α − v β‖² = hammingDist α β · (4/n) ≥ (n/4)·(4/n) = 1,
-```
-using the code's pairwise Hamming separation `≥ n/4`. Hence the images are unit vectors that are
-pairwise `≥ 1`-separated (a fortiori `≥ 1/2`); distinctness of the `≥ 1`-separated images makes the
-embedding injective, so `|image| = |code|` and the code's count `log |code| ≥ n/10` transports. The
-entire geometric content is local (per-coordinate), and the combinatorial count is the single
-imported brick `exists_hamming_packing` (`HammingPacking.lean`) — no measure theory.
+$$v_\alpha := \Bigl(i \mapsto \pm 1/\sqrt{n}\Bigr), \qquad
+\text{sign }+\text{ iff } \alpha_i = \texttt{true} \quad (\alpha : \mathrm{Fin}\,n \to \mathrm{Bool}),$$
+which lands every codeword on the unit sphere (each entry squared is $1/n$, summing to $1$). For two
+codewords the difference has entry $\pm 2/\sqrt{n}$ exactly on the Hamming-disagreement coordinates
+and $0$ elsewhere, so
+$$\|v_\alpha - v_\beta\|^2 = d_H(\alpha,\beta)\cdot (4/n) \ \ge\ (n/4)\cdot(4/n) = 1,$$
+using the code's pairwise Hamming separation $\ge n/4$. Hence the images are unit vectors that are
+pairwise $\ge 1$-separated (a fortiori $\ge 1/2$); distinctness of the $\ge 1$-separated images makes
+the embedding injective, so $|\mathrm{image}| = |\mathrm{code}|$ and the code's count
+$\log |\mathrm{code}| \ge n/10$ transports. The entire geometric content is local (per-coordinate),
+and the combinatorial count is the single imported brick `exists_hamming_packing`
+(`HammingPacking.lean`) — no measure theory. The $n = 0$ degenerate case is handled separately: no
+unit vectors exist, but the bound reduces to $0 \le \log 0 = 0$, satisfied by the empty set.
+
+**Bibliographic comments.** This result is textbook folklore with no single seminal origin: the
+existence of an exponentially large, constant-separated subset of the unit sphere follows from a
+standard volume / covering argument and appears in essentially every account of metric entropy and
+minimax lower bounds. The combinatorial engine used here — that a binary code on $n$ bits with
+minimum Hamming distance $\ge n/4$ exists with exponentially many codewords — is the
+*Gilbert–Varshamov bound*, due independently to E. N. Gilbert, "A comparison of signalling
+alphabets," *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, "Estimate
+of the number of signals in error correcting codes," *Doklady Akademii Nauk SSSR* **117** (1957),
+739–741. Wainwright presents the sphere-packing consequence as Example 5.8 (with the related binary
+Gilbert–Varshamov packing as Example 5.3) and invokes it for the PCA minimax lower bound in
+Example 15.19.
 -/
 
 open scoped ENNReal

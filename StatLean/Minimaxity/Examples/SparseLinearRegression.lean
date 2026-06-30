@@ -5,26 +5,51 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
-# Example: minimax risk for sparse linear regression (Wainwright Example 15.16)
+# Minimax risk for sparse linear regression
 
-For the Gaussian linear model `y = Xθ* + w`, `w ∼ 𝒩(0, σ²Iₙ)`, with the regression vector `θ*` known
-a priori to be `s`-sparse, the minimax risk over the sparse Euclidean unit ball
-`S_d(s) = B₀(s) ∩ B₂(1) = {θ : ‖θ‖₀ ≤ s, ‖θ‖₂ ≤ 1}` (Eq. 15.40) in squared Euclidean error is lower
-bounded as
-```
-M(S_d(s); ‖·‖₂) ≳ (σ²/γ₂ₛ²) · s·log((d−s)/s) / n            (Example 15.16),
-```
-where `γ₂ₛ = max_{|T|=2s} σ_max(X_T)/√n` is the `2s`-restricted maximum singular value of the design.
-Because `S_d(s)` is the bounded unit ball, the rate is capped at a constant (the `min(·, 1)` below), as
-in the PCA example over the sphere.
+Consider the Gaussian linear model $y = X\theta^* + w$, with noise $w \sim \mathcal{N}(0, \sigma^2 I_n)$,
+in which the regression vector $\theta^*$ is known a priori to be $s$-sparse. Take as the parameter set the
+sparse Euclidean unit ball
+$$
+\mathbb{S}_d(s) \;=\; \mathbb{B}_0(s) \cap \mathbb{B}_2(1)
+   \;=\; \{\theta : \|\theta\|_0 \le s,\ \|\theta\|_2 \le 1\},
+$$
+where $\|\theta\|_0$ counts the nonzero coordinates of $\theta$ (Eq. (15.40)). Then the minimax risk over
+$\mathbb{S}_d(s)$ measured in squared Euclidean error is lower bounded by
+$$
+\mathfrak{M}\bigl(\mathbb{S}_d(s); \|\cdot\|_2^2\bigr)
+   \;\gtrsim\; \min\!\left(\frac{\sigma^2}{\gamma_{2s}^2}\cdot
+   \frac{s\,\log\!\bigl((d-s)/s\bigr)}{n},\ 1\right),
+$$
+where $\gamma_{2s} = \max_{|T| = 2s} \sigma_{\max}(X_T)/\sqrt{n}$ is the $2s$-restricted maximum singular
+value of the design matrix $X$. Because $\mathbb{S}_d(s)$ is the bounded unit ball, the rate saturates at a
+constant — hence the truncation $\min(\,\cdot\,, 1)$, exactly as in the PCA-over-the-sphere example.
 
-The proof is the local-packing / Fano method (as in Example 15.14, `LinearRegression.lean`) applied to a
-`1/2`-packing of `S_d(s)` (`exists_sparse_packing`, Exercise 5.8) rescaled into the ball: the pairwise
-KL divergences are controlled by `γ₂ₛ` acting on the (at most `2s`-sparse) packing differences, and the
-equal-covariance multivariate Gaussian KL `klDiv_multivariateGaussian_smul_one` evaluates them.
+**Deviations from the book.** The leading constant stated in Lean is loosened relative to the textbook
+(permitted by CLAUDE.md §1): the formalized bound carries an explicit factor $1/4096$, forced by the
+$(s/2)\log((d-s)/s) - s\log 2$ log-cardinality of the sparse-packing brick. The Lean statement also adds two
+range hypotheses absent from the book's informal statement: $10 \le s$ (the local-packing / Fano cardinality
+bound (15.35b) is vacuous for very small $s$; the book's stated range is $10 \le s \le d/2$) and $8s \le d$
+(strengthening the book's $s \le d/2$ to absorb the $-s\log 2$ slack in the packing brick).
 
-**Reference.** Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
-Cambridge University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Example 15.16.
+**Reference.** M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge
+University Press, 2019. Chapter 15 (Minimax Lower Bounds), §15.3.3, Example 15.16, Eq. (15.40).
+
+**Proof formalization notes.** The proof is the local-packing / Fano method (as in Example 15.14,
+`LinearRegression.lean`) applied to a $1/2$-packing of $\mathbb{S}_d(s)$ (`exists_sparse_packing`,
+Wainwright Exercise 5.8) rescaled into the ball (scale factor $\le 1$, so the points stay inside
+$\mathbb{S}_d(s)$). The pairwise KL divergences are controlled by $\gamma_{2s}$ acting on the (at most
+$2s$-sparse) packing differences, and the equal-covariance multivariate Gaussian KL
+`klDiv_multivariateGaussian_smul_one` evaluates them, supplying the (15.35a) bound; the packing
+cardinality supplies the (15.35b) bound.
+
+**Bibliographic comments.** The sparse linear-regression minimax rate originates with G. Raskutti,
+M. J. Wainwright, and B. Yu, "Minimax rates of estimation for high-dimensional linear regression over
+$\ell_q$-balls," *IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011
+(arXiv:0910.2042). That paper establishes minimax rates over $\ell_q$-balls for $q \in [0, 1]$ in both
+$\ell_2$-estimation and $\ell_2$-prediction loss; the hard-sparsity ($q = 0$, i.e. the $\mathbb{B}_0(s)$
+ball) case formalized here is the $s\,\log(d/s)/n$ rate that Example 15.16 of Wainwright's textbook
+distills from their analysis.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory Matrix

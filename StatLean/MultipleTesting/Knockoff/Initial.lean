@@ -7,18 +7,58 @@ import Mathlib.Data.Finset.Powerset
 import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
-# Knock-off initial bound (Lu-BDA §19)
+# Knock-off initial bound: `E[V₊(0)/(1+V₋(0))] ≤ 1`
 
-`knockoff_initial_le`: `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` every (non-tied) null is counted,
-`V₊(0) + V₋(0) = N₀`, and by the knock-off sign field (Def. `kos` cond. 3, i.e.
-`KnockoffScore.signs_iIndep`/`signs_fair`) `V₊(0) ~ Binomial(N₀, ½)`. The integral becomes the
-finite sum bounded by `binom_ratio_sum_le_one`.
+In the knock-off variable-selection procedure each hypothesis $j$ is given a score
+$W_j = w_j(Z_j, \tilde Z_j)$, and at threshold $t$ one records the true-null positive and negative
+counts
+$$V_+(t) = \#\{\, j \in H_0 : |W_j| \ge t,\ \operatorname{sign}(W_j) = +1 \,\}, \qquad
+  V_-(t) = \#\{\, j \in H_0 : |W_j| \ge t,\ \operatorname{sign}(W_j) = -1 \,\},$$
+where $H_0$ is the set of true nulls and $N_0 = \#H_0$. The false-discovery-rate control proof
+reduces, through an optimal-stopping / super-martingale argument, to the base inequality at
+threshold $t = 0$:
+$$\mathbb{E}\!\left[\frac{V_+(0)}{1 + V_-(0)}\right] \le 1.$$
 
-The algebraic half (`binom_ratio_sum_le_one`) is proved locally here via the identity
-`C(N,k)·k/(N−k+1) = C(N+1,k) − C(N,k)` (from `Nat.choose_mul_succ_eq`) and the partial-sum
-formula `∑_{k=0}^N C(N+1,k) = 2^{N+1} − 1`.  The probability half
-(`knockoff_initial_integral_le_binom_sum`) — reducing the expectation to the binomial sum via the
-i.i.d. fair-sign distribution of `V₋(0)` — is left as a named sorry.
+`knockoff_initial_le` proves exactly this bound. At threshold $0$ the magnitude condition
+$|W_j| \ge 0$ is vacuous, so every untied null is counted as either positive or negative and
+$V_+(0) + V_-(0) \le N_0$. By condition 3 of the knock-off score definition — the signs
+$\operatorname{sign}(W_j)$ given the magnitudes $|W_1|,\dots,|W_d|$ are i.i.d.\ $\mathrm{Ber}(1/2)$ —
+the negative count obeys $V_-(0) \sim \mathrm{Binomial}(N_0, 1/2)$, so the expectation expands to
+the finite binomial-ratio sum
+$$\sum_{k=0}^{N_0} \binom{N_0}{k} 2^{-N_0}\, \frac{k}{1 + (N_0 - k)} \;=\; 1 - 2^{-N_0} \;\le\; 1.$$
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 21 (Knock-Off), §21.3 (Knock-Off),
+Definition 21.1 (Knock-Off Score), condition 3 (i.i.d.\ fair signs); the bound
+`E[V₊(0)/(1+V₋(0))] ≤ 1` is the $t = 0$ base case of the super-martingale argument in the proof
+of Theorem 21.2 (Knock-Off).
+
+**Proof formalization notes.**
+*Algebraic half.* `binom_ratio_sum_le_one_local` proves
+$\sum_{k=0}^{N} \binom{N}{k} 2^{-N}\, k/(1+(N-k)) = 1 - 2^{-N} \le 1$. Each term equals
+$\binom{N+1}{k} 2^{-N} - \binom{N}{k} 2^{-N}$, from the identity
+$\binom{N}{k}(N+1) = \binom{N+1}{k}(N+1-k)$ (`Nat.choose_mul_succ_eq`); the sum then telescopes via
+the partial-sum formula $\sum_{k=0}^{N} \binom{N+1}{k} = 2^{N+1} - 1$. This is proved locally and
+is deliberately independent of `BinomialRatio.binom_ratio_sum_le_one` (the imported general version
+still carries a `sorry`), which is why the local copy is used.
+*Probability half.* `knockoff_initial_integral_le_binom_sum` reduces the expectation to that sum:
+pointwise $V_+(0)/(1+V_-(0)) \le (N_0 - V_-(0))/(1 + V_-(0))$ from $V_+(0) \le N_0 - V_-(0)$
+(`vplus_add_vminus_le`); both integrands are bounded by $N_0$, hence integrable; and the law of
+$V_-(0)$ is obtained from `signCell_measure` (each fixed sign configuration on $H_0$ has probability
+$2^{-N_0}$, by the i.i.d.\ fair-sign field of condition 3, via
+`KnockoffScore.signs_iIndep`/`signs_fair`), giving
+`prob_Vminus0_eq` : $\mu\{V_-(0) = m\} = \binom{N_0}{m} 2^{-N_0}$. Integrating against this
+binomial law and reindexing $k = N_0 - m$ yields the claimed sum. (Earlier drafts left this half as
+a named sorry; it is now fully proved here.)
+
+**Bibliographic comments.** The knock-off framework originates with R. F. Barber and E. J. Candès,
+"Controlling the false discovery rate via knockoffs," *The Annals of Statistics* 43(5):2055–2085,
+2015 (preprint arXiv:1404.5609). The structural fact used here — that, conditional on the
+magnitudes $|W_1|,\dots,|W_d|$, the signs of the true-null statistics are i.i.d.\ fair coin flips —
+is their i.i.d.-sign ("coin-flip") lemma (Lemma 1), and the optimal-stopping / super-martingale
+argument for which `E[V₊(0)/(1+V₋(0))] ≤ 1` is the base step underlies their FDR-control results
+(the knockoff and knockoff+ theorems, their Theorems 1 and 2). The closed form $1 - 2^{-N_0}$ for
+the base-case binomial-ratio sum is the textbook's elementary rendering of that base step and is
+standard.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -43,7 +83,7 @@ private lemma Sminus_zero (W : Fin d → Ω → ℝ) (ω : Ω) :
   exact ⟨fun ⟨_, h⟩ => h, fun h => ⟨abs_nonneg _, h⟩⟩
 
 /-- At threshold `0`, `V₊(0) + V₋(0) ≤ N₀` since they count disjoint subsets of `H₀`
-(positive and negative nulls are disjoint; Lu-BDA §19). -/
+(positive and negative nulls are disjoint; Lu-BDA §21.3). -/
 private lemma vplus_add_vminus_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     Vplus W H₀ 0 ω + Vminus W H₀ 0 ω ≤ H₀.card := by
   unfold Vplus Vminus
@@ -289,14 +329,14 @@ private lemma prob_Vminus0_eq (μ : Measure Ω) [IsProbabilityMeasure μ] (W : F
     intro i _
     exact (measurable_sgnReal W hW.meas _) (by split_ifs <;> exact measurableSet_singleton _)
 
-/-- The integral `E[V₊(0)/(1+V₋(0))]` is bounded by the binomial ratio sum (Lu-BDA §19).
+/-- The integral `E[V₊(0)/(1+V₋(0))]` is bounded by the binomial ratio sum (Lu-BDA §21.3).
 `V₊(0) ≤ N₀ − V₋(0)` pointwise (`vplus_add_vminus_le`), and `V₋(0) ~ Bin(N₀, ½)` (the null signs
 are i.i.d. fair coins, `prob_Vminus0_eq`), so the expectation expands to
 `∑_m C(N₀,m)/2^{N₀} · (N₀−m)/(1+m)`, which equals the claimed sum via `k = N₀−m`. -/
 lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §19, Def. kos
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §19
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §19
+    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score; Lu-BDA §21.3, Def. kos
+    (H₀ : Finset (Fin d)) -- USER-INPUT: true null set; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §21.3
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤
     ∑ k ∈ Finset.range (H₀.card + 1),
       (H₀.card.choose k : ℝ) / 2 ^ H₀.card * ((k : ℝ) / (1 + ((H₀.card : ℝ) - k))) := by
@@ -399,13 +439,13 @@ lemma knockoff_initial_integral_le_binom_sum (μ : Measure Ω) [IsProbabilityMea
         rw [Nat.choose_symm hj', Nat.cast_sub hj']
         ring
 
-/-- Initial bound (Lu-BDA §19): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
+/-- Initial bound (Lu-BDA §21.3): `E[V₊(0)/(1+V₋(0))] ≤ 1`. At threshold `0` the null positives
 `V₊(0)` are `Binomial(N₀, ½)`-distributed (the null signs are i.i.d. fair coins), and the
 expectation reduces to the binomial ratio sum ≤ 1 (proved algebraically via `choose_mul_succ_eq`). -/
 theorem knockoff_initial_le (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §19, Def. kos
-    (H₀ : Finset (Fin d)) -- USER-INPUT: true null hypothesis set; Lu-BDA §19
-    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §19
+    (W : Fin d → Ω → ℝ) -- USER-INPUT: knock-off score statistic; Lu-BDA §21.3, Def. kos
+    (H₀ : Finset (Fin d)) -- USER-INPUT: true null hypothesis set; Lu-BDA §21.3
+    (hW : KnockoffScore W H₀ μ) : -- USER-INPUT: W satisfies Def. kos cond. 3; Lu-BDA §21.3
     ∫ ω, (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) ∂μ ≤ 1 :=
   le_trans (knockoff_initial_integral_le_binom_sum μ W H₀ hW)
     (binom_ratio_sum_le_one_local H₀.card)

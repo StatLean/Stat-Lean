@@ -22,7 +22,7 @@ parameter: concrete consumers supply a θ-only path with truth η₀
 fixed. See the main theorem's docstring for the full reading of the
 correspondence to vdV's symbol.
 
-Reference: vdV §25.5, thm:25.59.
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59.
 -/
 
 open MeasureTheory Filter Topology
@@ -75,8 +75,8 @@ Concrete consumers supply:
   encoding of the residual `√n · 𝕡_n ℓ̃_{θ̂_n, η̂_n} = vdV_bias + o_P(1)`.
 - `sqrt_n_consistency` — `√n · (estimator − θ₀) = O_P(1)`.
 
-Reference: vdV §25.5, thm:25.59 hypotheses (everything in thm:25.54
-except (25.52), with explicit bias). -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59 hypotheses
+(everything in thm:25.54 except (25.52), with explicit bias). -/
 structure ZEstimatorBiasResidualVdVFaithfulHyp
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -165,7 +165,7 @@ fields (`vdV_score_eq_with_bias`, `sqrt_n_consistency`,
 identity (`submodel_at_zero` is documentation/consumer-reconciliation,
 not consumed in the proof itself).
 
-Reference: vdV §25.5, thm:25.59. -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59. -/
 theorem zEstimator_biasResidual_asympLinear_of_taylor_vdV_faithful
     (h : ZEstimatorBiasResidualVdVFaithfulHyp P Θ S_θ T_nuis v
             estimator score_func_seq score_truth donsker_class
@@ -195,7 +195,7 @@ construction inputs (`h_mem`, `h_dψ`) into an
 literal bias `(fun n X => -(1/Ĩ) * vdV_bias_term submodel … n X)`.
 Plumbs into the bundled interface `zEstimator_biasResidual_expansion`.
 
-Reference: vdV §25.5, thm:25.59. -/
+Reference: vdV §25.8 (Efficient Score Equations), thm:25.59. -/
 def toEfficientScoreEqBiasResidualAssumptions_vdV_faithful
     {T : Submodule ℝ ↥(L2ZeroMean P)} {dψ : T →L[ℝ] ℝ}
     (h : ZEstimatorBiasResidualVdVFaithfulHyp P Θ S_θ T_nuis v
