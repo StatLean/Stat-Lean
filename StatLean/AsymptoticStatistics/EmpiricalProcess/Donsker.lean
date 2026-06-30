@@ -7,22 +7,72 @@ import Mathlib.Probability.IdentDistrib
 /-!
 # Donsker classes via the Theorem 18.14 characterization
 
-Defines `IsPDonsker F P` for a class of measurable functions. Following
-vdV §19.2, `F` is `P`-Donsker iff the empirical process `G_n f` converges in
-distribution to a tight Gaussian limit in `ℓ^∞(F)`. vdV Theorem 18.14 gives an
-equivalent operational characterization: `F` is Donsker iff (a) finite marginals
-jointly satisfy the multivariate CLT, and (b) the empirical process is
-asymptotically equicontinuous in the `L²(P)`-semimetric. We adopt the (a)+(b)
-formulation as the working definition, splitting it into two Props
-(`IsMarginalCLT`, `IsAsymptoticallyEquicontinuous`) to avoid formalising
-`ℓ^∞(F)` as a topological space.
+A class $\mathcal{F}$ of measurable functions is *$P$-Donsker* if the empirical
+process $\mathbb{G}_n f = \sqrt{n}\,(\mathbb{P}_n - P)f$ converges in distribution,
+as a process indexed by $\mathcal{F}$, to a tight Gaussian limit in
+$\ell^\infty(\mathcal{F})$. The characterization theorem states that this holds
+if and only if two conditions are met:
 
-The random-pair workaround for asymptotic equicontinuity is the standard
-formulation in Vaart–Wellner, *Weak Convergence and Empirical Processes*, §2.1.
+* **(a) Finite-dimensional convergence.** Every finite tuple
+  $(f_1,\dots,f_k)$ of functions in $\mathcal{F}$ satisfies the joint
+  multivariate central limit theorem under i.i.d. sampling from $P$, with
+  limiting Gaussian covariance $\bigl(Pf_if_j - Pf_i\,Pf_j\bigr)_{i,j}$. (In the
+  Lean formalization this is encoded through the $L^2(P)$-integrability of every
+  $f\in\mathcal{F}$, without which the covariance is undefined.)
+* **(b) Asymptotic equicontinuity.** The empirical process is asymptotically
+  equicontinuous with respect to the $L^2(P)$-semimetric
+  $\rho(f,g) = \bigl(P(f-g)^2\bigr)^{1/2}$.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §19.2
-(definitions) + Theorem 18.14 (characterization). Headline declarations:
-`IsPDonsker`, `IsPDonsker.union`.
+We adopt the (a)+(b) characterization as the working definition of
+`IsPDonsker`, splitting it into two predicates (`IsMarginalCLT`,
+`IsAsymptoticallyEquicontinuous`) so as to avoid formalising
+$\ell^\infty(\mathcal{F})$ as a topological space and weak convergence on it.
+The headline consumer result is closure under finite unions: the union of two
+$P$-Donsker classes is again $P$-Donsker, under measurable-selection
+admissibility and an $L^2(P)$-separation hypothesis on the symmetric difference
+of the two classes (both made explicit below as Vaart–Wellner regularity).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.2 (Donsker classes; definitions), with the
+operational characterization from Chapter 18 (Weak Convergence), Theorem 18.14.
+The union-closure statement is van der Vaart §19.4 (used in the proof of
+Theorem 19.23). The asymptotic-equicontinuity machinery follows A. W. van der
+Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer,
+1996, §2.1 (random-pair workaround), §2.3 (admissibility), §2.10.1 (measurable
+selection). Headline declarations: `IsPDonsker`, `IsPDonsker.union`.
+
+**Proof formalization notes.** The random-pair workaround for asymptotic
+equicontinuity is the standard formulation in Vaart–Wellner §2.1; the textbook
+$(\varepsilon,\eta,\delta,N)$ quadruple-quantifier form is replaced by its direct
+downstream consumer form (see `IsAsymptoticallyEquicontinuous`), equivalent under
+the modified-random-function trick. The $\Xi$ sample-space universe is fixed at
+`Type 0`. The union-closure proof partitions the deviation event into an
+`F`-pure piece, a `G`-pure piece, and a mixed straddling piece: the two pure
+pieces are handled by `union_aux_FF` / `union_aux_GG` via the measurable
+surrogate construction (collapse to a fixed measurable representative off the
+membership event; Vaart–Wellner Thm 2.10.1), and the mixed piece by
+`union_aux_mix` via Markov's inequality on the $L^2$-distance together with the
+$L^2(P)$-separation hypothesis `hFG_sep`. The outer integrability of the squared
+$L^2$-distance is bundled into the predicate body (Vaart–Wellner §2.3
+admissibility) so producers receive it for free.
+
+**Bibliographic comments.** The notion that the empirical process indexed by a
+class of functions converges weakly to a Gaussian process — and the term
+"Donsker class" — originates with M. D. Donsker, "Justification and extension of
+Doob's heuristic approach to the Kolmogorov–Smirnov theorems," *Annals of
+Mathematical Statistics* 23 (1952), no. 2, 277–281, which rigorously established
+the functional central limit theorem for the empirical distribution function
+(the case $\mathcal{F} = \{\mathbf{1}_{(-\infty,t]} : t\in\mathbb{R}\}$),
+following the heuristic program of J. L. Doob, "Heuristic approach to the
+Kolmogorov–Smirnov theorems," *Annals of Mathematical Statistics* 20 (1949),
+no. 3, 393–403. The abstract uniform-CLT theory for general Donsker classes,
+including the equicontinuity characterization (van der Vaart Theorem 18.14) and
+the measurable-selection/admissibility apparatus, was developed primarily by
+R. M. Dudley and by Giné and Zinn in the 1970s–80s and is given its standard
+textbook treatment in van der Vaart and Wellner, *Weak Convergence and Empirical
+Processes* (1996); the union-closure result formalized here is folklore within
+that theory.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

@@ -14,27 +14,97 @@ import Mathlib.Analysis.BoxIntegral.UnitPartition
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
-# Gaussian shift Bayes risk computations
+# Gaussian shift Bayes risk computations (minimax via Anderson's lemma)
 
-Concrete realization of the Bayesian path's Gaussian-side calculation in
-vdV §8.5. The "Gaussian shift" experiment here is the LAN limit experiment of
-parametric families:
-- prior on `h`: `π_τ = N(0, τ²I)` (Gaussian, parametrized by `τ > 0`)
-- likelihood: `X | h ~ multivariateGaussian h J⁻¹`
-- target: `A h` (linear functional of `h`)
-- loss: bowl-shaped `L`
+Concrete realization of the Bayesian path underlying the minimax property of the
+linear estimator in a Gaussian shift (normal location) experiment. The "Gaussian
+shift" experiment here is the LAN limit experiment of parametric families:
+- prior on the shift `h`: $\pi_\tau = N(0, \tau^2 I)$ (Gaussian, parametrized by $\tau > 0$);
+- likelihood (one observation): $X \mid h \sim N(h,\, J^{-1})$, with $J$ the
+  (nonsingular) Fisher information, so $J^{-1}$ plays the role of vdV's known
+  covariance $\Sigma$;
+- target: $A h$, a linear functional of the shift;
+- loss: a bowl-shaped function $L$ (sublevel sets $\{x : L(x) \le c\}$ convex and
+  symmetric about the origin).
 
-By Bayes' rule on Gaussian densities and Anderson's lemma applied to the
-Gaussian posterior, the posterior is `h | X = x ~ multivariateGaussian (Σ_τ J x) Σ_τ`
-with `Σ_τ := (J + τ⁻²I)⁻¹`, the Bayes risk is `r*(π_τ) = ∫ L dN(0, A Σ_τ Aᵀ)`,
-and `sup_{τ > 0} r*(π_τ) = ∫ L dN(0, A J⁻¹ Aᵀ)`.
+By Bayes' rule on Gaussian densities, the posterior is
+$h \mid X = x \sim N(\Sigma_\tau J x,\ \Sigma_\tau)$ with
+$\Sigma_\tau := (J + \tau^{-2} I)^{-1} = (\Sigma^{-1} + \Lambda^{-1})^{-1}$ where
+$\Lambda = \tau^2 I$ is the prior covariance. The Bayes risk at prior parameter
+$\tau$ is $r^\ast(\pi_\tau) = \int L \, dN(0,\, A \Sigma_\tau A^{\mathsf T})$, and
+taking the noninformative limit gives
+$\sup_{\tau > 0} r^\ast(\pi_\tau) = \int L \, dN(0,\, A J^{-1} A^{\mathsf T})$.
+Anderson's lemma — convoluting a centered Gaussian with any probability measure
+cannot decrease a bowl-shaped loss integral — supplies the monotonicity that
+makes the linear estimator $AX$ minimax: the maximum risk of any randomized
+estimator of $A h$ is at least $\int L \, dN(0,\, A J^{-1} A^{\mathsf T})$.
 
 Headline declarations: `bayesRiskAtTau`, `gaussianShift_bayes_risk_sup_eq_target`,
-`bowl_shaped_loss_risk_kernel_form` (vdV §8.5 Proposition 8.6, kernel form).
+`bowl_shaped_loss_risk_kernel_form` (the kernel form of Proposition 8.6, the
+lower bound on Bayes/minimax risk in the limit experiment).
 
 We define `bayesRiskAtTau` directly as the explicit integral form
-`∫ L dN(0, A Σ_τ Aᵀ)`; the abstract Bayes risk identification happens in the
-chapter assembly.
+$\int L \, dN(0,\, A \Sigma_\tau A^{\mathsf T})$; the abstract Bayes risk
+identification happens in the chapter assembly.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.4 (Estimating Normal Means), Lemma 8.5
+(Anderson's lemma) and Proposition 8.6 (minimaxity of `AX`). The result is the
+Gaussian-side engine of the Local Asymptotic Minimax Theorem (Theorem 8.11, §8.7),
+which is its downstream consumer.
+
+**Proof formalization notes.**
+The Bayesian argument of vdV's proof of Proposition 8.6 is formalized verbatim
+at the level of the limit experiment. Take a normal prior $H \sim N(0, \tau^2 I)$
+and view the likelihood $N(h, J^{-1})$ as the conditional law of $X$ given
+$H = h$. A standard complete-the-square calculation gives the Gaussian posterior
+$N(\Sigma_\tau J X,\ \Sigma_\tau)$ with $\Sigma_\tau = (J + \tau^{-2} I)^{-1}$;
+the innovation $G_\tau := A(H - \Sigma_\tau J X)$ has law $N(0, A \Sigma_\tau A^{\mathsf T})$
+and is **independent** of $X$. Because a supremum dominates an average,
+$\sup_h \mathbb E_h L(T - A h) \ge \mathbb E\, L(G_\tau + W_\tau) \ge \mathbb E\, L(G_\tau)$
+by Anderson's lemma (applied to the Gaussian $G_\tau$ convolved with the residual
+$W_\tau$), for every $\tau$. As $\tau \to \infty$ the prior flattens,
+$\Sigma_\tau \to J^{-1}$ in PSD order, $G_\tau \rightsquigarrow N(0, A J^{-1} A^{\mathsf T})$,
+and the liminf of the right side is at least the target integral by the
+portmanteau lemma.
+
+Key load-bearing pieces in this file:
+- `posteriorCov` ($\Sigma_\tau$), `posteriorMean`, `marginalGaussianShift`,
+  and the joint pushforward identity `joint_pushforward_eq` (the
+  independence-of-innovation step, proved via `IsGaussian.ext` on matching
+  means and covariance bilinear forms).
+- `posteriorCov_le_inv` ($\Sigma_\tau \preceq J^{-1}$ in PSD order) — the matrix
+  algebra feeding the easy direction `bayesRiskAtTau_le_target` (Anderson's
+  PSD-monotone form).
+- `target_le_iSup_bayesRiskAtTau` — the hard direction, closed unconditionally
+  for lower-semicontinuous `L` via Lévy weak continuity
+  (`posteriorCov_tendsto_inv`) plus the Portmanteau lsc bridge.
+- `gaussianShift_bayes_risk_sup_eq_target` assembles both directions; it is the
+  single largest direct consumer of Anderson's PSD-monotone form in the Theorem
+  8.11 proof.
+
+Book-vs-Lean note: vdV states the result for known covariance $\Sigma$ and prior
+$N(0, \Lambda)$ with $\Lambda \to \infty$; we instantiate $\Sigma = J^{-1}$ (limit
+experiment) and the scalar flat-prior family $\Lambda = \tau^2 I$, $\tau \to \infty$,
+which suffices for the LAM application and matches the displayed posterior
+$(\Sigma^{-1} + \Lambda^{-1})^{-1}$.
+
+**Bibliographic comments.**
+Anderson's lemma is Lemma 8.5 in vdV and originates in T. W. Anderson, "The
+integral of a symmetric unimodal function over a symmetric convex set and some
+probability inequalities," *Proceedings of the American Mathematical Society*
+**6** (1955), 170–176 (Theorem 1 and its corollaries): for a symmetric convex
+set $K$ and a symmetric unimodal density, the set's probability content is
+maximized when centered; equivalently $\int L\, dN(0,\Sigma) \le \int L\, d[N(0,\Sigma) * M]$
+for every bowl-shaped $L$ and probability measure $M$. The minimax/asymptotic
+optimality framing of the Gaussian shift experiment — the convolution theorem
+and the local asymptotic minimax theorem that Proposition 8.6 serves — is due to
+J. Hájek, "A characterization of limiting distributions of regular estimates,"
+*Z. Wahrscheinlichkeitstheorie verw. Gebiete* **14** (1970), 323–330, and
+J. Hájek, "Local asymptotic minimax and admissibility in estimation,"
+*Proc. Sixth Berkeley Symp. Math. Statist. Probab.*, Vol. 1 (1972), 175–194,
+building on L. Le Cam's theory of limit experiments.
 -/
 
 open MeasureTheory ProbabilityTheory Filter BoundedContinuousFunction
@@ -1050,7 +1120,7 @@ theorem gaussianShift_bayes_risk_sup_eq_target
     (iSup_le fun _ => iSup_le fun hτ => bayesRiskAtTau_le_target hJ A hL_bowl hτ)
     (target_le_iSup_bayesRiskAtTau hJ A L hL_lsc)
 
-/-- **vdV §8.5 Proposition 8.6, kernel form**.
+/-- **vdV §8.4 Proposition 8.6, kernel form**.
 
 On the Gaussian-shift limit experiment with prior on `h` of weight `1` at each
 `h ∈ ℝ^k` (via the finite-prior + sup-lift) and likelihood
@@ -1059,7 +1129,7 @@ On the Gaussian-shift limit experiment with prior on `h` of weight `1` at each
 target Gaussian-shift integral with the canonical Bayes-optimal covariance
 `ψDotMat · J⁻¹ · ψDotMatᵀ`.
 
-This is the kernel form of vdV §8.5 Proposition 8.6 (equation (8.7)):
+This is the kernel form of vdV §8.4 Proposition 8.6:
 the lower bound on Bayes risk in the limit experiment, expressed directly as a
 sup over h of the shift-translated L-integral against the data kernel composed
 with `κ`.

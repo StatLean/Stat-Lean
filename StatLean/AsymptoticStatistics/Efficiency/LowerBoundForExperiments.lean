@@ -4,25 +4,74 @@ import StatLean.AsymptoticStatistics.ForMathlib.SlutskyFrechetShift
 /-!
 # Theorem 8.3 — Lower Bound for Experiments
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §8.3.
+Consider a fixed point $\theta_0$ in an open parameter set $\Theta \subseteq
+\mathbb{R}^k$ and a functional $\psi : \Theta \to \mathbb{R}^m$. Assume the
+experiment $(P_\theta : \theta \in \Theta)$ is differentiable in quadratic mean
+at $\theta_0$ with nonsingular Fisher information matrix $J$ (the book's
+$I_{\theta_0}$), and that $\psi$ is differentiable at $\theta_0$ with derivative
+$\dot\psi_{\theta_0}$ (here a continuous linear map, written `ψ̇`). Let $T_n$ be
+estimators in the localized experiments $\bigl(P^n_{\theta_0 + h/\sqrt n} : h \in
+\mathbb{R}^k\bigr)$ for which the standardized sequence converges to a limit law
+$L_{\theta_0,h}$,
+$$
+  \sqrt{n}\,\Bigl(T_n - \psi\bigl(\theta_0 + h/\sqrt n\bigr)\Bigr)
+    \;\rightsquigarrow\; L_{\theta_0,h}
+  \quad\text{under } P^n_{\theta_0 + h/\sqrt n},
+  \qquad\text{every } h.
+  \tag{8.2}
+$$
+Then there exists a randomized statistic $T$ in the Gaussian limit experiment
+$\bigl(N(h, J^{-1}) : h \in \mathbb{R}^k\bigr)$ — formalized as a Markov kernel
+$\kappa$ — such that, for every $h$, the law of $T - \dot\psi_{\theta_0} h$ equals
+$L_{\theta_0,h}$. Equivalently, in pushforward form,
+$$
+  L_{\theta_0,h} \;=\; \bigl(N(h, J^{-1}) \mathbin{\gg\!=} \kappa\bigr)
+    \circ \bigl(y \mapsto y - \dot\psi_{\theta_0} h\bigr)^{-1}.
+$$
 
-Assume the experiment `(P_θ : θ ∈ Θ)` is DQM at `θ₀` with non-singular Fisher
-information `J`. Let `ψ : Θ → 𝓨` be Fréchet differentiable at `θ₀` with
-derivative `ψ̇`. Let `T_n` be estimators of `ψ(θ)` satisfying
+*Alignment with the Lean statement.* The book states the conclusion as "the
+randomized statistic $T$ has $T - \dot\psi_{\theta_0} h$ distributed as
+$L_{\theta_0,h}$"; the Lean formalization makes the randomization explicit as a
+Markov kernel $\kappa$ and expresses the conclusion as the pushforward identity
+$L_{\theta_0,h} = ((N(h,J^{-1}) \gg\!= \kappa).\mathrm{map}(\,\cdot - \dot\psi_{\theta_0}h\,))$.
+Fisher information is supplied through its bilinear form $J$ via the hypothesis
+identifying `fisherInformation` with $\langle u, J v\rangle$; differentiability
+of $\psi$ is the Fréchet derivative `HasFDerivAt ψ ψDot θ₀`. No constants are
+altered relative to the book.
 
-    √n (T_n - ψ(θ₀ + h/√n)) ⇝ L_{θ,h}    under  P^n_{θ₀ + h/√n}    (8.2)
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 8 (Efficiency of Estimators), §8.3 (Lower Bound for Experiments),
+Theorem 8.3, Eq (8.2); via Theorem 7.10 (the asymptotic representation theorem,
+Chapter 7, Local Asymptotic Normality).
 
-for every `h`. Then there exists a Markov kernel `κ : Θ ⇝ 𝓨` such that for
-every `h`,
+**Proof formalization notes.** Apply Theorem 7.10 to `S_n := √n(T_n − ψ θ₀)`.
+Since `S_n` equals `√n(T_n − ψ(θ₀ + h/√n))` plus the deterministic null sequence
+`√n(ψ(θ₀ + h/√n) − ψ θ₀)`, which tends to `ψ̇h` by Fréchet differentiability,
+Slutsky gives `S_n ⇝ L_{θ,h} * δ_{ψ̇h}` under each `P^n_{θ₀ + h/√n}` (book:
+`L_{θ,h} * δ_{ψ̇h}`, the translate of `L_{θ,h}` by `ψ̇h`). Theorem 7.10
+(`LAN_representation`) yields a Markov kernel `κ` with
+`L_{θ,h} * δ_{ψ̇h} = N(h, J⁻¹) >>= κ`. Translating back by `· − ψ̇h` gives the
+stated identity. The formalization splits this into three steps:
+`S_n_weak_conv_under_shifted` (Step 1, the Slutsky pre-standardization),
+`AsymptoticRepresentation.LAN_representation` (Step 2, Theorem 7.10), and
+`map_add_map_sub_eq` (Step 3, inverting the Dirac translation).
 
-    L_{θ,h} = ((N(h, J⁻¹)) >>= κ).map (· - ψ̇h).
-
-Proof. Apply Theorem 7.10 to `S_n := √n(T_n - ψ θ₀)`. Since `S_n` equals
-`√n(T_n - ψ(θ₀ + h/√n))` plus the deterministic null sequence
-`√n(ψ(θ₀ + h/√n) - ψ θ₀)`, which tends to `ψ̇h` by Fréchet differentiability,
-Slutsky gives `S_n ⇝ L_{θ,h} * δ_{ψ̇h}` under each `P^n_{θ₀ + h/√n}`.
-Theorem 7.10 yields a Markov kernel `κ` with `L_{θ,h} * δ_{ψ̇h} = N(h, J⁻¹) >>= κ`.
-Translate back by `· - ψ̇h`.
+**Bibliographic comments.** The theorem is a specialization to the estimation
+problem of Le Cam's asymptotic representation theorem (vdV Theorem 7.10), and
+its content — that the standardized limit law of any estimator sequence is the
+law of a randomized statistic in the Gaussian shift limit experiment, shifted by
+$\dot\psi_{\theta_0} h$ — originates with the theory of limits of experiments:
+L. Le Cam, "Limits of experiments," *Proceedings of the Sixth Berkeley Symposium
+on Mathematical Statistics and Probability* (Vol. 1: Theory of Statistics),
+University of California Press, Berkeley, 1972, pp. 245–261. The local
+asymptotic minimax and convolution consequences of this lower bound trace to
+J. Hájek, "A characterization of limiting distributions of regular estimates,"
+*Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* 14 (1970),
+323–330, and J. Hájek, "Local asymptotic minimax and admissibility in
+estimation," *Proc. Sixth Berkeley Symp.* (Vol. 1), 1972, pp. 175–194. Theorem
+8.3 itself is van der Vaart's textbook packaging of these results; the precise
+statement and the Theorem 7.10 reduction follow vdV §8.3.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

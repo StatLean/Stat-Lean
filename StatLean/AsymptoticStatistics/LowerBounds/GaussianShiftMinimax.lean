@@ -5,21 +5,71 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 /-!
 # Minimax bound in the Gaussian shift experiment
 
-Lemma 4 of the lower-bound proof of vdV §25.3, Theorem 25.21: a minimax
-Bayes-risk lower bound in the Gaussian shift experiment
-`(N(h, I_m) : h ∈ ℝᵐ)`, restricted to a convex cone `C_m` with nonempty
-interior. For the scalar parameter functional (`k = 1`) the book's linear
-coefficient collapses to a continuous linear functional
-`A : EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ`, and the covariance to the scalar
-variance `‖A‖²`. The headline declaration is `gaussianShift_minimax`.
+This file formalizes the key Gaussian-shift step ("Lemma 4") inside the
+lower-bound proof of the local asymptotic minimax (LAM) theorem. In the
+finite-dimensional Gaussian shift experiment, where one observes a single
+draw $X \sim N(h, I_m)$ with unknown shift $h$ ranging over a convex cone
+$C_m \subseteq \mathbb{R}^m$ of nonempty interior, consider estimating the
+scalar functional $h \mapsto A h$ for a continuous linear functional
+$A : \mathbb{R}^m \to \mathbb{R}$ (the differential of $\psi$ along the score
+basis; the book's general $k$-dimensional coefficient collapses to a single
+linear functional when $k = 1$). For any bounded, uniformly continuous,
+subconvex ("bowl-shaped") loss $\ell$, the finite-subset minimax risk is
+bounded below by the Gaussian integral of the loss against the limit law:
+$$
+\sup_{I_0 \subset C_m \text{ finite}} \;
+  \inf_{T} \; \max_{h \in I_0} \;
+  \int \ell\bigl(T(X) - A h\bigr)\, dN(h, I_m)(X)
+\;\ge\;
+  \int \ell(u)\, dN\!\left(0, \|A\|^2\right)(u),
+$$
+where the right-hand side uses the scalar limit variance $\|A\|^2$. The
+headline declaration is `gaussianShift_minimax`.
 
-The book derives this in three steps: (1) Anderson's lemma on a Gaussian
-prior `N(c h₀, c I_m)` identifies the posterior loss minimum as a Gaussian
-integral; (2) restricting the prior to `C_m` and letting `c → ∞` recovers
-`∫ ℓ dN(0, ‖A‖²)`; (3) a finite-support density argument plus Bayes-risk
-continuity transports the Bayes lower bound to the finite-subset minimax
-form. Steps (1)+(2) and step (3) enter as the hypotheses `hPriorBayesBound`
-and `hFiniteSupportApprox`; they are combined via `le_iSup`.
+Deviations from the book: the statement here is specialized to the scalar
+functional ($k = 1$), so the book's covariance matrix $A A^{\mathsf T}$
+becomes the scalar variance $\|A\|^2$; the limit Gaussian is encoded as
+Mathlib's `gaussianReal 0 ⟨‖A‖^2, _⟩` with the variance carried as a
+nonnegative real. The loss is `ℝ≥0∞`-valued (with its real `toReal` bridge
+carrying the uniform-continuity hypothesis), matching the book's
+nonnegative subconvex loss $\ell : \mathbb{R}^k \to [0, \infty)$.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge
+Series in Statistical and Probabilistic Mathematics, Cambridge University
+Press, 1998. Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and
+Information), Theorem 25.21 (LAM, local asymptotic minimax theorem). The
+Gaussian-shift inequality formalized here is the core normal-experiment
+step underlying that theorem's proof (the assertion that, when the tangent
+set is a convex cone, the minimax risk on the left cannot fall below the
+normal risk on the right), proved in the book by reduction to the
+parametric minimax result of Chapter 8 (Proposition 8.6) together with its
+convex-cone strengthening.
+
+**Proof formalization notes.** The book derives this in three steps:
+(1) Anderson's lemma on a Gaussian prior $N(c\,h_0,\, c\, I_m)$ identifies
+the posterior loss minimum as a Gaussian integral; (2) restricting the
+prior to $C_m$ and letting $c \to \infty$ recovers
+$\int \ell\, dN(0, \|A\|^2)$; (3) a finite-support density argument plus
+Bayes-risk continuity transports the Bayes lower bound to the finite-subset
+minimax form. Steps (1)+(2) and step (3) enter the Lean statement as the
+hypotheses `hPriorBayesBound` and `hFiniteSupportApprox`; they are combined
+via `le_iSup`. (See the per-declaration docstring for the role of each
+hypothesis and the `obtain`/`le_trans`/`le_iSup` assembly.)
+
+**Bibliographic comments.** The Gaussian-shift inequality rests on
+*Anderson's lemma*: T. W. Anderson, "The integral of a symmetric unimodal
+function over a symmetric convex set and some probability inequalities,"
+*Proceedings of the American Mathematical Society*, vol. 6, no. 2, pp.
+170–176, 1955. Anderson's Theorem 1 shows that the integral of a
+nonnegative, symmetric, unimodal function over a symmetric convex set, with
+the function shifted by $\lambda y$, is nonincreasing in $\lambda \ge 0$;
+its probabilistic corollary states that a centered Gaussian assigns at least
+as much mass to a symmetric convex set as any of its shifts, i.e.
+$P(X \in C) \ge P(X + a \in C)$. Applied to a bowl-shaped loss (whose
+sublevel sets are symmetric and convex) this yields that the unshifted
+location estimator is minimax in the Gaussian location problem — the
+ingredient van der Vaart invokes (via Proposition 8.6 and its convex-cone
+extension) to prove Theorem 25.21.
 -/
 
 open MeasureTheory Filter Topology ProbabilityTheory

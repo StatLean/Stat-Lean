@@ -7,24 +7,56 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# Covering number of the ℓ²-unit ball (Lu-BDA §4.2, `lm:covering-num`)
+# Covering number of the ℓ²-unit ball
 
-We prove that the covering number of the closed unit ball in `EuclideanSpace ℝ (Fin d)` satisfies
+For a dimension `d ≥ 1` and a radius `ε ∈ (0, 1)`, the covering number of the closed Euclidean
+unit ball `B = {x ∈ ℝ^d : ‖x‖₂ ≤ 1}` — the minimum number of Euclidean balls of radius `ε`
+needed to cover `B` — is bounded by
 
-  `coveringNumber (closedBall 0 1) ε ≤ ⌊(1 + 2/ε)^d⌋₊`
+  `N(B, ‖·‖₂, ε) ≤ (1 + 2/ε)^d`.
 
-for `0 < ε < 1`.
+This is the standard volume/packing estimate for the ℓ² ball. In the formalization the bound is
+stated with the floor on the right-hand side, `N(B, ‖·‖₂, ε) ≤ ⌊(1 + 2/ε)^d⌋`, because the
+covering number is an extended-natural-number quantity.
 
-The proof follows Lu, *Big Data Analysis* §4.2: take any ε-separated set `C` inside the ball;
-the open balls `ball(x, ε/2)` for `x ∈ C` are pairwise disjoint and all contained in
-`ball(0, 1 + ε/2)`.  Comparing Haar measures gives `|C| · (ε/2)^d ≤ (1 + ε/2)^d`, which
-rearranges to `|C| ≤ (1 + 2/ε)^d`.
+The argument is a packing bound. Take any ε-separated subset `C ⊆ B` (any two distinct points are
+at distance `> ε`). The open balls of radius `ε/2` centered at the points of `C` are pairwise
+disjoint, and they are all contained in the ball of radius `1 + ε/2` about the origin. Comparing
+(Haar/Lebesgue) volumes gives `|C| · (ε/2)^d · Vol(B₀¹) ≤ (1 + ε/2)^d · Vol(B₀¹)`, hence
+`|C| ≤ (1 + 2/ε)^d`. Since the covering number is bounded by the packing number, the same bound
+holds for `N(B, ‖·‖₂, ε)`.
 
 ## Main results
 
 * `card_le_of_isSeparated_ball` — volume packing bound: any finite ε-separated subset of
   `closedBall 0 1` has cardinality ≤ `(1 + 2/ε)^d`.
 * `coveringNumber_closedBall_le` — main theorem.
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities),
+§6.2, Lemma 6.1 (Covering Number) ("Covering number of the
+ℓ₂-ball"). The book states the bound for `ε ∈ (0, 1)`; this hypothesis (`hε₁ : ε < 1`) is carried
+to match the text but is not needed in the proof — the volume packing bound holds for all `ε > 0`.
+
+**Proof formalization notes.** The proof follows Lu §6.2 via the volume argument. Take any
+ε-separated set `C` inside the ball; the open balls `ball(x, ε/2)` for `x ∈ C` are pairwise
+disjoint and all contained in `ball(0, 1 + ε/2)`. Comparing Haar measures via
+`Measure.addHaar_ball_of_pos` gives `|C| · (ε/2)^d ≤ (1 + ε/2)^d`, which rearranges to
+`|C| ≤ (1 + 2/ε)^d`. The main theorem then uses `coveringNumber ≤ packingNumber`
+(`Metric.coveringNumber_le_packingNumber`) and bounds the packing number by the above. Whereas the
+book argues that the ε-net itself induces a cover whose dilated balls contain `B`, the Lean proof
+runs the dual (separated-set / packing) version, which is equivalent and meshes with Mathlib's
+`coveringNumber ≤ packingNumber` API; the resulting constant `(1 + 2/ε)^d` is identical to the
+book's.
+
+**Bibliographic comments.** This is a folklore volume/packing estimate with no single seminal
+origin; it is a standard tool in high-dimensional geometry and the analysis of empirical processes.
+A textbook statement and proof in the form `N(B, ‖·‖₂, ε) ≤ (1 + 2/ε)^d` appears as
+R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*,
+Cambridge University Press, 2018, Corollary 4.2.13 (covering numbers of the Euclidean ball). The
+volume-comparison technique underlying it goes back to the classical bounds on metric entropy of
+convex bodies (see e.g. A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets
+in function spaces," *Uspekhi Mat. Nauk* 14 (1959), no. 2, 3–86).
 -/
 
 open MeasureTheory Metric Set
@@ -34,7 +66,7 @@ namespace StatLean.ConcentrationInequalities
 
 /-! ### Volume-based packing bound -/
 
-/-- **Packing bound for the ℓ²-unit ball** (Lu-BDA §4.2, helper).
+/-- **Packing bound for the ℓ²-unit ball** (Lu-BDA §6.2, helper).
 
 Any *finite* ε-separated subset `C` of the closed unit ball in `EuclideanSpace ℝ (Fin d)` has
 cardinality `(C.ncard : ℝ) ≤ (1 + 2/ε)^d`.
@@ -140,7 +172,7 @@ lemma card_le_of_isSeparated_ball {d : ℕ} [NeZero d] {ε : ℝ} (hε₀ : 0 < 
 
 /-! ### Main theorem -/
 
-/-- **Covering number of the ℓ²-unit ball** (Lu-BDA §4.2, `lm:covering-num`).
+/-- **Covering number of the ℓ²-unit ball** (Lu-BDA §6.2, Lemma 6.1 (Covering Number)).
 
 For `0 < ε < 1` and `d ≥ 1`, the covering number of the closed unit ball satisfies
 `coveringNumber (closedBall 0 1) ε ≤ ⌊(1 + 2/ε)^d⌋₊`.
@@ -148,12 +180,12 @@ For `0 < ε < 1` and `d ≥ 1`, the covering number of the closed unit ball sati
 Proof: covering number ≤ packing number (`Metric.coveringNumber_le_packingNumber`); every
 ε-separated subset is finite with ncard ≤ `(1 + 2/ε)^d` by `card_le_of_isSeparated_ball`.
 
-Note: `hε₁ : ε < 1` matches Lu §4.2 but is not used in the proof body; the bound holds for
+Note: `hε₁ : ε < 1` matches Lu §6.2 but is not used in the proof body; the bound holds for
 all `0 < ε`. -/
 theorem coveringNumber_closedBall_le {d : ℕ} [NeZero d] {ε : ℝ}
-    -- USER-INPUT: ε > 0; Lu-BDA §4.2 (lm:covering-num)
+    -- USER-INPUT: ε > 0; Lu-BDA §6.2, Lemma 6.1 (Covering Number)
     (hε₀ : 0 < ε)
-    -- USER-INPUT: ε < 1; Lu-BDA §4.2 (lm:covering-num)
+    -- USER-INPUT: ε < 1; Lu-BDA §6.2, Lemma 6.1 (Covering Number)
     (hε₁ : ε < 1) :
     coveringNumber (Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) ε ≤
     (⌊(1 + 2 / ε) ^ d⌋₊ : ℕ∞) := by

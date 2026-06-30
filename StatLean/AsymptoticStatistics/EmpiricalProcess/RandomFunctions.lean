@@ -3,20 +3,64 @@ import StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess
 import Mathlib.Probability.IdentDistrib
 
 /-!
-# Random functions in a Donsker class (Lemma 19.24)
+# Random functions in a Donsker class
 
-If `F` is a `P`-Donsker class of measurable functions and `f̂_n` is a
-sequence of random functions taking values in `F` such that
-`∫ (f̂_n − f₀)² dP →_P 0` for some `f₀ ∈ L²(P)`, then `G_n(f̂_n − f₀) →_P 0`
-and hence `G_n f̂_n ⇝ G_P f₀`.
+Let $\mathcal{F}$ be a $P$-Donsker class of measurable functions, and let
+$\hat f_n$ be a sequence of random functions taking values in $\mathcal{F}$
+such that the $L^2(P)$ distance to a fixed $f_0 \in L^2(P)$ vanishes in
+probability, i.e. $\int (\hat f_n - f_0)^2 \, dP \xrightarrow{P} 0$. Then the
+empirical process applied to the increment converges to zero in probability,
+$\mathbb{G}_n(\hat f_n - f_0) \xrightarrow{P} 0$, and consequently
+$\mathbb{G}_n \hat f_n \rightsquigarrow \mathbb{G}_P f_0$. Here
+$\mathbb{G}_n f = n^{-1/2} \sum_{i=1}^n (f(X_i) - Pf)$ is the empirical process
+indexed by $\mathcal{F}$ and $\mathbb{G}_P$ is the $P$-Brownian-bridge limit.
 
-vdV §19.4 Lemma 19.24. vdV's proof uses the continuous-mapping theorem on
-`ℓ^∞(F) × F → ℝ` together with Lemma 18.15 (almost all sample paths of the
-limiting Gaussian process are continuous on `(F, ‖·‖_{P,2})`); the proof here
+The headline declaration `donsker_random_function_consistency` proves the
+in-probability part: for every $\eta > 0$,
+$\mu\{\xi : |\mathbb{G}_n(\hat f_n(\xi)) - \mathbb{G}_n(f_0)| > \eta\} \to 0$.
+
+*Alignment with the Lean statement / added hypotheses.* The Lean formalization
+makes explicit several items that vdV leaves implicit. Without loss of
+generality we take $f_0 \in \mathcal{F}$ (vdV's first reduction). The
+$L^2$-consistency hypothesis is supplied in **expectation form**,
+$\int \big(\int (\hat f_n(\xi) - f_0)^2 \, dP\big) \, d\mu(\xi) \to 0$, which is
+equivalent to the book's convergence-in-probability statement given the square
+envelope of $\mathcal{F}$ and is more compact in Lean than the iterated
+"$\xrightarrow{P}$" form. Joint measurability of $\hat f_n$ and of $f_0$, and the
+i.i.d. structure of the sample $(X_i)$ (independence, identical distribution,
+law $= P$), are stated as explicit adapters needed to apply equicontinuity at
+the random pair $(\hat f_n, f_0)$.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.4 (Random Functions), Lemma 19.24.
+
+**Proof formalization notes.** vdV's proof defines the map
+$g : \ell^\infty(\mathcal{F}) \times \mathcal{F} \to \mathbb{R}$,
+$g(z, f) = z(f) - z(f_0)$, and applies the continuous-mapping theorem together
+with Lemma 18.15 (almost all sample paths of the limiting Gaussian process are
+uniformly continuous on $(\mathcal{F}, \|\cdot\|_{P,2})$). The proof here
 routes directly through the random-pair-in-probability form of
-`IsAsymptoticallyEquicontinuous`, with no `ℓ^∞(F)`-topology infrastructure.
+`IsAsymptoticallyEquicontinuous` (from `Donsker.lean`), with no
+$\ell^\infty(\mathcal{F})$-topology infrastructure. That predicate is in
+consumer form: for any i.i.d. sample and any pair of measurable random
+functions in $\mathcal{F}$ whose squared $L^2(P)$-distance has expectation
+tending to $0$, the empirical process applied to the difference tends to $0$ in
+$\mu$-probability. We instantiate it at the pair $(\hat f_n, \text{const } f_0)$;
+the constant random function $(n, \xi) \mapsto f_0$ has uncurry
+$(\xi, x) \mapsto f_0(x) = f_0 \circ \mathrm{snd}$, which is jointly measurable
+exactly when $f_0$ is.
 
-Headline declaration: `donsker_random_function_consistency`.
+**Bibliographic comments.** This is textbook synthesis with no single seminal
+origin: it is a routine consequence of weak convergence of the empirical
+process over a Donsker class combined with asymptotic equicontinuity, the
+framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak
+Convergence and Empirical Processes: With Applications to Statistics*, Springer
+Series in Statistics, Springer, 1996. vdV (1998) presents it as Lemma 19.24 in
+§19.4 and uses it as the key device for controlling remainder terms in the
+asymptotic analysis of $Z$- and $M$-estimators (cf. its application in vdV
+(5.22)). We therefore cite the textbook rather than forcing attribution to a
+specific research paper.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

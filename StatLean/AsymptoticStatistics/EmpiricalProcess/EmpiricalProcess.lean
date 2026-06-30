@@ -4,10 +4,53 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 /-!
 # Empirical process `G_n f = √n · (P_n f − P f)`
 
-The centred, scaled empirical measure indexed by a real-valued function
-`f : Ω → ℝ`. This is the central object of vdV §19.1: convergence of
-`G_n` (uniformly in `f` over a class `F`) is what Glivenko–Cantelli and
-Donsker theorems characterise.
+For a real-valued function $f : \Omega \to \mathbb{R}$ and an i.i.d. sample
+$X_1, \dots, X_n$ drawn from a distribution $P$, the **empirical process** is
+the centred, $\sqrt{n}$-scaled empirical measure
+$$
+\mathbb{G}_n f \;=\; \sqrt{n}\,\bigl(\mathbb{P}_n f - P f\bigr),
+\qquad
+\mathbb{P}_n f = \frac{1}{n}\sum_{i=1}^n f(X_i),
+\quad P f = \int f \, dP .
+$$
+Indexed over a function class $\mathcal{F}$, $\{\mathbb{G}_n f : f \in \mathcal{F}\}$
+is the object whose limiting behaviour the Glivenko–Cantelli (uniform law of
+large numbers) and Donsker (uniform central limit) theorems characterise.
+
+This file provides the definition together with its degenerate-`n` value and
+the two linearity-in-`f` properties (additivity and scalar homogeneity).
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.1 (introduction of the empirical process
+$\mathbb{G}_n = \sqrt{n}(\mathbb{P}_n - P)$).
+
+**Proof formalization notes.**
+Operationally we use the empirical-average shorthand `empiricalAvg` in place of
+$\int f \, d\mathbb{P}_n$; the two agree on measurable functions, so
+`empiricalProcess P n X f` is `Real.sqrt n * (empiricalAvg f n X - ∫ x, f x ∂P)`.
+
+* Edge case $n = 0$: `empiricalAvg f 0 X = 0` and `Real.sqrt 0 = 0`, so
+  `empiricalProcess P 0 X f = 0`. Recorded as the simp lemma
+  `empiricalProcess_zero`.
+* Additivity `empiricalProcess_add` requires `Integrable f P` and
+  `Integrable g P` so that the population term splits via `integral_add`; the
+  empirical term splits unconditionally via `empiricalAvg_add`.
+* Scalar homogeneity `empiricalProcess_smul` is unconditional, using
+  `empiricalAvg_smul` and `integral_const_mul`.
+
+**Bibliographic comments.** The empirical process $\mathbb{G}_n$ as a centred,
+$\sqrt n$-scaled measure is foundational/folklore with no single seminal source;
+its definition is the natural normalization making the classical limit theorems
+non-degenerate. The two theorems it underpins do have canonical origins:
+V. Glivenko, "Sulla determinazione empirica delle leggi di probabilità",
+*Giornale dell'Istituto Italiano degli Attuari* **4** (1933), 92–99, and
+F. P. Cantelli, "Sulla determinazione empirica delle leggi di probabilità",
+*ibid.* **4** (1933), 421–424 (uniform law of large numbers); and
+M. D. Donsker, "Justification and extension of Doob's heuristic approach to the
+Kolmogorov–Smirnov theorems", *Annals of Mathematical Statistics* **23** (1952),
+277–281 (the functional/uniform central limit theorem for $\mathbb{G}_n$). The
+abstract function-class formulation used here follows van der Vaart §19.1.
 
 Main definition: `empiricalProcess`.
 -/

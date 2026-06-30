@@ -9,17 +9,40 @@ import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 
 /-!
-# Knock-off master inequality (Lu-BDA §19) — the supermartingale core
+# Knock-off master inequality — the supermartingale core
 
-`knockoff_ratio_stopped_le_one`: `E[V₊(t*)/(1+V₋(t*))] ≤ 1`. The heart of the knock-off proof.
+**Informal statement.** Consider the knock-off filter applied to a design with feature-importance
+statistics $W_1, \dots, W_d$, each carrying the anti-symmetry (sign-flip) property of a valid
+knock-off score, and let $H_0 \subseteq \{1, \dots, d\}$ be the set of true null coordinates. For a
+magnitude threshold $t \ge 0$ write
+$$ V_{+}(t) = \#\{ j \in H_0 : W_j \ge t \}, \qquad V_{-}(t) = \#\{ j \in H_0 : W_j \le -t \} $$
+for the numbers of nulls above $+t$ and below $-t$. Let $t^{\*}$ be the data-driven threshold chosen
+by the procedure (the smallest realised magnitude at which the estimated false discovery proportion
+$\widehat{\mathrm{FDP}}$ first drops to or below the target level $\alpha$). Then the ratio of nulls
+mistakenly selected to a regularised count of "knock-off decoys" satisfies, in expectation,
+$$ \mathbb{E}\!\left[ \frac{V_{+}(t^{\*})}{1 + V_{-}(t^{\*})} \right] \le 1. $$
+This is the master inequality at the heart of knock-off false-discovery-rate control: multiplying
+through by the target level recovers the FDR bound for the knock-off and knock-off$^{+}$ filters.
 
+In Lean this is `knockoff_ratio_stopped_le_one`. The bound is obtained by exhibiting the ratio,
+indexed by the increasing magnitudes of all $d$ coordinates, as a forward supermartingale with
+respect to a "count filtration" and applying optional stopping at the bounded stopping time
+$t^{\*}$. The constant on the right is exactly $1$ as in the book; no constants are weakened.
+
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off) — false
+discovery rate control via knock-offs. Dual reference: E. J. Candès, *STAT 300C: Theory of
+Statistics*, Lecture Notes, Stanford University, 2023, Lecture 11, §11.5 (the sequential
+supermartingale argument for FDR control of the knock-off filter).
+
+**Proof formalization notes.**
 Strategy (maximizing Mathlib reuse — this file is where the martingale construction lives, so the
 process/filtration definitions co-evolve with their proofs):
 
 * Reveal the coordinates in **increasing `|W|`** order over **all `d` magnitudes**; the forward
   process `Yproc n = V₊/(1+V₋)` indexed by the order statistics of `{|W j| : j : Fin d}` is a
   forward supermartingale, with `Yproc 0` = the all-nulls ratio (`knockoff_initial_le`,
-  via `Yproc_zero_eq`) and `Yproc d = 0`. Indexing over **all `d`** magnitudes (Candès STATS-300C
+  via `Yproc_zero_eq`) and `Yproc d = 0`. Indexing over **all `d`** magnitudes (Candès STAT 300C
   Lecture 11 §11.5) is what aligns the hitting time `tauStar` over `θ` with the procedure's
   threshold `tStar = min{ t ∈ {|W_j|} : FDPhat ≤ α }`, which ranges over *all* magnitudes.
 * `𝒢rev = Filtration.natural` of `(magnitudes, revealed non-null signs, null split-counts)`; the
@@ -32,6 +55,17 @@ process/filtration definitions co-evolve with their proofs):
 
 The construction (`Yproc`, `𝒢rev`, `tauStar`) and the one-step lemma `step_condExp_le` are authored
 here by the prover session, alongside this theorem.
+
+**Bibliographic comments.**
+The knock-off filter and this supermartingale-based proof of false-discovery-rate control originate
+with R. F. Barber and E. J. Candès, "Controlling the false discovery rate via knockoffs," *The
+Annals of Statistics* **43**(5):2055–2085, 2015. The master inequality `E[V₊/(1+V₋)] ≤ 1` is the
+engine behind their FDR guarantees (Theorem 1 for the knock-off filter and Theorem 2 for the
+knock-off$^{+}$ filter): in that paper it appears as the key supermartingale step bounding the
+expected null count at the data-driven threshold, established in the Appendix proof of those
+theorems. The pairwise sign-exchangeability of the null statistics $W_j$ under the anti-symmetry
+property is what makes the indexed ratio a supermartingale. The reformulation as a forward process
+over all $d$ ordered magnitudes, used here, follows Candès's STAT 300C Lecture 11 presentation.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -45,7 +79,7 @@ variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {d : ℕ}
 
 /-- The n-th smallest magnitude among ALL `d` coordinates `{|W j ω| : j : Fin d}`, via `orderStat`
 on the absolute-value tuple (0-indexed: `θ W ⟨0,h⟩ ω` = minimum magnitude over all coordinates).
-- **USER-INPUT**: `W` determines all `d` magnitudes; Lu-BDA §19 (Candès STATS-300C §11.5). -/
+- **USER-INPUT**: `W` determines all `d` magnitudes; Lu-BDA §21.3 (Candès STATS-300C §11.5). -/
 noncomputable def θ (W : Fin d → Ω → ℝ) (n : Fin d) (ω : Ω) : ℝ :=
   orderStat (fun (i : Fin d) => |W i ω|) n
 
@@ -53,7 +87,7 @@ noncomputable def θ (W : Fin d → Ω → ℝ) (n : Fin d) (ω : Ω) : ℝ :=
 all `d` coordinates. For n = 0, `θ_0 ω` is the smallest magnitude (over **all** coordinates), so
 every coordinate — in particular every null — is above threshold and `Yproc 0 = V₊(0)/(1+V₋(0))`
 (the initial ratio). For n ≥ d, `Yproc n = 0`.
-- **USER-INPUT**: `W`, `H₀` supply the knock-off scores and null set; Lu-BDA §19.
+- **USER-INPUT**: `W`, `H₀` supply the knock-off scores and null set; Lu-BDA §21.3.
 - **LEAN-ONLY**: the ℕ-indexed extension with `Yproc n = 0` for n ≥ d pads the process for
   `supermartingale_nat`; the supermartingale property holds on the non-trivial range. -/
 noncomputable def Yproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (ω : Ω) : ℝ :=
@@ -79,7 +113,7 @@ omit mΩ in
 /-- `Yproc 0 ω = V₊(0)/(1+V₋(0))`: the threshold `θ 0 ω` = the global minimum magnitude is ≤ |W j ω|
 for **all** j (since it is the minimum over all `d` coordinates), so in particular ≤ |W j ω| for
 every null j ∈ H₀, and hence V₊/V₋ at threshold θ₀ equals V₊/V₋ at threshold 0.
-- **USER-INPUT**: equality of counts at threshold θ₀ vs 0; Lu-BDA §19. -/
+- **USER-INPUT**: equality of counts at threshold θ₀ vs 0; Lu-BDA §21.3. -/
 lemma Yproc_zero_eq (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     Yproc W H₀ 0 ω = (Vplus W H₀ 0 ω : ℝ) / (1 + (Vminus W H₀ 0 ω : ℝ)) := by
   unfold Yproc
@@ -282,11 +316,11 @@ private lemma Yproc_stronglyMeasurable (W : Fin d → Ω → ℝ) (H₀ : Finset
   · simp only [h, ↓reduceDIte]; exact measurable_const
 
 /-- The data revealed by step `n` of the knock-off filter (the **count filtration** generators,
-Lu-BDA §19): all magnitudes `|W|`, the non-null signs (`0` padded on nulls), and the null
+Lu-BDA §21.3): all magnitudes `|W|`, the non-null signs (`0` padded on nulls), and the null
 split-counts `(V₊(θ_n), V₋(θ_n))`. Its natural filtration `𝒢rev` exposes `Yproc n` and `FDPhat(θ_n)`
 (both functions of these) while keeping the individual null-sign *assignment* above `θ_n` hidden —
 the exchangeability that makes `Yproc` a supermartingale. See `notes/.../construction_audit.md`.
-- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA §19 (Def. `kos` cond. 3). -/
+- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA §21.3 (Definition 21.1 (Knock-Off Score), condition 3). -/
 noncomputable def cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (ω : Ω) :
     (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ :=
   (fun j => |W j ω|,
@@ -671,7 +705,7 @@ private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
 /-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
 `sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
 (`signs_fair`), so `μ{W j = 0} = μ{0 ≤ W j} · μ{W j = 0} = ½ · μ{W j = 0}`, forcing `μ{W j = 0} = 0`.
-- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §19 (consequence of Def. `kos` cond. 3). -/
+- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §21.3 (consequence of Definition 21.1 (Knock-Off Score), condition 3). -/
 private lemma null_ne_zero (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (j : Fin d) (hj : j ∈ H₀) : ∀ᵐ ω ∂μ, W j ω ≠ 0 := by
@@ -1183,7 +1217,7 @@ Reason: `𝒢rev n = ⨆_{k ≤ n} σ(cproc k)`, and each `cproc k` is — off t
 `reconCproc`). Folding in the `𝒢rev`-measurable constraint `l, j ∈ S_n` (true on `F`) makes `C`
 invariant under the `l ↔ j` sign transposition, because `l, j` are then above `θ_k` for every
 `k ≤ n` (θ monotone), so swapping their signs preserves every count.
-- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §21.3. -/
 private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (n : ℕ) (h : n < d) (l j : Fin d) (hl : l ∈ H₀) (hj : j ∈ H₀)
@@ -1258,7 +1292,7 @@ private lemma grev_event_outer_invariant (W : Fin d → Ω → ℝ) (H₀ : Fins
     rw [Set.preimage_inter, ← hFeq]
     exact hrec.inter (Filter.EventuallyEq.refl _ _)
 
-/-- **The exchangeable sign-swap (the single research nugget, Lu-BDA §19).** For any
+/-- **The exchangeable sign-swap (the single research nugget, Lu-BDA §21.3).** For any
 `𝒢rev n`-measurable event `F` on which two nulls `l, j` are both above `θ_n`, the events
 `F ∩ {0 < W l}` and `F ∩ {0 < W j}` have equal measure. This is the exchangeability of the
 above-`θ_n` null signs: `F`'s defining data (magnitudes, non-null signs, the below-`θ_n` null signs,
@@ -1268,7 +1302,7 @@ which preserves the i.i.d.-fair joint law (`signs_iIndep`/`signs_fair`/`signs_in
 Proof: `grev_event_outer_invariant` represents `F` (mod null) as `(outerData, nsign⃗)⁻¹' C` for a
 `swap l j`-invariant measurable `C`, and the abstract `measure_inter_swap_outer` discharges the
 swap equality from independence of the null signs from the outer data + their i.i.d. fairness.
-- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §21.3. -/
 private lemma aboveNulls_sign_swap (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
@@ -1334,7 +1368,7 @@ private lemma integrable_ite_mul_ite (μ : Measure Ω) [IsProbabilityMeasure μ]
       ≤ 1 * 1 := mul_le_mul h1 h2 (abs_nonneg _) zero_le_one
     _ = 1 := one_mul 1
 
-/-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §19). Fix a null
+/-- **The exchangeable per-coordinate core** (the isolated research nugget, Lu-BDA §21.3). Fix a null
 `j`. Restricted to the event `{cIdx = j}` (where `j` is the rank-`n` coordinate, hence one of the
 `A + B` above-`θ_n` nonzero nulls), the conditional sign probability is the
 sampling-without-replacement ratio `A/(A+B)`:
@@ -1351,7 +1385,7 @@ subcount of `T` and `A+B = |T|` a.e. on each cell, and reduces the per-cell set-
 `aboveNulls_sign_swap` (the only remaining gap), which states that on a `𝒢rev n`-event where two
 nulls `l, j` are both above `θ_n`, `μ(F ∩ {0<W l}) = μ(F ∩ {0<W j})` — the exchangeability of the
 above-`θ_n` null signs. `count_condExp_minus` is derived algebraically from this.
-- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §19. -/
+- **USER-INPUT**: exchangeability of the i.i.d. fair null signs; Lu-BDA §21.3. -/
 private lemma core_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|)
@@ -1651,13 +1685,13 @@ private lemma core_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
   · rw [if_neg hc]; ring
 
 /-- **Exchangeable conditional expectation of the positive-null removal** (`count_condExp`, the
-crux, Lu-BDA §19). The increment `ΔV₊ = V₊(θ_n) − V₊(θ_{n+1})` is the indicator that the rank-`n`
+crux, Lu-BDA §21.3). The increment `ΔV₊ = V₊(θ_n) − V₊(θ_{n+1})` is the indicator that the rank-`n`
 coordinate `cIdx` is a *positive null*. Conditioned on the count filtration `𝒢rev n`, the crossed
 null is positive with the sampling-without-replacement probability `A/(A+B)` (`A = V₊(θ_n)`,
 `B = V₋(θ_n)`), restricted to the event that `cIdx` is a null at all:
 `μ[ΔV₊ | 𝒢rev n] =ᵐ 𝟙(cIdx ∈ H₀) · A/(A+B)`.
 - **USER-INPUT**: exchangeability of the i.i.d. fair null signs (`hW.signs_iIndep`/`signs_fair`/
-  `signs_indep_outer`); Lu-BDA §19. -/
+  `signs_indep_outer`); Lu-BDA §21.3. -/
 private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
@@ -1709,7 +1743,7 @@ private lemma count_condExp_plus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin 
       rw [← Finset.sum_mul, Finset.sum_ite_eq H₀ (cIdx W n h ω) (fun _ => (1 : ℝ))]
 
 /-- **Exchangeable conditional expectation of the negative-null removal** (`count_condExp`, Lu-BDA
-§19); the `V₋` analogue of `count_condExp_plus`, with conditional probability `B/(A+B)`. -/
+§21.3); the `V₋` analogue of `count_condExp_plus`, with conditional probability `B/(A+B)`. -/
 private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) (h : n < d) (h1 : n + 1 < d) :
@@ -1774,10 +1808,10 @@ private lemma count_condExp_minus (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin
   `E[Yproc (n+1) | 𝒢rev n] = (A/k)·(A−1)/(1+B) + (B/k)·A/B = A/(1+B) = Yproc n`.
 
 - **USER-INPUT**: sign exchangeability from `hW.signs_iIndep`/`signs_fair`/`signs_indep_outer`;
-  Lu-BDA §19. -/
+  Lu-BDA §21.3. -/
 lemma step_condExp_le (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
-    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §19.
+    -- USER-INPUT: a.s. distinct magnitudes (continuous knock-off statistics, no |Wᵢ| ties); Lu-BDA §21.3.
     -- Needed so each threshold step removes exactly one coordinate (the single-null exchangeable step).
     (hmag : ∀ᵐ ω ∂μ, ∀ i j : Fin d, i ≠ j → |W i ω| ≠ |W j ω|) (n : ℕ) :
     μ[Yproc W H₀ (n + 1) | 𝒢rev W H₀ hW.meas n] ≤ᵐ[μ] Yproc W H₀ n := by
@@ -1971,7 +2005,7 @@ lemma knockoff_supermartingale (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)
 ranges over the order statistics of **all `d`** magnitudes. Bounded by `d`. Defined via
 `hittingBtwn` on the FDPhat-at-θ process. Re-indexing over all `d` magnitudes (Candès §11.5) is
 what makes `tauStar` align with `tStar = min{ t ∈ {|W_j|} : FDPhat ≤ α }`.
-- **USER-INPUT**: the index-to-threshold correspondence; Lu-BDA §19. -/
+- **USER-INPUT**: the index-to-threshold correspondence; Lu-BDA §21.3. -/
 noncomputable def tauStar (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) : Ω → ℕ∞ :=
   fun ω => ↑(hittingBtwn
     (fun (n : ℕ) (ω : Ω) => if h : n < d then FDPhat W (θ W ⟨n, h⟩ ω) ω else α - 1)
@@ -2008,7 +2042,7 @@ function of `cproc n`. `#S±(θ_n) = V±(θ_n) + (non-null count above θ_n)`, w
 count components of `cproc n` and the non-null counts are functions of the magnitudes + non-null
 signs (also in `cproc n`); the threshold `θ_n ≤ |W_j|` is the rank condition `n < #{k | …}` over all
 `d` coordinates.
-- **USER-INPUT**: adaptedness from the count-filtration structure; Lu-BDA §19. -/
+- **USER-INPUT**: adaptedness from the count-filtration structure; Lu-BDA §21.3. -/
 private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
     (hWmeas : ∀ j, Measurable (W j)) :
     Adapted (𝒢rev W H₀ hWmeas)
@@ -2110,7 +2144,7 @@ private lemma FDPhat_atTheta_adapted (W : Fin d → Ω → ℝ) (H₀ : Finset (
 
 /-- `tauStar W H₀ α` is an `IsStoppingTime` for `𝒢rev W H₀ hWmeas`, being a hitting time of an
 adapted process to a measurable set.
-- **USER-INPUT**: stopping-time property from `Adapted.isStoppingTime_hittingBtwn`; Lu-BDA §19. -/
+- **USER-INPUT**: stopping-time property from `Adapted.isStoppingTime_hittingBtwn`; Lu-BDA §21.3. -/
 lemma tauStar_isStoppingTime (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ)
     (hWmeas : ∀ j, Measurable (W j)) :
     IsStoppingTime (𝒢rev W H₀ hWmeas) (tauStar W H₀ α) := by
@@ -2151,7 +2185,7 @@ FDPhat ≤ α (the threshold `tStar`) is itself one of the order statistics `θ_
 **all `d`** magnitudes), and is exactly the magnitude at the first hitting index `k` found by
 `hittingBtwn`. There `V₊(tStar) = V₊(θ_k)` and `V₋(tStar) = V₋(θ_k)`, so
 `V₊(tStar)/(1+V₋(tStar)) = V₊(θ_k)/(1+V₋(θ_k)) = Yproc k ω`.
-- **USER-INPUT**: order-statistic analysis; Lu-BDA §19 (Candès STATS-300C §11.5). -/
+- **USER-INPUT**: order-statistic analysis; Lu-BDA §21.3 (Candès STATS-300C §11.5). -/
 private lemma ratio_eq_Yproc_hittingIdx
     (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
@@ -2252,7 +2286,7 @@ private lemma ratio_eq_Yproc_hittingIdx
 /-- The stopped value `stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω` equals the ratio
 `V₊(tStar W α ω)/(1+V₋(tStar W α ω))`: unfolding `stoppedValue` and `tauStar` reduces the
 claim to `ratio_eq_Yproc_hittingIdx` via `(↑k : ℕ∞).untopA = k` (`WithTop.untopD_coe`).
-- **USER-INPUT**: bridge between the Yproc index space and the tStar threshold value; Lu-BDA §19. -/
+- **USER-INPUT**: bridge between the Yproc index space and the tStar threshold value; Lu-BDA §21.3. -/
 lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (α : ℝ) (ω : Ω) :
     (Vplus W H₀ (tStar W α ω) ω : ℝ) / (1 + (Vminus W H₀ (tStar W α ω) ω : ℝ)) =
     stoppedValue (Yproc W H₀) (tauStar W H₀ α) ω := by
@@ -2263,7 +2297,7 @@ lemma ratio_eq_stoppedValue (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (
 
 /-! ## 7. Master theorem -/
 
-/-- **Master inequality** (Lu-BDA §19): `E[V₊(t*)/(1+V₋(t*))] ≤ 1`, by exhibiting the
+/-- **Master inequality** (Lu-BDA §21.3): `E[V₊(t*)/(1+V₋(t*))] ≤ 1`, by exhibiting the
 threshold-indexed ratio as a supermartingale (one-step inequality from the exchangeable null-sign
 field) and applying optional stopping (`supermartingale_integral_stoppedValue_le`) plus the
 initial bound `knockoff_initial_le`. -/

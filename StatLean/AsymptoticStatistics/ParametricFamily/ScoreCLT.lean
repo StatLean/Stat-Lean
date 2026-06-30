@@ -10,18 +10,44 @@ Authors: Junwei Lu, Claude Opus 4.7
 -/
 
 /-!
-# Score CLT — multivariate adapter for Theorem 7.10
+# Score-sum central limit theorem (multivariate adapter for Theorem 7.10)
 
-This file provides the **score-sum CLT** in the form needed by Theorem 7.10
-(`AsymptoticStatistics.AsymptoticRepresentation`). It is a thin adapter on top
-of the project's underlying iid multivariate CLT brick
-`ProbabilityTheory.tendstoInDistribution_multivariate_clt`
-(in `AsymptoticStatistics/ForMathlib/MultivariateCLT.lean`).
+Let $X_1, X_2, \dots$ be independent and identically distributed observations and let
+$\dot\ell$ be the score function, viewed as a vector in $\mathbb{R}^k$. Suppose the score
+has **mean zero**, $\mathrm{E}\,\dot\ell(X_1) = 0$, and **covariance matrix** equal to the
+Fisher information $J$, characterised as a quadratic form by
+$\mathrm{E}\bigl[\langle u, \dot\ell(X_1)\rangle\,\langle v, \dot\ell(X_1)\rangle\bigr]
+= u^{\top} J\,v$ for all $u, v \in \mathbb{R}^k$. Then the standardised score sum
+$$
+  \Delta_n \;=\; \frac{1}{\sqrt n}\sum_{i=1}^{n} \dot\ell(X_i)
+$$
+converges in distribution to a centred multivariate Gaussian with covariance $J$, i.e.
+$\Delta_n \rightsquigarrow N(0, J)$.
 
-## Why a separate file?
+This is **Step 1** in van der Vaart's proof of the asymptotic representation theorem
+(Theorem 7.10): in the notation of that proof, $\Delta_n = n^{-1/2}\sum \dot\ell_\theta(X_i)$
+is shown to be a marginal weak limit that is $N(0, J)$-distributed with $J = I_\theta$ the
+Fisher information. This file isolates that convergence as the form consumed by the project's
+`AsymptoticStatistics.AsymptoticRepresentation`.
 
-Theorem 7.10's proof builds an *abstract* iid setup `(P, Y)` on `(ℕ → 𝓧)` from a
-parametric family `(M, μ, θ₀, ℓ)`. The CLT is consumed in the form
+**Added hypotheses / deviations from the book.** Van der Vaart obtains the $N(0,J)$ limit as a
+direct consequence of differentiability in quadratic mean (which forces the score to have mean
+zero and finite Fisher information). This adapter takes those two facts as explicit hypotheses
+— mean zero (`h_zero_mean`) and the covariance/Fisher-information identity (`h_cov`), both
+phrased through inner products — together with positive semidefiniteness of $J$ (`hJ_psd`) and
+square-integrability of the score (`h_L2`, i.e. $\mathrm{E}\,\|\dot\ell(X_1)\|^2 < \infty$).
+At the call site these are discharged from DQM via `Score.score_mean_zero` and the Fisher
+information definition, so no genuine extra assumption is introduced relative to the book.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical
+and Probabilistic Mathematics, Cambridge University Press, 1998. Chapter 7 (Local Asymptotic
+Normality), §7.3 (Convergence to a Normal Experiment; Theorem 7.10, proof; Step 1: the convergence
+$\Delta_n = n^{-1/2}\sum \dot\ell_\theta(X_i) \rightsquigarrow N(0, I_\theta)$).
+
+**Proof formalization notes.**
+
+*Why a separate file?* Theorem 7.10's proof builds an *abstract* iid setup `(P, Y)` on
+`(ℕ → 𝓧)` from a parametric family `(M, μ, θ₀, ℓ)`. The CLT is consumed in the form
 
     WeakConverges (fun n => P.map (fun ω => (√n)⁻¹ • ∑ i ∈ range n, Y i ω))
                   (multivariateGaussian 0 J)
@@ -32,17 +58,30 @@ with hypotheses that match what the call site has on hand:
 * covariance of `Y 0` *as a quadratic form on `EuclideanSpace ℝ (Fin k)`*:
   `∀ u v, ∫ ⟪u, Y 0 ω⟫ * ⟪v, Y 0 ω⟫ ∂P = u.ofLp ⬝ᵥ J.mulVec v.ofLp`.
 
-The underlying `MultivariateCLT` brick is stated more generically (with witness
-`Y' : Ω' → ℝ^k` and an arbitrary `P'`); this adapter specialises to the
-`Y' := id`, `P' := multivariateGaussian 0 J` case and converts
-`MeasureTheory.TendstoInDistribution` into our test-function-based
-`WeakConverges`.
+It is a thin adapter on top of the project's underlying iid multivariate CLT brick
+`ProbabilityTheory.tendstoInDistribution_multivariate_clt` (in
+`AsymptoticStatistics/ForMathlib/MultivariateCLT.lean`). The underlying `MultivariateCLT`
+brick is stated more generically (with witness `Y' : Ω' → ℝ^k` and an arbitrary `P'`); this
+adapter specialises to the `Y' := id`, `P' := multivariateGaussian 0 J` case and converts
+`MeasureTheory.TendstoInDistribution` into our test-function-based `WeakConverges`. The
+inner-product mean-zero / covariance hypotheses are converted to the brick's expected vector
+mean (`h_E_Y0`) and scalar-variance (`h_var`) forms, and the standardising recentering
+`n • P[Y 0]` is eliminated using `P[Y 0] = 0`.
 
-## Main result
+*Main result.* `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`: weak convergence of
+the scaled abstract score sum to `multivariateGaussian 0 J`, under the inner-product zero-mean /
+covariance / `MemLp 2` package.
 
-* `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`: weak convergence of the
-  scaled abstract score sum to `multivariateGaussian 0 J`, under the
-  inner-product zero-mean / covariance / `MemLp 2` package.
+**Bibliographic comments.** The result is the multivariate central limit theorem applied to the
+iid sequence of score vectors, and as such it is classical folklore with no single seminal
+origin. It is the vector-valued Lindeberg–Lévy CLT — provable from the one-dimensional CLT of
+J. W. Lindeberg, "Eine neue Herleitung des Exponentialgesetzes in der Wahrscheinlichkeits-
+rechnung," *Mathematische Zeitschrift* 15 (1922), 211–225, via the Cramér–Wold device of
+H. Cramér and H. Wold, "Some theorems on distribution functions," *Journal of the London
+Mathematical Society* s1-11 (1936), 290–294. Its specific use to establish the $N(0, I_\theta)$
+limit of the score sum in local asymptotic normality theory is due to L. Le Cam and is
+presented in van der Vaart, *Asymptotic Statistics* (1998), Chapter 7; no primary-source
+theorem number is attached to this step beyond the proof of Theorem 7.10.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology Matrix
@@ -79,7 +118,7 @@ theorem clt_finDim
     (h_zero_mean : ∀ u : EuclideanSpace ℝ (Fin k), ∫ ω, ⟪u, Y 0 ω⟫ ∂P = 0)
     (J : Matrix (Fin k) (Fin k) ℝ)
     (hJ_psd : J.PosSemidef)
-    -- vdV §7.10 (Fisher-information identity, supplied by the call site).
+    -- vdV §7.3 (Fisher-information identity, supplied by the call site).
     (h_cov : ∀ u v : EuclideanSpace ℝ (Fin k),
       ∫ ω, ⟪u, Y 0 ω⟫ * ⟪v, Y 0 ω⟫ ∂P = u.ofLp ⬝ᵥ J.mulVec v.ofLp)
     -- (DQM gives Fisher integrability ⇒ `MemLp 2`).

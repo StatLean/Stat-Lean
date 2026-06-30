@@ -3,30 +3,61 @@ import StatLean.MultipleTesting.PValues.Defs
 import StatLean.MultipleTesting.ForMathlib.OrderStatistics
 
 /-!
-# Holm–Bonferroni FWER control — assembly
+# Holm step-down and Bonferroni FWER control
 
-**Note on the source.** Lu, *Big Data Analysis* states the plain Bonferroni correction (§17) but
-contains *no* Holm step-down theorem. The Holm result is therefore formalized from the standard
-statement: S. Holm, "A simple sequentially rejective multiple test procedure", *Scand. J.
-Statist.* **6** (1979), 65–70. Hypotheses sourced to Holm (1979) are tagged accordingly.
+Suppose we test $N$ hypotheses and observe one p-value $p_j$ per hypothesis. Let $H_0$ be the
+(unknown) set of true null hypotheses, with cardinality $N_0 = |H_0|$, and call each null marginal
+*super-uniform* if $\mathbb{P}(p_j \le t) \le t$ for all $t \ge 0$ whenever $j \in H_0$. The
+family-wise error rate is the probability of rejecting at least one true null,
+$\mathrm{FWER} = \mathbb{P}(R \cap H_0 \ne \varnothing)$, where $R$ is the rejection set.
 
-The Holm step-down procedure orders the p-values `p₍₁₎ ≤ ⋯ ≤ p₍N₎`, walks down comparing
-`p₍ᵢ₎` to the cutoff `α/(N−i+1)`, and rejects the initial run that stays below cutoff.
+**Holm step-down procedure** (`holm_fwer_le`). Sort the p-values $p_{(1)} \le \cdots \le p_{(N)}$,
+walk down comparing $p_{(i)}$ against the descending cutoffs $\alpha/(N-i+1)$, and reject the
+longest initial run that stays at or below its cutoff. If every null marginal is super-uniform,
+then this procedure controls the family-wise error rate at level $\alpha$:
+$$ \mathrm{FWER} \le \alpha. $$
+No independence assumption is required, and the bound holds for $0 < \alpha < 1$.
 
-**Main result** (`holm_fwer_le`): if every null p-value is super-uniform (no independence needed),
-the Holm procedure controls the family-wise error rate, `FWER ≤ α`.
+**Bonferroni correction** (`bonferroni_fwer_le`, Lu-BDA §19.2.2). Reject every hypothesis with
+$p_j \le \alpha/N$. Under the same super-uniformity assumption this controls the family-wise error
+rate by
+$$ \mathrm{FWER} \le \tfrac{N_0}{N}\,\alpha \le \alpha. $$
+The Lean statement records the sharper $\tfrac{N_0}{N}\,\alpha$ bound; the textbook $\alpha$ bound
+follows since $N_0 \le N$.
 
-**Bonferroni corollary** (`bonferroni_fwer_le`, Lu-BDA §17): rejecting `{ j : pⱼ ≤ α/N }` gives
-`FWER ≤ (N₀/N)·α ≤ α`.
+**Note on the indexing.** The Lean definitions use 0-indexed sorted positions $i = 0,\dots,N-1$, so
+the cutoff is written $\alpha/(N-i)$ rather than the 1-indexed $\alpha/(N-i+1)$; the two describe
+the same procedure.
 
-Proof outline: the deterministic crux `holm_rejects_true_null_imp` shows that if Holm rejects any
-true null then some true null has `pⱼ ≤ α/N₀`; a union bound over `H₀` plus super-uniformity
-yields `FWER ≤ N₀·(α/N₀) = α`.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 19 (Multiple Hypotheses), §19.2 (Multiple Hypotheses),
+§19.2.2 (Bonferroni Correction), for the Bonferroni correction.
+Lu, *Big Data Analysis* states the plain Bonferroni correction but contains *no* Holm step-down
+theorem; the Holm result is formalized from S. Holm, "A simple sequentially rejective multiple
+test procedure", *Scand. J. Statist.* **6** (1979), 65–70 (see Bibliographic comments). Hypotheses
+sourced to Holm (1979) are tagged accordingly.
 
-**Note on holmCount guard.** `holmCount` is defined to be 0 when `α ≤ 0`, making `holmRejects = ∅`
-in that regime. This is faithful to the Holm procedure (intended for `α ∈ (0,1)`), and ensures
-`holm_rejects_true_null_imp` is vacuously true for non-positive `α` (where the conclusion
-`p j ω ≤ α / N₀` would otherwise fail to follow from the step-down inequality).
+**Proof formalization notes.** The deterministic crux `holm_rejects_true_null_imp` shows that if
+Holm rejects any true null then some true null has $p_j \le \alpha/N_0$; a finite union bound over
+$H_0$ plus super-uniformity then yields $\mathrm{FWER} \le N_0 \cdot (\alpha/N_0) = \alpha$. The
+Bonferroni proof is the same union-bound argument with the simpler membership condition
+$p_j \le \alpha/N$, collapsing to $N_0 \cdot (\alpha/N) = (N_0/N)\,\alpha$.
+
+`holmCount` is defined to be `0` when $\alpha \le 0$, making `holmRejects = ∅` in that regime. This
+is faithful to the Holm procedure (intended for $\alpha \in (0,1)$), and ensures
+`holm_rejects_true_null_imp` is vacuously true for non-positive $\alpha$ (where the conclusion
+$p_j \le \alpha/N_0$ would otherwise fail to follow from the step-down inequality).
+
+**Bibliographic comments.** The step-down procedure and its FWER guarantee are due to S. Holm, "A
+simple sequentially rejective multiple test procedure", *Scandinavian Journal of Statistics* **6**
+(1979), no. 2, 65–70; the level-$\alpha$ FWER control formalized here is Holm's Theorem 1. The
+Bonferroni correction rests on Boole's inequality (the union bound), commonly attributed to C. E.
+Bonferroni, "Teoria statistica delle classi e calcolo delle probabilità", *Pubblicazioni del R.
+Istituto Superiore di Scienze Economiche e Commerciali di Firenze* **8** (1936), 3–62; its use as a
+multiple-comparison correction was popularized by O. J. Dunn, "Multiple comparisons among means",
+*Journal of the American Statistical Association* **56** (1961), no. 293, 52–64. The single-step
+Bonferroni bound itself is essentially folklore (a direct union bound over the null events) and has
+no single seminal origin beyond these references.
 -/
 
 open MeasureTheory
@@ -52,7 +83,7 @@ noncomputable def holmRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (�
   Finset.univ.filter
     (fun j => (Finset.univ.filter (fun j' => p j' ω < p j ω)).card < holmCount α p ω)
 
-/-- Bonferroni rejection set (Lu-BDA §17): reject `{ j : pⱼ ≤ α/N }`. -/
+/-- Bonferroni rejection set (Lu-BDA §19.2.2): reject `{ j : pⱼ ≤ α/N }`. -/
 noncomputable def bonferroniRejects {N : ℕ} (α : ℝ) (p : Fin N → Ω → ℝ) (ω : Ω) : Finset (Fin N) :=
   Finset.univ.filter (fun j => p j ω ≤ α / (N : ℝ))
 
@@ -236,13 +267,13 @@ theorem holm_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Meas
           rw [nsmul_eq_mul]
           field_simp
 
-/-- **Bonferroni FWER control** (Lu-BDA §17). Rejecting `{ j : pⱼ ≤ α/N }` controls the
+/-- **Bonferroni FWER control** (Lu-BDA §19.2.2). Rejecting `{ j : pⱼ ≤ α/N }` controls the
 family-wise error rate: `FWER ≤ (N₀/N)·α ≤ α`. -/
 theorem bonferroni_fwer_le {N : ℕ} (hN : 0 < N) (α : ℝ) (hα : 0 < α) (μ : Measure Ω)
     [IsProbabilityMeasure μ] (H₀ : Finset (Fin N)) (p : Fin N → Ω → ℝ)
     -- LEAN-ONLY: measurability of each p-value; needed for the union bound over events
     (hmeas : ∀ j, Measurable (p j))
-    -- USER-INPUT: null marginals super-uniform; Lu-BDA §17
+    -- USER-INPUT: null marginals super-uniform; Lu-BDA §19.2.2
     (hnull : ∀ j ∈ H₀, SuperUniform (p j) μ) :
     FWER H₀ (bonferroniRejects α p) μ ≤ ENNReal.ofReal ((H₀.card : ℝ) / N * α) := by
   simp only [FWER]

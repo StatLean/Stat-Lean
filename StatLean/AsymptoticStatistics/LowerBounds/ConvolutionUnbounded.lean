@@ -7,16 +7,41 @@ import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.MeasureTheory.Measure.Dirac
 
 /-!
-# Drift-free convolution decomposition via `unboundedParamSubmodel`
+# Semiparametric Convolution Theorem (unbounded densities, scalar form)
 
-This file delivers `derived_convolution_decomp_unbounded`: for any orthonormal
-basis in the tangent space, the limit law `L` of a regular estimator decomposes
-as a Gaussian convolution `N(0, σ²) ∗ M_per` with `σ² = ∑ i ⟪IF_eff, g_P i⟫²`
-(vdV §25.20 scalar form). It avoids the bounded-density route's uniform-Hadamard
-and bounded-mixture hypotheses by using an affine functional `ψ_proj` (whose
-Fréchet derivative is automatic) and the sigmoid `unboundedParamSubmodel`.
+This file delivers `derived_convolution_decomp_unbounded`, the scalar
+($k = 1$) form of the semiparametric **convolution theorem**. Let $\psi$ be a
+real-valued functional, differentiable at $P$ relative to a tangent set, with
+efficient influence function $\tilde\psi_P$, and let $T_n$ be a *regular*
+estimator sequence with limit law $L$. Then, for every finite orthonormal
+family $g_1,\dots,g_m$ in the tangent space, the limit law decomposes as a
+Gaussian convolution
+$$ L \;=\; N\!\bigl(0,\ \sigma^2\bigr) * M, \qquad
+   \sigma^2 \;=\; \sum_{i=1}^m \langle \tilde\psi_P,\, g_i\rangle^2, $$
+for some probability distribution $M$ (the "noise" factor). In particular the
+asymptotic variance of any regular estimator is bounded below by $\sigma^2$.
 
-## Strategy
+This is the convolution half of van der Vaart's Theorem 25.20, specialized to
+$k = 1$ and to a **fixed** finite orthonormal subset of the tangent space.
+The book's full statement uses $\sigma^2 = P\tilde\psi_P\tilde\psi_P^\top$,
+the variance of the efficient influence function; that value is the supremum
+of the displayed finite-basis quantity $\sum_i\langle\tilde\psi_P,g_i\rangle^2$
+over all orthonormal subsets, attained in the Loewner-order limit. The Lean
+result establishes the decomposition for each such finite basis (the inner
+content of the book's proof, before the limiting step). Because the densities
+along the constructed submodel are everywhere strictly positive, this route
+avoids the bounded-density route's uniform-Hadamard and bounded-mixture
+hypotheses, using instead an affine functional `ψ_proj` (whose Fréchet
+derivative is automatic) and the sigmoid `unboundedParamSubmodel`.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series
+in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+Theorem 25.20 (Convolution). Auxiliary inputs: the parametric convolution
+theorem (Chapter 8, §8.5, Theorem 8.8 / Proposition 8.4) and the sigmoid
+submodel construction `k(x) = 2/(1+e^{-2x})` (§25.16).
+
+**Proof formalization notes.**
 
 1. **Affine `ψ_proj`**: define `ψ_proj θ := EuclideanSpace.single 0 (ψ P + ⟪IF_eff, ∑i θi g_P i⟫)`.
    Because `ψ_proj` is affine in `θ`, its Fréchet derivative `ψDot_proj` is just its
@@ -46,8 +71,19 @@ Fréchet derivative is automatic) and the sigmoid `unboundedParamSubmodel`.
    multivariate Gaussian on `Fin 1` projects to `gaussianReal 0 σ²` with
    `σ² = ∑ i ⟪IF_eff, g_P i⟫²` via `multivariateGaussian_map_inner_eq_gaussianReal`.
 
-References: vdV §25.20 (scalar convolution decomposition), §25.16 (sigmoid
-construction `k(x) = 2/(1+e^{-2x})`), §8.5 Theorem 8.8 (parametric convolution theorem).
+**Bibliographic comments.** The convolution theorem originates with J. Hájek,
+*A characterization of limiting distributions of regular estimates*, Zeitschrift
+für Wahrscheinlichkeitstheorie und Verwandte Gebiete **14** (1970), 323–330; an
+equivalent characterization was obtained independently by N. Inagaki,
+*On the limiting distribution of a sequence of estimators with uniformity
+property*, Annals of the Institute of Statistical Mathematics **22** (1970),
+1–13, and the general (local asymptotic minimax / convolution) framework is due
+to L. Le Cam. The semiparametric extension formalized here — projecting the
+efficient influence function onto a tangent space and applying the parametric
+theorem to finite-dimensional submodels — was developed by J. M. Begun, W. J.
+Hall, W.-M. Huang, and J. A. Wellner, *Information and asymptotic efficiency in
+parametric–nonparametric models*, Annals of Statistics **11** (1983), 432–452;
+van der Vaart's Theorem 25.20 is the textbook synthesis of that line of work.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology Asymptotics

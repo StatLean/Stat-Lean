@@ -14,24 +14,60 @@ import Mathlib.Probability.IdentDistrib
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 
 /-!
-# Theorem 7.2 — Local Asymptotic Normality (LAN) expansion
+# Local Asymptotic Normality (LAN) expansion
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §7.2.
+Let $(P_\theta : \theta \in \Theta)$ be a parametric family on a sample space
+$(\mathcal X, \mu)$ that is differentiable in quadratic mean (DQM) at the
+parameter $\theta$ with score function $\ell_\theta$. Then the score has mean
+zero, $P_\theta \ell_\theta = 0$, and for every sequence of local parameters
+$h_n \to h$ and i.i.d.\ observations $X_1, \dots, X_n \sim P_\theta$ the
+log-likelihood ratio of the perturbed model relative to the base model admits
+the quadratic expansion
 
-Let `(P_θ : θ ∈ Θ)` be a parametric family on `(𝓧, μ)` differentiable in
-quadratic mean (DQM) at `θ` with score `ℓ_θ`. Then for any `h_n → h` and
-i.i.d. `X_i ∼ P_θ`:
+$$
+  \log \prod_{i=1}^n
+    \frac{p_{\theta + h_n/\sqrt n}(X_i)}{p_\theta(X_i)}
+  = \frac{1}{\sqrt n} \sum_{i=1}^n \langle h, \ell_\theta(X_i)\rangle
+    - \tfrac12 \langle h, I_\theta\, h\rangle + o_{P_\theta}(1),
+$$
 
-  log ∏_i (p_{θ + h_n/√n}(X_i) / p_θ(X_i))
-    = (1/√n) ∑_i ⟨h, ℓ_θ(X_i)⟩  -  ½ ⟨h, I_θ h⟩  +  o_P(1),
+where $I_\theta = P_\theta\, \ell_\theta \ell_\theta^{\mathsf T}$ is the Fisher
+information matrix at $\theta$. The leading linear term is, up to scaling, a sum
+of i.i.d.\ mean-zero score contributions, while the deterministic quadratic term
+$-\tfrac12 \langle h, I_\theta h\rangle$ captures the local curvature of the model.
+This is the central structural result of locally asymptotically normal experiments:
+the local log-likelihood behaves asymptotically like that of a single Gaussian
+shift experiment with covariance $I_\theta$.
 
-where `I_θ = P_θ ℓ_θ ℓ_θᵀ` is the Fisher information.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 7 (Local Asymptotic Normality), §7.2, Theorem 7.2 (the mean-zero score
+identity $P_\theta \ell_\theta = 0$ is stated within the same theorem).
 
-The proof goes through the L²(μ)-convergence
-`√n (√p_{θ + h_n/√n} - √p_θ) → ½ ⟨h, ℓ_θ⟩ √p_θ` (the defining condition of DQM),
-a Taylor expansion of `2 log(1 + W/2) = W - W²/4 + o_P(W²)` applied to
-`W_i := 2 (√(p_{θ + h_n/√n}/p_θ)(X_i) - 1)`, and a mean-variance LLN/CLT
-pair for the i.i.d. sample `(W_i)`.
+**Proof formalization notes.** The argument proceeds through the $L^2(\mu)$
+convergence
+$\sqrt n\,(\sqrt{p_{\theta + h_n/\sqrt n}} - \sqrt{p_\theta})
+   \to \tfrac12 \langle h, \ell_\theta\rangle \sqrt{p_\theta}$
+— the defining condition of DQM — combined with a Taylor expansion
+$2\log(1 + W/2) = W - W^2/4 + o_P(W^2)$ applied to the Hellinger-type statistic
+$W_{n,i} := 2(\sqrt{p_{\theta + h_n/\sqrt n}/p_\theta}(X_i) - 1)$, and a
+mean–variance law-of-large-numbers / central-limit-theorem pair for the i.i.d.\
+sample $(W_{n,i})$. The file is organized into the corresponding steps: zero-mean
+score (`score_mean_zero`), the limit of $\sum_i \mathbb{E}[W_{n,i}]$ towards
+$-\tfrac14\langle h, I_\theta h\rangle$ (`sum_expect_W_tendsto`), variance control
+(`variance_tendsto_zero`), and the convergence-in-probability assembly
+(`sum_W_decomp`). The auxiliary statistic uses the convention that at $n = 0$ the
+scaling factor $(\sqrt 0)^{-1} = 0$ collapses the perturbation, which is harmless
+for `atTop` limits.
+
+**Bibliographic comments.** Local asymptotic normality originates with
+L. Le Cam, "Locally asymptotically normal families of distributions. Certain
+approximations to families of distributions and their use in the theory of
+estimation and testing hypotheses," *University of California Publications in
+Statistics*, vol. 3, pp. 37–98, 1960, where the LAN concept and the quadratic
+log-likelihood expansion were introduced. The differentiability-in-quadratic-mean
+formulation under which Theorem 7.2 is stated here is the modern presentation
+(due to Le Cam and Hájek) adopted in van der Vaart's textbook.
 -/
 
 open MeasureTheory ProbabilityTheory Asymptotics Filter Topology

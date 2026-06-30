@@ -12,18 +12,65 @@ import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 import Mathlib.Probability.Moments.Variance
 
 /-!
-**Theorem 25.20 clauses (a) and (b), vector form.**
+# Semiparametric Convolution Theorem (vector form)
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998),
-§25.3, Theorem 25.20 — generalized to vector-valued functionals and efficient influence
+Let $\psi$ be a vector-valued functional, pathwise differentiable along a tangent set
+with efficient influence function tuple $(\tilde\ell_1,\dots,\tilde\ell_k)$, and let
+$T_n$ be a *regular* estimator sequence whose normalized error
+$\sqrt{n}\,(T_n - \psi(P))$ converges in distribution under $P$ to a limit law $L$ on
+$\mathbb{R}^k$. Write $G$ for the Gram (information) matrix of the efficient influence
+functions, $G_{ij} = \langle \tilde\ell_i, \tilde\ell_j\rangle$. Then:
+
+* **(a) Covariance lower bound.** If $L$ has a finite second moment with covariance
+  matrix $\Sigma$, then $\Sigma - G$ is positive semidefinite; equivalently the
+  asymptotic covariance of any regular estimator is no smaller (in the Loewner order)
+  than the efficient information matrix $G$.
+* **(b) Convolution decomposition.** The limit law factors as
+  $L = N(0, G) * M$, a convolution of the centered multivariate Gaussian with
+  covariance $G$ and some probability measure $M$ on $\mathbb{R}^k$. In particular the
+  efficient (Gaussian) part is a sharp lower bound on the dispersion, attained exactly
+  when $M$ is degenerate at $0$.
+
+This is the multivariate generalization of the scalar convolution theorem: the scalar
+result is recovered along each direction $\lambda \in \mathbb{R}^k$ by passing to the
+real functional $\langle \lambda, \psi\rangle$, whose efficient influence function is
+$\sum_j \lambda_j \tilde\ell_j$.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information),
+Theorem 25.20 — here generalized to vector-valued functionals and efficient influence
 function tuples.
 
+**Proof formalization notes.**
 Proof strategy for clause (a): inline Cramér-Wold per-λ reduction, scalar application,
-and matrix PSD via Brick A (Matrix.sub_PosSemidef_iff_quadratic_form_le).
+and matrix PSD via Brick A (`Matrix.sub_PosSemidef_iff_quadratic_form_le`). For every
+direction `lam : Fin k → ℝ` we reduce to the scalar functional `⟪lam, ψ⟫`, apply the
+scalar clause (a) to get `lam ⬝ᵥ G ⬝ᵥ lam ≤ lam ⬝ᵥ Σ ⬝ᵥ lam`, and conclude `Σ - G` PSD.
 
 Proof strategy for clause (b): vector analogue of the scalar decomposition using
-vec-specific adapters from ConvolutionUnboundedVec for per-m Hájek decomposition and
-LevyMpassVec for matrix-valued Lévy m-pass with matrix convergence.
+vec-specific adapters from `ConvolutionUnboundedVec` for the per-`m` Hájek decomposition
+and `LevyMpassVec` for the matrix-valued Lévy m-pass with matrix convergence. The key
+steps are: universal-`m` decomposition (`derived_convolution_decomp_unbounded_vec`),
+per-`m` covariance matrices built from component projection sequences (`proj_seq_to_eif`,
+finset-union to a common subspace), a per-`m` orthonormal basis with Parseval
+identifying `Σ_m` entrywise, matrix convergence `Σ_m → G` from continuity of the inner
+product, and `levyMpass_vec` to extract the convolution decomposition.
+
+**Bibliographic comments.**
+The convolution theorem originates with J. Hájek, "A characterization of limiting
+distributions of regular estimates," *Zeitschrift für Wahrscheinlichkeitstheorie und
+Verwandte Gebiete* **14** (1970), 323–330, which proves that the limit law of any
+regular estimator in a (locally asymptotically normal) parametric model is the
+convolution of the optimal Gaussian law with an independent residual — the result
+van der Vaart presents in finite-dimensional form as Theorem 8.8. Closely related
+characterizations were given independently by L. Le Cam and by T. Inagaki, "On the
+limiting distribution of a sequence of estimators with uniformity property,"
+*Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The
+semiparametric (infinite-dimensional tangent space) generalization formalized here is
+due to J. M. Begun, W. J. Hall, W.-M. Huang and J. A. Wellner, "Information and
+asymptotic efficiency in parametric–nonparametric models," *Annals of Statistics*
+**11** (1983), 432–452; it is the form appearing as vdV Theorem 25.20.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

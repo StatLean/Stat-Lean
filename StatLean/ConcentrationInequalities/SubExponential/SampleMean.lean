@@ -1,26 +1,51 @@
 import StatLean.ConcentrationInequalities.SubExponential.Defs
 
 /-!
-# Sample-mean concentration of sub-exponentials — Lu-BDA §3.2
+# Sample-mean concentration of i.i.d. sub-exponentials (two-regime Bernstein bound)
 
-We formalize Lu, *Big Data Analysis* §3.2: for `n` independent copies `X 1, …, X n`
-each sub-exponential with parameter `α` and common mean `μ₀`, the sample mean
-`X̄ₙ = (1/n) ∑ᵢ Xᵢ` satisfies:
+Let $X_1, \dots, X_n$ be independent sub-exponential random variables with common
+parameter $\alpha > 0$ and common mean $\mu_0$, and write
+$\bar X_n = \tfrac1n \sum_{i=1}^n X_i$ for the sample mean. Then the upper tail of
+the centered sample mean splits into two regimes around the threshold $t = \alpha$:
 
-* `measure_sampleMean_lt_le_quadratic` — quadratic regime:
-  `μ {X̄ₙ − μ₀ > t} ≤ exp(−n t² / (2α²))` for `0 ≤ t ≤ α`.
-* `measure_sampleMean_lt_le_linear` — linear regime:
-  `μ {X̄ₙ − μ₀ > t} ≤ exp(−n t / (2α))` for `α ≤ t`.
+* **Quadratic regime** ($0 \le t \le \alpha$, `measure_sampleMean_lt_le_quadratic`):
+  $$\Pr\bigl(\bar X_n - \mu_0 > t\bigr) \;\le\; \exp\!\Bigl(-\tfrac{n\,t^2}{2\alpha^2}\Bigr).$$
+* **Linear regime** ($\alpha \le t$, `measure_sampleMean_lt_le_linear`):
+  $$\Pr\bigl(\bar X_n - \mu_0 > t\bigr) \;\le\; \exp\!\Bigl(-\tfrac{n\,t}{2\alpha}\Bigr).$$
 
-Proof sketch (book §3.2 Chernoff route): decompose `X̄ₙ − μ₀ = ∑ᵢ (1/n)(Xᵢ − μ₀)`.
-By `iIndepFun.mgf_sum` the MGF factors, and the sub-exponential bound on each
-factor gives `E[exp(λ (X̄ₙ − μ₀))] ≤ exp(λ² α²/(2n))` for `|λ| ≤ n/α`.
-Minimising the Chernoff upper bound over `λ` yields both regimes:
-- Quadratic (`t ≤ α`): optimal `λ = nt/α²` gives `exp(−nt²/(2α²))`.
-- Linear (`t ≥ α`): clamped `λ = n/α` gives `exp(−nt/α + n/2) ≤ exp(−nt/(2α))`.
+This is the classical Bernstein-type two-regime concentration bound for averages of
+sub-exponential variables: Gaussian-like decay for small deviations and exponential
+decay for large deviations.
 
-Deviation from book: Lu requires `t > 0`; we allow `t = 0`. The strict `<` on
-the event is faithful; the Chernoff brick gives `≤`, absorbed via `{t < Y} ⊆ {t ≤ Y}`.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 5 (Sub-exponential Random Variables), §5.2,
+Theorem 5.2 (Sub-exponential Tail Probability).
+
+**Proof formalization notes.** Chernoff route (book §5.2): decompose
+$\bar X_n - \mu_0 = \sum_i \tfrac1n (X_i - \mu_0)$. By `iIndepFun.mgf_sum` the
+moment generating function factors, and the per-variable sub-exponential bound on
+each factor gives $\mathbb{E}[\exp(\lambda(\bar X_n - \mu_0))] \le \exp(\lambda^2\alpha^2/(2n))$
+for $|\lambda| \le n/\alpha$. Minimising the Chernoff upper bound over $\lambda$
+yields both regimes:
+- Quadratic ($t \le \alpha$): optimal $\lambda = nt/\alpha^2$ gives $\exp(-nt^2/(2\alpha^2))$.
+- Linear ($t \ge \alpha$): clamped $\lambda = n/\alpha$ gives
+  $\exp(-nt/\alpha + n/2) \le \exp(-nt/(2\alpha))$ (using $n/2 \le nt/(2\alpha)$ since $t \ge \alpha$).
+
+Deviation from book: Lu requires $t > 0$ (quadratic regime) and $t > \alpha$ (linear
+regime); we prove the slightly stronger forms allowing $t = 0$ and $t = \alpha$
+respectively. The strict `>` on the event matches the book; the underlying Chernoff
+brick yields a `≥` bound, absorbed via the inclusion $\{t < Y\} \subseteq \{t \le Y\}$.
+
+**Bibliographic comments.** This is textbook synthesis / folklore — a Bernstein-type
+two-regime concentration inequality with no single seminal origin. Its lineage traces
+to Bernstein's exponential moment inequalities (S. N. Bernstein, *Theory of
+Probability*, 1927) and, in the modern sub-exponential / Orlicz-norm formulation, to
+R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data
+Science*, Cambridge University Press, 2018 (Bernstein's inequality, Thm 2.8.1 and
+Cor 2.8.3), and M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic
+Viewpoint*, Cambridge University Press, 2019 (Prop 2.9, sub-exponential tail bound).
+The two-regime split — Gaussian decay for $t \lesssim \alpha$ and exponential decay
+for $t \gtrsim \alpha$ — is the standard packaging of these results.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -51,13 +76,13 @@ bound to each factor (valid since `|λ/n| ≤ 1/α`) and collecting the product 
 private lemma mgf_sampleMean_le
     {n : ℕ} (hn : 0 < n)
     {X : Fin n → Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω} {μ₀ : ℝ}
-    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §3.2
+    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §5.2
     (hX : ∀ i, IsSubExponential (X i) α μ)
-    -- USER-INPUT: common mean μ₀; Lu-BDA §3.2
+    -- USER-INPUT: common mean μ₀; Lu-BDA §5.2
     (hμ₀ : ∀ i, ∫ ω, X i ω ∂μ = μ₀)
-    -- USER-INPUT: the X i are mutually independent; Lu-BDA §3.2
+    -- USER-INPUT: the X i are mutually independent; Lu-BDA §5.2
     (hindep : iIndepFun X μ)
-    -- USER-INPUT: α > 0; Lu-BDA §3.2
+    -- USER-INPUT: α > 0; Lu-BDA §5.2
     (hα : 0 < (α : ℝ))
     -- LEAN-ONLY: measurability of each X i; required by iIndepFun.mgf_sum
     (hmeas : ∀ i, Measurable (X i))
@@ -156,7 +181,7 @@ private lemma integrable_exp_sampleMean
   simp only [Finset.sum_apply] at h_sum
   exact h_sum
 
-/-- **Quadratic-regime sample-mean concentration** (Lu-BDA §3.2, quadratic case).
+/-- **Quadratic-regime sample-mean concentration** (Lu-BDA §5.2, quadratic case).
 
 For `n` independent sub-exponential `(α)` variables `X 1, …, X n` with common
 mean `μ₀` and `0 ≤ t ≤ α`,
@@ -168,19 +193,19 @@ absorbed via `{t < Y} ⊆ {t ≤ Y}`. -/
 theorem measure_sampleMean_lt_le_quadratic
     {n : ℕ} (hn : 0 < n)
     {X : Fin n → Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω} {μ₀ : ℝ}
-    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §3.2
+    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §5.2
     (hX : ∀ i, IsSubExponential (X i) α μ)
-    -- USER-INPUT: common mean μ₀; Lu-BDA §3.2
+    -- USER-INPUT: common mean μ₀; Lu-BDA §5.2
     (hμ₀ : ∀ i, ∫ ω, X i ω ∂μ = μ₀)
-    -- USER-INPUT: the X i are mutually independent; Lu-BDA §3.2
+    -- USER-INPUT: the X i are mutually independent; Lu-BDA §5.2
     (hindep : iIndepFun X μ)
-    -- USER-INPUT: α > 0; Lu-BDA §3.2
+    -- USER-INPUT: α > 0; Lu-BDA §5.2
     (hα : 0 < (α : ℝ))
     -- LEAN-ONLY: measurability of each X i; required by iIndepFun.mgf_sum
     (hmeas : ∀ i, Measurable (X i))
-    -- USER-INPUT: 0 ≤ t; Lu-BDA §3.2
+    -- USER-INPUT: 0 ≤ t; Lu-BDA §5.2
     {t : ℝ} (ht : 0 ≤ t)
-    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §3.2
+    -- USER-INPUT: t ≤ α (quadratic regime); Lu-BDA §5.2
     (htα : t ≤ (α : ℝ)) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t ^ 2 / (2 * (α : ℝ) ^ 2))) := by
@@ -246,7 +271,7 @@ theorem measure_sampleMean_lt_le_quadratic
         rw [← ENNReal.ofReal_toReal (measure_ne_top μ _)]
         exact ENNReal.ofReal_le_ofReal hbrick
 
-/-- **Linear-regime sample-mean concentration** (Lu-BDA §3.2, linear case).
+/-- **Linear-regime sample-mean concentration** (Lu-BDA §5.2, linear case).
 
 For `n` independent sub-exponential `(α)` variables `X 1, …, X n` with common
 mean `μ₀` and `α ≤ t`,
@@ -259,17 +284,17 @@ Deviation from book: Lu uses strict `t > α`; we allow equality. -/
 theorem measure_sampleMean_lt_le_linear
     {n : ℕ} (hn : 0 < n)
     {X : Fin n → Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω} {μ₀ : ℝ}
-    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §3.2
+    -- USER-INPUT: each X i is sub-exponential with parameter α; Lu-BDA §5.2
     (hX : ∀ i, IsSubExponential (X i) α μ)
-    -- USER-INPUT: common mean μ₀; Lu-BDA §3.2
+    -- USER-INPUT: common mean μ₀; Lu-BDA §5.2
     (hμ₀ : ∀ i, ∫ ω, X i ω ∂μ = μ₀)
-    -- USER-INPUT: the X i are mutually independent; Lu-BDA §3.2
+    -- USER-INPUT: the X i are mutually independent; Lu-BDA §5.2
     (hindep : iIndepFun X μ)
-    -- USER-INPUT: α > 0; Lu-BDA §3.2
+    -- USER-INPUT: α > 0; Lu-BDA §5.2
     (hα : 0 < (α : ℝ))
     -- LEAN-ONLY: measurability of each X i; required by iIndepFun.mgf_sum
     (hmeas : ∀ i, Measurable (X i))
-    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §3.2
+    -- USER-INPUT: α ≤ t (linear regime); Lu-BDA §5.2
     {t : ℝ} (htα : (α : ℝ) ≤ t) :
     μ {ω | t < (1 / (n : ℝ)) * ∑ i : Fin n, X i ω - μ₀}
       ≤ ENNReal.ofReal (Real.exp (-(n : ℝ) * t / (2 * (α : ℝ)))) := by

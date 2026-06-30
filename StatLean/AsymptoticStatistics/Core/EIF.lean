@@ -4,19 +4,81 @@ import StatLean.AsymptoticStatistics.Core.CandidateIF
 /-!
 # The reusable efficient-influence-function (EIF) theorem package
 
-Pure-Hilbert theorems about the efficient influence function: sufficient
-conditions for the EIF (`eif_of_representation_and_membership`), projection of
-any influence function onto the tangent space to obtain the EIF
-(`eif_eq_orthogonalProjection`), and the operational efficiency bound that the
-EIF has minimal `L²(P)` norm (`efficient_bound_eq_sqNorm`,
-`efficient_bound_eq_sup_ratio`).
+Fix a probability measure $P$ and a tangent space $T$, realized as a linear
+subspace of the mean-zero square-integrable functions $L^2_0(P)$. For a smooth
+parameter $\psi$ with pathwise derivative $\dot\psi : T \to \mathbb{R}$, an
+*influence function* is an element $\tilde\psi$ of $L^2_0(P)$ representing the
+derivative through the inner product, $\langle \tilde\psi, g\rangle = \dot\psi(g)$
+for every $g \in T$. The *efficient influence function* is the influence
+function that additionally lies in the tangent space $T$. This package collects
+the pure-Hilbert facts about it:
 
-All theorems take the pathwise derivative `dψ : T →L[ℝ] ℝ` directly as a
-parameter; they do not mention curves.
+* **Existence/sufficiency.** An influence function that lies in $T$ is the
+  efficient influence function.
+* **Projection characterization.** The orthogonal projection onto $T$ of any
+  influence function is the efficient influence function; equivalently, the
+  efficient influence function is the projection of any influence function onto
+  the closed linear span of the tangent set.
+* **Efficiency bound.** Among all influence functions for the same derivative,
+  the efficient influence function $\tilde\psi$ has minimal $L^2(P)$ norm:
+  $\|\tilde\psi\| \le \|\tilde\psi'\|$ for every influence function $\tilde\psi'$.
+  Dually, $\sup_{g \in T} \langle \tilde\psi, g\rangle^2 / \|g\|^2 = \|\tilde\psi\|^2$
+  (lem:25.19, operational form), with the degenerate term $0/0$ read as $0$.
 
-Reference: van der Vaart, *Asymptotic Statistics* (Cambridge, 1998), §25.3
-(definition of efficient influence function) and lem:25.19 (efficiency bound,
-operational form).
+All theorems take the pathwise derivative $\dot\psi : T \to \mathbb{R}$ directly
+as a (continuous linear) parameter; they do not mention parametric paths or
+curves. The two convenience wrappers at the end (`eif_of_influence_tangent_eq_top`,
+`influence_on_sup_of_subtract_proj_nuisance`) and the verification entry points
+(`candidate_isEIF_of_full_tangent`, `candidate_isEIF_of_membership`) package the
+full-tangent and nuisance-correction regimes used in concrete model examples.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (Tangent Spaces and Information):
+definition of the efficient influence function as the projection of any
+influence function onto the closed linear span of the tangent set, and
+Lemma 25.19 (the squared-norm/supremum efficiency bound). The full lower-bound
+interpretation — that $\|\tilde\psi\|^2$ is the asymptotic-variance lower bound
+for *any* regular estimator — relies on the Le Cam / LAM machinery of
+Theorems 25.20–25.21 and is recorded separately in
+`semiparametric_convolution_theorem`.
+
+**Proof formalization notes.** All four core results are elementary Hilbert-space
+geometry over $L^2_0(P)$:
+* `eif_of_representation_and_membership` is immediate from the definition.
+* `eif_eq_orthogonalProjection` uses that the residual $\tilde\psi -
+  \Pi_T\tilde\psi$ lies in $T^\perp$, so $\langle \Pi_T\tilde\psi, g\rangle =
+  \langle \tilde\psi, g\rangle = \dot\psi(g)$ for $g \in T$. The
+  `[T.HasOrthogonalProjection]` hypothesis is a standard side-condition,
+  automatic when $T$ is closed in a complete inner-product space.
+* `efficient_bound_eq_sqNorm` is Pythagoras: the cross term $\langle \tilde\psi,
+  \tilde\psi' - \tilde\psi\rangle$ vanishes because both functions represent
+  $\dot\psi$ on $T$ and $\tilde\psi \in T$, giving $\|\tilde\psi'\|^2 =
+  \|\tilde\psi\|^2 + \|\tilde\psi' - \tilde\psi\|^2 \ge \|\tilde\psi\|^2$.
+* `efficient_bound_eq_sup_ratio` is Cauchy–Schwarz for the upper bound on each
+  ratio term, with equality attained at $g = \tilde\psi$ (available via the EIF
+  membership clause). This is the dual face of `efficient_bound_eq_sqNorm`; the
+  two together exhaust the operational content of lem:25.19. The book's
+  $\sup$ over $\overline{\operatorname{lin}}(\text{tangent set})$ matches our
+  submodule $T$ when $T$ is closed.
+
+**Bibliographic comments.** The characterization of the efficient influence
+function as the orthogonal projection of any influence function onto the tangent
+space, and the resulting asymptotic-variance lower bound equal to its squared
+$L^2$ norm, originate in the semiparametric-efficiency literature rather than
+with a single textbook. The seminal references are J. M. Begun, W. J. Hall,
+W.-M. Huang, and J. A. Wellner, "Information and Asymptotic Efficiency in
+Parametric–Nonparametric Models", *The Annals of Statistics* 11(2), 432–452
+(1983), which established the representation/minimax lower bounds via
+Hellinger-differentiable root-densities and the effective (orthogonalized)
+score; and the monograph P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A.
+Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns
+Hopkins University Press (1993; reprinted Springer, 1998), which gives the
+projection-onto-tangent-space formulation in full generality. The underlying
+lower bound is the semiparametric form of the Hájek convolution theorem (J.
+Hájek, "A characterization of limiting distributions of regular estimates",
+*Z. Wahrscheinlichkeitstheorie verw. Gebiete* 14, 323–330 (1970)). van der Vaart
+§25.3 is an exposition of this body of work.
 -/
 
 open MeasureTheory

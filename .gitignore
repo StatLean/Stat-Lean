@@ -9,3 +9,11 @@ slurm-logs/
 *.sbatch
 slurm-*.out
 slurm-*.err
+# Claude/AI collaboration scaffolding + meta — tracked once, ignored going forward.
+.claude/
+assets/
+notes/
+tools/
+AGENTS.md
+CLAUDE.md
+classicallimits-build.log

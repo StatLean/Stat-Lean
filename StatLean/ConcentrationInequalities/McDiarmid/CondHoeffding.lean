@@ -3,11 +3,14 @@ import Mathlib.Probability.Moments.SubGaussian
 /-!
 # Conditional Hoeffding MGF lemma
 
-Lu, *Big Data Analysis* §3.1 (`McDiarmid`): for a real random variable `Z`
+Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities), §4.2
+(Sub-Gaussian Random Variables), Theorem 4.7 (Hoeffding Inequality): for a real random variable `Z`
 that is conditionally bounded in an interval of length `c = b − a` given a
 sub-σ-algebra `m`, the conditional MGF of the centered random variable
 `Z − E[Z|m]` is bounded by `exp(λ² c² / 8)` almost surely. This is the
-per-step MGF estimate underpinning McDiarmid's bounded differences inequality.
+per-step MGF estimate underpinning McDiarmid's bounded differences inequality
+(Lu, *Big Data Analysis*, Chapter 5 §5.1, Theorem 5.1 (McDiarmid Inequality)).
 
 The proof builds a `ProbabilityTheory.HasCondSubgaussianMGF` witness for
 `W := Z − E[Z|m]` with parameter `((b − a)/2)² = c²/4`, by applying Mathlib's
@@ -29,7 +32,9 @@ namespace StatLean.ConcentrationInequalities
 variable {Ω : Type*} {m : MeasurableSpace Ω} [mΩ : MeasurableSpace Ω]
   [StandardBorelSpace Ω] {μ : Measure Ω}
 
-/-- **Conditional Hoeffding MGF lemma** (Lu-BDA §3.1, McDiarmid).
+/-- **Conditional Hoeffding MGF lemma** (Lu-BDA Chapter 4 §4.2 Sub-Gaussian Random Variables,
+Theorem 4.7 (Hoeffding Inequality); per-step estimate for the McDiarmid Inequality, Chapter 5 §5.1
+Theorem 5.1).
 
 If a real random variable `Z` satisfies, almost surely,
 `Z − E[Z|m] ∈ Set.Icc a b` for fixed reals `a, b`, then for every `λ : ℝ` the
@@ -40,9 +45,9 @@ The proof goes via the per-fiber unconditional Hoeffding lemma applied to the
 conditional-expectation kernel `condExpKernel μ m`. -/
 theorem condExp_hoeffding_mgf [IsProbabilityMeasure μ]
     (hm : m ≤ mΩ) {Z : Ω → ℝ} {a b : ℝ}
-    -- USER-INPUT: Z is integrable w.r.t. μ; Lu-BDA §3.1 (regularity, implicit in the book).
+    -- USER-INPUT: Z is integrable w.r.t. μ; Lu-BDA §4.2 (regularity, implicit in the book).
     (hZ_int : Integrable Z μ)
-    -- USER-INPUT: Z − E[Z|m] ∈ [a,b] almost surely (length b−a = McDiarmid constant); Lu-BDA §3.1.
+    -- USER-INPUT: Z − E[Z|m] ∈ [a,b] almost surely (length b−a = McDiarmid constant); Lu-BDA §4.2.
     (hbound : ∀ᵐ ω ∂μ, Z ω - (μ[Z | m]) ω ∈ Set.Icc a b)
     (lam : ℝ) :
     ∀ᵐ ω ∂μ, (μ[fun ω' => Real.exp (lam * (Z ω' - (μ[Z | m]) ω')) | m]) ω

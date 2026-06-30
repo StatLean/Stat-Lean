@@ -22,7 +22,7 @@ derived, and `oneStep_asympLinear_of_taylor` proves the main asymptotic-linearit
 statement by decomposing the residual into three error terms each tending to 0 in
 Pⁿ-probability.
 
-Reference: vdV §25.5 thm:25.57 + Taylor strong-regularity remark.
+Reference: vdV §25.8 thm:25.57 + Taylor strong-regularity remark.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
@@ -57,7 +57,7 @@ route.
 Both `pfanzagl_display` and `info_consistency` are derived theorems on this
 structure: `OneStepTaylorHyp.pfanzagl_display` and `OneStepTaylorHyp.info_consistency`.
 
-Reference: vdV §25.5 thm:25.57 + Taylor strong-regularity remark. -/
+Reference: vdV §25.8 thm:25.57 + Taylor strong-regularity remark. -/
 structure OneStepTaylorHyp
     (P : Measure Ω) [IsProbabilityMeasure P]
     (Θ : Type*) [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -75,12 +75,12 @@ structure OneStepTaylorHyp
   in θ; we take it as a primitive condition on `score_l_dot`. -/
   score_l_dot_bartlett :
     ∫ ω, (score_l_dot : Ω → ℝ) ω ∂P = -efficientInformation S_θ T_nuis v
-  /-- vdV eq:25.58 (plug-in form): the information estimator equals
+  /-- vdV §25.8 (one-step construction / proof of thm:25.57): the information estimator equals
   the empirical 2nd moment of the score estimator at the preliminary. -/
   info_plug_in_def : ∀ n (X : Fin n → Ω),
     info_estimate_seq n X
       = (n : ℝ)⁻¹ * ∑ i : Fin n, (score_estimate_seq n (X i) (preliminary n X)) ^ 2
-  /-- vdV §25.5 (strong regularity, Taylor remark):
+  /-- vdV §25.8 (strong regularity, Taylor remark):
   empirical L²-Taylor remainder vanishes faster than 1/n. Specifically:
   `Σᵢ r_n(Xᵢ)² →_P 0` where
   `r_n(X) := score_estimate_seq n (X) (θ̃_n) − ℓ̃(X) − (θ̃_n − θ₀)·ℓ̇(X)`.
@@ -97,7 +97,7 @@ structure OneStepTaylorHyp
               - scoreEff (X i)
               - (preliminary n X - θ₀) * (score_l_dot : Ω → ℝ) (X i)) ^ 2})
     atTop (nhds 0)
-  /-- vdV §25.5: preliminary achieves the √n-rate: O_P(1).
+  /-- vdV §25.8: preliminary achieves the √n-rate: O_P(1).
   For every ε > 0 there is a uniform bound M such that
   `Pⁿ(|√n·(θ̃_n − θ₀)| ≥ M) ≤ ε` for all n. -/
   preliminary_sqrt_n_rate : ∀ ε > 0, ∃ M : ℝ, ∀ n : ℕ,
@@ -1223,7 +1223,7 @@ From `OneStepTaylorHyp`, derive
 4. `(1/n) Σ r_n` is oP(1/√n) by Cauchy-Schwarz: `|(1/n) Σ r_n|² ≤ (1/n) Σ r²`,
    so `√n · |(1/n) Σ r_n| ≤ √(Σ r_n²) →_P 0` from `score_l2_taylor`.
 
-Reference: vdV §25.5 (Taylor strong-regularity remark). -/
+Reference: vdV §25.8 (Taylor strong-regularity remark). -/
 theorem OneStepTaylorHyp.pfanzagl_display
     {P : Measure Ω} [IsProbabilityMeasure P]
     {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]
@@ -2157,7 +2157,7 @@ apply the three sub-lemmas, and squeeze. The bridge between the AL goal set
 residual sets (which use scalar multiplication directly) is via `Lp.coeFn_smul`,
 lifted to the product measure `Pⁿ` per coordinate by `sum_smul_lp_ae_eq`.
 
-Reference: vdV §25.5, thm:25.57 + Taylor remark. -/
+Reference: vdV §25.8, thm:25.57 + Taylor remark. -/
 theorem oneStep_asympLinear_of_taylor
     {P : Measure Ω} [IsProbabilityMeasure P]
     {Θ : Type*} [NormedAddCommGroup Θ] [InnerProductSpace ℝ Θ] [CompleteSpace Θ]

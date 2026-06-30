@@ -4,10 +4,61 @@ import StatLean.AsymptoticStatistics.Core.QMDPath
 /-!
 # Tangent set and tangent space (abstract Hilbert version)
 
-vdV §25.3. The unlabeled definitions following Lemma 25.14 introduce a *tangent
-set* at `P` as a subset of `L²₀(P)`, and the *tangent space* as its closed
-linear span. We separate the two: `TangentSpec P` bundles the set of score
-directions; `tangentSpace T` is the derived closed-linear-span submodule.
+Fix a probability measure $P$ and work in the Hilbert space $L^2_0(P)$ of
+square-integrable functions with mean zero (the scores). A *tangent set* at $P$
+is a collection $\dot{\mathcal{P}}_P \subseteq L^2_0(P)$ of score functions, each
+arising as the score $g$ at $t = 0$ of some one-dimensional submodel
+$t \mapsto P_t$ that is differentiable in quadratic mean and passes through $P$
+($P_0 = P$). The *tangent space* is the closed linear span of the tangent set
+inside $L^2_0(P)$.
+
+We separate the two notions: `TangentSpec P` bundles the set of admissible score
+directions together with the requirement that each one be realized by a
+quadratic-mean-differentiable path, while `tangentSpace T` is the derived closed
+linear span (`Submodule.span` followed by topological closure). The realizing-path
+requirement is imposed only on carrier elements, not on the limits that the
+closure introduces, mirroring the book: the closed span may contain directions
+not witnessed by any submodel. Closure of the tangent set under scaling or
+addition is treated as a regularity property, not part of the definition (vdV
+also studies one-sided tangent *cones* where additive closure fails), so it is
+not a field here.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 25 (Semiparametric Models), §25.3 (the unlabeled definitions in the
+paragraph following Lemma 25.14, p. 362), with the regularity discussion of the
+tangent span on p. 366 (§25.3.2).
+
+**Proof formalization notes.** These are definitions plus three elementary
+lemmas, so there is little proof content. `tangentSpace T` is built as
+`(Submodule.span ℝ T.carrier).topologicalClosure`. Edge behavior: when
+`T.carrier = ∅`, the algebraic span is `⊥` and its closure is again `⊥`, so a
+vacuous tangent set yields the trivial tangent space — matching the book's
+convention that "no admissible directions" means "no nontrivial tangent space".
+`span_carrier_le_tangentSpace` records that the algebraic span (over which vdV's
+regularity hypothesis on score directions is quantified, p. 366) sits inside the
+closure (where the efficient influence function and pathwise differentiability
+live). `exists_seq_span_tendsto_of_mem_tangentSpace` is the sequential
+characterization of closure membership in the metric space `L²₀(P)`: every
+element of the tangent space is an $L^2(P)$-limit of a sequence drawn from the
+algebraic span, the analytic core of vdV's finite-span approximation argument
+for the efficient influence function (§25.3.2).
+
+**Bibliographic comments.** The tangent-space / score-path machinery for
+semiparametric efficiency originates with C. Stein, "Efficient nonparametric
+testing and estimation", *Proc. Third Berkeley Symp. Math. Statist. Probab.*,
+vol. 1 (1956), 187–195, who first used one-dimensional parametric submodels to
+bound attainable accuracy. It was developed into the geometric "tangent space"
+formulation by J. M. Begun, W. J. Hall, W.-M. Huang and J. A. Wellner,
+"Information and asymptotic efficiency in parametric–nonparametric models",
+*Ann. Statist.* **11** (1983), 432–452, and given its canonical book-length
+treatment in P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner,
+*Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins
+University Press, 1993 (reprinted Springer, 1998), Chapter 3, where the tangent
+set/space and projected score directions are defined essentially as here. The
+abstract Hilbert-space packaging — tangent set as a subset of $L^2_0(P)$, tangent
+space as its closed linear span — follows van der Vaart's textbook synthesis of
+that literature rather than any single seminal equation.
 -/
 
 open MeasureTheory

@@ -8,22 +8,70 @@ import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Probability.HasLaw
 
 /-!
-# Theorem 19.23: empirical process under parameter estimation
+# Empirical process under parameter estimation (Theorem 19.23)
 
-vdV §19.4. Let `X_1, …, X_n` be a random sample from `P_θ` indexed by
-`θ ∈ ℝ^k`. If `F` is `P_θ`-Donsker, `θ̂_n` is asymptotically linear with
-influence function `ψ_θ`, and `θ ↦ P_θ` from `ℝ^k` to `ℓ^∞(F)` is Fréchet
-differentiable at `θ`, then `√n(P_n − P_{θ̂})` converges in distribution to
-the process `f ↦ G_{P_θ} f − G_{P_θ}(ψ_θᵀ Ṗ_θ f)`.
+Let $X_1, \dots, X_n$ be a random sample from a distribution $P_\theta$ indexed by
+a parameter $\theta \in \mathbb{R}^k$. Suppose $\mathcal{F}$ is a $P_\theta$-Donsker
+class of measurable functions, the estimators $\hat\theta_n$ are asymptotically
+linear with influence function $\psi_\theta$ (so that
+$\sqrt{n}(\hat\theta_n - \theta) = n^{-1/2}\sum_{i} \psi_\theta(X_i) + o_P(1)$, with
+$P_\theta \psi_\theta = 0$ and $P_\theta \|\psi_\theta\|^2 < \infty$), and the map
+$\theta \mapsto P_\theta$ from $\mathbb{R}^k$ to $\ell^\infty(\mathcal{F})$ is Fréchet
+differentiable at $\theta$ with derivative $\dot P_\theta$. Then the empirical
+process under the estimated parameter,
+$\sqrt{n}\,(\mathbb{P}_n - P_{\hat\theta_n})$, converges in distribution in
+$\ell^\infty(\mathcal{F})$ to the Gaussian process
+$f \mapsto \mathbb{G}_{P_\theta} f - \mathbb{G}_{P_\theta}\big(\psi_\theta^{\mathsf T}\dot P_\theta f\big)$,
+where $\mathbb{G}_{P_\theta}$ is the $P_\theta$-Brownian bridge.
 
-This file ships the single-direction (`k = 1`) special case, expressed against
-the ℝ-target `AsymptoticallyLinearAt`. The conclusion is the pointwise
-weak-convergence statement: for every `f ∈ F`, `√n · (P_n f − P_{θ̂_n} f)`
-converges in distribution under `μ` to `N(0, σ_f²)` with
-`σ_f² := ∫ (f − Pf − dPθ f · ψ_{θ₀})² ∂P_{θ₀}`.
+This file ships the single-direction ($k = 1$) special case, expressed against
+the $\mathbb{R}$-target `AsymptoticallyLinearAt`. The conclusion is the pointwise
+weak-convergence statement: for every $f \in \mathcal{F}$, the rescaled
+"empirical minus estimated" functional
+$\sqrt{n}\,\big(\mathbb{P}_n f - P_{\hat\theta_n} f\big)$ converges in distribution
+under the sample-space measure $\mu$ to the centered normal law $N(0, \sigma_f^2)$
+with variance
+$\sigma_f^2 := \int \big(f - P_{\theta_0}f - \dot P_{\theta_0} f \cdot \psi_{\theta_0}\big)^2\,dP_{\theta_0}$.
 
-Headline declarations: `Theorem19_23Hyp` (bundled hypotheses) and
-`empiricalProcess_param_estimation`.
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.4 (Random Functions), Theorem 19.23,
+Eq (19.22).
+
+**Proof formalization notes.**
+The full $k$-dimensional theorem of vdV takes $\theta \in \mathbb{R}^k$; this Lean
+version restricts to $k = 1$ (an $\mathbb{R}$-valued parameter) so as to use the
+$\mathbb{R}$-target `AsymptoticallyLinearAt`. The bundled hypotheses are collected
+in `Theorem19_23Hyp` (Donsker, asymptotic linearity, ε–δ Fréchet differentiability
+of $\theta \mapsto P_\theta$ in the $\ell^\infty(\mathcal{F})$ norm) and the headline
+result is `empiricalProcess_param_estimation`. The proof follows the textbook
+4-step argument specialised to $k = 1$:
+
+1. **Master decomposition (Eq 19.22).** Combine the ε–δ Fréchet bound at $\theta_0$
+   with the asymptotic-linearity expansion of $\hat\theta_n - \theta_0$ to obtain
+   $\sqrt{n}\,(\mathbb{P}_n f - P_{\hat\theta_n} f)
+     = n^{-1/2}\sum_i \big[f(X_i) - P_{\theta_0}f - \dot P_{\theta_0} f\cdot\psi_{\theta_0}(X_i)\big] + o_P(1)$.
+2. **Real CLT.** Apply Mathlib's i.i.d. 1D CLT
+   (`ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub`) to the centered
+   summand $g(X_i) := f(X_i) - P_{\theta_0}f - \dot P_{\theta_0} f\cdot\psi_{\theta_0}(X_i)$;
+   mean zero follows from $\psi_{\theta_0}$ being centered and $f - P_{\theta_0}f$
+   being the standard centering, and the variance is $\sigma_f^2$ by definition.
+3. **Slutsky.** Absorb the $o_P(1)$ residual via
+   `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub`.
+4. **Variance finiteness.** From the Donsker marginal CLT, $f \in L^2(P_{\theta_0})$;
+   together with $\psi_{\theta_0} \in L^2(P_{\theta_0})$ this gives
+   $\sigma_f^2 < \infty$, so the limit Gaussian is well-defined.
+
+**Bibliographic comments.**
+Theorem 19.23 is textbook synthesis (folklore) rather than the statement of a single
+seminal paper: van der Vaart derives it directly from the master approximation
+(19.22) by combining the continuous-mapping theorem with the asymptotic linearity of
+$\hat\theta_n$, leaning on the abstract Donsker machinery for empirical processes
+indexed by parametric classes. The underlying tools — uniform central limit theorems
+for empirical processes and the delta method for asymptotically linear estimators —
+trace back to the empirical-process theory developed by R. M. Dudley, E. Giné and
+J. Zinn, and others; vdV §19.4 (Random Functions) assembles them into this estimated-
+parameter limit law without attributing it to one origin.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

@@ -4,20 +4,60 @@ import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.IdentDistrib
 
 /-!
-# Glivenko–Cantelli classes and Theorem 19.4
+# Glivenko–Cantelli classes via finite $L_1$-bracketing (Theorem 19.4)
 
-Defines `IsPGlivenkoCantelli F P`: a class `F` of measurable functions
-is *P-Glivenko–Cantelli* if, for any iid sample from `P`, the supremum
-deviation `‖P_n − P‖_F = sup_{f ∈ F} |P_n f − P f|` converges to `0`
-almost surely.
+A class $\mathcal F$ of measurable functions is **$P$-Glivenko–Cantelli** if, for
+any i.i.d. sample $X_1, X_2, \dots$ drawn from $P$, the empirical-process
+supremum deviation
+$$\|\mathbb P_n - P\|_{\mathcal F} \;=\; \sup_{f \in \mathcal F}
+  \Bigl| \tfrac1n \sum_{i=1}^n f(X_i) - \int f \, dP \Bigr|$$
+converges to $0$ almost surely as $n \to \infty$.
 
-The headline result `isPGlivenkoCantelli_of_finite_bracketing_L1`
-(vdV §19.2 Theorem 19.4): if `F` admits a finite ε-bracketing cover in
-`L_1(P)` for every `ε > 0`, then `F` is `P`-Glivenko–Cantelli. The proof
-generalises vdV §19.1's proof of Theorem 19.1: a per-`ε` step
-(`gc_eventual_bound_per_eps`) uses the strong law of large numbers on
-each bracket endpoint and the bracket sandwich to bound the supremum
-deviation by `2ε`, followed by a double-limit chase over `ε = 1/(k+1)`.
+The headline result is: *every class $\mathcal F$ of measurable functions whose
+$L_1(P)$ bracketing numbers are finite — that is, $N_{[\,]}(\varepsilon,
+\mathcal F, L_1(P)) < \infty$ for every $\varepsilon > 0$ — is
+$P$-Glivenko–Cantelli.* Here a finite $\varepsilon$-bracketing cover means a
+finite collection of brackets $[l_i, u_i]$ with $\int (u_i - l_i)\, dP <
+\varepsilon$ that together contain every $f \in \mathcal F$ (each $f$ satisfies
+$l_i \le f \le u_i$ pointwise for some $i$).
+
+**Added/changed hypotheses (Lean vs. book).** The Lean statement carries the
+integrability side-condition $f \in L_1(P)$ for every $f \in \mathcal F$
+(`h_F_int`); this is the only $\mathcal F$-side requirement, since
+measurability of each $f$ follows from integrability, and the only places
+$\mathcal F$-side data enters the proof are the pointwise sandwich and the
+comparison of integrals. The Glivenko–Cantelli predicate is stated
+construction-agnostically: it is universally quantified over the sample
+probability space and the i.i.d. sequence rather than committed to a single
+canonical construction of the sample.
+
+**Reference.** A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in
+Statistical and Probabilistic Mathematics, Cambridge University Press, 1998,
+Chapter 19 (Empirical Processes), §19.2 (Glivenko–Cantelli Theorems),
+Theorem 19.4.
+
+**Proof formalization notes.** The proof generalises van der Vaart's §19.1
+argument for the classical Theorem 19.1; van der Vaart omits the proof of
+Theorem 19.4, calling it a "straightforward generalization" of Theorem 19.1.
+A per-$\varepsilon$ step (`gc_eventual_bound_per_eps`) applies the strong law of
+large numbers to each bracket endpoint $l_i, u_i$ and uses the bracket sandwich
+$l_i \le f \le u_i$ to bound the supremum deviation by $2\varepsilon$ eventually,
+almost surely. The full result then follows by a double-limit chase: take the
+countable intersection of the full-measure sets obtained for
+$\varepsilon = 1/(k+1)$, $k \in \mathbb N$, and let $k \to \infty$.
+
+**Bibliographic comments.** The classical Glivenko–Cantelli theorem — uniform
+a.s. convergence of the empirical distribution function to the true
+distribution function — originates in two companion 1933 papers in the same
+journal volume: V. Glivenko, "Sulla determinazione empirica delle leggi di
+probabilità," *Giornale dell'Istituto Italiano degli Attuari* 4 (1933), 92–99
+(the continuous case), and F. P. Cantelli, "Sulla determinazione empirica delle
+leggi di probabilità," *Giornale dell'Istituto Italiano degli Attuari* 4 (1933),
+421–424 (the general case). The abstract bracketing-entropy formulation
+generalised here (van der Vaart's Theorem 19.4) is part of the modern theory of
+empirical processes and is not attributable to a single seminal paper; it is
+folklore in that literature, presented systematically in A. W. van der Vaart and
+J. A. Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess
