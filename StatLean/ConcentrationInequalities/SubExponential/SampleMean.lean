@@ -17,8 +17,9 @@ This is the classical Bernstein-type two-regime concentration bound for averages
 sub-exponential variables: Gaussian-like decay for small deviations and exponential
 decay for large deviations.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 5
-(Sub-Exponential Random Variables), §5.2.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 5 (Sub-exponential Random Variables), §5.2,
+Theorem 5.2 (Sub-exponential Tail Probability).
 
 **Proof formalization notes.** Chernoff route (book §5.2): decompose
 $\bar X_n - \mu_0 = \sum_i \tfrac1n (X_i - \mu_0)$. By `iIndepFun.mgf_sum` the

@@ -25,8 +25,9 @@ minimizer; the $O(1/t)$ rate is the meaningful regime. The book's curvature
 constant is here specialized to $L D$ (smoothness constant times squared
 diameter), the standard upper bound for the affine-invariant curvature.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 13
-(Gradient Descent), §13.2 (Frank-Wolfe Algorithm), Theorem 13.2 (`thm:fw-rate`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 13 (Gradient Descent), §13.2, Theorem 13.2
+(Convergence Rate of Frank-Wolfe Algorithm).
 
 **Proof formalization notes.**
 The argument: smoothness + the LMO + convexity give the one-step recursion
@@ -60,7 +61,8 @@ open scoped InnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- **Frank–Wolfe one-step recursion** (step in Lu-BDA Thm 13.2). With
+/-- **Frank–Wolfe one-step recursion** (step in Lu-BDA Theorem 13.2,
+Convergence Rate of Frank-Wolfe Algorithm). With
 `η_t := 2 / ((t : ℝ) + 2)`, under convexity + L-smoothness + the
 linear-minimization oracle + the per-step diameter bound `‖y_t - x_t‖² ≤ D`,
 the optimality gap `Δ_t := f(x_t) - f(x*)` obeys
@@ -125,7 +127,7 @@ lemma frankWolfe_step
   -- Combine: `f(x(t+1)) ≤ f(x t) + η(f xstar - f(x t)) + (L/2) η² D` and rearrange.
   nlinarith [hsm, hη_step, hdiam_step]
 
-/-- Lu-BDA Thm 13.2 (Frank–Wolfe convergence rate). Convex `L`-smooth `f`,
+/-- Lu-BDA Theorem 13.2 (Convergence Rate of Frank-Wolfe Algorithm). Convex `L`-smooth `f`,
 convex feasible set `X` with squared diameter `≤ D`, linear-minimization oracle
 `hlmo`, step `η_t = 2/(t+2)`: `f(x_t) - f(x*) ≤ 2 L D / (t+2)`.
 

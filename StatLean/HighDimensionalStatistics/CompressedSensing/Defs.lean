@@ -31,10 +31,13 @@ theorems consume:
   the threshold $\delta \in (0,1)$ is imposed by the consumer theorems, not by the
   definition.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapters 8–9
-(compressive sensing, restricted isometry property): sparsity and the
-basis-pursuit program are introduced in Chapter 8 (Compressive Sensing), §8.2;
-the RIP definition is in Chapter 9 (Restricted Isometry Property), §9.1.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapters 8–9 (Compressive Sensing, Restricted Isometry
+Property): the sparse linear model and $s$-sparsity are introduced in Chapter 8
+(Compressive Sensing), §8.1, Definition 8.1 (Sparse Linear Model); the basis-pursuit
+program and its perfect-recovery theorem are in §8.2, Theorem 8.1; the RIP definition
+is in Chapter 9 (Restricted Isometry Property), §9.1, Definition 9.1 (Restricted
+Isometry Property).
 
 **Proof formalization notes.** This file contains definitions only (no proofs).
 Encoding choices: $s$-sparsity is stated in the decidability-free "support
@@ -54,8 +57,8 @@ principles: exact signal reconstruction from highly incomplete frequency
 information," *IEEE Transactions on Information Theory* **52**(2):489–509, 2006.
 Basis pursuit — the $\ell^1$-minimisation program itself — is due to S. S. Chen,
 D. L. Donoho and M. A. Saunders, "Atomic decomposition by basis pursuit," *SIAM
-Journal on Scientific Computing* **20**(1):33–61, 1998. The course text presents
-these as standard compressed-sensing background rather than as original results.
+Journal on Scientific Computing* **20**(1):33–61, 1998. Lu, *Big Data Analysis*
+presents these as standard compressed-sensing background rather than as original results.
 -/
 
 open Matrix
@@ -64,21 +67,21 @@ namespace StatLean.HighDimensionalStatistics
 
 variable {n d : ℕ}
 
-/-- **`s`-sparsity** (Lu §8.2 (Compressive Sensing), `‖β‖₀ = ∑ⱼ 𝟙{βⱼ ≠ 0}`): `x` is `s`-sparse when its
+/-- **`s`-sparsity** (Lu-BDA Ch8 §8.1, Definition 8.1 (Sparse Linear Model), `‖β‖₀ = ∑ⱼ 𝟙{βⱼ ≠ 0}`): `x` is `s`-sparse when its
 support is contained in some index set of cardinality at most `s`. Stated in the
 "support fits in a set" form (decidability-free, and the form the recovery proofs
 consume) rather than via an `ℓ₀` counting function. -/
 def IsSparse (s : ℕ) (x : EuclideanSpace ℝ (Fin d)) : Prop :=
   ∃ S : Finset (Fin d), S.card ≤ s ∧ ∀ i ∉ S, x.ofLp i = 0
 
-/-- **Basis-pursuit estimator predicate** (Lu §8.2 (Compressive Sensing)): `βhat` is feasible
+/-- **Basis-pursuit estimator predicate** (Lu-BDA Ch8 §8.2, Compressive Sensing): `βhat` is feasible
 (`X βhat = Y`) and has minimal ℓ¹ norm among all feasible points. The
 optimisation is `β̂ = argmin_β ‖β‖₁  s.t.  Y = X β`. -/
 def IsBasisPursuit (X : Matrix (Fin n) (Fin d) ℝ) (Y : EuclideanSpace ℝ (Fin n))
     (βhat : EuclideanSpace ℝ (Fin d)) : Prop :=
   designMap X βhat = Y ∧ ∀ β, designMap X β = Y → l1Norm βhat ≤ l1Norm β
 
-/-- **Unique basis-pursuit solution** (Lu §8.2 (Compressive Sensing), Theorem 8.1, `thm:cone`): `βhat` is a basis-pursuit
+/-- **Unique basis-pursuit solution** (Lu-BDA Ch8 §8.2, Theorem 8.1 (perfect recovery / unique basis-pursuit solution)): `βhat` is a basis-pursuit
 minimiser, and every feasible point whose ℓ¹ norm does not exceed `‖βhat‖₁` equals
 `βhat`. This is the "`β̂ = β*` is the unique solution" conclusion of the cone theorem. -/
 def IsUniqueBasisPursuit (X : Matrix (Fin n) (Fin d) ℝ) (Y : EuclideanSpace ℝ (Fin n))
@@ -86,7 +89,7 @@ def IsUniqueBasisPursuit (X : Matrix (Fin n) (Fin d) ℝ) (Y : EuclideanSpace �
   IsBasisPursuit X Y βhat ∧
     ∀ β, designMap X β = Y → l1Norm β ≤ l1Norm βhat → β = βhat
 
-/-- **Restricted isometry property** (Lu §9.1 (Restricted Isometry Property)): `X`
+/-- **Restricted isometry property** (Lu-BDA Ch9 §9.1, Definition 9.1 (Restricted Isometry Property)): `X`
 satisfies the `s`-RIP with constant `δ ∈ (0,1)` when, for every `s`-sparse `β`,
 `(1 − δ)‖β‖₂² ≤ ‖X β‖₂² ≤ (1 + δ)‖β‖₂²`. The constant `δ` (the restricted isometry
 constant `δ_s`) is left as a free parameter; the threshold `δ ∈ (0,1)` is imposed by

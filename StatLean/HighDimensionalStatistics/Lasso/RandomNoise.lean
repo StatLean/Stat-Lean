@@ -32,12 +32,12 @@ $O_P(\sqrt{s \log d / n})$ rate order. A nondegeneracy hypothesis $\sigma^2 > 0$
 added (when $\sigma^2 = 0$ the noise is almost surely zero and the bound holds trivially via
 a separate path).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 10 (Statistical
-Properties of Lasso), §10.2 (Statistical Rate of Lasso), Corollary 10.1 (`cor:lasso-rate`).
-The deterministic core is the restricted-eigenvalue oracle inequality Theorem 10.1 (`thm:re`)
-of the same chapter.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 10 (Statistical Properties of Lasso), §10.2
+(Statistical Rate of Lasso), Corollary 10.1. The deterministic core is the
+restricted-eigenvalue oracle inequality Theorem 10.1 (Rate of Lasso) of the same chapter.
 
-**Proof formalization notes.** The deterministic `lasso_l2_rate` (`thm:re`) reduces the
+**Proof formalization notes.** The deterministic `lasso_l2_rate` (Theorem 10.1) reduces the
 probabilistic content to showing the tuning event
 $\lambda \ge \tfrac{2}{n}\lVert X^\top\varepsilon \rVert_\infty$ holds with probability at
 least $1 - \delta$. For each column $j$, the inner product $\sum_i X_{ij}\varepsilon_i$ is
@@ -93,13 +93,13 @@ private lemma colInner_isSubGaussian
     (ε : Fin n → Ω → ℝ)
     (σ2 : ℝ≥0)
     (μ : Measure Ω)
-    -- USER-INPUT: each εᵢ is sub-Gaussian with variance proxy σ²; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is sub-Gaussian with variance proxy σ²; Lu-BDA §10.2, Corollary 10.1
     (hε_sg : ∀ i : Fin n, IsSubGaussian (ε i) σ2 μ)
-    -- USER-INPUT: ε₀,…,εₙ₋₁ are jointly independent; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: ε₀,…,εₙ₋₁ are jointly independent; Lu-BDA §10.2, Corollary 10.1
     (hε_indep : iIndepFun ε μ)
-    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2, Corollary 10.1
     (hε_zero : ∀ i : Fin n, ∫ ω, ε i ω ∂μ = 0)
-    -- USER-INPUT: column norms normalised, ∑ᵢ Xᵢⱼ² ≤ n; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: column norms normalised, ∑ᵢ Xᵢⱼ² ≤ n; Lu-BDA §10.2, Corollary 10.1
     (hcolnorm : ∀ j : Fin d, ∑ i : Fin n, X i j ^ 2 ≤ n)
     (j : Fin d) :
     IsSubGaussian (fun ω => ∑ i : Fin n, X i j * ε i ω) (n * σ2 : ℝ≥0) μ := by
@@ -226,11 +226,11 @@ private lemma linfNorm_noise_tail
               ← ENNReal.ofReal_mul (by positivity)]
           congr 1; push_cast; ring
 
-/-! ## Main theorem: cor:lasso-rate -/
+/-! ## Main theorem: Lasso rate under sub-Gaussian noise (Corollary 10.1) -/
 
-/-- **Lasso rate under sub-Gaussian noise** (Lu, *Big Data Analysis* Chapter 10
-(Statistical Properties of Lasso), §10.2 (Statistical Rate of Lasso), Corollary 10.1,
-`cor:lasso-rate`).
+/-- **Lasso rate under sub-Gaussian noise** (Lu, *Big Data Analysis*, Springer Nature
+Switzerland, 2025, Chapter 10 (Statistical Properties of Lasso), §10.2 (Statistical Rate
+of Lasso), Corollary 10.1).
 
 Given:
 - Fixed design `X ∈ ℝ^{n×d}`, true parameter `β*` supported on `S` (`|S| = s`).
@@ -255,33 +255,33 @@ theorem lasso_random_rate
     (μ : Measure Ω)
     (lam κ δ : ℝ)
     (βhat : Ω → EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: n > 0; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: n > 0; Lu-BDA §10.2, Corollary 10.1
     (hn : 0 < n)
-    -- USER-INPUT: κ > 0; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: κ > 0; Lu-BDA §10.2, Corollary 10.1
     (hkappa : 0 < κ)
-    -- USER-INPUT: λ > 0; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: λ > 0; Lu-BDA §10.2, Corollary 10.1
     (hlam_pos : 0 < lam)
-    -- USER-INPUT: d ≥ 1 (needed for log(2d/δ) > 0); Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: d ≥ 1 (needed for log(2d/δ) > 0); Lu-BDA §10.2, Corollary 10.1
     (hd : 0 < d)
-    -- USER-INPUT: δ ∈ (0,1); Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: δ ∈ (0,1); Lu-BDA §10.2, Corollary 10.1
     (hδ_pos : 0 < δ)
     (hδ_lt : δ < 1)
-    -- USER-INPUT: restricted eigenvalue RE(κ,3); Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: restricted eigenvalue RE(κ,3); Lu-BDA §10.1, Definition 10.1
     (hre : RestrictedEigenvalue X S κ 3)
-    -- USER-INPUT: β* supported on S; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: β* supported on S; Lu-BDA §10.2, Corollary 10.1
     (hS : ∀ j ∉ S, βstar.ofLp j = 0)
-    -- USER-INPUT: εᵢ are jointly independent; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: εᵢ are jointly independent; Lu-BDA §10.2, Corollary 10.1
     (hε_indep : iIndepFun ε μ)
-    -- USER-INPUT: each εᵢ is sub-Gaussian with proxy σ²; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is sub-Gaussian with proxy σ²; Lu-BDA §10.2, Corollary 10.1
     (hε_sg : ∀ i : Fin n, IsSubGaussian (ε i) σ2 μ)
-    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: each εᵢ is centered, E[εᵢ] = 0; Lu-BDA §10.2, Corollary 10.1
     (hε_zero : ∀ i : Fin n, ∫ ω, ε i ω ∂μ = 0)
-    -- USER-INPUT: column norms normalised, (1/n)‖X_j‖² ≤ 1; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: column norms normalised, (1/n)‖X_j‖² ≤ 1; Lu-BDA §10.2, Corollary 10.1
     (hcolnorm : ∀ j : Fin d, ∑ i : Fin n, X i j ^ 2 ≤ n)
-    -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: β̂ ω minimises the Lasso objective for response Y ω; Lu-BDA §10.2, Corollary 10.1
     (hLasso : ∀ ω, IsLassoEstimator X
         (designMap X βstar + WithLp.toLp (p := 2) (fun i => ε i ω)) lam (βhat ω))
-    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2 (cor:lasso-rate)
+    -- USER-INPUT: λ ≥ 2√(2σ² log(2d/δ)/n) — the provable tuning constant; Lu-BDA §10.2, Corollary 10.1
     -- Note: book states λ = σ√(log(2d/δ)/(2n)); the provable constant is ~4× larger.
     (hlam_ge : lam ≥ 2 * Real.sqrt (2 * (σ2 : ℝ) * Real.log (2 * d / δ) / n))
     -- LEAN-ONLY: 0 < σ2; when σ2 = 0 the noise is a.s. 0 and the result holds trivially

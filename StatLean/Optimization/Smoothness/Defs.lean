@@ -12,9 +12,9 @@ $\nabla f$ being $L$-Lipschitz; here we take the quadratic upper bound itself as
 the definition, since that is exactly the inequality consumed by the descent
 analyses (gradient descent, Frank–Wolfe, proximal gradient).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 13
-(Gradient Descent), §13.1 (Gradient Descent), Definition 13.1 (`def:lsmooth`,
-"`L`-smooth"). The book states the
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 13 (Gradient Descent), §13.1 (Gradient Descent),
+Definition 13.1 (L-Smooth). The book states the
 quadratic upper bound as the primary definition and records its equivalence, for
 $C^1$ functions, with $L$-Lipschitz continuity of the gradient.
 
@@ -45,7 +45,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- `IsLSmooth f L`: the function `f : E → ℝ` is `L`-smooth, i.e. it lies below
 the quadratic model around every point,
 `f y ≤ f x + ⟪∇f x, y - x⟫ + (L/2)‖x - y‖²` for all `x y` (Lu-BDA §13.1,
-Definition 13.1, `def:lsmooth`). `gradient f x` is the Riesz gradient. -/
+Definition 13.1 (L-Smooth)). `gradient f x` is the Riesz gradient. -/
 def IsLSmooth (f : E → ℝ) (L : ℝ) : Prop :=
   ∀ x y, f y ≤ f x + ⟪gradient f x, y - x⟫_ℝ + (L / 2) * ‖x - y‖ ^ 2
 

@@ -29,8 +29,9 @@ follows since $N_0 \le N$.
 the cutoff is written $\alpha/(N-i)$ rather than the 1-indexed $\alpha/(N-i+1)$; the two describe
 the same procedure.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 19 (Multiple Hypotheses), §19.2
-(Multiple Hypotheses), §19.2.2 (Bonferroni Correction), for the Bonferroni correction.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 19 (Multiple Hypotheses), §19.2 (Multiple Hypotheses),
+§19.2.2 (Bonferroni Correction), for the Bonferroni correction.
 Lu, *Big Data Analysis* states the plain Bonferroni correction but contains *no* Holm step-down
 theorem; the Holm result is formalized from S. Holm, "A simple sequentially rejective multiple
 test procedure", *Scand. J. Statist.* **6** (1979), 65–70 (see Bibliographic comments). Hypotheses

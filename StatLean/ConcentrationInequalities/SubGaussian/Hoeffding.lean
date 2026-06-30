@@ -32,11 +32,11 @@ We additionally record the **scalar-multiple** closure rule used downstream in
 OLS / Lasso noise bounds: if $X$ is sub-Gaussian with variance proxy
 $\sigma^2$, then $c\,X$ is sub-Gaussian with proxy $c^2\sigma^2$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 4
-(Concentration Inequalities), §4.2 (Sub-Gaussian Random Variables),
-Theorem 4.7 ("Hoeffding Inequality", `thm:hoefdding`). The scalar-multiple rule
-is the elementary closure property of sub-Gaussian variables recorded in the
-same section.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities),
+§4.2 (Sub-Gaussian Random Variables), Theorem 4.7 (Hoeffding Inequality). The
+scalar-multiple rule is the elementary closure property of sub-Gaussian
+variables recorded in the same section.
 
 **Proof formalization notes.** The centered-sum form is obtained directly from
 Mathlib's `ProbabilityTheory.HasSubgaussianMGF.measure_sum_range_ge_le_of_iIndepFun`
@@ -100,7 +100,7 @@ theorem isSubGaussian_const_mul {X : Ω → ℝ} {σ2 : ℝ≥0} {μ : Measure �
   rw [heq]
   exact h'
 
-/-- **Hoeffding's inequality (centered-sum form), Lu-BDA §4.2 `thm:hoefdding`.**
+/-- **Hoeffding's inequality (centered-sum form), Lu-BDA §4.2 Theorem 4.7.**
 If `X 0, …, X (n−1)` are jointly independent and each is sub-Gaussian with
 variance proxy `σ²` under the probability measure `μ`, then for every `t > 0`,
 
@@ -122,14 +122,14 @@ theorem hoeffding {n : ℕ} {X : ℕ → Ω → ℝ} {σ2 : ℝ≥0} {μ : Measu
     --            lift independence of `X` to independence of the centered family
     --            `X i − E[X i]`.
     (hX_meas : ∀ i, Measurable (X i))
-    -- USER-INPUT: X 0, …, X (n-1) are jointly independent; Lu-BDA §4.2 thm:hoefdding.
+    -- USER-INPUT: X 0, …, X (n-1) are jointly independent; Lu-BDA §4.2 Theorem 4.7.
     (hX_indep : iIndepFun X μ)
-    -- USER-INPUT: each X i is sub-Gaussian with variance proxy σ²; Lu-BDA §4.2 thm:hoefdding.
+    -- USER-INPUT: each X i is sub-Gaussian with variance proxy σ²; Lu-BDA §4.2 Theorem 4.7.
     (hX_subG : ∀ i, i < n → IsSubGaussian (X i) σ2 μ)
     -- USER-INPUT: at least one variable in the family `X 0, …, X (n-1)`;
-    --             Lu-BDA §4.2 thm:hoefdding (implicit in "X 0, …, X (n−1)").
+    --             Lu-BDA §4.2 Theorem 4.7 (implicit in "X 0, …, X (n−1)").
     (hn : 1 ≤ n)
-    -- USER-INPUT: t > 0; Lu-BDA §4.2 thm:hoefdding.
+    -- USER-INPUT: t > 0; Lu-BDA §4.2 Theorem 4.7.
     {t : ℝ} (ht : 0 < t) :
     μ.real {ω | (n : ℝ) * t ≤ ∑ i ∈ Finset.range n, (X i ω - ∫ x, X i x ∂μ)}
       ≤ Real.exp (-(n : ℝ) * t ^ 2 / (2 * (σ2 : ℝ))) := by

@@ -27,8 +27,9 @@ constant $N_0/N \cdot \alpha \cdot H_N$ is the book constant with no deviation.
 
 **Reference.** E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University,
 2023, Lecture 5 §5.5 and Lecture 6 §6.6, Theorem 3 (Benjamini–Yekutieli bound under arbitrary
-dependence); cross-referenced with Junwei Lu, *Big Data Analysis*, Chapter 21 (Knock-Off),
-§21.1 (False Discovery Rate: Dependent P-values).
+dependence); cross-referenced with Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.1 (False Discovery Rate: Dependent
+P-Values).
 
 **Proof formalization notes.** *(Benjamini–Yekutieli layer-cake.)* Write
 $\mathrm{FDP} = \sum_{i\in H_0} \psi_i/(R\vee 1)$, where $\psi_i$ indicates that null $i$ is rejected

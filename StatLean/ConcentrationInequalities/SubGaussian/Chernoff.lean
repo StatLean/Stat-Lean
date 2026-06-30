@@ -33,9 +33,10 @@ the real-valued supremum defining $\psi^*$ agrees with the textbook sup;
 otherwise it falls back on the junk value $0$, making $e^{-\psi^*} = 1$ and the
 bound vacuous).
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 4 (Concentration
-Inequalities), §4.2 (Sub-Gaussian Random Variables): Markov's inequality and
-Theorem 4.4 (the "Chernoff bound").
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities), §4.2
+(Sub-Gaussian Random Variables): Markov's inequality and Theorem 4.4 (Chernoff
+Bound).
 
 **Proof formalization notes.**
 
@@ -118,7 +119,7 @@ textbook meaning of the sup. -/
 noncomputable def psiStar (X : Ω → ℝ) (μ : Measure Ω) (t : ℝ) : ℝ :=
   ⨆ lam : {lam : ℝ // 0 ≤ lam}, lam.val * t - psi X μ lam.val
 
-/-- **Chernoff bound** (Lu-BDA §4.2, `thm:chernoff`, Theorem 4.4): with the centered log-MGF
+/-- **Chernoff bound** (Lu-BDA §4.2, Theorem 4.4 (Chernoff Bound)): with the centered log-MGF
 `ψ(λ) = log E[exp(λ (X − E[X]))]` and its Legendre dual
 `ψ*(t) = ⨆_{λ ≥ 0} (λ t − ψ(λ))`,
 `P(X − E[X] ≥ t) ≤ exp(−ψ*(t))`.

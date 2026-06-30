@@ -21,9 +21,10 @@ The Lean statement matches the book verbatim; no extra hypotheses or altered
 constants beyond making the inner-product space a `CompleteSpace` (a real
 Hilbert space) explicit, as the book assumes throughout.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 14
-(Proximal Gradient Descent), §14.1 (Proximal Perspective), Lemma 14.1
-(`lm:pillar`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0). Chapter 14 (Proximal Gradient Descent), §14.1,
+Lemma 14.1 (the helper for Theorem 14.1, Convergence Rate of Proximal Gradient
+Descent).
 
 **Proof formalization notes.** The proof combines three ingredients:
 * $L$-smoothness of $f$ evaluated at $(y, y^{+})$:
@@ -118,7 +119,8 @@ theorem prox_variational_inequality
     rw [← inner_neg_left]; congr 1; abel
   rw [hflip]; linarith
 
-/-- Pillar inequality (Lu-BDA Lemma 14.1). For convex `L`-smooth `f` (`0 < L`),
+/-- Pillar inequality (Lu, *Big Data Analysis* (Springer, 2025), Lemma 14.1).
+For convex `L`-smooth `f` (`0 < L`),
 convex `h`, and the prox step `y⁺ = prox_{(1/L)h}(y - (1/L)∇f y)`,
 `(f y⁺ + h y⁺) - (f x + h x) ≤ (L/2)‖x - y‖² - (L/2)‖x - y⁺‖²`. -/
 theorem pillar

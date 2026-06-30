@@ -23,8 +23,8 @@ inequality) also uses convexity, so the formalization carries **both** hypothese
 text. This is the key lemma behind the monotone-distance step of the
 gradient-descent convergence rate (Lu-BDA Theorem 13.1).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 13
-(Gradient Descent), §13.1, Lemma 13.1.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 13 (Gradient Descent), §13.1, Lemma 13.1.
 
 **Proof formalization notes.** Set $z = y + \tfrac{1}{L}(\nabla f(x) - \nabla f(y))$.
 Combine the first-order convexity inequality at $(x, z)$,

@@ -23,9 +23,10 @@ $R(\omega) = |R(\omega)|$ for the total number of rejections, we define:
 These are theorem-agnostic; the Benjamini–Hochberg / Holm / knockoff theorems live in sibling
 assembly files and consume these definitions. This is a concept-layer foundation.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 19 (Multiple Hypotheses),
-§19.2 (family-wise error rate: $\mathrm{FWER}$) and Chapter 20 (False Discovery Rate), §20.2
-(false discovery proportion and false discovery rate: $\mathrm{FDP}$, $\mathrm{FDR}$).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 19 (Multiple Hypotheses), §19.2 (family-wise error rate:
+$\mathrm{FWER}$) and Chapter 20 (False Discovery Rate), §20.2 (false discovery proportion and
+false discovery rate: $\mathrm{FDP}$, $\mathrm{FDR}$).
 
 **Proof formalization notes.** This file contains only definitions, no proofs. The denominator
 $\max(R(\omega), 1)$ encodes the book's convention $V/(R \vee 1)$: when there are no rejections

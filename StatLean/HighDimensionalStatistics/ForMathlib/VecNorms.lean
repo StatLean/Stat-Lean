@@ -10,7 +10,9 @@ import Mathlib.Data.Fintype.Order
 # ℓ¹ and ℓ∞ vector norms on `EuclideanSpace ℝ (Fin d)`
 
 Theorem-agnostic bricks (`ForMathlib` layer) used by the Lasso / OLS rate
-proofs (Lu, *Big Data Analysis* ch.7 OLS / ch.10 Lasso): the ℓ¹ and ℓ∞ vector norms, the
+proofs (Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Ch7 Ordinary Least Squares / Ch10 Statistical
+Properties of Lasso): the ℓ¹ and ℓ∞ vector norms, the
 Hölder pairing `|⟨x,y⟩| ≤ ‖x‖₁ ‖y‖∞`, the support-restriction operator
 `x ↦ x|_S`, and the `√|S|`-bound `‖x|_S‖₁ ≤ √|S| · ‖x‖₂`.
 
@@ -65,7 +67,7 @@ lemma linfNorm_nonneg (x : EuclideanSpace ℝ (Fin d)) : 0 ≤ linfNorm x := by
       rw [Set.range_eq_empty_iff.mpr ‹_›, Real.sSup_empty]
     linarith
 
-/-- Hölder / ℓ¹–ℓ∞ duality (Lu-BDA ch.10, Statistical Properties of Lasso): for `x y : EuclideanSpace ℝ (Fin d)`,
+/-- Hölder / ℓ¹–ℓ∞ duality (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso): for `x y : EuclideanSpace ℝ (Fin d)`,
 `|⟪x, y⟫_ℝ| ≤ ‖x‖₁ · ‖y‖∞`. -/
 theorem abs_inner_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
     |⟪x, y⟫_ℝ| ≤ l1Norm x * linfNorm y := by
@@ -102,7 +104,7 @@ theorem abs_sum_mul_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :
   exact h
 
 /-- Support-restriction operator: zero out coordinates outside `S`.
-Used in Lasso / sparse-recovery analyses (Lu-BDA ch.10, Statistical Properties of Lasso). -/
+Used in Lasso / sparse-recovery analyses (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso). -/
 def restrict (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     EuclideanSpace ℝ (Fin d) :=
   WithLp.toLp 2 (fun i => if i ∈ S then x.ofLp i else 0)
@@ -136,7 +138,7 @@ lemma l1Norm_restrict_eq_sum (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d
   simp_rw [h1]
   exact Fintype.sum_ite_mem S _
 
-/-- √s ℓ¹–ℓ² bound on the support (Lu-BDA ch.10, Statistical Properties of Lasso):
+/-- √s ℓ¹–ℓ² bound on the support (Lu, *Big Data Analysis* (Springer, 2025), Ch10 Statistical Properties of Lasso):
 `‖x|_S‖₁ ≤ √|S| · ‖x‖₂`. Proof: Cauchy–Schwarz with the all-ones vector on `S`
 gives `(∑_{i∈S} |xᵢ|)² ≤ |S| · ∑_{i∈S} xᵢ²`; taking square roots and bounding
 `∑_{i∈S} xᵢ² ≤ ∑ᵢ xᵢ² = ‖x‖²` yields the claim. The Mathlib brick is
@@ -179,7 +181,7 @@ theorem l1Norm_restrict_le_sqrt_card_mul_norm
   rw [h_normsq]
   exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt h_sub) (Real.sqrt_nonneg _)
 
-/-! ## Additional bricks for compressed sensing (Lu-BDA ch.8 Compressive Sensing – ch.9 Restricted Isometry Property) -/
+/-! ## Additional bricks for compressed sensing (Lu, *Big Data Analysis* (Springer, 2025), Ch8 Compressive Sensing – Ch9 Restricted Isometry Property) -/
 
 /-- The ℓ² norm as the square root of the sum of squared `.ofLp` coordinates. -/
 private lemma norm_eq_sqrt_sum_ofLp (v : EuclideanSpace ℝ (Fin d)) :
@@ -244,7 +246,7 @@ theorem restrict_compl_eq_zero (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin
   · exact h i (Finset.mem_compl.mp hi)
   · rfl
 
-/-- **Support split of the ℓ¹ norm** (Lu-BDA ch.8 §8.2 Compressive Sensing, eq:cone-ineq = Eq (8.3) workhorse):
+/-- **Support split of the ℓ¹ norm** (Lu, *Big Data Analysis* (Springer, 2025), Ch8 §8.2 Compressive Sensing, Eq (8.3) workhorse):
 `‖x‖₁ = ‖x|_S‖₁ + ‖x|_{Sᶜ}‖₁`. -/
 theorem l1Norm_split (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     l1Norm x = l1Norm (restrict S x) + l1Norm (restrict Sᶜ x) := by
@@ -259,7 +261,7 @@ theorem restrict_add_restrict_compl (S : Finset (Fin d)) (x : EuclideanSpace ℝ
   simp only [WithLp.ofLp_add, Pi.add_apply, restrict_ofLp_apply, Finset.mem_compl]
   split_ifs <;> simp_all
 
-/-- **ℓ²–ℓ∞ bound on a block** (Lu-BDA ch.9 Restricted Isometry Property, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse
+/-- **ℓ²–ℓ∞ bound on a block** (Lu, *Big Data Analysis* (Springer, 2025), Ch9 Restricted Isometry Property, the `‖x‖₂ ≤ √k‖x‖∞` step for `k`-sparse
 vectors): `‖x|_S‖₂ ≤ √|S| · ‖x|_S‖∞`. -/
 theorem norm_le_sqrt_card_mul_linfNorm (S : Finset (Fin d)) (x : EuclideanSpace ℝ (Fin d)) :
     ‖restrict S x‖ ≤ Real.sqrt (S.card : ℝ) * linfNorm (restrict S x) := by

@@ -14,10 +14,10 @@ This is the foundational object of the concentration-inequalities area: Markov /
 Chernoff bounds, Gaussian-type tail bounds, Hoeffding's inequality, and the
 maximal inequalities are all derived from this single MGF condition.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 4
-(Concentration Inequalities), §4.2 (Sub-Gaussian Random Variables). The Lean
-statement matches the book's centered-MGF definition with variance proxy
-$\sigma^2$.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 4 (Concentration Inequalities), §4.2,
+Definition 4.1 (Sub-Gaussian). The Lean statement matches the book's
+centered-MGF definition with variance proxy $\sigma^2$.
 
 **Proof formalization notes.** We formalize `IsSubGaussian` as a thin bridge to
 Mathlib's `ProbabilityTheory.HasSubgaussianMGF` applied to the **centered**
@@ -53,7 +53,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 /-- `IsSubGaussian X σ2 μ`: the random variable `X` is sub-Gaussian with variance
 proxy `σ2` under the measure `μ`, i.e. its centered moment generating function
 satisfies `E[exp(λ (X − E[X]))] ≤ exp(λ² σ2 / 2)` for every `λ ∈ ℝ`
-(Lu-BDA §4.2, Sub-Gaussian Random Variables).
+(Lu-BDA §4.2, Definition 4.1 (Sub-Gaussian)).
 
 Implemented as `ProbabilityTheory.HasSubgaussianMGF` of the centered variable
 `fun ω => X ω − ∫ x, X x ∂μ`. The mean `∫ x, X x ∂μ` is the Bochner integral of

@@ -21,8 +21,9 @@ inner-product space $E$ and assumes global convexity on the whole space
 hypotheses the inequality holds for every pair of points, with no further
 regularity conditions or constant adjustments relative to the book.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 12
-(Convexity and Subgradient), §12.2 (Subgradient). The book
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 12 (Convexity and Subgradient), §12.2,
+Definition 12.3 (Subgradient). The book
 derives the inequality by taking $\gamma \to 0$ in the convexity inequality
 $f(x + \gamma(y - x)) \le (1-\gamma) f(x) + \gamma f(y)$.
 

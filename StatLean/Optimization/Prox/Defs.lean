@@ -12,9 +12,9 @@ the proximal objective $z \mapsto \tfrac{1}{2}\|z - x\|^2 + h(z)$ and the
 predicate characterizing a point $z$ as attaining this minimum (i.e. as being a
 value of $\operatorname{prox}_h(x)$).
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 14
-(Proximal Gradient Descent), §14.1 (Proximal Perspective), Definition
-"proximal operator".
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0). Chapter 14 (Proximal Gradient Descent), §14.1,
+proximal operator definition.
 
 **Proof formalization notes.** The book defines $\operatorname{prox}_h(x)$ as
 the $\arg\min$ of $\tfrac{1}{2}\|z - x\|^2 + h(z)$. Rather than construct the

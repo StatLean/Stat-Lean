@@ -32,8 +32,9 @@ holds for `N(B, ‖·‖₂, ε)`.
   `closedBall 0 1` has cardinality ≤ `(1 + 2/ε)^d`.
 * `coveringNumber_closedBall_le` — main theorem.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal Inequality),
-§6.2 (Maximal Inequality), Lemma `lm:covering-num` ("Covering number of the
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities),
+§6.2, Lemma 6.1 (Covering Number) ("Covering number of the
 ℓ₂-ball"). The book states the bound for `ε ∈ (0, 1)`; this hypothesis (`hε₁ : ε < 1`) is carried
 to match the text but is not needed in the proof — the volume packing bound holds for all `ε > 0`.
 
@@ -171,7 +172,7 @@ lemma card_le_of_isSeparated_ball {d : ℕ} [NeZero d] {ε : ℝ} (hε₀ : 0 < 
 
 /-! ### Main theorem -/
 
-/-- **Covering number of the ℓ²-unit ball** (Lu-BDA §6.2, `lm:covering-num`).
+/-- **Covering number of the ℓ²-unit ball** (Lu-BDA §6.2, Lemma 6.1 (Covering Number)).
 
 For `0 < ε < 1` and `d ≥ 1`, the covering number of the closed unit ball satisfies
 `coveringNumber (closedBall 0 1) ε ≤ ⌊(1 + 2/ε)^d⌋₊`.
@@ -182,9 +183,9 @@ Proof: covering number ≤ packing number (`Metric.coveringNumber_le_packingNumb
 Note: `hε₁ : ε < 1` matches Lu §6.2 but is not used in the proof body; the bound holds for
 all `0 < ε`. -/
 theorem coveringNumber_closedBall_le {d : ℕ} [NeZero d] {ε : ℝ}
-    -- USER-INPUT: ε > 0; Lu-BDA §6.2 (lm:covering-num)
+    -- USER-INPUT: ε > 0; Lu-BDA §6.2, Lemma 6.1 (Covering Number)
     (hε₀ : 0 < ε)
-    -- USER-INPUT: ε < 1; Lu-BDA §6.2 (lm:covering-num)
+    -- USER-INPUT: ε < 1; Lu-BDA §6.2, Lemma 6.1 (Covering Number)
     (hε₁ : ε < 1) :
     coveringNumber (Metric.closedBall (0 : EuclideanSpace ℝ (Fin d)) 1) ε ≤
     (⌊(1 + 2 / ε) ^ d⌋₊ : ℕ∞) := by

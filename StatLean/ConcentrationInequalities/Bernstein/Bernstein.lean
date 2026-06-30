@@ -18,9 +18,10 @@ hypotheses that the book's narrative carries implicitly ($\sigma^2 > 0$ and $b >
 the Chernoff parameter $\lambda = t/(\sigma^2 + b t)$ strictly inside $(0, 1/b)$); the constant
 $(\sigma^2 + b t)$ is the book's and is *not* relaxed.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal Inequality),
-§6.1 (Bernstein Inequality), Theorem 6.1 (Steps 1 & 2 of its proof). The Bernstein condition is
-the definition given just above that theorem in §6.1.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities), §6.1,
+Theorem 6.1 (Bernstein Inequality) (Steps 1 & 2 of its proof). The Bernstein condition is
+Definition 6.1 (Bernstein Condition), given just above that theorem in §6.1.
 
 **Proof formalization notes.**
 
@@ -50,8 +51,8 @@ $e^{\lambda X} - 1 - \lambda X$, `lintegral_tsum`, geometric sum) is reproduced 
 geometric-series step. The book's Step 1 uses the same Taylor-series expansion of the MGF and the
 same geometric sum $\sum_{k\ge0} |\lambda|^k b^k = 1/(1-|\lambda|b)$.
 
-*Constant.* The provable constant is the $(\sigma^2 + b t)$ form, exactly as stated by Lu §6.1.
-No deviation.
+*Constant.* The provable constant is the $(\sigma^2 + b t)$ form, exactly as stated by Lu §6.1
+(Theorem 6.1).  No deviation.
 
 **Bibliographic comments.** The inequality originates with S. N. Bernstein, "On a modification of
 Chebyshev's inequality and of the error formula of Laplace" (in Russian), *Annals of the Scientific
@@ -64,7 +65,7 @@ constant $\sigma^2$) and the sub-exponential regime (large $t$, constant $b$).  
 proved here — the two-regime tail $\exp(-nt^2/(2(\sigma^2 + bt)))$ for the sample mean — is the
 standard textbook synthesis; see e.g. Boucheron, Lugosi & Massart, *Concentration Inequalities*
 (Oxford, 2013), §2.8, and Vershynin, *High-Dimensional Probability* (Cambridge, 2018),
-Theorem 2.8.1, for the modern moment/MGF presentation that Lu §6.1 follows.
+Theorem 2.8.1, for the modern moment/MGF presentation that Lu §6.1 (Theorem 6.1) follows.
 -/
 
 open MeasureTheory ProbabilityTheory Real
@@ -79,7 +80,8 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 set_option maxHeartbeats 800000 in
 -- The closed-form proof is long (≈40 `have`s sharing one budget); raising the limit avoids a
 -- cumulative timeout. No single step is expensive.
-/-- **Sharp sub-exponential MGF bound from the Bernstein condition** (Lu-BDA §6.1, Step 1).
+/-- **Sharp sub-exponential MGF bound from the Bernstein condition** (Lu-BDA §6.1,
+Theorem 6.1 (Bernstein Inequality), Step 1).
 
 For `0 ≤ l` with `l · b < 1`, the exponential `ω ↦ exp(l · Y ω)` is integrable and
 `mgf Y μ l ≤ exp(σ² l² / (2(1 − l b)))`.
@@ -95,7 +97,7 @@ private lemma bernstein_mgf_sharp {Y : Ω → ℝ} {σ2 b : ℝ≥0} {μ : Measu
     [IsProbabilityMeasure μ]
     -- USER-INPUT: `Y` measurable (random variable); Lu-BDA §6.1.
     (hY : Measurable Y)
-    -- USER-INPUT: Bernstein condition for `Y`; Lu-BDA §6.1.
+    -- USER-INPUT: Bernstein condition for `Y`; Lu-BDA §6.1, Definition 6.1 (Bernstein Condition).
     (hB : HasBernsteinCondition Y σ2 b μ)
     -- LEAN-ONLY: `0 ≤ l` (right-tail Chernoff only needs nonnegative `l`); Lu-BDA §6.1 MGF range.
     {l : ℝ} (hl0 : 0 ≤ l)
@@ -317,7 +319,7 @@ private lemma bernstein_mgf_sharp {Y : Ω → ℝ} {σ2 b : ℝ≥0} {μ : Measu
 
 /-! ### Main theorem -/
 
-/-- **Bernstein's inequality for the sample mean** (Lu-BDA §6.1, "Bernstein Inequality").
+/-- **Bernstein's inequality for the sample mean** (Lu-BDA §6.1, Theorem 6.1 (Bernstein Inequality)).
 
 If `X 0, …, X (n−1)` are jointly independent, each measurable, each satisfying the Bernstein
 condition with variance `σ² > 0` and scale `b > 0` under the probability measure `μ`, then for
@@ -341,7 +343,7 @@ theorem bernstein_inequality {n : ℕ} {X : Fin n → Ω → ℝ} {σ2 b : ℝ�
     -- USER-INPUT: `X 0, …, X (n-1)` jointly independent; Lu-BDA §6.1.
     (hX_indep : iIndepFun X μ)
     -- USER-INPUT: each `Xᵢ` satisfies the Bernstein condition (E Xᵢ=0, Var Xᵢ=σ², moment bound);
-    --             Lu-BDA §6.1.
+    --             Lu-BDA §6.1, Definition 6.1 (Bernstein Condition).
     (hB : ∀ i, HasBernsteinCondition (X i) σ2 b μ)
     -- USER-INPUT: positive sample size `n ≥ 1`; Lu-BDA §6.1.
     (hn : 0 < n)

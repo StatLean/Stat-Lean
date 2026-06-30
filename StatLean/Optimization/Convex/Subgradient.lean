@@ -12,9 +12,10 @@ $$ f(y) \ \ge\ f(x) + \langle g,\, y - x\rangle \qquad \text{for all } y \in E. 
 Equivalently, the gradient witnesses the supporting-hyperplane inequality that
 defines a subgradient.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 12
-(Convexity and Subgradient), §12.2 (Subgradient) ("When $f$ is
-differentiable and convex, $\nabla f(x) \in \partial f(x)$").
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland,
+2025 (ISBN 978-3-032-03160-0), Chapter 12 (Convexity and Subgradient), §12.2,
+Definition 12.3 (Subgradient) ("When $f$ is differentiable and convex,
+$\nabla f(x) \in \partial f(x)$").
 
 **Proof formalization notes.** Immediate from the first-order convexity
 inequality: for convex differentiable $f$ one has
@@ -41,7 +42,7 @@ open scoped InnerProductSpace Gradient
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
 /-- For convex differentiable `f`, the gradient is a subgradient:
-`∇f x ∈ ∂f x` (Lu-BDA §12.2). -/
+`∇f x ∈ ∂f x` (Lu-BDA §12.2, Definition 12.3). -/
 theorem gradient_mem_subdifferential
     {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f) (x : E) :
     gradient f x ∈ subdifferential f x := by

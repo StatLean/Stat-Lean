@@ -20,9 +20,9 @@ this implicit (the MGF is assumed to exist on the range). The degenerate paramet
 $\alpha = 0$ collapses the range to $\lambda = 0$ (since $1/0 = 0$ in $\mathbb{R}$),
 where the bound reads $\mathrm{mgf}(\cdot)(0) \le 1$.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 5
-(Sub-Exponential Random Variables), §5.2 ("Sub-Exponential Random Variables"),
-definition of a sub-exponential random variable.
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 5 (Sub-exponential Random Variables), §5.2,
+Definition 5.1 (Sub-exponential).
 
 **Proof formalization notes.** Mathlib has no predicate for the restricted-range
 MGF bound, so we build it here as a structure over the **centered** variable
@@ -30,9 +30,9 @@ $X - \mathbb{E}[X]$, mirroring the shape of
 `ProbabilityTheory.HasSubgaussianMGF` (an MGF-bound field plus an integrability
 field). The mean is the Bochner integral `∫ x, X x ∂μ` (Mathlib junk value `0`
 for non-integrable `X`). This is a concept-layer foundation: the sub-exponential
-tail bound (`thm:sub-exp`), the sample-mean concentration, and the Bernstein
-machinery (Chapter 6, Maximal Inequality, §6.1 Bernstein Inequality) all consume
-`IsSubExponential`.
+tail bound (Theorem 5.2), the sample-mean concentration, and the Bernstein
+machinery (Chapter 6, Bernstein and Maximal Inequalities, §6.1, Theorem 6.1
+(Bernstein Inequality)) all consume `IsSubExponential`.
 
 **Bibliographic comments.** The sub-exponential class via a restricted-range MGF
 (equivalently, sub-exponential characterized by Orlicz $\psi_1$-norm,
@@ -59,7 +59,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 /-- `IsSubExponential X α μ`: the random variable `X` is sub-exponential with
 parameter `α` under `μ`, i.e. its centered moment generating function satisfies
 `E[exp(λ (X − E[X]))] ≤ exp(λ² α² / 2)` for every `λ` with `|λ| ≤ 1/α`
-(Lu-BDA §5.2, "Sub-Exponential Random Variables").
+(Lu-BDA §5.2, Definition 5.1 (Sub-exponential)).
 
 The centered variable is `fun ω => X ω − ∫ x, X x ∂μ`; the mean is the Bochner
 integral (Mathlib junk value `0` for non-integrable `X`). For the degenerate
@@ -67,7 +67,7 @@ integral (Mathlib junk value `0` for non-integrable `X`). For the degenerate
 `mgf … 0 ≤ 1`. -/
 structure IsSubExponential (X : Ω → ℝ) (α : ℝ≥0) (μ : Measure Ω := by volume_tac) :
     Prop where
-  /-- Constitutive (Lu-BDA §5.2, Sub-Exponential Random Variables): on the restricted range
+  /-- Constitutive (Lu-BDA §5.2, Definition 5.1 (Sub-exponential)): on the restricted range
   `|λ| ≤ 1/α`, the centered MGF obeys the sub-Gaussian-type bound
   `mgf (X − E X) λ ≤ exp(λ² α² / 2)`. Removing this makes the object not the
   book's sub-exponential variable. -/
@@ -81,7 +81,7 @@ structure IsSubExponential (X : Ω → ℝ) (α : ℝ≥0) (μ : Measure Ω := b
     Integrable (fun ω => Real.exp (l * (X ω - ∫ x, X x ∂μ))) μ
 
 /-- The centered MGF bound carried by `IsSubExponential`, extracted for the
-range `0 ≤ l ≤ 1/α` used by the one-sided Chernoff tail (`thm:sub-exp`). -/
+range `0 ≤ l ≤ 1/α` used by the one-sided Chernoff tail (Theorem 5.2). -/
 theorem IsSubExponential.mgf_le_of_mem_Icc {X : Ω → ℝ} {α : ℝ≥0} {μ : Measure Ω}
     (hX : IsSubExponential X α μ) {l : ℝ} (hl₀ : 0 ≤ l) (hl₁ : l ≤ 1 / (α : ℝ)) :
     mgf (fun ω => X ω - ∫ x, X x ∂μ) μ l ≤ Real.exp (l ^ 2 * (α : ℝ) ^ 2 / 2) :=

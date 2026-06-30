@@ -20,8 +20,9 @@ This is the exact-identity companion to the super-uniform inequality $\mathrm{FD
 formalized in `BenjaminiHochberg.lean`. We require $0 < \alpha \le 1$ and $N \ge 1$; the upper bound
 $\alpha \le 1$ ensures every threshold $k\alpha/N \in [0,1]$ so that exact uniformity applies.
 
-**Reference.** Junwei Lu, *Big Data Analysis*, Chapter 20 (False Discovery Rate), §20.2 (False
-Discovery Rate: Independent P-values), Theorem 20.1; and
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 20 (False Discovery Rate), §20.2 (False Discovery Rate:
+Independent P-Values), Theorem 20.1; and
 E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University, 2023,
 Lecture 7, §7.2, Theorem 2 (BH attains $\mathrm{FDR} = (N_0/N)\,q$ under independent exactly-uniform
 nulls, with the level written $q = \alpha$).

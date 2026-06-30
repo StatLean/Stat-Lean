@@ -29,8 +29,9 @@ indexed by the increasing magnitudes of all $d$ coordinates, as a forward superm
 respect to a "count filtration" and applying optional stopping at the bounded stopping time
 $t^{\*}$. The constant on the right is exactly $1$ as in the book; no constants are weakened.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 21 (Knock-Off), §21.3
-(Knock-Off), Theorem 21.2 (false discovery rate control via knock-offs). Dual reference: E. J. Candès, *STAT 300C: Theory of
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off) — false
+discovery rate control via knock-offs. Dual reference: E. J. Candès, *STAT 300C: Theory of
 Statistics*, Lecture Notes, Stanford University, 2023, Lecture 11, §11.5 (the sequential
 supermartingale argument for FDR control of the knock-off filter).
 
@@ -319,7 +320,7 @@ Lu-BDA §21.3): all magnitudes `|W|`, the non-null signs (`0` padded on nulls), 
 split-counts `(V₊(θ_n), V₋(θ_n))`. Its natural filtration `𝒢rev` exposes `Yproc n` and `FDPhat(θ_n)`
 (both functions of these) while keeping the individual null-sign *assignment* above `θ_n` hidden —
 the exchangeability that makes `Yproc` a supermartingale. See `notes/.../construction_audit.md`.
-- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA §21.3 (Def. `kos` cond. 3). -/
+- **USER-INPUT**: `W`, `H₀` determine the revealed data; Lu-BDA §21.3 (Definition 21.1 (Knock-Off Score), condition 3). -/
 noncomputable def cproc (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (n : ℕ) (ω : Ω) :
     (Fin d → ℝ) × (Fin d → ℝ) × ℝ × ℝ :=
   (fun j => |W j ω|,
@@ -704,7 +705,7 @@ private lemma aesm'_cIdx_indicator (W : Fin d → Ω → ℝ) (H₀ : Finset (Fi
 /-- **Null coordinates are a.s. nonzero.** Derived from the constitutive knock-off fields: the sign
 `sgnReal W j` is independent of the magnitude `|W j|` (`signs_indep_outer`) and fair
 (`signs_fair`), so `μ{W j = 0} = μ{0 ≤ W j} · μ{W j = 0} = ½ · μ{W j = 0}`, forcing `μ{W j = 0} = 0`.
-- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §21.3 (consequence of Def. `kos` cond. 3). -/
+- **USER-INPUT**: nulls have no atom at `0`; Lu-BDA §21.3 (consequence of Definition 21.1 (Knock-Off Score), condition 3). -/
 private lemma null_ne_zero (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d))
     (μ : Measure Ω) [IsProbabilityMeasure μ] (hW : KnockoffScore W H₀ μ)
     (j : Fin d) (hj : j ∈ H₀) : ∀ᵐ ω ∂μ, W j ω ≠ 0 := by

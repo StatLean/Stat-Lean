@@ -10,8 +10,10 @@ global) minimizer of a differentiable function, the gradient vanishes.
 
 This bridges Mathlib's Fermat-type `IsLocalMin.fderiv_eq_zero` to the
 Riesz-representation `gradient`, giving the `∇f(x*) = 0` fact used in the
-unconstrained gradient-descent analysis (Lu, *Big Data Analysis* Ch. 13
-(Gradient Descent), §13.1 (Gradient Descent)).
+unconstrained gradient-descent analysis (Junwei Lu, *Big Data Analysis*,
+Springer Nature Switzerland, 2025 (ISBN 978-3-032-03160-0), Ch. 13
+(Gradient Descent), §13.1; the gradient-vanishing brick behind
+Theorem 13.1 (Convergence of Gradient Descent)).
 -/
 
 namespace StatLean.Optimization

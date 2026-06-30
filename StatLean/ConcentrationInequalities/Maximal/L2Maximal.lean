@@ -30,9 +30,9 @@ Lean-side regularity input that is in fact implied by sub-Gaussianity in finite
 dimension. The conclusion's constants ($4\sigma\sqrt{d}$ and the additive
 $2\sigma\sqrt{2\log(1/\delta)}$) match the book exactly.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal
-Inequality), §6.2 (Maximal Inequality), Theorem 6.3 "Maximal inequality for
-$\ell_2$-norm" (`thm:l2`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 6 (Bernstein and Maximal Inequalities), §6.2,
+Theorem 6.3 (Maximal Inequality for ℓ²-Norm).
 
 **Proof formalization notes.** Discretization trick (Lu §6.2). Take a $1/2$-net $N$ of
 the unit ball $\mathcal{B}_2^d = $ `closedBall 0 1`, with cardinality $|N| \le 5^d$
@@ -201,7 +201,7 @@ private noncomputable def buildL2Net (d : ℕ) [NeZero d]
 
 /-! ### Main theorems -/
 
-/-- **ℓ²-Norm Maximal Inequality — expectation bound** (Lu-BDA §6.2, `thm:l2`).
+/-- **ℓ²-Norm Maximal Inequality — expectation bound** (Lu-BDA §6.2, Theorem 6.3).
 
 For a centered sub-Gaussian random vector `X : Ω → EuclideanSpace ℝ (Fin d)` with
 variance proxy `σ²‖u‖₊²` for every direction `u`, under a probability measure `μ`:
@@ -219,9 +219,9 @@ theorem l2_max_expectation
     {d : ℕ} [NeZero d]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 (thm:l2)
+    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 Theorem 6.3
     (hcenter : ∫ ω, X ω ∂μ = 0)
-    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 (thm:l2)
+    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 Theorem 6.3
     (hX : ∀ u : EuclideanSpace ℝ (Fin d),
         IsSubGaussian (fun ω => inner ℝ u (X ω)) (σ2 * ‖u‖₊ ^ 2) μ)
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
@@ -412,7 +412,7 @@ private lemma l2_tail_numerical
             _ = Real.exp (2 * (d : ℝ) + -(2 * (d : ℝ))) * δ := by rw [← Real.exp_add]
             _ = δ := by simp
 
-/-- **ℓ²-Norm Maximal Inequality — high-probability tail bound** (Lu-BDA §6.2, `thm:l2`).
+/-- **ℓ²-Norm Maximal Inequality — high-probability tail bound** (Lu-BDA §6.2, Theorem 6.3).
 
 For a centered sub-Gaussian random vector `X : Ω → EuclideanSpace ℝ (Fin d)` with
 variance proxy `σ²‖u‖₊²` for every direction `u`, and any `δ > 0`:
@@ -428,14 +428,14 @@ theorem l2_max_tail
     {d : ℕ} [NeZero d]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {σ2 : ℝ≥0}
     {X : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 (thm:l2)
+    -- USER-INPUT: E[X] = 0; Lu-BDA §6.2 Theorem 6.3
     (hcenter : ∫ ω, X ω ∂μ = 0)
-    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 (thm:l2)
+    -- USER-INPUT: ⟨u, X⟩ sub-Gaussian with proxy σ²‖u‖₊²; Lu-BDA §6.2 Theorem 6.3
     (hX : ∀ u : EuclideanSpace ℝ (Fin d),
         IsSubGaussian (fun ω => inner ℝ u (X ω)) (σ2 * ‖u‖₊ ^ 2) μ)
     -- LEAN-ONLY: Bochner integrability; implied by sub-Gaussianity in finite dimension
     (hX_int : Integrable X μ)
-    -- USER-INPUT: δ > 0; Lu-BDA §6.2 (thm:l2)
+    -- USER-INPUT: δ > 0; Lu-BDA §6.2 Theorem 6.3
     {δ : ℝ} (hδ : 0 < δ) :
     μ {ω | 4 * Real.sqrt (σ2 : ℝ) * Real.sqrt (d : ℝ) +
            2 * Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (1 / δ)) < ‖X ω‖}

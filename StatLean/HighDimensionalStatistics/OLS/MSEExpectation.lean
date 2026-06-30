@@ -30,8 +30,9 @@ $\sigma^2 \,\mathrm{rank}(X)/n$. The hypotheses used are the genuine model input
 OLS minimizer); the only added hypothesis is $n > 0$, needed so the $1/n$ factor and the
 right-hand side are well-defined.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 7 (Ordinary Least
-Squares), §7.2 (Ordinary Least Squares), Theorem 7.1 (`thm:mse-ols`, expectation half).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0). Chapter 7 (Ordinary Least Squares), §7.2, Theorem 7.1
+(Mean Squared Error of Least Squares), expectation half.
 
 **Proof formalization notes.**
 1. The OLS minimizer satisfies $X\hat\beta = P_C(Y)$, the orthogonal projection of $Y$
@@ -192,7 +193,7 @@ private lemma ols_residual_orthogonal
     (X : Matrix (Fin n) (Fin d) ℝ)
     (Y : EuclideanSpace ℝ (Fin n))
     (βhat : EuclideanSpace ℝ (Fin d))
-    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §7.2 (thm:mse-ols)
+    -- USER-INPUT: βhat minimises ‖Y − Xβ‖² (OLS); Lu-BDA §7.2 Theorem 7.1
     (hols : IsOLSEstimator X Y βhat)
     {w : EuclideanSpace ℝ (Fin n)} (hw : w ∈ columnSpace X) :
     ⟪Y - designMap X βhat, w⟫_ℝ = 0 := by
@@ -260,17 +261,17 @@ private lemma designRank_eq_finrank_columnSpace (X : Matrix (Fin n) (Fin d) ℝ)
 
 /-! ### Main theorem -/
 
-/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (`thm:mse-ols`), expectation half.**
+/-- **Expected MSE of OLS — Lu-BDA §7.2 Theorem 7.1 (Mean Squared Error of Least Squares), expectation half.**
 
 For `Y ω = X β* + ε ω` with noise `ε` having independent mean-0 coordinates each
 sub-Gaussian proxy `σ²`, every OLS estimator `βhat` satisfies
   `E[MSE(Xβ̂, Xβ*)] ≤ σ² · rank(X) / n`.
 
 **Hypotheses:**
-- `hε_indep` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): joint independence of noise coordinates.
-- `hε_meanz` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): mean-0 noise coordinates.
-- `hε_subG` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): sub-Gaussian proxy σ² per coordinate.
-- `hβ_ols` (USER-INPUT; Lu-BDA §7.2 thm:mse-ols): βhat ω is OLS for Y ω = Xβ* + ε ω.
+- `hε_indep` (USER-INPUT; Lu-BDA §7.2 Theorem 7.1): joint independence of noise coordinates.
+- `hε_meanz` (USER-INPUT; Lu-BDA §7.2 Theorem 7.1): mean-0 noise coordinates.
+- `hε_subG` (USER-INPUT; Lu-BDA §7.2 Theorem 7.1): sub-Gaussian proxy σ² per coordinate.
+- `hβ_ols` (USER-INPUT; Lu-BDA §7.2 Theorem 7.1): βhat ω is OLS for Y ω = Xβ* + ε ω.
 - `hn` (LEAN-ONLY): `n > 0` so the `(1/n)` factor and the final bound are well-typed. -/
 theorem mse_ols_expectation_le
     {Ω : Type*} {mΩ : MeasurableSpace Ω}
@@ -280,16 +281,16 @@ theorem mse_ols_expectation_le
     (hn : 0 < n)
     {σ2 : ℝ≥0}
     {ε : Ω → EuclideanSpace ℝ (Fin n)}
-    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 thm:mse-ols
+    -- USER-INPUT: noise coordinates are jointly independent; Lu-BDA §7.2 Theorem 7.1
     (hε_indep : iIndepFun (fun (i : Fin n) (ω : Ω) => (ε ω) i) μ)
-    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 thm:mse-ols
+    -- USER-INPUT: each noise coordinate has mean 0; Lu-BDA §7.2 Theorem 7.1
     (hε_meanz : ∀ i : Fin n, ∫ ω, (ε ω) i ∂μ = 0)
-    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 thm:mse-ols
+    -- USER-INPUT: each noise coordinate is sub-Gaussian proxy σ²; Lu-BDA §7.2 Theorem 7.1
     (hε_subG : ∀ i : Fin n, IsSubGaussian (fun ω => (ε ω) i) σ2 μ)
-    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 thm:mse-ols
+    -- USER-INPUT: true coefficient vector; Lu-BDA §7.2 Theorem 7.1
     (βstar : EuclideanSpace ℝ (Fin d))
     {βhat : Ω → EuclideanSpace ℝ (Fin d)}
-    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² over β; Lu-BDA §7.2 thm:mse-ols
+    -- USER-INPUT: βhat ω minimises ‖Y ω − Xβ‖² over β; Lu-BDA §7.2 Theorem 7.1
     (hβ_ols : ∀ ω, IsOLSEstimator X (designMap X βstar + ε ω) (βhat ω)) :
     ∫ ω, mse X (βhat ω) βstar ∂μ ≤ ↑σ2 * ↑(designRank X) / ↑n := by
   -- Setup: column space C = range(X), finite-dimensional ⟹ complete ⟹ has orthogonal projection.

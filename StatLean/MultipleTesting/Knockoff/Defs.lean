@@ -21,14 +21,15 @@ that property — the only thing the FDR-control proof consumes — as three fie
   filtration conditions on.
 
 Together these say: *conditional on the magnitudes and the non-null signs, the null signs are i.i.d.
-$\mathrm{Ber}(\tfrac12)$* (the textbook's `kos` condition 3). The book's antisymmetry (condition 1)
+$\mathrm{Ber}(\tfrac12)$* (Definition 21.1 (Knock-Off Score), condition 3). The book's antisymmetry (condition 1)
 is an upstream property of the *construction* of $W$ that guarantees this coin-flip property;
 condition 2 ($W_j \stackrel{d}{=} -W_j$ for nulls) is a consequence of the three fields. The
 procedure ($S_\pm$, $\widehat{\mathrm{FDP}}$, the data-dependent threshold $t^*$, the rejection set)
 lives in the assembly file `Knockoff.lean`.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 21 (Knock-Off), §21.3
-(Knock-Off), Def. `kos` (condition 3). Equivalently — and this is the original source of the coin-flip property —
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3 (Knock-Off), Definition 21.1 (Knock-Off
+Score), condition 3. Equivalently — and this is the original source of the coin-flip property —
 E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University, 2023
 (knockoffs lecture, "i.i.d. sign" lemma).
 
@@ -68,17 +69,17 @@ noncomputable def sgnReal (W : Fin d → Ω → ℝ) (j : Fin d) (ω : Ω) : ℝ
   if 0 ≤ W j ω then 1 else -1
 
 /-- `KnockoffScore W H₀ μ`: the statistic `W : Fin d → Ω → ℝ` is a knock-off score for the true
-null set `H₀` under `μ` (Lu-BDA §21.3, Def. `kos` condition 3) — the null signs are i.i.d. fair
-coins given the magnitudes. -/
+null set `H₀` under `μ` (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score) condition 3) — the null
+signs are i.i.d. fair coins given the magnitudes. -/
 structure KnockoffScore (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (μ : Measure Ω) : Prop where
-  /-- Constitutive (Lu-BDA §21.3, Def. `kos` cond. 3): the null signs `{sign Wⱼ : j ∈ H₀}` are
-  jointly independent. -/
+  /-- Constitutive (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score) cond. 3): the null signs
+  `{sign Wⱼ : j ∈ H₀}` are jointly independent. -/
   signs_iIndep : iIndepFun (fun (j : H₀) (ω : Ω) => sgnReal W (j : Fin d) ω) μ
-  /-- Constitutive (Lu-BDA §21.3, Def. `kos` cond. 3): each null sign is a fair coin,
-  `P(Wⱼ ≥ 0) = ½` (with a probability measure). -/
+  /-- Constitutive (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score) cond. 3): each null sign is a
+  fair coin, `P(Wⱼ ≥ 0) = ½` (with a probability measure). -/
   signs_fair : ∀ j ∈ H₀, μ {ω | 0 ≤ W j ω} = 1 / 2
-  /-- Constitutive (Lu-BDA §21.3, Def. `kos` cond. 3): the null sign vector is independent of the
-  *outer data* — the magnitude vector `(|Wⱼ|)ⱼ` **together with the non-null signs** (encoded, as in
+  /-- Constitutive (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score) cond. 3): the null sign vector
+  is independent of the *outer data* — the magnitude vector `(|Wⱼ|)ⱼ` **together with the non-null signs** (encoded, as in
   `cproc`, by the padded vector `fun j => if j ∈ H₀ then 0 else sgn Wⱼ`). This is the data the count
   filtration `𝒢rev` conditions on; with `signs_iIndep`/`signs_fair` it gives: conditional on the
   magnitudes and non-null signs, the null signs are i.i.d. `Ber(½)` — exactly what the exchangeable
@@ -89,8 +90,8 @@ structure KnockoffScore (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (μ :
     IndepFun (fun ω (j : H₀) => sgnReal W (j : Fin d) ω)
       (fun ω => ((fun j => |W j ω|), (fun j => if j ∈ H₀ then (0 : ℝ) else sgnReal W j ω)))
       μ
-  /-- Constitutive (Lu-BDA §21.3, Def. `kos`): a knock-off *score* is a statistic, so each `Wⱼ` is
-  measurable. Needed for the martingale construction (natural filtration, adaptedness,
+  /-- Constitutive (Lu-BDA §21.3, Definition 21.1 (Knock-Off Score)): a knock-off *score* is a
+  statistic, so each `Wⱼ` is measurable. Needed for the martingale construction (natural filtration, adaptedness,
   integrability, conditional expectation) in `Knockoff/Supermartingale.lean`. -/
   meas : ∀ j, Measurable (W j)
 

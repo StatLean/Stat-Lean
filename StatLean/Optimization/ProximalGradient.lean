@@ -13,9 +13,9 @@ Then for every minimizer $x^\star$ of $F$ and every $t \ge 1$,
 $$ F(x_t) - F(x^\star) \;\le\; \frac{L\,\|x_0 - x^\star\|^2}{2\,t}, $$
 i.e. the objective gap decays at the $O(1/t)$ rate.
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 14
-(Proximal Gradient Descent), §14.1 (Proximal Perspective), Theorem 14.1
-(`thm:cvg-prox`).
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 14 (Proximal Gradient Descent), §14.1,
+Theorem 14.1 (Convergence Rate of Proximal Gradient Descent).
 
 **Proof formalization notes.** Each iterate is supplied as a prox minimizer
 (hypothesis `hrec`), rather than evaluating the `prox` operator explicitly; this
@@ -47,7 +47,7 @@ open scoped InnerProductSpace Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
 
-/-- Lu-BDA Thm 14.1 (proximal-gradient convergence rate). `f` convex `L`-smooth
+/-- Lu-BDA Theorem 14.1 (Convergence Rate of Proximal Gradient Descent). `f` convex `L`-smooth
 (`0 < L`), `h` convex, `F = f + h`, step `1/L`:
 `F(x_t) - F(x*) ≤ L‖x_0 - x*‖² / (2t)`. -/
 theorem proximalGradient_rate

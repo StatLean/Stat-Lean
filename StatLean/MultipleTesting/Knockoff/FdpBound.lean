@@ -25,8 +25,9 @@ FDR bound $\mathbb{E}[\mathrm{FDP}(t^*)] \le \alpha$ is **not** part of this res
 The constant matches the book exactly (target level $\alpha$, denominator $1 + V_-(t^*)$ from the
 "knock-off+" estimate with the extra $+1$).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 21 (Knock-Off), §21.3,
-Theorem 21.2 (Knock-Off), first display of the proof. Dual citation: E. J. Candès, *STAT 300C:
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 21 (Knock-Off), §21.3, Theorem 21.2 (Knock-Off), first display
+of the proof. Dual citation: E. J. Candès, *STAT 300C:
 Theory of Statistics*, Lecture Notes, Stanford University, 2023, Lecture 11, equation (11.1) and
 the FDP chain in the proof deferred to §11.5.
 
@@ -75,9 +76,9 @@ private lemma fdp_le_core (α : ℝ) (hα : 0 < α) (vp sp vm sm : ℕ) (hvm : v
       mul_le_mul_of_nonneg_left hkey hvp_r
     linarith [show (↑vp : ℝ) * (α * max (↑sp : ℝ) 1) = α * ↑vp * max (↑sp : ℝ) 1 from by ring]
 
-/-- Deterministic FDP bound (Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2, first display of the proof):
+/-- Deterministic FDP bound (Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first display of the proof):
 `FDP(t*) ≤ α · V₊(t*)/(1 + V₋(t*))`.
-**Reference.** Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2, first display of the proof;
+**Reference.** Lu-BDA Ch. 21 (Knock-Off) §21.3, Theorem 21.2 (Knock-Off), first display of the proof;
 Candès STAT 300C Lecture 11, eq. (11.1). -/
 theorem knockoff_fdp_le (α : ℝ) (hα : 0 < α) (W : Fin d → Ω → ℝ) (H₀ : Finset (Fin d)) (ω : Ω) :
     FDP H₀ (knockoffRejects W α) ω

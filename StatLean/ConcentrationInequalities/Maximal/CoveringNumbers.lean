@@ -24,12 +24,14 @@ All non-trivial combinatorial content is delegated to
 ## Main definitions
 
 * `IsEpsilonNet N s ε` — `N ⊆ s` and every point of `s` lies within `dist ≤ ε`
-  of some point of `N` (Lu §6.2, Definition of ε-net).
+  of some point of `N` (Lu-BDA §6.2, Definition 6.2 (ε-Net)).
 * `coveringNumber s ε` — minimum cardinality (in `ℕ∞`) of a finite internal
-  ε-net of `s`; thin alias of `Metric.coveringNumber` (Lu §6.2, `N(s, d, ε)`).
+  ε-net of `s`; thin alias of `Metric.coveringNumber` (Lu-BDA §6.2,
+  Lemma 6.1 (Covering Number), `N(s, d, ε)`).
 
-**Reference.** Junwei Lu, *Big Data Analysis* (course text), Chapter 6 (Maximal
-Inequality), §6.2 (Maximal Inequality) — Definition of $\varepsilon$-net and of the
+**Reference.** Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025
+(ISBN 978-3-032-03160-0), Chapter 6 (Bernstein and Maximal Inequalities),
+§6.2 — Definition 6.2 ($\varepsilon$-Net) and Lemma 6.1 (Covering Number), the
 covering number $N(s, d, \varepsilon)$.
 
 **Proof formalization notes.**
@@ -58,7 +60,7 @@ in function spaces," *Uspekhi Matematicheskikh Nauk* **14** (1959), no. 2 (86), 
 standard textbook material in empirical-process and high-dimensional statistics — see also
 M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint* (Cambridge
 University Press, 2019), §5.1, for the modern statistical treatment that the Lu-BDA §6.2
-presentation follows.
+(Bernstein and Maximal Inequalities) presentation follows.
 -/
 
 open Set
@@ -70,7 +72,7 @@ variable {X : Type*} [PseudoMetricSpace X]
 
 /-! ### ε-Net -/
 
-/-- **ε-Net** (Lu-BDA §6.2 Definition).
+/-- **ε-Net** (Lu-BDA §6.2, Definition 6.2 (ε-Net)).
 
 A subset `N` of a pseudo-metric space `(X, d)` is an *ε-net* of `s ⊆ X` if:
 - `N ⊆ s` (internal: the net lies inside the set), and
@@ -86,7 +88,7 @@ def IsEpsilonNet (N : Set X) (s : Set X) (ε : ℝ) : Prop :=
 
 /-! ### Covering number -/
 
-/-- **Covering number** `N(s, d, ε)` (Lu-BDA §6.2).
+/-- **Covering number** `N(s, d, ε)` (Lu-BDA §6.2, Lemma 6.1 (Covering Number)).
 
 The minimum cardinality (in `ℕ∞`) of a finite internal ε-net of `s ⊆ X`.
 Returns `⊤` when no finite ε-net of `s` exists.
@@ -94,7 +96,7 @@ Returns `⊤` when no finite ε-net of `s` exists.
 Thin alias of `Metric.coveringNumber (Real.toNNReal ε) s`.  The `toNNReal`
 coercion clamps `ε ≤ 0` to `0`; for `ε = 0` this equals `s.encard`.
 
-This is Lu-BDA §6.2's `N(s, d, ε)`. -/
+This is Lu-BDA §6.2's `N(s, d, ε)` (Lemma 6.1 (Covering Number)). -/
 noncomputable def coveringNumber (s : Set X) (ε : ℝ) : ℕ∞ :=
   Metric.coveringNumber (Real.toNNReal ε) s
 
@@ -106,7 +108,7 @@ lemma isEpsilonNet_self (s : Set X) {ε : ℝ} (hε : 0 ≤ ε) : IsEpsilonNet s
   ⟨le_refl s, fun x hx => ⟨x, hx, (dist_self x).le.trans hε⟩⟩
 
 /-- The covering number is anti-monotone in the radius:
-a smaller `ε` requires weakly more net points (Lu-BDA §6.2). -/
+a smaller `ε` requires weakly more net points (Lu-BDA §6.2, Lemma 6.1 (Covering Number)). -/
 lemma coveringNumber_anti {s : Set X} {ε δ : ℝ} (h : ε ≤ δ) :
     coveringNumber s δ ≤ coveringNumber s ε :=
   Metric.coveringNumber_anti (Real.toNNReal_le_toNNReal h)
