@@ -17,13 +17,11 @@ function lum(t: string): number {
 const contrastTriplet = (t: string) => (lum(t) > 145 ? "26 24 20" : "247 243 235");
 
 export function areaTriplets(): Record<Area, string> {
-  return {
-    parametric: triplet(AREA_VAR.parametric),
-    semiparametric: triplet(AREA_VAR.semiparametric),
-    empirical: triplet(AREA_VAR.empirical),
-    probability: triplet(AREA_VAR.probability),
-    external: triplet(AREA_VAR.external),
-  };
+  const out = {} as Record<Area, string>;
+  for (const area of Object.keys(AREA_VAR) as Area[]) {
+    out[area] = triplet(AREA_VAR[area]);
+  }
+  return out;
 }
 
 /**

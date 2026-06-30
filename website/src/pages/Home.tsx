@@ -46,7 +46,7 @@ export function Home() {
               className="font-display font-semibold tracking-tight leading-[0.98] text-5xl sm:text-6xl md:text-7xl max-w-4xl"
             >
               Lean&nbsp;4 Formalization of{" "}
-              <span className="italic text-param">Asymptotic Statistical Theory</span>
+              <span className="italic text-param">Statistical Theory</span>
             </motion.h1>
 
             <motion.div
@@ -89,7 +89,7 @@ export function Home() {
           Browse the library by area; each opens a gallery of aligned results.
         </p>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {CATEGORIES.map((c, i) => (
             <motion.div
               key={c.id}
