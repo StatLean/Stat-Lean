@@ -31,6 +31,7 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     6: "Contiguity",
     7: "Local Asymptotic Normality",
     8: "Efficiency of Estimators",
+    18: "Stochastic Convergence in Metric Spaces",
     19: "Empirical Processes",
     25: "Semiparametric Models",
   },
