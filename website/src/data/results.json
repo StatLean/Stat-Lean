@@ -6933,5 +6933,894 @@
       ]
     },
     "hasGraph": true
+  },
+  {
+    "id": "supermartingale-optional-stopping",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "supermartingale_integral_stoppedValue_le",
+    "fullName": "StatLean.MultipleTesting.supermartingale_integral_stoppedValue_le",
+    "title": "Optional Stopping Theorem (supermartingale half)",
+    "citation": "Lu (2025), Thm 21.1",
+    "shortRef": "Lu (2025), Thm 21.1",
+    "file": "StatLean/MultipleTesting/ForMathlib/OptionalStopping.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/OptionalStopping.html#StatLean.MultipleTesting.supermartingale_integral_stoppedValue_le",
+    "informal": "<p>Let $(X_n)_{n\\ge 0}$ be a <span data-link=\"h1\">supermartingale</span> adapted to a filtration $(\\mathcal{G}_n)$, and let $\\tau$ be a <span data-link=\"h2\">stopping time</span> that is <span data-link=\"h3\">bounded</span>, i.e. there is a constant $N$ with $\\tau \\le N$ everywhere. Then the expected value of the process stopped at $\\tau$ does not exceed its initial expectation:</p> $$\\mathbb{E}[X_\\tau] \\;\\le\\; \\mathbb{E}[X_0].$$ <p>(For a martingale the two sides are equal; this is the supermartingale inequality direction.)</p>",
+    "summary": "For a supermartingale and a bounded stopping time, the expected stopped value is at most the initial expectation.",
+    "leanSignature": "theorem supermartingale_integral_stoppedValue_le\n    {τ : Ω → ℕ∞} (hf : Supermartingale f 𝒢 μ) (hτ : IsStoppingTime 𝒢 τ)\n    {N : ℕ} (hbdd : ∀ ω, τ ω ≤ (N : ℕ∞)) :\n    ∫ x, stoppedValue f τ x ∂μ ≤ ∫ x, f 0 x ∂μ",
+    "formalizationNotes": "Obtained by dualizing Mathlib's submartingale optional-stopping inequality (via negation) and specializing the earlier stopping time to the constant 0. The bounded-stopping-time hypothesis is stated as an explicit uniform bound τ ≤ N.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Supermartingale f 𝒢 μ",
+        "label": "supermartingale",
+        "note": "The process is a supermartingale with respect to the filtration and measure."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsStoppingTime 𝒢 τ",
+        "label": "stopping time",
+        "note": "τ is a stopping time of the filtration."
+      },
+      {
+        "id": "h3",
+        "leanToken": "τ ω ≤ (N : ℕ∞)",
+        "label": "bounded",
+        "note": "The stopping time is uniformly bounded by a constant N."
+      }
+    ],
+    "reference": {
+      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
+      "pointer": "Theorem 21.1",
+      "keys": [
+        "lu-bda"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "supermartingale-stopped-value-antitone",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "supermartingale_expected_stoppedValue_antitone",
+    "fullName": "StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone",
+    "title": "Supermartingale stopped-value monotonicity",
+    "citation": "Lu (2025), Thm 21.1",
+    "shortRef": "Lu (2025), Thm 21.1",
+    "file": "StatLean/MultipleTesting/ForMathlib/OptionalStopping.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/OptionalStopping.html#StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone",
+    "informal": "<p>Let $(X_n)$ be a <span data-link=\"h1\">supermartingale</span> and let $\\tau \\le \\pi$ be two <span data-link=\"h2\">stopping times</span> with <span data-link=\"h3\">$\\tau$ everywhere below $\\pi$</span> and <span data-link=\"h4\">$\\pi$ bounded by a constant $N$</span>. Then stopping later can only decrease the expectation:</p> $$\\mathbb{E}[X_\\pi] \\;\\le\\; \\mathbb{E}[X_\\tau].$$ <p>This is the supermartingale dual of the submartingale monotonicity of stopped values, and the optional stopping inequality is the special case $\\tau \\equiv 0$.</p>",
+    "summary": "For a supermartingale and two ordered bounded stopping times, the later stopped value has the smaller expectation.",
+    "leanSignature": "theorem supermartingale_expected_stoppedValue_antitone\n    {τ π : Ω → ℕ∞} (hf : Supermartingale f 𝒢 μ)\n    (hτ : IsStoppingTime 𝒢 τ) (hπ : IsStoppingTime 𝒢 π) (hle : τ ≤ π)\n    {N : ℕ} (hbdd : ∀ ω, π ω ≤ (N : ℕ∞)) :\n    ∫ x, stoppedValue f π x ∂μ ≤ ∫ x, stoppedValue f τ x ∂μ",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Supermartingale f 𝒢 μ",
+        "label": "supermartingale",
+        "note": "The process is a supermartingale."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsStoppingTime 𝒢 π",
+        "label": "stopping times",
+        "note": "Both τ and π are stopping times of the filtration."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hle : τ ≤ π",
+        "label": "τ ≤ π",
+        "note": "The earlier stopping time is pointwise below the later one."
+      },
+      {
+        "id": "h4",
+        "leanToken": "π ω ≤ (N : ℕ∞)",
+        "label": "bounded",
+        "note": "The later stopping time is uniformly bounded by N."
+      }
+    ],
+    "reference": {
+      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
+      "pointer": "Theorem 21.1",
+      "keys": [
+        "lu-bda"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "order-statistic",
+    "category": "probability",
+    "kind": "definition",
+    "leanName": "orderStat",
+    "fullName": "StatLean.MultipleTesting.orderStat",
+    "title": "Order statistics of a finite tuple",
+    "citation": "Lu (2025), Order statistics",
+    "shortRef": "Lu (2025), Order statistics",
+    "file": "StatLean/MultipleTesting/ForMathlib/OrderStatistics.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/OrderStatistics.html#StatLean.MultipleTesting.orderStat",
+    "informal": "<p>Given a <span data-link=\"h1\">finite real tuple</span> $v = (v_0,\\dots,v_{n-1})$, its $i$-th <em>order statistic</em> $v_{(i)}$ is the $i$-th smallest entry, defined by precomposing $v$ with the permutation that sorts it into non-decreasing order. The resulting map <span data-link=\"h2\">$i \\mapsto v_{(i)}$ is monotone</span>, so</p> $$v_{(0)} \\;\\le\\; v_{(1)} \\;\\le\\; \\dots \\;\\le\\; v_{(n-1)}.$$ <p>These sorted values let the Benjamini–Hochberg and Holm procedures compare ordered p-values $p_{(i)}$ against their step cutoffs.</p>",
+    "summary": "The i-th order statistic of a real tuple is its i-th smallest entry, obtained via the sorting permutation, and is non-decreasing in i.",
+    "leanSignature": "noncomputable def orderStat (v : Fin n → ℝ) (i : Fin n) : ℝ",
+    "formalizationNotes": "Built on Mathlib's Tuple.sort. Monotonicity is recorded in the companion lemma orderStat_monotone (v : Fin n → ℝ) : Monotone (orderStat v).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "v : Fin n → ℝ",
+        "label": "finite tuple",
+        "note": "A tuple of n real numbers to be sorted."
+      },
+      {
+        "id": "h2",
+        "leanToken": "i : Fin n",
+        "label": "index",
+        "note": "The rank index; i ↦ orderStat v i is non-decreasing."
+      }
+    ],
+    "reference": {
+      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
+      "pointer": "Order statistics",
+      "keys": [
+        "lu-bda"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "empirical-cdf",
+    "category": "probability",
+    "kind": "definition",
+    "leanName": "empiricalCDF",
+    "fullName": "StatLean.MultipleTesting.empiricalCDF",
+    "title": "Empirical distribution function",
+    "citation": "Candès (2023), Lec. 3, Def. 1",
+    "shortRef": "Candès (2023), Lec. 3, Def. 1",
+    "file": "StatLean/MultipleTesting/ForMathlib/EmpiricalCDF.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/EmpiricalCDF.html#StatLean.MultipleTesting.empiricalCDF",
+    "informal": "<p>For <span data-link=\"h1\">$n$ real statistics</span> $p_1,\\dots,p_n$ (for instance $n$ p-values) and a <span data-link=\"h2\">threshold $t$</span>, let the rejection count be $R(t) = \\#\\{\\, j : p_j \\le t \\,\\}$. The <em>empirical distribution function</em> is the normalized count</p> $$\\hat F_n(t) \\;=\\; \\frac{R(t)}{n},$$ <p>with the convention $\\hat F_n \\equiv 0$ when $n = 0$. As a function of $t$ it is non-decreasing, and it always lies in $[0,1]$. It is the counting process underlying the Benjamini–Hochberg, Storey, and Kolmogorov–Smirnov constructions.</p>",
+    "summary": "The empirical CDF of n real statistics is the fraction of them at or below the threshold; it is monotone and takes values in the unit interval.",
+    "leanSignature": "noncomputable def empiricalCDF (p : Fin n → Ω → ℝ) (t : ℝ) (ω : Ω) : ℝ",
+    "formalizationNotes": "Defined as (countLE p t ω : ℝ) / n via the rejection-count brick countLE. The related false-rejection count nullCountLE V(t) = #{ j ∈ H₀ : p_j ≤ t } lives in the same file.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "p : Fin n → Ω → ℝ",
+        "label": "n statistics",
+        "note": "A finite family of n real-valued statistics on the sample space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "t : ℝ",
+        "label": "threshold",
+        "note": "The evaluation point of the empirical CDF."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 3, Def. 1",
+      "keys": [
+        "candes-stat300c"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "massart-ks-union",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "ksPlus_tail_union",
+    "fullName": "StatLean.MultipleTesting.ksPlus_tail_union",
+    "title": "Massart's inequality (union-bound form)",
+    "citation": "Candès (2023), Lec. 3, §3.3.1, Thm 2",
+    "shortRef": "Candès (2023), Lec. 3, §3.3.1, Thm 2",
+    "file": "StatLean/MultipleTesting/ForMathlib/EmpiricalProcessSup.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/EmpiricalProcessSup.html#StatLean.MultipleTesting.ksPlus_tail_union",
+    "informal": "<p>Let $p_1,\\dots,p_n$ be <span data-link=\"h2\">independent</span> p-values that are <span data-link=\"h3\">super-uniform under the global null</span>, meaning $\\Pr(p_j \\le t) \\le t$ for all $t$, with <span data-link=\"h4\">at least one sample ($n \\ge 1$)</span>. Define the <em>one-sided Kolmogorov–Smirnov statistic</em> as the supremum of the empirical process above the diagonal,</p> $$\\mathrm{KS}^{+} \\;=\\; \\sup_t\\bigl(\\hat F_n(t) - t\\bigr) \\;=\\; \\max_{1 \\le i \\le n}\\Bigl(\\tfrac{i}{n} - p_{(i)}\\Bigr).$$ <p>Then for every threshold <span data-link=\"h5\">$u \\ge 0$</span>,</p> $$\\Pr\\bigl(\\mathrm{KS}^{+} \\ge u\\bigr) \\;\\le\\; n\\,e^{-2 n u^2}.$$",
+    "summary": "For independent super-uniform null p-values, the upper tail of the one-sided Kolmogorov-Smirnov statistic is controlled by a union bound.",
+    "leanSignature": "theorem ksPlus_tail_union (μ : Measure Ω) [IsProbabilityMeasure μ] (p : Fin n → Ω → ℝ)\n    (hmeas : ∀ j, Measurable (p j))\n    (hindep : iIndepFun p μ)\n    (hnull : ∀ j, SuperUniform (p j) μ)\n    (hn : 1 ≤ n)\n    {u : ℝ} (hu : 0 ≤ u) :\n    μ {ω | u ≤ ksPlus p ω} ≤ ENNReal.ofReal ((n : ℝ) * Real.exp (-2 * n * u ^ 2))",
+    "formalizationNotes": "Candès states the sharp Dvoretzky–Kiefer–Wolfowitz/Massart constant, giving the bound $2\\,e^{-2nu^2}$. The sharp constant needs an empirical-process reflection / exponential-supermartingale argument not available in Mathlib, so the provable union-bound form $n\\,e^{-2nu^2}$ is stated instead — which is exactly what the Kolmogorov–Smirnov test consumes (with $u_\\alpha = \\sqrt{\\log(n/\\alpha)/(2n)}$ it yields level $\\alpha$). The hypothesis $n \\ge 1$ is genuinely required: at $n = 0$, $u = 0$ the event is all of $\\Omega$ while the bound is $0$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hmeas : ∀ j, Measurable (p j)",
+        "label": "measurable",
+        "note": "Each p-value is a measurable function."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hindep : iIndepFun p μ",
+        "label": "independent",
+        "note": "The p-values are jointly independent."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hnull : ∀ j, SuperUniform (p j) μ",
+        "label": "super-uniform null",
+        "note": "Each null p-value satisfies P(p_j ≤ t) ≤ t."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hn : 1 ≤ n",
+        "label": "n ≥ 1",
+        "note": "At least one sample; the bound fails at n = 0."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hu : 0 ≤ u",
+        "label": "u ≥ 0",
+        "note": "The tail threshold is nonnegative."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 3, §3.3.1, Theorem 2",
+      "biblio": "The inequality originates with A. Dvoretzky, J. Kiefer and J. Wolfowitz, \"Asymptotic minimax character of the sample distribution function and of the classical multinomial estimator,\" *Annals of Mathematical Statistics* **27** (1956), no. 3, 642–669, who proved $\\Pr(\\sup_t |\\hat F_n(t) - F(t)| > \\varepsilon) \\le C\\, e^{-2 n \\varepsilon^2}$ with an unspecified universal constant $C$. The tight constant was obtained by P. Massart, \"The tight constant in the Dvoretzky–Kiefer–Wolfowitz inequality,\" *Annals of Probability* **18** (1990), no. 3, 1269–1283: the two-sided inequality holds with $C = 2$, and the one-sided bound $\\Pr(\\sup_t(\\hat F_n(t) - F(t)) > \\varepsilon) \\le e^{-2 n \\varepsilon^2}$ holds when $e^{-2n\\varepsilon^2} \\le 1/2$. Candès's Theorem 2 states the one-sided statistic with the looser two-sided constant $2$.",
+      "keys": [
+        "candes-stat300c",
+        "dkw1956",
+        "massart1990"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "rank-uniformity",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "measure_rankOf_le",
+    "fullName": "StatLean.MultipleTesting.measure_rankOf_le",
+    "title": "Rank uniformity of exchangeable statistics",
+    "citation": "Candès (2023), Lec. 9, §9.6",
+    "shortRef": "Candès (2023), Lec. 9, §9.6",
+    "file": "StatLean/MultipleTesting/ForMathlib/RankUniform.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/RankUniform.html#StatLean.MultipleTesting.measure_rankOf_le",
+    "informal": "<p>Let $S_0,\\dots,S_{m-1}$ be a family of real-valued statistics that is <span data-link=\"h2\">exchangeable</span> — its joint law is invariant under permuting the indices — and whose values are <span data-link=\"h3\">almost surely pairwise distinct</span>. Define the (1-indexed) rank of the $i$-th statistic by</p> $$R_i \\;=\\; \\#\\{\\, j : S_j \\le S_i \\,\\},$$ <p>which always lies in $\\{1,\\dots,m\\}$. Then $R_i$ is <em>uniformly distributed</em> on $\\{1,\\dots,m\\}$: for every <span data-link=\"h4\">$k \\le m$</span>,</p> $$\\mathbb{P}(R_i \\le k) \\;=\\; \\frac{k}{m}.$$ <p>This is the precise form of the folklore remark that, for exchangeable statistics, all rankings are equally likely — the engine behind split-conformal coverage.</p>",
+    "summary": "For an exchangeable, almost surely distinct family of statistics, the rank of any single one is uniform on the index set.",
+    "leanSignature": "theorem measure_rankOf_le (S : Fin m → Ω → ℝ) (μ : Measure Ω) [IsProbabilityMeasure μ]\n    (hmeas : ∀ i, Measurable (S i))\n    (hExch : Exchangeable S μ)\n    (hdistinct : ∀ᵐ ω ∂μ, Function.Injective (fun i => S i ω))\n    (i : Fin m) {k : ℕ} (hk : k ≤ m) :\n    μ {ω | rankOf S i ω ≤ k} = (k : ℝ≥0∞) / (m : ℝ≥0∞)",
+    "formalizationNotes": "Three regularity hypotheses are made explicit beyond the bare textbook remark: measurability of each statistic, exchangeability (defined here, since Mathlib has no Exchangeable predicate, as invariance of the pushed-forward joint law under every index permutation), and almost-sure distinctness of the values (the textbook works with continuous scores / broken ties, which forces this).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hmeas : ∀ i, Measurable (S i)",
+        "label": "measurable",
+        "note": "Each statistic is measurable."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hExch : Exchangeable S μ",
+        "label": "exchangeable",
+        "note": "The joint law is invariant under permutations of the indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hdistinct : ∀ᵐ ω ∂μ, Function.Injective",
+        "label": "distinct values",
+        "note": "The statistics are almost surely pairwise distinct."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hk : k ≤ m",
+        "label": "k ≤ m",
+        "note": "The rank threshold does not exceed the sample size."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 9, §9.6",
+      "biblio": "The rank-uniformity statement is classical **folklore** of exchangeable sequences with no single seminal origin: for exchangeable random variables with almost surely distinct values, the induced ranking is uniform over the symmetric group, an immediate consequence of permutation-invariance of the joint law. Its role as the foundation of distribution-free prediction was made explicit in the conformal-prediction program of V. Vovk, A. Gammerman, and collaborators — see V. Vovk, A. Gammerman, G. Shafer, *Algorithmic Learning in a Random World*, Springer, 2005 (2nd ed. 2022), and, for the split/inductive variant, H. Papadopoulos, K. Proedrou, V. Vovk, A. Gammerman, \"Inductive Confidence Machines for Regression,\" *Proc. ECML 2002*, LNCS 2430, Springer, 2002, pp. 345–356.",
+      "keys": [
+        "candes-stat300c",
+        "vovk2005",
+        "papadopoulos2002"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "gaussian-fourth-moment",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "integral_pow_four_stdGaussian",
+    "fullName": "StatLean.MultipleTesting.integral_pow_four_stdGaussian",
+    "title": "Fourth Moment of the Standard Gaussian",
+    "citation": "Candès, STAT 300C, Lecture 2, §2.3",
+    "shortRef": "Candès, STAT 300C, Lecture 2, §2.3",
+    "file": "StatLean/MultipleTesting/ForMathlib/GaussianMoments.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/GaussianMoments.html#StatLean.MultipleTesting.integral_pow_four_stdGaussian",
+    "informal": "<p>Let <span data-link=\"h1\">$Z$ be a standard Gaussian random variable, $Z\\sim N(0,1)$</span>. Then its fourth moment is $$\\mathbb{E}\\big[Z^{4}\\big] = 3.$$</p><p>Together with $\\mathbb{E}[Z]=0$, $\\mathbb{E}[Z^2]=1$, and the vanishing odd moment $\\mathbb{E}[Z^3]=0$, this is the moment input behind the mean and variance of the chi-squared statistic $\\sum_i Z_i^2$.</p>",
+    "summary": "For a standard normal random variable Z, the fourth moment equals 3.",
+    "leanSignature": "theorem integral_pow_four_stdGaussian : ∫ x, x ^ 4 ∂(gaussianReal 0 1) = 3",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "gaussianReal 0 1",
+        "label": "standard Gaussian",
+        "note": "The integral is against N(0,1), the standard normal law with mean 0 and variance 1."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 2, §2.3",
+      "biblio": "The low-order Gaussian moments $\\mathbb{E}[Z^2]=1$, $\\mathbb{E}[Z^3]=0$, $\\mathbb{E}[Z^4]=3$ are the classical inputs to the mean/variance computation for the $\\chi^2$ statistic under the null.",
+      "keys": [
+        "candes-stat300c"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "gaussian-variance-of-square",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "variance_sq_stdGaussian",
+    "fullName": "StatLean.MultipleTesting.variance_sq_stdGaussian",
+    "title": "Variance of a Squared Standard Gaussian",
+    "citation": "Candès, STAT 300C, Lecture 2, §2.3",
+    "shortRef": "Candès, STAT 300C, Lecture 2, §2.3",
+    "file": "StatLean/MultipleTesting/ForMathlib/GaussianMoments.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/GaussianMoments.html#StatLean.MultipleTesting.variance_sq_stdGaussian",
+    "informal": "<p>Let <span data-link=\"h1\">$Z$ be a standard Gaussian random variable, $Z\\sim N(0,1)$</span>. Since $\\mathbb{E}[Z^2]=1$, the variance of $Z^2$ is the central second moment $$\\mathbb{E}\\big[(Z^{2}-1)^{2}\\big] = \\mathbb{E}[Z^4] - 2\\,\\mathbb{E}[Z^2] + 1 = 2.$$</p><p>Summed over $n$ independent coordinates this gives $\\operatorname{Var}\\big[\\sum_i Z_i^2\\big] = 2n$, the variance of a $\\chi^2_n$ variable.</p>",
+    "summary": "For a standard normal Z, the variance of Z squared equals 2.",
+    "leanSignature": "theorem variance_sq_stdGaussian : ∫ x, (x ^ 2 - 1) ^ 2 ∂(gaussianReal 0 1) = 2",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "gaussianReal 0 1",
+        "label": "standard Gaussian",
+        "note": "The integral is against N(0,1); the integrand is the centered square (Z^2 - 1)^2."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 2, §2.3",
+      "biblio": "The identity $\\operatorname{Var}[Z^2]=2$ underlies the variance $2n$ of the $\\chi^2_n$ distribution under the null hypothesis in the chi-squared test.",
+      "keys": [
+        "candes-stat300c"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "chi-squared-one-mgf",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "mgf_exp_sq_stdGaussian",
+    "fullName": "StatLean.MultipleTesting.mgf_exp_sq_stdGaussian",
+    "title": "Moment Generating Function of a Squared Gaussian",
+    "citation": "Candès, STAT 300C, Lecture 2, §2.3",
+    "shortRef": "Candès, STAT 300C, Lecture 2, §2.3",
+    "file": "StatLean/MultipleTesting/ForMathlib/GaussianSquareMGF.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/GaussianSquareMGF.html#StatLean.MultipleTesting.mgf_exp_sq_stdGaussian",
+    "informal": "<p>Let $Z\\sim N(0,1)$ be a standard Gaussian random variable. For every <span data-link=\"h1\">$l<\\tfrac12$</span>, the moment generating function of $Z^{2}$ has the closed form $$\\mathbb{E}\\big[e^{l Z^{2}}\\big] = \\frac{1}{\\sqrt{1-2l}} = (1-2l)^{-1/2}.$$</p><p>This is exactly the moment generating function of a chi-squared law with one degree of freedom, and it is the analytic input to identifying $\\sum_i Z_i^2\\sim\\chi^2_n$.</p>",
+    "summary": "The MGF of Z squared for a standard normal Z equals (1 - 2l) to the power minus one half, for l below one half.",
+    "leanSignature": "theorem mgf_exp_sq_stdGaussian {l : ℝ} (hl : l < 1 / 2) :\n    ∫ x, Real.exp (l * x ^ 2) ∂(gaussianReal 0 1) = (Real.sqrt (1 - 2 * l))⁻¹",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hl : l < 1 / 2",
+        "label": "convergence half-line",
+        "note": "The MGF is finite only for l < 1/2; for l ≥ 1/2 the integral diverges."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 2, §2.3",
+      "biblio": "The half-line $l<1/2$ is the convergence region of the $\\chi^2_1$ moment generating function; outside it the integrand $e^{lZ^2}$ is not integrable against $N(0,1)$.",
+      "keys": [
+        "candes-stat300c"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "gamma-mgf",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "mgf_gammaMeasure",
+    "fullName": "StatLean.MultipleTesting.mgf_gammaMeasure",
+    "title": "Moment Generating Function of the Gamma Distribution",
+    "citation": "Candès, STAT 300C, Lecture 2, §2.3",
+    "shortRef": "Candès, STAT 300C, Lecture 2, §2.3",
+    "file": "StatLean/MultipleTesting/ForMathlib/GammaMoments.lean",
+    "docGenUrl": "../docs/StatLean/MultipleTesting/ForMathlib/GammaMoments.html#StatLean.MultipleTesting.mgf_gammaMeasure",
+    "informal": "<p>Let $X\\sim\\mathrm{Gamma}(a,r)$ have <span data-link=\"h1\">shape $a>0$</span> and <span data-link=\"h2\">rate $r>0$</span> (density proportional to $x^{a-1}e^{-rx}$ on $x\\ge 0$). Then for every <span data-link=\"h3\">$t<r$</span> the moment generating function is $$\\mathbb{E}\\big[e^{tX}\\big] = \\left(\\frac{r}{r-t}\\right)^{a}.$$</p><p>At rate $r=\\tfrac12$ this becomes $(1-2t)^{-a}$; taking $a=k/2$ matches the squared-Gaussian moment generating function and identifies $\\chi^2_k=\\mathrm{Gamma}(k/2,\\,1/2)$.</p>",
+    "summary": "For a Gamma random variable with shape a and rate r, the MGF equals (r over r minus t) to the power a, for t below r.",
+    "leanSignature": "theorem mgf_gammaMeasure {a r : ℝ} (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :\n    ∫ x, Real.exp (t * x) ∂(gammaMeasure a r) = (r / (r - t)) ^ a",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "ha : 0 < a",
+        "label": "positive shape",
+        "note": "The Gamma shape parameter a is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hr : 0 < r",
+        "label": "positive rate",
+        "note": "The Gamma rate parameter r is strictly positive."
+      },
+      {
+        "id": "h3",
+        "leanToken": "ht : t < r",
+        "label": "convergence region",
+        "note": "The MGF is finite only for t < r."
+      }
+    ],
+    "reference": {
+      "formal": "E. J. Candès, *STAT 300C: Theory of Statistics*, Lecture Notes, Stanford University.",
+      "pointer": "Lecture 2, §2.3",
+      "biblio": "The Gamma MGF $(r/(r-t))^a$ specializes at rate $r=1/2$, shape $a=k/2$ to the $\\chi^2_k$ moment generating function, giving the identity $\\chi^2_k=\\mathrm{Gamma}(k/2,1/2)$.",
+      "keys": [
+        "candes-stat300c"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "first-order-convexity",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "inner_gradient_le_sub_of_convexOn",
+    "fullName": "StatLean.Optimization.inner_gradient_le_sub_of_convexOn",
+    "title": "First-Order Characterization of Convexity (Gradient Inequality)",
+    "citation": "Lu (2025), §12.2, Def. 12.3",
+    "shortRef": "Lu (2025), §12.2, Def. 12.3",
+    "file": "StatLean/Optimization/ForMathlib/FirstOrderConvex.lean",
+    "docGenUrl": "../docs/StatLean/Optimization/ForMathlib/FirstOrderConvex.html#StatLean.Optimization.inner_gradient_le_sub_of_convexOn",
+    "informal": "<p>Let $f:E\\to\\mathbb{R}$ be a function on a complete real inner-product space $E$ that is <span data-link=\"h1\">convex on all of $E$</span> and <span data-link=\"h2\">differentiable everywhere</span>. Then for all points $x,y\\in E$, $$f(x) + \\langle \\nabla f(x),\\, y-x\\rangle \\le f(y).$$</p><p>Geometrically, the first-order Taylor approximation of $f$ at $x$ underestimates $f$ everywhere: the graph never dips below any of its tangent hyperplanes. This is the differentiable specialization of the subgradient inequality, in which the unique subgradient at $x$ is the gradient $\\nabla f(x)$.</p>",
+    "summary": "A convex differentiable function on a real inner-product space lies above each of its tangent hyperplanes.",
+    "leanSignature": "theorem inner_gradient_le_sub_of_convexOn\n    {f : E → ℝ} (hf : ConvexOn ℝ Set.univ f) (hdiff : Differentiable ℝ f)\n    (x y : E) :\n    f x + ⟪gradient f x, y - x⟫_ℝ ≤ f y",
+    "formalizationNotes": "The book states the inequality for a convex differentiable function; the Lean version specializes the domain to a complete real inner-product space E and assumes global convexity (on Set.univ) together with global differentiability. Under these hypotheses the inequality holds for every pair of points, with no constant adjustments relative to the book.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : ConvexOn ℝ Set.univ f",
+        "label": "global convexity",
+        "note": "f is convex on the whole space E."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hdiff : Differentiable ℝ f",
+        "label": "differentiability",
+        "note": "f is (Frechet) differentiable at every point, so the gradient exists everywhere."
+      }
+    ],
+    "reference": {
+      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
+      "pointer": "§12.2, Definition 12.3",
+      "biblio": "This is classical convex-analysis folklore with no single seminal origin; it predates and underlies the modern theory of subdifferentials. The standard reference is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970 — the differentiable case is the specialization of the subgradient inequality $f(z)\\ge f(x)+\\langle x^\\ast,z-x\\rangle$ for $x^\\ast\\in\\partial f(x)$ (Thm 23.5), using that for a differentiable convex function the subdifferential is the singleton $\\{\\nabla f(x)\\}$ (Thm 25.1). The inequality also appears in essentially all convex-optimization references, e.g. Boyd & Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §3.1.3, Eq. (3.2).",
+      "keys": [
+        "lu-bda",
+        "rockafellar1970",
+        "boyd-vandenberghe2004"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "gram-posdef",
+    "category": "probability",
+    "kind": "lemma",
+    "leanName": "gram_posDef_of_coercive",
+    "fullName": "StatLean.HighDimensionalStatistics.gram_posDef_of_coercive",
+    "title": "Positive-Definiteness of the Support Gram Matrix",
+    "citation": "Wainwright (2019), §7.5, (A3)",
+    "shortRef": "Wainwright (2019), §7.5, (A3)",
+    "file": "StatLean/HighDimensionalStatistics/ForMathlib/GramMatrix.lean",
+    "docGenUrl": "../docs/StatLean/HighDimensionalStatistics/ForMathlib/GramMatrix.html#StatLean.HighDimensionalStatistics.gram_posDef_of_coercive",
+    "informal": "<p>Let $X$ be an $n\\times d$ design matrix and $S$ a subset of columns, with support Gram matrix $G_S = X_S^{\\top} X_S$. Suppose <span data-link=\"h1\">$n>0$</span>, <span data-link=\"h2\">$c_{\\min}>0$</span>, and the design satisfies the <span data-link=\"h3\">coercivity condition $$c_{\\min}\\,\\|v\\|^2 \\le \\tfrac1n\\,\\|X_S v\\|^2 \\quad\\text{for all } v$$</span> (the minimum-eigenvalue assumption (A3) unfolded). Then the Gram matrix $G_S = X_S^{\\top} X_S$ is positive definite.</p>",
+    "summary": "Quadratic-form coercivity of the design on the support makes the support Gram matrix positive definite.",
+    "leanSignature": "lemma gram_posDef_of_coercive (X : Matrix (Fin n) (Fin d) ℝ) (S : Finset (Fin d))\n    {cmin : ℝ}\n    (hn : 0 < n)\n    (hcmin : 0 < cmin)\n    (hcoer : ∀ v : EuclideanSpace ℝ {x // x ∈ S},\n      cmin * ‖v‖ ^ 2 ≤ (1 / (n : ℝ)) * ‖designSub X S v‖ ^ 2) :\n    (gram X S).PosDef",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hn : 0 < n",
+        "label": "positive sample size",
+        "note": "There is at least one observation, needed to clear the 1/n in the Rayleigh quotient."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hcmin : 0 < cmin",
+        "label": "positive eigenvalue floor",
+        "note": "The lower eigenvalue constant c_min is strictly positive."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hcoer",
+        "label": "quadratic-form coercivity",
+        "note": "The restricted design is coercive: (1/n) times the squared image norm dominates c_min times the squared input norm. This is condition (A3) unfolded."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§7.5, (A3), Eq. (7.43a)",
+      "biblio": "The coercivity hypothesis is Wainwright's minimum-eigenvalue lower-bound assumption (A3) on the support-restricted design; positive-definiteness (hence invertibility) of the support Gram matrix is the entry point for the Lasso primal-dual witness construction.",
+      "keys": [
+        "wainwright2019"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "holder-l1-linf",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "abs_inner_le_l1Norm_mul_linfNorm",
+    "fullName": "StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm",
+    "title": "Hölder Inequality for the ℓ¹–ℓ∞ Pairing",
+    "citation": "Lu (2025), Ch. 10",
+    "shortRef": "Lu (2025), Ch. 10",
+    "file": "StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.lean",
+    "docGenUrl": "../docs/StatLean/HighDimensionalStatistics/ForMathlib/VecNorms.html#StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm",
+    "informal": "<p>For vectors $x,y$ in $\\mathbb{R}^d$, the inner product obeys the ℓ¹–ℓ∞ Hölder bound $$|\\langle x,y\\rangle| \\;\\le\\; \\|x\\|_1\\,\\|y\\|_\\infty,$$ where $\\|x\\|_1=\\sum_i |x_i|$ and $\\|y\\|_\\infty=\\max_i |y_i|$.</p><p>This is the duality pairing between the ℓ¹ and ℓ∞ norms; it is the workhorse used to control the noise term $\\langle \\varepsilon, \\cdot\\rangle$ against the ℓ∞ deviation bound in the Lasso analysis.</p>",
+    "summary": "The absolute inner product of two vectors is bounded by the ℓ1 norm of one times the ℓ-infinity norm of the other.",
+    "leanSignature": "theorem abs_inner_le_l1Norm_mul_linfNorm (x y : EuclideanSpace ℝ (Fin d)) :\n    |⟪x, y⟫_ℝ| ≤ l1Norm x * linfNorm y",
+    "hypotheses": [],
+    "reference": {
+      "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
+      "pointer": "Chapter 10 (Statistical Properties of Lasso)",
+      "biblio": "The ℓ¹–ℓ∞ duality inequality is the standard device for bounding the empirical-process/noise inner product by the ℓ∞ deviation of the score times the ℓ¹ radius of the parameter, central to the Lasso oracle inequalities.",
+      "keys": [
+        "lu-bda"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "tvDist",
+    "category": "probability",
+    "kind": "definition",
+    "leanName": "tvDist",
+    "fullName": "StatLean.Minimaxity.tvDist",
+    "title": "Total Variation Distance",
+    "citation": "Wainwright (2019), Eq. (15.5)",
+    "shortRef": "Wainwright (2019), Eq. (15.5)",
+    "file": "StatLean/Minimaxity/ForMathlib/TotalVariation.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/TotalVariation.html#StatLean.Minimaxity.tvDist",
+    "informal": "<p>For two probability measures $\\mathbb{P}$ and $\\mathbb{Q}$ on a measurable space, the <em>total variation distance</em> is defined as the supremum of the gap in the probabilities they assign to a common event: <span data-link=\"h1\">$$\\|\\mathbb{P} - \\mathbb{Q}\\|_{\\mathrm{TV}} \\;=\\; \\sup_{A \\text{ measurable}} \\bigl(\\mathbb{P}(A) - \\mathbb{Q}(A)\\bigr).$$</span> Taking complements flips the sign of the difference, so this equals <span data-link=\"h2\">$\\sup_A |\\mathbb{P}(A) - \\mathbb{Q}(A)|$</span>, and for probability measures the value always lies in $[0,1]$.</p>",
+    "summary": "The total variation distance between two probability measures is the largest gap in probability they assign to any single event.",
+    "leanSignature": "noncomputable def tvDist (μ ν : Measure α) : ℝ≥0∞ :=\n  ⨆ (s : Set α) (_ : MeasurableSet s), μ s - ν s",
+    "formalizationNotes": "The difference $\\mathbb{P}(A) - \\mathbb{Q}(A)$ is the truncated subtraction in the extended nonnegative reals (its positive part); on probability measures the supremum is always attained on the set $\\{q \\le p\\}$, matching the standard real-valued definition.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "MeasurableSet s",
+        "label": "supremum over events",
+        "note": "The distance is a supremum ranging over all measurable subsets A of the sample space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "μ s - ν s",
+        "label": "probability gap",
+        "note": "For each event, one measures the (positive part of the) difference of the two probabilities assigned to it."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.1.3, Eq. (15.5)",
+      "biblio": "The total variation distance and its equivalent forms (supremum over events, one-half of the $L^1$ distance between densities, and the $\\min(p,q)$ / coupling-type variational representation) are classical folklore of statistical distances with no single seminal origin. The variational form and its use to bound testing error trace to L. Le Cam's theory of statistical experiments — see L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986 — but the elementary identities are reproduced as textbook material in Wainwright (2019).",
+      "keys": [
+        "wainwright2019",
+        "lecam1986"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "tvDist_eq_half_lintegral",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "tvDist_eq_half_lintegral",
+    "fullName": "StatLean.Minimaxity.tvDist_eq_half_lintegral",
+    "title": "Total Variation as Half the L¹ Density Distance",
+    "citation": "Wainwright (2019), Eq. (15.6)",
+    "shortRef": "Wainwright (2019), Eq. (15.6)",
+    "file": "StatLean/Minimaxity/ForMathlib/TotalVariation.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/TotalVariation.html#StatLean.Minimaxity.tvDist_eq_half_lintegral",
+    "informal": "<p>Let <span data-link=\"h1\">$\\mathbb{P}$</span> and <span data-link=\"h2\">$\\mathbb{Q}$</span> be probability measures, and write $p = d\\mathbb{P}/d\\xi$ and $q = d\\mathbb{Q}/d\\xi$ for their densities against the common dominating measure $\\xi = \\mathbb{P} + \\mathbb{Q}$. Then the total variation distance equals one half of the $L^1$ distance between the densities: $$\\|\\mathbb{P} - \\mathbb{Q}\\|_{\\mathrm{TV}} \\;=\\; \\tfrac12 \\int |p - q| \\, d\\xi.$$ This is the standard density (or one-half $L^1$) characterization of total variation.</p>",
+    "summary": "The total variation distance equals one half the L1 distance between the densities of the two measures.",
+    "leanSignature": "theorem tvDist_eq_half_lintegral (μ ν : Measure α)\n    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :\n    tvDist μ ν\n      = 2⁻¹ * ∫⁻ x, ENNReal.ofReal\n          |(μ.rnDeriv (μ + ν) x).toReal - (ν.rnDeriv (μ + ν) x).toReal| ∂(μ + ν)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[IsProbabilityMeasure μ]",
+        "label": "P is a probability measure",
+        "note": "The first measure has total mass one."
+      },
+      {
+        "id": "h2",
+        "leanToken": "[IsProbabilityMeasure ν]",
+        "label": "Q is a probability measure",
+        "note": "The second measure has total mass one."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.1.3, Eq. (15.6)",
+      "biblio": "The three equivalent forms of the total variation distance are classical folklore of statistical distances with no single seminal origin; the variational form and its use to bound testing error trace to L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986, and the density identity used here is reproduced as textbook material in Wainwright (2019).",
+      "keys": [
+        "wainwright2019",
+        "lecam1986"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "klDiv_pi_eq_nsmul",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "klDiv_pi_eq_nsmul",
+    "fullName": "StatLean.Minimaxity.klDiv_pi_eq_nsmul",
+    "title": "Tensorization of Kullback–Leibler Divergence",
+    "citation": "Wainwright (2019), Eq. (15.11b)",
+    "shortRef": "Wainwright (2019), Eq. (15.11b)",
+    "file": "StatLean/Minimaxity/ForMathlib/KLDivergence.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/KLDivergence.html#StatLean.Minimaxity.klDiv_pi_eq_nsmul",
+    "informal": "<p>For probability measures $\\mathbb{P}$ and $\\mathbb{Q}$ with densities $p, q$ relative to a common dominating measure, the <em>Kullback–Leibler divergence</em> is $D(\\mathbb{P}\\,\\|\\,\\mathbb{Q}) = \\int p \\log(p/q)\\,d\\nu$, with the convention $+\\infty$ when $\\mathbb{P}$ is not absolutely continuous with respect to $\\mathbb{Q}$. For the <span data-link=\"h1\">$n$-fold i.i.d. product measures</span> the divergence tensorizes exactly: $$D\\bigl(\\mathbb{P}^{\\otimes n}\\,\\|\\,\\mathbb{Q}^{\\otimes n}\\bigr) \\;=\\; n\\,D(\\mathbb{P}\\,\\|\\,\\mathbb{Q}).$$ This additivity across independent coordinates is what converts a per-sample divergence bound into an $n$-sample bound in minimax lower-bound arguments.</p>",
+    "summary": "The KL divergence between two n-fold i.i.d. product measures is n times the single-copy divergence.",
+    "leanSignature": "theorem klDiv_pi_eq_nsmul (n : ℕ) (μ ν : Measure α)\n    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :\n    klDiv (Measure.pi fun _ : Fin n => μ) (Measure.pi fun _ : Fin n => ν)\n      = n • klDiv μ ν",
+    "formalizationNotes": "KL divergence is $\\mathbb{R}_{\\ge 0}^\\infty$-valued in the formalization (via Mathlib's klDiv), so nonnegativity is automatic and the non-absolutely-continuous branch returns $+\\infty$. Wainwright's $D(\\mathbb{Q}\\,\\|\\,\\mathbb{P})$ matches klDiv with the integrated density as the first argument, so no argument swap is needed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Measure.pi fun _ : Fin n => μ",
+        "label": "i.i.d. product",
+        "note": "Both sides are n-fold independent product measures built from a single copy of each law."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.1.3, Eq. (15.11b)",
+      "biblio": "The KL divergence originates with S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *The Annals of Mathematical Statistics* **22** (1951), no. 1, 79–86. The tensorization identity is textbook folklore following from the chain rule for relative entropy; the mixture-minimization companion property (also proved in this file) is used to obtain the mutual-information minimax bound of Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *The Annals of Statistics* **27** (1999), no. 5, 1564–1599.",
+      "keys": [
+        "wainwright2019",
+        "kullback-leibler1951",
+        "yang-barron1999"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "sqHellinger",
+    "category": "probability",
+    "kind": "definition",
+    "leanName": "sqHellinger",
+    "fullName": "StatLean.Minimaxity.sqHellinger",
+    "title": "Squared Hellinger Distance",
+    "citation": "Wainwright (2019), Eq. (15.9)",
+    "shortRef": "Wainwright (2019), Eq. (15.9)",
+    "file": "StatLean/Minimaxity/ForMathlib/HellingerDivergence.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/HellingerDivergence.html#StatLean.Minimaxity.sqHellinger",
+    "informal": "<p>For probability measures $\\mathbb{P}, \\mathbb{Q}$ with densities $p, q$ relative to a common dominating measure $\\nu$, the <em>squared Hellinger distance</em> is the squared $L^2(\\nu)$ distance between the square-root densities: <span data-link=\"h1\">$$H^2(\\mathbb{P}\\,\\|\\,\\mathbb{Q}) \\;=\\; \\int \\bigl(\\sqrt{p} - \\sqrt{q}\\bigr)^2 \\, d\\nu.$$</span> It always lies in the range $[0,2]$ and, unlike total variation, tensorizes multiplicatively through the Hellinger affinity, making it convenient for i.i.d. minimax lower bounds.</p>",
+    "summary": "The squared Hellinger distance is the squared L2 distance between the square roots of the two densities.",
+    "leanSignature": "noncomputable def sqHellinger (μ ν : Measure α) : ℝ≥0∞ :=\n  ∫⁻ x, ENNReal.ofReal\n    ((Real.sqrt (μ.rnDeriv (μ + ν) x).toReal\n      - Real.sqrt (ν.rnDeriv (μ + ν) x).toReal) ^ 2) ∂(μ + ν)",
+    "formalizationNotes": "To make the definition canonical and independent of an external choice of dominating measure, it is taken against $\\nu = \\mathbb{P} + \\mathbb{Q}$; the value coincides with that against any other common dominating measure (dominating-measure invariance is proved in the file).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Real.sqrt",
+        "label": "square-root densities",
+        "note": "The integrand is the squared difference of the pointwise square roots of the two densities, i.e. the squared L2 distance between square-root densities."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.1.3, Eq. (15.9)",
+      "biblio": "The Hellinger distance is named after Ernst Hellinger, who introduced the underlying square-root-density geometry in E. Hellinger, \"Neue Begründung der Theorie quadratischer Formen von unendlichvielen Veränderlichen,\" *Journal für die reine und angewandte Mathematik* **136** (1909), 210–271. Its modern statistical use — the squared form, the range $[0,2]$, and tensorization across i.i.d. coordinates — is textbook folklore; the functional is a monotone transform of the Bhattacharyya affinity, A. Bhattacharyya, \"On a measure of divergence between two statistical populations defined by their probability distributions,\" *Bulletin of the Calcutta Mathematical Society* **35** (1943), 99–109.",
+      "keys": [
+        "wainwright2019",
+        "hellinger1909",
+        "bhattacharyya1943"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "discreteEntropy_le_log_card",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "discreteEntropy_le_log_card",
+    "fullName": "StatLean.Minimaxity.discreteEntropy_le_log_card",
+    "title": "Maximum-Entropy Bound on a Finite Alphabet",
+    "citation": "Wainwright (2019), Exercise 15.2",
+    "shortRef": "Wainwright (2019), Exercise 15.2",
+    "file": "StatLean/Minimaxity/ForMathlib/Entropy.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/Entropy.html#StatLean.Minimaxity.discreteEntropy_le_log_card",
+    "informal": "<p>For a probability mass function $p$ on a finite alphabet $\\mathcal{X}$, the <em>discrete Shannon entropy</em> is $H(p) = -\\sum_{x} p(x)\\log p(x)$. Provided <span data-link=\"h1\">every mass $p(x)$ is nonnegative</span> and <span data-link=\"h2\">the masses sum to one</span>, the entropy is bounded by the logarithm of the alphabet size, $$H(p) \\;\\le\\; \\log |\\mathcal{X}|,$$ with equality attained exactly at the uniform distribution. This is the maximum-entropy property on a finite set.</p>",
+    "summary": "The Shannon entropy of a distribution on a finite alphabet is at most the log of the alphabet size, with equality for the uniform distribution.",
+    "leanSignature": "theorem discreteEntropy_le_log_card {ι : Type*} [Fintype ι] [Nonempty ι] (p : ι → ℝ)\n    (h0 : ∀ i, 0 ≤ p i) (hsum : ∑ i, p i = 1) :\n    discreteEntropy p ≤ Real.log (Fintype.card ι)",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "h0 : ∀ i, 0 ≤ p i",
+        "label": "nonnegative masses",
+        "note": "Each probability mass is nonnegative."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hsum : ∑ i, p i = 1",
+        "label": "total mass one",
+        "note": "The masses sum to one, so p is a genuine probability distribution."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.4, Exercise 15.2",
+      "biblio": "The entropy functional and this maximal-entropy property ($H \\le \\log n$ with equality iff uniform) originate with C. E. Shannon, \"A Mathematical Theory of Communication,\" *Bell System Technical Journal* **27** (1948), 379–423 and 623–656. The bound is a consequence of Jensen's inequality for the concave function $-t\\log t$; the elementary inequality $\\log t \\le t - 1$ underlying the related Gibbs/subadditivity steps is the nonnegativity of relative entropy, S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *Annals of Mathematical Statistics* **22** (1951), 79–86.",
+      "keys": [
+        "wainwright2019",
+        "shannon1948",
+        "kullback-leibler1951"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "klDiv_gaussianReal",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "klDiv_gaussianReal",
+    "fullName": "StatLean.Minimaxity.klDiv_gaussianReal",
+    "title": "KL Divergence Between Equal-Variance Gaussians",
+    "citation": "Wainwright (2019), Exercise 15.13",
+    "shortRef": "Wainwright (2019), Exercise 15.13",
+    "file": "StatLean/Minimaxity/ForMathlib/GaussianKL.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/GaussianKL.html#StatLean.Minimaxity.klDiv_gaussianReal",
+    "informal": "<p>For two real Gaussian distributions with a <span data-link=\"h2\">common variance $\\sigma^2 > 0$</span> and means $m_1, m_2$, the Kullback–Leibler divergence has the closed form $$D\\bigl(\\mathcal{N}(m_1,\\sigma^2)\\,\\|\\,\\mathcal{N}(m_2,\\sigma^2)\\bigr) \\;=\\; \\frac{(m_1 - m_2)^2}{2\\sigma^2}.$$ This is the equal-covariance case of the general multivariate formula, in which only the mean-shift term survives; it is the divergence input to the Gaussian-location and linear-regression minimax lower bounds.</p>",
+    "summary": "The KL divergence between two Gaussians of equal variance depends only on the squared mean gap scaled by twice the variance.",
+    "leanSignature": "theorem klDiv_gaussianReal (m₁ m₂ : ℝ) (v : ℝ≥0) (hv : v ≠ 0) :\n    klDiv (gaussianReal m₁ v) (gaussianReal m₂ v)\n      = ENNReal.ofReal ((m₁ - m₂) ^ 2 / (2 * (v : ℝ)))",
+    "formalizationNotes": "The book constant is reproduced exactly. The only deviations from the book statement are the $\\mathbb{ENNReal.ofReal}$ wrapper (Mathlib's klDiv is extended-nonnegative-real valued) and the explicit nondegeneracy hypothesis $\\sigma^2 \\ne 0$.",
+    "hypotheses": [
+      {
+        "id": "h2",
+        "leanToken": "hv : v ≠ 0",
+        "label": "positive variance",
+        "note": "The shared variance is nonzero, so both Gaussians are nondegenerate."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.6, Exercise 15.13",
+      "biblio": "The closed-form KL divergence between Gaussian laws is folklore with no single seminal origin; the Kullback–Leibler divergence itself was introduced in S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *Annals of Mathematical Statistics* **22** (1951), no. 1, 79–86, and the Gaussian special case is a standard exercise (here Wainwright, Exercise 15.13).",
+      "keys": [
+        "wainwright2019",
+        "kullback-leibler1951"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "gaussian_mutualInfo_le",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "gaussian_mutualInfo_le",
+    "fullName": "StatLean.Minimaxity.gaussian_mutualInfo_le",
+    "title": "Gaussian Maximum-Entropy Mutual-Information Bound",
+    "citation": "Wainwright (2019), Lemma 15.17, Eq. (15.42)",
+    "shortRef": "Wainwright (2019), Lemma 15.17, Eq. (15.42)",
+    "file": "StatLean/Minimaxity/ForMathlib/GaussianMaxEntropy.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/GaussianMaxEntropy.html#StatLean.Minimaxity.gaussian_mutualInfo_le",
+    "informal": "<p>Let $J$ be uniformly distributed over $\\{1,\\dots,M\\}$ and suppose the observation conditioned on the index is a <span data-link=\"h2\">centered Gaussian, $Z \\mid J = j \\sim \\mathcal{N}(0, \\Sigma^j)$</span>, with <span data-link=\"h1\">each component covariance $\\Sigma^j$ positive definite</span>. Writing <span data-link=\"h3\">$\\operatorname{cov}(Z) = \\tfrac1M\\sum_{j} \\Sigma^j$ for the covariance of the Gaussian mixture</span>, the mutual information obeys the log-determinant bound $$I(Z;J) \\;\\le\\; \\tfrac12\\Bigl(\\log\\det \\operatorname{cov}(Z) \\;-\\; \\tfrac1M\\sum_{j=1}^{M}\\log\\det\\Sigma^j\\Bigr).$$ This is a packaging of the Gaussian maximum-entropy principle used for the PCA minimax lower bound.</p>",
+    "summary": "When the observation conditioned on the index is a centered Gaussian, the mutual information is bounded by a log-determinant gap coming from the Gaussian maximum-entropy property.",
+    "leanSignature": "theorem gaussian_mutualInfo_le {M d : ℕ} [NeZero M]\n    (Q : Kernel (Fin M) (EuclideanSpace ℝ (Fin d))) [IsMarkovKernel Q]\n    (S : Fin M → Matrix (Fin d) (Fin d) ℝ) (covZ : Matrix (Fin d) (Fin d) ℝ)\n    (hS : ∀ j, (S j).PosDef)\n    (hQ : ∀ j, Q j = multivariateGaussian 0 (S j))\n    (hcov : covZ = (M : ℝ)⁻¹ • ∑ j, S j) :\n    mutualInformation Q\n      ≤ ENNReal.ofReal\n          (2⁻¹ * (Real.log covZ.det - (M : ℝ)⁻¹ * ∑ j, Real.log (S j).det))",
+    "formalizationNotes": "Relative to the book, two extra assumptions are made explicit: each component covariance $\\Sigma^j$ is positive definite, and the component means are zero (the minimax constructions of §15.3.4 use centered Gaussians), so $\\operatorname{cov}(Z)$ is the plain average of the $\\Sigma^j$ with no between-means term. The proof avoids differential entropy: it uses that the mixture minimizes the average KL divergence and the closed-form centered-Gaussian KL, reducing nonnegativity to a matrix Gibbs inequality.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hS : ∀ j, (S j).PosDef",
+        "label": "positive-definite covariances",
+        "note": "Each conditional covariance matrix is positive definite."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hQ : ∀ j, Q j = multivariateGaussian 0 (S j)",
+        "label": "centered Gaussian components",
+        "note": "The conditional law of the observation given J = j is the zero-mean Gaussian with covariance the j-th matrix."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hcov : covZ = (M : ℝ)⁻¹ • ∑ j, S j",
+        "label": "mixture covariance",
+        "note": "The reference covariance is the uniform average of the component covariances (the covariance of the zero-mean mixture)."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "§15.3.4, Lemma 15.17, Eq. (15.42)",
+      "biblio": "This is a folklore consequence of the Gaussian maximum-entropy principle. That among all distributions with a fixed covariance the Gaussian maximizes differential entropy originates with C. E. Shannon, \"A Mathematical Theory of Communication,\" *Bell System Technical Journal* **27** (1948), 379–423 and 623–656; the standard modern reference is T. M. Cover and J. A. Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006 (Theorem 8.6.5). The mutual-information packaging for minimax analysis is Wainwright (2019), Lemma 15.17.",
+      "keys": [
+        "wainwright2019",
+        "shannon1948",
+        "cover-thomas2006"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "exists_hamming_packing",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "exists_hamming_packing",
+    "fullName": "StatLean.Minimaxity.exists_hamming_packing",
+    "title": "Gilbert–Varshamov Packing of the Binary Hypercube",
+    "citation": "Wainwright (2019), Example 5.3, Eq. (5.3)",
+    "shortRef": "Wainwright (2019), Example 5.3, Eq. (5.3)",
+    "file": "StatLean/Minimaxity/ForMathlib/Packing/HammingPacking.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/Packing/HammingPacking.html#StatLean.Minimaxity.exists_hamming_packing",
+    "informal": "<p>The binary hypercube $\\{0,1\\}^m$ contains a subset $T$ that is well separated in Hamming distance yet exponentially large: <span data-link=\"h2\">its elements are pairwise at Hamming distance at least $m/4$</span> and <span data-link=\"h1\">its log-cardinality satisfies $\\log |T| \\ge m/10$</span>. This is the Gilbert–Varshamov bound, the combinatorial engine behind the local packings used in minimax lower bounds.</p>",
+    "summary": "The binary hypercube contains an exponentially large set of codewords that are pairwise well separated in Hamming distance.",
+    "leanSignature": "theorem exists_hamming_packing (m : ℕ) :\n    ∃ T : Finset (Fin m → Bool),\n      (m / 10 : ℝ) ≤ Real.log T.card ∧\n      ∀ α ∈ T, ∀ β ∈ T, α ≠ β → (m / 4 : ℝ) ≤ (hammingDist α β : ℝ)",
+    "formalizationNotes": "The book states the qualitative claim that the log-packing number grows linearly in $m$ (its binary-entropy heart being $H_2(1/4) \\approx 0.5623$ nats). The formalization proves the explicit provable-slack constant $\\log|T| \\ge m/10$ via a Chernoff bound on the Hamming-ball volume; this is all the downstream minimax arguments require.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(m / 10 : ℝ) ≤ Real.log T.card",
+        "label": "exponential cardinality",
+        "note": "The set has at least e^(m/10) codewords, i.e. exponentially many in m."
+      },
+      {
+        "id": "h2",
+        "leanToken": "(m / 4 : ℝ) ≤ (hammingDist α β : ℝ)",
+        "label": "Hamming separation",
+        "note": "Any two distinct codewords differ in at least m/4 coordinates."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "Ch. 5, Example 5.3, Eq. (5.3)",
+      "biblio": "The bound originates independently with E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Gilbert proved existence of codes meeting the volume (sphere-covering) lower bound on code size at a prescribed minimum distance; Varshamov sharpened the construction to linear codes. The greedy/maximal-packing rendering used here is the standard textbook form, specialized by Wainwright's Example 5.3 to the rescaled Hamming metric.",
+      "keys": [
+        "wainwright2019",
+        "gilbert1952",
+        "varshamov1957"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "exists_sphere_packing",
+    "category": "probability",
+    "kind": "theorem",
+    "leanName": "exists_sphere_packing",
+    "fullName": "StatLean.Minimaxity.exists_sphere_packing",
+    "title": "Exponential Packing of the Euclidean Unit Sphere",
+    "citation": "Wainwright (2019), Example 5.8",
+    "shortRef": "Wainwright (2019), Example 5.8",
+    "file": "StatLean/Minimaxity/ForMathlib/Packing/SpherePacking.lean",
+    "docGenUrl": "../docs/StatLean/Minimaxity/ForMathlib/Packing/SpherePacking.html#StatLean.Minimaxity.exists_sphere_packing",
+    "informal": "<p>The unit sphere of $\\mathbb{R}^n$ admits an exponentially large half-separated packing: there is a finite set $T$ of <span data-link=\"h2\">unit vectors</span> that are <span data-link=\"h3\">pairwise at Euclidean distance at least $1/2$</span>, with <span data-link=\"h1\">log-cardinality $\\log |T| \\ge n/10$</span>. Such a packing is the metric-entropy input to the PCA minimax lower bound.</p>",
+    "summary": "The Euclidean unit sphere in n dimensions carries an exponentially large set of unit vectors that are pairwise at least one-half apart.",
+    "leanSignature": "theorem exists_sphere_packing (n : ℕ) :\n    ∃ T : Finset (EuclideanSpace ℝ (Fin n)),\n      (n / 10 : ℝ) ≤ Real.log T.card ∧\n      (∀ v ∈ T, ‖v‖ = 1) ∧\n      ∀ u ∈ T, ∀ v ∈ T, u ≠ v → (1 / 2 : ℝ) ≤ ‖u - v‖",
+    "formalizationNotes": "The book states $\\log|T| \\ge n\\log 2$; the formalization proves the looser but still exponential $\\log|T| \\ge n/10$ (note $1/10 < \\log 2$), inherited from the underlying Gilbert–Varshamov binary code used to build the sign-embedded packing. This is all the PCA Fano lower bound requires.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "(n / 10 : ℝ) ≤ Real.log T.card",
+        "label": "exponential cardinality",
+        "note": "The packing has at least e^(n/10) points, exponentially many in n."
+      },
+      {
+        "id": "h2",
+        "leanToken": "‖v‖ = 1",
+        "label": "unit vectors",
+        "note": "Every point of the packing lies on the Euclidean unit sphere."
+      },
+      {
+        "id": "h3",
+        "leanToken": "(1 / 2 : ℝ) ≤ ‖u - v‖",
+        "label": "half-separation",
+        "note": "Any two distinct points are at Euclidean distance at least one half."
+      }
+    ],
+    "reference": {
+      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
+      "pointer": "Ch. 5, Example 5.8",
+      "biblio": "The existence of an exponentially large, constant-separated subset of the unit sphere is textbook folklore following from a volume/covering argument. The combinatorial engine used here — a binary code on $n$ bits with minimum Hamming distance $\\ge n/4$ and exponentially many codewords — is the Gilbert–Varshamov bound, due independently to E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Wainwright presents the sphere-packing consequence as Example 5.8.",
+      "keys": [
+        "wainwright2019",
+        "gilbert1952",
+        "varshamov1957"
+      ]
+    },
+    "hasGraph": true
   }
 ]

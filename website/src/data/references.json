@@ -598,5 +598,35 @@
     "key": "vandervaart1991",
     "sortKey": "van der Vaart",
     "html": "A. W. van der Vaart, \"An asymptotic representation theorem,\" *International Statistical Review* **59**(1), 1991, pp. 97–121."
+  },
+  {
+    "key": "dkw1956",
+    "sortKey": "Dvoretzky",
+    "html": "A. Dvoretzky, J. Kiefer, and J. Wolfowitz, \"Asymptotic minimax character of the sample distribution function and of the classical multinomial estimator,\" *Annals of Mathematical Statistics* **27**(3), 1956, pp. 642–669."
+  },
+  {
+    "key": "kullback-leibler1951",
+    "sortKey": "Kullback",
+    "html": "S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *The Annals of Mathematical Statistics* **22**(1), 1951, pp. 79–86."
+  },
+  {
+    "key": "hellinger1909",
+    "sortKey": "Hellinger",
+    "html": "E. Hellinger, \"Neue Begründung der Theorie quadratischer Formen von unendlichvielen Veränderlichen,\" *Journal für die reine und angewandte Mathematik* **136**, 1909, pp. 210–271."
+  },
+  {
+    "key": "bhattacharyya1943",
+    "sortKey": "Bhattacharyya",
+    "html": "A. Bhattacharyya, \"On a measure of divergence between two statistical populations defined by their probability distributions,\" *Bulletin of the Calcutta Mathematical Society* **35**, 1943, pp. 99–109."
+  },
+  {
+    "key": "gilbert1952",
+    "sortKey": "Gilbert",
+    "html": "E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31**(3), 1952, pp. 504–522."
+  },
+  {
+    "key": "varshamov1957",
+    "sortKey": "Varshamov",
+    "html": "R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117**, 1957, pp. 739–741."
   }
 ]
