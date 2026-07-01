@@ -58,7 +58,7 @@ export function TopicIcon({
           <circle cx="24" cy="35" r="2.1" fill="currentColor" stroke="none" />
         </svg>
       );
-    case "hypothesis":
+    case "multipletesting":
       // two overlapping densities split by a decision threshold
       return (
         <svg {...common}>
