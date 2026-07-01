@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw",
   "nodes": [
-    {"id":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","label":"IsEquivariantInLaw","full":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","kind":"root","decl":"def","module":"AsymptoticStatistics.Experiment.EquivariantInLaw"},
+    {"id":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","label":"IsEquivariantInLaw","full":"AsymptoticStatistics.EquivariantInLaw.IsEquivariantInLaw","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.Experiment.EquivariantInLaw"},
     {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
     {"id":"EuclideanSpace","label":"EuclideanSpace","full":"EuclideanSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.PiL2"},
     {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},

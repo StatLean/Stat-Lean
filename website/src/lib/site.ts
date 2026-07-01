@@ -20,6 +20,16 @@ export function sourceUrl(r: ResultEntry): string {
   return `${REPO_URL}/blob/main/${r.file}`;
 }
 
+/** In-app hash route to a specific entry on the references page. */
+export function refUrl(key: string): string {
+  return `#/references#${key}`;
+}
+
+/** Derive the doc-gen4 URL for a result from its file + fullName. */
+export function docGenUrlFor(file: string, fullName: string): string {
+  return "../docs/" + file.replace(/\.lean$/, "") + ".html#" + fullName;
+}
+
 /**
  * doc-gen4 URL for any declaration, keyed by its defining module.
  * Mathlib and Batteries declarations are hosted at leanprover-community.github.io;

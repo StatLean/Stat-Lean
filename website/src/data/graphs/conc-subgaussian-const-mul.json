@@ -1,0 +1,20 @@
+{
+  "root": "StatLean.ConcentrationInequalities.isSubGaussian_const_mul",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","label":"isSubGaussian_const_mul","full":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Hoeffding"},
+    {"id":"StatLean.ConcentrationInequalities.IsSubGaussian","label":"IsSubGaussian","full":"StatLean.ConcentrationInequalities.IsSubGaussian","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubGaussian.Defs"},
+    {"id":"sq_nonneg","label":"sq_nonneg","full":"sq_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Unbundled.Basic"},
+    {"id":"AddGroup.existsAddOfLE","label":"existsAddOfLE","full":"AddGroup.existsAddOfLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.ExistsOfLE"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"ProbabilityTheory.HasSubgaussianMGF.const_mul","label":"const_mul","full":"ProbabilityTheory.HasSubgaussianMGF.const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"},
+    {"id":"MeasureTheory.integral_const_mul","label":"integral_const_mul","full":"MeasureTheory.integral_const_mul","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"StatLean.ConcentrationInequalities.IsSubGaussian"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"sq_nonneg"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"AddGroup.existsAddOfLE"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"ProbabilityTheory.HasSubgaussianMGF.const_mul"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_const_mul","target":"MeasureTheory.integral_const_mul"}
+  ]
+}

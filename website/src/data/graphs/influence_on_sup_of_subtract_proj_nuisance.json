@@ -1,15 +1,15 @@
 {
   "root": "AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance",
   "nodes": [
-    {"id":"AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance","label":"influence_on_sup_of_subtract_proj_nuisance","full":"AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance","kind":"root","decl":"thm","module":"AsymptoticStatistics.Core.EIF"},
+    {"id":"AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance","label":"influence_on_sup_of_subtract_proj_nuisance","full":"AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.Core.EIF"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
     {"id":"Real.isBoundedSMul","label":"isBoundedSMul","full":"Real.isBoundedSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.MetricSpace.Algebra"},
-    {"id":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","label":"L2ZeroMean","full":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"},
+    {"id":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","label":"L2ZeroMean","full":"AsymptoticStatistics.Core.Hilbert.L2ZeroMean","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Hilbert"},
     {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"Submodule.mem_sup_left","label":"mem_sup_left","full":"Submodule.mem_sup_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Lattice"},
     {"id":"Submodule.mem_sup_right","label":"mem_sup_right","full":"Submodule.mem_sup_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Lattice"},
-    {"id":"AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction","label":"IsInfluenceFunction","full":"AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Pathwise"},
+    {"id":"AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction","label":"IsInfluenceFunction","full":"AsymptoticStatistics.Core.Pathwise.IsInfluenceFunction","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Pathwise"},
     {"id":"Submodule.addSubgroupClass","label":"addSubgroupClass","full":"Submodule.addSubgroupClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Module.Submodule.Defs"},
     {"id":"Submodule.mem_sup","label":"mem_sup","full":"Submodule.mem_sup","kind":"mathlib","decl":"thm","module":"Mathlib.LinearAlgebra.Span.Defs"},
     {"id":"Submodule.starProjection_apply_mem","label":"starProjection_apply_mem","full":"Submodule.starProjection_apply_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Projection.Basic"},
@@ -21,8 +21,8 @@
     {"id":"inner_add_right","label":"inner_add_right","full":"inner_add_right","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
     {"id":"add_zero","label":"add_zero","full":"add_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"ContinuousLinearMap.map_add","label":"map_add","full":"ContinuousLinearMap.map_add","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Module.LinearMap"},
-    {"id":"AsymptoticStatistics.Core.Hilbert.integralL2","label":"integralL2","full":"AsymptoticStatistics.Core.Hilbert.integralL2","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"},
-    {"id":"AsymptoticStatistics.Core.Hilbert.oneL2","label":"oneL2","full":"AsymptoticStatistics.Core.Hilbert.oneL2","kind":"repo","decl":"def","module":"AsymptoticStatistics.Core.Hilbert"}
+    {"id":"AsymptoticStatistics.Core.Hilbert.integralL2","label":"integralL2","full":"AsymptoticStatistics.Core.Hilbert.integralL2","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Hilbert"},
+    {"id":"AsymptoticStatistics.Core.Hilbert.oneL2","label":"oneL2","full":"AsymptoticStatistics.Core.Hilbert.oneL2","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.Core.Hilbert"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.Core.EIF.influence_on_sup_of_subtract_proj_nuisance","target":"SeminormedAddCommGroup.toIsTopologicalAddGroup"},

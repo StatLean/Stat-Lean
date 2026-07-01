@@ -1,0 +1,24 @@
+{
+  "root": "StatLean.Minimaxity.tvDist",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.tvDist","label":"tvDist","full":"StatLean.Minimaxity.tvDist","kind":"root","decl":"def","module":"StatLean.Minimaxity.ForMathlib.TotalVariation"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"iSup","label":"iSup","full":"iSup","kind":"mathlib","decl":"def","module":"Mathlib.Order.SetNotation"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder","label":"toConditionallyCompletePartialOrder","full":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder","kind":"mathlib","decl":"def","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
+    {"id":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot","label":"toConditionallyCompleteLinearOrderBot","full":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot","kind":"mathlib","decl":"def","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
+    {"id":"MeasurableSet","label":"MeasurableSet","full":"MeasurableSet","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.tvDist","target":"MeasurableSpace"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"ENNReal"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"iSup"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"Set"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot"},
+    {"source":"StatLean.Minimaxity.tvDist","target":"MeasurableSet"}
+  ]
+}

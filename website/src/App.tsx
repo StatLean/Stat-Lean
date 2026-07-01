@@ -7,6 +7,7 @@ import { Home } from "./pages/Home";
 import { Category } from "./pages/Category";
 import { ResultDetail } from "./pages/ResultDetail";
 import { Search } from "./pages/Search";
+import { References } from "./pages/References";
 import { Team } from "./pages/Team";
 import { prefetchGraphView, prefetchDependencies, warmGraphChunks } from "./lib/prefetch";
 
@@ -48,6 +49,7 @@ export default function App() {
                 </Suspense>
               }
             />
+            <Route path="/references" element={<References />} />
             <Route path="/team" element={<Team />} />
             <Route path="/category/:catId" element={<Category />} />
             <Route path="/result/:resultId" element={<ResultDetail />} />

@@ -1,0 +1,18 @@
+{
+  "root": "StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential",
+  "nodes": [
+    {"id":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","label":"isGlobalMin_iff_zero_mem_subdifferential","full":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","kind":"root","decl":"thm","module":"StatLean.Optimization.LocalGlobal"},
+    {"id":"StatLean.Optimization.subdifferential","label":"subdifferential","full":"StatLean.Optimization.subdifferential","kind":"repo","decl":"def","module":"StatLean.Optimization.Convex.Defs"},
+    {"id":"inner_zero_left","label":"inner_zero_left","full":"inner_zero_left","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.InnerProductSpace.Basic"},
+    {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"StatLean.Optimization.IsSubgradient","label":"IsSubgradient","full":"StatLean.Optimization.IsSubgradient","kind":"repo","decl":"def","module":"StatLean.Optimization.Convex.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","target":"StatLean.Optimization.subdifferential"},
+    {"source":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","target":"inner_zero_left"},
+    {"source":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","target":"le_of_not_gt"},
+    {"source":"StatLean.Optimization.isGlobalMin_iff_zero_mem_subdifferential","target":"Nat.cast_zero"},
+    {"source":"StatLean.Optimization.subdifferential","target":"StatLean.Optimization.IsSubgradient"}
+  ]
+}

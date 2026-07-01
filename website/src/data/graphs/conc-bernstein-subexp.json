@@ -1,0 +1,17 @@
+{
+  "root": "StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","label":"isSubExponential_of_hasBernsteinCondition","full":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.Bernstein.MGFBound"},
+    {"id":"StatLean.ConcentrationInequalities.HasBernsteinCondition","label":"HasBernsteinCondition","full":"StatLean.ConcentrationInequalities.HasBernsteinCondition","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.Bernstein.Defs"},
+    {"id":"StatLean.ConcentrationInequalities.IsSubExponential","label":"IsSubExponential","full":"StatLean.ConcentrationInequalities.IsSubExponential","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubExponential.Defs"},
+    {"id":"StatLean.ConcentrationInequalities.IsSubExponential.mk","label":"mk","full":"StatLean.ConcentrationInequalities.IsSubExponential.mk","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubExponential.Defs"},
+    {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","target":"StatLean.ConcentrationInequalities.HasBernsteinCondition"},
+    {"source":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","target":"StatLean.ConcentrationInequalities.IsSubExponential"},
+    {"source":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","target":"StatLean.ConcentrationInequalities.IsSubExponential.mk"},
+    {"source":"StatLean.ConcentrationInequalities.isSubExponential_of_hasBernsteinCondition","target":"sub_zero"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubExponential.mk","target":"StatLean.ConcentrationInequalities.IsSubExponential"}
+  ]
+}

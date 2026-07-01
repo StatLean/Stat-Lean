@@ -1,10 +1,10 @@
 {
   "root": "AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1",
   "nodes": [
-    {"id":"AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1","label":"isPGlivenkoCantelli_of_finite_bracketing_L1","full":"AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.GlivenkoCantelli"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.HasFiniteBracketingCover","label":"HasFiniteBracketingCover","full":"AsymptoticStatistics.EmpiricalProcess.HasFiniteBracketingCover","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.IsPGlivenkoCantelli","label":"IsPGlivenkoCantelli","full":"AsymptoticStatistics.EmpiricalProcess.IsPGlivenkoCantelli","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.GlivenkoCantelli"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.supNormOver","label":"supNormOver","full":"AsymptoticStatistics.EmpiricalProcess.supNormOver","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1","label":"isPGlivenkoCantelli_of_finite_bracketing_L1","full":"AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.GlivenkoCantelli"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.HasFiniteBracketingCover","label":"HasFiniteBracketingCover","full":"AsymptoticStatistics.EmpiricalProcess.HasFiniteBracketingCover","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsPGlivenkoCantelli","label":"IsPGlivenkoCantelli","full":"AsymptoticStatistics.EmpiricalProcess.IsPGlivenkoCantelli","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.GlivenkoCantelli"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.supNormOver","label":"supNormOver","full":"AsymptoticStatistics.EmpiricalProcess.supNormOver","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
     {"id":"div_pos","label":"div_pos","full":"div_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
     {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
     {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
@@ -34,8 +34,8 @@
     {"id":"mul_one_div","label":"mul_one_div","full":"mul_one_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
     {"id":"ENNReal.ofReal_le_ofReal","label":"ofReal_le_ofReal","full":"ENNReal.ofReal_le_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Real"},
     {"id":"ENNReal.ofReal_toReal","label":"ofReal_toReal","full":"ENNReal.ofReal_toReal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","label":"IsEpsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.IsBracket","label":"IsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsBracket","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.Bracketing"}
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","label":"IsEpsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsEpsBracket","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsBracket","label":"IsBracket","full":"AsymptoticStatistics.EmpiricalProcess.IsBracket","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.Bracketing"}
   ],
   "edges": [
     {"source":"AsymptoticStatistics.EmpiricalProcess.isPGlivenkoCantelli_of_finite_bracketing_L1","target":"AsymptoticStatistics.EmpiricalProcess.HasFiniteBracketingCover"},
