@@ -4642,7 +4642,7 @@
   },
   {
     "id": "mt-bh-fdr-le",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "benjamini_hochberg_fdr_le",
     "fullName": "StatLean.MultipleTesting.benjamini_hochberg_fdr_le",
@@ -4683,7 +4683,7 @@
   },
   {
     "id": "mt-bh-dependent-fdr-le",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "benjamini_hochberg_dependent_fdr_le",
     "fullName": "StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le",
@@ -4719,7 +4719,7 @@
   },
   {
     "id": "mt-bh-fdr-eq",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "benjamini_hochberg_fdr_eq",
     "fullName": "StatLean.MultipleTesting.benjamini_hochberg_fdr_eq",
@@ -4761,7 +4761,7 @@
   },
   {
     "id": "mt-holm-fwer-le",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "holm_fwer_le",
     "fullName": "StatLean.MultipleTesting.holm_fwer_le",
@@ -4797,7 +4797,7 @@
   },
   {
     "id": "mt-bonferroni-fwer-le",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "bonferroni_fwer_le",
     "fullName": "StatLean.MultipleTesting.bonferroni_fwer_le",
@@ -4832,7 +4832,7 @@
   },
   {
     "id": "mt-knockoff-fdr-le",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "knockoff_fdr_le",
     "fullName": "StatLean.MultipleTesting.knockoff_fdr_le",
@@ -4879,7 +4879,7 @@
   },
   {
     "id": "mt-ks-test-level",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "ks_test_level",
     "fullName": "StatLean.MultipleTesting.ks_test_level",
@@ -4922,7 +4922,7 @@
   },
   {
     "id": "mt-chisq-h0-mean",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "chiSq_H0_mean",
     "fullName": "StatLean.MultipleTesting.chiSq_H0_mean",
@@ -4955,7 +4955,7 @@
   },
   {
     "id": "mt-chisq-h0-variance",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "chiSq_H0_variance",
     "fullName": "StatLean.MultipleTesting.chiSq_H0_variance",
@@ -4994,7 +4994,7 @@
   },
   {
     "id": "mt-chisq-h1-mean",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "chiSq_H1_mean",
     "fullName": "StatLean.MultipleTesting.chiSq_H1_mean",
@@ -5027,7 +5027,7 @@
   },
   {
     "id": "mt-chisq-h1-variance",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "chiSq_H1_variance",
     "fullName": "StatLean.MultipleTesting.chiSq_H1_variance",
@@ -5066,7 +5066,7 @@
   },
   {
     "id": "mt-conformal-coverage",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "conformal_coverage",
     "fullName": "StatLean.MultipleTesting.conformal_coverage",
@@ -5108,7 +5108,7 @@
   },
   {
     "id": "mt-evariable-def",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "definition",
     "leanName": "IsEVariable",
     "fullName": "StatLean.MultipleTesting.IsEVariable",
@@ -5155,7 +5155,7 @@
   },
   {
     "id": "mt-e-to-p-conversion",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "isPVariable_inv_of_isEVariable",
     "fullName": "StatLean.MultipleTesting.isPVariable_inv_of_isEVariable",
@@ -5195,7 +5195,7 @@
   },
   {
     "id": "mt-empirical-bayes-risk",
-    "category": "hypothesis",
+    "category": "multipletesting",
     "kind": "theorem",
     "leanName": "empiricalBayes_risk",
     "fullName": "StatLean.MultipleTesting.empiricalBayes_risk",

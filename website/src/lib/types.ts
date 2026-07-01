@@ -3,7 +3,7 @@ export type CategoryId =
   | "semiparametric"
   | "concentration"
   | "highdim"
-  | "hypothesis"
+  | "multipletesting"
   | "minimaxity"
   | "optimization"
   | "probability";

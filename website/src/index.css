@@ -17,7 +17,7 @@
   --c-semi: 22 124 112;    /* teal — Semiparametric */
   --c-conc: 188 70 64;     /* terracotta — Concentration Inequalities */
   --c-highdim: 38 110 176; /* blue — High-Dimensional Statistics */
-  --c-hyp: 142 68 158;     /* purple — Hypothesis Testing */
+  --c-hyp: 142 68 158;     /* purple — Multiple Testing */
   --c-mmx: 176 48 88;      /* rose — Minimaxity */
   --c-opt: 86 140 52;      /* green — Optimization */
   --c-prob: 90 92 130;     /* slate indigo — Miscellaneous */
@@ -87,7 +87,7 @@ body::before {
 [data-cat="semiparametric"] { --accent: var(--c-semi); }
 [data-cat="concentration"] { --accent: var(--c-conc); }
 [data-cat="highdim"] { --accent: var(--c-highdim); }
-[data-cat="hypothesis"] { --accent: var(--c-hyp); }
+[data-cat="multipletesting"] { --accent: var(--c-hyp); }
 [data-cat="minimaxity"] { --accent: var(--c-mmx); }
 [data-cat="optimization"] { --accent: var(--c-opt); }
 [data-cat="probability"] { --accent: var(--c-prob); }

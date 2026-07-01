@@ -12,9 +12,9 @@ export function SiteFooter() {
             <span className="font-display text-lg font-semibold">Stat-Lean</span>
           </div>
           <p className="text-ink-soft mt-2 leading-relaxed font-serif">
-            Formalized results from asymptotic statistical theory, each
-            informal statement aligned with its machine-checked Lean&nbsp;4 /
-            Mathlib formalization.
+            Formalized results from statistical theory, each informal
+            statement aligned with its machine-checked Lean&nbsp;4 / Mathlib
+            formalization.
           </p>
         </div>
         <div className="font-sans">
@@ -24,9 +24,9 @@ export function SiteFooter() {
           <ul className="space-y-1.5 text-ink-soft">
             <li><Link className="ulink" to="/search">Search results</Link></li>
             <li><Link className="ulink" to="/dependencies">Dependency graph</Link></li>
-            <li><Link className="ulink" to="/category/parametric">Parametric Statistics</Link></li>
-            <li><Link className="ulink" to="/category/semiparametric">Semiparametric Statistics</Link></li>
-            <li><Link className="ulink" to="/category/empirical">Empirical Processes</Link></li>
+            <li><Link className="ulink" to="/references">References</Link></li>
+            <li><Link className="ulink" to="/category/concentration">Concentration Inequalities</Link></li>
+            <li><Link className="ulink" to="/category/multipletesting">Multiple Testing</Link></li>
             <li><Link className="ulink" to="/category/probability">Miscellaneous Results</Link></li>
           </ul>
         </div>

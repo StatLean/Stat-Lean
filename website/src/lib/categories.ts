@@ -37,8 +37,8 @@ export const CATEGORIES: CategoryMeta[] = [
       "Ordinary least squares mean-squared error, deterministic and random-noise ℓ²-rates for the Lasso, support-recovery guarantees, compressed-sensing recovery under the cone and restricted-isometry conditions, and M-estimator deviation bounds.",
   },
   {
-    id: "hypothesis",
-    name: "Hypothesis Testing",
+    id: "multipletesting",
+    name: "Multiple Testing",
     tagline: "FDR, FWER, knockoffs & goodness-of-fit",
     blurb:
       "Benjamini–Hochberg FDR control, Holm and Bonferroni FWER control, the knockoff filter, e-values and conformal coverage, and goodness-of-fit tests including Kolmogorov–Smirnov and the chi-squared statistic.",
