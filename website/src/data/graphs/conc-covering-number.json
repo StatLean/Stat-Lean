@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.ConcentrationInequalities.coveringNumber",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.coveringNumber","label":"coveringNumber","full":"StatLean.ConcentrationInequalities.coveringNumber","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.Maximal.CoveringNumbers"},
+    {"id":"PseudoMetricSpace","label":"PseudoMetricSpace","full":"PseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"ENat","label":"ENat","full":"ENat","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENat.Defs"},
+    {"id":"Metric.coveringNumber","label":"coveringNumber","full":"Metric.coveringNumber","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.CoveringNumbers"},
+    {"id":"PseudoMetricSpace.toPseudoEMetricSpace","label":"toPseudoEMetricSpace","full":"PseudoMetricSpace.toPseudoEMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"Real.toNNReal","label":"toNNReal","full":"Real.toNNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.NNReal.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"PseudoMetricSpace"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"Set"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"Real"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"ENat"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"Metric.coveringNumber"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"PseudoMetricSpace.toPseudoEMetricSpace"},
+    {"source":"StatLean.ConcentrationInequalities.coveringNumber","target":"Real.toNNReal"}
+  ]
+}

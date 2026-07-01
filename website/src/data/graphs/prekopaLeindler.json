@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.prekopaLeindler",
   "nodes": [
-    {"id":"AsymptoticStatistics.prekopaLeindler","label":"prekopaLeindler","full":"AsymptoticStatistics.prekopaLeindler","kind":"root","decl":"thm","module":"AsymptoticStatistics.ForMathlib.PrekopaLeindler"},
+    {"id":"AsymptoticStatistics.prekopaLeindler","label":"prekopaLeindler","full":"AsymptoticStatistics.prekopaLeindler","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.PrekopaLeindler"},
     {"id":"Fintype.induction_empty_option","label":"induction_empty_option","full":"Fintype.induction_empty_option","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Option"},
     {"id":"MeasureTheory.volume_pi","label":"volume_pi","full":"MeasureTheory.volume_pi","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
     {"id":"MeasureTheory.Measure.pi_map_piCongrLeft","label":"pi_map_piCongrLeft","full":"MeasureTheory.Measure.pi_map_piCongrLeft","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
@@ -22,7 +22,7 @@
     {"id":"Measurable.prodMk","label":"prodMk","full":"Measurable.prodMk","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Constructions"},
     {"id":"measurable_id","label":"measurable_id","full":"measurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"measurable_const","label":"measurable_const","full":"measurable_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
-    {"id":"AsymptoticStatistics.prekopaLeindler_1d","label":"prekopaLeindler_1d","full":"AsymptoticStatistics.prekopaLeindler_1d","kind":"repo","decl":"thm","module":"AsymptoticStatistics.ForMathlib.PrekopaLeindler"},
+    {"id":"AsymptoticStatistics.prekopaLeindler_1d","label":"prekopaLeindler_1d","full":"AsymptoticStatistics.prekopaLeindler_1d","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.PrekopaLeindler"},
     {"id":"MeasureTheory.lintegral_prod_symm'","label":"lintegral_prod_symm'","full":"MeasureTheory.lintegral_prod_symm'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
     {"id":"sub_pos","label":"sub_pos","full":"sub_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Basic"},
     {"id":"IsRightCancelAdd.addRightStrictMono_of_addRightMono","label":"addRightStrictMono_of_addRightMono","full":"IsRightCancelAdd.addRightStrictMono_of_addRightMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},

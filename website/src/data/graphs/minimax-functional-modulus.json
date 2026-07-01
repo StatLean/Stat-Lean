@@ -1,0 +1,35 @@
+{
+  "root": "StatLean.Minimaxity.minimax_functional_modulus",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.minimax_functional_modulus","label":"minimax_functional_modulus","full":"StatLean.Minimaxity.minimax_functional_modulus","kind":"root","decl":"thm","module":"StatLean.Minimaxity.LeCam.Functional"},
+    {"id":"StatLean.Minimaxity.hellingerModulus","label":"hellingerModulus","full":"StatLean.Minimaxity.hellingerModulus","kind":"repo","decl":"def","module":"StatLean.Minimaxity.LeCam.Functional"},
+    {"id":"StatLean.Minimaxity.minimaxRiskDist","label":"minimaxRiskDist","full":"StatLean.Minimaxity.minimaxRiskDist","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.sqHellinger","label":"sqHellinger","full":"StatLean.Minimaxity.sqHellinger","kind":"repo","decl":"def","module":"StatLean.Minimaxity.ForMathlib.HellingerDivergence"},
+    {"id":"sub_self","label":"sub_self","full":"sub_self","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"zero_pow","label":"zero_pow","full":"zero_pow","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Basic"},
+    {"id":"ENNReal.ofReal_zero","label":"ofReal_zero","full":"ENNReal.ofReal_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"MeasureTheory.lintegral_const","label":"lintegral_const","full":"MeasureTheory.lintegral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"zero_le","label":"zero_le","full":"zero_le","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Canonical.Defs"},
+    {"id":"ENNReal.mul_iSup","label":"mul_iSup","full":"ENNReal.mul_iSup","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"mul_le_mul_left'","label":"mul_le_mul_left'","full":"mul_le_mul_left'","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
+    {"id":"IsOrderedMonoid.toMulLeftMono","label":"toMulLeftMono","full":"IsOrderedMonoid.toMulLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"iSup_le","label":"iSup_le","full":"iSup_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"StatLean.Minimaxity.distortionLoss","label":"distortionLoss","full":"StatLean.Minimaxity.distortionLoss","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"StatLean.Minimaxity.hellingerModulus"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"StatLean.Minimaxity.minimaxRiskDist"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"StatLean.Minimaxity.sqHellinger"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"sub_self"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"zero_pow"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"ENNReal.ofReal_zero"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"MeasureTheory.lintegral_const"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"zero_le"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"ENNReal.mul_iSup"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"mul_le_mul_left'"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"IsOrderedMonoid.toMulLeftMono"},
+    {"source":"StatLean.Minimaxity.minimax_functional_modulus","target":"iSup_le"},
+    {"source":"StatLean.Minimaxity.hellingerModulus","target":"StatLean.Minimaxity.sqHellinger"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"StatLean.Minimaxity.distortionLoss"}
+  ]
+}

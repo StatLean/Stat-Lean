@@ -1,0 +1,12 @@
+{
+  "root": "StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc","label":"isSubGaussian_of_mem_Icc","full":"StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Bounded"},
+    {"id":"StatLean.ConcentrationInequalities.IsSubGaussian","label":"IsSubGaussian","full":"StatLean.ConcentrationInequalities.IsSubGaussian","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubGaussian.Defs"},
+    {"id":"ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc","label":"hasSubgaussianMGF_of_mem_Icc","full":"ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.SubGaussian"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc","target":"StatLean.ConcentrationInequalities.IsSubGaussian"},
+    {"source":"StatLean.ConcentrationInequalities.isSubGaussian_of_mem_Icc","target":"ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc"}
+  ]
+}

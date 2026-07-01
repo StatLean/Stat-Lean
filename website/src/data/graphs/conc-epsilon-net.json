@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.ConcentrationInequalities.IsEpsilonNet",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.IsEpsilonNet","label":"IsEpsilonNet","full":"StatLean.ConcentrationInequalities.IsEpsilonNet","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.Maximal.CoveringNumbers"},
+    {"id":"PseudoMetricSpace","label":"PseudoMetricSpace","full":"PseudoMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.MetricSpace.Pseudo.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.IsEpsilonNet","target":"PseudoMetricSpace"},
+    {"source":"StatLean.ConcentrationInequalities.IsEpsilonNet","target":"Set"},
+    {"source":"StatLean.ConcentrationInequalities.IsEpsilonNet","target":"Real"}
+  ]
+}

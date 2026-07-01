@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","label":"benjamini_hochberg_dependent_fdr_le","full":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","kind":"root","decl":"thm","module":"StatLean.MultipleTesting.BHDependence"},
+    {"id":"StatLean.MultipleTesting.SuperUniform","label":"SuperUniform","full":"StatLean.MultipleTesting.SuperUniform","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.PValues.Defs"},
+    {"id":"StatLean.MultipleTesting.FDR","label":"FDR","full":"StatLean.MultipleTesting.FDR","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.FDP.Defs"},
+    {"id":"StatLean.MultipleTesting.bhRejects","label":"bhRejects","full":"StatLean.MultipleTesting.bhRejects","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.BenjaminiHochberg"},
+    {"id":"StatLean.MultipleTesting.FDP","label":"FDP","full":"StatLean.MultipleTesting.FDP","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.FDP.Defs"},
+    {"id":"StatLean.MultipleTesting.numRejections","label":"numRejections","full":"StatLean.MultipleTesting.numRejections","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.FDP.Defs"},
+    {"id":"MeasureTheory.integral_finset_sum","label":"integral_finset_sum","full":"MeasureTheory.integral_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Finset.sum_le_sum","label":"sum_le_sum","full":"Finset.sum_le_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.BigOperators.Group.Finset"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"StatLean.MultipleTesting.numFalseRejections","label":"numFalseRejections","full":"StatLean.MultipleTesting.numFalseRejections","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.FDP.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"StatLean.MultipleTesting.SuperUniform"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"StatLean.MultipleTesting.FDR"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"StatLean.MultipleTesting.bhRejects"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"StatLean.MultipleTesting.FDP"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"StatLean.MultipleTesting.numRejections"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"MeasureTheory.integral_finset_sum"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"Finset.sum_le_sum"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"Finset.sum_const"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"nsmul_eq_mul"},
+    {"source":"StatLean.MultipleTesting.benjamini_hochberg_dependent_fdr_le","target":"RCLike.charZero_rclike"},
+    {"source":"StatLean.MultipleTesting.FDR","target":"StatLean.MultipleTesting.FDP"},
+    {"source":"StatLean.MultipleTesting.FDP","target":"StatLean.MultipleTesting.numFalseRejections"},
+    {"source":"StatLean.MultipleTesting.FDP","target":"StatLean.MultipleTesting.numRejections"}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.ConcentrationInequalities.HasBernsteinCondition",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.HasBernsteinCondition","label":"HasBernsteinCondition","full":"StatLean.ConcentrationInequalities.HasBernsteinCondition","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.Bernstein.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"NNReal","label":"NNReal","full":"NNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.NNReal.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.HasBernsteinCondition","target":"MeasurableSpace"},
+    {"source":"StatLean.ConcentrationInequalities.HasBernsteinCondition","target":"Real"},
+    {"source":"StatLean.ConcentrationInequalities.HasBernsteinCondition","target":"NNReal"},
+    {"source":"StatLean.ConcentrationInequalities.HasBernsteinCondition","target":"MeasureTheory.Measure"}
+  ]
+}

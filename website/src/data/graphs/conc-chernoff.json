@@ -1,0 +1,39 @@
+{
+  "root": "StatLean.ConcentrationInequalities.chernoff",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.chernoff","label":"chernoff","full":"StatLean.ConcentrationInequalities.chernoff","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Chernoff"},
+    {"id":"StatLean.ConcentrationInequalities.psi","label":"psi","full":"StatLean.ConcentrationInequalities.psi","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubGaussian.Chernoff"},
+    {"id":"StatLean.ConcentrationInequalities.psiStar","label":"psiStar","full":"StatLean.ConcentrationInequalities.psiStar","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.SubGaussian.Chernoff"},
+    {"id":"le_refl","label":"le_refl","full":"le_refl","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"ProbabilityTheory.measure_ge_le_exp_cgf","label":"measure_ge_le_exp_cgf","full":"ProbabilityTheory.measure_ge_le_exp_cgf","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Basic"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"Real.exp_le_exp","label":"exp_le_exp","full":"Real.exp_le_exp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
+    {"id":"neg_le_neg","label":"neg_le_neg","full":"neg_le_neg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
+    {"id":"ContinuousAt.rexp","label":"rexp","full":"ContinuousAt.rexp","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Exp"},
+    {"id":"ContinuousAt.neg","label":"neg","full":"ContinuousAt.neg","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Group.Defs"},
+    {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
+    {"id":"continuousAt_id'","label":"continuousAt_id'","full":"continuousAt_id'","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Continuous"},
+    {"id":"Antitone.map_csSup_of_continuousAt","label":"map_csSup_of_continuousAt","full":"Antitone.map_csSup_of_continuousAt","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.Monotone"},
+    {"id":"HasSolidNorm.orderClosedTopology","label":"orderClosedTopology","full":"HasSolidNorm.orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
+    {"id":"Set.Nonempty.image","label":"image","full":"Set.Nonempty.image","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Image"},
+    {"id":"le_csInf","label":"le_csInf","full":"le_csInf","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"StatLean.ConcentrationInequalities.psi"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"StatLean.ConcentrationInequalities.psiStar"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"le_refl"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"ProbabilityTheory.measure_ge_le_exp_cgf"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"Real.exp_le_exp"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"neg_le_neg"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"ContinuousAt.rexp"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"ContinuousAt.neg"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"IsTopologicalRing.toIsSemitopologicalRing"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"continuousAt_id'"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"Antitone.map_csSup_of_continuousAt"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"HasSolidNorm.orderClosedTopology"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"Set.Nonempty.image"},
+    {"source":"StatLean.ConcentrationInequalities.chernoff","target":"le_csInf"},
+    {"source":"StatLean.ConcentrationInequalities.psiStar","target":"StatLean.ConcentrationInequalities.psi"}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "root": "StatLean.ConcentrationInequalities.IsSubGaussian",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.IsSubGaussian","label":"IsSubGaussian","full":"StatLean.ConcentrationInequalities.IsSubGaussian","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.SubGaussian.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"NNReal","label":"NNReal","full":"NNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.NNReal.Defs"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"ProbabilityTheory.HasSubgaussianMGF","label":"HasSubgaussianMGF","full":"ProbabilityTheory.HasSubgaussianMGF","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Moments.SubGaussian"},
+    {"id":"MeasureTheory.integral","label":"integral","full":"MeasureTheory.integral","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Real.normedAddCommGroup","label":"normedAddCommGroup","full":"Real.normedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Real"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"RCLike.toInnerProductSpaceReal","label":"toInnerProductSpaceReal","full":"RCLike.toInnerProductSpaceReal","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"MeasurableSpace"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"Real"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"NNReal"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"ProbabilityTheory.HasSubgaussianMGF"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"MeasureTheory.integral"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"Real.normedAddCommGroup"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.ConcentrationInequalities.IsSubGaussian","target":"RCLike.toInnerProductSpaceReal"}
+  ]
+}

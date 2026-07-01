@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.EmpiricalProcess.IsEnvelope",
   "nodes": [
-    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"root","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
     {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
     {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
     {"id":"abs","label":"abs","full":"abs","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
