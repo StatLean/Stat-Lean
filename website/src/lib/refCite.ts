@@ -50,15 +50,18 @@ export function linkifyBiblio(text: string, keys: string[]): string {
     if (!positions.length) continue;
     let chosen = -1;
     if (c.year) {
+      // A year-bearing key only links where ITS OWN year appears nearby (so the
+      // 1991 "van der Vaart" paper doesn't get linked to the 1998 textbook, and
+      // an uncited key doesn't grab a stray mention of its author).
+      const yre = new RegExp(`\\b${c.year}\\b`);
       for (const pos of positions) {
-        const end = pos + c.surname.length;
-        if (!overlaps(pos, end) && text.slice(pos, end + 80).includes(c.year)) {
+        const e = pos + c.surname.length;
+        if (!overlaps(pos, e) && yre.test(text.slice(e, e + 400))) {
           chosen = pos;
           break;
         }
       }
-    }
-    if (chosen === -1) {
+    } else {
       for (const pos of positions) {
         if (!overlaps(pos, pos + c.surname.length)) {
           chosen = pos;
@@ -67,9 +70,36 @@ export function linkifyBiblio(text: string, keys: string[]): string {
       }
     }
     if (chosen === -1) continue;
-    const end = chosen + c.surname.length;
-    ranges.push({ start: chosen, end, key: c.key });
-    claimed.push([chosen, end]);
+    const sEnd = chosen + c.surname.length;
+
+    // Extend the span to cover the whole inline citation, not just the surname:
+    //  - left over author initials ("W. ", "L. ", "J.-B. ")
+    //  - right through the key's year and an optional trailing page range.
+    let start = chosen;
+    const pre = text.slice(Math.max(0, chosen - 16), chosen);
+    const im = pre.match(/(?:\p{Lu}\.[-\s]*)+\s*$/u);
+    if (im) start = chosen - im[0].length;
+
+    let end = sEnd;
+    if (c.year) {
+      const yi = text.slice(sEnd, sEnd + 400).indexOf(c.year);
+      if (yi !== -1) {
+        end = sEnd + yi + c.year.length;
+        const tail = text
+          .slice(end, end + 48)
+          .match(/^\s*,?\s*(?:pp?\.\s*)?\p{Nd}+\s*[–-]\s*\p{Nd}+/u);
+        if (tail) end += tail[0].length;
+        // close a parenthesis the span opened (e.g. "… Review 59 (1991" → "…(1991)")
+        const span = text.slice(start, end);
+        const opens = (span.match(/\(/g) ?? []).length;
+        const closes = (span.match(/\)/g) ?? []).length;
+        if (opens > closes && text[end] === ")") end += 1;
+      }
+    }
+
+    if (overlaps(start, end)) continue;
+    ranges.push({ start, end, key: c.key });
+    claimed.push([start, end]);
   }
 
   ranges.sort((a, b) => a.start - b.start);
