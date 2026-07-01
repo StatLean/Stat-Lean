@@ -1,24 +1,17 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CATEGORIES } from "../lib/categories";
-import { RESULTS } from "../lib/data";
+import { MEMBERS } from "../lib/team";
 import { ConvergenceMark } from "../components/ConvergenceMark";
 import { Logo } from "../components/Logo";
-import { TheoremCard } from "../components/TheoremCard";
 import { TopicIcon } from "../components/TopicIcon";
 
-const FEATURED = [
-  "hajek_le_cam_convolution_theorem",
-  "TangentSpec",
-  "oneStep_semiparametricallyEfficient",
-  "weak_limit_under_Q_of_lecam_third",
-];
+const BASE = import.meta.env.BASE_URL;
+
+// Front-page Topics grid is ordered alphabetically by display name.
+const TOPICS = [...CATEGORIES].sort((a, b) => a.name.localeCompare(b.name));
 
 export function Home() {
-  const featured = FEATURED.map((id) => RESULTS.find((r) => r.id === id)).filter(
-    Boolean,
-  ) as typeof RESULTS;
-
   return (
     <div>
       {/* ---------- Hero ---------- */}
@@ -90,7 +83,7 @@ export function Home() {
         </p>
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {CATEGORIES.map((c, i) => (
+          {TOPICS.map((c, i) => (
             <motion.div
               key={c.id}
               initial={{ opacity: 0, y: 18 }}
@@ -124,20 +117,61 @@ export function Home() {
         </div>
       </section>
 
-      {/* ---------- Gallery ---------- */}
-      {featured.length > 0 && (
-        <section className="max-w-page mx-auto px-5 sm:px-8 pb-8">
-          <h2 className="font-display text-3xl font-semibold mb-1">Gallery</h2>
-          <p className="text-ink-soft font-serif mb-8">
-            A selection of results across the topics.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((r, i) => (
-              <TheoremCard key={r.id} r={r} index={i} />
-            ))}
+      {/* ---------- Team ---------- */}
+      <section className="max-w-page mx-auto px-5 sm:px-8 pb-16">
+        <div className="flex items-end justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-display text-3xl font-semibold mb-1">Team</h2>
+            <p className="text-ink-soft font-serif">
+              The people building the Stat-Lean library.
+            </p>
           </div>
-        </section>
-      )}
+          <Link to="/team" className="ulink accent font-sans text-sm shrink-0">
+            Meet the team →
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {MEMBERS.map((m, i) => (
+            <motion.div
+              key={m.name}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.5, delay: i * 0.06 }}
+              className="rounded-2xl border hairline bg-parchment-panel p-6 flex flex-col items-center text-center gap-3"
+            >
+              <img
+                src={`${BASE}team/${m.photo}`}
+                alt={m.name}
+                className="w-24 h-24 rounded-full object-cover border hairline shadow-sm"
+              />
+              {m.homepage ? (
+                <a
+                  href={m.homepage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-display text-lg font-semibold tracking-tight ulink"
+                >
+                  {m.name}
+                </a>
+              ) : (
+                <span className="font-display text-lg font-semibold tracking-tight">
+                  {m.name}
+                </span>
+              )}
+              <div className="flex flex-col gap-0.5">
+                <p className="font-sans text-sm text-ink-soft">{m.role}</p>
+                <p className="font-serif text-xs text-ink-faint leading-snug">
+                  {m.department}
+                </p>
+                <p className="font-serif text-xs text-ink-faint leading-snug">
+                  {m.university}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
