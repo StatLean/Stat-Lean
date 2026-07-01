@@ -143,6 +143,20 @@ body::before {
 
 .hairline { border-color: rgb(var(--rule)); }
 
+/* citations inside bibliographic comments → link to the references page */
+.ref-cite {
+  color: rgb(var(--accent));
+  border-bottom: 1px dotted rgb(var(--accent) / 0.5);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.ref-cite:hover {
+  background: rgb(var(--accent) / 0.16);
+  border-bottom-color: transparent;
+}
+
 /* reference page: flash the entry linked from a result's citation */
 .ref-flash {
   background: rgb(var(--c-param) / 0.12);

@@ -4,6 +4,7 @@ import { getResult, resultsByCategory } from "../lib/data";
 import { CATEGORY_BY_ID } from "../lib/categories";
 import { renderLean } from "../lib/render";
 import { docUrl, sourceUrl, refUrl } from "../lib/site";
+import { linkifyBiblio } from "../lib/refCite";
 import { MathText } from "../components/MathText";
 import { ConvergenceMark } from "../components/ConvergenceMark";
 import { Logo } from "../components/Logo";
@@ -187,7 +188,10 @@ export function ResultDetail() {
               <div className="mt-4 pt-4 border-t hairline">
                 <MathText
                   markdown
-                  html={`**Bibliographic comments.** ${r.reference.biblio}`}
+                  html={`**Bibliographic comments.** ${linkifyBiblio(
+                    r.reference.biblio,
+                    r.reference.keys,
+                  )}`}
                   className="font-serif text-[0.98rem] text-ink-soft leading-relaxed"
                 />
               </div>
