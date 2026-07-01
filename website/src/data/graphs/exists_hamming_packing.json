@@ -1,0 +1,9 @@
+{
+  "root": "StatLean.Minimaxity.exists_hamming_packing",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.exists_hamming_packing","label":"exists_hamming_packing","full":"StatLean.Minimaxity.exists_hamming_packing","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.Packing.HammingPacking"}
+  ],
+  "edges": [
+
+  ]
+}

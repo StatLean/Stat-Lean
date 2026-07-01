@@ -1,9 +1,9 @@
 {
   "root": "AsymptoticStatistics.anderson_lemma_set",
   "nodes": [
-    {"id":"AsymptoticStatistics.anderson_lemma_set","label":"anderson_lemma_set","full":"AsymptoticStatistics.anderson_lemma_set","kind":"root","decl":"thm","module":"AsymptoticStatistics.ForMathlib.Anderson"},
+    {"id":"AsymptoticStatistics.anderson_lemma_set","label":"anderson_lemma_set","full":"AsymptoticStatistics.anderson_lemma_set","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.Anderson"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
-    {"id":"AsymptoticStatistics.multivariateGaussian_zero_cov","label":"multivariateGaussian_zero_cov","full":"AsymptoticStatistics.multivariateGaussian_zero_cov","kind":"repo","decl":"thm","module":"AsymptoticStatistics.ForMathlib.MultivariateGaussianWeakLimit"},
+    {"id":"AsymptoticStatistics.multivariateGaussian_zero_cov","label":"multivariateGaussian_zero_cov","full":"AsymptoticStatistics.multivariateGaussian_zero_cov","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianWeakLimit"},
     {"id":"Set.eq_empty_or_nonempty","label":"eq_empty_or_nonempty","full":"Set.eq_empty_or_nonempty","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Basic"},
     {"id":"MeasureTheory.measure_empty","label":"measure_empty","full":"MeasureTheory.measure_empty","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.OuterMeasure.Basic"},
     {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
@@ -12,7 +12,7 @@
     {"id":"MeasureTheory.Measure.dirac_apply_of_mem","label":"dirac_apply_of_mem","full":"MeasureTheory.Measure.dirac_apply_of_mem","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Dirac"},
     {"id":"MeasureTheory.prob_le_one","label":"prob_le_one","full":"MeasureTheory.prob_le_one","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"MeasureTheory.Measure.dirac.isProbabilityMeasure","label":"isProbabilityMeasure","full":"MeasureTheory.Measure.dirac.isProbabilityMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Dirac"},
-    {"id":"AsymptoticStatistics.anderson_lemma_set_posDef","label":"anderson_lemma_set_posDef","full":"AsymptoticStatistics.anderson_lemma_set_posDef","kind":"repo","decl":"thm","module":"AsymptoticStatistics.ForMathlib.Anderson"},
+    {"id":"AsymptoticStatistics.anderson_lemma_set_posDef","label":"anderson_lemma_set_posDef","full":"AsymptoticStatistics.anderson_lemma_set_posDef","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.Anderson"},
     {"id":"SeminormedAddCommGroup.toIsTopologicalAddGroup","label":"toIsTopologicalAddGroup","full":"SeminormedAddCommGroup.toIsTopologicalAddGroup","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Group.Uniform"},
     {"id":"Function.smulCommClass","label":"smulCommClass","full":"Function.smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Pi"},
     {"id":"Algebra.to_smulCommClass","label":"to_smulCommClass","full":"Algebra.to_smulCommClass","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Basic"},

@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.MultipleTesting.empiricalCDF",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.empiricalCDF","label":"empiricalCDF","full":"StatLean.MultipleTesting.empiricalCDF","kind":"root","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.EmpiricalCDF"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.MultipleTesting.countLE","label":"countLE","full":"StatLean.MultipleTesting.countLE","kind":"repo","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.EmpiricalCDF"},
+    {"id":"Finset.card","label":"card","full":"Finset.card","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Card"},
+    {"id":"Finset.filter","label":"filter","full":"Finset.filter","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Filter"},
+    {"id":"Real.decidableLE","label":"decidableLE","full":"Real.decidableLE","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.empiricalCDF","target":"Real"},
+    {"source":"StatLean.MultipleTesting.empiricalCDF","target":"StatLean.MultipleTesting.countLE"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Real"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Finset.card"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Finset.filter"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Real.decidableLE"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Finset.univ"},
+    {"source":"StatLean.MultipleTesting.countLE","target":"Fin.fintype"}
+  ]
+}

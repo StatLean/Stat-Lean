@@ -1,8 +1,8 @@
 {
   "root": "AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist",
   "nodes": [
-    {"id":"AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist","label":"slutsky_of_tendstoInMeasure_dist","full":"AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist","kind":"root","decl":"thm","module":"AsymptoticStatistics.ForMathlib.Slutsky"},
-    {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"AsymptoticStatistics.ForMathlib.Contiguity"},
+    {"id":"AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist","label":"slutsky_of_tendstoInMeasure_dist","full":"AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.Slutsky"},
+    {"id":"AsymptoticStatistics.WeakConverges","label":"WeakConverges","full":"AsymptoticStatistics.WeakConverges","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.Contiguity"},
     {"id":"MeasureTheory.Measure.isProbabilityMeasure_map","label":"isProbabilityMeasure_map","full":"MeasureTheory.Measure.isProbabilityMeasure_map","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
     {"id":"MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_integral_tendsto","label":"tendsto_iff_forall_integral_tendsto","full":"MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_integral_tendsto","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.ProbabilityMeasure"},
     {"id":"MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto","label":"tendsto_iff_forall_lipschitz_integral_tendsto","full":"MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Portmanteau"},

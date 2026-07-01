@@ -1,0 +1,43 @@
+{
+  "root": "StatLean.Minimaxity.mutualInformation",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.mutualInformation","label":"mutualInformation","full":"StatLean.Minimaxity.mutualInformation","kind":"root","decl":"def","module":"StatLean.Minimaxity.Fano.MutualInformation"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"NonUnitalNonAssocSemiring.toDistrib","label":"toDistrib","full":"NonUnitalNonAssocSemiring.toDistrib","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"Semiring.toNonAssocSemiring","label":"toNonAssocSemiring","full":"Semiring.toNonAssocSemiring","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
+    {"id":"InformationTheory.klDiv","label":"klDiv","full":"InformationTheory.klDiv","kind":"mathlib","decl":"def","module":"Mathlib.InformationTheory.KullbackLeibler.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"StatLean.Minimaxity.mixture","label":"mixture","full":"StatLean.Minimaxity.mixture","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"MeasureTheory.Measure.bind","label":"bind","full":"MeasureTheory.Measure.bind","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"PMF.toMeasure","label":"toMeasure","full":"PMF.toMeasure","kind":"mathlib","decl":"def","module":"Mathlib.Probability.ProbabilityMassFunction.Basic"},
+    {"id":"PMF.uniformOfFintype","label":"uniformOfFintype","full":"PMF.uniformOfFintype","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Distributions.Uniform"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"MeasurableSpace"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"ProbabilityTheory.Kernel"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"ENNReal"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"NonUnitalNonAssocSemiring.toDistrib"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"Semiring.toNonAssocSemiring"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"Finset.sum"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"Finset.univ"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"Fin.fintype"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"InformationTheory.klDiv"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.mixture","target":"MeasurableSpace"},
+    {"source":"StatLean.Minimaxity.mixture","target":"ProbabilityTheory.Kernel"},
+    {"source":"StatLean.Minimaxity.mixture","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.Minimaxity.mixture","target":"MeasureTheory.Measure.bind"},
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"MeasureTheory.Measure"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.toMeasure"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"PMF.uniformOfFintype"},
+    {"source":"StatLean.Minimaxity.uniformPrior","target":"Fin.fintype"}
+  ]
+}

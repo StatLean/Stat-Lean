@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.Minimaxity.tvDist_eq_half_lintegral",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.tvDist_eq_half_lintegral","label":"tvDist_eq_half_lintegral","full":"StatLean.Minimaxity.tvDist_eq_half_lintegral","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.TotalVariation"},
+    {"id":"StatLean.Minimaxity.tvDist","label":"tvDist","full":"StatLean.Minimaxity.tvDist","kind":"repo","decl":"def","module":"StatLean.Minimaxity.ForMathlib.TotalVariation"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.tvDist_eq_half_lintegral","target":"StatLean.Minimaxity.tvDist"}
+  ]
+}

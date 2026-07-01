@@ -109,8 +109,14 @@ lake --version
 
 ```bash
 git clone https://github.com/StatLean/Stat-Lean.git
-cd Lean-Asymptotic-Statistical-Theory
+cd Stat-Lean
 ```
+
+The library is the single `lean_lib StatLean`, organized into per-area sublibraries under `StatLean/`:
+
+- `StatLean/AsymptoticStatistics/` — asymptotic statistics (van der Vaart)
+- `StatLean/ConcentrationInequalities/` — sub-Gaussian / sub-exponential / Bernstein / maximal inequalities (Lu, *Big Data Analysis*)
+- `StatLean/HighDimensionalStatistics/` — OLS and Lasso statistical rates (Lu, *Big Data Analysis*)
 
 ### 3. Fetch the Mathlib build cache
 
@@ -131,7 +137,7 @@ lake build
 Add to your `lakefile.lean`:
 
 ```lean
-require AsymptoticStatistics from git
+require StatLean from git
   "https://github.com/StatLean/Stat-Lean.git" @ "main"
 ```
 

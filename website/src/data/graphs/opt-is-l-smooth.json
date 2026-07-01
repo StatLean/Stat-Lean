@@ -1,0 +1,24 @@
+{
+  "root": "StatLean.Optimization.IsLSmooth",
+  "nodes": [
+    {"id":"StatLean.Optimization.IsLSmooth","label":"IsLSmooth","full":"StatLean.Optimization.IsLSmooth","kind":"root","decl":"def","module":"StatLean.Optimization.Smoothness.Defs"},
+    {"id":"NormedAddCommGroup","label":"NormedAddCommGroup","full":"NormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"InnerProductSpace","label":"InnerProductSpace","full":"InnerProductSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"CompleteSpace","label":"CompleteSpace","full":"CompleteSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.UniformSpace.Cauchy"},
+    {"id":"gradient","label":"gradient","full":"gradient","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Calculus.Gradient.Basic"},
+    {"id":"NormedAddCommGroup.toNormedAddGroup","label":"toNormedAddGroup","full":"NormedAddCommGroup.toNormedAddGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"Monoid.toPow","label":"toPow","full":"Monoid.toPow","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Optimization.IsLSmooth","target":"NormedAddCommGroup"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"InnerProductSpace"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"Real"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"CompleteSpace"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"gradient"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"NormedAddCommGroup.toNormedAddGroup"},
+    {"source":"StatLean.Optimization.IsLSmooth","target":"Monoid.toPow"}
+  ]
+}

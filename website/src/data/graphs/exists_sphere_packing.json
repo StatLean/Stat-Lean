@@ -1,0 +1,20 @@
+{
+  "root": "StatLean.Minimaxity.exists_sphere_packing",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.exists_sphere_packing","label":"exists_sphere_packing","full":"StatLean.Minimaxity.exists_sphere_packing","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.Packing.SpherePacking"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"CharP.cast_eq_zero","label":"cast_eq_zero","full":"CharP.cast_eq_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharP.Defs"},
+    {"id":"CharP.ofCharZero","label":"ofCharZero","full":"CharP.ofCharZero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharP.Defs"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"zero_div","label":"zero_div","full":"zero_div","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.Basic"},
+    {"id":"Real.log_zero","label":"log_zero","full":"Real.log_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"CharP.cast_eq_zero"},
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"CharP.ofCharZero"},
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"RCLike.charZero_rclike"},
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"zero_div"},
+    {"source":"StatLean.Minimaxity.exists_sphere_packing","target":"Real.log_zero"}
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.Minimaxity.klDiv_pi_eq_nsmul",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","label":"klDiv_pi_eq_nsmul","full":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.KLDivergence"},
+    {"id":"Fin.isEmpty'","label":"isEmpty'","full":"Fin.isEmpty'","kind":"mathlib","decl":"thm","module":"Mathlib.Logic.IsEmpty.Defs"},
+    {"id":"MeasureTheory.Measure.pi_of_empty","label":"pi_of_empty","full":"MeasureTheory.Measure.pi_of_empty","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
+    {"id":"InformationTheory.klDiv_self","label":"klDiv_self","full":"InformationTheory.klDiv_self","kind":"mathlib","decl":"thm","module":"Mathlib.InformationTheory.KullbackLeibler.Basic"},
+    {"id":"zero_nsmul","label":"zero_nsmul","full":"zero_nsmul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"MeasureTheory.measurePreserving_piFinSuccAbove","label":"measurePreserving_piFinSuccAbove","full":"MeasureTheory.measurePreserving_piFinSuccAbove","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Pi"},
+    {"id":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","label":"toSigmaFinite","full":"MeasureTheory.IsFiniteMeasure.toSigmaFinite","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.SFinite"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"StatLean.Minimaxity.klDiv_prod_eq_add","label":"klDiv_prod_eq_add","full":"StatLean.Minimaxity.klDiv_prod_eq_add","kind":"repo","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.KLDivergence"},
+    {"id":"succ_nsmul","label":"succ_nsmul","full":"succ_nsmul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"add_comm","label":"add_comm","full":"add_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"MeasureTheory.Measure.compProd_const","label":"compProd_const","full":"MeasureTheory.Measure.compProd_const","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Composition.MeasureCompProd"},
+    {"id":"InformationTheory.klDiv_compProd_eq_add","label":"klDiv_compProd_eq_add","full":"InformationTheory.klDiv_compProd_eq_add","kind":"mathlib","decl":"thm","module":"Mathlib.InformationTheory.KullbackLeibler.ChainRule"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"Fin.isEmpty'"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"MeasureTheory.Measure.pi_of_empty"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"InformationTheory.klDiv_self"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"zero_nsmul"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"MeasureTheory.measurePreserving_piFinSuccAbove"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"MeasureTheory.IsFiniteMeasure.toSigmaFinite"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"StatLean.Minimaxity.klDiv_prod_eq_add"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"succ_nsmul"},
+    {"source":"StatLean.Minimaxity.klDiv_pi_eq_nsmul","target":"add_comm"},
+    {"source":"StatLean.Minimaxity.klDiv_prod_eq_add","target":"MeasureTheory.Measure.compProd_const"},
+    {"source":"StatLean.Minimaxity.klDiv_prod_eq_add","target":"MeasureTheory.IsFiniteMeasure.toSigmaFinite"},
+    {"source":"StatLean.Minimaxity.klDiv_prod_eq_add","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.Minimaxity.klDiv_prod_eq_add","target":"InformationTheory.klDiv_compProd_eq_add"}
+  ]
+}
