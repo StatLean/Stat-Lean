@@ -6114,47 +6114,6 @@
     "hasGraph": true
   },
   {
-    "id": "quadratic-functional-two-point-rate",
-    "category": "minimaxity",
-    "kind": "theorem",
-    "leanName": "quadratic_functional_two_point_rate",
-    "fullName": "StatLean.Minimaxity.quadratic_functional_two_point_rate",
-    "title": "Lower Bound for a Quadratic Functional",
-    "citation": "Wainwright (2019), §15.2, Example 15.8",
-    "shortRef": "Wainwright (2019), §15.2, Example 15.8",
-    "file": "StatLean/Minimaxity/Examples/LipschitzDensity.lean",
-    "docGenUrl": "../docs/StatLean/Minimaxity/Examples/LipschitzDensity.html#StatLean.Minimaxity.quadratic_functional_two_point_rate",
-    "informal": "<p>There is a two-point family of <span data-link=\"h1\">densities on $[0,1]$ bounded below by $1/2$</span>, whose <span data-link=\"h2\">$n$-fold i.i.d. product model</span> has minimax <em>absolute-error</em> risk for the quadratic functional $\\theta(f)=\\int_0^1(f'(x))^2\\,dx$ at least $c\\cdot n^{-1/2}$ for some $c>0$ and all $n\\ge1$.</p>",
-    "summary": "Estimating the quadratic functional ∫(f')² over densities bounded below by 1/2 has minimax absolute-error risk at least a constant times n^{-1/2}.",
-    "leanSignature": "theorem quadratic_functional_two_point_rate (n : ℕ) (hn : 1 ≤ n) :\n    ∃ (ι : Type) (_ : MeasurableSpace ι) (f : ι → ℝ → ℝ) (θfunc : ι → ℝ)\n      (Pn : Kernel ι (Fin n → ℝ)) (_ : IsMarkovKernel Pn),\n      (∀ i, ∀ x ∈ Set.Icc (0:ℝ) 1, (1 / 2 : ℝ) ≤ f i x) ∧\n      (∀ i, θfunc i = ∫ x in Set.Icc (0:ℝ) 1, (deriv (f i) x) ^ 2) ∧\n      (∀ i, Pn i = Measure.pi fun _ : Fin n =>\n            (volume.restrict (Set.Icc (0:ℝ) 1)).withDensity fun x => ENNReal.ofReal (f i x)) ∧\n      ∃ c : ℝ, 0 < c ∧\n        ENNReal.ofReal (c * (n : ℝ) ^ (-(1 : ℝ) / 2)) ≤ minimaxRiskDist id θfunc Pn",
-    "formalizationNotes": "Stated existentially with the genuine functional θ(f)=∫(f')² and identity (absolute-error) distortion. This is the suboptimal two-point rate n^{-1/2}; the optimal n^{-4/9} convex-hull rate of Example 15.11 (needing a sign-vector/χ² mixture) is out of scope. Provable constant c = 1/32.",
-    "hypotheses": [
-      {
-        "id": "h1",
-        "leanToken": "∀ x ∈ Set.Icc (0:ℝ) 1, (1 / 2 : ℝ) ≤ f i x",
-        "label": "density bounded below",
-        "note": "Each density on [0,1] is bounded below by 1/2."
-      },
-      {
-        "id": "h2",
-        "leanToken": "Pn i = Measure.pi fun _ : Fin n =>",
-        "label": "n-fold i.i.d. product",
-        "note": "The observed model is the n-fold i.i.d. product of the density."
-      }
-    ],
-    "reference": {
-      "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
-      "pointer": "§15.2, Example 15.8",
-      "biblio": "The two-point reduction is L. Le Cam's method (\"Convergence of estimates under dimensionality restrictions,\" *Annals of Statistics* **1** (1973), 38–53). The quadratic functional $\\int(f')^2$ originates with P. J. Bickel and Y. Ritov, \"Estimating integrated squared density derivatives: sharp best order of convergence estimates,\" *Sankhyā: The Indian Journal of Statistics, Series A* **50**(3) (1988), 381–393.",
-      "keys": [
-        "wainwright2019",
-        "lecam1973",
-        "bickel-ritov1988"
-      ]
-    },
-    "hasGraph": true
-  },
-  {
     "id": "sobolev-regression-rate",
     "category": "minimaxity",
     "kind": "theorem",
