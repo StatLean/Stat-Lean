@@ -134,7 +134,6 @@ linear-regression-minimax-rate	StatLean.Minimaxity.linear_regression_minimax_rat
 sparse-linear-regression-minimax-rate	StatLean.Minimaxity.sparse_linear_regression_minimax_rate
 pca-minimax-rate	StatLean.Minimaxity.pca_minimax_rate
 lipschitz-density-pointwise-rate	StatLean.Minimaxity.lipschitz_density_pointwise_rate
-quadratic-functional-two-point-rate	StatLean.Minimaxity.quadratic_functional_two_point_rate
 sobolev-regression-rate	StatLean.Minimaxity.sobolev_regression_rate
 density-estimation-hellinger-rate	StatLean.Minimaxity.density_estimation_hellinger_rate
 opt-gradient-descent-rate	StatLean.Optimization.gradientDescent_rate
