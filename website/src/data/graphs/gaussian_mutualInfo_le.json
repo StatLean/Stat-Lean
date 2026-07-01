@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.Minimaxity.gaussian_mutualInfo_le",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.gaussian_mutualInfo_le","label":"gaussian_mutualInfo_le","full":"StatLean.Minimaxity.gaussian_mutualInfo_le","kind":"root","decl":"thm","module":"StatLean.Minimaxity.ForMathlib.GaussianMaxEntropy"},
+    {"id":"StatLean.Minimaxity.mutualInformation","label":"mutualInformation","full":"StatLean.Minimaxity.mutualInformation","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Fano.MutualInformation"},
+    {"id":"StatLean.Minimaxity.mixture","label":"mixture","full":"StatLean.Minimaxity.mixture","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.gaussian_mutualInfo_le","target":"StatLean.Minimaxity.mutualInformation"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"}
+  ]
+}

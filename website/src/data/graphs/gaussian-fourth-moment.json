@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.MultipleTesting.integral_pow_four_stdGaussian",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.integral_pow_four_stdGaussian","label":"integral_pow_four_stdGaussian","full":"StatLean.MultipleTesting.integral_pow_four_stdGaussian","kind":"root","decl":"thm","module":"StatLean.MultipleTesting.ForMathlib.GaussianMoments"},
+    {"id":"StatLean.MultipleTesting.integral_sq_stdGaussian","label":"integral_sq_stdGaussian","full":"StatLean.MultipleTesting.integral_sq_stdGaussian","kind":"repo","decl":"thm","module":"StatLean.MultipleTesting.ForMathlib.GaussianMoments"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"ProbabilityTheory.variance_fun_id_gaussianReal","label":"variance_fun_id_gaussianReal","full":"ProbabilityTheory.variance_fun_id_gaussianReal","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
+    {"id":"ProbabilityTheory.integral_id_gaussianReal","label":"integral_id_gaussianReal","full":"ProbabilityTheory.integral_id_gaussianReal","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Real"},
+    {"id":"sub_zero","label":"sub_zero","full":"sub_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Basic"},
+    {"id":"ProbabilityTheory.variance_eq_integral","label":"variance_eq_integral","full":"ProbabilityTheory.variance_eq_integral","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Moments.Variance"},
+    {"id":"aemeasurable_id","label":"aemeasurable_id","full":"aemeasurable_id","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.integral_pow_four_stdGaussian","target":"StatLean.MultipleTesting.integral_sq_stdGaussian"},
+    {"source":"StatLean.MultipleTesting.integral_pow_four_stdGaussian","target":"Nat.cast_one"},
+    {"source":"StatLean.MultipleTesting.integral_sq_stdGaussian","target":"ProbabilityTheory.variance_fun_id_gaussianReal"},
+    {"source":"StatLean.MultipleTesting.integral_sq_stdGaussian","target":"ProbabilityTheory.integral_id_gaussianReal"},
+    {"source":"StatLean.MultipleTesting.integral_sq_stdGaussian","target":"sub_zero"},
+    {"source":"StatLean.MultipleTesting.integral_sq_stdGaussian","target":"ProbabilityTheory.variance_eq_integral"},
+    {"source":"StatLean.MultipleTesting.integral_sq_stdGaussian","target":"aemeasurable_id"}
+  ]
+}
