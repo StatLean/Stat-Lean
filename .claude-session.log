@@ -1,0 +1,24 @@
+srun: job 28493483 queued and waiting for resources
+srun: job 28493483 has been allocated resources
+Done. Committed on `conc/hdp-chain-dudley-tail`.
+
+## Summary
+
+**Both** target theorems in `DudleyTail.lean` are now fully closed — **0 sorries, 0 axioms**, build gate exit 0. This *beats* the graded fallback, which only required `dudley_tail_three_term` to close and permitted `dudley_tail` to remain a named sorry.
+
+### What was closed
+- **`dudley_tail_three_term`** (the mandatory core): sharp three-term high-probability Dudley bound with failure probability exactly `2·exp(−u²)`.
+- **`dudley_tail`** (the designated fallback — closed anyway): the book display form `sup |X_t−X_s| ≤ 200·K·(∫₀^D √log𝒩 + u·diam T)` w.p. ≥ 1−2exp(−u²).
+
+### Proof architecture (built from scratch — the sibling `generic_chaining_tail` template was itself an unproven sorry)
+- **Per-level union-bound tail chaining**: at level `k`, threshold `τ_k = 3K·2^{−k}·(√(2 log N_k) + √(k+1) + u)`; the B1 pair tail `measure_abs_sub_ge_le` over `closePairs`, the `(a+b+c)² ≥ a²+b²+c²` inflation to cancel the `N_k²` union factor, and the geometric series `∑ₖ exp(−(k+1)) ≤ 1/(e−1)` give total failure `≤ 2exp(−u²)`.
+- **Two-sided sup** reduced to twice the anchored one-sided sup via the anchor triangle; telescoping identifies `X_t − X_c` a.e.
+- **Razor-thin threshold-sum control** (`2∑τ_k ≤ K(9·dudleySum + 17·diam + 12·u·diam)`) driven by a **Cauchy–Schwarz** bound `∑ 2^{−j}√j ≤ √2` (needed because `12√2 ≈ 16.97 < 17`).
+- **Diameter absorption** for the display form via `diam·√log2 ≤ 8·dudleyIntegral` with lower bound `√(log 2) ≥ 68/91` (from `Real.log_two_gt_d9`).
+
+### Key reusable helpers added
+`sum_half_succ_le_one`, `sum_succ_half_succ`/`_le_two`, `sum_half_succ_sqrt_le_sqrt_two` (Cauchy–Schwarz), `sum_exp_neg_succ_le_one`.
+
+Two imports added (statements/hypotheses/tags untouched): `Chaining.FinsetMaximal` (for `biSup_finset_eq_sup'`) and `Analysis.Complex.ExponentialBounds` (for `log_two_gt_d9`).
+
+Note: the two untracked files (`.claude-session.log`, `.fanout-prompt.md`) are pre-existing session artifacts, left unstaged.
