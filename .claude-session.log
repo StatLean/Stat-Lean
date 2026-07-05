@@ -1,0 +1,17 @@
+srun: job 28502032 queued and waiting for resources
+srun: job 28502032 has been allocated resources
+Done. **Example 8.3.5 / Exercise 8.17 is fully closed — 0 sorry.**
+
+## Summary
+
+All four theorems in `StatLean/ConcentrationInequalities/VC/HalfSpaces.lean` build green (`lake build … ` exit 0), including the designated fallback `not_shatters_halfSpaceClass`, which I **proved outright** rather than leaving as the graded sorry.
+
+**What was proved:**
+- **`shatters_halfSpaceClass_simplex`** (lower bound): the `(m+1)`-point set `{0, e₀,…,e_{m-1}}` is shattered. For each labeling `T`, witness `a = ∑ᵢ cᵢ·eᵢ` with `cᵢ = if eᵢ∈T then −1 else 1`, threshold `b = if 0∈T then 0 else −1/2`. Verified via orthonormality (`⟪eᵢ,eⱼ⟫ = δᵢⱼ`), `sum_inner`/`real_inner_smul_left`, and a per-point membership equivalence.
+- **`not_shatters_halfSpaceClass`** (upper bound, Radon): `m+2` points in ℝᵐ are affinely dependent (`finrank_vectorSpan_le_iff_not_affineIndependent` + `Submodule.finrank_le` + `finrank_euclideanSpace_fin`), so `Convex.radon_partition` gives a common hull point; the half-space realizing the `I`-labeling and its complement are convex (`convex_halfSpace_le`/`_gt` + `convexHull_min`), putting that point strictly on both sides — contradiction.
+- **`vcDim_halfSpaceClass`**: assembled `= m+1` from `Shatters.card_le_vcDim` + `vcDim_le_iff` + `Shatters.mono_right`, with the ℕ∞ cast arithmetic.
+- **`vcDim_halfSpaceClass_two`**: the `m=2` instance (VC dim 3).
+
+**Key obstacle solved:** `EuclideanSpace.inner_single_left` refused to `rw`/`simp` onto a hand-written `inner ℝ …` goal (defeq-but-not-syntactically-equal instance term). Fixed by bridging the library↔goal step with `refine (…).trans ?_` (defeq unification); everything downstream then matched. Recorded this reusable gotcha in memory.
+
+Committed as `e9c6025` on `conc/hdp-half-spaces`.
