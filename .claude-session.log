@@ -1,0 +1,24 @@
+srun: job 28472515 queued and waiting for resources
+srun: job 28472515 has been allocated resources
+Done. Both sorries are closed — no fallback needed.
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Symmetrization.Contraction` exits **0** with **zero sorries** in the target file (the two `grep` hits are docstring prose). Committed as `f49003b`.
+
+### Closed sorries
+1. **`contraction_principle_of_abs_le_one`** — the cube-normalized core.
+2. **`contraction_principle`** — HDP Theorem 6.6.1 with the sharp `‖a‖_∞` factor.
+
+### Proof structure
+Followed the roadmap's "elementary single-coordinate convexification" route (no convexity typeclass machinery):
+
+- **Core**, by strong induction on `k = card` of the non-vertex set `{i | a i ∉ {±1}}`:
+  - **Vertex base** (`contraction_vertex`): for `a ∈ {±1}^N`, change of variables via `signVec_map_mul_pm` + `integral_map` gives exact equality `E‖∑ aᵢεᵢxᵢ‖ = E‖∑ εᵢxᵢ‖`.
+  - **Inductive step**: pick non-vertex `i₀`, write `a i₀ = θ·1 + (1−θ)·(−1)` with `θ = (a i₀+1)/2 ∈ [0,1]`; the pointwise vector identity `∑ = θ•(∑ with aᵢ₀:=1) + (1−θ)•(∑ with aᵢ₀:=−1)` plus `norm_add_le`/`norm_smul` bounds the integrand *before* integrating; `integral_mono`/`integral_add`/`integral_const_mul` and the two IH calls (`card_filter_update_le` shows each update drops one non-vertex coordinate) finish.
+- **Wrapper**: `‖a‖ = 0` degenerate branch (`simp` after `norm_eq_zero`); else apply core to `a/M` and pull out `M` by norm-homogeneity (`norm_smul`, `integral_const_mul`, `mul_inv_cancel₀`), with `|aᵢ|/M ≤ 1` from `norm_le_pi_norm`.
+
+### Key Mathlib lemmas
+`integral_map`, `integral_mono`, `integral_const_mul`, `integral_add`, `Integrable.mono'`, `Integrable.const_mul`, `norm_add_le`, `norm_smul`, `norm_le_pi_norm`, `Function.update_self`/`update_of_ne`, `Finset.card_erase_of_mem`, `Finset.smul_sum`, `Finset.sum_add_distrib`.
+
+A supporting integrability helper (`integrable_norm_sum_coeff_smul`) uses that on `signVec`'s `±1`-support the integrand is a.e. bounded by `∑‖xᵢ‖` (via `signVec_ae_pm`).
