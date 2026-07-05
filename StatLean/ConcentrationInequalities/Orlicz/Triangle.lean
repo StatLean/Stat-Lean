@@ -202,6 +202,11 @@ theorem orliczNorm_finset_sum_le {ψ : ℝ → ℝ}
     (hψ_mono : MonotoneOn ψ (Set.Ici 0))
     -- USER-INPUT: ψ convex on [0,∞); HDP Exercise 2.42 (Orlicz function)
     (hψ_conv : ConvexOn ℝ (Set.Ici 0) ψ)
+    -- USER-INPUT: ψ(0) ≤ 0 (book: ψ(0) = 0); HDP Exercise 2.42 — REQUIRED for
+    -- the empty-sum base case (statement fix at the wave-2 gate: without it,
+    -- ψ ≡ 1 is admissible and `orliczNorm ψ 0 μ = ⊤` for `μ univ > 1`, making
+    -- the empty-sum inequality false; caught honestly by the closure session)
+    (hψ0 : ψ 0 ≤ 0)
     -- LEAN-ONLY: measurability of ψ; inherited from orliczNorm_add_le
     (hψ_meas : Measurable ψ)
     {ι : Type*} (s : Finset ι) {X : ι → Ω → ℝ} {μ : Measure Ω}
@@ -212,14 +217,8 @@ theorem orliczNorm_finset_sum_le {ψ : ℝ → ℝ}
   induction s using Finset.induction_on with
   | empty =>
       simp only [Finset.sum_empty]
-      -- Base case is UNPROVABLE under the stated hypotheses: the goal reduces to
-      -- `orliczNorm ψ (fun _ => 0) μ ≤ 0`, i.e. `orliczNorm ψ 0 μ = 0`, which needs
-      -- `ψ 0 ≤ 0` (`orliczNorm_zero`). With only `MonotoneOn`/`ConvexOn`/`Measurable`
-      -- the constant generator `ψ ≡ 1` is admissible, giving `orliczNorm ψ 0 μ = ⊤`
-      -- whenever `μ univ > 1`; so the empty-sum inequality is false in general.
-      -- See the session report: the finset corollary is missing a `ψ 0 ≤ 0`
-      -- hypothesis. All other cases (and the inductive step below) are closed.
-      sorry
+      -- With `ψ 0 ≤ 0` the zero function has Orlicz norm 0 (`orliczNorm_zero`).
+      exact le_of_eq (orliczNorm_zero hψ0 μ)
   | insert a s ha ih =>
       have hXa : AEMeasurable (X a) μ := hX a (Finset.mem_insert_self a s)
       have hXs : ∀ i ∈ s, AEMeasurable (X i) μ := fun i hi =>
