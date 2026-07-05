@@ -1,0 +1,22 @@
+srun: job 28433410 queued and waiting for resources
+srun: job 28433410 has been allocated resources
+Done. All sorries in `Attainment.lean` are closed — including the graded fallback.
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Orlicz.Attainment` exits **0** with **zero errors/warnings** from the file. It contains **no `sorry`, `admit`, or `axiom`** (the lone `sorry` string is inside a docstring).
+
+### Closed lemmas (all 6, including the fallback)
+
+1. **`lintegral_le_one_of_orliczNorm_le`** (attainment) — extract gauge members `sₙ = max(tₙ, K) ↓ K` from the infimum via `exists_mem_orliczSet_lt_of_orliczNorm_lt` + `orliczSet_upward`, squeeze `(sₙ:ℝ) → K`, then **Fatou** (`lintegral_liminf_le'`) with pointwise continuity of ψ and `Tendsto.liminf_eq` collapses the liminf to the target integrand; `liminf_le_liminf` + `liminf_const` bound it by 1.
+
+2. **`lintegral_exp_sq_le_two_of_subGaussianNorm_le`** / **`subGaussianNorm_le_of_lintegral_exp_sq_le_two`** — additive ±1 shift `ofReal(eᵘ) = ofReal(eᵘ−1) + 1` (via `ENNReal.ofReal_add`), integrated with `lintegral_add_right` (const-1 measurable, so no `AEMeasurable X` needed in the reverse direction) and `IsProbabilityMeasure` giving `∫⁻ 1 = 1`. Sign handled by `sq_abs`.
+
+3. **`lintegral_exp_abs_le_two_of_subExponentialNorm_le`** / **`subExponentialNorm_le_of_lintegral_exp_abs_le_two`** — same additive trick with `psiOne`, using `psiOne_monotone.monotoneOn`.
+
+4. **`orliczNorm_eq_zero_iff`** (definiteness, the designated fallback — **fully proven**) — forward: for each level set `{t ≤ |X|}`, Markov (`mul_meas_ge_le_lintegral₀`) at level `ofReal(ψ(t/K))` for arbitrarily small gauges `K` gives `N·μ{t≤|X|} ≤ 1` for every `N` (using `ψ → ∞`), so `ENNReal.exists_nat_mul_gt` forces the set null; covering `{X≠0}` by `{1/(m+1) ≤ |X|}` gives `X =ᵐ 0`. Since ψ carries no continuity hypothesis here, integrand measurability comes from a **monotone extension** `ψ'(x) = ψ(max x 0)` (`Monotone.measurable`), equal to ψ on the nonnegative range. Reverse: `orliczNorm_congr_ae` + `orliczNorm_zero`.
+
+### Key Mathlib lemmas used
+`lintegral_liminf_le'`, `lintegral_add_right`, `mul_meas_ge_le_lintegral₀`, `ENNReal.exists_nat_mul_gt`, `Monotone.measurable`, `Filter.Tendsto.liminf_eq`, `liminf_le_liminf`/`liminf_const`, `tendsto_of_tendsto_of_tendsto_of_le_of_le`, `tendsto_one_div_add_atTop_nhds_zero_nat`, `Tendsto.eventually_ge_atTop`, `exists_nat_one_div_lt`, `measure_iUnion_null_iff`, `ENNReal.ofReal_add`/`ofReal_natCast`/`ofReal_lt_ofReal_iff`.
+
+Committed as `d55157d`.
