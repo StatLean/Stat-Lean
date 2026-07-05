@@ -180,7 +180,7 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     have e1 : (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
         = F.sup' hFne (fun t => F.sup' hFne (fun s => |X t ω - X s ω|)) := by
       rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
-      refine Finset.sup'_congr rfl (fun t _ => ?_)
+      refine Finset.sup'_congr hFne rfl (fun t _ => ?_)
       rw [setToF (fun s => |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
     rw [e1, biSup_finset_eq_sup' hPne,
       Finset.sup'_product_left hPne (fun p => |X p.1 ω - X p.2 ω|)]
@@ -189,7 +189,8 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     intro ω
     have hanch : ∀ t ∈ T, |X t ω - X t₀ ω| ≤ A ω := by
       intro t ht
-      rw [hAdef, setToF (fun u => |X u ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      simp only [hAdef]
+      rw [setToF (fun u => |X u ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
       exact Finset.le_sup' (fun u => |X u ω - X t₀ ω|) ((hmemT t).mpr ht)
     rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
     refine Finset.sup'_le hFne _ (fun t ht => ?_)
