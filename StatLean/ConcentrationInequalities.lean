@@ -17,10 +17,77 @@ import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 import StatLean.ConcentrationInequalities.Maximal.FiniteMaximal
 import StatLean.ConcentrationInequalities.Maximal.L2Maximal
+import StatLean.ConcentrationInequalities.ForMathlib.ExpTaylorBounds
+import StatLean.ConcentrationInequalities.ForMathlib.IndepTransport
+import StatLean.ConcentrationInequalities.ForMathlib.GaussianAbsMoment
+import StatLean.ConcentrationInequalities.ForMathlib.BinomialSumBound
+import StatLean.ConcentrationInequalities.ForMathlib.SupRatApprox
+import StatLean.ConcentrationInequalities.Orlicz.Defs
+import StatLean.ConcentrationInequalities.Orlicz.Generators
+import StatLean.ConcentrationInequalities.Orlicz.Basic
+import StatLean.ConcentrationInequalities.Orlicz.Attainment
+import StatLean.ConcentrationInequalities.Orlicz.Triangle
+import StatLean.ConcentrationInequalities.Orlicz.SubGaussianTail
+import StatLean.ConcentrationInequalities.Orlicz.SubGaussianMGF
+import StatLean.ConcentrationInequalities.Orlicz.TailToNorm
+import StatLean.ConcentrationInequalities.Orlicz.SubGaussianMoments
+import StatLean.ConcentrationInequalities.Orlicz.NormFromMoments
+import StatLean.ConcentrationInequalities.Orlicz.Equivalence
+import StatLean.ConcentrationInequalities.Orlicz.SubExponentialTail
+import StatLean.ConcentrationInequalities.Orlicz.SubExponentialMGF
+import StatLean.ConcentrationInequalities.Orlicz.Product
+import StatLean.ConcentrationInequalities.Orlicz.Bernstein
+import StatLean.ConcentrationInequalities.Orlicz.SumNorm
+import StatLean.ConcentrationInequalities.Orlicz.VectorNorm
+import StatLean.ConcentrationInequalities.Symmetrization.Rademacher
+import StatLean.ConcentrationInequalities.Symmetrization.SignFlip
+import StatLean.ConcentrationInequalities.Symmetrization.NormAddMeanZero
+import StatLean.ConcentrationInequalities.Symmetrization.Symmetrization
+import StatLean.ConcentrationInequalities.Symmetrization.SymmetrizationIndep
+import StatLean.ConcentrationInequalities.Symmetrization.Contraction
+import StatLean.ConcentrationInequalities.Symmetrization.GaussianVector
+import StatLean.ConcentrationInequalities.Symmetrization.SymmetricLaw
+import StatLean.ConcentrationInequalities.Symmetrization.GaussianMax
+import StatLean.ConcentrationInequalities.Symmetrization.Gaussian
+import StatLean.ConcentrationInequalities.Symmetrization.Empirical
+import StatLean.ConcentrationInequalities.Chaining.SubGaussianIncrements
+import StatLean.ConcentrationInequalities.Chaining.FinsetMaximal
+import StatLean.ConcentrationInequalities.Chaining.TailToExpectation
+import StatLean.ConcentrationInequalities.Chaining.PsiTwoMaximal
+import StatLean.ConcentrationInequalities.Chaining.DyadicNets
+import StatLean.ConcentrationInequalities.Chaining.EntropyIntegrand
+import StatLean.ConcentrationInequalities.Chaining.EntropySum
+import StatLean.ConcentrationInequalities.Chaining.DiscreteDudley
+import StatLean.ConcentrationInequalities.Chaining.Dudley
+import StatLean.ConcentrationInequalities.Chaining.DudleyConsumers
+import StatLean.ConcentrationInequalities.Chaining.DudleyTail
+import StatLean.ConcentrationInequalities.Chaining.GammaTwo
+import StatLean.ConcentrationInequalities.Chaining.GenericChaining
+import StatLean.ConcentrationInequalities.EmpiricalProcess.Defs
+import StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzNet
+import StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzApprox
+import StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzCovering
+import StatLean.ConcentrationInequalities.EmpiricalProcess.SubGaussianIncrements
+import StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzDense
+import StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzLLN
+import StatLean.ConcentrationInequalities.VC.Defs
+import StatLean.ConcentrationInequalities.VC.SauerShelah
+import StatLean.ConcentrationInequalities.VC.Examples
+import StatLean.ConcentrationInequalities.VC.HalfSpaces
+import StatLean.ConcentrationInequalities.VC.DimensionReduction
+import StatLean.ConcentrationInequalities.VC.CoveringByVC
+import StatLean.ConcentrationInequalities.VC.EntropyIntegral
+import StatLean.ConcentrationInequalities.VC.LawOfLargeNumbers
+import StatLean.ConcentrationInequalities.VC.LawOfLargeNumbersCountable
+import StatLean.ConcentrationInequalities.VC.GlivenkoCantelli
+import StatLean.ConcentrationInequalities.VC.Generalization
 
 /-!
 # ConcentrationInequalities — area umbrella
 
 Sub-Gaussian / sub-exponential / Bernstein / maximal inequalities, formalized
-from Lu, *Big Data Analysis*, ch. 2–4. Modules are imported above as each lands.
+from Lu, *Big Data Analysis*, ch. 2–4, plus the Batch-10 Vershynin HDP layer
+(Orlicz/ψ-norms, symmetrization, Dudley + generic chaining, empirical
+processes, VC theory; `HDP §X.Y` tags). Modules are imported above as each
+lands.
 -/
