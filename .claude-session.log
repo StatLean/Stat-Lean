@@ -1,0 +1,25 @@
+srun: job 28496893 queued and waiting for resources
+srun: job 28496893 has been allocated resources
+Done. Summary of what was accomplished:
+
+## Result: DONE ✅
+
+**Build gate passes** — `lake build StatLean.ConcentrationInequalities.Symmetrization.Empirical` exits 0, with exactly **1 designated fallback sorry** remaining (`empirical_symmetrization_countable`).
+
+### Closures
+- **`empirical_symmetrization`** (the `[Fintype ι]` core the VC cluster consumes) — **fully proven, 0 sorry**.
+- **`empirical_symmetrization_countable`** — left as the designated graded fallback sorry.
+
+### Proof shape (finite core)
+Instantiated `symmetrization_upper_pi` (the centered, no-mean-zero canonical form from `Symmetrization.lean`) at `E := ι → ℝ` with the Fintype Pi sup-norm and vectors `Zᵢ(ω) := fun k => n⁻¹·f_k(Xᵢω)`. The centering constant cancels, which is exactly why the book's RHS is uncentered.
+
+Key steps:
+- **Transport** both sides to canonical product laws via `integral_eq_integral_pi_map` / `integral_prod_eq_integral_pi_prod` (IndepTransport black boxes).
+- **Norm ↔ ciSup** bridge `pi_norm_eq_ciSup_abs` (required importing `GaussianMax`).
+- **Coordinate mean** `= n⁻¹∫f_k dP` via `MeasureTheory.eval_integral` (required importing `Mathlib.MeasureTheory.SpecificCodomains.Pi`) + `integral_map` + the law hypothesis `hX_law`.
+- **Integrability** from `|F k|≤1` via `Integrable.of_mem_Icc (-1) 1`; independence of `Z` via `hX_indep.comp`.
+
+### Notes
+- Added 3 imports (`GaussianMax`, `SpecificCodomains.Pi`) — no statement/hypothesis/tag changes.
+- The `[Fintype ι]`-unused-in-type linter *warning* is expected (Fintype is used only in the proof for instance resolution); harmless.
+- Committed as `e10f133`. Memory note recorded for the reusable `E:=ι→ℝ` Pi-sup-norm symmetrization pattern.
