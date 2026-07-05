@@ -1,0 +1,15 @@
+srun: job 28516675 queued and waiting for resources
+srun: job 28516675 has been allocated resources
+Done. Both sorries in `NormFromMoments.lean` are closed — **zero named-sorry fallbacks used** (the file's only remaining "sorry" hit is the word in a docstring). Target builds exit 0.
+
+## What was closed
+
+**`lintegral_pow_le_of_eLpNorm_le`** (even-moment unpacking): `‖X‖_{2n} ≤ K√(2n) ⇒ E X^{2n} ≤ K^{2n}(2n)^n`. Route: `eLpNorm_eq_eLpNorm'` + `lintegral_rpow_enorm_eq_rpow_eLpNorm'` to turn the ∫⁻ into `(eLpNorm)^{p.toReal}`, monotone `ENNReal.rpow_le_rpow` against the hypothesis, then `ENNReal.ofReal_rpow_of_nonneg` and `(K√(2n))^{2n} = K^{2n}(2n)^n` via `Real.sq_sqrt`. Key trick: proving `p.toReal = ↑(2*n)` as `hptr2` so the exponent-rewrite doesn't also touch the `√(2n)` argument (both are syntactically `2*↑n`).
+
+**`subGaussianNorm_le_of_eLpNorm_le`** (HDP Prop 2.6.1 (ii)⇒(iii), `K₃ = 2√e·K`): reduced to the book form `E exp(X²/Cr²) ≤ 2` via the REAL bridge `subGaussianNorm_le_of_lintegral_exp_sq_le_two` (needed adding the `Attainment` import). Then:
+- `exp((X/Cr)²) = ∑' k, ((X/Cr)²)^k/k!` via `NormedSpace.expSeries_div_hasSum_exp` + `Real.exp_eq_exp_ℝ`;
+- `ENNReal.ofReal_tsum_of_nonneg` + `lintegral_tsum` to swap ∫⁻/∑';
+- per-term bound `term n ≤ ofReal((1/2)^n)`: pull out the constant (`lintegral_const_mul'`), apply the unpacking helper, and the real inequality collapses to `n^n ≤ e^n·n!` (i.e. the `pow_div_exp_pow_le_factorial` brick `(n/e)^n ≤ n!`) after cancelling the shared `(2K²)^n` factor;
+- `∑' ofReal((1/2)^n) = ofReal 2 = 2` via `tsum_geometric_two`.
+
+**Two minor fixes after first build:** a mis-scoped `have … ; positivity` in `hpr`, and the missing `Attainment` import for the book-form bridge. Committed as `6babfc7`.
