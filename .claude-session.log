@@ -1,0 +1,20 @@
+srun: job 28499801 queued and waiting for resources
+srun: job 28499801 has been allocated resources
+Done. **`LipschitzApprox.lean` fully closed — 0 sorry, build exit 0** (beats the ≤1 designated-fallback allowance).
+
+## What closed
+
+All nine sorries in the touch-set, including the graded fallback `exists_mem_lipschitzNet_dist_le`:
+
+- **`exists_gridKnot_dist_le`** — take `j = ⌊m·x⌋₊`; floor bounds `n ≤ m·x < n+1` give `|x − n/m| ≤ 1/m` after clearing the `/m`.
+- **`snapPath_le`** — `f(t_j) ≤ 1 ⇒ m·f(t_j) ≤ m`, monotone `Nat.floor` + `Nat.floor_natCast`.
+- **`abs_snapPath_sub_le`** — rewrote `f(t_j) − ⌊m·f⌋₊/m = (m·f − ⌊m·f⌋₊)/m`, then `abs_div` + `gcongr` reduces to `|m·f − ⌊m·f⌋₊| ≤ 1`.
+- **`snapPath_step_le`** — 1-Lipschitz on `1/m`-spaced knots ⇒ `|m·ya − m·yb| ≤ 1`; floors differ by ≤1 via `Nat.floor_add_one` + `Nat.floor_mono`, closed by `omega`.
+- **`gridPath_snapStep_eq`** — key telescoping. Private helpers `gridPath_zero`/`gridPath_succ` (the `filter(<i+1) = insert i (filter(<i))` step) give a clean `Fin.induction`; `snapStep_decode` proves `(step−1) = k_{i+1}−k_i` by the `<`/`=`/`>` trichotomy + `omega`.
+- **`coneFun_snap_le` / `le_coneFun_snap_add`** — via `coneFun_eq_snap` (rewrites the envelope through `gridPath_snapStep_eq` + `gridValue_snap_eq`, clamps are identity) and the symmetric Lipschitz brick `abs_f_sub_knot_le`; the `1/m + 1/m + 1/m` budget closed by `linarith`.
+- **`exists_mem_lipschitzNet_dist_le`** — `g = coneMap …`; `ContinuousMap.dist_le` + the two envelope bounds sandwich `0 ≤ f − cone ≤ 3/m`.
+- **`isEpsilonNet_lipschitzNet`** — internality from upstream `lipschitzNet_subset`, plus `3/m ≤ ε` from `3/ε ≤ m`.
+
+Upstream `LipschitzNet.lean` lemmas (`coneMap_mem_lipschitzNet`, `lipschitzNet_subset`, defs of `gridKnot`/`gridPath`/`gridValue`/`coneFun`) were cited as black boxes — several remain sorry-backed there, which is expected and outside the touch-set.
+
+Reusable patterns worth noting: the ℤ-telescoping `gridPath_succ` recurrence + `Fin.induction` combo, and the `↑(1:ℝ≥0)` gotcha in `LipschitzWith.dist_le_mul` (needs `NNReal.coe_one` before `one_mul` fires).
