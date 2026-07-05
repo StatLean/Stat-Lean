@@ -1,3 +1,26 @@
 srun: job 28418433 queued and waiting for resources
 srun: job 28418433 has been allocated resources
 Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+srun: job 28435260 queued and waiting for resources
+srun: job 28435260 has been allocated resources
+Done. Here's the summary.
+
+## Result
+
+`lake build StatLean.ConcentrationInequalities.Chaining.DiscreteDudley` → **exit 0**, with exactly one warning: the sanctioned fallback sorry on `discrete_dudley_abs`. Committed as `aec14ba`.
+
+### Sorries closed (2 of 3 — both required ones)
+1. **`discrete_dudley`** (HDP Thm 8.1.4, headline): `∫ ⨆_{t∈T} X_t ≤ 6√3·K·dudleySum T`.
+2. **`integrable_biSup_sub`** (exported for Dudley.lean).
+
+### How `discrete_dudley` was proven
+- **Reduction**: split on `diam T`. The `diam = 0` branch identifies all coordinates a.e. (`sub_ae_eq_zero` + `hfin.eventually_all`) so the sup collapses to `X_c`, `∫ = 0`.
+- **Chaining** (`diam > 0`): coarse scale `κ` (`exists_coarse_scale`) gives a singleton net `{c}` to anchor mean-zero; `choose` builds nets `N j` at `ε j = 2^{-(κ+j)}`; fine scale `n` (`exists_fine_scale`) makes the finest projection agree with `t` a.e.
+- **Telescoping**: `chain_telescope` per point + `Finset.sup'` bookkeeping bounds `⨆_t(X_t−X_c)` by `∑_j ⨆_{closePairs}`.
+- **Per level**: `expectation_max_finset_le` with proxy `σ² = 3(K·3ε)²` (fed via a new private `isSubGaussian_mono`) lands **exactly** `6√3·K·dudleySummand(κ+1+j)`; the `√27 = 3√3` and `card ≤ N²` accounting are the tight bits.
+- **Window sum**: `Finset.sum_map` + `sum_window_le_dudleySum`.
+
+Key Mathlib lemmas: `iSup₂`/`Finset.sup'_le`/`le_sup'`, `integral_mono_ae`, `integral_finset_sum`, `Real.sqrt_mul`/`sqrt_sq`, `Real.log_pow`, `coveringNumber_anti`, `eventually_all_finite`, `zpow_sub₀`.
+
+### `discrete_dudley_abs` — left as the designated graded fallback
+Closing it at the **frozen constant 20** requires the book's re-anchoring: the abs form uses `expectation_abs_max_le` (`2L√log(2N)`, no centering), whose `√log 2` terms on singleton (`𝒩=1`) levels sum to ~50·K·dudleySum via `diam·√log2 ≤ 4·dudleySum` — overshooting 20. The book excludes those by starting the chain at the covering-number threshold scale `max{k : 𝒩(2^{-k})=1}`, leaving only `𝒩≥2` levels (`6√3` chaining) plus one first-moment reanchor (`√π·K·diam ≈ 8.5`). That threshold-scale selection (`Nat.find` over covering numbers + diam attainment) is **not available as a black box** in `DyadicNets`/`EntropySum` — `exists_coarse_scale` gives the diam-based κ, not the 𝒩-based κ'. This is exactly the fallback the prompt authorizes.
