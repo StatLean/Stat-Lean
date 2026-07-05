@@ -1,0 +1,22 @@
+srun: job 28520795 queued and waiting for resources
+srun: job 28520795 has been allocated resources
+Done. Build gate passes (`lake build StatLean.ConcentrationInequalities.Orlicz.VectorNorm` exits 0), and the commit is in.
+
+## Summary
+
+Closed **7 of 8** sorries across the two touch-set files; the only remaining sorry is the module-designated named-sorry fallback `subGaussianVecNorm_le_of_indep`.
+
+**SumNorm.lean** (all 3 closed):
+- `hasSubgaussianMGF_weighted_sum` — B2 per-coordinate (`hasSubgaussianMGF_of_subGaussianNorm_le`) → Mathlib `HasSubgaussianMGF.const_mul` for the weights → `iIndepFun.comp` (independence preserved under `x ↦ vᵢ·x`) → `HasSubgaussianMGF.sum_of_iIndepFun`.
+- `subGaussianNorm_weighted_sum_le` — B3 via `subGaussianNorm_le_of_hasSubgaussianMGF`, folding `6·∑vᵢ²(3Kᵢ²) = 18·∑vᵢ²Kᵢ²` in ℝ≥0.
+- `subGaussianNorm_sum_le` — the `v ≡ 1` instance; reduced the `⟨1²,_⟩` subtype weight to `1` via `NNReal.eq` + proof-irrelevant `simp`, then `congr`.
+
+**VectorNorm.lean** (4 closed, 1 fallback):
+- `subGaussianNorm_inner_le_vecNorm` — `le_iSup₂` over the sphere.
+- `subGaussianNorm_coord_le_vecNorm` — instance at `EuclideanSpace.single i 1` + `Finset.sum_eq_single`.
+- `isSubGaussianVec_of_coords` — `⟪X,v⟫ = ∑vᵢXᵢ`, finset triangle (`orliczNorm_finset_sum_le`) + homogeneity (`orliczNorm_const_mul`/`_const_mul_zero`) + `ENNReal.sum_lt_top`.
+- `max_coord_le_subGaussianVecNorm` — `iSup_le`.
+
+**Key gotcha resolved** (matches the recorded HalfSpaces note): the library `RCLike.inner_apply` / `EuclideanSpace.inner_single_right` refuse to `rw`/`simp` onto the file's `⟪⟫` (`RealInnerProductSpace`-notation) inner — the instances are defeq but not syntactically equal. Since `RCLike.inner_apply` is `rfl`, I bridged with `show v i * (starRingEnd ℝ) (X ω i) = …` (defeq `change`) and finished with `simp`, rather than fighting the syntactic matcher.
+
+The fallback `subGaussianVecNorm_le_of_indep` (sphere-sup ≤ √18·K via the ‖v‖²=1 normalization) is left as the single graded sorry per the module's design.
