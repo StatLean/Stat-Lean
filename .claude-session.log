@@ -1,0 +1,20 @@
+srun: job 28511275 queued and waiting for resources
+srun: job 28511275 has been allocated resources
+Done. **GREEN, 0 sorry, committed** (`de3d68a`). Beat the fallback — the designated fallback `eLpNorm_le_of_subGaussianNorm_le` closed too.
+
+## Closures (HDP Prop 2.6.1 (iii)⇒(ii), K₂ = √3·K)
+
+**1. `lintegral_pow_le_of_lintegral_exp_sq_le_two`** — even-moment core `E|X|^{2n} ≤ 2·n!·K^{2n}`.
+- Pointwise `|X|^{2n} ≤ K^{2n}·n!·e^{(X/K)²}` from the single-term series bound `pow_div_factorial_le_exp` at `x=(|X|/K)²` (via `pow_mul`/`div_pow`, `sq_abs` to align the exp argument).
+- Lifted with `ENNReal.ofReal_mul`, `lintegral_mono`, `lintegral_const_mul'`, then the ψ₂ gauge hypothesis `∫⁻ e^{(X/K)²} ≤ 2`.
+
+**2. `eLpNorm_two_mul_le_of_lintegral_exp_sq_le_two`** — even-exponent bridge `‖X‖_{2n} ≤ √2·√n·K`.
+- Unfolded `eLpNorm` at `2n` via `eLpNorm_eq_eLpNorm'` / `eLpNorm'_eq_lintegral_enorm`; rewrote the enorm integrand as `ofReal(|X|^{2n})` (`Real.enorm_eq_ofReal_abs`, `ENNReal.rpow_natCast`, `ENNReal.ofReal_pow`).
+- Real bound `2·n!·K^{2n} ≤ (√2·√n·K)^{2n} = 2ⁿ·nⁿ·K^{2n}` from `Nat.factorial_le_pow` + `2 ≤ 2ⁿ`; final `(ofReal(c^{2n}))^{1/(2n)} = ofReal c` via `ENNReal.rpow_mul` + `ENNReal.rpow_natCast`.
+
+**3. `eLpNorm_le_of_subGaussianNorm_le`** (the designated fallback — fully closed) — moment growth `‖X‖_{L^p} ≤ √3·K·√p`.
+- `n := ⌈p/2⌉₊`, exponent monotonicity `eLpNorm_le_eLpNorm_of_exponent_le` (`IsProbabilityMeasure`), chained with (2).
+- Slack `2n ≤ 3p` (from `Nat.ceil_lt_add_one`, `p≥1`) gives `√2·√n ≤ √3·√p` via `Real.sqrt_mul`/`Real.sqrt_le_sqrt`.
+- ψ₂ condition supplied by the REAL bridge `lintegral_exp_sq_le_two_of_subGaussianNorm_le`.
+
+Only linter warnings remain (a `mul_le_mul_left'` deprecation and the LEAN-ONLY `hX` hypothesis unused in thm 2 — no signature change allowed).
