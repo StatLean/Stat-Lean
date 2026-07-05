@@ -1,0 +1,25 @@
+srun: job 28480564 queued and waiting for resources
+srun: job 28480564 has been allocated resources
+Done. **HDP Lemma 6.6.2 (Symmetrization with Gaussians) is fully closed — 0 sorry, beating the graded fallback (which permitted 1).**
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Symmetrization.Gaussian` → **exit 0**, no errors, no `sorry` in the source. Committed as `cbbec4e`.
+
+### Closed sorries (all four theorems)
+- **`gaussian_symmetrization_upper_sqrt`** — `E‖∑Xᵢ‖ ≤ √(2π)·E‖∑gᵢXᵢ‖` (sharp constant)
+- **`gaussian_symmetrization_upper`** — headline `≤ 3·E‖∑gᵢXᵢ‖` via `√(2π) ≤ √9`
+- **`gaussian_symmetrization_lower`** — `≤ 2√(2 log 2N)·E‖∑Xᵢ‖` (incl. `N=0` case split)
+- **`gaussian_symmetrization_lower_log`** — `≤ 4√(log N)·E‖∑Xᵢ‖` for `N≥2` via `log(2N) ≤ 2 log N`
+
+### Proof architecture
+Built 7 `private` helpers to run the whole `μ ⊗ signVec ⊗ gaussVec` argument in per-outcome iterated-integral style (no `Measure.prod` associativity):
+- **`jensen_pointwise`** — inserts `E|g|=√(2/π)` fibrewise, `norm_integral_le_integral_norm`, kills constant with `√(π/2)·√(2/π)=1`
+- **`cov_gaussVec`** — the `(εᵢ|gᵢ|)ᵢ =ᵈ (gᵢ)ᵢ` change of variables via `integral_map` + `map_signVec_mul_abs_pi`
+- **`upper_inner` / `lower_inner`** — the two directions per fixed vector family (lower uses `contraction_principle` at coefficients `|gᵢ|` + `integral_pi_norm_gaussVec_le`)
+- Integrability bricks: **`integrable_eval_signVec`**, **`integrable_normX`** (`Integrable.op_fst_snd`), **`integrable_abs_prod`** (`Integrable.mul_prod`), **`integrable_norm_gaussVec`**, plus **`norm_abs_pi`**
+
+### Key Mathlib lemmas
+`integral_prod`/`integral_prod_symm`, `Integrable.integral_prod_left`, `integral_mono_of_nonneg`, `integral_map`, `Integrable.op_fst_snd`/`mul_prod`/`smul_const`, `integral_smul_const`, `integral_const_mul`, `norm_integral_le_integral_norm`, `Real.sqrt_mul`/`sqrt_sq`/`sqrt_le_sqrt`, `Real.log_mul`/`log_le_log`, `integrable_dirac`, `Finset.single_le_sum`, `pi_norm_le_iff_of_nonneg`.
+
+All upstream StatLean statements (Lem 6.3.2, Thm 6.6.1, SymmetricLaw mixing, GaussianVector/GaussianMax, GaussianAbsMoment) were cited as black boxes — only `Gaussian.lean` was edited.
