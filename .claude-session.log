@@ -1,0 +1,21 @@
+srun: job 28507299 queued and waiting for resources
+srun: job 28507299 has been allocated resources
+Done. Both target files are fully closed and committed.
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Chaining.EntropySum` exits **0** with **zero `sorry`** in either touch-set file — I closed *everything*, including the designated graded fallback `sum_window_le_two_mul_dudleyIntegral` (so no fallback sorry was needed). Committed as `a97a9d4`.
+
+### EntropyIntegrand.lean (8 lemmas)
+- `sqrtLogCov_nonneg` — `Real.sqrt_nonneg`.
+- `sqrtLogCov_eq_zero_of_diam_le` — `𝒩=1` via `Metric.coveringNumber_eq_one_of_ediam_le` + `ediam_le_of_forall_dist_le` + `dist_le_diam_of_mem'`.
+- `sqrtLogCov_anti` / `_le_sqrt_log_ncard` / `_le_sqrt_log_of_le` — private `sqrt_log_natCast_mono` (handling the `k=0` junk), `ENat.toNat_le_toNat`, `coveringNumber_le_encard_self`.
+- `measurable_sqrtLogCov` — the plan's `Antitone.measurable` doesn't fit (ℕ∞ has `MeasurableSpace ⊤`, no `BorelSpace`); used **`ENat.measurable_iff` + `Set.OrdConnected.measurableSet`** on the antitone level sets, then `measurable_from_top`/continuity composition.
+- `integrableOn_sqrtLogCov_Ioc` — `Integrable.mono'` against the `√(log|T|)` constant on `Ioc 0 D`.
+
+### EntropySum.lean (15 lemmas)
+- Summability over ℤ via **`Summable.of_nat_of_neg_add_one`** (geometric right tail + eventually-zero left tail above the diameter scale).
+- The `∑ ≤ 2∫` tiling: per-block `setIntegral_ge_of_const_le_real` (constant `= sqrtLogCov(2^{-k})`, `vol.real = 2^{-(k+1)}`) with `sqrtLogCov_anti`, disjoint blocks assembled by **`integral_biUnion_finset`**, then `setIntegral_mono_set` to the cap.
+- Diameter lower bounds using `exists_coarse_scale (D:=diam/4)` + `one_lt_coveringNumber_of_two_mul_lt_dist`, and `dudleyLIntegral_eq_ofReal` via `ofReal_integral_eq_lintegral_ofReal`.
+
+The only non-proof change was adding `import Mathlib.MeasureTheory.Integral.Bochner.Set` to EntropySum (needed for the `setIntegral_*` lemmas); no statements, hypotheses, constants, or tags were altered.
