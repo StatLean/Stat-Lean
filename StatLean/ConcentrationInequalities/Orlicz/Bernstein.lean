@@ -69,7 +69,7 @@ theorem measure_sum_ge_le_of_subExponentialNorm_le
     (ht : 0 ≤ t) :
     μ {ω | t ≤ ∑ i, X i ω} ≤
       ENNReal.ofReal (Real.exp (-(min (t ^ 2 / (16 * ∑ i, (K i : ℝ) ^ 2))
-        (t / (4 * (Finset.univ.sup K : ℝ)))))) := by sorry
+        (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ))))))  := by sorry
 
 /-- **Bernstein's inequality, ψ₁-norm form** (HDP §2.9, Theorem 2.9.1; the
 book's absolute constant realized as `c = 1/16` quadratic / `1/4` linear):
@@ -96,7 +96,7 @@ theorem bernstein_subexponential
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |∑ i, X i ω|} ≤
       ENNReal.ofReal (2 * Real.exp (-(min (t ^ 2 / (16 * ∑ i, (K i : ℝ) ^ 2))
-        (t / (4 * (Finset.univ.sup K : ℝ)))))) := by sorry
+        (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ))))))  := by sorry
 
 /-- **Weighted Bernstein** (HDP Corollary 2.9.2; BONUS — this file's allowed
 named-sorry debt): tail for `∑ aᵢ Xᵢ` with uniform ψ₁ bound `K`, exponent
@@ -125,7 +125,8 @@ theorem bernstein_subexponential_weighted
     μ {ω | t ≤ |∑ i, a i * X i ω|} ≤
       ENNReal.ofReal (2 * Real.exp
         (-(min (t ^ 2 / (16 * (K : ℝ) ^ 2 * ∑ i, (a i) ^ 2))
-          (t / (4 * (K : ℝ) * (Finset.univ.sup fun i => ‖a i‖₊ : ℝ)))))) := by
+          (t / (4 * (K : ℝ) *
+            ((Finset.univ.sup fun i => ‖a i‖₊ : ℝ≥0) : ℝ)))))) := by
   sorry
 
 end StatLean.ConcentrationInequalities

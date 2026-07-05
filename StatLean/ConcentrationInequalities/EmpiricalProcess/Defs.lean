@@ -148,15 +148,16 @@ theorem abs_empiricalProcess_le [IsProbabilityMeasure P] {B : ℝ}
         _ = B := inv_mul_cancel_left₀ (ne_of_gt hn') B
   -- Population term.
   have hint : |∫ x, f x ∂P| ≤ B := by
-    have h := norm_integral_le_of_norm_le_const (μ := P) (C := B)
+    have h := norm_integral_le_of_norm_le_const (μ := P) (f := f) (C := B)
       (Filter.Eventually.of_forall fun x => by
-        simpa [Real.norm_eq_abs] using hB x)
-    simpa [Real.norm_eq_abs, measure_univ] using h
+        rw [Real.norm_eq_abs]; exact hB x)
+    simpa [Real.norm_eq_abs, measure_univ, ENNReal.toReal_one, mul_one]
+      using h
   calc |empiricalProcess P n X f ω|
       = |(n : ℝ)⁻¹ * ∑ i, f (X i ω) - ∫ x, f x ∂P| := rfl
     _ ≤ |(n : ℝ)⁻¹ * ∑ i, f (X i ω)| + |∫ x, f x ∂P| := by
-        have h := abs_add ((n : ℝ)⁻¹ * ∑ i, f (X i ω)) (-(∫ x, f x ∂P))
-        simpa [sub_eq_add_neg, abs_neg] using h
+        simpa [Real.norm_eq_abs] using
+          norm_sub_le ((n : ℝ)⁻¹ * ∑ i, f (X i ω)) (∫ x, f x ∂P)
     _ ≤ B + B := add_le_add hsum hint
     _ = 2 * B := (two_mul B).symm
 
