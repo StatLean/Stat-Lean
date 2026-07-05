@@ -1,0 +1,22 @@
+srun: job 28487733 queued and waiting for resources
+srun: job 28487733 has been allocated resources
+Done. `lake build StatLean.ConcentrationInequalities.Orlicz.Bernstein` exits 0, and the file is **fully sorry-free** — including the designated bonus fallback, which also closed. Committed as `ef4bf42`.
+
+## Closed sorries (3 of 3)
+
+1. **`measure_sum_ge_le_of_subExponentialNorm_le`** — the one-sided ψ₁-Bernstein engine. Chernoff → MGF factorization → per-`i` restricted MGF bound → optimize at `λ* = min(t/(8∑Kᵢ²), 1/(2·maxK))`, with the two-regime `min` computed by `le_total` case split (quadratic regime yields exactly `t²/(16∑Kᵢ²)`; linear regime uses the case condition `4∑Kᵢ² ≤ t·maxK`).
+
+2. **`bernstein_subexponential`** — Theorem 2.9.1, two-sided. Engine applied to `X` and to `−X` (via `iIndepFun.comp` + `orliczNorm_neg`), then `{t ≤ |∑X|} ⊆ {t ≤ ∑X} ∪ {t ≤ ∑(−Xᵢ)}` with `measure_union_le` and `ENNReal.ofReal_add` collapsing to the factor 2.
+
+3. **`bernstein_subexponential_weighted`** — Corollary 2.9.2 (the *allowed* fallback, closed anyway). Reduced to Thm 2.9.1 for `aᵢXᵢ` at scale `‖aᵢ‖₊·K`, then the aggregate scales rewritten into `‖a‖₂`/`‖a‖∞` form.
+
+## Key Mathlib lemmas used
+- `ProbabilityTheory.measure_ge_le_exp_mul_mgf` (Chernoff), `iIndepFun.mgf_sum`, `iIndepFun.integrable_exp_mul_sum`, `iIndepFun.comp`, `mgf_nonneg`
+- `Real.exp_sum`, `Finset.prod_le_prod`, `Finset.mul_sum`, `div_le_div_iff₀`, `one_div_le_one_div_of_le`, `Finset.le_sup`, `Finset.sum_pos`
+- `NNReal.finset_sup_mul`, `NNReal.coe_mul`, `coe_nnnorm`, `sq_abs`, `le_abs`, `Finset.sum_neg_distrib`
+- `ENNReal.ofReal_toReal` / `ofReal_le_ofReal` / `ofReal_add` for the ℝ≥0∞ conversion
+
+## Upstream black boxes cited (sorry-backed, untouched)
+`mgf_le_of_subExponentialNorm_le`, `integrable_exp_mul_of_lintegral_exp_abs_le_two`, `lintegral_exp_abs_le_two_of_subExponentialNorm_le`, `subExponentialNorm_const_mul`, `orliczNorm_neg`.
+
+The `hK : ∀ i, 0 < K i` strengthening (documented in the module notes) is used for the `maxK > 0` / `∑Kᵢ² > 0` positivity facts.
