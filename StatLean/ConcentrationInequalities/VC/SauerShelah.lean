@@ -23,7 +23,7 @@ Cambridge University Press, §8.3.2 Lemma 8.3.7 (Pajor), §8.3.3 Lemma 8.3.9
 `Finset.card_le_card_shatterer` on the `traceFamily` bridge
 (`shatters_traceFamily_iff` identifies Mathlib's `Finset.Shatters` of the
 trace family with our set-level `Shatters` — beware, `Finset.Shatters` and
-our `Shatters` coexist in scope, so Mathlib's must stay dot-/fully
+our `Shatters` coexist in scope, so Mathlib's must stay dot- or fully
 qualified). Mathlib's `Finset.card_shatterer_le_sum_vcDim` requires
 `[Fintype Ω]` and is unusable for `Ω = ℝⁿ`; instead we count Λ-relatively:
 every trace-shattered `T` is `C`-shattered (hence `T.card ≤ d`) and `T ⊆ Λ`,
