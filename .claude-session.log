@@ -1,0 +1,21 @@
+srun: job 28525642 queued and waiting for resources
+srun: job 28525642 has been allocated resources
+Committed. Done. Here's the per-file summary:
+
+## Result: all four files GREEN, 0 sorry (all designated fallbacks proven outright)
+
+**1. `Symmetrization/Rademacher.lean`** — fully closed
+- `IsProbabilityMeasure radLaw` (`inv_two_add_inv_two`), `radLaw_integral` (two-Dirac split via `integrable_smul_measure`/`integral_dirac`), `radLaw_ae_pm`, `radLaw_integral_id/abs`, `radLaw_map_neg`, `radLaw_map_mul_pm`.
+- `signVec` prob-measure instance, `signVec_ae_pm` (`ae_all_iff` + `ae_map_iff` through `measurePreserving_eval`), `measurePreserving_eval_signVec`, `iIndepFun_eval_signVec` (`iIndepFun_pi`), and the fallback candidate **`signVec_map_mul_pm`** proven via `Measure.pi_map_pi` + `radLaw_map_mul_pm`.
+
+**2. `ForMathlib/IndepTransport.lean`** — fully closed
+- `integral_eq_integral_pi_map` and `integral_indepFun_eq_integral_prod` via `iIndepFun_iff_map_fun_eq_pi_map` / `indepFun_iff_map_prod_eq_prod_map_map` + `integral_map`; the passenger-factor fallback candidate **`integral_prod_eq_integral_pi_prod`** proven via `Measure.map_prod_map` + `integral_map`.
+
+**3. `Symmetrization/SignFlip.lean`** — fully closed
+- Fallback candidate **`measurePreserving_condSwap`** proven by conjugating a coordinatewise map through `MeasurableEquiv.arrowProdEquivProdArrow` (`measurePreserving_arrowProdEquivProdArrow`), gluing per-coordinate `id`/`Prod.swap` invariance with `measurePreserving_pi`.
+- `integral_flip_diff` derived as a `Measure.map`/`integral_map` change of variables with `σ i := c i = 1`.
+
+**4. `Symmetrization/NormAddMeanZero.lean`** — fully closed
+- `norm_le_integral_norm_add` (insert the mean, `norm_integral_le_integral_norm`); fallback candidate **`integral_norm_le_integral_norm_add_prod`** via `integral_prod` (Fubini) + `integral_mono` + `Integrable.comp_fst/comp_snd/integral_prod_left`.
+
+Committed as `232fee0`.
