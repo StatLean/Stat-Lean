@@ -4,6 +4,11 @@ import StatLean.ConcentrationInequalities.Symmetrization.Rademacher
 import StatLean.ConcentrationInequalities.Symmetrization.Empirical
 import StatLean.ConcentrationInequalities.Chaining.SubGaussianIncrements
 import StatLean.ConcentrationInequalities.Chaining.DudleyConsumers
+import StatLean.ConcentrationInequalities.Orlicz.TailToNorm
+import Mathlib.Probability.Moments.SubGaussian
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Order.Lattice
 
 /-!
 # VC law of large numbers (Theorem 8.3.15) — finite-class core
@@ -78,7 +83,7 @@ lemma integral_indicator_one_real {μ : Measure Ω} {S : Set Ω}
     -- LEAN-ONLY: measurability so the indicator integral evaluates.
     (hS : MeasurableSet S) :
     ∫ x, S.indicator (fun _ => (1 : ℝ)) x ∂μ = μ.real S := by
-  sorry
+  rw [integral_indicator_const (1 : ℝ) hS, measureReal_def, smul_eq_mul, mul_one]
 
 /-- `Finset.sup'` equals the subtype-indexed `ciSup` (LEAN-ONLY adapter
 between the sup policy's finite core and Exercise 8.11's `⨆ k : ι` shape;
@@ -86,7 +91,8 @@ no book content). -/
 lemma finset_sup'_eq_iSup_subtype {α : Type*} {F : Finset α}
     (hFne : F.Nonempty) (f : α → ℝ) :
     F.sup' hFne f = ⨆ k : {S // S ∈ F}, f (k : α) := by
-  sorry
+  rw [Finset.sup'_eq_csSup_image, Set.image_eq_range]
+  rfl
 
 /-- **The Rademacher linear process has sub-Gaussian increments** (R6 named
 lemma; HDP §8.3.6, Theorem 8.3.15 proof step): on any index set
@@ -101,7 +107,99 @@ lemma subGaussianIncrements_inner_signVec {n : ℕ}
     SubGaussianIncrements
       (fun (v : EuclideanSpace ℝ (Fin n)) (e : Fin n → ℝ) => ∑ i, e i * v i)
       (NNReal.sqrt 6) T (signVec n) := by
-  sorry
+  intro v _hv w _hw
+  have hev : ∀ i, Measurable (fun e : Fin n → ℝ => e i) := fun i => measurable_pi_apply i
+  set c : Fin n → ℝ := fun i => w i - v i with hc
+  -- the increment `Z_w − Z_v` is `e ↦ ∑ i, e i · (w i − v i)`
+  have hfun : (fun e : Fin n → ℝ => (∑ i, e i * w i) - ∑ i, e i * v i)
+      = fun e => ∑ i, e i * c i := by
+    funext e
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp only [hc]; ring
+  set σ2 : ℝ≥0 := ∑ i, ‖c i‖₊ ^ 2 with hσ2
+  set Y : Fin n → (Fin n → ℝ) → ℝ := fun i e => e i * c i with hY
+  -- coordinatewise independence
+  have hY_indep : ProbabilityTheory.iIndepFun Y (signVec n) :=
+    (iIndepFun_eval_signVec n).comp (fun i (x : ℝ) => x * c i)
+      (fun i => measurable_id.mul_const (c i))
+  -- coordinate means vanish
+  have hmean_i : ∀ i, ∫ e, Y i e ∂(signVec n) = 0 := by
+    intro i
+    have h0 : ∫ e, e i ∂(signVec n) = 0 := by
+      have hmap := (measurePreserving_eval_signVec n i).map_eq
+      have hrw : ∫ e, e i ∂(signVec n) = ∫ x, x ∂radLaw := by
+        rw [← hmap]
+        exact (integral_map (hev i).aemeasurable
+          measurable_id.aestronglyMeasurable).symm
+      rw [hrw]; exact radLaw_integral_id
+    calc ∫ e, Y i e ∂(signVec n)
+        = (∫ e, e i ∂(signVec n)) * c i := by simp only [hY]; rw [integral_mul_const]
+      _ = 0 := by rw [h0, zero_mul]
+  -- coordinate integrability
+  have hY_int : ∀ i, MeasureTheory.Integrable (Y i) (signVec n) := by
+    intro i
+    refine MeasureTheory.Integrable.of_bound ?_ |c i| ?_
+    · simp only [hY]
+      exact ((hev i).mul_const (c i)).aestronglyMeasurable
+    · filter_upwards [signVec_ae_pm n] with e he
+      rcases he i with h | h <;> simp [hY, h, Real.norm_eq_abs]
+  -- coordinate sub-Gaussian MGF with proxy `(w i − v i)²`
+  have hY_mgf : ∀ i,
+      ProbabilityTheory.HasSubgaussianMGF (Y i) (‖c i‖₊ ^ 2) (signVec n) := by
+    intro i
+    have hb : ∀ᵐ e ∂(signVec n), Y i e ∈ Set.Icc (-|c i|) (|c i|) := by
+      filter_upwards [signVec_ae_pm n] with e he
+      rw [Set.mem_Icc, ← abs_le]
+      rcases he i with h | h <;> simp [hY, h, abs_neg]
+    have hmeas : AEMeasurable (Y i) (signVec n) := by
+      simp only [hY]
+      exact ((hev i).mul_const (c i)).aemeasurable
+    have hzero : (signVec n)[Y i] = 0 := hmean_i i
+    have hmgf := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero hmeas hb hzero
+    have hpx : (‖(|c i|) - (-|c i|)‖₊ / 2) ^ 2 = ‖c i‖₊ ^ 2 := by
+      have h2 : (|c i|) - (-|c i|) = 2 * |c i| := by ring
+      rw [h2]
+      apply NNReal.coe_injective
+      push_cast
+      simp only [Real.norm_eq_abs]
+      rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * |c i|)]
+      ring
+    rwa [hpx] at hmgf
+  -- sum over coordinates: proxy `‖w − v‖²`
+  have hsum_mgf : ProbabilityTheory.HasSubgaussianMGF
+      (fun e => ∑ i, Y i e) σ2 (signVec n) := by
+    have h := ProbabilityTheory.HasSubgaussianMGF.sum_of_iIndepFun hY_indep
+      (s := (Finset.univ : Finset (Fin n))) (fun i _ => hY_mgf i)
+    simpa [hσ2] using h
+  -- the increment is mean-zero
+  have hmean : ∫ e, (∑ i, Y i e) ∂(signVec n) = 0 := by
+    rw [MeasureTheory.integral_finset_sum _ (fun i _ => hY_int i)]
+    simp [hmean_i]
+  -- package as `IsSubGaussian`
+  have hSG : IsSubGaussian (fun e => ∑ i, Y i e) σ2 (signVec n) := by
+    rw [isSubGaussian_iff]
+    simpa only [hmean, sub_zero] using hsum_mgf
+  have hmeas_sum : AEMeasurable (fun e => ∑ i, Y i e) (signVec n) := by
+    refine Measurable.aemeasurable (Finset.measurable_sum _ fun i _ => ?_)
+    simp only [hY]; exact (hev i).mul_const (c i)
+  have hbridge := subGaussianNorm_le_of_isSubGaussian hmeas_sum hSG hmean
+  -- rewrite the goal's increment and conclude
+  rw [hfun]
+  refine le_trans hbridge (le_of_eq ?_)
+  -- `√(6 σ²) = √6 · edist v w`
+  rw [NNReal.sqrt_mul, ENNReal.coe_mul]
+  congr 1
+  rw [edist_dist, ← ENNReal.ofReal_coe_nnreal]
+  congr 1
+  rw [Real.coe_sqrt, EuclideanSpace.dist_eq, hσ2]
+  congr 1
+  push_cast
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Real.norm_eq_abs, sq_abs, Real.dist_eq]
+  simp only [hc]
+  rw [sq_abs]
+  ring
 
 /-- **Conditional Rademacher complexity bound** (HDP §8.3.6, Theorem 8.3.15
 conditional step): for a fixed sample `x`, the expected Rademacher supremum
@@ -158,7 +256,59 @@ lemma symmetrization_adapter {Ξ : Type*} [MeasurableSpace Ξ]
           |(n : ℝ)⁻¹ * ∑ i : Fin n,
             p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|)
         ∂(P.prod (signVec n)) := by
-  sorry
+  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  haveI : Nonempty {S // S ∈ F} := ⟨⟨hFne.choose, hFne.choose_spec⟩⟩
+  have key := empirical_symmetrization (α := Ω) (ι := {S // S ∈ F})
+      (μ := P) (P := μ) (n := n)
+      (X := fun (i : Fin n) (ξ : Ξ) => X i ξ)
+      (F := fun k : {S // S ∈ F} => (↑k : Set Ω).indicator (fun _ => (1 : ℝ)))
+      (hX_meas := fun i => hXmeas i)
+      (hX_indep := hindep.precomp Fin.val_injective)
+      (hX_law := fun i => hlaw i)
+      (hF_meas := fun k => measurable_const.indicator (hFmeas k.1 k.2))
+      (hF_bdd := fun k x => by
+        classical
+        have hb : |(↑k : Set Ω).indicator (fun _ => (1 : ℝ)) x| ≤ 1 := by
+          rw [Set.indicator_apply]; split_ifs <;> norm_num
+        exact hb)
+  -- convert the LHS: `Finset.sup'` → `⨆`, `empFrac` unfolds, `∫ 𝟙 = μ.real`
+  have hL : (∫ ξ, F.sup' hFne (fun S =>
+        |empFrac (fun i : Fin n => X i ξ) S - μ.real S|) ∂P)
+      = ∫ ξ, ⨆ k : {S // S ∈ F},
+          |(n : ℝ)⁻¹ * (∑ i : Fin n, (↑k : Set Ω).indicator (fun _ => (1 : ℝ)) (X i ξ))
+            - ∫ x, (↑k : Set Ω).indicator (fun _ => (1 : ℝ)) x ∂μ| ∂P := by
+    refine integral_congr_ae (ae_of_all _ fun ξ => ?_)
+    dsimp only
+    rw [finset_sup'_eq_iSup_subtype]
+    refine iSup_congr fun k => ?_
+    rw [integral_indicator_one_real (hFmeas k.1 k.2)]
+    rfl
+  -- convert the RHS: `Finset.sup'` → `⨆`
+  have hR : (∫ p, F.sup' hFne (fun S =>
+        |(n : ℝ)⁻¹ * ∑ i : Fin n,
+          p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|)
+        ∂(P.prod (signVec n)))
+      = ∫ p, ⨆ k : {S // S ∈ F},
+          |(n : ℝ)⁻¹ * ∑ i : Fin n,
+            p.2 i * (↑k : Set Ω).indicator (fun _ => (1 : ℝ)) (X i p.1)|
+        ∂(P.prod (signVec n)) := by
+    refine integral_congr_ae (ae_of_all _ fun p => ?_)
+    dsimp only
+    exact finset_sup'_eq_iSup_subtype hFne _
+  rw [hL, hR]
+  exact key
+
+/-- Absolute value of a `Finset.sup'` of nonnegative, `≤ 1`-bounded reals is
+`≤ 1` (LEAN-ONLY: isolates the finite-sup bound of the joint Rademacher
+integrand, keeping the bounded function abstract to avoid heavy defeq). -/
+private lemma abs_finset_sup'_le {α : Type*} {F : Finset α} (hFne : F.Nonempty)
+    (h : α → ℝ) (h1 : ∀ a ∈ F, h a ≤ 1) (h0 : ∀ a ∈ F, 0 ≤ h a) :
+    ‖F.sup' hFne h‖ ≤ 1 := by
+  have hnn : 0 ≤ F.sup' hFne h := by
+    obtain ⟨a, ha⟩ := hFne
+    exact le_trans (h0 a ha) (Finset.le_sup' h ha)
+  rw [Real.norm_eq_abs, abs_of_nonneg hnn]
+  exact Finset.sup'_le hFne h h1
 
 /-- **VC law of large numbers, finite core** (HDP §8.3.6, Theorem 8.3.15):
 `E max_{S ∈ F} |μ_n(S) − μ(S)| ≤ 5400·√d/√n` for a finite class of VC
@@ -194,6 +344,66 @@ theorem vc_lln_finset {Ξ : Type*} [MeasurableSpace Ξ]
     ∫ ξ, F.sup' hFne (fun S =>
         |empFrac (fun i : Fin n => X i ξ) S - μ.real S|) ∂P
       ≤ 5400 * Real.sqrt d / Real.sqrt n := by
-  sorry
+  haveI : NeZero n := ⟨Nat.one_le_iff_ne_zero.mp hn⟩
+  refine (symmetrization_adapter hXmeas hindep hlaw F hFne hFmeas hn).trans ?_
+  set g : Ξ × (Fin n → ℝ) → ℝ := fun p => F.sup' hFne (fun S =>
+      |(n : ℝ)⁻¹ * ∑ i : Fin n,
+        p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|) with hg_def
+  rw [show (5400 : ℝ) * Real.sqrt d / Real.sqrt n
+        = 2 * (2700 * Real.sqrt d / Real.sqrt n) by ring]
+  refine mul_le_mul_of_nonneg_left ?_ (by norm_num : (0 : ℝ) ≤ 2)
+  -- measurability of the joint integrand
+  have hg_meas : Measurable g := by
+    have hgeq : g = F.sup' hFne (fun S => fun p : Ξ × (Fin n → ℝ) =>
+        |(n : ℝ)⁻¹ * ∑ i : Fin n,
+          p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|) := by
+      funext p; rw [Finset.sup'_apply]
+    rw [hgeq]
+    refine Finset.measurable_sup' hFne fun S hS => ?_
+    refine Measurable.abs (Measurable.const_mul ?_ _)
+    refine Finset.measurable_sum _ fun i _ => ?_
+    exact ((measurable_pi_apply i).comp measurable_snd).mul
+      ((measurable_const.indicator (hFmeas S hS)).comp ((hXmeas i).comp measurable_fst))
+  -- a.e. bound: the joint integrand is `≤ 1`
+  have hae : ∀ᵐ p ∂(P.prod (signVec n)),
+      ∀ i, p.2 i = 1 ∨ p.2 i = -1 := by
+    rw [ae_iff]
+    have hset : {p : Ξ × (Fin n → ℝ) | ¬ ∀ i, p.2 i = 1 ∨ p.2 i = -1}
+        = Set.univ ×ˢ {s | ¬ ∀ i, s i = 1 ∨ s i = -1} := by
+      ext p; simp
+    rw [hset, Measure.prod_prod, ae_iff.mp (signVec_ae_pm n), mul_zero]
+  have hbnd : ∀ᵐ p ∂(P.prod (signVec n)), ‖g p‖ ≤ 1 := by
+    filter_upwards [hae] with p hp
+    classical
+    rw [hg_def]
+    refine abs_finset_sup'_le hFne _ (fun S _ => ?_) (fun S _ => abs_nonneg _)
+    have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne n)
+    rw [abs_mul, abs_inv, abs_of_nonneg hn'.le, inv_mul_le_iff₀ hn', mul_one]
+    calc |∑ i : Fin n, p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)|
+        ≤ ∑ i : Fin n, |p.2 i * S.indicator (fun _ => (1 : ℝ)) (X i p.1)| :=
+          Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ _i : Fin n, (1 : ℝ) := by
+          refine Finset.sum_le_sum fun i _ => ?_
+          rw [abs_mul]
+          have h1 : |p.2 i| = 1 := by rcases hp i with h | h <;> simp [h]
+          have h2 : |S.indicator (fun _ => (1 : ℝ)) (X i p.1)| ≤ 1 := by
+            rw [Set.indicator_apply]; split_ifs <;> norm_num
+          rw [h1, one_mul]; exact h2
+      _ = (n : ℝ) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+            mul_one]
+  have hg_int : Integrable g (P.prod (signVec n)) :=
+    Integrable.of_bound hg_meas.aestronglyMeasurable 1 hbnd
+  rw [integral_prod g hg_int]
+  -- conditional Dudley bound, fibrewise
+  have hbound : ∀ ξ, (∫ e, g (ξ, e) ∂(signVec n))
+      ≤ 2700 * Real.sqrt d / Real.sqrt n := by
+    intro ξ
+    simp only [hg_def]
+    exact rademacher_process_expectation_le (fun i => X i ξ) F hFne hFmeas hd hd1
+  calc ∫ ξ, (∫ e, g (ξ, e) ∂(signVec n)) ∂P
+      ≤ ∫ _ξ, (2700 * Real.sqrt d / Real.sqrt n) ∂P :=
+        integral_mono hg_int.integral_prod_left (integrable_const _) hbound
+    _ = 2700 * Real.sqrt d / Real.sqrt n := by rw [integral_const]; simp
 
 end StatLean.ConcentrationInequalities
