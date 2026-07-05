@@ -1,0 +1,17 @@
+srun: job 28460585 queued and waiting for resources
+srun: job 28460585 has been allocated resources
+Done. **`lake build StatLean.ConcentrationInequalities.Orlicz.TailToNorm` exits 0, and the file is completely sorry-free** — I even closed the designated fallback.
+
+## Closed sorries (7 declarations, all proven)
+
+1. **`integral_Ioi_self_mul_exp_neg_mul_sq`** (the graded fallback — closed, not left as sorry): `∫₀^∞ t·e^{−ct²} = 1/(2c)` via `integral_Ioi_of_hasDerivAt_of_nonneg'` with antiderivative `−(2c)⁻¹e^{−ct²}`, plus a private brick `hasDerivAt_gaussianAntideriv` for the derivative and a `tendsto_exp_atBot ∘ (const_mul_atTop_of_neg)` limit-at-∞.
+2. **`intervalIntegral_psiTwo_deriv`** (FTC): `∫₀ᵘ 2t/K²·e^{t²/K²} = ψ₂(u/K)` via `intervalIntegral.integral_eq_sub_of_hasDerivAt` (chain rule `HasDerivAt.exp ∘ .div_const`).
+3. **`lintegral_psiTwo_le_one_of_tail_le`** (layer-cake core): weighted layer cake `lintegral_comp_eq_lintegral_meas_le_mul`, tail plug-in via `lintegral_mono_ae`, `ofReal`-multiplicativity, `ofReal_integral_eq_lintegral_ofReal`, then the exact `(4/3)·(3/4)=1` reduction — the `3K₁² ≤ K²` inequality is where the √3 constant is forced.
+4. **`subGaussianNorm_le_of_tail_le`**: gauge-set membership + `orliczNorm_le_of_mem`, with `√3·K₁` coercion algebra.
+5. **`subGaussianNorm_le_of_hasSubgaussianMGF`** (B3 raw): σ2=0 edge via `orliczNorm_congr_ae`/`orliczNorm_zero`; σ2>0 via two-sided Chernoff tails (`measure_ge_le` on `X` and `.neg`, union bound), `IsFiniteMeasure` derived from `integrable_exp_mul 0`, at `K₁=√(2σ2)` giving `√3·√(2σ2)=√(6σ2)`.
+6. **`subGaussianNorm_centered_le_of_isSubGaussian`** and 7. **`subGaussianNorm_le_of_isSubGaussian`**: thin corollaries via `isSubGaussian_iff` (+ `hmean`/`sub_zero`).
+
+## Key Mathlib lemmas
+`lintegral_comp_eq_lintegral_meas_le_mul`, `integral_Ioi_of_hasDerivAt_of_nonneg'`, `integrableOn_Ioi_deriv_of_nonneg'`, `intervalIntegral.integral_eq_sub_of_hasDerivAt`, `ofReal_integral_eq_lintegral_ofReal`, `HasSubgaussianMGF.{measure_ge_le, neg, aemeasurable}`, `Filter.Tendsto.const_mul_atTop_of_neg`, `Real.tendsto_exp_atBot`, `NNReal.{sqrt_mul, sq_sqrt}`.
+
+Remaining warnings are benign (two unused frozen LEAN-ONLY hypotheses `hK`/`hu`, one unused `hX` per the frozen signature, one deprecation notice) — none affect the gate.
