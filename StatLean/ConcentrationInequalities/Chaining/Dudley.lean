@@ -79,7 +79,15 @@ theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: positive cap; the D = 0 corner degenerates to a point
     (hD0 : 0 < D) :
     ∫ ω, ⨆ t ∈ T, X t ω ∂μ
-      ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D := by sorry
+      ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D := by
+  calc ∫ ω, ⨆ t ∈ T, X t ω ∂μ
+      ≤ 6 * Real.sqrt 3 * K * dudleySum T :=
+        discrete_dudley hfin hne hmeas hint hmean hinc
+    _ ≤ 6 * Real.sqrt 3 * K * (2 * dudleyIntegral T D) := by
+        refine mul_le_mul_of_nonneg_left
+          (dudleySum_le_two_mul_dudleyIntegral hfin hne hD hD0) ?_
+        positivity
+    _ = 12 * Real.sqrt 3 * K * dudleyIntegral T D := by ring
 
 /-- **Dudley's inequality, absolute form** (HDP §8.1, Eq. (8.13), capped):
 `E sup |X_t − X_{t₀}| ≤ 40 · K · ∫_0^D √(log 𝒩)`, NO mean-zero — THE
@@ -102,7 +110,15 @@ theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D) :
     ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
-      ≤ 40 * K * dudleyIntegral T D := by sorry
+      ≤ 40 * K * dudleyIntegral T D := by
+  calc ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
+      ≤ 20 * K * dudleySum T :=
+        discrete_dudley_abs hfin hne hmeas hinc ht₀
+    _ ≤ 20 * K * (2 * dudleyIntegral T D) := by
+        refine mul_le_mul_of_nonneg_left
+          (dudleySum_le_two_mul_dudleyIntegral hfin hne hD hD0) ?_
+        positivity
+    _ = 40 * K * dudleyIntegral T D := by ring
 
 /-- **Dudley's inequality, pair form** (HDP §8.1, Eq. (8.14), capped):
 `E sup_{s,t} |X_t − X_s| ≤ 80 · K · ∫_0^D √(log 𝒩)` via the triangle
@@ -123,7 +139,79 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D) :
     ∫ ω, ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω| ∂μ
-      ≤ 80 * K * dudleyIntegral T D := by sorry
+      ≤ 80 * K * dudleyIntegral T D := by
+  classical
+  have hbd : Bornology.IsBounded T := hfin.isBounded
+  set F := hfin.toFinset with hFdef
+  have hFne : F.Nonempty := by rw [hFdef, Set.Finite.toFinset_nonempty]; exact hne
+  have hmemT : ∀ t, t ∈ F ↔ t ∈ T := fun t => hfin.mem_toFinset
+  set t₀ := hne.some with ht₀def
+  have ht₀ : t₀ ∈ T := hne.some_mem
+  -- Set ↔ Finset conversion for suprema.
+  have setToF : ∀ g : E → ℝ, (⨆ x ∈ T, g x) = ⨆ x ∈ F, g x :=
+    fun g => iSup_congr fun x => by rw [hfin.mem_toFinset]
+  -- The anchored single supremum and its integrability (Eq. (8.13) form).
+  set A : Ω → ℝ := fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω| with hAdef
+  have hIntA : MeasureTheory.Integrable A μ :=
+    integrable_biSup_sub hfin hne hmeas hinc ht₀
+  -- The double supremum as a supremum over the product Finset.
+  have hPne : (F ×ˢ F).Nonempty := hFne.product hFne
+  -- Integrability of the pair supremum via `integrable_biSup_abs` over `P`.
+  have hIntP : MeasureTheory.Integrable
+      (fun ω => ⨆ p ∈ (F ×ˢ F), |X p.1 ω - X p.2 ω|) μ := by
+    refine integrable_biSup_abs hPne (L := K * Real.toNNReal (Metric.diam T))
+      (fun p hp => ?_) (fun p hp => ?_)
+    · obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      exact (hmeas p.1 ((hmemT p.1).mp hp1)).sub (hmeas p.2 ((hmemT p.2).mp hp2))
+    · obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      have h1 : p.1 ∈ T := (hmemT p.1).mp hp1
+      have h2 : p.2 ∈ T := (hmemT p.2).mp hp2
+      refine (hinc p.2 h2 p.1 h1).trans ?_
+      have hde : edist p.2 p.1 ≤ (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by
+        rw [edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.dist_le_diam_of_mem hbd h2 h1)
+      calc (K : ℝ≥0∞) * edist p.2 p.1
+          ≤ (K : ℝ≥0∞) * (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by gcongr
+        _ = ((K * Real.toNNReal (Metric.diam T) : ℝ≥0) : ℝ≥0∞) := by push_cast; ring
+  -- Identify the double supremum with the product supremum, pointwise.
+  have hpair_eq : (fun ω => ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
+      = fun ω => ⨆ p ∈ (F ×ˢ F), |X p.1 ω - X p.2 ω| := by
+    funext ω
+    have e1 : (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
+        = F.sup' hFne (fun t => F.sup' hFne (fun s => |X t ω - X s ω|)) := by
+      rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
+      refine Finset.sup'_congr hFne rfl (fun t _ => ?_)
+      rw [setToF (fun s => |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
+    rw [e1, biSup_finset_eq_sup' hPne,
+      Finset.sup'_product_left hPne (fun p => |X p.1 ω - X p.2 ω|)]
+  -- Pointwise: the double sup is at most twice the anchored sup.
+  have hpt : ∀ ω, (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|) ≤ 2 * A ω := by
+    intro ω
+    have hanch : ∀ t ∈ T, |X t ω - X t₀ ω| ≤ A ω := by
+      intro t ht
+      simp only [hAdef]
+      rw [setToF (fun u => |X u ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      exact Finset.le_sup' (fun u => |X u ω - X t₀ ω|) ((hmemT t).mpr ht)
+    rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
+    refine Finset.sup'_le hFne _ (fun t ht => ?_)
+    rw [setToF (fun s => |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
+    refine Finset.sup'_le hFne _ (fun s hs => ?_)
+    have htri : |X t ω - X s ω| ≤ |X t ω - X t₀ ω| + |X s ω - X t₀ ω| := by
+      have h := abs_sub_le (X t ω) (X t₀ ω) (X s ω)
+      rwa [abs_sub_comm (X t₀ ω) (X s ω)] at h
+    have h1 := hanch t ((hmemT t).mp ht)
+    have h2 := hanch s ((hmemT s).mp hs)
+    linarith
+  -- Assemble the integral bound.
+  calc ∫ ω, ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω| ∂μ
+      ≤ ∫ ω, 2 * A ω ∂μ := by
+        refine integral_mono_ae ?_ (hIntA.const_mul 2) (ae_of_all _ hpt)
+        rw [hpair_eq]; exact hIntP
+    _ = 2 * ∫ ω, A ω ∂μ := integral_const_mul 2 A
+    _ ≤ 2 * (40 * K * dudleyIntegral T D) := by
+        refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
+        exact dudley_inequality_abs hfin hne hmeas hinc ht₀ hD hD0
+    _ = 80 * K * dudleyIntegral T D := by ring
 
 /-- **Dudley's inequality, `∫_0^∞` display** (HDP §8.1, Theorem 8.1.3
 verbatim shape): via `dudleyIntegral_Ioi_eq`; the `diam = 0` corner is
@@ -144,7 +232,12 @@ theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
     (hinc : SubGaussianIncrements X K T μ) :
     ∫ ω, ⨆ t ∈ T, X t ω ∂μ
-      ≤ 12 * Real.sqrt 3 * K * ∫ ε in Set.Ioi (0 : ℝ), sqrtLogCov T ε := by sorry
+      ≤ 12 * Real.sqrt 3 * K * ∫ ε in Set.Ioi (0 : ℝ), sqrtLogCov T ε := by
+  have hDpos : (0 : ℝ) < Metric.diam T + 1 := by
+    have := Metric.diam_nonneg (s := T); linarith
+  have hDle : Metric.diam T ≤ Metric.diam T + 1 := by linarith
+  rw [dudleyIntegral_Ioi_eq hfin hne hDle hDpos]
+  exact dudley_inequality hfin hne hmeas hint hmean hinc hDle hDpos
 
 /-- **Dudley's inequality, countable lift** (HDP §8.1, Eq. (8.13), countable
 form; p. 227 footnote "general case by approximation"): stated wholly in
