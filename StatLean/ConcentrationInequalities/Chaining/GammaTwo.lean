@@ -2,6 +2,7 @@ import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.MetricSpace.Bounded
+import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Admissible sequences and the γ₂ functional

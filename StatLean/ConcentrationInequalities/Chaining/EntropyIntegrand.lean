@@ -110,7 +110,7 @@ lemma sqrtLogCov_le_sqrt_log_of_le {T : Set E}
     -- LEAN-ONLY: nonemptiness
     (hne : T.Nonempty) {ε : ℝ} {b : ℝ}
     -- USER-INPUT: finite covering number (T totally bounded); HDP p.227
-    (h⊤ : coveringNumber T ε ≠ ⊤)
+    (htop : coveringNumber T ε ≠ ⊤)
     -- USER-INPUT: the entropy bound 𝒩(T,d,ε) ≤ b; HDP §8.2/§8.3 applications
     (hb : ((coveringNumber T ε).toNat : ℝ) ≤ b)
     -- LEAN-ONLY: b ≥ 1 so `log b ≥ 0` and √ is monotone on the range

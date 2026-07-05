@@ -198,8 +198,11 @@ lemma measurable_empFrac [MeasurableSpace Ω] {Ξ : Type*} [MeasurableSpace Ξ]
     {n : ℕ} {X : ℕ → Ξ → Ω} (hX : ∀ i, Measurable (X i)) {S : Set Ω}
     (hS : MeasurableSet S) :
     Measurable fun ξ => empFrac (fun i : Fin n => X i ξ) S := by
+  have hsum : Measurable fun ξ =>
+      ∑ i : Fin n, S.indicator (fun _ => (1 : ℝ)) (X i ξ) :=
+    Finset.measurable_sum (Finset.univ : Finset (Fin n)) fun i _ =>
+      (measurable_const.indicator hS).comp (hX i)
   unfold empFrac
-  exact ((Finset.measurable_sum Finset.univ fun i _ =>
-    (measurable_const.indicator hS).comp (hX (i : ℕ))).const_mul _)
+  exact hsum.const_mul ((n : ℝ)⁻¹)
 
 end StatLean.ConcentrationInequalities

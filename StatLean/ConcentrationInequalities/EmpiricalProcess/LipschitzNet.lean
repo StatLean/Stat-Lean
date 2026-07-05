@@ -74,7 +74,7 @@ theorem dist_le_one_of_mem_lipschitzUnitClass {f g : C(unitInterval, ℝ)}
 /-- **Grid knot** `t_j = j/m` (HDP Exercise 8.9), as a point of
 `unitInterval`. Edge behavior: `j ≤ m` always (the index type is
 `Fin (m+1)`), so no clamping is needed. -/
-def gridKnot (m : ℕ) [NeZero m] (j : Fin (m + 1)) : unitInterval :=
+noncomputable def gridKnot (m : ℕ) [NeZero m] (j : Fin (m + 1)) : unitInterval :=
   ⟨(j : ℝ) / m,
     ⟨by positivity,
      div_le_one_of_le₀ (by exact_mod_cast Nat.lt_succ_iff.mp j.isLt) (by positivity)⟩⟩
@@ -90,7 +90,7 @@ def gridPath (m : ℕ) (k₀ : Fin (m + 1)) (step : Fin m → Fin 3) (j : Fin (m
 /-- **Clamped knot value** `clamp_{[0,1]}(k/m)` (HDP Exercise 8.9). Edge
 behavior: garbage integers `k ∉ {0, …, m}` are clamped into `[0,1]`, so every
 parameter choice below yields a `[0,1]`-valued net member. -/
-def gridValue (m : ℕ) (k : ℤ) : ℝ := min 1 (max ((k : ℝ) / m) 0)
+noncomputable def gridValue (m : ℕ) (k : ℤ) : ℝ := min 1 (max ((k : ℝ) / m) 0)
 
 /-- A finite sup of `K`-Lipschitz functions is `K`-Lipschitz (LEAN-ONLY
 helper; induction on `LipschitzWith.max`; `ForMathlib` promotion candidate). -/
