@@ -1,0 +1,23 @@
+srun: job 28478936 queued and waiting for resources
+srun: job 28478936 has been allocated resources
+Done. **All sorries closed — the file builds sorry-free** (no fallback needed).
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Orlicz.SubGaussianMGF` exits 0. All five original `sorry`s are proven, **including the graded fallback** `integrable_exp_mul_of_lintegral_exp_sq_le_two`.
+
+### Closed theorems
+- `integrable_exp_mul_of_lintegral_exp_sq_le_two` (fallback) — dominated `e^{lX} ≤ e^{l²K²/2}·e^{(X/K)²/2}`.
+- `integrable_of_lintegral_exp_sq_le_two` — `|X| ≤ K·e^{(X/K)²}` domination.
+- `hasSubgaussianMGF_of_lintegral_exp_sq_le_two` (raw core) — the MGF bound `mgf X μ t ≤ exp(3K²·t²/2)`.
+- `hasSubgaussianMGF_of_subGaussianNorm_le` and `isSubGaussian_of_subGaussianNorm_le` (norm wrappers).
+
+### Proof architecture (the MGF core)
+Regime split on `t²K² ≤ 1` vs `> 1`:
+- **Small t:** Vershynin's `e^u ≤ u + e^{u²}` (proved as `exp_le_add_exp_sq`, 3-case: `u≥1` monotonicity, `u≤0` via the ForMathlib nonpos Taylor brick, `0<u<1` via `Real.exp_bound'` at n=3) + mean-zero cancellation of the linear term + weighted-power interpolation `e^{(tX)²} ≤ t²K²·e^{(X/K)²} + (1−t²K²)` (from `Real.geom_mean_le_arith_mean2_weighted`) ⇒ `∫ ≤ 1 + t²K² ≤ e^{t²K²} ≤ e^{3K²t²/2}`.
+- **Large t:** AM–GM `e^{tX} ≤ e^{t²K²/2}·e^{(X/K)²/2}` + `∫ e^{(X/K)²/2} ≤ 3/2` (via `e^{v/2} ≤ (e^v+1)/2`) ⇒ `(3/2)·e^{t²K²/2} ≤ e^{3K²t²/2}` since `3/2 ≤ e ≤ e^{t²K²}`.
+
+### Key Mathlib lemmas used
+`Real.geom_mean_le_arith_mean2_weighted`, `Real.exp_mul` (rpow-of-exp), `Real.exp_bound'`, `Real.add_one_le_exp`, `integral_eq_lintegral_of_nonneg_ae`, `hasFiniteIntegral_iff_ofReal`, `Integrable.mono'`, `integral_mono`, `integral_const_mul`, `probReal_univ`. Cited as black boxes: the ForMathlib brick `exp_le_one_add_add_sq_half_of_nonpos` and `lintegral_exp_sq_le_two_of_subGaussianNorm_le` (Attainment) / `isSubGaussian_iff` (Defs).
+
+The committed change touches only the designated file.
