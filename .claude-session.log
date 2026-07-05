@@ -1,0 +1,20 @@
+srun: job 28452591 queued and waiting for resources
+srun: job 28452591 has been allocated resources
+Done. The build is GREEN and committed.
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.VC.CoveringByVC` exits 0. The entire probabilistic/combinatorial spine is closed; the **only** remaining `sorry` is the permitted graded fallback `card_le_pow_of_entropy_bound` (the footnote-4 pure-real algebra).
+
+### Sorries closed (7 of 8)
+- **`sepFamily_card_le_of_vcDim_le`** (the workhorse packing bound) — the core. Case-splits on whether `F` already meets the bound; otherwise feeds `card_le_pow_of_entropy_bound` a proof of its `∀n` Sauer–Shelah hypothesis. For each `n ≥ 100ε⁻⁴log|F|`: derived `d ≤ n` from the large-`F` regime via log estimates (`Real.log_pow`, `Real.log_lt_log`, `Real.log_two_gt_d9`, `nlinarith`), built the canonical i.i.d. witness on `ℕ → Ω` (`Measure.infinitePi`, `iIndepFun_infinitePi`, `Measure.infinitePi_map_eval`), extracted a good sample from `dimension_reduction` (bad-event prob `≤ 1/100 < 1` ⟹ complement nonempty), and injected `F` into `traceFamily C Λ` via distinguishing sample points (`empFrac_pos_iff`), counted by `card_traceFamily_le_pow`.
+- **`exists_L2_net_of_vcDim_le`** (net form) — maximal-cardinality separated family via `Set.Nonempty.csSup_mem` over the bounded ℕ-set of achievable cardinalities; maximality ⟹ net by insert-contradiction.
+- **`empProj_apply`** — coordinate readout via `WithLp.toLp_sum` + `Finset.univ_sum_single`.
+- **`dist_empProj_sq`** — exact squared isometry via `EuclideanSpace.dist_sq_eq` and the indicator identity `(𝟙_S − 𝟙_T)² = 𝟙_{S∆T}`.
+- **`isProbabilityMeasure_avg_dirac`** / **`avg_dirac_real_eq_empFrac`** — via `Measure.finset_sum_apply`, `measureReal_ennreal_smul_apply`, `Measure.dirac_apply'`, `ENNReal.toReal_sum`.
+- **`coveringNumber_empProj_le`** — transports the net at `μ := μ_n` through `dist_empProj_sq` and `IsEpsilonNet.isCover` / `IsCover.coveringNumber_le_encard`.
+
+### Key added imports
+`Mathlib.Probability.ProductMeasure`, `Mathlib.Probability.Independence.InfinitePi`, `Mathlib.Analysis.Complex.ExponentialBounds`.
+
+No other files, statements, hypotheses, constants, or tags were touched.
