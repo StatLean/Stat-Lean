@@ -8,3 +8,10 @@ I'll stop here and wait for the build completion notification to arrive.
 To /n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.git
    1195b8a..75cbe6e  conc/hdp-chain-dudley -> conc/hdp-chain-dudley
 FANOUT-SESSION-DONE
+srun: job 28464586 queued and waiting for resources
+srun: job 28464586 has been allocated resources
+Done. `lake build StatLean.ConcentrationInequalities.Chaining.Dudley` exits 0; the sole remaining sorry is the authorized `dudley_inequality_countable` fallback.
+
+The two fixes:
+1. **Line 183** — `Finset.sup'_congr`'s first *explicit* argument is the `Nonempty` proof (from the section `variable (H : s.Nonempty)`), so the call needed `Finset.sup'_congr hFne rfl …` instead of starting at `rfl`.
+2. **Line 192** — `rw [hAdef]` left the RHS as an un-beta-reduced `(fun ω ↦ …) ω`, so the subsequent `setToF` rewrite couldn't find its pattern; replacing `rw [hAdef]` with `simp only [hAdef]` beta-reduces first, then the `setToF`/`biSup_finset_eq_sup'` rewrites apply.
