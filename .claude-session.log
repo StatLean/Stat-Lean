@@ -1,0 +1,25 @@
+srun: job 28437818 queued and waiting for resources
+srun: job 28437818 has been allocated resources
+Committed. Here's the summary of the work.
+
+## Result
+
+`lake build StatLean.ConcentrationInequalities.VC.LawOfLargeNumbers` **exits 0**, with exactly one `sorry` remaining — the designated graded fallback `rademacher_process_expectation_le` (goal #4). No `axiom`/`admit`, no sorried `have`s, all statements/tags/constants untouched.
+
+### Closed sorries (5 of 6)
+
+1. **`integral_indicator_one_real`** — `integral_indicator_const (1) hS` + `measureReal_def` + `smul_eq_mul`/`mul_one`.
+
+2. **`finset_sup'_eq_iSup_subtype`** — `Finset.sup'_eq_csSup_image` + `Set.image_eq_range`, then `rfl` (the subtype `{S // S ∈ F}` is defeq to `↥(↑F)`).
+
+3. **`subGaussianIncrements_inner_signVec`** (the hard mandatory one) — increment `∑ᵢ eᵢ(wᵢ−vᵢ)`; per-coordinate sub-Gaussian MGF via `hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero` (bounds `±|cᵢ|`, mean 0 from `radLaw_integral_id` transported through `measurePreserving_eval_signVec`), independence via `iIndepFun_eval_signVec.comp`, summed with `HasSubgaussianMGF.sum_of_iIndepFun` to proxy `∑‖cᵢ‖²`, then the B3 bridge `subGaussianNorm_le_of_isSubGaussian` (factor `√6`); final `√(6σ²) = √6·edist` via `NNReal.sqrt_mul`, `edist_dist`, `EuclideanSpace.dist_eq`, `Real.coe_sqrt`.
+
+5. **`symmetrization_adapter`** — cites `empirical_symmetrization` at `ι := {S // S ∈ F}`, indicator class, `Fin n` via `iIndepFun.precomp Fin.val_injective`; `Finset.sup' ↔ ⨆` by (2), `∫𝟙 = μ.real` by (1).
+
+6. **`vc_lln_finset`** — `symmetrization_adapter` → Fubini (`integral_prod`) → fibrewise conditional Dudley (cites #4) → `integral_mono` against the constant. Joint-integrand a.e. bound isolated in a private helper `abs_finset_sup'_le` (keeping the bounded function abstract), which resolved `isDefEq` heartbeat timeouts caused by unfolding the large `Finset.sup'` term.
+
+### Key environment note
+`lake` is not on `PATH`; it lives at `~/.elan/toolchains/leanprover--lean4---v4.29.1/bin/lake`.
+
+### The remaining fallback
+`rademacher_process_expectation_le` — the conditional Dudley glue over the three cross-cluster stubs (`empProj` covering via `coveringNumber_empProj_le`, `dudley_inequality_abs`, `entropyIntegral_le`). This is the explicitly sanctioned single fallback, and `vc_lln_finset` cites it as a black box.
