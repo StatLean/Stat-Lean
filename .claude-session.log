@@ -1,0 +1,22 @@
+srun: job 28446862 queued and waiting for resources
+srun: job 28446862 has been allocated resources
+Done. Build gate passes (`lake build StatLean.ConcentrationInequalities.Orlicz.Triangle` → EXIT 0), committed.
+
+## Summary
+
+**Closed (0 sorry):**
+- **`orliczNorm_add_le`** — the general Orlicz-norm triangle inequality (HDP Ex 2.42). Proved via the classical Luxemburg argument, factored into a private helper `orliczSet_add_mem` (the core gauge-addition step) plus an ε-free infimum-splitting finish.
+- **`subGaussianNorm_add_le`** (ψ₂) and **`subExponentialNorm_add_le`** (ψ₁) — one-line instances derived *from* the general lemma via the Generators facts.
+
+**One `sorry` remains — and it is a genuine obstruction, not `orliczNorm_add_le`:**
+- **`orliczNorm_finset_sum_le`**: the inductive step is fully closed (via `orliczNorm_add_le`), but the **empty-set base is false as stated**. It reduces to `orliczNorm ψ 0 μ ≤ 0`, i.e. `orliczNorm ψ 0 μ = 0`, which needs `ψ 0 ≤ 0` (`orliczNorm_zero` from Basic.lean). With only `MonotoneOn`/`ConvexOn`/`Measurable`, the constant generator `ψ ≡ 1` is admissible and gives `orliczNorm ψ 0 μ = ⊤` whenever `μ univ > 1`. The statement is missing a `ψ 0 ≤ 0` hypothesis. Per instructions I did **not** weaken it; the sorry is localized to exactly the empty base with an inline explanation.
+
+This deviates from the graded fallback (which anticipated `orliczNorm_add_le` as the resistant lemma) because that lemma is in fact provable, while the finset corollary carries an unavoidable gap regardless of how `orliczNorm_add_le` is handled.
+
+**Key structure of the core proof (`orliczSet_add_mem`):**
+- Pointwise: `ψ(|X+Y|/(a+b)) ≤ (a/(a+b))·ψ(|X|/a) + (b/(a+b))·ψ(|Y|/b)` via `abs_add_le` + `div_le_div_iff_of_pos_right` (monotonicity, args in `Ici 0`) and `ConvexOn.2` with weights summing to 1.
+- `ENNReal.ofReal_le_ofReal` → `ENNReal.ofReal_add_le` → `ENNReal.ofReal_mul`, then `lintegral_mono`, `lintegral_add_left'` (needs only the first integrand `AEMeasurable`, via `AEMeasurable.abs`), `lintegral_const_mul'`, and the two gauge bounds to reach `≤ a/(a+b) + b/(a+b) = 1`.
+
+**Key Mathlib lemmas for the finish:** `le_of_forall_gt_imp_ge_of_dense`, `ENNReal.lt_iff_exists_add_pos_lt`, `ENNReal.lt_add_right`, `ENNReal.add_lt_add`, `add_add_add_comm` + `ENNReal.add_halves`, and the citable StatLean black boxes `exists_mem_orliczSet_lt_of_orliczNorm_lt`, `orliczNorm_le_of_mem`.
+
+One new Mathlib import added: `Mathlib.MeasureTheory.Order.Group.Lattice` (for `AEMeasurable.abs`).
