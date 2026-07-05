@@ -1,0 +1,22 @@
+srun: job 28483520 queued and waiting for resources
+srun: job 28483520 has been allocated resources
+Done. Build is GREEN and committed.
+
+## Summary
+
+`lake build StatLean.ConcentrationInequalities.Orlicz.Product` exits 0. **Both** lemmas closed with **0 sorries** — including `subExponentialNorm_sq`, which was the authorized graded-fallback (the biInf-squaring gymnastics), so no fallback was needed.
+
+### Closed sorries
+
+**Lemma 2.8.5 — `subExponentialNorm_sq`** (`‖X²‖_{ψ₁} = ‖X‖²_{ψ₂}`, exact):
+- Pointwise integrand equality `ψ₁(|X²|/J²) = ψ₂(|X|/J)` via `abs_of_nonneg (sq_nonneg _)`, `NNReal.coe_pow`, `div_pow`, `sq_abs`.
+- Gauge-set bijection: `J ∈ ψ₂-gauge(X) → J² ∈ ψ₁-gauge(X²)` (forward) and `K ∈ ψ₁-gauge(X²) → √K ∈ ψ₂-gauge(X)` (backward, `NNReal.sqrt_pos` / `NNReal.sq_sqrt`).
+- `‖X²‖_{ψ₁} = ⨅_{J} (J:ℝ≥0∞)²` by `le_antisymm` + `le_iInf₂`/`iInf₂_le` + `orliczNorm_le_of_mem`.
+- Squaring commutes with the infimum via `ENNReal.iInf_mul_iInf` (diagonal, with a `le_total` min-witness) after `iInf_subtype''`, plus an empty-gauge-set branch (`iInf_emptyset`, both sides `⊤`).
+
+**Lemma 2.8.6 — `subExponentialNorm_mul_le`** (`‖XY‖_{ψ₁} ≤ ‖X‖_{ψ₂}·‖Y‖_{ψ₂}`, constant 1):
+- Private engine `young_psiOne_le : ψ₁(uv) ≤ ½ψ₂(u) + ½ψ₂(v)` for all reals, via `uv ≤ (u²+v²)/2` (`sq_nonneg (u-v)`) + `exp` convexity `e^{(s+t)/2} ≤ (e^s+e^t)/2` (`Real.exp_add` + `nlinarith [sq_nonneg (e^{u²/2}-e^{v²/2})]`).
+- `J·L` is a ψ₁-gauge of `XY`: pointwise `ℝ≥0∞` split (`abs_mul`, `mul_div_mul_comm`, `ofReal_add`, `ofReal_mul`), integrated via `lintegral_mono`, `lintegral_add_left'`, `lintegral_const_mul'`, giving `≤ ½·1 + ½·1 = 1`.
+- No zero-norm edge case needed: `ENNReal.le_iInf_mul_iInf` handles it directly given both gauge sets are nonempty (from `hXfin`/`hYfin` via `iInf_emptyset`), after reindexing both norms with `iInf_subtype''`.
+
+Key Mathlib lemmas: `ENNReal.iInf_mul_iInf`, `ENNReal.le_iInf_mul_iInf`, `iInf_subtype''`, `NNReal.sq_sqrt`/`sqrt_pos`, `ENNReal.ofReal_mul`/`ofReal_add`, `lintegral_add_left'`, `lintegral_const_mul'`, `ENNReal.coe_pow`/`coe_mul`.
