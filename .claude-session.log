@@ -1,0 +1,22 @@
+srun: job 28492321 queued and waiting for resources
+srun: job 28492321 has been allocated resources
+Done. **All sorries in the touch-set file closed — 0 fallback used** (the graded fallback `mgf_le_of_lintegral_exp_abs_le_two` was fully proven, not left as sorry). Build exits 0; committed as `e0fd23a`.
+
+## What closed
+
+All five declarations in `SubExponentialMGF.lean`:
+
+1. **`integrable_exp_mul_of_lintegral_exp_abs_le_two`** — domination `‖e^{lX}‖ = e^{lX} ≤ e^{|X|/K}` (via `lX ≤ |l||X| ≤ |X|/K` on the range) + `Integrable.mono'`.
+2. **`integrable_of_lintegral_exp_abs_le_two`** — domination `|X| = K·(|X|/K) ≤ K·e^{|X|/K}` (from `t ≤ e^t`, i.e. `Real.add_one_le_exp`).
+3. **`mgf_le_of_lintegral_exp_abs_le_two`** (raw core, `K₄ = 2K`) — the main work.
+4. **`mgf_le_of_subExponentialNorm_le`** (norm wrapper) — one-liner via the Attainment bridge `lintegral_exp_abs_le_two_of_subExponentialNorm_le`.
+5. **`isSubExponential_of_subExponentialNorm_le`** (carrier bridge, `α = 2√2·K`) — discharges both `IsSubExponential` fields.
+
+## Key proof pieces
+
+- **Pointwise Taylor chain** (raw core): `e^{lX} ≤ 1 + lX + (lX)²/2·e^{|lX|}` (`exp_le_one_add_add_sq_half_mul_exp_abs`), then the quadratic term `≤ 2l²K²·e^{|X|/K}` by combining `X² ≤ 4K²·e^{|X|/(2K)}` (from `sq_le_exp` at `y=|X|/(2K)`, using `sq_abs`) with `e^{|lX|} ≤ e^{|X|/(2K)}` and `e^{a}·e^{a}=e^{2a}=e^{|X|/K}`.
+- **Integration**: `integral_mono` against the integrable RHS `1 + lX + 2l²K²e^{|X|/K}`; linearity kills the linear term via `hmean`, and `∫e^{|X|/K} ≤ 2` comes from `integral_eq_lintegral_of_nonneg_ae` + `ENNReal.toReal_mono` on `hcond`; land `mgf ≤ 1 + 4l²K² ≤ e^{4l²K²}` (`Real.add_one_le_exp`).
+- **Bridge constants**: `(α:ℝ) = 2√2·K` (via `Real.coe_sqrt` through `push_cast`), giving `α² = 8K²` so `l²α²/2 = 4l²K²`, and `2K ≤ α` (from `√2 ≥ 1`) so `[−1/α,1/α] ⊆ [−1/(2K),1/(2K)]` (`one_div_le_one_div_of_le`); centering is trivial since `∫X = 0`.
+- Private helper **`integrable_exp_abs_div_of_lintegral_le_two`** (`e^{|X|/K}` integrable) built once via `hasFiniteIntegral_iff_enorm` + `Real.enorm_eq_ofReal`, reused across items 1–3.
+
+Upstream `ForMathlib/ExpTaylorBounds.lean` bricks (`sq_le_exp`, `exp_le_one_add_add_sq_half_mul_exp_abs`) were cited as designed — they remain sorry-backed black boxes outside the touch-set.
