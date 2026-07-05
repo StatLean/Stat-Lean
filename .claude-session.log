@@ -1,3 +1,23 @@
 srun: job 28418993 queued and waiting for resources
 srun: job 28418993 has been allocated resources
 Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+srun: job 28436412 queued and waiting for resources
+srun: job 28436412 has been allocated resources
+Done. **All three sorries closed** — the graded fallback was not needed.
+
+## Summary
+
+The build gate passes: `lake build StatLean.ConcentrationInequalities.EmpiricalProcess.LipschitzLLN` exits 0, and the file is sorry-free (the only `sorry` strings left are in docstrings). All upstream StatLean lemmas were used as black boxes (their own `sorry`-backed statements untouched).
+
+### Closed sorries
+
+1. **`expectation_sup'_netUnion_le`** (per-`m` finite Dudley plug) — applied `dudley_abs_of_cov_le_exp_div` with the restricted increment package (`subGaussianIncrements_empiricalProcess … |>.mono_set`), anchor `0 ∈ T` (`zero_mem_lipschitzNetUnion`), diameter cap `D=1` (`dist_le_one_of_mem_lipschitzUnitClass` + `Metric.diam_le_of_forall_dist_le`), and entropy exponent `C=24` (`coveringNumber_subset_toNat_le_exp` for `ε<1`, `coveringNumber_subset_eq_one_of_one_le` at `ε=1`). The anchored biSup was folded to `Finset.sup'` via a helper `biSup_coe_finset_eq_sup'` (from `biSup_finset_eq_sup'`), using `X_0 = 0` (`empiricalProcess_zero_fun`). Final arithmetic `80·(√6/√n)·√(24·1) = 960/√n` via `Real.sqrt_mul` (`√6·√24 = 12`) + `field_simp`/`linear_combination`.
+
+2. **`expectation_sup_lipschitzUnitClass_le`** (MCT lift) — Bochner monotone convergence `integral_tendsto_of_tendsto_of_monotone` over the exhaustion `m`, with each `netMaxAbs` integrable (`integrable_biSup_finset`), bounded in `[0,2]`, monotone (`Finset.sup'_mono` + `lipschitzNetUnion_mono`), converging pointwise (`tendsto_atTop_ciSup`); the limit inherits the per-`m` bound via `le_of_tendsto`; then the R3 dense-net identity `iSup_abs_empiricalProcess_eq_iSup_netUnion` rewrites the uncountable class supremum.
+
+3. **`lipschitz_lln`** (headline) — case split on `L`: `L=0` via `iSup_abs_empiricalProcess_lipZero_eq`; `L≠0` via R1 scaling (`iSup_abs_empiricalProcess_lip_smul`) + R2 shift (`iSup_abs_empiricalProcess_lipOne_eq`), pulling `L` out with `integral_const_mul` and applying proof 2.
+
+### Key Mathlib lemmas
+`integral_tendsto_of_tendsto_of_monotone`, `tendsto_atTop_ciSup`, `le_of_tendsto`, `AEMeasurable.iSup`, `Integrable.mono'`, `Finset.sup'_le`/`le_sup'`/`sup'_mono`/`sup'_congr`, `Metric.diam_le_of_forall_dist_le`, `Real.sqrt_mul`, `Real.coe_toNNReal`, `ContinuousMap.coe_zero`.
+
+One new StatLean import added (`Chaining.FinsetMaximal`, in-cluster) plus the private helpers `zero_mem_lipschitzNetUnion`, `biSup_coe_finset_eq_sup'`, `abs_ep_le_two_of_mem`, `integrable_abs_ep_of_mem`, and the def `netMaxAbs`. Committed as `d19d569`.
