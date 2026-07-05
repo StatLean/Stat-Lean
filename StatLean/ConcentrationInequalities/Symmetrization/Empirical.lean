@@ -1,5 +1,7 @@
 import StatLean.ConcentrationInequalities.Symmetrization.Symmetrization
+import StatLean.ConcentrationInequalities.Symmetrization.GaussianMax
 import StatLean.ConcentrationInequalities.ForMathlib.IndepTransport
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
 # Symmetrization for empirical processes (HDP Exercise 8.11)
@@ -79,7 +81,106 @@ theorem empirical_symmetrization {α : Type*} [MeasurableSpace α] {ι : Type*}
     ∫ ω, ⨆ k, |(n : ℝ)⁻¹ * (∑ i, F k (X i ω)) - ∫ x, F k x ∂P| ∂μ
       ≤ 2 * ∫ p, ⨆ k, |(n : ℝ)⁻¹ * ∑ i, p.2 i * F k (X i p.1)|
           ∂(μ.prod (signVec n)) := by
-  sorry
+  classical
+  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  -- The `E := ι → ℝ`-valued data `Zᵢ(ω) = fun k => n⁻¹ · f_k(Xᵢ ω)`.
+  set Z : Fin n → Ω → (ι → ℝ) := fun i ω k => (n : ℝ)⁻¹ * F k (X i ω) with hZ
+  have hZ_meas : ∀ i, Measurable (Z i) := by
+    intro i
+    rw [measurable_pi_iff]
+    intro k
+    exact measurable_const.mul ((hF_meas k).comp (hX_meas i))
+  have hZ_indep : iIndepFun Z μ := by
+    rw [hZ]
+    exact hX_indep.comp (fun (_ : Fin n) (a : α) (k : ι) => (n : ℝ)⁻¹ * F k a)
+      (fun _ => by rw [measurable_pi_iff]; intro k; exact measurable_const.mul (hF_meas k))
+  haveI hνp : ∀ i, IsProbabilityMeasure (μ.map (Z i)) :=
+    fun i => Measure.isProbabilityMeasure_map (hZ_meas i).aemeasurable
+  -- Boundedness ⇒ integrability of the class members and of `Zᵢ`.
+  have hFX_int : ∀ i k, Integrable (fun ω => F k (X i ω)) μ := by
+    intro i k
+    refine Integrable.of_mem_Icc (-1) 1 ((hF_meas k).comp (hX_meas i)).aemeasurable ?_
+    filter_upwards with ω
+    exact Set.mem_Icc.mpr (abs_le.mp (hF_bdd k (X i ω)))
+  have hZ_int : ∀ i, Integrable (Z i) μ := by
+    intro i
+    rw [integrable_pi_iff]
+    intro k
+    simp only [hZ]
+    exact (hFX_int i k).const_mul _
+  have hν_int : ∀ i, Integrable id (μ.map (Z i)) := fun i =>
+    (integrable_map_measure aestronglyMeasurable_id (hZ_meas i).aemeasurable).mpr
+      (by simpa using hZ_int i)
+  have hev : ∀ i, ∀ j : ι, Integrable (fun z : ι → ℝ => z j) (μ.map (Z i)) := by
+    intro i j
+    simpa using (integrable_pi_iff.mp (hν_int i)) j
+  -- The coordinate mean is `n⁻¹ ∫ f_k dP` (law transfer).
+  have hc : ∀ i (k : ι), (∫ z, z ∂(μ.map (Z i))) k = (n : ℝ)⁻¹ * ∫ x, F k x ∂P := by
+    intro i k
+    rw [eval_integral (hev i) k,
+      integral_map (hZ_meas i).aemeasurable (measurable_pi_apply k).aestronglyMeasurable]
+    simp only [hZ]
+    rw [integral_const_mul]
+    congr 1
+    rw [← hX_law i, integral_map (hX_meas i).aemeasurable (hF_meas k).aestronglyMeasurable]
+  -- Pointwise: the LHS integrand is the centered-sum norm on `ι → ℝ`.
+  have hpt_L : ∀ ω, ⨆ k, |(n : ℝ)⁻¹ * (∑ i, F k (X i ω)) - ∫ x, F k x ∂P|
+      = ‖∑ i, (Z i ω - ∫ z, z ∂(μ.map (Z i)))‖ := by
+    intro ω
+    rw [pi_norm_eq_ciSup_abs]
+    refine iSup_congr fun k => ?_
+    congr 1
+    have e1 : ∀ i : Fin n, (Z i ω - ∫ z, z ∂(μ.map (Z i))) k
+        = (n : ℝ)⁻¹ * F k (X i ω) - (n : ℝ)⁻¹ * ∫ x, F k x ∂P := by
+      intro i
+      rw [Pi.sub_apply, hc i k]
+    rw [Finset.sum_apply, Finset.sum_congr rfl (fun i _ => e1 i), Finset.sum_sub_distrib,
+      Finset.sum_const, ← Finset.mul_sum, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      ← mul_assoc, mul_inv_cancel₀ hn, one_mul]
+  -- Pointwise: the RHS integrand is the sign-randomized sum norm.
+  have hpt_R : ∀ p : Ω × (Fin n → ℝ),
+      ⨆ k, |(n : ℝ)⁻¹ * ∑ i, p.2 i * F k (X i p.1)| = ‖∑ i, p.2 i • Z i p.1‖ := by
+    intro p
+    rw [pi_norm_eq_ciSup_abs]
+    refine iSup_congr fun k => ?_
+    congr 1
+    rw [Finset.sum_apply, Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro i _
+    rw [Pi.smul_apply, smul_eq_mul]
+    simp only [hZ]
+    ring
+  -- Measurability of the two integrands over the canonical products.
+  have hG : AEStronglyMeasurable
+      (fun y : Fin n → (ι → ℝ) => ‖∑ i, (y i - ∫ z, z ∂(μ.map (Z i)))‖)
+      (Measure.pi fun i => μ.map (Z i)) := by
+    have hm : Measurable
+        (fun y : Fin n → (ι → ℝ) => ∑ i, (y i - ∫ z, z ∂(μ.map (Z i)))) :=
+      Finset.measurable_sum _ (fun i _ => (measurable_pi_apply i).sub measurable_const)
+    exact hm.norm.aestronglyMeasurable
+  have hH : AEStronglyMeasurable
+      (fun q : (Fin n → (ι → ℝ)) × (Fin n → ℝ) => ‖∑ i, q.2 i • q.1 i‖)
+      ((Measure.pi fun i => μ.map (Z i)).prod (signVec n)) := by
+    have hm : Measurable
+        (fun q : (Fin n → (ι → ℝ)) × (Fin n → ℝ) => ∑ i, q.2 i • q.1 i) := by
+      apply Finset.measurable_sum
+      intro i _
+      exact ((measurable_pi_apply i).comp measurable_snd).smul
+        ((measurable_pi_apply i).comp measurable_fst)
+    exact hm.norm.aestronglyMeasurable
+  -- Transport both sides to the canonical product laws.
+  have hLHS : ∫ ω, ⨆ k, |(n : ℝ)⁻¹ * (∑ i, F k (X i ω)) - ∫ x, F k x ∂P| ∂μ
+      = ∫ y, ‖∑ i, (y i - ∫ z, z ∂(μ.map (Z i)))‖
+          ∂(Measure.pi fun i => μ.map (Z i)) := by
+    rw [integral_congr_ae (ae_of_all _ hpt_L)]
+    exact integral_eq_integral_pi_map (fun i => (hZ_meas i).aemeasurable) hZ_indep hG
+  have hRHS : ∫ p, ⨆ k, |(n : ℝ)⁻¹ * ∑ i, p.2 i * F k (X i p.1)| ∂(μ.prod (signVec n))
+      = ∫ q, ‖∑ i, q.2 i • q.1 i‖
+          ∂((Measure.pi fun i => μ.map (Z i)).prod (signVec n)) := by
+    rw [integral_congr_ae (ae_of_all _ hpt_R)]
+    exact integral_prod_eq_integral_pi_prod hZ_meas hZ_indep hH
+  rw [hLHS, hRHS]
+  exact symmetrization_upper_pi (fun i => μ.map (Z i)) hν_int
 
 /-- **Symmetrization for empirical processes, countable class** (HDP §8.3,
 Exercise 8.11): the `Countable ι` lift of `empirical_symmetrization` per the
