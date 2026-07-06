@@ -70,7 +70,17 @@ theorem eLpNorm_le_of_tail_le
     -- USER-INPUT: moment order p ≥ 1; HDP Prop 2.6.1(ii)
     (hp : 1 ≤ p) :
     MeasureTheory.eLpNorm X (ENNReal.ofReal p) μ
-      ≤ ENNReal.ofReal (3 * (K₁ : ℝ) * Real.sqrt p) := by sorry
+      ≤ ENNReal.ofReal (3 * (K₁ : ℝ) * Real.sqrt p) := by
+  set K : ℝ≥0 := NNReal.sqrt 3 * K₁ with hKdef
+  have hKpos : 0 < K := mul_pos (NNReal.sqrt_pos.mpr (by norm_num)) hK₁
+  have hnorm : subGaussianNorm X μ ≤ (K : ℝ≥0∞) := by
+    rw [hKdef, ENNReal.coe_mul]
+    exact subGaussianNorm_le_of_tail_le hX hK₁ htail
+  have hmain := eLpNorm_le_of_subGaussianNorm_le hX hKpos hnorm hp
+  refine hmain.trans_eq (congrArg ENNReal.ofReal ?_)
+  have hKc : (K : ℝ) = Real.sqrt 3 * (K₁ : ℝ) := by
+    rw [hKdef, NNReal.coe_mul, Real.coe_sqrt]; norm_num
+  rw [hKc, ← mul_assoc, Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 3)]
 
 /-- HDP Prop 2.6.1 (iv)⇒(i), `K₁ = 2K₄` book-exact (property (iv) encoded as
 `HasSubgaussianMGF X (2K₄²)`, i.e. `E e^{λX} ≤ e^{K₄²λ²}`): the MGF bound
@@ -83,6 +93,37 @@ theorem measure_abs_ge_le_of_hasSubgaussianMGF {X : Ω → ℝ} {μ : Measure Ω
     -- USER-INPUT: nonnegative threshold; HDP Prop 2.6.1(i)
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |X ω|}
-      ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by sorry
+      ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by
+  haveI hfin : IsFiniteMeasure μ := by
+    have hi := h.integrable_exp_mul 0
+    simp only [zero_mul, Real.exp_zero] at hi
+    exact (integrable_const_iff.mp hi).resolve_left one_ne_zero
+  have hden : (2 : ℝ) * ((2 * K₄ ^ 2 : ℝ≥0) : ℝ) = (2 * (K₄ : ℝ)) ^ 2 := by
+    push_cast; ring
+  have hXt : μ {ω | t ≤ X ω}
+      ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by
+    have hb := h.measure_ge_le ht
+    rw [← ENNReal.ofReal_toReal (measure_ne_top μ {ω | t ≤ X ω})]
+    refine ENNReal.ofReal_le_ofReal (hb.trans_eq ?_)
+    rw [hden]
+  have hnXt : μ {ω | t ≤ -X ω}
+      ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by
+    have hb := (h.neg).measure_ge_le ht
+    rw [← ENNReal.ofReal_toReal (measure_ne_top μ {ω | t ≤ -X ω})]
+    refine ENNReal.ofReal_le_ofReal (hb.trans_eq ?_)
+    rw [hden]
+  have hsub : {ω | t ≤ |X ω|} ⊆ {ω | t ≤ X ω} ∪ {ω | t ≤ -X ω} := by
+    intro ω hω
+    have hω' : t ≤ |X ω| := hω
+    rcases le_abs.mp hω' with h1 | h1
+    · exact Or.inl h1
+    · exact Or.inr h1
+  calc μ {ω | t ≤ |X ω|}
+      ≤ μ ({ω | t ≤ X ω} ∪ {ω | t ≤ -X ω}) := measure_mono hsub
+    _ ≤ μ {ω | t ≤ X ω} + μ {ω | t ≤ -X ω} := measure_union_le _ _
+    _ ≤ ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2))
+          + ENNReal.ofReal (Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := add_le_add hXt hnXt
+    _ = ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (2 * (K₄ : ℝ)) ^ 2)) := by
+        rw [← ENNReal.ofReal_add (Real.exp_nonneg _) (Real.exp_nonneg _)]; congr 1; ring
 
 end StatLean.ConcentrationInequalities

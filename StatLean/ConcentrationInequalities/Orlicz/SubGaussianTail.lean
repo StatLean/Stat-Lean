@@ -52,7 +52,37 @@ theorem measure_abs_ge_le_of_lintegral_exp_sq_le_two {X : Ω → ℝ} {μ : Meas
     -- USER-INPUT: nonnegative threshold; HDP Prop 2.6.1(i)
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |X ω|} ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (K : ℝ) ^ 2)) := by
-  sorry
+  have hKR : (0 : ℝ) < (K : ℝ) := hK
+  set ε : ℝ≥0∞ := ENNReal.ofReal (Real.exp (t ^ 2 / (K : ℝ) ^ 2)) with hεdef
+  have hεpos : 0 < ε := by rw [hεdef]; exact ENNReal.ofReal_pos.mpr (Real.exp_pos _)
+  have hεtop : ε ≠ ⊤ := by rw [hεdef]; exact ENNReal.ofReal_ne_top
+  have hf_meas : AEMeasurable
+      (fun ω => ENNReal.ofReal (Real.exp ((X ω / (K : ℝ)) ^ 2))) μ := by
+    have hmeas : Measurable fun x : ℝ => Real.exp ((x / (K : ℝ)) ^ 2) := by fun_prop
+    exact (hmeas.comp_aemeasurable hX).ennreal_ofReal
+  have hsub : {ω | t ≤ |X ω|}
+      ⊆ {ω | ε ≤ ENNReal.ofReal (Real.exp ((X ω / (K : ℝ)) ^ 2))} := by
+    intro ω hω
+    have hle : t ≤ |X ω| := hω
+    have ht2 : t ^ 2 ≤ (X ω) ^ 2 := by
+      nlinarith [sq_abs (X ω), abs_nonneg (X ω), hle, ht]
+    have h2 : t ^ 2 / (K : ℝ) ^ 2 ≤ (X ω / (K : ℝ)) ^ 2 := by rw [div_pow]; gcongr
+    rw [hεdef]
+    exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr h2)
+  have hmark := mul_meas_ge_le_lintegral₀ hf_meas ε
+  have hchain : ε * μ {ω | t ≤ |X ω|} ≤ 2 := by
+    calc ε * μ {ω | t ≤ |X ω|}
+        ≤ ε * μ {ω | ε ≤ ENNReal.ofReal (Real.exp ((X ω / (K : ℝ)) ^ 2))} :=
+          mul_le_mul_left' (measure_mono hsub) ε
+      _ ≤ ∫⁻ ω, ENNReal.ofReal (Real.exp ((X ω / (K : ℝ)) ^ 2)) ∂μ := hmark
+      _ ≤ 2 := h
+  have hr : (2 : ℝ) * Real.exp (-t ^ 2 / (K : ℝ) ^ 2)
+      = 2 / Real.exp (t ^ 2 / (K : ℝ) ^ 2) := by
+    rw [neg_div, Real.exp_neg]; ring
+  have hRHS : ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (K : ℝ) ^ 2)) = 2 / ε := by
+    rw [hr, ENNReal.ofReal_div_of_pos (Real.exp_pos _), ENNReal.ofReal_ofNat, ← hεdef]
+  rw [hRHS, ENNReal.le_div_iff_mul_le (Or.inl hεpos.ne') (Or.inl hεtop), mul_comm]
+  exact hchain
 
 /-- **B1** (HDP Proposition 2.6.6(i), constant `c = 1`): a sub-Gaussian norm
 bound gives the two-sided Gaussian tail. -/
@@ -71,7 +101,8 @@ theorem measure_abs_ge_le_of_subGaussianNorm_le
     -- USER-INPUT: nonnegative threshold; HDP Prop 2.6.6(i)
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |X ω|} ≤ ENNReal.ofReal (2 * Real.exp (-t ^ 2 / (K : ℝ) ^ 2)) := by
-  sorry
+  have hcond := lintegral_exp_sq_le_two_of_subGaussianNorm_le hX hK h
+  exact measure_abs_ge_le_of_lintegral_exp_sq_le_two hX hK hcond ht
 
 /-- Convenience corollary of B1 at `K = (subGaussianNorm X μ).toNNReal`
 (HDP Proposition 2.6.6(i) with the norm itself in the exponent). -/
@@ -90,6 +121,13 @@ theorem measure_abs_ge_le_subGaussianNorm
     (ht : 0 ≤ t) :
     μ {ω | t ≤ |X ω|}
       ≤ ENNReal.ofReal
-          (2 * Real.exp (-t ^ 2 / (subGaussianNorm X μ).toReal ^ 2)) := by sorry
+          (2 * Real.exp (-t ^ 2 / (subGaussianNorm X μ).toReal ^ 2)) := by
+  set K := (subGaussianNorm X μ).toNNReal with hKdef
+  have hKpos : 0 < K := by rw [hKdef]; exact ENNReal.toNNReal_pos h0 htop
+  have hle : subGaussianNorm X μ ≤ (K : ℝ≥0∞) := by
+    rw [hKdef, ENNReal.coe_toNNReal htop]
+  have hmain := measure_abs_ge_le_of_subGaussianNorm_le hX hKpos hle ht
+  have hKR : (K : ℝ) = (subGaussianNorm X μ).toReal := by rw [hKdef]; rfl
+  rwa [hKR] at hmain
 
 end StatLean.ConcentrationInequalities
