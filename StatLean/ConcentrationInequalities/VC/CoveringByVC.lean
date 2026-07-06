@@ -86,7 +86,98 @@ lemma card_le_pow_of_entropy_bound {N d : ℕ} {ε : ℝ}
     (hN : ∀ n : ℕ, 100 * ε⁻¹ ^ 4 * Real.log N ≤ n →
       (N : ℝ) ≤ (Real.exp 1 * n / d) ^ d) :
     (N : ℝ) ≤ (2 / ε) ^ (21 * d) := by
-  sorry -- FALLBACK: footnote-4 pure-real algebra (permitted graded sorry).
+  -- Real preliminaries reused throughout.
+  have hd_nonneg : (0 : ℝ) ≤ (d : ℝ) := Nat.cast_nonneg d
+  have hd0 : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hεinv : (1 : ℝ) ≤ ε⁻¹ := (one_le_inv₀ hε).mpr hε1.le
+  have hε4 : (1 : ℝ) ≤ ε⁻¹ ^ 4 := one_le_pow₀ hεinv
+  have hbase_ge2 : (2 : ℝ) ≤ 2 / ε := by rw [le_div_iff₀ hε]; nlinarith [hε1, hε]
+  have hbase_ge1 : (1 : ℝ) ≤ 2 / ε := le_trans (by norm_num) hbase_ge2
+  have hbasepow_ge1 : (1 : ℝ) ≤ (2 / ε) ^ (21 * d) := one_le_pow₀ hbase_ge1
+  -- Reduce to `N ≥ 2`; for `N ≤ 1` the bound is immediate.
+  rcases le_or_gt N 1 with hNsmall | hN2
+  · calc (N : ℝ) ≤ 1 := by exact_mod_cast hNsmall
+      _ ≤ (2 / ε) ^ (21 * d) := hbasepow_ge1
+  -- `N ≥ 2`.
+  have hNpos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast (by omega : 0 < N)
+  have hN2R : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN2
+  have hlog2_pos : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
+  have hlog2_gt : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+  have hlogN2 : Real.log 2 ≤ Real.log (N : ℝ) := Real.log_le_log (by norm_num) hN2R
+  have hxpos : (0 : ℝ) < Real.log (N : ℝ) := lt_of_lt_of_le hlog2_pos hlogN2
+  have hxne : Real.log (N : ℝ) ≠ 0 := ne_of_gt hxpos
+  -- Instantiate the entropy hypothesis at `n₀ = ⌈100 ε⁻⁴ log N⌉`.
+  set n₀ : ℕ := ⌈100 * ε⁻¹ ^ 4 * Real.log (N : ℝ)⌉₊ with hn₀
+  have hr0 : (0 : ℝ) ≤ 100 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by positivity
+  have hle : 100 * ε⁻¹ ^ 4 * Real.log (N : ℝ) ≤ (n₀ : ℝ) := Nat.le_ceil _
+  have hlt : (n₀ : ℝ) < 100 * ε⁻¹ ^ 4 * Real.log (N : ℝ) + 1 := Nat.ceil_lt_add_one hr0
+  have h100 : (1 : ℝ) ≤ 100 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr hε4) hxpos.le, hlogN2, hlog2_gt, hε4]
+  have hn₀pos : 1 ≤ n₀ := by
+    have : (1 : ℝ) ≤ (n₀ : ℝ) := le_trans h100 hle
+    exact_mod_cast this
+  have hn₀ne : (n₀ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hbound := hN n₀ hle
+  -- Take logs.
+  have hlogmain : Real.log (N : ℝ) ≤ (d : ℝ) * Real.log (Real.exp 1 * (n₀ : ℝ) / (d : ℝ)) := by
+    have h := Real.log_le_log hNpos hbound
+    rwa [Real.log_pow] at h
+  -- Expand `log(e·n₀/d) = 1 + log n₀ − log d`.
+  have hid : Real.log (Real.exp 1 * (n₀ : ℝ) / (d : ℝ))
+      = 1 + Real.log (n₀ : ℝ) - Real.log (d : ℝ) := by
+    rw [Real.log_div (mul_ne_zero (Real.exp_ne_zero 1) hn₀ne) hd0,
+      Real.log_mul (Real.exp_ne_zero 1) hn₀ne, Real.log_exp]
+  -- Bound `log n₀ ≤ log 200 − 4 log ε + log(log N)`.
+  have hn₀bound : (n₀ : ℝ) ≤ 200 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by nlinarith [hlt, h100]
+  have hC : Real.log (n₀ : ℝ)
+      ≤ Real.log 200 - 4 * Real.log ε + Real.log (Real.log (N : ℝ)) := by
+    have hpos200 : (0 : ℝ) < 200 * ε⁻¹ ^ 4 * Real.log (N : ℝ) := by positivity
+    have h := Real.log_le_log (by exact_mod_cast hn₀pos : (0:ℝ) < (n₀:ℝ)) hn₀bound
+    rw [Real.log_mul (by positivity) hxne, Real.log_mul (by norm_num) (by positivity),
+      Real.log_pow, Real.log_inv] at h
+    push_cast at h
+    linarith [h]
+  -- Bound `log(log N) ≤ log 2 + log d + (log N)/(2d) − 1`.
+  have h2dne : (2 : ℝ) * (d : ℝ) ≠ 0 := mul_ne_zero (by norm_num) hd0
+  have hD : Real.log (Real.log (N : ℝ))
+      ≤ Real.log 2 + Real.log (d : ℝ) + Real.log (N : ℝ) / (2 * (d : ℝ)) - 1 := by
+    have hdiv : Real.log (Real.log (N : ℝ) / (2 * (d : ℝ)))
+        = Real.log (Real.log (N : ℝ)) - Real.log (2 * (d : ℝ)) := Real.log_div hxne h2dne
+    have hsub : Real.log (Real.log (N : ℝ) / (2 * (d : ℝ)))
+        ≤ Real.log (N : ℝ) / (2 * (d : ℝ)) - 1 := Real.log_le_sub_one_of_pos (by positivity)
+    have hlog2d : Real.log (2 * (d : ℝ)) = Real.log 2 + Real.log (d : ℝ) :=
+      Real.log_mul (by norm_num) hd0
+    linarith [hdiv, hsub, hlog2d]
+  -- Assemble the `B`-bound and multiply by `d`.
+  have hB : Real.log (Real.exp 1 * (n₀ : ℝ) / (d : ℝ))
+      ≤ Real.log 200 - 4 * Real.log ε + Real.log 2 + Real.log (N : ℝ) / (2 * (d : ℝ)) := by
+    rw [hid]; linarith [hC, hD]
+  have hxdB : Real.log (N : ℝ)
+      ≤ (d : ℝ) * (Real.log 200 - 4 * Real.log ε + Real.log 2
+          + Real.log (N : ℝ) / (2 * (d : ℝ))) :=
+    le_trans hlogmain (mul_le_mul_of_nonneg_left hB hd_nonneg)
+  have hcancel : (d : ℝ) * (Real.log (N : ℝ) / (2 * (d : ℝ))) = Real.log (N : ℝ) / 2 := by
+    field_simp
+  have heq2 : (d : ℝ) * (Real.log 200 - 4 * Real.log ε + Real.log 2
+        + Real.log (N : ℝ) / (2 * (d : ℝ)))
+      = (d : ℝ) * (Real.log 200 - 4 * Real.log ε + Real.log 2) + Real.log (N : ℝ) / 2 := by
+    rw [mul_add, hcancel]
+  rw [heq2] at hxdB
+  -- Numeric facts for the final combination.
+  have hnum : 2 * Real.log 200 ≤ 19 * Real.log 2 := by
+    have h := Real.log_le_log (by norm_num : (0:ℝ) < 200 ^ 2) (by norm_num : (200:ℝ) ^ 2 ≤ 2 ^ 19)
+    rw [Real.log_pow, Real.log_pow] at h
+    push_cast at h; linarith [h]
+  have hlogε_nonpos : Real.log ε ≤ 0 := Real.log_nonpos hε.le hε1.le
+  -- Close in log form, then exponentiate.
+  have hpospow : (0 : ℝ) < (2 / ε) ^ (21 * d) := by positivity
+  have hgoal : Real.log (N : ℝ) ≤ Real.log ((2 / ε) ^ (21 * d)) := by
+    rw [Real.log_pow, Real.log_div (by norm_num) (ne_of_gt hε)]
+    push_cast
+    nlinarith [hxdB, mul_nonneg hd_nonneg (sub_nonneg.mpr hnum),
+      mul_nonneg hd_nonneg (neg_nonneg.mpr hlogε_nonpos)]
+  have hexp := Real.exp_le_exp.mpr hgoal
+  rwa [Real.exp_log hNpos, Real.exp_log hpospow] at hexp
 
 /-- **Covering numbers via VC dimension, packing form** (HDP §8.3.5,
 Theorem 8.3.13, the core): any `ε`-separated subfamily (squared form
