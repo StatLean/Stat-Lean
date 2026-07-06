@@ -1,0 +1,30 @@
+srun: job 28898288 queued and waiting for resources
+srun: job 28898288 has been allocated resources
+## Status report
+
+**Step 1 — DONE and pushed** (commit `2f12467`). Both renegotiated lemmas in `Chaining/FinsetMaximal.lean` are proven, 0 sorries in the file, `lake build …FinsetMaximal` exit 0:
+- `biSup_finset_eq_sup'` — with the new `h0` nonneg guard (≤ via `Real.iSup_le` + junk-branch `Real.iSup_of_isEmpty ≤ sup'`; ≥ via `Finset.exists_mem_eq_sup'` + `le_ciSup_of_le`).
+- `expectation_max_finset_le` — reindex `Fin s.card` via `s.equivFin`, transport `expectation_max_le`, identify `s.sup'` with `⨆ j, Y j` pointwise.
+
+**Steps 2–4 — blocked by a genuine falseness I have to surface before proceeding.**
+
+While threading the call sites I found that **three public mean-zero theorems carry the exact junk-biSup defect the laptop just fixed in `expectation_max_finset_le`, but were left unfixed** — and they are provably **false**, not merely mis-threaded:
+
+- `discrete_dudley` (`DiscreteDudley.lean:76`) → consumed by
+- `dudley_inequality` (`Dudley.lean:63`) → consumed by
+- `dudley_inequality_Ioi` (`Dudley.lean:220`)
+
+All three have LHS `∫ ω, ⨆ t ∈ T, X t ω` (raw, non-abs). The junk makes `⨆ t∈T, X t ω = max(sup'_{t∈T} X t ω, 0)`.
+
+**Airtight counterexample:** `E = ℝ`, `T = {0}`, `X 0 =` Rademacher (±1). `SubGaussianIncrements` holds trivially (`X0−X0=0`), `hmean` holds (`E X0 = 0`). Single point ⇒ `dudleySum({0}) = 0` (𝒩=1, log 1 = 0) ⇒ **RHS = 0**, but **LHS = ∫(X0)⁺ = 1/2 > 0**. So `1/2 ≤ 0`. These theorems were only ever green because they transitively used the old biSup **sorry** (the degenerate branch's `⨆ = X c` step is exactly that false identity).
+
+Everything else is fine: the **abs-form family** (`discrete_dudley_abs`, `dudley_inequality_abs`, `..._abs_pair`, and all sites in `DudleyTail`, `GenericChaining`, `LipschitzLLN`) is TRUE — junk coincides with `sup'` since `|·| ≥ 0` — and threads normally with `(fun _ _ => abs_nonneg _)`. The non-abs *le-direction* sites (e.g. `DiscreteDudley:207`) are junk-tolerant via a one-directional `le_biSup_finset` helper. Only the `sup'_le`/equality sites **inside the 3 false theorems** are unclosable.
+
+**This means the full-area 0-sorry gate is unreachable without changing those 3 statements** — the same `Finset.sup'` restatement the laptop applied to `expectation_max_finset_le`. Your instructions say "no further public statement changes," so I'm stopping to get your call rather than either faking a proof or silently overriding that constraint.
+
+**Recommendation:** authorize restating the LHS of `discrete_dudley`, `dudley_inequality`, `dudley_inequality_Ioi` to `∫ ω, s.sup' hs (fun t => X t ω)` (junk-free, mirroring `expectation_max_finset_le`). Then I can: thread all abs sites, rebuild the mean-zero proofs against `sup'` (the degenerate branch becomes honestly `sup' = X c`), and drive the whole `StatLean.ConcentrationInequalities` umbrella to 0 sorries.
+
+How would you like me to proceed?
+1. Apply that 3-theorem `sup'` restatement + finish to the green gate, or
+2. Keep the statements frozen — I thread the true abs sites only and leave the 3 mean-zero theorems as documented frozen-false sorries (gate will not be fully zero), or
+3. Something else.
