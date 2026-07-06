@@ -61,7 +61,12 @@ def lipschitzUnitClass : Set C(unitInterval, ℝ) :=
 /-- The zero function belongs to the class (HDP §8.2 p. 231; base point of
 Eq. (8.25)). -/
 theorem zero_mem_lipschitzUnitClass : (0 : C(unitInterval, ℝ)) ∈ lipschitzUnitClass := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · simp only [ContinuousMap.coe_zero]
+    exact (LipschitzWith.const (0 : ℝ)).weaken (by norm_num)
+  · intro x
+    simp only [ContinuousMap.zero_apply]
+    exact ⟨le_refl 0, by norm_num⟩
 
 /-- The class has `L∞`-diameter at most `1` (HDP §8.2 p. 231): all members take
 values in `[0,1]`. Caps the entropy integral at radius `1`. -/
@@ -69,7 +74,13 @@ theorem dist_le_one_of_mem_lipschitzUnitClass {f g : C(unitInterval, ℝ)}
     -- USER-INPUT: class membership of both points; HDP §8.2, Eq. (8.24)
     (hf : f ∈ lipschitzUnitClass) (hg : g ∈ lipschitzUnitClass) :
     dist f g ≤ 1 := by
-  sorry
+  refine ContinuousMap.dist_le (by norm_num) |>.mpr ?_
+  intro x
+  rw [Real.dist_eq, abs_le]
+  have h1 := hf.2 x
+  have h2 := hg.2 x
+  rw [Set.mem_Icc] at h1 h2
+  constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
 
 /-- **Grid knot** `t_j = j/m` (HDP Exercise 8.9), as a point of
 `unitInterval`. Edge behavior: `j ≤ m` always (the index type is
@@ -100,7 +111,23 @@ theorem lipschitzWith_finset_sup' {ι : Type*} {s : Finset ι}
     -- LEAN-ONLY: per-member Lipschitz bound; no book content
     (hF : ∀ i ∈ s, LipschitzWith K (F i)) :
     LipschitzWith K (fun x => s.sup' hs (fun i => F i x)) := by
-  sorry
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a =>
+    have : (fun x => ({a} : Finset ι).sup' (Finset.singleton_nonempty a)
+        (fun i => F i x)) = F a := by
+      funext x; simp [Finset.sup'_singleton]
+    rw [this]; exact hF a (by simp)
+  | cons a s ha hs ih =>
+    have hkey : (fun x => (Finset.cons a s ha).sup' (Finset.cons_nonempty ha)
+        (fun i => F i x)) = fun x => max (F a x) (s.sup' hs (fun i => F i x)) := by
+      funext x
+      rw [Finset.sup'_cons]
+    rw [hkey]
+    have hla : LipschitzWith K (F a) := hF a (by simp)
+    have hls : LipschitzWith K (fun x => s.sup' hs (fun i => F i x)) :=
+      ih (fun i hi => hF i (by simp [hi]))
+    have := hla.max hls
+    rwa [max_self] at this
 
 /-- **Cone-envelope net function** (HDP Exercise 8.9): the max of the cones
 `x ↦ v_j − |x − t_j|` over all knots, floored at `0`, where
@@ -118,14 +145,49 @@ noncomputable def coneFun (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
 theorem lipschitzWith_coneFun (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
     (step : Fin m → Fin 3) :
     LipschitzWith 1 (coneFun m k₀ step) := by
-  sorry
+  unfold coneFun
+  have hinner : ∀ j : Fin (m + 1), LipschitzWith 1
+      (fun x : unitInterval => gridValue m (gridPath m k₀ step j) - |(x : ℝ) - (j : ℝ) / m|) := by
+    intro j
+    refine LipschitzWith.of_dist_le_mul (fun x y => ?_)
+    rw [NNReal.coe_one, one_mul, Real.dist_eq]
+    have hxy : dist x y = |(x : ℝ) - (y : ℝ)| := by rw [Subtype.dist_eq, Real.dist_eq]
+    rw [hxy]
+    have heq : (gridValue m (gridPath m k₀ step j) - |(x : ℝ) - (j : ℝ) / m|)
+        - (gridValue m (gridPath m k₀ step j) - |(y : ℝ) - (j : ℝ) / m|)
+        = |(y : ℝ) - (j : ℝ) / m| - |(x : ℝ) - (j : ℝ) / m| := by ring
+    rw [heq]
+    have hbound := abs_abs_sub_abs_le_abs_sub
+      ((y : ℝ) - (j : ℝ) / m) ((x : ℝ) - (j : ℝ) / m)
+    have hrw : ((y : ℝ) - (j : ℝ) / m) - ((x : ℝ) - (j : ℝ) / m) = (y : ℝ) - (x : ℝ) := by ring
+    rw [hrw] at hbound
+    rw [abs_sub_comm (y : ℝ) (x : ℝ)] at hbound
+    exact hbound
+  have hsup : LipschitzWith 1
+      (fun x : unitInterval => Finset.univ.sup' Finset.univ_nonempty
+        (fun j : Fin (m + 1) =>
+          gridValue m (gridPath m k₀ step j) - |(x : ℝ) - (j : ℝ) / m|)) :=
+    lipschitzWith_finset_sup' Finset.univ_nonempty (fun j _ => hinner j)
+  have hconst : LipschitzWith 1 (fun _ : unitInterval => (0 : ℝ)) :=
+    (LipschitzWith.const (0 : ℝ)).weaken zero_le_one
+  have := hsup.max hconst
+  rw [max_self] at this
+  exact this
 
 /-- Net members take values in `[0,1]` (HDP Exercise 8.9): clamping of knot
 values plus the outer `max 0`. Named-sorry fallback of `hdp-emp-net`. -/
 theorem coneFun_mem_Icc (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
     (step : Fin m → Fin 3) (x : unitInterval) :
     coneFun m k₀ step x ∈ Set.Icc (0 : ℝ) 1 := by
-  sorry
+  unfold coneFun
+  rw [Set.mem_Icc]
+  refine ⟨le_max_right _ _, ?_⟩
+  apply max_le _ (by norm_num)
+  apply Finset.sup'_le
+  intro j _
+  have hv : gridValue m (gridPath m k₀ step j) ≤ 1 := min_le_left _ _
+  have habs : (0 : ℝ) ≤ |(x : ℝ) - (j : ℝ) / m| := abs_nonneg _
+  linarith
 
 /-- The cone envelope as a bundled continuous map (LEAN-ONLY bundling; the
 continuity field cites `lipschitzWith_coneFun`). -/
@@ -146,17 +208,23 @@ noncomputable def lipschitzNet (m : ℕ) [NeZero m] : Finset C(unitInterval, ℝ
 theorem coneMap_mem_lipschitzNet (m : ℕ) [NeZero m] (k₀ : Fin (m + 1))
     (step : Fin m → Fin 3) :
     coneMap m k₀ step ∈ lipschitzNet m := by
-  sorry
+  classical
+  exact Finset.mem_image.mpr ⟨(k₀, step), Finset.mem_univ _, rfl⟩
 
 /-- The net is **internal**: `N ⊆ F` (HDP Exercise 8.9; required by our
 `IsEpsilonNet` / `Metric.coveringNumber` conventions). -/
 theorem lipschitzNet_subset (m : ℕ) [NeZero m] :
     ↑(lipschitzNet m) ⊆ lipschitzUnitClass := by
-  sorry
+  classical
+  intro f hf
+  rw [Finset.mem_coe, lipschitzNet, Finset.mem_image] at hf
+  obtain ⟨p, _, rfl⟩ := hf
+  exact ⟨lipschitzWith_coneFun m p.1 p.2, fun x => coneFun_mem_Icc m p.1 p.2 x⟩
 
 /-- The net is nonempty (LEAN-ONLY; image of a nonempty parameter space). -/
 theorem lipschitzNet_nonempty (m : ℕ) [NeZero m] : (lipschitzNet m).Nonempty := by
-  sorry
+  classical
+  exact Finset.univ_nonempty.image _
 
 /-- The zero function is a net member (all knot values clamped to `0`): take
 `k₀ = 0` and all steps `0` — the envelope `max(sup_j (0 − |x − t_j|), 0)` is
@@ -164,12 +232,53 @@ identically `0`. Provides the base point `0 ∈ T` for the Dudley plug in
 `LipschitzLLN.lean` (HDP §8.2, Eq. (8.25)). -/
 theorem zero_mem_lipschitzNet (m : ℕ) [NeZero m] :
     (0 : C(unitInterval, ℝ)) ∈ lipschitzNet m := by
-  sorry
+  classical
+  have hcm := coneMap_mem_lipschitzNet m 0 (fun _ => (0 : Fin 3))
+  have heq : (0 : C(unitInterval, ℝ)) = coneMap m 0 (fun _ => (0 : Fin 3)) := by
+    apply ContinuousMap.ext
+    intro x
+    rw [ContinuousMap.zero_apply]
+    symm
+    change coneFun m 0 (fun _ => (0 : Fin 3)) x = 0
+    unfold coneFun
+    -- each gridPath value is ≤ 0, so gridValue = 0, so each cone ≤ 0, sup' ≤ 0, max with 0 = 0
+    have hpath : ∀ j : Fin (m + 1), gridPath m 0 (fun _ => (0 : Fin 3)) j ≤ 0 := by
+      intro j
+      unfold gridPath
+      simp only [Fin.val_zero, Nat.cast_zero, zero_add]
+      apply Finset.sum_nonpos
+      intro i _
+      norm_num
+    have hval : ∀ j : Fin (m + 1), gridValue m (gridPath m 0 (fun _ => (0 : Fin 3)) j) = 0 := by
+      intro j
+      unfold gridValue
+      have hle : (gridPath m 0 (fun _ => (0 : Fin 3)) j : ℝ) / m ≤ 0 := by
+        apply div_nonpos_of_nonpos_of_nonneg
+        · exact_mod_cast hpath j
+        · positivity
+      rw [max_eq_right hle, min_eq_right (by norm_num)]
+    have hsup_le : Finset.univ.sup' Finset.univ_nonempty
+        (fun j : Fin (m + 1) => gridValue m (gridPath m 0 (fun _ => (0 : Fin 3)) j)
+          - |(x : ℝ) - (j : ℝ) / m|) ≤ 0 := by
+      apply Finset.sup'_le
+      intro j _
+      rw [hval j]
+      simp only [zero_sub, neg_nonpos]
+      exact abs_nonneg _
+    exact max_eq_right hsup_le
+  rw [heq]
+  exact hcm
 
 /-- Cardinality bound `#N ≤ (m+1)·3^m` (HDP Exercise 8.9): starts times
 step-sequences, via `Finset.card_image_le`. -/
 theorem card_lipschitzNet_le (m : ℕ) [NeZero m] :
     (lipschitzNet m).card ≤ (m + 1) * 3 ^ m := by
-  sorry
+  classical
+  calc (lipschitzNet m).card
+      ≤ (Finset.univ : Finset (Fin (m + 1) × (Fin m → Fin 3))).card :=
+        Finset.card_image_le
+    _ = (m + 1) * 3 ^ m := by
+        rw [Finset.card_univ]
+        simp [Fintype.card_prod, Fintype.card_fin]
 
 end StatLean.ConcentrationInequalities
