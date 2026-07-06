@@ -1,0 +1,11 @@
+srun: job 28695806 queued and waiting for resources
+srun: job 28695806 has been allocated resources
+Background tasks still running after 600s; terminating. Set CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 to wait indefinitely.
+I've launched all four debts as parallel background workers, each in its own isolated git worktree with its full roadmap:
+
+- **Debt A** — `discrete_dudley_abs` (DiscreteDudley.lean, κ'-reanchoring, constant 20)
+- **Debt B** — `dudley_inequality_countable` (Dudley.lean, Bochner→∫⁻ + exhaustion, constant 80)
+- **Debt C** — `generic_chaining_tail` (GenericChaining.lean, per-level union tail, 2·exp(−u²))
+- **Debt D** — `rademacher_process_expectation_le` (VC/LawOfLargeNumbers.lean, conditional-Dudley glue, 2700)
+
+They're working independently on non-overlapping files. When each completes I'll collect its result, integrate the closed proofs into this worktree, verify the build gate, and commit per-debt. I'll report back as results come in.
