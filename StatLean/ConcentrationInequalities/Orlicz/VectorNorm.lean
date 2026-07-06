@@ -147,7 +147,37 @@ theorem subGaussianVecNorm_le_of_indep
     (hmean : ∀ i, ∫ x, X x i ∂μ = 0)
     -- USER-INPUT: uniform coordinate ψ₂ bound; HDP Lemma 3.4.2
     (hnorm : ∀ i, subGaussianNorm (fun ω => X ω i) μ ≤ K) :
-    subGaussianVecNorm X μ ≤ (NNReal.sqrt 18 * K : ℝ≥0∞) := by sorry
+    subGaussianVecNorm X μ ≤ (NNReal.sqrt 18 * K : ℝ≥0∞) := by
+  unfold subGaussianVecNorm
+  refine iSup₂_le fun v hv => ?_
+  have hv1 : ‖v‖ = 1 := by
+    rw [Metric.mem_sphere, dist_zero_right] at hv; exact hv
+  -- marginal as a weighted coordinate sum
+  have hinner : (fun ω => ⟪X ω, v⟫) = (fun ω => ∑ i, v i * X ω i) := by
+    funext ω
+    rw [PiLp.inner_apply]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    simp
+  rw [hinner]
+  -- the `∑ (v i)² = ‖v‖² = 1` identity, over `ℝ`
+  have hsumR : ∑ i, (v i) ^ 2 = 1 := by
+    have h2 : ∑ i, (v i) ^ 2 = ‖v‖ ^ 2 := by
+      rw [EuclideanSpace.norm_sq_eq]
+      exact Finset.sum_congr rfl (fun i _ => by rw [Real.norm_eq_abs, sq_abs])
+    rw [h2, hv1, one_pow]
+  have harg : (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0)) = 18 * K ^ 2 := by
+    apply NNReal.coe_injective
+    push_cast
+    rw [← Finset.sum_mul, hsumR, one_mul]
+  have hconst : NNReal.sqrt (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0))
+      = NNReal.sqrt 18 * K := by
+    rw [harg, NNReal.sqrt_mul, NNReal.sqrt_sq]
+  calc subGaussianNorm (fun ω => ∑ i, v i * X ω i) μ
+      ≤ (NNReal.sqrt (18 * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * K ^ 2 : ℝ≥0)) : ℝ≥0∞) :=
+        subGaussianNorm_weighted_sum_le (X := fun i ω => X ω i) (K := fun _ => K)
+          v hmeas hindep hmean (fun _ => hK) hnorm
+    _ = (NNReal.sqrt 18 * K : ℝ≥0∞) := by rw [← ENNReal.coe_mul, hconst]
 
 /-- Lemma 3.4.2 statement packaging: the coordinate-max lower bound as a
 finite `⨆` (HDP §3.4). -/
