@@ -1,0 +1,20 @@
+srun: job 28763443 queued and waiting for resources
+srun: job 28763443 has been allocated resources
+Done. Summary of what was accomplished:
+
+## `generic_chaining_tail` closed at (12+4u) — DONE
+
+`lake build StatLean.ConcentrationInequalities.Chaining.GenericChaining` exits 0, **0 sorries** in the file, committed as `f3d3ad2`.
+
+### The proof
+The previous attempt had *proved* the old `(6+2u)` statement unprovable (that's the sharp root-anchored constant; the statement quantifies over an arbitrary anchor `t₀`). With the constant renegotiated to `(12+4u)`, I wrote the full canonical-anchor chaining proof, mirroring `DudleyTail.dudley_tail_three_term` but over admissible-sequence levels:
+
+- **Anchor reduction**: `a₀` = the `A.seq 0` singleton (`card_zero`); the arbitrary anchor is handled by `|X_t−X_{t₀}| ≤ 2·sup_s|X_s−X_{a₀}|`, which is exactly the 2× that turns the honest canonical `(6+2u)` into `(12+4u)`.
+- **Levels**: projections `netProj(A.seq k)`, level count from `exists_eventually_dist_zero`, chain step `d(π_{k+1},π_k) ≤ infDist(t,seq(k+1)) + infDist(t,seq k)`.
+- **Per-pair tail**: threshold `K·d(a,b)·s_k` with `s_k = √2^k·√(6log2)+√(k+1)+u`, giving an *exact* `2exp(−s_k²)` (no radius inflation needed); union over the full `A.seq(k+1) ×ˢ A.seq k` product, `card ≤ 2^{3·2^k}`, geometric collapse `Σ ≤ 2exp(−u²)`.
+- **γ-functional sum bound**: `Σ√2^k·infDist ≤ γ.toReal` via `ENNReal.sum_le_tsum`+`le_iSup₂`, then `Σ(ρ_{k+1}+ρ_k)s_k ≤ (6+2u)G` using the `1/√2` reindex saving and the key numeric `(√(6log2)+1)(√2+1) ≤ 6√2` (the lossy bound `2(√(6log2)+1)=6.08>6` would fail).
+
+### Consumer repairs
+The three doubled consumer proofs had residue: I set the `TailToExpectation` integration constants to `a=12·Kγ, b=4·Kγ` (were 6/2) so `∫ ≤ 12Kγ+√π·4Kγ ≤ 20Kγ` via `12+4√π≈19.1 ≤ 20`, and fixed stale `10→20` numerals in `generic_chaining`/`generic_chaining_real` (`ha_top`/`hpush`/`htop`/the `ofReal_mul` slack).
+
+Also added `import Mathlib.Analysis.Complex.ExponentialBounds` (for `log_two_lt_d9`). Statements are unchanged frozen ones; no new sorries/axioms/admits.
