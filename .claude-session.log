@@ -1,0 +1,22 @@
+srun: job 28681693 queued and waiting for resources
+srun: job 28681693 has been allocated resources
+All three closed debts are committed and the working tree has only untracked session-log files (not part of the debt work). 
+
+## Final report — hdp-debt-closure (tranche 2)
+
+**Closed: 3 of 7** (each built to exit 0 and committed individually):
+
+| # | File — lemma | Status | How |
+|---|---|---|---|
+| 1 | `ForMathlib/ExpTaylorBounds` — `exp_le_one_add_add_sq_half_of_nonpos` | ✅ closed | `f s = 1+s+s²/2−eˢ` is antitone on `Iic 0` (deriv `1+s−eˢ ≤ 0` via `Real.add_one_le_exp`), so `x≤0 ⇒ f 0 ≤ f x ⇒ 0 ≤ f x`. |
+| 2 | `Chaining/GammaTwo` — `AdmissibleSequence.exists_eventually_dist_zero` | ✅ closed | Finite positive-distance floor `δ>0`; per-term bound `√2^k·infDist ≤ γ.toReal` + `√2^k→∞` forces `infDist < δ`, and discreteness (finite `T`) forces it to `0`; `infDist` attained on the compact finite net. |
+| 6 | `VC/CoveringByVC` — `card_le_pow_of_entropy_bound` | ✅ closed | Footnote-4 algebra: instantiate `n₀=⌈100ε⁻⁴logN⌉`, take logs, use `log t ≤ t−1` self-reference trick to get `logN ≤ 2d logN/(2d)+…` and the squaring `N≤A^d√N⇒N≤A^{2d}`; final numeric `2log200 ≤ 19log2` and `logε ≤ 0`. |
+
+**Left open: 4 of 7** — all are large multi-step, cross-file assemblies exceeding the per-debt time box:
+
+- **3 `DiscreteDudley.discrete_dudley_abs`** — needs the full √π·K·diam re-anchoring + a new κ′-selection lemma; confirmed unavoidable because `subGaussianNorm` (Orlicz ψ₂) is *not* translation-invariant, so the mean-zero `discrete_dudley` cannot be applied to a recentered process directly.
+- **4 `Dudley.dudley_inequality_countable`** — requires a Bochner→`∫⁻` bridge for the finite anchored bound, a covering-number change-of-variables (`𝒩(F,ε) ≤ 𝒩(T,ε/2)`, the frozen 2×), and monotone convergence over a finite exhaustion; three nontrivial stages.
+- **5 `GenericChaining.generic_chaining_tail`** — per-level tail-event bookkeeping with geometric union bound and `(a+b+c)²≥a²+b²+c²` inflation; probability-heavy event algebra.
+- **7 `LawOfLargeNumbers.rademacher_process_expectation_le`** — conditional Dudley glue assembling `subGaussianIncrements_inner_signVec` + `dudley_inequality_abs` + empirical covering + entropy integral with exact constant accounting to 2700; multi-file assembly.
+
+Each of the four would realistically need 45–90 min of focused work; I prioritized fully closing and committing the three tractable ones rather than stalling. The three touched targets each build cleanly (`lake build` exit 0), and no statements/tags/hypotheses were changed — only the three `sorry` bodies.
