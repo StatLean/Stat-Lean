@@ -59,9 +59,14 @@ hypothesis. Kept as the file's structural sorry alongside
 lemma biSup_finset_eq_sup' {ι : Type*} {s : Finset ι}
     -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined and the real biSup
     -- is not junk; no book content
-    (hs : s.Nonempty) (f : ι → ℝ) :
+    (hs : s.Nonempty) (f : ι → ℝ)
+    -- LEAN-ONLY: nonnegative family — REQUIRED (statement fix at the debt
+    -- gate: for i ∉ s the inner sup is junk 0, so the unguarded identity is
+    -- FALSE for negative values, e.g. ⨆ i ∈ {0}, (−1) = 0 ≠ −1; every
+    -- chaining call site is |·|-valued so this is supplied uniformly as
+    -- (fun i _ => abs_nonneg _))
+    (h0 : ∀ i ∈ s, 0 ≤ f i) :
     (⨆ i ∈ s, f i) = s.sup' hs f := by
-  -- FROZEN-FALSE as stated (junk `sSup ∅ = 0` for `i ∉ s`); see docstring.
   sorry
 
 set_option maxHeartbeats 1000000 in
@@ -179,9 +184,11 @@ theorem expectation_max_finset_le {ι : Type*}
     (hcenter : ∀ i ∈ s, ∫ ω, X i ω ∂μ = 0)
     -- USER-INPUT: X_i sub-Gaussian with variance proxy σ²; Lu-BDA §6.2
     (hX : ∀ i ∈ s, IsSubGaussian (X i) σ2 μ) :
-    ∫ ω, ⨆ i ∈ s, X i ω ∂μ
+    -- Statement fix at the debt gate: the conclusion is stated with
+    -- `Finset.sup'` (junk-free), exactly mirroring the proven Fin-indexed
+    -- `expectation_max_le`; the old biSup form was FALSE at |s| = 1.
+    ∫ ω, s.sup' hs (fun i => X i ω) ∂μ
       ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log s.card) := by
-  -- FROZEN-FALSE as stated (false at `|s| = 1`, junk `biSup`); see docstring.
   sorry
 
 end StatLean.ConcentrationInequalities
