@@ -106,6 +106,7 @@ lemma le_biSup_finset {ι : Type*} {s : Finset ι} (f : ι → ℝ) {i : ι}
   have hbdd : BddAbove (Set.range (fun j => ⨆ (_ : j ∈ s), f j)) := by
     refine ⟨max (s.sup' hs f) 0, ?_⟩
     rintro y ⟨j, rfl⟩
+    dsimp only
     by_cases hj : j ∈ s
     · rw [ciSup_pos hj]; exact le_max_of_le_left (Finset.le_sup' f hj)
     · haveI : IsEmpty (j ∈ s) := ⟨hj⟩
@@ -126,7 +127,7 @@ lemma integrable_sup'_finset {ι : Type*} {s : Finset ι}
   induction hs using Finset.Nonempty.cons_induction with
   | singleton a =>
       intro hint
-      simp only [Finset.sup'_singleton]
+      -- `sup'_singleton` is `rfl`, so the goal is defeq to `Integrable (X a) μ`.
       exact hint a (by simp)
   | cons a t ha ht ih =>
       intro hint
