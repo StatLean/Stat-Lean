@@ -37,7 +37,15 @@ theorem posterior_lintegral_eq_div [StandardBorelSpace Θ] [Nonempty Θ]
     -- LEAN-ONLY: the integrand is measurable
     {g : Θ → ℝ≥0∞} (hg : Measurable g) :
     ∀ᵐ x ∂(κ ∘ₘ π),
-      ∫⁻ θ, g θ ∂((κ†π) x) = (∫⁻ θ, g θ * p θ x ∂π) / ∫⁻ θ', p θ' x ∂π := sorry
+      ∫⁻ θ, g θ ∂((κ†π) x) = (∫⁻ θ, g θ * p θ x ∂π) / ∫⁻ θ', p θ' x ∂π := by
+  filter_upwards [posterior_eq_withDensity_likelihood_div_predictive (π := π) hp hκ] with x hx
+  rw [hx, lintegral_withDensity_eq_lintegral_mul _
+    (hp.of_uncurry_right.div measurable_const) hg]
+  have hpt : ∀ θ, ((fun θ => p θ x / ∫⁻ θ', p θ' x ∂π) * g) θ
+      = (g θ * p θ x) * (∫⁻ θ', p θ' x ∂π)⁻¹ := by
+    intro θ; simp only [Pi.mul_apply, div_eq_mul_inv]; ring
+  simp_rw [hpt]
+  rw [lintegral_mul_const'' _ (hg.mul hp.of_uncurry_right).aemeasurable, ← div_eq_mul_inv]
 
 /-- Set form of Robert eq. (1.2.3): `π(s | x) = ∫_s p(·,x) dπ / ∫ p(·,x) dπ` for predictive-a.e.
 `x`. -/
@@ -49,6 +57,13 @@ theorem posterior_apply_eq_div [StandardBorelSpace Θ] [Nonempty Θ]
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ))
     -- LEAN-ONLY: the target parameter set is measurable
     {s : Set Θ} (hs : MeasurableSet s) :
-    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x s = (∫⁻ θ in s, p θ x ∂π) / ∫⁻ θ', p θ' x ∂π := sorry
+    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x s = (∫⁻ θ in s, p θ x ∂π) / ∫⁻ θ', p θ' x ∂π := by
+  filter_upwards [posterior_lintegral_eq_div (π := π) hp hκ (g := s.indicator 1)
+    (measurable_const.indicator hs)] with x hx
+  rw [← lintegral_indicator_one hs, hx]
+  congr 1
+  rw [← lintegral_indicator hs]
+  refine lintegral_congr fun θ => ?_
+  by_cases hθ : θ ∈ s <;> simp [hθ]
 
 end StatLean.Bayesian
