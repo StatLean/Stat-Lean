@@ -1,0 +1,21 @@
+srun: job 28617492 queued and waiting for resources
+srun: job 28617492 has been allocated resources
+Done. All four targets build (exit 0) and the work is committed (`37c8e71`).
+
+## Per-file closure report
+
+| File | Gate | Status |
+|---|---|---|
+| **BinomialSumBound.lean** | `…ForMathlib.BinomialSumBound` | **0-sorry** — `sum_choose_le_exp_mul_pow` proved (fallback beaten) |
+| **SupRatApprox.lean** | `…ForMathlib.SupRatApprox` | **0-sorry** — `iSup_eq_iSup_rat_of_right_approx` + right-continuity bridge proved (fallback beaten) |
+| **SauerShelah.lean** | `…VC.SauerShelah` | **1 sorry** = `two_pow_le_growthFunction` (the docstring-designated fallback; nothing downstream consumes it). All 6 other theorems — bridge, Pajor, `card_traceFamily_le_sum_choose`, closed form, `growthFunction_le_sum_choose`, `exists_shatters_card_eq` — closed |
+| **DimensionReduction.lean** | `…VC.DimensionReduction` | **0-sorry** — both the Hoeffding-reuse pair lemma **and** the designated fallback `dimension_reduction` (union bound + numeric assembly to 0.99) fully closed (fallback beaten) |
+
+**Bundle total: 1 designated fallback sorry** (vs. the ≤4 allowed) — three of the four files, including two of the four designated fallbacks, closed outright.
+
+Key moves:
+- `(en/d)^d` via `r=d/n` per-term `pow_le_pow_of_le_one` + `add_pow` truncation + `Real.add_one_le_exp`, cancelling `r^d`.
+- Reconciled Mathlib's strict-implicit `Finset.Shatters ⦃t⦄` against our explicit-`T` `Shatters` in the trace bridge.
+- Pair concentration reuses the existing `hoeffding` on the **negated indicator** `g : Ω → ℝ` (proxy `(1/2)²` via `isSubGaussian_of_mem_Icc`), then `dimension_reduction` sums over `Finset.offDiag` with the exp-chain `≤ exp(-5) ≤ 1/100` (huge slack, using `log_hundred_le_five`).
+
+Recorded the outcome and gotchas in memory.
