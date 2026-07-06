@@ -155,7 +155,35 @@ theorem orliczNorm_const_mul {X : Ω → ℝ} {μ : Measure Ω} {c : ℝ}
     -- off as orliczNorm_const_mul_zero (needs ψ 0 ≤ 0)
     (hc : c ≠ 0) :
     orliczNorm ψ (fun ω => c * X ω) μ = (‖c‖₊ : ℝ≥0∞) * orliczNorm ψ X μ := by
-  sorry
+  set c₀ : ℝ≥0 := ‖c‖₊ with hc₀def
+  have hc₀0 : c₀ ≠ 0 := by rw [hc₀def, ne_eq, nnnorm_eq_zero]; exact hc
+  have hc₀pos : (0 : ℝ≥0) < c₀ := zero_lt_iff.mpr hc₀0
+  have habs : (c₀ : ℝ) = |c| := by rw [hc₀def]; simp [Real.norm_eq_abs]
+  have hcabs0 : |c| ≠ 0 := abs_ne_zero.mpr hc
+  -- pointwise integrand identity at scale `c₀ * K'`
+  have hInt : ∀ K' : ℝ≥0,
+      ∫⁻ ω, ENNReal.ofReal (ψ (|c * X ω| / ((c₀ * K' : ℝ≥0) : ℝ))) ∂μ
+        = ∫⁻ ω, ENNReal.ofReal (ψ (|X ω| / (K' : ℝ))) ∂μ := by
+    intro K'
+    refine lintegral_congr (fun ω => ?_)
+    have harg : |c * X ω| / ((c₀ * K' : ℝ≥0) : ℝ) = |X ω| / (K' : ℝ) := by
+      rw [abs_mul, NNReal.coe_mul, habs, mul_div_mul_left _ _ hcabs0]
+    rw [harg]
+  -- gauge set of `c·X` is the `c₀`-scaling of the gauge set of `X`
+  have hset : orliczSet ψ (fun ω => c * X ω) μ
+      = (fun K' : ℝ≥0 => c₀ * K') '' orliczSet ψ X μ := by
+    ext K
+    simp only [Set.mem_image, mem_orliczSet_iff]
+    constructor
+    · rintro ⟨hKpos, hKint⟩
+      refine ⟨K / c₀, ⟨div_pos hKpos hc₀pos, ?_⟩, mul_div_cancel₀ K hc₀0⟩
+      have hcancel : c₀ * (K / c₀) = K := mul_div_cancel₀ K hc₀0
+      rw [← hInt (K / c₀), hcancel]; exact hKint
+    · rintro ⟨K', ⟨hK'pos, hK'int⟩, rfl⟩
+      exact ⟨mul_pos hc₀pos hK'pos, by rw [hInt K']; exact hK'int⟩
+  have hane : (c₀ : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.mpr hc₀0
+  simp only [orliczNorm, hset, iInf_image, ENNReal.coe_mul,
+    ENNReal.mul_iInf_of_ne hane ENNReal.coe_ne_top]
 
 /-- The `c = 0` edge of homogeneity, via `orliczNorm_zero`. -/
 theorem orliczNorm_const_mul_zero
