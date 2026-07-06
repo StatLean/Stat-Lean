@@ -131,7 +131,8 @@ lemma integrable_sup'_finset {ι : Type*} {s : Finset ι}
       exact hint a (by simp)
   | cons a t ha ht ih =>
       intro hint
-      simp only [Finset.sup'_cons]
+      -- `sup'_cons` needs the tail's nonemptiness `ht` supplied (RHS-only arg).
+      simp only [Finset.sup'_cons ht]
       exact (hint a (by simp)).sup (ih (fun i hi => hint i (by simp [hi])))
 
 set_option maxHeartbeats 1000000 in
