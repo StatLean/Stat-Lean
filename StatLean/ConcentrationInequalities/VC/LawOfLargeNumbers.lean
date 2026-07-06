@@ -201,6 +201,30 @@ lemma subGaussianIncrements_inner_signVec {n : ℕ}
   rw [sq_abs]
   ring
 
+/-- A single value is dominated by a finite `⨆ t ∈ T` (honest conditional
+`le_ciSup`, avoiding the FROZEN-FALSE `biSup_finset_eq_sup'`): the range of
+`fun t => ⨆ (_ : t ∈ T), g t` is bounded above (junk `sSup ∅ = 0` off `T`),
+so `le_ciSup_of_le` applies. -/
+private lemma le_biSup_mem {E : Type*} {T : Set E} (hfin : T.Finite)
+    (g : E → ℝ) {v : E} (hv : v ∈ T) : g v ≤ ⨆ t ∈ T, g t := by
+  classical
+  have hbdd : BddAbove (Set.range (fun t => ⨆ (_ : t ∈ T), g t)) := by
+    obtain ⟨M, hM⟩ := (hfin.image g).bddAbove
+    refine ⟨max M 0, ?_⟩
+    rintro y ⟨t, rfl⟩
+    change (⨆ (_ : t ∈ T), g t) ≤ max M 0
+    by_cases ht : t ∈ T
+    · rw [ciSup_pos ht]
+      exact le_trans (hM (Set.mem_image_of_mem g ht)) (le_max_left _ _)
+    · haveI : IsEmpty (t ∈ T) := ⟨ht⟩
+      rw [Real.iSup_of_isEmpty]
+      exact le_max_right _ _
+  exact le_ciSup_of_le hbdd v (le_of_eq (ciSup_pos (f := fun _ : v ∈ T => g v) hv).symm)
+
+-- The conditional Dudley glue assembles the whole §8.3.6 pipeline (covering
+-- construction, entropy integral, sub-Gaussian bridge) in one term, whose
+-- `Finset.sup'`/`⨆` defeq checks over `EuclideanSpace` need a raised limit.
+set_option maxHeartbeats 1600000 in
 /-- **Conditional Rademacher complexity bound** (HDP §8.3.6, Theorem 8.3.15
 conditional step): for a fixed sample `x`, the expected Rademacher supremum
 over a finite class of VC dimension `≤ d` is at most `2700·√d/√n`.
@@ -224,7 +248,230 @@ lemma rademacher_process_expectation_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
         |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|)
       ∂(signVec n)
       ≤ 2700 * Real.sqrt d / Real.sqrt n := by
-  sorry
+  classical
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne n)
+  -- The Rademacher linear process and the symmetrized empirical projection.
+  set Z : EuclideanSpace ℝ (Fin n) → (Fin n → ℝ) → ℝ :=
+    fun v e => ∑ i, e i * v i with hZ
+  set s : ℝ := Real.sqrt (n : ℝ) with hs
+  have hs0 : 0 < s := by rw [hs]; exact Real.sqrt_pos.mpr hn0
+  have hsn : s⁻¹ * s⁻¹ = (n : ℝ)⁻¹ := by
+    rw [← mul_inv, hs, Real.mul_self_sqrt hn0.le]
+  set T : Set (EuclideanSpace ℝ (Fin n)) := empProj x '' (↑F : Set (Set Ω)) ∪ {0} with hT
+  have hTfin : T.Finite :=
+    (F.finite_toSet.image (empProj x)).union (Set.finite_singleton _)
+  have h0T : (0 : EuclideanSpace ℝ (Fin n)) ∈ T := Or.inr rfl
+  have hTne : T.Nonempty := ⟨0, h0T⟩
+  -- Every point of `T` has norm `≤ 1`, so `diam T ≤ 2`.
+  have h_empzero : empProj x (∅ : Set Ω) = 0 := by
+    ext i; rw [empProj_apply]; simp
+  have hnorm1 : ∀ v ∈ T, dist v (0 : EuclideanSpace ℝ (Fin n)) ≤ 1 := by
+    intro v hv
+    rw [hT] at hv
+    rcases hv with hv | hv
+    · obtain ⟨S, _hS, rfl⟩ := hv
+      have hsq : dist (empProj x S) (0 : EuclideanSpace ℝ (Fin n)) ^ 2 = empFrac x S := by
+        rw [← h_empzero, dist_empProj_sq]; congr 1; simp
+      nlinarith [empFrac_le_one x S, empFrac_nonneg x S,
+        dist_nonneg (x := empProj x S) (y := (0 : EuclideanSpace ℝ (Fin n)))]
+    · rw [Set.mem_singleton_iff] at hv; subst hv; simp
+  have hdiam2 : Metric.diam T ≤ 2 := by
+    refine Metric.diam_le_of_forall_dist_le (by norm_num) (fun p hp q hq => ?_)
+    calc dist p q ≤ dist p 0 + dist 0 q := dist_triangle p 0 q
+      _ = dist p 0 + dist q 0 := by rw [dist_comm 0 q]
+      _ ≤ 1 + 1 := add_le_add (hnorm1 p hp) (hnorm1 q hq)
+      _ = 2 := by norm_num
+  -- Sub-Gaussian increments, measurability of the process.
+  have hinc : SubGaussianIncrements Z (NNReal.sqrt 6) T (signVec n) := by
+    rw [hZ]; exact subGaussianIncrements_inner_signVec T
+  have hmeas : ∀ t ∈ T, AEMeasurable (Z t) (signVec n) := by
+    intro t _
+    simp only [hZ]
+    exact (Finset.measurable_sum _ (fun i _ => (measurable_pi_apply i).mul_const _)).aemeasurable
+  have hK6 : ((NNReal.sqrt 6 : ℝ≥0) : ℝ) = Real.sqrt 6 := by rw [Real.coe_sqrt]; norm_num
+  -- Dudley's inequality on the projected class.
+  have hdud : (∫ e, ⨆ t ∈ T, |Z t e - Z 0 e| ∂(signVec n))
+      ≤ 40 * Real.sqrt 6 * dudleyIntegral T 2 := by
+    have h := dudley_inequality_abs hTfin hTne hmeas hinc h0T hdiam2 (by norm_num)
+    rwa [hK6] at h
+  -- The entropy integral is `≤ 27√d` (sample-independent covering bound).
+  have hint27 : dudleyIntegral T 2 ≤ 27 * Real.sqrt d := by
+    have hcov_bound : ∀ ε ∈ Set.Ioc (0 : ℝ) 2,
+        sqrtLogCov T ε ≤ Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)) := by
+      intro ε hε
+      obtain ⟨hε0, hε2⟩ := hε
+      have h4e : (1 : ℝ) ≤ 4 / ε := by rw [le_div_iff₀ hε0]; linarith
+      have hb1 : (1 : ℝ) ≤ (4 / ε) ^ (22 * d) := one_le_pow₀ h4e
+      have htop : coveringNumber T ε ≠ ⊤ :=
+        ne_top_of_le_ne_top hTfin.encard_lt_top.ne (Metric.coveringNumber_le_encard_self T)
+      have hcount : ((coveringNumber T ε).toNat : ℝ) ≤ (4 / ε) ^ (22 * d) := by
+        rcases lt_or_ge ε 1 with hε1lt | hεge1
+        · -- `ε < 1`: image net (Theorem 8.3.13) plus the anchor `0`.
+          have htop_img : coveringNumber (empProj x '' (↑F : Set (Set Ω))) ε ≠ ⊤ :=
+            ne_top_of_le_ne_top (F.finite_toSet.image (empProj x)).encard_lt_top.ne
+              (Metric.coveringNumber_le_encard_self _)
+          obtain ⟨Cc, hCsub, _hCfin, hCcov, hCenc⟩ :=
+            Metric.exists_set_encard_eq_coveringNumber htop_img
+          have hcover_union : Metric.IsCover (Real.toNNReal ε) T (Cc ∪ {0}) := by
+            rw [hT]
+            exact SetRel.IsCover.union hCcov
+              ((isEpsilonNet_self ({0} : Set (EuclideanSpace ℝ (Fin n))) hε0.le).isCover hε0.le)
+          have hsubU : Cc ∪ {0} ⊆ T := by
+            rw [hT]; exact Set.union_subset_union hCsub subset_rfl
+          have hle1 : coveringNumber T ε ≤ (Cc ∪ {0}).encard :=
+            hcover_union.coveringNumber_le_encard hsubU
+          have hle2 : (Cc ∪ {0}).encard ≤ (⌊(2 / ε) ^ (21 * d)⌋₊ : ℕ∞) + 1 := by
+            calc (Cc ∪ {0}).encard
+                ≤ Cc.encard + ({0} : Set (EuclideanSpace ℝ (Fin n))).encard :=
+                  Set.encard_union_le _ _
+              _ = Cc.encard + 1 := by rw [Set.encard_singleton]
+              _ ≤ (⌊(2 / ε) ^ (21 * d)⌋₊ : ℕ∞) + 1 := by
+                  gcongr
+                  rw [hCenc]
+                  exact coveringNumber_empProj_le x hFmeas hd hd1 hε0 hε1lt
+          have hcovU : coveringNumber T ε ≤ (⌊(2 / ε) ^ (21 * d)⌋₊ : ℕ∞) + 1 :=
+            le_trans hle1 hle2
+          have hcovU' : coveringNumber T ε ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℕ∞) := by
+            rw [Nat.cast_add, Nat.cast_one]; exact hcovU
+          have htoNat : (coveringNumber T ε).toNat ≤ ⌊(2 / ε) ^ (21 * d)⌋₊ + 1 := by
+            have h := ENat.toNat_le_toNat hcovU' (ENat.coe_ne_top _)
+            rwa [ENat.toNat_coe] at h
+          have hreal : ((coveringNumber T ε).toNat : ℝ) ≤ (2 / ε) ^ (21 * d) + 1 := by
+            calc ((coveringNumber T ε).toNat : ℝ)
+                ≤ ((⌊(2 / ε) ^ (21 * d)⌋₊ + 1 : ℕ) : ℝ) := by exact_mod_cast htoNat
+              _ = (⌊(2 / ε) ^ (21 * d)⌋₊ : ℝ) + 1 := by push_cast; ring
+              _ ≤ (2 / ε) ^ (21 * d) + 1 := by
+                  have := Nat.floor_le (by positivity : (0 : ℝ) ≤ (2 / ε) ^ (21 * d))
+                  linarith
+          refine le_trans hreal ?_
+          -- `(2/ε)^{21d} + 1 ≤ (4/ε)^{22d}`.
+          have hbase2 : (2 : ℝ) ≤ 2 / ε := by rw [le_div_iff₀ hε0]; nlinarith [hε1lt]
+          have hone_le : (1 : ℝ) ≤ 2 / ε := le_trans one_le_two hbase2
+          have hA1 : (1 : ℝ) ≤ (2 / ε) ^ (21 * d) := one_le_pow₀ hone_le
+          have hd1' : 1 ≤ 21 * d := by omega
+          have h4eq : (4 : ℝ) / ε = 2 * (2 / ε) := by field_simp; ring
+          have step1 : (2 * (2 / ε)) ^ (21 * d) ≤ (2 * (2 / ε)) ^ (22 * d) := by
+            apply pow_le_pow_right₀ (by nlinarith [hbase2]) (by omega)
+          have step3 : (2 : ℝ) ≤ 2 ^ (21 * d) := by
+            calc (2 : ℝ) = 2 ^ 1 := (pow_one 2).symm
+              _ ≤ 2 ^ (21 * d) := pow_le_pow_right₀ one_le_two hd1'
+          have step4 : (2 : ℝ) * (2 / ε) ^ (21 * d) ≤ 2 ^ (21 * d) * (2 / ε) ^ (21 * d) :=
+            mul_le_mul_of_nonneg_right step3 (by positivity)
+          calc (2 / ε) ^ (21 * d) + 1
+              ≤ (2 / ε) ^ (21 * d) + (2 / ε) ^ (21 * d) := by linarith [hA1]
+            _ = 2 * (2 / ε) ^ (21 * d) := by ring
+            _ ≤ 2 ^ (21 * d) * (2 / ε) ^ (21 * d) := step4
+            _ = (2 * (2 / ε)) ^ (21 * d) := (mul_pow 2 (2 / ε) (21 * d)).symm
+            _ ≤ (2 * (2 / ε)) ^ (22 * d) := step1
+            _ = (4 / ε) ^ (22 * d) := by rw [← h4eq]
+        · -- `ε ≥ 1`: the single ball centred at `0` covers `T`.
+          have hnet : IsEpsilonNet ({0} : Set (EuclideanSpace ℝ (Fin n))) T ε := by
+            refine ⟨fun y hy => ?_, fun v hv => ⟨0, rfl, ?_⟩⟩
+            · rw [Set.mem_singleton_iff] at hy; subst hy; exact h0T
+            · exact le_trans (hnorm1 v hv) hεge1
+          have hcov1 : coveringNumber T ε ≤ 1 := by
+            have hc := (hnet.isCover hε0.le).coveringNumber_le_encard
+              (by intro y hy; rw [Set.mem_singleton_iff] at hy; subst hy; exact h0T)
+            rwa [Set.encard_singleton] at hc
+          calc ((coveringNumber T ε).toNat : ℝ)
+              ≤ ((1 : ℕ∞).toNat : ℝ) := by exact_mod_cast ENat.toNat_le_toNat hcov1 (by simp)
+            _ = 1 := by simp
+            _ ≤ (4 / ε) ^ (22 * d) := hb1
+      have hle := sqrtLogCov_le_sqrt_log_of_le hTne htop hcount hb1
+      have hlogpow : Real.log ((4 / ε) ^ (22 * d)) = 22 * (d : ℝ) * Real.log (4 / ε) := by
+        rw [Real.log_pow]; push_cast; ring
+      rwa [hlogpow] at hle
+    have hRHSint : MeasureTheory.IntegrableOn
+        (fun ε => Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε))) (Set.Ioc (0 : ℝ) 2)
+        MeasureTheory.volume :=
+      (intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)).mp
+        (intervalIntegrable_sqrt_log_mul (by positivity : (0 : ℝ) ≤ 22 * (d : ℝ)))
+    calc dudleyIntegral T 2
+        = ∫ ε in Set.Ioc (0 : ℝ) 2, sqrtLogCov T ε := rfl
+      _ ≤ ∫ ε in Set.Ioc (0 : ℝ) 2, Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)) :=
+          setIntegral_mono_on (integrableOn_sqrtLogCov_Ioc hTfin) hRHSint measurableSet_Ioc
+            hcov_bound
+      _ = ∫ ε in (0 : ℝ)..2, Real.sqrt (22 * (d : ℝ) * Real.log (4 / ε)) :=
+          (intervalIntegral.integral_of_le (by norm_num)).symm
+      _ ≤ 27 * Real.sqrt d := entropyIntegral_le hd1
+  -- The LHS integrand is dominated by `s⁻¹` times the Dudley integrand.
+  set fI : (Fin n → ℝ) → ℝ := fun e => F.sup' hFne (fun S =>
+      |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|) with hfI
+  have hpt : ∀ e, fI e ≤ s⁻¹ * ⨆ t ∈ T, |Z t e - Z 0 e| := by
+    intro e
+    rw [hfI]
+    refine Finset.sup'_le hFne _ (fun S hS => ?_)
+    have hZ0 : Z (0 : EuclideanSpace ℝ (Fin n)) e = 0 := by simp only [hZ]; simp
+    have hZeq : Z (empProj x S) e
+        = s⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i) := by
+      simp only [hZ]
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [empProj_apply, ← hs]; ring
+    have hvT : empProj x S ∈ T := by
+      rw [hT]; exact Or.inl (Set.mem_image_of_mem _ (Finset.mem_coe.mpr hS))
+    have hbnd : |Z (empProj x S) e - Z 0 e| ≤ ⨆ t ∈ T, |Z t e - Z 0 e| :=
+      le_biSup_mem hTfin (fun t => |Z t e - Z 0 e|) hvT
+    calc |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|
+        = (n : ℝ)⁻¹ * |∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)| := by
+          rw [abs_mul, abs_of_nonneg (inv_nonneg.mpr hn0.le)]
+      _ = s⁻¹ * |Z (empProj x S) e| := by
+          rw [hZeq, abs_mul, abs_of_nonneg (inv_nonneg.mpr hs0.le), ← mul_assoc, hsn]
+      _ = s⁻¹ * |Z (empProj x S) e - Z 0 e| := by rw [hZ0, sub_zero]
+      _ ≤ s⁻¹ * ⨆ t ∈ T, |Z t e - Z 0 e| :=
+          mul_le_mul_of_nonneg_left hbnd (inv_nonneg.mpr hs0.le)
+  have hg_bisup_int : Integrable (fun e => ⨆ t ∈ T, |Z t e - Z 0 e|) (signVec n) :=
+    integrable_biSup_sub hTfin hTne hmeas hinc h0T
+  have hsg_int : Integrable (fun e => s⁻¹ * ⨆ t ∈ T, |Z t e - Z 0 e|) (signVec n) :=
+    hg_bisup_int.const_mul s⁻¹
+  have hf_nonneg : ∀ e, 0 ≤ fI e := by
+    intro e
+    obtain ⟨S, hS⟩ := id hFne
+    have h0 : (0 : ℝ) ≤ F.sup' hFne (fun S =>
+        |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|) :=
+      le_trans (abs_nonneg _) (Finset.le_sup' (fun S =>
+        |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|) hS)
+    exact h0
+  have hf_meas : Measurable fI := by
+    have hgeq : fI = F.sup' hFne (fun S => fun e : Fin n → ℝ =>
+        |(n : ℝ)⁻¹ * ∑ i : Fin n, e i * S.indicator (fun _ => (1 : ℝ)) (x i)|) := by
+      rw [hfI]; funext e; rw [Finset.sup'_apply]
+    rw [hgeq]
+    refine Finset.measurable_sup' hFne fun S hS => ?_
+    refine Measurable.abs (Measurable.const_mul ?_ _)
+    exact Finset.measurable_sum _ fun i _ => (measurable_pi_apply i).mul_const _
+  have hf_int : Integrable fI (signVec n) := by
+    refine Integrable.mono' hsg_int hf_meas.aestronglyMeasurable (ae_of_all _ (fun e => ?_))
+    rw [Real.norm_eq_abs, abs_of_nonneg (hf_nonneg e)]
+    exact hpt e
+  -- Assemble the numeral: `40·√6·27 = 1080·√6 ≤ 2700`.
+  have hsqrt6 : Real.sqrt 6 ≤ 5 / 2 := by
+    have h : (5 / 2 : ℝ) = Real.sqrt ((5 / 2) ^ 2) := by
+      rw [Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 5 / 2)]
+    rw [h]; exact Real.sqrt_le_sqrt (by norm_num)
+  have hnumeral : 40 * Real.sqrt 6 * (27 * Real.sqrt d) ≤ 2700 * Real.sqrt d := by
+    have hrw : 40 * Real.sqrt 6 * (27 * Real.sqrt d) = 1080 * Real.sqrt 6 * Real.sqrt d := by ring
+    rw [hrw]
+    calc 1080 * Real.sqrt 6 * Real.sqrt d
+        ≤ 1080 * (5 / 2) * Real.sqrt d := by
+          apply mul_le_mul_of_nonneg_right _ (Real.sqrt_nonneg d)
+          exact mul_le_mul_of_nonneg_left hsqrt6 (by norm_num)
+      _ = 2700 * Real.sqrt d := by ring
+  have hfinal : s⁻¹ * (40 * Real.sqrt 6 * (27 * Real.sqrt d)) ≤ 2700 * Real.sqrt d / s := by
+    calc s⁻¹ * (40 * Real.sqrt 6 * (27 * Real.sqrt d))
+        ≤ s⁻¹ * (2700 * Real.sqrt d) :=
+          mul_le_mul_of_nonneg_left hnumeral (inv_nonneg.mpr hs0.le)
+      _ = 2700 * Real.sqrt d / s := by rw [div_eq_mul_inv]; ring
+  calc ∫ e, fI e ∂(signVec n)
+      ≤ ∫ e, s⁻¹ * ⨆ t ∈ T, |Z t e - Z 0 e| ∂(signVec n) :=
+        integral_mono hf_int hsg_int hpt
+    _ = s⁻¹ * ∫ e, ⨆ t ∈ T, |Z t e - Z 0 e| ∂(signVec n) := integral_const_mul _ _
+    _ ≤ s⁻¹ * (40 * Real.sqrt 6 * dudleyIntegral T 2) :=
+        mul_le_mul_of_nonneg_left hdud (inv_nonneg.mpr hs0.le)
+    _ ≤ s⁻¹ * (40 * Real.sqrt 6 * (27 * Real.sqrt d)) := by
+        apply mul_le_mul_of_nonneg_left _ (inv_nonneg.mpr hs0.le)
+        exact mul_le_mul_of_nonneg_left hint27 (by positivity)
+    _ ≤ 2700 * Real.sqrt d / s := hfinal
 
 /-- **Symmetrization adapter** (HDP §8.3.6 via Exercise 8.11): the expected
 uniform deviation is at most twice the expected Rademacher supremum, jointly
