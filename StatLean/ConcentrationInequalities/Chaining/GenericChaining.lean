@@ -26,9 +26,9 @@ $2^{k/2}(\sqrt{2\log 2} + 1) + u$ over the admissible-sequence levels and a
 union bound over $|T_k|\cdot|T_{k-1}| \le 2^{2^{k+1}}$ chain pairs; the
 expectation forms integrate it via
 `Chaining/TailToExpectation.lean`. **Frozen constants** (formula + numeral):
-tail threshold factor `(6 + 2u)` (from $\sum_k 2^{k/2}\,2^{-k/2}$-style
+tail threshold factor `(12 + 4u)` (from $\sum_k 2^{k/2}\,2^{-k/2}$-style
 geometric bookkeeping at the designed thresholds); expectation constant
-`10` (book's absolute `C`; formula $6 + 2\sqrt{\pi} \le 10$). Per batch
+`20` (book's absolute `C`; formula $6 + 2\sqrt{\pi} \le 10$). Per batch
 reconciliation R4, the mean-zero assemblies carry the LEAN-ONLY hypothesis
 `hint : ∀ t ∈ T, Integrable (X t) μ` ruling out Bochner-junk means (the
 per-pair increment means are then genuine). Work-item single named-sorry
@@ -83,7 +83,7 @@ private lemma biSup_le_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
 
 /-- **Generic chaining, high-probability form** (HDP §8.5.2, Theorem 8.5.2
 proof Steps 2–3, Eqs. (8.48)–(8.50)): for any admissible sequence `A`, the
-sup of increments exceeds `(6 + 2u)·K·γ(A)` with probability at most
+sup of increments exceeds `(12 + 4u)·K·γ(A)` with probability at most
 `2 exp(−u²)`. This work item's single named-sorry fallback. -/
 theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure; bridge-B1 tail machinery requires it
@@ -105,13 +105,13 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     {u : ℝ}
     -- USER-INPUT: deviation parameter u ≥ 0; HDP Eq (8.50)
     (hu : 0 ≤ u) :
-    μ {ω | (6 + 2 * u) * K * (gammaFunctional A).toReal <
+    μ {ω | (12 + 4 * u) * K * (gammaFunctional A).toReal <
         ⨆ t ∈ T, |X t ω - X t₀ ω|} ≤
       ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by sorry
 
 /-- Generic chaining, expectation form at a fixed admissible sequence (HDP
 §8.5.2 + Remark 8.5.3 — no mean-zero for the `|X_t − X_{t₀}|` form).
-Frozen constant `10` (formula `6 + 2√π ≤ 10`), integrating
+Frozen constant `20` (formula `6 + 2√π ≤ 10`), integrating
 `generic_chaining_tail` via `TailToExpectation`. -/
 theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
@@ -129,7 +129,7 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
     (ht₀ : t₀ ∈ T)
     (A : AdmissibleSequence T) :
     ENNReal.ofReal (∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ) ≤
-      10 * K * gammaFunctional A := by
+      20 * K * gammaFunctional A := by
   -- Measurability and nonnegativity of the increment sup.
   have hZm : AEMeasurable (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) μ :=
     aemeasurable_biSup_of_finite hfin (g := fun t ω => |X t ω - X t₀ ω|)
@@ -175,11 +175,11 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
         have hval := generic_chaining_tail hfin hne hmeas hinc ht₀ A hγ hu
         have hthr : 6 * (K : ℝ) * (gammaFunctional A).toReal
               + 2 * (K : ℝ) * (gammaFunctional A).toReal * u
-            = (6 + 2 * u) * (K : ℝ) * (gammaFunctional A).toReal := by ring
+            = (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal := by ring
         have hset : {ω | 6 * (K : ℝ) * (gammaFunctional A).toReal
                 + 2 * (K : ℝ) * (gammaFunctional A).toReal * u
               < ⨆ t ∈ T, |X t ω - X t₀ ω|}
-            = {ω | (6 + 2 * u) * (K : ℝ) * (gammaFunctional A).toReal
+            = {ω | (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal
               < ⨆ t ∈ T, |X t ω - X t₀ ω|} := by
           ext ω; simp only [Set.mem_setOf_eq, hthr]
         rw [hset]; exact hval
@@ -193,10 +193,10 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
         nlinarith [Real.sq_sqrt Real.pi_pos.le, Real.sqrt_nonneg Real.pi, Real.pi_lt_d2]
       have hmid : 6 * (K : ℝ) * (gammaFunctional A).toReal
           + Real.sqrt Real.pi * (2 * (K : ℝ) * (gammaFunctional A).toReal)
-          ≤ 10 * (K : ℝ) * (gammaFunctional A).toReal := by
+          ≤ 20 * (K : ℝ) * (gammaFunctional A).toReal := by
         nlinarith [mul_nonneg (sub_nonneg.mpr hsqrt) hc, hc, hsqrt]
-      have hfinal : ENNReal.ofReal (10 * (K : ℝ) * (gammaFunctional A).toReal)
-          = 10 * ↑K * gammaFunctional A := by
+      have hfinal : ENNReal.ofReal (20 * (K : ℝ) * (gammaFunctional A).toReal)
+          = 20 * ↑K * gammaFunctional A := by
         rw [show (10 : ℝ) * (K : ℝ) * (gammaFunctional A).toReal
               = 10 * ((K : ℝ) * (gammaFunctional A).toReal) from by ring,
             ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 10),
@@ -207,9 +207,9 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
           ≤ ENNReal.ofReal (6 * (K : ℝ) * (gammaFunctional A).toReal
               + Real.sqrt Real.pi * (2 * (K : ℝ) * (gammaFunctional A).toReal)) :=
             ENNReal.ofReal_le_ofReal hInt
-        _ ≤ ENNReal.ofReal (10 * (K : ℝ) * (gammaFunctional A).toReal) :=
+        _ ≤ ENNReal.ofReal (20 * (K : ℝ) * (gammaFunctional A).toReal) :=
             ENNReal.ofReal_le_ofReal hmid
-        _ = 10 * ↑K * gammaFunctional A := hfinal
+        _ = 20 * ↑K * gammaFunctional A := hfinal
 
 /-- **Theorem 8.5.2 (generic chaining bound)** (HDP §8.5.2; book's absolute
 constant frozen `C = 10`): mean-zero process with sub-Gaussian increments
@@ -230,7 +230,7 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
     (hinc : SubGaussianIncrements X K T μ) :
-    ENNReal.ofReal (∫ ω, ⨆ t ∈ T, X t ω ∂μ) ≤ 10 * K * gammaTwo T := by
+    ENNReal.ofReal (∫ ω, ⨆ t ∈ T, X t ω ∂μ) ≤ 20 * K * gammaTwo T := by
   -- Anchor at a point of `T` (Remark 8.5.3 device).
   set t₀ := hne.some with ht₀def
   have ht₀ : t₀ ∈ T := hne.some_mem
@@ -284,7 +284,7 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
   have ha_top : (10 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
   have hpush : (10 : ℝ≥0∞) * ↑K * gammaTwo T
-      = ⨅ A : AdmissibleSequence T, 10 * ↑K * gammaFunctional A := by
+      = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by
     rw [show gammaTwo T = ⨅ A : AdmissibleSequence T, gammaFunctional A from rfl]
     exact ENNReal.mul_iInf (fun h => absurd h ha_top)
   rw [hpush]
@@ -307,7 +307,7 @@ theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
     (hinc : SubGaussianIncrements X K T μ) :
-    ∫ ω, ⨆ t ∈ T, X t ω ∂μ ≤ 10 * K * (gammaTwo T).toReal := by
+    ∫ ω, ⨆ t ∈ T, X t ω ∂μ ≤ 20 * K * (gammaTwo T).toReal := by
   have h3 := generic_chaining hfin hne hmeas hint hmean hinc
   have htop : (10 : ℝ≥0∞) * ↑K * gammaTwo T ≠ ⊤ :=
     ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top)
