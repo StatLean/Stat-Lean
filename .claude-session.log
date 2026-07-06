@@ -1,0 +1,4 @@
+srun: job 28618596 queued and waiting for resources
+srun: job 28618596 has been allocated resources
+Background tasks still running after 600s; terminating. Set CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 to wait indefinitely.
+Memory recorded. Three of four files are done (LipschitzNet 0-sorry, LipschitzCovering 0-sorry, SubGaussianIncrements 1 frozen-false sorry). Waiting for LipschitzDense (R1/R2/R3 reductions) to finish, then final build + commit.
