@@ -188,7 +188,78 @@ lemma AdmissibleSequence.exists_eventually_dist_zero {T : Set E}
     -- LEAN-ONLY: finite functional (otherwise the series carries no
     -- information); HDP §8.5.2 Step 1
     (hA : gammaFunctional A ≠ ⊤) :
-    ∃ k₀ : ℕ, ∀ k ≥ k₀, ∀ t ∈ T, ∃ a ∈ A.seq k, dist t a = 0 := by sorry
+    ∃ k₀ : ℕ, ∀ k ≥ k₀, ∀ t ∈ T, ∃ a ∈ A.seq k, dist t a = 0 := by
+  classical
+  set G : ℝ := (gammaFunctional A).toReal with hG
+  -- Per-term bound: `√2^k · d(t, T_k) ≤ γ₂(A)` (from `le_tsum` + `le_iSup₂`).
+  have hterm : ∀ t ∈ T, ∀ k,
+      Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k) ≤ G := by
+    intro t ht k
+    have hle : ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))
+        ≤ gammaFunctional A := by
+      refine le_trans (ENNReal.le_tsum (f := fun k =>
+        ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) k) ?_
+      exact le_iSup₂ (f := fun t (_ : t ∈ T) =>
+        ∑' k, ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) t ht
+    have := ENNReal.toReal_mono hA hle
+    rwa [ENNReal.toReal_ofReal
+      (mul_nonneg (pow_nonneg (Real.sqrt_nonneg 2) k) Metric.infDist_nonneg)] at this
+  -- Positive-distance floor: `1` together with the finite set of positive
+  -- pairwise distances in `T` (using `insert 1` to stay nonempty unconditionally).
+  obtain ⟨δ, hδpos, hfloor⟩ :
+      ∃ δ : ℝ, 0 < δ ∧ ∀ s ∈ T, ∀ s' ∈ T, dist s s' ≠ 0 → δ ≤ dist s s' := by
+    set Pos : Finset ℝ :=
+      ((hfin.toFinset ×ˢ hfin.toFinset).image (fun p => dist p.1 p.2)).filter (fun d => 0 < d)
+      with hPos
+    -- membership witness for a positive distance
+    have hmem_of : ∀ s ∈ T, ∀ s' ∈ T, dist s s' ≠ 0 → dist s s' ∈ Pos := by
+      intro s hs s' hs' hne0
+      have hpos : 0 < dist s s' := lt_of_le_of_ne dist_nonneg (Ne.symm hne0)
+      rw [hPos, Finset.mem_filter]
+      refine ⟨?_, hpos⟩
+      rw [Finset.mem_image]
+      refine ⟨(s, s'), ?_, rfl⟩
+      rw [Finset.mem_product]
+      exact ⟨hfin.mem_toFinset.mpr hs, hfin.mem_toFinset.mpr hs'⟩
+    by_cases hPne : Pos.Nonempty
+    · refine ⟨Pos.min' hPne, ?_, ?_⟩
+      · have hmin := Finset.min'_mem Pos hPne
+        exact (Finset.mem_filter.mp hmin).2
+      · intro s hs s' hs' hne0
+        exact Finset.min'_le Pos (dist s s') (hmem_of s hs s' hs' hne0)
+    · refine ⟨1, one_pos, ?_⟩
+      intro s hs s' hs' hne0
+      exact absurd ⟨dist s s', hmem_of s hs s' hs' hne0⟩ hPne
+  -- `√2^k → ∞`, so eventually `G/δ < √2^k`.
+  have h1 : (1 : ℝ) < Real.sqrt 2 := by
+    have : Real.sqrt 1 < Real.sqrt 2 := Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
+    simpa using this
+  have htend : Filter.Tendsto (fun k : ℕ => Real.sqrt 2 ^ k) Filter.atTop Filter.atTop :=
+    tendsto_pow_atTop_atTop_of_one_lt h1
+  obtain ⟨k₀, hk₀⟩ := Filter.eventually_atTop.mp (htend.eventually_gt_atTop (G / δ))
+  refine ⟨k₀, fun k hk_ge t ht => ?_⟩
+  -- infDist is attained on the finite (hence compact) net.
+  have hcpt : IsCompact (↑(A.seq k) : Set E) := (A.seq k).finite_toSet.isCompact
+  have hne : (↑(A.seq k) : Set E).Nonempty := Finset.coe_nonempty.mpr (A.nonempty k)
+  obtain ⟨a, ha_mem, ha_eq⟩ := hcpt.exists_infDist_eq_dist hne t
+  have haT : a ∈ T := A.subset_carrier k ha_mem
+  have hsqrt_pos : (0 : ℝ) < Real.sqrt 2 ^ k := pow_pos (by linarith) k
+  -- `d(t, T_k) ≤ G / √2^k < δ`.
+  have hb := hterm t ht k
+  rw [mul_comm] at hb
+  have hinf_le : Metric.infDist t ↑(A.seq k) ≤ G / Real.sqrt 2 ^ k :=
+    (le_div_iff₀ hsqrt_pos).mpr hb
+  have hGd : G / Real.sqrt 2 ^ k < δ := by
+    have hk := hk₀ k hk_ge
+    rw [div_lt_iff₀ hδpos] at hk
+    rw [div_lt_iff₀ hsqrt_pos]; linarith
+  have hinf_lt : Metric.infDist t ↑(A.seq k) < δ := lt_of_le_of_lt hinf_le hGd
+  -- So `d(t, a) < δ`; the floor forces `d(t, a) = 0`.
+  have hdt : dist t a < δ := by rw [← ha_eq]; exact hinf_lt
+  have hzero : dist t a = 0 := by
+    by_contra hcon
+    exact absurd hdt (not_lt.mpr (hfloor t ht a haT hcon))
+  exact ⟨a, Finset.mem_coe.mp ha_mem, hzero⟩
 
 /-- The `k = 0` term of the γ₂ series (HDP §8.5.2): the distance to the root
 singleton is dominated by the functional. -/
