@@ -68,13 +68,29 @@ theorem subGaussianNorm_inner_le_vecNorm {n : ℕ}
     -- USER-INPUT: unit direction; HDP Def 3.4.1 (the sup runs over S^{n−1})
     (hv : ‖v‖ = 1) :
     subGaussianNorm (fun ω => ⟪X ω, v⟫) μ ≤ subGaussianVecNorm X μ := by
-  sorry
+  have hmem : v ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 :=
+    Metric.mem_sphere.mpr (by rw [dist_zero_right]; exact hv)
+  exact le_iSup₂ (f := fun w (_ : w ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1) =>
+    subGaussianNorm (fun ω => ⟪X ω, w⟫) μ) v hmem
 
 /-- Coordinate marginals are bounded by the vector norm (HDP Lemma 3.4.2,
 lower bound, constant `1`; direction `EuclideanSpace.single i 1`). -/
 theorem subGaussianNorm_coord_le_vecNorm {n : ℕ}
     {X : Ω → EuclideanSpace ℝ (Fin n)} {μ : Measure Ω} (i : Fin n) :
-    subGaussianNorm (fun ω => X ω i) μ ≤ subGaussianVecNorm X μ := by sorry
+    subGaussianNorm (fun ω => X ω i) μ ≤ subGaussianVecNorm X μ := by
+  have hv : ‖(EuclideanSpace.single i (1 : ℝ))‖ = 1 := by simp
+  have h := subGaussianNorm_inner_le_vecNorm (X := X) (μ := μ)
+    (v := EuclideanSpace.single i (1 : ℝ)) hv
+  have hfun : (fun ω => ⟪X ω, EuclideanSpace.single i (1 : ℝ)⟫) = (fun ω => X ω i) := by
+    funext ω
+    rw [PiLp.inner_apply, Finset.sum_eq_single i]
+    · show (EuclideanSpace.single i (1 : ℝ)) i * (starRingEnd ℝ) (X ω i) = X ω i
+      simp [EuclideanSpace.single_apply]
+    · intro j _ hj
+      show (EuclideanSpace.single i (1 : ℝ)) j * (starRingEnd ℝ) (X ω j) = 0
+      simp [EuclideanSpace.single_apply, if_neg hj]
+    · intro hi; exact absurd (Finset.mem_univ i) hi
+  rwa [hfun] at h
 
 /-- Finite-dimensional marginal criterion (LEAN-ONLY: expand
 `⟪X, v⟫ = ∑ vᵢ Xᵢ` and use the finset-sum triangle inequality +
@@ -85,7 +101,32 @@ theorem isSubGaussianVec_of_coords {n : ℕ}
     (hmeas : ∀ i, AEMeasurable (fun ω => X ω i) μ)
     -- USER-INPUT: sub-Gaussian coordinates; HDP Def 3.4.1 discussion
     (h : ∀ i, subGaussianNorm (fun ω => X ω i) μ ≠ ⊤) :
-    IsSubGaussianVec X μ := by sorry
+    IsSubGaussianVec X μ := by
+  intro v
+  -- Expand the marginal as a finite weighted sum of coordinates.
+  have hinner : (fun ω => ⟪X ω, v⟫) = (fun ω => ∑ i, v i * X ω i) := by
+    funext ω
+    rw [PiLp.inner_apply]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    show v i * (starRingEnd ℝ) (X ω i) = v i * X ω i
+    simp
+  rw [hinner]
+  -- Each weighted coordinate has finite ψ₂ norm; the finset triangle bound is finite.
+  have hbound : subGaussianNorm (fun ω => ∑ i, v i * X ω i) μ ≤
+      ∑ i, subGaussianNorm (fun ω => v i * X ω i) μ := by
+    rw [subGaussianNorm_def]
+    refine le_trans (orliczNorm_finset_sum_le psiTwo_monotoneOn psiTwo_convexOn
+      psiTwo_zero.le psiTwo_measurable Finset.univ
+      (fun i _ => (measurable_id.const_mul (v i)).comp_aemeasurable (hmeas i))) ?_
+    exact le_of_eq (Finset.sum_congr rfl (fun i _ => (subGaussianNorm_def _ _).symm))
+  refine ne_of_lt (lt_of_le_of_lt hbound ?_)
+  refine ENNReal.sum_lt_top.mpr (fun i _ => ?_)
+  rcases eq_or_ne (v i) 0 with hvi | hvi
+  · rw [hvi]
+    rw [subGaussianNorm_def, orliczNorm_const_mul_zero psiTwo_zero.le]
+    exact ENNReal.zero_lt_top
+  · rw [subGaussianNorm_const_mul hvi]
+    exact ENNReal.mul_lt_top ENNReal.coe_lt_top (h i).lt_top
 
 /-- **Lemma 3.4.2, upper bound** (HDP §3.4; frozen constant `√18 = 3√2`,
 formula B3∘B2 via `subGaussianNorm_weighted_sum_le` at `‖v‖ = 1`): for
@@ -113,6 +154,7 @@ finite `⨆` (HDP §3.4). -/
 theorem max_coord_le_subGaussianVecNorm {n : ℕ} [NeZero n]
     {X : Ω → EuclideanSpace ℝ (Fin n)} {μ : Measure Ω} :
     (⨆ i : Fin n, subGaussianNorm (fun ω => X ω i) μ) ≤
-      subGaussianVecNorm X μ := by sorry
+      subGaussianVecNorm X μ :=
+  iSup_le fun i => subGaussianNorm_coord_le_vecNorm i
 
 end StatLean.ConcentrationInequalities
