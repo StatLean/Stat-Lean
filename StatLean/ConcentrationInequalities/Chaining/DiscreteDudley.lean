@@ -3,6 +3,7 @@ import StatLean.ConcentrationInequalities.Chaining.FinsetMaximal
 import StatLean.ConcentrationInequalities.Chaining.PsiTwoMaximal
 import StatLean.ConcentrationInequalities.Chaining.DyadicNets
 import StatLean.ConcentrationInequalities.Chaining.EntropySum
+import Mathlib.Analysis.Real.Pi.Bounds
 
 /-!
 # Discrete Dudley inequality (Theorem 8.1.4)
@@ -362,25 +363,6 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           rw [heq]
           exact mul_le_mul_of_nonneg_left hwin (by positivity)
 
-/-- **Discrete Dudley inequality, absolute form** (HDP §8.1, Remark 8.1.5,
-discrete): `E sup_{t ∈ T} |X_t − X_{t₀}| ≤ 20 · K · dudleySum T`, with NO
-mean-zero hypothesis (as the book stresses for Eq. (8.13)). Book constant
-frozen to `20` (`6√3` chaining + `4√π/√log 2` re-anchoring, slack). -/
-theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
-    -- USER-INPUT: probability-space context; HDP §8.1
-    [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: T finite (book WLOG, HDP p.224 / p.227 footnote)
-    (hfin : T.Finite)
-    -- LEAN-ONLY: nonemptiness guards the real biSup junk value
-    (hne : T.Nonempty)
-    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
-    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
-    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
-    (hinc : SubGaussianIncrements X K T μ)
-    -- USER-INPUT: the anchor point; HDP §8.1, Remark 8.1.5
-    {t₀ : E} (ht₀ : t₀ ∈ T) :
-    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ ≤ 20 * K * dudleySum T := by sorry
-
 /-- Integrability of the anchored supremum, exported for `Chaining/Dudley.lean`
 and the countable lift (derived from the increment tails, never
 hypothesized). -/
@@ -420,5 +402,444 @@ lemma integrable_biSup_sub {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     funext ω
     exact iSup_congr fun t => by rw [hfin.mem_toFinset]
   rwa [hcongr] at key
+
+/-- **Discrete Dudley inequality, absolute form** (HDP §8.1, Remark 8.1.5,
+discrete): `E sup_{t ∈ T} |X_t − X_{t₀}| ≤ 20 · K · dudleySum T`, with NO
+mean-zero hypothesis (as the book stresses for Eq. (8.13)). Book constant
+frozen to `20` (`6√3` chaining + `4√π/√log 2` re-anchoring, slack). -/
+theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: T finite (book WLOG, HDP p.224 / p.227 footnote)
+    (hfin : T.Finite)
+    -- LEAN-ONLY: nonemptiness guards the real biSup junk value
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the anchor point; HDP §8.1, Remark 8.1.5
+    {t₀ : E} (ht₀ : t₀ ∈ T) :
+    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ ≤ 20 * K * dudleySum T := by
+  classical
+  have hbd : Bornology.IsBounded T := hfin.isBounded
+  set F := hfin.toFinset with hFdef
+  have hFne : F.Nonempty := by rw [hFdef, Set.Finite.toFinset_nonempty]; exact hne
+  have hmemT : ∀ t, t ∈ F → t ∈ T := fun t ht => hfin.mem_toFinset.mp ht
+  have setToF : ∀ f : E → ℝ, (⨆ t ∈ F, f t) = ⨆ t ∈ T, f t :=
+    fun f => iSup_congr fun t => by rw [hfin.mem_toFinset]
+  -- Integrability of the anchored abs-sup (exported below).
+  have hIntSup : MeasureTheory.Integrable (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) μ :=
+    integrable_biSup_sub hfin hne hmeas hinc ht₀
+  have hIntSupF : MeasureTheory.Integrable (fun ω => ⨆ t ∈ F, |X t ω - X t₀ ω|) μ := by
+    rw [show (fun ω => ⨆ t ∈ F, |X t ω - X t₀ ω|)
+          = (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) from funext fun ω => setToF _]
+    exact hIntSup
+  -- Degenerate `K = 0`: every increment vanishes a.e. (ψ₂-norm ≤ 0).
+  rcases eq_or_lt_of_le (zero_le K) with hK0 | hKpos
+  · have hae : ∀ t ∈ T, (fun ω => X t ω - X t₀ ω) =ᵐ[μ] 0 := by
+      intro t ht
+      have hle : subGaussianNorm (fun ω => X t ω - X t₀ ω) μ ≤ 0 := by
+        refine (hinc t₀ ht₀ t ht).trans ?_
+        rw [← hK0]; simp
+      exact ae_eq_zero_of_subGaussianNorm_eq_zero ((hmeas t ht).sub (hmeas t₀ ht₀))
+        (le_antisymm hle (by positivity))
+    have haeeq : (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) =ᵐ[μ] fun _ => (0 : ℝ) := by
+      have hall : ∀ᵐ ω ∂μ, ∀ t ∈ T, |X t ω - X t₀ ω| = 0 := by
+        rw [hfin.eventually_all]
+        intro t ht
+        filter_upwards [hae t ht] with ω hω
+        have : X t ω - X t₀ ω = 0 := hω
+        rw [this, abs_zero]
+      filter_upwards [hall] with ω hω
+      rw [← setToF (fun t => |X t ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      apply le_antisymm
+      · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t (hmemT t ht)))
+      · calc (0 : ℝ) = |X t₀ ω - X t₀ ω| := by rw [sub_self, abs_zero]
+          _ ≤ _ := Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (hfin.mem_toFinset.mpr ht₀)
+    rw [integral_congr_ae haeeq, integral_zero]
+    exact mul_nonneg (by positivity) (dudleySum_nonneg T)
+  rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hD0 | hDpos
+  · -- Degenerate case `diam T = 0`: every coordinate equals `X t₀` a.e.
+    have hzero : ∀ t ∈ T, dist t₀ t = 0 := by
+      intro t ht
+      have hle := Metric.dist_le_diam_of_mem hbd ht₀ ht
+      rw [← hD0] at hle
+      exact le_antisymm hle dist_nonneg
+    have hae : ∀ t ∈ T, (fun ω => X t ω - X t₀ ω) =ᵐ[μ] 0 := fun t ht =>
+      hinc.sub_ae_eq_zero (hmeas t₀ ht₀) (hmeas t ht) ht₀ ht (hzero t ht)
+    have haeeq : (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) =ᵐ[μ] fun _ => (0 : ℝ) := by
+      have hall : ∀ᵐ ω ∂μ, ∀ t ∈ T, |X t ω - X t₀ ω| = 0 := by
+        rw [hfin.eventually_all]
+        intro t ht
+        filter_upwards [hae t ht] with ω hω
+        have : X t ω - X t₀ ω = 0 := hω
+        rw [this, abs_zero]
+      filter_upwards [hall] with ω hω
+      rw [← setToF (fun t => |X t ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      apply le_antisymm
+      · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t (hmemT t ht)))
+      · calc (0 : ℝ) = |X t₀ ω - X t₀ ω| := by rw [sub_self, abs_zero]
+          _ ≤ _ := Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (hfin.mem_toFinset.mpr ht₀)
+    rw [integral_congr_ae haeeq, integral_zero]
+    exact mul_nonneg (by positivity) (dudleySum_nonneg T)
+  · -- Main case `diam T > 0`: re-anchored dyadic chaining in absolute value.
+    obtain ⟨κ, hκ1, hκ2⟩ := exists_coarse_scale hDpos
+    set ε : ℕ → ℝ := fun j => (2 : ℝ) ^ (-(κ + (j : ℤ))) with hεdef
+    have hεval : ∀ j : ℕ, ε j = (2 : ℝ) ^ (-(κ + (j : ℤ))) := fun j => by rw [hεdef]
+    have hεpos : ∀ j : ℕ, 0 < ε j := fun j => by rw [hεval]; exact zpow_pos (by norm_num) _
+    have hεrec : ∀ j : ℕ, ε j = 2 * ε (j + 1) := by
+      intro j
+      rw [hεval, hεval,
+        show (-(κ + ((j + 1 : ℕ) : ℤ))) = (-(κ + (j : ℤ))) - 1 by push_cast; ring,
+        zpow_sub₀ (by norm_num : (2 : ℝ) ≠ 0)]
+      simp only [zpow_one]; ring
+    have hεle : ∀ j : ℕ, ε (j + 1) ≤ ε j := fun j => by
+      rw [hεrec j]; linarith [hεpos (j + 1)]
+    -- Dyadic nets at every scale.
+    have hnet : ∀ j : ℕ, ∃ N : Finset E, ↑N ⊆ T ∧ N.Nonempty ∧
+        (∀ t ∈ T, ∃ a ∈ N, dist t a ≤ ε j) ∧ (N.card : ℕ∞) = coveringNumber T (ε j) :=
+      fun j => exists_finset_net hfin hne (hεpos j)
+    choose N hN using hnet
+    have hprojT : ∀ i : ℕ, ∀ t : E, netProj (N i) t ∈ T :=
+      fun i t => (hN i).1 (Finset.mem_coe.mpr (netProj_mem (hN i).2.1 t))
+    have hproj : ∀ i : ℕ, ∀ t ∈ T, dist t (netProj (N i) t) ≤ ε i :=
+      fun i t ht => dist_netProj_le ((hN i).2.2.1 t ht)
+    -- Net cardinality equals the covering-number `toNat`.
+    have hcardcov : ∀ j : ℕ, (N j).card = (coveringNumber T (ε j)).toNat := by
+      intro j; have h := (hN j).2.2.2; rw [← h]; simp
+    -- Coarse net (`j = 0`) has covering number `1`.
+    have hcov1 : coveringNumber T (ε 0) = 1 := by
+      apply coveringNumber_eq_one_of_diam_le hne hbd (le_of_lt (hεpos 0))
+      rw [hεval]; push_cast; simpa using hκ1
+    -- Fine scale where the finest net identifies with `T` a.e.
+    obtain ⟨nf, hnf_pos, hfineScale⟩ := exists_fine_scale hfin κ
+    -- **Re-anchoring**: `m` = the finest scale index (≤ nf) whose net is a singleton.
+    set G : Finset ℕ := (Finset.range (nf + 1)).filter (fun j => coveringNumber T (ε j) = 1)
+      with hGdef
+    have h0G : (0 : ℕ) ∈ G := by
+      rw [hGdef, Finset.mem_filter]; exact ⟨Finset.mem_range.mpr (by omega), hcov1⟩
+    have hGne : G.Nonempty := ⟨0, h0G⟩
+    set m : ℕ := G.max' hGne with hmdef
+    have hmG : m ∈ G := G.max'_mem hGne
+    have hmcov1 : coveringNumber T (ε m) = 1 := (Finset.mem_filter.mp hmG).2
+    have hmle : m ≤ nf := by
+      have := (Finset.mem_filter.mp hmG).1; exact Nat.lt_succ_iff.mp (Finset.mem_range.mp this)
+    -- Above `m` (but ≤ nf) the net has ≥ 2 points: since `m` is the finest 𝒩 = 1 scale.
+    have hcov2 : ∀ j : ℕ, m < j → j ≤ nf → 2 ≤ (N j).card := by
+      intro j hjm hjnf
+      have hjne : coveringNumber T (ε j) ≠ 1 := by
+        intro hj1
+        have : j ∈ G := by
+          rw [hGdef, Finset.mem_filter]
+          exact ⟨Finset.mem_range.mpr (by omega), hj1⟩
+        exact absurd (G.le_max' j this) (by omega)
+      have hpos : 1 ≤ (N j).card := (hN j).2.1.card_pos
+      rcases Nat.lt_or_ge (N j).card 2 with h2 | h2
+      · exfalso; apply hjne
+        have : (N j).card = 1 := by omega
+        have hc := (hN j).2.2.2; rw [this] at hc; exact_mod_cast hc.symm
+      · exact h2
+    -- The single anchor point `c` at scale `m`.
+    have hcard_m : (N m).card = 1 := by rw [hcardcov, hmcov1]; rfl
+    obtain ⟨c, hc0⟩ := Finset.card_eq_one.mp hcard_m
+    have hcT : c ∈ T := (hN m).1 (Finset.mem_coe.mpr (hc0 ▸ Finset.mem_singleton_self c))
+    have hπm : ∀ t : E, netProj (N m) t = c := by
+      intro t; rw [hc0]
+      have hmem := netProj_mem (Finset.singleton_nonempty c) t
+      rwa [Finset.mem_singleton] at hmem
+    -- Fine identification: `π_{nf} t = t` a.e.
+    have hfine0 : ∀ t ∈ T, dist t (netProj (N nf) t) = 0 := by
+      intro t ht
+      apply hfineScale t ht (netProj (N nf) t) (hprojT nf t)
+      rw [← hεval nf]; exact hproj nf t ht
+    have hclean : ∀ᵐ ω ∂μ, ∀ t ∈ T, X (netProj (N nf) t) ω = X t ω := by
+      rw [hfin.eventually_all]
+      intro t ht
+      have hsub := hinc.sub_ae_eq_zero (hmeas t ht) (hmeas (netProj (N nf) t) (hprojT nf t))
+        ht (hprojT nf t) (hfine0 t ht)
+      filter_upwards [hsub] with ω hω
+      have : X (netProj (N nf) t) ω - X t ω = 0 := hω
+      linarith
+    -- The number of chaining levels.
+    set n : ℕ := nf - m with hndef
+    have hmn : m + n = nf := by omega
+    -- **Per-level abs suprema over close pairs** (window index `j`, scale `m+j`).
+    set CP : ℕ → Finset (E × E) := fun j =>
+      closePairs (N (m + j + 1)) (N (m + j)) (ε (m + j + 1) + ε (m + j)) with hCPdef
+    set CPS : ℕ → Ω → ℝ := fun j ω =>
+      ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| with hCPSdef
+    have hCPne : ∀ j : ℕ, (CP j).Nonempty := fun j =>
+      ⟨(netProj (N (m + j + 1)) hne.some, netProj (N (m + j)) hne.some),
+        proj_pair_mem_closePairs
+          (hproj (m + j + 1) hne.some hne.some_mem) (hproj (m + j) hne.some hne.some_mem)
+          (hN (m + j + 1)).2.1 (hN (m + j)).2.1⟩
+    have hCPmem : ∀ j : ℕ, ∀ p ∈ CP j, p.1 ∈ T ∧ p.2 ∈ T := by
+      intro j p hp
+      rw [hCPdef] at hp
+      simp only [closePairs, Finset.mem_filter, Finset.mem_product] at hp
+      exact ⟨(hN (m + j + 1)).1 (Finset.mem_coe.mpr hp.1.1),
+        (hN (m + j)).1 (Finset.mem_coe.mpr hp.1.2)⟩
+    -- ψ₂-norm control for every close pair at window level `j`, with scale `L j`.
+    set Lj : ℕ → ℝ≥0 := fun j => K * Real.toNNReal (ε (m + j + 1) + ε (m + j)) with hLjdef
+    have hSGpair : ∀ j : ℕ, ∀ p ∈ CP j,
+        subGaussianNorm (fun ω => X p.1 ω - X p.2 ω) μ ≤ (Lj j : ℝ≥0∞) := by
+      intro j p hp
+      have hdle : dist p.1 p.2 ≤ ε (m + j + 1) + ε (m + j) := by
+        rw [hCPdef] at hp
+        simp only [closePairs, Finset.mem_filter, Finset.mem_product] at hp
+        exact hp.2
+      have hrpos : 0 ≤ ε (m + j + 1) + ε (m + j) := by
+        linarith [hεpos (m + j + 1), hεpos (m + j)]
+      refine (hinc p.2 (hCPmem j p hp).2 p.1 (hCPmem j p hp).1).trans ?_
+      have hde : edist p.2 p.1 ≤ (Real.toNNReal (ε (m + j + 1) + ε (m + j)) : ℝ≥0∞) := by
+        rw [edist_dist, dist_comm]
+        exact ENNReal.ofReal_le_ofReal hdle
+      calc (K : ℝ≥0∞) * edist p.2 p.1
+          ≤ (K : ℝ≥0∞) * (Real.toNNReal (ε (m + j + 1) + ε (m + j)) : ℝ≥0∞) := by gcongr
+        _ = (Lj j : ℝ≥0∞) := by rw [hLjdef]; push_cast; ring
+    -- Integrability of the close-pair abs-suprema (via the ψ₂ tail).
+    have hIntCPS : ∀ j : ℕ, MeasureTheory.Integrable (CPS j) μ := fun j =>
+      integrable_biSup_abs (hCPne j)
+        (fun p hp => ((hmeas _ (hCPmem j p hp).1).sub (hmeas _ (hCPmem j p hp).2)))
+        (hSGpair j)
+    -- **STEP A: anchored split** `|X_t − X_{t₀}| ≤ |X_t − X_c| + |X_c − X_{t₀}|`,
+    -- and `E|X_c − X_{t₀}| ≤ √π·K·diam T`.
+    set AS : Ω → ℝ := fun ω => ⨆ t ∈ F, |X t ω - X c ω| with hASdef
+    have hASne : ∀ ω, ∀ t ∈ F, |X t ω - X c ω| ≤ AS ω := by
+      intro ω t ht
+      rw [hASdef]; simp only
+      rw [biSup_finset_eq_sup' hFne]
+      exact Finset.le_sup' (fun s => |X s ω - X c ω|) ht
+    have hIntAS : MeasureTheory.Integrable AS μ := by
+      have hkey := integrable_biSup_sub (X := X) (K := K) (T := T) hfin hne hmeas hinc hcT
+      rw [hASdef, show (fun ω => ⨆ t ∈ F, |X t ω - X c ω|)
+            = (fun ω => ⨆ t ∈ T, |X t ω - X c ω|) from funext fun ω => setToF _]
+      exact hkey
+    -- ψ₂-norm of the anchor increment `X_c − X_{t₀}` (distance ≤ diam T).
+    have hAnchorSG : subGaussianNorm (fun ω => X c ω - X t₀ ω) μ
+        ≤ ((K * Real.toNNReal (Metric.diam T) : ℝ≥0) : ℝ≥0∞) := by
+      refine (hinc t₀ ht₀ c hcT).trans ?_
+      have hde : edist t₀ c ≤ (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by
+        rw [edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.dist_le_diam_of_mem hbd ht₀ hcT)
+      calc (K : ℝ≥0∞) * edist t₀ c
+          ≤ (K : ℝ≥0∞) * (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by gcongr
+        _ = ((K * Real.toNNReal (Metric.diam T) : ℝ≥0) : ℝ≥0∞) := by push_cast; ring
+    have hAnchorInt : (∫ ω, |X c ω - X t₀ ω| ∂μ)
+        ≤ Real.sqrt Real.pi * ((K : ℝ) * Metric.diam T) := by
+      have h := integral_abs_le_of_subGaussianNorm_le
+        ((hmeas c hcT).sub (hmeas t₀ ht₀)) hAnchorSG
+      refine h.trans (le_of_eq ?_)
+      rw [NNReal.coe_mul, Real.coe_toNNReal _ Metric.diam_nonneg]
+    -- Integrability of the anchor increment `|X_c − X_{t₀}|` (dominated by the
+    -- integrable anchored abs-sup, since `c ∈ T`).
+    have hIntAnchor : MeasureTheory.Integrable (fun ω => |X c ω - X t₀ ω|) μ := by
+      refine hIntSup.mono' ((hmeas c hcT).sub (hmeas t₀ ht₀)).abs.aestronglyMeasurable ?_
+      filter_upwards with ω
+      rw [Real.norm_eq_abs, abs_abs, ← setToF (fun t => |X t ω - X t₀ ω|),
+        biSup_finset_eq_sup' hFne]
+      exact Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (hfin.mem_toFinset.mpr hcT)
+    -- **STEP B: split the anchored abs-sup along the chain plus the anchor.**
+    have hB : (∫ ω, ⨆ t ∈ F, |X t ω - X t₀ ω| ∂μ)
+        ≤ (∑ j ∈ Finset.range n, ∫ ω, CPS j ω ∂μ)
+          + ∫ ω, |X c ω - X t₀ ω| ∂μ := by
+      -- pointwise: `⨆_t |X_t − X_{t₀}| ≤ (∑_j CPS_j) + |X_c − X_{t₀}|` a.e.
+      have hpt : ∀ᵐ ω ∂μ, (⨆ t ∈ F, |X t ω - X t₀ ω|)
+          ≤ (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω| := by
+        filter_upwards [hclean] with ω hω
+        rw [biSup_finset_eq_sup' hFne]
+        refine Finset.sup'_le hFne _ (fun t ht => ?_)
+        have htT := hmemT t ht
+        -- telescope `X_t − X_c = ∑_{i<n} (X_{π_{m+i+1}t} − X_{π_{m+i}t})` a.e.
+        have htel : X t ω - X c ω
+            = ∑ i ∈ Finset.range n,
+                (X (netProj (N (m + i + 1)) t) ω - X (netProj (N (m + i)) t) ω) := by
+          have hshift : ∀ i : ℕ,
+              (fun i => X (netProj (N (m + i)) t) ω) (i + 1)
+                - (fun i => X (netProj (N (m + i)) t) ω) i
+              = X (netProj (N (m + i + 1)) t) ω - X (netProj (N (m + i)) t) ω := by
+            intro i; simp only; rw [show m + (i + 1) = m + i + 1 from by ring]
+          have h0 : X (netProj (N (m + 0)) t) ω = X c ω := by
+            rw [show m + 0 = m from by ring, hπm t]
+          have hnn : X (netProj (N (m + n)) t) ω = X t ω := by
+            rw [hmn]; exact hω t htT
+          have := chain_telescope (n := n) (fun i => X (netProj (N (m + i)) t) ω)
+          rw [show m + n = m + n from rfl] at this
+          rw [hnn, h0] at this
+          rw [this]
+          exact Finset.sum_congr rfl (fun i _ => hshift i)
+        -- each telescope term ≤ its abs ≤ CPS
+        have hbound : |X t ω - X c ω| ≤ ∑ i ∈ Finset.range n, CPS i ω := by
+          rw [htel]
+          refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+          refine Finset.sum_le_sum (fun i _ => ?_)
+          have hmem : (netProj (N (m + i + 1)) t, netProj (N (m + i)) t) ∈ CP i :=
+            proj_pair_mem_closePairs (hproj (m + i + 1) t htT) (hproj (m + i) t htT)
+              (hN (m + i + 1)).2.1 (hN (m + i)).2.1
+          rw [hCPSdef]; simp only
+          rw [biSup_finset_eq_sup' (hCPne i)]
+          exact Finset.le_sup' (fun p => |X p.1 ω - X p.2 ω|) hmem
+        calc |X t ω - X t₀ ω|
+            ≤ |X t ω - X c ω| + |X c ω - X t₀ ω| := by
+              rw [show X t ω - X t₀ ω = (X t ω - X c ω) + (X c ω - X t₀ ω) from by ring]
+              exact abs_add_le _ _
+          _ ≤ (∑ i ∈ Finset.range n, CPS i ω) + |X c ω - X t₀ ω| := by
+              linarith [hbound]
+      have hIntRHS : MeasureTheory.Integrable
+          (fun ω => (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω|) μ :=
+        (integrable_finset_sum _ (fun j _ => hIntCPS j)).add hIntAnchor
+      calc (∫ ω, ⨆ t ∈ F, |X t ω - X t₀ ω| ∂μ)
+          ≤ ∫ ω, (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω| ∂μ :=
+            integral_mono_ae hIntSupF hIntRHS hpt
+        _ = (∑ j ∈ Finset.range n, ∫ ω, CPS j ω ∂μ) + ∫ ω, |X c ω - X t₀ ω| ∂μ := by
+            rw [integral_add (integrable_finset_sum _ (fun j _ => hIntCPS j)) hIntAnchor,
+              integral_finset_sum _ (fun j _ => hIntCPS j)]
+    -- **STEP C: per-level bound** `E[CPS_j] ≤ 6√3·K·dudleySummand(κ+m+1+j)`.
+    have hC : ∀ j ∈ Finset.range n,
+        (∫ ω, CPS j ω ∂μ) ≤ 6 * Real.sqrt 3 * K * dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ)) := by
+      intro j hj
+      have hjrange : j < n := Finset.mem_range.mp hj
+      set r : ℝ := ε (m + j + 1) + ε (m + j) with hrdef
+      have hrpos : 0 < r := by rw [hrdef]; linarith [hεpos (m + j + 1), hεpos (m + j)]
+      have hr3 : r = 3 * ε (m + j + 1) := by rw [hrdef, hεrec (m + j)]; ring
+      -- net card at scale `m+j+1` is ≥ 2 (re-anchoring pays off).
+      have hNcard2 : 2 ≤ (N (m + j + 1)).card := hcov2 (m + j + 1) (by omega) (by omega)
+      set Mnat : ℕ := (N (m + j + 1)).card with hMnatdef
+      set M : ℝ := (Mnat : ℝ) with hMdef
+      have hM2 : (2 : ℝ) ≤ M := by rw [hMdef, hMnatdef]; exact_mod_cast hNcard2
+      have hM1nat : 0 < Mnat := by omega
+      have hcardCPnat : (CP j).card ≤ Mnat ^ 2 := by
+        have hNjle : (N (m + j)).card ≤ (N (m + j + 1)).card := by
+          have h1 := (hN (m + j)).2.2.2
+          have h2 := (hN (m + j + 1)).2.2.2
+          have hanti : coveringNumber T (ε (m + j)) ≤ coveringNumber T (ε (m + j + 1)) :=
+            coveringNumber_anti (hεle (m + j))
+          rw [← h1, ← h2] at hanti
+          exact_mod_cast hanti
+        calc (CP j).card ≤ (N (m + j + 1)).card * (N (m + j)).card := card_closePairs_le _ _ _
+          _ ≤ (N (m + j + 1)).card * (N (m + j + 1)).card := by gcongr
+          _ = Mnat ^ 2 := by rw [hMnatdef, sq]
+      -- `sqrtLogCov` identity at scale `m+j+1`.
+      have hslc : sqrtLogCov T (ε (m + j + 1)) = Real.sqrt (Real.log M) := by
+        unfold sqrtLogCov; rw [← hcardcov (m + j + 1), hMdef, hMnatdef]
+      have hlogM_pos : 0 < Real.log M := Real.log_pos (by linarith)
+      -- `√(log(2·card CP)) ≤ √3·sqrtLogCov`
+      have hstep : Real.sqrt (Real.log (2 * ((CP j).card : ℝ)))
+          ≤ Real.sqrt 3 * sqrtLogCov T (ε (m + j + 1)) := by
+        rw [hslc, ← Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 3)]
+        apply Real.sqrt_le_sqrt
+        -- log(2·card) ≤ log(2 M²) ≤ log(M³) = 3 log M
+        have hcard_le : (2 : ℝ) * ((CP j).card : ℝ) ≤ M ^ 3 := by
+          have h1 : ((CP j).card : ℝ) ≤ M ^ 2 := by
+            rw [hMdef]; exact_mod_cast hcardCPnat
+          have h2 : (2 : ℝ) * M ^ 2 ≤ M ^ 3 := by nlinarith [hM2, sq_nonneg M]
+          nlinarith [h1, hM2]
+        have hposc : (0 : ℝ) < 2 * ((CP j).card : ℝ) := by
+          have hc : 0 < (CP j).card := (hCPne j).card_pos
+          have : (0 : ℝ) < ((CP j).card : ℝ) := by exact_mod_cast hc
+          linarith
+        have hlog := Real.log_le_log hposc hcard_le
+        rw [show M ^ 3 = M ^ (3 : ℕ) from rfl, Real.log_pow] at hlog
+        push_cast at hlog; linarith
+      -- dyadic summand identity at the shifted index.
+      have hdud : dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ))
+          = ε (m + j + 1) * sqrtLogCov T (ε (m + j + 1)) := by
+        have hkk : (-(κ + (m : ℤ) + 1 + (j : ℤ))) = (-(κ + ((m + j + 1 : ℕ) : ℤ))) := by
+          push_cast; ring
+        simp only [dudleySummand]
+        rw [hkk, hεval (m + j + 1)]
+      -- assemble via `expectation_abs_max_le`.
+      have hLjpos : 0 < Lj j := by
+        rw [hLjdef]
+        have hrpos' : 0 < Real.toNNReal r := Real.toNNReal_pos.mpr hrpos
+        exact mul_pos hKpos hrpos'
+      have hExp : (∫ ω, CPS j ω ∂μ)
+          ≤ 2 * (Lj j : ℝ) * Real.sqrt (Real.log (2 * (CP j).card)) := by
+        rw [hCPSdef]
+        exact expectation_abs_max_le (hCPne j) hLjpos
+          (fun p hp => ((hmeas _ (hCPmem j p hp).1).sub (hmeas _ (hCPmem j p hp).2)))
+          (hSGpair j)
+      refine hExp.trans ?_
+      have hLjval : (Lj j : ℝ) = (K : ℝ) * r := by
+        rw [hLjdef, NNReal.coe_mul, Real.coe_toNNReal _ hrpos.le, hrdef]
+      rw [hLjval, hdud]
+      calc 2 * ((K : ℝ) * r) * Real.sqrt (Real.log (2 * (CP j).card))
+          ≤ 2 * ((K : ℝ) * r) * (Real.sqrt 3 * sqrtLogCov T (ε (m + j + 1))) := by
+            apply mul_le_mul_of_nonneg_left hstep
+            positivity
+        _ = 6 * Real.sqrt 3 * K * (ε (m + j + 1) * sqrtLogCov T (ε (m + j + 1))) := by
+            rw [hr3]; ring
+    -- **WINDOW SUM**: the chaining levels sum below the full dyadic entropy sum.
+    have hwin : ∑ j ∈ Finset.range n, dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ))
+        ≤ dudleySum T := by
+      have hemb : Function.Injective (fun j : ℕ => κ + (m : ℤ) + 1 + (j : ℤ)) := by
+        intro a b hab; simp only at hab; omega
+      rw [show (∑ j ∈ Finset.range n, dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ)))
+            = ∑ k ∈ (Finset.range n).map ⟨fun j : ℕ => κ + (m : ℤ) + 1 + (j : ℤ), hemb⟩,
+                dudleySummand T k
+          from by rw [Finset.sum_map]; rfl]
+      exact sum_window_le_dudleySum hfin hne _
+    -- **ANCHOR ABSORPTION**: `√π·K·diam T ≤ (4√π/√log2)·K·dudleySum ≤ (20 − 6√3)·K·dudleySum`.
+    have hlog2pos : 0 < Real.sqrt (Real.log 2) := Real.sqrt_pos.mpr (Real.log_pos (by norm_num))
+    have hAnchorAbsorb : Real.sqrt Real.pi * ((K : ℝ) * Metric.diam T)
+        ≤ (20 - 6 * Real.sqrt 3) * K * dudleySum T := by
+      have hdiam := diam_mul_sqrt_log_two_le_four_mul_dudleySum hfin hne
+      -- `diam T = (diam·√log2)/√log2 ≤ 4·dudleySum/√log2`.
+      have hdiam' : Metric.diam T ≤ 4 * dudleySum T / Real.sqrt (Real.log 2) := by
+        rw [le_div_iff₀ hlog2pos]; linarith [hdiam]
+      have hKnn : (0 : ℝ) ≤ (K : ℝ) := K.coe_nonneg
+      have hds : 0 ≤ dudleySum T := dudleySum_nonneg T
+      -- √π · K · diam ≤ √π · K · (4 dudleySum / √log2)
+      have hstep1 : Real.sqrt Real.pi * ((K : ℝ) * Metric.diam T)
+          ≤ Real.sqrt Real.pi * ((K : ℝ) * (4 * dudleySum T / Real.sqrt (Real.log 2))) := by
+        gcongr
+      refine hstep1.trans ?_
+      -- reduce to the scalar inequality `4√π/√log2 ≤ 20 − 6√3`.
+      have hconst : Real.sqrt Real.pi * (4 / Real.sqrt (Real.log 2))
+          ≤ 20 - 6 * Real.sqrt 3 := by
+        -- `4√π/√log2 ≈ 8.52`, `20 − 6√3 ≈ 9.61`.
+        have hpi : Real.sqrt Real.pi ≤ 1.773 := by
+          rw [show (1.773 : ℝ) = Real.sqrt (1.773 ^ 2) from
+            (Real.sqrt_sq (by norm_num)).symm]
+          apply Real.sqrt_le_sqrt
+          nlinarith [Real.pi_lt_d4]
+        have hlog2 : 0.693 ≤ Real.log 2 := by
+          have := Real.log_two_gt_d9; linarith
+        have hslog2 : 0.832 ≤ Real.sqrt (Real.log 2) := by
+          rw [show (0.832 : ℝ) = Real.sqrt (0.832 ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+          apply Real.sqrt_le_sqrt; nlinarith [hlog2]
+        have hsqrt3 : Real.sqrt 3 ≤ 1.7321 := by
+          rw [show (1.7321 : ℝ) = Real.sqrt (1.7321 ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+          apply Real.sqrt_le_sqrt; norm_num
+        have hslog2pos : (0 : ℝ) < 0.832 := by norm_num
+        have hdivle : (4 : ℝ) / Real.sqrt (Real.log 2) ≤ 4 / 0.832 :=
+          div_le_div_of_nonneg_left (by norm_num) hslog2pos hslog2
+        have hpinn : 0 ≤ Real.sqrt Real.pi := Real.sqrt_nonneg _
+        calc Real.sqrt Real.pi * (4 / Real.sqrt (Real.log 2))
+            ≤ 1.773 * (4 / 0.832) := by
+              apply mul_le_mul hpi hdivle (by positivity) (by norm_num)
+          _ ≤ 20 - 6 * Real.sqrt 3 := by nlinarith [hsqrt3]
+      calc Real.sqrt Real.pi * ((K : ℝ) * (4 * dudleySum T / Real.sqrt (Real.log 2)))
+          = (Real.sqrt Real.pi * (4 / Real.sqrt (Real.log 2))) * ((K : ℝ) * dudleySum T) := by
+            ring
+        _ ≤ (20 - 6 * Real.sqrt 3) * ((K : ℝ) * dudleySum T) := by
+            apply mul_le_mul_of_nonneg_right hconst
+            exact mul_nonneg hKnn hds
+        _ = (20 - 6 * Real.sqrt 3) * K * dudleySum T := by ring
+    -- **COMBINE.**
+    rw [show (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|)
+        = (fun ω => ⨆ t ∈ F, |X t ω - X t₀ ω|) from funext fun ω => (setToF _).symm]
+    calc (∫ ω, ⨆ t ∈ F, |X t ω - X t₀ ω| ∂μ)
+        ≤ (∑ j ∈ Finset.range n, ∫ ω, CPS j ω ∂μ) + ∫ ω, |X c ω - X t₀ ω| ∂μ := hB
+      _ ≤ (∑ j ∈ Finset.range n, 6 * Real.sqrt 3 * K * dudleySummand T (κ + (m : ℤ) + 1 + (j : ℤ)))
+            + Real.sqrt Real.pi * ((K : ℝ) * Metric.diam T) := by
+          apply add_le_add (Finset.sum_le_sum hC) hAnchorInt
+      _ ≤ 6 * Real.sqrt 3 * K * dudleySum T
+            + (20 - 6 * Real.sqrt 3) * K * dudleySum T := by
+          apply add_le_add _ hAnchorAbsorb
+          rw [← Finset.mul_sum]
+          exact mul_le_mul_of_nonneg_left hwin (by positivity)
+      _ = 20 * K * dudleySum T := by ring
 
 end StatLean.ConcentrationInequalities
