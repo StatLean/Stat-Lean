@@ -67,7 +67,23 @@ lemma biSup_finset_eq_sup' {ι : Type*} {s : Finset ι}
     -- (fun i _ => abs_nonneg _))
     (h0 : ∀ i ∈ s, 0 ≤ f i) :
     (⨆ i ∈ s, f i) = s.sup' hs f := by
-  sorry
+  classical
+  obtain ⟨i₀, hi₀⟩ := id hs
+  -- The `Finset.sup'` is nonnegative (it dominates the nonnegative `f i₀`).
+  have hsup_nonneg : 0 ≤ s.sup' hs f := (h0 i₀ hi₀).trans (Finset.le_sup' f hi₀)
+  -- Each inner supremum branch is `≤ sup'`: `f i` when `i ∈ s`, junk `0` otherwise.
+  have hbranch : ∀ i, (⨆ (_ : i ∈ s), f i) ≤ s.sup' hs f := by
+    intro i
+    by_cases hi : i ∈ s
+    · rw [ciSup_pos hi]; exact Finset.le_sup' f hi
+    · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
+      rw [Real.iSup_of_isEmpty]; exact hsup_nonneg
+  have hbdd : BddAbove (Set.range (fun i => ⨆ (_ : i ∈ s), f i)) :=
+    ⟨s.sup' hs f, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
+  refine le_antisymm (Real.iSup_le hbranch hsup_nonneg) ?_
+  obtain ⟨j, hj, hje⟩ := Finset.exists_mem_eq_sup' hs f
+  rw [hje]
+  exact le_ciSup_of_le hbdd j (le_of_eq (ciSup_pos (f := fun _ => f j) hj).symm)
 
 set_option maxHeartbeats 1000000 in
 /-- The pointwise supremum over a nonempty finite index set of integrable
@@ -189,6 +205,28 @@ theorem expectation_max_finset_le {ι : Type*}
     -- `expectation_max_le`; the old biSup form was FALSE at |s| = 1.
     ∫ ω, s.sup' hs (fun i => X i ω) ∂μ
       ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log s.card) := by
-  sorry
+  classical
+  -- Reindex `s` to `Fin s.card` via `s.equivFin` and transport the proven
+  -- `Fin`-indexed `expectation_max_le`.
+  haveI : NeZero s.card := ⟨hs.card_pos.ne'⟩
+  set e := s.equivFin with he
+  set Y : Fin s.card → Ω → ℝ := fun j ω => X ((e.symm j : ι)) ω with hY
+  have hcenterY : ∀ j, ∫ ω, Y j ω ∂μ = 0 := fun j => hcenter _ (e.symm j).2
+  have hXY : ∀ j, IsSubGaussian (Y j) σ2 μ := fun j => hX _ (e.symm j).2
+  have hbound := expectation_max_le (μ := μ) (X := Y) hcenterY hXY
+  -- Pointwise identification of the two maxima carriers.
+  have hpt : ∀ ω, s.sup' hs (fun i => X i ω) = ⨆ j : Fin s.card, Y j ω := by
+    intro ω
+    apply le_antisymm
+    · refine Finset.sup'_le hs _ (fun i hi => ?_)
+      have hbA : BddAbove (Set.range (fun j : Fin s.card => Y j ω)) :=
+        (Set.finite_range _).bddAbove
+      refine le_ciSup_of_le hbA (e ⟨i, hi⟩) ?_
+      simp [hY, Equiv.symm_apply_apply]
+    · refine ciSup_le (fun j => ?_)
+      exact Finset.le_sup' (fun i => X i ω) (e.symm j).2
+  calc ∫ ω, s.sup' hs (fun i => X i ω) ∂μ
+      = ∫ ω, ⨆ j : Fin s.card, Y j ω ∂μ := by simp_rw [hpt]
+    _ ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log s.card) := hbound
 
 end StatLean.ConcentrationInequalities
