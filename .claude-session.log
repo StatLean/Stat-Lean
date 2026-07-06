@@ -1,0 +1,23 @@
+srun: job 28701077 queued and waiting for resources
+srun: job 28701077 has been allocated resources
+Done. **Debt A `discrete_dudley_abs` is closed** — `lake build StatLean.ConcentrationInequalities.Chaining.DiscreteDudley` exits 0, no `declaration uses sorry`, committed as `ba39eef`.
+
+## Key steps
+
+The reverted tranche2 attempt had a **sound skeleton** (κ'-re-anchoring) but eight concrete breakages. I rebuilt from it, verifying every integration step with a build:
+
+1. **Forward-reference fix** — moved `integrable_biSup_sub` *above* `discrete_dudley_abs` (the abs proof and its anchor-integrability lemma reference it).
+
+2. **Re-anchoring** — the chain starts at scale `m = (Finset.range (nf+1)).filter (𝒩(T,ε j)=1) |>.max'`, the finest singleton-net scale. Levels `m<j≤nf` all have net card ≥ 2, so `√log(2N²) ≤ √3·√log N` (no spurious `√log 2`). The gap to `t₀` becomes ONE first-moment term `E|X_c − X_{t₀}| ≤ √π·K·diam T`, absorbed via `diam·√log2 ≤ 4·dudleySum`, landing `6√3 + 4√π/√log2 ≤ 20`.
+
+3. **Cardinality monotonicity** (`hNjle`) — used `(hN _).2.2.2` card-casts + `exact_mod_cast hanti`, replacing the bogus `Metric.coveringNumber_le_encard_self`/`ENat.toNat_le_toNat` path (that referenced Mathlib's differently-ordered `coveringNumber`).
+
+4. **Two type mismatches** (degenerate cases) — `0 ≤ sup'` proved via `calc 0 = |X t₀ − X t₀| := by rw [sub_self, abs_zero]` then `Finset.le_sup'` (raw `le_sup'` gives `|X t₀−X t₀| ≤ sup'`, not defeq to `0`).
+
+5. **Two positivity failures** — final `0 ≤ 20·K·dudleySum` needs `mul_nonneg (by positivity) (dudleySum_nonneg T)`; and a `2·card > 0` positivity that blew maxRecDepth on the `set`-term was replaced with `exact_mod_cast` + `linarith`.
+
+6. **Anchor integrability** — since the abs form carries **no** integrability hypothesis, derived `Integrable |X_c − X_{t₀}|` via `hIntSup.mono'` (dominated by `⨆ t∈T |X_t − X_{t₀}|`, using `c ∈ T`), replacing the invalid `.abs.integrable` projection.
+
+7. **API renames** — `abs_add` → `abs_add_le`; `Real.pi_lt_315` → `Real.pi_lt_d4` (plus added `import Mathlib.Analysis.Real.Pi.Bounds`, not transitively available); `field_simp; ring` → `ring` for the absorption arithmetic; dropped a stale `mul_assoc`/`gcongr`-tail leftover.
+
+Memory note updated to reflect closure.
