@@ -1,0 +1,4 @@
+srun: job 28629997 queued and waiting for resources
+srun: job 28629997 has been allocated resources
+Background tasks still running after 600s; terminating. Set CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 to wait indefinitely.
+EntropyIntegral.lean is **GREEN, 0 sorry, no fallback used**. Three of four independent files done. Waiting on LawOfLargeNumbersCountable, which unblocks the final two.
