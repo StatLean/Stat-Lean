@@ -1,12 +1,14 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "./lib/theme";
+import { recordPageview } from "./lib/analytics";
 import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { Home } from "./pages/Home";
 import { Category } from "./pages/Category";
 import { ResultDetail } from "./pages/ResultDetail";
 import { Search } from "./pages/Search";
+import { References } from "./pages/References";
 import { Team } from "./pages/Team";
 import { prefetchGraphView, prefetchDependencies, warmGraphChunks } from "./lib/prefetch";
 
@@ -23,12 +25,31 @@ function ScrollToTop() {
   return null;
 }
 
+/**
+ * Record a Statcounter page view on each client-side route change. The initial
+ * page load is already counted by the snippet in index.html, so the first
+ * render is skipped to avoid double-counting the landing page.
+ */
+function RouteAnalytics() {
+  const { pathname, search } = useLocation();
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    recordPageview();
+  }, [pathname, search]);
+  return null;
+}
+
 export default function App() {
   useEffect(warmGraphChunks, []);
   return (
     <ThemeProvider>
       <div className="min-h-screen flex flex-col">
         <ScrollToTop />
+        <RouteAnalytics />
         <SiteHeader />
         <main className="flex-1">
           <Routes>
@@ -48,6 +69,7 @@ export default function App() {
                 </Suspense>
               }
             />
+            <Route path="/references" element={<References />} />
             <Route path="/team" element={<Team />} />
             <Route path="/category/:catId" element={<Category />} />
             <Route path="/result/:resultId" element={<ResultDetail />} />

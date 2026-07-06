@@ -3,7 +3,7 @@ import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
 import { loadGraph, getResult } from "../lib/data";
 import { docUrlForNode } from "../lib/site";
-import { AREA_VAR, AREA_LABEL, nodeArea, nodeShape, type Area } from "../lib/graphArea";
+import { AREA_VAR, AREA_LABEL, AREAS, nodeArea, nodeShape, type Area } from "../lib/graphArea";
 import type { CategoryId, DepGraph as DepGraphData } from "../lib/types";
 
 cytoscape.use(dagre);
@@ -57,13 +57,9 @@ export function DepGraph({ id, fill: fillMode = false }: { id: string; fill?: bo
     const rule = triplet("--rule");
 
     // precompute area-triplet per area, once
-    const areaTriplet: Record<Area, string> = {
-      parametric: triplet(AREA_VAR.parametric),
-      semiparametric: triplet(AREA_VAR.semiparametric),
-      empirical: triplet(AREA_VAR.empirical),
-      probability: triplet(AREA_VAR.probability),
-      external: triplet(AREA_VAR.external),
-    };
+    const areaTriplet = Object.fromEntries(
+      (Object.keys(AREA_VAR) as Area[]).map((a) => [a, triplet(AREA_VAR[a])]),
+    ) as Record<Area, string>;
 
     const nodeEls = graph.nodes.map((n) => {
       const area = nodeArea(n, rootArea);
@@ -210,11 +206,9 @@ export function DepGraph({ id, fill: fillMode = false }: { id: string; fill?: bo
         <ShapeKey shape="round" label="Definition" />
       </div>
       <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs font-sans text-ink-soft shrink-0">
-        {(["parametric", "semiparametric", "empirical", "probability", "external"] as Area[]).map(
-          (a) => (
-            <ColorKey key={a} area={a} />
-          ),
-        )}
+        {AREAS.map((a) => (
+          <ColorKey key={a} area={a} />
+        ))}
       </div>
     </div>
   );

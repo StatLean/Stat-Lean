@@ -1,0 +1,33 @@
+{
+  "root": "StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","label":"mutualInformation_le_avg_pairwise_kl","full":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","kind":"root","decl":"thm","module":"StatLean.Minimaxity.Fano.MutualInformation"},
+    {"id":"StatLean.Minimaxity.mutualInformation","label":"mutualInformation","full":"StatLean.Minimaxity.mutualInformation","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Fano.MutualInformation"},
+    {"id":"StatLean.Minimaxity.mixture","label":"mixture","full":"StatLean.Minimaxity.mixture","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"mul_le_mul_right","label":"mul_le_mul_right","full":"mul_le_mul_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
+    {"id":"IsOrderedMonoid.toMulLeftMono","label":"toMulLeftMono","full":"IsOrderedMonoid.toMulLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"Finset.sum_le_sum","label":"sum_le_sum","full":"Finset.sum_le_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.BigOperators.Group.Finset"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"Finset.mul_sum","label":"mul_sum","full":"Finset.mul_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"sq","label":"sq","full":"sq","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ENNReal.mul_inv","label":"mul_inv","full":"ENNReal.mul_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"ENNReal.natCast_ne_top","label":"natCast_ne_top","full":"ENNReal.natCast_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"StatLean.Minimaxity.mutualInformation"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"mul_le_mul_right"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"IsOrderedMonoid.toMulLeftMono"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"Finset.sum_le_sum"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"Finset.mul_sum"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"mul_assoc"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"sq"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"ENNReal.mul_inv"},
+    {"source":"StatLean.Minimaxity.mutualInformation_le_avg_pairwise_kl","target":"ENNReal.natCast_ne_top"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"}
+  ]
+}

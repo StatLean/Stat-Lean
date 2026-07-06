@@ -1,0 +1,38 @@
+{
+  "root": "StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","label":"law_of_large_numbers_in_probability","full":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.ClassicalLimits"},
+    {"id":"ProbabilityTheory.iIndepFun.indepFun","label":"indepFun","full":"ProbabilityTheory.iIndepFun.indepFun","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Independence.Basic"},
+    {"id":"ProbabilityTheory.strong_law_ae","label":"strong_law_ae","full":"ProbabilityTheory.strong_law_ae","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.StrongLaw"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"ProbabilityTheory.IdentDistrib.aestronglyMeasurable_fst","label":"aestronglyMeasurable_fst","full":"ProbabilityTheory.IdentDistrib.aestronglyMeasurable_fst","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.IdentDistrib"},
+    {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
+    {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"MeasureTheory.AEStronglyMeasurable.const_smul'","label":"const_smul'","full":"MeasureTheory.AEStronglyMeasurable.const_smul'","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
+    {"id":"SeparatelyContinuousMul.to_continuousSMul","label":"to_continuousSMul","full":"SeparatelyContinuousMul.to_continuousSMul","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Monoid"},
+    {"id":"IsTopologicalRing.toIsSemitopologicalRing","label":"toIsSemitopologicalRing","full":"IsTopologicalRing.toIsSemitopologicalRing","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.Ring.Basic"},
+    {"id":"MeasureTheory.AEStronglyMeasurable.congr","label":"congr","full":"MeasureTheory.AEStronglyMeasurable.congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
+    {"id":"Finset.aestronglyMeasurable_sum","label":"aestronglyMeasurable_sum","full":"Finset.aestronglyMeasurable_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable"},
+    {"id":"Filter.Eventually.of_forall","label":"of_forall","full":"Filter.Eventually.of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Basic"},
+    {"id":"Finset.sum_apply","label":"sum_apply","full":"Finset.sum_apply","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Pi"},
+    {"id":"MeasureTheory.tendstoInMeasure_of_tendsto_ae","label":"tendstoInMeasure_of_tendsto_ae","full":"MeasureTheory.tendstoInMeasure_of_tendsto_ae","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Function.ConvergenceInMeasure"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"ProbabilityTheory.iIndepFun.indepFun"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"ProbabilityTheory.strong_law_ae"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"Real.borelSpace"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"ProbabilityTheory.IdentDistrib.aestronglyMeasurable_fst"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"PseudoEMetricSpace.pseudoMetrizableSpace"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"BorelSpace.opensMeasurable"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"MeasureTheory.AEStronglyMeasurable.const_smul'"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"SeparatelyContinuousMul.to_continuousSMul"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"IsTopologicalRing.toIsSemitopologicalRing"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"MeasureTheory.AEStronglyMeasurable.congr"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"Finset.aestronglyMeasurable_sum"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"Filter.Eventually.of_forall"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"Finset.sum_apply"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"MeasureTheory.tendstoInMeasure_of_tendsto_ae"},
+    {"source":"StatLean.ConcentrationInequalities.law_of_large_numbers_in_probability","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"}
+  ]
+}

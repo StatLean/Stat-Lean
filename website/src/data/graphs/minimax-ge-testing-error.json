@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.Minimaxity.minimax_ge_testing_error",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.minimax_ge_testing_error","label":"minimax_ge_testing_error","full":"StatLean.Minimaxity.minimax_ge_testing_error","kind":"root","decl":"thm","module":"StatLean.Minimaxity.EstimationToTesting"},
+    {"id":"StatLean.Minimaxity.IsSeparatedFamily","label":"IsSeparatedFamily","full":"StatLean.Minimaxity.IsSeparatedFamily","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.multiwayTestingError","label":"multiwayTestingError","full":"StatLean.Minimaxity.multiwayTestingError","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.minimaxRiskDist","label":"minimaxRiskDist","full":"StatLean.Minimaxity.minimaxRiskDist","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"StatLean.Minimaxity.distortionLoss","label":"distortionLoss","full":"StatLean.Minimaxity.distortionLoss","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.zeroOneLoss","label":"zeroOneLoss","full":"StatLean.Minimaxity.zeroOneLoss","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.IsSeparatedFamily"},
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.multiwayTestingError"},
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.minimaxRiskDist"},
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"le_trans"},
+    {"source":"StatLean.Minimaxity.minimax_ge_testing_error","target":"StatLean.Minimaxity.distortionLoss"},
+    {"source":"StatLean.Minimaxity.multiwayTestingError","target":"StatLean.Minimaxity.zeroOneLoss"},
+    {"source":"StatLean.Minimaxity.multiwayTestingError","target":"StatLean.Minimaxity.uniformPrior"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"StatLean.Minimaxity.distortionLoss"}
+  ]
+}

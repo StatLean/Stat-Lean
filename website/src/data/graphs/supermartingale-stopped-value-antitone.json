@@ -1,0 +1,26 @@
+{
+  "root": "StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","label":"supermartingale_expected_stoppedValue_antitone","full":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","kind":"root","decl":"thm","module":"StatLean.MultipleTesting.ForMathlib.OptionalStopping"},
+    {"id":"MeasureTheory.Submartingale.expected_stoppedValue_mono","label":"expected_stoppedValue_mono","full":"MeasureTheory.Submartingale.expected_stoppedValue_mono","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Martingale.OptionalStopping"},
+    {"id":"IsStrictOrderedModule.toIsOrderedModule","label":"toIsOrderedModule","full":"IsStrictOrderedModule.toIsOrderedModule","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Module.Defs"},
+    {"id":"IsStrictOrderedRing.toIsStrictOrderedModule","label":"toIsStrictOrderedModule","full":"IsStrictOrderedRing.toIsStrictOrderedModule","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Module.Defs"},
+    {"id":"HasSolidNorm.orderClosedTopology","label":"orderClosedTopology","full":"HasSolidNorm.orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
+    {"id":"MeasureTheory.Supermartingale.neg","label":"neg","full":"MeasureTheory.Supermartingale.neg","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Martingale.Basic"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"le_of_not_gt","label":"le_of_not_gt","full":"le_of_not_gt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"MeasureTheory.integral_neg","label":"integral_neg","full":"MeasureTheory.integral_neg","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"MeasureTheory.Submartingale.expected_stoppedValue_mono"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"IsStrictOrderedModule.toIsOrderedModule"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"IsStrictOrderedRing.toIsStrictOrderedModule"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"HasSolidNorm.orderClosedTopology"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"MeasureTheory.Supermartingale.neg"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"le_of_not_gt"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"Nat.cast_zero"},
+    {"source":"StatLean.MultipleTesting.supermartingale_expected_stoppedValue_antitone","target":"MeasureTheory.integral_neg"}
+  ]
+}

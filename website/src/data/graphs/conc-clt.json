@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.ConcentrationInequalities.central_limit_theorem",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.central_limit_theorem","label":"central_limit_theorem","full":"StatLean.ConcentrationInequalities.central_limit_theorem","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.ClassicalLimits"},
+    {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub","label":"tendstoInDistribution_inv_sqrt_mul_sum_sub","full":"ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.CentralLimitTheorem"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.central_limit_theorem","target":"BorelSpace.opensMeasurable"},
+    {"source":"StatLean.ConcentrationInequalities.central_limit_theorem","target":"Real.borelSpace"},
+    {"source":"StatLean.ConcentrationInequalities.central_limit_theorem","target":"ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub"}
+  ]
+}

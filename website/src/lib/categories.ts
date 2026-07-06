@@ -23,11 +23,39 @@ export const CATEGORIES: CategoryMeta[] = [
       "Tangent sets, the efficient influence function as a projection, score and information operators, and the convolution / minimax bounds and efficient estimators of semiparametric theory.",
   },
   {
-    id: "empirical",
-    name: "Empirical Processes",
-    tagline: "Glivenko–Cantelli, Donsker & maximal inequalities",
+    id: "concentration",
+    name: "Concentration Inequalities",
+    tagline: "Sub-Gaussian tails, Bernstein & empirical processes",
     blurb:
-      "Bracketing entropy conditions yielding the Glivenko–Cantelli and Donsker properties, maximal inequalities, and empirical-process limits under estimated parameters.",
+      "Sub-Gaussian and sub-exponential tail bounds, Hoeffding, Bernstein and McDiarmid inequalities, maximal inequalities over finite and covering classes, and the empirical-process limits (Glivenko–Cantelli, Donsker) that build on them.",
+  },
+  {
+    id: "highdim",
+    name: "High-Dimensional Statistics",
+    tagline: "OLS, Lasso rates & compressed sensing",
+    blurb:
+      "Ordinary least squares mean-squared error, deterministic and random-noise ℓ²-rates for the Lasso, support-recovery guarantees, compressed-sensing recovery under the cone and restricted-isometry conditions, and M-estimator deviation bounds.",
+  },
+  {
+    id: "multipletesting",
+    name: "Multiple Testing",
+    tagline: "FDR, FWER, knockoffs & goodness-of-fit",
+    blurb:
+      "Benjamini–Hochberg FDR control, Holm and Bonferroni FWER control, the knockoff filter, e-values and conformal coverage, and goodness-of-fit tests including Kolmogorov–Smirnov and the chi-squared statistic.",
+  },
+  {
+    id: "minimaxity",
+    name: "Minimaxity",
+    tagline: "Le Cam, Fano & minimax lower bounds",
+    blurb:
+      "The estimation-to-testing reduction, Le Cam's two-point and convex-hull methods, Fano's inequality with local packing and the Yang–Barron bound, and worked minimax rates for location, regression, PCA and density estimation.",
+  },
+  {
+    id: "optimization",
+    name: "Optimization",
+    tagline: "Gradient, proximal & accelerated methods",
+    blurb:
+      "Convexity and smoothness primitives, co-coercivity, the O(1/t) rates of gradient descent, Frank–Wolfe and proximal gradient, and the O(1/t²) rates of Nesterov-accelerated gradient and proximal methods.",
   },
   {
     id: "probability",

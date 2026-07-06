@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.Minimaxity.minimaxRiskDist",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.minimaxRiskDist","label":"minimaxRiskDist","full":"StatLean.Minimaxity.minimaxRiskDist","kind":"root","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"PseudoEMetricSpace","label":"PseudoEMetricSpace","full":"PseudoEMetricSpace","kind":"mathlib","decl":"def","module":"Mathlib.Topology.EMetricSpace.Defs"},
+    {"id":"ENNReal","label":"ENNReal","full":"ENNReal","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"ProbabilityTheory.minimaxRisk","label":"minimaxRisk","full":"ProbabilityTheory.minimaxRisk","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Decision.Risk.Defs"},
+    {"id":"StatLean.Minimaxity.distortionLoss","label":"distortionLoss","full":"StatLean.Minimaxity.distortionLoss","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"MeasurableSpace"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"PseudoEMetricSpace"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"ENNReal"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"ProbabilityTheory.Kernel"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"ProbabilityTheory.minimaxRisk"},
+    {"source":"StatLean.Minimaxity.minimaxRiskDist","target":"StatLean.Minimaxity.distortionLoss"},
+    {"source":"StatLean.Minimaxity.distortionLoss","target":"PseudoEMetricSpace"},
+    {"source":"StatLean.Minimaxity.distortionLoss","target":"ENNReal"}
+  ]
+}
