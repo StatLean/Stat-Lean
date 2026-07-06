@@ -60,26 +60,25 @@ theorem bayesKernel_apply_univ_le_one [IsFiniteMeasure π]
   rw [lintegral_mul_const'' _ hp.of_uncurry_right.aemeasurable]
   exact ENNReal.mul_inv_le_one _
 
-/-- The Bayes kernel is a finite kernel (unconditionally — the non-measurable branch is `0`). -/
-instance [IsFiniteMeasure π] : IsFiniteKernel (bayesKernel p π) := by
-  by_cases h : Measurable (Function.uncurry (bayesDensity p π))
-  · refine ⟨1, ENNReal.one_lt_top, fun x => ?_⟩
-    rw [bayesKernel, Kernel.withDensity_apply _ h, Kernel.const_apply,
-      withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
-    show ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
-    rcases eq_or_ne (predictiveDensity p π x) 0 with hm | hm
-    · -- `m x = 0`: the integrand is `p θ x / 0 = p θ x * ∞`, and the bound `≤ 1` requires
-      -- `p(·,x) =ᵐ[π] 0`, i.e. `π {p(·,x) > 0} = 0`.  This follows from `∫ p(·,x) dπ = 0` ONLY
-      -- via measurability of `θ ↦ p θ x`, which the instance (lacking `hp`) cannot supply: the
-      -- joint measurability `h` of `bayesDensity` collapses to `∞ · 𝟙_{p(·,x)>0}` on this fibre and
-      -- loses the magnitude of `p(·,x)`.  Honest blocker — closed with `hp` in
-      -- `bayesKernel_apply_univ_le_one`.
-      sorry
-    · simp_rw [div_eq_mul_inv]
-      rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hm)]
-      exact ENNReal.mul_inv_le_one _
-  · rw [bayesKernel, Kernel.withDensity_of_not_measurable _ h]
-    infer_instance
+/-- The Bayes kernel is a finite kernel (total mass `≤ 1`). -/
+theorem isFiniteKernel_bayesKernel [IsFiniteMeasure π]
+    -- LEAN-ONLY: joint measurability of the likelihood density
+    (hp : Measurable (Function.uncurry p)) :
+    IsFiniteKernel (bayesKernel p π) := by
+  refine ⟨1, ENNReal.one_lt_top, fun x => ?_⟩
+  rw [bayesKernel_apply hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
+  show ∫⁻ θ, p θ x / predictiveDensity p π x ∂π ≤ 1
+  rcases eq_or_ne (predictiveDensity p π x) 0 with hm | hm
+  · -- `m x = 0`: with `hp`, `p(·,x) =ᵐ[π] 0`, so the integrand is `π`-a.e. `0`.
+    have hae : (fun θ => p θ x) =ᵐ[π] 0 :=
+      likelihood_ae_eq_zero_of_predictiveDensity_eq_zero hp hm
+    rw [lintegral_congr_ae (g := fun _ => (0 : ℝ≥0∞))]
+    · simp
+    · filter_upwards [hae] with θ hθ
+      simp [hθ]
+  · simp_rw [div_eq_mul_inv]
+    rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hm)]
+    exact ENNReal.mul_inv_le_one _
 
 /-- Pointwise heart of the disintegration: for `ν`-a.e. `x`,
 `m x * ∫_s (p(·,x)/m x) dπ = ∫_s p(·,x) dπ`. -/
@@ -115,6 +114,7 @@ theorem compProd_bayesKernel_eq_map_swap [IsFiniteMeasure π] [IsFiniteKernel κ
     -- USER-INPUT: dominated model; Robert Definition 1.2.1 / §1.4
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :
     (κ ∘ₘ π) ⊗ₘ bayesKernel p π = (π ⊗ₘ κ).map Prod.swap := by
+  haveI := isFiniteKernel_bayesKernel (π := π) hp
   have key : ∀ {t : Set 𝓧} {s : Set Θ}, MeasurableSet t → MeasurableSet s →
       ((κ ∘ₘ π) ⊗ₘ bayesKernel p π) (t ×ˢ s) = ((π ⊗ₘ κ).map Prod.swap) (t ×ˢ s) := by
     intro t s ht hs
@@ -147,8 +147,9 @@ theorem bayesKernel_ae_eq_posterior [StandardBorelSpace Θ] [Nonempty Θ]
     (hp : Measurable (Function.uncurry p))
     -- USER-INPUT: dominated model; Robert Definition 1.2.1 / §1.4
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :
-    bayesKernel p π =ᵐ[κ ∘ₘ π] κ†π :=
-  ae_eq_posterior_of_compProd_eq (μ := π) (compProd_bayesKernel_eq_map_swap hp hκ)
+    bayesKernel p π =ᵐ[κ ∘ₘ π] κ†π := by
+  haveI := isFiniteKernel_bayesKernel (π := π) hp
+  exact ae_eq_posterior_of_compProd_eq (μ := π) (compProd_bayesKernel_eq_map_swap hp hκ)
 
 /-- **Bayes' theorem, dominated form** (Robert eq. (1.2.3)): for predictive-a.e. `x`,
 `π(dθ | x) = p(θ,x) π(dθ) / ∫ p(θ',x) π(dθ')`. -/
