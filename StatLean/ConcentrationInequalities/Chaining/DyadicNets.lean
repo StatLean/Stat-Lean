@@ -104,6 +104,10 @@ lemma coveringNumber_eq_one_of_diam_le {T : Set E}
 `𝒩 ≥ 2` below `diam/2` device feeding the diameter lower bounds on the
 entropy sum (HDP §8.1, Remark 8.1.6 absorption). -/
 lemma one_lt_coveringNumber_of_two_mul_lt_dist {T : Set E} {ε : ℝ} {a b : E}
+    -- LEAN-ONLY: nonnegative radius — REQUIRED (statement fix at the debt
+    -- gate: for ε < 0 with a = b coincident the claim is false, e.g.
+    -- T = {x₀}, ε = −1 gives 𝒩 = 1; the sole consumer supplies 0 < e)
+    (hε : 0 ≤ ε)
     -- LEAN-ONLY: the two witnesses live in T
     (ha : a ∈ T) (hb : b ∈ T)
     -- LEAN-ONLY: separation 2ε < d(a,b); pure metric pigeonhole
@@ -120,28 +124,12 @@ lemma one_lt_coveringNumber_of_two_mul_lt_dist {T : Set E} {ε : ℝ} {a b : E}
   obtain ⟨yb, hybC, hyb⟩ := hCcov hb
   have hyab : ya = yb := hsub ya yb hyaC hybC
   subst hyab
-  rcases le_or_gt 0 ε with hε | hε
-  · -- 0 ≤ ε: both projections are within ε, so dist a b ≤ 2ε, contradiction
-    have hda : dist a ya ≤ ε := (edist_le_ofReal hε).mp hya
-    have hdb : dist b ya ≤ ε := (edist_le_ofReal hε).mp hyb
-    have : dist a b ≤ dist a ya + dist ya b := dist_triangle a ya b
-    rw [dist_comm ya b] at this
-    linarith
-  · -- ε < 0: the covering radius `Real.toNNReal ε` clamps to 0, forcing both pseudo-distances
-    -- to `ya` to vanish, hence `dist a b ≤ 0`.  With `2ε < dist a b` and `ε < 0` this is NOT a
-    -- contradiction when `dist a b = 0`: the frozen statement is FALSE in this
-    -- (ε < 0 ∧ a, b coincident) corner — e.g. `T = {x₀}`, `a = b = x₀`, `ε = -1` gives
-    -- `coveringNumber T ε = 1`, so the goal `1 < 1` is unprovable.
-    have hclamp : (↑(Real.toNNReal ε) : ℝ≥0∞) = ENNReal.ofReal 0 := by
-      rw [Real.toNNReal_of_nonpos hε.le, ENNReal.ofReal_zero, ENNReal.coe_zero]
-    have hda : dist a ya ≤ 0 := (edist_le_ofReal le_rfl).mp (hya.trans hclamp.le)
-    have hdb : dist b ya ≤ 0 := (edist_le_ofReal le_rfl).mp (hyb.trans hclamp.le)
-    have htri : dist a b ≤ dist a ya + dist ya b := dist_triangle a ya b
-    rw [dist_comm ya b] at htri
-    have hd0 : dist a b = 0 := le_antisymm (by linarith) dist_nonneg
-    rw [hd0] at h
-    -- remaining goal `False` from `2 * ε < 0` with `ε < 0` — unprovable (frozen-false corner)
-    sorry
+  -- Both projections are within ε, so dist a b ≤ 2ε — contradiction.
+  have hda : dist a ya ≤ ε := (edist_le_ofReal hε).mp hya
+  have hdb : dist b ya ≤ ε := (edist_le_ofReal hε).mp hyb
+  have : dist a b ≤ dist a ya + dist ya b := dist_triangle a ya b
+  rw [dist_comm ya b] at this
+  linarith
 
 /-- Coarse dyadic scale (HDP §8.1, Eqs. (8.4)/(8.6)): `κ := −Int.clog 2 D`
 satisfies `D ≤ 2^{−κ} < 2D` (via `Int.self_le_zpow_clog` and
