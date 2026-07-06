@@ -86,7 +86,50 @@ theorem IsSymmetricLaw.map_mul_abs_rad {ν : Measure ℝ} [IsProbabilityMeasure 
     -- USER-INPUT: ν symmetric; HDP §6.3 Lemma 6.3.1(b)
     (hν : IsSymmetricLaw ν) :
     (radLaw.prod ν).map (fun p => p.1 * |p.2|) = ν := by
-  sorry
+  have hmul : Measurable (fun p : ℝ × ℝ => p.1 * |p.2|) :=
+    measurable_fst.mul measurable_snd.abs
+  -- Key: for *any* measure, the paired pushforwards of `(|·|, -|·|)` and
+  -- `(id, -·)` have equal sums (unordered pair `{|y|, -|y|} = {y, -y}`).
+  set s := Set.Ici (0 : ℝ) with hs_def
+  have hs : MeasurableSet s := measurableSet_Ici
+  have hmap_split : ∀ g : ℝ → ℝ, Measurable g →
+      ν.map g = (ν.restrict s).map g + (ν.restrict sᶜ).map g := by
+    intro g hg
+    conv_lhs => rw [← Measure.restrict_add_restrict_compl (μ := ν) hs]
+    rw [Measure.map_add _ _ hg]
+  have c1 : (ν.restrict s).map (fun y => |y|) = (ν.restrict s).map (fun y => y) :=
+    Measure.map_congr <| by
+      filter_upwards [ae_restrict_mem hs] with y hy; exact abs_of_nonneg hy
+  have c2 : (ν.restrict s).map (fun y => -|y|) = (ν.restrict s).map (fun y => -y) :=
+    Measure.map_congr <| by
+      filter_upwards [ae_restrict_mem hs] with y hy; rw [abs_of_nonneg hy]
+  have c3 : (ν.restrict sᶜ).map (fun y => |y|) = (ν.restrict sᶜ).map (fun y => -y) :=
+    Measure.map_congr <| by
+      filter_upwards [ae_restrict_mem hs.compl] with y hy
+      exact abs_of_neg (by simpa [hs_def, not_le] using hy)
+  have c4 : (ν.restrict sᶜ).map (fun y => -|y|) = (ν.restrict sᶜ).map (fun y => y) :=
+    Measure.map_congr <| by
+      filter_upwards [ae_restrict_mem hs.compl] with y hy
+      rw [abs_of_neg (by simpa [hs_def, not_le] using hy), neg_neg]
+  have hsum : ν.map (fun y => |y|) + ν.map (fun y => -|y|)
+      = ν.map (fun y => y) + ν.map (fun y => -y) := by
+    rw [hmap_split (fun y => |y|) (by fun_prop),
+      hmap_split (fun y => -|y|) (by fun_prop),
+      hmap_split (fun y => y) (by fun_prop),
+      hmap_split (fun y => -y) (by fun_prop), c1, c2, c3, c4]
+    abel
+  -- Assemble as in `map_mul_rad`.
+  unfold radLaw
+  rw [Measure.add_prod, Measure.prod_smul_left, Measure.prod_smul_left,
+    Measure.map_add _ _ hmul, Measure.map_smul, Measure.map_smul,
+    Measure.dirac_prod, Measure.dirac_prod,
+    Measure.map_map hmul measurable_prodMk_left, Measure.map_map hmul measurable_prodMk_left]
+  have h1 : (fun p : ℝ × ℝ => p.1 * |p.2|) ∘ (Prod.mk (1 : ℝ)) = (fun y => |y|) := by
+    funext y; simp
+  have h2 : (fun p : ℝ × ℝ => p.1 * |p.2|) ∘ (Prod.mk (-1 : ℝ)) = (fun y => -|y|) := by
+    funext y; simp
+  rw [h1, h2, ← smul_add, hsum, smul_add, Measure.map_id',
+    show ν.map (fun y => -y) = ν from hν, ← add_smul, ENNReal.inv_two_add_inv_two, one_smul]
 
 /-- Vector assembly of the scalar mixing identities. Given a measurable scalar
 combining map `f : ℝ × ℝ → ℝ` whose pushforward of `radLaw.prod (ν i)` is
