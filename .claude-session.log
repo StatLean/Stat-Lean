@@ -9,3 +9,25 @@ EntropyIntegral.lean is **GREEN, 0 sorry, no fallback used**. Three of four inde
 To /n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.git
    7ae9f88..4111d98  conc/hdp-bundle-final -> conc/hdp-bundle-final
 FANOUT-SESSION-DONE
+srun: job 28637888 queued and waiting for resources
+srun: job 28637888 has been allocated resources
+Committed. Here's the final report.
+
+## Summary — all three targets GREEN, 0 sorries, 0 fallbacks used
+
+**1. `VC/LawOfLargeNumbersCountable.lean`** — fixed the compilation error at 136:21. The `le_of_eq (ciSup_pos …).symm` term left the constant function as an unresolved metavariable (higher-order unification ambiguity). Replaced with `rw [ciSup_pos (he_mem k)]`, which pins the function from the goal pattern. Both `integral_biSup_le_of_forall_finset` and `vc_lln_countable` were already fully proven by the previous session — no remaining sorries.
+
+**2. `VC/GlivenkoCantelli.lean`** — closed all 5 sorries (fallback `iSup_iic_diff_eq_iSup_rat` proved outright):
+- `vcDim_iicClass = 1` — upper bound via a "no 2-point set shattered" lemma (`p<q` ⟹ label `{q}` forces `p≤t`, contradiction); lower bound via `{0}` shattered.
+- `empFrac_iic_rightContinuous` — per-indicator right-continuity (`.congr` for `x i ≤ t`, `.congr_of_eventuallyEq` on `Iio (x i)` otherwise), summed via `tendsto_finset_sum`.
+- `real_iic_rightContinuous` — transported `StieltjesFunction.right_continuous` through `cdf_eq_real`.
+- `iSup_iic_diff_eq_iSup_rat` — `iSup_eq_iSup_rat_of_right_approx` + `ContinuousWithinAt.abs`.
+- `glivenko_cantelli` — `vc_lln_countable` on `iicRatClass` at `d=1`, bridged ℝ-sup → ℚ-sup → `iicRatClass`-sup (helper `biSup_iicRatClass_eq`).
+
+**3. `VC/Generalization.lean`** — closed all 4 sorries (fallback `vcDim_symmDiff_image` proved outright):
+- `shatters_symmDiff_image` — labeling bijection via `inf_symmDiff_distrib_left` + `symmDiff_symmDiff_cancel_right`, both directions from one implication using the `·∆Θ` involution.
+- `vcDim_symmDiff_image` — `simp only [shatters_symmDiff_image]` on the unfolded `vcDim`.
+- `excess_risk_le_two_mul_sup` — Eq 8.40 chain (R(Sₙ) ≤ Rₙ(Sₙ)+dev ≤ Rₙ(S₀)+dev ≤ R(S₀)+2·dev) closed by `linarith`.
+- `vc_generalization` — pointwise excess-risk + `integral_mono`; needed a private `integrable_biSup_of_countable` (mirrors the countable engine) for the loss-class sup, plus `biSup_symmDiff_image_eq` reindexing. `10800 = 2·5400`.
+
+A couple of gotchas worth noting: `set`-free raw-lambda ranges needed `dsimp only` before `rw [ciSup_pos …]` (beta redex hides the pattern); `μ` had to be passed explicitly to `excess_risk_le_two_mul_sup` (not determined by its arguments); and `integral_const` yields `μ.real univ • c` (used `probReal_univ`, not `measure_univ`).
