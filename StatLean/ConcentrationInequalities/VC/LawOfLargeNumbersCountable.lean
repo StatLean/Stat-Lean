@@ -133,7 +133,7 @@ lemma integral_biSup_le_of_forall_finset {Ξ : Type*} [MeasurableSpace Ξ]
       obtain ⟨k, _, rfl⟩ := hS
       -- `g (e k) ξ ≤ ⨆ S ∈ range e, g S ξ`
       refine le_ciSup_of_le hbdd_biSup (e k) ?_
-      exact le_of_eq (ciSup_pos (he_mem k)).symm
+      rw [ciSup_pos (he_mem k)]
   -- Measurability / integrability of each net max and of the limit.
   have hnet_meas : ∀ m, Measurable (netMax m) := by
     intro m
