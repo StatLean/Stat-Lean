@@ -58,7 +58,31 @@ lemma shatters_traceFamily_iff [DecidableEq Ω] {C : Set (Set Ω)}
     -- condition, no scope change.
     (h : Λ' ⊆ Λ) :
     (traceFamily C Λ).Shatters Λ' ↔ Shatters C Λ' := by
-  sorry
+  have hcoe : (↑Λ' : Set Ω) ⊆ ↑Λ := Finset.coe_subset.mpr h
+  constructor
+  · intro hsh T hT
+    obtain ⟨u, hu, huT⟩ := hsh hT
+    obtain ⟨huΛ, S, hS, hSeq⟩ := mem_traceFamily.mp hu
+    refine ⟨S, hS, ?_⟩
+    calc (↑Λ' : Set Ω) ∩ S
+        = (↑Λ' ∩ ↑Λ) ∩ S := by rw [Set.inter_eq_self_of_subset_left hcoe]
+      _ = ↑Λ' ∩ (↑Λ ∩ S) := by rw [Set.inter_assoc]
+      _ = ↑Λ' ∩ ↑u := by rw [hSeq]
+      _ = ↑(Λ' ∩ u) := by rw [Finset.coe_inter]
+      _ = ↑T := by rw [huT]
+  · intro hsh t ht
+    obtain ⟨S, hS, hSeq⟩ := hsh t ht
+    obtain ⟨U, hUΛ, hUeq⟩ :=
+      exists_finset_coe_of_subset_coe
+        (Set.inter_subset_left : (↑Λ : Set Ω) ∩ S ⊆ ↑Λ)
+    have hcoeq : (↑(Λ' ∩ U) : Set Ω) = ↑t := by
+      rw [Finset.coe_inter, hUeq]
+      calc (↑Λ' : Set Ω) ∩ (↑Λ ∩ S)
+          = (↑Λ' ∩ ↑Λ) ∩ S := by rw [← Set.inter_assoc]
+        _ = ↑Λ' ∩ S := by rw [Set.inter_eq_self_of_subset_left hcoe]
+        _ = ↑t := hSeq
+    exact ⟨U, mem_traceFamily.mpr ⟨hUΛ, S, hS, hUeq.symm⟩,
+      Finset.coe_injective hcoeq⟩
 
 open Classical in
 /-- **Pajor's lemma** (HDP §8.3.2, Lemma 8.3.7): the trace family has at most
@@ -66,7 +90,15 @@ as many members as there are subsets of `Λ` shattered by `C`. Via
 `Finset.card_le_card_shatterer` and the `shatters_traceFamily_iff` bridge. -/
 theorem pajor [DecidableEq Ω] (C : Set (Set Ω)) (Λ : Finset Ω) :
     (traceFamily C Λ).card ≤ (Λ.powerset.filter fun T => Shatters C T).card := by
-  sorry
+  refine (Finset.card_le_card_shatterer (traceFamily C Λ)).trans ?_
+  refine Finset.card_le_card ?_
+  intro s hs
+  rw [Finset.mem_shatterer] at hs
+  obtain ⟨t, ht, hst⟩ := hs.exists_superset
+  have htΛ : t ⊆ Λ := (mem_traceFamily.mp ht).1
+  have hsΛ : s ⊆ Λ := hst.trans htΛ
+  rw [Finset.mem_filter, Finset.mem_powerset]
+  exact ⟨hsΛ, (shatters_traceFamily_iff hsΛ).mp hs⟩
 
 /-- **Sauer–Shelah, binomial form** (HDP §8.3.3, Lemma 8.3.9, first
 inequality): `|C|_Λ| ≤ ∑_{k ≤ d} C(|Λ|, k)` when `vc(C) ≤ d`. Pajor + (every
@@ -75,7 +107,22 @@ theorem card_traceFamily_le_sum_choose {C : Set (Set Ω)} {d : ℕ}
     -- USER-INPUT: VC dimension bound; HDP §8.3.3, Lemma 8.3.9.
     (hd : vcDim C ≤ (d : ℕ∞)) (Λ : Finset Ω) :
     (traceFamily C Λ).card ≤ ∑ k ∈ Finset.Iic d, Λ.card.choose k := by
-  sorry
+  classical
+  refine (pajor C Λ).trans ?_
+  have hsub : (Λ.powerset.filter fun T => Shatters C T)
+      ⊆ (Finset.Iic d).biUnion (fun k => Λ.powersetCard k) := by
+    intro T hT
+    rw [Finset.mem_filter, Finset.mem_powerset] at hT
+    obtain ⟨hTΛ, hShT⟩ := hT
+    have hcard : (T.card : ℕ∞) ≤ (d : ℕ∞) := hShT.card_le_vcDim.trans hd
+    have hcard' : T.card ≤ d := by exact_mod_cast hcard
+    rw [Finset.mem_biUnion]
+    exact ⟨T.card, Finset.mem_Iic.mpr hcard',
+      Finset.mem_powersetCard.mpr ⟨hTΛ, rfl⟩⟩
+  refine (Finset.card_le_card hsub).trans ?_
+  refine Finset.card_biUnion_le.trans ?_
+  refine le_of_eq (Finset.sum_congr rfl fun k _ => ?_)
+  rw [Finset.card_powersetCard]
 
 /-- **Sauer–Shelah, closed form** (HDP §8.3.3, Lemma 8.3.9, second
 inequality): `|C|_Λ| ≤ (e·n/d)^d` for `|Λ| ≤ n`, via
@@ -90,7 +137,17 @@ theorem card_traceFamily_le_pow {C : Set (Set Ω)} {d n : ℕ}
     -- USER-INPUT: d ≤ n (the closed form's regime); HDP Exercise 0.6.
     (hdn : d ≤ n) :
     ((traceFamily C Λ).card : ℝ) ≤ (Real.exp 1 * n / d) ^ d := by
-  sorry
+  have h1 : (traceFamily C Λ).card ≤ ∑ k ∈ Finset.Iic d, Λ.card.choose k :=
+    card_traceFamily_le_sum_choose hd Λ
+  have h2 : (∑ k ∈ Finset.Iic d, Λ.card.choose k)
+      ≤ ∑ k ∈ Finset.Iic d, n.choose k :=
+    Finset.sum_le_sum fun k _ => Nat.choose_le_choose k hΛ
+  have h3 : ((traceFamily C Λ).card : ℝ) ≤ ∑ k ∈ Finset.Iic d, (n.choose k : ℝ) := by
+    have hnat : (traceFamily C Λ).card ≤ ∑ k ∈ Finset.Iic d, n.choose k := h1.trans h2
+    calc ((traceFamily C Λ).card : ℝ)
+        ≤ ((∑ k ∈ Finset.Iic d, n.choose k : ℕ) : ℝ) := by exact_mod_cast hnat
+      _ = ∑ k ∈ Finset.Iic d, (n.choose k : ℝ) := by push_cast; rfl
+  exact h3.trans (sum_choose_le_exp_mul_pow hd1 hdn)
 
 /-- Growth-function upper bound (HDP §8.3.4, Eq. (8.30), right inequality,
 `ℕ∞` form): `Π_C(n) ≤ ∑_{k ≤ d} C(n, k)` when `vc(C) ≤ d`. -/
@@ -98,7 +155,10 @@ theorem growthFunction_le_sum_choose {C : Set (Set Ω)} {d n : ℕ}
     -- USER-INPUT: VC dimension bound; HDP §8.3.4, Eq. (8.30).
     (hd : vcDim C ≤ (d : ℕ∞)) :
     growthFunction C n ≤ ((∑ k ∈ Finset.Iic d, n.choose k : ℕ) : ℕ∞) := by
-  sorry
+  refine iSup₂_le fun Λ hΛ => ?_
+  have hc := card_traceFamily_le_sum_choose hd Λ
+  rw [hΛ] at hc
+  exact_mod_cast hc
 
 /-- Attainment of the `ℕ∞`-valued `vcDim` supremum at a finite value
 (LEAN-ONLY: `iSup` attainment in `ℕ∞`, no book content). -/
@@ -109,7 +169,21 @@ theorem exists_shatters_card_eq {C : Set (Set Ω)} {d : ℕ}
     -- USER-INPUT: exact finite VC dimension; HDP §8.3.4, Eq. (8.30).
     (hd : vcDim C = (d : ℕ∞)) :
     ∃ Λ : Finset Ω, Shatters C Λ ∧ Λ.card = d := by
-  sorry
+  rcases Nat.eq_zero_or_pos d with hd0 | hdpos
+  · exact ⟨∅, shatters_empty_iff.mpr hC, by simp [hd0]⟩
+  · by_contra hcon
+    push_neg at hcon
+    have hub : vcDim C ≤ ((d - 1 : ℕ) : ℕ∞) := by
+      rw [vcDim_le_iff]
+      intro Λ hΛ
+      have hle : (Λ.card : ℕ∞) ≤ (d : ℕ∞) := hd ▸ hΛ.card_le_vcDim
+      have hle' : Λ.card ≤ d := by exact_mod_cast hle
+      have hne : Λ.card ≠ d := hcon Λ hΛ
+      have hdec : Λ.card ≤ d - 1 := by omega
+      exact_mod_cast hdec
+    rw [hd] at hub
+    have hnat : d ≤ d - 1 := by exact_mod_cast hub
+    omega
 
 /-- Growth-function lower bound (HDP §8.3.4, Eq. (8.30), left inequality):
 `2^d ≤ Π_C(n)` for `n ≥ d = vc(C)`. Decorative for downstream (nothing
