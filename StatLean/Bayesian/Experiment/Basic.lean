@@ -29,22 +29,29 @@ namespace BayesExperiment
 
 variable (E : BayesExperiment Θ 𝓧)
 
-instance : IsProbabilityMeasure E.joint := sorry
+instance : IsProbabilityMeasure E.joint := by
+  unfold BayesExperiment.joint; infer_instance
 
-instance : IsProbabilityMeasure E.predictive := sorry
+instance : IsProbabilityMeasure E.predictive := by
+  unfold BayesExperiment.predictive; infer_instance
 
-instance [StandardBorelSpace Θ] [Nonempty Θ] : IsMarkovKernel E.posterior := sorry
+instance [StandardBorelSpace Θ] [Nonempty Θ] : IsMarkovKernel E.posterior := by
+  unfold BayesExperiment.posterior; infer_instance
 
 /-- **The posterior disintegrates the joint distribution**: `predictive ⊗ₘ posterior` equals the
 joint distribution with its coordinates swapped (Robert §1.4). Textbook alias of Mathlib's
 `compProd_posterior_eq_map_swap`. -/
 theorem posterior_disintegrates_joint [StandardBorelSpace Θ] [Nonempty Θ] :
-    E.predictive ⊗ₘ E.posterior = E.joint.map Prod.swap := sorry
+    E.predictive ⊗ₘ E.posterior = E.joint.map Prod.swap := by
+  unfold BayesExperiment.predictive BayesExperiment.posterior BayesExperiment.joint
+  exact compProd_posterior_eq_map_swap
 
 /-- Composing the posterior kernel with the prior predictive recovers the prior
 (Robert §1.4). Textbook alias of Mathlib's `posterior_comp_self`. -/
 theorem posterior_comp_predictive [StandardBorelSpace Θ] [Nonempty Θ] :
-    E.posterior ∘ₘ E.predictive = E.prior := sorry
+    E.posterior ∘ₘ E.predictive = E.prior := by
+  unfold BayesExperiment.posterior BayesExperiment.predictive
+  exact posterior_comp_self
 
 end BayesExperiment
 

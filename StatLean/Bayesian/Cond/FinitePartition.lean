@@ -43,7 +43,16 @@ theorem measure_eq_sum_cond_mul_of_partition {s : Finset ι} {H : ι → Set Ω}
     (μ : Measure Ω) [IsFiniteMeasure μ]
     -- LEAN-ONLY: the observed data `d` is an event (measurability is regularity)
     {d : Set Ω} (hd : MeasurableSet d) :
-    μ d = ∑ i ∈ s, μ[d | H i] * μ (H i) := sorry
+    μ d = ∑ i ∈ s, μ[d | H i] * μ (H i) := by
+  have hdisj : (s : Set ι).PairwiseDisjoint (fun i => H i ∩ d) :=
+    fun i hi j hj hij => (hHd hi hj hij).mono Set.inter_subset_left Set.inter_subset_left
+  have hmeas : ∀ i ∈ s, MeasurableSet (H i ∩ d) := fun i hi => (hHm i hi).inter hd
+  have hunion : (⋃ i ∈ s, H i ∩ d) = d := by
+    rw [← Set.iUnion₂_inter, hHc, Set.univ_inter]
+  calc μ d = μ (⋃ i ∈ s, H i ∩ d) := by rw [hunion]
+    _ = ∑ i ∈ s, μ (H i ∩ d) := measure_biUnion_finset hdisj hmeas
+    _ = ∑ i ∈ s, μ[d | H i] * μ (H i) :=
+        Finset.sum_congr rfl fun i hi => (cond_mul_eq_inter (hHm i hi) d μ).symm
 
 /-- **Bayes' theorem for a finite partition** (Robert §1.2, discrete posterior form). If
 `μ d = 0` both sides are `0` (`0/0 = 0` in `ℝ≥0∞`), so the observed-data event needs no
@@ -58,7 +67,10 @@ theorem cond_eq_cond_mul_div_sum_of_partition {s : Finset ι} {H : ι → Set Ω
     (μ : Measure Ω) [IsFiniteMeasure μ]
     -- LEAN-ONLY: the observed data `d` is an event
     {d : Set Ω} (hd : MeasurableSet d) {j : ι} (hj : j ∈ s) :
-    μ[H j | d] = μ[d | H j] * μ (H j) / ∑ i ∈ s, μ[d | H i] * μ (H i) := sorry
+    μ[H j | d] = μ[d | H j] * μ (H j) / ∑ i ∈ s, μ[d | H i] * μ (H i) := by
+  rw [← measure_eq_sum_cond_mul_of_partition hHm hHd hHc μ hd,
+    cond_apply' (hHm j hj) μ, cond_mul_eq_inter (hHm j hj) d μ, Set.inter_comm d (H j),
+    ENNReal.div_eq_inv_mul]
 
 /-- **Two-hypothesis Bayes' theorem** (Robert §1.2, p. 8). Only the hypothesis `t` needs
 measurability; the data `d` may be any set (`cond_apply'` / `cond_add_cond_compl_eq` take the
@@ -66,6 +78,8 @@ target set arbitrary). Degenerate cases vanish under the `ℝ≥0∞` convention
 theorem cond_eq_cond_mul_div_add_compl (μ : Measure Ω) [IsFiniteMeasure μ]
     -- LEAN-ONLY: the hypothesis `t` is an event
     {t : Set Ω} (ht : MeasurableSet t) (d : Set Ω) :
-    μ[t | d] = μ[d | t] * μ t / (μ[d | t] * μ t + μ[d | tᶜ] * μ tᶜ) := sorry
+    μ[t | d] = μ[d | t] * μ t / (μ[d | t] * μ t + μ[d | tᶜ] * μ tᶜ) := by
+  rw [cond_add_cond_compl_eq ht μ, cond_apply' ht μ, cond_mul_eq_inter ht d μ,
+    Set.inter_comm d t, ENNReal.div_eq_inv_mul]
 
 end StatLean.Bayesian
