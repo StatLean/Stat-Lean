@@ -1,0 +1,16 @@
+srun: job 28617740 queued and waiting for resources
+srun: job 28617740 has been allocated resources
+Done. All six touch-set targets build **GREEN** (verified via the final combined `lake build` — "Build completed successfully (2876 jobs)"), and the work is committed.
+
+## Per-file closure report
+
+| File | Status | Notes |
+|---|---|---|
+| **Orlicz/Generators.lean** | ✅ **0-sorry** | ψ₂/ψ₁ zero/nonneg/monotone/convex/continuous/measurable/tendsto. Convexity via `convexOn_pow`+`ConvexOn.comp`(exp∘·²) and `convexOn_exp.add_const`; needed `import Mathlib.Analysis.Convex.Mul`. |
+| **ForMathlib/ExpTaylorBounds.lean** | ⚠️ **1 designated fallback** | `pow_div_factorial_le_exp`, `le_exp_half`, `sq_le_exp`, `pow_div_exp_pow_le_factorial`, and the two-sided `exp_le_one_add_add_sq_half_mul_exp_abs` all proven. `le_exp_half` via 3-term series `Real.sum_le_exp_of_nonneg`; the x≥0 Taylor branch via a **new integral-comparison lemma** (`∫₀ˣ(eᵗ−1)dt ≤ ∫₀ˣ t·eˣ dt`). Only the designated `exp_le_one_add_add_sq_half_of_nonpos` left as sorry. |
+| **Orlicz/Basic.lean** | ⚠️ **1 designated fallback** | Gauge upward-closure, witness extraction (`iInf_lt_iff`), congr/mono/neg/abs, `orliczNorm_zero` (via `ENNReal.le_of_forall_pos_le_add`), and all wrappers proven. Only the designated `orliczNorm_const_mul` left as sorry. |
+| **Orlicz/SubGaussianTail.lean** | ✅ **0-sorry** | B1 raw core via Markov (`mul_meas_ge_le_lintegral₀`) on the event `{t≤|X|}⊆{eᵗ²/ᴷ²≤e^{(X/K)²}}` + `ENNReal.le_div_iff_mul_le`; norm wrapper + `toNNReal` corollary. |
+| **Orlicz/SubExponentialTail.lean** | ✅ **0-sorry** | ψ₁ Markov tail, same shape with `exp(|X|/K)`. |
+| **Orlicz/Equivalence.lean** | ✅ **0-sorry** | (i)⇒(ii) composed (`√3·√3=3`); (iv)⇒(i) via `HasSubgaussianMGF.measure_ge_le`/`.neg` + union bound. **Beat the designated fallback** (`eLpNorm_le_of_tail_le` proven outright). |
+
+**Total: 2 designated fallback sorries** (well under the ≤6 budget); 4 of 6 files fully 0-sorry, including beating the Equivalence fallback.
