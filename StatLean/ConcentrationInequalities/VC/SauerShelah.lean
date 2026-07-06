@@ -198,6 +198,25 @@ theorem two_pow_le_growthFunction [Infinite Ω] {C : Set (Set Ω)} {d n : ℕ}
     -- superset must exist inside Ω.)
     (hn : d ≤ n) :
     (2 ^ d : ℕ∞) ≤ growthFunction C n := by
-  sorry
+  classical
+  -- a shattered `d`-set exists at the exact VC dimension
+  obtain ⟨Λ₀, hΛ₀sh, hΛ₀card⟩ := exists_shatters_card_eq hC hd
+  -- extend it to an `n`-point set (possible since `Ω` is infinite and `d ≤ n`)
+  obtain ⟨Λ, hsub, hΛcard⟩ :=
+    Infinite.exists_superset_card_eq Λ₀ n (by rw [hΛ₀card]; exact hn)
+  -- the trace family shatters `Λ₀` (Mathlib's `Finset.Shatters` via the bridge)
+  have hshtrace : (traceFamily C Λ).Shatters Λ₀ :=
+    (shatters_traceFamily_iff hsub).mpr hΛ₀sh
+  -- so its `Λ₀ ∩ ·` image realizes all `2^d` subsets of `Λ₀`
+  have himg : (traceFamily C Λ).image (fun t => Λ₀ ∩ t) = Λ₀.powerset :=
+    shatters_iff.mp hshtrace
+  have hcard : 2 ^ d ≤ (traceFamily C Λ).card := by
+    calc 2 ^ d = 2 ^ Λ₀.card := by rw [hΛ₀card]
+      _ = Λ₀.powerset.card := (Finset.card_powerset Λ₀).symm
+      _ = ((traceFamily C Λ).image (fun t => Λ₀ ∩ t)).card := by rw [himg]
+      _ ≤ (traceFamily C Λ).card := Finset.card_image_le
+  have hcast : (2 ^ d : ℕ∞) ≤ ((traceFamily C Λ).card : ℕ∞) := by exact_mod_cast hcard
+  exact hcast.trans (le_iSup₂ (f := fun (Λ : Finset Ω) (_ : Λ.card = n) =>
+    ((traceFamily C Λ).card : ℕ∞)) Λ hΛcard)
 
 end StatLean.ConcentrationInequalities
