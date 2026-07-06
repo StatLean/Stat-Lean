@@ -235,13 +235,15 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
 
 /-- **Dudley's inequality, `∫_0^∞` display** (HDP §8.1, Theorem 8.1.3
 verbatim shape): via `dudleyIntegral_Ioi_eq`; the `diam = 0` corner is
-handled separately in the proof. -/
+handled separately in the proof. `Finset.sup'` carrier as in
+`dudley_inequality` (junk-free honest maximum; statement fix at the debt
+gate). -/
 theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
     (hfin : T.Finite)
-    -- LEAN-ONLY: nonemptiness guards the real biSup junk value
+    -- LEAN-ONLY: nonemptiness so the (junk-free) `Finset.sup'` is defined
     (hne : T.Nonempty)
     -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
     (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
@@ -251,7 +253,7 @@ theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
     (hinc : SubGaussianIncrements X K T μ) :
-    ∫ ω, ⨆ t ∈ T, X t ω ∂μ
+    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
       ≤ 12 * Real.sqrt 3 * K * ∫ ε in Set.Ioi (0 : ℝ), sqrtLogCov T ε := by
   have hDpos : (0 : ℝ) < Metric.diam T + 1 := by
     have := Metric.diam_nonneg (s := T); linarith
