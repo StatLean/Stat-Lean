@@ -8,3 +8,13 @@ I've scheduled a check. Waiting for the build to finish.
 To /n/holylabs/LABS/junweil_lab/Lab/Users/junweil/Projects/Stat-Lean.git
    e5792a1..d333c46  conc/hdp-debt-dudley-countable -> conc/hdp-debt-dudley-countable
 FANOUT-SESSION-DONE
+srun: job 28753964 queued and waiting for resources
+srun: job 28753964 has been allocated resources
+DONE. `StatLean.ConcentrationInequalities.Chaining.Dudley` builds green (0 errors, 0 sorries in Dudley.lean); committed as 436c376.
+
+Five fixes (proof bodies only):
+1. **287** unsolved goals — `lintegral_smul_measure` left a `•`; appended `smul_eq_mul` to the rw chain so `ofReal|2⁻¹| • ∫ = ofReal|2⁻¹| * ∫` closes.
+2. **304** unknown constant — `Set.indicator_of_not_mem` → `Set.indicator_of_notMem` (pin rename), both occurrences.
+3. **366** application type mismatch — `Finset.range_subset` (`⊆ ↔ ∀x<n,...`) → `Finset.range_subset_range` (`range n ⊆ range m ↔ n ≤ m`), so `.mpr hmn` typechecks.
+4. **397** no goals — dropped the superfluous `simp only [hΦ]` after `rw [← hUnion, iSup_iUnion]` (already closed by rfl).
+5. **424** unknown identifier — `comp_sup'_eq_sup'_comp` → `Finset.comp_sup'_eq_sup'_comp` and added a trailing `rfl` to discharge the defeq `fun t => ofReal|·|` vs `ofReal ∘ fun t => |·|`.
