@@ -3,3 +3,26 @@ srun: job 28748723 has been allocated resources
 Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
 Error: Input must be provided either through stdin or as a prompt argument when using --print
 srun: error: holy8a26303: task 0: Exited with exit code 1
+srun: job 28755323 queued and waiting for resources
+srun: job 28755323 has been allocated resources
+Done. **Debt D closed — `rademacher_process_expectation_le` is GREEN, 0-sorry, committed** (`36b0be1`).
+
+## What was proven
+
+The conditional Dudley glue: for a fixed sample, `∫ Rademacher-sup ≤ 2700·√d/√n`, assembling the full §8.3.6 pipeline in one lemma.
+
+## Key architecture
+
+I used **`T = empProj x '' ↑F ∪ {0}`** (anchor `0`) rather than the docstring's provisional symmetric doubling — the extra `{0}` is what makes the covering bound clean:
+
+1. **Reduction** — pointwise `|(n)⁻¹∑ eᵢ𝟙_S| = s⁻¹·|Z(empProj x S)e|` (`s=√n`, `s⁻¹·s⁻¹=n⁻¹`), dominated by `s⁻¹·⨆_{t∈T}|Z t e − Z 0 e|` via a fresh honest `le_biSup_mem` (`le_ciSup_of_le`, avoiding the FROZEN-FALSE `biSup_finset_eq_sup'`); then `integral_mono` + `integral_const_mul`.
+2. **Dudley** — `dudley_inequality_abs` with `K=√6` from `subGaussianIncrements_inner_signVec`; `diam T ≤ 2` from `dist_empProj_sq x S ∅` + `empFrac_le_one`.
+3. **Entropy** — `dudleyIntegral T 2 ≤ ∫√(22d·log(4/ε)) ≤ 27√d` (`setIntegral_mono_on` → `entropyIntegral_le`).
+4. **Sample-independent covering** `N(T,ε) ≤ (4/ε)^{22d}`, split at ε=1: ε<1 uses `coveringNumber_empProj_le` + anchor (extracted cover via `exists_set_encard_eq_coveringNumber`, `SetRel.IsCover.union`, `+1`); ε≥1 the single ball at `0` covers `T` (all norms ≤ 1) ⇒ covering ≤ 1.
+5. **Numeral** — `40·√6·27 = 1080√6 ≤ 2700` via `√6 ≤ 5/2`.
+
+## Notable gotchas
+- `set_option maxHeartbeats 1600000 in` must go **before the docstring** (not between docstring and lemma — parse error), for the `Finset.sup'`/`⨆` defeq blowup over `EuclideanSpace`.
+- `ciSup_pos (f := …)` needs `f` explicit in term mode; `change` to beta-reduce; `rcases lt_or_ge`.
+
+`lake build …VC.LawOfLargeNumbers` exits 0; the only remaining `sorry` token in the file is the word inside a docstring. Touch-set respected (only `LawOfLargeNumbers.lean` committed).
