@@ -338,7 +338,7 @@ lemma diam_mul_sqrt_log_two_le_four_mul_dudleySum {T : Set E}
       exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
     -- Hence `𝒩(T, e) ≥ 2`, giving `sqrtLogCov T e ≥ √(log 2)`.
     have hcov : 1 < coveringNumber T e :=
-      one_lt_coveringNumber_of_two_mul_lt_dist ha hb hab
+      one_lt_coveringNumber_of_two_mul_lt_dist he_pos.le ha hb hab
     have hcov_top : coveringNumber T e ≠ ⊤ :=
       ne_top_of_le_ne_top hfin.encard_lt_top.ne (Metric.coveringNumber_le_encard_self T)
     have h2n : 2 ≤ (coveringNumber T e).toNat := by
