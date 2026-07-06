@@ -1,0 +1,24 @@
+srun: job 28884795 queued and waiting for resources
+srun: job 28884795 has been allocated resources
+Done. Session summary:
+
+## Outcome per debt
+
+**Debt 5 (REPAIR) — Symmetrization/Empirical.lean `empirical_symmetrization_countable` — ✅ CLOSED**
+Imported the final5 closure and fixed its 4 pin-drift errors to reach **gate-green, 0-sorry** (committed `92f1885`, pushed):
+- `abs_add` → `abs_add_le` (bare `abs_add` absent at this pin)
+- `quasiMeasurePreserving_snd` → `Measure.quasiMeasurePreserving_snd` (namespace not opened)
+- 3× `Finset.le_sup' _ hk`: with `f := _` against a nonneg lower bound, HO unification wrongly solved the function as a *constant* → passed the k-dependent function explicitly
+- 2× `rw` on an un-beta-reduced redex `(fun k ↦ …) k` → inserted `dsimp only` first
+- Plus a line-length lint I introduced.
+
+Gate `StatLean.ConcentrationInequalities.Symmetrization.Empirical` builds **exit 0** (remaining warnings are all pre-existing).
+
+**Debts 1, 2, 3, and SubGaussianIncrements:243 — ⛔ LEFT (genuinely FROZEN-FALSE)**
+Each has a documented false-as-stated counterexample, which I independently re-verified and which match three prior-session memory notes:
+1. `biSup_finset_eq_sup'` — false for `f = const(-1), s = {0}` (junk `sSup ∅ = 0` leaks in)
+2. `expectation_max_finset_le` — false at `|s|=1` (RHS = 0 < E[X⁺] = LHS)
+3. `one_lt_coveringNumber_of_two_mul_lt_dist` — false in the `ε<0 ∧ a=b coincident` corner
+4. `hasSubgaussianMGF_empiricalProcess_sub` — false when `f,g` are non-P-integrable and `∫(f−g)dP ≠ 0` (a sub-Gaussian MGF forces the mean = `∫(f−g)dP` to vanish)
+
+The prompt's suggested closure strategies for these four rest on the statements being true; they are not (the private-lemma pointer for debt 1 was also inaccurate — GenericChaining *consumes* `biSup_finset_eq_sup'`, it doesn't reprove it). Statements are frozen, so nothing further is closable there. Recorded in memory.
