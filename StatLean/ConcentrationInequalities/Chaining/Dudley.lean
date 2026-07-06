@@ -286,7 +286,8 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
           = ENNReal.ofReal (|(2:ℝ)⁻¹|)
               * ∫⁻ ε, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) ε ∂volume := by
       rw [← lintegral_map hF (measurable_const_mul 2),
-        Real.map_volume_mul_left (by norm_num : (2:ℝ) ≠ 0), lintegral_smul_measure]
+        Real.map_volume_mul_left (by norm_num : (2:ℝ) ≠ 0), lintegral_smul_measure,
+        smul_eq_mul]
     rw [lintegral_indicator measurableSet_Ioc] at step1
     have hLHS :
         ∫⁻ u, Set.indicator (Set.Ioc (0:ℝ) D) (fun ε => g (ε / 2)) (2 * u) ∂volume
@@ -301,7 +302,7 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
         congr 1; ring
       · have h2u : 2 * u ∉ Set.Ioc (0:ℝ) D := by
           intro hmem; exact hu ⟨by linarith [hmem.1], by linarith [hmem.2]⟩
-        rw [Set.indicator_of_not_mem h2u, Set.indicator_of_not_mem hu]
+        rw [Set.indicator_of_notMem h2u, Set.indicator_of_notMem hu]
     rw [hLHS] at step1
     have hc2 : (2:ℝ≥0∞) * ENNReal.ofReal (|(2:ℝ)⁻¹|) = 1 := by
       rw [abs_of_pos (by norm_num : (0:ℝ) < (2:ℝ)⁻¹),
@@ -363,7 +364,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
   have hSmono : Monotone S := by
     intro m n hmn
     apply Finset.insert_subset_insert
-    exact Finset.image_subset_image (Finset.range_subset.mpr hmn)
+    exact Finset.image_subset_image (Finset.range_subset_range.mpr hmn)
   have hUnion : (⋃ n, (↑(S n) : Set E)) = T := by
     refine Set.Subset.antisymm (Set.iUnion_subset hSsub) ?_
     rw [hf]
@@ -394,7 +395,6 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
   have hA : ∀ ω, (⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω|) = ⨆ n, Φ n ω := by
     intro ω
     rw [← hUnion, iSup_iUnion]
-    simp only [hΦ]
   -- Per-level bound via the finite absolute Dudley inequality.
   have hbound : ∀ n, ∫⁻ ω, Φ n ω ∂μ
       ≤ ENNReal.ofReal (80 * K) * dudleyLIntegral T D := by
@@ -421,7 +421,8 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
       simp only [hΦ]
       rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
         Ssup (fun t => |X t ω - X t₀ ω|) n,
-        comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal (fun x y => ENNReal.ofReal_max x y)]
+        Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal (fun x y => ENNReal.ofReal_max x y)]
+      rfl
     calc ∫⁻ ω, Φ n ω ∂μ
         = ∫⁻ ω, ENNReal.ofReal (⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) ∂μ := by
           apply lintegral_congr; intro ω; exact hΦeq ω
