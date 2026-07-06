@@ -1,0 +1,24 @@
+srun: job 28617002 queued and waiting for resources
+srun: job 28617002 has been allocated resources
+Done. Here's the summary.
+
+## Result: all four files GREEN, **0 real sorries**, committed
+
+All four touch-set files build exit 0, beating **every** designated fallback (0 of 4 fallbacks used). The downstream consumer `Symmetrization/Gaussian.lean` (Lemma 6.6.2) still builds.
+
+**Per-file closures:**
+
+1. **`ForMathlib/GaussianAbsMoment.lean`** — 0 sorry
+   - `integrable_abs_id_gaussianReal` via `memLp_id_gaussianReal'`
+   - `integral_abs_id_gaussianReal` = √(2/π) (the designated fallback, **proved outright**): pdf route (`integral_gaussianReal_eq_integral_smul`) → split the line at 0 (`integral_add_compl`) → each half by FTC (`integral_Ioi/Iic_of_hasDerivAt_of_tendsto'`) with antiderivative ∓(√2π)⁻¹e^(−x²/2).
+
+2. **`Symmetrization/GaussianVector.lean`** — 0 sorry
+   - All 8 items: probability instance, coordinate marginal/integrability/mean-zero/abs-moment, the MGF bridge `hasSubgaussianMGF_eval_gaussVec` (designated fallback, **proved** via `HasSubgaussianMGF.id_map_iff` + `mgf_id_gaussianReal`), both sub-Gaussian directions, and independence (`iIndepFun_pi`).
+
+3. **`Symmetrization/SymmetricLaw.lean`** — 0 sorry
+   - `isSymmetricLaw_radLaw/gaussianReal`, scalar `map_mul_rad`, both vector assemblies via a shared `arrowProdEquivProdArrow` + `pi_map_pi` helper, and the designated fallback `map_mul_abs_rad` (ξ|X|=ᵈX, **proved** via the unordered-pair/Ici–Iio partition identity).
+
+4. **`Symmetrization/GaussianMax.lean`** — 0 sorry
+   - `pi_norm_eq_ciSup_abs`, and `integral_ciSup_abs_gaussVec_le` (designated fallback, **proved**) reusing `expectation_max_le` verbatim on the 2N two-sided family `(gᵢ,−gᵢ)` reindexed via `Fin(2N)≃Fin N⊕Fin N`, plus the sup-norm phrasing.
+
+Commits: `e9beb1f` (initial closure, 1 fallback sorry) and `12ddc1f` (final, 0 sorry). Key learnings saved to memory.
