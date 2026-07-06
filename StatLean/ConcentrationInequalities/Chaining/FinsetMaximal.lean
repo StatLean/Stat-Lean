@@ -44,46 +44,94 @@ namespace StatLean.ConcentrationInequalities
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
 /-- Conversion between the set-bounded supremum `⨆ i ∈ s, f i` and
-`Finset.sup'` over a nonempty Finset.
+`Finset.sup'` over a nonempty Finset — sharp form.
 
-FROZEN-FALSE corner (documented sorry). As literally stated over a general
-`f : ι → ℝ` the equality is **false**: the outer `⨆ i, ⨆ (_ : i ∈ s), f i`
-ranges over *all* of `ι`, and for `i ∉ s` the inner supremum is the junk value
-`sSup (∅ : Set ℝ) = 0`. Hence `⨆ i ∈ s, f i = max (s.sup' hs f) 0` whenever
-`ι \ s ≠ ∅`, so e.g. `⨆ i ∈ ({0} : Finset ℕ), (-1 : ℝ) = 0 ≠ -1 = sup'`.
-The identity holds only when `s.sup' hs f ≥ 0` (in particular for the
-nonnegative `|·|`-valued applications that consume it in the chaining files);
-the general statement is frozen and cannot be closed without a nonnegativity
-hypothesis. Kept as the file's structural sorry alongside
-`expectation_max_finset_le` (which fails at `|s| = 1` for the same reason). -/
-lemma biSup_finset_eq_sup' {ι : Type*} {s : Finset ι}
+Junk-value caveat (why `h0` is REQUIRED, statement fix at the debt gate): over
+a general `f : ι → ℝ` the unguarded equality is **false**: the outer
+`⨆ i, ⨆ (_ : i ∈ s), f i` ranges over *all* of `ι`, and for `i ∉ s` the inner
+supremum is the junk value `sSup (∅ : Set ℝ) = 0`. Hence
+`⨆ i ∈ s, f i = max (s.sup' hs f) 0` whenever `ι \ s ≠ ∅`, so e.g.
+`⨆ i ∈ ({0} : Finset ℕ), (-1 : ℝ) = 0 ≠ -1 = sup'`. `0 ≤ s.sup' hs f` is the
+sharp hypothesis under which the identity holds; anchored chaining families
+(containing a `0` member value) supply it via `Finset.le_sup'_of_le`. -/
+lemma biSup_finset_eq_sup'_of_sup'_nonneg {ι : Type*} {s : Finset ι}
     -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined and the real biSup
     -- is not junk; no book content
     (hs : s.Nonempty) (f : ι → ℝ)
-    -- LEAN-ONLY: nonnegative family — REQUIRED (statement fix at the debt
-    -- gate: for i ∉ s the inner sup is junk 0, so the unguarded identity is
-    -- FALSE for negative values, e.g. ⨆ i ∈ {0}, (−1) = 0 ≠ −1; every
-    -- chaining call site is |·|-valued so this is supplied uniformly as
-    -- (fun i _ => abs_nonneg _))
-    (h0 : ∀ i ∈ s, 0 ≤ f i) :
+    -- LEAN-ONLY: nonnegative maximum — the sharp junk-value guard (see
+    -- docstring); no book content
+    (h0 : 0 ≤ s.sup' hs f) :
     (⨆ i ∈ s, f i) = s.sup' hs f := by
   classical
-  obtain ⟨i₀, hi₀⟩ := id hs
-  -- The `Finset.sup'` is nonnegative (it dominates the nonnegative `f i₀`).
-  have hsup_nonneg : 0 ≤ s.sup' hs f := (h0 i₀ hi₀).trans (Finset.le_sup' f hi₀)
   -- Each inner supremum branch is `≤ sup'`: `f i` when `i ∈ s`, junk `0` otherwise.
   have hbranch : ∀ i, (⨆ (_ : i ∈ s), f i) ≤ s.sup' hs f := by
     intro i
     by_cases hi : i ∈ s
     · rw [ciSup_pos hi]; exact Finset.le_sup' f hi
     · haveI : IsEmpty (i ∈ s) := ⟨hi⟩
-      rw [Real.iSup_of_isEmpty]; exact hsup_nonneg
+      rw [Real.iSup_of_isEmpty]; exact h0
   have hbdd : BddAbove (Set.range (fun i => ⨆ (_ : i ∈ s), f i)) :=
     ⟨s.sup' hs f, by rintro y ⟨i, rfl⟩; exact hbranch i⟩
-  refine le_antisymm (Real.iSup_le hbranch hsup_nonneg) ?_
+  refine le_antisymm (Real.iSup_le hbranch h0) ?_
   obtain ⟨j, hj, hje⟩ := Finset.exists_mem_eq_sup' hs f
   rw [hje]
   exact le_ciSup_of_le hbdd j (le_of_eq (ciSup_pos (f := fun _ => f j) hj).symm)
+
+/-- Conversion between the set-bounded supremum `⨆ i ∈ s, f i` and
+`Finset.sup'`, nonnegative-family form (the shape every `|·|`-valued chaining
+call site consumes, supplied uniformly as `fun i _ => abs_nonneg _`). See
+`biSup_finset_eq_sup'_of_sup'_nonneg` for the sharp hypothesis and the
+junk-value discussion. -/
+lemma biSup_finset_eq_sup' {ι : Type*} {s : Finset ι}
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined and the real biSup
+    -- is not junk; no book content
+    (hs : s.Nonempty) (f : ι → ℝ)
+    -- LEAN-ONLY: nonnegative family — junk-value guard (statement fix at the
+    -- debt gate: for i ∉ s the inner sup is junk 0, so the unguarded identity
+    -- is FALSE for negative values); no book content
+    (h0 : ∀ i ∈ s, 0 ≤ f i) :
+    (⨆ i ∈ s, f i) = s.sup' hs f := by
+  obtain ⟨i₀, hi₀⟩ := id hs
+  exact biSup_finset_eq_sup'_of_sup'_nonneg hs f
+    ((h0 i₀ hi₀).trans (Finset.le_sup' f hi₀))
+
+/-- A member value is dominated by the set-bounded supremum, unconditionally:
+the junk branches only push the real biSup *up*
+(`⨆ i ∈ s, f i = max (s.sup' _ f) 0` for `ι ⊋ s`), so no nonnegativity is
+needed for the `≤` direction. -/
+lemma le_biSup_finset {ι : Type*} {s : Finset ι} (f : ι → ℝ) {i : ι}
+    (hi : i ∈ s) : f i ≤ ⨆ j ∈ s, f j := by
+  classical
+  have hs : s.Nonempty := ⟨i, hi⟩
+  have hbdd : BddAbove (Set.range (fun j => ⨆ (_ : j ∈ s), f j)) := by
+    refine ⟨max (s.sup' hs f) 0, ?_⟩
+    rintro y ⟨j, rfl⟩
+    by_cases hj : j ∈ s
+    · rw [ciSup_pos hj]; exact le_max_of_le_left (Finset.le_sup' f hj)
+    · haveI : IsEmpty (j ∈ s) := ⟨hj⟩
+      rw [Real.iSup_of_isEmpty]; exact le_max_right _ _
+  exact le_ciSup_of_le hbdd i (le_of_eq (ciSup_pos (f := fun _ => f i) hi).symm)
+
+/-- Integrability of the pointwise `Finset.sup'` of finitely many integrable
+functions (junk-free twin of `integrable_biSup_finset`; the engine behind the
+`sup'`-carried chaining level suprema). -/
+lemma integrable_sup'_finset {ι : Type*} {s : Finset ι}
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined; no book content
+    (hs : s.Nonempty) {X : ι → Ω → ℝ}
+    -- LEAN-ONLY: per-index integrability, dominates the finite sup; HDP §8.1
+    (hint : ∀ i ∈ s, MeasureTheory.Integrable (X i) μ) :
+    MeasureTheory.Integrable (fun ω => s.sup' hs (fun i => X i ω)) μ := by
+  classical
+  revert hint
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a =>
+      intro hint
+      simp only [Finset.sup'_singleton]
+      exact hint a (by simp)
+  | cons a t ha ht ih =>
+      intro hint
+      simp only [Finset.sup'_cons]
+      exact (hint a (by simp)).sup (ih (fun i hi => hint i (by simp [hi])))
 
 set_option maxHeartbeats 1000000 in
 /-- The pointwise supremum over a nonempty finite index set of integrable
@@ -182,15 +230,14 @@ theorem tail_max_finset_le {ι : Type*} {s : Finset ι}
 6.2 / HDP §2.5, Eq. (2.22)): Finset reindex of `expectation_max_le` via
 `s.equivFin`; the per-level engine of HDP §8.1, Eq. (8.11).
 
-FROZEN-FALSE corner (documented sorry). As stated the bound is **false** for
-the same junk-`biSup` reason as `biSup_finset_eq_sup'`: over a general index
-type `ι ⊋ s` the integrand `⨆ i ∈ s, X i ω` equals `(s.sup' _ (X · ω))⁺`, not
-the honest max. At `|s| = 1` the RHS is `√σ² · √(2 log 1) = 0`, while the LHS
-is `∫ (X_{i₀})⁺ ≥ 0`, strictly positive for any non-degenerate centered
-sub-Gaussian `X_{i₀}` — a counterexample. The honest `Fin`-indexed
-`expectation_max_le` (no junk, since `Fin d` is the whole index type) is the
-correct engine; the Finset reindex needs `s.sup' _ (X · ω) ≥ 0` a.e. (true for
-the `|·|`-valued chaining applications) which the frozen statement omits. -/
+Carrier note (statement fix at the debt gate). The conclusion is stated with
+the junk-free `Finset.sup'` maximum, exactly mirroring the proven
+`Fin`-indexed `expectation_max_le`. The old set-bounded `⨆ i ∈ s, X i ω` form
+was **false**: over a general index type `ι ⊋ s` that biSup equals
+`(s.sup' _ (X · ω))⁺`, and at `|s| = 1` the RHS is `√σ² · √(2 log 1) = 0`
+while `∫ (X_{i₀})⁺` is strictly positive for any non-degenerate centered
+sub-Gaussian `X_{i₀}` — a counterexample. Consumers carry the same `sup'`
+form (see `discrete_dudley`). -/
 theorem expectation_max_finset_le {ι : Type*}
     -- USER-INPUT: probability-space context; Lu-BDA §6.2, Theorem 6.2
     [IsProbabilityMeasure μ] {s : Finset ι}

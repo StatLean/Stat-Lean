@@ -58,14 +58,19 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 variable {E : Type*} [PseudoMetricSpace E]
 
 /-- **Dudley's inequality, mean-zero capped form** (HDP §8.1, Theorem 8.1.3
-+ Eq. (8.16)): `E sup X ≤ 12√3 · K · ∫_0^D √(log 𝒩)`. Book constant frozen
-to `12√3 = 2 × 6√3`. -/
++ Eq. (8.16)): `E max_{t ∈ T} X_t ≤ 12√3 · K · ∫_0^D √(log 𝒩)`. Book constant
+frozen to `12√3 = 2 × 6√3`.
+
+Carrier note (statement fix at the debt gate): the finite maximum is stated
+with the junk-free `Finset.sup'` carrier, inherited verbatim from
+`discrete_dudley` (see its docstring for the `|T| = 1` counterexample to the
+old set-bounded `⨆ t ∈ T` form). -/
 theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
     (hfin : T.Finite)
-    -- LEAN-ONLY: nonemptiness guards the real biSup junk value
+    -- LEAN-ONLY: nonemptiness so the (junk-free) `Finset.sup'` is defined
     (hne : T.Nonempty)
     -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
     (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
@@ -79,9 +84,9 @@ theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     {D : ℝ} (hD : Metric.diam T ≤ D)
     -- LEAN-ONLY: positive cap; the D = 0 corner degenerates to a point
     (hD0 : 0 < D) :
-    ∫ ω, ⨆ t ∈ T, X t ω ∂μ
+    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
       ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D := by
-  calc ∫ ω, ⨆ t ∈ T, X t ω ∂μ
+  calc ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
       ≤ 6 * Real.sqrt 3 * K * dudleySum T :=
         discrete_dudley hfin hne hmeas hint hmean hinc
     _ ≤ 6 * Real.sqrt 3 * K * (2 * dudleyIntegral T D) := by
@@ -180,10 +185,22 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     funext ω
     have e1 : (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
         = F.sup' hFne (fun t => F.sup' hFne (fun s => |X t ω - X s ω|)) := by
-      rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
-      refine Finset.sup'_congr hFne rfl (fun t _ => ?_)
-      rw [setToF (fun s => |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
-    rw [e1, biSup_finset_eq_sup' hPne,
+      have hinner : ∀ t, (⨆ s ∈ T, |X t ω - X s ω|)
+          = F.sup' hFne (fun s => |X t ω - X s ω|) := fun t => by
+        rw [setToF (fun s => |X t ω - X s ω|),
+          biSup_finset_eq_sup' hFne (fun s => |X t ω - X s ω|)
+            (fun _ _ => abs_nonneg _)]
+      calc (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
+          = ⨆ t ∈ T, F.sup' hFne (fun s => |X t ω - X s ω|) :=
+            iSup_congr fun t => iSup_congr fun _ => hinner t
+        _ = F.sup' hFne (fun t => F.sup' hFne (fun s => |X t ω - X s ω|)) := by
+            rw [setToF (fun t => F.sup' hFne (fun s => |X t ω - X s ω|)),
+              biSup_finset_eq_sup' hFne
+                (fun t => F.sup' hFne (fun s => |X t ω - X s ω|))
+                (fun t _ => (abs_nonneg (X t ω - X t₀ ω)).trans
+                  (Finset.le_sup' (fun s => |X t ω - X s ω|) ((hmemT t₀).mpr ht₀)))]
+    rw [e1, biSup_finset_eq_sup' hPne (fun p => |X p.1 ω - X p.2 ω|)
+        (fun _ _ => abs_nonneg _),
       Finset.sup'_product_left hPne (fun p => |X p.1 ω - X p.2 ω|)]
   -- Pointwise: the double sup is at most twice the anchored sup.
   have hpt : ∀ ω, (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|) ≤ 2 * A ω := by
@@ -191,17 +208,19 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     have hanch : ∀ t ∈ T, |X t ω - X t₀ ω| ≤ A ω := by
       intro t ht
       simp only [hAdef]
-      rw [setToF (fun u => |X u ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
-      exact Finset.le_sup' (fun u => |X u ω - X t₀ ω|) ((hmemT t).mpr ht)
-    rw [setToF (fun t => ⨆ s ∈ T, |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
-    refine Finset.sup'_le hFne _ (fun t ht => ?_)
-    rw [setToF (fun s => |X t ω - X s ω|), biSup_finset_eq_sup' hFne]
-    refine Finset.sup'_le hFne _ (fun s hs => ?_)
-    have htri : |X t ω - X s ω| ≤ |X t ω - X t₀ ω| + |X s ω - X t₀ ω| := by
-      have h := abs_sub_le (X t ω) (X t₀ ω) (X s ω)
-      rwa [abs_sub_comm (X t₀ ω) (X s ω)] at h
-    have h1 := hanch t ((hmemT t).mp ht)
-    have h2 := hanch s ((hmemT s).mp hs)
+      rw [setToF (fun u => |X u ω - X t₀ ω|)]
+      exact le_biSup_finset (fun u => |X u ω - X t₀ ω|) ((hmemT t).mpr ht)
+    rw [show (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|)
+          = ⨆ p ∈ (F ×ˢ F), |X p.1 ω - X p.2 ω| from congrFun hpair_eq ω,
+      biSup_finset_eq_sup' hPne (fun p => |X p.1 ω - X p.2 ω|)
+        (fun _ _ => abs_nonneg _)]
+    refine Finset.sup'_le hPne _ (fun p hp => ?_)
+    obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+    have htri : |X p.1 ω - X p.2 ω| ≤ |X p.1 ω - X t₀ ω| + |X p.2 ω - X t₀ ω| := by
+      have h := abs_sub_le (X p.1 ω) (X t₀ ω) (X p.2 ω)
+      rwa [abs_sub_comm (X t₀ ω) (X p.2 ω)] at h
+    have h1 := hanch p.1 ((hmemT p.1).mp hp1)
+    have h2 := hanch p.2 ((hmemT p.2).mp hp2)
     linarith
   -- Assemble the integral bound.
   calc ∫ ω, ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω| ∂μ
@@ -373,9 +392,9 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
     rw [hS, Finset.coe_insert, Set.mem_insert_iff, Finset.coe_image]
     exact Or.inr ⟨k, by simp [Finset.mem_range], rfl⟩
   -- `↑(S n)`-biSup as a `Finset.sup'` (real and `ℝ≥0∞`).
-  have Ssup : ∀ (h : E → ℝ) (n : ℕ),
-      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n => by
-    rw [Finset.iSup_coe, biSup_finset_eq_sup' (hSne n)]
+  have Ssup : ∀ (h : E → ℝ) (n : ℕ), (∀ t ∈ S n, 0 ≤ h t) →
+      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n h0 => by
+    rw [Finset.iSup_coe, biSup_finset_eq_sup' (hSne n) h h0]
   have SsupE : ∀ (h : E → ℝ≥0∞) (n : ℕ),
       (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n => by
     rw [Finset.iSup_coe, ← Finset.sup_eq_iSup, Finset.sup'_eq_sup]
@@ -412,7 +431,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
       integrable_biSup_sub (S n).finite_toSet hAne hAmeas hAinc ht₀A
     have hAnn : ∀ ω, 0 ≤ ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| := by
       intro ω
-      rw [Ssup (fun t => |X t ω - X t₀ ω|) n]
+      rw [Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _)]
       refine le_trans ?_ (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (ht₀S n))
       rw [sub_self, abs_zero]
     have hΦeq : ∀ ω, Φ n ω
@@ -420,7 +439,7 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
       intro ω
       simp only [hΦ]
       rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
-        Ssup (fun t => |X t ω - X t₀ ω|) n,
+        Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _),
         Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal (fun x y => ENNReal.ofReal_max x y)]
       rfl
     calc ∫⁻ ω, Φ n ω ∂μ

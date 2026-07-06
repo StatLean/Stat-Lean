@@ -71,14 +71,23 @@ private lemma isSubGaussian_mono {Y : Ω → ℝ} {σ2 σ2' : ℝ≥0}
   gcongr
 
 /-- **Discrete Dudley inequality, mean-zero form** (HDP §8.1, Theorem 8.1.4,
-Eq. (8.2)): `E sup_{t ∈ T} X_t ≤ 6√3 · K · dudleySum T`. Book's unnamed
-absolute constant `C` frozen to `6√3` (see file notes for the derivation). -/
+Eq. (8.2)): `E max_{t ∈ T} X_t ≤ 6√3 · K · dudleySum T`. Book's unnamed
+absolute constant `C` frozen to `6√3` (see file notes for the derivation).
+
+Carrier note (statement fix at the debt gate): the finite maximum is stated
+with the junk-free `Finset.sup'` over `hfin.toFinset` — the honest
+`max_{t ∈ T} X_t` of the book. The previous set-bounded `⨆ t ∈ T, X t ω` form
+was **false**: for `ι ⊋ T` that biSup equals `(max_{t ∈ T} X t ω)⁺`, and at
+`|T| = 1` the left side degenerates to `∫ (X_c)⁺ > 0` while the right side is
+`0` (all covering numbers are `1`). The `|·|`-valued forms
+(`discrete_dudley_abs` and downstream) keep the biSup carrier, which is
+junk-free there since the family is nonnegative. -/
 theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG, HDP p.224 / p.227 footnote)
     (hfin : T.Finite)
-    -- LEAN-ONLY: nonemptiness guards the real biSup junk value
+    -- LEAN-ONLY: nonemptiness so the (junk-free) `Finset.sup'` is defined
     (hne : T.Nonempty)
     -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
     (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
@@ -88,14 +97,13 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
     (hinc : SubGaussianIncrements X K T μ) :
-    ∫ ω, ⨆ t ∈ T, X t ω ∂μ ≤ 6 * Real.sqrt 3 * K * dudleySum T := by
+    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
+      ≤ 6 * Real.sqrt 3 * K * dudleySum T := by
   classical
   have hbd : Bornology.IsBounded T := hfin.isBounded
   set F := hfin.toFinset with hFdef
   have hFne : F.Nonempty := by rw [hFdef, Set.Finite.toFinset_nonempty]; exact hne
   have hmemT : ∀ t, t ∈ F → t ∈ T := fun t ht => hfin.mem_toFinset.mp ht
-  have setToF : ∀ f : E → ℝ, (⨆ t ∈ F, f t) = ⨆ t ∈ T, f t :=
-    fun f => iSup_congr fun t => by rw [hfin.mem_toFinset]
   have ht' : hne.some ∈ T := hne.some_mem
   rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hD0 | hDpos
   · -- Degenerate case: `diam T = 0`, all coordinates coincide a.e.
@@ -109,7 +117,7 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hae : ∀ t ∈ T, (fun ω => X t ω - X c ω) =ᵐ[μ] 0 := by
       intro t ht
       exact hinc.sub_ae_eq_zero (hmeas c hcT) (hmeas t ht) hcT ht (hzero t ht)
-    have haeeq : (fun ω => ⨆ t ∈ T, X t ω) =ᵐ[μ] fun ω => X c ω := by
+    have haeeq : (fun ω => F.sup' hFne (fun t => X t ω)) =ᵐ[μ] fun ω => X c ω := by
       have hall : ∀ᵐ ω ∂μ, ∀ t ∈ T, X t ω = X c ω := by
         rw [hfin.eventually_all]
         intro t ht
@@ -117,12 +125,14 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         have : X t ω - X c ω = 0 := hω
         linarith
       filter_upwards [hall] with ω hω
-      rw [← setToF (fun t => X t ω), biSup_finset_eq_sup' hFne]
       apply le_antisymm
       · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t (hmemT t ht)))
       · exact Finset.le_sup' (fun t => X t ω) (hfin.mem_toFinset.mpr hcT)
-    rw [integral_congr_ae haeeq, hmean c hcT]
-    exact mul_nonneg (by positivity) (dudleySum_nonneg T)
+    calc ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ
+        = ∫ ω, X c ω ∂μ := integral_congr_ae haeeq
+      _ = 0 := hmean c hcT
+      _ ≤ 6 * Real.sqrt 3 * K * dudleySum T :=
+          mul_nonneg (by positivity) (dudleySum_nonneg T)
   · -- Main case: `diam T > 0`, dyadic chaining.
     obtain ⟨κ, hκ1, hκ2⟩ := exists_coarse_scale hDpos
     set ε : ℕ → ℝ := fun j => (2 : ℝ) ^ (-(κ + (j : ℤ))) with hεdef
@@ -172,17 +182,18 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       filter_upwards [hsub] with ω hω
       have : X (netProj (N n) t) ω - X t ω = 0 := hω
       linarith
-    -- Per-level suprema and close-pair suprema.
+    -- Per-level suprema and close-pair suprema (`Finset.sup'`-carried: the
+    -- junk-free honest maxima; see the theorem's carrier note).
     set S : ℕ → Ω → ℝ := fun j ω =>
-      ⨆ t ∈ F, (X (netProj (N (j + 1)) t) ω - X (netProj (N j) t) ω) with hSdef
+      F.sup' hFne (fun t => X (netProj (N (j + 1)) t) ω - X (netProj (N j) t) ω) with hSdef
     set CP : ℕ → Finset (E × E) := fun j =>
       closePairs (N (j + 1)) (N j) (ε (j + 1) + ε j) with hCPdef
-    set CPS : ℕ → Ω → ℝ := fun j ω =>
-      ⨆ p ∈ CP j, (X p.1 ω - X p.2 ω) with hCPSdef
     have hCPne : ∀ j : ℕ, (CP j).Nonempty := fun j =>
       ⟨(netProj (N (j + 1)) hne.some, netProj (N j) hne.some),
         proj_pair_mem_closePairs (hproj (j + 1) hne.some ht') (hproj j hne.some ht')
           (hN (j + 1)).2.1 (hN j).2.1⟩
+    set CPS : ℕ → Ω → ℝ := fun j ω =>
+      (CP j).sup' (hCPne j) (fun p => X p.1 ω - X p.2 ω) with hCPSdef
     have hCPmem : ∀ j : ℕ, ∀ p ∈ CP j, p.1 ∈ T ∧ p.2 ∈ T := by
       intro j p hp
       rw [hCPdef] at hp
@@ -190,48 +201,47 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       exact ⟨(hN (j + 1)).1 (Finset.mem_coe.mpr hp.1.1), (hN j).1 (Finset.mem_coe.mpr hp.1.2)⟩
     -- Integrability of all suprema.
     have hIntS : ∀ j : ℕ, MeasureTheory.Integrable (S j) μ := fun j =>
-      integrable_biSup_finset hFne fun t ht =>
+      integrable_sup'_finset hFne fun t ht =>
         (hint _ (hprojT (j + 1) t)).sub (hint _ (hprojT j t))
     have hIntCPS : ∀ j : ℕ, MeasureTheory.Integrable (CPS j) μ := fun j =>
-      integrable_biSup_finset (hCPne j) fun p hp =>
+      integrable_sup'_finset (hCPne j) fun p hp =>
         (hint _ (hCPmem j p hp).1).sub (hint _ (hCPmem j p hp).2)
-    have hIntSupX : MeasureTheory.Integrable (fun ω => ⨆ t ∈ F, X t ω) μ :=
-      integrable_biSup_finset hFne fun t ht => hint t (hmemT t ht)
-    have hIntSupA : MeasureTheory.Integrable (fun ω => ⨆ t ∈ F, (X t ω - X c ω)) μ :=
-      integrable_biSup_finset hFne fun t ht => (hint t (hmemT t ht)).sub (hint c hcT)
+    have hIntSupX : MeasureTheory.Integrable (fun ω => F.sup' hFne (fun t => X t ω)) μ :=
+      integrable_sup'_finset hFne fun t ht => hint t (hmemT t ht)
+    have hIntSupA : MeasureTheory.Integrable
+        (fun ω => F.sup' hFne (fun t => X t ω - X c ω)) μ :=
+      integrable_sup'_finset hFne fun t ht => (hint t (hmemT t ht)).sub (hint c hcT)
     -- Per-level term is dominated by its supremum.
     have term_le_S : ∀ j : ℕ, ∀ t ∈ T, ∀ ω,
         (X (netProj (N (j + 1)) t) ω - X (netProj (N j) t) ω) ≤ S j ω := by
       intro j t ht ω
       rw [hSdef]; simp only
-      rw [biSup_finset_eq_sup' hFne]
       exact Finset.le_sup'
         (fun s => X (netProj (N (j + 1)) s) ω - X (netProj (N j) s) ω)
         (hfin.mem_toFinset.mpr ht)
     -- STEP A: reduce to the `X_t - X_c` sup via mean-zero anchoring at `c`.
-    have hstepA : (∫ ω, ⨆ t ∈ F, X t ω ∂μ) ≤ ∫ ω, ⨆ t ∈ F, (X t ω - X c ω) ∂μ := by
-      have hpt : ∀ ω, (⨆ t ∈ F, X t ω) ≤ X c ω + ⨆ t ∈ F, (X t ω - X c ω) := by
+    have hstepA : (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+        ≤ ∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ := by
+      have hpt : ∀ ω, F.sup' hFne (fun t => X t ω)
+          ≤ X c ω + F.sup' hFne (fun t => X t ω - X c ω) := by
         intro ω
-        rw [biSup_finset_eq_sup' hFne]
         refine Finset.sup'_le hFne _ (fun t ht => ?_)
-        have hle : (X t ω - X c ω) ≤ ⨆ s ∈ F, (X s ω - X c ω) := by
-          rw [biSup_finset_eq_sup' hFne]
-          exact Finset.le_sup' (fun s => X s ω - X c ω) ht
+        have hle : (X t ω - X c ω) ≤ F.sup' hFne (fun s => X s ω - X c ω) :=
+          Finset.le_sup' (fun s => X s ω - X c ω) ht
         linarith
-      calc (∫ ω, ⨆ t ∈ F, X t ω ∂μ)
-          ≤ ∫ ω, (X c ω + ⨆ t ∈ F, (X t ω - X c ω)) ∂μ :=
+      calc (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+          ≤ ∫ ω, (X c ω + F.sup' hFne (fun t => X t ω - X c ω)) ∂μ :=
             integral_mono_ae hIntSupX ((hint c hcT).add hIntSupA) (ae_of_all _ hpt)
-        _ = (∫ ω, X c ω ∂μ) + ∫ ω, ⨆ t ∈ F, (X t ω - X c ω) ∂μ :=
+        _ = (∫ ω, X c ω ∂μ) + ∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ :=
             integral_add (hint c hcT) hIntSupA
-        _ = ∫ ω, ⨆ t ∈ F, (X t ω - X c ω) ∂μ := by rw [hmean c hcT, zero_add]
+        _ = ∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ := by rw [hmean c hcT, zero_add]
     -- STEP B1: split the anchored sup along the chain.
-    have hB1 : (∫ ω, ⨆ t ∈ F, (X t ω - X c ω) ∂μ)
+    have hB1 : (∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ)
         ≤ ∑ j ∈ Finset.range n, ∫ ω, S j ω ∂μ := by
       rw [← integral_finset_sum (Finset.range n) (fun j _ => hIntS j)]
       refine integral_mono_ae hIntSupA
         (integrable_finset_sum _ (fun j _ => hIntS j)) ?_
       filter_upwards [hclean] with ω hω
-      rw [biSup_finset_eq_sup' hFne]
       refine Finset.sup'_le hFne _ (fun t ht => ?_)
       have htT := hmemT t ht
       have htel : X t ω - X c ω
@@ -322,14 +332,14 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           ≤ ∫ ω, CPS j ω ∂μ := by
             refine integral_mono_ae (hIntS j) (hIntCPS j) (ae_of_all _ (fun ω => ?_))
             rw [hSdef, hCPSdef]; simp only
-            rw [biSup_finset_eq_sup' hFne, biSup_finset_eq_sup' (hCPne j)]
             refine Finset.sup'_le hFne _ (fun t ht => ?_)
             have htT := hmemT t ht
             exact Finset.le_sup' (fun p => X p.1 ω - X p.2 ω)
               (proj_pair_mem_closePairs (hproj (j + 1) t htT) (hproj j t htT)
                 (hN (j + 1)).2.1 (hN j).2.1)
         _ ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log (CP j).card) := by
-            rw [hCPSdef]; exact expectation_max_finset_le (hCPne j) hcenter hSG
+            rw [hCPSdef]; simp only
+            exact expectation_max_finset_le (hCPne j) hcenter hSG
         _ ≤ 6 * Real.sqrt 3 * K * dudleySummand T (κ + 1 + (j : ℤ)) := by
             rw [hsqrtσ, hdud]
             calc Real.sqrt 3 * ((K : ℝ) * r) * Real.sqrt (2 * Real.log (CP j).card)
@@ -348,10 +358,8 @@ theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           from by rw [Finset.sum_map]; rfl]
       exact sum_window_le_dudleySum hfin hne _
     -- COMBINE.
-    rw [show (fun ω => ⨆ t ∈ T, X t ω) = (fun ω => ⨆ t ∈ F, X t ω)
-        from funext fun ω => (setToF _).symm]
-    calc (∫ ω, ⨆ t ∈ F, X t ω ∂μ)
-        ≤ ∫ ω, ⨆ t ∈ F, (X t ω - X c ω) ∂μ := hstepA
+    calc (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+        ≤ ∫ ω, F.sup' hFne (fun t => X t ω - X c ω) ∂μ := hstepA
       _ ≤ ∑ j ∈ Finset.range n, ∫ ω, S j ω ∂μ := hB1
       _ ≤ ∑ j ∈ Finset.range n, 6 * Real.sqrt 3 * K * dudleySummand T (κ + 1 + (j : ℤ)) :=
           Finset.sum_le_sum hB2
@@ -452,7 +460,8 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         have : X t ω - X t₀ ω = 0 := hω
         rw [this, abs_zero]
       filter_upwards [hall] with ω hω
-      rw [← setToF (fun t => |X t ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      rw [← setToF (fun t => |X t ω - X t₀ ω|),
+        biSup_finset_eq_sup' hFne _ (fun _ _ => abs_nonneg _)]
       apply le_antisymm
       · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t (hmemT t ht)))
       · calc (0 : ℝ) = |X t₀ ω - X t₀ ω| := by rw [sub_self, abs_zero]
@@ -476,7 +485,8 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         have : X t ω - X t₀ ω = 0 := hω
         rw [this, abs_zero]
       filter_upwards [hall] with ω hω
-      rw [← setToF (fun t => |X t ω - X t₀ ω|), biSup_finset_eq_sup' hFne]
+      rw [← setToF (fun t => |X t ω - X t₀ ω|),
+        biSup_finset_eq_sup' hFne _ (fun _ _ => abs_nonneg _)]
       apply le_antisymm
       · exact Finset.sup'_le hFne _ (fun t ht => le_of_eq (hω t (hmemT t ht)))
       · calc (0 : ℝ) = |X t₀ ω - X t₀ ω| := by rw [sub_self, abs_zero]
@@ -609,8 +619,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hASne : ∀ ω, ∀ t ∈ F, |X t ω - X c ω| ≤ AS ω := by
       intro ω t ht
       rw [hASdef]; simp only
-      rw [biSup_finset_eq_sup' hFne]
-      exact Finset.le_sup' (fun s => |X s ω - X c ω|) ht
+      exact le_biSup_finset (fun s => |X s ω - X c ω|) ht
     have hIntAS : MeasureTheory.Integrable AS μ := by
       have hkey := integrable_biSup_sub (X := X) (K := K) (T := T) hfin hne hmeas hinc hcT
       rw [hASdef, show (fun ω => ⨆ t ∈ F, |X t ω - X c ω|)
@@ -637,9 +646,8 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hIntAnchor : MeasureTheory.Integrable (fun ω => |X c ω - X t₀ ω|) μ := by
       refine hIntSup.mono' ((hmeas c hcT).sub (hmeas t₀ ht₀)).abs.aestronglyMeasurable ?_
       filter_upwards with ω
-      rw [Real.norm_eq_abs, abs_abs, ← setToF (fun t => |X t ω - X t₀ ω|),
-        biSup_finset_eq_sup' hFne]
-      exact Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (hfin.mem_toFinset.mpr hcT)
+      rw [Real.norm_eq_abs, abs_abs, ← setToF (fun t => |X t ω - X t₀ ω|)]
+      exact le_biSup_finset (fun t => |X t ω - X t₀ ω|) (hfin.mem_toFinset.mpr hcT)
     -- **STEP B: split the anchored abs-sup along the chain plus the anchor.**
     have hB : (∫ ω, ⨆ t ∈ F, |X t ω - X t₀ ω| ∂μ)
         ≤ (∑ j ∈ Finset.range n, ∫ ω, CPS j ω ∂μ)
@@ -648,7 +656,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       have hpt : ∀ᵐ ω ∂μ, (⨆ t ∈ F, |X t ω - X t₀ ω|)
           ≤ (∑ j ∈ Finset.range n, CPS j ω) + |X c ω - X t₀ ω| := by
         filter_upwards [hclean] with ω hω
-        rw [biSup_finset_eq_sup' hFne]
+        rw [biSup_finset_eq_sup' hFne _ (fun _ _ => abs_nonneg _)]
         refine Finset.sup'_le hFne _ (fun t ht => ?_)
         have htT := hmemT t ht
         -- telescope `X_t − X_c = ∑_{i<n} (X_{π_{m+i+1}t} − X_{π_{m+i}t})` a.e.
@@ -678,8 +686,7 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
             proj_pair_mem_closePairs (hproj (m + i + 1) t htT) (hproj (m + i) t htT)
               (hN (m + i + 1)).2.1 (hN (m + i)).2.1
           rw [hCPSdef]; simp only
-          rw [biSup_finset_eq_sup' (hCPne i)]
-          exact Finset.le_sup' (fun p => |X p.1 ω - X p.2 ω|) hmem
+          exact le_biSup_finset (fun p => |X p.1 ω - X p.2 ω|) hmem
         calc |X t ω - X t₀ ω|
             ≤ |X t ω - X c ω| + |X c ω - X t₀ ω| := by
               rw [show X t ω - X t₀ ω = (X t ω - X c ω) + (X c ω - X t₀ ω) from by ring]

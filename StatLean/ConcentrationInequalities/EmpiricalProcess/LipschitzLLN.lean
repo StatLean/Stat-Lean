@@ -77,10 +77,13 @@ private theorem zero_mem_lipschitzNetUnion (m : ℕ) :
   exact ⟨0, Finset.mem_range.mpr (Nat.succ_pos m), zero_mem_lipschitzNet (0 + 1)⟩
 
 /-- Conversion between the set-bounded supremum over a Finset's coercion and
-`Finset.sup'` (both equal the honest finite maximum). -/
+`Finset.sup'` (both equal the honest finite maximum when the family is
+nonnegative — the junk-value guard `h0` is required, see
+`biSup_finset_eq_sup'`; every use here is `|·|`-valued). -/
 private lemma biSup_coe_finset_eq_sup' {ι : Type*} {s : Finset ι} (hs : s.Nonempty)
-    (g : ι → ℝ) : (⨆ t ∈ (↑s : Set ι), g t) = s.sup' hs g := by
-  rw [← biSup_finset_eq_sup' hs g]
+    (g : ι → ℝ) (h0 : ∀ i ∈ s, 0 ≤ g i) :
+    (⨆ t ∈ (↑s : Set ι), g t) = s.sup' hs g := by
+  rw [← biSup_finset_eq_sup' hs g h0]
   simp only [Finset.mem_coe]
 
 /-- Pointwise bound `|X_g| ≤ 2` for class members (values in `[0,1]`). -/
@@ -187,7 +190,8 @@ theorem expectation_sup'_netUnion_le [IsProbabilityMeasure μ]
       = ⨆ t ∈ (↑(lipschitzNetUnion m) : Set C(unitInterval, ℝ)),
           |empiricalProcess P n X ⇑t ω - empiricalProcess P n X ⇑(0 : C(unitInterval, ℝ)) ω| := by
     intro ω
-    rw [biSup_coe_finset_eq_sup' (lipschitzNetUnion_nonempty m)]
+    rw [biSup_coe_finset_eq_sup' (lipschitzNetUnion_nonempty m) _
+      (fun _ _ => abs_nonneg _)]
     refine Finset.sup'_congr (lipschitzNetUnion_nonempty m) rfl (fun g _ => ?_)
     rw [hzero_ep ω, sub_zero]
   simp_rw [hrw]
@@ -234,6 +238,7 @@ theorem expectation_sup_lipschitzUnitClass_le [IsProbabilityMeasure μ]
     filter_upwards with ω
     simp only [netMaxAbs]
     exact biSup_finset_eq_sup' (lipschitzNetUnion_nonempty m) _
+      (fun _ _ => abs_nonneg _)
   -- Uniform bounds `0 ≤ netMaxAbs P n X m ω ≤ 2`.
   have hSle2 : ∀ m ω, netMaxAbs P n X m ω ≤ 2 := by
     intro m ω
