@@ -1,0 +1,29 @@
+{
+  "root": "StatLean.Minimaxity.yang_barron",
+  "nodes": [
+    {"id":"StatLean.Minimaxity.yang_barron","label":"yang_barron","full":"StatLean.Minimaxity.yang_barron","kind":"root","decl":"thm","module":"StatLean.Minimaxity.Fano.YangBarron"},
+    {"id":"StatLean.Minimaxity.mutualInformation","label":"mutualInformation","full":"StatLean.Minimaxity.mutualInformation","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Fano.MutualInformation"},
+    {"id":"StatLean.Minimaxity.mixture","label":"mixture","full":"StatLean.Minimaxity.mixture","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"},
+    {"id":"mul_le_mul_right","label":"mul_le_mul_right","full":"mul_le_mul_right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Basic"},
+    {"id":"IsOrderedMonoid.toMulLeftMono","label":"toMulLeftMono","full":"IsOrderedMonoid.toMulLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"mul_assoc","label":"mul_assoc","full":"mul_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"ENNReal.inv_mul_cancel","label":"inv_mul_cancel","full":"ENNReal.inv_mul_cancel","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Inv"},
+    {"id":"Nat.cast_ne_zero","label":"cast_ne_zero","full":"Nat.cast_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.CharZero.Defs"},
+    {"id":"ENNReal.natCast_ne_top","label":"natCast_ne_top","full":"ENNReal.natCast_ne_top","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"one_mul","label":"one_mul","full":"one_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"StatLean.Minimaxity.uniformPrior","label":"uniformPrior","full":"StatLean.Minimaxity.uniformPrior","kind":"repo","decl":"def","module":"StatLean.Minimaxity.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Minimaxity.yang_barron","target":"StatLean.Minimaxity.mutualInformation"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"mul_le_mul_right"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"IsOrderedMonoid.toMulLeftMono"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"mul_assoc"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"ENNReal.inv_mul_cancel"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"Nat.cast_ne_zero"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"ENNReal.natCast_ne_top"},
+    {"source":"StatLean.Minimaxity.yang_barron","target":"one_mul"},
+    {"source":"StatLean.Minimaxity.mutualInformation","target":"StatLean.Minimaxity.mixture"},
+    {"source":"StatLean.Minimaxity.mixture","target":"StatLean.Minimaxity.uniformPrior"}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.MultipleTesting.chiSq_H0_mean",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.chiSq_H0_mean","label":"chiSq_H0_mean","full":"StatLean.MultipleTesting.chiSq_H0_mean","kind":"root","decl":"thm","module":"StatLean.MultipleTesting.ChiSquaredTest.Distribution"},
+    {"id":"MeasureTheory.integral_finset_sum","label":"integral_finset_sum","full":"MeasureTheory.integral_finset_sum","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"Finset.sum_const","label":"sum_const","full":"Finset.sum_const","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"nsmul_eq_mul","label":"nsmul_eq_mul","full":"nsmul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Ring.Defs"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"MeasureTheory.integral_finset_sum"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.sum_congr"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.sum_const"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Finset.card_univ"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"Fintype.card_fin"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"nsmul_eq_mul"},
+    {"source":"StatLean.MultipleTesting.chiSq_H0_mean","target":"mul_one"}
+  ]
+}

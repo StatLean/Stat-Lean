@@ -1,10 +1,10 @@
 {
   "root": "AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing",
   "nodes": [
-    {"id":"AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing","label":"maximal_inequality_bracketing","full":"AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing","kind":"root","decl":"thm","module":"AsymptoticStatistics.EmpiricalProcess.Maximal"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.supNormOver","label":"supNormOver","full":"AsymptoticStatistics.EmpiricalProcess.supNormOver","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing","label":"maximal_inequality_bracketing","full":"AsymptoticStatistics.EmpiricalProcess.maximal_inequality_bracketing","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.Maximal"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","label":"IsEnvelope","full":"AsymptoticStatistics.EmpiricalProcess.IsEnvelope","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.supNormOver","label":"supNormOver","full":"AsymptoticStatistics.EmpiricalProcess.supNormOver","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.FunctionClass"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","label":"empiricalProcess","full":"AsymptoticStatistics.EmpiricalProcess.empiricalProcess","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalProcess"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
     {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
@@ -20,7 +20,7 @@
     {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
     {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
     {"id":"Measurable.ennreal_ofReal","label":"ennreal_ofReal","full":"Measurable.ennreal_ofReal","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Real"},
-    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
+    {"id":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","label":"empiricalAvg","full":"AsymptoticStatistics.EmpiricalProcess.empiricalAvg","kind":"repo","decl":"def","module":"StatLean.AsymptoticStatistics.EmpiricalProcess.EmpiricalMeasure"},
     {"id":"iSup₂_le","label":"iSup₂_le","full":"iSup₂_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
     {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
     {"id":"abs_inv","label":"abs_inv","full":"abs_inv","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},

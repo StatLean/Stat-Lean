@@ -1,0 +1,18 @@
+{
+  "root": "StatLean.MultipleTesting.orderStat",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.orderStat","label":"orderStat","full":"StatLean.MultipleTesting.orderStat","kind":"root","decl":"def","module":"StatLean.MultipleTesting.ForMathlib.OrderStatistics"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Equiv.Perm","label":"Perm","full":"Equiv.Perm","kind":"mathlib","decl":"def","module":"Mathlib.Logic.Equiv.Defs"},
+    {"id":"EquivLike.toFunLike","label":"toFunLike","full":"EquivLike.toFunLike","kind":"mathlib","decl":"def","module":"Mathlib.Data.FunLike.Equiv"},
+    {"id":"Tuple.sort","label":"sort","full":"Tuple.sort","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fin.Tuple.Sort"},
+    {"id":"Real.linearOrder","label":"linearOrder","full":"Real.linearOrder","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Real"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Equiv.Perm"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"EquivLike.toFunLike"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Tuple.sort"},
+    {"source":"StatLean.MultipleTesting.orderStat","target":"Real.linearOrder"}
+  ]
+}

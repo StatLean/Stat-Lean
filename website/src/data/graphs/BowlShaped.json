@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.BowlShaped",
   "nodes": [
-    {"id":"AsymptoticStatistics.BowlShaped","label":"BowlShaped","full":"AsymptoticStatistics.BowlShaped","kind":"root","decl":"def","module":"AsymptoticStatistics.ForMathlib.BowlShaped"},
+    {"id":"AsymptoticStatistics.BowlShaped","label":"BowlShaped","full":"AsymptoticStatistics.BowlShaped","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.ForMathlib.BowlShaped"},
     {"id":"AddCommGroup","label":"AddCommGroup","full":"AddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Group.Defs"},
     {"id":"Module","label":"Module","full":"Module","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.Module.Defs"},
     {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},

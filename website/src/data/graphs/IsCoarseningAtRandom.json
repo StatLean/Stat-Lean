@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom",
   "nodes": [
-    {"id":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","label":"IsCoarseningAtRandom","full":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","kind":"root","decl":"def","module":"AsymptoticStatistics.Operators.CAR"},
+    {"id":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","label":"IsCoarseningAtRandom","full":"AsymptoticStatistics.Operators.CAR.IsCoarseningAtRandom","kind":"root","decl":"def","module":"StatLean.AsymptoticStatistics.Operators.CAR"},
     {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
     {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
     {"id":"ProbabilityTheory.Kernel","label":"Kernel","full":"ProbabilityTheory.Kernel","kind":"mathlib","decl":"def","module":"Mathlib.Probability.Kernel.Defs"},

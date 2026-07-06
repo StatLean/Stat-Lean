@@ -1,10 +1,36 @@
 export type CategoryId =
   | "parametric"
   | "semiparametric"
-  | "empirical"
+  | "concentration"
+  | "highdim"
+  | "multipletesting"
+  | "minimaxity"
+  | "optimization"
   | "probability";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
+
+/** The REFERENCE block on a result page (formal citation + bibliographic notes). */
+export interface ReferenceBlock {
+  /** Full formal citation, e.g. "A. W. van der Vaart, *Asymptotic Statistics*, …, 1998." May carry $…$ math. */
+  formal: string;
+  /** Concise pointer into the source, e.g. "Theorem 7.2" or "Eq. (15.13)". */
+  pointer: string;
+  /** Bibliographic-comments paragraph (may carry $…$ math); rendered after the citation. */
+  biblio?: string;
+  /** Anchor ids on the references page this block links to (e.g. ["vdv1998", "lecam1960"]). */
+  keys: string[];
+}
+
+/** One book / paper on the global references page. */
+export interface Reference {
+  /** stable anchor id, e.g. "vdv1998", "lu2026", "wainwright2019". */
+  key: string;
+  /** first author's surname, used for alphabetical ordering. */
+  sortKey: string;
+  /** full bibliographic entry as HTML (may carry $…$ math and *italics* via markdown-ish render). */
+  html: string;
+}
 
 /** A link between a Lean hypothesis token and a span in the informal statement. */
 export interface HypothesisLink {
@@ -50,6 +76,15 @@ export interface ResultEntry {
   title: string;
   /** citation, e.g. "van der Vaart (1998), Thm 25.18" */
   citation: string;
+  /**
+   * Short pointer shown to the right of the informal statement, e.g.
+   * "van der Vaart (1998), §19.2; Thm 18.14" or "Lu (2026), Thm 4.7".
+   * The author–year prefix links to the references page (see `reference.keys`).
+   * Falls back to `citation` when absent.
+   */
+  shortRef?: string;
+  /** Full reference block shown above the formalization notes. */
+  reference?: ReferenceBlock;
   /** source module path, e.g. "AsymptoticStatistics/Core/EIF.lean" */
   file: string;
   /** relative doc-gen4 URL */

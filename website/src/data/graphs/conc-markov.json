@@ -1,0 +1,18 @@
+{
+  "root": "StatLean.ConcentrationInequalities.markov",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.markov","label":"markov","full":"StatLean.ConcentrationInequalities.markov","kind":"root","decl":"thm","module":"StatLean.ConcentrationInequalities.SubGaussian.Chernoff"},
+    {"id":"MeasureTheory.mul_meas_ge_le_integral_of_nonneg","label":"mul_meas_ge_le_integral_of_nonneg","full":"MeasureTheory.mul_meas_ge_le_integral_of_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Bochner.Basic"},
+    {"id":"le_div_iff₀","label":"le_div_iff₀","full":"le_div_iff₀","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"MulPosReflectLE.toMulPosReflectLT","label":"toMulPosReflectLT","full":"MulPosReflectLE.toMulPosReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"MulPosStrictMono.toMulPosReflectLE","label":"toMulPosReflectLE","full":"MulPosStrictMono.toMulPosReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"mul_comm","label":"mul_comm","full":"mul_comm","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.markov","target":"MeasureTheory.mul_meas_ge_le_integral_of_nonneg"},
+    {"source":"StatLean.ConcentrationInequalities.markov","target":"le_div_iff₀"},
+    {"source":"StatLean.ConcentrationInequalities.markov","target":"MulPosReflectLE.toMulPosReflectLT"},
+    {"source":"StatLean.ConcentrationInequalities.markov","target":"MulPosStrictMono.toMulPosReflectLE"},
+    {"source":"StatLean.ConcentrationInequalities.markov","target":"mul_comm"}
+  ]
+}

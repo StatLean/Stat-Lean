@@ -1,0 +1,28 @@
+{
+  "root": "StatLean.Optimization.subdifferential",
+  "nodes": [
+    {"id":"StatLean.Optimization.subdifferential","label":"subdifferential","full":"StatLean.Optimization.subdifferential","kind":"root","decl":"def","module":"StatLean.Optimization.Convex.Defs"},
+    {"id":"NormedAddCommGroup","label":"NormedAddCommGroup","full":"NormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"InnerProductSpace","label":"InnerProductSpace","full":"InnerProductSpace","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.InnerProductSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"NormedAddCommGroup.toSeminormedAddCommGroup","label":"toSeminormedAddCommGroup","full":"NormedAddCommGroup.toSeminormedAddCommGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"setOf","label":"setOf","full":"setOf","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"StatLean.Optimization.IsSubgradient","label":"IsSubgradient","full":"StatLean.Optimization.IsSubgradient","kind":"repo","decl":"def","module":"StatLean.Optimization.Convex.Defs"},
+    {"id":"NormedAddCommGroup.toNormedAddGroup","label":"toNormedAddGroup","full":"NormedAddCommGroup.toNormedAddGroup","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Normed.Group.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Optimization.subdifferential","target":"NormedAddCommGroup"},
+    {"source":"StatLean.Optimization.subdifferential","target":"InnerProductSpace"},
+    {"source":"StatLean.Optimization.subdifferential","target":"Real"},
+    {"source":"StatLean.Optimization.subdifferential","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.Optimization.subdifferential","target":"Set"},
+    {"source":"StatLean.Optimization.subdifferential","target":"setOf"},
+    {"source":"StatLean.Optimization.subdifferential","target":"StatLean.Optimization.IsSubgradient"},
+    {"source":"StatLean.Optimization.IsSubgradient","target":"NormedAddCommGroup"},
+    {"source":"StatLean.Optimization.IsSubgradient","target":"InnerProductSpace"},
+    {"source":"StatLean.Optimization.IsSubgradient","target":"Real"},
+    {"source":"StatLean.Optimization.IsSubgradient","target":"NormedAddCommGroup.toSeminormedAddCommGroup"},
+    {"source":"StatLean.Optimization.IsSubgradient","target":"NormedAddCommGroup.toNormedAddGroup"}
+  ]
+}

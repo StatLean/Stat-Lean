@@ -1,7 +1,7 @@
 {
   "root": "AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec",
   "nodes": [
-    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","label":"levyMpass_vec","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","kind":"root","decl":"thm","module":"AsymptoticStatistics.ForMathlib.LevyMpassVec"},
+    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","label":"levyMpass_vec","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.levyMpass_vec","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.LevyMpassVec"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
     {"id":"Complex.exp_ne_zero","label":"exp_ne_zero","full":"Complex.exp_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Complex.Exponential"},
     {"id":"ProbabilityTheory.charFun_multivariateGaussian","label":"charFun_multivariateGaussian","full":"ProbabilityTheory.charFun_multivariateGaussian","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Distributions.Gaussian.Multivariate"},
@@ -22,7 +22,7 @@
     {"id":"one_ne_zero","label":"one_ne_zero","full":"one_ne_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.NeZero"},
     {"id":"NeZero.one","label":"one","full":"NeZero.one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.GroupWithZero.NeZero"},
     {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
-    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.multivariateGaussian_charFun_continuous_tendsto","label":"multivariateGaussian_charFun_continuous_tendsto","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.multivariateGaussian_charFun_continuous_tendsto","kind":"repo","decl":"thm","module":"AsymptoticStatistics.ForMathlib.LevyMpassVec"},
+    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.multivariateGaussian_charFun_continuous_tendsto","label":"multivariateGaussian_charFun_continuous_tendsto","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.multivariateGaussian_charFun_continuous_tendsto","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.LevyMpassVec"},
     {"id":"Filter.Tendsto.div","label":"div","full":"Filter.Tendsto.div","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Algebra.GroupWithZero"},
     {"id":"tendsto_const_nhds","label":"tendsto_const_nhds","full":"tendsto_const_nhds","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Neighborhoods"},
     {"id":"MeasureTheory.isTightMeasureSet_of_tendsto_charFun","label":"isTightMeasureSet_of_tendsto_charFun","full":"MeasureTheory.isTightMeasureSet_of_tendsto_charFun","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.LevyConvergence"},
@@ -33,7 +33,7 @@
     {"id":"isCompact_closure_of_isTightMeasureSet","label":"isCompact_closure_of_isTightMeasureSet","full":"isCompact_closure_of_isTightMeasureSet","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prokhorov"},
     {"id":"TopologicalSpace.t2Space_of_metrizableSpace","label":"t2Space_of_metrizableSpace","full":"TopologicalSpace.t2Space_of_metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
     {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
-    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.isTightMeasureSet_probabilityMeasure_coercion","label":"isTightMeasureSet_probabilityMeasure_coercion","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.isTightMeasureSet_probabilityMeasure_coercion","kind":"repo","decl":"thm","module":"AsymptoticStatistics.ForMathlib.LevyMpassVec"},
+    {"id":"AsymptoticStatistics.ForMathlib.LevyMpassVec.isTightMeasureSet_probabilityMeasure_coercion","label":"isTightMeasureSet_probabilityMeasure_coercion","full":"AsymptoticStatistics.ForMathlib.LevyMpassVec.isTightMeasureSet_probabilityMeasure_coercion","kind":"repo","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.LevyMpassVec"},
     {"id":"IsCompact.tendsto_subseq","label":"tendsto_subseq","full":"IsCompact.tendsto_subseq","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Sequences"},
     {"id":"TopologicalSpace.PseudoMetrizableSpace.firstCountableTopology","label":"firstCountableTopology","full":"TopologicalSpace.PseudoMetrizableSpace.firstCountableTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Basic"},
     {"id":"PseudoEMetricSpace.pseudoMetrizableSpace","label":"pseudoMetrizableSpace","full":"PseudoEMetricSpace.pseudoMetrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},

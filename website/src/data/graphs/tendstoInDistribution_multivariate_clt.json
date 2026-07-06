@@ -1,7 +1,7 @@
 {
   "root": "ProbabilityTheory.tendstoInDistribution_multivariate_clt",
   "nodes": [
-    {"id":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","label":"tendstoInDistribution_multivariate_clt","full":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","kind":"root","decl":"thm","module":"AsymptoticStatistics.ForMathlib.MultivariateCLT"},
+    {"id":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","label":"tendstoInDistribution_multivariate_clt","full":"ProbabilityTheory.tendstoInDistribution_multivariate_clt","kind":"root","decl":"thm","module":"StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT"},
     {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
     {"id":"BorelSpace.opensMeasurable","label":"opensMeasurable","full":"BorelSpace.opensMeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
     {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},

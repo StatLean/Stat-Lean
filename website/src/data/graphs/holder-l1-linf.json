@@ -1,0 +1,43 @@
+{
+  "root": "StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm",
+  "nodes": [
+    {"id":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","label":"abs_inner_le_l1Norm_mul_linfNorm","full":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","kind":"root","decl":"thm","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"StatLean.HighDimensionalStatistics.l1Norm","label":"l1Norm","full":"StatLean.HighDimensionalStatistics.l1Norm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
+    {"id":"StatLean.HighDimensionalStatistics.linfNorm","label":"linfNorm","full":"StatLean.HighDimensionalStatistics.linfNorm","kind":"repo","decl":"def","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
+    {"id":"Finset.sum_congr","label":"sum_congr","full":"Finset.sum_congr","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Group.Finset.Basic"},
+    {"id":"Finset.abs_sum_le_sum_abs","label":"abs_sum_le_sum_abs","full":"Finset.abs_sum_le_sum_abs","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.BigOperators.Group.Finset"},
+    {"id":"abs_mul","label":"abs_mul","full":"abs_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Abs"},
+    {"id":"Finset.sum_le_sum","label":"sum_le_sum","full":"Finset.sum_le_sum","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.BigOperators.Group.Finset"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"mul_le_mul_of_nonneg_left","label":"mul_le_mul_of_nonneg_left","full":"mul_le_mul_of_nonneg_left","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","label":"abs_le_linfNorm","full":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","kind":"repo","decl":"thm","module":"StatLean.HighDimensionalStatistics.ForMathlib.VecNorms"},
+    {"id":"abs_nonneg","label":"abs_nonneg","full":"abs_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Unbundled.Abs"},
+    {"id":"covariant_swap_add_of_covariant_add","label":"covariant_swap_add_of_covariant_add","full":"covariant_swap_add_of_covariant_add","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Unbundled.Defs"},
+    {"id":"Finset.sum_mul","label":"sum_mul","full":"Finset.sum_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.BigOperators.Ring.Finset"},
+    {"id":"le_ciSup","label":"le_ciSup","full":"le_ciSup","kind":"mathlib","decl":"thm","module":"Mathlib.Order.ConditionallyCompleteLattice.Indexed"},
+    {"id":"Set.Finite.bddAbove","label":"bddAbove","full":"Set.Finite.bddAbove","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Finite.Lattice"},
+    {"id":"Set.finite_range","label":"finite_range","full":"Set.finite_range","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Set.Finite.Range"},
+    {"id":"Finite.of_fintype","label":"of_fintype","full":"Finite.of_fintype","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.EquivFin"}
+  ],
+  "edges": [
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"StatLean.HighDimensionalStatistics.l1Norm"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"StatLean.HighDimensionalStatistics.linfNorm"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"Finset.sum_congr"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"Finset.abs_sum_le_sum_abs"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"abs_mul"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"Finset.sum_le_sum"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"mul_le_mul_of_nonneg_left"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"StatLean.HighDimensionalStatistics.abs_le_linfNorm"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"abs_nonneg"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"covariant_swap_add_of_covariant_add"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_inner_le_l1Norm_mul_linfNorm","target":"Finset.sum_mul"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","target":"StatLean.HighDimensionalStatistics.linfNorm"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","target":"le_ciSup"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","target":"Set.Finite.bddAbove"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","target":"Set.finite_range"},
+    {"source":"StatLean.HighDimensionalStatistics.abs_le_linfNorm","target":"Finite.of_fintype"}
+  ]
+}

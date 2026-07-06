@@ -1,0 +1,14 @@
+{
+  "root": "StatLean.MultipleTesting.IsEVariable",
+  "nodes": [
+    {"id":"StatLean.MultipleTesting.IsEVariable","label":"IsEVariable","full":"StatLean.MultipleTesting.IsEVariable","kind":"root","decl":"def","module":"StatLean.MultipleTesting.EValues.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"MeasureTheory.Measure","label":"Measure","full":"MeasureTheory.Measure","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.MultipleTesting.IsEVariable","target":"MeasurableSpace"},
+    {"source":"StatLean.MultipleTesting.IsEVariable","target":"Real"},
+    {"source":"StatLean.MultipleTesting.IsEVariable","target":"MeasureTheory.Measure"}
+  ]
+}

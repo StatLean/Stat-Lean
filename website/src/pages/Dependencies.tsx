@@ -11,6 +11,7 @@ import {
   nodeShape,
   AREA_VAR,
   AREA_LABEL,
+  AREAS,
   type Area,
 } from "../lib/graphArea";
 import { triplet, rgb, rgba, areaTriplets } from "../lib/cyStyle";
@@ -325,20 +326,18 @@ export function Dependencies() {
         <Key shape="ellipse">Lemma</Key>
         <Key shape="round">Definition</Key>
         <span className="text-ink-faint">·</span>
-        {(["parametric", "semiparametric", "empirical", "probability", "external"] as Area[]).map(
-          (a) => (
-            <span key={a} className="inline-flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{
-                  background: `rgb(var(${AREA_VAR[a]}) / 0.9)`,
-                  border: `1.5px solid rgb(var(${AREA_VAR[a]}))`,
-                }}
-              />
-              {AREA_LABEL[a]}
-            </span>
-          ),
-        )}
+        {AREAS.map((a) => (
+          <span key={a} className="inline-flex items-center gap-1.5">
+            <span
+              className="inline-block w-3 h-3 rounded-full"
+              style={{
+                background: `rgb(var(${AREA_VAR[a]}) / 0.9)`,
+                border: `1.5px solid rgb(var(${AREA_VAR[a]}))`,
+              }}
+            />
+            {AREA_LABEL[a]}
+          </span>
+        ))}
       </div>
     </div>
   );

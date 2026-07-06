@@ -3,7 +3,8 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { getResult, resultsByCategory } from "../lib/data";
 import { CATEGORY_BY_ID } from "../lib/categories";
 import { renderLean } from "../lib/render";
-import { docUrl, sourceUrl } from "../lib/site";
+import { docUrl, sourceUrl, refUrl } from "../lib/site";
+import { linkifyBiblio } from "../lib/refCite";
 import { MathText } from "../components/MathText";
 import { ConvergenceMark } from "../components/ConvergenceMark";
 import { Logo } from "../components/Logo";
@@ -104,7 +105,11 @@ export function ResultDetail() {
         <div className="grid gap-6 lg:grid-cols-2 items-start">
           {/* informal */}
           <div className="rounded-2xl border hairline bg-parchment-panel overflow-hidden">
-            <PaneHeader label="Informal statement" sub={r.citation} />
+            <PaneHeader
+              label="Informal statement"
+              sub={r.shortRef ?? r.citation}
+              subHref={r.reference?.keys?.[0] ? refUrl(r.reference.keys[0]) : undefined}
+            />
             <div className="p-6">
               <MathText
                 html={r.informal}
@@ -158,6 +163,42 @@ export function ResultDetail() {
           </div>
         )}
 
+        {/* reference */}
+        {r.reference && (
+          <div className="mt-6 rounded-2xl border hairline bg-parchment-panel p-6">
+            <h3 className="font-sans text-xs uppercase tracking-widest text-ink-faint mb-3">
+              Reference
+            </h3>
+            <MathText
+              markdown
+              html={`${r.reference.formal}${
+                r.reference.pointer ? ` ${r.reference.pointer}.` : ""
+              }`}
+              className="font-serif text-[1.02rem] text-ink leading-relaxed"
+            />
+            {r.reference.keys?.[0] && (
+              <a
+                href={refUrl(r.reference.keys[0])}
+                className="ulink accent inline-block mt-2.5 text-sm font-sans"
+              >
+                View in references →
+              </a>
+            )}
+            {r.reference.biblio && (
+              <div className="mt-4 pt-4 border-t hairline">
+                <MathText
+                  markdown
+                  html={`**Bibliographic comments.** ${linkifyBiblio(
+                    r.reference.biblio,
+                    r.reference.keys,
+                  )}`}
+                  className="font-serif text-[0.98rem] text-ink-soft leading-relaxed"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* formalization notes */}
         {r.formalizationNotes && (
           <div className="mt-6 rounded-2xl border-l-2 border-accent bg-accent/[0.06] p-5 pl-6">
@@ -194,24 +235,29 @@ export function ResultDetail() {
 function PaneHeader({
   label,
   sub,
+  subHref,
   mono,
 }: {
   label: string;
   sub: string;
+  subHref?: string;
   mono?: boolean;
 }) {
+  const subClass = `text-xs text-ink-faint truncate max-w-[55%] ${
+    mono ? "font-mono" : "font-sans"
+  }`;
   return (
     <div className="flex items-center justify-between px-5 py-3 border-b hairline bg-parchment/40">
       <span className="font-sans text-xs uppercase tracking-widest text-ink-faint">
         {label}
       </span>
-      <span
-        className={`text-xs text-ink-faint truncate max-w-[55%] ${
-          mono ? "font-mono" : "font-sans"
-        }`}
-      >
-        {sub}
-      </span>
+      {subHref ? (
+        <a href={subHref} className={`${subClass} ulink hover:text-ink`}>
+          {sub}
+        </a>
+      ) : (
+        <span className={subClass}>{sub}</span>
+      )}
     </div>
   );
 }
