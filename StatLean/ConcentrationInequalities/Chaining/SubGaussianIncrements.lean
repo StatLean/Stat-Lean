@@ -73,13 +73,16 @@ def SubGaussianIncrements (X : E → Ω → ℝ) (K : ℝ≥0) (T : Set E)
 lemma SubGaussianIncrements.mono_set (h : SubGaussianIncrements X K T μ)
     -- LEAN-ONLY: restriction to a sub-index-set; no scope change; HDP §8.1
     {S : Set E} (hST : S ⊆ T) :
-    SubGaussianIncrements X K S μ := by sorry
+    SubGaussianIncrements X K S μ := fun s hs t ht => h s (hST hs) t (hST ht)
 
 /-- Weakening the increment parameter. -/
 lemma SubGaussianIncrements.mono_const (h : SubGaussianIncrements X K T μ)
     -- LEAN-ONLY: monotone weakening of the constant; no scope change; HDP §8.1
     {K' : ℝ≥0} (hK : K ≤ K') :
-    SubGaussianIncrements X K' T μ := by sorry
+    SubGaussianIncrements X K' T μ := by
+  intro s hs t ht
+  refine (h s hs t ht).trans ?_
+  exact mul_le_mul_right' (by exact_mod_cast hK) _
 
 /-- A random variable with vanishing ψ₂-norm vanishes a.e.
 
@@ -92,7 +95,10 @@ lemma ae_eq_zero_of_subGaussianNorm_eq_zero {Y : Ω → ℝ}
     (hm : AEMeasurable Y μ)
     -- LEAN-ONLY: vanishing ψ₂-norm, the degenerate-increment input; HDP §8.1
     (h : subGaussianNorm Y μ = 0) :
-    Y =ᵐ[μ] 0 := by sorry
+    Y =ᵐ[μ] 0 := by
+  rw [subGaussianNorm_def] at h
+  exact (orliczNorm_eq_zero_iff psiTwo_monotoneOn psiTwo_zero.le
+    psiTwo_tendsto_atTop hm).mp h
 
 /-- Pseudometric chain-end identification: indices at distance `0` carry
 a.e.-equal process values (HDP §8.1, the `T_K = T` step in the proof of
@@ -104,7 +110,11 @@ lemma SubGaussianIncrements.sub_ae_eq_zero (h : SubGaussianIncrements X K T μ)
     (hs : s ∈ T) (ht : t ∈ T)
     -- LEAN-ONLY: zero pseudo-distance (the pseudometric degeneracy); HDP §8.1
     (hd : dist s t = 0) :
-    (fun ω => X t ω - X s ω) =ᵐ[μ] 0 := by sorry
+    (fun ω => X t ω - X s ω) =ᵐ[μ] 0 := by
+  have hedist : edist s t = 0 := by rw [edist_dist, hd]; simp
+  have hle := h s hs t ht
+  rw [hedist, mul_zero, nonpos_iff_eq_zero] at hle
+  exact ae_eq_zero_of_subGaussianNorm_eq_zero (hmt.sub hms) hle
 
 /-- **Increment tail bound** (HDP §8.1, Eq. (8.3) flavor): a sub-gaussian
 increment satisfies the Gaussian-type tail
@@ -125,7 +135,16 @@ theorem SubGaussianIncrements.measure_abs_sub_ge_le
     -- USER-INPUT: τ ≥ 0; HDP §8.1
     {τ : ℝ} (hτ : 0 ≤ τ) :
     μ {ω | τ ≤ |X t ω - X s ω|}
-      ≤ ENNReal.ofReal (2 * Real.exp (-τ ^ 2 / ((K : ℝ) * dist s t) ^ 2)) := by sorry
+      ≤ ENNReal.ofReal (2 * Real.exp (-τ ^ 2 / ((K : ℝ) * dist s t) ^ 2)) := by
+  set K' : ℝ≥0 := K * nndist s t with hK'def
+  have hcoe : (K' : ℝ) = (K : ℝ) * dist s t := by
+    rw [hK'def, NNReal.coe_mul, coe_nndist]
+  have hbound : subGaussianNorm (fun ω => X t ω - X s ω) μ ≤ (K' : ℝ≥0∞) := by
+    have hh := h s hs t ht
+    rwa [edist_nndist, ← ENNReal.coe_mul] at hh
+  have hK'pos : 0 < K' := by rw [← NNReal.coe_pos, hcoe]; exact hK
+  have hmain := measure_abs_ge_le_of_subGaussianNorm_le (hmt.sub hms) hK'pos hbound hτ
+  rwa [hcoe] at hmain
 
 /-- **Increment MGF bound** (HDP §8.1, proof of Theorem 8.1.4, Step 2): a
 mean-zero sub-gaussian increment has `HasSubgaussianMGF` with variance proxy
@@ -144,7 +163,24 @@ theorem SubGaussianIncrements.hasSubgaussianMGF_sub
     -- USER-INPUT: mean-zero increment; HDP §8.1, Theorem 8.1.4 hypothesis
     (hmean : ∫ ω, (X t ω - X s ω) ∂μ = 0) :
     ProbabilityTheory.HasSubgaussianMGF (fun ω => X t ω - X s ω)
-      (3 * (K * nndist s t) ^ 2) μ := by sorry
+      (3 * (K * nndist s t) ^ 2) μ := by
+  set K' : ℝ≥0 := K * nndist s t with hK'def
+  have hbound : subGaussianNorm (fun ω => X t ω - X s ω) μ ≤ (K' : ℝ≥0∞) := by
+    have hh := h s hs t ht
+    rwa [edist_nndist, ← ENNReal.coe_mul] at hh
+  rcases eq_or_lt_of_le (zero_le K') with hK0 | hK0
+  · -- degenerate scale `K' = 0`: the increment vanishes a.e.
+    have hz : subGaussianNorm (fun ω => X t ω - X s ω) μ = 0 := by
+      have hle : subGaussianNorm (fun ω => X t ω - X s ω) μ ≤ 0 := by
+        rw [← hK0] at hbound; simpa using hbound
+      exact le_antisymm hle (zero_le _)
+    have hae : (fun ω => X t ω - X s ω) =ᵐ[μ] 0 :=
+      ae_eq_zero_of_subGaussianNorm_eq_zero (hmt.sub hms) hz
+    have hgoal : (3 * K' ^ 2 : ℝ≥0) = 0 := by rw [← hK0]; ring
+    rw [hgoal]
+    exact (ProbabilityTheory.HasSubgaussianMGF.zero).congr hae.symm
+  · -- non-degenerate scale: bridge B2
+    exact hasSubgaussianMGF_of_subGaussianNorm_le (hmt.sub hms) hK0 hbound hmean
 
 /-- Repackaging of `hasSubgaussianMGF_sub` into the project carrier
 `IsSubGaussian` (the centering in `IsSubGaussian` is a no-op under `hmean`). -/
@@ -159,6 +195,9 @@ theorem SubGaussianIncrements.isSubGaussian_sub
     (hs : s ∈ T) (ht : t ∈ T)
     -- USER-INPUT: mean-zero increment; HDP §8.1, Theorem 8.1.4 hypothesis
     (hmean : ∫ ω, (X t ω - X s ω) ∂μ = 0) :
-    IsSubGaussian (fun ω => X t ω - X s ω) (3 * (K * nndist s t) ^ 2) μ := by sorry
+    IsSubGaussian (fun ω => X t ω - X s ω) (3 * (K * nndist s t) ^ 2) μ := by
+  rw [isSubGaussian_iff, hmean]
+  simp only [sub_zero]
+  exact hasSubgaussianMGF_sub h hms hmt hs ht hmean
 
 end StatLean.ConcentrationInequalities
