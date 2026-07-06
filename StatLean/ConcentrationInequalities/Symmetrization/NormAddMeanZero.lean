@@ -59,7 +59,11 @@ theorem norm_le_integral_norm_add {β : Type*} {mβ : MeasurableSpace β}
     (hg0 : ∫ z, g z ∂P = 0)
     (y : E) :
     ‖y‖ ≤ ∫ z, ‖y + g z‖ ∂P := by
-  sorry
+  have hy : ∫ z, (y + g z) ∂P = y := by
+    rw [integral_add (integrable_const y) hg, integral_const, hg0, add_zero,
+        probReal_univ, one_smul]
+  calc ‖y‖ = ‖∫ z, (y + g z) ∂P‖ := by rw [hy]
+    _ ≤ ∫ z, ‖y + g z‖ ∂P := norm_integral_le_integral_norm _
 
 /-- **HDP Eq. (6.13)**, product form: for independent `Y ∼ P₁`-component `f`
 and mean-zero `Z ∼ P₂`-component `g` (independence by construction on
@@ -78,6 +82,10 @@ theorem integral_norm_le_integral_norm_add_prod {α β : Type*}
     -- USER-INPUT: E Z = 0; HDP Eq. (6.13)
     (hg0 : ∫ z, g z ∂P₂ = 0) :
     ∫ x, ‖f x‖ ∂P₁ ≤ ∫ p, ‖f p.1 + g p.2‖ ∂(P₁.prod P₂) := by
-  sorry
+  have hF : Integrable (fun p : α × β => ‖f p.1 + g p.2‖) (P₁.prod P₂) :=
+    ((hf.comp_fst P₂).add (hg.comp_snd P₁)).norm
+  rw [integral_prod _ hF]
+  refine integral_mono hf.norm hF.integral_prod_left (fun x => ?_)
+  exact norm_le_integral_norm_add hg hg0 (f x)
 
 end StatLean.ConcentrationInequalities

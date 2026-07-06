@@ -65,7 +65,11 @@ theorem integral_eq_integral_pi_map {μ : Measure Ω} [IsProbabilityMeasure μ]
     -- `integral_map` side condition
     (hG : AEStronglyMeasurable G (Measure.pi fun i => μ.map (X i))) :
     ∫ ω, G (fun i => X i ω) ∂μ = ∫ y, G y ∂(Measure.pi fun i => μ.map (X i)) := by
-  sorry
+  have hφ : AEMeasurable (fun ω i => X i ω) μ := aemeasurable_pi_lambda _ h_meas
+  have hmap : μ.map (fun ω i => X i ω) = Measure.pi (fun i => μ.map (X i)) :=
+    (iIndepFun_iff_map_fun_eq_pi_map h_meas).mp h_indep
+  rw [← hmap] at hG ⊢
+  exact (integral_map hφ hG).symm
 
 /-- Transport with a passenger product factor: an integral over `μ.prod ρ` of
 a function of the independent family in the first coordinate equals the
@@ -84,7 +88,17 @@ theorem integral_prod_eq_integral_pi_prod {μ : Measure Ω} [IsProbabilityMeasur
     (hG : AEStronglyMeasurable G ((Measure.pi fun i => μ.map (X i)).prod ρ)) :
     ∫ p, G (fun i => X i p.1, p.2) ∂(μ.prod ρ)
       = ∫ q, G q ∂((Measure.pi fun i => μ.map (X i)).prod ρ) := by
-  sorry
+  have hφ : Measurable (fun ω i => X i ω) := measurable_pi_lambda _ h_meas
+  have hmapφ : μ.map (fun ω i => X i ω) = Measure.pi (fun i => μ.map (X i)) :=
+    (iIndepFun_iff_map_fun_eq_pi_map (fun i => (h_meas i).aemeasurable)).mp h_indep
+  have hψ : Measurable (fun p : Ω × γ => (fun i => X i p.1, p.2)) :=
+    (measurable_pi_lambda _ (fun i => (h_meas i).comp measurable_fst)).prodMk measurable_snd
+  have hmapψ : (μ.prod ρ).map (fun p : Ω × γ => (fun i => X i p.1, p.2))
+      = (Measure.pi fun i => μ.map (X i)).prod ρ := by
+    rw [show (fun p : Ω × γ => (fun i => X i p.1, p.2))
+          = Prod.map (fun ω i => X i ω) id from rfl,
+        ← Measure.map_prod_map μ ρ hφ measurable_id, Measure.map_id, hmapφ]
+  rw [← hmapψ, integral_map hψ.aemeasurable (by rw [hmapψ]; exact hG)]
 
 /-- Replace on-`Ω` auxiliary randomness by a product extension: if `A ⊥ B`
 and `B` has law `ρ`, integrating `G (A ω, B ω)` over `Ω` equals integrating
@@ -105,6 +119,19 @@ theorem integral_indepFun_eq_integral_prod {μ : Measure Ω} [IsProbabilityMeasu
     -- LEAN-ONLY: integrand measurability w.r.t. the pushforward product
     (hG : AEStronglyMeasurable G ((μ.map A).prod ρ)) :
     ∫ ω, G (A ω, B ω) ∂μ = ∫ p, G (A p.1, p.2) ∂(μ.prod ρ) := by
-  sorry
+  haveI : IsProbabilityMeasure ρ := hBlaw ▸ Measure.isProbabilityMeasure_map hB.aemeasurable
+  have hφ : AEMeasurable (fun ω => (A ω, B ω)) μ := hA.aemeasurable.prodMk hB.aemeasurable
+  have hmapφ : μ.map (fun ω => (A ω, B ω)) = (μ.map A).prod ρ := by
+    rw [(indepFun_iff_map_prod_eq_prod_map_map hA.aemeasurable hB.aemeasurable).mp hAB, hBlaw]
+  have hψ : Measurable (fun p : Ω × γ => (A p.1, p.2)) :=
+    (hA.comp measurable_fst).prodMk measurable_snd
+  have hmapψ : (μ.prod ρ).map (fun p : Ω × γ => (A p.1, p.2)) = (μ.map A).prod ρ := by
+    rw [show (fun p : Ω × γ => (A p.1, p.2)) = Prod.map A id from rfl,
+        ← Measure.map_prod_map μ ρ hA measurable_id, Measure.map_id]
+  have hL : ∫ ω, G (A ω, B ω) ∂μ = ∫ y, G y ∂((μ.map A).prod ρ) := by
+    rw [← hmapφ, integral_map hφ (by rw [hmapφ]; exact hG)]
+  have hR : ∫ p, G (A p.1, p.2) ∂(μ.prod ρ) = ∫ y, G y ∂((μ.map A).prod ρ) := by
+    rw [← hmapψ, integral_map hψ.aemeasurable (by rw [hmapψ]; exact hG)]
+  rw [hL, hR]
 
 end StatLean.ConcentrationInequalities
