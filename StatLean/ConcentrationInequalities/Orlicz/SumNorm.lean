@@ -57,7 +57,21 @@ theorem hasSubgaussianMGF_weighted_sum
     -- USER-INPUT: ‖Xᵢ‖_{ψ₂} ≤ Kᵢ; HDP Prop 2.7.1
     (hnorm : ∀ i, subGaussianNorm (X i) μ ≤ K i) :
     ProbabilityTheory.HasSubgaussianMGF (fun ω => ∑ i, v i * X i ω)
-      (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * (3 * (K i) ^ 2)) μ := by sorry
+      (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * (3 * (K i) ^ 2)) μ := by
+  -- B2 per coordinate: mean-zero + ψ₂ bound give a sub-Gaussian MGF (proxy 3Kᵢ²).
+  have hB2 : ∀ i, ProbabilityTheory.HasSubgaussianMGF (X i) (3 * (K i) ^ 2) μ := fun i =>
+    hasSubgaussianMGF_of_subGaussianNorm_le (hmeas i).aemeasurable (hK i) (hnorm i) (hmean i)
+  -- Scale each coordinate by the weight vᵢ (Mathlib `const_mul`: proxy vᵢ²·(3Kᵢ²)).
+  have hscaled : ∀ i, ProbabilityTheory.HasSubgaussianMGF (fun ω => v i * X i ω)
+      (⟨(v i) ^ 2, sq_nonneg _⟩ * (3 * (K i) ^ 2)) μ :=
+    fun i => (hB2 i).const_mul (v i)
+  -- Independence is preserved under the coordinatewise measurable maps `x ↦ vᵢ·x`.
+  have hindep' : ProbabilityTheory.iIndepFun (fun i ω => v i * X i ω) μ :=
+    hindep.comp (fun i (x : ℝ) => v i * x) (fun i => measurable_id.const_mul (v i))
+  -- Sum the per-index proxies via Mathlib's independent-sum MGF lemma.
+  have hsum := ProbabilityTheory.HasSubgaussianMGF.sum_of_iIndepFun hindep'
+    (s := Finset.univ) (fun i _ => hscaled i)
+  simpa using hsum
 
 /-- **ψ₂-norm of a weighted independent sum** (HDP Proposition 2.7.1,
 weighted; frozen constant `C = 18 = 6·3` from B3 ∘ B2). -/
@@ -77,7 +91,18 @@ theorem subGaussianNorm_weighted_sum_le
     (hnorm : ∀ i, subGaussianNorm (X i) μ ≤ K i) :
     subGaussianNorm (fun ω => ∑ i, v i * X i ω) μ ≤
       (NNReal.sqrt (18 * ∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * (K i) ^ 2) :
-        ℝ≥0∞) := by sorry
+        ℝ≥0∞) := by
+  -- The weighted sum has a sub-Gaussian MGF with proxy σ² = ∑ vᵢ²·(3Kᵢ²).
+  have hmgf := hasSubgaussianMGF_weighted_sum v hmeas hindep hmean hK hnorm
+  -- B3: convert the MGF bound to a ψ₂-norm bound `≤ √(6σ²)`.
+  have hnorm' := subGaussianNorm_le_of_hasSubgaussianMGF hmgf
+  -- Fold the constant: 6·(∑ vᵢ²·3Kᵢ²) = 18·∑ vᵢ²·Kᵢ².
+  have hσeq : (6 : ℝ≥0) * (∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * (3 * (K i) ^ 2))
+      = 18 * ∑ i, ⟨(v i) ^ 2, sq_nonneg _⟩ * (K i) ^ 2 := by
+    rw [Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    ring
+  rwa [hσeq] at hnorm'
 
 /-- **ψ₂-norm of an independent sum** (HDP Proposition 2.7.1, the `v ≡ 1`
 instance): `‖∑ Xᵢ‖_{ψ₂} ≤ √(18 ∑ Kᵢ²)`. -/
@@ -95,6 +120,15 @@ theorem subGaussianNorm_sum_le
     -- USER-INPUT: ‖Xᵢ‖_{ψ₂} ≤ Kᵢ; HDP Prop 2.7.1
     (hnorm : ∀ i, subGaussianNorm (X i) μ ≤ K i) :
     subGaussianNorm (fun ω => ∑ i, X i ω) μ ≤
-      (NNReal.sqrt (18 * ∑ i, (K i) ^ 2) : ℝ≥0∞) := by sorry
+      (NNReal.sqrt (18 * ∑ i, (K i) ^ 2) : ℝ≥0∞) := by
+  -- The `v ≡ 1` instance of the weighted bound.
+  have h := subGaussianNorm_weighted_sum_le (fun _ => (1 : ℝ)) hmeas hindep hmean hK hnorm
+  have h1 : (⟨(1 : ℝ) ^ 2, sq_nonneg (1 : ℝ)⟩ : ℝ≥0) = 1 := by
+    apply NNReal.eq; simp
+  simp only [one_mul, h1] at h
+  refine h.trans_eq ?_
+  congr 2
+  congr 1
+  exact Finset.sum_congr rfl fun i _ => one_mul ((K i) ^ 2)
 
 end StatLean.ConcentrationInequalities
