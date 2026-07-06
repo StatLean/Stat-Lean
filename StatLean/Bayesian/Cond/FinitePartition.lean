@@ -28,7 +28,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω}
+variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω]
 
 /-- **Law of total probability** over a finite measurable partition:
 `μ d = ∑ i ∈ s, μ[d | H i] * μ (H i)`. Parts with `μ (H i) = 0` contribute `0` to both sides,

@@ -39,7 +39,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
+variable {Ω : Type*} [mΩ : MeasurableSpace Ω]
 
 /-- The **prior odds** of a hypothesis event `s`: the ratio `μ s / μ sᶜ` of its probability to
 that of its complement, before conditioning on data (Robert §5.2.2, the prior ratio `ρ₀/ρ₁`
