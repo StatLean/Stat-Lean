@@ -1,0 +1,13 @@
+srun: job 28890121 queued and waiting for resources
+srun: job 28890121 has been allocated resources
+## Summary
+
+I could not close the sorry, because **the frozen statement `one_lt_coveringNumber_of_two_mul_lt_dist` is false as written.** This is not a proof-engineering gap — it's a genuine mathematical counterexample, and no sorry-free proof of a false statement exists.
+
+**Counterexample:** `E = ℝ`, `T = {0}`, `a = b = 0`, `ε = −1`. All hypotheses hold (`2·(−1) = −2 < dist 0 0 = 0`), but `coveringNumber {0} (−1) = Metric.coveringNumber 0 {0} = ({0}).encard = 1` (Mathlib `coveringNumber_zero`), so the goal `1 < 1` is false. The `ε < 0 ∧ dist a b = 0` corner is satisfiable, hence `False` is underivable there.
+
+**State of the file:** builds green (exit 0) with this single, genuinely-false sorry; the other 12 lemmas are all fully proved. The proof's `ε ≥ 0` branch is complete and correct.
+
+**The only honest fix is out-of-touch-set:** add `(hε : 0 ≤ ε)` to the frozen signature (chaining only ever uses `ε = 2^{-k} > 0`, so it's harmless), after which the sign-split is deleted and the existing `ε ≥ 0` branch closes it. I did not modify the frozen statement, did not fabricate a proof, and committed nothing (the file is already at its correct frozen state).
+
+This reconfirms the prior recorded verdict (`conc-hdp-bundle-chain-closed`); I've logged the re-verification with the concrete counterexample to memory. **The gate cannot be made green without a statement change, which is outside the touch-set.**
