@@ -25,7 +25,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {𝓧 : Type*} {m𝓧 : MeasurableSpace 𝓧}
+variable {𝓧 : Type*} [m𝓧 : MeasurableSpace 𝓧]
 
 /-- The quadratic loss is jointly measurable. -/
 theorem measurable_uncurry_sqLoss : Measurable (Function.uncurry sqLoss) := sorry

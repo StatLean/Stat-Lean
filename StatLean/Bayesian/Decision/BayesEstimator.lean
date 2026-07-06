@@ -30,8 +30,8 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Θ 𝓧 𝓨 : Type*} {mΘ : MeasurableSpace Θ} {m𝓧 : MeasurableSpace 𝓧}
-  {m𝓨 : MeasurableSpace 𝓨}
+variable {Θ 𝓧 𝓨 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
+  [m𝓨 : MeasurableSpace 𝓨]
 
 /-- **Robert Theorem 2.3.2 / eq. (2.3.1)** for a deterministic estimator `δ`: the integrated risk
 equals the integral over the data of the posterior expected loss. -/

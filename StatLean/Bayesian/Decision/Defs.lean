@@ -57,8 +57,8 @@ namespace StatLean.Bayesian
 
 /-! ### Bayes estimator and posterior risk -/
 
-variable {Θ 𝓧 𝓨 : Type*} {mΘ : MeasurableSpace Θ} {m𝓧 : MeasurableSpace 𝓧}
-  {m𝓨 : MeasurableSpace 𝓨}
+variable {Θ 𝓧 𝓨 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
+  [m𝓨 : MeasurableSpace 𝓨]
 
 /-- An estimator `κ` is a **Bayes estimator** for the prior `π` if it attains the Bayes risk:
 `avgRisk ℓ P κ π = bayesRisk ℓ P π` (Robert Definition 2.3.3; Robert's *integrated risk* is

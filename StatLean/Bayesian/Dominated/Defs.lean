@@ -36,7 +36,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Θ 𝓧 : Type*} {mΘ : MeasurableSpace Θ} {m𝓧 : MeasurableSpace 𝓧}
+variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
 
 /-- The **prior predictive (marginal) density** `m(x) = ∫ p(θ, x) π(dθ)` of the data
 (Robert §1.4, the marginal `m(x)`). Junk behavior: may be `0` or `∞` off the support of the data

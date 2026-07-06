@@ -27,7 +27,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
+variable {Ω : Type*} [mΩ : MeasurableSpace Ω]
 
 /-- **Posterior odds = prior odds × Bayes factor** (Robert §1.2, eq. (1.2.2); Definition 5.2.5).
 Holds unconditionally for a finite measure: all degenerate cases collapse both sides under the

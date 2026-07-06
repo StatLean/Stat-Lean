@@ -23,7 +23,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Θ 𝓧 : Type*} {mΘ : MeasurableSpace Θ} {m𝓧 : MeasurableSpace 𝓧}
+variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
   {κ : Kernel Θ 𝓧} {π : Measure Θ} {ν : Measure 𝓧} {p : Θ → 𝓧 → ℝ≥0∞}
 
 /-- **Posterior expectation formula** (Robert §1.4): for predictive-a.e. `x` and measurable

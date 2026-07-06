@@ -26,7 +26,7 @@ open scoped ENNReal
 
 namespace StatLean.Bayesian
 
-variable {Θ 𝓧 : Type*} {mΘ : MeasurableSpace Θ} {m𝓧 : MeasurableSpace 𝓧}
+variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace 𝓧]
 
 /-! ### `fintypeArgmax` API -/
 
