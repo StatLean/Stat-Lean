@@ -56,7 +56,11 @@ theorem map_signs_eq_signVec {μ : Measure Ω} [IsProbabilityMeasure μ] {N : �
     -- USER-INPUT: Rademacher marginals; HDP §6.3
     (hε_law : ∀ i, μ.map (ε i) = radLaw) :
     μ.map (fun ω i => ε i ω) = signVec N := by
-  sorry
+  rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hε_meas i).aemeasurable)).mp hε_indep]
+  unfold signVec
+  congr 1
+  funext i
+  exact hε_law i
 
 /-- **Symmetrization, upper bound, book statement** (HDP §6.3, Lemma 6.3.2):
 `E‖∑ Xᵢ‖ ≤ 2 E‖∑ εᵢXᵢ‖` for independent mean-zero data and independent
@@ -83,7 +87,26 @@ theorem symmetrization_upper_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure
     -- USER-INPUT: signs independent of the data; HDP §6.3.2 footnote 7
     (hXε : IndepFun (fun ω i => X i ω) (fun ω i => ε i ω) μ) :
     ∫ ω, ‖∑ i, X i ω‖ ∂μ ≤ 2 * ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ := by
-  sorry
+  have hG : AEStronglyMeasurable
+      (fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖)
+      ((μ.map (fun ω i => X i ω)).prod (signVec N)) := by
+    have hm : Measurable (fun q : (Fin N → E) × (Fin N → ℝ) => ∑ i, q.2 i • q.1 i) := by
+      apply Finset.measurable_sum
+      intro i _
+      exact ((measurable_pi_apply i).comp measurable_snd).smul
+        ((measurable_pi_apply i).comp measurable_fst)
+    exact hm.aestronglyMeasurable.norm
+  have htransport : ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ
+      = ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) :=
+    integral_indepFun_eq_integral_prod
+      (A := fun ω i => X i ω) (B := fun ω i => ε i ω)
+      (measurable_pi_lambda _ hX_meas) (measurable_pi_lambda _ hε_meas)
+      hXε (map_signs_eq_signVec hε_meas hε_indep hε_law)
+      (G := fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖) hG
+  calc ∫ ω, ‖∑ i, X i ω‖ ∂μ
+      ≤ 2 * ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) :=
+        symmetrization_upper hX_meas hX_int hX_mean hX_indep
+    _ = 2 * ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ := by rw [htransport]
 
 /-- **Symmetrization, lower bound, book statement** (HDP §6.3, Lemma 6.3.2):
 `E‖∑ εᵢXᵢ‖ ≤ 2 E‖∑ Xᵢ‖`. Named-sorry debt candidate of this work item. -/
@@ -108,6 +131,25 @@ theorem symmetrization_lower_of_indepFun {μ : Measure Ω} [IsProbabilityMeasure
     -- USER-INPUT: signs independent of the data; HDP §6.3.2 footnote 7
     (hXε : IndepFun (fun ω i => X i ω) (fun ω i => ε i ω) μ) :
     ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ ≤ 2 * ∫ ω, ‖∑ i, X i ω‖ ∂μ := by
-  sorry
+  have hG : AEStronglyMeasurable
+      (fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖)
+      ((μ.map (fun ω i => X i ω)).prod (signVec N)) := by
+    have hm : Measurable (fun q : (Fin N → E) × (Fin N → ℝ) => ∑ i, q.2 i • q.1 i) := by
+      apply Finset.measurable_sum
+      intro i _
+      exact ((measurable_pi_apply i).comp measurable_snd).smul
+        ((measurable_pi_apply i).comp measurable_fst)
+    exact hm.aestronglyMeasurable.norm
+  have htransport : ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ
+      = ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) :=
+    integral_indepFun_eq_integral_prod
+      (A := fun ω i => X i ω) (B := fun ω i => ε i ω)
+      (measurable_pi_lambda _ hX_meas) (measurable_pi_lambda _ hε_meas)
+      hXε (map_signs_eq_signVec hε_meas hε_indep hε_law)
+      (G := fun q : (Fin N → E) × (Fin N → ℝ) => ‖∑ i, q.2 i • q.1 i‖) hG
+  calc ∫ ω, ‖∑ i, ε i ω • X i ω‖ ∂μ
+      = ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N)) := htransport
+    _ ≤ 2 * ∫ ω, ‖∑ i, X i ω‖ ∂μ :=
+        symmetrization_lower hX_meas hX_int hX_mean hX_indep
 
 end StatLean.ConcentrationInequalities
