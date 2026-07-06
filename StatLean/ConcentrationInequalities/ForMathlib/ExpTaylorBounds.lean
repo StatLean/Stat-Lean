@@ -83,7 +83,34 @@ convexity argument; helper for `exp_le_one_add_add_sq_half_mul_exp_abs`). -/
 theorem exp_le_one_add_add_sq_half_of_nonpos {x : ℝ}
     -- LEAN-ONLY: branch condition of the two-sided Taylor bound; no book scope
     (hx : x ≤ 0) :
-    Real.exp x ≤ 1 + x + x ^ 2 / 2 := by sorry
+    Real.exp x ≤ 1 + x + x ^ 2 / 2 := by
+  -- `f s = 1 + s + s²/2 − eˢ` has `f' s = 1 + s − eˢ ≤ 0` (since `1 + s ≤ eˢ`),
+  -- so `f` is antitone; `x ≤ 0` gives `f 0 ≤ f x`, i.e. `0 ≤ f x`.
+  have hderiv : ∀ s : ℝ,
+      HasDerivAt (fun s => 1 + s + s ^ 2 / 2 - Real.exp s) (1 + s - Real.exp s) s := by
+    intro s
+    have h1 : HasDerivAt (fun s : ℝ => 1 + s + s ^ 2 / 2) (1 + s) s := by
+      have hpow : HasDerivAt (fun s : ℝ => s ^ 2 / 2) ((2 : ℝ) * s ^ (2 - 1) / 2) s :=
+        (hasDerivAt_pow 2 s).div_const 2
+      have := ((hasDerivAt_const s (1 : ℝ)).add (hasDerivAt_id s)).add hpow
+      convert this using 1
+      ring
+    exact h1.sub (Real.hasDerivAt_exp s)
+  have hdiff : Differentiable ℝ (fun s => 1 + s + s ^ 2 / 2 - Real.exp s) :=
+    fun s => (hderiv s).differentiableAt
+  have hanti : AntitoneOn (fun s => 1 + s + s ^ 2 / 2 - Real.exp s) (Set.Iic 0) := by
+    apply antitoneOn_of_deriv_nonpos (convex_Iic 0) hdiff.continuous.continuousOn
+      hdiff.differentiableOn
+    intro s _
+    rw [(hderiv s).deriv]
+    have := Real.add_one_le_exp s
+    linarith
+  have hmem0 : (0 : ℝ) ∈ Set.Iic (0 : ℝ) := Set.mem_Iic.mpr le_rfl
+  have hmemx : x ∈ Set.Iic (0 : ℝ) := Set.mem_Iic.mpr hx
+  have hmono := hanti hmemx hmem0 hx
+  simp only at hmono
+  have hf0 : Real.exp 0 = 1 := Real.exp_zero
+  nlinarith [hmono, hf0]
 
 /-- Nonnegative branch of the two-sided Taylor bound: `e^x ≤ 1 + x +
 (x²/2)·e^x` for `x ≥ 0`, via the integral comparison
