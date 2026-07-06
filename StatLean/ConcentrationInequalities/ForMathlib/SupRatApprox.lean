@@ -50,7 +50,18 @@ theorem iSup_eq_iSup_rat_of_right_approx {h : ℝ → ℝ}
     -- right-continuity by `right_approx_of_rightContinuous`.
     (happ : ∀ x : ℝ, ∀ δ > 0, ∃ q : ℚ, x ≤ (q : ℝ) ∧ h x ≤ h (q : ℝ) + δ) :
     (⨆ x : ℝ, h x) = ⨆ q : ℚ, h (q : ℝ) := by
-  sorry
+  have hbd_rat : BddAbove (Set.range fun q : ℚ => h (q : ℝ)) := by
+    obtain ⟨M, hM⟩ := hbd
+    refine ⟨M, ?_⟩
+    rintro y ⟨q, rfl⟩
+    exact hM ⟨(q : ℝ), rfl⟩
+  refine le_antisymm ?_ ?_
+  · refine ciSup_le fun x => ?_
+    refine le_of_forall_pos_le_add fun δ hδ => ?_
+    obtain ⟨q, _hxq, hq⟩ := happ x δ hδ
+    have hle : h (q : ℝ) ≤ ⨆ q : ℚ, h (q : ℝ) := le_ciSup hbd_rat q
+    linarith
+  · exact ciSup_le fun q => le_ciSup hbd (q : ℝ)
 
 /-- Right-continuity gives right approximability along ℚ (LEAN-ONLY: density
 of ℚ via `exists_rat_btwn`; no book content). -/
@@ -59,6 +70,17 @@ lemma right_approx_of_rightContinuous {h : ℝ → ℝ}
     -- `StieltjesFunction` API and by the finite-sample empirical CDF.
     (hc : ∀ x : ℝ, ContinuousWithinAt h (Set.Ici x) x) :
     ∀ x : ℝ, ∀ δ > 0, ∃ q : ℚ, x ≤ (q : ℝ) ∧ h x ≤ h (q : ℝ) + δ := by
-  sorry
+  intro x δ hδ
+  obtain ⟨δ', hδ'0, hδ'⟩ :=
+    (Metric.continuousWithinAt_iff).mp (hc x) δ hδ
+  obtain ⟨q, hxq, hqδ⟩ := exists_rat_btwn (show x < x + δ' by linarith)
+  have hmem : (q : ℝ) ∈ Set.Ici x := le_of_lt hxq
+  have hdist : dist (q : ℝ) x < δ' := by
+    rw [Real.dist_eq, abs_of_nonneg (by linarith)]; linarith
+  have hd := hδ' hmem hdist
+  rw [Real.dist_eq] at hd
+  refine ⟨q, le_of_lt hxq, ?_⟩
+  have := (abs_lt.mp hd).1
+  linarith
 
 end StatLean.ConcentrationInequalities
