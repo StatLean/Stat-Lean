@@ -274,12 +274,6 @@ theorem isSubGaussian_empiricalProcess_sub [IsProbabilityMeasure μ]
     (hf : Measurable f) (hg : Measurable g)
     -- USER-INPUT: sup-distance bound ‖f − g‖∞ ≤ δ; HDP §8.2 Step 1
     (hfg : ∀ x, |f x - g x| ≤ (δ : ℝ))
-    -- LEAN-ONLY: individual integrability — REQUIRED (statement fix at the
-    -- debt gate: without it the population terms are Bochner junk and the
-    -- claim is FALSE, e.g. non-integrable f with g = f − 1 makes the
-    -- increment the constant 1; holds at every call site since class
-    -- members are bounded)
-    (hf_int : Integrable f P) (hg_int : Integrable g P)
     -- LEAN-ONLY: measurability of the data; regularity, no book content
     (hX : ∀ i, Measurable (X i))
     -- USER-INPUT: independence of the sample; HDP §8.2, Theorem 8.2.3
@@ -335,6 +329,12 @@ theorem subGaussianNorm_empiricalProcess_sub_le [IsProbabilityMeasure μ]
     (hf : Measurable f) (hg : Measurable g)
     -- USER-INPUT: sup-distance bound ‖f − g‖∞ ≤ δ; HDP §8.2 Step 1
     (hfg : ∀ x, |f x - g x| ≤ (δ : ℝ))
+    -- LEAN-ONLY: individual integrability — REQUIRED (statement fix at the
+    -- debt gate: without it the population terms are Bochner junk and the
+    -- claim is FALSE, e.g. non-integrable f with g = f − 1 makes the
+    -- increment the constant 1; holds at every call site since class
+    -- members are bounded)
+    (hf_int : Integrable f P) (hg_int : Integrable g P)
     -- LEAN-ONLY: measurability of the data; regularity, no book content
     (hX : ∀ i, Measurable (X i))
     -- USER-INPUT: independence of the sample; HDP §8.2, Theorem 8.2.3
