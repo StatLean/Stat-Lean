@@ -60,27 +60,29 @@ private lemma aemeasurable_biSup_of_finite {Ω : Type*} {mΩ : MeasurableSpace �
     AEMeasurable (fun ω => ⨆ t ∈ T, g t ω) μ :=
   AEMeasurable.biSup T hfin.countable hg
 
-/-- A single value is dominated by the finite `biSup` (via `Finset.sup'`). -/
+/-- A single value is dominated by the finite `biSup`, unconditionally (the
+`ℝ`-junk branches only push the biSup up). -/
 private lemma le_biSup_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
     (g : E → ℝ) {t : E} (ht : t ∈ T) : g t ≤ ⨆ s ∈ T, g s := by
-  have hFne : hfin.toFinset.Nonempty := by
-    rw [Set.Finite.toFinset_nonempty]; exact ⟨t, ht⟩
   have setToF : (⨆ s ∈ hfin.toFinset, g s) = ⨆ s ∈ T, g s :=
     iSup_congr fun s => by rw [hfin.mem_toFinset]
-  rw [← setToF, biSup_finset_eq_sup' hFne]
-  exact Finset.le_sup' g (hfin.mem_toFinset.mpr ht)
+  rw [← setToF]
+  exact le_biSup_finset g (hfin.mem_toFinset.mpr ht)
 
-/-- A uniform bound on the values dominates the finite `biSup` (via
-`Finset.sup'`). -/
+/-- A uniform **nonnegative** bound on the values dominates the finite
+`biSup`. The nonnegativity `hc` is REQUIRED (junk-value guard, statement fix
+at the debt gate): for `E ⊋ T` the real biSup carries the junk branch value
+`0`, so `⨆ s ∈ T, g s = max (max_T g) 0 ≤ c` genuinely needs `0 ≤ c`
+(e.g. `g ≡ -1 ≤ c := -1` on a proper subset, but the biSup is `0`). Every
+use in this file has an `|·|`-valued or otherwise nonnegative bound. -/
 private lemma biSup_le_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
-    (hne : T.Nonempty) (g : E → ℝ) {c : ℝ} (h : ∀ s ∈ T, g s ≤ c) :
-    ⨆ s ∈ T, g s ≤ c := by
-  have hFne : hfin.toFinset.Nonempty := by
-    rw [Set.Finite.toFinset_nonempty]; exact hne
-  have setToF : (⨆ s ∈ hfin.toFinset, g s) = ⨆ s ∈ T, g s :=
-    iSup_congr fun s => by rw [hfin.mem_toFinset]
-  rw [← setToF, biSup_finset_eq_sup' hFne]
-  exact Finset.sup'_le hFne g (fun s hs => h s (hfin.mem_toFinset.mp hs))
+    (hne : T.Nonempty) (g : E → ℝ) {c : ℝ} (h : ∀ s ∈ T, g s ≤ c)
+    (hc : 0 ≤ c) : ⨆ s ∈ T, g s ≤ c := by
+  refine Real.iSup_le (fun s => ?_) hc
+  by_cases hs : s ∈ T
+  · rw [ciSup_pos hs]; exact h s hs
+  · haveI : IsEmpty (s ∈ T) := ⟨hs⟩
+    rw [Real.iSup_of_isEmpty]; exact hc
 
 /-- Exponential geometric tail `∑_{k<n} exp(-(k+1)) ≤ 1`, via `exp(-1) ≤ 1/2`. -/
 private lemma sum_exp_neg_succ_le_one (n : ℕ) :
@@ -166,7 +168,7 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       exact ae_eq_zero_of_subGaussianNorm_eq_zero ((hmeas t ht).sub (hmeas t₀ ht₀)) hnorm
     have hallz : ∀ᵐ ω ∂μ, (⨆ t ∈ T, |X t ω - X t₀ ω|) ≤ 0 := by
       filter_upwards [hz] with ω hω
-      exact biSup_le_of_finite hfin hne _ (fun s hs => by rw [hω s hs, abs_zero])
+      exact biSup_le_of_finite hfin hne _ (fun s hs => by rw [hω s hs, abs_zero]) le_rfl
     have hthr0 : (12 + 4 * u) * (K : ℝ) * G = 0 := by rw [hK0]; simp
     rw [hthr0]
     have hnull : μ {ω | (0 : ℝ) < ⨆ t ∈ T, |X t ω - X t₀ ω|} = 0 := by
@@ -464,7 +466,8 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           ¬ ((K : ℝ) * dist p.1 p.2 * s k < |X p.1 ω - X p.2 ω|)) →
         (⨆ t ∈ T, |X t ω - X a₀ ω|) ≤ (6 + 2 * u) * (K : ℝ) * G := by
       intro ω hω hnb
-      rw [← setToF (fun t => |X t ω - X a₀ ω|), biSup_finset_eq_sup' hFne]
+      rw [← setToF (fun t => |X t ω - X a₀ ω|),
+        biSup_finset_eq_sup' hFne _ (fun _ _ => abs_nonneg _)]
       refine Finset.sup'_le hFne _ (fun t htF => ?_)
       have htT := hmemT t htF
       have htel : X t ω - X a₀ ω = ∑ k ∈ Finset.range n,
@@ -514,10 +517,11 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have hreduce : ∀ ω, (⨆ t ∈ T, |X t ω - X t₀ ω|) ≤ 2 * ⨆ t ∈ T, |X t ω - X a₀ ω| := by
       intro ω
       have hHnn : (0 : ℝ) ≤ ⨆ t ∈ T, |X t ω - X a₀ ω| := by
-        rw [← setToF (fun t => |X t ω - X a₀ ω|), biSup_finset_eq_sup' hFne]
+        rw [← setToF (fun t => |X t ω - X a₀ ω|)]
         exact le_trans (abs_nonneg _)
-          (Finset.le_sup' (fun t => |X t ω - X a₀ ω|) (hfin.mem_toFinset.mpr ha₀T))
+          (le_biSup_finset (fun t => |X t ω - X a₀ ω|) (hfin.mem_toFinset.mpr ha₀T))
       refine biSup_le_of_finite hfin hne _ (fun t htT => ?_)
+        (mul_nonneg (by norm_num) hHnn)
       have hta : |X t ω - X a₀ ω| ≤ ⨆ t' ∈ T, |X t' ω - X a₀ ω| :=
         le_biSup_of_finite hfin (fun t' => |X t' ω - X a₀ ω|) htT
       have ht0a : |X t₀ ω - X a₀ ω| ≤ ⨆ t' ∈ T, |X t' ω - X a₀ ω| :=
@@ -618,7 +622,7 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
     have hZae : (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) =ᵐ[μ] 0 := by
       filter_upwards [hz] with ω hω
       have hup : (⨆ t ∈ T, |X t ω - X t₀ ω|) ≤ 0 :=
-        biSup_le_of_finite hfin hne _ (fun s hs => by rw [hω s hs]; simp)
+        biSup_le_of_finite hfin hne _ (fun s hs => by rw [hω s hs]; simp) le_rfl
       have hlo : (0 : ℝ) ≤ ⨆ t ∈ T, |X t ω - X t₀ ω| :=
         Real.iSup_nonneg (fun t => Real.iSup_nonneg (fun _ => abs_nonneg _))
       simp only [Pi.zero_apply]
@@ -679,8 +683,14 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
         _ = 20 * ↑K * gammaFunctional A := hfinal
 
 /-- **Theorem 8.5.2 (generic chaining bound)** (HDP §8.5.2; book's absolute
-constant frozen `C = 10`): mean-zero process with sub-Gaussian increments
-has `E sup X ≤ 10·K·γ₂(T,d)`, in `ofReal` form. -/
+constant frozen `C = 20`, from the renegotiated tail `(12 + 4u)`): mean-zero
+process with sub-Gaussian increments has `E max_{t ∈ T} X_t ≤ 20·K·γ₂(T,d)`,
+in `ofReal` form.
+
+Carrier note (statement fix at the debt gate): the finite maximum is stated
+with the junk-free `Finset.sup'` carrier — the previous set-bounded
+`⨆ t ∈ T, X t ω` form was **false** at `|T| = 1` (left side `∫ (X_{t₀})⁺ > 0`
+against `γ₂ = 0`); see `discrete_dudley` for the same renegotiation. -/
 theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
@@ -697,16 +707,17 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
     (hinc : SubGaussianIncrements X K T μ) :
-    ENNReal.ofReal (∫ ω, ⨆ t ∈ T, X t ω ∂μ) ≤ 20 * K * gammaTwo T := by
+    ENNReal.ofReal
+        (∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ)
+      ≤ 20 * K * gammaTwo T := by
   -- Anchor at a point of `T` (Remark 8.5.3 device).
   set t₀ := hne.some with ht₀def
   have ht₀ : t₀ ∈ T := hne.some_mem
-  -- Measurability of the two increment sups.
+  have hFne : hfin.toFinset.Nonempty := hfin.toFinset_nonempty.mpr hne
+  -- Measurability of the anchored abs increment sup.
   have hWm : AEMeasurable (fun ω => ⨆ t ∈ T, |X t ω - X t₀ ω|) μ :=
     aemeasurable_biSup_of_finite hfin (g := fun t ω => |X t ω - X t₀ ω|)
       (fun t ht => ((hmeas t ht).sub (hmeas t₀ ht₀)).abs)
-  have hSXm : AEMeasurable (fun ω => ⨆ t ∈ T, X t ω) μ :=
-    aemeasurable_biSup_of_finite hfin (g := fun t ω => X t ω) (fun t ht => hmeas t ht)
   -- Integrability of the increment sup via domination by a finite sum.
   have hSumInt : Integrable (fun ω => ∑ t ∈ hfin.toFinset, |X t ω - X t₀ ω|) μ :=
     integrable_finset_sum _
@@ -719,31 +730,20 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     exact biSup_le_of_finite hfin ⟨t₀, ht₀⟩ _
       (fun s hs => Finset.single_le_sum (f := fun t => |X t ω - X t₀ ω|)
         (fun i _ => abs_nonneg _) (hfin.mem_toFinset.mpr hs))
-  -- Integrability of the process sup, sandwiched by `X t₀` and `X t₀ + sup |·|`.
-  have hSXint : Integrable (fun ω => ⨆ t ∈ T, X t ω) μ := by
-    refine Integrable.mono' ((hint t₀ ht₀).norm.add hWint) hSXm.aestronglyMeasurable
-      (Filter.Eventually.of_forall (fun ω => ?_))
-    have hlo : X t₀ ω ≤ ⨆ t ∈ T, X t ω := le_biSup_of_finite hfin (fun t => X t ω) ht₀
-    have hhi : ⨆ t ∈ T, X t ω ≤ X t₀ ω + ⨆ t ∈ T, |X t ω - X t₀ ω| := by
-      refine biSup_le_of_finite hfin ⟨t₀, ht₀⟩ _ (fun s hs => ?_)
-      have h1 : |X s ω - X t₀ ω| ≤ ⨆ t ∈ T, |X t ω - X t₀ ω| :=
-        le_biSup_of_finite hfin (fun r => |X r ω - X t₀ ω|) hs
-      have h2 := le_abs_self (X s ω - X t₀ ω)
-      linarith
-    have hW0 : (0 : ℝ) ≤ ⨆ t ∈ T, |X t ω - X t₀ ω| :=
-      Real.iSup_nonneg (fun t => Real.iSup_nonneg (fun _ => abs_nonneg _))
-    simp only [Real.norm_eq_abs, Pi.add_apply, abs_le]
-    refine ⟨?_, ?_⟩
-    · nlinarith [hlo, neg_abs_le (X t₀ ω), hW0]
-    · nlinarith [hhi, le_abs_self (X t₀ ω), hW0]
-  -- E sup X ≤ E sup |X − X t₀| (mean-zero anchor cancels).
-  have hred : ∫ ω, ⨆ t ∈ T, X t ω ∂μ ≤ ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ := by
-    have hbound : ∫ ω, ⨆ t ∈ T, X t ω ∂μ
+      (Finset.sum_nonneg (fun _ _ => abs_nonneg _))
+  -- Integrability of the (junk-free) process max.
+  have hSXint : Integrable
+      (fun ω => hfin.toFinset.sup' hFne (fun t => X t ω)) μ :=
+    integrable_sup'_finset hFne (fun t ht => hint t (hfin.mem_toFinset.mp ht))
+  -- E max X ≤ E sup |X − X t₀| (mean-zero anchor cancels).
+  have hred : ∫ ω, hfin.toFinset.sup' hFne (fun t => X t ω) ∂μ
+      ≤ ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ := by
+    have hbound : ∫ ω, hfin.toFinset.sup' hFne (fun t => X t ω) ∂μ
         ≤ ∫ ω, (X t₀ ω + ⨆ t ∈ T, |X t ω - X t₀ ω|) ∂μ := by
       refine integral_mono hSXint ((hint t₀ ht₀).add hWint) (fun ω => ?_)
-      refine biSup_le_of_finite hfin ⟨t₀, ht₀⟩ _ (fun s hs => ?_)
+      refine Finset.sup'_le hFne _ (fun s hs => ?_)
       have h1 : |X s ω - X t₀ ω| ≤ ⨆ t ∈ T, |X t ω - X t₀ ω| :=
-        le_biSup_of_finite hfin (fun r => |X r ω - X t₀ ω|) hs
+        le_biSup_of_finite hfin (fun r => |X r ω - X t₀ ω|) (hfin.mem_toFinset.mp hs)
       have h2 := le_abs_self (X s ω - X t₀ ω)
       linarith
     rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
@@ -758,7 +758,8 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   exact le_iInf (fun A => generic_chaining_of_admissible hfin hne hmeas hinc ht₀ A)
 
 /-- Theorem 8.5.2, real display (LEAN-ONLY: via `gammaTwo_lt_top_of_finite`
-the `ℝ≥0∞` bound descends to `ℝ`). -/
+the `ℝ≥0∞` bound descends to `ℝ`; `Finset.sup'` carrier as in
+`generic_chaining`). -/
 theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
@@ -774,7 +775,8 @@ theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
     -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
     (hinc : SubGaussianIncrements X K T μ) :
-    ∫ ω, ⨆ t ∈ T, X t ω ∂μ ≤ 20 * K * (gammaTwo T).toReal := by
+    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
+      ≤ 20 * K * (gammaTwo T).toReal := by
   have h3 := generic_chaining hfin hne hmeas hint hmean hinc
   have htop : (20 : ℝ≥0∞) * ↑K * gammaTwo T ≠ ⊤ :=
     ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top)

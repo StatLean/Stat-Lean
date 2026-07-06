@@ -411,7 +411,8 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         ⊆ ⋃ p ∈ CP j, {ω | τ j < |X p.1 ω - X p.2 ω|} := by
       intro ω hω
       simp only [Set.mem_setOf_eq] at hω
-      rw [biSup_finset_eq_sup' (hCPne j), Finset.lt_sup'_iff] at hω
+      rw [biSup_finset_eq_sup' (hCPne j) (fun p => |X p.1 ω - X p.2 ω|)
+        (fun _ _ => abs_nonneg _), Finset.lt_sup'_iff] at hω
       obtain ⟨p, hp, hlt⟩ := hω
       exact Set.mem_biUnion hp hlt
     calc μ {ω | τ j < ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω|}
@@ -438,20 +439,20 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   -- Two-sided sup ≤ twice the anchored one-sided sup.
   have hHnn : ∀ ω, 0 ≤ ⨆ t ∈ T, |X t ω - X c ω| := by
     intro ω
-    rw [← setToF (fun t => |X t ω - X c ω|), biSup_finset_eq_sup' hFne]
+    rw [← setToF (fun t => |X t ω - X c ω|)]
     exact le_trans (abs_nonneg _)
-      (Finset.le_sup' (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr hcT))
+      (le_biSup_finset (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr hcT))
   have hG2H : ∀ ω, (⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|) ≤ 2 * ⨆ t ∈ T, |X t ω - X c ω| := by
     intro ω
     have h2H : (0 : ℝ) ≤ 2 * ⨆ t ∈ T, |X t ω - X c ω| := by linarith [hHnn ω]
     refine Real.iSup_le (fun t => Real.iSup_le (fun ht =>
       Real.iSup_le (fun s => Real.iSup_le (fun hs => ?_) h2H) h2H) h2H) h2H
     have htc : |X t ω - X c ω| ≤ ⨆ t' ∈ T, |X t' ω - X c ω| := by
-      rw [← setToF (fun t => |X t ω - X c ω|), biSup_finset_eq_sup' hFne]
-      exact Finset.le_sup' (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr ht)
+      rw [← setToF (fun t => |X t ω - X c ω|)]
+      exact le_biSup_finset (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr ht)
     have hsc : |X s ω - X c ω| ≤ ⨆ t' ∈ T, |X t' ω - X c ω| := by
-      rw [← setToF (fun t => |X t ω - X c ω|), biSup_finset_eq_sup' hFne]
-      exact Finset.le_sup' (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr hs)
+      rw [← setToF (fun t => |X t ω - X c ω|)]
+      exact le_biSup_finset (fun t => |X t ω - X c ω|) (hfin.mem_toFinset.mpr hs)
     have habs := abs_sub_le (X t ω) (X c ω) (X s ω)
     have hcs : |X c ω - X s ω| = |X s ω - X c ω| := abs_sub_comm _ _
     linarith
@@ -459,7 +460,8 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
   have htele : ∀ᵐ ω ∂μ, (⨆ t ∈ T, |X t ω - X c ω|)
       ≤ ∑ j ∈ Finset.range n, ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
     filter_upwards [hclean] with ω hω
-    rw [← setToF (fun t => |X t ω - X c ω|), biSup_finset_eq_sup' hFne]
+    rw [← setToF (fun t => |X t ω - X c ω|),
+      biSup_finset_eq_sup' hFne _ (fun _ _ => abs_nonneg _)]
     refine Finset.sup'_le hFne _ (fun t ht => ?_)
     have htT := hmemT t ht
     have htel : X t ω - X c ω = ∑ i ∈ Finset.range n,
@@ -477,8 +479,7 @@ theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       _ ≤ ∑ j ∈ Finset.range n, ⨆ p ∈ CP j, |X p.1 ω - X p.2 ω| := by
           apply Finset.sum_le_sum
           intro i _
-          rw [biSup_finset_eq_sup' (hCPne i)]
-          exact Finset.le_sup' (fun p => |X p.1 ω - X p.2 ω|)
+          exact le_biSup_finset (fun p => |X p.1 ω - X p.2 ω|)
             (proj_pair_mem_closePairs (hproj (i + 1) t htT) (hproj i t htT)
               (hN (i + 1)).2.1 (hN i).2.1)
   -- Threshold sum: `2 ∑ τ_j ≤ thr`.
