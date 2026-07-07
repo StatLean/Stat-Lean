@@ -36,7 +36,11 @@ variable {𝓧 𝓨 : Type*} [m𝓧 : MeasurableSpace 𝓧] [m𝓨 : MeasurableS
 
 /-- The map `x ↦ w • κ₁ x + (1 − w) • κ₂ x` is measurable. -/
 theorem measurable_mixKernel_coe (w : ℝ≥0∞) (κ₁ κ₂ : Kernel 𝓧 𝓨) :
-    Measurable fun x => w • κ₁ x + (1 - w) • κ₂ x := sorry
+    Measurable fun x => w • κ₁ x + (1 - w) • κ₂ x := by
+  refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
+  simp only [Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+  exact ((Kernel.measurable_coe κ₁ hs).const_mul w).add
+    ((Kernel.measurable_coe κ₂ hs).const_mul (1 - w))
 
 /-- **Two-component kernel mixture** `w • κ₁ + (1 − w) • κ₂` (Robert §2.4.1: randomized
 estimators; §6.3.5: random-scan sweeps). The pinned `Kernel` has no `ℝ≥0∞`-smul, so the mixture is
@@ -53,20 +57,35 @@ theorem isMarkovKernel_mixKernel {w : ℝ≥0∞}
     -- USER-INPUT: the mixing weight is a probability; Robert §2.4.1
     (hw : w ≤ 1)
     (κ₁ κ₂ : Kernel 𝓧 𝓨) [IsMarkovKernel κ₁] [IsMarkovKernel κ₂] :
-    IsMarkovKernel (mixKernel w κ₁ κ₂) := sorry
+    IsMarkovKernel (mixKernel w κ₁ κ₂) := by
+  refine ⟨fun x => ⟨?_⟩⟩
+  rw [mixKernel_apply]
+  simp only [Measure.add_apply, Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+  exact add_tsub_cancel_of_le hw
 
 /-- Lintegral against a mixture kernel value. -/
 theorem lintegral_mixKernel (w : ℝ≥0∞) (κ₁ κ₂ : Kernel 𝓧 𝓨) (x : 𝓧) (f : 𝓨 → ℝ≥0∞) :
     ∫⁻ y, f y ∂(mixKernel w κ₁ κ₂ x)
-      = w * ∫⁻ y, f y ∂(κ₁ x) + (1 - w) * ∫⁻ y, f y ∂(κ₂ x) := sorry
+      = w * ∫⁻ y, f y ∂(κ₁ x) + (1 - w) * ∫⁻ y, f y ∂(κ₂ x) := by
+  rw [mixKernel_apply, lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure]
+  simp only [smul_eq_mul]
 
 /-- Binding a measure through a mixture kernel mixes the binds. -/
 theorem bind_mixKernel (w : ℝ≥0∞) (κ₁ κ₂ : Kernel 𝓧 𝓨) (μ : Measure 𝓧) :
-    mixKernel w κ₁ κ₂ ∘ₘ μ = w • (κ₁ ∘ₘ μ) + (1 - w) • (κ₂ ∘ₘ μ) := sorry
+    mixKernel w κ₁ κ₂ ∘ₘ μ = w • (κ₁ ∘ₘ μ) + (1 - w) • (κ₂ ∘ₘ μ) := by
+  ext s hs
+  rw [Measure.bind_apply hs (Kernel.aemeasurable _)]
+  simp_rw [mixKernel_apply, Measure.add_apply, Measure.smul_apply, smul_eq_mul]
+  rw [lintegral_add_left ((Kernel.measurable_coe κ₁ hs).const_mul w) _,
+    lintegral_const_mul _ (Kernel.measurable_coe κ₁ hs),
+    lintegral_const_mul _ (Kernel.measurable_coe κ₂ hs),
+    Measure.bind_apply hs (Kernel.aemeasurable _), Measure.bind_apply hs (Kernel.aemeasurable _)]
 
 /-- Composing a mixture on the left distributes over the mixture. -/
 theorem mixKernel_comp_left (w : ℝ≥0∞) (κ₁ κ₂ : Kernel 𝓧 𝓨) {𝓩 : Type*}
     [m𝓩 : MeasurableSpace 𝓩] (η : Kernel 𝓩 𝓧) (z : 𝓩) :
-    (mixKernel w κ₁ κ₂ ∘ₖ η) z = w • ((κ₁ ∘ₖ η) z) + (1 - w) • ((κ₂ ∘ₖ η) z) := sorry
+    (mixKernel w κ₁ κ₂ ∘ₖ η) z = w • ((κ₁ ∘ₖ η) z) + (1 - w) • ((κ₂ ∘ₖ η) z) := by
+  rw [Kernel.comp_apply, Kernel.comp_apply, Kernel.comp_apply]
+  exact bind_mixKernel w κ₁ κ₂ (η z)
 
 end StatLean.Bayesian
