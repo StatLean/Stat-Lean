@@ -37,16 +37,23 @@ variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace �
 theorem IsCredibleSet.mono_level (h : IsCredibleSet post m C γ)
     -- USER-INPUT: the target level is looser; Robert Definition 5.5.2
     (hγ : γ ≤ γ') :
-    IsCredibleSet post m C γ' := sorry
+    IsCredibleSet post m C γ' := by
+  filter_upwards [h] with x hx
+  exact le_trans (tsub_le_tsub_left hγ 1) hx
 
 /-- Enlarging the sets preserves credibility. -/
 theorem IsCredibleSet.mono_set (h : IsCredibleSet post m C γ)
     -- USER-INPUT: pointwise enlargement of the credible sets; Robert Definition 5.5.2
     (hCD : ∀ x, C x ⊆ D x) :
-    IsCredibleSet post m D γ := sorry
+    IsCredibleSet post m D γ := by
+  filter_upwards [h] with x hx
+  exact le_trans hx (measure_mono (hCD x))
 
 /-- The full-space family is `γ`-credible at every level (for a Markov posterior kernel). -/
 theorem isCredibleSet_univ [IsMarkovKernel post] (γ : ℝ≥0∞) :
-    IsCredibleSet post m (fun _ => Set.univ) γ := sorry
+    IsCredibleSet post m (fun _ => Set.univ) γ := by
+  refine ae_of_all m fun x => ?_
+  rw [measure_univ]
+  exact tsub_le_self
 
 end StatLean.Bayesian

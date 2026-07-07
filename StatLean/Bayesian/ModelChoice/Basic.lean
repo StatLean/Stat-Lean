@@ -42,6 +42,14 @@ namespace StatLean.Bayesian
 
 variable {𝓧 M : Type*} [m𝓧 : MeasurableSpace 𝓧] [mM : MeasurableSpace M]
 
+/-- On a finite discrete model space, a Lebesgue integral against `ϖ` is the finite weighted sum
+of atomic masses. -/
+private theorem lintegral_eq_sum_prob [Fintype M] [MeasurableSingletonClass M]
+    (ϖ : Measure M) (f : M → ℝ≥0∞) :
+    ∫⁻ j, f j ∂ϖ = ∑ j, ϖ {j} * f j := by
+  rw [lintegral_fintype]
+  exact Finset.sum_congr rfl fun j _ => mul_comm _ _
+
 /-- **Posterior model probabilities** (Robert eq. (7.2.2)): over a finite model space with
 marginal densities `q m`, the posterior probability of model `m` is
 `ϖ{m}·q m x / ∑ j, ϖ{j}·q j x`, predictive-a.e. (simultaneously in `m`). -/
@@ -55,7 +63,16 @@ theorem posteriorModelProb_eq_div [Fintype M] [MeasurableSingletonClass M] [None
     -- Robert §7.2.1
     (hQ : ∀ m, Q m = ν.withDensity (q m)) :
     ∀ᵐ x ∂(Q ∘ₘ ϖ), ∀ m,
-      posteriorModelProb Q ϖ x m = ϖ {m} * q m x / ∑ j, ϖ {j} * q j x := sorry
+      posteriorModelProb Q ϖ x m = ϖ {m} * q m x / ∑ j, ϖ {j} * q j x := by
+  filter_upwards [posterior_eq_withDensity_likelihood_div_predictive
+      (κ := Q) (π := ϖ) (ν := ν) (p := q) hq hQ] with x hx
+  intro m
+  rw [posteriorModelProb, hx, withDensity_apply _ (measurableSet_singleton m),
+    lintegral_singleton]
+  dsimp only
+  rw [lintegral_eq_sum_prob ϖ (fun j => q j x)]
+  simp only [div_eq_mul_inv]
+  ring
 
 /-- **Posterior model odds = prior odds × Bayes factor** (Robert §7.2.2; Definition 5.2.5): for
 two models `m₀ m₁` in the finite family, predictive-a.e. -/
@@ -65,9 +82,21 @@ theorem posteriorModelProb_div_eq_odds_mul [Fintype M] [MeasurableSingletonClass
     -- LEAN-ONLY: joint measurability of the marginal densities (regularity)
     (hq : Measurable (Function.uncurry q))
     -- USER-INPUT: marginal-density representation of each model; Robert §7.2.1
-    (hQ : ∀ m, Q m = ν.withDensity (q m)) (m₀ m₁ : M) :
+    (hQ : ∀ m, Q m = ν.withDensity (q m)) (m₀ m₁ : M)
+    -- USER-INPUT: the reference model is nondegenerate; Robert §7.2.2
+    (hm₁ : ϖ {m₁} ≠ 0) :
     ∀ᵐ x ∂(Q ∘ₘ ϖ),
       posteriorModelProb Q ϖ x m₀ / posteriorModelProb Q ϖ x m₁
-        = (ϖ {m₀} / ϖ {m₁}) * (q m₀ x / q m₁ x) := sorry
+        = (ϖ {m₀} / ϖ {m₁}) * (q m₀ x / q m₁ x) := by
+  filter_upwards [posteriorModelProb_eq_div hq hQ,
+      predictiveDensity_pos_ae (κ := Q) (π := ϖ) hq hQ,
+      predictiveDensity_lt_top_ae_comp (κ := Q) (π := ϖ) hq hQ] with x hx hpos htop
+  have hSeq : predictiveDensity q ϖ x = ∑ j, ϖ {j} * q j x :=
+    lintegral_eq_sum_prob ϖ (fun j => q j x)
+  have hSpos : (∑ j, ϖ {j} * q j x) ≠ 0 := by rw [← hSeq]; exact hpos.ne'
+  have hStop : (∑ j, ϖ {j} * q j x) ≠ ∞ := by rw [← hSeq]; exact htop.ne
+  rw [hx m₀, hx m₁, div_eq_mul_inv (ϖ {m₀} * q m₀ x), div_eq_mul_inv (ϖ {m₁} * q m₁ x),
+    ENNReal.mul_div_mul_right _ _ (ENNReal.inv_ne_zero.mpr hStop) (ENNReal.inv_ne_top.mpr hSpos),
+    ENNReal.mul_div_mul_comm (Or.inl hm₁) (Or.inl (measure_ne_top ϖ _))]
 
 end StatLean.Bayesian
