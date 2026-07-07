@@ -54,8 +54,7 @@ unified framework for high-dimensional analysis of $M$-estimators with decomposa
 *Statistical Science* 27(4):538–557, 2012 (DOI 10.1214/12-STS400; arXiv:1010.2731, 2010). That paper
 introduces the decomposable-regularizer / restricted-strong-convexity machinery and applies it to
 generalized linear models, where the column-normalization condition (here G1) and the bounded
-cumulant second derivative (here G2) appear as the regularity assumptions for the GLM example; the
-Wainwright (2019) textbook Chapter 9 is the consolidated exposition of that framework.
+cumulant second derivative (here G2) appear as the regularity assumptions for the GLM example.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

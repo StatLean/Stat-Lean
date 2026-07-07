@@ -86,9 +86,8 @@ limiting distributions of regular estimates*, Z. Wahrsch. Verw. Gebiete 14
 (1970), 323–330). The reduction of the asymptotic minimax problem to a
 Bayes-risk computation in the Gaussian limit experiment is due to L. Le Cam
 (see *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986).
-The formalization here follows van der Vaart's textbook synthesis (vdV
-§25.3, Theorem 25.21) of this Hájek–Le Cam theory for semiparametric
-models.
+The formalization here follows the synthesis of this Hájek–Le Cam theory
+for semiparametric models in vdV §25.3, Theorem 25.21.
 -/
 
 open MeasureTheory Filter Topology

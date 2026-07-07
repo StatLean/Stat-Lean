@@ -38,7 +38,7 @@ gives $f(z) \le (1-\gamma)\,f(x^\star) + \gamma\,f(y)$, and since $\gamma > 0$ a
 $f(y) < f(x^\star)$ these two bounds contradict each other.
 
 **Bibliographic comments.** This is folklore in convex analysis with no single
-seminal origin. The canonical textbook treatment is R. T. Rockafellar, *Convex
+seminal origin. The canonical treatment is R. T. Rockafellar, *Convex
 Analysis*, Princeton University Press, 1970: the first-order optimality
 characterization $0 \in \partial f(x^\star)$ is Theorem 27.1 there, and "every
 local minimum of a convex function is a global minimum" follows from the

@@ -33,7 +33,7 @@ $f(y) - f(x) \ge \langle g, y - x\rangle$.
 
 **Bibliographic comments.** The subgradient and subdifferential of a convex
 function are foundational notions of convex analysis with no single seminal
-origin in the textbook sense; they are folklore traceable to the development of
+origin; they are folklore traceable to the development of
 convex analysis in the 1960s. The standard reference is R. T. Rockafellar,
 *Convex Analysis*, Princeton Mathematical Series 28, Princeton University Press,
 1970 (see §23, "Subgradients"), which fixed the now-standard definition

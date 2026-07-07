@@ -36,16 +36,13 @@ machinery (Chapter 6, Bernstein and Maximal Inequalities, §6.1, Theorem 6.1
 
 **Bibliographic comments.** The sub-exponential class via a restricted-range MGF
 (equivalently, sub-exponential characterized by Orlicz $\psi_1$-norm,
-linear-in-$t$ MGF growth, or exponential tails) is textbook folklore with no
+linear-in-$t$ MGF growth, or exponential tails) is folklore with no
 single seminal origin; it is standard background for the Bernstein-type
-inequalities tracing to S. N. Bernstein (1920s). Modern treatments are
-R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in
-Data Science*, Cambridge University Press, 2018 (§2.7–2.8, Prop. 2.7.1 on the
-equivalence of sub-exponential properties); and M. J. Wainwright,
-*High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University
-Press, 2019 (§2.1.3, Def. of sub-exponential variables and the
-$(\nu^2, \alpha)$-Bernstein condition). The two-parameter form used in those
-texts ($\mathbb{E}[e^{\lambda(X-\mu)}] \le e^{\nu^2\lambda^2/2}$ for
+inequalities tracing to S. N. Bernstein (1920s). A modern treatment is
+M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019 (§2.1.3, Def. of sub-exponential variables and
+the $(\nu^2, \alpha)$-Bernstein condition). The two-parameter form used there
+($\mathbb{E}[e^{\lambda(X-\mu)}] \le e^{\nu^2\lambda^2/2}$ for
 $|\lambda| < 1/\alpha$) specializes to the single-parameter $\alpha$ form here.
 -/
 

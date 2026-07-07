@@ -57,7 +57,7 @@ the conclusion fails.
 score onto the orthocomplement of the nuisance tangent space, and the
 resulting efficient influence function `\tilde I^{-1}\tilde\ell_\theta`, are the
 central organizing concepts of modern semiparametric efficiency theory; van
-der Vaart's Lemma 25.25 is a textbook synthesis rather than a single seminal
+der Vaart's Lemma 25.25 is a synthesis rather than a single seminal
 result. The geometric/projection formulation traces back to C. Stein,
 "Efficient nonparametric testing and estimation," *Proc. Third Berkeley
 Symp. Math. Statist. Probab.*, vol. 1 (1956), 187–195, and was developed into

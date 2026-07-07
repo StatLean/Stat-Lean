@@ -68,8 +68,8 @@ appear in D. L. Donoho and X. Huo, "Uncertainty principles and ideal atomic
 decomposition", *IEEE Trans. Inform. Theory* 47 (2001), no. 7, 2845–2862, and in
 R. Gribonval and M. Nielsen, "Sparse representations in unions of bases", *IEEE Trans.
 Inform. Theory* 49 (2003), no. 12, 3320–3325. The support-restricted version proven
-here ($C(S) \cap \mathrm{Null}(X) = \{0\}$ for a fixed $S$) is the textbook (Lu-BDA §8.2)
-packaging of that property and is standard; it is the deterministic core later combined
+here ($C(S) \cap \mathrm{Null}(X) = \{0\}$ for a fixed $S$) is a standard packaging of
+that property; it is the deterministic core later combined
 with the restricted-isometry property to give probabilistic recovery guarantees
 (E. J. Candès and T. Tao, "Decoding by linear programming", *IEEE Trans. Inform. Theory*
 51 (2005), no. 12, 4203–4215).

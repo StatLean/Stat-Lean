@@ -31,8 +31,8 @@ inequality. The degenerate cases ($D(\mu\|\nu) = \infty$, or $\mu \not\ll \nu$) 
 separately by `le_top`.
 
 **Bibliographic comments.** The data-processing inequality for KL divergence (and more generally
-for any $f$-divergence) is classical folklore with no single seminal source; it predates and
-underlies Wainwright's textbook treatment. The general $f$-divergence statement and its convexity
+for any $f$-divergence) is classical folklore with no single seminal source. The general
+$f$-divergence statement and its convexity
 proof are due to I. Csiszár, *Information-type measures of difference of probability distributions
 and indirect observations*, Studia Scientiarum Mathematicarum Hungarica **2** (1967), 299–318, and
 independently S. M. Ali and S. D. Silvey, *A general class of coefficients of divergence of one

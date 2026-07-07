@@ -66,7 +66,7 @@ geometry over $L^2_0(P)$:
 function as the orthogonal projection of any influence function onto the tangent
 space, and the resulting asymptotic-variance lower bound equal to its squared
 $L^2$ norm, originate in the semiparametric-efficiency literature rather than
-with a single textbook. The seminal references are J. M. Begun, W. J. Hall,
+with a single source. The seminal references are J. M. Begun, W. J. Hall,
 W.-M. Huang, and J. A. Wellner, "Information and Asymptotic Efficiency in
 Parametric–Nonparametric Models", *The Annals of Statistics* 11(2), 432–452
 (1983), which established the representation/minimax lower bounds via

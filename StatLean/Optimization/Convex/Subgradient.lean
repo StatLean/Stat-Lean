@@ -31,7 +31,7 @@ single seminal origin. The standard reference is R. T. Rockafellar, *Convex
 Analysis*, Princeton University Press, 1970 — the equivalence between
 differentiability and the gradient being the unique subgradient is Theorem 25.1
 there, building on the basic subgradient inequality of §23. The result is
-also standard textbook material in, e.g., Boyd & Vandenberghe, *Convex
+also standard material in, e.g., Boyd & Vandenberghe, *Convex
 Optimization* (Cambridge, 2004), §3.1.3.
 -/
 
