@@ -1,0 +1,26 @@
+{
+  "root": "StatLean.ConcentrationInequalities.vcDim",
+  "nodes": [
+    {"id":"StatLean.ConcentrationInequalities.vcDim","label":"vcDim","full":"StatLean.ConcentrationInequalities.vcDim","kind":"root","decl":"def","module":"StatLean.ConcentrationInequalities.VC.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"ENat","label":"ENat","full":"ENat","kind":"mathlib","decl":"def","module":"Mathlib.Data.ENat.Defs"},
+    {"id":"iSup","label":"iSup","full":"iSup","kind":"mathlib","decl":"def","module":"Mathlib.Order.SetNotation"},
+    {"id":"Finset","label":"Finset","full":"Finset","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Defs"},
+    {"id":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder","label":"toConditionallyCompletePartialOrder","full":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder","kind":"mathlib","decl":"def","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
+    {"id":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot","label":"toConditionallyCompleteLinearOrderBot","full":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot","kind":"mathlib","decl":"def","module":"Mathlib.Order.ConditionallyCompleteLattice.Basic"},
+    {"id":"StatLean.ConcentrationInequalities.Shatters","label":"Shatters","full":"StatLean.ConcentrationInequalities.Shatters","kind":"repo","decl":"def","module":"StatLean.ConcentrationInequalities.VC.Defs"},
+    {"id":"Finset.card","label":"card","full":"Finset.card","kind":"mathlib","decl":"def","module":"Mathlib.Data.Finset.Card"}
+  ],
+  "edges": [
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"Set"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"ENat"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"iSup"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"Finset"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"ConditionallyCompleteLattice.toConditionallyCompletePartialOrder"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"CompleteLinearOrder.toConditionallyCompleteLinearOrderBot"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"StatLean.ConcentrationInequalities.Shatters"},
+    {"source":"StatLean.ConcentrationInequalities.vcDim","target":"Finset.card"},
+    {"source":"StatLean.ConcentrationInequalities.Shatters","target":"Set"},
+    {"source":"StatLean.ConcentrationInequalities.Shatters","target":"Finset"}
+  ]
+}
