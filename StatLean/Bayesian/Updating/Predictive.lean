@@ -48,7 +48,37 @@ eq. (4.1.5)): binding the prior through the pair experiment factors as the data 
 theorem comp_prod_eq_compProd_posteriorPredictive
     [StandardBorelSpace Θ] [Nonempty Θ] {π : Measure Θ} [IsFiniteMeasure π]
     (KX : Kernel Θ 𝓧) [IsMarkovKernel KX] (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] :
-    (KX ×ₖ KY) ∘ₘ π = (KX ∘ₘ π) ⊗ₘ posteriorPredictive KX KY π := sorry
+    (KX ×ₖ KY) ∘ₘ π = (KX ∘ₘ π) ⊗ₘ posteriorPredictive KX KY π := by
+  refine ext_of_generate_finite _ generateFrom_prod.symm isPiSystem_prod ?_ ?_
+  · rintro s ⟨A, hA, B, hB, rfl⟩
+    -- The integrand on `𝓧 × Θ`.
+    set F : 𝓧 × Θ → ℝ≥0∞ := fun p => A.indicator (1 : 𝓧 → ℝ≥0∞) p.1 * KY p.2 B with hFdef
+    have hF : Measurable F :=
+      ((measurable_const.indicator hA).comp measurable_fst).mul
+        ((KY.measurable_coe hB).comp measurable_snd)
+    -- Swap route: the pivotal disintegration identity.
+    have key2 : ∫⁻ p, F p ∂((KX ∘ₘ π) ⊗ₘ (KX†π)) = ∫⁻ θ, KX θ A * KY θ B ∂π := by
+      rw [compProd_posterior_eq_map_swap, lintegral_map hF measurable_swap,
+        Measure.lintegral_compProd (f := fun a : Θ × 𝓧 => F a.swap) (hF.comp measurable_swap)]
+      refine lintegral_congr fun θ => ?_
+      simp only [hFdef, Prod.swap_prod_mk]
+      rw [lintegral_mul_const _ (measurable_one.indicator hA), lintegral_indicator_one hA]
+    -- CompProd route: unfold the posterior predictive on the rectangle.
+    have key : ∫⁻ p, F p ∂((KX ∘ₘ π) ⊗ₘ (KX†π))
+        = ∫⁻ x in A, ∫⁻ θ, KY θ B ∂((KX†π) x) ∂(KX ∘ₘ π) := by
+      rw [Measure.lintegral_compProd hF]
+      simp only [hFdef]
+      rw [← lintegral_indicator hA]
+      refine lintegral_congr fun x => ?_
+      rw [lintegral_const_mul _ (KY.measurable_coe hB)]
+      by_cases hx : x ∈ A <;> simp [Set.indicator_of_mem, Set.indicator_of_notMem, hx]
+    -- Assemble.
+    rw [Measure.bind_apply (hA.prod hB) (Kernel.aemeasurable _)]
+    simp_rw [Kernel.prod_apply_prod]
+    rw [Measure.compProd_apply_prod hA hB]
+    simp_rw [posteriorPredictive_apply, Measure.bind_apply hB (Kernel.aemeasurable _)]
+    rw [← key, key2]
+  · simp
 
 /-- **The posterior predictive is the conditional law of the future given the data**
 (Robert eq. (4.1.5)): under `(θ, x, y) ~ π ⊗ₘ (KX ×ₖ KY)`, `condDistrib` of the future given the
@@ -58,6 +88,23 @@ theorem condDistrib_ae_eq_posteriorPredictive
     {π : Measure Θ} [IsFiniteMeasure π]
     (KX : Kernel Θ 𝓧) [IsMarkovKernel KX] (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] :
     condDistrib (fun ω : Θ × 𝓧 × 𝓨 => ω.2.2) (fun ω => ω.2.1) (π ⊗ₘ (KX ×ₖ KY))
-      =ᵐ[KX ∘ₘ π] posteriorPredictive KX KY π := sorry
+      =ᵐ[KX ∘ₘ π] posteriorPredictive KX KY π := by
+  set μ : Measure (Θ × 𝓧 × 𝓨) := π ⊗ₘ (KX ×ₖ KY) with hμ
+  set X : Θ × 𝓧 × 𝓨 → 𝓧 := fun ω => ω.2.1 with hXdef
+  set Y : Θ × 𝓧 × 𝓨 → 𝓨 := fun ω => ω.2.2 with hYdef
+  have hY : AEMeasurable Y μ := (measurable_snd.comp measurable_snd).aemeasurable
+  -- Data marginal of the joint model is the predictive base measure.
+  have hmarg : μ.map X = KX ∘ₘ π := by
+    have hXcomp : X = Prod.fst ∘ Prod.snd := rfl
+    rw [hXcomp, ← Measure.map_map measurable_fst measurable_snd,
+      show μ.map Prod.snd = μ.snd from rfl, hμ, Measure.snd_compProd,
+      Measure.map_comp _ _ measurable_fst, ← Kernel.fst_eq, Kernel.fst_prod]
+  -- Joint law of the pair `(data, future)` factors as data ⊗ predictive.
+  have hjoint : μ.map (fun ω => (X ω, Y ω)) = μ.map X ⊗ₘ (posteriorPredictive KX KY π) := by
+    have he : (fun ω : Θ × 𝓧 × 𝓨 => (X ω, Y ω)) = Prod.snd := rfl
+    rw [he, show μ.map Prod.snd = μ.snd from rfl, hμ, Measure.snd_compProd,
+      comp_prod_eq_compProd_posteriorPredictive, ← hmarg]
+  have h := condDistrib_ae_eq_of_measure_eq_compProd X hY hjoint
+  rwa [hmarg] at h
 
 end StatLean.Bayesian

@@ -42,18 +42,37 @@ variable {A B : Type*} [mA : MeasurableSpace A] [mB : MeasurableSpace B]
 /-- **The second-coordinate Gibbs update preserves the target** (2F.5; Robert §6.3.3). -/
 theorem invariant_gibbsSnd (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace B] [Nonempty B] :
-    Kernel.Invariant (gibbsSnd ρ) ρ := sorry
+    Kernel.Invariant (gibbsSnd ρ) ρ := by
+  unfold Kernel.Invariant gibbsSnd
+  rw [← Kernel.comp_deterministic_eq_comap, ← Measure.comp_assoc,
+    Measure.deterministic_comp_eq_map]
+  change (Kernel.id ×ₖ ρ.condKernel) ∘ₘ ρ.fst = ρ
+  rw [← Measure.compProd_eq_comp_prod]
+  exact ρ.disintegrate _
 
 /-- **The first-coordinate Gibbs update preserves the target** (2F.5; Robert §6.3.3). -/
 theorem invariant_gibbsFst (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] :
-    Kernel.Invariant (gibbsFst ρ) ρ := sorry
+    Kernel.Invariant (gibbsFst ρ) ρ := by
+  unfold Kernel.Invariant gibbsFst
+  rw [← Kernel.comp_deterministic_eq_comap, ← Measure.comp_assoc,
+    Measure.deterministic_comp_eq_map]
+  -- goal: ((ρ.map Prod.swap).condKernel ×ₖ Kernel.id) ∘ₘ (ρ.map Prod.snd) = ρ
+  have e2 : (Kernel.id ×ₖ (ρ.map Prod.swap).condKernel) ∘ₘ (ρ.map Prod.snd)
+      = ρ.map Prod.swap := by
+    have hfst : (Measure.map Prod.snd ρ) = (ρ.map Prod.swap).fst := Measure.fst_map_swap.symm
+    rw [hfst, ← Measure.compProd_eq_comp_prod]
+    exact (ρ.map Prod.swap).disintegrate _
+  rw [← Kernel.map_prod_swap, ← Kernel.swap_comp_eq_map, ← Measure.comp_assoc, e2,
+    Measure.swap_comp, Measure.map_map measurable_swap measurable_swap]
+  simp
 
 /-- **Two-block Gibbs stationarity** (2F.6; Robert Lemma 6.3.6): the systematic sweep
 "update `a`, then update `b`" preserves the target. -/
 theorem invariant_twoBlockGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B] :
-    Kernel.Invariant (gibbsSnd ρ ∘ₖ gibbsFst ρ) ρ := sorry
+    Kernel.Invariant (gibbsSnd ρ ∘ₖ gibbsFst ρ) ρ :=
+  (invariant_gibbsSnd ρ).comp (invariant_gibbsFst ρ)
 
 /-- **Random-scan Gibbs stationarity** (2F.7; Robert §6.3.5): the `w`-mixture of the two
 one-coordinate updates preserves the target, for any mixing probability `w ≤ 1`. -/
@@ -61,6 +80,9 @@ theorem invariant_randomScanGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B] {w : ℝ≥0∞}
     -- USER-INPUT: the scan probability is a probability; Robert §6.3.5
     (hw : w ≤ 1) :
-    Kernel.Invariant (randomScanGibbs ρ w) ρ := sorry
+    Kernel.Invariant (randomScanGibbs ρ w) ρ := by
+  unfold Kernel.Invariant randomScanGibbs
+  rw [bind_mixKernel, (invariant_gibbsFst ρ).def, (invariant_gibbsSnd ρ).def,
+    ← add_smul, add_tsub_cancel_of_le hw, one_smul]
 
 end StatLean.Bayesian

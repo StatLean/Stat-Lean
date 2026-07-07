@@ -45,6 +45,32 @@ theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : Measur
     (hm : m ≤ m𝓧) {T : 𝓧 → ℝ}
     -- USER-INPUT: the statistic is square-integrable; Robert §6.3.4
     (hT : MemLp T 2 μ) (c : ℝ) :
-    ∫⁻ x, sqLoss c ((μ[T | m]) x) ∂μ ≤ ∫⁻ x, sqLoss c (T x) ∂μ := sorry
+    ∫⁻ x, sqLoss c ((μ[T | m]) x) ∂μ ≤ ∫⁻ x, sqLoss c (T x) ∂μ := by
+  -- The quadratic risk about `c` is the square of the `L²` norm of `c - ·`.
+  have bridge : ∀ h : 𝓧 → ℝ,
+      ∫⁻ x, sqLoss c (h x) ∂μ = eLpNorm (fun x => c - h x) 2 μ ^ (2 : ℝ) := by
+    intro h
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num), ← ENNReal.rpow_mul,
+      ENNReal.toReal_ofNat, show (1 / (2 : ℝ)) * 2 = 1 by norm_num, ENNReal.rpow_one]
+    simp only [sqLoss]
+    refine lintegral_congr fun x => ?_
+    rw [← ENNReal.rpow_natCast (‖c - h x‖ₑ) 2]
+    norm_num
+  -- The centered statistic and its conditional expectation.
+  have hci : Integrable (fun _ : 𝓧 => c) μ := integrable_const c
+  have hTi : Integrable T μ := hT.integrable one_le_two
+  have hsub : μ[(fun _ => c) - T | m] =ᵐ[μ] fun x => c - (μ[T | m]) x := by
+    have h1 := condExp_sub hci hTi m
+    have h2 : μ[fun _ : 𝓧 => c | m] = fun _ => c := condExp_const hm c
+    filter_upwards [h1] with x hx
+    rw [hx, h2]
+    rfl
+  have hle : eLpNorm (fun x => c - (μ[T | m]) x) 2 μ ≤ eLpNorm (fun x => c - T x) 2 μ :=
+    calc eLpNorm (fun x => c - (μ[T | m]) x) 2 μ
+        = eLpNorm (μ[(fun _ => c) - T | m]) 2 μ := (eLpNorm_congr_ae hsub).symm
+      _ ≤ eLpNorm ((fun _ => c) - T) 2 μ := eLpNorm_condExp_le
+      _ = eLpNorm (fun x => c - T x) 2 μ := rfl
+  rw [bridge (μ[T | m]), bridge T]
+  exact ENNReal.rpow_le_rpow hle (by norm_num)
 
 end StatLean.Bayesian
