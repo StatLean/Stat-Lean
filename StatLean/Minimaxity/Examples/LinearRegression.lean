@@ -50,8 +50,8 @@ separation radius is correspondingly `δ = √(v·r/(1280 n))`. The result requi
 since the local-packing/Fano cardinality condition (15.35b) needs `Ω(r)` packing hypotheses and
 small-rank designs are degenerate.
 
-**Bibliographic comments.** The fixed-design prediction-error minimax rates formalized here are
-the textbook (Examples 15.14, 15.16) presentation of results from G. Raskutti, M. J. Wainwright,
+**Bibliographic comments.** The fixed-design prediction-error minimax rates formalized here
+(Examples 15.14, 15.16) are due to G. Raskutti, M. J. Wainwright,
 and B. Yu, "Minimax rates of estimation for high-dimensional linear regression over $\ell_q$-balls,"
 *IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011 (DOI
 10.1109/TIT.2011.2165799; preprint arXiv:0910.2042). That paper derives matching minimax upper and

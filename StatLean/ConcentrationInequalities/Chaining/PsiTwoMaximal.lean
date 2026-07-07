@@ -40,7 +40,7 @@ folklore consequences of the Cramér–Chernoff method and Orlicz-norm calculus;
 systematic treatments are Buldygin–Kozachenko, *Metric Characterization of
 Random Variables and Random Processes*, AMS 2000, and van der Vaart–Wellner,
 *Weak Convergence and Empirical Processes*, Springer 1996, §2.2 (Orlicz-norm
-maximal inequalities). See the HDP Chapter 2 Notes.
+maximal inequalities).
 -/
 
 open MeasureTheory ProbabilityTheory

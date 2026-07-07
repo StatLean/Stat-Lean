@@ -63,9 +63,8 @@ all higher moments (the *Bernstein moment condition* used here, $\mathbb{E}|X|^k
 \tfrac{\sigma^2}{2}k!\,b^{k-2}$), which interpolates between the sub-Gaussian regime (small $t$,
 constant $\sigma^2$) and the sub-exponential regime (large $t$, constant $b$).  The formulation
 proved here — the two-regime tail $\exp(-nt^2/(2(\sigma^2 + bt)))$ for the sample mean — is the
-standard textbook synthesis; see e.g. Boucheron, Lugosi & Massart, *Concentration Inequalities*
-(Oxford, 2013), §2.8, and Vershynin, *High-Dimensional Probability* (Cambridge, 2018),
-Theorem 2.8.1, for the modern moment/MGF presentation that Lu §6.1 (Theorem 6.1) follows.
+standard modern synthesis; see e.g. Boucheron, Lugosi & Massart, *Concentration Inequalities*
+(Oxford, 2013), §2.8, for the modern moment/MGF presentation that Lu §6.1 (Theorem 6.1) follows.
 -/
 
 open MeasureTheory ProbabilityTheory Real

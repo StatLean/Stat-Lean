@@ -39,8 +39,7 @@ and Lemma 6.6.2 consume — fully proven, mixed forms derived).
 **Bibliographic comments.** Symmetrization goes back to P. Lévy; the modern
 two-sided Banach-space form is due to J.-P. Kahane and is often called the
 Kahane symmetrization lemma (Kahane, *Some Random Series of Functions*, 1968;
-Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, Lemma 6.3); see HDP
-§6.3 Notes.
+Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, Lemma 6.3).
 -/
 
 open MeasureTheory ProbabilityTheory

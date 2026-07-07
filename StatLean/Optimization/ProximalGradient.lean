@@ -38,7 +38,7 @@ $F(x_t) - F(x^\star) \le L\|x_0 - x^\star\|^2/(2t)$ formalized here is Theorem 3
 of A. Beck and M. Teboulle, "A fast iterative shrinkage-thresholding algorithm
 for linear inverse problems", *SIAM J. Imaging Sci.* 2 (2009), 183–202 (where it
 is stated for the ISTA instance; the accelerated FISTA variant in the same paper
-achieves $O(1/t^2)$). The textbook statement is a synthesis of this line of work.
+achieves $O(1/t^2)$).
 -/
 
 namespace StatLean.Optimization

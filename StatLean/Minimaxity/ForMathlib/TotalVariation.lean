@@ -60,7 +60,7 @@ distances with no single seminal origin; they appear in standard references on t
 experiments and minimax theory. The variational form and its use to bound testing error trace to
 L. Le Cam's theory of statistical experiments — see L. Le Cam, *Asymptotic Methods in Statistical
 Decision Theory*, Springer, 1986 — but the elementary identities formalized here predate any
-specific attribution and are reproduced as textbook material in the Wainwright reference above.
+specific attribution and are reproduced in the Wainwright reference above.
 -/
 
 open MeasureTheory

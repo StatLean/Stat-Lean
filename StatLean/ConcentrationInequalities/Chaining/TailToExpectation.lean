@@ -37,10 +37,9 @@ $s/a \ge 1$ majorization) is exported for the split-point optimization in
 
 **Bibliographic comments.** The layer-cake (Cavalieri) representation of the
 expectation is classical measure theory; its use to integrate chaining tail
-bounds is standard since Dudley (1967) and is the textbook route in HDP §8.1
-and Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer
-2014, §2.2. Gaussian tail estimates of the form used here go back to
-Laplace; see the HDP Chapter 2 Notes.
+bounds is standard since Dudley (1967) and is presented in Talagrand, *Upper
+and Lower Bounds for Stochastic Processes*, Springer 2014, §2.2. Gaussian
+tail estimates of the form used here go back to Laplace.
 -/
 
 open MeasureTheory

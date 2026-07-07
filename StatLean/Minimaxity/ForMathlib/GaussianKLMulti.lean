@@ -60,7 +60,7 @@ The mean-shift corollary is Example 15.13(b).
 **Bibliographic comments.** The Kullback–Leibler divergence originates with S. Kullback and
 R. A. Leibler, "On Information and Sufficiency," *Annals of Mathematical Statistics*, 22(1):79–86,
 1951. The closed-form expression for the KL divergence between two multivariate Gaussian
-distributions is textbook folklore with no single seminal source: it is a direct computation from
+distributions is folklore with no single seminal source: it is a direct computation from
 the Gaussian density and is reproduced in standard references (e.g. Wainwright 2019, Example 15.13;
 C. M. Bishop, *Pattern Recognition and Machine Learning*, Springer, 2006; T. M. Cover and J. A.
 Thomas, *Elements of Information Theory*, 2nd ed., Wiley, 2006). The centered, zero-mean case

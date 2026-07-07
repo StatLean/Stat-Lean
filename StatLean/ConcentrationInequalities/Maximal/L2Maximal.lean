@@ -54,17 +54,14 @@ $A = 2\sqrt{d}$, $B = \sqrt{2\log(1/\delta)}$ and nonnegative cross term; the
 $\sigma^2 = 0$ corner case (degenerate $X = 0$ a.e.) is handled separately in
 `l2_max_tail`.
 
-**Bibliographic comments.** This is a textbook/folklore result with no single seminal
+**Bibliographic comments.** This is a folklore result with no single seminal
 research-paper origin: it is the standard $\epsilon$-net (discretization) argument for
 the norm of a sub-Gaussian random vector, where the supremum $\|X\| = \max_{u\in
 \mathcal{B}_2}\langle u, X\rangle$ over the unit sphere is reduced to a maximum over a
 finite net and then controlled by a finite sub-Gaussian maximal inequality. The
 covering/net method goes back to classical metric-entropy arguments in geometric
 functional analysis (Kolmogorov–Tikhomirov $\epsilon$-entropy; Sudakov–Dudley
-chaining). For a modern textbook treatment of exactly this estimate see R. Vershynin,
-*High-Dimensional Probability: An Introduction with Applications in Data Science*,
-Cambridge University Press, 2018, §4.4 (nets, covering numbers, and the spectral/norm
-bounds derived from them).
+chaining).
 -/
 
 open MeasureTheory ProbabilityTheory Real Metric Set

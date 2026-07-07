@@ -61,7 +61,7 @@ a General Asymptotic Statistical Theory*, Springer, 1982; P. J. Bickel,
 C. A. J. Klaassen, Y. Ritov, J. A. Wellner, *Efficient and Adaptive
 Estimation for Semiparametric Models*, Johns Hopkins University Press,
 1993). There is no single seminal source for the "$\tilde\psi \in
-L^2_0(P)$" packaging; it is textbook synthesis.
+L^2_0(P)$" packaging; it is folklore.
 -/
 
 open MeasureTheory

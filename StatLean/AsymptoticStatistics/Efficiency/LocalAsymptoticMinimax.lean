@@ -99,7 +99,7 @@ theory of local asymptotic normality and limits of experiments, and the
 Gaussian-shift lower bound rests on Anderson's lemma (T. W. Anderson,
 *The integral of a symmetric unimodal function over a symmetric convex set and
 some probability inequalities*, Proc. Amer. Math. Soc. 6 (1955), 170–176).
-van der Vaart's Theorem 8.11 is the textbook synthesis of Hájek's result within
+van der Vaart's Theorem 8.11 synthesizes Hájek's result within
 the LAN / convolution-theorem framework of Chapter 8.
 -/
 

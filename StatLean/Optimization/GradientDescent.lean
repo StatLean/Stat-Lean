@@ -51,7 +51,7 @@ the book constant $2L$; the bound stated here matches the book exactly.
 
 **Bibliographic comments.** This $O(1/t)$ rate for gradient descent on convex
 smooth functions is classical folklore in convex optimization with no single
-seminal paper; it is standard textbook material. The canonical modern reference
+seminal paper. The canonical modern reference
 is Y. Nesterov, *Introductory Lectures on Convex Optimization: A Basic Course*,
 Applied Optimization 87, Kluwer Academic Publishers, 2004 (cf. Corollary 2.1.2
 and the surrounding §2.1.5 analysis of the gradient method for the class

@@ -29,9 +29,8 @@ item's designated named-sorry fallback. `(n/e)^n ≤ n!` follows from
 
 **Bibliographic comments.** Taylor–Lagrange bounds on the exponential are
 classical (Euler). Their systematic use to convert Orlicz-moment conditions
-into MGF bounds follows Vershynin (HDP §2.6, §2.8 and the end-of-chapter
-Notes) and Buldygin–Kozachenko, *Metric Characterization of Random Variables
-and Random Processes*, AMS 2000.
+into MGF bounds follows Buldygin–Kozachenko, *Metric Characterization of
+Random Variables and Random Processes*, AMS 2000.
 -/
 
 namespace StatLean.ConcentrationInequalities

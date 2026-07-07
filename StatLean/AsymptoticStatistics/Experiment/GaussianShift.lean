@@ -61,14 +61,13 @@ is not consumed downstream and its derivation needs an explicit multivariate den
 sides equal `multivariateGaussian (J h) J`.
 
 **Bibliographic comments.**
-The Gaussian shift experiment and its affine log-likelihood ratio are textbook folklore
+The Gaussian shift experiment and its affine log-likelihood ratio are folklore
 with no single seminal source; they are the canonical limit object of Le Cam's theory of
 asymptotic equivalence of experiments. The foundational reference is
 L. Le Cam, "Locally asymptotically normal families of distributions," *University of
 California Publications in Statistics* **3** (1960), 37–98, where local asymptotic normality
 and the Gaussian limit experiment are introduced; see also L. Le Cam, *Asymptotic Methods
-in Statistical Decision Theory*, Springer, 1986. The textbook synthesis used here follows
-van der Vaart (1998), Chapter 7.
+in Statistical Decision Theory*, Springer, 1986.
 -/
 
 open MeasureTheory ProbabilityTheory

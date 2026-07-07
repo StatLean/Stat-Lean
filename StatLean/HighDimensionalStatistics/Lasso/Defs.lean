@@ -53,9 +53,9 @@ eigenvalue over exactly the cone $\{\lVert\Delta_{S^c}\rVert_1 \le c_0
 \lVert\Delta_S\rVert_1\}$ used above. Closely related cone/curvature
 conditions (the compatibility condition) appear in S. A. van de Geer and
 P. Bühlmann, "On the conditions used to prove oracle results for the Lasso,"
-*Electronic Journal of Statistics*, 3:1360–1392 (2009). The textbook
-presentation specializes these to the $\kappa$/$\alpha$ parametrization used in
-this file.
+*Electronic Journal of Statistics*, 3:1360–1392 (2009). The
+$\kappa$/$\alpha$ parametrization used in this file is a specialization of
+these conditions.
 -/
 
 open Matrix

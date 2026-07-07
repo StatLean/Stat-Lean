@@ -32,7 +32,7 @@ proven); `expectation_max_le` is reused, never re-derived.
 
 **Bibliographic comments.** The $\sqrt{2\log N}$ growth of Gaussian maxima is
 classical extreme-value theory (Cramér, 1946); the sub-Gaussian
-maximal-inequality route used here is the textbook argument of HDP §2.5 and
+maximal-inequality route used here is the standard argument of
 Boucheron–Lugosi–Massart, *Concentration Inequalities* (2013), §2.5.
 -/
 

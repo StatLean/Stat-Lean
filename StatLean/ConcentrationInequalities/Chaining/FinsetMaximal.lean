@@ -20,20 +20,21 @@ Maximal Inequality). Used at each chaining level in HDP §8.1, Eq. (8.11).
 
 **Proof formalization notes.** Pure reindexing via `s.equivFin` of
 `tail_max_le` and `expectation_max_le` (`Maximal/FiniteMaximal.lean`) — no
-new probabilistic content. The finite maximum is written as the set-bounded
-supremum `⨆ i ∈ s, X i ω`; `biSup_finset_eq_sup'` is the conversion helper
-between this `biSup` form and `Finset.sup'` (needed because Mathlib's Finset
-API and the chaining assembly use different maxima carriers).
-`integrable_biSup_finset` is the public Finset twin of `FiniteMaximal`'s
-private domination helper. Named-sorry fallback of this work item:
-`tail_max_finset_le` (the expectation form `expectation_max_finset_le` is the
-one `DiscreteDudley` needs and lands first).
+new probabilistic content. Carriers: the tail form takes the set-bounded
+supremum `⨆ i ∈ s, X i ω` (junk-safe there since the threshold is `≥ 0`),
+while the expectation form is stated with the junk-free `Finset.sup'`
+maximum, exactly mirroring the proven `Fin`-indexed `expectation_max_le`.
+`biSup_finset_eq_sup'` (and its sharp core
+`biSup_finset_eq_sup'_of_sup'_nonneg`) converts between the two carriers
+under the nonnegativity guard; `le_biSup_finset` is the unconditional member
+bound; `integrable_biSup_finset` / `integrable_sup'_finset` are the public
+Finset twins of `FiniteMaximal`'s private domination helper.
 
 **Bibliographic comments.** The maximal inequality for finitely many
-sub-Gaussian variables is folklore via the Cramér–Chernoff method; standard
-modern references are Boucheron–Lugosi–Massart, *Concentration Inequalities*,
-Oxford 2013, §2.5, and HDP §2.5. No single seminal attribution is
-appropriate; see the HDP Chapter 2 Notes.
+sub-Gaussian variables is folklore via the Cramér–Chernoff method; the
+standard modern reference is S. Boucheron, G. Lugosi, and P. Massart,
+*Concentration Inequalities: A Nonasymptotic Theory of Independence*, Oxford
+University Press, 2013, §2.5. No single seminal attribution is appropriate.
 -/
 
 open MeasureTheory ProbabilityTheory

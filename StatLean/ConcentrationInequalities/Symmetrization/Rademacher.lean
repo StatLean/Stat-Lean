@@ -38,8 +38,6 @@ provable directly from `integral_dirac` / `Measure.map_dirac`.
 "Einige Sätze über Reihen von allgemeinen Orthogonalfunktionen," *Math. Ann.*
 87 (1922), 112–138; their systematic use as random signs in Banach-space
 probability is classical (Kahane, *Some Random Series of Functions*, 1968).
-The present role as the carrier of symmetrization follows HDP §6.3 and its
-end-of-chapter Notes.
 -/
 
 open MeasureTheory ProbabilityTheory

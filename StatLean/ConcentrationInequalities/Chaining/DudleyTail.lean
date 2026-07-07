@@ -38,12 +38,13 @@ tail-integrates-to-expectation step is factored in
 `dudley_tail` (the display form with diameter absorption), with
 `dudley_tail_three_term` proved.
 
-**Bibliographic comments.** The high-probability form of Dudley's bound is
-folklore refinement of Dudley (1967) by the concentration-of-chaining
-argument; the exposition followed here is HDP §8.1 (Exercise 8.1) and
-Talagrand, *Upper and Lower Bounds for Stochastic Processes*, 2014, §2.2
-(where it appears as the tail version of the generic chaining bound
-specialized to entropy numbers). See the HDP Chapter 8 Notes.
+**Bibliographic comments.** The high-probability form of Dudley's bound is a
+folklore refinement of R. M. Dudley, "The sizes of compact subsets of Hilbert
+space and continuity of Gaussian processes," *J. Funct. Anal.* 1 (1967),
+290–330, by the concentration-of-chaining argument; see M. Talagrand, *Upper
+and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.2, where it
+appears as the tail version of the generic chaining bound specialized to
+entropy numbers.
 -/
 
 open MeasureTheory ProbabilityTheory

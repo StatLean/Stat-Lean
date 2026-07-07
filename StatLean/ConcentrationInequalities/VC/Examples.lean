@@ -28,8 +28,8 @@ exact equalities, no slack. Named-sorry fallback of this work item:
 `vcDim_intervalClass` (the harder computation; `vcDim_threePointClass` on
 `Fin 3` must close).
 
-**Bibliographic comments.** Both examples are HDP's warm-up computations for
-Definition 8.3.1; the interval class goes back to the original
+**Bibliographic comments.** Both examples are standard warm-up computations
+for the VC dimension; the interval class goes back to the original
 Vapnik–Chervonenkis paper (*Theory Probab. Appl.* 16 (1971), 264–280) as the
 canonical example of a class with a two-point cap on shattering.
 -/

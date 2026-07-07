@@ -30,7 +30,7 @@ proof to outline. Two formalization choices to record:
 
 **Bibliographic comments.** $L$-smoothness via the quadratic upper bound is
 classical folklore of smooth convex optimization with no single seminal origin;
-the modern textbook treatment is Y. Nesterov, *Lectures on Convex Optimization*,
+the modern treatment is Y. Nesterov, *Lectures on Convex Optimization*,
 2nd ed., Springer, 2018 (and the earlier *Introductory Lectures on Convex
 Optimization*, Kluwer, 2004), where the equivalence between Lipschitz-continuous
 gradient and the quadratic bound appears as the standard "descent lemma."

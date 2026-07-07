@@ -41,7 +41,7 @@ V. N. Vapnik and A. Ya. Chervonenkis (*Theory Probab. Appl.* 16 (1971),
 264–280), N. Sauer (*J. Combin. Theory Ser. A* 13 (1972), 145–147), and
 S. Shelah (*Pacific J. Math.* 41 (1972), 247–261). The sharper
 "count shattered sets" form is due to A. Pajor, *Sous-espaces $\ell_1^n$ des
-espaces de Banach*, Hermann, Paris, 1985; see HDP §8.3 Notes.
+espaces de Banach*, Hermann, Paris, 1985.
 -/
 
 open Finset

@@ -47,7 +47,7 @@ C. F. Gauss, *Theoria motus corporum coelestium* (1809); the optimality of OLS
 among linear unbiased estimators is the Gauss–Markov theorem (Gauss 1821–1823;
 A. A. Markov, *Wahrscheinlichkeitsrechnung*, 1912). The prediction-error
 analysis used here (MSE of the fitted projection $X\hat\beta$) is standard
-textbook material rather than an original research result.
+material rather than an original research result.
 -/
 
 open Matrix

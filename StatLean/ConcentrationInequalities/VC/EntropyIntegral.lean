@@ -41,7 +41,7 @@ assembly).
 sizes of compact subsets of Hilbert space and continuity of Gaussian
 processes," *J. Funct. Anal.* 1 (1967), 290–330); its finiteness for VC
 classes — the fact that `∫₀² √(d·log(4/ε)) dε ≍ √d` — is the engine of the
-uniform CLT/LLN for VC classes, HDP §8.3 Notes.
+uniform CLT/LLN for VC classes.
 -/
 
 open MeasureTheory intervalIntegral

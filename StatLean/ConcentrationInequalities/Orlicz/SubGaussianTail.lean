@@ -27,8 +27,7 @@ close (the fallback lives in `Orlicz/Equivalence.lean`).
 
 **Bibliographic comments.** Gaussian-type tails from square-exponential
 moments are classical (cf. Kahane 1960; Buldygin–Kozachenko 1980); the
-five-way equivalence packaging is Vershynin's Proposition 2.6.1 (HDP §2.6
-Notes).
+five-way equivalence packaging is Vershynin's Proposition 2.6.1.
 -/
 
 open MeasureTheory

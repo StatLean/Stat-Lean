@@ -52,8 +52,7 @@ matrices satisfy the RIP with high probability. The concentration-of-measure pro
 here — a per-vector chi-squared tail bound combined with a covering/net argument over sparse
 coordinate subspaces and a union bound — follows R. Baraniuk, M. Davenport, R. DeVore and
 M. Wakin, "A simple proof of the restricted isometry property for random matrices,"
-*Constructive Approximation* 28(3):253–263 (2008), Lemma 5.1 and Theorem 5.2. The textbook
-statement (Lu §9.1) is a streamlined exposition of that argument.
+*Constructive Approximation* 28(3):253–263 (2008), Lemma 5.1 and Theorem 5.2.
 -/
 
 open MeasureTheory ProbabilityTheory Real Matrix

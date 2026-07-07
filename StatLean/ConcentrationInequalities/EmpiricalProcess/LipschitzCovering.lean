@@ -43,7 +43,7 @@ arithmetic step; the `ℕ∞` covering chain closes modulo it).
 Lipschitz balls on $[0,1]$ is due to Kolmogorov–Tikhomirov (1959); the
 uniform-entropy input to Dudley's bound follows R. M. Dudley, "The sizes of
 compact subsets of Hilbert space and continuity of Gaussian processes,"
-*J. Funct. Anal.* 1 (1967), 290–330; see HDP §8 Notes.
+*J. Funct. Anal.* 1 (1967), 290–330.
 -/
 
 open scoped ENNReal NNReal
