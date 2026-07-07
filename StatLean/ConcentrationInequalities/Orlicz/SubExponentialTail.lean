@@ -23,8 +23,7 @@ this work item: `measure_abs_ge_le_of_lintegral_exp_abs_le_two` (only if the
 Markov event-equality resists; expected to close fully).
 
 **Bibliographic comments.** Exponential tails from exponential moments is
-Markov's inequality in its oldest clothing (Bernstein 1924, Chernoff 1952);
-the ψ₁ packaging follows HDP §2.8 and its end-of-chapter Notes.
+Markov's inequality in its oldest clothing (Bernstein 1924, Chernoff 1952).
 -/
 
 open MeasureTheory

@@ -50,7 +50,7 @@ and variance". Mathlib requires:
   is harmless on a probability space.
 
 **Bibliographic comments.** Both results are classical folklore with no single seminal
-source; the textbook statements synthesize a long lineage.
+source.
 
 * *Law of large numbers.* The earliest form is the weak law for Bernoulli trials in
   J. Bernoulli, *Ars Conjectandi* (Basel, 1713, posthumous). The general weak LLN for

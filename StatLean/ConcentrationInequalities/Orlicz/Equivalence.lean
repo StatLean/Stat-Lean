@@ -41,8 +41,7 @@ fallback of the owning work item (shared with `SubGaussianTail.lean`):
 
 **Bibliographic comments.** The equivalence of tail, moment, and MGF
 characterizations of sub-Gaussianity is folklore systematized by
-Buldygin–Kozachenko (1980; AMS book 2000); the quantitative five-property
-cycle with tracked constants is HDP §2.6 (see its Notes).
+Buldygin–Kozachenko (1980; AMS book 2000).
 -/
 
 open MeasureTheory ProbabilityTheory

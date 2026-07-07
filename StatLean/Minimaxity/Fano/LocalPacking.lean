@@ -45,7 +45,7 @@ Statistics* 27(5) (1999), 1564–1599, which established the metric-entropy char
 minimax rates and the key mutual-information bound used in Step 1. The broader Fano-method tradition
 for minimax lower bounds traces back to R. Z. Khas'minskii and to L. Birgé ("Approximation dans les
 espaces métriques et théorie de l'estimation," *Z. Wahrsch. Verw. Gebiete* 65 (1983), 181–237);
-Wainwright's §15.3.3 is a textbook synthesis of this line of work rather than an original result.
+Wainwright's §15.3.3 is a synthesis of this line of work rather than an original result.
 -/
 
 open MeasureTheory ProbabilityTheory InformationTheory

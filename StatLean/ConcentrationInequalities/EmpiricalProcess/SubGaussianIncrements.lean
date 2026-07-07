@@ -50,7 +50,7 @@ MGF-level core and the `δ`-form must close for real).
 W. Hoeffding, "Probability inequalities for sums of bounded random
 variables," *J. Amer. Statist. Assoc.* 58 (1963), 13–30; the sub-Gaussian
 increment condition for processes is R. M. Dudley, *J. Funct. Anal.* 1
-(1967), 290–330; see HDP §8 Notes.
+(1967), 290–330.
 -/
 
 open MeasureTheory ProbabilityTheory

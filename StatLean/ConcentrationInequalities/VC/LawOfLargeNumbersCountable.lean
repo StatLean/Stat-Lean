@@ -24,8 +24,8 @@ engine); `vc_lln_countable` itself is a short assembly over it and must
 close.
 
 **Bibliographic comments.** The exhaustion argument is folklore measure
-theory; the uniform LLN over VC classes is Vapnik–Chervonenkis (1971), in
-the in-expectation form of HDP §8.3.6.
+theory; the uniform LLN over VC classes is Vapnik–Chervonenkis (1971),
+formalized here in the in-expectation form.
 -/
 
 open MeasureTheory ProbabilityTheory

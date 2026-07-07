@@ -33,8 +33,7 @@ in which `Gaussian.lean` consumes them. Gaussian symmetry via
 identity and the vector assemblies proven.
 
 **Bibliographic comments.** Symmetrization by an independent sign is
-classical (P. Lévy, *Théorie de l'addition des variables aléatoires*, 1937);
-the formulation as Lemma 6.3.1 follows HDP §6.3 and its Notes.
+classical (P. Lévy, *Théorie de l'addition des variables aléatoires*, 1937).
 -/
 
 open MeasureTheory ProbabilityTheory

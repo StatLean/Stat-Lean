@@ -30,7 +30,7 @@ downstream Lemma 6.6.2-upper then carries exactly one visible debt.
 **Bibliographic comments.** The half-normal mean $\sqrt{2/\pi}$ is classical
 (the first absolute moment of the normal law appears already in Gauss's
 *Theoria motus*, 1809, and the folded-normal literature); it is standard
-textbook material and not attributable to a research paper.
+material and not attributable to a research paper.
 -/
 
 open MeasureTheory ProbabilityTheory

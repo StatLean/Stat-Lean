@@ -70,7 +70,7 @@ no. 3, 393–403. The abstract uniform-CLT theory for general Donsker classes,
 including the equicontinuity characterization (van der Vaart Theorem 18.14) and
 the measurable-selection/admissibility apparatus, was developed primarily by
 R. M. Dudley and by Giné and Zinn in the 1970s–80s and is given its standard
-textbook treatment in van der Vaart and Wellner, *Weak Convergence and Empirical
+treatment in van der Vaart and Wellner, *Weak Convergence and Empirical
 Processes* (1996); the union-closure result formalized here is folklore within
 that theory.
 -/

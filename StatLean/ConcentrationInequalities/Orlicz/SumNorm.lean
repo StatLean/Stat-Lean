@@ -28,8 +28,7 @@ named-sorry fallback is `subGaussianVecNorm_le_of_indep` in
 
 **Bibliographic comments.** The rotation-invariance-style additivity of
 sub-Gaussian norms under independent sums is classical (Hoeffding/Kahane);
-the ψ₂-norm packaging follows HDP §2.7 and Buldygin–Kozachenko (AMS 2000,
-Ch. 1).
+the ψ₂-norm packaging follows Buldygin–Kozachenko (AMS 2000, Ch. 1).
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -31,9 +31,7 @@ this work item: `integrable_exp_mul_of_lintegral_exp_sq_le_two` (domination
 bookkeeping), with the MGF bound closed modulo it.
 
 **Bibliographic comments.** The MGF characterization of sub-Gaussian
-variables is due to J.-P. Kahane (1960) and Buldygin–Kozachenko (1980); the
-constant-tracking equivalence proof follows HDP §2.6 (see the end-of-chapter
-Notes there).
+variables is due to J.-P. Kahane (1960) and Buldygin–Kozachenko (1980).
 -/
 
 open MeasureTheory ProbabilityTheory

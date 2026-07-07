@@ -38,7 +38,7 @@ Chervonenkis, "On the uniform convergence of relative frequencies of events
 to their probabilities," *Theory Probab. Appl.* 16 (1971), 264–280. The
 growth function and its polynomial bound trace to the same paper and,
 independently, N. Sauer, *J. Combin. Theory Ser. A* 13 (1972), 145–147, and
-S. Shelah, *Pacific J. Math.* 41 (1972), 247–261; see HDP §8.3 Notes.
+S. Shelah, *Pacific J. Math.* 41 (1972), 247–261.
 -/
 
 open MeasureTheory

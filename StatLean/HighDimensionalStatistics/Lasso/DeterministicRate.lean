@@ -44,8 +44,8 @@ Cauchy–Schwarz).
 oracle bound for the Lasso originate with P. J. Bickel, Y. Ritov, and A. B. Tsybakov,
 "Simultaneous analysis of Lasso and Dantzig selector," *Annals of Statistics* 37(4):
 1705–1732 (2009), which introduces Assumption $\mathrm{RE}(s, c_0)$ and proves ℓ²/ℓ_q
-bounds for the Lasso (their Theorem 7.2). The textbook's Theorem 10.1 is a streamlined version
-of that result specialised to $c_0 = 3$ with simplified constants; closely related
+bounds for the Lasso (their Theorem 7.2). The Theorem 10.1 form proved here is a streamlined
+version of that result specialised to $c_0 = 3$ with simplified constants; closely related
 treatments appear in P. Bühlmann and S. van de Geer, *Statistics for High-Dimensional Data*
 (Springer, 2011), and in S. van de Geer and P. Bühlmann, "On the conditions used to prove
 oracle results for the Lasso," *Electronic Journal of Statistics* 3:1360–1392 (2009).

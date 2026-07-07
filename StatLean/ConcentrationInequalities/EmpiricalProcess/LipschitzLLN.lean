@@ -56,8 +56,7 @@ Glivenko–Cantelli / Wasserstein-1 law of large numbers; the $n^{-1/2}$ rate
 for the Lipschitz class on $[0,1]$ traces to R. M. Dudley, "The speed of
 mean Glivenko–Cantelli convergence," *Ann. Math. Statist.* 40 (1969), 40–50;
 the uniform-LLN framework is Vapnik–Chervonenkis (1971) and the chaining
-route is Dudley (1967); see HDP §8 Notes and Remark 8.2.6 (Wasserstein
-reading).
+route is Dudley (1967).
 -/
 
 open MeasureTheory ProbabilityTheory Filter

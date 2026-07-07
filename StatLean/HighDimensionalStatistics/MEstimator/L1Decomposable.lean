@@ -48,7 +48,7 @@ regularizers," *Statistical Science* 27(4):538–557, 2012. In that paper decomp
 defining condition (Definition 1, equation (5)): `\Phi(\alpha + \beta) = \Phi(\alpha) + \Phi(\beta)`
 for `\alpha \in M` and `\beta \in M̄^\perp`, and the ℓ₁ norm with the support pair
 `M(S) = M̄(S) = \{\theta : \theta_{S^c} = 0\}` is presented as their leading worked example (the
-Lasso / sparse-vector case). The textbook treatment formalized here (Wainwright 2019, Ch. 9)
+Lasso / sparse-vector case). The treatment formalized here (Wainwright 2019, Ch. 9)
 is the streamlined exposition of that framework; the ℓ₁/ℓ∞ dual pairing itself is classical
 (Hölder duality of `\ell_p`/`\ell_q` with `p = 1`, `q = \infty`).
 -/

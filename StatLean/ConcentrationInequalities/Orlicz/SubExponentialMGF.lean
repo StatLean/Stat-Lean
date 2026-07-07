@@ -32,8 +32,8 @@ Integrability is derived, not laundered (`e^{lx} ≤ e^{|x|/K}` on the range;
 
 **Bibliographic comments.** Restricted-range MGF control of sub-exponential
 variables goes back to S. N. Bernstein's 1924 inequality; the modern
-two-parameter formulation is in Vershynin (HDP §2.8) and Wainwright
-(*High-Dimensional Statistics*, 2019, §2.1.3).
+two-parameter formulation is in Wainwright (*High-Dimensional Statistics*,
+2019, §2.1.3).
 -/
 
 open MeasureTheory ProbabilityTheory

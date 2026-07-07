@@ -10,7 +10,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 
 The chaining workhorse: for a process with sub-gaussian increments
 (parameter $K$) on a finite index set $T$,
-$$ \mathbb{E}\Bigl[\sup_{t \in T} X_t\Bigr]
+$$ \mathbb{E}\Bigl[\max_{t \in T} X_t\Bigr]
      \;\le\; 6\sqrt{3}\; K \sum_{k \in \mathbb{Z}} 2^{-k}
        \sqrt{\log \mathcal{N}(T, d, 2^{-k})} $$
 under mean-zero coordinates, and the no-mean-zero absolute deviation form
@@ -48,8 +48,7 @@ points. Named-sorry fallback of this work item: `discrete_dudley_abs`
 **Bibliographic comments.** Dudley's bound is from R. M. Dudley, "The sizes
 of compact subsets of Hilbert space and continuity of Gaussian processes,"
 *J. Funct. Anal.* 1 (1967), 290–330 (for Gaussian processes; the
-sub-gaussian extension is folklore). The dyadic discrete form as the primary
-statement follows HDP §8.1. See the HDP Chapter 8 Notes.
+sub-gaussian extension is folklore).
 -/
 
 open MeasureTheory ProbabilityTheory

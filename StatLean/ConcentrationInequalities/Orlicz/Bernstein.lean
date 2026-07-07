@@ -30,8 +30,8 @@ work item's single named-sorry fallback is the **bonus** weighted Corollary
 
 **Bibliographic comments.** Bernstein-type inequalities for unbounded
 variables under exponential-moment conditions go back to S. N. Bernstein
-(1920s–1930s); the ψ₁-norm formulation is the modern synthesis of
-Vershynin (HDP §2.9, and the Notes to Chapter 2). The moment-condition
+(1920s–1930s); the ψ₁-norm formulation is the modern synthesis due to
+Vershynin. The moment-condition
 variant is formalized separately in `Bernstein/Bernstein.lean` (Lu-BDA); the
 two are deliberately distinct results.
 -/

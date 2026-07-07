@@ -32,9 +32,8 @@ LEAN-ONLY per the batch sup policy. Work-item single named-sorry fallback:
 (`excess_risk_le_two_mul_sup`) and the integral assembly must close.
 
 **Bibliographic comments.** Theorem 8.4.5 is the classical
-Vapnik–Chervonenkis generalization bound in the in-expectation form of HDP
-§8.4; the reduction of Boolean squared loss to symmetric differences is
-folklore (see HDP Exercise 8.29 and the Notes to Chapter 8).
+Vapnik–Chervonenkis generalization bound in in-expectation form; the
+reduction of Boolean squared loss to symmetric differences is folklore.
 -/
 
 open MeasureTheory ProbabilityTheory symmDiff

@@ -70,7 +70,7 @@ J. Hájek, "A characterization of limiting distributions of regular estimates,"
 *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* 14 (1970),
 323–330, and J. Hájek, "Local asymptotic minimax and admissibility in
 estimation," *Proc. Sixth Berkeley Symp.* (Vol. 1), 1972, pp. 175–194. Theorem
-8.3 itself is van der Vaart's textbook packaging of these results; the precise
+8.3 itself is van der Vaart's packaging of these results; the precise
 statement and the Theorem 7.10 reduction follow vdV §8.3.
 -/
 

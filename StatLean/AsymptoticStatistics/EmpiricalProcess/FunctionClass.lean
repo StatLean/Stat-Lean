@@ -45,7 +45,7 @@ facts, not a theorem with a proof to outline.
 
 **Bibliographic comments.** The notions of an envelope function for a class and
 of the supremum norm over a class indexing an empirical process are standard
-textbook infrastructure of empirical-process theory rather than results with a
+infrastructure of empirical-process theory rather than results with a
 single seminal origin; they pervade the modern treatment in van der Vaart and
 Wellner, *Weak Convergence and Empirical Processes* (Springer, 1996), and the
 account in van der Vaart's *Asymptotic Statistics* (1998), Chapter 19. No

@@ -37,7 +37,7 @@ assembly must close.
 example of Vapnik–Chervonenkis theory (*Theory Probab. Appl.* 16 (1971),
 264–280); the Radon-partition route to the upper bound follows J. Radon,
 "Mengen konvexer Körper, die einen gemeinsamen Punkt enthalten," *Math.
-Ann.* 83 (1921), 113–115, as in HDP Exercise 8.17 and its solution sketch.
+Ann.* 83 (1921), 113–115.
 -/
 
 namespace StatLean.ConcentrationInequalities

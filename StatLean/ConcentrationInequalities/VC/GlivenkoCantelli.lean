@@ -35,7 +35,7 @@ must close.
 
 **Bibliographic comments.** V. Glivenko and F. P. Cantelli (1933),
 *Giornale dell'Istituto Italiano degli Attuari* 4; the in-expectation
-$n^{-1/2}$ form with the VC route is HDP §8.3.6; the sharp constant is the
+$n^{-1/2}$ form follows the VC route; the sharp constant is the
 DKW inequality (Dvoretzky–Kiefer–Wolfowitz 1956, Massart 1990), out of
 scope here.
 -/

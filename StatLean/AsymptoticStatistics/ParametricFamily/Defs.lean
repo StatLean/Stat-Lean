@@ -58,7 +58,7 @@ statistical folklore with no single seminal origin. Its modern asymptotic use
 traces through L. Le Cam's work on differentiability in quadratic mean and contiguity
 (L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986) and
 the earlier C. R. Rao / J. Hájek tradition on regular parametric families; the
-textbook synthesis followed here is van der Vaart (1998), Chapter 7. No original
+synthesis followed here is van der Vaart (1998), Chapter 7. No original
 research paper is attributed for these definitional objects.
 -/
 

@@ -39,8 +39,7 @@ finiteness, and the diameter lemmas proved).
 M. Talagrand, "Regularity of Gaussian processes," *Acta Math.* 159 (1987),
 99–149, building on X. Fernique's majorizing measures (1975); the admissible-
 sequence formulation is Talagrand, *The Generic Chaining*, Springer 2005, and
-*Upper and Lower Bounds for Stochastic Processes*, Springer 2014, §2.3. See
-the HDP §8.5 Notes.
+*Upper and Lower Bounds for Stochastic Processes*, Springer 2014, §2.3.
 -/
 
 open Set

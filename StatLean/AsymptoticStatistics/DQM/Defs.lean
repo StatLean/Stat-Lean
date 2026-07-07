@@ -49,8 +49,7 @@ likelihood estimates," *The Annals of Mathematical Statistics* 41 (1970), no. 3,
 density as the minimal regularity replacing the classical pointwise
 smoothness-and-domination conditions, and used it to establish local asymptotic
 normality and the asymptotic normality of maximum likelihood estimators without
-the cumbersome third-derivative hypotheses of the Cramér–Wald approach. Van der
-Vaart's §7.2 (Eq. 7.1) is a textbook restatement of this notion.
+the cumbersome third-derivative hypotheses of the Cramér–Wald approach.
 -/
 
 open MeasureTheory Asymptotics Filter Topology

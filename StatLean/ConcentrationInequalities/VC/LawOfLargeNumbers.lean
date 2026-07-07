@@ -65,8 +65,7 @@ assembly must close.
 Vapnik–Chervonenkis theorem (*Theory Probab. Appl.* 16 (1971), 264–280);
 the `√(d/n)` rate through Dudley's entropy integral and Haussler-type
 covering bounds follows R. M. Dudley (*Ann. Probab.* 6 (1978), 899–929)
-and D. Haussler (*J. Combin. Theory Ser. A* 69 (1995), 217–232), as
-presented in HDP §8.3.6 and its Notes.
+and D. Haussler (*J. Combin. Theory Ser. A* 69 (1995), 217–232).
 -/
 
 open MeasureTheory ProbabilityTheory

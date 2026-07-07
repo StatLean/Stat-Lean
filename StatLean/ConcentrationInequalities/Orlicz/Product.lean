@@ -32,8 +32,7 @@ gymnastics); Lemma 2.8.6 must close.
 
 **Bibliographic comments.** The ψ₂–ψ₁ product/squaring calculus is the
 standard Orlicz-space Hölder inequality specialized to conjugate Young
-functions (Rao–Ren, *Theory of Orlicz Spaces*, 1991, §IV); the constant-1
-formulation follows HDP §2.8 (Notes).
+functions (Rao–Ren, *Theory of Orlicz Spaces*, 1991, §IV).
 -/
 
 open MeasureTheory

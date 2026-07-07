@@ -34,7 +34,7 @@ Named-sorry fallback of this work item: `hasSubgaussianMGF_eval_gaussVec`
 **Bibliographic comments.** Gaussian multipliers as the comparison class for
 Rademacher sums are classical Banach-space probability (Ledoux–Talagrand,
 *Probability in Banach Spaces*, 1991, Ch. 4); the sub-Gaussian bridging facts
-are HDP §2.5.
+are standard.
 -/
 
 open MeasureTheory ProbabilityTheory

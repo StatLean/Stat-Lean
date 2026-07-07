@@ -49,7 +49,7 @@ with proxy $0$), and $d = 1$ gives $\max = X_0$ with $\mathbb{E}[X_0] = 0$ and
 $\sqrt{2\log 1} = 0$; both reduce to $0 \le 0$.
 
 **Bibliographic comments.** This is a folklore result with no single seminal origin; it
-is the textbook prototype of the maximal-inequality-via-MGF argument. A standard modern
+is the prototype of the maximal-inequality-via-MGF argument. A standard modern
 reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities: A
 Nonasymptotic Theory of Independence*, Oxford University Press, 2013, §2.5 (the maximal
 inequality $\mathbb{E}[\max_j X_j] \le \sqrt{2v\log d}$ for sub-Gaussian variables with

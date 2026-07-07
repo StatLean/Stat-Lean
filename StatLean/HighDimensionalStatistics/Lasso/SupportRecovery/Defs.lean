@@ -61,8 +61,8 @@ The **Lasso objective itself is reused** from `Lasso/Defs.lean` (`lassoObjective
 with the primal-dual witness method for exact Lasso support recovery originate with
 M. J. Wainwright, "Sharp thresholds for high-dimensional and noisy sparsity recovery using
 $\ell_1$-constrained quadratic programming (Lasso)," *IEEE Transactions on Information Theory*,
-vol. 55, no. 5, pp. 2183–2202, May 2009. The textbook §7.5 (conditions (A3)/(A4) and
-Theorem 7.21) is a non-asymptotic synthesis of that paper; the incoherence/irrepresentable
+vol. 55, no. 5, pp. 2183–2202, May 2009. Conditions (A3)/(A4) and Theorem 7.21 give a
+non-asymptotic synthesis of that paper; the incoherence/irrepresentable
 condition was independently identified for the noiseless and deterministic-design settings by
 P. Zhao and B. Yu, "On model selection consistency of Lasso," *Journal of Machine Learning
 Research*, vol. 7, pp. 2541–2563, 2006, and by N. Meinshausen and P. Bühlmann, "High-dimensional

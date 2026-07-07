@@ -53,8 +53,8 @@ both carriers and all other lemmas proved.
 **Bibliographic comments.** The entropy integral is due to R. M. Dudley,
 "The sizes of compact subsets of Hilbert space and continuity of Gaussian
 processes," *J. Funct. Anal.* 1 (1967), 290–330; the dyadic-sum form and the
-sum/integral equivalence are standard (HDP §8.1; Talagrand, *Upper and Lower
-Bounds for Stochastic Processes*, 2014, §2.3). See the HDP Chapter 8 Notes.
+sum/integral equivalence are standard (Talagrand, *Upper and Lower Bounds
+for Stochastic Processes*, 2014, §2.3).
 -/
 
 open MeasureTheory Set

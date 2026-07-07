@@ -37,7 +37,7 @@ defining MGF bound trace to J.-P. Kahane, "Propriétés locales des fonctions à
 séries de Fourier aléatoires," *Studia Mathematica* 19 (1960), 1–25, and the
 systematic study to V. V. Buldygin and Yu. V. Kozachenko, "Sub-Gaussian random
 variables," *Ukrainian Mathematical Journal* 32 (1980), 483–489. The
-variance-proxy MGF formulation used here is the standard textbook synthesis (see
+variance-proxy MGF formulation used here is the standard modern synthesis (see
 also Wainwright, *High-Dimensional Statistics*, 2019, §2.1.2, Def. 2.2;
 Boucheron, Lugosi & Massart, *Concentration Inequalities*, 2013, §2.3); no
 attribution to a single research paper is appropriate.

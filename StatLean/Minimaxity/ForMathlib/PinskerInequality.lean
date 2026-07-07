@@ -47,7 +47,7 @@ giving `‖P − Q‖²_TV ≤ ½ D(Q ‖ P)`) was obtained independently by I. 
 *Studia Scientiarum Mathematicarum Hungarica* 2 (1967), 299–318, and by S. Kullback,
 "A lower bound for discrimination information in terms of variation", *IEEE Transactions on
 Information Theory* 13 (1) (1967), 126–127 (with a correction in 13 (4) (1967), 765). The result is
-now standard textbook material; the Bernoulli-reduction proof formalized here is the one in
+now standard material; the Bernoulli-reduction proof formalized here is the one in
 Wainwright's Exercise 15.6.
 -/
 

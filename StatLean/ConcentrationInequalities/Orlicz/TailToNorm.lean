@@ -37,8 +37,7 @@ it.
 
 **Bibliographic comments.** The layer-cake (distribution-integral) identity
 is classical (see Lieb–Loss, *Analysis*, 2nd ed., §1.13); the tails-to-Orlicz
-direction of the equivalence follows HDP §2.6 (Notes), tracing to
-Buldygin–Kozachenko (1980).
+direction of the equivalence traces to Buldygin–Kozachenko (1980).
 -/
 
 open MeasureTheory ProbabilityTheory

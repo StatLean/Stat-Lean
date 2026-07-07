@@ -31,7 +31,7 @@ inequality is deliberate: it is what the BH / Holm assembly files can discharge 
 FDR/FWER bound.
 
 **Bibliographic comments.** The super-uniform (a.k.a. *valid* or *conservative*) p-value
-condition $\mathbb{P}(p \le t) \le t$ is textbook folklore with no single seminal origin: it is
+condition $\mathbb{P}(p \le t) \le t$ is folklore with no single seminal origin: it is
 the standard formalization of what it means for a p-value to be valid under the null, appearing
 implicitly throughout the classical hypothesis-testing literature (e.g. Lehmann & Romano,
 *Testing Statistical Hypotheses*) and used explicitly as the null hypothesis in the
