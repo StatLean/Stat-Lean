@@ -1,5 +1,6 @@
 import StatLean.Bayesian.GeneralizedBayes.Defs
 import StatLean.Bayesian.Dominated.PredictiveDensity
+import StatLean.Bayesian.Dominated.PosteriorDensity
 
 /-!
 # Sequential Bayes and reparameterization equivariance
@@ -66,10 +67,11 @@ theorem posterior_prod_ae_eq_sequential
     have h₁ : Measurable (p₁ θ) := hp₁.comp (measurable_const.prodMk measurable_id)
     have h₂ : Measurable (p₂ θ) := hp₂.comp (measurable_const.prodMk measurable_id)
     rw [Kernel.prod_apply, hκ₁, hκ₂, prod_withDensity₀ h₁.aemeasurable h₂.aemeasurable]
-    rfl
   -- (ii) Batch-1 dominated Bayes for the pair.
+  haveI : IsMarkovKernel (κ₁ ×ₖ κ₂) := inferInstance
+  haveI : SFinite (ν₁.prod ν₂) := inferInstance
   have hbayes := posterior_eq_withDensity_likelihood_div_predictive
-    (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ
+    (π := π) (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ
   -- (iii) The first-coordinate predictive `m₁` is nondegenerate `(κ₁ ×ₖ κ₂) ∘ₘ π`-a.e.
   have hfst : ((κ₁ ×ₖ κ₂) ∘ₘ π).map Prod.fst = κ₁ ∘ₘ π := by
     rw [Measure.map_comp _ _ measurable_fst, ← Kernel.fst_eq, Kernel.fst_prod]
@@ -102,12 +104,15 @@ theorem posterior_prod_ae_eq_sequential
       = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π := by
     show predictiveDensity p₁ π q.1 * (∫⁻ θ, p₂ θ q.2 ∂(generalizedPosterior p₁ π q.1))
       = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π
-    rw [hgp₁, lintegral_withDensity_eq_lintegral_mul _ (ha.div_const _),
-      ← lintegral_const_mul _ ((ha.div_const _).mul hb)]
+    rw [hgp₁, lintegral_withDensity_eq_lintegral_mul _ (ha.div_const _) hb]
+    simp only [Pi.mul_apply]
+    rw [← lintegral_const_mul _ ((ha.div_const _).mul hb)]
     refine lintegral_congr fun θ => ?_
-    rw [Pi.mul_apply, ← mul_assoc, ENNReal.mul_div_cancel hm0 hmtop]
+    rw [← mul_assoc, ENNReal.mul_div_cancel hm0 hmtop]
   -- Assemble: two-stage density equals the joint density.
-  rw [generalizedPosterior_def, generalizedPosterior_def, ← withDensity_mul _ hbd1 hbd2]
+  rw [generalizedPosterior_def]
+  nth_rewrite 1 [generalizedPosterior_def]
+  rw [← withDensity_mul _ hbd1 hbd2]
   refine withDensity_congr_ae (Filter.Eventually.of_forall fun θ => ?_)
   simp only [Pi.mul_apply, bayesDensity, hpJdef]
   rw [← hprod, div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,

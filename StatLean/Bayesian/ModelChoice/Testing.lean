@@ -86,6 +86,7 @@ theorem isBayesEstimator_bayesTest [StandardBorelSpace Θ] [Nonempty Θ]
       (Kernel.deterministic (bayesTest κ π Θ₀ a₀ a₁) (measurable_bayesTest κ π hΘ₀ a₀ a₁))
       π := by
   have hℓ : Measurable (Function.uncurry (hypLoss Θ₀ a₀ a₁)) := by
+    classical
     apply measurable_from_prod_countable_left
     intro b
     have h : (fun θ => Function.uncurry (hypLoss Θ₀ a₀ a₁) (θ, b))
@@ -121,7 +122,7 @@ theorem bayesTest_eq_threshold [StandardBorelSpace Θ] [Nonempty Θ]
   obtain ⟨ha0, ha1⟩ := ENNReal.add_ne_top.mp h1
   have hp : (κ†π) x Θ₀ ≤ 1 := prob_le_one
   have hfin : a₁ * (κ†π) x Θ₀ ≠ ∞ :=
-    ENNReal.mul_ne_top ha1 (ne_top_of_le_ne_top one_ne_top hp)
+    ENNReal.mul_ne_top ha1 (ne_top_of_le_ne_top ENNReal.one_ne_top hp)
   have hcompl : (κ†π) x Θ₀ᶜ = 1 - (κ†π) x Θ₀ := prob_compl_eq_one_sub hΘ₀
   have hiff : (a₁ * (κ†π) x Θ₀ᶜ ≤ a₀ * (κ†π) x Θ₀)
       ↔ (a₁ / (a₀ + a₁) ≤ (κ†π) x Θ₀) := by
@@ -162,7 +163,6 @@ theorem pointNull_posterior_singleton_ae [StandardBorelSpace Θ] [Nonempty Θ]
       lintegral_dirac' θ₀ hp.of_uncurry_right]
     simp only [ENNReal.smul_def, smul_eq_mul]
   rw [hx, withDensity_apply _ (measurableSet_singleton θ₀), lintegral_singleton]
-  dsimp only
   rw [hsing, hD, div_eq_mul_inv, div_eq_mul_inv]
   ring
 
