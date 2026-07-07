@@ -44,9 +44,8 @@ proved.
 natural setting for chaining go back to R. M. Dudley, "The sizes of compact
 subsets of Hilbert space and continuity of Gaussian processes," *J. Funct.
 Anal.* 1 (1967), 290–330, abstracting Kolmogorov's continuity criterion
-(1930s); the ψ₂-increment formulation used here follows HDP §8.1 and
-Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer 2014,
-§2.2. See the HDP Chapter 8 Notes.
+(1930s); the ψ₂-increment formulation used here follows Talagrand, *Upper
+and Lower Bounds for Stochastic Processes*, Springer 2014, §2.2.
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -36,16 +36,14 @@ regime); we prove the slightly stronger forms allowing $t = 0$ and $t = \alpha$
 respectively. The strict `>` on the event matches the book; the underlying Chernoff
 brick yields a `≥` bound, absorbed via the inclusion $\{t < Y\} \subseteq \{t \le Y\}$.
 
-**Bibliographic comments.** This is textbook synthesis / folklore — a Bernstein-type
+**Bibliographic comments.** This is a folklore result — a Bernstein-type
 two-regime concentration inequality with no single seminal origin. Its lineage traces
 to Bernstein's exponential moment inequalities (S. N. Bernstein, *Theory of
 Probability*, 1927) and, in the modern sub-exponential / Orlicz-norm formulation, to
-R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data
-Science*, Cambridge University Press, 2018 (Bernstein's inequality, Thm 2.8.1 and
-Cor 2.8.3), and M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic
-Viewpoint*, Cambridge University Press, 2019 (Prop 2.9, sub-exponential tail bound).
-The two-regime split — Gaussian decay for $t \lesssim \alpha$ and exponential decay
-for $t \gtrsim \alpha$ — is the standard packaging of these results.
+M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge
+University Press, 2019 (Prop 2.9, sub-exponential tail bound). The two-regime split —
+Gaussian decay for $t \lesssim \alpha$ and exponential decay for $t \gtrsim \alpha$ — is
+the standard packaging of these results.
 -/
 
 open MeasureTheory ProbabilityTheory Real

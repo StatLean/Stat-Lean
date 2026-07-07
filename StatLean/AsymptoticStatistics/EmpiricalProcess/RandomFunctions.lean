@@ -51,7 +51,7 @@ the constant random function $(n, \xi) \mapsto f_0$ has uncurry
 $(\xi, x) \mapsto f_0(x) = f_0 \circ \mathrm{snd}$, which is jointly measurable
 exactly when $f_0$ is.
 
-**Bibliographic comments.** This is textbook synthesis with no single seminal
+**Bibliographic comments.** This is a folklore synthesis with no single seminal
 origin: it is a routine consequence of weak convergence of the empirical
 process over a Donsker class combined with asymptotic equicontinuity, the
 framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak
@@ -59,8 +59,7 @@ Convergence and Empirical Processes: With Applications to Statistics*, Springer
 Series in Statistics, Springer, 1996. vdV (1998) presents it as Lemma 19.24 in
 §19.4 and uses it as the key device for controlling remainder terms in the
 asymptotic analysis of $Z$- and $M$-estimators (cf. its application in vdV
-(5.22)). We therefore cite the textbook rather than forcing attribution to a
-specific research paper.
+(5.22)). No attribution to a specific research paper is warranted.
 -/
 
 namespace AsymptoticStatistics.EmpiricalProcess

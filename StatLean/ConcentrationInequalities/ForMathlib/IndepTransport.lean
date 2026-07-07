@@ -38,8 +38,7 @@ transport); the two single-map transports are direct wraps.
 the product of its marginal laws is Kolmogorov's construction (*Grundbegriffe
 der Wahrscheinlichkeitsrechnung*, 1933); the "enlarge the space by an
 independent auxiliary sequence" device is standard in Banach-space probability
-(Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, Ch. 6; HDP §6.3
-Notes).
+(Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, Ch. 6).
 -/
 
 open MeasureTheory ProbabilityTheory

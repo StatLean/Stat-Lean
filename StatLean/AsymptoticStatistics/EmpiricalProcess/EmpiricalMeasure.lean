@@ -40,7 +40,7 @@ $(0 : \mathbb{R})^{-1} = 0$ makes the $n = 0$ case evaluate to $0$. The accompan
 lemmas record that `empiricalAvg` is linear in $f$ (additivity `empiricalAvg_add`,
 scalar homogeneity `empiricalAvg_smul`) and vanishes on the zero function.
 
-**Bibliographic comments.** The empirical measure is textbook/folklore foundational
+**Bibliographic comments.** The empirical measure is folklore foundational
 material with no single seminal originating paper. Its scalar-CDF special case, the
 empirical distribution function $F_n(t) = \frac1n\#\{i : X_i \le t\}$, traces to the
 uniform-convergence results of V. Glivenko, "Sulla determinazione empirica delle leggi di

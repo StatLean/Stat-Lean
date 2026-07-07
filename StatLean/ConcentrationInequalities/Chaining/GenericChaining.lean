@@ -10,10 +10,11 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 # Generic chaining (Talagrand's γ₂ bound)
 
 For a mean-zero process $(X_t)_{t \in T}$ with sub-Gaussian increments
-(Eq. 8.1) on a metric space $(T, d)$,
-$$ \mathbb{E} \sup_{t \in T} X_t \;\le\; C K \,\gamma_2(T, d), $$
+(Eq. 8.1) on a finite metric space $(T, d)$,
+$$ \mathbb{E} \max_{t \in T} X_t \;\le\; 20\, K \,\gamma_2(T, d), $$
 where $\gamma_2$ is the Talagrand functional over admissible sequences
-(Definition 8.5.1, `Chaining/GammaTwo.lean`).
+(Definition 8.5.1, `Chaining/GammaTwo.lean`) and $20$ freezes the book's
+unnamed absolute constant $C$.
 
 **Reference.** Roman Vershynin, *High-Dimensional Probability*, 2nd ed.,
 Cambridge University Press, §8.5.2, Theorem 8.5.2 (proof Steps 1–3,
@@ -27,21 +28,22 @@ $2^{k/2}(\sqrt{2\log 2} + 1) + u$ over the admissible-sequence levels and a
 union bound over $|T_k|\cdot|T_{k-1}| \le 2^{2^{k+1}}$ chain pairs; the
 expectation forms integrate it via
 `Chaining/TailToExpectation.lean`. **Frozen constants** (formula + numeral):
-tail threshold factor `(12 + 4u)` (from $\sum_k 2^{k/2}\,2^{-k/2}$-style
-geometric bookkeeping at the designed thresholds); expectation constant
-`20` (book's absolute `C`; formula $6 + 2\sqrt{\pi} \le 10$). Per batch
-reconciliation R4, the mean-zero assemblies carry the LEAN-ONLY hypothesis
-`hint : ∀ t ∈ T, Integrable (X t) μ` ruling out Bochner-junk means (the
-per-pair increment means are then genuine). Work-item single named-sorry
-fallback: `generic_chaining_tail` (the per-level event bookkeeping); the
-integration and `iInf` steps to Theorem 8.5.2 must close against it.
+tail threshold factor `(12 + 4u)` — the sharp canonical-anchor factor
+`(6 + 2u)` doubled through the arbitrary-anchor triangle; expectation
+constant `20` (book's unnamed absolute `C`, from integrating the
+`(12 + 4u)` tail). Per batch reconciliation R4, the mean-zero assemblies
+carry the LEAN-ONLY hypothesis `hint : ∀ t ∈ T, Integrable (X t) μ` ruling
+out Bochner-junk means (the per-pair increment means are then genuine).
 
 **Bibliographic comments.** Generic chaining and the majorizing-measure
-theory are due to X. Fernique (1975) and M. Talagrand ("Regularity of
-Gaussian processes," *Acta Math.* 159 (1987), 99–149; *Upper and Lower
-Bounds for Stochastic Processes*, Springer 2014). The admissible-sequence
-formulation follows Talagrand via HDP §8.5; the matching lower bound
-(majorizing measure theorem, HDP Theorem 8.5.5) is out of Batch-10 scope.
+theory are due to X. Fernique ("Régularité des trajectoires des fonctions
+aléatoires gaussiennes," in *École d'Été de Probabilités de Saint-Flour
+IV–1974*, Lecture Notes in Mathematics 480, Springer, 1975, 1–96) and
+M. Talagrand ("Regularity of Gaussian processes," *Acta Math.* 159 (1987),
+99–149; *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014).
+The admissible-sequence formulation of $\gamma_2$ is Talagrand's; the
+matching lower bound (the majorizing measure theorem) is not formalized
+here.
 -/
 
 open MeasureTheory ProbabilityTheory

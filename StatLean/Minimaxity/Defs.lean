@@ -55,7 +55,7 @@ This file adds the Wainwright-specific wiring on top:
 * `mixture` — the mixture distribution `Q̄ = (1/M) Σⱼ P_{θʲ}` (Eq. (15.30));
 * `IsSeparatedFamily g θ δ` — a `2δ`-separated finite family in the semimetric `ρ`.
 
-**Bibliographic comments.** These objects are textbook synthesis of the classical
+**Bibliographic comments.** These objects are a synthesis of the classical
 minimax decision-theory framework, with no single seminal origin. The decision-theoretic
 formulation of minimax risk over a family of distributions traces to A. Wald, *Statistical
 Decision Functions* (Wiley, 1950). The reduction of minimax estimation to $M$-ary

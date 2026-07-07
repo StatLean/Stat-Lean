@@ -68,9 +68,8 @@ analysis of $M$-estimators with decomposable regularizers," *Statistical Science
 538–557 (arXiv:1010.2731). There the cone-membership statement appears as Lemma 1: on the event
 $\{\lambda_n \ge 2\,\mathcal{R}^*(\nabla \mathcal{L}(\theta^*))\}$ the error lies in the set
 $\mathbb{C}(M, \overline{M}^{\perp}; \theta^*)$ — the same content as Proposition 9.13 here, modulo
-the $\lambda/2$ versus $2\lambda$ normalization of the good event. Wainwright's 2019 textbook
-(Lemma 9.14, Proposition 9.13) is the book exposition of that paper's analysis, which is what this
-file formalizes.
+the $\lambda/2$ versus $2\lambda$ normalization of the good event. Lemma 9.14 and
+Proposition 9.13 present that paper's analysis in the form this file formalizes.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

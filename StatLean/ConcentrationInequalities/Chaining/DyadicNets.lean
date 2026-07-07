@@ -46,7 +46,7 @@ to A. N. Kolmogorov (continuity criterion, unpublished lectures, 1930s) and
 was developed for Gaussian processes by R. M. Dudley, "The sizes of compact
 subsets of Hilbert space and continuity of Gaussian processes," *J. Funct.
 Anal.* 1 (1967), 290–330; the ε-net vocabulary is Kolmogorov–Tikhomirov
-(1959). See the HDP Chapter 8 Notes.
+(1959).
 -/
 
 open Set

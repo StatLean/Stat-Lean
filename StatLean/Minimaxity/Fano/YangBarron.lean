@@ -43,7 +43,7 @@ $\sum_j D(Q_j \,\|\, \bar{Q}) \le M\,(\varepsilon^{2} + \log N)$, in two book st
 "Information-theoretic determination of minimax rates of convergence," *Annals of Statistics*,
 27(5):1564–1599, 1999 (see their Section 2 and the mutual-information / metric-entropy bounds used
 to derive minimax rates; the global-entropy device replacing local packings is the paper's central
-contribution). Wainwright's Lemma 15.21 is the textbook presentation of this device; the formalized
+contribution). Wainwright's Lemma 15.21 presents this device; the formalized
 statement follows Wainwright's notation and constants.
 -/
 

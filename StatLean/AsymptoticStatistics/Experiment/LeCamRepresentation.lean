@@ -78,9 +78,8 @@ Statistics), University of California Press, 1972, pp. 245–261. The companion
 convolution theorem for regular estimator sequences (vdV §8.5, Theorem 8.8) is due
 to J. Hájek, "A characterization of limiting distributions of regular estimates,"
 *Z. Wahrscheinlichkeitstheorie verw. Gebiete* 14 (1970), 323–330, and Le Cam.
-van der Vaart's Theorem 8.3 / Theorem 7.10 are the textbook synthesis of Le Cam's
-asymptotic representation theorem specialized to the locally asymptotically normal
-case.
+van der Vaart's Theorem 8.3 / Theorem 7.10 specialize Le Cam's asymptotic
+representation theorem to the locally asymptotically normal case.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology

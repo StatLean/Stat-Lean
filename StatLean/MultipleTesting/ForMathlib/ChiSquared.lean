@@ -61,7 +61,7 @@ in goodness-of-fit testing were independently popularized by K. Pearson, "On the
 given system of deviations from the probable in the case of a correlated system of variables is
 such that it can be reasonably supposed to have arisen from random sampling" (*Philosophical
 Magazine*, Series 5, 50(302), 1900, pp. 157–175). The identity $\sum_i Z_i^2 \sim \chi^2_n$ is now
-standard textbook material and is not attributed to a single original theorem.
+standard material and is not attributed to a single original theorem.
 -/
 
 open MeasureTheory ProbabilityTheory Real Set

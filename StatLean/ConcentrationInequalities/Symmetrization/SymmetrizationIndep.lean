@@ -33,8 +33,7 @@ item: `symmetrization_lower_of_indepFun` (upper corollary +
 
 **Bibliographic comments.** See `Symmetrization.lean`; the observation that
 the auxiliary signs may live on any enlargement of the probability space is
-classical (Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, §6.1) and
-is HDP's footnote 7.
+classical (Ledoux–Talagrand, *Probability in Banach Spaces*, 1991, §6.1).
 -/
 
 open MeasureTheory ProbabilityTheory

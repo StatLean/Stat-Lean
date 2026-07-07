@@ -58,7 +58,7 @@ squares originates with M. J. Wainwright, "Sharp thresholds for high-dimensional
 sparsity recovery using $\ell_1$-constrained quadratic programming (Lasso)," *IEEE Transactions
 on Information Theory*, vol. 55, no. 5, pp. 2183–2202, 2009. That paper introduced the mutual
 incoherence and lower-eigenvalue conditions and established the support-recovery thresholds for
-Gaussian designs; Corollary 7.22 of Wainwright (2019) is the textbook restatement under the
+Gaussian designs; Corollary 7.22 of Wainwright (2019) restates the result under the
 i.i.d. sub-Gaussian noise model with a fixed (deterministic) design satisfying the same
 conditions.
 -/

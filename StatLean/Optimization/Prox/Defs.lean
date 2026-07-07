@@ -31,7 +31,7 @@ computes, mirroring the book's algorithm definition. `proxObj` is
 J.-J. Moreau, *Proximité et dualité dans un espace hilbertien*, Bulletin de la
 Société Mathématique de France, vol. 93, pp. 273–299, 1965, where the associated
 infimal-convolution regularization is now called the Moreau envelope. The notion
-underpins modern proximal-gradient and splitting methods; the textbook
+underpins modern proximal-gradient and splitting methods; the
 presentation here is standard.
 -/
 

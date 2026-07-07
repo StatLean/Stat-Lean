@@ -38,7 +38,7 @@ hypotheses. Named-sorry fallback of this work item:
 the difference of two independent copies goes back to P. Lévy (1937) and was
 developed for Banach-space-valued sums by J.-P. Kahane, *Some Random Series of
 Functions* (1968), and Ledoux–Talagrand, *Probability in Banach Spaces*
-(1991), §6.1; see HDP §6.3 Notes.
+(1991), §6.1.
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -32,8 +32,7 @@ all other proofs are one-step compositions.
 
 **Bibliographic comments.** The requirements on an Orlicz function (convex,
 increasing, ψ(0)=0, ψ(∞)=∞) go back to W. Orlicz (1932) and W. A. J. Luxemburg
-(1955); see HDP §2.6/§2.8 end-of-chapter Notes and Buldygin–Kozachenko,
-AMS 2000, for the ψ₂/ψ₁ specializations.
+(1955); see Buldygin–Kozachenko, AMS 2000, for the ψ₂/ψ₁ specializations.
 -/
 
 open MeasureTheory

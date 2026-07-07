@@ -7,7 +7,7 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 Integral-form Dudley from the discrete core via the comparison
 $\Sigma \le 2 I$: for a process with sub-gaussian increments on a finite
 index set $T$ with $\operatorname{diam} T \le D$,
-$$ \mathbb{E}\Bigl[\sup_{t \in T} X_t\Bigr] \;\le\;
+$$ \mathbb{E}\Bigl[\max_{t \in T} X_t\Bigr] \;\le\;
      12\sqrt{3}\; K \int_0^{D} \sqrt{\log \mathcal{N}(T,d,\varepsilon)}\,
      d\varepsilon \quad (\text{mean-zero}), $$
 $$ \mathbb{E}\Bigl[\sup_{t \in T} |X_t - X_{t_0}|\Bigr]
@@ -44,9 +44,9 @@ MCT/change-of-variables lift is the isolated hard part).
 **Bibliographic comments.** R. M. Dudley, "The sizes of compact subsets of
 Hilbert space and continuity of Gaussian processes," *J. Funct. Anal.* 1
 (1967), 290–330. The entropy-integral formulation for sub-gaussian processes
-is the standard textbook synthesis (HDP §8.1; Talagrand 2014, §2.3;
-Ledoux–Talagrand, *Probability in Banach Spaces*, Springer 1991, Ch. 11).
-See the HDP Chapter 8 Notes.
+appears in M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*,
+Springer, 2014, §2.3, and in M. Ledoux and M. Talagrand, *Probability in
+Banach Spaces*, Springer, 1991, Ch. 11.
 -/
 
 open MeasureTheory ProbabilityTheory

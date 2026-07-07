@@ -67,7 +67,7 @@ estimation and testing hypotheses," *University of California Publications in
 Statistics*, vol. 3, pp. 37–98, 1960, where the LAN concept and the quadratic
 log-likelihood expansion were introduced. The differentiability-in-quadratic-mean
 formulation under which Theorem 7.2 is stated here is the modern presentation
-(due to Le Cam and Hájek) adopted in van der Vaart's textbook.
+due to Le Cam and Hájek.
 -/
 
 open MeasureTheory ProbabilityTheory Asymptotics Filter Topology

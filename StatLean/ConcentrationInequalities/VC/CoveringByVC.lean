@@ -59,8 +59,8 @@ R. M. Dudley, "Central limit theorems for empirical measures," *Ann.
 Probab.* 6 (1978), 899–929, with the sharp exponent later obtained by
 D. Haussler, "Sphere packing numbers for subsets of the Boolean n-cube with
 bounded Vapnik–Chervonenkis dimension," *J. Combin. Theory Ser. A* 69
-(1995), 217–232; HDP §8.3.5 presents the (non-sharp) exponent-`Cd` version
-formalized here. See HDP §8.3 Notes.
+(1995), 217–232; the (non-sharp) exponent-`Cd` version is the one
+formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -46,7 +46,7 @@ Princeton University Press, 1970 — the differentiable case is the specializati
 of the subgradient inequality $f(z) \ge f(x) + \langle x^\ast, z - x\rangle$ for
 $x^\ast \in \partial f(x)$ (Rockafellar, Thm 23.5 / §23), using that for a
 differentiable convex function the subdifferential is the singleton
-$\{\nabla f(x)\}$ (Rockafellar, Thm 25.1). The inequality is a textbook staple
+$\{\nabla f(x)\}$ (Rockafellar, Thm 25.1). The inequality is a staple
 appearing in essentially all convex-optimization references (e.g. Boyd &
 Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §3.1.3,
 Eq. (3.2)); we do not attribute it to a single research paper.
