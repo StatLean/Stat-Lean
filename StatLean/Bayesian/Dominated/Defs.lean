@@ -19,7 +19,9 @@ Given a prior `π` on the parameter space `Θ` and a nonnegative jointly-measura
 The theorem that this explicit kernel agrees, for predictive-almost-every `x`, with Mathlib's
 abstract posterior `K†π` is `StatLean.Bayesian.Dominated.PosteriorDensity`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.2, eq. (1.2.3)
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2, eq. (1.2.3)
 (posterior density), p. 9; §1.4, marginal `m(x)`, p. 22.
 
 **Proof formalization notes.** Laptop-only data model — definitions only, all in `ℝ≥0∞`. The
@@ -29,6 +31,15 @@ in `Dominated.PredictiveDensity`). `bayesKernel` is built with `Kernel.withDensi
 constant kernel `Kernel.const 𝓧 π`; when `Function.uncurry (bayesDensity p π)` is not measurable,
 `Kernel.withDensity` returns the zero kernel (Mathlib's junk convention), which is why several
 downstream lemmas take joint measurability of `p` as an explicit hypothesis.
+
+**Bibliographic comments.** The density form of Bayes' theorem is the original one: Bayes (1763)
+and Laplace ("Mémoire sur la probabilité des causes par les événements," 1774) both worked with
+likelihood densities against a uniform base measure. The modern dominated-family framework —
+a family of distributions admitting densities with respect to one σ-finite measure — is due to
+P. R. Halmos and L. J. Savage, "Application of the Radon–Nikodym theorem to the theory of
+sufficient statistics," *Annals of Mathematical Statistics* 20 (1949), 225–241, building on the
+Radon–Nikodym theorem (J. Radon 1913; O. Nikodym 1930). Robert §1.2–§1.4 is the synthesis
+formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

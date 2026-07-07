@@ -10,7 +10,9 @@ the **finite-partition Bayes' theorem**
 $$\mu[H_j \mid d] = \frac{\mu[d \mid H_j]\,\mu(H_j)}{\sum_{i \in s} \mu[d \mid H_i]\,\mu(H_i)},$$
 and the **two-hypothesis Bayes' theorem** (the `{t, tᶜ}` special case).
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.2, p. 8 (two-event
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2, p. 8 (two-event
 Bayes' theorem and its total-probability denominator); Example 1.2.3 (Laplace), p. 11 (finite
 discrete Bayes). Robert states these via prose and numbered equations rather than as a standalone
 numbered theorem.
@@ -21,6 +23,15 @@ numbered theorem.
 extended-nonnegative conventions (`0/0 = 0`), so **no positivity hypotheses are needed**. Key
 Mathlib bricks: `cond_mul_eq_inter`, `cond_add_cond_compl_eq`, `cond_apply'`,
 `measure_biUnion_finset`.
+
+**Bibliographic comments.** Bayes' theorem first appeared, for the binomial case, in the essay of
+T. Bayes read to the Royal Society in 1761 and published posthumously by R. Price ("An essay
+towards solving a problem in the doctrine of chances," *Philosophical Transactions of the Royal
+Society* 53 (1763), 370–418). P. S. Laplace rediscovered it in full generality in his "Mémoire sur
+la probabilité des causes par les événements" (1773/1774), apparently unaware of Bayes's work; the
+finite-partition computation formalized here is exactly Laplace's usage (Robert, Example 1.2.3).
+For the history see S. M. Stigler, *The History of Statistics* (Harvard, 1986) and A. I. Dale,
+*A History of Inverse Probability* (Springer, 1991); Robert §1.8.1 surveys these credits.
 -/
 
 open MeasureTheory ProbabilityTheory

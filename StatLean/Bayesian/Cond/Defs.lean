@@ -17,8 +17,9 @@ Writing $\mu[t \mid s]$ for the conditional probability of $t$ given $s$
 The central identity — *posterior odds = prior odds × Bayes factor* — is proved in
 `StatLean.Bayesian.Cond.Odds`; this file only fixes the vocabulary.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to
-Computational Implementation*, 2nd ed., Springer, 2007. §1.2 (Bayes' theorem, p. 8) for the
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2 (Bayes' theorem, p. 8) for the
 odds form of Bayes' theorem; §5.2.2, Definition 5.2.5 (Bayes factor) and eq. (5.2.2), p. 227.
 
 **Proof formalization notes.** This is a laptop-only shared data model — definitions only.

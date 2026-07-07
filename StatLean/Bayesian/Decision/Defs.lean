@@ -24,7 +24,9 @@ The theorems that these are Bayes estimators live in `StatLean.Bayesian.Decision
 and `.ZeroOneLoss`; the general "pointwise posterior-risk minimizer ⇒ Bayes" engine is in
 `.BayesEstimator`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §2.3, Theorem 2.3.2
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §2.3, Theorem 2.3.2
 and Definition 2.3.3 (Bayes estimator, integrated risk `r(π,δ)`, posterior expected loss
 `ρ(π,d|x)`), p. 62–63; §2.5.1, eq. (2.5.1) and Proposition 2.5.1 (quadratic loss → posterior
 mean), p. 77–78; §2.5.3, eq. (2.5.5), and §4.1.2 (MAP estimator, 0–1 loss → posterior mode),
@@ -111,5 +113,25 @@ finite parameter space (Robert §4.1.2, p. 166; §2.5.3, Proposition 2.5.7). Use
 noncomputable def posteriorMode [Fintype Θ] [Nonempty Θ] [DiscreteMeasurableSpace Θ]
     (P : Kernel Θ 𝓧) [IsFiniteKernel P] (π : Measure Θ) [IsFiniteMeasure π] : 𝓧 → Θ :=
   fun x => fintypeArgmax fun a => (P†π) x {a}
+
+/-! ### Frequentist risk, minimaxity, and least favorable priors (Robert §2.4) -/
+
+/-- The **frequentist risk** `R(θ, κ) = ∫ ℓ(θ, y) d((κ ∘ₖ P) θ)(y)` of the (randomized) estimator
+`κ` at parameter `θ` (Robert §2.3, prose display p. 61). Definitionally the integrand of the
+pinned `avgRisk`/`minimaxRisk`, so `minimaxRisk ℓ P = ⨅ κ (Markov), ⨆ θ, risk ℓ P κ θ`
+holds by `rfl`. -/
+noncomputable def risk (ℓ : Θ → 𝓨 → ℝ≥0∞) (P : Kernel Θ 𝓧) (κ : Kernel 𝓧 𝓨) (θ : Θ) : ℝ≥0∞ :=
+  ∫⁻ y, ℓ θ y ∂((κ ∘ₖ P) θ)
+
+/-- A (Markov) estimator is **minimax** if its worst-case risk attains the minimax risk
+(Robert Definition 2.4.3, p. 67). -/
+def IsMinimaxEstimator (ℓ : Θ → 𝓨 → ℝ≥0∞) (P : Kernel Θ 𝓧) (κ : Kernel 𝓧 𝓨) : Prop :=
+  ⨆ θ, risk ℓ P κ θ = minimaxRisk ℓ P
+
+/-- A prior is **least favorable** if it is a probability measure maximizing the Bayes risk over
+all probability priors (Robert §2.4.3, after Lemma 2.4.10, p. 70). -/
+def IsLeastFavorable (ℓ : Θ → 𝓨 → ℝ≥0∞) (P : Kernel Θ 𝓧) (π : Measure Θ) : Prop :=
+  IsProbabilityMeasure π ∧
+    ∀ π' : Measure Θ, IsProbabilityMeasure π' → bayesRisk ℓ P π' ≤ bayesRisk ℓ P π
 
 end StatLean.Bayesian

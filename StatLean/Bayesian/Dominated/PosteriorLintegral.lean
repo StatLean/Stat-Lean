@@ -8,7 +8,9 @@ $$\int_\Theta g(\theta)\,\pi(d\theta \mid x)
    = \frac{\int_\Theta g(\theta)\,p(\theta, x)\,\pi(d\theta)}{\int_\Theta p(\theta', x)\,\pi(d\theta')},$$
 and its set-indicator special case `π(s | x) = ∫_s p(·,x) dπ / ∫ p(·,x) dπ`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.4, p. 22 (the
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.4, p. 22 (the
 posterior and expectations under it); the formula is eq. (1.2.3) integrated against `g`.
 
 **Proof formalization notes.** Follows from `posterior_eq_withDensity_likelihood_div_predictive`
@@ -16,6 +18,12 @@ by `lintegral_withDensity_eq_lintegral_mul` and pulling the constant `(m x)⁻¹
 `lintegral` with `lintegral_mul_const''` (unconditional in `ℝ≥0∞`, so **no positivity hypotheses
 needed**). Stated for `ℝ≥0∞`-valued `g`; a real-integrable version can follow later. Watch
 CLAUDE.md gotcha 12 (`simp_rw` after the withDensity rewrite).
+
+**Bibliographic comments.** Ratios of the form `∫ g·p dπ / ∫ p dπ` are the computational core of
+Bayesian inference — already Laplace's 1774 memoir evaluates posterior expectations of exactly
+this shape, and their numerical approximation motivates the Monte Carlo and Laplace-approximation
+methods of Robert's Chapter 6. Robert §1.4 introduces the formula as part of the Bayesian machine;
+Chapter 4 develops the resulting point estimators.
 -/
 
 open MeasureTheory ProbabilityTheory

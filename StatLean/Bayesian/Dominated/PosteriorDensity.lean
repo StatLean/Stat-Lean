@@ -12,7 +12,9 @@ posterior `κ†π`, via the disintegration identity
 `(κ ∘ₘ π) ⊗ₘ bayesKernel p π = (π ⊗ₘ κ).map Prod.swap` and the uniqueness of disintegrations
 (`ae_eq_posterior_of_compProd_eq`).
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.2, eq. (1.2.3)
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2, eq. (1.2.3)
 (the posterior density), p. 9; §1.4, p. 22.
 
 **Proof formalization notes.** The headline `compProd_bayesKernel_eq_map_swap` is a π-system
@@ -24,6 +26,15 @@ for the Tonelli/withDensity manipulations. Watch CLAUDE.md gotcha 12: after
 bricks: `ext_of_generate_finite`, `generateFrom_prod`, `isPiSystem_prod`,
 `Measure.compProd_apply_prod`, `Measure.map_apply`, `Set.preimage_swap_prod`,
 `Kernel.withDensity_apply'`, `ae_eq_posterior_of_compProd_eq`.
+
+**Bibliographic comments.** The density form of Bayes' theorem goes back to Bayes (1763, published
+by R. Price) and, in the generality of "the probability of causes," to P. S. Laplace (1774; and
+*Théorie analytique des probabilités*, 1812). Its measure-theoretic justification rests on
+A. N. Kolmogorov's axiomatization of conditioning (*Grundbegriffe der
+Wahrscheinlichkeitsrechnung*, Springer, 1933) and on the theory of regular conditional
+distributions on standard Borel spaces (J. L. Doob, *Stochastic Processes*, Wiley, 1953), which is
+what Mathlib's disintegration-uniqueness lemma encapsulates. Robert §1.2/§1.4 is the statistical
+synthesis formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

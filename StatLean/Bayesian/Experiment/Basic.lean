@@ -9,13 +9,23 @@ Textbook-facing restatements, for a `BayesExperiment`, of Mathlib's posterior-ke
   Bayesian conditioning "prior × likelihood becomes predictive × posterior" (Robert §1.4);
 * `posterior_comp_predictive` — composing the posterior with the predictive returns the prior.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.4 (a)–(d)
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.4 (a)–(d)
 (joint, marginal, posterior, predictive), p. 22.
 
 **Proof formalization notes.** These are *aliases* of pinned Mathlib theorems under
 textbook-facing names — we `import` and reuse `ProbabilityTheory.compProd_posterior_eq_map_swap`
 and `posterior_comp_self`, we do not reprove them. The probability/Markov instances follow from
 the constitutive `BayesExperiment` fields through Mathlib's instance chains.
+
+**Bibliographic comments.** The disintegration of a joint law into a marginal and a regular
+conditional distribution originates with A. N. Kolmogorov (*Grundbegriffe*, 1933) and was given
+its standard-Borel form by J. L. Doob (*Stochastic Processes*, Wiley, 1953); see also
+K. R. Parthasarathy, *Probability Measures on Metric Spaces* (Academic Press, 1967) for the
+disintegration theorem Mathlib's `condKernel` implements. Reading "prior × likelihood =
+predictive × posterior" as the statistical meaning of this disintegration is the viewpoint of
+Robert §1.4.
 -/
 
 open MeasureTheory ProbabilityTheory
