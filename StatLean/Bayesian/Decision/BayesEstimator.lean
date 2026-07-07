@@ -9,7 +9,9 @@ $$r(\pi, \delta) = \int_{\mathcal X} \Big(\int_\Theta \ell(\theta, \delta(x))\,\
 so an estimator that minimizes the posterior expected loss pointwise (for predictive-a.e. `x`) is
 a Bayes estimator.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §2.3, Theorem 2.3.2
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §2.3, Theorem 2.3.2
 and eq. (2.3.1) (integrated risk = integrated posterior expected loss), Definition 2.3.3 (Bayes
 estimator), p. 62–63.
 
@@ -23,6 +25,15 @@ exactly Robert's Fubini step (2.3.1):
 lower bound uses `iInf_le_lintegral` (needs `IsProbabilityMeasure ((P†π) x)`, from the posterior's
 Markov instance); `isBayesEstimator_of_ae_argmin` closes by the `bayesRisk_le_avgRisk` sandwich.
 No copied code; `IsBayesEstimator` is our own definition (`Decision.Defs`).
+
+**Bibliographic comments.** The frequentist-risk framework in which Bayes rules are optimal
+points is due to A. Wald, *Statistical Decision Functions* (Wiley, 1950); the subjectivist
+justification of minimizing posterior expected loss is L. J. Savage, *The Foundations of
+Statistics* (Wiley, 1954), with the axiomatic treatment developed further in M. H. DeGroot,
+*Optimal Statistical Decisions* (McGraw-Hill, 1970). The reduction of the integrated risk to a
+pointwise posterior minimization — Robert's Theorem 2.3.2 — is the standard bridge between the
+two viewpoints and appears in every decision-theoretic account since Wald; Robert §1.8.1 and the
+Notes to his Chapter 2 survey the history.
 -/
 
 open MeasureTheory ProbabilityTheory

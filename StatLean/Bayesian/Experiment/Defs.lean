@@ -17,7 +17,9 @@ This file is a thin textbook-facing wrapper over Mathlib's kernel infrastructure
 disintegration identity relating these objects is stated in `StatLean.Bayesian.Experiment.Basic`
 as an alias of Mathlib's `compProd_posterior_eq_map_swap`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.2,
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2,
 Definition 1.2.1 (Bayesian statistical model), p. 9; §1.4, items (a)–(d) (joint, marginal
 `m(x)`, posterior, predictive), p. 22.
 

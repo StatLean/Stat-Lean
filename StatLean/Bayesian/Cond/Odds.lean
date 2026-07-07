@@ -9,7 +9,9 @@ The odds reformulation of Bayes' theorem for a single hypothesis event `s` again
   $$\frac{\mu[s \mid d]}{\mu[s^c \mid d]} = \frac{\mu(s)}{\mu(s^c)} \cdot \frac{\mu[d \mid s]}{\mu[d \mid s^c]};$$
 * the **Bayes factor as the odds ratio** `bayesFactor = posteriorOdds / priorOdds`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.2 (odds form of
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.2 (odds form of
 Bayes' theorem, eq. (1.2.2), p. 9); §5.2.2, Definition 5.2.5 (Bayes factor) and eq. (5.2.2),
 p. 227.
 
@@ -20,6 +22,14 @@ the generic case reduces to `ENNReal.mul_div_mul_left` with the nonzero, non-inf
 or both `∞`. The *inversion* (`bayesFactor = posteriorOdds / priorOdds`) does need nondegenerate
 priors `μ s ≠ 0`, `μ sᶜ ≠ 0` (else the odds ratio is `0/0` junk), which is exactly Robert's
 standing assumption in Definition 5.2.5.
+
+**Bibliographic comments.** The odds formulation of Bayesian hypothesis comparison and the Bayes
+factor are due to H. Jeffreys (*Theory of Probability*, Oxford University Press, 1939; 3rd ed.
+1961), whose calibration scale for Bayes factors — refined by I. J. Good ("Significance tests in
+parallel and in series," *J. Amer. Statist. Assoc.* 53 (1958), 799–813) — remains in use; Robert
+reproduces it on p. 228. The modern survey is R. E. Kass and A. E. Raftery, "Bayes factors,"
+*J. Amer. Statist. Assoc.* 90 (1995), 773–795. Robert §5.2.2 gives the decision-theoretic
+formulation followed here.
 -/
 
 open MeasureTheory ProbabilityTheory

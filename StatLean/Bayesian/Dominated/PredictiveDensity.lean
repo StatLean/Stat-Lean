@@ -9,7 +9,9 @@ $$\kappa \circ_m \pi = \nu.\mathrm{withDensity}\,(m), \qquad m(x) = \int_\Theta 
 together with the measurability of `m` and the a.e. non-degeneracy facts (`0 < m < ∞`) that hold
 automatically under a finite model.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §1.4, the marginal
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §1.4, the marginal
 `m(x) = ∫ f(x|θ) π(dθ)`, p. 22.
 
 **Proof formalization notes.** `m`'s finiteness (`ν`-a.e. and `(κ ∘ₘ π)`-a.e.) and positivity
@@ -18,6 +20,13 @@ representation — they are *not* hypotheses (assuming `0 < m` would be launderi
 the setup). Key Mathlib bricks: `Measurable.lintegral_prod_left'`, `Measure.bind_apply`,
 `MeasureTheory.withDensity_apply`, `lintegral_eq_zero_iff`, `ae_lt_top`,
 `withDensity_absolutelyContinuous`.
+
+**Bibliographic comments.** The marginal (prior predictive) density `m(x)` is the *evidence* of
+the model: its systematic use for hypothesis comparison begins with H. Jeffreys (*Theory of
+Probability*, Oxford, 1939), and it underlies Bayes factors, model averaging, and empirical-Bayes
+calibration — see R. E. Kass and A. E. Raftery, "Bayes factors," *J. Amer. Statist. Assoc.* 90
+(1995), 773–795. Robert introduces it as item (b) of the Bayesian machine in §1.4 and returns to
+it for testing and model choice in his Chapters 5 and 7.
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -7,7 +7,9 @@ import Mathlib.Probability.Kernel.MeasurableIntegral
 Under the quadratic loss `ℓ(θ, a) = (θ − a)²`, the posterior mean `x ↦ 𝔼[θ | x]` is a Bayes
 estimator.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §2.5.1,
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §2.5.1,
 eq. (2.5.1) and Proposition 2.5.1, p. 77–78.
 
 **Proof formalization notes.** No integrability hypothesis: we case-split on whether the posterior
@@ -19,6 +21,14 @@ probability measure at every `x` (posterior Markov instance), so the split is po
 `isBayesEstimator_of_ae_argmin` applies via `ae_of_all`. Bridge `‖·‖ₑ ^ 2` ↔ `(· )²` via
 `Real.enorm_eq_ofReal_abs`, `ENNReal.ofReal_pow`, `sq_abs`. This subsumes Robert's "provided the
 expectation exists" proviso.
+
+**Bibliographic comments.** Quadratic loss is the founding loss function of statistics, going back
+to the least-squares theory of A. M. Legendre (*Nouvelles méthodes pour la détermination des
+orbites des comètes*, 1805) and C. F. Gauss (*Theoria motus corporum coelestium*, 1809), as Robert
+notes in §2.5.1; that the posterior mean minimizes posterior quadratic loss was already implicit
+in Laplace's "probability of causes" computations (1774). The bias–variance decomposition used in
+the proof is textbook folklore; Robert Proposition 2.5.1 (with the weighted and matrix variants in
+his Corollaries 2.5.2–2.5.3) is the synthesis formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

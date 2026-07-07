@@ -7,7 +7,9 @@ On a finite parameter space, under the 0–1 loss `ℓ(θ, a) = 𝟙[θ ≠ a]`,
 estimator) is a Bayes estimator. The mechanism is that the posterior 0–1 risk of action `a` is
 `1 − π({a} | x)`, so minimizing it means maximizing the posterior mass.
 
-**Reference.** C. P. Robert, *The Bayesian Choice*, 2nd ed., Springer, 2007. §2.5.3, eq. (2.5.5)
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §2.5.3, eq. (2.5.5)
 and Proposition 2.5.7 (0–1 loss picks the most probable hypothesis), p. 81; §4.1.2 (MAP estimator
 = posterior mode), p. 166.
 
@@ -19,6 +21,15 @@ and Proposition 2.5.7 (0–1 loss picks the most probable hypothesis), p. 81; §
 `measurable_to_countable'` and the finite Boolean combination of comparison sets (via
 `fintypeArgmax_eq_iff`). Parameter space carries `[Fintype Θ] [Nonempty Θ]
 [DiscreteMeasurableSpace Θ]`, so `StandardBorelSpace Θ` is automatic.
+
+**Bibliographic comments.** The 0–1 loss is the decision-theoretic formulation of hypothesis
+selection, tied to the testing theory of J. Neyman and E. S. Pearson ("On the problem of the most
+efficient tests of statistical hypotheses," *Philosophical Transactions of the Royal Society A*
+231 (1933), 289–337) through Robert's §2.5.3. That the Bayes rule under 0–1 loss is the *maximum
+a posteriori* (MAP) estimator — the posterior mode — is stated explicitly by Robert in §2.8.1
+(p. 96) and §4.1.2 (p. 166), where the MAP estimator is also read as penalized maximum likelihood;
+H. Rue ("New loss functions in Bayesian imaging," *J. Amer. Statist. Assoc.* 90 (1995), 900–908)
+critiques its oversmoothing in high-dimensional image models.
 -/
 
 open MeasureTheory ProbabilityTheory
