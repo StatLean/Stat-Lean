@@ -222,7 +222,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§7.3, Theorem 7.10",
-      "biblio": "The Gaussian shift experiment and its affine log-likelihood ratio are the canonical limit object of Le Cam's theory of asymptotic equivalence of experiments. The foundational reference is L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98; see also L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986. The textbook synthesis follows van der Vaart (1998), Chapter 7.",
+      "biblio": "The Gaussian shift experiment and its affine log-likelihood ratio are the canonical limit object of Le Cam's theory of asymptotic equivalence of experiments. The foundational reference is L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98; see also L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986. The synthesis follows van der Vaart (1998), Chapter 7.",
       "keys": [
         "vdv1998",
         "lecam1960",
@@ -257,7 +257,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§8.4, Proposition 8.4",
-      "biblio": "The notion of an equivariant-in-law (regular) estimator and the resulting convolution structure originate with the convolution theorem of J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und Verwandte Gebiete* **14** (1970), 323–330, with parallel contributions by L. Le Cam and by N. Inagaki, \"On the limiting distribution of a sequence of estimators with uniformity property,\" *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The finite-dimensional Gaussian-shift formulation used here is the standard textbook distillation (vdV §8.4).",
+      "biblio": "The notion of an equivariant-in-law (regular) estimator and the resulting convolution structure originate with the convolution theorem of J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und Verwandte Gebiete* **14** (1970), 323–330, with parallel contributions by L. Le Cam and by N. Inagaki, \"On the limiting distribution of a sequence of estimators with uniformity property,\" *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The finite-dimensional Gaussian-shift formulation used here is the standard distillation (vdV §8.4).",
       "keys": [
         "vdv1998",
         "hajek1970",
@@ -348,7 +348,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§7.2, Theorem 7.2",
-      "biblio": "Local asymptotic normality originates with L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98, where the LAN concept and the quadratic log-likelihood expansion were introduced. The differentiability-in-quadratic-mean formulation under which Theorem 7.2 is stated is the modern presentation (Le Cam and Hájek) adopted in van der Vaart's textbook.",
+      "biblio": "Local asymptotic normality originates with L. Le Cam, \"Locally asymptotically normal families of distributions,\" *University of California Publications in Statistics* **3** (1960), 37–98, where the LAN concept and the quadratic log-likelihood expansion were introduced. The differentiability-in-quadratic-mean formulation under which Theorem 7.2 is stated is the modern presentation (Le Cam and Hájek) adopted by van der Vaart.",
       "keys": [
         "vdv1998",
         "lecam1960"
@@ -432,7 +432,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§8.5, Eq. (8.2)",
-      "biblio": "The convolution theorem originates with J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970), 323–330: the limiting law of any regular estimator in a locally asymptotically normal family is a convolution of the optimal Gaussian with a residual measure. An essentially equivalent result was obtained independently by N. Inagaki, *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The underlying local-asymptotic framework and an early lower bound are due to L. Le Cam, \"On some asymptotic properties of maximum likelihood estimates and related Bayes' estimates,\" *University of California Publications in Statistics* **1** (1953), 277–330 (hence \"Hájek–Le Cam\"); vdV Theorem 8.8 is the textbook synthesis.",
+      "biblio": "The convolution theorem originates with J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970), 323–330: the limiting law of any regular estimator in a locally asymptotically normal family is a convolution of the optimal Gaussian with a residual measure. An essentially equivalent result was obtained independently by N. Inagaki, *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The underlying local-asymptotic framework and an early lower bound are due to L. Le Cam, \"On some asymptotic properties of maximum likelihood estimates and related Bayes' estimates,\" *University of California Publications in Statistics* **1** (1953), 277–330 (hence \"Hájek–Le Cam\"); vdV Theorem 8.8 is the synthesis.",
       "keys": [
         "vdv1998",
         "hajek1970",
@@ -492,7 +492,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§7.3, Theorem 7.10",
-      "biblio": "The result and the surrounding theory of *limit experiments* originate with L. Le Cam, \"Limits of experiments,\" *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972, pp. 245–261. Closely related convolution- and representation-theorem ideas were pioneered concurrently by J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" same Proceedings (Vol. I, pp. 175–194, 1972), and later extended by A. W. van der Vaart, \"An asymptotic representation theorem,\" *International Statistical Review* **59** (1991), 97–121. The kernel form stated here is the textbook synthesis presented as vdV Theorem 7.10.",
+      "biblio": "The result and the surrounding theory of *limit experiments* originate with L. Le Cam, \"Limits of experiments,\" *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. I, University of California Press, 1972, pp. 245–261. Closely related convolution- and representation-theorem ideas were pioneered concurrently by J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" same Proceedings (Vol. I, pp. 175–194, 1972), and later extended by A. W. van der Vaart, \"An asymptotic representation theorem,\" *International Statistical Review* **59** (1991), 97–121. The kernel form stated here is the synthesis presented as vdV Theorem 7.10.",
       "keys": [
         "vdv1998",
         "lecam1972",
@@ -597,7 +597,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§8.5, Theorem 8.8",
-      "biblio": "The convolution theorem originates with J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970), 323–330: the limiting law of any regular estimator in a locally asymptotically normal family is a convolution of the optimal Gaussian with a residual measure. An essentially equivalent result was obtained independently by N. Inagaki, *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The underlying local-asymptotic framework and an early lower bound are due to L. Le Cam, \"On some asymptotic properties of maximum likelihood estimates and related Bayes' estimates,\" *University of California Publications in Statistics* **1** (1953), 277–330 (hence \"Hájek–Le Cam\"); vdV Theorem 8.8 is the textbook synthesis.",
+      "biblio": "The convolution theorem originates with J. Hájek, \"A characterization of limiting distributions of regular estimates,\" *Zeitschrift für Wahrscheinlichkeitstheorie und verwandte Gebiete* **14** (1970), 323–330: the limiting law of any regular estimator in a locally asymptotically normal family is a convolution of the optimal Gaussian with a residual measure. An essentially equivalent result was obtained independently by N. Inagaki, *Annals of the Institute of Statistical Mathematics* **22** (1970), 1–13. The underlying local-asymptotic framework and an early lower bound are due to L. Le Cam, \"On some asymptotic properties of maximum likelihood estimates and related Bayes' estimates,\" *University of California Publications in Statistics* **1** (1953), 277–330 (hence \"Hájek–Le Cam\"); vdV Theorem 8.8 is the synthesis.",
       "keys": [
         "vdv1998",
         "hajek1970",
@@ -657,7 +657,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§8.7, Theorem 8.11",
-      "biblio": "The local asymptotic minimax theorem originates with J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1972, pp. 175–194. It builds on Le Cam's theory of local asymptotic normality and limits of experiments, and the Gaussian-shift lower bound rests on Anderson's lemma (T. W. Anderson, \"The integral of a symmetric unimodal function over a symmetric convex set and some probability inequalities,\" *Proc. Amer. Math. Soc.* **6** (1955), 170–176). Van der Vaart's Theorem 8.11 is the textbook synthesis.",
+      "biblio": "The local asymptotic minimax theorem originates with J. Hájek, \"Local asymptotic minimax and admissibility in estimation,\" *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1972, pp. 175–194. It builds on Le Cam's theory of local asymptotic normality and limits of experiments, and the Gaussian-shift lower bound rests on Anderson's lemma (T. W. Anderson, \"The integral of a symmetric unimodal function over a symmetric convex set and some probability inequalities,\" *Proc. Amer. Math. Soc.* **6** (1955), 170–176). Van der Vaart's Theorem 8.11 is the synthesis.",
       "keys": [
         "vdv1998",
         "hajek1972",
@@ -1229,7 +1229,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.4, Lemma 25.25",
-      "biblio": "The efficient score as the projection of the score onto the orthocomplement of the nuisance tangent space, and the resulting efficient influence function, are central to modern semiparametric efficiency theory. The geometric/projection formulation traces back to C. Stein, \"Efficient nonparametric testing and estimation,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.*, vol. 1 (1956), 187–195, and was developed into a full tangent-space theory by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993. Van der Vaart's Lemma 25.25 is a textbook synthesis.",
+      "biblio": "The efficient score as the projection of the score onto the orthocomplement of the nuisance tangent space, and the resulting efficient influence function, are central to modern semiparametric efficiency theory. The geometric/projection formulation traces back to C. Stein, \"Efficient nonparametric testing and estimation,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.*, vol. 1 (1956), 187–195, and was developed into a full tangent-space theory by P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993. Van der Vaart's Lemma 25.25 is a synthesis.",
       "keys": [
         "vdv1998",
         "stein1956",
@@ -1443,7 +1443,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Theorem 25.54",
-      "biblio": "This is textbook synthesis with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
+      "biblio": "This is folklore with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993",
@@ -1520,7 +1520,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.8, Theorem 25.59",
-      "biblio": "This is textbook synthesis with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
+      "biblio": "This is folklore with no single seminal paper. The efficient score and efficient influence function are central to the semiparametric efficiency theory of P. J. Bickel, C. A. J. Klaassen, Y. Ritov and J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*, Johns Hopkins University Press, 1993; the lower bound descends from the convolution and local-asymptotic-minimaxity theorems of J. Hájek (*Z. Wahrsch. Verw. Gebiete* **14**, 1970, 323–330) and L. Le Cam, with the projection construction of the efficient score going back to C. Stein (*Proc. 3rd Berkeley Symp.*, 1956). The \"efficient score equation\" packaging is van der Vaart's §25.8.",
       "keys": [
         "vdv1998",
         "bickel-klaassen-ritov-wellner1993",
@@ -1562,7 +1562,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§25.11, Theorem 25.77",
-      "biblio": "The least-favorable-submodel construction for the MLE of a scalar parameter in a semiparametric model originates with T. A. Severini and W. H. Wong, \"Profile Likelihood and Conditionally Parametric Models,\" *The Annals of Statistics* **20**(4) (1992), 1768–1802. Van der Vaart's §25.11 is a textbook synthesis; the Stein least-favorable terminology traces to C. Stein, \"Efficient nonparametric testing and estimation,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* **1** (1956), 187–195.",
+      "biblio": "The least-favorable-submodel construction for the MLE of a scalar parameter in a semiparametric model originates with T. A. Severini and W. H. Wong, \"Profile Likelihood and Conditionally Parametric Models,\" *The Annals of Statistics* **20**(4) (1992), 1768–1802. Van der Vaart's §25.11 is a synthesis; the Stein least-favorable terminology traces to C. Stein, \"Efficient nonparametric testing and estimation,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* **1** (1956), 187–195.",
       "keys": [
         "vdv1998",
         "severini-wong1992",
@@ -1675,7 +1675,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.2 (bracket)",
-      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are textbook synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are a synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
       "keys": [
         "vdv1998",
         "dudley1967",
@@ -1729,7 +1729,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.2 (ε-bracket)",
-      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are textbook synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are a synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
       "keys": [
         "vdv1998",
         "dudley1967",
@@ -1771,7 +1771,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.2 (bracketing number $N_{[\\,]}$)",
-      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are textbook synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
+      "biblio": "The notions of bracket, bracketing number and bracketing entropy integral are a synthesis crystallizing metric-entropy methods for empirical processes. The entropy-integral idea originates with R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* **1**(3):290–330, 1967. The decisive result behind the $L_2$-bracketing condition — finiteness of $J_{[\\,]}$ implies the Donsker property (vdV Theorem 19.5) — is due to M. Ossiander, \"A central limit theorem under metric entropy with $L_2$ bracketing,\" *The Annals of Probability* **15**(3):897–919, 1987. The systematic packaging follows van der Vaart and Wellner, *Weak Convergence and Empirical Processes*, Springer, 1996.",
       "keys": [
         "vdv1998",
         "dudley1967",
@@ -1807,7 +1807,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.2 (envelope function); Lemma 19.34",
-      "biblio": "The notions of an envelope function for a class and of the supremum norm over a class are standard textbook infrastructure of empirical-process theory rather than results with a single seminal origin; they pervade van der Vaart and Wellner, *Weak Convergence and Empirical Processes* (Springer, 1996), and van der Vaart's *Asymptotic Statistics* (1998), Chapter 19.",
+      "biblio": "The notions of an envelope function for a class and of the supremum norm over a class are standard infrastructure of empirical-process theory rather than results with a single seminal origin; they pervade van der Vaart and Wellner, *Weak Convergence and Empirical Processes* (Springer, 1996), and van der Vaart's *Asymptotic Statistics* (1998), Chapter 19.",
       "keys": [
         "vdv1998",
         "vandervaart-wellner1996"
@@ -1941,7 +1941,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.4, Lemma 19.24",
-      "biblio": "This is textbook synthesis with no single seminal origin: a routine consequence of weak convergence of the empirical process over a Donsker class combined with asymptotic equicontinuity, the framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes: With Applications to Statistics*, Springer, 1996. vdV (1998) presents it as Lemma 19.24.",
+      "biblio": "This is folklore with no single seminal origin: a routine consequence of weak convergence of the empirical process over a Donsker class combined with asymptotic equicontinuity, the framework systematized in A. W. van der Vaart and J. A. Wellner, *Weak Convergence and Empirical Processes: With Applications to Statistics*, Springer, 1996. vdV (1998) presents it as Lemma 19.24.",
       "keys": [
         "vdv1998",
         "vandervaart-wellner1996"
@@ -1981,7 +1981,7 @@
     "reference": {
       "formal": "A. W. van der Vaart, *Asymptotic Statistics*, Cambridge Series in Statistical and Probabilistic Mathematics, Cambridge University Press, 1998.",
       "pointer": "§19.4, Theorem 19.23, Eq. (19.22)",
-      "biblio": "Theorem 19.23 is textbook synthesis rather than a single seminal paper: van der Vaart derives it from the master approximation (19.22) by combining the continuous-mapping theorem with the asymptotic linearity of $\\hat\\theta_n$. The underlying uniform central limit theorems for empirical processes trace back to R. M. Dudley, E. Giné and J. Zinn; vdV §19.4 assembles them into this estimated-parameter limit law.",
+      "biblio": "Theorem 19.23 is a synthesis rather than a single seminal paper: van der Vaart derives it from the master approximation (19.22) by combining the continuous-mapping theorem with the asymptotic linearity of $\\hat\\theta_n$. The underlying uniform central limit theorems for empirical processes trace back to R. M. Dudley, E. Giné and J. Zinn; vdV §19.4 assembles them into this estimated-parameter limit law.",
       "keys": [
         "vdv1998",
         "dudley1967",
@@ -2618,7 +2618,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§4.2, Definition 4.1",
-      "biblio": "The notion of a sub-Gaussian random variable is classical folklore with no single seminal origin. The terminology and the defining MGF bound trace to J.-P. Kahane, *Propriétés locales des fonctions à séries de Fourier aléatoires*, Studia Mathematica 19 (1960), and the systematic study to V. V. Buldygin and Yu. V. Kozachenko, *Sub-Gaussian random variables*, Ukrainian Mathematical Journal 32 (1980). The variance-proxy MGF formulation used here is the standard textbook synthesis (see also Wainwright, *High-Dimensional Statistics*, 2019, §2.1.2; Boucheron, Lugosi & Massart, *Concentration Inequalities*, 2013, §2.3).",
+      "biblio": "The notion of a sub-Gaussian random variable is classical folklore with no single seminal origin. The terminology and the defining MGF bound trace to J.-P. Kahane, *Propriétés locales des fonctions à séries de Fourier aléatoires*, Studia Mathematica 19 (1960), and the systematic study to V. V. Buldygin and Yu. V. Kozachenko, *Sub-Gaussian random variables*, Ukrainian Mathematical Journal 32 (1980). The variance-proxy MGF formulation used here is the standard synthesis (see also Wainwright, *High-Dimensional Statistics*, 2019, §2.1.2; Boucheron, Lugosi & Massart, *Concentration Inequalities*, 2013, §2.3).",
       "keys": [
         "lu-bda",
         "kahane1960",
@@ -2655,7 +2655,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§4.2, Theorem 4.6",
-      "biblio": "W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30. The moment-generating-function bound for a bounded centered random variable (Hoeffding's lemma) is the key step in the proof of Theorem 2 of that paper; it is now standard textbook material and is what the variance-proxy statement formalized here records.",
+      "biblio": "W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30. The moment-generating-function bound for a bounded centered random variable (Hoeffding's lemma) is the key step in the proof of Theorem 2 of that paper; it is now standard material and is what the variance-proxy statement formalized here records.",
       "keys": [
         "lu-bda",
         "hoeffding1963"
@@ -2774,7 +2774,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§4.2",
-      "biblio": "The seminal source for the sub-Gaussian tail/MGF machinery is W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30. The scalar-multiple closure rule is elementary textbook material and appears in modern references such as Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), Vershynin, *High-Dimensional Probability* (2018), and Wainwright, *High-Dimensional Statistics* (2019).",
+      "biblio": "The seminal source for the sub-Gaussian tail/MGF machinery is W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30. The scalar-multiple closure rule is elementary material and appears in modern references such as Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), Vershynin, *High-Dimensional Probability* (2018), and Wainwright, *High-Dimensional Statistics* (2019).",
       "keys": [
         "lu-bda",
         "hoeffding1963",
@@ -2829,7 +2829,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§4.2, Theorem 4.7",
-      "biblio": "The seminal source is W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30, whose Theorem 2 gives the exponential tail bound for sums of bounded independent variables. The sub-Gaussian reformulation stated here replaces the boundedness hypothesis with a sub-Gaussian variance proxy; in this generality it is textbook synthesis presented in modern references (Boucheron, Lugosi & Massart, 2013; Vershynin, *High-Dimensional Probability*, 2018; Wainwright, *High-Dimensional Statistics*, 2019).",
+      "biblio": "The seminal source is W. Hoeffding, *Probability inequalities for sums of bounded random variables*, Journal of the American Statistical Association **58**(301), 1963, 13–30, whose Theorem 2 gives the exponential tail bound for sums of bounded independent variables. The sub-Gaussian reformulation stated here replaces the boundedness hypothesis with a sub-Gaussian variance proxy; in this generality it is a synthesis presented in modern references (Boucheron, Lugosi & Massart, 2013; Vershynin, *High-Dimensional Probability*, 2018; Wainwright, *High-Dimensional Statistics*, 2019).",
       "keys": [
         "lu-bda",
         "hoeffding1963",
@@ -2915,7 +2915,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§5.2, Definition 5.1",
-      "biblio": "The sub-exponential class via a restricted-range MGF (equivalently characterized by Orlicz $\\psi_1$-norm, linear-in-$t$ MGF growth, or exponential tails) is textbook folklore with no single seminal origin; it is standard background for the Bernstein-type inequalities tracing to S. N. Bernstein (1920s). Modern treatments are R. Vershynin, *High-Dimensional Probability* (2018), §2.7–2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3 (the $(\\nu^2,\\alpha)$-Bernstein condition).",
+      "biblio": "The sub-exponential class via a restricted-range MGF (equivalently characterized by Orlicz $\\psi_1$-norm, linear-in-$t$ MGF growth, or exponential tails) is folklore with no single seminal origin; it is standard background for the Bernstein-type inequalities tracing to S. N. Bernstein (1920s). Modern treatments are R. Vershynin, *High-Dimensional Probability* (2018), §2.7–2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3 (the $(\\nu^2,\\alpha)$-Bernstein condition).",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -2957,7 +2957,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§5.2, Theorem 5.2",
-      "biblio": "The two-regime sub-exponential tail bound is textbook folklore: the standard packaging of the sub-exponential MGF condition into a deviation inequality via the Chernoff method. References giving this two-regime statement are R. Vershynin, *High-Dimensional Probability* (2018), §2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3. The underlying Chernoff bounding technique originates with H. Chernoff (1952).",
+      "biblio": "The two-regime sub-exponential tail bound is folklore: the standard packaging of the sub-exponential MGF condition into a deviation inequality via the Chernoff method. References giving this two-regime statement are R. Vershynin, *High-Dimensional Probability* (2018), §2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3. The underlying Chernoff bounding technique originates with H. Chernoff (1952).",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -2999,7 +2999,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§5.2, Theorem 5.2",
-      "biblio": "The two-regime sub-exponential tail bound is textbook folklore: Gaussian decay for small deviations and exponential decay for large ones, obtained from the sub-exponential MGF condition via the Chernoff method. Standard references are R. Vershynin, *High-Dimensional Probability* (2018), §2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3. The Chernoff technique originates with H. Chernoff (1952).",
+      "biblio": "The two-regime sub-exponential tail bound is folklore: Gaussian decay for small deviations and exponential decay for large ones, obtained from the sub-exponential MGF condition via the Chernoff method. Standard references are R. Vershynin, *High-Dimensional Probability* (2018), §2.8, and M. J. Wainwright, *High-Dimensional Statistics* (2019), §2.1.3. The Chernoff technique originates with H. Chernoff (1952).",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -3155,7 +3155,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.1, Definition 6.1",
-      "biblio": "The moment condition $\\mathbb{E}\\,|X|^k \\le \\tfrac12\\,k!\\,\\sigma^2\\,b^{k-2}$ is the classical *Bernstein moment condition*, named for S. N. Bernstein, who introduced this family of moment hypotheses to derive exponential tail bounds (S. N. Bernstein, *Theory of Probability*, Moscow–Leningrad, 1927, with antecedents in his 1924 work). The exact factorial form is textbook standard and appears as the Bernstein condition in Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), §2.8.",
+      "biblio": "The moment condition $\\mathbb{E}\\,|X|^k \\le \\tfrac12\\,k!\\,\\sigma^2\\,b^{k-2}$ is the classical *Bernstein moment condition*, named for S. N. Bernstein, who introduced this family of moment hypotheses to derive exponential tail bounds (S. N. Bernstein, *Theory of Probability*, Moscow–Leningrad, 1927, with antecedents in his 1924 work). The exact factorial form is standard and appears as the Bernstein condition in Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), §2.8.",
       "keys": [
         "lu-bda",
         "bernstein1927",
@@ -3191,7 +3191,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.1, Theorem 6.1 (Step 1)",
-      "biblio": "Textbook folklore with no single seminal paper. The moment (Bernstein) condition and its use to bound the moment generating function trace back to S. N. Bernstein's work on probability inequalities in the 1920s–1930s (S. N. Bernstein, *The Theory of Probabilities*, Moscow–Leningrad, 1927). The modern packaging — that the Bernstein moment condition yields $\\mathbb{E}\\,e^{\\lambda X} \\le \\exp(\\lambda^2\\alpha^2/2)$ on $|\\lambda| \\le 1/\\alpha$ — appears, up to the variance-vs-standard-deviation convention, in Wainwright (2019), §2.1.3, and in R. Vershynin, *High-Dimensional Probability* (2018), §2.7–2.8.",
+      "biblio": "Folklore with no single seminal paper. The moment (Bernstein) condition and its use to bound the moment generating function trace back to S. N. Bernstein's work on probability inequalities in the 1920s–1930s (S. N. Bernstein, *The Theory of Probabilities*, Moscow–Leningrad, 1927). The modern packaging — that the Bernstein moment condition yields $\\mathbb{E}\\,e^{\\lambda X} \\le \\exp(\\lambda^2\\alpha^2/2)$ on $|\\lambda| \\le 1/\\alpha$ — appears, up to the variance-vs-standard-deviation convention, in Wainwright (2019), §2.1.3, and in R. Vershynin, *High-Dimensional Probability* (2018), §2.7–2.8.",
       "keys": [
         "lu-bda",
         "wainwright2019",
@@ -3251,7 +3251,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.1, Theorem 6.1",
-      "biblio": "The inequality originates with S. N. Bernstein, *On a modification of Chebyshev's inequality and of the error formula of Laplace* (in Russian), Annals of the Scientific Institutes of Savings of Ukraine, Mathematical Section, vol. 1 (1924), 38–49; reprinted in his *Collected Works*, Vol. IV, Nauka, Moscow, 1964. Bernstein replaced the Chebyshev second-moment bound by control of all higher moments, interpolating between the sub-Gaussian and sub-exponential regimes. The two-regime tail $\\exp(-nt^2/(2(\\sigma^2+bt)))$ is standard textbook synthesis; see Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), §2.8, and Vershynin, *High-Dimensional Probability* (2018), Theorem 2.8.1.",
+      "biblio": "The inequality originates with S. N. Bernstein, *On a modification of Chebyshev's inequality and of the error formula of Laplace* (in Russian), Annals of the Scientific Institutes of Savings of Ukraine, Mathematical Section, vol. 1 (1924), 38–49; reprinted in his *Collected Works*, Vol. IV, Nauka, Moscow, 1964. Bernstein replaced the Chebyshev second-moment bound by control of all higher moments, interpolating between the sub-Gaussian and sub-exponential regimes. The two-regime tail $\\exp(-nt^2/(2(\\sigma^2+bt)))$ is standard; see Boucheron, Lugosi & Massart, *Concentration Inequalities* (2013), §2.8, and Vershynin, *High-Dimensional Probability* (2018), Theorem 2.8.1.",
       "keys": [
         "lu-bda",
         "bernstein1924",
@@ -3395,7 +3395,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Theorem 6.2",
-      "biblio": "A folklore result with no single seminal origin; the textbook prototype of the maximal-inequality-via-MGF argument. A standard reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities* (Oxford, 2013), §2.5. The same bound appears in P. Massart, *Concentration Inequalities and Model Selection*, Lecture Notes in Mathematics 1896, Springer, 2007. The argument goes back to the classical Cramér–Chernoff method applied to the maximum.",
+      "biblio": "A folklore result with no single seminal origin; the prototype of the maximal-inequality-via-MGF argument. A standard reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities* (Oxford, 2013), §2.5. The same bound appears in P. Massart, *Concentration Inequalities and Model Selection*, Lecture Notes in Mathematics 1896, Springer, 2007. The argument goes back to the classical Cramér–Chernoff method applied to the maximum.",
       "keys": [
         "lu-bda",
         "blm2013",
@@ -3436,7 +3436,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Theorem 6.2",
-      "biblio": "A folklore result with no single seminal origin; the textbook prototype of the maximal-inequality-via-MGF argument. A standard modern reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities* (Oxford, 2013), §2.5 (the maximal inequality $\\mathbb{E}[\\max_j X_j] \\le \\sqrt{2v\\log d}$). The same bound appears in P. Massart, *Concentration Inequalities and Model Selection* (Springer, 2007).",
+      "biblio": "A folklore result with no single seminal origin; the prototype of the maximal-inequality-via-MGF argument. A standard modern reference is S. Boucheron, G. Lugosi, and P. Massart, *Concentration Inequalities* (Oxford, 2013), §2.5 (the maximal inequality $\\mathbb{E}[\\max_j X_j] \\le \\sqrt{2v\\log d}$). The same bound appears in P. Massart, *Concentration Inequalities and Model Selection* (Springer, 2007).",
       "keys": [
         "lu-bda",
         "blm2013",
@@ -3477,7 +3477,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Theorem 6.3",
-      "biblio": "A textbook/folklore result with no single seminal origin: the standard $\\epsilon$-net (discretization) argument for the norm of a sub-Gaussian random vector. The covering/net method goes back to classical metric-entropy arguments (Kolmogorov–Tikhomirov $\\epsilon$-entropy; Sudakov–Dudley chaining). For a modern treatment see R. Vershynin, *High-Dimensional Probability* (2018), §4.4.",
+      "biblio": "A folklore result with no single seminal origin: the standard $\\epsilon$-net (discretization) argument for the norm of a sub-Gaussian random vector. The covering/net method goes back to classical metric-entropy arguments (Kolmogorov–Tikhomirov $\\epsilon$-entropy; Sudakov–Dudley chaining). For a modern treatment see R. Vershynin, *High-Dimensional Probability* (2018), §4.4.",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -3524,7 +3524,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Theorem 6.3",
-      "biblio": "A textbook/folklore result: the standard $\\epsilon$-net discretization argument for the norm of a sub-Gaussian random vector, reducing the supremum over the unit sphere to a finite-net maximum. The covering/net method goes back to classical metric-entropy arguments (Kolmogorov–Tikhomirov). For a modern treatment see R. Vershynin, *High-Dimensional Probability* (2018), §4.4.",
+      "biblio": "A folklore result: the standard $\\epsilon$-net discretization argument for the norm of a sub-Gaussian random vector, reducing the supremum over the unit sphere to a finite-net maximum. The covering/net method goes back to classical metric-entropy arguments (Kolmogorov–Tikhomirov). For a modern treatment see R. Vershynin, *High-Dimensional Probability* (2018), §4.4.",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -3599,7 +3599,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Lemma 6.1",
-      "biblio": "The covering number and the dual packing/capacity numbers originate with A. N. Kolmogorov and V. M. Tikhomirov, *ε-entropy and ε-capacity of sets in function spaces*, Uspekhi Matematicheskikh Nauk **14** (1959), no. 2, 3–86. The covering-number vocabulary is standard textbook material in empirical-process and high-dimensional statistics — see M. J. Wainwright, *High-Dimensional Statistics* (2019), §5.1.",
+      "biblio": "The covering number and the dual packing/capacity numbers originate with A. N. Kolmogorov and V. M. Tikhomirov, *ε-entropy and ε-capacity of sets in function spaces*, Uspekhi Matematicheskikh Nauk **14** (1959), no. 2, 3–86. The covering-number vocabulary is standard material in empirical-process and high-dimensional statistics — see M. J. Wainwright, *High-Dimensional Statistics* (2019), §5.1.",
       "keys": [
         "lu-bda",
         "kolmogorov-tikhomirov1959",
@@ -3634,7 +3634,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§6.2, Lemma 6.1",
-      "biblio": "A folklore volume/packing estimate with no single seminal origin; a standard tool in high-dimensional geometry and the analysis of empirical processes. A textbook statement in the form $N(B, \\|\\cdot\\|_2, \\varepsilon) \\le (1 + 2/\\varepsilon)^d$ appears as R. Vershynin, *High-Dimensional Probability* (2018), Corollary 4.2.13. The volume-comparison technique goes back to the classical bounds on metric entropy of convex bodies (A. N. Kolmogorov and V. M. Tikhomirov, *ε-entropy and ε-capacity of sets in function spaces*, Uspekhi Mat. Nauk 14 (1959)).",
+      "biblio": "A folklore volume/packing estimate with no single seminal origin; a standard tool in high-dimensional geometry and the analysis of empirical processes. A statement in the form $N(B, \\|\\cdot\\|_2, \\varepsilon) \\le (1 + 2/\\varepsilon)^d$ appears as R. Vershynin, *High-Dimensional Probability* (2018), Corollary 4.2.13. The volume-comparison technique goes back to the classical bounds on metric entropy of convex bodies (A. N. Kolmogorov and V. M. Tikhomirov, *ε-entropy and ε-capacity of sets in function spaces*, Uspekhi Mat. Nauk 14 (1959)).",
       "keys": [
         "lu-bda",
         "vershynin2018",
@@ -3907,7 +3907,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§10.2, Theorem 10.1",
-      "biblio": "The restricted eigenvalue condition and the corresponding $\\ell_2$ oracle bound for the Lasso originate with P. J. Bickel, Y. Ritov, and A. B. Tsybakov, \"Simultaneous analysis of Lasso and Dantzig selector,\" *Annals of Statistics* **37**(4): 1705–1732 (2009), which introduces Assumption $\\mathrm{RE}(s, c_0)$ and proves $\\ell_2/\\ell_q$ bounds (their Theorem 7.2). The textbook's Theorem 10.1 specializes this to $c_0 = 3$ with simplified constants; related treatments appear in P. Bühlmann and S. van de Geer, *Statistics for High-Dimensional Data* (Springer, 2011), and in S. van de Geer and P. Bühlmann, \"On the conditions used to prove oracle results for the Lasso,\" *Electronic Journal of Statistics* **3**: 1360–1392 (2009).",
+      "biblio": "The restricted eigenvalue condition and the corresponding $\\ell_2$ oracle bound for the Lasso originate with P. J. Bickel, Y. Ritov, and A. B. Tsybakov, \"Simultaneous analysis of Lasso and Dantzig selector,\" *Annals of Statistics* **37**(4): 1705–1732 (2009), which introduces Assumption $\\mathrm{RE}(s, c_0)$ and proves $\\ell_2/\\ell_q$ bounds (their Theorem 7.2). Theorem 10.1 specializes this to $c_0 = 3$ with simplified constants; related treatments appear in P. Bühlmann and S. van de Geer, *Statistics for High-Dimensional Data* (Springer, 2011), and in S. van de Geer and P. Bühlmann, \"On the conditions used to prove oracle results for the Lasso,\" *Electronic Journal of Statistics* **3**: 1360–1392 (2009).",
       "keys": [
         "lu-bda",
         "bickel-ritov-tsybakov2009",
@@ -4259,7 +4259,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§7.5, Corollary 7.22, Eqs. (7.46)–(7.47)",
-      "biblio": "The primal-dual witness analysis of $\\ell_1$-regularized least squares originates with M. J. Wainwright, \"Sharp thresholds for high-dimensional and noisy sparsity recovery using $\\ell_1$-constrained quadratic programming (Lasso),\" *IEEE Transactions on Information Theory*, vol. 55, no. 5, pp. 2183–2202, 2009. That paper introduced the mutual incoherence and lower-eigenvalue conditions and established the support-recovery thresholds for Gaussian designs; Corollary 7.22 of Wainwright (2019) is the textbook restatement under the i.i.d. sub-Gaussian noise model with a fixed deterministic design.",
+      "biblio": "The primal-dual witness analysis of $\\ell_1$-regularized least squares originates with M. J. Wainwright, \"Sharp thresholds for high-dimensional and noisy sparsity recovery using $\\ell_1$-constrained quadratic programming (Lasso),\" *IEEE Transactions on Information Theory*, vol. 55, no. 5, pp. 2183–2202, 2009. That paper introduced the mutual incoherence and lower-eigenvalue conditions and established the support-recovery thresholds for Gaussian designs; Corollary 7.22 of Wainwright (2019) is the restatement under the i.i.d. sub-Gaussian noise model with a fixed deterministic design.",
       "keys": [
         "wainwright2019",
         "wainwright2009"
@@ -4352,7 +4352,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§9.1, Theorem 9.1",
-      "biblio": "The Restricted Isometry Property and the idea of certifying $\\ell_1$ recovery through restricted isometry constants originate with E. J. Candès and T. Tao, \"Decoding by linear programming,\" *IEEE Transactions on Information Theory*, 51(12):4203–4215, 2005 (exact $\\ell_1$ recovery under $\\delta_{3S} + 3\\delta_{4S} < 2$). The clean single-constant condition was sharpened by E. J. Candès, \"The restricted isometry property and its implications for compressed sensing,\" *Comptes Rendus de l'Académie des Sciences, Paris, Série I*, 346:589–592, 2008, obtaining exact recovery under $\\delta_{2s} < \\sqrt 2 - 1$. The $3s$-RIP form with threshold $\\delta_{3s} < 1/3$ is a textbook variant.",
+      "biblio": "The Restricted Isometry Property and the idea of certifying $\\ell_1$ recovery through restricted isometry constants originate with E. J. Candès and T. Tao, \"Decoding by linear programming,\" *IEEE Transactions on Information Theory*, 51(12):4203–4215, 2005 (exact $\\ell_1$ recovery under $\\delta_{3S} + 3\\delta_{4S} < 2$). The clean single-constant condition was sharpened by E. J. Candès, \"The restricted isometry property and its implications for compressed sensing,\" *Comptes Rendus de l'Académie des Sciences, Paris, Série I*, 346:589–592, 2008, obtaining exact recovery under $\\delta_{2s} < \\sqrt 2 - 1$. The $3s$-RIP form with threshold $\\delta_{3s} < 1/3$ is a variant.",
       "keys": [
         "lu-bda",
         "candes-tao2005",
@@ -4452,7 +4452,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§9.4, Theorem 9.19(a), Eq. (9.48a)",
-      "biblio": "The decomposable-regularizer framework and these bounds originate with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science*, 27(4):538–557, 2012. Wainwright's Theorem 9.19 / Corollary 9.20 are the textbook presentation of that paper's Theorem 1.",
+      "biblio": "The decomposable-regularizer framework and these bounds originate with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science*, 27(4):538–557, 2012. Wainwright's Theorem 9.19 / Corollary 9.20 are the presentation of that paper's Theorem 1.",
       "keys": [
         "wainwright2019",
         "negahban-ravikumar-wainwright-yu2012"
@@ -4522,7 +4522,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§9.4, Theorem 9.19(b), Eq. (9.48b)",
-      "biblio": "The decomposable-regularizer framework and these bounds originate with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science*, 27(4):538–557, 2012, whose Theorem 1 states exactly the squared-error bound under restricted strong convexity (their Definition 2) and the dual-norm condition $\\lambda \\ge 2\\,\\Phi^*(\\nabla\\mathcal{L}(\\theta^\\star))$. Wainwright's Theorem 9.19 is the textbook presentation.",
+      "biblio": "The decomposable-regularizer framework and these bounds originate with S. N. Negahban, P. Ravikumar, M. J. Wainwright and B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science*, 27(4):538–557, 2012, whose Theorem 1 states exactly the squared-error bound under restricted strong convexity (their Definition 2) and the dual-norm condition $\\lambda \\ge 2\\,\\Phi^*(\\nabla\\mathcal{L}(\\theta^\\star))$. Wainwright's Theorem 9.19 is the presentation.",
       "keys": [
         "wainwright2019",
         "negahban-ravikumar-wainwright-yu2012"
@@ -4632,7 +4632,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§9.5.1, Corollary 9.27, Eq. (9.64)",
-      "biblio": "This corollary is the GLM specialization of the unified decomposable-regularizer M-estimation framework of S. N. Negahban, P. Ravikumar, M. J. Wainwright & B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science* **27**(4):538–557, 2012. The $\\ell_\\infty$ bound follows the primal-dual / curvature refinement developed in Wainwright's textbook treatment rather than the original 2012 paper.",
+      "biblio": "This corollary is the GLM specialization of the unified decomposable-regularizer M-estimation framework of S. N. Negahban, P. Ravikumar, M. J. Wainwright & B. Yu, \"A unified framework for high-dimensional analysis of M-estimators with decomposable regularizers,\" *Statistical Science* **27**(4):538–557, 2012. The $\\ell_\\infty$ bound follows the primal-dual / curvature refinement developed in Wainwright's treatment rather than the original 2012 paper.",
       "keys": [
         "wainwright2019",
         "negahban-ravikumar-wainwright-yu2012"
@@ -5270,7 +5270,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.1, Eq. (15.2)",
-      "biblio": "These objects are textbook synthesis of the classical minimax decision-theory framework. The decision-theoretic formulation of minimax risk over a family of distributions traces to A. Wald, *Statistical Decision Functions* (Wiley, 1950). The reduction of minimax estimation to $M$-ary hypothesis testing over a separated family — the engine behind the Le Cam, Fano, and Assouad lower-bound methods — is due to L. Le Cam (*Convergence of estimates under dimensionality restrictions*, Ann. Statist. 1 (1973), 38–53; and *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986), with multi-hypothesis/packing variants developed by P. Assouad (1983) and the information-theoretic Fano bound (see also Ibragimov and Has'minskii, *Statistical Estimation*, Springer, 1981).",
+      "biblio": "These objects are a synthesis of the classical minimax decision-theory framework. The decision-theoretic formulation of minimax risk over a family of distributions traces to A. Wald, *Statistical Decision Functions* (Wiley, 1950). The reduction of minimax estimation to $M$-ary hypothesis testing over a separated family — the engine behind the Le Cam, Fano, and Assouad lower-bound methods — is due to L. Le Cam (*Convergence of estimates under dimensionality restrictions*, Ann. Statist. 1 (1973), 38–53; and *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986), with multi-hypothesis/packing variants developed by P. Assouad (1983) and the information-theoretic Fano bound (see also Ibragimov and Has'minskii, *Statistical Estimation*, Springer, 1981).",
       "keys": [
         "wainwright2019",
         "wald1950",
@@ -5348,7 +5348,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.2.1, Eq. (15.13)",
-      "biblio": "The reduction of estimation to two-point testing originates with L. Le Cam, \"Convergence of Estimates Under Dimensionality Restrictions,\" *The Annals of Statistics* **1** (1973), no. 1, 38–53, which introduced what is now called *Le Cam's method*. The identification of the optimal binary-testing error with the total-variation distance is the classical Neyman–Pearson consequence and is textbook folklore.",
+      "biblio": "The reduction of estimation to two-point testing originates with L. Le Cam, \"Convergence of Estimates Under Dimensionality Restrictions,\" *The Annals of Statistics* **1** (1973), no. 1, 38–53, which introduced what is now called *Le Cam's method*. The identification of the optimal binary-testing error with the total-variation distance is the classical Neyman–Pearson consequence and is folklore.",
       "keys": [
         "wainwright2019",
         "lecam1973"
@@ -5580,7 +5580,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.3.3, Eq. (15.34)",
-      "biblio": "The convexity (KL) bound is textbook synthesis: the standard \"convexity of KL in the second argument\" step underlying the local Fano / Has'minskii (1978) local-packing minimax machinery, with no single seminal origin beyond the joint convexity of the KL divergence itself.",
+      "biblio": "The convexity (KL) bound is folklore: the standard \"convexity of KL in the second argument\" step underlying the local Fano / Has'minskii (1978) local-packing minimax machinery, with no single seminal origin beyond the joint convexity of the KL divergence itself.",
       "keys": [
         "wainwright2019",
         "hasminskii1978"
@@ -5752,7 +5752,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.3.5, Lemma 15.21, Eqs. (15.51)–(15.52)",
-      "biblio": "The result originates with Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *Annals of Statistics*, 27(5):1564–1599, 1999, whose global-entropy device replacing local packings is the paper's central contribution. Wainwright's Lemma 15.21 is the textbook presentation.",
+      "biblio": "The result originates with Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *Annals of Statistics*, 27(5):1564–1599, 1999, whose global-entropy device replacing local packings is the paper's central contribution. Wainwright's Lemma 15.21 is the presentation.",
       "keys": [
         "wainwright2019",
         "yang-barron1999"
@@ -5820,7 +5820,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.3, Lemma 15.3, Eq. (15.10)",
-      "biblio": "L. Le Cam, \"Convergence of Estimates Under Dimensionality Restrictions,\" *The Annals of Statistics* **1**(1), 38–53, 1973, introduced the Hellinger affinity / Hellinger distance as the controlling quantity for testing and estimation rates; the two-sided comparison between total variation and Hellinger distance — of which the inequality $\\mathrm{TV}\\le H\\sqrt{1-H^2/4}$ is the upper bound — originates in this line of work. The sharp constants and clean Cauchy–Schwarz derivation are now standard textbook material.",
+      "biblio": "L. Le Cam, \"Convergence of Estimates Under Dimensionality Restrictions,\" *The Annals of Statistics* **1**(1), 38–53, 1973, introduced the Hellinger affinity / Hellinger distance as the controlling quantity for testing and estimation rates; the two-sided comparison between total variation and Hellinger distance — of which the inequality $\\mathrm{TV}\\le H\\sqrt{1-H^2/4}$ is the upper bound — originates in this line of work. The sharp constants and clean Cauchy–Schwarz derivation are now standard material.",
       "keys": [
         "wainwright2019",
         "lecam1973"
@@ -5936,7 +5936,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.2, Example 15.5",
-      "biblio": "This is a classical textbook example. The uniform shift (location) family is the canonical illustration of a *non-regular* parametric model whose minimax rate $n^{-2}$ is faster than the parametric $n^{-1}$. The analysis via Hellinger-based two-point bounds is folklore (cf. L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986; I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*, Springer, 1981).",
+      "biblio": "This is a classical example. The uniform shift (location) family is the canonical illustration of a *non-regular* parametric model whose minimax rate $n^{-2}$ is faster than the parametric $n^{-1}$. The analysis via Hellinger-based two-point bounds is folklore (cf. L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986; I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory*, Springer, 1981).",
       "keys": [
         "wainwright2019",
         "lecam1986",
@@ -5983,7 +5983,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.3.3, Example 15.14, conditions (15.35a)–(15.35b)",
-      "biblio": "The fixed-design prediction-error minimax rates are the textbook presentation of results from G. Raskutti, M. J. Wainwright, and B. Yu, \"Minimax rates of estimation for high-dimensional linear regression over $\\ell_q$-balls,\" *IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011. That paper derives matching minimax upper and lower bounds, under suitable design regularity, using exactly the Fano / local-packing argument reproduced here.",
+      "biblio": "The fixed-design prediction-error minimax rates are the presentation of results from G. Raskutti, M. J. Wainwright, and B. Yu, \"Minimax rates of estimation for high-dimensional linear regression over $\\ell_q$-balls,\" *IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011. That paper derives matching minimax upper and lower bounds, under suitable design regularity, using exactly the Fano / local-packing argument reproduced here.",
       "keys": [
         "wainwright2019",
         "raskutti-wainwright-yu2011"
@@ -6251,7 +6251,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§13.1, Theorem 13.1",
-      "biblio": "This $O(1/t)$ rate for gradient descent on convex smooth functions is classical folklore in convex optimization with no single seminal paper; it is standard textbook material. The canonical modern reference is Y. Nesterov, *Introductory Lectures on Convex Optimization: A Basic Course*, Applied Optimization 87, Kluwer Academic Publishers, 2004 (cf. Corollary 2.1.2 and the surrounding §2.1.5 analysis of the gradient method for the class $\\mathcal{F}_L^{1,1}$ of convex $L$-smooth functions). The co-coercivity inequality underlying the distance-monotonicity step is itself attributed to the Baillon–Haddad theorem: J.-B. Baillon and G. Haddad, \"Quelques propriétés des opérateurs angle-bornés et n-cycliquement monotones,\" *Israel Journal of Mathematics* 26 (1977), 137–150.",
+      "biblio": "This $O(1/t)$ rate for gradient descent on convex smooth functions is classical folklore in convex optimization with no single seminal paper; it is standard material. The canonical modern reference is Y. Nesterov, *Introductory Lectures on Convex Optimization: A Basic Course*, Applied Optimization 87, Kluwer Academic Publishers, 2004 (cf. Corollary 2.1.2 and the surrounding §2.1.5 analysis of the gradient method for the class $\\mathcal{F}_L^{1,1}$ of convex $L$-smooth functions). The co-coercivity inequality underlying the distance-monotonicity step is itself attributed to the Baillon–Haddad theorem: J.-B. Baillon and G. Haddad, \"Quelques propriétés des opérateurs angle-bornés et n-cycliquement monotones,\" *Israel Journal of Mathematics* 26 (1977), 137–150.",
       "keys": [
         "lu-bda",
         "nesterov2004",
@@ -6310,7 +6310,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§13.2, Theorem 13.2",
-      "biblio": "The Frank–Wolfe (conditional-gradient) method originates with M. Frank and P. Wolfe, \"An algorithm for quadratic programming,\" *Naval Research Logistics Quarterly* **3** (1956), no. 1–2, 95–110, which introduced the projection-free scheme based on a linear oracle for quadratic objectives. The modern $O(1/t)$ convergence analysis with step size $\\eta_t = \\tfrac{2}{t+2}$ and the affine-invariant curvature constant — exactly the form formalized here — is due to M. Jaggi, \"Revisiting Frank–Wolfe: Projection-Free Sparse Convex Optimization,\" *Proceedings of the 30th International Conference on Machine Learning (ICML)*, 2013, pp. 427–435 (the primal $O(1/t)$ rate is Theorem 1 there). The textbook statement is a synthesis of this line of work.",
+      "biblio": "The Frank–Wolfe (conditional-gradient) method originates with M. Frank and P. Wolfe, \"An algorithm for quadratic programming,\" *Naval Research Logistics Quarterly* **3** (1956), no. 1–2, 95–110, which introduced the projection-free scheme based on a linear oracle for quadratic objectives. The modern $O(1/t)$ convergence analysis with step size $\\eta_t = \\tfrac{2}{t+2}$ and the affine-invariant curvature constant — exactly the form formalized here — is due to M. Jaggi, \"Revisiting Frank–Wolfe: Projection-Free Sparse Convex Optimization,\" *Proceedings of the 30th International Conference on Machine Learning (ICML)*, 2013, pp. 427–435 (the primal $O(1/t)$ rate is Theorem 1 there).",
       "keys": [
         "lu-bda",
         "frank-wolfe1956",
@@ -6369,7 +6369,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§14.1, Theorem 14.1",
-      "biblio": "The proximal-gradient (forward–backward splitting) method originates with P. L. Lions and B. Mercier, \"Splitting algorithms for the sum of two nonlinear operators\", *SIAM J. Numer. Anal.* 16 (1979), 964–979, and its modern signal-processing form is developed by P. L. Combettes and V. R. Wajs, \"Signal recovery by proximal forward–backward splitting\", *Multiscale Model. Simul.* 4 (2005), 1168–1200. The explicit $O(1/t)$ objective-gap bound $F(x_t) - F(x^\\star) \\le L\\|x_0 - x^\\star\\|^2/(2t)$ formalized here is Theorem 3.1 of A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", *SIAM J. Imaging Sci.* 2 (2009), 183–202 (where it is stated for the ISTA instance; the accelerated FISTA variant in the same paper achieves $O(1/t^2)$). The textbook statement is a synthesis of this line of work.",
+      "biblio": "The proximal-gradient (forward–backward splitting) method originates with P. L. Lions and B. Mercier, \"Splitting algorithms for the sum of two nonlinear operators\", *SIAM J. Numer. Anal.* 16 (1979), 964–979, and its modern signal-processing form is developed by P. L. Combettes and V. R. Wajs, \"Signal recovery by proximal forward–backward splitting\", *Multiscale Model. Simul.* 4 (2005), 1168–1200. The explicit $O(1/t)$ objective-gap bound $F(x_t) - F(x^\\star) \\le L\\|x_0 - x^\\star\\|^2/(2t)$ formalized here is Theorem 3.1 of A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", *SIAM J. Imaging Sci.* 2 (2009), 183–202 (where it is stated for the ISTA instance; the accelerated FISTA variant in the same paper achieves $O(1/t^2)$).",
       "keys": [
         "lu-bda",
         "lions-mercier1979",
@@ -6429,7 +6429,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§13.3, Theorem 13.3",
-      "biblio": "The algorithm and its $O(1/k^2)$ convergence rate are due to Y. E. Nesterov, \"A method for solving the convex programming problem with convergence rate $O(1/k^2)$\", *Doklady Akademii Nauk SSSR* **269** (3), 543–547, 1983 (in Russian). This is the seminal result establishing that, for convex $L$-smooth objectives, first-order methods can accelerate the gradient-descent $O(1/k)$ rate to the optimal $O(1/k^2)$ rate; the momentum schedule $\\lambda_{t+1} = (1 + \\sqrt{1 + 4\\lambda_t^2})/2$ originates there. The proof technique formalized here (via an estimate-sequence / proximal argument) follows the modern textbook treatment rather than Nesterov's original presentation.",
+      "biblio": "The algorithm and its $O(1/k^2)$ convergence rate are due to Y. E. Nesterov, \"A method for solving the convex programming problem with convergence rate $O(1/k^2)$\", *Doklady Akademii Nauk SSSR* **269** (3), 543–547, 1983 (in Russian). This is the seminal result establishing that, for convex $L$-smooth objectives, first-order methods can accelerate the gradient-descent $O(1/k)$ rate to the optimal $O(1/k^2)$ rate; the momentum schedule $\\lambda_{t+1} = (1 + \\sqrt{1 + 4\\lambda_t^2})/2$ originates there. The proof technique formalized here (via an estimate-sequence / proximal argument) follows the modern treatment rather than Nesterov's original presentation.",
       "keys": [
         "lu-bda",
         "nesterov1983"
@@ -6568,7 +6568,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§13.1, Lemma 13.1",
-      "biblio": "Gradient co-coercivity for convex Lipschitz-smooth functions is the *Baillon–Haddad theorem*: J.-B. Baillon and G. Haddad, \"Quelques propriétés des opérateurs angle-bornés et $n$-cycliquement monotones\", *Israel Journal of Mathematics* **26** (1977), no. 2, pp. 137–150. Their result gives the *sharp* constant: for convex $f$ with $L$-Lipschitz gradient, $\\nabla f$ is $\\tfrac{1}{L}$-co-coercive. The version proved here carries the weaker constant $\\tfrac{1}{2L}$, obtained by the elementary symmetrization of the two descent/convexity inequalities (matching the textbook's Lemma 13.1). A modern self-contained proof of the sharp version appears in H. H. Bauschke and P. L. Combettes, *Convex Analysis and Monotone Operator Theory in Hilbert Spaces*, 2nd ed., Springer, 2017 (Corollary 18.16).",
+      "biblio": "Gradient co-coercivity for convex Lipschitz-smooth functions is the *Baillon–Haddad theorem*: J.-B. Baillon and G. Haddad, \"Quelques propriétés des opérateurs angle-bornés et $n$-cycliquement monotones\", *Israel Journal of Mathematics* **26** (1977), no. 2, pp. 137–150. Their result gives the *sharp* constant: for convex $f$ with $L$-Lipschitz gradient, $\\nabla f$ is $\\tfrac{1}{L}$-co-coercive. The version proved here carries the weaker constant $\\tfrac{1}{2L}$, obtained by the elementary symmetrization of the two descent/convexity inequalities (matching Lemma 13.1). A modern self-contained proof of the sharp version appears in H. H. Bauschke and P. L. Combettes, *Convex Analysis and Monotone Operator Theory in Hilbert Spaces*, 2nd ed., Springer, 2017 (Corollary 18.16).",
       "keys": [
         "lu-bda",
         "baillon-haddad1977",
@@ -6655,7 +6655,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§14.1, Lemma 14.1",
-      "biblio": "This is a textbook synthesis / folklore result with no single seminal origin: it is the standard \"sufficient-decrease\" lemma at the heart of forward–backward (proximal-gradient) splitting and ISTA. The closest canonical references are A. Beck and M. Teboulle, \"A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems,\" *SIAM Journal on Imaging Sciences* 2(1):183–202, 2009 (the key progress estimate appears as Lemma 2.3), and N. Parikh and S. Boyd, \"Proximal Algorithms,\" *Foundations and Trends in Optimization* 1(3):127–239, 2014 (§4.2, convergence of the proximal gradient method). The inequality itself predates these as part of the general forward–backward splitting analysis and is not attributable to a single paper.",
+      "biblio": "This is a folklore result with no single seminal origin: it is the standard \"sufficient-decrease\" lemma at the heart of forward–backward (proximal-gradient) splitting and ISTA. The closest canonical references are A. Beck and M. Teboulle, \"A Fast Iterative Shrinkage-Thresholding Algorithm for Linear Inverse Problems,\" *SIAM Journal on Imaging Sciences* 2(1):183–202, 2009 (the key progress estimate appears as Lemma 2.3), and N. Parikh and S. Boyd, \"Proximal Algorithms,\" *Foundations and Trends in Optimization* 1(3):127–239, 2014 (§4.2, convergence of the proximal gradient method). The inequality itself predates these as part of the general forward–backward splitting analysis and is not attributable to a single paper.",
       "keys": [
         "lu-bda",
         "beck-teboulle2009",
@@ -6722,7 +6722,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§12.2, Proposition 12.2",
-      "biblio": "This is folklore in convex analysis with no single seminal origin. The canonical textbook treatment is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970: the first-order optimality characterization $0 \\in \\partial f(x^\\star)$ is Theorem 27.1 there. The facts are standard across convex-optimization references (e.g. Boyd & Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §4.2.3 and §3.1.7).",
+      "biblio": "This is folklore in convex analysis with no single seminal origin. The canonical treatment is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970: the first-order optimality characterization $0 \\in \\partial f(x^\\star)$ is Theorem 27.1 there. The facts are standard across convex-optimization references (e.g. Boyd & Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §4.2.3 and §3.1.7).",
       "keys": [
         "lu-bda",
         "rockafellar1970",
@@ -6762,7 +6762,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§12.2, Proposition 12.1",
-      "biblio": "This is folklore in convex analysis with no single seminal origin. The canonical textbook treatment is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970: \"every local minimum of a convex function is a global minimum\" follows from the convexity inequality (cf. §27). The facts are standard across convex-optimization references (e.g. Boyd & Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §4.2.3 and §3.1.7).",
+      "biblio": "This is folklore in convex analysis with no single seminal origin. The canonical treatment is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970: \"every local minimum of a convex function is a global minimum\" follows from the convexity inequality (cf. §27). The facts are standard across convex-optimization references (e.g. Boyd & Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §4.2.3 and §3.1.7).",
       "keys": [
         "lu-bda",
         "rockafellar1970",
@@ -6802,7 +6802,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§12.2, Definition 12.3",
-      "biblio": "This is classical, folklore convex analysis with no single seminal origin. The standard reference is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970 — the equivalence between differentiability and the gradient being the unique subgradient is Theorem 25.1 there, building on the basic subgradient inequality of §23. The result is also standard textbook material in, e.g., Boyd & Vandenberghe, *Convex Optimization* (Cambridge, 2004), §3.1.3.",
+      "biblio": "This is classical, folklore convex analysis with no single seminal origin. The standard reference is R. T. Rockafellar, *Convex Analysis*, Princeton University Press, 1970 — the equivalence between differentiability and the gradient being the unique subgradient is Theorem 25.1 there, building on the basic subgradient inequality of §23. The result is also standard material in, e.g., Boyd & Vandenberghe, *Convex Optimization* (Cambridge, 2004), §3.1.3.",
       "keys": [
         "lu-bda",
         "rockafellar1970",
@@ -6830,7 +6830,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§13.1, Definition 13.1",
-      "biblio": "$L$-smoothness via the quadratic upper bound is classical folklore of smooth convex optimization with no single seminal origin; the modern textbook treatment is Y. Nesterov, *Lectures on Convex Optimization*, 2nd ed., Springer, 2018 (and the earlier *Introductory Lectures on Convex Optimization*, Kluwer, 2004), where the equivalence between Lipschitz-continuous gradient and the quadratic bound appears as the standard \"descent lemma.\"",
+      "biblio": "$L$-smoothness via the quadratic upper bound is classical folklore of smooth convex optimization with no single seminal origin; the modern treatment is Y. Nesterov, *Lectures on Convex Optimization*, 2nd ed., Springer, 2018 (and the earlier *Introductory Lectures on Convex Optimization*, Kluwer, 2004), where the equivalence between Lipschitz-continuous gradient and the quadratic bound appears as the standard \"descent lemma.\"",
       "keys": [
         "lu-bda",
         "nesterov2018",
@@ -6858,7 +6858,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§12.2, Definition 12.3",
-      "biblio": "The subgradient and subdifferential of a convex function are foundational notions of convex analysis with no single seminal origin in the textbook sense; they are folklore traceable to the development of convex analysis in the 1960s. The standard reference is R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, Princeton University Press, 1970 (see §23, \"Subgradients\"), which fixed the now-standard definition $\\partial f(x) = \\{\\, g : f(y) \\ge f(x) + \\langle g, y - x\\rangle\\ \\forall y\\,\\}$ and the inclusion $\\nabla f(x) \\in \\partial f(x)$ in the differentiable case.",
+      "biblio": "The subgradient and subdifferential of a convex function are foundational notions of convex analysis with no single seminal origin; they are folklore traceable to the development of convex analysis in the 1960s. The standard reference is R. T. Rockafellar, *Convex Analysis*, Princeton Mathematical Series 28, Princeton University Press, 1970 (see §23, \"Subgradients\"), which fixed the now-standard definition $\\partial f(x) = \\{\\, g : f(y) \\ge f(x) + \\langle g, y - x\\rangle\\ \\forall y\\,\\}$ and the inclusion $\\nabla f(x) \\in \\partial f(x)$ in the differentiable case.",
       "keys": [
         "lu-bda",
         "rockafellar1970"
@@ -6885,7 +6885,7 @@
     "reference": {
       "formal": "Junwei Lu, *Big Data Analysis*, Springer Nature Switzerland, 2025.",
       "pointer": "§14.1",
-      "biblio": "The proximal mapping (\"proximité\") was introduced by J.-J. Moreau, *Proximité et dualité dans un espace hilbertien*, Bulletin de la Société Mathématique de France, vol. 93, pp. 273–299, 1965, where the associated infimal-convolution regularization is now called the Moreau envelope. The notion underpins modern proximal-gradient and splitting methods; the textbook presentation here is standard.",
+      "biblio": "The proximal mapping (\"proximité\") was introduced by J.-J. Moreau, *Proximité et dualité dans un espace hilbertien*, Bulletin de la Société Mathématique de France, vol. 93, pp. 273–299, 1965, where the associated infimal-convolution regularization is now called the Moreau envelope. The notion underpins modern proximal-gradient and splitting methods; the presentation here is standard.",
       "keys": [
         "lu-bda",
         "moreau1965"
@@ -7456,7 +7456,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.3, Eq. (15.5)",
-      "biblio": "The total variation distance and its equivalent forms (supremum over events, one-half of the $L^1$ distance between densities, and the $\\min(p,q)$ / coupling-type variational representation) are classical folklore of statistical distances with no single seminal origin. The variational form and its use to bound testing error trace to L. Le Cam's theory of statistical experiments — see L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986 — but the elementary identities are reproduced as textbook material in Wainwright (2019).",
+      "biblio": "The total variation distance and its equivalent forms (supremum over events, one-half of the $L^1$ distance between densities, and the $\\min(p,q)$ / coupling-type variational representation) are classical folklore of statistical distances with no single seminal origin. The variational form and its use to bound testing error trace to L. Le Cam's theory of statistical experiments — see L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986 — but the elementary identities are reproduced in Wainwright (2019).",
       "keys": [
         "wainwright2019",
         "lecam1986"
@@ -7495,7 +7495,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.3, Eq. (15.6)",
-      "biblio": "The three equivalent forms of the total variation distance are classical folklore of statistical distances with no single seminal origin; the variational form and its use to bound testing error trace to L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986, and the density identity used here is reproduced as textbook material in Wainwright (2019).",
+      "biblio": "The three equivalent forms of the total variation distance are classical folklore of statistical distances with no single seminal origin; the variational form and its use to bound testing error trace to L. Le Cam, *Asymptotic Methods in Statistical Decision Theory*, Springer, 1986, and the density identity used here is reproduced in Wainwright (2019).",
       "keys": [
         "wainwright2019",
         "lecam1986"
@@ -7529,7 +7529,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.3, Eq. (15.11b)",
-      "biblio": "The KL divergence originates with S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *The Annals of Mathematical Statistics* **22** (1951), no. 1, 79–86. The tensorization identity is textbook folklore following from the chain rule for relative entropy; the mixture-minimization companion property (also proved in this file) is used to obtain the mutual-information minimax bound of Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *The Annals of Statistics* **27** (1999), no. 5, 1564–1599.",
+      "biblio": "The KL divergence originates with S. Kullback and R. A. Leibler, \"On Information and Sufficiency,\" *The Annals of Mathematical Statistics* **22** (1951), no. 1, 79–86. The tensorization identity is folklore following from the chain rule for relative entropy; the mixture-minimization companion property (also proved in this file) is used to obtain the mutual-information minimax bound of Y. Yang and A. Barron, \"Information-theoretic determination of minimax rates of convergence,\" *The Annals of Statistics* **27** (1999), no. 5, 1564–1599.",
       "keys": [
         "wainwright2019",
         "kullback-leibler1951",
@@ -7564,7 +7564,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "§15.1.3, Eq. (15.9)",
-      "biblio": "The Hellinger distance is named after Ernst Hellinger, who introduced the underlying square-root-density geometry in E. Hellinger, \"Neue Begründung der Theorie quadratischer Formen von unendlichvielen Veränderlichen,\" *Journal für die reine und angewandte Mathematik* **136** (1909), 210–271. Its modern statistical use — the squared form, the range $[0,2]$, and tensorization across i.i.d. coordinates — is textbook folklore; the functional is a monotone transform of the Bhattacharyya affinity, A. Bhattacharyya, \"On a measure of divergence between two statistical populations defined by their probability distributions,\" *Bulletin of the Calcutta Mathematical Society* **35** (1943), 99–109.",
+      "biblio": "The Hellinger distance is named after Ernst Hellinger, who introduced the underlying square-root-density geometry in E. Hellinger, \"Neue Begründung der Theorie quadratischer Formen von unendlichvielen Veränderlichen,\" *Journal für die reine und angewandte Mathematik* **136** (1909), 210–271. Its modern statistical use — the squared form, the range $[0,2]$, and tensorization across i.i.d. coordinates — is folklore; the functional is a monotone transform of the Bhattacharyya affinity, A. Bhattacharyya, \"On a measure of divergence between two statistical populations defined by their probability distributions,\" *Bulletin of the Calcutta Mathematical Society* **35** (1943), 99–109.",
       "keys": [
         "wainwright2019",
         "hellinger1909",
@@ -7726,7 +7726,7 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "Ch. 5, Example 5.3, Eq. (5.3)",
-      "biblio": "The bound originates independently with E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Gilbert proved existence of codes meeting the volume (sphere-covering) lower bound on code size at a prescribed minimum distance; Varshamov sharpened the construction to linear codes. The greedy/maximal-packing rendering used here is the standard textbook form, specialized by Wainwright's Example 5.3 to the rescaled Hamming metric.",
+      "biblio": "The bound originates independently with E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Gilbert proved existence of codes meeting the volume (sphere-covering) lower bound on code size at a prescribed minimum distance; Varshamov sharpened the construction to linear codes. The greedy/maximal-packing rendering used here is the standard form, specialized by Wainwright's Example 5.3 to the rescaled Hamming metric.",
       "keys": [
         "wainwright2019",
         "gilbert1952",
@@ -7773,11 +7773,849 @@
     "reference": {
       "formal": "M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*, Cambridge University Press, 2019.",
       "pointer": "Ch. 5, Example 5.8",
-      "biblio": "The existence of an exponentially large, constant-separated subset of the unit sphere is textbook folklore following from a volume/covering argument. The combinatorial engine used here — a binary code on $n$ bits with minimum Hamming distance $\\ge n/4$ and exponentially many codewords — is the Gilbert–Varshamov bound, due independently to E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Wainwright presents the sphere-packing consequence as Example 5.8.",
+      "biblio": "The existence of an exponentially large, constant-separated subset of the unit sphere is folklore following from a volume/covering argument. The combinatorial engine used here — a binary code on $n$ bits with minimum Hamming distance $\\ge n/4$ and exponentially many codewords — is the Gilbert–Varshamov bound, due independently to E. N. Gilbert, \"A comparison of signalling alphabets,\" *Bell System Technical Journal* **31** (1952), 504–522, and R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117** (1957), 739–741. Wainwright presents the sphere-packing consequence as Example 5.8.",
       "keys": [
         "wainwright2019",
         "gilbert1952",
         "varshamov1957"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-psi1-bernstein",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "bernstein_subexponential",
+    "fullName": "StatLean.ConcentrationInequalities.bernstein_subexponential",
+    "title": "Bernstein's Inequality (ψ₁ norm)",
+    "citation": "Vershynin (2018), Thm 2.9.1",
+    "shortRef": "Vershynin (2018), Thm 2.9.1",
+    "file": "StatLean/ConcentrationInequalities/Orlicz/Bernstein.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Orlicz/Bernstein.html#StatLean.ConcentrationInequalities.bernstein_subexponential",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">independent</span>, <span data-link=\"h2\">mean-zero</span> sub-exponential random variables, each with <span data-link=\"h3\">sub-exponential norm $\\|X_i\\|_{\\psi_1} \\le K_i$</span> for some <span data-link=\"h4\">positive scales $K_i > 0$</span>. Then for every <span data-link=\"h5\">$t \\ge 0$</span>, $$\\mathbb{P}\\!\\left(\\left|\\sum_{i=1}^{n} X_i\\right| \\ge t\\right) \\;\\le\\; 2\\exp\\!\\left[-\\min\\!\\left(\\frac{t^2}{16\\sum_{i} K_i^2},\\; \\frac{t}{4\\max_i K_i}\\right)\\right].$$ The book's absolute constant $c$ is realized here as $c = 1/16$ in the quadratic (small-$t$) regime and $c = 1/4$ in the linear (large-$t$) regime.</p>",
+    "summary": "For independent mean-zero sub-exponential variables with psi-1 norms at most K_i, the absolute sum exceeds t with probability at most 2 exp of minus the minimum of t-squared over 16 sum K_i-squared and t over 4 max K_i.",
+    "leanSignature": "theorem bernstein_subexponential\n    [IsProbabilityMeasure μ] {n : ℕ} {X : Fin n → Ω → ℝ} {K : Fin n → ℝ≥0}\n    (hn : 0 < n)\n    (hmeas : ∀ i, Measurable (X i))\n    (hindep : ProbabilityTheory.iIndepFun X μ)\n    (hmean : ∀ i, ∫ x, X i x ∂μ = 0)\n    (hK : ∀ i, 0 < K i)\n    (hnorm : ∀ i, subExponentialNorm (X i) μ ≤ K i)\n    {t : ℝ}\n    (ht : 0 ≤ t) :\n    μ {ω | t ≤ |∑ i, X i ω|} ≤\n      ENNReal.ofReal (2 * Real.exp (-(min (t ^ 2 / (16 * ∑ i, (K i : ℝ) ^ 2))\n        (t / (4 * ((Finset.univ.sup K : ℝ≥0) : ℝ))))))",
+    "formalizationNotes": "Constants are explicit: the exponent is $\\min\\!\\left(t^2/(16\\sum K_i^2),\\, t/(4\\max_i K_i)\\right)$, so the book's absolute constant $c$ is realized as $1/16$ in the quadratic regime and $1/4$ in the linear regime, obtained from the restricted MGF bound $\\mathbb{E}e^{\\lambda X} \\le e^{4\\lambda^2 K^2}$ for $|\\lambda| \\le 1/(2K)$ via Chernoff. The positivity hypothesis $K_i > 0$ is a mild documented strengthening (a zero bound forces $X_i = 0$ a.e., removable by reindexing).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independence",
+        "note": "The summands are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmean",
+        "label": "Mean-zero",
+        "note": "Each variable has zero expectation."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hnorm",
+        "label": "ψ₁ norm bound",
+        "note": "Each Xᵢ has sub-exponential norm at most Kᵢ."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hK",
+        "label": "Positive scales",
+        "note": "Each norm bound Kᵢ is strictly positive."
+      },
+      {
+        "id": "h5",
+        "leanToken": "ht",
+        "label": "t ≥ 0",
+        "note": "Nonnegative deviation level."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§2.9, Theorem 2.9.1",
+      "biblio": "Bernstein-type inequalities for unbounded variables under exponential-moment conditions go back to S. N. Bernstein in the 1920s–1930s; the $\\psi_1$-norm formulation is the modern synthesis due to Vershynin. The moment-condition variant is a deliberately distinct result.",
+      "keys": [
+        "vershynin2018",
+        "bernstein1924"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-subgaussian-vector-norm",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "subGaussianVecNorm_le_of_indep",
+    "fullName": "StatLean.ConcentrationInequalities.subGaussianVecNorm_le_of_indep",
+    "title": "Sub-Gaussian Norm of a Random Vector",
+    "citation": "Vershynin (2018), Lem 3.4.2",
+    "shortRef": "Vershynin (2018), Lem 3.4.2",
+    "file": "StatLean/ConcentrationInequalities/Orlicz/VectorNorm.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Orlicz/VectorNorm.html#StatLean.ConcentrationInequalities.subGaussianVecNorm_le_of_indep",
+    "informal": "<p>The sub-Gaussian norm of a random vector $X$ in $\\mathbb{R}^n$ is $\\|X\\|_{\\psi_2} = \\sup_{v \\in S^{n-1}} \\|\\langle X, v\\rangle\\|_{\\psi_2}$, the largest sub-Gaussian norm among its one-dimensional marginals. If the coordinates $X_1, \\dots, X_n$ are <span data-link=\"h1\">independent</span> and <span data-link=\"h2\">mean-zero</span>, each with <span data-link=\"h3\">sub-Gaussian norm at most $K$</span> for some <span data-link=\"h4\">$K > 0$</span>, then the whole vector is sub-Gaussian and $$\\|X\\|_{\\psi_2} \\;\\le\\; \\sqrt{18}\\,K \\;=\\; 3\\sqrt{2}\\,K.$$</p>",
+    "summary": "For a random vector with independent mean-zero coordinates each of sub-Gaussian norm at most K, the vector's sub-Gaussian norm is at most the square root of 18 times K.",
+    "leanSignature": "theorem subGaussianVecNorm_le_of_indep\n    {μ : Measure Ω}\n    [IsProbabilityMeasure μ] {n : ℕ}\n    {X : Ω → EuclideanSpace ℝ (Fin n)} {K : ℝ≥0}\n    (hK : 0 < K)\n    (hmeas : ∀ i, Measurable (fun ω => X ω i))\n    (hindep : ProbabilityTheory.iIndepFun (fun i ω => X ω i) μ)\n    (hmean : ∀ i, ∫ x, X x i ∂μ = 0)\n    (hnorm : ∀ i, subGaussianNorm (fun ω => X ω i) μ ≤ K) :\n    subGaussianVecNorm X μ ≤ (NNReal.sqrt 18 * K : ℝ≥0∞)",
+    "formalizationNotes": "The vector norm is a supremum of $\\mathbb{R}_{\\ge 0}^{\\infty}$-valued marginal norms over the unit sphere of $\\mathrm{EuclideanSpace}\\,\\mathbb{R}\\,(\\mathrm{Fin}\\,n)$. The companion lower bound $\\max_i \\|X_i\\|_{\\psi_2} \\le \\|X\\|_{\\psi_2}$ holds with constant $1$; the upper bound is frozen at the book's absolute constant $C = \\sqrt{18} = 3\\sqrt{2}$. The positive-bound hypothesis $K > 0$ is a mild documented strengthening.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independent coordinates",
+        "note": "The coordinates of X are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmean",
+        "label": "Mean-zero coordinates",
+        "note": "Each coordinate has zero expectation."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hnorm",
+        "label": "Uniform ψ₂ bound",
+        "note": "Every coordinate has sub-Gaussian norm at most K."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hK",
+        "label": "K > 0",
+        "note": "The uniform norm bound is positive."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§3.4, Lemma 3.4.2",
+      "biblio": "The definition of sub-Gaussian random vectors through one-dimensional marginals and the control of a vector's norm by its coordinate norms under independence are standard; see also D. Hsu, S. M. Kakade & T. Zhang, \"A tail inequality for quadratic forms of subgaussian random vectors,\" *Electronic Communications in Probability* 17 (2012), for the quadratic sequel.",
+      "keys": [
+        "vershynin2018"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-subgaussian-equiv",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "subGaussianNorm",
+    "fullName": "StatLean.ConcentrationInequalities.subGaussianNorm",
+    "title": "Sub-Gaussian (ψ₂) Norm",
+    "citation": "Vershynin (2018), Def 2.6.4",
+    "shortRef": "Vershynin (2018), Def 2.6.4",
+    "file": "StatLean/ConcentrationInequalities/Orlicz/Defs.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Orlicz/Defs.html#StatLean.ConcentrationInequalities.subGaussianNorm",
+    "informal": "<p>For a real random variable $X$, the <em>sub-Gaussian norm</em> is $$\\|X\\|_{\\psi_2} \\;=\\; \\inf\\!\\left\\{ K > 0 \\;:\\; \\mathbb{E}\\,\\exp\\!\\left(X^2/K^2\\right) \\le 2 \\right\\},$$ with the convention $\\inf\\emptyset = +\\infty$. Equivalently it is the Luxemburg (Orlicz) norm for the generator $\\psi_2(x) = e^{x^2} - 1$, since $\\mathbb{E}\\,\\psi_2(|X|/K) \\le 1 \\iff \\mathbb{E}\\,\\exp(X^2/K^2) \\le 2$. The norm equals $+\\infty$ exactly when $X$ is not sub-Gaussian.</p>",
+    "summary": "The sub-Gaussian norm of X is the smallest scale K for which the expectation of exp of X-squared over K-squared is at most two.",
+    "leanSignature": "noncomputable def subGaussianNorm (X : Ω → ℝ)\n    (μ : Measure Ω := by volume_tac) : ℝ≥0∞ :=\n  orliczNorm psiTwo X μ",
+    "formalizationNotes": "The norm is $\\mathbb{R}_{\\ge 0}^{\\infty}$-valued, following Mathlib's `eLpNorm` precedent: it equals $\\top$ exactly when $X$ is not sub-Gaussian. The gauge condition is stated with a lower Lebesgue integral, so no integrability side conditions enter the definition; the threshold-$1$ Luxemburg convention reproduces the book's threshold-$2$ MGF condition exactly.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§2.6, Definition 2.6.4",
+      "biblio": "Orlicz spaces originate with W. Orlicz, \"Über eine gewisse Klasse von Räumen vom Typus B,\" *Bulletin International de l'Académie Polonaise* Ser. A 8/9 (1932), 207–220; the gauge-functional (Luxemburg) form used here is due to W. A. J. Luxemburg, *Banach Function Spaces* (thesis, Delft, 1955). The $\\psi_2$ and $\\psi_1$ special cases as the standard carriers of sub-Gaussian and sub-exponential behavior follow Vershynin; see also Buldygin & Kozachenko, *Metric Characterization of Random Variables and Random Processes*, AMS, 2000.",
+      "keys": [
+        "vershynin2018",
+        "buldygin-kozachenko1980"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-symmetrization",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "symmetrization_upper",
+    "fullName": "StatLean.ConcentrationInequalities.symmetrization_upper",
+    "title": "Symmetrization Inequality",
+    "citation": "Vershynin (2018), Lem 6.3.2",
+    "shortRef": "Vershynin (2018), Lem 6.3.2",
+    "file": "StatLean/ConcentrationInequalities/Symmetrization/Symmetrization.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Symmetrization/Symmetrization.html#StatLean.ConcentrationInequalities.symmetrization_upper",
+    "informal": "<p>Let $X_1,\\dots,X_N$ be <span data-link=\"h1\">independent</span>, <span data-link=\"h2\">mean-zero</span>, <span data-link=\"h3\">integrable</span> random vectors taking values in a Banach space $E$, and let $\\varepsilon_1,\\dots,\\varepsilon_N$ be independent Rademacher signs (each $\\pm1$ with equal probability), drawn independently of the $X_i$. Then the expected norm of the plain sum is controlled by the expected norm of the sign-randomized sum: $$\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N X_i\\Bigr\\| \\;\\le\\; 2\\,\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N \\varepsilon_i X_i\\Bigr\\|.$$ Here the signs live on the product extension of the sample space with the canonical Rademacher law. The companion lower bound $\\tfrac12\\,\\mathbb{E}\\|\\sum_i\\varepsilon_i X_i\\| \\le \\mathbb{E}\\|\\sum_i X_i\\|$ holds as well.</p>",
+    "summary": "For independent mean-zero integrable random vectors, the expected norm of the sum is at most twice the expected norm of the Rademacher sign-randomized sum.",
+    "leanSignature": "theorem symmetrization_upper {μ : Measure Ω} [IsProbabilityMeasure μ]\n    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]\n    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {N : ℕ}\n    {X : Fin N → Ω → E}\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_int : ∀ i, Integrable (X i) μ)\n    (hX_mean : ∀ i, ∫ ω, X i ω ∂μ = 0)\n    (hX_indep : iIndepFun X μ) :\n    ∫ ω, ‖∑ i, X i ω‖ ∂μ\n      ≤ 2 * ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (signVec N))",
+    "formalizationNotes": "The public form carries mean-zero, integrability, and independence exactly as the book requires; the underlying canonical upper bound is proven in centered form with no mean-zero hypothesis, since the centering constant cancels in the difference of two independent copies. Both factors are $2$, exactly as in the book, and both directions hold at $N=0$ (empty sums). Per-coordinate integrability is the book's $\\mathbb{E}\\|X_i\\|<\\infty$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hX_indep",
+        "label": "Independence",
+        "note": "The random vectors are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hX_mean",
+        "label": "Mean zero",
+        "note": "Each vector has zero expectation."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hX_int",
+        "label": "Integrable",
+        "note": "Each vector has finite expected norm."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§6.3, Lemma 6.3.2",
+      "biblio": "Symmetrization goes back to P. Lévy; the modern two-sided Banach-space form is due to J.-P. Kahane and is often called the Kahane symmetrization lemma (Kahane, *Some Random Series of Functions*, 1968; Ledoux and Talagrand, *Probability in Banach Spaces*, 1991, Lemma 6.3).",
+      "keys": [
+        "vershynin2018",
+        "levy1925",
+        "kahane1960",
+        "ledoux-talagrand1991"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-contraction",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "contraction_principle",
+    "fullName": "StatLean.ConcentrationInequalities.contraction_principle",
+    "title": "Contraction Principle",
+    "citation": "Vershynin (2018), Thm 6.6.1",
+    "shortRef": "Vershynin (2018), Thm 6.6.1",
+    "file": "StatLean/ConcentrationInequalities/Symmetrization/Contraction.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Symmetrization/Contraction.html#StatLean.ConcentrationInequalities.contraction_principle",
+    "informal": "<p>Fix vectors $x_1,\\dots,x_N$ in a normed space and real coefficients $a_1,\\dots,a_N$, and let $\\varepsilon_1,\\dots,\\varepsilon_N$ be independent Rademacher signs. Then averaging over the signs, $$\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N a_i\\varepsilon_i x_i\\Bigr\\| \\;\\le\\; \\|a\\|_\\infty\\,\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N \\varepsilon_i x_i\\Bigr\\|,$$ where $\\|a\\|_\\infty = \\max_i |a_i|$ is the sharp constant, so no numerical factor is lost. The inequality holds for every choice of $x$ and $a$, with both sides vanishing when $N=0$.</p>",
+    "summary": "For fixed vectors and coefficients, the expected norm of the coefficient-weighted Rademacher sum is at most the sup-norm of the coefficients times the expected norm of the plain sign sum.",
+    "leanSignature": "theorem contraction_principle {E : Type*} [NormedAddCommGroup E]\n    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]\n    [SecondCountableTopology E] {N : ℕ} (x : Fin N → E) (a : Fin N → ℝ) :\n    ∫ s, ‖∑ i, (a i * s i) • x i‖ ∂(signVec N)\n      ≤ ‖a‖ * ∫ s, ‖∑ i, s i • x i‖ ∂(signVec N)",
+    "formalizationNotes": "The sharp factor $\\|a\\|_\\infty$ is realized as Mathlib's Fintype Pi sup-norm on $\\mathbb{R}^N$, with no hidden constant. The book's convexity/maximum-principle argument is replaced by an elementary single-coordinate convexification with strong induction on the number of non-vertex coordinates; the statement is total in $x$ and $a$ (no hypotheses).",
+    "hypotheses": [],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§6.6, Theorem 6.6.1",
+      "biblio": "The contraction principle is due to J.-P. Kahane (*Some Random Series of Functions*, 1968); the general Lipschitz-contraction form is Ledoux and Talagrand, *Probability in Banach Spaces* (1991), Theorem 4.4.",
+      "keys": [
+        "vershynin2018",
+        "kahane1960",
+        "ledoux-talagrand1991"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-gaussian-symmetrization",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "gaussian_symmetrization_upper",
+    "fullName": "StatLean.ConcentrationInequalities.gaussian_symmetrization_upper",
+    "title": "Gaussian Symmetrization",
+    "citation": "Vershynin (2018), Lem 6.6.2",
+    "shortRef": "Vershynin (2018), Lem 6.6.2",
+    "file": "StatLean/ConcentrationInequalities/Symmetrization/Gaussian.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Symmetrization/Gaussian.html#StatLean.ConcentrationInequalities.gaussian_symmetrization_upper",
+    "informal": "<p>Let $X_1,\\dots,X_N$ be <span data-link=\"h1\">independent</span>, <span data-link=\"h2\">mean-zero</span>, <span data-link=\"h3\">integrable</span> random vectors in a Banach space $E$, and let $g_1,\\dots,g_N$ be independent standard Gaussian multipliers, drawn independently of the $X_i$. Then $$\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N X_i\\Bigr\\| \\;\\le\\; 3\\,\\mathbb{E}\\Bigl\\|\\sum_{i=1}^N g_i X_i\\Bigr\\|,$$ with the Gaussian multipliers living on the product extension of the sample space with the standard Gaussian law. The displayed constant $3$ is the book's headline; the sharp constant $\\sqrt{2\\pi}\\approx 2.507$ is also available.</p>",
+    "summary": "For independent mean-zero integrable random vectors, the expected norm of the sum is at most three times the expected norm of the Gaussian-multiplied sum.",
+    "leanSignature": "theorem gaussian_symmetrization_upper {μ : Measure Ω} [IsProbabilityMeasure μ]\n    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]\n    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E] {N : ℕ}\n    {X : Fin N → Ω → E}\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_int : ∀ i, Integrable (X i) μ)\n    (hX_mean : ∀ i, ∫ ω, X i ω ∂μ = 0)\n    (hX_indep : iIndepFun X μ) :\n    ∫ ω, ‖∑ i, X i ω‖ ∂μ\n      ≤ 3 * ∫ p, ‖∑ i, p.2 i • X i p.1‖ ∂(μ.prod (gaussVec N))",
+    "formalizationNotes": "The book's display constant $3$ is obtained as a headline from the sharp constant $\\sqrt{2\\pi}$ (proven separately from the exact first absolute Gaussian moment $\\mathbb{E}|g|=\\sqrt{2/\\pi}$) via $\\sqrt{2\\pi}\\le 3$. Integrability of each $X_i$ is the book's $\\mathbb{E}\\|X_i\\|<\\infty$; the companion lower bound loses the documented $\\sqrt{\\log N}$ factor.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hX_indep",
+        "label": "Independence",
+        "note": "The random vectors are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hX_mean",
+        "label": "Mean zero",
+        "note": "Each vector has zero expectation."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hX_int",
+        "label": "Integrable",
+        "note": "Each vector has finite expected norm."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§6.6, Lemma 6.6.2",
+      "biblio": "Gaussian-Rademacher comparison is classical Banach-space theory: the upper direction and the $\\sqrt{\\log N}$ loss trace to unconditionality arguments in Ledoux and Talagrand, *Probability in Banach Spaces* (1991), §4.2, where the loss is shown necessary at $\\ell_\\infty^N$.",
+      "keys": [
+        "vershynin2018",
+        "ledoux-talagrand1991"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-empirical-symmetrization",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "empirical_symmetrization",
+    "fullName": "StatLean.ConcentrationInequalities.empirical_symmetrization",
+    "title": "Symmetrization of Empirical Processes",
+    "citation": "Vershynin (2018), Ex 8.11",
+    "shortRef": "Vershynin (2018), Ex 8.11",
+    "file": "StatLean/ConcentrationInequalities/Symmetrization/Empirical.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Symmetrization/Empirical.html#StatLean.ConcentrationInequalities.empirical_symmetrization",
+    "informal": "<p>Let $X_1,\\dots,X_n$ be an <span data-link=\"h1\">independent</span> sample <span data-link=\"h2\">drawn from a common law $P$</span> on a space $\\mathcal{X}$, and let $\\{f_k\\}_{k}$ be a finite class of measurable functions that is <span data-link=\"h3\">uniformly bounded, $|f_k|\\le 1$</span>. Writing $\\varepsilon_1,\\dots,\\varepsilon_n$ for independent Rademacher signs, the expected supremum of the centered empirical averages is controlled by its symmetrized version: $$\\mathbb{E}\\,\\sup_{k}\\Bigl|\\frac1n\\sum_{i=1}^n f_k(X_i) - \\mathbb{E}_P f_k\\Bigr| \\;\\le\\; 2\\,\\mathbb{E}\\,\\sup_{k}\\Bigl|\\frac1n\\sum_{i=1}^n \\varepsilon_i f_k(X_i)\\Bigr|.$$ The right-hand side is deliberately uncentered, and the signs live on the product extension of the sample space with the Rademacher law.</p>",
+    "summary": "For an iid sample and a uniformly bounded function class, the expected supremum of centered empirical averages is at most twice the expected supremum of the Rademacher-symmetrized averages.",
+    "leanSignature": "theorem empirical_symmetrization {α : Type*} [MeasurableSpace α] {ι : Type*}\n    [Fintype ι] [Nonempty ι] {μ : Measure Ω} [IsProbabilityMeasure μ] {n : ℕ}\n    [NeZero n] {X : Fin n → Ω → α} {P : Measure α} [IsProbabilityMeasure P]\n    (hX_meas : ∀ i, Measurable (X i))\n    (hX_indep : ProbabilityTheory.iIndepFun X μ)\n    (hX_law : ∀ i, μ.map (X i) = P)\n    {F : ι → α → ℝ}\n    (hF_meas : ∀ k, Measurable (F k))\n    (hF_bdd : ∀ k x, |F k x| ≤ 1) :\n    ∫ ω, ⨆ k, |(n : ℝ)⁻¹ * (∑ i, F k (X i ω)) - ∫ x, F k x ∂P| ∂μ\n      ≤ 2 * ∫ p, ⨆ k, |(n : ℝ)⁻¹ * ∑ i, p.2 i * F k (X i p.1)|\n          ∂(μ.prod (signVec n))",
+    "formalizationNotes": "Instantiated from the canonical symmetrization bound at $E=\\mathbb{R}^\\iota$ with the Fintype sup-norm and data $Z_i(\\omega)=n^{-1}f_k(X_i(\\omega))$; the centering constant cancels in $Z_i-Z_i'$, which is exactly why the right-hand side is uncentered. The condition $n\\ge 1$ ($n\\ne 0$) is genuine, since the statement is false at $n=0$, and the class is stated with $|f_k|\\le 1$ rather than $\\{0,1\\}$-valued, a mild free generalization of the book's Boolean class.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hX_indep",
+        "label": "Independent sample",
+        "note": "The observations are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hX_law",
+        "label": "Common law P",
+        "note": "Each observation has the same distribution P."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hF_bdd",
+        "label": "Uniformly bounded class",
+        "note": "Every function in the class is bounded by one in absolute value."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.3, Exercise 8.11",
+      "biblio": "Symmetrization of empirical processes is the Giné-Zinn school's basic tool, going back to V. N. Vapnik and A. Ya. Chervonenkis (1971) and formalized in E. Giné and J. Zinn, \"Some limit theorems for empirical processes,\" *Annals of Probability* 12 (1984), 929-989; the canonical treatment is van der Vaart and Wellner, *Weak Convergence and Empirical Processes* (1996), §2.3.2.",
+      "keys": [
+        "vershynin2018",
+        "vandervaart-wellner1996",
+        "vapnik-chervonenkis1971"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-discrete-dudley",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "discrete_dudley",
+    "fullName": "StatLean.ConcentrationInequalities.discrete_dudley",
+    "title": "Discrete Dudley Inequality",
+    "citation": "Vershynin (2018), Thm 8.1.4",
+    "shortRef": "Vershynin (2018), Thm 8.1.4",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.html#StatLean.ConcentrationInequalities.discrete_dudley",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a stochastic process indexed by a <span data-link=\"h1\">finite</span> subset $T$ of a metric space $(E,d)$, whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span>, with $\\mathbb{E}[X_t]=0$, and whose increments are <span data-link=\"h2\">sub-Gaussian</span>, meaning $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ for all $s,t\\in T$. Then the expected finite maximum satisfies $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 6\\sqrt{3}\\;K\\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log \\mathcal{N}(T,d,2^{-k})},$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the covering number of $T$ at scale $\\varepsilon$. The left-hand side is the honest maximum $\\max_{t\\in T} X_t$ over the finite index set, not an unrestricted supremum.</p>",
+    "summary": "For a centered process with sub-Gaussian increments on a finite set, the expected maximum is bounded by six root three times K times the dyadic entropy sum.",
+    "leanSignature": "theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ) :\n    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ\n      ≤ 6 * Real.sqrt 3 * K * dudleySum T",
+    "formalizationNotes": "The book's unspecified absolute constant is frozen at the provable value $6\\sqrt3$. The finite index set is a Lean-side working assumption (the book reduces to it), and integrability of each coordinate is required to rule out Bochner-junk means (a non-integrable coordinate would satisfy $\\int X_t = 0$ vacuously). The conclusion uses the honest finite maximum (a Finset supremum), because the previous set-indexed supremum form is false when $|T|=1$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hfin",
+        "label": "Finite index set",
+        "note": "The index set T is finite (the book's working reduction)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hmean",
+        "label": "Mean-zero coordinates",
+        "note": "Every coordinate has expectation zero."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hint",
+        "label": "Integrable coordinates",
+        "note": "Each coordinate is integrable, ruling out junk means."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.1, Theorem 8.1.4",
+      "biblio": "R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330, established the entropy bound for Gaussian processes; the sub-Gaussian extension via dyadic chaining is folklore.",
+      "keys": [
+        "vershynin2018",
+        "dudley1967"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-dudley",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "dudley_inequality",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality",
+    "title": "Dudley's Integral Inequality",
+    "citation": "Vershynin (2018), Thm 8.1.3",
+    "shortRef": "Vershynin (2018), Thm 8.1.3",
+    "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span> ($\\mathbb{E}[X_t]=0$), with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. If <span data-link=\"h5\">$\\operatorname{diam}(T)\\le D$</span>, then the expected maximum obeys Dudley's entropy-integral bound $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 12\\sqrt{3}\\;K\\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the covering number of $T$. The left-hand side is the honest finite maximum over $T$.</p>",
+    "summary": "For a centered process with sub-Gaussian increments on a finite bounded set, the expected maximum is bounded by twelve root three times K times the entropy integral up to the diameter.",
+    "leanSignature": "theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ\n      ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D",
+    "formalizationNotes": "The constant is frozen at $12\\sqrt3 = 2\\times 6\\sqrt3$, obtained from the discrete form via the comparison $\\Sigma\\le 2I$ between the dyadic entropy sum and the entropy integral. The capped integral $\\int_0^D$ (with $\\operatorname{diam}T\\le D$) is the primary statement; the finite index set and per-coordinate integrability are Lean-side working hypotheses, and the maximum uses the junk-free finite (Finset) supremum.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hfin",
+        "label": "Finite index set",
+        "note": "The index set T is finite (the book's working reduction)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hmean",
+        "label": "Mean-zero coordinates",
+        "note": "Every coordinate has expectation zero."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hint",
+        "label": "Integrable coordinates",
+        "note": "Each coordinate is integrable, ruling out junk means."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hD",
+        "label": "Diameter cap",
+        "note": "The diameter of T is at most the integration cap D."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.1, Theorem 8.1.3",
+      "biblio": "R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330. The entropy-integral formulation for sub-Gaussian processes appears in M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.3, and in M. Ledoux and M. Talagrand, *Probability in Banach Spaces*, Springer, 1991, Ch. 11.",
+      "keys": [
+        "vershynin2018",
+        "dudley1967",
+        "ledoux-talagrand1991",
+        "talagrand2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-dudley-abs",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "dudley_inequality_abs",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_inequality_abs",
+    "title": "Dudley's Inequality (Absolute Form)",
+    "citation": "Vershynin (2018), Eq. 8.13",
+    "shortRef": "Vershynin (2018), Eq. 8.13",
+    "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality_abs",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ — no mean-zero assumption is required. Fix any <span data-link=\"h3\">reference point $t_0\\in T$</span> and suppose <span data-link=\"h4\">$\\operatorname{diam}(T)\\le D$</span>. Then the expected supremum of the absolute deviations from $t_0$ satisfies $$\\mathbb{E}\\Big[\\sup_{t\\in T}\\lvert X_t-X_{t_0}\\rvert\\Big] \\;\\le\\; 40\\,K\\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon.$$ Because the integrand $\\lvert X_t-X_{t_0}\\rvert$ is nonnegative, the supremum over $T$ is junk-free.</p>",
+    "summary": "For a process with sub-Gaussian increments on a finite bounded set and no mean-zero assumption, the expected supremum of absolute deviations from a fixed point is at most forty times K times the entropy integral.",
+    "leanSignature": "theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ\n      ≤ 40 * K * dudleyIntegral T D",
+    "formalizationNotes": "No mean-zero hypothesis is required, as the book stresses for Eq. (8.13). The constant is frozen at $40 = 2\\times 20$ (the discrete absolute form times the sum-to-integral factor 2). Since the integrand $|X_t-X_{t_0}|$ is nonnegative, the supremum over $T$ needs no finite-carrier fix and remains an honest set-indexed supremum.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hfin",
+        "label": "Finite index set",
+        "note": "The index set T is finite (the book's working reduction)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "ht₀",
+        "label": "Reference point in T",
+        "note": "The anchor point t-zero belongs to the index set."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hD",
+        "label": "Diameter cap",
+        "note": "The diameter of T is at most the integration cap D."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.1, Eq. (8.13)",
+      "biblio": "The absolute-deviation form requires no centering. It descends from R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330, via the entropy-integral chaining argument.",
+      "keys": [
+        "vershynin2018",
+        "dudley1967"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-dudley-tail",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "dudley_tail_three_term",
+    "fullName": "StatLean.ConcentrationInequalities.dudley_tail_three_term",
+    "title": "High-Probability Dudley Inequality",
+    "citation": "Vershynin (2018), Eq. 8.15",
+    "shortRef": "Vershynin (2018), Eq. 8.15",
+    "file": "StatLean/ConcentrationInequalities/Chaining/DudleyTail.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleyTail.html#StatLean.ConcentrationInequalities.dudley_tail_three_term",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (no mean-zero assumption). For every <span data-link=\"h3\">deviation level $u\\ge 0$</span>, with probability at least $1-2e^{-u^2}$ the two-sided oscillation is controlled by $$\\sup_{s,t\\in T}\\lvert X_t-X_s\\rvert \\;\\le\\; K\\Big(9\\,\\Sigma + 17\\,\\operatorname{diam}(T) + 12\\,u\\,\\operatorname{diam}(T)\\Big),$$ where $\\Sigma=\\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})}$ is the dyadic entropy sum. Equivalently, the oscillation exceeds this three-term threshold with probability at most $2e^{-u^2}$.</p>",
+    "summary": "For a process with sub-Gaussian increments on a finite set, the two-sided oscillation exceeds a three-term threshold built from the entropy sum, the diameter, and u times the diameter with probability at most two exp minus u squared.",
+    "leanSignature": "theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {u : ℝ} (hu : 0 ≤ u) :\n    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)\n        < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}\n      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2))",
+    "formalizationNotes": "This is the sharp three-term core of the high-probability Dudley bound: the book's failure probability $2e^{-u^2}$ is met exactly, with no constant deviation. The frozen constants $9/17/12$ carry slack in the per-level threshold algebra; the book's single-constant display form follows by absorbing the bare diameter term into the entropy integral. The two-sided oscillation is a supremum of the nonnegative quantities $|X_t-X_s|$, hence junk-free.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hfin",
+        "label": "Finite index set",
+        "note": "The index set T is finite (the book's standing assumption for this bound)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hu",
+        "label": "Deviation level u ≥ 0",
+        "note": "The tail parameter u is nonnegative."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.1, Eq. (8.15)",
+      "biblio": "The high-probability form of Dudley's bound is a concentration-of-chaining refinement of R. M. Dudley, \"The sizes of compact subsets of Hilbert space and continuity of Gaussian processes,\" *Journal of Functional Analysis* 1 (1967), 290–330; see M. Talagrand, *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014, §2.2, where it appears as the tail version of the generic chaining bound specialized to entropy numbers.",
+      "keys": [
+        "vershynin2018",
+        "dudley1967",
+        "talagrand2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-generic-chaining",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "generic_chaining",
+    "fullName": "StatLean.ConcentrationInequalities.generic_chaining",
+    "title": "Generic Chaining (γ₂ Bound)",
+    "citation": "Vershynin (2018), Thm 8.5.2",
+    "shortRef": "Vershynin (2018), Thm 8.5.2",
+    "file": "StatLean/ConcentrationInequalities/Chaining/GenericChaining.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/GenericChaining.html#StatLean.ConcentrationInequalities.generic_chaining",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> metric space $(T,d)$ whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span> ($\\mathbb{E}[X_t]=0$), with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. Then Talagrand's generic chaining bound holds: $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 20\\,K\\,\\gamma_2(T,d),$$ where $\\gamma_2(T,d)=\\inf\\;\\sup_{t\\in T}\\sum_{k\\ge 0} 2^{k/2}\\,d(t,T_k)$ is the Talagrand $\\gamma_2$ functional, the infimum ranging over admissible sequences $(T_k)$ of subsets of $T$ with $|T_0|=1$ and $|T_k|\\le 2^{2^k}$. The left-hand side is the honest finite maximum over $T$.</p>",
+    "summary": "For a centered process with sub-Gaussian increments on a finite metric space, the expected maximum is bounded by twenty times K times Talagrand's gamma-two functional.",
+    "leanSignature": "theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ) :\n    ENNReal.ofReal\n        (∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ)\n      ≤ 20 * K * gammaTwo T",
+    "formalizationNotes": "The book's unspecified absolute constant is frozen at the provable value $20$, obtained by integrating the renegotiated $(12+4u)$ high-probability tail. The result is stated for a finite index set (the book's working reduction) with per-coordinate integrability to rule out Bochner-junk means, and the maximum uses the junk-free finite (Finset) supremum, because the set-indexed supremum form is false when $|T|=1$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hfin",
+        "label": "Finite metric space",
+        "note": "The index set T is finite (the book's working reduction)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hmean",
+        "label": "Mean-zero coordinates",
+        "note": "Every coordinate has expectation zero."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hint",
+        "label": "Integrable coordinates",
+        "note": "Each coordinate is integrable, ruling out junk means."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.5, Theorem 8.5.2",
+      "biblio": "Generic chaining and the majorizing-measure theory are due to X. Fernique (\"Régularité des trajectoires des fonctions aléatoires gaussiennes,\" in *École d'Été de Probabilités de Saint-Flour IV–1974*, Lecture Notes in Mathematics 480, Springer, 1975, 1–96) and M. Talagrand (\"Regularity of Gaussian processes,\" *Acta Mathematica* 159 (1987), 99–149; *Upper and Lower Bounds for Stochastic Processes*, Springer, 2014). The admissible-sequence formulation of $\\gamma_2$ is Talagrand's.",
+      "keys": [
+        "vershynin2018",
+        "fernique1975",
+        "talagrand2014",
+        "talagrand1987"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-lipschitz-lln",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "lipschitz_lln",
+    "fullName": "StatLean.ConcentrationInequalities.lipschitz_lln",
+    "title": "Uniform LLN for Lipschitz Classes",
+    "citation": "Vershynin (2018), Thm 8.2.3",
+    "shortRef": "Vershynin (2018), Thm 8.2.3",
+    "file": "StatLean/ConcentrationInequalities/EmpiricalProcess/LipschitzLLN.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/EmpiricalProcess/LipschitzLLN.html#StatLean.ConcentrationInequalities.lipschitz_lln",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">independent</span> random variables taking values in the unit interval $[0,1]$, <span data-link=\"h2\">each with the common law $P$</span>. Then, for every Lipschitz constant $L \\ge 0$, the empirical process over the full $L$-Lipschitz class satisfies $$\\mathbb{E}\\,\\sup_{\\|f\\|_{\\mathrm{Lip}} \\le L}\\Bigl|\\frac1n\\sum_{i=1}^n f(X_i) - \\mathbb{E}_P f\\Bigr| \\;\\le\\; \\frac{960\\,L}{\\sqrt n}.$$ The supremum runs over the genuine uncountable class of all $L$-Lipschitz functions $f : [0,1] \\to \\mathbb{R}$; no countability restriction is imposed, and the degenerate case $L = 0$ is included.</p>",
+    "summary": "For independent data on the unit interval, the expected uniform deviation of the empirical mean over the full L-Lipschitz class is at most 960 L over the square root of n.",
+    "leanSignature": "theorem lipschitz_lln {L : ℝ≥0} [IsProbabilityMeasure μ]\n    [IsProbabilityMeasure P] [NeZero n]\n    (hX : ∀ i, Measurable (X i))\n    (hindep : iIndepFun X μ)\n    (hlaw : ∀ i, μ.map (X i) = P) :\n    ∫ ω, (⨆ f : {f : unitInterval → ℝ // LipschitzWith L f},\n        |empiricalProcess P n X (↑f) ω|) ∂μ\n      ≤ lipschitzLLNConst * (L : ℝ) / Real.sqrt n",
+    "formalizationNotes": "The book leaves the absolute constant $C$ unnamed; here it is frozen at $960 = 4\\sqrt6 \\cdot 40 \\cdot \\sqrt6$ (entropy integral times the Dudley constant times the Orlicz carrier). The supremum is the genuine uncountable one over the full $L$-Lipschitz class, with no countability hypothesis, and the degenerate case $L=0$ is handled separately. Per-index measurability is an added regularity hypothesis; the chaining integrability and mean-zero increment conditions are derived internally rather than assumed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independence",
+        "note": "The sample variables are jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlaw",
+        "label": "Common law P",
+        "note": "Each variable has distribution P on the unit interval."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.2, Theorem 8.2.3",
+      "biblio": "Theorem 8.2.3 is a quantitative mean Glivenko–Cantelli (Wasserstein-1) law of large numbers; the $n^{-1/2}$ rate for the Lipschitz class on $[0,1]$ traces to R. M. Dudley, “The speed of mean Glivenko–Cantelli convergence,” Annals of Mathematical Statistics 40 (1969), 40–50. The uniform-LLN framework is due to Vapnik and Chervonenkis (Theory of Probability and Its Applications 16, 1971), and the chaining route follows R. M. Dudley (1967).",
+      "keys": [
+        "vershynin2018",
+        "dudley1967",
+        "vapnik-chervonenkis1971"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-vc-lln",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "vc_lln_finset",
+    "fullName": "StatLean.ConcentrationInequalities.vc_lln_finset",
+    "title": "VC Law of Large Numbers",
+    "citation": "Vershynin (2018), Thm 8.3.15",
+    "shortRef": "Vershynin (2018), Thm 8.3.15",
+    "file": "StatLean/ConcentrationInequalities/VC/LawOfLargeNumbers.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/VC/LawOfLargeNumbers.html#StatLean.ConcentrationInequalities.vc_lln_finset",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">independent</span> random variables <span data-link=\"h2\">with common law $\\mu$</span>, and let $\\mathcal{F}$ be a finite class of measurable sets whose <span data-link=\"h3\">VC dimension is at most $d$</span>, with <span data-link=\"h4\">$d \\ge 1$</span> and <span data-link=\"h5\">$n \\ge 1$</span>. Writing $\\mu_n$ for the empirical measure of the sample, $$\\mathbb{E}\\,\\max_{S \\in \\mathcal{F}}\\bigl|\\mu_n(S) - \\mu(S)\\bigr| \\;\\le\\; 5400\\,\\sqrt{\\tfrac{d}{n}}.$$</p>",
+    "summary": "For independent data and a finite class of measurable sets with VC dimension at most d, the expected worst-case gap between empirical and true measures is at most 5400 times the square root of d over n.",
+    "leanSignature": "theorem vc_lln_finset {Ξ : Type*} [MeasurableSpace Ξ]\n    {P : Measure Ξ} [IsProbabilityMeasure P] {μ : Measure Ω}\n    [IsProbabilityMeasure μ] {X : ℕ → Ξ → Ω}\n    (hXmeas : ∀ i, Measurable (X i))\n    (hindep : iIndepFun X P)\n    (hlaw : ∀ i, P.map (X i) = μ)\n    (F : Finset (Set Ω)) (hFne : F.Nonempty)\n    (hFmeas : ∀ S ∈ F, MeasurableSet S)\n    {d : ℕ}\n    (hd : vcDim (↑F : Set (Set Ω)) ≤ (d : ℕ∞))\n    (hd1 : 1 ≤ d)\n    {n : ℕ}\n    (hn : 1 ≤ n) :\n    ∫ ξ, F.sup' hFne (fun S =>\n        |empFrac (fun i : Fin n => X i ξ) S - μ.real S|) ∂P\n      ≤ 5400 * Real.sqrt d / Real.sqrt n",
+    "formalizationNotes": "The book's unnamed absolute constant $C$ is frozen at $5400 = 2 \\cdot 40 \\cdot \\sqrt6 \\cdot 27$ (symmetrization factor, Dudley constant, Orlicz bridge, and entropy integral). The maximum is over a finite class; measurability of the class members is an added regularity hypothesis, and the sampling law is stated in pushforward (map) form.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independence",
+        "note": "The sample stream is jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlaw",
+        "label": "Common law mu",
+        "note": "Each variable has distribution mu."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hd",
+        "label": "VC dimension at most d",
+        "note": "The class has VC dimension bounded by d."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hd1",
+        "label": "d at least 1",
+        "note": "The VC dimension bound is at least one."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hn",
+        "label": "n at least 1",
+        "note": "There is at least one sample point."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.3, Theorem 8.3.15",
+      "biblio": "The uniform law of large numbers over VC classes is the Vapnik–Chervonenkis theorem (Theory of Probability and Its Applications 16, 1971, 264–280); the $\\sqrt{d/n}$ rate through Dudley's entropy integral and Haussler-type covering bounds follows R. M. Dudley (Annals of Probability 6, 1978, 899–929) and D. Haussler (Journal of Combinatorial Theory Series A 69, 1995, 217–232).",
+      "keys": [
+        "vershynin2018",
+        "vapnik-chervonenkis1971"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-glivenko-cantelli",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "glivenko_cantelli",
+    "fullName": "StatLean.ConcentrationInequalities.glivenko_cantelli",
+    "title": "Glivenko–Cantelli via VC Dimension",
+    "citation": "Vershynin (2018), Thm 8.3.17",
+    "shortRef": "Vershynin (2018), Thm 8.3.17",
+    "file": "StatLean/ConcentrationInequalities/VC/GlivenkoCantelli.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/VC/GlivenkoCantelli.html#StatLean.ConcentrationInequalities.glivenko_cantelli",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">independent</span> real-valued random variables <span data-link=\"h2\">with common distribution $\\mu$</span> and cumulative distribution function $F$, let $F_n$ denote the empirical CDF, and suppose <span data-link=\"h3\">$n \\ge 1$</span>. Then $$\\mathbb{E}\\,\\|F_n - F\\|_\\infty \\;=\\; \\mathbb{E}\\,\\sup_{t \\in \\mathbb{R}}\\bigl|F_n(t) - F(t)\\bigr| \\;\\le\\; \\frac{5400}{\\sqrt n}.$$ The supremum is the genuine full one over all $t \\in \\mathbb{R}$, recovered from the rational thresholds by right-continuity.</p>",
+    "summary": "For independent real data, the expected supremum distance between the empirical and true cumulative distribution functions is at most 5400 over the square root of n.",
+    "leanSignature": "theorem glivenko_cantelli {Ξ : Type*} [MeasurableSpace Ξ]\n    {P : Measure Ξ} [IsProbabilityMeasure P] {μ : Measure ℝ}\n    [IsProbabilityMeasure μ] {X : ℕ → Ξ → ℝ}\n    (hXmeas : ∀ i, Measurable (X i))\n    (hindep : iIndepFun X P)\n    (hlaw : ∀ i, P.map (X i) = μ)\n    {n : ℕ}\n    (hn : 1 ≤ n) :\n    ∫ ξ, ⨆ t : ℝ, |empFrac (fun i : Fin n => X i ξ) (Set.Iic t) -\n        μ.real (Set.Iic t)| ∂P ≤ 5400 / Real.sqrt n",
+    "formalizationNotes": "The half-line class $\\{\\mathbf{1}_{(-\\infty,t]}\\}$ has VC dimension computed exactly as $1$ (the book uses the weaker bound $\\le 2$), so $\\sqrt d = 1$ and the constant $5400$ is inherited from the VC law of large numbers. The uncountable supremum over $\\mathbb{R}$ is recovered deterministically from the rational thresholds by right-continuity of both CDFs, so no countability hypothesis appears in the statement.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independence",
+        "note": "The sample stream is jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlaw",
+        "label": "Common law mu",
+        "note": "Each variable has distribution mu on the real line."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hn",
+        "label": "n at least 1",
+        "note": "There is at least one sample point."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.3, Theorem 8.3.17",
+      "biblio": "The theorem is due to V. Glivenko and F. P. Cantelli (Giornale dell'Istituto Italiano degli Attuari 4, 1933); the in-expectation $n^{-1/2}$ form here follows the VC route, while the sharp constant is given by the Dvoretzky–Kiefer–Wolfowitz inequality (1956) with Massart's optimal constant (1990), which is outside the present scope.",
+      "keys": [
+        "vershynin2018",
+        "glivenko1933",
+        "cantelli1933",
+        "dvoretzky-kiefer-wolfowitz1956",
+        "massart1990"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-vc-generalization",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "vc_generalization",
+    "fullName": "StatLean.ConcentrationInequalities.vc_generalization",
+    "title": "VC Generalization Bound",
+    "citation": "Vershynin (2018), Thm 8.4.5",
+    "shortRef": "Vershynin (2018), Thm 8.4.5",
+    "file": "StatLean/ConcentrationInequalities/VC/Generalization.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/VC/Generalization.html#StatLean.ConcentrationInequalities.vc_generalization",
+    "informal": "<p>Consider Boolean learning with a measurable target set $\\Theta$ and a hypothesis class $\\mathcal{C}$ of measurable sets whose <span data-link=\"h3\">VC dimension is at most $d$</span> (with <span data-link=\"h4\">$d \\ge 1$</span>). The risk of a hypothesis $S$ is $R(S) = \\mu(S \\,\\triangle\\, \\Theta)$ and its empirical risk is $R_n(S) = \\mu_n(S \\,\\triangle\\, \\Theta)$. Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">independent</span> data <span data-link=\"h2\">with common law $\\mu$</span>, let $S^*_n$ be <span data-link=\"h5\">an empirical risk minimizer</span> over $\\mathcal{C}$, and let $S_0$ be <span data-link=\"h6\">any competitor in the class</span>. Then $$\\mathbb{E}\\,R(S^*_n) \\;\\le\\; R(S_0) \\;+\\; 10800\\,\\sqrt{\\tfrac{d}{n}}.$$</p>",
+    "summary": "For Boolean learning with a hypothesis class of VC dimension at most d, the expected risk of the empirical risk minimizer exceeds the best in-class risk by at most 10800 times the square root of d over n.",
+    "leanSignature": "theorem vc_generalization {Ξ : Type*} [MeasurableSpace Ξ] [MeasurableSpace Ω]\n    {P : Measure Ξ} [IsProbabilityMeasure P] {μ : Measure Ω}\n    [IsProbabilityMeasure μ] {X : ℕ → Ξ → Ω}\n    (hXmeas : ∀ i, Measurable (X i))\n    (hindep : iIndepFun X P)\n    (hlaw : ∀ i, P.map (X i) = μ)\n    {C : Set (Set Ω)}\n    (hCc : C.Countable)\n    (hCne : C.Nonempty)\n    (hCmeas : ∀ S ∈ C, MeasurableSet S)\n    {Θ : Set Ω}\n    (hΘ : MeasurableSet Θ)\n    {d : ℕ}\n    (hd : vcDim C ≤ (d : ℕ∞))\n    (hd1 : 1 ≤ d)\n    {n : ℕ}\n    (hn : 1 ≤ n)\n    (Sn : Ξ → Set Ω)\n    (hSn_mem : ∀ ξ, Sn ξ ∈ C)\n    (hERM : ∀ ξ, ∀ S ∈ C, empFrac (fun i : Fin n => X i ξ) (Sn ξ ∆ Θ) ≤\n      empFrac (fun i : Fin n => X i ξ) (S ∆ Θ))\n    (hRmeas : MeasureTheory.AEStronglyMeasurable\n      (fun ξ => μ.real (Sn ξ ∆ Θ)) P)\n    {S₀ : Set Ω}\n    (hS₀ : S₀ ∈ C) :\n    ∫ ξ, μ.real (Sn ξ ∆ Θ) ∂P ≤\n      μ.real (S₀ ∆ Θ) + 10800 * Real.sqrt d / Real.sqrt n",
+    "formalizationNotes": "The constant $10800 = 2 \\times 5400$ follows from the excess-risk bound $R(S^*_n) \\le R(S_0) + 2\\sup_S |R_n(S) - R(S)|$ combined with the VC law of large numbers on the loss class, whose VC dimension equals that of $\\mathcal{C}$ (the Boolean squared loss reduces pointwise to the indicator of the symmetric difference with $\\Theta$). The class is assumed countable per the batch supremum policy, and measurability of the selected hypothesis's risk is an added regularity hypothesis.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hindep",
+        "label": "Independence",
+        "note": "The sample stream is jointly independent."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlaw",
+        "label": "Common law mu",
+        "note": "Each variable has distribution mu."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hd",
+        "label": "VC dimension at most d",
+        "note": "The hypothesis class has VC dimension bounded by d."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hd1",
+        "label": "d at least 1",
+        "note": "The VC dimension bound is at least one."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hERM",
+        "label": "Empirical risk minimizer",
+        "note": "The learner output minimizes empirical risk over the class at each sample."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hS₀",
+        "label": "Competitor in class",
+        "note": "The comparison hypothesis belongs to the class."
+      }
+    ],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.4, Theorem 8.4.5",
+      "biblio": "Theorem 8.4.5 is the classical Vapnik–Chervonenkis generalization bound in in-expectation form (Theory of Probability and Its Applications 16, 1971); the reduction of Boolean squared loss to symmetric differences is folklore.",
+      "keys": [
+        "vershynin2018",
+        "vapnik-chervonenkis1971"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-vc-dimension",
+    "category": "concentration",
+    "kind": "definition",
+    "leanName": "vcDim",
+    "fullName": "StatLean.ConcentrationInequalities.vcDim",
+    "title": "VC Dimension",
+    "citation": "Vershynin (2018), Def 8.3.1",
+    "shortRef": "Vershynin (2018), Def 8.3.1",
+    "file": "StatLean/ConcentrationInequalities/VC/Defs.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/VC/Defs.html#StatLean.ConcentrationInequalities.vcDim",
+    "informal": "<p>A class $\\mathcal{C}$ of subsets of a space $\\Omega$ (each set identified with the Boolean classifier it indicates) <em>shatters</em> a finite set $\\Lambda \\subseteq \\Omega$ when every subset of $\\Lambda$ arises as a trace $\\Lambda \\cap S$ for some $S \\in \\mathcal{C}$, i.e. $\\{\\Lambda \\cap S : S \\in \\mathcal{C}\\} = 2^\\Lambda$. The <strong>VC dimension</strong> $\\mathrm{vc}(\\mathcal{C})$ is the largest cardinality of a shattered finite set, $$\\mathrm{vc}(\\mathcal{C}) \\;=\\; \\sup\\{|\\Lambda| : \\mathcal{C}\\text{ shatters }\\Lambda\\},$$ valued in $\\mathbb{N} \\cup \\{\\infty\\}$, equal to $\\infty$ when arbitrarily large sets are shattered. By convention the empty class shatters nothing, so $\\mathrm{vc}(\\varnothing) = 0$.</p>",
+    "summary": "The VC dimension of a set class is the largest cardinality of a finite set that the class shatters.",
+    "leanSignature": "noncomputable def vcDim (C : Set (Set Ω)) : ℕ∞ :=\n  ⨆ (Λ : Finset Ω) (_ : Shatters C Λ), (Λ.card : ℕ∞)",
+    "formalizationNotes": "Classes are encoded as `Set (Set Ω)` (a classifier identified with the set it indicates), and $\\mathrm{vc}$ is valued in $\\mathbb{N} \\cup \\{\\infty\\}$ (the top element when arbitrarily large sets are shattered). Edge behavior: the empty class shatters nothing, giving the degenerate value $0$.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.3, Definition 8.3.1",
+      "biblio": "The VC dimension is due to V. N. Vapnik and A. Ya. Chervonenkis, “On the uniform convergence of relative frequencies of events to their probabilities,” Theory of Probability and Its Applications 16 (1971), 264–280. The growth function and its polynomial bound trace to the same paper and, independently, to N. Sauer (Journal of Combinatorial Theory Series A 13, 1972, 145–147) and S. Shelah (Pacific Journal of Mathematics 41, 1972, 247–261).",
+      "keys": [
+        "vershynin2018",
+        "vapnik-chervonenkis1971",
+        "sauer1972",
+        "shelah1972"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "conc-hdp-vc-halfspaces",
+    "category": "concentration",
+    "kind": "theorem",
+    "leanName": "vcDim_halfSpaceClass",
+    "fullName": "StatLean.ConcentrationInequalities.vcDim_halfSpaceClass",
+    "title": "VC Dimension of Half-Spaces",
+    "citation": "Vershynin (2018), Ex 8.3.5",
+    "shortRef": "Vershynin (2018), Ex 8.3.5",
+    "file": "StatLean/ConcentrationInequalities/VC/HalfSpaces.lean",
+    "docGenUrl": "../docs/StatLean/ConcentrationInequalities/VC/HalfSpaces.html#StatLean.ConcentrationInequalities.vcDim_halfSpaceClass",
+    "informal": "<p>The class of closed half-spaces $\\{x \\in \\mathbb{R}^m : \\langle a, x\\rangle \\le b\\}$ in $\\mathbb{R}^m$, taken over all $a \\in \\mathbb{R}^m$ and $b \\in \\mathbb{R}$, has VC dimension exactly $$\\mathrm{vc}(\\text{half-spaces in }\\mathbb{R}^m) \\;=\\; m + 1.$$ In particular, half-planes in $\\mathbb{R}^2$ have VC dimension $3$.</p>",
+    "summary": "The class of closed half-spaces in m-dimensional Euclidean space has VC dimension exactly m plus one.",
+    "leanSignature": "theorem vcDim_halfSpaceClass (m : ℕ) :\n    vcDim (halfSpaceClass m) = m + 1",
+    "formalizationNotes": "The lower bound exhibits the shattered $(m+1)$-point simplex $\\{0, e_0, \\dots, e_{m-1}\\}$ with explicit separating witnesses; the upper bound uses Radon's partition theorem to show that no $(m+2)$-point set is shattered. The equality is exact with no constant slack, and the half-plane case ($m = 2$, VC dimension $3$) is derived as an instance rather than re-proved.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*, Cambridge University Press, 2018.",
+      "pointer": "§8.3, Example 8.3.5",
+      "biblio": "The half-space computation is a classical example of Vapnik–Chervonenkis theory (Theory of Probability and Its Applications 16, 1971, 264–280); the Radon-partition route to the upper bound follows J. Radon, “Mengen konvexer Körper, die einen gemeinsamen Punkt enthalten,” Mathematische Annalen 83 (1921), 113–115.",
+      "keys": [
+        "vershynin2018",
+        "vapnik-chervonenkis1971"
       ]
     },
     "hasGraph": true

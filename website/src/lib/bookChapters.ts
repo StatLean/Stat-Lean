@@ -9,6 +9,7 @@ export const TEXTBOOK_KEYS = new Set([
   "lu-bda",
   "wainwright2019",
   "candes-stat300c",
+  "vershynin2018",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -70,6 +71,12 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     19: "Conformal Inference",
     20: "False Discovery Rate",
     21: "Knockoffs",
+  },
+  vershynin2018: {
+    2: "Concentration of Sums of Independent Random Variables",
+    3: "Random Vectors in High Dimensions",
+    6: "Quadratic Forms, Symmetrization and Contraction",
+    8: "Chaining",
   },
 };
 
