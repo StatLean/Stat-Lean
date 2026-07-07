@@ -69,7 +69,6 @@ theorem posteriorModelProb_eq_div [Fintype M] [MeasurableSingletonClass M] [None
   intro m
   rw [posteriorModelProb, hx, withDensity_apply _ (measurableSet_singleton m),
     lintegral_singleton]
-  dsimp only
   rw [lintegral_eq_sum_prob ϖ (fun j => q j x)]
   simp only [div_eq_mul_inv]
   ring

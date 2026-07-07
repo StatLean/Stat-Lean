@@ -76,7 +76,8 @@ theorem generalizedPosterior_of_factorized {p : Θ → 𝓧 → ℝ≥0∞} {T :
       = π.withDensity fun θ => g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π := by
   have hpred : predictiveDensity p π x = (∫⁻ θ', g θ' (T x) ∂π) * h x := by
     unfold predictiveDensity
-    simp_rw [hfac]
+    have hfac' : ∀ θ' x', p θ' x' = g θ' (T x') * h x' := hfac
+    simp_rw [hfac']
     rw [lintegral_mul_const' _ _ hx']
   rw [generalizedPosterior_def]
   congr 1
@@ -106,9 +107,10 @@ theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty �
   have hκ' : ∀ θ, statKernel κ hT θ = ((ν.withDensity h).map T).withDensity (g θ) := by
     intro θ
     rw [statKernel_apply κ hT θ, hκ θ]
-    have hpθ : (p θ) = fun x => h x * g θ (T x) := by
-      funext x; rw [hfac θ x, mul_comm]
-    rw [hpθ, withDensity_mul _ hh ((hgθ θ).comp hT), map_withDensity_comp hT (hgθ θ)]
+    have hpθ : (p θ) = h * fun x => g θ (T x) := by
+      funext x; rw [Pi.mul_apply, hfac θ x, mul_comm]
+    rw [hpθ, withDensity_mul _ hh (show Measurable fun x => g θ (T x) from (hgθ θ).comp hT),
+      map_withDensity_comp hT (hgθ θ)]
   -- Batch-1 dominated Bayes for the full and the statistic experiments.
   have hfull := posterior_eq_withDensity_likelihood_div_predictive (κ := κ) (π := π) (ν := ν) hp hκ
   have hstatpost := posterior_eq_withDensity_likelihood_div_predictive
@@ -127,7 +129,8 @@ theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty �
   have hgTx : Measurable fun θ' => g θ' (T x) := hg.comp (measurable_id.prodMk measurable_const)
   have hmfac : predictiveDensity p π x = (∫⁻ θ', g θ' (T x) ∂π) * h x := by
     unfold predictiveDensity
-    simp_rw [hfac]
+    have hfac' : ∀ θ' x', p θ' x' = g θ' (T x') * h x' := hfac
+    simp_rw [hfac']
     rw [lintegral_mul_const _ hgTx]
   -- Hence `h x ∈ (0, ∞)`.
   have hne0 : (∫⁻ θ', g θ' (T x) ∂π) * h x ≠ 0 := by rw [← hmfac]; exact hxpos.ne'
