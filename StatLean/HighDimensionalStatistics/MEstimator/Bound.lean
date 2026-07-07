@@ -72,9 +72,9 @@ M-estimators with decomposable regularizers," *Statistical Science*, 27(4):538â€
 key result there is Theorem 1, which states exactly the squared-error bound $\|\hat\theta -
 \theta^*\|^2 \le 9\,(\lambda^2/\kappa^2)\,\Psi^2(\overline{M}) + \ldots$ under restricted strong
 convexity (their Definition 2) and the dual-norm condition $\lambda \ge 2\,\Phi^*(\nabla
-\mathcal{L}(\theta^*))$. Wainwright's Theorem 9.19 / Corollary 9.20 are the textbook
-presentation of that paper's Theorem 1 and its $\theta^* \in M$ corollary; the formalization here
-follows the textbook's notation and proof.
+\mathcal{L}(\theta^*))$. Wainwright's Theorem 9.19 / Corollary 9.20 restate that paper's
+Theorem 1 and its $\theta^* \in M$ corollary; the formalization here follows Wainwright's
+notation and proof.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

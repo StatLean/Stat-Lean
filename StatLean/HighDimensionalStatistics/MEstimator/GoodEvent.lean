@@ -46,9 +46,9 @@ P. Ravikumar, M. J. Wainwright and B. Yu, "A unified framework for high-dimensio
 M-estimators with decomposable regularizers," *Statistical Science* 27(4): 538–557, 2012. There the
 GLM gradient bound is one of the running examples instantiating the general decomposable-regularizer
 framework (their Theorem 1 / Corollary 1 give the deterministic bound, and the GLM corollaries supply
-the sub-Gaussian tail control of $R^*(\nabla \mathcal{L}_n(\theta^*))$). Wainwright's Corollary 9.26 is
-the textbook packaging of that GLM instance; the $\ell_\infty$ union-bound argument formalized here is
-the standard sub-Gaussian maximal-inequality step underlying it.
+the sub-Gaussian tail control of $R^*(\nabla \mathcal{L}_n(\theta^*))$). Wainwright's
+Corollary 9.26 packages that GLM instance; the $\ell_\infty$ union-bound argument formalized
+here is the standard sub-Gaussian maximal-inequality step underlying it.
 -/
 
 namespace StatLean.HighDimensionalStatistics.MEstimator

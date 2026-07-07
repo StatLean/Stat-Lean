@@ -109,7 +109,7 @@ truncation radius and the curve's Radon–Nikodym derivative; their per-
 declaration docstrings record the precise book-vs-Lean correspondences,
 including the deliberate restriction to bounded-RN convex mixtures noted above.
 
-**Bibliographic comments.** This is textbook synthesis / folklore in
+**Bibliographic comments.** This is a folklore result in
 semiparametric statistics, with no single seminal theorem to cite. The
 "influence function as a Gâteaux derivative" viewpoint originates in the
 von Mises calculus of differentiable statistical functionals — R. von Mises,

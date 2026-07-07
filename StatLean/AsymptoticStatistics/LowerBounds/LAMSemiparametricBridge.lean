@@ -81,7 +81,7 @@ parametric submodels trace back to J. Hájek, "Local asymptotic minimax and
 admissibility in estimation", *Proc. Sixth Berkeley Symp. Math. Statist.
 Probab.* 1 (1972), 175–194, and to the convolution theorem of J. Hájek, "A
 characterization of limiting distributions of regular estimators",
-*Z. Wahrsch. Verw. Gebiete* 14 (1970), 323–330; the textbook synthesis of these
+*Z. Wahrsch. Verw. Gebiete* 14 (1970), 323–330; the synthesis of these
 into the semiparametric submodel argument is van der Vaart's §25.3 / Theorem 25.21 (§25.3).
 -/
 

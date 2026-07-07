@@ -80,8 +80,8 @@ feasibility / mutual-incoherence analysis of the Lasso originate with M. J. Wain
 Quadratic Programming (Lasso)," *IEEE Transactions on Information Theory*, vol. 55, no. 5,
 pp. 2183–2202, 2009. There the witness is built in the proof of that paper's main support-
 recovery theorem (Theorem 1), and the incoherence condition appears as the paper's mutual-
-incoherence assumption; Theorem 7.21 of the 2019 textbook is the streamlined deterministic
-restatement formalized here. Closely related sufficient conditions for exact support
+incoherence assumption; Theorem 7.21 is the streamlined deterministic restatement
+formalized here. Closely related sufficient conditions for exact support
 recovery were obtained independently by P. Zhao and B. Yu, "On Model Selection Consistency
 of Lasso," *Journal of Machine Learning Research*, vol. 7, pp. 2541–2563, 2006 (the
 "irrepresentable condition," which coincides with mutual incoherence).

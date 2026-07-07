@@ -58,7 +58,7 @@ magnitudes $|W_1|,\dots,|W_d|$, the signs of the true-null statistics are i.i.d.
 is their i.i.d.-sign ("coin-flip") lemma (Lemma 1), and the optimal-stopping / super-martingale
 argument for which `E[V₊(0)/(1+V₋(0))] ≤ 1` is the base step underlies their FDR-control results
 (the knockoff and knockoff+ theorems, their Theorems 1 and 2). The closed form $1 - 2^{-N_0}$ for
-the base-case binomial-ratio sum is the textbook's elementary rendering of that base step and is
+the base-case binomial-ratio sum is an elementary rendering of that base step and is
 standard.
 -/
 

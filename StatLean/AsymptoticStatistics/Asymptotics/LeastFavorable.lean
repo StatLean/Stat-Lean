@@ -53,8 +53,8 @@ scalar parameter in a semiparametric model originates with T. A. Severini and W.
 "Profile Likelihood and Conditionally Parametric Models," *The Annals of Statistics* 20(4)
 (1992), 1768–1802. They estimate the scalar parameter by first forming a one-dimensional
 subproblem that is *least favorable in the sense of Stein* and then maximizing the induced
-"generalized profile likelihood"; van der Vaart's §25.11 is a textbook synthesis of this
-program. (The Stein least-favorable terminology traces to C. Stein, "Efficient
+"generalized profile likelihood". (The Stein least-favorable terminology traces to
+C. Stein, "Efficient
 nonparametric testing and estimation," *Proc. Third Berkeley Symp. Math. Statist. Probab.*
 1 (1956), 187–195.)
 -/

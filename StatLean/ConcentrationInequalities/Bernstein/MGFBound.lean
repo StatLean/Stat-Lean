@@ -56,16 +56,16 @@ Key Mathlib lemmas: `MeasureTheory.lintegral_tsum`, `ENNReal.ofReal_tsum_of_nonn
 `Summable.sum_add_tsum_nat_add`, `integral_eq_lintegral_of_nonneg_ae`.
 
 **Bibliographic comments.**
-This is textbook folklore with no single seminal paper. The moment ("Bernstein") condition and
+This is folklore with no single seminal paper. The moment ("Bernstein") condition and
 its use to bound the moment generating function trace back to S. N. Bernstein's work on
 probability inequalities in the 1920s–1930s (S. N. Bernstein, *The Theory of Probabilities*,
 Moscow–Leningrad, 1927; reprinted in his collected works). The modern packaging — that the
 Bernstein moment condition is equivalent to sub-exponentiality and yields the bound
 $\mathbb{E}\,e^{\lambda X} \le \exp(\lambda^2 \alpha^2/2)$ on the range $|\lambda| \le 1/\alpha$
 — is standard and appears, with the constants used here up to the variance-vs-standard-deviation
-convention, in Wainwright (2019, §2.1.3) and in R. Vershynin, *High-Dimensional Probability: An
-Introduction with Applications in Data Science*, Cambridge University Press, 2018, §2.7–2.8. It
-is reproduced as Step 1 of Lu-BDA §6.1; no original research-paper theorem number is attached.
+convention, in M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic Viewpoint*,
+Cambridge University Press, 2019, §2.1.3. It is reproduced as Step 1 of Lu-BDA §6.1; no original
+research-paper theorem number is attached.
 -/
 
 open MeasureTheory ProbabilityTheory Real

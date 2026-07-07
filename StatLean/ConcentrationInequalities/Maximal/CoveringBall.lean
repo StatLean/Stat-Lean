@@ -51,10 +51,7 @@ book's.
 
 **Bibliographic comments.** This is a folklore volume/packing estimate with no single seminal
 origin; it is a standard tool in high-dimensional geometry and the analysis of empirical processes.
-A textbook statement and proof in the form `N(B, ‖·‖₂, ε) ≤ (1 + 2/ε)^d` appears as
-R. Vershynin, *High-Dimensional Probability: An Introduction with Applications in Data Science*,
-Cambridge University Press, 2018, Corollary 4.2.13 (covering numbers of the Euclidean ball). The
-volume-comparison technique underlying it goes back to the classical bounds on metric entropy of
+The volume-comparison technique underlying it goes back to the classical bounds on metric entropy of
 convex bodies (see e.g. A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets
 in function spaces," *Uspekhi Mat. Nauk* 14 (1959), no. 2, 3–86).
 -/

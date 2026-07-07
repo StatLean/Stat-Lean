@@ -32,7 +32,7 @@ Series A*, vol. 222, pp. 309–368, 1922, where the "intrinsic accuracy" / amoun
 statistic is introduced (§§3–11), and is developed further in R. A. Fisher, "Theory of statistical
 estimation," *Proceedings of the Cambridge Philosophical Society*, vol. 22, pp. 700–725, 1925. The
 modern multivariate form as the expected outer product of the score, $I_\theta = E_\theta[\dot\ell_\theta\dot\ell_\theta^{\mathsf T}]$,
-formalized here is the standard textbook synthesis (van der Vaart §7.2).
+formalized here is standard (van der Vaart §7.2).
 -/
 
 open MeasureTheory

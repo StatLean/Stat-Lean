@@ -63,7 +63,7 @@ result is `empiricalProcess_param_estimation`. The proof follows the textbook
    $\sigma_f^2 < \infty$, so the limit Gaussian is well-defined.
 
 **Bibliographic comments.**
-Theorem 19.23 is textbook synthesis (folklore) rather than the statement of a single
+Theorem 19.23 is folklore rather than the statement of a single
 seminal paper: van der Vaart derives it directly from the master approximation
 (19.22) by combining the continuous-mapping theorem with the asymptotic linearity of
 $\hat\theta_n$, leaning on the abstract Donsker machinery for empirical processes

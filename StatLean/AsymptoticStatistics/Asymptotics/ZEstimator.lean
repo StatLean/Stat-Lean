@@ -64,7 +64,7 @@ Scope: scalar parameter / 1-dim score direction `v : Θ`.
 Headline declarations: `zEstimator_semiparametricallyEfficient`,
 `zEstimator_biasResidual_expansion`.
 
-**Bibliographic comments.** This is textbook synthesis with no single
+**Bibliographic comments.** This is a folklore synthesis with no single
 seminal paper. The efficient score function and efficient influence
 function are the central objects of the modern semiparametric efficiency
 theory developed in P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and J. A.

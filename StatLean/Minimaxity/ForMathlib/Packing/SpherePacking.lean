@@ -42,7 +42,7 @@ and the combinatorial count is the single imported brick `exists_hamming_packing
 (`HammingPacking.lean`) — no measure theory. The $n = 0$ degenerate case is handled separately: no
 unit vectors exist, but the bound reduces to $0 \le \log 0 = 0$, satisfied by the empty set.
 
-**Bibliographic comments.** This result is textbook folklore with no single seminal origin: the
+**Bibliographic comments.** This result is folklore with no single seminal origin: the
 existence of an exponentially large, constant-separated subset of the unit sphere follows from a
 standard volume / covering argument and appears in essentially every account of metric entropy and
 minimax lower bounds. The combinatorial engine used here — that a binary code on $n$ bits with

@@ -54,8 +54,7 @@ That work generalizes the missing-at-random (MAR) notion of D. B. Rubin,
 coarsening mechanisms and characterizes when the coarsening is ancillary for the
 full-data parameter. Van der Vaart's §25.5.2 (Information Loss Models) presents the
 resulting information-loss operator as a Hilbert-space projection; the
-conditional-expectation form
-formalized here is the textbook synthesis of that line of work.
+conditional-expectation form formalized here synthesizes that line of work.
 -/
 
 open MeasureTheory Filter Topology

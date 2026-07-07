@@ -57,7 +57,7 @@ deviations from the book:
   class need not be Donsker.
 
 **Bibliographic comments.** The notions of bracket, bracketing number, and the
-bracketing entropy integral are textbook synthesis rather than the content of a
+bracketing entropy integral are folklore rather than the content of a
 single seminal paper; they crystallize a line of work on metric-entropy methods
 for empirical processes. The entropy-integral idea originates with R. M. Dudley,
 "The sizes of compact subsets of Hilbert space and continuity of Gaussian

@@ -108,7 +108,7 @@ efficient influence functions for semiparametric models — the synthesis vdV §
 follows — is developed in P. J. Bickel, C. A. J. Klaassen, Y. Ritov, and
 J. A. Wellner, *Efficient and Adaptive Estimation for Semiparametric Models*,
 Johns Hopkins University Press, 1993. The cone-restriction and basis-selection
-steps assembled in this file are textbook synthesis (vdV §25.3) of these
+steps assembled in this file are a synthesis (vdV §25.3) of these
 sources rather than a single seminal result.
 -/
 

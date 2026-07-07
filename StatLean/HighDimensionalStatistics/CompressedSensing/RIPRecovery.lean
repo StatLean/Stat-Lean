@@ -44,7 +44,7 @@ sufficient condition was sharpened by E. J. Candès, "The restricted isometry pr
 its implications for compressed sensing," *Comptes Rendus de l'Académie des Sciences,
 Paris, Série I*, 346:589–592, 2008, which obtains exact recovery under $\delta_{2s} <
 \sqrt 2 - 1$. The $3s$-RIP form with the threshold $\delta_{3s} < 1/3$ used here is a
-textbook variant of these results (the precise constant is presentation-dependent and not
+standard variant of these results (the precise constant is presentation-dependent and not
 a verbatim theorem of either original paper).
 -/
 
