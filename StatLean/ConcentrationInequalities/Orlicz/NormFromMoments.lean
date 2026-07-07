@@ -30,7 +30,7 @@ unpacking helper closed.
 
 **Bibliographic comments.** The series argument converting moment growth into
 square-exponential integrability is classical (Khinchin; Buldygin–Kozachenko
-1980); constant tracking follows HDP §2.6 and its end-of-chapter Notes.
+1980).
 -/
 
 open MeasureTheory

@@ -27,9 +27,9 @@ fallback: `subGaussianVecNorm_le_of_indep` (Lemma 3.4.2 upper — the
 inner-product/sphere plumbing); the definitions, the lower bound, and the
 marginal predicate lemmas must close.
 
-**Bibliographic comments.** Sub-Gaussian random vectors via one-dimensional
-marginals follow HDP §3.4; the idea of controlling a vector norm by
-coordinate norms under independence is standard (see also
+**Bibliographic comments.** The definition of sub-Gaussian random vectors
+via one-dimensional marginals and the control of a vector norm by coordinate
+norms under independence are both standard (see also
 Hsu–Kakade–Zhang, "A tail inequality for quadratic forms of subgaussian
 random vectors," *Electron. Commun. Probab.* 17 (2012), for the quadratic
 sequel).

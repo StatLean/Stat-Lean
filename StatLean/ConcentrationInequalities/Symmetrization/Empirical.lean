@@ -49,8 +49,8 @@ proven).
 Giné–Zinn school's basic tool, going back to V. N. Vapnik and A. Ya.
 Chervonenkis (1971) and formalized in E. Giné and J. Zinn, "Some limit
 theorems for empirical processes," *Ann. Probab.* 12 (1984), 929–989; the
-textbook treatment is van der Vaart–Wellner, *Weak Convergence and Empirical
-Processes* (1996), §2.3.2, and HDP §8.3 Notes.
+canonical treatment is van der Vaart–Wellner, *Weak Convergence and Empirical
+Processes* (1996), §2.3.2.
 -/
 
 open MeasureTheory ProbabilityTheory

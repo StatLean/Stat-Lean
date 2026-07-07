@@ -38,7 +38,7 @@ elementary.
 A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets in
 function spaces," *Uspekhi Mat. Nauk* 14 (1959), 3–86; its square-root
 integral as a modulus for Gaussian processes is R. M. Dudley, *J. Funct.
-Anal.* 1 (1967), 290–330. See the HDP Chapter 8 Notes.
+Anal.* 1 (1967), 290–330.
 -/
 
 open MeasureTheory Set

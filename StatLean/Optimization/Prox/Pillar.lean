@@ -42,7 +42,7 @@ Descent).
 A polarization identity then reassembles the three pieces into the stated
 two-square bound.
 
-**Bibliographic comments.** This is a textbook synthesis / folklore result with
+**Bibliographic comments.** This is a folklore result with
 no single seminal origin: it is the standard "sufficient-decrease" lemma at the
 heart of forward–backward (proximal-gradient) splitting and ISTA. The closest
 canonical references are A. Beck and M. Teboulle, "A Fast Iterative

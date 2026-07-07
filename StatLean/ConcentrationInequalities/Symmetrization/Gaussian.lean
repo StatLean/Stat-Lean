@@ -47,8 +47,7 @@ constants fully proven; the `N ≥ 2` corollary inherits the debt).
 **Bibliographic comments.** Gaussian–Rademacher comparison is classical
 Banach-space theory: the upper direction and the `√(log N)` loss trace to
 unconditionality arguments in Ledoux–Talagrand, *Probability in Banach
-Spaces* (1991), §4.2 (where the loss is shown necessary at `ℓ∞^N`); see HDP
-§6.6 Notes.
+Spaces* (1991), §4.2 (where the loss is shown necessary at `ℓ∞^N`).
 -/
 
 open MeasureTheory ProbabilityTheory

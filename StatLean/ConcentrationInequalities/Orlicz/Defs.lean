@@ -41,8 +41,8 @@ gewisse Klasse von Räumen vom Typus B," *Bull. Int. Acad. Pol. Ser. A* 8/9
 (1932), 207–220; the gauge-functional form used here is due to W. A. J.
 Luxemburg, *Banach function spaces*, Thesis, Delft, 1955. The ψ₂/ψ₁ special
 cases as the standard carriers of sub-Gaussian / sub-exponential behavior
-follow Vershynin (HDP §2.6, §2.8); see also Buldygin–Kozachenko, *Metric
-Characterization of Random Variables and Random Processes*, AMS 2000.
+follow Vershynin; see also Buldygin–Kozachenko, *Metric Characterization of
+Random Variables and Random Processes*, AMS 2000.
 -/
 
 open MeasureTheory

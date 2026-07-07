@@ -60,8 +60,7 @@ necessary and sufficient for sign-consistent support recovery by P. Zhao and B. 
 selection consistency of Lasso," *Journal of Machine Learning Research*, vol. 7, pp. 2541–2563,
 2006, and by N. Meinshausen and P. Bühlmann, "High-dimensional graphs and variable selection
 with the Lasso," *Annals of Statistics*, vol. 34, no. 3, pp. 1436–1462, 2006 (in the
-neighbourhood-selection setting). Theorem 7.21 is Wainwright's textbook synthesis of this line
-of work.
+neighbourhood-selection setting). Theorem 7.21 is a synthesis of this line of work.
 -/
 
 open Matrix

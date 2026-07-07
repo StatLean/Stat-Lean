@@ -45,8 +45,7 @@ the work item `hdp-emp-dense`: `iSup_abs_empiricalProcess_eq_iSup_netUnion`
 classical device for measurability of empirical suprema, systematized in
 R. M. Dudley, *Uniform Central Limit Theorems*, Cambridge, 1999, §5.3, and
 van der Vaart–Wellner, *Weak Convergence and Empirical Processes*, Springer,
-1996, §1.7; HDP suppresses the issue (§8.2 footnote), and this file makes the
-suppressed argument explicit.
+1996, §1.7; this file makes the usually-suppressed argument explicit.
 -/
 
 open MeasureTheory

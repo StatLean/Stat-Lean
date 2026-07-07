@@ -47,13 +47,11 @@ Mathlib brick: `ProbabilityTheory.measure_ge_le_exp_mul_mgf`
 `IsFiniteMeasure μ` is derived privately from `integrable_exp_mul` at `l = 0`,
 mirroring the pattern in `SubGaussian/TailBounds.lean`.
 
-**Bibliographic comments.** The two-regime sub-exponential tail bound is textbook folklore
+**Bibliographic comments.** The two-regime sub-exponential tail bound is folklore
 with no single seminal origin; it is the standard packaging of the sub-exponential MGF
-condition into a deviation inequality via the Chernoff method. Standard modern references
+condition into a deviation inequality via the Chernoff method. A standard modern reference
 giving precisely this two-regime ($\exp(-ct^2)$ for small $t$, $\exp(-ct)$ for large $t$)
-statement are: R. Vershynin, *High-Dimensional Probability: An Introduction with
-Applications in Data Science*, Cambridge University Press, 2018, §2.8 (Proposition 2.7.1 /
-Theorem 2.8.1); and M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic
+statement is M. J. Wainwright, *High-Dimensional Statistics: A Non-Asymptotic
 Viewpoint*, Cambridge University Press, 2019, §2.1.3 (Proposition 2.9, sub-exponential tail
 bound). The underlying Chernoff bounding technique originates with H. Chernoff, "A measure
 of asymptotic efficiency for tests of a hypothesis based on the sum of observations,"

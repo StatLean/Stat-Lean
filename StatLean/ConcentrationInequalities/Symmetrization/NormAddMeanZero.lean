@@ -34,8 +34,7 @@ pointwise core fully proven.
 **Bibliographic comments.** This inequality is folklore (a one-line
 consequence of Jensen's inequality for the norm); in the Banach-space
 literature it appears as the standard "centering increases moments" step, see
-Ledoux–Talagrand, *Probability in Banach Spaces* (1991), Lemma 6.3, and HDP
-§6.3 Notes.
+Ledoux–Talagrand, *Probability in Banach Spaces* (1991), Lemma 6.3.
 -/
 
 open MeasureTheory ProbabilityTheory

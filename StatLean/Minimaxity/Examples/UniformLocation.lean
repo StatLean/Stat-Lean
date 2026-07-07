@@ -53,7 +53,7 @@ total-variation/Hellinger bound (Lemma 15.3).
 * `uniform_location_minimax_rate`: the two-point minimax reduction (`minimax_two_point`) with the
   above total-variation bound, delivering the final $n^{-2}$ rate.
 
-**Bibliographic comments.** This is a classical textbook example rather than a result with a single
+**Bibliographic comments.** This is a classical example rather than a result with a single
 seminal source. The uniform shift (location) family is the canonical illustration of a *non-regular*
 parametric model whose minimax rate $n^{-2}$ is faster than the parametric $n^{-1}$, because the
 log-likelihood is not differentiable in quadratic mean and the densities have non-overlapping

@@ -42,9 +42,9 @@ interface). Constants: failure probability `1/100` and sample-size constant
 Hoeffding reuse — real; sorry only the union-bound + numeric assembly).
 
 **Bibliographic comments.** The dimension-reduction step is the modern
-streamlining (due to Vershynin, HDP §8.3.5) of the random-projection idea in
+streamlining (due to R. Vershynin) of the random-projection idea in
 the covering-number bound of R. M. Dudley, "Central limit theorems for
-empirical measures," *Ann. Probab.* 6 (1978), 899–929; see HDP §8.3 Notes.
+empirical measures," *Ann. Probab.* 6 (1978), 899–929.
 -/
 
 open MeasureTheory ProbabilityTheory

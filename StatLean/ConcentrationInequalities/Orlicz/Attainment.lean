@@ -37,7 +37,7 @@ must close since every bridge consumes them).
 **Bibliographic comments.** Attainment of the Luxemburg gauge under
 continuity is classical Orlicz-space theory (Luxemburg 1955; see also
 Rao–Ren, *Theory of Orlicz Spaces*, Dekker 1991, §III); the threshold-2
-formulation is Vershynin's (HDP §2.6/§2.8 Notes).
+formulation is Vershynin's.
 -/
 
 open MeasureTheory Filter

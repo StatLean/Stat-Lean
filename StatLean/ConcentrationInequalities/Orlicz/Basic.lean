@@ -29,8 +29,7 @@ item: `orliczNorm_const_mul` (the gauge-set bijection under scaling).
 
 **Bibliographic comments.** The norm axioms for Luxemburg functionals are due
 to W. A. J. Luxemburg, *Banach function spaces*, Thesis, Delft, 1955; the
-sub-Gaussian/sub-exponential instances are Vershynin's Exercises 2.42–2.43
-(HDP §2.6/§2.8 Notes).
+sub-Gaussian/sub-exponential instances are Vershynin's Exercises 2.42–2.43.
 -/
 
 open MeasureTheory

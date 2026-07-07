@@ -35,8 +35,7 @@ corollary skeletons standing on it.
 **Bibliographic comments.** Entropy bounds of order $e^{C/\varepsilon}$ for
 Lipschitz function classes go back to Kolmogorov–Tikhomirov (1959, §2); the
 plug-in route through Dudley's integral is the standard empirical-process
-argument (Dudley 1967; van der Vaart–Wellner 1996, §2.7). See the HDP
-Chapter 8 Notes.
+argument (Dudley 1967; van der Vaart–Wellner 1996, §2.7).
 -/
 
 open MeasureTheory ProbabilityTheory Set

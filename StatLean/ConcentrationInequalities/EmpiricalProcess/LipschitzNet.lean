@@ -42,8 +42,8 @@ Dudley plug in `LipschitzLLN.lean` (Eq. (8.25)).
 **Bibliographic comments.** Covering numbers of Lipschitz balls, with the
 $\log N(\varepsilon) \asymp 1/\varepsilon$ rate formalized here, are due to
 A. N. Kolmogorov and V. M. Tikhomirov, "ε-entropy and ε-capacity of sets in
-function spaces," *Uspekhi Mat. Nauk* 14 (1959), 3–86; see HDP §8 Notes. The
-step-path counting argument is the standard solution of HDP Exercise 8.9.
+function spaces," *Uspekhi Mat. Nauk* 14 (1959), 3–86. The step-path
+counting argument used here is standard.
 -/
 
 open scoped ENNReal NNReal

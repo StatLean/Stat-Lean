@@ -34,10 +34,8 @@ other (cross-area concept-layer imports are forbidden by the project charter).
 **Bibliographic comments.** Empirical processes as random functionals indexed
 by function classes go back to the Glivenko–Cantelli theorem (1933) and were
 systematized by R. M. Dudley, "Central limit theorems for empirical measures,"
-*Ann. Probab.* 6 (1978), 899–929; the modern textbook treatments are van der
-Vaart–Wellner, *Weak Convergence and Empirical Processes*, Springer 1996, and
-HDP §8.2. The Wasserstein/empirical-measure reading of Eq. (8.23) is HDP
-Remark 8.2.6.
+*Ann. Probab.* 6 (1978), 899–929; the modern treatment is van der
+Vaart–Wellner, *Weak Convergence and Empirical Processes*, Springer 1996.
 -/
 
 open MeasureTheory

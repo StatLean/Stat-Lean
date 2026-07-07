@@ -35,7 +35,7 @@ it).
 
 **Bibliographic comments.** The knot-snapping argument is the classical
 Kolmogorov–Tikhomirov (1959) upper bound for the ε-entropy of Lipschitz
-balls; the exercise form is HDP Exercise 8.9 (see HDP §8 Notes).
+balls.
 -/
 
 open scoped ENNReal NNReal

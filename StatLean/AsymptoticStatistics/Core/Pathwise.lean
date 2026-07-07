@@ -66,7 +66,7 @@ include Yu. A. Koshevnik and B. Ya. Levit, "On a Non-parametric Analogue of the
 Information Matrix," *Theory of Probability and Its Applications* 21 (1976), 738–753, and
 J. Pfanzagl (with W. Wefelmeyer), *Contributions to a General Asymptotic Statistical
 Theory*, Lecture Notes in Statistics 13, Springer, 1982. The presentation formalized
-here follows van der Vaart's textbook §25.3, which synthesizes these sources.
+here follows van der Vaart's §25.3, which synthesizes these sources.
 -/
 
 open MeasureTheory

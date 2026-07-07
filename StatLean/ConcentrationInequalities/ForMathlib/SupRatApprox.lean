@@ -32,7 +32,7 @@ Named-sorry fallback of this work item: `iSup_eq_iSup_rat_of_right_approx`.
 **Bibliographic comments.** The reduction of the Kolmogorov–Smirnov /
 Glivenko–Cantelli supremum to a countable dense set is classical (V. Glivenko
 and F. Cantelli, *Giorn. Ist. Ital. Attuari* 4 (1933)); the right-continuity
-route used here follows the standard CDF treatment, cf. HDP §8.3 Notes.
+route used here follows the standard CDF treatment.
 -/
 
 open Set

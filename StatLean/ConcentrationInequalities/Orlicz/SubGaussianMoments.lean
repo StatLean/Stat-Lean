@@ -30,7 +30,7 @@ Named-sorry fallback of this work item: `eLpNorm_le_of_subGaussianNorm_le`
 
 **Bibliographic comments.** Moment growth `‖X‖_p ≍ √p` as the second face of
 sub-Gaussianity is classical (Khinchin-type inequalities; Buldygin–Kozachenko
-1980); the equivalence bookkeeping follows HDP §2.6 and its Notes.
+1980).
 -/
 
 open MeasureTheory

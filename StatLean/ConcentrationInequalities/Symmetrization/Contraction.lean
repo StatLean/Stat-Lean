@@ -35,7 +35,6 @@ it.
 **Bibliographic comments.** The contraction principle is due to J.-P. Kahane
 (*Some Random Series of Functions*, 1968); the general Lipschitz-contraction
 form is Ledoux–Talagrand, *Probability in Banach Spaces* (1991), Theorem 4.4.
-The coefficient form stated here follows HDP §6.6 and its Notes.
 -/
 
 open MeasureTheory ProbabilityTheory

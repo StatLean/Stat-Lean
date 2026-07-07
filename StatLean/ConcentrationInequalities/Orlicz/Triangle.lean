@@ -31,8 +31,8 @@ work item: `orliczNorm_add_le` itself, with the ψ₂/ψ₁ instances and the
 finset-sum corollary derived from it.
 
 **Bibliographic comments.** That the Luxemburg gauge is a norm is Luxemburg's
-thesis (Delft, 1955); Vershynin assigns the ψ₂ case as HDP Exercise 2.42. See
-also Rao–Ren, *Theory of Orlicz Spaces*, Dekker 1991, §III.3.
+thesis (Delft, 1955). See also Rao–Ren, *Theory of Orlicz Spaces*, Dekker
+1991, §III.3.
 -/
 
 open MeasureTheory

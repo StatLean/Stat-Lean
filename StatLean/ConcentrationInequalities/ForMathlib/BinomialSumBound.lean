@@ -29,8 +29,7 @@ candidate upstream. Named-sorry fallback of this work item:
 **Bibliographic comments.** The bound is folklore in combinatorics and
 statistical learning theory; it appears as the standard companion to the
 Sauer–Shelah lemma (N. Sauer, *J. Combin. Theory Ser. A* 13 (1972), 145–147;
-S. Shelah, *Pacific J. Math.* 41 (1972), 247–261) — see HDP §8.3 Notes and
-Exercise 0.6.
+S. Shelah, *Pacific J. Math.* 41 (1972), 247–261).
 -/
 
 open Finset

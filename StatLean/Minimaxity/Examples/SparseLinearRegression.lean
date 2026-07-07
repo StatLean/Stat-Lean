@@ -48,7 +48,7 @@ M. J. Wainwright, and B. Yu, "Minimax rates of estimation for high-dimensional l
 $\ell_q$-balls," *IEEE Transactions on Information Theory*, vol. 57, no. 10, pp. 6976–6994, 2011
 (arXiv:0910.2042). That paper establishes minimax rates over $\ell_q$-balls for $q \in [0, 1]$ in both
 $\ell_2$-estimation and $\ell_2$-prediction loss; the hard-sparsity ($q = 0$, i.e. the $\mathbb{B}_0(s)$
-ball) case formalized here is the $s\,\log(d/s)/n$ rate that Example 15.16 of Wainwright's textbook
+ball) case formalized here is the $s\,\log(d/s)/n$ rate that Example 15.16 of Wainwright
 distills from their analysis.
 -/
 
