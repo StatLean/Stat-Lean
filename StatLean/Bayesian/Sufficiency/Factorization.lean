@@ -49,14 +49,19 @@ variable {Θ 𝓧 S : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace
 /-- The statistic kernel is the pushforward: `statKernel K T hT θ = (K θ).map T`
 (Robert §1.3.1). -/
 theorem statKernel_apply (K : Kernel Θ 𝓧) {T : 𝓧 → S} (hT : Measurable T) (θ : Θ) :
-    statKernel K hT θ = (K θ).map T := sorry
+    statKernel K hT θ = (K θ).map T := by
+  show (Kernel.deterministic T hT ∘ₖ K) θ = (K θ).map T
+  rw [Kernel.comp_apply, Measure.deterministic_comp_eq_map hT]
 
 /-- A density factoring through `T` passes through the pushforward:
 `(μ.withDensity (f ∘ T)).map T = (μ.map T).withDensity f`. -/
 theorem map_withDensity_comp {T : 𝓧 → S}
     -- LEAN-ONLY: the statistic and the density are measurable (regularity)
     (hT : Measurable T) {f : S → ℝ≥0∞} (hf : Measurable f) (μ : Measure 𝓧) :
-    (μ.withDensity fun x => f (T x)).map T = (μ.map T).withDensity f := sorry
+    (μ.withDensity fun x => f (T x)).map T = (μ.map T).withDensity f := by
+  ext s hs
+  rw [Measure.map_apply hT hs, withDensity_apply _ (hT hs), withDensity_apply _ hs,
+    Measure.restrict_map hT hs, lintegral_map hf hT]
 
 /-- **The base factor cancels from the posterior** (Robert §1.3.1): under a Fisher–Neyman
 factorization, at any data point where `h(x) ∉ {0, ∞}` the generalized posterior is the
@@ -68,7 +73,16 @@ theorem generalizedPosterior_of_factorized {p : Θ → 𝓧 → ℝ≥0∞} {T :
     -- USER-INPUT: the base factor is positive and finite at the observed data; Robert §1.3.1
     (hx0 : h x ≠ 0) (hx' : h x ≠ ∞) :
     generalizedPosterior p π x
-      = π.withDensity fun θ => g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π := sorry
+      = π.withDensity fun θ => g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π := by
+  have hpred : predictiveDensity p π x = (∫⁻ θ', g θ' (T x) ∂π) * h x := by
+    unfold predictiveDensity
+    simp_rw [hfac]
+    rw [lintegral_mul_const' _ _ hx']
+  rw [generalizedPosterior_def]
+  congr 1
+  funext θ
+  show p θ x / predictiveDensity p π x = g θ (T x) / ∫⁻ θ', g θ' (T x) ∂π
+  rw [hfac θ x, hpred, ENNReal.mul_div_mul_right _ _ hx0 hx']
 
 /-- **The posterior depends on the data only through a sufficient statistic** (Robert §1.3.1–1.3.2,
 dominated form): under a Fisher–Neyman factorization, the full-data posterior at `x` equals the
@@ -84,7 +98,46 @@ theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty �
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ))
     -- USER-INPUT: Fisher–Neyman factorization of the likelihood; Robert §1.3.1, p. 14
     (hfac : IsFactorizedLikelihood p T g h) :
-    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x = ((statKernel κ hT)†π) (T x) := sorry
+    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x = ((statKernel κ hT)†π) (T x) := by
+  -- `g θ` is measurable, as is its precomposition with `T`.
+  have hgθ : ∀ θ, Measurable (g θ) := fun θ =>
+    hg.comp (measurable_const.prodMk measurable_id)
+  -- The statistic experiment is dominated by `ν' := (ν.withDensity h).map T` with density `g`.
+  have hκ' : ∀ θ, statKernel κ hT θ = ((ν.withDensity h).map T).withDensity (g θ) := by
+    intro θ
+    rw [statKernel_apply κ hT θ, hκ θ]
+    have hpθ : (p θ) = fun x => h x * g θ (T x) := by
+      funext x; rw [hfac θ x, mul_comm]
+    rw [hpθ, withDensity_mul _ hh ((hgθ θ).comp hT), map_withDensity_comp hT (hgθ θ)]
+  -- Batch-1 dominated Bayes for the full and the statistic experiments.
+  have hfull := posterior_eq_withDensity_likelihood_div_predictive (κ := κ) (π := π) (ν := ν) hp hκ
+  have hstatpost := posterior_eq_withDensity_likelihood_div_predictive
+    (κ := statKernel κ hT) (π := π) (ν := (ν.withDensity h).map T) hg hκ'
+  -- The statistic law is the pushforward of the data law: `statKernel κ hT ∘ₘ π = (κ ∘ₘ π).map T`.
+  have hmap : statKernel κ hT ∘ₘ π = (κ ∘ₘ π).map T := by
+    show (Kernel.deterministic T hT ∘ₖ κ) ∘ₘ π = (κ ∘ₘ π).map T
+    rw [← Measure.comp_assoc, Measure.deterministic_comp_eq_map hT]
+  rw [hmap] at hstatpost
+  -- Transport the statistic-side a.e. equality back along `T`.
+  have hstat := ae_of_ae_map hT.aemeasurable hstatpost
+  have hpos := predictiveDensity_pos_ae (κ := κ) (π := π) (ν := ν) hp hκ
+  have hlt := predictiveDensity_lt_top_ae_comp (κ := κ) (π := π) (ν := ν) hp hκ
+  filter_upwards [hfull, hstat, hpos, hlt] with x hx hxstat hxpos hxlt
+  -- The predictive density factors: `m x = (∫ g(·, T x) dπ) * h x`.
+  have hgTx : Measurable fun θ' => g θ' (T x) := hg.comp (measurable_id.prodMk measurable_const)
+  have hmfac : predictiveDensity p π x = (∫⁻ θ', g θ' (T x) ∂π) * h x := by
+    unfold predictiveDensity
+    simp_rw [hfac]
+    rw [lintegral_mul_const _ hgTx]
+  -- Hence `h x ∈ (0, ∞)`.
+  have hne0 : (∫⁻ θ', g θ' (T x) ∂π) * h x ≠ 0 := by rw [← hmfac]; exact hxpos.ne'
+  obtain ⟨hA0, hx0⟩ := mul_ne_zero_iff.mp hne0
+  have hx' : h x ≠ ∞ := by
+    intro hinf
+    exact hxlt.ne (by rw [hmfac, hinf, ENNReal.mul_top hA0])
+  -- Bridge the two posteriors via the cancellation of `h`.
+  rw [hx, hxstat, ← generalizedPosterior_of_factorized hfac hx0 hx', generalizedPosterior_def]
+  rfl
 
 /-- **The likelihood principle**, dominated version (Robert §1.3.2, pp. 15–16): proportional
 likelihoods yield the same posterior under the same prior. -/
@@ -94,6 +147,15 @@ theorem generalizedPosterior_eq_of_likelihood_proportional {p₁ p₂ : Θ → �
     (hc0 : c ≠ 0) (hc' : c ≠ ∞)
     -- USER-INPUT: the two observations have proportional likelihoods; Robert §1.3.2
     (hprop : ∀ θ, p₁ θ x₁ = c * p₂ θ x₂) :
-    generalizedPosterior p₁ π x₁ = generalizedPosterior p₂ π x₂ := sorry
+    generalizedPosterior p₁ π x₁ = generalizedPosterior p₂ π x₂ := by
+  have hpred : predictiveDensity p₁ π x₁ = c * predictiveDensity p₂ π x₂ := by
+    unfold predictiveDensity
+    simp_rw [hprop]
+    rw [lintegral_const_mul' c _ hc']
+  rw [generalizedPosterior_def, generalizedPosterior_def]
+  congr 1
+  funext θ
+  show p₁ θ x₁ / predictiveDensity p₁ π x₁ = p₂ θ x₂ / predictiveDensity p₂ π x₂
+  rw [hprop θ, hpred, ENNReal.mul_div_mul_left _ _ hc0 hc']
 
 end StatLean.Bayesian

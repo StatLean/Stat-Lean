@@ -55,12 +55,82 @@ theorem posterior_prod_ae_eq_sequential
     -- USER-INPUT: both coordinates are dominated models; Robert Definition 1.2.1 / §1.4
     (hκ₁ : ∀ θ, κ₁ θ = ν₁.withDensity (p₁ θ)) (hκ₂ : ∀ θ, κ₂ θ = ν₂.withDensity (p₂ θ)) :
     ∀ᵐ q ∂((κ₁ ×ₖ κ₂) ∘ₘ π),
-      ((κ₁ ×ₖ κ₂)†π) q = generalizedPosterior p₂ (generalizedPosterior p₁ π q.1) q.2 := sorry
+      ((κ₁ ×ₖ κ₂)†π) q = generalizedPosterior p₂ (generalizedPosterior p₁ π q.1) q.2 := by
+  -- (i) The pair experiment is dominated by `ν₁.prod ν₂` with the product density.
+  set pJ : Θ → 𝓧 × 𝓨 → ℝ≥0∞ := fun θ q => p₁ θ q.1 * p₂ θ q.2 with hpJdef
+  have hpJmeas : Measurable (Function.uncurry pJ) :=
+    (hp₁.comp (measurable_fst.prodMk (measurable_fst.comp measurable_snd))).mul
+      (hp₂.comp (measurable_fst.prodMk (measurable_snd.comp measurable_snd)))
+  have hκJ : ∀ θ, (κ₁ ×ₖ κ₂) θ = (ν₁.prod ν₂).withDensity (pJ θ) := by
+    intro θ
+    have h₁ : Measurable (p₁ θ) := hp₁.comp (measurable_const.prodMk measurable_id)
+    have h₂ : Measurable (p₂ θ) := hp₂.comp (measurable_const.prodMk measurable_id)
+    rw [Kernel.prod_apply, hκ₁, hκ₂, prod_withDensity₀ h₁.aemeasurable h₂.aemeasurable]
+    rfl
+  -- (ii) Batch-1 dominated Bayes for the pair.
+  have hbayes := posterior_eq_withDensity_likelihood_div_predictive
+    (κ := κ₁ ×ₖ κ₂) (ν := ν₁.prod ν₂) (p := pJ) hpJmeas hκJ
+  -- (iii) The first-coordinate predictive `m₁` is nondegenerate `(κ₁ ×ₖ κ₂) ∘ₘ π`-a.e.
+  have hfst : ((κ₁ ×ₖ κ₂) ∘ₘ π).map Prod.fst = κ₁ ∘ₘ π := by
+    rw [Measure.map_comp _ _ measurable_fst, ← Kernel.fst_eq, Kernel.fst_prod]
+  have hpos : ∀ᵐ q ∂((κ₁ ×ₖ κ₂) ∘ₘ π), 0 < predictiveDensity p₁ π q.1 := by
+    have h := predictiveDensity_pos_ae (κ := κ₁) (π := π) (ν := ν₁) hp₁ hκ₁
+    rw [← hfst] at h
+    rwa [ae_map_iff measurable_fst.aemeasurable
+      (measurableSet_lt measurable_const (measurable_predictiveDensity hp₁))] at h
+  have htop : ∀ᵐ q ∂((κ₁ ×ₖ κ₂) ∘ₘ π), predictiveDensity p₁ π q.1 < ∞ := by
+    have h := predictiveDensity_lt_top_ae_comp (κ := κ₁) (π := π) (ν := ν₁) hp₁ hκ₁
+    rw [← hfst] at h
+    rwa [ae_map_iff measurable_fst.aemeasurable
+      (measurableSet_lt (measurable_predictiveDensity hp₁) measurable_const)] at h
+  -- (iv) Rearrange the joint posterior into the two-stage form.
+  filter_upwards [hbayes, hpos, htop] with q hq hqpos hqtop
+  rw [hq]
+  have hm0 : predictiveDensity p₁ π q.1 ≠ 0 := hqpos.ne'
+  have hmtop : predictiveDensity p₁ π q.1 ≠ ∞ := hqtop.ne
+  have ha : Measurable (fun θ => p₁ θ q.1) := hp₁.comp (measurable_id.prodMk measurable_const)
+  have hb : Measurable (fun θ => p₂ θ q.2) := hp₂.comp (measurable_id.prodMk measurable_const)
+  have hbd1 : Measurable (bayesDensity p₁ π q.1) := ha.div_const (predictiveDensity p₁ π q.1)
+  have hbd2 : Measurable (bayesDensity p₂ (generalizedPosterior p₁ π q.1) q.2) :=
+    hb.div_const (predictiveDensity p₂ (generalizedPosterior p₁ π q.1) q.2)
+  -- The first-stage generalized posterior has density `p₁(·,q.1)/m₁`.
+  have hgp₁ : generalizedPosterior p₁ π q.1
+      = π.withDensity (fun θ => p₁ θ q.1 / predictiveDensity p₁ π q.1) := rfl
+  -- The second-stage predictive `m₂ = m₁₂ / m₁`, in multiplicative form `m₁ * m₂ = m₁₂`.
+  have hprod : predictiveDensity p₁ π q.1
+        * predictiveDensity p₂ (generalizedPosterior p₁ π q.1) q.2
+      = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π := by
+    show predictiveDensity p₁ π q.1 * (∫⁻ θ, p₂ θ q.2 ∂(generalizedPosterior p₁ π q.1))
+      = ∫⁻ θ', p₁ θ' q.1 * p₂ θ' q.2 ∂π
+    rw [hgp₁, lintegral_withDensity_eq_lintegral_mul _ (ha.div_const _),
+      ← lintegral_const_mul _ ((ha.div_const _).mul hb)]
+    refine lintegral_congr fun θ => ?_
+    rw [Pi.mul_apply, ← mul_assoc, ENNReal.mul_div_cancel hm0 hmtop]
+  -- Assemble: two-stage density equals the joint density.
+  rw [generalizedPosterior_def, generalizedPosterior_def, ← withDensity_mul _ hbd1 hbd2]
+  refine withDensity_congr_ae (Filter.Eventually.of_forall fun θ => ?_)
+  simp only [Pi.mul_apply, bayesDensity, hpJdef]
+  rw [← hprod, div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,
+    ENNReal.mul_inv (Or.inl hm0) (Or.inl hmtop)]
+  ring
 
 /-- Change of prior variables through `compProd` (rectangle computation). -/
 theorem map_compProd_comap (φ : Θ ≃ᵐ Θ') (κ : Kernel Θ 𝓧) [IsSFiniteKernel κ]
     (π : Measure Θ) [SFinite π] :
-    (π.map φ) ⊗ₘ (κ.comap φ.symm φ.symm.measurable) = (π ⊗ₘ κ).map (Prod.map φ id) := sorry
+    (π.map φ) ⊗ₘ (κ.comap φ.symm φ.symm.measurable) = (π ⊗ₘ κ).map (Prod.map φ id) := by
+  have hmap : Measurable (Prod.map (φ : Θ → Θ') (id : 𝓧 → 𝓧)) :=
+    φ.measurable.prodMap measurable_id
+  have hk : (Kernel.id ×ₖ κ.comap φ.symm φ.symm.measurable) ∘ₖ
+        Kernel.deterministic (φ : Θ → Θ') φ.measurable
+      = (Kernel.id ×ₖ κ).map (Prod.map (φ : Θ → Θ') id) := by
+    rw [Kernel.comp_deterministic_eq_comap]
+    ext θ : 1
+    rw [Kernel.comap_apply, Kernel.map_apply _ hmap, Kernel.prod_apply, Kernel.prod_apply,
+      Kernel.id_apply, Kernel.id_apply, Kernel.comap_apply, φ.symm_apply_apply,
+      ← Measure.map_prod_map _ _ φ.measurable measurable_id, Measure.map_dirac' φ.measurable,
+      Measure.map_id]
+  rw [Measure.compProd_eq_comp_prod, ← Measure.deterministic_comp_eq_map φ.measurable,
+    Measure.comp_assoc, hk, Measure.compProd_eq_comp_prod, Measure.map_comp _ _ hmap]
 
 /-- **Reparameterization equivariance of the posterior** (Robert §1.3/§3.5 invariance): for a
 measurable equivalence of parameter spaces, the posterior of the reparameterized experiment is the
@@ -69,6 +139,33 @@ theorem posterior_comap_map_ae_eq_map_posterior
     [StandardBorelSpace Θ] [Nonempty Θ] [StandardBorelSpace Θ'] [Nonempty Θ']
     {π : Measure Θ} [IsFiniteMeasure π] (κ : Kernel Θ 𝓧) [IsFiniteKernel κ] (φ : Θ ≃ᵐ Θ') :
     ∀ᵐ x ∂(κ ∘ₘ π),
-      ((κ.comap φ.symm φ.symm.measurable)†(π.map φ)) x = ((κ†π) x).map φ := sorry
+      ((κ.comap φ.symm φ.symm.measurable)†(π.map φ)) x = ((κ†π) x).map φ := by
+  haveI : IsFiniteMeasure (π.map φ) := Measure.isFiniteMeasure_map π φ
+  have hmapφid : Measurable (Prod.map (φ : Θ → Θ') (id : 𝓧 → 𝓧)) :=
+    φ.measurable.prodMap measurable_id
+  have hmapidφ : Measurable (Prod.map (id : 𝓧 → 𝓧) (φ : Θ → Θ')) :=
+    measurable_id.prodMap φ.measurable
+  -- The reparameterized experiment has the same data distribution.
+  have hker : (κ.comap φ.symm φ.symm.measurable).comap (φ : Θ → Θ') φ.measurable = κ := by
+    ext θ : 1
+    rw [Kernel.comap_apply, Kernel.comap_apply, φ.symm_apply_apply]
+  have hbase : (κ.comap φ.symm φ.symm.measurable) ∘ₘ (π.map φ) = κ ∘ₘ π := by
+    rw [← Measure.deterministic_comp_eq_map φ.measurable, Measure.comp_assoc,
+      Kernel.comp_deterministic_eq_comap, hker]
+  -- The pushforward posterior disintegrates the reparameterized experiment.
+  have hfun : (Prod.map (id : 𝓧 → 𝓧) (φ : Θ → Θ')) ∘ (Prod.swap : Θ × 𝓧 → 𝓧 × Θ)
+      = (Prod.swap : Θ' × 𝓧 → 𝓧 × Θ') ∘ (Prod.map (φ : Θ → Θ') id) := by
+    funext z; rfl
+  have hcompProd :
+      ((κ.comap φ.symm φ.symm.measurable) ∘ₘ (π.map φ)) ⊗ₘ ((κ†π).map (φ : Θ → Θ'))
+        = ((π.map φ) ⊗ₘ (κ.comap φ.symm φ.symm.measurable)).map Prod.swap := by
+    rw [hbase, Measure.compProd_map φ.measurable, compProd_posterior_eq_map_swap,
+      Measure.map_map hmapidφ measurable_swap, hfun,
+      ← Measure.map_map measurable_swap hmapφid, ← map_compProd_comap]
+  have hae := ae_eq_posterior_of_compProd_eq
+    (κ := κ.comap φ.symm φ.symm.measurable) (μ := π.map φ) hcompProd
+  rw [hbase] at hae
+  filter_upwards [hae] with x hx
+  rw [← hx, Kernel.map_apply _ φ.measurable]
 
 end StatLean.Bayesian

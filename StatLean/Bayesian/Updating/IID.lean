@@ -48,6 +48,9 @@ theorem posterior_iid_eq_withDensity_prod_likelihood
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) (n : ℕ) :
     ∀ᵐ x ∂(iidKernel κ n ∘ₘ π),
       ((iidKernel κ n)†π) x
-        = π.withDensity fun θ => (∏ i, p θ (x i)) / ∫⁻ θ', ∏ i, p θ' (x i) ∂π := sorry
+        = π.withDensity fun θ => (∏ i, p θ (x i)) / ∫⁻ θ', ∏ i, p θ' (x i) ∂π :=
+  posterior_eq_withDensity_likelihood_div_predictive
+    (ν := Measure.pi fun _ => ν)
+    (measurable_uncurry_prod_likelihood hp) (iidKernel_withDensity hp hκ n)
 
 end StatLean.Bayesian
