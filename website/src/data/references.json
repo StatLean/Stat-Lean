@@ -628,5 +628,40 @@
     "key": "varshamov1957",
     "sortKey": "Varshamov",
     "html": "R. R. Varshamov, \"Estimate of the number of signals in error correcting codes,\" *Doklady Akademii Nauk SSSR* **117**, 1957, pp. 739–741."
+  },
+  {
+    "key": "vapnik-chervonenkis1971",
+    "sortKey": "Vapnik",
+    "html": "V. N. Vapnik and A. Ya. Chervonenkis, \"On the uniform convergence of relative frequencies of events to their probabilities,\" *Theory of Probability and Its Applications* **16**(2), 1971, pp. 264–280."
+  },
+  {
+    "key": "sauer1972",
+    "sortKey": "Sauer",
+    "html": "N. Sauer, \"On the density of families of sets,\" *Journal of Combinatorial Theory, Series A* **13**(1), 1972, pp. 145–147."
+  },
+  {
+    "key": "shelah1972",
+    "sortKey": "Shelah",
+    "html": "S. Shelah, \"A combinatorial problem; stability and order for models and theories in infinitary languages,\" *Pacific Journal of Mathematics* **41**(1), 1972, pp. 247–261."
+  },
+  {
+    "key": "talagrand1987",
+    "sortKey": "Talagrand",
+    "html": "M. Talagrand, \"Regularity of Gaussian processes,\" *Acta Mathematica* **159**(1), 1987, pp. 99–149."
+  },
+  {
+    "key": "talagrand2014",
+    "sortKey": "Talagrand",
+    "html": "M. Talagrand, *Upper and Lower Bounds for Stochastic Processes: Modern Methods and Classical Problems*, Springer, 2014."
+  },
+  {
+    "key": "fernique1975",
+    "sortKey": "Fernique",
+    "html": "X. Fernique, \"Régularité des trajectoires des fonctions aléatoires gaussiennes,\" in *École d'Été de Probabilités de Saint-Flour IV—1974*, Lecture Notes in Mathematics **480**, Springer, 1975, pp. 1–96."
+  },
+  {
+    "key": "ledoux-talagrand1991",
+    "sortKey": "Ledoux",
+    "html": "M. Ledoux and M. Talagrand, *Probability in Banach Spaces: Isoperimetry and Processes*, Springer, 1991."
   }
 ]
