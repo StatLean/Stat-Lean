@@ -38,13 +38,13 @@ variable {Θ 𝓧 : Type*} [MeasurableSpace Θ] [MeasurableSpace 𝓧]
 Bayesian predictive density (a definitional bridge). -/
 theorem mixtureDensity_eq_predictiveDensity (p : Θ → 𝓧 → ℝ≥0∞) (G : Measure Θ) (x : 𝓧) :
     mixtureDensity p G x = predictiveDensity p G x := by
-  sorry
+  rfl
 
 /-- **Oracle posterior** (3F.2): the empirical-Bayes oracle posterior is the generalized posterior
 of the likelihood against the mixing distribution (Robbins 1956). -/
 theorem npEB_oraclePosterior_eq_withDensity (p : Θ → 𝓧 → ℝ≥0∞) (G : Measure Θ) (x : 𝓧) :
     generalizedPosterior p G x = G.withDensity (bayesDensity p G x) := by
-  sorry
+  exact generalizedPosterior_def p G x
 
 /-- **The oracle Bayes rule minimizes compound risk** (3F.3): a decision rule with pointwise
 smaller posterior expected loss has smaller compound (marginal-integrated) risk (Robbins 1951). -/
@@ -55,6 +55,6 @@ theorem oracleBayesRule_minimizes_compoundRisk {ℓ : Θ → Θ → ℝ≥0∞} 
       ≤ ∫⁻ θ, ℓ θ (d₁ x) ∂(generalizedPosterior p G x)) :
     ∫⁻ x, (∫⁻ θ, ℓ θ (d₀ x) ∂(generalizedPosterior p G x)) ∂m
       ≤ ∫⁻ x, (∫⁻ θ, ℓ θ (d₁ x) ∂(generalizedPosterior p G x)) ∂m := by
-  sorry
+  exact lintegral_mono hpoint
 
 end StatLean.Bayesian

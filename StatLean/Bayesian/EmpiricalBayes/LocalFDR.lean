@@ -36,7 +36,7 @@ variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 /-- **Two-groups marginal** (3G.1): `f(x) = π₀ f₀(x) + (1−π₀) f₁(x)` (Efron §2.1). -/
 theorem twoGroupMarginalDensity_eq (π₀ : ℝ≥0∞) (f₀ f₁ : 𝓧 → ℝ≥0∞) (x : 𝓧) :
     twoGroupsMixture π₀ f₀ f₁ x = π₀ * f₀ x + (1 - π₀) * f₁ x := by
-  sorry
+  rfl
 
 /-- **Local FDR is the posterior null probability** (3G.2): `fdr(x) = π₀ f₀(x)/f(x)` is the
 posterior probability of the null given `x` (Efron §5.1). -/
@@ -44,7 +44,7 @@ theorem localFDR_eq_posteriorNullProb (π₀ : ℝ≥0∞)
     -- USER-INPUT: the null proportion is a probability; Efron §2.1
     (hπ₀ : π₀ ≤ 1) (f₀ f₁ : 𝓧 → ℝ≥0∞) (x : 𝓧) :
     localFDR π₀ f₀ f₁ x = (π₀ * f₀ x) / (π₀ * f₀ x + (1 - π₀) * f₁ x) := by
-  sorry
+  rfl
 
 /-- **Local-FDR threshold rule** (3G.3): rejecting when `fdr(x) ≤ t` is the weighted-density
 comparison `π₀ f₀(x) ≤ t·f(x)` — the Bayes decision rule (Efron §5.2). -/
@@ -52,6 +52,6 @@ theorem localFDR_bayesRule_threshold (π₀ : ℝ≥0∞) (f₀ f₁ : 𝓧 → 
     -- USER-INPUT: nondegenerate marginal at `x`; Efron §5.2
     (hb0 : twoGroupsMixture π₀ f₀ f₁ x ≠ 0) (hbt : twoGroupsMixture π₀ f₀ f₁ x ≠ ∞) :
     localFDR π₀ f₀ f₁ x ≤ t ↔ π₀ * f₀ x ≤ t * twoGroupsMixture π₀ f₀ f₁ x := by
-  sorry
+  rw [localFDR, ENNReal.div_le_iff hb0 hbt]
 
 end StatLean.Bayesian
