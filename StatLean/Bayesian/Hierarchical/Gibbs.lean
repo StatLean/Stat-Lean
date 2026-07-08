@@ -42,8 +42,8 @@ theorem hierarchicalGibbs_stationary (Kθ Klam : Kernel (Λ × Θ) (Λ × Θ)) (
     (hθ : Kernel.Invariant Kθ π)
     -- USER-INPUT: the λ-block update fixes the joint posterior; Robert §10.2.4
     (hlam : Kernel.Invariant Klam π) :
-    Kernel.Invariant (Klam ∘ₖ Kθ) π := by
-  sorry
+    Kernel.Invariant (Klam ∘ₖ Kθ) π :=
+  hlam.comp hθ
 
 /-- **Collapsed hyper Gibbs is stationary** (3H.4): a chain on the hyperparameter that is invariant
 for the hyperposterior marginal keeps it invariant after composing with a parameter refresh that
@@ -54,7 +54,7 @@ theorem collapsedHyperGibbs_stationary (Kcollapse Krefresh : Kernel (Λ × Θ) (
     (hc : Kernel.Invariant Kcollapse π)
     -- USER-INPUT: the parameter refresh fixes the joint posterior; Robert §10.2.4
     (hr : Kernel.Invariant Krefresh π) :
-    Kernel.Invariant (Krefresh ∘ₖ Kcollapse) π := by
-  sorry
+    Kernel.Invariant (Krefresh ∘ₖ Kcollapse) π :=
+  hr.comp hc
 
 end StatLean.Bayesian
