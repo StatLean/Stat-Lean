@@ -39,13 +39,15 @@ variable {Λ Θ 𝓧 : Type*} [MeasurableSpace Λ] [MeasurableSpace Θ] [Measura
 /-- **Marginal prior on a set** (3A.1): `Π(s) = ∫ Π_λ(s) ρ(dλ)` (Robert §10.1). -/
 theorem mixPrior_apply {s : Set Θ} (hs : MeasurableSet s) :
     H.mixPrior s = ∫⁻ lam, H.priorKernel lam s ∂H.hyperPrior := by
-  sorry
+  unfold HierBayesExperiment.mixPrior
+  rw [Measure.bind_apply hs H.priorKernel.aemeasurable]
 
 /-- **Associativity of the three-stage marginal** (3A.2): the data marginal equals the likelihood
 pushed through the marginal prior (Robert §10.2.2). -/
 theorem dataMarginal_eq_comp_mixPrior :
     H.dataMarginal = H.likelihood ∘ₘ H.mixPrior := by
-  sorry
+  unfold HierBayesExperiment.dataMarginal HierBayesExperiment.mixPrior
+  rw [Measure.comp_assoc]
 
 /-- **Marginal likelihood of the hierarchy** (3A.3): the marginal density under the mixed prior is
 the hyperprior-average of the per-hyperparameter marginal densities (Robert §10.2.2). -/
@@ -53,7 +55,9 @@ theorem marginalLikelihood_hier_eq_lintegral_hyperMarginal
     (p : Θ → 𝓧 → ℝ≥0∞) (hp : Measurable (Function.uncurry p)) (x : 𝓧) :
     predictiveDensity p H.mixPrior x
       = ∫⁻ lam, predictiveDensity p (H.priorKernel lam) x ∂H.hyperPrior := by
-  sorry
+  unfold predictiveDensity HierBayesExperiment.mixPrior
+  have hpx : Measurable fun θ => p θ x := hp.comp (measurable_id.prodMk measurable_const)
+  rw [Measure.lintegral_bind H.priorKernel.aemeasurable hpx.aemeasurable]
 
 /-- **Hyperposterior in density form** (3A.4, the central theorem of hierarchical Bayes): if the
 collapsed likelihood `K ∘ₖ Π` is dominated with per-hyperparameter density `q`, the hyperposterior
@@ -66,7 +70,8 @@ theorem hyperPosterior_ae_eq_generalizedPosterior
     -- USER-INPUT: the collapsed likelihood is dominated with density `q`; Robert §10.2.3
     (hcollapse : ∀ lam, (H.likelihood ∘ₖ H.priorKernel) lam = ν.withDensity (q lam)) :
     ∀ᵐ x ∂H.dataMarginal, H.hyperPosterior x = generalizedPosterior q H.hyperPrior x := by
-  sorry
+  unfold HierBayesExperiment.dataMarginal HierBayesExperiment.hyperPosterior
+  exact posterior_ae_eq_generalizedPosterior hq hcollapse
 
 /-- **Conditional posterior given a hyperparameter** (3A.5): for fixed `λ`, the posterior on `Θ` is
 the generalized posterior of the likelihood density against the prior `Π_λ` (Robert §10.2.3). -/
@@ -78,6 +83,7 @@ theorem conditionalPosterior_givenHyper_ae_eq_generalizedPosterior
     (hκ : ∀ θ, H.likelihood θ = ν.withDensity (p θ)) (lam : Λ) :
     ∀ᵐ x ∂(H.likelihood ∘ₘ H.priorKernel lam),
       H.conditionalPosterior lam x = generalizedPosterior p (H.priorKernel lam) x := by
-  sorry
+  unfold HierBayesExperiment.conditionalPosterior
+  exact posterior_ae_eq_generalizedPosterior hp hκ
 
 end StatLean.Bayesian
