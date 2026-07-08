@@ -41,7 +41,22 @@ variable {α β : Type*} [mα : MeasurableSpace α] [mβ : MeasurableSpace β]
 coordinate projection `measurable_pi_apply`). -/
 theorem measurable_diagKernel_coe (κ : Kernel α β) [IsMarkovKernel κ] (J : ℕ) :
     Measurable fun θ : Fin J → α => Measure.pi fun j => κ (θ j) := by
-  sorry
+  refine Measure.measurable_of_measurable_coe _ (fun s hs => ?_)
+  induction s, hs using MeasurableSpace.induction_on_inter with
+  | h_eq => exact generateFrom_pi.symm
+  | h_inter => exact isPiSystem_pi
+  | empty => simp only [measure_empty]; exact measurable_const
+  | basic t ht =>
+      obtain ⟨u, hu, rfl⟩ := ht
+      simp_rw [Measure.pi_pi]
+      exact Finset.measurable_prod _ fun i _ =>
+        (κ.measurable_coe (hu i (Set.mem_univ i))).comp (measurable_pi_apply i)
+  | compl t htm iht =>
+      simp_rw [measure_compl htm (measure_ne_top _ _), measure_univ]
+      exact iht.const_sub 1
+  | iUnion g hgd hgm ihg =>
+      simp_rw [measure_iUnion hgd hgm]
+      exact Measurable.ennreal_tsum ihg
 
 /-- The **diagonal product kernel** `θ ↦ ⊗ⱼ κ(θⱼ)` on `Fin J → β`: `J` independent observations,
 the `j`-th from `κ(θ_j)` (Robert §10.2.5). -/
@@ -60,6 +75,6 @@ instance (κ : Kernel α β) [IsMarkovKernel κ] (J : ℕ) : IsMarkovKernel (dia
 theorem diagKernel_apply_pi (κ : Kernel α β) [IsMarkovKernel κ] (J : ℕ) (θ : Fin J → α)
     {s : Fin J → Set β} (hs : ∀ j, MeasurableSet (s j)) :
     diagKernel κ J θ (Set.univ.pi s) = ∏ j, κ (θ j) (s j) := by
-  sorry
+  rw [diagKernel_apply, Measure.pi_pi]
 
 end StatLean.Bayesian

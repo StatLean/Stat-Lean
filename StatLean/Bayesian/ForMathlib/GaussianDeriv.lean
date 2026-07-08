@@ -41,7 +41,19 @@ namespace StatLean.Bayesian
 theorem hasDerivAt_gaussianPDFReal (θ : ℝ) (v : ℝ≥0) (hv : v ≠ 0) (x : ℝ) :
     HasDerivAt (gaussianPDFReal θ v)
       ((θ - x) / (v : ℝ) * gaussianPDFReal θ v x) x := by
-  sorry
+  have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hv
+  -- Derivative of the exponent `g x = -(x-θ)^2/(2v)`.
+  have hsq : HasDerivAt (fun y : ℝ => (y - θ) ^ 2) ((2 : ℝ) * (x - θ) ^ (2 - 1) * 1) x :=
+    ((hasDerivAt_id x).sub_const θ).pow 2
+  have hg : HasDerivAt (fun y : ℝ => -(y - θ) ^ 2 / (2 * (v : ℝ)))
+      (-((2 : ℝ) * (x - θ) ^ (2 - 1) * 1) / (2 * (v : ℝ))) x :=
+    hsq.neg.div_const _
+  -- Chain rule through `exp` and the constant prefactor: this IS `gaussianPDFReal θ v` by defeq.
+  have hpdf : HasDerivAt (gaussianPDFReal θ v) _ x := (hg.exp).const_mul _
+  convert hpdf using 1
+  rw [gaussianPDFReal]
+  field_simp
+  ring
 
 /-- The `deriv` form of `hasDerivAt_gaussianPDFReal`. -/
 theorem deriv_gaussianPDFReal (θ : ℝ) (v : ℝ≥0) (hv : v ≠ 0) (x : ℝ) :
