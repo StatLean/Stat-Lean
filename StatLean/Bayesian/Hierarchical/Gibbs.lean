@@ -37,12 +37,12 @@ variable {Λ Θ : Type*} [MeasurableSpace Λ] [MeasurableSpace Θ]
 
 /-- **Two-block hierarchical Gibbs is stationary** (3H.3): if each full-conditional update kernel
 is invariant for the joint posterior, so is their composition (Robert §10.2.4). -/
-theorem hierarchicalGibbs_stationary (Kθ Kλ : Kernel (Λ × Θ) (Λ × Θ)) (π : Measure (Λ × Θ))
+theorem hierarchicalGibbs_stationary (Kθ Klam : Kernel (Λ × Θ) (Λ × Θ)) (π : Measure (Λ × Θ))
     -- USER-INPUT: the θ-block update fixes the joint posterior; Robert §10.2.4
     (hθ : Kernel.Invariant Kθ π)
     -- USER-INPUT: the λ-block update fixes the joint posterior; Robert §10.2.4
-    (hλ : Kernel.Invariant Kλ π) :
-    Kernel.Invariant (Kλ ∘ₖ Kθ) π := by
+    (hlam : Kernel.Invariant Klam π) :
+    Kernel.Invariant (Klam ∘ₖ Kθ) π := by
   sorry
 
 /-- **Collapsed hyper Gibbs is stationary** (3H.4): a chain on the hyperparameter that is invariant
