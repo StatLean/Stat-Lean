@@ -1,0 +1,83 @@
+import StatLean.Bayesian.Hierarchical.Defs
+import StatLean.Bayesian.GeneralizedBayes.Basic
+
+/-!
+# Hierarchical decomposition — marginal prior, marginal likelihood, hyper/conditional posteriors
+
+The algebra of the three-stage hierarchy: the marginal prior integrates out the hyperparameter,
+the marginal likelihood is the hyperprior-average of the per-hyperparameter marginals, and both the
+hyperposterior and the conditional posteriors are ordinary dominated Bayes posteriors.
+
+**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
+Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
+2007 (ISBN 978-0-387-71598-8). §10.1 (incompletely specified priors), p. 457; §10.2.2–10.2.3
+(hierarchical decompositions), pp. 462–467.
+
+**Proof formalization notes.** `mixPrior_apply` is `Measure.bind_apply`; `dataMarginal_eq_comp_mixPrior`
+is kernel/measure composition associativity (`Measure.comp_assoc`/`bind_bind`);
+`marginalLikelihood_hier_eq_lintegral_hyperMarginal` is Tonelli (`lintegral_bind`) on the nested
+`∫λ∫θ p(θ,x)`; `hyperPosterior_ae_eq_generalizedPosterior` and
+`conditionalPosterior_givenHyper_ae_eq_generalizedPosterior` are single applications of the Batch-2
+`posterior_ae_eq_generalizedPosterior` to the collapsed likelihood `K∘ₖΠ` (resp. `K`) with respect
+to the hyperprior (resp. the prior `Π_λ`).
+
+**Bibliographic comments.** The conditional decomposition of a hierarchical posterior into a
+hyperposterior and per-hyperparameter conditional posteriors is the computational heart of
+hierarchical Bayes (Lindley and Smith, *J. Roy. Statist. Soc. Ser. B* 34 (1972), 1–41; Robert
+§10.2.3); it is what makes the Gibbs sampler of Gelfand and Smith (*J. Amer. Statist. Assoc.* 85
+(1990), 398–409) applicable to these models.
+-/
+
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal
+
+namespace StatLean.Bayesian
+
+variable {Λ Θ 𝓧 : Type*} [MeasurableSpace Λ] [MeasurableSpace Θ] [MeasurableSpace 𝓧]
+  (H : HierBayesExperiment Λ Θ 𝓧)
+
+/-- **Marginal prior on a set** (3A.1): `Π(s) = ∫ Π_λ(s) ρ(dλ)` (Robert §10.1). -/
+theorem mixPrior_apply {s : Set Θ} (hs : MeasurableSet s) :
+    H.mixPrior s = ∫⁻ lam, H.priorKernel lam s ∂H.hyperPrior := by
+  sorry
+
+/-- **Associativity of the three-stage marginal** (3A.2): the data marginal equals the likelihood
+pushed through the marginal prior (Robert §10.2.2). -/
+theorem dataMarginal_eq_comp_mixPrior :
+    H.dataMarginal = H.likelihood ∘ₘ H.mixPrior := by
+  sorry
+
+/-- **Marginal likelihood of the hierarchy** (3A.3): the marginal density under the mixed prior is
+the hyperprior-average of the per-hyperparameter marginal densities (Robert §10.2.2). -/
+theorem marginalLikelihood_hier_eq_lintegral_hyperMarginal
+    (p : Θ → 𝓧 → ℝ≥0∞) (hp : Measurable (Function.uncurry p)) (x : 𝓧) :
+    predictiveDensity p H.mixPrior x
+      = ∫⁻ lam, predictiveDensity p (H.priorKernel lam) x ∂H.hyperPrior := by
+  sorry
+
+/-- **Hyperposterior in density form** (3A.4, the central theorem of hierarchical Bayes): if the
+collapsed likelihood `K ∘ₖ Π` is dominated with per-hyperparameter density `q`, the hyperposterior
+is the generalized posterior of `q` against the hyperprior, for data-marginal-a.e. `x`
+(Robert §10.2.3). -/
+theorem hyperPosterior_ae_eq_generalizedPosterior
+    [StandardBorelSpace Λ] [Nonempty Λ] {ν : Measure 𝓧} [SFinite ν] {q : Λ → 𝓧 → ℝ≥0∞}
+    -- LEAN-ONLY: joint measurability of the collapsed marginal density (regularity)
+    (hq : Measurable (Function.uncurry q))
+    -- USER-INPUT: the collapsed likelihood is dominated with density `q`; Robert §10.2.3
+    (hcollapse : ∀ lam, (H.likelihood ∘ₖ H.priorKernel) lam = ν.withDensity (q lam)) :
+    ∀ᵐ x ∂H.dataMarginal, H.hyperPosterior x = generalizedPosterior q H.hyperPrior x := by
+  sorry
+
+/-- **Conditional posterior given a hyperparameter** (3A.5): for fixed `λ`, the posterior on `Θ` is
+the generalized posterior of the likelihood density against the prior `Π_λ` (Robert §10.2.3). -/
+theorem conditionalPosterior_givenHyper_ae_eq_generalizedPosterior
+    [StandardBorelSpace Θ] [Nonempty Θ] {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}
+    -- LEAN-ONLY: joint measurability of the likelihood density (regularity)
+    (hp : Measurable (Function.uncurry p))
+    -- USER-INPUT: dominated likelihood; Robert §10.2.1
+    (hκ : ∀ θ, H.likelihood θ = ν.withDensity (p θ)) (lam : Λ) :
+    ∀ᵐ x ∂(H.likelihood ∘ₘ H.priorKernel lam),
+      H.conditionalPosterior lam x = generalizedPosterior p (H.priorKernel lam) x := by
+  sorry
+
+end StatLean.Bayesian
