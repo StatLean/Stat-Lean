@@ -166,23 +166,28 @@ theorem dirichletZ_pos {k : ℕ} {α : Fin (k + 1) → ℝ}
   rw [Real.volume_Ioo, ne_eq, ENNReal.ofReal_eq_zero, not_le]
   exact sub_pos.mpr hlohi
 
-/-- The Dirichlet normalization is finite for positive parameters (coordinate-peel recursion down
-to the one-dimensional Beta integral). -/
+/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Robert Appendix A.8). Batch-3
+target closing the carried debt: the coordinate-peel recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ)·Z(tail α)`
+with the pinned real Beta–Gamma identity `ProbabilityTheory.beta a b = Γ(a)Γ(b)/Γ(a+b)`
+(`beta_eq_betaIntegralReal`) telescopes to `∏Γ/Γ(∑)`; `dirichletZ_lt_top` is then an immediate
+corollary. -/
+theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}
+    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    (hα : ∀ i, 0 < α i) :
+    dirichletZ α = ENNReal.ofReal ((∏ i, Real.Gamma (α i)) / Real.Gamma (∑ i, α i)) := by
+  -- Coordinate-peel recursion on `k` via `measurePreserving_piFinSuccAbove volume 0` + Tonelli +
+  -- Haar rescaling `η = (1 − t) • ζ` (`map_addHaar_smul`, Jacobian `(1 − t)^k`); the `t`-marginal
+  -- evaluates by `lintegral_Ioo_rpow_mul_rpow` = `ofReal (beta α₀ (∑_{i≥1} αᵢ))`, and
+  -- `beta_eq_betaIntegralReal` + `ProbabilityTheory.beta` telescope `∏ B` into `∏Γ/Γ(∑)`.
+  sorry
+
+/-- The Dirichlet normalization is finite for positive parameters (immediate from the exact form
+`dirichletZ_eq_prod_Gamma_div`; `Real.Gamma` is positive, hence finite, for positive arguments). -/
 theorem dirichletZ_lt_top {k : ℕ} {α : Fin (k + 1) → ℝ}
     -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
     (hα : ∀ i, 0 < α i) :
     dirichletZ α < ∞ := by
-  -- SANCTIONED DEBT (batch's single accepted `sorry`). The finiteness of the Dirichlet
-  -- normalization is the genuine analytic content of this file: it requires the coordinate-peel
-  -- recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ) · Z(tail α)`, obtained by (1) splitting the first
-  -- coordinate with `MeasureTheory.measurePreserving_piFinSuccAbove volume 0` + Tonelli, then
-  -- (2) the Haar rescaling `η = (1 − t) • ζ` on `Fin k → ℝ` (`map_addHaar_smul`, Jacobian
-  -- `(1 − t)^k`), collecting the `(1 − t)` powers via `Real.rpow_add` (positive base on the open
-  -- corner) into the exponent `∑_{i≥1} αᵢ − 1`, bounding the `t`-marginal by
-  -- `lintegral_Ioo_rpow_mul_rpow` (target 8) and closing by induction on `k` (base `k = 0`:
-  -- `Z = 1`). This peel is several hours of measure-theoretic bookkeeping and is left as the
-  -- documented debt per the batch plan; every other statement in the touch-set is closed.
-  sorry
+  rw [dirichletZ_eq_prod_Gamma_div hα]; exact ENNReal.ofReal_lt_top
 
 /-- The Dirichlet distribution is a probability measure for positive parameters. -/
 theorem isProbabilityMeasure_dirichletMeasure {k : ℕ} {α : Fin (k + 1) → ℝ}
