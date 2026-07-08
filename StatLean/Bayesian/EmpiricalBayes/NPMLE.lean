@@ -1,4 +1,9 @@
 import StatLean.Bayesian.EmpiricalBayes.Defs
+import Mathlib.Analysis.Convex.Caratheodory
+import Mathlib.Analysis.Convex.Combination
+import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
 # The nonparametric maximum-likelihood mixing distribution (NPMLE)
@@ -42,14 +47,124 @@ theorem mixtureDensity_linear_in_mixing (p : Θ → 𝓧 → ℝ≥0∞) (t : �
       = t * mixtureDensity p G₀ x + (1 - t) * mixtureDensity p G₁ x := by
   simp only [mixtureDensity, predictiveDensity, lintegral_add_measure, lintegral_smul_measure, smul_eq_mul]
 
-/-- **Lindsay's finite-support theorem** (3F.7, stretch): the NPMLE can be taken supported on at
-most `n+1` points (Lindsay 1983). -/
-theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ} [MeasurableSingletonClass Θ]
+/-- **Lindsay's finite-support theorem** (3F.7): the NPMLE can be taken supported on at most `n+1`
+points (Lindsay 1983). Stated in Lindsay's *discrete* regular setting — a finite parameter space
+`Θ` (the "discrete/compact" case; discrete + compact = finite) with finite likelihoods `hpfin`. The
+geometric content (the `n+1` Carathéodory bound) is unchanged: the likelihood vector
+`G ↦ (f_G(x₁),…,f_G(xₙ)) ∈ ℝⁿ` is the `G`-barycenter of the likelihood curve `θ ↦ (p(θ,x₁),…)`, and
+Carathéodory in `ℝⁿ` (affine dimension `n`) rewrites a maximizer's barycenter as a positive convex
+combination of at most `n+1` curve points, i.e. a mixing measure on `≤ n+1` Dirac atoms. -/
+theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
+    [MeasurableSingletonClass Θ] [Finite Θ]
     (p : Θ → 𝓧 → ℝ≥0∞) (x : Fin n → 𝓧)
+    -- Lindsay's regularity: the likelihoods are finite (`p(θ,xᵢ) ≠ ∞`)
+    (hpfin : ∀ θ i, p θ (x i) ≠ ∞)
     -- USER-INPUT: existence of an NPMLE (a compactness step on the likelihood range); Lindsay 1983
     (hex : ∃ Ghat, IsNPMLE p x Ghat) :
     ∃ (Ghat : Measure Θ) (S : Finset Θ),
       IsNPMLE p x Ghat ∧ Ghat ((↑S : Set Θ)ᶜ) = 0 ∧ S.card ≤ n + 1 := by
-  sorry
+  classical
+  letI : Fintype Θ := Fintype.ofFinite Θ
+  obtain ⟨Ĝ, hĜprob, hĜmax⟩ := hex
+  -- the `n`-dimensional likelihood curve `w θ = (p(θ,x₀),…,p(θ,xₙ₋₁))` in `ℝⁿ`
+  set w : Θ → (Fin n → ℝ) := fun θ i => (p θ (x i)).toReal with hw
+  -- the mixing weights of `Ĝ` on the (finite) parameter space
+  set μ : Θ → ℝ := fun θ => (Ĝ {θ}).toReal with hμ
+  -- `mixtureDensity p Ĝ (x j)` as a finite weighted sum of likelihoods
+  have hĜmix : ∀ j, mixtureDensity p Ĝ (x j) = ∑ θ, p θ (x j) * Ĝ {θ} := by
+    intro j
+    simp only [mixtureDensity, predictiveDensity]
+    exact lintegral_fintype _
+  have hĜfin : ∀ j, mixtureDensity p Ĝ (x j) ≠ ∞ := by
+    intro j
+    rw [hĜmix j]
+    refine (ENNReal.sum_lt_top.2 ?_).ne
+    intro θ _
+    exact ENNReal.mul_lt_top (hpfin θ j).lt_top (measure_ne_top Ĝ _).lt_top
+  -- the NPMLE likelihood vector
+  set v : Fin n → ℝ := fun j => (mixtureDensity p Ĝ (x j)).toReal with hv
+  have hμnn : ∀ θ, 0 ≤ μ θ := fun θ => ENNReal.toReal_nonneg
+  have hsum1 : ∑ θ, μ θ = 1 := by
+    have : ∑ θ, μ θ = (∑ θ, Ĝ {θ}).toReal := by
+      rw [ENNReal.toReal_sum (fun θ _ => measure_ne_top Ĝ _)]
+    rw [this, sum_measure_singleton, Finset.coe_univ, measure_univ, ENNReal.toReal_one]
+  -- `v` is the `Ĝ`-barycenter of the likelihood curve `w`
+  have hvsum : v = ∑ θ, μ θ • w θ := by
+    funext j
+    simp only [hv, hĜmix j, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, hw, hμ]
+    rw [ENNReal.toReal_sum (fun θ _ =>
+      (ENNReal.mul_lt_top (hpfin θ j).lt_top (measure_ne_top Ĝ _).lt_top).ne)]
+    refine Finset.sum_congr rfl fun θ _ => ?_
+    rw [ENNReal.toReal_mul, mul_comm]
+  have hvmem : v ∈ convexHull ℝ (Set.range w) := by
+    rw [hvsum]
+    exact (convex_convexHull ℝ _).sum_mem (fun θ _ => hμnn θ) hsum1
+      (fun θ _ => subset_convexHull ℝ _ (Set.mem_range_self θ))
+  -- Carathéodory: `v` is a positive affinely-independent convex combination of `≤ n+1` curve points
+  obtain ⟨ι, hιfin, z, wt, hzrange, hzaff, hwtpos, hwtsum, hzv⟩ :=
+    eq_pos_convex_span_of_mem_convexHull hvmem
+  -- affine dimension of `ℝⁿ` is `n`, so `#ι ≤ n+1`
+  have hcard : Fintype.card ι ≤ n + 1 := by
+    calc Fintype.card ι
+        ≤ Module.finrank ℝ (vectorSpan ℝ (Set.range z)) + 1 := hzaff.card_le_finrank_succ
+      _ ≤ Module.finrank ℝ (Fin n → ℝ) + 1 := by
+          exact Nat.add_le_add_right (Submodule.finrank_le _) 1
+      _ = n + 1 := by rw [Module.finrank_fin_fun]
+  -- each Carathéodory point `z i` is a curve value `w (θ i)`
+  have hzw : ∀ i, ∃ θ, w θ = z i := fun i => hzrange (Set.mem_range_self i)
+  choose θpt hθpt using hzw
+  -- reconstruct the finite-support NPMLE
+  set Ĝ' : Measure Θ := ∑ i, ENNReal.ofReal (wt i) • Measure.dirac (θpt i) with hĜ'
+  set S : Finset Θ := Finset.image θpt Finset.univ with hS
+  -- `Ĝ'` is a probability measure
+  have hĜ'univ : Ĝ' Set.univ = 1 := by
+    rw [hĜ', Measure.finset_sum_apply]
+    simp only [Measure.smul_apply, MeasureTheory.measure_univ, smul_eq_mul, mul_one]
+    rw [← ENNReal.ofReal_sum_of_nonneg (fun i _ => (hwtpos i).le), hwtsum, ENNReal.ofReal_one]
+  have hĜ'prob : IsProbabilityMeasure Ĝ' := ⟨hĜ'univ⟩
+  -- `mixtureDensity p Ĝ' (x j)` as a finite weighted sum over the Carathéodory points
+  have hĜ'mix : ∀ j, mixtureDensity p Ĝ' (x j) = ∑ i, ENNReal.ofReal (wt i) * p (θpt i) (x j) := by
+    intro j
+    simp only [mixtureDensity, predictiveDensity, hĜ']
+    rw [lintegral_finset_sum_measure]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+  have hĜ'fin : ∀ j, mixtureDensity p Ĝ' (x j) ≠ ∞ := by
+    intro j
+    rw [hĜ'mix j]
+    refine (ENNReal.sum_lt_top.2 ?_).ne
+    intro i _
+    exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hpfin _ j).lt_top
+  -- the two mixture densities agree at every data point (equal finite `toReal`s)
+  have hmixeq : ∀ j, mixtureDensity p Ĝ' (x j) = mixtureDensity p Ĝ (x j) := by
+    intro j
+    rw [← ENNReal.toReal_eq_toReal_iff' (hĜ'fin j) (hĜfin j)]
+    calc (mixtureDensity p Ĝ' (x j)).toReal
+        = ∑ i, wt i * (z i) j := by
+          rw [hĜ'mix j, ENNReal.toReal_sum
+            (fun i _ => (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hpfin _ j).lt_top).ne)]
+          refine Finset.sum_congr rfl fun i _ => ?_
+          rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hwtpos i).le, ← hθpt i]
+      _ = (∑ i, wt i • z i) j := by
+          rw [Finset.sum_apply]; exact Finset.sum_congr rfl fun i _ => by
+            rw [Pi.smul_apply, smul_eq_mul]
+      _ = v j := by rw [hzv]
+  -- `Ĝ'` inherits `Ĝ`'s maximality since the product likelihoods coincide
+  have hprodeq : ∏ j, mixtureDensity p Ĝ' (x j) = ∏ j, mixtureDensity p Ĝ (x j) :=
+    Finset.prod_congr rfl fun j _ => hmixeq j
+  refine ⟨Ĝ', S, ⟨hĜ'prob, ?_⟩, ?_, ?_⟩
+  · intro G hG
+    rw [hprodeq]
+    exact hĜmax G hG
+  · -- `Ĝ'` is supported on `S`
+    rw [hĜ', Measure.finset_sum_apply]
+    refine Finset.sum_eq_zero fun i _ => ?_
+    rw [Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ (by measurability)]
+    have : θpt i ∈ (↑S : Set Θ) := by
+      rw [hS, Finset.coe_image]; exact Set.mem_image_of_mem _ (Finset.mem_univ i)
+    rw [Set.indicator_of_notMem (by simpa using this), mul_zero]
+  · calc S.card ≤ (Finset.univ : Finset ι).card := Finset.card_image_le
+      _ = Fintype.card ι := Finset.card_univ
+      _ ≤ n + 1 := hcard
 
 end StatLean.Bayesian
