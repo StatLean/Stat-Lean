@@ -4,6 +4,7 @@ import StatLean.HighDimensionalStatistics
 import StatLean.Optimization
 import StatLean.MultipleTesting
 import StatLean.Minimaxity
+import StatLean.Bayesian
 
 /-!
 # StatLean
