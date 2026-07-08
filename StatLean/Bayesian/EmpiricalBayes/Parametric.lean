@@ -61,14 +61,14 @@ theorem normalRandomEffects_marginal (μ : ℝ) (τ2 σ2 : ℝ≥0)
     -- USER-INPUT: nondegenerate noise variance; Robert §10.5.1
     (hσ : σ2 ≠ 0) :
     gaussKernel σ2 ∘ₘ gaussianReal μ τ2 = gaussianReal μ (τ2 + σ2) := by
-  sorry
+  exact comp_gaussKernel_gaussianReal hσ μ τ2
 
 /-- **The parametric-EB estimator formula** (3E.7): the plug-in shrinkage form (Robert §10.5.1). -/
 theorem normalParamEB_estimator_formula {J : ℕ} (y : Fin J → ℝ) (σ2 : ℝ) (j : Fin J) :
     normalParamEBEstimator y σ2 j
       = sampleMean y
         + (normalEBhyperVar y σ2 / (normalEBhyperVar y σ2 + σ2)) * (y j - sampleMean y) := by
-  sorry
+  rfl
 
 /-- **Consistency of the plug-in shrinkage weight** (3E.4/3E.5, normal method-of-moments): if the
 sample variance is consistent for `σ²+τ²`, the empirical-Bayes weight converges to the oracle
@@ -80,7 +80,22 @@ theorem normalParamEB_shrinkageWeight_tendsto_oracle (τ2 σ2 : ℝ)
     (hv : Tendsto vn atTop (𝓝 (τ2 + σ2))) :
     Tendsto (fun n => max 0 (vn n - σ2) / (max 0 (vn n - σ2) + σ2)) atTop
       (𝓝 (τ2 / (τ2 + σ2))) := by
-  sorry
+  have hcont : ContinuousAt
+      (fun t : ℝ => max 0 (t - σ2) / (max 0 (t - σ2) + σ2)) (τ2 + σ2) := by
+    have hnum : ContinuousAt (fun t : ℝ => max 0 (t - σ2)) (τ2 + σ2) :=
+      (continuous_const.max (continuous_id.sub continuous_const)).continuousAt
+    have hden : ContinuousAt (fun t : ℝ => max 0 (t - σ2) + σ2) (τ2 + σ2) :=
+      hnum.add continuousAt_const
+    have hne : (fun t : ℝ => max 0 (t - σ2) + σ2) (τ2 + σ2) ≠ 0 := by
+      have : max 0 (τ2 + σ2 - σ2) + σ2 = τ2 + σ2 := by
+        rw [add_sub_cancel_right, max_eq_right hτ.le]
+      simp only [this]; positivity
+    exact hnum.div hden hne
+  have key : (fun t : ℝ => max 0 (t - σ2) / (max 0 (t - σ2) + σ2)) (τ2 + σ2)
+      = τ2 / (τ2 + σ2) := by
+    simp only [add_sub_cancel_right, max_eq_right hτ.le]
+  rw [← key]
+  exact hcont.tendsto.comp hv
 
 /-- **Fisher's identity for the normal marginal** (3E.8): the marginal score equals the shrinkage
 factor times the complete-data score, `(y−μ)/(σ²+τ²) = (1−B)·(y−μ)/τ²` (Robert §10.4.2). -/
@@ -88,7 +103,10 @@ theorem fisherIdentity_normalMarginal (μ τ2 σ2 : ℝ)
     -- USER-INPUT: nondegenerate variances; Robert §10.4.2
     (hτ : 0 < τ2) (hσ : 0 < σ2) (y : ℝ) :
     (y - μ) / (σ2 + τ2) = (1 - σ2 / (σ2 + τ2)) * ((y - μ) / τ2) := by
-  sorry
+  have h1 : σ2 + τ2 ≠ 0 := by positivity
+  have h2 : τ2 ≠ 0 := hτ.ne'
+  field_simp
+  ring
 
 /-- **EM monotonicity** (3E.9, stretch): with the decomposition `ℓ = Q − R`, an M-step that
 increases `Q` together with Gibbs' inequality on `R` does not decrease the marginal log-likelihood
@@ -101,6 +119,7 @@ theorem EM_monotonicity_marginalLikelihood (marginalLogLik : ℝ → ℝ) (Q R :
     -- USER-INPUT: Gibbs' inequality on the entropy term; DLR 1977
     (hGibbs : R θ₁ θ₀ ≤ R θ₀ θ₀) :
     marginalLogLik θ₀ ≤ marginalLogLik θ₁ := by
-  sorry
+  rw [hdecomp θ₀, hdecomp θ₁]
+  linarith [hM, hGibbs]
 
 end StatLean.Bayesian
