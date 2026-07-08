@@ -39,13 +39,13 @@ variable {Θ 𝓧 : Type*} [MeasurableSpace Θ] [MeasurableSpace 𝓧]
 /-- A law on `Fin n → α` is **exchangeable** if it is invariant under permuting the coordinates
 (Robert §3.8.2). -/
 def IsExchangeable {n : ℕ} {α : Type*} [MeasurableSpace α] (μ : Measure (Fin n → α)) : Prop :=
-  ∀ σ : Equiv.Perm (Fin n), μ.map (fun x => x ∘ σ) = μ
+  ∀ σ : Equiv.Perm (Fin n), μ.map (fun x i => x (σ i)) = μ
 
 /-- **Conditional group joint is permutation-invariant** (3B.1): the i.i.d. product law is
 symmetric under coordinate permutations. -/
 theorem iidKernel_map_perm (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) (θ : Θ)
     (σ : Equiv.Perm (Fin n)) :
-    (iidKernel κ n θ).map (fun x => x ∘ σ) = iidKernel κ n θ := by
+    (iidKernel κ n θ).map (fun x i => x (σ i)) = iidKernel κ n θ := by
   sorry
 
 /-- **Conditionally i.i.d. ⇒ exchangeable** (3B.2): mixing an i.i.d. product over a prior gives an
@@ -61,7 +61,7 @@ theorem posterior_exchangeable_of_exchangeable_hierarchy (κ : Kernel Θ 𝓧) [
     (n : ℕ) (π : Measure Θ) [IsProbabilityMeasure π] [StandardBorelSpace Θ] [Nonempty Θ]
     (σ : Equiv.Perm (Fin n)) :
     ∀ᵐ x ∂(iidKernel κ n ∘ₘ π),
-      (iidKernel κ n † π) (x ∘ σ) = (iidKernel κ n † π) x := by
+      ((iidKernel κ n) † π) (fun i => x (σ i)) = ((iidKernel κ n) † π) x := by
   sorry
 
 end StatLean.Bayesian

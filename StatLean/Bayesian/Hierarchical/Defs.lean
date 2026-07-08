@@ -79,6 +79,9 @@ variable (H : HierBayesExperiment Λ Θ 𝓧)
 (Robert §10.1, the incompletely specified prior). -/
 noncomputable def mixPrior : Measure Θ := H.priorKernel ∘ₘ H.hyperPrior
 
+instance : IsProbabilityMeasure H.mixPrior := by
+  unfold HierBayesExperiment.mixPrior; infer_instance
+
 /-- The **prior predictive (data marginal)** on `𝓧`, `m(x) = ∫∫ K_θ Π_λ(dθ) ρ(dλ)`
 (Robert §10.2.2). -/
 noncomputable def dataMarginal : Measure 𝓧 := (H.likelihood ∘ₖ H.priorKernel) ∘ₘ H.hyperPrior
