@@ -32,7 +32,7 @@ formula popularized by B. Efron ("Tweedie's formula and selection bias," *J. Ame
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.Bayesian
 

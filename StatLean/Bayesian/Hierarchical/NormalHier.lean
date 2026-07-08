@@ -78,7 +78,7 @@ theorem normalHier_muPosterior_given_tau (μ0 : ℝ) (t0 τ2 σ2 : ℝ≥0)
     -- LEAN-ONLY: Markov instance for the marginal Gaussian kernel
     [IsMarkovKernel (gaussKernel (σ2 + τ2))] (J : ℕ) :
     ∀ᵐ y ∂(iidKernel (gaussKernel (σ2 + τ2)) J ∘ₘ gaussianReal μ0 t0),
-      ((iidKernel (gaussKernel (σ2 + τ2)) J) † gaussianReal μ0 t0) y
+      ((iidKernel (gaussKernel (σ2 + τ2)) J) † (gaussianReal μ0 t0)) y
         = gaussianReal (postMean μ0 t0 (σ2 + τ2) y) (postVar t0 (σ2 + τ2) J) := by
   sorry
 
@@ -90,7 +90,7 @@ theorem normalHier_thetaPosterior_given_mu_tau_coord (μ : ℝ) (τ2 σ2 : ℝ�
     -- LEAN-ONLY: Markov instance for the Gaussian kernel
     [IsMarkovKernel (gaussKernel σ2)] :
     ∀ᵐ y ∂(iidKernel (gaussKernel σ2) 1 ∘ₘ gaussianReal μ τ2),
-      ((iidKernel (gaussKernel σ2) 1) † gaussianReal μ τ2) y
+      ((iidKernel (gaussKernel σ2) 1) † (gaussianReal μ τ2)) y
         = gaussianReal (postMean μ τ2 σ2 y) (postVar τ2 σ2 1) := by
   sorry
 
