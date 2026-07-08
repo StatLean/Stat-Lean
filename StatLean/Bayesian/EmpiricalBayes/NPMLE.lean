@@ -40,7 +40,7 @@ NPMLE): `f_{tG₀+(1−t)G₁} = t·f_{G₀} + (1−t)·f_{G₁}` (Lindsay 1983)
 theorem mixtureDensity_linear_in_mixing (p : Θ → 𝓧 → ℝ≥0∞) (t : ℝ≥0∞) (G₀ G₁ : Measure Θ) (x : 𝓧) :
     mixtureDensity p (t • G₀ + (1 - t) • G₁) x
       = t * mixtureDensity p G₀ x + (1 - t) * mixtureDensity p G₁ x := by
-  simp only [mixtureDensity, predictiveDensity, lintegral_add_measure, lintegral_smul_measure]
+  simp only [mixtureDensity, predictiveDensity, lintegral_add_measure, lintegral_smul_measure, smul_eq_mul]
 
 /-- **Lindsay's finite-support theorem** (3F.7, stretch): the NPMLE can be taken supported on at
 most `n+1` points (Lindsay 1983). -/
