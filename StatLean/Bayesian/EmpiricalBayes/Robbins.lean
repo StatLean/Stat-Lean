@@ -42,7 +42,18 @@ theorem poissonDensity_succ_mul (θ : ℝ)
     -- USER-INPUT: nonnegative Poisson rate; Robbins 1956
     (hθ : 0 ≤ θ) (y : ℕ) :
     ((y : ℝ≥0∞) + 1) * poissonDensity θ (y + 1) = ENNReal.ofReal θ * poissonDensity θ y := by
-  sorry
+  unfold poissonDensity
+  have hy : ((y : ℝ≥0∞) + 1) = ENNReal.ofReal ((y : ℝ) + 1) := by
+    rw [ENNReal.ofReal_add (by positivity) (by norm_num), ENNReal.ofReal_natCast,
+      ENNReal.ofReal_one]
+  rw [hy, ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hθ]
+  congr 1
+  simp only [poissonPMFReal, Real.coe_toNNReal θ hθ]
+  have h1 : (y.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero y)
+  have h2 : ((y : ℝ) + 1) ≠ 0 := by positivity
+  rw [Nat.factorial_succ, pow_succ]
+  push_cast
+  field_simp
 
 /-- **Robbins's identity** (3F.4): the numerator of the Poisson posterior mean equals
 `(y+1)·f_G(y+1)` (Robbins 1956). -/
@@ -51,7 +62,11 @@ theorem robbins_poisson_posteriorMean (G : Measure ℝ) [IsProbabilityMeasure G]
     (hG : ∀ᵐ θ ∂G, 0 ≤ θ) (y : ℕ) :
     ∫⁻ θ, ENNReal.ofReal θ * poissonDensity θ y ∂G
       = ((y : ℝ≥0∞) + 1) * mixtureDensity poissonDensity G (y + 1) := by
-  sorry
+  unfold mixtureDensity predictiveDensity
+  rw [← lintegral_const_mul' ((y : ℝ≥0∞) + 1) _ (by simp)]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hG] with θ hθ
+  exact (poissonDensity_succ_mul θ hθ y).symm
 
 /-- **Consistency of the plug-in Robbins estimator** (3F.5): if the empirical marginal pmf converges
 to the true marginal pmf, the plug-in Robbins estimator converges to the oracle (Robbins 1956). -/
@@ -63,6 +78,9 @@ theorem robbinsEstimator_tendsto_oracle (G : Measure ℝ) [IsProbabilityMeasure 
     (hpos : mixtureDensity poissonDensity G y ≠ 0) (htop : mixtureDensity poissonDensity G y ≠ ∞) :
     Tendsto (fun n => ((y : ℝ≥0∞) + 1) * fhat n (y + 1) / fhat n y) atTop
       (𝓝 (robbinsPoissonEstimator G y)) := by
-  sorry
+  unfold robbinsPoissonEstimator
+  exact ENNReal.Tendsto.div
+    (ENNReal.Tendsto.const_mul (hf (y + 1)) (Or.inr (by simp)))
+    (Or.inr hpos) (hf y) (Or.inl htop)
 
 end StatLean.Bayesian

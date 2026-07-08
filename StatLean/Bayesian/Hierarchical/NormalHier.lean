@@ -40,7 +40,11 @@ noncomputable def shrinkageWeight (σ2 τ2 : ℝ≥0) : ℝ := (σ2 : ℝ) / ((�
 
 /-- The shrinkage weight lies in `[0, 1]` (3C.3). -/
 theorem shrinkageWeight_mem_Icc (σ2 τ2 : ℝ≥0) : shrinkageWeight σ2 τ2 ∈ Set.Icc (0 : ℝ) 1 := by
-  sorry
+  rw [shrinkageWeight, Set.mem_Icc]
+  refine ⟨div_nonneg (NNReal.coe_nonneg _)
+      (add_nonneg (NNReal.coe_nonneg _) (NNReal.coe_nonneg _)), ?_⟩
+  exact div_le_one_of_le₀ (le_add_of_nonneg_right (NNReal.coe_nonneg _))
+    (add_nonneg (NNReal.coe_nonneg _) (NNReal.coe_nonneg _))
 
 /-- **Partial pooling** (3C.3): the per-group posterior mean is the convex combination
 `(1−B)·y + B·μ` of the observation and the prior (grand) mean (Robert §10.2.5). -/
@@ -49,7 +53,16 @@ theorem normalHier_posteriorMean_convexCombination (μ : ℝ) (τ2 σ2 : ℝ≥0
     (hτ : τ2 ≠ 0) (hσ : σ2 ≠ 0) (y : ℝ) :
     postMean μ τ2 σ2 (fun _ : Fin 1 => y)
       = (1 - shrinkageWeight σ2 τ2) * y + shrinkageWeight σ2 τ2 * μ := by
-  sorry
+  have ha : (τ2 : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hτ
+  have hb : (σ2 : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hσ
+  have hbpos : (0 : ℝ) < (σ2 : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hσ)
+  have hab : (σ2 : ℝ) + (τ2 : ℝ) ≠ 0 :=
+    ne_of_gt (lt_of_lt_of_le hbpos (le_add_of_nonneg_right (NNReal.coe_nonneg _)))
+  rw [shrinkageWeight]
+  simp only [postMean, postVar, Fin.sum_univ_one, Nat.cast_one, one_mul]
+  push_cast
+  field_simp
+  ring
 
 /-- **Variance reduction** (3C.4): the per-group posterior variance is strictly below the sampling
 variance (Robert §10.2.5). -/
@@ -57,7 +70,14 @@ theorem normalHier_posteriorVar_lt_samplingVar (τ2 σ2 : ℝ≥0)
     -- USER-INPUT: nondegenerate prior and noise variances; Robert §10.2.5
     (hτ : τ2 ≠ 0) (hσ : σ2 ≠ 0) :
     (postVar τ2 σ2 1 : ℝ) < (σ2 : ℝ) := by
-  sorry
+  have ha : (0 : ℝ) < (τ2 : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hτ)
+  have hb : (0 : ℝ) < (σ2 : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hσ)
+  simp only [postVar, Nat.cast_one, one_mul, NNReal.coe_inv, NNReal.coe_add]
+  have key : ((τ2 : ℝ)⁻¹ + (σ2 : ℝ)⁻¹)⁻¹ = (τ2 : ℝ) * (σ2 : ℝ) / ((τ2 : ℝ) + (σ2 : ℝ)) := by
+    field_simp
+    ring
+  rw [key, div_lt_iff₀ (by positivity)]
+  nlinarith [mul_pos ha hb, mul_pos hb hb]
 
 /-- **Marginal of the data given the hyperparameters** (3C.1): integrating out the group means, the
 `J` groups are i.i.d. `N(μ, σ²+τ²)` (Robert §10.2.5). -/
@@ -68,7 +88,28 @@ theorem normalHier_marginal_y_given_hyper (μ : ℝ) (τ2 σ2 : ℝ≥0)
     [IsMarkovKernel (gaussKernel σ2)] (J : ℕ) :
     (diagKernel (gaussKernel σ2) J) ∘ₘ (Measure.pi fun _ : Fin J => gaussianReal μ τ2)
       = Measure.pi fun _ : Fin J => gaussianReal μ (τ2 + σ2) := by
-  sorry
+  refine (Measure.pi_eq (μ := fun _ : Fin J => gaussianReal μ (τ2 + σ2))
+    (fun s hs => ?_)).symm
+  have hmeas : ∀ j : Fin J, Measurable fun θ : ℝ => gaussKernel σ2 θ (s j) :=
+    fun j => (gaussKernel σ2).measurable_coe (hs j)
+  have hbox : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
+  calc (diagKernel (gaussKernel σ2) J ∘ₘ (Measure.pi fun _ : Fin J => gaussianReal μ τ2))
+          (Set.univ.pi s)
+      = ∫⁻ θ, diagKernel (gaussKernel σ2) J θ (Set.univ.pi s)
+          ∂(Measure.pi fun _ : Fin J => gaussianReal μ τ2) :=
+        Measure.bind_apply hbox (Kernel.aemeasurable _)
+    _ = ∫⁻ θ, ∏ j, gaussKernel σ2 (θ j) (s j)
+          ∂(Measure.pi fun _ : Fin J => gaussianReal μ τ2) := by
+        refine lintegral_congr (fun θ => ?_)
+        rw [diagKernel_apply_pi (gaussKernel σ2) J θ hs]
+    _ = ∏ j, ∫⁻ θ, gaussKernel σ2 θ (s j) ∂(gaussianReal μ τ2) :=
+        lintegral_pi_prod (gaussianReal μ τ2) hmeas
+    _ = ∏ j, (gaussKernel σ2 ∘ₘ gaussianReal μ τ2) (s j) := by
+        refine Finset.prod_congr rfl (fun j _ => ?_)
+        rw [Measure.bind_apply (hs j) (Kernel.aemeasurable _)]
+    _ = ∏ j, gaussianReal μ (τ2 + σ2) (s j) := by
+        refine Finset.prod_congr rfl (fun j _ => ?_)
+        rw [comp_gaussKernel_gaussianReal hσ μ τ2]
 
 /-- **Posterior of the hyper-mean given `τ²`** (3C.5): with the group means integrated out, `μ` has
 a Normal–Normal posterior from `J` i.i.d. observations of variance `σ²+τ²` (Robert §10.2.5). -/
@@ -80,7 +121,7 @@ theorem normalHier_muPosterior_given_tau (μ0 : ℝ) (t0 τ2 σ2 : ℝ≥0)
     ∀ᵐ y ∂(iidKernel (gaussKernel (σ2 + τ2)) J ∘ₘ gaussianReal μ0 t0),
       ((iidKernel (gaussKernel (σ2 + τ2)) J) † (gaussianReal μ0 t0)) y
         = gaussianReal (postMean μ0 t0 (σ2 + τ2) y) (postVar t0 (σ2 + τ2) J) := by
-  sorry
+  exact normal_normal_posterior_ae ht0 hστ J
 
 /-- **Per-group posterior given the hyperparameters** (3C.2, one coordinate): the group mean `θ_j`
 has the scalar Normal–Normal posterior `N((1−B)y_j + B·μ, postVar)` (Robert §10.2.5). -/
@@ -92,6 +133,6 @@ theorem normalHier_thetaPosterior_given_mu_tau_coord (μ : ℝ) (τ2 σ2 : ℝ�
     ∀ᵐ y ∂(iidKernel (gaussKernel σ2) 1 ∘ₘ gaussianReal μ τ2),
       ((iidKernel (gaussKernel σ2) 1) † (gaussianReal μ τ2)) y
         = gaussianReal (postMean μ τ2 σ2 y) (postVar τ2 σ2 1) := by
-  sorry
+  exact normal_normal_posterior_ae hτ hσ 1
 
 end StatLean.Bayesian
