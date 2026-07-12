@@ -1,6 +1,6 @@
 import StatLean.ConcentrationInequalities.Maximal.CoveringBall
 import StatLean.ConcentrationInequalities.Maximal.CoveringNumbers
-import Mathlib.Analysis.InnerProductSpace.Projection
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Finite ε-nets of Euclidean balls, as `Finset`s (C10)

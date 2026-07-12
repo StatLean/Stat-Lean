@@ -33,7 +33,7 @@ composes `Real.tendsto_exp_atBot` with the continuity of `ENNReal.ofReal` at `0`
 leading term is standard elementary analysis.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.Bayesian
