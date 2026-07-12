@@ -1,4 +1,5 @@
 import StatLean.Bayesian.Conjugacy.NormalNormal
+import StatLean.Bayesian.ForMathlib.GaussianDeriv
 
 /-!
 # Linear-shrinkage and James–Stein risk
@@ -265,10 +266,10 @@ private lemma gaussian_stein_1d (m : ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) {h h
   have huv' : Integrable (fun t => h t * ((m - t) / (σ2 : ℝ) * pdf t)) := by
     have hrw : (fun t => h t * ((m - t) / (σ2 : ℝ) * pdf t))
         = fun t => (σ2 : ℝ)⁻¹ * (h t * ((m - t) * pdf t)) := by
-      funext t; field_simp; ring
+      funext t; ring
     rw [hrw]
     exact (hscore.bdd_mul hm.aestronglyMeasurable
-      ⟨C, fun t => by rw [Real.norm_eq_abs]; exact hhC t⟩).const_mul _
+      (ae_of_all _ fun t => by rw [Real.norm_eq_abs]; exact hhC t)).const_mul _
   have hibp : (∫ t, h t * ((m - t) / (σ2 : ℝ) * pdf t)) = -∫ t, h' t * pdf t := by
     have key := integral_bilinear_hasDerivAt_right_eq_neg_left_of_integrable
       (L := ContinuousLinearMap.mul ℝ ℝ) (u := h) (u' := h') (v := pdf)
@@ -279,7 +280,8 @@ private lemma gaussian_stein_1d (m : ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) {h h
       (by simpa only [ContinuousLinearMap.mul_apply'] using huv)
     simpa only [ContinuousLinearMap.mul_apply'] using key
   rw [integral_gaussianReal_eq_integral_smul hσ, integral_gaussianReal_eq_integral_smul hσ]
-  simp only [smul_eq_mul]
+  simp only [smul_eq_mul, ← hpdfdef]
+  have hσ' : (σ2 : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hσ
   have hpt : (fun t => pdf t * ((t - m) * h t))
       = fun t => -(σ2 : ℝ) * (h t * ((m - t) / (σ2 : ℝ) * pdf t)) := by
     funext t; field_simp; ring
