@@ -63,18 +63,47 @@ namespace StatLean.Bayesian
 
 variable {ι : Type*} [Fintype ι]
 
+/-- The denominator is the predictive density of the likelihood ratio (`dlDenom = m`). -/
+private lemma dlDenom_eq_predictiveDensity (θ₀ : EuclideanSpace ℝ ι)
+    (π : Measure (EuclideanSpace ℝ ι)) (y : EuclideanSpace ℝ ι) :
+    dlDenom θ₀ π y = predictiveDensity (dlLR θ₀) π y := by
+  rw [dlDenom, dlNumer, setLIntegral_univ]; rfl
+
+/-- The predictive density of the Gaussian likelihood ratio is strictly positive **everywhere**:
+its integrand `dlLR θ₀ θ y = exp(…) > 0` for all `θ`, and `π` is a probability measure. -/
+private lemma predictiveDensity_dlLR_pos (θ₀ y : EuclideanSpace ℝ ι)
+    (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure π] :
+    0 < predictiveDensity (dlLR θ₀) π y := by
+  have hf : Measurable (fun θ => dlLR θ₀ θ y) := by unfold dlLR; fun_prop
+  have hpos : ∀ θ, dlLR θ₀ θ y ≠ 0 := fun θ => by
+    rw [dlLR]; exact (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
+  rw [predictiveDensity, pos_iff_ne_zero, Ne, lintegral_eq_zero_iff hf]
+  intro hzero
+  have hfalse : ∀ᵐ θ ∂π, False := by
+    filter_upwards [hzero] with θ hθ
+    exact hpos θ (by simpa using hθ)
+  rw [Filter.eventually_false_iff_eq_bot, ae_eq_bot] at hfalse
+  have h1 : π Set.univ = 1 := measure_univ
+  rw [hfalse] at h1
+  simp at h1
+
 /-- **Girsanov density identity** (the dominated-model hypothesis for `posterior_apply_eq_div`):
 `N(θ, I) = N(θ₀, I).withDensity (dN(θ,I)/dN(θ₀,I))`, i.e.
 `gaussShiftKernel ι θ = (gaussShiftKernel ι θ₀).withDensity (dlLR θ₀ θ)`. -/
 theorem gaussShiftKernel_eq_withDensity (θ₀ θ : EuclideanSpace ℝ ι) :
     gaussShiftKernel ι θ = (gaussShiftKernel ι θ₀).withDensity (fun y => dlLR θ₀ θ y) := by
-  sorry
+  simp only [gaussShiftKernel_apply]
+  exact stdGaussianShift_withDensity θ₀ θ
 
 /-- The Gaussian likelihood ratio integrates to `1` against the base measure `K θ₀`
 (it is a probability density: `∫ dN(θ,I)/dN(θ₀,I) dN(θ₀,I) = N(θ,I)(univ) = 1`). -/
 theorem lintegral_dlLR_eq_one (θ₀ θ : EuclideanSpace ℝ ι) :
     ∫⁻ y, dlLR θ₀ θ y ∂(gaussShiftKernel ι θ₀) = 1 := by
-  sorry
+  have h : (gaussShiftKernel ι θ) Set.univ
+      = ∫⁻ y, dlLR θ₀ θ y ∂(gaussShiftKernel ι θ₀) := by
+    rw [gaussShiftKernel_eq_withDensity θ₀ θ, withDensity_apply _ MeasurableSet.univ,
+      setLIntegral_univ]
+  rw [← h, measure_univ]
 
 /-- **Change-of-measure Tonelli**: swapping the order of integration in
 `E_{θ₀}[dlNumer C] = ∫ (∫_C dlLR dΠ) dP₀` yields `∫_C (∫ dlLR dP₀) dΠ`. -/
@@ -84,7 +113,9 @@ theorem dlLR_fubini (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpac
     (hC : MeasurableSet C) :
     ∫⁻ y, dlNumer θ₀ π C y ∂(gaussShiftKernel ι θ₀)
       = ∫⁻ θ in C, (∫⁻ y, dlLR θ₀ θ y ∂(gaussShiftKernel ι θ₀)) ∂π := by
-  sorry
+  simp only [dlNumer]
+  rw [lintegral_lintegral_swap (f := fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)
+    ((measurable_dlLR_uncurry θ₀).comp measurable_swap).aemeasurable]
 
 /-- **Numerator expectation = prior mass** (BPPD §6): combining `dlLR_fubini` with
 `lintegral_dlLR_eq_one`, the truth-expectation of the un-normalized posterior numerator over `C`
@@ -94,7 +125,9 @@ theorem lintegral_dlNumer_eq_prior (θ₀ : EuclideanSpace ℝ ι) (π : Measure
     -- LEAN-ONLY: target parameter set measurable (regularity)
     (hC : MeasurableSet C) :
     ∫⁻ y, dlNumer θ₀ π C y ∂(gaussShiftKernel ι θ₀) = π C := by
-  sorry
+  rw [dlLR_fubini θ₀ π hC]
+  simp only [lintegral_dlLR_eq_one]
+  rw [setLIntegral_const, one_mul]
 
 /-- **Truth dominated by the predictive**: `N(θ', I) ≪ (K ∘ₘ Π)`. Both are equivalent to Lebesgue
 measure (Gaussian densities are strictly positive and the predictive density
@@ -102,27 +135,38 @@ measure (Gaussian densities are strictly positive and the predictive density
 theorem comp_absolutelyContinuous (θ' : EuclideanSpace ℝ ι)
     (π : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure π] :
     gaussShiftKernel ι θ' ≪ (gaussShiftKernel ι) ∘ₘ π := by
-  sorry
+  rw [comp_eq_withDensity_predictiveDensity (ν := gaussShiftKernel ι θ') (p := dlLR θ')
+    (measurable_dlLR_uncurry θ') (gaussShiftKernel_eq_withDensity θ')]
+  exact withDensity_absolutelyContinuous'
+    (measurable_predictiveDensity (measurable_dlLR_uncurry θ')).aemeasurable
+    (Filter.Eventually.of_forall fun y => (predictiveDensity_dlLR_pos θ' y π).ne')
 
 /-- The posterior denominator is `P₀`-a.e. strictly positive (forced by finiteness of the
 predictive, transferred along `P₀ ≪ K ∘ₘ Π`; not a hypothesis). -/
 theorem dlDenom_pos_ae (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     [IsProbabilityMeasure π] :
     ∀ᵐ y ∂(gaussShiftKernel ι θ₀), 0 < dlDenom θ₀ π y := by
-  sorry
+  refine Filter.Eventually.of_forall fun y => ?_
+  rw [dlDenom_eq_predictiveDensity]
+  exact predictiveDensity_dlLR_pos θ₀ y π
 
 /-- The posterior denominator is `P₀`-a.e. finite (forced by finiteness of the predictive,
 transferred along `P₀ ≪ K ∘ₘ Π`; not a hypothesis). -/
 theorem dlDenom_lt_top_ae (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     [IsProbabilityMeasure π] :
     ∀ᵐ y ∂(gaussShiftKernel ι θ₀), dlDenom θ₀ π y < ∞ := by
-  sorry
+  have h := predictiveDensity_lt_top_ae (κ := gaussShiftKernel ι) (π := π)
+    (ν := gaussShiftKernel ι θ₀) (measurable_dlLR_uncurry θ₀)
+    (gaussShiftKernel_eq_withDensity θ₀)
+  filter_upwards [h] with y hy
+  rwa [dlDenom_eq_predictiveDensity]
 
 /-- The posterior ratio is `≤ 1` (indeed pointwise, since `dlNumer ≤ dlDenom`). -/
 theorem dlRatio_le_one_ae (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     (C : Set (EuclideanSpace ℝ ι)) :
-    ∀ᵐ y ∂(gaussShiftKernel ι θ₀), dlNumer θ₀ π C y / dlDenom θ₀ π y ≤ 1 := by
-  sorry
+    ∀ᵐ y ∂(gaussShiftKernel ι θ₀), dlNumer θ₀ π C y / dlDenom θ₀ π y ≤ 1 :=
+  Filter.Eventually.of_forall fun y => ENNReal.div_le_of_le_mul
+    (by rw [one_mul]; exact dlNumer_le_dlDenom θ₀ π C y)
 
 /-- **The posterior ↔ ratio bridge.** For a measurable parameter set `C`, the truth-averaged
 posterior mass of `C` equals the truth-average of the explicit likelihood-ratio function
@@ -136,6 +180,13 @@ theorem lintegral_posterior_eq_lintegral_ratio (θ₀ : EuclideanSpace ℝ ι)
     (hC : MeasurableSet C) :
     ∫⁻ y, ((gaussShiftKernel ι)†π) y C ∂(gaussShiftKernel ι θ₀)
       = ∫⁻ y, dlNumer θ₀ π C y / dlDenom θ₀ π y ∂(gaussShiftKernel ι θ₀) := by
-  sorry
+  have hpost := posterior_apply_eq_div (κ := gaussShiftKernel ι) (π := π)
+    (ν := gaussShiftKernel ι θ₀) (p := dlLR θ₀)
+    (measurable_dlLR_uncurry θ₀) (gaussShiftKernel_eq_withDensity θ₀) hC
+  have hpost0 := (comp_absolutelyContinuous θ₀ π).ae_le hpost
+  refine lintegral_congr_ae ?_
+  filter_upwards [hpost0] with y hy
+  rw [hy, dlDenom_eq_predictiveDensity]
+  rfl
 
 end StatLean.Bayesian
