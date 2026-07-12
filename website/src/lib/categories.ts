@@ -58,6 +58,13 @@ export const CATEGORIES: CategoryMeta[] = [
       "Convexity and smoothness primitives, co-coercivity, the O(1/t) rates of gradient descent, Frank–Wolfe and proximal gradient, and the O(1/t²) rates of Nesterov-accelerated gradient and proximal methods.",
   },
   {
+    id: "bayesian",
+    name: "Bayesian Statistics",
+    tagline: "Conjugacy, hierarchical models & MCMC",
+    blurb:
+      "The dominated-Bayes posterior and predictive densities, sufficiency and conjugate families (Beta–Binomial, Gamma–Poisson, Normal–Normal, Dirichlet–Multinomial), Bayes decision theory and the route to minimaxity, model choice and MCMC correctness, and the hierarchical + empirical-Bayes theory — posterior tower/mixture, partial pooling, James–Stein, Tweedie, and the NPMLE.",
+  },
+  {
     id: "probability",
     name: "Miscellaneous Results",
     tagline: "Load-bearing probability & analysis",
