@@ -1,5 +1,8 @@
 import StatLean.Bayesian.Conjugacy.NormalNormal
 import StatLean.Bayesian.ForMathlib.GaussianDeriv
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Linear-shrinkage and James–Stein risk
@@ -288,6 +291,72 @@ private lemma gaussian_stein_1d (m : ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) {h h
   rw [hpt, integral_const_mul, hibp, neg_mul_neg]
   congr 1
   exact integral_congr_ae (ae_of_all _ fun t => mul_comm (h' t) (pdf t))
+
+/-! ### Brick D: finiteness of `E‖X‖⁻²` for `p ≥ 3` -/
+
+/-- **Radial ball integrability** of `x ↦ ‖x‖⁻²` on the closed unit ball for `p ≥ 3` (Lebesgue
+measure on `Fin p → ℝ`). The whole-space radial integral of `‖x‖⁻²` diverges, but restricted to the
+ball it is finite: transferring to `EuclideanSpace ℝ (Fin p)` and integrating radially reduces to
+`∫₀¹ r^{p-3} dr`, finite precisely because `p ≥ 3`. -/
+private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
+    IntegrableOn (fun x : Fin p → ℝ => 1 / (∑ i, (x i) ^ 2))
+      {x : Fin p → ℝ | (∑ i, (x i) ^ 2) ≤ 1} volume := by
+  classical
+  set F : ℝ → ℝ := fun t => if t ≤ 1 then 1 / t ^ 2 else 0 with hF
+  -- Euclidean-space integrability of `y ↦ ‖y‖⁻²` on the closed unit ball.
+  have hball : IntegrableOn (fun y : EuclideanSpace ℝ (Fin p) => 1 / ‖y‖ ^ 2)
+      (Metric.closedBall 0 1) volume := by
+    rw [← integrable_indicator_iff measurableSet_closedBall]
+    have hEq : (Metric.closedBall (0 : EuclideanSpace ℝ (Fin p)) 1).indicator
+        (fun y => 1 / ‖y‖ ^ 2) = fun y => F ‖y‖ := by
+      funext y
+      by_cases hy : y ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin p)) 1
+      · rw [Set.indicator_of_mem hy]
+        have hle : ‖y‖ ≤ 1 := by simpa [Metric.mem_closedBall, dist_eq_norm] using hy
+        simp [hF, hle]
+      · rw [Set.indicator_of_notMem hy]
+        have hlt : ¬ ‖y‖ ≤ 1 := by simpa [Metric.mem_closedBall, dist_eq_norm] using hy
+        simp [hF, hlt]
+    haveI : Nontrivial (EuclideanSpace ℝ (Fin p)) :=
+      Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [finrank_euclideanSpace_fin]; omega)
+    rw [hEq, integrable_fun_norm_addHaar, finrank_euclideanSpace_fin,
+      ← Set.Ioc_union_Ioi_eq_Ioi (show (0 : ℝ) ≤ 1 by norm_num), integrableOn_union]
+    constructor
+    · -- On `Ioc 0 1` the integrand equals the continuous monomial `t ↦ t^{p-3}`.
+      have hcont : IntegrableOn (fun t : ℝ => t ^ (p - 3)) (Set.Ioc 0 1) volume :=
+        (continuous_pow (p - 3)).integrableOn_Ioc
+      refine hcont.congr_fun (fun t ht => ?_) measurableSet_Ioc
+      have ht1 : t ≤ 1 := ht.2
+      have ht0 : t ≠ 0 := ne_of_gt ht.1
+      simp only [hF, smul_eq_mul, if_pos ht1]
+      rw [show p - 1 = (p - 3) + 2 by omega, pow_add]
+      field_simp
+    · -- On `Ioi 1` the integrand vanishes.
+      refine (integrableOn_zero).congr_fun (fun t ht => ?_) measurableSet_Ioi
+      have ht1 : ¬ t ≤ 1 := not_le.mpr ht
+      simp [hF, ht1]
+  -- Transfer back to `Fin p → ℝ` via the volume-preserving coordinate identification.
+  have hmp : MeasurePreserving (⇑(EuclideanSpace.measurableEquiv (Fin p)))
+      (volume : Measure (EuclideanSpace ℝ (Fin p))) (volume : Measure (Fin p → ℝ)) := by
+    rw [EuclideanSpace.coe_measurableEquiv]; exact PiLp.volume_preserving_ofLp (Fin p)
+  have hemb : MeasurableEmbedding (⇑(EuclideanSpace.measurableEquiv (Fin p))) :=
+    (EuclideanSpace.measurableEquiv (Fin p)).measurableEmbedding
+  rw [← hmp.integrableOn_comp_preimage hemb]
+  have hfun : ((fun x : Fin p → ℝ => 1 / ∑ i, (x i) ^ 2)
+        ∘ ⇑(EuclideanSpace.measurableEquiv (Fin p)))
+      = fun y : EuclideanSpace ℝ (Fin p) => 1 / ‖y‖ ^ 2 := by
+    funext y
+    simp only [Function.comp_apply, EuclideanSpace.coe_measurableEquiv, EuclideanSpace.real_norm_sq_eq]
+  have hset : (⇑(EuclideanSpace.measurableEquiv (Fin p))
+        ⁻¹' {x : Fin p → ℝ | ∑ i, (x i) ^ 2 ≤ 1})
+      = Metric.closedBall 0 1 := by
+    ext y
+    simp only [Set.mem_preimage, Set.mem_setOf_eq, EuclideanSpace.coe_measurableEquiv,
+      Metric.mem_closedBall, dist_eq_norm, sub_zero, ← EuclideanSpace.real_norm_sq_eq]
+    constructor
+    · intro h; nlinarith [norm_nonneg y, h]
+    · intro h; nlinarith [norm_nonneg y, h]
+  rw [hfun, hset]; exact hball
 
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
