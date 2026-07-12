@@ -166,23 +166,247 @@ theorem dirichletZ_pos {k : ℕ} {α : Fin (k + 1) → ℝ}
   rw [Real.volume_Ioo, ne_eq, ENNReal.ofReal_eq_zero, not_le]
   exact sub_pos.mpr hlohi
 
-/-- The Dirichlet normalization is finite for positive parameters (coordinate-peel recursion down
-to the one-dimensional Beta integral). -/
+open Classical in
+/-- **Coordinate-peel pointwise identity.** Writing the first free coordinate as `t` and rescaling
+the remaining `k` coordinates by `1 − t` (`η ↦ (1 − t) • η`), the Dirichlet weight factors as a
+`t`/`(1 − t)`-power times the *tail* Dirichlet weight (parameters `α ∘ succ`). This is the pointwise
+core of the recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ) · Z(tail α)`. -/
+private theorem dirichletWeight_cons_smul {k : ℕ} (α : Fin (k + 2) → ℝ)
+    {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) (η : Fin k → ℝ) :
+    dirichletWeight α (Fin.cons t ((1 - t) • η))
+      = ENNReal.ofReal (t ^ (α 0 - 1) * (1 - t) ^ ((∑ i : Fin (k + 1), α i.succ) - ((k : ℝ) + 1)))
+        * dirichletWeight (fun i => α i.succ) η := by
+  set τ : Fin (k + 1) → ℝ := fun i => α i.succ with hτ
+  set φ : Fin (k + 1) → ℝ := Fin.cons t ((1 - t) • η) with hφ
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  -- The sum `∑ φ = t + (1 - t) · ∑ η`.
+  have hsumφ : ∑ i, φ i = t + (1 - t) * ∑ i, η i := by
+    rw [hφ, Fin.sum_univ_succ, Fin.cons_zero]
+    congr 1
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [Fin.cons_succ, Pi.smul_apply, smul_eq_mul]
+  by_cases hcorner : η ∈ simplexCorner k
+  · obtain ⟨hηpos, hηsum⟩ := hcorner
+    -- `φ` lands in the bigger corner.
+    have hφcorner : φ ∈ simplexCorner (k + 1) := by
+      refine ⟨fun i => ?_, ?_⟩
+      · refine Fin.cases ?_ ?_ i
+        · rw [hφ, Fin.cons_zero]; exact ht0
+        · intro j; rw [hφ, Fin.cons_succ, Pi.smul_apply, smul_eq_mul]
+          exact mul_pos h1t (hηpos j)
+      · rw [hsumφ]; nlinarith [hηsum, h1t]
+    rw [dirichletWeight, if_pos hφcorner, dirichletWeight, if_pos ⟨hηpos, hηsum⟩,
+      ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    -- Real product identity.
+    set S := ∑ i, η i with hS
+    have h1S : (0 : ℝ) < 1 - S := by rw [hS]; linarith
+    -- Middle product: `∏_{i} simplexExtend φ i.castSucc = t^(α₀-1) · ∏_j ((1-t)ηⱼ)^…`.
+    have hmid : (∏ i : Fin (k + 1), simplexExtend φ i.castSucc ^ (α i.castSucc - 1))
+        = t ^ (α 0 - 1) * ∏ j : Fin k, ((1 - t) * η j) ^ (α (j.succ).castSucc - 1) := by
+      have hsc : ∀ i : Fin (k + 1), simplexExtend φ i.castSucc = φ i :=
+        fun i => by rw [simplexExtend, Fin.snoc_castSucc]
+      rw [Fin.prod_univ_succ]
+      simp only [hsc]
+      simp only [hφ, Fin.cons_zero, Fin.cons_succ, Fin.castSucc_zero, Pi.smul_apply, smul_eq_mul]
+    -- Expand the `(k+2)`-fold product over `simplexExtend φ`.
+    have hLHS : (∏ i, simplexExtend φ i ^ (α i - 1))
+        = (t ^ (α 0 - 1) * ∏ j : Fin k, ((1 - t) * η j) ^ (α (j.succ).castSucc - 1))
+          * ((1 - t) * (1 - S)) ^ (α (Fin.last (k + 1)) - 1) := by
+      rw [Fin.prod_univ_castSucc, hmid, simplexExtend, Fin.snoc_last,
+        show (1 - ∑ i, φ i) = (1 - t) * (1 - S) by rw [hsumφ, hS]; ring]
+    -- Expand the tail `(k+1)`-fold product over `simplexExtend η`.
+    have hRHS : (∏ i, simplexExtend η i ^ (τ i - 1))
+        = (∏ j : Fin k, η j ^ (α (j.succ).castSucc - 1))
+          * (1 - S) ^ (α (Fin.last (k + 1)) - 1) := by
+      rw [Fin.prod_univ_castSucc]
+      congr 1
+      · refine Finset.prod_congr rfl fun j _ => ?_
+        simp only [simplexExtend, Fin.snoc_castSucc, hτ, Fin.succ_castSucc]
+      · have hlast : τ (Fin.last k) = α (Fin.last (k + 1)) := by
+          simp only [hτ, Fin.succ_last]
+        rw [simplexExtend, Fin.snoc_last, ← hS, hlast]
+    rw [hLHS, hRHS]
+    -- Push out the `(1 - t)` powers.
+    have hsumexp : (∑ j : Fin k, (α (j.succ).castSucc - 1)) + (α (Fin.last (k + 1)) - 1)
+        = (∑ i, τ i) - ((k : ℝ) + 1) := by
+      rw [Fin.sum_univ_castSucc (f := τ)]
+      simp only [hτ, Fin.succ_castSucc, Fin.succ_last]
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, mul_one]
+      ring
+    have hmulrpow : ∀ j : Fin k, ((1 - t) * η j) ^ (α (j.succ).castSucc - 1)
+        = (1 - t) ^ (α (j.succ).castSucc - 1) * η j ^ (α (j.succ).castSucc - 1) :=
+      fun j => Real.mul_rpow h1t.le (hηpos j).le
+    have hcomb : (1 - t) ^ (∑ j : Fin k, (α (j.succ).castSucc - 1))
+          * (1 - t) ^ (α (Fin.last (k + 1)) - 1)
+        = (1 - t) ^ ((∑ i, τ i) - ((k : ℝ) + 1)) := by
+      rw [← Real.rpow_add h1t, hsumexp]
+    simp only [hmulrpow]
+    rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos h1t, Real.mul_rpow h1t.le h1S.le, ← hcomb]
+    ring
+  · -- Off the corner both sides vanish.
+    have hφoff : φ ∉ simplexCorner (k + 1) := by
+      intro hφmem
+      apply hcorner
+      obtain ⟨hpos, hsum⟩ := hφmem
+      refine ⟨fun j => ?_, ?_⟩
+      · have hj := hpos j.succ
+        rw [hφ, Fin.cons_succ, Pi.smul_apply, smul_eq_mul] at hj
+        have : η j = ((1 - t) * η j) / (1 - t) := by field_simp
+        rw [this]; exact div_pos hj h1t
+      · rw [hsumφ] at hsum; nlinarith [hsum, h1t]
+    rw [dirichletWeight, if_neg hφoff, dirichletWeight, if_neg hcorner, mul_zero]
+
+open Classical in
+/-- Off the interval `(0, 1)` the first coordinate forces the point out of the corner, so the
+Dirichlet weight vanishes. -/
+private theorem dirichletWeight_cons_eq_zero {k : ℕ} (α : Fin (k + 2) → ℝ)
+    {t : ℝ} (ht : t ≤ 0 ∨ 1 ≤ t) (ζ : Fin k → ℝ) :
+    dirichletWeight α (Fin.cons t ζ) = 0 := by
+  rw [dirichletWeight, if_neg]
+  rintro ⟨hpos, hsum⟩
+  rcases ht with h | h
+  · have h0 := hpos 0; rw [Fin.cons_zero] at h0; linarith
+  · rw [Fin.sum_univ_succ] at hsum
+    simp only [Fin.cons_zero, Fin.cons_succ] at hsum
+    have hζ : (0 : ℝ) ≤ ∑ j, ζ j :=
+      Finset.sum_nonneg fun j _ => by have := hpos j.succ; rw [Fin.cons_succ] at this; linarith
+    linarith
+
+/-- Consing a fixed first coordinate is measurable. -/
+private theorem measurable_cons_right {k : ℕ} (t : ℝ) :
+    Measurable (fun ζ : Fin k → ℝ => (Fin.cons t ζ : Fin (k + 1) → ℝ)) := by
+  rw [measurable_pi_iff]; intro i
+  refine Fin.cases ?_ ?_ i
+  · simp only [Fin.cons_zero]; exact measurable_const
+  · intro j; simp only [Fin.cons_succ]; exact measurable_pi_apply j
+
+/-- **Inner marginal.** For `t ∈ (0, 1)`, integrating out the remaining `k` coordinates (rescaled by
+`1 − t`) gives the one-dimensional `t`-density times the tail normalization. -/
+private theorem dirichletZ_inner {k : ℕ} (α : Fin (k + 2) → ℝ)
+    {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1) :
+    ∫⁻ ζ : Fin k → ℝ, dirichletWeight α (Fin.cons t ζ)
+      = ENNReal.ofReal (t ^ (α 0 - 1) * (1 - t) ^ ((∑ i : Fin (k + 1), α i.succ) - 1))
+        * dirichletZ (fun i => α i.succ) := by
+  have h1t : (0 : ℝ) < 1 - t := by linarith
+  set F : (Fin k → ℝ) → ℝ≥0∞ := fun ζ => dirichletWeight α (Fin.cons t ζ) with hF
+  have hFmeas : Measurable F := (measurable_dirichletWeight α).comp (measurable_cons_right t)
+  -- Change of variables `ζ = (1 − t) • η`, Jacobian `(1 − t)^k`.
+  have hmap : Measure.map (fun η : Fin k → ℝ => (1 - t) • η) volume
+      = ENNReal.ofReal (((1 - t) ^ k)⁻¹) • (volume : Measure (Fin k → ℝ)) := by
+    rw [Measure.map_addHaar_smul volume (by positivity : (1 - t) ≠ 0)]
+    congr 2
+    rw [Module.finrank_fin_fun, abs_of_pos (by positivity)]
+  have hcov : ∫⁻ ζ, F ζ = ENNReal.ofReal ((1 - t) ^ k) * ∫⁻ η, F ((1 - t) • η) := by
+    have hmapint := lintegral_map (μ := (volume : Measure (Fin k → ℝ))) hFmeas
+      (measurable_const_smul (1 - t))
+    rw [hmap, lintegral_smul_measure, smul_eq_mul] at hmapint
+    have hck : ENNReal.ofReal ((1 - t) ^ k) * ENNReal.ofReal (((1 - t) ^ k)⁻¹) = 1 := by
+      rw [← ENNReal.ofReal_mul (by positivity), mul_inv_cancel₀ (by positivity),
+        ENNReal.ofReal_one]
+    calc ∫⁻ ζ, F ζ
+        = 1 * ∫⁻ ζ, F ζ := (one_mul _).symm
+      _ = ENNReal.ofReal ((1 - t) ^ k)
+            * (ENNReal.ofReal (((1 - t) ^ k)⁻¹) * ∫⁻ ζ, F ζ) := by rw [← hck, mul_assoc]
+      _ = ENNReal.ofReal ((1 - t) ^ k) * ∫⁻ η, F ((1 - t) • η) := by rw [hmapint]
+  rw [hcov]
+  simp only [hF, dirichletWeight_cons_smul α ht0 ht1]
+  rw [lintegral_const_mul _ (measurable_dirichletWeight _), ← mul_assoc,
+    ← ENNReal.ofReal_mul (pow_nonneg h1t.le k)]
+  congr 1
+  congr 1
+  rw [← Real.rpow_natCast (1 - t) k, ← mul_assoc, mul_comm ((1 - t) ^ (k : ℝ)) (t ^ (α 0 - 1)),
+    mul_assoc, ← Real.rpow_add h1t,
+    show (k : ℝ) + ((∑ i : Fin (k + 1), α i.succ) - ((k : ℝ) + 1))
+      = (∑ i : Fin (k + 1), α i.succ) - 1 by ring]
+
+/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Robert Appendix A.8). Batch-3
+target closing the carried debt: the coordinate-peel recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ)·Z(tail α)`
+with the pinned real Beta–Gamma identity `ProbabilityTheory.beta a b = Γ(a)Γ(b)/Γ(a+b)`
+(`beta_eq_betaIntegralReal`) telescopes to `∏Γ/Γ(∑)`; `dirichletZ_lt_top` is then an immediate
+corollary. -/
+theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}
+    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    (hα : ∀ i, 0 < α i) :
+    dirichletZ α = ENNReal.ofReal ((∏ i, Real.Gamma (α i)) / Real.Gamma (∑ i, α i)) := by
+  induction k with
+  | zero =>
+    -- One category: `Z = 1 = Γ(α₀)/Γ(α₀)`.
+    have hw : ∀ θ : Fin 0 → ℝ, dirichletWeight α θ = 1 := by
+      intro θ
+      have hmem : θ ∈ simplexCorner 0 := ⟨fun i => i.elim0, by simp⟩
+      have h0 : simplexExtend θ (0 : Fin 1) = 1 := by
+        rw [simplexExtend, show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]; simp
+      rw [dirichletWeight, if_pos hmem, Fin.prod_univ_one, h0]
+      simp
+    rw [dirichletZ]
+    simp only [hw, lintegral_one, Fin.prod_univ_succ, Fin.sum_univ_succ, Finset.univ_eq_empty,
+      Finset.prod_empty, Finset.sum_empty, mul_one, add_zero]
+    rw [div_self (Real.Gamma_pos_of_pos (hα 0)).ne', ENNReal.ofReal_one, volume_pi,
+      Measure.pi_univ]
+    simp
+  | succ k ih =>
+    -- Peel coordinate `0` and apply Tonelli.
+    have h1 : ∀ i : Fin (k + 1), 0 < α i.succ := fun i => hα i.succ
+    have hb : 0 < ∑ i : Fin (k + 1), α i.succ :=
+      Finset.sum_pos (fun i _ => hα i.succ) ⟨0, Finset.mem_univ 0⟩
+    have hmp := (volume_preserving_piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm
+    have hfae : AEMeasurable (fun z : ℝ × (Fin k → ℝ) => dirichletWeight α
+        ((MeasurableEquiv.piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm z))
+        ((volume : Measure ℝ).prod volume) :=
+      ((measurable_dirichletWeight α).comp
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm.measurable).aemeasurable
+    rw [dirichletZ,
+      hmp.lintegral_map_equiv (dirichletWeight α)
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm,
+      Measure.volume_eq_prod, lintegral_prod _ hfae]
+    have hesymm : ∀ (x : ℝ) (y : Fin k → ℝ),
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (k + 1) => ℝ) 0).symm (x, y)
+          = Fin.cons x y := by
+      intro x y
+      rw [MeasurableEquiv.piFinSuccAbove_symm_apply]
+      exact Fin.insertNth_zero' x y
+    simp only [hesymm]
+    -- Restrict the outer integral to `(0, 1)`.
+    have hzero : ∀ t : ℝ, t ∉ Set.Ioo (0 : ℝ) 1 →
+        (∫⁻ ζ, dirichletWeight α (Fin.cons t ζ)) = 0 := by
+      intro t ht
+      have ht' : t ≤ 0 ∨ 1 ≤ t := by
+        rw [Set.mem_Ioo, not_and_or, not_lt, not_lt] at ht; exact ht
+      simp only [dirichletWeight_cons_eq_zero α ht', lintegral_zero]
+    have hgind : (fun t => ∫⁻ ζ, dirichletWeight α (Fin.cons t ζ))
+        = Set.indicator (Set.Ioo 0 1) (fun t => ∫⁻ ζ, dirichletWeight α (Fin.cons t ζ)) := by
+      ext t
+      by_cases h : t ∈ Set.Ioo (0 : ℝ) 1
+      · rw [Set.indicator_of_mem h]
+      · rw [Set.indicator_of_notMem h, hzero t h]
+    rw [hgind, lintegral_indicator measurableSet_Ioo,
+      setLIntegral_congr_fun measurableSet_Ioo (fun t ht => dirichletZ_inner α ht.1 ht.2)]
+    have hmeas : Measurable fun t : ℝ =>
+        ENNReal.ofReal (t ^ (α 0 - 1) * (1 - t) ^ ((∑ i : Fin (k + 1), α i.succ) - 1)) := by
+      fun_prop
+    rw [lintegral_mul_const _ hmeas, lintegral_Ioo_rpow_mul_rpow (hα 0) hb,
+      ih (α := fun i => α i.succ) h1,
+      ← ENNReal.ofReal_mul (ProbabilityTheory.beta_pos (hα 0) hb).le]
+    congr 1
+    -- Telescope `B(α₀, S₁) · ∏τΓ/Γ(S₁) = ∏Γ/Γ(∑)`.
+    rw [ProbabilityTheory.beta]
+    simp only [Fin.prod_univ_succ (f := fun i => Real.Gamma (α i)), Fin.sum_univ_succ (f := α)]
+    have hΓ1 : Real.Gamma (∑ i : Fin (k + 1), α i.succ) ≠ 0 := (Real.Gamma_pos_of_pos hb).ne'
+    have hΓ2 : Real.Gamma (α 0 + ∑ i : Fin (k + 1), α i.succ) ≠ 0 :=
+      (Real.Gamma_pos_of_pos (add_pos (hα 0) hb)).ne'
+    field_simp
+    -- `field_simp` clears the (nonzero) `Γ` denominators; the remaining identity is definitional.
+
+/-- The Dirichlet normalization is finite for positive parameters (immediate from the exact form
+`dirichletZ_eq_prod_Gamma_div`; `Real.Gamma` is positive, hence finite, for positive arguments). -/
 theorem dirichletZ_lt_top {k : ℕ} {α : Fin (k + 1) → ℝ}
     -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
     (hα : ∀ i, 0 < α i) :
     dirichletZ α < ∞ := by
-  -- SANCTIONED DEBT (batch's single accepted `sorry`). The finiteness of the Dirichlet
-  -- normalization is the genuine analytic content of this file: it requires the coordinate-peel
-  -- recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ) · Z(tail α)`, obtained by (1) splitting the first
-  -- coordinate with `MeasureTheory.measurePreserving_piFinSuccAbove volume 0` + Tonelli, then
-  -- (2) the Haar rescaling `η = (1 − t) • ζ` on `Fin k → ℝ` (`map_addHaar_smul`, Jacobian
-  -- `(1 − t)^k`), collecting the `(1 − t)` powers via `Real.rpow_add` (positive base on the open
-  -- corner) into the exponent `∑_{i≥1} αᵢ − 1`, bounding the `t`-marginal by
-  -- `lintegral_Ioo_rpow_mul_rpow` (target 8) and closing by induction on `k` (base `k = 0`:
-  -- `Z = 1`). This peel is several hours of measure-theoretic bookkeeping and is left as the
-  -- documented debt per the batch plan; every other statement in the touch-set is closed.
-  sorry
+  rw [dirichletZ_eq_prod_Gamma_div hα]; exact ENNReal.ofReal_lt_top
 
 /-- The Dirichlet distribution is a probability measure for positive parameters. -/
 theorem isProbabilityMeasure_dirichletMeasure {k : ℕ} {α : Fin (k + 1) → ℝ}

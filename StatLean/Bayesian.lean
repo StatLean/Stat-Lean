@@ -3,6 +3,8 @@ import StatLean.Bayesian.ForMathlib.IIDKernel
 import StatLean.Bayesian.ForMathlib.KernelMixture
 import StatLean.Bayesian.ForMathlib.MultinomialDist
 import StatLean.Bayesian.ForMathlib.DirichletDist
+import StatLean.Bayesian.ForMathlib.PiKernel
+import StatLean.Bayesian.ForMathlib.GaussianDeriv
 import StatLean.Bayesian.Cond.Defs
 import StatLean.Bayesian.Cond.FinitePartition
 import StatLean.Bayesian.Cond.Odds
@@ -42,6 +44,20 @@ import StatLean.Bayesian.Decision.BayesEstimator
 import StatLean.Bayesian.Decision.SquaredLoss
 import StatLean.Bayesian.Decision.ZeroOneLoss
 import StatLean.Bayesian.Decision.Minimax
+import StatLean.Bayesian.Hierarchical.Defs
+import StatLean.Bayesian.Hierarchical.Decomposition
+import StatLean.Bayesian.Hierarchical.Tower
+import StatLean.Bayesian.Hierarchical.Exchangeable
+import StatLean.Bayesian.Hierarchical.NormalHier
+import StatLean.Bayesian.Hierarchical.Shrinkage
+import StatLean.Bayesian.Hierarchical.Gibbs
+import StatLean.Bayesian.EmpiricalBayes.Defs
+import StatLean.Bayesian.EmpiricalBayes.Parametric
+import StatLean.Bayesian.EmpiricalBayes.Robbins
+import StatLean.Bayesian.EmpiricalBayes.Tweedie
+import StatLean.Bayesian.EmpiricalBayes.Compound
+import StatLean.Bayesian.EmpiricalBayes.LocalFDR
+import StatLean.Bayesian.EmpiricalBayes.NPMLE
 
 /-!
 # Bayesian — area umbrella
@@ -52,11 +68,16 @@ principle, iid/sequential updating and the posterior predictive, conjugate famil
 families, Beta–Binomial, Gamma–Poisson, Normal–Normal, Dirichlet–Multinomial — with the Dirichlet
 and Multinomial distributions built here), generalized Bayes for improper priors, Bayesian
 testing/model choice/credible sets, correctness of finite-state MCMC (Metropolis–Hastings, Gibbs),
-and the Bayes-decision-theoretic bridge to minimaxity.
+the Bayes-decision-theoretic bridge to minimaxity, and — in the hierarchical and empirical-Bayes
+layer — two-level models with their posterior tower/mixture decompositions, normal partial pooling,
+shrinkage optimality, parametric and nonparametric empirical Bayes (Robbins, Tweedie), and local
+false discovery rate.
 
 **Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
 Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Chapters 1–7 and Appendix A. Tag token `Robert §X.Y` in
+2007 (ISBN 978-0-387-71598-8). Chapters 1–7, Chapter 10 (hierarchical and empirical Bayes), and
+Appendix A. The local false discovery rate and Tweedie's formula are not in Robert; they follow
+B. Efron, *Large-Scale Inference*, Cambridge University Press, 2010. Tag token `Robert §X.Y` in
 declaration docstrings.
 
 **Proof formalization notes.** The area builds a textbook-facing layer on top of Mathlib's pinned
@@ -94,7 +115,17 @@ from external Lean sources.
   (Thm 2.3.2); posterior mean under quadratic loss (Prop. 2.5.1); MAP under 0–1 loss
   (Prop. 2.5.7/§4.1.2); randomized-risk linearity and the constant-risk/least-favorable route to
   minimaxity (Lemma 2.4.13). The `ForMathlib/` files hold the pin-agnostic bricks (finite product
-  densities, the iid kernel, kernel mixtures, and the Multinomial and Dirichlet distributions).
+  densities, the iid and diagonal product kernels, kernel mixtures, the spatial derivative of the
+  Gaussian density, and the Multinomial and Dirichlet distributions).
+* **Hierarchical Bayes** (`Hierarchical/`) — the `HierBayesExperiment` interface (hyperprior →
+  prior kernel → likelihood); the marginal prior, hyperposterior, and conditional posteriors; the
+  posterior tower and mixture decompositions; conditional-iid exchangeability; the normal one-way
+  hierarchy with partial pooling; linear-shrinkage and James–Stein risk; hierarchical Gibbs.
+  Robert §10.1–10.3, Note 2.8.2.
+* **Empirical Bayes** (`EmpiricalBayes/`) — the mixture density and marginal likelihood; parametric
+  empirical Bayes for the normal random-effects model; Robbins's nonparametric Poisson rule;
+  Tweedie's formula; the two-groups model and local false discovery rate; the NPMLE and its
+  finite-support geometry. Robert §10.4; Efron, *Large-Scale Inference* (2010); Robbins (1956).
 
 **Bibliographic comments.** The subject runs from Bayes (1763, published by R. Price) and
 Laplace's "probability of causes" (1774) through Jeffreys's *Theory of Probability* (1939) — the
@@ -103,6 +134,10 @@ Functions*, 1950) and Savage (*The Foundations of Statistics*, 1954). Conjugate 
 with Raiffa and Schlaifer (*Applied Statistical Decision Theory*, 1961) and were characterized for
 exponential families by Diaconis and Ylvisaker (*Ann. Statist.* 7 (1979), 269–281); the MCMC
 material rests on Metropolis et al. (1953), Hastings (1970), Geman and Geman (1984), and Gelfand
-and Smith (1990). Robert's book is the decision-theoretic synthesis this area follows; his §1.8,
-§2.8 and §3.8 Notes survey the history in detail.
+and Smith (1990). Hierarchical priors are due to Good (1965) and Lindley and Smith (*J. Roy.
+Statist. Soc. Ser. B* 34 (1972), 1–41); empirical Bayes to Robbins (1956), with the Stein effect
+(Stein 1956; James and Stein 1961) as its decision-theoretic driver, the nonparametric MLE geometry
+to Lindsay (1983), and the modern large-scale-inference synthesis (two-groups model, local FDR,
+Tweedie's formula) to Efron (*Large-Scale Inference*, 2010). Robert's book is the decision-theoretic
+synthesis this area follows; his §1.8, §2.8, §3.8 and §10.6 Notes survey the history in detail.
 -/
