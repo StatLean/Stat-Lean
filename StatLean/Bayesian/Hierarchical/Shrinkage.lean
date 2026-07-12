@@ -770,5 +770,5 @@ theorem jamesStein_dominates_mle {p : ℕ}
 end StatLean.Bayesian
 
 -- INDEPENDENT AXIOM CHECK (verify branch only)
-#print axioms jamesStein_risk_difference
-#print axioms jamesStein_dominates_mle
+#print axioms StatLean.Bayesian.jamesStein_risk_difference
+#print axioms StatLean.Bayesian.jamesStein_dominates_mle
