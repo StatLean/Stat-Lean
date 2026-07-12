@@ -65,7 +65,9 @@ noncomputable def dlTestSet (θ₀ φ : EuclideanSpace ℝ ι) (ρ : ℝ) : Set 
 continuous, hence measurable, and `dlTestSet` is the preimage of `Ici _`. -/
 lemma measurableSet_dlTestSet (θ₀ φ : EuclideanSpace ℝ ι) (ρ : ℝ) :
     MeasurableSet (dlTestSet θ₀ φ ρ) := by
-  sorry
+  unfold dlTestSet
+  apply measurableSet_le measurable_const
+  fun_prop
 
 /-- **Type I error bound** (BPPD §6, deviation D4).
 
@@ -79,7 +81,21 @@ lemma measure_dlTestSet_le (θ₀ φ : EuclideanSpace ℝ ι) {ρ : ℝ}
     (hρd : ρ < ‖φ - θ₀‖) :
     (gaussShiftKernel ι θ₀) (dlTestSet θ₀ φ ρ)
       ≤ ENNReal.ofReal (Real.exp (-((‖φ - θ₀‖ - ρ) ^ 2 / 8))) := by
-  sorry
+  rw [gaussShiftKernel_apply θ₀]
+  have hd : (0 : ℝ) < ‖φ - θ₀‖ := lt_of_le_of_lt hρ0 hρd
+  have ht : 0 ≤ ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 := by
+    apply div_nonneg _ (by norm_num)
+    exact mul_nonneg (norm_nonneg _) (by linarith)
+  -- Rewrite the acceptance region with the inner product in `stdGaussianShift`-order.
+  have hset_eq : dlTestSet θ₀ φ ρ
+      = {y : EuclideanSpace ℝ ι | ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 ≤ ⟪φ - θ₀, y - θ₀⟫} := by
+    unfold dlTestSet; ext y; simp only [Set.mem_setOf_eq]; rw [real_inner_comm]
+  rw [hset_eq]
+  refine (stdGaussianShift_inner_ge_le θ₀ (φ - θ₀) _ ht).trans_eq ?_
+  congr 2
+  have hdne : ‖φ - θ₀‖ ≠ 0 := hd.ne'
+  field_simp
+  ring
 
 /-- **Type II error bound** (BPPD §6, deviation D4).
 
@@ -98,6 +114,45 @@ lemma measure_compl_dlTestSet_le (θ₀ φ θ : EuclideanSpace ℝ ι) {ρ : ℝ
     (hθφ : ‖θ - φ‖ ≤ ρ) :
     (gaussShiftKernel ι θ) (dlTestSet θ₀ φ ρ)ᶜ
       ≤ ENNReal.ofReal (Real.exp (-((‖φ - θ₀‖ - ρ) ^ 2 / 8))) := by
-  sorry
+  rw [gaussShiftKernel_apply θ]
+  have hd : (0 : ℝ) < ‖φ - θ₀‖ := lt_of_le_of_lt hρ0 hρd
+  have ht : 0 ≤ ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 := by
+    apply div_nonneg _ (by norm_num)
+    exact mul_nonneg (norm_nonneg _) (by linarith)
+  -- The statistic's mean under `θ` is at least `d(d − ρ)` (Cauchy–Schwarz on `‖θ − φ‖ ≤ ρ`).
+  have hmean : ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) ≤ ⟪θ - θ₀, φ - θ₀⟫ := by
+    have hself : ⟪φ - θ₀, φ - θ₀⟫ = ‖φ - θ₀‖ ^ 2 := real_inner_self_eq_norm_sq _
+    have hsplit : ⟪θ - θ₀, φ - θ₀⟫ = ⟪θ - φ, φ - θ₀⟫ + ‖φ - θ₀‖ ^ 2 := by
+      rw [← hself, ← inner_add_left]; congr 1; abel
+    have hcs : -(ρ * ‖φ - θ₀‖) ≤ ⟪θ - φ, φ - θ₀⟫ := by
+      have h1 : |⟪θ - φ, φ - θ₀⟫| ≤ ‖θ - φ‖ * ‖φ - θ₀‖ := abs_real_inner_le_norm _ _
+      have h2 : ‖θ - φ‖ * ‖φ - θ₀‖ ≤ ρ * ‖φ - θ₀‖ :=
+        mul_le_mul_of_nonneg_right hθφ (norm_nonneg _)
+      have h3 := abs_le.mp h1
+      linarith [h3.1, h3.2]
+    rw [hsplit]; nlinarith [hcs]
+  -- The complement is contained in the reflected half-space `{d(d−ρ)/2 ≤ ⟪−(φ−θ₀), y − θ⟫}`.
+  have hsub : (dlTestSet θ₀ φ ρ)ᶜ
+      ⊆ {y : EuclideanSpace ℝ ι |
+          ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 ≤ ⟪-(φ - θ₀), y - θ⟫} := by
+    intro y hy
+    simp only [dlTestSet, Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hy
+    simp only [Set.mem_setOf_eq]
+    rw [inner_neg_left, real_inner_comm]
+    have hdecomp : ⟪y - θ₀, φ - θ₀⟫ = ⟪y - θ, φ - θ₀⟫ + ⟪θ - θ₀, φ - θ₀⟫ := by
+      rw [← inner_add_left]; congr 1; abel
+    linarith [hy, hmean, hdecomp]
+  calc ((stdGaussian (EuclideanSpace ℝ ι)).map (· + θ)) (dlTestSet θ₀ φ ρ)ᶜ
+      ≤ ((stdGaussian (EuclideanSpace ℝ ι)).map (· + θ))
+          {y : EuclideanSpace ℝ ι |
+            ‖φ - θ₀‖ * (‖φ - θ₀‖ - ρ) / 2 ≤ ⟪-(φ - θ₀), y - θ⟫} :=
+        measure_mono hsub
+    _ ≤ _ := by
+        refine (stdGaussianShift_inner_ge_le θ (-(φ - θ₀)) _ ht).trans_eq ?_
+        congr 2
+        rw [norm_neg]
+        have hdne : ‖φ - θ₀‖ ≠ 0 := hd.ne'
+        field_simp
+        ring
 
 end StatLean.Bayesian
