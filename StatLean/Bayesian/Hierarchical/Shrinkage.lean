@@ -441,6 +441,73 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     rw [div_le_one hSpos]; exact hx
 
+/-! ### Brick B support: integrability of the cross-term integrands -/
+
+/-- Each squared coordinate is dominated by the squared norm. -/
+private lemma coord_sq_le_sum {p : ℕ} (x : Fin p → ℝ) (i : Fin p) :
+    (x i) ^ 2 ≤ ∑ j, (x j) ^ 2 :=
+  Finset.single_le_sum (fun j _ => sq_nonneg (x j)) (Finset.mem_univ i)
+
+/-- Triangle inequality in the form `|a − b| ≤ |a| + |b|`. -/
+private lemma abs_sub_le_abs_add (a b : ℝ) : |a - b| ≤ |a| + |b| := by
+  cases abs_cases (a - b) with
+  | inl h => rw [h.1]; nlinarith [le_abs_self a, neg_abs_le b]
+  | inr h => rw [h.1]; nlinarith [neg_abs_le a, le_abs_self b]
+
+/-- **Integrability of the cross-term integrand** `(xᵢ − θᵢ)·xᵢ/‖x‖²`, dominated pointwise by
+`3/2 + (θᵢ²/2)·‖x‖⁻²` (Brick D gives the second summand). -/
+private lemma integrable_jsG {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0)
+    (i : Fin p) :
+    Integrable (fun x : Fin p → ℝ => (x i - θ i) * (x i / ∑ j, (x j) ^ 2))
+      (Measure.pi fun j => gaussianReal (θ j) σ2) := by
+  set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
+  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
+  set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
+  have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
+  have hSmeas : Measurable S :=
+    Finset.measurable_sum _ fun j _ => (measurable_pi_apply j).pow_const 2
+  have hg : Integrable (fun x => 3 / 2 + (θ i) ^ 2 / 2 * (1 / S x)) N :=
+    (integrable_const _).add ((integrable_inv_normSq_pi hp θ σ2 hσ).const_mul _)
+  refine hg.mono' (((measurable_pi_apply i).sub measurable_const).mul
+      ((measurable_pi_apply i).div hSmeas)).aestronglyMeasurable (ae_of_all _ fun x => ?_)
+  rcases eq_or_lt_of_le (hSnn x) with h0 | hpos
+  · have hz : x i / S x = 0 := by rw [← h0]; exact div_zero _
+    have hnn : (0 : ℝ) ≤ (θ i) ^ 2 / 2 * (1 / S x) := by rw [← h0]; simp
+    rw [hz, mul_zero, Real.norm_eq_abs, abs_zero]; linarith
+  · have hSne : S x ≠ 0 := ne_of_gt hpos
+    rw [Real.norm_eq_abs, abs_mul, abs_div, abs_of_pos hpos, ← mul_div_assoc, div_le_iff₀ hpos,
+      show (3 / 2 + (θ i) ^ 2 / 2 * (1 / S x)) * S x = 3 / 2 * S x + (θ i) ^ 2 / 2 by
+        field_simp]
+    nlinarith [mul_le_mul_of_nonneg_right (abs_sub_le_abs_add (x i) (θ i)) (abs_nonneg (x i)),
+      sq_abs (x i), sq_abs (θ i), sq_nonneg (|x i| - |θ i|), coord_sq_le_sum x i,
+      abs_nonneg (x i), abs_nonneg (θ i)]
+
+/-- **Integrability of the divergence integrand** `(‖x‖² − 2xᵢ²)/‖x‖⁴`, dominated pointwise by
+`3·‖x‖⁻²` (Brick D). -/
+private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0)
+    (i : Fin p) :
+    Integrable (fun x : Fin p → ℝ => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2)
+      (Measure.pi fun j => gaussianReal (θ j) σ2) := by
+  set N := Measure.pi fun j => gaussianReal (θ j) σ2 with hN
+  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
+  set S : (Fin p → ℝ) → ℝ := fun x => ∑ j, (x j) ^ 2 with hS
+  have hSnn : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun j _ => sq_nonneg _
+  have hSmeas : Measurable S :=
+    Finset.measurable_sum _ fun j _ => (measurable_pi_apply j).pow_const 2
+  have hg : Integrable (fun x => 3 * (1 / S x)) N :=
+    (integrable_inv_normSq_pi hp θ σ2 hσ).const_mul _
+  refine hg.mono' ((hSmeas.sub (((measurable_pi_apply i).pow_const 2).const_mul 2)).div
+      (hSmeas.pow_const 2)).aestronglyMeasurable (ae_of_all _ fun x => ?_)
+  rcases eq_or_lt_of_le (hSnn x) with h0 | hpos
+  · have hz : (S x - 2 * (x i) ^ 2) / (S x) ^ 2 = 0 := by rw [← h0]; simp
+    have hr : (3 : ℝ) * (1 / S x) = 0 := by rw [← h0]; simp
+    rw [hz, hr]; simp
+  · have hSne : S x ≠ 0 := ne_of_gt hpos
+    have hS2 : (0 : ℝ) < (S x) ^ 2 := by positivity
+    rw [Real.norm_eq_abs, abs_div, abs_of_pos hS2, div_le_iff₀ hS2,
+      show 3 * (1 / S x) * (S x) ^ 2 = 3 * S x by field_simp, abs_le]
+    constructor <;> nlinarith [coord_sq_le_sum x i, sq_nonneg (x i), hpos.le]
+
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
     (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
