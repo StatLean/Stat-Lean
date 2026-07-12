@@ -358,6 +358,89 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
     · intro h; nlinarith [norm_nonneg y, h]
   rw [hfun, hset]; exact hball
 
+/-- The Gaussian pdf is bounded by its peak height `(√(2πσ²))⁻¹` (as `exp(·) ≤ 1`). -/
+private lemma gaussianPDFReal_le_peak (m : ℝ) (σ2 : ℝ≥0) (t : ℝ) :
+    gaussianPDFReal m σ2 t ≤ (Real.sqrt (2 * Real.pi * σ2))⁻¹ := by
+  rw [gaussianPDFReal]
+  refine mul_le_of_le_one_right (inv_nonneg.mpr (Real.sqrt_nonneg _))
+    (Real.exp_le_one_iff.mpr ?_)
+  exact div_nonpos_iff.mpr (Or.inr ⟨neg_nonpos_of_nonneg (sq_nonneg _), by positivity⟩)
+
+/-- **Brick D: `E‖X‖⁻² < ∞` for `p ≥ 3`.** Integrability of `x ↦ ‖x‖⁻²` against the product
+Gaussian `N = ⨂ᵢ 𝒩(θᵢ, σ²)`. Split the space into the unit ball and its complement: on the tail
+`‖x‖² ≥ 1` the integrand is `≤ 1` and `N` is a probability measure; on the ball the Gaussian
+density is bounded by its peak `M`, reducing to the Lebesgue ball fact
+`integrableOn_inv_normSq_ball`, finite precisely for `p ≥ 3`. -/
+private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
+    (hσ : σ2 ≠ 0) :
+    Integrable (fun x : Fin p → ℝ => 1 / (∑ i, (x i) ^ 2))
+      (Measure.pi fun i => gaussianReal (θ i) σ2) := by
+  classical
+  set N := Measure.pi fun i => gaussianReal (θ i) σ2 with hN
+  haveI : IsProbabilityMeasure N := by rw [hN]; infer_instance
+  set S : (Fin p → ℝ) → ℝ := fun x => ∑ i, (x i) ^ 2 with hS
+  have hSmeas : Measurable S := by
+    apply Finset.measurable_sum; intro i _; exact (measurable_pi_apply i).pow_const 2
+  have hSnonneg : ∀ x, 0 ≤ S x := fun x => Finset.sum_nonneg fun i _ => sq_nonneg _
+  -- `N` as `withDensity` of the product density against Lebesgue measure.
+  haveI : ∀ i, SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (θ i) σ2)) := by
+    intro i; rw [← gaussianReal_of_var_ne_zero (θ i) hσ]; infer_instance
+  have hNwd : N = (volume : Measure (Fin p → ℝ)).withDensity
+      (fun x => ∏ i, gaussianPDF (θ i) σ2 (x i)) := by
+    rw [hN, show (fun i => gaussianReal (θ i) σ2)
+        = fun i => (volume : Measure ℝ).withDensity (gaussianPDF (θ i) σ2) from
+      funext fun i => gaussianReal_of_var_ne_zero (θ i) hσ,
+      pi_withDensity (μ := (volume : Measure ℝ)) (f := fun i => gaussianPDF (θ i) σ2)
+        (fun i => measurable_gaussianPDF (θ i) σ2)]
+    congr 1
+  -- Peak bound on the product density.
+  set M : ℝ := ((Real.sqrt (2 * Real.pi * σ2))⁻¹) ^ p with hM
+  have hMnonneg : 0 ≤ M := by rw [hM]; positivity
+  have hρle : ∀ x : Fin p → ℝ, (∏ i, gaussianPDF (θ i) σ2 (x i)).toReal ≤ M := by
+    intro x
+    rw [ENNReal.toReal_prod]
+    have hfac : ∀ i, (gaussianPDF (θ i) σ2 (x i)).toReal = gaussianPDFReal (θ i) σ2 (x i) := by
+      intro i; rw [gaussianPDF, ENNReal.toReal_ofReal (gaussianPDFReal_nonneg _ _ _)]
+    calc ∏ i, (gaussianPDF (θ i) σ2 (x i)).toReal
+        = ∏ i, gaussianPDFReal (θ i) σ2 (x i) := Finset.prod_congr rfl fun i _ => hfac i
+      _ ≤ ∏ _i : Fin p, (Real.sqrt (2 * Real.pi * σ2))⁻¹ :=
+          Finset.prod_le_prod (fun i _ => gaussianPDFReal_nonneg _ _ _)
+            (fun i _ => gaussianPDFReal_le_peak _ _ _)
+      _ = M := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, hM]
+  -- Split `univ` into ball and tail.
+  have huniv : (Set.univ : Set (Fin p → ℝ)) = {x | S x ≤ 1} ∪ {x | 1 ≤ S x} := by
+    ext x; simp only [Set.mem_univ, Set.mem_union, Set.mem_setOf_eq, true_iff]
+    exact le_total (S x) 1
+  rw [← integrableOn_univ, huniv, integrableOn_union]
+  refine ⟨?_, ?_⟩
+  · -- Ball: dominate by `M · ‖x‖⁻²`, use the Lebesgue ball fact.
+    have hmset0 : MeasurableSet {x : Fin p → ℝ | S x ≤ 1} := measurableSet_le hSmeas measurable_const
+    have hρmeas : Measurable (fun x : Fin p → ℝ => ∏ i, gaussianPDF (θ i) σ2 (x i)) :=
+      Finset.measurable_prod _ fun i _ =>
+        (measurable_gaussianPDF (θ i) σ2).comp (measurable_pi_apply i)
+    have hballvol : IntegrableOn (fun x : Fin p → ℝ => M * (1 / S x)) {x | S x ≤ 1} volume :=
+      (integrableOn_inv_normSq_ball hp).const_mul M
+    rw [IntegrableOn, hNwd, restrict_withDensity hmset0,
+      integrable_withDensity_iff_integrable_smul' hρmeas
+        (ae_of_all _ fun x => ENNReal.prod_lt_top fun i _ => gaussianPDF_ne_top.lt_top)]
+    refine hballvol.mono' ?_ ?_
+    · exact (hρmeas.ennreal_toReal.mul (measurable_const.div hSmeas)).aestronglyMeasurable
+    · refine ae_of_all _ fun x => ?_
+      rw [Real.norm_eq_abs, smul_eq_mul, abs_of_nonneg]
+      · refine mul_le_mul_of_nonneg_right (hρle x) ?_
+        positivity
+      · exact mul_nonneg ENNReal.toReal_nonneg (by positivity)
+  · -- Tail: `‖x‖⁻² ≤ 1`.
+    have hmset1 : MeasurableSet {x : Fin p → ℝ | 1 ≤ S x} := measurableSet_le measurable_const hSmeas
+    refine (Integrable.mono' (g := fun _ => (1 : ℝ))
+      (integrableOn_const (μ := N) (s := {x | 1 ≤ S x}) (measure_ne_top N _))
+      (measurable_const.div hSmeas).aestronglyMeasurable ?_)
+    rw [ae_restrict_iff' hmset1]
+    refine ae_of_all _ fun x hx => ?_
+    have hSpos : 0 < S x := lt_of_lt_of_le one_pos hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    rw [div_le_one hSpos]; exact hx
+
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
     (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
