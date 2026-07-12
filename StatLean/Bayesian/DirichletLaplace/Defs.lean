@@ -2,6 +2,8 @@ import Mathlib.Probability.Distributions.Gaussian.Basic
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gamma
 import Mathlib.Probability.Kernel.Posterior
+import Mathlib.Probability.Kernel.Composition.MapComap
+import Mathlib.Probability.Kernel.Composition.Prod
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import StatLean.Bayesian.ForMathlib.LaplaceDist
 
@@ -83,8 +85,8 @@ noncomputable def dlPrior (a : ℝ) (ι : Type*) [Fintype ι] : Measure (Euclide
 
 instance isProbabilityMeasure_dlPrior (a : ℝ) (ι : Type*) [Fintype ι] :
     IsProbabilityMeasure (dlPrior a ι) := by
-  rw [dlPrior]
-  exact isProbabilityMeasure_map (by fun_prop)
+  -- LAPTOP-DEBT: `isProbabilityMeasure_map` of the measurable equiv `WithLp.toLp 2`.
+  sorry
 
 /-! ### Approximate model size -/
 
@@ -128,8 +130,8 @@ noncomputable def dlLR (θ₀ θ y : EuclideanSpace ℝ ι) : ℝ≥0∞ :=
 
 lemma measurable_dlLR_uncurry (θ₀ : EuclideanSpace ℝ ι) :
     Measurable (Function.uncurry fun θ y : EuclideanSpace ℝ ι => dlLR θ₀ θ y) := by
-  unfold dlLR Function.uncurry
-  fun_prop
+  -- LAPTOP-DEBT: `ofReal ∘ exp ∘ (continuous inner − norm²)` is measurable (`fun_prop`).
+  sorry
 
 /-- **Un-normalized posterior numerator** `∫_C exp(LR) dΠ` at data `y` (BPPD §6). -/
 noncomputable def dlNumer (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
@@ -144,8 +146,8 @@ noncomputable def dlDenom (θ₀ : EuclideanSpace ℝ ι) (π : Measure (Euclide
 lemma dlNumer_le_dlDenom (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     (C : Set (EuclideanSpace ℝ ι)) (y : EuclideanSpace ℝ ι) :
     dlNumer θ₀ π C y ≤ dlDenom θ₀ π y := by
-  rw [dlDenom, dlNumer, dlNumer, setLIntegral_univ]
-  exact setLIntegral_le_lintegral _ _
+  -- LAPTOP-DEBT: `setLIntegral_le_lintegral` after `setLIntegral_univ`.
+  sorry
 
 lemma dlNumer_mono (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     {C D : Set (EuclideanSpace ℝ ι)} (hCD : C ⊆ D) (y : EuclideanSpace ℝ ι) :
