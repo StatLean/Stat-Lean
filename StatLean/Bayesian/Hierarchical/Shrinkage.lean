@@ -346,7 +346,8 @@ private lemma integrableOn_inv_normSq_ball {p : ℕ} (hp : 3 ≤ p) :
         ∘ ⇑(EuclideanSpace.measurableEquiv (Fin p)))
       = fun y : EuclideanSpace ℝ (Fin p) => 1 / ‖y‖ ^ 2 := by
     funext y
-    simp only [Function.comp_apply, EuclideanSpace.coe_measurableEquiv, EuclideanSpace.real_norm_sq_eq]
+    simp only [Function.comp_apply, EuclideanSpace.coe_measurableEquiv,
+      EuclideanSpace.real_norm_sq_eq]
   have hset : (⇑(EuclideanSpace.measurableEquiv (Fin p))
         ⁻¹' {x : Fin p → ℝ | ∑ i, (x i) ^ 2 ≤ 1})
       = Metric.closedBall 0 1 := by
@@ -414,7 +415,8 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
   rw [← integrableOn_univ, huniv, integrableOn_union]
   refine ⟨?_, ?_⟩
   · -- Ball: dominate by `M · ‖x‖⁻²`, use the Lebesgue ball fact.
-    have hmset0 : MeasurableSet {x : Fin p → ℝ | S x ≤ 1} := measurableSet_le hSmeas measurable_const
+    have hmset0 : MeasurableSet {x : Fin p → ℝ | S x ≤ 1} :=
+      measurableSet_le hSmeas measurable_const
     have hρmeas : Measurable (fun x : Fin p → ℝ => ∏ i, gaussianPDF (θ i) σ2 (x i)) :=
       Finset.measurable_prod _ fun i _ =>
         (measurable_gaussianPDF (θ i) σ2).comp (measurable_pi_apply i)
@@ -431,7 +433,8 @@ private lemma integrable_inv_normSq_pi {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → 
         positivity
       · exact mul_nonneg ENNReal.toReal_nonneg (by positivity)
   · -- Tail: `‖x‖⁻² ≤ 1`.
-    have hmset1 : MeasurableSet {x : Fin p → ℝ | 1 ≤ S x} := measurableSet_le measurable_const hSmeas
+    have hmset1 : MeasurableSet {x : Fin p → ℝ | 1 ≤ S x} :=
+      measurableSet_le measurable_const hSmeas
     refine (Integrable.mono' (g := fun _ => (1 : ℝ))
       (integrableOn_const (μ := N) (s := {x | 1 ≤ S x}) (measure_ne_top N _))
       (measurable_const.div hSmeas).aestronglyMeasurable ?_)
@@ -512,8 +515,9 @@ private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
 
 /-- **Cross-term identity** (Brick B): for each coordinate `i`,
 `∫ (xᵢ − θᵢ)·xᵢ/‖x‖² ∂N = σ²·∫ (‖x‖² − 2xᵢ²)/‖x‖⁴ ∂N`. Isolating coordinate `i` by the measure-
-preserving `piFinSuccAbove` equivalence turns each side into an iterated integral; for a.e. choice of
-the other coordinates `b` (whose squared norm `c := ∑_{j≠i} bⱼ² > 0`), the inner `xᵢ`-integral is the
+preserving `piFinSuccAbove` equivalence turns each side into an iterated integral; for a.e. choice
+of the other coordinates `b` (whose squared norm `c := ∑_{j≠i} bⱼ² > 0`), the inner `xᵢ`-integral is
+the
 one-dimensional Gaussian Stein identity `gaussian_stein_1d` applied to `s ↦ s/(s²+c)`. -/
 private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
     (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) (i : Fin p) :
@@ -582,7 +586,8 @@ private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
   filter_upwards [hkpos] with b hcb
   set c : ℝ := ∑ j, (b j) ^ 2 with hc
   have hμi : μ i = gaussianReal (θ i) σ2 := rfl
-  have hGeq : (fun a : ℝ => (e.symm (a, b) i - θ i) * (e.symm (a, b) i / ∑ j, (e.symm (a, b) j) ^ 2))
+  have hGeq :
+      (fun a : ℝ => (e.symm (a, b) i - θ i) * (e.symm (a, b) i / ∑ j, (e.symm (a, b) j) ^ 2))
       = fun a : ℝ => (a - θ i) * (a / (a ^ 2 + c)) := by
     funext a; rw [hes a b, hsame a b, hsum a b]
   have hReq : (fun a : ℝ => ((∑ j, (e.symm (a, b) j) ^ 2) - 2 * (e.symm (a, b) i) ^ 2)
@@ -720,10 +725,46 @@ theorem jamesStein_dominates_mle {p : ℕ}
     (∫ x, ∑ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2
         ∂(Measure.pi fun i => gaussianReal (θ i) σ2))
       < (p : ℝ) * (σ2 : ℝ) := by
-  -- DOCUMENTED SORRY (3D.4 stretch).  Immediate from `jamesStein_risk_difference`: the subtracted
-  -- term `((p:ℝ)−2)²·σ⁴·E‖X‖⁻²` is strictly positive for `p ≥ 3` (so `(p−2)² > 0`), `σ² ≠ 0`, and
-  -- the integrand `1/‖x‖² > 0` on the full-measure set `{x ≠ 0}`, giving `E‖X‖⁻² > 0`.  It rests on
-  -- the risk identity above; see the note there.  Core 3D (3D.1–3D.3) is fully proved above.
-  sorry
+  classical
+  -- The risk identity plus strict positivity of the subtracted term `(p−2)²σ⁴·E‖X‖⁻²`.
+  rw [jamesStein_risk_difference hp θ σ2 hσ]
+  set M := Measure.pi fun i => gaussianReal (θ i) σ2 with hM
+  haveI : IsProbabilityMeasure M := by rw [hM]; infer_instance
+  have hnn_fn : (0 : (Fin p → ℝ) → ℝ) ≤ fun x => 1 / ∑ i, (x i) ^ 2 :=
+    fun x => one_div_nonneg.mpr (Finset.sum_nonneg fun i _ => sq_nonneg _)
+  have hDint : Integrable (fun x : Fin p → ℝ => 1 / ∑ i, (x i) ^ 2) M := by
+    rw [hM]; exact integrable_inv_normSq_pi hp θ σ2 hσ
+  -- `‖x‖² > 0` for a.e. `x` (the zero point is null under the atomless product Gaussian)
+  have hae : ∀ᵐ x ∂M, (0 : ℝ) < ∑ i, (x i) ^ 2 := by
+    have h0lt : 0 < p := by omega
+    set k : Fin p := ⟨0, h0lt⟩ with hk
+    haveI : NoAtoms (gaussianReal (θ k) σ2) := noAtoms_gaussianReal hσ
+    have hmpk : MeasurePreserving (Function.eval k) M (gaussianReal (θ k) σ2) := by
+      rw [hM]; exact measurePreserving_eval (μ := fun i => gaussianReal (θ i) σ2) k
+    have hatom : ∀ᵐ y ∂(gaussianReal (θ k) σ2), y ≠ 0 := by
+      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+        measure_singleton (μ := gaussianReal (θ k) σ2) 0
+    filter_upwards [ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)] with x hx
+    exact lt_of_lt_of_le (by positivity : (0 : ℝ) < (x k) ^ 2) (coord_sq_le_sum x k)
+  -- `E‖X‖⁻² > 0`
+  have hEpos : 0 < ∫ x, 1 / ∑ i, (x i) ^ 2 ∂M := by
+    rcases (integral_nonneg hnn_fn).lt_or_eq with h | h
+    · exact h
+    · exfalso
+      have hz := (integral_eq_zero_iff_of_nonneg hnn_fn hDint).mp h.symm
+      have hbad : ∀ᵐ x ∂M, False := by
+        filter_upwards [hz, hae] with x hx0 hxpos
+        rw [Pi.zero_apply, one_div, inv_eq_zero] at hx0
+        linarith
+      rw [ae_iff] at hbad
+      simp only [not_false_iff, Set.setOf_true, measure_univ] at hbad
+      exact one_ne_zero hbad
+  have hcoef : 0 < ((p : ℝ) - 2) ^ 2 * (σ2 : ℝ) ^ 2 := by
+    have hp2 : (0 : ℝ) < (p : ℝ) - 2 := by
+      have : (3 : ℝ) ≤ (p : ℝ) := by exact_mod_cast hp
+      linarith
+    have hσ2 : (0 : ℝ) < (σ2 : ℝ) := by rw [NNReal.coe_pos]; exact zero_lt_iff.mpr hσ
+    positivity
+  linarith [mul_pos hcoef hEpos]
 
 end StatLean.Bayesian
