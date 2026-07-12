@@ -230,10 +230,7 @@ private lemma integrable_bdd_mul_gaussianPDFReal (m : ℝ) (σ2 : ℝ≥0) {h : 
     (hm.aestronglyMeasurable.mul (measurable_gaussianPDFReal m σ2).aestronglyMeasurable) ?_
   refine ae_of_all _ fun t => ?_
   rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (gaussianPDFReal_nonneg m σ2 t)]
-  calc |h t| * gaussianPDFReal m σ2 t ≤ C * gaussianPDFReal m σ2 t :=
-        mul_le_mul_of_nonneg_right (hC t) (gaussianPDFReal_nonneg m σ2 t)
-    _ = ‖C * gaussianPDFReal m σ2 t‖ := by
-        rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  exact mul_le_mul_of_nonneg_right (hC t) (gaussianPDFReal_nonneg m σ2 t)
 
 /-- Integrability of the Gaussian score `t ↦ (m − t) · gaussianPDFReal m σ² t` (first-moment
 integrability). -/
@@ -242,9 +239,10 @@ private lemma integrable_score_gaussianPDFReal (m : ℝ) (σ2 : ℝ≥0) (hσ : 
   have hid : Integrable (fun t => t * gaussianPDFReal m σ2 t) := by
     have h1 : Integrable (id : ℝ → ℝ) (gaussianReal m σ2) :=
       (memLp_id_gaussianReal 1).integrable (by norm_num)
-    rw [gaussianReal_of_var_ne_zero m hσ, integrable_withDensity_iff_integrable_smul₀
-      (measurable_gaussianPDF m σ2).aemeasurable (ae_of_all _ fun _ => gaussianPDF_lt_top)] at h1
-    · simpa [gaussianPDF, ENNReal.toReal_ofReal (gaussianPDFReal_nonneg m σ2 _), mul_comm] using h1
+    rw [gaussianReal_of_var_ne_zero m hσ, integrable_withDensity_iff_integrable_smul'
+      (measurable_gaussianPDF m σ2) (ae_of_all _ fun _ => gaussianPDF_lt_top)] at h1
+    simpa [gaussianPDF, ENNReal.toReal_ofReal (gaussianPDFReal_nonneg m σ2 _), smul_eq_mul,
+      mul_comm] using h1
   have : (fun t => (m - t) * gaussianPDFReal m σ2 t)
       = (fun t => m * gaussianPDFReal m σ2 t - t * gaussianPDFReal m σ2 t) := by
     funext t; ring
