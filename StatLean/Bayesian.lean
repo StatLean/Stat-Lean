@@ -58,6 +58,28 @@ import StatLean.Bayesian.EmpiricalBayes.Tweedie
 import StatLean.Bayesian.EmpiricalBayes.Compound
 import StatLean.Bayesian.EmpiricalBayes.LocalFDR
 import StatLean.Bayesian.EmpiricalBayes.NPMLE
+import StatLean.Bayesian.ForMathlib.LaplaceDist
+import StatLean.Bayesian.ForMathlib.GammaBounds
+import StatLean.Bayesian.ForMathlib.BindWithDensity
+import StatLean.Bayesian.ForMathlib.PiLintegralFintype
+import StatLean.Bayesian.ForMathlib.GaussianShift
+import StatLean.Bayesian.ForMathlib.ExpOfRealCalc
+import StatLean.Bayesian.DirichletLaplace.Defs
+import StatLean.Bayesian.DirichletLaplace.MarginalDensity
+import StatLean.Bayesian.DirichletLaplace.DensityBounds
+import StatLean.Bayesian.DirichletLaplace.PriorDensityBounds
+import StatLean.Bayesian.DirichletLaplace.PriorSmallBall
+import StatLean.Bayesian.DirichletLaplace.NormalMeansModel
+import StatLean.Bayesian.DirichletLaplace.DenominatorLowerBound
+import StatLean.Bayesian.DirichletLaplace.GaussianTests
+import StatLean.Bayesian.DirichletLaplace.TestingBound
+import StatLean.Bayesian.DirichletLaplace.CoveringNets
+import StatLean.Bayesian.DirichletLaplace.CoordinateSplit
+import StatLean.Bayesian.DirichletLaplace.CompressEngine
+import StatLean.Bayesian.DirichletLaplace.ShellDecomposition
+import StatLean.Bayesian.DirichletLaplace.PriorMassRatio
+import StatLean.Bayesian.DirichletLaplace.Theorem34
+import StatLean.Bayesian.DirichletLaplace.Theorem31
 
 /-!
 # Bayesian — area umbrella
