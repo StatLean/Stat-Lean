@@ -515,12 +515,14 @@ private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
 preserving `piFinSuccAbove` equivalence turns each side into an iterated integral; for a.e. choice of
 the other coordinates `b` (whose squared norm `c := ∑_{j≠i} bⱼ² > 0`), the inner `xᵢ`-integral is the
 one-dimensional Gaussian Stein identity `gaussian_stein_1d` applied to `s ↦ s/(s²+c)`. -/
-private lemma jamesStein_crossTerm {n : ℕ} (hp3 : 3 ≤ n + 1) (θ : Fin (n + 1) → ℝ)
-    (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) (i : Fin (n + 1)) :
+private lemma jamesStein_crossTerm {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ)
+    (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) (i : Fin p) :
     (∫ x, (x i - θ i) * (x i / ∑ j, (x j) ^ 2) ∂(Measure.pi fun j => gaussianReal (θ j) σ2))
       = (σ2 : ℝ) * ∫ x, ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2
           ∂(Measure.pi fun j => gaussianReal (θ j) σ2) := by
   classical
+  obtain ⟨n, rfl⟩ : ∃ n, p = n + 1 := ⟨p - 1, by omega⟩
+  have hp3 : 3 ≤ n + 1 := hp
   set μ : Fin (n + 1) → Measure ℝ := fun j => gaussianReal (θ j) σ2 with hμ
   haveI : ∀ j, IsProbabilityMeasure (μ j) := fun j => by rw [hμ]; infer_instance
   set e : (Fin (n + 1) → ℝ) ≃ᵐ ℝ × (Fin n → ℝ) :=
@@ -620,19 +622,93 @@ theorem jamesStein_risk_difference {p : ℕ}
         ∂(Measure.pi fun i => gaussianReal (θ i) σ2))
       = (p : ℝ) * (σ2 : ℝ) - ((p : ℝ) - 2) ^ 2 * (σ2 : ℝ) ^ 2
           * (∫ x, 1 / (∑ i, (x i) ^ 2) ∂(Measure.pi fun i => gaussianReal (θ i) σ2)) := by
-  -- DOCUMENTED SORRY (3D.4 stretch, James–Stein 1961).  Expanding the loss,
-  --   (δ_JS − θ)² = (X − θ)² − 2(p−2)σ²·⟨X − θ, X/‖X‖²⟩ + (p−2)²σ⁴/‖X‖²,
-  -- and integrating termwise gives `p·σ²` (target 3D.1 with `c = 1`) for the first term and the
-  -- last term as stated; the cross term is where Stein's multivariate integration by parts is
-  -- required: `∫ (xᵢ − θᵢ)·gᵢ(x) ∂N = σ²·∫ ∂ᵢgᵢ ∂N` for `gᵢ(x) = xᵢ/‖x‖²`, summed over `i` using
-  -- `∑ᵢ ∂ᵢ(xᵢ/‖x‖²) = (p−2)/‖x‖²`, turning the cross term into `2(p−2)²σ⁴·E‖X‖⁻²`.  This needs the
-  -- coordinatewise IBP built from `ForMathlib.GaussianDeriv.hasDerivAt_gaussianPDFReal` together
-  -- with the improper/interval `MeasureTheory.integral_deriv_mul_eq_sub`, handling the singularity
-  -- of `xᵢ/‖x‖²` at the origin and the finiteness of `E‖X‖⁻²` (which holds precisely for `p ≥ 3`).
-  -- The one-dimensional Stein primitive is present; the multivariate assembly is a deep analysis
-  -- task beyond the current touch-set budget, and the frozen statement forbids conditioning on the
-  -- scalar identity.  Core 3D (3D.1–3D.3) is fully proved above.
-  sorry
+  classical
+  -- Expanding the loss pointwise:
+  --   ∑ᵢ(δ_JS,ᵢ − θᵢ)² = ∑ᵢ(Xᵢ − θᵢ)² − 2k·∑ᵢ(Xᵢ − θᵢ)Xᵢ/‖X‖² + k²·‖X‖⁻²,  k = (p−2)σ².
+  -- Integrate termwise; the cross term uses `jamesStein_crossTerm` and the divergence identity
+  -- `js_div_sum`, the last term uses Brick D `integrable_inv_normSq_pi`.
+  set M := Measure.pi fun i => gaussianReal (θ i) σ2 with hM
+  haveI : IsProbabilityMeasure M := by rw [hM]; infer_instance
+  -- integrability of the coordinate second moments
+  have term1 : ∀ i, Integrable (fun x : Fin p → ℝ => (x i - θ i) ^ 2) M := by
+    intro i
+    have hgi : Integrable (fun y : ℝ => (y - θ i) ^ 2) (gaussianReal (θ i) σ2) := by
+      have h2 : MemLp (fun y => y - θ i) 2 (gaussianReal (θ i) σ2) :=
+        (memLp_id_gaussianReal 2).sub (memLp_const _)
+      simpa using h2.integrable_sq
+    rw [hM]
+    exact integrable_comp_eval (μ := fun i => gaussianReal (θ i) σ2) (i := i)
+      (f := fun y => (y - θ i) ^ 2) hgi
+  have hDint : Integrable (fun x : Fin p → ℝ => 1 / ∑ j, (x j) ^ 2) M := by
+    rw [hM]; exact integrable_inv_normSq_pi hp θ σ2 hσ
+  have hGi : ∀ i, Integrable (fun x : Fin p → ℝ => (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) M :=
+    fun i => by rw [hM]; exact integrable_jsG hp θ σ2 hσ i
+  have hf1 : Integrable (fun x : Fin p → ℝ => ∑ i, (x i - θ i) ^ 2) M :=
+    integrable_finset_sum _ fun i _ => term1 i
+  have hf2 : Integrable (fun x : Fin p → ℝ => ∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) M :=
+    integrable_finset_sum _ fun i _ => hGi i
+  -- pointwise expansion of the loss
+  have hexpand : ∀ x : Fin p → ℝ, ∑ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2
+      = (∑ i, (x i - θ i) ^ 2)
+        - 2 * (((p : ℝ) - 2) * σ2) * (∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2))
+        + (((p : ℝ) - 2) * σ2) ^ 2 * (1 / ∑ j, (x j) ^ 2) := by
+    intro x
+    have hV : ∑ i, (x i / ∑ j, (x j) ^ 2) ^ 2 = 1 / ∑ j, (x j) ^ 2 := by
+      rcases eq_or_ne (∑ j, (x j) ^ 2) 0 with h0 | hne
+      · simp [h0]
+      · rw [Finset.sum_congr rfl fun i _ => (div_pow (x i) (∑ j, (x j) ^ 2) 2), ← Finset.sum_div,
+          div_eq_div_iff (pow_ne_zero 2 hne) hne]
+        ring
+    have hpt : ∀ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2
+        = (x i - θ i) ^ 2
+          - 2 * (((p : ℝ) - 2) * σ2) * ((x i - θ i) * (x i / ∑ j, (x j) ^ 2))
+          + (((p : ℝ) - 2) * σ2) ^ 2 * (x i / ∑ j, (x j) ^ 2) ^ 2 := by
+      intro i
+      simp only [jamesSteinEstimator]
+      rcases eq_or_ne (∑ j, (x j) ^ 2) 0 with h0 | hne
+      · rw [h0]; simp
+      · field_simp; ring
+    rw [Finset.sum_congr rfl fun i _ => hpt i, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+      ← Finset.mul_sum, ← Finset.mul_sum, hV]
+  -- value of the first term: `∑ᵢ σ² = pσ²`
+  have hI1 : ∫ x, (∑ i, (x i - θ i) ^ 2) ∂M = (p : ℝ) * (σ2 : ℝ) := by
+    rw [integral_finset_sum _ fun i _ => term1 i]
+    have : (∑ i, ∫ x, (x i - θ i) ^ 2 ∂M) = ∑ _i : Fin p, (σ2 : ℝ) := by
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [hM, integral_comp_eval (μ := fun i => gaussianReal (θ i) σ2) (i := i)
+        (f := fun y => (y - θ i) ^ 2)
+        (by have h2 : MemLp (fun y => y - θ i) 2 (gaussianReal (θ i) σ2) :=
+              (memLp_id_gaussianReal 2).sub (memLp_const _)
+            simpa using h2.integrable_sq.aestronglyMeasurable)]
+      exact gaussian_centred_sq (θ i) σ2
+    rw [this, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  -- cross-term identity and divergence-integrand integrability, stated over `M`
+  have crossM : ∀ i, ∫ x, (x i - θ i) * (x i / ∑ j, (x j) ^ 2) ∂M
+      = (σ2 : ℝ) * ∫ x, ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2 ∂M :=
+    fun i => by rw [hM]; exact jamesStein_crossTerm hp θ σ2 hσ i
+  have jsRM : ∀ i, Integrable
+      (fun x : Fin p → ℝ => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2) M :=
+    fun i => by rw [hM]; exact integrable_jsR hp θ σ2 hσ i
+  -- value of the cross term: `σ²(p−2)·E‖X‖⁻²`
+  have hI2 : ∫ x, (∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) ∂M
+      = (σ2 : ℝ) * ((p : ℝ) - 2) * ∫ x, 1 / ∑ j, (x j) ^ 2 ∂M := by
+    rw [integral_finset_sum _ fun i _ => hGi i, Finset.sum_congr rfl fun i _ => crossM i,
+      ← Finset.mul_sum, ← integral_finset_sum _ fun i _ => jsRM i,
+      integral_congr_ae (ae_of_all _ fun x => js_div_sum x),
+      show (fun x : Fin p → ℝ => ((p : ℝ) - 2) / ∑ j, (x j) ^ 2)
+          = fun x => ((p : ℝ) - 2) * (1 / ∑ j, (x j) ^ 2) from by funext x; rw [mul_one_div],
+      integral_const_mul]
+    ring
+  -- assemble by linearity
+  have hfa : Integrable (fun x : Fin p → ℝ => (∑ i, (x i - θ i) ^ 2)
+      - 2 * (((p : ℝ) - 2) * σ2) * (∑ i, (x i - θ i) * (x i / ∑ j, (x j) ^ 2))) M :=
+    hf1.sub (hf2.const_mul _)
+  have hfb : Integrable
+      (fun x : Fin p → ℝ => (((p : ℝ) - 2) * σ2) ^ 2 * (1 / ∑ j, (x j) ^ 2)) M :=
+    hDint.const_mul _
+  rw [integral_congr_ae (ae_of_all _ hexpand), integral_add hfa hfb,
+    integral_sub hf1 (hf2.const_mul _), integral_const_mul, integral_const_mul, hI1, hI2]
+  ring
 
 /-- **James–Stein dominates the MLE** (3D.4, stretch): in dimension `p ≥ 3` the James–Stein risk is
 strictly below the MLE risk `p·σ²` for every `θ` (the Stein effect). -/
