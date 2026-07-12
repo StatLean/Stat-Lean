@@ -6,6 +6,7 @@ export type CategoryId =
   | "multipletesting"
   | "minimaxity"
   | "optimization"
+  | "bayesian"
   | "probability";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";

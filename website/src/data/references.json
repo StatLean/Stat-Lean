@@ -663,5 +663,20 @@
     "key": "ledoux-talagrand1991",
     "sortKey": "Ledoux",
     "html": "M. Ledoux and M. Talagrand, *Probability in Banach Spaces: Isoperimetry and Processes*, Springer, 1991."
+  },
+  {
+    "key": "robert2007",
+    "sortKey": "Robert",
+    "html": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007."
+  },
+  {
+    "key": "gelman2014",
+    "sortKey": "Gelman",
+    "html": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014."
+  },
+  {
+    "key": "efron2010",
+    "sortKey": "Efron",
+    "html": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Institute of Mathematical Statistics Monographs, Cambridge University Press, 2010."
   }
 ]

@@ -8649,5 +8649,1806 @@
       ]
     },
     "hasGraph": true
+  },
+  {
+    "id": "bayes-experiment",
+    "category": "bayesian",
+    "kind": "definition",
+    "leanName": "BayesExperiment",
+    "fullName": "StatLean.Bayesian.BayesExperiment",
+    "title": "Bayesian Statistical Experiment",
+    "citation": "Robert (2007), Def. 1.2.1",
+    "shortRef": "Robert (2007), Def. 1.2.1",
+    "file": "StatLean/Bayesian/Experiment/Defs.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Experiment/Defs.html#StatLean.Bayesian.BayesExperiment",
+    "informal": "<p>A <em>Bayesian statistical model</em> on a parameter space $\\Theta$ and a sample space $\\mathcal{X}$ consists of a <em>prior</em> probability distribution $\\pi$ on $\\Theta$ together with a <em>sampling model</em> $\\theta \\mapsto f(\\cdot\\mid\\theta)$, presented as a Markov kernel (the likelihood) assigning to each parameter $\\theta$ a probability distribution on the data. The prior is required to be a genuine probability measure and each $f(\\cdot\\mid\\theta)$ a probability distribution. From these ingredients one forms the <em>joint</em> law $\\pi \\otimes f$ on $\\Theta \\times \\mathcal{X}$, the <em>prior predictive</em> (marginal) $m(x) = \\int_\\Theta f(x\\mid\\theta)\\,\\pi(d\\theta)$ on $\\mathcal{X}$, and the <em>posterior</em> kernel $x \\mapsto \\pi(\\cdot\\mid x)$.</p>",
+    "summary": "The core data model bundling a prior probability measure with a Markov-kernel likelihood, from which the joint, prior predictive, and posterior distributions are built.",
+    "leanSignature": "structure BayesExperiment (Θ 𝓧 : Type*) [MeasurableSpace Θ] [MeasurableSpace 𝓧] where\n  /-- The prior distribution `π` on the parameter space. -/\n  prior : Measure Θ\n  /-- The sampling model `θ ↦ f(·|θ)`, as a Markov kernel from parameters to data. -/\n  likelihood : Kernel Θ 𝓧\n  /-- Constitutive: the prior is a *probability* distribution. -/\n  priorIsProbability : IsProbabilityMeasure prior\n  /-- Constitutive: each `f(·|θ)` is a probability distribution (Markov kernel). -/\n  likelihoodIsMarkov : IsMarkovKernel likelihood",
+    "formalizationNotes": "Formalizes Robert's Definition 1.2.1. The probability/Markov requirements are constitutive structure fields (registered as instances), because dropping either makes the object not Robert's Bayesian model. Standard-Borelness and nonemptiness of Θ, needed by Mathlib's posterior construction, attach as typeclass arguments on the derived `posterior`, not as fields; improper (non-probability) priors are a deliberate out-of-scope extension.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.2, Definition 1.2.1, p. 9; §1.4 (a)–(d), p. 22",
+      "biblio": "The measure-theoretic Bayesian model — a prior on the parameter and a regular conditional distribution for the posterior — is standard; for the kernel/disintegration formulation used here, see the regular-conditional-probability theory of J. L. Doob and the standard-Borel disintegration theorem.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-disintegrates-joint",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_disintegrates_joint",
+    "fullName": "StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint",
+    "title": "Posterior Disintegrates the Joint Distribution",
+    "citation": "Robert (2007), §1.4",
+    "shortRef": "Robert (2007), §1.4",
+    "file": "StatLean/Bayesian/Experiment/Basic.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Experiment/Basic.html#StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint",
+    "informal": "<p>For a Bayesian model with prior $\\pi$ and likelihood kernel $f$, form the joint law $\\pi \\otimes f$ of parameter and data, the prior predictive (marginal) distribution $m$ of the data, and the posterior kernel $x \\mapsto \\pi(\\cdot\\mid x)$. Then <span data-link=\"h1\">on a standard Borel, nonempty parameter space</span> the prior predictive composed with the posterior kernel equals the joint law with its two coordinates swapped:</p>$$m \\otimes \\pi(\\cdot\\mid\\cdot) \\;=\\; (\\pi \\otimes f)^{\\mathrm{swap}}.$$<p>This identity is the measure-theoretic content of Bayesian conditioning — <em>prior $\\times$ likelihood $=$ predictive $\\times$ posterior</em>.</p>",
+    "summary": "The prior predictive composed with the posterior kernel reproduces the joint law of parameter and data (coordinates swapped) — the disintegration identity underlying Bayesian conditioning.",
+    "leanSignature": "theorem posterior_disintegrates_joint [StandardBorelSpace Θ] [Nonempty Θ] :\n    E.predictive ⊗ₘ E.posterior = E.joint.map Prod.swap",
+    "formalizationNotes": "A textbook-facing alias of Mathlib's `compProd_posterior_eq_map_swap`, specialized to the fields of a `BayesExperiment` (here `E`). Standard-Borelness and nonemptiness of the parameter space are Lean-side regularity needed to construct the posterior kernel; Robert states the identity without them.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "StandardBorelSpace Θ",
+        "label": "standard Borel parameter",
+        "note": "The parameter space Θ is standard Borel and nonempty — the regularity Mathlib requires to construct the regular conditional distribution (the posterior kernel)."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.4 (a)–(d), p. 22",
+      "biblio": "The disintegration of a joint law into a marginal and a regular conditional distribution originates with A. N. Kolmogorov (*Grundbegriffe*, 1933) and was given its standard-Borel form by J. L. Doob (*Stochastic Processes*, 1953); reading “prior × likelihood = predictive × posterior” as its statistical meaning is the standard Bayesian viewpoint.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-density",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_eq_withDensity_likelihood_div_predictive",
+    "fullName": "StatLean.Bayesian.posterior_eq_withDensity_likelihood_div_predictive",
+    "title": "Bayes' Theorem (Dominated Form)",
+    "citation": "Robert (2007), Eq. (1.2.3)",
+    "shortRef": "Robert (2007), Eq. (1.2.3)",
+    "file": "StatLean/Bayesian/Dominated/PosteriorDensity.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Dominated/PosteriorDensity.html#StatLean.Bayesian.posterior_eq_withDensity_likelihood_div_predictive",
+    "informal": "<p>Consider a dominated statistical model in which <span data-link=\"h2\">the sampling distribution $f(\\cdot\\mid\\theta)$ has density $p(\\theta,\\cdot)$ with respect to a common dominating measure $\\nu$</span>, together with a prior $\\pi$. Then for prior-predictive-almost-every observation $x$, the posterior is the prior reweighted by the normalized likelihood:</p>$$\\pi(d\\theta\\mid x) \\;=\\; \\frac{p(\\theta,x)\\,\\pi(d\\theta)}{\\int_\\Theta p(\\theta',x)\\,\\pi(d\\theta')}.$$<p>This holds provided <span data-link=\"h1\">the joint density $(\\theta,x)\\mapsto p(\\theta,x)$ is jointly measurable</span> (with the parameter space standard Borel and the prior finite).</p>",
+    "summary": "In a dominated model, the posterior equals the prior reweighted by the likelihood density normalized by the evidence — the density form of Bayes' theorem.",
+    "leanSignature": "theorem posterior_eq_withDensity_likelihood_div_predictive\n    [StandardBorelSpace Θ] [Nonempty Θ] [IsFiniteMeasure π] [IsFiniteKernel κ] [SFinite ν]\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :\n    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x = π.withDensity fun θ => p θ x / ∫⁻ θ', p θ' x ∂π",
+    "formalizationNotes": "Formalizes Robert eq. (1.2.3). Proved by identifying the explicit density kernel with Mathlib's abstract posterior via uniqueness of disintegration. Joint measurability of $p$ is Lean-side regularity; finiteness of the prior/kernel and σ-finiteness of ν are standing instance assumptions. No `IsMarkovKernel` on the likelihood is needed — the density self-normalizes.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "joint measurability",
+        "note": "The likelihood density $(θ,x) ↦ p(θ,x)$ is jointly measurable — a measure-theoretic regularity condition; without it the density-form posterior kernel would be Mathlib's junk zero kernel."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each sampling distribution $K(θ,\\cdot)$ equals $ν$ reweighted by $p(θ,\\cdot)$, i.e. has density $p(θ,\\cdot)$ with respect to the common σ-finite dominating measure ν. This is the defining assumption of a dominated Bayesian model."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.2, Eq. (1.2.3), p. 9; §1.4, p. 22",
+      "biblio": "The density form of Bayes' theorem goes back to Bayes (1763, published by R. Price) and, in the generality of “the probability of causes,” to P. S. Laplace (1774); its measure-theoretic justification rests on Kolmogorov's axiomatization of conditioning (1933) and the theory of regular conditional distributions on standard Borel spaces (J. L. Doob, 1953).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-predictive-density",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "comp_eq_withDensity_predictiveDensity",
+    "fullName": "StatLean.Bayesian.comp_eq_withDensity_predictiveDensity",
+    "title": "Prior Predictive Density (Evidence)",
+    "citation": "Robert (2007), §1.4",
+    "shortRef": "Robert (2007), §1.4",
+    "file": "StatLean/Bayesian/Dominated/PredictiveDensity.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Dominated/PredictiveDensity.html#StatLean.Bayesian.comp_eq_withDensity_predictiveDensity",
+    "informal": "<p>In a dominated model where <span data-link=\"h2\">the sampling distribution has density $p(\\theta,\\cdot)$ with respect to a dominating measure $\\nu$</span>, the marginal (prior predictive) distribution of the data — obtained by integrating the likelihood against the prior $\\pi$ — itself has a density with respect to $\\nu$, namely the <em>prior predictive density</em> (the <em>evidence</em>)</p>$$m(x) \\;=\\; \\int_\\Theta p(\\theta,x)\\,\\pi(d\\theta).$$<p>That is, the data distribution equals $\\nu$ reweighted by $m$. This requires only <span data-link=\"h1\">joint measurability of the likelihood density</span>.</p>",
+    "summary": "The marginal distribution of the data in a dominated model has density m(x) = ∫ p(θ,x) π(dθ) — the evidence — with respect to the dominating measure.",
+    "leanSignature": "theorem comp_eq_withDensity_predictiveDensity [SFinite π] [SFinite ν]\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) :\n    κ ∘ₘ π = ν.withDensity (predictiveDensity p π)",
+    "formalizationNotes": "Formalizes Robert's marginal $m(x)$ (§1.4). The a.e. non-degeneracy facts $0 < m < ∞$ under a finite model are derived elsewhere in the file (not assumed — assuming them would launder a fact forced by the setup). Only σ-finiteness of π and ν plus joint measurability of $p$ are needed.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "joint measurability",
+        "note": "The likelihood density $(θ,x) ↦ p(θ,x)$ is jointly measurable (measure-theoretic regularity)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each sampling distribution $K(θ,\\cdot)$ equals $ν$ reweighted by $p(θ,\\cdot)$: the model is dominated by the common measure ν with density $p$."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.4, the marginal $m(x)$, p. 22",
+      "biblio": "The marginal (prior predictive) density $m(x)$ is the <em>evidence</em> of the model; its systematic use for hypothesis comparison begins with H. Jeffreys (*Theory of Probability*, 1939), and it underlies Bayes factors, model averaging, and empirical-Bayes calibration — see R. E. Kass and A. E. Raftery, “Bayes factors,” *J. Amer. Statist. Assoc.* 90 (1995), 773–795.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-expectation",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_lintegral_eq_div",
+    "fullName": "StatLean.Bayesian.posterior_lintegral_eq_div",
+    "title": "Posterior Expectation Formula",
+    "citation": "Robert (2007), §1.4",
+    "shortRef": "Robert (2007), §1.4",
+    "file": "StatLean/Bayesian/Dominated/PosteriorLintegral.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Dominated/PosteriorLintegral.html#StatLean.Bayesian.posterior_lintegral_eq_div",
+    "informal": "<p>In a dominated model with <span data-link=\"h2\">likelihood density $p(\\theta,\\cdot)$ against a dominating measure $\\nu$</span> and prior $\\pi$, the posterior expectation of any <span data-link=\"h3\">nonnegative measurable functional $g(\\theta)$</span> is the ratio of likelihood-weighted prior integrals: for prior-predictive-almost-every $x$,</p>$$\\int_\\Theta g(\\theta)\\,\\pi(d\\theta\\mid x) \\;=\\; \\frac{\\int_\\Theta g(\\theta)\\,p(\\theta,x)\\,\\pi(d\\theta)}{\\int_\\Theta p(\\theta',x)\\,\\pi(d\\theta')}.$$<p>This uses only <span data-link=\"h1\">joint measurability of the likelihood density</span> and holds with no positivity side conditions.</p>",
+    "summary": "The posterior mean of a nonnegative functional equals the likelihood-weighted prior integral divided by the evidence.",
+    "leanSignature": "theorem posterior_lintegral_eq_div [StandardBorelSpace Θ] [Nonempty Θ]\n    [IsFiniteMeasure π] [IsFiniteKernel κ] [SFinite ν]\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ))\n    {g : Θ → ℝ≥0∞} (hg : Measurable g) :\n    ∀ᵐ x ∂(κ ∘ₘ π),\n      ∫⁻ θ, g θ ∂((κ†π) x) = (∫⁻ θ, g θ * p θ x ∂π) / ∫⁻ θ', p θ' x ∂π",
+    "formalizationNotes": "Formalizes the posterior-expectation ratio of Robert §1.4 (eq. (1.2.3) integrated against $g$). Stated for $ℝ_{≥0}^∞$-valued $g$, so no positivity or integrability hypotheses are required; the set-indicator special case gives $π(s\\mid x) = \\int_s p\\,dπ / \\int p\\,dπ$ (a companion lemma in the same file).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "joint measurability",
+        "note": "The likelihood density $(θ,x) ↦ p(θ,x)$ is jointly measurable (regularity)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each sampling distribution equals $ν$ reweighted by $p(θ,\\cdot)$: the model is dominated by ν with density $p$."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hg",
+        "label": "measurable functional",
+        "note": "The functional $g : Θ → ℝ_{≥0}^∞$ is measurable; being extended-nonnegative-real–valued, it needs no integrability or positivity conditions."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.4, p. 22 (posterior expectations); eq. (1.2.3) integrated against $g$",
+      "biblio": "Ratios of the form $\\int g\\cdot p\\,dπ / \\int p\\,dπ$ are the computational core of Bayesian inference — already Laplace's 1774 memoir evaluates posterior expectations of this shape, and their numerical approximation motivates the Monte Carlo and Laplace-approximation methods.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-odds",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posteriorOdds_eq_priorOdds_mul_bayesFactor",
+    "fullName": "StatLean.Bayesian.posteriorOdds_eq_priorOdds_mul_bayesFactor",
+    "title": "Posterior Odds = Prior Odds × Bayes Factor",
+    "citation": "Robert (2007), §5.2.2",
+    "shortRef": "Robert (2007), §5.2.2",
+    "file": "StatLean/Bayesian/Cond/Odds.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Cond/Odds.html#StatLean.Bayesian.posteriorOdds_eq_priorOdds_mul_bayesFactor",
+    "informal": "<p>For a hypothesis represented by <span data-link=\"h1\">a measurable event $s$</span> (with alternative $s^c$) and observed data $d$ on a <span data-link=\"h2\">finite measure space</span>, the posterior odds factor as the prior odds times the Bayes factor:</p>$$\\frac{\\mu[s\\mid d]}{\\mu[s^c\\mid d]} \\;=\\; \\frac{\\mu(s)}{\\mu(s^c)}\\cdot\\frac{\\mu[d\\mid s]}{\\mu[d\\mid s^c]}.$$<p>The identity holds unconditionally — every degenerate case collapses both sides under the extended-nonnegative-real conventions.</p>",
+    "summary": "Bayesian hypothesis testing: the posterior odds of an event equal its prior odds multiplied by the Bayes factor (the data's likelihood ratio).",
+    "leanSignature": "theorem posteriorOdds_eq_priorOdds_mul_bayesFactor (μ : Measure Ω) [IsFiniteMeasure μ]\n    {s : Set Ω} (hs : MeasurableSet s) (d : Set Ω) :\n    posteriorOdds μ s d = priorOdds μ s * bayesFactor μ s d",
+    "formalizationNotes": "Formalizes Robert's odds form of Bayes' theorem (eq. (1.2.2)) and Definition 5.2.5. Stated unconditionally for a finite measure: all degenerate cases ($μ d$, $μ s$, or $μ s^c$ zero) collapse both sides under the $ℝ_{≥0}^∞$ division conventions. A companion lemma inverts it to express the Bayes factor as the posterior/prior odds ratio, which does require nondegenerate prior mass on $s$ and $s^c$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hs",
+        "label": "hypothesis is an event",
+        "note": "The hypothesis $s$ is a measurable set; its complement $s^c$ is the alternative hypothesis."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsFiniteMeasure μ",
+        "label": "finite measure",
+        "note": "$μ$ is a finite measure, which removes the $∞$ cases so the odds factorization holds without further positivity assumptions."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.2, eq. (1.2.2), p. 9; §5.2.2, Definition 5.2.5 and eq. (5.2.2), p. 227",
+      "biblio": "The odds formulation of Bayesian hypothesis comparison and the Bayes factor are due to H. Jeffreys (*Theory of Probability*, 1939), whose calibration scale — refined by I. J. Good (1958) — remains in use; the modern survey is R. E. Kass and A. E. Raftery, “Bayes factors,” *J. Amer. Statist. Assoc.* 90 (1995), 773–795.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-sufficiency-posterior-reduction",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_ae_eq_posterior_statKernel",
+    "fullName": "StatLean.Bayesian.posterior_ae_eq_posterior_statKernel",
+    "title": "Sufficiency: Posterior Depends on Data Only Through the Statistic",
+    "citation": "Robert (2007), §1.3.1",
+    "shortRef": "Robert (2007), §1.3.1",
+    "file": "StatLean/Bayesian/Sufficiency/Factorization.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Sufficiency/Factorization.html#StatLean.Bayesian.posterior_ae_eq_posterior_statKernel",
+    "informal": "<p>Suppose the likelihood of a dominated model <span data-link=\"h4\">factorizes in the Fisher–Neyman form $p(\\theta,x)=g(\\theta,T(x))\\,h(x)$</span> through <span data-link=\"h2\">a measurable statistic $T$</span>, with <span data-link=\"h1\">the density $p$ jointly measurable</span> and <span data-link=\"h3\">the model dominated, $f(\\cdot\\mid\\theta)=p(\\theta,\\cdot)\\,\\nu$</span>. Then the full-data posterior depends on the observation only through the sufficient statistic: for prior-predictive-almost-every $x$,</p>$$\\pi(\\cdot\\mid x) \\;=\\; \\pi\\big(\\cdot\\mid T(x)\\big),$$<p>where the right-hand side is the posterior of the experiment induced by $T$. Equivalently, the base factor $h(x)$ cancels from the posterior.</p>",
+    "summary": "Under a Fisher–Neyman factorization, the posterior given the full data equals the posterior given only the sufficient statistic T(x) — the nuisance factor h(x) cancels.",
+    "leanSignature": "theorem posterior_ae_eq_posterior_statKernel [StandardBorelSpace Θ] [Nonempty Θ]\n    {π : Measure Θ} [IsFiniteMeasure π] {κ : Kernel Θ 𝓧} [IsFiniteKernel κ]\n    {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞} {T : 𝓧 → S}\n    (hp : Measurable (Function.uncurry p)) (hT : Measurable T)\n    {g : Θ → S → ℝ≥0∞} (hg : Measurable (Function.uncurry g))\n    {h : 𝓧 → ℝ≥0∞} (hh : Measurable h)\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ))\n    (hfac : IsFactorizedLikelihood p T g h) :\n    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x = ((statKernel κ hT)†π) (T x)",
+    "formalizationNotes": "Formalizes the Bayesian content of sufficiency (Robert §1.3.1–1.3.2): the base factor $h$ cancels and the posterior reduces to the statistic experiment's posterior. Joint measurability of $g$ and measurability of $h$ are additional Lean-side regularity; the exceptional-set transport uses that $h \\in (0,∞)$ holds predictive-a.e. (forced, not assumed). The likelihood-principle statement (proportional likelihoods give equal posteriors) is a companion result in the same file.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "joint measurability",
+        "note": "The likelihood density $(θ,x) ↦ p(θ,x)$ is jointly measurable (regularity)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hT",
+        "label": "measurable statistic",
+        "note": "$T : 𝓧 → S$ is measurable; it defines the statistic experiment, the pushforward of the likelihood along $T$."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each sampling distribution equals $ν$ reweighted by $p(θ,\\cdot)$: the model is dominated by the common measure ν with density $p$."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hfac",
+        "label": "factorized likelihood",
+        "note": "The density factorizes as $p(θ,x) = g(θ, T x)\\cdot h(x)$: the part depending on $θ$ enters only through $T(x)$. This is the Fisher–Neyman sufficiency criterion."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.3.1, Definition 1.3.1 and the factorization theorem, p. 14; §1.3.2, pp. 15–16",
+      "biblio": "Sufficiency is due to R. A. Fisher (1922); the factorization criterion to J. Neyman (1935) and, in measure-theoretic form, to P. R. Halmos and L. J. Savage (*Ann. Math. Statist.* 20 (1949), 225–241). The Likelihood Principle — which Bayesian inference automatically obeys — was given its modern form by A. Birnbaum (1962) and defended by J. O. Berger and R. L. Wolpert (*The Likelihood Principle*, 1988).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-iid-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_iid_eq_withDensity_prod_likelihood",
+    "fullName": "StatLean.Bayesian.posterior_iid_eq_withDensity_prod_likelihood",
+    "title": "The i.i.d. Posterior (Product Likelihood)",
+    "citation": "Gelman et al. (2014), §1.3",
+    "shortRef": "Gelman et al. (2014), §1.3",
+    "file": "StatLean/Bayesian/Updating/IID.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Updating/IID.html#StatLean.Bayesian.posterior_iid_eq_withDensity_prod_likelihood",
+    "informal": "<p>For an i.i.d. sample $x=(x_1,\\dots,x_n)$ drawn from a dominated model in which <span data-link=\"h2\">each observation has density $p(\\theta,\\cdot)$ with respect to a dominating measure $\\nu$</span>, with prior $\\pi$, the posterior is the prior reweighted by the normalized product likelihood: for prior-predictive-almost-every sample,</p>$$\\pi(d\\theta\\mid x_{1:n}) \\;=\\; \\frac{\\prod_{i=1}^n p(\\theta,x_i)\\,\\pi(d\\theta)}{\\int_\\Theta \\prod_{i=1}^n p(\\theta',x_i)\\,\\pi(d\\theta')}.$$<p>This requires <span data-link=\"h1\">joint measurability of the per-observation density</span>.</p>",
+    "summary": "For an i.i.d. sample, the posterior is the prior reweighted by the product of the per-observation likelihoods, normalized by the evidence.",
+    "leanSignature": "theorem posterior_iid_eq_withDensity_prod_likelihood\n    [StandardBorelSpace Θ] [Nonempty Θ] {π : Measure Θ} [IsFiniteMeasure π]\n    {κ : Kernel Θ 𝓧} [IsMarkovKernel κ] {ν : Measure 𝓧} [SigmaFinite ν]\n    {p : Θ → 𝓧 → ℝ≥0∞}\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) (n : ℕ) :\n    ∀ᵐ x ∂(iidKernel κ n ∘ₘ π),\n      ((iidKernel κ n)†π) x\n        = π.withDensity fun θ => (∏ i, p θ (x i)) / ∫⁻ θ', ∏ i, p θ' (x i) ∂π",
+    "formalizationNotes": "Formalizes posterior $∝$ prior $×$ i.i.d. likelihood (Gelman §1.3) as a one-shot application of the dominated Bayes theorem to the i.i.d. product kernel `iidKernel κ n`; the dominating measure is the product measure `Measure.pi (fun _ => ν)`. Here the likelihood is a Markov kernel (a genuine sampling model) and ν is σ-finite.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "joint measurability",
+        "note": "The per-observation likelihood density $(θ,x) ↦ p(θ,x)$ is jointly measurable (regularity)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each single-observation sampling distribution equals $ν$ reweighted by $p(θ,\\cdot)$; the sample of size $n$ is i.i.d. from this model."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§1.3 (posterior ∝ prior × i.i.d. likelihood), p. 6",
+      "biblio": "Posterior updating on an i.i.d. sample is the original setting of both Bayes (1763, binomial counts) and Laplace (1774); the product-likelihood form is implicit in every conjugate analysis.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-predictive",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "condDistrib_ae_eq_posteriorPredictive",
+    "fullName": "StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive",
+    "title": "Posterior Predictive = Conditional Law of the Future",
+    "citation": "Gelman et al. (2014), §1.3",
+    "shortRef": "Gelman et al. (2014), §1.3",
+    "file": "StatLean/Bayesian/Updating/Predictive.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Updating/Predictive.html#StatLean.Bayesian.condDistrib_ae_eq_posteriorPredictive",
+    "informal": "<p>Consider the joint Bayesian model in which the parameter is drawn from the prior $\\pi$ and, given the parameter, <span data-link=\"h1\">the observed data $X$ and a future observation $Y$ are conditionally independent</span>, with $X\\sim K_X(\\theta,\\cdot)$ and $Y\\sim K_Y(\\theta,\\cdot)$. Then <span data-link=\"h2\">on standard Borel parameter and future spaces</span> the conditional law of the future given the data is the posterior predictive distribution: for prior-predictive-almost-every $x$,</p>$$\\mathcal{L}(Y\\mid X=x) \\;=\\; \\int_\\Theta K_Y(\\theta,\\cdot)\\,\\pi(d\\theta\\mid x).$$<p>The future's distribution is obtained by averaging its sampling law over the posterior.</p>",
+    "summary": "In the joint model over parameter, data, and a conditionally-independent future, the conditional law of the future given the data is exactly the posterior predictive.",
+    "leanSignature": "theorem condDistrib_ae_eq_posteriorPredictive\n    [StandardBorelSpace Θ] [Nonempty Θ] [StandardBorelSpace 𝓨] [Nonempty 𝓨]\n    {π : Measure Θ} [IsFiniteMeasure π]\n    (KX : Kernel Θ 𝓧) [IsMarkovKernel KX] (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] :\n    condDistrib (fun ω : Θ × 𝓧 × 𝓨 => ω.2.2) (fun ω => ω.2.1) (π ⊗ₘ (KX ×ₖ KY))\n      =ᵐ[KX ∘ₘ π] posteriorPredictive KX KY π",
+    "formalizationNotes": "Formalizes the posterior predictive distribution of Gelman §1.3 by identifying Mathlib's `condDistrib` of the future given the data with `posteriorPredictive KX KY π = KY ∘ₖ (KX†π)`. Conditional independence of $X$ and $Y$ given $θ$ is encoded by the product kernel $K_X ×_k K_Y$ (a constitutive modeling choice). The future space must be standard Borel for `condDistrib` to exist; the pivot is the disintegration “data ⊗ predictive = joint of the pair.”",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "KX ×ₖ KY",
+        "label": "conditional independence",
+        "note": "Data and future are modeled by the product kernel $K_X ×_k K_Y$, encoding that $X$ and $Y$ are conditionally independent given $θ$ — a constitutive modeling choice, not a regularity assumption."
+      },
+      {
+        "id": "h2",
+        "leanToken": "StandardBorelSpace 𝓨",
+        "label": "standard Borel spaces",
+        "note": "The parameter space $Θ$ and the future space $𝓨$ are standard Borel and nonempty, as required for the posterior kernel and for the conditional distribution `condDistrib` to exist."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§1.3 (prediction / posterior predictive distribution), p. 7",
+      "biblio": "Reading prediction as conditioning in a joint model over parameter, data, and future is the de Finetti–Geisser predictivist program (B. de Finetti, *Theory of Probability*, 1974; S. Geisser, *Predictive Inference*, 1993) and the semantic basis of probabilistic programming; the disintegration technology is Kolmogorov (1933) and Doob (1953).",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-conjugacy-criterion",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posterior_ae_eq_of_withDensity_eq_smul",
+    "fullName": "StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul",
+    "title": "The Conjugacy Criterion (Normalization Principle)",
+    "citation": "Robert (2007), §3.3.2",
+    "shortRef": "Robert (2007), §3.3.2",
+    "file": "StatLean/Bayesian/Conjugacy/Criterion.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/Criterion.html#StatLean.Bayesian.posterior_ae_eq_of_withDensity_eq_smul",
+    "informal": "<p>This is the engine behind every conjugate-prior computation: the working principle that one may <em>recognize the posterior up to its normalizing constant</em>. Let $\\pi$ be a prior (a finite measure) on a parameter space $\\Theta$, and let the observation model be a likelihood kernel $\\kappa$ that is <span data-link=\"h2\">dominated by a $\\sigma$-finite measure $\\nu$, so that each observation law $\\kappa(\\theta,\\cdot)$ has density $p(\\theta,\\cdot)$ against $\\nu$</span>, where <span data-link=\"h1\">the density $p(\\theta,x)$ is jointly measurable in the parameter and the data</span>.</p><p>Suppose that <span data-link=\"h4\">at every data point $x$ the unnormalized posterior $p(\\cdot,x)\\,\\pi(d\\theta)$ equals a scalar multiple $c(x)\\cdot\\rho_x$ of a candidate measure</span>, where <span data-link=\"h3\">each candidate $\\rho_x$ is a probability measure</span>. Then the posterior coincides with the candidate, $$\\pi(d\\theta \\mid x) = \\rho_x,$$ for prior-predictive-almost-every data point $x$. Remarkably, no positivity or finiteness assumption on the constant $c(x)$ is required: evaluating the recognized identity on the whole parameter space forces $c(x)$ to equal the marginal density $m(x)=\\int_\\Theta p(\\theta,x)\\,\\pi(d\\theta)$, which the dominated-model machinery guarantees is strictly positive and finite almost everywhere.</p>",
+    "summary": "The normalization principle behind conjugacy: if the unnormalized posterior is a scalar multiple of a probability measure, the posterior is exactly that measure, for predictive-almost-every data point.",
+    "leanSignature": "theorem posterior_ae_eq_of_withDensity_eq_smul\n    [StandardBorelSpace Θ] [Nonempty Θ] {π : Measure Θ} [IsFiniteMeasure π]\n    {κ : Kernel Θ 𝓧} [IsFiniteKernel κ] {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ))\n    {ρ : 𝓧 → Measure Θ}\n    (hρ : ∀ x, IsProbabilityMeasure (ρ x))\n    {c : 𝓧 → ℝ≥0∞}\n    (h : ∀ x, π.withDensity (fun θ => p θ x) = c x • ρ x) :\n    ∀ᵐ x ∂(κ ∘ₘ π), (κ†π) x = ρ x := by ...",
+    "formalizationNotes": "Robert states conjugacy informally as `the posterior is proportional to f(x|θ)π(θ)'; this packages that slogan as a reusable measure-theoretic lemma, so each concrete conjugate pair below reduces to a single pointwise density identity. The predictive-almost-everywhere qualifier and the joint-measurability hypothesis on p are Lean-side regularity. Notably the recognized constant c(x) needs no side conditions — the whole-space evaluation forces c(x) = m(x), and the dominated Bayes machinery supplies 0 < m(x) < ∞ almost everywhere. A pointwise companion, generalizedPosterior_eq_of_withDensity_eq_smul, gives an everywhere (non-a.e.) identity at the cost of assuming c ∈ (0, ∞) explicitly.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "measurable likelihood density",
+        "note": "The likelihood density p(θ, x) is jointly measurable in the parameter and the data."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hκ",
+        "label": "dominated model",
+        "note": "Each observation law κ(θ, ·) has a density p(θ, ·) against a common σ-finite measure ν."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hρ",
+        "label": "probability candidates",
+        "note": "Each candidate posterior ρ_x is a probability measure."
+      },
+      {
+        "id": "h4",
+        "leanToken": "h",
+        "label": "recognized form",
+        "note": "At every data point x, the unnormalized posterior p(·, x)·π equals a scalar multiple c(x)·ρ_x of the candidate measure."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§3.3.2, Definition 3.3.1 (conjugate families) and the proportionality computations of §3.3–§4.2.",
+      "biblio": "The `recognize the posterior up to its normalizing constant' principle traces to H. Raiffa and R. Schlaifer, *Applied Statistical Decision Theory* (Harvard, 1961).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-beta-bernoulli-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "beta_bernoulli_posterior_ae",
+    "fullName": "StatLean.Bayesian.beta_bernoulli_posterior_ae",
+    "title": "Beta–Bernoulli Conjugacy and Laplace's Rule of Succession",
+    "citation": "Gelman et al. (2014), §2.4",
+    "shortRef": "Gelman et al. (2014), §2.4",
+    "file": "StatLean/Bayesian/Conjugacy/BetaBernoulli.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/BetaBernoulli.html#StatLean.Bayesian.beta_bernoulli_posterior_ae",
+    "informal": "<p>Model an unknown success probability with a Beta prior, $\\theta \\sim \\mathrm{Beta}(\\alpha, \\beta)$ with <span data-link=\"h1\">$\\alpha > 0$</span> and <span data-link=\"h2\">$\\beta > 0$</span>, and observe $n$ independent Bernoulli trials $y_1, \\dots, y_n$. Writing $s = \\sum_{i} y_i$ for the number of successes, the posterior is again a Beta law, obtained by adding the successes and the failures to the two parameters: $$\\theta \\mid y_{1:n} \\sim \\mathrm{Beta}\\big(\\alpha + s,\\ \\beta + (n - s)\\big),$$ for prior-predictive-almost-every sample.</p><p>The celebrated corollary is <strong>Laplace's rule of succession</strong> (companion theorem <code>beta_bernoulli_posteriorPredictive_true_ae</code>): the posterior predictive probability of one further success is $$P(y_{n+1} = 1 \\mid y_{1:n}) = \\frac{\\alpha + s}{\\alpha + \\beta + n}.$$ Laplace's original form $(n+1)/(n+2)$ — the odds the sun rises again after $n$ risings — is the uniform-prior case $\\alpha = \\beta = 1$, $s = n$. This is the first posterior predictive computation in history and the standard `add-one' (Laplace) smoothing device of modern categorical modeling.</p>",
+    "summary": "For i.i.d. Bernoulli data with a Beta prior, the posterior is Beta with successes and failures added to the parameters, yielding Laplace's rule of succession for the next-success probability.",
+    "leanSignature": "theorem beta_bernoulli_posterior_ae {α β : ℝ}\n    (hα : 0 < α) (hβ : 0 < β)\n    [IsFiniteMeasure (betaMeasure α β)] (n : ℕ) :\n    ∀ᵐ y ∂(iidKernel bernoulliKernel n ∘ₘ betaMeasure α β),\n      ((iidKernel bernoulliKernel n)†(betaMeasure α β)) y\n        = betaMeasure (α + successes y) (β + ((n - successes y : ℕ) : ℝ)) := by ...",
+    "formalizationNotes": "Gelman §2.4 gives the update for a single binomial count; here the likelihood is the i.i.d. Bernoulli product, whose exponents are the success count s and failure count n−s. Positivity α, β > 0 is required for the Beta prior to be a genuine probability measure (Lean-side [IsFiniteMeasure ...] plumbing is discharged from it). The result holds for prior-predictive-almost-every sample — the a.e. qualifier is the measure-theoretic rendering of `for all observed data', excluding the marginal null set.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hα",
+        "label": "positive shape α",
+        "note": "The first Beta parameter is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hβ",
+        "label": "positive shape β",
+        "note": "The second Beta parameter is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§2.1 and §2.4 (binomial model with conjugate Beta prior), pp. 29, 34.",
+      "biblio": "The rule of succession is P. S. Laplace, `Mémoire sur la probabilité des causes par les événements' (1774); de Finetti's representation theorem explains the exchangeable-data reduction.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-beta-binomial-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "beta_binomial_posterior_ae",
+    "fullName": "StatLean.Bayesian.beta_binomial_posterior_ae",
+    "title": "Beta–Binomial Conjugacy",
+    "citation": "Gelman et al. (2014), §2.4",
+    "shortRef": "Gelman et al. (2014), §2.4",
+    "file": "StatLean/Bayesian/Conjugacy/BetaBinomial.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/BetaBinomial.html#StatLean.Bayesian.beta_binomial_posterior_ae",
+    "informal": "<p>The classical first example of Bayes' theorem. Place a Beta prior $\\theta \\sim \\mathrm{Beta}(\\alpha, \\beta)$ on a success probability, with <span data-link=\"h1\">$\\alpha > 0$</span> and <span data-link=\"h2\">$\\beta > 0$</span>, and take a single Binomial observation $k \\sim \\mathcal{B}(n, \\theta)$ recording $k$ successes in $n$ trials. The posterior is again Beta, with the successes and the failures added to the two parameters: $$\\theta \\mid k \\sim \\mathrm{Beta}\\big(\\alpha + k,\\ \\beta + (n - k)\\big),$$ for prior-predictive-almost-every $k$.</p><p>The prior predictive (marginal) law is the <strong>Beta–Binomial pmf</strong> (companion theorem <code>beta_binomial_predictiveDensity</code>): $$P(k) = \\binom{n}{k}\\,\\frac{B(\\alpha + k,\\ \\beta + n - k)}{B(\\alpha, \\beta)}.$$ Bayes's 1763 essay treats exactly the uniform-prior case $\\mathrm{Beta}(1,1)$.</p>",
+    "summary": "A Beta prior on a success probability updated by a single Binomial observation gives a Beta posterior with the successes and failures added to the two parameters.",
+    "leanSignature": "theorem beta_binomial_posterior_ae {α β : ℝ}\n    (hα : 0 < α) (hβ : 0 < β)\n    [IsFiniteMeasure (betaMeasure α β)] (n : ℕ) :\n    ∀ᵐ k ∂(binomialKernel n ∘ₘ betaMeasure α β),\n      ((binomialKernel n)†(betaMeasure α β)) k\n        = betaMeasure (α + (k : ℕ)) (β + ((n - (k : ℕ) : ℕ) : ℝ)) := by ...",
+    "formalizationNotes": "Matches Gelman §2.4 exactly. The success probability is internally clamped to [0, 1] so that the Binomial kernel is a total Markov kernel over all real parameters; the clamp is invisible under the Beta prior, whose density vanishes off [0, 1]. The Markov property of the kernel is the binomial theorem evaluated at clamp(θ) + (1 − clamp(θ)) = 1. The predictive-a.e. qualifier is the Lean rendering of `for every observed count k'.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hα",
+        "label": "positive shape α",
+        "note": "The first Beta parameter is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hβ",
+        "label": "positive shape β",
+        "note": "The second Beta parameter is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§2.4 (binomial model), p. 34.",
+      "biblio": "The original Bayesian computation: T. Bayes's 1763 essay treats the uniform-prior case Beta(1,1); the modern conjugate-family reading is Raiffa–Schlaifer (1961), with the Beta–Binomial as Diaconis–Ylvisaker's (1985) canonical worked example.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-gamma-poisson-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "gamma_poisson_posterior_ae",
+    "fullName": "StatLean.Bayesian.gamma_poisson_posterior_ae",
+    "title": "Gamma–Poisson Conjugacy",
+    "citation": "Gelman et al. (2014), §2.6",
+    "shortRef": "Gelman et al. (2014), §2.6",
+    "file": "StatLean/Bayesian/Conjugacy/GammaPoisson.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/GammaPoisson.html#StatLean.Bayesian.gamma_poisson_posterior_ae",
+    "informal": "<p>For an unknown Poisson rate with a Gamma prior in the shape–rate parametrization, $\\lambda \\sim \\mathrm{Gamma}(a, r)$ with <span data-link=\"h1\">shape $a > 0$</span> and <span data-link=\"h2\">rate $r > 0$</span>, observe $n$ independent counts $y_1, \\dots, y_n \\sim \\mathrm{Poisson}(\\lambda)$. The posterior is again a Gamma law, adding the total observed count to the shape and the sample size to the rate: $$\\lambda \\mid y_{1:n} \\sim \\mathrm{Gamma}\\Big(a + \\sum_{i} y_i,\\ r + n\\Big),$$ for prior-predictive-almost-every sample.</p><p>This is the count-data workhorse of Bayesian practice, from actuarial credibility theory to empirical-Bayes shrinkage of rates; the negative-binomial marginal it induces is the classical overdispersed count model.</p>",
+    "summary": "For i.i.d. Poisson counts with a Gamma prior on the rate, the posterior is Gamma with the total count added to the shape and the sample size added to the rate.",
+    "leanSignature": "theorem gamma_poisson_posterior_ae {a r : ℝ}\n    (ha : 0 < a) (hr : 0 < r)\n    [IsFiniteMeasure (gammaMeasure a r)] (n : ℕ) :\n    ∀ᵐ y ∂(iidKernel poissonKernel n ∘ₘ gammaMeasure a r),\n      ((iidKernel poissonKernel n)†(gammaMeasure a r)) y\n        = gammaMeasure (a + ∑ i, (y i : ℝ)) (r + n) := by ...",
+    "formalizationNotes": "The pinned Gamma measure is shape/RATE, matching Gelman's parametrization with the second argument a rate, so the update reads Gamma(a + Σy_i, r + n) with no reparametrization. Positivity of shape and rate makes the prior a genuine probability measure. The Poisson rate is internally clamped to [0, ∞) (invisible under the Gamma prior, whose density vanishes on θ ≤ 0); the Poisson kernel is Markov for every real parameter since the Poisson pmf sums to one at every nonnegative rate. Holds for prior-predictive-almost-every sample.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "ha",
+        "label": "positive shape",
+        "note": "The Gamma shape parameter is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hr",
+        "label": "positive rate",
+        "note": "The Gamma rate parameter is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§2.6 (Poisson model), p. 42.",
+      "biblio": "The Gamma prior for Poisson intensities appears in actuarial credibility theory (Bühlmann 1967) and empirical-Bayes rate shrinkage (Robbins 1956; Efron–Morris 1975); it is one of the Raiffa–Schlaifer (1961) natural conjugate pairs.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-normal-normal-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "normal_normal_posterior_ae",
+    "fullName": "StatLean.Bayesian.normal_normal_posterior_ae",
+    "title": "Normal–Normal Conjugacy (Known Variance)",
+    "citation": "Gelman et al. (2014), §2.5",
+    "shortRef": "Gelman et al. (2014), §2.5",
+    "file": "StatLean/Bayesian/Conjugacy/NormalNormal.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/NormalNormal.html#StatLean.Bayesian.normal_normal_posterior_ae",
+    "informal": "<p>For an unknown Gaussian mean with a Gaussian prior $\\mu \\sim \\mathcal{N}(m_0, t_0)$ and $n$ independent observations $x_i \\sim \\mathcal{N}(\\mu, v)$ of known noise variance $v$, assuming <span data-link=\"h1\">the prior variance $t_0$ is nonzero</span> and <span data-link=\"h2\">the noise variance $v$ is nonzero</span>, the posterior is again Gaussian: $$\\mu \\mid x_{1:n} \\sim \\mathcal{N}(\\mu_n,\\ \\tau_n), \\qquad \\tau_n = \\Big(t_0^{-1} + n\\,v^{-1}\\Big)^{-1}, \\qquad \\mu_n = \\tau_n\\Big(\\frac{m_0}{t_0} + \\frac{\\sum_{i} x_i}{v}\\Big).$$ In words, the posterior precision is the sum of the prior precision and the $n$ data precisions, and the posterior mean is the corresponding precision-weighted average of the prior mean and the observations. This holds for prior-predictive-almost-every sample.</p><p>A future observation then has posterior predictive law $\\mathcal{N}(\\mu_n,\\ \\tau_n + v)$ — the posterior uncertainty plus the observation noise (companion theorem <code>normal_normal_posteriorPredictive_ae</code>). The precision-weighted update is the static basis of the Kalman filter.</p>",
+    "summary": "For i.i.d. Gaussian observations of known variance with a Gaussian prior on the mean, the posterior is Gaussian with precision-weighted mean and summed precisions.",
+    "leanSignature": "theorem normal_normal_posterior_ae {m₀ : ℝ} {t₀ v : ℝ≥0}\n    (ht₀ : t₀ ≠ 0) (hv : v ≠ 0)\n    [IsMarkovKernel (gaussKernel v)] (n : ℕ) :\n    ∀ᵐ x ∂(iidKernel (gaussKernel v) n ∘ₘ gaussianReal m₀ t₀),\n      ((iidKernel (gaussKernel v) n)†(gaussianReal m₀ t₀)) x\n        = gaussianReal (postMean m₀ t₀ v x) (postVar t₀ v n) := by ...",
+    "formalizationNotes": "Matches Gelman §2.5. Variances t₀, v are encoded as nonnegative reals, and the nondegeneracy hypotheses t₀ ≠ 0, v ≠ 0 replace the book's implicit positivity; at v = 0 the Gaussian likelihood kernel degenerates to the zero kernel, so the Markov-kernel instance carries v ≠ 0 (a Lean-side plumbing argument, discharged by isMarkovKernel_gaussKernel, not a statistical assumption beyond nondegeneracy). The proof's heart is a completing-the-square identity. Holds for prior-predictive-almost-every sample.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "ht₀",
+        "label": "nonzero prior variance",
+        "note": "The prior variance is nonzero, i.e. the prior is nondegenerate."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hv",
+        "label": "nonzero noise variance",
+        "note": "The known observation-noise variance is nonzero; at zero variance the Gaussian likelihood kernel degenerates to the zero kernel."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§2.5 (normal mean, known variance), p. 39.",
+      "biblio": "The Gaussian-mean update with Gaussian prior is Gauss's combination-of-observations calculus (*Theoria motus*, 1809) read as Bayesian shrinkage; the precision-weighted form is the basis of the Kalman filter (Kalman 1960).",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-dirichlet-multinomial-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "dirichlet_multinomial_posterior_ae",
+    "fullName": "StatLean.Bayesian.dirichlet_multinomial_posterior_ae",
+    "title": "Dirichlet–Multinomial Conjugacy",
+    "citation": "Gelman et al. (2014), §3.4",
+    "shortRef": "Gelman et al. (2014), §3.4",
+    "file": "StatLean/Bayesian/Conjugacy/DirichletMultinomial.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/DirichletMultinomial.html#StatLean.Bayesian.dirichlet_multinomial_posterior_ae",
+    "informal": "<p>The categorical generalization of Beta–Binomial conjugacy. For category probabilities over $k + 1$ categories with a Dirichlet prior $\\theta \\sim \\mathcal{D}_{k+1}(\\alpha)$, where <span data-link=\"h1\">every concentration parameter satisfies $\\alpha_i > 0$</span>, and a single Multinomial observation of $n$ trials producing the count vector $v = (v_0, \\dots, v_k)$, the posterior is again Dirichlet, obtained by adding the counts to the concentrations: $$\\theta \\mid v \\sim \\mathcal{D}_{k+1}(\\alpha + v),$$ for prior-predictive-almost-every count vector.</p><p>This `add the counts to the concentrations' rule is the categorical analogue of Laplace smoothing and the conjugate core of finite mixture models, latent Dirichlet allocation, and (in the infinite limit) the Dirichlet-process machinery of Bayesian nonparametrics.</p>",
+    "summary": "A Dirichlet prior on category probabilities updated by a Multinomial count vector gives a Dirichlet posterior with the counts added to the concentration parameters.",
+    "leanSignature": "theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}\n    (hα : ∀ i, 0 < α i)\n    [IsFiniteMeasure (dirichletMeasure α)] (n : ℕ) :\n    ∀ᵐ v ∂(dmKernel k n ∘ₘ dirichletMeasure α),\n      ((dmKernel k n)†(dirichletMeasure α)) v\n        = dirichletMeasure (α + fun i => (v i : ℝ)) := by ...",
+    "formalizationNotes": "Gelman §3.4 writes the Dirichlet density in k+1 symmetric coordinates on the simplex null set; here it uses the standard Lebesgue-absolutely-continuous corner parametrization (drop the last coordinate, keeping all measure theory on Fin k → ℝ). Positivity of every concentration makes both prior and posterior genuine probability measures. The conjugacy kernel is the Multinomial kernel pulled back along the simplex embedding, dominated by counting measure on the countable count space; the observed counts satisfy Σ v_i = n. Holds predictive-a.e.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hα",
+        "label": "positive concentrations",
+        "note": "Every Dirichlet concentration parameter is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§3.4 (multinomial model for categorical data), p. 69.",
+      "biblio": "Dirichlet-multinomial updating underlies latent Dirichlet allocation (Blei–Ng–Jordan 2003) and, in the infinite limit, the Dirichlet-process prior of T. S. Ferguson (*Ann. Statist.* 1 (1973), 209–230); it is one of the Raiffa–Schlaifer natural conjugate families.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-expfamily-conjugacy",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "expFamily_iid_posterior_ae",
+    "fullName": "StatLean.Bayesian.expFamily_iid_posterior_ae",
+    "title": "Exponential-Family Conjugacy (Diaconis–Ylvisaker)",
+    "citation": "Robert (2007), §3.3.3",
+    "shortRef": "Robert (2007), §3.3.3",
+    "file": "StatLean/Bayesian/Conjugacy/ExpFamily.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Conjugacy/ExpFamily.html#StatLean.Bayesian.expFamily_iid_posterior_ae",
+    "informal": "<p>The single most reusable conjugacy theorem, from which all the concrete pairs specialize. Let the sampling model be a natural exponential family: <span data-link=\"h1\">each observation law has density $p(\\theta, x) = h(x)\\,\\exp\\big(\\langle \\eta(\\theta), T(x) \\rangle - A(\\theta)\\big)$ against a $\\sigma$-finite base measure</span>, with natural parameter $\\eta(\\theta) \\in \\mathbb{R}^d$, sufficient statistic $T(x) \\in \\mathbb{R}^d$, log-partition $A(\\theta)$, and <span data-link=\"h2\">finite base factor $h(x) < \\infty$</span>; the family components are <span data-link=\"h6\">measurable</span>. Equip it with the Diaconis–Ylvisaker conjugate prior $$\\pi_{\\chi, \\nu_0}(d\\theta) \\propto \\exp\\big(\\langle \\chi, \\eta(\\theta) \\rangle - \\nu_0\\,A(\\theta)\\big)\\,\\mu_0(d\\theta),$$ assumed proper (<span data-link=\"h3\">$Z(\\chi, \\nu_0) \\neq 0$</span> and <span data-link=\"h4\">$Z(\\chi, \\nu_0) < \\infty$</span>).</p><p>If <span data-link=\"h5\">every updated prior is likewise proper</span>, then after $n$ independent observations $x_1, \\dots, x_n$ the posterior stays in the conjugate family with updated hyperparameters $$\\pi_{\\chi, \\nu_0}(\\cdot \\mid x_{1:n}) = \\pi_{\\chi + \\sum_{i} T(x_i),\\ \\nu_0 + n},$$ for prior-predictive-almost-every sample: the sufficient statistics are accumulated into $\\chi$ and the pseudo-count $\\nu_0$ is incremented by the sample size $n$. In modern practice this update is the tractable primitive behind variational inference and natural-gradient methods.</p>",
+    "summary": "For any natural exponential family with its Diaconis-Ylvisaker conjugate prior, the posterior stays conjugate with the sufficient statistics accumulated and the pseudo-count incremented by the sample size.",
+    "leanSignature": "theorem expFamily_iid_posterior_ae [StandardBorelSpace Θ] [Nonempty Θ]\n    {ν : Measure 𝓧} [SigmaFinite ν] {κ : Kernel Θ 𝓧} [IsMarkovKernel κ]\n    (hη : Measurable η) (hA : Measurable A) (hT : Measurable T) (hh : Measurable h)\n    (hh' : ∀ x, h x ≠ ∞)\n    (hκ : ∀ θ, κ θ = ν.withDensity (expFamilyDensity η T A h θ)) (n : ℕ)\n    (hZ0 : conjExpZ μ₀ η A χ ν₀ ≠ 0) (hZ' : conjExpZ μ₀ η A χ ν₀ ≠ ∞)\n    [IsFiniteMeasure (conjExpPrior μ₀ η A χ ν₀)]\n    (hZn : ∀ x : Fin n → 𝓧,\n      conjExpZ μ₀ η A (χ + ∑ i, T (x i)) (ν₀ + n) ≠ 0\n        ∧ conjExpZ μ₀ η A (χ + ∑ i, T (x i)) (ν₀ + n) ≠ ∞) :\n    ∀ᵐ x ∂(iidKernel κ n ∘ₘ conjExpPrior μ₀ η A χ ν₀),\n      ((iidKernel κ n)†(conjExpPrior μ₀ η A χ ν₀)) x\n        = conjExpPrior μ₀ η A (χ + ∑ i, T (x i)) (ν₀ + n) := by ...",
+    "formalizationNotes": "Robert Prop. 3.3.13 states the single-observation update; the n-sample form here is the sufficiency version (Robert §4.2.2). Propriety of the prior and of every updated prior (0 < Z < ∞) is Robert's condition (3.3.5), kept as an explicit hypothesis to stay measure-theoretically minimal rather than derived from Diaconis–Ylvisaker's sufficient conditions (ν₀ > 0, χ/ν₀ interior). Finiteness of the base factor is needed for the scalar manipulations (true for every density model); measurability of the family components is Lean-side regularity. This one theorem specializes to the Beta–Bernoulli/Binomial, Gamma–Poisson, and Normal–Normal pairs.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hκ",
+        "label": "exponential-family model",
+        "note": "Each observation law is the natural exponential family density h(x)·exp(⟨η(θ), T(x)⟩ − A(θ)) against a σ-finite base measure ν."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hh'",
+        "label": "finite base factor",
+        "note": "The base factor h(x) is finite for every data point x."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hZ0",
+        "label": "prior normalizer nonzero",
+        "note": "The conjugate-prior normalizer Z(χ, ν₀) is nonzero."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hZ'",
+        "label": "prior normalizer finite",
+        "note": "The conjugate-prior normalizer Z(χ, ν₀) is finite; together with h3 this is Robert's propriety condition (3.3.5)."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hZn",
+        "label": "updated priors proper",
+        "note": "Every updated conjugate prior has a nonzero and finite normalizer."
+      },
+      {
+        "id": "h6",
+        "leanToken": "hη",
+        "label": "measurable components",
+        "note": "The natural parameter η is measurable (and likewise the log-partition A, sufficient statistic T, and base factor h)."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§3.3.3, Proposition 3.3.13 and eqs. (3.3.4)–(3.3.5), p. 120; the n-sample form via sufficiency, §4.2.2, p. 175.",
+      "biblio": "The conjugate family for a natural exponential family and the posterior linearity characterizing it are P. Diaconis and D. Ylvisaker, `Conjugate priors for exponential families,' *Ann. Statist.* 7 (1979), 269–281; the conjugate-prior program is Raiffa–Schlaifer (1961) and exponential-family theory is L. D. Brown (1986).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-dirichlet-normalizer",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "dirichletZ_eq_prod_Gamma_div",
+    "fullName": "StatLean.Bayesian.dirichletZ_eq_prod_Gamma_div",
+    "title": "The Dirichlet Normalizing Constant",
+    "citation": "Gelman et al. (2014), §3.4",
+    "shortRef": "Gelman et al. (2014), §3.4",
+    "file": "StatLean/Bayesian/ForMathlib/DirichletDist.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/ForMathlib/DirichletDist.html#StatLean.Bayesian.dirichletZ_eq_prod_Gamma_div",
+    "informal": "<p>The exact closed form of the normalizing constant of the Dirichlet distribution over $k + 1$ categories. For <span data-link=\"h1\">strictly positive concentration parameters $\\alpha_i > 0$</span>, the integral of the unnormalized Dirichlet density over the probability simplex evaluates to a ratio of Gamma functions: $$Z(\\alpha) = \\int_{\\Delta} \\prod_{i=0}^{k} \\theta_i^{\\alpha_i - 1}\\,d\\theta = \\frac{\\prod_{i=0}^{k} \\Gamma(\\alpha_i)}{\\Gamma\\!\\big(\\sum_{i=0}^{k} \\alpha_i\\big)}.$$ Equivalently, this is the multivariate Beta function $B(\\alpha)$.</p><p>The identity follows by peeling one coordinate at a time, reducing to the one-dimensional Beta integral $B(a, b) = \\Gamma(a)\\Gamma(b)/\\Gamma(a + b)$ and telescoping. As immediate corollaries, the normalizer is finite ($Z(\\alpha) < \\infty$) and the Dirichlet measure is a genuine probability measure — the two facts the Dirichlet–Multinomial conjugacy result consumes. The evaluation goes back to Dirichlet's 1839 computation of the multivariate simplex integral.</p>",
+    "summary": "The Dirichlet normalizing constant equals the product of the Gamma functions of the parameters divided by the Gamma function of their sum.",
+    "leanSignature": "theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}\n    (hα : ∀ i, 0 < α i) :\n    dirichletZ α = ENNReal.ofReal ((∏ i, Real.Gamma (α i)) / Real.Gamma (∑ i, α i)) := by ...",
+    "formalizationNotes": "Closes the closed-form Dirichlet normalizer that the conjugacy results otherwise needed only abstractly (0 < Z < ∞). The integral is taken in the corner parametrization on ℝ^k against Lebesgue measure, equivalent to the symmetric simplex integral of Gelman §3.4. The proof uses the pinned real Beta–Gamma identity B(a,b) = Γ(a)Γ(b)/Γ(a+b) telescoped through a coordinate-peel recursion Z(α) = B(α₀, Σ_{i≥1} α_i)·Z(tail α). Finiteness dirichletZ_lt_top and the probability-measure property are immediate corollaries.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hα",
+        "label": "positive concentrations",
+        "note": "Every Dirichlet concentration parameter is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§3.4 (multinomial/Dirichlet) and Appendix A (standard distributions), p. 69.",
+      "biblio": "The normalizing constant is P. G. L. Dirichlet's evaluation of the multivariate simplex integral ∫ ∏ x_i^{α_i−1} (*J. Math. Pures Appl.* 4 (1839), 164–168); as the multinomial's conjugate prior it enters via Raiffa–Schlaifer (1961) and underlies Ferguson's (1973) Dirichlet process.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-estimator-posterior-risk",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "isBayesEstimator_of_ae_argmin",
+    "fullName": "StatLean.Bayesian.isBayesEstimator_of_ae_argmin",
+    "title": "Bayes Estimator via Posterior-Risk Minimization",
+    "citation": "Robert (2007), §2.3, Thm 2.3.2",
+    "shortRef": "Robert (2007), §2.3, Thm 2.3.2",
+    "file": "StatLean/Bayesian/Decision/BayesEstimator.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Decision/BayesEstimator.html#StatLean.Bayesian.isBayesEstimator_of_ae_argmin",
+    "informal": "<p>Consider a statistical decision problem with parameter $\\theta$, data $x$, and a loss $\\ell(\\theta, y)\\in[0,\\infty]$ for taking action $y$; let $\\pi(\\cdot\\mid x)$ be the posterior for a prior $\\pi$ and data-generating model $P$. If <span data-link=\"h3\">the decision rule $\\delta$ is measurable</span> and <span data-link=\"h1\">for almost every observation $x$ (under the marginal $m = P\\pi$) the action $\\delta(x)$ minimizes the posterior expected loss $\\int_\\Theta \\ell(\\theta, y)\\,\\pi(d\\theta\\mid x)$ over all actions $y$</span>, then $\\delta$ is a <strong>Bayes estimator</strong>: it attains the Bayes risk $r(\\pi) = \\inf_{\\widehat\\theta} r(\\pi, \\widehat\\theta)$. The proof rests on the Fubini identity $r(\\pi,\\delta) = \\int_{\\mathcal X}\\big(\\int_\\Theta \\ell(\\theta,\\delta(x))\\,\\pi(d\\theta\\mid x)\\big)\\,m(dx)$, so pointwise optimality gives global optimality. Here <span data-link=\"h2\">the loss is jointly measurable in $(\\theta, y)$</span>.</p>",
+    "summary": "A decision rule that minimizes the posterior expected loss at almost every observation attains the Bayes risk, hence is a Bayes estimator.",
+    "leanSignature": "theorem isBayesEstimator_of_ae_argmin [StandardBorelSpace Θ] [Nonempty Θ]\n    (ℓ : Θ → 𝓨 → ℝ≥0∞)\n    (hℓ : Measurable (Function.uncurry ℓ))\n    (P : Kernel Θ 𝓧) [IsFiniteKernel P] (π : Measure Θ) [IsFiniteMeasure π]\n    {δ : 𝓧 → 𝓨} (hδ : Measurable δ)\n    (hmin : ∀ᵐ x ∂(P ∘ₘ π), ∀ y, ∫⁻ θ, ℓ θ (δ x) ∂(P†π) x ≤ ∫⁻ θ, ℓ θ y ∂(P†π) x) :\n    IsBayesEstimator ℓ P (Kernel.deterministic δ hδ) π",
+    "formalizationNotes": "Formalizes Robert Theorem 2.3.2 / Eq. (2.3.1). `IsBayesEstimator ℓ P κ π` is our own definition, `avgRisk ℓ P κ π = bayesRisk ℓ P π` (Robert's integrated risk and Bayes risk are Mathlib's avgRisk and bayesRisk). The engine is Mathlib's posterior disintegration compProd_posterior_eq_map_swap. The two measurability hypotheses are Lean-side regularity, not conditions in Robert.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hmin : ∀ᵐ x ∂(P ∘ₘ π), ∀ y, ∫⁻ θ, ℓ θ (δ x) ∂(P†π) x ≤ ∫⁻ θ, ℓ θ y ∂(P†π) x",
+        "label": "δ(x) minimizes posterior expected loss a.e.",
+        "note": "For predictive-almost-every observation x, the action δ(x) attains the least posterior expected loss among all actions y. This is the substantive assumption (Robert Thm 2.3.2)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hℓ : Measurable (Function.uncurry ℓ)",
+        "label": "jointly measurable loss",
+        "note": "The loss ℓ(θ,y) is measurable in the pair (θ,y); a Lean regularity condition."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hδ : Measurable δ",
+        "label": "measurable decision rule",
+        "note": "The estimator δ : 𝓧 → 𝓨 is a measurable function of the data."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§2.3, Theorem 2.3.2 and Eq. (2.3.1), Definition 2.3.3, pp. 62–63",
+      "biblio": "The frequentist-risk framework in which Bayes rules are optimal points is due to A. Wald, *Statistical Decision Functions* (Wiley, 1950); the subjectivist justification of minimizing posterior expected loss is L. J. Savage, *The Foundations of Statistics* (Wiley, 1954), developed further by M. H. DeGroot, *Optimal Statistical Decisions* (McGraw-Hill, 1970). Reducing integrated risk to pointwise posterior minimization is the standard bridge between the two viewpoints.",
+      "keys": [
+        "robert2007",
+        "wald1950"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-mean-squared-loss",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posteriorMean_isBayesEstimator_sqLoss",
+    "fullName": "StatLean.Bayesian.posteriorMean_isBayesEstimator_sqLoss",
+    "title": "Posterior Mean is Bayes under Squared Loss",
+    "citation": "Robert (2007), §2.5.1, Prop. 2.5.1",
+    "shortRef": "Robert (2007), §2.5.1, Prop. 2.5.1",
+    "file": "StatLean/Bayesian/Decision/SquaredLoss.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Decision/SquaredLoss.html#StatLean.Bayesian.posteriorMean_isBayesEstimator_sqLoss",
+    "informal": "<p>Under the <strong>quadratic (squared-error) loss</strong> $\\ell(\\theta, a) = (\\theta - a)^2$ on $\\mathbb R$, the Bayes action given data $x$ is the <strong>posterior mean</strong> $$\\widehat\\theta(x) = \\mathbb E[\\theta \\mid x] = \\int_{\\mathbb R} \\theta\\,\\pi(d\\theta\\mid x),$$ and the resulting estimator attains the Bayes risk. Remarkably, no integrability assumption is needed: if the posterior lacks a finite second moment at $x$, then every action incurs infinite posterior quadratic risk there, so the claim holds vacuously; otherwise the mean is the unique minimizer by the bias–variance identity. This subsumes Robert's \"provided the expectation exists\" proviso.</p>",
+    "summary": "Under quadratic loss the posterior mean is a Bayes estimator, with no integrability assumption required.",
+    "leanSignature": "theorem posteriorMean_isBayesEstimator_sqLoss (P : Kernel ℝ 𝓧) [IsFiniteKernel P]\n    (π : Measure ℝ) [IsFiniteMeasure π] :\n    IsBayesEstimator sqLoss P\n      (Kernel.deterministic (posteriorMean P π) (measurable_posteriorMean P π)) π",
+    "formalizationNotes": "Formalizes Robert Proposition 2.5.1. The proof case-splits on whether the posterior has a finite second moment (MemLp id 2): in the degenerate branch every action has infinite posterior quadratic risk, so even the junk value of `posteriorMean` (the Bochner integral, which is 0 when no first moment) minimizes; otherwise the bias–variance inequality selects the mean. The loss is encoded as ‖θ − a‖ₑ² to reuse Mathlib's variance API.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§2.5.1, Eq. (2.5.1) and Proposition 2.5.1, pp. 77–78",
+      "biblio": "Quadratic loss is the founding loss function of statistics, from the least-squares theory of A. M. Legendre (1805) and C. F. Gauss (1809); that the posterior mean minimizes posterior quadratic loss was already implicit in Laplace's probability-of-causes computations (1774). The bias–variance decomposition used here is textbook folklore.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-mode-map",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posteriorMode_isBayesEstimator_zeroOneLoss",
+    "fullName": "StatLean.Bayesian.posteriorMode_isBayesEstimator_zeroOneLoss",
+    "title": "Posterior Mode (MAP) is Bayes under 0–1 Loss",
+    "citation": "Robert (2007), §2.5.3, Prop. 2.5.7",
+    "shortRef": "Robert (2007), §2.5.3, Prop. 2.5.7",
+    "file": "StatLean/Bayesian/Decision/ZeroOneLoss.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Decision/ZeroOneLoss.html#StatLean.Bayesian.posteriorMode_isBayesEstimator_zeroOneLoss",
+    "informal": "<p>On a <span data-link=\"h1\">finite parameter space $\\Theta$</span>, under the <strong>0–1 loss</strong> $\\ell(\\theta, a) = \\mathbf 1[\\theta \\neq a]$, the Bayes action given data $x$ is the <strong>posterior mode</strong> — the maximum a posteriori (MAP) estimator $$\\widehat\\theta(x) = \\arg\\max_{a\\in\\Theta}\\ \\pi(\\{a\\}\\mid x).$$ The mechanism is that the posterior $0$–$1$ risk of action $a$ equals $1 - \\pi(\\{a\\}\\mid x)$, so minimizing the risk is exactly maximizing the posterior mass; the most probable parameter value is optimal, and the estimator attains the Bayes risk.</p>",
+    "summary": "Under 0–1 loss on a finite parameter space, the posterior mode (the MAP estimator) is a Bayes estimator.",
+    "leanSignature": "theorem posteriorMode_isBayesEstimator_zeroOneLoss [Fintype Θ] [Nonempty Θ]\n    [DiscreteMeasurableSpace Θ]\n    (P : Kernel Θ 𝓧) [IsFiniteKernel P] (π : Measure Θ) [IsFiniteMeasure π] :\n    IsBayesEstimator zeroOneLoss P\n      (Kernel.deterministic (posteriorMode P π) (measurable_posteriorMode P π)) π",
+    "formalizationNotes": "Formalizes Robert Proposition 2.5.7 / §4.1.2 (MAP = posterior mode). The mode is built from a choice-free finite argmax (`fintypeArgmax`, taking the least maximizer in the canonical enumeration) so that the estimator is genuinely measurable, rather than an unmeasurable `Exists.choose`. Finiteness plus the discrete σ-algebra makes StandardBorelSpace automatic.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[Fintype Θ] [Nonempty Θ] [DiscreteMeasurableSpace Θ]",
+        "label": "finite parameter space",
+        "note": "The parameter space Θ is finite and carries the discrete σ-algebra, so the MAP argmax is well defined and measurable."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§2.5.3, Eq. (2.5.5) and Proposition 2.5.7, p. 81; §4.1.2 (MAP estimator), p. 166",
+      "biblio": "The 0–1 loss is the decision-theoretic formulation of hypothesis selection, tied to the testing theory of J. Neyman and E. S. Pearson (Phil. Trans. R. Soc. A 231 (1933), 289–337). That the Bayes rule under 0–1 loss is the maximum a posteriori estimator is standard; the MAP estimator also reads as penalized maximum likelihood.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-to-minimax-const-risk",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "isMinimaxEstimator_of_isBayesEstimator_of_risk_const",
+    "fullName": "StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const",
+    "title": "Constant-Risk Bayes Estimator is Minimax",
+    "citation": "Robert (2007), §2.4.3, Lemma 2.4.13 / Ex. 2.4.14",
+    "shortRef": "Robert (2007), §2.4.3, Ex. 2.4.14",
+    "file": "StatLean/Bayesian/Decision/Minimax.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Decision/Minimax.html#StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const",
+    "informal": "<p>Let $\\kappa$ be a (randomized) estimator and $\\pi$ a proper prior. If <span data-link=\"h1\">$\\kappa$ is a Bayes estimator for $\\pi$</span> and <span data-link=\"h2\">its frequentist risk $R(\\theta, \\kappa)$ is constant in $\\theta$</span>, then $\\kappa$ is <strong>minimax</strong>: it minimizes the worst-case risk $\\sup_\\theta R(\\theta, \\widehat\\theta)$ over all estimators. This is the classical device for certifying minimaxity from above — a Bayes rule with flat risk has risk equal to its own Bayes risk, and the Bayes risk always lower-bounds the minimax risk. The associated prior $\\pi$ is then least favorable.</p>",
+    "summary": "A Bayes estimator whose frequentist risk is constant across all parameters is minimax.",
+    "leanSignature": "theorem isMinimaxEstimator_of_isBayesEstimator_of_risk_const\n    {κ : Kernel 𝓧 𝓨} [IsMarkovKernel κ] {π : Measure Θ} [IsProbabilityMeasure π]\n    (hB : IsBayesEstimator ℓ P κ π)\n    (hconst : ∀ θ θ', risk ℓ P κ θ = risk ℓ P κ θ') :\n    IsMinimaxEstimator ℓ P κ",
+    "formalizationNotes": "Formalizes the principle of Robert Example 2.4.14 (a special case of Lemma 2.4.13). It reduces to the global-domination form (risk ≤ Bayes risk everywhere, `isMinimaxEstimator_of_isBayesEstimator_of_risk_le`): a constant-risk Bayes rule has risk equal to its integrated = Bayes risk. Complements the Minimaxity area (which lower-bounds minimax risk); here Bayes rules certify minimax risk from above.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hB : IsBayesEstimator ℓ P κ π",
+        "label": "Bayes for the prior π",
+        "note": "The estimator κ attains the Bayes risk for the prior π (which is a probability measure)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hconst : ∀ θ θ', risk ℓ P κ θ = risk ℓ P κ θ'",
+        "label": "constant frequentist risk",
+        "note": "The estimator's frequentist risk R(θ,κ) is the same for every parameter θ."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§2.4.3, Lemma 2.4.13 and Example 2.4.14, pp. 70–71; Definition 2.4.3, p. 67",
+      "biblio": "The Bayes-to-minimax route is due to A. Wald (*Statistical Decision Functions*, 1950), with the geometric risk-set picture of D. Blackwell and M. A. Girshick (*Theory of Games and Statistical Decisions*, Wiley, 1954). Constant-risk Bayes rules and least favorable priors are the standard devices for exhibiting minimax estimators, e.g. the Beta(√n/2, √n/2) binomial example.",
+      "keys": [
+        "robert2007",
+        "wald1950"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-flat-normal-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "flat_normal_generalizedPosterior",
+    "fullName": "StatLean.Bayesian.flat_normal_generalizedPosterior",
+    "title": "Flat-Prior Normal Mean Posterior",
+    "citation": "Gelman et al. (2014), §2.5, §3.2",
+    "shortRef": "Gelman et al. (2014), §2.5, §3.2",
+    "file": "StatLean/Bayesian/GeneralizedBayes/FlatNormal.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/GeneralizedBayes/FlatNormal.html#StatLean.Bayesian.flat_normal_generalizedPosterior",
+    "informal": "<p>Let $x_1, \\dots, x_n$ be i.i.d. observations from $\\mathcal N(\\mu, v)$ with <span data-link=\"h1\">known positive variance $v$</span>, and place the improper <strong>flat prior</strong> $\\pi(d\\mu) = d\\mu$ (Lebesgue measure) on the mean. Provided <span data-link=\"h2\">there is at least one observation</span>, the generalized posterior is a proper Gaussian distribution $$\\mu \\mid x_{1:n} \\sim \\mathcal N\\!\\Big(\\bar x,\\ \\frac{v}{n}\\Big), \\qquad \\bar x = \\frac{1}{n}\\sum_{i=1}^n x_i.$$ The posterior is centered at the sample mean with variance $v/n$, reproducing the frequentist answer — the classical reconciliation between Bayesian and frequentist inference for a location parameter.</p>",
+    "summary": "Under the improper flat prior, the posterior for a normal mean from n i.i.d. observations is Normal, centered at the sample mean with variance v/n.",
+    "leanSignature": "theorem flat_normal_generalizedPosterior {v : ℝ≥0}\n    (hv : v ≠ 0) {n : ℕ}\n    (hn : n ≠ 0) (x : Fin n → ℝ) :\n    generalizedPosterior (fun (θ : ℝ) (x : Fin n → ℝ) => ∏ i, gaussianPDF θ v (x i))\n        volume x\n      = gaussianReal ((∑ i, x i) / n) (v / n)",
+    "formalizationNotes": "Formalizes the noninformative-prior normal-mean result of Gelman §2.5 / §3.2. Because Lebesgue measure is not finite, Mathlib's abstract posterior κ†π does not exist; the statement is genuinely about `generalizedPosterior` (the withDensity construction that works for improper σ-finite priors). The proof completes the square in the product Gaussian likelihood, exhibiting the unnormalized posterior as a positive finite multiple of the 𝒩(x̄, v/n) probability measure.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hv : v ≠ 0",
+        "label": "nondegenerate variance",
+        "note": "The known observation variance v is nonzero (positive)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hn : n ≠ 0",
+        "label": "at least one observation",
+        "note": "n ≥ 1; required for posterior propriety under the improper flat prior."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§2.5 (normal, known variance) and §3.2 (noninformative prior, N(ȳ, σ²/n)), pp. 39, 64",
+      "biblio": "The flat prior on a location parameter is Laplace's original principle of insufficient reason (1774) and the simplest Jeffreys prior (H. Jeffreys, *Theory of Probability*, 1939). That it reproduces the frequentist answer 𝒩(x̄, v/n) — with credible intervals numerically equal to confidence intervals — is the classical reconciliation example; it is safe for estimation but the arbitrary normalizing constant wrecks Bayes factors.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-factor-improper-scaling",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "bayesFactorM_smul_left",
+    "fullName": "StatLean.Bayesian.bayesFactorM_smul_left",
+    "title": "Bayes Factors Scale with Improper-Prior Constants",
+    "citation": "Robert (2007), §1.5, §5.2.2",
+    "shortRef": "Robert (2007), §1.5, §5.2.2",
+    "file": "StatLean/Bayesian/GeneralizedBayes/Basic.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/GeneralizedBayes/Basic.html#StatLean.Bayesian.bayesFactorM_smul_left",
+    "informal": "<p>The <strong>Bayes factor</strong> of model $0$ against model $1$ is the ratio of marginal (predictive) densities $B_{01}(x) = m_0(x)/m_1(x)$. Rescaling the null model's prior $\\pi_0$ by an arbitrary constant $c \\in (0, \\infty)$ — as one is free to do with an improper prior, defined only up to a multiplicative constant — multiplies the Bayes factor by exactly the same $c$, whenever <span data-link=\"h1\">the alternative marginal is nonzero</span> and <span data-link=\"h2\">finite</span> at $x$: $$B_{01}^{\\,c\\pi_0}(x) = c \\cdot B_{01}^{\\,\\pi_0}(x).$$ Since $c$ is arbitrary, the Bayes factor is undetermined. This is the precise reason <strong>improper priors are safe for estimation but meaningless for testing and model choice</strong> — by contrast, the generalized posterior itself is scale-invariant.</p>",
+    "summary": "Rescaling an improper null prior by an arbitrary constant multiplies the Bayes factor by that constant, so improper priors cannot be used for model comparison.",
+    "leanSignature": "theorem bayesFactorM_smul_left {p₀ : Θ₀' → 𝓧 → ℝ≥0∞} {π₀ : Measure Θ₀'}\n    {p₁ : Θ₁' → 𝓧 → ℝ≥0∞} {π₁ : Measure Θ₁'} {x : 𝓧} (c : ℝ≥0∞)\n    (h1 : predictiveDensity p₁ π₁ x ≠ 0) (h1' : predictiveDensity p₁ π₁ x ≠ ∞) :\n    bayesFactorM p₀ (c • π₀) p₁ π₁ x = c * bayesFactorM p₀ π₀ p₁ π₁ x",
+    "formalizationNotes": "Formalizes the improper-prior indeterminacy warning of Robert §1.5 (pp. 28–29, pointing to Chapter 5). The pseudo-marginal m(x) = ∫ p(θ,x) π(dθ) scales linearly in the prior, so the ratio inherits the constant. Companion results in the same file prove the generalized posterior is scale-invariant (so estimation is unaffected) and characterize posterior propriety.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "h1 : predictiveDensity p₁ π₁ x ≠ 0",
+        "label": "alternative marginal nonzero",
+        "note": "The alternative model's marginal (predictive) density at x is nonzero."
+      },
+      {
+        "id": "h2",
+        "leanToken": "h1' : predictiveDensity p₁ π₁ x ≠ ∞",
+        "label": "alternative marginal finite",
+        "note": "The alternative model's marginal density at x is finite, so the ratio is well defined."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§1.5, pp. 26–30 (improper priors); §5.2.2, Definition 5.2.5, p. 227",
+      "biblio": "The scale-invariance of generalized posteriors and the resulting indeterminacy of Bayes factors under improper priors were emphasized by H. Jeffreys (1939) and motivate pseudo-Bayes-factor proposals — intrinsic and fractional Bayes factors (J. O. Berger and L. R. Pericchi, JASA 91 (1996), 109–122; A. O'Hagan, JRSS-B 57 (1995), 99–138). The marginalization paradoxes of Dawid, Stone and Zidek (JRSS-B 35 (1973), 189–233) delimit the safe zone.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-posterior-model-probability",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "posteriorModelProb_eq_div",
+    "fullName": "StatLean.Bayesian.posteriorModelProb_eq_div",
+    "title": "Posterior Model Probabilities",
+    "citation": "Robert (2007), §7.2.1, Eq. (7.2.2)",
+    "shortRef": "Robert (2007), §7.2.1, Eq. (7.2.2)",
+    "file": "StatLean/Bayesian/ModelChoice/Basic.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/ModelChoice/Basic.html#StatLean.Bayesian.posteriorModelProb_eq_div",
+    "informal": "<p>Consider a finite family of competing models indexed by $m$, with prior model probabilities $\\varpi(\\{m\\})$ and, for <span data-link=\"h1\">each model, a marginal (predictive) data density $q_m(x)$</span>. Then for almost every observation $x$, the <strong>posterior probability of model $m$</strong> is, simultaneously across all $m$, $$P(M = m \\mid x) = \\frac{\\varpi(\\{m\\})\\,q_m(x)}{\\sum_j \\varpi(\\{j\\})\\,q_j(x)}.$$ Each model's posterior weight is its prior weight times its marginal likelihood, renormalized over the family — the basis of Bayesian model comparison and model averaging. Here <span data-link=\"h2\">the densities are assumed jointly measurable</span>.</p>",
+    "summary": "Over a finite family of models, the posterior probability of each model is its prior probability times its marginal likelihood, renormalized across the family.",
+    "leanSignature": "theorem posteriorModelProb_eq_div [Fintype M] [MeasurableSingletonClass M] [Nonempty M]\n    {Q : Kernel M 𝓧} [IsFiniteKernel Q] {ϖ : Measure M} [IsFiniteMeasure ϖ]\n    {ν : Measure 𝓧} [SFinite ν] {q : M → 𝓧 → ℝ≥0∞}\n    (hq : Measurable (Function.uncurry q))\n    (hQ : ∀ m, Q m = ν.withDensity (q m)) :\n    ∀ᵐ x ∂(Q ∘ₘ ϖ), ∀ m,\n      posteriorModelProb Q ϖ x m = ϖ {m} * q m x / ∑ j, ϖ {j} * q j x",
+    "formalizationNotes": "Formalizes Robert Eq. (7.2.2). The model index M is treated as a new finite-discrete parameter space (StandardBorelSpace from the countable-discrete instance), and the dominated-Bayes posterior-density theorem is applied, computing the posterior singleton mass and the predictive density as the finite sum ∑ⱼ ϖ({j}) qⱼ(x). Feeding q m := predictiveDensity (p m) (π m) recovers genuine within-model marginal likelihoods.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hQ : ∀ m, Q m = ν.withDensity (q m)",
+        "label": "each model has marginal density qₘ",
+        "note": "Model m generates data with marginal (predictive) density q m against the common reference measure ν."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq : Measurable (Function.uncurry q)",
+        "label": "jointly measurable densities",
+        "note": "The marginal densities q m x are jointly measurable in (m, x); a regularity condition."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§7.2.1, Eq. (7.2.2), p. 348; §7.2.2, p. 350; Definition 5.2.5, p. 227",
+      "biblio": "Posterior model probabilities go back to Jeffreys's testing calculus (*Theory of Probability*, 1939); the model-space formulation (7.2.1)–(7.2.3) with model averaging became central with A. E. Raftery, D. Madigan and J. A. Hoeting (JASA 92 (1997), 179–191) and the review of J. A. Hoeting et al. (Statist. Sci. 14 (1999), 382–417).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-test-threshold",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "bayesTest_eq_threshold",
+    "fullName": "StatLean.Bayesian.bayesTest_eq_threshold",
+    "title": "Bayes Test Threshold Rule",
+    "citation": "Robert (2007), §5.2.1, Prop. 5.2.2",
+    "shortRef": "Robert (2007), §5.2.1, Prop. 5.2.2",
+    "file": "StatLean/Bayesian/ModelChoice/Testing.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/ModelChoice/Testing.html#StatLean.Bayesian.bayesTest_eq_threshold",
+    "informal": "<p>Consider testing $H_0 : \\theta \\in \\Theta_0$ against $H_1 : \\theta \\notin \\Theta_0$ under the asymmetric $a_0$–$a_1$ loss, where wrongly rejecting $H_0$ costs $a_0$ and wrongly accepting costs $a_1$, and <span data-link=\"h1\">$\\Theta_0$ is a measurable event</span>. Whenever <span data-link=\"h2\">the combined weight $a_0 + a_1$ is nonzero</span> and <span data-link=\"h3\">finite</span>, the Bayes decision rule accepts $H_0$ exactly when the posterior null probability exceeds the loss-determined threshold: $$\\text{accept } H_0 \\iff \\pi(\\Theta_0 \\mid x) \\ge \\frac{a_1}{a_0 + a_1}.$$ The optimal test is a threshold rule on the posterior probability of the null, with the threshold fixed by the ratio of the two error costs.</p>",
+    "summary": "Under the asymmetric a₀–a₁ testing loss, the Bayes test accepts the null exactly when its posterior probability exceeds the threshold a₁/(a₀+a₁).",
+    "leanSignature": "theorem bayesTest_eq_threshold [StandardBorelSpace Θ] [Nonempty Θ]\n    (κ : Kernel Θ 𝓧) [IsFiniteKernel κ] (π : Measure Θ) [IsFiniteMeasure π]\n    {Θ₀ : Set Θ}\n    (hΘ₀ : MeasurableSet Θ₀) {a₀ a₁ : ℝ≥0∞}\n    (h0 : a₀ + a₁ ≠ 0) (h1 : a₀ + a₁ ≠ ∞) (x : 𝓧) :\n    bayesTest κ π Θ₀ a₀ a₁ x = (a₁ / (a₀ + a₁) ≤ (κ†π) x Θ₀ : Bool)",
+    "formalizationNotes": "Formalizes Robert Proposition 5.2.2 / Eq. (5.2.3). The rule `bayesTest` is defined directly by comparing the two posterior expected losses a₁·π(Θ₀ᶜ|x) and a₀·π(Θ₀|x); this theorem rewrites that comparison as the posterior-probability threshold via ℝ≥0∞ division algebra. A companion theorem (isBayesEstimator_bayesTest) shows the rule is a Bayes estimator for the loss.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hΘ₀ : MeasurableSet Θ₀",
+        "label": "the null hypothesis is an event",
+        "note": "The null region Θ₀ ⊆ Θ is a measurable set."
+      },
+      {
+        "id": "h2",
+        "leanToken": "h0 : a₀ + a₁ ≠ 0",
+        "label": "nondegenerate loss weights (nonzero)",
+        "note": "The combined loss weight a₀ + a₁ is nonzero."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h1 : a₀ + a₁ ≠ ∞",
+        "label": "nondegenerate loss weights (finite)",
+        "note": "The combined loss weight a₀ + a₁ is finite, so the threshold a₁/(a₀+a₁) is well defined."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§5.2.1, Eq. (5.2.1) and Proposition 5.2.2, p. 225; Eq. (5.2.3), p. 227",
+      "biblio": "The threshold structure of Bayes tests is the Bayesian counterpart of the Neyman–Pearson lemma (1933) and appears with the a₀–a₁ loss following Wald's decision theory. Point-null refinements were sharpened into calibration results by J. O. Berger and T. Sellke (JASA 82 (1987), 112–122).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-point-null-posterior",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "pointNull_posterior_singleton_ae",
+    "fullName": "StatLean.Bayesian.pointNull_posterior_singleton_ae",
+    "title": "Point-Null Posterior Probability",
+    "citation": "Robert (2007), §5.2.4",
+    "shortRef": "Robert (2007), §5.2.4",
+    "file": "StatLean/Bayesian/ModelChoice/Testing.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/ModelChoice/Testing.html#StatLean.Bayesian.pointNull_posterior_singleton_ae",
+    "informal": "<p>To test a <strong>point null</strong> $H_0 : \\theta = \\theta_0$, use the mixture prior $w\\,\\delta_{\\theta_0} + (1 - w)\\,\\pi_1$ that places an atom of mass <span data-link=\"h2\">$w \\in [0, 1]$</span> at $\\theta_0$ and spreads the remaining mass over a continuous alternative <span data-link=\"h3\">$\\pi_1$ giving no mass to $\\theta_0$</span>. For a <span data-link=\"h1\">dominated model with likelihood $p(\\theta, x)$</span>, the posterior probability of the null is, for almost every $x$, $$\\pi(\\{\\theta_0\\} \\mid x) = \\frac{w\\,p(\\theta_0, x)}{w\\,p(\\theta_0, x) + (1 - w)\\int_\\Theta p(\\theta, x)\\,\\pi_1(d\\theta)}.$$ The null atom survives conditioning; its posterior weight compares the null likelihood against the alternative likelihood averaged over $\\pi_1$.</p>",
+    "summary": "Under a point-mass-plus-continuous mixture prior, the posterior probability of the null point has an explicit ratio form comparing the null likelihood to the averaged alternative likelihood.",
+    "leanSignature": "theorem pointNull_posterior_singleton_ae [StandardBorelSpace Θ] [Nonempty Θ]\n    [MeasurableSingletonClass Θ]\n    {κ : Kernel Θ 𝓧} [IsFiniteKernel κ] {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}\n    (hp : Measurable (Function.uncurry p))\n    (hκ : ∀ θ, κ θ = ν.withDensity (p θ))\n    {w : ℝ≥0}\n    (hw : w ≤ 1) {θ₀ : Θ} {π₁ : Measure Θ} [IsProbabilityMeasure π₁]\n    (hπ₁ : π₁ {θ₀} = 0) :\n    ∀ᵐ x ∂(κ ∘ₘ (w • Measure.dirac θ₀ + (1 - w) • π₁)),\n      (κ†(w • Measure.dirac θ₀ + (1 - w) • π₁)) x {θ₀}\n        = (w : ℝ≥0∞) * p θ₀ x\n            / ((w : ℝ≥0∞) * p θ₀ x + ((1 - w : ℝ≥0) : ℝ≥0∞) * ∫⁻ θ, p θ x ∂π₁)",
+    "formalizationNotes": "Formalizes the point-null posterior formula of Robert §5.2.4 (p. 231, stated but unnumbered). The mixture prior is finite by construction; the predictive density splits additively over the Dirac atom and the continuous part, and the hypothesis π₁({θ₀}) = 0 keeps the alternative from contaminating the null atom's posterior mass.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hκ : ∀ θ, κ θ = ν.withDensity (p θ)",
+        "label": "dominated model with density p",
+        "note": "The data law at θ has likelihood density p(θ, ·) against the common reference measure ν."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hw : w ≤ 1",
+        "label": "null prior weight is a probability",
+        "note": "The prior mass w placed on the null point θ₀ is at most 1."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hπ₁ : π₁ {θ₀} = 0",
+        "label": "alternative prior avoids the null point",
+        "note": "The continuous alternative prior π₁ assigns no mass to the point θ₀."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§5.2.3 (the mixture prior) and §5.2.4 (the posterior-probability formula), pp. 229–231",
+      "biblio": "Point-null mixture priors originate with H. Jeffreys (1939) and were sharpened into calibration results by J. O. Berger and T. Sellke (\"Testing a point null hypothesis: the irreconcilability of P values and evidence,\" JASA 82 (1987), 112–122).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-mh-reversible",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "isReversible_mhKernel",
+    "fullName": "StatLean.Bayesian.isReversible_mhKernel",
+    "title": "Metropolis–Hastings Reversibility (Detailed Balance)",
+    "citation": "Gelman et al. (2014), §11.2",
+    "shortRef": "Gelman et al. (2014), §11.2",
+    "file": "StatLean/Bayesian/MCMC/MetropolisHastings.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/MCMC/MetropolisHastings.html#StatLean.Bayesian.isReversible_mhKernel",
+    "informal": "<p>On a countable state space, fix a <span data-link=\"h1\">finite target measure $\\pi$</span> and a <span data-link=\"h2\">proposal kernel $q$</span>. The <strong>Metropolis–Hastings kernel</strong> — propose $y \\sim q(x, \\cdot)$, accept with probability $$\\alpha(x, y) = \\min\\Big\\{1,\\ \\frac{\\pi\\{y\\}\\,q(y, \\{x\\})}{\\pi\\{x\\}\\,q(x, \\{y\\})}\\Big\\},$$ otherwise stay at $x$ — satisfies <strong>detailed balance</strong> with respect to $\\pi$: $$\\pi\\{x\\}\\,K(x, \\{y\\}) = \\pi\\{y\\}\\,K(y, \\{x\\}) \\qquad \\text{for all } x, y.$$ The chain is reversible for its target distribution — the structural property from which stationarity follows.</p>",
+    "summary": "The Metropolis–Hastings transition kernel satisfies detailed balance with respect to its target distribution, hence is reversible.",
+    "leanSignature": "theorem isReversible_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel S S)\n    [IsMarkovKernel q] :\n    Kernel.IsReversible (mhKernel π q) π",
+    "formalizationNotes": "Formalizes the detailed-balance property of Gelman §11.2. The core is a pointwise symmetry lemma π{x}·q(x,{y})·α(x,y) = π{y}·q(y,{x})·α(y,x), proved via the ℝ≥0∞ identity c·min(1, d/c) = min(c, d); reversibility integrates it over pairs using Tonelli for tsums, and the diagonal-supported rejection mass is symmetric by construction. Reversibility is Mathlib's `Kernel.IsReversible`.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[IsFiniteMeasure π]",
+        "label": "finite target measure",
+        "note": "The target π is a finite measure (a probability distribution after normalization)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "[IsMarkovKernel q]",
+        "label": "proposal is a Markov kernel",
+        "note": "The proposal q(x, ·) is a probability distribution for every current state x."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§11.1–11.2 (Metropolis and Metropolis–Hastings), pp. 276–278",
+      "biblio": "The Metropolis algorithm is N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller (J. Chem. Phys. 21 (1953), 1087–1092), generalized to asymmetric proposals by W. K. Hastings (Biometrika 57 (1970), 97–109). That detailed balance suffices for stationarity is the classical reversible-chain argument (A. N. Kolmogorov's reversibility criterion, 1936).",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-mh-stationary",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "invariant_mhKernel",
+    "fullName": "StatLean.Bayesian.invariant_mhKernel",
+    "title": "Metropolis–Hastings Stationarity",
+    "citation": "Gelman et al. (2014), §11.2",
+    "shortRef": "Gelman et al. (2014), §11.2",
+    "file": "StatLean/Bayesian/MCMC/MetropolisHastings.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/MCMC/MetropolisHastings.html#StatLean.Bayesian.invariant_mhKernel",
+    "informal": "<p>On a countable state space, with a <span data-link=\"h1\">finite target measure $\\pi$</span> and a <span data-link=\"h2\">Markov proposal kernel $q$</span>, the target $\\pi$ is <strong>invariant (stationary)</strong> for the Metropolis–Hastings kernel $K$: $$\\pi K = \\pi, \\qquad \\text{i.e.} \\qquad \\int K(x, A)\\,\\pi(dx) = \\pi(A) \\ \\text{ for every event } A.$$ Once the chain reaches its target distribution it stays there — the correctness guarantee that makes Metropolis–Hastings a valid sampler for $\\pi$. Stationarity is a direct consequence of detailed balance (reversibility).</p>",
+    "summary": "The target distribution is invariant for the Metropolis–Hastings kernel, so the chain correctly samples from it in the stationary regime.",
+    "leanSignature": "theorem invariant_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel S S)\n    [IsMarkovKernel q] :\n    Kernel.Invariant (mhKernel π q) π",
+    "formalizationNotes": "Formalizes the stationarity conclusion of Gelman §11.2. It is derived from reversibility (`isReversible_mhKernel`) via the standard implication that detailed balance implies invariance (Mathlib's `Kernel.IsReversible.invariant`). The MH kernel's Markov property — acceptance mass plus rejection mass equals one — is established separately (`isMarkovKernel_mhKernel`).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[IsFiniteMeasure π]",
+        "label": "finite target measure",
+        "note": "The target π is a finite measure (a probability distribution after normalization)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "[IsMarkovKernel q]",
+        "label": "proposal is a Markov kernel",
+        "note": "The proposal q(x, ·) is a probability distribution for every current state x."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§11.2 (Metropolis–Hastings), p. 278",
+      "biblio": "Metropolis et al. (1953) introduced the symmetric-proposal algorithm for statistical mechanics; Hastings (1970) the general ratio. That reversibility implies stationarity is the classical reversible-chain argument (Kolmogorov, 1936); convergence theory (irreducibility, Harris recurrence, ergodic theorems) is Meyn–Tweedie-style analysis beyond this scope.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-gibbs-invariant",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "invariant_twoBlockGibbs",
+    "fullName": "StatLean.Bayesian.invariant_twoBlockGibbs",
+    "title": "Gibbs Sampler Stationarity",
+    "citation": "Gelman et al. (2014), §11.1",
+    "shortRef": "Gelman et al. (2014), §11.1",
+    "file": "StatLean/Bayesian/MCMC/Gibbs.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/MCMC/Gibbs.html#StatLean.Bayesian.invariant_twoBlockGibbs",
+    "informal": "<p>Let $\\rho$ be a target distribution on a product space $A \\times B$, where <span data-link=\"h1\">$A$</span> and <span data-link=\"h2\">$B$</span> are standard Borel spaces so the exact conditionals $\\rho(da \\mid b)$ and $\\rho(db \\mid a)$ exist. The <strong>two-block Gibbs sweep</strong> — first refresh the $A$-coordinate from its exact conditional $\\rho(da \\mid b)$, then refresh the $B$-coordinate from its exact conditional $\\rho(db \\mid a)$ — leaves $\\rho$ <strong>invariant</strong>: applying the sweep to a $\\rho$-distributed state returns a $\\rho$-distributed state. Each single-coordinate update already preserves $\\rho$ (the exact conditional preserves the joint), and composing invariant kernels preserves invariance.</p>",
+    "summary": "The systematic two-block Gibbs sweep, refreshing each coordinate from its exact conditional, leaves the joint target distribution invariant.",
+    "leanSignature": "theorem invariant_twoBlockGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]\n    [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B] :\n    Kernel.Invariant (gibbsSnd ρ ∘ₖ gibbsFst ρ) ρ",
+    "formalizationNotes": "Formalizes the validity core of the Gibbs sampler (Gelman §11.1). Each one-coordinate update is shown invariant using Mathlib's measure disintegration ρ.fst ⊗ₘ ρ.condKernel = ρ (the exact conditional preserves the joint law); the two-block sweep is then `Kernel.Invariant.comp` of the two single-site updates. A companion result covers the random-scan (mixture) sweep.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[StandardBorelSpace A] [Nonempty A]",
+        "label": "first block is standard Borel",
+        "note": "The first coordinate space A is standard Borel (and nonempty), so its exact conditional exists via disintegration."
+      },
+      {
+        "id": "h2",
+        "leanToken": "[StandardBorelSpace B] [Nonempty B]",
+        "label": "second block is standard Borel",
+        "note": "The second coordinate space B is standard Borel (and nonempty), so its exact conditional exists via disintegration."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§11.1 (Gibbs sampler), p. 276",
+      "biblio": "The Gibbs sampler is S. Geman and D. Geman (IEEE Trans. PAMI 6 (1984), 721–741), named for the Gibbs distributions of statistical mechanics; its data-augmentation form is M. A. Tanner and W. H. Wong (1987), and its statistical mainstreaming A. E. Gelfand and A. F. M. Smith (JASA 85 (1990), 398–409). Convergence rates and ergodicity are beyond this scope.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-rao-blackwell",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "raoBlackwell_sqLoss",
+    "fullName": "StatLean.Bayesian.raoBlackwell_sqLoss",
+    "title": "Rao–Blackwellization (Variance Reduction by Conditioning)",
+    "citation": "Robert (2007), §6.3.4",
+    "shortRef": "Robert (2007), §6.3.4",
+    "file": "StatLean/Bayesian/MCMC/RaoBlackwell.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/MCMC/RaoBlackwell.html#StatLean.Bayesian.raoBlackwell_sqLoss",
+    "informal": "<p>Let $T$ be a <span data-link=\"h1\">square-integrable statistic</span> and let $\\mathcal G$ be a <span data-link=\"h2\">sub-$\\sigma$-algebra</span> — the retained information. Replacing $T$ by its conditional expectation $\\mathbb E[T \\mid \\mathcal G]$ never increases its quadratic risk about any center $c$: $$\\mathbb E\\big[(\\mathbb E[T \\mid \\mathcal G] - c)^2\\big] \\le \\mathbb E\\big[(T - c)^2\\big].$$ This is the <strong>Rao–Blackwell</strong> inequality. In MCMC practice it justifies <strong>Rao–Blackwellization</strong>: replacing sampled values in an ergodic average by their conditional expectations given the retained coordinates reduces Monte Carlo variance at no bias cost.</p>",
+    "summary": "Conditioning a square-integrable statistic on a sub-σ-algebra cannot increase its quadratic risk, which justifies variance reduction by conditioning in MCMC.",
+    "leanSignature": "theorem raoBlackwell_sqLoss {μ : Measure 𝓧} [IsFiniteMeasure μ] {m : MeasurableSpace 𝓧}\n    (hm : m ≤ m𝓧) {T : 𝓧 → ℝ}\n    (hT : MemLp T 2 μ) (c : ℝ) :\n    ∫⁻ x, sqLoss c ((μ[T | m]) x) ∂μ ≤ ∫⁻ x, sqLoss c (T x) ∂μ",
+    "formalizationNotes": "Formalizes the Rao–Blackwell inequality behind MCMC Rao–Blackwellization (Robert §6.3.4, pp. 309–310, unnumbered). The proof uses L² contractivity of conditional expectation (Mathlib's `eLpNorm_condExp_le`) applied to the centered statistic T − c, bridged to the ∫⁻ sqLoss form; `condExp_sub` and `condExp_const` move the center c through the conditional expectation.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hT : MemLp T 2 μ",
+        "label": "square-integrable statistic",
+        "note": "The statistic T has a finite second moment (lies in L²)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hm : m ≤ m𝓧",
+        "label": "conditioning sub-σ-algebra",
+        "note": "m is a sub-σ-algebra of the ambient measurable structure — the retained information one conditions on."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§6.3.4 (Rao–Blackwellization), pp. 309–310",
+      "biblio": "The Rao–Blackwell theorem is C. R. Rao (Bull. Calcutta Math. Soc. 37 (1945), 81–91) and D. Blackwell (Ann. Math. Statist. 18 (1947), 105–110). Its use as an MCMC variance-reduction device is A. E. Gelfand and A. F. M. Smith (1990), extended by J. S. Liu, W. H. Wong and A. Kong (Biometrika 81 (1994), 27–40).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-hier-experiment",
+    "category": "bayesian",
+    "kind": "definition",
+    "leanName": "HierBayesExperiment",
+    "fullName": "StatLean.Bayesian.HierBayesExperiment",
+    "title": "The Hierarchical Bayesian Model",
+    "citation": "Gelman et al. (2014), §5.2",
+    "shortRef": "Gelman et al. (2014), §5.2",
+    "file": "StatLean/Bayesian/Hierarchical/Defs.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Defs.html#StatLean.Bayesian.HierBayesExperiment",
+    "informal": "<p>A <strong>two-level hierarchical Bayesian model</strong> on a hyperparameter space $\\Lambda$, a parameter space $\\Theta$, and a sample space $\\mathcal{X}$ bundles three ingredients:</p><ul><li>a <em>hyperprior</em> $\\rho$, a probability distribution on $\\Lambda$;</li><li>a <em>prior kernel</em> $\\lambda \\mapsto \\Pi_\\lambda$, assigning to each hyperparameter a probability distribution on $\\Theta$;</li><li>a <em>likelihood kernel</em> $\\theta \\mapsto K_\\theta$, assigning to each parameter a probability distribution on $\\mathcal{X}$.</li></ul><p>Together they realize the three-stage generative process $$\\lambda \\sim \\rho, \\qquad \\theta \\mid \\lambda \\sim \\Pi_\\lambda, \\qquad X \\mid \\theta \\sim K_\\theta.$$ From these three pieces one derives every downstream object: the mixed (marginal) prior $\\Pi = \\int \\Pi_\\lambda\\,\\rho(d\\lambda)$ on $\\Theta$, the prior predictive on $\\mathcal{X}$, the hyperposterior $\\rho(\\cdot \\mid x)$ on $\\Lambda$, and the conditional posteriors $\\Pi_\\lambda(\\cdot \\mid x)$ on $\\Theta$.</p>",
+    "summary": "The data model bundling a hyperprior, a prior kernel, and a likelihood kernel into a two-level hierarchical Bayesian experiment.",
+    "leanSignature": "structure HierBayesExperiment (Λ Θ 𝓧 : Type*) [MeasurableSpace Λ] [MeasurableSpace Θ]\n    [MeasurableSpace 𝓧] where\n  hyperPrior : Measure Λ\n  priorKernel : Kernel Λ Θ\n  likelihood : Kernel Θ 𝓧\n  hyperPriorIsProbability : IsProbabilityMeasure hyperPrior\n  priorKernelIsMarkov : IsMarkovKernel priorKernel\n  likelihoodIsMarkov : IsMarkovKernel likelihood",
+    "formalizationNotes": "Definition-only data model (Gelman §5.2). The probability/Markov requirements are carried as constitutive instance-typed fields: Gelman's hierarchical model demands a probability hyperprior and Markov prior and likelihood kernels, and dropping any makes the object not the model. The standard-Borel and nonemptiness regularity that Mathlib's posterior needs is attached at the derived objects (hyperposterior, conditional posterior), not as structure fields.",
+    "hypotheses": [],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§5.2–5.3 (hierarchical model setup), pp. 104–108",
+      "biblio": "Hierarchical priors: I. J. Good, *The Estimation of Probabilities* (MIT Press, 1965); the Bayesian linear-model form: D. V. Lindley and A. F. M. Smith, *J. Roy. Statist. Soc. Ser. B* 34 (1972), 1–41.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-hier-mixture-identity",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "thetaPosterior_apply_eq_lintegral_hyperPosterior",
+    "fullName": "StatLean.Bayesian.thetaPosterior_apply_eq_lintegral_hyperPosterior",
+    "title": "The Hierarchical Posterior Mixture Identity",
+    "citation": "Gelman et al. (2014), §5.3",
+    "shortRef": "Gelman et al. (2014), §5.3",
+    "file": "StatLean/Bayesian/Hierarchical/Tower.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Tower.html#StatLean.Bayesian.thetaPosterior_apply_eq_lintegral_hyperPosterior",
+    "informal": "<p><strong>The mixture identity for hierarchical posteriors</strong> — the single most important decomposition of the two-level model. Suppose <span data-link=\"h2\">the likelihood is dominated, each $K_\\theta$ having density $p(\\theta, \\cdot)$ against a common $\\sigma$-finite base measure $\\nu$</span>, with <span data-link=\"h1\">the density $(\\theta, x) \\mapsto p(\\theta, x)$ jointly measurable</span>. Then for prior-predictive-almost-every observation $x$ and every <span data-link=\"h3\">measurable parameter set $s \\subseteq \\Theta$</span>, $$\\Pi(s \\mid x) = \\int_\\Lambda \\Pi_\\lambda(s \\mid x)\\,\\rho(d\\lambda \\mid x).$$ The marginal posterior of $s$ is the <em>hyperposterior average</em> of the fixed-hyperparameter conditional posteriors $\\Pi_\\lambda(s \\mid x)$, weighted by the hyperposterior $\\rho(\\cdot \\mid x)$ on the hyperparameter. Equivalently, the parameter posterior is a mixture of the conditional posteriors over the posterior on $\\lambda$ — the measure-theoretic content of the law of total conditional probability for the hierarchy.</p>",
+    "summary": "The marginal parameter posterior is the hyperposterior-weighted mixture of the fixed-hyperparameter conditional posteriors.",
+    "leanSignature": "theorem thetaPosterior_apply_eq_lintegral_hyperPosterior\n    {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}\n    (hp : Measurable (Function.uncurry p))\n    (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))\n    {s : Set Θ} (hs : MeasurableSet s) :\n    ∀ᵐ x ∂H.dataMarginal,\n      (H.likelihood † H.mixPrior) x s\n        = ∫⁻ lam, generalizedPosterior p (H.priorKernel lam) x s ∂(H.hyperPosterior x) := by\n  ...",
+    "formalizationNotes": "Gelman §5.3 (eq. 5.3), labeled 3A.6 in the source. Stated for a dominated likelihood — the setting the whole Bayesian area uses — while the prior kernel stays abstract; only the likelihood domination is assumed, no prior density is needed. The joint measurability of $p$ is a Lean-side regularity condition absent from the book. Derived by specializing the general posterior tower identity to the indicator of the set $s$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "jointly measurable density",
+        "note": "Lean-side regularity (not in the book): $(\\theta, x) \\mapsto p(\\theta, x)$ is measurable."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlik",
+        "label": "dominated likelihood",
+        "note": "Each likelihood $K_\\theta$ equals the base measure $\\nu$ weighted by the density $p(\\theta, \\cdot)$; $\\nu$ is a common $\\sigma$-finite measure."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hs",
+        "label": "measurable parameter set",
+        "note": "$s \\subseteq \\Theta$ is a measurable set."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§5.3 (hierarchical posterior factorization, eq. 5.3), p. 108",
+      "biblio": "Conditional decomposition into a hyperposterior and per-hyperparameter conditional posteriors: D. V. Lindley and A. F. M. Smith, *J. Roy. Statist. Soc. Ser. B* 34 (1972), 1–41; computational basis of the hierarchical Gibbs sampler of A. E. Gelfand and A. F. M. Smith, *J. Amer. Statist. Assoc.* 85 (1990), 398–409.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-conditionally-iid-exchangeable",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "conditionallyIID_implies_exchangeable",
+    "fullName": "StatLean.Bayesian.conditionallyIID_implies_exchangeable",
+    "title": "Conditionally I.I.D. Implies Exchangeable",
+    "citation": "Gelman et al. (2014), §5.2",
+    "shortRef": "Gelman et al. (2014), §5.2",
+    "file": "StatLean/Bayesian/Hierarchical/Exchangeable.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Exchangeable.html#StatLean.Bayesian.conditionallyIID_implies_exchangeable",
+    "informal": "<p><strong>Conditionally i.i.d. samples are exchangeable</strong> — the elementary (“if”) direction of de Finetti's theorem. Fix <span data-link=\"h1\">a likelihood, given as a Markov kernel $\\theta \\mapsto f(\\cdot \\mid \\theta)$ on the sample space</span>, a sample size $n$, and <span data-link=\"h2\">a prior probability distribution $\\pi$ on the parameter</span>. Draw the parameter $\\theta \\sim \\pi$ and then, conditionally on $\\theta$, draw $X_1, \\dots, X_n$ independently and identically from $f(\\cdot \\mid \\theta)$. Integrating out $\\theta$, the resulting joint law of $(X_1, \\dots, X_n)$ is <strong>exchangeable</strong>: it is invariant under every permutation $\\sigma$ of the coordinates, $$(X_{\\sigma(1)}, \\dots, X_{\\sigma(n)}) \\stackrel{d}{=} (X_1, \\dots, X_n).$$ This is the foundation of the Bayesian reading of hierarchical models: exchangeability of the observables is exactly what a conditionally i.i.d. mixture produces.</p>",
+    "summary": "Mixing an i.i.d. product likelihood over a prior yields an exchangeable joint law -- the easy direction of de Finetti's theorem.",
+    "leanSignature": "theorem conditionallyIID_implies_exchangeable (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ)\n    (π : Measure Θ) [IsProbabilityMeasure π] :\n    IsExchangeable (iidKernel κ n ∘ₘ π) := by\n  ...",
+    "formalizationNotes": "Gelman §5.2, labeled 3B.2. `IsExchangeable` is defined as invariance of the law under every coordinate permutation, and `iidKernel κ n θ` is the $n$-fold product $(\\kappa_\\theta)^{\\otimes n}$. Only the forward (conditionally-i.i.d. ⇒ exchangeable) direction is formalized; the full de Finetti representation of an exchangeable sequence as a mixture of i.i.d. sequences is left as future work.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "IsMarkovKernel κ",
+        "label": "Markov likelihood kernel",
+        "note": "$\\theta \\mapsto f(\\cdot \\mid \\theta)$ is a probability (Markov) kernel from the parameter space to the sample space."
+      },
+      {
+        "id": "h2",
+        "leanToken": "IsProbabilityMeasure π",
+        "label": "prior probability measure",
+        "note": "the mixing prior $\\pi$ is a probability measure on the parameter space."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§5.2 (exchangeability and hierarchical models), p. 104",
+      "biblio": "Exchangeability and the i.i.d.-mixture representation: B. de Finetti (*Atti Accad. Naz. Lincei* 4 (1931), 251–299; *Ann. Inst. H. Poincaré* 7 (1937), 1–68); general Polish-space form: E. Hewitt and L. J. Savage, *Trans. Amer. Math. Soc.* 80 (1955), 470–501.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-normal-hier-partial-pooling",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "normalHier_posteriorMean_convexCombination",
+    "fullName": "StatLean.Bayesian.normalHier_posteriorMean_convexCombination",
+    "title": "Partial Pooling in the Normal Hierarchy",
+    "citation": "Gelman et al. (2014), §5.4",
+    "shortRef": "Gelman et al. (2014), §5.4",
+    "file": "StatLean/Bayesian/Hierarchical/NormalHier.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/NormalHier.html#StatLean.Bayesian.normalHier_posteriorMean_convexCombination",
+    "informal": "<p><strong>Partial pooling in the normal one-way hierarchy.</strong> In the model $$Y_j \\mid \\theta_j \\sim N(\\theta_j, \\sigma^2), \\qquad \\theta_j \\mid \\mu, \\tau^2 \\sim N(\\mu, \\tau^2),$$ with a <span data-link=\"h2\">nondegenerate sampling variance $\\sigma^2 > 0$</span> and a <span data-link=\"h1\">nondegenerate prior variance $\\tau^2 > 0$</span>, the posterior mean of a group effect $\\theta_j$ given its observation $y$ is the convex combination $$\\mathbb{E}[\\theta_j \\mid y] = (1 - B)\\, y + B\\, \\mu, \\qquad B = \\frac{\\sigma^2}{\\sigma^2 + \\tau^2}.$$ The estimate is <em>shrunk</em> from the raw observation $y$ toward the grand mean $\\mu$ by the shrinkage weight $B \\in [0, 1]$: strong when the noise $\\sigma^2$ dominates the between-group spread $\\tau^2$, and negligible when it does not.</p>",
+    "summary": "In the normal one-way hierarchy the posterior mean of a group effect is a convex combination of its observation and the grand mean, shrinking by the weight sigma-squared over sigma-squared plus tau-squared.",
+    "leanSignature": "theorem normalHier_posteriorMean_convexCombination (μ : ℝ) (τ2 σ2 : ℝ≥0)\n    (hτ : τ2 ≠ 0) (hσ : σ2 ≠ 0) (y : ℝ) :\n    postMean μ τ2 σ2 (fun _ : Fin 1 => y)\n      = (1 - shrinkageWeight σ2 τ2) * y + shrinkageWeight σ2 τ2 * μ := by\n  ...",
+    "formalizationNotes": "Gelman §5.4, labeled 3C.3. `postMean` and `shrinkageWeight` are the scalar Normal–Normal posterior mean and the weight $B = \\sigma^2/(\\sigma^2 + \\tau^2)$; a single observation is encoded as a length-one vector. Both nondegeneracy hypotheses are load-bearing: they clear the denominators in the closed-form posterior. That $B \\in [0, 1]$ (so this is a genuine convex combination) is proved as a companion lemma.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hτ",
+        "label": "nondegenerate prior variance",
+        "note": "$\\tau^2 \\neq 0$: the between-group prior variance is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hσ",
+        "label": "nondegenerate sampling variance",
+        "note": "$\\sigma^2 \\neq 0$: the within-group sampling variance is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§5.4 (normal one-way hierarchy), p. 113; §5.5 (eight schools), p. 119",
+      "biblio": "Partial pooling / shrinkage of group means toward a grand mean: C. Stein (1956) read hierarchically; D. V. Lindley and A. F. M. Smith (1972); B. Efron and C. Morris, *J. Amer. Statist. Assoc.* 68 (1973), 117–130.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-normal-hier-variance-reduction",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "normalHier_posteriorVar_lt_samplingVar",
+    "fullName": "StatLean.Bayesian.normalHier_posteriorVar_lt_samplingVar",
+    "title": "Posterior Variance Reduction",
+    "citation": "Gelman et al. (2014), §5.4",
+    "shortRef": "Gelman et al. (2014), §5.4",
+    "file": "StatLean/Bayesian/Hierarchical/NormalHier.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/NormalHier.html#StatLean.Bayesian.normalHier_posteriorVar_lt_samplingVar",
+    "informal": "<p><strong>Variance reduction from partial pooling.</strong> In the normal one-way hierarchy $Y_j \\mid \\theta_j \\sim N(\\theta_j, \\sigma^2)$, $\\theta_j \\mid \\mu, \\tau^2 \\sim N(\\mu, \\tau^2)$, with a <span data-link=\"h2\">nondegenerate sampling variance $\\sigma^2 > 0$</span> and a <span data-link=\"h1\">nondegenerate prior variance $\\tau^2 > 0$</span>, the posterior variance of a group effect is strictly smaller than the sampling variance: $$\\operatorname{Var}(\\theta_j \\mid y) = \\frac{\\sigma^2 \\tau^2}{\\sigma^2 + \\tau^2} < \\sigma^2.$$ Borrowing strength across groups through the shared prior always sharpens the estimate of each group effect relative to using its single observation alone.</p>",
+    "summary": "The posterior variance of a group effect in the normal one-way hierarchy is strictly below the sampling variance.",
+    "leanSignature": "theorem normalHier_posteriorVar_lt_samplingVar (τ2 σ2 : ℝ≥0)\n    (hτ : τ2 ≠ 0) (hσ : σ2 ≠ 0) :\n    (postVar τ2 σ2 1 : ℝ) < (σ2 : ℝ) := by\n  ...",
+    "formalizationNotes": "Gelman §5.4, labeled 3C.4. `postVar τ2 σ2 1` is the scalar Normal–Normal posterior variance with a single observation, equal to $\\sigma^2\\tau^2/(\\sigma^2 + \\tau^2)$ (the reciprocal-sum combination of prior precision and one unit of data precision). Both variances must be nonzero for the strict inequality; the proof is real algebra after clearing denominators.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hτ",
+        "label": "nondegenerate prior variance",
+        "note": "$\\tau^2 \\neq 0$: the between-group prior variance is strictly positive."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hσ",
+        "label": "nondegenerate sampling variance",
+        "note": "$\\sigma^2 \\neq 0$: the within-group sampling variance is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§5.4 (normal one-way hierarchy), p. 113",
+      "biblio": "Variance reduction from hierarchical borrowing of strength: D. V. Lindley and A. F. M. Smith (1972); B. Efron and C. Morris (1973).",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-james-stein-risk-identity",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "jamesStein_risk_difference",
+    "fullName": "StatLean.Bayesian.jamesStein_risk_difference",
+    "title": "The James–Stein Risk Identity",
+    "citation": "Robert (2007), §10.5",
+    "shortRef": "Robert (2007), §10.5",
+    "file": "StatLean/Bayesian/Hierarchical/Shrinkage.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Shrinkage.html#StatLean.Bayesian.jamesStein_risk_difference",
+    "informal": "<p><strong>The James–Stein risk identity.</strong> Let $X \\sim N(\\theta, \\sigma^2 I_p)$ be a $p$-dimensional normal vector with a <span data-link=\"h2\">nondegenerate coordinate variance $\\sigma^2 > 0$</span> and <span data-link=\"h1\">dimension $p \\geq 3$</span>, and consider the James–Stein estimator $$\\delta^{\\mathrm{JS}}(X) = \\Bigl(1 - \\frac{(p-2)\\sigma^2}{\\lVert X \\rVert^2}\\Bigr) X.$$ Its expected squared-error risk is given exactly by $$\\mathbb{E}\\,\\lVert \\delta^{\\mathrm{JS}}(X) - \\theta \\rVert^2 = p\\,\\sigma^2 - (p-2)^2 \\sigma^4 \\, \\mathbb{E}\\!\\left[\\frac{1}{\\lVert X \\rVert^2}\\right].$$ The first term $p\\sigma^2$ is the risk of the maximum-likelihood estimator $X$ itself; the second, always nonnegative, is the improvement obtained by shrinking toward the origin. The proof is a Gaussian integration by parts (Stein's lemma), and $p \\geq 3$ is exactly what makes $\\mathbb{E}\\lVert X\\rVert^{-2}$ finite.</p>",
+    "summary": "The James-Stein estimator's squared-error risk equals the MLE risk p-sigma-squared minus (p minus two) squared times sigma-to-the-fourth times the expected inverse squared norm.",
+    "leanSignature": "theorem jamesStein_risk_difference {p : ℕ}\n    (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)\n    (hσ : σ2 ≠ 0) :\n    (∫ x, ∑ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2\n        ∂(Measure.pi fun i => gaussianReal (θ i) σ2))\n      = (p : ℝ) * (σ2 : ℝ) - ((p : ℝ) - 2) ^ 2 * (σ2 : ℝ) ^ 2\n          * (∫ x, 1 / (∑ i, (x i) ^ 2) ∂(Measure.pi fun i => gaussianReal (θ i) σ2)) := by\n  ...",
+    "formalizationNotes": "Robert Note 2.8.2 / §10.5, labeled 3D.4. The estimator and the loss are stated over the product Gaussian $\\bigotimes_i N(\\theta_i, \\sigma^2)$ on $\\mathbb{R}^p$. The identity is proved via a one-dimensional Gaussian Stein integration by parts applied coordinatewise, plus the divergence identity $\\sum_i \\partial_i(x_i/\\lVert x\\rVert^2) = (p-2)/\\lVert x\\rVert^2$; the hypothesis $p \\ge 3$ is load-bearing, guaranteeing finiteness of $\\mathbb{E}\\lVert X\\rVert^{-2}$ (finite precisely because the radial integral $\\int_0^1 r^{p-3}\\,dr$ converges).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "dimension ≥ 3",
+        "note": "$p \\ge 3$: the Stein effect is dimension-driven; three or more coordinates are needed, and $p \\ge 3$ makes $\\mathbb{E}\\lVert X\\rVert^{-2}$ finite."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hσ",
+        "label": "nondegenerate noise variance",
+        "note": "$\\sigma^2 \\neq 0$: the coordinate noise variance is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "Note 2.8.2 (the Stein effect), p. 96; §10.5 (empirical-Bayes justifications), p. 484",
+      "biblio": "The dominating estimator and its risk: W. James and C. Stein, “Estimation with quadratic loss,” *Proc. Fourth Berkeley Symp.* 1 (1961), 361–379; the tool is C. Stein's Gaussian integration-by-parts lemma.",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-james-stein-dominance",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "jamesStein_dominates_mle",
+    "fullName": "StatLean.Bayesian.jamesStein_dominates_mle",
+    "title": "James–Stein Dominates the MLE",
+    "citation": "Robert (2007), §10.5",
+    "shortRef": "Robert (2007), §10.5",
+    "file": "StatLean/Bayesian/Hierarchical/Shrinkage.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Shrinkage.html#StatLean.Bayesian.jamesStein_dominates_mle",
+    "informal": "<p><strong>The Stein effect: James–Stein strictly dominates the MLE.</strong> For $X \\sim N(\\theta, \\sigma^2 I_p)$ with a <span data-link=\"h2\">nondegenerate coordinate variance $\\sigma^2 > 0$</span> in <span data-link=\"h1\">dimension $p \\geq 3$</span>, the James–Stein estimator has strictly smaller risk than the maximum-likelihood estimator $X$ at <em>every</em> parameter value $\\theta$: $$\\mathbb{E}\\,\\lVert \\delta^{\\mathrm{JS}}(X) - \\theta \\rVert^2 < p\\,\\sigma^2 = \\mathbb{E}\\,\\lVert X - \\theta \\rVert^2.$$ Hence the sample mean is <strong>inadmissible</strong> under squared-error loss once $p \\geq 3$ — the celebrated Stein paradox. The strict gap is the term $(p-2)^2\\sigma^4\\,\\mathbb{E}\\lVert X\\rVert^{-2}$ from the risk identity, which is strictly positive because the product Gaussian is atomless (so $\\lVert X\\rVert^2 > 0$ almost surely) and $p \\geq 3$.</p>",
+    "summary": "In dimension at least three the James-Stein estimator has strictly smaller squared-error risk than the sample mean at every parameter, so the MLE is inadmissible.",
+    "leanSignature": "theorem jamesStein_dominates_mle {p : ℕ}\n    (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)\n    (hσ : σ2 ≠ 0) :\n    (∫ x, ∑ i, (jamesSteinEstimator (σ2 : ℝ) x i - θ i) ^ 2\n        ∂(Measure.pi fun i => gaussianReal (θ i) σ2))\n      < (p : ℝ) * (σ2 : ℝ) := by\n  ...",
+    "formalizationNotes": "Robert Note 2.8.2 / §10.5, labeled 3D.4 (stretch). An immediate corollary of the James–Stein risk identity: the subtracted term $(p-2)^2\\sigma^4\\,\\mathbb{E}\\lVert X\\rVert^{-2}$ is strictly positive. Both $p \\ge 3$ and $\\sigma^2 \\ne 0$ are load-bearing — positivity of the coefficient $(p-2)^2$ needs $p > 2$, and atomlessness of the Gaussian gives $\\lVert X\\rVert^2 > 0$ almost surely, so the expectation is strictly positive.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp",
+        "label": "dimension ≥ 3",
+        "note": "$p \\ge 3$: dominance fails in dimensions 1 and 2; the coefficient $(p-2)^2$ requires $p > 2$."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hσ",
+        "label": "nondegenerate noise variance",
+        "note": "$\\sigma^2 \\neq 0$: the coordinate noise variance is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "Note 2.8.2 (the Stein effect), p. 96; §10.5, p. 484",
+      "biblio": "Inadmissibility of the sample mean for $p \\ge 3$: C. Stein, *Proc. Third Berkeley Symp.* 1 (1956), 197–206; explicit dominating estimator: W. James and C. Stein (1961); empirical-Bayes reading: B. Efron and C. Morris (1973).",
+      "keys": [
+        "robert2007"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-hierarchical-gibbs-stationary",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "hierarchicalGibbs_stationary",
+    "fullName": "StatLean.Bayesian.hierarchicalGibbs_stationary",
+    "title": "Stationarity of Hierarchical Gibbs",
+    "citation": "Gelman et al. (2014), §11.1",
+    "shortRef": "Gelman et al. (2014), §11.1",
+    "file": "StatLean/Bayesian/Hierarchical/Gibbs.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/Hierarchical/Gibbs.html#StatLean.Bayesian.hierarchicalGibbs_stationary",
+    "informal": "<p><strong>Stationarity of the two-block hierarchical Gibbs sampler.</strong> Consider a hierarchical model with joint posterior $\\pi$ on hyperparameter–parameter pairs $(\\lambda, \\theta)$, sampled by alternately updating the two blocks: refresh $\\theta$ from its full conditional $\\theta \\mid \\lambda, x$, then refresh $\\lambda$ from its full conditional $\\lambda \\mid \\theta, x$. If <span data-link=\"h1\">the $\\theta$-block update leaves the joint posterior $\\pi$ invariant</span> and <span data-link=\"h2\">the $\\lambda$-block update leaves $\\pi$ invariant</span>, then the composed sweep also leaves $\\pi$ invariant: $$\\pi\\, K_\\lambda K_\\theta = \\pi.$$ Thus $\\pi$ is a stationary distribution of the block Gibbs chain — the correctness guarantee that makes Gibbs sampling a valid Monte Carlo method for hierarchical posteriors.</p>",
+    "summary": "If each full-conditional block update leaves the joint hierarchical posterior invariant, then so does one full sweep of the two-block Gibbs sampler.",
+    "leanSignature": "theorem hierarchicalGibbs_stationary (Kθ Klam : Kernel (Λ × Θ) (Λ × Θ)) (π : Measure (Λ × Θ))\n    (hθ : Kernel.Invariant Kθ π)\n    (hlam : Kernel.Invariant Klam π) :\n    Kernel.Invariant (Klam ∘ₖ Kθ) π :=\n  hlam.comp hθ",
+    "formalizationNotes": "Gelman §11.1, labeled 3H.3. A direct consequence of the invariance calculus: the composition of two $\\pi$-invariant kernels is $\\pi$-invariant. Stated with the two block kernels and their per-block invariance as inputs; the concrete full-conditional kernels for a specific hierarchy (drawn from the tower decomposition) are supplied separately. Each full-conditional update is invariant for the joint posterior by construction of a Gibbs step.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hθ",
+        "label": "θ-block leaves posterior invariant",
+        "note": "the parameter-block full-conditional update $K_\\theta$ has the joint posterior $\\pi$ as an invariant measure."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hlam",
+        "label": "λ-block leaves posterior invariant",
+        "note": "the hyperparameter-block full-conditional update $K_\\lambda$ has $\\pi$ as an invariant measure."
+      }
+    ],
+    "reference": {
+      "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
+      "pointer": "§11.1 (Gibbs sampler), p. 276; §11.6 (hierarchical-normal example), p. 288",
+      "biblio": "Data-augmentation / block Gibbs for hierarchical models: M. A. Tanner and W. H. Wong, *J. Amer. Statist. Assoc.* 82 (1987), 528–540; A. E. Gelfand and A. F. M. Smith, *J. Amer. Statist. Assoc.* 85 (1990), 398–409.",
+      "keys": [
+        "gelman2014"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-tweedie-mean",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "tweedie_normal_posteriorMean",
+    "fullName": "StatLean.Bayesian.tweedie_normal_posteriorMean",
+    "title": "Tweedie's Formula (Posterior Mean)",
+    "citation": "Efron (2010), §1.5, Eq. (1.24)–(1.26)",
+    "shortRef": "Efron (2010), §1.5",
+    "file": "StatLean/Bayesian/EmpiricalBayes/Tweedie.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/Tweedie.html#StatLean.Bayesian.tweedie_normal_posteriorMean",
+    "informal": "<p>Let $G$ be a prior distribution on a location parameter $\\theta$, and suppose the observation is Gaussian, $X\\mid\\theta\\sim N(\\theta, v)$, with known variance $v$. Write $f_G(x)=\\int \\varphi_v(x-\\theta)\\,dG(\\theta)$ for the resulting <em>marginal</em> (mixture) density of $X$, where $\\varphi_v$ is the $N(0,v)$ density. Provided <span data-link=\"h1\">the variance is nondegenerate, $v>0$</span>, <span data-link=\"h2\">the prior has a finite first moment</span>, and <span data-link=\"h3\">the marginal density is strictly positive at $x$</span>, the posterior mean of $\\theta$ given $X=x$ is given by <strong>Tweedie's formula</strong>: $$\\mathbb{E}[\\theta\\mid X=x]=\\frac{\\int \\theta\\,\\varphi_v(x-\\theta)\\,dG(\\theta)}{f_G(x)} = x + v\\,\\frac{d}{dx}\\log f_G(x).$$ The posterior mean depends on the prior $G$ only through the marginal $f_G$, which is directly estimable from data &mdash; the empirical-Bayes principle behind shrinkage estimation.</p>",
+    "summary": "For a Gaussian likelihood with any prior, the posterior mean of the location equals the observation plus the variance times the derivative of the log marginal density.",
+    "leanSignature": "theorem tweedie_normal_posteriorMean (G : Measure ℝ) [IsProbabilityMeasure G] (v : ℝ≥0)\n    (hv : v ≠ 0)\n    (hmean : Integrable (fun θ => θ) G)\n    (x : ℝ) (hpos : 0 < gaussianMarginalPDF G v x) :\n    (∫ θ, θ * gaussianPDFReal θ v x ∂G) / gaussianMarginalPDF G v x = tweedieEstimator G v x",
+    "formalizationNotes": "The Lean statement matches Efron's Eq. (1.26) exactly. Beyond `G` being a probability measure, the three hypotheses are genuine analytic side-conditions, not laundered assumptions: `v ≠ 0` (a nondegenerate Gaussian), a finite prior first moment (`Integrable (fun θ => θ) G`, needed to differentiate the marginal under the integral sign — it supplies an integrable envelope for the Gaussian score, established in `hasDerivAt_gaussianMarginalPDF`), and strict positivity of the marginal at `x` (needed both to divide and to form the logarithmic derivative). Here `gaussianMarginalPDF G v x = ∫ N(x; θ, v) dG(θ)` and `tweedieEstimator G v x = x + v·(log f_G)'(x)`.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hv",
+        "label": "nondegenerate variance",
+        "note": "v ≠ 0: the Gaussian likelihood N(θ, v) is nondegenerate (v > 0)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hmean",
+        "label": "finite prior first moment",
+        "note": "Integrable (fun θ => θ) G: the prior has a finite mean, giving an integrable envelope for the Gaussian score so the marginal may be differentiated under the integral sign."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hpos",
+        "label": "positive marginal at x",
+        "note": "0 < gaussianMarginalPDF G v x: the marginal density is strictly positive at x, needed to divide by f_G(x) and to form the logarithmic derivative."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§1.5, Eq. (1.24)–(1.26)",
+      "biblio": "Tweedie's formula is the exponential-family posterior-mean identity attributed by H. Robbins (\"An empirical Bayes approach to statistics,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* 1 (1956), 157–163) to M. C. K. Tweedie; its empirical-Bayes and selection-bias applications are developed in B. Efron, \"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614. It underlies g-modeling (Efron 2016) and the general-maximum-likelihood empirical Bayes of W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684).",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-tweedie-variance",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "tweedie_normal_posteriorVariance",
+    "fullName": "StatLean.Bayesian.tweedie_normal_posteriorVariance",
+    "title": "Tweedie's Formula (Posterior Variance)",
+    "citation": "Efron (2010), §1.5",
+    "shortRef": "Efron (2010), §1.5",
+    "file": "StatLean/Bayesian/EmpiricalBayes/Tweedie.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/Tweedie.html#StatLean.Bayesian.tweedie_normal_posteriorVariance",
+    "informal": "<p>In the Gaussian location model $X\\mid\\theta\\sim N(\\theta, v)$ with prior $G$ and marginal density $f_G(x)=\\int\\varphi_v(x-\\theta)\\,dG(\\theta)$, the posterior <em>variance</em> admits a companion to Tweedie's mean formula. Provided <span data-link=\"h1\">the variance is nondegenerate, $v>0$</span>, <span data-link=\"h2\">the prior has a finite second moment</span>, and <span data-link=\"h3\">the marginal is strictly positive at $x$</span>, $$\\mathrm{Var}[\\theta\\mid X=x]=\\frac{\\int(\\theta-m(x))^2\\,\\varphi_v(x-\\theta)\\,dG(\\theta)}{f_G(x)} = v + v^2\\,\\frac{d^2}{dx^2}\\log f_G(x),$$ where $m(x)=x+v\\,(\\log f_G)'(x)$ is the Tweedie posterior mean. Like the mean, the posterior variance is recovered from the marginal density alone, so it too is estimable from data without knowing the prior.</p>",
+    "summary": "The posterior variance in the Gaussian location model equals the variance plus its square times the second derivative of the log marginal density.",
+    "leanSignature": "theorem tweedie_normal_posteriorVariance (G : Measure ℝ) [IsProbabilityMeasure G] (v : ℝ≥0)\n    (hv : v ≠ 0)\n    (hsq : Integrable (fun θ => θ ^ 2) G)\n    (x : ℝ) (hpos : 0 < gaussianMarginalPDF G v x) :\n    (∫ θ, (θ - tweedieEstimator G v x) ^ 2 * gaussianPDFReal θ v x ∂G) / gaussianMarginalPDF G v x\n      = (v : ℝ) + (v : ℝ) ^ 2 * deriv (deriv (fun y => Real.log (gaussianMarginalPDF G v y))) x",
+    "formalizationNotes": "Companion to the posterior-mean formula, matching Efron §1.5. The finite-second-moment hypothesis `Integrable (fun θ => θ^2) G` is the genuine side-condition for the second differentiation under the integral (it dominates the second-order Gaussian score); the first-moment integrability needed for the mean is derived from it internally. `tweedieEstimator G v x` denotes the Tweedie posterior mean m(x), so the left-hand side is a genuine second central moment of the posterior.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hv",
+        "label": "nondegenerate variance",
+        "note": "v ≠ 0: the Gaussian likelihood is nondegenerate (v > 0)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hsq",
+        "label": "finite prior second moment",
+        "note": "Integrable (fun θ => θ^2) G: a finite second moment dominates the second-order Gaussian score, allowing the second differentiation of the marginal under the integral; the first-moment integrability is derived from it internally."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hpos",
+        "label": "positive marginal at x",
+        "note": "0 < gaussianMarginalPDF G v x: the marginal is strictly positive at x, needed to divide and to take the second logarithmic derivative."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§1.5",
+      "biblio": "The posterior-variance companion to Tweedie's formula follows the same marginal-to-posterior differentiation as the mean; both are systematized in B. Efron, \"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614, building on the identity attributed by H. Robbins (1956) to M. C. K. Tweedie.",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-robbins-poisson",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "robbins_poisson_posteriorMean",
+    "fullName": "StatLean.Bayesian.robbins_poisson_posteriorMean",
+    "title": "Robbins's Poisson Empirical-Bayes Rule",
+    "citation": "Efron (2010), §6.1; Robbins (1956), Eq. (5)",
+    "shortRef": "Efron (2010), §6.1",
+    "file": "StatLean/Bayesian/EmpiricalBayes/Robbins.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/Robbins.html#StatLean.Bayesian.robbins_poisson_posteriorMean",
+    "informal": "<p>Suppose the count $Y\\mid\\theta\\sim\\mathrm{Poisson}(\\theta)$ is Poisson with rate $\\theta$ drawn from an arbitrary mixing distribution $G$, and let $f_G(y)=\\int p_y(\\theta)\\,dG(\\theta)$ denote the marginal probability mass function of $Y$, where $p_y(\\theta)=e^{-\\theta}\\theta^y/y!$. Provided <span data-link=\"h1\">the prior charges only nonnegative rates</span>, the numerator of the posterior mean satisfies <strong>Robbins's identity</strong> $$\\int \\theta\\,p_y(\\theta)\\,dG(\\theta) = (y+1)\\,f_G(y+1),$$ so that the posterior mean of the rate given the count $y$ is $$\\mathbb{E}[\\theta\\mid Y=y]=(y+1)\\,\\frac{f_G(y+1)}{f_G(y)}.$$ The rule is expressed entirely through the marginal pmf, which empirical Bayes estimates from the observed counts &mdash; no knowledge of the prior $G$ is required.</p>",
+    "summary": "For a Poisson likelihood with any mixing distribution, the posterior mean of the rate given count y equals (y+1) times the ratio of the marginal pmf at y+1 to its value at y.",
+    "leanSignature": "theorem robbins_poisson_posteriorMean (G : Measure ℝ) [IsProbabilityMeasure G]\n    (hG : ∀ᵐ θ ∂G, 0 ≤ θ) (y : ℕ) :\n    ∫⁻ θ, ENNReal.ofReal θ * poissonDensity θ y ∂G\n      = ((y : ℝ≥0∞) + 1) * mixtureDensity poissonDensity G (y + 1)",
+    "formalizationNotes": "The theorem states Robbins's numerator identity `∫ θ·p_y(θ) dG = (y+1)·f_G(y+1)`; dividing by the marginal `f_G(y)` yields the Robbins estimator `robbinsPoissonEstimator G y = (y+1)·f_G(y+1)/f_G(y)`. It rests on the pure Poisson pmf recursion `(y+1)·p_{y+1}(θ) = θ·p_y(θ)` (`poissonDensity_succ_mul`). The single hypothesis — that the prior charges only nonnegative rates — is intrinsic to the Poisson model. A companion result (`robbinsEstimator_tendsto_oracle`) establishes consistency of the plug-in estimator built from the empirical pmf.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hG",
+        "label": "prior on nonnegative rates",
+        "note": "∀ᵐ θ ∂G, 0 ≤ θ: the mixing measure charges only nonnegative Poisson rates — intrinsic to the Poisson model."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§6.1; Robbins (1956), Eq. (5)",
+      "biblio": "Empirical Bayes originates with H. Robbins, \"An empirical Bayes approach to statistics,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* 1 (1956), 157–163 (the Poisson formula is Eq. (5)); the compound-decision precursor is Robbins (*Proc. Second Berkeley Symp.*, 1951, 131–148). Its modern nonparametric and g-modeling forms are due to B. Efron (\"Empirical Bayes deconvolution estimates,\" *Biometrika* 103 (2016), 1–20) and W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684).",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-localfdr-posterior-null",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "localFDR_eq_posteriorNullProb",
+    "fullName": "StatLean.Bayesian.localFDR_eq_posteriorNullProb",
+    "title": "Local FDR is the Posterior Null Probability",
+    "citation": "Efron (2010), §5.1",
+    "shortRef": "Efron (2010), §5.1",
+    "file": "StatLean/Bayesian/EmpiricalBayes/LocalFDR.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/LocalFDR.html#StatLean.Bayesian.localFDR_eq_posteriorNullProb",
+    "informal": "<p>In Efron's two-groups model for large-scale testing, each case is null with prior probability $\\pi_0$ (yielding null density $f_0$) or non-null with probability $1-\\pi_0$ (density $f_1$), so the marginal density of the test statistic is the mixture $f(x)=\\pi_0 f_0(x)+(1-\\pi_0)f_1(x)$. The <strong>local false discovery rate</strong> is $\\mathrm{fdr}(x)=\\pi_0 f_0(x)/f(x)$. Provided <span data-link=\"h1\">the null proportion $\\pi_0$ is a genuine probability ($\\pi_0\\le 1$)</span>, this ratio is exactly the posterior probability that a case with statistic $x$ belongs to the null group: $$\\mathrm{fdr}(x)=\\Pr(\\text{null}\\mid X=x)=\\frac{\\pi_0 f_0(x)}{\\pi_0 f_0(x)+(1-\\pi_0)f_1(x)}.$$ The Bayes decision rule rejects the null exactly when $\\mathrm{fdr}(x)$ falls below a chosen threshold, connecting large-scale testing to empirical-Bayes shrinkage.</p>",
+    "summary": "In the two-groups model, the local false discovery rate equals the posterior probability that a case with the observed statistic belongs to the null group.",
+    "leanSignature": "theorem localFDR_eq_posteriorNullProb (π₀ : ℝ≥0∞)\n    (hπ₀ : π₀ ≤ 1) (f₀ f₁ : 𝓧 → ℝ≥0∞) (x : 𝓧) :\n    localFDR π₀ f₀ f₁ x = (π₀ * f₀ x) / (π₀ * f₀ x + (1 - π₀) * f₁ x)",
+    "formalizationNotes": "The identity `localFDR π₀ f₀ f₁ x = π₀f₀(x)/(π₀f₀(x)+(1−π₀)f₁(x))` is definitional (`rfl`) once the two-groups marginal is unfolded; the hypothesis `π₀ ≤ 1` is included so that `π₀` and `1−π₀` are genuine complementary probabilities (giving the ratio its posterior-null-probability reading), though the algebraic identity itself does not consume it. Extended-nonnegative (ℝ≥0∞) division is used, taking the junk value 0 where the marginal degenerates. A companion result (`localFDR_bayesRule_threshold`) turns the threshold `fdr(x) ≤ t` into the weighted-density comparison `π₀f₀(x) ≤ t·f(x)`.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hπ₀",
+        "label": "null proportion is a probability",
+        "note": "π₀ ≤ 1: the null fraction π₀ (and its complement 1−π₀) are genuine probabilities, giving the ratio its posterior-null-probability reading. The algebraic identity itself holds by definitional unfolding."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§2.1 (two-groups model), §5.1 (local FDR)",
+      "biblio": "The two-groups model and local false discovery rate are B. Efron's empirical-Bayes formulation (Efron, Tibshirani, Storey, Tusher, *J. Amer. Statist. Assoc.* 96 (2001), 1151–1160; Efron 2010); the local FDR as a posterior null probability is the Bayesian reading of the tail-area false-discovery-rate framework of Y. Benjamini and Y. Hochberg (\"Controlling the false discovery rate,\" *J. Roy. Statist. Soc. Ser. B* 57 (1995), 289–300).",
+      "keys": [
+        "efron2010",
+        "benjamini-hochberg1995"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-npmle-finite-support",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "NPMLE_exists_finiteSupport_le_card_add_one",
+    "fullName": "StatLean.Bayesian.NPMLE_exists_finiteSupport_le_card_add_one",
+    "title": "Lindsay's Finite-Support NPMLE Theorem",
+    "citation": "Lindsay (1983)",
+    "shortRef": "Lindsay (1983)",
+    "file": "StatLean/Bayesian/EmpiricalBayes/NPMLE.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/NPMLE.html#StatLean.Bayesian.NPMLE_exists_finiteSupport_le_card_add_one",
+    "informal": "<p>The nonparametric maximum-likelihood estimator (NPMLE) maximizes the marginal likelihood $\\prod_{i=1}^n f_G(x_i)$ over <em>all</em> mixing distributions $G$, where $f_G(x)=\\int p(\\theta,x)\\,dG(\\theta)$. Because this likelihood is linear in $G$, the problem is convex, and <strong>Lindsay's theorem</strong> shows the maximizer can be taken with finite support. Formalized in the discrete-regular setting: for <span data-link=\"h1\">a finite, nonempty parameter space $\\Theta$</span> with <span data-link=\"h2\">finite likelihoods $p(\\theta, x_i)<\\infty$</span>, there exists a mixing probability measure $\\widehat{G}$ that attains the maximum marginal likelihood and is supported on a finite set $S$ of at most $n+1$ points: $$\\widehat{G}\\big(S^{c}\\big)=0,\\qquad |S|\\le n+1.$$ Geometrically, the likelihood vector $G\\mapsto\\big(f_G(x_1),\\dots,f_G(x_n)\\big)\\in\\mathbb{R}^n$ is the $G$-barycenter of the $n$-dimensional likelihood curve $\\theta\\mapsto\\big(p(\\theta,x_1),\\dots\\big)$, and Carathéodory's theorem writes any boundary maximizer as a positive convex combination of at most $n+1$ extreme points (Dirac masses).</p>",
+    "summary": "The nonparametric MLE of a mixing distribution can be taken supported on at most n+1 points, by Lindsay's convex-geometry argument.",
+    "leanSignature": "theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}\n    [MeasurableSingletonClass Θ] [Finite Θ] [Nonempty Θ]\n    (p : Θ → 𝓧 → ℝ≥0∞) (x : Fin n → 𝓧)\n    (hpfin : ∀ θ i, p θ (x i) ≠ ∞) :\n    ∃ (Ghat : Measure Θ) (S : Finset Θ),\n      IsNPMLE p x Ghat ∧ Ghat ((↑S : Set Θ)ᶜ) = 0 ∧ S.card ≤ n + 1",
+    "formalizationNotes": "Formalized in Lindsay's discrete-regular setting: `Θ` finite (the discrete-and-compact case) with finite likelihoods `hpfin`, so the geometric `n+1` Carathéodory bound is preserved exactly. Existence of a maximizer is *derived* internally (in `NPMLE_exists_of_finite`) rather than assumed — the marginal likelihood is a continuous function of the weight vector on the compact probability simplex `stdSimplex ℝ Θ`, hence attains its maximum — closing what would otherwise be a provider-style `∃ Ghat, IsNPMLE` hypothesis. `IsNPMLE p x Ghat` is the optimality predicate: `Ghat` is a probability measure maximizing `∏ᵢ f_G(xᵢ)` over all mixing probability measures on `Θ`. The linearity of `f_G` in `G` behind the convexity is the separate lemma `mixtureDensity_linear_in_mixing`.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "[Finite Θ] [Nonempty Θ]",
+        "label": "finite parameter space",
+        "note": "Θ is finite, nonempty, with measurable singletons — Lindsay's discrete-regular (discrete-and-compact) setting, in which the n+1 Carathéodory bound is preserved exactly."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hpfin",
+        "label": "finite likelihoods",
+        "note": "∀ θ i, p θ (x i) ≠ ∞: the likelihoods p(θ, xᵢ) are finite — Lindsay's regularity condition."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§5 (nonparametric empirical Bayes); Lindsay (1983)",
+      "biblio": "The finite-support NPMLE is B. G. Lindsay's theorem (\"The geometry of mixture likelihoods: a general theory,\" *Ann. Statist.* 11 (1983), 86–94), refining the consistency result of J. Kiefer and J. Wolfowitz (\"Consistency of the maximum likelihood estimator in the presence of infinitely many incidental parameters,\" *Ann. Math. Statist.* 27 (1956), 887–906). Its use for normal-means estimation (GMLEB) is W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684); it is the nonparametric backbone of modern empirical-Bayes deconvolution (Efron 2010, §5).",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-oracle-compound-risk",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "oracleBayesRule_minimizes_compoundRisk",
+    "fullName": "StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk",
+    "title": "Oracle Bayes Rule Minimizes Compound Risk",
+    "citation": "Efron (2010), §1; Robbins (1951)",
+    "shortRef": "Efron (2010), §1",
+    "file": "StatLean/Bayesian/EmpiricalBayes/Compound.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/Compound.html#StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk",
+    "informal": "<p>In the compound decision problem underlying nonparametric empirical Bayes, the oracle posterior for a mixing distribution $G$ is the ordinary (generalized) posterior $\\Pi(\\cdot\\mid x)$ of the likelihood against $G$. Given two decision rules $d_0, d_1$ mapping each observation $x$ to an action, suppose <span data-link=\"h1\">$d_0$ dominates $d_1$ in posterior expected loss pointwise at every $x$</span>, i.e. $$\\int \\ell\\big(\\theta, d_0(x)\\big)\\,d\\Pi(\\theta\\mid x)\\ \\le\\ \\int \\ell\\big(\\theta, d_1(x)\\big)\\,d\\Pi(\\theta\\mid x)\\quad\\text{for all }x.$$ Then $d_0$ also has smaller <strong>compound risk</strong> &mdash; the posterior loss integrated over the data marginal $m$: $$\\int\\!\\!\\left(\\int \\ell(\\theta, d_0(x))\\,d\\Pi(\\theta\\mid x)\\right)dm(x)\\ \\le\\ \\int\\!\\!\\left(\\int \\ell(\\theta, d_1(x))\\,d\\Pi(\\theta\\mid x)\\right)dm(x).$$ The pointwise Bayes optimality of the oracle rule integrates to compound optimality; empirical Bayes approximates this oracle by estimating $G$ (or the marginal) from data.</p>",
+    "summary": "A decision rule with pointwise smaller posterior expected loss also has smaller compound risk integrated over the data marginal.",
+    "leanSignature": "theorem oracleBayesRule_minimizes_compoundRisk {ℓ : Θ → Θ → ℝ≥0∞} (p : Θ → 𝓧 → ℝ≥0∞)\n    (G : Measure Θ) (m : Measure 𝓧) (d₀ d₁ : 𝓧 → Θ)\n    (hpoint : ∀ x, ∫⁻ θ, ℓ θ (d₀ x) ∂(generalizedPosterior p G x)\n      ≤ ∫⁻ θ, ℓ θ (d₁ x) ∂(generalizedPosterior p G x)) :\n    ∫⁻ x, (∫⁻ θ, ℓ θ (d₀ x) ∂(generalizedPosterior p G x)) ∂m\n      ≤ ∫⁻ x, (∫⁻ θ, ℓ θ (d₁ x) ∂(generalizedPosterior p G x)) ∂m",
+    "formalizationNotes": "A clean consequence of `lintegral_mono`: pointwise domination of posterior expected loss integrates (over the data marginal `m`) to domination of compound risk — the decision-theoretic content of Fubini's theorem. The hypothesis `hpoint` is a genuine external input (it is precisely what the pointwise oracle Bayes rule supplies for `d₀` against any competitor `d₁`). `generalizedPosterior p G x` is the Batch-1/2 dominated-Bayes posterior; the definitional bridges `mixtureDensity = predictiveDensity` (`mixtureDensity_eq_predictiveDensity`) and the oracle posterior as a `withDensity` (`npEB_oraclePosterior_eq_withDensity`) are established alongside in the same file.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hpoint",
+        "label": "pointwise posterior-risk domination",
+        "note": "For every x, the oracle rule d₀ has posterior expected loss no larger than the competitor d₁ — what the pointwise oracle Bayes rule supplies. A genuine external input, not laundered content."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§1; Robbins (1951)",
+      "biblio": "The compound decision problem and its empirical-Bayes solution are due to H. Robbins (\"Asymptotically subminimax solutions of compound statistical decision problems,\" *Proc. Second Berkeley Symp.*, 1951, 131–148; and \"An empirical Bayes approach to statistics,\" 1956); the \"oracle\" terminology and modern large-scale reading are B. Efron's (2010). The equivalence of pointwise (posterior) and compound (frequentist, integrated) Bayes optimality is the decision-theoretic content of Fubini's theorem.",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-parametric-eb-shrinkage",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "normalParamEB_shrinkageWeight_tendsto_oracle",
+    "fullName": "StatLean.Bayesian.normalParamEB_shrinkageWeight_tendsto_oracle",
+    "title": "Parametric Empirical-Bayes Shrinkage Attains the Oracle Weight",
+    "citation": "Robert (2007), §10.4.2",
+    "shortRef": "Robert (2007), §10.4.2",
+    "file": "StatLean/Bayesian/EmpiricalBayes/Parametric.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/EmpiricalBayes/Parametric.html#StatLean.Bayesian.normalParamEB_shrinkageWeight_tendsto_oracle",
+    "informal": "<p>In the normal random-effects model $Y_j\\mid\\theta_j\\sim N(\\theta_j,\\sigma^2)$ with $\\theta_j\\sim N(\\mu,\\tau^2)$, the parametric empirical-Bayes estimator shrinks each $Y_j$ toward the sample mean with the plug-in weight $\\widehat B = \\widehat\\tau^2/(\\widehat\\tau^2+\\sigma^2)$, using the method-of-moments variance estimate $\\widehat\\tau^2=\\max(0,\\, s^2-\\sigma^2)$. Provided <span data-link=\"h1\">the noise and effect variances are positive ($\\sigma^2,\\tau^2>0$)</span> and <span data-link=\"h2\">the sample variance is consistent for the marginal variance $\\sigma^2+\\tau^2$</span>, the plug-in shrinkage weight converges to the oracle Bayes weight: $$\\frac{\\max(0,\\, s_n^2-\\sigma^2)}{\\max(0,\\, s_n^2-\\sigma^2)+\\sigma^2}\\ \\xrightarrow[n\\to\\infty]{}\\ \\frac{\\tau^2}{\\tau^2+\\sigma^2}.$$ Thus the empirical-Bayes rule, which knows neither $\\mu$ nor $\\tau^2$, attains the oracle shrinkage in the large-sample limit.</p>",
+    "summary": "The plug-in method-of-moments shrinkage weight in the normal random-effects model converges to the oracle Bayes shrinkage weight.",
+    "leanSignature": "theorem normalParamEB_shrinkageWeight_tendsto_oracle (τ2 σ2 : ℝ)\n    (hσ : 0 < σ2) (hτ : 0 < τ2) (vn : ℕ → ℝ)\n    (hv : Tendsto vn atTop (𝓝 (τ2 + σ2))) :\n    Tendsto (fun n => max 0 (vn n - σ2) / (max 0 (vn n - σ2) + σ2)) atTop\n      (𝓝 (τ2 / (τ2 + σ2)))",
+    "formalizationNotes": "Consistency is cut to the normal method-of-moments estimator per the formalization plan: this is a continuous-mapping limit of the plug-in shrinkage weight, given a consistent sample variance `vn → σ²+τ²` (which the strong law supplies as a genuine external input `hv`). The `max(0, ·)` truncation reflects the estimate `τ̂² = max(0, s²−σ²)`. General-family marginal-MLE consistency is deferred; the closely related Fisher identity for the normal marginal (`fisherIdentity_normalMarginal`), the EM monotonicity of the marginal likelihood (`EM_monotonicity_marginalLikelihood`), and the N(μ, σ²+τ²) marginal (`normalRandomEffects_marginal`) are proved separately in the same file.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hσ, hτ",
+        "label": "positive variances",
+        "note": "0 < σ² and 0 < τ²: the noise and random-effect variances are nondegenerate, so the oracle shrinkage weight τ²/(τ²+σ²) is well-defined and strictly between 0 and 1."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hv",
+        "label": "consistent sample variance",
+        "note": "vn → σ²+τ²: the sample variance is consistent for the marginal variance (supplied by the strong law) — the genuine external input driving the continuous-mapping limit."
+      }
+    ],
+    "reference": {
+      "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
+      "pointer": "§10.4.2 (parametric empirical Bayes), §10.5.1 (the normal case)",
+      "biblio": "Parametric empirical Bayes is H. Robbins's (1956) subject made parametric; the normal random-effects (James–Stein) analysis is B. Efron and C. Morris (*J. Amer. Statist. Assoc.* 68 (1973), 117–130, and companion papers 1972–1975). The method-of-moments shrinkage estimate and its consistency are standard empirical Bayes; the general marginal-MLE computation rests on R. A. Fisher's missing-information identity and the EM algorithm of A. P. Dempster, N. M. Laird, and D. B. Rubin (*J. Roy. Statist. Soc. Ser. B* 39 (1977), 1–38).",
+      "keys": [
+        "robert2007",
+        "efron-morris1973"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-gaussian-score-derivative",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "hasDerivAt_gaussianPDFReal",
+    "fullName": "StatLean.Bayesian.hasDerivAt_gaussianPDFReal",
+    "title": "Spatial Derivative of the Gaussian Density (Score Identity)",
+    "citation": "Efron (2010), §1.5, Eq. (1.24)",
+    "shortRef": "Efron (2010), §1.5",
+    "file": "StatLean/Bayesian/ForMathlib/GaussianDeriv.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/ForMathlib/GaussianDeriv.html#StatLean.Bayesian.hasDerivAt_gaussianPDFReal",
+    "informal": "<p>The Gaussian density $\\varphi_{\\theta,v}(x)=(2\\pi v)^{-1/2}\\exp\\!\\big(-(x-\\theta)^2/(2v)\\big)$, viewed as a function of the observation $x$, satisfies the <strong>Gaussian score identity</strong>. Provided <span data-link=\"h1\">the variance is nondegenerate, $v>0$</span>, $$\\frac{\\partial}{\\partial x}\\,\\varphi_{\\theta,v}(x)=\\frac{\\theta-x}{v}\\,\\varphi_{\\theta,v}(x),$$ equivalently $(\\theta-x)\\,\\varphi_{\\theta,v}(x)=v\\,\\partial_x\\varphi_{\\theta,v}(x)$. This elementary but load-bearing identity &mdash; the one-dimensional case of Stein's lemma &mdash; converts the numerator $\\int\\theta\\,\\varphi_{\\theta,v}(x)\\,dG(\\theta)$ of a posterior mean into $x\\,f_G(x)+v\\,f_G'(x)$, which is the algebraic engine behind Tweedie's formula.</p>",
+    "summary": "The spatial derivative of the Gaussian density equals (theta minus x)/v times the density, the score identity behind Tweedie's formula.",
+    "leanSignature": "theorem hasDerivAt_gaussianPDFReal (θ : ℝ) (v : ℝ≥0) (hv : v ≠ 0) (x : ℝ) :\n    HasDerivAt (gaussianPDFReal θ v)\n      ((θ - x) / (v : ℝ) * gaussianPDFReal θ v x) x",
+    "formalizationNotes": "The pin (Mathlib's Gaussian file) has Gaussian moments and mgf but not the spatial derivative of `gaussianPDFReal`; this supplies it directly. `gaussianPDFReal θ v` is `const · exp ∘ g` with `g x = −(x−θ)²/(2v)`, so `HasDerivAt` follows from the chain rule (`HasDerivAt.exp`) and simplifies via `field_simp`/`ring` using `v ≠ 0`. The single hypothesis `v ≠ 0` is the nondegeneracy of the Gaussian. The `deriv`-form corollary (`deriv_gaussianPDFReal`) and pointwise differentiability (`differentiable_gaussianPDFReal`) accompany it.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hv",
+        "label": "nondegenerate variance",
+        "note": "v ≠ 0: the Gaussian density N(θ, v) is nondegenerate (v > 0), so the score (θ−x)/v is finite."
+      }
+    ],
+    "reference": {
+      "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
+      "pointer": "§1.5, Eq. (1.24)",
+      "biblio": "The identity $\\partial_x\\varphi=-(x/\\sigma^2)\\varphi$ for the standard normal density is classical (it makes the Hermite functions eigenfunctions of the Ornstein–Uhlenbeck operator); its statistical exploitation is C. M. Stein's integration-by-parts / unbiased-risk lemma (*Proc. Sixth Berkeley Symp.*, 1972; *Ann. Statist.* 9 (1981), 1135–1151), and, for empirical-Bayes shrinkage, the marginal-to-posterior formula of H. Robbins and M. C. K. Tweedie popularized by B. Efron (\"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614).",
+      "keys": [
+        "efron2010"
+      ]
+    },
+    "hasGraph": true
   }
 ]

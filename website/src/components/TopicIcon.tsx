@@ -89,6 +89,15 @@ export function TopicIcon({
           <circle cx="19.5" cy="30" r="1.7" fill="currentColor" stroke="none" opacity={0.8} />
         </svg>
       );
+    case "bayesian":
+      // Bayesian updating — a broad (dashed) prior sharpened into a peaked posterior
+      return (
+        <svg {...common}>
+          <path d="M5 34h38" />
+          <path d="M6 34c10 0 8-14 18-14s8 14 18 14" strokeDasharray="2 3" opacity={0.55} />
+          <path d="M14 34c6 0 5-20 12-20s6 20 12 20" />
+        </svg>
+      );
     case "probability":
       // compass star — assorted foundational results (miscellaneous)
       return (
