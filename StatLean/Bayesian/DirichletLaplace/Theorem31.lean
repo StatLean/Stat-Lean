@@ -99,7 +99,7 @@ theorem dl_theorem31 {β : ℝ}
     -- USER-INPUT: θ₀ is qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n (signal-size growth condition, BPPD (11)); BPPD Thm 3.1.
-    (hnorm : ∀ᶠ n in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | M * Real.sqrt (q n * Real.log n) < ‖θ - θ₀ n‖}
@@ -120,7 +120,7 @@ theorem dl_theorem31_ball {β : ℝ}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ n in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | ‖θ - θ₀ n‖ ≤ M * Real.sqrt (q n * Real.log n)}
@@ -143,7 +143,7 @@ theorem dl_theorem31_paper_rate {β : ℝ}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ n in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
     -- USER-INPUT: qₙ ≤ n^{1−c} (polynomial sparsity, D1 — makes sₙ ≍ √(qₙ log n)); BPPD Thm 3.1.
     (hqpoly : ∀ᶠ n in Filter.atTop, (q n : ℝ) ≤ (n:ℝ)^(1-c)) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
@@ -164,9 +164,9 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
     -- USER-INPUT: θ₀ qₙ-sparse; BPPD Thm 3.1.
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     -- USER-INPUT: ‖θ₀‖² ≤ qₙ log⁴n; BPPD Thm 3.1.
-    (hnorm : ∀ᶠ n in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
+    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4)
     -- USER-INPUT: qₙ ≥ C₀ log n (needed for the 1/n-regime denominator error, D2); BPPD Thm 3.1.
-    (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ n in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
+    (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ (n : ℕ) in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
     ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)⁻¹) (Fin n))) y
           {θ | M * Real.sqrt (q n * Real.log n) < ‖θ - θ₀ n‖}

@@ -110,7 +110,7 @@ theorem dl_theorem34_beta {β : ℝ}
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     {δ : ℕ → ℝ}
     -- USER-INPUT: δ-window n^{−2} ≤ δₙ ≤ 1/2 (thresholding level; D2 — supports the internal δ = rₙ/n); BPPD Thm 3.4.
-    (hδ : ∀ᶠ n in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2) :
+    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2) :
     ∃ A : ℝ, 0 < A ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}
@@ -130,9 +130,9 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
     (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)
     {δ : ℕ → ℝ}
     -- USER-INPUT: δ-window n^{−2} ≤ δₙ ≤ 1/2 (D2); BPPD Thm 3.4.
-    (hδ : ∀ᶠ n in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2)
+    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2)
     -- USER-INPUT: qₙ ≥ C₀ log n (needed for the 1/n-regime denominator error, D2); BPPD Thm 3.4.
-    (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ n in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
+    (hqlog : ∃ C₀ : ℝ, 0 < C₀ ∧ ∀ᶠ (n : ℕ) in atTop, C₀ * Real.log n ≤ (q n : ℝ)) :
     ∃ A : ℝ, 0 < A ∧ Tendsto (fun n => ∫⁻ y,
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)⁻¹) (Fin n))) y
           {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}
