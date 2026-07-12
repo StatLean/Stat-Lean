@@ -51,6 +51,7 @@ import StatLean.ConcentrationInequalities.Symmetrization.GaussianMax
 import StatLean.ConcentrationInequalities.Symmetrization.Gaussian
 import StatLean.ConcentrationInequalities.Symmetrization.Empirical
 import StatLean.ConcentrationInequalities.Chaining.SubGaussianIncrements
+import StatLean.ConcentrationInequalities.Chaining.SubsetChaining
 import StatLean.ConcentrationInequalities.Chaining.FinsetMaximal
 import StatLean.ConcentrationInequalities.Chaining.TailToExpectation
 import StatLean.ConcentrationInequalities.Chaining.PsiTwoMaximal

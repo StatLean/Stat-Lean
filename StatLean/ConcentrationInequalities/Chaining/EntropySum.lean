@@ -394,4 +394,226 @@ lemma dudleyLIntegral_eq_ofReal {T : Set E} {D : ℝ}
   rw [MeasureTheory.ofReal_integral_eq_lintegral_ofReal hint
     (Filter.Eventually.of_forall (fun x => sqrtLogCov_nonneg T x))]
 
+/-! ### ℝ≥0∞ dyadic entropy sum (faithful infinite-`T` carriers)
+
+For infinite totally bounded `T` the real `dudleySum` (a `tsum`) silently
+junks to `0` when the dyadic entropy series diverges, so the faithful
+general-`T` statements (HDP Thm 8.1.4 with E sup read per Remark 7.2.1)
+carry the ℝ≥0∞ twin `dudleyLSum`, which never junks: divergence is an
+honest `⊤` and the inequality is then trivially true — exactly the book's
+"≤ ∞". The real lemmas above remain the finite-`T` display path. -/
+
+/-- ℝ≥0∞ twin of the dyadic entropy sum `dudleySum` (HDP §8.1, Eq. (8.2)
+RHS): `∑_{k ∈ ℤ} 2^{−k} √(log 𝒩(T, 2^{−k}))` valued in `ℝ≥0∞`, honest at
+divergence (`⊤`), junk-free without any summability hypothesis. -/
+noncomputable def dudleyLSum (T : Set E) : ℝ≥0∞ :=
+  ∑' k : ℤ, ENNReal.ofReal (dudleySummand T k)
+
+/-- Finite windows sit below the full ℝ≥0∞ dyadic sum — unconditionally
+(the ℝ≥0∞ twin of `sum_window_le_dudleySum`, with no summability needed). -/
+lemma sum_window_le_dudleyLSum {T : Set E} (s : Finset ℤ) :
+    ∑ k ∈ s, ENNReal.ofReal (dudleySummand T k) ≤ dudleyLSum T :=
+  ENNReal.sum_le_tsum s
+
+/-- The ℝ≥0∞ dyadic sum agrees with the real one under summability
+(`ENNReal.ofReal`-tsum bridge; the summand is nonnegative). -/
+lemma dudleyLSum_eq_ofReal_of_summable {T : Set E}
+    -- LEAN-ONLY: summability so the real tsum is honest; no book content
+    (hS : Summable fun k : ℤ => dudleySummand T k) :
+    dudleyLSum T = ENNReal.ofReal (dudleySum T) := by
+  unfold dudleyLSum dudleySum
+  rw [ENNReal.ofReal_tsum_of_nonneg (fun k => dudleySummand_nonneg T k) hS]
+
+/-- Summability of the dyadic summand for finite `T` (geometric tail
+`𝒩 ≤ |T|` at fine scales, zero summand beyond the diameter at coarse
+scales) — extracted from the existing `summable_dudleySummand` route so the
+`*_of_finite` corollaries can rebuild the real display from the ℝ≥0∞
+primaries. -/
+lemma summable_dudleySummand_of_finite {T : Set E}
+    -- LEAN-ONLY: T finite (book WLOG); geometric-tail discharge
+    (hfin : T.Finite)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) :
+    Summable fun k : ℤ => dudleySummand T k :=
+  summable_dudleySummand hfin hne
+
+/-- Sum-to-integral comparison, ℝ≥0∞ twin (HDP §8.1, proof of Thm 8.1.3):
+`dudleyLSum T ≤ 2 · dudleyLIntegral T D` whenever the cap dominates the
+diameter. Junk-free at every entropy size: both sides are honest ℝ≥0∞. -/
+lemma dudleyLSum_le_two_mul_dudleyLIntegral {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard for
+    -- `sqrtLogCov`, whose `toNat` collapses at 𝒩 = ⊤); the faithful `hcov`
+    -- package of the general Dudley statements
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) {D : ℝ}
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1
+    (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D) :
+    dudleyLSum T ≤ 2 * dudleyLIntegral T D := by
+  classical
+  have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
+  set B : ℤ → Set ℝ := fun k => Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)) with hB
+  -- Key scale identity `2^{-k} = 2 · 2^{-(k+1)}`.
+  have hkey : ∀ k : ℤ, (2 : ℝ) ^ (-k) = 2 * (2 : ℝ) ^ (-(k + 1)) := by
+    intro k
+    rw [show (-(k + 1) : ℤ) = -k - 1 from by ring, zpow_sub₀ (two_ne_zero), zpow_one]; ring
+  -- Per-block lower bound in ℝ≥0∞ (constant-on-block + antitonicity).
+  have hblock : ∀ k : ℤ, ENNReal.ofReal (dudleySummand T k)
+      ≤ 2 * ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T x) := by
+    intro k
+    have hds : ENNReal.ofReal (dudleySummand T k)
+        = 2 * (ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))
+            * ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1)))) := by
+      have h1 : dudleySummand T k
+          = sqrtLogCov T ((2 : ℝ) ^ (-k)) * (2 * (2 : ℝ) ^ (-(k + 1))) := by
+        unfold dudleySummand; rw [hkey k]; ring
+      rw [h1, ENNReal.ofReal_mul (sqrtLogCov_nonneg T _),
+        ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+      ring
+    have hc : ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))
+        = ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))
+            * ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1))) := by
+      rw [setLIntegral_const]
+      congr 1
+      show MeasureTheory.volume (Set.Ioc ((2 : ℝ) ^ (-(k + 1))) ((2 : ℝ) ^ (-k)))
+          = ENNReal.ofReal ((2 : ℝ) ^ (-(k + 1)))
+      rw [Real.volume_Ioc]; congr 1; rw [hkey k]; ring
+    have hmono : ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k)))
+        ≤ ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T x) := by
+      apply setLIntegral_mono' measurableSet_Ioc
+      intro x hx
+      have hxpos : 0 < x := lt_trans (by positivity) hx.1
+      exact ENNReal.ofReal_le_ofReal (sqrtLogCov_anti hx.2 (hcov x hxpos))
+    calc ENNReal.ofReal (dudleySummand T k)
+        = 2 * ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T ((2 : ℝ) ^ (-k))) := by rw [hds, hc]
+      _ ≤ 2 * ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T x) := by gcongr
+  -- Blocks are pairwise disjoint.
+  have hdisj : Set.PairwiseDisjoint (Set.univ : Set ℤ) B := by
+    have key : ∀ i j : ℤ, i < j → Disjoint (B i) (B j) := by
+      intro i j hij
+      rw [hB, Set.disjoint_left]
+      intro x hxi hxj
+      have h3 : (2 : ℝ) ^ (-j) ≤ (2 : ℝ) ^ (-(i + 1)) :=
+        zpow_le_zpow_right₀ one_le_two (by omega)
+      have := hxi.1
+      have := hxj.2
+      linarith
+    intro i _ j _ hij
+    rcases lt_or_gt_of_ne hij with h | h
+    · exact key i j h
+    · exact (key j i h).symm
+  -- Pass to the tsum via finite windows.
+  unfold dudleyLSum
+  rw [ENNReal.tsum_eq_iSup_sum]
+  refine iSup_le (fun s => ?_)
+  -- Drop the coarse terms above the diameter scale (their summand is `0`).
+  rw [← Finset.sum_filter_add_sum_filter_not s (fun k => (2 : ℝ) ^ (-k) ≤ D)]
+  have hz : ∑ k ∈ s.filter (fun k => ¬ (2 : ℝ) ^ (-k) ≤ D),
+      ENNReal.ofReal (dudleySummand T k) = 0 := by
+    apply Finset.sum_eq_zero
+    intro k hk
+    rw [Finset.mem_filter, not_le] at hk
+    have : dudleySummand T k = 0 := by
+      unfold dudleySummand
+      rw [sqrtLogCov_eq_zero_of_diam_le hne hbd (by positivity) (hD.trans hk.2.le), mul_zero]
+    rw [this, ENNReal.ofReal_zero]
+  rw [hz, add_zero]
+  set s' := s.filter (fun k => (2 : ℝ) ^ (-k) ≤ D) with hs'def
+  have hssub : ∀ k ∈ s', (2 : ℝ) ^ (-k) ≤ D := fun k hk => (Finset.mem_filter.mp hk).2
+  have hsub : ∀ k ∈ s', B k ⊆ Set.Ioc 0 D := by
+    intro k hk x hx
+    exact ⟨lt_of_lt_of_le (by positivity) hx.1.le, hx.2.trans (hssub k hk)⟩
+  have hUsub : (⋃ k ∈ s', B k) ⊆ Set.Ioc 0 D := by
+    simp only [Set.iUnion_subset_iff]; exact hsub
+  calc ∑ k ∈ s', ENNReal.ofReal (dudleySummand T k)
+      ≤ ∑ k ∈ s', 2 * ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T x) :=
+        Finset.sum_le_sum (fun k _ => hblock k)
+    _ = 2 * ∑ k ∈ s', ∫⁻ x in B k, ENNReal.ofReal (sqrtLogCov T x) := by rw [Finset.mul_sum]
+    _ = 2 * ∫⁻ x in ⋃ k ∈ s', B k, ENNReal.ofReal (sqrtLogCov T x) := by
+        rw [lintegral_biUnion_finset (hdisj.subset (Set.subset_univ _))
+          (fun b _ => measurableSet_Ioc)]
+    _ ≤ 2 * dudleyLIntegral T D := by
+        gcongr
+        unfold dudleyLIntegral
+        exact lintegral_mono' (Measure.restrict_mono hUsub le_rfl) le_rfl
+
+/-- Diameter absorber, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.6 absorption):
+`ofReal (diam T · √log 2) ≤ 4 · dudleyLSum T`. -/
+lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard)
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) :
+    ENNReal.ofReal (Metric.diam T * Real.sqrt (Real.log 2))
+      ≤ 4 * dudleyLSum T := by
+  have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
+  rcases eq_or_lt_of_le (Metric.diam_nonneg (s := T)) with hdiam0 | hdiam_pos
+  · rw [← hdiam0, zero_mul, ENNReal.ofReal_zero]; exact zero_le _
+  · -- Pick a dyadic scale `e = 2^{-κ}` with `diam/4 ≤ e < diam/2`.
+    obtain ⟨κ, h_lo, h_hi⟩ := exists_coarse_scale (D := Metric.diam T / 4) (by linarith)
+    set e : ℝ := (2 : ℝ) ^ (-κ) with he
+    have h_lo' : Metric.diam T / 4 ≤ e := h_lo
+    have he_pos : 0 < e := by positivity
+    have h_hi' : e < Metric.diam T / 2 := by
+      have : e < 2 * (Metric.diam T / 4) := h_hi; linarith
+    have h2e : 2 * e < Metric.diam T := by linarith
+    obtain ⟨a, ha, b, hb, hab⟩ :
+        ∃ a ∈ T, ∃ b ∈ T, 2 * e < dist a b := by
+      by_contra h_all
+      push_neg at h_all
+      exact absurd (Metric.diam_le_of_forall_dist_le_of_nonempty hne h_all) (not_le.2 h2e)
+    have hcov1 : 1 < coveringNumber T e :=
+      one_lt_coveringNumber_of_two_mul_lt_dist he_pos.le ha hb hab
+    have hcov_top : coveringNumber T e ≠ ⊤ := hcov e he_pos
+    have h2n : 2 ≤ (coveringNumber T e).toNat := by
+      have : (2 : ℕ∞) ≤ coveringNumber T e := by
+        rwa [show (2 : ℕ∞) = 1 + 1 from rfl, ENat.add_one_le_iff (by simp)]
+      simpa using ENat.toNat_le_toNat this hcov_top
+    have hsqrt : Real.sqrt (Real.log 2) ≤ sqrtLogCov T e := by
+      unfold sqrtLogCov
+      apply Real.sqrt_le_sqrt
+      apply Real.log_le_log (by norm_num)
+      exact_mod_cast h2n
+    have hsummand : Metric.diam T / 4 * Real.sqrt (Real.log 2) ≤ dudleySummand T κ := by
+      have : Metric.diam T / 4 * Real.sqrt (Real.log 2) ≤ e * sqrtLogCov T e :=
+        mul_le_mul h_lo' hsqrt (Real.sqrt_nonneg _) he_pos.le
+      simpa [dudleySummand, he] using this
+    calc ENNReal.ofReal (Metric.diam T * Real.sqrt (Real.log 2))
+        ≤ ENNReal.ofReal (4 * dudleySummand T κ) := by
+          apply ENNReal.ofReal_le_ofReal
+          have heq : Metric.diam T * Real.sqrt (Real.log 2)
+              = 4 * (Metric.diam T / 4 * Real.sqrt (Real.log 2)) := by ring
+          rw [heq]
+          exact mul_le_mul_of_nonneg_left hsummand (by norm_num)
+      _ = 4 * ENNReal.ofReal (dudleySummand T κ) := by
+          rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 4), ENNReal.ofReal_ofNat]
+      _ ≤ 4 * dudleyLSum T := by
+          gcongr
+          exact ENNReal.le_tsum κ
+
+/-- Capped-vs-`Ioi` display, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.7): beyond the
+diameter the integrand vanishes, so the `∫₀^∞` and capped forms agree. -/
+lemma dudleyLIntegral_Ioi_eq {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard)
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) {D : ℝ}
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Remark 8.1.7
+    (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D) :
+    ∫⁻ ε in Set.Ioi (0 : ℝ), ENNReal.ofReal (sqrtLogCov T ε)
+      = dudleyLIntegral T D := by
+  have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
+  have hzero_on : ∀ x ∈ Set.Ioi D, sqrtLogCov T x = 0 := fun x hx =>
+    sqrtLogCov_eq_zero_of_diam_le hne hbd
+      (le_of_lt (lt_of_le_of_lt hD0.le hx)) (le_of_lt (lt_of_le_of_lt hD hx))
+  unfold dudleyLIntegral
+  rw [← Set.Ioc_union_Ioi_eq_Ioi hD0.le,
+    lintegral_union measurableSet_Ioi (Set.Ioc_disjoint_Ioi le_rfl),
+    setLIntegral_eq_zero measurableSet_Ioi (fun x hx => by rw [hzero_on x hx]; simp),
+    add_zero]
+
 end StatLean.ConcentrationInequalities
