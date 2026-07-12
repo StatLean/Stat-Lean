@@ -249,6 +249,44 @@ private lemma integrable_score_gaussianPDFReal (m : ℝ) (σ2 : ℝ≥0) (hσ : 
   rw [this]
   exact ((integrable_gaussianPDFReal m σ2).const_mul m).sub hid
 
+/-- **One-dimensional Gaussian Stein identity**: `∫ (t−m)·h ∂N(m,σ²) = σ²·∫ h' ∂N(m,σ²)` for a
+differentiable `h` with `h` and `h'` bounded. The integration-by-parts boundary terms vanish by
+Gaussian decay; integrability is the bounded-times-density and score lemmas above. -/
+private lemma gaussian_stein_1d (m : ℝ) (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) {h h' : ℝ → ℝ}
+    (hm : Measurable h) (hm' : Measurable h') (hd : ∀ t, HasDerivAt h (h' t) t)
+    {C : ℝ} (hhC : ∀ t, |h t| ≤ C) (hh'C : ∀ t, |h' t| ≤ C) :
+    ∫ t, (t - m) * h t ∂(gaussianReal m σ2) = (σ2 : ℝ) * ∫ t, h' t ∂(gaussianReal m σ2) := by
+  set pdf := gaussianPDFReal m σ2 with hpdfdef
+  have hderiv : ∀ t, HasDerivAt pdf ((m - t) / (σ2 : ℝ) * pdf t) t := fun t =>
+    hasDerivAt_gaussianPDFReal m σ2 hσ t
+  have huv : Integrable (fun t => h t * pdf t) := integrable_bdd_mul_gaussianPDFReal m σ2 hm hhC
+  have hu'v : Integrable (fun t => h' t * pdf t) := integrable_bdd_mul_gaussianPDFReal m σ2 hm' hh'C
+  have hscore : Integrable (fun t => (m - t) * pdf t) := integrable_score_gaussianPDFReal m σ2 hσ
+  have huv' : Integrable (fun t => h t * ((m - t) / (σ2 : ℝ) * pdf t)) := by
+    have hrw : (fun t => h t * ((m - t) / (σ2 : ℝ) * pdf t))
+        = fun t => (σ2 : ℝ)⁻¹ * (h t * ((m - t) * pdf t)) := by
+      funext t; field_simp; ring
+    rw [hrw]
+    exact (hscore.bdd_mul hm.aestronglyMeasurable
+      ⟨C, fun t => by rw [Real.norm_eq_abs]; exact hhC t⟩).const_mul _
+  have hibp : (∫ t, h t * ((m - t) / (σ2 : ℝ) * pdf t)) = -∫ t, h' t * pdf t := by
+    have key := integral_bilinear_hasDerivAt_right_eq_neg_left_of_integrable
+      (L := ContinuousLinearMap.mul ℝ ℝ) (u := h) (u' := h') (v := pdf)
+      (v' := fun t => (m - t) / (σ2 : ℝ) * pdf t)
+      (fun x _ => hd x) (fun x _ => hderiv x)
+      (by simpa only [ContinuousLinearMap.mul_apply'] using huv')
+      (by simpa only [ContinuousLinearMap.mul_apply'] using hu'v)
+      (by simpa only [ContinuousLinearMap.mul_apply'] using huv)
+    simpa only [ContinuousLinearMap.mul_apply'] using key
+  rw [integral_gaussianReal_eq_integral_smul hσ, integral_gaussianReal_eq_integral_smul hσ]
+  simp only [smul_eq_mul]
+  have hpt : (fun t => pdf t * ((t - m) * h t))
+      = fun t => -(σ2 : ℝ) * (h t * ((m - t) / (σ2 : ℝ) * pdf t)) := by
+    funext t; field_simp; ring
+  rw [hpt, integral_const_mul, hibp, neg_mul_neg]
+  congr 1
+  exact integral_congr_ae (ae_of_all _ fun t => mul_comm (h' t) (pdf t))
+
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
     (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
