@@ -67,12 +67,13 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
     refine ⟨fun θ => if θ = Classical.arbitrary Θ then 1 else 0, fun θ => ?_, ?_⟩
     · by_cases h : θ = Classical.arbitrary Θ <;> simp [h]
     · simp [Finset.sum_ite_eq' Finset.univ (Classical.arbitrary Θ)]
-  obtain ⟨w, hwmem, hwmax⟩ := (isCompact_stdSimplex Θ).exists_isMaxOn hne hcont.continuousOn
+  obtain ⟨w, hwmem, hwmax⟩ :=
+    (isCompact_stdSimplex (𝕜 := ℝ) (ι := Θ)).exists_isMaxOn hne hcont.continuousOn
   obtain ⟨hwnn, hwsum⟩ := hwmem
   -- The maximizing measure `Ghat = ∑_θ ofReal (w θ) • δ_θ`.
   set Ghat : Measure Θ := ∑ θ, ENNReal.ofReal (w θ) • Measure.dirac θ with hGhat
   have hGuniv : Ghat Set.univ = 1 := by
-    rw [hGhat, Measure.finset_sum_apply _ MeasurableSet.univ]
+    rw [hGhat, Measure.finset_sum_apply]
     simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg (fun θ _ => hwnn θ), hwsum, ENNReal.ofReal_one]
   have hGprob : IsProbabilityMeasure Ghat := ⟨hGuniv⟩
