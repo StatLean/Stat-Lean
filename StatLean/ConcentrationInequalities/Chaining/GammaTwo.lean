@@ -117,7 +117,15 @@ lemma sqrt_two_pow_mul_infDist_le_toReal_gammaFunctional {T : Set E}
     (ht : t ∈ T) (k : ℕ) :
     Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)
       ≤ (gammaFunctional A).toReal := by
-  sorry
+  have hle : ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))
+      ≤ gammaFunctional A := by
+    refine le_trans (ENNReal.le_tsum (f := fun k =>
+      ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) k) ?_
+    exact le_iSup₂ (f := fun t (_ : t ∈ T) =>
+      ∑' k, ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) t ht
+  have := ENNReal.toReal_mono hA hle
+  rwa [ENNReal.toReal_ofReal
+    (mul_nonneg (pow_nonneg (Real.sqrt_nonneg 2) k) Metric.infDist_nonneg)] at this
 
 /-- Finiteness of γ₂ for finite `T` (HDP §8.5.2, proof Step 1, "T finite
 makes γ₂ finite"): the exhausting sequence `seq k = T` once `2^{2^k} ≥ |T|`
