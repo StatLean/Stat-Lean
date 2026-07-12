@@ -112,7 +112,38 @@ theorem coveringNumber_ne_top_of_totallyBounded {T : Set E}
     -- infinite T is genuinely ⊤)
     {ε : ℝ} (hε : 0 < ε) :
     coveringNumber T ε ≠ ⊤ := by
-  sorry
+  classical
+  rcases T.eq_empty_or_nonempty with rfl | hTne
+  · simp [coveringNumber]
+  obtain ⟨x₀, hx₀⟩ := hTne
+  haveI : Nonempty E := ⟨x₀⟩
+  -- External `ε/2`-cover from total boundedness.
+  obtain ⟨t, htfin, htcov⟩ := (Metric.totallyBounded_iff.mp hTB) (ε / 2) (by linarith)
+  -- Center-swap: for each center `y` whose ball meets `T`, pick an internal
+  -- witness `z y ∈ T ∩ ball y (ε/2)`.
+  set P : E → Prop := fun y => ∃ z, z ∈ T ∧ z ∈ Metric.ball y (ε / 2) with hP
+  have zchoose : ∀ y, P y → ∃ z, z ∈ T ∧ z ∈ Metric.ball y (ε / 2) := fun y h => h
+  choose! z hzT hzB using zchoose
+  set C : Set E := z '' {y | y ∈ t ∧ P y} with hCdef
+  have hCsub : C ⊆ T := by
+    rintro _ ⟨y, ⟨_, hy⟩, rfl⟩; exact hzT y hy
+  have hCfin : C.Finite := (htfin.subset (fun y hy => hy.1)).image z
+  have hCcov : Metric.IsCover (Real.toNNReal ε) T C := by
+    intro x hx
+    have hxU : x ∈ ⋃ y ∈ t, Metric.ball y (ε / 2) := htcov hx
+    simp only [Set.mem_iUnion, exists_prop] at hxU
+    obtain ⟨y, hyt, hxy⟩ := hxU
+    have hPy : P y := ⟨x, hx, hxy⟩
+    refine ⟨z y, ⟨y, ⟨hyt, hPy⟩, rfl⟩, ?_⟩
+    have h1 : dist x y < ε / 2 := Metric.mem_ball.mp hxy
+    have h2 : dist (z y) y < ε / 2 := Metric.mem_ball.mp (hzB y hPy)
+    have hd : dist x (z y) < ε := by
+      calc dist x (z y) ≤ dist x y + dist y (z y) := dist_triangle x y (z y)
+        _ = dist x y + dist (z y) y := by rw [dist_comm y (z y)]
+        _ < ε := by linarith
+    exact (edist_le_ofReal hε.le).mpr hd.le
+  exact ne_top_of_le_ne_top hCfin.encard_lt_top.ne
+    (Metric.IsCover.coveringNumber_le_encard hCsub hCcov)
 
 /-- Total boundedness from finite covering numbers at every positive radius
 (converse bridge; internal nets are in particular external covers). -/
@@ -120,7 +151,16 @@ theorem totallyBounded_of_coveringNumber_ne_top {T : Set E}
     -- LEAN-ONLY: the `hcov` package carried by the general Dudley statements
     (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤) :
     TotallyBounded T := by
-  sorry
+  rcases T.eq_empty_or_nonempty with rfl | hTne
+  · exact totallyBounded_empty
+  rw [Metric.totallyBounded_iff]
+  intro ε hε
+  obtain ⟨N, hNsub, hNne, hNcov, hNcard⟩ :=
+    exists_finset_net_of_cov_ne_top (hcov (ε / 2) (by linarith)) hTne (by linarith)
+  refine ⟨↑N, N.finite_toSet, fun x hx => ?_⟩
+  obtain ⟨a, haN, ha⟩ := hNcov x hx
+  exact Set.mem_biUnion (Finset.mem_coe.mpr haN)
+    (Metric.mem_ball.mpr (lt_of_le_of_lt ha (by linarith)))
 
 /-- Boundedness (hence an honest `Metric.diam`) from the `hcov` package:
 route through `totallyBounded_of_coveringNumber_ne_top` and

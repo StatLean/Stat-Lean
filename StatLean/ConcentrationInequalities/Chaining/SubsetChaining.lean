@@ -94,7 +94,45 @@ theorem residual_expectation_le
     (hFne : F.Nonempty) :
     ∫ ω, F.sup' hFne (fun t => X t ω - X (netProj N t) ω) ∂μ
       ≤ Real.sqrt 3 * ((K : ℝ) * ε) * Real.sqrt (2 * Real.log (F.card : ℝ)) := by
-  sorry
+  classical
+  set σ2 : ℝ≥0 := 3 * (K * Real.toNNReal ε) ^ 2 with hσ2def
+  -- local proxy monotonicity for `IsSubGaussian` (re-derived; the DiscreteDudley
+  -- helper is `private`)
+  have mono : ∀ {Y : Ω → ℝ} {a b : ℝ≥0}, IsSubGaussian Y a μ → a ≤ b →
+      IsSubGaussian Y b μ := by
+    intro Y a b hYa hab
+    refine ⟨hYa.integrable_exp_mul, fun t => (hYa.mgf_le t).trans ?_⟩
+    have : (a : ℝ) ≤ (b : ℝ) := by exact_mod_cast hab
+    gcongr
+  -- the residual increments are centered …
+  have hcenter : ∀ t ∈ F, ∫ ω, (X t ω - X (netProj N t) ω) ∂μ = 0 := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    rw [integral_sub (hint t htT) (hint (netProj N t) hpT),
+      hmean t htT, hmean (netProj N t) hpT, sub_zero]
+  -- … and sub-Gaussian with proxy `σ2 = 3(K·ε)²`.
+  have hSG : ∀ t ∈ F, IsSubGaussian (fun ω => X t ω - X (netProj N t) ω) σ2 μ := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    refine mono (hinc.isSubGaussian_sub (hmeas (netProj N t) hpT) (hmeas t htT)
+      hpT htT (hcenter t ht)) ?_
+    rw [hσ2def]
+    have hnn : nndist (netProj N t) t ≤ Real.toNNReal ε := by
+      rw [nndist_dist, dist_comm]
+      exact Real.toNNReal_le_toNNReal (dist_netProj_le (hprox t htT))
+    gcongr
+  have hsqrtσ : Real.sqrt (σ2 : ℝ) = Real.sqrt 3 * ((K : ℝ) * ε) := by
+    have hcoe : ((σ2 : ℝ≥0) : ℝ) = 3 * ((K : ℝ) * ε) ^ 2 := by
+      rw [hσ2def]; push_cast [Real.coe_toNNReal ε hε]; ring
+    rw [hcoe, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 3),
+      Real.sqrt_sq (mul_nonneg (NNReal.coe_nonneg K) hε)]
+  calc ∫ ω, F.sup' hFne (fun t => X t ω - X (netProj N t) ω) ∂μ
+      ≤ Real.sqrt (σ2 : ℝ) * Real.sqrt (2 * Real.log F.card) :=
+        expectation_max_finset_le hFne hcenter hSG
+    _ = Real.sqrt 3 * ((K : ℝ) * ε) * Real.sqrt (2 * Real.log (F.card : ℝ)) := by
+        rw [hsqrtσ]
 
 /-- **Absolute chaining residual** (HDP §8.1 truncation, no mean-zero): the
 expected maximum of `|X_t − X_{π t}|` over a finite subset is at most
@@ -127,7 +165,39 @@ theorem residual_abs_expectation_le
     (hFne : F.Nonempty) :
     ∫ ω, F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|) ∂μ
       ≤ 2 * ((K : ℝ) * ε) * Real.sqrt (Real.log (2 * (F.card : ℝ))) := by
-  sorry
+  classical
+  set L : ℝ≥0 := K * Real.toNNReal ε with hLdef
+  have hLpos : 0 < L := by
+    rw [hLdef]; exact mul_pos hK (Real.toNNReal_pos.mpr hε)
+  have hm : ∀ t ∈ F, AEMeasurable (fun ω => X t ω - X (netProj N t) ω) μ := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    exact (hmeas t htT).sub (hmeas (netProj N t) hpT)
+  have hY : ∀ t ∈ F, subGaussianNorm (fun ω => X t ω - X (netProj N t) ω) μ
+      ≤ (L : ℝ≥0∞) := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    refine (hinc (netProj N t) hpT t htT).trans ?_
+    have hde : edist (netProj N t) t ≤ (Real.toNNReal ε : ℝ≥0∞) := by
+      rw [edist_dist, dist_comm]
+      exact ENNReal.ofReal_le_ofReal (dist_netProj_le (hprox t htT))
+    calc (K : ℝ≥0∞) * edist (netProj N t) t
+        ≤ (K : ℝ≥0∞) * (Real.toNNReal ε : ℝ≥0∞) := by gcongr
+      _ = (L : ℝ≥0∞) := by rw [hLdef]; push_cast; ring
+  have hpt : ∀ ω, F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)
+      = ⨆ i ∈ F, |X i ω - X (netProj N i) ω| := by
+    intro ω
+    exact (biSup_finset_eq_sup' hFne (fun t => |X t ω - X (netProj N t) ω|)
+      (fun _ _ => abs_nonneg _)).symm
+  have hLcoe : (L : ℝ) = (K : ℝ) * ε := by
+    rw [hLdef]; push_cast [Real.coe_toNNReal ε hε.le]; ring
+  calc ∫ ω, F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|) ∂μ
+      = ∫ ω, ⨆ i ∈ F, |X i ω - X (netProj N i) ω| ∂μ := by simp_rw [hpt]
+    _ ≤ 2 * (L : ℝ) * Real.sqrt (Real.log (2 * F.card)) :=
+        expectation_abs_max_le hFne hLpos hm hY
+    _ = 2 * ((K : ℝ) * ε) * Real.sqrt (Real.log (2 * (F.card : ℝ))) := by rw [hLcoe]
 
 /-- **Chaining residual, tail form** (HDP §8.1 / Remark 8.1.6 truncation):
 the maximum truncation residual over a finite subset exceeds `δ ≥ 0` with
@@ -164,6 +234,42 @@ theorem residual_tail_le
     μ {ω | δ < F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)}
       ≤ ENNReal.ofReal
           (2 * (F.card : ℝ) * Real.exp (-δ ^ 2 / ((K : ℝ) * ε) ^ 2)) := by
-  sorry
+  classical
+  set L : ℝ≥0 := K * Real.toNNReal ε with hLdef
+  have hLpos : 0 < L := by
+    rw [hLdef]; exact mul_pos hK (Real.toNNReal_pos.mpr hε)
+  have hm : ∀ t ∈ F, AEMeasurable (fun ω => X t ω - X (netProj N t) ω) μ := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    exact (hmeas t htT).sub (hmeas (netProj N t) hpT)
+  have hY : ∀ t ∈ F, subGaussianNorm (fun ω => X t ω - X (netProj N t) ω) μ
+      ≤ (L : ℝ≥0∞) := by
+    intro t ht
+    have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+    have hpT : netProj N t ∈ T := netProj_mem_of_subset hNsub hNne t
+    refine (hinc (netProj N t) hpT t htT).trans ?_
+    have hde : edist (netProj N t) t ≤ (Real.toNNReal ε : ℝ≥0∞) := by
+      rw [edist_dist, dist_comm]
+      exact ENNReal.ofReal_le_ofReal (dist_netProj_le (hprox t htT))
+    calc (K : ℝ≥0∞) * edist (netProj N t) t
+        ≤ (K : ℝ≥0∞) * (Real.toNNReal ε : ℝ≥0∞) := by gcongr
+      _ = (L : ℝ≥0∞) := by rw [hLdef]; push_cast; ring
+  have hpt : ∀ ω, F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)
+      = ⨆ i ∈ F, |X i ω - X (netProj N i) ω| := by
+    intro ω
+    exact (biSup_finset_eq_sup' hFne (fun t => |X t ω - X (netProj N t) ω|)
+      (fun _ _ => abs_nonneg _)).symm
+  have hLcoe : (L : ℝ) = (K : ℝ) * ε := by
+    rw [hLdef]; push_cast [Real.coe_toNNReal ε hε.le]; ring
+  have hset : {ω | δ < F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)}
+      = {ω | δ < ⨆ i ∈ F, |X i ω - X (netProj N i) ω|} := by
+    ext ω; simp only [Set.mem_setOf_eq]; rw [hpt ω]
+  calc μ {ω | δ < F.sup' hFne (fun t => |X t ω - X (netProj N t) ω|)}
+      = μ {ω | δ < ⨆ i ∈ F, |X i ω - X (netProj N i) ω|} := by rw [hset]
+    _ ≤ ENNReal.ofReal (2 * (F.card : ℝ) * Real.exp (-δ ^ 2 / (L : ℝ) ^ 2)) :=
+        tail_abs_max_le hFne hLpos hm hY hδ
+    _ = ENNReal.ofReal (2 * (F.card : ℝ) * Real.exp (-δ ^ 2 / ((K : ℝ) * ε) ^ 2)) := by
+        rw [hLcoe]
 
 end StatLean.ConcentrationInequalities
