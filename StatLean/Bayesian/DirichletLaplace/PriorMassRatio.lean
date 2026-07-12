@@ -23,7 +23,7 @@ Objects:
   `(17a)^{|S|}·δ^{(a−1)|S|}` times the centered ball (BPPD Lemma 3.2(13), `dlDensity_le` on the `S`
   coordinates, box-correction on the rest).
 * `dlPrior_fullBall_near_truth_ge` — the `n`-dimensional lower bound feeding the denominator threshold
-  `d̄` used in `Theorem31.lean` (product over the `S` and `Sᶜ` coordinates, `CoordinateSplit`).
+  `dbar` used in `Theorem31.lean` (product over the `S` and `Sᶜ` coordinates, `CoordinateSplit`).
 * `dlBetaRatio_le` — the combined ratio bound: with the shape contract `δ ≥ n^{−2}`, `t ≤ 2√q log²n`,
   `r² = q log n` substituted, the exponent collapses to `|S|log(64j) + C(|S|+q)log n + C'r²`
   (BPPD Lemma 6.1). The consumer (`Theorem31.lean`) uses only the combined exponent.
@@ -96,7 +96,7 @@ theorem dlPrior_piece_le {a δ : ℝ}
 /-- **Full-ball prior mass lower bound near the truth** (BPPD Lemma 6.1, `n`-dimensional). The mass of
 the contraction ball `B(θ₀, r)` is at least `exp(−(|S|log(1/a) + |S|log n + ‖θ₀‖² + r²))`, obtained by
 factoring the prior over the support coordinates `S` and their complement (`CoordinateSplit`). This is
-the `d̄`-input consumed by the denominator event in `Theorem31.lean`. -/
+the `dbar`-input consumed by the denominator event in `Theorem31.lean`. -/
 theorem dlPrior_fullBall_near_truth_ge {a : ℝ}
     -- LEAN-ONLY: 0 < a ≤ 1 — DL scale range; engine-internal.
     (ha : 0 < a) (ha1 : a ≤ 1)

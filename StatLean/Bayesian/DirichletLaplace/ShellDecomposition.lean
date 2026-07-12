@@ -81,7 +81,7 @@ theorem exists_shell_net (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : �
 /-- **Per-shell posterior bound** (BPPD §6, D4). The `E_{θ₀}`-mean of the un-normalized posterior
 ratio for a single shell is bounded by the sum over its `≤ 33^{|S|}` net pieces of the Type I test
 error `e^{−j²r²/12}`, plus the shell prior mass weighted by the Type II error over the denominator
-threshold `d̄`. Assembled from `GaussianTests` (the midpoint tests) and `TestingBound`. -/
+threshold `dbar`. Assembled from `GaussianTests` (the midpoint tests) and `TestingBound`. -/
 theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     -- LEAN-ONLY: 2 ≤ j — tested radial range (margin d − ρ ≥ (7/8)jr needs j ≥ 2); engine-internal.
     (hj : 2 ≤ j) {a r δ : ℝ}
@@ -89,13 +89,13 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
     (ha : 0 < a) (hr : 0 < r)
     -- LEAN-ONLY: √n·δ ≤ r — piece-radius control (D4); engine-internal.
     (hδ : Real.sqrt (Fintype.card ι : ℝ) * δ ≤ r)
-    -- LEAN-ONLY: 0 < d̄ — denominator lower threshold from `DenominatorLowerBound`; engine-internal.
-    (d̄ : ℝ≥0∞) (hd̄ : 0 < d̄) :
+    -- LEAN-ONLY: 0 < dbar — denominator lower threshold from `DenominatorLowerBound`; engine-internal.
+    (dbar : ℝ≥0∞) (hdbar : 0 < dbar) :
     ∫⁻ y, dlNumer θ₀ (dlPrior a ι) (dlShell θ₀ S j r δ) y / dlDenom θ₀ (dlPrior a ι) y
         ∂(gaussShiftKernel ι θ₀)
       ≤ (33 : ℝ≥0∞) ^ S.card * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12))
           + (dlPrior a ι) (dlShell θ₀ S j r δ)
-              * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) / d̄ := by
+              * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) / dbar := by
   sorry
 
 end StatLean.Bayesian

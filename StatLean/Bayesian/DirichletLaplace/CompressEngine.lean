@@ -16,9 +16,9 @@ expressed on the un-normalized ratio `dlNumer / dlDenom` (the passage to the abs
 happens once, in `Theorem34.lean`, via `NormalMeansModel`).
 
 Objects:
-* `compress_ratio_le` — the split bound: on the event `{ D ≥ d̄ }` with `d̄ = e^{−r²}·Π(B(0,r))` the
-  ratio is `≤ dlNumer/d̄` and its `E_{θ₀=0}`-mean equals the prior mass (change-of-measure Tonelli,
-  BPPD §6, `NormalMeansModel`); on `{ D < d̄ }` the Castillo–van der Vaart denominator event
+* `compress_ratio_le` — the split bound: on the event `{ D ≥ dbar }` with `dbar = e^{−r²}·Π(B(0,r))` the
+  ratio is `≤ dlNumer/dbar` and its `E_{θ₀=0}`-mean equals the prior mass (change-of-measure Tonelli,
+  BPPD §6, `NormalMeansModel`); on `{ D < dbar }` the Castillo–van der Vaart denominator event
   (`DenominatorLowerBound`, a Jensen / one-dimensional-Gaussian argument) contributes `≤ e^{−r²/8}`.
 * `compress_ratio_le_explicit` — plug the support-count MGF / Chernoff bound (`PriorSmallBall`,
   `Π{|supp_δ| > k}`) and the small-ball lower bound into `compress_ratio_le`, collapsing the RHS to a
@@ -30,7 +30,7 @@ proof pp. 18–19); the denominator-event lemma is the analogue of Ghosal–Ghos
 Castillo–van der Vaart Lemma 5.2.
 
 **Proof formalization notes.** The skeleton is *reduction → denominator event → Chernoff*: the ratio
-integral is split at `d̄`, the denominator event handled by `measure_dlDenom_lt_le`, the numerator
+integral is split at `dbar`, the denominator event handled by `measure_dlDenom_lt_le`, the numerator
 mean identified with the prior mass, and the prior mass bounded by the count Chernoff bound.
 
 **Deviations.**
@@ -56,8 +56,8 @@ variable {ι : Type*} [Fintype ι]
 
 /-- **Compressibility split bound** (BPPD Thm 3.4 core). At the true parameter `θ₀ = 0`, the
 `E_{θ₀=0}`-mean of the un-normalized posterior ratio for `{ |supp_δ(θ)| > k }` is at most the prior
-mass of that set divided by `d̄ = e^{−r²}·Π(B(0,r))`, plus the denominator-event error `e^{−r²/8}`.
-The two summands are the `{D ≥ d̄}` (testing/numerator) and `{D < d̄}` (denominator-event) pieces. -/
+mass of that set divided by `dbar = e^{−r²}·Π(B(0,r))`, plus the denominator-event error `e^{−r²/8}`.
+The two summands are the `{D ≥ dbar}` (testing/numerator) and `{D < dbar}` (denominator-event) pieces. -/
 theorem compress_ratio_le {a δ r : ℝ}
     -- LEAN-ONLY: 0 < a — DL scale at a junk-free index; engine-internal regularity.
     (ha : 0 < a)
