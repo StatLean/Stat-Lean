@@ -394,4 +394,89 @@ lemma dudleyLIntegral_eq_ofReal {T : Set E} {D : ℝ}
   rw [MeasureTheory.ofReal_integral_eq_lintegral_ofReal hint
     (Filter.Eventually.of_forall (fun x => sqrtLogCov_nonneg T x))]
 
+/-! ### ℝ≥0∞ dyadic entropy sum (faithful infinite-`T` carriers)
+
+For infinite totally bounded `T` the real `dudleySum` (a `tsum`) silently
+junks to `0` when the dyadic entropy series diverges, so the faithful
+general-`T` statements (HDP Thm 8.1.4 with E sup read per Remark 7.2.1)
+carry the ℝ≥0∞ twin `dudleyLSum`, which never junks: divergence is an
+honest `⊤` and the inequality is then trivially true — exactly the book's
+"≤ ∞". The real lemmas above remain the finite-`T` display path. -/
+
+/-- ℝ≥0∞ twin of the dyadic entropy sum `dudleySum` (HDP §8.1, Eq. (8.2)
+RHS): `∑_{k ∈ ℤ} 2^{−k} √(log 𝒩(T, 2^{−k}))` valued in `ℝ≥0∞`, honest at
+divergence (`⊤`), junk-free without any summability hypothesis. -/
+noncomputable def dudleyLSum (T : Set E) : ℝ≥0∞ :=
+  ∑' k : ℤ, ENNReal.ofReal (dudleySummand T k)
+
+/-- Finite windows sit below the full ℝ≥0∞ dyadic sum — unconditionally
+(the ℝ≥0∞ twin of `sum_window_le_dudleySum`, with no summability needed). -/
+lemma sum_window_le_dudleyLSum {T : Set E} (s : Finset ℤ) :
+    ∑ k ∈ s, ENNReal.ofReal (dudleySummand T k) ≤ dudleyLSum T :=
+  ENNReal.sum_le_tsum s
+
+/-- The ℝ≥0∞ dyadic sum agrees with the real one under summability
+(`ENNReal.ofReal`-tsum bridge; the summand is nonnegative). -/
+lemma dudleyLSum_eq_ofReal_of_summable {T : Set E}
+    -- LEAN-ONLY: summability so the real tsum is honest; no book content
+    (hS : Summable fun k : ℤ => dudleySummand T k) :
+    dudleyLSum T = ENNReal.ofReal (dudleySum T) := by
+  sorry
+
+/-- Summability of the dyadic summand for finite `T` (geometric tail
+`𝒩 ≤ |T|` at fine scales, zero summand beyond the diameter at coarse
+scales) — extracted from the existing `summable_dudleySummand` route so the
+`*_of_finite` corollaries can rebuild the real display from the ℝ≥0∞
+primaries. -/
+lemma summable_dudleySummand_of_finite {T : Set E}
+    -- LEAN-ONLY: T finite (book WLOG); geometric-tail discharge
+    (hfin : T.Finite)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) :
+    Summable fun k : ℤ => dudleySummand T k :=
+  summable_dudleySummand hfin hne
+
+/-- Sum-to-integral comparison, ℝ≥0∞ twin (HDP §8.1, proof of Thm 8.1.3):
+`dudleyLSum T ≤ 2 · dudleyLIntegral T D` whenever the cap dominates the
+diameter. Junk-free at every entropy size: both sides are honest ℝ≥0∞. -/
+lemma dudleyLSum_le_two_mul_dudleyLIntegral {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard for
+    -- `sqrtLogCov`, whose `toNat` collapses at 𝒩 = ⊤); the faithful `hcov`
+    -- package of the general Dudley statements
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) {D : ℝ}
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1
+    (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D) :
+    dudleyLSum T ≤ 2 * dudleyLIntegral T D := by
+  sorry
+
+/-- Diameter absorber, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.6 absorption):
+`ofReal (diam T · √log 2) ≤ 4 · dudleyLSum T`. -/
+lemma ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard)
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) :
+    ENNReal.ofReal (Metric.diam T * Real.sqrt (Real.log 2))
+      ≤ 4 * dudleyLSum T := by
+  sorry
+
+/-- Capped-vs-`Ioi` display, ℝ≥0∞ twin (HDP §8.1, Remark 8.1.7): beyond the
+diameter the integrand vanishes, so the `∫₀^∞` and capped forms agree. -/
+lemma dudleyLIntegral_Ioi_eq {T : Set E}
+    -- LEAN-ONLY: finite covering numbers at positive radii (junk-guard)
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty) {D : ℝ}
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Remark 8.1.7
+    (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D) :
+    ∫⁻ ε in Set.Ioi (0 : ℝ), ENNReal.ofReal (sqrtLogCov T ε)
+      = dudleyLIntegral T D := by
+  sorry
+
 end StatLean.ConcentrationInequalities

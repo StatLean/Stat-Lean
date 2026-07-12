@@ -23,7 +23,7 @@ form.
 
 **Proof formalization notes.** Finite-`T` core per the batch sup policy
 (book WLOG, p. 247 Step 1). The high-probability form
-(`generic_chaining_tail`) carries per-level thresholds
+(`generic_chaining_tail_of_finite`) carries per-level thresholds
 $2^{k/2}(\sqrt{2\log 2} + 1) + u$ over the admissible-sequence levels and a
 union bound over $|T_k|\cdot|T_{k-1}| \le 2^{2^{k+1}}$ chain pairs; the
 expectation forms integrate it via
@@ -110,7 +110,7 @@ private lemma sum_exp_neg_succ_le_one (n : ℕ) :
 proof Steps 2–3, Eqs. (8.48)–(8.50)): for any admissible sequence `A`, the
 sup of increments exceeds `(12 + 4u)·K·γ(A)` with probability at most
 `2 exp(−u²)`. This work item's single named-sorry fallback. -/
-theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem generic_chaining_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure; bridge-B1 tail machinery requires it
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: finite index (book WLOG p.247 Step 1; sup policy core)
@@ -585,8 +585,8 @@ theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
 /-- Generic chaining, expectation form at a fixed admissible sequence (HDP
 §8.5.2 + Remark 8.5.3 — no mean-zero for the `|X_t − X_{t₀}|` form).
 Frozen constant `20` (formula `6 + 2√π ≤ 10`), integrating
-`generic_chaining_tail` via `TailToExpectation`. -/
-theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+`generic_chaining_tail_of_finite` via `TailToExpectation`. -/
+theorem generic_chaining_of_admissible_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: finite index (sup policy core)
@@ -645,7 +645,7 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
               < ⨆ t ∈ T, |X t ω - X t₀ ω|}
             ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
         intro u hu
-        have hval := generic_chaining_tail hfin hne hmeas hinc ht₀ A hγ hu
+        have hval := generic_chaining_tail_of_finite hfin hne hmeas hinc ht₀ A hγ hu
         have hthr : 12 * (K : ℝ) * (gammaFunctional A).toReal
               + 4 * (K : ℝ) * (gammaFunctional A).toReal * u
             = (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal := by ring
@@ -692,8 +692,8 @@ in `ofReal` form.
 Carrier note (statement fix at the debt gate): the finite maximum is stated
 with the junk-free `Finset.sup'` carrier — the previous set-bounded
 `⨆ t ∈ T, X t ω` form was **false** at `|T| = 1` (left side `∫ (X_{t₀})⁺ > 0`
-against `γ₂ = 0`); see `discrete_dudley` for the same renegotiation. -/
-theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+against `γ₂ = 0`); see `discrete_dudley_of_finite` for the same renegotiation. -/
+theorem generic_chaining_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: finite index (book WLOG; sup policy core)
@@ -757,12 +757,12 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     rw [show gammaTwo T = ⨅ A : AdmissibleSequence T, gammaFunctional A from rfl]
     exact ENNReal.mul_iInf (fun h => absurd h ha_top)
   rw [hpush]
-  exact le_iInf (fun A => generic_chaining_of_admissible hfin hne hmeas hinc ht₀ A)
+  exact le_iInf (fun A => generic_chaining_of_admissible_of_finite hfin hne hmeas hinc ht₀ A)
 
 /-- Theorem 8.5.2, real display (LEAN-ONLY: via `gammaTwo_lt_top_of_finite`
 the `ℝ≥0∞` bound descends to `ℝ`; `Finset.sup'` carrier as in
-`generic_chaining`). -/
-theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+`generic_chaining_of_finite`). -/
+theorem generic_chaining_real_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: probability measure
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: finite index
@@ -779,12 +779,135 @@ theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hinc : SubGaussianIncrements X K T μ) :
     ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
       ≤ 20 * K * (gammaTwo T).toReal := by
-  have h3 := generic_chaining hfin hne hmeas hint hmean hinc
+  have h3 := generic_chaining_of_finite hfin hne hmeas hint hmean hinc
   have htop : (20 : ℝ≥0∞) * ↑K * gammaTwo T ≠ ⊤ :=
     ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top)
       (gammaTwo_lt_top_of_finite hfin hne).ne
   rw [ENNReal.ofReal_le_iff_le_toReal htop, ENNReal.toReal_mul, ENNReal.toReal_mul,
     ENNReal.toReal_ofNat, ENNReal.coe_toReal] at h3
   exact h3
+
+/-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
+
+Theorem 8.5.2 is stated in HDP for a mean-zero process on a general metric
+space `(T, d)` (its proof's WLOG-to-finite, p. 247 Step 1, cites Remark
+7.2.1). Unlike the Dudley family, no covering package is needed: admissible
+sequences carry all the geometry, `gammaTwo` is already an honest `ℝ≥0∞`
+(`⊤` at divergence, no junk), and the `γ₂ = ⊤` case is trivial. The chain
+for a finite subset `F ⊆ T` walks the sequence's levels inside `T` and is
+truncated; the residual is controlled by
+`sqrt_two_pow_mul_infDist_le_toReal_gammaFunctional` (each `d(t, T_k)` is
+`≤ toReal·(√2)^{−k} → 0`, uniformly on `F`), replacing the finite-`T`
+chain-end device `exists_eventually_dist_zero`. -/
+
+/-- **Generic chaining, tail form** (HDP §8.5.2, Eq. (8.50); faithful
+general-`T` form): for every finite subset `F ⊆ T`, the anchored maximum
+exceeds `(12 + 4u)·K·(γ₂-series)` with probability at most `2e^{−u²}`. -/
+theorem generic_chaining_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- LEAN-ONLY: probability measure; bridge-B1 tail machinery requires it
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: nonempty index so the anchor exists
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the process; regularity
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
+    (hinc : SubGaussianIncrements X K T μ)
+    {t₀ : E}
+    -- LEAN-ONLY: anchor point of the increment max; Remark 8.5.3 device
+    (ht₀ : t₀ ∈ T)
+    (A : AdmissibleSequence T)
+    -- LEAN-ONLY: finite functional (⊤ makes the event's threshold junk 0)
+    (hA : gammaFunctional A ≠ ⊤)
+    {u : ℝ}
+    -- USER-INPUT: deviation parameter u ≥ 0; HDP Eq (8.50)
+    (hu : 0 ≤ u)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    μ {ω | (12 + 4 * u) * K * (gammaFunctional A).toReal <
+        F.sup' hFne (fun t => |X t ω - X t₀ ω|)} ≤
+      ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
+  sorry
+
+/-- **Generic chaining along an admissible sequence** (HDP §8.5.2; faithful
+general-`T` form): `E max_{t∈F} |X_t − X_{t₀}| ≤ 20·K·(γ₂-series of A)` in
+`ℝ≥0∞`, for every finite subset `F ⊆ T`; the `⊤` branch is trivial. -/
+theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- LEAN-ONLY: probability measure
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: nonempty index
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
+    (hinc : SubGaussianIncrements X K T μ)
+    {t₀ : E}
+    -- LEAN-ONLY: anchor point
+    (ht₀ : t₀ ∈ T)
+    (A : AdmissibleSequence T)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ) ≤
+      20 * K * gammaFunctional A := by
+  sorry
+
+/-- **Theorem 8.5.2 (generic chaining bound)** (HDP §8.5.2; faithful
+general-`T` form, book's absolute constant frozen `C = 20`): mean-zero
+process with sub-Gaussian increments on an arbitrary metric space satisfies,
+for every finite subset `F ⊆ T` (the Remark 7.2.1 reading of E sup),
+`E max_{t∈F} X_t ≤ 20·K·γ₂(T,d)` in `ℝ≥0∞`. -/
+theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- LEAN-ONLY: probability measure
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: nonempty index
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- LEAN-ONLY: integrability of the process, ruling out Bochner-junk
+    -- means (reconciliation R4; the book's E X_t = 0 presupposes it)
+    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
+    -- USER-INPUT: mean-zero process; HDP Thm 8.5.2
+    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
+    -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
+    (hinc : SubGaussianIncrements X K T μ)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ) ≤
+      20 * K * gammaTwo T := by
+  sorry
+
+/-- Theorem 8.5.2, real display (faithful general-`T` form): under a finite
+γ₂ (LEAN-ONLY junk-guard replacing the former finiteness of `T`),
+`E max_{t∈F} X_t ≤ 20·K·γ₂(T,d)` as real numbers. -/
+theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- LEAN-ONLY: probability measure
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: nonempty index
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- LEAN-ONLY: integrability (R4, as above)
+    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
+    -- USER-INPUT: mean-zero process; HDP Thm 8.5.2
+    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
+    -- USER-INPUT: sub-Gaussian increments Eq (8.1); HDP Thm 8.5.2
+    (hinc : SubGaussianIncrements X K T μ)
+    -- LEAN-ONLY: finite γ₂ so the real RHS is honest (junk-guard)
+    (hγ : gammaTwo T ≠ ⊤)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ ≤ 20 * K * (gammaTwo T).toReal := by
+  sorry
 
 end StatLean.ConcentrationInequalities

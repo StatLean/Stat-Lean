@@ -56,23 +56,23 @@ namespace StatLean.ConcentrationInequalities
 
 variable {E : Type*} [PseudoMetricSpace E]
 
-/-- Realizer net (HDP §8.1, Eq. (8.5)): a finite set `T` admits, at every
-radius `ε > 0`, an internal Finset net whose cardinality realizes the
-covering number (from `Metric.exists_set_encard_eq_coveringNumber`; the
-`≠ ⊤` discharge is `coveringNumber ≤ encard < ⊤`). -/
-lemma exists_finset_net {T : Set E}
-    -- LEAN-ONLY: T finite (book WLOG, HDP p.227 footnote); realizer plumbing
-    (hfin : T.Finite)
+/-- Realizer net at a finite covering number (HDP §8.1, Eq. (8.5)): any set
+`T` with `𝒩(T, ε) ≠ ⊤` admits an internal Finset net at radius `ε > 0` whose
+cardinality realizes the covering number (from
+`Metric.exists_set_encard_eq_coveringNumber`). This is the general engine for
+chaining over totally bounded index sets (faithful infinite-`T` Dudley); the
+finite case is the corollary `exists_finset_net` below. -/
+lemma exists_finset_net_of_cov_ne_top {T : Set E} {ε : ℝ}
+    -- LEAN-ONLY: finite covering number at this radius (junk-guard: at
+    -- 𝒩 = ⊤ no finite net exists); supplied by `hcov` in the assemblies
+    (hcov : coveringNumber T ε ≠ ⊤)
     -- LEAN-ONLY: nonemptiness so the net is nonempty
     (hne : T.Nonempty)
     -- LEAN-ONLY: positive radius; ε ≤ 0 is never used by chaining
-    {ε : ℝ} (hε : 0 < ε) :
+    (hε : 0 < ε) :
     ∃ N : Finset E, ↑N ⊆ T ∧ N.Nonempty ∧ (∀ t ∈ T, ∃ a ∈ N, dist t a ≤ ε) ∧
       (N.card : ℕ∞) = coveringNumber T ε := by
-  have hnetop : Metric.coveringNumber (Real.toNNReal ε) T ≠ ⊤ :=
-    ne_top_of_le_ne_top (by rw [Set.encard_ne_top_iff]; exact hfin)
-      (Metric.coveringNumber_le_encard_self T)
-  obtain ⟨C, hCsub, hCfin, hCcov, hCenc⟩ := Metric.exists_set_encard_eq_coveringNumber hnetop
+  obtain ⟨C, hCsub, hCfin, hCcov, hCenc⟩ := Metric.exists_set_encard_eq_coveringNumber hcov
   refine ⟨hCfin.toFinset, ?_, ?_, ?_, ?_⟩
   · rw [Set.Finite.coe_toFinset]; exact hCsub
   · rw [← Finset.coe_nonempty, Set.Finite.coe_toFinset]; exact hCcov.nonempty hne
@@ -82,6 +82,54 @@ lemma exists_finset_net {T : Set E}
     exact (edist_le_ofReal hε.le).mp hy
   · rw [Set.Finite.encard_eq_coe_toFinset_card hCfin] at hCenc
     exact hCenc
+
+/-- Realizer net (HDP §8.1, Eq. (8.5)), finite-`T` corollary of
+`exists_finset_net_of_cov_ne_top` (the `≠ ⊤` discharge is
+`coveringNumber ≤ encard < ⊤`). -/
+lemma exists_finset_net {T : Set E}
+    -- LEAN-ONLY: T finite (book WLOG, HDP p.227 footnote); realizer plumbing
+    (hfin : T.Finite)
+    -- LEAN-ONLY: nonemptiness so the net is nonempty
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: positive radius; ε ≤ 0 is never used by chaining
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ N : Finset E, ↑N ⊆ T ∧ N.Nonempty ∧ (∀ t ∈ T, ∃ a ∈ N, dist t a ≤ ε) ∧
+      (N.card : ℕ∞) = coveringNumber T ε :=
+  exists_finset_net_of_cov_ne_top
+    (ne_top_of_le_ne_top (by rw [Set.encard_ne_top_iff]; exact hfin)
+      (Metric.coveringNumber_le_encard_self T)) hne hε
+
+/-- Finite covering numbers at every positive radius from total boundedness
+(the bridge Mathlib lacks at the pin: internal ε-nets from
+`totallyBounded_iff` external ball covers by a center-swap into `T`).
+Faithful infinite-`T` chaining consumes covering finiteness in exactly this
+`hcov` shape. -/
+theorem coveringNumber_ne_top_of_totallyBounded {T : Set E}
+    -- USER-INPUT: T totally bounded — the book's standing finite-entropy
+    -- setting for Dudley (HDP §8.1: the RHS is finite only for such T)
+    (hTB : TotallyBounded T)
+    -- LEAN-ONLY: positive radius (at ε ≤ 0 the covering number of an
+    -- infinite T is genuinely ⊤)
+    {ε : ℝ} (hε : 0 < ε) :
+    coveringNumber T ε ≠ ⊤ := by
+  sorry
+
+/-- Total boundedness from finite covering numbers at every positive radius
+(converse bridge; internal nets are in particular external covers). -/
+theorem totallyBounded_of_coveringNumber_ne_top {T : Set E}
+    -- LEAN-ONLY: the `hcov` package carried by the general Dudley statements
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤) :
+    TotallyBounded T := by
+  sorry
+
+/-- Boundedness (hence an honest `Metric.diam`) from the `hcov` package:
+route through `totallyBounded_of_coveringNumber_ne_top` and
+`TotallyBounded.isBounded`. -/
+theorem isBounded_of_coveringNumber_ne_top {T : Set E}
+    -- LEAN-ONLY: the `hcov` package carried by the general Dudley statements
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤) :
+    Bornology.IsBounded T :=
+  (totallyBounded_of_coveringNumber_ne_top hcov).isBounded
 
 /-- Above the diameter one center suffices (HDP §8.1, Eq. (8.6), the coarse
 net): real-radius wrapper of `Metric.coveringNumber_eq_one_of_ediam_le`. -/

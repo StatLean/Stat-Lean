@@ -25,8 +25,9 @@ Eq. (8.16) / Remark 8.1.7; the countable form realizes the p. 227 footnote
 **Proof formalization notes.** Frozen constants: `12√3 = 2 × 6√3` (mean-zero,
 via `dudleySum_le_two_mul_dudleyIntegral`), `40 = 2 × 20` (abs form),
 `80 = 2 × 40` (pair form, triangle through a fixed `t₀`), countable lift
-`80 = 40 × 2` (the `coveringNumber_subset_le` `ε/2` loss after the `u = ε/2`
-change of variables). The diameter-capped Eq. (8.16) is the PRIMARY
+`40` (per-finite-subset engine against the entropy of `T` itself — the former
+`ε/2` subset-covering loss and its factor `2` are gone). The diameter-capped
+Eq. (8.16) is the PRIMARY
 statement; the `∫_0^∞` shape of Theorem 8.1.3 is a display corollary via
 `dudleyIntegral_Ioi_eq` (the `diam = 0` corner handled separately). The
 mean-zero forms carry the LEAN-ONLY hypothesis
@@ -63,9 +64,9 @@ frozen to `12√3 = 2 × 6√3`.
 
 Carrier note (statement fix at the debt gate): the finite maximum is stated
 with the junk-free `Finset.sup'` carrier, inherited verbatim from
-`discrete_dudley` (see its docstring for the `|T| = 1` counterexample to the
+`discrete_dudley_of_finite` (see its docstring for the `|T| = 1` counterexample to the
 old set-bounded `⨆ t ∈ T` form). -/
-theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_inequality_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
@@ -88,7 +89,7 @@ theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D := by
   calc ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ
       ≤ 6 * Real.sqrt 3 * K * dudleySum T :=
-        discrete_dudley hfin hne hmeas hint hmean hinc
+        discrete_dudley_of_finite hfin hne hmeas hint hmean hinc
     _ ≤ 6 * Real.sqrt 3 * K * (2 * dudleyIntegral T D) := by
         refine mul_le_mul_of_nonneg_left
           (dudleySum_le_two_mul_dudleyIntegral hfin hne hD hD0) ?_
@@ -98,7 +99,7 @@ theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
 /-- **Dudley's inequality, absolute form** (HDP §8.1, Eq. (8.13), capped):
 `E sup |X_t − X_{t₀}| ≤ 40 · K · ∫_0^D √(log 𝒩)`, NO mean-zero — THE
 consumer-facing form. Book constant frozen to `40 = 2 × 20`. -/
-theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_inequality_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
@@ -119,7 +120,7 @@ theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       ≤ 40 * K * dudleyIntegral T D := by
   calc ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
       ≤ 20 * K * dudleySum T :=
-        discrete_dudley_abs hfin hne hmeas hinc ht₀
+        discrete_dudley_abs_of_finite hfin hne hmeas hinc ht₀
     _ ≤ 20 * K * (2 * dudleyIntegral T D) := by
         refine mul_le_mul_of_nonneg_left
           (dudleySum_le_two_mul_dudleyIntegral hfin hne hD hD0) ?_
@@ -129,7 +130,7 @@ theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
 /-- **Dudley's inequality, pair form** (HDP §8.1, Eq. (8.14), capped):
 `E sup_{s,t} |X_t − X_s| ≤ 80 · K · ∫_0^D √(log 𝒩)` via the triangle
 inequality through a fixed `t₀`. Book constant frozen to `80 = 2 × 40`. -/
-theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_inequality_abs_pair_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
@@ -230,15 +231,15 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     _ = 2 * ∫ ω, A ω ∂μ := integral_const_mul 2 A
     _ ≤ 2 * (40 * K * dudleyIntegral T D) := by
         refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
-        exact dudley_inequality_abs hfin hne hmeas hinc ht₀ hD hD0
+        exact dudley_inequality_abs_of_finite hfin hne hmeas hinc ht₀ hD hD0
     _ = 80 * K * dudleyIntegral T D := by ring
 
 /-- **Dudley's inequality, `∫_0^∞` display** (HDP §8.1, Theorem 8.1.3
 verbatim shape): via `dudleyIntegral_Ioi_eq`; the `diam = 0` corner is
 handled separately in the proof. `Finset.sup'` carrier as in
-`dudley_inequality` (junk-free honest maximum; statement fix at the debt
+`dudley_inequality_of_finite` (junk-free honest maximum; statement fix at the debt
 gate). -/
-theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_inequality_Ioi_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG p.227 footnote)
@@ -259,7 +260,7 @@ theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     have := Metric.diam_nonneg (s := T); linarith
   have hDle : Metric.diam T ≤ Metric.diam T + 1 := by linarith
   rw [dudleyIntegral_Ioi_eq hfin hne hDle hDpos]
-  exact dudley_inequality hfin hne hmeas hint hmean hinc hDle hDpos
+  exact dudley_inequality_of_finite hfin hne hmeas hint hmean hinc hDle hDpos
 
 /-- Subset change-of-radius for the entropy integrand: for `S ⊆ T`, at radius
 `ε ≥ 0`, `√log 𝒩(S, ε) ≤ √log 𝒩(T, ε/2)` (the `ε/2` covering loss of
@@ -342,8 +343,10 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
 /-- **Dudley's inequality, countable lift** (HDP §8.1, Eq. (8.13), countable
 form; p. 227 footnote "general case by approximation"): stated wholly in
 `ℝ≥0∞` so neither side can be junk; monotone convergence over a finite
-exhaustion + the `coveringNumber_subset_le` `ε/2` loss (frozen constant
-`80 = 40 × 2`). -/
+exhaustion of `T` fed into the general per-finite-subset `dudley_inequality_abs`
+below, which measures the entropy of `T` directly — so the former
+`coveringNumber_subset_le` `ε/2` loss disappears and the constant improves
+`80 → 40`. -/
 theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
@@ -366,110 +369,138 @@ theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Se
     -- LEAN-ONLY: positive cap
     (hD0 : 0 < D) :
     ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
-      ≤ ENNReal.ofReal (80 * K) * dudleyLIntegral T D := by
-  classical
-  -- Enumerate the countable index set and build a finite exhaustion `S n ↑ T`
-  -- through the anchor `t₀`.
-  obtain ⟨f, hf⟩ := hcnt.exists_eq_range hne
-  set S : ℕ → Finset E := fun n => insert t₀ ((Finset.range n).image f) with hS
-  have ht₀S : ∀ n, t₀ ∈ S n := fun n => Finset.mem_insert_self _ _
-  have hSne : ∀ n, (S n).Nonempty := fun n => ⟨t₀, ht₀S n⟩
-  have hSsub : ∀ n, (↑(S n) : Set E) ⊆ T := by
-    intro n x hx
-    rw [hS, Finset.coe_insert, Set.mem_insert_iff] at hx
-    rcases hx with rfl | hx
-    · exact ht₀
-    · rw [Finset.coe_image] at hx
-      obtain ⟨k, _, rfl⟩ := hx
-      rw [hf]; exact Set.mem_range_self k
-  have hSmono : Monotone S := by
-    intro m n hmn
-    apply Finset.insert_subset_insert
-    exact Finset.image_subset_image (Finset.range_subset_range.mpr hmn)
-  have hUnion : (⋃ n, (↑(S n) : Set E)) = T := by
-    refine Set.Subset.antisymm (Set.iUnion_subset hSsub) ?_
-    rw [hf]
-    rintro x ⟨k, rfl⟩
-    refine Set.mem_iUnion.2 ⟨k + 1, ?_⟩
-    rw [hS, Finset.coe_insert, Set.mem_insert_iff, Finset.coe_image]
-    exact Or.inr ⟨k, by simp [Finset.mem_range], rfl⟩
-  -- `↑(S n)`-biSup as a `Finset.sup'` (real and `ℝ≥0∞`).
-  have Ssup : ∀ (h : E → ℝ) (n : ℕ), (∀ t ∈ S n, 0 ≤ h t) →
-      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n h0 => by
-    rw [Finset.iSup_coe, biSup_finset_eq_sup' (hSne n) h h0]
-  have SsupE : ∀ (h : E → ℝ≥0∞) (n : ℕ),
-      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n => by
-    rw [Finset.iSup_coe, ← Finset.sup_eq_iSup, Finset.sup'_eq_sup]
-  -- The monotone-convergence integrand family.
-  set Φ : ℕ → Ω → ℝ≥0∞ :=
-    fun n ω => ⨆ t ∈ (↑(S n) : Set E), ENNReal.ofReal |X t ω - X t₀ ω| with hΦ
-  have hΦmeas : ∀ n, AEMeasurable (Φ n) μ := by
-    intro n
-    simp only [hΦ]
-    refine AEMeasurable.biSup (↑(S n) : Set E) (S n).countable_toSet (fun t ht => ?_)
-    exact ((hmeas t (hSsub n ht)).sub (hmeas t₀ ht₀)).abs.ennreal_ofReal
-  have hΦmono : ∀ ω, Monotone (fun n => Φ n ω) := by
-    intro ω m n hmn
-    simp only [hΦ]
-    exact iSup_le_iSup_of_subset (Finset.coe_subset.mpr (hSmono hmn))
-  -- `⨆ t ∈ T = ⨆ n ⨆ t ∈ S n`.
-  have hA : ∀ ω, (⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω|) = ⨆ n, Φ n ω := by
-    intro ω
-    rw [← hUnion, iSup_iUnion]
-  -- Per-level bound via the finite absolute Dudley inequality.
-  have hbound : ∀ n, ∫⁻ ω, Φ n ω ∂μ
-      ≤ ENNReal.ofReal (80 * K) * dudleyLIntegral T D := by
-    intro n
-    have ht₀A : t₀ ∈ (↑(S n) : Set E) := Finset.mem_coe.mpr (ht₀S n)
-    have hAne : (↑(S n) : Set E).Nonempty := ⟨t₀, ht₀A⟩
-    have hAmeas : ∀ t ∈ (↑(S n) : Set E), AEMeasurable (X t) μ :=
-      fun t ht => hmeas t (hSsub n ht)
-    have hAinc : SubGaussianIncrements X K (↑(S n) : Set E) μ := hinc.mono_set (hSsub n)
-    have hdiamA : Metric.diam (↑(S n) : Set E) ≤ D :=
-      Metric.diam_le_of_forall_dist_le hD0.le
-        (fun x hx y hy => hD x (hSsub n hx) y (hSsub n hy))
-    have hIntA : MeasureTheory.Integrable
-        (fun ω => ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) μ :=
-      integrable_biSup_sub (S n).finite_toSet hAne hAmeas hAinc ht₀A
-    have hAnn : ∀ ω, 0 ≤ ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| := by
-      intro ω
-      rw [Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _)]
-      refine le_trans ?_ (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (ht₀S n))
-      rw [sub_self, abs_zero]
-    have hΦeq : ∀ ω, Φ n ω
-        = ENNReal.ofReal (⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) := by
-      intro ω
-      simp only [hΦ]
-      rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
-        Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _),
-        Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal (fun x y => ENNReal.ofReal_max x y)]
-      rfl
-    calc ∫⁻ ω, Φ n ω ∂μ
-        = ∫⁻ ω, ENNReal.ofReal (⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) ∂μ := by
-          apply lintegral_congr; intro ω; exact hΦeq ω
-      _ = ENNReal.ofReal (∫ ω, ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| ∂μ) :=
-          (ofReal_integral_eq_lintegral_ofReal hIntA (ae_of_all _ hAnn)).symm
-      _ ≤ ENNReal.ofReal (40 * K * dudleyIntegral (↑(S n) : Set E) D) := by
-          apply ENNReal.ofReal_le_ofReal
-          exact dudley_inequality_abs (S n).finite_toSet hAne hAmeas hAinc ht₀A hdiamA hD0
-      _ = ENNReal.ofReal (40 * K) * dudleyLIntegral (↑(S n) : Set E) D := by
-          rw [ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ 40 * (K:ℝ)),
-            ← dudleyLIntegral_eq_ofReal
-              (integrableOn_sqrtLogCov_Ioc (S n).finite_toSet)]
-      _ ≤ ENNReal.ofReal (40 * K) * (2 * dudleyLIntegral T D) := by
-          gcongr
-          exact dudleyLIntegral_subset_le_two (hSsub n) hD0.le
-            (fun ε hε => hcov ε hε)
-      _ = ENNReal.ofReal (80 * K) * dudleyLIntegral T D := by
-          have h2 : ENNReal.ofReal (80 * (K:ℝ)) = 2 * ENNReal.ofReal (40 * K) := by
-            rw [show (80:ℝ) * K = 2 * (40 * K) by ring,
-              ENNReal.ofReal_mul (by norm_num : (0:ℝ) ≤ 2)]
-            norm_num
-          rw [h2]; ring
-  calc ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
-      = ∫⁻ ω, ⨆ n, Φ n ω ∂μ := by
-        apply lintegral_congr; intro ω; exact hA ω
-    _ = ⨆ n, ∫⁻ ω, Φ n ω ∂μ := lintegral_iSup' hΦmeas (ae_of_all _ hΦmono)
-    _ ≤ ENNReal.ofReal (80 * K) * dudleyLIntegral T D := iSup_le hbound
+      ≤ ENNReal.ofReal (40 * K) * dudleyLIntegral T D := by
+  -- Constant improved 80 → 40: the per-F general engine measures the
+  -- entropy of T directly (no subset-covering ε/2 step); see the ledger.
+  sorry
+
+/-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
+
+Theorem 8.1.3 and Eqs. (8.13)/(8.14)/(8.16) are stated in HDP for a general
+metric space `(T, d)`; `E sup_{t∈T}` is read per Remark 7.2.1 as the
+supremum over finite subsets. The statements below quantify over a finite
+`F ⊆ T`, measure the entropy on the full `T`, replace `T.Finite` by the
+finite-covering package `hcov`, and carry the RHS in `ℝ≥0∞`
+(`dudleyLIntegral`) so a divergent entropy integral is an honest `⊤`. -/
+
+/-- **Dudley's integral inequality, mean-zero capped form** (HDP §8.1,
+Theorem 8.1.3 + Eq. (8.16); faithful general-`T` form): for every finite
+subset `F ⊆ T`,
+`E max_{t∈F} X_t ≤ 12√3 · K · ∫₀^D √(log 𝒩(T,d,ε)) dε` in `ℝ≥0∞`. Constant
+`12√3 = 2 × 6√3` as in the finite form. -/
+theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- LEAN-ONLY: rules out Bochner-junk means; increment means then derive
+    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
+    -- USER-INPUT: mean-zero coordinates; HDP §8.1, Theorem 8.1.3
+    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
+    -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the cap dominates the diameter (Eq (8.16)); HDP §8.1
+    {D : ℝ} (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap; the D = 0 corner degenerates to a point
+    (hD0 : 0 < D)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+      ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D := by
+  sorry
+
+/-- **Dudley's inequality, absolute form** (HDP §8.1, Eq. (8.13), capped;
+faithful general-`T` form): for every finite subset `F ⊆ T` and anchor
+`t₀ ∈ T`, `E max_{t∈F} |X_t − X_{t₀}| ≤ 40 · K · ∫₀^D √(log 𝒩(T,d,ε)) dε`
+in `ℝ≥0∞`, NO mean-zero. Constant `40` as in the finite form. -/
+theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the anchor point; HDP §8.1, Eq (8.13)
+    {t₀ : E} (ht₀ : t₀ ∈ T)
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Eq (8.16)
+    {D : ℝ} (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
+      ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D := by
+  sorry
+
+/-- **Dudley's inequality, pair form** (HDP §8.1, Eq. (8.14), capped;
+faithful general-`T` form): for every finite subset `F ⊆ T`,
+`E max_{s,t∈F} |X_t − X_s| ≤ 80 · K · ∫₀^D √(log 𝒩(T,d,ε)) dε` in `ℝ≥0∞`.
+Constant `80 = 2 × 40` as in the finite form. -/
+theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Eq (8.16)
+    {D : ℝ} (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal
+        (∫ ω, (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|) ∂μ)
+      ≤ ENNReal.ofReal 80 * K * dudleyLIntegral T D := by
+  sorry
+
+/-- **Dudley's inequality, `∫₀^∞` display** (HDP §8.1, Theorem 8.1.3
+verbatim shape; faithful general-`T` form): via `dudleyLIntegral_Ioi_eq`,
+the capped form with `D := diam T + 1`. -/
+theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- LEAN-ONLY: rules out Bochner-junk means; increment means then derive
+    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
+    -- USER-INPUT: mean-zero coordinates; HDP §8.1, Theorem 8.1.3
+    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
+    -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
+    (hinc : SubGaussianIncrements X K T μ)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+      ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K
+          * ∫⁻ ε in Set.Ioi (0 : ℝ), ENNReal.ofReal (sqrtLogCov T ε) := by
+  sorry
 
 end StatLean.ConcentrationInequalities

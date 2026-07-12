@@ -1,4 +1,5 @@
 import StatLean.ConcentrationInequalities.Chaining.SubGaussianIncrements
+import StatLean.ConcentrationInequalities.Chaining.SubsetChaining
 import StatLean.ConcentrationInequalities.Chaining.FinsetMaximal
 import StatLean.ConcentrationInequalities.Chaining.PsiTwoMaximal
 import StatLean.ConcentrationInequalities.Chaining.DyadicNets
@@ -42,8 +43,8 @@ the LEAN-ONLY hypothesis `hint : ∀ t ∈ T, Integrable (X t) μ` ruling out
 Bochner-junk means (a non-integrable `X t` satisfies `∫ X t = 0` vacuously);
 increment means are then derived. The pseudometric chain end is identified
 a.e. via `ae_eq_zero_of_subGaussianNorm_eq_zero` over the finitely many
-points. Named-sorry fallback of this work item: `discrete_dudley_abs`
-(the mean-zero headline `discrete_dudley` lands first).
+points. Named-sorry fallback of this work item: `discrete_dudley_abs_of_finite`
+(the mean-zero headline `discrete_dudley_of_finite` lands first).
 
 **Bibliographic comments.** Dudley's bound is from R. M. Dudley, "The sizes
 of compact subsets of Hilbert space and continuity of Gaussian processes,"
@@ -79,9 +80,9 @@ with the junk-free `Finset.sup'` over `hfin.toFinset` — the honest
 was **false**: for `ι ⊋ T` that biSup equals `(max_{t ∈ T} X t ω)⁺`, and at
 `|T| = 1` the left side degenerates to `∫ (X_c)⁺ > 0` while the right side is
 `0` (all covering numbers are `1`). The `|·|`-valued forms
-(`discrete_dudley_abs` and downstream) keep the biSup carrier, which is
+(`discrete_dudley_abs_of_finite` and downstream) keep the biSup carrier, which is
 junk-free there since the family is nonnegative. -/
-theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem discrete_dudley_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG, HDP p.224 / p.227 footnote)
@@ -414,7 +415,7 @@ lemma integrable_biSup_sub {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
 discrete): `E sup_{t ∈ T} |X_t − X_{t₀}| ≤ 20 · K · dudleySum T`, with NO
 mean-zero hypothesis (as the book stresses for Eq. (8.13)). Book constant
 frozen to `20` (`6√3` chaining + `4√π/√log 2` re-anchoring, slack). -/
-theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem discrete_dudley_abs_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- LEAN-ONLY: T finite (book WLOG, HDP p.224 / p.227 footnote)
@@ -847,5 +848,76 @@ theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
           rw [← Finset.mul_sum]
           exact mul_le_mul_of_nonneg_left hwin (by positivity)
       _ = 20 * K * dudleySum T := by ring
+
+/-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
+
+HDP states Theorem 8.1.4 for a process on a general metric space `(T, d)`,
+reading `E sup_{t∈T} X_t` per Remark 7.2.1 (p. 199) as the supremum over all
+finite subsets `T₀ ⊆ T` of `E max_{t∈T₀} X_t`. The faithful Lean statements
+therefore quantify over a finite subset `F ⊆ T` while measuring the entropy
+on the FULL `T`; finiteness of `T` is replaced by finiteness of the covering
+numbers (`hcov`, the totally-bounded package), and the RHS is carried in
+`ℝ≥0∞` (`dudleyLSum`) so that a divergent entropy series is an honest `⊤`
+(the real `dudleySum` tsum would junk to `0`). The chain runs through nets
+of `T` and is truncated at an arbitrary level; the truncation residual over
+the fixed finite `F` vanishes (`SubsetChaining.residual_expectation_le`),
+replacing the finite-`T` fine-scale stop of `discrete_dudley_of_finite`. -/
+
+/-- **Discrete Dudley inequality** (HDP §8.1, Theorem 8.1.4, Eq. (8.2);
+faithful general-`T` form): for every finite subset `F ⊆ T`,
+`E max_{t∈F} X_t ≤ 6√3 · K · dudleyLSum T` — the Remark 7.2.1 reading of
+`E sup_{t∈T} X_t ≤ CK Σ_k 2^{−k}√(log 𝒩(T,d,2^{−k}))`, with `C` frozen to
+`6√3` exactly as in the finite form. -/
+theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii (the
+    -- totally-bounded package; junk-guard for `sqrtLogCov`); HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- LEAN-ONLY: rules out Bochner-junk means; increment means then derive
+    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)
+    -- USER-INPUT: mean-zero coordinates; HDP §8.1, Theorem 8.1.4
+    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)
+    -- USER-INPUT: sub-gaussian increments Eq (8.1); HDP §8.1, Def 8.1.1
+    (hinc : SubGaussianIncrements X K T μ)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+      ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T := by
+  sorry
+
+/-- **Discrete Dudley inequality, absolute form** (HDP §8.1, Remark 8.1.5
+discrete; faithful general-`T` form): for every finite subset `F ⊆ T` and any
+anchor `t₀ ∈ T` (not necessarily in `F`),
+`E max_{t∈F} |X_t − X_{t₀}| ≤ 20 · K · dudleyLSum T`, with NO mean-zero
+hypothesis. Constant `20` as in the finite form. -/
+theorem discrete_dudley_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: the anchor point; HDP §8.1, Remark 8.1.5
+    {t₀ : E} (ht₀ : t₀ ∈ T)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
+      ≤ ENNReal.ofReal 20 * K * dudleyLSum T := by
+  sorry
 
 end StatLean.ConcentrationInequalities

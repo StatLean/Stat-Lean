@@ -21,11 +21,11 @@ pipeline.
 **Proof formalization notes.** Per the batch's consumer-ownership rule, this
 file keeps ONLY the exponential branch: the polynomial (`(2/ε)^m`, VC-type)
 branch and its integral evaluation are OWNED by the VC cluster
-(`VC/EntropyIntegral.lean`), which plugs `dudley_inequality_abs` (frozen
+(`VC/EntropyIntegral.lean`), which plugs `dudley_inequality_abs_of_finite` (frozen
 constant `40`) directly. The integral evaluation
 `∫_0^D √(C/ε) dε = 2√(CD)` is exact (via `integral_rpow`), deliberately
 avoiding the `Γ(3/2)` change-of-variables. Headline constant frozen to
-`80·K·√(C·D)` (= `40` from `dudley_inequality_abs` × `2` from the integral
+`80·K·√(C·D)` (= `40` from `dudley_inequality_abs_of_finite` × `2` from the integral
 evaluation). The covering hypothesis shape
 `hcov : ∀ ε ∈ Ioc 0 D, coveringNumber T ε ≠ ⊤ ∧ (toNat 𝒩 : ℝ) ≤ exp (C/ε)`
 is frozen for the gaussian-lln cluster. Named-sorry fallback of this work
@@ -142,7 +142,7 @@ theorem dudley_abs_of_cov_le_exp_div {X : E → Ω → ℝ} {K : ℝ≥0} {T : S
     dudleyIntegral_le_of_cov_le_exp_div hne hC hD0 hcov
   calc ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ
       ≤ 40 * K * dudleyIntegral T D :=
-        dudley_inequality_abs hfin hne hmeas hinc ht₀ hdiam hD0
+        dudley_inequality_abs_of_finite hfin hne hmeas hinc ht₀ hdiam hD0
     _ ≤ 40 * K * (2 * Real.sqrt (C * D)) := by
         refine mul_le_mul_of_nonneg_left h2 ?_; positivity
     _ = 80 * K * Real.sqrt (C * D) := by ring

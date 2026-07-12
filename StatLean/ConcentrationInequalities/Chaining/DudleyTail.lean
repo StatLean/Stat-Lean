@@ -1,4 +1,5 @@
 import StatLean.ConcentrationInequalities.Chaining.SubGaussianIncrements
+import StatLean.ConcentrationInequalities.Chaining.SubsetChaining
 import StatLean.ConcentrationInequalities.Chaining.PsiTwoMaximal
 import StatLean.ConcentrationInequalities.Chaining.DyadicNets
 import StatLean.ConcentrationInequalities.Chaining.EntropySum
@@ -35,8 +36,8 @@ pattern with `Chaining/GenericChaining.lean` — accepted small duplication in
 exchange for pairwise-disjoint parallel proof sessions; the shared
 tail-integrates-to-expectation step is factored in
 `Chaining/TailToExpectation.lean`. Named-sorry fallback of this work item:
-`dudley_tail` (the display form with diameter absorption), with
-`dudley_tail_three_term` proved.
+`dudley_tail_of_finite` (the display form with diameter absorption), with
+`dudley_tail_three_term_of_finite` proved.
 
 **Bibliographic comments.** The high-probability form of Dudley's bound is a
 folklore refinement of R. M. Dudley, "The sizes of compact subsets of Hilbert
@@ -132,7 +133,7 @@ private lemma sum_exp_neg_succ_le_one (n : ℕ) :
 8.1.6 / Exercise 8.1): with failure probability at most `2exp(−u²)`,
 `sup_{s,t} |X_t − X_s| ≤ K(9·dudleySum + 17·diam + 12·u·diam)`. Frozen core
 constants `9 / 17 / 12`; the book's `2exp(−u²)` is met exactly. -/
-theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_tail_three_term_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- USER-INPUT: T finite (the book's standing assumption for (8.15))
@@ -614,7 +615,7 @@ probability at least `1 − 2exp(−u²)`,
 `sup_{s,t} |X_t − X_s| ≤ 200·K·(∫_0^D √(log 𝒩) + u·diam T)`. Book's unnamed
 `C` frozen to `200` (the bare diameter term of the three-term core absorbed
 via `diam·√log2 ≤ 8·dudleyIntegral`). -/
-theorem dudley_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+theorem dudley_tail_of_finite {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- USER-INPUT: probability-space context; HDP §8.1
     [IsProbabilityMeasure μ]
     -- USER-INPUT: T finite (the book's standing assumption for (8.15))
@@ -635,7 +636,7 @@ theorem dudley_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
         < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}
       ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
   -- Reduce to the three-term core by absorbing the bare diameter into the integral.
-  refine le_trans (measure_mono ?_) (dudley_tail_three_term hfin hne hmeas hinc hu)
+  refine le_trans (measure_mono ?_) (dudley_tail_three_term_of_finite hfin hne hmeas hinc hu)
   intro ω hω
   simp only [Set.mem_setOf_eq] at hω ⊢
   refine lt_of_le_of_lt ?_ hω
@@ -659,5 +660,111 @@ theorem dudley_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
       ≤ (K : ℝ) * (200 * (dudleyIntegral T D + u * Metric.diam T)) :=
         mul_le_mul_of_nonneg_left key K.coe_nonneg
     _ = 200 * (K : ℝ) * (dudleyIntegral T D + u * Metric.diam T) := by ring
+
+/-! ### Faithful general forms (arbitrary `T`; HDP Remark 8.1.6 footnote)
+
+The book states Eq. (8.15) "assuming T is finite" purely "to avoid
+measurability issues" (p. 227, footnote 1: "the general case typically
+follows by approximation"). The forms below realize that approximation:
+per finite subset `F ⊆ T` over general `T` with the covering-finiteness
+package `hcov`, thresholds in the entropy of the FULL `T` (guarded by a
+LEAN-ONLY summability hypothesis — a real-valued threshold cannot honestly
+encode an infinite entropy sum, and (8.15) is vacuous there), plus a
+countable-supremum corollary by continuity from below along a finite
+exhaustion. Proof: the finite-`T` per-level union bound with the chain
+truncated at an arbitrary level; the residual event is killed by
+`SubsetChaining.residual_tail_le` and a `δ ↓ 0` slack. -/
+
+/-- **High-probability Dudley inequality, three-term core** (HDP §8.1,
+Remark 8.1.6 / Eq. (8.15); faithful general-`T` form): for every finite
+subset `F ⊆ T`, the maximal pair oscillation over `F` exceeds
+`K(9·S + 17·diam T + 12u·diam T)` with probability at most `2e^{−u²}`. -/
+theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- LEAN-ONLY: summable dyadic entropy so the real threshold is honest
+    -- (junk-guard: a divergent series junks `dudleySum` to 0, and (8.15)
+    -- is vacuous at infinite entropy anyway)
+    (hS : Summable fun k : ℤ => dudleySummand T k)
+    -- USER-INPUT: deviation parameter u ≥ 0; HDP §8.1, Eq (8.15)
+    {u : ℝ} (hu : 0 ≤ u)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)
+        < (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|)}
+      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
+  sorry
+
+/-- **High-probability Dudley inequality, display form** (HDP §8.1,
+Eq. (8.15); faithful general-`T` form): threshold
+`200·K·((∫₀^D √log 𝒩).toReal + u·diam T)` with the entropy integral carried
+in `ℝ≥0∞` and required finite (LEAN-ONLY junk-guard, as for the sum). -/
+theorem dudley_tail {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- LEAN-ONLY: summable dyadic entropy (real-threshold junk-guard)
+    (hS : Summable fun k : ℤ => dudleySummand T k)
+    -- LEAN-ONLY: finite entropy integral (real-threshold junk-guard)
+    {D : ℝ} (hDL : dudleyLIntegral T D ≠ ⊤)
+    -- USER-INPUT: the cap dominates the diameter; HDP §8.1, Eq (8.16)
+    (hD : Metric.diam T ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D)
+    -- USER-INPUT: deviation parameter u ≥ 0; HDP §8.1, Eq (8.15)
+    {u : ℝ} (hu : 0 ≤ u)
+    {F : Finset E}
+    -- USER-INPUT: the finite subset of Remark 7.2.1
+    (hF : ↑F ⊆ T)
+    -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
+    (hFne : F.Nonempty) :
+    μ {ω | 200 * K * ((dudleyLIntegral T D).toReal + u * Metric.diam T)
+        < (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|)}
+      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
+  sorry
+
+/-- **High-probability Dudley inequality, countable supremum** (HDP §8.1,
+Eq. (8.15) via the p. 227 footnote approximation): for countable `T` the
+two-sided oscillation supremum itself obeys the tail bound — continuity from
+below along a finite exhaustion of the per-subset form. -/
+theorem dudley_tail_three_term_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: countable T per the sup policy
+    (hcnt : T.Countable)
+    -- USER-INPUT: finite covering numbers at all positive radii; HDP §8.1
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- LEAN-ONLY: nonemptiness of the carrier
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- LEAN-ONLY: summable dyadic entropy (real-threshold junk-guard)
+    (hS : Summable fun k : ℤ => dudleySummand T k)
+    -- USER-INPUT: deviation parameter u ≥ 0; HDP §8.1, Eq (8.15)
+    {u : ℝ} (hu : 0 ≤ u) :
+    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)
+        < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}
+      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
+  sorry
 
 end StatLean.ConcentrationInequalities
