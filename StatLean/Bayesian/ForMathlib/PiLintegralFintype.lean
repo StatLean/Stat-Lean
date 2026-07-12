@@ -1,5 +1,7 @@
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import StatLean.Bayesian.ForMathlib.PiWithDensity
 
 /-!
@@ -47,6 +49,45 @@ namespace StatLean.Bayesian
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {ι : Type*} [Fintype ι]
 
+/-- Heterogeneous Tonelli over `Fin n` (private engine; re-derivation of the `Fin n`
+peeling used to seed the `Fintype` transport). Mirrors the Bochner
+`integral_fin_nat_prod_eq_prod`, peeling one coordinate with `piFinSuccAbove`. -/
+private theorem lintegral_pi_prod_hetero_fin {n : ℕ} {α : Fin n → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : (i : Fin n) → Measure (α i)) (hμ : ∀ i, SigmaFinite (μ i))
+    {f : (i : Fin n) → α i → ℝ≥0∞} (hf : ∀ i, Measurable (f i)) :
+    ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi μ) = ∏ i, ∫⁻ y, f i y ∂(μ i) := by
+  induction n with
+  | zero => haveI := hμ; simp [Measure.pi_empty_univ]
+  | succ n ih =>
+      haveI := hμ
+      have hg : Measurable fun z : (j : Fin n) → α j.succ => ∏ i, f i.succ (z i) :=
+        Finset.measurable_prod _ fun i _ => (hf i.succ).comp (measurable_pi_apply i)
+      rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).lintegral_comp_emb
+            (MeasurableEquiv.measurableEmbedding _) (fun b => ∏ i, f i (b i))]
+      simp_rw [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv,
+        Fin.prod_univ_succ, Fin.insertNth_zero, Equiv.coe_fn_mk, Fin.cons_succ,
+        Fin.zero_succAbove, cast_eq, Fin.cons_zero]
+      refine (lintegral_prod_mul (μ := μ 0) (ν := Measure.pi fun i => μ i.succ)
+        (f := f 0) (g := fun z : (j : Fin n) → α j.succ => ∏ i, f i.succ (z i))
+        (hf 0).aemeasurable hg.aemeasurable).trans ?_
+      rw [ih (μ := fun i => μ i.succ) (fun i => hμ i.succ) (f := fun i => f i.succ)
+          (fun i => hf i.succ)]
+
+/-- Heterogeneous Tonelli over an arbitrary finite index (private engine; transports
+`lintegral_pi_prod_hetero_fin` along `Fintype.equivFin ι` via
+`measurePreserving_piCongrLeft`). -/
+private theorem lintegral_pi_prod_hetero_fintype {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    (μ : (i : ι) → Measure (α i)) (hμ : ∀ i, SigmaFinite (μ i))
+    {f : (i : ι) → α i → ℝ≥0∞} (hf : ∀ i, Measurable (f i)) :
+    ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi μ) = ∏ i, ∫⁻ y, f i y ∂(μ i) := by
+  haveI := hμ
+  let e := (Fintype.equivFin ι).symm
+  rw [(measurePreserving_piCongrLeft μ e).lintegral_map_equiv
+      (fun x => ∏ i, f i (x i)) (MeasurableEquiv.piCongrLeft α e)]
+  simp_rw [← e.prod_comp, MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply_apply]
+  rw [lintegral_pi_prod_hetero_fin (fun i' => μ (e i')) (fun i' => hμ (e i'))
+      (f := fun i' => f (e i')) (fun i' => hf (e i'))]
+
 /-- **Tonelli for coordinate products over an arbitrary finite index.** The
 `Fintype ι` upgrade of `lintegral_pi_prod`:
 `∫⁻ x, ∏ i, f i (x i) ∂(⨂_ι μ) = ∏ i, ∫⁻ y, f i y ∂μ`. -/
@@ -54,8 +95,8 @@ theorem lintegral_pi_prod_fintype (μ : Measure 𝓧) [SigmaFinite μ]
     {f : ι → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: coordinate integrands measurable (regularity for Tonelli); no scope change
     (hf : ∀ i, Measurable (f i)) :
-    ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi fun _ : ι => μ) = ∏ i, ∫⁻ y, f i y ∂μ := by
-  sorry
+    ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi fun _ : ι => μ) = ∏ i, ∫⁻ y, f i y ∂μ :=
+  lintegral_pi_prod_hetero_fintype (fun _ => μ) (fun _ => inferInstance) hf
 
 /-- **A finite product of `withDensity` measures is `withDensity` of the product
 density**, over an arbitrary finite index `ι` (the `Fintype` upgrade of
@@ -68,7 +109,19 @@ theorem pi_withDensity_fintype (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ i : ι, SigmaFinite (μ.withDensity (f i))] :
     Measure.pi (fun i => μ.withDensity (f i))
       = (Measure.pi fun _ : ι => μ).withDensity fun x => ∏ i, f i (x i) := by
-  sorry
+  have hprod : Measurable fun x : ι → 𝓧 => ∏ i, f i (x i) :=
+    Finset.measurable_prod _ fun i _ => (hf i).comp (measurable_pi_apply i)
+  refine Measure.pi_eq (μ := fun i => μ.withDensity (f i)) (fun s hs => ?_)
+  calc ((Measure.pi fun _ : ι => μ).withDensity fun x => ∏ i, f i (x i)) (Set.univ.pi s)
+      = ∫⁻ x in Set.univ.pi s, ∏ i, f i (x i) ∂(Measure.pi fun _ : ι => μ) :=
+        withDensity_apply _ (MeasurableSet.univ_pi hs)
+    _ = ∫⁻ x, ∏ i, f i (x i) ∂(Measure.pi fun i => μ.restrict (s i)) := by
+        rw [Measure.restrict_pi_pi]
+    _ = ∏ i, ∫⁻ y, f i y ∂(μ.restrict (s i)) :=
+        lintegral_pi_prod_hetero_fintype (fun i => μ.restrict (s i)) (fun _ => inferInstance) hf
+    _ = ∏ i, (μ.withDensity (f i)) (s i) := by
+        refine Finset.prod_congr rfl (fun i _ => ?_)
+        rw [withDensity_apply _ (hs i)]
 
 /-- **Coordinate restriction marginalizes a product of probability measures.**
 Pushing `⨂_ι μ` forward under the restriction `x ↦ (fun i : {i // p i} => x i)`
@@ -81,7 +134,12 @@ theorem pi_map_restrict_subtype {α : ι → Type*} [∀ i, MeasurableSpace (α 
     (p : ι → Prop) [DecidablePred p] :
     (Measure.pi μ).map (fun x : ∀ i, α i => fun i : Subtype p => x i.val)
       = Measure.pi (fun i : Subtype p => μ i.val) := by
-  sorry
+  have hmp := measurePreserving_piEquivPiSubtypeProd μ p
+  have hcomp : (fun x : ∀ i, α i => fun i : Subtype p => x i.val)
+      = Prod.fst ∘ ⇑(MeasurableEquiv.piEquivPiSubtypeProd α p) := rfl
+  rw [hcomp, ← Measure.map_map measurable_fst
+      (MeasurableEquiv.piEquivPiSubtypeProd α p).measurable, hmp.map_eq]
+  exact Measure.fst_prod
 
 /-- **Split-Tonelli over a predicate `p`.** An lintegral against the full product
 measure equals the iterated lintegral over the `p`-coordinates (outer) and the
@@ -97,6 +155,10 @@ theorem lintegral_pi_split {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
       = ∫⁻ xS, ∫⁻ xSc, f ((Equiv.piEquivPiSubtypeProd p α).symm (xS, xSc))
           ∂(Measure.pi fun i : {i // ¬ p i} => μ i.val)
           ∂(Measure.pi fun i : Subtype p => μ i.val) := by
-  sorry
+  have hmp := measurePreserving_piEquivPiSubtypeProd μ p
+  rw [← hmp.symm.lintegral_comp hf,
+    lintegral_prod (fun a => f ((MeasurableEquiv.piEquivPiSubtypeProd α p).symm a))
+      (hf.comp (MeasurableEquiv.piEquivPiSubtypeProd α p).symm.measurable).aemeasurable]
+  rfl
 
 end StatLean.Bayesian
