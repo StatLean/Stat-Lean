@@ -340,40 +340,6 @@ private lemma dudleyLIntegral_subset_le_two {S T : Set E} (hST : S ⊆ T) {D : �
     _ = 2 * ∫⁻ u in Set.Ioc (0:ℝ) (D / 2), g u := hb
     _ ≤ 2 * ∫⁻ u in Set.Ioc (0:ℝ) D, g u := by gcongr
 
-/-- **Dudley's inequality, countable lift** (HDP §8.1, Eq. (8.13), countable
-form; p. 227 footnote "general case by approximation"): stated wholly in
-`ℝ≥0∞` so neither side can be junk; monotone convergence over a finite
-exhaustion of `T` fed into the general per-finite-subset `dudley_inequality_abs`
-below, which measures the entropy of `T` directly — so the former
-`coveringNumber_subset_le` `ε/2` loss disappears and the constant improves
-`80 → 40`. -/
-theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
-    -- USER-INPUT: probability-space context; HDP §8.1
-    [IsProbabilityMeasure μ]
-    -- LEAN-ONLY: countable T per the sup policy (uncountable sups are left
-    -- to consumers)
-    (hcnt : T.Countable)
-    -- LEAN-ONLY: nonemptiness
-    (hne : T.Nonempty)
-    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
-    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
-    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
-    (hinc : SubGaussianIncrements X K T μ)
-    -- USER-INPUT: T totally bounded, as finite covering numbers; HDP p.227
-    -- footnote
-    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
-    -- USER-INPUT: the anchor point; HDP §8.1, Eq (8.13)
-    {t₀ : E} (ht₀ : t₀ ∈ T)
-    -- USER-INPUT: uniform diameter bound (T bounded); HDP §8.1, Eq (8.16)
-    {D : ℝ} (hD : ∀ s ∈ T, ∀ t ∈ T, dist s t ≤ D)
-    -- LEAN-ONLY: positive cap
-    (hD0 : 0 < D) :
-    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
-      ≤ ENNReal.ofReal (40 * K) * dudleyLIntegral T D := by
-  -- Constant improved 80 → 40: the per-F general engine measures the
-  -- entropy of T directly (no subset-covering ε/2 step); see the ledger.
-  sorry
-
 /-! ### Faithful general forms (arbitrary `T`; HDP Remark 7.2.1)
 
 Theorem 8.1.3 and Eqs. (8.13)/(8.14)/(8.16) are stated in HDP for a general
@@ -414,7 +380,18 @@ theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hFne : F.Nonempty) :
     ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
       ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D := by
-  sorry
+  calc ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
+      ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T :=
+        discrete_dudley hcov hne hmeas hint hmean hinc hF hFne
+    _ ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * (2 * dudleyLIntegral T D) := by
+        gcongr
+        exact dudleyLSum_le_two_mul_dudleyLIntegral hcov hne hD hD0
+    _ = ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D := by
+        have h2 : ENNReal.ofReal (12 * Real.sqrt 3)
+            = 2 * ENNReal.ofReal (6 * Real.sqrt 3) := by
+          rw [show (12 : ℝ) * Real.sqrt 3 = 2 * (6 * Real.sqrt 3) by ring,
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+        rw [h2]; ring
 
 /-- **Dudley's inequality, absolute form** (HDP §8.1, Eq. (8.13), capped;
 faithful general-`T` form): for every finite subset `F ⊆ T` and anchor
@@ -444,7 +421,14 @@ theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hFne : F.Nonempty) :
     ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
       ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D := by
-  sorry
+  calc ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
+      ≤ ENNReal.ofReal 20 * K * dudleyLSum T :=
+        discrete_dudley_abs hcov hne hmeas hinc ht₀ hF hFne
+    _ ≤ ENNReal.ofReal 20 * K * (2 * dudleyLIntegral T D) := by
+        gcongr
+        exact dudleyLSum_le_two_mul_dudleyLIntegral hcov hne hD hD0
+    _ = ENNReal.ofReal 40 * K * dudleyLIntegral T D := by
+        rw [ENNReal.ofReal_ofNat, ENNReal.ofReal_ofNat]; ring
 
 /-- **Dudley's inequality, pair form** (HDP §8.1, Eq. (8.14), capped;
 faithful general-`T` form): for every finite subset `F ⊆ T`,
@@ -473,7 +457,90 @@ theorem dudley_inequality_abs_pair {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set
     ENNReal.ofReal
         (∫ ω, (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|) ∂μ)
       ≤ ENNReal.ofReal 80 * K * dudleyLIntegral T D := by
-  sorry
+  classical
+  have hbd : Bornology.IsBounded T := isBounded_of_coveringNumber_ne_top hcov
+  set t₀ := hne.some with ht₀def
+  have ht₀ : t₀ ∈ T := hne.some_mem
+  set L : ℝ≥0 := K * Real.toNNReal (Metric.diam T) with hLdef
+  have hPne : (F ×ˢ F).Nonempty := hFne.product hFne
+  -- Integrability of the anchored single supremum (leg), via its biSup twin.
+  have hIntLegB : MeasureTheory.Integrable
+      (fun ω => ⨆ t ∈ F, |X t ω - X t₀ ω|) μ := by
+    refine integrable_biSup_abs hFne (L := L) (fun t ht => ?_) (fun t ht => ?_)
+    · exact (hmeas t (hF (Finset.mem_coe.mpr ht))).sub (hmeas t₀ ht₀)
+    · have htT : t ∈ T := hF (Finset.mem_coe.mpr ht)
+      refine (hinc t₀ ht₀ t htT).trans ?_
+      have hde : edist t₀ t ≤ (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by
+        rw [edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.dist_le_diam_of_mem hbd ht₀ htT)
+      calc (K : ℝ≥0∞) * edist t₀ t
+          ≤ (K : ℝ≥0∞) * (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by gcongr
+        _ = (L : ℝ≥0∞) := by rw [hLdef]; push_cast; ring
+  have hlegeq : (fun ω => ⨆ t ∈ F, |X t ω - X t₀ ω|)
+      = fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|) :=
+    funext fun ω => biSup_finset_eq_sup' hFne (fun t => |X t ω - X t₀ ω|)
+      (fun _ _ => abs_nonneg _)
+  have hIntLeg : MeasureTheory.Integrable
+      (fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|)) μ := by
+    rw [← hlegeq]; exact hIntLegB
+  -- Integrability of the pair supremum, via its biSup twin.
+  have hIntPairB : MeasureTheory.Integrable
+      (fun ω => ⨆ p ∈ (F ×ˢ F), |X p.1 ω - X p.2 ω|) μ := by
+    refine integrable_biSup_abs hPne (L := L) (fun p hp => ?_) (fun p hp => ?_)
+    · obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      exact (hmeas p.1 (hF (Finset.mem_coe.mpr hp1))).sub
+        (hmeas p.2 (hF (Finset.mem_coe.mpr hp2)))
+    · obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+      have h1 : p.1 ∈ T := hF (Finset.mem_coe.mpr hp1)
+      have h2 : p.2 ∈ T := hF (Finset.mem_coe.mpr hp2)
+      refine (hinc p.2 h2 p.1 h1).trans ?_
+      have hde : edist p.2 p.1 ≤ (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by
+        rw [edist_dist]
+        exact ENNReal.ofReal_le_ofReal (Metric.dist_le_diam_of_mem hbd h2 h1)
+      calc (K : ℝ≥0∞) * edist p.2 p.1
+          ≤ (K : ℝ≥0∞) * (Real.toNNReal (Metric.diam T) : ℝ≥0∞) := by gcongr
+        _ = (L : ℝ≥0∞) := by rw [hLdef]; push_cast; ring
+  have hpaireq : (fun ω => ⨆ p ∈ (F ×ˢ F), |X p.1 ω - X p.2 ω|)
+      = fun ω => (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|) :=
+    funext fun ω => biSup_finset_eq_sup' hPne (fun p => |X p.1 ω - X p.2 ω|)
+      (fun _ _ => abs_nonneg _)
+  have hIntPair : MeasureTheory.Integrable
+      (fun ω => (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|)) μ := by
+    rw [← hpaireq]; exact hIntPairB
+  -- Pointwise: the pair sup is at most twice the anchored single sup (triangle).
+  have hpt : ∀ ω, (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|)
+      ≤ 2 * F.sup' hFne (fun t => |X t ω - X t₀ ω|) := by
+    intro ω
+    refine Finset.sup'_le hPne _ (fun p hp => ?_)
+    obtain ⟨hp1, hp2⟩ := Finset.mem_product.mp hp
+    have htri : |X p.1 ω - X p.2 ω|
+        ≤ |X p.1 ω - X t₀ ω| + |X p.2 ω - X t₀ ω| := by
+      have h := abs_sub_le (X p.1 ω) (X t₀ ω) (X p.2 ω)
+      rwa [abs_sub_comm (X t₀ ω) (X p.2 ω)] at h
+    have h1 : |X p.1 ω - X t₀ ω| ≤ F.sup' hFne (fun t => |X t ω - X t₀ ω|) :=
+      Finset.le_sup' (fun t => |X t ω - X t₀ ω|) hp1
+    have h2 : |X p.2 ω - X t₀ ω| ≤ F.sup' hFne (fun t => |X t ω - X t₀ ω|) :=
+      Finset.le_sup' (fun t => |X t ω - X t₀ ω|) hp2
+    linarith
+  -- Integral form of the pointwise bound.
+  have hint_le : ∫ ω, (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|) ∂μ
+      ≤ 2 * ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ := by
+    calc ∫ ω, (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|) ∂μ
+        ≤ ∫ ω, 2 * F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ :=
+          integral_mono_ae hIntPair (hIntLeg.const_mul 2) (ae_of_all _ hpt)
+      _ = 2 * ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ :=
+          integral_const_mul 2 _
+  -- Assemble the ℝ≥0∞ bound.
+  calc ENNReal.ofReal (∫ ω, (F ×ˢ F).sup' hPne (fun p => |X p.1 ω - X p.2 ω|) ∂μ)
+      ≤ ENNReal.ofReal (2 * ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ) :=
+        ENNReal.ofReal_le_ofReal hint_le
+    _ = 2 * ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ) := by
+        rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+    _ ≤ 2 * (ENNReal.ofReal 40 * K * dudleyLIntegral T D) := by
+        gcongr
+        exact dudley_inequality_abs hcov hne hmeas hinc ht₀ hD hD0 hF hFne
+    _ = ENNReal.ofReal 80 * K * dudleyLIntegral T D := by
+        rw [ENNReal.ofReal_ofNat, ENNReal.ofReal_ofNat]; ring
 
 /-- **Dudley's inequality, `∫₀^∞` display** (HDP §8.1, Theorem 8.1.3
 verbatim shape; faithful general-`T` form): via `dudleyLIntegral_Ioi_eq`,
@@ -501,6 +568,143 @@ theorem dudley_inequality_Ioi {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)
       ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K
           * ∫⁻ ε in Set.Ioi (0 : ℝ), ENNReal.ofReal (sqrtLogCov T ε) := by
-  sorry
+  have hDpos : (0 : ℝ) < Metric.diam T + 1 := by
+    have := Metric.diam_nonneg (s := T); linarith
+  have hDle : Metric.diam T ≤ Metric.diam T + 1 := by linarith
+  rw [dudleyLIntegral_Ioi_eq hcov hne hDle hDpos]
+  exact dudley_inequality hcov hne hmeas hint hmean hinc hDle hDpos hF hFne
+
+/-- **Dudley's inequality, countable lift** (HDP §8.1, Eq. (8.13), countable
+form; p. 227 footnote "general case by approximation"): stated wholly in
+`ℝ≥0∞` so neither side can be junk; monotone convergence over a finite
+exhaustion of `T` fed into the general per-finite-subset `dudley_inequality_abs`
+below, which measures the entropy of `T` directly — so the former
+`coveringNumber_subset_le` `ε/2` loss disappears and the constant improves
+`80 → 40`. -/
+theorem dudley_inequality_countable {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
+    -- USER-INPUT: probability-space context; HDP §8.1
+    [IsProbabilityMeasure μ]
+    -- LEAN-ONLY: countable T per the sup policy (uncountable sups are left
+    -- to consumers)
+    (hcnt : T.Countable)
+    -- LEAN-ONLY: nonemptiness
+    (hne : T.Nonempty)
+    -- LEAN-ONLY: a.e.-measurability of the coordinates (Orlicz bridges)
+    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)
+    -- USER-INPUT: sub-gaussian increments only (NO mean-zero); HDP §8.1
+    (hinc : SubGaussianIncrements X K T μ)
+    -- USER-INPUT: T totally bounded, as finite covering numbers; HDP p.227
+    -- footnote
+    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)
+    -- USER-INPUT: the anchor point; HDP §8.1, Eq (8.13)
+    {t₀ : E} (ht₀ : t₀ ∈ T)
+    -- USER-INPUT: uniform diameter bound (T bounded); HDP §8.1, Eq (8.16)
+    {D : ℝ} (hD : ∀ s ∈ T, ∀ t ∈ T, dist s t ≤ D)
+    -- LEAN-ONLY: positive cap
+    (hD0 : 0 < D) :
+    ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
+      ≤ ENNReal.ofReal (40 * K) * dudleyLIntegral T D := by
+  -- Constant improved 80 → 40: the per-F general engine measures the
+  -- entropy of T directly (no subset-covering ε/2 step); see the ledger.
+  classical
+  -- Enumerate the countable index set and build a finite exhaustion `S n ↑ T`
+  -- through the anchor `t₀`.
+  obtain ⟨f, hf⟩ := hcnt.exists_eq_range hne
+  set S : ℕ → Finset E := fun n => insert t₀ ((Finset.range n).image f) with hS
+  have ht₀S : ∀ n, t₀ ∈ S n := fun n => Finset.mem_insert_self _ _
+  have hSne : ∀ n, (S n).Nonempty := fun n => ⟨t₀, ht₀S n⟩
+  have hSsub : ∀ n, (↑(S n) : Set E) ⊆ T := by
+    intro n x hx
+    rw [hS, Finset.coe_insert, Set.mem_insert_iff] at hx
+    rcases hx with rfl | hx
+    · exact ht₀
+    · rw [Finset.coe_image] at hx
+      obtain ⟨k, _, rfl⟩ := hx
+      rw [hf]; exact Set.mem_range_self k
+  have hSmono : Monotone S := by
+    intro m n hmn
+    apply Finset.insert_subset_insert
+    exact Finset.image_subset_image (Finset.range_subset_range.mpr hmn)
+  have hUnion : (⋃ n, (↑(S n) : Set E)) = T := by
+    refine Set.Subset.antisymm (Set.iUnion_subset hSsub) ?_
+    rw [hf]
+    rintro x ⟨k, rfl⟩
+    refine Set.mem_iUnion.2 ⟨k + 1, ?_⟩
+    rw [hS, Finset.coe_insert, Set.mem_insert_iff, Finset.coe_image]
+    exact Or.inr ⟨k, by simp [Finset.mem_range], rfl⟩
+  -- `↑(S n)`-biSup as a `Finset.sup'` (real and `ℝ≥0∞`).
+  have Ssup : ∀ (h : E → ℝ) (n : ℕ), (∀ t ∈ S n, 0 ≤ h t) →
+      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n h0 => by
+    rw [Finset.iSup_coe, biSup_finset_eq_sup' (hSne n) h h0]
+  have SsupE : ∀ (h : E → ℝ≥0∞) (n : ℕ),
+      (⨆ t ∈ (↑(S n) : Set E), h t) = (S n).sup' (hSne n) h := fun h n => by
+    rw [Finset.iSup_coe, ← Finset.sup_eq_iSup, Finset.sup'_eq_sup]
+  -- The monotone-convergence integrand family.
+  set Φ : ℕ → Ω → ℝ≥0∞ :=
+    fun n ω => ⨆ t ∈ (↑(S n) : Set E), ENNReal.ofReal |X t ω - X t₀ ω| with hΦ
+  have hΦmeas : ∀ n, AEMeasurable (Φ n) μ := by
+    intro n
+    simp only [hΦ]
+    refine AEMeasurable.biSup (↑(S n) : Set E) (S n).countable_toSet (fun t ht => ?_)
+    exact ((hmeas t (hSsub n ht)).sub (hmeas t₀ ht₀)).abs.ennreal_ofReal
+  have hΦmono : ∀ ω, Monotone (fun n => Φ n ω) := by
+    intro ω m n hmn
+    simp only [hΦ]
+    exact iSup_le_iSup_of_subset (Finset.coe_subset.mpr (hSmono hmn))
+  -- `⨆ t ∈ T = ⨆ n ⨆ t ∈ S n`.
+  have hA : ∀ ω, (⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω|) = ⨆ n, Φ n ω := by
+    intro ω
+    rw [← hUnion, iSup_iUnion]
+  -- Honest diameter cap of `T` from the uniform pairwise-distance bound.
+  have hdiamT : Metric.diam T ≤ D := Metric.diam_le_of_forall_dist_le hD0.le hD
+  -- Per-level bound via the general (faithful) absolute Dudley inequality,
+  -- measuring the entropy of `T` DIRECTLY (constant `40`, no `ε/2` step).
+  have hbound : ∀ n, ∫⁻ ω, Φ n ω ∂μ
+      ≤ ENNReal.ofReal (40 * K) * dudleyLIntegral T D := by
+    intro n
+    have ht₀A : t₀ ∈ (↑(S n) : Set E) := Finset.mem_coe.mpr (ht₀S n)
+    have hAne : (↑(S n) : Set E).Nonempty := ⟨t₀, ht₀A⟩
+    have hIntA : MeasureTheory.Integrable
+        (fun ω => ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) μ :=
+      integrable_biSup_sub (S n).finite_toSet hAne
+        (fun t ht => hmeas t (hSsub n ht)) (hinc.mono_set (hSsub n)) ht₀A
+    have hAnn : ∀ ω, 0 ≤ ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| := by
+      intro ω
+      rw [Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _)]
+      refine le_trans ?_ (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) (ht₀S n))
+      rw [sub_self, abs_zero]
+    have hΦeq : ∀ ω, Φ n ω
+        = ENNReal.ofReal (⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) := by
+      intro ω
+      simp only [hΦ]
+      rw [SsupE (fun t => ENNReal.ofReal |X t ω - X t₀ ω|) n,
+        Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _),
+        Finset.comp_sup'_eq_sup'_comp (hSne n) ENNReal.ofReal
+          (fun x y => ENNReal.ofReal_max x y)]
+      rfl
+    -- Bridge the `↑(S n)`-biSup Bochner integrand to the `Finset.sup'` carrier
+    -- of the general theorem.
+    have hbridge : ∫ ω, ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| ∂μ
+        = ∫ ω, (S n).sup' (hSne n) (fun t => |X t ω - X t₀ ω|) ∂μ := by
+      apply integral_congr_ae
+      filter_upwards with ω
+      exact Ssup (fun t => |X t ω - X t₀ ω|) n (fun _ _ => abs_nonneg _)
+    calc ∫⁻ ω, Φ n ω ∂μ
+        = ∫⁻ ω, ENNReal.ofReal (⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω|) ∂μ := by
+          apply lintegral_congr; intro ω; exact hΦeq ω
+      _ = ENNReal.ofReal (∫ ω, ⨆ t ∈ (↑(S n) : Set E), |X t ω - X t₀ ω| ∂μ) :=
+          (ofReal_integral_eq_lintegral_ofReal hIntA (ae_of_all _ hAnn)).symm
+      _ = ENNReal.ofReal
+            (∫ ω, (S n).sup' (hSne n) (fun t => |X t ω - X t₀ ω|) ∂μ) := by
+          rw [hbridge]
+      _ ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D :=
+          dudley_inequality_abs hcov hne hmeas hinc ht₀ hdiamT hD0 (hSsub n) (hSne n)
+      _ = ENNReal.ofReal (40 * K) * dudleyLIntegral T D := by
+          rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 40), ENNReal.ofReal_coe_nnreal]
+  calc ∫⁻ ω, ⨆ t ∈ T, ENNReal.ofReal |X t ω - X t₀ ω| ∂μ
+      = ∫⁻ ω, ⨆ n, Φ n ω ∂μ := by
+        apply lintegral_congr; intro ω; exact hA ω
+    _ = ⨆ n, ∫⁻ ω, Φ n ω ∂μ := lintegral_iSup' hΦmeas (ae_of_all _ hΦmono)
+    _ ≤ ENNReal.ofReal (40 * K) * dudleyLIntegral T D := iSup_le hbound
 
 end StatLean.ConcentrationInequalities
