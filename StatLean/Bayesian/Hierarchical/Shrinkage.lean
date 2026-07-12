@@ -508,6 +508,109 @@ private lemma integrable_jsR {p : ℕ} (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 
       show 3 * (1 / S x) * (S x) ^ 2 = 3 * S x by field_simp, abs_le]
     constructor <;> nlinarith [coord_sq_le_sum x i, sq_nonneg (x i), hpos.le]
 
+/-! ### Brick B: the cross term via coordinate Fubini and the 1D Stein identity -/
+
+/-- **Cross-term identity** (Brick B): for each coordinate `i`,
+`∫ (xᵢ − θᵢ)·xᵢ/‖x‖² ∂N = σ²·∫ (‖x‖² − 2xᵢ²)/‖x‖⁴ ∂N`. Isolating coordinate `i` by the measure-
+preserving `piFinSuccAbove` equivalence turns each side into an iterated integral; for a.e. choice of
+the other coordinates `b` (whose squared norm `c := ∑_{j≠i} bⱼ² > 0`), the inner `xᵢ`-integral is the
+one-dimensional Gaussian Stein identity `gaussian_stein_1d` applied to `s ↦ s/(s²+c)`. -/
+private lemma jamesStein_crossTerm {n : ℕ} (hp3 : 3 ≤ n + 1) (θ : Fin (n + 1) → ℝ)
+    (σ2 : ℝ≥0) (hσ : σ2 ≠ 0) (i : Fin (n + 1)) :
+    (∫ x, (x i - θ i) * (x i / ∑ j, (x j) ^ 2) ∂(Measure.pi fun j => gaussianReal (θ j) σ2))
+      = (σ2 : ℝ) * ∫ x, ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2
+          ∂(Measure.pi fun j => gaussianReal (θ j) σ2) := by
+  classical
+  set μ : Fin (n + 1) → Measure ℝ := fun j => gaussianReal (θ j) σ2 with hμ
+  haveI : ∀ j, IsProbabilityMeasure (μ j) := fun j => by rw [hμ]; infer_instance
+  set e : (Fin (n + 1) → ℝ) ≃ᵐ ℝ × (Fin n → ℝ) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) i with he
+  have mp : MeasurePreserving e (Measure.pi μ)
+      ((μ i).prod (Measure.pi fun j => μ (i.succAbove j))) :=
+    measurePreserving_piFinSuccAbove μ i
+  set νr : Measure (Fin n → ℝ) := Measure.pi fun j => μ (i.succAbove j) with hνr
+  haveI : IsProbabilityMeasure νr := by rw [hνr]; infer_instance
+  have mps : MeasurePreserving e.symm ((μ i).prod νr) (Measure.pi μ) :=
+    MeasurePreserving.symm e mp
+  -- coordinate identities for `e.symm (a, b) = insertNth i a b`
+  have hes : ∀ (a : ℝ) (b : Fin n → ℝ),
+      e.symm (a, b) = Fin.insertNth (α := fun _ : Fin (n + 1) => ℝ) i a b := fun _ _ => rfl
+  have hsame : ∀ (a : ℝ) (b : Fin n → ℝ),
+      (Fin.insertNth (α := fun _ : Fin (n + 1) => ℝ) i a b) i = a :=
+    fun a b => Fin.insertNth_apply_same (α := fun _ => ℝ) i a b
+  have hsum : ∀ (a : ℝ) (b : Fin n → ℝ),
+      ∑ j, ((Fin.insertNth (α := fun _ : Fin (n + 1) => ℝ) i a b) j) ^ 2
+        = a ^ 2 + ∑ j, (b j) ^ 2 := by
+    intro a b
+    rw [Fin.sum_univ_succAbove
+        (fun k => ((Fin.insertNth (α := fun _ : Fin (n + 1) => ℝ) i a b) k) ^ 2) i, hsame]
+    congr 1
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [Fin.insertNth_apply_succAbove (α := fun _ => ℝ)]
+  -- a.e. positivity of `c = ∑_{j≠i} bⱼ²` under the product Gaussian on the frozen coordinates
+  have hn1 : 0 < n := by omega
+  have hkpos : ∀ᵐ b ∂νr, (0 : ℝ) < ∑ j, (b j) ^ 2 := by
+    set k : Fin n := ⟨0, hn1⟩ with hk
+    haveI : NoAtoms (μ (i.succAbove k)) := noAtoms_gaussianReal hσ
+    have hmpk : MeasurePreserving (Function.eval k) νr (μ (i.succAbove k)) := by
+      rw [hνr]; exact measurePreserving_eval (μ := fun j => μ (i.succAbove j)) k
+    have hatom : ∀ᵐ y ∂(μ (i.succAbove k)), y ≠ 0 := by
+      simpa only [ae_iff, not_ne_iff, Set.setOf_eq_eq_singleton] using
+        measure_singleton (μ := μ (i.succAbove k)) 0
+    have hbk : ∀ᵐ b ∂νr, (b k) ≠ 0 :=
+      ae_of_ae_map hmpk.measurable.aemeasurable (hmpk.map_eq ▸ hatom)
+    filter_upwards [hbk] with b hb
+    have hpos : 0 < (b k) ^ 2 := by positivity
+    exact lt_of_lt_of_le hpos (coord_sq_le_sum b k)
+  -- transfer both integrals through the equivalence and Fubini
+  have hGint : Integrable (fun x => (x i - θ i) * (x i / ∑ j, (x j) ^ 2)) (Measure.pi μ) := by
+    rw [hμ]; exact integrable_jsG hp3 θ σ2 hσ i
+  have hRint : Integrable (fun x => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2)
+      (Measure.pi μ) := by rw [hμ]; exact integrable_jsR hp3 θ σ2 hσ i
+  have hGint2 : Integrable (fun z => (e.symm z i - θ i) * (e.symm z i / ∑ j, (e.symm z j) ^ 2))
+      ((μ i).prod νr) :=
+    (mps.integrable_comp_emb e.symm.measurableEmbedding).mpr hGint
+  have hRint2 : Integrable (fun z => ((∑ j, (e.symm z j) ^ 2) - 2 * (e.symm z i) ^ 2)
+      / (∑ j, (e.symm z j) ^ 2) ^ 2) ((μ i).prod νr) :=
+    (mps.integrable_comp_emb e.symm.measurableEmbedding).mpr hRint
+  rw [← mps.integral_comp' (fun x => (x i - θ i) * (x i / ∑ j, (x j) ^ 2)),
+      ← mps.integral_comp' (fun x => ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2),
+      integral_prod_symm _ hGint2, integral_prod_symm _ hRint2, ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [hkpos] with b hcb
+  set c : ℝ := ∑ j, (b j) ^ 2 with hc
+  have hμi : μ i = gaussianReal (θ i) σ2 := rfl
+  have hGeq : (fun a : ℝ => (e.symm (a, b) i - θ i) * (e.symm (a, b) i / ∑ j, (e.symm (a, b) j) ^ 2))
+      = fun a : ℝ => (a - θ i) * (a / (a ^ 2 + c)) := by
+    funext a; rw [hes a b, hsame a b, hsum a b]
+  have hReq : (fun a : ℝ => ((∑ j, (e.symm (a, b) j) ^ 2) - 2 * (e.symm (a, b) i) ^ 2)
+        / (∑ j, (e.symm (a, b) j) ^ 2) ^ 2)
+      = fun a : ℝ => (c - a ^ 2) / (a ^ 2 + c) ^ 2 := by
+    funext a; rw [hes a b, hsame a b, hsum a b]; ring
+  rw [hGeq, hReq, hμi]
+  -- inner Stein identity
+  have hbound_h : ∀ a : ℝ, |a / (a ^ 2 + c)| ≤ 1 / (2 * Real.sqrt c) := by
+    intro a
+    rw [abs_div, abs_of_pos (show (0 : ℝ) < a ^ 2 + c by positivity),
+      div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [sq_nonneg (|a| - Real.sqrt c), Real.sq_sqrt hcb.le, sq_abs a,
+      Real.sqrt_nonneg c, abs_nonneg a]
+  have hbound_h' : ∀ a : ℝ, |(c - a ^ 2) / (a ^ 2 + c) ^ 2| ≤ 1 / c := by
+    intro a
+    rw [abs_div, abs_of_pos (show (0 : ℝ) < (a ^ 2 + c) ^ 2 by positivity),
+      div_le_div_iff₀ (by positivity) hcb]
+    have h1 : |c - a ^ 2| ≤ a ^ 2 + c := by
+      rw [abs_le]; constructor <;> nlinarith [sq_nonneg a, hcb.le]
+    nlinarith [h1, sq_nonneg a, hcb.le, mul_nonneg (abs_nonneg (c - a ^ 2)) hcb.le,
+      mul_le_mul h1 (show c ≤ a ^ 2 + c by nlinarith [sq_nonneg a]) hcb.le
+        (by positivity : (0 : ℝ) ≤ a ^ 2 + c)]
+  have hd : ∀ t : ℝ, HasDerivAt (fun s => s / (s ^ 2 + c)) ((c - t ^ 2) / (t ^ 2 + c) ^ 2) t :=
+    fun t => hasDerivAt_jsSlice c t (show (0 : ℝ) < t ^ 2 + c by positivity).ne'
+  exact gaussian_stein_1d (θ i) σ2 hσ (C := 1 / (2 * Real.sqrt c) + 1 / c)
+    (by fun_prop) (by fun_prop) hd
+    (fun t => (hbound_h t).trans (le_add_of_nonneg_right (by positivity)))
+    (fun t => (hbound_h' t).trans (le_add_of_nonneg_left (by positivity)))
+
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
     (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
