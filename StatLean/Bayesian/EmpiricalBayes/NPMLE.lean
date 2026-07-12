@@ -58,13 +58,64 @@ private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Fi
     ∃ Ghat, IsNPMLE p x Ghat := by
   classical
   letI : Fintype Θ := Fintype.ofFinite Θ
-  -- Real objective on weight vectors: `Ψ w = ∏ⱼ ∑_θ (p θ xⱼ).toReal · w θ`, continuous.
-  -- Maximize over the compact nonempty simplex `stdSimplex ℝ Θ` (`isCompact_stdSimplex` +
-  -- `IsCompact.exists_isMaxOn`), giving weights `w✶`. Set `Ghat = ∑_θ ofReal (w✶ θ) • dirac θ`
-  -- (a probability measure since `∑ w✶ = 1`). For any probability `G`, its real weights
-  -- `μ_G θ = (G{θ}).toReal ∈ stdSimplex` and `(∏ⱼ mix G).toReal = Ψ μ_G ≤ Ψ w✶ = (∏ⱼ mix Ghat).toReal`
-  -- (finiteness from `hpfin` + `measure_ne_top`), so `∏ⱼ mix G ≤ ∏ⱼ mix Ghat`.
-  sorry
+  -- Real objective on weight vectors: `Ψ w = ∏ⱼ ∑_θ (p θ xⱼ).toReal · w θ`.
+  set Ψ : (Θ → ℝ) → ℝ := fun w => ∏ j, ∑ θ, (p θ (x j)).toReal * w θ with hΨ
+  have hcont : Continuous Ψ :=
+    continuous_finset_prod _ fun j _ =>
+      continuous_finset_sum _ fun θ _ => continuous_const.mul (continuous_apply θ)
+  have hne : (stdSimplex ℝ Θ).Nonempty := by
+    refine ⟨fun θ => if θ = Classical.arbitrary Θ then 1 else 0, fun θ => ?_, ?_⟩
+    · by_cases h : θ = Classical.arbitrary Θ <;> simp [h]
+    · simp [Finset.sum_ite_eq' Finset.univ (Classical.arbitrary Θ)]
+  obtain ⟨w, hwmem, hwmax⟩ := (isCompact_stdSimplex Θ).exists_isMaxOn hne hcont.continuousOn
+  obtain ⟨hwnn, hwsum⟩ := hwmem
+  -- The maximizing measure `Ghat = ∑_θ ofReal (w θ) • δ_θ`.
+  set Ghat : Measure Θ := ∑ θ, ENNReal.ofReal (w θ) • Measure.dirac θ with hGhat
+  have hGuniv : Ghat Set.univ = 1 := by
+    rw [hGhat, Measure.finset_sum_apply _ MeasurableSet.univ]
+    simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]
+    rw [← ENNReal.ofReal_sum_of_nonneg (fun θ _ => hwnn θ), hwsum, ENNReal.ofReal_one]
+  have hGprob : IsProbabilityMeasure Ghat := ⟨hGuniv⟩
+  -- Both marginal likelihoods are finite weighted sums over the (finite) parameter space.
+  have hmixfin : ∀ (H : Measure Θ) j, mixtureDensity p H (x j) = ∑ θ, p θ (x j) * H {θ} := by
+    intro H j; simp only [mixtureDensity, predictiveDensity]; exact lintegral_fintype _
+  have hGhatmix : ∀ j, mixtureDensity p Ghat (x j) = ∑ θ, ENNReal.ofReal (w θ) * p θ (x j) := by
+    intro j; simp only [mixtureDensity, predictiveDensity, hGhat]
+    rw [lintegral_finset_sum_measure]
+    exact Finset.sum_congr rfl fun θ _ => by rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+  -- `(∏ⱼ f_Ghat(xⱼ)).toReal = Ψ w`.
+  have hprodGhat : (∏ j, mixtureDensity p Ghat (x j)).toReal = Ψ w := by
+    rw [ENNReal.toReal_prod]
+    refine Finset.prod_congr rfl fun j _ => ?_
+    rw [hGhatmix j, ENNReal.toReal_sum
+      (fun θ _ => (ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hpfin θ j).lt_top).ne)]
+    exact Finset.sum_congr rfl fun θ _ => by
+      rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hwnn θ), mul_comm]
+  refine ⟨Ghat, hGprob, fun G hG => ?_⟩
+  -- `G`'s real weights lie in the simplex.
+  have hμmem : (fun θ => (G {θ}).toReal) ∈ stdSimplex ℝ Θ := by
+    refine ⟨fun θ => ENNReal.toReal_nonneg, ?_⟩
+    rw [← ENNReal.toReal_sum (fun θ _ => measure_ne_top G _), sum_measure_singleton,
+      Finset.coe_univ, measure_univ, ENNReal.toReal_one]
+  have hmixGfin : ∀ j, mixtureDensity p G (x j) ≠ ∞ := by
+    intro j; rw [hmixfin G j]
+    exact (ENNReal.sum_lt_top.2 fun θ _ =>
+      ENNReal.mul_lt_top (hpfin θ j).lt_top (measure_ne_top G _).lt_top).ne
+  have hprodG : (∏ j, mixtureDensity p G (x j)).toReal = Ψ (fun θ => (G {θ}).toReal) := by
+    rw [ENNReal.toReal_prod]
+    refine Finset.prod_congr rfl fun j _ => ?_
+    rw [hmixfin G j, ENNReal.toReal_sum
+      (fun θ _ => (ENNReal.mul_lt_top (hpfin θ j).lt_top (measure_ne_top G _).lt_top).ne)]
+    exact Finset.sum_congr rfl fun θ _ => by rw [ENNReal.toReal_mul]
+  -- Maximality: transfer the real inequality `Ψ μ_G ≤ Ψ w` back to `ℝ≥0∞`.
+  have hprodGhatfin : ∏ j, mixtureDensity p Ghat (x j) ≠ ∞ :=
+    ENNReal.prod_ne_top fun j _ => by
+      rw [hGhatmix j]
+      exact (ENNReal.sum_lt_top.2 fun θ _ =>
+        ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hpfin θ j).lt_top).ne
+  rw [← ENNReal.toReal_le_toReal (ENNReal.prod_ne_top fun j _ => hmixGfin j) hprodGhatfin,
+    hprodG, hprodGhat]
+  exact hwmax hμmem
 
 /-- **Lindsay's finite-support theorem** (3F.7): the NPMLE can be taken supported on at most `n+1`
 points (Lindsay 1983). Stated in Lindsay's *discrete* regular setting — a finite parameter space
