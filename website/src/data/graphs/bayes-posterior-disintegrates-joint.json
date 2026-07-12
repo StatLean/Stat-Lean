@@ -1,0 +1,21 @@
+{
+  "root": "StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint",
+  "nodes": [
+    {"id":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","label":"posterior_disintegrates_joint","full":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","kind":"root","decl":"thm","module":"StatLean.Bayesian.Experiment.Basic"},
+    {"id":"StatLean.Bayesian.BayesExperiment","label":"BayesExperiment","full":"StatLean.Bayesian.BayesExperiment","kind":"repo","decl":"def","module":"StatLean.Bayesian.Experiment.Defs"},
+    {"id":"StatLean.Bayesian.BayesExperiment.predictive","label":"predictive","full":"StatLean.Bayesian.BayesExperiment.predictive","kind":"repo","decl":"def","module":"StatLean.Bayesian.Experiment.Defs"},
+    {"id":"StatLean.Bayesian.BayesExperiment.posterior","label":"posterior","full":"StatLean.Bayesian.BayesExperiment.posterior","kind":"repo","decl":"def","module":"StatLean.Bayesian.Experiment.Defs"},
+    {"id":"StatLean.Bayesian.BayesExperiment.joint","label":"joint","full":"StatLean.Bayesian.BayesExperiment.joint","kind":"repo","decl":"def","module":"StatLean.Bayesian.Experiment.Defs"},
+    {"id":"ProbabilityTheory.compProd_posterior_eq_map_swap","label":"compProd_posterior_eq_map_swap","full":"ProbabilityTheory.compProd_posterior_eq_map_swap","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Posterior"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","target":"StatLean.Bayesian.BayesExperiment"},
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","target":"StatLean.Bayesian.BayesExperiment.predictive"},
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","target":"StatLean.Bayesian.BayesExperiment.posterior"},
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","target":"StatLean.Bayesian.BayesExperiment.joint"},
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior_disintegrates_joint","target":"ProbabilityTheory.compProd_posterior_eq_map_swap"},
+    {"source":"StatLean.Bayesian.BayesExperiment.predictive","target":"StatLean.Bayesian.BayesExperiment"},
+    {"source":"StatLean.Bayesian.BayesExperiment.posterior","target":"StatLean.Bayesian.BayesExperiment"},
+    {"source":"StatLean.Bayesian.BayesExperiment.joint","target":"StatLean.Bayesian.BayesExperiment"}
+  ]
+}

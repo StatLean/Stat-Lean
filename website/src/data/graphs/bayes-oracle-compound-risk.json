@@ -1,0 +1,16 @@
+{
+  "root": "StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk",
+  "nodes": [
+    {"id":"StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk","label":"oracleBayesRule_minimizes_compoundRisk","full":"StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk","kind":"root","decl":"thm","module":"StatLean.Bayesian.EmpiricalBayes.Compound"},
+    {"id":"StatLean.Bayesian.generalizedPosterior","label":"generalizedPosterior","full":"StatLean.Bayesian.generalizedPosterior","kind":"repo","decl":"def","module":"StatLean.Bayesian.GeneralizedBayes.Defs"},
+    {"id":"MeasureTheory.lintegral_mono","label":"lintegral_mono","full":"MeasureTheory.lintegral_mono","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"StatLean.Bayesian.bayesDensity","label":"bayesDensity","full":"StatLean.Bayesian.bayesDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.Dominated.Defs"},
+    {"id":"StatLean.Bayesian.predictiveDensity","label":"predictiveDensity","full":"StatLean.Bayesian.predictiveDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.Dominated.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk","target":"StatLean.Bayesian.generalizedPosterior"},
+    {"source":"StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk","target":"MeasureTheory.lintegral_mono"},
+    {"source":"StatLean.Bayesian.generalizedPosterior","target":"StatLean.Bayesian.bayesDensity"},
+    {"source":"StatLean.Bayesian.bayesDensity","target":"StatLean.Bayesian.predictiveDensity"}
+  ]
+}

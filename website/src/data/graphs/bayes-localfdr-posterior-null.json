@@ -1,0 +1,12 @@
+{
+  "root": "StatLean.Bayesian.localFDR_eq_posteriorNullProb",
+  "nodes": [
+    {"id":"StatLean.Bayesian.localFDR_eq_posteriorNullProb","label":"localFDR_eq_posteriorNullProb","full":"StatLean.Bayesian.localFDR_eq_posteriorNullProb","kind":"root","decl":"thm","module":"StatLean.Bayesian.EmpiricalBayes.LocalFDR"},
+    {"id":"StatLean.Bayesian.localFDR","label":"localFDR","full":"StatLean.Bayesian.localFDR","kind":"repo","decl":"def","module":"StatLean.Bayesian.EmpiricalBayes.Defs"},
+    {"id":"StatLean.Bayesian.twoGroupsMixture","label":"twoGroupsMixture","full":"StatLean.Bayesian.twoGroupsMixture","kind":"repo","decl":"def","module":"StatLean.Bayesian.EmpiricalBayes.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.localFDR_eq_posteriorNullProb","target":"StatLean.Bayesian.localFDR"},
+    {"source":"StatLean.Bayesian.localFDR","target":"StatLean.Bayesian.twoGroupsMixture"}
+  ]
+}
