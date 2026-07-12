@@ -1,0 +1,21 @@
+srun: job 30375477 queued and waiting for resources
+srun: job 30375477 has been allocated resources
+All five sorries in `Dudley.lean` are closed and committed. Summary of what was done:
+
+## Result: `Dudley.lean` fully closed (0 sorries)
+
+**Items 1–4 (mandatory) — all closed:**
+
+1. **`dudley_inequality`** — ℝ≥0∞ calc through general `discrete_dudley` → `dudleyLSum_le_two_mul_dudleyLIntegral`, with the `12√3 = 2·(6√3)` constant algebra done via a *separated* `have h2` so `ENNReal.ofReal_mul` targets the right `ofReal` (the naive rw hit the `6√3` atom on the LHS — that was the initial `ring` failure).
+
+2. **`dudley_inequality_abs`** — same shape, `20 → 40`, constants via `ENNReal.ofReal_ofNat` + `ring`.
+
+3. **`dudley_inequality_abs_pair`** — triangle through `t₀ = hne.some`: pointwise `pair-sup ≤ 2·leg-sup` via `Finset.sup'_le` + `Finset.le_sup'` + `abs_sub_le`; per-carrier integrability mined from `integrable_biSup_abs` (ψ₂ diam-`T` cap, `T` bounded via `isBounded_of_coveringNumber_ne_top`) bridged biSup↔sup'; `integral_mono_ae` then `2·(general abs) = 80`.
+
+4. **`dudley_inequality_Ioi`** — `dudleyLIntegral_Ioi_eq` at `D := diam T + 1`, then the general `dudley_inequality`.
+
+**Item 5 (fallback) — also closed:** `dudley_inequality_countable` at constant **40**. Reused the old exhaustion/MCT plumbing but replaced the per-`n` bound with the new general `dudley_inequality_abs` (carrier `T`, `F := S n`), measuring the entropy of `T` directly — dropping the `ε/2` subset-covering step and its factor 2 (80→40).
+
+**One structural change (no statement/docstring edits):** moved `dudley_inequality_countable` below the "Faithful general forms" section so it can consume `dudley_inequality_abs` (Lean has no forward references).
+
+The full `StatLean.ConcentrationInequalities` area builds with no errors; the only remaining sorries are the upstream frozen `discrete_dudley`/`discrete_dudley_abs` in `DiscreteDudley.lean`, which are outside the touch-set and expected.
