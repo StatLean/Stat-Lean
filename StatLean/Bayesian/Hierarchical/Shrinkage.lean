@@ -768,3 +768,7 @@ theorem jamesStein_dominates_mle {p : ℕ}
   linarith [mul_pos hcoef hEpos]
 
 end StatLean.Bayesian
+
+-- INDEPENDENT AXIOM CHECK (verify branch only)
+#print axioms jamesStein_risk_difference
+#print axioms jamesStein_dominates_mle
