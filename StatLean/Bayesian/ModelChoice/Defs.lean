@@ -30,13 +30,12 @@ measure; this one compares two dominated models). `predictiveDensity` serves as 
 finite/countable discrete `M`. `bayesTest` uses classical decidability of `≤` in `ℝ≥0∞` (the rule
 is noncomputable, like every posterior quantity here).
 
-**Bibliographic comments.** Bayes factors are due to H. Jeffreys (*Theory of Probability*, 1939),
-the model-comparison calculus to §5–§7 of Robert; the modern review is R. E. Kass and A. E.
-Raftery, "Bayes factors," *J. Amer. Statist. Assoc.* 90 (1995), 773–795. Posterior model
-probabilities and model averaging in the form (7.2.2)–(7.2.3) were systematized in the 1990s
-(A. E. Raftery, D. Madigan, J. A. Hoeting, "Bayesian model averaging for linear regression
-models," *J. Amer. Statist. Assoc.* 92 (1997), 179–191). Credible regions are the Bayesian
-counterpart of confidence sets; Robert Definition 5.5.2 follows the HPD tradition of Box and Tiao
+**Bibliographic comments.** Bayes factors are due to H. Jeffreys (*Theory of Probability*, 1939);
+the modern review is R. E. Kass and A. E. Raftery, "Bayes factors," *J. Amer. Statist. Assoc.* 90
+(1995), 773–795. Posterior model probabilities and model averaging in the form (7.2.2)–(7.2.3)
+were systematized in the 1990s (A. E. Raftery, D. Madigan, J. A. Hoeting, "Bayesian model averaging
+for linear regression models," *J. Amer. Statist. Assoc.* 92 (1997), 179–191). Credible regions
+are the Bayesian counterpart of confidence sets, following the HPD tradition of Box and Tiao
 (*Bayesian Inference in Statistical Analysis*, Addison-Wesley, 1973).
 -/
 

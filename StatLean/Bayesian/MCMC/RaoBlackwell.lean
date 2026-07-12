@@ -28,7 +28,7 @@ attainable in the estimation of statistical parameters," *Bull. Calcutta Math. S
 81–91) and D. Blackwell ("Conditional expectation and unbiased sequential estimation," *Ann. Math.
 Statist.* 18 (1947), 105–110). Its use as an MCMC variance-reduction device is A. E. Gelfand and
 A. F. M. Smith (1990), extended by J. S. Liu, W. H. Wong and A. Kong ("Covariance structure of the
-Gibbs sampler…," *Biometrika* 81 (1994), 27–40) — Robert's §6.3.4 credits.
+Gibbs sampler…," *Biometrika* 81 (1994), 27–40).
 -/
 
 open MeasureTheory ProbabilityTheory

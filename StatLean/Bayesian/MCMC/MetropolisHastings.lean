@@ -3,7 +3,7 @@ import StatLean.Bayesian.MCMC.Defs
 /-!
 # Metropolis–Hastings correctness: reversibility and stationarity
 
-Correctness of the Metropolis–Hastings kernel on a countable state space (Robert Theorem 6.3.1):
+Correctness of the Metropolis–Hastings kernel on a countable state space (Gelman §11.2):
 
 * the kernel is **Markov** (2F.2): acceptance mass plus rejection mass is one;
 * **detailed balance** (2F.3): `π{x}·K(x, {y}) = π{y}·K(y, {x})` — in kernel form,
@@ -11,10 +11,9 @@ Correctness of the Metropolis–Hastings kernel on a countable state space (Robe
 * **stationarity** (2F.1/2F.4): reversibility implies invariance, `π·K = π`, loaded from the
   pinned `Kernel.IsReversible.invariant`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §6.3.2, Theorem 6.3.1 and the detailed-balance identity
-eq. (6.3.1), p. 304.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §11.2
+(Metropolis and Metropolis–Hastings), p. 278.
 
 **Proof formalization notes.** The pointwise engine is the symmetry lemma `mhAccept_mul_symm`
 (`π{x}·q(x,{y})·α(x,y) = π{y}·q(y,{x})·α(y,x)`), an `ℝ≥0∞` computation via the helper
@@ -22,14 +21,13 @@ eq. (6.3.1), p. 304.
 `q`). Reversibility integrates it over `A × B` with `lintegral_countable'`-style indicator sums
 (`ENNReal.tsum_comm` for the swap); the rejection part is diagonal-supported and symmetric by
 construction. Stationarity is the pinned `IsReversible.invariant` — the textbook-named wrapper
-`invariant_of_isReversible` (2F.1) records Robert's phrasing; we load, not reprove.
+`invariant_of_isReversible` (2F.1) records Gelman's phrasing; we load, not reprove.
 
 **Bibliographic comments.** Metropolis et al. (1953) introduced the symmetric-proposal algorithm
 for statistical mechanics; Hastings (1970) the general ratio used here. That detailed balance
 (reversibility) suffices for stationarity is the classical reversible-chain argument (A. N.
-Kolmogorov's reversibility criterion, 1936); the MCMC-correctness reading is Robert Theorem 6.3.1,
-with the convergence theory (irreducibility, Harris recurrence, ergodic theorems) deferred to
-Meyn–Tweedie-style analysis outside this batch's scope.
+Kolmogorov's reversibility criterion, 1936), with the convergence theory (irreducibility, Harris
+recurrence, ergodic theorems) deferred to Meyn–Tweedie-style analysis outside this batch's scope.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -111,7 +109,7 @@ private theorem rejFlow_symm (π : Measure S) [IsFiniteMeasure π] (q : Kernel S
       simp [Measure.dirac_apply' _ hD, hxC, hxD, Set.mem_inter_iff]
   rw [key A B hA hB, key B A hB hA, Set.inter_comm]
 
-/-- **Metropolis–Hastings detailed balance** (2F.3; Robert Theorem 6.3.1 / eq. (6.3.1)): the MH
+/-- **Metropolis–Hastings detailed balance** (2F.3; Gelman §11.2): the MH
 kernel is reversible with respect to its target. -/
 theorem isReversible_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel S S)
     [IsMarkovKernel q] :
@@ -128,15 +126,15 @@ theorem isReversible_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel 
   rw [lintegral_add_left Measurable.of_discrete, lintegral_add_left Measurable.of_discrete,
     accFlow_symm π q, rejFlow_symm π q hA hB]
 
-/-- **Detailed balance implies stationarity** (2F.1; Robert Theorem 6.3.1) — textbook-named
+/-- **Detailed balance implies stationarity** (2F.1; Gelman §11.2) — textbook-named
 wrapper of the pinned `Kernel.IsReversible.invariant`. -/
 theorem invariant_of_isReversible {κ : Kernel S S} [IsMarkovKernel κ] {π : Measure S}
-    -- USER-INPUT: detailed balance of the chain; Robert eq. (6.3.1)
+    -- USER-INPUT: detailed balance of the chain; Gelman §11.2
     (h : Kernel.IsReversible κ π) :
     Kernel.Invariant κ π :=
   h.invariant
 
-/-- **Metropolis–Hastings stationarity** (2F.4; Robert Theorem 6.3.1): the target is invariant
+/-- **Metropolis–Hastings stationarity** (2F.4; Gelman §11.2): the target is invariant
 for the MH kernel. -/
 theorem invariant_mhKernel (π : Measure S) [IsFiniteMeasure π] (q : Kernel S S)
     [IsMarkovKernel q] :

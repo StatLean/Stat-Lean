@@ -36,11 +36,11 @@ normalization `conjExpZ` is kept **abstract**: the update and marginal theorems 
 fact.
 
 **Bibliographic comments.** Conjugate priors originate with H. Raiffa and R. Schlaifer, *Applied
-Statistical Decision Theory* (Harvard, 1961; Robert §3.3.2, p. 114); the exponential-family theory
+Statistical Decision Theory* (Harvard, 1961); the exponential-family theory
 of conjugacy — including the linearity of posterior expectations characterizing these priors — is
 P. Diaconis and D. Ylvisaker, "Conjugate priors for exponential families," *Ann. Statist.* 7
 (1979), 269–281. The general theory of exponential families is L. D. Brown, *Fundamentals of
-Statistical Exponential Families* (IMS Lecture Notes 9, 1986), Robert's cited source in §3.3.3.
+Statistical Exponential Families* (IMS Lecture Notes 9, 1986).
 -/
 
 open MeasureTheory ProbabilityTheory

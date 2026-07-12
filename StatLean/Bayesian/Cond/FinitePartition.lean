@@ -10,12 +10,9 @@ the **finite-partition Bayes' theorem**
 $$\mu[H_j \mid d] = \frac{\mu[d \mid H_j]\,\mu(H_j)}{\sum_{i \in s} \mu[d \mid H_i]\,\mu(H_i)},$$
 and the **two-hypothesis Bayes' theorem** (the `{t, tᶜ}` special case).
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §1.2, p. 8 (two-event
-Bayes' theorem and its total-probability denominator); Example 1.2.3 (Laplace), p. 11 (finite
-discrete Bayes). Robert states these via prose and numbered equations rather than as a standalone
-numbered theorem.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3
+(Bayes' rule / conditional probability), p. 6.
 
 **Proof formalization notes.** Built directly on Mathlib's `ProbabilityTheory.cond`
 (`μ[d | H i] = cond μ (H i) d`). We work in `ℝ≥0∞` with `[IsFiniteMeasure μ]`, which removes all
@@ -29,9 +26,9 @@ T. Bayes read to the Royal Society in 1761 and published posthumously by R. Pric
 towards solving a problem in the doctrine of chances," *Philosophical Transactions of the Royal
 Society* 53 (1763), 370–418). P. S. Laplace rediscovered it in full generality in his "Mémoire sur
 la probabilité des causes par les événements" (1773/1774), apparently unaware of Bayes's work; the
-finite-partition computation formalized here is exactly Laplace's usage (Robert, Example 1.2.3).
+finite-partition computation formalized here is exactly Laplace's usage.
 For the history see S. M. Stigler, *The History of Statistics* (Harvard, 1986) and A. I. Dale,
-*A History of Inverse Probability* (Springer, 1991); Robert §1.8.1 surveys these credits.
+*A History of Inverse Probability* (Springer, 1991).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -43,13 +40,13 @@ variable {Ω ι : Type*} [mΩ : MeasurableSpace Ω]
 
 /-- **Law of total probability** over a finite measurable partition:
 `μ d = ∑ i ∈ s, μ[d | H i] * μ (H i)`. Parts with `μ (H i) = 0` contribute `0` to both sides,
-so no positivity hypotheses are needed (Robert §1.2, the total-probability denominator, p. 8). -/
+so no positivity hypotheses are needed (Gelman §1.3, the total-probability denominator). -/
 theorem measure_eq_sum_cond_mul_of_partition {s : Finset ι} {H : ι → Set Ω}
     -- LEAN-ONLY: the hypotheses `H i` are events (measurability is measure-theoretic regularity)
     (hHm : ∀ i ∈ s, MeasurableSet (H i))
-    -- USER-INPUT: the hypotheses are mutually exclusive; Robert §1.2
+    -- USER-INPUT: the hypotheses are mutually exclusive; Gelman §1.3
     (hHd : (s : Set ι).PairwiseDisjoint H)
-    -- USER-INPUT: the hypotheses are exhaustive; Robert §1.2
+    -- USER-INPUT: the hypotheses are exhaustive; Gelman §1.3
     (hHc : ⋃ i ∈ s, H i = Set.univ)
     (μ : Measure Ω) [IsFiniteMeasure μ]
     -- LEAN-ONLY: the observed data `d` is an event (measurability is regularity)
@@ -65,15 +62,15 @@ theorem measure_eq_sum_cond_mul_of_partition {s : Finset ι} {H : ι → Set Ω}
     _ = ∑ i ∈ s, μ[d | H i] * μ (H i) :=
         Finset.sum_congr rfl fun i hi => (cond_mul_eq_inter (hHm i hi) d μ).symm
 
-/-- **Bayes' theorem for a finite partition** (Robert §1.2, discrete posterior form). If
+/-- **Bayes' theorem for a finite partition** (Gelman §1.3, discrete posterior form). If
 `μ d = 0` both sides are `0` (`0/0 = 0` in `ℝ≥0∞`), so the observed-data event needs no
 positivity hypothesis. -/
 theorem cond_eq_cond_mul_div_sum_of_partition {s : Finset ι} {H : ι → Set Ω}
     -- LEAN-ONLY: the hypotheses `H i` are events
     (hHm : ∀ i ∈ s, MeasurableSet (H i))
-    -- USER-INPUT: the hypotheses are mutually exclusive; Robert §1.2
+    -- USER-INPUT: the hypotheses are mutually exclusive; Gelman §1.3
     (hHd : (s : Set ι).PairwiseDisjoint H)
-    -- USER-INPUT: the hypotheses are exhaustive; Robert §1.2
+    -- USER-INPUT: the hypotheses are exhaustive; Gelman §1.3
     (hHc : ⋃ i ∈ s, H i = Set.univ)
     (μ : Measure Ω) [IsFiniteMeasure μ]
     -- LEAN-ONLY: the observed data `d` is an event
@@ -83,7 +80,7 @@ theorem cond_eq_cond_mul_div_sum_of_partition {s : Finset ι} {H : ι → Set Ω
     cond_apply' (hHm j hj) μ, cond_mul_eq_inter (hHm j hj) d μ, Set.inter_comm d (H j),
     ENNReal.div_eq_inv_mul]
 
-/-- **Two-hypothesis Bayes' theorem** (Robert §1.2, p. 8). Only the hypothesis `t` needs
+/-- **Two-hypothesis Bayes' theorem** (Gelman §1.3). Only the hypothesis `t` needs
 measurability; the data `d` may be any set (`cond_apply'` / `cond_add_cond_compl_eq` take the
 target set arbitrary). Degenerate cases vanish under the `ℝ≥0∞` conventions. -/
 theorem cond_eq_cond_mul_div_add_compl (μ : Measure Ω) [IsFiniteMeasure μ]

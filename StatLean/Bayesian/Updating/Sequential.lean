@@ -7,7 +7,7 @@ import StatLean.Bayesian.Dominated.PosteriorDensity
 
 Two coherence properties of Bayesian updating:
 
-* **Sequential Bayes** (Robert eq. (1.4.1)): updating on `x` and then on `y` equals updating once
+* **Sequential Bayes** (Gelman §1.3): updating on `x` and then on `y` equals updating once
   on the joint observation `(x, y)` — for a dominated pair experiment `κ₁ ×ₖ κ₂`,
   $$\big((\kappa_1 \times \kappa_2)^{\dagger}_\pi\big)(x, y)
     = \big(\pi_x\big)_y \qquad \text{predictive-a.e.},$$
@@ -15,11 +15,8 @@ Two coherence properties of Bayesian updating:
 * **Reparameterization equivariance**: for a measurable equivalence `φ : Θ ≃ᵐ Θ'`, the posterior
   transforms by pushforward, `(κ.comap φ.symm)†(π.map φ) = ((κ†π) ·).map φ` predictive-a.e.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §1.4, eq. (1.4.1) (sequential coherence of the posterior), p. 23;
-the equivariance of the Bayesian answer under reparameterization is the §1.3 invariance discussion
-(and underlies the §3.5 noninformative-prior program).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3, p. 6.
 
 **Proof formalization notes.** Sequential: the pair kernel is dominated by `ν₁.prod ν₂` with the
 product density (pinned `prod_withDensity_left/right` + `withDensity_mul`); apply the Batch-1
@@ -33,7 +30,7 @@ abstract (no domination): verify the disintegration property of `((κ†π) ·).
 operational heart of Bayesian learning, already used by Laplace and stressed axiomatically by
 B. de Finetti (1937) and D. V. Lindley (*Introduction to Probability and Statistics from a
 Bayesian Viewpoint*, Cambridge, 1965). Equivariance under reparameterization is the invariance
-desideratum behind Jeffreys's priors (H. Jeffreys, *Theory of Probability*, 1939; Robert §3.5).
+desideratum behind Jeffreys's priors (H. Jeffreys, *Theory of Probability*, 1939).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -44,7 +41,7 @@ namespace StatLean.Bayesian
 variable {Θ Θ' 𝓧 𝓨 : Type*} [mΘ : MeasurableSpace Θ] [mΘ' : MeasurableSpace Θ']
   [m𝓧 : MeasurableSpace 𝓧] [m𝓨 : MeasurableSpace 𝓨]
 
-/-- **Sequential Bayes** (Robert eq. (1.4.1)), dominated form: the posterior of the pair
+/-- **Sequential Bayes** (Gelman §1.3), dominated form: the posterior of the pair
 experiment at `(x, y)` is the `y`-update of the `x`-posterior, predictive-a.e. -/
 theorem posterior_prod_ae_eq_sequential
     [StandardBorelSpace Θ] [Nonempty Θ] {π : Measure Θ} [IsFiniteMeasure π]
@@ -53,7 +50,7 @@ theorem posterior_prod_ae_eq_sequential
     {p₁ : Θ → 𝓧 → ℝ≥0∞} {p₂ : Θ → 𝓨 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the two densities (regularity)
     (hp₁ : Measurable (Function.uncurry p₁)) (hp₂ : Measurable (Function.uncurry p₂))
-    -- USER-INPUT: both coordinates are dominated models; Robert Definition 1.2.1 / §1.4
+    -- USER-INPUT: both coordinates are dominated models; Gelman §1.3
     (hκ₁ : ∀ θ, κ₁ θ = ν₁.withDensity (p₁ θ)) (hκ₂ : ∀ θ, κ₂ θ = ν₂.withDensity (p₂ θ)) :
     ∀ᵐ q ∂((κ₁ ×ₖ κ₂) ∘ₘ π),
       ((κ₁ ×ₖ κ₂)†π) q = generalizedPosterior p₂ (generalizedPosterior p₁ π q.1) q.2 := by
@@ -137,7 +134,7 @@ theorem map_compProd_comap (φ : Θ ≃ᵐ Θ') (κ : Kernel Θ 𝓧) [IsSFinite
   rw [Measure.compProd_eq_comp_prod, ← Measure.deterministic_comp_eq_map φ.measurable,
     Measure.comp_assoc, hk, Measure.compProd_eq_comp_prod, Measure.map_comp _ _ hmap]
 
-/-- **Reparameterization equivariance of the posterior** (Robert §1.3/§3.5 invariance): for a
+/-- **Reparameterization equivariance of the posterior** (Gelman §1.3 invariance): for a
 measurable equivalence of parameter spaces, the posterior of the reparameterized experiment is the
 pushforward of the original posterior, predictive-a.e. -/
 theorem posterior_comap_map_ae_eq_map_posterior

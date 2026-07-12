@@ -11,11 +11,9 @@ $$\theta \sim \mathcal D_{k+1}(\alpha), \quad v \mid \theta \sim \mathcal M_{k+1
 \mathrm{simplexExtend}\ \theta) \ \Longrightarrow\
 \theta \mid v \sim \mathcal D_{k+1}(\alpha + v) \qquad \text{predictive-a.e.}$$
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Table 3.3.1 (Multinomial ℳ_k(θ) + Dirichlet 𝒟(α) →
-𝒟(α₁+x₁, …, α_k+x_k)), p. 121; Appendix A.8/A.11, p. 521; Example 3.3.4 (Dirichlet as an
-exponential family), p. 116.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §3.4
+(multinomial model for categorical data), p. 69.
 
 **Proof formalization notes.** The conjugacy kernel `dmKernel` is the multinomial kernel pulled
 back along `simplexExtend`, so it is dominated by counting measure on the countable data space
@@ -31,8 +29,7 @@ concentrations" — is the categorical analogue of Laplace smoothing and the con
 finite mixture models, latent Dirichlet allocation (D. M. Blei, A. Y. Ng, M. I. Jordan, "Latent
 Dirichlet allocation," *J. Mach. Learn. Res.* 3 (2003), 993–1022), and, in the infinite limit, the
 Dirichlet-process machinery of Bayesian nonparametrics (T. S. Ferguson, *Ann. Statist.* 1 (1973),
-209–230; Robert §1.8.2). Robert lists the pair among the natural conjugate families of
-Raiffa–Schlaifer (Table 3.3.1).
+209–230). The pair is one of the natural conjugate families of Raiffa–Schlaifer.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -64,9 +61,9 @@ private theorem simplexExtend_mem_simplex {θ : Fin k → ℝ} (hc : θ ∈ simp
 /-- Pointwise weight algebra on the corner: Dirichlet weight times multinomial likelihood is the
 multinomial coefficient times the updated Dirichlet weight. Off the corner both sides vanish. -/
 theorem dirichletWeight_mul_multinomialWeight {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i) (n : ℕ) (v : Fin (k + 1) → ℕ)
-    -- USER-INPUT: the observed counts total `n` trials; Robert Appendix A.11
+    -- USER-INPUT: the observed counts total `n` trials; Gelman §3.4
     (hv : ∑ i, v i = n) (θ : Fin k → ℝ) :
     dirichletWeight α θ * multinomialWeight (k + 1) n (simplexExtend θ) v
       = ENNReal.ofReal (Nat.multinomial Finset.univ v : ℝ)
@@ -99,10 +96,10 @@ theorem dirichletWeight_mul_multinomialWeight {α : Fin (k + 1) → ℝ}
     have h2 : dirichletWeight (α + fun i => (v i : ℝ)) θ = 0 := by rw [dirichletWeight, if_neg hc]
     rw [h1, h2, zero_mul, mul_zero]
 
-/-- **Dirichlet-Multinomial posterior** (Robert Table 3.3.1): observing counts `v` updates
+/-- **Dirichlet-Multinomial posterior** (Gelman §3.4): observing counts `v` updates
 `𝒟(α)` to `𝒟(α + v)`, predictive-a.e. -/
 theorem dirichlet_multinomial_posterior_ae {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i)
     -- LEAN-ONLY: instance plumbing, derivable from hα via `isProbabilityMeasure_dirichletMeasure`
     [IsFiniteMeasure (dirichletMeasure α)] (n : ℕ) :

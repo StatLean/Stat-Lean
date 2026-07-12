@@ -26,10 +26,9 @@ standing assumption in Definition 5.2.5.
 **Bibliographic comments.** The odds formulation of Bayesian hypothesis comparison and the Bayes
 factor are due to H. Jeffreys (*Theory of Probability*, Oxford University Press, 1939; 3rd ed.
 1961), whose calibration scale for Bayes factors — refined by I. J. Good ("Significance tests in
-parallel and in series," *J. Amer. Statist. Assoc.* 53 (1958), 799–813) — remains in use; Robert
-reproduces it on p. 228. The modern survey is R. E. Kass and A. E. Raftery, "Bayes factors,"
-*J. Amer. Statist. Assoc.* 90 (1995), 773–795. Robert §5.2.2 gives the decision-theoretic
-formulation followed here.
+parallel and in series," *J. Amer. Statist. Assoc.* 53 (1958), 799–813) — remains in use. The
+modern survey is R. E. Kass and A. E. Raftery, "Bayes factors," *J. Amer. Statist. Assoc.* 90
+(1995), 773–795.
 -/
 
 open MeasureTheory ProbabilityTheory

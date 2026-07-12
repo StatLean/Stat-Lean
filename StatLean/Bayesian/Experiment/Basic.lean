@@ -24,8 +24,8 @@ conditional distribution originates with A. N. Kolmogorov (*Grundbegriffe*, 1933
 its standard-Borel form by J. L. Doob (*Stochastic Processes*, Wiley, 1953); see also
 K. R. Parthasarathy, *Probability Measures on Metric Spaces* (Academic Press, 1967) for the
 disintegration theorem Mathlib's `condKernel` implements. Reading "prior × likelihood =
-predictive × posterior" as the statistical meaning of this disintegration is the viewpoint of
-Robert §1.4.
+predictive × posterior" as the statistical meaning of this disintegration is the standard Bayesian
+viewpoint.
 -/
 
 open MeasureTheory ProbabilityTheory

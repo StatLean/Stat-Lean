@@ -25,8 +25,7 @@ the setup). Key Mathlib bricks: `Measurable.lintegral_prod_left'`, `Measure.bind
 the model: its systematic use for hypothesis comparison begins with H. Jeffreys (*Theory of
 Probability*, Oxford, 1939), and it underlies Bayes factors, model averaging, and empirical-Bayes
 calibration — see R. E. Kass and A. E. Raftery, "Bayes factors," *J. Amer. Statist. Assoc.* 90
-(1995), 773–795. Robert introduces it as item (b) of the Bayesian machine in §1.4 and returns to
-it for testing and model choice in his Chapters 5 and 7.
+(1995), 773–795.
 -/
 
 open MeasureTheory ProbabilityTheory

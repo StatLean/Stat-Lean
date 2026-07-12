@@ -8,11 +8,9 @@ For iid observations `xᵢ ~ 𝒩(μ, v)` and the improper flat prior `π(dμ) =
 generalized posterior is proper and Gaussian:
 $$\mu \mid x_{1:n} \sim \mathcal N\big(\bar x,\ v/n\big).$$
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §1.5, Example 1.5.2 (`x ~ 𝒩(θ, 1)`, flat prior ⇒ posterior
-`𝒩(x, 1)` — the `n = 1` case), p. 28; Example 1.5.1 (the flat prior as the location-invariant
-choice), p. 27.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §2.5 (normal,
+known variance) + §3.2 (noninformative prior, N(ȳ,σ²/n)), p. 39/64.
 
 **Proof formalization notes.** The pointwise normalization engine applies with `π := volume`:
 the product Gaussian likelihood completes the square in `μ` (the `sumSq_completion` lemma of
@@ -23,11 +21,10 @@ directly), exhibiting `volume.withDensity (∏ᵢ gaussianPDF μ v xᵢ)` as
 `generalizedPosterior`, which is the point of the example.
 
 **Bibliographic comments.** The flat prior on a location parameter is Laplace's original
-"principle of insufficient reason" (1774; Robert Example 1.5.1) and the simplest Jeffreys prior;
+"principle of insufficient reason" (1774) and the simplest Jeffreys prior;
 that it reproduces the frequentist answer `𝒩(x̄, v/n)` — with credible intervals numerically
-equal to confidence intervals — is the classical reconciliation example. Robert §1.5 stresses both
-its safety for estimation and (pp. 28–29) the Chapter-5 caveat that the arbitrary constant wrecks
-Bayes factors, formalized in `GeneralizedBayes.Basic`.
+equal to confidence intervals — is the classical reconciliation example. It is safe for estimation
+but the arbitrary constant wrecks Bayes factors, formalized in `GeneralizedBayes.Basic`.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -135,12 +132,12 @@ private theorem flat_withDensity_eq_smul {v : ℝ≥0} (hv : v ≠ 0) {n : ℕ} 
       flat_pdf_prod_real hv hn x θ, ENNReal.ofReal_mul hCnonneg]
   rw [hdens, withDensity_smul' _ _ ENNReal.ofReal_ne_top, ← gaussianReal_of_var_ne_zero _ hw]
 
-/-- **Flat-prior normal mean** (Robert Example 1.5.2, `n`-observation form): under the improper
+/-- **Flat-prior normal mean** (Gelman §2.5, `n`-observation form): under the improper
 Lebesgue prior, the generalized posterior from iid `𝒩(·, v)` data is `𝒩(x̄, v/n)`. -/
 theorem flat_normal_generalizedPosterior {v : ℝ≥0}
-    -- USER-INPUT: nondegenerate noise variance; Robert Example 1.5.2
+    -- USER-INPUT: nondegenerate noise variance; Gelman §2.5
     (hv : v ≠ 0) {n : ℕ}
-    -- USER-INPUT: at least one observation (propriety needs it); Robert §1.5
+    -- USER-INPUT: at least one observation (propriety needs it); Gelman §3.2
     (hn : n ≠ 0) (x : Fin n → ℝ) :
     generalizedPosterior (fun (θ : ℝ) (x : Fin n → ℝ) => ∏ i, gaussianPDF θ v (x i))
         volume x

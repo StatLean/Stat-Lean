@@ -33,8 +33,7 @@ by R. Price) and, in the generality of "the probability of causes," to P. S. Lap
 A. N. Kolmogorov's axiomatization of conditioning (*Grundbegriffe der
 Wahrscheinlichkeitsrechnung*, Springer, 1933) and on the theory of regular conditional
 distributions on standard Borel spaces (J. L. Doob, *Stochastic Processes*, Wiley, 1953), which is
-what Mathlib's disintegration-uniqueness lemma encapsulates. Robert §1.2/§1.4 is the statistical
-synthesis formalized here.
+what Mathlib's disintegration-uniqueness lemma encapsulates.
 -/
 
 open MeasureTheory ProbabilityTheory

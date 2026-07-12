@@ -38,8 +38,7 @@ likelihood densities against a uniform base measure. The modern dominated-family
 a family of distributions admitting densities with respect to one σ-finite measure — is due to
 P. R. Halmos and L. J. Savage, "Application of the Radon–Nikodym theorem to the theory of
 sufficient statistics," *Annals of Mathematical Statistics* 20 (1949), 225–241, building on the
-Radon–Nikodym theorem (J. Radon 1913; O. Nikodym 1930). Robert §1.2–§1.4 is the synthesis
-formalized here.
+Radon–Nikodym theorem (J. Radon 1913; O. Nikodym 1930).
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -31,7 +31,7 @@ manipulations; base densities are finite in every model.
 
 **Bibliographic comments.** The conjugate family for a natural exponential family and the
 posterior linearity that characterizes it are P. Diaconis and D. Ylvisaker, "Conjugate priors for
-exponential families," *Ann. Statist.* 7 (1979), 269–281 (Robert Props. 3.3.13–3.3.14); the
+exponential families," *Ann. Statist.* 7 (1979), 269–281; the
 conjugate-prior program itself is H. Raiffa and R. Schlaifer (1961). Exponential-family theory:
 L. D. Brown (1986). In modern practice this theorem is the backbone of variational inference and
 natural-gradient methods, where conjugate updates are the tractable primitives.

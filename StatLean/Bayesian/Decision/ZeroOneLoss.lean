@@ -25,11 +25,10 @@ and Proposition 2.5.7 (0–1 loss picks the most probable hypothesis), p. 81; §
 **Bibliographic comments.** The 0–1 loss is the decision-theoretic formulation of hypothesis
 selection, tied to the testing theory of J. Neyman and E. S. Pearson ("On the problem of the most
 efficient tests of statistical hypotheses," *Philosophical Transactions of the Royal Society A*
-231 (1933), 289–337) through Robert's §2.5.3. That the Bayes rule under 0–1 loss is the *maximum
-a posteriori* (MAP) estimator — the posterior mode — is stated explicitly by Robert in §2.8.1
-(p. 96) and §4.1.2 (p. 166), where the MAP estimator is also read as penalized maximum likelihood;
-H. Rue ("New loss functions in Bayesian imaging," *J. Amer. Statist. Assoc.* 90 (1995), 900–908)
-critiques its oversmoothing in high-dimensional image models.
+231 (1933), 289–337). That the Bayes rule under 0–1 loss is the *maximum a posteriori* (MAP)
+estimator — the posterior mode — is standard; the MAP estimator is also read as penalized maximum
+likelihood, and H. Rue ("New loss functions in Bayesian imaging," *J. Amer. Statist. Assoc.* 90
+(1995), 900–908) critiques its oversmoothing in high-dimensional image models.
 -/
 
 open MeasureTheory ProbabilityTheory

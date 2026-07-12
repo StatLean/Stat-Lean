@@ -11,10 +11,9 @@ property, and the **product-density representation**: if `κ θ = ν.withDensity
 $$\mathrm{iidKernel}\ \kappa\ n\ \theta = \nu^{\otimes n}.\mathrm{withDensity}
   \Big(x \mapsto \prod_i p(\theta, x_i)\Big).$$
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §1.3, p. 13 (iid samples; the product likelihood
-`∏ᵢ f(xᵢ|θ)` underlying every `n`-observation posterior).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §1.3, p. 6
+(iid sampling model).
 
 **Proof formalization notes.** The pinned Mathlib has no `Kernel.pi`; we package `Measure.pi`
 directly. Measurability of the coe (`measurable_pi_const_kernel`) is by π-system induction on
@@ -27,8 +26,7 @@ finite). Candidate for upstreaming.
 **Bibliographic comments.** The iid product experiment is the basic object of sampling theory
 since J. Bernoulli's *Ars Conjectandi* (1713); its kernel-parametrized form (a measurable family
 of product measures) is the measure-theoretic folklore underlying Ionescu-Tulcea's and
-Kolmogorov's constructions. Robert §1.3 uses it silently whenever a sample `x₁,…,xₙ ~ f(x|θ)`
-appears.
+Kolmogorov's constructions.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -58,7 +56,7 @@ theorem measurable_pi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n 
       exact Measurable.ennreal_tsum ihg
 
 /-- The **iid product kernel** `θ ↦ (κ θ)^{⊗ n}` on `Fin n → 𝓧`: the law of an iid sample of
-size `n` from the model `κ θ` (Robert §1.3). -/
+size `n` from the model `κ θ` (Gelman §1.3). -/
 noncomputable def iidKernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) :
     Kernel Θ (Fin n → 𝓧) :=
   ⟨fun θ => Measure.pi fun _ : Fin n => κ θ, measurable_pi_const_kernel κ n⟩
@@ -79,13 +77,13 @@ theorem iidKernel_apply_pi (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) (
   rw [iidKernel_apply, Measure.pi_pi]
 
 /-- **Product-density representation of the iid kernel**: a dominated model has iid samples
-dominated by the product measure, with the product likelihood as density (Robert §1.3,
+dominated by the product measure, with the product likelihood as density (Gelman §1.3,
 `∏ᵢ f(xᵢ|θ)`). -/
 theorem iidKernel_withDensity {κ : Kernel Θ 𝓧} [IsMarkovKernel κ] {ν : Measure 𝓧} [SigmaFinite ν]
     {p : Θ → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the likelihood density (regularity)
     (hp : Measurable (Function.uncurry p))
-    -- USER-INPUT: dominated model, K(θ, ·) = p(θ, ·) ν; Robert Definition 1.2.1 / §1.4
+    -- USER-INPUT: dominated model, K(θ, ·) = p(θ, ·) ν; Gelman §1.3
     (hκ : ∀ θ, κ θ = ν.withDensity (p θ)) (n : ℕ) (θ : Θ) :
     iidKernel κ n θ
       = (Measure.pi fun _ : Fin n => ν).withDensity fun x => ∏ i, p θ (x i) := by

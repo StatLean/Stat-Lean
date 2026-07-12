@@ -11,15 +11,13 @@ For iid Bernoulli data with a Beta prior on the success probability:
   `θ | y ~ Beta(α + s, β + (n − s))`;
 * **posterior mean of the success probability** (`lintegral_unitClamp_betaMeasure`):
   `E[θ] = α/(α + β)` under `Beta(α, β)`;
-* **Laplace's rule of succession** (Robert §1.2's historical example, formalized via the posterior
+* **Laplace's rule of succession** (Gelman §2.4's historical example, formalized via the posterior
   predictive): the predictive probability of a further success is
   $$P(y_{n+1} = 1 \mid y_{1:n}) = \frac{\alpha + s}{\alpha + \beta + n}.$$
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Example 1.4.1 (Beta-Binomial machinery), pp. 22–23; Table 4.2.1
-(posterior mean `(α+x)/(α+β+n)`), p. 176; the succession rule is Laplace's 1774 computation,
-recounted by Robert in §1.8.1.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §2.1 and
+§2.4 (binomial with conjugate Beta prior), pp. 29, 34.
 
 **Proof formalization notes.** The iid Bernoulli likelihood is a clamped-power factor with
 exponents `successes y` and `n − successes y` (`Bool.toNat` bookkeeping), so the posterior is the
@@ -33,9 +31,8 @@ for the Beta-function ratio `B(α+1,β)/B(α,β) = α/(α+β)`).
 probabilité des causes par les événements," 1774): after the sun has risen `n` times, the odds it
 rises again are `(n+1)/(n+2)` — the case `α = β = 1`, `s = n`. It is the first posterior
 predictive computation in history and the standard smoothing device ("add-one" or Laplace
-smoothing) in modern categorical modeling. Robert §1.8.1 surveys the history; de Finetti's
-representation theorem (Robert §3.8.2) explains why exchangeable binary data reduce to exactly
-this model.
+smoothing) in modern categorical modeling. De Finetti's representation theorem explains why
+exchangeable binary data reduce to exactly this model.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -71,10 +68,9 @@ instance : IsMarkovKernel bernoulliKernel := by
   rw [ht, hf, ← ENNReal.ofReal_add hc0 (by linarith),
     show unitClamp θ + (1 - unitClamp θ) = 1 from by ring, ENNReal.ofReal_one]
 
-/-- **Posterior mean of a clamped success probability under a Beta law**: `α/(α+β)` (Robert
-Table 4.2.1 row 4 with `n = 1`, `x = 1`; the pdf-ratio trick). -/
+/-- **Posterior mean of a clamped success probability under a Beta law**: `α/(α+β)` (Gelman §2.4 with `n = 1`, `x = 1`; the pdf-ratio trick). -/
 theorem lintegral_unitClamp_betaMeasure {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β) :
     ∫⁻ θ, ENNReal.ofReal (unitClamp θ) ∂betaMeasure α β
       = ENNReal.ofReal (α / (α + β)) := by
@@ -128,7 +124,7 @@ private theorem prod_bernoulliDensity {n : ℕ} (θ : ℝ) (y : Fin n → Bool) 
 /-- **Beta-Bernoulli posterior** (iid sample): `θ | y ~ Beta(α + s, β + (n − s))` with
 `s = successes y`, predictive-a.e. -/
 theorem beta_bernoulli_posterior_ae {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β)
     -- LEAN-ONLY: instance plumbing, derivable from hα/hβ via `isProbabilityMeasureBeta`
     [IsFiniteMeasure (betaMeasure α β)] (n : ℕ) :
@@ -167,11 +163,11 @@ theorem beta_bernoulli_posterior_ae {α β : ℝ}
   simp only [betaMeasure]
   rw [← withDensity_mul _ hbeta hg, hdens, withDensity_smul' _ _ hck]
 
-/-- **Laplace's rule of succession** (Robert §1.8.1; Table 4.2.1): the posterior predictive
+/-- **Laplace's rule of succession** (Gelman §2.4): the posterior predictive
 probability of one more success after `n` tosses with `s` successes is `(α + s)/(α + β + n)`,
 predictive-a.e. -/
 theorem beta_bernoulli_posteriorPredictive_true_ae {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β)
     -- LEAN-ONLY: instance plumbing, derivable from hα/hβ via `isProbabilityMeasureBeta`
     [IsFiniteMeasure (betaMeasure α β)] (n : ℕ) :

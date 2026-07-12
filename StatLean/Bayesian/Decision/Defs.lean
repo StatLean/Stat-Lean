@@ -48,8 +48,7 @@ risk).
 **Bibliographic comments.** The reduction of Bayesian estimation to per-observation minimization
 of posterior expected loss is classical decision theory (A. Wald, *Statistical Decision
 Functions*, Wiley, 1950; L. J. Savage, *The Foundations of Statistics*, Wiley, 1954). The
-posterior-mean/median/mode correspondence with quadratic/absolute/0–1 loss is standard; see
-Robert §2.5 and its Notes §2.8.
+posterior-mean/median/mode correspondence with quadratic/absolute/0–1 loss is standard.
 -/
 
 open MeasureTheory ProbabilityTheory

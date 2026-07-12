@@ -26,8 +26,8 @@ complement step finite). Candidate for upstreaming as the finite homogeneous-ind
 **Bibliographic comments.** The diagonal product of a measurable kernel family is the sampling
 model behind the one-way random-effects (variance-components) analysis of C. Eisenhart ("The
 assumptions underlying the analysis of variance," *Biometrics* 3 (1947), 1–21) and the compound
-decision problems of H. Robbins (1951, 1956); it is the likelihood layer of Robert's normal
-hierarchy (§10.2.5) and of the James–Stein / empirical-Bayes normal-means problem.
+decision problems of H. Robbins (1951, 1956); it is the likelihood layer of the James–Stein /
+empirical-Bayes normal-means problem.
 -/
 
 open MeasureTheory ProbabilityTheory

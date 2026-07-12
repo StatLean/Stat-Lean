@@ -21,10 +21,9 @@ composition; a `Kernel`-level module structure is deliberately not introduced. M
 
 **Bibliographic comments.** Randomization of decision rules is a founding device of statistical
 decision theory — A. Wald, *Statistical Decision Functions* (Wiley, 1950) — and the convexity of
-the risk set it produces underlies minimax and complete-class theory (Robert §2.4, after
-D. Blackwell and M. A. Girshick, *Theory of Games and Statistical Decisions*, Wiley, 1954).
-Mixtures of Markov transition kernels as MCMC sweeps appear with the random-scan Gibbs sampler
-(Geman and Geman 1984; Robert §6.3.5).
+the risk set it produces underlies minimax and complete-class theory (D. Blackwell and
+M. A. Girshick, *Theory of Games and Statistical Decisions*, Wiley, 1954). Mixtures of Markov
+transition kernels as MCMC sweeps appear with the random-scan Gibbs sampler (Geman and Geman 1984).
 -/
 
 open MeasureTheory ProbabilityTheory

@@ -28,7 +28,7 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 
 **Bibliographic comments.** "Recognize the posterior up to its normalizing constant" is the
 working principle of every conjugate analysis since H. Raiffa and R. Schlaifer (*Applied
-Statistical Decision Theory*, 1961) — Robert's §1.4 remark that the posterior "is proportional to
+Statistical Decision Theory*, 1961); the posterior "is proportional to
 f(x|θ)π(θ)" is its informal statement. Packaging it as a reusable measure-theoretic lemma is what
 lets each conjugate pair below reduce to one pointwise density identity.
 -/

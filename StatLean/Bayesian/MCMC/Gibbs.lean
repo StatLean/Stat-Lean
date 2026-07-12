@@ -7,15 +7,13 @@ Correctness of Gibbs updates for a target `ρ` on a product space `A × B`:
 
 * each **one-coordinate update preserves `ρ`** (2F.5): refreshing a coordinate from its exact
   conditional leaves the joint invariant;
-* the **two-block sweep** `gibbsSnd ∘ₖ gibbsFst` preserves `ρ` (2F.6; Robert Lemma 6.3.6) — by
+* the **two-block sweep** `gibbsSnd ∘ₖ gibbsFst` preserves `ρ` (2F.6; Gelman §11.1) — by
   the pinned `Kernel.Invariant.comp`;
 * the **random-scan sweep** preserves `ρ` (2F.7): a mixture of invariant kernels is invariant.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §6.3.3 (two-stage Gibbs / data augmentation, eq. (6.3.3) and the
-boxed algorithm, pp. 307–308) and Lemma 6.3.6, p. 309; §6.3.5 (general and random-scan sweeps,
-eqs. (6.3.4)–(6.3.5)).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §11.1
+(Gibbs sampler), p. 276.
 
 **Proof formalization notes.** For `gibbsSnd`, the bound measure `ρ.bind (gibbsSnd ρ)` evaluates
 through `Prod.fst`: the update factors as `(Kernel.id ×ₖ ρ.condKernel)` composed with the first
@@ -27,9 +25,9 @@ argument through `Prod.swap`. Two-block is `Invariant.comp`; random-scan is `bin
 
 **Bibliographic comments.** The Gibbs sampler is Geman and Geman (1984), named for the Gibbs
 distributions of statistical mechanics; its two-stage (data-augmentation) form is Tanner and Wong
-(1987) and its statistical mainstreaming Gelfand and Smith (1990) — credits Robert gives in
-§6.3.3–§6.3.4. The "exact conditional preserves the joint" argument formalized here is the
-validity core (Robert Lemma 6.3.6); convergence rates and ergodicity are beyond this batch.
+(1987) and its statistical mainstreaming Gelfand and Smith (1990). The "exact conditional preserves
+the joint" argument formalized here is the validity core; convergence rates and ergodicity are
+beyond this batch.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -39,7 +37,7 @@ namespace StatLean.Bayesian
 
 variable {A B : Type*} [mA : MeasurableSpace A] [mB : MeasurableSpace B]
 
-/-- **The second-coordinate Gibbs update preserves the target** (2F.5; Robert §6.3.3). -/
+/-- **The second-coordinate Gibbs update preserves the target** (2F.5; Gelman §11.1). -/
 theorem invariant_gibbsSnd (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace B] [Nonempty B] :
     Kernel.Invariant (gibbsSnd ρ) ρ := by
@@ -50,7 +48,7 @@ theorem invariant_gibbsSnd (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
   rw [← Measure.compProd_eq_comp_prod]
   exact ρ.disintegrate _
 
-/-- **The first-coordinate Gibbs update preserves the target** (2F.5; Robert §6.3.3). -/
+/-- **The first-coordinate Gibbs update preserves the target** (2F.5; Gelman §11.1). -/
 theorem invariant_gibbsFst (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] :
     Kernel.Invariant (gibbsFst ρ) ρ := by
@@ -67,18 +65,18 @@ theorem invariant_gibbsFst (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     Measure.swap_comp, Measure.map_map measurable_swap measurable_swap]
   simp
 
-/-- **Two-block Gibbs stationarity** (2F.6; Robert Lemma 6.3.6): the systematic sweep
+/-- **Two-block Gibbs stationarity** (2F.6; Gelman §11.1): the systematic sweep
 "update `a`, then update `b`" preserves the target. -/
 theorem invariant_twoBlockGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B] :
     Kernel.Invariant (gibbsSnd ρ ∘ₖ gibbsFst ρ) ρ :=
   (invariant_gibbsSnd ρ).comp (invariant_gibbsFst ρ)
 
-/-- **Random-scan Gibbs stationarity** (2F.7; Robert §6.3.5): the `w`-mixture of the two
+/-- **Random-scan Gibbs stationarity** (2F.7; Gelman §11.1): the `w`-mixture of the two
 one-coordinate updates preserves the target, for any mixing probability `w ≤ 1`. -/
 theorem invariant_randomScanGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B] {w : ℝ≥0∞}
-    -- USER-INPUT: the scan probability is a probability; Robert §6.3.5
+    -- USER-INPUT: the scan probability is a probability; Gelman §11.1
     (hw : w ≤ 1) :
     Kernel.Invariant (randomScanGibbs ρ w) ρ := by
   unfold Kernel.Invariant randomScanGibbs

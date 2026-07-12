@@ -15,9 +15,9 @@ and prove its total mass is `1` exactly on the probability simplex (multinomial 
 simplex the weight is defined to vanish, so the kernel is finite (sub-Markov) rather than Markov;
 the Bayesian machinery of this area only needs `IsFiniteKernel`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Appendix A.11 (Multinomial ℳ_k(n; p₁,…,p_k)), p. 521.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §3.4
+(multinomial model), p. 69.
 
 **Proof formalization notes.** Pinned Mathlib has `Nat.multinomial` and the multinomial theorem
 `Finset.sum_pow_eq_sum_piAntidiag` but no multinomial *distribution* — built here (candidate for
@@ -29,9 +29,8 @@ takes real `q` and clamps by the simplex indicator: junk value `0` off `{q | (�
 
 **Bibliographic comments.** The multinomial law goes back to the earliest combinatorial
 probability (J. Bernoulli, *Ars Conjectandi*, 1713; A. De Moivre, *The Doctrine of Chances*,
-1718), the multinomial coefficient being the enumeration of arrangements. Its role as the
-canonical finite-category sampling model, conjugate to the Dirichlet prior, is tabulated by
-Robert (Table 3.3.1, p. 121; Appendix A.11).
+1718), the multinomial coefficient being the enumeration of arrangements. It is the canonical
+finite-category sampling model, conjugate to the Dirichlet prior.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -41,7 +40,7 @@ namespace StatLean.Bayesian
 
 /-- **Multinomial weight** (pmf against counting measure): `multinomial coefficient × ∏ qᵢ^{vᵢ}`
 on the event `{∑ vᵢ = n}` when `q` lies in the probability simplex, and `0` otherwise
-(Robert Appendix A.11). -/
+(Gelman §3.4). -/
 noncomputable def multinomialWeight (m n : ℕ) (q : Fin m → ℝ) : (Fin m → ℕ) → ℝ≥0∞ :=
   fun v =>
     if (∀ i, 0 ≤ q i) ∧ ∑ i, q i = 1 ∧ ∑ i, v i = n then
@@ -77,7 +76,7 @@ noncomputable def multinomialKernel (m n : ℕ) : Kernel (Fin m → ℝ) (Fin m 
 
 /-- On the probability simplex, the multinomial masses sum to `1` (multinomial theorem). -/
 theorem multinomialKernel_apply_univ_of_mem_simplex (m n : ℕ) {q : Fin m → ℝ}
-    -- USER-INPUT: `q` is a probability vector; Robert Appendix A.11
+    -- USER-INPUT: `q` is a probability vector; Gelman §3.4
     (hq0 : ∀ i, 0 ≤ q i) (hq1 : ∑ i, q i = 1) :
     multinomialKernel m n q Set.univ = 1 := by
   rw [multinomialKernel, Kernel.withDensity_apply' _ (measurable_uncurry_multinomialWeight m n),

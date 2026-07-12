@@ -8,17 +8,14 @@ import StatLean.Bayesian.Updating.Defs
 
 For a mean `μ ~ 𝒩(m₀, t₀)` and iid observations `xᵢ ~ 𝒩(μ, v)` with known noise variance `v`:
 
-* **posterior** (Robert Table 3.3.1 / §4.4.1): `μ | x_{1:n} ~ 𝒩(postMean, postVar)` with
+* **posterior** (Gelman §2.5): `μ | x_{1:n} ~ 𝒩(postMean, postVar)` with
   `postVar = (t₀⁻¹ + n v⁻¹)⁻¹` and `postMean = postVar · (m₀/t₀ + (∑xᵢ)/v)`;
 * **posterior predictive**: a future observation satisfies
   `x_{n+1} | x_{1:n} ~ 𝒩(postMean, postVar + v)` — posterior uncertainty plus noise.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Table 3.3.1 (Normal row: 𝒩(θ,σ²) + 𝒩(μ,τ²) →
-𝒩(ϱ(σ²μ+τ²x), ϱσ²τ²), ϱ⁻¹ = σ²+τ²), p. 121; §4.4.1 (multivariate known-Σ update), p. 186;
-Table 4.2.1, p. 176. The predictive has no numbered statement in Robert (general form is
-eq. (4.1.5), p. 172) — flagged per our citation audit.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §2.5
+(normal mean, known variance), p. 39.
 
 **Proof formalization notes.** The heart is a real **sum-of-squares (completing the square)
 identity**: `(θ−m₀)²/t₀ + ∑ᵢ(xᵢ−θ)²/v = (θ−postMean)²/postVar + R(x)` with `R` independent of
@@ -35,7 +32,7 @@ plumbing argument, not a statistical assumption beyond `v ≠ 0`.
 combination-of-observations calculus (*Theoria motus*, 1809) read as Bayesian shrinkage; the
 precision-weighted form is the basis of the Kalman filter (R. E. Kalman, *J. Basic Eng.* 82
 (1960), 35–45 — sequential Normal-Normal updating) and of credibility formulas in actuarial
-science. Robert presents it as the canonical conjugate pair (Tables 3.3.1/4.2.1, §4.4).
+science.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -53,7 +50,7 @@ private theorem measurable_uncurry_gaussKernelDensity (v : ℝ≥0) :
 
 /-- The Gaussian known-variance kernel is Markov for nonzero variance. -/
 theorem isMarkovKernel_gaussKernel {v : ℝ≥0}
-    -- USER-INPUT: nondegenerate noise variance; Robert Table 3.3.1
+    -- USER-INPUT: nondegenerate noise variance; Gelman §2.5
     (hv : v ≠ 0) :
     IsMarkovKernel (gaussKernel v) := by
   refine ⟨fun θ => ⟨?_⟩⟩
@@ -71,7 +68,7 @@ private theorem postVar_coe_inv (t₀ v : ℝ≥0) (n : ℕ) :
 /-- **Sum-of-squares (completing the square)**: the prior-plus-likelihood exponent is the
 posterior exponent plus a `θ`-free remainder. -/
 theorem sumSq_completion {m₀ : ℝ} {t₀ v : ℝ≥0}
-    -- USER-INPUT: nondegenerate prior and noise variances; Robert Table 3.3.1
+    -- USER-INPUT: nondegenerate prior and noise variances; Gelman §2.5
     (ht₀ : t₀ ≠ 0) (hv : v ≠ 0) {n : ℕ} (x : Fin n → ℝ) (θ : ℝ) :
     (θ - m₀) ^ 2 / (t₀ : ℝ) + ∑ i, (x i - θ) ^ 2 / (v : ℝ)
       = (θ - postMean m₀ t₀ v x) ^ 2 / (postVar t₀ v n : ℝ)
@@ -187,10 +184,10 @@ private theorem pdf_prod_ennreal {m₀ : ℝ} {t₀ v : ℝ≥0} (ht₀ : t₀ �
     ← ENNReal.ofReal_mul hcnn, pdf_prod_real ht₀ hv x θ]
 
 set_option maxHeartbeats 1000000 in
-/-- **Normal-Normal posterior, known variance** (Robert Table 3.3.1 / §4.4.1): iid Gaussian
+/-- **Normal-Normal posterior, known variance** (Gelman §2.5): iid Gaussian
 observations update `𝒩(m₀, t₀)` to `𝒩(postMean, postVar)`, predictive-a.e. -/
 theorem normal_normal_posterior_ae {m₀ : ℝ} {t₀ v : ℝ≥0}
-    -- USER-INPUT: nondegenerate prior and noise variances; Robert Table 3.3.1
+    -- USER-INPUT: nondegenerate prior and noise variances; Gelman §2.5
     (ht₀ : t₀ ≠ 0) (hv : v ≠ 0)
     -- LEAN-ONLY: Markov instance for the Gaussian kernel; from `isMarkovKernel_gaussKernel hv`
     [IsMarkovKernel (gaussKernel v)] (n : ℕ) :
@@ -237,7 +234,7 @@ private theorem gaussKernel_apply_eq {v : ℝ≥0} (hv : v ≠ 0) (m' : ℝ) :
 /-- **Bind is convolution for Gaussians**: pushing a Gaussian law through the Gaussian kernel adds
 the variances. -/
 theorem comp_gaussKernel_gaussianReal {v : ℝ≥0}
-    -- USER-INPUT: nondegenerate noise variance; Robert Table 3.3.1
+    -- USER-INPUT: nondegenerate noise variance; Gelman §2.5
     (hv : v ≠ 0) (m : ℝ) (V : ℝ≥0) :
     gaussKernel v ∘ₘ gaussianReal m V = gaussianReal m (V + v) := by
   have hconv : gaussianReal m V ∗ gaussianReal 0 v = gaussianReal m (V + v) := by
@@ -252,10 +249,10 @@ theorem comp_gaussKernel_gaussianReal {v : ℝ≥0}
     rw [gaussianReal_map_const_add, zero_add]
   rw [← hmap, lintegral_map hf (measurable_const_add m')]
 
-/-- **Normal posterior predictive** (Robert eq. (4.1.5) specialized): a future observation is
+/-- **Normal posterior predictive** (Gelman §2.5 specialized): a future observation is
 Gaussian with the posterior mean and variance `postVar + v`, predictive-a.e. -/
 theorem normal_normal_posteriorPredictive_ae {m₀ : ℝ} {t₀ v : ℝ≥0}
-    -- USER-INPUT: nondegenerate prior and noise variances; Robert Table 3.3.1
+    -- USER-INPUT: nondegenerate prior and noise variances; Gelman §2.5
     (ht₀ : t₀ ≠ 0) (hv : v ≠ 0)
     -- LEAN-ONLY: Markov instance for the Gaussian kernel; from `isMarkovKernel_gaussKernel hv`
     [IsMarkovKernel (gaussKernel v)] (n : ℕ) :
