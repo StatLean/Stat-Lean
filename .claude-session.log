@@ -1,0 +1,18 @@
+srun: job 30375478 queued and waiting for resources
+srun: job 30375478 has been allocated resources
+Both target theorems are proven. Here's the summary:
+
+## Result
+
+Both `sorry`s in `DiscreteDudley.lean` are closed — the file is now **0-sorry**, and `lake build StatLean.ConcentrationInequalities` completes with no errors (3061 jobs).
+
+**`discrete_dudley`** (mean-zero, the required close) and **`discrete_dudley_abs`** (the designated fallback — also closed) both follow the roadmap: mirror the finite `*_of_finite` templates with two changes:
+
+1. **Max over `F ⊆ T`, entropy on `T`**: nets come from `exists_finset_net_of_cov_ne_top` fed by the `hcov` finite-covering package (not the finite-`T` version); `hmemT` bridges `F`-membership to `T`.
+2. **Truncation + residual instead of a fine-scale stop**: the chain is cut at an arbitrary level `n`, the tail bounded by `SubsetChaining.residual_{,abs_}expectation_le`, and `n → ∞` closes via `ge_of_tendsto'` (the ℝ≥0∞ target `C + ofReal(B n) → C`, with `B n → 0` because `ε n = 2^{-(κ+n)} → 0`).
+
+The absolute form additionally re-anchors at the finest `𝒩 = 1` scale `m` (bounded above by an explicit diam-based `J` via `one_lt_coveringNumber_of_two_mul_lt_dist`) and absorbs the `√π·K·diam T` reconnection into `dudleyLSum` in ℝ≥0∞ (constant `20`).
+
+Key gotchas resolved along the way: the `SubGaussianIncrements` argument-order convention (`hinc a ha b hb : subGaussianNorm (X b − X a)`); building `Integrable |X u − X v|` from the ψ₂ tail via a singleton `integrable_biSup_abs` (no integrability hypothesis exists in the abs form); the three-way `integral_add` split through a defeq `show ... from`; `Finset.Nonempty.choose` (not `.some`); and the `ε(m+n)` shifted tendsto.
+
+Work committed on branch `conc/dinf-discrete` (`ab2456c`), memory updated.
