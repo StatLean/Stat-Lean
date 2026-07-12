@@ -1,5 +1,5 @@
 import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.MeasureTheory.Constructions.Prod.Basic
+import Mathlib.MeasureTheory.Measure.Prod
 import StatLean.Bayesian.ForMathlib.PiWithDensity
 
 /-!
@@ -40,7 +40,7 @@ classical measure theory (Fubini 1907; Tonelli 1909), used here only in their
 finite-product / iid-experiment form.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.Bayesian

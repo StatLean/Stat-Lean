@@ -29,7 +29,7 @@ predating the Gaussian second law; in Bayesian shrinkage it is the prior behind 
 (Park–Casella, *J. Amer. Statist. Assoc.* 103 (2008), 681–686).
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.Bayesian

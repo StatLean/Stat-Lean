@@ -1,7 +1,7 @@
 import Mathlib.MeasureTheory.Measure.GiryMonad
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
-import Mathlib.MeasureTheory.Constructions.Prod.Basic
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Binding a scale-family of `withDensity` measures
@@ -32,7 +32,7 @@ to probability theory*, LNM 915, 1982); the integral swap is the Fubini–Tonell
 1909), valid here in the s-finite / σ-finite regime.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.Bayesian
