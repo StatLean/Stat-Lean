@@ -22,16 +22,18 @@ Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statist
 2007 (ISBN 978-0-387-71598-8). §10.2.3 (conditional decompositions), pp. 465–467 (the mixture
 representation of the hierarchical posterior).
 
-**Proof formalization notes.** Both sides reduce, for data-marginal-a.e. `x`, to
-`Z(x)⁻¹ · ∫λ ∫θ g(θ)·p(θ,x)·q(λ,θ) ∂μ ∂ρ` with `Z(x) = predictiveDensity p (mixPrior) x`. LHS:
-`posterior_ae_eq_generalizedPosterior` turns `(K†Π)x` into the density form, `lintegral_bind`
-expands `mixPrior = Π_• ∘ₘ ρ`, and `hpri` unfolds `Π_λ = μ.withDensity (q λ)`. RHS:
-`hyperPosterior_ae_eq_generalizedPosterior` (the collapsed likelihood
-`K∘ₖΠ_• = ν.withDensity (Z_•(x))` via the dominated predictive) turns the outer integral into a
-`withDensity` against `ρ` with the per-`λ` normalizer `Z_λ(x)`, which **cancels** the conditional
-normalizer inside; `∫λ Z_λ(x) ∂ρ = Z(x)` is `marginalLikelihood_hier_eq_lintegral_hyperMarginal`.
-The abstract density-free versions need a jointly-measurable conditional-posterior kernel family
-(a ForMathlib disintegration primitive; see `notes/bayesian/roadmap.md`, Batch 4).
+**Proof formalization notes.** Only the *likelihood* is assumed dominated (`hlik`); the prior kernel
+`Π_•` stays abstract. Both sides reduce, for data-marginal-a.e. `x`, to
+`Z(x)⁻¹ · ∫λ (∫θ g(θ)·p(θ,x) ∂Π_λ) ∂ρ` with `Z(x) = predictiveDensity p (mixPrior) x`. LHS:
+`posterior_ae_eq_generalizedPosterior` turns `(K†Π)x` into the density form and `lintegral_bind`
+expands `mixPrior = Π_• ∘ₘ ρ` over the abstract prior kernel. RHS:
+`hyperPosterior_ae_eq_generalizedPosterior` with the collapsed per-`λ` density
+`Z_λ(x) = predictiveDensity p (Π_λ) x` (the collapsed likelihood `K∘ₖΠ_• = ν.withDensity (Z_•(x))`
+via the dominated predictive) turns the outer integral into a `withDensity` against `ρ` whose
+per-`λ` normalizer `Z_λ(x)` **cancels** the conditional normalizer inside; `∫λ Z_λ(x) ∂ρ = Z(x)` is
+`marginalLikelihood_hier_eq_lintegral_hyperMarginal`. No prior density is needed. The abstract
+density-free version (dropping `hlik` too) needs a jointly-measurable conditional-posterior kernel
+family (a ForMathlib disintegration primitive; see `notes/bayesian/roadmap.md`, Batch 4).
 
 **Bibliographic comments.** The mixture/tower decomposition of a hierarchical posterior is the
 Rao–Blackwellization structure exploited by every hierarchical Gibbs sampler (Gelfand and Smith,
@@ -85,11 +87,6 @@ theorem posteriorExpectation_tower_hierarchical
     (hp : Measurable (Function.uncurry p))
     -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
-    {μ : Measure Θ} [SFinite μ] {q : Λ → Θ → ℝ≥0∞}
-    -- LEAN-ONLY: joint measurability of the prior density (regularity)
-    (hq : Measurable (Function.uncurry q))
-    -- USER-INPUT: dominated prior kernel; Robert §10.2.1
-    (hpri : ∀ lam, H.priorKernel lam = μ.withDensity (q lam))
     (g : Θ → ℝ≥0∞) (hg : Measurable g) :
     ∀ᵐ x ∂H.dataMarginal,
       ∫⁻ θ, g θ ∂((H.likelihood † H.mixPrior) x)
@@ -175,16 +172,11 @@ theorem thetaPosterior_apply_eq_lintegral_hyperPosterior
     (hp : Measurable (Function.uncurry p))
     -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
-    {μ : Measure Θ} [SFinite μ] {q : Λ → Θ → ℝ≥0∞}
-    -- LEAN-ONLY: joint measurability of the prior density (regularity)
-    (hq : Measurable (Function.uncurry q))
-    -- USER-INPUT: dominated prior kernel; Robert §10.2.1
-    (hpri : ∀ lam, H.priorKernel lam = μ.withDensity (q lam))
     {s : Set Θ} (hs : MeasurableSet s) :
     ∀ᵐ x ∂H.dataMarginal,
       (H.likelihood † H.mixPrior) x s
         = ∫⁻ lam, generalizedPosterior p (H.priorKernel lam) x s ∂(H.hyperPosterior x) := by
-  filter_upwards [posteriorExpectation_tower_hierarchical H hp hlik hq hpri
+  filter_upwards [posteriorExpectation_tower_hierarchical H hp hlik
     (s.indicator 1) (measurable_one.indicator hs)] with x hx
   rw [← lintegral_indicator_one hs, hx]
   simp_rw [lintegral_indicator_one hs]
@@ -197,17 +189,12 @@ theorem posteriorPredictive_hierarchical_tower
     (hp : Measurable (Function.uncurry p))
     -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
-    {μ : Measure Θ} [SFinite μ] {q : Λ → Θ → ℝ≥0∞}
-    -- LEAN-ONLY: joint measurability of the prior density (regularity)
-    (hq : Measurable (Function.uncurry q))
-    -- USER-INPUT: dominated prior kernel; Robert §10.2.1
-    (hpri : ∀ lam, H.priorKernel lam = μ.withDensity (q lam))
     (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] {s : Set 𝓨} (hs : MeasurableSet s) :
     ∀ᵐ x ∂H.dataMarginal,
       (KY ∘ₖ (H.likelihood † H.mixPrior)) x s
         = ∫⁻ lam, (KY ∘ₘ (generalizedPosterior p (H.priorKernel lam) x)) s
             ∂(H.hyperPosterior x) := by
-  filter_upwards [posteriorExpectation_tower_hierarchical H hp hlik hq hpri
+  filter_upwards [posteriorExpectation_tower_hierarchical H hp hlik
     (fun θ => KY θ s) (KY.measurable_coe hs)] with x hx
   rw [Kernel.comp_apply' KY (H.likelihood † H.mixPrior) x hs, hx]
   simp_rw [Measure.bind_apply hs (Kernel.aemeasurable KY)]
