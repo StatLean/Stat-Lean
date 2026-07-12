@@ -62,6 +62,21 @@ private lemma aemeasurable_biSup_of_finite {Ω : Type*} {mΩ : MeasurableSpace �
     AEMeasurable (fun ω => ⨆ t ∈ T, g t ω) μ :=
   AEMeasurable.biSup T hfin.countable hg
 
+/-- A.e.-measurability of a pointwise `Finset.sup'` of a.e.-measurable
+functions (junk-free twin of `aemeasurable_biSup_of_finite`). -/
+private lemma aemeasurable_sup'_finset {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} {ι : Type*} {s : Finset ι} (hs : s.Nonempty) {g : ι → Ω → ℝ}
+    (hg : ∀ i ∈ s, AEMeasurable (g i) μ) :
+    AEMeasurable (fun ω => s.sup' hs (fun i => g i ω)) μ := by
+  classical
+  revert hg
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a => intro hg; exact hg a (by simp)
+  | cons a t ha ht ih =>
+      intro hg
+      simp only [Finset.sup'_cons ht]
+      exact (hg a (by simp)).sup (ih (fun i hi => hg i (by simp [hi])))
+
 /-- A single value is dominated by the finite `biSup`, unconditionally (the
 `ℝ`-junk branches only push the biSup up). -/
 private lemma le_biSup_of_finite {E : Type*} {T : Set E} (hfin : T.Finite)
@@ -854,7 +869,88 @@ theorem generic_chaining_of_admissible {X : E → Ω → ℝ} {K : ℝ≥0} {T :
     (hFne : F.Nonempty) :
     ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ) ≤
       20 * K * gammaFunctional A := by
-  sorry
+  have hmemT : ∀ t ∈ F, t ∈ T := fun t ht => hF (Finset.mem_coe.mpr ht)
+  -- Measurability and nonnegativity of the increment sup.
+  have hZm : AEMeasurable (fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|)) μ :=
+    aemeasurable_sup'_finset hFne
+      (fun t ht => ((hmeas t (hmemT t ht)).sub (hmeas t₀ ht₀)).abs)
+  have hZ0 : (0 : Ω → ℝ) ≤ᵐ[μ] fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|) := by
+    filter_upwards with ω
+    obtain ⟨a, ha⟩ := hFne
+    exact (abs_nonneg _).trans (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) ha)
+  by_cases hK0 : K = 0
+  · -- K = 0: all increments vanish a.e., so the sup is a.e. 0.
+    subst hK0
+    have hz : ∀ᵐ ω ∂μ, ∀ t ∈ (↑F : Set E), X t ω - X t₀ ω = 0 := by
+      rw [ae_ball_iff F.countable_toSet]
+      intro t ht
+      have htT := hmemT t ht
+      have hnorm : subGaussianNorm (fun ω => X t ω - X t₀ ω) μ = 0 := by
+        have h := hinc t₀ ht₀ t htT
+        simp only [ENNReal.coe_zero, zero_mul, nonpos_iff_eq_zero] at h
+        exact h
+      exact ae_eq_zero_of_subGaussianNorm_eq_zero ((hmeas t htT).sub (hmeas t₀ ht₀)) hnorm
+    have hZae : (fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|)) =ᵐ[μ] 0 := by
+      filter_upwards [hz] with ω hω
+      simp only [Pi.zero_apply]
+      refine le_antisymm (Finset.sup'_le hFne _ (fun s hs => ?_))
+        ((abs_nonneg _).trans
+          (Finset.le_sup' (fun t => |X t ω - X t₀ ω|) hFne.choose_spec))
+      rw [hω s (Finset.mem_coe.mpr hs), abs_zero]
+    rw [integral_congr_ae hZae]
+    simp
+  · by_cases hγ : gammaFunctional A = ⊤
+    · rw [hγ, ENNReal.mul_top (mul_ne_zero (by norm_num) (ENNReal.coe_ne_zero.mpr hK0))]
+      exact le_top
+    · -- Main case: integrate the tail bound via `TailToExpectation`.
+      have ha0 : (0 : ℝ) ≤ 12 * (K : ℝ) * (gammaFunctional A).toReal :=
+        mul_nonneg (mul_nonneg (by norm_num) K.coe_nonneg) ENNReal.toReal_nonneg
+      have hb0 : (0 : ℝ) ≤ 4 * (K : ℝ) * (gammaFunctional A).toReal :=
+        mul_nonneg (mul_nonneg (by norm_num) K.coe_nonneg) ENNReal.toReal_nonneg
+      have htail : ∀ u : ℝ, 0 ≤ u →
+          μ {ω | 12 * (K : ℝ) * (gammaFunctional A).toReal
+                + 4 * (K : ℝ) * (gammaFunctional A).toReal * u
+              < F.sup' hFne (fun t => |X t ω - X t₀ ω|)}
+            ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2)) := by
+        intro u hu
+        have hval := generic_chaining_tail hne hmeas hinc ht₀ A hγ hu hF hFne
+        have hthr : 12 * (K : ℝ) * (gammaFunctional A).toReal
+              + 4 * (K : ℝ) * (gammaFunctional A).toReal * u
+            = (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal := by ring
+        have hset : {ω | 12 * (K : ℝ) * (gammaFunctional A).toReal
+                + 4 * (K : ℝ) * (gammaFunctional A).toReal * u
+              < F.sup' hFne (fun t => |X t ω - X t₀ ω|)}
+            = {ω | (12 + 4 * u) * (K : ℝ) * (gammaFunctional A).toReal
+              < F.sup' hFne (fun t => |X t ω - X t₀ ω|)} := by
+          ext ω; simp only [Set.mem_setOf_eq, hthr]
+        rw [hset]; exact hval
+      have hInt : ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ
+          ≤ 12 * (K : ℝ) * (gammaFunctional A).toReal
+            + Real.sqrt Real.pi * (4 * (K : ℝ) * (gammaFunctional A).toReal) :=
+        integral_le_of_tail_le hZm hZ0 ha0 hb0 htail
+      have hc : (0 : ℝ) ≤ (K : ℝ) * (gammaFunctional A).toReal :=
+        mul_nonneg K.coe_nonneg ENNReal.toReal_nonneg
+      have hsqrt : Real.sqrt Real.pi ≤ 2 := by
+        nlinarith [Real.sq_sqrt Real.pi_pos.le, Real.sqrt_nonneg Real.pi, Real.pi_lt_d2]
+      have hmid : 12 * (K : ℝ) * (gammaFunctional A).toReal
+          + Real.sqrt Real.pi * (4 * (K : ℝ) * (gammaFunctional A).toReal)
+          ≤ 20 * (K : ℝ) * (gammaFunctional A).toReal := by
+        nlinarith [mul_nonneg (sub_nonneg.mpr hsqrt) hc, hc, hsqrt]
+      have hfinal : ENNReal.ofReal (20 * (K : ℝ) * (gammaFunctional A).toReal)
+          = 20 * ↑K * gammaFunctional A := by
+        rw [show (20 : ℝ) * (K : ℝ) * (gammaFunctional A).toReal
+              = 20 * ((K : ℝ) * (gammaFunctional A).toReal) from by ring,
+            ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 20),
+            ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal,
+            ENNReal.ofReal_toReal hγ, ENNReal.ofReal_ofNat]
+        ring
+      calc ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)
+          ≤ ENNReal.ofReal (12 * (K : ℝ) * (gammaFunctional A).toReal
+              + Real.sqrt Real.pi * (4 * (K : ℝ) * (gammaFunctional A).toReal)) :=
+            ENNReal.ofReal_le_ofReal hInt
+        _ ≤ ENNReal.ofReal (20 * (K : ℝ) * (gammaFunctional A).toReal) :=
+            ENNReal.ofReal_le_ofReal hmid
+        _ = 20 * ↑K * gammaFunctional A := hfinal
 
 /-- **Theorem 8.5.2 (generic chaining bound)** (HDP §8.5.2; faithful
 general-`T` form, book's absolute constant frozen `C = 20`): mean-zero
@@ -882,7 +978,37 @@ theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     (hFne : F.Nonempty) :
     ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ) ≤
       20 * K * gammaTwo T := by
-  sorry
+  have hmemT : ∀ t ∈ F, t ∈ T := fun t ht => hF (Finset.mem_coe.mpr ht)
+  -- Anchor at a point of `T` (Remark 8.5.3 device).
+  set t₀ := hne.some with ht₀def
+  have ht₀ : t₀ ∈ T := hne.some_mem
+  -- Integrability of the two finite maxima.
+  have hSXint : Integrable (fun ω => F.sup' hFne (fun t => X t ω)) μ :=
+    integrable_sup'_finset hFne (fun t ht => hint t (hmemT t ht))
+  have hWint : Integrable (fun ω => F.sup' hFne (fun t => |X t ω - X t₀ ω|)) μ :=
+    integrable_sup'_finset hFne
+      (fun t ht => ((hint t (hmemT t ht)).sub (hint t₀ ht₀)).abs)
+  -- E max X ≤ E sup |X − X t₀| (mean-zero anchor cancels).
+  have hred : ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ
+      ≤ ∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ := by
+    have hbound : ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ
+        ≤ ∫ ω, (X t₀ ω + F.sup' hFne (fun t => |X t ω - X t₀ ω|)) ∂μ := by
+      refine integral_mono hSXint ((hint t₀ ht₀).add hWint) (fun ω => ?_)
+      refine Finset.sup'_le hFne _ (fun s hs => ?_)
+      have h1 : |X s ω - X t₀ ω| ≤ F.sup' hFne (fun t => |X t ω - X t₀ ω|) :=
+        Finset.le_sup' (fun t => |X t ω - X t₀ ω|) hs
+      have h2 := le_abs_self (X s ω - X t₀ ω)
+      linarith
+    rwa [integral_add (hint t₀ ht₀) hWint, hmean t₀ ht₀, zero_add] at hbound
+  refine le_trans (ENNReal.ofReal_le_ofReal hred) ?_
+  haveI : Nonempty (AdmissibleSequence T) := nonempty_admissibleSequence hne
+  have ha_top : (20 : ℝ≥0∞) * ↑K ≠ ⊤ := ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top
+  have hpush : (20 : ℝ≥0∞) * ↑K * gammaTwo T
+      = ⨅ A : AdmissibleSequence T, 20 * ↑K * gammaFunctional A := by
+    rw [show gammaTwo T = ⨅ A : AdmissibleSequence T, gammaFunctional A from rfl]
+    exact ENNReal.mul_iInf (fun h => absurd h ha_top)
+  rw [hpush]
+  exact le_iInf (fun A => generic_chaining_of_admissible hne hmeas hinc ht₀ A hF hFne)
 
 /-- Theorem 8.5.2, real display (faithful general-`T` form): under a finite
 γ₂ (LEAN-ONLY junk-guard replacing the former finiteness of `T`),
@@ -908,6 +1034,11 @@ theorem generic_chaining_real {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}
     -- LEAN-ONLY: nonemptiness so `Finset.sup'` is defined
     (hFne : F.Nonempty) :
     ∫ ω, F.sup' hFne (fun t => X t ω) ∂μ ≤ 20 * K * (gammaTwo T).toReal := by
-  sorry
+  have h3 := generic_chaining hne hmeas hint hmean hinc hF hFne
+  have htop : (20 : ℝ≥0∞) * ↑K * gammaTwo T ≠ ⊤ :=
+    ENNReal.mul_ne_top (ENNReal.mul_ne_top (by norm_num) ENNReal.coe_ne_top) hγ
+  rw [ENNReal.ofReal_le_iff_le_toReal htop, ENNReal.toReal_mul, ENNReal.toReal_mul,
+    ENNReal.toReal_ofNat, ENNReal.coe_toReal] at h3
+  exact h3
 
 end StatLean.ConcentrationInequalities
