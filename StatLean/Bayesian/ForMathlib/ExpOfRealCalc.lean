@@ -1,4 +1,5 @@
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
@@ -39,32 +40,33 @@ open scoped ENNReal NNReal
 namespace StatLean.Bayesian
 
 /-- `ENNReal.ofReal (Real.exp x)` is strictly positive (the exponential is). -/
-lemma ofReal_exp_pos (x : ℝ) : 0 < ENNReal.ofReal (Real.exp x) := by
-  sorry
+lemma ofReal_exp_pos (x : ℝ) : 0 < ENNReal.ofReal (Real.exp x) :=
+  ENNReal.ofReal_pos.mpr (Real.exp_pos x)
 
 /-- `ENNReal.ofReal (Real.exp x)` is finite (it is the image of a real under
 `ENNReal.ofReal`). -/
-lemma ofReal_exp_ne_top (x : ℝ) : ENNReal.ofReal (Real.exp x) ≠ ⊤ := by
-  sorry
+lemma ofReal_exp_ne_top (x : ℝ) : ENNReal.ofReal (Real.exp x) ≠ ⊤ :=
+  ENNReal.ofReal_ne_top
 
 /-- Monotonicity transfer: `ofReal (exp x) ≤ ofReal (exp y) ↔ x ≤ y` (exponentials
 are positive, so `ENNReal.ofReal` neither clamps nor loses order). -/
 lemma ofReal_exp_le_iff (x y : ℝ) :
     ENNReal.ofReal (Real.exp x) ≤ ENNReal.ofReal (Real.exp y) ↔ x ≤ y := by
-  sorry
+  rw [ENNReal.ofReal_le_ofReal_iff (Real.exp_pos y).le, Real.exp_le_exp]
 
 /-- The additive law for a product of exponentials in `ℝ≥0∞`:
 `ofReal (exp x) * ofReal (exp y) = ofReal (exp (x + y))`. -/
 lemma ofReal_exp_mul (x y : ℝ) :
     ENNReal.ofReal (Real.exp x) * ENNReal.ofReal (Real.exp y)
       = ENNReal.ofReal (Real.exp (x + y)) := by
-  sorry
+  rw [← ENNReal.ofReal_mul (Real.exp_pos x).le, ← Real.exp_add]
 
 /-- Division by an exponential is multiplication by its reciprocal exponential:
 `a / ofReal (exp x) = a * ofReal (exp (−x))`. -/
 lemma div_ofReal_exp_neg (a : ℝ≥0∞) (x : ℝ) :
     a / ENNReal.ofReal (Real.exp x) = a * ENNReal.ofReal (Real.exp (-x)) := by
-  sorry
+  rw [ENNReal.div_eq_inv_mul, Real.exp_neg, ENNReal.ofReal_inv_of_pos (Real.exp_pos x),
+    mul_comm]
 
 /-- **Gaussian-type tail series, dominated by twice its leading term.** For
 `c, K` with positive curvature `c` and the first inter-term gap large enough
@@ -77,7 +79,66 @@ theorem tsum_ofReal_exp_neg_sq_le (c K : ℝ) (M : ℕ)
     (h : 1 ≤ c * (2 * M + 1) * K) :
     (∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ) : ℝ) ^ 2 * K)))
       ≤ 2 * ENNReal.ofReal (Real.exp (-c * (M : ℝ) ^ 2 * K)) := by
-  sorry
+  -- `K > 0` from the gap hypothesis `1 ≤ c(2M+1)K` (`c(2M+1) > 0`).
+  have hK : 0 < K := by
+    by_contra hle
+    push_neg at hle
+    nlinarith [h, mul_nonneg (mul_pos hc (by positivity : (0:ℝ) < 2 * (M:ℝ) + 1)).le
+      (neg_nonneg.mpr hle)]
+  have hcK : 0 ≤ c * K := (mul_pos hc hK).le
+  -- Term-by-term geometric domination: `exp(-c(M+j)²K) ≤ exp(-cM²K)·r^j`.
+  have hterm : ∀ j : ℕ,
+      ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ) : ℝ) ^ 2 * K))
+        ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
+          * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j := by
+    intro j
+    have hexp : Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K)
+        ≤ Real.exp (-c * (M:ℝ)^2 * K) * Real.exp (-c * (2 * (M:ℝ) + 1) * K) ^ j := by
+      rw [← Real.exp_nat_mul, ← Real.exp_add]
+      apply Real.exp_le_exp.mpr
+      push_cast
+      have hjsq : (j:ℝ) ≤ (j:ℝ)^2 := by
+        exact_mod_cast Nat.le_self_pow (by norm_num) j
+      nlinarith [mul_nonneg hcK (sub_nonneg.mpr hjsq)]
+    calc ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K))
+        ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)
+            * Real.exp (-c * (2 * (M:ℝ) + 1) * K) ^ j) := ENNReal.ofReal_le_ofReal hexp
+      _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
+            * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j := by
+          rw [ENNReal.ofReal_mul (Real.exp_pos _).le,
+            ENNReal.ofReal_pow (Real.exp_pos _).le]
+  -- The ratio `r = exp(-c(2M+1)K) ≤ exp(-1) ≤ 1/2`.
+  have he2 : -c * (2 * (M:ℝ) + 1) * K ≤ -1 := by nlinarith [h]
+  have he1 : (2:ℝ) < Real.exp 1 := Real.exp_one_gt_two
+  have hexpm1 : Real.exp (-1) ≤ 1/2 := by
+    have hpos := Real.exp_pos 1
+    have hprodone : Real.exp (-1) * Real.exp 1 = 1 := by rw [← Real.exp_add]; simp
+    nlinarith [hprodone, hpos, he1, Real.exp_pos (-1)]
+  have hofhalf : ENNReal.ofReal (1/2 : ℝ) = 2⁻¹ := by
+    rw [one_div, ENNReal.ofReal_inv_of_pos (by norm_num), ENNReal.ofReal_ofNat]
+  have hRhalf : ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ≤ 2⁻¹ := by
+    rw [← hofhalf]
+    exact ENNReal.ofReal_le_ofReal (le_trans (Real.exp_le_exp.mpr he2) hexpm1)
+  have hhalf : (1 : ℝ≥0∞) - 2⁻¹ = 2⁻¹ := by
+    rw [ENNReal.sub_eq_of_eq_add (by simp) (ENNReal.inv_two_add_inv_two).symm]
+  have hR12 : (2 : ℝ≥0∞)⁻¹ ≤ 1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) :=
+    hhalf ▸ tsub_le_tsub_left hRhalf 1
+  have hinv : (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹ ≤ 2 := by
+    calc (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹
+        ≤ ((2:ℝ≥0∞)⁻¹)⁻¹ := ENNReal.inv_le_inv.mpr hR12
+      _ = 2 := inv_inv 2
+  calc (∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * ((M + j : ℕ):ℝ)^2 * K)))
+      ≤ ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
+          * ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j :=
+        ENNReal.tsum_le_tsum hterm
+    _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
+          * ∑' j : ℕ, ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)) ^ j :=
+        ENNReal.tsum_mul_left
+    _ = ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K))
+          * (1 - ENNReal.ofReal (Real.exp (-c * (2 * (M:ℝ) + 1) * K)))⁻¹ := by
+        rw [ENNReal.tsum_geometric]
+    _ ≤ ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) * 2 := mul_le_mul_left' hinv _
+    _ = 2 * ENNReal.ofReal (Real.exp (-c * (M:ℝ)^2 * K)) := mul_comm _ _
 
 /-- **Series endgame.** If the real exponent diverges (`εₙ → ∞`) then
 `ofReal (exp (−εₙ)) → 0` in `ℝ≥0∞`. -/
@@ -86,6 +147,9 @@ theorem tendsto_ofReal_exp_neg {ε : ℕ → ℝ}
     (h : Filter.Tendsto ε Filter.atTop Filter.atTop) :
     Filter.Tendsto (fun n => ENNReal.ofReal (Real.exp (-(ε n))))
       Filter.atTop (nhds (0 : ℝ≥0∞)) := by
-  sorry
+  have hreal : Filter.Tendsto (fun n => Real.exp (-(ε n))) Filter.atTop (nhds (0 : ℝ)) :=
+    Real.tendsto_exp_atBot.comp (Filter.tendsto_neg_atBot_iff.mpr h)
+  have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hreal
+  simpa [ENNReal.ofReal_zero, Function.comp] using this
 
 end StatLean.Bayesian
