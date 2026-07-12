@@ -191,8 +191,34 @@ theorem normalMeans_linearShrinkage_bayesRisk_argmin (p : ℕ) (τ2 σ2 : ℝ≥
   rw [hcstar, div_le_iff₀ hd]
   nlinarith [sq_nonneg (((σ2 : ℝ) + (τ2 : ℝ)) * c - (τ2 : ℝ))]
 
-/-- **James–Stein risk identity** (3D.4, stretch): the risk of the James–Stein estimator falls
-below the MLE risk `p·σ²` by `(p−2)²σ⁴·E‖X‖⁻²` (Stein's lemma; James–Stein 1961). -/
+/-! ### James–Stein risk (3D.4): the Gaussian Stein's-lemma development -/
+
+/-- Derivative of the one-coordinate slice `s ↦ s/(s²+c)` of the James–Stein vector field
+`x ↦ xᵢ/‖x‖²` (with `c = ∑_{j≠i} xⱼ²` the fixed contribution of the other coordinates). -/
+private lemma hasDerivAt_jsSlice (c t : ℝ) (h : t ^ 2 + c ≠ 0) :
+    HasDerivAt (fun s => s / (s ^ 2 + c)) ((c - t ^ 2) / (t ^ 2 + c) ^ 2) t := by
+  have h1 : HasDerivAt (fun s => s ^ 2 + c) (2 * t) t := by
+    simpa using (hasDerivAt_pow 2 t).add_const c
+  have h2 := (hasDerivAt_id t).div h1 h
+  convert h2 using 1
+  field_simp
+  ring
+
+/-- The **divergence identity** `∑ᵢ (S − 2xᵢ²)/S² = (p−2)/S` with `S = ‖x‖²` — the pointwise
+content of `∑ᵢ ∂ᵢ(xᵢ/‖x‖²) = (p−2)/‖x‖²`. Holds unconditionally (`ℝ`-division by `0` is `0`). -/
+private lemma js_div_sum {p : ℕ} (x : Fin p → ℝ) :
+    ∑ i, ((∑ j, (x j) ^ 2) - 2 * (x i) ^ 2) / (∑ j, (x j) ^ 2) ^ 2
+      = ((p : ℝ) - 2) / (∑ j, (x j) ^ 2) := by
+  set S : ℝ := ∑ j, (x j) ^ 2 with hSdef
+  rcases eq_or_ne S 0 with hS | hS
+  · simp [hS]
+  · rw [← Finset.sum_div]
+    have hnum : ∑ i, (S - 2 * (x i) ^ 2) = (p : ℝ) * S - 2 * S := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, ← Finset.mul_sum, ← hSdef]
+    rw [hnum]
+    field_simp
+    ring
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
     (hp : 3 ≤ p) (θ : Fin p → ℝ) (σ2 : ℝ≥0)
