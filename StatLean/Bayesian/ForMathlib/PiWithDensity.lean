@@ -30,7 +30,7 @@ finishing with the binary `lintegral_prod_mul`; `pi_withDensity` follows on boxe
 theory (G. Fubini 1907; L. Tonelli 1909); the countable-product construction used for iid models
 is due to C. Ionescu-Tulcea and, in the probabilistic setting, A. N. Kolmogorov
 (*Grundbegriffe*, 1933). The statistical reading — an iid sample as a product experiment — is
-standard; see Robert §1.3.
+standard.
 -/
 
 open MeasureTheory

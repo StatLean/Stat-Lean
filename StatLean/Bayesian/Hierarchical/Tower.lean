@@ -17,10 +17,9 @@ There the conditional posterior `Π_λ(·∣x)` is the density-form `generalized
 measure-posterior — is jointly measurable in `(λ, x)`, so the outer hyperposterior integral is
 well-behaved and the identity is a density Fubini computation.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §10.2.3 (conditional decompositions), pp. 465–467 (the mixture
-representation of the hierarchical posterior).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.3
+(hierarchical model factorization), p. 108.
 
 **Proof formalization notes.** Only the *likelihood* is assumed dominated (`hlik`); the prior kernel
 `Π_•` stays abstract. Both sides reduce, for data-marginal-a.e. `x`, to
@@ -37,7 +36,7 @@ family (a ForMathlib disintegration primitive; see `notes/bayesian/roadmap.md`, 
 
 **Bibliographic comments.** The mixture/tower decomposition of a hierarchical posterior is the
 Rao–Blackwellization structure exploited by every hierarchical Gibbs sampler (Gelfand and Smith,
-1990) and the basis of the "conditioning" justifications of the Stein effect (Robert §10.5); it is
+1990) and the basis of the "conditioning" justifications of the Stein effect; it is
 the measure-theoretic content of the law of total (conditional) expectation applied to the
 three-stage model of Lindley and Smith (1972).
 -/
@@ -80,12 +79,12 @@ theorem dataMarginal_compProd_thetaPosterior_eq_map_swap :
 
 /-- **Posterior tower for the dominated hierarchy** (3A.7): a posterior expectation is the
 hyperposterior average of the conditional (density-form) posterior expectations
-(Robert §10.2.3). -/
+(Gelman §5.3). -/
 theorem posteriorExpectation_tower_hierarchical
     {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the likelihood density (regularity)
     (hp : Measurable (Function.uncurry p))
-    -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
+    -- USER-INPUT: dominated likelihood; Gelman §5.3
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
     (g : Θ → ℝ≥0∞) (hg : Measurable g) :
     ∀ᵐ x ∂H.dataMarginal,
@@ -165,12 +164,12 @@ theorem posteriorExpectation_tower_hierarchical
 
 /-- **The mixture identity** (3A.6, the single most important theorem of the batch), in evaluated
 form: the parameter posterior of a set is the hyperposterior average of the conditional posteriors
-of that set — `Π(s∣x) = ∫ Π_λ(s∣x) ρ(dλ∣x)` (Robert §10.2.3). -/
+of that set — `Π(s∣x) = ∫ Π_λ(s∣x) ρ(dλ∣x)` (Gelman §5.3). -/
 theorem thetaPosterior_apply_eq_lintegral_hyperPosterior
     {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the likelihood density (regularity)
     (hp : Measurable (Function.uncurry p))
-    -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
+    -- USER-INPUT: dominated likelihood; Gelman §5.3
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
     {s : Set Θ} (hs : MeasurableSet s) :
     ∀ᵐ x ∂H.dataMarginal,
@@ -182,12 +181,12 @@ theorem thetaPosterior_apply_eq_lintegral_hyperPosterior
   simp_rw [lintegral_indicator_one hs]
 
 /-- **Predictive tower** (3A.8): the hierarchical posterior predictive is the hyperposterior
-average of the conditional posterior predictives (Robert §10.2.3). -/
+average of the conditional posterior predictives (Gelman §5.3). -/
 theorem posteriorPredictive_hierarchical_tower
     {ν : Measure 𝓧} [SFinite ν] {p : Θ → 𝓧 → ℝ≥0∞}
     -- LEAN-ONLY: joint measurability of the likelihood density (regularity)
     (hp : Measurable (Function.uncurry p))
-    -- USER-INPUT: dominated likelihood; Robert §1.2 / §10.2.1
+    -- USER-INPUT: dominated likelihood; Gelman §5.3
     (hlik : ∀ θ, H.likelihood θ = ν.withDensity (p θ))
     (KY : Kernel Θ 𝓨) [IsMarkovKernel KY] {s : Set 𝓨} (hs : MeasurableSet s) :
     ∀ᵐ x ∂H.dataMarginal,

@@ -35,7 +35,7 @@ restatement of the Batch-1 headline `posterior_eq_withDensity_likelihood_div_pre
 indeterminacy of Bayes factors under improper priors were emphasized by H. Jeffreys (1939) and are
 the reason for pseudo-Bayes-factor proposals (intrinsic and fractional Bayes factors: J. O. Berger
 and L. R. Pericchi, *J. Amer. Statist. Assoc.* 91 (1996), 109–122; A. O'Hagan, *J. Roy. Statist.
-Soc. B* 57 (1995), 99–138). Robert §1.5 and his Chapter 5 discuss both sides; the marginalization
+Soc. B* 57 (1995), 99–138). The marginalization
 paradoxes of Dawid, Stone and Zidek (*J. Roy. Statist. Soc. B* 35 (1973), 189–233) delimit the
 safe zone formalized here.
 -/

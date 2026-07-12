@@ -17,12 +17,11 @@ and `dirichletMeasure α = Z(α)⁻¹ • volume.withDensity w_α` with the **ab
 `Z(α) = ∫⁻ w_α`. Conjugacy (`StatLean.Bayesian.Conjugacy.DirichletMultinomial`) needs only
 `0 < Z(α) < ∞`, never the closed form `Z(α) = ∏Γ(αᵢ)/Γ(∑αᵢ)` (a stretch goal).
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Appendix A.8 (Dirichlet 𝒟_k(α₁,…,α_k)), p. 521; Example 3.3.4
-(the Dirichlet as an exponential family), p. 116.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §3.4
+(multinomial/Dirichlet) and Appendix A (standard distributions), p. 69.
 
-**Proof formalization notes.** Robert's A.8 writes the density in `k + 1` symmetric coordinates on
+**Proof formalization notes.** Gelman's §3.4 writes the density in `k + 1` symmetric coordinates on
 the null set `{∑ xᵢ = 1}`; the corner parametrization used here is the standard
 Lebesgue-absolutely-continuous realization (drop the last coordinate), which keeps all measure
 theory on `Fin k → ℝ` where `volume` is the pi measure and `StandardBorelSpace` is automatic.
@@ -37,9 +36,9 @@ the multivariate integral `∫ ∏ xᵢ^{αᵢ−1}` over the simplex ("Sur une 
 détermination des intégrales multiples," *J. Math. Pures Appl.* 4 (1839), 164–168) gives the
 normalizing constant. As the conjugate prior of the multinomial it enters Bayesian statistics with
 the conjugate-family program of H. Raiffa and R. Schlaifer (*Applied Statistical Decision Theory*,
-Harvard, 1961; Robert Table 3.3.1), and it underlies the Dirichlet-process prior of T. S. Ferguson
-("A Bayesian analysis of some nonparametric problems," *Ann. Statist.* 1 (1973), 209–230; Robert
-§1.8.2) at the heart of Bayesian nonparametrics.
+Harvard, 1961), and it underlies the Dirichlet-process prior of T. S. Ferguson ("A Bayesian
+analysis of some nonparametric problems," *Ann. Statist.* 1 (1973), 209–230) at the heart of
+Bayesian nonparametrics.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -48,7 +47,7 @@ open scoped ENNReal
 namespace StatLean.Bayesian
 
 /-- The open **corner simplex**: the first `k` category probabilities, positive with sum `< 1`
-(Robert Appendix A.8, in the corner parametrization). -/
+(Gelman §3.4, in the corner parametrization). -/
 def simplexCorner (k : ℕ) : Set (Fin k → ℝ) :=
   {θ | (∀ i, 0 < θ i) ∧ ∑ i, θ i < 1}
 
@@ -78,7 +77,7 @@ theorem measurableSet_simplexCorner (k : ℕ) : MeasurableSet (simplexCorner k) 
 
 open Classical in
 /-- **Dirichlet weight** (unnormalized density against Lebesgue on the corner):
-`𝟙_corner(θ) · ∏ᵢ (simplexExtend θ)ᵢ^(αᵢ − 1)` (Robert Appendix A.8). -/
+`𝟙_corner(θ) · ∏ᵢ (simplexExtend θ)ᵢ^(αᵢ − 1)` (Gelman §3.4). -/
 noncomputable def dirichletWeight {k : ℕ} (α : Fin (k + 1) → ℝ) : (Fin k → ℝ) → ℝ≥0∞ :=
   fun θ =>
     if θ ∈ simplexCorner k then
@@ -98,7 +97,7 @@ the closed form `∏Γ(αᵢ)/Γ(∑αᵢ)` is a stretch goal. -/
 noncomputable def dirichletZ {k : ℕ} (α : Fin (k + 1) → ℝ) : ℝ≥0∞ :=
   ∫⁻ θ, dirichletWeight α θ
 
-/-- The **Dirichlet distribution** in the corner parametrization (Robert Appendix A.8). Junk: the
+/-- The **Dirichlet distribution** in the corner parametrization (Gelman §3.4). Junk: the
 zero measure when `Z(α) ∈ {0, ∞}` (excluded for `α > 0` by `dirichletZ_pos`/`dirichletZ_lt_top`). -/
 noncomputable def dirichletMeasure {k : ℕ} (α : Fin (k + 1) → ℝ) : Measure (Fin k → ℝ) :=
   (dirichletZ α)⁻¹ • (volume : Measure (Fin k → ℝ)).withDensity (dirichletWeight α)
@@ -106,7 +105,7 @@ noncomputable def dirichletMeasure {k : ℕ} (α : Fin (k + 1) → ℝ) : Measur
 /-- One-dimensional Beta integral in `ℝ≥0∞` form, derived from the pinned Beta-distribution
 normalization: `∫⁻ t in Ioo 0 1, ofReal (t^(a−1) (1−t)^(b−1)) = ofReal (B(a, b))`. -/
 theorem lintegral_Ioo_rpow_mul_rpow {a b : ℝ}
-    -- USER-INPUT: positive shape parameters; Robert Appendix A.3
+    -- USER-INPUT: positive shape parameters; Gelman §3.4
     (ha : 0 < a) (hb : 0 < b) :
     ∫⁻ t in Set.Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ (a - 1) * (1 - t) ^ (b - 1))
       = ENNReal.ofReal (ProbabilityTheory.beta a b) := by
@@ -130,7 +129,7 @@ theorem lintegral_Ioo_rpow_mul_rpow {a b : ℝ}
 
 /-- The Dirichlet normalization is positive for positive parameters (sub-box lower bound). -/
 theorem dirichletZ_pos {k : ℕ} {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i) :
     0 < dirichletZ α := by
   have hkpos : (0 : ℝ) < (k : ℝ) + 1 := by positivity
@@ -322,13 +321,13 @@ private theorem dirichletZ_inner {k : ℕ} (α : Fin (k + 2) → ℝ)
     show (k : ℝ) + ((∑ i : Fin (k + 1), α i.succ) - ((k : ℝ) + 1))
       = (∑ i : Fin (k + 1), α i.succ) - 1 by ring]
 
-/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Robert Appendix A.8). Batch-3
+/-- **Exact Dirichlet normalization** `Z(α) = ∏ᵢ Γ(αᵢ) / Γ(∑ᵢ αᵢ)` (Gelman §3.4). Batch-3
 target closing the carried debt: the coordinate-peel recursion `Z(α) = B(α₀, ∑_{i≥1} αᵢ)·Z(tail α)`
 with the pinned real Beta–Gamma identity `ProbabilityTheory.beta a b = Γ(a)Γ(b)/Γ(a+b)`
 (`beta_eq_betaIntegralReal`) telescopes to `∏Γ/Γ(∑)`; `dirichletZ_lt_top` is then an immediate
 corollary. -/
 theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i) :
     dirichletZ α = ENNReal.ofReal ((∏ i, Real.Gamma (α i)) / Real.Gamma (∑ i, α i)) := by
   induction k with
@@ -403,14 +402,14 @@ theorem dirichletZ_eq_prod_Gamma_div {k : ℕ} {α : Fin (k + 1) → ℝ}
 /-- The Dirichlet normalization is finite for positive parameters (immediate from the exact form
 `dirichletZ_eq_prod_Gamma_div`; `Real.Gamma` is positive, hence finite, for positive arguments). -/
 theorem dirichletZ_lt_top {k : ℕ} {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i) :
     dirichletZ α < ∞ := by
   rw [dirichletZ_eq_prod_Gamma_div hα]; exact ENNReal.ofReal_lt_top
 
 /-- The Dirichlet distribution is a probability measure for positive parameters. -/
 theorem isProbabilityMeasure_dirichletMeasure {k : ℕ} {α : Fin (k + 1) → ℝ}
-    -- USER-INPUT: positive Dirichlet parameters; Robert Appendix A.8
+    -- USER-INPUT: positive Dirichlet parameters; Gelman §3.4
     (hα : ∀ i, 0 < α i) :
     IsProbabilityMeasure (dirichletMeasure α) := by
   refine ⟨?_⟩

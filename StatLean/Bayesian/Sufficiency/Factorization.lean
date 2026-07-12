@@ -32,10 +32,9 @@ likelihood principle is the scalar case of the same cancellation.
 
 **Bibliographic comments.** The Likelihood Principle was articulated by G. Barnard (1949) and
 R. A. Fisher, given its modern form by A. Birnbaum ("On the foundations of statistical inference,"
-*J. Amer. Statist. Assoc.* 57 (1962), 269–306 — Robert's Theorem 1.3.8: sufficiency +
-conditionality ⇔ likelihood), and defended at book length by J. O. Berger and R. L. Wolpert,
-*The Likelihood Principle* (IMS, 1988). That Bayesian inference automatically obeys it (the
-posterior depends only on the likelihood) is Robert's observation on p. 16, formalized here.
+*J. Amer. Statist. Assoc.* 57 (1962), 269–306), and defended at book length by J. O. Berger and
+R. L. Wolpert, *The Likelihood Principle* (IMS, 1988). That Bayesian inference automatically obeys
+it (the posterior depends only on the likelihood) is formalized here.
 -/
 
 open MeasureTheory ProbabilityTheory

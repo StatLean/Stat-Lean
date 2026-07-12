@@ -7,22 +7,18 @@ Basic calculus of `γ`-credible set families (`IsCredibleSet post m C γ`: poste
 is at least `1 − γ`, a.e. data): monotonicity in the level and in the sets, and the trivial
 full-space family.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §5.5.1, Definition 5.5.2 (α-credible sets and HPD regions),
-p. 260; Example 5.5.3 (normal credible intervals), p. 260.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §2.3
+(posterior intervals / highest posterior density regions), p. 32.
 
 **Proof formalization notes.** All three lemmas are one-line filter/order arguments
 (`tsub_le_tsub_left` for the level, `measure_mono` for the sets, `measure_univ` for the trivial
 family — the last needs the posterior values to be probability measures, e.g. any Markov `post`).
-The decision-theoretic refinement (HPD regions minimize volume at fixed credibility, Robert
-§5.5.3/eq. (5.5.2)) is a Batch-3 target recorded in `notes/bayesian/roadmap.md`.
+The decision-theoretic refinement (HPD regions minimize volume at fixed credibility, Gelman §2.3) is a Batch-3 target recorded in `notes/bayesian/roadmap.md`.
 
 **Bibliographic comments.** Credible regions are the Bayesian counterpart of Neyman's confidence
 sets; the highest-posterior-density convention is systematized in G. E. P. Box and G. C. Tiao,
-*Bayesian Inference in Statistical Analysis* (Addison-Wesley, 1973). Robert Definition 5.5.2 and
-his §5.5 discussion (including the decision-theoretic loss (5.5.2)) are the account followed
-here.
+*Bayesian Inference in Statistical Analysis* (Addison-Wesley, 1973).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -35,7 +31,7 @@ variable {Θ 𝓧 : Type*} [mΘ : MeasurableSpace Θ] [m𝓧 : MeasurableSpace �
 
 /-- A `γ`-credible family is `γ'`-credible for any looser level `γ ≤ γ'`. -/
 theorem IsCredibleSet.mono_level (h : IsCredibleSet post m C γ)
-    -- USER-INPUT: the target level is looser; Robert Definition 5.5.2
+    -- USER-INPUT: the target level is looser; Gelman §2.3
     (hγ : γ ≤ γ') :
     IsCredibleSet post m C γ' := by
   filter_upwards [h] with x hx
@@ -43,7 +39,7 @@ theorem IsCredibleSet.mono_level (h : IsCredibleSet post m C γ)
 
 /-- Enlarging the sets preserves credibility. -/
 theorem IsCredibleSet.mono_set (h : IsCredibleSet post m C γ)
-    -- USER-INPUT: pointwise enlargement of the credible sets; Robert Definition 5.5.2
+    -- USER-INPUT: pointwise enlargement of the credible sets; Gelman §2.3
     (hCD : ∀ x, C x ⊆ D x) :
     IsCredibleSet post m D γ := by
   filter_upwards [h] with x hx

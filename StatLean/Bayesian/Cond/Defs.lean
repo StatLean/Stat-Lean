@@ -31,8 +31,7 @@ Everything is expressed with Mathlib's `ProbabilityTheory.cond`. All three quant
 **Bibliographic comments.** The odds/Bayes-factor formulation of hypothesis comparison is due to
 H. Jeffreys (*Theory of Probability*, Oxford, 1939); the terminology "Bayes factor" and its role
 in model choice are surveyed by R. E. Kass and A. E. Raftery (*Bayes factors*, J. Amer. Statist.
-Assoc. 90 (1995), 773–795). Robert §5.2 collects this material in the decision-theoretic setting
-used here.
+Assoc. 90 (1995), 773–795).
 -/
 
 open MeasureTheory ProbabilityTheory

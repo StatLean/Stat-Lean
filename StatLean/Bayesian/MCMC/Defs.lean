@@ -18,12 +18,9 @@ Data model for Markov chain Monte Carlo correctness:
 Stationarity vocabulary is the pinned Mathlib's: `ProbabilityTheory.Kernel.Invariant` and
 `Kernel.IsReversible` (detailed balance), with `IsReversible.invariant` and `Invariant.comp`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §6.3.2 (the Metropolis–Hastings algorithm, boxed display,
-pp. 303–304) and Theorem 6.3.1 / eq. (6.3.1) (detailed balance and stationarity), p. 304;
-§6.3.3 (Gibbs sampling / data augmentation, pp. 307–308) and Lemma 6.3.6, p. 309; §6.3.5
-(random-scan sweeps).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §11.1–11.2,
+pp. 276–278.
 
 **Proof formalization notes.** Laptop-only data model — definitions only. On a countable `S` with
 measurable singletons the space is discrete, so the MH kernel's coe-measurability is automatic
@@ -41,8 +38,7 @@ W. K. Hastings, "Monte Carlo sampling methods using Markov chains and their appl
 Gibbs distributions, and the Bayesian restoration of images," *IEEE Trans. PAMI* 6 (1984),
 721–741, brought into mainstream statistics by A. E. Gelfand and A. F. M. Smith, "Sampling-based
 approaches to calculating marginal densities," *J. Amer. Statist. Assoc.* 85 (1990), 398–409
-(with data augmentation from M. A. Tanner and W. H. Wong, 1987). Robert credits these in the
-running text of §6.2–§6.3.
+(with data augmentation from M. A. Tanner and W. H. Wong, 1987).
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -57,13 +53,13 @@ section MetropolisHastings
 variable {S : Type*} [mS : MeasurableSpace S] [Countable S] [MeasurableSingletonClass S]
 
 /-- The **Metropolis–Hastings acceptance probability**
-`α(x, y) = min{1, π{y}·q(y,{x}) / (π{x}·q(x,{y}))}` (Robert §6.3.2). `ℝ≥0∞` junk: `α = 1`
+`α(x, y) = min{1, π{y}·q(y,{x}) / (π{x}·q(x,{y}))}` (Gelman §11.1). `ℝ≥0∞` junk: `α = 1`
 wherever the denominator vanishes. -/
 noncomputable def mhAccept (π : Measure S) (q : Kernel S S) : S → S → ℝ≥0∞ :=
   fun x y => min 1 (π {y} * q y {x} / (π {x} * q x {y}))
 
 /-- The **Metropolis–Hastings kernel**: propose from `q(x, ·)`, accept with probability
-`mhAccept π q x ·`, otherwise stay at `x` (Robert §6.3.2, boxed algorithm). -/
+`mhAccept π q x ·`, otherwise stay at `x` (Gelman §11.1, boxed algorithm). -/
 noncomputable def mhKernel (π : Measure S) (q : Kernel S S) : Kernel S S :=
   ⟨fun x =>
       (q x).withDensity (mhAccept π q x)
@@ -85,19 +81,19 @@ section Gibbs
 variable {A B : Type*} [mA : MeasurableSpace A] [mB : MeasurableSpace B]
 
 /-- The **first-coordinate Gibbs update** for a target `ρ` on `A × B`: refresh `a` from the exact
-conditional `ρ(da | b)`, keep `b` (Robert §6.3.3). -/
+conditional `ρ(da | b)`, keep `b` (Gelman §11.1). -/
 noncomputable def gibbsFst (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] : Kernel (A × B) (A × B) :=
   ((((ρ.map Prod.swap).condKernel) ×ₖ Kernel.id)).comap Prod.snd measurable_snd
 
 /-- The **second-coordinate Gibbs update** for a target `ρ` on `A × B`: keep `a`, refresh `b` from
-the exact conditional `ρ(db | a)` (Robert §6.3.3). -/
+the exact conditional `ρ(db | a)` (Gelman §11.1). -/
 noncomputable def gibbsSnd (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace B] [Nonempty B] : Kernel (A × B) (A × B) :=
   (Kernel.id ×ₖ ρ.condKernel).comap Prod.fst measurable_fst
 
 /-- The **random-scan Gibbs sweep**: update the first coordinate with probability `w`, else the
-second (Robert §6.3.5). -/
+second (Gelman §11.1). -/
 noncomputable def randomScanGibbs (ρ : Measure (A × B)) [IsFiniteMeasure ρ]
     [StandardBorelSpace A] [Nonempty A] [StandardBorelSpace B] [Nonempty B]
     (w : ℝ≥0∞) : Kernel (A × B) (A × B) :=

@@ -24,11 +24,10 @@ expectation exists" proviso.
 
 **Bibliographic comments.** Quadratic loss is the founding loss function of statistics, going back
 to the least-squares theory of A. M. Legendre (*Nouvelles méthodes pour la détermination des
-orbites des comètes*, 1805) and C. F. Gauss (*Theoria motus corporum coelestium*, 1809), as Robert
-notes in §2.5.1; that the posterior mean minimizes posterior quadratic loss was already implicit
-in Laplace's "probability of causes" computations (1774). The bias–variance decomposition used in
-the proof is textbook folklore; Robert Proposition 2.5.1 (with the weighted and matrix variants in
-his Corollaries 2.5.2–2.5.3) is the synthesis formalized here.
+orbites des comètes*, 1805) and C. F. Gauss (*Theoria motus corporum coelestium*, 1809); that the
+posterior mean minimizes posterior quadratic loss was already implicit in Laplace's "probability
+of causes" computations (1774). The bias–variance decomposition used in the proof is textbook
+folklore.
 -/
 
 open MeasureTheory ProbabilityTheory

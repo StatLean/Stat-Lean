@@ -22,8 +22,7 @@ CLAUDE.md gotcha 12 (`simp_rw` after the withDensity rewrite).
 **Bibliographic comments.** Ratios of the form `∫ g·p dπ / ∫ p dπ` are the computational core of
 Bayesian inference — already Laplace's 1774 memoir evaluates posterior expectations of exactly
 this shape, and their numerical approximation motivates the Monte Carlo and Laplace-approximation
-methods of Robert's Chapter 6. Robert §1.4 introduces the formula as part of the Bayesian machine;
-Chapter 4 develops the resulting point estimators.
+methods.
 -/
 
 open MeasureTheory ProbabilityTheory

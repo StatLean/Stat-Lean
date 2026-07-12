@@ -32,8 +32,7 @@ of theoretical statistics," *Philosophical Transactions of the Royal Society A* 
 309–368); the factorization criterion was formalized by J. Neyman ("Sur un teorema concernente le
 cosiddette statistiche sufficienti," *Giorn. Ist. Ital. Attuari* 6 (1935), 320–334) and given its
 measure-theoretic form by P. R. Halmos and L. J. Savage ("Application of the Radon–Nikodym theorem
-to the theory of sufficient statistics," *Ann. Math. Statist.* 20 (1949), 225–241). Robert §1.3
-presents the Bayesian reading formalized in this directory.
+to the theory of sufficient statistics," *Ann. Math. Statist.* 20 (1949), 225–241).
 -/
 
 open MeasureTheory ProbabilityTheory

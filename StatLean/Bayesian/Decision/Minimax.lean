@@ -31,7 +31,7 @@ definition; `risk`/`IsMinimaxEstimator`/`IsLeastFavorable` live in `Decision.Def
 Functions*, 1950), with the geometric risk-set picture of D. Blackwell and M. A. Girshick
 (*Theory of Games and Statistical Decisions*, Wiley, 1954). The constant-risk criterion and least
 favorable priors are the standard devices for exhibiting minimax estimators — e.g. the
-`Beta(√n/2, √n/2)` binomial example (Robert Example 2.4.14). This file complements the
+`Beta(√n/2, √n/2)` binomial example. This file complements the
 `StatLean.Minimaxity` area (Wainwright ch. 15), which bounds minimax risks from below; here Bayes
 rules certify them from above.
 -/

@@ -33,7 +33,7 @@ uses the Gaussian integration-by-parts (Stein's lemma) built from
 *Proc. Third Berkeley Symp.* 1 (1956), 197–206); the explicit dominating estimator and its risk are
 W. James and C. Stein ("Estimation with quadratic loss," *Proc. Fourth Berkeley Symp.* 1 (1961),
 361–379). The empirical-Bayes reading — shrinkage toward a data-estimated prior mean — is B. Efron
-and C. Morris (1973) and underlies Robert §10.5.
+and C. Morris (1973).
 -/
 
 open MeasureTheory ProbabilityTheory

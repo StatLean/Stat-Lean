@@ -9,10 +9,9 @@ The easy, useful direction of de Finetti: a **conditionally i.i.d.** sample — 
 the data only through their (permutation-invariant) empirical content. The full de Finetti
 representation theorem is postponed (recorded in `roadmap.md`, Batch 4).
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). §1.5 and §3.8.2 (exchangeability and de Finetti's theorem);
-§10.2 (the conditional-independence structure of hierarchical models).
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §5.2
+(exchangeability and hierarchical models), p. 104.
 
 **Proof formalization notes.** `IsExchangeable` is invariance of the law under coordinate
 permutations. `iidKernel_map_perm` is permutation invariance of `Measure.pi` of identical factors
@@ -26,7 +25,7 @@ mixture of i.i.d. sequences are due to B. de Finetti ("Funzione caratteristica d
 aleatorio," *Atti Accad. Naz. Lincei* 4 (1931), 251–299; "La prévision," *Ann. Inst. H. Poincaré*
 7 (1937), 1–68); the general (Polish-space) form is E. Hewitt and L. J. Savage (*Trans. Amer. Math.
 Soc.* 80 (1955), 470–501). The conditionally-i.i.d. direction formalized here is the "if" half and
-the foundation of the Bayesian reading of hierarchical models (Robert §3.8.2).
+the foundation of the Bayesian reading of hierarchical models.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -37,7 +36,7 @@ namespace StatLean.Bayesian
 variable {Θ 𝓧 : Type*} [MeasurableSpace Θ] [MeasurableSpace 𝓧]
 
 /-- A law on `Fin n → α` is **exchangeable** if it is invariant under permuting the coordinates
-(Robert §3.8.2). -/
+(Gelman §5.2). -/
 def IsExchangeable {n : ℕ} {α : Type*} [MeasurableSpace α] (μ : Measure (Fin n → α)) : Prop :=
   ∀ σ : Equiv.Perm (Fin n), μ.map (fun x i => x (σ i)) = μ
 

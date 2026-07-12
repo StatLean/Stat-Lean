@@ -32,11 +32,10 @@ mass follows from the Batch-1 headline with `withDensity_apply` on `{θ₀}` (th
 `π₁{θ₀} = 0` keeps the alternative from contaminating the atom).
 
 **Bibliographic comments.** The threshold structure of Bayes tests is the Bayesian counterpart of
-the Neyman–Pearson lemma (1933) and appears with the a₀–a₁ loss in Robert §5.2 following Wald's
-decision theory. Point-null mixture priors originate with H. Jeffreys (1939) and were sharpened
-into calibration results by J. O. Berger and T. Sellke ("Testing a point null hypothesis: the
-irreconcilability of P values and evidence," *J. Amer. Statist. Assoc.* 82 (1987), 112–122),
-Robert's §5.2.4 companion reading.
+the Neyman–Pearson lemma (1933) and appears with the a₀–a₁ loss following Wald's decision theory.
+Point-null mixture priors originate with H. Jeffreys (1939) and were sharpened into calibration
+results by J. O. Berger and T. Sellke ("Testing a point null hypothesis: the irreconcilability of
+P values and evidence," *J. Amer. Statist. Assoc.* 82 (1987), 112–122).
 -/
 
 open MeasureTheory ProbabilityTheory

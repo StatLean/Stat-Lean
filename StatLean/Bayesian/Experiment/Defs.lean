@@ -34,9 +34,9 @@ priors (σ-finite, non-probability) are a deliberate extension (Robert §1.5) an
 this structure.
 
 **Bibliographic comments.** The measure-theoretic Bayesian model — prior on the parameter,
-regular conditional distribution for the posterior — is standard; see Robert §1.3–1.5 and, for
-the kernel/disintegration formulation used by Mathlib, the regular-conditional-probability
-theory of J. L. Doob and the standard-Borel disintegration theorem.
+regular conditional distribution for the posterior — is standard; for the kernel/disintegration
+formulation used by Mathlib, see the regular-conditional-probability theory of J. L. Doob and the
+standard-Borel disintegration theorem.
 -/
 
 open MeasureTheory ProbabilityTheory

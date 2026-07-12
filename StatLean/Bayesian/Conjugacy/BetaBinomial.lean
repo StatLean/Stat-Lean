@@ -8,15 +8,13 @@ import Mathlib.Probability.Distributions.Beta
 The classical first example of Bayes' theorem: for a success probability `θ ~ Beta(α, β)` and one
 binomial observation `k ~ ℬ(n, θ)`,
 
-* **posterior** (Robert Example 1.4.1 / Table 3.3.1): `θ | k ~ Beta(α + k, β + n − k)`;
-* **marginal** (the Beta-Binomial pmf, Robert Example 1.4.1):
+* **posterior** (Gelman §2.4): `θ | k ~ Beta(α + k, β + n − k)`;
+* **marginal** (the Beta-Binomial pmf, Gelman §2.4):
   `P(k) = C(n, k) · B(α + k, β + n − k) / B(α, β)`.
 
-**Reference.** C. P. Robert, *The Bayesian Choice: From Decision-Theoretic
-Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer,
-2007 (ISBN 978-0-387-71598-8). Example 1.4.1 (the worked Beta-Binomial update, incl. the
-Γ-function marginal), pp. 22–23; Table 3.3.1 (Binomial ℬ(n,θ) + Beta ℬe(α,β) → ℬe(α+x, β+n−x)),
-p. 121; Appendix A.3/A.10, pp. 519–521.
+**Reference.** A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin,
+*Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014 (ISBN 978-1-4398-9820-8). §2.4
+(binomial model), p. 34.
 
 **Proof formalization notes.** One pointwise pdf-algebra lemma (`betaPDF_mul_clampPow`: Beta pdf ×
 clamped power = Beta-function ratio × updated Beta pdf, using `Real.rpow_natCast`/`rpow_add` on
@@ -26,10 +24,10 @@ Markov property is the binomial theorem `add_pow` at `clamp θ + (1 − clamp θ
 both sides of the algebra vanish (the Beta pdf is zero), which is why clamping is harmless.
 
 **Bibliographic comments.** This is the original Bayesian computation: Bayes's 1763 essay treats
-exactly the uniform-prior case `Beta(1,1)` (as Robert recounts in §1.2), and Laplace's rule of
+exactly the uniform-prior case `Beta(1,1)`, and Laplace's rule of
 succession builds on it (`Conjugacy.BetaBernoulli`). The modern conjugate-family reading is
 Raiffa–Schlaifer (1961); Diaconis and Ylvisaker (1985, "Quantifying prior opinion") use the
-spinning-coin Beta-Binomial as the canonical worked example (Robert Example 3.4.1).
+spinning-coin Beta-Binomial as the canonical worked example.
 -/
 
 open MeasureTheory ProbabilityTheory
@@ -80,7 +78,7 @@ instance (n : ℕ) : IsMarkovKernel (binomialKernel n) := by
 /-- Pointwise pdf algebra: Beta pdf times a clamped-power factor is a Beta-function ratio times
 the updated Beta pdf. Both sides vanish off `(0, 1)`. -/
 theorem betaPDF_mul_clampPow {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β) (a b : ℕ) (θ : ℝ) :
     betaPDF α β θ * ENNReal.ofReal (unitClamp θ ^ a * (1 - unitClamp θ) ^ b)
       = ENNReal.ofReal (ProbabilityTheory.beta (α + a) (β + b) / ProbabilityTheory.beta α β)
@@ -120,10 +118,10 @@ theorem betaPDF_mul_clampPow {α β : ℝ}
       · exact betaPDF_eq_zero_of_one_le (not_lt.mp h)
     rw [hz1, hz2, zero_mul, mul_zero]
 
-/-- **Beta-Binomial posterior** (Robert Example 1.4.1 / Table 3.3.1): observing `k` successes in
+/-- **Beta-Binomial posterior** (Gelman §2.4): observing `k` successes in
 `n` trials updates `Beta(α, β)` to `Beta(α + k, β + (n − k))`, predictive-a.e. -/
 theorem beta_binomial_posterior_ae {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β)
     -- LEAN-ONLY: instance plumbing, derivable from hα/hβ via `isProbabilityMeasureBeta`
     [IsFiniteMeasure (betaMeasure α β)] (n : ℕ) :
@@ -164,10 +162,10 @@ theorem beta_binomial_posterior_ae {α β : ℝ}
     simp only [betaMeasure]
     rw [← withDensity_mul _ hbeta hg, hdens, withDensity_smul' _ _ hck]
 
-/-- **Beta-Binomial marginal** (Robert Example 1.4.1): the prior predictive pmf is
+/-- **Beta-Binomial marginal** (Gelman §2.4): the prior predictive pmf is
 `C(n,k) · B(α+k, β+n−k) / B(α, β)`. -/
 theorem beta_binomial_predictiveDensity {α β : ℝ}
-    -- USER-INPUT: positive Beta parameters; Robert Appendix A.3
+    -- USER-INPUT: positive Beta parameters; Gelman §2.4
     (hα : 0 < α) (hβ : 0 < β) (n : ℕ) (k : Fin (n + 1)) :
     predictiveDensity (binomialDensity n) (betaMeasure α β) k
       = ENNReal.ofReal ((n.choose k : ℝ)

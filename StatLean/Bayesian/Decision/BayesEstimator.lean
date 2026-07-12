@@ -31,9 +31,8 @@ points is due to A. Wald, *Statistical Decision Functions* (Wiley, 1950); the su
 justification of minimizing posterior expected loss is L. J. Savage, *The Foundations of
 Statistics* (Wiley, 1954), with the axiomatic treatment developed further in M. H. DeGroot,
 *Optimal Statistical Decisions* (McGraw-Hill, 1970). The reduction of the integrated risk to a
-pointwise posterior minimization — Robert's Theorem 2.3.2 — is the standard bridge between the
-two viewpoints and appears in every decision-theoretic account since Wald; Robert §1.8.1 and the
-Notes to his Chapter 2 survey the history.
+pointwise posterior minimization is the standard bridge between the two viewpoints and appears in
+every decision-theoretic account since Wald.
 -/
 
 open MeasureTheory ProbabilityTheory

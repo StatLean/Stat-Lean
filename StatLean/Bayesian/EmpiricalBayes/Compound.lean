@@ -24,7 +24,7 @@ compound optimality.
 **Bibliographic comments.** The compound decision problem and its empirical-Bayes solution are
 Robbins's (1951, 1956); the "oracle" terminology and the modern large-scale reading are Efron's
 (2010). The equivalence of pointwise (posterior) and compound (frequentist, integrated) Bayes
-optimality is the decision-theoretic content of Fubini's theorem, as in Robert §2.3.
+optimality is the decision-theoretic content of Fubini's theorem.
 -/
 
 open MeasureTheory ProbabilityTheory

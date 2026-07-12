@@ -31,8 +31,7 @@ likelihood `predictiveDensity (p m) (π m)`, feed Batch-1's
 (*Theory of Probability*, 1939); the model-space formulation (7.2.1)–(7.2.3) with model averaging
 became central with A. E. Raftery, D. Madigan and J. A. Hoeting ("Bayesian model averaging for
 linear regression models," *J. Amer. Statist. Assoc.* 92 (1997), 179–191) and the review of
-J. A. Hoeting et al., *Statist. Sci.* 14 (1999), 382–417. Robert Chapter 7 is the
-decision-theoretic account followed here.
+J. A. Hoeting et al., *Statist. Sci.* 14 (1999), 382–417.
 -/
 
 open MeasureTheory ProbabilityTheory

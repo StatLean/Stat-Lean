@@ -26,8 +26,8 @@ extension. Junk: the zero measure wherever `m(x) ∈ {0, ∞}` (`0/0 = 0`, `·/�
 **Bibliographic comments.** Improper priors begin with Laplace's uniform "prior of ignorance"
 (1774) and were systematized by H. Jeffreys (*Theory of Probability*, 1939), whose invariance
 priors are typically improper. The σ-finite formulation with the propriety condition is standard;
-Robert §1.5 (and his §5 warning that improper priors are safe for estimation but dangerous for
-Bayes factors — formalized in `GeneralizedBayes.Basic`) is the account followed here. See also
+improper priors are safe for estimation but dangerous for Bayes factors, formalized in
+`GeneralizedBayes.Basic`. See also
 A. P. Dawid, M. Stone and J. V. Zidek, "Marginalization paradoxes in Bayesian and structural
 inference," *J. Roy. Statist. Soc. B* 35 (1973), 189–233 for the classical pitfalls.
 -/
