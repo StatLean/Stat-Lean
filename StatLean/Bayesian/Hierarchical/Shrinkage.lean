@@ -197,12 +197,14 @@ theorem normalMeans_linearShrinkage_bayesRisk_argmin (p : ℕ) (τ2 σ2 : ℝ≥
 `x ↦ xᵢ/‖x‖²` (with `c = ∑_{j≠i} xⱼ²` the fixed contribution of the other coordinates). -/
 private lemma hasDerivAt_jsSlice (c t : ℝ) (h : t ^ 2 + c ≠ 0) :
     HasDerivAt (fun s => s / (s ^ 2 + c)) ((c - t ^ 2) / (t ^ 2 + c) ^ 2) t := by
-  have h1 : HasDerivAt (fun s => s ^ 2 + c) (2 * t) t := by
+  have h1 : HasDerivAt (fun s : ℝ => s ^ 2 + c) (2 * t) t := by
     simpa using (hasDerivAt_pow 2 t).add_const c
-  have h2 := (hasDerivAt_id t).div h1 h
-  convert h2 using 1
-  field_simp
-  ring
+  have h2 : HasDerivAt (fun s : ℝ => s / (s ^ 2 + c))
+      ((1 * (t ^ 2 + c) - t * (2 * t)) / (t ^ 2 + c) ^ 2) t := (hasDerivAt_id t).div h1 h
+  have heq : (1 * (t ^ 2 + c) - t * (2 * t)) / (t ^ 2 + c) ^ 2
+      = (c - t ^ 2) / (t ^ 2 + c) ^ 2 := by
+    rw [div_eq_div_iff (pow_ne_zero 2 h) (pow_ne_zero 2 h)]; ring
+  rwa [heq] at h2
 
 /-- The **divergence identity** `∑ᵢ (S − 2xᵢ²)/S² = (p−2)/S` with `S = ‖x‖²` — the pointwise
 content of `∑ᵢ ∂ᵢ(xᵢ/‖x‖²) = (p−2)/‖x‖²`. Holds unconditionally (`ℝ`-division by `0` is `0`). -/
@@ -216,8 +218,7 @@ private lemma js_div_sum {p : ℕ} (x : Fin p → ℝ) :
     have hnum : ∑ i, (S - 2 * (x i) ^ 2) = (p : ℝ) * S - 2 * S := by
       rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
         nsmul_eq_mul, ← Finset.mul_sum, ← hSdef]
-    rw [hnum]
-    field_simp
+    rw [hnum, div_eq_div_iff (pow_ne_zero 2 hS) hS]
     ring
 theorem jamesStein_risk_difference {p : ℕ}
     -- USER-INPUT: the Stein effect requires dimension ≥ 3; James–Stein 1961
