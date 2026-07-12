@@ -23,8 +23,9 @@ measure `G` (`lintegral_add_measure`, `lintegral_smul_measure`). `NPMLE_exists_f
 card_add_one` is Lindsay's Carathéodory/convex-geometry argument: the likelihood vector
 `G ↦ (f_G(x₁), …, f_G(xₙ))` ranges over the convex hull of the `n`-dimensional likelihood curve, and
 a boundary maximizer is a convex combination of at most `n+1` extreme points (Dirac masses).
-Existence of a maximizer (a compactness step) is taken as input; the finite-support conclusion is
-the geometric content. If the Carathéodory bound resists it is a recorded Batch-4 stretch.
+Existence of a maximizer is *derived* in `NPMLE_exists_of_finite` (the marginal likelihood is a
+continuous function of the weight vector on the compact probability simplex, so it attains its
+maximum), and the finite-support conclusion is the geometric content.
 
 **Bibliographic comments.** The finite-support NPMLE is Lindsay's theorem (1983), refining Kiefer
 and Wolfowitz (1956); its consistency is the Kiefer–Wolfowitz theorem, and its use for normal-means
