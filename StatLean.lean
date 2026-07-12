@@ -4,6 +4,7 @@ import StatLean.HighDimensionalStatistics
 import StatLean.Optimization
 import StatLean.MultipleTesting
 import StatLean.Minimaxity
+import StatLean.Bayesian
 
 /-!
 # StatLean
@@ -25,6 +26,11 @@ theory, organized into per-area sublibraries.
 * `StatLean.Minimaxity` — minimax lower bounds: divergences, Le Cam / Fano /
   local-packing / Yang–Barron methods (Wainwright, *High-Dimensional Statistics*,
   ch. 15).
+* `StatLean.Bayesian` — Bayesian statistics: dominated Bayes, sufficiency,
+  updating/prediction, conjugacy (incl. Dirichlet–Multinomial), generalized Bayes,
+  model choice, MCMC correctness, decision theory / minimax bridge, hierarchical +
+  empirical Bayes (Robert, *The Bayesian Choice*; Gelman et al., *Bayesian Data
+  Analysis*, 3rd ed.).
 
 Per-area umbrellas are imported above as each area lands.
 -/
