@@ -1,0 +1,24 @@
+srun: job 30375476 queued and waiting for resources
+srun: job 30375476 has been allocated resources
+All done. Summary of what I accomplished:
+
+## All 9 sorries closed (0 fallbacks used)
+
+I closed every sorry in the three touch-set files, and the full `StatLean.ConcentrationInequalities` compiles error-free (3061 jobs). The three touch-set files are 0-sorry.
+
+**DyadicNets.lean (2):**
+- `coveringNumber_ne_top_of_totallyBounded` — external ε/2-cover from `Metric.totallyBounded_iff`, center-swapped into `T` (using `choose!` with `x₀` as off-support junk), then `IsCover.coveringNumber_le_encard` on the finite swapped cover gives `≠ ⊤`. `T = ∅` handled separately.
+- `totallyBounded_of_coveringNumber_ne_top` — `T = ∅` via `totallyBounded_empty`; otherwise the ε/2 realizer net becomes an open ε-ball cover.
+
+**EntropySum.lean (4):**
+- `dudleyLSum_eq_ofReal_of_summable` — one-liner via `ENNReal.ofReal_tsum_of_nonneg`.
+- `dudleyLSum_le_two_mul_dudleyLIntegral` — native ℝ≥0∞ block-tiling (no integrability needed): per-block constant lower bound via `setLIntegral_const` + `setLIntegral_mono'` (antitonicity), disjoint blocks via `lintegral_biUnion_finset`, passed to the tsum via `tsum_eq_iSup_sum` + `iSup_le`, with coarse terms above the diameter scale dropping to 0.
+- `ofReal_diam_mul_sqrt_log_two_le_four_mul_dudleyLSum` — single-scale κ with 𝒩 ≥ 2 and `ENNReal.le_tsum`.
+- `dudleyLIntegral_Ioi_eq` — `Ioi 0 = Ioc 0 D ∪ Ioi D`, `lintegral_union` + `setLIntegral_eq_zero` on the vanishing tail.
+
+**SubsetChaining.lean (3):**
+- `residual_expectation_le` — `expectation_max_finset_le` on the centered residual family, proxy `3(K·ε)²`, with a locally re-derived `IsSubGaussian` proxy-monotonicity.
+- `residual_abs_expectation_le` — `expectation_abs_max_le` with `L = K·toNNReal ε`, biSup↔sup' conversion under the integral.
+- `residual_tail_le` (the designated fallback — closed anyway) — `tail_abs_max_le` with the same `L` and a biSup↔sup' event-set equality.
+
+Committed as `fc8089e`.
