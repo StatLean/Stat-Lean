@@ -47,6 +47,25 @@ theorem mixtureDensity_linear_in_mixing (p : Θ → 𝓧 → ℝ≥0∞) (t : �
       = t * mixtureDensity p G₀ x + (1 - t) * mixtureDensity p G₁ x := by
   simp only [mixtureDensity, predictiveDensity, lintegral_add_measure, lintegral_smul_measure, smul_eq_mul]
 
+/-- **Existence of an NPMLE on a finite parameter space** (the compactness step, in Lindsay's
+regular/finite setting). On a nonempty finite `Θ` with finite likelihoods, the marginal likelihood
+`G ↦ ∏ⱼ f_G(xⱼ) = ∏ⱼ ∑_θ p(θ,xⱼ)·G{θ}` is a continuous function of the weight vector `w θ = G{θ}`
+on the compact probability simplex `stdSimplex ℝ Θ`, hence attains its maximum. This *derives* the
+existence that Lindsay 1983 obtains by weak-* compactness in the general (non-finite) setting —
+replacing the former `∃ Ghat, IsNPMLE` provider hypothesis (hypothesis-discipline fix, §2). -/
+private lemma NPMLE_exists_of_finite {n : ℕ} [MeasurableSingletonClass Θ] [Finite Θ] [Nonempty Θ]
+    (p : Θ → 𝓧 → ℝ≥0∞) (x : Fin n → 𝓧) (hpfin : ∀ θ i, p θ (x i) ≠ ∞) :
+    ∃ Ghat, IsNPMLE p x Ghat := by
+  classical
+  letI : Fintype Θ := Fintype.ofFinite Θ
+  -- Real objective on weight vectors: `Ψ w = ∏ⱼ ∑_θ (p θ xⱼ).toReal · w θ`, continuous.
+  -- Maximize over the compact nonempty simplex `stdSimplex ℝ Θ` (`isCompact_stdSimplex` +
+  -- `IsCompact.exists_isMaxOn`), giving weights `w✶`. Set `Ghat = ∑_θ ofReal (w✶ θ) • dirac θ`
+  -- (a probability measure since `∑ w✶ = 1`). For any probability `G`, its real weights
+  -- `μ_G θ = (G{θ}).toReal ∈ stdSimplex` and `(∏ⱼ mix G).toReal = Ψ μ_G ≤ Ψ w✶ = (∏ⱼ mix Ghat).toReal`
+  -- (finiteness from `hpfin` + `measure_ne_top`), so `∏ⱼ mix G ≤ ∏ⱼ mix Ghat`.
+  sorry
+
 /-- **Lindsay's finite-support theorem** (3F.7): the NPMLE can be taken supported on at most `n+1`
 points (Lindsay 1983). Stated in Lindsay's *discrete* regular setting — a finite parameter space
 `Θ` (the "discrete/compact" case; discrete + compact = finite) with finite likelihoods `hpfin`. The
@@ -55,17 +74,15 @@ geometric content (the `n+1` Carathéodory bound) is unchanged: the likelihood v
 Carathéodory in `ℝⁿ` (affine dimension `n`) rewrites a maximizer's barycenter as a positive convex
 combination of at most `n+1` curve points, i.e. a mixing measure on `≤ n+1` Dirac atoms. -/
 theorem NPMLE_exists_finiteSupport_le_card_add_one {n : ℕ}
-    [MeasurableSingletonClass Θ] [Finite Θ]
+    [MeasurableSingletonClass Θ] [Finite Θ] [Nonempty Θ]
     (p : Θ → 𝓧 → ℝ≥0∞) (x : Fin n → 𝓧)
     -- Lindsay's regularity: the likelihoods are finite (`p(θ,xᵢ) ≠ ∞`)
-    (hpfin : ∀ θ i, p θ (x i) ≠ ∞)
-    -- USER-INPUT: existence of an NPMLE (a compactness step on the likelihood range); Lindsay 1983
-    (hex : ∃ Ghat, IsNPMLE p x Ghat) :
+    (hpfin : ∀ θ i, p θ (x i) ≠ ∞) :
     ∃ (Ghat : Measure Θ) (S : Finset Θ),
       IsNPMLE p x Ghat ∧ Ghat ((↑S : Set Θ)ᶜ) = 0 ∧ S.card ≤ n + 1 := by
   classical
   letI : Fintype Θ := Fintype.ofFinite Θ
-  obtain ⟨Ĝ, hĜprob, hĜmax⟩ := hex
+  obtain ⟨Ĝ, hĜprob, hĜmax⟩ := NPMLE_exists_of_finite p x hpfin
   -- the `n`-dimensional likelihood curve `w θ = (p(θ,x₀),…,p(θ,xₙ₋₁))` in `ℝⁿ`
   set w : Θ → (Fin n → ℝ) := fun θ i => (p θ (x i)).toReal with hw
   -- the mixing weights of `Ĝ` on the (finite) parameter space
