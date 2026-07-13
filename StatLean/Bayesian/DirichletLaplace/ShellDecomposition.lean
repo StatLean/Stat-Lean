@@ -260,29 +260,32 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       ≤ (33 : ℝ≥0∞) ^ S.card * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12))
           + (dlPrior a ι) (dlShell θ₀ S j r δ)
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) / dbar := by
-  -- RESIDUAL DEBT (statement bug, reported — do NOT weaken the frozen signature).
+  -- RESIDUAL DEBT (geometry/constant bug in the FROZEN signature, reported — do NOT weaken it).
   --
-  -- As frozen, the LHS integrates over ALL `y`. The testing machinery this target is built from
-  -- (`TestingBound.lintegral_ratio_split` / `lintegral_ratio_on_event_le_test'`) only bounds the
-  -- integral over the GOOD denominator event `{y | dbar ≤ dlDenom θ₀ (dlPrior a ι) y}`; splitting off
-  -- the small-denominator event leaves an extra mass `P₀{dlDenom < dbar}` that is ABSENT from the RHS
-  -- here (it is discharged once, globally, by C7 `DenominatorLowerBound` in the §6 assembly).
+  -- The denominator-event restriction added to the LHS DOES fix the earlier `dbar = ⊤` falseness
+  -- (on `{⊤ ≤ dlDenom}` the ratio `dlNumer/⊤ = 0`, so the LHS is `0`). But the restricted statement is
+  -- still not provable from the supplied machinery, because of a factor-two mismatch between the
+  -- radial BAND of `dlShell` and the net-piece radius delivered by `exists_shell_net`.
   --
-  -- This is not a provable-constant gap but an unprovable statement: `dbar` is only assumed `0 < dbar`,
-  -- so `dbar = ⊤` is admissible, and then `x / ⊤ = 0` (`ENNReal.div_top`) collapses the RHS to
-  -- `33 ^ S.card * ofReal (exp (-j²r²/12))`. The full integral `∫⁻ y, dlNumer(shell)/dlDenom ∂P₀`
-  -- equals the truth-averaged posterior mass `E_{θ₀}[Π(shell | ·)]`, which cannot be bounded by the
-  -- Type-I error alone: its Type-II (posterior-mass) part is genuinely positive and needs a lower
-  -- bound on the denominator to control. Hence the frozen inequality is FALSE for `dbar = ⊤`.
+  -- The recipe (and the old comment) needs, for every NONEMPTY net piece `P_c ⊆ closedBall c ρ ∩ shell`
+  -- with `d := ‖c − θ₀‖`, the Type-I margin `d − ρ ≥ (7/8)jr`, which it derives from `‖θ − θ₀‖ ≥ 2jr`.
+  -- But `dlShell θ₀ S j r δ` is the BAND `jr ≤ ‖θ − θ₀‖ < (j+1)r`, so every shell point satisfies
+  --   `‖θ − θ₀‖ < (j+1)r ≤ (3/2)·jr < 2·jr`   (for `j ≥ 2`),
+  -- directly CONTRADICTING the premise `‖θ − θ₀‖ ≥ 2jr`. With the true band floor `jr`, the closest a
+  -- nonempty piece's centre can lie to `θ₀` is `d ≥ jr − ρ` (nearest point on the inner sphere), so the
+  -- best provable Type-I margin is
+  --   `d − ρ ≥ jr − 2ρ = (1 − √5/2)·jr ≈ −0.118·jr < 0`   (since `ρ = √5/4·jr ≈ 0.559·jr`).
+  -- The margin is NEGATIVE for every `j ≥ 2` (`ρ > jr/2` always), so `measure_dlTestSet_le`'s hypothesis
+  -- `ρ < ‖φ − θ₀‖` fails for near pieces, its Type-I error is `≈ 1/2`, and it is nowhere near the
+  -- required `exp(−(d−ρ)²/8) ≤ exp(−j²r²/12)` (which would need margin `≥ √(2/3)·jr ≈ 0.816·jr`).
   --
-  -- The intended (and provable) statement matches this file's `exists_shell_net` deliverable and the
-  -- target spec: restrict the LHS to `∫⁻ y in {y | dbar ≤ dlDenom θ₀ (dlPrior a ι) y}, …`. Then the
-  -- proof goes through unchanged: cover the shell by `exists_shell_net` (≤ 33^|S| pieces of radius
-  -- `ρ = √5/4·jr`), split the shell into DISJOINT pieces `P_c ⊆ closedBall c ρ ∩ shell` (nearest-net
-  -- assignment, so `∑_c π(P_c) = π(shell)`), apply `lintegral_ratio_on_event_le_test'` per piece with
-  -- the two-parameter midpoint test `dlTestSet θ₀ c ρ` (margin `d − ρ ≥ (7/8)jr`, both errors
-  -- `≤ exp(-(d−ρ)²/8) ≤ exp(-j²r²/12)` since `(7/8)²/8 = 49/512 ≥ 1/12`), and sum: Type-I gives
-  -- `net.card · exp(-j²r²/12) ≤ 33^|S| · exp(-j²r²/12)`, Type-II gives `π(shell) · exp(-j²r²/12)/dbar`.
+  -- Root cause: `ρ ≥ r` always (piece radius `ρ² = ε² + r²` from the `Sᶜ`-block of width `≤ √n·δ ≤ r`),
+  -- so no refinement of the net can push `ρ` below `r ≥ (1/2)·jr` at `j = 2`, and the recipe's `2jr`
+  -- floor is impossible anyway (the band `[2jr,(j+1)r)` would be EMPTY for `j ≥ 2`). The statement is
+  -- provable only with a strictly weaker RHS exponent (roughly `exp(−c·r²)`, `c` matching the achievable
+  -- `O(r)` margin), not the frozen `exp(−j²r²/12)`. Filling this `sorry` requires either raising the
+  -- `dlShell` band floor to `~2jr` (impossible without widening the band) or weakening the RHS constant
+  -- — both outside the frozen touch-set. Left as a reported residual debt.
   sorry
 
 end StatLean.Bayesian

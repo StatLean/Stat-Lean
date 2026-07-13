@@ -50,6 +50,52 @@ open scoped ENNReal NNReal RealInnerProductSpace Topology Classical
 
 namespace StatLean.Bayesian
 
+/-- **Count split off the truth block.** At most `|S₀|` of the large coordinates of `θ` can sit in
+`S₀`, so `|supp_δ(θ)| ≤ |S₀| + |supp_δ(projS S₀ᶜ θ)|`. -/
+private lemma dlSuppCount_le_card_add_projS {ι : Type*} [Fintype ι] (δ : ℝ) (S₀ : Finset ι)
+    (θ : EuclideanSpace ℝ ι) :
+    dlSuppCount δ θ ≤ S₀.card + dlSuppCount δ (projS (↑S₀ : Set ι)ᶜ θ) := by
+  classical
+  -- The `S₀ᶜ`-submodel count equals the count of large coordinates outside `S₀`.
+  have hBeq : dlSuppCount δ (projS (↑S₀ : Set ι)ᶜ θ)
+      = (Finset.univ.filter (fun j : ι => δ < |θ j| ∧ j ∉ S₀)).card := by
+    unfold dlSuppCount
+    refine Finset.card_bij
+      (fun (i : {j // j ∈ (↑S₀ : Set ι)ᶜ}) _ => (i : ι)) ?_ ?_ ?_
+    · intro a ha
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha ⊢
+      have hval : (projS (↑S₀ : Set ι)ᶜ θ) a = θ a.val := rfl
+      have hmem : (a : ι) ∉ S₀ := by
+        have hp : (a : ι) ∈ (↑S₀ : Set ι)ᶜ := a.property
+        rwa [Set.mem_compl_iff, Finset.mem_coe] at hp
+      exact ⟨by rwa [hval] at ha, hmem⟩
+    · intro a _ b _ hab
+      exact Subtype.ext hab
+    · intro b hb
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hb
+      have hmem : b ∈ (↑S₀ : Set ι)ᶜ := by
+        rw [Set.mem_compl_iff, Finset.mem_coe]; exact hb.2
+      refine ⟨⟨b, hmem⟩, ?_, rfl⟩
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      have hval : (projS (↑S₀ : Set ι)ᶜ θ) ⟨b, hmem⟩ = θ b := rfl
+      rw [hval]; exact hb.1
+  rw [hBeq]
+  -- `|supp_δ θ| = |{large}∩S₀| + |{large}\S₀| ≤ |S₀| + |{large}\S₀|`.
+  unfold dlSuppCount
+  have hsplit := Finset.filter_card_add_filter_neg_card_eq_card
+    (s := Finset.univ.filter (fun j : ι => δ < |θ j|)) (p := fun j => j ∈ S₀)
+  have hle : ((Finset.univ.filter (fun j : ι => δ < |θ j|)).filter (fun j => j ∈ S₀)).card
+      ≤ S₀.card := by
+    refine Finset.card_le_card ?_
+    intro j hj
+    simp only [Finset.mem_filter] at hj
+    exact hj.2
+  have hcompl : ((Finset.univ.filter (fun j : ι => δ < |θ j|)).filter
+        (fun j => ¬ j ∈ S₀)).card
+      = (Finset.univ.filter (fun j : ι => δ < |θ j| ∧ j ∉ S₀)).card := by
+    rw [Finset.filter_filter]
+  omega
+
 /-- **Compressibility reduction** (BPPD §6, eq. (26)). The `E_{θ₀}`-mean of the posterior mass of
 `{ |supp_δ(θ)| > |S₀| + k }` (for a truth `θ₀` supported on `S₀`) is bounded by the truth-`0`
 compress-ratio integral on the `S₀ᶜ`-submodel: the posterior is bridged once
@@ -67,7 +113,79 @@ theorem dl_compress_reduction {ι : Type*} [Fintype ι] {a δ : ℝ}
               {θ | (k : ℝ) < (dlSuppCount δ θ : ℝ)} y
             / dlDenom (0 : EuclideanSpace ℝ {i : ι // i ∉ S₀}) (dlPrior a {i : ι // i ∉ S₀}) y
           ∂(gaussShiftKernel {i : ι // i ∉ S₀} (0 : EuclideanSpace ℝ {i : ι // i ∉ S₀})) := by
-  sorry
+  classical
+  set S : Set ι := (↑S₀ : Set ι) with hSdef
+  set π := dlPrior a ι with hπ
+  -- The truth vanishes on `Sᶜ`.
+  have hθ₀' : projS Sᶜ θ₀ = (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ}) := by
+    ext i
+    have hval : (projS Sᶜ θ₀) i = θ₀ i.val := rfl
+    have hi : (i : ι) ∉ S₀ := i.property
+    rw [hval, hθ₀ i.val hi]; rfl
+  -- Measurability of the two count events.
+  have hcast₁ : Measurable (fun θ : EuclideanSpace ℝ ι => ((dlSuppCount δ θ : ℕ) : ℝ)) :=
+    (measurable_of_countable (fun n : ℕ => (n : ℝ))).comp (measurable_dlSuppCount δ)
+  have hCmeas : MeasurableSet
+      {θ : EuclideanSpace ℝ ι | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)} :=
+    measurableSet_lt measurable_const hcast₁
+  have hcast₂ : Measurable
+      (fun θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} => ((dlSuppCount δ θ : ℕ) : ℝ)) :=
+    (measurable_of_countable (fun n : ℕ => (n : ℝ))).comp (measurable_dlSuppCount δ)
+  have hDmeas : MeasurableSet
+      {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} :=
+    measurableSet_lt measurable_const hcast₂
+  -- The compress event sits inside the `Sᶜ`-cylinder over `{count > k}`.
+  have hsub : {θ : EuclideanSpace ℝ ι | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)}
+      ⊆ projS Sᶜ ⁻¹' {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} := by
+    intro θ hθ
+    simp only [Set.mem_preimage, Set.mem_setOf_eq] at hθ ⊢
+    have hcount := dlSuppCount_le_card_add_projS δ S₀ θ
+    have : ((S₀.card : ℝ) + k) < (S₀.card : ℝ) + (dlSuppCount δ (projS Sᶜ θ) : ℝ) :=
+      lt_of_lt_of_le hθ (by exact_mod_cast hcount)
+    linarith
+  -- Numerator measurability on the submodel (for the change of variables).
+  have hratio_meas : Measurable (fun y' : EuclideanSpace ℝ {j // j ∈ Sᶜ} =>
+      dlNumer (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ})
+          {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} y'
+        / dlDenom (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ}) y') :=
+    (measurable_dlNumer _ _ _).div (measurable_dlDenom _ _)
+  have hmproj : Measurable (projS (ι := ι) Sᶜ) := by
+    unfold projS
+    exact (WithLp.measurable_toLp _ _).comp
+      (measurable_pi_lambda _ fun i =>
+        (measurable_pi_apply (i : ι)).comp (WithLp.measurable_ofLp 2 _))
+  -- Assemble.
+  rw [lintegral_posterior_eq_lintegral_ratio θ₀ π hCmeas]
+  calc ∫⁻ y, dlNumer θ₀ π
+            {θ : EuclideanSpace ℝ ι | ((S₀.card : ℝ) + k) < (dlSuppCount δ θ : ℝ)} y
+          / dlDenom θ₀ π y ∂(gaussShiftKernel ι θ₀)
+      ≤ ∫⁻ y, dlNumer θ₀ π
+            (projS Sᶜ ⁻¹'
+              {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)}) y
+          / dlDenom θ₀ π y ∂(gaussShiftKernel ι θ₀) := by
+        refine lintegral_mono fun y => ?_
+        exact ENNReal.div_le_div_right (dlNumer_mono θ₀ π hsub y) _
+    _ = ∫⁻ y, dlNumer (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ})
+            {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} (projS Sᶜ y)
+          / dlDenom (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ}) (projS Sᶜ y)
+          ∂(gaussShiftKernel ι θ₀) := by
+        refine lintegral_congr fun y => ?_
+        exact dlRatio_cylinder a S θ₀ y hθ₀' hDmeas
+    _ = ∫⁻ y', dlNumer (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ})
+            {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} y'
+          / dlDenom (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ}) y'
+          ∂((gaussShiftKernel ι θ₀).map (projS Sᶜ)) := by
+        rw [lintegral_map hratio_meas hmproj]
+    _ = ∫⁻ y', dlNumer (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ})
+            {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} y'
+          / dlDenom (projS Sᶜ θ₀) (dlPrior a {j // j ∈ Sᶜ}) y'
+          ∂(gaussShiftKernel {j // j ∈ Sᶜ} (projS Sᶜ θ₀)) := by
+        rw [gaussShift_map_projS]
+    _ = ∫⁻ y', dlNumer (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ}) (dlPrior a {j // j ∈ Sᶜ})
+              {θ : EuclideanSpace ℝ {j // j ∈ Sᶜ} | (k : ℝ) < (dlSuppCount δ θ : ℝ)} y'
+            / dlDenom (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ}) (dlPrior a {j // j ∈ Sᶜ}) y'
+          ∂(gaussShiftKernel {j // j ∈ Sᶜ} (0 : EuclideanSpace ℝ {j // j ∈ Sᶜ})) := by
+        rw [hθ₀']
 
 /-- **Fixed-`n` compressibility bound** (BPPD Thm 3.4 engine). For a `q`-sparse truth `θ₀`, the
 `E_{θ₀}`-mean of the posterior mass of `{ |supp_δ(θ)| > A·q }` is at most an explicit exponential
@@ -92,6 +210,20 @@ theorem dl_theorem34_engine {ι : Type*} [Fintype ι] {a δ r : ℝ}
               * (Real.exp 1 * a * (8 + 2 * Real.log (1 / δ))) * (c - 1)
               - (A - 1) * (q : ℝ) * Real.log c + 3 * r ^ 2))
           + ENNReal.ofReal (Real.exp (- r ^ 2 / 8)) := by
+  -- RESIDUAL DEBT (engine composition — renegotiation required, see CompressEngine D2/D3 note).
+  -- Route: set `S₀ = supp θ₀` (`|S₀| ≤ q`), pick `k` with `|S₀|+k ≤ A·q`, then
+  --   `dl_compress_reduction ha θ₀ S₀ hθ₀supp k` (monotone in the event `{A·q<count} ⊆ {|S₀|+k<count}`)
+  --   ∘ `compress_ratio_le_explicit` on the `S₀ᶜ`-submodel (`card' = card − |S₀| ≤ card`, `z` from
+  --   `dlMarginal_abs_gt_le'`, `w` the C3 tail at `s = min(rₙ/√card', 1/2)`).
+  -- Obstruction: the FROZEN exponent is provably not attainable as written and must be renegotiated:
+  --   (i) `3 r²` folds the honest small-ball correction `2·card'·w` into `2 r²` via `card'·w ≤ r²`,
+  --       which is false for fixed `r` as `card' → ∞` (the tail `w = ζ(s)` does not shrink like
+  --       `r²/card'`); the honest engine carries `+ r² + 2·card'·w` (cf. `compress_ratio_le_explicit`).
+  --   (ii) `−(A−1)·q·log c` requires `k ≥ (A−1)q` but `k = ⌊A·q⌋ − |S₀| ≥ (A−1)q − 1`, off by `log c`.
+  -- Plus edge branches `card' = 0` (dense truth: submodel trivial, LHS = 0) and `δ = 1`
+  -- (`dlMarginal_abs_gt_le'` needs `δ < 1`). Deferred: composition is routine once the statement is
+  -- renegotiated to the honest exponent; the asymptotic headlines below call reduction ∘ explicit
+  -- directly and do not depend on this intermediate.
   sorry
 
 /-- **BPPD Theorem 3.4 (posterior compressibility, `β`-regime).** In the normal-means model with the
@@ -115,6 +247,19 @@ theorem dl_theorem34_beta {β : ℝ}
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y
           {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}
         ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
+  -- RESIDUAL DEBT (asymptotic assembly). Route (per n, eventually): `dl_compress_reduction` ∘
+  -- `compress_ratio_le_explicit` on the `S₀ᶜ`-submodel gives
+  --   `∫⁻ … ≤ exp(card'·z·(cₙ−1) − kₙ·log cₙ + rₙ² + 2·card'·wₙ) + exp(−rₙ²/8)`,
+  -- with `aₙ = n^{−(1+β)}`, `rₙ² = qₙ log n`, `z ≤ e·aₙ·(8+4 log n)` (C3, `δₙ ≥ n^{−2}`),
+  -- `wₙ ≈ z`, `card' ≤ n`, `kₙ ≈ (A−1)qₙ`.
+  -- KEY (beyond the frozen note): the Chernoff parameter MUST GROW — with fixed `c`,
+  -- `−(A−1)qₙ log c + rₙ² = qₙ(log n − (A−1)log c) → +∞`, so the bound does NOT vanish. Take
+  -- `cₙ = n^{1/(A−1)}` so `−(A−1)qₙ log cₙ = −qₙ log n` cancels `+rₙ²`; then the count term
+  -- `card'·z·cₙ ≈ n^{−β + 1/(A−1)} log n → 0` requires `A > 1 + C/β` (C the density constant), and the
+  -- residual `exp(−rₙ²/8) = exp(−qₙ log n /8) → 0` from `qₙ ≥ 1` (D3). Conclude by
+  -- `tendsto_ofReal_exp_neg` (F6) on both terms + `tendsto_of_tendsto_of_tendsto_of_le_of_le'` squeeze.
+  -- Deferred: the eventually-discharges (`aₙ ≤ 1/2`, `δₙ < 1`, `wₙ ≤ 1/2`, `card' > 0`, `S₀`-padding to
+  -- size `q`) and the growing-`cₙ` limit algebra are ~several hundred lines; not closed in this window.
   sorry
 
 /-- **BPPD Theorem 3.4 (posterior compressibility, `1/n`-regime).** Same conclusion with scale
@@ -137,6 +282,11 @@ theorem dl_theorem34_recip {q : ℕ → ℕ}
         ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)⁻¹) (Fin n))) y
           {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}
         ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
+  -- RESIDUAL DEBT (asymptotic assembly, `1/n`-regime). Same route as `dl_theorem34_beta` with
+  -- `aₙ = 1/n` and `rₙ² = qₙ` (D2). Here the count term `card'·z·cₙ ≈ n^{−1+1/(A−1)}·qₙ/n·…` needs
+  -- `A > 2`, and the Chernoff/`+rₙ²` balance uses `cₙ` growing; the residual `exp(−rₙ²/8)=exp(−qₙ/8)`
+  -- vanishes only because `qₙ ≥ C₀ log n → ∞` (hypothesis `hqlog`, D2), unlike the `β`-regime where
+  -- `qₙ ≥ 1` sufficed. Same deferred discharges + growing-`cₙ` limit algebra as `dl_theorem34_beta`.
   sorry
 
 end StatLean.Bayesian
