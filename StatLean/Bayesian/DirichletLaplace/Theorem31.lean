@@ -15,9 +15,11 @@ posterior mass of `{ ‖θ − θ₀‖ > M√(qₙ log n) }` tends to `0` in `E
 
 Objects:
 * `dl_contraction_engine` — the fixed-`n` bound assembled from three vanishing pieces: the Theorem 3.4
-  compressibility term at `δ = r/n` (`Theorem34`), the denominator event on the full model at radius
-  `2r` (`DenominatorLowerBound` + `PriorMassRatio.dlPrior_fullBall_near_truth_ge`), and the summed
-  shell/net bound (`ShellDecomposition` per shell, `PriorMassRatio.dlBetaRatio_le` per piece).
+  compressibility term at `δ = r/n` (`Theorem34`), the denominator event `K θ₀{D < dbar} ≤ e^{−r²/8}`
+  with `dbar := e^{−r²}·Π(B(θ₀,r))` (`DenominatorLowerBound.measure_dlDenom_lt_le` — note `dbar` needs
+  no *absolute* lower bound; it cancels into the ratio below, see `PriorMassRatio` D10), and the summed
+  shell/net bound (`ShellDecomposition` per shell, `PriorMassRatio.dlBetaRatio_le` per piece: each shell
+  term `Π(shell)·e^{−j²r²/12}/dbar = [Π(shell)/Π(B(θ₀,r))]·e^{−j²r²/12}·e^{r²}` has `Π(B(θ₀,r))` cancel).
 * `dl_theorem31` — the headline (rate `M√(qₙ log n)`, deviation D1).
 * `dl_theorem31_ball` — the equivalent `𝓝 1` form (posterior mass of the ball `{‖θ − θ₀‖ ≤ M√(qₙ log
   n)}` tends to `1`; BPPD eq. (12)).
