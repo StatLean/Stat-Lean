@@ -8669,9 +8669,10 @@
     "reference": {
       "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
       "pointer": "§1.2, Definition 1.2.1, p. 9; §1.4 (a)–(d), p. 22",
-      "biblio": "The measure-theoretic Bayesian model — a prior on the parameter and a regular conditional distribution for the posterior — is standard; for the kernel/disintegration formulation used here, see the regular-conditional-probability theory of J. L. Doob and the standard-Borel disintegration theorem.",
+      "biblio": "The measure-theoretic Bayesian model — a prior on the parameter and a regular conditional distribution for the posterior — is standard; for the kernel/disintegration formulation used here, see the regular-conditional-probability and disintegration theory of J. L. Doob (*Stochastic Processes*, Wiley, 1953).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "doob1953"
       ]
     },
     "hasGraph": true
@@ -8704,7 +8705,9 @@
       "pointer": "§1.4 (a)–(d), p. 22",
       "biblio": "The disintegration of a joint law into a marginal and a regular conditional distribution originates with A. N. Kolmogorov (*Grundbegriffe*, 1933) and was given its standard-Borel form by J. L. Doob (*Stochastic Processes*, 1953); reading “prior × likelihood = predictive × posterior” as its statistical meaning is the standard Bayesian viewpoint.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "kolmogorov1933",
+        "doob1953"
       ]
     },
     "hasGraph": true
@@ -8743,7 +8746,11 @@
       "pointer": "§1.2, Eq. (1.2.3), p. 9; §1.4, p. 22",
       "biblio": "The density form of Bayes' theorem goes back to Bayes (1763, published by R. Price) and, in the generality of “the probability of causes,” to P. S. Laplace (1774); its measure-theoretic justification rests on Kolmogorov's axiomatization of conditioning (1933) and the theory of regular conditional distributions on standard Borel spaces (J. L. Doob, 1953).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "bayes1763",
+        "laplace1774",
+        "kolmogorov1933",
+        "doob1953"
       ]
     },
     "hasGraph": true
@@ -8782,7 +8789,9 @@
       "pointer": "§1.4, the marginal $m(x)$, p. 22",
       "biblio": "The marginal (prior predictive) density $m(x)$ is the <em>evidence</em> of the model; its systematic use for hypothesis comparison begins with H. Jeffreys (*Theory of Probability*, 1939), and it underlies Bayes factors, model averaging, and empirical-Bayes calibration — see R. E. Kass and A. E. Raftery, “Bayes factors,” *J. Amer. Statist. Assoc.* 90 (1995), 773–795.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "jeffreys1939",
+        "kass-raftery1995"
       ]
     },
     "hasGraph": true
@@ -8827,7 +8836,8 @@
       "pointer": "§1.4, p. 22 (posterior expectations); eq. (1.2.3) integrated against $g$",
       "biblio": "Ratios of the form $\\int g\\cdot p\\,dπ / \\int p\\,dπ$ are the computational core of Bayesian inference — already Laplace's 1774 memoir evaluates posterior expectations of this shape, and their numerical approximation motivates the Monte Carlo and Laplace-approximation methods.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "laplace1774"
       ]
     },
     "hasGraph": true
@@ -8866,7 +8876,10 @@
       "pointer": "§1.2, eq. (1.2.2), p. 9; §5.2.2, Definition 5.2.5 and eq. (5.2.2), p. 227",
       "biblio": "The odds formulation of Bayesian hypothesis comparison and the Bayes factor are due to H. Jeffreys (*Theory of Probability*, 1939), whose calibration scale — refined by I. J. Good (1958) — remains in use; the modern survey is R. E. Kass and A. E. Raftery, “Bayes factors,” *J. Amer. Statist. Assoc.* 90 (1995), 773–795.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "jeffreys1939",
+        "good1958",
+        "kass-raftery1995"
       ]
     },
     "hasGraph": true
@@ -8917,7 +8930,12 @@
       "pointer": "§1.3.1, Definition 1.3.1 and the factorization theorem, p. 14; §1.3.2, pp. 15–16",
       "biblio": "Sufficiency is due to R. A. Fisher (1922); the factorization criterion to J. Neyman (1935) and, in measure-theoretic form, to P. R. Halmos and L. J. Savage (*Ann. Math. Statist.* 20 (1949), 225–241). The Likelihood Principle — which Bayesian inference automatically obeys — was given its modern form by A. Birnbaum (1962) and defended by J. O. Berger and R. L. Wolpert (*The Likelihood Principle*, 1988).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "fisher1922",
+        "neyman1935",
+        "halmos-savage1949",
+        "birnbaum1962",
+        "berger-wolpert1988"
       ]
     },
     "hasGraph": true
@@ -8956,7 +8974,9 @@
       "pointer": "§1.3 (posterior ∝ prior × i.i.d. likelihood), p. 6",
       "biblio": "Posterior updating on an i.i.d. sample is the original setting of both Bayes (1763, binomial counts) and Laplace (1774); the product-likelihood form is implicit in every conjugate analysis.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "bayes1763",
+        "laplace1774"
       ]
     },
     "hasGraph": true
@@ -8995,7 +9015,11 @@
       "pointer": "§1.3 (prediction / posterior predictive distribution), p. 7",
       "biblio": "Reading prediction as conditioning in a joint model over parameter, data, and future is the de Finetti–Geisser predictivist program (B. de Finetti, *Theory of Probability*, 1974; S. Geisser, *Predictive Inference*, 1993) and the semantic basis of probabilistic programming; the disintegration technology is Kolmogorov (1933) and Doob (1953).",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "definetti1974",
+        "geisser1993",
+        "kolmogorov1933",
+        "doob1953"
       ]
     },
     "hasGraph": true
@@ -9046,7 +9070,8 @@
       "pointer": "§3.3.2, Definition 3.3.1 (conjugate families) and the proportionality computations of §3.3–§4.2.",
       "biblio": "The `recognize the posterior up to its normalizing constant' principle traces to H. Raiffa and R. Schlaifer, *Applied Statistical Decision Theory* (Harvard, 1961).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "raiffa-schlaifer1961"
       ]
     },
     "hasGraph": true
@@ -9083,9 +9108,11 @@
     "reference": {
       "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
       "pointer": "§2.1 and §2.4 (binomial model with conjugate Beta prior), pp. 29, 34.",
-      "biblio": "The rule of succession is P. S. Laplace, `Mémoire sur la probabilité des causes par les événements' (1774); de Finetti's representation theorem explains the exchangeable-data reduction.",
+      "biblio": "The rule of succession is P. S. Laplace, `Mémoire sur la probabilité des causes par les événements' (1774); the representation theorem of B. de Finetti (1937) explains the exchangeable-data reduction.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "laplace1774",
+        "definetti1937"
       ]
     },
     "hasGraph": true
@@ -9124,7 +9151,10 @@
       "pointer": "§2.4 (binomial model), p. 34.",
       "biblio": "The original Bayesian computation: T. Bayes's 1763 essay treats the uniform-prior case Beta(1,1); the modern conjugate-family reading is Raiffa–Schlaifer (1961), with the Beta–Binomial as Diaconis–Ylvisaker's (1985) canonical worked example.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "bayes1763",
+        "raiffa-schlaifer1961",
+        "diaconis-ylvisaker1985"
       ]
     },
     "hasGraph": true
@@ -9163,7 +9193,11 @@
       "pointer": "§2.6 (Poisson model), p. 42.",
       "biblio": "The Gamma prior for Poisson intensities appears in actuarial credibility theory (Bühlmann 1967) and empirical-Bayes rate shrinkage (Robbins 1956; Efron–Morris 1975); it is one of the Raiffa–Schlaifer (1961) natural conjugate pairs.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "buhlmann1967",
+        "robbins1956",
+        "efron-morris1975",
+        "raiffa-schlaifer1961"
       ]
     },
     "hasGraph": true
@@ -9202,7 +9236,9 @@
       "pointer": "§2.5 (normal mean, known variance), p. 39.",
       "biblio": "The Gaussian-mean update with Gaussian prior is Gauss's combination-of-observations calculus (*Theoria motus*, 1809) read as Bayesian shrinkage; the precision-weighted form is the basis of the Kalman filter (Kalman 1960).",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "gauss1809",
+        "kalman1960"
       ]
     },
     "hasGraph": true
@@ -9233,9 +9269,12 @@
     "reference": {
       "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
       "pointer": "§3.4 (multinomial model for categorical data), p. 69.",
-      "biblio": "Dirichlet-multinomial updating underlies latent Dirichlet allocation (Blei–Ng–Jordan 2003) and, in the infinite limit, the Dirichlet-process prior of T. S. Ferguson (*Ann. Statist.* 1 (1973), 209–230); it is one of the Raiffa–Schlaifer natural conjugate families.",
+      "biblio": "Dirichlet-multinomial updating underlies latent Dirichlet allocation (Blei–Ng–Jordan 2003) and, in the infinite limit, the Dirichlet-process prior of T. S. Ferguson (*Ann. Statist.* 1 (1973), 209–230); it is one of the Raiffa–Schlaifer (1961) natural conjugate families.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "blei-ng-jordan2003",
+        "ferguson1973",
+        "raiffa-schlaifer1961"
       ]
     },
     "hasGraph": true
@@ -9298,7 +9337,10 @@
       "pointer": "§3.3.3, Proposition 3.3.13 and eqs. (3.3.4)–(3.3.5), p. 120; the n-sample form via sufficiency, §4.2.2, p. 175.",
       "biblio": "The conjugate family for a natural exponential family and the posterior linearity characterizing it are P. Diaconis and D. Ylvisaker, `Conjugate priors for exponential families,' *Ann. Statist.* 7 (1979), 269–281; the conjugate-prior program is Raiffa–Schlaifer (1961) and exponential-family theory is L. D. Brown (1986).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "diaconis-ylvisaker1979",
+        "raiffa-schlaifer1961",
+        "brown1986"
       ]
     },
     "hasGraph": true
@@ -9331,7 +9373,10 @@
       "pointer": "§3.4 (multinomial/Dirichlet) and Appendix A (standard distributions), p. 69.",
       "biblio": "The normalizing constant is P. G. L. Dirichlet's evaluation of the multivariate simplex integral ∫ ∏ x_i^{α_i−1} (*J. Math. Pures Appl.* 4 (1839), 164–168); as the multinomial's conjugate prior it enters via Raiffa–Schlaifer (1961) and underlies Ferguson's (1973) Dirichlet process.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "dirichlet1839",
+        "raiffa-schlaifer1961",
+        "ferguson1973"
       ]
     },
     "hasGraph": true
@@ -9377,7 +9422,9 @@
       "biblio": "The frequentist-risk framework in which Bayes rules are optimal points is due to A. Wald, *Statistical Decision Functions* (Wiley, 1950); the subjectivist justification of minimizing posterior expected loss is L. J. Savage, *The Foundations of Statistics* (Wiley, 1954), developed further by M. H. DeGroot, *Optimal Statistical Decisions* (McGraw-Hill, 1970). Reducing integrated risk to pointwise posterior minimization is the standard bridge between the two viewpoints.",
       "keys": [
         "robert2007",
-        "wald1950"
+        "wald1950",
+        "savage1954",
+        "degroot1970"
       ]
     },
     "hasGraph": true
@@ -9403,7 +9450,10 @@
       "pointer": "§2.5.1, Eq. (2.5.1) and Proposition 2.5.1, pp. 77–78",
       "biblio": "Quadratic loss is the founding loss function of statistics, from the least-squares theory of A. M. Legendre (1805) and C. F. Gauss (1809); that the posterior mean minimizes posterior quadratic loss was already implicit in Laplace's probability-of-causes computations (1774). The bias–variance decomposition used here is textbook folklore.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "legendre1805",
+        "gauss1809",
+        "laplace1774"
       ]
     },
     "hasGraph": true
@@ -9436,7 +9486,8 @@
       "pointer": "§2.5.3, Eq. (2.5.5) and Proposition 2.5.7, p. 81; §4.1.2 (MAP estimator), p. 166",
       "biblio": "The 0–1 loss is the decision-theoretic formulation of hypothesis selection, tied to the testing theory of J. Neyman and E. S. Pearson (Phil. Trans. R. Soc. A 231 (1933), 289–337). That the Bayes rule under 0–1 loss is the maximum a posteriori estimator is standard; the MAP estimator also reads as penalized maximum likelihood.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "neyman-pearson1933"
       ]
     },
     "hasGraph": true
@@ -9476,7 +9527,8 @@
       "biblio": "The Bayes-to-minimax route is due to A. Wald (*Statistical Decision Functions*, 1950), with the geometric risk-set picture of D. Blackwell and M. A. Girshick (*Theory of Games and Statistical Decisions*, Wiley, 1954). Constant-risk Bayes rules and least favorable priors are the standard devices for exhibiting minimax estimators, e.g. the Beta(√n/2, √n/2) binomial example.",
       "keys": [
         "robert2007",
-        "wald1950"
+        "wald1950",
+        "blackwell-girshick1954"
       ]
     },
     "hasGraph": true
@@ -9515,7 +9567,9 @@
       "pointer": "§2.5 (normal, known variance) and §3.2 (noninformative prior, N(ȳ, σ²/n)), pp. 39, 64",
       "biblio": "The flat prior on a location parameter is Laplace's original principle of insufficient reason (1774) and the simplest Jeffreys prior (H. Jeffreys, *Theory of Probability*, 1939). That it reproduces the frequentist answer 𝒩(x̄, v/n) — with credible intervals numerically equal to confidence intervals — is the classical reconciliation example; it is safe for estimation but the arbitrary normalizing constant wrecks Bayes factors.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "laplace1774",
+        "jeffreys1939"
       ]
     },
     "hasGraph": true
@@ -9554,7 +9608,11 @@
       "pointer": "§1.5, pp. 26–30 (improper priors); §5.2.2, Definition 5.2.5, p. 227",
       "biblio": "The scale-invariance of generalized posteriors and the resulting indeterminacy of Bayes factors under improper priors were emphasized by H. Jeffreys (1939) and motivate pseudo-Bayes-factor proposals — intrinsic and fractional Bayes factors (J. O. Berger and L. R. Pericchi, JASA 91 (1996), 109–122; A. O'Hagan, JRSS-B 57 (1995), 99–138). The marginalization paradoxes of Dawid, Stone and Zidek (JRSS-B 35 (1973), 189–233) delimit the safe zone.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "jeffreys1939",
+        "berger-pericchi1996",
+        "ohagan1995",
+        "dawid-stone-zidek1973"
       ]
     },
     "hasGraph": true
@@ -9593,7 +9651,10 @@
       "pointer": "§7.2.1, Eq. (7.2.2), p. 348; §7.2.2, p. 350; Definition 5.2.5, p. 227",
       "biblio": "Posterior model probabilities go back to Jeffreys's testing calculus (*Theory of Probability*, 1939); the model-space formulation (7.2.1)–(7.2.3) with model averaging became central with A. E. Raftery, D. Madigan and J. A. Hoeting (JASA 92 (1997), 179–191) and the review of J. A. Hoeting et al. (Statist. Sci. 14 (1999), 382–417).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "jeffreys1939",
+        "raftery-madigan-hoeting1997",
+        "hoeting1999"
       ]
     },
     "hasGraph": true
@@ -9636,9 +9697,12 @@
     "reference": {
       "formal": "C. P. Robert, *The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation*, 2nd ed., Springer Texts in Statistics, Springer, 2007.",
       "pointer": "§5.2.1, Eq. (5.2.1) and Proposition 5.2.2, p. 225; Eq. (5.2.3), p. 227",
-      "biblio": "The threshold structure of Bayes tests is the Bayesian counterpart of the Neyman–Pearson lemma (1933) and appears with the a₀–a₁ loss following Wald's decision theory. Point-null refinements were sharpened into calibration results by J. O. Berger and T. Sellke (JASA 82 (1987), 112–122).",
+      "biblio": "The threshold structure of Bayes tests is the Bayesian counterpart of the Neyman–Pearson lemma (1933) and appears with the a₀–a₁ loss following Wald's (1950) decision theory. Point-null refinements were sharpened into calibration results by J. O. Berger and T. Sellke (JASA 82 (1987), 112–122).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "neyman-pearson1933",
+        "wald1950",
+        "berger-sellke1987"
       ]
     },
     "hasGraph": true
@@ -9683,7 +9747,9 @@
       "pointer": "§5.2.3 (the mixture prior) and §5.2.4 (the posterior-probability formula), pp. 229–231",
       "biblio": "Point-null mixture priors originate with H. Jeffreys (1939) and were sharpened into calibration results by J. O. Berger and T. Sellke (\"Testing a point null hypothesis: the irreconcilability of P values and evidence,\" JASA 82 (1987), 112–122).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "jeffreys1939",
+        "berger-sellke1987"
       ]
     },
     "hasGraph": true
@@ -9722,7 +9788,10 @@
       "pointer": "§11.1–11.2 (Metropolis and Metropolis–Hastings), pp. 276–278",
       "biblio": "The Metropolis algorithm is N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller and E. Teller (J. Chem. Phys. 21 (1953), 1087–1092), generalized to asymmetric proposals by W. K. Hastings (Biometrika 57 (1970), 97–109). That detailed balance suffices for stationarity is the classical reversible-chain argument (A. N. Kolmogorov's reversibility criterion, 1936).",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "metropolis1953",
+        "hastings1970",
+        "kolmogorov1936"
       ]
     },
     "hasGraph": true
@@ -9759,9 +9828,13 @@
     "reference": {
       "formal": "A. Gelman, J. B. Carlin, H. S. Stern, D. B. Dunson, A. Vehtari, and D. B. Rubin, *Bayesian Data Analysis*, 3rd ed., Chapman & Hall/CRC, 2014.",
       "pointer": "§11.2 (Metropolis–Hastings), p. 278",
-      "biblio": "Metropolis et al. (1953) introduced the symmetric-proposal algorithm for statistical mechanics; Hastings (1970) the general ratio. That reversibility implies stationarity is the classical reversible-chain argument (Kolmogorov, 1936); convergence theory (irreducibility, Harris recurrence, ergodic theorems) is Meyn–Tweedie-style analysis beyond this scope.",
+      "biblio": "Metropolis et al. (1953) introduced the symmetric-proposal algorithm for statistical mechanics; Hastings (1970) the general ratio. That reversibility implies stationarity is the classical reversible-chain argument (Kolmogorov, 1936); convergence theory (irreducibility, Harris recurrence, ergodic theorems) is Meyn–Tweedie (1993)-style analysis beyond this scope.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "metropolis1953",
+        "hastings1970",
+        "kolmogorov1936",
+        "meyn-tweedie1993"
       ]
     },
     "hasGraph": true
@@ -9800,7 +9873,10 @@
       "pointer": "§11.1 (Gibbs sampler), p. 276",
       "biblio": "The Gibbs sampler is S. Geman and D. Geman (IEEE Trans. PAMI 6 (1984), 721–741), named for the Gibbs distributions of statistical mechanics; its data-augmentation form is M. A. Tanner and W. H. Wong (1987), and its statistical mainstreaming A. E. Gelfand and A. F. M. Smith (JASA 85 (1990), 398–409). Convergence rates and ergodicity are beyond this scope.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "geman-geman1984",
+        "tanner-wong1987",
+        "gelfand-smith1990"
       ]
     },
     "hasGraph": true
@@ -9839,7 +9915,11 @@
       "pointer": "§6.3.4 (Rao–Blackwellization), pp. 309–310",
       "biblio": "The Rao–Blackwell theorem is C. R. Rao (Bull. Calcutta Math. Soc. 37 (1945), 81–91) and D. Blackwell (Ann. Math. Statist. 18 (1947), 105–110). Its use as an MCMC variance-reduction device is A. E. Gelfand and A. F. M. Smith (1990), extended by J. S. Liu, W. H. Wong and A. Kong (Biometrika 81 (1994), 27–40).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "rao1945",
+        "blackwell1947",
+        "gelfand-smith1990",
+        "liu-wong-kong1994"
       ]
     },
     "hasGraph": true
@@ -9865,7 +9945,9 @@
       "pointer": "§5.2–5.3 (hierarchical model setup), pp. 104–108",
       "biblio": "Hierarchical priors: I. J. Good, *The Estimation of Probabilities* (MIT Press, 1965); the Bayesian linear-model form: D. V. Lindley and A. F. M. Smith, *J. Roy. Statist. Soc. Ser. B* 34 (1972), 1–41.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "good1965",
+        "lindley-smith1972"
       ]
     },
     "hasGraph": true
@@ -9910,7 +9992,9 @@
       "pointer": "§5.3 (hierarchical posterior factorization, eq. 5.3), p. 108",
       "biblio": "Conditional decomposition into a hyperposterior and per-hyperparameter conditional posteriors: D. V. Lindley and A. F. M. Smith, *J. Roy. Statist. Soc. Ser. B* 34 (1972), 1–41; computational basis of the hierarchical Gibbs sampler of A. E. Gelfand and A. F. M. Smith, *J. Amer. Statist. Assoc.* 85 (1990), 398–409.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "lindley-smith1972",
+        "gelfand-smith1990"
       ]
     },
     "hasGraph": true
@@ -9949,7 +10033,10 @@
       "pointer": "§5.2 (exchangeability and hierarchical models), p. 104",
       "biblio": "Exchangeability and the i.i.d.-mixture representation: B. de Finetti (*Atti Accad. Naz. Lincei* 4 (1931), 251–299; *Ann. Inst. H. Poincaré* 7 (1937), 1–68); general Polish-space form: E. Hewitt and L. J. Savage, *Trans. Amer. Math. Soc.* 80 (1955), 470–501.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "definetti1931",
+        "definetti1937",
+        "hewitt-savage1955"
       ]
     },
     "hasGraph": true
@@ -9988,7 +10075,10 @@
       "pointer": "§5.4 (normal one-way hierarchy), p. 113; §5.5 (eight schools), p. 119",
       "biblio": "Partial pooling / shrinkage of group means toward a grand mean: C. Stein (1956) read hierarchically; D. V. Lindley and A. F. M. Smith (1972); B. Efron and C. Morris, *J. Amer. Statist. Assoc.* 68 (1973), 117–130.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "stein1956a",
+        "lindley-smith1972",
+        "efron-morris1973"
       ]
     },
     "hasGraph": true
@@ -10027,7 +10117,9 @@
       "pointer": "§5.4 (normal one-way hierarchy), p. 113",
       "biblio": "Variance reduction from hierarchical borrowing of strength: D. V. Lindley and A. F. M. Smith (1972); B. Efron and C. Morris (1973).",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "lindley-smith1972",
+        "efron-morris1973"
       ]
     },
     "hasGraph": true
@@ -10066,7 +10158,8 @@
       "pointer": "Note 2.8.2 (the Stein effect), p. 96; §10.5 (empirical-Bayes justifications), p. 484",
       "biblio": "The dominating estimator and its risk: W. James and C. Stein, “Estimation with quadratic loss,” *Proc. Fourth Berkeley Symp.* 1 (1961), 361–379; the tool is C. Stein's Gaussian integration-by-parts lemma.",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "james-stein1961"
       ]
     },
     "hasGraph": true
@@ -10105,7 +10198,10 @@
       "pointer": "Note 2.8.2 (the Stein effect), p. 96; §10.5, p. 484",
       "biblio": "Inadmissibility of the sample mean for $p \\ge 3$: C. Stein, *Proc. Third Berkeley Symp.* 1 (1956), 197–206; explicit dominating estimator: W. James and C. Stein (1961); empirical-Bayes reading: B. Efron and C. Morris (1973).",
       "keys": [
-        "robert2007"
+        "robert2007",
+        "stein1956a",
+        "james-stein1961",
+        "efron-morris1973"
       ]
     },
     "hasGraph": true
@@ -10144,7 +10240,9 @@
       "pointer": "§11.1 (Gibbs sampler), p. 276; §11.6 (hierarchical-normal example), p. 288",
       "biblio": "Data-augmentation / block Gibbs for hierarchical models: M. A. Tanner and W. H. Wong, *J. Amer. Statist. Assoc.* 82 (1987), 528–540; A. E. Gelfand and A. F. M. Smith, *J. Amer. Statist. Assoc.* 85 (1990), 398–409.",
       "keys": [
-        "gelman2014"
+        "gelman2014",
+        "tanner-wong1987",
+        "gelfand-smith1990"
       ]
     },
     "hasGraph": true
@@ -10189,7 +10287,11 @@
       "pointer": "§1.5, Eq. (1.24)–(1.26)",
       "biblio": "Tweedie's formula is the exponential-family posterior-mean identity attributed by H. Robbins (\"An empirical Bayes approach to statistics,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* 1 (1956), 157–163) to M. C. K. Tweedie; its empirical-Bayes and selection-bias applications are developed in B. Efron, \"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614. It underlies g-modeling (Efron 2016) and the general-maximum-likelihood empirical Bayes of W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684).",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "robbins1956",
+        "efron2011",
+        "efron2016",
+        "jiang-zhang2009"
       ]
     },
     "hasGraph": true
@@ -10234,7 +10336,9 @@
       "pointer": "§1.5",
       "biblio": "The posterior-variance companion to Tweedie's formula follows the same marginal-to-posterior differentiation as the mean; both are systematized in B. Efron, \"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614, building on the identity attributed by H. Robbins (1956) to M. C. K. Tweedie.",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "efron2011",
+        "robbins1956"
       ]
     },
     "hasGraph": true
@@ -10267,7 +10371,11 @@
       "pointer": "§6.1; Robbins (1956), Eq. (5)",
       "biblio": "Empirical Bayes originates with H. Robbins, \"An empirical Bayes approach to statistics,\" *Proc. Third Berkeley Symp. Math. Statist. Probab.* 1 (1956), 157–163 (the Poisson formula is Eq. (5)); the compound-decision precursor is Robbins (*Proc. Second Berkeley Symp.*, 1951, 131–148). Its modern nonparametric and g-modeling forms are due to B. Efron (\"Empirical Bayes deconvolution estimates,\" *Biometrika* 103 (2016), 1–20) and W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684).",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "robbins1956",
+        "robbins1951",
+        "efron2016",
+        "jiang-zhang2009"
       ]
     },
     "hasGraph": true
@@ -10301,7 +10409,8 @@
       "biblio": "The two-groups model and local false discovery rate are B. Efron's empirical-Bayes formulation (Efron, Tibshirani, Storey, Tusher, *J. Amer. Statist. Assoc.* 96 (2001), 1151–1160; Efron 2010); the local FDR as a posterior null probability is the Bayesian reading of the tail-area false-discovery-rate framework of Y. Benjamini and Y. Hochberg (\"Controlling the false discovery rate,\" *J. Roy. Statist. Soc. Ser. B* 57 (1995), 289–300).",
       "keys": [
         "efron2010",
-        "benjamini-hochberg1995"
+        "benjamini-hochberg1995",
+        "efron-tibshirani-storey-tusher2001"
       ]
     },
     "hasGraph": true
@@ -10340,7 +10449,10 @@
       "pointer": "§5 (nonparametric empirical Bayes); Lindsay (1983)",
       "biblio": "The finite-support NPMLE is B. G. Lindsay's theorem (\"The geometry of mixture likelihoods: a general theory,\" *Ann. Statist.* 11 (1983), 86–94), refining the consistency result of J. Kiefer and J. Wolfowitz (\"Consistency of the maximum likelihood estimator in the presence of infinitely many incidental parameters,\" *Ann. Math. Statist.* 27 (1956), 887–906). Its use for normal-means estimation (GMLEB) is W. Jiang and C.-H. Zhang (*Ann. Statist.* 37 (2009), 1647–1684); it is the nonparametric backbone of modern empirical-Bayes deconvolution (Efron 2010, §5).",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "lindsay1983",
+        "kiefer-wolfowitz1956",
+        "jiang-zhang2009"
       ]
     },
     "hasGraph": true
@@ -10373,7 +10485,9 @@
       "pointer": "§1; Robbins (1951)",
       "biblio": "The compound decision problem and its empirical-Bayes solution are due to H. Robbins (\"Asymptotically subminimax solutions of compound statistical decision problems,\" *Proc. Second Berkeley Symp.*, 1951, 131–148; and \"An empirical Bayes approach to statistics,\" 1956); the \"oracle\" terminology and modern large-scale reading are B. Efron's (2010). The equivalence of pointwise (posterior) and compound (frequentist, integrated) Bayes optimality is the decision-theoretic content of Fubini's theorem.",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "robbins1951",
+        "robbins1956"
       ]
     },
     "hasGraph": true
@@ -10413,7 +10527,9 @@
       "biblio": "Parametric empirical Bayes is H. Robbins's (1956) subject made parametric; the normal random-effects (James–Stein) analysis is B. Efron and C. Morris (*J. Amer. Statist. Assoc.* 68 (1973), 117–130, and companion papers 1972–1975). The method-of-moments shrinkage estimate and its consistency are standard empirical Bayes; the general marginal-MLE computation rests on R. A. Fisher's missing-information identity and the EM algorithm of A. P. Dempster, N. M. Laird, and D. B. Rubin (*J. Roy. Statist. Soc. Ser. B* 39 (1977), 1–38).",
       "keys": [
         "robert2007",
-        "efron-morris1973"
+        "efron-morris1973",
+        "robbins1956",
+        "dempster-laird-rubin1977"
       ]
     },
     "hasGraph": true
@@ -10444,9 +10560,13 @@
     "reference": {
       "formal": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Cambridge University Press, 2010.",
       "pointer": "§1.5, Eq. (1.24)",
-      "biblio": "The identity $\\partial_x\\varphi=-(x/\\sigma^2)\\varphi$ for the standard normal density is classical (it makes the Hermite functions eigenfunctions of the Ornstein–Uhlenbeck operator); its statistical exploitation is C. M. Stein's integration-by-parts / unbiased-risk lemma (*Proc. Sixth Berkeley Symp.*, 1972; *Ann. Statist.* 9 (1981), 1135–1151), and, for empirical-Bayes shrinkage, the marginal-to-posterior formula of H. Robbins and M. C. K. Tweedie popularized by B. Efron (\"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614).",
+      "biblio": "The identity $\\partial_x\\varphi=-(x/\\sigma^2)\\varphi$ for the standard normal density is classical (it makes the Hermite functions eigenfunctions of the Ornstein–Uhlenbeck operator); its statistical exploitation is C. M. Stein's integration-by-parts / unbiased-risk lemma (*Proc. Sixth Berkeley Symp.*, 1972; *Ann. Statist.* 9 (1981), 1135–1151), and, for empirical-Bayes shrinkage, the marginal-to-posterior formula of H. Robbins (1956) and M. C. K. Tweedie popularized by B. Efron (\"Tweedie's formula and selection bias,\" *J. Amer. Statist. Assoc.* 106 (2011), 1602–1614).",
       "keys": [
-        "efron2010"
+        "efron2010",
+        "stein1972",
+        "stein1981",
+        "robbins1956",
+        "efron2011"
       ]
     },
     "hasGraph": true

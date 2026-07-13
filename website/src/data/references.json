@@ -678,5 +678,315 @@
     "key": "efron2010",
     "sortKey": "Efron",
     "html": "B. Efron, *Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction*, Institute of Mathematical Statistics Monographs, Cambridge University Press, 2010."
+  },
+  {
+    "key": "bayes1763",
+    "sortKey": "Bayes",
+    "html": "T. Bayes, \"An essay towards solving a problem in the doctrine of chances,\" *Philosophical Transactions of the Royal Society of London* **53**, 1763, pp. 370–418 (communicated by R. Price)."
+  },
+  {
+    "key": "laplace1774",
+    "sortKey": "Laplace",
+    "html": "P.-S. Laplace, \"Mémoire sur la probabilité des causes par les événements,\" *Mémoires de mathématique et de physique, présentés à l'Académie royale des sciences par divers savans* **6**, 1774, pp. 621–656."
+  },
+  {
+    "key": "jeffreys1939",
+    "sortKey": "Jeffreys",
+    "html": "H. Jeffreys, *Theory of Probability*, Clarendon Press, Oxford, 1939 (3rd ed., 1961)."
+  },
+  {
+    "key": "kass-raftery1995",
+    "sortKey": "Kass",
+    "html": "R. E. Kass and A. E. Raftery, \"Bayes factors,\" *Journal of the American Statistical Association* **90**(430), 1995, pp. 773–795."
+  },
+  {
+    "key": "good1958",
+    "sortKey": "Good",
+    "html": "I. J. Good, \"Significance tests in parallel and in series,\" *Journal of the American Statistical Association* **53**, 1958, pp. 799–813."
+  },
+  {
+    "key": "fisher1922",
+    "sortKey": "Fisher",
+    "html": "R. A. Fisher, \"On the mathematical foundations of theoretical statistics,\" *Philosophical Transactions of the Royal Society of London, Series A* **222**, 1922, pp. 309–368."
+  },
+  {
+    "key": "neyman1935",
+    "sortKey": "Neyman",
+    "html": "J. Neyman, \"Su un teorema concernente le cosiddette statistiche sufficienti,\" *Giornale dell'Istituto Italiano degli Attuari* **6**, 1935, pp. 320–334."
+  },
+  {
+    "key": "halmos-savage1949",
+    "sortKey": "Halmos",
+    "html": "P. R. Halmos and L. J. Savage, \"Application of the Radon–Nikodym theorem to the theory of sufficient statistics,\" *The Annals of Mathematical Statistics* **20**(2), 1949, pp. 225–241."
+  },
+  {
+    "key": "birnbaum1962",
+    "sortKey": "Birnbaum",
+    "html": "A. Birnbaum, \"On the foundations of statistical inference,\" *Journal of the American Statistical Association* **57**(298), 1962, pp. 269–306."
+  },
+  {
+    "key": "berger-wolpert1988",
+    "sortKey": "Berger",
+    "html": "J. O. Berger and R. L. Wolpert, *The Likelihood Principle*, 2nd ed., Institute of Mathematical Statistics Lecture Notes—Monograph Series **6**, Hayward, CA, 1988."
+  },
+  {
+    "key": "definetti1974",
+    "sortKey": "de Finetti",
+    "html": "B. de Finetti, *Theory of Probability: A Critical Introductory Treatment*, 2 vols., John Wiley & Sons, New York, 1974–1975."
+  },
+  {
+    "key": "geisser1993",
+    "sortKey": "Geisser",
+    "html": "S. Geisser, *Predictive Inference: An Introduction*, Monographs on Statistics and Applied Probability **55**, Chapman & Hall, New York, 1993."
+  },
+  {
+    "key": "raiffa-schlaifer1961",
+    "sortKey": "Raiffa",
+    "html": "H. Raiffa and R. Schlaifer, *Applied Statistical Decision Theory*, Division of Research, Harvard Business School, Boston, 1961."
+  },
+  {
+    "key": "definetti1937",
+    "sortKey": "de Finetti",
+    "html": "B. de Finetti, \"La prévision: ses lois logiques, ses sources subjectives,\" *Annales de l'Institut Henri Poincaré* **7**(1), 1937, pp. 1–68."
+  },
+  {
+    "key": "definetti1931",
+    "sortKey": "de Finetti",
+    "html": "B. de Finetti, \"Funzione caratteristica di un fenomeno aleatorio,\" *Atti della Reale Accademia Nazionale dei Lincei, Serie 6, Memorie, Classe di Scienze Fisiche, Matematiche e Naturali* **4**, 1931, pp. 251–299."
+  },
+  {
+    "key": "diaconis-ylvisaker1985",
+    "sortKey": "Diaconis",
+    "html": "P. Diaconis and D. Ylvisaker, \"Quantifying prior opinion,\" in *Bayesian Statistics 2* (J. M. Bernardo, M. H. DeGroot, D. V. Lindley, and A. F. M. Smith, eds.), North-Holland, Amsterdam, 1985, pp. 133–156."
+  },
+  {
+    "key": "buhlmann1967",
+    "sortKey": "Bühlmann",
+    "html": "H. Bühlmann, \"Experience rating and credibility,\" *ASTIN Bulletin* **4**(3), 1967, pp. 199–207."
+  },
+  {
+    "key": "robbins1956",
+    "sortKey": "Robbins",
+    "html": "H. Robbins, \"An empirical Bayes approach to statistics,\" in *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1956, pp. 157–163."
+  },
+  {
+    "key": "efron-morris1975",
+    "sortKey": "Efron",
+    "html": "B. Efron and C. Morris, \"Data analysis using Stein's estimator and its generalizations,\" *Journal of the American Statistical Association* **70**(350), 1975, pp. 311–319."
+  },
+  {
+    "key": "gauss1809",
+    "sortKey": "Gauss",
+    "html": "C. F. Gauss, *Theoria motus corporum coelestium in sectionibus conicis solem ambientium*, Perthes & Besser, Hamburg, 1809."
+  },
+  {
+    "key": "kalman1960",
+    "sortKey": "Kalman",
+    "html": "R. E. Kalman, \"A new approach to linear filtering and prediction problems,\" *Journal of Basic Engineering (Transactions of the ASME, Series D)* **82**, 1960, pp. 35–45."
+  },
+  {
+    "key": "blei-ng-jordan2003",
+    "sortKey": "Blei",
+    "html": "D. M. Blei, A. Y. Ng, and M. I. Jordan, \"Latent Dirichlet allocation,\" *Journal of Machine Learning Research* **3**, 2003, pp. 993–1022."
+  },
+  {
+    "key": "ferguson1973",
+    "sortKey": "Ferguson",
+    "html": "T. S. Ferguson, \"A Bayesian analysis of some nonparametric problems,\" *The Annals of Statistics* **1**(2), 1973, pp. 209–230."
+  },
+  {
+    "key": "diaconis-ylvisaker1979",
+    "sortKey": "Diaconis",
+    "html": "P. Diaconis and D. Ylvisaker, \"Conjugate priors for exponential families,\" *The Annals of Statistics* **7**(2), 1979, pp. 269–281."
+  },
+  {
+    "key": "brown1986",
+    "sortKey": "Brown",
+    "html": "L. D. Brown, *Fundamentals of Statistical Exponential Families with Applications in Statistical Decision Theory*, Institute of Mathematical Statistics Lecture Notes—Monograph Series **9**, Hayward, CA, 1986."
+  },
+  {
+    "key": "dirichlet1839",
+    "sortKey": "Dirichlet",
+    "html": "P. G. L. Dirichlet, \"Sur une nouvelle méthode pour la détermination des intégrales multiples,\" *Journal de mathématiques pures et appliquées* **4**, 1839, pp. 164–168."
+  },
+  {
+    "key": "savage1954",
+    "sortKey": "Savage",
+    "html": "L. J. Savage, *The Foundations of Statistics*, John Wiley & Sons, New York, 1954."
+  },
+  {
+    "key": "degroot1970",
+    "sortKey": "DeGroot",
+    "html": "M. H. DeGroot, *Optimal Statistical Decisions*, McGraw-Hill, New York, 1970."
+  },
+  {
+    "key": "legendre1805",
+    "sortKey": "Legendre",
+    "html": "A.-M. Legendre, *Nouvelles méthodes pour la détermination des orbites des comètes*, Firmin Didot, Paris, 1805 (method of least squares given in the appendix)."
+  },
+  {
+    "key": "neyman-pearson1933",
+    "sortKey": "Neyman",
+    "html": "J. Neyman and E. S. Pearson, \"On the problem of the most efficient tests of statistical hypotheses,\" *Philosophical Transactions of the Royal Society of London, Series A* **231**, 1933, pp. 289–337."
+  },
+  {
+    "key": "blackwell-girshick1954",
+    "sortKey": "Blackwell",
+    "html": "D. Blackwell and M. A. Girshick, *Theory of Games and Statistical Decisions*, John Wiley & Sons, New York, 1954."
+  },
+  {
+    "key": "berger-pericchi1996",
+    "sortKey": "Berger",
+    "html": "J. O. Berger and L. R. Pericchi, \"The intrinsic Bayes factor for model selection and prediction,\" *Journal of the American Statistical Association* **91**, 1996, pp. 109–122."
+  },
+  {
+    "key": "ohagan1995",
+    "sortKey": "O'Hagan",
+    "html": "A. O'Hagan, \"Fractional Bayes factors for model comparison,\" *Journal of the Royal Statistical Society, Series B* **57**(1), 1995, pp. 99–138."
+  },
+  {
+    "key": "dawid-stone-zidek1973",
+    "sortKey": "Dawid",
+    "html": "A. P. Dawid, M. Stone, and J. V. Zidek, \"Marginalization paradoxes in Bayesian and structural inference,\" *Journal of the Royal Statistical Society, Series B* **35**(2), 1973, pp. 189–233."
+  },
+  {
+    "key": "raftery-madigan-hoeting1997",
+    "sortKey": "Raftery",
+    "html": "A. E. Raftery, D. Madigan, and J. A. Hoeting, \"Bayesian model averaging for linear regression models,\" *Journal of the American Statistical Association* **92**(437), 1997, pp. 179–191."
+  },
+  {
+    "key": "hoeting1999",
+    "sortKey": "Hoeting",
+    "html": "J. A. Hoeting, D. Madigan, A. E. Raftery, and C. T. Volinsky, \"Bayesian model averaging: a tutorial,\" *Statistical Science* **14**(4), 1999, pp. 382–417."
+  },
+  {
+    "key": "berger-sellke1987",
+    "sortKey": "Berger",
+    "html": "J. O. Berger and T. Sellke, \"Testing a point null hypothesis: the irreconcilability of P values and evidence,\" *Journal of the American Statistical Association* **82**(397), 1987, pp. 112–122."
+  },
+  {
+    "key": "metropolis1953",
+    "sortKey": "Metropolis",
+    "html": "N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller, and E. Teller, \"Equation of state calculations by fast computing machines,\" *The Journal of Chemical Physics* **21**(6), 1953, pp. 1087–1092."
+  },
+  {
+    "key": "hastings1970",
+    "sortKey": "Hastings",
+    "html": "W. K. Hastings, \"Monte Carlo sampling methods using Markov chains and their applications,\" *Biometrika* **57**(1), 1970, pp. 97–109."
+  },
+  {
+    "key": "kolmogorov1936",
+    "sortKey": "Kolmogorov",
+    "html": "A. N. Kolmogorov, \"Zur Theorie der Markoffschen Ketten,\" *Mathematische Annalen* **112**, 1936, pp. 155–160."
+  },
+  {
+    "key": "meyn-tweedie1993",
+    "sortKey": "Meyn",
+    "html": "S. P. Meyn and R. L. Tweedie, *Markov Chains and Stochastic Stability*, Communications and Control Engineering Series, Springer-Verlag, London, 1993."
+  },
+  {
+    "key": "geman-geman1984",
+    "sortKey": "Geman",
+    "html": "S. Geman and D. Geman, \"Stochastic relaxation, Gibbs distributions, and the Bayesian restoration of images,\" *IEEE Transactions on Pattern Analysis and Machine Intelligence* **6**(6), 1984, pp. 721–741."
+  },
+  {
+    "key": "tanner-wong1987",
+    "sortKey": "Tanner",
+    "html": "M. A. Tanner and W. H. Wong, \"The calculation of posterior distributions by data augmentation,\" *Journal of the American Statistical Association* **82**(398), 1987, pp. 528–540."
+  },
+  {
+    "key": "gelfand-smith1990",
+    "sortKey": "Gelfand",
+    "html": "A. E. Gelfand and A. F. M. Smith, \"Sampling-based approaches to calculating marginal densities,\" *Journal of the American Statistical Association* **85**(410), 1990, pp. 398–409."
+  },
+  {
+    "key": "rao1945",
+    "sortKey": "Rao",
+    "html": "C. R. Rao, \"Information and the accuracy attainable in the estimation of statistical parameters,\" *Bulletin of the Calcutta Mathematical Society* **37**, 1945, pp. 81–91."
+  },
+  {
+    "key": "blackwell1947",
+    "sortKey": "Blackwell",
+    "html": "D. Blackwell, \"Conditional expectation and unbiased sequential estimation,\" *The Annals of Mathematical Statistics* **18**(1), 1947, pp. 105–110."
+  },
+  {
+    "key": "liu-wong-kong1994",
+    "sortKey": "Liu",
+    "html": "J. S. Liu, W. H. Wong, and A. Kong, \"Covariance structure of the Gibbs sampler with applications to the comparisons of estimators and augmentation schemes,\" *Biometrika* **81**(1), 1994, pp. 27–40."
+  },
+  {
+    "key": "good1965",
+    "sortKey": "Good",
+    "html": "I. J. Good, *The Estimation of Probabilities: An Essay on Modern Bayesian Methods*, Research Monograph **30**, MIT Press, Cambridge, MA, 1965."
+  },
+  {
+    "key": "lindley-smith1972",
+    "sortKey": "Lindley",
+    "html": "D. V. Lindley and A. F. M. Smith, \"Bayes estimates for the linear model,\" *Journal of the Royal Statistical Society, Series B* **34**(1), 1972, pp. 1–41."
+  },
+  {
+    "key": "hewitt-savage1955",
+    "sortKey": "Hewitt",
+    "html": "E. Hewitt and L. J. Savage, \"Symmetric measures on Cartesian products,\" *Transactions of the American Mathematical Society* **80**, 1955, pp. 470–501."
+  },
+  {
+    "key": "stein1956a",
+    "sortKey": "Stein",
+    "html": "C. Stein, \"Inadmissibility of the usual estimator for the mean of a multivariate normal distribution,\" in *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1956, pp. 197–206."
+  },
+  {
+    "key": "james-stein1961",
+    "sortKey": "James",
+    "html": "W. James and C. Stein, \"Estimation with quadratic loss,\" in *Proceedings of the Fourth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 1, University of California Press, 1961, pp. 361–379."
+  },
+  {
+    "key": "efron2011",
+    "sortKey": "Efron",
+    "html": "B. Efron, \"Tweedie's formula and selection bias,\" *Journal of the American Statistical Association* **106**(496), 2011, pp. 1602–1614."
+  },
+  {
+    "key": "efron2016",
+    "sortKey": "Efron",
+    "html": "B. Efron, \"Empirical Bayes deconvolution estimates,\" *Biometrika* **103**(1), 2016, pp. 1–20."
+  },
+  {
+    "key": "jiang-zhang2009",
+    "sortKey": "Jiang",
+    "html": "W. Jiang and C.-H. Zhang, \"General maximum likelihood empirical Bayes estimation of normal means,\" *The Annals of Statistics* **37**(4), 2009, pp. 1647–1684."
+  },
+  {
+    "key": "robbins1951",
+    "sortKey": "Robbins",
+    "html": "H. Robbins, \"Asymptotically subminimax solutions of compound statistical decision problems,\" in *Proceedings of the Second Berkeley Symposium on Mathematical Statistics and Probability*, University of California Press, 1951, pp. 131–148."
+  },
+  {
+    "key": "efron-tibshirani-storey-tusher2001",
+    "sortKey": "Efron",
+    "html": "B. Efron, R. Tibshirani, J. D. Storey, and V. Tusher, \"Empirical Bayes analysis of a microarray experiment,\" *Journal of the American Statistical Association* **96**(456), 2001, pp. 1151–1160."
+  },
+  {
+    "key": "lindsay1983",
+    "sortKey": "Lindsay",
+    "html": "B. G. Lindsay, \"The geometry of mixture likelihoods: a general theory,\" *The Annals of Statistics* **11**(1), 1983, pp. 86–94."
+  },
+  {
+    "key": "kiefer-wolfowitz1956",
+    "sortKey": "Kiefer",
+    "html": "J. Kiefer and J. Wolfowitz, \"Consistency of the maximum likelihood estimator in the presence of infinitely many incidental parameters,\" *The Annals of Mathematical Statistics* **27**(4), 1956, pp. 887–906."
+  },
+  {
+    "key": "dempster-laird-rubin1977",
+    "sortKey": "Dempster",
+    "html": "A. P. Dempster, N. M. Laird, and D. B. Rubin, \"Maximum likelihood from incomplete data via the EM algorithm,\" *Journal of the Royal Statistical Society, Series B* **39**(1), 1977, pp. 1–38."
+  },
+  {
+    "key": "stein1972",
+    "sortKey": "Stein",
+    "html": "C. Stein, \"A bound for the error in the normal approximation to the distribution of a sum of dependent random variables,\" in *Proceedings of the Sixth Berkeley Symposium on Mathematical Statistics and Probability*, Vol. 2, University of California Press, 1972, pp. 583–602."
+  },
+  {
+    "key": "stein1981",
+    "sortKey": "Stein",
+    "html": "C. Stein, \"Estimation of the mean of a multivariate normal distribution,\" *The Annals of Statistics* **9**(6), 1981, pp. 1135–1151."
   }
 ]
