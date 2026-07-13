@@ -30,7 +30,7 @@ is the §6 posterior-contraction assembly, in the framework of Ghosal–Ghosh–
 **Proof formalization notes.** The skeleton is *shells → nets → per-piece tests → series*: cover each
 shell by its net, test each net piece against `θ₀`, sum the Type I errors over the `≤ 33^{|S|}` pieces
 and the Type II errors against the piece prior mass. The outer summation over `(S, j)` is closed in
-`Theorem31.lean` (`Nat.choose_le_pow` for the support patterns, `ExpOfRealCalc` for the radial
+`PosteriorContraction.lean` (`Nat.choose_le_pow` for the support patterns, `ExpOfRealCalc` for the radial
 series).
 
 **Deviations.**
@@ -69,7 +69,7 @@ while its covering net-point sits within `ρ = (√5/4)jr` of it, so the usable 
 exactly what `shell_ratio_le`'s Type I/II error `e^{−j²r²/12}` needs. This is the geometry the paper's
 `2jrₙ`-ball language actually intends; only the net *radius* `(√5/4)jr` and error *constant* `1/12`
 differ from the paper's unspecified numerals (charter §1 "state the constants that are provable"). The
-outer series in `Theorem31` is unaffected: `⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the
+outer series in `PosteriorContraction` is unaffected: `⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the
 complement of the contraction ball, with the ball radius rescaled by the harmless factor 2. -/
 noncomputable def dlShell (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) (j : ℕ) (r δ : ℝ) :
     Set (EuclideanSpace ℝ ι) :=

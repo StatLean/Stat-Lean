@@ -1,6 +1,6 @@
 import StatLean.Bayesian.DirichletLaplace.ShellDecomposition
 import StatLean.Bayesian.DirichletLaplace.PriorMassRatio
-import StatLean.Bayesian.DirichletLaplace.Theorem34
+import StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility
 import StatLean.Bayesian.DirichletLaplace.DenominatorLowerBound
 import StatLean.Bayesian.DirichletLaplace.TestingBound
 import StatLean.Bayesian.ForMathlib.ExpOfRealCalc
