@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.Bayesian.BayesExperiment",
+  "nodes": [
+    {"id":"StatLean.Bayesian.BayesExperiment","label":"BayesExperiment","full":"StatLean.Bayesian.BayesExperiment","kind":"root","decl":"def","module":"StatLean.Bayesian.Experiment.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.BayesExperiment","target":"MeasurableSpace"}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.Bayesian.HierBayesExperiment",
+  "nodes": [
+    {"id":"StatLean.Bayesian.HierBayesExperiment","label":"HierBayesExperiment","full":"StatLean.Bayesian.HierBayesExperiment","kind":"root","decl":"def","module":"StatLean.Bayesian.Hierarchical.Defs"},
+    {"id":"MeasurableSpace","label":"MeasurableSpace","full":"MeasurableSpace","kind":"mathlib","decl":"def","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.HierBayesExperiment","target":"MeasurableSpace"}
+  ]
+}

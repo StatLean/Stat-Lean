@@ -12,6 +12,7 @@ export const AREA_VAR: Record<Area, string> = {
   multipletesting: "--c-hyp",
   minimaxity: "--c-mmx",
   optimization: "--c-opt",
+  bayesian: "--c-bayes",
   probability: "--c-prob",
   external: "--c-ext",
 };
@@ -24,6 +25,7 @@ export const AREA_LABEL: Record<Area, string> = {
   multipletesting: "Multiple Testing",
   minimaxity: "Minimaxity",
   optimization: "Optimization",
+  bayesian: "Bayesian",
   probability: "Miscellaneous",
   external: "Mathlib / external",
 };

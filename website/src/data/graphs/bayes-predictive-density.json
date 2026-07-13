@@ -1,0 +1,22 @@
+{
+  "root": "StatLean.Bayesian.comp_eq_withDensity_predictiveDensity",
+  "nodes": [
+    {"id":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","label":"comp_eq_withDensity_predictiveDensity","full":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","kind":"root","decl":"thm","module":"StatLean.Bayesian.Dominated.PredictiveDensity"},
+    {"id":"StatLean.Bayesian.predictiveDensity","label":"predictiveDensity","full":"StatLean.Bayesian.predictiveDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.Dominated.Defs"},
+    {"id":"MeasureTheory.Measure.ext","label":"ext","full":"MeasureTheory.Measure.ext","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"},
+    {"id":"MeasureTheory.Measure.bind_apply","label":"bind_apply","full":"MeasureTheory.Measure.bind_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.GiryMonad"},
+    {"id":"ProbabilityTheory.Kernel.aemeasurable","label":"aemeasurable","full":"ProbabilityTheory.Kernel.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
+    {"id":"MeasureTheory.lintegral_lintegral_swap","label":"lintegral_lintegral_swap","full":"MeasureTheory.lintegral_lintegral_swap","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Prod"},
+    {"id":"Measurable.aemeasurable","label":"aemeasurable","full":"Measurable.aemeasurable","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpaceDef"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"StatLean.Bayesian.predictiveDensity"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"MeasureTheory.Measure.ext"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"MeasureTheory.Measure.bind_apply"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"ProbabilityTheory.Kernel.aemeasurable"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"MeasureTheory.withDensity_apply"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"MeasureTheory.lintegral_lintegral_swap"},
+    {"source":"StatLean.Bayesian.comp_eq_withDensity_predictiveDensity","target":"Measurable.aemeasurable"}
+  ]
+}
