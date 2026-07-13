@@ -9,12 +9,12 @@ import StatLean.Bayesian.ForMathlib.ExpOfRealCalc
 
 The fixed-dimension core behind BPPD **Theorem 3.4** (posterior compressibility of the normal-means
 model under the Dirichlet–Laplace prior). Working at the true parameter `θ₀ = 0` (the case the
-`S₀ᶜ`-submodel reduction in `Theorem34.lean` produces), we bound
+`S₀ᶜ`-submodel reduction in `PosteriorCompressibility.lean` produces), we bound
 
 `E_{θ₀=0} [ posterior mass of { θ : |supp_δ(θ)| > k } ]`
 
 expressed on the un-normalized ratio `dlNumer / dlDenom` (the passage to the abstract posterior `κ†Π`
-happens once, in `Theorem34.lean`, via `NormalMeansModel`).
+happens once, in `PosteriorCompressibility.lean`, via `NormalMeansModel`).
 
 Objects:
 * `compress_ratio_le` — the split bound: on the event `{ D ≥ dbar }` with `dbar = e^{−r²}·Π(B(0,r))` the
@@ -35,7 +35,7 @@ integral is split at `dbar`, the denominator event handled by `measure_dlDenom_l
 mean identified with the prior mass, and the prior mass bounded by the count Chernoff bound.
 
 **Deviations.**
-* **D2 (regime-dependent `r`).** The engine keeps `r` free. The `β`-regime (`Theorem34.lean`)
+* **D2 (regime-dependent `r`).** The engine keeps `r` free. The `β`-regime (`PosteriorCompressibility.lean`)
   instantiates `r² = qₙ log n`; the `1/n`-regime uses `r² = qₙ`. A fixed choice cannot serve both:
   `r² = qₙ` leaves the `β`-regime failure term `e^{−qₙ}` non-vanishing for bounded `qₙ`, while
   `r² = qₙ log n` breaks the `1/n`-regime Chernoff exponent. Hence the free-`r` statement here.
@@ -152,7 +152,7 @@ collapses the RHS to a single exponential (`m·ζ·(c−1) − k·log c` Chernof
 **Deviation (D2/D3).** The frozen stub's placeholder exponent `card·ζ·(c−1) − k·log c + 3 r²` folds
 the small-ball correction `2·card·w` into `2 r²` via an unprovable `card·w ≤ r²`; the honest engine
 (this statement) keeps `ζ` and `w` as supplied C3/C5 bounds and carries the additive `2·card·w`. The
-headline rate/threshold (`Theorem34`) is unchanged. -/
+headline rate/threshold (`PosteriorCompressibility`) is unchanged. -/
 theorem compress_ratio_le_explicit {a δ r : ℝ}
     -- LEAN-ONLY: 0 < a — DL scale at a junk-free index; engine-internal.
     (ha : 0 < a)

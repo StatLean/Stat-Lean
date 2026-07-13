@@ -258,7 +258,7 @@ attainable**: (i) the `3r²` folds the honest small-ball correction `2·card'·w
 `card'·w ≤ r²`, false for fixed `r` as `card' → ∞`; (ii) the Chernoff `−(A−1)q·log c` needs `k ≥ (A−1)q`
 but `k = ⌊Aq⌋ − |S₀| ≥ (A−1)q − 1`, off by `log c`. The asymptotic headlines `dl_theorem34_beta` /
 `dl_theorem34_recip` below **do not need it** — they call `dl_compress_reduction ∘
-compress_ratio_le_explicit` (the honest fixed-`n` bricks, `CompressEngine`) directly. The `Theorem31`
+compress_ratio_le_explicit` (the honest fixed-`n` bricks, `CompressEngine`) directly. The `PosteriorContraction`
 assembly likewise uses those bricks for its 3.4-term. So the intermediate is deleted rather than
 restated (D12). -/
 

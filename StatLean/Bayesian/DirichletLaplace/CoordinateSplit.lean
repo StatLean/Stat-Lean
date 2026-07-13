@@ -41,7 +41,7 @@ between `EuclideanSpace ℝ ι` and the plain pi type, `measurePreserving_piEqui
 (exp b) = ENNReal.ofReal (exp (a + b))`. In `dlRatio_cylinder` the `S`-factor
 `dlDenom (projS S θ₀) (dlPrior a {j // j ∈ S}) (projS S y)` is in `(0, ∞)` (integrand bounded by
 `exp(½‖·‖²)`, prior a probability measure), so it cancels in the `ℝ≥0∞` quotient. **Fallback** (per
-plan): if the `ℝ≥0∞` cancellation is intractable, prove only the `≤` direction `Theorem34` consumes,
+plan): if the `ℝ≥0∞` cancellation is intractable, prove only the `≤` direction `PosteriorCompressibility` consumes,
 or leave `dlRatio_cylinder` as the single named debt (its statement layer insulates the consumers).
 -/
 

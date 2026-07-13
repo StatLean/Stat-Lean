@@ -78,8 +78,8 @@ import StatLean.Bayesian.DirichletLaplace.CoordinateSplit
 import StatLean.Bayesian.DirichletLaplace.CompressEngine
 import StatLean.Bayesian.DirichletLaplace.ShellDecomposition
 import StatLean.Bayesian.DirichletLaplace.PriorMassRatio
-import StatLean.Bayesian.DirichletLaplace.Theorem34
-import StatLean.Bayesian.DirichletLaplace.Theorem31
+import StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility
+import StatLean.Bayesian.DirichletLaplace.PosteriorContraction
 
 /-!
 # Bayesian — area umbrella
