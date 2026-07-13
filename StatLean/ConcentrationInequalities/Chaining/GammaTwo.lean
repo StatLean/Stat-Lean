@@ -103,6 +103,30 @@ lemma gammaTwo_le {T : Set E} (A : AdmissibleSequence T) :
     -- LEAN-ONLY: iInf_le; no book content
     gammaTwo T ≤ gammaFunctional A := iInf_le _ A
 
+/-- **Per-level distance bound from the γ₂ series** (HDP §8.5.2, proof
+Step 1, Eq. (8.46) consequence): each series term sits below the whole
+series, so `√2^k · d(t, T_k) ≤ (γ₂-series of A).toReal` whenever the series
+is finite. This is the general-`T` replacement for the finite-`T` chain-end
+device `exists_eventually_dist_zero`: it yields
+`d(t, T_k) ≤ toReal · (√2)^{−k} → 0`, uniformly on any finite subset. -/
+lemma sqrt_two_pow_mul_infDist_le_toReal_gammaFunctional {T : Set E}
+    (A : AdmissibleSequence T)
+    -- LEAN-ONLY: finite series (the ⊤ branch is trivial in the consumers)
+    (hA : gammaFunctional A ≠ ⊤) {t : E}
+    -- LEAN-ONLY: the point lives in the carrier
+    (ht : t ∈ T) (k : ℕ) :
+    Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k)
+      ≤ (gammaFunctional A).toReal := by
+  have hle : ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))
+      ≤ gammaFunctional A := by
+    refine le_trans (ENNReal.le_tsum (f := fun k =>
+      ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) k) ?_
+    exact le_iSup₂ (f := fun t (_ : t ∈ T) =>
+      ∑' k, ENNReal.ofReal (Real.sqrt 2 ^ k * Metric.infDist t ↑(A.seq k))) t ht
+  have := ENNReal.toReal_mono hA hle
+  rwa [ENNReal.toReal_ofReal
+    (mul_nonneg (pow_nonneg (Real.sqrt_nonneg 2) k) Metric.infDist_nonneg)] at this
+
 /-- Finiteness of γ₂ for finite `T` (HDP §8.5.2, proof Step 1, "T finite
 makes γ₂ finite"): the exhausting sequence `seq k = T` once `2^{2^k} ≥ |T|`
 makes the series a finite sum. -/
