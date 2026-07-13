@@ -40,7 +40,7 @@ in `[−|c|, |c|]` so `HasSubgaussianMGF` with proxy `c²` via
 `HasSubgaussianMGF.sum_of_iIndepFun` to proxy `‖v − w‖²`, then bridged to
 `subGaussianNorm ≤ √6 · dist` by the orlicz bridge B3
 `subGaussianNorm_le_of_isSubGaussian`). (3) The chaining cluster's
-`dudley_inequality_abs` (frozen constant `40`) with the SAMPLE-INDEPENDENT
+`dudley_inequality_abs_of_finite` (frozen constant `40`) with the SAMPLE-INDEPENDENT
 entropy bound `N(T', ε) ≤ (4/ε)^{22d}` from `coveringNumber_empProj_le` —
 valid pointwise in the sample because Theorem 8.3.13 holds for *every*
 probability measure, in particular the random empirical measure; the
@@ -53,7 +53,7 @@ interfaces — DEVIATION from the design's provisional 500/1000).**
 Conditional Rademacher step: `40 · √6 · 27 = 1080·√6 ≈ 2645.5 ≤ 2700`
 (frozen `2700` in `rademacher_process_expectation_le`). Headline:
 `2 × 2700 = 5400` (frozen `5400` in `vc_lln_finset`; formula
-`2 (symmetrization, Ex 8.11) × 40 (dudley_inequality_abs) × √6 (B3 bridge)
+`2 (symmetrization, Ex 8.11) × 40 (dudley_inequality_abs_of_finite) × √6 (B3 bridge)
 × 27 (entropy integral) = 2160·√6 ≈ 5290.9 ≤ 5400`). Downstream consumers
 scale linearly: `5400/√n` (Glivenko–Cantelli), `2·5400 = 10800`
 (generalization). Named-sorry fallback of this work item:
@@ -227,7 +227,7 @@ set_option maxHeartbeats 1600000 in
 /-- **Conditional Rademacher complexity bound** (HDP §8.3.6, Theorem 8.3.15
 conditional step): for a fixed sample `x`, the expected Rademacher supremum
 over a finite class of VC dimension `≤ d` is at most `2700·√d/√n`.
-Frozen numeral: `40 (dudley_inequality_abs) × √6 (B3) × 27 (entropy
+Frozen numeral: `40 (dudley_inequality_abs_of_finite) × √6 (B3) × 27 (entropy
 integral) = 1080·√6 ≈ 2645.5 ≤ 2700` — DEVIATION from the design's
 provisional `500`, recomputed from the batch's frozen constants. Applied
 over `T' = empProj x '' F ∪ (−(empProj x '' F))` with the
@@ -291,7 +291,7 @@ lemma rademacher_process_expectation_le {n : ℕ} [NeZero n] (x : Fin n → Ω)
   -- Dudley's inequality on the projected class.
   have hdud : (∫ e, ⨆ t ∈ T, |Z t e - Z 0 e| ∂(signVec n))
       ≤ 40 * Real.sqrt 6 * dudleyIntegral T 2 := by
-    have h := dudley_inequality_abs hTfin hTne hmeas hinc h0T hdiam2 (by norm_num)
+    have h := dudley_inequality_abs_of_finite hTfin hTne hmeas hinc h0T hdiam2 (by norm_num)
     rwa [hK6] at h
   -- The entropy integral is `≤ 27√d` (sample-independent covering bound).
   have hint27 : dudleyIntegral T 2 ≤ 27 * Real.sqrt d := by
@@ -559,7 +559,7 @@ private lemma abs_finset_sup'_le {α : Type*} {F : Finset α} (hFne : F.Nonempty
 /-- **VC law of large numbers, finite core** (HDP §8.3.6, Theorem 8.3.15):
 `E max_{S ∈ F} |μ_n(S) − μ(S)| ≤ 5400·√d/√n` for a finite class of VC
 dimension `≤ d`. Frozen numeral: `2 (symmetrization) × 40
-(dudley_inequality_abs) × √6 (B3) × 27 (entropy integral) = 2160·√6
+(dudley_inequality_abs_of_finite) × √6 (B3) × 27 (entropy integral) = 2160·√6
 ≈ 5290.9 ≤ 5400` — DEVIATION from the design's provisional `1000`,
 recomputed from the batch's frozen constants. Proof: symmetrize
 (`symmetrization_adapter`) → Fubini → conditional Dudley with

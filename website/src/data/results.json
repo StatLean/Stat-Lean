@@ -8098,34 +8098,40 @@
     "shortRef": "Vershynin (2018), Thm 8.1.4",
     "file": "StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.lean",
     "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DiscreteDudley.html#StatLean.ConcentrationInequalities.discrete_dudley",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a stochastic process indexed by a <span data-link=\"h1\">finite</span> subset $T$ of a metric space $(E,d)$, whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span>, with $\\mathbb{E}[X_t]=0$, and whose increments are <span data-link=\"h2\">sub-Gaussian</span>, meaning $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ for all $s,t\\in T$. Then the expected finite maximum satisfies $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 6\\sqrt{3}\\;K\\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log \\mathcal{N}(T,d,2^{-k})},$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the covering number of $T$ at scale $\\varepsilon$. The left-hand side is the honest maximum $\\max_{t\\in T} X_t$ over the finite index set, not an unrestricted supremum.</p>",
-    "summary": "For a centered process with sub-Gaussian increments on a finite set, the expected maximum is bounded by six root three times K times the dyadic entropy sum.",
-    "leanSignature": "theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ) :\n    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ\n      ≤ 6 * Real.sqrt 3 * K * dudleySum T",
-    "formalizationNotes": "The book's unspecified absolute constant is frozen at the provable value $6\\sqrt3$. The finite index set is a Lean-side working assumption (the book reduces to it), and integrability of each coordinate is required to rule out Bochner-junk means (a non-integrable coordinate would satisfy $\\int X_t = 0$ vacuously). The conclusion uses the honest finite maximum (a Finset supremum), because the previous set-indexed supremum form is false when $|T|=1$.",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ of a (pseudo)metric space whose <span data-link=\"h1\">covering numbers are finite at every positive radius</span>, with <span data-link=\"h2\">centered</span> ($\\mathbb{E}[X_t]=0$), <span data-link=\"h4\">integrable</span> coordinates and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. Then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> — the reading of $\\mathbb{E}\\sup_{t\\in T}X_t$ as $\\sup_{F}\\mathbb{E}\\max_{t\\in F}X_t$ (Remark 7.2.1) — $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 6\\sqrt{3}\\;K \\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})},$$ where the dyadic entropy series of the full $T$ is valued in $[0,\\infty]$ (a divergent series reads as $+\\infty$ and the bound is trivially true).</p>",
+    "summary": "For any index set with finite covering numbers, the expected maximum over every finite subset is bounded by six root three times K times the dyadic entropy series of the whole set.",
+    "leanSignature": "theorem discrete_dudley {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)\n      ≤ ENNReal.ofReal (6 * Real.sqrt 3) * K * dudleyLSum T",
+    "formalizationNotes": "Faithful general-$T$ form of the book's statement. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The finite maximum uses the junk-free finite-max carrier; the entropy series is carried in $[0,\\infty]$ so divergence is an honest $+\\infty$ rather than a silent real-series junk value. Finiteness of the index set is replaced by finiteness of covering numbers (equivalent to total boundedness — the bridge is proved in the library); the proof truncates the chain through nets of $T$ at an arbitrary level and sends the residual $\\mathbb{E}\\max_{t\\in F}(X_t-X_{\\pi_k t})\\lesssim K\\,2^{-k}\\sqrt{\\log|F|}$ to zero, replacing the finite-$T$ finest-scale stop. The constant $6\\sqrt3$ is unchanged from the finite form, which remains available as discrete_dudley_of_finite.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hfin",
-        "label": "Finite index set",
-        "note": "The index set T is finite (the book's working reduction)."
+        "leanToken": "hcov",
+        "label": "Finite covering numbers",
+        "note": "Every positive radius admits a finite internal covering of T (total boundedness)."
       },
       {
         "id": "h2",
-        "leanToken": "hinc",
-        "label": "Sub-Gaussian increments",
-        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+        "leanToken": "hmean",
+        "label": "Mean zero",
+        "note": "Each coordinate is centered."
       },
       {
         "id": "h3",
-        "leanToken": "hmean",
-        "label": "Mean-zero coordinates",
-        "note": "Every coordinate has expectation zero."
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
         "id": "h4",
         "leanToken": "hint",
-        "label": "Integrable coordinates",
-        "note": "Each coordinate is integrable, ruling out junk means."
+        "label": "Integrability",
+        "note": "Each coordinate is integrable, ruling out junk Bochner means."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hF",
+        "label": "Finite subset",
+        "note": "The maximum runs over an arbitrary finite subset F of T (Remark 7.2.1 convention)."
       }
     ],
     "reference": {
@@ -8150,40 +8156,46 @@
     "shortRef": "Vershynin (2018), Thm 8.1.3",
     "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
     "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span> ($\\mathbb{E}[X_t]=0$), with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. If <span data-link=\"h5\">$\\operatorname{diam}(T)\\le D$</span>, then the expected maximum obeys Dudley's entropy-integral bound $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 12\\sqrt{3}\\;K\\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ where $\\mathcal{N}(T,d,\\varepsilon)$ is the covering number of $T$. The left-hand side is the honest finite maximum over $T$.</p>",
-    "summary": "For a centered process with sub-Gaussian increments on a finite bounded set, the expected maximum is bounded by twelve root three times K times the entropy integral up to the diameter.",
-    "leanSignature": "theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ\n      ≤ 12 * Real.sqrt 3 * K * dudleyIntegral T D",
-    "formalizationNotes": "The constant is frozen at $12\\sqrt3 = 2\\times 6\\sqrt3$, obtained from the discrete form via the comparison $\\Sigma\\le 2I$ between the dyadic entropy sum and the entropy integral. The capped integral $\\int_0^D$ (with $\\operatorname{diam}T\\le D$) is the primary statement; the finite index set and per-coordinate integrability are Lean-side working hypotheses, and the maximum uses the junk-free finite (Finset) supremum.",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ with <span data-link=\"h1\">finite covering numbers</span>, <span data-link=\"h2\">centered</span> and <span data-link=\"h4\">integrable</span> coordinates, and <span data-link=\"h3\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. If <span data-link=\"h6\">$\\operatorname{diam}(T)\\le D$</span>, then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 12\\sqrt{3}\\;K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon,$$ with the entropy integral of the full $T$ valued in $[0,\\infty]$.</p>",
+    "summary": "Dudley's entropy-integral bound over an arbitrary totally bounded index set: the expected maximum over every finite subset is at most twelve root three times K times the entropy integral of the whole set.",
+    "leanSignature": "theorem dudley_inequality {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ)\n      ≤ ENNReal.ofReal (12 * Real.sqrt 3) * K * dudleyLIntegral T D",
+    "formalizationNotes": "Faithful general-$T$ form of Theorem 8.1.3 (diameter-capped display, Eq. (8.16)). Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The entropy integral is a lower Lebesgue integral in $[0,\\infty]$; the $\\int_0^\\infty$ display and a countable honest-supremum corollary (constant $40$, improved from $80$ since the per-subset engine measures the entropy of $T$ directly) are proved alongside. Constant $12\\sqrt3=2\\times6\\sqrt3$ unchanged; the finite form remains as dudley_inequality_of_finite.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hfin",
-        "label": "Finite index set",
-        "note": "The index set T is finite (the book's working reduction)."
+        "leanToken": "hcov",
+        "label": "Finite covering numbers",
+        "note": "Every positive radius admits a finite internal covering of T."
       },
       {
         "id": "h2",
-        "leanToken": "hinc",
-        "label": "Sub-Gaussian increments",
-        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+        "leanToken": "hmean",
+        "label": "Mean zero",
+        "note": "Each coordinate is centered."
       },
       {
         "id": "h3",
-        "leanToken": "hmean",
-        "label": "Mean-zero coordinates",
-        "note": "Every coordinate has expectation zero."
+        "leanToken": "hinc",
+        "label": "Sub-Gaussian increments",
+        "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
         "id": "h4",
         "leanToken": "hint",
-        "label": "Integrable coordinates",
-        "note": "Each coordinate is integrable, ruling out junk means."
+        "label": "Integrability",
+        "note": "Each coordinate is integrable."
       },
       {
         "id": "h5",
+        "leanToken": "hF",
+        "label": "Finite subset",
+        "note": "The maximum runs over an arbitrary finite subset F of T."
+      },
+      {
+        "id": "h6",
         "leanToken": "hD",
         "label": "Diameter cap",
-        "note": "The diameter of T is at most the integration cap D."
+        "note": "D dominates the diameter of T; positive."
       }
     ],
     "reference": {
@@ -8210,34 +8222,40 @@
     "shortRef": "Vershynin (2018), Eq. 8.13",
     "file": "StatLean/ConcentrationInequalities/Chaining/Dudley.lean",
     "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/Dudley.html#StatLean.ConcentrationInequalities.dudley_inequality_abs",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ — no mean-zero assumption is required. Fix any <span data-link=\"h3\">reference point $t_0\\in T$</span> and suppose <span data-link=\"h4\">$\\operatorname{diam}(T)\\le D$</span>. Then the expected supremum of the absolute deviations from $t_0$ satisfies $$\\mathbb{E}\\Big[\\sup_{t\\in T}\\lvert X_t-X_{t_0}\\rvert\\Big] \\;\\le\\; 40\\,K\\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon.$$ Because the integrand $\\lvert X_t-X_{t_0}\\rvert$ is nonnegative, the supremum over $T$ is junk-free.</p>",
-    "summary": "For a process with sub-Gaussian increments on a finite bounded set and no mean-zero assumption, the expected supremum of absolute deviations from a fixed point is at most forty times K times the entropy integral.",
-    "leanSignature": "theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D) :\n    ∫ ω, ⨆ t ∈ T, |X t ω - X t₀ ω| ∂μ\n      ≤ 40 * K * dudleyIntegral T D",
-    "formalizationNotes": "No mean-zero hypothesis is required, as the book stresses for Eq. (8.13). The constant is frozen at $40 = 2\\times 20$ (the discrete absolute form times the sum-to-integral factor 2). Since the integrand $|X_t-X_{t_0}|$ is nonnegative, the supremum over $T$ needs no finite-carrier fix and remains an honest set-indexed supremum.",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ with <span data-link=\"h1\">finite covering numbers</span> and <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ — <em>no mean-zero assumption</em>. Fix an <span data-link=\"h3\">anchor $t_0\\in T$</span> and a <span data-link=\"h4\">diameter cap $D$</span>. Then for <span data-link=\"h5\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F}\\,\\lvert X_t-X_{t_0}\\rvert\\Big] \\;\\le\\; 40\\,K \\int_0^{D}\\sqrt{\\log\\mathcal{N}(T,d,\\varepsilon)}\\,d\\varepsilon.$$</p>",
+    "summary": "Anchored absolute form of Dudley's inequality over an arbitrary totally bounded index set, with no mean-zero assumption; constant forty.",
+    "leanSignature": "theorem dudley_inequality_abs {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {t₀ : E} (ht₀ : t₀ ∈ T)\n    {D : ℝ} (hD : Metric.diam T ≤ D)\n    (hD0 : 0 < D)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => |X t ω - X t₀ ω|) ∂μ)\n      ≤ ENNReal.ofReal 40 * K * dudleyLIntegral T D",
+    "formalizationNotes": "Faithful general-$T$ form of Eq. (8.13) (capped). Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The anchor need not lie in the finite subset. A countable honest-supremum corollary (dudley_inequality_countable) holds at constant $40$ — improved from the previous $80$, because the per-subset statement measures the entropy of $T$ itself and the subset-covering $\\varepsilon/2$ loss disappears. The finite form remains as dudley_inequality_abs_of_finite.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hfin",
-        "label": "Finite index set",
-        "note": "The index set T is finite (the book's working reduction)."
+        "leanToken": "hcov",
+        "label": "Finite covering numbers",
+        "note": "Every positive radius admits a finite internal covering of T."
       },
       {
         "id": "h2",
         "leanToken": "hinc",
         "label": "Sub-Gaussian increments",
-        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+        "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
         "id": "h3",
         "leanToken": "ht₀",
-        "label": "Reference point in T",
-        "note": "The anchor point t-zero belongs to the index set."
+        "label": "Anchor point",
+        "note": "A fixed reference point of T (not necessarily in F)."
       },
       {
         "id": "h4",
         "leanToken": "hD",
         "label": "Diameter cap",
-        "note": "The diameter of T is at most the integration cap D."
+        "note": "D dominates the diameter of T; positive."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hF",
+        "label": "Finite subset",
+        "note": "The maximum runs over an arbitrary finite subset F of T."
       }
     ],
     "reference": {
@@ -8262,28 +8280,40 @@
     "shortRef": "Vershynin (2018), Eq. 8.15",
     "file": "StatLean/ConcentrationInequalities/Chaining/DudleyTail.lean",
     "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/DudleyTail.html#StatLean.ConcentrationInequalities.dudley_tail_three_term",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> index set $T\\subseteq(E,d)$ with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ (no mean-zero assumption). For every <span data-link=\"h3\">deviation level $u\\ge 0$</span>, with probability at least $1-2e^{-u^2}$ the two-sided oscillation is controlled by $$\\sup_{s,t\\in T}\\lvert X_t-X_s\\rvert \\;\\le\\; K\\Big(9\\,\\Sigma + 17\\,\\operatorname{diam}(T) + 12\\,u\\,\\operatorname{diam}(T)\\Big),$$ where $\\Sigma=\\sum_{k\\in\\mathbb{Z}} 2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})}$ is the dyadic entropy sum. Equivalently, the oscillation exceeds this three-term threshold with probability at most $2e^{-u^2}$.</p>",
-    "summary": "For a process with sub-Gaussian increments on a finite set, the two-sided oscillation exceeds a three-term threshold built from the entropy sum, the diameter, and u times the diameter with probability at most two exp minus u squared.",
-    "leanSignature": "theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    {u : ℝ} (hu : 0 ≤ u) :\n    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)\n        < ⨆ t ∈ T, ⨆ s ∈ T, |X t ω - X s ω|}\n      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2))",
-    "formalizationNotes": "This is the sharp three-term core of the high-probability Dudley bound: the book's failure probability $2e^{-u^2}$ is met exactly, with no constant deviation. The frozen constants $9/17/12$ carry slack in the per-level threshold algebra; the book's single-constant display form follows by absorbing the bare diameter term into the entropy integral. The two-sided oscillation is a supremum of the nonnegative quantities $|X_t-X_s|$, hence junk-free.",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ with <span data-link=\"h1\">finite covering numbers</span>, <span data-link=\"h2\">sub-Gaussian increments</span>, and a <span data-link=\"h3\">summable dyadic entropy series</span> $S=\\sum_{k\\in\\mathbb{Z}}2^{-k}\\sqrt{\\log\\mathcal{N}(T,d,2^{-k})}$. Then for every <span data-link=\"h4\">$u\\ge 0$</span> and <span data-link=\"h5\">every finite subset $F\\subseteq T$</span>, with probability at least $1-2e^{-u^2}$, $$\\max_{s,t\\in F}\\,\\lvert X_t-X_s\\rvert \\;\\le\\; K\\bigl(9S + 17\\operatorname{diam}T + 12u\\operatorname{diam}T\\bigr).$$</p>",
+    "summary": "High-probability Dudley bound over an arbitrary totally bounded index set: the maximal pair oscillation over every finite subset is controlled by the entropy series plus u times the diameter, with failure probability two e to the minus u squared.",
+    "leanSignature": "theorem dudley_tail_three_term {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hcov : ∀ ε : ℝ, 0 < ε → coveringNumber T ε ≠ ⊤)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hinc : SubGaussianIncrements X K T μ)\n    (hS : Summable fun k : ℤ => dudleySummand T k)\n    {u : ℝ} (hu : 0 ≤ u)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    μ {ω | K * (9 * dudleySum T + 17 * Metric.diam T + 12 * u * Metric.diam T)\n        < (F ×ˢ F).sup' (hFne.product hFne) (fun p => |X p.1 ω - X p.2 ω|)}\n      ≤ ENNReal.ofReal (2 * Real.exp (-u ^ 2))",
+    "formalizationNotes": "Faithful general-$T$ form of Eq. (8.15), which the book states for finite $T$ with the footnote that the general case follows by approximation — realized here per finite subset, plus a countable-supremum corollary by continuity from below. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. The summability hypothesis is a junk-guard: a real-valued threshold cannot honestly encode an infinite entropy series, and the bound is vacuous there. The proof truncates the chain and kills the truncation residual in probability with a $\\delta\\downarrow 0$ slack. Book's exact failure probability $2e^{-u^2}$ is met; the display form (constant $200$) and the finite forms (*_of_finite) are proved alongside.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hfin",
-        "label": "Finite index set",
-        "note": "The index set T is finite (the book's standing assumption for this bound)."
+        "leanToken": "hcov",
+        "label": "Finite covering numbers",
+        "note": "Every positive radius admits a finite internal covering of T."
       },
       {
         "id": "h2",
         "leanToken": "hinc",
         "label": "Sub-Gaussian increments",
-        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+        "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
         "id": "h3",
+        "leanToken": "hS",
+        "label": "Summable entropy series",
+        "note": "The dyadic entropy series of T converges (junk-guard for the real-valued threshold)."
+      },
+      {
+        "id": "h4",
         "leanToken": "hu",
-        "label": "Deviation level u ≥ 0",
-        "note": "The tail parameter u is nonnegative."
+        "label": "Deviation parameter",
+        "note": "u is nonnegative."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hF",
+        "label": "Finite subset",
+        "note": "The pair maximum runs over an arbitrary finite subset F of T."
       }
     ],
     "reference": {
@@ -8309,34 +8339,34 @@
     "shortRef": "Vershynin (2018), Thm 8.5.2",
     "file": "StatLean/ConcentrationInequalities/Chaining/GenericChaining.lean",
     "docGenUrl": "../docs/StatLean/ConcentrationInequalities/Chaining/GenericChaining.html#StatLean.ConcentrationInequalities.generic_chaining",
-    "informal": "<p>Let $(X_t)_{t\\in T}$ be a process on a <span data-link=\"h1\">finite</span> metric space $(T,d)$ whose coordinates are <span data-link=\"h4\">integrable</span> and <span data-link=\"h3\">centered</span> ($\\mathbb{E}[X_t]=0$), with <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$. Then Talagrand's generic chaining bound holds: $$\\mathbb{E}\\Big[\\max_{t\\in T} X_t\\Big] \\;\\le\\; 20\\,K\\,\\gamma_2(T,d),$$ where $\\gamma_2(T,d)=\\inf\\;\\sup_{t\\in T}\\sum_{k\\ge 0} 2^{k/2}\\,d(t,T_k)$ is the Talagrand $\\gamma_2$ functional, the infimum ranging over admissible sequences $(T_k)$ of subsets of $T$ with $|T_0|=1$ and $|T_k|\\le 2^{2^k}$. The left-hand side is the honest finite maximum over $T$.</p>",
-    "summary": "For a centered process with sub-Gaussian increments on a finite metric space, the expected maximum is bounded by twenty times K times Talagrand's gamma-two functional.",
-    "leanSignature": "theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hfin : T.Finite)\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ) :\n    ENNReal.ofReal\n        (∫ ω, hfin.toFinset.sup' (hfin.toFinset_nonempty.mpr hne) (fun t => X t ω) ∂μ)\n      ≤ 20 * K * gammaTwo T",
-    "formalizationNotes": "The book's unspecified absolute constant is frozen at the provable value $20$, obtained by integrating the renegotiated $(12+4u)$ high-probability tail. The result is stated for a finite index set (the book's working reduction) with per-coordinate integrability to rule out Bochner-junk means, and the maximum uses the junk-free finite (Finset) supremum, because the set-indexed supremum form is false when $|T|=1$.",
+    "informal": "<p>Let $(X_t)_{t\\in T}$ be a random process on an <em>arbitrary</em> subset $T$ of a (pseudo)metric space, with <span data-link=\"h1\">centered</span> and <span data-link=\"h3\">integrable</span> coordinates and <span data-link=\"h2\">sub-Gaussian increments</span> $\\lVert X_t-X_s\\rVert_{\\psi_2}\\le K\\,d(t,s)$ — no finiteness or compactness assumptions of any kind. Then for <span data-link=\"h4\">every finite subset $F\\subseteq T$</span> $$\\mathbb{E}\\Big[\\max_{t\\in F} X_t\\Big] \\;\\le\\; 20\\,K\\,\\gamma_2(T,d),$$ where $\\gamma_2(T,d)=\\inf_{(T_k)}\\sup_{t\\in T}\\sum_{k\\ge 0}2^{k/2}d(t,T_k)\\in[0,\\infty]$ is Talagrand's functional over admissible sequences of the full $T$ (if $\\gamma_2=\\infty$ the bound is trivially true).</p>",
+    "summary": "Talagrand's generic chaining bound over a completely arbitrary index set: the expected maximum over every finite subset is at most twenty K times the gamma-two functional of the whole set.",
+    "leanSignature": "theorem generic_chaining {X : E → Ω → ℝ} {K : ℝ≥0} {T : Set E}\n    [IsProbabilityMeasure μ]\n    (hne : T.Nonempty)\n    (hmeas : ∀ t ∈ T, AEMeasurable (X t) μ)\n    (hint : ∀ t ∈ T, MeasureTheory.Integrable (X t) μ)\n    (hmean : ∀ t ∈ T, ∫ ω, X t ω ∂μ = 0)\n    (hinc : SubGaussianIncrements X K T μ)\n    {F : Finset E}\n    (hF : ↑F ⊆ T)\n    (hFne : F.Nonempty) :\n    ENNReal.ofReal (∫ ω, F.sup' hFne (fun t => X t ω) ∂μ) ≤\n      20 * K * gammaTwo T",
+    "formalizationNotes": "Faithful general-$T$ form of Theorem 8.5.2. Following the book's convention (Remark 7.2.1), the expected supremum over an arbitrary index set is read as the supremum over all finite subsets of the expected maximum, so the theorem quantifies over a finite subset while the metric entropy is measured on the full index set. Unlike the Dudley family, no covering hypothesis is needed: admissible sequences carry the geometry and $\\gamma_2$ is an honest $[0,\\infty]$ value ($\\infty$ at divergence, a trivial branch). The chain walks the sequence levels inside $T$ and is truncated; each residual distance obeys $d(t,T_k)\\le\\gamma_2\\cdot 2^{-k/2}\\to 0$ uniformly on the finite subset, replacing the finite-$T$ chain-end device. Book's unnamed absolute constant frozen at $C=20$; the tail form $(12+4u)$, the per-sequence form, the real display (under $\\gamma_2<\\infty$), and the finite forms (*_of_finite) are proved alongside.",
     "hypotheses": [
       {
         "id": "h1",
-        "leanToken": "hfin",
-        "label": "Finite metric space",
-        "note": "The index set T is finite (the book's working reduction)."
+        "leanToken": "hmean",
+        "label": "Mean zero",
+        "note": "Each coordinate is centered."
       },
       {
         "id": "h2",
         "leanToken": "hinc",
         "label": "Sub-Gaussian increments",
-        "note": "Each increment has psi-2 norm at most K times the distance between indices."
+        "note": "The psi-2 norm of every increment is bounded by K times the distance."
       },
       {
         "id": "h3",
-        "leanToken": "hmean",
-        "label": "Mean-zero coordinates",
-        "note": "Every coordinate has expectation zero."
+        "leanToken": "hint",
+        "label": "Integrability",
+        "note": "Each coordinate is integrable, ruling out junk Bochner means."
       },
       {
         "id": "h4",
-        "leanToken": "hint",
-        "label": "Integrable coordinates",
-        "note": "Each coordinate is integrable, ruling out junk means."
+        "leanToken": "hF",
+        "label": "Finite subset",
+        "note": "The maximum runs over an arbitrary finite subset F of T (Remark 7.2.1 convention)."
       }
     ],
     "reference": {
