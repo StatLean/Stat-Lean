@@ -2,8 +2,11 @@ import Mathlib.Probability.Distributions.Gaussian.Basic
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gamma
 import Mathlib.Probability.Kernel.Posterior
+import Mathlib.Probability.Kernel.Composition.MapComap
+import Mathlib.Probability.Kernel.Composition.Prod
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import StatLean.Bayesian.ForMathlib.LaplaceDist
+import StatLean.Bayesian.ForMathlib.GammaBounds
 
 /-!
 # Dirichlet–Laplace contraction — core data model (laptop-only `Defs`)
@@ -70,10 +73,25 @@ lemma dlMarginal_eq_bind {a : ℝ} (ha : 0 < a) :
 /-- `dlMarginal a` is a probability measure for every `a` (dirac branch trivial; mixture branch uses
 the Laplace probability-mass identity and the positivity of the Gamma support). -/
 instance isProbabilityMeasure_dlMarginal (a : ℝ) : IsProbabilityMeasure (dlMarginal a) := by
-  -- LAPTOP-DEBT: mixture branch via `laplaceMeasure` prob. + `gammaMeasure` supported on `Ioi 0`.
   rw [dlMarginal]
   split
-  · sorry
+  · rename_i ha
+    haveI : IsProbabilityMeasure (gammaMeasure a 2⁻¹) :=
+      isProbabilityMeasure_gammaMeasure ha (by norm_num)
+    have hmeas : Measurable (fun b => laplaceMeasure b) :=
+      Measure.measurable_of_measurable_coe _ (fun s hs => measurable_laplaceMeasure_apply hs)
+    refine ⟨?_⟩
+    rw [Measure.bind_apply MeasurableSet.univ hmeas.aemeasurable]
+    -- `gammaMeasure` is supported on `Ioi 0`, and `laplaceMeasure b` is a probability measure there.
+    have hpos : ∀ᵐ b ∂(gammaMeasure a 2⁻¹), (0 : ℝ) < b := by
+      rw [ae_iff]
+      simp only [not_lt]
+      exact gammaMeasure_Iic_eq_zero ha (by norm_num)
+    have hae : (fun b => laplaceMeasure b Set.univ) =ᵐ[gammaMeasure a 2⁻¹] fun _ => 1 := by
+      filter_upwards [hpos] with b hb
+      haveI := isProbabilityMeasure_laplaceMeasure hb
+      exact measure_univ
+    rw [lintegral_congr_ae hae, lintegral_one, measure_univ]
   · infer_instance
 
 /-- **Dirichlet–Laplace product prior** `DLₐ` on `ℝ^ι` (BPPD eq. (10), joint form): the `ι`-fold
@@ -84,7 +102,9 @@ noncomputable def dlPrior (a : ℝ) (ι : Type*) [Fintype ι] : Measure (Euclide
 instance isProbabilityMeasure_dlPrior (a : ℝ) (ι : Type*) [Fintype ι] :
     IsProbabilityMeasure (dlPrior a ι) := by
   rw [dlPrior]
-  exact isProbabilityMeasure_map (by fun_prop)
+  haveI : ∀ _i : ι, IsProbabilityMeasure (dlMarginal a) := fun _ => isProbabilityMeasure_dlMarginal a
+  refine ⟨?_⟩
+  rw [Measure.map_apply (by fun_prop) MeasurableSet.univ, Set.preimage_univ, measure_univ]
 
 /-! ### Approximate model size -/
 
@@ -96,8 +116,11 @@ noncomputable def dlSuppCount (δ : ℝ) (θ : EuclideanSpace ℝ ι) : ℕ :=
 `{θ | δ < |θ j|}`). -/
 lemma measurable_dlSuppCount (δ : ℝ) :
     Measurable (fun θ : EuclideanSpace ℝ ι => dlSuppCount δ θ) := by
-  -- LAPTOP-DEBT: countable/finite case split over the subsets `S ⊆ univ`.
-  sorry
+  classical
+  simp only [dlSuppCount, Finset.card_filter]
+  refine Finset.measurable_sum _ (fun j _ => ?_)
+  refine Measurable.ite (measurableSet_lt measurable_const ?_) measurable_const measurable_const
+  exact (measurable_pi_apply j).comp (EuclideanSpace.measurableEquiv ι).measurable |>.abs
 
 /-! ### The normal-means model -/
 
@@ -110,14 +133,20 @@ noncomputable def gaussShiftKernel (ι : Type*) [Fintype ι] :
 
 instance isMarkovKernel_gaussShiftKernel (ι : Type*) [Fintype ι] :
     IsMarkovKernel (gaussShiftKernel ι) := by
-  -- LAPTOP-DEBT: map/prod/const/id Markov instances; `(·+·)` measurable.
-  sorry
+  rw [gaussShiftKernel]
+  haveI : IsProbabilityMeasure (stdGaussian (EuclideanSpace ℝ ι)) := inferInstance
+  exact Kernel.IsMarkovKernel.map _ (by fun_prop)
 
 /-- `gaussShiftKernel ι θ = N(θ, I) = stdGaussian shifted by θ`. -/
 lemma gaussShiftKernel_apply (θ : EuclideanSpace ℝ ι) :
     gaussShiftKernel ι θ = (stdGaussian (EuclideanSpace ℝ ι)).map (· + θ) := by
-  -- LAPTOP-DEBT: `Kernel.map_apply` + `Kernel.prod_apply` + `dirac_prod` + `map_map`.
-  sorry
+  have hadd : Measurable (fun p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι => p.1 + p.2) := by
+    fun_prop
+  rw [gaussShiftKernel, Kernel.map_apply _ hadd, Kernel.prod_apply, Kernel.id_apply,
+    Kernel.const_apply, Measure.dirac_prod, Measure.map_map hadd (by fun_prop)]
+  congr 1
+  ext x
+  simp [Function.comp, add_comm]
 
 /-! ### Likelihood ratio and the un-normalized posterior ratio -/
 
@@ -128,7 +157,7 @@ noncomputable def dlLR (θ₀ θ y : EuclideanSpace ℝ ι) : ℝ≥0∞ :=
 
 lemma measurable_dlLR_uncurry (θ₀ : EuclideanSpace ℝ ι) :
     Measurable (Function.uncurry fun θ y : EuclideanSpace ℝ ι => dlLR θ₀ θ y) := by
-  unfold dlLR Function.uncurry
+  unfold Function.uncurry dlLR
   fun_prop
 
 /-- **Un-normalized posterior numerator** `∫_C exp(LR) dΠ` at data `y` (BPPD §6). -/
@@ -150,7 +179,7 @@ lemma dlNumer_le_dlDenom (θ₀ : EuclideanSpace ℝ ι) (π : Measure (Euclidea
 lemma dlNumer_mono (θ₀ : EuclideanSpace ℝ ι) (π : Measure (EuclideanSpace ℝ ι))
     {C D : Set (EuclideanSpace ℝ ι)} (hCD : C ⊆ D) (y : EuclideanSpace ℝ ι) :
     dlNumer θ₀ π C y ≤ dlNumer θ₀ π D y := by
-  -- LAPTOP-DEBT: `setLIntegral_mono_set` / restrict-monotone.
-  sorry
+  rw [dlNumer, dlNumer]
+  exact lintegral_mono' (Measure.restrict_mono hCD le_rfl) le_rfl
 
 end StatLean.Bayesian
