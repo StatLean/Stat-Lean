@@ -238,3 +238,5 @@ bayes-npmle-finite-support	StatLean.Bayesian.NPMLE_exists_finiteSupport_le_card_
 bayes-oracle-compound-risk	StatLean.Bayesian.oracleBayesRule_minimizes_compoundRisk
 bayes-parametric-eb-shrinkage	StatLean.Bayesian.normalParamEB_shrinkageWeight_tendsto_oracle
 bayes-gaussian-score-derivative	StatLean.Bayesian.hasDerivAt_gaussianPDFReal
+bayes-dl-posterior-compressibility	StatLean.Bayesian.dl_theorem34_beta
+bayes-dl-posterior-contraction	StatLean.Bayesian.dl_theorem31
