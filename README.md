@@ -115,6 +115,7 @@ cd Stat-Lean
 The library is the single `lean_lib StatLean`, organized into per-area sublibraries under `StatLean/`:
 
 - `StatLean/AsymptoticStatistics/` — parametric & semiparametric asymptotics (van der Vaart, *Asymptotic Statistics*)
+- `StatLean/Bayesian/` — posteriors via disintegration, conjugacy, Bayesian decision theory, hierarchical & empirical Bayes, MCMC correctness, posterior contraction (Robert, *The Bayesian Choice*; Bhattacharya–Pati–Pillai–Dunson)
 - `StatLean/ConcentrationInequalities/` — sub-Gaussian / sub-exponential / Bernstein / maximal inequalities and empirical processes (Lu, *Big Data Analysis*)
 - `StatLean/HighDimensionalStatistics/` — OLS, Lasso rates, compressed sensing, M-estimators (Lu, *Big Data Analysis*; Wainwright)
 - `StatLean/MultipleTesting/` — FDR / FWER control, knockoffs, goodness-of-fit (Lu, *Big Data Analysis*; Candès)
@@ -153,6 +154,7 @@ then run `lake update && lake exe cache get && lake build`. Your project must us
 
 Browse the library by area on the [website](https://statlean.github.io/website/):
 
+- **[Bayesian Statistics](https://statlean.github.io/website/#/category/bayesian)** — priors and posteriors via disintegration, sufficiency and conjugate families, Bayesian decision theory and the Bayes route to minimaxity, hierarchical and empirical Bayes, MCMC correctness, and Dirichlet–Laplace posterior compressibility and contraction.
 - **[Concentration Inequalities](https://statlean.github.io/website/#/category/concentration)** — sub-Gaussian and sub-exponential tails, Hoeffding, Bernstein and McDiarmid inequalities, maximal inequalities, and the empirical-process limits (Glivenko–Cantelli, Donsker) built on them.
 - **[High-Dimensional Statistics](https://statlean.github.io/website/#/category/highdim)** — OLS mean-squared error, deterministic and random-noise Lasso rates, support recovery, compressed-sensing recovery, and M-estimator deviation bounds.
 - **[Minimaxity](https://statlean.github.io/website/#/category/minimaxity)** — the estimation-to-testing reduction, Le Cam's two-point and convex-hull methods, Fano's inequality with local packing, and worked minimax rates.
