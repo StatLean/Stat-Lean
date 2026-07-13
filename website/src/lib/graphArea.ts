@@ -39,6 +39,7 @@ export const AREAS: Area[] = [
   "multipletesting",
   "minimaxity",
   "optimization",
+  "bayesian",
   "probability",
   "external",
 ];
@@ -50,6 +51,7 @@ export const AREAS: Area[] = [
  * probability) and is resolved by the per-subfolder vote below instead.
  */
 const DIR_AREA: Partial<Record<string, CategoryId>> = {
+  Bayesian: "bayesian",
   ConcentrationInequalities: "concentration",
   HighDimensionalStatistics: "highdim",
   MultipleTesting: "multipletesting",
