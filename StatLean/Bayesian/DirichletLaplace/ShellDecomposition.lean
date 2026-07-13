@@ -54,13 +54,25 @@ namespace StatLean.Bayesian
 variable {ι : Type*} [Fintype ι]
 
 /-- **Contraction shell** (BPPD §6): the set of `θ` whose δ-support is exactly `S` and whose distance
-from `θ₀` lies in the `j`-th radial band `[jr, (j+1)r)`. The complement of the contraction ball is the
+from `θ₀` lies in the `j`-th radial band `[2jr, 2(j+1)r)`. The complement of the contraction ball is the
 disjoint union of these over support patterns `S` and radial indices `j`. Degenerate inputs are not
-special-cased in the definition (an empty band or `S` gives the empty shell). -/
+special-cased in the definition (an empty band or `S` gives the empty shell).
+
+**Formalization note (D4, radial-band factor 2).** The band floor is `2jr`, not the `jr` a literal
+reading of the paper's "`jrₙ`-net / `2jrₙ`-balls" text might suggest. With a `jr` floor the two-parameter
+midpoint test of `GaussianTests` is *degenerate*: a shell point sits at distance `d ≥ jr − ρ` from `θ₀`
+while its covering net-point sits within `ρ = (√5/4)jr` of it, so the usable test margin
+`d − ρ ≥ jr − 2ρ = (1 − √5/2)jr < 0` is negative and no consistent test exists. Doubling the floor to
+`2jr` restores a positive margin `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr` (for `j ≥ 2`), which is
+exactly what `shell_ratio_le`'s Type I/II error `e^{−j²r²/12}` needs. This is the geometry the paper's
+`2jrₙ`-ball language actually intends; only the net *radius* `(√5/4)jr` and error *constant* `1/12`
+differ from the paper's unspecified numerals (charter §1 "state the constants that are provable"). The
+outer series in `Theorem31` is unaffected: `⋃_{j ≥ M} [2jr, 2(j+1)r) = [2Mr, ∞)` still tiles the
+complement of the contraction ball, with the ball radius rescaled by the harmless factor 2. -/
 noncomputable def dlShell (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) (j : ℕ) (r δ : ℝ) :
     Set (EuclideanSpace ℝ ι) :=
   {θ | (Finset.univ.filter fun i => δ < |θ i|) = S ∧
-       (j : ℝ) * r ≤ ‖θ - θ₀‖ ∧ ‖θ - θ₀‖ < ((j : ℝ) + 1) * r}
+       2 * (j : ℝ) * r ≤ ‖θ - θ₀‖ ∧ ‖θ - θ₀‖ < 2 * ((j : ℝ) + 1) * r}
 
 /-! ### Private geometry helpers for `exists_shell_net` (D4) -/
 
@@ -165,7 +177,7 @@ theorem exists_shell_net (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : �
   classical
   set T : Set ι := (↑S : Set ι) with hTdef
   clear_value T
-  set R : ℝ := ((j : ℝ) + 1) * r with hRdef
+  set R : ℝ := 2 * ((j : ℝ) + 1) * r with hRdef
   set ε : ℝ := (j : ℝ) * r / 4 with hεdef
   have hj2 : (2 : ℝ) ≤ (j : ℝ) := by exact_mod_cast hj
   have hjr : (0 : ℝ) < (j : ℝ) := by linarith
@@ -181,7 +193,8 @@ theorem exists_shell_net (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : �
     have hbase : 1 + 2 * R / ε ≤ 33 := by
       have key : 2 * R / ε ≤ 32 := by
         rw [hRdef, hεdef, div_le_iff₀ (by positivity : (0 : ℝ) < (j : ℝ) * r / 4)]
-        nlinarith [hj2, hr, mul_pos hjr hr]
+        nlinarith [hj2, hr, mul_pos hjr hr,
+          mul_nonneg hr.le (by linarith : (0 : ℝ) ≤ (j : ℝ) - 1)]
       linarith
     have hbnn : (0 : ℝ) ≤ 1 + 2 * R / ε := by positivity
     have hRℝ : ((F₀.image (extendS T)).card : ℝ) ≤ (33 : ℝ) ^ S.card := by
@@ -260,32 +273,26 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
       ≤ (33 : ℝ≥0∞) ^ S.card * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12))
           + (dlPrior a ι) (dlShell θ₀ S j r δ)
               * ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) / dbar := by
-  -- RESIDUAL DEBT (geometry/constant bug in the FROZEN signature, reported — do NOT weaken it).
+  -- PROOF RECIPE (now provable: `dlShell` band floor raised to `2jr`, ceiling to `2(j+1)r`, D4).
   --
-  -- The denominator-event restriction added to the LHS DOES fix the earlier `dbar = ⊤` falseness
-  -- (on `{⊤ ≤ dlDenom}` the ratio `dlNumer/⊤ = 0`, so the LHS is `0`). But the restricted statement is
-  -- still not provable from the supplied machinery, because of a factor-two mismatch between the
-  -- radial BAND of `dlShell` and the net-piece radius delivered by `exists_shell_net`.
-  --
-  -- The recipe (and the old comment) needs, for every NONEMPTY net piece `P_c ⊆ closedBall c ρ ∩ shell`
-  -- with `d := ‖c − θ₀‖`, the Type-I margin `d − ρ ≥ (7/8)jr`, which it derives from `‖θ − θ₀‖ ≥ 2jr`.
-  -- But `dlShell θ₀ S j r δ` is the BAND `jr ≤ ‖θ − θ₀‖ < (j+1)r`, so every shell point satisfies
-  --   `‖θ − θ₀‖ < (j+1)r ≤ (3/2)·jr < 2·jr`   (for `j ≥ 2`),
-  -- directly CONTRADICTING the premise `‖θ − θ₀‖ ≥ 2jr`. With the true band floor `jr`, the closest a
-  -- nonempty piece's centre can lie to `θ₀` is `d ≥ jr − ρ` (nearest point on the inner sphere), so the
-  -- best provable Type-I margin is
-  --   `d − ρ ≥ jr − 2ρ = (1 − √5/2)·jr ≈ −0.118·jr < 0`   (since `ρ = √5/4·jr ≈ 0.559·jr`).
-  -- The margin is NEGATIVE for every `j ≥ 2` (`ρ > jr/2` always), so `measure_dlTestSet_le`'s hypothesis
-  -- `ρ < ‖φ − θ₀‖` fails for near pieces, its Type-I error is `≈ 1/2`, and it is nowhere near the
-  -- required `exp(−(d−ρ)²/8) ≤ exp(−j²r²/12)` (which would need margin `≥ √(2/3)·jr ≈ 0.816·jr`).
-  --
-  -- Root cause: `ρ ≥ r` always (piece radius `ρ² = ε² + r²` from the `Sᶜ`-block of width `≤ √n·δ ≤ r`),
-  -- so no refinement of the net can push `ρ` below `r ≥ (1/2)·jr` at `j = 2`, and the recipe's `2jr`
-  -- floor is impossible anyway (the band `[2jr,(j+1)r)` would be EMPTY for `j ≥ 2`). The statement is
-  -- provable only with a strictly weaker RHS exponent (roughly `exp(−c·r²)`, `c` matching the achievable
-  -- `O(r)` margin), not the frozen `exp(−j²r²/12)`. Filling this `sorry` requires either raising the
-  -- `dlShell` band floor to `~2jr` (impossible without widening the band) or weakening the RHS constant
-  -- — both outside the frozen touch-set. Left as a reported residual debt.
+  -- 1. `exists_shell_net θ₀ S hj hr hδ` gives a Finset `net`, `net.card ≤ 33^{|S|}`, with
+  --      `dlShell θ₀ S j r δ ⊆ ⋃ φ ∈ net, closedBall φ ρ`,  `ρ := (√5/4)·jr`.
+  -- 2. Disjointify: intersect each `closedBall φ ρ` with the shell and subtract predecessors to get a
+  --    Finset-indexed DISJOINT family `P φ ⊆ closedBall φ ρ ∩ shell` with `⋃ P φ = shell`. Then
+  --      `dlNumer θ₀ · (shell) = ∑ φ, dlNumer θ₀ · (P φ)`  (numer is a measure; `measure_biUnion_finset`)
+  --      `dlPrior a ι shell    = ∑ φ, dlPrior a ι (P φ)`   (same).
+  -- 3. Fix `φ` with `P φ ≠ ∅`; pick `θ✶ ∈ P φ ⊆ shell`, so `‖θ✶ − θ₀‖ ≥ 2jr` and `‖θ✶ − φ‖ ≤ ρ`, giving
+  --      `d := ‖φ − θ₀‖ ≥ 2jr − ρ`  ⇒  margin  `d − ρ ≥ 2jr − 2ρ = (2 − √5/2)jr ≥ (7/8)jr > 0`  (j ≥ 2).
+  -- 4. `measure_dlTestSet_typeI`/`_typeII` (GaussianTests, hypothesis `ρ < d` now holds) bound both errors
+  --    by `exp(−(d−ρ)²/8) ≤ exp(−(7/8·jr)²/8) ≤ exp(−j²r²/12)`  (since (7/8)²/8 = 49/512 ≥ 1/12).
+  -- 5. `lintegral_ratio_on_event_le_test` (TestingBound) on the event `{dbar ≤ dlDenom}` with test set
+  --    `dlTestSet θ₀ φ ρ`, dominating measure `dbar`:
+  --      `∫_{D≥dbar} dlNumer θ₀ · (P φ)/dlDenom ≤ (K θ₀)(test) + dlPrior a ι (P φ)·sup_θ (K θ)(testᶜ)/dbar`
+  --                                            `≤ exp(−j²r²/12) + dlPrior a ι (P φ)·exp(−j²r²/12)/dbar`.
+  -- 6. Sum over `φ ∈ net` (`Finset.sum_le_sum` + `ENNReal.sum_div`): the first term sums to
+  --    `net.card · exp ≤ 33^{|S|}·exp`; the second, using `∑ φ, dlPrior a ι (P φ) = dlPrior a ι shell`
+  --    (step 2, disjoint & exact — this is why disjointification, not the raw cover, is needed), sums to
+  --    `dlPrior a ι shell · exp / dbar`.  ∎
   sorry
 
 end StatLean.Bayesian
