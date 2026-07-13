@@ -10570,5 +10570,123 @@
       ]
     },
     "hasGraph": true
+  },
+  {
+    "id": "bayes-dl-posterior-compressibility",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "dl_theorem34_beta",
+    "fullName": "StatLean.Bayesian.dl_theorem34_beta",
+    "title": "Posterior Compressibility of the Dirichlet–Laplace Prior",
+    "citation": "Bhattacharya et al. (2015), Thm. 3.4",
+    "shortRef": "BPPD (2015), Thm. 3.4",
+    "file": "StatLean/Bayesian/DirichletLaplace/PosteriorCompressibility.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/DirichletLaplace/PosteriorCompressibility.html#StatLean.Bayesian.dl_theorem34_beta",
+    "informal": "<p>Consider the normal-means model $y \\sim N_n(\\theta_0, I_n)$ with the Dirichlet–Laplace prior in product form: $\\theta_j \\mid \\psi_j \\sim \\mathrm{DE}(\\psi_j)$ and $\\psi_j \\sim \\mathrm{Ga}(a_n, 1/2)$ independently across coordinates, at the scale $a_n = n^{-(1+\\beta)}$ for a fixed $\\beta > 0$. Let the sparsity level satisfy $q_n \\ge 1$ and $q_n = o(n)$, let the truth $\\theta_0$ have at most $q_n$ nonzero coordinates, and let $(\\delta_n)$ be any significance-threshold sequence with $n^{-2} \\le \\delta_n \\le 1/2$ for all large $n$. Writing $\\mathrm{supp}_{\\delta}(\\theta) = \\{j : |\\theta_j| > \\delta\\}$ for the set of $\\delta$-significant coordinates, there is a constant $A > 0$ such that the expected posterior probability $E_{\\theta_0}\\,\\Pi\\bigl(\\,|\\mathrm{supp}_{\\delta_n}(\\theta)| > A\\,q_n \\;\\big|\\; y\\bigr) \\longrightarrow 0$. In words: although a continuous shrinkage prior never produces exact zeros, the posterior concentrates on vectors whose <em>effective</em> dimension — the number of coordinates exceeding $\\delta_n$ in magnitude — is at most a constant multiple of the true sparsity. The same conclusion holds at the scale $a_n = 1/n$ under the additional assumption $q_n \\ge C_0 \\log n$.</p>",
+    "summary": "The posterior effective dimension (number of coordinates above a small threshold) stays within a constant multiple of the true sparsity, in both prior-scale regimes.",
+    "leanSignature": "theorem dl_theorem34_beta {β : ℝ}\n    (hβ : 0 < β) {q : ℕ → ℕ}\n    (hq1 : ∀ n, 1 ≤ q n)\n    (hqn : Tendsto (fun n => (q n : ℝ) / n) atTop (𝓝 0))\n    {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}\n    (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)\n    {δ : ℕ → ℝ}\n    (hδ : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δ n ∧ δ n ≤ 1/2) :\n    ∃ A : ℝ, 0 < A ∧ Tendsto (fun n => ∫⁻ y,\n        ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y\n          {θ | A * q n < (dlSuppCount (δ n) θ : ℝ)}\n        ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0)",
+    "formalizationNotes": "The paper states the theorem at the fixed threshold δₙ = qₙ/n; the formalization proves it uniformly over any threshold window n⁻² ≤ δₙ ≤ 1/2, which is what the proof of Theorem 3.1 actually consumes (it applies the result at δₙ = rₙ/n, and the support-count monotonicity runs the wrong way when qₙ > log n). Two repairs to the paper's proof: its internal radius rₙ² = qₙ leaves a failure term e^{−qₙ} that need not vanish in the β-regime (where qₙ may stay bounded) — the formalization uses rₙ² = qₙ log n with the explicit threshold constant A = 3 + 2/β and tilt cₙ = n^{β/2}; and the auxiliary inequality Γ(x) ≥ 1/x quoted on p. 9 is false — the intended consequence survives as 1/Γ(a) ≤ e·a. The aₙ = 1/n regime is dl_theorem34_recip (A = 3 + (4e(e−1)+2e)/C₀, constant tilt c = e). All six DL headline declarations carry clean axioms (no sorryAx). A full deviation ledger (D1–D14) lives in the module headers.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hβ",
+        "label": "prior-scale exponent",
+        "note": "The Dirichlet–Laplace concentration parameter is aₙ = n^{−(1+β)} for a fixed β > 0. (The 1/n scale is the companion dl_theorem34_recip.)"
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1",
+        "label": "nonempty sparsity level",
+        "note": "qₙ ≥ 1 — implicit in the paper and necessary: for qₙ = 0 the event |supp| > 0 has posterior probability one under any continuous prior."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hqn",
+        "label": "sub-linear sparsity",
+        "note": "qₙ/n → 0: the true model dimension is negligible relative to the ambient dimension."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hθ₀",
+        "label": "sparse truth",
+        "note": "θ₀ has at most qₙ nonzero coordinates (θ₀ ∈ ℓ₀[qₙ; n])."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hδ",
+        "label": "threshold window",
+        "note": "The significance thresholds satisfy n^{−2} ≤ δₙ ≤ 1/2 eventually. The paper fixes δₙ = qₙ/n; the free window is a strengthening needed where Theorem 3.1's proof consumes this result at δₙ = rₙ/n."
+      }
+    ],
+    "reference": {
+      "formal": "A. Bhattacharya, D. Pati, N. S. Pillai, and D. B. Dunson, “Dirichlet–Laplace priors for optimal shrinkage,” *Journal of the American Statistical Association* **110**(512), 2015, pp. 1479–1490 (arXiv:1401.5398).",
+      "pointer": "Theorem 3.4, p. 9; proof pp. 18–19",
+      "biblio": "Posterior compressibility — an effective-dimension bound for continuous shrinkage priors — is the entry point of the posterior-contraction program of S. Ghosal, J. K. Ghosh, and A. W. van der Vaart (*Ann. Statist.* **28**, 2000) as adapted to sparse sequence models by I. Castillo and A. W. van der Vaart (*Ann. Statist.* **40**, 2012).",
+      "keys": [
+        "bppd2015",
+        "ggv2000",
+        "castillovdv2012"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "bayes-dl-posterior-contraction",
+    "category": "bayesian",
+    "kind": "theorem",
+    "leanName": "dl_theorem31",
+    "fullName": "StatLean.Bayesian.dl_theorem31",
+    "title": "Posterior Contraction of the Dirichlet–Laplace Prior",
+    "citation": "Bhattacharya et al. (2015), Thm. 3.1",
+    "shortRef": "BPPD (2015), Thm. 3.1",
+    "file": "StatLean/Bayesian/DirichletLaplace/PosteriorContraction.lean",
+    "docGenUrl": "../docs/StatLean/Bayesian/DirichletLaplace/PosteriorContraction.html#StatLean.Bayesian.dl_theorem31",
+    "informal": "<p>In the normal-means model $y \\sim N_n(\\theta_0, I_n)$ with the Dirichlet–Laplace prior at scale $a_n = n^{-(1+\\beta)}$ ($\\beta > 0$), let $q_n \\ge 1$, $q_n = o(n)$, let $\\theta_0$ have at most $q_n$ nonzero coordinates, and assume the signal-growth condition $\\|\\theta_0\\|_2^2 \\le q_n \\log^4 n$ — each nonzero signal may grow at a $\\log^2 n$ rate. Then there is a constant $M > 0$ such that the expected posterior mass outside the ball of radius $M\\sqrt{q_n \\log n}$ vanishes: $E_{\\theta_0}\\, \\Pi\\bigl(\\|\\theta - \\theta_0\\|_2 > M\\sqrt{q_n \\log n} \\;\\big|\\; y\\bigr) \\longrightarrow 0$. Equivalently, the posterior distribution contracts around the truth at the near-minimax rate $\\sqrt{q_n \\log n}$ for $q_n$-sparse means — the first such guarantee for a fully continuous shrinkage prior. Under the polynomial-sparsity condition $q_n \\le n^{1-c}$ the rate improves to the exact minimax rate $\\sqrt{q_n \\log(n/q_n)}$, and the same conclusion holds at the scale $a_n = 1/n$ when $q_n \\ge C_0 \\log n$.</p>",
+    "summary": "The posterior contracts around a qₙ-sparse truth at the near-minimax rate √(qₙ log n), in both prior-scale regimes; the exact minimax rate follows under polynomial sparsity.",
+    "leanSignature": "theorem dl_theorem31 {β : ℝ}\n    (hβ : 0 < β) {q : ℕ → ℕ}\n    (hq1 : ∀ n, 1 ≤ q n)\n    (hqn : Tendsto (fun n => (q n : ℝ)/n) atTop (𝓝 0))\n    {θ₀ : (n : ℕ) → EuclideanSpace ℝ (Fin n)}\n    (hθ₀ : ∀ n, (Finset.univ.filter fun j => θ₀ n j ≠ 0).card ≤ q n)\n    (hnorm : ∀ᶠ (n : ℕ) in atTop, ‖θ₀ n‖^2 ≤ (q n : ℝ) * (Real.log n)^4) :\n    ∃ M : ℝ, 0 < M ∧ Tendsto (fun n => ∫⁻ y,\n        ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)^(-(1+β))) (Fin n))) y\n          {θ | M * Real.sqrt (q n * Real.log n) < ‖θ - θ₀ n‖}\n        ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0)",
+    "formalizationNotes": "The paper's Theorem 3.1 states the rate sₙ = √(qₙ log(n/qₙ)), but its proof fixes rₙ² = qₙ log n and only yields that; the formal headline states the proved rate, and the paper's sₙ is recovered exactly under qₙ ≤ n^{1−c} (dl_theorem31_paper_rate). The proof is formalized following the paper's own composition (p. 15): the compressibility event is discharged by Theorem 3.4 as a black box carrying its own internal radius, while the denominator event and the shell/testing series run at rₙ² = qₙ log n — a single-radius reading is provably impossible in the 1/n regime. The testing geometry is repaired (the paper's jrₙ-nets of the full ball admit pieces with nonpositive test margin): jrₙ/4-nets with at most 33^{|S|} pieces, explicit midpoint tests with errors e^{−j²r²/12}. Companions: the ball form dl_theorem31_ball (paper's eq. (12)), dl_theorem31_paper_rate, and the aₙ = 1/n regime dl_theorem31_recip (under qₙ ≥ C₀ log n). All constants are explicit and deliberately roomy; the deviation ledger (D1–D14) lives in the module headers, with a full discussion in notes/bayesian/dl_contraction.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hβ",
+        "label": "prior-scale exponent",
+        "note": "The Dirichlet–Laplace concentration parameter is aₙ = n^{−(1+β)} for a fixed β > 0. (The 1/n scale is the companion dl_theorem31_recip.)"
+      },
+      {
+        "id": "h2",
+        "leanToken": "hq1",
+        "label": "nonempty sparsity level",
+        "note": "qₙ ≥ 1 — implicit in the paper and necessary (the internal radius rₙ² = qₙ log n must tend to infinity)."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hqn",
+        "label": "sub-linear sparsity",
+        "note": "qₙ/n → 0: the true model dimension is negligible relative to the ambient dimension."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hθ₀",
+        "label": "sparse truth",
+        "note": "θ₀ has at most qₙ nonzero coordinates (θ₀ ∈ ℓ₀[qₙ; n])."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hnorm",
+        "label": "signal growth",
+        "note": "‖θ₀‖² ≤ qₙ log⁴ n eventually (the paper's condition (11)): it controls the prior mass near the truth via the density lower bound, entering the shell series through Σⱼ√|θ₀ⱼ| ≤ qₙ^{3/4}‖θ₀‖^{1/2} = O(qₙ log n)."
+      }
+    ],
+    "reference": {
+      "formal": "A. Bhattacharya, D. Pati, N. S. Pillai, and D. B. Dunson, “Dirichlet–Laplace priors for optimal shrinkage,” *Journal of the American Statistical Association* **110**(512), 2015, pp. 1479–1490 (arXiv:1401.5398).",
+      "pointer": "Theorem 3.1, p. 7; proof §6, pp. 14–16 (with Lemma 6.1)",
+      "biblio": "Posterior contraction rates follow the testing framework of S. Ghosal, J. K. Ghosh, and A. W. van der Vaart (*Ann. Statist.* **28**, 2000); the sparse normal-means benchmark and the minimax rate √(qₙ log(n/qₙ)) are from I. Castillo and A. W. van der Vaart (*Ann. Statist.* **40**, 2012).",
+      "keys": [
+        "bppd2015",
+        "ggv2000",
+        "castillovdv2012"
+      ]
+    },
+    "hasGraph": true
   }
 ]
