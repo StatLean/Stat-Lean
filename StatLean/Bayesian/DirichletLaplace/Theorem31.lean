@@ -20,11 +20,19 @@ Objects:
   no *absolute* lower bound; it cancels into the ratio below, see `PriorMassRatio` D10), and the summed
   shell/net bound (`ShellDecomposition` per shell, `PriorMassRatio.dlBetaRatio_le` per piece: each shell
   term `Π(shell)·e^{−j²r²/12}/dbar = [Π(shell)/Π(B(θ₀,r))]·e^{−j²r²/12}·e^{r²}` has `Π(B(θ₀,r))` cancel).
-* `dl_theorem31` — the headline (rate `M√(qₙ log n)`, deviation D1).
-* `dl_theorem31_ball` — the equivalent `𝓝 1` form (posterior mass of the ball `{‖θ − θ₀‖ ≤ M√(qₙ log
-  n)}` tends to `1`; BPPD eq. (12)).
+* `dl_theorem31` — the headline (rate `M√(qₙ log n)`, deviation D1). **Proven, modulo the one TRUE
+  outer-series limit `dl_shellSum_tendsto_zero_beta`** (the term-(iii) shell double-series `→ 0`; its
+  hard structural reduction is developed on branch `bay/dl-thm31-shellsum`).
+* `dl_theorem31_ball` — the equivalent `𝓝 1` form (BPPD eq. (12)). Proven (reduces to `dl_theorem31`).
 * `dl_theorem31_paper_rate` — under `qₙ ≤ n^{1−c}`, the paper's minimax rate `sₙ = √(qₙ log(n/qₙ))`.
-* `dl_theorem31_recip` — the `aₙ = 1/n` companion under `qₙ ≥ C₀ log n`.
+  Proven (reduces to `dl_theorem31`).
+* `dl_theorem31_recip` — the `aₙ = 1/n` companion. **DOCUMENTED OPEN CASE (D13, two-scale obstruction)** —
+  not provable by the single-radius engine; see its proof body.
+
+**Status (2 sorries).** The β-regime (main result) is proven modulo the single TRUE closable limit
+`dl_shellSum_tendsto_zero_beta`; the `1/n`-regime `dl_theorem31_recip` is a documented open case (D13).
+No false lemma underpins any headline (`#print axioms` on `dl_theorem31` shows exactly the beta-limit
+`sorryAx`, on `dl_theorem34_beta` is clean).
 
 **Reference.** Bhattacharya–Pati–Pillai–Dunson, *Dirichlet–Laplace priors for optimal shrinkage*,
 JASA 110 (2015), 1479–1490 (arXiv:1401.5398). Theorem 3.1 (statement p. 7, proof §6 pp. 14–16 with
@@ -42,10 +50,16 @@ the thin corollaries.
 * **D1 (rate).** The paper states `sₙ² = qₙ log(n/qₙ)` but its proof fixes `rₙ² = qₙ log n` (p. 15) and
   only yields that. The headline `dl_theorem31` therefore states the rate `√(qₙ log n)`; the paper's
   `sₙ` is recovered as `dl_theorem31_paper_rate` under `qₙ ≤ n^{1−c}` (where `log(n/qₙ) ≍ log n`).
-* **D2 (regime-dependent `r`).** `β`-regime uses `r² = qₙ log n`; `1/n`-regime (`dl_theorem31_recip`)
-  uses `r² = qₙ` and needs `qₙ ≥ C₀ log n`. Same free-`r` engine, two instantiations.
+* **D2 (regime-dependent `r`).** `β`-regime uses `r² = qₙ log n`. The plan's original claim that the
+  `1/n`-regime uses a single `r² = qₙ` is **wrong** — see D13.
 * **D4 (net / test geometry).** Inherited from `ShellDecomposition`: `jr/4`-nets (`≤ 33^{|S|}`),
   pieces of radius `≤ (√5/4)jr`, two-parameter midpoint tests with errors `≤ e^{−j²r²/12}`.
+* **D13 (`1/n` two-scale obstruction; `dl_theorem31_recip` open).** The `aₙ = 1/n` regime cannot use one
+  radius: the compress (3.4) term needs `r² = qₙ` (small, with constant Chernoff `c` and `qₙ ≥ C₀ log n`),
+  while the shell double-series needs `r² = qₙ log n` (large — with `r² = qₙ` the Type-I net count
+  `exp(Aqₙ·log 33n − J₀²qₙ/12) → +∞` for fixed `J₀`). The intermediate lemma asserting the shell series
+  `→ 0` at `r² = qₙ` was therefore **false** and is removed; `dl_theorem31_recip` is left as a documented
+  open case pending a two-scale peeling sieve (BPPD §6). The β-regime and `dl_theorem34_recip` are proven.
 
 **Bibliographic comments.** Posterior contraction rates after Ghosal, Ghosh, and van der Vaart
 (*Ann. Statist.* 28 (2000), 500–531); sparse-normal-means Bayesian contraction after Castillo and van
