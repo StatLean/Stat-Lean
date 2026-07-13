@@ -988,5 +988,20 @@
     "key": "stein1981",
     "sortKey": "Stein",
     "html": "C. Stein, \"Estimation of the mean of a multivariate normal distribution,\" *The Annals of Statistics* **9**(6), 1981, pp. 1135–1151."
+  },
+  {
+    "key": "bppd2015",
+    "sortKey": "Bhattacharya",
+    "html": "A. Bhattacharya, D. Pati, N. S. Pillai, and D. B. Dunson, “Dirichlet–Laplace priors for optimal shrinkage,” *Journal of the American Statistical Association* **110**(512), 2015, pp. 1479–1490 (arXiv:1401.5398)."
+  },
+  {
+    "key": "ggv2000",
+    "sortKey": "Ghosal",
+    "html": "S. Ghosal, J. K. Ghosh, and A. W. van der Vaart, “Convergence rates of posterior distributions,” *The Annals of Statistics* **28**(2), 2000, pp. 500–531."
+  },
+  {
+    "key": "castillovdv2012",
+    "sortKey": "Castillo",
+    "html": "I. Castillo and A. W. van der Vaart, “Needles and straw in a haystack: posterior concentration for possibly sparse sequences,” *The Annals of Statistics* **40**(4), 2012, pp. 2069–2101."
   }
 ]

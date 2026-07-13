@@ -1,0 +1,399 @@
+{
+  "root": "StatLean.Bayesian.dl_theorem34_beta",
+  "nodes": [
+    {
+      "id": "StatLean.Bayesian.dl_theorem34_beta",
+      "label": "dl_theorem34_beta",
+      "full": "StatLean.Bayesian.dl_theorem34_beta",
+      "kind": "root",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_compress_reduction",
+      "label": "dl_compress_reduction",
+      "full": "StatLean.Bayesian.dl_compress_reduction",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility"
+    },
+    {
+      "id": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "label": "compress_ratio_le_explicit",
+      "full": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CompressEngine"
+    },
+    {
+      "id": "StatLean.Bayesian.compress_ratio_le",
+      "label": "compress_ratio_le",
+      "full": "StatLean.Bayesian.compress_ratio_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CompressEngine"
+    },
+    {
+      "id": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "label": "lintegral_posterior_eq_lintegral_ratio",
+      "full": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.NormalMeansModel"
+    },
+    {
+      "id": "StatLean.Bayesian.lintegral_dlNumer_eq_prior",
+      "label": "lintegral_dlNumer_eq_prior",
+      "full": "StatLean.Bayesian.lintegral_dlNumer_eq_prior",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.NormalMeansModel"
+    },
+    {
+      "id": "StatLean.Bayesian.dlRatio_cylinder",
+      "label": "dlRatio_cylinder",
+      "full": "StatLean.Bayesian.dlRatio_cylinder",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CoordinateSplit"
+    },
+    {
+      "id": "StatLean.Bayesian.gaussShift_map_projS",
+      "label": "gaussShift_map_projS",
+      "full": "StatLean.Bayesian.gaussShift_map_projS",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CoordinateSplit"
+    },
+    {
+      "id": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "label": "measure_dlDenom_lt_le",
+      "full": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.DenominatorLowerBound"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior_count_ge_le",
+      "label": "dlPrior_count_ge_le",
+      "full": "StatLean.Bayesian.dlPrior_count_ge_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PriorSmallBall"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior_ball_zero_ge",
+      "label": "dlPrior_ball_zero_ge",
+      "full": "StatLean.Bayesian.dlPrior_ball_zero_ge",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PriorSmallBall"
+    },
+    {
+      "id": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "label": "dlMarginal_abs_gt_le'",
+      "full": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.DensityBounds"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior",
+      "label": "dlPrior",
+      "full": "StatLean.Bayesian.dlPrior",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.dlMarginal",
+      "label": "dlMarginal",
+      "full": "StatLean.Bayesian.dlMarginal",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.dlSuppCount",
+      "label": "dlSuppCount",
+      "full": "StatLean.Bayesian.dlSuppCount",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.gaussShiftKernel",
+      "label": "gaussShiftKernel",
+      "full": "StatLean.Bayesian.gaussShiftKernel",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.dlNumer",
+      "label": "dlNumer",
+      "full": "StatLean.Bayesian.dlNumer",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.dlDenom",
+      "label": "dlDenom",
+      "full": "StatLean.Bayesian.dlDenom",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.laplaceMeasure",
+      "label": "laplaceMeasure",
+      "full": "StatLean.Bayesian.laplaceMeasure",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.ForMathlib.LaplaceDist"
+    },
+    {
+      "id": "StatLean.Bayesian.stdGaussianShift_withDensity",
+      "label": "stdGaussianShift_withDensity",
+      "full": "StatLean.Bayesian.stdGaussianShift_withDensity",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.GaussianShift"
+    },
+    {
+      "id": "StatLean.Bayesian.lintegral_pi_split",
+      "label": "lintegral_pi_split",
+      "full": "StatLean.Bayesian.lintegral_pi_split",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.PiLintegralFintype"
+    },
+    {
+      "id": "StatLean.Bayesian.exp_neg_one_le_Gamma_one_add",
+      "label": "exp_neg_one_le_Gamma_one_add",
+      "full": "StatLean.Bayesian.exp_neg_one_le_Gamma_one_add",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.GammaBounds"
+    },
+    {
+      "id": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
+      "label": "tendsto_ofReal_exp_neg",
+      "full": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.ExpOfRealCalc"
+    },
+    {
+      "id": "ProbabilityTheory.posterior",
+      "label": "posterior",
+      "full": "ProbabilityTheory.posterior",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Probability.Kernel.Posterior"
+    },
+    {
+      "id": "ProbabilityTheory.gammaMeasure",
+      "label": "gammaMeasure",
+      "full": "ProbabilityTheory.gammaMeasure",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Probability.Distributions.Gamma"
+    },
+    {
+      "id": "ProbabilityTheory.gaussianReal",
+      "label": "gaussianReal",
+      "full": "ProbabilityTheory.gaussianReal",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Probability.Distributions.Gaussian.Real"
+    },
+    {
+      "id": "MeasureTheory.Measure.pi",
+      "label": "pi",
+      "full": "MeasureTheory.Measure.pi",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.MeasureTheory.Constructions.Pi"
+    },
+    {
+      "id": "MeasureTheory.Measure.withDensity",
+      "label": "withDensity",
+      "full": "MeasureTheory.Measure.withDensity",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.MeasureTheory.Measure.WithDensity"
+    },
+    {
+      "id": "MeasureTheory.Measure.bind",
+      "label": "bind",
+      "full": "MeasureTheory.Measure.bind",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.MeasureTheory.Measure.GiryMonad"
+    },
+    {
+      "id": "Real.Gamma",
+      "label": "Gamma",
+      "full": "Real.Gamma",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Analysis.SpecialFunctions.Gamma.Basic"
+    },
+    {
+      "id": "inner_mul_le_norm_mul_norm",
+      "label": "inner_mul_le_norm_mul_norm",
+      "full": "inner_mul_le_norm_mul_norm",
+      "kind": "mathlib",
+      "decl": "thm",
+      "module": "Mathlib.Analysis.InnerProductSpace.Basic"
+    },
+    {
+      "id": "Filter.Tendsto",
+      "label": "Tendsto",
+      "full": "Filter.Tendsto",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Order.Filter.Basic"
+    }
+  ],
+  "edges": [
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "StatLean.Bayesian.dl_compress_reduction"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "StatLean.Bayesian.compress_ratio_le_explicit"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "StatLean.Bayesian.tendsto_ofReal_exp_neg"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "StatLean.Bayesian.dlSuppCount"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem34_beta",
+      "target": "Filter.Tendsto"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_compress_reduction",
+      "target": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_compress_reduction",
+      "target": "StatLean.Bayesian.dlRatio_cylinder"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_compress_reduction",
+      "target": "StatLean.Bayesian.gaussShift_map_projS"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "target": "StatLean.Bayesian.compress_ratio_le"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "target": "StatLean.Bayesian.dlPrior_count_ge_le"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "target": "StatLean.Bayesian.dlPrior_ball_zero_ge"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le",
+      "target": "StatLean.Bayesian.measure_dlDenom_lt_le"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le",
+      "target": "StatLean.Bayesian.lintegral_dlNumer_eq_prior"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le",
+      "target": "StatLean.Bayesian.dlNumer"
+    },
+    {
+      "source": "StatLean.Bayesian.compress_ratio_le",
+      "target": "StatLean.Bayesian.dlDenom"
+    },
+    {
+      "source": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "target": "ProbabilityTheory.posterior"
+    },
+    {
+      "source": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "target": "StatLean.Bayesian.stdGaussianShift_withDensity"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "target": "ProbabilityTheory.gaussianReal"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "target": "inner_mul_le_norm_mul_norm"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior_count_ge_le",
+      "target": "StatLean.Bayesian.lintegral_pi_split"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior_ball_zero_ge",
+      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "target": "Real.Gamma"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "target": "StatLean.Bayesian.exp_neg_one_le_Gamma_one_add"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "target": "StatLean.Bayesian.dlMarginal"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior",
+      "target": "MeasureTheory.Measure.pi"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior",
+      "target": "StatLean.Bayesian.dlMarginal"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal",
+      "target": "ProbabilityTheory.gammaMeasure"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal",
+      "target": "StatLean.Bayesian.laplaceMeasure"
+    },
+    {
+      "source": "StatLean.Bayesian.dlMarginal",
+      "target": "MeasureTheory.Measure.bind"
+    },
+    {
+      "source": "StatLean.Bayesian.laplaceMeasure",
+      "target": "MeasureTheory.Measure.withDensity"
+    },
+    {
+      "source": "StatLean.Bayesian.gaussShiftKernel",
+      "target": "ProbabilityTheory.gaussianReal"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_compress_reduction",
+      "target": "StatLean.Bayesian.gaussShiftKernel"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_compress_reduction",
+      "target": "StatLean.Bayesian.dlPrior"
+    }
+  ]
+}
