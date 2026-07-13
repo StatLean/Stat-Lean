@@ -10,6 +10,8 @@ export const TEXTBOOK_KEYS = new Set([
   "wainwright2019",
   "candes-stat300c",
   "vershynin2018",
+  "robert2007",
+  "gelman2014",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -77,6 +79,23 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     3: "Random Vectors in High Dimensions",
     6: "Quadratic Forms, Symmetrization and Contraction",
     8: "Chaining",
+  },
+  robert2007: {
+    1: "Introduction",
+    2: "Decision-Theoretic Foundations",
+    3: "From Prior Information to Prior Distributions",
+    4: "Bayesian Point Estimation",
+    5: "Tests and Confidence Regions",
+    6: "Bayesian Calculations",
+    7: "Model Choice",
+    10: "Hierarchical and Empirical Bayes Extensions",
+  },
+  gelman2014: {
+    1: "Probability and Inference",
+    2: "Single-Parameter Models",
+    3: "Introduction to Multiparameter Models",
+    5: "Hierarchical Models",
+    11: "Basics of Markov Chain Simulation",
   },
 };
 

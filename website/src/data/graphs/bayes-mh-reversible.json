@@ -1,0 +1,34 @@
+{
+  "root": "StatLean.Bayesian.isReversible_mhKernel",
+  "nodes": [
+    {"id":"StatLean.Bayesian.isReversible_mhKernel","label":"isReversible_mhKernel","full":"StatLean.Bayesian.isReversible_mhKernel","kind":"root","decl":"thm","module":"StatLean.Bayesian.MCMC.MetropolisHastings"},
+    {"id":"StatLean.Bayesian.mhKernel","label":"mhKernel","full":"StatLean.Bayesian.mhKernel","kind":"repo","decl":"def","module":"StatLean.Bayesian.MCMC.Defs"},
+    {"id":"StatLean.Bayesian.mhAccept","label":"mhAccept","full":"StatLean.Bayesian.mhAccept","kind":"repo","decl":"def","module":"StatLean.Bayesian.MCMC.Defs"},
+    {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
+    {"id":"StatLean.Bayesian.mhKernel_apply","label":"mhKernel_apply","full":"StatLean.Bayesian.mhKernel_apply","kind":"repo","decl":"thm","module":"StatLean.Bayesian.MCMC.Defs"},
+    {"id":"MeasureTheory.Measure.add_apply","label":"add_apply","full":"MeasureTheory.Measure.add_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"MeasureTheory.withDensity_apply","label":"withDensity_apply","full":"MeasureTheory.withDensity_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.WithDensity"},
+    {"id":"MeasureTheory.Measure.smul_apply","label":"smul_apply","full":"MeasureTheory.Measure.smul_apply","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.MeasureSpace"},
+    {"id":"smul_eq_mul","label":"smul_eq_mul","full":"smul_eq_mul","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Action.Defs"},
+    {"id":"MeasureTheory.lintegral_add_left","label":"lintegral_add_left","full":"MeasureTheory.lintegral_add_left","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Add"},
+    {"id":"Measurable.of_discrete","label":"of_discrete","full":"Measurable.of_discrete","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"},
+    {"id":"MeasurableSingletonClass.toDiscreteMeasurableSpace","label":"toDiscreteMeasurableSpace","full":"MeasurableSingletonClass.toDiscreteMeasurableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.MeasurableSpace.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"StatLean.Bayesian.mhKernel"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"StatLean.Bayesian.mhAccept"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"IsScalarTower.right"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"StatLean.Bayesian.mhKernel_apply"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"MeasureTheory.Measure.add_apply"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"MeasureTheory.withDensity_apply"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"MeasureTheory.Measure.smul_apply"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"smul_eq_mul"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"MeasureTheory.lintegral_add_left"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"Measurable.of_discrete"},
+    {"source":"StatLean.Bayesian.isReversible_mhKernel","target":"MeasurableSingletonClass.toDiscreteMeasurableSpace"},
+    {"source":"StatLean.Bayesian.mhKernel","target":"StatLean.Bayesian.mhAccept"},
+    {"source":"StatLean.Bayesian.mhKernel_apply","target":"StatLean.Bayesian.mhKernel"},
+    {"source":"StatLean.Bayesian.mhKernel_apply","target":"StatLean.Bayesian.mhAccept"},
+    {"source":"StatLean.Bayesian.mhKernel_apply","target":"IsScalarTower.right"}
+  ]
+}

@@ -1,0 +1,427 @@
+{
+  "root": "StatLean.Bayesian.dl_theorem31",
+  "nodes": [
+    {
+      "id": "StatLean.Bayesian.dl_theorem31",
+      "label": "dl_theorem31",
+      "full": "StatLean.Bayesian.dl_theorem31",
+      "kind": "root",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_contraction_engine",
+      "label": "dl_contraction_engine",
+      "full": "StatLean.Bayesian.dl_contraction_engine",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
+      "label": "dl_shellSum_tendsto_zero_beta",
+      "full": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
+      "label": "dl_shellSum_tendsto_zero_generic",
+      "full": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_shellSum_reduction",
+      "label": "dl_shellSum_reduction",
+      "full": "StatLean.Bayesian.dl_shellSum_reduction",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior_closedBall_ge",
+      "label": "dlPrior_closedBall_ge",
+      "full": "StatLean.Bayesian.dlPrior_closedBall_ge",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior_closedBall_pos",
+      "label": "dlPrior_closedBall_pos",
+      "full": "StatLean.Bayesian.dlPrior_closedBall_pos",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
+      "label": "sum_dlPrior_dlShell_le_one",
+      "full": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.sum_sqrt_abs_finset_le",
+      "label": "sum_sqrt_abs_finset_le",
+      "full": "StatLean.Bayesian.sum_sqrt_abs_finset_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
+    },
+    {
+      "id": "StatLean.Bayesian.shell_ratio_le",
+      "label": "shell_ratio_le",
+      "full": "StatLean.Bayesian.shell_ratio_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
+    },
+    {
+      "id": "StatLean.Bayesian.exists_shell_net",
+      "label": "exists_shell_net",
+      "full": "StatLean.Bayesian.exists_shell_net",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
+    },
+    {
+      "id": "StatLean.Bayesian.dlShell",
+      "label": "dlShell",
+      "full": "StatLean.Bayesian.dlShell",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
+    },
+    {
+      "id": "StatLean.Bayesian.measure_dlTestSet_le",
+      "label": "measure_dlTestSet_le",
+      "full": "StatLean.Bayesian.measure_dlTestSet_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.GaussianTests"
+    },
+    {
+      "id": "StatLean.Bayesian.dlTestSet",
+      "label": "dlTestSet",
+      "full": "StatLean.Bayesian.dlTestSet",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.GaussianTests"
+    },
+    {
+      "id": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'",
+      "label": "lintegral_ratio_on_event_le_test'",
+      "full": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.TestingBound"
+    },
+    {
+      "id": "StatLean.Bayesian.exists_finset_net_closedBall",
+      "label": "exists_finset_net_closedBall",
+      "full": "StatLean.Bayesian.exists_finset_net_closedBall",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CoveringNets"
+    },
+    {
+      "id": "StatLean.coveringNumber_closedBall_le",
+      "label": "coveringNumber_closedBall_le",
+      "full": "StatLean.coveringNumber_closedBall_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.ConcentrationInequalities.Maximal.CoveringBall"
+    },
+    {
+      "id": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "label": "lintegral_posterior_eq_lintegral_ratio",
+      "full": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.NormalMeansModel"
+    },
+    {
+      "id": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "label": "measure_dlDenom_lt_le",
+      "full": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.DenominatorLowerBound"
+    },
+    {
+      "id": "StatLean.Bayesian.dl_compress_reduction",
+      "label": "dl_compress_reduction",
+      "full": "StatLean.Bayesian.dl_compress_reduction",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility"
+    },
+    {
+      "id": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "label": "compress_ratio_le_explicit",
+      "full": "StatLean.Bayesian.compress_ratio_le_explicit",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.CompressEngine"
+    },
+    {
+      "id": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "label": "dlMarginal_abs_gt_le'",
+      "full": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.DirichletLaplace.DensityBounds"
+    },
+    {
+      "id": "StatLean.Bayesian.dlPrior",
+      "label": "dlPrior",
+      "full": "StatLean.Bayesian.dlPrior",
+      "kind": "repo",
+      "decl": "def",
+      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
+    },
+    {
+      "id": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le",
+      "label": "tsum_ofReal_exp_neg_sq_le",
+      "full": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.ExpOfRealCalc"
+    },
+    {
+      "id": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
+      "label": "tendsto_ofReal_exp_neg",
+      "full": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
+      "kind": "repo",
+      "decl": "thm",
+      "module": "StatLean.Bayesian.ForMathlib.ExpOfRealCalc"
+    },
+    {
+      "id": "ProbabilityTheory.posterior",
+      "label": "posterior",
+      "full": "ProbabilityTheory.posterior",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Probability.Kernel.Posterior"
+    },
+    {
+      "id": "ProbabilityTheory.gaussianReal",
+      "label": "gaussianReal",
+      "full": "ProbabilityTheory.gaussianReal",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Probability.Distributions.Gaussian.Real"
+    },
+    {
+      "id": "MeasureTheory.measure_biUnion_finset",
+      "label": "measure_biUnion_finset",
+      "full": "MeasureTheory.measure_biUnion_finset",
+      "kind": "mathlib",
+      "decl": "thm",
+      "module": "Mathlib.MeasureTheory.Measure.MeasureSpace"
+    },
+    {
+      "id": "disjointed",
+      "label": "disjointed",
+      "full": "disjointed",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Order.Disjointed"
+    },
+    {
+      "id": "Nat.choose_le_pow",
+      "label": "choose_le_pow",
+      "full": "Nat.choose_le_pow",
+      "kind": "mathlib",
+      "decl": "thm",
+      "module": "Mathlib.Data.Nat.Choose.Bounds"
+    },
+    {
+      "id": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
+      "label": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
+      "full": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
+      "kind": "mathlib",
+      "decl": "thm",
+      "module": "Mathlib.Topology.Order.Basic"
+    },
+    {
+      "id": "inner_mul_le_norm_mul_norm",
+      "label": "inner_mul_le_norm_mul_norm",
+      "full": "inner_mul_le_norm_mul_norm",
+      "kind": "mathlib",
+      "decl": "thm",
+      "module": "Mathlib.Analysis.InnerProductSpace.Basic"
+    },
+    {
+      "id": "MeasureTheory.Measure.pi",
+      "label": "pi",
+      "full": "MeasureTheory.Measure.pi",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.MeasureTheory.Constructions.Pi"
+    },
+    {
+      "id": "Real.log",
+      "label": "log",
+      "full": "Real.log",
+      "kind": "mathlib",
+      "decl": "def",
+      "module": "Mathlib.Analysis.SpecialFunctions.Log.Basic"
+    }
+  ],
+  "edges": [
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "StatLean.Bayesian.dl_contraction_engine"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "StatLean.Bayesian.dlPrior_closedBall_pos"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "StatLean.Bayesian.tendsto_ofReal_exp_neg"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "Real.log"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_theorem31",
+      "target": "tendsto_of_tendsto_of_tendsto_of_le_of_le'"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
+      "target": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
+      "target": "StatLean.Bayesian.dl_shellSum_reduction"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
+      "target": "StatLean.Bayesian.sum_sqrt_abs_finset_le"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_reduction",
+      "target": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_reduction",
+      "target": "StatLean.Bayesian.dlPrior_closedBall_ge"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_reduction",
+      "target": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_shellSum_reduction",
+      "target": "Nat.choose_le_pow"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior_closedBall_ge",
+      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
+    },
+    {
+      "source": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
+      "target": "MeasureTheory.measure_biUnion_finset"
+    },
+    {
+      "source": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
+      "target": "StatLean.Bayesian.dlShell"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.measure_dlDenom_lt_le"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.shell_ratio_le"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.dl_compress_reduction"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.compress_ratio_le_explicit"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.dlShell"
+    },
+    {
+      "source": "StatLean.Bayesian.shell_ratio_le",
+      "target": "StatLean.Bayesian.exists_shell_net"
+    },
+    {
+      "source": "StatLean.Bayesian.shell_ratio_le",
+      "target": "StatLean.Bayesian.measure_dlTestSet_le"
+    },
+    {
+      "source": "StatLean.Bayesian.shell_ratio_le",
+      "target": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'"
+    },
+    {
+      "source": "StatLean.Bayesian.shell_ratio_le",
+      "target": "disjointed"
+    },
+    {
+      "source": "StatLean.Bayesian.shell_ratio_le",
+      "target": "MeasureTheory.measure_biUnion_finset"
+    },
+    {
+      "source": "StatLean.Bayesian.exists_shell_net",
+      "target": "StatLean.Bayesian.exists_finset_net_closedBall"
+    },
+    {
+      "source": "StatLean.Bayesian.exists_finset_net_closedBall",
+      "target": "StatLean.coveringNumber_closedBall_le"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlTestSet_le",
+      "target": "StatLean.Bayesian.dlTestSet"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlTestSet_le",
+      "target": "ProbabilityTheory.gaussianReal"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlTestSet_le",
+      "target": "inner_mul_le_norm_mul_norm"
+    },
+    {
+      "source": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
+      "target": "ProbabilityTheory.posterior"
+    },
+    {
+      "source": "StatLean.Bayesian.measure_dlDenom_lt_le",
+      "target": "ProbabilityTheory.gaussianReal"
+    },
+    {
+      "source": "StatLean.Bayesian.dlPrior",
+      "target": "MeasureTheory.Measure.pi"
+    },
+    {
+      "source": "StatLean.Bayesian.dl_contraction_engine",
+      "target": "StatLean.Bayesian.dlPrior"
+    }
+  ]
+}

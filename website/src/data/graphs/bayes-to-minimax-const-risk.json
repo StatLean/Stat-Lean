@@ -1,0 +1,38 @@
+{
+  "root": "StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const",
+  "nodes": [
+    {"id":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","label":"isMinimaxEstimator_of_isBayesEstimator_of_risk_const","full":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","kind":"root","decl":"thm","module":"StatLean.Bayesian.Decision.Minimax"},
+    {"id":"StatLean.Bayesian.IsBayesEstimator","label":"IsBayesEstimator","full":"StatLean.Bayesian.IsBayesEstimator","kind":"repo","decl":"def","module":"StatLean.Bayesian.Decision.Defs"},
+    {"id":"StatLean.Bayesian.risk","label":"risk","full":"StatLean.Bayesian.risk","kind":"repo","decl":"def","module":"StatLean.Bayesian.Decision.Defs"},
+    {"id":"StatLean.Bayesian.IsMinimaxEstimator","label":"IsMinimaxEstimator","full":"StatLean.Bayesian.IsMinimaxEstimator","kind":"repo","decl":"def","module":"StatLean.Bayesian.Decision.Defs"},
+    {"id":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","label":"isMinimaxEstimator_of_isBayesEstimator_of_risk_le","full":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","kind":"repo","decl":"thm","module":"StatLean.Bayesian.Decision.Minimax"},
+    {"id":"MeasureTheory.lintegral_congr","label":"lintegral_congr","full":"MeasureTheory.lintegral_congr","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"MeasureTheory.lintegral_const","label":"lintegral_const","full":"MeasureTheory.lintegral_const","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"},
+    {"id":"mul_one","label":"mul_one","full":"mul_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"Eq.le","label":"le","full":"Eq.le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"le_antisymm","label":"le_antisymm","full":"le_antisymm","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"LE.le.trans","label":"trans","full":"LE.le.trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"iSup_le","label":"iSup_le","full":"iSup_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"},
+    {"id":"ProbabilityTheory.bayesRisk_le_minimaxRisk","label":"bayesRisk_le_minimaxRisk","full":"ProbabilityTheory.bayesRisk_le_minimaxRisk","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Decision.Risk.Basic"},
+    {"id":"iInf₂_le","label":"iInf₂_le","full":"iInf₂_le","kind":"mathlib","decl":"thm","module":"Mathlib.Order.CompleteLattice.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"StatLean.Bayesian.IsBayesEstimator"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"StatLean.Bayesian.risk"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"StatLean.Bayesian.IsMinimaxEstimator"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"MeasureTheory.lintegral_congr"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"MeasureTheory.lintegral_const"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"mul_one"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_const","target":"Eq.le"},
+    {"source":"StatLean.Bayesian.IsMinimaxEstimator","target":"StatLean.Bayesian.risk"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"StatLean.Bayesian.IsBayesEstimator"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"StatLean.Bayesian.risk"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"StatLean.Bayesian.IsMinimaxEstimator"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"le_antisymm"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"LE.le.trans"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"iSup_le"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"ProbabilityTheory.bayesRisk_le_minimaxRisk"},
+    {"source":"StatLean.Bayesian.isMinimaxEstimator_of_isBayesEstimator_of_risk_le","target":"iInf₂_le"}
+  ]
+}

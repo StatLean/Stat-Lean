@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.Bayesian.hierarchicalGibbs_stationary",
+  "nodes": [
+    {"id":"StatLean.Bayesian.hierarchicalGibbs_stationary","label":"hierarchicalGibbs_stationary","full":"StatLean.Bayesian.hierarchicalGibbs_stationary","kind":"root","decl":"thm","module":"StatLean.Bayesian.Hierarchical.Gibbs"},
+    {"id":"ProbabilityTheory.Kernel.Invariant.comp","label":"comp","full":"ProbabilityTheory.Kernel.Invariant.comp","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Invariance"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.hierarchicalGibbs_stationary","target":"ProbabilityTheory.Kernel.Invariant.comp"}
+  ]
+}

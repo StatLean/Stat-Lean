@@ -1,0 +1,23 @@
+{
+  "root": "StatLean.Bayesian.bayesFactorM_smul_left",
+  "nodes": [
+    {"id":"StatLean.Bayesian.bayesFactorM_smul_left","label":"bayesFactorM_smul_left","full":"StatLean.Bayesian.bayesFactorM_smul_left","kind":"root","decl":"thm","module":"StatLean.Bayesian.GeneralizedBayes.Basic"},
+    {"id":"StatLean.Bayesian.predictiveDensity","label":"predictiveDensity","full":"StatLean.Bayesian.predictiveDensity","kind":"repo","decl":"def","module":"StatLean.Bayesian.Dominated.Defs"},
+    {"id":"StatLean.Bayesian.bayesFactorM","label":"bayesFactorM","full":"StatLean.Bayesian.bayesFactorM","kind":"repo","decl":"def","module":"StatLean.Bayesian.ModelChoice.Defs"},
+    {"id":"IsScalarTower.right","label":"right","full":"IsScalarTower.right","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Algebra.Defs"},
+    {"id":"StatLean.Bayesian.predictiveDensity_smul_prior","label":"predictiveDensity_smul_prior","full":"StatLean.Bayesian.predictiveDensity_smul_prior","kind":"repo","decl":"thm","module":"StatLean.Bayesian.GeneralizedBayes.Basic"},
+    {"id":"mul_div_assoc","label":"mul_div_assoc","full":"mul_div_assoc","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Group.Defs"},
+    {"id":"MeasureTheory.lintegral_smul_measure","label":"lintegral_smul_measure","full":"MeasureTheory.lintegral_smul_measure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Integral.Lebesgue.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.Bayesian.bayesFactorM_smul_left","target":"StatLean.Bayesian.predictiveDensity"},
+    {"source":"StatLean.Bayesian.bayesFactorM_smul_left","target":"StatLean.Bayesian.bayesFactorM"},
+    {"source":"StatLean.Bayesian.bayesFactorM_smul_left","target":"IsScalarTower.right"},
+    {"source":"StatLean.Bayesian.bayesFactorM_smul_left","target":"StatLean.Bayesian.predictiveDensity_smul_prior"},
+    {"source":"StatLean.Bayesian.bayesFactorM_smul_left","target":"mul_div_assoc"},
+    {"source":"StatLean.Bayesian.bayesFactorM","target":"StatLean.Bayesian.predictiveDensity"},
+    {"source":"StatLean.Bayesian.predictiveDensity_smul_prior","target":"StatLean.Bayesian.predictiveDensity"},
+    {"source":"StatLean.Bayesian.predictiveDensity_smul_prior","target":"IsScalarTower.right"},
+    {"source":"StatLean.Bayesian.predictiveDensity_smul_prior","target":"MeasureTheory.lintegral_smul_measure"}
+  ]
+}
