@@ -1,6 +1,7 @@
 import StatLean.Bayesian.DirichletLaplace.GaussianTests
 import StatLean.Bayesian.DirichletLaplace.CoveringNets
 import StatLean.Bayesian.DirichletLaplace.CoordinateSplit
+import StatLean.Bayesian.DirichletLaplace.TestingBound
 
 /-!
 # Dirichlet–Laplace posterior contraction — shell/net decomposition (C13)
@@ -12,8 +13,9 @@ midpoint test controls the posterior mass of each net piece.
 
 Objects:
 * `dlShell θ₀ S j r δ` — the set of `θ` whose δ-support equals `S` and whose distance from `θ₀` lies
-  in the `j`-th radial shell `[jr, (j+1)r)`. Each admissible `θ` (with bounded δ-support) falls into
-  exactly one shell, so the complement of the ball is `⋃_{S} ⋃_{j ≥ M} dlShell θ₀ S j r δ`.
+  in the `j`-th radial shell `[2jr, 2(j+1)r)` (band floor `2jr`; see the def's D4 note). Each admissible
+  `θ` (with bounded δ-support) falls into exactly one shell, so the complement of the ball
+  `{‖θ−θ₀‖ ≥ 2Mr}` is `⋃_{S} ⋃_{j ≥ M} dlShell θ₀ S j r δ`.
 * `exists_shell_net` — a `jr/4`-net of `dlShell θ₀ S j r δ` of cardinality `≤ 33^{|S|}`
   (`CoveringNets`, volumetric covering of a `|S|`-dimensional ball) whose pieces have radius
   `≤ (√5/4)·jr` (using `√n·δ ≤ r` and `j ≥ 2`).
@@ -293,6 +295,217 @@ theorem shell_ratio_le (θ₀ : EuclideanSpace ℝ ι) (S : Finset ι) {j : ℕ}
   --    `net.card · exp ≤ 33^{|S|}·exp`; the second, using `∑ φ, dlPrior a ι (P φ) = dlPrior a ι shell`
   --    (step 2, disjoint & exact — this is why disjointification, not the raw cover, is needed), sums to
   --    `dlPrior a ι shell · exp / dbar`.  ∎
-  sorry
+  --
+  -- Final error constant: `c = 1/12` (the frozen value; `(7/8)²/8 = 49/512 ≥ 1/12`). `exists_shell_net`
+  -- was used unchanged (its statement and proof were not touched).
+  classical
+  obtain ⟨net, hcard, hcover⟩ := exists_shell_net θ₀ S hj hr hδ
+  set π := dlPrior a ι with hπdef
+  haveI hπprob : IsProbabilityMeasure π := by rw [hπdef]; infer_instance
+  haveI : SFinite π := inferInstance
+  set shell := dlShell θ₀ S j r δ with hshelldef
+  set ρ : ℝ := Real.sqrt 5 / 4 * ((j : ℝ) * r) with hρdef
+  set b : ℝ≥0∞ := ENNReal.ofReal (Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12)) with hbdef
+  set E : Set (EuclideanSpace ℝ ι) := {y | dbar ≤ dlDenom θ₀ π y} with hEdef
+  have hdbar_ne : dbar ≠ 0 := hdbar.ne'
+  -- Measurability of numerator/denominator in the data `y` (local copies).
+  have hnum_meas : ∀ (C : Set (EuclideanSpace ℝ ι)), Measurable (fun y => dlNumer θ₀ π C y) := by
+    intro C
+    have huc : Measurable (Function.uncurry (fun (y θ : EuclideanSpace ℝ ι) => dlLR θ₀ θ y)) := by
+      unfold Function.uncurry dlLR; fun_prop
+    show Measurable (fun y => ∫⁻ θ, dlLR θ₀ θ y ∂(π.restrict C))
+    exact huc.lintegral_prod_right
+  have hden_meas : Measurable (fun y => dlDenom θ₀ π y) := by
+    have hEq : (fun y => dlDenom θ₀ π y) = (fun y => dlNumer θ₀ π Set.univ y) := by
+      funext y; rw [dlDenom]
+    rw [hEq]; exact hnum_meas Set.univ
+  -- Measurability of the shell.
+  have hshell_meas : MeasurableSet shell := by
+    rw [hshelldef]
+    have hcoord : ∀ i, Measurable (fun θ : EuclideanSpace ℝ ι => θ i) := fun i =>
+      (measurable_pi_apply i).comp (EuclideanSpace.measurableEquiv ι).measurable
+    have hnormc : Continuous (fun θ : EuclideanSpace ℝ ι => ‖θ - θ₀‖) := by fun_prop
+    have h2 : MeasurableSet {θ : EuclideanSpace ℝ ι | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} :=
+      measurableSet_le measurable_const hnormc.measurable
+    have h3 : MeasurableSet {θ : EuclideanSpace ℝ ι | ‖θ - θ₀‖ < 2 * ((j : ℝ) + 1) * r} :=
+      measurableSet_lt hnormc.measurable measurable_const
+    have h1 : MeasurableSet
+        {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S} := by
+      have hset : {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
+          = ⋂ i, {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S} := by
+        ext θ
+        simp only [Set.mem_setOf_eq, Set.mem_iInter, Finset.ext_iff, Finset.mem_filter,
+          Finset.mem_univ, true_and]
+      rw [hset]
+      refine MeasurableSet.iInter (fun i => ?_)
+      by_cases hiS : i ∈ S
+      · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
+            = {θ : EuclideanSpace ℝ ι | δ < |θ i|} := by
+          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_true]
+        rw [hrw]; exact measurableSet_lt measurable_const (hcoord i).abs
+      · have hrw : {θ : EuclideanSpace ℝ ι | (δ < |θ i|) ↔ i ∈ S}
+            = {θ : EuclideanSpace ℝ ι | ¬ (δ < |θ i|)} := by
+          ext θ; simp only [Set.mem_setOf_eq, hiS, iff_false]
+        rw [hrw]; exact (measurableSet_lt measurable_const (hcoord i).abs).compl
+    have hinter : (dlShell θ₀ S j r δ)
+        = {θ : EuclideanSpace ℝ ι | (Finset.univ.filter fun i => δ < |θ i|) = S}
+          ∩ {θ | 2 * (j : ℝ) * r ≤ ‖θ - θ₀‖} ∩ {θ | ‖θ - θ₀‖ < 2 * ((j : ℝ) + 1) * r} := by
+      ext θ; simp only [dlShell, Set.mem_setOf_eq, Set.mem_inter_iff]; tauto
+    rw [hinter]; exact (h1.inter h2).inter h3
+  -- Enumeration of the net and the covering pieces.
+  set enum : Fin net.card → EuclideanSpace ℝ ι :=
+    fun m => (↑(net.equivFin.symm m) : EuclideanSpace ℝ ι) with henumdef
+  set B : ℕ → Set (EuclideanSpace ℝ ι) :=
+    fun k => if h : k < net.card then Metric.closedBall (enum ⟨k, h⟩) ρ ∩ shell else ∅ with hBdef
+  have hB_meas : ∀ k, MeasurableSet (B k) := by
+    intro k
+    by_cases hk : k < net.card
+    · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
+        simp only [hBdef, dif_pos hk]]
+      exact measurableSet_closedBall.inter hshell_meas
+    · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+      exact MeasurableSet.empty
+  -- Disjointified pieces.
+  set P : ℕ → Set (EuclideanSpace ℝ ι) := disjointed B with hPdef
+  have hP_meas : ∀ k, MeasurableSet (P k) := fun k => MeasurableSet.disjointed hB_meas k
+  have hP_sub : ∀ k, P k ⊆ B k := fun k => disjointed_subset B k
+  have hP_disj := disjoint_disjointed B
+  have hP_pwd : (↑(Finset.range net.card) : Set ℕ).PairwiseDisjoint P := hP_disj.set_pairwise _
+  have hP_union : (⋃ k, P k) = ⋃ k, B k := iUnion_disjointed
+  have hPk_empty : ∀ k, net.card ≤ k → P k = ∅ := by
+    intro k hk
+    have hBk : B k = ∅ := by simp only [hBdef, dif_neg (not_lt.mpr hk)]
+    exact Set.eq_empty_of_subset_empty (hBk ▸ hP_sub k)
+  -- `⋃ k, B k = shell` (the cover, intersected with the shell).
+  have hBunion : (⋃ k, B k) = shell := by
+    apply le_antisymm
+    · refine Set.iUnion_subset (fun k => ?_)
+      by_cases hk : k < net.card
+      · rw [show B k = Metric.closedBall (enum ⟨k, hk⟩) ρ ∩ shell from by
+          simp only [hBdef, dif_pos hk]]
+        exact Set.inter_subset_right
+      · rw [show B k = (∅ : Set (EuclideanSpace ℝ ι)) from by simp only [hBdef, dif_neg hk]]
+        exact Set.empty_subset _
+    · intro x hx
+      obtain ⟨ψ, hψ, hxψ⟩ := Set.mem_iUnion₂.mp (hcover hx)
+      have hlt : ((net.equivFin ⟨ψ, hψ⟩ : Fin net.card) : ℕ) < net.card :=
+        (net.equivFin ⟨ψ, hψ⟩).isLt
+      refine Set.mem_iUnion.mpr ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), ?_⟩
+      have hBk : B (net.equivFin ⟨ψ, hψ⟩ : ℕ)
+          = Metric.closedBall (enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩) ρ ∩ shell := by
+        simp only [hBdef, dif_pos hlt]
+      have henumeq : enum ⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ = ψ := by
+        have hfe : (⟨(net.equivFin ⟨ψ, hψ⟩ : ℕ), hlt⟩ : Fin net.card) = net.equivFin ⟨ψ, hψ⟩ :=
+          Fin.ext rfl
+        simp only [henumdef, hfe, Equiv.symm_apply_apply]
+      rw [hBk, henumeq]
+      exact ⟨hxψ, hx⟩
+  -- The finset-indexed disjoint union over `range net.card` also equals the shell.
+  have hPfin_union : (⋃ k ∈ Finset.range net.card, P k) = shell := by
+    rw [← hBunion, ← hP_union]
+    ext x
+    simp only [Set.mem_iUnion, Finset.mem_range, exists_prop]
+    constructor
+    · rintro ⟨k, _, hxk⟩; exact ⟨k, hxk⟩
+    · rintro ⟨k, hxk⟩
+      by_cases hk : k < net.card
+      · exact ⟨k, hk, hxk⟩
+      · rw [hPk_empty k (not_lt.mp hk)] at hxk; exact hxk.elim
+  -- `dlNumer θ₀ π C y` as the withDensity measure of `C`.
+  have hν_eq : ∀ (y : EuclideanSpace ℝ ι) (C : Set (EuclideanSpace ℝ ι)), MeasurableSet C →
+      dlNumer θ₀ π C y = (π.withDensity (fun θ => dlLR θ₀ θ y)) C := by
+    intro y C hC
+    rw [withDensity_apply _ hC]; rfl
+  -- Numerator and prior are additive over the disjoint pieces (exact equalities).
+  have hnumer_sum : ∀ y, dlNumer θ₀ π shell y
+      = ∑ k ∈ Finset.range net.card, dlNumer θ₀ π (P k) y := by
+    intro y
+    rw [hν_eq y shell hshell_meas, ← hPfin_union,
+      measure_biUnion_finset hP_pwd (fun k _ => hP_meas k)]
+    exact Finset.sum_congr rfl (fun k _ => (hν_eq y (P k) (hP_meas k)).symm)
+  have hprior_sum : π shell = ∑ k ∈ Finset.range net.card, π (P k) := by
+    rw [← hPfin_union, measure_biUnion_finset hP_pwd (fun k _ => hP_meas k)]
+  have hdiv_sum : ∀ y, dlNumer θ₀ π shell y / dlDenom θ₀ π y
+      = ∑ k ∈ Finset.range net.card, dlNumer θ₀ π (P k) y / dlDenom θ₀ π y := by
+    intro y
+    rw [hnumer_sum y]
+    simp only [div_eq_mul_inv, Finset.sum_mul]
+  have hsum2 : ∑ k ∈ Finset.range net.card, π (P k) * b / dbar = π shell * b / dbar := by
+    simp only [div_eq_mul_inv]
+    rw [← Finset.sum_mul, ← Finset.sum_mul, ← hprior_sum]
+  have hcard_le : (net.card : ℝ≥0∞) ≤ (33 : ℝ≥0∞) ^ S.card := by exact_mod_cast hcard
+  -- Global geometry facts (independent of the piece).
+  have hjpos : (0 : ℝ) < (j : ℝ) := by
+    have : 0 < j := by omega
+    exact_mod_cast this
+  have hjrpos : (0 : ℝ) < (j : ℝ) * r := mul_pos hjpos hr
+  have hρ0 : 0 ≤ ρ := by
+    rw [hρdef]; exact mul_nonneg (by positivity) hjrpos.le
+  have h78pos : (0 : ℝ) < 7 / 8 * ((j : ℝ) * r) := mul_pos (by norm_num) hjrpos
+  have hsqrt5 : Real.sqrt 5 ≤ 9 / 4 := by
+    rw [show (9 / 4 : ℝ) = Real.sqrt ((9 / 4) ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+    exact Real.sqrt_le_sqrt (by norm_num)
+  -- Per-piece posterior bound.
+  have hk_all : ∀ k ∈ Finset.range net.card,
+      ∫⁻ y in E, dlNumer θ₀ π (P k) y / dlDenom θ₀ π y ∂(gaussShiftKernel ι θ₀)
+        ≤ b + π (P k) * b / dbar := by
+    intro k hk
+    rcases eq_or_ne (P k) ∅ with hPk | hPk
+    · -- Empty piece: the ratio integrand is identically zero.
+      have hzero : (fun y => dlNumer θ₀ π (P k) y / dlDenom θ₀ π y)
+          = fun _ => (0 : ℝ≥0∞) := by
+        funext y; simp [dlNumer, hPk]
+      rw [hzero, lintegral_zero]
+      exact zero_le _
+    · -- Nonempty piece: test the true parameter against the net point `enum ⟨k, _⟩`.
+      have hk_lt : k < net.card := Finset.mem_range.mp hk
+      have hBk : B k = Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := by
+        simp only [hBdef, dif_pos hk_lt]
+      obtain ⟨θs, hθs⟩ := Set.nonempty_iff_ne_empty.mpr hPk
+      have hθsB : θs ∈ Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := hBk ▸ hP_sub k hθs
+      have hθs_ball : ‖θs - enum ⟨k, hk_lt⟩‖ ≤ ρ := by
+        have h := hθsB.1; rwa [Metric.mem_closedBall, dist_eq_norm] at h
+      have hmem : (Finset.univ.filter fun i => δ < |θs i|) = S
+          ∧ 2 * (j : ℝ) * r ≤ ‖θs - θ₀‖ ∧ ‖θs - θ₀‖ < 2 * ((j : ℝ) + 1) * r := hθsB.2
+      have hθs_shell : 2 * (j : ℝ) * r ≤ ‖θs - θ₀‖ := hmem.2.1
+      have htri : ‖θs - θ₀‖ ≤ ‖θs - enum ⟨k, hk_lt⟩‖ + ‖enum ⟨k, hk_lt⟩ - θ₀‖ := by
+        have h := dist_triangle θs (enum ⟨k, hk_lt⟩) θ₀
+        simpa [dist_eq_norm] using h
+      have hd_lb : 2 * (j : ℝ) * r - ρ ≤ ‖enum ⟨k, hk_lt⟩ - θ₀‖ := by
+        linarith [htri, hθs_shell, hθs_ball]
+      -- Positive test margin `d − ρ ≥ (7/8) j r` (uses `√5 ≤ 9/4` and `j ≥ 2`).
+      have hmargin : 7 / 8 * ((j : ℝ) * r) ≤ ‖enum ⟨k, hk_lt⟩ - θ₀‖ - ρ := by
+        have hprod : (0 : ℝ) ≤ (9 / 4 - Real.sqrt 5) * ((j : ℝ) * r) :=
+          mul_nonneg (by linarith [hsqrt5]) hjrpos.le
+        nlinarith [hd_lb, hprod, hρdef]
+      have hρd : ρ < ‖enum ⟨k, hk_lt⟩ - θ₀‖ := by linarith [hmargin, h78pos]
+      -- The two test errors both dominate `b = exp(−j²r²/12)`.
+      have hexp_le : Real.exp (-((‖enum ⟨k, hk_lt⟩ - θ₀‖ - ρ) ^ 2 / 8))
+          ≤ Real.exp (- (j : ℝ) ^ 2 * r ^ 2 / 12) := by
+        apply Real.exp_le_exp.mpr
+        have hMnn : (0 : ℝ) ≤ ‖enum ⟨k, hk_lt⟩ - θ₀‖ - ρ := le_trans h78pos.le hmargin
+        have hsq : (7 / 8 * ((j : ℝ) * r)) * (7 / 8 * ((j : ℝ) * r))
+            ≤ (‖enum ⟨k, hk_lt⟩ - θ₀‖ - ρ) * (‖enum ⟨k, hk_lt⟩ - θ₀‖ - ρ) :=
+          mul_le_mul hmargin hmargin h78pos.le hMnn
+        nlinarith [hsq, sq_nonneg ((j : ℝ) * r)]
+      have hI : gaussShiftKernel ι θ₀ (dlTestSet θ₀ (enum ⟨k, hk_lt⟩) ρ) ≤ b :=
+        (measure_dlTestSet_le θ₀ (enum ⟨k, hk_lt⟩) hρ0 hρd).trans
+          (ENNReal.ofReal_le_ofReal hexp_le)
+      have hbtest : ∀ θ ∈ P k, gaussShiftKernel ι θ (dlTestSet θ₀ (enum ⟨k, hk_lt⟩) ρ)ᶜ ≤ b := by
+        intro θ hθ
+        have hθB : θ ∈ Metric.closedBall (enum ⟨k, hk_lt⟩) ρ ∩ shell := hBk ▸ hP_sub k hθ
+        have hθφ : ‖θ - enum ⟨k, hk_lt⟩‖ ≤ ρ := by
+          have h := hθB.1; rwa [Metric.mem_closedBall, dist_eq_norm] at h
+        exact (measure_compl_dlTestSet_le θ₀ (enum ⟨k, hk_lt⟩) θ hρ0 hρd hθφ).trans
+          (ENNReal.ofReal_le_ofReal hexp_le)
+      have hkbound := lintegral_ratio_on_event_le_test' θ₀ π (hP_meas k)
+        (measurableSet_dlTestSet θ₀ (enum ⟨k, hk_lt⟩) ρ) hdbar_ne hbtest
+      exact le_trans hkbound (add_le_add hI (le_refl _))
+  -- Sum the per-piece bounds.
+  simp_rw [hdiv_sum]
+  rw [lintegral_finset_sum _ (fun k _ => (hnum_meas (P k)).div hden_meas)]
+  refine le_trans (Finset.sum_le_sum hk_all) ?_
+  rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul, hsum2]
+  exact add_le_add (mul_le_mul_right' hcard_le b) (le_refl _)
 
 end StatLean.Bayesian
