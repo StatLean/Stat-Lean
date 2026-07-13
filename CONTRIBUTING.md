@@ -1,8 +1,11 @@
-# Contributing to Asymptotic Statistical Theory in Lean 4
+# Contributing to Stat-Lean — Statistical Theory in Lean 4
 
-Thank you for your interest in contributing! This project formalizes results
-from asymptotic statistical theory in Lean 4 / Mathlib. Contributions of new
-theorems, improved proofs, website content, and documentation are all welcome.
+Thank you for your interest in contributing! This project formalizes
+statistical theory in Lean 4 / Mathlib, organized into per-area sublibraries
+under `StatLean/` — asymptotic (parametric & semiparametric) statistics,
+Bayesian statistics, concentration inequalities, high-dimensional statistics,
+minimaxity, multiple testing, and optimization. Contributions of new theorems,
+improved proofs, website content, and documentation are all welcome.
 
 ## Getting started
 
@@ -17,16 +20,21 @@ theorems, improved proofs, website content, and documentation are all welcome.
 
 If you want to add a new theorem or definition:
 
-- Place Lean source files in the appropriate subdirectory under the project root
-  (e.g., `EmpiricalProcess/`, `Operators/`, `ForMathlib/`).
-- Ensure the new file is imported in the relevant module index.
+- Place Lean source files under `StatLean/` in the appropriate area
+  (e.g., `StatLean/Bayesian/`, `StatLean/ConcentrationInequalities/`,
+  `StatLean/AsymptoticStatistics/`). Pure-math prerequisites that could live in
+  Mathlib go in that area's `ForMathlib/` subdirectory; concept files should
+  stay theorem-agnostic, with theorem-specific wiring in assembly files.
+- Ensure the new module is imported in its area umbrella
+  (`StatLean/<Area>.lean`), which `StatLean.lean` imports.
 - Every user-facing result should have a corresponding entry in
   `website/src/data/results.json` with:
   - `informal` — the natural-language statement with LaTeX math (`$…$`)
   - `leanSignature` — the verbatim Lean `theorem`/`def` header
   - `hypotheses` — the list mapping Lean hypothesis names to their
     informal descriptions (used for hover-highlighting)
-  - `citation` — the theorem/lemma number in van der Vaart (1998)
+  - `citation` — the theorem/lemma number in the area's source text
+    (e.g., van der Vaart 1998; Lu 2025; Wainwright 2019; Robert 2007)
 
 ### Improving existing proofs
 
@@ -61,8 +69,8 @@ describing the problem or suggestion.
 - **Commit messages** — use a short imperative subject line, e.g.:
   `Add Donsker theorem for VC classes` or `Fix: remove sorry in LANExpansion`.
 - **Describe the mathematical content** — in the PR body, state which theorem
-  or definition you are adding/changing and its reference in van der Vaart
-  (1998) or another source.
+  or definition you are adding/changing and its reference in the relevant
+  source text (book or paper, with theorem/section number).
 
 ## Code style
 
