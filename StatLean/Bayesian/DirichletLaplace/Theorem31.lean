@@ -2249,5 +2249,137 @@ theorem dl_theorem31_recip {q : ℕ → ℕ}
   --      (hBpos := dlPrior_closedBall_pos; hδnet via √n ≤ n; hJ₀ by M = 2J₀).
   --   6. RHS → 0: step-3 bound of the 3.4-term (h34) + ofReal(exp(−rv²/8)) → 0
   --      (`tendsto_ofReal_exp_neg`, rv² = q log n ≥ log n → ∞) + hshell; `Filter.Tendsto.add`.
-  sorry
+  classical
+  -- 1. Regime abbreviations (prior scale aₙ = 1/n; radius/threshold at rₙ² = qₙ log n).
+  set rv : ℕ → ℝ := fun n => Real.sqrt ((q n : ℝ) * Real.log n) with hrv
+  set δv : ℕ → ℝ := fun n => rv n / n with hδv
+  -- The δ-window `[n^{−2}, 1/2]` (verbatim from `dl_theorem31`).
+  have hδwin : ∀ᶠ (n : ℕ) in atTop, (n : ℝ)^(-2 : ℝ) ≤ δv n ∧ δv n ≤ 1/2 := by
+    filter_upwards [eventually_ge_atTop 3,
+      hqn.eventually (Iio_mem_nhds (show (0:ℝ) < 1/8 by norm_num))] with n hn3 hqs
+    have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn3)
+    have hnpos : (0:ℝ) < n := by linarith
+    have hlogn0 : 0 ≤ Real.log n := Real.log_nonneg hn1R
+    have hq1n : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have hlogn1 : (1:ℝ) ≤ Real.log n := by
+      have h3 : (3:ℝ) ≤ n := by exact_mod_cast hn3
+      have := Real.exp_one_lt_d9
+      have hle : Real.exp 1 ≤ n := by linarith
+      calc (1:ℝ) = Real.log (Real.exp 1) := (Real.log_exp 1).symm
+        _ ≤ Real.log n := Real.log_le_log (Real.exp_pos 1) hle
+    have hrv_pos : 0 < rv n := by
+      rw [hrv]; exact Real.sqrt_pos.mpr (by nlinarith)
+    have hrv_ge1 : (1:ℝ) ≤ rv n := by
+      rw [hrv, show (1:ℝ) = Real.sqrt 1 by rw [Real.sqrt_one]]
+      exact Real.sqrt_le_sqrt (by nlinarith)
+    refine ⟨?_, ?_⟩
+    · have hmono : (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le hn1R (by norm_num)
+      have hinv : (n:ℝ)^(-1:ℝ) = 1 / n := by
+        rw [Real.rpow_neg_one]; exact (one_div _).symm
+      calc (n:ℝ)^(-2:ℝ) ≤ (n:ℝ)^(-1:ℝ) := hmono
+        _ = 1 / n := hinv
+        _ ≤ rv n / n := by gcongr
+    · have hlogle : Real.log n ≤ (n : ℝ) := by
+        have := Real.log_le_sub_one_of_pos hnpos; linarith
+      have hqle : (q n : ℝ) ≤ n / 8 := by
+        have : (q n : ℝ) / n < 1/8 := hqs
+        rw [div_lt_iff₀ hnpos] at this; linarith
+      have h4 : 4 * rv n ^ 2 ≤ (n : ℝ) ^ 2 := by
+        rw [hrv, Real.sq_sqrt (by nlinarith)]
+        nlinarith [hqle, hlogle, hlogn0, hq1n, hnpos]
+      have h2rv : 2 * rv n ≤ (n : ℝ) := by
+        have hsq : Real.sqrt (4 * rv n ^ 2) ≤ Real.sqrt ((n : ℝ) ^ 2) := Real.sqrt_le_sqrt h4
+        rwa [show 4 * rv n ^ 2 = (2 * rv n) ^ 2 by ring, Real.sqrt_sq (by positivity),
+          Real.sqrt_sq hnpos.le] at hsq
+      rw [hδv, div_le_iff₀ hnpos]; linarith
+  -- 2. Theorem 3.4 (1/n-regime): the support-count term → 0 at threshold `A'·qₙ`.
+  obtain ⟨A', hA', h34⟩ := dl_theorem34_recip hq1 hqn hθ₀ hδwin hqlog
+  -- 3. Chernoff threshold `K = ⌊(A'+1)qₙ⌋`; the engine's abstract 3.4-term is dominated by `h34`.
+  set Kf : ℕ → ℕ := fun n => ⌊(A' + 1) * (q n : ℝ)⌋₊ with hKf
+  have hA'q_le : ∀ n, A' * (q n : ℝ) ≤ (Kf n : ℝ) := by
+    intro n
+    have hq1n : (1:ℝ) ≤ (q n : ℝ) := by exact_mod_cast hq1 n
+    have hfl : (A' + 1) * (q n : ℝ) - 1 < (⌊(A' + 1) * (q n : ℝ)⌋₊ : ℝ) := by
+      have := Nat.lt_floor_add_one ((A' + 1) * (q n : ℝ)); linarith
+    have hle : A' * (q n : ℝ) ≤ (A' + 1) * (q n : ℝ) - 1 := by nlinarith
+    simp only [hKf]; linarith
+  have hterm34 : Tendsto (fun n => ∫⁻ y,
+      ((gaussShiftKernel (Fin n))†(dlPrior ((n : ℝ)⁻¹) (Fin n))) y
+        {θ | (Kf n : ℝ) < (dlSuppCount (δv n) θ : ℝ)}
+      ∂(gaussShiftKernel (Fin n) (θ₀ n))) atTop (𝓝 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h34
+      (Filter.Eventually.of_forall fun n => zero_le _) (Filter.Eventually.of_forall fun n => ?_)
+    refine lintegral_mono fun y => measure_mono fun θ hθ => ?_
+    simp only [Set.mem_setOf_eq] at hθ ⊢
+    exact lt_of_le_of_lt (hA'q_le n) hθ
+  -- 4. Shell double series limit at the generic scale window `avₙ = 1/n`.
+  have hav : ∀ᶠ (n : ℕ) in atTop, 0 < (n : ℝ)⁻¹ ∧ (n : ℝ)⁻¹ ≤ 1 / 2 ∧ (n : ℝ) * (n : ℝ)⁻¹ ≤ 1 := by
+    filter_upwards [eventually_ge_atTop 2] with n hn2
+    have hnpos : (0:ℝ) < n := by
+      have : (2:ℝ) ≤ n := by exact_mod_cast hn2
+      linarith
+    refine ⟨inv_pos.mpr hnpos, ?_, le_of_eq (mul_inv_cancel₀ (ne_of_gt hnpos))⟩
+    rw [show (1:ℝ)/2 = (2:ℝ)⁻¹ by norm_num]
+    exact inv_anti₀ (by norm_num) (by exact_mod_cast hn2)
+  have hav2 : ∃ p : ℝ, 0 < p ∧ ∀ᶠ (n : ℕ) in atTop, (n : ℝ) ^ (-p) ≤ (n : ℝ)⁻¹ := by
+    refine ⟨1, one_pos, ?_⟩
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hnn : (0:ℝ) ≤ n := by exact_mod_cast Nat.zero_le n
+    have : (n:ℝ)^(-(1:ℝ)) = (n:ℝ)⁻¹ := by rw [Real.rpow_neg hnn, Real.rpow_one]
+    exact le_of_eq this
+  obtain ⟨J₀, hJ2, hshell⟩ := dl_shellSum_tendsto_zero_generic hq1 hqn hθ₀ hnorm
+    (fun n => (n : ℝ)⁻¹) hav hav2 (A' + 1) (by linarith)
+  -- 5. The geometric `exp(−rₙ²/8)` term vanishes (`rₙ² = qₙ log n ≥ log n → ∞`).
+  have hlogtend : Tendsto (fun n : ℕ => Real.log n) atTop atTop :=
+    Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  have hε2 : Tendsto (fun n => rv n ^ 2 / 8) atTop atTop := by
+    apply tendsto_atTop_mono' atTop (f₁ := fun n : ℕ => Real.log n / 8) ?_
+      ((hlogtend).atTop_div_const (by norm_num))
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    have hn1 : (1:ℝ) ≤ n := by exact_mod_cast hn
+    have hrv2 : rv n ^ 2 = (q n : ℝ) * Real.log n := by
+      rw [hrv]; exact Real.sq_sqrt (mul_nonneg (by positivity) (Real.log_nonneg hn1))
+    have hq1n : (1:ℝ) ≤ q n := by exact_mod_cast hq1 n
+    have hlogn : 0 ≤ Real.log n := Real.log_nonneg hn1
+    rw [hrv2]; nlinarith
+  have hf2 : Tendsto (fun n => ENNReal.ofReal (Real.exp (- rv n ^ 2 / 8))) atTop (𝓝 0) := by
+    have hh := tendsto_ofReal_exp_neg hε2
+    refine hh.congr fun n => ?_; rw [neg_div]
+  -- 6. Assemble and squeeze the posterior mass between `0` and the engine RHS.
+  set M : ℝ := 2 * (J₀ : ℝ) with hM_def
+  have hJ2R : (2 : ℝ) ≤ (J₀ : ℝ) := by exact_mod_cast hJ2
+  have hMpos : 0 < M := by rw [hM_def]; linarith
+  refine ⟨M, hMpos, ?_⟩
+  have hRHS := (hterm34.add hf2).add hshell
+  simp only [add_zero] at hRHS
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hRHS
+    (Filter.Eventually.of_forall fun n => zero_le _) ?_
+  filter_upwards [hδwin, eventually_ge_atTop 4] with n hδn hn4
+  obtain ⟨hδlb, hδub⟩ := hδn
+  have hn1R : (1:ℝ) ≤ n := by exact_mod_cast (le_trans (by norm_num) hn4)
+  have hnpos : (0:ℝ) < n := by linarith
+  have hn2 : (1:ℝ) < n := by
+    have h4 : (4:ℝ) ≤ n := by exact_mod_cast hn4
+    linarith
+  have hlogn_pos : 0 < Real.log n := Real.log_pos hn2
+  have hapos : 0 < (n : ℝ)⁻¹ := inv_pos.mpr hnpos
+  have hδpos : 0 < δv n := lt_of_lt_of_le (Real.rpow_pos_of_pos hnpos _) hδlb
+  have hr_pos : 0 < rv n := by
+    rw [hrv]; exact Real.sqrt_pos.mpr (mul_pos (by exact_mod_cast hq1 n) hlogn_pos)
+  have hδnet : Real.sqrt (Fintype.card (Fin n) : ℝ) * δv n ≤ rv n := by
+    rw [Fintype.card_fin, hδv]
+    have hsqn : Real.sqrt (n : ℝ) ≤ (n : ℝ) := by
+      calc Real.sqrt (n : ℝ) ≤ Real.sqrt ((n:ℝ)*(n:ℝ)) :=
+            Real.sqrt_le_sqrt (by nlinarith)
+        _ = n := by rw [Real.sqrt_mul_self hnpos.le]
+    calc Real.sqrt (n : ℝ) * (rv n / n) ≤ (n : ℝ) * (rv n / n) := by
+          apply mul_le_mul_of_nonneg_right hsqn (by positivity)
+      _ = rv n := by field_simp
+  have hBpos : 0 < (dlPrior ((n : ℝ)⁻¹) (Fin n)) (Metric.closedBall (θ₀ n) (rv n)) :=
+    dlPrior_closedBall_pos hapos hr_pos (θ₀ n)
+  have hJ₀ : (J₀ : ℝ) ≤ M / 2 := by rw [hM_def]; linarith
+  -- Apply the composed engine (its conclusion is exactly the RHS of the squeeze).
+  exact dl_contraction_engine' hapos hδpos hδnet hr_pos (θ₀ n) hBpos
+    M hMpos (Kf n) J₀ hJ2 hJ₀
 end StatLean.Bayesian
