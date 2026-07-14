@@ -125,6 +125,37 @@ private lemma gaussian_lintegral_sq (v : ℝ≥0) :
   rw [← ofReal_integral_eq_lintegral_ofReal hint2 (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
     hint]
 
+/-- Second moment of the `ℓ¹`-norm of the noise vector: `E[(∑ᵢ|ξᵢ|)²] ≤ n²·v`. -/
+private lemma lintegral_sum_abs_sq_le {n : ℕ} {Ω : Type} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] (ξ : Fin n → Ω → ℝ) (v : ℝ≥0) (hξm : ∀ i, Measurable (ξ i))
+    (hξlaw : ∀ i, HasLaw (ξ i) (gaussianReal 0 v) P) :
+    ∫⁻ ω, ENNReal.ofReal ((∑ i, |ξ i ω|) ^ 2) ∂P ≤ ENNReal.ofReal ((n : ℝ) ^ 2 * v) := by
+  have hcs : ∀ ω, (∑ i, |ξ i ω|) ^ 2 ≤ (n : ℝ) * ∑ i, (ξ i ω) ^ 2 := by
+    intro ω
+    have h := Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (fun _ => (1 : ℝ)) (fun i => |ξ i ω|)
+    simpa only [one_mul, one_pow, sq_abs, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, mul_one] using h
+  calc ∫⁻ ω, ENNReal.ofReal ((∑ i, |ξ i ω|) ^ 2) ∂P
+      ≤ ∫⁻ ω, ENNReal.ofReal ((n : ℝ) * ∑ i, (ξ i ω) ^ 2) ∂P :=
+        lintegral_mono (fun ω => ENNReal.ofReal_le_ofReal (hcs ω))
+    _ = ∫⁻ ω, ENNReal.ofReal (n : ℝ) * ∑ i, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P := by
+        refine lintegral_congr (fun ω => ?_)
+        rw [ENNReal.ofReal_mul (by positivity),
+          ENNReal.ofReal_sum_of_nonneg (fun i _ => sq_nonneg _)]
+    _ = ENNReal.ofReal (n : ℝ) * ∑ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P := by
+        rw [lintegral_const_mul _ (by fun_prop), lintegral_finset_sum _ (fun i _ => by fun_prop)]
+    _ = ENNReal.ofReal (n : ℝ) * ∑ _i : Fin n, ENNReal.ofReal (v : ℝ) := by
+        congr 1
+        refine Finset.sum_congr rfl (fun i _ => ?_)
+        rw [(hξlaw i).lintegral_comp (f := fun x => ENNReal.ofReal (x ^ 2)) (by fun_prop),
+          gaussian_lintegral_sq]
+    _ = ENNReal.ofReal (n : ℝ) * ENNReal.ofReal ((n : ℝ) * v) := by
+        congr 1
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
+    _ = ENNReal.ofReal ((n : ℝ) ^ 2 * v) := by
+        rw [← ENNReal.ofReal_mul (by positivity)]; congr 1; ring
+
 /-- **Sup-norm stochastic bound**: there is `C = C(ℓ, K_max, λ₀, a₀, L_K)` such that under
 the standing design assumptions, a Lipschitz boxed kernel, and i.i.d. `N(0, v)` noise,
 `E[(sup_{t∈[0,1]} |∑ᵢ ξᵢ·W*ᵢ(t)|)²] ≤ C·v·log n/(n·h)` for all `n ≥ 2`,
