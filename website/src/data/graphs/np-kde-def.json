@@ -1,0 +1,19 @@
+{
+  "root": "StatLean.NonparametricStatistics.kde",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.kde","label":"kde","full":"StatLean.NonparametricStatistics.kde","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.KernelDensity.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.NonparametricStatistics.kdeData","label":"kdeData","full":"StatLean.NonparametricStatistics.kdeData","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.KernelDensity.Defs"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.kde","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.kde","target":"StatLean.NonparametricStatistics.kdeData"},
+    {"source":"StatLean.NonparametricStatistics.kdeData","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.kdeData","target":"Finset.sum"},
+    {"source":"StatLean.NonparametricStatistics.kdeData","target":"Finset.univ"},
+    {"source":"StatLean.NonparametricStatistics.kdeData","target":"Fin.fintype"}
+  ]
+}
