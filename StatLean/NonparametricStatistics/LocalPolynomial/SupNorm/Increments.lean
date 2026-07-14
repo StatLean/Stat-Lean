@@ -189,9 +189,11 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
       have hUk' := lpBasis_abs_le_two hz'2 k
       have hUj' := lpBasis_abs_le_two hz'2 j
       have hdUk : |lpBasis ℓ z' k - lpBasis ℓ z k| ≤ B * (|t - t'| / h) := by
-        have := lpBasis_sub_abs_le_two hz'2 hz2 k; rwa [hzz'] at this
+        have := lpBasis_sub_abs_le_two hz'2 hz2 k
+        rw [abs_sub_comm z' z, hzz'] at this; exact this
       have hdUj : |lpBasis ℓ z' j - lpBasis ℓ z j| ≤ B * (|t - t'| / h) := by
-        have := lpBasis_sub_abs_le_two hz'2 hz2 j; rwa [hzz'] at this
+        have := lpBasis_sub_abs_le_two hz'2 hz2 j
+        rw [abs_sub_comm z' z, hzz'] at this; exact this
       have hdK : |K z' - K z| ≤ LK * (|t - t'| / h) := by
         have hkl := hKlip z' z
         rw [abs_sub_comm z' z, hzz'] at hkl; exact hkl
@@ -238,11 +240,83 @@ private lemma lpMatrix_summand_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
       rw [hz', abs_div, abs_of_pos hh, div_le_one hh] at hb
       rw [abs_le] at hb
       have hd' : |t - t'| < h := hd
-      rw [Set.mem_Icc]; rw [abs_le] at hd'
+      rw [Set.mem_Icc]; rw [abs_lt] at hd'
       constructor <;> nlinarith [hb.1, hb.2, hd'.1, hd'.2, hh]
     have hK1 : K z = 0 := hbox.2 z hz1
     have hK2 : K z' = 0 := hbox.2 z' hz'1
     simp only [hK1, hK2, zero_mul, mul_zero, sub_zero, abs_zero, le_refl]
+
+/-- The inverse of the (symmetric) local design matrix is symmetric. -/
+private lemma lpMatrix_inv_isSymm {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)
+    (t : ℝ) : (lpMatrix xdat K h ℓ t)⁻¹.IsSymm := by
+  have hs : (lpMatrix xdat K h ℓ t)ᵀ = lpMatrix xdat K h ℓ t := lpMatrix_isSymm xdat K h ℓ t
+  show ((lpMatrix xdat K h ℓ t)⁻¹)ᵀ = (lpMatrix xdat K h ℓ t)⁻¹
+  rw [Matrix.transpose_nonsing_inv, hs]
+
+/-- The `0`-th coordinate of `B⁻¹ U` is the dot product with the `0`-th column of `B⁻¹`. -/
+private lemma lpMatrix_inv_mulVec_zero {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)
+    (t : ℝ) (U : Fin (ℓ + 1) → ℝ) :
+    (lpMatrix xdat K h ℓ t)⁻¹.mulVec U 0
+      = ∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k * U k := by
+  have hs : ((lpMatrix xdat K h ℓ t)⁻¹)ᵀ = (lpMatrix xdat K h ℓ t)⁻¹ :=
+    lpMatrix_inv_isSymm xdat K h ℓ t
+  have hsymm : ∀ k, (lpMatrix xdat K h ℓ t)⁻¹ k 0 = (lpMatrix xdat K h ℓ t)⁻¹ 0 k := by
+    intro k
+    have := congrFun (congrFun hs 0) k
+    simpa [Matrix.transpose_apply] using this
+  have hR : ∀ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+      = (lpMatrix xdat K h ℓ t)⁻¹ 0 k := by
+    intro k
+    have hc : (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+        = (lpMatrix xdat K h ℓ t)⁻¹ k 0 := by
+      simp [Matrix.mulVec, dotProduct, Pi.single_apply, Finset.sum_ite_eq]
+    rw [hc, hsymm k]
+  simp_rw [hR]
+  simp only [Matrix.mulVec, dotProduct]
+
+/-- Squared-ℓ² bound on the `0`-th column of `B⁻¹`: `∑ (B⁻¹ e₀)² ≤ 1/lam0²`. -/
+private lemma lp_invE0_normSq_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {lam0 h : ℝ} {ℓ : ℕ}
+    {t : ℝ} (hlam : 0 < lam0)
+    (hLB : ∀ v : Fin (ℓ + 1) → ℝ,
+      lam0 * ∑ k, (v k) ^ 2 ≤ ∑ k, v k * (lpMatrix xdat K h ℓ t).mulVec v k) :
+    ∑ k, ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k) ^ 2 ≤ 1 / lam0 ^ 2 := by
+  have hb := lpMatrix_inv_mulVec_sq_le hlam hLB (Pi.single (0 : Fin (ℓ + 1)) 1)
+  have he0 : ∑ k, ((Pi.single (0 : Fin (ℓ + 1)) 1 : Fin (ℓ + 1) → ℝ) k) ^ 2 = 1 := by
+    rw [Finset.sum_eq_single (0 : Fin (ℓ + 1))]
+    · simp
+    · intro b _ hb; simp [Pi.single_eq_of_ne hb]
+    · intro h0; exact absurd (Finset.mem_univ _) h0
+  rwa [he0] at hb
+
+/-- ℓ¹ bound on the `0`-th column of `B⁻¹`: `∑ |B⁻¹ e₀| ≤ (ℓ+1)/lam0`. -/
+private lemma lp_invE0_absSum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {lam0 h : ℝ} {ℓ : ℕ}
+    {t : ℝ} (hlam : 0 < lam0)
+    (hLB : ∀ v : Fin (ℓ + 1) → ℝ,
+      lam0 * ∑ k, (v k) ^ 2 ≤ ∑ k, v k * (lpMatrix xdat K h ℓ t).mulVec v k) :
+    ∑ k, |(lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k| ≤ ((ℓ : ℝ) + 1) / lam0 := by
+  set g := fun k => (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k with hg
+  have hsq : ∑ k, (g k) ^ 2 ≤ 1 / lam0 ^ 2 := lp_invE0_normSq_le hlam hLB
+  set S := ∑ k, |g k| with hS
+  have hSnn : 0 ≤ S := Finset.sum_nonneg (fun k _ => abs_nonneg _)
+  have hMnn : 0 ≤ ((ℓ : ℝ) + 1) / lam0 := by positivity
+  have hcs : S ^ 2 ≤ (∑ k, (g k) ^ 2) * ((ℓ : ℝ) + 1) := by
+    have h := Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (fun k => |g k|) (fun _ => (1 : ℝ))
+    simp only [mul_one, one_pow, sq_abs, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, Nat.cast_add, Nat.cast_one] at h
+    exact h
+  have hle1 : ((ℓ : ℝ) + 1) ≤ ((ℓ : ℝ) + 1) ^ 2 := by
+    nlinarith [(Nat.cast_nonneg ℓ : (0 : ℝ) ≤ (ℓ : ℝ))]
+  have hS2 : S ^ 2 ≤ (((ℓ : ℝ) + 1) / lam0) ^ 2 := by
+    have hstep : (∑ k, (g k) ^ 2) * ((ℓ : ℝ) + 1) ≤ (((ℓ : ℝ) + 1) / lam0) ^ 2 := by
+      rw [div_pow]
+      have h1 : (∑ k, (g k) ^ 2) * ((ℓ : ℝ) + 1) ≤ (1 / lam0 ^ 2) * ((ℓ : ℝ) + 1) :=
+        mul_le_mul_of_nonneg_right hsq (by positivity)
+      calc (∑ k, (g k) ^ 2) * ((ℓ : ℝ) + 1) ≤ (1 / lam0 ^ 2) * ((ℓ : ℝ) + 1) := h1
+        _ = ((ℓ : ℝ) + 1) / lam0 ^ 2 := by ring
+        _ ≤ ((ℓ : ℝ) + 1) ^ 2 / lam0 ^ 2 := by gcongr
+    exact le_trans hcs hstep
+  have h1 := Real.sqrt_le_sqrt hS2
+  rwa [Real.sqrt_sq hSnn, Real.sqrt_sq hMnn] at h1
 
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
