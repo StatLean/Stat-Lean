@@ -389,6 +389,24 @@ private lemma lpMatrix_entry_diff_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ �
     _ = 4 * a₀ * (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by
         field_simp
 
+/-- Resolvent identity applied to `e₀`: `A⁻¹e₀ − C⁻¹e₀ = A⁻¹(C − A)C⁻¹e₀`. -/
+private lemma resolvent_e0 {ℓ : ℕ} (A C : Matrix (Fin (ℓ + 1)) (Fin (ℓ + 1)) ℝ)
+    (hA : IsUnit A.det) (hC : IsUnit C.det) :
+    A⁻¹.mulVec (Pi.single 0 1) - C⁻¹.mulVec (Pi.single 0 1)
+      = A⁻¹.mulVec ((C - A).mulVec (C⁻¹.mulVec (Pi.single 0 1))) := by
+  have hCg : C.mulVec (C⁻¹.mulVec (Pi.single 0 1)) = Pi.single 0 1 := by
+    rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hC, Matrix.one_mulVec]
+  rw [Matrix.sub_mulVec, hCg, Matrix.mulVec_sub, Matrix.mulVec_mulVec,
+      Matrix.nonsing_inv_mul _ hA, Matrix.one_mulVec]
+
+/-- Cauchy–Schwarz: `(∑ |vₖ|)² ≤ (ℓ+1)·∑ vₖ²`. -/
+private lemma absSum_sq_le {ℓ : ℕ} (v : Fin (ℓ + 1) → ℝ) :
+    (∑ k, |v k|) ^ 2 ≤ ((ℓ : ℝ) + 1) * ∑ k, (v k) ^ 2 := by
+  have h := Finset.sum_mul_sq_le_sq_mul_sq Finset.univ (fun k => |v k|) (fun _ => (1 : ℝ))
+  simp only [mul_one, one_pow, sq_abs, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    nsmul_eq_mul, Nat.cast_add, Nat.cast_one] at h
+  linarith [h, mul_comm (∑ k, (v k) ^ 2) ((ℓ : ℝ) + 1)]
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
