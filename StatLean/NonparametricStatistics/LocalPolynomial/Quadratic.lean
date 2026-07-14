@@ -184,29 +184,37 @@ private lemma isLPSolution_imp_normal (hpd : (lpMatrix xdat K h ℓ t).PosDef)
       = (n : ℝ) * h * (lpMatrix xdat K h ℓ t).mulVec θ j := by linarith
   exact (mul_left_cancel₀ hnh this).symm
 
-/-- **Normal equations**: under `B_t ≻ 0`, `θ` minimises the LP(`ℓ`) criterion iff
-`B_t θ = a_t`. -/
-theorem isLPSolution_iff_normal (hpd : (lpMatrix xdat K h ℓ t).PosDef)
+/-- **Normal equations**: under `B_t ≻ 0` and a positive bandwidth, `θ` minimises the LP(`ℓ`)
+criterion iff `B_t θ = a_t`. (The `→` direction needs no sign hypothesis; the `←` direction
+does — with `n·h < 0` the objective is concave and has no minimiser even when the normal
+equations hold, so `0 < h` is genuinely required.) -/
+theorem isLPSolution_iff_normal
+    -- LEAN-ONLY: positive bandwidth, making `n·h > 0` and the objective convex; without it
+    -- the `←` direction is false (concave objective at `n·h < 0`). Standard side condition.
+    (hh : 0 < h)
+    (hpd : (lpMatrix xdat K h ℓ t).PosDef)
     (θ : Fin (ℓ + 1) → ℝ) :
     IsLPSolution xdat Y K h ℓ t θ
       ↔ (lpMatrix xdat K h ℓ t).mulVec θ = lpRhs xdat Y K h ℓ t := by
   constructor
   · exact isLPSolution_imp_normal hpd
-  · -- TODO(np): the `←` direction (`B_t θ = a_t → θ` is a global minimiser) is FALSE as
-    -- stated: it requires `0 < n·h` (equivalently a convex objective). With `n·h < 0` and a
-    -- kernel taking negative values the objective is concave/unbounded below, so no `θ`
-    -- minimises even though the normal equations hold (counterexample `n=1, ℓ=0, h<0, K<0`).
-    -- Closing this needs an extra `0 < h` hypothesis, which the frozen signature forbids.
+  · -- TODO(np): `←` direction with `0 < h` in hand: `n ≥ 1` follows from `hpd` (the zero
+    -- matrix is not PosDef), so `n·h > 0`; completing the square via
+    -- `lpObjective_add_single`-style expansion along `θ' − θ` gives
+    -- `obj θ' − obj θ = (n·h)·⟨Δ, B Δ⟩ ≥ 0`. Close in the np/lp-core-fix session.
     sorry
 
-/-- Existence of the minimiser in closed form: under `B_t ≻ 0`,
+/-- Existence of the minimiser in closed form: under `B_t ≻ 0` and a positive bandwidth,
 `θ̂ = B_t⁻¹ a_t` minimises the LP(`ℓ`) criterion. -/
-theorem isLPSolution_inv_mulVec (hpd : (lpMatrix xdat K h ℓ t).PosDef) :
+theorem isLPSolution_inv_mulVec
+    -- LEAN-ONLY: positive bandwidth; same obstruction as `isLPSolution_iff_normal` (`←`)
+    (hh : 0 < h)
+    (hpd : (lpMatrix xdat K h ℓ t).PosDef) :
     IsLPSolution xdat Y K h ℓ t
       ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (lpRhs xdat Y K h ℓ t)) := by
-  -- TODO(np): FALSE as stated for `n·h < 0` — same obstruction as the `←` direction of
-  -- `isLPSolution_iff_normal`: `B_t⁻¹ a_t` solves the normal equations but does not minimise a
-  -- concave objective. Needs an extra `0 < h` hypothesis (frozen signature forbids it).
+  -- TODO(np): apply `(isLPSolution_iff_normal hh hpd _).mpr` to
+  -- `B (B⁻¹ a) = a` (`Matrix.mul_nonsing_inv` at the vector level). Close in the
+  -- np/lp-core-fix session.
   sorry
 
 /-- Uniqueness of the minimiser under `B_t ≻ 0`. -/
