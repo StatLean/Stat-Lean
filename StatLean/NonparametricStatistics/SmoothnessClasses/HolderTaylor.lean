@@ -1,5 +1,6 @@
 import StatLean.NonparametricStatistics.SmoothnessClasses.Defs
 import StatLean.NonparametricStatistics.ForMathlib.TaylorLagrangeTwoSided
+import Mathlib.Analysis.Calculus.Taylor
 
 /-!
 # Taylor remainder bounds over Hölder classes
@@ -32,13 +33,35 @@ open scoped Nat
 
 namespace StatLean.NonparametricStatistics
 
+/-- For `0 < β`, the ceiling `⌈β⌉₊` is at least one, so `holderIndex β = ⌈β⌉₊ - 1` is honest. -/
+private lemma one_le_ceil {β : ℝ} (hβ : 0 < β) : 1 ≤ ⌈β⌉₊ := Nat.one_le_ceil_iff.mpr hβ
+
+/-- The smoothness index is strictly below `β`: `(holderIndex β : ℝ) < β`. -/
+private lemma holderIndex_lt_self {β : ℝ} (hβ : 0 < β) : (holderIndex β : ℝ) < β := by
+  have h1 : 1 ≤ ⌈β⌉₊ := one_le_ceil hβ
+  unfold holderIndex
+  rw [Nat.cast_sub h1, Nat.cast_one]
+  have h2 : (⌈β⌉₊ : ℝ) < β + 1 := Nat.ceil_lt_add_one hβ.le
+  linarith
+
+/-- The fractional exponent `β − holderIndex β` is positive. -/
+private lemma sub_holderIndex_pos {β : ℝ} (hβ : 0 < β) : 0 < β - (holderIndex β : ℝ) :=
+  sub_pos.mpr (holderIndex_lt_self hβ)
+
+/-- Exponent splitter: `|t|^ℓ · |t|^(β−ℓ) = |t|^β` for `t ≠ 0` (natural power times rpow). -/
+private lemma abs_rpow_split {β : ℝ} {t : ℝ} (ht : t ≠ 0) (ℓ : ℕ) :
+    |t| ^ ℓ * |t| ^ (β - (ℓ : ℝ)) = |t| ^ β := by
+  rw [← Real.rpow_natCast |t| ℓ, ← Real.rpow_add (abs_pos.mpr ht)]
+  congr 1; ring
+
 /-- Global Hölder classes see through `iteratedDerivWithin univ = iteratedDeriv`: the top
 derivative satisfies the Hölder bound globally. -/
 theorem MemHolder.iteratedDeriv_holder {β L : ℝ} {f : ℝ → ℝ} (hf : MemHolder β L f)
     (x y : ℝ) :
     |iteratedDeriv (holderIndex β) f x - iteratedDeriv (holderIndex β) f y|
       ≤ L * |x - y| ^ (β - (holderIndex β : ℝ)) := by
-  sorry
+  have h := MemHolderOn.deriv_holder hf x (Set.mem_univ x) y (Set.mem_univ y)
+  simpa only [iteratedDerivWithin_univ] using h
 
 /-- **Taylor remainder bound over a global Hölder class**: for `f ∈ Σ(β, L)` on `ℝ`,
 `|f(x₀+t) − ∑_{j≤ℓ} f⁽ʲ⁾(x₀)tʲ/j!| ≤ (L/ℓ!)·|t|^β` with `ℓ = holderIndex β`. -/
@@ -49,7 +72,59 @@ theorem MemHolder.taylor_remainder_abs_le {β L : ℝ}
     |f (x₀ + t) - ∑ j ∈ Finset.range (holderIndex β + 1),
         iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ)|
       ≤ L / (Nat.factorial (holderIndex β) : ℝ) * |t| ^ β := by
-  sorry
+  rcases Nat.eq_zero_or_pos (holderIndex β) with hℓ0 | hℓpos
+  · -- `ℓ = 0`: the bound is the Hölder condition itself.
+    have hsum : (∑ j ∈ Finset.range (holderIndex β + 1),
+        iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ)) = f x₀ := by
+      rw [hℓ0, zero_add, Finset.sum_range_one]; simp
+    rw [hsum, hℓ0]
+    have hh := hf.iteratedDeriv_holder (x₀ + t) x₀
+    rw [hℓ0] at hh
+    simp only [iteratedDeriv_zero, Nat.cast_zero, sub_zero, add_sub_cancel_left,
+      Nat.factorial_zero, Nat.cast_one, div_one] at hh ⊢
+    exact hh
+  rcases eq_or_ne t 0 with rfl | ht
+  · -- `ℓ ≥ 1`, `t = 0`: both sides vanish.
+    have hsum : (∑ j ∈ Finset.range (holderIndex β + 1),
+        iteratedDeriv j f x₀ * (0 : ℝ) ^ j / (Nat.factorial j : ℝ)) = f x₀ := by
+      rw [Finset.sum_eq_single 0]
+      · simp
+      · intro j _ hj; simp [zero_pow hj]
+      · intro h; exact absurd (Finset.mem_range.mpr (Nat.succ_pos _)) h
+    rw [add_zero, hsum, sub_self]
+    simp [Real.zero_rpow hβ.ne']
+  · -- `ℓ ≥ 1`, `t ≠ 0`: Taylor–Lagrange leaves a top-derivative difference; bound by Hölder.
+    obtain ⟨τ, hτ, heq⟩ :=
+      taylor_lagrange_global hℓpos (contDiffOn_univ.mp (MemHolderOn.contDiffOn hf)) x₀ t ht
+    have hdiff : f (x₀ + t) - ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ)
+        = (iteratedDeriv (holderIndex β) f (x₀ + τ * t)
+              - iteratedDeriv (holderIndex β) f x₀)
+            * t ^ (holderIndex β) / (Nat.factorial (holderIndex β) : ℝ) := by
+      rw [Finset.sum_range_succ, heq]; ring
+    have hfac : (0 : ℝ) < (Nat.factorial (holderIndex β) : ℝ) :=
+      Nat.cast_pos.mpr (Nat.factorial_pos _)
+    have hA : |iteratedDeriv (holderIndex β) f (x₀ + τ * t)
+          - iteratedDeriv (holderIndex β) f x₀|
+        ≤ L * |t| ^ (β - (holderIndex β : ℝ)) := by
+      have h1 := hf.iteratedDeriv_holder (x₀ + τ * t) x₀
+      rw [add_sub_cancel_left] at h1
+      refine h1.trans ?_
+      apply mul_le_mul_of_nonneg_left _ hL
+      apply Real.rpow_le_rpow (abs_nonneg _) _ (le_of_lt (sub_holderIndex_pos hβ))
+      rw [abs_mul]
+      have hτle : |τ| ≤ 1 := by rw [abs_of_pos hτ.1]; exact le_of_lt hτ.2
+      calc |τ| * |t| ≤ 1 * |t| := mul_le_mul_of_nonneg_right hτle (abs_nonneg _)
+        _ = |t| := one_mul _
+    rw [hdiff, abs_div, abs_mul, abs_pow, abs_of_pos hfac]
+    calc |iteratedDeriv (holderIndex β) f (x₀ + τ * t) - iteratedDeriv (holderIndex β) f x₀|
+            * |t| ^ (holderIndex β) / (Nat.factorial (holderIndex β) : ℝ)
+        ≤ (L * |t| ^ (β - (holderIndex β : ℝ))) * |t| ^ (holderIndex β)
+            / (Nat.factorial (holderIndex β) : ℝ) := by gcongr
+      _ = L / (Nat.factorial (holderIndex β) : ℝ) * |t| ^ β := by
+          have hsplit : |t| ^ (holderIndex β) * |t| ^ (β - (holderIndex β : ℝ)) = |t| ^ β :=
+            abs_rpow_split ht (holderIndex β)
+          rw [← hsplit]; ring
 
 /-- **Taylor remainder bound over a Hölder class on an interval**: for `f ∈ Σ(β, L)` on
 `[a, b]` and `x, y ∈ [a, b]`,
@@ -74,6 +149,20 @@ theorem MemHolder.abs_le_growth {β L : ℝ} (hβ : 0 < β) (hL : 0 ≤ L)
     |f (x₀ + t)| ≤ (∑ j ∈ Finset.range (holderIndex β + 1),
         |iteratedDeriv j f x₀| * |t| ^ j / (Nat.factorial j : ℝ))
       + L / (Nat.factorial (holderIndex β) : ℝ) * |t| ^ β := by
-  sorry
+  set S := ∑ j ∈ Finset.range (holderIndex β + 1),
+      iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ) with hS
+  have h1 : |f (x₀ + t) - S| ≤ L / (Nat.factorial (holderIndex β) : ℝ) * |t| ^ β :=
+    hf.taylor_remainder_abs_le hβ hL x₀ t
+  have h2 : |S| ≤ ∑ j ∈ Finset.range (holderIndex β + 1),
+      |iteratedDeriv j f x₀| * |t| ^ j / (Nat.factorial j : ℝ) := by
+    rw [hS]
+    refine (Finset.abs_sum_le_sum_abs _ _).trans_eq (Finset.sum_congr rfl (fun j _ => ?_))
+    rw [abs_div, abs_mul, abs_pow, Nat.abs_cast]
+  calc |f (x₀ + t)| = |(f (x₀ + t) - S) + S| := by congr 1; ring
+    _ ≤ |f (x₀ + t) - S| + |S| := abs_add_le _ _
+    _ ≤ (∑ j ∈ Finset.range (holderIndex β + 1),
+          |iteratedDeriv j f x₀| * |t| ^ j / (Nat.factorial j : ℝ))
+        + L / (Nat.factorial (holderIndex β) : ℝ) * |t| ^ β := by
+        rw [add_comm (|f (x₀ + t) - S|)]; exact add_le_add h2 h1
 
 end StatLean.NonparametricStatistics
