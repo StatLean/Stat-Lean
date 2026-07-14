@@ -304,6 +304,16 @@ private lemma kmBias_eq {p K w : ℝ → ℝ}
     refine integral_congr_ae (ae_of_all _ fun u => ?_); ring
   rw [kmBias, hsplit, hlow, hthirdval, add_sub_cancel_left]
 
+/-- `∫⁻ x ofReal(f x²) = (eLpNorm f 2)²`, the `ofReal`↔`eLpNorm` bridge for real `f`. -/
+private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} :
+    (∫⁻ x, ENNReal.ofReal ((f x) ^ 2)) = (eLpNorm f 2 volume) ^ (2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  simp only [ENNReal.toReal_ofNat]
+  rw [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one]
+  refine lintegral_congr fun x => ?_
+  rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    Real.rpow_two, sq_abs]
+
 /-- **Step C**: the `L²(dx)` distance between the bias and its surrogate is `o(h²)`. There is a
 function `κ : ℝ → ℝ` tending to `0` at `0`, with `κ ≥ 0`, such that for all `0 < h`,
 `eLpNorm (fun x => kmBias p K h x − kmSurr w K h x) 2 ≤ ofReal (h² · κ h)`. -/
@@ -324,17 +334,31 @@ private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 :
     {h : ℝ} :
     eLpNorm (fun x => kmSurr w K h x) 2 volume
       = ENNReal.ofReal (h ^ 2 * (|∫ u, u ^ 2 * K u| / 2) * (∫ x, (w x) ^ 2).sqrt) := by
-  sorry
-
-/-- `∫⁻ x ofReal(f x²) = (eLpNorm f 2)²`, the `ofReal`↔`eLpNorm` bridge for real `f`. -/
-private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} :
-    (∫⁻ x, ENNReal.ofReal ((f x) ^ 2)) = (eLpNorm f 2 volume) ^ (2 : ℝ) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
-  simp only [ENNReal.toReal_ofNat]
-  rw [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one]
-  refine lintegral_congr fun x => ?_
-  rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
-    Real.rpow_two, sq_abs]
+  set c : ℝ := h ^ 2 * ((∫ u, u ^ 2 * K u) / 2) with hcdef
+  set S : ℝ := ∫ u, u ^ 2 * K u with hSdef
+  set I : ℝ := ∫ x, (w x) ^ 2 with hIdef
+  have hInn : 0 ≤ I := by rw [hIdef]; exact integral_nonneg fun x => sq_nonneg _
+  -- `eLpNorm w 2 = ofReal (√ I)`.
+  have hwnorm : eLpNorm w 2 volume = ENNReal.ofReal I.sqrt := by
+    have h1 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = (eLpNorm w 2 volume) ^ (2 : ℝ) :=
+      lintegral_ofReal_sq_eq_eLpNorm_sq
+    have h2 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = ENNReal.ofReal I :=
+      (ofReal_integral_eq_lintegral_ofReal hw2.integrable_sq (ae_of_all _ fun x => sq_nonneg _)).symm
+    have h3 : (eLpNorm w 2 volume) ^ (2 : ℝ) = ENNReal.ofReal I := by rw [← h1, h2]
+    have h4 : eLpNorm w 2 volume = (ENNReal.ofReal I) ^ (1 / 2 : ℝ) := by
+      rw [← h3, ← ENNReal.rpow_mul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, ENNReal.rpow_one]
+    rw [h4, ENNReal.ofReal_rpow_of_nonneg hInn (by norm_num : (0 : ℝ) ≤ 1 / 2),
+      ← Real.sqrt_eq_rpow]
+  -- The surrogate is `c • w`.
+  have hsmul : (fun x => kmSurr w K h x) = c • w := by
+    funext x; simp only [kmSurr, Pi.smul_apply, smul_eq_mul, hcdef, hSdef]
+  rw [hsmul, eLpNorm_const_smul, hwnorm, Real.enorm_eq_ofReal_abs,
+    ← ENNReal.ofReal_mul (abs_nonneg c)]
+  congr 1
+  have hcabs : |c| = h ^ 2 * (|S| / 2) := by
+    rw [hcdef, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ h ^ 2), abs_div,
+      show |(2 : ℝ)| = 2 by norm_num]
+  rw [hcabs]
 
 /-- **Deterministic core**: the exact asymptotics of `∫⁻ x ofReal(D h x ²)`, independent of the
 sample and of `n`. -/
