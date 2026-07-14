@@ -1,0 +1,20 @@
+{
+  "root": "StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator","label":"isLinearEstimator_lpEstimator","full":"StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator","kind":"root","decl":"thm","module":"StatLean.NonparametricStatistics.LocalPolynomial.Quadratic"},
+    {"id":"StatLean.NonparametricStatistics.IsLinearEstimator","label":"IsLinearEstimator","full":"StatLean.NonparametricStatistics.IsLinearEstimator","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Regression.Defs"},
+    {"id":"StatLean.NonparametricStatistics.lpEstimator","label":"lpEstimator","full":"StatLean.NonparametricStatistics.lpEstimator","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.LocalPolynomial.Defs"},
+    {"id":"StatLean.NonparametricStatistics.lpWeight","label":"lpWeight","full":"StatLean.NonparametricStatistics.lpWeight","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.LocalPolynomial.Defs"},
+    {"id":"StatLean.NonparametricStatistics.lpMatrix","label":"lpMatrix","full":"StatLean.NonparametricStatistics.lpMatrix","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.LocalPolynomial.Defs"},
+    {"id":"StatLean.NonparametricStatistics.lpBasis","label":"lpBasis","full":"StatLean.NonparametricStatistics.lpBasis","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.LocalPolynomial.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator","target":"StatLean.NonparametricStatistics.IsLinearEstimator"},
+    {"source":"StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator","target":"StatLean.NonparametricStatistics.lpEstimator"},
+    {"source":"StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator","target":"StatLean.NonparametricStatistics.lpWeight"},
+    {"source":"StatLean.NonparametricStatistics.lpEstimator","target":"StatLean.NonparametricStatistics.lpWeight"},
+    {"source":"StatLean.NonparametricStatistics.lpWeight","target":"StatLean.NonparametricStatistics.lpMatrix"},
+    {"source":"StatLean.NonparametricStatistics.lpWeight","target":"StatLean.NonparametricStatistics.lpBasis"},
+    {"source":"StatLean.NonparametricStatistics.lpMatrix","target":"StatLean.NonparametricStatistics.lpBasis"}
+  ]
+}

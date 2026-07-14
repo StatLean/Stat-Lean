@@ -1,0 +1,10 @@
+{
+  "root": "StatLean.NonparametricStatistics.IsKernelOfOrder",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.IsKernelOfOrder","label":"IsKernelOfOrder","full":"StatLean.NonparametricStatistics.IsKernelOfOrder","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.KernelDensity.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.IsKernelOfOrder","target":"Real"}
+  ]
+}

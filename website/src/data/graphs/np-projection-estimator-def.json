@@ -1,0 +1,37 @@
+{
+  "root": "StatLean.NonparametricStatistics.projEstimator",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.projEstimator","label":"projEstimator","full":"StatLean.NonparametricStatistics.projEstimator","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"Finset.sum","label":"sum","full":"Finset.sum","kind":"mathlib","decl":"def","module":"Mathlib.Algebra.BigOperators.Group.Finset.Defs"},
+    {"id":"Finset.Icc","label":"Icc","full":"Finset.Icc","kind":"mathlib","decl":"def","module":"Mathlib.Order.Interval.Finset.Defs"},
+    {"id":"StatLean.NonparametricStatistics.coeffEstimator","label":"coeffEstimator","full":"StatLean.NonparametricStatistics.coeffEstimator","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
+    {"id":"StatLean.NonparametricStatistics.trigBasis","label":"trigBasis","full":"StatLean.NonparametricStatistics.trigBasis","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
+    {"id":"Finset.univ","label":"univ","full":"Finset.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Fin.fintype","label":"fintype","full":"Fin.fintype","kind":"mathlib","decl":"def","module":"Mathlib.Data.Fintype.Basic"},
+    {"id":"StatLean.NonparametricStatistics.regularDesign","label":"regularDesign","full":"StatLean.NonparametricStatistics.regularDesign","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.Projection.Defs"},
+    {"id":"Real.sqrt","label":"sqrt","full":"Real.sqrt","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Sqrt"},
+    {"id":"Real.cos","label":"cos","full":"Real.cos","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Trigonometric"},
+    {"id":"Real.pi","label":"pi","full":"Real.pi","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic"},
+    {"id":"Real.sin","label":"sin","full":"Real.sin","kind":"mathlib","decl":"def","module":"Mathlib.Analysis.Complex.Trigonometric"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.projEstimator","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.projEstimator","target":"Finset.sum"},
+    {"source":"StatLean.NonparametricStatistics.projEstimator","target":"Finset.Icc"},
+    {"source":"StatLean.NonparametricStatistics.projEstimator","target":"StatLean.NonparametricStatistics.coeffEstimator"},
+    {"source":"StatLean.NonparametricStatistics.projEstimator","target":"StatLean.NonparametricStatistics.trigBasis"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"Finset.sum"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"Finset.univ"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"Fin.fintype"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"StatLean.NonparametricStatistics.trigBasis"},
+    {"source":"StatLean.NonparametricStatistics.coeffEstimator","target":"StatLean.NonparametricStatistics.regularDesign"},
+    {"source":"StatLean.NonparametricStatistics.trigBasis","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.trigBasis","target":"Real.sqrt"},
+    {"source":"StatLean.NonparametricStatistics.trigBasis","target":"Real.cos"},
+    {"source":"StatLean.NonparametricStatistics.trigBasis","target":"Real.pi"},
+    {"source":"StatLean.NonparametricStatistics.trigBasis","target":"Real.sin"},
+    {"source":"StatLean.NonparametricStatistics.regularDesign","target":"Real"}
+  ]
+}

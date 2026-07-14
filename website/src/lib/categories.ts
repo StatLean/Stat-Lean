@@ -65,6 +65,13 @@ export const CATEGORIES: CategoryMeta[] = [
       "The dominated-Bayes posterior and predictive densities, sufficiency and conjugate families (Beta–Binomial, Gamma–Poisson, Normal–Normal, Dirichlet–Multinomial), Bayes decision theory and the route to minimaxity, model choice and MCMC correctness, and the hierarchical + empirical-Bayes theory — posterior tower/mixture, partial pooling, James–Stein, Tweedie, and the NPMLE.",
   },
   {
+    id: "nonparametric",
+    name: "Nonparametric Statistics",
+    tagline: "Kernel, local polynomial & projection estimators",
+    blurb:
+      "Kernel density estimation with bias–variance analysis over Hölder and Nikol'skii classes, exact asymptotic MISE, Nadaraya–Watson and local polynomial regression with pointwise, L² and sup-norm rates, and projection estimators on the trigonometric basis attaining the Sobolev-ellipsoid rate.",
+  },
+  {
     id: "probability",
     name: "Miscellaneous Results",
     tagline: "Load-bearing probability & analysis",

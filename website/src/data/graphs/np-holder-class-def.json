@@ -1,0 +1,17 @@
+{
+  "root": "StatLean.NonparametricStatistics.MemHolder",
+  "nodes": [
+    {"id":"StatLean.NonparametricStatistics.MemHolder","label":"MemHolder","full":"StatLean.NonparametricStatistics.MemHolder","kind":"root","decl":"def","module":"StatLean.NonparametricStatistics.SmoothnessClasses.Defs"},
+    {"id":"Real","label":"Real","full":"Real","kind":"mathlib","decl":"def","module":"Mathlib.Data.Real.Basic"},
+    {"id":"StatLean.NonparametricStatistics.MemHolderOn","label":"MemHolderOn","full":"StatLean.NonparametricStatistics.MemHolderOn","kind":"repo","decl":"def","module":"StatLean.NonparametricStatistics.SmoothnessClasses.Defs"},
+    {"id":"Set.univ","label":"univ","full":"Set.univ","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"},
+    {"id":"Set","label":"Set","full":"Set","kind":"mathlib","decl":"def","module":"Mathlib.Data.Set.Defs"}
+  ],
+  "edges": [
+    {"source":"StatLean.NonparametricStatistics.MemHolder","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.MemHolder","target":"StatLean.NonparametricStatistics.MemHolderOn"},
+    {"source":"StatLean.NonparametricStatistics.MemHolder","target":"Set.univ"},
+    {"source":"StatLean.NonparametricStatistics.MemHolderOn","target":"Real"},
+    {"source":"StatLean.NonparametricStatistics.MemHolderOn","target":"Set"}
+  ]
+}
