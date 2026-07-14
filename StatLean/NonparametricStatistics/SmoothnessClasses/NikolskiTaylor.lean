@@ -324,7 +324,8 @@ theorem MemNikolski.lintegral_sq_remainder_le {β L : ℝ}
       rw [hAeq]; gcongr
     -- Assemble constants.
     rw [hc2]
-    refine le_trans (mul_le_mul_left' (le_trans hIA hAle) _) ?_
+    refine le_trans (mul_le_mul' (le_refl (ENNReal.ofReal (c ^ 2)))
+      (le_trans hIA hAle)) ?_
     -- Reduce to a real identity: collapse the LHS product into one `ofReal`.
     rw [← ENNReal.ofReal_mul (by positivity : (0:ℝ) ≤ L * |t| ^ (β - (ℓ:ℝ))),
       ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_mul (sq_nonneg _)]
