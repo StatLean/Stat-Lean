@@ -645,6 +645,23 @@ private lemma lp_termII_sum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ
           * (Kmax * (((ℓ : ℝ) + 1) * 2 ^ ℓ) * (4 * a₀ * h * n)) := by
         rw [← Finset.sum_mul, hBdef]
 
+/-- Split of the weight increment into the Term I (`Δ`-basis) and Term II (`Δ`-resolvent)
+inner sums, scaled by `(nh)⁻¹`. -/
+private lemma lp_weight_diff_eq {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)
+    (t t' : ℝ) (i : Fin n) :
+    lpWeight xdat K h ℓ t i - lpWeight xdat K h ℓ t' i
+      = ((n : ℝ) * h)⁻¹
+        * ((∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+              * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+                - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h)))
+          + (∑ k, ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+                - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k)
+              * (lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h)))) := by
+  rw [lpWeight_eq_dot, lpWeight_eq_dot, ← mul_sub]
+  congr 1
+  rw [← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+  exact Finset.sum_congr rfl (fun k _ => by ring)
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
