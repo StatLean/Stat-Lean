@@ -407,6 +407,97 @@ private lemma absSum_sq_le {ℓ : ℕ} (v : Fin (ℓ + 1) → ℝ) :
     nsmul_eq_mul, Nat.cast_add, Nat.cast_one] at h
   linarith [h, mul_comm (∑ k, (v k) ^ 2) ((ℓ : ℝ) + 1)]
 
+/-- ℓ¹ bound on the difference of the two `0`-columns of the inverse design matrices
+(the resolvent/`Δg` term): `∑ₖ |B_t⁻¹e₀ − B_{t'}⁻¹e₀|ₖ ≤ (ℓ+1)²·D/λ₀²·(|t−t'|/h)`,
+`D = 4a₀(L_K+2K_max)((ℓ+1)2^ℓ)²`. -/
+private lemma lp_gdiff_absSum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ}
+    {Kmax lam0 a₀ LK h : ℝ} {ℓ : ℕ} (hn : 0 < n) (hh : 0 < h) (hhl : 1 / (2 * (n : ℝ)) ≤ h)
+    (ha₀ : 0 ≤ a₀) (hlam : 0 < lam0) (hbox : KernelBoxed K Kmax)
+    (hKlip : ∀ u u' : ℝ, |K u - K u'| ≤ LK * |u - u'|) (hdens : DesignDensityBound xdat a₀)
+    {t t' : ℝ} (hd : |t - t'| < h)
+    (hLBt : ∀ v : Fin (ℓ + 1) → ℝ,
+      lam0 * ∑ k, (v k) ^ 2 ≤ ∑ k, v k * (lpMatrix xdat K h ℓ t).mulVec v k)
+    (hLBt' : ∀ v : Fin (ℓ + 1) → ℝ,
+      lam0 * ∑ k, (v k) ^ 2 ≤ ∑ k, v k * (lpMatrix xdat K h ℓ t').mulVec v k) :
+    ∑ k, |(lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+        - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k|
+      ≤ ((ℓ : ℝ) + 1) ^ 2 * (4 * a₀ * (LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2)
+          / lam0 ^ 2 * (|t - t'| / h) := by
+  classical
+  set e0 : Fin (ℓ + 1) → ℝ := Pi.single 0 1 with he0
+  set Bt := lpMatrix xdat K h ℓ t with hBt
+  set Bt' := lpMatrix xdat K h ℓ t' with hBt'
+  set d : ℝ := |t - t'| / h with hddef
+  set D : ℝ := 4 * a₀ * (LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 with hD
+  have hlne : lam0 ≠ 0 := hlam.ne'
+  have hdnn : 0 ≤ d := div_nonneg (abs_nonneg _) hh.le
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hLK : 0 ≤ LK := by
+    have hk := hKlip 1 0; rw [show |(1 : ℝ) - 0| = 1 by norm_num, mul_one] at hk
+    exact le_trans (abs_nonneg _) hk
+  have hDnn : 0 ≤ D := by rw [hD]; positivity
+  have hdett : IsUnit Bt.det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp (lpMatrix_posDef hlam hLBt).isUnit
+  have hdett' : IsUnit Bt'.det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp (lpMatrix_posDef hlam hLBt').isUnit
+  set gt' := Bt'⁻¹.mulVec e0 with hgt'
+  set w := (Bt' - Bt).mulVec gt' with hw
+  have hres : Bt⁻¹.mulVec e0 - Bt'⁻¹.mulVec e0 = Bt⁻¹.mulVec w :=
+    resolvent_e0 Bt Bt' hdett hdett'
+  have hg' : ∑ j, |gt' j| ≤ ((ℓ : ℝ) + 1) / lam0 := lp_invE0_absSum_le hlam hLBt'
+  have hbnd : ∀ k, |w k| ≤ D * d * (((ℓ : ℝ) + 1) / lam0) := by
+    intro k
+    have hwk : ((Bt' - Bt).mulVec gt') k = ∑ j, (Bt' - Bt) k j * gt' j := rfl
+    rw [hw, hwk]
+    calc |∑ j, (Bt' - Bt) k j * gt' j|
+        ≤ ∑ j, |(Bt' - Bt) k j * gt' j| := Finset.abs_sum_le_sum_abs _ _
+      _ = ∑ j, |(Bt' - Bt) k j| * |gt' j| := by simp_rw [abs_mul]
+      _ ≤ ∑ j, (D * d) * |gt' j| := by
+          refine Finset.sum_le_sum (fun j _ => mul_le_mul_of_nonneg_right ?_ (abs_nonneg _))
+          rw [Matrix.sub_apply]
+          have hb := lpMatrix_entry_diff_le hn hh hhl hbox hKlip hdens hd k j
+          rw [← hD, ← hddef] at hb; exact hb
+      _ = (D * d) * ∑ j, |gt' j| := by rw [← Finset.mul_sum]
+      _ ≤ (D * d) * (((ℓ : ℝ) + 1) / lam0) := mul_le_mul_of_nonneg_left hg' (by positivity)
+      _ = D * d * (((ℓ : ℝ) + 1) / lam0) := by ring
+  have hwsq : ∑ k, (w k) ^ 2 ≤ ((ℓ : ℝ) + 1) * (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 := by
+    calc ∑ k, (w k) ^ 2
+        ≤ ∑ _k : Fin (ℓ + 1), (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 := by
+          refine Finset.sum_le_sum (fun k _ => ?_)
+          rw [← sq_abs (w k)]; exact pow_le_pow_left₀ (abs_nonneg _) (hbnd k) 2
+      _ = ((ℓ : ℝ) + 1) * (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin]; push_cast; ring
+  have hΔ : ∀ k, (Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k = (Bt⁻¹.mulVec w) k := by
+    intro k; have := congrFun hres k; rwa [Pi.sub_apply] at this
+  set S := ∑ k, |(Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k| with hSdef
+  have hSnn : 0 ≤ S := Finset.sum_nonneg (fun k _ => abs_nonneg _)
+  have hTnn : 0 ≤ ((ℓ : ℝ) + 1) ^ 2 * D / lam0 ^ 2 * d :=
+    mul_nonneg (div_nonneg (mul_nonneg (by positivity) hDnn) (by positivity)) hdnn
+  have hΔsq : ∑ k, ((Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k) ^ 2
+      ≤ (∑ k, (w k) ^ 2) / lam0 ^ 2 := by
+    have hb := lpMatrix_inv_mulVec_sq_le hlam hLBt w
+    calc ∑ k, ((Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k) ^ 2
+        = ∑ k, ((Bt⁻¹.mulVec w) k) ^ 2 :=
+          Finset.sum_congr rfl (fun k _ => by rw [hΔ k])
+      _ ≤ (∑ k, (w k) ^ 2) / lam0 ^ 2 := hb
+  have hScs : S ^ 2 ≤ ((ℓ : ℝ) + 1)
+      * ∑ k, ((Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k) ^ 2 :=
+    absSum_sq_le (fun k => (Bt⁻¹.mulVec e0) k - (Bt'⁻¹.mulVec e0) k)
+  have heq : ((ℓ : ℝ) + 1) * (((ℓ : ℝ) + 1) * (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 / lam0 ^ 2)
+      = (((ℓ : ℝ) + 1) ^ 2 * D / lam0 ^ 2 * d) ^ 2 := by field_simp
+  have hchain : S ^ 2 ≤ (((ℓ : ℝ) + 1) ^ 2 * D / lam0 ^ 2 * d) ^ 2 := by
+    have h1 : S ^ 2 ≤ ((ℓ : ℝ) + 1) * ((∑ k, (w k) ^ 2) / lam0 ^ 2) :=
+      le_trans hScs (mul_le_mul_of_nonneg_left hΔsq (by positivity))
+    have h2 : ((ℓ : ℝ) + 1) * ((∑ k, (w k) ^ 2) / lam0 ^ 2)
+        ≤ ((ℓ : ℝ) + 1)
+          * (((ℓ : ℝ) + 1) * (D * d * (((ℓ : ℝ) + 1) / lam0)) ^ 2 / lam0 ^ 2) := by
+      apply mul_le_mul_of_nonneg_left _ (by positivity)
+      rw [div_eq_mul_inv, div_eq_mul_inv]
+      exact mul_le_mul_of_nonneg_right hwsq (by positivity)
+    exact le_trans h1 (le_trans h2 (le_of_eq heq))
+  have hfin := Real.sqrt_le_sqrt hchain
+  rwa [Real.sqrt_sq hSnn, Real.sqrt_sq hTnn] at hfin
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
