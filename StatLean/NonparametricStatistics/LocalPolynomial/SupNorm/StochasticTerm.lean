@@ -217,6 +217,30 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
         |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2) ∂P = 0 := by
       simp only [hzero, ENNReal.ofReal_zero, lintegral_zero]
     rw [hL0]; exact zero_le _
+  have hCstpos : 0 < Cst := lt_of_le_of_ne hCstnn (Ne.symm hCst0)
+  -- degenerate case: `v = 0` forces the noise to vanish a.e.
+  by_cases hv0 : v = 0
+  · have hxi0 : ∀ i, ξ i =ᵐ[P] 0 := by
+      intro i
+      have hmap : P.map (ξ i) = Measure.dirac 0 := by
+        rw [(hξlaw i).map_eq, hv0, gaussianReal_zero_var]
+      have hne : P {ω | ξ i ω ≠ 0} = 0 := by
+        have hset : {ω | ξ i ω ≠ 0} = ξ i ⁻¹' {(0 : ℝ)}ᶜ := by ext ω; simp
+        rw [hset, ← Measure.map_apply (hξm i) (measurableSet_singleton (0 : ℝ)).compl, hmap,
+          Measure.dirac_apply' _ (measurableSet_singleton (0 : ℝ)).compl]
+        simp
+      exact ae_iff.mpr hne
+    have hZ0 : ∀ᵐ ω ∂P, (⨆ t : Set.Icc (0 : ℝ) 1,
+        |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2 = 0 := by
+      have hall : ∀ᵐ ω ∂P, ∀ i, ξ i ω = 0 := (ae_all_iff).mpr hxi0
+      filter_upwards [hall] with ω hω
+      have : ∀ t : Set.Icc (0 : ℝ) 1, |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i| = 0 := by
+        intro t; simp [hω]
+      rw [show (⨆ t : Set.Icc (0 : ℝ) 1, |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|)
+          = 0 from by simp only [this]; exact ciSup_const]
+      norm_num
+    rw [lintegral_congr_ae (hZ0.mono (fun ω h => by rw [h, ENNReal.ofReal_zero]))]
+    simp only [lintegral_zero]; exact zero_le _
   · sorry
 
 end StatLean.NonparametricStatistics
