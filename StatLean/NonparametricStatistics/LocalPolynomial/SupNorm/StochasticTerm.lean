@@ -156,6 +156,7 @@ private lemma lintegral_sum_abs_sq_le {n : ℕ} {Ω : Type} [MeasurableSpace Ω]
     _ = ENNReal.ofReal ((n : ℝ) ^ 2 * v) := by
         rw [← ENNReal.ofReal_mul (by positivity)]; congr 1; ring
 
+set_option maxHeartbeats 2000000 in
 /-- **Sup-norm stochastic bound**: there is `C = C(ℓ, K_max, λ₀, a₀, L_K)` such that under
 the standing design assumptions, a Lipschitz boxed kernel, and i.i.d. `N(0, v)` noise,
 `E[(sup_{t∈[0,1]} |∑ᵢ ξᵢ·W*ᵢ(t)|)²] ≤ C·v·log n/(n·h)` for all `n ≥ 2`,
@@ -179,6 +180,43 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
         ∫⁻ ω, ENNReal.ofReal
             ((⨆ t : Set.Icc (0 : ℝ) 1, |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2) ∂P
           ≤ ENNReal.ofReal (C * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
-  sorry
+  obtain ⟨CL, hCLpos, hCL⟩ := lp_weight_lipschitz_sum (ℓ := ℓ) hlam ha₀ hbox hKlip
+  set Cst : ℝ := lpWeightConst Kmax lam0 a₀ with hCstdef
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hCstnn : 0 ≤ Cst := by
+    rw [hCstdef, lpWeightConst]
+    exact le_trans (div_nonneg (mul_nonneg (by norm_num) hKmax) hlam.le) (le_max_left _ _)
+  have hlog2 : 0 < Real.log 2 := Real.log_pos (by norm_num)
+  refine ⟨48 * Cst ^ 2 + 64 * CL ^ 2 / Real.log 2 + 1, by positivity, ?_⟩
+  intro n hn h hhl hh1 xdat hx heig hdens Ω _ P _ ξ v hξm hξind hξlaw
+  have hn0 : 0 < n := by omega
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn0
+  have hh : 0 < h := lt_of_lt_of_le (div_pos one_pos (mul_pos (by norm_num) hnpos)) hhl
+  have hnh : (0 : ℝ) < (n : ℝ) * h := mul_pos hnpos hh
+  have hlogn : (0 : ℝ) ≤ Real.log n := Real.log_nonneg (by exact_mod_cast (by omega : 1 ≤ n))
+  have hRHSnn : (0 : ℝ) ≤ (48 * Cst ^ 2 + 64 * CL ^ 2 / Real.log 2 + 1)
+      * (v : ℝ) * Real.log n / ((n : ℝ) * h) := by positivity
+  -- degenerate case: `Cst = 0` (kernel bound `0`) forces all weights to vanish
+  by_cases hCst0 : Cst = 0
+  · have hzero : ∀ ω, (⨆ t : Set.Icc (0 : ℝ) 1,
+        |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2 = 0 := by
+      intro ω
+      have hval : ∀ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i| = 0 := by
+        intro t
+        have hW : ∀ i, lpWeight xdat K h ℓ (t : ℝ) i = 0 := by
+          intro i
+          have hb := lp_weight_abs_le hn0 hh hlam ha₀ heig hbox t.2 i
+          rw [← hCstdef, hCst0, zero_div] at hb
+          exact abs_nonpos_iff.mp hb
+        simp [hW]
+      rw [show (⨆ t : Set.Icc (0 : ℝ) 1, |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|)
+          = 0 from by simp only [hval]; exact ciSup_const]
+      norm_num
+    have hL0 : ∫⁻ ω, ENNReal.ofReal ((⨆ t : Set.Icc (0 : ℝ) 1,
+        |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2) ∂P = 0 := by
+      simp only [hzero, ENNReal.ofReal_zero, lintegral_zero]
+    rw [hL0]; exact zero_le _
+  · sorry
 
 end StatLean.NonparametricStatistics
