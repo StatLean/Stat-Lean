@@ -318,6 +318,77 @@ private lemma lp_invE0_absSum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → �
   have h1 := Real.sqrt_le_sqrt hS2
   rwa [Real.sqrt_sq hSnn, Real.sqrt_sq hMnn] at h1
 
+/-- The weight as a dot product with the `0`-th column of `B⁻¹`. -/
+private lemma lpWeight_eq_dot {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ) (t : ℝ)
+    (i : Fin n) :
+    lpWeight xdat K h ℓ t i
+      = ((n : ℝ) * h)⁻¹ * ∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+          * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)) := by
+  rw [lpWeight, lpMatrix_inv_mulVec_zero]
+  rw [show (∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+        * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)))
+      = (∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+        * lpBasis ℓ ((xdat i - t) / h) k) * K ((xdat i - t) / h) from by
+      rw [Finset.sum_mul]; exact Finset.sum_congr rfl (fun k _ => by ring)]
+  ring
+
+/-- Design-density count bound on the doubled bandwidth window: `∑ᵢ 1[xᵢ∈[t−2h,t+2h]] ≤ 4a₀hn`. -/
+private lemma count_active_le {n : ℕ} {xdat : Fin n → ℝ} {a₀ h : ℝ} (hn : 0 < n) (hh : 0 < h)
+    (hhl : 1 / (2 * (n : ℝ)) ≤ h) (hdens : DesignDensityBound xdat a₀) (t : ℝ) :
+    ∑ i, (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i)
+      ≤ 4 * a₀ * h * (n : ℝ) := by
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
+  have hd := hdens (t - 2 * h) (t + 2 * h) (by linarith)
+  have hinv : (n : ℝ)⁻¹ ≤ 4 * h := by
+    have he : (n : ℝ)⁻¹ = 2 * (1 / (2 * (n : ℝ))) := by field_simp
+    rw [he]; nlinarith [hhl, hh]
+  have hmax : max ((t + 2 * h) - (t - 2 * h)) ((n : ℝ)⁻¹) = (t + 2 * h) - (t - 2 * h) :=
+    max_eq_left (by rw [show (t + 2 * h) - (t - 2 * h) = 4 * h by ring]; exact hinv)
+  rw [hmax, show (t + 2 * h) - (t - 2 * h) = 4 * h by ring] at hd
+  have h2 := mul_le_mul_of_nonneg_left hd hnpos.le
+  rw [← mul_assoc, mul_inv_cancel₀ hnpos.ne', one_mul] at h2
+  calc ∑ i, (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i)
+      ≤ (n : ℝ) * (a₀ * (4 * h)) := h2
+    _ = 4 * a₀ * h * (n : ℝ) := by ring
+
+/-- Entrywise Lipschitz bound of the local design matrix in the evaluation point. -/
+private lemma lpMatrix_entry_diff_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ}
+    {Kmax a₀ LK h : ℝ} {ℓ : ℕ} (hn : 0 < n) (hh : 0 < h) (hhl : 1 / (2 * (n : ℝ)) ≤ h)
+    (hbox : KernelBoxed K Kmax) (hKlip : ∀ u u' : ℝ, |K u - K u'| ≤ LK * |u - u'|)
+    (hdens : DesignDensityBound xdat a₀) {t t' : ℝ} (hd : |t - t'| < h) (k j : Fin (ℓ + 1)) :
+    |lpMatrix xdat K h ℓ t' k j - lpMatrix xdat K h ℓ t k j|
+      ≤ 4 * a₀ * (LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h) := by
+  set B := ((ℓ : ℝ) + 1) * 2 ^ ℓ with hBdef
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hLK : 0 ≤ LK := by
+    have hk := hKlip 1 0; rw [show |(1 : ℝ) - 0| = 1 by norm_num, mul_one] at hk
+    exact le_trans (abs_nonneg _) hk
+  have hcoef : (0 : ℝ) ≤ (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by
+    have : (0 : ℝ) ≤ |t - t'| / h := div_nonneg (abs_nonneg _) hh.le
+    positivity
+  rw [lpMatrix_apply, lpMatrix_apply, ← mul_sub, ← Finset.sum_sub_distrib, abs_mul,
+    abs_of_pos (by positivity : (0 : ℝ) < ((n : ℝ) * h)⁻¹)]
+  have hsum : |∑ i, (K ((xdat i - t') / h)
+        * (lpBasis ℓ ((xdat i - t') / h) k * lpBasis ℓ ((xdat i - t') / h) j)
+      - K ((xdat i - t) / h)
+        * (lpBasis ℓ ((xdat i - t) / h) k * lpBasis ℓ ((xdat i - t) / h) j))|
+      ≤ (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) * (4 * a₀ * h * (n : ℝ)) := by
+    calc |∑ i, _| ≤ ∑ i, |_| := Finset.abs_sum_le_sum_abs _ _
+      _ ≤ ∑ i, (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h)
+            * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) :=
+          Finset.sum_le_sum (fun i _ => lpMatrix_summand_le hh hbox hKlip hd k j i)
+      _ = (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h)
+            * ∑ i, (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by
+          rw [← Finset.mul_sum]
+      _ ≤ (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) * (4 * a₀ * h * (n : ℝ)) :=
+          mul_le_mul_of_nonneg_left (count_active_le hn hh hhl hdens t) hcoef
+  calc ((n : ℝ) * h)⁻¹ * |∑ i, _|
+      ≤ ((n : ℝ) * h)⁻¹ * ((LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) * (4 * a₀ * h * (n : ℝ))) :=
+        mul_le_mul_of_nonneg_left hsum (by positivity)
+    _ = 4 * a₀ * (LK + 2 * Kmax) * B ^ 2 * (|t - t'| / h) := by
+        field_simp
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
