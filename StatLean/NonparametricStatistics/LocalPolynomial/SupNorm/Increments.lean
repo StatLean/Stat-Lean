@@ -662,6 +662,7 @@ private lemma lp_weight_diff_eq {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → �
   rw [← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl (fun k _ => by ring)
 
+set_option maxHeartbeats 1600000 in
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
@@ -681,6 +682,100 @@ theorem lp_weight_lipschitz_sum {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK
       ∀ t ∈ Set.Icc (0 : ℝ) 1, ∀ t' ∈ Set.Icc (0 : ℝ) 1,
         ∑ i, |lpWeight xdat K h ℓ t i - lpWeight xdat K h ℓ t' i|
           ≤ CL * |t - t'| / h ^ 3 := by
-  sorry
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hLK : 0 ≤ LK := by
+    have hk := hKlip 1 0; rw [show |(1 : ℝ) - 0| = 1 by norm_num, mul_one] at hk
+    exact le_trans (abs_nonneg _) hk
+  have h4a : (0 : ℝ) ≤ 4 * a₀ := by linarith
+  have hLKK : (0 : ℝ) ≤ LK + 2 * Kmax := by linarith
+  have hP : (0 : ℝ) ≤ ((ℓ : ℝ) + 1) * 2 ^ ℓ := by positivity
+  have hP2 : (0 : ℝ) ≤ (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 := sq_nonneg _
+  have hCstnn : (0 : ℝ) ≤ lpWeightConst Kmax lam0 a₀ := by
+    unfold lpWeightConst
+    exact le_trans (div_nonneg (mul_nonneg (by norm_num) hKmax) hlam.le) (le_max_left _ _)
+  set CI : ℝ := ((ℓ : ℝ) + 1) / lam0 * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2)
+      * (4 * a₀) with hCIdef
+  set CII : ℝ := ((ℓ : ℝ) + 1) ^ 2 * (4 * a₀ * (LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2)
+      / lam0 ^ 2 * (Kmax * (((ℓ : ℝ) + 1) * 2 ^ ℓ) * (4 * a₀)) with hCIIdef
+  have hCInn : 0 ≤ CI :=
+    mul_nonneg (mul_nonneg (div_nonneg (by positivity) hlam.le) (mul_nonneg hLKK hP2)) h4a
+  have hCIInn : 0 ≤ CII :=
+    mul_nonneg (div_nonneg (mul_nonneg (by positivity)
+        (mul_nonneg (mul_nonneg h4a hLKK) hP2)) (by positivity))
+      (mul_nonneg (mul_nonneg hKmax hP) h4a)
+  refine ⟨2 * lpWeightConst Kmax lam0 a₀ + CI + CII + 1, by linarith, ?_⟩
+  intro n hn h hhl hh1 xdat hx heig hdens t ht t' ht'
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
+  have hh : 0 < h := lt_of_lt_of_le (div_pos one_pos (mul_pos (by norm_num) hnpos)) hhl
+  have hnh : (0 : ℝ) < (n : ℝ) * h := mul_pos hnpos hh
+  rcases le_or_gt h (|t - t'|) with hcase | hcase
+  · -- crude case: `h ≤ |t − t'|`
+    have hsum := lp_weight_sum_abs_le hn hhl hlam ha₀ heig hbox hdens ht
+    have hsum' := lp_weight_sum_abs_le hn hhl hlam ha₀ heig hbox hdens ht'
+    have hcrude : ∑ i, |lpWeight xdat K h ℓ t i - lpWeight xdat K h ℓ t' i|
+        ≤ 2 * lpWeightConst Kmax lam0 a₀ := by
+      calc ∑ i, |lpWeight xdat K h ℓ t i - lpWeight xdat K h ℓ t' i|
+          ≤ ∑ i, (|lpWeight xdat K h ℓ t i| + |lpWeight xdat K h ℓ t' i|) :=
+            Finset.sum_le_sum (fun i _ => by
+              rw [sub_eq_add_neg]
+              exact le_trans (abs_add_le _ _) (le_of_eq (by rw [abs_neg])))
+        _ = ∑ i, |lpWeight xdat K h ℓ t i| + ∑ i, |lpWeight xdat K h ℓ t' i| :=
+            Finset.sum_add_distrib
+        _ ≤ 2 * lpWeightConst Kmax lam0 a₀ := by linarith
+    refine le_trans hcrude ?_
+    rw [le_div_iff₀ (by positivity : (0 : ℝ) < h ^ 3)]
+    have hh3h : h ^ 3 ≤ h := by
+      have := pow_le_pow_of_le_one hh.le hh1 (by norm_num : 1 ≤ 3); simpa using this
+    have hh3 : h ^ 3 ≤ |t - t'| := le_trans hh3h hcase
+    nlinarith [mul_nonneg hCstnn (sub_nonneg.mpr hh3), mul_nonneg hCInn (abs_nonneg (t - t')),
+      mul_nonneg hCIInn (abs_nonneg (t - t')), abs_nonneg (t - t'), hCstnn]
+  · -- smooth case: `|t − t'| < h`
+    have hPn : (0 : ℝ) ≤ 4 * a₀ * h * (n : ℝ) :=
+      mul_nonneg (mul_nonneg h4a hh.le) (Nat.cast_nonneg n)
+    have hnn : (0 : ℝ) ≤ Kmax * (((ℓ : ℝ) + 1) * 2 ^ ℓ) * (4 * a₀ * h * (n : ℝ)) :=
+      mul_nonneg (mul_nonneg hKmax hP) hPn
+    have hTI := lp_termI_sum_le hn hh hhl hlam hbox hKlip hdens (heig t ht) hcase
+    have hgdiff := lp_gdiff_absSum_le hn hh hhl ha₀ hlam hbox hKlip hdens hcase
+      (heig t ht) (heig t' ht')
+    have hTII := le_trans (lp_termII_sum_le hn hh hhl hbox hdens hcase)
+      (mul_le_mul_of_nonneg_right hgdiff hnn)
+    have hne_n : (n : ℝ) ≠ 0 := hnpos.ne'
+    calc ∑ i, |lpWeight xdat K h ℓ t i - lpWeight xdat K h ℓ t' i|
+        ≤ ∑ i, ((n : ℝ) * h)⁻¹
+            * (|∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+                  * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+                    - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|
+              + |∑ k, ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+                    - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k)
+                  * (lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|) := by
+          refine Finset.sum_le_sum (fun i _ => ?_)
+          rw [lp_weight_diff_eq, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ((n : ℝ) * h)⁻¹)]
+          exact mul_le_mul_of_nonneg_left (abs_add_le _ _) (by positivity)
+      _ = ((n : ℝ) * h)⁻¹
+          * ((∑ i, |∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+                * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+                  - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|)
+            + ∑ i, |∑ k, ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+                  - (lpMatrix xdat K h ℓ t')⁻¹.mulVec (Pi.single 0 1) k)
+                * (lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|) := by
+          rw [← Finset.mul_sum, Finset.sum_add_distrib]
+      _ ≤ ((n : ℝ) * h)⁻¹
+          * (((ℓ : ℝ) + 1) / lam0
+              * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h)) * (4 * a₀ * h * n)
+            + ((ℓ : ℝ) + 1) ^ 2 * (4 * a₀ * (LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2)
+                / lam0 ^ 2 * (|t - t'| / h)
+              * (Kmax * (((ℓ : ℝ) + 1) * 2 ^ ℓ) * (4 * a₀ * h * n))) :=
+          mul_le_mul_of_nonneg_left (add_le_add hTI hTII) (by positivity)
+      _ = (CI + CII) * (|t - t'| / h) := by
+          rw [hCIdef, hCIIdef, mul_add, add_mul]
+          congr 1 <;> field_simp
+      _ ≤ (2 * lpWeightConst Kmax lam0 a₀ + CI + CII + 1) * |t - t'| / h ^ 3 := by
+          rw [le_div_iff₀ (by positivity : (0 : ℝ) < h ^ 3)]
+          have hexp : (CI + CII) * (|t - t'| / h) * h ^ 3 = (CI + CII) * |t - t'| * h ^ 2 := by
+            field_simp
+          rw [hexp]
+          nlinarith [mul_nonneg (mul_nonneg (add_nonneg hCInn hCIInn) (abs_nonneg (t - t')))
+              (by nlinarith [hh1, hh.le] : (0 : ℝ) ≤ 1 - h ^ 2),
+            mul_nonneg hCstnn (abs_nonneg (t - t')), abs_nonneg (t - t')]
 
 end StatLean.NonparametricStatistics
