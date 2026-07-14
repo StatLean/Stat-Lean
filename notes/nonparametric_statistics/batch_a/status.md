@@ -1,6 +1,25 @@
 # Nonparametric statistics, Batch a — status
 
-Last update: 2026-07-14 (Waves 1–4 gated & merged; E-wave + lp-core-fix running).
+Last update: 2026-07-14 (ALL WAVES CLOSED — batch 0-sorry; full-lib build + axiom sweep in
+final gate).
+
+E-wave + fixes outcomes:
+- lp-core-fix: both renegotiated Quadratic debts CLOSED under the `0<h` amendment
+  (completing-the-square, `n ≥ 1` derived from PosDef). LP Quadratic fully real.
+- E1 `np/kde-mise` (3 sessions): MISEVariance exact lower bound (Young/Minkowski convolution
+  L²), MISEBias closed incl. `stepC_bound` (double Minkowski + nested dominated convergence
+  on the translation modulus — hardest lemma of the batch), ExactMISE assembly (3 drift
+  errors fixed in a follow-up micro-session). **Prop 1.6 CLOSED.**
+  Process note: one E1 gate ran red (3 assembly errors) and was merged prematurely by a bad
+  `&&`-chain (tail success masked rc=1); fixed forward by E1C, whose gate was verified green
+  before merging. No red state ever reached main.
+- E2 `np/lp-supnorm` (2 sessions): Increments ℓ¹-Lipschitz (case-split crude/smooth +
+  resolvent), StochasticTerm (n⁴ grid, Gaussian weighted-sum law + exp-square maximal bound,
+  ℓ¹-noise increment), SupNormRate (bias/stochastic split + rpow bandwidth substitution).
+  **Thm 1.8 CLOSED.**
+- E3 `np/proj-rate`: ellipsoid→ℓ¹ (AM-GM + p-series), aliasing rate (Cauchy–Schwarz on the
+  tail + tail p-series, explicit `residualConst`), **Thm 1.9 CLOSED** (three-term assembly;
+  Σ|θ| DERIVED on the ellipsoid).
 
 Waves 2–4 outcomes (all gate-verified 0-sorry in their touch-sets, merged):
 - B1 Minkowski-L² (duality + spanning-set truncation) / translation-L² (3ε via
