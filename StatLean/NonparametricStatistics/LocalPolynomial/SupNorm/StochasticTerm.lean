@@ -241,6 +241,101 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
       norm_num
     rw [lintegral_congr_ae (hZ0.mono (fun ω h => by rw [h, ENNReal.ofReal_zero]))]
     simp only [lintegral_zero]; exact zero_le _
-  · sorry
+  -- main case: `Cst > 0` and `v > 0`
+  have hvpos : 0 < v := pos_iff_ne_zero.mpr hv0
+  have hvR : (0 : ℝ) < (v : ℝ) := NNReal.coe_pos.mpr hvpos
+  have hnr : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hCLnn : 0 ≤ CL := hCLpos.le
+  set M : ℕ := n ^ 4 with hMdef
+  have hMpos : 0 < M := by rw [hMdef]; positivity
+  have hMr : (0 : ℝ) < (M : ℝ) := Nat.cast_pos.mpr hMpos
+  set s : Fin (M + 1) → ℝ := fun j => (j : ℝ) / M with hsdef
+  have hs01 : ∀ j, s j ∈ Set.Icc (0 : ℝ) 1 := by
+    intro j
+    refine ⟨by positivity, ?_⟩
+    rw [hsdef, div_le_one hMr]
+    exact_mod_cast Nat.lt_succ_iff.mp j.isLt
+  set a : ℝ := ((n : ℝ) * h) / (4 * Cst ^ 2 * (v : ℝ)) with hadef
+  have hapos : 0 < a := by rw [hadef]; positivity
+  set Z : Ω → ℝ → ℝ := fun ω s => ∑ i, ξ i ω * lpWeight xdat K h ℓ s i with hZdef
+  have hZapp : ∀ ω s, Z ω s = ∑ i, ξ i ω * lpWeight xdat K h ℓ s i := fun _ _ => rfl
+  set E : Ω → ℝ := fun ω => (∑ i, |ξ i ω|) * (CL / ((M : ℝ) * h ^ 3)) with hEdef
+  have hEapp : ∀ ω, E ω = (∑ i, |ξ i ω|) * (CL / ((M : ℝ) * h ^ 3)) := fun _ => rfl
+  have hη_meas : ∀ j, Measurable (fun ω => Z ω (s j)) := by
+    intro j
+    simp only [hZapp]
+    exact Finset.measurable_sum Finset.univ (fun i _ => (hξm i).mul_const _)
+  have hbddabove : ∀ ω, BddAbove (Set.range fun t : Set.Icc (0 : ℝ) 1 => |Z ω (t : ℝ)|) := by
+    intro ω
+    refine ⟨(∑ i, |ξ i ω|) * Cst / ((n : ℝ) * h), ?_⟩
+    rintro _ ⟨t, rfl⟩
+    simp only [hZapp]
+    calc |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|
+        ≤ ∑ i, |ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i| := Finset.abs_sum_le_sum_abs _ _
+      _ = ∑ i, |ξ i ω| * |lpWeight xdat K h ℓ (t : ℝ) i| := by simp_rw [abs_mul]
+      _ ≤ ∑ i, |ξ i ω| * (Cst / ((n : ℝ) * h)) := by
+          refine Finset.sum_le_sum (fun i _ => mul_le_mul_of_nonneg_left ?_ (abs_nonneg _))
+          rw [hCstdef]; exact lp_weight_abs_le hn0 hh hlam ha₀ heig hbox t.2 i
+      _ = (∑ i, |ξ i ω|) * Cst / ((n : ℝ) * h) := by rw [← Finset.sum_mul]; ring
+  -- pointwise bound
+  have hpt : ∀ ω, (⨆ t : Set.Icc (0 : ℝ) 1, |Z ω (t : ℝ)|) ^ 2
+      ≤ 2 * (⨆ j, (Z ω (s j)) ^ 2) + 2 * (E ω) ^ 2 := by
+    intro ω
+    have hbddg : BddAbove (Set.range fun j => |Z ω (s j)|) := (Set.finite_range _).bddAbove
+    have hbddsq : BddAbove (Set.range fun j => (Z ω (s j)) ^ 2) := (Set.finite_range _).bddAbove
+    set sgrid : ℝ := ⨆ j, (Z ω (s j)) ^ 2 with hsgrid
+    have hsgrid_nn : 0 ≤ sgrid := le_trans (sq_nonneg (Z ω (s 0))) (le_ciSup hbddsq 0)
+    have hgle : (⨆ j, |Z ω (s j)|) ≤ Real.sqrt sgrid := by
+      apply ciSup_le; intro j
+      rw [← Real.sqrt_sq_eq_abs]; exact Real.sqrt_le_sqrt (le_ciSup hbddsq j)
+    have hgabs_nn : 0 ≤ ⨆ j, |Z ω (s j)| := le_trans (abs_nonneg _) (le_ciSup hbddg 0)
+    have hgsq : (⨆ j, |Z ω (s j)|) ^ 2 ≤ sgrid := by
+      calc (⨆ j, |Z ω (s j)|) ^ 2 ≤ (Real.sqrt sgrid) ^ 2 := pow_le_pow_left₀ hgabs_nn hgle 2
+        _ = sgrid := Real.sq_sqrt hsgrid_nn
+    have hkey : (⨆ t : Set.Icc (0 : ℝ) 1, |Z ω (t : ℝ)|) ≤ (⨆ j, |Z ω (s j)|) + E ω := by
+      apply ciSup_le; intro t
+      obtain ⟨j, hj⟩ := exists_grid_near hMpos t.2
+      have hinc : |Z ω (t : ℝ) - Z ω (s j)| ≤ E ω := by
+        have hdiff : Z ω (t : ℝ) - Z ω (s j)
+            = ∑ i, ξ i ω * (lpWeight xdat K h ℓ (t : ℝ) i - lpWeight xdat K h ℓ (s j) i) := by
+          rw [hZapp, hZapp, ← Finset.sum_sub_distrib]
+          exact Finset.sum_congr rfl (fun i _ => by ring)
+        have hM1 : |(t : ℝ) - s j| * (M : ℝ) ≤ 1 := by
+          have hh2 := mul_le_mul_of_nonneg_right hj hMr.le
+          rwa [div_mul_cancel₀ _ hMr.ne'] at hh2
+        rw [hdiff, hEapp]
+        calc |∑ i, ξ i ω * (lpWeight xdat K h ℓ (t : ℝ) i - lpWeight xdat K h ℓ (s j) i)|
+            ≤ ∑ i, |ξ i ω| * |lpWeight xdat K h ℓ (t : ℝ) i - lpWeight xdat K h ℓ (s j) i| := by
+              refine le_trans (Finset.abs_sum_le_sum_abs _ _) (le_of_eq ?_)
+              simp_rw [abs_mul]
+          _ ≤ ∑ i, |ξ i ω|
+                * (∑ i', |lpWeight xdat K h ℓ (t : ℝ) i' - lpWeight xdat K h ℓ (s j) i'|) := by
+              refine Finset.sum_le_sum (fun i _ => mul_le_mul_of_nonneg_left ?_ (abs_nonneg _))
+              exact Finset.single_le_sum
+                (f := fun i' => |lpWeight xdat K h ℓ (t : ℝ) i' - lpWeight xdat K h ℓ (s j) i'|)
+                (fun i' _ => abs_nonneg _) (Finset.mem_univ i)
+          _ = (∑ i, |ξ i ω|)
+                * (∑ i', |lpWeight xdat K h ℓ (t : ℝ) i' - lpWeight xdat K h ℓ (s j) i'|) := by
+              rw [← Finset.sum_mul]
+          _ ≤ (∑ i, |ξ i ω|) * (CL * |(t : ℝ) - s j| / h ^ 3) := by
+              refine mul_le_mul_of_nonneg_left ?_ (Finset.sum_nonneg (fun i _ => abs_nonneg _))
+              exact hCL hn0 hhl hh1 hx heig hdens (t : ℝ) t.2 (s j) (hs01 j)
+          _ ≤ (∑ i, |ξ i ω|) * (CL / ((M : ℝ) * h ^ 3)) := by
+              refine mul_le_mul_of_nonneg_left ?_ (Finset.sum_nonneg (fun i _ => abs_nonneg _))
+              rw [div_le_div_iff₀ (by positivity) (by positivity)]
+              nlinarith [mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hM1 hCLnn)
+                (pow_pos hh 3).le]
+      calc |Z ω (t : ℝ)| = |Z ω (s j) + (Z ω (t : ℝ) - Z ω (s j))| := by congr 1; ring
+        _ ≤ |Z ω (s j)| + |Z ω (t : ℝ) - Z ω (s j)| := abs_add_le _ _
+        _ ≤ (⨆ j', |Z ω (s j')|) + E ω := add_le_add (le_ciSup hbddg j) hinc
+    have hsupt_nn : 0 ≤ ⨆ t : Set.Icc (0 : ℝ) 1, |Z ω (t : ℝ)| :=
+      le_trans (abs_nonneg _) (le_ciSup (hbddabove ω)
+        (⟨0, Set.mem_Icc.mpr ⟨le_refl 0, zero_le_one⟩⟩ : Set.Icc (0 : ℝ) 1))
+    calc (⨆ t : Set.Icc (0 : ℝ) 1, |Z ω (t : ℝ)|) ^ 2
+        ≤ ((⨆ j, |Z ω (s j)|) + E ω) ^ 2 := pow_le_pow_left₀ hsupt_nn hkey 2
+      _ ≤ 2 * (⨆ j, |Z ω (s j)|) ^ 2 + 2 * (E ω) ^ 2 := by
+          nlinarith [sq_nonneg ((⨆ j, |Z ω (s j)|) - E ω)]
+      _ ≤ 2 * sgrid + 2 * (E ω) ^ 2 := by nlinarith [hgsq]
+  sorry
 
 end StatLean.NonparametricStatistics
