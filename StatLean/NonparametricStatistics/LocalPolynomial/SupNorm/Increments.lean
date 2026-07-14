@@ -526,6 +526,76 @@ private lemma lpV_abs_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {Kma
       constructor <;> nlinarith [hb.1, hb.2, hd'.1, hd'.2, hh]
     rw [hbox.2 z' hz'1, zero_mul, abs_zero]
 
+/-- Term I of the weight increment: `∑ᵢ |∑ₖ (B_t⁻¹e₀)ₖ (V_i(t)−V_i(t'))ₖ|`. -/
+private lemma lp_termI_sum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK h : ℝ}
+    {ℓ : ℕ} {t t' : ℝ} (hn : 0 < n) (hh : 0 < h) (hhl : 1 / (2 * (n : ℝ)) ≤ h) (hlam : 0 < lam0)
+    (hbox : KernelBoxed K Kmax) (hKlip : ∀ u u' : ℝ, |K u - K u'| ≤ LK * |u - u'|)
+    (hdens : DesignDensityBound xdat a₀)
+    (heigt : ∀ v : Fin (ℓ + 1) → ℝ,
+      lam0 * ∑ k, (v k) ^ 2 ≤ ∑ k, v k * (lpMatrix xdat K h ℓ t).mulVec v k)
+    (hd : |t - t'| < h) :
+    ∑ i, |∑ k, (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) k
+        * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+          - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|
+      ≤ ((ℓ : ℝ) + 1) / lam0
+          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h)) * (4 * a₀ * h * n) := by
+  set B : ℝ := ((ℓ : ℝ) + 1) * 2 ^ ℓ with hBdef
+  set d : ℝ := |t - t'| / h with hddef
+  set M : ℝ := (LK + 2 * Kmax) * B ^ 2 * d with hMdef
+  set G := (lpMatrix xdat K h ℓ t)⁻¹.mulVec (Pi.single 0 1) with hG
+  have hdnn : 0 ≤ d := div_nonneg (abs_nonneg _) hh.le
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hLK : 0 ≤ LK := by
+    have hk := hKlip 1 0; rw [show |(1 : ℝ) - 0| = 1 by norm_num, mul_one] at hk
+    exact le_trans (abs_nonneg _) hk
+  have hMnn : 0 ≤ M := by rw [hMdef]; positivity
+  have hg : ∑ k, |G k| ≤ ((ℓ : ℝ) + 1) / lam0 := by
+    rw [hG]; exact lp_invE0_absSum_le hlam heigt
+  have hVdiff : ∀ i k, |lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+        - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h)|
+      ≤ M * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by
+    intro i k
+    have hb := lpMatrix_summand_le (xdat := xdat) hh hbox hKlip hd k 0 i
+    have h0t : lpBasis ℓ ((xdat i - t) / h) 0 = 1 := by simp [lpBasis]
+    have h0t' : lpBasis ℓ ((xdat i - t') / h) 0 = 1 := by simp [lpBasis]
+    rw [h0t, h0t', mul_one, mul_one] at hb
+    rw [mul_comm (lpBasis ℓ ((xdat i - t) / h) k) (K ((xdat i - t) / h)),
+      mul_comm (lpBasis ℓ ((xdat i - t') / h) k) (K ((xdat i - t') / h)), abs_sub_comm]
+    exact hb
+  calc ∑ i, |∑ k, G k * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+          - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|
+      ≤ ∑ i, ((ℓ : ℝ) + 1) / lam0 * M
+          * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by
+        refine Finset.sum_le_sum (fun i _ => ?_)
+        calc |∑ k, G k * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+                - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))|
+            ≤ ∑ k, |G k * (lpBasis ℓ ((xdat i - t) / h) k * K ((xdat i - t) / h)
+                - lpBasis ℓ ((xdat i - t') / h) k * K ((xdat i - t') / h))| :=
+              Finset.abs_sum_le_sum_abs _ _
+          _ ≤ ∑ k, |G k| * (M
+              * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i)) := by
+              refine Finset.sum_le_sum (fun k _ => ?_)
+              rw [abs_mul]
+              exact mul_le_mul_of_nonneg_left (hVdiff i k) (abs_nonneg _)
+          _ = (∑ k, |G k|) * (M
+              * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i)) := by
+              rw [← Finset.sum_mul]
+          _ ≤ ((ℓ : ℝ) + 1) / lam0 * (M
+              * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i)) := by
+              refine mul_le_mul_of_nonneg_right hg ?_
+              exact mul_nonneg hMnn (Set.indicator_nonneg (fun _ _ => by norm_num) _)
+          _ = ((ℓ : ℝ) + 1) / lam0 * M
+              * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by ring
+    _ = ((ℓ : ℝ) + 1) / lam0 * M
+          * ∑ i, (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by
+        rw [← Finset.mul_sum]
+    _ ≤ ((ℓ : ℝ) + 1) / lam0 * M * (4 * a₀ * h * n) := by
+        refine mul_le_mul_of_nonneg_left (count_active_le hn hh hhl hdens t) ?_
+        exact mul_nonneg (div_nonneg (by positivity) hlam.le) hMnn
+    _ = ((ℓ : ℝ) + 1) / lam0
+          * ((LK + 2 * Kmax) * (((ℓ : ℝ) + 1) * 2 ^ ℓ) ^ 2 * (|t - t'| / h)) * (4 * a₀ * h * n) := by
+        rw [hMdef]
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
