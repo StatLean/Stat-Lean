@@ -254,7 +254,7 @@ theorem kde_exact_mise {p K w : ℝ → ℝ}
   have hcorr : (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 ≤ ε / 2 * ((n : ℝ) * h)⁻¹ := by
     calc (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 = (n : ℝ)⁻¹ * C := by rw [hCdef]; ring
       _ ≤ (n : ℝ)⁻¹ * (ε / 2 / h) := mul_le_mul_of_nonneg_left hCle (by positivity)
-      _ = ε / 2 * ((n : ℝ) * h)⁻¹ := by rw [mul_inv]; field_simp; ring
+      _ = ε / 2 * ((n : ℝ) * h)⁻¹ := by rw [mul_inv]; field_simp
   -- MISE decomposition and the three integral bounds.
   have hdecomp := kdeMise_eq_integrated hn hh hs hXmeas hp_meas h0 hKmeas hK1 hK2
   obtain ⟨hbl, hbu⟩ := hbias P X hn1 hs hXmeas h hh hlt_bias
@@ -268,11 +268,12 @@ theorem kde_exact_mise {p K w : ℝ → ℝ}
             + h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2)
             - ε * (((n : ℝ) * h)⁻¹ + h ^ 4))
         ≤ ENNReal.ofReal ((h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) - ε / 2 * h ^ 4)
-            + (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2
+            + (((n : ℝ) * h)⁻¹ * (∫ u, (K u) ^ 2)
               - (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2)) := by
-          apply ENNReal.ofReal_le_ofReal; nlinarith [hcorr, hε.le, hD0, hh40]
+          apply ENNReal.ofReal_le_ofReal
+          nlinarith [hcorr, hε.le, hD0, hh40, mul_nonneg hε.le hD0, mul_nonneg hε.le hh40]
       _ ≤ ENNReal.ofReal (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) - ε / 2 * h ^ 4)
-            + ENNReal.ofReal (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2
+            + ENNReal.ofReal (((n : ℝ) * h)⁻¹ * (∫ u, (K u) ^ 2)
               - (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2) := ENNReal.ofReal_add_le
       _ ≤ (∫⁻ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2))
             + ∫⁻ x, kdeVarianceAt P X K h x := add_le_add hbl hvge
