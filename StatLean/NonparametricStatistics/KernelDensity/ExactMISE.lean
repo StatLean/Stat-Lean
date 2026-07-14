@@ -179,7 +179,7 @@ theorem kdeMise_eq_integrated {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     rw [huc]
     exact ((hjoint.sub (hp.comp measurable_snd)).pow_const 2).ennreal_ofReal
   have hswap : kdeMise P X K h p = ∫⁻ x, kdeMseAt P X K h p x := by
-    rw [kdeMise]
+    unfold kdeMise kdeMseAt
     rw [lintegral_lintegral_swap (f := fun ω x =>
       ENNReal.ofReal ((kde X K h ω x - p x) ^ 2)) hswapmeas.aemeasurable]
   rw [hswap]
@@ -223,6 +223,70 @@ theorem kde_exact_mise {p K w : ℝ → ℝ}
               ≤ kdeMise P X K h p ∧
             kdeMise P X K h p
               ≤ ENNReal.ofReal (kdeMiseMain K w n h + ε * (((n : ℝ) * h)⁻¹ + h ^ 4)) := by
-  sorry
+  have hK1 : Integrable K := by
+    have := hK.integrable_pow 0 (Nat.zero_le _); simpa using this
+  intro ε hε
+  -- Bias part: the exact asymptotic at tolerance `ε/2`.
+  obtain ⟨h₀b, hh₀b, hbias⟩ := kde_integrated_sq_bias_asymptotic hp_meas h0 h1 hp1 hw_meas hpw hw2 hK
+    hKmeas hKu2 (ε / 2) (by positivity)
+  set C : ℝ := (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 with hCdef
+  have hCnn : (0 : ℝ) ≤ C :=
+    mul_nonneg (sq_nonneg _) (integral_nonneg fun x => sq_nonneg _)
+  refine ⟨min h₀b (ε / (2 * (C + 1))), lt_min hh₀b (by positivity), ?_⟩
+  intro h hh hlt Ω _ P _ n X hn1 hs hXmeas
+  have hn : 0 < n := hn1
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast hn
+  have hlt_bias : h < h₀b := lt_of_lt_of_le hlt (min_le_left _ _)
+  have hlt_corr : h < ε / (2 * (C + 1)) := lt_of_lt_of_le hlt (min_le_right _ _)
+  -- Nonnegativity facts.
+  have hV0 : (0 : ℝ) ≤ ((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2 :=
+    mul_nonneg (by positivity) (integral_nonneg fun u => sq_nonneg _)
+  have hMb0 : (0 : ℝ) ≤ h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * ∫ x, (w x) ^ 2 :=
+    mul_nonneg (mul_nonneg (by positivity) (sq_nonneg _)) (integral_nonneg fun x => sq_nonneg _)
+  have hD0 : (0 : ℝ) ≤ ((n : ℝ) * h)⁻¹ := by positivity
+  have hh40 : (0 : ℝ) ≤ h ^ 4 := by positivity
+  -- Correction smallness: `n⁻¹·C ≤ (ε/2)·(nh)⁻¹`.
+  have hhC : h * C ≤ ε / 2 := by
+    have hden : (0 : ℝ) < 2 * (C + 1) := by positivity
+    have := (lt_div_iff₀ hden).mp hlt_corr
+    nlinarith [hCnn, hε.le, this]
+  have hCle : C ≤ ε / 2 / h := (le_div_iff₀ hh).mpr (by nlinarith [hhC])
+  have hcorr : (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 ≤ ε / 2 * ((n : ℝ) * h)⁻¹ := by
+    calc (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2 = (n : ℝ)⁻¹ * C := by rw [hCdef]; ring
+      _ ≤ (n : ℝ)⁻¹ * (ε / 2 / h) := mul_le_mul_of_nonneg_left hCle (by positivity)
+      _ = ε / 2 * ((n : ℝ) * h)⁻¹ := by rw [mul_inv]; field_simp; ring
+  -- MISE decomposition and the three integral bounds.
+  have hdecomp := kdeMise_eq_integrated hn hh hs hXmeas hp_meas h0 hKmeas hK1 hK2
+  obtain ⟨hbl, hbu⟩ := hbias P X hn1 hs hXmeas h hh hlt_bias
+  have hvle := kde_integrated_variance_le hh hs hXmeas hp_meas h0 hKmeas hK2
+  have hvge := kde_integrated_variance_ge hn hh hs hXmeas hp_meas h0 hp2 hKmeas hK1 hK2
+  rw [hdecomp]
+  simp only [kdeMiseMain]
+  constructor
+  · -- Lower bound.
+    calc ENNReal.ofReal ((((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2)
+            + h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2)
+            - ε * (((n : ℝ) * h)⁻¹ + h ^ 4))
+        ≤ ENNReal.ofReal ((h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) - ε / 2 * h ^ 4)
+            + (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2
+              - (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2)) := by
+          apply ENNReal.ofReal_le_ofReal; nlinarith [hcorr, hε.le, hD0, hh40]
+      _ ≤ ENNReal.ofReal (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) - ε / 2 * h ^ 4)
+            + ENNReal.ofReal (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2
+              - (n : ℝ)⁻¹ * (∫ u, |K u|) ^ 2 * ∫ x, (p x) ^ 2) := ENNReal.ofReal_add_le
+      _ ≤ (∫⁻ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2))
+            + ∫⁻ x, kdeVarianceAt P X K h x := add_le_add hbl hvge
+  · -- Upper bound.
+    calc (∫⁻ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2))
+            + ∫⁻ x, kdeVarianceAt P X K h x
+        ≤ ENNReal.ofReal (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) + ε / 2 * h ^ 4)
+            + ENNReal.ofReal (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2) := add_le_add hbu hvle
+      _ = ENNReal.ofReal ((h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) + ε / 2 * h ^ 4)
+            + ((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2) :=
+          (ENNReal.ofReal_add (by nlinarith [hMb0, hε.le, hh40]) hV0).symm
+      _ ≤ ENNReal.ofReal ((((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2)
+            + h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2)
+            + ε * (((n : ℝ) * h)⁻¹ + h ^ 4)) := by
+          apply ENNReal.ofReal_le_ofReal; nlinarith [hD0, hh40, hε.le]
 
 end StatLean.NonparametricStatistics
