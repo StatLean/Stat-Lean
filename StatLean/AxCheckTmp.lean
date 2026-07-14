@@ -1,4 +1,0 @@
-import StatLean.NonparametricStatistics.LocalPolynomial.Quadratic
-open StatLean.NonparametricStatistics
-#print axioms isLPSolution_iff_normal
-#print axioms isLPSolution_inv_mulVec
