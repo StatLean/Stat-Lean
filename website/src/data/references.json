@@ -1003,5 +1003,110 @@
     "key": "castillovdv2012",
     "sortKey": "Castillo",
     "html": "I. Castillo and A. W. van der Vaart, “Needles and straw in a haystack: posterior concentration for possibly sparse sequences,” *The Annals of Statistics* **40**(4), 2012, pp. 2069–2101."
+  },
+  {
+    "key": "rosenblatt1956",
+    "sortKey": "Rosenblatt",
+    "html": "M. Rosenblatt, \"Remarks on some nonparametric estimates of a density function,\" *The Annals of Mathematical Statistics* **27**(3), 1956, pp. 832–837."
+  },
+  {
+    "key": "parzen1962",
+    "sortKey": "Parzen",
+    "html": "E. Parzen, \"On estimation of a probability density function and mode,\" *The Annals of Mathematical Statistics* **33**(3), 1962, pp. 1065–1076."
+  },
+  {
+    "key": "fix-hodges1951",
+    "sortKey": "Fix",
+    "html": "E. Fix and J. L. Hodges, *Discriminatory Analysis — Nonparametric Discrimination: Consistency Properties*, Report No. 4, USAF School of Aviation Medicine, Randolph Field, Texas, 1951."
+  },
+  {
+    "key": "akaike1954",
+    "sortKey": "Akaike",
+    "html": "H. Akaike, \"An approximation to the density function,\" *Annals of the Institute of Statistical Mathematics* **6**, 1954, pp. 127–132."
+  },
+  {
+    "key": "bartlett1963",
+    "sortKey": "Bartlett",
+    "html": "M. S. Bartlett, \"Statistical estimation of density functions,\" *Sankhyā, Series A* **25**, 1963, pp. 245–254."
+  },
+  {
+    "key": "holder1882",
+    "sortKey": "Hölder",
+    "html": "O. Hölder, *Beiträge zur Potentialtheorie*, Dissertation, Universität Tübingen, 1882."
+  },
+  {
+    "key": "watson-leadbetter1963",
+    "sortKey": "Watson",
+    "html": "G. S. Watson and M. R. Leadbetter, \"On the estimation of the probability density, I,\" *The Annals of Mathematical Statistics* **34**(2), 1963, pp. 480–491."
+  },
+  {
+    "key": "nikolskii1975",
+    "sortKey": "Nikol'skii",
+    "html": "S. M. Nikol'skii, *Approximation of Functions of Several Variables and Imbedding Theorems*, Springer, Berlin, 1975."
+  },
+  {
+    "key": "epanechnikov1969",
+    "sortKey": "Epanechnikov",
+    "html": "V. A. Epanechnikov, \"Non-parametric estimation of a multivariate probability density,\" *Theory of Probability and Its Applications* **14**(1), 1969, pp. 153–158."
+  },
+  {
+    "key": "brown-low-zhao1997",
+    "sortKey": "Brown",
+    "html": "L. D. Brown, M. G. Low and L. H. Zhao, \"Superefficiency in nonparametric function estimation,\" *The Annals of Statistics* **25**(6), 1997, pp. 2607–2625."
+  },
+  {
+    "key": "nadaraya1964",
+    "sortKey": "Nadaraya",
+    "html": "E. A. Nadaraya, \"On estimating regression,\" *Theory of Probability and Its Applications* **9**(1), 1964, pp. 141–142."
+  },
+  {
+    "key": "watson1964",
+    "sortKey": "Watson",
+    "html": "G. S. Watson, \"Smooth regression analysis,\" *Sankhyā: The Indian Journal of Statistics, Series A* **26**(4), 1964, pp. 359–372."
+  },
+  {
+    "key": "stone1977",
+    "sortKey": "Stone",
+    "html": "C. J. Stone, \"Consistent nonparametric regression,\" *The Annals of Statistics* **5**(4), 1977, pp. 595–620."
+  },
+  {
+    "key": "katkovnik1979",
+    "sortKey": "Katkovnik",
+    "html": "V. Ya. Katkovnik, \"Linear and nonlinear methods of nonparametric regression analysis,\" *Soviet Automatic Control* **5**, 1979, pp. 25–34."
+  },
+  {
+    "key": "fan-gijbels1996",
+    "sortKey": "Fan",
+    "html": "J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications*, Chapman & Hall, London, 1996."
+  },
+  {
+    "key": "stone1982",
+    "sortKey": "Stone",
+    "html": "C. J. Stone, \"Optimal global rates of convergence for nonparametric regression,\" *The Annals of Statistics* **10**(4), 1982, pp. 1040–1053."
+  },
+  {
+    "key": "cencov1962",
+    "sortKey": "Čencov",
+    "html": "N. N. Čencov, \"Evaluation of an unknown distribution density from observations,\" *Soviet Mathematics Doklady* **3**, 1962, pp. 1559–1562."
+  },
+  {
+    "key": "rice1984",
+    "sortKey": "Rice",
+    "html": "J. Rice, \"Bandwidth choice for nonparametric regression,\" *The Annals of Statistics* **12**(4), 1984, pp. 1215–1230."
+  },
+  {
+    "key": "shibata1981",
+    "sortKey": "Shibata",
+    "html": "R. Shibata, \"An optimal selection of regression variables,\" *Biometrika* **68**(1), 1981, pp. 45–54."
+  },
+  {
+    "key": "pinsker1980",
+    "sortKey": "Pinsker",
+    "html": "M. S. Pinsker, \"Optimal filtering of square-integrable signals in Gaussian noise,\" *Problems of Information Transmission* **16**(2), 1980, pp. 120–133."
+  },
+  {
+    "key": "polyak-tsybakov1990",
+    "sortKey": "Polyak",
+    "html": "B. T. Polyak and A. B. Tsybakov, \"Asymptotic optimality of the C_p-test for the orthogonal series estimation of regression,\" *Theory of Probability and Its Applications* **35**(2), 1990, pp. 293–306."
   }
 ]

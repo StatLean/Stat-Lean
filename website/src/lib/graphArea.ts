@@ -13,6 +13,7 @@ export const AREA_VAR: Record<Area, string> = {
   minimaxity: "--c-mmx",
   optimization: "--c-opt",
   bayesian: "--c-bayes",
+  nonparametric: "--c-nonparam",
   probability: "--c-prob",
   external: "--c-ext",
 };
@@ -26,6 +27,7 @@ export const AREA_LABEL: Record<Area, string> = {
   minimaxity: "Minimaxity",
   optimization: "Optimization",
   bayesian: "Bayesian",
+  nonparametric: "Nonparametric",
   probability: "Miscellaneous",
   external: "Mathlib / external",
 };
@@ -40,6 +42,7 @@ export const AREAS: Area[] = [
   "minimaxity",
   "optimization",
   "bayesian",
+  "nonparametric",
   "probability",
   "external",
 ];
@@ -52,6 +55,7 @@ export const AREAS: Area[] = [
  */
 const DIR_AREA: Partial<Record<string, CategoryId>> = {
   Bayesian: "bayesian",
+  NonparametricStatistics: "nonparametric",
   ConcentrationInequalities: "concentration",
   HighDimensionalStatistics: "highdim",
   MultipleTesting: "multipletesting",

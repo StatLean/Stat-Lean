@@ -1,8 +1,8 @@
 # Stat-Lean — the interactive website
 
 A React + Vite + Tailwind front-end that aligns informal mathematical statements
-with their Lean 4 / Mathlib formalizations, organized across four categories of
-asymptotic statistical theory. Deployed to GitHub Pages at
+with their Lean 4 / Mathlib formalizations, organized across ten categories of
+statistical theory. Deployed to GitHub Pages at
 `https://statlean.github.io/website/`.
 
 ## Develop
@@ -10,7 +10,7 @@ asymptotic statistical theory. Deployed to GitHub Pages at
 ```bash
 cd website
 npm install
-npm run dev        # http://localhost:5173/Lean-Asymptotic-Statistical-Theory/website/
+npm run dev        # http://localhost:5173/website/
 npm run build      # type-check + production build into dist/
 ```
 
@@ -41,13 +41,19 @@ The site is driven by two data layers:
 
 ## Categories
 
-Results are organized into four categories (defined in `src/lib/categories.ts`):
+Results are organized into ten categories (defined in `src/lib/categories.ts`):
 
 | Category | `id` | Content |
 |---|---|---|
 | Parametric Statistics | `parametric` | Local asymptotic normality, DQM, LAN expansion, Hájek–Le Cam bounds |
 | Semiparametric Statistics | `semiparametric` | Tangent spaces, efficient influence functions, score operators |
-| Empirical Processes | `empirical` | Glivenko–Cantelli, Donsker, bracketing entropy, maximal inequalities |
+| Concentration Inequalities | `concentration` | Sub-Gaussian/sub-exponential tails, Bernstein, McDiarmid, chaining, empirical processes |
+| High-Dimensional Statistics | `highdim` | OLS, Lasso rates, support recovery, compressed sensing, M-estimators |
+| Multiple Testing | `multipletesting` | FDR/FWER control, knockoffs, e-values, goodness-of-fit |
+| Minimaxity | `minimaxity` | Le Cam, Fano, local packing, minimax lower bounds |
+| Optimization | `optimization` | Gradient, proximal, Frank–Wolfe & accelerated methods |
+| Bayesian Statistics | `bayesian` | Posteriors, conjugacy, hierarchical/empirical Bayes, MCMC, posterior contraction |
+| Nonparametric Statistics | `nonparametric` | Kernel density estimation, local polynomial regression, projection estimators |
 | Miscellaneous Results | `probability` | Prékopa–Leindler, Anderson's lemma, Le Cam lemmas, multivariate CLT |
 
 ## Key features

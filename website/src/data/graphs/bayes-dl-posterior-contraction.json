@@ -1,427 +1,98 @@
 {
   "root": "StatLean.Bayesian.dl_theorem31",
   "nodes": [
-    {
-      "id": "StatLean.Bayesian.dl_theorem31",
-      "label": "dl_theorem31",
-      "full": "StatLean.Bayesian.dl_theorem31",
-      "kind": "root",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dl_contraction_engine",
-      "label": "dl_contraction_engine",
-      "full": "StatLean.Bayesian.dl_contraction_engine",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
-      "label": "dl_shellSum_tendsto_zero_beta",
-      "full": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
-      "label": "dl_shellSum_tendsto_zero_generic",
-      "full": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dl_shellSum_reduction",
-      "label": "dl_shellSum_reduction",
-      "full": "StatLean.Bayesian.dl_shellSum_reduction",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dlPrior_closedBall_ge",
-      "label": "dlPrior_closedBall_ge",
-      "full": "StatLean.Bayesian.dlPrior_closedBall_ge",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.dlPrior_closedBall_pos",
-      "label": "dlPrior_closedBall_pos",
-      "full": "StatLean.Bayesian.dlPrior_closedBall_pos",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
-      "label": "sum_dlPrior_dlShell_le_one",
-      "full": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.sum_sqrt_abs_finset_le",
-      "label": "sum_sqrt_abs_finset_le",
-      "full": "StatLean.Bayesian.sum_sqrt_abs_finset_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorContraction"
-    },
-    {
-      "id": "StatLean.Bayesian.shell_ratio_le",
-      "label": "shell_ratio_le",
-      "full": "StatLean.Bayesian.shell_ratio_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
-    },
-    {
-      "id": "StatLean.Bayesian.exists_shell_net",
-      "label": "exists_shell_net",
-      "full": "StatLean.Bayesian.exists_shell_net",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
-    },
-    {
-      "id": "StatLean.Bayesian.dlShell",
-      "label": "dlShell",
-      "full": "StatLean.Bayesian.dlShell",
-      "kind": "repo",
-      "decl": "def",
-      "module": "StatLean.Bayesian.DirichletLaplace.ShellDecomposition"
-    },
-    {
-      "id": "StatLean.Bayesian.measure_dlTestSet_le",
-      "label": "measure_dlTestSet_le",
-      "full": "StatLean.Bayesian.measure_dlTestSet_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.GaussianTests"
-    },
-    {
-      "id": "StatLean.Bayesian.dlTestSet",
-      "label": "dlTestSet",
-      "full": "StatLean.Bayesian.dlTestSet",
-      "kind": "repo",
-      "decl": "def",
-      "module": "StatLean.Bayesian.DirichletLaplace.GaussianTests"
-    },
-    {
-      "id": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'",
-      "label": "lintegral_ratio_on_event_le_test'",
-      "full": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.TestingBound"
-    },
-    {
-      "id": "StatLean.Bayesian.exists_finset_net_closedBall",
-      "label": "exists_finset_net_closedBall",
-      "full": "StatLean.Bayesian.exists_finset_net_closedBall",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.CoveringNets"
-    },
-    {
-      "id": "StatLean.coveringNumber_closedBall_le",
-      "label": "coveringNumber_closedBall_le",
-      "full": "StatLean.coveringNumber_closedBall_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.ConcentrationInequalities.Maximal.CoveringBall"
-    },
-    {
-      "id": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
-      "label": "lintegral_posterior_eq_lintegral_ratio",
-      "full": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.NormalMeansModel"
-    },
-    {
-      "id": "StatLean.Bayesian.measure_dlDenom_lt_le",
-      "label": "measure_dlDenom_lt_le",
-      "full": "StatLean.Bayesian.measure_dlDenom_lt_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.DenominatorLowerBound"
-    },
-    {
-      "id": "StatLean.Bayesian.dl_compress_reduction",
-      "label": "dl_compress_reduction",
-      "full": "StatLean.Bayesian.dl_compress_reduction",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility"
-    },
-    {
-      "id": "StatLean.Bayesian.compress_ratio_le_explicit",
-      "label": "compress_ratio_le_explicit",
-      "full": "StatLean.Bayesian.compress_ratio_le_explicit",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.CompressEngine"
-    },
-    {
-      "id": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
-      "label": "dlMarginal_abs_gt_le'",
-      "full": "StatLean.Bayesian.dlMarginal_abs_gt_le'",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.DirichletLaplace.DensityBounds"
-    },
-    {
-      "id": "StatLean.Bayesian.dlPrior",
-      "label": "dlPrior",
-      "full": "StatLean.Bayesian.dlPrior",
-      "kind": "repo",
-      "decl": "def",
-      "module": "StatLean.Bayesian.DirichletLaplace.Defs"
-    },
-    {
-      "id": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le",
-      "label": "tsum_ofReal_exp_neg_sq_le",
-      "full": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.ForMathlib.ExpOfRealCalc"
-    },
-    {
-      "id": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
-      "label": "tendsto_ofReal_exp_neg",
-      "full": "StatLean.Bayesian.tendsto_ofReal_exp_neg",
-      "kind": "repo",
-      "decl": "thm",
-      "module": "StatLean.Bayesian.ForMathlib.ExpOfRealCalc"
-    },
-    {
-      "id": "ProbabilityTheory.posterior",
-      "label": "posterior",
-      "full": "ProbabilityTheory.posterior",
-      "kind": "mathlib",
-      "decl": "def",
-      "module": "Mathlib.Probability.Kernel.Posterior"
-    },
-    {
-      "id": "ProbabilityTheory.gaussianReal",
-      "label": "gaussianReal",
-      "full": "ProbabilityTheory.gaussianReal",
-      "kind": "mathlib",
-      "decl": "def",
-      "module": "Mathlib.Probability.Distributions.Gaussian.Real"
-    },
-    {
-      "id": "MeasureTheory.measure_biUnion_finset",
-      "label": "measure_biUnion_finset",
-      "full": "MeasureTheory.measure_biUnion_finset",
-      "kind": "mathlib",
-      "decl": "thm",
-      "module": "Mathlib.MeasureTheory.Measure.MeasureSpace"
-    },
-    {
-      "id": "disjointed",
-      "label": "disjointed",
-      "full": "disjointed",
-      "kind": "mathlib",
-      "decl": "def",
-      "module": "Mathlib.Order.Disjointed"
-    },
-    {
-      "id": "Nat.choose_le_pow",
-      "label": "choose_le_pow",
-      "full": "Nat.choose_le_pow",
-      "kind": "mathlib",
-      "decl": "thm",
-      "module": "Mathlib.Data.Nat.Choose.Bounds"
-    },
-    {
-      "id": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
-      "label": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
-      "full": "tendsto_of_tendsto_of_tendsto_of_le_of_le'",
-      "kind": "mathlib",
-      "decl": "thm",
-      "module": "Mathlib.Topology.Order.Basic"
-    },
-    {
-      "id": "inner_mul_le_norm_mul_norm",
-      "label": "inner_mul_le_norm_mul_norm",
-      "full": "inner_mul_le_norm_mul_norm",
-      "kind": "mathlib",
-      "decl": "thm",
-      "module": "Mathlib.Analysis.InnerProductSpace.Basic"
-    },
-    {
-      "id": "MeasureTheory.Measure.pi",
-      "label": "pi",
-      "full": "MeasureTheory.Measure.pi",
-      "kind": "mathlib",
-      "decl": "def",
-      "module": "Mathlib.MeasureTheory.Constructions.Pi"
-    },
-    {
-      "id": "Real.log",
-      "label": "log",
-      "full": "Real.log",
-      "kind": "mathlib",
-      "decl": "def",
-      "module": "Mathlib.Analysis.SpecialFunctions.Log.Basic"
-    }
+    {"id":"StatLean.Bayesian.dl_theorem31","label":"dl_theorem31","full":"StatLean.Bayesian.dl_theorem31","kind":"root","decl":"thm","module":"StatLean.Bayesian.DirichletLaplace.PosteriorContraction"},
+    {"id":"StatLean.Bayesian.gaussShiftKernel","label":"gaussShiftKernel","full":"StatLean.Bayesian.gaussShiftKernel","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
+    {"id":"standardBorel_of_polish","label":"standardBorel_of_polish","full":"standardBorel_of_polish","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.Polish.Basic"},
+    {"id":"PiLp.borelSpace","label":"borelSpace","full":"PiLp.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.MeasurableSpace"},
+    {"id":"Real.borelSpace","label":"borelSpace","full":"Real.borelSpace","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Constructions.BorelSpace.Basic"},
+    {"id":"TopologicalSpace.SecondCountableTopology.to_separableSpace","label":"to_separableSpace","full":"TopologicalSpace.SecondCountableTopology.to_separableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Bases"},
+    {"id":"PiLp.secondCountableTopology","label":"secondCountableTopology","full":"PiLp.secondCountableTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
+    {"id":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","label":"of_completeSpace_metrizable","full":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.CompletelyMetrizable"},
+    {"id":"PiLp.completeSpace","label":"completeSpace","full":"PiLp.completeSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Lp.PiLp"},
+    {"id":"fact_one_le_two_ennreal","label":"fact_one_le_two_ennreal","full":"fact_one_le_two_ennreal","kind":"mathlib","decl":"thm","module":"Mathlib.Data.ENNReal.Basic"},
+    {"id":"EMetricSpace.metrizableSpace","label":"metrizableSpace","full":"EMetricSpace.metrizableSpace","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Metrizable.Uniformity"},
+    {"id":"StatLean.Bayesian.dlPrior","label":"dlPrior","full":"StatLean.Bayesian.dlPrior","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
+    {"id":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","label":"toIsFiniteMeasure","full":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure","kind":"mathlib","decl":"thm","module":"Mathlib.MeasureTheory.Measure.Typeclasses.Probability"},
+    {"id":"StatLean.Bayesian.isProbabilityMeasure_dlPrior","label":"isProbabilityMeasure_dlPrior","full":"StatLean.Bayesian.isProbabilityMeasure_dlPrior","kind":"repo","decl":"thm","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
+    {"id":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","label":"isFiniteKernel","full":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","label":"IsZeroOrMarkovKernel","full":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel","kind":"mathlib","decl":"thm","module":"Mathlib.Probability.Kernel.Defs"},
+    {"id":"StatLean.Bayesian.isMarkovKernel_gaussShiftKernel","label":"isMarkovKernel_gaussShiftKernel","full":"StatLean.Bayesian.isMarkovKernel_gaussShiftKernel","kind":"repo","decl":"thm","module":"StatLean.Bayesian.DirichletLaplace.Defs"},
+    {"id":"StatLean.Bayesian.dlShell","label":"dlShell","full":"StatLean.Bayesian.dlShell","kind":"repo","decl":"def","module":"StatLean.Bayesian.DirichletLaplace.ShellDecomposition"},
+    {"id":"IsOrderedAddMonoid.toAddLeftMono","label":"toAddLeftMono","full":"IsOrderedAddMonoid.toAddLeftMono","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Monoid.Defs"},
+    {"id":"RCLike.charZero_rclike","label":"charZero_rclike","full":"RCLike.charZero_rclike","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.RCLike.Basic"},
+    {"id":"lt_of_not_ge","label":"lt_of_not_ge","full":"lt_of_not_ge","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.LinearOrder"},
+    {"id":"Nat.cast_one","label":"cast_one","full":"Nat.cast_one","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"Nat.cast_zero","label":"cast_zero","full":"Nat.cast_zero","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Nat.Cast.Defs"},
+    {"id":"neg_neg_of_pos","label":"neg_neg_of_pos","full":"neg_neg_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Group.Defs"},
+    {"id":"Filter.mp_mem","label":"mp_mem","full":"Filter.mp_mem","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Filter.eventually_ge_atTop","label":"eventually_ge_atTop","full":"Filter.eventually_ge_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Defs"},
+    {"id":"Filter.univ_mem'","label":"univ_mem'","full":"Filter.univ_mem'","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Defs"},
+    {"id":"Real.rpow_pos_of_pos","label":"rpow_pos_of_pos","full":"Real.rpow_pos_of_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Pow.Real"},
+    {"id":"LE.le.trans_eq","label":"trans_eq","full":"LE.le.trans_eq","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Basic"},
+    {"id":"Fintype.card_subtype_le","label":"card_subtype_le","full":"Fintype.card_subtype_le","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Fintype.card_fin","label":"card_fin","full":"Fintype.card_fin","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Filter.eventually_gt_atTop","label":"eventually_gt_atTop","full":"Filter.eventually_gt_atTop","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.AtTopBot.Defs"},
+    {"id":"Filter.Tendsto.eventually","label":"eventually","full":"Filter.Tendsto.eventually","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Filter.Tendsto"},
+    {"id":"Iio_mem_nhds","label":"Iio_mem_nhds","full":"Iio_mem_nhds","kind":"mathlib","decl":"thm","module":"Mathlib.Topology.Order.OrderClosed"},
+    {"id":"HasSolidNorm.orderClosedTopology","label":"orderClosedTopology","full":"HasSolidNorm.orderClosedTopology","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.Normed.Order.Lattice"},
+    {"id":"div_lt_one","label":"div_lt_one","full":"div_lt_one","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Field.Basic"},
+    {"id":"PosMulReflectLE.toPosMulReflectLT","label":"toPosMulReflectLT","full":"PosMulReflectLE.toPosMulReflectLT","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Basic"},
+    {"id":"PosMulStrictMono.toPosMulReflectLE","label":"toPosMulReflectLE","full":"PosMulStrictMono.toPosMulReflectLE","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.GroupWithZero.Unbundled.Defs"},
+    {"id":"lt_of_le_of_lt","label":"lt_of_le_of_lt","full":"lt_of_le_of_lt","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"Finset.eq_univ_of_forall","label":"eq_univ_of_forall","full":"Finset.eq_univ_of_forall","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Defs"},
+    {"id":"Finset.card_univ","label":"card_univ","full":"Finset.card_univ","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"Fintype.card_pos","label":"card_pos","full":"Fintype.card_pos","kind":"mathlib","decl":"thm","module":"Mathlib.Data.Fintype.Card"},
+    {"id":"IsStrictOrderedRing.toCharZero","label":"toCharZero","full":"IsStrictOrderedRing.toCharZero","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Defs"},
+    {"id":"le_trans","label":"le_trans","full":"le_trans","kind":"mathlib","decl":"thm","module":"Mathlib.Order.Defs.PartialOrder"},
+    {"id":"StarOrderedRing.toIsOrderedRing","label":"toIsOrderedRing","full":"StarOrderedRing.toIsOrderedRing","kind":"mathlib","decl":"thm","module":"Mathlib.Algebra.Order.Ring.Star"},
+    {"id":"Real.log_nonneg","label":"log_nonneg","full":"Real.log_nonneg","kind":"mathlib","decl":"thm","module":"Mathlib.Analysis.SpecialFunctions.Log.Basic"}
   ],
   "edges": [
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "StatLean.Bayesian.dl_contraction_engine"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "StatLean.Bayesian.dlPrior_closedBall_pos"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "StatLean.Bayesian.tendsto_ofReal_exp_neg"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "Real.log"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_theorem31",
-      "target": "tendsto_of_tendsto_of_tendsto_of_le_of_le'"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_beta",
-      "target": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
-      "target": "StatLean.Bayesian.dl_shellSum_reduction"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_tendsto_zero_generic",
-      "target": "StatLean.Bayesian.sum_sqrt_abs_finset_le"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_reduction",
-      "target": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_reduction",
-      "target": "StatLean.Bayesian.dlPrior_closedBall_ge"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_reduction",
-      "target": "StatLean.Bayesian.tsum_ofReal_exp_neg_sq_le"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_shellSum_reduction",
-      "target": "Nat.choose_le_pow"
-    },
-    {
-      "source": "StatLean.Bayesian.dlPrior_closedBall_ge",
-      "target": "StatLean.Bayesian.dlMarginal_abs_gt_le'"
-    },
-    {
-      "source": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
-      "target": "MeasureTheory.measure_biUnion_finset"
-    },
-    {
-      "source": "StatLean.Bayesian.sum_dlPrior_dlShell_le_one",
-      "target": "StatLean.Bayesian.dlShell"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.measure_dlDenom_lt_le"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.shell_ratio_le"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.dl_compress_reduction"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.compress_ratio_le_explicit"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.dlShell"
-    },
-    {
-      "source": "StatLean.Bayesian.shell_ratio_le",
-      "target": "StatLean.Bayesian.exists_shell_net"
-    },
-    {
-      "source": "StatLean.Bayesian.shell_ratio_le",
-      "target": "StatLean.Bayesian.measure_dlTestSet_le"
-    },
-    {
-      "source": "StatLean.Bayesian.shell_ratio_le",
-      "target": "StatLean.Bayesian.lintegral_ratio_on_event_le_test'"
-    },
-    {
-      "source": "StatLean.Bayesian.shell_ratio_le",
-      "target": "disjointed"
-    },
-    {
-      "source": "StatLean.Bayesian.shell_ratio_le",
-      "target": "MeasureTheory.measure_biUnion_finset"
-    },
-    {
-      "source": "StatLean.Bayesian.exists_shell_net",
-      "target": "StatLean.Bayesian.exists_finset_net_closedBall"
-    },
-    {
-      "source": "StatLean.Bayesian.exists_finset_net_closedBall",
-      "target": "StatLean.coveringNumber_closedBall_le"
-    },
-    {
-      "source": "StatLean.Bayesian.measure_dlTestSet_le",
-      "target": "StatLean.Bayesian.dlTestSet"
-    },
-    {
-      "source": "StatLean.Bayesian.measure_dlTestSet_le",
-      "target": "ProbabilityTheory.gaussianReal"
-    },
-    {
-      "source": "StatLean.Bayesian.measure_dlTestSet_le",
-      "target": "inner_mul_le_norm_mul_norm"
-    },
-    {
-      "source": "StatLean.Bayesian.lintegral_posterior_eq_lintegral_ratio",
-      "target": "ProbabilityTheory.posterior"
-    },
-    {
-      "source": "StatLean.Bayesian.measure_dlDenom_lt_le",
-      "target": "ProbabilityTheory.gaussianReal"
-    },
-    {
-      "source": "StatLean.Bayesian.dlPrior",
-      "target": "MeasureTheory.Measure.pi"
-    },
-    {
-      "source": "StatLean.Bayesian.dl_contraction_engine",
-      "target": "StatLean.Bayesian.dlPrior"
-    }
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.gaussShiftKernel"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"standardBorel_of_polish"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"PiLp.borelSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.borelSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"TopologicalSpace.SecondCountableTopology.to_separableSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"PiLp.secondCountableTopology"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"TopologicalSpace.IsCompletelyMetrizableSpace.of_completeSpace_metrizable"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"PiLp.completeSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"fact_one_le_two_ennreal"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"EMetricSpace.metrizableSpace"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.dlPrior"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"MeasureTheory.IsZeroOrProbabilityMeasure.toIsFiniteMeasure"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.isProbabilityMeasure_dlPrior"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"ProbabilityTheory.IsZeroOrMarkovKernel.isFiniteKernel"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"ProbabilityTheory.IsMarkovKernel.IsZeroOrMarkovKernel"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.isMarkovKernel_gaussShiftKernel"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StatLean.Bayesian.dlShell"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"IsOrderedAddMonoid.toAddLeftMono"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"RCLike.charZero_rclike"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"lt_of_not_ge"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Nat.cast_one"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Nat.cast_zero"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"neg_neg_of_pos"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Filter.mp_mem"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Filter.eventually_ge_atTop"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Filter.univ_mem'"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.rpow_pos_of_pos"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"LE.le.trans_eq"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Fintype.card_subtype_le"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Fintype.card_fin"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Filter.eventually_gt_atTop"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Filter.Tendsto.eventually"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Iio_mem_nhds"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"HasSolidNorm.orderClosedTopology"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"div_lt_one"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"PosMulReflectLE.toPosMulReflectLT"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"PosMulStrictMono.toPosMulReflectLE"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"lt_of_le_of_lt"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Finset.eq_univ_of_forall"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Finset.card_univ"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Fintype.card_pos"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"IsStrictOrderedRing.toCharZero"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"le_trans"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"StarOrderedRing.toIsOrderedRing"},
+    {"source":"StatLean.Bayesian.dl_theorem31","target":"Real.log_nonneg"}
   ]
 }

@@ -98,6 +98,15 @@ export function TopicIcon({
           <path d="M14 34c6 0 5-20 12-20s6 20 12 20" />
         </svg>
       );
+    case "nonparametric":
+      // kernel density estimate — a smooth bimodal curve over a rug of data points
+      return (
+        <svg {...common}>
+          <path d="M5 36h38" />
+          <path d="M6 36c4 0 5-11 9-11s4 6 8 6 4-18 9-18 8 23 12 23" />
+          <path d="M11 39v3M17 39v3M23 39v3M30 39v3M34 39v3M38 39v3" opacity={0.7} />
+        </svg>
+      );
     case "probability":
       // compass star — assorted foundational results (miscellaneous)
       return (

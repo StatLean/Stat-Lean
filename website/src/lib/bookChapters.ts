@@ -12,6 +12,7 @@ export const TEXTBOOK_KEYS = new Set([
   "vershynin2018",
   "robert2007",
   "gelman2014",
+  "tsybakov2009",
 ]);
 
 export function isTextbook(key: string): boolean {
@@ -89,6 +90,11 @@ const CHAPTER_TITLES: Record<string, Record<number, string>> = {
     6: "Bayesian Calculations",
     7: "Model Choice",
     10: "Hierarchical and Empirical Bayes Extensions",
+  },
+  tsybakov2009: {
+    1: "Nonparametric Estimators",
+    2: "Lower Bounds on the Minimax Risk",
+    3: "Asymptotic Efficiency and Adaptation",
   },
   gelman2014: {
     1: "Probability and Inference",
