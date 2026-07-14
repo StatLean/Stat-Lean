@@ -126,6 +126,8 @@ theorem MemHolder.taylor_remainder_abs_le {β L : ℝ}
             abs_rpow_split ht (holderIndex β)
           rw [← hsplit]; ring
 
+-- The Cauchy mean-value setup (`taylorWithinEval` continuity/derivative side goals and the two
+-- `linear_combination` closings) is elaboration-heavy; the default heartbeat budget is tight.
 set_option maxHeartbeats 800000 in
 /-- **Two-sided Taylor–Lagrange over a closed interval.** For `f ∈ C^{n+1}(Icc a b)`, expansion
 around any `x₀ ∈ Icc a b`, evaluated at any `x ∈ Icc a b` (either side), leaves the Lagrange
