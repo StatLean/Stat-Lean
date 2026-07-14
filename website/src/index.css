@@ -21,6 +21,7 @@
   --c-mmx: 176 48 88;      /* rose — Minimaxity */
   --c-opt: 86 140 52;      /* green — Optimization */
   --c-bayes: 88 80 200;    /* indigo — Bayesian */
+  --c-nonparam: 8 138 158; /* petrol cyan — Nonparametric */
   --c-prob: 90 92 130;     /* slate indigo — Miscellaneous */
   --c-ext: 214 178 38;     /* yellow — Mathlib / external */
 
@@ -45,6 +46,7 @@
   --c-mmx: 240 130 168;
   --c-opt: 158 206 120;
   --c-bayes: 160 150 240;
+  --c-nonparam: 92 202 220;
   --c-prob: 162 164 208;
   --c-ext: 232 206 96;     /* yellow — Mathlib / external */
 
@@ -93,6 +95,7 @@ body::before {
 [data-cat="minimaxity"] { --accent: var(--c-mmx); }
 [data-cat="optimization"] { --accent: var(--c-opt); }
 [data-cat="bayesian"] { --accent: var(--c-bayes); }
+[data-cat="nonparametric"] { --accent: var(--c-nonparam); }
 [data-cat="probability"] { --accent: var(--c-prob); }
 
 /* bare `accent` className = active-accent text color (not a Tailwind utility) */

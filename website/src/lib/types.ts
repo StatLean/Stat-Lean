@@ -7,6 +7,7 @@ export type CategoryId =
   | "minimaxity"
   | "optimization"
   | "bayesian"
+  | "nonparametric"
   | "probability";
 
 export type ResultKind = "definition" | "theorem" | "lemma" | "proposition" | "corollary" | "equation";
