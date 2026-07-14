@@ -336,6 +336,123 @@ theorem lp_supnorm_stochastic_le {ℓ : ℕ} {K : ℝ → ℝ} {Kmax lam0 a₀ L
       _ ≤ 2 * (⨆ j, |Z ω (s j)|) ^ 2 + 2 * (E ω) ^ 2 := by
           nlinarith [sq_nonneg ((⨆ j, |Z ω (s j)|) - E ω)]
       _ ≤ 2 * sgrid + 2 * (E ω) ^ 2 := by nlinarith [hgsq]
-  sorry
+  -- grid maximum bound
+  have hgrid : ∫⁻ ω, ENNReal.ofReal (⨆ j, (Z ω (s j)) ^ 2) ∂P
+      ≤ ENNReal.ofReal (24 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
+    have hexp : ∀ j, ∫⁻ ω, ENNReal.ofReal (Real.exp (a * (Z ω (s j)) ^ 2)) ∂P
+        ≤ ENNReal.ofReal (Real.sqrt 2) := by
+      intro j
+      have hlaw : HasLaw (fun ω => Z ω (s j))
+          (gaussianReal 0 ((∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2).toNNReal * v)) P := by
+        have hL := hasLaw_sum_mul_gaussianReal (P := P)
+          (fun i => lpWeight xdat K h ℓ (s j) i) hξm hξind hξlaw
+        have heq : (fun ω => ∑ i, lpWeight xdat K h ℓ (s j) i * ξ i ω) = (fun ω => Z ω (s j)) := by
+          funext ω; rw [hZapp]; exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
+        rwa [heq] at hL
+      rw [hlaw.lintegral_comp (f := fun x => ENNReal.ofReal (Real.exp (a * x ^ 2))) (by fun_prop)]
+      apply lintegral_exp_mul_sq_gaussianReal_le
+      have hσ : (((∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2).toNNReal * v : ℝ≥0) : ℝ)
+          = (∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2) * (v : ℝ) := by
+        rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
+      rw [hσ]
+      have hsw := lp_sum_weight_sq_le hn0 hh hhl hlam ha₀ heig hbox hdens (hs01 j)
+      have key : a * (4 * ((∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2) * (v : ℝ)))
+          = ((n : ℝ) * h) * (∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2) / Cst ^ 2 := by
+        rw [hadef]; field_simp
+      rw [key, div_le_one (by positivity : (0 : ℝ) < Cst ^ 2)]
+      calc ((n : ℝ) * h) * (∑ i, (lpWeight xdat K h ℓ (s j) i) ^ 2)
+          ≤ ((n : ℝ) * h) * (Cst ^ 2 / ((n : ℝ) * h)) := mul_le_mul_of_nonneg_left hsw hnh.le
+        _ = Cst ^ 2 := by field_simp
+    have hbase := lintegral_iSup_sq_le_log (P := P) (by omega : 1 ≤ M + 1) hapos hη_meas hexp
+    refine le_trans hbase (ENNReal.ofReal_le_ofReal ?_)
+    have hMcast : ((M + 1 : ℕ) : ℝ) = (n : ℝ) ^ 4 + 1 := by rw [hMdef]; push_cast; ring
+    rw [hMcast, div_le_iff₀ hapos]
+    have hrhs : 24 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h) * a = 6 * Real.log n := by
+      rw [hadef]; field_simp; ring
+    rw [hrhs]; exact log_sqrt2_grid_le hn
+  -- increment bound
+  have hincr : ∫⁻ ω, ENNReal.ofReal ((E ω) ^ 2) ∂P
+      ≤ ENNReal.ofReal (32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
+    have hc0nn : (0 : ℝ) ≤ (CL / ((M : ℝ) * h ^ 3)) ^ 2 := by positivity
+    have hnum : (CL / ((M : ℝ) * h ^ 3)) ^ 2 * ((n : ℝ) ^ 2 * (v : ℝ))
+        ≤ 32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h) := by
+      have h1 : (CL / ((M : ℝ) * h ^ 3)) ^ 2 * ((n : ℝ) ^ 2 * (v : ℝ))
+          = CL ^ 2 * (v : ℝ) / ((n : ℝ) ^ 6 * h ^ 6) := by rw [hMdef]; push_cast; field_simp
+      have hRHSeq : 32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+          = (32 * CL ^ 2 * (v : ℝ) * Real.log n) / (Real.log 2 * ((n : ℝ) * h)) := by
+        field_simp
+      have hnh_half : (1 : ℝ) / 2 ≤ (n : ℝ) * h := by
+        have hm := mul_le_mul_of_nonneg_left hhl hnpos.le
+        rw [show (n : ℝ) * (1 / (2 * (n : ℝ))) = 1 / 2 by field_simp] at hm; linarith
+      have h32 : (1 : ℝ) ≤ 32 * ((n : ℝ) * h) ^ 5 := by
+        nlinarith [pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 1 / 2) hnh_half 5]
+      have hlogn2 : Real.log 2 ≤ Real.log n := Real.log_le_log (by norm_num) hnr
+      have hkey5 : Real.log 2 ≤ 32 * Real.log n * ((n : ℝ) * h) ^ 5 := by
+        nlinarith [mul_le_mul_of_nonneg_left h32 hlogn, hlogn2]
+      rw [h1, hRHSeq, div_le_div_iff₀ (by positivity) (mul_pos hlog2 hnh)]
+      nlinarith [mul_le_mul_of_nonneg_left hkey5
+        (by positivity : (0 : ℝ) ≤ CL ^ 2 * (v : ℝ) * ((n : ℝ) * h))]
+    calc ∫⁻ ω, ENNReal.ofReal ((E ω) ^ 2) ∂P
+        = ∫⁻ ω, ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2)
+            * ENNReal.ofReal ((∑ i, |ξ i ω|) ^ 2) ∂P := by
+          refine lintegral_congr (fun ω => ?_)
+          rw [hEapp, mul_pow, mul_comm ((∑ i, |ξ i ω|) ^ 2) _, ENNReal.ofReal_mul hc0nn]
+      _ = ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2)
+            * ∫⁻ ω, ENNReal.ofReal ((∑ i, |ξ i ω|) ^ 2) ∂P := by
+          rw [lintegral_const_mul _ (by fun_prop)]
+      _ ≤ ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2) * ENNReal.ofReal ((n : ℝ) ^ 2 * v) :=
+          mul_le_mul_left' (lintegral_sum_abs_sq_le ξ v hξm hξlaw) _
+      _ = ENNReal.ofReal ((CL / ((M : ℝ) * h ^ 3)) ^ 2 * ((n : ℝ) ^ 2 * v)) :=
+          (ENNReal.ofReal_mul hc0nn).symm
+      _ ≤ ENNReal.ofReal (32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) :=
+          ENNReal.ofReal_le_ofReal hnum
+  -- assemble
+  have hsup_meas : Measurable (fun ω => ⨆ j, (Z ω (s j)) ^ 2) :=
+    Measurable.iSup (fun j => (hη_meas j).pow_const 2)
+  have hE_meas : Measurable E := by
+    rw [hEdef]
+    exact (Finset.measurable_sum Finset.univ (fun i _ => (hξm i).abs)).mul_const _
+  have hdbl : ∀ y : ℝ, (2 : ℝ≥0∞) * ENNReal.ofReal y = ENNReal.ofReal (2 * y) := fun y => by
+    rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+  have hA : ∫⁻ ω, ENNReal.ofReal (2 * (⨆ j, (Z ω (s j)) ^ 2)) ∂P
+      = 2 * ∫⁻ ω, ENNReal.ofReal (⨆ j, (Z ω (s j)) ^ 2) ∂P := by
+    rw [← lintegral_const_mul 2 hsup_meas.ennreal_ofReal]
+    exact lintegral_congr (fun ω => (hdbl _).symm)
+  have hB : ∫⁻ ω, ENNReal.ofReal (2 * (E ω) ^ 2) ∂P
+      = 2 * ∫⁻ ω, ENNReal.ofReal ((E ω) ^ 2) ∂P := by
+    rw [← lintegral_const_mul 2 (hE_meas.pow_const 2).ennreal_ofReal]
+    exact lintegral_congr (fun ω => (hdbl _).symm)
+  calc ∫⁻ ω, ENNReal.ofReal ((⨆ t : Set.Icc (0 : ℝ) 1,
+        |∑ i, ξ i ω * lpWeight xdat K h ℓ (t : ℝ) i|) ^ 2) ∂P
+      ≤ ∫⁻ ω, ENNReal.ofReal (2 * (⨆ j, (Z ω (s j)) ^ 2) + 2 * (E ω) ^ 2) ∂P :=
+        lintegral_mono (fun ω => ENNReal.ofReal_le_ofReal (hpt ω))
+    _ ≤ ∫⁻ ω, (ENNReal.ofReal (2 * (⨆ j, (Z ω (s j)) ^ 2))
+          + ENNReal.ofReal (2 * (E ω) ^ 2)) ∂P :=
+        lintegral_mono (fun ω => ENNReal.ofReal_add_le)
+    _ = ∫⁻ ω, ENNReal.ofReal (2 * (⨆ j, (Z ω (s j)) ^ 2)) ∂P
+          + ∫⁻ ω, ENNReal.ofReal (2 * (E ω) ^ 2) ∂P :=
+        lintegral_add_left (by measurability) _
+    _ = 2 * ∫⁻ ω, ENNReal.ofReal (⨆ j, (Z ω (s j)) ^ 2) ∂P
+          + 2 * ∫⁻ ω, ENNReal.ofReal ((E ω) ^ 2) ∂P := by rw [hA, hB]
+    _ ≤ 2 * ENNReal.ofReal (24 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h))
+          + 2 * ENNReal.ofReal (32 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) :=
+        add_le_add (mul_le_mul_left' hgrid 2) (mul_le_mul_left' hincr 2)
+    _ = ENNReal.ofReal (48 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h))
+          + ENNReal.ofReal (64 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
+        rw [hdbl, hdbl]; congr 1 <;> · congr 1; ring
+    _ = ENNReal.ofReal (48 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+          + 64 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)) :=
+        (ENNReal.ofReal_add (by positivity) (by positivity)).symm
+    _ ≤ ENNReal.ofReal ((48 * Cst ^ 2 + 64 * CL ^ 2 / Real.log 2 + 1)
+          * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
+        refine ENNReal.ofReal_le_ofReal ?_
+        have heq : (48 * Cst ^ 2 + 64 * CL ^ 2 / Real.log 2 + 1) * (v : ℝ) * Real.log n
+              / ((n : ℝ) * h)
+            = 48 * Cst ^ 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+              + 64 * CL ^ 2 / Real.log 2 * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+              + (v : ℝ) * Real.log n / ((n : ℝ) * h) := by ring
+        have hXnn : (0 : ℝ) ≤ (v : ℝ) * Real.log n / ((n : ℝ) * h) :=
+          div_nonneg (mul_nonneg (NNReal.coe_nonneg v) hlogn) hnh.le
+        linarith [heq, hXnn]
 
 end StatLean.NonparametricStatistics
