@@ -410,7 +410,72 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
       ∀ h : ℝ, 0 < h →
         eLpNorm (fun x => kmBias p K h x - kmSurr w K h x) 2 volume
           ≤ ENNReal.ofReal (h ^ 2 * κ h) := by
-  sorry
+  classical
+  set I : ℝ := ∫ x, (w x) ^ 2 with hIdef
+  set M : ℝ := Real.sqrt (4 * I) with hMdef
+  have hMnn : 0 ≤ M := Real.sqrt_nonneg _
+  have hωnn : ∀ s, 0 ≤ transMod w s := fun s => transMod_nonneg s
+  have hωle : ∀ s, transMod w s ≤ M := fun s => transMod_le hw_meas hw2 s
+  have hωmeas : Measurable (transMod w) := measurable_transMod hw_meas
+  have hω0 : Filter.Tendsto (transMod w) (nhds 0) (nhds 0) := tendsto_transMod hw_meas hw2
+  -- Inner integrand `τ ↦ (1−τ)·ω(τ·u·h)` is interval-integrable on `[0,1]`.
+  have hII : ∀ u h' : ℝ,
+      IntervalIntegrable (fun τ => (1 - τ) * transMod w (τ * (u * h'))) volume 0 1 := by
+    intro u h'
+    rw [intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num : (0 : ℝ) ≤ 1)]
+    have hmeas : AEStronglyMeasurable (fun τ => (1 - τ) * transMod w (τ * (u * h')))
+        (volume.restrict (Set.Ioc 0 1)) :=
+      (((continuous_const.sub continuous_id).measurable).mul
+        (hωmeas.comp (by fun_prop))).aestronglyMeasurable
+    refine Integrable.mono' (g := fun _ => M) (integrableOn_const measure_Ioc_lt_top.ne) hmeas ?_
+    refine ae_restrict_of_forall_mem measurableSet_Ioc fun τ hτ => ?_
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (by linarith [hτ.2]) (hωnn _))]
+    calc (1 - τ) * transMod w (τ * (u * h'))
+        ≤ 1 * M := mul_le_mul (by linarith [hτ.1]) (hωle _) (hωnn _) (by norm_num)
+      _ = M := one_mul M
+  -- The inner integral `gg u h = ∫₀¹ (1−τ)·ω(τuh) dτ`.
+  set gg : ℝ → ℝ → ℝ := fun u h' => ∫ τ in (0 : ℝ)..1, (1 - τ) * transMod w (τ * (u * h'))
+    with hggdef
+  have hg_nonneg : ∀ u h', 0 ≤ gg u h' := fun u h' =>
+    intervalIntegral.integral_nonneg (by norm_num)
+      (fun τ hτ => mul_nonneg (by linarith [hτ.2]) (hωnn _))
+  have hg_le : ∀ u h', gg u h' ≤ M := by
+    intro u h'
+    have h1 : gg u h' ≤ ∫ _τ in (0 : ℝ)..1, M := by
+      refine intervalIntegral.integral_mono_on (by norm_num) (hII u h') intervalIntegrable_const
+        (fun τ hτ => ?_)
+      calc (1 - τ) * transMod w (τ * (u * h'))
+          ≤ 1 * M := mul_le_mul (by linarith [hτ.1]) (hωle _) (hωnn _) (by norm_num)
+        _ = M := one_mul M
+    rwa [intervalIntegral.integral_const, smul_eq_mul, sub_zero, one_mul] at h1
+  have hgmeas : ∀ h', Measurable (fun u => gg u h') := by
+    intro h'
+    have hrw : (fun u => gg u h')
+        = fun u => ∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * transMod w (τ * (u * h')) := by
+      funext u; simp only [hggdef]; rw [intervalIntegral.integral_of_le (by norm_num)]
+    rw [hrw]
+    have hsm : StronglyMeasurable
+        (Function.uncurry fun u τ => (1 - τ) * transMod w (τ * (u * h'))) := by
+      refine Measurable.stronglyMeasurable ?_
+      have : (Function.uncurry fun u τ => (1 - τ) * transMod w (τ * (u * h')))
+          = fun q : ℝ × ℝ => (1 - q.2) * transMod w (q.2 * (q.1 * h')) := rfl
+      rw [this]
+      exact ((continuous_const.sub continuous_snd).measurable).mul (hωmeas.comp (by fun_prop))
+    exact (hsm.integral_prod_right' (ν := volume.restrict (Set.Ioc 0 1))).measurable
+  -- The dominating integrable envelope `|K u|·u²·M`.
+  have hdom : Integrable (fun u => |K u| * u ^ 2 * M) :=
+    (hKu2.const_mul M).congr (ae_of_all _ fun u => by ring)
+  -- The modulus function.
+  set κ : ℝ → ℝ := fun h' => ∫ u, |K u| * u ^ 2 * gg u h' with hκdef
+  refine ⟨κ, ?_, ?_, ?_⟩
+  · -- `κ ≥ 0`.
+    intro h'
+    exact integral_nonneg fun u =>
+      mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _)) (hg_nonneg u h')
+  · -- `κ → 0` at `0`, by nested dominated convergence.
+    sorry
+  · -- The `L²` bound via two generalized Minkowski inequalities.
+    sorry
 
 /-- The surrogate is in `L²` with `eLpNorm (kmSurr) 2 = ofReal(h²·|S_K|/2·√(∫w²))`. -/
 private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
