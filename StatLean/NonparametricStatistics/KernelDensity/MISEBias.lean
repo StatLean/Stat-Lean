@@ -473,7 +473,56 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
     exact integral_nonneg fun u =>
       mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _)) (hg_nonneg u h')
   · -- `κ → 0` at `0`, by nested dominated convergence.
-    sorry
+    -- Inner limit: for each `u`, `gg u h' → 0` as `h' → 0`.
+    have hgtend : ∀ u, Filter.Tendsto (fun h' => gg u h') (nhds 0) (nhds 0) := by
+      intro u
+      have hmeas2 : ∀ h', AEStronglyMeasurable (fun τ => (1 - τ) * transMod w (τ * (u * h')))
+          (volume.restrict (Set.Ioc (0 : ℝ) 1)) := fun h' =>
+        (((continuous_const.sub continuous_id).measurable).mul
+          (hωmeas.comp (by fun_prop))).aestronglyMeasurable
+      have hbd2 : ∀ h', ∀ᵐ τ ∂(volume.restrict (Set.Ioc (0 : ℝ) 1)),
+          ‖(1 - τ) * transMod w (τ * (u * h'))‖ ≤ M := by
+        intro h'
+        refine ae_restrict_of_forall_mem measurableSet_Ioc fun τ hτ => ?_
+        rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (by linarith [hτ.2]) (hωnn _))]
+        calc (1 - τ) * transMod w (τ * (u * h'))
+            ≤ 1 * M := mul_le_mul (by linarith [hτ.1]) (hωle _) (hωnn _) (by norm_num)
+          _ = M := one_mul M
+      have hbdint2 : Integrable (fun _ : ℝ => M) (volume.restrict (Set.Ioc (0 : ℝ) 1)) :=
+        integrableOn_const measure_Ioc_lt_top.ne
+      have hlim2 : ∀ᵐ τ ∂(volume.restrict (Set.Ioc (0 : ℝ) 1)),
+          Filter.Tendsto (fun h' => (1 - τ) * transMod w (τ * (u * h'))) (nhds 0) (nhds 0) := by
+        refine ae_of_all _ fun τ => ?_
+        have htend0 : Filter.Tendsto (fun h' : ℝ => τ * (u * h')) (nhds 0) (nhds 0) :=
+          (by fun_prop : Continuous (fun h' : ℝ => τ * (u * h'))).tendsto' 0 0 (by simp)
+        have := (hω0.comp htend0).const_mul (1 - τ)
+        simpa using this
+      have hconv : (fun h' => gg u h')
+          = fun h' => ∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * transMod w (τ * (u * h')) := by
+        funext h'; simp only [hggdef]; rw [intervalIntegral.integral_of_le (by norm_num)]
+      rw [hconv]
+      have key := tendsto_integral_filter_of_dominated_convergence
+        (μ := volume.restrict (Set.Ioc (0 : ℝ) 1)) (l := nhds (0 : ℝ)) (f := fun _ => (0 : ℝ))
+        (fun _ => M) (Filter.Eventually.of_forall hmeas2) (Filter.Eventually.of_forall hbd2)
+        hbdint2 hlim2
+      simpa using key
+    -- Outer dominated convergence.
+    have hmeasO : ∀ h', AEStronglyMeasurable (fun u => |K u| * u ^ 2 * gg u h') volume := fun h' =>
+      (((hKmeas.abs).mul (by fun_prop)).mul (hgmeas h')).aestronglyMeasurable
+    have hbdO : ∀ h', ∀ᵐ u, ‖|K u| * u ^ 2 * gg u h'‖ ≤ |K u| * u ^ 2 * M := by
+      intro h'
+      refine ae_of_all _ fun u => ?_
+      rw [Real.norm_eq_abs,
+        abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _)) (hg_nonneg u h'))]
+      exact mul_le_mul_of_nonneg_left (hg_le u h') (mul_nonneg (abs_nonneg _) (sq_nonneg _))
+    have hlimO : ∀ᵐ u, Filter.Tendsto (fun h' => |K u| * u ^ 2 * gg u h') (nhds 0) (nhds 0) := by
+      refine ae_of_all _ fun u => ?_
+      have := (hgtend u).const_mul (|K u| * u ^ 2)
+      simpa using this
+    have keyO := tendsto_integral_filter_of_dominated_convergence (μ := volume) (l := nhds (0 : ℝ))
+      (f := fun _ => (0 : ℝ)) (fun u => |K u| * u ^ 2 * M) (Filter.Eventually.of_forall hmeasO)
+      (Filter.Eventually.of_forall hbdO) hdom hlimO
+    simpa using keyO
   · -- The `L²` bound via two generalized Minkowski inequalities.
     sorry
 
