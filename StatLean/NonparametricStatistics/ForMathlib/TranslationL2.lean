@@ -1,5 +1,6 @@
 import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!

@@ -1,5 +1,5 @@
 import StatLean.NonparametricStatistics.KernelDensity.LawTransfer
-import Mathlib.Probability.Variance
+import Mathlib.Probability.Moments.Variance
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
