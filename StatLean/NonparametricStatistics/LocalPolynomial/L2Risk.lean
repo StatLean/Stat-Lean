@@ -35,6 +35,9 @@ theorem lp_l2_rate {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {h lam0 a�
     -- LEAN-ONLY: side condition `h ≥ 1/(2n)`, satisfied for all large `n`
     (hhl : 1 / (2 * (n : ℝ)) ≤ h)
     (hlam : 0 < lam0) (ha₀ : 0 ≤ a₀)
+    -- LEAN-ONLY: measurability of the kernel, needed for the Tonelli swap of the two risk
+    -- integrals; standard regularity (all classical kernels qualify)
+    (hKmeas : Measurable K)
     -- USER-INPUT: design in `[0,1]`, eigenvalue floor, boxed kernel, design density bound;
     -- the standing fixed-design assumptions
     (hx : ∀ i, xdat i ∈ Set.Icc (0 : ℝ) 1)
