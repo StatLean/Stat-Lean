@@ -252,6 +252,89 @@ private noncomputable def kmSurr (w K : ℝ → ℝ) (h x : ℝ) : ℝ :=
 private noncomputable def transMod (w : ℝ → ℝ) (s : ℝ) : ℝ :=
   ((∫⁻ x, ENNReal.ofReal ((w (x + s) - w x) ^ 2)) ^ (1 / 2 : ℝ)).toReal
 
+/-- The raw `L²`-translation-modulus lower integral `Λ s = ∫⁻ (w(·+s) − w)²`. -/
+private noncomputable def transModSq (w : ℝ → ℝ) (s : ℝ) : ℝ≥0∞ :=
+  ∫⁻ x, ENNReal.ofReal ((w (x + s) - w x) ^ 2)
+
+private lemma transMod_nonneg {w : ℝ → ℝ} (s : ℝ) : 0 ≤ transMod w s := ENNReal.toReal_nonneg
+
+/-- `Λ s = ∫⁻ (w(·+s)−w)²` is bounded by `4·∫w²`, hence finite. -/
+private lemma transModSq_le {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    (s : ℝ) : transModSq w s ≤ ENNReal.ofReal (4 * ∫ x, (w x) ^ 2) := by
+  set I : ℝ := ∫ x, (w x) ^ 2 with hIdef
+  have hInn : 0 ≤ I := integral_nonneg fun x => sq_nonneg _
+  have hΛ0 : (∫⁻ x, ENNReal.ofReal ((w x) ^ 2)) = ENNReal.ofReal I :=
+    (ofReal_integral_eq_lintegral_ofReal hw2.integrable_sq (ae_of_all _ fun x => sq_nonneg _)).symm
+  have hstep : ∀ x, ENNReal.ofReal ((w (x + s) - w x) ^ 2)
+      ≤ ENNReal.ofReal (2 * (w (x + s)) ^ 2) + ENNReal.ofReal (2 * (w x) ^ 2) := by
+    intro x
+    rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
+    exact ENNReal.ofReal_le_ofReal (by nlinarith [sq_nonneg (w (x + s) - w x), sq_nonneg (w (x + s) + w x)])
+  calc transModSq w s
+      ≤ ∫⁻ x, (ENNReal.ofReal (2 * (w (x + s)) ^ 2) + ENNReal.ofReal (2 * (w x) ^ 2)) :=
+        lintegral_mono hstep
+    _ = (∫⁻ x, ENNReal.ofReal (2 * (w (x + s)) ^ 2)) + ∫⁻ x, ENNReal.ofReal (2 * (w x) ^ 2) :=
+        lintegral_add_right _ (by measurability)
+    _ = ENNReal.ofReal (2 * I) + ENNReal.ofReal (2 * I) := by
+        congr 1
+        · rw [lintegral_congr fun x => ENNReal.ofReal_mul (by norm_num),
+            lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+          rw [show (∫⁻ x, ENNReal.ofReal ((w (x + s)) ^ 2))
+              = ∫⁻ x, ENNReal.ofReal ((w x) ^ 2) from
+            lintegral_add_right_eq_self (fun x => ENNReal.ofReal ((w x) ^ 2)) s, hΛ0,
+            ← ENNReal.ofReal_mul (by norm_num), show (2:ℝ) * I = 2 * I from rfl]
+        · rw [lintegral_congr fun x => ENNReal.ofReal_mul (by norm_num),
+            lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hΛ0,
+            ← ENNReal.ofReal_mul (by norm_num)]
+    _ = ENNReal.ofReal (4 * I) := by
+        rw [← ENNReal.ofReal_add (by positivity) (by positivity)]; ring_nf
+
+private lemma transModSq_ne_top {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    (s : ℝ) : transModSq w s ≠ ⊤ :=
+  ne_top_of_le_ne_top ENNReal.ofReal_ne_top (transModSq_le hw_meas hw2 s)
+
+/-- `ofReal (ω s) = Λ s ^ (1/2)`: the modulus is the honest square root of the finite `Λ s`. -/
+private lemma ofReal_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    (s : ℝ) : ENNReal.ofReal (transMod w s) = (transModSq w s) ^ (1 / 2 : ℝ) := by
+  rw [transMod, transModSq]
+  exact ENNReal.ofReal_toReal
+    ((ENNReal.rpow_lt_top_of_nonneg (by norm_num) (transModSq_ne_top hw_meas hw2 s)).ne)
+
+private lemma transMod_le {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    (s : ℝ) : transMod w s ≤ Real.sqrt (4 * ∫ x, (w x) ^ 2) := by
+  have hInn : 0 ≤ 4 * ∫ x, (w x) ^ 2 := by positivity
+  have h1 : (transModSq w s) ^ (1 / 2 : ℝ)
+      ≤ ENNReal.ofReal (Real.sqrt (4 * ∫ x, (w x) ^ 2)) := by
+    rw [Real.sqrt_eq_rpow, ← ENNReal.ofReal_rpow_of_nonneg hInn (by norm_num)]
+    exact ENNReal.rpow_le_rpow (transModSq_le hw_meas hw2 s) (by norm_num)
+  have h2 : ENNReal.ofReal (transMod w s) ≤ ENNReal.ofReal (Real.sqrt (4 * ∫ x, (w x) ^ 2)) := by
+    rw [ofReal_transMod hw_meas hw2 s]; exact h1
+  exact (ENNReal.ofReal_le_ofReal_iff (Real.sqrt_nonneg _)).1 h2
+
+private lemma tendsto_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume) :
+    Filter.Tendsto (transMod w) (nhds 0) (nhds 0) := by
+  have hΛ : Filter.Tendsto (transModSq w) (nhds 0) (nhds 0) :=
+    tendsto_lintegral_sq_sub_translate hw_meas hw2
+  have hrpow : Filter.Tendsto (fun s => (transModSq w s) ^ (1 / 2 : ℝ)) (nhds 0) (nhds 0) := by
+    have h := (ENNReal.continuous_rpow_const (y := (1 / 2 : ℝ))).tendsto (0 : ℝ≥0∞)
+    rw [ENNReal.zero_rpow_of_pos (by norm_num)] at h
+    exact h.comp hΛ
+  have htoReal : Filter.Tendsto (fun s => ((transModSq w s) ^ (1 / 2 : ℝ)).toReal)
+      (nhds 0) (nhds (0 : ℝ)) := by
+    have := (ENNReal.tendsto_toReal (by simp : (0 : ℝ≥0∞) ≠ ⊤)).comp hrpow
+    simpa using this
+  exact htoReal
+
+private lemma measurable_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) :
+    Measurable (transMod w) := by
+  have hF : Measurable (Function.uncurry fun s x => ENNReal.ofReal ((w (x + s) - w x) ^ 2)) := by
+    have huc : (Function.uncurry fun s x => ENNReal.ofReal ((w (x + s) - w x) ^ 2))
+        = fun q : ℝ × ℝ => ENNReal.ofReal ((w (q.2 + q.1) - w q.2) ^ 2) := rfl
+    rw [huc]
+    exact (((hw_meas.comp (by fun_prop)).sub (hw_meas.comp measurable_snd)).pow_const 2).ennreal_ofReal
+  have hΛmeas : Measurable (transModSq w) := hF.lintegral_prod_right'
+  exact (ENNReal.continuous_rpow_const.measurable.comp hΛmeas).ennreal_toReal
+
 /-- **Step B**: the a.e.-`x` bias identity. Using `∫K = 1` and `∫uK = 0`,
 `kmBias p K h x = h²·∫ u, K u · u² · (∫₀¹ (1−τ)·w(x+τuh) dτ) du`. -/
 private lemma kmBias_eq {p K w : ℝ → ℝ}
