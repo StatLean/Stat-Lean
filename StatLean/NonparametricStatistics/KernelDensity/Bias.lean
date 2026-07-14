@@ -45,7 +45,42 @@ theorem integrable_kernel_mul_holder {β L : ℝ} (hβ : 0 < β) (hL : 0 ≤ L)
     (hKβ : Integrable fun u => |u| ^ β * |K u|)
     {h : ℝ} (hh : 0 < h) (x₀ : ℝ) :
     Integrable fun u => K u * f (x₀ + u * h) := by
-  sorry
+  have hfcont : Continuous f := (contDiffOn_univ.mp (MemHolderOn.contDiffOn hf)).continuous
+  have hKaesm : AEStronglyMeasurable K volume := by
+    have h := (hK.integrable_pow 0 (Nat.zero_le _)).aestronglyMeasurable
+    simpa only [pow_zero, one_mul] using h
+  have haesm : AEStronglyMeasurable (fun u => K u * f (x₀ + u * h)) volume :=
+    hKaesm.mul (hfcont.comp (by fun_prop)).aestronglyMeasurable
+  have hint_dom : Integrable (fun u =>
+      (∑ j ∈ Finset.range (holderIndex β + 1),
+        |iteratedDeriv j f x₀| / (Nat.factorial j : ℝ) * h ^ j * (|u| ^ j * |K u|))
+      + (L / (Nat.factorial (holderIndex β) : ℝ) * h ^ β) * (|u| ^ β * |K u|)) := by
+    apply Integrable.add
+    · apply integrable_finset_sum
+      intro j hj
+      have hjℓ : j ≤ holderIndex β := Finset.mem_range_succ_iff.mp hj
+      have hjint : Integrable (fun u => |u| ^ j * |K u|) := by
+        have h := (hK.integrable_pow j hjℓ).abs
+        simpa only [abs_mul, abs_pow] using h
+      exact hjint.const_mul _
+    · exact hKβ.const_mul _
+  refine hint_dom.mono' haesm (ae_of_all _ fun u => ?_)
+  rw [Real.norm_eq_abs, abs_mul]
+  have hg := hf.abs_le_growth hβ hL x₀ (u * h)
+  have huh : |u * h| = |u| * h := by rw [abs_mul, abs_of_pos hh]
+  calc |K u| * |f (x₀ + u * h)|
+      ≤ |K u| * ((∑ j ∈ Finset.range (holderIndex β + 1),
+            |iteratedDeriv j f x₀| * |u * h| ^ j / (Nat.factorial j : ℝ))
+          + L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β) :=
+        mul_le_mul_of_nonneg_left hg (abs_nonneg _)
+    _ = (∑ j ∈ Finset.range (holderIndex β + 1),
+          |iteratedDeriv j f x₀| / (Nat.factorial j : ℝ) * h ^ j * (|u| ^ j * |K u|))
+        + (L / (Nat.factorial (holderIndex β) : ℝ) * h ^ β) * (|u| ^ β * |K u|) := by
+        rw [mul_add, Finset.mul_sum]
+        congr 1
+        · refine Finset.sum_congr rfl fun j _ => ?_
+          rw [huh, mul_pow]; ring
+        · rw [huh, Real.mul_rpow (abs_nonneg u) hh.le]; ring
 
 /-- **Deterministic bias core**: for global Hölder `f` and a kernel of order
 `ℓ = holderIndex β` with finite `β`-moment,
@@ -65,7 +100,79 @@ theorem abs_integral_kernel_taylor_le {β L : ℝ}
     -- LEAN-ONLY: positive bandwidth; standard side condition
     (hh : 0 < h) (x₀ : ℝ) :
     |(∫ u, K u * f (x₀ + u * h)) - f x₀| ≤ kdeBiasConst β L K * h ^ β := by
-  sorry
+  have hcomp : Integrable (fun u => K u * f (x₀ + u * h)) :=
+    integrable_kernel_mul_holder hβ hL hf hK hKβ hh x₀
+  have hpolyint : ∀ j ∈ Finset.range (holderIndex β + 1),
+      Integrable (fun u => K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))) := by
+    intro j hj
+    have hjℓ : j ≤ holderIndex β := Finset.mem_range_succ_iff.mp hj
+    have h := (hK.integrable_pow j hjℓ).const_mul
+      (iteratedDeriv j f x₀ * h ^ j / (Nat.factorial j : ℝ))
+    refine h.congr (ae_of_all _ fun u => ?_)
+    simp only [mul_pow]; ring
+  have hInt_poly : Integrable (fun u => K u * ∑ j ∈ Finset.range (holderIndex β + 1),
+      iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
+    have hfun : (fun u => K u * ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))
+        = fun u => ∑ j ∈ Finset.range (holderIndex β + 1),
+          K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
+      funext u; rw [Finset.mul_sum]
+    rw [hfun]; exact integrable_finset_sum _ hpolyint
+  have hKT : (∫ u, K u * ∑ j ∈ Finset.range (holderIndex β + 1),
+      iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) = f x₀ := by
+    have hfun : (fun u => K u * ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))
+        = fun u => ∑ j ∈ Finset.range (holderIndex β + 1),
+          K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
+      funext u; rw [Finset.mul_sum]
+    rw [hfun, integral_finset_sum _ hpolyint]
+    have hterm : ∀ j ∈ Finset.range (holderIndex β + 1),
+        (∫ u, K u * (iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)))
+          = iteratedDeriv j f x₀ * h ^ j / (Nat.factorial j : ℝ) * (∫ u, u ^ j * K u) := by
+      intro j _
+      rw [← integral_const_mul]
+      refine integral_congr_ae (ae_of_all _ fun u => ?_)
+      simp only [mul_pow]; ring
+    rw [Finset.sum_congr rfl hterm, Finset.sum_eq_single (0 : ℕ)
+      (fun j hj hj0 => by
+        have hjℓ : j ≤ holderIndex β := Finset.mem_range_succ_iff.mp hj
+        rw [hK.moment_eq_zero j (Nat.one_le_iff_ne_zero.mpr hj0) hjℓ, mul_zero])
+      (fun h => absurd (Finset.mem_range.mpr (Nat.succ_pos _)) h)]
+    have hK1 : (∫ u, u ^ (0 : ℕ) * K u) = 1 := by
+      simp only [pow_zero, one_mul]; exact hK.integral_eq_one
+    rw [hK1]; simp [iteratedDeriv_zero]
+  have key : (∫ u, K u * f (x₀ + u * h)) - f x₀
+      = ∫ u, K u * (f (x₀ + u * h) - ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ)) := by
+    rw [← hKT, ← integral_sub hcomp hInt_poly]
+    exact integral_congr_ae (ae_of_all _ fun u => (mul_sub _ _ _).symm)
+  have habs_int : Integrable (fun u => K u * (f (x₀ + u * h)
+      - ∑ j ∈ Finset.range (holderIndex β + 1),
+        iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))) := by
+    refine (hcomp.sub hInt_poly).congr (ae_of_all _ fun u => ?_)
+    exact (mul_sub _ _ _).symm
+  have hmaj_eq : (fun u => |K u| * (L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β))
+      = fun u => (L / (Nat.factorial (holderIndex β) : ℝ) * h ^ β) * (|u| ^ β * |K u|) := by
+    funext u
+    rw [show |u * h| = |u| * h by rw [abs_mul, abs_of_pos hh],
+        Real.mul_rpow (abs_nonneg u) hh.le]; ring
+  have hmaj_int : Integrable
+      (fun u => |K u| * (L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β)) := by
+    rw [hmaj_eq]; exact hKβ.const_mul _
+  calc |(∫ u, K u * f (x₀ + u * h)) - f x₀|
+      = ‖∫ u, K u * (f (x₀ + u * h) - ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))‖ := by
+        rw [key, Real.norm_eq_abs]
+    _ ≤ ∫ u, ‖K u * (f (x₀ + u * h) - ∑ j ∈ Finset.range (holderIndex β + 1),
+          iteratedDeriv j f x₀ * (u * h) ^ j / (Nat.factorial j : ℝ))‖ :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ u, |K u| * (L / (Nat.factorial (holderIndex β) : ℝ) * |u * h| ^ β) := by
+        refine integral_mono habs_int.norm hmaj_int (fun u => ?_)
+        rw [Real.norm_eq_abs, abs_mul]
+        exact mul_le_mul_of_nonneg_left
+          (hf.taylor_remainder_abs_le hβ hL x₀ (u * h)) (abs_nonneg _)
+    _ = kdeBiasConst β L K * h ^ β := by
+        rw [hmaj_eq, integral_const_mul, kdeBiasConst]; ring
 
 /-- **Pointwise bias bound for the kernel density estimator**: for `p ∈ P(β, L)`, kernel of
 order `ℓ = holderIndex β` with finite `β`-moment, `n ≥ 1` and `h > 0`:
@@ -91,6 +198,13 @@ theorem kde_bias_abs_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     -- USER-INPUT: finite `β`-moment of the kernel; classical bias-bound input
     (hKβ : Integrable fun u => |u| ^ β * |K u|) :
     |kdeBiasAt P X K h p x₀| ≤ kdeBiasConst β L K * h ^ β := by
-  sorry
+  have h0 : ∀ x, 0 ≤ p x := hp.nonneg
+  have hp_meas : Measurable p :=
+    (contDiffOn_univ.mp (MemHolderOn.contDiffOn hp.holder)).continuous.measurable
+  have hint : Integrable fun u => K u * p (x₀ + u * h) :=
+    integrable_kernel_mul_holder hβ hL hp.holder hK hKβ hh x₀
+  unfold kdeBiasAt
+  rw [kdeMeanAt_eq_integral_kernel hn hh hs hp_meas h0 hKmeas hint]
+  exact abs_integral_kernel_taylor_le hβ hL hp.holder hK hKβ hh x₀
 
 end StatLean.NonparametricStatistics
