@@ -1,6 +1,6 @@
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Constructions.Prod.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.NNRpow
+import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # Generalized Minkowski integral inequality (L² form)

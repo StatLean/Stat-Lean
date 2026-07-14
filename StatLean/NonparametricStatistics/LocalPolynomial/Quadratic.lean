@@ -1,5 +1,6 @@
 import StatLean.NonparametricStatistics.LocalPolynomial.Defs
 import StatLean.NonparametricStatistics.Regression.Defs
+import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The local polynomial estimator as a quadratic minimisation
