@@ -479,6 +479,58 @@ private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} :
   rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
     Real.rpow_two, sq_abs]
 
+/-- Interval-integrability of `τ ↦ (1−τ)·w(x+τc)` on `[0,1]` from `MemLp w 2` (affine change of
+variables plus continuity of `1−τ`). -/
+private lemma intervalIntegrable_taylor_kernel {w : ℝ → ℝ} (hw_meas : Measurable w)
+    (hw2 : MemLp w 2 volume) (x c : ℝ) :
+    IntervalIntegrable (fun τ => (1 - τ) * w (x + τ * c)) volume 0 1 := by
+  have hii : ∀ a b : ℝ, IntervalIntegrable w volume a b :=
+    fun a b => intervalIntegrable_of_memLp_two hw_meas hw2 a b
+  have haff : IntervalIntegrable (fun τ => w (x + τ * c)) volume 0 1 := by
+    rcases eq_or_ne c 0 with hc | hc
+    · simp only [hc, mul_zero, add_zero]; exact intervalIntegrable_const
+    · have h1 : IntervalIntegrable (fun y => w (x + y)) volume 0 c := by
+        simpa using (hii x (x + c)).comp_add_left x
+      simpa only [zero_div, div_self hc, mul_comm c] using h1.comp_mul_left (c := c)
+  exact haff.continuousOn_mul (Continuous.continuousOn (by fun_prop))
+
+/-- Integrability in `u` of `K u · u² · ∫₀¹ (1−τ)·w(x+τuh) dτ`, from the second-order remainder
+and the low-order kernel-moment integrabilities. -/
+private lemma integrable_kernel_sq_taylor {p K w : ℝ → ℝ}
+    (hp1 : Differentiable ℝ p) (hw_meas : Measurable w)
+    (hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s) (hw2 : MemLp w 2 volume)
+    (hK : IsKernelOfOrder K 1) {h x : ℝ} (hh : 0 < h)
+    (hKp : Integrable (fun u => K u * p (x + u * h))) :
+    Integrable (fun u => K u * u ^ 2 * ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h))) := by
+  set R : ℝ → ℝ := fun u => ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h)) with hRdef
+  have hK_int : Integrable K := by simpa using hK.integrable_pow 0 (Nat.zero_le _)
+  have hpoly1 : Integrable (fun u => K u * p x) := hK_int.mul_const _
+  have hpoly2 : Integrable (fun u => K u * (u * h) * deriv p x) := by
+    have hh1 : Integrable (fun u => u ^ 1 * K u) := hK.integrable_pow 1 (le_refl 1)
+    have he : (fun u => K u * (u * h) * deriv p x) = fun u => (h * deriv p x) * (u ^ 1 * K u) := by
+      funext u; simp only [pow_one]; ring
+    rw [he]; exact hh1.const_mul _
+  have hpoly : Integrable (fun u => K u * p x + K u * (u * h) * deriv p x) := hpoly1.add hpoly2
+  have hA : ∀ u, K u * p (x + u * h)
+      = (K u * p x + K u * (u * h) * deriv p x) + K u * (u ^ 2 * h ^ 2) * R u := by
+    intro u
+    have hsa := second_order_remainder hp1 hw_meas hw2 hpw x (u * h)
+    have hRu : (∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h))) = R u := rfl
+    rw [hRu] at hsa
+    have hp : p (x + u * h) = p x + (u * h) * deriv p x + (u * h) ^ 2 * R u := by linarith [hsa]
+    rw [hp]; ring
+  have hthird : Integrable (fun u => K u * (u ^ 2 * h ^ 2) * R u) := by
+    have heq : (fun u => K u * (u ^ 2 * h ^ 2) * R u)
+        = fun u => K u * p (x + u * h) - (K u * p x + K u * (u * h) * deriv p x) := by
+      funext u; rw [hA u]; ring
+    rw [heq]; exact hKp.sub hpoly
+  have hh0 : (h : ℝ) ^ 2 ≠ 0 := by positivity
+  have hfac : (fun u => K u * u ^ 2 * R u)
+      = fun u => (h ^ 2)⁻¹ * (K u * (u ^ 2 * h ^ 2) * R u) := by
+    funext u; field_simp
+  show Integrable (fun u => K u * u ^ 2 * R u)
+  rw [hfac]; exact hthird.const_mul _
+
 /-- **Step C**: the `L²(dx)` distance between the bias and its surrogate is `o(h²)`. There is a
 function `κ : ℝ → ℝ` tending to `0` at `0`, with `κ ≥ 0`, such that for all `0 < h`,
 `eLpNorm (fun x => kmBias p K h x − kmSurr w K h x) 2 ≤ ofReal (h² · κ h)`. -/
