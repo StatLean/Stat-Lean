@@ -335,6 +335,88 @@ private lemma measurable_transMod {w : ℝ → ℝ} (hw_meas : Measurable w) :
   have hΛmeas : Measurable (transModSq w) := hF.lintegral_prod_right'
   exact (ENNReal.continuous_rpow_const.measurable.comp hΛmeas).ennreal_toReal
 
+/-- **Step C, τ-level Minkowski**: the `L²(dx)` norm of the second-order remainder integral over
+`τ` is at most the integral over `τ` of the `L²`-moduli, i.e.
+`‖∫₀¹ (1−τ)(w(·+τuh)−w) dτ‖_{L²} ≤ ∫₀¹ (1−τ)·ω(τuh) dτ`. -/
+private lemma stepC_tau_bound {w : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    (h u : ℝ) :
+    (∫⁻ x, ENNReal.ofReal
+        ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)) ^ (1 / 2 : ℝ)
+      ≤ ENNReal.ofReal (∫ τ in (0 : ℝ)..1, (1 - τ) * transMod w (τ * (u * h))) := by
+  classical
+  have hωmeas : Measurable (transMod w) := measurable_transMod hw_meas
+  set μ2 : Measure ℝ := volume.restrict (Set.Ioc (0 : ℝ) 1) with hμ2def
+  -- Pointwise `ofReal(D²) ≤ (∫⁻_τ ‖·‖ₑ)²`.
+  have hptD : ∀ x,
+      ENNReal.ofReal ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)
+        ≤ (∫⁻ τ, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ∂μ2) ^ 2 := by
+    intro x
+    rw [intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1)]
+    have hle := enorm_integral_le_lintegral_enorm
+      (μ := μ2) (fun τ => (1 - τ) * (w (x + τ * (u * h)) - w x))
+    have heq : ENNReal.ofReal ((∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)
+        = ‖∫ τ in Set.Ioc (0 : ℝ) 1, (1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2 := by
+      rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+    rw [heq]
+    exact pow_le_pow_left' hle 2
+  -- Joint measurability of the `(τ, x)` integrand.
+  have hg2meas : Measurable
+      (Function.uncurry fun τ x => ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ) := by
+    have : (Function.uncurry fun τ x => ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ)
+        = fun q : ℝ × ℝ => ‖(1 - q.1) * (w (q.2 + q.1 * (u * h)) - w q.2)‖ₑ := rfl
+    rw [this]
+    exact (((continuous_const.sub continuous_fst).measurable).mul
+      ((hw_meas.comp (by fun_prop)).sub (hw_meas.comp measurable_snd))).enorm
+  -- The two-variable Minkowski inequality (over `τ` and `x`).
+  have hmink := lintegral_lintegral_sq_rpow_le μ2 volume
+    (g := fun τ x => ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ) hg2meas
+  -- `R2 = ofReal(∫₀¹ (1−τ)ω)`.
+  have hinner : ∀ᵐ τ ∂μ2,
+      (∫⁻ x, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2) ^ (1 / 2 : ℝ)
+        = ENNReal.ofReal ((1 - τ) * transMod w (τ * (u * h))) := by
+    refine ae_restrict_of_forall_mem measurableSet_Ioc fun τ hτ => ?_
+    have hx : ∀ x, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2
+        = ENNReal.ofReal ((1 - τ) ^ 2) * ENNReal.ofReal ((w (x + τ * (u * h)) - w x) ^ 2) := by
+      intro x
+      rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs, mul_pow,
+        ENNReal.ofReal_mul (by positivity)]
+    rw [lintegral_congr hx, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+      show (∫⁻ x, ENNReal.ofReal ((w (x + τ * (u * h)) - w x) ^ 2)) = transModSq w (τ * (u * h))
+        from rfl,
+      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 1 / 2),
+      ← ofReal_transMod hw_meas hw2 (τ * (u * h)),
+      ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num : (0 : ℝ) ≤ 1 / 2),
+      ← Real.sqrt_eq_rpow, Real.sqrt_sq (by linarith [hτ.2] : (0 : ℝ) ≤ 1 - τ),
+      ← ENNReal.ofReal_mul (by linarith [hτ.2] : (0 : ℝ) ≤ 1 - τ)]
+  have hginteg : Integrable (fun τ => (1 - τ) * transMod w (τ * (u * h))) μ2 := by
+    rw [hμ2def]
+    refine Integrable.mono' (g := fun _ => Real.sqrt (4 * ∫ x, (w x) ^ 2))
+      (integrableOn_const (C := Real.sqrt (4 * ∫ x, (w x) ^ 2)) measure_Ioc_lt_top.ne)
+      (((continuous_const.sub continuous_id).measurable).mul
+        (hωmeas.comp (by fun_prop))).aestronglyMeasurable ?_
+    refine ae_restrict_of_forall_mem measurableSet_Ioc fun τ hτ => ?_
+    rw [Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg (by linarith [hτ.2]) (transMod_nonneg _))]
+    calc (1 - τ) * transMod w (τ * (u * h))
+        ≤ 1 * Real.sqrt (4 * ∫ x, (w x) ^ 2) :=
+          mul_le_mul (by linarith [hτ.1]) (transMod_le hw_meas hw2 _)
+            (transMod_nonneg _) (by norm_num)
+      _ = _ := one_mul _
+  have hgnn : ∀ᵐ τ ∂μ2, 0 ≤ (1 - τ) * transMod w (τ * (u * h)) :=
+    ae_restrict_of_forall_mem measurableSet_Ioc fun τ hτ =>
+      mul_nonneg (by linarith [hτ.2]) (transMod_nonneg _)
+  have hR2eq : (∫⁻ τ, (∫⁻ x, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2) ^ (1 / 2 : ℝ) ∂μ2)
+      = ENNReal.ofReal (∫ τ in (0 : ℝ)..1, (1 - τ) * transMod w (τ * (u * h))) := by
+    rw [lintegral_congr_ae hinner, ← ofReal_integral_eq_lintegral_ofReal hginteg hgnn,
+      intervalIntegral.integral_of_le (by norm_num : (0 : ℝ) ≤ 1)]
+  -- Assemble.
+  calc (∫⁻ x, ENNReal.ofReal
+          ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)) ^ (1 / 2 : ℝ)
+      ≤ (∫⁻ x, (∫⁻ τ, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ∂μ2) ^ 2) ^ (1 / 2 : ℝ) :=
+        ENNReal.rpow_le_rpow (lintegral_mono hptD) (by norm_num)
+    _ ≤ ∫⁻ τ, (∫⁻ x, ‖(1 - τ) * (w (x + τ * (u * h)) - w x)‖ₑ ^ 2) ^ (1 / 2 : ℝ) ∂μ2 := hmink
+    _ = ENNReal.ofReal (∫ τ in (0 : ℝ)..1, (1 - τ) * transMod w (τ * (u * h))) := hR2eq
+
 /-- **Step B**: the a.e.-`x` bias identity. Using `∫K = 1` and `∫uK = 0`,
 `kmBias p K h x = h²·∫ u, K u · u² · (∫₀¹ (1−τ)·w(x+τuh) dτ) du`. -/
 private lemma kmBias_eq {p K w : ℝ → ℝ}
