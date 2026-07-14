@@ -63,6 +63,151 @@ theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : �
               |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ)
                 - f (t : ℝ)|) ^ 2) ∂P
           ≤ ENNReal.ofReal (C * (Real.log n / n) ^ (2 * β / (2 * β + 1))) := by
-  sorry
+  obtain ⟨Cs, hCspos, hCs⟩ := lp_supnorm_stochastic_le (ℓ := holderIndex β) hlam ha₀ hbox hKlip
+  set q₁ : ℝ := lpBiasConst β L Kmax lam0 a₀ with hq₁def
+  refine ⟨2 * Cs * (v : ℝ) / α + 2 * q₁ ^ 2 * α ^ (2 * β) + 1, by positivity, ?_⟩
+  intro n hn h hform hhl hh1 xdat hx heig hdens Ω _ P _ ξ hξm hξind hξlaw f hf
+  have hn0 : 0 < n := by omega
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn0
+  have hh : 0 < h := lt_of_lt_of_le (div_pos one_pos (mul_pos (by norm_num) hnpos)) hhl
+  have hnh : (0 : ℝ) < (n : ℝ) * h := mul_pos hnpos hh
+  set r : ℝ := Real.log n / n with hrdef
+  have hlognpos : 0 < Real.log n := Real.log_pos (by exact_mod_cast (by omega : 1 < n))
+  have hrpos : 0 < r := by rw [hrdef]; positivity
+  have hβ1 : (0 : ℝ) < 2 * β + 1 := by linarith
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hCstnn : (0 : ℝ) ≤ lpWeightConst Kmax lam0 a₀ := by
+    unfold lpWeightConst
+    exact le_trans (div_nonneg (mul_nonneg (by norm_num) hKmax) hlam.le) (le_max_left _ _)
+  -- bound of the stochastic term at each `t`, uniformly bounded (for `BddAbove`)
+  have hZbdd : ∀ ω, BddAbove (Set.range fun t : Set.Icc (0 : ℝ) 1 =>
+      |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) := by
+    intro ω
+    refine ⟨(∑ i, |ξ i ω|) * lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h), ?_⟩
+    rintro _ ⟨t, rfl⟩
+    calc |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|
+        ≤ ∑ i, |ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i| := Finset.abs_sum_le_sum_abs _ _
+      _ = ∑ i, |ξ i ω| * |lpWeight xdat K h (holderIndex β) (t : ℝ) i| := by simp_rw [abs_mul]
+      _ ≤ ∑ i, |ξ i ω| * (lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h)) := by
+          refine Finset.sum_le_sum (fun i _ => mul_le_mul_of_nonneg_left ?_ (abs_nonneg _))
+          exact lp_weight_abs_le hn0 hh hlam ha₀ heig hbox t.2 i
+      _ = (∑ i, |ξ i ω|) * lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h) := by
+          rw [← Finset.sum_mul]; ring
+  -- pointwise bias/stochastic split
+  have hpt : ∀ ω (t : Set.Icc (0 : ℝ) 1),
+      |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|
+        ≤ q₁ * h ^ β + |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i| := by
+    intro ω t
+    have hsplit :
+        lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)
+        = (∑ i, f (xdat i) * lpWeight xdat K h (holderIndex β) (t : ℝ) i - f (t : ℝ))
+          + ∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i := by
+      simp only [lpEstimator]
+      rw [show (∑ i, (f (xdat i) + ξ i ω) * lpWeight xdat K h (holderIndex β) (t : ℝ) i)
+          = (∑ i, f (xdat i) * lpWeight xdat K h (holderIndex β) (t : ℝ) i)
+            + ∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i from by
+        rw [← Finset.sum_add_distrib]; exact Finset.sum_congr rfl (fun i _ => by ring)]
+      ring
+    rw [hsplit]
+    refine le_trans (abs_add_le _ _) ?_
+    gcongr
+    exact lp_bias_deterministic hβ hL hn0 hhl hlam ha₀ hx heig hbox hdens hf t.2
+  -- squared pointwise bound
+  have hptsq : ∀ ω, (⨆ t : Set.Icc (0 : ℝ) 1,
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|) ^ 2
+      ≤ 2 * (⨆ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2
+        + 2 * (q₁ * h ^ β) ^ 2 := by
+    intro ω
+    have hbnd : (⨆ t : Set.Icc (0 : ℝ) 1,
+          |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|)
+        ≤ q₁ * h ^ β + ⨆ t : Set.Icc (0 : ℝ) 1,
+            |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i| := by
+      apply ciSup_le; intro t
+      refine le_trans (hpt ω t) ?_
+      gcongr
+      exact le_ciSup (hZbdd ω) t
+    have hfbdd : BddAbove (Set.range fun t : Set.Icc (0 : ℝ) 1 =>
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)|) := by
+      obtain ⟨B, hB⟩ := hZbdd ω
+      refine ⟨q₁ * h ^ β + B, ?_⟩
+      rintro _ ⟨t, rfl⟩
+      refine le_trans (hpt ω t) ?_
+      gcongr
+      exact hB ⟨t, rfl⟩
+    have hff_nn : 0 ≤ ⨆ t : Set.Icc (0 : ℝ) 1,
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ) - f (t : ℝ)| :=
+      le_trans (abs_nonneg _)
+        (le_ciSup hfbdd (⟨0, Set.mem_Icc.mpr ⟨le_refl 0, zero_le_one⟩⟩ : Set.Icc (0 : ℝ) 1))
+    calc (⨆ t : Set.Icc (0 : ℝ) 1, |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h
+            (holderIndex β) (t : ℝ) - f (t : ℝ)|) ^ 2
+        ≤ (q₁ * h ^ β + ⨆ t : Set.Icc (0 : ℝ) 1,
+            |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2 :=
+          pow_le_pow_left₀ hff_nn hbnd 2
+      _ ≤ 2 * (⨆ t : Set.Icc (0 : ℝ) 1,
+            |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2
+          + 2 * (q₁ * h ^ β) ^ 2 := by
+          nlinarith [sq_nonneg (q₁ * h ^ β - ⨆ t : Set.Icc (0 : ℝ) 1,
+            |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|)]
+  -- rpow substitution
+  have hqh : 2 * (q₁ * h ^ β) ^ 2 = 2 * q₁ ^ 2 * h ^ (2 * β) := by
+    rw [mul_pow, pow_two (h ^ β), ← Real.rpow_add hh, show β + β = 2 * β by ring]; ring
+  have hh2b : h ^ (2 * β) = α ^ (2 * β) * r ^ (2 * β / (2 * β + 1)) := by
+    rw [hform, Real.mul_rpow hα.le (Real.rpow_nonneg hrpos.le _),
+      ← Real.rpow_mul hrpos.le, show 1 / (2 * β + 1) * (2 * β) = 2 * β / (2 * β + 1) by ring]
+  have hstep : Real.log n / ((n : ℝ) * h) = r / h := by rw [hrdef]; field_simp
+  have hexpE : (1 : ℝ) - 1 / (2 * β + 1) = 2 * β / (2 * β + 1) := by
+    rw [eq_div_iff hβ1.ne', sub_mul, one_mul, div_mul_cancel₀ _ hβ1.ne']; ring
+  have h2 : 2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+      = 2 * Cs * (v : ℝ) / α * r ^ (2 * β / (2 * β + 1)) := by
+    rw [show 2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+        = 2 * Cs * (v : ℝ) * (Real.log n / ((n : ℝ) * h)) by ring, hstep, hform,
+      show r / (α * r ^ (1 / (2 * β + 1))) = α⁻¹ * (r ^ (1 : ℝ) / r ^ (1 / (2 * β + 1))) by
+        rw [Real.rpow_one]; ring, ← Real.rpow_sub hrpos, hexpE]
+    ring
+  -- assemble
+  have hCsapp := hCs hn hhl hh1 hx heig hdens P ξ v hξm hξind hξlaw
+  have hdbl : (2 : ℝ≥0∞) * ENNReal.ofReal (Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
+      = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)) := by
+    rw [show 2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+        = 2 * (Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)) by ring,
+      ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+  calc ∫⁻ ω, ENNReal.ofReal ((⨆ t : Set.Icc (0 : ℝ) 1,
+        |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ)
+          - f (t : ℝ)|) ^ 2) ∂P
+      ≤ ∫⁻ ω, ENNReal.ofReal (2 * (⨆ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2
+        + 2 * (q₁ * h ^ β) ^ 2) ∂P :=
+        lintegral_mono (fun ω => ENNReal.ofReal_le_ofReal (hptsq ω))
+    _ ≤ ∫⁻ ω, (ENNReal.ofReal (2 * (⨆ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2)
+        + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2)) ∂P :=
+        lintegral_mono (fun ω => ENNReal.ofReal_add_le)
+    _ = ∫⁻ ω, ENNReal.ofReal (2 * (⨆ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2) ∂P
+        + ∫⁻ _ω, ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) ∂P :=
+        lintegral_add_right _ measurable_const
+    _ = 2 * ∫⁻ ω, ENNReal.ofReal ((⨆ t : Set.Icc (0 : ℝ) 1,
+          |∑ i, ξ i ω * lpWeight xdat K h (holderIndex β) (t : ℝ) i|) ^ 2) ∂P
+        + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) := by
+        congr 1
+        · rw [lintegral_congr (fun ω => by
+            rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]),
+            lintegral_const_mul' 2 _ (by simp)]
+        · rw [lintegral_const, measure_univ, mul_one]
+    _ ≤ 2 * ENNReal.ofReal (Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
+        + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) :=
+        add_le_add (mul_le_mul_left' hCsapp 2) (le_refl _)
+    _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h))
+        + ENNReal.ofReal (2 * (q₁ * h ^ β) ^ 2) := by rw [hdbl]
+    _ = ENNReal.ofReal (2 * Cs * (v : ℝ) * Real.log n / ((n : ℝ) * h)
+        + 2 * (q₁ * h ^ β) ^ 2) :=
+        (ENNReal.ofReal_add (by positivity) (by positivity)).symm
+    _ ≤ ENNReal.ofReal ((2 * Cs * (v : ℝ) / α + 2 * q₁ ^ 2 * α ^ (2 * β) + 1)
+        * r ^ (2 * β / (2 * β + 1))) := by
+        refine ENNReal.ofReal_le_ofReal ?_
+        rw [hqh, h2, hh2b]
+        have hrE : 0 ≤ r ^ (2 * β / (2 * β + 1)) := Real.rpow_nonneg hrpos.le _
+        nlinarith [hrE]
 
 end StatLean.NonparametricStatistics
