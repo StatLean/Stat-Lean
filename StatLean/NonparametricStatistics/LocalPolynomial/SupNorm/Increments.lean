@@ -498,6 +498,34 @@ private lemma lp_gdiff_absSum_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → �
   have hfin := Real.sqrt_le_sqrt hchain
   rwa [Real.sqrt_sq hSnn, Real.sqrt_sq hTnn] at hfin
 
+/-- Pointwise bound on a basis-times-kernel coordinate, supported in the doubled window. -/
+private lemma lpV_abs_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {Kmax h : ℝ} {ℓ : ℕ}
+    (hh : 0 < h) (hbox : KernelBoxed K Kmax) {t t' : ℝ} (hd : |t - t'| < h) (k : Fin (ℓ + 1))
+    (i : Fin n) :
+    |K ((xdat i - t') / h) * lpBasis ℓ ((xdat i - t') / h) k|
+      ≤ Kmax * (((ℓ : ℝ) + 1) * 2 ^ ℓ)
+        * (Set.Icc (t - 2 * h) (t + 2 * h)).indicator (fun _ => (1 : ℝ)) (xdat i) := by
+  set z' := (xdat i - t') / h with hz'
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  by_cases hact : xdat i ∈ Set.Icc (t - 2 * h) (t + 2 * h)
+  · rw [Set.indicator_of_mem hact, mul_one]
+    by_cases hz'1 : z' ∈ Set.Icc (-1 : ℝ) 1
+    · rw [abs_mul]
+      have h1 : |z'| ≤ 2 := le_trans (abs_le.mpr (Set.mem_Icc.mp hz'1)) (by norm_num)
+      exact mul_le_mul (hbox.1 z') (lpBasis_abs_le_two h1 k) (abs_nonneg _) hKmax
+    · rw [hbox.2 z' hz'1, zero_mul, abs_zero]; positivity
+  · rw [Set.indicator_of_notMem hact, mul_zero]
+    have hz'1 : z' ∉ Set.Icc (-1 : ℝ) 1 := by
+      intro hin
+      apply hact
+      have hb : |z'| ≤ 1 := abs_le.mpr (Set.mem_Icc.mp hin)
+      rw [hz', abs_div, abs_of_pos hh, div_le_one hh] at hb
+      rw [abs_le] at hb
+      have hd' : |t - t'| < h := hd
+      rw [Set.mem_Icc]; rw [abs_lt] at hd'
+      constructor <;> nlinarith [hb.1, hb.2, hd'.1, hd'.2, hh]
+    rw [hbox.2 z' hz'1, zero_mul, abs_zero]
+
 /-- **ℓ¹-Lipschitz bound of the weight vector in the evaluation point**: there is
 `C_L = C_L(ℓ, K_max, λ₀, a₀, L_K)` with
 `∑ i, |W*ᵢ(t) − W*ᵢ(t')| ≤ C_L·|t − t'|/h³` for all `t, t' ∈ [0,1]` under the standing
