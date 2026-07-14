@@ -10688,5 +10688,1244 @@
       ]
     },
     "hasGraph": true
+  },
+  {
+    "id": "np-kde-def",
+    "category": "nonparametric",
+    "kind": "definition",
+    "leanName": "kde",
+    "fullName": "StatLean.NonparametricStatistics.kde",
+    "title": "The Kernel Density Estimator",
+    "citation": "Tsybakov (2009), Eq. (1.2)",
+    "shortRef": "Tsybakov (2009), Eq. (1.2)",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/Defs.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/Defs.html#StatLean.NonparametricStatistics.kde",
+    "informal": "<p>Let <span data-link=\"h1\">$X_1, \\dots, X_n$ be i.i.d. real-valued random variables</span> with common density $p$ with respect to Lebesgue measure. Given a function $K : \\mathbb{R} \\to \\mathbb{R}$ (the <em>kernel</em>) and a number $h > 0$ (the <em>bandwidth</em>), the <strong>kernel density estimator</strong>, or <strong>Parzen–Rosenblatt estimator</strong>, of $p$ at a point $x \\in \\mathbb{R}$ is <span data-link=\"h2\">the normalized kernel average</span> $$\\hat p_n(x) \\;=\\; \\frac{1}{nh} \\sum_{i=1}^{n} K\\!\\left(\\frac{X_i - x}{h}\\right).$$</p><p>Classically the kernel is an integrable function with $\\int K(u)\\,du = 1$; if moreover $K \\ge 0$, the function $x \\mapsto \\hat p_n(x)$ is itself a probability density. The definition places no conditions on $K$ or $h$ — each risk bound for $\\hat p_n$ states its own.</p>",
+    "summary": "The Parzen–Rosenblatt kernel density estimator p̂ₙ(x) = (nh)⁻¹ Σᵢ K((Xᵢ−x)/h), built from an i.i.d. sample, a kernel K, and a bandwidth h.",
+    "leanSignature": "noncomputable def kdeData {n : ℕ} (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (x : ℝ) : ℝ :=\n  ((n : ℝ) * h)⁻¹ * ∑ i, K ((xdat i - x) / h)\n\nnoncomputable def kde {n : ℕ} (X : Fin n → Ω → ℝ) (K : ℝ → ℝ) (h : ℝ) (ω : Ω) (x : ℝ) : ℝ :=\n  kdeData (fun i => X i ω) K h x",
+    "formalizationNotes": "`kde` is the estimator as a random function on the sample space: `kde X K h ω` is the deterministic kernel average `kdeData` evaluated on the realized data vector, so the two definitions together are exactly the classical display $\\hat p_n(x) = (nh)^{-1}\\sum_i K((X_i - x)/h)$. The definition itself imposes nothing on $K$ or $h$: unit mass $\\int K = 1$ and vanishing moments are packaged separately in `IsKernelOfOrder`, and each risk theorem states its own kernel conditions. Degenerate inputs $n = 0$ or $h = 0$ return the junk value $0$ (Lean's convention $0^{-1} = 0$ in the reals), which is why the bias and rate theorems carry $n \\ge 1$ and $0 < h$ side conditions. The kernel argument is $(X_i - x)/h$, matching the book's display; for symmetric kernels this agrees with the $(x - X_i)/h$ convention.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "X : Fin n → Ω → ℝ",
+        "label": "the sample",
+        "note": "The n observations X_1, …, X_n, modelled as random variables on a sample space Ω."
+      },
+      {
+        "id": "h2",
+        "leanToken": "((n : ℝ) * h)⁻¹ * ∑ i, K ((xdat i - x) / h)",
+        "label": "the estimator formula",
+        "note": "The kernel average (nh)⁻¹ Σᵢ K((Xᵢ − x)/h); degenerate n = 0 or h = 0 yields 0 by convention."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2 (Kernel density estimators), Eq. (1.2)",
+      "biblio": "The estimator goes back to ideas of E. Fix and J. L. Hodges (USAF School of Aviation Medicine, Report 4, 1951) and H. Akaike (Ann. Inst. Statist. Math. 6 (1954), 127–132); its mathematical theory was initiated by M. Rosenblatt (Ann. Math. Statist. 27 (1956), 832–837) and E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076) — whence the name Parzen–Rosenblatt estimator.",
+      "keys": [
+        "tsybakov2009",
+        "fix-hodges1951",
+        "akaike1954",
+        "rosenblatt1956",
+        "parzen1962"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kernel-order-def",
+    "category": "nonparametric",
+    "kind": "definition",
+    "leanName": "IsKernelOfOrder",
+    "fullName": "StatLean.NonparametricStatistics.IsKernelOfOrder",
+    "title": "Kernel of Order ℓ",
+    "citation": "Tsybakov (2009), Def. 1.3",
+    "shortRef": "Tsybakov (2009), Def. 1.3",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/Defs.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/Defs.html#StatLean.NonparametricStatistics.IsKernelOfOrder",
+    "informal": "<p>Let $\\ell$ be a nonnegative integer. A function $K : \\mathbb{R} \\to \\mathbb{R}$ is a <strong>kernel of order $\\ell$</strong> if <span data-link=\"h1\">the functions $u \\mapsto u^j K(u)$ are integrable for $j = 0, 1, \\dots, \\ell$</span> and they satisfy <span data-link=\"h2\">$\\int K(u)\\,du = 1$</span> and <span data-link=\"h3\">$\\int u^j K(u)\\,du = 0$ for $j = 1, \\dots, \\ell$</span> (vanishing moments of orders $1$ through $\\ell$). Following the classical convention, nothing is assumed about the $(\\ell+1)$-st moment.</p><p>Vanishing moments are the classical bias-reduction device: smoothing a $\\beta$-smooth density with a kernel of order $\\ell = \\lceil\\beta\\rceil - 1$ kills every Taylor term of the bias below order $\\beta$. Any symmetric probability-density kernel with finite first absolute moment (rectangular, triangular, Epanechnikov, Gaussian, …) is a kernel of order $1$, whereas kernels of order $\\ell \\ge 2$ necessarily take negative values on a set of positive Lebesgue measure.</p>",
+    "summary": "A kernel of order ℓ integrates to one and has vanishing moments of orders 1, …, ℓ — the classical bias-reduction device for kernel estimators.",
+    "leanSignature": "structure IsKernelOfOrder (K : ℝ → ℝ) (ℓ : ℕ) : Prop where\n  integrable_pow : ∀ j : ℕ, j ≤ ℓ → Integrable fun u => u ^ j * K u\n  integral_eq_one : ∫ u, K u = 1\n  moment_eq_zero : ∀ j : ℕ, 1 ≤ j → j ≤ ℓ → ∫ u, u ^ j * K u = 0",
+    "formalizationNotes": "The book defines kernels of order ℓ only for integers ℓ ≥ 1; the Lean structure reads verbatim for every natural ℓ, order 0 meaning simply an integrable function with $\\int K = 1$, and all downstream statements specialize correctly. As in the book, no condition is placed on the $(\\ell+1)$-st moment. In the bias and rate theorems the order is instantiated at ℓ = `holderIndex β` $= \\lceil\\beta\\rceil - 1$, the greatest integer strictly less than the smoothness $\\beta$. Existence of bounded kernels of every order — needed inside Theorem 1.1's proof — is established constructively in `exists_bounded_kernel_of_order` (box superposition plus a Vandermonde argument, replacing the book's Legendre-polynomial construction).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "integrable_pow : ∀ j : ℕ, j ≤ ℓ → Integrable fun u => u ^ j * K u",
+        "label": "integrable moments",
+        "note": "Each weighted kernel u ↦ uʲK(u), 0 ≤ j ≤ ℓ, is integrable on ℝ."
+      },
+      {
+        "id": "h2",
+        "leanToken": "integral_eq_one : ∫ u, K u = 1",
+        "label": "unit total integral",
+        "note": "The kernel has total mass one: ∫K(u)du = 1."
+      },
+      {
+        "id": "h3",
+        "leanToken": "moment_eq_zero : ∀ j : ℕ, 1 ≤ j → j ≤ ℓ → ∫ u, u ^ j * K u = 0",
+        "label": "vanishing moments",
+        "note": "The moments of orders 1 through ℓ vanish: ∫uʲK(u)du = 0."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.1 (Mean squared error of kernel estimators), Definition 1.3",
+      "biblio": "Bias reduction through vanishing kernel moments is classical: E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076) systematically analyzed the bias of kernel estimators, and M. S. Bartlett (Sankhyā Ser. A 25 (1963), 245–254) initiated the second-order analysis leading to the parabolic (Epanechnikov) kernel. Kernels of arbitrary order can be built from orthogonal polynomial systems.",
+      "keys": [
+        "tsybakov2009",
+        "parzen1962",
+        "bartlett1963"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-holder-class-def",
+    "category": "nonparametric",
+    "kind": "definition",
+    "leanName": "MemHolder",
+    "fullName": "StatLean.NonparametricStatistics.MemHolder",
+    "title": "Hölder Classes and Hölder Densities",
+    "citation": "Tsybakov (2009), Def. 1.2",
+    "shortRef": "Tsybakov (2009), Def. 1.2",
+    "file": "StatLean/NonparametricStatistics/SmoothnessClasses/Defs.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/SmoothnessClasses/Defs.html#StatLean.NonparametricStatistics.MemHolder",
+    "informal": "<p>Let $\\beta$ and $L$ be positive numbers and let $\\ell = \\lceil\\beta\\rceil - 1$ be the greatest integer <em>strictly</em> smaller than $\\beta$ (so $\\ell = \\beta - 1$ for integer $\\beta$, and $\\ell = \\lfloor\\beta\\rfloor$ for non-integer $\\beta$). The <strong>Hölder class</strong> $\\Sigma(\\beta, L)$ on a set $T \\subseteq \\mathbb{R}$ (classically an interval) is the set of functions $f$ that are <span data-link=\"h1\">$\\ell$ times continuously differentiable on $T$</span> and whose <span data-link=\"h2\">$\\ell$-th derivative is Hölder of exponent $\\beta - \\ell$ with constant $L$: $\\;|f^{(\\ell)}(x) - f^{(\\ell)}(x^\\prime)| \\le L\\,|x - x^\\prime|^{\\beta - \\ell}$ for all $x, x^\\prime \\in T$</span>.</p><p>The kernel-estimator risk bounds are proved uniformly over the associated <strong>Hölder density class</strong> $\\mathcal{P}(\\beta, L)$: the probability densities on $\\mathbb{R}$ — nonnegative and integrating to one — that belong to $\\Sigma(\\beta, L)$ on all of $\\mathbb{R}$.</p>",
+    "summary": "The Hölder class Σ(β,L) of ℓ-times continuously differentiable functions with (β−ℓ)-Hölder top derivative, ℓ = ⌈β⌉−1, and the density class P(β,L) over which the KDE risk bounds are uniform.",
+    "leanSignature": "noncomputable def holderIndex (β : ℝ) : ℕ := ⌈β⌉₊ - 1\n\nstructure MemHolderOn (β L : ℝ) (f : ℝ → ℝ) (T : Set ℝ) : Prop where\n  contDiffOn : ContDiffOn ℝ (holderIndex β) f T\n  deriv_holder : ∀ x ∈ T, ∀ y ∈ T,\n    |iteratedDerivWithin (holderIndex β) f T x - iteratedDerivWithin (holderIndex β) f T y|\n      ≤ L * |x - y| ^ (β - (holderIndex β : ℝ))\n\ndef MemHolder (β L : ℝ) (f : ℝ → ℝ) : Prop := MemHolderOn β L f Set.univ",
+    "formalizationNotes": "The smoothness index `holderIndex β` $= \\lceil\\beta\\rceil - 1$ is exactly the book's \"greatest integer strictly less than $\\beta$\" ($\\beta - 1$ for integer $\\beta$, the usual floor otherwise). Differentiability is stated as `ContDiffOn` — continuity of the $\\ell$-th derivative included — which carves out the same class as the book's \"$\\ell$ times differentiable\", because the Hölder bound itself forces continuity of $f^{(\\ell)}$ and lower-order derivatives are continuous wherever the next one exists. `MemHolder` is the global case $T = \\mathbb{R}$; the density class $\\mathcal{P}(\\beta, L)$ is `IsHolderDensity` in the same file, packaging nonnegativity, $\\int p = 1$, and global Hölder smoothness. The structure reads verbatim for arbitrary real $\\beta, L$; membership is meaningful for $\\beta > 0$ and $L \\ge 0$ (the bias theorems relax the book's $L > 0$ to $L \\ge 0$).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "contDiffOn : ContDiffOn ℝ (holderIndex β) f T",
+        "label": "ℓ-fold differentiability",
+        "note": "f is ℓ = ⌈β⌉−1 times continuously differentiable on T."
+      },
+      {
+        "id": "h2",
+        "leanToken": "deriv_holder",
+        "label": "Hölder bound on f⁽ℓ⁾",
+        "note": "The top derivative satisfies |f⁽ℓ⁾(x) − f⁽ℓ⁾(y)| ≤ L|x − y|^(β−ℓ) on T."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.1 (Mean squared error of kernel estimators), Definition 1.2",
+      "biblio": "Hölder conditions go back to O. Hölder's dissertation *Beiträge zur Potentialtheorie* (Tübingen, 1882). As the standard smoothness scale for pointwise nonparametric risk they entered density estimation with M. Rosenblatt (Ann. Math. Statist. 27 (1956), 832–837) and E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076).",
+      "keys": [
+        "tsybakov2009",
+        "holder1882",
+        "rosenblatt1956",
+        "parzen1962"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-variance",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "kde_variance_le",
+    "fullName": "StatLean.NonparametricStatistics.kde_variance_le",
+    "title": "Pointwise Variance of the Kernel Density Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.1",
+    "shortRef": "Tsybakov (2009), Prop. 1.1",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/Variance.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/Variance.html#StatLean.NonparametricStatistics.kde_variance_le",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h1\">i.i.d. random variables with a measurable density $p$ on $\\mathbb{R}$</span>, and suppose <span data-link=\"h2\">$p(x) \\le p_{\\max} < \\infty$ for all $x \\in \\mathbb{R}$</span>. Let $K$ be a measurable kernel with <span data-link=\"h3\">$\\int K^2(u)\\,du < \\infty$</span>. Then for every point $x_0 \\in \\mathbb{R}$, every <span data-link=\"h4\">bandwidth $h > 0$</span>, and every sample size $n \\ge 1$, the variance $\\sigma^2(x_0) = \\mathbb{E}_p\\big[\\big(\\hat p_n(x_0) - \\mathbb{E}_p[\\hat p_n(x_0)]\\big)^2\\big]$ of the kernel density estimator satisfies $$\\sigma^2(x_0) \\;\\le\\; \\frac{C_1}{nh}, \\qquad C_1 = p_{\\max} \\int K^2(u)\\,du.$$</p>",
+    "summary": "For a density bounded by p_max and a square-integrable kernel, the pointwise variance of the kernel density estimator is at most C₁/(nh) with C₁ = p_max ∫K².",
+    "leanSignature": "theorem kde_variance_le {n : ℕ} {X : Fin n → Ω → ℝ} {p K : ℝ → ℝ} {h pmax : ℝ} {x₀ : ℝ}\n    (hh : 0 < h)\n    (hs : IsIIDSample P X (densityMeasure p))\n    (hX : ∀ i, Measurable (X i))\n    (hp : Measurable p) (h0 : ∀ x, 0 ≤ p x)\n    (hbdd : ∀ x, p x ≤ pmax)\n    (hK : Measurable K)\n    (hK2 : Integrable fun u => (K u) ^ 2) :\n    kdeVarianceAt P X K h x₀\n      ≤ ENNReal.ofReal (kdeVarianceConst K pmax / ((n : ℝ) * h))",
+    "formalizationNotes": "The variance is formalized as a lower Lebesgue integral in the extended reals (`kdeVarianceAt`), so no integrability of the squared estimator is laundered through the statement: a non-integrable square would register as $\\infty$ rather than as a vacuous Bochner junk value $0$. Square-integrability of the estimator is in fact derived from these hypotheses (`kde_memLp_two`), and the same file proves the exact bias–variance decomposition $\\mathrm{MSE}(x_0) = b^2(x_0) + \\sigma^2(x_0)$ (`kdeMseAt_eq_bias_sq_add_variance`). The constant is exactly the book's $C_1 = p_{\\max}\\int K^2$ (`kdeVarianceConst`). Measurability of $p$, $K$, and the observations are Lean-side regularity conditions; the bound is fully non-asymptotic and in Lean holds for every $n$, the case $n = 0$ being degenerate (the estimator is then identically $0$).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hs : IsIIDSample P X (densityMeasure p)",
+        "label": "i.i.d. sample with density p",
+        "note": "The observations are mutually independent, each with law given by the Lebesgue density p."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hbdd : ∀ x, p x ≤ pmax",
+        "label": "bounded density",
+        "note": "The sampled density is uniformly bounded by p_max."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hK2 : Integrable fun u => (K u) ^ 2",
+        "label": "square-integrable kernel",
+        "note": "The kernel satisfies ∫K²(u)du < ∞ — condition (1.5) of the book."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hh : 0 < h",
+        "label": "positive bandwidth",
+        "note": "The bandwidth is strictly positive."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.1 (Mean squared error of kernel estimators), Proposition 1.1",
+      "biblio": "The variance computation is the classical opening move of kernel density estimation, going back to M. Rosenblatt (Ann. Math. Statist. 27 (1956), 832–837) and E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076).",
+      "keys": [
+        "tsybakov2009",
+        "rosenblatt1956",
+        "parzen1962"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-bias",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "kde_bias_abs_le",
+    "fullName": "StatLean.NonparametricStatistics.kde_bias_abs_le",
+    "title": "Pointwise Bias of the Kernel Density Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.2",
+    "shortRef": "Tsybakov (2009), Prop. 1.2",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/Bias.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/Bias.html#StatLean.NonparametricStatistics.kde_bias_abs_le",
+    "informal": "<p>Let $X_1, \\dots, X_n$ be <span data-link=\"h4\">i.i.d. with density $p$</span>, where <span data-link=\"h1\">$p$ belongs to the Hölder density class $\\mathcal{P}(\\beta, L)$</span> — nonnegative, integrating to one, and in $\\Sigma(\\beta, L)$ on $\\mathbb{R}$ — for some $\\beta > 0$ and $L \\ge 0$. Let <span data-link=\"h2\">$K$ be a kernel of order $\\ell = \\lceil\\beta\\rceil - 1$</span> (the greatest integer strictly less than $\\beta$) <span data-link=\"h3\">satisfying $\\int |u|^{\\beta} |K(u)|\\,du < \\infty$</span>. Then for every $x_0 \\in \\mathbb{R}$, every <span data-link=\"h5\">bandwidth $h > 0$</span>, and every sample size $n \\ge 1$, the bias $b(x_0) = \\mathbb{E}_p[\\hat p_n(x_0)] - p(x_0)$ of the kernel density estimator satisfies $$|b(x_0)| \\;\\le\\; C_2\\, h^{\\beta}, \\qquad C_2 = \\frac{L}{\\ell!} \\int |u|^{\\beta}\\,|K(u)|\\,du.$$</p>",
+    "summary": "Over the Hölder density class P(β,L), a kernel of order ℓ = ⌈β⌉−1 with finite β-moment gives pointwise bias at most C₂hᵝ with C₂ = (L/ℓ!)∫|u|ᵝ|K|.",
+    "leanSignature": "theorem kde_bias_abs_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {n : ℕ} {X : Fin n → Ω → ℝ} {p K : ℝ → ℝ} {h : ℝ} {x₀ : ℝ}\n    {β L : ℝ}\n    (hβ : 0 < β) (hL : 0 ≤ L)\n    (hn : 0 < n)\n    (hh : 0 < h)\n    (hs : IsIIDSample P X (densityMeasure p))\n    (hp : IsHolderDensity β L p)\n    (hK : IsKernelOfOrder K (holderIndex β))\n    (hKmeas : Measurable K)\n    (hKβ : Integrable fun u => |u| ^ β * |K u|) :\n    |kdeBiasAt P X K h p x₀| ≤ kdeBiasConst β L K * h ^ β",
+    "formalizationNotes": "The constant is exactly the book's $C_2 = (L/\\ell!)\\int|u|^{\\beta}|K(u)|\\,du$ (`kdeBiasConst`). The integrability of the kernel-smoothed density $u \\mapsto K(u)\\,p(x_0 + uh)$ — needed even to write the estimator's mean as an integral — is derived from the Hölder class and the kernel moments (`integrable_kernel_mul_holder`), never assumed; the deterministic Taylor-cancellation core is factored out as `abs_integral_kernel_taylor_le`. Both $n \\ge 1$ and $h > 0$ are genuine side conditions: at $n = 0$ or $h = 0$ the Lean estimator degenerates to the constant $0$ and its bias is $-p(x_0)$. The class parameter allows $L \\ge 0$, harmlessly relaxing the book's $L > 0$; the bias itself is a Bochner integral whose integrability is derived, and measurability of $K$ is a Lean-side regularity condition.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp : IsHolderDensity β L p",
+        "label": "Hölder density class",
+        "note": "p is a probability density in Σ(β,L) on ℝ — the class P(β,L)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hK : IsKernelOfOrder K (holderIndex β)",
+        "label": "kernel of order ℓ",
+        "note": "K integrates to one and its moments of orders 1, …, ℓ = ⌈β⌉−1 vanish."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hKβ : Integrable fun u => |u| ^ β * |K u|",
+        "label": "finite β-moment",
+        "note": "The kernel satisfies ∫|u|^β|K(u)|du < ∞."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hs : IsIIDSample P X (densityMeasure p)",
+        "label": "i.i.d. sample with density p",
+        "note": "The observations are mutually independent, each with law given by the density p."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hh : 0 < h",
+        "label": "positive bandwidth",
+        "note": "The bandwidth is strictly positive; at h = 0 the estimator degenerates."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.1 (Mean squared error of kernel estimators), Proposition 1.2",
+      "biblio": "The bias computation with higher-order kernels is classical: E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076) and M. S. Bartlett (Sankhyā Ser. A 25 (1963), 245–254).",
+      "keys": [
+        "tsybakov2009",
+        "parzen1962",
+        "bartlett1963"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-pointwise-rate",
+    "category": "nonparametric",
+    "kind": "theorem",
+    "leanName": "kde_pointwise_rate",
+    "fullName": "StatLean.NonparametricStatistics.kde_pointwise_rate",
+    "title": "Pointwise Rate of the Kernel Density Estimator over a Hölder Class",
+    "citation": "Tsybakov (2009), Thm. 1.1",
+    "shortRef": "Tsybakov (2009), Thm. 1.1",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/PointwiseRate.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/PointwiseRate.html#StatLean.NonparametricStatistics.kde_pointwise_rate",
+    "informal": "<p>Fix $\\beta > 0$, $L > 0$, and a bandwidth scale $\\alpha > 0$. Let <span data-link=\"h1\">$K$ be a kernel of order $\\ell = \\lceil\\beta\\rceil - 1$</span> which is <span data-link=\"h2\">square-integrable</span> and has <span data-link=\"h3\">finite $\\beta$-moment, $\\int |u|^{\\beta}|K(u)|\\,du < \\infty$</span>. Then there is a constant $C > 0$, depending only on $\\beta$, $L$, $\\alpha$, and the kernel $K$, such that with the bandwidth choice $h = \\alpha\\, n^{-1/(2\\beta+1)}$ the kernel density estimator satisfies, for <span data-link=\"h5\">every sample size $n \\ge 1$</span>, every point $x_0 \\in \\mathbb{R}$, and every i.i.d. sample from <span data-link=\"h4\">any density $p$ in the Hölder class $\\mathcal{P}(\\beta, L)$</span>, $$\\mathbb{E}_p\\!\\left[\\big(\\hat p_n(x_0) - p(x_0)\\big)^2\\right] \\;\\le\\; C\\, n^{-\\frac{2\\beta}{2\\beta+1}}.$$ Since $C$ is chosen before $x_0$ and $p$, this is the uniform bound $\\sup_{x_0 \\in \\mathbb{R}}\\, \\sup_{p \\in \\mathcal{P}(\\beta,L)} \\mathbb{E}_p\\big[(\\hat p_n(x_0) - p(x_0))^2\\big] \\le C\\, n^{-2\\beta/(2\\beta+1)}$.</p>",
+    "summary": "With bandwidth h = αn^(−1/(2β+1)) the kernel density estimator attains the pointwise mean-squared-error rate n^(−2β/(2β+1)) uniformly over the point and over the Hölder density class P(β,L).",
+    "leanSignature": "theorem kde_pointwise_rate {β L α : ℝ}\n    (hβ : 0 < β) (hL : 0 < L) (hα : 0 < α)\n    {K : ℝ → ℝ}\n    (hK : IsKernelOfOrder K (holderIndex β))\n    (hKmeas : Measurable K)\n    (hK2 : Integrable fun u => (K u) ^ 2)\n    (hKβ : Integrable fun u => |u| ^ β * |K u|) :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ {Ω : Type} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n        {n : ℕ} (X : Fin n → Ω → ℝ) (p : ℝ → ℝ) (x₀ : ℝ),\n        1 ≤ n →\n        IsIIDSample P X (densityMeasure p) →\n        (∀ i, Measurable (X i)) →\n        IsHolderDensity β L p →\n        kdeMseAt P X K (α * (n : ℝ) ^ (-(1 / (2 * β + 1)))) p x₀\n          ≤ ENNReal.ofReal (C * (n : ℝ) ^ (-(2 * β / (2 * β + 1))))",
+    "formalizationNotes": "The book's proof needs a uniform bound $p_{\\max}$ on all densities of $\\mathcal{P}(\\beta,L)$ (its eq. (1.9)); in the Lean theorem this is not a hypothesis but is derived internally (`holder_density_uniform_bound`, proved via an auxiliary bounded kernel of order $\\ell$ constructed by box superposition and a Vandermonde argument). The constant is existential, exactly as sanctioned by the book (\"a constant depending only on $\\beta, L, \\alpha$ and on the kernel $K$\"); the proof realizes $C = C_2^2\\alpha^{2\\beta} + C_1/\\alpha + 1$ with $C_1 = p_{\\max}\\int K^2$ and $C_2 = (L/\\ell!)\\int|u|^{\\beta}|K|$. Uniformity over $x_0$, $p$, and the underlying probability space is by quantifier position: $C$ is fixed before them. The mean squared error is a lower Lebesgue integral in the extended reals, so no integrability assumptions are laundered; measurability of the kernel and the observations are Lean-side regularity conditions.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hK : IsKernelOfOrder K (holderIndex β)",
+        "label": "kernel of order ℓ",
+        "note": "K integrates to one with vanishing moments of orders 1, …, ℓ = ⌈β⌉−1."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hK2 : Integrable fun u => (K u) ^ 2",
+        "label": "square-integrable kernel",
+        "note": "∫K²(u)du < ∞ — condition (1.5), feeding the variance term."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hKβ : Integrable fun u => |u| ^ β * |K u|",
+        "label": "finite β-moment",
+        "note": "∫|u|^β|K(u)|du < ∞, feeding the bias term."
+      },
+      {
+        "id": "h4",
+        "leanToken": "IsHolderDensity β L p",
+        "label": "Hölder density class",
+        "note": "The bound holds uniformly over all densities p in P(β,L); the constant C does not depend on p."
+      },
+      {
+        "id": "h5",
+        "leanToken": "1 ≤ n",
+        "label": "sample size at least one",
+        "note": "The bound holds for every finite sample size n ≥ 1."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.1 (Mean squared error of kernel estimators), Theorem 1.1",
+      "biblio": "The pointwise rate n^(−2β/(2β+1)) for kernel estimators over smoothness classes goes back to M. Rosenblatt (Ann. Math. Statist. 27 (1956), 832–837) and E. Parzen (Ann. Math. Statist. 33 (1962), 1065–1076); its optimality over the Hölder class — no estimator improves on n^(−β/(2β+1)) — is due to C. J. Stone (Ann. Statist. 8 (1980), 1348–1360).",
+      "keys": [
+        "tsybakov2009",
+        "rosenblatt1956",
+        "parzen1962",
+        "stone1980"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-integrated-variance",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "kde_integrated_variance_le",
+    "fullName": "StatLean.NonparametricStatistics.kde_integrated_variance_le",
+    "title": "Integrated Variance of the Kernel Density Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.4",
+    "shortRef": "Tsybakov (2009), Prop. 1.4",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/IntegratedVariance.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/IntegratedVariance.html#StatLean.NonparametricStatistics.kde_integrated_variance_le",
+    "informal": "<p>Let $K$ be a measurable kernel with <span data-link=\"h1\">$\\int K^2(u)\\,du < \\infty$</span>. Then for every <span data-link=\"h2\">bandwidth $h > 0$</span>, every sample size $n \\ge 1$, and <span data-link=\"h3\">an i.i.d. sample from <em>any</em> probability density $p$ on $\\mathbb{R}$</span>, the integrated variance of the kernel density estimator satisfies $$\\int \\sigma^2(x)\\,dx \\;\\le\\; \\frac{1}{nh} \\int K^2(u)\\,du.$$ Remarkably, no smoothness or boundedness condition on $p$ is required: integrating the pointwise second moment over $x$ turns the density into its total mass $\\int p = 1$.</p>",
+    "summary": "For any probability density whatsoever, the integrated variance of the kernel density estimator is at most (nh)⁻¹∫K² — no smoothness or boundedness of the density is needed.",
+    "leanSignature": "theorem kde_integrated_variance_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {n : ℕ} {X : Fin n → Ω → ℝ} {p K : ℝ → ℝ} {h : ℝ}\n    (hh : 0 < h)\n    (hs : IsIIDSample P X (densityMeasure p))\n    (hX : ∀ i, Measurable (X i))\n    (hp : Measurable p) (h0 : ∀ x, 0 ≤ p x)\n    (hK : Measurable K)\n    (hK2 : Integrable fun u => (K u) ^ 2) :\n    (∫⁻ x, kdeVarianceAt P X K h x)\n      ≤ ENNReal.ofReal (((n : ℝ) * h)⁻¹ * ∫ u, (K u) ^ 2)",
+    "formalizationNotes": "Both the pointwise variance $\\sigma^2(x)$ and its integral over $x$ are lower Lebesgue integrals in the extended reals, so the statement carries no hidden integrability assumptions — the classical point of the proposition, that $p$ needs nothing beyond being a (measurable, nonnegative) density, survives formalization intact. The proof is a Tonelli swap followed by the affine change of variables $u = (z - x)/h$ in each slice. In Lean the bound holds for every $n$, the case $n = 0$ being degenerate (the estimator is identically $0$); measurability of $p$, $K$, and the observations are Lean-side regularity conditions.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hK2 : Integrable fun u => (K u) ^ 2",
+        "label": "square-integrable kernel",
+        "note": "The kernel satisfies ∫K²(u)du < ∞ — the only substantive assumption."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hh : 0 < h",
+        "label": "positive bandwidth",
+        "note": "The bandwidth is strictly positive."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hs : IsIIDSample P X (densityMeasure p)",
+        "label": "i.i.d. sample from any density",
+        "note": "The observations are i.i.d. with Lebesgue density p; no smoothness or boundedness of p is assumed."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.3 (Integrated squared risk of kernel estimators), Proposition 1.4",
+      "biblio": "The mean-integrated-squared-error analysis of kernel estimators originates with M. Rosenblatt (Ann. Math. Statist. 27 (1956), 832–837); the exact L² viewpoint was developed by G. S. Watson and M. R. Leadbetter (Ann. Math. Statist. 34 (1963), 480–491).",
+      "keys": [
+        "tsybakov2009",
+        "rosenblatt1956",
+        "watson-leadbetter1963"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-integrated-bias",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "kde_integrated_sq_bias_le",
+    "fullName": "StatLean.NonparametricStatistics.kde_integrated_sq_bias_le",
+    "title": "Integrated Squared Bias over a Nikol'skii Class",
+    "citation": "Tsybakov (2009), Prop. 1.5",
+    "shortRef": "Tsybakov (2009), Prop. 1.5",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/IntegratedBias.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/IntegratedBias.html#StatLean.NonparametricStatistics.kde_integrated_sq_bias_le",
+    "informal": "<p>The <strong>Nikol&#8217;skii class</strong> $H(\\beta, L)$ ($\\beta > 0$, $L \\ge 0$) is the $L^2$ analogue of the Hölder class: with $\\ell = \\lceil\\beta\\rceil - 1$ the greatest integer strictly less than $\\beta$, it consists of the $\\ell$-times continuously differentiable functions $f$ whose top derivative satisfies the translated $L^2$ bound $\\big(\\int \\big(f^{(\\ell)}(x+t) - f^{(\\ell)}(x)\\big)^2 dx\\big)^{1/2} \\le L\\,|t|^{\\beta-\\ell}$ for every shift $t \\in \\mathbb{R}$.</p><p>Suppose <span data-link=\"h1\">$p$ is a probability density belonging to $H(\\beta, L)$</span>, and let <span data-link=\"h2\">$K$ be a kernel of order $\\ell$</span> <span data-link=\"h3\">with $\\int |u|^{\\beta}|K(u)|\\,du < \\infty$</span>. Then for every <span data-link=\"h4\">bandwidth $h > 0$</span> and every <span data-link=\"h5\">sample size $n \\ge 1$</span>, the integrated squared bias of the kernel density estimator satisfies $$\\int b^2(x)\\,dx \\;\\le\\; C_2^2\\, h^{2\\beta}, \\qquad C_2 = \\frac{L}{\\ell!} \\int |u|^{\\beta}|K(u)|\\,du$$ — the same constant as in the pointwise bias bound.</p>",
+    "summary": "Over the Nikol'skii density class H(β,L), a kernel of order ℓ = ⌈β⌉−1 with finite β-moment gives integrated squared bias at most C₂²h^(2β), with the same constant C₂ as the pointwise bound.",
+    "leanSignature": "theorem kde_integrated_sq_bias_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {n : ℕ} {X : Fin n → Ω → ℝ} {p K : ℝ → ℝ} {h : ℝ} {β L : ℝ}\n    (hβ : 0 < β) (hL : 0 ≤ L)\n    (hn : 0 < n)\n    (hh : 0 < h)\n    (hs : IsIIDSample P X (densityMeasure p))\n    (hX : ∀ i, Measurable (X i))\n    (hp : IsNikolskiDensity β L p)\n    (hK : IsKernelOfOrder K (holderIndex β))\n    (hKmeas : Measurable K)\n    (hKβ : Integrable fun u => |u| ^ β * |K u|) :\n    (∫⁻ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2))\n      ≤ ENNReal.ofReal ((kdeBiasConst β L K) ^ 2 * h ^ (2 * β))",
+    "formalizationNotes": "`MemNikolski` states differentiability as `ContDiff` (continuous derivatives up to order $\\ell$), a documented mild strengthening of the book's a.e.-flavoured class; it is what makes the order-$\\ell$ Taylor formula with integral remainder available pointwise. The defining $L^2$-translate bound is stated in squared form as a lower Lebesgue integral in the extended reals, so a non-square-integrable difference registers as $\\infty$ rather than satisfying the bound vacuously through a Bochner junk value — and the integrated squared bias in the conclusion is likewise a lower integral. The constant $C_2$ (`kdeBiasConst`) is exactly the book's, and the proof follows the book's route: a.e.-$x$ moment cancellation against the Taylor polynomial, then the generalized Minkowski inequality (Tsybakov's Lemma 1.1, formalized as `lintegral_lintegral_sq_rpow_le`) to pull the $L^2(dx)$ norm inside the kernel integral.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hp : IsNikolskiDensity β L p",
+        "label": "Nikol'skii density class",
+        "note": "p is a probability density (nonnegative, integrating to one) in the Nikol'skii class H(β,L)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hK : IsKernelOfOrder K (holderIndex β)",
+        "label": "kernel of order ℓ",
+        "note": "K integrates to one with vanishing moments of orders 1, …, ℓ = ⌈β⌉−1."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hKβ : Integrable fun u => |u| ^ β * |K u|",
+        "label": "finite β-moment",
+        "note": "The kernel satisfies ∫|u|^β|K(u)|du < ∞."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hh : 0 < h",
+        "label": "positive bandwidth",
+        "note": "The bandwidth is strictly positive."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hn : 0 < n",
+        "label": "nonempty sample",
+        "note": "At least one observation; at n = 0 the estimator degenerates to 0."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.3 (Integrated squared risk of kernel estimators), Proposition 1.5",
+      "biblio": "The L²-modulus smoothness classes are due to S. M. Nikol'skii (*Approximation of Functions of Several Variables and Imbedding Theorems*, Springer, 1975); the L² bias analysis of kernel estimators goes back to G. S. Watson and M. R. Leadbetter (Ann. Math. Statist. 34 (1963), 480–491).",
+      "keys": [
+        "tsybakov2009",
+        "nikolskii1975",
+        "watson-leadbetter1963"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-kde-exact-mise",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "kde_exact_mise",
+    "fullName": "StatLean.NonparametricStatistics.kde_exact_mise",
+    "title": "Exact Asymptotic MISE of the Kernel Density Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.6",
+    "shortRef": "Tsybakov (2009), Prop. 1.6",
+    "file": "StatLean/NonparametricStatistics/KernelDensity/ExactMISE.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/KernelDensity/ExactMISE.html#StatLean.NonparametricStatistics.kde_exact_mise",
+    "informal": "<p>Let $p$ be a probability density on $\\mathbb{R}$ which is <span data-link=\"h1\">differentiable with absolutely continuous derivative $p^\\prime$ — witnessed by a measurable function $w$ (an almost-everywhere second derivative of $p$) with $p^\\prime(b) - p^\\prime(a) = \\int_a^b w(s)\\,ds$ for all $a, b$</span> — such that <span data-link=\"h2\">$\\int w^2(x)\\,dx < \\infty$</span> and, in addition, <span data-link=\"h3\">$\\int p^2(x)\\,dx < \\infty$</span>. Let <span data-link=\"h4\">$K$ be a kernel of order $1$</span>, square-integrable with $\\int u^2 |K(u)|\\,du < \\infty$ and with nonvanishing second moment <span data-link=\"h5\">$S_K = \\int u^2 K(u)\\,du \\neq 0$</span>. Write $$A(n, h) \\;=\\; \\frac{1}{nh} \\int K^2(u)\\,du \\;+\\; \\frac{h^4}{4}\\, S_K^2 \\int w^2(x)\\,dx$$ for the main term of the mean integrated squared error $\\mathrm{MISE} = \\mathbb{E}_p \\int \\big(\\hat p_n(x) - p(x)\\big)^2 dx$.</p><p>Then for every $\\varepsilon > 0$ there is a threshold $h_0 > 0$ — depending only on $\\varepsilon$, $p$, and $K$, not on $n$ — such that for every bandwidth $0 < h < h_0$ and every i.i.d. sample of any size $n \\ge 1$ drawn from $p$, $$\\bigl|\\mathrm{MISE} - A(n, h)\\bigr| \\;\\le\\; \\varepsilon \\left(\\frac{1}{nh} + h^4\\right).$$</p>",
+    "summary": "For a twice weakly differentiable density and an order-1 kernel with S_K ≠ 0, the MISE equals (nh)⁻¹∫K² + (h⁴/4)S_K²∫(p″)² up to an error ε((nh)⁻¹ + h⁴), for all bandwidths below an n-independent threshold h₀(ε) and all n ≥ 1.",
+    "leanSignature": "theorem kde_exact_mise {p K w : ℝ → ℝ}\n    (hp_meas : Measurable p) (h0 : ∀ x, 0 ≤ p x) (h1 : ∫ x, p x = 1)\n    (hp1 : Differentiable ℝ p) (hw_meas : Measurable w)\n    (hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s)\n    (hw2 : MemLp w 2 volume)\n    (hp2 : MemLp p 2 volume)\n    (hK : IsKernelOfOrder K 1) (hSK : (∫ u, u ^ 2 * K u) ≠ 0)\n    (hKmeas : Measurable K)\n    (hK2 : Integrable fun u => (K u) ^ 2) (hKu2 : Integrable fun u => u ^ 2 * |K u|) :\n    ∀ ε : ℝ, 0 < ε → ∃ h₀ : ℝ, 0 < h₀ ∧\n      ∀ h : ℝ, 0 < h → h < h₀ →\n      ∀ {Ω : Type} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n        {n : ℕ} (X : Fin n → Ω → ℝ), 1 ≤ n →\n        IsIIDSample P X (densityMeasure p) → (∀ i, Measurable (X i)) →\n          ENNReal.ofReal (kdeMiseMain K w n h - ε * (((n : ℝ) * h)⁻¹ + h ^ 4))\n              ≤ kdeMise P X K h p ∧\n            kdeMise P X K h p\n              ≤ ENNReal.ofReal (kdeMiseMain K w n h + ε * (((n : ℝ) * h)⁻¹ + h ^ 4))",
+    "formalizationNotes": "Tsybakov states Proposition 1.6 multiplicatively: $\\mathrm{MISE} = A(n,h)\\,(1 + o(1))$ with $o(1)$ independent of $n$ and vanishing as $h \\to 0$. The Lean theorem is the equivalent absolute-error form $\\forall\\varepsilon\\,\\exists h_0$: $|\\mathrm{MISE} - A(n,h)| \\le \\varepsilon((nh)^{-1} + h^4)$ for all $0 < h < h_0$ and all $n \\ge 1$ — equivalent because $A(n,h) \\asymp (nh)^{-1} + h^4$ with both coefficients bounded away from zero ($\\int K^2 > 0$ follows from $\\int K = 1$; $S_K \\ne 0$ is hypothesized; $\\int w^2 > 0$ because a probability density cannot have an a.e.-vanishing second derivative). The MISE (`kdeMise`) is a nested lower Lebesgue integral in the extended reals, so no integrability assumptions are laundered, and the conclusion is the two-sided bound around the main term `kdeMiseMain`. Absolute continuity of $p'$ is encoded by the explicit a.e.-second-derivative witness $w$ with $p'(b) - p'(a) = \\int_a^b w$, so the book's $\\int (p'')^2 < \\infty$ becomes `MemLp w 2`. One hypothesis is book-silent: square-integrability of $p$ itself (`MemLp p 2`), used in the exact lower bound for the integrated variance; it is a documented extra input of this formalization (derivable in principle by interpolation).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s",
+        "label": "absolutely continuous derivative",
+        "note": "p′ is absolutely continuous with a.e. second derivative w: p′(b) − p′(a) = ∫ₐᵇ w for all a, b."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hw2 : MemLp w 2 volume",
+        "label": "square-integrable second derivative",
+        "note": "∫w² < ∞ — the book's condition ∫(p″)² < ∞ on the second derivative."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hp2 : MemLp p 2 volume",
+        "label": "square-integrable density",
+        "note": "∫p² < ∞ — a book-silent extra hypothesis feeding the exact variance lower bound."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hK : IsKernelOfOrder K 1",
+        "label": "kernel of order 1",
+        "note": "K integrates to one and has vanishing first moment."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hSK : (∫ u, u ^ 2 * K u) ≠ 0",
+        "label": "nonvanishing second moment",
+        "note": "S_K = ∫u²K(u)du ≠ 0, so the h⁴ bias term is genuinely present."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.2.4 (Lack of asymptotic optimality for fixed density), Proposition 1.6",
+      "biblio": "The exact MISE expansion is due to G. S. Watson and M. R. Leadbetter (Ann. Math. Statist. 34 (1963), 480–491); the second-order form and the optimal parabolic kernel go back to M. S. Bartlett (Sankhyā Ser. A 25 (1963), 245–254) and V. A. Epanechnikov (Theory Probab. Appl. 14 (1969), 153–158). Tsybakov presents the expansion as the starting point of a critique of fixed-density asymptotic optimality, following L. D. Brown, M. G. Low and L. H. Zhao (Ann. Statist. 25 (1997), 2607–2625).",
+      "keys": [
+        "tsybakov2009",
+        "watson-leadbetter1963",
+        "bartlett1963",
+        "epanechnikov1969",
+        "brown-low-zhao1997"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-nw-kde-ratio",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "nadarayaWatson_eq_kde_ratio",
+    "fullName": "StatLean.NonparametricStatistics.nadarayaWatson_eq_kde_ratio",
+    "title": "The Nadaraya–Watson Estimator as a Ratio of Density Estimates",
+    "citation": "Tsybakov (2009), Prop. 1.10",
+    "shortRef": "Tsybakov (2009), Prop. 1.10",
+    "file": "StatLean/NonparametricStatistics/Regression/NWKernelRepresentation.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Regression/NWKernelRepresentation.html#StatLean.NonparametricStatistics.nadarayaWatson_eq_kde_ratio",
+    "informal": "<p>Consider data pairs $(X_1, Y_1), \\dots, (X_n, Y_n)$. Given a kernel $K$ and a bandwidth $h$, the <strong>Nadaraya–Watson kernel regression estimator</strong> of the regression function $f(x) = \\mathbb{E}[Y \\mid X = x]$ is the locally weighted average $$f_n^{NW}(x) \\;=\\; \\frac{\\sum_{i=1}^{n} Y_i\\, K\\!\\left(\\frac{X_i - x}{h}\\right)}{\\sum_{j=1}^{n} K\\!\\left(\\frac{X_j - x}{h}\\right)},$$ defined to be $0$ whenever the denominator vanishes.</p><p>Let $\\hat p_n(x) = \\frac{1}{nh}\\sum_{i=1}^{n} K\\big(\\tfrac{X_i - x}{h}\\big)$ be the kernel density estimator built from $X_1, \\dots, X_n$, and let $\\hat p_n(x, y) = \\frac{1}{nh^2}\\sum_{i=1}^{n} K\\big(\\tfrac{X_i - x}{h}\\big) K\\big(\\tfrac{Y_i - y}{h}\\big)$ be the bivariate product-kernel estimator built from the pairs. If <span data-link=\"h1\">$K$ is a kernel of order $1$ — that is, $u \\mapsto u\\,K(u)$ is integrable, $\\int K(u)\\,du = 1$, and $\\int u\\,K(u)\\,du = 0$</span> — <span data-link=\"h2\">the bandwidth $h$ is positive</span>, and <span data-link=\"h3\">$\\hat p_n(x) \\neq 0$ at the point $x$</span>, then $$f_n^{NW}(x) \\;=\\; \\frac{\\int y\\,\\hat p_n(x, y)\\,dy}{\\hat p_n(x)}.$$ The locally weighted average is thus exactly the plug-in estimate of the conditional-mean formula $f(x) = \\int y\\,p(x, y)\\,dy \\,\\big/\\, p(x)$.</p>",
+    "summary": "The Nadaraya–Watson locally weighted average equals the ratio ∫y·p̂ₙ(x,y)dy / p̂ₙ(x) of the bivariate and marginal kernel density estimates when the kernel has order 1 and p̂ₙ(x) ≠ 0.",
+    "leanSignature": "theorem nadarayaWatson_eq_kde_ratio {n : ℕ} (xdat ydat : Fin n → ℝ) {K : ℝ → ℝ}\n    (hK : IsKernelOfOrder K 1)\n    {h : ℝ}\n    (hh : 0 < h)\n    {x : ℝ}\n    (hden : kdeData xdat K h x ≠ 0) :\n    nadarayaWatson xdat ydat K h x\n      = (∫ y, y * kde2Data xdat ydat K h x y) / kdeData xdat K h x",
+    "formalizationNotes": "Proved as a purely algebraic identity in the data vectors — no probability model is invoked, so it covers both the random-design and fixed-design settings. The heart is the change-of-variables identity $\\int y\\,K((Y_i - y)/h)\\,dy = h\\,Y_i$, which uses exactly the order-$1$ moment conditions; integrability of $y \\mapsto y\\,K((Y_i - y)/h)$ is derived from the kernel's order-$1$ integrability rather than assumed. `0 < h` is a Lean-side side condition (the chapter's standing convention, made explicit). The formalized estimator `nadarayaWatson` is total, set to $0$ when the denominator vanishes exactly as in the book; the hypothesis $\\hat p_n(x) \\neq 0$ rules that case out.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hK : IsKernelOfOrder K 1",
+        "label": "kernel of order one",
+        "note": "K integrates to one, its first moment vanishes (∫u·K(u)du = 0), and u ↦ u·K(u) is integrable."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hh : 0 < h",
+        "label": "positive bandwidth",
+        "note": "The bandwidth h is strictly positive — the chapter's standing convention, made explicit."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hden : kdeData xdat K h x ≠ 0",
+        "label": "nonvanishing marginal estimate",
+        "note": "The kernel density estimate p̂ₙ(x) is nonzero at x — the proviso under which the ratio is defined."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.5 (Nonparametric regression. The Nadaraya–Watson estimator), Proposition 1.10",
+      "biblio": "The kernel regression estimator was introduced independently by E. A. Nadaraya (Theory Probab. Appl. 9 (1964), 141–142) and G. S. Watson (Sankhyā Ser. A 26 (1964), 359–372), in both cases motivated by exactly this representation: substituting kernel density estimates into the conditional-mean formula for the regression function.",
+      "keys": [
+        "tsybakov2009",
+        "nadaraya1964",
+        "watson1964"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-estimator-def",
+    "category": "nonparametric",
+    "kind": "definition",
+    "leanName": "lpEstimator",
+    "fullName": "StatLean.NonparametricStatistics.lpEstimator",
+    "title": "The Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Def. 1.8",
+    "shortRef": "Tsybakov (2009), Def. 1.8",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/Defs.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/Defs.html#StatLean.NonparametricStatistics.lpEstimator",
+    "informal": "<p>In the nonparametric regression model $Y_i = f(X_i) + \\xi_i$, fix <span data-link=\"h2\">a kernel $K$</span>, <span data-link=\"h3\">a bandwidth $h > 0$</span>, and <span data-link=\"h4\">an integer order $\\ell \\ge 0$</span>. Writing $U(u) = \\big(1,\\, u,\\, u^2/2!,\\, \\dots,\\, u^\\ell/\\ell!\\big)^{T}$, a vector $\\hat\\theta_n(x) \\in \\mathbb{R}^{\\ell+1}$ minimizing the kernel-localized least-squares criterion $$\\hat\\theta_n(x) \\in \\operatorname*{arg\\,min}_{\\theta \\in \\mathbb{R}^{\\ell+1}}\\; \\sum_{i=1}^{n} \\Big(Y_i - \\theta^{T} U\\Big(\\frac{X_i - x}{h}\\Big)\\Big)^{2} K\\Big(\\frac{X_i - x}{h}\\Big)$$ is a <strong>local polynomial estimator of order $\\ell$</strong> of $\\theta(x)$, and its first coordinate $\\hat f_n(x) = U(0)^{T}\\hat\\theta_n(x)$ is the <strong>LP($\\ell$) estimator</strong> of $f(x)$.</p><p>The criterion is a weighted least-squares problem with normal equations $\\mathcal{B}_{nx}\\theta = a_{nx}$, where $\\mathcal{B}_{nx} = \\frac{1}{nh}\\sum_{i} U(z_i)U(z_i)^{T}K(z_i)$ and $a_{nx} = \\frac{1}{nh}\\sum_{i} Y_i\\,U(z_i)K(z_i)$ with $z_i = (X_i - x)/h$. When $\\mathcal{B}_{nx}$ is positive definite the minimizer is unique, $\\hat\\theta_n(x) = \\mathcal{B}_{nx}^{-1}a_{nx}$, and the estimator takes the closed weight form $$\\hat f_n(x) = \\sum_{i=1}^{n} Y_i\\,W_{ni}^{*}(x), \\qquad W_{ni}^{*}(x) = \\frac{1}{nh}\\, U(0)^{T} \\mathcal{B}_{nx}^{-1} U\\Big(\\frac{X_i - x}{h}\\Big)\\, K\\Big(\\frac{X_i - x}{h}\\Big).$$ The formalized estimator is defined <span data-link=\"h5\">directly by these closed-form weights</span>, applied to <span data-link=\"h1\">the design points and the response vector</span>; it agrees with any minimizer of the criterion whenever $\\mathcal{B}_{nx} \\succ 0$.</p>",
+    "summary": "The LP(ℓ) estimator fits a degree-ℓ polynomial by kernel-localized weighted least squares; formalized in the closed weight form W*ᵢ(x) = (nh)⁻¹U(0)ᵀB⁻¹U(zᵢ)K(zᵢ), total via the zero-matrix convention at singular B.",
+    "leanSignature": "noncomputable def lpEstimator {n : ℕ} (xdat Y : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ)\n    (t : ℝ) : ℝ :=\n  ∑ i, Y i * lpWeight xdat K h ℓ t i",
+    "formalizationNotes": "Mirroring the book's display (1.67) — and the library's least-squares precedent — the estimator is *defined* by the closed-form weights `lpWeight`, with Lean's `Matrix.inv` returning the junk zero matrix at singular $\\mathcal{B}_{nx}$, so the estimator is a total function (identically $0$ at degenerate points). The honest minimiser of the book's display (1.64) is the separate predicate `IsLPSolution`; the two are tied together under positive definiteness in `LocalPolynomial/Quadratic.lean` (`lpEstimator_eq_isLPSolution`). The rescaled monomial basis $U$, the objective, the design matrix $\\mathcal{B}_{nx}$ and the right-hand side $a_{nx}$ of the normal equations (1.65)–(1.66) are formalized as `lpBasis`, `lpObjective`, `lpMatrix`, `lpRhs`; note $(\\mathcal{B}^{-1}v)_0 = U(0)^T\\mathcal{B}^{-1}v$ since $U(0) = e_0$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "xdat Y : Fin n → ℝ",
+        "label": "design and responses",
+        "note": "The fixed design points X₁,…,Xₙ and the observed responses Y₁,…,Yₙ."
+      },
+      {
+        "id": "h2",
+        "leanToken": "K : ℝ → ℝ",
+        "label": "kernel",
+        "note": "The localizing kernel, down-weighting design points far from the evaluation point."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h : ℝ",
+        "label": "bandwidth",
+        "note": "The bandwidth setting the localization scale; the definition is total in h, and the risk theorems assume h > 0."
+      },
+      {
+        "id": "h4",
+        "leanToken": "ℓ : ℕ",
+        "label": "polynomial order",
+        "note": "The degree ℓ of the locally fitted polynomial; LP(0) recovers the Nadaraya–Watson estimator for nonnegative kernels."
+      },
+      {
+        "id": "h5",
+        "leanToken": "lpWeight xdat K h ℓ t i",
+        "label": "closed-form weights",
+        "note": "The weights W*ᵢ(t) = (nh)⁻¹·U(0)ᵀB_t⁻¹U(zᵢ)·K(zᵢ); at singular B_t the Mathlib matrix inverse is the zero matrix, so the weights (and the estimator) vanish."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6 (Local polynomial estimators), Definition 1.8",
+      "biblio": "Local polynomial fitting descends from 1930s actuarial graduation of time series; its use in nonparametric regression begins with C. J. Stone (Ann. Statist. 5 (1977), 595–620), and the now-standard definition via the kernel-localized least-squares criterion appears in V. Ya. Katkovnik (Soviet Automat. Control 5 (1979), 25–34). The monograph of J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications* (Chapman & Hall, 1996), is the standard modern reference.",
+      "keys": [
+        "tsybakov2009",
+        "stone1977",
+        "katkovnik1979",
+        "fan-gijbels1996"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-linear",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "isLinearEstimator_lpEstimator",
+    "fullName": "StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator",
+    "title": "Linearity of the Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.11",
+    "shortRef": "Tsybakov (2009), Prop. 1.11",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/Quadratic.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/Quadratic.html#StatLean.NonparametricStatistics.isLinearEstimator_lpEstimator",
+    "informal": "<p>An estimator $\\hat f_n$ of the regression function is a <span data-link=\"h5\"><strong>linear nonparametric regression estimator</strong></span> if it can be written as $\\hat f_n(x) = \\sum_{i=1}^{n} Y_i\\,W_{ni}(x)$, where the weights $W_{ni}(x)$ depend only on $n$, $i$, $x$ and <span data-link=\"h1\">the design points $X_1, \\dots, X_n$</span> — not on the responses. The local polynomial estimator of <span data-link=\"h4\">order $\\ell$</span>, built from <span data-link=\"h2\">a kernel $K$</span> and <span data-link=\"h3\">a bandwidth $h$</span>, is a linear estimator: $$\\hat f_n(x) = \\sum_{i=1}^{n} Y_i\\,W^{*}_{ni}(x), \\qquad W^{*}_{ni}(x) = \\frac{1}{nh}\\, U(0)^{T} \\mathcal{B}_{nx}^{-1}\\, U\\Big(\\frac{X_i - x}{h}\\Big)\\, K\\Big(\\frac{X_i - x}{h}\\Big).$$</p><p>In the book this is stated for positive definite $\\mathcal{B}_{nx}$, where the localized least-squares minimizer is unique and equals $\\mathcal{B}_{nx}^{-1} a_{nx}$. The accompanying formal development proves exactly this identification: under $\\mathcal{B}_{nx} \\succ 0$ and $h > 0$, a coefficient vector minimizes the criterion if and only if it solves the normal equations $\\mathcal{B}_{nx}\\theta = a_{nx}$, the minimizer is unique, and the closed-form estimator equals its first coordinate.</p>",
+    "summary": "The LP(ℓ) estimator is a linear estimator — a response-free weighted sum Σ YᵢW*ᵢ(x) — with the closed-form weights tied to the least-squares minimizer by the normal equations when B ≻ 0.",
+    "leanSignature": "theorem isLinearEstimator_lpEstimator (xdat : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ) :\n    IsLinearEstimator fun (Y : Fin n → ℝ) (t : ℝ) => lpEstimator xdat Y K h ℓ t",
+    "formalizationNotes": "Because the formalized LP($\\ell$) estimator is *defined* by the closed weight form (with the zero-matrix convention at singular $\\mathcal{B}_{nx}$), linearity holds for every design, kernel, bandwidth and order with no hypotheses; the content of the book's positive-definiteness assumption moves into the companion identification lemmas. `isLPSolution_iff_normal` proves the normal-equations characterization (1.66) of minimizers under $\\mathcal{B}_{nx} \\succ 0$ and $h > 0$; `isLPSolution_unique` and `lpEstimator_eq_isLPSolution` then identify the closed form with the minimizer's first coordinate, and `lpMatrix_inv_mulVec_sq_le` is the inverse bound (1.70). The hypothesis $h > 0$ in those companions was added after formal renegotiation: the book is silent about it at this point, but for $h < 0$ the weighted least-squares objective becomes concave (the kernel weights flip sign) and has no minimizer even when the normal equations hold, so the \"normal equations ⇒ minimizer\" direction is false without it; the book's standing convention $h > 0$ covers it.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "xdat : Fin n → ℝ",
+        "label": "fixed design",
+        "note": "The deterministic design points; linear-estimator weights may depend on them (and on n, i, x) but not on the responses."
+      },
+      {
+        "id": "h2",
+        "leanToken": "K : ℝ → ℝ",
+        "label": "kernel",
+        "note": "The localizing kernel entering the weights."
+      },
+      {
+        "id": "h3",
+        "leanToken": "h : ℝ",
+        "label": "bandwidth",
+        "note": "The localization scale of the weights."
+      },
+      {
+        "id": "h4",
+        "leanToken": "ℓ : ℕ",
+        "label": "polynomial order",
+        "note": "The degree of the locally fitted polynomial."
+      },
+      {
+        "id": "h5",
+        "leanToken": "IsLinearEstimator",
+        "label": "linear estimator property",
+        "note": "Existence of response-free weights W with f̂(Y, x) = Σᵢ Yᵢ·W(x, i) — the book's Definition 1.7."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6 (Local polynomial estimators), Proposition 1.11",
+      "biblio": "The weight-function (linear estimator) viewpoint on nonparametric regression is systematized in C. J. Stone (Ann. Statist. 5 (1977), 595–620); the weighted least-squares formulation whose normal equations produce the closed-form weights is due to V. Ya. Katkovnik (Soviet Automat. Control 5 (1979), 25–34).",
+      "keys": [
+        "tsybakov2009",
+        "stone1977",
+        "katkovnik1979"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-reproduction",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "lp_weight_reproduce_monomial",
+    "fullName": "StatLean.NonparametricStatistics.lp_weight_reproduce_monomial",
+    "title": "Polynomial Reproduction by Local Polynomial Weights",
+    "citation": "Tsybakov (2009), Prop. 1.12",
+    "shortRef": "Tsybakov (2009), Prop. 1.12",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/Reproduction.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/Reproduction.html#StatLean.NonparametricStatistics.lp_weight_reproduce_monomial",
+    "informal": "<p>Fix a point $x$ at which <span data-link=\"h1\">the local design matrix $\\mathcal{B}_{nx}$ is positive definite</span>, and let <span data-link=\"h2\">the bandwidth $h$ be nonzero</span>. The weights $W^{*}_{ni}(x)$ of the LP($\\ell$) estimator then reproduce every polynomial of degree at most $\\ell$ <em>exactly</em>: for any sample $(X_1, \\dots, X_n)$ and any polynomial $Q$ of degree $\\le \\ell$, $$\\sum_{i=1}^{n} Q(X_i)\\, W^{*}_{ni}(x) \\;=\\; Q(x).$$ In particular the weights sum to one, $\\sum_{i=1}^{n} W^{*}_{ni}(x) = 1$, and their centered moments vanish: $\\sum_{i=1}^{n} (X_i - x)^k\\, W^{*}_{ni}(x) = 0$ for $k = 1, \\dots, \\ell$.</p><p>The root statement formalized here is the centered-monomial form: for each <span data-link=\"h3\">degree $k \\le \\ell$</span>, the weighted sum $\\sum_{i} (X_i - x)^k\\, W^{*}_{ni}(x)$ equals $1$ if $k = 0$ and $0$ otherwise. Since every polynomial of degree $\\le \\ell$ expands in the centered basis $(z - x)^k$, this is equivalent to the general display above. This exact cancellation of the Taylor terms of orders $1, \\dots, \\ell$ is the mechanism driving the bias analysis of the estimator.</p>",
+    "summary": "When the local design matrix is positive definite, the LP(ℓ) weights reproduce every polynomial of degree ≤ ℓ exactly: they sum to 1 and their centered moments of orders 1,…,ℓ vanish.",
+    "leanSignature": "theorem lp_weight_reproduce_monomial (hpd : (lpMatrix xdat K h ℓ t).PosDef)\n    (hh : h ≠ 0)\n    {k : ℕ} (hk : k ≤ ℓ) :\n    ∑ i, (xdat i - t) ^ k * lpWeight xdat K h ℓ t i = if k = 0 then 1 else 0",
+    "formalizationNotes": "The root is the centered-monomial identity $\\sum_i (X_i - x)^k W^*_{ni}(x) = \\delta_{k,0}$ for $k \\le \\ell$; the companions `lp_weight_sum_one` (the $k = 0$ case — the first half of the book's display (1.68)) and `lp_weight_reproduce_poly` (arbitrary centered-coefficient polynomials, giving $\\sum_i Q(X_i)W^*_{ni}(x) = Q(x)$) are derived from it. The extra hypothesis `h ≠ 0` is Lean-side — it makes the centered basis change $z = (x' - x)/h$ invertible — and is implied by the book's standing $h > 0$. The proof is pure normal-equations algebra, exactly the book's: for the response vector $Y_i = (X_i - x)^k$ the coefficient vector $q_j = \\delta_{jk}\\, k!\\, h^k$ solves $\\mathcal{B}_{nx} q = a_{nx}$, so the estimator returns $q_0$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hpd : (lpMatrix xdat K h ℓ t).PosDef",
+        "label": "positive definite design matrix",
+        "note": "The local design matrix B_x = (nh)⁻¹ΣᵢU(zᵢ)U(zᵢ)ᵀK(zᵢ) is positive definite, so the localized least-squares problem has a unique solution."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hh : h ≠ 0",
+        "label": "nonzero bandwidth",
+        "note": "Lean-side: makes the centered basis change z = (x′ − x)/h invertible; implied by the book's standing h > 0."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hk : k ≤ ℓ",
+        "label": "degree at most ℓ",
+        "note": "The centered monomial degree k does not exceed the polynomial order ℓ of the estimator."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6 (Local polynomial estimators), Proposition 1.12",
+      "biblio": "Exact polynomial reproduction is the defining feature of local polynomial smoothers and the source of their automatic bias correction; see J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications* (Chapman & Hall, 1996), §3.1, and C. J. Stone (Ann. Statist. 5 (1977), 595–620).",
+      "keys": [
+        "tsybakov2009",
+        "fan-gijbels1996",
+        "stone1977"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-weight-bounds",
+    "category": "nonparametric",
+    "kind": "lemma",
+    "leanName": "lp_weight_abs_le",
+    "fullName": "StatLean.NonparametricStatistics.lp_weight_abs_le",
+    "title": "Bounds on the Local Polynomial Weights",
+    "citation": "Tsybakov (2009), Lemma 1.3",
+    "shortRef": "Tsybakov (2009), Lemma 1.3",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/WeightBounds.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/WeightBounds.html#StatLean.NonparametricStatistics.lp_weight_abs_le",
+    "informal": "<p>Consider the LP($\\ell$) weights $W^{*}_{ni}(x)$ over the unit interval, under the three standing assumptions of the local polynomial risk analysis: <span data-link=\"h2\">(LP1) the smallest eigenvalue of the local design matrix satisfies $\\lambda_{\\min}(\\mathcal{B}_{nx}) \\ge \\lambda_0$ uniformly over $x \\in [0,1]$</span>, with <span data-link=\"h1\">$\\lambda_0 > 0$</span>; (LP2) the design is spread out — every interval $A$ contains at most $a_0\\, n \\max(\\mathrm{Leb}(A),\\, 1/n)$ of the points $X_i$, for a constant $a_0 \\ge 0$ (the regular design $X_i = i/n$ satisfies this with $a_0 = 2$); and <span data-link=\"h3\">(LP3) the kernel $K$ is supported in $[-1, 1]$ and bounded, $|K(u)| \\le K_{\\max}$</span>. Set $$C_* \\;=\\; \\max\\Big\\{\\frac{2 K_{\\max}}{\\lambda_0},\\; \\frac{4 K_{\\max}\\, a_0}{\\lambda_0}\\Big\\}.$$</p><p>Then for every <span data-link=\"h4\">$x \\in [0,1]$</span> the weights satisfy: (i) $\\;|W^{*}_{ni}(x)| \\le \\dfrac{C_*}{nh}$ for every $i$ — the bound formalized as this entry's root statement, which needs only (LP1), (LP3), the sign conditions $\\lambda_0 > 0$ and $a_0 \\ge 0$, and $n, h > 0$; (ii) $\\;\\sum_{i=1}^{n} |W^{*}_{ni}(x)| \\le C_*$, which additionally uses (LP2) and the bandwidth range $h \\ge 1/(2n)$; and (iii) $\\;W^{*}_{ni}(x) = 0$ whenever $|X_i - x| > h$, which needs only (LP3) and $h > 0$.</p>",
+    "summary": "Under the eigenvalue, design-density and boxed-kernel assumptions, each LP weight is at most C*/(nh), their absolute sum is at most C*, and weights vanish beyond distance h, with C* = max{2Kmax/λ₀, 4Kmax·a₀/λ₀}.",
+    "leanSignature": "theorem lp_weight_abs_le\n    (hn : 0 < n) (hh : 0 < h)\n    (hlam : 0 < lam0)\n    (ha₀ : 0 ≤ a₀)\n    (heig : DesignEigenvalueLB xdat K h ℓ lam0)\n    (hbox : KernelBoxed K Kmax)\n    {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (i : Fin n) :\n    |lpWeight xdat K h ℓ t i| ≤ lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h)",
+    "formalizationNotes": "The constant is exactly the book's $C_* = \\max\\{2K_{\\max}/\\lambda_0,\\, 4K_{\\max}a_0/\\lambda_0\\}$ (`lpWeightConst`); the only proof-level deviation is bounding $\\|U(z)\\|^2 \\le \\sum_k 1/k! \\le e \\le 4$ (`lpBasis_normSq_le`) instead of the book's termwise square root — the resulting factor $2$ is the same. (LP1) is encoded as the quadratic-form bound $\\lambda_0\\|v\\|^2 \\le v^T\\mathcal{B}_{nx}v$ for all $v$ (`DesignEigenvalueLB`), the exact content used by the proofs, and the book's inverse bound (1.70), $\\|\\mathcal{B}_{nx}^{-1}v\\| \\le \\|v\\|/\\lambda_0$, is derived from it by Cauchy–Schwarz (`lpMatrix_inv_mulVec_sq_le`). The hypotheses are finer-grained than the book's blanket \"(LP1)–(LP3), $h \\ge 1/(2n)$\": part (i) (this root, `lp_weight_abs_le`) needs neither (LP2) nor $h \\ge 1/(2n)$; part (iii) (`lp_weight_eq_zero_of_far`) needs only (LP3) and $h > 0$; only the $\\ell^1$ bound (ii) (`lp_weight_sum_abs_le`) uses (LP2) `DesignDensityBound` and $h \\ge 1/(2n)$. All assumptions are stated at the given sample size, so the book's \"for all $n \\ge n_0$\" is absorbed into the hypotheses.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hlam : 0 < lam0",
+        "label": "positive eigenvalue floor",
+        "note": "λ₀ > 0 — the eigenvalue lower bound of (LP1) is a positive constant."
+      },
+      {
+        "id": "h2",
+        "leanToken": "heig : DesignEigenvalueLB xdat K h ℓ lam0",
+        "label": "(LP1) eigenvalue lower bound",
+        "note": "Uniformly over x ∈ [0,1], the local design matrix satisfies λ₀‖v‖² ≤ vᵀB_x v for all v — the quadratic-form encoding of λ_min(B_x) ≥ λ₀."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hbox : KernelBoxed K Kmax",
+        "label": "(LP3) boxed kernel",
+        "note": "K is supported in [−1, 1] and bounded by K_max."
+      },
+      {
+        "id": "h4",
+        "leanToken": "ht : t ∈ Set.Icc (0 : ℝ) 1",
+        "label": "evaluation point in [0,1]",
+        "note": "The weight bound is uniform over evaluation points in the unit interval."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6.1 (Pointwise and integrated risk of local polynomial estimators), Lemma 1.3",
+      "biblio": "These weight bounds are the standard technical core of local polynomial risk analysis, going back to the convergence-rate arguments of C. J. Stone (Ann. Statist. 8 (1980), 1348–1360); the treatment for general kernels is systematized in J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications* (Chapman & Hall, 1996).",
+      "keys": [
+        "tsybakov2009",
+        "stone1980",
+        "fan-gijbels1996"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-bias-variance",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "lp_mse_le",
+    "fullName": "StatLean.NonparametricStatistics.lp_mse_le",
+    "title": "Pointwise Bias and Variance of the Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.13",
+    "shortRef": "Tsybakov (2009), Prop. 1.13",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/PointwiseRisk.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/PointwiseRisk.html#StatLean.NonparametricStatistics.lp_mse_le",
+    "informal": "<p>Consider the fixed-design nonparametric regression model $Y_i = f(X_i) + \\xi_i$, $i = 1, \\dots, n$, with deterministic design points $X_1, \\dots, X_n \\in [0,1]$, where <span data-link=\"h1\">$f$ belongs to the Hölder class $\\Sigma(\\beta, L)$ on $[0,1]$ — it is $\\ell$ times continuously differentiable with $|f^{(\\ell)}(x) - f^{(\\ell)}(x')| \\le L\\,|x - x'|^{\\beta - \\ell}$, $\\ell$ being the greatest integer strictly less than $\\beta$</span> — and the noise variables $\\xi_i$ are independent with $\\mathbb{E}[\\xi_i] = 0$ and <span data-link=\"h5\">$\\mathbb{E}[\\xi_i^2] \\le \\sigma^2_{\\max}$</span>. Let $\\hat f_n$ be the local polynomial estimator of order $\\ell$, and assume <span data-link=\"h2\">the eigenvalue bound (LP1): $\\lambda_{\\min}(\\mathcal{B}_{nx}) \\ge \\lambda_0 > 0$ uniformly over $x \\in [0,1]$</span>, <span data-link=\"h3\">the design density bound (LP2): every interval $[a, b]$ contains at most $a_0\\, n \\max(b - a,\\, 1/n)$ design points</span>, and <span data-link=\"h4\">the boxed-kernel assumption (LP3): $K$ is supported in $[-1, 1]$ with $|K| \\le K_{\\max}$</span>.</p><p>Then for every $x_0 \\in [0,1]$ and every bandwidth $h \\ge 1/(2n)$, the bias $b(x_0) = \\mathbb{E}\\big[\\hat f_n(x_0)\\big] - f(x_0)$ and the variance $\\sigma^2(x_0) = \\mathbb{E}\\big[\\big(\\hat f_n(x_0) - \\mathbb{E}[\\hat f_n(x_0)]\\big)^2\\big]$ satisfy $$|b(x_0)| \\le q_1\\, h^{\\beta}, \\qquad \\sigma^2(x_0) \\le \\frac{q_2}{nh}, \\qquad q_1 = \\frac{C_* L}{\\ell!},\\quad q_2 = \\sigma^2_{\\max} C_*^{\\,2},$$ with $C_*$ the weight constant of Lemma 1.3, and consequently the mean squared error obeys $$\\mathbb{E}\\Big[\\big(\\hat f_n(x_0) - f(x_0)\\big)^2\\Big] \\;\\le\\; q_1^2\\, h^{2\\beta} + \\frac{q_2}{nh}.$$</p>",
+    "summary": "Over the Hölder class Σ(β,L) with independent centered noise, the LP(ℓ) estimator has bias ≤ q₁h^β and variance ≤ q₂/(nh), hence pointwise MSE ≤ q₁²h^{2β} + q₂/(nh), with q₁ = C*L/ℓ! and q₂ = σ²maxC*².",
+    "leanSignature": "theorem lp_mse_le {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {ξ : Fin n → Ω → ℝ} {σmax2 : ℝ} {β L : ℝ} {f : ℝ → ℝ}\n    (hβ : 0 < β) (hL : 0 ≤ L) (hσ : 0 ≤ σmax2)\n    (hn : 0 < n) (hhl : 1 / (2 * (n : ℝ)) ≤ h)\n    (hlam : 0 < lam0) (ha₀ : 0 ≤ a₀)\n    (hx : ∀ i, xdat i ∈ Set.Icc (0 : ℝ) 1)\n    (heig : DesignEigenvalueLB xdat K h (holderIndex β) lam0)\n    (hbox : KernelBoxed K Kmax)\n    (hdens : DesignDensityBound xdat a₀)\n    (hf : MemHolderOn β L f (Set.Icc 0 1))\n    (hξm : ∀ i, Measurable (ξ i)) (hξi : iIndepFun ξ P)\n    (hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0)\n    (hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P ≤ ENNReal.ofReal σmax2)\n    {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :\n    ∫⁻ ω, ENNReal.ofReal\n        ((lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) t - f t) ^ 2) ∂P\n      ≤ ENNReal.ofReal ((lpBiasConst β L Kmax lam0 a₀) ^ 2 * h ^ (2 * β)\n          + lpVarConst σmax2 Kmax lam0 a₀ / ((n : ℝ) * h))",
+    "formalizationNotes": "The MSE is formalized as a lower Lebesgue integral in the extended reals, so no integrability assumptions are laundered: square-integrability of the estimator is derived from the noise moment bounds, and the exact decomposition MSE $=$ bias$^2$ $+$ variance is proved internally. The noise second-moment hypothesis is likewise in lower-integral form (a Bochner-integral hypothesis would be vacuously satisfiable when $\\xi_i^2$ is not integrable). Constants match the book exactly: $q_1 = C_*L/\\ell!$ (`lpBiasConst`) and $q_2 = \\sigma_{\\max}^2 C_*^2$ (`lpVarConst`). The two halves are the companions `lp_bias_deterministic` — the bias bound, proved as a purely deterministic statement about the noiseless weighted sum via polynomial reproduction and the weight bounds — and `lp_variance_le`. Minor relaxations: $L \\ge 0$ rather than the book's $L > 0$, and the standing assumptions are stated at the given $n$, absorbing the book's \"$n \\ge n_0$\".",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : MemHolderOn β L f (Set.Icc 0 1)",
+        "label": "Hölder class membership",
+        "note": "f ∈ Σ(β, L) on [0,1]: ℓ times continuously differentiable with the (β − ℓ)-Hölder bound on the ℓ-th derivative, ℓ the greatest integer strictly less than β."
+      },
+      {
+        "id": "h2",
+        "leanToken": "heig : DesignEigenvalueLB xdat K h (holderIndex β) lam0",
+        "label": "(LP1) eigenvalue lower bound",
+        "note": "The local design matrix at order ℓ = holderIndex β has quadratic form bounded below by λ₀‖v‖², uniformly over [0,1]."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hdens : DesignDensityBound xdat a₀",
+        "label": "(LP2) design density bound",
+        "note": "Every interval [a,b] contains at most n·a₀·max(b − a, 1/n) design points (the regular design i/n satisfies this with a₀ = 2)."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hbox : KernelBoxed K Kmax",
+        "label": "(LP3) boxed kernel",
+        "note": "K is supported in [−1, 1] and bounded by K_max."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P ≤ ENNReal.ofReal σmax2",
+        "label": "noise second moments",
+        "note": "E[ξᵢ²] ≤ σ²_max for every i, stated as a lower Lebesgue integral so the bound is a genuine moment constraint."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6.1 (Pointwise and integrated risk of local polynomial estimators), Proposition 1.13",
+      "biblio": "Pointwise bias–variance bounds of this form over Hölder classes originate with C. J. Stone (Ann. Statist. 8 (1980), 1348–1360), who worked with the rectangular kernel; the treatment for general kernels has been standard since the 1980s — see J. Fan and I. Gijbels, *Local Polynomial Modelling and Its Applications* (Chapman & Hall, 1996).",
+      "keys": [
+        "tsybakov2009",
+        "stone1980",
+        "fan-gijbels1996"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-pointwise-rate",
+    "category": "nonparametric",
+    "kind": "theorem",
+    "leanName": "lp_pointwise_rate",
+    "fullName": "StatLean.NonparametricStatistics.lp_pointwise_rate",
+    "title": "Pointwise Convergence Rate of the Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Thm. 1.6",
+    "shortRef": "Tsybakov (2009), Thm. 1.6",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/PointwiseRisk.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/PointwiseRisk.html#StatLean.NonparametricStatistics.lp_pointwise_rate",
+    "informal": "<p>In the setting of the bias–variance bound (Proposition 1.13) — fixed design in $[0,1]$ satisfying <span data-link=\"h3\">the eigenvalue bound (LP1)</span> and <span data-link=\"h4\">the design density bound (LP2)</span>, a bounded kernel supported in $[-1,1]$ (LP3), independent centered noise with second moments at most $\\sigma^2_{\\max}$, and <span data-link=\"h2\">$f$ in the Hölder class $\\Sigma(\\beta, L)$ on $[0,1]$</span> — choose <span data-link=\"h1\">the bandwidth $h = \\alpha\\, n^{-\\frac{1}{2\\beta+1}}$</span> for some $\\alpha > 0$. Then, provided <span data-link=\"h5\">$h \\ge 1/(2n)$</span> (true for all sufficiently large $n$), the LP($\\ell$) estimator with $\\ell$ the greatest integer strictly less than $\\beta$ satisfies, at every $x_0 \\in [0,1]$ and for every such $f$, the finite-sample bound $$\\mathbb{E}\\Big[\\big(\\hat f_n(x_0) - f(x_0)\\big)^2\\Big] \\;\\le\\; C\\, n^{-\\frac{2\\beta}{2\\beta+1}}, \\qquad C = q_1^2\\,\\alpha^{2\\beta} + \\frac{q_2}{\\alpha},$$ where $q_1 = C_* L/\\ell!$ and $q_2 = \\sigma^2_{\\max} C_*^{\\,2}$. In particular $\\psi_n = n^{-\\beta/(2\\beta+1)}$ is a uniform rate of convergence of the estimator over $\\Sigma(\\beta, L)$, in the sense of the book's display (1.71).</p>",
+    "summary": "With bandwidth h = αn^{−1/(2β+1)}, the LP(ℓ) estimator attains pointwise MSE ≤ (q₁²α^{2β} + q₂/α)·n^{−2β/(2β+1)} uniformly over [0,1] and the Hölder class Σ(β,L) — a finite-n bound with explicit constant.",
+    "leanSignature": "theorem lp_pointwise_rate {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {ξ : Fin n → Ω → ℝ} {σmax2 : ℝ} {β L α : ℝ} {f : ℝ → ℝ}\n    (hβ : 0 < β) (hL : 0 ≤ L) (hα : 0 < α) (hσ : 0 ≤ σmax2)\n    (hn : 0 < n)\n    (hform : h = α * (n : ℝ) ^ (-(1 / (2 * β + 1))))\n    (hhl : 1 / (2 * (n : ℝ)) ≤ h)\n    (hlam : 0 < lam0) (ha₀ : 0 ≤ a₀)\n    (hx : ∀ i, xdat i ∈ Set.Icc (0 : ℝ) 1)\n    (heig : DesignEigenvalueLB xdat K h (holderIndex β) lam0)\n    (hbox : KernelBoxed K Kmax)\n    (hdens : DesignDensityBound xdat a₀)\n    (hf : MemHolderOn β L f (Set.Icc 0 1))\n    (hξm : ∀ i, Measurable (ξ i)) (hξi : iIndepFun ξ P)\n    (hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0)\n    (hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P ≤ ENNReal.ofReal σmax2)\n    {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :\n    ∫⁻ ω, ENNReal.ofReal\n        ((lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) t - f t) ^ 2) ∂P\n      ≤ ENNReal.ofReal (lpRateConst β L α σmax2 Kmax lam0 a₀\n          * (n : ℝ) ^ (-(2 * β / (2 * β + 1))))",
+    "formalizationNotes": "A finite-$n$ strengthening of the book's limsup statement: the bound holds at every $n$ for which the tuned bandwidth satisfies $h \\ge 1/(2n)$ (true for all large $n$), with the fully explicit constant `lpRateConst` $= q_1^2\\alpha^{2\\beta} + q_2/\\alpha$ where the book's Theorem 1.6 leaves $C$ unspecified — this implies (1.71). The bandwidth choice is packaged as the equation hypothesis $h = \\alpha n^{-1/(2\\beta+1)}$ so that all design assumptions are stated at that bandwidth. Uniformity over $x_0 \\in [0,1]$ and $f \\in \\Sigma(\\beta, L)$ holds by quantifier position: the constant depends only on $\\beta, L, \\alpha, \\sigma^2_{\\max}, K_{\\max}, \\lambda_0, a_0$. The risk is formalized as a lower Lebesgue integral in the extended reals, so no integrability assumptions are laundered.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hform : h = α * (n : ℝ) ^ (-(1 / (2 * β + 1)))",
+        "label": "rate-optimal bandwidth",
+        "note": "The bandwidth is tuned to h = α·n^{−1/(2β+1)}, balancing the squared bias h^{2β} against the variance 1/(nh)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hf : MemHolderOn β L f (Set.Icc 0 1)",
+        "label": "Hölder class membership",
+        "note": "f ∈ Σ(β, L) on [0,1]; the bound is uniform over this class."
+      },
+      {
+        "id": "h3",
+        "leanToken": "heig : DesignEigenvalueLB xdat K h (holderIndex β) lam0",
+        "label": "(LP1) eigenvalue lower bound",
+        "note": "λ_min of the local design matrix is at least λ₀ > 0, uniformly over [0,1], in quadratic-form encoding."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hdens : DesignDensityBound xdat a₀",
+        "label": "(LP2) design density bound",
+        "note": "Every interval [a,b] contains at most n·a₀·max(b − a, 1/n) design points."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hhl : 1 / (2 * (n : ℝ)) ≤ h",
+        "label": "bandwidth range h ≥ 1/(2n)",
+        "note": "The classical range of the weight bounds; automatic for all large n at the tuned bandwidth."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6.1 (Pointwise and integrated risk of local polynomial estimators), Theorem 1.6",
+      "biblio": "The optimal pointwise rate over Hölder classes is due to C. J. Stone, \"Optimal rates of convergence for nonparametric estimators\" (Ann. Statist. 8 (1980), 1348–1360), whose lower bounds (reproved in Tsybakov's Chapter 2) show that no estimator can improve on it.",
+      "keys": [
+        "tsybakov2009",
+        "stone1980"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-l2-rate",
+    "category": "nonparametric",
+    "kind": "corollary",
+    "leanName": "lp_l2_rate",
+    "fullName": "StatLean.NonparametricStatistics.lp_l2_rate",
+    "title": "Integrated Squared-Error Rate of the Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Cor. 1.2",
+    "shortRef": "Tsybakov (2009), Cor. 1.2",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/L2Risk.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/L2Risk.html#StatLean.NonparametricStatistics.lp_l2_rate",
+    "informal": "<p>Under the assumptions of Theorem 1.6 — fixed design in $[0,1]$ with the standing assumptions (LP1)–(LP3), independent centered noise with <span data-link=\"h4\">second moments at most $\\sigma^2_{\\max}$</span>, <span data-link=\"h1\">$f$ in the Hölder class $\\Sigma(\\beta, L)$ on $[0,1]$</span>, and <span data-link=\"h2\">bandwidth $h = \\alpha\\, n^{-\\frac{1}{2\\beta+1}}$</span> with $h \\ge 1/(2n)$ — and assuming in addition that <span data-link=\"h3\">the kernel $K$ is measurable</span>, the LP($\\ell$) estimator attains the same rate in the integrated squared-error risk on $[0,1]$: $$\\mathbb{E}\\left[\\int_0^1 \\big(\\hat f_n(t) - f(t)\\big)^2\\, dt\\right] \\;\\le\\; \\Big(q_1^2\\,\\alpha^{2\\beta} + \\frac{q_2}{\\alpha}\\Big)\\; n^{-\\frac{2\\beta}{2\\beta+1}},$$ with the same explicit constant as the pointwise bound. In particular $\\psi_n = n^{-\\beta/(2\\beta+1)}$ is also a uniform rate of convergence over $\\Sigma(\\beta, L)$ for the $L^2([0,1])$ risk, in the sense of the book's display (1.72).</p>",
+    "summary": "With the rate-optimal bandwidth, the expected integrated squared error over [0,1] of the LP(ℓ) estimator obeys the same n^{−2β/(2β+1)} bound as the pointwise risk, with the same explicit constant.",
+    "leanSignature": "theorem lp_l2_rate {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {h lam0 a₀ Kmax : ℝ}\n    {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]\n    {ξ : Fin n → Ω → ℝ} {σmax2 : ℝ} {β L α : ℝ} {f : ℝ → ℝ}\n    (hβ : 0 < β) (hL : 0 ≤ L) (hα : 0 < α) (hσ : 0 ≤ σmax2)\n    (hn : 0 < n)\n    (hform : h = α * (n : ℝ) ^ (-(1 / (2 * β + 1))))\n    (hhl : 1 / (2 * (n : ℝ)) ≤ h)\n    (hlam : 0 < lam0) (ha₀ : 0 ≤ a₀)\n    (hKmeas : Measurable K)\n    (hx : ∀ i, xdat i ∈ Set.Icc (0 : ℝ) 1)\n    (heig : DesignEigenvalueLB xdat K h (holderIndex β) lam0)\n    (hbox : KernelBoxed K Kmax)\n    (hdens : DesignDensityBound xdat a₀)\n    (hf : MemHolderOn β L f (Set.Icc 0 1))\n    (hξm : ∀ i, Measurable (ξ i))\n    (hξi : iIndepFun ξ P)\n    (hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0)\n    (hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P ≤ ENNReal.ofReal σmax2) :\n    ∫⁻ ω, (∫⁻ t in Set.Icc (0 : ℝ) 1, ENNReal.ofReal\n        ((lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) t\n          - f t) ^ 2)) ∂P\n      ≤ ENNReal.ofReal (lpRateConst β L α σmax2 Kmax lam0 a₀\n          * (n : ℝ) ^ (-(2 * β / (2 * β + 1))))",
+    "formalizationNotes": "The integrated risk is an iterated lower Lebesgue integral (the $t$-integral over $[0,1]$ inside, the sample-space integral outside), so no integrability or measurability of the risk in $t$ is hypothesized. The single genuinely new hypothesis versus Theorem 1.6 is the Lean-only `Measurable K`, needed for the Tonelli swap of the two integrals — measurability in $t$ of the weights is then derived through the determinant/adjugate formula for the matrix inverse; every classical kernel qualifies. Since the pointwise bound of `lp_pointwise_rate` is uniform over $t \\in [0,1]$ and $\\mathrm{Leb}([0,1]) = 1$, integrating costs nothing: the constant is the same explicit `lpRateConst` $= q_1^2\\alpha^{2\\beta} + q_2/\\alpha$, where the book leaves $C$ unspecified.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hf : MemHolderOn β L f (Set.Icc 0 1)",
+        "label": "Hölder class membership",
+        "note": "f ∈ Σ(β, L) on [0,1]; the bound is uniform over this class."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hform : h = α * (n : ℝ) ^ (-(1 / (2 * β + 1)))",
+        "label": "rate-optimal bandwidth",
+        "note": "The bandwidth is tuned to h = α·n^{−1/(2β+1)}, as in the pointwise theorem."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hKmeas : Measurable K",
+        "label": "measurable kernel",
+        "note": "Lean-only regularity for the Tonelli swap of the sample-space and t integrals; every classical kernel qualifies."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P ≤ ENNReal.ofReal σmax2",
+        "label": "noise second moments",
+        "note": "E[ξᵢ²] ≤ σ²_max for every i, in lower-Lebesgue form."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6.1 (Pointwise and integrated risk of local polynomial estimators), Corollary 1.2",
+      "biblio": "Optimal rates for integrated (global) risks in nonparametric regression are due to C. J. Stone, \"Optimal global rates of convergence for nonparametric regression\" (Ann. Statist. 10 (1982), 1040–1053).",
+      "keys": [
+        "tsybakov2009",
+        "stone1982"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-lp-supnorm-rate",
+    "category": "nonparametric",
+    "kind": "theorem",
+    "leanName": "lp_supnorm_rate",
+    "fullName": "StatLean.NonparametricStatistics.lp_supnorm_rate",
+    "title": "Sup-Norm Rate of the Local Polynomial Estimator",
+    "citation": "Tsybakov (2009), Thm. 1.8",
+    "shortRef": "Tsybakov (2009), Thm. 1.8",
+    "file": "StatLean/NonparametricStatistics/LocalPolynomial/SupNorm/SupNormRate.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/LocalPolynomial/SupNorm/SupNormRate.html#StatLean.NonparametricStatistics.lp_supnorm_rate",
+    "informal": "<p>Let <span data-link=\"h1\">$f$ belong to the Hölder class $\\Sigma(\\beta, L)$ on $[0,1]$</span> with $\\beta > 0$, and let $\\hat f_n$ be the LP($\\ell$) estimator, $\\ell$ the greatest integer strictly less than $\\beta$, with <span data-link=\"h2\">the sup-norm bandwidth $h = \\alpha \\left(\\frac{\\log n}{n}\\right)^{\\frac{1}{2\\beta+1}}$, $\\alpha > 0$</span>. Assume the design points are deterministic, lie in $[0,1]$, and satisfy the eigenvalue bound (LP1) and the design density bound (LP2); that <span data-link=\"h3\">the kernel is bounded and supported in $[-1,1]$</span> (LP3) and moreover <span data-link=\"h4\">Lipschitz, $|K(u) - K(u')| \\le L_K\\,|u - u'|$</span>; and that <span data-link=\"h5\">the noise variables $\\xi_i$ are i.i.d. Gaussian $\\mathcal{N}(0, \\sigma_\\xi^2)$</span>. Then there is a constant $C > 0$, depending only on $\\beta, L, \\alpha, K, \\lambda_0, a_0$ and $\\sigma_\\xi^2$, such that for every $n \\ge 2$ at which the bandwidth satisfies $1/(2n) \\le h \\le 1$, $$\\mathbb{E}\\Big[\\, \\big\\|\\hat f_n - f\\big\\|_\\infty^2 \\Big] \\;\\le\\; C \\left(\\frac{\\log n}{n}\\right)^{\\frac{2\\beta}{2\\beta+1}}, \\qquad \\|g\\|_\\infty = \\sup_{t \\in [0,1]} |g(t)|.$$ Compared with the pointwise and $L^2$ rates, the supremum costs exactly a logarithmic factor — and by the Chapter 2 lower bounds this rate is optimal in sup-norm loss.</p>",
+    "summary": "With Gaussian noise and bandwidth h = α(log n/n)^{1/(2β+1)}, the expected squared sup-norm error of the LP(ℓ) estimator is at most C·(log n/n)^{2β/(2β+1)} — the pointwise rate times a log factor.",
+    "leanSignature": "theorem lp_supnorm_rate {β L α : ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ LK : ℝ} {v : ℝ≥0}\n    (hβ : 0 < β) (hL : 0 ≤ L) (hα : 0 < α) (hlam : 0 < lam0) (ha₀ : 0 ≤ a₀)\n    (hbox : KernelBoxed K Kmax)\n    (hKlip : ∀ u u' : ℝ, |K u - K u'| ≤ LK * |u - u'|) :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ {n : ℕ}, 2 ≤ n →\n      ∀ {h : ℝ},\n        h = α * (Real.log n / n) ^ ((1 : ℝ) / (2 * β + 1)) →\n        1 / (2 * (n : ℝ)) ≤ h → h ≤ 1 →\n      ∀ {xdat : Fin n → ℝ}, (∀ i, xdat i ∈ Set.Icc (0 : ℝ) 1) →\n        DesignEigenvalueLB xdat K h (holderIndex β) lam0 →\n        DesignDensityBound xdat a₀ →\n      ∀ {Ω : Type} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n        (ξ : Fin n → Ω → ℝ),\n        (∀ i, Measurable (ξ i)) → iIndepFun ξ P →\n        (∀ i, HasLaw (ξ i) (gaussianReal 0 v) P) →\n      ∀ {f : ℝ → ℝ}, MemHolderOn β L f (Set.Icc 0 1) →\n        ∫⁻ ω, ENNReal.ofReal\n            ((⨆ t : Set.Icc (0 : ℝ) 1,\n              |lpEstimator xdat (fun i => f (xdat i) + ξ i ω) K h (holderIndex β) (t : ℝ)\n                - f (t : ℝ)|) ^ 2) ∂P\n          ≤ ENNReal.ofReal (C * (Real.log n / n) ^ (2 * β / (2 * β + 1)))",
+    "formalizationNotes": "Stated in the book-sanctioned $\\exists C$ form ($C$ is not closed-form; its dependence on exactly $\\beta, L, \\alpha, K, \\lambda_0, a_0, \\sigma_\\xi^2$ is enforced by binder position), but as a finite-$n$ bound: it holds at every $n \\ge 2$ where the tuned bandwidth obeys $1/(2n) \\le h \\le 1$ (true for all large $n$), which implies the book's limsup display. The sup-norm risk is the lower Lebesgue integral of the square of a genuine supremum over $[0,1]$, so no measurability of the supremum is needed and no integrability is laundered. The noise hypothesis is a per-coordinate Gaussian law plus joint independence — the book's i.i.d. $\\mathcal{N}(0, \\sigma_\\xi^2)$ — and the book's $\\sigma_\\xi^2 > 0$ is not needed ($\\sigma_\\xi^2 \\ge 0$ suffices). The proof splits the error into the deterministic bias ($\\le q_1 h^\\beta$, from `lp_bias_deterministic`) and a stochastic supremum controlled via the book's maximal inequalities Lemma 1.6 and Corollary 1.3, formalized as `lintegral_iSup_sq_le_log` and `lintegral_iSup_normSq_gaussian_le` (the latter under a per-coordinate Gaussian hypothesis weaker than joint Gaussianity), on a discretization grid of $n^4$ points (the book uses $n^2$; proof-internal and harmless) together with an $\\ell^1$-Lipschitz weight-increment bound (`lp_weight_lipschitz_sum`).",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "MemHolderOn β L f (Set.Icc 0 1)",
+        "label": "Hölder class membership",
+        "note": "f ∈ Σ(β, L) on [0,1]; the bound is uniform over this class."
+      },
+      {
+        "id": "h2",
+        "leanToken": "h = α * (Real.log n / n) ^ ((1 : ℝ) / (2 * β + 1))",
+        "label": "sup-norm bandwidth",
+        "note": "h = α(log n/n)^{1/(2β+1)} — the tuning that balances the squared bias against the log-inflated stochastic term."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hbox : KernelBoxed K Kmax",
+        "label": "(LP3) boxed kernel",
+        "note": "K is supported in [−1, 1] and bounded by K_max."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hKlip : ∀ u u' : ℝ, |K u - K u'| ≤ LK * |u - u'|",
+        "label": "Lipschitz kernel",
+        "note": "The book's assumption (iv), K ∈ Σ(1, L_K): controls the weight increments between grid points in the discretization."
+      },
+      {
+        "id": "h5",
+        "leanToken": "(∀ i, HasLaw (ξ i) (gaussianReal 0 v) P)",
+        "label": "Gaussian noise",
+        "note": "Each ξᵢ has law N(0, σ²_ξ); with the joint-independence hypothesis this is the book's i.i.d. Gaussian noise assumption (iii)."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.6.2 (Convergence in the sup-norm), Theorem 1.8",
+      "biblio": "Sup-norm rates exhibiting the (log n/n)^{β/(2β+1)} phenomenon go back to I. A. Ibragimov and R. Z. Has'minskii, *Statistical Estimation: Asymptotic Theory* (Springer, 1981), and C. J. Stone (Ann. Statist. 10 (1982), 1040–1053), who established the extra logarithmic factor as the unavoidable price of uniform loss.",
+      "keys": [
+        "tsybakov2009",
+        "ibragimov-hasminskii1981",
+        "stone1982"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-projection-estimator-def",
+    "category": "nonparametric",
+    "kind": "definition",
+    "leanName": "projEstimator",
+    "fullName": "StatLean.NonparametricStatistics.projEstimator",
+    "title": "Projection Estimator on the Trigonometric Basis",
+    "citation": "Tsybakov (2009), Def. 1.9",
+    "shortRef": "Tsybakov (2009), Def. 1.9",
+    "file": "StatLean/NonparametricStatistics/Projection/Defs.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Projection/Defs.html#StatLean.NonparametricStatistics.projEstimator",
+    "informal": "<p>Consider the nonparametric regression model $Y_i = f(x_i) + \\xi_i$, $i = 1, \\dots, n$, observed at the <span data-link=\"h2\">regular design $x_i = i/n$</span>, and let $\\{\\varphi_j\\}_{j \\ge 1}$ be the <span data-link=\"h3\">trigonometric basis</span> of $L^2[0,1]$: $$\\varphi_1(x) \\equiv 1, \\qquad \\varphi_{2k}(x) = \\sqrt{2}\\,\\cos(2\\pi k x), \\qquad \\varphi_{2k+1}(x) = \\sqrt{2}\\,\\sin(2\\pi k x), \\qquad k = 1, 2, \\dots$$ From the <span data-link=\"h1\">observations $Y_1, \\dots, Y_n$</span> one estimates the Fourier coefficients $\\theta_j = \\int_0^1 f \\varphi_j$ of $f$ by the empirical averages $$\\hat\\theta_j \\;=\\; \\frac{1}{n} \\sum_{i=1}^{n} Y_i\\, \\varphi_j(x_i).$$</p><p>For an integer <span data-link=\"h4\">order $N \\ge 1$</span>, the <strong>projection estimator</strong> (or <strong>orthogonal series estimator</strong>) of the regression function $f$ at a point $x$ is $$\\hat f_{nN}(x) \\;=\\; \\sum_{j=1}^{N} \\hat\\theta_j\\, \\varphi_j(x).$$ The order $N$ plays the same smoothing role as the bandwidth of a kernel estimator: it governs the balance between bias (small $N$, oversmoothing) and variance (large $N$, undersmoothing).</p>",
+    "summary": "The projection estimator f̂_nN = Σ_{j≤N} θ̂ⱼφⱼ with coefficient estimates θ̂ⱼ = n⁻¹ Σᵢ Yᵢφⱼ(i/n), on the trigonometric basis at the regular design i/n.",
+    "leanSignature": "noncomputable def coeffEstimator {n : ℕ} (Y : Fin n → ℝ) (j : ℕ) : ℝ :=\n  (n : ℝ)⁻¹ * ∑ i, Y i * trigBasis j (regularDesign n i)\n\nnoncomputable def projEstimator {n : ℕ} (Y : Fin n → ℝ) (N : ℕ) (x : ℝ) : ℝ :=\n  ∑ j ∈ Finset.Icc 1 N, coeffEstimator Y j * trigBasis j x",
+    "formalizationNotes": "`trigBasis` is 1-indexed exactly as in the classical display: `trigBasis 1` is the constant $1$, and for $j \\ge 2$ the frequency is the natural-number quotient $j/2$, giving $\\sqrt2\\cos(2\\pi kx)$ at $j = 2k$ and $\\sqrt2\\sin(2\\pi kx)$ at $j = 2k+1$; index $0$ is inert (`trigBasis 0 = 0`), so all sums run over $j = 1, \\dots, N$ (`Finset.Icc 1 N`). The regular design is encoded as `regularDesign n i = (i+1)/n` for `i : Fin n`, i.e. the design points $1/n, 2/n, \\dots, 1$. In the surrounding risk analysis the coefficient sequence $\\theta$ is the primitive object and the target is defined as `seriesFun θ`, the pointwise sum $\\sum_j \\theta_j \\varphi_j$ — membership of $f$ in a smoothness class becomes a statement about its coefficient sequence, which keeps every risk theorem self-contained without invoking completeness of the trigonometric system.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "Y : Fin n → ℝ",
+        "label": "observation vector",
+        "note": "The n observations Y₁, …, Yₙ of the regression model, one per design point."
+      },
+      {
+        "id": "h2",
+        "leanToken": "regularDesign n i",
+        "label": "regular design",
+        "note": "The equispaced design points i/n, i = 1, …, n, at which the basis is sampled."
+      },
+      {
+        "id": "h3",
+        "leanToken": "trigBasis j x",
+        "label": "trigonometric basis",
+        "note": "The orthonormal trigonometric system φ₁ ≡ 1, φ₂ₖ = √2 cos(2πkx), φ₂ₖ₊₁ = √2 sin(2πkx) of L²[0,1]."
+      },
+      {
+        "id": "h4",
+        "leanToken": "Finset.Icc 1 N",
+        "label": "order N truncation",
+        "note": "The estimator keeps the first N basis directions; N is the smoothing parameter."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.7 (Projection estimators), Definition 1.9",
+      "biblio": "Orthogonal series (projection) estimation was introduced by N. N. Čencov (Soviet Math. Dokl. 3 (1962), 1559–1562) for density estimation, and developed at length in his 1972 monograph *Statistical Decision Rules and Optimal Inference*. Its use for regression at the regular design in the trigonometric system follows the analyses of R. Shibata (Biometrika 68 (1981), 45–54) and J. Rice (Ann. Statist. 12 (1984), 1215–1230).",
+      "keys": [
+        "tsybakov2009",
+        "cencov1962",
+        "shibata1981",
+        "rice1984"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-trig-discrete-orthonormal",
+    "category": "nonparametric",
+    "kind": "lemma",
+    "leanName": "trigBasis_discrete_orthonormal",
+    "fullName": "StatLean.NonparametricStatistics.trigBasis_discrete_orthonormal",
+    "title": "Discrete Orthonormality of the Trigonometric Basis at the Regular Design",
+    "citation": "Tsybakov (2009), Lemma 1.7",
+    "shortRef": "Tsybakov (2009), Lemma 1.7",
+    "file": "StatLean/NonparametricStatistics/Projection/DiscreteOrthogonality.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Projection/DiscreteOrthogonality.html#StatLean.NonparametricStatistics.trigBasis_discrete_orthonormal",
+    "informal": "<p>Let $\\{\\varphi_j\\}_{j \\ge 1}$ be the trigonometric basis of $L^2[0,1]$. Then the first $n-1$ basis functions are <em>exactly</em> orthonormal also in the discrete inner product generated by the regular design $x_s = s/n$: for all indices <span data-link=\"h1\">$1 \\le j \\le n-1$</span> and <span data-link=\"h2\">$1 \\le k \\le n-1$</span>, $$\\frac{1}{n} \\sum_{s=1}^{n} \\varphi_j(s/n)\\, \\varphi_k(s/n) \\;=\\; \\delta_{jk},$$ where $\\delta_{jk}$ is the Kronecker delta.</p><p>Equivalently, the empirical Gram matrix of $\\varphi_1, \\dots, \\varphi_{n-1}$ at the regular design is the identity — the discrete counterpart of the orthonormality relation $\\int_0^1 \\varphi_j \\varphi_k = \\delta_{jk}$. This is the reason the coefficient estimates $\\hat\\theta_j$ of the projection estimator behave exactly like Fourier coefficients: the stochastic part of their risk is exactly $\\sigma_\\xi^2/n$, with no cross-frequency contamination below index $n$.</p>",
+    "summary": "The first n−1 trigonometric basis functions are exactly orthonormal in the discrete inner product n⁻¹ Σₛ φⱼ(s/n)φₖ(s/n) at the regular design.",
+    "leanSignature": "theorem trigBasis_discrete_orthonormal {n j k : ℕ}\n    (hj : 1 ≤ j) (hj' : j ≤ n - 1) (hk : 1 ≤ k) (hk' : k ≤ n - 1) :\n    (n : ℝ)⁻¹ * ∑ i : Fin n, trigBasis j (regularDesign n i) * trigBasis k (regularDesign n i)\n      = if j = k then 1 else 0",
+    "formalizationNotes": "The statement is the book's identity with the Kronecker delta rendered as an if-then-else and the design sum over `i : Fin n` (design points $(i+1)/n = 1/n, \\dots, 1$). The proof reduces each product $\\varphi_j\\varphi_k$ by product-to-sum identities to discrete cosine/sine sums at the integer frequencies $j/2 \\pm k/2$, which — by exact roots-of-unity summation — vanish unless the frequency is a multiple of $n$; the range $1 \\le j, k \\le n-1$ keeps these frequencies inside $(-n, n)$, so only the zero frequency survives, precisely at equal same-parity indices, where the normalization $(\\sqrt2)^2 \\cdot \\tfrac12 = 1$ gives the diagonal. The book proves one representative parity case and leaves the rest 'along similar lines'; the Lean proof covers all nine parity cases. The continuous companion `trigBasis_orthonormal` establishes the $L^2[0,1]$ orthonormality $\\int_0^1 \\varphi_j\\varphi_k = \\delta_{jk}$ for all $j, k \\ge 1$.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hj : 1 ≤ j) (hj' : j ≤ n - 1",
+        "label": "index range for j",
+        "note": "1 ≤ j ≤ n − 1: the frequency of φⱼ stays below the design size; beyond n − 1 exact orthonormality fails (aliasing)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hk : 1 ≤ k) (hk' : k ≤ n - 1",
+        "label": "index range for k",
+        "note": "1 ≤ k ≤ n − 1, the same range for the second index."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.7.2 (Integrated squared risk of projection estimators), Lemma 1.7",
+      "biblio": "The identity is classical discrete Fourier analysis — exact orthogonality of the sampled trigonometric system, equivalently of the $n$-th roots of unity. Its role in regular-design series regression appears in J. Rice (Ann. Statist. 12 (1984), 1215–1230); the behaviour of the discrete products beyond the first $n-1$ frequencies — the aliasing this lemma rules out — is studied by B. T. Polyak and A. B. Tsybakov (Theory Probab. Appl. 35 (1990), 293–306).",
+      "keys": [
+        "tsybakov2009",
+        "rice1984",
+        "polyak-tsybakov1990"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-proj-coefficient-risk",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "coeffEstimator_sq_error",
+    "fullName": "StatLean.NonparametricStatistics.coeffEstimator_sq_error",
+    "title": "Mean and Quadratic Risk of the Coefficient Estimates",
+    "citation": "Tsybakov (2009), Prop. 1.16",
+    "shortRef": "Tsybakov (2009), Prop. 1.16",
+    "file": "StatLean/NonparametricStatistics/Projection/CoefficientRisk.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Projection/CoefficientRisk.html#StatLean.NonparametricStatistics.coeffEstimator_sq_error",
+    "informal": "<p>Consider the regression model $Y_i = f(i/n) + \\xi_i$, $i = 1, \\dots, n$, at the regular design, where the target has the trigonometric expansion $f = \\sum_{j \\ge 1} \\theta_j \\varphi_j$ with <span data-link=\"h2\">absolutely summable coefficients $\\sum_j |\\theta_j| < \\infty$</span>, and the errors $\\xi_1, \\dots, \\xi_n$ are <span data-link=\"h3\">independent</span> with <span data-link=\"h4\">$\\mathbb{E}[\\xi_i] = 0$</span> and <span data-link=\"h5\">common second moment $\\mathbb{E}[\\xi_i^2] = \\sigma_\\xi^2 < \\infty$</span>. Then the coefficient estimates $\\hat\\theta_j = n^{-1} \\sum_{i} Y_i \\varphi_j(i/n)$ satisfy $\\mathbb{E}[\\hat\\theta_j] = \\theta_j + \\alpha_j$ for every $j$, and, for <span data-link=\"h1\">every index $1 \\le j \\le n-1$</span>, the exact quadratic-risk identity $$\\mathbb{E}\\big[(\\hat\\theta_j - \\theta_j)^2\\big] \\;=\\; \\frac{\\sigma_\\xi^2}{n} + \\alpha_j^2, \\qquad \\alpha_j = \\frac{1}{n} \\sum_{i=1}^{n} f(i/n)\\, \\varphi_j(i/n) \\;-\\; \\theta_j.$$</p><p>Here $\\alpha_j$ is the residual of approximating the Fourier coefficient $\\theta_j = \\int_0^1 f \\varphi_j$ by its Riemann sum over the design — the aliasing bias of the discretization. The entire stochastic contribution to the risk is <em>exactly</em> $\\sigma_\\xi^2/n$, a consequence of the discrete orthonormality of the trigonometric basis at the regular design (Lemma 1.7).</p>",
+    "summary": "Coefficient estimates satisfy E θ̂ⱼ = θⱼ + αⱼ and, for 1 ≤ j ≤ n−1, E(θ̂ⱼ − θⱼ)² = σ_ξ²/n + αⱼ² exactly, where αⱼ is the Riemann-sum (aliasing) residual.",
+    "leanSignature": "theorem coeffEstimator_sq_error {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {n : ℕ} {ξ : Fin n → Ω → ℝ} {θ : ℕ → ℝ} {σξ2 : ℝ} {j : ℕ}\n    (hj : 1 ≤ j) (hj' : j ≤ n - 1)\n    (hσ : 0 ≤ σξ2)\n    (hθ1 : Summable fun j => |θ j|)\n    (hξm : ∀ i, Measurable (ξ i))\n    (hξi : iIndepFun ξ P)\n    (hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0)\n    (hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = ENNReal.ofReal σξ2) :\n    ∫⁻ ω, ENNReal.ofReal\n        ((coeffEstimator (fun i => seriesFun θ (regularDesign n i) + ξ i ω) j - θ j) ^ 2) ∂P\n      = ENNReal.ofReal (σξ2 / n + (riemannResidual θ n j) ^ 2)",
+    "formalizationNotes": "The displayed theorem is part (ii) of the proposition; part (i), $\\mathbb E[\\hat\\theta_j] = \\theta_j + \\alpha_j$, is the companion `coeffEstimator_mean` and needs no index restriction — the range $1 \\le j \\le n-1$ enters only through discrete orthonormality, which drives the variance computation. The coefficient sequence $\\theta$ is the primitive object and the target is defined as $f = $ `seriesFun θ`, so the residual `riemannResidual` is taken against $\\theta_j$ directly (no completeness of the trigonometric system is needed). The noise model matches the book's Assumption (A): independent — not necessarily identically distributed — errors with zero mean and common second moment; the second moment is hypothesized as a lower Lebesgue integral in the extended reals, so no integrability is laundered — square-integrability and integrability of the errors are derived from it, and the risk itself is formalized as a lower Lebesgue integral. Measurability of each $\\xi_i$ is a Lean-side regularity requirement, not a book assumption. The conclusion is an exact identity, not an upper bound.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hj : 1 ≤ j) (hj' : j ≤ n - 1",
+        "label": "index range",
+        "note": "1 ≤ j ≤ n − 1: the range in which discrete orthonormality of the basis holds; the mean identity needs no such restriction."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hθ1 : Summable fun j => |θ j|",
+        "label": "summable coefficients",
+        "note": "Σⱼ|θⱼ| < ∞ (Assumption (A)(iii)), so the series defining f converges absolutely and uniformly."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hξi : iIndepFun ξ P",
+        "label": "independent errors",
+        "note": "The noise variables ξ₁, …, ξₙ are mutually independent."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0",
+        "label": "centered errors",
+        "note": "Each error has mean zero."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = ENNReal.ofReal σξ2",
+        "label": "common second moment",
+        "note": "Each error has second moment σ_ξ², stated as a lower Lebesgue integral so that square-integrability is derived, never laundered."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.7.2 (Integrated squared risk of projection estimators), Proposition 1.16",
+      "biblio": "Unbiased estimation of Fourier coefficients by empirical averages goes back to N. N. Čencov's orthogonal-series programme for densities (Soviet Math. Dokl. 3 (1962), 1559–1562); the regular-design regression version with the exact $\\sigma^2/n$ variance identity is in the tradition of J. Rice (Ann. Statist. 12 (1984), 1215–1230).",
+      "keys": [
+        "tsybakov2009",
+        "cencov1962",
+        "rice1984"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-proj-mise-decomposition",
+    "category": "nonparametric",
+    "kind": "proposition",
+    "leanName": "proj_mise_decomposition",
+    "fullName": "StatLean.NonparametricStatistics.proj_mise_decomposition",
+    "title": "Exact MISE Decomposition of the Projection Estimator",
+    "citation": "Tsybakov (2009), Prop. 1.17",
+    "shortRef": "Tsybakov (2009), Prop. 1.17",
+    "file": "StatLean/NonparametricStatistics/Projection/MISEDecomposition.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Projection/MISEDecomposition.html#StatLean.NonparametricStatistics.proj_mise_decomposition",
+    "informal": "<p>In the regression model $Y_i = f(i/n) + \\xi_i$ at the regular design, with target $f = \\sum_{j \\ge 1} \\theta_j \\varphi_j$, <span data-link=\"h2\">$\\sum_j |\\theta_j| < \\infty$</span>, and <span data-link=\"h3\">independent</span> errors of <span data-link=\"h4\">mean zero</span> and <span data-link=\"h5\">common second moment $\\sigma_\\xi^2$</span>, the mean integrated squared error of the projection estimator $\\hat f_{nN} = \\sum_{j=1}^{N} \\hat\\theta_j \\varphi_j$ of <span data-link=\"h1\">any order $1 \\le N \\le n-1$</span> decomposes exactly: $$\\mathbb{E}\\,\\big\\|\\hat f_{nN} - f\\big\\|_2^2 \\;=\\; \\frac{\\sigma_\\xi^2 N}{n} \\;+\\; \\sum_{j=1}^{N} \\alpha_j^2 \\;+\\; \\rho_N, \\qquad \\rho_N = \\sum_{j=N+1}^{\\infty} \\theta_j^2,$$ where $\\|\\cdot\\|_2$ is the $L^2$ norm on $[0,1]$ and $\\alpha_j = n^{-1}\\sum_i f(i/n)\\varphi_j(i/n) - \\theta_j$ is the Riemann-sum residual of Proposition 1.16.</p><p>The three terms are the stochastic (variance) term $\\sigma_\\xi^2 N/n$, the aliasing term $\\sum_{j \\le N} \\alpha_j^2$, and the approximation term $\\rho_N$ — the energy of the discarded coefficient tail. This exact identity is the starting point of the risk analysis of series estimators over Sobolev classes.</p>",
+    "summary": "Exact MISE identity for the projection estimator: E‖f̂_nN − f‖₂² = σ_ξ²N/n + Σ_{j≤N} αⱼ² + ρ_N, with tail energy ρ_N = Σ_{j>N} θⱼ².",
+    "leanSignature": "theorem proj_mise_decomposition {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}\n    [IsProbabilityMeasure P] {n N : ℕ} {ξ : Fin n → Ω → ℝ} {θ : ℕ → ℝ} {σξ2 : ℝ}\n    (hN : 1 ≤ N) (hN' : N ≤ n - 1)\n    (hσ : 0 ≤ σξ2)\n    (hθ1 : Summable fun j => |θ j|)\n    (hξm : ∀ i, Measurable (ξ i))\n    (hξi : iIndepFun ξ P)\n    (hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0)\n    (hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = ENNReal.ofReal σξ2) :\n    ∫⁻ ω, (∫⁻ x in Set.Icc (0 : ℝ) 1, ENNReal.ofReal\n        ((projEstimator (fun i => seriesFun θ (regularDesign n i) + ξ i ω) N x\n          - seriesFun θ x) ^ 2)) ∂P\n      = ENNReal.ofReal (σξ2 * N / n\n          + (∑ j ∈ Finset.Icc 1 N, (riemannResidual θ n j) ^ 2) + tailEnergy θ N)",
+    "formalizationNotes": "The conclusion is an exact identity, not a bound. The book leaves the admissible range of $N$ implicit (its proof invokes Proposition 1.16(ii) for every $j \\le N$); the formal statement makes $1 \\le N \\le n-1$ explicit. The expectation is formalized as an iterated lower Lebesgue integral in the extended reals — the mean over the sample of $\\int_{[0,1]} (\\hat f_{nN} - f)^2$ — so no integrability assumptions are laundered, and the right-hand side is the finite real value of the decomposition. Because the target is defined as `seriesFun θ`, the tail's squared $L^2$ norm is proved equal to `tailEnergy θ N` $= \\sum_{j>N}\\theta_j^2$ via uniform convergence of the tail series and the $L^2$ orthonormality `trigBasis_orthonormal` — no completeness of the trigonometric system (Parseval) is invoked anywhere.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hN : 1 ≤ N) (hN' : N ≤ n - 1",
+        "label": "order range",
+        "note": "1 ≤ N ≤ n − 1: every retained frequency lies in the range where discrete orthonormality holds."
+      },
+      {
+        "id": "h2",
+        "leanToken": "hθ1 : Summable fun j => |θ j|",
+        "label": "summable coefficients",
+        "note": "Σⱼ|θⱼ| < ∞ (Assumption (A)(iii)), giving absolute and uniform convergence of the series for f."
+      },
+      {
+        "id": "h3",
+        "leanToken": "hξi : iIndepFun ξ P",
+        "label": "independent errors",
+        "note": "The noise variables are mutually independent."
+      },
+      {
+        "id": "h4",
+        "leanToken": "hξ0 : ∀ i, ∫ ω, ξ i ω ∂P = 0",
+        "label": "centered errors",
+        "note": "Each error has mean zero."
+      },
+      {
+        "id": "h5",
+        "leanToken": "hξ2 : ∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = ENNReal.ofReal σξ2",
+        "label": "common second moment",
+        "note": "Each error has second moment σ_ξ², in lower-Lebesgue form so integrability is derived rather than assumed."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.7.2 (Integrated squared risk of projection estimators), Proposition 1.17",
+      "biblio": "The exact variance–aliasing–tail decomposition is the classical starting point of orthogonal-series risk analysis, going back to N. N. Čencov (Soviet Math. Dokl. 3 (1962), 1559–1562) in the density problem; for regression at a regular design see J. Rice (Ann. Statist. 12 (1984), 1215–1230).",
+      "keys": [
+        "tsybakov2009",
+        "cencov1962",
+        "rice1984"
+      ]
+    },
+    "hasGraph": true
+  },
+  {
+    "id": "np-proj-sobolev-rate",
+    "category": "nonparametric",
+    "kind": "theorem",
+    "leanName": "proj_sobolev_rate",
+    "fullName": "StatLean.NonparametricStatistics.proj_sobolev_rate",
+    "title": "MISE Rate of the Projection Estimator over Sobolev Ellipsoids",
+    "citation": "Tsybakov (2009), Thm. 1.9",
+    "shortRef": "Tsybakov (2009), Thm. 1.9",
+    "file": "StatLean/NonparametricStatistics/Projection/SobolevRate.lean",
+    "docGenUrl": "../docs/StatLean/NonparametricStatistics/Projection/SobolevRate.html#StatLean.NonparametricStatistics.proj_sobolev_rate",
+    "informal": "<p>Let <span data-link=\"h1\">$\\beta \\ge 1$</span> and $L > 0$, and consider the Sobolev class of targets $f = \\sum_{j \\ge 1} \\theta_j \\varphi_j$ whose coefficient sequence lies in <span data-link=\"h2\">the Sobolev ellipsoid $\\Theta(\\beta, Q) = \\big\\{\\theta : \\sum_{j \\ge 1} a_j^2 \\theta_j^2 \\le Q\\big\\}$ of radius $Q = L^2/\\pi^{2\\beta}$</span>, with the standard weights $a_j = j^{\\beta}$ for even $j$ and $a_j = (j-1)^{\\beta}$ for odd $j$. Observations follow the regression model $Y_i = f(i/n) + \\xi_i$ at the regular design $i/n$, with <span data-link=\"h5\">independent errors of mean zero and common second moment $\\sigma_\\xi^2$</span>. For a tuning constant $\\alpha > 0$, choose the order <span data-link=\"h3\">$N = \\big\\lceil \\alpha\\, n^{1/(2\\beta+1)} \\big\\rceil$</span>.</p><p>Then there is a constant $C = C(\\beta, L, \\alpha, \\sigma_\\xi^2) > 0$ such that for every sample size with <span data-link=\"h4\">$n \\ge 3$ and $N \\le n-1$</span> (both hold for all $n$ large enough), the projection estimator $\\hat f_{nN} = \\sum_{j=1}^{N} \\hat\\theta_j \\varphi_j$ satisfies $$\\mathbb{E}\\,\\big\\|\\hat f_{nN} - f\\big\\|_2^2 \\;\\le\\; C\\, n^{-\\frac{2\\beta}{2\\beta+1}}$$ uniformly over the class and over every error distribution satisfying these conditions. The projection estimator thus attains the rate $n^{-\\beta/(2\\beta+1)}$ in the $L^2[0,1]$ norm on the Sobolev class — the same rate as for pointwise estimation over Hölder classes.</p>",
+    "summary": "With N ≈ αn^(1/(2β+1)), the projection estimator attains MISE ≤ C n^(−2β/(2β+1)) uniformly over the Sobolev ellipsoid Θ(β, L²/π^(2β)), for smoothness β ≥ 1.",
+    "leanSignature": "theorem proj_sobolev_rate {β L α σξ2 : ℝ}\n    (hβ : 1 ≤ β) (hL : 0 < L) (hα : 0 < α) (hσ : 0 ≤ σξ2) :\n    ∃ C : ℝ, 0 < C ∧\n      ∀ {n N : ℕ},\n        3 ≤ n → N = ⌈α * (n : ℝ) ^ ((1 : ℝ) / (2 * β + 1))⌉₊ → N ≤ n - 1 →\n      ∀ {θ : ℕ → ℝ},\n        MemEllipsoid β (ellipsoidRadius β L) θ →\n      ∀ {Ω : Type} [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]\n        (ξ : Fin n → Ω → ℝ),\n        (∀ i, Measurable (ξ i)) → iIndepFun ξ P →\n        (∀ i, ∫ ω, ξ i ω ∂P = 0) →\n        (∀ i, ∫⁻ ω, ENNReal.ofReal ((ξ i ω) ^ 2) ∂P = ENNReal.ofReal σξ2) →\n        ∫⁻ ω, (∫⁻ x in Set.Icc (0 : ℝ) 1, ENNReal.ofReal\n            ((projEstimator (fun i => seriesFun θ (regularDesign n i) + ξ i ω) N x\n              - seriesFun θ x) ^ 2)) ∂P\n          ≤ ENNReal.ofReal (C * (n : ℝ) ^ (-(2 * β / (2 * β + 1))))",
+    "formalizationNotes": "Finite-$n$ form of the book's asymptotic statement: the bound holds for every $n \\ge 3$ with $N \\le n-1$, uniformly in $\\theta$, in the probability space, and in the error distribution, which implies the book's limsup-of-sup form; $C$ is a sanctioned existential (the book's constant is unspecified) and depends on $\\beta, L, \\alpha$ and also on $\\sigma_\\xi^2$, which the book fixes implicitly in Assumption (A). The order uses the ceiling $N = \\lceil \\alpha n^{1/(2\\beta+1)} \\rceil$ rather than the book's integer part, guaranteeing $N \\ge 1$. The aliasing term is controlled by the formalized Lemma 1.8, `riemannResidual_abs_le`: $|\\alpha_j| \\le C_{\\beta,Q}\\, n^{1/2-\\beta}$ for $1 \\le j \\le n-1$ with the explicit constant `residualConst` $C_{\\beta,Q} = 2\\sqrt{Q}\\,\\sqrt{2\\beta/(2\\beta-1)}\\, 3^{\\beta-1/2}$ (the factor $3^{\\beta-1/2}$ absorbs a tail-shift estimate valid for $n \\ge 3$ — the origin of the side condition, versus the book's $n \\ge 2$). Assumption (A)(iii), $\\sum_j |\\theta_j| < \\infty$, is never assumed: on the ellipsoid with $\\beta \\ge 1 > 1/2$ it is derived via `MemEllipsoid.summable_abs`. Risks are lower Lebesgue integrals in the extended reals so no integrability is laundered, and `MemEllipsoid` carries convergence of the weighted series as a constitutive field, ruling out vacuous junk-value membership.",
+    "hypotheses": [
+      {
+        "id": "h1",
+        "leanToken": "hβ : 1 ≤ β",
+        "label": "smoothness at least one",
+        "note": "The smoothness parameter β is a real number ≥ 1 (the ellipsoid itself makes sense for any β > 0)."
+      },
+      {
+        "id": "h2",
+        "leanToken": "MemEllipsoid β (ellipsoidRadius β L) θ",
+        "label": "Sobolev ellipsoid membership",
+        "note": "The coefficients satisfy Σ aⱼ²θⱼ² ≤ Q with Q = L²/π^(2β) and the standard weights aⱼ ~ j^β; convergence of the weighted series is part of the membership."
+      },
+      {
+        "id": "h3",
+        "leanToken": "N = ⌈α * (n : ℝ) ^ ((1 : ℝ) / (2 * β + 1))⌉₊",
+        "label": "order choice N ≍ n^(1/(2β+1))",
+        "note": "The rate-optimal order: N is the ceiling of αn^(1/(2β+1)), balancing the variance term N/n against the bias tail N^(−2β)."
+      },
+      {
+        "id": "h4",
+        "leanToken": "3 ≤ n",
+        "label": "finite-n side conditions",
+        "note": "n ≥ 3 (needed by the explicit aliasing constant) together with the adjacent requirement N ≤ n − 1; both hold for all sufficiently large n."
+      },
+      {
+        "id": "h5",
+        "leanToken": "iIndepFun ξ P",
+        "label": "noise model",
+        "note": "Mutually independent errors; with the adjacent hypotheses (zero mean, common second moment σ_ξ² in lower-Lebesgue form, measurability) this is the book's Assumption (A)(i)."
+      }
+    ],
+    "reference": {
+      "formal": "A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, New York, 2009.",
+      "pointer": "§1.7.2 (Integrated squared risk of projection estimators), Theorem 1.9",
+      "biblio": "Orthogonal-series estimation and its rates over smoothness classes originate with N. N. Čencov (Soviet Math. Dokl. 3 (1962), 1559–1562); the regular-design regression analysis follows R. Shibata (Biometrika 68 (1981), 45–54) and J. Rice (Ann. Statist. 12 (1984), 1215–1230). The Sobolev-ellipsoid description of smoothness classes is standard in the minimax theory on ellipsoids initiated by M. S. Pinsker (Probl. Inf. Transm. 16 (1980), 120–133), which gives exact asymptotic minimax constants in the Gaussian model.",
+      "keys": [
+        "tsybakov2009",
+        "cencov1962",
+        "shibata1981",
+        "rice1984",
+        "pinsker1980"
+      ]
+    },
+    "hasGraph": true
   }
 ]
