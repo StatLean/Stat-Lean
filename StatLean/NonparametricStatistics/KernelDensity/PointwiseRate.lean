@@ -60,6 +60,69 @@ theorem kde_pointwise_rate {β L α : ℝ}
         IsHolderDensity β L p →
         kdeMseAt P X K (α * (n : ℝ) ^ (-(1 / (2 * β + 1)))) p x₀
           ≤ ENNReal.ofReal (C * (n : ℝ) ^ (-(2 * β / (2 * β + 1)))) := by
-  sorry
+  obtain ⟨pmax, hpm, hbdd⟩ := holder_density_uniform_bound β L hβ hL
+  have hCnn : 0 ≤ kdeBiasConst β L K := by
+    rw [kdeBiasConst]
+    exact mul_nonneg (div_nonneg hL.le (by positivity)) (integral_nonneg fun u => by positivity)
+  have hCb : 0 ≤ (kdeBiasConst β L K) ^ 2 * α ^ (2 * β) :=
+    mul_nonneg (sq_nonneg _) (Real.rpow_nonneg hα.le _)
+  have hCv : 0 ≤ kdeVarianceConst K pmax / α := by
+    rw [kdeVarianceConst]
+    exact div_nonneg (mul_nonneg hpm.le (integral_nonneg fun u => sq_nonneg _)) hα.le
+  refine ⟨(kdeBiasConst β L K) ^ 2 * α ^ (2 * β) + kdeVarianceConst K pmax / α + 1,
+    by linarith, ?_⟩
+  intro Ω hMS P hP n X p x₀ hn hs hX hpd
+  have hnpos : 0 < n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hnpos
+  have hne : (2 * β + 1) ≠ 0 := by positivity
+  set h := α * (n : ℝ) ^ (-(1 / (2 * β + 1))) with hh_def
+  have hh : 0 < h := mul_pos hα (Real.rpow_pos_of_pos hnR _)
+  have hp_meas : Measurable p :=
+    (contDiffOn_univ.mp (MemHolderOn.contDiffOn hpd.holder)).continuous.measurable
+  have h0 : ∀ y, 0 ≤ p y := hpd.nonneg
+  have hbdd' : ∀ y, p y ≤ pmax := hbdd p hpd
+  have hL2 : MemLp (fun ω => kde X K h ω x₀) 2 P :=
+    kde_memLp_two hh hs hX hp_meas h0 hbdd' hKmeas hK2
+  have hbias : |kdeBiasAt P X K h p x₀| ≤ kdeBiasConst β L K * h ^ β :=
+    kde_bias_abs_le hβ hL.le hnpos hh hs hpd hK hKmeas hKβ
+  have hb2 : (kdeBiasAt P X K h p x₀) ^ 2 ≤ (kdeBiasConst β L K * h ^ β) ^ 2 :=
+    sq_le_sq' (abs_le.mp hbias).1 (abs_le.mp hbias).2
+  have hT1 : (kdeBiasConst β L K * h ^ β) ^ 2
+      = (kdeBiasConst β L K) ^ 2 * α ^ (2 * β) * (n : ℝ) ^ (-(2 * β / (2 * β + 1))) := by
+    rw [mul_pow]
+    have hhβ2 : (h ^ β) ^ 2 = h ^ (2 * β) := by
+      rw [← Real.rpow_natCast (h ^ β) 2, ← Real.rpow_mul hh.le]; congr 1; push_cast; ring
+    rw [hhβ2, hh_def, Real.mul_rpow hα.le (Real.rpow_nonneg hnR.le _), ← Real.rpow_mul hnR.le]
+    have hexp : -(1 / (2 * β + 1)) * (2 * β) = -(2 * β / (2 * β + 1)) := by
+      rw [neg_mul, one_div_mul_eq_div]
+    rw [hexp]; ring
+  have hT2 : kdeVarianceConst K pmax / ((n : ℝ) * h)
+      = kdeVarianceConst K pmax / α * (n : ℝ) ^ (-(2 * β / (2 * β + 1))) := by
+    have hnh : (n : ℝ) * h = α * (n : ℝ) ^ (2 * β / (2 * β + 1)) := by
+      rw [hh_def]
+      have hstep : (n : ℝ) * (α * (n : ℝ) ^ (-(1 / (2 * β + 1))))
+          = α * ((n : ℝ) ^ (1 : ℝ) * (n : ℝ) ^ (-(1 / (2 * β + 1)))) := by
+        rw [Real.rpow_one]; ring
+      rw [hstep, ← Real.rpow_add hnR]
+      have hexp2 : (1 : ℝ) + -(1 / (2 * β + 1)) = 2 * β / (2 * β + 1) := by
+        field_simp; ring
+      rw [hexp2]
+    rw [hnh, Real.rpow_neg hnR.le, ← div_eq_mul_inv, div_div]
+  rw [kdeMseAt_eq_bias_sq_add_variance hL2]
+  have hC1nn : 0 ≤ kdeVarianceConst K pmax / ((n : ℝ) * h) := by
+    rw [kdeVarianceConst]
+    exact div_nonneg (mul_nonneg hpm.le (integral_nonneg fun u => sq_nonneg _)) (mul_pos hnR hh).le
+  refine (add_le_add (ENNReal.ofReal_le_ofReal hb2)
+    (kde_variance_le hh hs hX hp_meas h0 hbdd' hKmeas hK2)).trans ?_
+  rw [← ENNReal.ofReal_add (sq_nonneg _) hC1nn]
+  apply ENNReal.ofReal_le_ofReal
+  rw [hT1, hT2]
+  have hfac : ((kdeBiasConst β L K) ^ 2 * α ^ (2 * β) + kdeVarianceConst K pmax / α + 1)
+        * (n : ℝ) ^ (-(2 * β / (2 * β + 1)))
+      = (kdeBiasConst β L K) ^ 2 * α ^ (2 * β) * (n : ℝ) ^ (-(2 * β / (2 * β + 1)))
+        + kdeVarianceConst K pmax / α * (n : ℝ) ^ (-(2 * β / (2 * β + 1)))
+        + (n : ℝ) ^ (-(2 * β / (2 * β + 1))) := by ring
+  rw [hfac]
+  linarith [Real.rpow_nonneg hnR.le (-(2 * β / (2 * β + 1)))]
 
 end StatLean.NonparametricStatistics
