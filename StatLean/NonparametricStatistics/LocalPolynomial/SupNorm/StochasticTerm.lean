@@ -1,5 +1,7 @@
 import StatLean.NonparametricStatistics.LocalPolynomial.WeightBounds
+import StatLean.NonparametricStatistics.LocalPolynomial.SupNorm.Increments
 import StatLean.NonparametricStatistics.ForMathlib.MaxExpSquare
+import StatLean.NonparametricStatistics.ForMathlib.GaussianExpSq
 
 /-!
 # Sup-norm control of the stochastic term of the local polynomial estimator
@@ -35,6 +37,48 @@ open MeasureTheory ProbabilityTheory
 open scoped ENNReal NNReal
 
 namespace StatLean.NonparametricStatistics
+
+/-- ℓ²-sum of local polynomial weights: `∑ᵢ Wᵢ(s)² ≤ (C*)²/(nh)`. -/
+private lemma lp_sum_weight_sq_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → ℝ} {Kmax lam0 a₀ h : ℝ}
+    {ℓ : ℕ} (hn : 0 < n) (hh : 0 < h) (hhl : 1 / (2 * (n : ℝ)) ≤ h) (hlam : 0 < lam0)
+    (ha₀ : 0 ≤ a₀) (heig : DesignEigenvalueLB xdat K h ℓ lam0) (hbox : KernelBoxed K Kmax)
+    (hdens : DesignDensityBound xdat a₀) {s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    ∑ i, (lpWeight xdat K h ℓ s i) ^ 2 ≤ (lpWeightConst Kmax lam0 a₀) ^ 2 / ((n : ℝ) * h) := by
+  have hnpos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
+  have hnh : (0 : ℝ) < (n : ℝ) * h := mul_pos hnpos hh
+  have hKmax : 0 ≤ Kmax := le_trans (abs_nonneg (K 0)) (hbox.1 0)
+  have hC : (0 : ℝ) ≤ lpWeightConst Kmax lam0 a₀ := by
+    unfold lpWeightConst
+    exact le_trans (div_nonneg (mul_nonneg (by norm_num) hKmax) hlam.le) (le_max_left _ _)
+  have hper : ∀ i, (lpWeight xdat K h ℓ s i) ^ 2
+      ≤ lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h) * |lpWeight xdat K h ℓ s i| := by
+    intro i
+    have habs := lp_weight_abs_le hn hh hlam ha₀ heig hbox hs i
+    have h1 : (lpWeight xdat K h ℓ s i) ^ 2
+        = |lpWeight xdat K h ℓ s i| * |lpWeight xdat K h ℓ s i| := by rw [← sq_abs]; ring
+    rw [h1]
+    exact mul_le_mul_of_nonneg_right habs (abs_nonneg _)
+  calc ∑ i, (lpWeight xdat K h ℓ s i) ^ 2
+      ≤ ∑ i, lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h) * |lpWeight xdat K h ℓ s i| :=
+        Finset.sum_le_sum (fun i _ => hper i)
+    _ = lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h) * ∑ i, |lpWeight xdat K h ℓ s i| := by
+        rw [← Finset.mul_sum]
+    _ ≤ lpWeightConst Kmax lam0 a₀ / ((n : ℝ) * h) * lpWeightConst Kmax lam0 a₀ :=
+        mul_le_mul_of_nonneg_left (lp_weight_sum_abs_le hn hhl hlam ha₀ heig hbox hdens hs)
+          (div_nonneg hC hnh.le)
+    _ = (lpWeightConst Kmax lam0 a₀) ^ 2 / ((n : ℝ) * h) := by rw [div_mul_eq_mul_div, ← pow_two]
+
+/-- Second moment of a centered Gaussian as a lower Lebesgue integral: `∫⁻ x², d𝒩(0,v) = v`. -/
+private lemma gaussian_lintegral_sq (v : ℝ≥0) :
+    ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(gaussianReal 0 v) = ENNReal.ofReal (v : ℝ) := by
+  have hint : ∫ x, x ^ 2 ∂(gaussianReal 0 v) = (v : ℝ) := by
+    have hv := variance_id_gaussianReal (μ := (0 : ℝ)) (v := v)
+    rw [variance_eq_integral measurable_id.aemeasurable] at hv
+    simpa [integral_id_gaussianReal] using hv
+  have hint2 : Integrable (fun x : ℝ => x ^ 2) (gaussianReal 0 v) :=
+    (memLp_id_gaussianReal' 2 (by simp)).integrable_sq
+  rw [← ofReal_integral_eq_lintegral_ofReal hint2 (Filter.Eventually.of_forall (fun x => sq_nonneg x)),
+    hint]
 
 /-- **Sup-norm stochastic bound**: there is `C = C(ℓ, K_max, λ₀, a₀, L_K)` such that under
 the standing design assumptions, a Lipschitz boxed kernel, and i.i.d. `N(0, v)` noise,
