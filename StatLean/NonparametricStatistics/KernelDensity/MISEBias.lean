@@ -244,6 +244,66 @@ private lemma second_order_remainder {p w : ℝ → ℝ} (hp1 : Differentiable �
 /-- The deterministic kernel-mean bias functional `D h x = (∫ u, K u · p(x+uh)) − p x`. -/
 private noncomputable def kmBias (p K : ℝ → ℝ) (h x : ℝ) : ℝ := (∫ u, K u * p (x + u * h)) - p x
 
+/-- The surrogate `b*(x) = h²·(S_K/2)·w x`, whose squared `L²` norm is exactly `M h`. -/
+private noncomputable def kmSurr (w K : ℝ → ℝ) (h x : ℝ) : ℝ :=
+  h ^ 2 * ((∫ u, u ^ 2 * K u) / 2) * w x
+
+/-- The `L²`-translation modulus of `w` at shift `s`, as a real number. -/
+private noncomputable def transMod (w : ℝ → ℝ) (s : ℝ) : ℝ :=
+  ((∫⁻ x, ENNReal.ofReal ((w (x + s) - w x) ^ 2)) ^ (1 / 2 : ℝ)).toReal
+
+/-- **Step B**: the a.e.-`x` bias identity. Using `∫K = 1` and `∫uK = 0`,
+`kmBias p K h x = h²·∫ u, K u · u² · (∫₀¹ (1−τ)·w(x+τuh) dτ) du`. -/
+private lemma kmBias_eq {p K w : ℝ → ℝ}
+    (hp_meas : Measurable p) (h0 : ∀ x, 0 ≤ p x) (h1 : ∫ x, p x = 1)
+    (hp1 : Differentiable ℝ p) (hw_meas : Measurable w)
+    (hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s)
+    (hw2 : MemLp w 2 volume) (hK : IsKernelOfOrder K 1) (hKmeas : Measurable K)
+    (hKu2 : Integrable fun u => u ^ 2 * |K u|) {h : ℝ} (hh : 0 < h) (x : ℝ)
+    (hKp : Integrable (fun u => K u * p (x + u * h))) :
+    kmBias p K h x
+      = h ^ 2 * ∫ u, K u * u ^ 2 * ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h)) := by
+  set R : ℝ → ℝ := fun u => ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h)) with hRdef
+  -- Step A pointwise, with `t = u·h`.
+  have hA : ∀ u, K u * p (x + u * h)
+      = (K u * p x + K u * (u * h) * deriv p x) + K u * (u ^ 2 * h ^ 2) * R u := by
+    intro u
+    have hsa := second_order_remainder hp1 hw_meas hw2 hpw x (u * h)
+    have hRu : (∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h))) = R u := rfl
+    have : p (x + u * h) = p x + (u * h) * deriv p x + (u * h) ^ 2 * R u := by
+      rw [hRdef] at hRu ⊢; nlinarith [hsa]
+    rw [this]; ring
+  -- The two low-order pieces integrate to `p x` and `0`.
+  have hK_int : Integrable K := by simpa using hK.integrable_pow 0 (Nat.zero_le _)
+  have hpoly1 : Integrable (fun u => K u * p x) := hK_int.mul_const _
+  have hpoly2 : Integrable (fun u => K u * (u * h) * deriv p x) := by
+    have h1 : Integrable (fun u => u ^ 1 * K u) := hK.integrable_pow 1 (le_refl 1)
+    have : (fun u => K u * (u * h) * deriv p x)
+        = fun u => (h * deriv p x) * (u ^ 1 * K u) := by funext u; simp only [pow_one]; ring
+    rw [this]; exact h1.const_mul _
+  have hpoly : Integrable (fun u => K u * p x + K u * (u * h) * deriv p x) := hpoly1.add hpoly2
+  have hthird : Integrable (fun u => K u * (u ^ 2 * h ^ 2) * R u) := by
+    have heq : (fun u => K u * (u ^ 2 * h ^ 2) * R u)
+        = fun u => K u * p (x + u * h) - (K u * p x + K u * (u * h) * deriv p x) := by
+      funext u; rw [hA u]; ring
+    rw [heq]; exact hKp.sub hpoly
+  -- Assemble.
+  have hsplit : (∫ u, K u * p (x + u * h))
+      = (∫ u, K u * p x + K u * (u * h) * deriv p x) + ∫ u, K u * (u ^ 2 * h ^ 2) * R u := by
+    rw [← integral_add hpoly hthird]
+    exact integral_congr_ae (ae_of_all _ fun u => hA u)
+  have hlow : (∫ u, K u * p x + K u * (u * h) * deriv p x) = p x := by
+    rw [integral_add hpoly1 hpoly2, integral_mul_const, hK.integral_eq_one, one_mul]
+    have h0m : (∫ u, K u * (u * h) * deriv p x) = 0 := by
+      have : (fun u => K u * (u * h) * deriv p x)
+          = fun u => (h * deriv p x) * (u ^ 1 * K u) := by funext u; simp only [pow_one]; ring
+      rw [this, integral_const_mul, hK.moment_eq_zero 1 (le_refl 1) (le_refl 1), mul_zero]
+    rw [h0m, add_zero]
+  have hthirdval : (∫ u, K u * (u ^ 2 * h ^ 2) * R u) = h ^ 2 * ∫ u, K u * u ^ 2 * R u := by
+    rw [← integral_const_mul]
+    refine integral_congr_ae (ae_of_all _ fun u => ?_); ring
+  rw [kmBias, hsplit, hlow, hthirdval, add_sub_cancel_left]
+
 /-- **Deterministic core**: the exact asymptotics of `∫⁻ x ofReal(D h x ²)`, independent of the
 sample and of `n`. -/
 private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
