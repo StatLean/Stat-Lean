@@ -304,6 +304,38 @@ private lemma kmBias_eq {p K w : ℝ → ℝ}
     refine integral_congr_ae (ae_of_all _ fun u => ?_); ring
   rw [kmBias, hsplit, hlow, hthirdval, add_sub_cancel_left]
 
+/-- **Step C**: the `L²(dx)` distance between the bias and its surrogate is `o(h²)`. There is a
+function `κ : ℝ → ℝ` tending to `0` at `0`, with `κ ≥ 0`, such that for all `0 < h`,
+`eLpNorm (fun x => kmBias p K h x − kmSurr w K h x) 2 ≤ ofReal (h² · κ h)`. -/
+private lemma stepC_bound {p K w : ℝ → ℝ}
+    (hp_meas : Measurable p) (h0 : ∀ x, 0 ≤ p x) (h1 : ∫ x, p x = 1)
+    (hp1 : Differentiable ℝ p) (hw_meas : Measurable w)
+    (hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s)
+    (hw2 : MemLp w 2 volume) (hK : IsKernelOfOrder K 1) (hKmeas : Measurable K)
+    (hKu2 : Integrable fun u => u ^ 2 * |K u|) :
+    ∃ κ : ℝ → ℝ, (∀ s, 0 ≤ κ s) ∧ Filter.Tendsto κ (nhds 0) (nhds 0) ∧
+      ∀ h : ℝ, 0 < h →
+        eLpNorm (fun x => kmBias p K h x - kmSurr w K h x) 2 volume
+          ≤ ENNReal.ofReal (h ^ 2 * κ h) := by
+  sorry
+
+/-- The surrogate is in `L²` with `eLpNorm (kmSurr) 2 = ofReal(h²·|S_K|/2·√(∫w²))`. -/
+private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
+    {h : ℝ} :
+    eLpNorm (fun x => kmSurr w K h x) 2 volume
+      = ENNReal.ofReal (h ^ 2 * (|∫ u, u ^ 2 * K u| / 2) * (∫ x, (w x) ^ 2).sqrt) := by
+  sorry
+
+/-- `∫⁻ x ofReal(f x²) = (eLpNorm f 2)²`, the `ofReal`↔`eLpNorm` bridge for real `f`. -/
+private lemma lintegral_ofReal_sq_eq_eLpNorm_sq {f : ℝ → ℝ} :
+    (∫⁻ x, ENNReal.ofReal ((f x) ^ 2)) = (eLpNorm f 2 volume) ^ (2 : ℝ) := by
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num) (by norm_num)]
+  simp only [ENNReal.toReal_ofNat]
+  rw [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one]
+  refine lintegral_congr fun x => ?_
+  rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    Real.rpow_two, sq_abs]
+
 /-- **Deterministic core**: the exact asymptotics of `∫⁻ x ofReal(D h x ²)`, independent of the
 sample and of `n`. -/
 private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
@@ -318,7 +350,108 @@ private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
         (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2))
           ≤ ENNReal.ofReal
               (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) + ε * h ^ 4) := by
-  sorry
+  classical
+  set S : ℝ := ∫ u, u ^ 2 * K u with hSdef
+  set W2 : ℝ := ∫ x, (w x) ^ 2 with hW2def
+  have hW2nn : 0 ≤ W2 := by rw [hW2def]; exact integral_nonneg fun x => sq_nonneg _
+  set aC : ℝ := |S| / 2 * W2.sqrt with haCdef
+  have haCnn : 0 ≤ aC := by rw [haCdef]; positivity
+  obtain ⟨κ, hκnn, hκ0, hκb⟩ := stepC_bound hp_meas h0 h1 hp1 hw_meas hpw hw2 hK hKmeas hKu2
+  -- Choose `h₀` so that `κ h · (aC·2 + κ h) ≤ ε` for `0 < h < h₀`.
+  have hev : ∀ᶠ h in nhds (0:ℝ), κ h * (2 * aC + κ h) ≤ ε := by
+    have hcont : Filter.Tendsto (fun h => κ h * (2 * aC + κ h)) (nhds 0) (nhds (0 * (2 * aC + 0))) :=
+      hκ0.mul (Filter.Tendsto.const_add _ hκ0)
+    simp only [zero_mul] at hcont
+    exact hcont.eventually_le_const hε
+  rw [Metric.eventually_nhds_iff] at hev
+  obtain ⟨h₀, hh₀0, hh₀⟩ := hev
+  refine ⟨h₀, hh₀0, fun h hh hhlt => ?_⟩
+  -- Real quantities.
+  set A : ℝ≥0∞ := eLpNorm (fun x => kmSurr w K h x) 2 volume with hAdef
+  set B : ℝ≥0∞ := eLpNorm (fun x => kmBias p K h x - kmSurr w K h x) 2 volume with hBdef
+  set C : ℝ≥0∞ := eLpNorm (fun x => kmBias p K h x) 2 volume with hCdef
+  have hAval : A = ENNReal.ofReal (h ^ 2 * aC) := by
+    rw [hAdef, eLpNorm_kmSurr hw_meas hw2, haCdef, hSdef, hW2def]; ring_nf
+  have hAfin : A ≠ ⊤ := by rw [hAval]; exact ENNReal.ofReal_ne_top
+  have hBb : B ≤ ENNReal.ofReal (h ^ 2 * κ h) := hκb h hh
+  have hBfin : B ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hBb
+  -- Measurability.
+  have hSurrmeas : AEStronglyMeasurable (fun x => kmSurr w K h x) volume :=
+    ((measurable_const.mul hw_meas)).aestronglyMeasurable
+  have hBiasmeas : AEStronglyMeasurable (fun x => kmBias p K h x) volume := by
+    have hF : Measurable (Function.uncurry fun x u => K u * p (x + u * h)) := by
+      have : Function.uncurry (fun x u => K u * p (x + u * h))
+          = fun q : ℝ × ℝ => K q.2 * p (q.1 + q.2 * h) := rfl
+      rw [this]; exact (hKmeas.comp measurable_snd).mul (hp_meas.comp (by fun_prop))
+    have hm : Measurable (fun x => ∫ u, K u * p (x + u * h)) :=
+      (hF.stronglyMeasurable).integral_prod_right'.measurable
+    exact (hm.sub hp_meas).aestronglyMeasurable
+  have hΔmeas : AEStronglyMeasurable (fun x => kmBias p K h x - kmSurr w K h x) volume :=
+    hBiasmeas.sub hSurrmeas
+  -- Triangle inequalities: `C ≤ A + B` and `A ≤ C + B`.
+  have hCAB : C ≤ A + B := by
+    have hsum : (fun x => kmBias p K h x)
+        = (fun x => kmSurr w K h x) + (fun x => kmBias p K h x - kmSurr w K h x) := by
+      funext x; simp only [Pi.add_apply]; ring
+    rw [hCdef, hsum]
+    exact eLpNorm_add_le hSurrmeas hΔmeas one_le_two
+  have hACB : A ≤ C + B := by
+    have hsum : (fun x => kmSurr w K h x)
+        = (fun x => kmBias p K h x) + (fun x => -(kmBias p K h x - kmSurr w K h x)) := by
+      funext x; simp only [Pi.add_apply]; ring
+    rw [hAdef, hsum]
+    have := eLpNorm_add_le hBiasmeas hΔmeas.neg (μ := volume) (p := 2) one_le_two
+    rwa [eLpNorm_neg] at this
+  -- Pass to reals.
+  set a : ℝ := A.toReal with hadef
+  set b : ℝ := B.toReal with hbdef
+  set c : ℝ := C.toReal with hcdef
+  have haval : a = h ^ 2 * aC := by rw [hadef, hAval, ENNReal.toReal_ofReal (by positivity)]
+  have hhκnn : 0 ≤ h ^ 2 * κ h := mul_nonneg (by positivity) (hκnn h)
+  have hbb : b ≤ h ^ 2 * κ h := by
+    rw [hbdef]; exact (ENNReal.toReal_le_toReal hBfin ENNReal.ofReal_ne_top).2 hBb |>.trans_eq
+      (ENNReal.toReal_ofReal hhκnn)
+  have hCfin : C ≠ ⊤ := ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hAfin, hBfin⟩) hCAB
+  have hca : c ≤ a + b := by
+    rw [hcdef, hadef, hbdef, ← ENNReal.toReal_add hAfin hBfin]
+    exact (ENNReal.toReal_le_toReal hCfin (ENNReal.add_ne_top.2 ⟨hAfin, hBfin⟩)).2 hCAB
+  have hac : a ≤ c + b := by
+    rw [hadef, hcdef, hbdef, ← ENNReal.toReal_add hCfin hBfin]
+    exact (ENNReal.toReal_le_toReal hAfin (ENNReal.add_ne_top.2 ⟨hCfin, hBfin⟩)).2 hACB
+  have hbnn : 0 ≤ b := ENNReal.toReal_nonneg
+  have hcnn : 0 ≤ c := ENNReal.toReal_nonneg
+  have hann : 0 ≤ a := ENNReal.toReal_nonneg
+  -- `|c² − a²| ≤ b·(2a+b) ≤ h⁴·ε`.
+  have hMh : h ^ 4 / 4 * S ^ 2 * W2 = a ^ 2 := by
+    have hs : W2.sqrt ^ 2 = W2 := Real.sq_sqrt hW2nn
+    have hab : |S| ^ 2 = S ^ 2 := sq_abs S
+    rw [haval, haCdef, mul_pow, mul_pow, hs, div_pow, hab]; ring
+  have hκev : κ h * (2 * aC + κ h) ≤ ε := by
+    apply hh₀; rw [Real.dist_eq, sub_zero, abs_of_pos hh]; exact hhlt
+  have hbound : |c ^ 2 - a ^ 2| ≤ ε * h ^ 4 := by
+    have h1 : c ^ 2 - a ^ 2 ≤ b * (2 * a + b) := by nlinarith [hca, hann, hbnn, hcnn]
+    have h2 : a ^ 2 - c ^ 2 ≤ b * (2 * a + b) := by nlinarith [hac, hann, hbnn, hcnn]
+    have h3 : b * (2 * a + b) ≤ (h ^ 2 * κ h) * (2 * (h ^ 2 * aC) + h ^ 2 * κ h) := by
+      apply mul_le_mul hbb _ (by positivity) hhκnn
+      have : 2 * a + b ≤ 2 * (h ^ 2 * aC) + h ^ 2 * κ h := by rw [haval]; linarith [hbb]
+      exact this
+    have h4 : (h ^ 2 * κ h) * (2 * (h ^ 2 * aC) + h ^ 2 * κ h)
+        = h ^ 4 * (κ h * (2 * aC + κ h)) := by ring
+    rw [abs_sub_le_iff]
+    have hκpos : (0:ℝ) ≤ 2 * aC + κ h := by have := hκnn h; positivity
+    have hh4 : 0 ≤ h ^ 4 := by positivity
+    constructor <;> nlinarith [h1, h2, h3, h4, hκev, hh4, mul_nonneg (hκnn h) hκpos]
+  -- Conclude.
+  have hCsq : (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2)) = ENNReal.ofReal (c ^ 2) := by
+    rw [lintegral_ofReal_sq_eq_eLpNorm_sq, ← hCdef, ← ENNReal.ofReal_toReal hCfin, ← hcdef,
+      ENNReal.ofReal_rpow_of_nonneg hcnn (by norm_num : (0:ℝ) ≤ 2)]
+    norm_num
+  rw [hCsq, hMh]
+  constructor
+  · apply ENNReal.ofReal_le_ofReal
+    have := abs_le.1 hbound; linarith [this.1]
+  · apply ENNReal.ofReal_le_ofReal
+    have := abs_le.1 hbound; linarith [this.2]
 
 /-- **Integrated squared bias, exact asymptotics**: under the second-order smoothness
 hypotheses, for every `ε > 0` there is `h₀ > 0` such that for all `0 < h < h₀`, `n ≥ 1`:
