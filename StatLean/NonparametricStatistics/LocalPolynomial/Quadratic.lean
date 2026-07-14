@@ -184,6 +184,70 @@ private lemma isLPSolution_imp_normal (hpd : (lpMatrix xdat K h ℓ t).PosDef)
       = (n : ℝ) * h * (lpMatrix xdat K h ℓ t).mulVec θ j := by linarith
   exact (mul_left_cancel₀ hnh this).symm
 
+/-- Objective-difference identity used for the `←` direction of the normal equations. For all
+`θ θ'`, writing `Δ := θ' − θ`, the objective gap decomposes into a quadratic form plus a
+gradient term. Needs only `(n·h) ≠ 0`. -/
+private lemma lpObjective_diff (xdat Y : Fin n → ℝ) (K : ℝ → ℝ) (h : ℝ) (ℓ : ℕ) (t : ℝ)
+    (hnh : (n : ℝ) * h ≠ 0) (θ θ' : Fin (ℓ + 1) → ℝ) :
+    lpObjective xdat Y K h ℓ t θ' - lpObjective xdat Y K h ℓ t θ
+      = (n : ℝ) * h * (∑ j, (θ' - θ) j * (lpMatrix xdat K h ℓ t).mulVec (θ' - θ) j)
+        + 2 * ((n : ℝ) * h) * (∑ j, (θ' - θ) j
+            * ((lpMatrix xdat K h ℓ t).mulVec θ - lpRhs xdat Y K h ℓ t) j) := by
+  have hM : ∀ w : Fin (ℓ + 1) → ℝ,
+      (n : ℝ) * h * (∑ j, (θ' - θ) j * (lpMatrix xdat K h ℓ t).mulVec w j)
+        = ∑ i, (∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k)
+            * (∑ k, w k * lpBasis ℓ ((xdat i - t) / h) k) * K ((xdat i - t) / h) := by
+    intro w
+    simp only [lpMatrix_mulVec_apply]
+    rw [Finset.mul_sum, Finset.sum_congr rfl fun j _ => by
+      rw [mul_left_comm, mul_inv_cancel_left₀ hnh, Finset.mul_sum]]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    trans (∑ j, (θ' - θ) j * lpBasis ℓ ((xdat i - t) / h) j)
+        * (K ((xdat i - t) / h) * (∑ k, w k * lpBasis ℓ ((xdat i - t) / h) k))
+    · rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun j _ => by ring
+    · ring
+  have hA : (n : ℝ) * h * (∑ j, (θ' - θ) j * lpRhs xdat Y K h ℓ t j)
+      = ∑ i, (∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k)
+          * Y i * K ((xdat i - t) / h) := by
+    simp only [lpRhs]
+    rw [Finset.mul_sum, Finset.sum_congr rfl fun j _ => by
+      rw [mul_left_comm, mul_inv_cancel_left₀ hnh, Finset.mul_sum]]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    trans (∑ j, (θ' - θ) j * lpBasis ℓ ((xdat i - t) / h) j)
+        * (Y i * K ((xdat i - t) / h))
+    · rw [Finset.sum_mul]; exact Finset.sum_congr rfl fun j _ => by ring
+    · ring
+  have hobj : lpObjective xdat Y K h ℓ t θ' - lpObjective xdat Y K h ℓ t θ
+      = ∑ i, ((∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k) ^ 2
+          - 2 * (Y i - ∑ k, θ k * lpBasis ℓ ((xdat i - t) / h) k)
+              * (∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k))
+          * K ((xdat i - t) / h) := by
+    simp only [lpObjective]
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    have hΔ : ∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k
+        = (∑ k, θ' k * lpBasis ℓ ((xdat i - t) / h) k)
+          - ∑ k, θ k * lpBasis ℓ ((xdat i - t) / h) k := by
+      simp only [Pi.sub_apply, sub_mul, Finset.sum_sub_distrib]
+    rw [hΔ]; ring
+  have hcross : (n : ℝ) * h
+      * (∑ j, (θ' - θ) j * ((lpMatrix xdat K h ℓ t).mulVec θ - lpRhs xdat Y K h ℓ t) j)
+      = (∑ i, (∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k)
+            * (∑ k, θ k * lpBasis ℓ ((xdat i - t) / h) k) * K ((xdat i - t) / h))
+        - ∑ i, (∑ k, (θ' - θ) k * lpBasis ℓ ((xdat i - t) / h) k) * Y i
+            * K ((xdat i - t) / h) := by
+    rw [← hM θ, ← hA, ← mul_sub]
+    congr 1
+    rw [← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    simp only [Pi.sub_apply]; ring
+  rw [hobj, hM (θ' - θ), mul_assoc, hcross, mul_sub, Finset.mul_sum, Finset.mul_sum,
+    ← add_sub_assoc, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  ring
+
 /-- **Normal equations**: under `B_t ≻ 0` and a positive bandwidth, `θ` minimises the LP(`ℓ`)
 criterion iff `B_t θ = a_t`. (The `→` direction needs no sign hypothesis; the `←` direction
 does — with `n·h < 0` the objective is concave and has no minimiser even when the normal
@@ -196,13 +260,33 @@ theorem isLPSolution_iff_normal
     (θ : Fin (ℓ + 1) → ℝ) :
     IsLPSolution xdat Y K h ℓ t θ
       ↔ (lpMatrix xdat K h ℓ t).mulVec θ = lpRhs xdat Y K h ℓ t := by
+  have hnh : (n : ℝ) * h ≠ 0 := by
+    intro h0
+    have hx : (Pi.single (0 : Fin (ℓ + 1)) (1 : ℝ) : Fin (ℓ + 1) → ℝ) ≠ 0 := by
+      intro hcon; simpa using congrFun hcon 0
+    have hpos := hpd.dotProduct_mulVec_pos hx
+    rw [show lpMatrix xdat K h ℓ t = 0 from by simp [lpMatrix, h0]] at hpos
+    simp at hpos
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hnh
+  have hnh_pos : 0 < (n : ℝ) * h :=
+    mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hn0) hh
   constructor
   · exact isLPSolution_imp_normal hpd
-  · -- TODO(np): `←` direction with `0 < h` in hand: `n ≥ 1` follows from `hpd` (the zero
-    -- matrix is not PosDef), so `n·h > 0`; completing the square via
-    -- `lpObjective_add_single`-style expansion along `θ' − θ` gives
-    -- `obj θ' − obj θ = (n·h)·⟨Δ, B Δ⟩ ≥ 0`. Close in the np/lp-core-fix session.
-    sorry
+  · intro hnorm θ'
+    have hid := lpObjective_diff xdat Y K h ℓ t hnh θ θ'
+    have hterm2 : ∑ j, (θ' - θ) j
+        * ((lpMatrix xdat K h ℓ t).mulVec θ - lpRhs xdat Y K h ℓ t) j = 0 := by
+      refine Finset.sum_eq_zero fun j _ => ?_
+      rw [Pi.sub_apply, Pi.sub_apply, hnorm, sub_self, mul_zero]
+    rw [hterm2, mul_zero, add_zero] at hid
+    have hquad : 0 ≤ ∑ j, (θ' - θ) j * (lpMatrix xdat K h ℓ t).mulVec (θ' - θ) j := by
+      rcases eq_or_ne (θ' - θ) 0 with hΔ0 | hΔ0
+      · rw [hΔ0]; simp
+      · refine le_of_lt ?_
+        have hp := hpd.dotProduct_mulVec_pos hΔ0
+        simpa [dotProduct, Pi.star_apply, star_trivial] using hp
+    have := mul_nonneg hnh_pos.le hquad
+    linarith [hid]
 
 /-- Existence of the minimiser in closed form: under `B_t ≻ 0` and a positive bandwidth,
 `θ̂ = B_t⁻¹ a_t` minimises the LP(`ℓ`) criterion. -/
@@ -212,10 +296,10 @@ theorem isLPSolution_inv_mulVec
     (hpd : (lpMatrix xdat K h ℓ t).PosDef) :
     IsLPSolution xdat Y K h ℓ t
       ((lpMatrix xdat K h ℓ t)⁻¹.mulVec (lpRhs xdat Y K h ℓ t)) := by
-  -- TODO(np): apply `(isLPSolution_iff_normal hh hpd _).mpr` to
-  -- `B (B⁻¹ a) = a` (`Matrix.mul_nonsing_inv` at the vector level). Close in the
-  -- np/lp-core-fix session.
-  sorry
+  refine (isLPSolution_iff_normal hh hpd _).mpr ?_
+  have hdet : IsUnit (lpMatrix xdat K h ℓ t).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp hpd.isUnit
+  rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv _ hdet, Matrix.one_mulVec]
 
 /-- Uniqueness of the minimiser under `B_t ≻ 0`. -/
 theorem isLPSolution_unique (hpd : (lpMatrix xdat K h ℓ t).PosDef)
