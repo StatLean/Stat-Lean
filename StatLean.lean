@@ -5,6 +5,7 @@ import StatLean.Optimization
 import StatLean.MultipleTesting
 import StatLean.Minimaxity
 import StatLean.Bayesian
+import StatLean.NonparametricStatistics
 
 /-!
 # StatLean
@@ -31,6 +32,11 @@ theory, organized into per-area sublibraries.
   model choice, MCMC correctness, decision theory / minimax bridge, hierarchical +
   empirical Bayes (Robert, *The Bayesian Choice*; Gelman et al., *Bayesian Data
   Analysis*, 3rd ed.).
+* `StatLean.NonparametricStatistics` — nonparametric estimation: kernel density
+  estimation (pointwise and integrated risk, exact asymptotic MISE), local
+  polynomial regression (pointwise/L²/sup-norm rates over Hölder classes), and
+  projection estimators on the trigonometric basis (exact MISE decomposition and
+  Sobolev-ellipsoid rates).
 
 Per-area umbrellas are imported above as each area lands.
 -/
