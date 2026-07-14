@@ -2,6 +2,8 @@ import StatLean.NonparametricStatistics.KernelDensity.LawTransfer
 import StatLean.NonparametricStatistics.ForMathlib.MinkowskiIntegral
 import StatLean.NonparametricStatistics.ForMathlib.TranslationL2
 import StatLean.NonparametricStatistics.SmoothnessClasses.NikolskiTaylor
+import Mathlib.MeasureTheory.Order.Group.Lattice
+import Mathlib.MeasureTheory.Group.LIntegral
 
 /-!
 # Exact asymptotics of the integrated squared bias
@@ -239,6 +241,25 @@ private lemma second_order_remainder {p w : ℝ → ℝ} (hp1 : Differentiable �
       rw [hval, hrw, smul_eq_mul]; ring
   rw [hcov]; ring
 
+/-- The deterministic kernel-mean bias functional `D h x = (∫ u, K u · p(x+uh)) − p x`. -/
+private noncomputable def kmBias (p K : ℝ → ℝ) (h x : ℝ) : ℝ := (∫ u, K u * p (x + u * h)) - p x
+
+/-- **Deterministic core**: the exact asymptotics of `∫⁻ x ofReal(D h x ²)`, independent of the
+sample and of `n`. -/
+private lemma kmBias_asymptotic {p K w : ℝ → ℝ}
+    (hp_meas : Measurable p) (h0 : ∀ x, 0 ≤ p x) (h1 : ∫ x, p x = 1)
+    (hp1 : Differentiable ℝ p) (hw_meas : Measurable w)
+    (hpw : ∀ a b : ℝ, deriv p b - deriv p a = ∫ s in a..b, w s)
+    (hw2 : MemLp w 2 volume) (hK : IsKernelOfOrder K 1) (hKmeas : Measurable K)
+    (hKu2 : Integrable fun u => u ^ 2 * |K u|) (ε : ℝ) (hε : 0 < ε) :
+    ∃ h₀ : ℝ, 0 < h₀ ∧ ∀ h : ℝ, 0 < h → h < h₀ →
+      ENNReal.ofReal (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) - ε * h ^ 4)
+          ≤ (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2)) ∧
+        (∫⁻ x, ENNReal.ofReal ((kmBias p K h x) ^ 2))
+          ≤ ENNReal.ofReal
+              (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) + ε * h ^ 4) := by
+  sorry
+
 /-- **Integrated squared bias, exact asymptotics**: under the second-order smoothness
 hypotheses, for every `ε > 0` there is `h₀ > 0` such that for all `0 < h < h₀`, `n ≥ 1`:
 `ofReal ((h⁴/4)·S_K²·∫w² − ε·h⁴) ≤ ∫ b² ≤ ofReal ((h⁴/4)·S_K²·∫w² + ε·h⁴)`. -/
@@ -269,6 +290,58 @@ theorem kde_integrated_sq_bias_asymptotic {p K w : ℝ → ℝ}
             (∫⁻ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2))
               ≤ ENNReal.ofReal
                   (h ^ 4 / 4 * (∫ u, u ^ 2 * K u) ^ 2 * (∫ x, (w x) ^ 2) + ε * h ^ 4) := by
-  sorry
+  intro ε hε
+  obtain ⟨h₀, hh₀, hcore⟩ := kmBias_asymptotic hp_meas h0 h1 hp1 hw_meas hpw hw2 hK hKmeas hKu2 ε hε
+  refine ⟨h₀, hh₀, ?_⟩
+  intro Ω _ P _ n X hn hs hX h hh hhlt
+  -- `p` is integrable with unit `∫⁻` mass; `K` is integrable.
+  have hp_int : Integrable p := by
+    by_contra hni; rw [integral_undef hni] at h1; exact one_ne_zero h1.symm
+  have hmass : (∫⁻ z, ENNReal.ofReal (p z)) = 1 := by
+    rw [← ofReal_integral_eq_lintegral_ofReal hp_int (ae_of_all _ h0), h1, ENNReal.ofReal_one]
+  have hK_int : Integrable K := by simpa using hK.integrable_pow 0 (Nat.zero_le _)
+  have hKabs_int : Integrable (fun u => |K u|) := hK_int.abs
+  have hn' : 0 < n := hn
+  -- Tonelli: a.e.-`x` integrability of `u ↦ K u · p(x+uh)`.
+  have hfmeas : Measurable (Function.uncurry
+      (fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))) := by
+    have huc : Function.uncurry (fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))
+        = fun q : ℝ × ℝ => ENNReal.ofReal (|K q.2| * p (q.1 + q.2 * h)) := rfl
+    rw [huc]
+    exact ((Measurable.abs (hKmeas.comp measurable_snd)).mul
+      (hp_meas.comp (by fun_prop))).ennreal_ofReal
+  have hDbias : (∫⁻ x, ∫⁻ u, ENNReal.ofReal (|K u| * p (x + u * h)))
+      = ENNReal.ofReal (∫ u, |K u|) := by
+    rw [lintegral_lintegral_swap (f := fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))
+      hfmeas.aemeasurable]
+    have hinner : ∀ u, (∫⁻ x, ENNReal.ofReal (|K u| * p (x + u * h)))
+        = ENNReal.ofReal (|K u|) := by
+      intro u
+      rw [lintegral_congr (fun x => ENNReal.ofReal_mul (abs_nonneg _)),
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        show (∫⁻ x, ENNReal.ofReal (p (x + u * h))) = ∫⁻ x, ENNReal.ofReal (p x) from
+          lintegral_add_right_eq_self (fun x => ENNReal.ofReal (p x)) (u * h),
+        hmass, mul_one]
+    rw [lintegral_congr hinner]
+    exact (ofReal_integral_eq_lintegral_ofReal hKabs_int (ae_of_all _ fun u => abs_nonneg _)).symm
+  have haex : ∀ᵐ x, (∫⁻ u, ENNReal.ofReal (|K u| * p (x + u * h))) < ⊤ := by
+    refine ae_lt_top hfmeas.lintegral_prod_right' ?_
+    rw [hDbias]; exact ENNReal.ofReal_ne_top
+  -- a.e.-`x`, `kdeBiasAt = kmBias`.
+  have hbias_ae : ∀ᵐ x, ENNReal.ofReal ((kdeBiasAt P X K h p x) ^ 2)
+      = ENNReal.ofReal ((kmBias p K h x) ^ 2) := by
+    filter_upwards [haex] with x hx
+    have hKp : Integrable (fun u => K u * p (x + u * h)) := by
+      refine ⟨(hKmeas.mul (hp_meas.comp (by fun_prop))).aestronglyMeasurable, ?_⟩
+      rw [hasFiniteIntegral_iff_enorm]
+      rw [lintegral_congr fun u => by
+        rw [Real.enorm_eq_ofReal_abs, abs_mul, abs_of_nonneg (h0 _)]]
+      exact hx
+    have hmean : kdeMeanAt P X K h x = ∫ u, K u * p (x + u * h) :=
+      kdeMeanAt_eq_integral_kernel hn' hh hs hp_meas h0 hKmeas hKp
+    rw [show kdeBiasAt P X K h p x = kmBias p K h x from by
+      rw [kdeBiasAt, hmean, kmBias]]
+  rw [lintegral_congr_ae hbias_ae]
+  exact hcore h hh hhlt
 
 end StatLean.NonparametricStatistics
