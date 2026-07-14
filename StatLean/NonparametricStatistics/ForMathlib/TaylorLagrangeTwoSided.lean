@@ -1,5 +1,6 @@
 import Mathlib.Analysis.Calculus.Taylor
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Taylor's theorem with Lagrange remainder, two-sided global form
@@ -29,6 +30,40 @@ open scoped Nat
 
 namespace StatLean.NonparametricStatistics
 
+open Set in
+/-- One-sided (positive increment) form of Taylor–Lagrange, obtained directly from Mathlib's
+`taylor_mean_remainder_lagrange_iteratedDeriv` on `Icc x₀ (x₀ + t)`. -/
+private lemma taylor_lagrange_pos {f : ℝ → ℝ} {ℓ : ℕ} (hℓ : 1 ≤ ℓ)
+    (hf : ContDiff ℝ ℓ f) (x₀ t : ℝ) (ht : 0 < t) :
+    ∃ τ ∈ Set.Ioo (0 : ℝ) 1,
+      f (x₀ + t)
+        = (∑ j ∈ Finset.range ℓ, iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ))
+          + iteratedDeriv ℓ f (x₀ + τ * t) * t ^ ℓ / (Nat.factorial ℓ : ℝ) := by
+  obtain ⟨n, rfl⟩ : ∃ n, ℓ = n + 1 := ⟨ℓ - 1, (Nat.succ_pred_eq_of_pos hℓ).symm⟩
+  obtain ⟨x', h1, h2⟩ :=
+    taylor_mean_remainder_lagrange_iteratedDeriv (x := x₀ + t) (x₀ := x₀) (n := n)
+      (by linarith) hf.contDiffOn
+  -- Convert the Taylor polynomial to the explicit sum with global iterated derivatives.
+  have hsum : taylorWithinEval f n (Set.Icc x₀ (x₀ + t)) x₀ (x₀ + t)
+      = ∑ j ∈ Finset.range (n + 1),
+          iteratedDeriv j f x₀ * ((x₀ + t) - x₀) ^ j / (Nat.factorial j : ℝ) := by
+    rw [taylor_within_apply]
+    refine Finset.sum_congr rfl (fun k hk => ?_)
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (by linarith))
+        (hf.contDiffAt.of_le (by exact_mod_cast (Finset.mem_range.mp hk).le))
+        (Set.left_mem_Icc.mpr (by linarith)), smul_eq_mul]
+    ring
+  -- The intermediate point `x'` is `x₀ + τ·t` with `τ ∈ (0,1)`.
+  set τ := (x' - x₀) / t with hτdef
+  have htne : t ≠ 0 := ne_of_gt ht
+  have hτ0 : 0 < τ := div_pos (by linarith [h1.1]) ht
+  have hτ1 : τ < 1 := by rw [hτdef, div_lt_one ht]; linarith [h1.2]
+  have hpt : x₀ + τ * t = x' := by rw [hτdef, div_mul_cancel₀ _ htne]; ring
+  refine ⟨τ, ⟨hτ0, hτ1⟩, ?_⟩
+  rw [hsum, ← hpt] at h2
+  simp only [add_sub_cancel_left] at h2
+  linarith [h2]
+
 /-- **Taylor–Lagrange, two-sided global form.** If `f` is `C^ℓ` on `ℝ` with `ℓ ≥ 1` and
 `t ≠ 0`, then for some `τ ∈ (0,1)`:
 `f (x₀ + t) = ∑_{j<ℓ} f⁽ʲ⁾(x₀)·tʲ/j! + f⁽ℓ⁾(x₀ + τ·t)·tℓ/ℓ!`. -/
@@ -47,6 +82,38 @@ theorem taylor_lagrange_global {f : ℝ → ℝ} {ℓ : ℕ}
       f (x₀ + t)
         = (∑ j ∈ Finset.range ℓ, iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ))
           + iteratedDeriv ℓ f (x₀ + τ * t) * t ^ ℓ / (Nat.factorial ℓ : ℝ) := by
-  sorry
+  rcases lt_trichotomy t 0 with ht' | rfl | ht'
+  · -- Negative increment: reflect through `x₀` and apply the positive-increment lemma.
+    set g : ℝ → ℝ := fun z => f (2 * x₀ - z) with hg
+    have hgC : ContDiff ℝ ℓ g := by rw [hg]; fun_prop
+    have hpow : ∀ j : ℕ, (-1 : ℝ) ^ j * (-t) ^ j = t ^ j := fun j => by
+      rw [← mul_pow, neg_one_mul, neg_neg]
+    have hrefl : ∀ (k : ℕ) (y : ℝ),
+        iteratedDeriv k g y = (-1 : ℝ) ^ k * iteratedDeriv k f (2 * x₀ - y) := by
+      intro k y
+      simp only [hg, iteratedDeriv_comp_const_sub, smul_eq_mul]
+    obtain ⟨τ, hτ, heq⟩ := taylor_lagrange_pos hℓ hgC x₀ (-t) (by linarith)
+    refine ⟨τ, hτ, ?_⟩
+    have hL : g (x₀ + -t) = f (x₀ + t) := by
+      simp only [hg, show (2 : ℝ) * x₀ - (x₀ + -t) = x₀ + t from by ring]
+    have hterm : ∀ j : ℕ,
+        iteratedDeriv j g x₀ * (-t) ^ j / (Nat.factorial j : ℝ)
+          = iteratedDeriv j f x₀ * t ^ j / (Nat.factorial j : ℝ) := by
+      intro j
+      rw [hrefl j x₀, show (2 : ℝ) * x₀ - x₀ = x₀ from by ring]
+      conv_rhs => rw [← hpow j]
+      ring
+    have hrem :
+        iteratedDeriv ℓ g (x₀ + τ * -t) * (-t) ^ ℓ / (Nat.factorial ℓ : ℝ)
+          = iteratedDeriv ℓ f (x₀ + τ * t) * t ^ ℓ / (Nat.factorial ℓ : ℝ) := by
+      rw [hrefl ℓ (x₀ + τ * -t), show (2 : ℝ) * x₀ - (x₀ + τ * -t) = x₀ + τ * t from by ring]
+      conv_rhs => rw [← hpow ℓ]
+      ring
+    rw [← hL, heq, hrem]
+    congr 1
+    exact Finset.sum_congr rfl (fun j _ => hterm j)
+  · exact (ht rfl).elim
+  · -- Positive increment: direct.
+    exact taylor_lagrange_pos hℓ hf x₀ t ht'
 
 end StatLean.NonparametricStatistics
