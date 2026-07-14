@@ -58,7 +58,7 @@ open scoped ENNReal NNReal
 
 namespace StatLean.NonparametricStatistics
 
-variable {Ω : Type*}
+variable {Ω : Type*} [MeasurableSpace Ω]
 
 /-- **Kernel of order `ℓ`**: the functions `u ↦ uʲ·K(u)` are integrable for `j ≤ ℓ`, `K`
 integrates to one, and the moments of orders `1, …, ℓ` vanish. (Order `0` just says `K` is an
@@ -118,7 +118,7 @@ noncomputable def kdeMise {n : ℕ} (P : Measure Ω) (X : Fin n → Ω → ℝ) 
 /-- **The i.i.d. sampling model**: the coordinates `X 0, …, X (n−1)` are mutually independent
 under `P` and each has law `μ`. This is the standard formalization of "an i.i.d. sample of size
 `n` from `μ`". -/
-structure IsIIDSample {n : ℕ} [MeasurableSpace Ω] (P : Measure Ω) (X : Fin n → Ω → ℝ)
+structure IsIIDSample {n : ℕ} (P : Measure Ω) (X : Fin n → Ω → ℝ)
     (μ : Measure ℝ) : Prop where
   /-- Constitutive: mutual independence of the observations. -/
   indep : iIndepFun X P
