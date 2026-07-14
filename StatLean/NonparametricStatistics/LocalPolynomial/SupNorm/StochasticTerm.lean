@@ -68,6 +68,51 @@ private lemma lp_sum_weight_sq_le {n : ℕ} {xdat : Fin n → ℝ} {K : ℝ → 
           (div_nonneg hC hnh.le)
     _ = (lpWeightConst Kmax lam0 a₀) ^ 2 / ((n : ℝ) * h) := by rw [div_mul_eq_mul_div, ← pow_two]
 
+/-- Every point of `[0,1]` lies within `1/M` of a grid point `j/M`, `j ≤ M`. -/
+private lemma exists_grid_near {M : ℕ} (hM : 0 < M) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ∃ j : Fin (M + 1), |t - (j : ℝ) / M| ≤ 1 / M := by
+  have hMr : (0 : ℝ) < (M : ℝ) := Nat.cast_pos.mpr hM
+  have htM : 0 ≤ t * M := mul_nonneg ht.1 hMr.le
+  have hle : t * (M : ℝ) ≤ (M : ℝ) := by nlinarith [ht.2, hMr.le]
+  have hjle : Nat.floor (t * M) ≤ M := by
+    calc Nat.floor (t * M) ≤ Nat.floor ((M : ℝ)) := Nat.floor_le_floor hle
+      _ = M := Nat.floor_natCast M
+  refine ⟨⟨Nat.floor (t * M), Nat.lt_succ_iff.mpr hjle⟩, ?_⟩
+  have hflle : (Nat.floor (t * M) : ℝ) ≤ t * M := Nat.floor_le htM
+  have hltfl : t * M < Nat.floor (t * M) + 1 := Nat.lt_floor_add_one _
+  have hval : ((⟨Nat.floor (t * M), Nat.lt_succ_iff.mpr hjle⟩ : Fin (M + 1)) : ℝ)
+      = (Nat.floor (t * M) : ℝ) := rfl
+  have he : t - (Nat.floor (t * M) : ℝ) / M = (t * M - Nat.floor (t * M)) / M := by
+    field_simp
+  have habs1 : |t * M - (Nat.floor (t * M) : ℝ)| ≤ 1 := by
+    rw [abs_le]; constructor <;> nlinarith [hflle, hltfl]
+  rw [hval, he, abs_div, abs_of_pos hMr, div_le_div_iff₀ hMr hMr]
+  exact mul_le_mul_of_nonneg_right habs1 hMr.le
+
+/-- `log(√2·(n⁴+1)) ≤ 6·log n` for `n ≥ 2` (the price of the `n⁴`-point grid). -/
+private lemma log_sqrt2_grid_le {n : ℕ} (hn : 2 ≤ n) :
+    Real.log (Real.sqrt 2 * ((n : ℝ) ^ 4 + 1)) ≤ 6 * Real.log n := by
+  have hnr : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have h4 : Real.sqrt 4 = 2 := by
+    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)]
+  have hs2 : Real.sqrt 2 ≤ 2 := by
+    have := Real.sqrt_le_sqrt (show (2 : ℝ) ≤ 4 by norm_num); rwa [h4] at this
+  have hn4 : (1 : ℝ) ≤ (n : ℝ) ^ 4 := by
+    have : (1 : ℕ) ≤ n ^ 4 := Nat.one_le_pow 4 n (by omega)
+    exact_mod_cast this
+  have hbound : Real.sqrt 2 * ((n : ℝ) ^ 4 + 1) ≤ (n : ℝ) ^ 6 := by
+    have h1 : (n : ℝ) ^ 4 + 1 ≤ 2 * (n : ℝ) ^ 4 := by nlinarith [hn4]
+    calc Real.sqrt 2 * ((n : ℝ) ^ 4 + 1) ≤ 2 * (2 * (n : ℝ) ^ 4) := by
+          apply mul_le_mul hs2 h1 (by positivity) (by norm_num)
+      _ = 4 * (n : ℝ) ^ 4 := by ring
+      _ ≤ (n : ℝ) ^ 2 * (n : ℝ) ^ 4 := by
+          have h4n : (4 : ℝ) ≤ (n : ℝ) ^ 2 := by nlinarith [hnr]
+          nlinarith [h4n, pow_nonneg (show (0 : ℝ) ≤ (n : ℝ) by linarith) 4]
+      _ = (n : ℝ) ^ 6 := by ring
+  calc Real.log (Real.sqrt 2 * ((n : ℝ) ^ 4 + 1))
+      ≤ Real.log ((n : ℝ) ^ 6) := Real.log_le_log (by positivity) hbound
+    _ = 6 * Real.log n := by rw [Real.log_pow]; push_cast; ring
+
 /-- Second moment of a centered Gaussian as a lower Lebesgue integral: `∫⁻ x², d𝒩(0,v) = v`. -/
 private lemma gaussian_lintegral_sq (v : ℝ≥0) :
     ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂(gaussianReal 0 v) = ENNReal.ofReal (v : ℝ) := by
