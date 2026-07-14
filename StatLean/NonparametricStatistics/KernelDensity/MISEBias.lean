@@ -658,7 +658,209 @@ private lemma stepC_bound {p K w : ℝ → ℝ}
       (Filter.Eventually.of_forall hbdO) hdom hlimO
     simpa using keyO
   · -- The `L²` bound via two generalized Minkowski inequalities.
-    sorry
+    intro h hh
+    have hp_int : Integrable p := by
+      by_contra hni; rw [integral_undef hni] at h1; exact one_ne_zero h1.symm
+    have hmass : (∫⁻ z, ENNReal.ofReal (p z)) = 1 := by
+      rw [← ofReal_integral_eq_lintegral_ofReal hp_int (ae_of_all _ h0), h1, ENNReal.ofReal_one]
+    have hK_int : Integrable K := by simpa using hK.integrable_pow 0 (Nat.zero_le _)
+    have hKabs_int : Integrable (fun u => |K u|) := hK_int.abs
+    set G : ℝ → ℝ → ℝ := fun u x => K u * u ^ 2
+        * ∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x) with hGdef
+    -- Tonelli: a.e.-`x` integrability of `u ↦ K u · p(x+uh)`.
+    have hfmeas : Measurable (Function.uncurry
+        (fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))) := by
+      have huc : Function.uncurry (fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))
+          = fun q : ℝ × ℝ => ENNReal.ofReal (|K q.2| * p (q.1 + q.2 * h)) := rfl
+      rw [huc]
+      exact ((Measurable.abs (hKmeas.comp measurable_snd)).mul
+        (hp_meas.comp (by fun_prop))).ennreal_ofReal
+    have hDbias : (∫⁻ x, ∫⁻ u, ENNReal.ofReal (|K u| * p (x + u * h)))
+        = ENNReal.ofReal (∫ u, |K u|) := by
+      rw [lintegral_lintegral_swap (f := fun x u => ENNReal.ofReal (|K u| * p (x + u * h)))
+        hfmeas.aemeasurable]
+      have hinner : ∀ u, (∫⁻ x, ENNReal.ofReal (|K u| * p (x + u * h)))
+          = ENNReal.ofReal (|K u|) := by
+        intro u
+        rw [lintegral_congr (fun x => ENNReal.ofReal_mul (abs_nonneg _)),
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          show (∫⁻ x, ENNReal.ofReal (p (x + u * h))) = ∫⁻ x, ENNReal.ofReal (p x) from
+            lintegral_add_right_eq_self (fun x => ENNReal.ofReal (p x)) (u * h),
+          hmass, mul_one]
+      rw [lintegral_congr hinner]
+      exact (ofReal_integral_eq_lintegral_ofReal hKabs_int (ae_of_all _ fun u => abs_nonneg _)).symm
+    have haex : ∀ᵐ x, (∫⁻ u, ENNReal.ofReal (|K u| * p (x + u * h))) < ⊤ := by
+      refine ae_lt_top hfmeas.lintegral_prod_right' ?_
+      rw [hDbias]; exact ENNReal.ofReal_ne_top
+    -- `κ h ≥ 0`.
+    have hκnn : 0 ≤ κ h := integral_nonneg fun u =>
+      mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _)) (hg_nonneg u h)
+    -- The a.e.-`x` identity `Δ x = h²·∫ u, G u x`.
+    have hΔ : ∀ᵐ x, kmBias p K h x - kmSurr w K h x = h ^ 2 * ∫ u, G u x := by
+      filter_upwards [haex] with x hx
+      have hKp : Integrable (fun u => K u * p (x + u * h)) := by
+        refine ⟨(hKmeas.mul (hp_meas.comp (by fun_prop))).aestronglyMeasurable, ?_⟩
+        rw [hasFiniteIntegral_iff_enorm]
+        rw [lintegral_congr fun u => by
+          rw [Real.enorm_eq_ofReal_abs, abs_mul, abs_of_nonneg (h0 _)]]
+        exact hx
+      have hbeq := kmBias_eq hp_meas h0 h1 hp1 hw_meas hpw hw2 hK hKmeas hKu2 hh x hKp
+      have hRint := integrable_kernel_sq_taylor hp1 hw_meas hpw hw2 hK hh hKp
+      have hu2K : Integrable (fun u => u ^ 2 * K u) := by
+        refine hKu2.mono' ((by fun_prop : Measurable (fun u : ℝ => u ^ 2)).mul
+          hKmeas).aestronglyMeasurable (ae_of_all _ fun u => ?_)
+        rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (sq_nonneg _)]
+      have hconstint : Integrable (fun u => K u * u ^ 2 * (w x / 2)) := by
+        have he : (fun u => K u * u ^ 2 * (w x / 2)) = fun u => (w x / 2) * (u ^ 2 * K u) := by
+          funext u; ring
+        rw [he]; exact hu2K.const_mul _
+      have h12 : (∫ τ in (0 : ℝ)..1, (1 - τ)) = 1 / 2 := by
+        have hd : ∀ τ ∈ Set.uIcc (0 : ℝ) 1,
+            HasDerivAt (fun s : ℝ => s - s ^ 2 / 2) (1 - τ) τ := by
+          intro τ _
+          have hderiv : HasDerivAt (fun s : ℝ => s - s ^ 2 / 2) (1 - 2 * τ ^ 1 / 2) τ :=
+            (hasDerivAt_id τ).sub ((hasDerivAt_pow 2 τ).div_const 2)
+          convert hderiv using 1; ring
+        rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd
+          ((by fun_prop : Continuous (fun τ : ℝ => 1 - τ)).intervalIntegrable 0 1)]
+        norm_num
+      have hDsplit : ∀ u, (∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x))
+          = (∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h))) - w x / 2 := by
+        intro u
+        have e1 : (fun τ => (1 - τ) * (w (x + τ * (u * h)) - w x))
+            = fun τ => (1 - τ) * w (x + τ * (u * h)) - w x * (1 - τ) := by funext τ; ring
+        rw [e1, intervalIntegral.integral_sub
+          (intervalIntegrable_taylor_kernel hw_meas hw2 x (u * h))
+          ((by fun_prop : Continuous (fun τ => w x * (1 - τ))).intervalIntegrable 0 1),
+          intervalIntegral.integral_const_mul, h12]
+        ring
+      have hGval : (∫ u, G u x)
+          = (∫ u, K u * u ^ 2 * ∫ τ in (0 : ℝ)..1, (1 - τ) * w (x + τ * (u * h)))
+              - ∫ u, K u * u ^ 2 * (w x / 2) := by
+        rw [← integral_sub hRint hconstint]
+        refine integral_congr_ae (ae_of_all _ fun u => ?_)
+        simp only [hGdef]
+        rw [hDsplit u]; ring
+      have hconstval : (∫ u, K u * u ^ 2 * (w x / 2)) = (∫ u, u ^ 2 * K u) / 2 * w x := by
+        rw [show (fun u => K u * u ^ 2 * (w x / 2)) = fun u => (w x / 2) * (u ^ 2 * K u) from by
+          funext u; ring, integral_const_mul]
+        ring
+      rw [hGval, mul_sub, ← hbeq, hconstval]
+      simp only [kmSurr]; ring
+    -- Joint measurability of `G`.
+    have hD2meas : Measurable (Function.uncurry
+        (fun u x => ∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x))) := by
+      have hrw : (Function.uncurry
+          (fun u x => ∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)))
+          = fun q : ℝ × ℝ => ∫ τ in Set.Ioc (0 : ℝ) 1,
+              (1 - τ) * (w (q.2 + τ * (q.1 * h)) - w q.2) := by
+        funext q; simp only [Function.uncurry]
+        rw [intervalIntegral.integral_of_le (by norm_num)]
+      rw [hrw]
+      have hsm : StronglyMeasurable (Function.uncurry
+          fun q : ℝ × ℝ => fun τ => (1 - τ) * (w (q.2 + τ * (q.1 * h)) - w q.2)) := by
+        refine Measurable.stronglyMeasurable ?_
+        have : (Function.uncurry fun q : ℝ × ℝ =>
+              fun τ => (1 - τ) * (w (q.2 + τ * (q.1 * h)) - w q.2))
+            = fun r : (ℝ × ℝ) × ℝ => (1 - r.2) * (w (r.1.2 + r.2 * (r.1.1 * h)) - w r.1.2) := rfl
+        rw [this]
+        exact ((continuous_const.sub continuous_snd).measurable).mul
+          ((hw_meas.comp (by fun_prop)).sub (hw_meas.comp (by fun_prop)))
+      exact (hsm.integral_prod_right' (ν := volume.restrict (Set.Ioc (0 : ℝ) 1))).measurable
+    have hGmeas : Measurable (Function.uncurry G) := by
+      have hrw : Function.uncurry G = fun q : ℝ × ℝ => K q.1 * q.1 ^ 2
+          * Function.uncurry
+              (fun u x => ∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) q := rfl
+      rw [hrw]
+      exact ((hKmeas.comp measurable_fst).mul (by fun_prop)).mul hD2meas
+    -- Per-`u` factor bound from the `τ`-level Minkowski.
+    have hRu_bound : ∀ u, (∫⁻ x, ‖G u x‖ₑ ^ 2) ^ (1 / 2 : ℝ)
+        ≤ ENNReal.ofReal (|K u| * u ^ 2 * gg u h) := by
+      intro u
+      have hGx : ∀ x, ‖G u x‖ₑ ^ 2
+          = ENNReal.ofReal ((K u * u ^ 2) ^ 2) * ENNReal.ofReal
+              ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2) := by
+        intro x
+        simp only [hGdef]
+        rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs, mul_pow,
+          ENNReal.ofReal_mul (by positivity)]
+      rw [lintegral_congr hGx, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 1 / 2),
+        ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num : (0 : ℝ) ≤ 1 / 2),
+        ← Real.sqrt_eq_rpow, Real.sqrt_sq_eq_abs, abs_mul, abs_of_nonneg (sq_nonneg u)]
+      calc ENNReal.ofReal (|K u| * u ^ 2)
+            * (∫⁻ x, ENNReal.ofReal
+                ((∫ τ in (0 : ℝ)..1, (1 - τ) * (w (x + τ * (u * h)) - w x)) ^ 2)) ^ (1 / 2 : ℝ)
+          ≤ ENNReal.ofReal (|K u| * u ^ 2) * ENNReal.ofReal (gg u h) :=
+            mul_le_mul_left' (stepC_tau_bound hw_meas hw2 h u) _
+        _ = ENNReal.ofReal (|K u| * u ^ 2 * gg u h) := by
+            rw [← ENNReal.ofReal_mul (by positivity)]
+    -- Two-variable Minkowski over `(u, x)`.
+    have hmink := lintegral_lintegral_sq_rpow_le volume volume
+      (g := fun u x => ‖G u x‖ₑ) hGmeas.enorm
+    have hκintegrand : Integrable (fun u => |K u| * u ^ 2 * gg u h) := by
+      refine Integrable.mono' hdom
+        (((hKmeas.abs).mul (by fun_prop)).mul (hgmeas h)).aestronglyMeasurable
+        (ae_of_all _ fun u => ?_)
+      rw [Real.norm_eq_abs,
+        abs_of_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _)) (hg_nonneg u h))]
+      exact mul_le_mul_of_nonneg_left (hg_le u h) (mul_nonneg (abs_nonneg _) (sq_nonneg _))
+    have hRle : (∫⁻ u, (∫⁻ x, ‖G u x‖ₑ ^ 2) ^ (1 / 2 : ℝ)) ≤ ENNReal.ofReal (κ h) := by
+      calc (∫⁻ u, (∫⁻ x, ‖G u x‖ₑ ^ 2) ^ (1 / 2 : ℝ))
+          ≤ ∫⁻ u, ENNReal.ofReal (|K u| * u ^ 2 * gg u h) := lintegral_mono hRu_bound
+        _ = ENNReal.ofReal (∫ u, |K u| * u ^ 2 * gg u h) :=
+            (ofReal_integral_eq_lintegral_ofReal hκintegrand
+              (ae_of_all _ fun u => mul_nonneg (mul_nonneg (abs_nonneg _) (sq_nonneg _))
+                (hg_nonneg u h))).symm
+    have hchain : (∫⁻ x, (∫⁻ u, ‖G u x‖ₑ) ^ 2) ^ (1 / 2 : ℝ) ≤ ENNReal.ofReal (κ h) :=
+      le_trans hmink hRle
+    have hRint2 : (∫⁻ x, (∫⁻ u, ‖G u x‖ₑ) ^ 2) ≤ (ENNReal.ofReal (κ h)) ^ 2 := by
+      have h2 := ENNReal.rpow_le_rpow hchain (by norm_num : (0 : ℝ) ≤ 2)
+      rwa [← ENNReal.rpow_mul, show (1 / 2 : ℝ) * 2 = 1 by norm_num, ENNReal.rpow_one,
+        ENNReal.rpow_two] at h2
+    -- Pointwise bound feeding the outer lintegral.
+    have hpt : ∀ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2)
+        ≤ (ENNReal.ofReal (h ^ 2)) ^ 2 * (∫⁻ u, ‖G u x‖ₑ) ^ 2 := by
+      intro x
+      have he : ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2) = ‖h ^ 2 * ∫ u, G u x‖ₑ ^ 2 := by
+        rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg _), sq_abs]
+      rw [he]
+      have hb : ‖h ^ 2 * ∫ u, G u x‖ₑ ≤ ENNReal.ofReal (h ^ 2) * ∫⁻ u, ‖G u x‖ₑ := by
+        rw [Real.enorm_eq_ofReal_abs, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ h ^ 2),
+          ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ h ^ 2)]
+        refine mul_le_mul_left' ?_ _
+        rw [← Real.enorm_eq_ofReal_abs]
+        exact enorm_integral_le_lintegral_enorm _
+      calc ‖h ^ 2 * ∫ u, G u x‖ₑ ^ 2
+          ≤ (ENNReal.ofReal (h ^ 2) * ∫⁻ u, ‖G u x‖ₑ) ^ 2 := pow_le_pow_left' hb 2
+        _ = (ENNReal.ofReal (h ^ 2)) ^ 2 * (∫⁻ u, ‖G u x‖ₑ) ^ 2 := by rw [mul_pow]
+    have hcore : (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2))
+        ≤ ENNReal.ofReal ((h ^ 2 * κ h) ^ 2) := by
+      calc (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2))
+          ≤ (ENNReal.ofReal (h ^ 2)) ^ 2 * ∫⁻ x, (∫⁻ u, ‖G u x‖ₑ) ^ 2 := by
+            calc (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2))
+                ≤ ∫⁻ x, (ENNReal.ofReal (h ^ 2)) ^ 2 * (∫⁻ u, ‖G u x‖ₑ) ^ 2 := lintegral_mono hpt
+              _ = (ENNReal.ofReal (h ^ 2)) ^ 2 * ∫⁻ x, (∫⁻ u, ‖G u x‖ₑ) ^ 2 :=
+                  lintegral_const_mul' _ _ (ENNReal.pow_ne_top ENNReal.ofReal_ne_top)
+        _ ≤ (ENNReal.ofReal (h ^ 2)) ^ 2 * (ENNReal.ofReal (κ h)) ^ 2 :=
+            mul_le_mul_left' hRint2 _
+        _ = ENNReal.ofReal ((h ^ 2 * κ h) ^ 2) := by
+            rw [← mul_pow, ← ENNReal.ofReal_mul (by positivity),
+              ← ENNReal.ofReal_pow (mul_nonneg (by positivity) hκnn)]
+    -- Conclude.
+    rw [eLpNorm_congr_ae hΔ]
+    have heLp : eLpNorm (fun x => h ^ 2 * ∫ u, G u x) 2 volume
+        = (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2)) ^ (1 / 2 : ℝ) := by
+      rw [lintegral_ofReal_sq_eq_eLpNorm_sq, ← ENNReal.rpow_mul,
+        show (2 : ℝ) * (1 / 2) = 1 by norm_num, ENNReal.rpow_one]
+    rw [heLp]
+    calc (∫⁻ x, ENNReal.ofReal ((h ^ 2 * ∫ u, G u x) ^ 2)) ^ (1 / 2 : ℝ)
+        ≤ (ENNReal.ofReal ((h ^ 2 * κ h) ^ 2)) ^ (1 / 2 : ℝ) :=
+          ENNReal.rpow_le_rpow hcore (by norm_num)
+      _ = ENNReal.ofReal (h ^ 2 * κ h) := by
+          rw [show ((h ^ 2 * κ h) ^ 2) = (h ^ 2 * κ h) ^ (2 : ℝ) from (Real.rpow_natCast _ 2).symm,
+            ← ENNReal.ofReal_rpow_of_nonneg (mul_nonneg (by positivity) hκnn) (by norm_num),
+            ← ENNReal.rpow_mul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, ENNReal.rpow_one]
 
 /-- The surrogate is in `L²` with `eLpNorm (kmSurr) 2 = ofReal(h²·|S_K|/2·√(∫w²))`. -/
 private lemma eLpNorm_kmSurr {w K : ℝ → ℝ} (hw_meas : Measurable w) (hw2 : MemLp w 2 volume)
