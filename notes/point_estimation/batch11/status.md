@@ -1,0 +1,60 @@
+# PointEstimation Batch 11 — orchestration status
+
+Last update: 2026-07-15 (campaign start; design frozen, stubs in progress).
+
+Integration branch: `pe/batch11` (off main 31c61ed). Proof branches `pe/<topic>` base off it. Merge to local `main` after full close (never GitHub origin without user request).
+
+## Design decisions (frozen)
+
+- **Model carrier (Batch 12 contract)**: bare `P : Θ → Measure 𝓧` + `[∀ θ, IsProbabilityMeasure (P θ)]` (no measurability-in-θ — kernels bridge via coercion). Dominated models via `ParametricFamily.toMeasure M μ θ := μ.withDensity (ofReal ∘ M.density θ)` (reuses AsymptoticStatistics.ParametricFamily, ℝ-valued densities). `Identifiable := Function.Injective P`.
+- **Risk**: `risk P L δ θ = ∫⁻ L θ (δ x) ∂(P θ)` in ℝ≥0∞ (junk-value discipline); `riskRand` for `κ : Kernel 𝓧 D`; bridge to Mathlib `Probability.Decision` risk shape.
+- **Exponential family**: `structure ExpFamily 𝓧 V` (V real inner-product space) with `base` (h absorbed: ν = h·μ), `stat`, `stat_meas`; `natSet := {η | Integrable (exp ⟪η,stat ·⟫) base}`; `logPartition = log ∫ exp⟪η,T⟫ dν`; **members via `Measure.tilted`** (junk = 0 measure off natSet); general form (5.1) via `IsCanonicalRepr`; `StatAffineIndep`, `FullRank`. Thm 6.22 needs only nonempty-interior; Cor 6.16 takes the affine-span condition.
+- **Sufficiency**: primary per-A classical def `IsSufficient` (θ-free measurable κA with the defining lintegral property); workhorse `HasSufficientKernel P T := ∃ Q Markov, ∀ θ, (P θ).map (fun x => (T x, x)) = ((P θ).map T) ⊗ₘ Q` (compProd graph form — gives fiber support a.e. + Bayesian bridge by `snd`); `IsFactorizedDensity` a.e. form. Thm 6.1 = kernel composition (easy under this def); Rao–Blackwell via plain Jensen on Q-fibers (`ConvexOn.map_integral_le`), NOT conditional Jensen.
+- **Completeness**: family-first `IsCompleteFamily` / `IsBoundedlyCompleteFamily` (both, for Batch 12); `IsCompleteStat := IsCompleteFamily (fun θ => (P θ).map T)`; `IsAncillary`. Basu stated with BOUNDED completeness.
+- **UMVU**: variance-based `IsUMVU` over Δ = {∀θ, MemLp δ 2}; Thm 1.11(a) separately as risk-minimality for every nonneg convex loss.
+- **Fisher info (PE-local, junk-safe)**: `score = deriv (density · x) θ / density θ x` (div-by-0 = 0); `fisherInfo = ∫ score² · density dμ`; s-dim `scoreVec`/`infoMatrix : Matrix (Fin s) (Fin s) ℝ`; bridge lemma to AsymptoticStatistics `fisherInformation`. CR bound with explicit USER-INPUT regularity (5.29)/(5.30); Thm 5.15 discharges the δ-side conditions from density-side (5.38).
+- **Equivariance**: general via `[Group G] [MulAction G 𝓧/Θ/D] [MeasurableSMul G 𝓧]`, induced Θ-action as data; `IsInvariantModel/IsInvariantLoss/IsEquivariant/IsRiskUnbiased`; transitivity = `MulAction.IsPretransitive`. Location §3.1 developed CONCRETELY on `Fin n → ℝ` (`P ξ = P₀.map (· + ξ•1)`, `diffs` statistic). Shared `ConditionalRiskEngine` (condDistrib over orbit statistic + pointwise a.e. minimizer ⇒ global optimality) instantiated by location/scale/location-scale. `pitmanEstimator` = closed-form ratio of integrals.
+- **Linear models**: `canonicalNormal η σ² := Measure.pi (gaussianReal ∘ η)`; mean subspace `Submodule ℝ (EuclideanSpace ℝ (Fin n))`; LSE = `orthogonalProjection`; Gauss–Markov moments-only. Reuse PiGaussian, chiSquared (MultipleTesting), stdGaussian_eq_map_pi_orthonormalBasis.
+
+## Named deferrals (pre-agreed)
+
+- TSH 2.6.1 GENERAL standard-Borel per-A⇒kernel gluing (statement + documented deferral); the dominated+standard-Borel version — the one Batch 12 consumes — is fully proved.
+- Thm 4.14(c) (book proof = "see Problems 4.16–4.18"): statement + deferral.
+- Thm 5.12 (attainment ⇒ direction): extra USER-INPUT C¹-in-θ regularity, documented deviation.
+- Conditional: s-dim Thm 5.8 full joint analyticity (fallback freeze: continuity + HasFDerivAt + all-order partials — covers all downstream uses); Cor 1.11 measurable-argmin brick (only Cor 1.11 renegotiates if it stalls).
+
+## Work items (19) — 3 concurrent lanes, rolling waves
+
+Deps: P = proofs merged; s = stubs only.
+
+| # | id | wave | size | headliners | deps |
+|---|---|---|---|---|---|
+| 1 | pe/expfam-core | 1 | M | natSet convex, P η prob., densities, products, Thm 5.10, (5.14)/(5.15), Thm 5.17 | s |
+| 2 | pe/mgf-uniqueness | 1 | L | 1-D Laplace uniqueness + signed corollary | — |
+| 3 | pe/sufficiency-risk | 1 | M | kernel⇒per-A, fiber support, Thm 6.1, Bayesian bridge | s |
+| 4 | pe/hs-bricks | 2 | L | Halmos–Savage mixture existence; condExp-withDensity | — |
+| 5 | pe/completeness-expfam | 2 | L | s-dim mgf uniqueness (box); Thm 6.22 (1-D + s-dim) | 2P |
+| 6 | pe/umvu-core | 2 | M | Lem 1.4, Thm 1.7, Thm 5.1(§2.5), Rao–Blackwell | s |
+| 7 | pe/sufficiency-factorization | 3 | L | TSH 2.6.2; Cor 2.6.1 (both directions) | 4P |
+| 8 | pe/basu-minimal | 3 | M | Thm 6.21 Basu; Thm 6.12; Cor 6.13; Cor 6.16 | 1P, 3s |
+| 9 | pe/cramer-rao | 3 | M/L | Lem 5.3; Thm 5.10 CR; (5.32); Thm 5.15+Cor 5.17; Thm 5.8(§2.5)+Cor 5.9 | s |
+| 10 | pe/lehmann-scheffe | 4 | M | Lem 1.10; Thm 1.11(a)(b); Cor 1.12 | 6P, 5P, 3P |
+| 11 | pe/expfam-smoothness | 4 | L | Thm 5.8(§1.5) smoothness; Lem 5.15 Stein | 1P |
+| 12 | pe/equivariance-general | 4 | M | argmin+convex bricks; Thm 2.7; Cors 2.8/2.13; Thm 2.17 | s |
+| 13 | pe/location | 5 | L | Thm 1.4; Lems 1.6/1.7; Thm 1.8; engine; Thm 1.10; Cors 1.11/1.12/1.14; Thm 2.15; Lem 1.23/Thm 1.27 | 12P |
+| 14 | pe/info-multiparam | 5 | L | Thm 5.4; Thm 6.2; Thm 6.1; Thm 6.6; Thm 5.12 | 1P, 9P |
+| 15 | pe/linear-model-umvu | 5 | L | canonical completeness; Thm 4.3(a); Thm 4.4; Thms 4.8/4.10; Thm 4.12; Cor 4.13 | 5P, 10P |
+| 16 | pe/pitman | 6 | L | Thm 1.20 Pitman = MRE | 13P |
+| 17 | pe/scale | 6 | M/L | Thm 3.1; Thm 3.3; Cors 3.4/3.8; Thm 3.17 | 13P |
+| 18 | pe/linear-model-mre | 7 | L | Thm 4.3(b)(c); Cor 4.5; Thm 1.17 + X̄-MRE; Thm 4.14(a)(b) | 8P, 13P, 15P, 17P |
+| 19 | pe/sufficiency-regcond | 4–7 | XL | TSH 2.6.1 (dominated proved; general deferral-eligible) | 7P |
+
+Layering: ForMathlib → Model → {ExponentialFamily, Sufficiency, Completeness} → {UMVU, InformationInequality} → {Equivariance, LinearModel}. Sufficiency/Completeness NEVER import UMVU/Equivariance (Batch 12 imports the former only).
+
+## Ledger
+
+See outline.md for the 73-item book↔Lean dictionary (Lean names filled as stubs land).
+
+## Event log
+
+- 2026-07-15: design frozen (19 items ≈7 waves, ~42 files); pe/batch11 cut off main 31c61ed, pushed to cannon; ledgers committed; Defs stubs next.
