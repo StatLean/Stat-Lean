@@ -127,3 +127,37 @@ Scope/route decisions:
 - 2026-07-15: design frozen (19 items ≈7 waves, ~42 files); pe/batch11 cut off main 31c61ed, pushed to cannon; ledgers committed.
 - 2026-07-18: weekly-quota interruption killed 13 of 14 draft agents; scratchpad worktrees lost (committed work intact). Worktrees recreated, cluster re-authed, full fan-out relaunched.
 - 2026-07-18: stub phase COMPLETE — 57 files / 176 stubs committed; ForMathlib and ExpFamily/Completeness/InfoIneq gates green; scoreVec contract bug found by gate + agent and fixed.
+
+## Proof-closure phase (started 2026-07-18)
+
+Rolling 3-lane cluster fan-out (`lean-fasrc-fan-out`, detached tmux + srun). Per-item prompts
+under `.claude/prompts/pe-*.md`. Each item: closed on its own `pe/<topic>` branch → harvested →
+touch-set audit → merged `--no-ff` into `pe/batch11` → integration gate.
+
+### Wave 1 — COMPLETE, all three items 0-sorry and axiom-clean
+
+| item | files | sorries closed | axioms | notes |
+|---|---|---|---|---|
+| `pe/mgf-uniqueness` | ForMathlib/MGFUniqueness | 4 → 0 | clean | Laplace-transform uniqueness. Route: tilt at an interior point so `0 ∈ interior (integrableExpSet)`, local `Set.EqOn` mgf identity theorem seeded via `interior_maximal` (Mathlib's needs *global* equality), strip preconnectedness from `Convex.inter`/`.linear_preimage Complex.reLm`, restrict to the imaginary axis (`complexMGF_id_mul_I`) → `Measure.ext_of_charFun`, untilt with `withDensity_inv_same`. |
+| `pe/sufficiency-risk` | Sufficiency/{Basic,RiskEquality,BayesianBridge} | 9 → 0 | clean | Thm 6.1 came out as pure kernel-composition associativity, exactly as the graph/`⊗ₘ` design predicted — no conditional expectation anywhere. `hasSufficientKernel_fiber` needed `upgradeStandardBorel` for `MeasurableEq S`. |
+| `pe/expfam-core` | ExponentialFamily/{Basic,MGF,NaturalStatistic} | 17 → 0 | clean | `natSet_convex` via weighted AM–GM (`Real.geom_mean_le_arith_mean2_weighted`) + `Integrable.mono'`. The `E.base ≠ 0` nondegeneracy hypotheses were **used, not circumvented**. Imports `AsymptoticStatistics.ForMathlib.PiWithDensity` — sanctioned (ForMathlib layer, DAG-forward). |
+
+**No false statements found; no escape-hatch sorries used.** PE sorry count 175 → 146.
+Integration gate after the first merge: 0 errors, `Build completed successfully`.
+
+### Process findings
+
+- **`CLAUDE.md` is gitignored, so it does not exist in cluster worktrees.** Prompts that said
+  "read the repo `CLAUDE.md` first" were pointing at a missing file. All prompts now inline the
+  rules they need. (Same applies to `notes/`, `tools/`, `.claude/` — use `git add -f`.)
+- Do **not** pre-create a cluster worktree with `lean-fasrc-worktree-add` for a branch you intend
+  to hand to `lean-fasrc-fan-out`: the wrapper creates its own and dies with
+  "already used by worktree". Let fan-out own the lifecycle.
+- Proof branches cut before an earlier merge land as normal merges; verify the earlier closure
+  survived (`grep -c sorry`) rather than assuming.
+
+### Wave 2 — in flight
+
+`pe/completeness-expfam` (MGFUniquenessPi + Completeness/ExpFamily — the batch's load-bearing
+item), `pe/umvu-core` (UMVU Basic/CovarianceCriterion/RaoBlackwell), `pe/hs-bricks`
+(ForMathlib HalmosSavage + CondExpWithDensity).
