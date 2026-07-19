@@ -1,8 +1,12 @@
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import StatLean.PointEstimation.Sufficiency.Defs
 import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
+import Mathlib.LinearAlgebra.AffineSpace.Independent
+import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Analysis.Convex.Topology
+import Mathlib.Analysis.Convex.Intrinsic
 
 /-!
 # Minimal sufficiency of the natural statistic
@@ -81,7 +85,35 @@ theorem fullRank_exists_affineSpan [FiniteDimensional ℝ V] (E : ExpFamily 𝓧
     (hFR : E.FullRank Ξ') :
     ∃ η' : Fin (Module.finrank ℝ V + 1) → V, (∀ i, η' i ∈ Ξ') ∧
       affineSpan ℝ (Set.range η') = (⊤ : AffineSubspace ℝ V) := by
-  sorry
+  obtain ⟨-, hint, -⟩ := hFR
+  -- a nonempty-interior set affinely spans the whole space
+  have hspanΞ : affineSpan ℝ Ξ' = (⊤ : AffineSubspace ℝ V) := by
+    obtain ⟨x₀, hx₀⟩ := hint
+    obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx₀)
+    have hballspan : affineSpan ℝ (Metric.ball x₀ r) = (⊤ : AffineSubspace ℝ V) :=
+      (convex_ball x₀ r).interior_nonempty_iff_affineSpan_eq_top.mp
+        (by rw [Metric.isOpen_ball.interior_eq]; exact ⟨x₀, Metric.mem_ball_self hr⟩)
+    have hle := affineSpan_mono ℝ hball
+    rw [hballspan] at hle
+    exact top_le_iff.mp hle
+  -- extract an affinely independent spanning subset of `Ξ'`
+  obtain ⟨t, hts, htspan, htind⟩ := exists_affineIndependent ℝ V Ξ'
+  rw [hspanΞ] at htspan
+  haveI : Finite t := finite_of_fin_dim_affineIndependent ℝ htind
+  haveI : Fintype t := Fintype.ofFinite t
+  have htspan' : affineSpan ℝ (Set.range (Subtype.val : t → V)) = (⊤ : AffineSubspace ℝ V) := by
+    rwa [Subtype.range_coe]
+  have hcard : Fintype.card t = Module.finrank ℝ V + 1 :=
+    htind.affineSpan_eq_top_iff_card_eq_finrank_add_one.mp htspan'
+  let e : Fin (Module.finrank ℝ V + 1) ≃ t := (Fintype.equivFinOfCardEq hcard).symm
+  have hrange : Set.range (fun i => ((e i : t) : V)) = (t : Set V) := by
+    ext v
+    simp only [Set.mem_range]
+    constructor
+    · rintro ⟨i, rfl⟩; exact (e i).2
+    · intro hv; exact ⟨e.symm ⟨v, hv⟩, by simp⟩
+  refine ⟨fun i => ((e i : t) : V), fun i => hts (e i).2, ?_⟩
+  rw [hrange]; exact htspan
 
 /-- **The natural statistic is minimal sufficient** for a canonical exponential family whose
 parameter set contains `s + 1` natural parameters spanning the parameter space affinely. -/
