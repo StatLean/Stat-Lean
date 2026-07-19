@@ -216,7 +216,19 @@ theorem condExp_orbit_indicator (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     condExp (invariantSigmaAlgebra G) P ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
       =ᵐ[P] fun x => (Fintype.card G : ℝ)⁻¹ *
         ∑ g : G, B.indicator (fun _ => (1 : ℝ)) (T (g • x)) := by
-  sorry
+  have hfmeas : Measurable ((T ⁻¹' B).indicator (fun _ => (1 : ℝ))) :=
+    measurable_const.indicator (hT hB)
+  have hfb : ∀ x, |(T ⁻¹' B).indicator (fun _ => (1 : ℝ)) x| ≤ 1 := by
+    classical
+    intro x; rw [Set.indicator_apply]; split_ifs <;> simp
+  have hmain := condExp_orbit_eq_orbitAverage P ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
+    hfmeas hfb hsmul hrand
+  have heq : orbitAverage G ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
+      = fun x => (Fintype.card G : ℝ)⁻¹ *
+        ∑ g : G, B.indicator (fun _ => (1 : ℝ)) (T (g • x)) := by
+    funext x
+    rfl
+  exact heq ▸ hmain
 
 /-- **The conditional law given the orbit *is* the randomization distribution.** Taking
 `B = (-∞, t]` in the set form identifies the conditional c.d.f. of `T(X)` given the orbit
@@ -232,6 +244,12 @@ theorem randDist_eq_condExp_orbit (P : Measure 𝓧) [IsProbabilityMeasure P] (T
     (hrand : RandomizationHypothesis G P) (t : ℝ) :
     condExp (invariantSigmaAlgebra G) P ((T ⁻¹' Set.Iic t).indicator (fun _ => (1 : ℝ)))
       =ᵐ[P] fun x => randDist G T x t := by
-  sorry
+  have hmain := condExp_orbit_indicator P T hT (B := Set.Iic t) measurableSet_Iic hsmul hrand
+  have heq : (fun x => (Fintype.card G : ℝ)⁻¹ *
+        ∑ g : G, (Set.Iic t).indicator (fun _ => (1 : ℝ)) (T (g • x)))
+      = fun x => randDist G T x t := by
+    funext x
+    rfl
+  exact heq ▸ hmain
 
 end StatLean.HypothesisTesting
