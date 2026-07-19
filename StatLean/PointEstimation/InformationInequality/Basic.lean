@@ -118,7 +118,7 @@ lemma score_mul_density_eq_deriv {M : ParametricFamily 𝓧 ℝ}
 
 /-- Integration against the model measure `P_θ = μ.withDensity p_θ` is integration of
 `g · p_θ` against `μ`. -/
-private lemma integral_toMeasure_eq (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (θ : ℝ)
+lemma integral_toMeasure_eq (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (θ : ℝ)
     (g : 𝓧 → ℝ) :
     ∫ x, g x ∂(M.toMeasure μ θ) = ∫ x, g x * M.density θ x ∂μ := by
   rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
@@ -129,7 +129,7 @@ private lemma integral_toMeasure_eq (M : ParametricFamily 𝓧 ℝ) (μ : Measur
   ring
 
 /-- The model measure `P_θ` of a probability-density family is a probability measure. -/
-private lemma isProbabilityMeasure_toMeasure (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
+lemma isProbabilityMeasure_toMeasure (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     (hpdf : IsPDFOf M μ) (θ : ℝ) : IsProbabilityMeasure (M.toMeasure μ θ) := by
   refine ⟨?_⟩
   rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
@@ -137,6 +137,22 @@ private lemma isProbabilityMeasure_toMeasure (M : ParametricFamily 𝓧 ℝ) (μ
     ← ofReal_integral_eq_lintegral_ofReal (hpdf.density_integrable θ)
       (Filter.Eventually.of_forall (M.density_nonneg θ)), hpdf.density_integral_eq_one θ,
     ENNReal.ofReal_one]
+
+/-- The score is square-integrable under the model measure `P_θ`, from measurability and
+finiteness of the information. -/
+lemma memLp_score (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (θ : ℝ)
+    (hmeas : AEStronglyMeasurable (score M θ) μ)
+    (hint : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ) :
+    MemLp (score M θ) 2 (M.toMeasure μ θ) := by
+  have hmeasP : AEStronglyMeasurable (score M θ) (M.toMeasure μ θ) :=
+    hmeas.mono_ac (withDensity_absolutelyContinuous _ _)
+  have hintP : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := by
+    rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+      integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine (integrable_congr (Filter.Eventually.of_forall fun x => ?_)).2 hint
+    rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+  exact (memLp_two_iff_integrable_sq hmeasP).2 hintP
 
 /-! ## Mean-zero score and the two expressions for the information -/
 
