@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.MLR.Defs
 import StatLean.HypothesisTesting.NeymanPearson.Lemma
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -64,11 +65,19 @@ hypotheses," *Stat. Res. Mem.* **1** (1936), 1–37).
 -/
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
 open StatLean.PointEstimation
+
+/-- The real inner product on `ℝ` is multiplication. -/
+private lemma real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  have h1 : ⟪(1 : ℝ), b⟫_ℝ = b := by
+    have h := real_inner_smul_right (1 : ℝ) 1 b
+    simpa [real_inner_self_eq_norm_mul_norm] using h
+  have h2 := real_inner_smul_left (1 : ℝ) b a
+  simpa [h1] using h2
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
@@ -583,6 +592,15 @@ theorem isUMP_oneSided_expFamily
     ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
       power P (oneSidedTest E.stat C γ) θ₀ = α ∧
       IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest E.stat C γ) := by
-  sorry
+  -- Read off the canonical densities and reduce to the general MLR theorem.
+  set p : ℝ → 𝓧 → ℝ :=
+    fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ)) with hpdef
+  have hp : ∀ θ, HasDensity E.base (p θ) (P θ) := by
+    intro θ
+    refine ⟨(((E.stat_meas.const_mul (ηmap θ)).sub_const _).exp), fun x => (Real.exp_pos _).le, ?_⟩
+    rw [hrepr θ, E.P_eq_withDensity (hnat θ)]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hpdef, real_inner_mul]
+  exact isUMP_oneSided E.base P p hp E.stat E.stat_meas (hasMLR_expFamily E hη) θ₀ hα
 
 end StatLean.HypothesisTesting
