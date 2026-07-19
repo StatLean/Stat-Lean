@@ -73,7 +73,9 @@ theorem quantile_mono (F : ℝ → ℝ) {p q : ℝ}
     -- LEAN-ONLY: excludes the `sInf ∅ = 0` junk at the upper level
     (hne : {x : ℝ | q ≤ F x}.Nonempty) :
     quantile F p ≤ quantile F q := by
-  sorry
+  apply csInf_le_csInf hbdd hne
+  intro x hx
+  exact le_trans hpq hx
 
 /-- **Galois property** of the quantile function: for a nondecreasing, right-continuous `F`,
 `quantile F p ≤ x` iff `p ≤ F x`.
@@ -90,7 +92,27 @@ theorem quantile_le_iff {F : ℝ → ℝ} {p x : ℝ}
     -- LEAN-ONLY: excludes the `sInf` junk of an unbounded-below sublevel set
     (hbdd : BddBelow {y : ℝ | p ≤ F y}) :
     quantile F p ≤ x ↔ p ≤ F x := by
-  sorry
+  have hc : p ≤ F (quantile F p) := by
+    show p ≤ F (sInf {y : ℝ | p ≤ F y})
+    have hglb : IsGLB {y : ℝ | p ≤ F y} (sInf {y : ℝ | p ≤ F y}) :=
+      Real.isGLB_sInf hne hbdd
+    have hmem : sInf {y : ℝ | p ≤ F y} ∈ closure {y : ℝ | p ≤ F y} :=
+      hglb.mem_closure hne
+    haveI hnb : (𝓝[{y : ℝ | p ≤ F y}] (sInf {y : ℝ | p ≤ F y})).NeBot :=
+      mem_closure_iff_nhdsWithin_neBot.mp hmem
+    have hsub : {y : ℝ | p ≤ F y} ⊆ Set.Ici (sInf {y : ℝ | p ≤ F y}) :=
+      fun y hy => hglb.1 hy
+    have htend : Tendsto F (𝓝[{y : ℝ | p ≤ F y}] (sInf {y : ℝ | p ≤ F y}))
+        (𝓝 (F (sInf {y : ℝ | p ≤ F y}))) :=
+      (hrc _).mono_left (nhdsWithin_mono _ hsub)
+    have hev : ∀ᶠ y in 𝓝[{y : ℝ | p ≤ F y}] (sInf {y : ℝ | p ≤ F y}), p ≤ F y :=
+      Filter.eventually_of_mem self_mem_nhdsWithin (fun y hy => hy)
+    exact ge_of_tendsto htend hev
+  constructor
+  · intro h
+    exact le_trans hc (hmono h)
+  · intro h
+    exact csInf_le hbdd h
 
 /-- **Critical constants of a randomized test.** For any law `P` on `ℝ` and any level
 `α ∈ (0,1)` there are a threshold `C` and a boundary weight `γ ∈ [0,1]` with
@@ -125,7 +147,12 @@ theorem quantile_eq_of_strictMono {F : ℝ → ℝ} {p q : ℝ}
     -- USER-INPUT: the level `p` is attained at `q`; classical
     (hq : F q = p) :
     quantile F p = q := by
-  sorry
+  have hL : IsLeast {x : ℝ | p ≤ F x} q := by
+    refine ⟨hq.ge, ?_⟩
+    intro x hx
+    have : F q ≤ F x := by rw [hq]; exact hx
+    exact hF.le_iff_le.mp this
+  exact hL.csInf_eq
 
 /-- **Deterministic quantile convergence**: if nondecreasing `Fₙ` converge pointwise to a
 strictly increasing `F` and the level `p` is attained by `F`, then the `Fₙ`-quantiles converge
@@ -143,7 +170,35 @@ theorem tendsto_quantile_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ}
     -- USER-INPUT: pointwise convergence of the distribution functions; classical
     (hconv : ∀ x : ℝ, Tendsto (fun n => Fn n x) atTop (𝓝 (F x))) :
     Tendsto (fun n => quantile (Fn n) p) atTop (𝓝 (quantile F p)) := by
-  sorry
+  rw [quantile_eq_of_strictMono hF hq, Metric.tendsto_atTop]
+  intro ε hε
+  set e := ε / 2 with he
+  have hepos : 0 < e := by positivity
+  have he1 : F (q - e) < p := by have := hF (show q - e < q by linarith); rw [hq] at this; linarith
+  have he2 : p < F (q + e) := by have := hF (show q < q + e by linarith); rw [hq] at this; linarith
+  have hlowev : ∀ᶠ n in atTop, Fn n (q - e) < p :=
+    (hconv (q - e)).eventually_lt_const he1
+  have hupev : ∀ᶠ n in atTop, p < Fn n (q + e) :=
+    (hconv (q + e)).eventually_const_lt he2
+  rw [Filter.eventually_atTop] at hlowev hupev
+  obtain ⟨N₁, hN₁⟩ := hlowev
+  obtain ⟨N₂, hN₂⟩ := hupev
+  refine ⟨max N₁ N₂, fun n hn => ?_⟩
+  have hlow : Fn n (q - e) < p := hN₁ n (le_of_max_le_left hn)
+  have hup : p < Fn n (q + e) := hN₂ n (le_of_max_le_right hn)
+  have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fn n x} := by
+    intro x hx
+    simp only [Set.mem_setOf_eq] at hx
+    by_contra h
+    push_neg at h
+    have := (hmono n) h.le
+    linarith
+  have hmemup : (q + e) ∈ {x : ℝ | p ≤ Fn n x} := hup.le
+  have h1 : q - e ≤ quantile (Fn n) p := le_csInf ⟨q + e, hmemup⟩ hlb
+  have h2 : quantile (Fn n) p ≤ q + e := csInf_le ⟨q - e, hlb⟩ hmemup
+  rw [Real.dist_eq]
+  have hb : |quantile (Fn n) p - q| ≤ e := abs_le.mpr ⟨by linarith, by linarith⟩
+  linarith
 
 /-- **Quantile convergence in probability** for random distribution functions: if the random
 nondecreasing `Fhat n ω` converge in probability, at every fixed argument, to a strictly
