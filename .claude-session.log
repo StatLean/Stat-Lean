@@ -1,0 +1,43 @@
+srun: job 33044578 queued and waiting for resources
+srun: job 33044578 has been allocated resources
+All four modules build cleanly. My work is committed. Here's the final report.
+
+## Report
+
+### Build status (all four modules green, `v4.29.1`)
+| Module | Result | Sorries |
+|---|---|---|
+| `ForMathlib.GroupAverageMeasure` | ✅ built | **0** |
+| `Invariance.MaximalInvariant` | ✅ built | 4 |
+| `Invariance.UMPInvariantFinite` | ✅ built | 3 |
+| `Invariance.EquivariantConfidence` | ✅ built | 1 |
+
+### `#print axioms` (both clean: `[propext, Classical.choice, Quot.sound]`)
+- `condExp_eq_groupAverage` ✅
+- `isInvariantTest_iff_factors` ✅
+
+I edited **only** `GroupAverageMeasure.lean`; the other three are untouched. Committed as `condExp_eq_groupAverage` close.
+
+### `condExp_eq_groupAverage` — CLOSED, but with an important signature finding
+
+I proved it (0-sorry, axiom-clean), **but the previous fix was incomplete.** The parameter `(m : MeasurableSpace 𝓧)` is a *local instance*; declared after the section's `[m𝓧 : MeasurableSpace 𝓧]`, it shadows `m𝓧` as the default. So `μ`, `hmeas`, `hμ`, `hf` all elaborate over **`m`**, not `m𝓧`. Verified directly: `Integrable f (μ : @Measure 𝓧 m𝓧)` fails with *"μ has type `@Measure 𝓧 m`"*.
+
+Consequence: the conditioning σ-algebra `m` **equals** `μ`'s own ambient σ-algebra, so `μ[f|m]` is the *degenerate* condExp-onto-ambient (= identity). The previous session pinned `m𝓧` only inside `hm_inv`; it did not pin `μ`. The intended route (`hm : m ≤ m𝓧`) **does not typecheck** — the lemma needs `m ≤ m0 = m`.
+
+The statement is nevertheless **true** (integrability over `m` forces `f` a.e. invariant), and I proved it honestly for what is written: `ae_eq_condExp_of_forall_setIntegral_eq` with `hm = le_rfl`, direct `m`-measurability of the average, and `hm_inv` supplying each `m`-set's invariance for the set-integral step. A `-- NOTE` in the proof and the commit message flag this.
+
+**Minimal honest fix (for the laptop session) to restore the intended coarser-`m` reading:** pin the measure side to `m𝓧` — `(μ : @Measure 𝓧 m𝓧)`, and likewise `hmeas`/`hμ` over `m𝓧`. Then `hm : m ≤ m𝓧` becomes derivable from `hm_inv` and my original m𝓧-based proof (via `measurable_groupAverage` + `preimage_mem_invariantSets`) applies.
+
+### The four `MaximalInvariant` statements — all genuinely under-hypothesized (verified, left sorried)
+
+1. **`InducesOn.mul`** (line 118): missing **`Measurable ⇑g'`** (only `hg : Measurable ⇑g`). `Measure.map_map` needs the outer map measurable. Confirmed genuinely false otherwise: with `g'` non-measurable, `h'` forces `P` to vanish on `range gbar'` only, and a `θ ∉ range gbar'` with `g'∘g` measurable gives `(Pθ).map ⇑(g'*g) ≠ 0 = P(ḡ'ḡθ)`. Fix = add `Measurable ⇑g'`.
+2. **`InducesOn.inv`** (line 172): missing **`Measurable ⇑g`** (only `hg : Measurable ⇑g.symm`). Inverting the pushforward needs both directions. Fix = add `Measurable ⇑g`.
+3. **`isInvariantTest_iff_factors_measurable`, (⇒) only** (line 250): needs a **standard-Borel / measurable-selection hypothesis on `𝓘`, `𝓨`**. The bare `MeasurableEmbedding (M,Y)` makes `e '' (φ⁻¹B)` measurable, but the factor's sublevel set is its `𝓘`-projection — analytic, not measurable, without measurable uniformization (Jankov–von Neumann). The (⇐) direction is closed.
+4. **`map_maximalInvariant_eq_of_orbit`** (line 340): missing **`Measurable (g • ·)` / `[MeasurableSMul G 𝓧]`**. `IsInvariantModel` uses `Measure.map (g•·)` but does *not* assert its measurability (I confirmed its def), so it is not derivable. Fix = add `[MeasurableSMul G 𝓧]`.
+
+### `UMPInvariantFinite` — 3 open, all a single signature gap: **`[MeasurableSMul G 𝓧]`** (or `∀ g, Measurable (g•·)`)
+- `orbitAverage_eq_avg_translated_density` (82), `isUMPInvariant_of_orbitAverage_ratio` (107), `exists_isUMPInvariant_of_finite_transitive` (145).
+- The NP-layer blocker is **gone** (NP lemmas now closed), so `exists_…` no longer needs the fundamental lemma. The **only** remaining obstruction across all three is measurability of the action: the density transport / `integral_map` change-of-variables and the orbit-power invariance step all need `Measurable (g•·)`, which `IsInvariantModel` does not provide. Report as a signature gap, not worked around.
+
+### `EquivariantConfidence` — 1 open (the UMA transfer)
+- `isUMAEquivariant_of_isUMPInvariant` (162). Two obstructions, both real: (1) the competitor `S'` is quantified with **no measurability on its slices** `{x | θ' ∈ S' x}`, so its complement-indicator need not be an `IsCriticalFn` and the RHS `P θ (·)` is an outer measure — needs restriction to measurable slices (as `IsUMAConfidence` does); (2) the power↔coverage bridge (`power_acceptanceTest` / `isCriticalFn_acceptanceTest`) is still `sorry` in `Tests/Confidence.lean` (`ht/test-foundations`). The dictionary iff and stabilizer corollary are closed and were kept separate from source part (i), per the deliberate asymmetry.
