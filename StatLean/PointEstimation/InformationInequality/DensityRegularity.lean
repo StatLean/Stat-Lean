@@ -96,6 +96,19 @@ the statistic with the score, the score being centered.
 Cauchy–Schwarz bounds the integrand `|δ| · |difference quotient|` by `|δ| b`, which is
 integrable because both factors are square-integrable; dominated convergence then exchanges
 the limit and the integral. -/
+-- TODO: the dominated-convergence core of the family-side differentiation-under-the-integral
+-- step — bounding the difference quotients `δ · (p_{θ+Δ} − p_θ)/Δ` by the `L²` envelope
+-- `|δ| · b · p_θ` (Cauchy–Schwarz) and passing to the limit — is the single sanctioned analytic
+-- debt of this file; every downstream theorem is a genuine reduction to it.
+private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
+    (hpdf : IsPDFOf M μ) (hsupp : HasCommonSupport M) (θ : ℝ)
+    (hdiff : ∀ x, 0 < M.density θ x → DifferentiableAt ℝ (fun t => M.density t x) θ)
+    (hreg : HasDominatedDifferenceQuotient M μ θ) (δ : 𝓧 → ℝ)
+    (hδ2 : MemLp δ 2 (M.toMeasure μ θ)) :
+    HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ)
+      (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ := by
+  sorry
+
 theorem diff_under_integral_of_density_regular (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     -- USER-INPUT: `M` is a family of `μ`-probability densities
     (hpdf : IsPDFOf M μ)
@@ -112,8 +125,8 @@ theorem diff_under_integral_of_density_regular (M : ParametricFamily 𝓧 ℝ) (
     -- USER-INPUT: the statistic has a finite second moment at `θ`
     (hδ2 : MemLp δ 2 (M.toMeasure μ θ)) :
     HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ)
-      (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ := by
-  sorry
+      (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ :=
+  diff_under_integral_core M μ hpdf hsupp θ hdiff hreg δ hδ2
 
 /-- **The mean-zero property of the score is a consequence of family-side regularity.**
 Taking the constant statistic `1` in the previous theorem, the derivative of the constant
@@ -129,7 +142,15 @@ theorem integral_score_eq_zero_of_density_regular (M : ParametricFamily 𝓧 ℝ
     -- USER-INPUT: the dominated-difference-quotient condition at `θ`
     (hreg : HasDominatedDifferenceQuotient M μ θ) :
     ∫ x, score M θ x * M.density θ x ∂μ = 0 := by
-  sorry
+  haveI := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hd := diff_under_integral_of_density_regular M μ hpdf hsupp θ hdiff hreg
+    (fun _ => 1) (memLp_const 1)
+  have hconst : (fun t => ∫ x, (1 : ℝ) * M.density t x ∂μ) = fun _ => (1 : ℝ) := by
+    funext t; simp_rw [one_mul]; exact hpdf.density_integral_eq_one t
+  have h0 : HasDerivAt (fun t => ∫ x, (1 : ℝ) * M.density t x ∂μ) 0 θ := by
+    rw [hconst]; exact hasDerivAt_const θ 1
+  have hzero := hd.unique h0
+  simpa using hzero
 
 /-- **The information inequality under family-side regularity.** If the family has a common
 support, is differentiable in the parameter on that support, has positive information and
