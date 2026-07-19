@@ -52,6 +52,81 @@ Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land)
 
 pe (Batch 11): exp-family canonical form/log-partition/full-rank completeness (Thm 4.3.1 = pe statement, imported), bounded completeness, kernel sufficiency/factorization. AsymptoticStatistics: Contiguity/WeakConverges/Le Cam third, LANExpansion/AsymptoticRepresentation/productMeasure, ScoreCLT.clt_finDim, MultivariateCLT, CramerWold, Slutsky/SlutskyVec, Anderson, PrekopaLeindler, MultivariateGaussianSmul/Conv, LogTaylor. MultipleTesting: empiricalCDF, chiSquared + map_sum_sq_eq_chiSquared + mgf, orderStat, SuperUniform, SymmetricCondExp. ConcentrationInequalities: McDiarmid, markov. Bayesian: NormalNormal (Lem 6.7.1). Minimaxity: tvDist view optional.
 
+## Statement-first stub phase — COMPLETE (2026-07-18)
+
+63 files, 243 sorry-stubs, drafted by an 8-agent fan-out, all committed on `ht/batch12`
+(which now also carries a merge of the full `pe/batch11` tree).
+
+| Directory | Files | Stubs |
+|---|---|---|
+| ForMathlib | 10 | 54 |
+| Tests | 3 | 10 |
+| MLR | 5 | 16 |
+| NeymanPearson | 3 | 17 |
+| Invariance | 10 | 35 |
+| Unbiased | 5 | 18 |
+| LikelihoodMethods | 4 | 10 |
+| GoodnessOfFit | 7 | 26 |
+| Randomization | 9 | 31 |
+| Bootstrap | 7 | 26 |
+
+### Honest corrections to the source and to the drafting briefs
+
+Errors found in the reference text itself:
+- **Thm 17.3.2's parenthetical `R^{aT+b}(t) = R^T((t−b)/a)` "for a ≠ 0" is false for `a < 0`.**
+  `cdf_map_affine` is stated for `0 < a`.
+- **Thm 18.5.1 needs strict increase at the quantile**, not just continuity of `G(·,P)`: a flat
+  stretch at height `1 − α` leaves the quantile undetermined. Made explicit (the source does state
+  it in 18.3.1).
+- **Thm 18.3.5's class must include mean-vector convergence** — the source lists only weak +
+  covariance convergence, but its own Cramér–Wold reduction to 18.3.3(i) consumes the means.
+- **Thm 18.3.2 needs tightness of `√n(θ̂ₙ − θ)`, not mere consistency**: consistency alone never
+  activates a compact-`h` hypothesis.
+- **No integrality caveat exists** in the randomization identity (17.2): `∑_g φ(g·x) = Mα` holds
+  exactly for every `x`; `a(x)` absorbs the fractional part. What `0 < α < 1` actually buys is
+  `k ∈ {1,…,M}` (keeping the critical value off the junk branch) and `M⁰ ≥ 1` (no `0/0`).
+
+Anti-laundering corrections:
+- Thm 17.2.4's `E_P[ψ(X)] = 0` is FORCED by "ψ odd" + "P symmetric" + square-integrability;
+  carrying it would be laundering. Dropped; `0 < τ` added as an explicit LEAN-ONLY nondegeneracy.
+- `CondDistribTilt`'s normalizer positivity/finiteness are DERIVED, not hypothesized.
+- Cor 18.3.1's `hlocalCLT`/`hcritval` are flagged as belonging to the local-asymptotics layer —
+  to be discharged there, not by callers.
+- Thm 6.5.1 needs `ν ≠ 0` (the source says "w.l.o.g. ν(G) = 1", impossible for the zero measure).
+
+Brief errors caught by the agents (page/label mistakes in my own instructions):
+- The measurable-factorization hypothesis for Thm 6.2.1 is at PDF **267**, not 257.
+- Displays (16.28)–(16.30) are at PDF **796–797**, not 806–807 (which is the smooth-test material).
+- **Thms 18.4.1/18.4.2 labels were swapped** in the brief: 18.4.1 is the NON-studentized root
+  (`EX⁴ < ∞` + Cramér), 18.4.2 the studentized one (`EX⁴ < ∞` + absolute continuity).
+- My `(18.17)` pointer is Cramér's condition in this edition; the 18.3.1 coverage display is (18.6).
+- Thm 17.3.3's "equivalence with the two-sample t-test" is the EQUAL-variance pooled-t remark; the
+  honest unequal-variance statement is that the studentized statistic is algebraically the
+  **Welch** t-statistic, so the level result transfers verbatim. Stated that way.
+
+Design/route decisions:
+- **DKW constants `4·exp(−d²/8)`** (not the briefed `1/2` exponent): with mean bound `E[√n Dₙ] ≤ 2`,
+  McDiarmid only covers `d ≥ 2`, and `4e^{−d²/2}` drops below 1 at `d ≈ 1.66`, leaving a gap.
+  `4e^{−d²/8}` satisfies `2(d−2)² ≥ d²/8 − log 4` for all `d ≥ 2` (min slack ≈ 0.85). Both are
+  implied by sharp Massart. Consequence: `ksThreshold α = √(8·log(4/α))`, the single coupling
+  numeral between `DKWUniform` and `GoodnessOfFit/KSConsistency`.
+- DKW calibration makes Thm 16.2.3 **exact** rather than slack, and needs **no continuity of F₀**
+  (unlike quantile calibration).
+- §17.4's three lemmas use the **sign-change** group, not permutations.
+- `randomizedTestKernel` is defined fresh (not a promotion of Minimaxity's private `binaryTest`).
+- `groupAverage` (ForMathlib) vs `orbitAverage` (Invariance/Defs) kept distinct to avoid a
+  namespace collision; `Randomization/OrbitConditional` has its own `invariantSigmaAlgebra`.
+  **Dedupe candidates for the laptop session** (all three pairs are same-namespace duplicates):
+  `groupAverage`/`orbitAverage`, `quantile`/`cdfPseudoInverse`, `empCDF`/`empiricalCDF`.
+- Thm 6.3.1's orbit average: the source averages *translated parameter densities*, the frozen
+  `orbitAverage` averages *over the sample*; these agree only when the dominating measure is
+  `G`-invariant. Headline is stated sample-side plus an explicit bridge lemma carrying that
+  invariance hypothesis.
+- Bentkus is stated in the **ball** form (not the `400k^{1/4}` convex form): the convex constant
+  would force `kₙ^{7/2}/n → 0` rather than the needed `kₙ³/n → 0`.
+
 ## Event log
 
 - 2026-07-15: design frozen (17 items, 6 waves); stubs pending.
+- 2026-07-18: weekly-quota interruption killed the first fan-out; relaunched.
+- 2026-07-18: stub phase COMPLETE — 63 files / 243 stubs committed; `pe/batch11` merged in; full-tree stub gate running.
