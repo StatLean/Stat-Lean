@@ -1,0 +1,49 @@
+srun: job 32957606 queued and waiting for resources
+srun: job 32957606 has been allocated resources
+All three modules build green. Here is the final report.
+
+## Summary
+
+Worked on the three files; iterated with foreground `lake build` per module. Committed after each closed lemma.
+
+### Per-module `lake build` status
+All three compile successfully (only `sorry` warnings remain where noted):
+- `StatLean.PointEstimation.Completeness.Basu` — ✅ builds, **0 sorries**
+- `StatLean.PointEstimation.ExponentialFamily.MinimalSufficient` — ✅ builds, **1 sorry**
+- `StatLean.PointEstimation.UMVU.LehmannScheffe` — ✅ builds, **2 sorries**
+
+### Per-file sorry counts / what closed
+
+**Basu.lean — 3/3 closed (0 sorries):**
+- `IsCompleteFamily.boundedlyComplete` — bounded ⇒ integrable on probability laws (`HasFiniteIntegral.of_bounded`).
+- `completeStat_boundedlyCompleteStat` — specialization to laws of `T`.
+- `indepFun_of_boundedlyComplete_sufficient` (**Basu, Thm 6.21**) — full proof: test function `f t = (Q t (V⁻¹A)).toReal`, reconstruction `∫f d(statLaw) = P(V∈A)` via `statLaw_snd`+`Measure.bind_apply`, ancillarity ⇒ constant mean, **bounded** completeness ⇒ `Q t(V⁻¹A) =ᵐ P(V∈A)`, then graph-compProd product formula.
+
+**MinimalSufficient.lean — 1/2 closed (1 sorry):**
+- `fullRank_exists_affineSpan` (Cor 6.16, geometry) — **closed**: nonempty interior ⇒ a ball ⊆ Ξ′ affinely spans (`Convex.interior_nonempty_iff_affineSpan_eq_top`), then `exists_affineIndependent` + `affineSpan_eq_top_iff_card_eq_finrank_add_one` extract exactly `finrank+1` points, re-indexed by `Fintype.equivFinOfCardEq`.
+- `isMinimalSufficient_stat` — **sorry** (documented TODO).
+
+**LehmannScheffe.lean — 2/4 closed (2 sorries):**
+- `unique_unbiased_function_of_complete` (Lem 1.10) — **closed** (completeness kills the zero-mean difference).
+- `risk_le_of_complete_sufficient` (Thm 1.11b) — **closed**: its competitor `δ'` *is* `Measurable`, so RB(δ′)+uniqueness+`ae_eq_comp`+`risk_rbEstimator_le` go through.
+- `isUMVU_of_complete_sufficient` (Thm 1.11a) — unbiasedness and `MemEstL2` (via new `memLp_two_rbEstimator_statLaw` L² Jensen helper + `memLp_map_measure_iff`) **proven**; minimality **deferred** to one private sorried lemma.
+- `isUMVU_of_fullRank_expFamily` (Cor 1.12) — **sorry** (documented TODO).
+
+Also added two proven private helpers: `integrable_rbEstimator_statLaw` (L¹) and `memLp_two_rbEstimator_statLaw` (L²).
+
+### `#print axioms`
+- `indepFun_of_boundedlyComplete_sufficient` → **`[propext, Classical.choice, Quot.sound]`** ✅ axiom-clean.
+- `isUMVU_of_complete_sufficient` → `[propext, sorryAx, Classical.choice, Quot.sound]` — carries `sorryAx` from the deferred minimality lemma.
+
+### The three remaining sorries — why they are blocked by the frozen signatures (no statement weakened, none false)
+
+1. **`variance_rbEstimator_le_of_complete`** (LehmannScheffe minimality). `IsUMVU`'s minimality quantifies over competitors `δ'` carrying only `MemEstL2 P δ'` — i.e. a *per-parameter* `AEStronglyMeasurable` representative, **no global `Measurable δ'`**. The kernel Rao–Blackwell comparison (`variance_rbEstimator_le`) needs `Measurable δ'`, and the completeness step needs the θ-free certificate `t ↦ ∫ δ' dQ_t` to be genuinely `Measurable` with identically-zero mean. These do not glue to one global measurable representative (false in general — Dirac families are a counterexample), and `IsCompleteStat` demands `Measurable`. Closing it needs a `condExp`-based RB layer (integrability-only), which is not among the imported kernel lemmas. The theorem is **true**, just unreachable with this API + frozen hypotheses.
+
+2. **`isUMVU_of_fullRank_expFamily`**. It must feed `HasSufficientKernel P E.stat` (the graph/compProd kernel) into `isUMVU_of_complete_sufficient`. The only route to that kernel, `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient`, requires `[StandardBorelSpace 𝓧]` (+ `[Nonempty 𝓧]`) — **absent from the frozen signature**, and an exponential family gives no explicit reconstruction kernel over an abstract measurable space. (Completeness itself transfers fine.)
+
+3. **`isMinimalSufficient_stat`**. Two obstacles: (i) the sufficiency half routes through `Sufficiency.Factorization.isSufficient_of_isFactorizedDensity`, which is **itself an open `sorry` in this worktree** (I may not edit it); (ii) the minimality half is a substantial likelihood-ratio-inversion + Doob–Dynkin (`Measurable.exists_eq_measurable_comp`) development beyond the imported API.
+
+### Note on the escape-hatch budget
+The "≤1 lifted private sorry per file" was met for `MinimalSufficient` (1) but **exceeded in `LehmannScheffe` (2)**. I could not satisfy it without either weakening a statement (forbidden) or fabricating a proof: the two LS gaps are independent, each forced by a distinct missing hypothesis in a frozen signature (non-`Measurable` competitor; missing `StandardBorelSpace`). I chose to leave both statements exactly as posed and document the precise obstruction at each `sorry`.
+
+No statement was weakened; no unproven content was laundered into hypotheses; nothing outside the three target files was edited.
