@@ -275,6 +275,58 @@ private lemma isCriticalFn_npTest {p₀ p₁ : 𝓧 → ℝ} (hp0 : Measurable p
     · exact hγ
     · exact ⟨le_refl 0, zero_le_one⟩
 
+/-- The `μ`-density of a probability measure vanishes exactly off its support: the set where
+the density is `0` carries no `P`-mass. -/
+private lemma density_null {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) : P {x | p x = 0} = 0 := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  have hs : MeasurableSet {x | p x = 0} := measurableSet_eq_fun hmeas measurable_const
+  rw [hPeq, withDensity_apply _ hs]
+  refine setLIntegral_eq_zero hs ?_
+  intro x hx
+  simp only [Set.mem_setOf_eq] at hx
+  simp [hx]
+
+/-- The power of the likelihood-ratio test against `P₀` splits into the mass of the strict
+rejection region plus `γ` times the mass of the boundary set. -/
+private lemma powerAgainst_npTest_eq {p₀ p₁ : 𝓧 → ℝ} {P₀ : Measure 𝓧}
+    [IsProbabilityMeasure P₀] (hp0 : Measurable p₀) (hp1 : Measurable p₁)
+    (C : ℝ≥0∞) (γ : ℝ) :
+    powerAgainst P₀ (npTest p₀ p₁ C γ)
+      = (P₀ {x | C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x)}).toReal
+        + γ * (P₀ {x | ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x)}).toReal := by
+  set R := {x | C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x)} with hRdef
+  set B := {x | ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x)} with hBdef
+  have hRmeas : MeasurableSet R :=
+    measurableSet_lt (measurable_const.mul hp0.ennreal_ofReal) hp1.ennreal_ofReal
+  have hBmeas : MeasurableSet B :=
+    measurableSet_eq_fun hp1.ennreal_ofReal (measurable_const.mul hp0.ennreal_ofReal)
+  have hsplit : npTest p₀ p₁ C γ = fun x =>
+      R.indicator (1 : 𝓧 → ℝ) x + γ * B.indicator (1 : 𝓧 → ℝ) x := by
+    funext x
+    show (if C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) then (1 : ℝ)
+      else if ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x) then γ else 0) = _
+    by_cases hR : x ∈ R
+    · have hxR : C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) := hR
+      have hnB : x ∉ B := fun he => absurd ((he : _) ▸ hxR) (lt_irrefl _)
+      rw [Set.indicator_of_mem hR, Set.indicator_of_notMem hnB, if_pos hxR]; simp
+    · have hxR : ¬ C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) := hR
+      rw [Set.indicator_of_notMem hR, if_neg hxR]
+      by_cases hB : x ∈ B
+      · have hxB : ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x) := hB
+        rw [Set.indicator_of_mem hB, if_pos hxB]; simp
+      · have hxB : ¬ ENNReal.ofReal (p₁ x) = C * ENNReal.ofReal (p₀ x) := hB
+        rw [Set.indicator_of_notMem hB, if_neg hxB]; simp
+  have hR1 : Integrable (R.indicator (1 : 𝓧 → ℝ)) P₀ :=
+    (show Integrable (1 : 𝓧 → ℝ) P₀ from integrable_const 1).indicator hRmeas
+  have hB1 : Integrable (fun x => γ * B.indicator (1 : 𝓧 → ℝ) x) P₀ :=
+    ((show Integrable (1 : 𝓧 → ℝ) P₀ from integrable_const 1).indicator hBmeas).const_mul γ
+  unfold powerAgainst
+  rw [integral_congr_ae (Filter.Eventually.of_forall (fun x => congrFun hsplit x)),
+    integral_add hR1 hB1, integral_indicator_one hRmeas, integral_const_mul,
+    integral_indicator_one hBmeas]
+  simp only [measureReal_def]
+
 /-- **Existence (i).** For every level `α ∈ [0,1]` there are a threshold `C` and a
 boundary weight `γ ∈ [0,1]` for which the likelihood-ratio test has size **exactly** `α`
 and is most powerful at that level. The corner cases `α = 0` and `α = 1` are covered by
@@ -295,11 +347,101 @@ theorem exists_mostPowerful
     ∃ (C : ℝ≥0∞) (γ : ℝ), γ ∈ Set.Icc (0 : ℝ) 1 ∧
       powerAgainst P₀ (npTest p₀ p₁ C γ) = α ∧
       IsMostPowerful P₀ P₁ α (npTest p₀ p₁ C γ) := by
-  -- TODO: the existence construction. The optimality half is `isMostPowerful_npTest`; what
-  -- remains is choosing `(C, γ)` with `powerAgainst P₀ (npTest …) = α`, obtained by applying
-  -- `exists_critical_constants` to the law under `P₀` of the likelihood ratio
-  -- `ofReal (p₁ x) / ofReal (p₀ x)` (pushforward + `p₀ = 0` null-set bookkeeping).
-  sorry
+  obtain ⟨hα0, hα1⟩ := hα
+  -- The optimality half, built directly from the fundamental inequality.
+  have mp : ∀ (C : ℝ≥0∞) (γ : ℝ), γ ∈ Set.Icc (0 : ℝ) 1 →
+      powerAgainst P₀ (npTest p₀ p₁ C γ) = α →
+      IsMostPowerful P₀ P₁ α (npTest p₀ p₁ C γ) := by
+    intro C γ hγ hsize
+    refine ⟨isCriticalFn_npTest h₀.1 h₁.1 hγ, hsize.le, fun ψ hψ hψs => ?_⟩
+    exact np_fundamental μ P₀ P₁ h₀ h₁ (isCriticalFn_npTest h₀.1 h₁.1 hγ) hψ
+      (hasNPShape_npTest μ p₀ p₁ C γ) (by rw [hsize]; exact hψs)
+  rcases eq_or_lt_of_le hα0 with hα0' | hα0'
+  · -- `α = 0`: reject only on the `P₀`-null set `{p₀ = 0, p₁ > 0}`, via `C = ∞`.
+    have hpe : powerAgainst P₀ (npTest p₀ p₁ ⊤ 0) = α := by
+      rw [powerAgainst_npTest_eq h₀.1 h₁.1 ⊤ 0]
+      have hR0 : P₀ {x | (⊤ : ℝ≥0∞) * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x)} = 0 := by
+        refine measure_mono_null (fun x hx => ?_) (density_null h₀)
+        simp only [Set.mem_setOf_eq] at hx ⊢
+        by_contra hne
+        have hpos : 0 < p₀ x := lt_of_le_of_ne (h₀.2.1 x) (Ne.symm hne)
+        rw [ENNReal.top_mul (by simpa using (ENNReal.ofReal_pos.mpr hpos).ne')] at hx
+        exact not_top_lt hx
+      rw [hR0]; simp only [ENNReal.toReal_zero, zero_mul, add_zero]; exact hα0'
+    exact ⟨⊤, 0, ⟨le_refl 0, zero_le_one⟩, hpe, mp ⊤ 0 ⟨le_refl 0, zero_le_one⟩ hpe⟩
+  rcases eq_or_lt_of_le hα1 with hα1' | hα1'
+  · -- `α = 1`: reject everywhere, via `C = 0, γ = 1`.
+    have hone : npTest p₀ p₁ 0 1 = fun _ => (1 : ℝ) := by
+      funext x
+      show npTest p₀ p₁ 0 1 x = 1
+      unfold npTest
+      simp only [zero_mul]
+      by_cases h : ENNReal.ofReal (p₁ x) = 0
+      · rw [if_neg (by rw [h]; exact lt_irrefl 0), if_pos h]
+      · rw [if_pos (lt_of_le_of_ne (zero_le _) (Ne.symm h))]
+    have hpe : powerAgainst P₀ (npTest p₀ p₁ 0 1) = α := by
+      rw [hone]; unfold powerAgainst; rw [hα1']; simp
+    exact ⟨0, 1, ⟨zero_le_one, le_refl 1⟩, hpe, mp 0 1 ⟨zero_le_one, le_refl 1⟩ hpe⟩
+  -- `0 < α < 1`: push the likelihood ratio forward under `P₀` and randomize on its atom.
+  have hrmeas : Measurable fun x => p₁ x / p₀ x := h₁.1.div h₀.1
+  have hrnn : ∀ x, 0 ≤ p₁ x / p₀ x := fun x => div_nonneg (h₁.2.1 x) (h₀.2.1 x)
+  set Q : Measure ℝ := P₀.map (fun x => p₁ x / p₀ x) with hQ
+  haveI hQprob : IsProbabilityMeasure Q := Measure.isProbabilityMeasure_map hrmeas.aemeasurable
+  obtain ⟨c, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants Q hα0' hα1'
+  have hsr : MeasurableSet {x : ℝ | c < x} := measurableSet_Ioi
+  have hse : MeasurableSet {x : ℝ | x = c} := by
+    rw [show {x : ℝ | x = c} = {c} from by ext x; simp [eq_comm]]
+    exact measurableSet_singleton c
+  have hQIio : Q (Set.Iio 0) = 0 := by
+    rw [hQ, Measure.map_apply hrmeas measurableSet_Iio]
+    have : (fun x => p₁ x / p₀ x) ⁻¹' Set.Iio 0 = ∅ := by
+      ext x
+      simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_empty_iff_false, iff_false, not_lt]
+      exact hrnn x
+    rw [this, measure_empty]
+  have hc0 : 0 ≤ c := by
+    by_contra hcneg
+    push_neg at hcneg
+    have hIic : Q (Set.Iic c) = 0 :=
+      measure_mono_null (fun y hy => lt_of_le_of_lt hy hcneg) hQIio
+    have h1 : Q {x : ℝ | c < x} = 1 := by
+      rw [show {x : ℝ | c < x} = (Set.Iic c)ᶜ from (Set.compl_Iic).symm,
+        prob_compl_eq_one_sub measurableSet_Iic, hIic, tsub_zero]
+    have h2 : Q {x : ℝ | x = c} = 0 := by
+      rw [hQ, Measure.map_apply hrmeas hse]
+      have : (fun x => p₁ x / p₀ x) ⁻¹' {x : ℝ | x = c} = ∅ := by
+        ext x
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+        exact fun he => absurd he (by linarith [hrnn x])
+      rw [this, measure_empty]
+    rw [h1, h2] at hcrit
+    simp only [ENNReal.toReal_one, ENNReal.toReal_zero, mul_zero, add_zero] at hcrit
+    linarith
+  have hnull : P₀ {x | p₀ x = 0} = 0 := density_null h₀
+  have haep : ∀ᵐ x ∂P₀, p₀ x ≠ 0 := ae_iff.mpr (by simpa using hnull)
+  have hReq : P₀ {x | ENNReal.ofReal c * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x)}
+      = Q {x : ℝ | c < x} := by
+    rw [hQ, Measure.map_apply hrmeas hsr]
+    refine measure_congr (Filter.eventuallyEq_set.mpr ?_)
+    filter_upwards [haep] with x hx
+    have hpos : 0 < p₀ x := lt_of_le_of_ne (h₀.2.1 x) (Ne.symm hx)
+    simp only [Set.mem_setOf_eq, Set.mem_preimage]
+    rw [← ENNReal.ofReal_mul hc0,
+      ENNReal.ofReal_lt_ofReal_iff_of_nonneg (mul_nonneg hc0 hpos.le)]
+    exact (lt_div_iff₀ hpos).symm
+  have hBeq : P₀ {x | ENNReal.ofReal (p₁ x) = ENNReal.ofReal c * ENNReal.ofReal (p₀ x)}
+      = Q {x : ℝ | x = c} := by
+    rw [hQ, Measure.map_apply hrmeas hse]
+    refine measure_congr (Filter.eventuallyEq_set.mpr ?_)
+    filter_upwards [haep] with x hx
+    have hpos : 0 < p₀ x := lt_of_le_of_ne (h₀.2.1 x) (Ne.symm hx)
+    simp only [Set.mem_setOf_eq, Set.mem_preimage]
+    rw [← ENNReal.ofReal_mul hc0,
+      ENNReal.ofReal_eq_ofReal_iff (h₁.2.1 x) (mul_nonneg hc0 hpos.le), div_eq_iff hpos.ne']
+  have hpe : powerAgainst P₀ (npTest p₀ p₁ (ENNReal.ofReal c) γ) = α := by
+    rw [powerAgainst_npTest_eq h₀.1 h₁.1 (ENNReal.ofReal c) γ, hReq, hBeq]
+    exact hcrit
+  exact ⟨ENNReal.ofReal c, γ, ⟨hγ0, hγ1⟩, hpe, mp (ENNReal.ofReal c) γ ⟨hγ0, hγ1⟩ hpe⟩
 
 /-- **Sufficiency (ii).** Any critical function of Neyman–Pearson shape whose size equals
 `α` is most powerful at level `α`. Only the shape and the size enter: the values of `φ`

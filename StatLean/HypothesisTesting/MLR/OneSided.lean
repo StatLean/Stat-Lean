@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.MLR.Defs
 import StatLean.HypothesisTesting.NeymanPearson.Lemma
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # One-sided testing under a monotone likelihood ratio
@@ -201,7 +202,10 @@ theorem hasMLR_expFamily
     -- "`Q` is strictly monotone", in its increasing case
     {ηmap : ℝ → ℝ} (hη : StrictMono ηmap) :
     HasMLR (fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))) E.stat := by
-  sorry
+  intro θ θ' hθθ' x y hTxy
+  have hηlt : ηmap θ < ηmap θ' := hη hθθ'
+  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+  nlinarith [mul_nonneg (sub_pos.mpr hηlt).le (sub_nonneg.mpr hTxy)]
 
 /-- **UMP one-sided test in a one-parameter exponential family.** For a family presented
 in canonical form through a strictly increasing `η`, the test rejecting for large values of
@@ -225,6 +229,43 @@ theorem isUMP_oneSided_expFamily
       IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest E.stat C γ) := by
   sorry
 
+/-- A density of a probability measure is integrable (local copy of the NP-layer lemma). -/
+private lemma density_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : Integrable p μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall hnn)]
+  have h1 : (μ.withDensity fun x => ENNReal.ofReal (p x)) Set.univ = 1 := by
+    rw [← hPeq]; exact measure_univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  rw [h1]; exact ENNReal.one_lt_top
+
+/-- Expectation against a density-carrying measure equals the integral against the density. -/
+private lemma integral_density_eq {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (ψ : 𝓧 → ℝ) : ∫ x, ψ x ∂P = ∫ x, ψ x * p x ∂μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq, integral_withDensity_eq_integral_toReal_smul hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hnn x)]; ring
+
+/-- The density integrates to `1`. -/
+private lemma density_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
+  have h1 : ∫ x, (1 : ℝ) ∂P = ∫ x, (1 : ℝ) * p x ∂μ := integral_density_eq h (fun _ => 1)
+  simp only [one_mul] at h1
+  rw [← h1]; simp
+
+/-- If `ψ` is `P`-integrable and `P` has density `p`, then `ψ·p` is `μ`-integrable. -/
+private lemma density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (hψ : Integrable ψ P) : Integrable (fun x => ψ x * p x) μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq] at hψ
+  refine ((integrable_withDensity_iff hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mp hψ).congr ?_
+  filter_upwards with x
+  rw [ENNReal.toReal_ofReal (hnn x)]
+
 /-- **Monotone statistics have monotone expectations.** Under a monotone likelihood ratio
 in `T`, the expectation of any function that is nondecreasing along `T` is a nondecreasing
 function of the parameter. Taking `𝓧 = ℝ` and `T = id` gives the classical statement for a
@@ -244,6 +285,63 @@ theorem integral_mono_of_hasMLR
     -- USER-INPUT: integrability under every member, so both sides are defined
     (hint : ∀ θ, Integrable ψ (P θ)) :
     Monotone fun θ => ∫ x, ψ x ∂(P θ) := by
-  sorry
+  intro θ θ' hθθ'
+  show ∫ x, ψ x ∂(P θ) ≤ ∫ x, ψ x ∂(P θ')
+  rcases eq_or_lt_of_le hθθ' with h | hlt
+  · rw [h]
+  -- `θ < θ'`: the double-integral correlation identity `2·(D_θ' − D_θ) = ∫∫ F ≥ 0`.
+  rw [integral_density_eq (hp θ) ψ, integral_density_eq (hp θ') ψ]
+  have ha : Integrable (p θ) μ := density_integrable (hp θ)
+  have hb : Integrable (p θ') μ := density_integrable (hp θ')
+  have hψa : Integrable (fun x => ψ x * p θ x) μ := density_mul_integrable (hp θ) (hint θ)
+  have hψb : Integrable (fun x => ψ x * p θ' x) μ := density_mul_integrable (hp θ') (hint θ')
+  have hone_a : ∫ x, p θ x ∂μ = 1 := density_integral_one (hp θ)
+  have hone_b : ∫ x, p θ' x ∂μ = 1 := density_integral_one (hp θ')
+  have i1 : Integrable (fun z : 𝓧 × 𝓧 => p θ z.1 * (ψ z.2 * p θ' z.2)) (μ.prod μ) :=
+    Integrable.mul_prod ha hψb
+  have i2 : Integrable (fun z : 𝓧 × 𝓧 => p θ' z.1 * (ψ z.2 * p θ z.2)) (μ.prod μ) :=
+    Integrable.mul_prod hb hψa
+  have i3 : Integrable (fun z : 𝓧 × 𝓧 => ψ z.1 * p θ z.1 * p θ' z.2) (μ.prod μ) :=
+    Integrable.mul_prod hψa hb
+  have i4 : Integrable (fun z : 𝓧 × 𝓧 => ψ z.1 * p θ' z.1 * p θ z.2) (μ.prod μ) :=
+    Integrable.mul_prod hψb ha
+  have hFnn : 0 ≤ᵐ[μ.prod μ] fun z : 𝓧 × 𝓧 =>
+      p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
+        - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2 := by
+    refine Filter.Eventually.of_forall (fun z => ?_)
+    show (0 : ℝ) ≤ p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
+        - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2
+    have key : p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
+        - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2
+        = (ψ z.2 - ψ z.1) * (p θ z.1 * p θ' z.2 - p θ' z.1 * p θ z.2) := by ring
+    rw [key]
+    rcases le_total (T z.1) (T z.2) with hle | hle
+    · exact mul_nonneg (by linarith [hmono z.1 z.2 hle])
+        (by linarith [hMLR hlt z.1 z.2 hle])
+    · refine mul_nonneg_of_nonpos_of_nonpos (by linarith [hmono z.2 z.1 hle]) ?_
+      nlinarith [hMLR hlt z.2 z.1 hle]
+  -- Compute the four product integrals separately, then combine.
+  have e1 : ∫ z : 𝓧 × 𝓧, p θ z.1 * (ψ z.2 * p θ' z.2) ∂(μ.prod μ)
+      = ∫ x, ψ x * p θ' x ∂μ := by
+    rw [integral_prod_mul (p θ) (fun y => ψ y * p θ' y), hone_a, one_mul]
+  have e2 : ∫ z : 𝓧 × 𝓧, p θ' z.1 * (ψ z.2 * p θ z.2) ∂(μ.prod μ)
+      = ∫ x, ψ x * p θ x ∂μ := by
+    rw [integral_prod_mul (p θ') (fun y => ψ y * p θ y), hone_b, one_mul]
+  have e3 : ∫ z : 𝓧 × 𝓧, ψ z.1 * p θ z.1 * p θ' z.2 ∂(μ.prod μ)
+      = ∫ x, ψ x * p θ x ∂μ := by
+    rw [integral_prod_mul (fun x => ψ x * p θ x) (p θ'), hone_b, mul_one]
+  have e4 : ∫ z : 𝓧 × 𝓧, ψ z.1 * p θ' z.1 * p θ z.2 ∂(μ.prod μ)
+      = ∫ x, ψ x * p θ' x ∂μ := by
+    rw [integral_prod_mul (fun x => ψ x * p θ' x) (p θ), hone_a, mul_one]
+  have hf12 : Integrable (fun z : 𝓧 × 𝓧 => p θ z.1 * (ψ z.2 * p θ' z.2)
+      - p θ' z.1 * (ψ z.2 * p θ z.2)) (μ.prod μ) := i1.sub i2
+  have hf123 : Integrable (fun z : 𝓧 × 𝓧 => p θ z.1 * (ψ z.2 * p θ' z.2)
+      - p θ' z.1 * (ψ z.2 * p θ z.2) - ψ z.1 * p θ z.1 * p θ' z.2) (μ.prod μ) := hf12.sub i3
+  have hFint : (0 : ℝ) ≤ ∫ z : 𝓧 × 𝓧,
+      (p θ z.1 * (ψ z.2 * p θ' z.2) - p θ' z.1 * (ψ z.2 * p θ z.2)
+        - ψ z.1 * p θ z.1 * p θ' z.2 + ψ z.1 * p θ' z.1 * p θ z.2) ∂(μ.prod μ) :=
+    integral_nonneg_of_ae hFnn
+  rw [integral_add hf123 i4, integral_sub hf12 i3, integral_sub i1 i2, e1, e2, e3, e4] at hFint
+  linarith [hFint]
 
 end StatLean.HypothesisTesting

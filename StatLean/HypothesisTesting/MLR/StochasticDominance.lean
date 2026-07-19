@@ -71,7 +71,16 @@ theorem cdf_le_of_monotone_coupling
     -- USER-INPUT: the two pushforwards are the given laws — clause (b)
     (hmap₀ : ν.map f₀ = μ₀) (hmap₁ : ν.map f₁ = μ₁) :
     ∀ x : ℝ, (μ₁ (Set.Iic x)).toReal ≤ (μ₀ (Set.Iic x)).toReal := by
-  sorry
+  intro x
+  have hm0 : Measurable f₀ := hf₀.measurable
+  have hm1 : Measurable f₁ := hf₁.measurable
+  have e0 : μ₀ (Set.Iic x) = ν {v | f₀ v ≤ x} := by
+    rw [← hmap₀, Measure.map_apply hm0 measurableSet_Iic]; rfl
+  have e1 : μ₁ (Set.Iic x) = ν {v | f₁ v ≤ x} := by
+    rw [← hmap₁, Measure.map_apply hm1 measurableSet_Iic]; rfl
+  rw [e0, e1]
+  refine ENNReal.toReal_mono (measure_ne_top ν _) (measure_mono ?_)
+  exact fun v hv => le_trans (hle v) hv
 
 /-- **The stochastic ordering produces a monotone coupling.** If `F₁ ≤ F₀` pointwise then
 both laws are realized as nondecreasing functions of a single variable uniform on `(0,1)`,
@@ -85,6 +94,14 @@ theorem exists_monotone_coupling_of_cdf_le
     ∃ f₀ f₁ : ℝ → ℝ, Monotone f₀ ∧ Monotone f₁ ∧ (∀ v, f₀ v ≤ f₁ v) ∧
       (volume.restrict (Set.Icc (0 : ℝ) 1)).map f₀ = μ₀ ∧
       (volume.restrict (Set.Icc (0 : ℝ) 1)).map f₁ = μ₁ := by
+  -- FALSE AS STATED. The conclusion demands a *globally* `Monotone f₀ : ℝ → ℝ` whose
+  -- pushforward of the uniform law is `μ₀`. For a full-support law (e.g. `μ₀ = μ₁ = N(0,1)`,
+  -- for which `hcdf` holds with equality) any such `f₀` must satisfy `f₀ p → -∞` as `p → 0⁺`
+  -- (its `(0,1)`-restriction is monotone with essential range = ℝ), so
+  -- `inf_{p∈(0,1)} f₀ p = -∞`, and no real value `f₀ 0 ≤ f₀ p (∀ p > 0)` exists — `Monotone`
+  -- is unsatisfiable. The classical coupling only makes `f₀` monotone *on* `(0,1)`; the total
+  -- `Monotone ℝ → ℝ` transcription is strictly stronger and false. Left sorried per the
+  -- honest-refusal policy; fixing requires weakening to `MonotoneOn … (Ioo 0 1)`.
   sorry
 
 /-- **The characterization.** Stochastic ordering of two laws on the real line is
@@ -96,6 +113,13 @@ theorem cdf_le_iff_exists_monotone_coupling
       ∃ (ν : Measure ℝ) (_ : IsProbabilityMeasure ν) (f₀ f₁ : ℝ → ℝ),
         Monotone f₀ ∧ Monotone f₁ ∧ (∀ v, f₀ v ≤ f₁ v) ∧
           ν.map f₀ = μ₀ ∧ ν.map f₁ = μ₁ := by
-  sorry
+  constructor
+  · intro hcdf
+    -- Forward direction depends on `exists_monotone_coupling_of_cdf_le`, which is FALSE as
+    -- stated (globally `Monotone` map for a full-support law is unsatisfiable — see there).
+    sorry
+  · rintro ⟨ν, hν, f₀, f₁, hf₀, hf₁, hle, hmap₀, hmap₁⟩
+    haveI := hν
+    exact cdf_le_of_monotone_coupling μ₀ μ₁ ν f₀ f₁ hf₀ hf₁ hle hmap₀ hmap₁
 
 end StatLean.HypothesisTesting
