@@ -260,7 +260,48 @@ theorem fisherInfo_eq_neg_integral_secondDeriv (M : ParametricFamily 𝓧 ℝ) (
     fisherInfo M μ θ
       = -∫ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ
           * M.density θ x ∂μ := by
-  sorry
+  -- pointwise: `∂²(log p)·p = ∂²p − (score)²·p`
+  have hpt : ∀ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ * M.density θ x
+      = deriv (fun u => deriv (fun s => M.density s x) u) θ - score M θ x ^ 2 * M.density θ x := by
+    intro x
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with hpx | hpos
+    · have hz : (fun s => M.density s x) = fun _ => (0 : ℝ) :=
+        funext fun s => density_eq_zero_of_commonSupport hsupp hpx.symm
+      rw [← hpx, hz]
+      simp
+    · have hdiffθ : DifferentiableAt ℝ (fun s => M.density s x) θ := (hdiff x hpos).self_of_nhds
+      have hcont : ContinuousAt (fun s => M.density s x) θ := hdiffθ.continuousAt
+      have hlog_ev : (fun u => deriv (fun s => Real.log (M.density s x)) u)
+          =ᶠ[nhds θ] fun u => deriv (fun s => M.density s x) u / M.density u x := by
+        filter_upwards [hdiff x hpos, continuousAt_const.eventually_lt hcont hpos]
+          with u hu hpu
+        exact (hu.hasDerivAt.log hpu.ne').deriv
+      rw [hlog_ev.deriv_eq,
+        show (fun u => deriv (fun s => M.density s x) u / M.density u x)
+            = (fun u => deriv (fun s => M.density s x) u) / fun u => M.density u x from rfl,
+        deriv_div (hdiff2 x hpos) hdiffθ hpos.ne', score]
+      have hne := hpos.ne'
+      field_simp
+  -- the first derivative of the normalisation vanishes at every parameter value
+  have h1 : ∀ t, ∫ x, deriv (fun s => M.density s x) t ∂μ = 0 := by
+    intro t
+    refine (hswap t).unique ?_
+    rw [show (fun u => ∫ x, M.density u x ∂μ) = fun _ => (1 : ℝ) from
+      funext hpdf.density_integral_eq_one]
+    exact hasDerivAt_const t 1
+  -- hence the second derivative of the normalisation vanishes at `θ`
+  have h2 : ∫ x, deriv (fun u => deriv (fun s => M.density s x) u) θ ∂μ = 0 := by
+    refine hswap2.unique ?_
+    rw [show (fun t => ∫ x, deriv (fun s => M.density s x) t ∂μ) = fun _ => (0 : ℝ) from
+      funext h1]
+    exact hasDerivAt_const θ 0
+  -- split the curvature integral
+  have key : ∫ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ
+        * M.density θ x ∂μ
+      = (∫ x, deriv (fun u => deriv (fun s => M.density s x) u) θ ∂μ) - fisherInfo M μ θ := by
+    rw [fisherInfo, ← integral_sub hint hI]
+    exact integral_congr_ae (Filter.Eventually.of_forall hpt)
+  rw [key, h2, zero_sub, neg_neg]
 
 /-! ## Reparametrization -/
 
