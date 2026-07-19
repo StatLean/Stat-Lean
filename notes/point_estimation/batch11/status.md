@@ -339,3 +339,32 @@ Cor 4.13); the canonical normal model end to end — complete sufficiency plus t
 26 sorried declarations** (down from 175 at the stub gate — **85% closed**). The build warning
 count is the authoritative inventory; a `grep -c sorry` over the tree reports 29 because it also
 matches docstring and TODO mentions.
+
+## Two structural findings on the remaining tail (2026-07-19)
+
+### 1. `ForMathlib/MeasurableArgmin.exists_measurable_argmin` is INAPPLICABLE as stated — my design error
+
+The brick requires **continuity** of the `ℝ≥0∞`-valued objective in the scan variable. I chose
+continuity over lower semicontinuity deliberately at stub time, reasoning that it "keeps the
+selection elementarily provable" and noting the LSC strengthening in the header.
+
+That choice makes the brick **unusable by its two intended consumers**
+(`LocationMRE.exists_measurable_condMinimizer_convex` and
+`ScaleMRE.exists_isScaleMRE_of_convex`): their objective `w ↦ ∫⁻ ofReal(ρ(δ₀· − w)) ∂κ(z)` is
+convex but can **jump finite → ∞** at the boundary of its finiteness domain — constructible with
+an asymmetric-growth convex `ρ` and a heavy-tailed conditional kernel. So `Continuous` genuinely
+fails in general and the two convex-MRE existence theorems cannot route through it.
+
+Options: **(a)** restate the brick with lower semicontinuity (the honest form; needs real
+measurable-selection machinery — Kuratowski–Ryll-Nardzewski); **(b)** add a finiteness/growth
+hypothesis to the two consumers restricting to losses whose conditional risk is finite on a
+neighbourhood; **(c)** leave both consumers as named debts. Currently **(c)**. Recommend **(b)**
+as the cheap sound fix and **(a)** as the right one — this is a scope call.
+
+### 2. `ScaleStructure`'s measurable-factorization `mpr` is CONFIRMED genuinely FALSE
+
+Not a missing hypothesis: a global `Measurable u` cannot be recovered from a factorization that
+holds only off a null set, because `{xₙ = 0}` is Borel-isomorphic to `ℝᵐ` and therefore carries
+non-Borel subsets. The set-level version and the `mp` direction are true and closed. A sound
+restatement would conclude a.e.-measurability, or assume a complete σ-algebra. Left as a
+documented obstruction with the counterexample in-file.
