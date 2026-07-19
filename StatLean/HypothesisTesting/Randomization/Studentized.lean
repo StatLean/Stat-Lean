@@ -128,7 +128,18 @@ theorem studentizedTwoSample_eq_welch {m n : ℕ}
     studentizedTwoSample m n x =
       (twoSampleMeanY m n x - twoSampleMeanZ m n x) /
         Real.sqrt (twoSampleVarY m n x / m + twoSampleVarZ m n x / n) := by
-  sorry
+  rw [studentizedTwoSample, twoSampleScale, twoSampleMeanDiff_eq]
+  set a := twoSampleVarY m n x with ha
+  set b := twoSampleVarZ m n x with hb
+  set D := twoSampleMeanY m n x - twoSampleMeanZ m n x with hD
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hkey : Real.sqrt (a + (m : ℝ) / n * b) =
+      Real.sqrt m * Real.sqrt (a / m + b / n) := by
+    rw [← Real.sqrt_mul hmR.le]
+    congr 1
+    field_simp
+  rw [hkey, mul_div_mul_left _ _ (Real.sqrt_ne_zero'.2 hmR)]
 
 /-! ### Asymptotic validity under unequal variances -/
 
