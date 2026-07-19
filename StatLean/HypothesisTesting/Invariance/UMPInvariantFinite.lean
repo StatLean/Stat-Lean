@@ -181,6 +181,146 @@ theorem orbitAverage_eq_avg_translated_density [Fintype G] [MeasurableSMul G �
   rw [Finset.sum_congr rfl (fun g _ => hx g)]
   exact (Equiv.sum_comp (Equiv.inv G) (fun g => p θ (g • x))).symm
 
+/-! ### The orbit-averaged model and its optimality bridge -/
+
+/-- The orbit average of a density carries an honest probability density with respect to
+`μ`: the associated `withDensity` measure is a probability measure. -/
+private theorem hasDensity_orbitAverage [Fintype G] [MeasurableSMul G 𝓧] {P : Θ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {μ : Measure 𝓧} {p : Θ → 𝓧 → ℝ}
+    (hμinv : ∀ g : G, μ.map (fun x : 𝓧 => g • x) = μ)
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (p θ x))
+    (hpmeas : ∀ θ, Measurable (p θ)) (hpnonneg : ∀ θ x, 0 ≤ p θ x) (θ : Θ) :
+    HasDensity μ (orbitAverage G (p θ))
+        (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ) x)) ∧
+      IsProbabilityMeasure (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ) x)) := by
+  have horbnn : ∀ x, 0 ≤ orbitAverage G (p θ) x := by
+    intro x; unfold orbitAverage
+    exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => hpnonneg θ (g • x))
+  have horbmeas : Measurable (orbitAverage G (p θ)) := by
+    unfold orbitAverage
+    exact (Finset.measurable_sum _
+      (fun g _ => (hpmeas θ).comp (measurable_const_smul g))).const_mul _
+  have hintp : Integrable (p θ) μ := by
+    refine ⟨(hpmeas θ).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall (hpnonneg θ))]
+    have h1 : (P θ) Set.univ = 1 := measure_univ
+    rw [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+    rw [h1]; exact ENNReal.one_lt_top
+  have hp1 : ∫ x, p θ x ∂μ = 1 := by
+    have h1 : (P θ) Set.univ = 1 := measure_univ
+    rw [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+    have h := ofReal_integral_eq_lintegral_ofReal hintp (Filter.Eventually.of_forall (hpnonneg θ))
+    rw [h1] at h
+    have hnn : 0 ≤ ∫ x, p θ x ∂μ := integral_nonneg (hpnonneg θ)
+    have := congrArg ENNReal.toReal h
+    rwa [ENNReal.toReal_ofReal hnn, ENNReal.toReal_one] at this
+  have horbint : Integrable (orbitAverage G (p θ)) μ := by
+    unfold orbitAverage
+    refine Integrable.const_mul (integrable_finset_sum _ (fun g _ => ?_)) _
+    exact (⟨measurable_const_smul g, hμinv g⟩ :
+      MeasurePreserving _ μ μ).integrable_comp_of_integrable hintp
+  have horb1 : ∫ x, orbitAverage G (p θ) x ∂μ = 1 := by
+    rw [integral_orbitAverage_eq (hpmeas θ) hintp hμinv, hp1]
+  refine ⟨⟨horbmeas, horbnn, rfl⟩, ⟨?_⟩⟩
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal horbint (Filter.Eventually.of_forall horbnn),
+    horb1, ENNReal.ofReal_one]
+
+/-- **The optimality bridge.** For an invariant critical function, its power against the
+orbit-averaged probability measure at `θ` equals its true power at `θ`. This is the change
+of variables that makes the sample-side orbit-average model faithful. -/
+private theorem powerAgainst_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧]
+    {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)] {μ : Measure 𝓧} {p : Θ → 𝓧 → ℝ}
+    (hμinv : ∀ g : G, μ.map (fun x : 𝓧 => g • x) = μ)
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (p θ x))
+    (hpmeas : ∀ θ, Measurable (p θ)) (hpnonneg : ∀ θ x, 0 ≤ p θ x)
+    {χ : 𝓧 → ℝ} (hχc : IsCriticalFn χ) (hχinv : IsInvariantTest G χ) (θ : Θ) :
+    powerAgainst (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ) x)) χ
+        = power P χ θ := by
+  haveI : Nonempty G := ⟨1⟩
+  have hcard : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have horbnn : ∀ x, 0 ≤ orbitAverage G (p θ) x := by
+    intro x; unfold orbitAverage
+    exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => hpnonneg θ (g • x))
+  have horbmeas : Measurable (orbitAverage G (p θ)) := by
+    unfold orbitAverage
+    exact (Finset.measurable_sum _
+      (fun g _ => (hpmeas θ).comp (measurable_const_smul g))).const_mul _
+  have hintp : Integrable (p θ) μ := by
+    refine ⟨(hpmeas θ).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall (hpnonneg θ))]
+    have h1 : (P θ) Set.univ = 1 := measure_univ
+    rw [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+    rw [h1]; exact ENNReal.one_lt_top
+  have hpw : power P χ θ = ∫ x, χ x * p θ x ∂μ := by
+    unfold power; rw [hdens θ, power_withDensity_eq (hpmeas θ) (hpnonneg θ) χ]
+  have hint : ∀ g : G, Integrable (fun x => χ x * p θ (g • x)) μ := by
+    intro g
+    have hpg : Integrable (fun x => p θ (g • x)) μ :=
+      (⟨measurable_const_smul g, hμinv g⟩ :
+        MeasurePreserving _ μ μ).integrable_comp_of_integrable hintp
+    exact hpg.bdd_mul hχc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hχc.2 x).1]; exact (hχc.2 x).2)
+  have key : ∀ g : G, ∫ x, χ x * p θ (g • x) ∂μ = ∫ x, χ x * p θ x ∂μ := by
+    intro g
+    have hFmeas : Measurable (fun y : 𝓧 => χ (g⁻¹ • y) * p θ y) :=
+      (hχc.1.comp (measurable_const_smul g⁻¹)).mul (hpmeas θ)
+    have h1 := integral_smul_invariant g hFmeas (hμinv g)
+    simp only [inv_smul_smul] at h1
+    rw [h1]
+    exact integral_congr_ae
+      (Filter.Eventually.of_forall fun x => congrArg (· * p θ x) (hχinv g⁻¹ x))
+  have hpt : ∀ x, χ x * orbitAverage G (p θ) x
+      = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, χ x * p θ (g • x) := by
+    intro x; unfold orbitAverage; rw [mul_left_comm, Finset.mul_sum]
+  unfold powerAgainst
+  rw [power_withDensity_eq horbmeas horbnn χ, hpw,
+    integral_congr_ae (Filter.Eventually.of_forall hpt), integral_const_mul,
+    integral_finset_sum _ (fun g _ => hint g), Finset.sum_congr rfl (fun g _ => key g),
+    Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hcard, one_mul]
+
+/-- **From most-powerful for the orbit-averaged model to UMP invariant.** If `φ` is an
+invariant critical function that is most powerful for the orbit-averaged simple-vs-simple
+problem at the class representatives, then it is UMP among invariant level-`α` tests. -/
+private theorem isUMPInvariant_of_mostPowerful [Fintype G] [MeasurableSMul G 𝓧]
+    {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)] {μ : Measure 𝓧} {p : Θ → 𝓧 → ℝ}
+    {Θ₀ Θ₁ : Set Θ} {θ₀ θ₁ : Θ} {α : ℝ} {φ : 𝓧 → ℝ}
+    (hP : IsInvariantModel (G := G) P)
+    (hμinv : ∀ g : G, μ.map (fun x : 𝓧 => g • x) = μ)
+    (htrans₀ : ∀ θ ∈ Θ₀, ∀ θ' ∈ Θ₀, ∃ g : G, θ' = g • θ)
+    (htrans₁ : ∀ θ ∈ Θ₁, ∀ θ' ∈ Θ₁, ∃ g : G, θ' = g • θ)
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (p θ x))
+    (hpmeas : ∀ θ, Measurable (p θ)) (hpnonneg : ∀ θ x, 0 ≤ p θ x)
+    (hθ₀ : θ₀ ∈ Θ₀) (hθ₁ : θ₁ ∈ Θ₁)
+    (hφ : IsCriticalFn φ) (hφinv : IsInvariantTest G φ)
+    (hMP : IsMostPowerful (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x))
+      (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₁) x)) α φ) :
+    IsUMPInvariant G P Θ₀ Θ₁ α φ := by
+  have horbitpow : ∀ (ψ : 𝓧 → ℝ), IsCriticalFn ψ → IsInvariantTest G ψ →
+      ∀ (h : G) (θ : Θ), power P ψ (h • θ) = power P ψ θ := by
+    intro ψ hψc hψinv h θ
+    unfold power
+    rw [← hP h θ, integral_map (measurable_const_smul h).aemeasurable hψc.1.aestronglyMeasurable]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => hψinv h x)
+  refine ⟨hφ, hφinv, ?_, ?_⟩
+  · intro θ hθ
+    obtain ⟨g, hg⟩ := htrans₀ θ₀ hθ₀ θ hθ
+    rw [hg, horbitpow φ hφ hφinv g θ₀,
+      ← powerAgainst_orbitAverage_eq hμinv hdens hpmeas hpnonneg hφ hφinv θ₀]
+    exact hMP.2.1
+  · intro ψ hψc hψinv hψlvl θ hθ
+    obtain ⟨g, hg⟩ := htrans₁ θ₁ hθ₁ θ hθ
+    rw [hg, horbitpow ψ hψc hψinv g θ₁, horbitpow φ hφ hφinv g θ₁]
+    have hψs :
+        powerAgainst (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x)) ψ ≤ α := by
+      rw [powerAgainst_orbitAverage_eq hμinv hdens hpmeas hpnonneg hψc hψinv θ₀]
+      exact hψlvl θ₀ hθ₀
+    have hb := hMP.2.2 ψ hψc hψs
+    rw [powerAgainst_orbitAverage_eq hμinv hdens hpmeas hpnonneg hψc hψinv θ₁,
+      powerAgainst_orbitAverage_eq hμinv hdens hpmeas hpnonneg hφ hφinv θ₁] at hb
+    exact hb
+
 /-- **A Neyman–Pearson test for the orbit-averaged densities is UMP invariant.** For a
 finite group whose induced action is transitive on the null class and on the alternative
 class, an invariant test that rejects where the orbit-averaged likelihood ratio exceeds a
@@ -218,21 +358,25 @@ theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] [MeasurableSMul G 𝓧]
     -- USER-INPUT: `φ` has size exactly `α` at the null representative
     (hsize : power P φ θ₀ = α) :
     IsUMPInvariant G P Θ₀ Θ₁ α φ := by
-  -- TODO: under-hypothesized — the theorem is FALSE as stated. `[MeasurableSMul G 𝓧]` is now
-  -- present, but the dominating measure `μ` is not assumed `G`-invariant, and the reduction
-  -- genuinely requires it. The optimality argument needs the bridge
-  -- `∫ ψ · orbitAverage G (p θᵢ) dμ = power P ψ θᵢ` (for invariant `ψ`) and the fact that the
-  -- orbit-averaged densities integrate to 1 (so they are honest likelihood densities); BOTH rest
-  -- on the change of variables `∫ f (g • x) ∂μ = ∫ f ∂μ`, i.e. on `μ.map (g • ·) = μ`. The proof
-  -- sketch here already invokes "`hμ`-invariance of `μ`" — but no such `hμ` is in the signature.
-  -- COUNTEREXAMPLE without it: `G = ℤ/2` acting on `ℝ` by reflection with trivial induced action,
-  -- every `P θ` reflection-symmetric (so `IsInvariantModel` holds) and `[SigmaFinite μ]`,
-  -- `[IsProbabilityMeasure]` all satisfied, but with `μ` an asymmetric law (e.g. `N(1,10)`) the
-  -- sample-side orbit-average ratio `orbitAverage (p θ₁) / orbitAverage (p θ₀)` is NOT the true
-  -- likelihood ratio, so a test built off it is invariant but not UMP. Fix = add
-  -- `hμ : ∀ g : G, μ.map (g • ·) = μ` (invariance of the dominating measure — exactly the
-  -- hypothesis `orbitAverage_eq_avg_translated_density` already carries).
-  sorry
+  obtain ⟨hd0, hQ0⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₀
+  obtain ⟨hd1, hQ1⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₁
+  haveI := hQ0; haveI := hQ1
+  have hshape : HasNPShape μ (orbitAverage G (p θ₀)) (orbitAverage G (p θ₁))
+      (ENNReal.ofReal k) φ := by
+    refine ⟨Filter.Eventually.of_forall (fun x hlt => hrej x ?_),
+      Filter.Eventually.of_forall (fun x hlt => hacc x ?_)⟩
+    · rw [ofReal_mul_nonneg (hd0.2.1 x)] at hlt
+      exact ofReal_lt_of_ofReal_lt hlt
+    · rw [ofReal_mul_nonneg (hd0.2.1 x)] at hlt
+      exact ofReal_lt_of_ofReal_lt hlt
+  have hsizeQ0 :
+      powerAgainst (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x)) φ = α := by
+    rw [powerAgainst_orbitAverage_eq hμinv hdens hpmeas hpnonneg hφ hφinv θ₀]; exact hsize
+  have hMP : IsMostPowerful (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x))
+      (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₁) x)) α φ :=
+    isMostPowerful_of_npShape μ _ _ hd0 hd1 hφ hsizeQ0 hshape
+  exact isUMPInvariant_of_mostPowerful hP hμinv htrans₀ htrans₁ hdens hpmeas hpnonneg
+    hθ₀ hθ₁ hφ hφinv hMP
 
 /-- **Existence of a UMP invariant test under a finite transitive group.** -/
 theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] [MeasurableSMul G 𝓧]
@@ -260,17 +404,21 @@ theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] [MeasurableSMul G
     -- USER-INPUT: the prescribed level is a probability
     (hα0 : 0 ≤ α) (hα1 : α ≤ 1) :
     ∃ φ : 𝓧 → ℝ, IsUMPInvariant G P Θ₀ Θ₁ α φ := by
-  -- TODO: under-hypothesized — missing `hμ : ∀ g : G, μ.map (g • ·) = μ`, exactly as in
-  -- `isUMPInvariant_of_orbitAverage_ratio` (which this theorem would invoke). The two OTHER
-  -- blockers previously listed here are now RESOLVED: (a) `[MeasurableSMul G 𝓧]` is present, and
-  -- (b) the Neyman–Pearson existence half is available — `NeymanPearson.Lemma.exists_mostPowerful`
-  -- (now closed, axiom-clean) supplies `C, γ` realizing size exactly `α`, and the resulting
-  -- `npTest (orbitAverage G (p θ₀)) (orbitAverage G (p θ₁)) C γ` is invariant because orbit
-  -- averages are invariant (`isInvariantTest_orbitAverage`). With `hμ` added the proof is: form
-  -- the orbit-averaged probability measures `Qᵢ = μ.withDensity (ofReal ∘ orbitAverage G (p θᵢ))`
-  -- at the class representatives, apply `exists_mostPowerful` at level `α`, note the `npTest` is
-  -- invariant, and conclude `IsUMPInvariant` via the same orbit-power bridge as
-  -- `isUMPInvariant_of_orbitAverage_ratio`. Fix = add `hμ : ∀ g : G, μ.map (g • ·) = μ`.
-  sorry
+  obtain ⟨θ₀, hθ₀⟩ := hne₀
+  obtain ⟨θ₁, hθ₁⟩ := hne₁
+  obtain ⟨hd0, hQ0⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₀
+  obtain ⟨hd1, hQ1⟩ := hasDensity_orbitAverage hμinv hdens hpmeas hpnonneg θ₁
+  haveI := hQ0; haveI := hQ1
+  obtain ⟨C, γ, _, _, hMP⟩ := exists_mostPowerful μ
+    (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₀) x))
+    (μ.withDensity fun x => ENNReal.ofReal (orbitAverage G (p θ₁) x))
+    hd0 hd1 (Set.mem_Icc.mpr ⟨hα0, hα1⟩)
+  refine ⟨npTest (orbitAverage G (p θ₀)) (orbitAverage G (p θ₁)) C γ, ?_⟩
+  have hφinv : IsInvariantTest G (npTest (orbitAverage G (p θ₀)) (orbitAverage G (p θ₁)) C γ) := by
+    intro g x
+    unfold npTest
+    rw [isInvariantTest_orbitAverage (p θ₀) g x, isInvariantTest_orbitAverage (p θ₁) g x]
+  exact isUMPInvariant_of_mostPowerful hP hμinv htrans₀ htrans₁ hdens hpmeas hpnonneg
+    hθ₀ hθ₁ hMP.1 hφinv hMP
 
 end StatLean.HypothesisTesting
