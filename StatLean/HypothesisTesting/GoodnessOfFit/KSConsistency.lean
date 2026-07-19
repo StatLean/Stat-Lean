@@ -127,14 +127,15 @@ brick agree: counting the sample points below a threshold is the same as summing
 indicators. -/
 theorem empiricalCDF_eq_empCDF {n : ℕ} (X : Fin n → Ω → ℝ) (t : ℝ) (ω : Ω) :
     empiricalCDF X t ω = empCDF X ω t := by
-  sorry
+  unfold empiricalCDF empCDF StatLean.MultipleTesting.countLE
+  rw [Finset.sum_boole, div_eq_mul_inv, mul_comm]
 
 /-- The Kolmogorov–Smirnov statistic against the c.d.f. of a law `μ` is `n^{1/2}` times the
 Kolmogorov distance of `ForMathlib/DKWUniform`. This is the single bridge through which
 every proof in this file and in `KSLocalPower.lean` reaches the deviation inequality. -/
 theorem ksStat_eq_sqrt_mul_ksDist {n : ℕ} (X : Fin n → Ω → ℝ) (μ : Measure ℝ) (ω : Ω) :
     ksStat X (fun t => cdf μ t) ω = Real.sqrt (n : ℝ) * ksDist X μ ω := by
-  sorry
+  simp only [ksStat, supCDFDist, ksDist, empiricalCDF_eq_empCDF]
 
 /-- Measurability of the Kolmogorov–Smirnov statistic. The supremum defining `d_K` ranges
 over all of `ℝ`, but both competing functions are right continuous — the empirical c.d.f.
@@ -149,6 +150,19 @@ theorem measurable_ksStat {n : ℕ} (X : Fin n → Ω → ℝ) (F₀ : ℝ → �
   sorry
 
 /-! ### Level: the DKW calibration is exact -/
+
+/-- The DKW envelope evaluated at the calibrated threshold equals the nominal level:
+`4·exp(−(ksThreshold α)²/8) = α`. This is the defining equation of `ksThreshold`. -/
+private lemma dkw_envelope_threshold {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
+    4 * Real.exp (-(ksThreshold α) ^ 2 / 8) = α := by
+  have h4a : 1 ≤ 4 / α := by rw [le_div_iff₀ hα]; linarith
+  have hlog : 0 ≤ Real.log (4 / α) := Real.log_nonneg h4a
+  have hsq : (ksThreshold α) ^ 2 = 8 * Real.log (4 / α) := by
+    unfold ksThreshold
+    exact Real.sq_sqrt (mul_nonneg (by norm_num) hlog)
+  rw [hsq, show -(8 * Real.log (4 / α)) / 8 = -Real.log (4 / α) by ring,
+    Real.exp_neg, Real.exp_log (by positivity), inv_div]
+  field_simp
 
 /-- **Level of the calibrated test.** Under the null hypothesis the test that rejects when
 `Tₙ > ksThreshold α` has level `α` — nonasymptotically, at every sample size `n ≥ 1`, and
@@ -172,7 +186,17 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
     -- USER-INPUT: `F₀` is the c.d.f. of the null law
     (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t) :
     P {ω | ksThreshold α < ksStat X F₀ ω} ≤ ENNReal.ofReal α := by
-  sorry
+  have hF : F₀ = fun t => cdf μ₀ t := funext hF₀
+  have hthr : 0 ≤ ksThreshold α := Real.sqrt_nonneg _
+  calc P {ω | ksThreshold α < ksStat X F₀ ω}
+      ≤ P {ω | ksThreshold α ≤ Real.sqrt (n : ℝ) * ksDist X μ₀ ω} := by
+        apply measure_mono
+        intro ω hω
+        rw [Set.mem_setOf_eq, hF, ksStat_eq_sqrt_mul_ksDist] at hω
+        exact le_of_lt hω
+    _ ≤ ENNReal.ofReal (4 * Real.exp (-(ksThreshold α) ^ 2 / 8)) :=
+        dkw_uniform hn μ₀ X hX hindep hlaw hthr
+    _ = ENNReal.ofReal α := by rw [dkw_envelope_threshold hα hα1]
 
 /-! ### Pointwise consistency against a fixed alternative -/
 
