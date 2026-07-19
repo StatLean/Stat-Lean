@@ -1,0 +1,39 @@
+srun: job 33219523 queued and waiting for resources
+srun: job 33219523 has been allocated resources
+Done. Here is the final report.
+
+## Summary
+
+**`StatLean/HypothesisTesting/ForMathlib/NoncentralChiSquared.lean` now builds green.** The two frozen headline bridge theorems are fully proven and axiom-clean; only the 4 pre-existing asymptotic sorries remain (unchanged, out of the 8-error fix scope). Committed as `8aed2c5`.
+
+### Final `lake build` status
+`lake build StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared` → **EXIT 0** (all 8 compile errors fixed).
+
+### The 8 errors — what they actually were and the fixes
+The prompt's diagnosis was partly off (CFC.sqrt *does* work on matrices at this pin). Root causes:
+1. **`ᴴ` notation** → `open scoped Matrix`.
+2. **`PartialOrder (Matrix …)` not synthesized** (blocked `CFC.sqrt`, `CFC.sqrt_nonneg`, `CFC.sqrt_mul_sqrt_self`) → the star-order instance is `scoped[MatrixOrder]`; fixed with `import Mathlib.Analysis.Matrix.Order` **and** `open scoped MatrixOrder`.
+3. **`hS.nonneg` → `And.nonneg`** (`PosDef` has no `.nonneg`) → `hS.posSemidef.nonneg`.
+4. **`set B := CFC.sqrt S` folding**: `IsUnit (CFC.sqrt S)` isn't defeq `IsUnit B` → each `have` folded via `by rw [hB_def]; exact …`.
+5. **`StarHomClass`/`map_mul` on the `toEuclideanCLM` star-algebra-equiv fail to synthesize** (`hAclSA` via `IsSelfAdjoint.map`, and `hAAcl` via `map_mul`). This was genuinely unresolvable at the CLM level, so I **replaced the whole self-adjoint+composition argument with a dot-product proof** of `‖A z‖² = ⟪z, S⁻¹ z⟫`: `Matrix.inner_toEuclideanCLM` → `(A *ᵥ z) ⬝ᵥ (A *ᵥ z) = z ⬝ᵥ S⁻¹ *ᵥ z` via `dotProduct_mulVec`, `mulVec_transpose`, `mulVec_mulVec`, `Aᵀ = A`, `A·A = S⁻¹`, `dotProduct_comm`.
+
+### `#print axioms` (both clean — no `sorryAx`)
+```
+multivariateGaussian_map_inner_inv_eq_chiSquared        depends on: [propext, Classical.choice, Quot.sound]
+multivariateGaussian_map_inner_inv_eq_noncentralChiSquared  depends on: [propext, Classical.choice, Quot.sound]
+```
+
+### Remaining sorries: 4 (all pre-existing, unchanged; NOT the whitening bridge)
+The prompt's "4 sorries" section described the *whitening argument* — but that argument was in an **error** state, not sorried, and is now fully proven. The 4 actual sorries are separate large asymptotic results that were already `sorry` before this session (commit `643a5f9`), each a substantial theorem out of the 8-error scope:
+
+| line | named lemma | content |
+|---|---|---|
+| 377 | `noncentralChiSquared_tail_mono` | stochastic monotonicity of the upper tail in the noncentrality parameter (1-D unimodal-shift reduction) |
+| 388 | `weakConverges_chiSquared_standardized` | `(χ²_k − k)/√(2k) ⇝ N(0,1)` (i.i.d. CLT) |
+| 404 | `tendsto_chiSquared_quantile_standardized` | standardized upper-quantile convergence |
+| 419 | `weakConverges_noncentralChiSquared_standardized` | noncentral large-`k` normalisation with drift |
+
+### On statement correctness
+No statement was found false. The two bridge headlines are true as stated (verified by completing the whitening proof). I did not weaken any statement.
+
+I stopped at the two frozen headline theorems (the actual deliverable of the "8 errors + whitening" scope); the 4 asymptotic sorries are genuine, large, separate debt and I left them untouched and honestly reported rather than attempting speculative CLT/quantile machinery.
