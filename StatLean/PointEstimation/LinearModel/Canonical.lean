@@ -4,7 +4,10 @@ import StatLean.PointEstimation.Completeness.Defs
 import StatLean.PointEstimation.Completeness.ExpFamily
 import StatLean.PointEstimation.ExponentialFamily.Basic
 import StatLean.PointEstimation.Sufficiency.Defs
+import StatLean.PointEstimation.Sufficiency.Factorization
+import StatLean.PointEstimation.Sufficiency.RegularConditional
 import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
+import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 
 /-!
 # The canonical normal linear model
@@ -440,6 +443,41 @@ private lemma interior_range_canonicalEta_nonempty :
     rw [← hSopen.interior_eq]; exact interior_mono hSsub
   exact hSne.mono hsub
 
+/-! ## Sufficiency-kernel scaffolding (private)
+
+The canonical model is dominated by `volume` on the observation space, with the
+product-Gaussian density `canonicalDensity`, which factors through `canonicalStat` as
+`canonicalFactor (canonicalStat y) · 1` — the Fisher–Neyman form. -/
+
+/-- The product-Gaussian density of the canonical model on the observation space
+`EuclideanSpace ℝ (Fin (s + m))` (with respect to `volume`). -/
+private noncomputable def canonicalDensity (θ : CanonicalParam s) :
+    EuclideanSpace ℝ (Fin (s + m)) → ℝ≥0∞ :=
+  fun Y => ∏ i, gaussianPDF ((Fin.append θ.1 (0 : Fin m → ℝ)) i) θ.2.1 (Y i)
+
+/-- The `T`-side Fisher–Neyman factor: `canonicalDensity θ y = canonicalFactor θ (canonicalStat y)`. -/
+private noncomputable def canonicalFactor (θ : CanonicalParam s) :
+    (Fin s → ℝ) × ℝ → ℝ≥0∞ :=
+  fun t => ENNReal.ofReal (canonicalC (m := m) θ) *
+    ENNReal.ofReal (Real.exp ((∑ i, θ.1 i / (θ.2.1 : ℝ) * t.1 i)
+      + -(1 / (2 * (θ.2.1 : ℝ))) * (t.2 + ∑ i, t.1 i ^ 2)))
+
+private lemma measurable_canonicalDensity (θ : CanonicalParam s) :
+    Measurable (canonicalDensity (m := m) θ) := by
+  unfold canonicalDensity
+  refine Finset.measurable_prod _ fun i _ => ?_
+  exact (measurable_gaussianPDF _ _).comp
+    ((measurable_pi_apply i).comp (WithLp.measurable_ofLp 2 (Fin (s + m) → ℝ)))
+
+private lemma measurable_canonicalFactor (θ : CanonicalParam s) :
+    Measurable (canonicalFactor (m := m) θ) := by
+  unfold canonicalFactor
+  refine measurable_const.mul (Measurable.ennreal_ofReal (Real.measurable_exp.comp ?_))
+  refine (Finset.measurable_sum _ fun i _ =>
+    measurable_const.mul ((measurable_pi_apply i).comp measurable_fst)).add
+    (measurable_const.mul (measurable_snd.add
+      (Finset.measurable_sum _ fun i _ => ((measurable_pi_apply i).comp measurable_fst).pow_const 2)))
+
 /-! ## Completeness and sufficiency -/
 
 /-- **Sufficiency of the canonical statistic**: the conditional law of the observation
@@ -448,7 +486,59 @@ theorem canonicalStat_hasSufficientKernel
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     HasSufficientKernel (canonicalModel (s := s) (m := m)) canonicalStat := by
-  sorry
+  haveI hprob : ∀ θ : CanonicalParam s, IsProbabilityMeasure (canonicalModel (m := m) θ) := by
+    intro θ
+    have hmap : canonicalModel (m := m) θ
+        = (canonicalNormal (Fin.append θ.1 (0 : Fin m → ℝ)) θ.2.1).map
+            (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) := by
+      rw [canonicalModel, gaussianVector,
+        show (fun i => (canonicalMean θ.1) i) = Fin.append θ.1 (0 : Fin m → ℝ) from rfl]
+    rw [hmap]
+    haveI : IsProbabilityMeasure (canonicalNormal (Fin.append θ.1 (0 : Fin m → ℝ)) θ.2.1) := by
+      unfold canonicalNormal; infer_instance
+    exact Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 _).aemeasurable
+  have hP : ∀ θ : CanonicalParam s,
+      canonicalModel (m := m) θ = (volume).withDensity (canonicalDensity (m := m) θ) := by
+    intro θ
+    have hσ : θ.2.1 ≠ 0 := ne_of_gt θ.2.2
+    have hcomp : (canonicalDensity (m := m) θ) ∘
+        (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
+        = fun x => ∏ i, gaussianPDF ((Fin.append θ.1 (0 : Fin m → ℝ)) i) θ.2.1 (x i) := by
+      funext x; simp only [canonicalDensity, Function.comp, PiLp.toLp_apply]
+    rw [canonicalModel, gaussianVector,
+        show (fun i => (canonicalMean θ.1) i) = Fin.append θ.1 (0 : Fin m → ℝ) from rfl,
+        canonicalNormal_eq_withDensity _ hσ, ← hcomp,
+        ← AsymptoticStatistics.Measure.withDensity_map_eq_map_withDensity volume _
+          (WithLp.measurable_toLp 2 (Fin (s + m) → ℝ)) _ (measurable_canonicalDensity θ),
+        (PiLp.volume_preserving_toLp (Fin (s + m))).map_eq]
+  have hfac : IsFactorizedDensity (canonicalDensity (s := s) (m := m)) volume canonicalStat
+      (canonicalFactor (s := s) (m := m)) (fun _ => 1) := by
+    intro θ
+    refine Filter.Eventually.of_forall fun Y => ?_
+    show canonicalDensity θ Y = canonicalFactor θ (canonicalStat Y) * 1
+    rw [mul_one]
+    have hd : canonicalDensity θ Y
+        = ENNReal.ofReal (canonicalC (m := m) θ) *
+          ENNReal.ofReal (Real.exp
+            ⟪canonicalEta θ, (canonicalExpFamily s m).stat (fun k => Y k)⟫_ℝ) := by
+      simpa only [canonicalDensity] using canonical_density_eq θ (fun k => Y k)
+    have hexp : ⟪canonicalEta θ, (canonicalExpFamily s m).stat (fun k => Y k)⟫_ℝ
+        = (∑ i, θ.1 i / (θ.2.1 : ℝ) * (canonicalStat Y).1 i)
+          + -(1 / (2 * (θ.2.1 : ℝ))) *
+              ((canonicalStat Y).2 + ∑ i, (canonicalStat Y).1 i ^ 2) := by
+      rw [canonicalEta_inner]
+      simp only [canonicalStat, canonicalHead, canonicalRSS]
+      rw [Fin.sum_univ_add]
+      ring
+    rw [hd, canonicalFactor, hexp]
+  have hdom : ∀ θ : CanonicalParam s, canonicalModel (m := m) θ ≪ volume := by
+    intro θ; rw [hP θ]; exact withDensity_absolutelyContinuous _ _
+  have hsuf : IsSufficient (canonicalModel (s := s) (m := m)) canonicalStat :=
+    isSufficient_of_isFactorizedDensity (canonicalModel (s := s) (m := m)) volume
+      (canonicalDensity (s := s) (m := m)) measurable_canonicalDensity hP measurable_canonicalStat
+      measurable_canonicalFactor measurable_const hfac
+  exact hasSufficientKernel_of_isSufficient_dominated (canonicalModel (s := s) (m := m))
+    measurable_canonicalStat volume hdom hsuf
 
 /-- **Completeness of the canonical statistic**: an integrable function of
 `(Y₁, …, Y_s, S²)` with identically vanishing mean vanishes almost everywhere. -/
