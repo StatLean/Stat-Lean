@@ -232,6 +232,34 @@ theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : 
       atTop (nhds 1) := by
   sorry
 
+/-! ### Kolmogorov-distance geometry (triangle inequality) -/
+
+/-- The sup (Kolmogorov) distance is symmetric. -/
+private lemma supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
+  unfold supCDFDist
+  exact iSup_congr fun t => abs_sub_comm _ _
+
+/-- The absolute difference of two `[0,1]`-valued functions is bounded (by `1`). -/
+private lemma bddAbove_absCDFDiff {F G : ℝ → ℝ} (hF : ∀ t, F t ∈ Set.Icc (0 : ℝ) 1)
+    (hG : ∀ t, G t ∈ Set.Icc (0 : ℝ) 1) :
+    BddAbove (Set.range fun t => |F t - G t|) := by
+  refine ⟨1, ?_⟩
+  rintro _ ⟨t, rfl⟩
+  have h1 := hF t; have h2 := hG t
+  simp only [Set.mem_Icc] at h1 h2
+  rw [abs_le]; constructor <;> linarith
+
+/-- Triangle inequality for the sup distance (given boundedness of the two sups). -/
+private lemma supCDFDist_triangle {F G H : ℝ → ℝ}
+    (hFG : BddAbove (Set.range fun t => |F t - G t|))
+    (hGH : BddAbove (Set.range fun t => |G t - H t|)) :
+    supCDFDist F H ≤ supCDFDist F G + supCDFDist G H := by
+  unfold supCDFDist
+  refine ciSup_le fun t => ?_
+  calc |F t - H t| ≤ |F t - G t| + |G t - H t| := abs_sub_le _ _ _
+    _ ≤ (⨆ t, |F t - G t|) + (⨆ t, |G t - H t|) :=
+        add_le_add (le_ciSup hFG t) (le_ciSup hGH t)
+
 /-! ### Uniform consistency over shrinking alternatives -/
 
 /-- **Nonasymptotic power bound.** If the sampling law is at Kolmogorov distance at least
@@ -267,7 +295,63 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
     (hgap : ksThreshold α < ε) :
     ENNReal.ofReal (1 - 4 * Real.exp (-((ε - ksThreshold α) ^ 2) / 8))
       ≤ P {ω | ksThreshold α < ksStat X F₀ ω} := by
-  sorry
+  set s := ksThreshold α with hs
+  have hsnn : 0 ≤ s := Real.sqrt_nonneg _
+  have hd : 0 ≤ ε - s := by linarith
+  -- `[0,1]`-valued CDFs and empirical CDF
+  have hFIcc : ∀ t, F t ∈ Set.Icc (0 : ℝ) 1 := fun t => by
+    rw [hF t]; exact ⟨cdf_nonneg μ t, cdf_le_one μ t⟩
+  have hF₀Icc : ∀ t, F₀ t ∈ Set.Icc (0 : ℝ) 1 := fun t => by
+    rw [hF₀ t]; exact ⟨cdf_nonneg μ₀ t, cdf_le_one μ₀ t⟩
+  have hEIcc : ∀ ω, ∀ t, empCDF X ω t ∈ Set.Icc (0 : ℝ) 1 := fun ω t => by
+    rw [← empiricalCDF_eq_empCDF]
+    exact ⟨StatLean.MultipleTesting.empiricalCDF_nonneg X t ω,
+      StatLean.MultipleTesting.empiricalCDF_le_one X t ω⟩
+  -- the good event `{√n d_K(F̂ₙ, F) < ε − s}` forces rejection
+  have hsubset : {ω | Real.sqrt (n : ℝ) * ksDist X μ ω < ε - s}
+      ⊆ {ω | s < ksStat X F₀ ω} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    have hEval := hEIcc ω
+    -- triangle: d_K(F, F₀) ≤ d_K(F, F̂ₙ) + d_K(F̂ₙ, F₀)
+    have htri : supCDFDist F F₀
+        ≤ supCDFDist F (fun t => empCDF X ω t) + supCDFDist (fun t => empCDF X ω t) F₀ :=
+      supCDFDist_triangle (bddAbove_absCDFDiff hFIcc hEval) (bddAbove_absCDFDiff hEval hF₀Icc)
+    -- identify the two summands with `ksDist` and `ksStat / √n`
+    have hks : ksStat X F₀ ω = Real.sqrt (n : ℝ) * supCDFDist (fun t => empCDF X ω t) F₀ := by
+      simp only [ksStat, supCDFDist, empiricalCDF_eq_empCDF]
+    have hdist : ksDist X μ ω = supCDFDist F (fun t => empCDF X ω t) := by
+      rw [supCDFDist_comm]
+      unfold ksDist supCDFDist
+      exact iSup_congr fun t => by rw [hF t]
+    have hsqrt_nonneg : 0 ≤ Real.sqrt (n : ℝ) := Real.sqrt_nonneg _
+    have hchain : ε ≤ Real.sqrt (n : ℝ) * ksDist X μ ω + ksStat X F₀ ω := by
+      calc ε ≤ Real.sqrt (n : ℝ) * supCDFDist F F₀ := hfar
+        _ ≤ Real.sqrt (n : ℝ) * (supCDFDist F (fun t => empCDF X ω t)
+              + supCDFDist (fun t => empCDF X ω t) F₀) := by
+            exact mul_le_mul_of_nonneg_left htri hsqrt_nonneg
+        _ = Real.sqrt (n : ℝ) * ksDist X μ ω + ksStat X F₀ ω := by
+            rw [hks, hdist, mul_add]
+    linarith
+  -- combine with the deviation inequality via subadditivity
+  set A := {ω | ε - s ≤ Real.sqrt (n : ℝ) * ksDist X μ ω} with hA
+  have hdkw : P A ≤ ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 8)) :=
+    dkw_uniform hn μ X hX hindep hlaw hd
+  have hAc : {ω | Real.sqrt (n : ℝ) * ksDist X μ ω < ε - s} = Aᶜ := by
+    rw [hA]; ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+  have hsub : P Aᶜ ≤ P {ω | s < ksStat X F₀ ω} := by
+    rw [← hAc]; exact measure_mono hsubset
+  have hunion : (1 : ℝ≥0∞) ≤ P A + P Aᶜ := by
+    have := measure_union_le (μ := P) A Aᶜ
+    simpa [Set.union_compl_self, measure_univ] using this
+  calc ENNReal.ofReal (1 - 4 * Real.exp (-((ε - s) ^ 2) / 8))
+      = 1 - ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 8)) := by
+        rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one]
+    _ ≤ 1 - P A := by
+        apply tsub_le_tsub_left hdkw
+    _ ≤ P Aᶜ := by
+        rw [tsub_le_iff_right, add_comm]; exact hunion
+    _ ≤ P {ω | s < ksStat X F₀ ω} := hsub
 
 /-- **Uniform consistency in power.** The power of the calibrated Kolmogorov–Smirnov test
 tends to one uniformly over the alternatives `F` with `n^{1/2} d_K(F, F₀) ≥ εₙ`, whenever
@@ -299,6 +383,34 @@ theorem ks_uniform_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabili
     (hε : Tendsto ε atTop atTop) :
     Tendsto (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal)
       atTop (nhds 1) := by
-  sorry
+  set s := ksThreshold α with hs
+  have hεs : Tendsto (fun n => ε n - s) atTop atTop := by
+    simpa [sub_eq_add_neg] using tendsto_atTop_add_const_right atTop (-s) hε
+  have hexp0 : Tendsto (fun n => 4 * Real.exp (-((ε n - s) ^ 2) / 8)) atTop (nhds 0) := by
+    have h1 : Tendsto (fun n => (ε n - s) ^ 2 / 8) atTop atTop :=
+      ((tendsto_pow_atTop two_ne_zero).comp hεs).atTop_div_const (by norm_num)
+    have h2 : Tendsto (fun n => Real.exp (-((ε n - s) ^ 2 / 8))) atTop (nhds 0) :=
+      Real.tendsto_exp_neg_atTop_nhds_zero.comp h1
+    have h3 := h2.const_mul 4
+    simpa [neg_div] using h3
+  have hLlim : Tendsto (fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)) atTop (nhds 1) := by
+    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub hexp0
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
+    (g := fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)) (h := fun _ => (1 : ℝ))
+    hLlim tendsto_const_nhds ?_ ?_
+  · filter_upwards [hε.eventually_gt_atTop s, eventually_ge_atTop 1] with n hgap hn1
+    have hn : 0 < n := hn1
+    have hlb := ks_power_lower_bound hn hα hα1 (hX n) (hindep n) (hlaw n) (hF n) hF₀
+      (hfar n) hgap
+    have hle : 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)
+        ≤ (ENNReal.ofReal (1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8))).toReal := by
+      by_cases h : 0 ≤ 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)
+      · rw [ENNReal.toReal_ofReal h]
+      · exact le_trans (not_le.mp h).le ENNReal.toReal_nonneg
+    exact hle.trans (ENNReal.toReal_mono (measure_ne_top _ _) hlb)
+  · filter_upwards with n
+    have h1 : (P n) {ω | s < ksStat (X n) F₀ ω} ≤ 1 :=
+      (measure_mono (Set.subset_univ _)).trans_eq (measure_univ)
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top h1
 
 end StatLean.HypothesisTesting
