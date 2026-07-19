@@ -1,5 +1,6 @@
 import Mathlib.Analysis.Convex.Function
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
@@ -121,6 +122,58 @@ theorem exists_forall_le_of_continuous_of_coercive
     · exact isMinOn_iff.mp hx_min y hy
     · exact le_trans hx_mem (not_le.mp hy).le
 
+/-- The infimum over `Iic q` equals the infimum of `v ↦ g (min v q)` over all of `ℝ`. -/
+private theorem iInf_Iic_eq_iInf_comp_min (g : ℝ → ℝ≥0∞) (q : ℝ) :
+    (⨅ v ∈ Set.Iic q, g v) = ⨅ v : ℝ, g (min v q) := by
+  apply le_antisymm
+  · exact le_iInf fun v => iInf₂_le (min v q) (min_le_right v q)
+  · refine le_iInf₂ fun w hw => ?_
+    calc ⨅ v : ℝ, g (min v q) ≤ g (min w q) := iInf_le _ w
+      _ = g w := by rw [min_eq_left hw]
+
+/-- A continuous coercive function attains its infimum over a lower half-line `Iic q`. -/
+private theorem exists_argmin_Iic {g : ℝ → ℝ≥0∞} (hg : Continuous g)
+    (hcoer : Tendsto g (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞))) (q : ℝ) :
+    ∃ w ≤ q, g w = ⨅ v ∈ Set.Iic q, g v := by
+  set mq : ℝ≥0∞ := ⨅ v ∈ Set.Iic q, g v with hmq
+  by_cases hmqtop : mq = ⊤
+  · refine ⟨q, le_refl q, ?_⟩
+    have h : mq ≤ g q := by
+      rw [hmq]; exact iInf₂_le q (Set.mem_Iic.mpr le_rfl)
+    rw [hmqtop] at h ⊢
+    exact top_le_iff.mp h
+  · have hmqlt : mq < ⊤ := lt_top_iff_ne_top.mpr hmqtop
+    set c : ℝ≥0∞ := mq + 1 with hc
+    have hctop : c < ⊤ := by
+      rw [hc]; exact ENNReal.add_lt_top.mpr ⟨hmqlt, ENNReal.one_lt_top⟩
+    have hmc : mq < c := by rw [hc]; exact ENNReal.lt_add_right hmqtop one_ne_zero
+    obtain ⟨v₀, hv₀q, hv₀c⟩ : ∃ v₀ ≤ q, g v₀ < c := by
+      have h : (⨅ v ∈ Set.Iic q, g v) < c := hmc
+      rw [iInf_lt_iff] at h
+      obtain ⟨v, hv⟩ := h
+      rw [iInf_lt_iff] at hv
+      obtain ⟨hvq, hvc⟩ := hv
+      exact ⟨v, hvq, hvc⟩
+    have hmem : g ⁻¹' Set.Ioi c ∈ cocompact ℝ := hcoer (Ioi_mem_nhds hctop)
+    obtain ⟨t, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hclosed : IsClosed (Set.Iic q ∩ {v | g v ≤ c}) :=
+      isClosed_Iic.inter (isClosed_Iic.preimage hg)
+    have hsub : (Set.Iic q ∩ {v | g v ≤ c}) ⊆ t := by
+      intro v hv
+      by_contra hvt
+      exact absurd (ht_sub hvt) (by simpa using hv.2)
+    have hcompact : IsCompact (Set.Iic q ∩ {v | g v ≤ c}) :=
+      ht_comp.of_isClosed_subset hclosed hsub
+    have hne : (Set.Iic q ∩ {v | g v ≤ c}).Nonempty := ⟨v₀, hv₀q, hv₀c.le⟩
+    obtain ⟨w, hw_mem, hw_min⟩ := hcompact.exists_isMinOn hne hg.continuousOn
+    refine ⟨w, hw_mem.1, ?_⟩
+    rw [hmq]
+    refine le_antisymm ?_ (iInf₂_le w hw_mem.1)
+    refine le_iInf₂ fun v hv => ?_
+    by_cases hvc : g v ≤ c
+    · exact isMinOn_iff.mp hw_min v ⟨hv, hvc⟩
+    · exact le_trans hw_mem.2 (not_le.mp hvc).le
+
 /-- **Measurable argmin.** A jointly measurable family of convex, continuous, coercive
 functions of a real scan variable admits a measurable minimizer selection. -/
 theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
@@ -135,6 +188,125 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
     -- USER-INPUT: coercivity in the scan variable; forces attainment
     (hcoer : ∀ ω, Tendsto (f ω) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞))) :
     ∃ u : Ω → ℝ, Measurable u ∧ ∀ ω, f ω (u ω) = ⨅ v : ℝ, f ω v := by
-  sorry
+  classical
+  -- pointwise minimum value; measurable through a rational infimum
+  have hfq : ∀ q : ℚ, Measurable (fun ω => f ω (q : ℝ)) := fun q =>
+    hf.comp (measurable_id.prodMk measurable_const)
+  set M : Ω → ℝ≥0∞ := fun ω => ⨅ v : ℝ, f ω v with hMdef
+  have hM_meas : Measurable M := by
+    have hEq : M = fun ω => ⨅ q : ℚ, f ω (q : ℝ) := by
+      funext ω; exact iInf_eq_iInf_rat_of_continuous (hcont ω)
+    rw [hEq]; exact Measurable.iInf hfq
+  -- restricted minimum value over `Iic q`; measurable through the `min`-trick
+  have hLq_meas : ∀ q : ℚ, Measurable (fun ω => ⨅ v ∈ Set.Iic (q : ℝ), f ω v) := by
+    intro q
+    have hEq : (fun ω => ⨅ v ∈ Set.Iic (q : ℝ), f ω v)
+        = fun ω => ⨅ p : ℚ, f ω (min (p : ℝ) (q : ℝ)) := by
+      funext ω
+      rw [iInf_Iic_eq_iInf_comp_min (f ω) (q : ℝ)]
+      exact iInf_eq_iInf_rat_of_continuous
+        ((hcont ω).comp (continuous_id.min continuous_const))
+    rw [hEq]
+    exact Measurable.iInf fun p => hf.comp (measurable_id.prodMk measurable_const)
+  -- the minimizer set and its leftmost point
+  set S : Ω → Set ℝ := fun ω => {v | f ω v = M ω} with hSdef
+  set u : Ω → ℝ := fun ω => sInf (S ω) with hudef
+  have hclosedS : ∀ ω, IsClosed (S ω) := fun ω =>
+    isClosed_singleton.preimage (hcont ω)
+  have hneS : ∀ ω, (S ω).Nonempty := by
+    intro ω
+    obtain ⟨x, hx⟩ := exists_forall_le_of_continuous_of_coercive (hcont ω) (hcoer ω)
+    exact ⟨x, le_antisymm (le_iInf hx) (iInf_le _ x)⟩
+  have hbddS : ∀ ω, M ω < ⊤ → BddBelow (S ω) := by
+    intro ω hlt
+    have hmem : f ω ⁻¹' Set.Ioi (M ω) ∈ cocompact ℝ := (hcoer ω) (Ioi_mem_nhds hlt)
+    obtain ⟨t, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hSsub : S ω ⊆ t := by
+      intro v hv
+      by_contra hvt
+      have hlt2 : M ω < f ω v := ht_sub hvt
+      rw [show f ω v = M ω from hv] at hlt2
+      exact lt_irrefl _ hlt2
+    exact ht_comp.bddBelow.mono hSsub
+  -- attainment
+  have hattain : ∀ ω, f ω (u ω) = M ω := by
+    intro ω
+    by_cases hMtop : M ω = ⊤
+    · have h1 : M ω ≤ f ω (u ω) := iInf_le _ (u ω)
+      rw [hMtop] at h1 ⊢
+      exact top_le_iff.mp h1
+    · have hlt : M ω < ⊤ := lt_top_iff_ne_top.mpr hMtop
+      exact (hclosedS ω).csInf_mem (hneS ω) (hbddS ω hlt)
+  -- leftmost-point characterisation of `{u ≤ q}`
+  have hMle_biInf : ∀ ω (q : ℚ), M ω ≤ ⨅ v ∈ Set.Iic (q : ℝ), f ω v := fun ω q =>
+    le_iInf₂ fun v _ => iInf_le _ v
+  have hchar : ∀ ω (q : ℚ), u ω ≤ (q : ℝ) ↔
+      (M ω = ⊤ ∧ (0 : ℝ) ≤ (q : ℝ)) ∨
+      (M ω < ⊤ ∧ (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω) := by
+    intro ω q
+    by_cases hMtop : M ω = ⊤
+    · -- here every point is a minimiser and `u ω = 0`
+      have hSuniv : S ω = Set.univ := by
+        ext v
+        refine ⟨fun _ => Set.mem_univ _, fun _ => ?_⟩
+        show f ω v = M ω
+        exact le_antisymm (by rw [hMtop]; exact le_top) (iInf_le _ v)
+      have hu0 : u ω = 0 := by
+        show sInf (S ω) = 0
+        rw [hSuniv]
+        exact Real.sInf_of_not_bddBelow
+          (not_bddBelow_iff.mpr fun x => ⟨x - 1, Set.mem_univ _, by linarith⟩)
+      rw [hu0]
+      constructor
+      · intro h; exact Or.inl ⟨hMtop, h⟩
+      · rintro (⟨_, h⟩ | ⟨hlt, _⟩)
+        · exact h
+        · exact absurd hMtop (ne_of_lt hlt)
+    · have hlt : M ω < ⊤ := lt_top_iff_ne_top.mpr hMtop
+      have hmem : u ω ∈ S ω := (hclosedS ω).csInf_mem (hneS ω) (hbddS ω hlt)
+      constructor
+      · intro h
+        refine Or.inr ⟨hlt, le_antisymm ?_ (hMle_biInf ω q)⟩
+        calc ⨅ v ∈ Set.Iic (q : ℝ), f ω v
+            ≤ f ω (u ω) := iInf₂_le (u ω) (Set.mem_Iic.mpr h)
+          _ = M ω := hmem
+      · rintro (⟨hcontra, _⟩ | ⟨_, hbi⟩)
+        · exact absurd hcontra hMtop
+        · obtain ⟨w, hwq, hfw⟩ := exists_argmin_Iic (hcont ω) (hcoer ω) (q : ℝ)
+          have hwS : w ∈ S ω := by show f ω w = M ω; rw [hfw, hbi]
+          exact le_trans (csInf_le (hbddS ω hlt) hwS) hwq
+  -- measurability of the selection
+  refine ⟨u, ?_, fun ω => (hattain ω)⟩
+  apply measurable_of_Iic
+  intro r
+  -- `{u ≤ r} = ⋂ (q:ℚ) (_ : r < q), {u ≤ q}`
+  have hset : u ⁻¹' Set.Iic r
+      = ⋂ (q : ℚ) (_ : r < (q : ℝ)), {ω | u ω ≤ (q : ℝ)} := by
+    ext ω
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_setOf_eq]
+    constructor
+    · intro h q _; exact le_trans h (le_of_lt ‹r < (q : ℝ)›)
+    · intro h
+      by_contra hlt
+      push_neg at hlt
+      obtain ⟨q, hrq, hqu⟩ := exists_rat_btwn hlt
+      exact absurd (h q hrq) (not_le.mpr hqu)
+  rw [hset]
+  refine MeasurableSet.iInter fun q => MeasurableSet.iInter fun _ => ?_
+  have hqset : {ω | u ω ≤ (q : ℝ)}
+      = ((M ⁻¹' {⊤}) ∩ {ω | (0 : ℝ) ≤ (q : ℝ)}) ∪
+        ((M ⁻¹' Set.Iio ⊤) ∩ {ω | (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω}) := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
+      Set.mem_singleton_iff, Set.mem_Iio]
+    rw [hchar ω q]
+  rw [hqset]
+  refine MeasurableSet.union (MeasurableSet.inter ?_ ?_) (MeasurableSet.inter ?_ ?_)
+  · exact hM_meas (measurableSet_singleton ⊤)
+  · by_cases h : (0 : ℝ) ≤ (q : ℝ)
+    · simp only [h, Set.setOf_true]; exact MeasurableSet.univ
+    · simp only [h, Set.setOf_false]; exact MeasurableSet.empty
+  · exact hM_meas measurableSet_Iio
+  · exact measurableSet_eq_fun (hLq_meas q) hM_meas
 
 end StatLean.PointEstimation
