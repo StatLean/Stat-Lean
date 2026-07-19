@@ -63,27 +63,65 @@ variable {m n : ℕ}
 
 /-! ### Elementary closure properties -/
 
+/-- Translating the data by a constant shift leaves the differences unchanged. -/
+private lemma diffs_add_smul_one (x : Fin (m + 1) → ℝ) (a : ℝ) :
+    diffs (x + a • (1 : Fin (m + 1) → ℝ)) = diffs x := by
+  funext i
+  simp only [diffs, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
+  ring
+
+/-- Every data point equals the section `Fin.snoc (diffs x) 0` shifted by its last
+coordinate. This exhibits `x` and `Fin.snoc (diffs x) 0` as translates, which is the
+engine of the factorization through the differences. -/
+private lemma eq_snoc_diffs_add (x : Fin (m + 1) → ℝ) :
+    x = Fin.snoc (diffs x) (0 : ℝ) + (x (Fin.last m)) • (1 : Fin (m + 1) → ℝ) := by
+  funext j
+  induction j using Fin.lastCases with
+  | last =>
+      simp only [Fin.snoc_last, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul,
+        mul_one, zero_add]
+  | cast i =>
+      simp only [Fin.snoc_castSucc, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul,
+        mul_one, diffs]
+      ring
+
+/-- Appending a zero last coordinate is a measurable map. -/
+private lemma measurable_snoc_zero :
+    Measurable (fun y : Fin m → ℝ => (Fin.snoc y (0 : ℝ) : Fin (m + 1) → ℝ)) := by
+  apply measurable_pi_lambda
+  intro j
+  induction j using Fin.lastCases with
+  | last => simp only [Fin.snoc_last]; exact measurable_const
+  | cast i => simp only [Fin.snoc_castSucc]; exact measurable_pi_apply i
+
 /-- The difference statistic is measurable. -/
 theorem measurable_diffs : Measurable (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ) := by
-  sorry
+  apply measurable_pi_lambda
+  intro i
+  exact (measurable_pi_apply i.castSucc).sub (measurable_pi_apply (Fin.last m))
 
 /-- Appending a zero last coordinate is a section of `diffs`. -/
 theorem diffs_snoc (y : Fin m → ℝ) : diffs (Fin.snoc y (0 : ℝ)) = y := by
-  sorry
+  funext i
+  simp only [diffs, Fin.snoc_castSucc, Fin.snoc_last, sub_zero]
 
 /-- Subtracting a constant preserves location equivariance. Together with
 `locRisk_const` this is the whole content of the risk-unbiasedness of a minimum risk
 equivariant estimator. -/
 theorem IsLocEquivariant.sub_const {δ : (Fin n → ℝ) → ℝ} (hδ : IsLocEquivariant δ)
     (a : ℝ) : IsLocEquivariant fun x => δ x - a := by
-  sorry
+  intro b x
+  show δ (x + b • (1 : Fin n → ℝ)) - a = (δ x - a) + b
+  rw [hδ b x]; ring
 
 /-- Subtracting a translation-invariant function from an equivariant estimator leaves it
 equivariant. -/
 theorem IsLocEquivariant.sub_invariant {δ : (Fin n → ℝ) → ℝ} {u : (Fin n → ℝ) → ℝ}
     (hδ : IsLocEquivariant δ) (hu : IsLocInvariant u) :
     IsLocEquivariant fun x => δ x - u x := by
-  sorry
+  intro b x
+  show δ (x + b • (1 : Fin n → ℝ)) - u (x + b • (1 : Fin n → ℝ)) = (δ x - u x) + b
+  rw [hδ b x, hu b x]; ring
 
 /-! ### Constant risk -/
 
@@ -104,7 +142,13 @@ theorem locRisk_const (f : (Fin n → ℝ) → ℝ) (ρ : ℝ → ℝ) (δ : (Fi
     (hδeq : IsLocEquivariant δ)
     (ξ : ℝ) :
     ∫⁻ x, ENNReal.ofReal (ρ (δ x - ξ)) ∂(locationFamily f ξ) = locRisk f ρ δ := by
-  sorry
+  unfold locationFamily locRisk
+  have hmap_meas : Measurable (fun x : Fin n → ℝ => x + ξ • (1 : Fin n → ℝ)) := by fun_prop
+  have hint_meas : Measurable (fun x : Fin n → ℝ => ENNReal.ofReal (ρ (δ x - ξ))) :=
+    ENNReal.measurable_ofReal.comp (hρ.comp (hδ.sub_const ξ))
+  rw [lintegral_map hint_meas hmap_meas]
+  refine lintegral_congr fun x => ?_
+  rw [hδeq ξ x, add_sub_cancel_right]
 
 /-! ### Structure of the equivariant class -/
 
@@ -115,14 +159,29 @@ theorem isLocEquivariant_iff_sub_invariant {δ₀ : (Fin n → ℝ) → ℝ}
     (h₀ : IsLocEquivariant δ₀)
     (δ : (Fin n → ℝ) → ℝ) :
     IsLocEquivariant δ ↔ IsLocInvariant fun x => δ x - δ₀ x := by
-  sorry
+  constructor
+  · intro hδ a x
+    show δ (x + a • (1 : Fin n → ℝ)) - δ₀ (x + a • (1 : Fin n → ℝ)) = δ x - δ₀ x
+    rw [hδ a x, h₀ a x]; ring
+  · intro hu a x
+    have hux := hu a x
+    show δ (x + a • (1 : Fin n → ℝ)) = δ x + a
+    simp only at hux
+    rw [h₀ a x] at hux
+    linarith
 
 /-- **A function of the data is translation-invariant iff it factors through the
 differences.** For `m = 0` (a single observation) the target `Fin 0 → ℝ` is a
 subsingleton, so the statement specialises to "invariant iff constant". -/
 theorem isLocInvariant_iff_factors_diffs (u : (Fin (m + 1) → ℝ) → ℝ) :
     IsLocInvariant u ↔ ∃ v : (Fin m → ℝ) → ℝ, ∀ x, u x = v (diffs x) := by
-  sorry
+  constructor
+  · intro hu
+    refine ⟨fun y => u (Fin.snoc y 0), fun x => ?_⟩
+    conv_lhs => rw [eq_snoc_diffs_add x]
+    exact hu (x (Fin.last m)) (Fin.snoc (diffs x) 0)
+  · rintro ⟨v, hv⟩ a x
+    rw [hv, hv, diffs_add_smul_one]
 
 /-- Measurable version of the factorization through the differences: a measurable
 translation-invariant function factors through `diffs` **measurably**. This is the form
@@ -131,7 +190,15 @@ against a conditional distribution. -/
 theorem isLocInvariant_iff_factors_diffs_measurable (u : (Fin (m + 1) → ℝ) → ℝ) :
     (Measurable u ∧ IsLocInvariant u) ↔
       ∃ v : (Fin m → ℝ) → ℝ, Measurable v ∧ ∀ x, u x = v (diffs x) := by
-  sorry
+  constructor
+  · rintro ⟨humeas, hu⟩
+    refine ⟨fun y => u (Fin.snoc y 0), humeas.comp measurable_snoc_zero, fun x => ?_⟩
+    conv_lhs => rw [eq_snoc_diffs_add x]
+    exact hu (x (Fin.last m)) (Fin.snoc (diffs x) 0)
+  · rintro ⟨v, hvmeas, hv⟩
+    refine ⟨?_, fun a x => by rw [hv, hv, diffs_add_smul_one]⟩
+    have hueq : u = fun x => v (diffs x) := funext hv
+    rw [hueq]; exact hvmeas.comp measurable_diffs
 
 /-- **Representation of the equivariant class.** Relative to a fixed equivariant `δ₀`,
 the equivariant estimators are exactly `δ₀ − v ∘ diffs` as `v` ranges over all functions
@@ -141,7 +208,14 @@ theorem isLocEquivariant_iff_exists_diffs_rep {δ₀ : (Fin (m + 1) → ℝ) →
     (h₀ : IsLocEquivariant δ₀)
     (δ : (Fin (m + 1) → ℝ) → ℝ) :
     IsLocEquivariant δ ↔ ∃ v : (Fin m → ℝ) → ℝ, ∀ x, δ x = δ₀ x - v (diffs x) := by
-  sorry
+  rw [isLocEquivariant_iff_sub_invariant h₀, isLocInvariant_iff_factors_diffs]
+  constructor
+  · rintro ⟨v, hv⟩
+    refine ⟨fun y => - v y, fun x => ?_⟩
+    have hvx := hv x; dsimp only at hvx ⊢; linarith
+  · rintro ⟨v, hv⟩
+    refine ⟨fun y => - v y, fun x => ?_⟩
+    have hvx := hv x; dsimp only at hvx ⊢; linarith
 
 /-- Measurable version of the representation of the equivariant class: measurable
 equivariant estimators correspond to measurable functions of the differences. -/
@@ -154,7 +228,19 @@ theorem isLocEquivariant_iff_exists_diffs_rep_measurable {δ₀ : (Fin (m + 1) �
     (δ : (Fin (m + 1) → ℝ) → ℝ) :
     (Measurable δ ∧ IsLocEquivariant δ) ↔
       ∃ v : (Fin m → ℝ) → ℝ, Measurable v ∧ ∀ x, δ x = δ₀ x - v (diffs x) := by
-  sorry
+  constructor
+  · rintro ⟨hδm, hδeq⟩
+    have hinv : IsLocInvariant (fun x => δ x - δ₀ x) :=
+      (isLocEquivariant_iff_sub_invariant h₀ δ).mp hδeq
+    obtain ⟨v, hvm, hv⟩ :=
+      (isLocInvariant_iff_factors_diffs_measurable _).mp ⟨hδm.sub h₀meas, hinv⟩
+    refine ⟨fun y => - v y, hvm.neg, fun x => ?_⟩
+    have hvx := hv x; dsimp only at hvx ⊢; linarith
+  · rintro ⟨v, hvm, hv⟩
+    have heq : IsLocEquivariant δ :=
+      (isLocEquivariant_iff_exists_diffs_rep h₀ δ).mpr ⟨v, hv⟩
+    have hueq : δ = fun x => δ₀ x - v (diffs x) := funext hv
+    exact ⟨by rw [hueq]; exact h₀meas.sub (hvm.comp measurable_diffs), heq⟩
 
 end Location
 
