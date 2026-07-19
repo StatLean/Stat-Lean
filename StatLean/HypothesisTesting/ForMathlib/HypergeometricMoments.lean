@@ -466,6 +466,45 @@ theorem var_mean_linear_le {n m : ℕ}
         ((m : ℝ)⁻¹ * ((∑ i, c i * weight i s)
           - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s'))) ^ 2)
       ≤ (2 / m) * ((n : ℝ)⁻¹ * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2) := by
-  sorry
+  have hmr : (0 : ℝ) < m := by exact_mod_cast hm0
+  have hnr2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < n := by linarith
+  have hn1 : (0 : ℝ) < (n : ℝ) - 1 := by linarith
+  have hmn : (m : ℝ) ≤ n := by exact_mod_cast hm
+  have hmne : (m : ℝ) ≠ 0 := hmr.ne'
+  have hn0ne : (n : ℝ) ≠ 0 := hn0.ne'
+  have hn1ne : (n : ℝ) - 1 ≠ 0 := hn1.ne'
+  have hV : 0 ≤ ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2 :=
+    Finset.sum_nonneg fun i _ => sq_nonneg _
+  -- Pull out the `m⁻²` factor and invoke the exact variance identity.
+  have hstep : expect (fun s : SubsetsOfCard n m =>
+        ((m : ℝ)⁻¹ * ((∑ i, c i * weight i s)
+          - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s'))) ^ 2)
+      = ((m : ℝ)⁻¹) ^ 2 * (((m : ℝ) * ((n : ℝ) - m) / ((n : ℝ) * ((n : ℝ) - 1)))
+          * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2) := by
+    rw [show (fun s : SubsetsOfCard n m =>
+            ((m : ℝ)⁻¹ * ((∑ i, c i * weight i s)
+              - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s'))) ^ 2)
+          = (fun s => ((m : ℝ)⁻¹) ^ 2 * (((∑ i, c i * weight i s)
+              - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s')) ^ 2))
+          from by funext s; ring,
+      expect_smul, var_linear hm hn]
+  rw [hstep]
+  -- The finite-population factor `(n-m)/(n-1)` is at most `2`.
+  have hcoef : ((m : ℝ)⁻¹) ^ 2 * ((m : ℝ) * ((n : ℝ) - m) / ((n : ℝ) * ((n : ℝ) - 1)))
+      ≤ (2 / m) * (n : ℝ)⁻¹ := by
+    rw [show ((m : ℝ)⁻¹) ^ 2 * ((m : ℝ) * ((n : ℝ) - m) / ((n : ℝ) * ((n : ℝ) - 1)))
+          = ((n : ℝ) - m) / ((m : ℝ) * ((n : ℝ) * ((n : ℝ) - 1))) from by field_simp,
+      show (2 / (m : ℝ)) * (n : ℝ)⁻¹ = 2 / ((m : ℝ) * (n : ℝ)) from by field_simp,
+      div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [mul_nonneg (mul_nonneg hmr.le hn0.le)
+      (show (0 : ℝ) ≤ (n : ℝ) + (m : ℝ) - 2 from by linarith)]
+  calc ((m : ℝ)⁻¹) ^ 2 * (((m : ℝ) * ((n : ℝ) - m) / ((n : ℝ) * ((n : ℝ) - 1)))
+          * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2)
+      = (((m : ℝ)⁻¹) ^ 2 * ((m : ℝ) * ((n : ℝ) - m) / ((n : ℝ) * ((n : ℝ) - 1))))
+          * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2 := by ring
+    _ ≤ ((2 / m) * (n : ℝ)⁻¹) * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2 :=
+        mul_le_mul_of_nonneg_right hcoef hV
+    _ = (2 / m) * ((n : ℝ)⁻¹ * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2) := by ring
 
 end StatLean.HypothesisTesting
