@@ -515,7 +515,146 @@ theorem isUMP_oneSided_shifted
     {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (θ' : ℝ) :
     IsUMP P (Set.Iic θ') (Set.Ioi θ') (power P (oneSidedTest T C γ) θ')
       (oneSidedTest T C γ) := by
-  sorry
+  set φ := oneSidedTest T C γ with hφdef
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
+  have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+  have hmono : Monotone fun θ => power P φ θ :=
+    integral_mono_of_hasMLR μ P p hp T hT hMLR φ hφc.1
+      (fun x y h => oneSidedTest_mono hγ h) hφint
+  refine ⟨hφc, fun θ hθ => hmono (Set.mem_Iic.mp hθ), ?_⟩
+  intro ψ hψ hψlevel θ'' hθ''
+  have hlt : θ' < θ'' := Set.mem_Ioi.mp hθ''
+  by_cases hz : ∃ z, C ≤ T z ∧ 0 < p θ' z
+  · have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ hz
+    exact hMP.2.2 ψ hψ (hψlevel θ' (Set.mem_Iic.mpr le_rfl))
+  · -- Degenerate boundary: `p θ' = 0` on `{T ≥ C}`, so `power P φ θ' = 0` and the level is
+    -- `0`. Here the frozen statement is DEFECTIVE: at level `0` a competitor may reject on
+    -- the *whole* `P θ'`-null set `{p θ' = 0}` (which can strictly contain `{T ≥ C}` when a
+    -- density vanishes below `C`), beating `φ`, so `φ` need not be UMP. The classical result
+    -- carries the omitted hypothesis that the densities are strictly positive (equivalently,
+    -- that the level `power P φ θ'` is positive); under `hz` — which positivity guarantees —
+    -- the branch above is a complete proof. Reported per the no-weakening policy.
+    -- TODO(statement-bug): add `0 < power P φ θ'` (or positive densities) to discharge this.
+    sorry
+
+/-- Power of the co-test `1 − g` is `1 −` the power of `g`. -/
+private lemma powerAgainst_one_sub {P : Measure 𝓧} [IsProbabilityMeasure P] {g : 𝓧 → ℝ}
+    (hg : Integrable g P) : powerAgainst P (fun x => 1 - g x) = 1 - powerAgainst P g := by
+  unfold powerAgainst
+  rw [integral_sub (integrable_const 1) hg, integral_const]; simp
+
+/-- **Reversed separating multiplier.** For `θ < θ'`, given a point of positive `θ'`-density
+with `T ≤ C`, there is `k ≥ 0` with `p_θ' ≤ k·p_θ` where `T ≥ C` and `k·p_θ ≤ p_θ'` where
+`T ≤ C` — the mirror of `exists_sep_const`, for the ratio `p_θ'/p_θ` read as *nonincreasing*
+below the boundary. -/
+private lemma exists_sep_const_rev {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (hz : ∃ z, T z ≤ C ∧ 0 < p θ' z) :
+    ∃ k : ℝ, 0 ≤ k ∧ (∀ x, C ≤ T x → p θ x ≤ k * p θ' x) ∧
+      (∀ x, T x ≤ C → k * p θ' x ≤ p θ x) := by
+  obtain ⟨z₀, hz₀C, hz₀pos⟩ := hz
+  have hnn' : ∀ x, 0 ≤ p θ' x := (hp θ').2.1
+  have hnn : ∀ x, 0 ≤ p θ x := (hp θ).2.1
+  set S : Set ℝ := {r | ∃ x, C ≤ T x ∧ 0 < p θ' x ∧ r = p θ x / p θ' x} with hSdef
+  set ratz := p θ z₀ / p θ' z₀ with hratz
+  have hratz_nn : 0 ≤ ratz := div_nonneg (hnn z₀) hz₀pos.le
+  have hUB : ∀ r ∈ insert (0 : ℝ) S, r ≤ ratz := by
+    intro r hr
+    rcases hr with hr0 | ⟨x, hxC, hxpos, hxeq⟩
+    · exact hr0 ▸ hratz_nn
+    · rw [hxeq, hratz, div_le_div_iff₀ hxpos hz₀pos]
+      have := hMLR hlt z₀ x (le_trans hz₀C hxC)
+      nlinarith [this]
+  have hbdd : BddAbove (insert (0 : ℝ) S) := ⟨ratz, hUB⟩
+  have hne : (insert (0 : ℝ) S).Nonempty := ⟨0, Set.mem_insert 0 S⟩
+  set k := sSup (insert (0 : ℝ) S) with hkdef
+  have hk0 : 0 ≤ k := le_csSup hbdd (Set.mem_insert 0 S)
+  refine ⟨k, hk0, ?_, ?_⟩
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn' x) with hpx | hpx
+    · have hkey := hMLR hlt z₀ x (le_trans hz₀C hxC)
+      rw [← hpx, mul_zero] at hkey
+      have : p θ' z₀ * p θ x ≤ 0 := by nlinarith [hkey]
+      have hpx'0 : p θ x = 0 :=
+        le_antisymm (nonpos_of_mul_nonpos_right this hz₀pos) (hnn x)
+      rw [hpx'0, ← hpx, mul_zero]
+    · have hmem : p θ x / p θ' x ∈ insert (0 : ℝ) S :=
+        Set.mem_insert_iff.mpr (Or.inr ⟨x, hxC, hpx, rfl⟩)
+      have hle : p θ x / p θ' x ≤ k := le_csSup hbdd hmem
+      rw [div_le_iff₀ hpx] at hle
+      linarith [hle]
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn' x) with hpx | hpx
+    · rw [← hpx, mul_zero]; exact hnn x
+    · have hUBx : ∀ r ∈ insert (0 : ℝ) S, r ≤ p θ x / p θ' x := by
+        intro r hr
+        rcases hr with hr0 | ⟨y, hyC, hypos, hyeq⟩
+        · exact hr0 ▸ div_nonneg (hnn x) hpx.le
+        · rw [hyeq, div_le_div_iff₀ hypos hpx]
+          have := hMLR hlt x y (le_trans hxC hyC)
+          nlinarith [this]
+      have hle : k ≤ p θ x / p θ' x := csSup_le hne hUBx
+      rw [le_div_iff₀ hpx] at hle
+      linarith [hle]
+
+/-- **The co-test `1 − φ` has Neyman–Pearson shape** for the swapped simple problem
+`P θ'` (null) against `P θ` (alt), `θ < θ'`, given a positive `θ'`-density point below `C`. -/
+private lemma hasNPShape_coOneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (γ : ℝ) (hz : ∃ z, T z ≤ C ∧ 0 < p θ' z) :
+    ∃ K : ℝ≥0∞, HasNPShape μ (p θ') (p θ) K (fun x => 1 - oneSidedTest T C γ x) := by
+  obtain ⟨k, hk0, hge, hle⟩ := exists_sep_const_rev hp hMLR hlt hz
+  refine ⟨ENNReal.ofReal k, ?_, ?_⟩
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : k * p θ' x < p θ x := by
+      by_contra hcon; push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : T x < C := by
+      by_contra hcon
+      exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show 1 - oneSidedTest T C γ x = 1
+    unfold oneSidedTest
+    rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]; ring
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : p θ x < k * p θ' x := by
+      by_contra hcon; push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : C < T x := by
+      by_contra hcon
+      exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show 1 - oneSidedTest T C γ x = 0
+    unfold oneSidedTest; rw [if_pos hTC]; ring
+
+/-- If the co-test `1 − φ` has positive power at `θ`, some point at or below the threshold
+has positive `θ`-density. -/
+private lemma exists_pos_density_below_of_coPower_pos {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {p : ℝ → 𝓧 → ℝ} (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ} {θ : ℝ}
+    (hpow : power P (oneSidedTest T C γ) θ < 1) : ∃ z, T z ≤ C ∧ 0 < p θ z := by
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
+  have hnull : (P θ) {x | T x ≤ C} = 0 := by
+    rw [hPeq, withDensity_apply _ (measurableSet_le hT measurable_const)]
+    refine setLIntegral_eq_zero (measurableSet_le hT measurable_const) fun x hx => ?_
+    simp only [Set.mem_setOf_eq] at hx
+    simp [le_antisymm (hcon x hx) (hnn x)]
+  -- Off `{T ≤ C}`, i.e. on `{C < T}`, the one-sided test is `1`, so its power is `1`.
+  have hone : power P (oneSidedTest T C γ) θ = 1 := by
+    rw [power_oneSidedTest_eq hT C γ θ]
+    have hRfull : (P θ) {x | C < T x} = 1 := by
+      have hcompl : {x | C < T x} = {x | T x ≤ C}ᶜ := by
+        ext x; simp [not_le]
+      rw [hcompl, prob_compl_eq_one_sub (measurableSet_le hT measurable_const), hnull, tsub_zero]
+    have hBle : (P θ) {x | T x = C} = 0 :=
+      measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_eq hx) hnull
+    rw [hRfull, hBle]; simp
+  rw [hone] at hpow; exact absurd hpow (lt_irrefl 1)
 
 /-- **Minimum rejection probability below the boundary.** Among all tests whose size at
 `θ₀` is exactly `α`, the one-sided test minimizes the probability of rejection — the
@@ -534,7 +673,43 @@ theorem power_min_oneSided
     (hsize : power P (oneSidedTest T C γ) θ₀ = α) :
     ∀ θ < θ₀, ∀ ψ, IsCriticalFn ψ → power P ψ θ₀ = α →
       power P (oneSidedTest T C γ) θ ≤ power P ψ θ := by
-  sorry
+  intro θ hθ ψ hψ hψsize
+  set φ := oneSidedTest T C γ with hφdef
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
+  have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+  have hψint : ∀ θ, Integrable ψ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hψ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]; exact (hψ.2 x).2)
+  by_cases hz : ∃ z, T z ≤ C ∧ 0 < p θ₀ z
+  · -- The co-test `1 − φ` is most powerful for `P θ₀` (null) against `P θ` (alt).
+    set coφ : 𝓧 → ℝ := fun x => 1 - φ x with hcoφdef
+    have hcoφc : IsCriticalFn coφ :=
+      ⟨measurable_const.sub hφc.1, fun x => ⟨by linarith [(hφc.2 x).2], by linarith [(hφc.2 x).1]⟩⟩
+    have hcoφsize : powerAgainst (P θ₀) coφ = 1 - α := by
+      rw [hcoφdef, powerAgainst_one_sub (hφint θ₀)]
+      exact congrArg (1 - ·) hsize
+    obtain ⟨K, hshape⟩ := hasNPShape_coOneSided hp hMLR hθ γ hz
+    have hMP := isMostPowerful_of_npShape μ (P θ₀) (P θ) (hp θ₀) (hp θ) hcoφc hcoφsize hshape
+    set coψ : 𝓧 → ℝ := fun x => 1 - ψ x with hcoψdef
+    have hcoψc : IsCriticalFn coψ :=
+      ⟨measurable_const.sub hψ.1, fun x => ⟨by linarith [(hψ.2 x).2], by linarith [(hψ.2 x).1]⟩⟩
+    have hcoψsize : powerAgainst (P θ₀) coψ ≤ 1 - α := by
+      rw [hcoψdef, powerAgainst_one_sub (hψint θ₀)]; exact le_of_eq (congrArg (1 - ·) hψsize)
+    have hcmp := hMP.2.2 coψ hcoψc hcoψsize
+    rw [hcoψdef, powerAgainst_one_sub (hψint θ), hcoφdef, powerAgainst_one_sub (hφint θ)] at hcmp
+    show powerAgainst (P θ) φ ≤ powerAgainst (P θ) ψ
+    linarith [hcmp]
+  · -- Degenerate: `p θ₀ = 0` on `{T ≤ C}`, forcing `power P φ θ₀ = 1`, i.e. `α = 1`. At
+    -- `α = 1` the size constraint `power ψ θ₀ = 1` forces `ψ = 1` `P θ₀`-a.e., but says
+    -- nothing about `P θ`, so the frozen statement is DEFECTIVE here for the same reason as
+    -- `isUMP_oneSided_shifted`: the classical result needs strictly positive densities (which
+    -- supply `hz`) or `α < 1`. Under either the branch above is a complete proof. Reported.
+    -- TODO(statement-bug): add positive densities (or `α < 1`) to discharge this.
+    sorry
 
 /-- **The one-sided tests form an essentially complete class.** For the two-decision
 problem whose losses satisfy `L₁ - L₀ > 0` below the boundary and `< 0` above it, every
