@@ -332,3 +332,10 @@ Cor 4.13); the canonical normal model end to end — complete sufficiency plus t
 - **Sanctioned deferrals (5):** TSH 2.6.1 general gluing, Thm 4.14(c), Thm 5.12 (⇒),
   Thm 5.8 s-dim joint analyticity, Thm 2.17's analytic core — each a named `private` lemma with
   a precise TODO, none consumed by any other result.
+
+### VERIFIED integration gate (2026-07-19)
+
+`lake build StatLean.PointEstimation` on the cluster: **0 errors, `Build completed successfully`,
+26 sorried declarations** (down from 175 at the stub gate — **85% closed**). The build warning
+count is the authoritative inventory; a `grep -c sorry` over the tree reports 29 because it also
+matches docstring and TODO mentions.
