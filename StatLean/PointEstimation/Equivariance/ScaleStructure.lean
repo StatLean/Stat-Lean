@@ -85,17 +85,71 @@ def IsLocScaleEquivariantScale (δ : (Fin n → ℝ) → ℝ) : Prop :=
 
 /-! ### Elementary closure properties -/
 
+/-- Positive scalings leave the maximal invariant `scaleZ` unchanged. This holds for
+*every* `x`, including `x (Fin.last m) = 0`, because Lean's `x / 0 = 0` makes both sides
+degenerate identically there. -/
+private lemma scaleZ_smul {b : ℝ} (hb : 0 < b) (x : Fin (m + 1) → ℝ) :
+    scaleZ (b • x) = scaleZ x := by
+  have hb0 : b ≠ 0 := ne_of_gt hb
+  have h1 : ∀ i : Fin m, (b • x) i.castSucc / (b • x) (Fin.last m)
+      = x i.castSucc / x (Fin.last m) := by
+    intro i
+    show b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
+    rw [mul_div_mul_left _ _ hb0]
+  have h2 : (b • x) (Fin.last m) / |(b • x) (Fin.last m)|
+      = x (Fin.last m) / |x (Fin.last m)| := by
+    show b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
+    rw [abs_mul, abs_of_pos hb, mul_div_mul_left _ _ hb0]
+  exact Prod.ext_iff.mpr ⟨funext h1, h2⟩
+
+/-- The explicit section of `scaleZ`: from the ratios `z` and the sign `s` rebuild a
+representative data point `Fin.snoc (fun i => z i * s) s`. -/
+private def scaleSect (p : (Fin m → ℝ) × ℝ) : Fin (m + 1) → ℝ :=
+  Fin.snoc (fun i => p.1 i * p.2) p.2
+
+/-- Off the null set, the section applied to `scaleZ x` recovers `x` up to the positive
+scalar `|x (Fin.last m)|⁻¹`; this is why a scale-invariant function is constant along it. -/
+private lemma scaleSect_scaleZ (x : Fin (m + 1) → ℝ) (hx : x (Fin.last m) ≠ 0) :
+    scaleSect (scaleZ x) = (|x (Fin.last m)|)⁻¹ • x := by
+  have haL : |x (Fin.last m)| ≠ 0 := abs_ne_zero.mpr hx
+  funext j
+  induction j using Fin.lastCases with
+  | last =>
+      simp only [scaleSect, scaleZ, Fin.snoc_last, Pi.smul_apply, smul_eq_mul]
+      rw [div_eq_inv_mul]
+  | cast i =>
+      simp only [scaleSect, scaleZ, Fin.snoc_castSucc, Pi.smul_apply, smul_eq_mul]
+      field_simp
+
+/-- The section is measurable. -/
+private lemma measurable_scaleSect :
+    Measurable (scaleSect : (Fin m → ℝ) × ℝ → (Fin (m + 1) → ℝ)) := by
+  apply measurable_pi_lambda
+  intro j
+  induction j using Fin.lastCases with
+  | last => simp only [scaleSect, Fin.snoc_last]; exact measurable_snd
+  | cast i =>
+      simp only [scaleSect, Fin.snoc_castSucc]
+      exact ((measurable_pi_apply i).comp measurable_fst).mul measurable_snd
+
 /-- The scale-invariant statistic is measurable. -/
 theorem measurable_scaleZ :
     Measurable (scaleZ : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) := by
-  sorry
+  apply Measurable.prodMk
+  · apply measurable_pi_lambda
+    intro i
+    exact (measurable_pi_apply i.castSucc).div (measurable_pi_apply (Fin.last m))
+  · exact (measurable_pi_apply (Fin.last m)).div
+      (continuous_abs.measurable.comp (measurable_pi_apply (Fin.last m)))
 
 /-- Dividing a scale-equivariant estimator by a scale-invariant function leaves it scale
 equivariant. -/
 theorem IsScaleEquivariant.div_invariant {r : ℕ} {δ : (Fin n → ℝ) → ℝ}
     {u : (Fin n → ℝ) → ℝ} (hδ : IsScaleEquivariant r δ) (hu : IsScaleInvariant u) :
     IsScaleEquivariant r fun x => δ x / u x := by
-  sorry
+  intro b hb x
+  show δ (b • x) / u (b • x) = b ^ r * (δ x / u x)
+  rw [hδ hb x, hu hb x, mul_div_assoc]
 
 /-! ### Structure of the scale-equivariant class -/
 
@@ -111,7 +165,20 @@ theorem isScaleEquivariant_iff_div_invariant {r : ℕ} {δ₀ : (Fin n → ℝ) 
     (h₀ne : ∀ x, δ₀ x ≠ 0)
     (δ : (Fin n → ℝ) → ℝ) :
     IsScaleEquivariant r δ ↔ ∃ u, IsScaleInvariant u ∧ ∀ x, δ x = δ₀ x / u x := by
-  sorry
+  constructor
+  · intro hδ
+    refine ⟨fun x => δ₀ x / δ x, ?_, ?_⟩
+    · intro b hb x
+      have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
+      show δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
+      rw [h₀ hb x, hδ hb x, mul_div_mul_left _ _ hbr]
+    · intro x
+      rw [div_div_eq_mul_div, mul_comm (δ₀ x) (δ x), mul_div_assoc,
+        div_self (h₀ne x), mul_one]
+  · rintro ⟨u, hu, hrep⟩
+    have hδeq : δ = fun x => δ₀ x / u x := funext hrep
+    rw [hδeq]
+    exact h₀.div_invariant hu
 
 /-- **A function is scale-invariant iff it factors through the maximal invariant**
 `scaleZ`, off the null set where the last coordinate vanishes. Both sides of the
@@ -120,7 +187,18 @@ determined either way. -/
 theorem isScaleInvariant_iff_factors_scaleZ (u : (Fin (m + 1) → ℝ) → ℝ) :
     (∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → u (b • x) = u x) ↔
       ∃ w : (Fin m → ℝ) × ℝ → ℝ, ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
-  sorry
+  constructor
+  · intro hu
+    refine ⟨fun p => u (scaleSect p), fun x hx => ?_⟩
+    have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
+    show u x = u (scaleSect (scaleZ x))
+    rw [scaleSect_scaleZ x hx]
+    exact (hu hb x hx).symm
+  · rintro ⟨w, hw⟩ b hb x hx
+    have hbx : (b • x) (Fin.last m) ≠ 0 := by
+      simp only [Pi.smul_apply, smul_eq_mul]
+      exact mul_ne_zero (ne_of_gt hb) hx
+    rw [hw (b • x) hbx, scaleZ_smul hb x, hw x hx]
 
 /-- Measurable version of the factorization through `scaleZ`, as consumed by the
 conditional-minimization argument. -/
@@ -129,7 +207,30 @@ theorem isScaleInvariant_iff_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ
         ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → u (b • x) = u x) ↔
       ∃ w : (Fin m → ℝ) × ℝ → ℝ, Measurable w ∧
         ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
-  sorry
+  constructor
+  · rintro ⟨hum, hu⟩
+    refine ⟨fun p => u (scaleSect p), hum.comp measurable_scaleSect, fun x hx => ?_⟩
+    have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
+    show u x = u (scaleSect (scaleZ x))
+    rw [scaleSect_scaleZ x hx]
+    exact (hu hb x hx).symm
+  · -- FALSE AS STATED (mpr). The right-hand side constrains `u` only off the null set
+    -- `{x (Fin.last m) = 0}`; on that Borel set (which is Borel-isomorphic to `ℝ^m`,
+    -- hence carries non-Borel subsets) `u` is unconstrained, so `Measurable u` cannot be
+    -- recovered. Counterexample: take `w = 0` (measurable) and let `u = 0` off the null
+    -- set and `u = indicator A` on it for a non-Borel `A ⊆ {x (Fin.last m) = 0}`. Then the
+    -- factorization holds off the null set but `u` is not measurable. The `mp` direction —
+    -- the one the conditional-minimization argument actually consumes — is true and proved
+    -- above; only this converse is defective, from restricting the factorization to the
+    -- null set on a statement whose left conjunct asks for *global* measurability.
+    rintro ⟨w, hwm, hw⟩
+    refine ⟨?_, ?_⟩
+    · sorry -- TODO: `Measurable u` is not derivable from an off-null-set factorization
+    · intro b hb x hx
+      have hbx : (b • x) (Fin.last m) ≠ 0 := by
+        simp only [Pi.smul_apply, smul_eq_mul]
+        exact mul_ne_zero (ne_of_gt hb) hx
+      rw [hw (b • x) hbx, scaleZ_smul hb x, hw x hx]
 
 /-- **Representation of the scale-equivariant class.** Relative to a nowhere-vanishing
 reference scale-equivariant estimator `δ₀`, the scale-equivariant estimators are exactly
@@ -144,7 +245,24 @@ theorem isScaleEquivariant_iff_div_scaleZ {r : ℕ} {δ₀ : (Fin (m + 1) → �
     (∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → δ (b • x) = b ^ r * δ x) ↔
       ∃ w : (Fin m → ℝ) × ℝ → ℝ,
         ∀ x, x (Fin.last m) ≠ 0 → δ x = δ₀ x / w (scaleZ x) := by
-  sorry
+  constructor
+  · intro hδ
+    -- `u = δ₀ / δ` is scale-invariant off the null set; factor it through `scaleZ`.
+    have hinv : ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 →
+        (fun y => δ₀ y / δ y) (b • x) = (fun y => δ₀ y / δ y) x := by
+      intro b hb x hx
+      have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
+      show δ₀ (b • x) / δ (b • x) = δ₀ x / δ x
+      rw [h₀ hb x, hδ hb x hx, mul_div_mul_left _ _ hbr]
+    obtain ⟨w, hw⟩ := (isScaleInvariant_iff_factors_scaleZ (fun y => δ₀ y / δ y)).mp hinv
+    refine ⟨w, fun x hx => ?_⟩
+    rw [← hw x hx, div_div_eq_mul_div, mul_comm (δ₀ x) (δ x), mul_div_assoc,
+      div_self (h₀ne x), mul_one]
+  · rintro ⟨w, hw⟩ b hb x hx
+    have hbx : (b • x) (Fin.last m) ≠ 0 := by
+      simp only [Pi.smul_apply, smul_eq_mul]
+      exact mul_ne_zero (ne_of_gt hb) hx
+    rw [hw (b • x) hbx, scaleZ_smul hb x, h₀ hb x, hw x hx, mul_div_assoc]
 
 /-! ### Location-scale families -/
 
@@ -168,7 +286,14 @@ theorem isLocScaleEquivariant_iff_exists_scaleZ_diffs_rep
     IsLocScaleEquivariantLocation δ ↔
       ∃ w : (Fin m → ℝ) × ℝ → ℝ, ∀ x, diffs x (Fin.last m) ≠ 0 →
         δ x = δ₀ x - w (scaleZ (diffs x)) * δ₁ x := by
-  sorry
+  -- The hypotheses are jointly unsatisfiable, so the statement is vacuously true: a
+  -- strictly positive scale-equivariant estimator cannot exist. Evaluating the scale
+  -- equivariance of `δ₁` at `x = 0`, `a = 0`, `b = 2` gives `δ₁ 0 = 2 · δ₁ 0`, hence
+  -- `δ₁ 0 = 0`, contradicting `0 < δ₁ 0`.
+  exfalso
+  have hz := h₁ 0 (by norm_num : (0 : ℝ) < 2) 0
+  simp only [zero_smul, smul_zero, add_zero] at hz
+  exact absurd (by linarith : δ₁ 0 = 0) (h₁pos 0).ne'
 
 end Scale
 
