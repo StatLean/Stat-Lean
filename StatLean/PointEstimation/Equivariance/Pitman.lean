@@ -478,19 +478,12 @@ theorem pitmanEstimator_eq_sub_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
       pitmanEstimator f x = x (Fin.last m) -
         ∫ z, z (Fin.last m)
           ∂(orbitCondKernel (locationBase f) diffs (diffs x)) := by
-  -- Contract-level debt (reported). This is the substantive change of variables.
-  -- `ForMathlib.CondDistribDensity.condDistrib_withDensity_prod_ae_eq` is now CLOSED and
-  -- axiom-clean, so the upstream blocker is gone; what remains is the det-1 shear geometry
-  -- itself. The route: push `locationBase f` forward along `Φ x = (diffs x, x n)` (a linear
-  -- shear of unit Jacobian, so `volume`-preserving via `volume_preserving_transvectionStruct`
-  -- + `MeasurableEquiv.piFinSuccAbove` for the snoc reindexing) to a joint law
-  -- `ρ = (volume ⊗ volume).withDensity p` with `p (y,s) = ofReal (f (Fin.snoc y 0 + s • 1))`;
-  -- apply `condDistrib_withDensity_prod_ae_eq` to identify the conditional law given `diffs`
-  -- as the normalized slice; transport `orbitCondKernel … diffs = condDistrib id diffs` to
-  -- `condDistrib Prod.snd Prod.fst ρ`; then the slice-mean Bochner integral becomes the
-  -- displayed ratio after the translation substitution `s = x n − u`. This is a large,
-  -- self-contained measure-geometry development; left as reported debt in this session.
-  sorry
+  -- Combine the pointwise ratio form of the Pitman estimator (`pitmanEstimator_eq_ratio`,
+  -- via the reflection change of variables) with the a.e. identification of the conditional
+  -- mean of the last coordinate as that same ratio (`condMean_last_eq_ratio`, via the
+  -- unit-Jacobian shear and `condDistrib_withDensity_prod_ae_eq`).
+  filter_upwards [condMean_last_eq_ratio f hf hfnn hden hden0] with x hx
+  rw [pitmanEstimator_eq_ratio f hf hnum hden hden0 x, hx]
 
 /-- Conditional integrability of the reference estimator `δ₀ x = x n` against the fibre
 kernel of the differences, in *every* fibre — the hypothesis `isLocMRE_sq_of_condMean`
