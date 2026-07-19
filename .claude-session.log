@@ -1,0 +1,33 @@
+srun: job 33011253 queued and waiting for resources
+srun: job 33011253 has been allocated resources
+I've now fully mapped the construction and confirmed the key structural facts. Given the genuine scope here, let me be direct with you about where this stands rather than risk a large non-compiling diff.
+
+## Status report
+
+I did deep reconnaissance, committed a foundational lemma, and found two substantive issues with the intended route. Here is the honest picture.
+
+### What I committed (compiles, axiom-clean)
+`canonicalNormal_eq_withDensity` in `Canonical.lean` — the product-Gaussian density `canonicalNormal η σ² = volume.withDensity (∏ᵢ gaussianPDF (η i) σ²)`, built via `pi_withDensity_prod`. This is the foundation both completeness and sufficiency need. (commit made)
+
+### Two corrections to the prompt's route — please note
+
+1. **The natural statistic must be the TOTAL sum of squares, not the residual.** With the printed `T y = (y₀,…,y_{s−1}, Σ_{j≥s} yⱼ²)` and `η = (η₁/σ²,…, −1/(2σ²))`, the Gaussian log-density carries an extra `−(1/2σ²)·Σ_{i<s} yᵢ²` term that depends on **both** `y` and the parameter `σ²`, so it is neither part of `⟨η,T⟩` nor absorbable into a θ-free carrier `h`. It is **not** a canonical exponential family in that form. The clean canonical statistic is `T̃ = (y₀,…,y_{s−1}, Σ_{all k} yₖ²)` (total SS), with `base = volume`, `h = 1`. Completeness of `canonicalStat = (head, RSS)` then follows by transporting completeness of `T̃` along the measurable bijection `(a, total) ↔ (a, total − Σaᵢ²) = (head, RSS)`. The math works; the printed statistic just needs this internal detour.
+
+2. **`isUMVU_of_complete_sufficient` is sorry-tainted and cannot be used.** It calls the private `variance_rbEstimator_le_of_complete` (`LehmannScheffe.lean:195`), which is an open `sorry` (documented there: the frozen `MemEstL2` competitor has no global measurable representative). So routing the UMVU theorems through it would make `#print axioms isUMVU_lse_functional` show `sorryAx`, violating the success criterion. The viable axiom-clean route is the fully-proven **`isUMVU_iff_uncorrelated_unbiasedZero`** (`CovarianceCriterion.lean`) — and the measurable-representative gap is closable **for this model specifically** because all `canonicalModel` members are **mutually absolutely continuous** (positive Gaussian densities), so a `P p₀`-a.e. representative of a competitor is automatically a `P p'`-a.e. representative for every `p'`. That mutual-a.c. fact must be established as a helper.
+
+### Realistic scope
+`gaussianVector` has **zero** existing helper lemmas — the entire moment / density / mutual-a.c. / exponential-family-recognition / orthonormal-basis-transport / Pitman-equivariance theory has to be built from scratch across these four files. Concretely each remaining sorry requires, in order:
+
+- **completeness** (hinge): build `ExpFamily`, prove `canonicalNormal = E.P(ηmap)` (density-algebra with `Fin.snoc` inner products + tilted normalization), `Ξ' = range ηmap` has nonempty interior, `⊆ natSet`, then a measurable-equiv completeness transfer (+ the total/residual bijection). ~250–350 lines.
+- **sufficiency**: density factorization (reuses my committed lemma) + `toLp` measure-preservation to move to `EuclideanSpace` + dominated regular-conditional. ~150 lines.
+- **3 canonical UMVU**: mutual-a.c. helper + covariance-criterion wiring. depends on the above.
+- **LeastSquares (3)**: orthonormal-basis transport `linearModelFull → canonicalModel`. depends on Canonical.
+- **Equivariant (4)**: Pitman MRE — independent, individually hard.
+- **RandomDesign covariance**: Gaussian covariance of linear functionals from scratch; **nonexistence**: sanctioned deferral.
+
+This is a multi-session formalization, not a single-pass one, and grinding the whole completeness proof now risks exhausting the budget mid-proof with a large non-compiling diff — which would violate "commit after each lemma compiles."
+
+### Recommendation
+I'd like to proceed by **landing the completeness hinge next**, committing each sub-lemma as it compiles, and isolating the density-algebra identity as the one sanctioned `private sorry` per file only if it resists after a bounded number of build cycles. That keeps the tree green throughout and turns the highest-leverage theorem into "closed modulo one clearly-marked arithmetic identity" at worst.
+
+Want me to go ahead and grind the completeness construction on that basis (green-at-every-commit, at most one documented private sorry in `Canonical`), or would you prefer I start with a more self-contained target like `covariance_regression_coeff`?
