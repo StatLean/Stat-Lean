@@ -498,6 +498,15 @@ theorem power_strictMono_oneSided
       0 < power P (oneSidedTest T C γ) θ → power P (oneSidedTest T C γ) θ < 1 →
       0 < power P (oneSidedTest T C γ) θ' → power P (oneSidedTest T C γ) θ' < 1 →
       power P (oneSidedTest T C γ) θ < power P (oneSidedTest T C γ) θ' := by
+  -- OBSTRUCTION: this is precisely the *strict* half of unbiasedness of the MP test, the
+  -- same content as `NeymanPearson.Lemma.power_gt_alpha_of_ne`, which is itself still an
+  -- open `sorry` upstream. The monotone (`≤`) direction is `integral_mono_of_hasMLR`; the
+  -- STRICT inequality needs the correlation identity `2·(β(θ') − β(θ)) = ∫∫ F d(μ×μ)` with
+  -- `F = (φ(x')−φ(x))·(p_θ(x)p_θ'(x') − p_θ'(x)p_θ(x'))` shown to be *strictly* positive on
+  -- a μ×μ-positive set — which is where `hdist` (the family is non-constant) and the strict
+  -- bracketing `0 < β < 1` (φ genuinely randomizes: both `{φ=1}` and `{φ=0}` carry mass)
+  -- enter. No shortcut through the NP layer exists while `power_gt_alpha_of_ne` is open.
+  -- TODO: port the strict-unbiasedness argument (shared with the NP layer) here.
   sorry
 
 /-- **The same test is UMP at every null boundary.** For any `θ'`, the one-sided test is
@@ -730,6 +739,21 @@ theorem essentiallyComplete_oneSidedTest
     (hloss_gt : ∀ θ, θ₀ < θ → L₁ θ - L₀ θ < 0) :
     ∀ ψ, IsCriticalFn ψ → ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
       ∀ θ, testRisk P L₀ L₁ (oneSidedTest T C γ) θ ≤ testRisk P L₀ L₁ ψ θ := by
+  -- ROADMAP (regular case fully reduces to machinery already proven above): put
+  -- `α := power P ψ θ₀ ∈ (0,1)`; take `C, γ` from `exists_critical_constants` on the
+  -- `T`-marginal so `power P (oneSidedTest T C γ) θ₀ = α = power P ψ θ₀`. Then, with
+  -- `testRisk P L₀ L₁ φ θ = power P φ θ · (L₁ θ − L₀ θ) + L₀ θ`:
+  --   • `θ = θ₀`: equal powers ⇒ equal risk.
+  --   • `θ > θ₀` (`L₁−L₀ < 0`): `isMostPowerful_oneSided` at `(θ₀,θ)` gives
+  --     `power ψ θ ≤ power φ θ`, and the negative loss coefficient flips it to risk `φ ≤ ψ`.
+  --   • `θ < θ₀` (`L₁−L₀ > 0`): `power_min_oneSided` gives `power φ θ ≤ power ψ θ`, and the
+  --     positive coefficient keeps risk `φ ≤ ψ`.
+  -- OBSTRUCTION: the reduction inherits the two documented gaps of its ingredients — the
+  -- endpoint failure of the exact-size construction at `α ∈ {0,1}` (see `isUMP_oneSided`)
+  -- and the `hz`/positive-density corner of `isMostPowerful_oneSided` / `power_min_oneSided`.
+  -- Under strictly positive densities and `0 < power P ψ θ₀ < 1` the roadmap is a complete
+  -- proof; the general frozen statement needs those omitted hypotheses.
+  -- TODO: discharge once the positivity hypothesis is added (mirrors the sibling theorems).
   sorry
 
 /-- **The one-parameter exponential family has a monotone likelihood ratio** in its
