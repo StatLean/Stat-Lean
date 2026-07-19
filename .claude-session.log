@@ -1,0 +1,53 @@
+srun: job 33064950 queued and waiting for resources
+srun: job 33064950 has been allocated resources
+Working tree clean (only pre-existing untracked artifacts). Everything builds green. Here is the final report.
+
+## PE final sweep — report
+
+### Outcome
+
+Closed **2 of 12** genuinely-blocked sorries, both in `RandomDesign`, and confirmed the remaining 10 are blocked on named, missing multi-lemma developments (not on any statement defect). All six target modules build **0-error**. Two commits landed, each building green before commit.
+
+| File | sorries before → after | closed this session |
+|---|---|---|
+| `LinearModel/RandomDesign` | 3 → **1** | `isUMVU_regression_coeff`, `covariance_regression_coeff` |
+| `LinearModel/LeastSquares` | 2 → 2 | — |
+| `LinearModel/Equivariant` | 4 → 4 | — |
+| `Equivariance/Pitman` | 2 → 2 | — |
+| `Equivariance/LocationExamples` | 1 → 1 | — |
+| `Equivariance/LocationMRE` | 2 → 2 | — |
+
+### What I closed (both axiom-verified)
+
+- **`covariance_regression_coeff` = σ²(AAᵀ)⁻¹** — fully axiom-clean: `#print axioms` → `[propext, Classical.choice, Quot.sound]`. Built `covariance_coord_gaussianVector` (diagonal via `variance_id_gaussianReal`, off-diagonal via `iIndepFun_pi`), `memLp_coord_gaussianVector`, propagated through `covariance_fun_sum_fun_sum` bilinearity, with the Gram identity `MᵀM = (AAᵀ)⁻¹`.
+- **`isUMVU_regression_coeff`** — reduced to the (already-closed) `isUMVU_linear_functional_of_mean` via a new `isUMVU_reparam` (UMVU transports along a *surjective* reindexing) plus the fact that `designMean A` is a bijection onto `W = designSpace A` (proved from `designMean_lseCoeff` + `starProjection_eq_self_iff`, no finrank juggling for surjectivity; `finrank_span_eq_card` for `dim W = s < n`). `#print axioms` → `[propext, sorryAx, Classical.choice, Quot.sound]` — the `sorryAx` is purely the transitive, named LeastSquares debt (`isUMVU_lse_functional`), exactly the intended "closed modulo named debt" status.
+
+### The two required axiom prints (both still carry `sorryAx`, since I could not close the underlying debts)
+
+```
+isUMVU_lse_functional     depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+pitmanEstimator_isLocMRE  depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]
+```
+
+### Remaining open statements — precise obstruction for each
+
+All ten are true-as-stated and blocked on a **named piece of missing infrastructure**, not on any under-hypothesis or false statement. None is a laundered hypothesis; none is a short reduction to a closed lemma. (The `ScaleMRE.isScaleMRE_of_conditional_min` false-as-stated issue is out of my touch-set and untouched.)
+
+- **`LeastSquares.isUMVU_lse_functional`, `isUMVU_residualSumSq`** — both need **Gaussian isometry-invariance**: `(gaussianVector ξ σ²).map L = gaussianVector (L ξ) σ²` for an orthogonal `L`, plus an `IsUMVU`-transport lemma along the induced measurable equivalence of the sample space. Neither exists in the tree; `stdGaussian_eq_map_pi_orthonormalBasis` is not present in StatLean or (as searched) usable off-the-shelf. This is the root debt the whole original-coordinate UMVU chain sits on.
+
+- **`Pitman.pitmanEstimator_eq_sub_condMean`** and the lifted private **`integrable_lastCoord_orbitCondKernel`** — the upstream `ForMathlib.CondDistribDensity` is now closed, so what remains is the **det-1 shear change-of-variables** `Φ x = (diffs x, xₙ)`: pushing `locationBase f` forward as `volume`-preserving (needs `volume_preserving_transvectionStruct` + `MeasurableEquiv.piFinSuccAbove` snoc reindexing) to `ρ = (volume ⊗ volume).withDensity p`, then `condDistrib_withDensity_prod_ae_eq` to identify the fibre as the normalized slice. Large self-contained measure-geometry; not landed.
+
+- **`LocationExamples.isLocMRE_mean_gaussian`** — the Basu route (`indepFun_of_boundedlyComplete_sufficient` is closed) needs, as new infrastructure, the **normal location family** set up with `X̄` proved **complete + sufficient** and `diffs` **ancillary**; then `E₀[X̄∣diffs]` is a.e. constant `0` and the estimator collapses via `isLocMRE_sq_of_condMean`. That completeness-of-Gaussian-location layer does not exist yet, and `isLocMRE_sq_of_condMean` additionally re-imposes the same per-fibre integrability obligation as the Pitman private debt.
+
+- **`LocationMRE.exists_measurable_condMinimizer_convex`** (private, Cor 1.11) — must discharge the four `exists_measurable_argmin` hypotheses for `fObj z w = ∫⁻ ρ(δ₀ − w) d(orbitCondKernel …)`; the hard one is **continuity of the ℝ≥0∞-valued conditional integral in `w`** (a convex ℝ≥0∞ objective can jump to `∞` at the boundary of its finiteness domain). `exists_isLocMRE_of_convex` is closed *modulo* this lemma.
+
+- **`LocationMRE.exists_isLocMRE_of_bounded_loss`** (Cor 1.14) — a genuinely separate analytic core: **translation-continuity of the convolution** `c ↦ ∫ ρ(x₀ − c) f` from a.e.-continuity of the density via dominated convergence (dominating constant `M`), then extreme-value on `g c → ofReal M` at `±∞`.
+
+- **`Equivariant`** — `isCanonicalMRE_linear_combination`: the tool `lintegral_convex_even_min_at_zero` exists, but applying it needs the **product/independence decomposition of `gaussianVector 0 σ²` into head × residual** and the conditional law of `∑λᵢYᵢ` given the residual block as a fixed symmetric measure (a disintegration + Tonelli development). `isCanonicalScaleMRE_residual_pow` (and its `r=1` corollary `…_residual_variance`) additionally need the scale-group orbit decomposition of `canonicalRSS`; `isSubspaceMRE_lse_functional` reduces to the canonical case only *after* the same Gaussian-isometry transport that blocks LeastSquares.
+
+- **`RandomDesign.not_exists_blue_of_known_design_moment`** — left as the **sanctioned deferral** (per the file docstring and the task brief): it carries an explicit nondegeneracy hypothesis because the printed universal form is false for an a.s.-constant design, and the statement is to be renegotiated when the exercise-level proof is discharged.
+
+### Notes
+- Every module I touched compiles with `lake build` (foreground, on-cluster). `RandomDesign` is the only file changed; the other five are byte-identical to session start.
+- No signatures, hypothesis tags, or docstrings were altered; the only additions are `import`-free `private` helpers (`linearIndependent_row_of_rank`, `isUnit_mulTranspose_of_rank`, `isUMVU_reparam`, `memLp_coord_gaussianVector`, `covariance_coord_gaussianVector`) inside `RandomDesign`.
+- No `#print axioms`/scratch edits remain; all temporary probes were reverted (`git status` clean apart from the two pre-existing untracked `.log`/`.md` artifacts).
