@@ -1,4 +1,6 @@
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import Mathlib.Analysis.InnerProductSpace.Continuous
+import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import Mathlib.Probability.Notation
 
 /-!
@@ -65,21 +67,40 @@ noncomputable def statFamily (E : ExpFamily 𝓧 V) : ExpFamily V V :=
 
 variable [OpensMeasurableSpace V]
 
+/-- The tilting integrand `t ↦ exp⟨η, t⟩` on the statistic's own scale is measurable. -/
+private theorem measurable_exp_inner_id (η : V) : Measurable fun t : V => Real.exp ⟪η, t⟫_ℝ :=
+  (continuous_const.inner continuous_id).measurable.exp
+
 /-- **The natural statistic is exponentially distributed**: the law of `T` under `P_η` is the
 member of the statistic's own exponential family at the same natural parameter. -/
 theorem map_stat_P (E : ExpFamily 𝓧 V) (η : V) :
     (E.P η).map E.stat = E.statFamily.P η := by
-  sorry
+  have hZ : ∫ t, Real.exp ⟪η, t⟫_ℝ ∂(E.base.map E.stat)
+      = ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base :=
+    integral_map E.stat_meas.aemeasurable (measurable_exp_inner_id η).aestronglyMeasurable
+  ext S hS
+  rw [show E.P η = E.base.tilted (fun x => ⟪η, E.stat x⟫_ℝ) from rfl,
+    Measure.map_apply E.stat_meas hS, tilted_apply' _ _ (E.stat_meas hS),
+    show E.statFamily.P η = (E.base.map E.stat).tilted (fun t => ⟪η, t⟫_ℝ) from rfl,
+    tilted_apply' _ _ hS,
+    setLIntegral_map hS ((measurable_exp_inner_id η).div_const _).ennreal_ofReal E.stat_meas]
+  simp only [hZ]
 
 /-- The two families have the **same natural parameter set**. -/
 theorem natSet_statFamily (E : ExpFamily 𝓧 V) : E.statFamily.natSet = E.natSet := by
-  sorry
+  ext η
+  simp only [ExpFamily.natSet, statFamily, id_eq, Set.mem_setOf_eq]
+  exact integrable_map_measure (measurable_exp_inner_id η).aestronglyMeasurable
+    E.stat_meas.aemeasurable
 
 /-- The two families have the **same log-partition function**: the density of the law of `T`
 is `exp(⟨η, t⟩ − A(η))` with the *original* `A`. -/
 theorem logPartition_statFamily (E : ExpFamily 𝓧 V) :
     E.statFamily.logPartition = E.logPartition := by
-  sorry
+  funext η
+  simp only [ExpFamily.logPartition, statFamily, id_eq]
+  congr 1
+  exact integral_map E.stat_meas.aemeasurable (measurable_exp_inner_id η).aestronglyMeasurable
 
 end ExpFamily
 
