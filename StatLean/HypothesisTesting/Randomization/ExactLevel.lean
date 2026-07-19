@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.Randomization.Defs
 import StatLean.MultipleTesting.PValues.Defs
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
@@ -497,6 +498,14 @@ theorem randTest_exact_level (P : Measure 𝓧) [IsProbabilityMeasure P] (T : �
 
 /-! ### The randomization `p`-value -/
 
+/-- The randomization `p`-value is a measurable function of the data. -/
+private lemma measurable_randPValue (T : 𝓧 → ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (randPValue G T) := by
+  unfold randPValue
+  refine Measurable.const_mul (Finset.measurable_sum _ fun g _ => ?_) _
+  exact Measurable.ite (measurableSet_le hT (hT.comp (hsmul g))) measurable_const measurable_const
+
 /-- **Super-uniformity of the randomization `p`-value.** Under the randomization
 hypothesis,
 $$ P\{\hat p(X) \le u\} \;\le\; u \qquad \text{for all } 0 \le u \le 1 , $$
@@ -511,6 +520,87 @@ theorem superUniform_randPValue (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     -- USER-INPUT: the null law is `G`-invariant; the randomization hypothesis
     (hrand : RandomizationHypothesis G P) :
     SuperUniform (randPValue G T) P := by
-  sorry
+  classical
+  intro t ht
+  have hcardG : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (0 : ℝ) < Fintype.card G := by exact_mod_cast hcardG
+  set E := {x : 𝓧 | randPValue G T x ≤ t} with hE
+  have hpv : Measurable (randPValue G T) := measurable_randPValue T hT hsmul
+  have hEmeas : MeasurableSet E := hpv measurableSet_Iic
+  set f : 𝓧 → ℝ := E.indicator (fun _ => 1) with hf
+  -- `p̂(g·x)` as a normalized rank on the fixed orbit.
+  have hpval_eq : ∀ (x : 𝓧) (g : G), randPValue G T (g • x)
+      = (Fintype.card G : ℝ)⁻¹
+        * ((Finset.univ.filter fun h : G => T (g • x) ≤ T (h • x)).card : ℝ) := by
+    intro x g
+    have hcount : (Finset.univ.filter fun h : G => T (g • x) ≤ T (h • (g • x))).card
+        = (Finset.univ.filter fun h : G => T (g • x) ≤ T (h • x)).card := by
+      rw [← card_filter_mulRight (fun h => T (g • x) ≤ T (h • x)) g]
+      congr 1
+      apply Finset.filter_congr
+      intro h _
+      simp only [mul_smul]
+    unfold randPValue
+    rw [Finset.sum_boole, hcount]
+  -- Pointwise rank bound: at most `|G|·t` orbit points have `p̂ ≤ t`.
+  have hptwise : ∀ x, (∑ g : G, f (g • x)) ≤ (Fintype.card G : ℝ) * t := by
+    intro x
+    have hfg : ∀ g : G, f (g • x) = if randPValue G T (g • x) ≤ t then (1 : ℝ) else 0 := by
+      intro g; rw [hf, Set.indicator_apply]; simp only [hE, Set.mem_setOf_eq]
+    simp_rw [hfg]
+    rw [Finset.sum_boole]
+    rcases (Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t).eq_empty_or_nonempty
+      with h0 | hne
+    · rw [h0]; simp; positivity
+    · obtain ⟨g0, hg0A, hg0min⟩ :=
+        Finset.exists_min_image _ (fun g => T (g • x)) hne
+      have hsub : (Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t)
+          ⊆ Finset.univ.filter fun h : G => T (g0 • x) ≤ T (h • x) := by
+        intro g hg
+        rw [Finset.mem_filter]
+        exact ⟨Finset.mem_univ _, hg0min g hg⟩
+      have hcardle : ((Finset.univ.filter fun g : G => randPValue G T (g • x) ≤ t).card : ℝ)
+          ≤ ((Finset.univ.filter fun h : G => T (g0 • x) ≤ T (h • x)).card : ℝ) := by
+        exact_mod_cast Finset.card_le_card hsub
+      have hp := (Finset.mem_filter.mp hg0A).2
+      rw [hpval_eq x g0] at hp
+      have hR : ((Finset.univ.filter fun h : G => T (g0 • x) ≤ T (h • x)).card : ℝ)
+          ≤ (Fintype.card G : ℝ) * t := by
+        have h2 := mul_le_mul_of_nonneg_left hp hcardR.le
+        rwa [← mul_assoc, mul_inv_cancel₀ hcardR.ne', one_mul] at h2
+      linarith
+  -- Averaging under invariance.
+  have hf_meas : Measurable f := measurable_const.indicator hEmeas
+  have hbound_f : ∀ y, ‖f y‖ ≤ 1 := by
+    intro y
+    by_cases hy : y ∈ E
+    · rw [hf, Set.indicator_of_mem hy]; simp
+    · rw [hf, Set.indicator_of_notMem hy]; simp
+  have hf_int : Integrable f P := (integrable_const (1 : ℝ)).mono'
+    hf_meas.aestronglyMeasurable (ae_of_all P hbound_f)
+  have hfg_int : ∀ g : G, Integrable (fun x => f (g • x)) P := fun g =>
+    (integrable_const (1 : ℝ)).mono' (hf_meas.comp (hsmul g)).aestronglyMeasurable
+      (ae_of_all P fun x => hbound_f (g • x))
+  have hsum_int : Integrable (fun x => ∑ g : G, f (g • x)) P :=
+    integrable_finset_sum _ fun g _ => hfg_int g
+  have htrans : ∀ g : G, ∫ x, f (g • x) ∂P = ∫ x, f x ∂P := by
+    intro g
+    have h := integral_map (μ := P) (φ := fun x => g • x) (f := f)
+      (hsmul g).aemeasurable hf_meas.aestronglyMeasurable
+    rw [hrand g] at h; exact h.symm
+  have hcard_mul : ∑ g : G, ∫ x, f (g • x) ∂P = (Fintype.card G : ℝ) * ∫ x, f x ∂P := by
+    simp_rw [htrans, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hle : (Fintype.card G : ℝ) * ∫ x, f x ∂P ≤ (Fintype.card G : ℝ) * t := by
+    rw [← hcard_mul, ← integral_finset_sum _ fun g _ => hfg_int g]
+    calc ∫ x, (∑ g : G, f (g • x)) ∂P
+        ≤ ∫ _ : 𝓧, (Fintype.card G : ℝ) * t ∂P :=
+          integral_mono_ae hsum_int (integrable_const _) (ae_of_all P hptwise)
+      _ = (Fintype.card G : ℝ) * t := by rw [integral_const]; simp
+  have hfle : ∫ x, f x ∂P ≤ t := le_of_mul_le_mul_left hle hcardR
+  have hInt_f : ∫ x, f x ∂P = (P E).toReal := by
+    rw [hf, integral_indicator hEmeas, setIntegral_const]; simp [Measure.real]
+  rw [hInt_f] at hfle
+  calc P E = ENNReal.ofReal (P E).toReal := (ENNReal.ofReal_toReal (measure_ne_top P E)).symm
+    _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal hfle
 
 end StatLean.HypothesisTesting
