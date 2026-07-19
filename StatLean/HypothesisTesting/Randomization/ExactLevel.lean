@@ -378,6 +378,76 @@ theorem sum_randTest_orbit (T : 𝓧 → ℝ) {α : ℝ}
   rw [div_mul_cancel₀ _ hM0']
   ring
 
+/-! ### Private helpers: measurability of the randomization test -/
+
+/-- `m ↦ orderStat m ⟨n,h⟩` is measurable: each sub-level set is a count condition. -/
+private lemma measurable_orderStat_eval {d : ℕ} (n : ℕ) (h : n < d) :
+    Measurable (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) := by
+  apply measurable_of_Iic
+  intro a
+  have hset : (fun m : Fin d → ℝ => orderStat m ⟨n, h⟩) ⁻¹' Set.Iic a
+      = {m | n < ((Finset.univ : Finset (Fin d)).filter (fun k => m k ≤ a)).card} := by
+    ext m
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    exact orderStat_le_iff_card_lt m ⟨n, h⟩ a
+  rw [hset]
+  apply measurableSet_lt measurable_const
+  simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+  exact Finset.measurable_sum _ fun k _ =>
+    Measurable.ite (measurableSet_le (measurable_pi_apply k) measurable_const)
+      measurable_const measurable_const
+
+/-- The critical value is a measurable function of the data. -/
+private lemma measurable_randCritValue (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x => randCritValue G T α x) := by
+  unfold randCritValue orbitOrderStat
+  by_cases hk : randCritIndex G α - 1 < Fintype.card G
+  · simp only [dif_pos hk]
+    have hov : Measurable (fun x : 𝓧 => (orbitValues G T x : Fin (Fintype.card G) → ℝ)) := by
+      rw [measurable_pi_iff]
+      exact fun i => hT.comp (hsmul ((Fintype.equivFin G).symm i))
+    exact (measurable_orderStat_eval (randCritIndex G α - 1) hk).comp hov
+  · simp only [dif_neg hk]; exact measurable_const
+
+/-- `M⁺(·)`, cast to `ℝ`, is a measurable function of the data. -/
+private lemma measurable_randPlusCount (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x => ((randPlusCount G T α x : ℕ) : ℝ)) := by
+  unfold randPlusCount
+  simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+  refine Finset.measurable_sum _ fun g _ => ?_
+  exact Measurable.ite (measurableSet_lt (measurable_randCritValue T α hT hsmul)
+    (hT.comp (hsmul g))) measurable_const measurable_const
+
+/-- `M⁰(·)`, cast to `ℝ`, is a measurable function of the data. -/
+private lemma measurable_randZeroCount (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x => ((randZeroCount G T α x : ℕ) : ℝ)) := by
+  unfold randZeroCount
+  simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+  refine Finset.measurable_sum _ fun g _ => ?_
+  exact Measurable.ite (measurableSet_eq_fun (hT.comp (hsmul g))
+    (measurable_randCritValue T α hT hsmul)) measurable_const measurable_const
+
+/-- The boundary weight `a(·)` is a measurable function of the data. -/
+private lemma measurable_randGamma (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x => randGamma G T α x) := by
+  unfold randGamma
+  exact Measurable.div (measurable_const.sub (measurable_randPlusCount T α hT hsmul))
+    (measurable_randZeroCount T α hT hsmul)
+
+/-- The randomization test is a measurable function of the data. -/
+private lemma measurable_randTest (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (randTest G T α) := by
+  unfold randTest
+  have hv := measurable_randCritValue T α hT hsmul
+  refine Measurable.ite (measurableSet_lt hv hT) measurable_const ?_
+  exact Measurable.ite (measurableSet_eq_fun hT hv)
+    (measurable_randGamma T α hT hsmul) measurable_const
+
 /-- **Exact level of the randomization test.** Under the randomization hypothesis — the
 null law `P` is invariant under every element of the finite group `G` — the randomization
 test built from an arbitrary statistic `T` has size exactly `α` at every finite sample
@@ -396,7 +466,34 @@ theorem randTest_exact_level (P : Measure 𝓧) [IsProbabilityMeasure P] (T : �
     -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
     (hα₀ : 0 < α) (hα₁ : α < 1) :
     powerAgainst P (randTest G T α) = α := by
-  sorry
+  have hcardG : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast hcardG.ne'
+  have hmt : Measurable (randTest G T α) := measurable_randTest T α hT hsmul
+  have hbound : ∀ y : 𝓧, ‖randTest G T α y‖ ≤ 1 := by
+    intro y
+    have h := randTest_mem_Icc (G := G) T hα₀ hα₁ y
+    rw [Set.mem_Icc] at h
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [h.1], h.2⟩
+  have hintg : ∀ g : G, Integrable (fun x => randTest G T α (g • x)) P := fun g =>
+    (integrable_const (1 : ℝ)).mono' (hmt.comp (hsmul g)).aestronglyMeasurable
+      (ae_of_all P fun x => hbound (g • x))
+  -- integrate the pointwise orbit identity
+  have hconst : ∫ x, (∑ g : G, randTest G T α (g • x)) ∂P = (Fintype.card G : ℝ) * α := by
+    have heq : (fun x => ∑ g : G, randTest G T α (g • x))
+        = fun _ => (Fintype.card G : ℝ) * α :=
+      funext fun x => sum_randTest_orbit T hα₀ hα₁ x
+    rw [heq, integral_const]; simp
+  rw [integral_finset_sum _ fun g _ => hintg g] at hconst
+  have htrans : ∀ g : G, ∫ x, randTest G T α (g • x) ∂P = ∫ x, randTest G T α x ∂P := by
+    intro g
+    have h := integral_map (μ := P) (φ := fun x => g • x) (f := randTest G T α)
+      (hsmul g).aemeasurable hmt.aestronglyMeasurable
+    rw [hrand g] at h
+    exact h.symm
+  simp_rw [htrans, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hconst
+  unfold powerAgainst
+  exact mul_left_cancel₀ hcardR hconst
 
 /-! ### The randomization `p`-value -/
 
