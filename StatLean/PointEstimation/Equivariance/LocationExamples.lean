@@ -112,13 +112,80 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
     (hmean : ∫ t, t ∂P₁ = 0) (hvar : ∫ t, t ^ 2 ∂P₁ = 1) :
     locRisk f (fun t : ℝ => t ^ 2) (fun x => (∑ i, x i) / ((m : ℝ) + 1))
       = ENNReal.ofReal (1 / ((m : ℝ) + 1)) := by
-  -- Named debt: the second-moment computation `E₀[X̄²] = 1/(m+1)`. Under the iid law
-  -- `hf`, expand `(∑ Xᵢ)²/(m+1)²` and integrate: the `m+1` diagonal terms contribute
-  -- `∫t² = 1` each (`hvar`) and the off-diagonal terms vanish by independence and
-  -- `∫t = 0` (`hmean`), giving `(m+1)/(m+1)² = 1/(m+1)`. The `∫⁻ ofReal`/`ofReal ∫`
-  -- bridge uses square-integrability from `hvar`. Left as a (mechanical but lengthy)
-  -- moment-calculus debt; nothing false here.
-  sorry
+  set N : ℝ := (m : ℝ) + 1 with hNdef
+  have hNpos : (0 : ℝ) < N := by rw [hNdef]; positivity
+  -- Square-integrability of the coordinate law from the second-moment hypothesis.
+  have hsq_int : Integrable (fun t : ℝ => t ^ 2) P₁ := by
+    by_contra h; rw [integral_undef h] at hvar; exact one_ne_zero hvar.symm
+  have hL2 : MemLp (fun t : ℝ => t) 2 P₁ :=
+    (memLp_two_iff_integrable_sq aestronglyMeasurable_id).mpr hsq_int
+  -- Each coordinate is square-integrable under the product law.
+  have hL2i : ∀ i : Fin (m + 1),
+      MemLp (fun x : Fin (m + 1) → ℝ => x i) 2 (Measure.pi fun _ => P₁) := by
+    intro i
+    have := hL2.comp_measurePreserving (measurePreserving_eval (fun _ => P₁) i)
+    simpa [Function.comp] using this
+  have hint_i : ∀ i, Integrable (fun x : Fin (m + 1) → ℝ => x i)
+      (Measure.pi fun _ => P₁) := fun i => (hL2i i).integrable one_le_two
+  have hint_ij : ∀ i j, Integrable (fun x : Fin (m + 1) → ℝ => x i * x j)
+      (Measure.pi fun _ => P₁) := fun i j => (hL2i i).integrable_mul (hL2i j)
+  -- Coordinate first and second moments; cross moments vanish by independence.
+  have hEi : ∀ i, ∫ x : Fin (m + 1) → ℝ, x i ∂(Measure.pi fun _ => P₁) = 0 := by
+    intro i; rw [integral_eval]; exact hmean
+  have hindep : iIndepFun (fun i (x : Fin (m + 1) → ℝ) => x i) (Measure.pi fun _ => P₁) :=
+    iIndepFun_pi fun _ => aemeasurable_id
+  have hc : ∀ i j, ∫ x : Fin (m + 1) → ℝ, x i * x j ∂(Measure.pi fun _ => P₁)
+      = if i = j then 1 else 0 := by
+    intro i j
+    by_cases hij : i = j
+    · subst hij
+      have heq : (fun x : Fin (m + 1) → ℝ => x i * x i)
+          = fun x => (fun t : ℝ => t ^ 2) (x i) := by funext x; ring
+      have hev := integral_comp_eval (μ := fun _ : Fin (m + 1) => P₁) (i := i)
+        (f := fun t : ℝ => t ^ 2) (by fun_prop)
+      rw [if_pos rfl, heq, hev]; exact hvar
+    · rw [if_neg hij]
+      have hpair := (hindep.indepFun hij).integral_fun_mul_eq_mul_integral
+        (measurable_pi_apply i).aestronglyMeasurable
+        (measurable_pi_apply j).aestronglyMeasurable
+      rw [hpair, hEi i, hEi j, mul_zero]
+  -- Second moment of the total: `∫ (∑ Xᵢ)² = m + 1`.
+  have hSmemLp : MemLp (fun x : Fin (m + 1) → ℝ => ∑ i, x i) 2 (Measure.pi fun _ => P₁) :=
+    memLp_finset_sum _ fun i _ => hL2i i
+  have hSsq_int : Integrable (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
+      (Measure.pi fun _ => P₁) := by
+    have := hSmemLp.integrable_mul hSmemLp
+    simpa [Pi.mul_apply, pow_two] using this
+  have hSsq : ∫ x : Fin (m + 1) → ℝ, (∑ i, x i) ^ 2 ∂(Measure.pi fun _ => P₁) = N := by
+    have hexpand : (fun x : Fin (m + 1) → ℝ => (∑ i, x i) ^ 2)
+        = fun x => ∑ i, ∑ j, x i * x j := by
+      funext x; rw [pow_two, Fintype.sum_mul_sum]
+    rw [hexpand, integral_finset_sum _ fun i _ => integrable_finset_sum _ fun j _ => hint_ij i j]
+    have hinner : ∀ i, ∫ x : Fin (m + 1) → ℝ, ∑ j, x i * x j ∂(Measure.pi fun _ => P₁) = 1 := by
+      intro i
+      rw [integral_finset_sum _ fun j _ => hint_ij i j]
+      simp [hc i]
+    simp only [hinner]
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, hNdef]
+    push_cast; ring
+  -- Assemble: `∫ X̄² = (1/N²) · N = 1/N`.
+  have hmean_sq_int : Integrable (fun x : Fin (m + 1) → ℝ => ((∑ i, x i) / N) ^ 2)
+      (Measure.pi fun _ => P₁) := by
+    have : (fun x : Fin (m + 1) → ℝ => ((∑ i, x i) / N) ^ 2)
+        = fun x => (N ^ 2)⁻¹ * (∑ i, x i) ^ 2 := by
+      funext x; rw [div_pow]; ring
+    rw [this]; exact hSsq_int.const_mul _
+  have hmeanRisk : ∫ x : Fin (m + 1) → ℝ, ((∑ i, x i) / N) ^ 2 ∂(Measure.pi fun _ => P₁)
+      = 1 / N := by
+    have hrw : (fun x : Fin (m + 1) → ℝ => ((∑ i, x i) / N) ^ 2)
+        = fun x => (N ^ 2)⁻¹ * (∑ i, x i) ^ 2 := by funext x; rw [div_pow]; ring
+    have hN0 : N ≠ 0 := hNpos.ne'
+    rw [hrw, integral_const_mul, hSsq, pow_two, mul_inv, mul_assoc,
+        inv_mul_cancel₀ hN0, mul_one, one_div]
+  -- The `ℝ≥0∞`-risk is the `ENNReal.ofReal` of this Bochner integral.
+  unfold locRisk
+  rw [hf, ← ofReal_integral_eq_lintegral_ofReal hmean_sq_int
+        (ae_of_all _ fun x => sq_nonneg _), hmeanRisk]
 
 /-- **The normal law is least favourable for equivariant location estimation.** Over the
 class of location families generated by an independent sample of centred unit-variance
