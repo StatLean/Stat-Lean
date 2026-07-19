@@ -142,13 +142,18 @@ theorem pitmanEstimator_eq_sub_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
     pitmanEstimator f x = x (Fin.last m) -
       ∫ z, z (Fin.last m)
         ∂(orbitCondKernel (locationBase f) diffs (diffs x)) := by
-  -- Contract-level debt (reported). This is the substantive change of variables. The
-  -- intended route identifies the conditional law of the data given `diffs` as the
-  -- normalized slice of the joint density via `ForMathlib.CondDistribDensity`
-  -- (`condDistrib_withDensity_prod_ae_eq`) — **which is itself a statement-first stub with
-  -- `sorry` in this tree**, not a closed lemma — and then applies the unit-Jacobian shear
-  -- `y_i = x_i - x_n`, `y_n = x_n` to turn the slice integral into the displayed ratio of
-  -- one-dimensional integrals. Blocked upstream; no axiom-clean proof is available here.
+  -- Contract-level debt (reported). This is the substantive change of variables.
+  -- `ForMathlib.CondDistribDensity.condDistrib_withDensity_prod_ae_eq` is now CLOSED and
+  -- axiom-clean, so the upstream blocker is gone; what remains is the det-1 shear geometry
+  -- itself. The route: push `locationBase f` forward along `Φ x = (diffs x, x n)` (a linear
+  -- shear of unit Jacobian, so `volume`-preserving via `volume_preserving_transvectionStruct`
+  -- + `MeasurableEquiv.piFinSuccAbove` for the snoc reindexing) to a joint law
+  -- `ρ = (volume ⊗ volume).withDensity p` with `p (y,s) = ofReal (f (Fin.snoc y 0 + s • 1))`;
+  -- apply `condDistrib_withDensity_prod_ae_eq` to identify the conditional law given `diffs`
+  -- as the normalized slice; transport `orbitCondKernel … diffs = condDistrib id diffs` to
+  -- `condDistrib Prod.snd Prod.fst ρ`; then the slice-mean Bochner integral becomes the
+  -- displayed ratio after the translation substitution `s = x n − u`. This is a large,
+  -- self-contained measure-geometry development; left as reported debt in this session.
   sorry
 
 /-- Conditional integrability of the reference estimator `δ₀ x = x n` against the fibre

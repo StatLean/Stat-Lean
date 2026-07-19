@@ -1,4 +1,6 @@
 import Mathlib.Probability.Kernel.CondDistrib
+import Mathlib.Probability.Kernel.WithDensity
+import Mathlib.Probability.Kernel.Basic
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
@@ -69,7 +71,10 @@ theorem map_fst_withDensity_prod
     {p : S × ℝ → ℝ≥0∞} (hp : Measurable p) :
     ((ν.prod volume).withDensity p).map Prod.fst
       = ν.withDensity fun t => ∫⁻ y, p (t, y) ∂volume := by
-  sorry
+  ext s hs
+  rw [Measure.map_apply measurable_fst hs, withDensity_apply p (measurable_fst hs),
+      withDensity_apply _ hs, ← Set.prod_univ, ← Measure.restrict_prod_eq_prod_univ,
+      lintegral_prod _ hp.aemeasurable]
 
 /-- Integration against a jointly absolutely continuous law, written as an iterated integral
 of density-weighted slices. -/
@@ -84,7 +89,11 @@ theorem lintegral_withDensity_prod
     {f : S × ℝ → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ z, f z ∂((ν.prod volume).withDensity p)
       = ∫⁻ t, (∫⁻ y, f (t, y) * p (t, y) ∂volume) ∂ν := by
-  sorry
+  rw [lintegral_withDensity_eq_lintegral_mul (ν.prod volume) hp hf]
+  simp only [Pi.mul_apply]
+  rw [lintegral_prod (fun z => p z * f z) (hp.mul hf).aemeasurable]
+  refine lintegral_congr fun t => lintegral_congr fun y => ?_
+  rw [mul_comm]
 
 /-- **Conditional distribution of a jointly absolutely continuous law.** The regular
 conditional distribution of the second coordinate given the first is almost everywhere the
@@ -112,6 +121,70 @@ theorem condDistrib_withDensity_prod_ae_eq
     ∀ᵐ t ∂(ρ.map Prod.fst),
       condDistrib Prod.snd Prod.fst ρ t
         = (∫⁻ y, p (t, y) ∂volume)⁻¹ • volume.withDensity fun y => p (t, y) := by
-  sorry
+  -- The slice mass (normalizer) and its measurability.
+  set g : S → ℝ≥0∞ := fun t => ∫⁻ y, p (t, y) ∂volume with hg_def
+  have hpt : ∀ t : S, Measurable fun y => p (t, y) := fun t =>
+    hp.comp (measurable_const.prodMk measurable_id)
+  have hg : Measurable g := hp.lintegral_prod_right'
+  -- The candidate kernel: `volume` tilted by the normalized slice density.
+  set q : S → ℝ → ℝ≥0∞ := fun t y => (g t)⁻¹ * p (t, y) with hq_def
+  have hq_uncurry : Measurable (Function.uncurry q) :=
+    ((hg.inv).comp measurable_fst).mul hp
+  set κ : Kernel S ℝ := Kernel.withDensity (Kernel.const S volume) q with hκ_def
+  -- Every slice of the candidate is the normalized slice measure in the statement.
+  have hκ_apply : ∀ t : S,
+      κ t = (g t)⁻¹ • volume.withDensity fun y => p (t, y) := by
+    intro t
+    rw [hκ_def, Kernel.withDensity_apply _ hq_uncurry, Kernel.const_apply, hq_def,
+        ← withDensity_smul _ (hpt t)]
+    rfl
+  -- The candidate is a finite kernel: its total mass is `(g t)⁻¹ * g t ≤ 1`.
+  have hκ_fin : IsFiniteKernel κ := by
+    refine ⟨1, ENNReal.one_lt_top, fun t => ?_⟩
+    rw [hκ_apply t, Measure.smul_apply, withDensity_apply _ MeasurableSet.univ,
+        Measure.restrict_univ, smul_eq_mul]
+    exact ENNReal.inv_mul_le_one _
+  haveI := hκ_fin
+  -- The first marginal has the slice-mass density.
+  have hmap : ρ.map Prod.fst = ν.withDensity g := by
+    rw [hρ]; exact map_fst_withDensity_prod hp
+  haveI : SFinite (ν.withDensity g) := by rw [← hmap]; infer_instance
+  -- The defining composition-product identity for the candidate.
+  have hcompProd : ρ.map (fun x => (Prod.fst x, Prod.snd x)) = ρ.map Prod.fst ⊗ₘ κ := by
+    have hid : (fun x : S × ℝ => (Prod.fst x, Prod.snd x)) = id := by funext x; rfl
+    rw [hid, Measure.map_id]
+    refine Measure.ext_of_lintegral _ fun f hf => ?_
+    -- Left side: iterated integral of the density-weighted slices.
+    have hL : ∫⁻ z, f z ∂ρ = ∫⁻ t, ∫⁻ y, p (t, y) * f (t, y) ∂volume ∂ν := by
+      rw [hρ, lintegral_withDensity_prod hp hf]
+      exact lintegral_congr fun t => lintegral_congr fun y => mul_comm _ _
+    -- Inner kernel integral equals the normalized slice integral.
+    have hft : ∀ t : S, Measurable fun y => f (t, y) := fun t =>
+      hf.comp (measurable_const.prodMk measurable_id)
+    have hker : ∀ t : S, ∫⁻ y, f (t, y) ∂(κ t)
+        = (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := by
+      intro t
+      rw [hκ_def, Kernel.lintegral_withDensity _ hq_uncurry t (hft t), Kernel.const_apply,
+          ← lintegral_const_mul _ ((hpt t).mul (hft t))]
+      exact lintegral_congr fun y => by rw [hq_def, mul_assoc]
+    -- Right side: unfold the composition-product and the marginal density.
+    have hJ : Measurable fun t => ∫⁻ y, p (t, y) * f (t, y) ∂volume :=
+      (hp.mul hf).lintegral_prod_right'
+    have hR : ∫⁻ z, f z ∂(ρ.map Prod.fst ⊗ₘ κ)
+        = ∫⁻ t, g t * ((g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume) ∂ν := by
+      rw [hmap, Measure.lintegral_compProd hf]
+      have hcong : (fun t => ∫⁻ y, f (t, y) ∂(κ t))
+          = fun t => (g t)⁻¹ * ∫⁻ y, p (t, y) * f (t, y) ∂volume := funext hker
+      rw [hcong, lintegral_withDensity_eq_lintegral_mul ν hg ((hg.inv).mul hJ)]
+      simp only [Pi.mul_apply]
+    rw [hL, hR]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hp_ne_top, hp_ne_zero] with t htop hzero
+    rw [← mul_assoc, ENNReal.mul_inv_cancel hzero htop, one_mul]
+  -- Conclude by a.e. uniqueness of the disintegration, then rewrite each fibre.
+  have hae := condDistrib_ae_eq_of_measure_eq_compProd (μ := ρ) Prod.fst
+    measurable_snd.aemeasurable (κ := κ) hcompProd
+  filter_upwards [hae] with t ht
+  rw [ht, hκ_apply t]
 
 end StatLean.PointEstimation

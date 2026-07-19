@@ -1,0 +1,64 @@
+# Close ForMathlib/CondDistribDensity.lean, then the debts it unblocks in Equivariance/{Pitman,LocationExamples}.lean
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.ForMathlib.CondDistribDensity`, then `.Equivariance.Pitman`, then `.Equivariance.LocationExamples`. **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
+
+## Hard constraints
+
+- **Only edit** `StatLean/PointEstimation/ForMathlib/CondDistribDensity.lean`, `.../Equivariance/Pitman.lean`, `.../Equivariance/LocationExamples.lean`. Touch nothing else — no `Defs.lean` (frozen, laptop-only). `CondDistribDensity` must keep **Mathlib-only imports**.
+- **Signatures, hypothesis tags, docstrings FROZEN.** You may add `import Mathlib.*`, import already-closed project modules (into the two `Equivariance` files only), and add `private` helpers. Lines ≤ 100 characters.
+- Goal: **0 sorries, 0 errors**. Escape hatch: at most one lifted `private` sorry per file with a precise `-- TODO:`; report each.
+- **Do not weaken any statement.** If one looks false, STOP, leave it sorried, report the counterexample.
+- Commit after each lemma compiles.
+- After green: `#print axioms condDistrib_withDensity_prod_ae_eq`, `#print axioms pitmanEstimator_isLocMRE` — expect only `propext, Classical.choice, Quot.sound`.
+
+## Why this item exists
+
+`CondDistribDensity` was left unscheduled in an earlier wave, and two downstream results were
+blocked by its `sorry`s rather than by any real mathematical obstacle. **Close it first** — the
+Pitman and Gaussian-example debts are then genuine reductions to it.
+
+## Priority 1 — `ForMathlib/CondDistribDensity.lean` (3 stubs)
+
+The setting: `ρ` σ-finite on `S × ℝ` (S standard Borel), a joint density `p` with the input
+supplied as an equation `hρ : ρ = (ν.prod volume).withDensity p`.
+
+- `map_fst_withDensity_prod` — the first marginal has density `s ↦ ∫⁻ t, p (s,t)` by Tonelli
+  (`Measure.lintegral_prod`, `lintegral_withDensity_eq_lintegral_mul`).
+- `lintegral_withDensity_prod` — the slice disintegration.
+- `condDistrib_withDensity_prod_ae_eq` — Mathlib's `condDistrib` is a.e. equal to the
+  **normalized slice** kernel `volume.withDensity (fun t => p (s,t) / ∫⁻ t', p (s,t'))`. Route:
+  verify the defining compProd identity for the candidate and appeal to a.e. uniqueness
+  (`condDistrib_ae_eq_iff_measure_eq_compProd` or `compProd_map_condDistrib`). The normalizer
+  lies in `(0, ∞)` for a.e. `s` — derive that, don't hypothesize it. Note Mathlib's
+  `condDistrib Y X μ` puts the **conditioned** variable first.
+
+## Priority 2 — `Equivariance/Pitman.lean`
+
+`pitmanEstimator_eq_sub_condMean` is the bridge: the conditional law of the data given `diffs`
+is the normalized slice (now available), and a **det-1 shear** change of variables on `ℝⁿ`
+(`x ↦ (diffs x, xₙ)` is measure preserving for Lebesgue) turns the slice integral into the
+displayed ratio `(∫ u·f(x − u𝟙)) / (∫ f(x − u𝟙))`. Then `isLocMRE_sq_of_condMean` (already
+closed) gives `pitmanEstimator_isLocMRE`. There is also one lifted `private` conditional-
+integrability helper from the previous session — close it too.
+
+## Priority 3 — `Equivariance/LocationExamples.lean`
+
+- `locRisk_mean_eq_inv` — the mechanical second-moment calculation `E₀[X̄²] = 1/(m+1)`: expand
+  `(∑ Xᵢ)²/(m+1)²`, integrate, diagonal terms give `∫t² = 1` each (`hvar`), off-diagonal vanish
+  by independence and `∫t = 0` (`hmean`). Use `Measure.pi` independence lemmas
+  (`integral_fintype_prod_eq_prod` / `iIndepFun` for the product measure). Bridge
+  `∫⁻ ofReal` ↔ `ofReal ∫` using square-integrability from `hvar`. Lengthy but routine.
+- `isLocMRE_mean_gaussian` — with `Pitman` closed, the intended route now works: `X̄` is
+  equivariant, `X̄` is complete sufficient for the Gaussian location family and `diffs` is
+  ancillary, so **Basu** (`Completeness.Basu.indepFun_of_boundedlyComplete_sufficient`, closed
+  and axiom-clean) makes them independent; the conditional mean is then a.e. constant and the
+  Pitman estimator collapses to `X̄`.
+- **Do not attempt the Kagan–Linnik–Rao converse** — it is quoted, not proved, in the classical
+  development and is explicitly out of scope. `risk_le_gaussian_of_unitVariance` and
+  `locRisk_isLocMRE_gaussian_eq` are already closed; leave them alone.
+
+## Report
+
+Final `lake build` status per module, per-file sorry counts, both `#print axioms` outputs, and any statement you believe is false (with the counterexample).
