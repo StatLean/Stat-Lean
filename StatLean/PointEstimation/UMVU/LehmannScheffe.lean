@@ -171,6 +171,29 @@ theorem unique_unbiased_function_of_complete (P : Θ → Measure 𝓧)
   simp only [Pi.zero_apply] at hs
   exact sub_eq_zero.mp hs
 
+/-- Lehmann–Scheffé minimality for an **arbitrary** square-integrable unbiased competitor.
+
+TODO: the sole open step of the variance form. The classical argument Rao–Blackwellizes the
+competitor `δ'` through `T` and compares by `variance_rbEstimator_le`, then identifies the two
+Rao–Blackwellizations by `unique_unbiased_function_of_complete`. Both steps require `δ'` to be
+`Measurable` (the kernel average `t ↦ ∫ δ' dQ_t` and the completeness test function must be
+genuinely measurable with identically zero mean). The frozen `IsUMVU` minimality quantifies
+over competitors carrying only `MemEstL2 P δ'`, i.e. a *per-parameter* `AEStronglyMeasurable`
+representative; these do not glue to a single global measurable representative (false in
+general — Dirac families are a counterexample), and the signature provides no dominating
+measure. Closing this needs a `condExp`-based Rao–Blackwell layer (which requires only
+integrability), not available among the imported kernel lemmas. The statement is left intact;
+only this measurability-selection gap is deferred. -/
+private lemma variance_rbEstimator_le_of_complete (P : Θ → Measure 𝓧)
+    [∀ θ, IsProbabilityMeasure (P θ)] (g : Θ → ℝ) {T : 𝓧 → S} (hT : Measurable T)
+    {Q : Kernel S 𝓧} [IsMarkovKernel Q]
+    (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q)
+    (hcomp : IsCompleteStat P T) {δ : 𝓧 → ℝ} (hδm : Measurable δ) (hδu : IsUnbiased P g δ)
+    (hδ2 : MemEstL2 P δ) {δ' : 𝓧 → ℝ} (hδ'u : IsUnbiased P g δ') (hδ'2 : MemEstL2 P δ')
+    (θ : Θ) :
+    variance (fun x => rbEstimator Q δ (T x)) (P θ) ≤ variance δ' (P θ) := by
+  sorry
+
 /-- **Lehmann–Scheffé, variance form.** Averaging any unbiased square-integrable estimator
 over the fibers of a *complete* sufficient statistic produces the uniformly minimum variance
 unbiased estimator of the estimand. -/
@@ -189,7 +212,15 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
     -- USER-INPUT: the witness lies in the estimator class `Δ`
     (hδ2 : MemEstL2 P δ) :
     IsUMVU P g (fun x => rbEstimator Q δ (T x)) := by
-  sorry
+  refine ⟨isUnbiased_rbEstimator P g hT hgraph hδm
+      (fun θ' => (hδ2 θ').integrable one_le_two) hδu, ?_, ?_⟩
+  · -- square-integrability of the Rao–Blackwellized estimator, transported to the data scale
+    intro θ
+    have hstat := memLp_two_rbEstimator_statLaw P hT hgraph hδm hδ2 θ
+    exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
+  · -- minimality against every square-integrable unbiased competitor
+    intro δ' hδ'u hδ'2 θ
+    exact variance_rbEstimator_le_of_complete P g hT hgraph hcomp hδm hδu hδ2 hδ'u hδ'2 θ
 
 /-- **Lehmann–Scheffé, convex-loss form.** The estimator of `isUMVU_of_complete_sufficient`
 minimizes the risk among *all* unbiased estimators, simultaneously for every loss that is
@@ -268,6 +299,15 @@ theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ
     -- USER-INPUT: the witness lies in the estimator class `Δ`
     (hδ2 : MemEstL2 P δ) :
     ∃ η : V → ℝ, Measurable η ∧ IsUMVU P g (fun x => η (E.stat x)) := by
+  -- TODO: assemble from completeness of the natural statistic (`Completeness.ExpFamily`) and
+  -- `isUMVU_of_complete_sufficient`. The latter consumes `HasSufficientKernel P E.stat`, the
+  -- θ-free graph/compProd carrier. For a general reference measure this kernel is produced by
+  -- `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient`, which requires
+  -- `[StandardBorelSpace 𝓧]` (and `[Nonempty 𝓧]`) — neither is available in this frozen
+  -- signature, and an exponential family gives no explicit reconstruction kernel without such
+  -- structure. Completeness (`hcomp`) transfers cleanly through `hrepr`/`hcover`/`hFR` via the
+  -- mutual absolute continuity of the members; the only missing input is the sufficiency
+  -- kernel, which the ambient measurable space is too weak to supply.
   sorry
 
 end StatLean.PointEstimation
