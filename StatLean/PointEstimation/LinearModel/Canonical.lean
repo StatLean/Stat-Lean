@@ -732,6 +732,44 @@ private theorem isUMVU_canonical_of_stat (hm : 0 < m)
         filter_upwards [hrbzero] with t ht
         simp [ht]
 
+/-! ## Coordinate moment reductions (private)
+
+Every coordinate `y ↦ y k` of the canonical model is a single Gaussian marginal
+`N(meanₖ, σ²)`. Integration and `L²`-membership of a function of one coordinate reduce to
+the corresponding statement for `gaussianReal`. -/
+
+/-- The canonical model as a pushforward of the coordinate product of Gaussians. -/
+private lemma canonicalModel_eq_map_pi (p : CanonicalParam s) :
+    canonicalModel (m := m) p
+      = (Measure.pi (fun i => gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) i) p.2.1)).map
+          (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) := by
+  rw [canonicalModel, gaussianVector]; rfl
+
+/-- Reduction of a coordinate integral to a one-dimensional Gaussian integral. -/
+private lemma canonicalModel_integral_coord (p : CanonicalParam s) (k : Fin (s + m))
+    {f : ℝ → ℝ} (hf : Measurable f) :
+    ∫ y, f (y k) ∂(canonicalModel (m := m) p)
+      = ∫ x, f x ∂(gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) k) p.2.1) := by
+  have hgmeas : Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => f (y k)) :=
+    hf.comp ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _))
+  rw [canonicalModel_eq_map_pi,
+      integral_map (WithLp.measurable_toLp 2 _).aemeasurable hgmeas.aestronglyMeasurable]
+  simp only [PiLp.toLp_apply]
+  exact integral_comp_eval hf.aestronglyMeasurable
+
+/-- Reduction of coordinate `L²`-membership to a one-dimensional Gaussian statement. -/
+private lemma canonicalModel_memLp_coord (p : CanonicalParam s) (k : Fin (s + m))
+    {f : ℝ → ℝ} (hfm : Measurable f)
+    (hf : MemLp f 2 (gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) k) p.2.1)) :
+    MemLp (fun y => f (y k)) 2 (canonicalModel (m := m) p) := by
+  have hgmeas : Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => f (y k)) :=
+    hfm.comp ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _))
+  rw [canonicalModel_eq_map_pi]
+  refine (memLp_map_measure_iff hgmeas.aestronglyMeasurable
+    (WithLp.measurable_toLp 2 _).aemeasurable).mpr ?_
+  exact hf.comp_measurePreserving (MeasureTheory.measurePreserving_eval
+    (μ := fun i => gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) i) p.2.1) k)
+
 /-! ## Unbiased optimality in the canonical model -/
 
 /-- Each coordinate `Yᵢ` of the signal block is UMVU for the corresponding mean `ηᵢ`. -/
@@ -740,7 +778,18 @@ theorem isUMVU_coord
     (hm : 0 < m) (i : Fin s) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => p.1 i)
       (fun y => canonicalHead y i) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => t.1 i) :=
+    (measurable_pi_apply i).comp measurable_fst
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y, y (Fin.castAdd m i) ∂(canonicalModel p) = p.1 i
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+    simp only [id_eq] at hc
+    rw [hc, integral_id_gaussianReal, Fin.append_left]
+  · intro p
+    show MemLp (fun y => y (Fin.castAdd m i)) 2 (canonicalModel p)
+    exact canonicalModel_memLp_coord (m := m) p (Fin.castAdd m i)
+      (f := id) measurable_id (memLp_id_gaussianReal 2)
 
 /-- Every linear combination `∑ λᵢ Yᵢ` of the signal block is UMVU for `∑ λᵢ ηᵢ`. -/
 theorem isUMVU_linear_combination
