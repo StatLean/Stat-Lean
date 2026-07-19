@@ -89,6 +89,11 @@ theorem continuousOn_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ
     (hf : Measurable f) :
     ContinuousOn (fun η => ∫ x, f x * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)
       (interior (E.weightedNatSet f)) := by
+  -- TODO: dominated-convergence continuity. On a ball `B(η, r) ⊆ interior (weightedNatSet f)`
+  -- the integrand `ζ ↦ f x · e^{⟪ζ, T x⟫}` is dominated by the local envelope
+  -- `|f x|·(e^{⟪η,T x⟫} + e^{⟪ζ,T x⟫})` (convexity of `exp` along the segment); its integrability
+  -- is the `2^s` sign-vector bound `e^{c·Σ|Tᵢ|} ≤ Σ_ε e^{⟪c·ε, T⟫}` (finite dimension), giving
+  -- `continuousWithinAt` at each interior point via `continuousAt_of_dominated`.
   sorry
 
 /-- **Differentiability**: on the interior of the weighted natural parameter set the weighted
@@ -105,6 +110,13 @@ theorem hasFDerivAt_integral_exp_inner
     (hη : η ∈ interior (E.weightedNatSet f)) :
     HasFDerivAt (fun ζ => ∫ x, f x * Real.exp ⟪ζ, E.stat x⟫_ℝ ∂E.base)
       (innerSL ℝ (∫ x, (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • E.stat x ∂E.base)) η := by
+  -- TODO: differentiation under the integral via `hasFDerivAt_integral_of_dominated_loc_of_lip'`
+  -- with `F ζ x = f x · e^{⟪ζ, T x⟫}`, `F' x = (f x · e^{⟪η, T x⟫}) • innerSL ℝ (T x)` (whose
+  -- integral is `innerSL ℝ` of the stated vector, since `innerSL ℝ` is a CLM and commutes with
+  -- the Bochner integral). The Lipschitz bound needs `bound x = |f x|·‖T x‖·e^{⟪η,T x⟫+r‖T x‖}`
+  -- integrable on a ball `B(η, r) ⊆ interior (weightedNatSet f)`; absorbing the `‖T x‖` factor
+  -- (`t·e^{rt} ≤ C·e^{r't}`) and the `e^{r'‖T x‖}` factor via the `2^s` sign-vector envelope
+  -- (finite dimension) is the remaining work.
   sorry
 
 /-- **Derivatives of all orders** along a fixed direction: the `n`-th derivative of
@@ -117,6 +129,11 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     (hη : η ∈ interior (E.weightedNatSet f)) (u : V) (n : ℕ) :
     iteratedDeriv n (fun t : ℝ => ∫ x, f x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ ∂E.base) 0
       = ∫ x, f x * ⟪u, E.stat x⟫_ℝ ^ n * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := by
+  -- TODO: iterate the directional derivative. Along `t ↦ η + t•u` the integrand is
+  -- `f x · e^{⟪η,T x⟫ + t·⟪u,T x⟫}`; each differentiation pulls down a factor `⟪u, T x⟫`, and the
+  -- swap of `iteratedDeriv` with `∫` at order `n` follows by induction from the same
+  -- dominated-differentiation step as `hasFDerivAt_integral_exp_inner` (with weight
+  -- `f · ⟪u,T⟫^k`), whose local envelope is again the `2^s` sign-vector bound.
   sorry
 
 /-- **Real-analyticity, one-dimensional case**: for a real natural statistic the weighted
