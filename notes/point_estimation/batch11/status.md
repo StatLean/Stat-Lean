@@ -55,6 +55,71 @@ Layering: ForMathlib → Model → {ExponentialFamily, Sufficiency, Completeness
 
 See outline.md for the 73-item book↔Lean dictionary (Lean names filled as stubs land).
 
+## Statement-first stub phase — COMPLETE (2026-07-18)
+
+57 files, 176 sorry-stubs, drafted by a 6-agent fan-out, all committed on `pe/batch11`.
+
+| Directory | Files | Stubs |
+|---|---|---|
+| ForMathlib | 8 | 23 |
+| Model | 1 | 0 (defs only) |
+| ExponentialFamily | 7 | 24 |
+| Sufficiency | 8 | 19 |
+| Completeness | 3 | 6 |
+| UMVU | 5 | 11 |
+| InformationInequality | 8 | 19 |
+| Equivariance | 11 | 48 |
+| LinearModel | 6 | 26 |
+
+### Stub-gate results (cluster, `lean-fasrc-build --worktree pe/batch11`)
+
+- ForMathlib (8 modules): **GREEN**, 2856 jobs, 0 errors, 23 sorries.
+- Defs + Sufficiency + UMVU: **1 error** — `InformationInequality/Defs.lean:72` type mismatch on
+  `scoreVec`. FIXED (laptop, `Defs.lean` is laptop-only): at pin v4.29.1 `WithLp` is a *structure*,
+  not a type synonym, and there is no `Coe (∀ i, α i) (PiLp p α)`, so the bare lambda does not
+  elaborate to `EuclideanSpace`. Must be built with `WithLp.toLp 2 (fun i => …)` — the idiom the
+  rest of the repo already uses (`ParametricFamily/SubmodelDQM.lean:52`). Everything else green.
+- ExponentialFamily + Completeness + InformationInequality (post-fix): **GREEN**, 2840 jobs, 0 errors.
+- Equivariance + LinearModel: gate running.
+
+### Statement decisions & honest corrections made during drafting
+
+Mathematical catches (statements would have been false or laundered as originally briefed):
+- **Thm 5.10 needs `E.base ≠ 0`.** For the zero reference measure the identity reads `0 = 1`. The
+  1-D moment identities (5.14)/(5.15) do NOT need it — both sides degenerate to 0, matching
+  Mathlib's `integral_tilted_mul_self`/`variance_tilted_mul`.
+- **Cramér–Rao needs `HasCommonSupport`.** Without it the theorem is FALSE: the junk-safe score
+  vanishes off the support while `∫ δ ∂p` still sees that region. This restores a standing
+  hypothesis of the source's §2.5 rather than adding one. Also `AEStronglyMeasurable (score …)` is
+  unavoidable (the score is a `deriv`; the integrability of `score²·p` cannot recover its sign).
+- **Thm 4.14(c) is false as printed** for an a.s. constant design (the fixed-design theorem then
+  does supply a BLUE). Stated with an explicit nondegeneracy hypothesis, marked DEFERRAL-ELIGIBLE.
+- **Thm 1.27 needs neither convexity nor evenness** — the source's proof only applies MRE
+  minimality to the equivariant `δ − a`. Stated hypothesis-free.
+- **Thm 2.15 does not use the invariant-model hypothesis** (only transitivity, loss invariance,
+  commutativity, minimality); dropped as dead weight.
+- **`unique_unbiased_function_of_complete` needs only completeness**, not sufficiency (strengthening).
+- Fiber integrability in Rao–Blackwell/Lehmann–Scheffé is DERIVED from the reconstruction identity,
+  never hypothesized (anti-laundering).
+
+Scope/route decisions:
+- Thm 5.8 (§1.5) full s-dim joint analyticity is a separate DEFERRAL-ELIGIBLE stub; the
+  continuity + `HasFDerivAt` + all-order-partials forms cover every downstream consumer.
+- Thm 1.17 is the source's short comparison argument (r_n maximized at the normal). The
+  Kagan–Linnik–Rao uniqueness is quoted-not-proved in the source and is OUT of scope.
+- Cor 3.8: both the Stein-loss form and the standardized squared-error form are stated (both are
+  source content; the brief named the latter).
+- Lem 6.14 omitted (not in the outline ledger); Lem 1.23(c) omitted (needs the UMVU layer, which
+  the Equivariance layer may not import).
+- Cor 5.17 is the source's "score has mean zero" (not the iid statement); the iid form ships under
+  the requested name `cramer_rao_iid` as the source's (5.33).
+- Equivariance uses `MeasurableConstSMul` (weaker than the design note's `MeasurableSMul`; nothing
+  integrates over the group). LinearModel keeps equivariance as explicit functional equations on
+  competitors rather than the general `MulAction` framework.
+- `Matrix` has no `MeasurableSpace` instance at this pin → random designs use `Fin k → Fin l → ℝ`.
+
 ## Event log
 
-- 2026-07-15: design frozen (19 items ≈7 waves, ~42 files); pe/batch11 cut off main 31c61ed, pushed to cannon; ledgers committed; Defs stubs next.
+- 2026-07-15: design frozen (19 items ≈7 waves, ~42 files); pe/batch11 cut off main 31c61ed, pushed to cannon; ledgers committed.
+- 2026-07-18: weekly-quota interruption killed 13 of 14 draft agents; scratchpad worktrees lost (committed work intact). Worktrees recreated, cluster re-authed, full fan-out relaunched.
+- 2026-07-18: stub phase COMPLETE — 57 files / 176 stubs committed; ForMathlib and ExpFamily/Completeness/InfoIneq gates green; scoreVec contract bug found by gate + agent and fixed.
