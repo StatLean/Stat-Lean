@@ -84,22 +84,23 @@ noncomputable def groupAverage (G : Type*) [Group G] [Fintype G] [MulAction G �
 /-! ### The invariant sets form a σ-algebra -/
 
 /-- σ-algebra bookkeeping: the empty set is invariant. -/
-theorem empty_mem_invariantSets : (∅ : Set 𝓧) ∈ invariantSets G 𝓧 := by
-  sorry
+theorem empty_mem_invariantSets : (∅ : Set 𝓧) ∈ invariantSets G 𝓧 :=
+  ⟨MeasurableSet.empty, fun _ => Set.preimage_empty⟩
 
 /-- σ-algebra bookkeeping: invariant sets are closed under complement. -/
 theorem compl_mem_invariantSets {A : Set 𝓧}
     -- USER-INPUT: the set to be complemented is invariant and measurable; classical
     (hA : A ∈ invariantSets G 𝓧) :
-    Aᶜ ∈ invariantSets G 𝓧 := by
-  sorry
+    Aᶜ ∈ invariantSets G 𝓧 :=
+  ⟨hA.1.compl, fun g => by rw [Set.preimage_compl, hA.2 g]⟩
 
 /-- σ-algebra bookkeeping: invariant sets are closed under countable unions. -/
 theorem iUnion_mem_invariantSets {A : ℕ → Set 𝓧}
     -- USER-INPUT: each set of the sequence is invariant and measurable; classical
     (hA : ∀ n, A n ∈ invariantSets G 𝓧) :
-    (⋃ n, A n) ∈ invariantSets G 𝓧 := by
-  sorry
+    (⋃ n, A n) ∈ invariantSets G 𝓧 :=
+  ⟨MeasurableSet.iUnion fun n => (hA n).1, fun g => by
+    simp only [Set.preimage_iUnion]; exact Set.iUnion_congr fun n => (hA n).2 g⟩
 
 /-- Preimages of measurable sets under an invariant measurable statistic are invariant: this is
 how invariant functions are seen to be measurable for the invariant σ-algebra. -/
@@ -111,8 +112,9 @@ theorem preimage_mem_invariantSets {𝓘 : Type*} [MeasurableSpace 𝓘] {h : �
     {B : Set 𝓘}
     -- LEAN-ONLY: measurability of the target set; standard regularity
     (hB : MeasurableSet B) :
-    h ⁻¹' B ∈ invariantSets G 𝓧 := by
-  sorry
+    h ⁻¹' B ∈ invariantSets G 𝓧 :=
+  ⟨hB.preimage hmeas, fun g => Set.ext fun x => by
+    simp only [Set.mem_preimage, hinv g x]⟩
 
 /-! ### The orbit average -/
 
@@ -121,7 +123,10 @@ variable [Fintype G]
 /-- The orbit average is invariant along the orbits. -/
 theorem groupAverage_smul (f : 𝓧 → ℝ) (g : G) (x : 𝓧) :
     groupAverage G f (g • x) = groupAverage G f x := by
-  sorry
+  unfold groupAverage
+  congr 1
+  rw [← Equiv.sum_comp (Equiv.mulRight g) (fun b => f (b • x))]
+  simp only [Equiv.coe_mulRight, mul_smul]
 
 /-- The orbit average of a measurable function is measurable. -/
 theorem measurable_groupAverage {f : 𝓧 → ℝ}
@@ -130,14 +135,19 @@ theorem measurable_groupAverage {f : 𝓧 → ℝ}
     -- LEAN-ONLY: the action is by measurable maps; standard regularity
     (hmeas : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
     Measurable (groupAverage G f) := by
-  sorry
+  unfold groupAverage
+  exact (Finset.measurable_sum _ fun g _ => hf.comp (hmeas g)).const_mul _
 
 /-- Averaging an already invariant function changes nothing. -/
 theorem groupAverage_of_isInvariant {f : 𝓧 → ℝ}
     -- USER-INPUT: the function is invariant along the orbits; Hunt–Stein (1946)
     (hinv : ∀ (g : G) (x : 𝓧), f (g • x) = f x) :
     groupAverage G f = f := by
-  sorry
+  have hcard : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  funext x
+  unfold groupAverage
+  simp only [hinv]
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, inv_mul_cancel_left₀ hcard]
 
 /-- **Orbit averaging preserves the integral** against an invariant measure. -/
 theorem integral_groupAverage (μ : Measure 𝓧) {f : 𝓧 → ℝ}
@@ -148,7 +158,21 @@ theorem integral_groupAverage (μ : Measure 𝓧) {f : 𝓧 → ℝ}
     -- LEAN-ONLY: integrability of the integrand; standard regularity
     (hf : Integrable f μ) :
     ∫ x, groupAverage G f x ∂μ = ∫ x, f x ∂μ := by
-  sorry
+  have hcard : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  have hmp : ∀ g : G, MeasurePreserving (fun x : 𝓧 => g • x) μ μ :=
+    fun g => ⟨hmeas g, hμ g⟩
+  have hint : ∀ g : G, ∫ x, f (g • x) ∂μ = ∫ x, f x ∂μ := by
+    intro g
+    have hae : AEStronglyMeasurable f (μ.map fun x : 𝓧 => g • x) := by
+      rw [hμ g]; exact hf.aestronglyMeasurable
+    conv_rhs => rw [← hμ g]
+    exact (integral_map (hmeas g).aemeasurable hae).symm
+  have hsum : (∫ x, ∑ g : G, f (g • x) ∂μ) = ∑ g : G, ∫ x, f (g • x) ∂μ :=
+    integral_finset_sum Finset.univ fun g _ => (hmp g).integrable_comp_of_integrable hf
+  unfold groupAverage
+  rw [integral_const_mul, hsum]
+  simp only [hint]
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, inv_mul_cancel_left₀ hcard]
 
 /-- **Conditional expectation given the invariant σ-algebra is the orbit average**, for a
 `G`-invariant measure and a finite group.
@@ -170,6 +194,18 @@ theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
     -- LEAN-ONLY: integrability of the integrand; standard regularity
     (hf : Integrable f μ) :
     μ[f | m] =ᵐ[μ] groupAverage G f := by
+  -- TODO: FALSE AS ELABORATED — do not close. In this frozen signature the parameter
+  -- `(m : MeasurableSpace 𝓧)` shadows the ambient `[m𝓧]`: Lean's local-instance
+  -- resolution picks the more recent local hypothesis `m` for the implicit
+  -- `[MeasurableSpace 𝓧]` of `invariantSets G 𝓧` inside `hm_inv`. So `hm_inv` reads
+  --   `MeasurableSet[m] s ↔ (MeasurableSet[m] s ∧ IsInvariantSet G s)`,
+  -- i.e. only "every m-measurable set is invariant"; it does NOT force `m ≤ m𝓧`, which
+  -- `ae_eq_condExp_of_forall_setIntegral_eq` requires. Counterexample: 𝓧 = ℝ, G = ℤ/2
+  -- acting by `x ↦ -x`, μ = standard Gaussian (G-invariant), m = {∅, ℝ, N, Nᶜ} with N a
+  -- non-Lebesgue-measurable symmetric set. Then `hm_inv` holds but `m ⊄ m𝓧`, so
+  -- `μ[f|m] = 0` while `groupAverage G f x = (f x + f (-x))/2 ≠ᵐ 0`. Under the *intended*
+  -- reading (invariantSets at `m𝓧`) the statement is true and the proof below works; the
+  -- fix is a signature change (e.g. pass the ambient instance explicitly) — out of scope.
   sorry
 
 end StatLean.HypothesisTesting
