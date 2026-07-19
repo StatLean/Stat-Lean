@@ -128,7 +128,67 @@ theorem analyticAt_integral_exp_mul (E : ExpFamily 𝓧 ℝ) {f : 𝓧 → ℝ}
     -- USER-INPUT: interior parameter; see `hasFDerivAt_integral_exp_inner`
     (hη : η ∈ interior (E.weightedNatSet f)) :
     AnalyticAt ℝ (fun ζ : ℝ => ∫ x, f x * Real.exp ⟪ζ, E.stat x⟫_ℝ ∂E.base) η := by
-  sorry
+  have hinner : ∀ a b : ℝ, ⟪a, b⟫_ℝ = a * b := fun a b => by rw [← real_inner_comm]; rfl
+  -- the positive and negative parts of the weight
+  have hfp : Measurable fun x => max (f x) 0 := hf.max measurable_const
+  have hfm : Measurable fun x => max (-f x) 0 := hf.neg.max measurable_const
+  have hfp_nn : ∀ x, 0 ≤ max (f x) 0 := fun x => le_max_right _ _
+  have hfm_nn : ∀ x, 0 ≤ max (-f x) 0 := fun x => le_max_right _ _
+  have hfp_le : ∀ x, max (f x) 0 ≤ |f x| := fun x => max_le (le_abs_self _) (abs_nonneg _)
+  have hfm_le : ∀ x, max (-f x) 0 ≤ |f x| := fun x => max_le (neg_le_abs _) (abs_nonneg _)
+  -- `mgf` of the tilted measure equals the weighted integral
+  have hmgf : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → ∀ ζ : ℝ,
+      mgf E.stat (E.base.withDensity fun x => ENNReal.ofReal (w x)) ζ
+        = ∫ x, w x * Real.exp (ζ * E.stat x) ∂E.base := by
+    intro w hw hwnn ζ
+    simp only [mgf]
+    rw [integral_withDensity_eq_integral_toReal_smul hw.ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (hwnn x), smul_eq_mul]
+  -- weighted integrand is integrable on the weighted natural set
+  have hintw : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
+      ∀ ζ ∈ E.weightedNatSet f, Integrable (fun x => w x * Real.exp (ζ * E.stat x)) E.base := by
+    intro w hw hwnn hwle ζ hζ
+    have hζI : Integrable (fun x => |f x| * Real.exp ⟪ζ, E.stat x⟫_ℝ) E.base := hζ
+    refine hζI.mono' ((hw.aestronglyMeasurable).mul
+      (((measurable_const.mul E.stat_meas).exp).aestronglyMeasurable))
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hwnn x),
+      abs_of_nonneg (Real.exp_nonneg _), hinner ζ (E.stat x)]
+    exact mul_le_mul_of_nonneg_right (hwle x) (Real.exp_nonneg _)
+  -- membership in the interior of the integrable-exp set of each tilted measure
+  have hsub : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
+      E.weightedNatSet f ⊆ integrableExpSet E.stat (E.base.withDensity
+        fun x => ENNReal.ofReal (w x)) := by
+    intro w hw hwnn hwle ζ hζ
+    simp only [integrableExpSet, Set.mem_setOf_eq]
+    rw [integrable_withDensity_iff hw.ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine ((hintw w hw hwnn hwle ζ hζ).congr (Filter.Eventually.of_forall fun x => ?_))
+    dsimp only
+    rw [ENNReal.toReal_ofReal (hwnn x), mul_comm]
+  have hmemp : η ∈ interior (integrableExpSet E.stat
+      (E.base.withDensity fun x => ENNReal.ofReal (max (f x) 0))) :=
+    interior_mono (hsub _ hfp hfp_nn hfp_le) hη
+  have hmemm : η ∈ interior (integrableExpSet E.stat
+      (E.base.withDensity fun x => ENNReal.ofReal (max (-f x) 0))) :=
+    interior_mono (hsub _ hfm hfm_nn hfm_le) hη
+  have ha := (analyticAt_mgf hmemp).sub (analyticAt_mgf hmemm)
+  refine ha.congr ?_
+  have hnhd : interior (E.weightedNatSet f) ∈ nhds η := isOpen_interior.mem_nhds hη
+  filter_upwards [hnhd] with ζ hζ
+  have hζ' : ζ ∈ E.weightedNatSet f := interior_subset hζ
+  simp only [Pi.sub_apply]
+  rw [hmgf _ hfp hfp_nn ζ, hmgf _ hfm hfm_nn ζ,
+    ← integral_sub (hintw _ hfp hfp_nn hfp_le ζ hζ') (hintw _ hfm hfm_nn hfm_le ζ hζ')]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  dsimp only
+  rw [hinner ζ (E.stat x)]
+  rcases le_total (f x) 0 with h | h
+  · simp only [max_eq_right h, max_eq_left (neg_nonneg.mpr h)]; ring
+  · simp only [max_eq_left h, max_eq_right (neg_nonpos.mpr h)]; ring
 
 /-- **Joint real-analyticity in several natural parameters.**
 
