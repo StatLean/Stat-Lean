@@ -82,7 +82,7 @@ at a fixed parameter coincides almost everywhere with the average of the densiti
 translated parameters — the quantity appearing in the classical rejection region. -/
 theorem orbitAverage_eq_avg_translated_density [Fintype G] [MeasurableSMul G 𝓧]
     {P : Θ → Measure 𝓧}
-    {μ : Measure 𝓧} {p : Θ → 𝓧 → ℝ} (θ : Θ)
+    {μ : Measure 𝓧} [SigmaFinite μ] {p : Θ → 𝓧 → ℝ} (θ : Θ)
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
     (hP : IsInvariantModel (G := G) P)
     -- USER-INPUT: the model is dominated by `μ` with densities `p`
@@ -117,6 +117,11 @@ theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] [MeasurableSMul G 𝓧]
     {Θ₀ Θ₁ : Set Θ} {θ₀ θ₁ : Θ} {α k : ℝ} {φ : 𝓧 → ℝ}
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
     (hP : IsInvariantModel (G := G) P)
+    -- USER-INPUT: the dominating measure is itself invariant under the group. Without this the
+    -- statement is FALSE: with G = Z/2 acting on R by reflection, every P θ symmetric (so
+    -- `IsInvariantModel` holds) but μ asymmetric (e.g. N(1,10)), the sample-side orbit-average
+    -- ratio is not the likelihood ratio, so the test is invariant but not UMP.
+    (hμinv : ∀ g : G, μ.map (fun x : 𝓧 => g • x) = μ)
     -- USER-INPUT: the null and alternative classes are preserved by the induced action
     (hΘ₀ : ∀ (g : G) (θ : Θ), θ ∈ Θ₀ → g • θ ∈ Θ₀)
     (hΘ₁ : ∀ (g : G) (θ : Θ), θ ∈ Θ₁ → g • θ ∈ Θ₁)
@@ -161,6 +166,11 @@ theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] [MeasurableSMul G
     {Θ₀ Θ₁ : Set Θ} {α : ℝ}
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
     (hP : IsInvariantModel (G := G) P)
+    -- USER-INPUT: the dominating measure is itself invariant under the group. Without this the
+    -- statement is FALSE: with G = Z/2 acting on R by reflection, every P θ symmetric (so
+    -- `IsInvariantModel` holds) but μ asymmetric (e.g. N(1,10)), the sample-side orbit-average
+    -- ratio is not the likelihood ratio, so the test is invariant but not UMP.
+    (hμinv : ∀ g : G, μ.map (fun x : 𝓧 => g • x) = μ)
     -- USER-INPUT: the null and alternative classes are preserved by the induced action
     (hΘ₀ : ∀ (g : G) (θ : Θ), θ ∈ Θ₀ → g • θ ∈ Θ₀)
     (hΘ₁ : ∀ (g : G) (θ : Θ), θ ∈ Θ₁ → g • θ ∈ Θ₁)
