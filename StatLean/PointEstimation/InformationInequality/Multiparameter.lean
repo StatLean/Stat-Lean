@@ -214,6 +214,54 @@ theorem multiparameter_cramer_rao {s : ℕ} (M : ParametricFamily 𝓧 (Euclidea
     -- USER-INPUT: those derivatives are obtained by differentiating under the integral sign
     (hswap : ∀ i, α i = ∫ x, δ x * scoreVec M θ x i * M.density θ x ∂μ) :
     α ⬝ᵥ ((infoMatrix M μ θ)⁻¹ *ᵥ α) ≤ variance δ (M.toMeasure μ θ) := by
-  sorry
+  haveI hP : IsProbabilityMeasure (M.toMeasure μ θ) := by
+    refine ⟨?_⟩
+    rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+      withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+      ← ofReal_integral_eq_lintegral_ofReal (hpdf.density_integrable θ)
+        (Filter.Eventually.of_forall (M.density_nonneg θ)), hpdf.density_integral_eq_one θ,
+      ENNReal.ofReal_one]
+  set ψ : Fin s → 𝓧 → ℝ := fun i x => scoreVec M θ x i with hψdef
+  -- integration against `P_θ` is integration of `g · p_θ` against `μ`
+  have hint_tm : ∀ g : 𝓧 → ℝ, ∫ x, g x ∂(M.toMeasure μ θ) = ∫ x, g x * M.density θ x ∂μ := by
+    intro g
+    rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+      integral_withDensity_eq_integral_toReal_smul (M.density_meas θ).ennreal_ofReal
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [ENNReal.toReal_ofReal (M.density_nonneg θ x), smul_eq_mul]; ring
+  -- each coordinate score has mean zero under `P_θ`
+  have hmean0P : ∀ i, ∫ x, ψ i x ∂(M.toMeasure μ θ) = 0 := by
+    intro i; rw [hint_tm]; exact hmean0 i
+  -- and is square-integrable under `P_θ`
+  have hψmem : ∀ i, MemLp (ψ i) 2 (M.toMeasure μ θ) := by
+    intro i
+    have hmeasP : AEStronglyMeasurable (ψ i) (M.toMeasure μ θ) :=
+      (hmeas i).mono_ac (withDensity_absolutelyContinuous _ _)
+    have hintP : Integrable (fun x => ψ i x ^ 2) (M.toMeasure μ θ) := by
+      rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+        integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+          (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+      refine (integrable_congr (Filter.Eventually.of_forall fun x => ?_)).2 (hscore_int i)
+      rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+    exact (memLp_two_iff_integrable_sq hmeasP).2 hintP
+  -- covariance with a mean-zero variable is the uncentered second moment
+  have hcov_mean0 : ∀ (X Y : 𝓧 → ℝ), MemLp X 2 (M.toMeasure μ θ) → MemLp Y 2 (M.toMeasure μ θ) →
+      (∫ x, Y x ∂(M.toMeasure μ θ)) = 0 →
+      covariance X Y (M.toMeasure μ θ) = ∫ x, X x * Y x ∂(M.toMeasure μ θ) := by
+    intro X Y hX hY hY0
+    rw [covariance_eq_sub hX hY, hY0, mul_zero, sub_zero]
+    simp only [Pi.mul_apply]
+  -- the information matrix is the covariance matrix of the coordinate scores
+  have hC : ∀ i j, infoMatrix M μ θ i j = covariance (ψ i) (ψ j) (M.toMeasure μ θ) := by
+    intro i j
+    rw [hcov_mean0 _ _ (hψmem i) (hψmem j) (hmean0P j), hint_tm]
+    simp only [infoMatrix, hψdef]
+  -- the gradient is the covariance vector of `δ` with the coordinate scores
+  have hγ : ∀ i, α i = covariance δ (ψ i) (M.toMeasure μ θ) := by
+    intro i
+    rw [hcov_mean0 _ _ hδ2 (hψmem i) (hmean0P i), hint_tm, hswap i]
+  exact covariance_matrix_inequality (M.toMeasure μ θ) δ ψ hδ2 hψmem
+    (infoMatrix M μ θ) hC hIpos α hγ
 
 end StatLean.PointEstimation
