@@ -50,7 +50,7 @@ parameter was proved by C. Stein, "The admissibility of Pitman's estimator of a 
 location parameter," *Ann. Math. Statist.* **30** (1959), 970–979.
 -/
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
 namespace StatLean.PointEstimation
@@ -288,6 +288,106 @@ private lemma pitmanEstimator_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ) (hf :
   have hD0 : (∫ s : ℝ, f (pUnshear (diffs x, s))) ≠ 0 := hDl ▸ hden0 x
   rw [hNl, hDl]
   field_simp
+
+/-- The Pitman denominator in shear coordinates: `∫ f(x − u𝟙) du = ∫ f(snoc (diffs x) 0 + s𝟙) ds`. -/
+private lemma integral_den_eq_slice (f : (Fin (m + 1) → ℝ) → ℝ) (x : Fin (m + 1) → ℝ) :
+    (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) = ∫ s : ℝ, f (pUnshear (diffs x, s)) := by
+  simp_rw [sub_smul_one_eq_pUnshear]
+  exact integral_const_sub_comm (fun s => f (pUnshear (diffs x, s))) (x (Fin.last m))
+
+/-- The density slice has positive mass at every `y`. -/
+private lemma slice_den_pos (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
+    (hfnn : ∀ x, 0 ≤ f x)
+    (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0)
+    (y : Fin m → ℝ) : 0 < ∫ s : ℝ, f (pUnshear (y, s)) := by
+  set x₀ : Fin (m + 1) → ℝ := Fin.snoc y (0 : ℝ) with hx₀
+  have hne : (∫ s : ℝ, f (pUnshear (y, s))) ≠ 0 := by
+    have h := hden0 x₀
+    rw [integral_den_eq_slice f x₀, diffs_snoc y] at h
+    exact h
+  exact lt_of_le_of_ne (integral_nonneg fun s => hfnn _) (Ne.symm hne)
+
+/-- **The conditional mean of the last coordinate given the differences is the Pitman ratio.**
+This is the substantive change of variables, delivered almost everywhere in the data because
+the conditional distribution `orbitCondKernel` is a `condDistrib`, determined only up to a
+null set. -/
+private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
+    [IsProbabilityMeasure (locationBase f)] (hf : Measurable f) (hfnn : ∀ x, 0 ≤ f x)
+    (hden : ∀ x, Integrable fun u : ℝ => f (x - u • (1 : Fin (m + 1) → ℝ)))
+    (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0) :
+    ∀ᵐ x ∂(locationBase f),
+      ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs (diffs x))
+        = (∫ s : ℝ, s * f (pUnshear (diffs x, s)))
+          / (∫ s : ℝ, f (pUnshear (diffs x, s))) := by
+  set P₀ := locationBase f with hP₀
+  set δ₀ : (Fin (m + 1) → ℝ) → ℝ := fun x => x (Fin.last m) with hδ₀
+  have hδ₀meas : Measurable δ₀ := measurable_pi_apply (Fin.last m)
+  set p : (Fin m → ℝ) × ℝ → ℝ≥0∞ := fun q => ENNReal.ofReal (f (pUnshear q)) with hp_def
+  have hp_meas : Measurable p :=
+    ENNReal.measurable_ofReal.comp (hf.comp measurable_pUnshear)
+  set ρ : Measure ((Fin m → ℝ) × ℝ) := P₀.map pShear with hρ_def
+  haveI : IsProbabilityMeasure ρ := by
+    rw [hρ_def]; exact Measure.isProbabilityMeasure_map measurable_pShear.aemeasurable
+  -- the slice-integral identities
+  have hslice_int : ∀ t : Fin m → ℝ, Integrable (fun s : ℝ => f (pUnshear (t, s))) :=
+    fun t => integrable_slice_den f hf hden t
+  have hlint : ∀ t : Fin m → ℝ,
+      (∫⁻ y, p (t, y) ∂volume) = ENNReal.ofReal (∫ s : ℝ, f (pUnshear (t, s))) := by
+    intro t
+    simp only [hp_def]
+    exact (ofReal_integral_eq_lintegral_ofReal (hslice_int t) (ae_of_all _ fun s => hfnn _)).symm
+  -- `ρ` is the density `p` against `volume ⊗ volume`
+  have hρ : ρ = (volume.prod volume).withDensity p := by
+    rw [hρ_def, hP₀]; exact map_pShear_locationBase f hf
+  -- side conditions for the disintegration formula
+  have hp_ne_top : ∀ᵐ t ∂(volume : Measure (Fin m → ℝ)), (∫⁻ y, p (t, y) ∂volume) ≠ ⊤ :=
+    ae_of_all _ fun t => by rw [hlint t]; exact ENNReal.ofReal_ne_top
+  have hp_ne_zero : ∀ᵐ t ∂(volume : Measure (Fin m → ℝ)), (∫⁻ y, p (t, y) ∂volume) ≠ 0 :=
+    ae_of_all _ fun t => by
+      rw [hlint t]
+      exact (ENNReal.ofReal_pos.mpr (slice_den_pos f hf hfnn hden0 t)).ne'
+  -- the disintegration formula, a.e. in the differences
+  have hmapfst : ρ.map Prod.fst = P₀.map diffs := by
+    rw [hρ_def, Measure.map_map measurable_fst measurable_pShear]
+    rfl
+  have hkey := condDistrib_withDensity_prod_ae_eq (S := Fin m → ℝ) hp_meas hρ hp_ne_top hp_ne_zero
+  rw [hmapfst] at hkey
+  -- relate `condDistrib snd fst ρ` to `condDistrib δ₀ diffs P₀`
+  have hcmap : condDistrib Prod.snd Prod.fst ρ =ᵐ[P₀.map diffs] condDistrib δ₀ diffs P₀ := by
+    have h := condDistrib_map (X := Prod.fst) (Y := Prod.snd) (f := pShear) (ν := P₀)
+      (measurable_fst.aemeasurable) (measurable_snd.aemeasurable) measurable_pShear.aemeasurable
+    exact h
+  -- relate `condDistrib δ₀ diffs P₀` to the pushforward of `orbitCondKernel` under `δ₀`
+  have hccomp : condDistrib δ₀ diffs P₀
+      =ᵐ[P₀.map diffs] (condDistrib id diffs P₀).map δ₀ := by
+    have h := condDistrib_comp (μ := P₀) (Y := id) (mβ := inferInstance)
+      (X := (diffs : (Fin (m + 1) → ℝ) → Fin m → ℝ)) (aemeasurable_id (μ := P₀))
+      (f := δ₀) hδ₀meas
+    simpa using h
+  -- assemble everything, a.e. in the differences
+  have hae : ∀ᵐ t ∂(P₀.map diffs),
+      ∫ z, δ₀ z ∂(orbitCondKernel P₀ diffs t)
+        = (∫ s : ℝ, s * f (pUnshear (t, s))) / (∫ s : ℝ, f (pUnshear (t, s))) := by
+    filter_upwards [hkey, hcmap, hccomp] with t hkt hcm hcc
+    -- push the integral through `δ₀`
+    have hpush : ∫ z, δ₀ z ∂(orbitCondKernel P₀ diffs t)
+        = ∫ s : ℝ, s ∂(condDistrib δ₀ diffs P₀ t) := by
+      rw [hcc, Kernel.map_apply _ hδ₀meas]
+      exact (integral_map hδ₀meas.aemeasurable aestronglyMeasurable_id).symm
+    -- the slice mean
+    have hwd : ∫ s : ℝ, s ∂(volume.withDensity fun y => p (t, y))
+        = ∫ s : ℝ, s * f (pUnshear (t, s)) := by
+      have hfm : Measurable fun y : ℝ => p (t, y) :=
+        hp_meas.comp (measurable_const.prodMk measurable_id)
+      rw [integral_withDensity_eq_integral_toReal_smul hfm
+            (ae_of_all _ fun s => by simp only [hp_def]; exact ENNReal.ofReal_lt_top)
+            (fun s => s)]
+      refine integral_congr_ae (ae_of_all _ fun s => ?_)
+      simp only [hp_def, ENNReal.toReal_ofReal (hfnn _), smul_eq_mul, mul_comm]
+    rw [hpush, ← hcm, hkt, integral_smul_measure, hlint t, hwd, ENNReal.toReal_inv,
+        ENNReal.toReal_ofReal (le_of_lt (slice_den_pos f hf hfnn hden0 t)), smul_eq_mul,
+        div_eq_inv_mul]
+  exact ae_of_ae_map measurable_diffs.aemeasurable hae
 
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
