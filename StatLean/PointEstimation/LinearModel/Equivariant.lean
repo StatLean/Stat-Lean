@@ -135,13 +135,86 @@ with `k` degrees of freedom — the constant minimizing `E(c·V^r − 1)²`. -/
 noncomputable def residualScaleConst (k r : ℕ) : ℝ :=
   (∫ v, v ^ r ∂(chiSquared k)) / (∫ v, v ^ (2 * r) ∂(chiSquared k))
 
+open Set in
+/-- Integrability of `x ↦ xᵏ` under `χ²ₘ` (`m ≥ 1`): mirrors the Gamma-moment brick. -/
+private lemma integrable_pow_chiSquared {m : ℕ} (hm : 0 < m) (k : ℕ) :
+    Integrable (fun x => x ^ k) (chiSquared m) := by
+  have hmr : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  set a : ℝ := (m : ℝ) / 2 with ha_def
+  have ha : (0 : ℝ) < a := by rw [ha_def]; linarith
+  have hr : (0 : ℝ) < (1 : ℝ) / 2 := by norm_num
+  rw [show chiSquared m = gammaMeasure a (1 / 2) from rfl]
+  rw [gammaMeasure, integrable_withDensity_iff
+        (show Measurable (gammaPDF a (1 / 2)) from
+          (measurable_gammaPDFReal a (1 / 2)).ennreal_ofReal)
+        (ae_of_all _ (fun _ => ENNReal.ofReal_lt_top))]
+  have hcongr : (fun x => x ^ k * (gammaPDF a (1 / 2) x).toReal)
+      = fun x => x ^ k * gammaPDFReal a (1 / 2) x := by
+    funext x
+    rw [show gammaPDF a (1 / 2) x = ENNReal.ofReal (gammaPDFReal a (1 / 2) x) from rfl,
+        ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr x)]
+  rw [hcongr]
+  have hmodel : IntegrableOn (fun x => x ^ (a + (k : ℝ) - 1) * Real.exp (-((1 / 2) * x)))
+      (Ioi (0 : ℝ)) volume := by
+    have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a + (k : ℝ) - 1) (b := 1 / 2)
+      (by have := Nat.cast_nonneg (α := ℝ) k; linarith) le_rfl hr
+    refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
+    rw [mem_Ioi] at hx
+    rw [Real.rpow_one, neg_mul]
+  have hIoi : IntegrableOn (fun x => x ^ k * gammaPDFReal a (1 / 2) x) (Ioi (0 : ℝ)) volume := by
+    refine IntegrableOn.congr_fun (hmodel.const_mul ((1 / 2) ^ a / Real.Gamma a))
+      (fun x hx => ?_) measurableSet_Ioi
+    rw [mem_Ioi] at hx
+    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x k,
+        show a + (k : ℝ) - 1 = (a - 1) + (k : ℝ) by ring, Real.rpow_add hx (a - 1) (k : ℝ)]
+    ring
+  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
+  refine ⟨?_, hIoi⟩
+  refine integrableOn_zero.congr ?_
+  rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
+  refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
+  intro x hx
+  simp only [mem_setOf_eq, Classical.not_imp, mem_Iic] at hx
+  obtain ⟨hx1, hx2⟩ := hx
+  rcases lt_or_eq_of_le hx1 with h | h
+  · exact absurd (show x ^ k * gammaPDFReal a (1 / 2) x = 0 by
+      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+  · exact h
+
 /-- The multiplier at `r = 1`: `E[V] = m` and `E[V²] = m(m + 2)` give
 `residualScaleConst m 1 = 1/(m + 2)`, the classical `1/(n − s + 2)`. -/
 theorem residualScaleConst_one
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     residualScaleConst m 1 = 1 / ((m : ℝ) + 2) := by
-  sorry
+  haveI : NeZero m := ⟨hm.ne'⟩
+  have hmr : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hI1 : ∫ v, v ^ 1 ∂(chiSquared m) = (m : ℝ) := by
+    simp only [pow_one]; exact StatLean.MultipleTesting.integral_id_chiSquared hm
+  have hI2 : ∫ v, v ^ (2 * 1) ∂(chiSquared m) = (m : ℝ) * ((m : ℝ) + 2) := by
+    have e21 : (2 * 1 : ℕ) = 2 := rfl
+    rw [e21]
+    have hint1 : Integrable (fun x : ℝ => x) (chiSquared m) := by
+      simpa using integrable_pow_chiSquared hm 1
+    have hint2 : Integrable (fun x : ℝ => x ^ 2) (chiSquared m) := integrable_pow_chiSquared hm 2
+    have hvar := StatLean.MultipleTesting.variance_chiSquared hm
+    have hmean := StatLean.MultipleTesting.integral_id_chiSquared hm
+    have hexp : ∀ x : ℝ, (x - (m : ℝ)) ^ 2 = x ^ 2 - 2 * (m : ℝ) * x + (m : ℝ) ^ 2 :=
+      fun x => by ring
+    have hf : Integrable (fun x : ℝ => x ^ 2 - 2 * (m : ℝ) * x) (chiSquared m) :=
+      hint2.sub (hint1.const_mul (2 * (m : ℝ)))
+    rw [show (∫ x, (x - (m : ℝ)) ^ 2 ∂(chiSquared m))
+          = (∫ x, x ^ 2 ∂(chiSquared m)) - 2 * (m : ℝ) * (∫ x, x ∂(chiSquared m)) + (m : ℝ) ^ 2
+        from by
+        simp_rw [hexp]
+        rw [integral_add hf (integrable_const _),
+            integral_sub hint2 (hint1.const_mul (2 * (m : ℝ))), integral_const_mul,
+            integral_const, probReal_univ, smul_eq_mul, one_mul]] at hvar
+    rw [hmean] at hvar
+    linarith [hvar]
+  rw [residualScaleConst, hI1, hI2]
+  rw [div_eq_div_iff (by positivity) (by positivity)]
+  ring
 
 /-- A fixed multiple of `(S²)^r` is minimum risk equivariant for `(σ²)^r` under the
 location-scale group, the multiplier being the chi-square moment ratio. -/
