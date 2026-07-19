@@ -288,7 +288,7 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
     · intro h q _; exact le_trans h (le_of_lt ‹r < (q : ℝ)›)
     · intro h
       by_contra hlt
-      push_neg at hlt
+      rw [not_le] at hlt
       obtain ⟨q, hrq, hqu⟩ := exists_rat_btwn hlt
       exact absurd (h q hrq) (not_le.mpr hqu)
   rw [hset]
