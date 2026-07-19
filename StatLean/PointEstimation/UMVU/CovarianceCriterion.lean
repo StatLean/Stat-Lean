@@ -65,6 +65,23 @@ namespace StatLean.PointEstimation
 
 variable {Θ 𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- A quadratic `2ct + vt²` (in `t`) with `v ≥ 0` that is nonnegative for every `t` forces
+its linear coefficient to vanish: the minimizer `t = -c/(v+1)` gives a strictly negative value
+unless `c = 0`. -/
+private lemma cov_eq_zero_of_quadratic_nonneg {c v : ℝ}
+    (h : ∀ t : ℝ, 0 ≤ 2 * c * t + t ^ 2 * v) (hv : 0 ≤ v) : c = 0 := by
+  have hc2 : c ^ 2 ≤ 0 := by
+    rcases eq_or_lt_of_le hv with rfl | hvpos
+    · nlinarith [h (-c)]
+    · have ht := h (-c / v)
+      have e : 2 * c * (-c / v) + (-c / v) ^ 2 * v = -(c ^ 2) / v := by
+        field_simp; ring
+      rw [e] at ht
+      have h2 := mul_nonneg ht hvpos.le
+      rw [div_mul_cancel₀ _ hvpos.ne'] at h2
+      linarith
+  exact sq_eq_zero_iff.mp (le_antisymm hc2 (sq_nonneg c))
+
 /-- **UMVU ⟺ uncorrelated with every unbiased estimator of zero.** A square-integrable
 unbiased estimator of `g` has uniformly minimum variance among the square-integrable unbiased
 estimators of `g` exactly when its covariance with every square-integrable unbiased estimator
@@ -77,7 +94,41 @@ theorem isUMVU_iff_uncorrelated_unbiasedZero (P : Θ → Measure 𝓧)
     (hδ2 : MemEstL2 P δ) :
     IsUMVU P g δ ↔
       ∀ U : 𝓧 → ℝ, IsUnbiasedZero P U → MemEstL2 P U → ∀ θ, covariance δ U (P θ) = 0 := by
-  sorry
+  constructor
+  · -- (⟹) perturb `δ` by `t·U`, minimize the resulting quadratic in `t`
+    rintro ⟨-, -, hmin⟩ U hU hUL2 θ
+    have key : ∀ t : ℝ,
+        0 ≤ 2 * covariance δ U (P θ) * t + t ^ 2 * variance U (P θ) := by
+      intro t
+      have hδ'u : IsUnbiased P g (fun x => δ x + t * U x) := by
+        intro θ'
+        rw [integral_add ((hδ2 θ').integrable one_le_two)
+            (((hUL2 θ').integrable one_le_two).const_mul t), integral_const_mul, hδu θ', hU θ']
+        simp
+      have hδ'2 : MemEstL2 P (fun x => δ x + t * U x) :=
+        fun θ' => (hδ2 θ').add ((hUL2 θ').const_mul t)
+      have hle := hmin _ hδ'u hδ'2 θ
+      rw [variance_fun_add (hδ2 θ) ((hUL2 θ).const_mul t), covariance_const_mul_right t,
+        variance_const_mul t U] at hle
+      nlinarith [hle]
+    exact cov_eq_zero_of_quadratic_nonneg key (variance_nonneg _ _)
+  · -- (⟸) any competitor differs from `δ` by an unbiased estimator of zero
+    intro hcorr
+    refine ⟨hδu, hδ2, fun δ' hδ'u hδ'2 θ => ?_⟩
+    have hUz : IsUnbiasedZero P (fun x => δ' x - δ x) := by
+      intro θ'
+      change ∫ x, (δ' x - δ x) ∂ P θ' = 0
+      rw [integral_sub ((hδ'2 θ').integrable one_le_two) ((hδ2 θ').integrable one_le_two),
+        hδ'u θ', hδu θ', sub_self]
+    have hUL2 : MemEstL2 P (fun x => δ' x - δ x) := fun θ' => (hδ'2 θ').sub (hδ2 θ')
+    have hcov0 := hcorr _ hUz hUL2 θ
+    have hvar : variance δ' (P θ)
+        = variance δ (P θ) + 2 * covariance δ (fun x => δ' x - δ x) (P θ)
+          + variance (fun x => δ' x - δ x) (P θ) := by
+      rw [← variance_fun_add (hδ2 θ) (hUL2 θ)]
+      exact variance_congr (Filter.Eventually.of_forall fun x => by ring)
+    rw [hvar, hcov0]
+    linarith [variance_nonneg (fun x => δ' x - δ x) (P θ)]
 
 /-- **When does a covariance bound apply to all unbiased estimators?** The covariance of an
 estimator with a fixed reference statistic `ψ` is determined by the estimator's mean function
@@ -92,6 +143,22 @@ theorem covariance_depends_only_on_mean_iff (P : Θ → Measure 𝓧)
         (∀ θ, ∫ x, δ₁ x ∂(P θ) = ∫ x, δ₂ x ∂(P θ)) →
         ∀ θ, covariance δ₁ (ψ θ) (P θ) = covariance δ₂ (ψ θ) (P θ)) ↔
       ∀ U : 𝓧 → ℝ, IsUnbiasedZero P U → MemEstL2 P U → ∀ θ, covariance U (ψ θ) (P θ) = 0 := by
-  sorry
+  constructor
+  · -- (⟹) apply the mean-invariance to `U` and the zero estimator
+    intro hdep U hU hUL2 θ
+    have hmean : ∀ θ', ∫ x, U x ∂(P θ') = ∫ x, (fun _ => (0 : ℝ)) x ∂(P θ') := by
+      intro θ'; rw [hU θ']; simp
+    have h := hdep U (fun _ => 0) hUL2 (fun _ => memLp_const 0) hmean θ
+    rwa [covariance_const_left] at h
+  · -- (⟸) two estimators with the same mean differ by an unbiased estimator of zero
+    intro huncorr δ₁ δ₂ h1 h2 hmean θ
+    have hUz : IsUnbiasedZero P (fun x => δ₁ x - δ₂ x) := by
+      intro θ'
+      change ∫ x, (δ₁ x - δ₂ x) ∂ P θ' = 0
+      rw [integral_sub ((h1 θ').integrable one_le_two) ((h2 θ').integrable one_le_two),
+        hmean θ', sub_self]
+    have hc := huncorr _ hUz (fun θ' => (h1 θ').sub (h2 θ')) θ
+    rw [covariance_fun_sub_left (h1 θ) (h2 θ) (hψ θ)] at hc
+    linarith
 
 end StatLean.PointEstimation
