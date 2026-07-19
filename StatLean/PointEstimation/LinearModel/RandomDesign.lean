@@ -199,6 +199,46 @@ theorem designMean_lseCoeff {A : Matrix (Fin s) (Fin n) ℝ}
 
 /-! ## Optimality and covariance of the coefficient estimator -/
 
+/-- Full row rank means the rows are linearly independent. -/
+private lemma linearIndependent_row_of_rank {A : Matrix (Fin s) (Fin n) ℝ} (hA : A.rank = s) :
+    LinearIndependent ℝ A.row := by
+  rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
+      ← Matrix.rank_eq_finrank_span_row, hA]; simp
+
+/-- For a full-row-rank design the Gram matrix `A Aᵀ` is invertible. -/
+private lemma isUnit_mulTranspose_of_rank {A : Matrix (Fin s) (Fin n) ℝ} (hA : A.rank = s) :
+    IsUnit (A * Aᵀ) := by
+  have hli := linearIndependent_row_of_rank hA
+  have hvecA : Function.Injective A.vecMul := Matrix.vecMul_injective_iff.mpr hli
+  rw [← Matrix.vecMul_injective_iff_isUnit]
+  intro x z h
+  have hx0 : (x - z) ᵥ* (A * Aᵀ) = 0 := by rw [Matrix.sub_vecMul, sub_eq_zero]; exact h
+  have hself : ((x - z) ᵥ* A) ⬝ᵥ ((x - z) ᵥ* A) = 0 := by
+    have e1 : ((x - z) ᵥ* A) ⬝ᵥ ((x - z) ᵥ* A)
+        = ((x - z) ᵥ* A) ⬝ᵥ (Aᵀ *ᵥ (x - z)) := by rw [Matrix.mulVec_transpose]
+    rw [e1, Matrix.dotProduct_mulVec,
+      show ((x - z) ᵥ* A) ᵥ* Aᵀ = (x - z) ᵥ* (A * Aᵀ) from Matrix.vecMul_vecMul _ _ _,
+      hx0, zero_dotProduct]
+  have hxA : (x - z) ᵥ* A = 0 := by rw [← dotProduct_self_eq_zero]; exact hself
+  exact sub_eq_zero.mp (hvecA (by simpa using hxA))
+
+/-- **Reparametrization transport of `IsUMVU`.** Along a *surjective* reindexing `φ` of the
+parameter space, a UMVU estimator remains UMVU: unbiasedness and `L²`-membership restrict,
+and surjectivity makes the competitor conditions over the reindexed family equivalent to
+those over the original, so the variance-minimality transports. -/
+private theorem isUMVU_reparam {Θ Θ' 𝓧 : Type*} [MeasurableSpace 𝓧]
+    (P : Θ → Measure 𝓧) (φ : Θ' → Θ) (hφ : Function.Surjective φ)
+    (g : Θ → ℝ) (δ : 𝓧 → ℝ) (h : IsUMVU P g δ) :
+    IsUMVU (fun t => P (φ t)) (fun t => g (φ t)) δ := by
+  obtain ⟨hunb, hL2, hmin⟩ := h
+  refine ⟨fun t => hunb (φ t), fun t => hL2 (φ t), ?_⟩
+  intro δ' hunb' hL2' t
+  have hunbP : IsUnbiased P g δ' := fun θ => by
+    obtain ⟨t', rfl⟩ := hφ θ; exact hunb' t'
+  have hL2P : MemEstL2 P δ' := fun θ => by
+    obtain ⟨t', rfl⟩ := hφ θ; exact hL2' t'
+  exact hmin δ' hunbP hL2P (φ t)
+
 /-- **Optimality of the regression coefficient estimator**: every linear function of the
 least-squares coefficients is the UMVU estimator of the corresponding linear function of the
 coefficients. -/
@@ -212,7 +252,61 @@ theorem isUMVU_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
     (c : Fin s → ℝ) :
     IsUMVU (regressionModel A) (fun p => ∑ i, c i * p.1 i)
       (fun y => ∑ i, c i * lseCoeff A y i) := by
-  sorry
+  classical
+  -- Least squares on the mean subspace `W = designSpace A`, of dimension `s < n`.
+  set W := designSpace A with hWdef
+  have hli := linearIndependent_row_of_rank hA
+  have hlitoLp : LinearIndependent ℝ
+      (fun i => (WithLp.toLp 2 (A i) : EuclideanSpace ℝ (Fin n))) :=
+    hli.map' (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm.toLinearMap
+      (LinearEquiv.ker _)
+  have hfr : Module.finrank ℝ W < n := by
+    have : Module.finrank ℝ W = s := by
+      rw [hWdef, designSpace, finrank_span_eq_card hlitoLp]; simp
+    rw [this]; exact hsn
+  -- The Riesz vector `γ ∈ W` representing the functional `θ ↦ ∑ cᵢ θᵢ` of the mean.
+  set w : Fin s → ℝ := (A * Aᵀ)⁻¹ *ᵥ c with hwdef
+  set γ : EuclideanSpace ℝ (Fin n) := WithLp.toLp 2 (Aᵀ *ᵥ w) with hγdef
+  have hunit := isUnit_mulTranspose_of_rank hA
+  have hunitdet : IsUnit (A * Aᵀ).det := by rw [← Matrix.isUnit_iff_isUnit_det]; exact hunit
+  have hinner : ∀ θ : Fin s → ℝ, ⟪γ, designMean A θ⟫_ℝ = ∑ i, c i * θ i := by
+    intro θ
+    rw [hγdef, designMean]
+    show (θ ᵥ* A) ⬝ᵥ star (Aᵀ *ᵥ w) = ∑ i, c i * θ i
+    rw [show star (Aᵀ *ᵥ w) = Aᵀ *ᵥ w from by funext i; exact star_trivial _]
+    calc (θ ᵥ* A) ⬝ᵥ (Aᵀ *ᵥ w)
+        = (θ ᵥ* (A * Aᵀ)) ⬝ᵥ w := by rw [Matrix.dotProduct_mulVec, Matrix.vecMul_vecMul]
+      _ = (θ ᵥ* ((A * Aᵀ) * (A * Aᵀ)⁻¹)) ⬝ᵥ c := by
+            rw [hwdef, Matrix.dotProduct_mulVec, Matrix.vecMul_vecMul]
+      _ = θ ⬝ᵥ c := by rw [Matrix.mul_nonsing_inv _ hunitdet, Matrix.vecMul_one]
+      _ = ∑ i, c i * θ i := by
+            rw [dotProduct]; exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
+  -- The base UMVU statement in the mean coordinates (`T = ⟪γ, ·⟫`).
+  have hbase := isUMVU_linear_functional_of_mean W hfr
+    (fun ζ => ⟪γ, ζ⟫_ℝ) (γ := γ) (fun ζ _ => rfl)
+  -- The reindexing `(θ, σ²) ↦ (designMean A θ, σ²)` is surjective onto `W × PosVar`.
+  set φ : RegressionParam s → ↥W × PosVar :=
+    fun t => (⟨designMean A t.1, designMean_mem_designSpace A t.1⟩, t.2) with hφdef
+  have hφsurj : Function.Surjective φ := by
+    rintro ⟨⟨ξ, hξ⟩, σ2⟩
+    refine ⟨(lseCoeff A ξ, σ2), ?_⟩
+    have hproj : designMean A (lseCoeff A ξ) = ξ := by
+      rw [designMean_lseCoeff hA ξ]
+      exact Submodule.starProjection_eq_self_iff.mpr hξ
+    simp only [hφdef, Prod.mk.injEq, Subtype.mk.injEq]
+    refine ⟨hproj, ?_⟩; trivial
+  have htrans := isUMVU_reparam _ φ hφsurj _ _ hbase
+  -- Match the transported statement to the regression form, coordinatewise.
+  have hmodel : (fun t => linearModelFull W (φ t)) = regressionModel A := by
+    funext t; rfl
+  have hg : (fun t : RegressionParam s => (fun ζ => ⟪γ, ζ⟫_ℝ) ((φ t).1 : _))
+      = fun p => ∑ i, c i * p.1 i := by
+    funext t; exact hinner t.1
+  have hδ : (fun y => (fun ζ => ⟪γ, ζ⟫_ℝ) (lse W y))
+      = fun y => ∑ i, c i * lseCoeff A y i := by
+    funext y; rw [← designMean_lseCoeff hA y]; exact hinner (lseCoeff A y)
+  rw [hmodel, hg, hδ] at htrans
+  exact htrans
 
 /-- **Covariance of the regression coefficient estimator**: `cov(θ̂) = σ² (A Aᵀ)⁻¹`. -/
 theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
