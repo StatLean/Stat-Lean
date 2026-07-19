@@ -2,6 +2,8 @@ import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Anderson
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import Mathlib.Probability.Independence.Basic
 
 /-!
 # The noncentral chi-squared distribution
@@ -98,11 +100,68 @@ for `l = 0` it is the central chi-squared law (`noncentralChiSquared_zero`, for 
 noncomputable def noncentralChiSquared (k : ℕ) (l : ℝ≥0) : Measure ℝ :=
   (multivariateGaussian (noncentralMean k l) 1).map fun z => ‖z‖ ^ 2
 
+/-- With unit covariance, `multivariateGaussian` is a translate of the standard Gaussian. -/
+private lemma multivariateGaussian_one_eq_map_add {k : ℕ}
+    (v : EuclideanSpace ℝ (Fin k)) :
+    multivariateGaussian v 1
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-- The mean vector vanishes when the noncentrality parameter is `0`. -/
+@[simp] private lemma noncentralMean_zero {k : ℕ} : noncentralMean k (0 : ℝ≥0) = 0 := by
+  ext i
+  simp [noncentralMean]
+
+/-- The mean vector has the prescribed length `√l` (when there is at least one coordinate). -/
+private lemma noncentralMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
+    ‖noncentralMean k l‖ = Real.sqrt (l : ℝ) := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have h2 : ‖noncentralMean k l‖ ^ 2 = (l : ℝ) := by
+    rw [EuclideanSpace.real_norm_sq_eq]
+    have hval : ∀ i : Fin k,
+        (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
+      intro i
+      by_cases hi : i = 0
+      · simp only [noncentralMean, hi, Fin.val_zero, if_pos, if_true]
+        rw [Real.sq_sqrt l.coe_nonneg]
+      · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
+        simp [noncentralMean, hi, hi']
+    simp_rw [hval]
+    simp [Finset.sum_ite_eq']
+  rw [← h2, Real.sqrt_sq (norm_nonneg _)]
+
+/-- Direction-invariance core: translating the standard Gaussian by mean vectors of equal
+length gives the same squared-norm law. Proved with the reflection that swaps the means. -/
+private lemma map_normSq_stdGaussian_add_congr {k : ℕ}
+    {v w : EuclideanSpace ℝ (Fin k)} (h : ‖v‖ = ‖w‖) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => ‖v + x‖ ^ 2)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => ‖w + x‖ ^ 2) := by
+  obtain ⟨f, hf⟩ : ∃ f : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k), f v = w :=
+    ⟨_, Submodule.reflection_sub h⟩
+  have hmap : (stdGaussian (EuclideanSpace ℝ (Fin k))).map (f : _ → _)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := stdGaussian_map f
+  symm
+  calc (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => ‖w + x‖ ^ 2)
+      = ((stdGaussian (EuclideanSpace ℝ (Fin k))).map (f : _ → _)).map
+          (fun x => ‖w + x‖ ^ 2) := by rw [hmap]
+    _ = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun y => ‖w + f y‖ ^ 2) := by
+          rw [Measure.map_map (by fun_prop)
+            (LinearIsometryEquiv.continuous f).measurable]; rfl
+    _ = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun y => ‖v + y‖ ^ 2) := by
+          have hfun : (fun y => ‖w + f y‖ ^ 2)
+              = (fun y : EuclideanSpace ℝ (Fin k) => ‖v + y‖ ^ 2) := by
+            funext y
+            rw [← hf, ← map_add, LinearIsometryEquiv.norm_map]
+          rw [hfun]
+
 /-- The noncentral chi-squared law is a probability measure: it is the pushforward of a
 Gaussian (hence probability) measure under a continuous map. -/
 instance isProbabilityMeasure_noncentralChiSquared (k : ℕ) (l : ℝ≥0) :
     IsProbabilityMeasure (noncentralChiSquared k l) := by
-  sorry
+  rw [noncentralChiSquared]
+  exact Measure.isProbabilityMeasure_map
+    (by fun_prop : Measurable fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2).aemeasurable
 
 /-- **Direction invariance.** Any Gaussian mean vector whose norm is `√l` yields the same
 squared-norm law, so the noncentrality parameter `l = ‖μ‖²` is a complete invariant. Follows
@@ -112,7 +171,16 @@ theorem map_normSq_multivariateGaussian_of_norm_eq (k : ℕ) (l : ℝ≥0)
     -- USER-INPUT: the mean vector has the prescribed length.
     (hv : ‖v‖ = Real.sqrt (l : ℝ)) :
     (multivariateGaussian v 1).map (fun z => ‖z‖ ^ 2) = noncentralChiSquared k l := by
-  sorry
+  have hnorm : ‖v‖ = ‖noncentralMean k l‖ := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · rw [Subsingleton.elim v (noncentralMean 0 l)]
+    · rw [hv, noncentralMean_norm hk]
+  rw [noncentralChiSquared, multivariateGaussian_one_eq_map_add,
+    multivariateGaussian_one_eq_map_add,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def]
+  exact map_normSq_stdGaussian_add_congr hnorm
 
 /-- **Zero noncentrality is the central chi-squared law.** For `0 < k`,
 `χ²_k(0) = χ²_k`. Via `multivariateGaussian_zero_one` the Gaussian becomes standard, its
@@ -122,7 +190,29 @@ theorem noncentralChiSquared_zero {k : ℕ}
     -- USER-INPUT: at least one degree of freedom (`chiSquared 0` is degenerate).
     (hk : 0 < k) :
     noncentralChiSquared k 0 = StatLean.MultipleTesting.chiSquared k := by
-  sorry
+  haveI : NeZero k := ⟨hk.ne'⟩
+  rw [noncentralChiSquared, noncentralMean_zero, multivariateGaussian_zero_one,
+    ← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop)]
+  have hfun : ((fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2) ∘ (WithLp.toLp 2))
+      = (fun x : Fin k → ℝ => ∑ i, (x i) ^ 2) := by
+    funext x
+    simp only [Function.comp_apply, EuclideanSpace.real_norm_sq_eq]
+  rw [hfun]
+  exact StatLean.MultipleTesting.map_sum_sq_eq_chiSquared hk
+    (Measure.pi fun _ => gaussianReal 0 1)
+    (fun i x => x i) (fun i => measurable_pi_apply i)
+    (fun i => (measurePreserving_eval _ i).map_eq)
+    (iIndepFun_pi (fun _ => aemeasurable_id))
+
+/-- The upper tail of `noncentralChiSquared` as a standard-Gaussian ball-complement measure. -/
+private lemma noncentralChiSquared_Ioi_eq {k : ℕ} (l : ℝ≥0) (t : ℝ) :
+    noncentralChiSquared k l (Set.Ioi t)
+      = stdGaussian (EuclideanSpace ℝ (Fin k))
+          {x | t < ‖noncentralMean k l + x‖ ^ 2} := by
+  rw [noncentralChiSquared, multivariateGaussian_one_eq_map_add,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_apply (by fun_prop) measurableSet_Ioi]
+  rfl
 
 /-- **The noncentral upper tail dominates the central one.** Direct consequence of the set
 form of Anderson's inequality applied to the closed ball `{z : ‖z‖² ≤ t}`, which is convex
@@ -132,7 +222,67 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
     (hk : 0 < k) (l : ℝ≥0) (t : ℝ) :
     (StatLean.MultipleTesting.chiSquared k) (Set.Ioi t)
       ≤ (noncentralChiSquared k l) (Set.Ioi t) := by
-  sorry
+  rw [← noncentralChiSquared_zero hk, noncentralChiSquared_Ioi_eq,
+    noncentralChiSquared_Ioi_eq, noncentralMean_zero]
+  set E := EuclideanSpace ℝ (Fin k)
+  set μ := stdGaussian E
+  -- the closed ball `C = {z : ‖z‖² ≤ t}`, convex and symmetric
+  set C : Set E := {z | ‖z‖ ^ 2 ≤ t} with hC
+  have hCmeas : MeasurableSet C := by
+    have : Measurable fun z : E => ‖z‖ ^ 2 := by fun_prop
+    exact measurableSet_le this measurable_const
+  have hCconv : Convex ℝ C := by
+    by_cases ht : (0 : ℝ) ≤ t
+    · have hset : C = Metric.closedBall (0 : E) (Real.sqrt t) := by
+        ext z
+        simp only [hC, Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        constructor
+        · intro h
+          rw [← Real.sqrt_sq (norm_nonneg z)]
+          exact Real.sqrt_le_sqrt h
+        · intro h
+          have hmul := mul_self_le_mul_self (norm_nonneg z) h
+          rw [Real.mul_self_sqrt ht] at hmul
+          rw [pow_two]; exact hmul
+      rw [hset]; exact convex_closedBall _ _
+    · have ht' : t < 0 := not_le.mp ht
+      have hset : C = (∅ : Set E) := by
+        ext z
+        simp only [hC, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        exact lt_of_lt_of_le ht' (sq_nonneg _)
+      rw [hset]; exact convex_empty
+  have hCsymm : ∀ z ∈ C, -z ∈ C := by
+    intro z hz; simpa [hC] using hz
+  -- both tails are complements of `{· ∈ C}` events under the standard Gaussian
+  have hmeasA : MeasurableSet {x : E | ‖(0 : E) + x‖ ^ 2 ≤ t} := by
+    have : Measurable fun x : E => ‖(0 : E) + x‖ ^ 2 := by fun_prop
+    exact measurableSet_le this measurable_const
+  have hmeasB : MeasurableSet {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := by
+    have : Measurable fun x : E => ‖noncentralMean k l + x‖ ^ 2 := by fun_prop
+    exact measurableSet_le this measurable_const
+  have key : μ {x | noncentralMean k l + x ∈ C} ≤ μ C := by
+    have hand := AsymptoticStatistics.anderson_lemma_set_stdGaussian hCmeas hCconv hCsymm
+      (noncentralMean k l)
+    rwa [show {x : E | x + noncentralMean k l ∈ C}
+        = {x : E | noncentralMean k l + x ∈ C} from by
+      ext x; simp only [Set.mem_setOf_eq]; rw [add_comm]] at hand
+  have hCeq : {x : E | (0 : E) + x ∈ C} = {x : E | ‖(0 : E) + x‖ ^ 2 ≤ t} := rfl
+  have hBeq : {x : E | noncentralMean k l + x ∈ C}
+      = {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := rfl
+  have hEA : {x : E | t < ‖(0 : E) + x‖ ^ 2} = {x : E | ‖(0 : E) + x‖ ^ 2 ≤ t}ᶜ := by
+    ext x; simp [not_le]
+  have hEB : {x : E | t < ‖noncentralMean k l + x‖ ^ 2}
+      = {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t}ᶜ := by
+    ext x; simp [not_le]
+  rw [hEA, hEB, measure_compl hmeasA (measure_ne_top _ _),
+    measure_compl hmeasB (measure_ne_top _ _)]
+  have key' : μ {x | ‖noncentralMean k l + x‖ ^ 2 ≤ t} ≤ μ {x | ‖(0 : E) + x‖ ^ 2 ≤ t} := by
+    have h0 : μ {x | (0 : E) + x ∈ C} = μ C := by
+      simp
+    rw [← hBeq, ← hCeq]
+    calc μ {x | noncentralMean k l + x ∈ C} ≤ μ C := key
+      _ = μ {x | (0 : E) + x ∈ C} := h0.symm
+  exact tsub_le_tsub_left key' _
 
 /-- **The upper tail increases with the noncentrality parameter.** The noncentral
 chi-squared family is stochastically ordered in `l`. Proved by the one-dimensional
