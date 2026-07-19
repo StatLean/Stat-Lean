@@ -295,6 +295,10 @@ theorem exists_mostPowerful
     ∃ (C : ℝ≥0∞) (γ : ℝ), γ ∈ Set.Icc (0 : ℝ) 1 ∧
       powerAgainst P₀ (npTest p₀ p₁ C γ) = α ∧
       IsMostPowerful P₀ P₁ α (npTest p₀ p₁ C γ) := by
+  -- TODO: the existence construction. The optimality half is `isMostPowerful_npTest`; what
+  -- remains is choosing `(C, γ)` with `powerAgainst P₀ (npTest …) = α`, obtained by applying
+  -- `exists_critical_constants` to the law under `P₀` of the likelihood ratio
+  -- `ofReal (p₁ x) / ofReal (p₀ x)` (pushforward + `p₀ = 0` null-set bookkeeping).
   sorry
 
 /-- **Sufficiency (ii).** Any critical function of Neyman–Pearson shape whose size equals
@@ -363,6 +367,9 @@ theorem npTest_necessity
     (∃ C : ℝ≥0∞, HasNPShape μ p₀ p₁ C φ) ∧
       ((¬ ∃ ψ, IsCriticalFn ψ ∧ powerAgainst P₀ ψ < α ∧ powerAgainst P₁ ψ = 1) →
         powerAgainst P₀ φ = α) := by
+  -- TODO: necessity/uniqueness. This is the converse of the sufficiency direction proved
+  -- above and needs the likelihood-ratio law construction (`exists_mostPowerful`) together
+  -- with the a.e. characterization of the boundary; it is the deepest clause of the lemma.
   sorry
 
 /-- **Strict unbiasedness.** For `0 < α < 1` the power of a most powerful level-`α` test
@@ -384,6 +391,9 @@ theorem power_gt_alpha_of_ne
     -- USER-INPUT: the two hypotheses are distinct — the stated exception of the result
     (hne : P₀ ≠ P₁) :
     α < powerAgainst P₁ φ := by
+  -- TODO: strict unbiasedness. The `≤` half is immediate from the constant test `ψ ≡ α`;
+  -- the strict inequality needs the necessity structure (an MP test attaining power exactly
+  -- `α` forces `p₀ = p₁` a.e., contradicting `P₀ ≠ P₁`), i.e. `npTest_necessity`.
   sorry
 
 /-- **The degenerate case, stated honestly.** When the null and the alternative coincide,
