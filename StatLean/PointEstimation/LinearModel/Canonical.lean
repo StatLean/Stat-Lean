@@ -2,6 +2,7 @@ import StatLean.PointEstimation.LinearModel.Defs
 import StatLean.PointEstimation.UMVU.Defs
 import StatLean.PointEstimation.Completeness.Defs
 import StatLean.PointEstimation.Completeness.ExpFamily
+import StatLean.PointEstimation.ExponentialFamily.Basic
 import StatLean.PointEstimation.Sufficiency.Defs
 import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 
@@ -243,6 +244,87 @@ private lemma canonical_pdf_prod_eq (p : CanonicalParam s) (y : Fin (s + m) → 
   rw [hnum, hmul, hsq, hR]
   field_simp
   ring
+
+/-- Measurability of the exponential integrand `y ↦ exp⟪η, T̃ y⟫`. -/
+private lemma measurable_expInner (p : CanonicalParam s) :
+    Measurable
+      (fun y : Fin (s + m) → ℝ => Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ) :=
+  (((continuous_const.inner continuous_id).measurable).comp
+    (canonicalExpFamily s m).stat_meas).exp
+
+/-- The ENNReal density of the canonical model in exponential-family form. -/
+private lemma canonical_density_eq (p : CanonicalParam s) (y : Fin (s + m) → ℝ) :
+    (∏ i, gaussianPDF ((Fin.append p.1 (0 : Fin m → ℝ)) i) p.2.1 (y i))
+      = ENNReal.ofReal (canonicalC (m := m) p)
+          * ENNReal.ofReal (Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ) := by
+  simp only [gaussianPDF]
+  rw [← ENNReal.ofReal_prod_of_nonneg (fun i _ => gaussianPDFReal_nonneg _ _ _),
+    canonical_pdf_prod_eq, ENNReal.ofReal_mul (canonicalC_pos p).le]
+
+/-- **The exponential-family bridge.** The canonical product-Gaussian law with mean
+`(η, 0)` equals the exponential-family member `P (canonicalEta p)`. -/
+private lemma canonicalNormal_eq_P (p : CanonicalParam s) :
+    canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1
+      = (canonicalExpFamily s m).P (canonicalEta p) := by
+  set φ : (Fin (s + m) → ℝ) → ℝ≥0∞ :=
+    fun y => ENNReal.ofReal (Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ) with hφ
+  set A : ℝ := (canonicalExpFamily s m).logPartition (canonicalEta p) with hA
+  have hφmeas : Measurable φ := (measurable_expInner p).ennreal_ofReal
+  have hσ : p.2.1 ≠ 0 := ne_of_gt p.2.2
+  -- The canonical law as a weighted volume.
+  have hcanon : canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1
+      = volume.withDensity (fun y => ENNReal.ofReal (canonicalC (m := m) p) * φ y) := by
+    rw [canonicalNormal_eq_withDensity _ hσ]
+    exact withDensity_congr_ae (Filter.Eventually.of_forall fun y => canonical_density_eq p y)
+  haveI : IsProbabilityMeasure (canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1) := by
+    unfold canonicalNormal; infer_instance
+  have hbne : (volume : Measure (Fin (s + m) → ℝ)) ≠ 0 := by
+    intro h
+    have h0 : canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1 = 0 := by
+      rw [hcanon, h, withDensity_zero_left]
+    have := measure_univ (μ := canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1)
+    rw [h0] at this; simp at this
+  set Z : ℝ≥0∞ := ∫⁻ y, φ y ∂(volume : Measure (Fin (s + m) → ℝ)) with hZ
+  -- Total mass of the canonical law gives `ofReal C · Z = 1`.
+  have hmassC : ENNReal.ofReal (canonicalC (m := m) p) * Z = 1 := by
+    have := measure_univ (μ := canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1)
+    rw [hcanon, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
+      lintegral_const_mul _ hφmeas] at this
+    exact this
+  have hZne : Z ≠ 0 := by
+    rintro h; rw [h, mul_zero] at hmassC; exact one_ne_zero hmassC.symm
+  have hZlt : Z ≠ ∞ := by
+    rintro h
+    rw [h, ENNReal.mul_top (ENNReal.ofReal_pos.2 (canonicalC_pos (m := m) p)).ne'] at hmassC
+    exact ENNReal.top_ne_one hmassC
+  -- Hence `canonicalEta p` is a natural parameter (Gaussian integrability).
+  have hmem : canonicalEta p ∈ (canonicalExpFamily s m).natSet := by
+    show Integrable
+      (fun y => Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ)
+      (canonicalExpFamily s m).base
+    rw [canonicalExpFamily_base]
+    refine ⟨(measurable_expInner p).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall fun y => (Real.exp_pos _).le)]
+    exact lt_of_le_of_ne le_top hZlt
+  haveI : IsProbabilityMeasure ((canonicalExpFamily s m).P (canonicalEta p)) :=
+    ExpFamily.isProbabilityMeasure_P _ (by rw [canonicalExpFamily_base]; exact hbne) hmem
+  -- The member in density form.
+  have hP : (canonicalExpFamily s m).P (canonicalEta p)
+      = volume.withDensity (fun y => ENNReal.ofReal (Real.exp (-A)) * φ y) := by
+    rw [ExpFamily.P_eq_withDensity _ hmem, canonicalExpFamily_base]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only [hφ, ← hA]
+    rw [show ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ - A
+          = -A + ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ from by ring,
+      Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le]
+  have hmassP : ENNReal.ofReal (Real.exp (-A)) * Z = 1 := by
+    have := measure_univ (μ := (canonicalExpFamily s m).P (canonicalEta p))
+    rw [hP, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
+      lintegral_const_mul _ hφmeas] at this
+    exact this
+  have hconst : ENNReal.ofReal (canonicalC (m := m) p) = ENNReal.ofReal (Real.exp (-A)) :=
+    (ENNReal.mul_left_inj hZne hZlt).1 (hmassC.trans hmassP.symm)
+  rw [hcanon, hP, hconst]
 
 /-! ## Completeness and sufficiency -/
 
