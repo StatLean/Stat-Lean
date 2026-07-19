@@ -175,6 +175,82 @@ private lemma np_fundamental_finite (μ : Measure 𝓧) [SigmaFinite μ]
     mul_nonneg hc0 (by linarith)
   linarith
 
+/-- **Fundamental inequality, infinite threshold** (the `α = 0` corner). A test of
+Neyman–Pearson shape at `C = ∞` has `P₀`-size zero; any competitor with size `≤ 0` puts no
+mass where `p₀ > 0`, so `φ` dominates it in `P₁`-power. -/
+private lemma np_fundamental_top (μ : Measure 𝓧) [SigmaFinite μ]
+    (P₀ P₁ : Measure 𝓧) [IsProbabilityMeasure P₀] [IsProbabilityMeasure P₁]
+    {p₀ p₁ : 𝓧 → ℝ} (h₀ : HasDensity μ p₀ P₀) (h₁ : HasDensity μ p₁ P₁)
+    {φ ψ : 𝓧 → ℝ} (hφc : IsCriticalFn φ) (hψc : IsCriticalFn ψ)
+    (hshape : HasNPShape μ p₀ p₁ ⊤ φ)
+    (hsize : powerAgainst P₀ ψ ≤ powerAgainst P₀ φ) :
+    powerAgainst P₁ ψ ≤ powerAgainst P₁ φ := by
+  have hp0nn := h₀.2.1; have hp1nn := h₁.2.1
+  obtain ⟨hsp1, hsp0⟩ := hshape
+  have hp0i : Integrable p₀ μ := hasDensity_integrable h₀
+  have hp1i : Integrable p₁ μ := hasDensity_integrable h₁
+  have hφp0z : (fun x => φ x * p₀ x) =ᵐ[μ] 0 := by
+    filter_upwards [hsp0] with x hx0
+    show φ x * p₀ x = 0
+    rcases eq_or_lt_of_le (hp0nn x) with h | h
+    · rw [← h, mul_zero]
+    · have hc2 : ENNReal.ofReal (p₁ x) < ⊤ * ENNReal.ofReal (p₀ x) := by
+        rw [ENNReal.top_mul (by simp only [Ne, ENNReal.ofReal_eq_zero, not_le]; exact h)]
+        exact ENNReal.ofReal_lt_top
+      rw [hx0 hc2, zero_mul]
+  have hpAφ0 : powerAgainst P₀ φ = 0 := by
+    rw [powerAgainst_eq h₀ φ, integral_congr_ae hφp0z]; simp
+  have hψp0nn : 0 ≤ᵐ[μ] fun x => ψ x * p₀ x :=
+    Filter.Eventually.of_forall fun x => mul_nonneg (hψc.2 x).1 (hp0nn x)
+  have hψp0i : Integrable (fun x => ψ x * p₀ x) μ := integrable_crit_mul hp0i hψc
+  have hψp0z : (fun x => ψ x * p₀ x) =ᵐ[μ] 0 := by
+    have hle : ∫ x, ψ x * p₀ x ∂μ ≤ 0 := by
+      rw [← powerAgainst_eq h₀ ψ]; rw [hpAφ0] at hsize; exact hsize
+    have heq0 : ∫ x, ψ x * p₀ x ∂μ = 0 := le_antisymm hle (integral_nonneg_of_ae hψp0nn)
+    exact (integral_eq_zero_iff_of_nonneg_ae hψp0nn hψp0i).mp heq0
+  have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * p₁ x := by
+    filter_upwards [hsp1, hsp0, hψp0z] with x hx1 hx0 hxψ0
+    show 0 ≤ (φ x - ψ x) * p₁ x
+    rcases eq_or_lt_of_le (hp0nn x) with hp0 | hp0
+    · rcases eq_or_lt_of_le (hp1nn x) with hp1 | hp1
+      · rw [← hp1]; simp
+      · have hc1 : (⊤ : ℝ≥0∞) * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) := by
+          rw [← hp0, ENNReal.ofReal_zero, mul_zero]
+          exact ENNReal.ofReal_pos.mpr hp1
+        rw [hx1 hc1]
+        exact mul_nonneg (by linarith [(hψc.2 x).2]) (le_of_lt hp1)
+    · have hc2 : ENNReal.ofReal (p₁ x) < ⊤ * ENNReal.ofReal (p₀ x) := by
+        rw [ENNReal.top_mul (by simp only [Ne, ENNReal.ofReal_eq_zero, not_le]; exact hp0)]
+        exact ENNReal.ofReal_lt_top
+      have hψ0 : ψ x = 0 := by
+        simp only [Pi.zero_apply] at hxψ0
+        rcases mul_eq_zero.mp hxψ0 with h | h
+        · exact h
+        · exact absurd h (ne_of_gt hp0)
+      rw [hx0 hc2, hψ0]; simp
+  have hnn := integral_nonneg_of_ae hpt
+  have hφp1 := integrable_crit_mul hp1i hφc
+  have hψp1 := integrable_crit_mul hp1i hψc
+  have key : ∫ x, (φ x - ψ x) * p₁ x ∂μ = powerAgainst P₁ φ - powerAgainst P₁ ψ := by
+    rw [powerAgainst_eq h₁ φ, powerAgainst_eq h₁ ψ, ← integral_sub hφp1 hψp1]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    ring
+  rw [key] at hnn
+  linarith
+
+/-- The combined fundamental inequality for an arbitrary (possibly infinite) threshold. -/
+private lemma np_fundamental (μ : Measure 𝓧) [SigmaFinite μ]
+    (P₀ P₁ : Measure 𝓧) [IsProbabilityMeasure P₀] [IsProbabilityMeasure P₁]
+    {p₀ p₁ : 𝓧 → ℝ} (h₀ : HasDensity μ p₀ P₀) (h₁ : HasDensity μ p₁ P₁)
+    {C : ℝ≥0∞} {φ ψ : 𝓧 → ℝ}
+    (hφc : IsCriticalFn φ) (hψc : IsCriticalFn ψ)
+    (hshape : HasNPShape μ p₀ p₁ C φ)
+    (hsize : powerAgainst P₀ ψ ≤ powerAgainst P₀ φ) :
+    powerAgainst P₁ ψ ≤ powerAgainst P₁ φ := by
+  rcases eq_or_ne C ⊤ with hC | hC
+  · subst hC; exact np_fundamental_top μ P₀ P₁ h₀ h₁ hφc hψc hshape hsize
+  · exact np_fundamental_finite μ P₀ P₁ h₀ h₁ hC hφc hψc hshape hsize
+
 /-- **Existence (i).** For every level `α ∈ [0,1]` there are a threshold `C` and a
 boundary weight `γ ∈ [0,1]` for which the likelihood-ratio test has size **exactly** `α`
 and is most powerful at that level. The corner cases `α = 0` and `α = 1` are covered by
