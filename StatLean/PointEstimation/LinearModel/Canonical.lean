@@ -1,10 +1,15 @@
 import StatLean.PointEstimation.LinearModel.Defs
 import StatLean.PointEstimation.UMVU.Defs
+import StatLean.PointEstimation.UMVU.CovarianceCriterion
+import StatLean.PointEstimation.UMVU.RaoBlackwell
 import StatLean.PointEstimation.Completeness.Defs
 import StatLean.PointEstimation.Completeness.ExpFamily
 import StatLean.PointEstimation.ExponentialFamily.Basic
 import StatLean.PointEstimation.Sufficiency.Defs
+import StatLean.PointEstimation.Sufficiency.Factorization
+import StatLean.PointEstimation.Sufficiency.RegularConditional
 import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
+import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 
 /-!
 # The canonical normal linear model
@@ -440,6 +445,70 @@ private lemma interior_range_canonicalEta_nonempty :
     rw [← hSopen.interior_eq]; exact interior_mono hSsub
   exact hSne.mono hsub
 
+/-! ## Sufficiency-kernel scaffolding (private)
+
+The canonical model is dominated by `volume` on the observation space, with the
+product-Gaussian density `canonicalDensity`, which factors through `canonicalStat` as
+`canonicalFactor (canonicalStat y) · 1` — the Fisher–Neyman form. -/
+
+/-- The product-Gaussian density of the canonical model on the observation space
+`EuclideanSpace ℝ (Fin (s + m))` (with respect to `volume`). -/
+private noncomputable def canonicalDensity (θ : CanonicalParam s) :
+    EuclideanSpace ℝ (Fin (s + m)) → ℝ≥0∞ :=
+  fun Y => ∏ i, gaussianPDF ((Fin.append θ.1 (0 : Fin m → ℝ)) i) θ.2.1 (Y i)
+
+/-- The `T`-side Fisher–Neyman factor: `canonicalDensity θ y = canonicalFactor θ (canonicalStat y)`. -/
+private noncomputable def canonicalFactor (θ : CanonicalParam s) :
+    (Fin s → ℝ) × ℝ → ℝ≥0∞ :=
+  fun t => ENNReal.ofReal (canonicalC (m := m) θ) *
+    ENNReal.ofReal (Real.exp ((∑ i, θ.1 i / (θ.2.1 : ℝ) * t.1 i)
+      + -(1 / (2 * (θ.2.1 : ℝ))) * (t.2 + ∑ i, t.1 i ^ 2)))
+
+private lemma measurable_canonicalDensity (θ : CanonicalParam s) :
+    Measurable (canonicalDensity (m := m) θ) := by
+  unfold canonicalDensity
+  refine Finset.measurable_prod _ fun i _ => ?_
+  exact (measurable_gaussianPDF _ _).comp
+    ((measurable_pi_apply i).comp (WithLp.measurable_ofLp 2 (Fin (s + m) → ℝ)))
+
+private lemma measurable_canonicalFactor (θ : CanonicalParam s) :
+    Measurable (canonicalFactor (m := m) θ) := by
+  unfold canonicalFactor
+  refine measurable_const.mul (Measurable.ennreal_ofReal (Real.measurable_exp.comp ?_))
+  refine (Finset.measurable_sum _ fun i _ =>
+    measurable_const.mul ((measurable_pi_apply i).comp measurable_fst)).add
+    (measurable_const.mul (measurable_snd.add
+      (Finset.measurable_sum _ fun i _ => ((measurable_pi_apply i).comp measurable_fst).pow_const 2)))
+
+/-- The canonical model is a probability measure. -/
+private instance isProbabilityMeasure_canonicalModel (θ : CanonicalParam s) :
+    IsProbabilityMeasure (canonicalModel (m := m) θ) := by
+  have hmap : canonicalModel (m := m) θ
+      = (canonicalNormal (Fin.append θ.1 (0 : Fin m → ℝ)) θ.2.1).map
+          (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) := by
+    rw [canonicalModel, gaussianVector,
+      show (fun i => (canonicalMean θ.1) i) = Fin.append θ.1 (0 : Fin m → ℝ) from rfl]
+  rw [hmap]
+  haveI : IsProbabilityMeasure (canonicalNormal (Fin.append θ.1 (0 : Fin m → ℝ)) θ.2.1) := by
+    unfold canonicalNormal; infer_instance
+  exact Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 _).aemeasurable
+
+/-- **Domination density.** The canonical model is `volume` on the observation space weighted
+by `canonicalDensity`. -/
+private lemma canonicalModel_eq_withDensity (θ : CanonicalParam s) :
+    canonicalModel (m := m) θ = (volume).withDensity (canonicalDensity (m := m) θ) := by
+  have hσ : θ.2.1 ≠ 0 := ne_of_gt θ.2.2
+  have hcomp : (canonicalDensity (m := m) θ) ∘
+      (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
+      = fun x => ∏ i, gaussianPDF ((Fin.append θ.1 (0 : Fin m → ℝ)) i) θ.2.1 (x i) := by
+    funext x; simp only [canonicalDensity, Function.comp, PiLp.toLp_apply]
+  rw [canonicalModel, gaussianVector,
+      show (fun i => (canonicalMean θ.1) i) = Fin.append θ.1 (0 : Fin m → ℝ) from rfl,
+      canonicalNormal_eq_withDensity _ hσ, ← hcomp,
+      ← AsymptoticStatistics.Measure.withDensity_map_eq_map_withDensity volume _
+        (WithLp.measurable_toLp 2 (Fin (s + m) → ℝ)) _ (measurable_canonicalDensity θ),
+      (PiLp.volume_preserving_toLp (Fin (s + m))).map_eq]
+
 /-! ## Completeness and sufficiency -/
 
 /-- **Sufficiency of the canonical statistic**: the conditional law of the observation
@@ -448,7 +517,37 @@ theorem canonicalStat_hasSufficientKernel
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     HasSufficientKernel (canonicalModel (s := s) (m := m)) canonicalStat := by
-  sorry
+  have hP : ∀ θ : CanonicalParam s,
+      canonicalModel (m := m) θ = (volume).withDensity (canonicalDensity (m := m) θ) :=
+    canonicalModel_eq_withDensity
+  have hfac : IsFactorizedDensity (canonicalDensity (s := s) (m := m)) volume canonicalStat
+      (canonicalFactor (s := s) (m := m)) (fun _ => 1) := by
+    intro θ
+    refine Filter.Eventually.of_forall fun Y => ?_
+    show canonicalDensity θ Y = canonicalFactor θ (canonicalStat Y) * 1
+    rw [mul_one]
+    have hd : canonicalDensity θ Y
+        = ENNReal.ofReal (canonicalC (m := m) θ) *
+          ENNReal.ofReal (Real.exp
+            ⟪canonicalEta θ, (canonicalExpFamily s m).stat (fun k => Y k)⟫_ℝ) := by
+      simpa only [canonicalDensity] using canonical_density_eq θ (fun k => Y k)
+    have hexp : ⟪canonicalEta θ, (canonicalExpFamily s m).stat (fun k => Y k)⟫_ℝ
+        = (∑ i, θ.1 i / (θ.2.1 : ℝ) * (canonicalStat Y).1 i)
+          + -(1 / (2 * (θ.2.1 : ℝ))) *
+              ((canonicalStat Y).2 + ∑ i, (canonicalStat Y).1 i ^ 2) := by
+      rw [canonicalEta_inner]
+      simp only [canonicalStat, canonicalHead, canonicalRSS]
+      rw [Fin.sum_univ_add]
+      ring
+    rw [hd, canonicalFactor, hexp]
+  have hdom : ∀ θ : CanonicalParam s, canonicalModel (m := m) θ ≪ volume := by
+    intro θ; rw [hP θ]; exact withDensity_absolutelyContinuous _ _
+  have hsuf : IsSufficient (canonicalModel (s := s) (m := m)) canonicalStat :=
+    isSufficient_of_isFactorizedDensity (canonicalModel (s := s) (m := m)) volume
+      (canonicalDensity (s := s) (m := m)) measurable_canonicalDensity hP measurable_canonicalStat
+      measurable_canonicalFactor measurable_const hfac
+  exact hasSufficientKernel_of_isSufficient_dominated (canonicalModel (s := s) (m := m))
+    measurable_canonicalStat volume hdom hsuf
 
 /-- **Completeness of the canonical statistic**: an integrable function of
 `(Y₁, …, Y_s, S²)` with identically vanishing mean vanishes almost everywhere. -/
@@ -496,6 +595,181 @@ theorem canonical_complete_sufficient
       IsCompleteStat (canonicalModel (s := s) (m := m)) canonicalStat :=
   ⟨canonicalStat_hasSufficientKernel (s := s) hm, canonicalStat_isCompleteStat (s := s) hm⟩
 
+/-! ## UMVU scaffolding (private)
+
+Every candidate below is a function of the complete sufficient statistic `canonicalStat`.
+For such an estimator the covariance criterion is met: the covariance with any unbiased
+estimator of zero vanishes, because its Rao–Blackwellization is an unbiased function of the
+complete statistic, hence a.e. zero. The one subtlety — the competitor `U` carries only a
+per-parameter `L²` representative — is resolved by the **mutual absolute continuity** of the
+canonical members (strictly positive Gaussian densities), which upgrades a `P p₀`-a.e.
+representative to a global one. -/
+
+/-- The canonical density is strictly positive (a product of positive Gaussian pdfs). -/
+private lemma canonicalDensity_pos (θ : CanonicalParam s)
+    (Y : EuclideanSpace ℝ (Fin (s + m))) : 0 < canonicalDensity (m := m) θ Y := by
+  unfold canonicalDensity
+  rw [pos_iff_ne_zero, ne_eq, Finset.prod_eq_zero_iff]
+  push_neg
+  intro i _
+  rw [gaussianPDF]
+  exact (ENNReal.ofReal_pos.2 (gaussianPDFReal_pos _ _ _ (ne_of_gt θ.2.2))).ne'
+
+/-- `volume` is absolutely continuous with respect to every canonical member. -/
+private lemma volume_absolutelyContinuous_canonicalModel (θ : CanonicalParam s) :
+    (volume : Measure (EuclideanSpace ℝ (Fin (s + m)))) ≪ canonicalModel (m := m) θ := by
+  rw [canonicalModel_eq_withDensity]
+  exact withDensity_absolutelyContinuous' (measurable_canonicalDensity θ).aemeasurable
+    (Filter.Eventually.of_forall fun Y => (canonicalDensity_pos θ Y).ne')
+
+/-- **Mutual absolute continuity** of the canonical members. -/
+private lemma canonicalModel_absolutelyContinuous (θ θ' : CanonicalParam s) :
+    canonicalModel (m := m) θ ≪ canonicalModel (m := m) θ' := by
+  have h1 : canonicalModel (m := m) θ ≪ volume := by
+    rw [canonicalModel_eq_withDensity]; exact withDensity_absolutelyContinuous _ _
+  exact h1.trans (volume_absolutelyContinuous_canonicalModel θ')
+
+/-- **Global measurable representative.** A per-parameter `L²` competitor has a single
+measurable representative valid `P θ`-a.e. for every `θ` — the payoff of mutual absolute
+continuity. -/
+private lemma exists_measurableRep {U : EuclideanSpace ℝ (Fin (s + m)) → ℝ}
+    (hU : MemEstL2 (canonicalModel (s := s) (m := m)) U) :
+    ∃ Û : EuclideanSpace ℝ (Fin (s + m)) → ℝ, Measurable Û ∧
+      ∀ θ, U =ᵐ[canonicalModel (m := m) θ] Û := by
+  set θ₀ : CanonicalParam s := (fun _ => 0, ⟨1, one_pos⟩) with hθ₀
+  refine ⟨(hU θ₀).aestronglyMeasurable.mk U,
+    (hU θ₀).aestronglyMeasurable.stronglyMeasurable_mk.measurable, fun θ => ?_⟩
+  exact (canonicalModel_absolutelyContinuous θ θ₀).ae_eq
+    (hU θ₀).aestronglyMeasurable.ae_eq_mk
+
+/-- **The covariance criterion is met by any function of the complete sufficient statistic.**
+This is the reusable engine behind the three UMVU statements. -/
+private theorem isUMVU_canonical_of_stat (hm : 0 < m)
+    {g : CanonicalParam s → ℝ} {φ : (Fin s → ℝ) × ℝ → ℝ} (hφ : Measurable φ)
+    (hunb : IsUnbiased (canonicalModel (s := s) (m := m)) g (fun y => φ (canonicalStat y)))
+    (hL2 : MemEstL2 (canonicalModel (s := s) (m := m)) (fun y => φ (canonicalStat y))) :
+    IsUMVU (canonicalModel (s := s) (m := m)) g (fun y => φ (canonicalStat y)) := by
+  obtain ⟨Q, hQm, hgraph⟩ := canonicalStat_hasSufficientKernel (s := s) hm
+  have hcomplete : IsCompleteStat (canonicalModel (s := s) (m := m)) canonicalStat :=
+    canonicalStat_isCompleteStat (s := s) hm
+  haveI hstatprob : ∀ θ' : CanonicalParam s,
+      IsProbabilityMeasure (statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ') :=
+    fun θ' => Measure.isProbabilityMeasure_map
+      (μ := canonicalModel θ') measurable_canonicalStat.aemeasurable
+  rw [isUMVU_iff_uncorrelated_unbiasedZero _ g hunb hL2]
+  intro U hUz hUL2 θ
+  obtain ⟨Û, hÛm, hÛae⟩ := exists_measurableRep hUL2
+  -- covariance reduces to `∫ φ(T x) · U x`, since `E[U] = 0`
+  have hEU : ∫ x, U x ∂(canonicalModel θ) = 0 := hUz θ
+  rw [covariance_eq_sub (hL2 θ) (hUL2 θ), hEU, mul_zero, sub_zero]
+  show ∫ x, φ (canonicalStat x) * U x ∂(canonicalModel θ) = 0
+  -- replace `U` by its global representative `Û`
+  have hprodeq : ∫ x, φ (canonicalStat x) * U x ∂(canonicalModel θ)
+      = ∫ x, φ (canonicalStat x) * Û x ∂(canonicalModel θ) := by
+    refine integral_congr_ae ?_
+    filter_upwards [hÛae θ] with x hx
+    rw [hx]
+  rw [hprodeq]
+  -- disintegrate the cross-integral through the sufficiency kernel
+  have hÛL2 : ∀ θ', MemLp Û 2 (canonicalModel (m := m) θ') :=
+    fun θ' => (hUL2 θ').ae_eq (hÛae θ')
+  have hÛint : ∀ θ', Integrable Û (canonicalModel (m := m) θ') :=
+    fun θ' => (hÛL2 θ').integrable one_le_two
+  have hgm : Measurable (fun x : EuclideanSpace ℝ (Fin (s + m)) => (canonicalStat x, x)) :=
+    measurable_canonicalStat.prodMk measurable_id
+  have hf2 : Measurable (fun z : ((Fin s → ℝ) × ℝ) × EuclideanSpace ℝ (Fin (s + m)) =>
+      φ z.1 * Û z.2) := (hφ.comp measurable_fst).mul (hÛm.comp measurable_snd)
+  haveI : IsMarkovKernel Q := hQm
+  -- rbEstimator of `Û` is an unbiased function of the complete statistic, hence a.e. zero
+  have hrbUnb : IsUnbiased (canonicalModel (s := s) (m := m)) (fun _ => 0)
+      (fun x => rbEstimator Q Û (canonicalStat x)) :=
+    isUnbiased_rbEstimator (canonicalModel (s := s) (m := m)) (fun _ => 0)
+      measurable_canonicalStat hgraph hÛm hÛint
+      (fun θ' => by rw [← integral_congr_ae (hÛae θ')]; exact hUz θ')
+  have hrbmeas : Measurable (rbEstimator Q Û) :=
+    (hÛm.stronglyMeasurable.integral_kernel (κ := Q)).measurable
+  have hrbint : ∀ θ', Integrable (rbEstimator Q Û)
+      (statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ') := by
+    intro θ'
+    have hÛsnd : Integrable (fun z : ((Fin s → ℝ) × ℝ) × EuclideanSpace ℝ (Fin (s + m)) => Û z.2)
+        (statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ' ⊗ₘ Q) := by
+      rw [← hgraph θ']
+      exact (integrable_map_measure (hÛm.comp measurable_snd).aestronglyMeasurable
+        hgm.aemeasurable).mpr (hÛint θ')
+    have hnorm := ((Measure.integrable_compProd_iff hÛsnd.aestronglyMeasurable).mp hÛsnd).2
+    refine Integrable.mono' hnorm hrbmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun t => ?_)
+    exact (norm_integral_le_integral_norm _).trans_eq rfl
+  have hrbmean : ∀ θ', ∫ t, rbEstimator Q Û t
+      ∂(statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ') = 0 := by
+    intro θ'
+    rw [statLaw, integral_map measurable_canonicalStat.aemeasurable
+      hrbmeas.aestronglyMeasurable]
+    exact hrbUnb θ'
+  have hrbzero : rbEstimator Q Û
+      =ᵐ[statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ] 0 :=
+    hcomplete (rbEstimator Q Û) hrbmeas hrbint hrbmean θ
+  -- the cross-integral equals `∫ φ · rbEstimator = 0`
+  have hInt : Integrable (fun z => φ z.1 * Û z.2)
+      (statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ ⊗ₘ Q) := by
+    rw [← hgraph θ, integrable_map_measure hf2.aestronglyMeasurable hgm.aemeasurable]
+    exact (hL2 θ).integrable_mul (hÛL2 θ)
+  calc ∫ x, φ (canonicalStat x) * Û x ∂(canonicalModel θ)
+      = ∫ z, φ z.1 * Û z.2
+          ∂((canonicalModel θ).map (fun x => (canonicalStat x, x))) :=
+        (integral_map hgm.aemeasurable hf2.aestronglyMeasurable).symm
+    _ = ∫ z, φ z.1 * Û z.2
+          ∂(statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ ⊗ₘ Q) := by rw [hgraph θ]
+    _ = ∫ t, ∫ x, φ t * Û x ∂(Q t)
+          ∂(statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ) :=
+        Measure.integral_compProd hInt
+    _ = ∫ t, φ t * rbEstimator Q Û t
+          ∂(statLaw (canonicalModel (s := s) (m := m)) canonicalStat θ) := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
+        exact integral_const_mul (φ t) Û
+    _ = 0 := by
+        refine integral_eq_zero_of_ae ?_
+        filter_upwards [hrbzero] with t ht
+        simp [ht]
+
+/-! ## Coordinate moment reductions (private)
+
+Every coordinate `y ↦ y k` of the canonical model is a single Gaussian marginal
+`N(meanₖ, σ²)`. Integration and `L²`-membership of a function of one coordinate reduce to
+the corresponding statement for `gaussianReal`. -/
+
+/-- The canonical model as a pushforward of the coordinate product of Gaussians. -/
+private lemma canonicalModel_eq_map_pi (p : CanonicalParam s) :
+    canonicalModel (m := m) p
+      = (Measure.pi (fun i => gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) i) p.2.1)).map
+          (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) := by
+  rw [canonicalModel, gaussianVector]; rfl
+
+/-- Reduction of a coordinate integral to a one-dimensional Gaussian integral. -/
+private lemma canonicalModel_integral_coord (p : CanonicalParam s) (k : Fin (s + m))
+    {f : ℝ → ℝ} (hf : Measurable f) :
+    ∫ y, f (y k) ∂(canonicalModel (m := m) p)
+      = ∫ x, f x ∂(gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) k) p.2.1) := by
+  have hgmeas : Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => f (y k)) :=
+    hf.comp ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _))
+  rw [canonicalModel_eq_map_pi,
+      integral_map (WithLp.measurable_toLp 2 _).aemeasurable hgmeas.aestronglyMeasurable]
+  simp only [PiLp.toLp_apply]
+  exact integral_comp_eval hf.aestronglyMeasurable
+
+/-- Reduction of coordinate `L²`-membership to a one-dimensional Gaussian statement. -/
+private lemma canonicalModel_memLp_coord (p : CanonicalParam s) (k : Fin (s + m))
+    {f : ℝ → ℝ} (hfm : Measurable f)
+    (hf : MemLp f 2 (gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) k) p.2.1)) :
+    MemLp (fun y => f (y k)) 2 (canonicalModel (m := m) p) := by
+  have hgmeas : Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => f (y k)) :=
+    hfm.comp ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _))
+  rw [canonicalModel_eq_map_pi]
+  refine (memLp_map_measure_iff hgmeas.aestronglyMeasurable
+    (WithLp.measurable_toLp 2 _).aemeasurable).mpr ?_
+  exact hf.comp_measurePreserving (MeasureTheory.measurePreserving_eval
+    (μ := fun i => gaussianReal ((Fin.append p.1 (0 : Fin m → ℝ)) i) p.2.1) k)
+
 /-! ## Unbiased optimality in the canonical model -/
 
 /-- Each coordinate `Yᵢ` of the signal block is UMVU for the corresponding mean `ηᵢ`. -/
@@ -504,7 +778,18 @@ theorem isUMVU_coord
     (hm : 0 < m) (i : Fin s) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => p.1 i)
       (fun y => canonicalHead y i) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => t.1 i) :=
+    (measurable_pi_apply i).comp measurable_fst
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y, y (Fin.castAdd m i) ∂(canonicalModel p) = p.1 i
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+    simp only [id_eq] at hc
+    rw [hc, integral_id_gaussianReal, Fin.append_left]
+  · intro p
+    show MemLp (fun y => y (Fin.castAdd m i)) 2 (canonicalModel p)
+    exact canonicalModel_memLp_coord (m := m) p (Fin.castAdd m i)
+      (f := id) measurable_id (memLp_id_gaussianReal 2)
 
 /-- Every linear combination `∑ λᵢ Yᵢ` of the signal block is UMVU for `∑ λᵢ ηᵢ`. -/
 theorem isUMVU_linear_combination
@@ -514,7 +799,30 @@ theorem isUMVU_linear_combination
     (lam : Fin s → ℝ) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => ∑ i, lam i * p.1 i)
       (fun y => ∑ i, lam i * canonicalHead y i) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => ∑ i, lam i * t.1 i) :=
+    Finset.measurable_sum _ fun i _ =>
+      measurable_const.mul ((measurable_pi_apply i).comp measurable_fst)
+  have hcoordMemLp : ∀ (p : CanonicalParam s) (i : Fin s),
+      MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => y (Fin.castAdd m i)) 2
+        (canonicalModel p) := fun p i =>
+    canonicalModel_memLp_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+      (memLp_id_gaussianReal 2)
+  have hcoordmean : ∀ (p : CanonicalParam s) (i : Fin s),
+      ∫ y, y (Fin.castAdd m i) ∂(canonicalModel p) = p.1 i := by
+    intro p i
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+    simp only [id_eq] at hc
+    rw [hc, integral_id_gaussianReal, Fin.append_left]
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y, ∑ i, lam i * y (Fin.castAdd m i) ∂(canonicalModel p) = ∑ i, lam i * p.1 i
+    rw [integral_finset_sum _
+      (fun i _ => ((hcoordMemLp p i).integrable one_le_two).const_mul (lam i))]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_const_mul, hcoordmean p i]
+  · intro p
+    show MemLp (fun y => ∑ i, lam i * y (Fin.castAdd m i)) 2 (canonicalModel p)
+    exact memLp_finset_sum _ fun i _ => (hcoordMemLp p i).const_mul (lam i)
 
 /-- The rescaled residual sum of squares `S²/m` (that is, `S²/(n − s)`) is UMVU for the
 variance `σ²`. -/
@@ -523,6 +831,60 @@ theorem isUMVU_residual_variance
     (hm : 0 < m) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => (p.2.1 : ℝ))
       (fun y => canonicalRSS y / (m : ℝ)) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => t.2 / (m : ℝ)) :=
+    measurable_snd.div_const _
+  -- one-dimensional second moment of a centred Gaussian
+  have hsq2 : ∀ v : ℝ≥0, ∫ x, x ^ 2 ∂(gaussianReal (0 : ℝ) v) = (v : ℝ) := by
+    intro v
+    have h := variance_eq_sub (μ := gaussianReal (0 : ℝ) v) (X := id) (memLp_id_gaussianReal 2)
+    rw [variance_id_gaussianReal] at h
+    simp only [integral_id_gaussianReal, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+      zero_pow, sub_zero, Pi.pow_apply, id_eq] at h
+    linarith [h]
+  -- `x ↦ x²` is square-integrable under any one-dimensional Gaussian (fourth moment finite)
+  have hsqMemLp : ∀ (μ : ℝ) (v : ℝ≥0), MemLp (fun x => x ^ 2) 2 (gaussianReal μ v) := by
+    intro μ v
+    haveI : ENNReal.HolderTriple (4 : ℝ≥0∞) 4 2 := ⟨by
+      rw [show (4 : ℝ≥0∞) = 2 * 2 by norm_num, ENNReal.mul_inv (by norm_num) (by norm_num)]
+      rw [← two_mul, ← mul_assoc, ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]⟩
+    have h4 : MemLp (id : ℝ → ℝ) 4 (gaussianReal μ v) := memLp_id_gaussianReal' 4 (by simp)
+    refine (h4.mul h4).ae_eq (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.mul_apply, id_eq]; ring
+  -- per-residual-coordinate second moment and integrability
+  have hcoordsqmean : ∀ (p : CanonicalParam s) (j : Fin m),
+      ∫ y : EuclideanSpace ℝ (Fin (s + m)), (y (Fin.natAdd s j)) ^ 2 ∂(canonicalModel p)
+        = (p.2.1 : ℝ) := by
+    intro p j
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.natAdd s j)
+      (f := fun x => x ^ 2) (measurable_id.pow_const 2)
+    rw [hc, Fin.append_right]
+    simpa using hsq2 p.2.1
+  have hcoordsqint : ∀ (p : CanonicalParam s) (j : Fin m),
+      Integrable (fun y : EuclideanSpace ℝ (Fin (s + m)) => (y (Fin.natAdd s j)) ^ 2)
+        (canonicalModel p) := fun p j =>
+    (canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j) (f := fun x => x ^ 2)
+      (measurable_id.pow_const 2) (hsqMemLp _ _)).integrable one_le_two
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y : EuclideanSpace ℝ (Fin (s + m)), canonicalRSS y / (m : ℝ) ∂(canonicalModel p)
+      = (p.2.1 : ℝ)
+    have hRSS : ∫ y : EuclideanSpace ℝ (Fin (s + m)), canonicalRSS y ∂(canonicalModel p)
+        = (m : ℝ) * p.2.1 := by
+      show ∫ y : EuclideanSpace ℝ (Fin (s + m)), ∑ j, (y (Fin.natAdd s j)) ^ 2 ∂(canonicalModel p)
+        = (m : ℝ) * p.2.1
+      rw [integral_finset_sum _ (fun j _ => hcoordsqint p j),
+        Finset.sum_congr rfl (fun j _ => hcoordsqmean p j), Finset.sum_const, Finset.card_univ,
+        Fintype.card_fin, nsmul_eq_mul]
+    rw [integral_div, hRSS, mul_comm, mul_div_assoc,
+      div_self (by exact_mod_cast hm.ne'), mul_one]
+  · intro p
+    show MemLp (fun y => canonicalRSS y / (m : ℝ)) 2 (canonicalModel p)
+    have hRSSmemLp : MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => canonicalRSS y) 2
+        (canonicalModel p) := by
+      show MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => ∑ j, (y (Fin.natAdd s j)) ^ 2) 2
+        (canonicalModel p)
+      exact memLp_finset_sum _ fun j _ => canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j)
+        (f := fun x => x ^ 2) (measurable_id.pow_const 2) (hsqMemLp _ _)
+    simpa [div_eq_mul_inv] using hRSSmemLp.mul_const (m : ℝ)⁻¹
 
 end StatLean.PointEstimation
