@@ -91,8 +91,9 @@ block: measurable, equivariant, and of minimal (constant) risk among all such. -
 def IsCanonicalMRE (σ2 : PosVar) (lam : Fin s → ℝ) (ρ : ℝ → ℝ)
     (δ : EuclideanSpace ℝ (Fin (s + m)) → ℝ) : Prop :=
   Measurable δ ∧ IsCanonicalEquivariant lam δ ∧
-    ∀ δ', Measurable δ' → IsCanonicalEquivariant lam δ' →
-      canonicalRisk σ2 ρ δ ≤ canonicalRisk σ2 ρ δ'
+    ∀ δ' : EuclideanSpace ℝ (Fin (s + m)) → ℝ,
+      Measurable δ' → IsCanonicalEquivariant lam δ' →
+        canonicalRisk σ2 ρ δ ≤ canonicalRisk σ2 ρ δ'
 
 /-- The unbiased optimal estimator `∑ λᵢ Yᵢ` of `∑ λᵢ ηᵢ` is also minimum risk equivariant
 under translations of the signal block, for every convex even loss. -/
@@ -125,8 +126,9 @@ noncomputable def canonicalScaleRisk (δ : EuclideanSpace ℝ (Fin (s + m)) → 
 /-- **Minimum risk equivariant** estimator of `(σ²)^r` under the location-scale group. -/
 def IsCanonicalScaleMRE (r : ℕ) (δ : EuclideanSpace ℝ (Fin (s + m)) → ℝ) : Prop :=
   Measurable δ ∧ IsCanonicalScaleEquivariant r δ ∧
-    ∀ δ', Measurable δ' → IsCanonicalScaleEquivariant r δ' →
-      canonicalScaleRisk δ ≤ canonicalScaleRisk δ'
+    ∀ δ' : EuclideanSpace ℝ (Fin (s + m)) → ℝ,
+      Measurable δ' → IsCanonicalScaleEquivariant r δ' →
+        canonicalScaleRisk δ ≤ canonicalScaleRisk δ'
 
 /-- The optimal multiplier of `(S²)^r`: the ratio `E[V^r]/E[V^{2r}]` of chi-square moments
 with `k` degrees of freedom — the constant minimizing `E(c·V^r − 1)²`. -/
