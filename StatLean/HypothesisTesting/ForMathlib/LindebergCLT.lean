@@ -78,6 +78,35 @@ namespace StatLean.HypothesisTesting
 variable {Ω Ω' : Type*} {mΩ : MeasurableSpace Ω} {mΩ' : MeasurableSpace Ω'}
   {P : Measure Ω} {P' : Measure Ω'} [IsProbabilityMeasure P] [IsProbabilityMeasure P']
 
+open Complex in
+/-- **The analytic core of the Lindeberg CLT.** Under the Lindeberg hypotheses the product
+of the row characteristic functions converges pointwise to the standard-normal
+characteristic function `t ↦ exp(−t²/2)`. This is the content of Lindeberg's
+swapping/telescoping estimate; `lindeberg_clt` merely feeds this pointwise statement through
+Lévy's continuity theorem.
+
+TODO: prove the swapping estimate. The classical argument bounds
+`|∏ᵢ φₙᵢ(t) − ∏ᵢ (1 − t²σₙᵢ²/2)| ≤ ∑ᵢ |φₙᵢ(t) − (1 − t²σₙᵢ²/2)|` (product telescoping with
+all factors of modulus ≤ 1), estimates each summand by
+`E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]` (the third-order remainder of `e^{iy}`) and splits the
+expectation at `|Xₙᵢ| = ε` — the small part is `≤ |t|³ε ∑ᵢ σₙᵢ² /6` and the large part is
+`≤ t² ∑ᵢ E[Xₙᵢ² 1{|Xₙᵢ|>ε}]`, the Lindeberg sum. The missing ingredient is the quantitative
+pointwise bound `‖e^{iy} − (1 + iy − y²/2)‖ ≤ min(|y|³/6, y²)`, which Mathlib does not yet
+provide (`taylor_charFun_two` gives only the non-uniform `o(t²)` near `0`). -/
+private lemma tendsto_prod_charFun_lindeberg
+    {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) → Ω → ℝ}
+    (hmeas : ∀ n i, Measurable (X n i))
+    (hindep : ∀ n, iIndepFun (X n) P)
+    (hL2 : ∀ n i, MemLp (X n i) 2 P)
+    (hmean : ∀ n i, ∫ ω, X n i ω ∂P = 0)
+    (hvar : Tendsto (fun n => ∑ i, Var[X n i; P]) atTop (𝓝 1))
+    (hlin : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) atTop (𝓝 0))
+    (t : ℝ) :
+    Tendsto (fun n => ∏ i, charFun (P.map (X n i)) t) atTop
+      (𝓝 (charFun (gaussianReal 0 1) t)) := by
+  sorry
+
 /-- **Lindeberg's central limit theorem for triangular arrays.**
 
 For each `n` the row `(X n i)_{i < m n}` consists of independent, centered,
@@ -102,8 +131,17 @@ theorem lindeberg_clt {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) → Ω → 
       Tendsto (fun n => ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) atTop (𝓝 0))
     -- USER-INPUT: `Z` realises the standard normal law on the limit space.
     (hZ : HasLaw Z (gaussianReal 0 1) P') :
-    TendstoInDistribution (fun n ω => ∑ i, X n i ω) atTop Z (fun _ => P) P' := by
-  sorry
+    TendstoInDistribution (fun n ω => ∑ i, X n i ω) atTop Z (fun _ => P) P' where
+  forall_aemeasurable n :=
+    Finset.aemeasurable_fun_sum _ fun i _ => (hmeas n i).aemeasurable
+  tendsto := by
+    refine ProbabilityMeasure.tendsto_iff_tendsto_charFun.2 fun t => ?_
+    rw! [hZ.map_eq]
+    have hcf : ∀ n, charFun (P.map (fun ω => ∑ i, X n i ω)) t
+        = ∏ i, charFun (P.map (X n i)) t := fun n => by
+      rw [iIndepFun.charFun_map_fun_sum_eq_prod (fun i => (hmeas n i).aemeasurable) (hindep n),
+        Finset.prod_apply]
+    simpa [hcf] using tendsto_prod_charFun_lindeberg hmeas hindep hL2 hmean hvar hlin t
 
 /-- **Uniformly bounded rows.**
 
@@ -132,7 +170,25 @@ theorem lindeberg_clt_of_bounded {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) 
     -- USER-INPUT: `Z` realises the standard normal law on the limit space.
     (hZ : HasLaw Z (gaussianReal 0 1) P') :
     TendstoInDistribution (fun n ω => ∑ i, X n i ω) atTop Z (fun _ => P) P' := by
-  sorry
+  -- Bounded measurable ⇒ `L²`.
+  have hL2 : ∀ n i, MemLp (X n i) 2 P := fun n i =>
+    MemLp.of_bound (hmeas n i).aestronglyMeasurable (c n)
+      (ae_of_all _ fun ω => by rw [Real.norm_eq_abs]; exact hbdd n i ω)
+  -- Lindeberg condition: for `ε > 0` the truncation sets are eventually empty (`c n < ε`).
+  have hlin : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) atTop (𝓝 0) := by
+    intro ε hε
+    have key : ∀ᶠ n in atTop,
+        (∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) = 0 := by
+      filter_upwards [hc.eventually (eventually_lt_nhds hε)] with n hn
+      refine Finset.sum_eq_zero fun i _ => ?_
+      have hempty : {ω | ε < |X n i ω|} = (∅ : Set Ω) := by
+        ext ω
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_lt]
+        exact le_trans (hbdd n i ω) hn.le
+      rw [hempty]; simp
+    exact tendsto_const_nhds.congr' (key.mono fun n hn => hn.symm)
+  exact lindeberg_clt hmeas hindep hL2 hmean hvar hlin hZ
 
 /-- **Central limit theorem for weighted sums of an i.i.d. sequence.**
 

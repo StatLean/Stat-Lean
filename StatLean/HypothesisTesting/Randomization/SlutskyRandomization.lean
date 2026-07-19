@@ -89,7 +89,17 @@ lemma cdf_map_affine (R : Measure ℝ) [IsProbabilityMeasure R] {a : ℝ}
     -- USER-INPUT: positive scaling; the order-preserving case
     (ha : 0 < a) (b t : ℝ) :
     cdf (R.map (fun u => a * u + b)) t = cdf R ((t - b) / a) := by
-  sorry
+  have hf : Measurable (fun u : ℝ => a * u + b) := by fun_prop
+  have : IsProbabilityMeasure (R.map (fun u => a * u + b)) :=
+    Measure.isProbabilityMeasure_map hf.aemeasurable
+  rw [cdf_eq_real, cdf_eq_real, Measure.real, Measure.real,
+    Measure.map_apply hf measurableSet_Iic]
+  congr 2
+  ext u
+  simp only [Set.mem_preimage, Set.mem_Iic, le_div_iff₀ ha]
+  constructor
+  · intro h; linarith
+  · intro h; linarith
 
 section Slutsky
 
