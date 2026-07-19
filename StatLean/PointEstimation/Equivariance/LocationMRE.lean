@@ -66,7 +66,7 @@ variable {m : ℕ}
 
 /-- The conditional mean minimizes the conditional expected squared error, phrased at the
 `ℝ≥0∞` level with no second-moment hypothesis: outside `L²` both sides are `∞`. -/
-private lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     [IsProbabilityMeasure μ] {φ : Ω → ℝ} (hφ : Measurable φ) (w : ℝ) :
     ∫⁻ x, ENNReal.ofReal ((φ x - ∫ z, φ z ∂μ) ^ 2) ∂μ ≤
       ∫⁻ x, ENNReal.ofReal ((φ x - w) ^ 2) ∂μ := by

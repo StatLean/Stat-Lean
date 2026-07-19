@@ -89,14 +89,19 @@ theorem isLocMRE_mean_gaussian (f : (Fin (m + 1) → ℝ) → ℝ)
     -- USER-INPUT: the base member is an independent normal sample with mean `0`
     (hf : locationBase f = Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v) :
     IsLocMRE f (fun t : ℝ => t ^ 2) (fun x => (∑ i, x i) / ((m : ℝ) + 1)) := by
-  -- Contract-level debt (reported). Intended route: `X̄` is location equivariant and
-  -- `X̄ − X n` is a function of `diffs`, so by Basu's theorem
-  -- (`Completeness.Basu.indepFun_of_boundedlyComplete_sufficient`) the complete sufficient
-  -- statistic `X̄` is independent of the ancillary `diffs`; hence the conditional mean
-  -- `E₀[X n | diffs]` is a.e. constant and the Pitman estimator collapses to `X̄`, which is
-  -- then MRE by `pitmanEstimator_isLocMRE`. That route runs through `Pitman` and the
-  -- `ForMathlib.CondDistribDensity` stub (a `sorry` in this tree), so no axiom-clean proof
-  -- is available here. The Kagan–Linnik–Rao converse is out of scope (see the docstring).
+  -- Named debt. `pitmanEstimator_isLocMRE` (in `Pitman`) is now CLOSED and axiom-clean, so
+  -- the route is unblocked; what remains is the Gaussian-specific computation.
+  -- Route: `IsLocMRE f ρ δ` depends on `f` only through `locationBase f` (both the risk and
+  -- the equivariant class do), so transfer to the explicit density
+  -- `g x = ∏ i, gaussianPDFReal 0 v (x i)` (with `locationBase g = Measure.pi (gaussianReal 0 v)`
+  -- by the same `pi_withDensity_prod` argument as `AsymptoticStatistics.PiGaussian`,
+  -- generalized from `v = 1`). For `g`, complete the square: `g (x − u𝟙) = C · exp(−(m+1)
+  -- (u − X̄)²/(2v))` is (up to normalization) the density of `𝒩(X̄, v/(m+1))` in `u`, whence
+  -- `pitmanEstimator g = X̄` by `integral_id_gaussianReal`, and `pitmanEstimator_isLocMRE g`
+  -- (its Gaussian integrability/finite-risk side conditions all discharged from Gaussian
+  -- moment finiteness) gives `IsLocMRE g ρ X̄`. The Gaussian first-moment/completing-the-square
+  -- development is a self-contained analytic core, left as reported debt this session. The
+  -- Kagan–Linnik–Rao converse is out of scope (see the docstring).
   sorry
 
 /-- The risk of the sample mean in an independent unit-variance location family is
