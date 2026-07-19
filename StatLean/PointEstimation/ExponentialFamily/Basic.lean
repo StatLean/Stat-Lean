@@ -1,7 +1,11 @@
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import Mathlib.Analysis.Convex.Basic
+import Mathlib.Analysis.MeanInequalities
+import Mathlib.Analysis.InnerProductSpace.Continuous
 import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.Probability.Notation
+import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 
 /-!
 # Exponential families — basic structural properties
@@ -71,9 +75,27 @@ section Members
 
 variable [OpensMeasurableSpace V]
 
+/-- The integrand `x ↦ exp⟨c, T x⟩` defining the natural parameter set is measurable: the linear
+functional `⟨c, ·⟩` is continuous, hence measurable, and composes with the measurable statistic. -/
+private theorem measurable_exp_inner (E : ExpFamily 𝓧 V) (c : V) :
+    Measurable fun x => Real.exp ⟪c, E.stat x⟫_ℝ :=
+  (((continuous_const.inner continuous_id).measurable).comp E.stat_meas).exp
+
 /-- The natural parameter set is **convex**. -/
 theorem natSet_convex (E : ExpFamily 𝓧 V) : Convex ℝ E.natSet := by
-  sorry
+  rintro η₀ h₀ η₁ h₁ a b ha hb hab
+  simp only [ExpFamily.natSet, Set.mem_setOf_eq] at h₀ h₁ ⊢
+  refine ((h₀.const_mul a).add (h₁.const_mul b)).mono'
+      (E.measurable_exp_inner _).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le, inner_add_left,
+    real_inner_smul_left, real_inner_smul_left]
+  calc Real.exp (a * ⟪η₀, E.stat x⟫_ℝ + b * ⟪η₁, E.stat x⟫_ℝ)
+      = Real.exp ⟪η₀, E.stat x⟫_ℝ ^ a * Real.exp ⟪η₁, E.stat x⟫_ℝ ^ b := by
+        rw [Real.exp_add, mul_comm a ⟪η₀, E.stat x⟫_ℝ, mul_comm b ⟪η₁, E.stat x⟫_ℝ,
+          Real.exp_mul, Real.exp_mul]
+    _ ≤ a * Real.exp ⟪η₀, E.stat x⟫_ℝ + b * Real.exp ⟪η₁, E.stat x⟫_ℝ :=
+        Real.geom_mean_le_arith_mean2_weighted ha hb (Real.exp_pos _).le (Real.exp_pos _).le hab
 
 /-- Members indexed by the natural parameter set are **probability measures**. -/
 theorem isProbabilityMeasure_P (E : ExpFamily 𝓧 V) {η : V}
@@ -83,15 +105,16 @@ theorem isProbabilityMeasure_P (E : ExpFamily 𝓧 V) {η : V}
     -- USER-INPUT: the natural parameter lies where the family is defined
     (hη : η ∈ E.natSet) :
     IsProbabilityMeasure (E.P η) := by
-  sorry
+  haveI : NeZero E.base := ⟨hbase⟩
+  exact isProbabilityMeasure_tilted hη
 
 /-- **Junk convention**: off the natural parameter set the member is the zero measure. -/
 theorem P_eq_zero_of_notMem (E : ExpFamily 𝓧 V) {η : V}
     -- LEAN-ONLY: the parameter is outside the domain of definition; records the junk value
     -- inherited from `Measure.tilted`, so that consumers never need a side condition
     (hη : η ∉ E.natSet) :
-    E.P η = 0 := by
-  sorry
+    E.P η = 0 :=
+  tilted_of_not_integrable hη
 
 /-- **Explicit density form** of a member: `dP_η/dν = exp(⟨η, T⟩ − A(η))`. -/
 theorem P_eq_withDensity (E : ExpFamily 𝓧 V) {η : V}
@@ -99,7 +122,16 @@ theorem P_eq_withDensity (E : ExpFamily 𝓧 V) {η : V}
     (hη : η ∈ E.natSet) :
     E.P η = E.base.withDensity
       fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) := by
-  sorry
+  rcases eq_or_ne E.base 0 with hb | hb
+  · rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, hb,
+      tilted_zero_measure, withDensity_zero_left]
+  · haveI : NeZero E.base := ⟨hb⟩
+    have hpos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := integral_exp_pos hη
+    rw [show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl, Measure.tilted]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [show E.logPartition η = Real.log (∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base) from rfl,
+      Real.exp_sub, Real.exp_log hpos]
 
 /-- **Classical presentation**: for a family built by absorbing a carrier `h` into the
 reference measure, the member has density `exp(⟨η, T x⟩ − A(η))·h(x)` with respect to `μ`. -/
@@ -114,7 +146,15 @@ theorem P_ofDensity_eq (μ : Measure 𝓧) {h : 𝓧 → ℝ≥0∞}
     (ofDensity μ h T hT).P η
       = μ.withDensity fun x =>
           ENNReal.ofReal (Real.exp (⟪η, T x⟫_ℝ - (ofDensity μ h T hT).logPartition η)) * h x := by
-  sorry
+  set A := (ofDensity μ h T hT).logPartition η with hA
+  have hg : Measurable fun x => ENNReal.ofReal (Real.exp (⟪η, T x⟫_ℝ - A)) :=
+    ((((continuous_const.inner continuous_id).measurable.comp hT).sub
+      measurable_const).exp).ennreal_ofReal
+  rw [P_eq_withDensity (ofDensity μ h T hT) hη]
+  change (μ.withDensity h).withDensity (fun x => ENNReal.ofReal (Real.exp (⟪η, T x⟫_ℝ - A)))
+      = μ.withDensity fun x => ENNReal.ofReal (Real.exp (⟪η, T x⟫_ℝ - A)) * h x
+  rw [← withDensity_mul _ hh hg]
+  exact withDensity_congr_ae (Filter.Eventually.of_forall fun x => mul_comm _ _)
 
 end Members
 
@@ -140,7 +180,13 @@ theorem natSet_pow (E : ExpFamily 𝓧 V)
     -- expected Tonelli behaviour; every dominated statistical model satisfies it
     [SigmaFinite E.base] (n : ℕ) :
     E.natSet ⊆ (E.pow n).natSet := by
-  sorry
+  intro η hη
+  simp only [ExpFamily.natSet, Set.mem_setOf_eq] at hη ⊢
+  have hprod : Integrable (fun x : Fin n → 𝓧 => ∏ i, Real.exp ⟪η, E.stat (x i)⟫_ℝ)
+      (Measure.pi fun _ => E.base) := Integrable.fintype_prod fun _ => hη
+  refine hprod.congr (Filter.Eventually.of_forall fun x => ?_)
+  change ∏ i, Real.exp ⟪η, E.stat (x i)⟫_ℝ = Real.exp ⟪η, (E.pow n).stat x⟫_ℝ
+  rw [show (E.pow n).stat x = ∑ i, E.stat (x i) from rfl, inner_sum, Real.exp_sum]
 
 /-- **Stability under i.i.d. sampling**: the `n`-fold product of the member `P_η` is the
 member of the product family at the same natural parameter. -/
@@ -150,7 +196,37 @@ theorem pi_P_eq_pow_P (E : ExpFamily 𝓧 V)
     -- USER-INPUT: the natural parameter lies where the family is defined
     (hη : η ∈ E.natSet) :
     (Measure.pi fun _ : Fin n => E.P η) = (E.pow n).P η := by
-  sorry
+  have hηpow : η ∈ (E.pow n).natSet := E.natSet_pow n hη
+  have hfun : (fun x : Fin n → 𝓧 => Real.exp ⟪η, ∑ i, E.stat (x i)⟫_ℝ)
+      = fun x => ∏ i, Real.exp ⟪η, E.stat (x i)⟫_ℝ := by
+    funext x; rw [inner_sum, Real.exp_sum]
+  have hApow : (E.pow n).logPartition η = (n : ℝ) * E.logPartition η := by
+    change Real.log (∫ x : Fin n → 𝓧, Real.exp ⟪η, ∑ i, E.stat (x i)⟫_ℝ
+          ∂(Measure.pi fun _ => E.base))
+        = (n : ℝ) * Real.log (∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)
+    rw [hfun, integral_fintype_prod_eq_pow (f := fun y => Real.exp ⟪η, E.stat y⟫_ℝ),
+      Fintype.card_fin, Real.log_pow]
+  have hg : Measurable fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) :=
+    (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
+      measurable_const).exp.ennreal_ofReal
+  haveI : IsZeroOrProbabilityMeasure (E.base.withDensity
+      fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) := by
+    rw [← P_eq_withDensity E hη, show E.P η = E.base.tilted fun x => ⟪η, E.stat x⟫_ℝ from rfl]
+    infer_instance
+  rw [show (Measure.pi fun _ : Fin n => E.P η)
+        = Measure.pi fun _ : Fin n => E.base.withDensity
+            fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η)) by
+      simp_rw [P_eq_withDensity E hη],
+    ← pi_withDensity_prod (fun _ : Fin n => hg), P_eq_withDensity (E.pow n) hηpow, hApow]
+  refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  change ∏ i, ENNReal.ofReal (Real.exp (⟪η, E.stat (x i)⟫_ℝ - E.logPartition η))
+      = ENNReal.ofReal (Real.exp (⟪η, (E.pow n).stat x⟫_ℝ - (n : ℝ) * E.logPartition η))
+  rw [← ENNReal.ofReal_prod_of_nonneg (fun i _ => (Real.exp_pos _).le)]
+  congr 1
+  rw [show (E.pow n).stat x = ∑ i, E.stat (x i) from rfl, ← Real.exp_sum]
+  congr 1
+  rw [Finset.sum_sub_distrib, ← inner_sum, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    nsmul_eq_mul]
 
 end Product
 
