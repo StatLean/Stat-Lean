@@ -270,7 +270,20 @@ theorem fisherInfo_reparam (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (
     -- sides vanish, the junk-safe score being `0` there)
     (hdiff : ∀ x, 0 < M.density (h ξ) x → DifferentiableAt ℝ (fun t => M.density t x) (h ξ)) :
     fisherInfo (reparam M h) μ ξ = fisherInfo M μ (h ξ) * h' ^ 2 := by
-  sorry
+  simp only [fisherInfo]
+  rw [← integral_mul_const]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  rcases eq_or_lt_of_le (M.density_nonneg (h ξ) x) with hden | hden
+  · simp only [score, reparam]
+    rw [← hden]; ring
+  · have hf : HasDerivAt (fun s => M.density s x)
+        (deriv (fun s => M.density s x) (h ξ)) (h ξ) := (hdiff x hden).hasDerivAt
+    have hderiv : deriv (fun t => M.density (h t) x) ξ
+        = deriv (fun s => M.density s x) (h ξ) * h' := (hf.comp ξ hh).deriv
+    have hne : M.density (h ξ) x ≠ 0 := ne_of_gt hden
+    simp only [score, reparam]
+    rw [hderiv]
+    field_simp
 
 /-! ## Bridge to the bilinear Fisher information of the asymptotics area -/
 
