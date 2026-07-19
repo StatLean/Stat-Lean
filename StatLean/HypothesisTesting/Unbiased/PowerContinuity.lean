@@ -126,7 +126,7 @@ theorem isUMPU_of_isUMP_on_boundary [TopologicalSpace Θ]
   have hconst_crit : IsCriticalFn (fun _ : 𝓧 => α) :=
     ⟨measurable_const, fun _ => ⟨hα₀, hα₁⟩⟩
   have hconst_power : ∀ θ' : Θ, power P (fun _ : 𝓧 => α) θ' = α := fun θ' => by
-    rw [power, integral_const, measure_univ, ENNReal.one_toReal, one_smul]
+    rw [power, integral_const, probReal_univ, one_smul]
   have hconst_sim : IsSimilar P ωB α (fun _ : 𝓧 => α) := fun θ' _ => hconst_power θ'
   refine ⟨hφ₀, ⟨hlevel, ?_⟩, ?_⟩
   · -- unbiasedness: `φ₀` beats the boundary-similar constant test on the alternative
