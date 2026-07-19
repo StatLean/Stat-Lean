@@ -176,8 +176,8 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q])
     -- USER-INPUT: nominal level strictly between `0` and `1`
     (hα : α ∈ Set.Ioo (0 : ℝ) 1) :
-    Tendsto (fun n => (Pr {ω |
-        Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
+    Tendsto (fun n : ℕ => (Pr {ω |
+        Real.sqrt (n : ℝ) * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
           ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)
               (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
