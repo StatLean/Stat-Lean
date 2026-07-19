@@ -1,0 +1,42 @@
+# Finish the Lindeberg swapping estimate — the remainder bound is now PROVED
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (`CLAUDE.md` is gitignored and absent here; everything you need is below. Never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+**CRITICAL — how to build.** Run `lake build StatLean.HypothesisTesting.ForMathlib.LindebergCLT` as an ordinary FOREGROUND command and read its output in the same step. Do **not** background it, do **not** wait for a "build notification" — there is no notification channel and you will stall and lose the session.
+
+## Scope: ONE lemma is the whole item
+
+**Only edit** `StatLean/HypothesisTesting/ForMathlib/LindebergCLT.lean` and, if you finish early, `.../Randomization/{Asymptotics,SignChange}.lean`.
+
+The file's public theorems `lindeberg_clt`, `lindeberg_clt_of_bounded`, `weighted_iid_clt` and `triangular_wlln_of_L1` are structured so that **everything rests on one private lemma**:
+
+```
+private lemma tendsto_prod_charFun_lindeberg … (t : ℝ) :
+    Tendsto (fun n => ∏ i, charFun (P.map (X n i)) t) atTop (𝓝 (charFun (gaussianReal 0 1) t))
+```
+
+Close it and the triangular-array CLT is done.
+
+## The prerequisite your predecessor was missing is now available
+
+`private lemma norm_cexp_sub_taylor_le (y : ℝ)` — the **uniform third-order remainder bound** for `exp (I y)` — is **proved and committed at line 93 of this same file**. Mathlib has only the non-uniform `taylor_charFun_two` (`o(t²)` near 0), which is why this had to be built. Read its exact statement and use it.
+
+## The assembly
+
+1. **Telescoping.** `|∏ᵢ aᵢ − ∏ᵢ bᵢ| ≤ ∑ᵢ |aᵢ − bᵢ|` whenever all `|aᵢ|, |bᵢ| ≤ 1`. Prove by `Finset.prod_induction` / induction on the finset. `|charFun μ t| ≤ 1` for a probability measure; `|1 − t²σ²/2| ≤ 1` needs `t²σ² ≤ 4`, which holds eventually since `∑ᵢ σₙᵢ² → 1` and each term is small — handle the finitely many bad `n` by working `∀ᶠ n`.
+2. **Per-term bound.** With `aᵢ = charFun (P.map (X n i)) t` and `bᵢ = 1 − t²σₙᵢ²/2`, centering (`hmean`) plus `norm_cexp_sub_taylor_le` gives `|aᵢ − bᵢ| ≤ E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]`.
+3. **Split at `ε`.** Small part `≤ |t|³ ε ∑ᵢ σₙᵢ² / 6`; large part `≤ t² ∑ᵢ E[Xₙᵢ² 1{|Xₙᵢ| > ε}]`, which is exactly the Lindeberg sum killed by `hlin`. Conclude with an `ε`-then-`n` argument (`Metric.tendsto_atTop` / `tendsto_of_forall_pos`).
+4. **Gaussian side.** `∏ᵢ (1 − t²σₙᵢ²/2) → exp(−t²/2)` from `hvar : ∑ᵢ σₙᵢ² → 1`, using `Real.log (1−u) = −u + O(u²)` with the row terms uniformly small (uniform smallness follows from the Lindeberg condition plus `hvar`: `σₙᵢ² ≤ ε² + E[Xₙᵢ²1{|Xₙᵢ|>ε}]`).
+
+If step 4's uniform-smallness argument proves long, it is the acceptable place for the single lifted `private` sorry — but close steps 1–3 regardless.
+
+## Hard constraints
+
+- Signatures FROZEN. `import Mathlib.*` and `private` helpers freely; **Mathlib-only imports** in this file. Lines ≤ 100 chars.
+- **Do not weaken any statement.** If something is wrong, STOP and report precisely.
+- Commit after each helper compiles.
+- After green: `#print axioms lindeberg_clt` — expect only `propext, Classical.choice, Quot.sound`.
+
+## Report
+
+Final `lake build` status, the file's sorry count, `#print axioms lindeberg_clt`, and for anything left open the precise obstruction.
