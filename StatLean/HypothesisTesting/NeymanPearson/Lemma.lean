@@ -1,5 +1,7 @@
 import StatLean.HypothesisTesting.Tests.Defs
+import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # The fundamental lemma of testing a simple hypothesis against a simple alternative
@@ -82,6 +84,96 @@ is the shape that most powerful tests are forced to have. -/
 def HasNPShape (μ : Measure 𝓧) (p₀ p₁ : 𝓧 → ℝ) (C : ℝ≥0∞) (φ : 𝓧 → ℝ) : Prop :=
   (∀ᵐ x ∂μ, C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) → φ x = 1) ∧
     (∀ᵐ x ∂μ, ENNReal.ofReal (p₁ x) < C * ENNReal.ofReal (p₀ x) → φ x = 0)
+
+/-- A density of a probability measure is integrable. -/
+private lemma hasDensity_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : Integrable p μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall hnn)]
+  have h1 : (μ.withDensity fun x => ENNReal.ofReal (p x)) Set.univ = 1 := by
+    rw [← hPeq]; exact measure_univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  rw [h1]; exact ENNReal.one_lt_top
+
+/-- The power of a critical function against a density-carrying measure is the integral of the
+critical function times the density. -/
+private lemma powerAgainst_eq {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (φ : 𝓧 → ℝ) :
+    powerAgainst P φ = ∫ x, φ x * p x ∂μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  unfold powerAgainst
+  rw [hPeq, integral_withDensity_eq_integral_toReal_smul hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hnn x)]; ring
+
+/-- Integrability of a critical function times a density. -/
+private lemma integrable_crit_mul {μ : Measure 𝓧} {p φ : 𝓧 → ℝ} (hp : Integrable p μ)
+    (hφ : IsCriticalFn φ) : Integrable (fun x => φ x * p x) μ :=
+  hp.bdd_mul hφ.1.aestronglyMeasurable (Filter.Eventually.of_forall fun x => by
+    rw [Real.norm_eq_abs, abs_of_nonneg (hφ.2 x).1]; exact (hφ.2 x).2)
+
+/-- **Fundamental inequality, finite threshold.** For a finite threshold `C`, any test of
+Neyman–Pearson shape whose `P₀`-size dominates that of a competitor `ψ` dominates it in
+`P₁`-power as well. This is the pointwise `(φ − ψ)(p₁ − C·p₀) ≥ 0` argument. -/
+private lemma np_fundamental_finite (μ : Measure 𝓧) [SigmaFinite μ]
+    (P₀ P₁ : Measure 𝓧) [IsProbabilityMeasure P₀] [IsProbabilityMeasure P₁]
+    {p₀ p₁ : 𝓧 → ℝ} (h₀ : HasDensity μ p₀ P₀) (h₁ : HasDensity μ p₁ P₁)
+    {C : ℝ≥0∞} (hC : C ≠ ⊤) {φ ψ : 𝓧 → ℝ}
+    (hφc : IsCriticalFn φ) (hψc : IsCriticalFn ψ)
+    (hshape : HasNPShape μ p₀ p₁ C φ)
+    (hsize : powerAgainst P₀ ψ ≤ powerAgainst P₀ φ) :
+    powerAgainst P₁ ψ ≤ powerAgainst P₁ φ := by
+  have hp0nn := h₀.2.1
+  have hp1nn := h₁.2.1
+  set c := C.toReal with hcdef
+  have hc0 : 0 ≤ c := ENNReal.toReal_nonneg
+  have hCeq : C = ENNReal.ofReal c := (ENNReal.ofReal_toReal hC).symm
+  obtain ⟨hsp1, hsp0⟩ := hshape
+  -- Pointwise `(φ − ψ)(p₁ − c·p₀) ≥ 0`.
+  have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * (p₁ x - c * p₀ x) := by
+    filter_upwards [hsp1, hsp0] with x hx1 hx0
+    have hp0x := hp0nn x; have hp1x := hp1nn x
+    have hφ1 := (hφc.2 x).2; have hψ0 := (hψc.2 x).1; have hψ1 := (hψc.2 x).2
+    rcases lt_trichotomy (c * p₀ x) (p₁ x) with hlt | heq | hgt
+    · have hpos : 0 < p₁ x := lt_of_le_of_lt (by positivity) hlt
+      have hcmp : C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) := by
+        rw [hCeq, ← ENNReal.ofReal_mul hc0]
+        exact (ENNReal.ofReal_lt_ofReal_iff hpos).mpr hlt
+      rw [hx1 hcmp]
+      exact mul_nonneg (by linarith) (by linarith)
+    · have hz : p₁ x - c * p₀ x = 0 := by linarith
+      simp [hz]
+    · have hpos : 0 < c * p₀ x := lt_of_le_of_lt hp1x hgt
+      have hcmp : ENNReal.ofReal (p₁ x) < C * ENNReal.ofReal (p₀ x) := by
+        rw [hCeq, ← ENNReal.ofReal_mul hc0]
+        exact (ENNReal.ofReal_lt_ofReal_iff hpos).mpr hgt
+      rw [hx0 hcmp]
+      have hrw : (0 - ψ x) * (p₁ x - c * p₀ x) = ψ x * (c * p₀ x - p₁ x) := by ring
+      rw [hrw]
+      exact mul_nonneg (by linarith) (by linarith)
+  have hnn := integral_nonneg_of_ae hpt
+  have hp0i : Integrable p₀ μ := hasDensity_integrable h₀
+  have hp1i : Integrable p₁ μ := hasDensity_integrable h₁
+  have hφp1 := integrable_crit_mul hp1i hφc
+  have hψp1 := integrable_crit_mul hp1i hψc
+  have hφp0 := integrable_crit_mul hp0i hφc
+  have hψp0 := integrable_crit_mul hp0i hψc
+  have key : ∫ x, (φ x - ψ x) * (p₁ x - c * p₀ x) ∂μ
+      = (powerAgainst P₁ φ - powerAgainst P₁ ψ) - c * (powerAgainst P₀ φ - powerAgainst P₀ ψ) := by
+    have hAB : Integrable (fun x => φ x * p₁ x - ψ x * p₁ x) μ := hφp1.sub hψp1
+    have hDE : Integrable (fun x => c * (φ x * p₀ x - ψ x * p₀ x)) μ :=
+      (hφp0.sub hψp0).const_mul c
+    rw [powerAgainst_eq h₁ φ, powerAgainst_eq h₁ ψ, powerAgainst_eq h₀ φ, powerAgainst_eq h₀ ψ,
+      ← integral_sub hφp1 hψp1, ← integral_sub hφp0 hψp0, ← integral_const_mul,
+      ← integral_sub hAB hDE]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    ring
+  rw [key] at hnn
+  have hc_nonneg : 0 ≤ c * (powerAgainst P₀ φ - powerAgainst P₀ ψ) :=
+    mul_nonneg hc0 (by linarith)
+  linarith
 
 /-- **Existence (i).** For every level `α ∈ [0,1]` there are a threshold `C` and a
 boundary weight `γ ∈ [0,1]` for which the likelihood-ratio test has size **exactly** `α`
