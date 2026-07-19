@@ -131,6 +131,20 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
     (hspan : ∃ η' : Fin (s + 1) → V, (∀ i, η' i ∈ Ξ') ∧
       affineSpan ℝ (Set.range η') = (⊤ : AffineSubspace ℝ V)) :
     IsMinimalSufficient (fun θ : Ξ' => E.P (θ : V)) E.stat := by
+  -- TODO: the two halves of `IsMinimalSufficient`.
+  -- (1) Sufficiency of `E.stat`: the density of `E.P η` against `E.base` is
+  --     `exp(⟨η, T⟩ - A(η))`, a function of `T` alone, giving the Fisher–Neyman factorization
+  --     `IsFactorizedDensity`; `Sufficiency.Factorization.isSufficient_of_isFactorizedDensity`
+  --     then yields `IsSufficient`. (That bridging lemma is itself an open `sorry` in this
+  --     worktree's `Sufficiency/Factorization.lean`, so this half cannot currently be
+  --     discharged without laundering another file's debt.)
+  -- (2) Minimality: for a competing sufficient `U`, the likelihood ratios
+  --     `p_{η^{(j)}}/p_{η^{(0)}} = exp(⟨η^{(j)} - η^{(0)}, T⟩ - ΔA)` are `U`-measurable; the
+  --     affine-span hypothesis makes the vector `(⟨η^{(j)} - η^{(0)}, T⟩)_j` determine `T` up
+  --     to `a.e.` equality, so `T` factors through `U` by Doob–Dynkin
+  --     (`Measurable.exists_eq_measurable_comp`). This is a substantial development
+  --     (log-likelihood inversion + measurable selection) beyond the imported API.
+  -- The statement is left exactly as posed; only the proof is deferred.
   sorry
 
 end ExpFamily
