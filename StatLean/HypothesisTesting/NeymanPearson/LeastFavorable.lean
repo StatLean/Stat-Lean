@@ -113,6 +113,9 @@ theorem isMostPowerful_composite_of_leastFavorable
     (hlevel : IsLevel P ω φ α) :
     IsCriticalFn φ ∧ IsLevel P ω φ α ∧
       ∀ ψ, IsCriticalFn ψ → IsLevel P ω ψ α → powerAgainst G ψ ≤ powerAgainst G φ := by
+  -- TODO: needs the mixture-Fubini bridge
+  --   `powerAgainst (mixtureMeasure μ f Λ) ψ = ∫ θ, power P ψ θ ∂Λ`
+  -- (joint measurability + `integral_integral_swap`); the transfer logic on top is short.
   sorry
 
 /-- **Transfer of uniqueness.** Under the hypotheses above, if the mixed problem has an
@@ -140,6 +143,9 @@ theorem unique_mostPowerful_composite_of_leastFavorable
     ∀ ψ, IsCriticalFn ψ → IsLevel P ω ψ α →
       (∀ χ, IsCriticalFn χ → IsLevel P ω χ α → powerAgainst G χ ≤ powerAgainst G ψ) →
       ψ =ᵐ[μ] φ := by
+  -- TODO: needs the mixture-Fubini bridge
+  --   `powerAgainst (mixtureMeasure μ f Λ) ψ = ∫ θ, power P ψ θ ∂Λ`
+  -- (joint measurability + `integral_integral_swap`); the transfer logic on top is short.
   sorry
 
 /-- **The prior is least favorable.** A prior whose mixed-problem optimum keeps level `α`
@@ -162,6 +168,9 @@ theorem leastFavorable_max_power
     (hMP : IsMostPowerful (mixtureMeasure μ f Λ) G α φ)
     (hlevel : IsLevel P ω φ α) :
     IsLeastFavorable μ f G ω α Λ := by
+  -- TODO: needs the mixture-Fubini bridge
+  --   `powerAgainst (mixtureMeasure μ f Λ) ψ = ∫ θ, power P ψ θ ∂Λ`
+  -- (joint measurability + `integral_integral_swap`); the transfer logic on top is short.
   sorry
 
 /-- **The practical sufficient condition.** Let `Λ` be a prior carried by a subset
@@ -195,6 +204,9 @@ theorem isMostPowerful_composite_of_npShape
     (hlevel : IsLevel P ω φ α) :
     IsCriticalFn φ ∧ IsLevel P ω φ α ∧
       ∀ ψ, IsCriticalFn ψ → IsLevel P ω ψ α → powerAgainst G ψ ≤ powerAgainst G φ := by
+  -- TODO: needs the mixture-Fubini bridge
+  --   `powerAgainst (mixtureMeasure μ f Λ) ψ = ∫ θ, power P ψ θ ∂Λ`
+  -- (joint measurability + `integral_integral_swap`); the transfer logic on top is short.
   sorry
 
 end StatLean.HypothesisTesting

@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.MultipleTesting.PValues.Defs
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # p-values from nested rejection regions
@@ -46,8 +47,8 @@ regions is the Neyman–Pearson construction ("On the problem of the most effici
 statistical hypotheses," *Phil. Trans. R. Soc. A* **231** (1933), 289–337).
 -/
 
-open MeasureTheory
-open scoped ENNReal
+open MeasureTheory Filter
+open scoped ENNReal Topology
 
 namespace StatLean.HypothesisTesting
 
@@ -70,7 +71,16 @@ theorem nestedPValue_nonneg {R : ℝ → Set 𝓧}
     (hR_neg : ∀ α : ℝ, α < 0 → R α = ∅)
     (x : 𝓧) :
     0 ≤ nestedPValue R x := by
-  sorry
+  rcases Set.eq_empty_or_nonempty {α : ℝ | x ∈ R α} with h | h
+  · show 0 ≤ sInf {α : ℝ | x ∈ R α}
+    rw [h, Real.sInf_empty]
+  · apply le_csInf h
+    intro α hα
+    simp only [Set.mem_setOf_eq] at hα
+    by_contra hlt
+    push_neg at hlt
+    rw [hR_neg α hlt] at hα
+    exact absurd hα (Set.notMem_empty x)
 
 /-- The p-value is at most one as soon as every point is rejected at some level below one. -/
 theorem nestedPValue_le_one {R : ℝ → Set 𝓧}
@@ -80,7 +90,16 @@ theorem nestedPValue_le_one {R : ℝ → Set 𝓧}
     (hR_exh : ∀ x : 𝓧, ∃ α < 1, x ∈ R α)
     (x : 𝓧) :
     nestedPValue R x ≤ 1 := by
-  sorry
+  obtain ⟨α, hα1, hαx⟩ := hR_exh x
+  have hbdd : BddBelow {β : ℝ | x ∈ R β} := by
+    refine ⟨0, fun β hβ => ?_⟩
+    simp only [Set.mem_setOf_eq] at hβ
+    by_contra h
+    push_neg at h
+    rw [hR_neg β h] at hβ
+    exact absurd hβ (Set.notMem_empty x)
+  have : nestedPValue R x ≤ α := csInf_le hbdd hαx
+  linarith
 
 /-- **Validity of the p-value of a nested family of valid rejection regions**: if the regions
 are nested and each has null probability at most its level, the induced p-value is
@@ -96,7 +115,39 @@ theorem superUniform_nestedPValue (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     -- USER-INPUT: each region is valid at its own level, uniformly over the null; classical
     (hvalid : ∀ α : ℝ, 0 < α → α < 1 → ∀ θ ∈ Θ₀, P θ (R α) ≤ ENNReal.ofReal α) :
     ∀ θ ∈ Θ₀, SuperUniform (nestedPValue R) (P θ) := by
-  sorry
+  intro θ hθ t ht
+  by_cases htlt : t < 1
+  · refine ge_of_tendsto (a := ENNReal.ofReal t)
+      ((ENNReal.continuous_ofReal.tendsto t).mono_left
+        (nhdsWithin_le_nhds (s := Set.Ioi t))) ?_
+    have hv1 : ∀ᶠ v in 𝓝[>] t, v < 1 :=
+      Filter.eventually_of_mem (mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds htlt))
+        (fun v hv => Set.mem_Iio.mp hv)
+    filter_upwards [self_mem_nhdsWithin, hv1] with v hv hv1'
+    rw [Set.mem_Ioi] at hv
+    have hsub : {x : 𝓧 | nestedPValue R x ≤ t} ⊆ R v := by
+      intro x hx
+      simp only [Set.mem_setOf_eq] at hx
+      have hnonempty : {α : ℝ | x ∈ R α}.Nonempty := by
+        obtain ⟨β, _, hβx⟩ := hR_exh x; exact ⟨β, hβx⟩
+      have hbdd : BddBelow {α : ℝ | x ∈ R α} := by
+        refine ⟨0, fun α hα => ?_⟩
+        simp only [Set.mem_setOf_eq] at hα
+        by_contra h
+        push_neg at h
+        rw [hR_neg α h] at hα
+        exact absurd hα (Set.notMem_empty x)
+      have hlt : sInf {α : ℝ | x ∈ R α} < v := lt_of_le_of_lt hx hv
+      obtain ⟨α, hαmem, hαv⟩ := exists_lt_of_csInf_lt hnonempty hlt
+      exact hmono (le_of_lt hαv) hαmem
+    calc P θ {x : 𝓧 | nestedPValue R x ≤ t}
+        ≤ P θ (R v) := measure_mono hsub
+      _ ≤ ENNReal.ofReal v := hvalid v (by linarith) hv1' θ hθ
+  · push_neg at htlt
+    calc P θ {x : 𝓧 | nestedPValue R x ≤ t}
+        ≤ P θ Set.univ := measure_mono (Set.subset_univ _)
+      _ = 1 := measure_univ
+      _ ≤ ENNReal.ofReal t := ENNReal.one_le_ofReal.mpr htlt
 
 /-- **The p-value test has level `α`**: rejecting when the p-value is at most `α` is a
 level-`α` test, for any super-uniform p-value. -/
@@ -109,6 +160,11 @@ theorem isLevel_pValueTest (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasu
     -- USER-INPUT: the p-value is valid under every null distribution; classical
     (hsu : ∀ θ ∈ Θ₀, SuperUniform (nestedPValue R) (P θ)) :
     IsLevel P Θ₀ (Set.indicator {x : 𝓧 | nestedPValue R x ≤ α} (1 : 𝓧 → ℝ)) α := by
-  sorry
+  intro θ hθ
+  unfold power
+  rw [integral_indicator_one hmeas]
+  calc (P θ {x : 𝓧 | nestedPValue R x ≤ α}).toReal
+      ≤ (ENNReal.ofReal α).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top (hsu θ hθ α hα)
+    _ = α := ENNReal.toReal_ofReal hα
 
 end StatLean.HypothesisTesting
