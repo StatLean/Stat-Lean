@@ -1,0 +1,49 @@
+srun: job 33233320 queued and waiting for resources
+srun: job 33233320 has been allocated resources
+All work is committed and verified. Here is the final report.
+
+## Summary
+
+Worked the 5 files in `PointEstimation/Equivariance/`. Every build was run in the foreground and waited on.
+
+### Per-file `lake build` status & sorry counts
+
+| File | Build | Sorries before | Sorries after | Change |
+|---|---|---|---|---|
+| `NoGroup.lean` | ✅ pass | 1 | **0** | **CLOSED** |
+| `ScaleStructure.lean` | ✅ pass | 1 | **0** | **CLOSED** |
+| `LocationExamples.lean` | ✅ pass | 0 | 0 | already closed |
+| `LocationMRE.lean` | ✅ pass | 2 | 2 | LIFTED (documented) |
+| `ScaleMRE.lean` | ✅ pass | 1 | 1 | LIFTED (documented) |
+
+(The `ScaleMRE.lean:112` grep hit is a docstring reference, not a sorry — that lemma is already proven.)
+
+### CLOSED
+
+**1. `NoGroup.lean` — `powerSeriesFamily_invariant_affine_core`** (was the file's designated lifted debt).
+Route: matched point masses of `(P θ).map g = P θ'` at singletons (new helper `powerSeriesFamily_singleton`), passed to positive reals via `toReal`, took `Real.log` to get a relation **linear** in `log θ, log θ'`. The index-`k` minus index-`0` form, combined by `linear_combination e·(hLG k − hLG 0) − fk·(hLG 1 − hLG 0)`, **eliminates `log θ'`**, giving `(e·k − (gk−g0))·log θ = C` with `C` independent of `θ`; a two-point argument (`Real.log_injOn_pos`) forces the integer exponent to 0, so `g k = g 0 + k·e`. This is a genuine full close of the analytic core — no hypotheses added.
+
+`#print axioms` (headlines built on it):
+- `powerSeriesFamily_invariant_perm_eq_one` → `[propext, Classical.choice, Quot.sound]` ✅
+- `powerSeriesFamily_invariantPerms_eq_singleton` → `[propext, Classical.choice, Quot.sound]` ✅
+
+**2. `ScaleStructure.lean` — `isScaleInvariant_iff_factors_scaleZ_measurable`.**
+The `mpr` direction is **genuinely false** as originally stated (an off-null-set factorization cannot recover *global* `Measurable u`; the file's own comment gave the non-Borel counterexample). Closed with the **pre-authorized `(hu : Measurable u)` hypothesis** — the lemma is unused except in a docstring, and every real consumer supplies measurability. Reported as authorized.
+
+### LIFTED — retained named debts (annotated `-- RETAINED DEBT (pe/equivariance-close)`)
+
+All three hinge on the **same obstruction**: they need continuity of an ℝ≥0∞-valued conditional-risk integral, but the frozen `ForMathlib/MeasurableArgmin.exists_measurable_argmin` brick demands *full* continuity (its own docstring notes the LSC weakening is not done), and for an unbounded convex loss the objective genuinely jumps to `∞` at its finiteness boundary. No side hypothesis closes them without laundering the analytic core, so the pre-authorized hypothesis additions do **not** apply cleanly.
+
+- `LocationMRE.exists_measurable_condMinimizer_convex` (174) — feeds `exists_isLocMRE_of_convex`.
+- `LocationMRE.exists_isLocMRE_of_bounded_loss` (273) — needs convolution/DCT continuity of `c ↦ ∫ ρ(x₀−c) f`; a bounded merely-measurable objective on ℝ need not attain its inf.
+- `ScaleMRE.exists_isScaleMRE_of_convex` (307) — tainted by the location-convex twin (same brick).
+
+### False statements found
+Only one: the **`mpr` of `isScaleInvariant_iff_factors_scaleZ_measurable`** (false without measurability; counterexample = `w = 0`, `u = 0` off the null set and `indicator A` for non-Borel `A ⊆ {xₙ=0}` on it). Resolved via the pre-authorized measurability hypothesis rather than weakening.
+
+### Commits
+- `aa0db77` ScaleStructure close
+- `b88c259` NoGroup core close (0-sorry, axiom-clean)
+- `dc6c58d` explicit RETAINED-DEBT annotations on the 3 lifts
+
+Net: **2 files newly closed to 0-sorry** (one of them the NoGroup analytic core), the whole chapter compiles green, and the 3 remaining debts are precisely documented.
