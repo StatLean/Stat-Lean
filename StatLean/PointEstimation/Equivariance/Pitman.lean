@@ -1,6 +1,9 @@
 import StatLean.PointEstimation.Equivariance.LocationMRE
+import StatLean.PointEstimation.ForMathlib.CondDistribDensity
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Group.Measure
 
 /-!
 # The Pitman estimator of location
@@ -54,6 +57,110 @@ namespace StatLean.PointEstimation
 section Pitman
 
 variable {m n : ℕ}
+
+/-! ### The unit-Jacobian shear `x ↦ (diffs x, xₙ)`
+
+The change of variables underlying the identification of the Pitman ratio with the
+conditional mean. We realize it as `swap ∘ h ∘ (split off last coordinate)`, where the
+only non-trivial factor `h (a, w) = (a, w − a·𝟙)` is measure preserving by translation
+invariance of Lebesgue measure — no determinant computation is needed. -/
+
+/-- The shear `x ↦ (diffs x, xₙ)`. -/
+private def pShear (x : Fin (m + 1) → ℝ) : (Fin m → ℝ) × ℝ :=
+  (diffs x, x (Fin.last m))
+
+/-- Its inverse `(y, s) ↦ snoc y 0 + s·𝟙`. -/
+private noncomputable def pUnshear (p : (Fin m → ℝ) × ℝ) : Fin (m + 1) → ℝ :=
+  Fin.snoc p.1 (0 : ℝ) + p.2 • (1 : Fin (m + 1) → ℝ)
+
+private lemma pShear_pUnshear (p : (Fin m → ℝ) × ℝ) : pShear (pUnshear p) = p := by
+  obtain ⟨y, s⟩ := p
+  have hlast : (pUnshear (y, s)) (Fin.last m) = s := by
+    simp only [pUnshear, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one,
+      Fin.snoc_last, zero_add]
+  refine Prod.ext ?_ hlast
+  funext i
+  show diffs (pUnshear (y, s)) i = y i
+  simp only [diffs, pUnshear, Pi.add_apply, Pi.smul_apply, Pi.one_apply,
+    smul_eq_mul, mul_one, Fin.snoc_castSucc, Fin.snoc_last]
+  ring
+
+private lemma pUnshear_pShear (x : Fin (m + 1) → ℝ) : pUnshear (pShear x) = x := by
+  funext j
+  induction j using Fin.lastCases with
+  | last =>
+      simp only [pUnshear, pShear, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul,
+        mul_one, Fin.snoc_last, zero_add]
+  | cast i =>
+      simp only [pUnshear, pShear, diffs, Pi.add_apply, Pi.smul_apply, Pi.one_apply,
+        smul_eq_mul, mul_one, Fin.snoc_castSucc]
+      ring
+
+private lemma measurable_pShear :
+    Measurable (pShear : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) :=
+  measurable_diffs.prodMk (measurable_pi_apply (Fin.last m))
+
+private lemma measurable_pUnshear :
+    Measurable (pUnshear : (Fin m → ℝ) × ℝ → Fin (m + 1) → ℝ) := by
+  apply measurable_pi_lambda
+  intro j
+  induction j using Fin.lastCases with
+  | last =>
+      simp only [pUnshear, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one,
+        Fin.snoc_last, zero_add]
+      exact measurable_snd
+  | cast i =>
+      simp only [pUnshear, Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one,
+        Fin.snoc_castSucc]
+      exact (measurable_pi_apply i |>.comp measurable_fst).add measurable_snd
+
+/-- The shear preserves Lebesgue measure (unit Jacobian). -/
+private lemma measurePreserving_pShear :
+    MeasurePreserving (pShear : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) volume volume := by
+  -- split off the last coordinate: `x ↦ (xₙ, fun j => x j.castSucc)`
+  have hs : MeasurePreserving
+      (MeasurableEquiv.piFinSuccAbove (fun _ => ℝ) (Fin.last m)) volume volume :=
+    volume_preserving_piFinSuccAbove (fun _ => ℝ) (Fin.last m)
+  -- the fiberwise translation `h (a, w) = (a, w − a·𝟙)`
+  set h : ℝ × (Fin m → ℝ) → ℝ × (Fin m → ℝ) :=
+    fun p => (p.1, p.2 - p.1 • (1 : Fin m → ℝ)) with hh_def
+  have hh_meas : Measurable h :=
+    measurable_fst.prodMk (measurable_snd.sub (measurable_fst.smul_const _))
+  have hh : MeasurePreserving h volume volume := by
+    refine ⟨hh_meas, ?_⟩
+    rw [Measure.volume_eq_prod ℝ (Fin m → ℝ)]
+    refine Measure.ext_of_lintegral _ fun φ hφ => ?_
+    rw [lintegral_map hφ hh_meas,
+        lintegral_prod (fun p => φ (h p)) (hφ.comp hh_meas).aemeasurable,
+        lintegral_prod φ hφ.aemeasurable]
+    refine lintegral_congr fun a => ?_
+    have key := lintegral_add_right_eq_self (μ := (volume : Measure (Fin m → ℝ)))
+      (fun w => φ (a, w)) (-(a • (1 : Fin m → ℝ)))
+    simp only [hh_def, sub_eq_add_neg]
+    exact key
+  -- swap `(a, w) ↦ (w, a)`
+  have hswap : MeasurePreserving
+      (Prod.swap : ℝ × (Fin m → ℝ) → (Fin m → ℝ) × ℝ) volume volume := by
+    rw [Measure.volume_eq_prod ℝ (Fin m → ℝ), Measure.volume_eq_prod (Fin m → ℝ) ℝ]
+    exact Measure.measurePreserving_swap
+  have hcomp := hswap.comp (hh.comp hs)
+  -- the split map sends `x` to `(xₙ, fun j => x j.castSucc)`
+  have hsx : ∀ x : Fin (m + 1) → ℝ,
+      (MeasurableEquiv.piFinSuccAbove (fun _ => ℝ) (Fin.last m)) x
+        = (x (Fin.last m), fun j : Fin m => x j.castSucc) := by
+    intro x
+    refine Prod.ext rfl ?_
+    funext j
+    show x ((Fin.last m).succAbove j) = x j.castSucc
+    rw [Fin.succAbove_last]
+  have hfun : (Prod.swap ∘ h ∘ (MeasurableEquiv.piFinSuccAbove (fun _ => ℝ) (Fin.last m)))
+      = (pShear : (Fin (m + 1) → ℝ) → (Fin m → ℝ) × ℝ) := by
+    funext x
+    simp only [Function.comp_apply, hsx x, hh_def, Prod.swap_prod_mk]
+    refine Prod.ext ?_ rfl
+    funext i
+    simp only [pShear, diffs, Pi.sub_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
+  rwa [hfun] at hcomp
 
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
