@@ -67,14 +67,17 @@ theorem randomizedTestKernel_apply
     (φ : 𝓧 → ℝ) (hφ : Measurable φ) (x : 𝓧) :
     randomizedTestKernel φ hφ x
       = ENNReal.ofReal (φ x) • Measure.dirac 1 + ENNReal.ofReal (1 - φ x) • Measure.dirac 0 := by
-  sorry
+  unfold randomizedTestKernel; rw [Kernel.coe_mk]
 
 /-- The **rejection probability**: the kernel gives mass `φ(x)` to the reject action `1`. -/
 theorem randomizedTestKernel_apply_one
     -- LEAN-ONLY: measurability of the critical function; needed to form the kernel at all
     (φ : 𝓧 → ℝ) (hφ : Measurable φ) (x : 𝓧) :
     randomizedTestKernel φ hφ x {1} = ENNReal.ofReal (φ x) := by
-  sorry
+  rw [randomizedTestKernel_apply, Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
+    smul_eq_mul, smul_eq_mul, Measure.dirac_apply' _ (measurableSet_singleton (1 : Fin 2)),
+    Measure.dirac_apply' _ (measurableSet_singleton (1 : Fin 2))]
+  simp
 
 /-- The **acceptance probability**: the kernel gives mass `1 − φ(x)` to the accept action
 `0`. -/
@@ -82,7 +85,10 @@ theorem randomizedTestKernel_apply_zero
     -- LEAN-ONLY: measurability of the critical function; needed to form the kernel at all
     (φ : 𝓧 → ℝ) (hφ : Measurable φ) (x : 𝓧) :
     randomizedTestKernel φ hφ x {0} = ENNReal.ofReal (1 - φ x) := by
-  sorry
+  rw [randomizedTestKernel_apply, Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
+    smul_eq_mul, smul_eq_mul, Measure.dirac_apply' _ (measurableSet_singleton (0 : Fin 2)),
+    Measure.dirac_apply' _ (measurableSet_singleton (0 : Fin 2))]
+  simp
 
 /-- A `[0,1]`-valued critical function yields a **Markov kernel**. -/
 theorem isMarkovKernel_randomizedTestKernel
@@ -91,7 +97,11 @@ theorem isMarkovKernel_randomizedTestKernel
     -- USER-INPUT: the critical function is `[0,1]`-valued; Neyman–Pearson (1933)
     (h0 : ∀ x, 0 ≤ φ x) (h1 : ∀ x, φ x ≤ 1) :
     IsMarkovKernel (randomizedTestKernel φ hφ) := by
-  sorry
+  refine ⟨fun x => ⟨?_⟩⟩
+  rw [randomizedTestKernel_apply, Measure.add_apply, Measure.smul_apply, Measure.smul_apply,
+    smul_eq_mul, smul_eq_mul, measure_univ, measure_univ, mul_one, mul_one,
+    ← ENNReal.ofReal_add (h0 x) (by linarith [h1 x]),
+    show φ x + (1 - φ x) = 1 by ring, ENNReal.ofReal_one]
 
 /-- Integration against the randomized-test kernel is the two-point average
 `φ(x)·f(1) + (1 − φ(x))·f(0)`. No measurability of `f` is needed (`Fin 2` is discrete). -/
@@ -100,6 +110,7 @@ theorem lintegral_randomizedTestKernel
     (φ : 𝓧 → ℝ) (hφ : Measurable φ) (x : 𝓧) (f : Fin 2 → ℝ≥0∞) :
     ∫⁻ j, f j ∂(randomizedTestKernel φ hφ x)
       = ENNReal.ofReal (φ x) * f 1 + ENNReal.ofReal (1 - φ x) * f 0 := by
-  sorry
+  rw [randomizedTestKernel_apply, lintegral_add_measure, lintegral_smul_measure,
+    lintegral_smul_measure, lintegral_dirac, lintegral_dirac, smul_eq_mul, smul_eq_mul]
 
 end StatLean.HypothesisTesting
