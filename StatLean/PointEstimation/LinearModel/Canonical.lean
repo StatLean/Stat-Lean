@@ -326,6 +326,120 @@ private lemma canonicalNormal_eq_P (p : CanonicalParam s) :
     (ENNReal.mul_left_inj hZne hZlt).1 (hmassC.trans hmassP.symm)
   rw [hcanon, hP, hconst]
 
+/-- `canonicalEta p` is a natural parameter of the exponential family (Gaussian
+integrability). -/
+private lemma canonicalEta_mem_natSet (p : CanonicalParam s) :
+    canonicalEta p ∈ (canonicalExpFamily s m).natSet := by
+  set φ : (Fin (s + m) → ℝ) → ℝ≥0∞ :=
+    fun y => ENNReal.ofReal (Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ) with hφ
+  have hφmeas : Measurable φ := (measurable_expInner p).ennreal_ofReal
+  have hσ : p.2.1 ≠ 0 := ne_of_gt p.2.2
+  have hcanon : canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1
+      = volume.withDensity (fun y => ENNReal.ofReal (canonicalC (m := m) p) * φ y) := by
+    rw [canonicalNormal_eq_withDensity _ hσ]
+    exact withDensity_congr_ae (Filter.Eventually.of_forall fun y => canonical_density_eq p y)
+  haveI : IsProbabilityMeasure (canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1) := by
+    unfold canonicalNormal; infer_instance
+  have hmassC : ENNReal.ofReal (canonicalC (m := m) p)
+      * ∫⁻ y, φ y ∂(volume : Measure (Fin (s + m) → ℝ)) = 1 := by
+    have := measure_univ (μ := canonicalNormal (Fin.append p.1 (0 : Fin m → ℝ)) p.2.1)
+    rw [hcanon, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ,
+      lintegral_const_mul _ hφmeas] at this
+    exact this
+  have hZlt : (∫⁻ y, φ y ∂(volume : Measure (Fin (s + m) → ℝ))) ≠ ∞ := by
+    rintro h
+    rw [h, ENNReal.mul_top (ENNReal.ofReal_pos.2 (canonicalC_pos (m := m) p)).ne'] at hmassC
+    exact ENNReal.top_ne_one hmassC
+  show Integrable
+    (fun y => Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ)
+    (canonicalExpFamily s m).base
+  rw [canonicalExpFamily_base]
+  refine ⟨(measurable_expInner p).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall fun y => (Real.exp_pos _).le)]
+  exact lt_of_le_of_ne le_top hZlt
+
+/-- The **measurable shear** carrying the total-sum-of-squares statistic `(a, total)` to the
+frozen residual statistic `(a, total − ∑ aᵢ²)`. -/
+private def canonicalShear (v : EuclideanSpace ℝ (Fin (s + 1))) : (Fin s → ℝ) × ℝ :=
+  (fun i => v (Fin.castSucc i), v (Fin.last s) - ∑ i, v (Fin.castSucc i) ^ 2)
+
+private lemma measurable_canonicalShear : Measurable (canonicalShear (s := s)) := by
+  have hcoord : ∀ k : Fin (s + 1),
+      Measurable (fun v : EuclideanSpace ℝ (Fin (s + 1)) => v k) :=
+    fun k => (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 (Fin (s + 1) → ℝ))
+  refine Measurable.prodMk (measurable_pi_lambda _ fun i => hcoord (Fin.castSucc i)) ?_
+  exact (hcoord (Fin.last s)).sub
+    (Finset.measurable_sum _ fun i _ => (hcoord (Fin.castSucc i)).pow_const 2)
+
+/-- `canonicalStat ∘ toLp = canonicalShear ∘ T̃`: the frozen statistic is the shear of the
+exponential-family statistic. -/
+private lemma canonicalStat_toLp_eq_shear (y : Fin (s + m) → ℝ) :
+    canonicalStat ((WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) y)
+      = canonicalShear ((canonicalExpFamily s m).stat y) := by
+  refine Prod.ext ?_ ?_
+  · funext i
+    simp only [canonicalStat, canonicalHead, canonicalShear, canonicalExpFamily_stat,
+      PiLp.toLp_apply, Fin.snoc_castSucc]
+  · simp only [canonicalStat, canonicalRSS, canonicalShear, canonicalExpFamily_stat,
+      PiLp.toLp_apply, Fin.snoc_castSucc, Fin.snoc_last]
+    rw [Fin.sum_univ_add]; ring
+
+/-- **Completeness transfers** along a measurable reparametrization of the sample and a
+surjective reindexing of the parameter. -/
+private lemma isCompleteFamily_map_comp {α β : Type*} {V' W' : Type*}
+    [MeasurableSpace V'] [MeasurableSpace W']
+    {Q : α → Measure V'} (hQ : IsCompleteFamily Q)
+    {ρ : β → α} (hρ : Function.Surjective ρ)
+    {ψ : V' → W'} (hψ : Measurable ψ) :
+    IsCompleteFamily (fun b => (Q (ρ b)).map ψ) := by
+  intro f hf hint hmean
+  have hInt : ∀ a, Integrable (fun v => f (ψ v)) (Q a) := by
+    intro a; obtain ⟨b, rfl⟩ := hρ a
+    exact (integrable_map_measure hf.aestronglyMeasurable hψ.aemeasurable).1 (hint b)
+  have hMean : ∀ a, ∫ v, f (ψ v) ∂(Q a) = 0 := by
+    intro a; obtain ⟨b, rfl⟩ := hρ a
+    rw [← integral_map hψ.aemeasurable hf.aestronglyMeasurable]; exact hmean b
+  have hkey := hQ (fun v => f (ψ v)) (hf.comp hψ) hInt hMean
+  intro b
+  exact (ae_map_iff (μ := Q (ρ b)) hψ.aemeasurable
+    (p := fun w => f w = (0 : W' → ℝ) w) (hf (measurableSet_singleton 0))).2 (hkey (ρ b))
+
+/-- The range of `canonicalEta` (the open half-space `{w : w_last < 0}`) has nonempty
+interior. -/
+private lemma interior_range_canonicalEta_nonempty :
+    (interior (Set.range (canonicalEta (s := s)))).Nonempty := by
+  set S : Set (EuclideanSpace ℝ (Fin (s + 1))) := {w | w (Fin.last s) < 0} with hSdef
+  have hcont : Continuous (fun w : EuclideanSpace ℝ (Fin (s + 1)) => w (Fin.last s)) :=
+    (continuous_apply (Fin.last s)).comp (PiLp.continuous_ofLp 2 (fun _ : Fin (s + 1) => ℝ))
+  have hSopen : IsOpen S := isOpen_lt hcont continuous_const
+  have hSsub : S ⊆ Set.range (canonicalEta (s := s)) := by
+    intro w hw
+    have hw0 : w (Fin.last s) < 0 := hw
+    have hwne : w (Fin.last s) ≠ 0 := ne_of_lt hw0
+    set vr : ℝ := -1 / (2 * w (Fin.last s)) with hvrdef
+    have h2w : 2 * w (Fin.last s) < 0 := by linarith
+    have hvr : 0 < vr := div_pos_of_neg_of_neg (by norm_num) h2w
+    have hcoe : (Real.toNNReal vr : ℝ) = vr := Real.coe_toNNReal vr hvr.le
+    have hlast : -(1 / (2 * vr)) = w (Fin.last s) := by rw [hvrdef]; field_simp
+    refine ⟨(fun i => w (Fin.castSucc i) * vr, ⟨vr.toNNReal, Real.toNNReal_pos.2 hvr⟩), ?_⟩
+    rw [canonicalEta]
+    simp only [hcoe]
+    have hfun : (fun i => w (Fin.castSucc i) * vr / vr) = fun i => w (Fin.castSucc i) := by
+      funext i; rw [mul_div_assoc, div_self (ne_of_gt hvr), mul_one]
+    rw [hfun, hlast]
+    have hsnoc : Fin.snoc (fun i => w (Fin.castSucc i)) (w (Fin.last s)) = WithLp.ofLp w :=
+      Fin.snoc_init_self (WithLp.ofLp w)
+    rw [hsnoc, WithLp.toLp_ofLp]
+  have hSne : S.Nonempty :=
+    ⟨canonicalEta (s := s) (fun _ => 0, ⟨1, one_pos⟩), by
+      show canonicalEta (fun _ => 0, ⟨1, one_pos⟩) (Fin.last s) < 0
+      rw [canonicalEta]
+      simp only [PiLp.toLp_apply, Fin.snoc_last, NNReal.coe_one]
+      norm_num⟩
+  have hsub : S ⊆ interior (Set.range (canonicalEta (s := s))) := by
+    rw [← hSopen.interior_eq]; exact interior_mono hSsub
+  exact hSne.mono hsub
+
 /-! ## Completeness and sufficiency -/
 
 /-- **Sufficiency of the canonical statistic**: the conditional law of the observation
