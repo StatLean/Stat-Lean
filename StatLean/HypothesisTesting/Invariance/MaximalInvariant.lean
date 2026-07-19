@@ -327,8 +327,8 @@ end Stepwise
 
 section Shrinkage
 
-variable {G Θ 𝓧 𝓘 𝓥 : Type*} [Group G] [MeasurableSpace 𝓧] [MeasurableSpace 𝓘]
-  [MulAction G 𝓧] [MulAction G Θ]
+variable {G Θ 𝓧 𝓘 𝓥 : Type*} [Group G] [MeasurableSpace G] [MeasurableSpace 𝓧]
+  [MeasurableSpace 𝓘] [MulAction G 𝓧] [MulAction G Θ]
 
 open StatLean.PointEstimation (IsInvariantModel)
 
@@ -361,7 +361,7 @@ theorem map_maximalInvariant_eq_of_orbit [MeasurableSMul G 𝓧] {P : Θ → Mea
   have hgmeas : Measurable (fun x : 𝓧 => g • x) := measurable_const_smul g
   rw [hg, ← hP g θ₁, Measure.map_map hMmeas hgmeas]
   congr 1
-  exact funext fun x => hMinv g x
+  exact funext fun x => (hMinv g x).symm
 
 end Shrinkage
 
