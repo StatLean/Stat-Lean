@@ -1,0 +1,51 @@
+srun: job 33125174 queued and waiting for resources
+srun: job 33125174 has been allocated resources
+All six modules build green and artifacts are cleaned up. Here is my final report.
+
+## Report — Randomization asymptotics pass
+
+### Build status (all green, `lake build`, toolchain v4.29.1)
+Full dependency build of the six target modules (via the three leaves `MultivariateQuadratic`, `Studentized`, `SlutskyRandomization`, which transitively cover `Asymptotics`, `SignChange`, `TwoSamplePermutation`) — **`Build completed successfully (3138 jobs)`, 0 errors**. Only `declaration uses 'sorry'` warnings remain.
+
+### Per-file sorry counts (start → now)
+| File | start | now | Δ |
+|---|---|---|---|
+| Asymptotics | 3 | 3 | — (+ 3 new axiom‑clean helper lemmas) |
+| SignChange | 4 | 4 | — |
+| SlutskyRandomization | 1 | 1 | — |
+| TwoSamplePermutation | 3 | 3 | — |
+| **Studentized** | 4 | **3** | **−1** (`studentizedTwoSample_eq_welch` closed) |
+| MultivariateQuadratic | 4 | 4 | — |
+
+### `#print axioms`
+- `randDist_tendstoInProb_cdf` → `[propext, sorryAx, Classical.choice, Quot.sound]` (still `sorry` — see below).
+- `integral_randDist_eq_real_randPairLaw` → `[propext, Classical.choice, Quot.sound]` (**axiom‑clean**).
+- `integral_randDist_sq_eq_real_randPairLaw` and the portmanteau bridge — likewise axiom‑clean.
+
+### What I closed / landed
+1. **`studentizedTwoSample_eq_welch`** (Studentized) — closed, axiom‑clean. Pure algebra: `√m·D/√(S²_Y+(m/n)S²_Z) = D/√(S²_Y/m+S²_Z/n)` via `Real.sqrt_mul` + `mul_div_mul_left`.
+2. **Reusable axiom‑clean machinery in Asymptotics** (new lemmas, not sorries):
+   - `tendsto_real_of_weakConverges_of_null_frontier` — portmanteau `Measure.real` bridge.
+   - `integral_randDist_eq_real_randPairLaw` — `E[R̂(·,t)] = randPairLaw(Iic t ×ˢ univ)`.
+   - `integral_randDist_sq_eq_real_randPairLaw` — `E[R̂(·,t)²] = randPairLaw(Iic t ×ˢ Iic t)`.
+
+### ⚠️ STOP-and-report: the three `Asymptotics` theorems are **unprovable as stated** (missing measurability)
+`randDist_tendstoInProb_cdf`, `randQuantile_tendstoInProb`, and `weakConverges_randPairLaw_of_randDist_tendstoInProb` carry **no measurability hypothesis on `T` or the action**, but the proof provably needs one. `Measure.map f μ = 0` when `f` is not `AEMeasurable`, so:
+- the pointwise `randDist` integrates `if T(g•x)≤t …` and needs **per‑`g`** measurability of `x ↦ T(g•x)`;
+- the measure `randPairLaw` is `(card²)⁻¹ ∑ᵍ∑ᵍ' P.map(x↦(T(g•x),T(g'•x)))` and needs **per‑pair** measurability.
+
+These junk conventions differ, so the link fails without measurability. I proved this is exactly the missing ingredient: the first‑moment identity `integral_randDist_eq_real_randPairLaw` compiles **iff** given `(hT : Measurable T)` and `(hsmul : ∀ g, Measurable (g • ·))` — the very hypotheses the closed `randTest_exact_level` already threads.
+
+**Fix:** add `(hT : ∀ n, Measurable (T n))` + `(hsmul : ∀ n g, Measurable (fun x => g • x))` (or `[∀ n, MeasurableSMul (G n) (𝓧 n)]` + `hT`) to those three signatures. With the two moment identities + portmanteau bridge already landed, the remaining `_of_measurable` proof is routine (Chebyshev via `mul_meas_ge_le_integral_of_nonneg`, atom‑null `R{t}=0` from continuity via `measure_cdf`/`measure_singleton`/`continuousWithinAt_Iio_iff_leftLim_eq`, frontier via `frontier_prod_univ_eq`/`frontier_Iic`).
+
+This single API gap **also blocks every "consequence" theorem downstream** — `randDist_signChange_tendstoInProb`, `randDist_twoSample_tendstoInProb`, `randDist_studentized_tendstoInProb`, `randDist_affine_tendstoInProb` (Slutsky), and the two `randQuantile_*` — because each has a measurable statistic available (from `hψmeas`) but no slot to pass it into the general theorem.
+
+### Remaining open sorries (provable, but each session‑scale)
+The **producer** theorems don't hit the measurability gap and are self‑contained, but each is a full CLT/distributional formalization:
+- `weakConverges_randPairLaw_signChange`, `_twoSample`, `_signChange_sum`, `weakConverges_twoSampleMeanDiff`, and the two quadratic‑form producers — all require representing the `(card)⁻²∑∑` randPairLaw mixture as a law on *data × two group elements*, then Cramér–Wold (repo `cramerWold_weakConverges`/`_euclidean`) + the weighted‑iid CLT / `lindeberg_clt_of_bounded`.
+- `map_quadraticForm_multivariateGaussian_eq_chiSquared` — matrix whitening `S = AAᵀ`, `N(0,S) = N(0,I).map(A·)`, `zᵀS⁻¹z = ∑wᵢ²`, then `map_sum_sq_eq_chiSquared`.
+
+I did not start these — partial work would leave them at `sorry` anyway, and the highest‑leverage finding (the measurability gap, which unblocks ~10 of the 18 remaining sorries at once) was worth landing cleanly with proof.
+
+### Note
+`ForMathlib.LindebergCLT` still has 2 sorries (`weighted_iid_clt`, `triangular_wlln_of_L1`) — usable as black boxes but they mean downstream producers won't be axiom‑clean until those close (outside the editable set). Also: I accidentally `git add -A`'d two stray session artifacts (`.claude-session.log`, `.fanout-prompt.md`) early; corrected with a follow‑up `git rm --cached` commit — they're untracked again.
