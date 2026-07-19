@@ -2,6 +2,8 @@ import StatLean.PointEstimation.InformationInequality.CramerRao
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Probability.Moments.Covariance
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 
 /-!
 # The multiparameter information inequality
@@ -68,6 +70,39 @@ open AsymptoticStatistics (ParametricFamily IsPDFOf)
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- Cauchy–Schwarz for the Bochner integral against a probability measure:
+`(∫ X·Y)² ≤ (∫ X²)(∫ Y²)`, via nonnegativity of `∫ (X - tY)²` (a quadratic in `t`). -/
+private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X Y : 𝓧 → ℝ}
+    (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+    (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
+  have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
+  have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hY.mul' hX)
+  have hquad : ∀ t : ℝ,
+      0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
+    intro t
+    have hnn : 0 ≤ ∫ x, (X x - t * Y x) ^ 2 ∂P := integral_nonneg fun x => sq_nonneg _
+    have hfun : (fun x => (X x - t * Y x) ^ 2)
+        = fun x => (X x ^ 2 - (2 * t) * (X x * Y x)) + t ^ 2 * Y x ^ 2 := by funext x; ring
+    rw [hfun,
+      integral_add (show Integrable (fun x => X x ^ 2 - (2 * t) * (X x * Y x)) P from
+          iX2.sub (iXY.const_mul (2 * t)))
+        (show Integrable (fun x => t ^ 2 * Y x ^ 2) P from iY2.const_mul (t ^ 2)),
+      integral_sub iX2 (show Integrable (fun x => (2 * t) * (X x * Y x)) P from
+          iXY.const_mul (2 * t)),
+      integral_const_mul, integral_const_mul] at hnn
+    nlinarith [hnn]
+  have hdisc := discrim_le_zero hquad
+  rw [discrim] at hdisc
+  nlinarith [hdisc]
+
+/-- Cauchy–Schwarz for the covariance: `cov(X, Y)² ≤ var(X)·var(Y)`. -/
+private lemma sq_covariance_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X Y : 𝓧 → ℝ}
+    (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+    covariance X Y P ^ 2 ≤ variance X P * variance Y P := by
+  rw [covariance, variance_eq_integral hX.aemeasurable, variance_eq_integral hY.aemeasurable]
+  exact sq_integral_mul_le (hX.sub (memLp_const _)) (hY.sub (memLp_const _))
+
 /-- **The covariance inequality in quadratic form.** For square-integrable `δ` and
 auxiliary functions `ψ_1, …, ψ_r` whose covariance matrix `C` is positive definite,
 `γᵀ C⁻¹ γ ≤ var(δ)`, where `γ_i = cov(δ, ψ_i)`.
@@ -93,7 +128,51 @@ theorem covariance_matrix_inequality {r : ℕ} (P : Measure 𝓧)
     -- functions
     (hγ : ∀ i, γ i = covariance δ (ψ i) P) :
     γ ⬝ᵥ (C⁻¹ *ᵥ γ) ≤ variance δ P := by
-  sorry
+  classical
+  have hdot : ∀ u v : Fin r → ℝ, u ⬝ᵥ v = ∑ i, u i * v i := fun _ _ => rfl
+  set a : Fin r → ℝ := C⁻¹ *ᵥ γ with ha
+  set W : 𝓧 → ℝ := fun x => ∑ i, a i * ψ i x with hW
+  set q : ℝ := γ ⬝ᵥ (C⁻¹ *ᵥ γ) with hq
+  -- `W ∈ L²`
+  have hWmem : MemLp W 2 P := by
+    rw [hW]; exact memLp_finset_sum _ (fun i _ => (hψ i).const_mul (a i))
+  -- `C⁻¹` is positive definite, so `q ≥ 0` and `C` is nonsingular
+  have hCinv : (C⁻¹).PosDef := hCpos.inv
+  have hqnn : 0 ≤ q := by rw [hq]; exact hCinv.posSemidef.dotProduct_mulVec_nonneg γ
+  have hunit : IsUnit C.det := (Matrix.isUnit_iff_isUnit_det C).mp hCpos.isUnit
+  -- `C *ᵥ a = γ`
+  have hCa : C *ᵥ a = γ := by
+    rw [ha, Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv C hunit, Matrix.one_mulVec]
+  -- `a ⬝ᵥ γ = q`
+  have haγ : a ⬝ᵥ γ = q := by rw [hq, ha, dotProduct_comm]
+  -- covariance of `δ` with `W`
+  have hcovW : covariance δ W P = q := by
+    nth_rewrite 1 [hW]
+    rw [covariance_fun_sum_right (fun i => (hψ i).const_mul (a i)) hδ]
+    rw [show (∑ i, covariance δ (fun x => a i * ψ i x) P) = ∑ i, a i * γ i from
+      Finset.sum_congr rfl fun i _ => by rw [covariance_const_mul_right, ← hγ i]]
+    rw [← haγ, hdot]
+  -- variance of `W`
+  have hvarW : variance W P = q := by
+    rw [← covariance_self hWmem.aemeasurable]
+    nth_rewrite 1 [hW]
+    rw [covariance_fun_sum_left (fun i => (hψ i).const_mul (a i)) hWmem]
+    have hterm : ∀ i, covariance (fun x => a i * ψ i x) W P = a i * (C *ᵥ a) i := by
+      intro i
+      have hmv : (C *ᵥ a) i = ∑ j, C i j * a j := rfl
+      rw [covariance_const_mul_left, hW,
+        covariance_fun_sum_right (fun j => (hψ j).const_mul (a j)) (hψ i), hmv,
+        show (∑ j, covariance (ψ i) (fun x => a j * ψ j x) P) = ∑ j, C i j * a j from
+          Finset.sum_congr rfl fun j _ => by rw [covariance_const_mul_right, ← hC i j, mul_comm]]
+    simp_rw [hterm, hCa]
+    rw [← haγ, hdot]
+  -- Cauchy–Schwarz and conclude
+  have hCS : covariance δ W P ^ 2 ≤ variance δ P * variance W P := sq_covariance_le hδ hWmem
+  rw [hcovW, hvarW] at hCS
+  rcases eq_or_lt_of_le hqnn with h0 | hpos
+  · rw [← h0]; exact variance_nonneg δ P
+  · have : q * q ≤ variance δ P * q := by rw [← sq]; exact hCS
+    exact le_of_mul_le_mul_right this hpos
 
 /-- **The multiparameter information inequality.** For a dominated family on an
 `s`-dimensional parameter with a common support, mean-zero coordinate scores and a positive
