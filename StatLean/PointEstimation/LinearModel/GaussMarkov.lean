@@ -100,6 +100,27 @@ private lemma variance_inner_linear (a : EuclideanSpace ℝ (Fin n)) {σ2 : ℝ}
         (fun h => absurd (Finset.mem_univ i) h)]
   rw [if_pos rfl]; ring
 
+/-- A linear statistic `⟪a, ·⟫` is square-integrable under the moment assumptions. -/
+private lemma memLp_inner_linear (a : EuclideanSpace ℝ (Fin n))
+    {P : Measure (EuclideanSpace ℝ (Fin n))} [IsProbabilityMeasure P]
+    (hL2 : ∀ i, MemLp (fun y => y i) 2 P) :
+    MemLp (fun y => ⟪a, y⟫_ℝ) 2 P := by
+  have hbody : (fun y : EuclideanSpace ℝ (Fin n) => ⟪a, y⟫_ℝ)
+      = ∑ i, (fun y => a i * y i) := by
+    funext y; rw [real_inner_euclidean, Finset.sum_apply]
+  rw [hbody]
+  exact memLp_finset_sum' _ (fun i _ => (hL2 i).const_mul (a i))
+
+/-- The mean of a linear statistic `⟪a, ·⟫` is `⟪a, ξ⟫`. -/
+private lemma integral_inner_linear (a : EuclideanSpace ℝ (Fin n))
+    {ξ : EuclideanSpace ℝ (Fin n)} {P : Measure (EuclideanSpace ℝ (Fin n))}
+    [IsProbabilityMeasure P] (hmean : ∀ i, ∫ y, y i ∂P = ξ i)
+    (hint : ∀ i, Integrable (fun y => y i) P) :
+    ∫ y, ⟪a, y⟫_ℝ ∂P = ⟪a, ξ⟫_ℝ := by
+  simp_rw [real_inner_euclidean a]
+  rw [integral_finset_sum Finset.univ (fun i _ => (hint i).const_mul (a i))]
+  simp_rw [integral_const_mul, hmean]
+
 /-- The least-squares functional rewritten as the linear statistic `⟪P_W γ, ·⟫`. -/
 private lemma variance_lse_eq (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (γ : EuclideanSpace ℝ (Fin n))
@@ -241,6 +262,21 @@ theorem isMRE_lse_among_linear_equivariant {W : Submodule ℝ (EuclideanSpace �
     -- mean subspace
     (hequiv : IsSubspaceEquivariant W γ (fun y => ⟪c, y⟫_ℝ)) :
     ∫ y, (⟪γ, lse W y⟫_ℝ - ⟪γ, ξ⟫_ℝ) ^ 2 ∂P ≤ ∫ y, (⟪c, y⟫_ℝ - ⟪γ, ξ⟫_ℝ) ^ 2 ∂P := by
-  sorry
+  have hc : ∀ ζ ∈ W, ⟪c, ζ⟫_ℝ = ⟪γ, ζ⟫_ℝ := (isSubspaceEquivariant_inner_iff W γ c).mp hequiv
+  have hint : ∀ i, Integrable (fun y => y i) P := fun i => (hL2 i).integrable one_le_two
+  -- both estimators are unbiased for `⟪γ, ξ⟫`, so their MSE equals their variance
+  have hElse : ∫ y, ⟪γ, lse W y⟫_ℝ ∂P = ⟪γ, ξ⟫_ℝ := integral_inner_lse hξ hmean hint
+  have hEc : ∫ y, ⟪c, y⟫_ℝ ∂P = ⟪γ, ξ⟫_ℝ :=
+    (integral_inner_linear c hmean hint).trans (hc ξ hξ)
+  have hlseEq : (fun y => ⟪γ, lse W y⟫_ℝ) = fun y => ⟪W.starProjection γ, y⟫_ℝ := by
+    funext y; exact inner_lse_eq_inner_starProjection W γ y
+  have hml : MemLp (fun y => ⟪γ, lse W y⟫_ℝ) 2 P := by
+    rw [hlseEq]; exact memLp_inner_linear (W.starProjection γ) hL2
+  have hmc : MemLp (fun y => ⟪c, y⟫_ℝ) 2 P := memLp_inner_linear c hL2
+  have key : ∀ δ : EuclideanSpace ℝ (Fin n) → ℝ, AEMeasurable δ P →
+      (∫ y, δ y ∂P = ⟪γ, ξ⟫_ℝ) → ∫ y, (δ y - ⟪γ, ξ⟫_ℝ) ^ 2 ∂P = variance δ P := by
+    intro δ hδ hE; rw [variance_eq_integral hδ, hE]
+  rw [key _ hml.aemeasurable hElse, key _ hmc.aemeasurable hEc]
+  exact gauss_markov hcov hL2 hc
 
 end StatLean.PointEstimation
