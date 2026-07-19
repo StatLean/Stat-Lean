@@ -1,4 +1,5 @@
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -81,7 +82,9 @@ theorem map_restrict_eq_withDensity_map
     (hdet : ∀ ⦃B : Set S⦄, MeasurableSet B →
       ∫⁻ x in T ⁻¹' B, κA (T x) ∂μ = μ (A ∩ T ⁻¹' B)) :
     (μ.restrict A).map T = (μ.map T).withDensity κA := by
-  sorry
+  refine Measure.ext fun B hB => ?_
+  rw [Measure.map_apply hT hB, Measure.restrict_apply (hT hB),
+      withDensity_apply κA hB, setLIntegral_map hB hκA hT, hdet hB, Set.inter_comm]
 
 /-- A determination of `P(A ∣ T = ·)` for `μ` is still a determination after `μ` is tilted by
 a density that factors through `T`. -/
@@ -103,7 +106,24 @@ theorem setLIntegral_comp_withDensity_comap_eq
     ⦃B : Set S⦄ (hB : MeasurableSet B) :
     ∫⁻ x in T ⁻¹' B, κA (T x) ∂(μ.withDensity fun x => g (T x))
       = (μ.withDensity fun x => g (T x)) (A ∩ T ⁻¹' B) := by
-  sorry
+  have hgT : Measurable fun x => g (T x) := hg.comp hT
+  have hκAT : Measurable fun x => κA (T x) := hκA.comp hT
+  have hmap := map_restrict_eq_withDensity_map hT hA hκA hdet
+  have key : ∫⁻ x in T ⁻¹' B, g (T x) * κA (T x) ∂μ
+      = ∫⁻ x in A ∩ T ⁻¹' B, g (T x) ∂μ := by
+    have h : ∫⁻ y in B, g y ∂((μ.restrict A).map T)
+        = ∫⁻ y in B, g y ∂((μ.map T).withDensity κA) := by rw [hmap]
+    rw [setLIntegral_map hB hg hT, Measure.restrict_restrict (hT hB), Set.inter_comm,
+        restrict_withDensity hB, lintegral_withDensity_eq_lintegral_mul _ hκA hg] at h
+    simp only [Pi.mul_apply] at h
+    rw [setLIntegral_map hB (hκA.mul hg) hT] at h
+    rw [h]
+    refine lintegral_congr fun x => ?_
+    rw [mul_comm]
+  rw [withDensity_apply _ (hA.inter (hT hB)), ← key, restrict_withDensity (hT hB),
+      lintegral_withDensity_eq_lintegral_mul _ hgT hκAT]
+  refine lintegral_congr fun x => ?_
+  simp only [Pi.mul_apply]
 
 /-- Conditional expectation given `σ(T)` is invariant under a tilt by a `T`-measurable
 density. -/
@@ -129,6 +149,44 @@ theorem condExp_withDensity_comap_ae_eq
     [SigmaFinite ((μ.withDensity fun x => g (T x)).trim hT.comap_le)] :
     condExp (MeasurableSpace.comap T mS) (μ.withDensity fun x => g (T x)) f
       =ᵐ[(μ.withDensity fun x => g (T x))] condExp (MeasurableSpace.comap T mS) μ f := by
-  sorry
+  have hd_meas : Measurable fun x => g (T x) := hg.comp hT
+  have hd_lt : ∀ᵐ x ∂μ, g (T x) < ∞ := by
+    filter_upwards [hg_ne_top] with x hx using lt_top_iff_ne_top.mpr hx
+  -- the density, in composed form, is `σ(T)`-measurable
+  have hw_sm : StronglyMeasurable[MeasurableSpace.comap T mS]
+      (fun x => (g (T x)).toReal) :=
+    (hg.ennreal_toReal.comp (comap_measurable T)).stronglyMeasurable
+  -- `w * f` is `μ`-integrable because `f` is integrable against the tilt
+  have hwf : Integrable (fun x => (g (T x)).toReal * f x) μ := by
+    simpa [smul_eq_mul] using
+      (integrable_withDensity_iff_integrable_smul' hd_meas hd_lt).mp hf'
+  -- pull the `σ(T)`-measurable density out of the conditional expectation
+  have hpull := condExp_mul_of_stronglyMeasurable_left hw_sm hwf hf
+  have hwc : Integrable
+      (fun x => (g (T x)).toReal * (μ[f | MeasurableSpace.comap T mS]) x) μ :=
+    integrable_condExp.congr hpull
+  have hgm : AEStronglyMeasurable[MeasurableSpace.comap T mS]
+      (μ[f | MeasurableSpace.comap T mS]) (μ.withDensity fun x => g (T x)) :=
+    StronglyMeasurable.aestronglyMeasurable stronglyMeasurable_condExp
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (g := μ[f | MeasurableSpace.comap T mS])
+    hT.comap_le hf' ?_ ?_ hgm).symm
+  · -- integrability of the candidate on finite-measure `σ(T)`-sets
+    intro s hs _
+    change Integrable (μ[f | MeasurableSpace.comap T mS])
+      ((μ.withDensity fun x => g (T x)).restrict s)
+    rw [restrict_withDensity (hT.comap_le s hs),
+        integrable_withDensity_iff_integrable_smul' hd_meas (ae_restrict_of_ae hd_lt)]
+    simpa [smul_eq_mul] using hwc.integrableOn
+  · -- the set-integral identity, via pull-out and `setIntegral_condExp`
+    intro s hs _
+    rw [setIntegral_withDensity_eq_setIntegral_toReal_smul hd_meas
+          (ae_restrict_of_ae hd_lt) _ (hT.comap_le s hs),
+        setIntegral_withDensity_eq_setIntegral_toReal_smul hd_meas
+          (ae_restrict_of_ae hd_lt) _ (hT.comap_le s hs)]
+    simp only [smul_eq_mul]
+    rw [← setIntegral_condExp hT.comap_le hwf hs]
+    refine setIntegral_congr_ae (hT.comap_le s hs) ?_
+    filter_upwards [hpull] with x hx _
+    exact hx.symm
 
 end StatLean.PointEstimation
