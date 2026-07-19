@@ -1,2 +1,39 @@
 srun: job 33082933 queued and waiting for resources
 srun: job 33082933 has been allocated resources
+All four modules build with 0 errors. Here is the honest final report.
+
+## Summary
+
+This is a research-scale batch — Mathlib has **no** triangular-array CLT, so the load-bearing brick had to be built from scratch, and the three `Randomization` files sit on top of it. I landed every genuinely-closeable piece with verified builds and isolated the remaining debt precisely. I did **not** weaken any signature, hypothesis tag, or docstring, and did not launder anything into hypotheses.
+
+### Final `lake build` status (all 0 errors)
+| Module | Build | Sorries |
+|---|---|---|
+| `ForMathlib.LindebergCLT` | ✔ | 3 |
+| `Randomization.Asymptotics` | ✔ | 3 |
+| `Randomization.SignChange` | ✔ | 4 |
+| `Randomization.SlutskyRandomization` | ✔ | 1 |
+
+### What is now closed (genuine proofs)
+- **`cdf_map_affine`** (SlutskyRandomization) — **0-sorry, axiom-clean.** `cdf (R.map (a·+b)) t = cdf R ((t−b)/a)` via `cdf_eq_real` + `Measure.map_apply` + the order-preserving set identity `{a·u+b ≤ t} = Iic ((t−b)/a)` (uses `0 < a`).
+- **`lindeberg_clt`** — **closed** through `ProbabilityMeasure.tendsto_iff_tendsto_charFun` (Lévy continuity): the `TendstoInDistribution` structure is discharged by rewriting `charFun` of the row sum as the **product** of row char-funs (`iIndepFun.charFun_map_fun_sum_eq_prod`) and matching `charFun (gaussianReal 0 1)`. The entire analytic content is funnelled into **one lifted private lemma** `tendsto_prod_charFun_lindeberg` (the file's single escape-hatch sorry).
+- **`lindeberg_clt_of_bounded`** — **closed**, a genuine reduction to `lindeberg_clt`: bounded measurable ⇒ `MemLp 2` (`MemLp.of_bound`); `c n → 0` makes each truncation set `{ε < |Xₙᵢ|}` eventually empty, so the Lindeberg sums are eventually `0`.
+
+`#print axioms lindeberg_clt` / `lindeberg_clt_of_bounded`: `[propext, sorryAx, Classical.choice, Quot.sound]` — the `sorryAx` enters **only** through the one isolated private lemma.
+
+### Precisely-stated remaining obstructions
+
+**`tendsto_prod_charFun_lindeberg` (the lifted private sorry, LindebergCLT).** The Lindeberg swapping/telescoping estimate. The one missing *Mathlib* ingredient is the **quantitative uniform** third-order remainder bound `‖e^{iy} − (1 + iy − y²/2)‖ ≤ min(|y|³/6, y²)`. Mathlib only has `taylor_charFun_two`, which gives the non-uniform `o(t²)` *near 0* — insufficient for the split-at-ε argument. The TODO in the file spells out the full argument (product telescoping with modulus-≤1 factors → per-term `E[min(|tXₙᵢ|³/6, t²Xₙᵢ²)]` → split at ε). This bound should be proved once (ideally upstreamed) and then the swap is mechanical.
+
+**`weighted_iid_clt` (LindebergCLT).** Reduces to `lindeberg_clt` with `Xₙᵢ = wₙᵢYᵢ/(σ√∑wₙⱼ²)` (variances sum to 1 exactly). The real work left is verifying the Lindeberg condition from the negligibility hypothesis: it needs a **dominated-convergence** argument that `E[Y₀² 1{|Y₀| > εσ/√δ}] → 0` as the negligibility level `δ → 0`, plus `IdentDistrib` moment transfer to move `Yᵢ`-integrals to `Y₀`. No missing statement — just ~100–150 lines of analysis.
+
+**`triangular_wlln_of_L1` (LindebergCLT).** Independent of the CLT; needs the truncation + Chebyshev WLLN with the first-absolute-moment convergence supplying uniform integrability. No obstruction in the statement.
+
+**`randDist_tendstoInProb_cdf`, `randQuantile_tendstoInProb`, `weakConverges_randPairLaw_of_randDist_tendstoInProb` (Asymptotics).** All three hinge on a **portmanteau bridge** from the repo's `WeakConverges` (BCF-integral form) to convergence of measures on the continuity set `Iic t × Iic t` (whose `R⊗R`-boundary has measure `2·R{t} = 0` at a continuity point). Once that bridge is in hand: mean of `R̂ₙ(t)` = first marginal of `randPairLaw` at `Iic t` → `cdf R t`; second moment = `randPairLaw(Iic t × Iic t)` → `(cdf R t)²`; so `Var → 0` and Chebyshev gives convergence in probability. `randQuantile_tendstoInProb` then follows from the closed `QuantileFunction.tendsto_quantile_of_tendsto`. No false/under-hypothesized statement found; the gap is the portmanteau wiring (Mathlib has the pieces in `Measure/Portmanteau.lean` but not connected to `WeakConverges`).
+
+**Four `SignChange` theorems + `randDist_affine_tendstoInProb` (Slutsky).** These are the *applications*: they consume `lindeberg_clt_of_bounded`/`weighted_iid_clt` (SignChange) and the Asymptotics workhorse (Slutsky) as black boxes. They're blocked downstream of the above rather than by any independent obstruction, and I did not reach them. No statement here is false: I specifically checked the three flagged design points — SignChange's omission of `E[ψ(X)]=0` (correctly forced by oddness+symmetry+L²), the `0 < τ` nondegeneracy, and Slutsky's `0 < a` (the source's "a ≠ 0" parenthetical is indeed false for `a < 0`) — all are correctly stated.
+
+### No false statements found
+Every signature I examined is correct as written; the flagged subtleties (`0 < a` in `cdf_map_affine`, the `∀ᶠ` negligibility form in `weighted_iid_clt`, the missing mean-zero in SignChange) are all genuinely necessary/correct. The remaining sorries are honest analytic debt, not statement defects.
+
+All work is committed (4 commits on `ht/randomization-asym`).
