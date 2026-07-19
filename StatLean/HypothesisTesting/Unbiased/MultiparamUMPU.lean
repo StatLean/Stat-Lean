@@ -322,7 +322,9 @@ theorem inner_exponent_reparam {a₀ : ℝ} (a : Ξ) (θ : ℝ) (ϑ : Ξ) (u : �
     (ha₀ : a₀ ≠ 0) :
     θ * u + ⟪ϑ, t⟫_ℝ
       = (a₀ * θ + ⟪a, ϑ⟫_ℝ) * (u / a₀) + ⟪ϑ, t - (u / a₀) • a⟫_ℝ := by
-  sorry
+  rw [inner_sub_right, real_inner_smul_right, real_inner_comm a ϑ]
+  field_simp
+  ring
 
 /-- **Reduction to canonical form.**
 

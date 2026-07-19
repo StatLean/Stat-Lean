@@ -151,6 +151,20 @@ theorem integral_eq_integral_condDistrib
     (hint : Integrable (fun x => φ (U x, T x)) (P p)) :
     ∫ x, φ (U x, T x) ∂(P p)
       = ∫ t, (∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ∂((P p).map T) := by
-  sorry
+  have hfm : Measurable (fun x => (T x, U x)) := hT.prodMk hU
+  have hgm : Measurable (fun z : Ξ × ℝ => φ (z.2, z.1)) :=
+    hφ.comp (measurable_snd.prodMk measurable_fst)
+  -- disintegrate the joint law of `(T, U)` along `T`
+  have hmap : (P p).map (fun x => (T x, U x)) = (P p).map T ⊗ₘ condDistrib U T (P p) :=
+    (compProd_map_condDistrib hU.aemeasurable).symm
+  have hint' : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1))
+      ((P p).map (fun x => (T x, U x))) := by
+    rw [integrable_map_measure hgm.aestronglyMeasurable hfm.aemeasurable]; exact hint
+  calc ∫ x, φ (U x, T x) ∂(P p)
+      = ∫ z, φ (z.2, z.1) ∂((P p).map (fun x => (T x, U x))) :=
+        (integral_map hfm.aemeasurable hgm.aestronglyMeasurable).symm
+    _ = ∫ z, φ (z.2, z.1) ∂((P p).map T ⊗ₘ condDistrib U T (P p)) := by rw [hmap]
+    _ = ∫ t, (∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ∂((P p).map T) :=
+        Measure.integral_compProd (hmap ▸ hint')
 
 end StatLean.HypothesisTesting

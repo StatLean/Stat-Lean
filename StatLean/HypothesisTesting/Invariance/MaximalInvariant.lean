@@ -128,15 +128,9 @@ theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {gbar gbar' : Θ → Θ}
     -- on a non-standard-Borel space where `⇑g'` is non-measurable but `⇑g' ∘ ⇑g` is not.
     (hg' : Measurable ⇑g') :
     InducesOn P (g' * g) (gbar' ∘ gbar) := by
-  -- TODO: under-hypothesized for general measurable spaces. The composite pushforward
-  -- `(P θ).map ⇑(g'*g) = ((P θ).map ⇑g).map ⇑g'` (`Measure.map_map`) needs `Measurable ⇑g'`,
-  -- which is NOT among the hypotheses (only `hg : Measurable ⇑g`). Without it the identity
-  -- can fail: on a non-standard-Borel `𝓧`, `⇑g'` can be non-measurable while `⇑g'∘⇑g` is
-  -- measurable (a measurable bijection can have a non-measurable inverse), so
-  -- `(P θ).map ⇑(g'*g) ≠ ((P θ).map ⇑g).map ⇑g' = 0`. The intended (standard-Borel /
-  -- bimeasurable) setting supplies `Measurable ⇑g'`; the content is discharged inline in
-  -- `PreservesFamily.mul`, where it is available. Fix = add `Measurable ⇑g'` to the signature.
-  sorry
+  intro θ
+  rw [Equiv.Perm.coe_mul, ← Measure.map_map hg' hg, h θ]
+  exact h' (gbar θ)
 
 /-- Family-preserving transformations are closed under composition. -/
 theorem PreservesFamily.mul {g g' : Equiv.Perm 𝓧}
@@ -182,14 +176,13 @@ theorem InducesOn.inv {g : Equiv.Perm 𝓧} {gbar : Equiv.Perm Θ}
     -- needs both directions; the transformations the theory quantifies over are bimeasurable.
     (hgf : Measurable ⇑g) :
     InducesOn P g⁻¹ ⇑gbar⁻¹ := by
-  -- TODO: under-hypothesized for general measurable spaces. Inverting the pushforward
-  -- `((P θ').map ⇑g).map ⇑g.symm = P θ'` (`Measure.map_map`) needs BOTH `Measurable ⇑g` and
-  -- `Measurable ⇑g.symm`, but only `hg : Measurable ⇑g.symm` is supplied. On a non-standard
-  -- measurable space a bijection may be measurable in one direction only, and then the
-  -- cancellation fails. The intended bimeasurable setting supplies `Measurable ⇑g`; the
-  -- content is discharged inline in `PreservesFamily.inv`, where both are available. Fix =
-  -- add `Measurable ⇑g` to the signature.
-  sorry
+  intro θ
+  have hkey : (P (⇑gbar⁻¹ θ)).map ⇑g = P θ := by
+    rw [h (⇑gbar⁻¹ θ)]; congr 1
+    rw [← Equiv.Perm.mul_apply, mul_inv_cancel, Equiv.Perm.one_apply]
+  have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) hkey
+  simp only [Measure.map_map hg hgf, Equiv.symm_comp_self, Measure.map_id] at e2
+  exact e2.symm
 
 /-- Family-preserving transformations are closed under inversion, given identifiability
 (which is what turns the induced map into a bijection). -/
