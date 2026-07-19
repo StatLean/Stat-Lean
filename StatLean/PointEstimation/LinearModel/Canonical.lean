@@ -831,6 +831,60 @@ theorem isUMVU_residual_variance
     (hm : 0 < m) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => (p.2.1 : ℝ))
       (fun y => canonicalRSS y / (m : ℝ)) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => t.2 / (m : ℝ)) :=
+    measurable_snd.div_const _
+  -- one-dimensional second moment of a centred Gaussian
+  have hsq2 : ∀ v : ℝ≥0, ∫ x, x ^ 2 ∂(gaussianReal (0 : ℝ) v) = (v : ℝ) := by
+    intro v
+    have h := variance_eq_sub (μ := gaussianReal (0 : ℝ) v) (X := id) (memLp_id_gaussianReal 2)
+    rw [variance_id_gaussianReal] at h
+    simp only [integral_id_gaussianReal, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
+      zero_pow, sub_zero, Pi.pow_apply, id_eq] at h
+    linarith [h]
+  -- `x ↦ x²` is square-integrable under any one-dimensional Gaussian (fourth moment finite)
+  have hsqMemLp : ∀ (μ : ℝ) (v : ℝ≥0), MemLp (fun x => x ^ 2) 2 (gaussianReal μ v) := by
+    intro μ v
+    haveI : ENNReal.HolderTriple (4 : ℝ≥0∞) 4 2 := ⟨by
+      rw [show (4 : ℝ≥0∞) = 2 * 2 by norm_num, ENNReal.mul_inv (by norm_num) (by norm_num)]
+      rw [← two_mul, ← mul_assoc, ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]⟩
+    have h4 : MemLp (id : ℝ → ℝ) 4 (gaussianReal μ v) := memLp_id_gaussianReal' 4 (by simp)
+    refine (h4.mul h4).ae_eq (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.mul_apply, id_eq]; ring
+  -- per-residual-coordinate second moment and integrability
+  have hcoordsqmean : ∀ (p : CanonicalParam s) (j : Fin m),
+      ∫ y : EuclideanSpace ℝ (Fin (s + m)), (y (Fin.natAdd s j)) ^ 2 ∂(canonicalModel p)
+        = (p.2.1 : ℝ) := by
+    intro p j
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.natAdd s j)
+      (f := fun x => x ^ 2) (measurable_id.pow_const 2)
+    rw [hc, Fin.append_right]
+    simpa using hsq2 p.2.1
+  have hcoordsqint : ∀ (p : CanonicalParam s) (j : Fin m),
+      Integrable (fun y : EuclideanSpace ℝ (Fin (s + m)) => (y (Fin.natAdd s j)) ^ 2)
+        (canonicalModel p) := fun p j =>
+    (canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j) (f := fun x => x ^ 2)
+      (measurable_id.pow_const 2) (hsqMemLp _ _)).integrable one_le_two
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y : EuclideanSpace ℝ (Fin (s + m)), canonicalRSS y / (m : ℝ) ∂(canonicalModel p)
+      = (p.2.1 : ℝ)
+    have hRSS : ∫ y : EuclideanSpace ℝ (Fin (s + m)), canonicalRSS y ∂(canonicalModel p)
+        = (m : ℝ) * p.2.1 := by
+      show ∫ y : EuclideanSpace ℝ (Fin (s + m)), ∑ j, (y (Fin.natAdd s j)) ^ 2 ∂(canonicalModel p)
+        = (m : ℝ) * p.2.1
+      rw [integral_finset_sum _ (fun j _ => hcoordsqint p j),
+        Finset.sum_congr rfl (fun j _ => hcoordsqmean p j), Finset.sum_const, Finset.card_univ,
+        Fintype.card_fin, nsmul_eq_mul]
+    rw [integral_div, hRSS, mul_comm, mul_div_assoc,
+      div_self (by exact_mod_cast hm.ne'), mul_one]
+  · intro p
+    show MemLp (fun y => canonicalRSS y / (m : ℝ)) 2 (canonicalModel p)
+    have hRSSmemLp : MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => canonicalRSS y) 2
+        (canonicalModel p) := by
+      show MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => ∑ j, (y (Fin.natAdd s j)) ^ 2) 2
+        (canonicalModel p)
+      exact memLp_finset_sum _ fun j _ => canonicalModel_memLp_coord (m := m) p (Fin.natAdd s j)
+        (f := fun x => x ^ 2) (measurable_id.pow_const 2) (hsqMemLp _ _)
+    simpa [div_eq_mul_inv] using hRSSmemLp.mul_const (m : ℝ)⁻¹
 
 end StatLean.PointEstimation
