@@ -120,7 +120,13 @@ same as unbiasedness throughout the mean subspace. -/
 theorem isSubspaceEquivariant_inner_iff (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     (γ c : EuclideanSpace ℝ (Fin n)) :
     IsSubspaceEquivariant W γ (fun y => ⟪c, y⟫_ℝ) ↔ ∀ b ∈ W, ⟪c, b⟫_ℝ = ⟪γ, b⟫_ℝ := by
-  sorry
+  constructor
+  · intro h b hb
+    have hb0 := h b hb 0
+    simpa using hb0
+  · intro h b hb y
+    show ⟪c, y + b⟫_ℝ = ⟪c, y⟫_ℝ + ⟪γ, b⟫_ℝ
+    rw [inner_add_right, h b hb]
 
 /-- Under squared error, the least-squares functional is minimum risk equivariant among the
 **linear** equivariant estimators, under the moment assumptions alone. -/

@@ -63,7 +63,8 @@ noncomputable def linearModelFull (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)
 theorem inner_lse_eq_inner_starProjection (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (γ y : EuclideanSpace ℝ (Fin n)) :
     ⟪γ, lse W y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ := by
-  sorry
+  show ⟪γ, W.starProjection y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ
+  rw [← Submodule.inner_starProjection_left_eq_right]
 
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
