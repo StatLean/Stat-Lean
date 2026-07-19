@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.MLR.Defs
 import StatLean.HypothesisTesting.NeymanPearson.Lemma
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -64,11 +65,19 @@ hypotheses," *Stat. Res. Mem.* **1** (1936), 1–37).
 -/
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
 open StatLean.PointEstimation
+
+/-- The real inner product on `ℝ` is multiplication. -/
+private lemma real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  have h1 : ⟪(1 : ℝ), b⟫_ℝ = b := by
+    have h := real_inner_smul_right (1 : ℝ) 1 b
+    simpa [real_inner_self_eq_norm_mul_norm] using h
+  have h2 := real_inner_smul_left (1 : ℝ) b a
+  simpa [h1] using h2
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
@@ -86,148 +95,6 @@ is the integral form `∫ p_θ {φ L₁ + (1-φ) L₀} dμ`. -/
 noncomputable def testRisk {Θ : Type*} (P : Θ → Measure 𝓧) (L₀ L₁ : Θ → ℝ) (φ : 𝓧 → ℝ)
     (θ : Θ) : ℝ :=
   power P φ θ * L₁ θ + (1 - power P φ θ) * L₀ θ
-
-/-- **Existence of a UMP one-sided test.** Under a monotone likelihood ratio in `T` there
-are a critical value `C` and a boundary weight `γ ∈ [0,1]` for which the one-sided test has
-size exactly `α` at `θ₀` and is uniformly most powerful at level `α` for `H : θ ≤ θ₀`
-against `K : θ > θ₀`. -/
-theorem isUMP_oneSided
-    -- USER-INPUT: dominating measure, σ-finite
-    (μ : Measure 𝓧) [SigmaFinite μ]
-    -- USER-INPUT: the model, a family of probability measures indexed by a real parameter
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    -- USER-INPUT: its densities with respect to `μ`
-    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
-    -- USER-INPUT: the statistic in which the likelihood ratio is monotone
-    (T : 𝓧 → ℝ) (hT : Measurable T)
-    -- USER-INPUT: the monotone-likelihood-ratio property — the whole content of the setup
-    (hMLR : HasMLR p T)
-    -- USER-INPUT: the null boundary and the nominal level
-    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
-    ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
-      power P (oneSidedTest T C γ) θ₀ = α ∧
-      IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest T C γ) := by
-  sorry
-
-/-- **Strict monotonicity of the power function.** On the set of parameter values where
-the power is neither `0` nor `1`, the power function of the one-sided test is strictly
-increasing.
-
-The distinctness hypothesis `P θ ≠ P θ'` for `θ < θ'` is part of the classical definition
-of a monotone likelihood ratio but not of the division-free `HasMLR`; it is what rules out
-a constant family, for which the conclusion is false. -/
-theorem power_strictMono_oneSided
-    -- USER-INPUT: dominating measure, σ-finite
-    (μ : Measure 𝓧) [SigmaFinite μ]
-    -- USER-INPUT: the model and its densities
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
-    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
-    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
-    -- USER-INPUT: distinctness of the members — the clause of the classical MLR
-    -- definition that `HasMLR` omits; without it the family may be constant
-    (hdist : ∀ θ θ' : ℝ, θ < θ' → P θ ≠ P θ')
-    -- USER-INPUT: the critical value and the boundary weight of the test under study
-    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) :
-    ∀ θ θ' : ℝ, θ < θ' →
-      0 < power P (oneSidedTest T C γ) θ → power P (oneSidedTest T C γ) θ < 1 →
-      0 < power P (oneSidedTest T C γ) θ' → power P (oneSidedTest T C γ) θ' < 1 →
-      power P (oneSidedTest T C γ) θ < power P (oneSidedTest T C γ) θ' := by
-  sorry
-
-/-- **The same test is UMP at every null boundary.** For any `θ'`, the one-sided test is
-uniformly most powerful for `H' : θ ≤ θ'` against `K' : θ > θ'` at the level it happens to
-have there, namely `α' = β(θ')`. -/
-theorem isUMP_oneSided_shifted
-    -- USER-INPUT: dominating measure, σ-finite
-    (μ : Measure 𝓧) [SigmaFinite μ]
-    -- USER-INPUT: the model and its densities
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
-    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
-    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
-    -- USER-INPUT: the critical value and the boundary weight
-    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (θ' : ℝ) :
-    IsUMP P (Set.Iic θ') (Set.Ioi θ') (power P (oneSidedTest T C γ) θ')
-      (oneSidedTest T C γ) := by
-  sorry
-
-/-- **Minimum rejection probability below the boundary.** Among all tests whose size at
-`θ₀` is exactly `α`, the one-sided test minimizes the probability of rejection — the
-probability of an error of the first kind — at every `θ < θ₀`. -/
-theorem power_min_oneSided
-    -- USER-INPUT: dominating measure, σ-finite
-    (μ : Measure 𝓧) [SigmaFinite μ]
-    -- USER-INPUT: the model and its densities
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
-    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
-    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
-    -- USER-INPUT: the null boundary, level, and the constants of the test
-    (θ₀ : ℝ) {α C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1)
-    -- USER-INPUT: the test is the one determined by the exact-size requirement
-    (hsize : power P (oneSidedTest T C γ) θ₀ = α) :
-    ∀ θ < θ₀, ∀ ψ, IsCriticalFn ψ → power P ψ θ₀ = α →
-      power P (oneSidedTest T C γ) θ ≤ power P ψ θ := by
-  sorry
-
-/-- **The one-sided tests form an essentially complete class.** For the two-decision
-problem whose losses satisfy `L₁ - L₀ > 0` below the boundary and `< 0` above it, every
-test is matched or beaten, uniformly in `θ`, by a one-sided test. -/
-theorem essentiallyComplete_oneSidedTest
-    -- USER-INPUT: dominating measure, σ-finite
-    (μ : Measure 𝓧) [SigmaFinite μ]
-    -- USER-INPUT: the model and its densities
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
-    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
-    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
-    -- USER-INPUT: the null boundary and the two loss functions
-    (θ₀ : ℝ) (L₀ L₁ : ℝ → ℝ)
-    -- USER-INPUT: rejecting costs more than accepting strictly below the boundary …
-    (hloss_lt : ∀ θ < θ₀, 0 < L₁ θ - L₀ θ)
-    -- USER-INPUT: … and less strictly above it (the monotone-loss condition)
-    (hloss_gt : ∀ θ, θ₀ < θ → L₁ θ - L₀ θ < 0) :
-    ∀ ψ, IsCriticalFn ψ → ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
-      ∀ θ, testRisk P L₀ L₁ (oneSidedTest T C γ) θ ≤ testRisk P L₀ L₁ ψ θ := by
-  sorry
-
-/-- **The one-parameter exponential family has a monotone likelihood ratio** in its
-natural statistic, provided the parametrization `θ ↦ η(θ)` is strictly increasing. The
-densities are the canonical ones, `exp(η(θ)·T(x) - A(η(θ)))`. -/
-theorem hasMLR_expFamily
-    -- USER-INPUT: the exponential family (reference measure and natural statistic)
-    (E : ExpFamily 𝓧 ℝ)
-    -- USER-INPUT: the parametrization, strictly increasing — the printed hypothesis
-    -- "`Q` is strictly monotone", in its increasing case
-    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap) :
-    HasMLR (fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))) E.stat := by
-  intro θ θ' hθθ' x y hTxy
-  have hηlt : ηmap θ < ηmap θ' := hη hθθ'
-  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
-  nlinarith [mul_nonneg (sub_pos.mpr hηlt).le (sub_nonneg.mpr hTxy)]
-
-/-- **UMP one-sided test in a one-parameter exponential family.** For a family presented
-in canonical form through a strictly increasing `η`, the test rejecting for large values of
-the natural statistic is UMP for `H : θ ≤ θ₀` against `K : θ > θ₀`. -/
-theorem isUMP_oneSided_expFamily
-    -- USER-INPUT: the exponential family, with σ-finite reference measure
-    (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
-    -- USER-INPUT: the model, a family of probability measures
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    -- USER-INPUT: the parametrization, strictly increasing
-    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap)
-    -- USER-INPUT: the model is the canonical family read through `ηmap`
-    (hrepr : IsCanonicalRepr P E ηmap)
-    -- USER-INPUT: every parameter value is in the natural parameter set, so that each
-    -- `P θ` really is the tilted probability measure and not the junk zero measure
-    (hnat : ∀ θ, ηmap θ ∈ E.natSet)
-    -- USER-INPUT: the null boundary and the nominal level
-    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
-    ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
-      power P (oneSidedTest E.stat C γ) θ₀ = α ∧
-      IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest E.stat C γ) := by
-  sorry
 
 /-- A density of a probability measure is integrable (local copy of the NP-layer lemma). -/
 private lemma density_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
@@ -265,6 +132,199 @@ private lemma density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ} {
     (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mp hψ).congr ?_
   filter_upwards with x
   rw [ENNReal.toReal_ofReal (hnn x)]
+
+/-- The one-sided test is measurable when `T` is. -/
+private lemma measurable_oneSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C γ : ℝ) :
+    Measurable (oneSidedTest T C γ) := by
+  unfold oneSidedTest
+  refine Measurable.ite (measurableSet_lt measurable_const hT) measurable_const
+    (Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const measurable_const)
+
+/-- The one-sided test with `γ ∈ [0,1]` is a critical function. -/
+private lemma isCriticalFn_oneSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ}
+    (hγ : γ ∈ Set.Icc (0 : ℝ) 1) : IsCriticalFn (oneSidedTest T C γ) := by
+  refine ⟨measurable_oneSidedTest hT C γ, fun x => ?_⟩
+  unfold oneSidedTest
+  split_ifs
+  · exact ⟨zero_le_one, le_refl 1⟩
+  · exact hγ
+  · exact ⟨le_refl 0, zero_le_one⟩
+
+/-- The one-sided test is nondecreasing along `T`. -/
+private lemma oneSidedTest_mono {T : 𝓧 → ℝ} {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1)
+    {x y : 𝓧} (hxy : T x ≤ T y) : oneSidedTest T C γ x ≤ oneSidedTest T C γ y := by
+  unfold oneSidedTest
+  by_cases hbx : C < T x
+  · rw [if_pos hbx, if_pos (lt_of_lt_of_le hbx hxy)]
+  · rw [if_neg hbx]
+    by_cases hex : T x = C
+    · rw [if_pos hex]
+      have hyC : C ≤ T y := hex ▸ hxy
+      by_cases hby : C < T y
+      · rw [if_pos hby]; exact hγ.2
+      · rw [if_neg hby, if_pos (le_antisymm (not_lt.mp hby) hyC)]
+    · rw [if_neg hex]
+      split_ifs
+      · exact zero_le_one
+      · exact hγ.1
+      · exact le_refl 0
+
+/-- The power of the one-sided test splits into the tail mass plus `γ` times the atom mass. -/
+private lemma power_oneSidedTest_eq {P : ℝ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
+    {T : 𝓧 → ℝ} (hT : Measurable T) (C γ : ℝ) (θ : ℝ) :
+    power P (oneSidedTest T C γ) θ
+      = (P θ {x | C < T x}).toReal + γ * (P θ {x | T x = C}).toReal := by
+  set R := {x | C < T x} with hRdef
+  set B := {x | T x = C} with hBdef
+  have hRmeas : MeasurableSet R := measurableSet_lt measurable_const hT
+  have hBmeas : MeasurableSet B := measurableSet_eq_fun hT measurable_const
+  have hsplit : oneSidedTest T C γ = fun x =>
+      R.indicator (1 : 𝓧 → ℝ) x + γ * B.indicator (1 : 𝓧 → ℝ) x := by
+    funext x
+    show (if C < T x then (1 : ℝ) else if T x = C then γ else 0) = _
+    by_cases hR : x ∈ R
+    · have hxR : C < T x := hR
+      have hnB : x ∉ B := fun he => absurd (he : T x = C) (ne_of_gt hxR)
+      rw [Set.indicator_of_mem hR, Set.indicator_of_notMem hnB, if_pos hxR]; simp
+    · have hxR : ¬ C < T x := hR
+      rw [Set.indicator_of_notMem hR, if_neg hxR]
+      by_cases hB : x ∈ B
+      · have hxB : T x = C := hB
+        rw [Set.indicator_of_mem hB, if_pos hxB]; simp
+      · have hxB : ¬ T x = C := hB
+        rw [Set.indicator_of_notMem hB, if_neg hxB]; simp
+  have hR1 : Integrable (R.indicator (1 : 𝓧 → ℝ)) (P θ) :=
+    (show Integrable (1 : 𝓧 → ℝ) (P θ) from integrable_const 1).indicator hRmeas
+  have hB1 : Integrable (fun x => γ * B.indicator (1 : 𝓧 → ℝ) x) (P θ) :=
+    ((show Integrable (1 : 𝓧 → ℝ) (P θ) from integrable_const 1).indicator hBmeas).const_mul γ
+  unfold power
+  rw [integral_congr_ae (Filter.Eventually.of_forall (fun x => congrFun hsplit x)),
+    integral_add hR1 hB1, integral_indicator_one hRmeas, integral_const_mul,
+    integral_indicator_one hBmeas]
+  simp only [measureReal_def]
+
+/-- **Existence of the separating multiplier.** Given the monotone likelihood ratio, a
+threshold `C`, and one point of positive `θ`-density with `T ≥ C`, there is a real `k ≥ 0`
+that separates the two densities across the level set: `p_{θ'} ≤ k·p_θ` where `T ≤ C` and
+`k·p_θ ≤ p_{θ'}` where `T ≥ C`. This is the division-free Karlin–Rubin separation. -/
+private lemma exists_sep_const {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (hz : ∃ z, C ≤ T z ∧ 0 < p θ z) :
+    ∃ k : ℝ, 0 ≤ k ∧ (∀ x, T x ≤ C → p θ' x ≤ k * p θ x) ∧
+      (∀ x, C ≤ T x → k * p θ x ≤ p θ' x) := by
+  obtain ⟨z₀, hz₀C, hz₀pos⟩ := hz
+  have hnn' : ∀ x, 0 ≤ p θ' x := (hp θ').2.1
+  have hnn : ∀ x, 0 ≤ p θ x := (hp θ).2.1
+  set S : Set ℝ := {r | ∃ x, T x ≤ C ∧ 0 < p θ x ∧ r = p θ' x / p θ x} with hSdef
+  set ratz := p θ' z₀ / p θ z₀ with hratz
+  have hratz_nn : 0 ≤ ratz := div_nonneg (hnn' z₀) hz₀pos.le
+  -- `ratz` bounds `insert 0 S` above, so the supremum exists.
+  have hUB : ∀ r ∈ insert (0 : ℝ) S, r ≤ ratz := by
+    intro r hr
+    rcases hr with hr0 | ⟨x, hxC, hxpos, hxeq⟩
+    · exact hr0 ▸ hratz_nn
+    · rw [hxeq, hratz, div_le_div_iff₀ hxpos hz₀pos]
+      have := hMLR hlt x z₀ (le_trans hxC hz₀C)
+      nlinarith [this]
+  have hbdd : BddAbove (insert (0 : ℝ) S) := ⟨ratz, hUB⟩
+  have hne : (insert (0 : ℝ) S).Nonempty := ⟨0, Set.mem_insert 0 S⟩
+  set k := sSup (insert (0 : ℝ) S) with hkdef
+  have hk0 : 0 ≤ k := le_csSup hbdd (Set.mem_insert 0 S)
+  refine ⟨k, hk0, ?_, ?_⟩
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn x) with hpx | hpx
+    · -- `p θ x = 0`: MLR against `z₀` forces `p θ' x = 0`.
+      have hkey := hMLR hlt x z₀ (le_trans hxC hz₀C)
+      rw [← hpx, zero_mul] at hkey
+      have : p θ' x * p θ z₀ ≤ 0 := hkey
+      have hpx'0 : p θ' x = 0 :=
+        le_antisymm (nonpos_of_mul_nonpos_left this hz₀pos) (hnn' x)
+      rw [hpx'0, ← hpx, mul_zero]
+    · have hmem : p θ' x / p θ x ∈ insert (0 : ℝ) S :=
+        Set.mem_insert_iff.mpr (Or.inr ⟨x, hxC, hpx, rfl⟩)
+      have hle : p θ' x / p θ x ≤ k := le_csSup hbdd hmem
+      rw [div_le_iff₀ hpx] at hle
+      linarith [hle]
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn x) with hpx | hpx
+    · rw [← hpx, mul_zero]; exact hnn' x
+    · -- `p θ x > 0`: `p θ' x / p θ x` is an upper bound of `insert 0 S`, so `k ≤` it.
+      have hUBx : ∀ r ∈ insert (0 : ℝ) S, r ≤ p θ' x / p θ x := by
+        intro r hr
+        rcases hr with hr0 | ⟨y, hyC, hypos, hyeq⟩
+        · exact hr0 ▸ div_nonneg (hnn' x) hpx.le
+        · rw [hyeq, div_le_div_iff₀ hypos hpx]
+          have := hMLR hlt y x (le_trans hyC hxC)
+          nlinarith [this]
+      have hle : k ≤ p θ' x / p θ x := csSup_le hne hUBx
+      rw [le_div_iff₀ hpx] at hle
+      linarith [hle]
+
+/-- **The one-sided test has Neyman–Pearson shape** for `θ < θ'`, at the multiplier `k`
+produced by `exists_sep_const`. -/
+private lemma hasNPShape_oneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (γ : ℝ) (hz : ∃ z, C ≤ T z ∧ 0 < p θ z) :
+    ∃ K : ℝ≥0∞, HasNPShape μ (p θ) (p θ') K (oneSidedTest T C γ) := by
+  obtain ⟨k, hk0, hle, hge⟩ := exists_sep_const hp hMLR hlt hz
+  have hnn : ∀ x, 0 ≤ p θ x := (hp θ).2.1
+  refine ⟨ENNReal.ofReal k, ?_, ?_⟩
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : k * p θ x < p θ' x := by
+      by_contra hcon
+      push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : C < T x := by
+      by_contra hcon
+      exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show oneSidedTest T C γ x = 1
+    unfold oneSidedTest; rw [if_pos hTC]
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : p θ' x < k * p θ x := by
+      by_contra hcon
+      push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : T x < C := by
+      by_contra hcon
+      exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show oneSidedTest T C γ x = 0
+    unfold oneSidedTest; rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]
+
+/-- **The one-sided test is most powerful** for `P θ` against `P θ'` (`θ < θ'`) at its own
+size, provided the `θ`-density is positive somewhere above the threshold. -/
+private lemma isMostPowerful_oneSided {μ : Measure 𝓧} [SigmaFinite μ] {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {p : ℝ → 𝓧 → ℝ} (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    {T : 𝓧 → ℝ} (hT : Measurable T) (hMLR : HasMLR p T) {θ θ' : ℝ} (hlt : θ < θ')
+    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (hz : ∃ z, C ≤ T z ∧ 0 < p θ z) :
+    IsMostPowerful (P θ) (P θ') (power P (oneSidedTest T C γ) θ) (oneSidedTest T C γ) := by
+  obtain ⟨K, hshape⟩ := hasNPShape_oneSided hp hMLR hlt γ hz
+  exact isMostPowerful_of_npShape μ (P θ) (P θ') (hp θ) (hp θ')
+    (isCriticalFn_oneSidedTest hT hγ) rfl hshape
+
+/-- If the one-sided test has positive power at `θ`, some point above the threshold has
+positive `θ`-density. -/
+private lemma exists_pos_density_of_power_pos {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {p : ℝ → 𝓧 → ℝ} (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ} {θ : ℝ}
+    (hpow : 0 < power P (oneSidedTest T C γ) θ) : ∃ z, C ≤ T z ∧ 0 < p θ z := by
+  by_contra hcon
+  push_neg at hcon
+  -- `p θ = 0` on `{T ≥ C}`, hence both the tail and the atom carry no `P θ`-mass.
+  obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
+  have hnull : (P θ) {x | C ≤ T x} = 0 := by
+    rw [hPeq, withDensity_apply _ (measurableSet_le measurable_const hT)]
+    refine setLIntegral_eq_zero (measurableSet_le measurable_const hT) fun x hx => ?_
+    simp only [Set.mem_setOf_eq] at hx
+    have : p θ x ≤ 0 := hcon x hx
+    simp [le_antisymm this (hnn x)]
+  have hRle : (P θ) {x | C < T x} = 0 :=
+    measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_lt hx) hnull
+  have hBle : (P θ) {x | T x = C} = 0 :=
+    measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_eq hx.symm) hnull
+  rw [power_oneSidedTest_eq hT C γ θ, hRle, hBle] at hpow
+  simp at hpow
 
 /-- **Monotone statistics have monotone expectations.** Under a monotone likelihood ratio
 in `T`, the expectation of any function that is nondecreasing along `T` is a nondecreasing
@@ -343,5 +403,403 @@ theorem integral_mono_of_hasMLR
     integral_nonneg_of_ae hFnn
   rw [integral_add hf123 i4, integral_sub hf12 i3, integral_sub i1 i2, e1, e2, e3, e4] at hFint
   linarith [hFint]
+
+
+/-- **Existence of a UMP one-sided test.** Under a monotone likelihood ratio in `T` there
+are a critical value `C` and a boundary weight `γ ∈ [0,1]` for which the one-sided test has
+size exactly `α` at `θ₀` and is uniformly most powerful at level `α` for `H : θ ≤ θ₀`
+against `K : θ > θ₀`. -/
+theorem isUMP_oneSided
+    -- USER-INPUT: dominating measure, σ-finite
+    (μ : Measure 𝓧) [SigmaFinite μ]
+    -- USER-INPUT: the model, a family of probability measures indexed by a real parameter
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    -- USER-INPUT: its densities with respect to `μ`
+    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    -- USER-INPUT: the statistic in which the likelihood ratio is monotone
+    (T : 𝓧 → ℝ) (hT : Measurable T)
+    -- USER-INPUT: the monotone-likelihood-ratio property — the whole content of the setup
+    (hMLR : HasMLR p T)
+    -- USER-INPUT: the null boundary and the nominal level
+    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
+    ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
+      power P (oneSidedTest T C γ) θ₀ = α ∧
+      IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest T C γ) := by
+  obtain ⟨hα0', hα1'⟩ := hα
+  by_cases hmid : 0 < α ∧ α < 1
+  · obtain ⟨hα0, hα1⟩ := hmid
+    -- Boundary constants from the `T`-marginal under `θ₀`.
+    haveI : IsProbabilityMeasure ((P θ₀).map T) :=
+      Measure.isProbabilityMeasure_map hT.aemeasurable
+    obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ := exists_critical_constants ((P θ₀).map T) hα0 hα1
+    have hγ' : γ ∈ Set.Icc (0 : ℝ) 1 := ⟨hγ0, hγ1⟩
+    set φ := oneSidedTest T C γ with hφdef
+    have hmR : MeasurableSet {x : ℝ | C < x} := measurableSet_Ioi
+    have hmB : MeasurableSet {x : ℝ | x = C} := by
+      rw [show {x : ℝ | x = C} = {C} from by ext x; simp [eq_comm]]
+      exact measurableSet_singleton C
+    have hReq : (P θ₀) {x | C < T x} = ((P θ₀).map T) {x : ℝ | C < x} := by
+      rw [Measure.map_apply hT hmR]; rfl
+    have hBeq : (P θ₀) {x | T x = C} = ((P θ₀).map T) {x : ℝ | x = C} := by
+      rw [Measure.map_apply hT hmB]; rfl
+    have hsize : power P φ θ₀ = α := by
+      rw [hφdef, power_oneSidedTest_eq hT C γ θ₀, hReq, hBeq]; exact hcrit
+    have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ'
+    have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+      (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => by
+          rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+    have hmono : Monotone fun θ => power P φ θ :=
+      integral_mono_of_hasMLR μ P p hp T hT hMLR φ hφc.1
+        (fun x y h => oneSidedTest_mono hγ' h) hφint
+    refine ⟨C, γ, hγ', hsize, hφc, ?_, ?_⟩
+    · intro θ hθ
+      exact le_trans (hmono (Set.mem_Iic.mp hθ)) hsize.le
+    · intro ψ hψ hψlevel θ' hθ'
+      have hlt : θ₀ < θ' := Set.mem_Ioi.mp hθ'
+      have hz : ∃ z, C ≤ T z ∧ 0 < p θ₀ z :=
+        exists_pos_density_of_power_pos hp hT (by rw [hsize]; exact hα0)
+      have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ' hz
+      have hlevel0 : powerAgainst (P θ₀) ψ ≤ power P φ θ₀ := by
+        rw [hsize]; exact hψlevel θ₀ (Set.mem_Iic.mpr le_rfl)
+      exact hMP.2.2 ψ hψ hlevel0
+  · -- `α ∈ {0,1}`: the EXACT-size clause `power = α` cannot be met by any one-sided test
+    -- when `T` is essentially unbounded in the relevant tail. E.g. `𝓧 = ℝ`, `T = id`,
+    -- `P θ = 𝒩(θ,1)`: for every real `C, γ` the size `1 - Φ(C) > 0`, so `= 0` is
+    -- unattainable (dually `= 1` at `α = 1`). The frozen `α ∈ Icc 0 1` is therefore FALSE
+    -- at the two endpoints; the honest statement restricts to `α ∈ Ioo 0 1` (matching
+    -- `exists_critical_constants`, which requires `0 < α < 1`). All optimality theorems in
+    -- this file that take `C, γ` as inputs are unaffected — only this exact-size EXISTENCE
+    -- claim breaks at the endpoints. Reported per the no-weakening policy.
+    -- TODO(statement-bug): restrict `hα` to `Set.Ioo 0 1`; then this branch disappears.
+    sorry
+
+/-- **Strict monotonicity of the power function.** On the set of parameter values where
+the power is neither `0` nor `1`, the power function of the one-sided test is strictly
+increasing.
+
+The distinctness hypothesis `P θ ≠ P θ'` for `θ < θ'` is part of the classical definition
+of a monotone likelihood ratio but not of the division-free `HasMLR`; it is what rules out
+a constant family, for which the conclusion is false. -/
+theorem power_strictMono_oneSided
+    -- USER-INPUT: dominating measure, σ-finite
+    (μ : Measure 𝓧) [SigmaFinite μ]
+    -- USER-INPUT: the model and its densities
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
+    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
+    -- USER-INPUT: distinctness of the members — the clause of the classical MLR
+    -- definition that `HasMLR` omits; without it the family may be constant
+    (hdist : ∀ θ θ' : ℝ, θ < θ' → P θ ≠ P θ')
+    -- USER-INPUT: the critical value and the boundary weight of the test under study
+    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) :
+    ∀ θ θ' : ℝ, θ < θ' →
+      0 < power P (oneSidedTest T C γ) θ → power P (oneSidedTest T C γ) θ < 1 →
+      0 < power P (oneSidedTest T C γ) θ' → power P (oneSidedTest T C γ) θ' < 1 →
+      power P (oneSidedTest T C γ) θ < power P (oneSidedTest T C γ) θ' := by
+  -- OBSTRUCTION: this is precisely the *strict* half of unbiasedness of the MP test, the
+  -- same content as `NeymanPearson.Lemma.power_gt_alpha_of_ne`, which is itself still an
+  -- open `sorry` upstream. The monotone (`≤`) direction is `integral_mono_of_hasMLR`; the
+  -- STRICT inequality needs the correlation identity `2·(β(θ') − β(θ)) = ∫∫ F d(μ×μ)` with
+  -- `F = (φ(x')−φ(x))·(p_θ(x)p_θ'(x') − p_θ'(x)p_θ(x'))` shown to be *strictly* positive on
+  -- a μ×μ-positive set — which is where `hdist` (the family is non-constant) and the strict
+  -- bracketing `0 < β < 1` (φ genuinely randomizes: both `{φ=1}` and `{φ=0}` carry mass)
+  -- enter. No shortcut through the NP layer exists while `power_gt_alpha_of_ne` is open.
+  -- TODO: port the strict-unbiasedness argument (shared with the NP layer) here.
+  sorry
+
+/-- **The same test is UMP at every null boundary.** For any `θ'`, the one-sided test is
+uniformly most powerful for `H' : θ ≤ θ'` against `K' : θ > θ'` at the level it happens to
+have there, namely `α' = β(θ')`. -/
+theorem isUMP_oneSided_shifted
+    -- USER-INPUT: dominating measure, σ-finite
+    (μ : Measure 𝓧) [SigmaFinite μ]
+    -- USER-INPUT: the model and its densities
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
+    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
+    -- USER-INPUT: the critical value and the boundary weight
+    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (θ' : ℝ) :
+    IsUMP P (Set.Iic θ') (Set.Ioi θ') (power P (oneSidedTest T C γ) θ')
+      (oneSidedTest T C γ) := by
+  set φ := oneSidedTest T C γ with hφdef
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
+  have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+  have hmono : Monotone fun θ => power P φ θ :=
+    integral_mono_of_hasMLR μ P p hp T hT hMLR φ hφc.1
+      (fun x y h => oneSidedTest_mono hγ h) hφint
+  refine ⟨hφc, fun θ hθ => hmono (Set.mem_Iic.mp hθ), ?_⟩
+  intro ψ hψ hψlevel θ'' hθ''
+  have hlt : θ' < θ'' := Set.mem_Ioi.mp hθ''
+  by_cases hz : ∃ z, C ≤ T z ∧ 0 < p θ' z
+  · have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ hz
+    exact hMP.2.2 ψ hψ (hψlevel θ' (Set.mem_Iic.mpr le_rfl))
+  · -- Degenerate boundary: `p θ' = 0` on `{T ≥ C}`, so `power P φ θ' = 0` and the level is
+    -- `0`. Here the frozen statement is DEFECTIVE: at level `0` a competitor may reject on
+    -- the *whole* `P θ'`-null set `{p θ' = 0}` (which can strictly contain `{T ≥ C}` when a
+    -- density vanishes below `C`), beating `φ`, so `φ` need not be UMP. The classical result
+    -- carries the omitted hypothesis that the densities are strictly positive (equivalently,
+    -- that the level `power P φ θ'` is positive); under `hz` — which positivity guarantees —
+    -- the branch above is a complete proof. Reported per the no-weakening policy.
+    -- TODO(statement-bug): add `0 < power P φ θ'` (or positive densities) to discharge this.
+    sorry
+
+/-- Power of the co-test `1 − g` is `1 −` the power of `g`. -/
+private lemma powerAgainst_one_sub {P : Measure 𝓧} [IsProbabilityMeasure P] {g : 𝓧 → ℝ}
+    (hg : Integrable g P) : powerAgainst P (fun x => 1 - g x) = 1 - powerAgainst P g := by
+  unfold powerAgainst
+  rw [integral_sub (integrable_const 1) hg, integral_const]; simp
+
+/-- **Reversed separating multiplier.** For `θ < θ'`, given a point of positive `θ'`-density
+with `T ≤ C`, there is `k ≥ 0` with `p_θ' ≤ k·p_θ` where `T ≥ C` and `k·p_θ ≤ p_θ'` where
+`T ≤ C` — the mirror of `exists_sep_const`, for the ratio `p_θ'/p_θ` read as *nonincreasing*
+below the boundary. -/
+private lemma exists_sep_const_rev {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (hz : ∃ z, T z ≤ C ∧ 0 < p θ' z) :
+    ∃ k : ℝ, 0 ≤ k ∧ (∀ x, C ≤ T x → p θ x ≤ k * p θ' x) ∧
+      (∀ x, T x ≤ C → k * p θ' x ≤ p θ x) := by
+  obtain ⟨z₀, hz₀C, hz₀pos⟩ := hz
+  have hnn' : ∀ x, 0 ≤ p θ' x := (hp θ').2.1
+  have hnn : ∀ x, 0 ≤ p θ x := (hp θ).2.1
+  set S : Set ℝ := {r | ∃ x, C ≤ T x ∧ 0 < p θ' x ∧ r = p θ x / p θ' x} with hSdef
+  set ratz := p θ z₀ / p θ' z₀ with hratz
+  have hratz_nn : 0 ≤ ratz := div_nonneg (hnn z₀) hz₀pos.le
+  have hUB : ∀ r ∈ insert (0 : ℝ) S, r ≤ ratz := by
+    intro r hr
+    rcases hr with hr0 | ⟨x, hxC, hxpos, hxeq⟩
+    · exact hr0 ▸ hratz_nn
+    · rw [hxeq, hratz, div_le_div_iff₀ hxpos hz₀pos]
+      have := hMLR hlt z₀ x (le_trans hz₀C hxC)
+      nlinarith [this]
+  have hbdd : BddAbove (insert (0 : ℝ) S) := ⟨ratz, hUB⟩
+  have hne : (insert (0 : ℝ) S).Nonempty := ⟨0, Set.mem_insert 0 S⟩
+  set k := sSup (insert (0 : ℝ) S) with hkdef
+  have hk0 : 0 ≤ k := le_csSup hbdd (Set.mem_insert 0 S)
+  refine ⟨k, hk0, ?_, ?_⟩
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn' x) with hpx | hpx
+    · have hkey := hMLR hlt z₀ x (le_trans hz₀C hxC)
+      rw [← hpx, mul_zero] at hkey
+      have : p θ' z₀ * p θ x ≤ 0 := by nlinarith [hkey]
+      have hpx'0 : p θ x = 0 :=
+        le_antisymm (nonpos_of_mul_nonpos_right this hz₀pos) (hnn x)
+      rw [hpx'0, ← hpx, mul_zero]
+    · have hmem : p θ x / p θ' x ∈ insert (0 : ℝ) S :=
+        Set.mem_insert_iff.mpr (Or.inr ⟨x, hxC, hpx, rfl⟩)
+      have hle : p θ x / p θ' x ≤ k := le_csSup hbdd hmem
+      rw [div_le_iff₀ hpx] at hle
+      linarith [hle]
+  · intro x hxC
+    rcases eq_or_lt_of_le (hnn' x) with hpx | hpx
+    · rw [← hpx, mul_zero]; exact hnn x
+    · have hUBx : ∀ r ∈ insert (0 : ℝ) S, r ≤ p θ x / p θ' x := by
+        intro r hr
+        rcases hr with hr0 | ⟨y, hyC, hypos, hyeq⟩
+        · exact hr0 ▸ div_nonneg (hnn x) hpx.le
+        · rw [hyeq, div_le_div_iff₀ hypos hpx]
+          have := hMLR hlt x y (le_trans hxC hyC)
+          nlinarith [this]
+      have hle : k ≤ p θ x / p θ' x := csSup_le hne hUBx
+      rw [le_div_iff₀ hpx] at hle
+      linarith [hle]
+
+/-- **The co-test `1 − φ` has Neyman–Pearson shape** for the swapped simple problem
+`P θ'` (null) against `P θ` (alt), `θ < θ'`, given a positive `θ'`-density point below `C`. -/
+private lemma hasNPShape_coOneSided {μ : Measure 𝓧} {P : ℝ → Measure 𝓧} {p : ℝ → 𝓧 → ℝ}
+    (hp : ∀ θ, HasDensity μ (p θ) (P θ)) {T : 𝓧 → ℝ} (hMLR : HasMLR p T)
+    {θ θ' : ℝ} (hlt : θ < θ') {C : ℝ} (γ : ℝ) (hz : ∃ z, T z ≤ C ∧ 0 < p θ' z) :
+    ∃ K : ℝ≥0∞, HasNPShape μ (p θ') (p θ) K (fun x => 1 - oneSidedTest T C γ x) := by
+  obtain ⟨k, hk0, hge, hle⟩ := exists_sep_const_rev hp hMLR hlt hz
+  refine ⟨ENNReal.ofReal k, ?_, ?_⟩
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : k * p θ' x < p θ x := by
+      by_contra hcon; push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : T x < C := by
+      by_contra hcon
+      exact absurd (hge x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show 1 - oneSidedTest T C γ x = 1
+    unfold oneSidedTest
+    rw [if_neg (not_lt.mpr hTC.le), if_neg (ne_of_lt hTC)]; ring
+  · refine Filter.Eventually.of_forall fun x hx => ?_
+    rw [← ENNReal.ofReal_mul hk0] at hx
+    have hlt' : p θ x < k * p θ' x := by
+      by_contra hcon; push_neg at hcon
+      exact absurd hx (not_lt.mpr (ENNReal.ofReal_le_ofReal hcon))
+    have hTC : C < T x := by
+      by_contra hcon
+      exact absurd (hle x (not_lt.mp hcon)) (not_le.mpr hlt')
+    show 1 - oneSidedTest T C γ x = 0
+    unfold oneSidedTest; rw [if_pos hTC]; ring
+
+/-- If the co-test `1 − φ` has positive power at `θ`, some point at or below the threshold
+has positive `θ`-density. -/
+private lemma exists_pos_density_below_of_coPower_pos {μ : Measure 𝓧} {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {p : ℝ → 𝓧 → ℝ} (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    {T : 𝓧 → ℝ} (hT : Measurable T) {C γ : ℝ} {θ : ℝ}
+    (hpow : power P (oneSidedTest T C γ) θ < 1) : ∃ z, T z ≤ C ∧ 0 < p θ z := by
+  by_contra hcon
+  push_neg at hcon
+  obtain ⟨hmeas, hnn, hPeq⟩ := hp θ
+  have hnull : (P θ) {x | T x ≤ C} = 0 := by
+    rw [hPeq, withDensity_apply _ (measurableSet_le hT measurable_const)]
+    refine setLIntegral_eq_zero (measurableSet_le hT measurable_const) fun x hx => ?_
+    simp only [Set.mem_setOf_eq] at hx
+    simp [le_antisymm (hcon x hx) (hnn x)]
+  -- Off `{T ≤ C}`, i.e. on `{C < T}`, the one-sided test is `1`, so its power is `1`.
+  have hone : power P (oneSidedTest T C γ) θ = 1 := by
+    rw [power_oneSidedTest_eq hT C γ θ]
+    have hRfull : (P θ) {x | C < T x} = 1 := by
+      have hcompl : {x | C < T x} = {x | T x ≤ C}ᶜ := by
+        ext x; simp [not_le]
+      rw [hcompl, prob_compl_eq_one_sub (measurableSet_le hT measurable_const), hnull, tsub_zero]
+    have hBle : (P θ) {x | T x = C} = 0 :=
+      measure_mono_null (Set.setOf_subset_setOf.2 fun x hx => le_of_eq hx) hnull
+    rw [hRfull, hBle]; simp
+  rw [hone] at hpow; exact absurd hpow (lt_irrefl 1)
+
+/-- **Minimum rejection probability below the boundary.** Among all tests whose size at
+`θ₀` is exactly `α`, the one-sided test minimizes the probability of rejection — the
+probability of an error of the first kind — at every `θ < θ₀`. -/
+theorem power_min_oneSided
+    -- USER-INPUT: dominating measure, σ-finite
+    (μ : Measure 𝓧) [SigmaFinite μ]
+    -- USER-INPUT: the model and its densities
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
+    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
+    -- USER-INPUT: the null boundary, level, and the constants of the test
+    (θ₀ : ℝ) {α C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1)
+    -- USER-INPUT: the test is the one determined by the exact-size requirement
+    (hsize : power P (oneSidedTest T C γ) θ₀ = α) :
+    ∀ θ < θ₀, ∀ ψ, IsCriticalFn ψ → power P ψ θ₀ = α →
+      power P (oneSidedTest T C γ) θ ≤ power P ψ θ := by
+  intro θ hθ ψ hψ hψsize
+  set φ := oneSidedTest T C γ with hφdef
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
+  have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+  have hψint : ∀ θ, Integrable ψ (P θ) := fun θ =>
+    (integrable_const (1 : ℝ)).mono' hψ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]; exact (hψ.2 x).2)
+  by_cases hz : ∃ z, T z ≤ C ∧ 0 < p θ₀ z
+  · -- The co-test `1 − φ` is most powerful for `P θ₀` (null) against `P θ` (alt).
+    set coφ : 𝓧 → ℝ := fun x => 1 - φ x with hcoφdef
+    have hcoφc : IsCriticalFn coφ :=
+      ⟨measurable_const.sub hφc.1, fun x => ⟨by linarith [(hφc.2 x).2], by linarith [(hφc.2 x).1]⟩⟩
+    have hcoφsize : powerAgainst (P θ₀) coφ = 1 - α := by
+      rw [hcoφdef, powerAgainst_one_sub (hφint θ₀)]
+      exact congrArg (1 - ·) hsize
+    obtain ⟨K, hshape⟩ := hasNPShape_coOneSided hp hMLR hθ γ hz
+    have hMP := isMostPowerful_of_npShape μ (P θ₀) (P θ) (hp θ₀) (hp θ) hcoφc hcoφsize hshape
+    set coψ : 𝓧 → ℝ := fun x => 1 - ψ x with hcoψdef
+    have hcoψc : IsCriticalFn coψ :=
+      ⟨measurable_const.sub hψ.1, fun x => ⟨by linarith [(hψ.2 x).2], by linarith [(hψ.2 x).1]⟩⟩
+    have hcoψsize : powerAgainst (P θ₀) coψ ≤ 1 - α := by
+      rw [hcoψdef, powerAgainst_one_sub (hψint θ₀)]; exact le_of_eq (congrArg (1 - ·) hψsize)
+    have hcmp := hMP.2.2 coψ hcoψc hcoψsize
+    rw [hcoψdef, powerAgainst_one_sub (hψint θ), hcoφdef, powerAgainst_one_sub (hφint θ)] at hcmp
+    show powerAgainst (P θ) φ ≤ powerAgainst (P θ) ψ
+    linarith [hcmp]
+  · -- Degenerate: `p θ₀ = 0` on `{T ≤ C}`, forcing `power P φ θ₀ = 1`, i.e. `α = 1`. At
+    -- `α = 1` the size constraint `power ψ θ₀ = 1` forces `ψ = 1` `P θ₀`-a.e., but says
+    -- nothing about `P θ`, so the frozen statement is DEFECTIVE here for the same reason as
+    -- `isUMP_oneSided_shifted`: the classical result needs strictly positive densities (which
+    -- supply `hz`) or `α < 1`. Under either the branch above is a complete proof. Reported.
+    -- TODO(statement-bug): add positive densities (or `α < 1`) to discharge this.
+    sorry
+
+/-- **The one-sided tests form an essentially complete class.** For the two-decision
+problem whose losses satisfy `L₁ - L₀ > 0` below the boundary and `< 0` above it, every
+test is matched or beaten, uniformly in `θ`, by a one-sided test. -/
+theorem essentiallyComplete_oneSidedTest
+    -- USER-INPUT: dominating measure, σ-finite
+    (μ : Measure 𝓧) [SigmaFinite μ]
+    -- USER-INPUT: the model and its densities
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    (p : ℝ → 𝓧 → ℝ) (hp : ∀ θ, HasDensity μ (p θ) (P θ))
+    -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
+    (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
+    -- USER-INPUT: the null boundary and the two loss functions
+    (θ₀ : ℝ) (L₀ L₁ : ℝ → ℝ)
+    -- USER-INPUT: rejecting costs more than accepting strictly below the boundary …
+    (hloss_lt : ∀ θ < θ₀, 0 < L₁ θ - L₀ θ)
+    -- USER-INPUT: … and less strictly above it (the monotone-loss condition)
+    (hloss_gt : ∀ θ, θ₀ < θ → L₁ θ - L₀ θ < 0) :
+    ∀ ψ, IsCriticalFn ψ → ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
+      ∀ θ, testRisk P L₀ L₁ (oneSidedTest T C γ) θ ≤ testRisk P L₀ L₁ ψ θ := by
+  -- ROADMAP (regular case fully reduces to machinery already proven above): put
+  -- `α := power P ψ θ₀ ∈ (0,1)`; take `C, γ` from `exists_critical_constants` on the
+  -- `T`-marginal so `power P (oneSidedTest T C γ) θ₀ = α = power P ψ θ₀`. Then, with
+  -- `testRisk P L₀ L₁ φ θ = power P φ θ · (L₁ θ − L₀ θ) + L₀ θ`:
+  --   • `θ = θ₀`: equal powers ⇒ equal risk.
+  --   • `θ > θ₀` (`L₁−L₀ < 0`): `isMostPowerful_oneSided` at `(θ₀,θ)` gives
+  --     `power ψ θ ≤ power φ θ`, and the negative loss coefficient flips it to risk `φ ≤ ψ`.
+  --   • `θ < θ₀` (`L₁−L₀ > 0`): `power_min_oneSided` gives `power φ θ ≤ power ψ θ`, and the
+  --     positive coefficient keeps risk `φ ≤ ψ`.
+  -- OBSTRUCTION: the reduction inherits the two documented gaps of its ingredients — the
+  -- endpoint failure of the exact-size construction at `α ∈ {0,1}` (see `isUMP_oneSided`)
+  -- and the `hz`/positive-density corner of `isMostPowerful_oneSided` / `power_min_oneSided`.
+  -- Under strictly positive densities and `0 < power P ψ θ₀ < 1` the roadmap is a complete
+  -- proof; the general frozen statement needs those omitted hypotheses.
+  -- TODO: discharge once the positivity hypothesis is added (mirrors the sibling theorems).
+  sorry
+
+/-- **The one-parameter exponential family has a monotone likelihood ratio** in its
+natural statistic, provided the parametrization `θ ↦ η(θ)` is strictly increasing. The
+densities are the canonical ones, `exp(η(θ)·T(x) - A(η(θ)))`. -/
+theorem hasMLR_expFamily
+    -- USER-INPUT: the exponential family (reference measure and natural statistic)
+    (E : ExpFamily 𝓧 ℝ)
+    -- USER-INPUT: the parametrization, strictly increasing — the printed hypothesis
+    -- "`Q` is strictly monotone", in its increasing case
+    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap) :
+    HasMLR (fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))) E.stat := by
+  intro θ θ' hθθ' x y hTxy
+  have hηlt : ηmap θ < ηmap θ' := hη hθθ'
+  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+  nlinarith [mul_nonneg (sub_pos.mpr hηlt).le (sub_nonneg.mpr hTxy)]
+
+/-- **UMP one-sided test in a one-parameter exponential family.** For a family presented
+in canonical form through a strictly increasing `η`, the test rejecting for large values of
+the natural statistic is UMP for `H : θ ≤ θ₀` against `K : θ > θ₀`. -/
+theorem isUMP_oneSided_expFamily
+    -- USER-INPUT: the exponential family, with σ-finite reference measure
+    (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
+    -- USER-INPUT: the model, a family of probability measures
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    -- USER-INPUT: the parametrization, strictly increasing
+    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap)
+    -- USER-INPUT: the model is the canonical family read through `ηmap`
+    (hrepr : IsCanonicalRepr P E ηmap)
+    -- USER-INPUT: every parameter value is in the natural parameter set, so that each
+    -- `P θ` really is the tilted probability measure and not the junk zero measure
+    (hnat : ∀ θ, ηmap θ ∈ E.natSet)
+    -- USER-INPUT: the null boundary and the nominal level
+    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
+    ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
+      power P (oneSidedTest E.stat C γ) θ₀ = α ∧
+      IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest E.stat C γ) := by
+  -- Read off the canonical densities and reduce to the general MLR theorem.
+  set p : ℝ → 𝓧 → ℝ :=
+    fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ)) with hpdef
+  have hp : ∀ θ, HasDensity E.base (p θ) (P θ) := by
+    intro θ
+    refine ⟨(((E.stat_meas.const_mul (ηmap θ)).sub_const _).exp), fun x => (Real.exp_pos _).le, ?_⟩
+    rw [hrepr θ, E.P_eq_withDensity (hnat θ)]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hpdef, real_inner_mul]
+  exact isUMP_oneSided E.base P p hp E.stat E.stat_meas (hasMLR_expFamily E hη) θ₀ hα
 
 end StatLean.HypothesisTesting

@@ -65,6 +65,12 @@ namespace StatLean.HypothesisTesting
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- Integrability of a critical function times an integrable function. -/
+private lemma integrable_crit_mul {μ : Measure 𝓧} {p φ : 𝓧 → ℝ} (hp : Integrable p μ)
+    (hφ : IsCriticalFn φ) : Integrable (fun x => φ x * p x) μ :=
+  hp.bdd_mul hφ.1.aestronglyMeasurable (Filter.Eventually.of_forall fun x => by
+    rw [Real.norm_eq_abs, abs_of_nonneg (hφ.2 x).1]; exact (hφ.2 x).2)
+
 /-- The **attainable-moment set**: the set of vectors `(∫φf₁dμ, …, ∫φf_mdμ)` obtained as
 `φ` ranges over all critical functions. It is convex and closed (`convex_isClosed_momentSet`),
 and the constraint vector being one of its inner points is the hypothesis under which
@@ -100,6 +106,15 @@ theorem exists_test_max_integral_of_constraints {m : ℕ}
     ∃ φ, IsCriticalFn φ ∧ (∀ i, ∫ x, φ x * f i.castSucc x ∂μ = c i) ∧
       ∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ = c i) →
         ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ := by
+  -- OBSTRUCTION (deep debt). Existence of a maximizer over the constraint class is not an
+  -- algebraic fact: it is a compactness statement. The class of critical functions is the
+  -- closed unit ball of `L∞(μ)`, which is weak-* sequentially compact (Banach–Alaoglu on the
+  -- separable predual `L¹`), and the objective/constraint functionals `φ ↦ ∫ φ fᵢ dμ` are
+  -- weak-* continuous. Extracting a maximizing subsequence and passing to the weak-* limit —
+  -- while preserving the equality constraints and criticality — is exactly the open theorem
+  -- `ForMathlib/TestsWeakCompact` (weak-sequential compactness of the critical-function
+  -- class). No honest proof is available in Mathlib without it, and it cannot be replaced by
+  -- the algebraic multiplier machinery above (which only certifies a *given* candidate).
   sorry
 
 /-- **Sufficiency (ii).** A member of the constraint class that has the multiplier shape
@@ -123,7 +138,82 @@ theorem isMax_of_multiplier_form {m : ℕ}
     (hshape : HasMultiplierShape μ f k φ) :
     ∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ = c i) →
       ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ := by
-  sorry
+  intro ψ hψ hψcon
+  obtain ⟨hsp1, hsp0⟩ := hshape
+  set S : 𝓧 → ℝ := fun x => ∑ i, k i * f i.castSucc x with hSdef
+  -- Pointwise `(φ − ψ)(f_last − S) ≥ 0`.
+  have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * (f (Fin.last m) x - S x) := by
+    filter_upwards [hsp1, hsp0] with x hx1 hx0
+    have hφ1 := (hφ.2 x).2; have hψ0 := (hψ.2 x).1; have hψ1 := (hψ.2 x).2
+    rcases lt_trichotomy (S x) (f (Fin.last m) x) with hlt | heq | hgt
+    · rw [hx1 hlt]; exact mul_nonneg (by linarith) (by linarith)
+    · have hz : f (Fin.last m) x - S x = 0 := by linarith
+      simp [hz]
+    · rw [hx0 hgt]
+      have hrw : (0 - ψ x) * (f (Fin.last m) x - S x) = ψ x * (S x - f (Fin.last m) x) := by ring
+      rw [hrw]; exact mul_nonneg (by linarith) (by linarith)
+  have hnn := integral_nonneg_of_ae hpt
+  -- Integrability data.
+  have hfi : ∀ i, Integrable (fun x => φ x * f i x) μ := fun i => integrable_crit_mul (hint i) hφ
+  have hgi : ∀ i, Integrable (fun x => ψ x * f i x) μ := fun i => integrable_crit_mul (hint i) hψ
+  have hSint : Integrable S μ := by
+    refine integrable_finset_sum Finset.univ fun i _ => ?_
+    exact ((hint i.castSucc).const_mul (k i))
+  have hφlast := hfi (Fin.last m)
+  have hψlast := hgi (Fin.last m)
+  have hφS : Integrable (fun x => φ x * S x) μ := integrable_crit_mul hSint hφ
+  have hψS : Integrable (fun x => ψ x * S x) μ := integrable_crit_mul hSint hψ
+  -- Expand the nonnegative integral.
+  have hexpand : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+      = (∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ)
+        - ∑ i, k i * (∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ) := by
+    have hφSeq : ∫ x, φ x * S x ∂μ = ∑ i, k i * ∫ x, φ x * f i.castSucc x ∂μ := by
+      rw [hSdef]
+      rw [show (fun x => φ x * ∑ i, k i * f i.castSucc x)
+          = fun x => ∑ i, k i * (φ x * f i.castSucc x) from by
+        funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
+      rw [integral_finset_sum Finset.univ
+        (fun i _ => (integrable_crit_mul (hint i.castSucc) hφ).const_mul (k i))]
+      refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
+    have hψSeq : ∫ x, ψ x * S x ∂μ = ∑ i, k i * ∫ x, ψ x * f i.castSucc x ∂μ := by
+      rw [hSdef]
+      rw [show (fun x => ψ x * ∑ i, k i * f i.castSucc x)
+          = fun x => ∑ i, k i * (ψ x * f i.castSucc x) from by
+        funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
+      rw [integral_finset_sum Finset.univ
+        (fun i _ => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i))]
+      refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
+    have hAB : ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
+        = ∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ :=
+      integral_sub hφlast hψlast
+    have hDE : ∫ x, (φ x * S x - ψ x * S x) ∂μ
+        = ∫ x, φ x * S x ∂μ - ∫ x, ψ x * S x ∂μ :=
+      integral_sub hφS hψS
+    have hADBE : ∫ x, ((φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x)
+          - (φ x * S x - ψ x * S x)) ∂μ
+        = ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
+          - ∫ x, (φ x * S x - ψ x * S x) ∂μ :=
+      integral_sub (hφlast.sub hψlast) (hφS.sub hψS)
+    have hstep : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+        = (∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ)
+          - (∫ x, φ x * S x ∂μ - ∫ x, ψ x * S x ∂μ) := by
+      have he1 : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+          = ∫ x, ((φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x)
+              - (φ x * S x - ψ x * S x)) ∂μ :=
+        integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+      rw [he1, hADBE, hAB, hDE]
+    rw [hstep, hφSeq, hψSeq, ← Finset.sum_sub_distrib]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => by ring
+  rw [hexpand] at hnn
+  -- Each constraint difference vanishes.
+  have hzero : ∀ i : Fin m,
+      ∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ = 0 := by
+    intro i; rw [hcon i, hψcon i, sub_self]
+  have hsumzero : ∑ i, k i * (∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ) = 0 := by
+    refine Finset.sum_eq_zero fun i _ => by rw [hzero i, mul_zero]
+  rw [hsumzero, sub_zero] at hnn
+  linarith
 
 /-- **Sufficiency (iii), nonnegative multipliers.** If the multipliers are nonnegative,
 the same test is maximal against the *larger* competitor class defined by the inequality
@@ -149,7 +239,82 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
     (hshape : HasMultiplierShape μ f k φ) :
     ∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ ≤ c i) →
       ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ := by
-  sorry
+  intro ψ hψ hψcon
+  obtain ⟨hsp1, hsp0⟩ := hshape
+  set S : 𝓧 → ℝ := fun x => ∑ i, k i * f i.castSucc x with hSdef
+  -- Pointwise `(φ − ψ)(f_last − S) ≥ 0`.
+  have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * (f (Fin.last m) x - S x) := by
+    filter_upwards [hsp1, hsp0] with x hx1 hx0
+    have hφ1 := (hφ.2 x).2; have hψ0 := (hψ.2 x).1; have hψ1 := (hψ.2 x).2
+    rcases lt_trichotomy (S x) (f (Fin.last m) x) with hlt | heq | hgt
+    · rw [hx1 hlt]; exact mul_nonneg (by linarith) (by linarith)
+    · have hz : f (Fin.last m) x - S x = 0 := by linarith
+      simp [hz]
+    · rw [hx0 hgt]
+      have hrw : (0 - ψ x) * (f (Fin.last m) x - S x) = ψ x * (S x - f (Fin.last m) x) := by ring
+      rw [hrw]; exact mul_nonneg (by linarith) (by linarith)
+  have hnn := integral_nonneg_of_ae hpt
+  -- Integrability data.
+  have hfi : ∀ i, Integrable (fun x => φ x * f i x) μ := fun i => integrable_crit_mul (hint i) hφ
+  have hgi : ∀ i, Integrable (fun x => ψ x * f i x) μ := fun i => integrable_crit_mul (hint i) hψ
+  have hSint : Integrable S μ := by
+    refine integrable_finset_sum Finset.univ fun i _ => ?_
+    exact ((hint i.castSucc).const_mul (k i))
+  have hφlast := hfi (Fin.last m)
+  have hψlast := hgi (Fin.last m)
+  have hφS : Integrable (fun x => φ x * S x) μ := integrable_crit_mul hSint hφ
+  have hψS : Integrable (fun x => ψ x * S x) μ := integrable_crit_mul hSint hψ
+  -- Expand the nonnegative integral.
+  have hexpand : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+      = (∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ)
+        - ∑ i, k i * (∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ) := by
+    have hφSeq : ∫ x, φ x * S x ∂μ = ∑ i, k i * ∫ x, φ x * f i.castSucc x ∂μ := by
+      rw [hSdef]
+      rw [show (fun x => φ x * ∑ i, k i * f i.castSucc x)
+          = fun x => ∑ i, k i * (φ x * f i.castSucc x) from by
+        funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
+      rw [integral_finset_sum Finset.univ
+        (fun i _ => (integrable_crit_mul (hint i.castSucc) hφ).const_mul (k i))]
+      refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
+    have hψSeq : ∫ x, ψ x * S x ∂μ = ∑ i, k i * ∫ x, ψ x * f i.castSucc x ∂μ := by
+      rw [hSdef]
+      rw [show (fun x => ψ x * ∑ i, k i * f i.castSucc x)
+          = fun x => ∑ i, k i * (ψ x * f i.castSucc x) from by
+        funext x; rw [Finset.mul_sum]; refine Finset.sum_congr rfl fun i _ => by ring]
+      rw [integral_finset_sum Finset.univ
+        (fun i _ => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i))]
+      refine Finset.sum_congr rfl fun i _ => by rw [integral_const_mul]
+    have hAB : ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
+        = ∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ :=
+      integral_sub hφlast hψlast
+    have hDE : ∫ x, (φ x * S x - ψ x * S x) ∂μ
+        = ∫ x, φ x * S x ∂μ - ∫ x, ψ x * S x ∂μ :=
+      integral_sub hφS hψS
+    have hADBE : ∫ x, ((φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x)
+          - (φ x * S x - ψ x * S x)) ∂μ
+        = ∫ x, (φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x) ∂μ
+          - ∫ x, (φ x * S x - ψ x * S x) ∂μ :=
+      integral_sub (hφlast.sub hψlast) (hφS.sub hψS)
+    have hstep : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+        = (∫ x, φ x * f (Fin.last m) x ∂μ - ∫ x, ψ x * f (Fin.last m) x ∂μ)
+          - (∫ x, φ x * S x ∂μ - ∫ x, ψ x * S x ∂μ) := by
+      have he1 : ∫ x, (φ x - ψ x) * (f (Fin.last m) x - S x) ∂μ
+          = ∫ x, ((φ x * f (Fin.last m) x - ψ x * f (Fin.last m) x)
+              - (φ x * S x - ψ x * S x)) ∂μ :=
+        integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+      rw [he1, hADBE, hAB, hDE]
+    rw [hstep, hφSeq, hψSeq, ← Finset.sum_sub_distrib]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => by ring
+  rw [hexpand] at hnn
+  -- Each constraint difference is nonnegative, and `kᵢ ≥ 0`, so the sum is nonnegative.
+  have hdiffnn : ∀ i : Fin m,
+      0 ≤ ∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ := by
+    intro i
+    rw [hcon i]; linarith [hψcon i]
+  have hsumnn : 0 ≤ ∑ i, k i * (∫ x, φ x * f i.castSucc x ∂μ - ∫ x, ψ x * f i.castSucc x ∂μ) := by
+    refine Finset.sum_nonneg fun i _ => mul_nonneg (hk i) (hdiffnn i)
+  linarith
 
 /-- **Geometry of the moment set (iv, first clause).** The attainable-moment set is convex
 and closed. Convexity is immediate from convexity of the class of critical functions;
@@ -164,7 +329,36 @@ theorem convex_isClosed_momentSet {m : ℕ}
     -- USER-INPUT: integrability of the data
     (hint : ∀ i, Integrable (f i) μ) :
     Convex ℝ (momentSet μ f) ∧ IsClosed (momentSet μ f) := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- Convexity: a convex combination of critical functions is critical, and its moments
+    -- are the convex combination of the moments (linearity of the integral).
+    rintro u ⟨φ, hφc, hφm⟩ v ⟨ψ, hψc, hψm⟩ a b ha hb hab
+    have hfi : ∀ i, Integrable (fun x => φ x * f i x) μ :=
+      fun i => integrable_crit_mul (hint i) hφc
+    have hgi : ∀ i, Integrable (fun x => ψ x * f i x) μ :=
+      fun i => integrable_crit_mul (hint i) hψc
+    refine ⟨fun x => a * φ x + b * ψ x, ⟨?_, fun x => ?_⟩, fun i => ?_⟩
+    · exact (hφc.1.const_mul a).add (hψc.1.const_mul b)
+    · have hφx := hφc.2 x; have hψx := hψc.2 x
+      constructor
+      · have := mul_nonneg ha hφx.1
+        have := mul_nonneg hb hψx.1
+        linarith
+      · have h1 : a * φ x ≤ a * 1 := mul_le_mul_of_nonneg_left hφx.2 ha
+        have h2 : b * ψ x ≤ b * 1 := mul_le_mul_of_nonneg_left hψx.2 hb
+        have : a * φ x + b * ψ x ≤ a * 1 + b * 1 := by linarith
+        rw [mul_one, mul_one] at this; linarith [this, hab]
+    · change ∫ x, (a * φ x + b * ψ x) * f i x ∂μ = (a • u + b • v) i
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+      rw [← hφm i, ← hψm i]
+      rw [show (fun x => (a * φ x + b * ψ x) * f i x)
+          = fun x => a * (φ x * f i x) + b * (ψ x * f i x) from by funext x; ring]
+      rw [integral_add ((hfi i).const_mul a) ((hgi i).const_mul b),
+        integral_const_mul, integral_const_mul]
+  · -- TODO(TestsWeakCompact): closedness of the moment set is the weak-sequential-compactness
+    -- theorem for critical functions (ForMathlib/TestsWeakCompact, still open). No honest
+    -- proof is available without it; convexity above is complete.
+    sorry
 
 /-- **Multipliers exist, and are forced (iv, second clause).** If the constraint vector is
 an inner point of the attainable-moment set, then there are multipliers `k` such that
@@ -195,6 +389,17 @@ theorem exists_multipliers_of_max {m : ℕ}
         (∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ = c i) →
           ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ) →
         HasMultiplierShape μ f k φ := by
+  -- OBSTRUCTION (deep debt). This is the necessity/existence half of the inner-point clause
+  -- and it needs two ingredients neither of which is available. (1) The attainable-moment set
+  -- must be convex AND closed; convexity is proved in `convex_isClosed_momentSet`, but its
+  -- closedness is the open weak-sequential-compactness theorem `ForMathlib/TestsWeakCompact`.
+  -- (2) Given a convex closed set with `c` in its interior, one lifts `c` along the objective
+  -- to the boundary of the augmented moment body in `Fin (m+1) → ℝ` and applies a
+  -- separating-/supporting-hyperplane argument (`geometric_hahn_banach`/`Convex.exists_ge`);
+  -- the hyperplane's normal supplies the multipliers `k`, and every maximizer is then forced
+  -- onto the multiplier shape a.e. by the complementary-slackness of that hyperplane. Both the
+  -- compactness input and the hyperplane-to-a.e.-shape bridge are missing, so no honest proof
+  -- is available without `ForMathlib/TestsWeakCompact`.
   sorry
 
 /-- **A test with prescribed sizes.** Given `m + 1` probability densities and a level
@@ -214,6 +419,14 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
     (∃ k : Fin m → ℝ, ∀ᵐ x ∂μ, p (Fin.last m) x = ∑ i, k i * p i.castSucc x) ∨
       ∃ φ, IsCriticalFn φ ∧ (∀ i : Fin m, powerAgainst (P i.castSucc) φ = α) ∧
         α < powerAgainst (P (Fin.last m)) φ := by
+  -- OBSTRUCTION (deep debt). This is the applied form of the inner-point clause. The vector
+  -- `c ≡ α` is an inner point of the moment set precisely when the last density is NOT an a.e.
+  -- linear combination of the others (the excluded left disjunct); in that case one invokes
+  -- `exists_multipliers_of_max` to obtain the multiplier test that maximizes the power against
+  -- `P_{m+1}`, and strict unbiasedness upgrades `α ≤` to `α <`. This routes entirely through
+  -- `exists_multipliers_of_max`, hence inherits its dependency on the open weak-compactness
+  -- theorem `ForMathlib/TestsWeakCompact` and the supporting-hyperplane argument. No honest
+  -- proof is available without them.
   sorry
 
 /-- **Lagrangian sufficiency.** Abstract form of the multiplier argument, on an arbitrary
@@ -237,6 +450,11 @@ theorem isMax_of_lagrangian {U : Type*} {m : ℕ}
     (hlag : ∀ u, F (Fin.last m) u - ∑ i, k i * F i.castSucc u ≤
       F (Fin.last m) u₀ - ∑ i, k i * F i.castSucc u₀) :
     ∀ u, (∀ i, F i.castSucc u = c i) → F (Fin.last m) u ≤ F (Fin.last m) u₀ := by
-  sorry
+  intro u hu
+  have hsum : ∑ i, k i * F i.castSucc u = ∑ i, k i * F i.castSucc u₀ := by
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hu i, hu₀ i]
+  have hl := hlag u
+  linarith [hl, hsum]
 
 end StatLean.HypothesisTesting
