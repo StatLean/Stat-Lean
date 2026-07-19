@@ -299,6 +299,11 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- vacuously.
     (hposmin : ∀ u : ℝ, ∃ v : ℝ, 0 < v ∧ γ v ≤ γ u) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
+  -- RETAINED DEBT (pe/equivariance-close): tainted by the same obstruction as the location
+  -- twin `exists_measurable_condMinimizer_convex` — the fibrewise minimizer needs continuity
+  -- of the ℝ≥0∞-valued conditional-risk objective in the log-shift, which the frozen
+  -- `exists_measurable_argmin` brick demands as full continuity and which fails at the
+  -- finiteness boundary for an unbounded (log-)convex loss.
   -- Statement corrected: `hposmin` rules out the counterexample below by forbidding `γ` from
   -- dipping under its positive-axis values off the positive axis. Route: apply the corrected
   -- `isScaleMRE_of_conditional_min` (closed) with a fibrewise minimizer produced by

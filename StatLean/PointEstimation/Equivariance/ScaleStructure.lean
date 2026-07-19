@@ -217,27 +217,30 @@ theorem isScaleInvariant_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) �
   exact (hu hb x hx).symm
 
 /-- Measurable version of the factorization through `scaleZ`, as consumed by the
-conditional-minimization argument. -/
-theorem isScaleInvariant_iff_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) → ℝ) :
+conditional-minimization argument.
+
+The measurability of `u` is supplied as a hypothesis rather than being part of the
+equivalence. Without it the `mpr` direction is **false**: the right-hand side constrains
+`u` only off the null set `{x (Fin.last m) = 0}`; on that Borel set (which is
+Borel-isomorphic to `ℝ^m`, hence carries non-Borel subsets) `u` is unconstrained, so
+`Measurable u` cannot be recovered from the factorization alone. Counterexample: take
+`w = 0` (measurable) and let `u = 0` off the null set and `u = indicator A` on it for a
+non-Borel `A ⊆ {x (Fin.last m) = 0}`. Then the factorization holds off the null set but
+`u` is not measurable. Every consumer supplies measurability of `u` anyway (it is a
+Lean-side requirement for `u` to be an estimator), so pinning it as `hu` costs nothing. -/
+theorem isScaleInvariant_iff_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) → ℝ)
+    -- LEAN-ONLY: measurability of `u`; the `mpr` direction is false without it (see above),
+    -- and every consumer supplies it
+    (hu : Measurable u) :
     (Measurable u ∧
         ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → u (b • x) = u x) ↔
       ∃ w : (Fin m → ℝ) × ℝ → ℝ, Measurable w ∧
         ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
   constructor
-  · rintro ⟨hum, hu⟩
-    exact isScaleInvariant_factors_scaleZ_measurable u hum hu
-  · -- FALSE AS STATED (mpr). The right-hand side constrains `u` only off the null set
-    -- `{x (Fin.last m) = 0}`; on that Borel set (which is Borel-isomorphic to `ℝ^m`,
-    -- hence carries non-Borel subsets) `u` is unconstrained, so `Measurable u` cannot be
-    -- recovered. Counterexample: take `w = 0` (measurable) and let `u = 0` off the null
-    -- set and `u = indicator A` on it for a non-Borel `A ⊆ {x (Fin.last m) = 0}`. Then the
-    -- factorization holds off the null set but `u` is not measurable. The `mp` direction —
-    -- the one the conditional-minimization argument actually consumes — is true and proved
-    -- above; only this converse is defective, from restricting the factorization to the
-    -- null set on a statement whose left conjunct asks for *global* measurability.
-    rintro ⟨w, hwm, hw⟩
-    refine ⟨?_, ?_⟩
-    · sorry -- TODO: `Measurable u` is not derivable from an off-null-set factorization
+  · rintro ⟨hum, huinv⟩
+    exact isScaleInvariant_factors_scaleZ_measurable u hum huinv
+  · rintro ⟨w, hwm, hw⟩
+    refine ⟨hu, ?_⟩
     · intro b hb x hx
       have hbx : (b • x) (Fin.last m) ≠ 0 := by
         simp only [Pi.smul_apply, smul_eq_mul]
