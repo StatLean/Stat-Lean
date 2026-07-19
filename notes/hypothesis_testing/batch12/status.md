@@ -240,3 +240,9 @@ provides only a non-uniform `o(t²)` version.
   and it waits on `power_acceptanceTest` in `Tests/Confidence`.
 - Edgeworth (Thms 18.4.1/18.4.2) and the Bentkus bound (Lem 16.4.1): **proofless in the source**;
   pre-agreed statement-plus-deferral.
+
+### VERIFIED integration gate (2026-07-19)
+
+`lake build StatLean.HypothesisTesting` on the cluster: **0 errors, `Build completed successfully`,
+164 sorried declarations** (down from 243 at the stub gate — **33% closed**). The build warning
+count is authoritative; `grep -c sorry` reports 165 (docstring/TODO mentions).
