@@ -181,21 +181,6 @@ private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
   · rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), ← Finset.mul_sum]
     exact mul_le_mul_of_nonneg_left (hpt (E.stat x)) (abs_nonneg _)
 
-/-- **Continuity** of the weighted exponential integral on the interior of the weighted
-natural parameter set. -/
-theorem continuousOn_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
-    -- USER-INPUT: the weight is a measurable function on the sample space; this is the
-    -- classical "integrable function `f`" of the differentiation theorem
-    (hf : Measurable f) :
-    ContinuousOn (fun η => ∫ x, f x * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)
-      (interior (E.weightedNatSet f)) := by
-  -- TODO: dominated-convergence continuity. On a ball `B(η, r) ⊆ interior (weightedNatSet f)`
-  -- the integrand `ζ ↦ f x · e^{⟪ζ, T x⟫}` is dominated by the local envelope
-  -- `|f x|·(e^{⟪η,T x⟫} + e^{⟪ζ,T x⟫})` (convexity of `exp` along the segment); its integrability
-  -- is the `2^s` sign-vector bound `e^{c·Σ|Tᵢ|} ≤ Σ_ε e^{⟪c·ε, T⟫}` (finite dimension), giving
-  -- `continuousWithinAt` at each interior point via `continuousAt_of_dominated`.
-  sorry
-
 /-- **Differentiability**: on the interior of the weighted natural parameter set the weighted
 exponential integral is Fréchet differentiable, and its differential is represented by the
 vector `∫ (f x · e^{⟨η, T x⟩}) • T x dν` — the integral of the differentiated integrand. -/
@@ -273,7 +258,8 @@ theorem hasFDerivAt_integral_exp_inner
       _ = (Real.exp 1 * r)⁻¹ * (|f x| * (Real.exp ⟪η, E.stat x⟫_ℝ
             * Real.exp (2 * r * ‖E.stat x‖))) := by ring
   -- integrability of the `V`-valued and CLM-valued differentiated integrands
-  have hstat_asm : AEStronglyMeasurable (fun x => E.stat x) E.base := E.stat_meas.aestronglyMeasurable
+  have hstat_asm : AEStronglyMeasurable (fun x => E.stat x) E.base :=
+    E.stat_meas.aestronglyMeasurable
   have hgT_int : Integrable (fun x => (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • E.stat x) E.base := by
     refine bound_int.mono' ((hexp_asm η).smul hstat_asm) (Filter.Eventually.of_forall fun x => ?_)
     rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
@@ -344,6 +330,20 @@ theorem hasFDerivAt_integral_exp_inner
   rw [hcomm] at key
   exact key
 
+/-- **Continuity** of the weighted exponential integral on the interior of the weighted
+natural parameter set. -/
+theorem continuousOn_integral_exp_inner
+    -- LEAN-ONLY: finite dimension, inherited from `hasFDerivAt_integral_exp_inner` (of which this
+    -- is a corollary: differentiability at each interior point gives continuity there).
+    [FiniteDimensional ℝ V] (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
+    -- USER-INPUT: the weight is a measurable function on the sample space; this is the
+    -- classical "integrable function `f`" of the differentiation theorem
+    (hf : Measurable f) :
+    ContinuousOn (fun η => ∫ x, f x * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)
+      (interior (E.weightedNatSet f)) :=
+  -- differentiability at each interior point gives continuity within the interior there
+  fun _ hη => (hasFDerivAt_integral_exp_inner E hf hη).continuousAt.continuousWithinAt
+
 /-- **Derivatives of all orders** along a fixed direction: the `n`-th derivative of
 `t ↦ ∫ f(x) e^{⟨η + t·u, T x⟩} dν` at `t = 0` is obtained by differentiating under the
 integral sign `n` times. -/
@@ -354,12 +354,138 @@ theorem iteratedDeriv_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → �
     (hη : η ∈ interior (E.weightedNatSet f)) (u : V) (n : ℕ) :
     iteratedDeriv n (fun t : ℝ => ∫ x, f x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ ∂E.base) 0
       = ∫ x, f x * ⟪u, E.stat x⟫_ℝ ^ n * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := by
-  -- TODO: iterate the directional derivative. Along `t ↦ η + t•u` the integrand is
-  -- `f x · e^{⟪η,T x⟫ + t·⟪u,T x⟫}`; each differentiation pulls down a factor `⟪u, T x⟫`, and the
-  -- swap of `iteratedDeriv` with `∫` at order `n` follows by induction from the same
-  -- dominated-differentiation step as `hasFDerivAt_integral_exp_inner` (with weight
-  -- `f · ⟪u,T⟫^k`), whose local envelope is again the `2^s` sign-vector bound.
-  sorry
+  classical
+  -- Reduce to the one-parameter moment generating function of `Y = ⟪u, T⟫` under the tilted
+  -- measure `μof w = ν.withDensity (w · e^{⟪η,T⟫})`, then invoke `iteratedDeriv_mgf`.
+  set Y : 𝓧 → ℝ := fun x => ⟪u, E.stat x⟫_ℝ with hYdef
+  have hYmeas : Measurable Y := (innerSL ℝ u).continuous.measurable.comp E.stat_meas
+  have hinner_meas : Measurable fun x => ⟪η, E.stat x⟫_ℝ :=
+    (innerSL ℝ η).continuous.measurable.comp E.stat_meas
+  have hline : ∀ (t : ℝ) (x : 𝓧), ⟪η + t • u, E.stat x⟫_ℝ = ⟪η, E.stat x⟫_ℝ + t * Y x := by
+    intro t x; rw [hYdef]; simp only [inner_add_left, real_inner_smul_left]
+  set μof : (𝓧 → ℝ) → Measure 𝓧 :=
+    fun w => E.base.withDensity (fun x => ENNReal.ofReal (w x * Real.exp ⟪η, E.stat x⟫_ℝ))
+    with hμof
+  have hdmeas : ∀ (w : 𝓧 → ℝ), Measurable w →
+      Measurable fun x => w x * Real.exp ⟪η, E.stat x⟫_ℝ := fun w hw => hw.mul hinner_meas.exp
+  -- (a) the mgf of `Y` under `μof w` is the weighted line integral
+  have hmgf : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → ∀ t : ℝ,
+      mgf Y (μof w) t = ∫ x, w x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ ∂E.base := by
+    intro w hw hwnn t
+    simp only [mgf, hμof]
+    rw [integral_withDensity_eq_integral_toReal_smul (hdmeas w hw).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (mul_nonneg (hwnn x) (Real.exp_nonneg _)), smul_eq_mul,
+      hline t x, Real.exp_add]
+    ring
+  -- (b) `0` lies in the interior of the integrable-exp set of `μof w`
+  have hcont : Continuous fun t : ℝ => η + t • u :=
+    continuous_const.add (continuous_id.smul continuous_const)
+  have hmem : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
+      (0 : ℝ) ∈ interior (integrableExpSet Y (μof w)) := by
+    intro w hw hwnn hwle
+    have hsub : {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} ⊆
+        integrableExpSet Y (μof w) := by
+      intro t ht
+      simp only [Set.mem_setOf_eq] at ht
+      have htmem : η + t • u ∈ E.weightedNatSet f := interior_subset ht
+      have hint : Integrable (fun x => |f x| * Real.exp ⟪η + t • u, E.stat x⟫_ℝ) E.base := htmem
+      simp only [integrableExpSet, Set.mem_setOf_eq, hμof]
+      rw [integrable_withDensity_iff (hdmeas w hw).ennreal_ofReal
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+      refine hint.mono' (((hYmeas.const_mul t).exp.aestronglyMeasurable).mul
+        ((hdmeas w hw).ennreal_ofReal.ennreal_toReal).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun x => ?_)
+      rw [Real.norm_eq_abs,
+        ENNReal.toReal_ofReal (mul_nonneg (hwnn x) (Real.exp_nonneg _)),
+        abs_of_nonneg (mul_nonneg (Real.exp_nonneg _)
+          (mul_nonneg (hwnn x) (Real.exp_nonneg _))),
+        show Real.exp (t * Y x) * (w x * Real.exp ⟪η, E.stat x⟫_ℝ)
+            = w x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ by rw [hline t x, Real.exp_add]; ring]
+      exact mul_le_mul_of_nonneg_right (hwle x) (Real.exp_nonneg _)
+    have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
+      isOpen_interior.preimage hcont
+    have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
+      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+    exact interior_maximal hsub hUopen h0U
+  -- (c) the `n`-th derivative of the mgf at `0` is the `n`-th `Y`-moment of `μof w`
+  have hiter : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
+      iteratedDeriv n (mgf Y (μof w)) 0
+        = ∫ x, w x * ⟪u, E.stat x⟫_ℝ ^ n * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := by
+    intro w hw hwnn hwle
+    rw [iteratedDeriv_mgf (hmem w hw hwnn hwle) n]
+    simp only [hμof, hYdef]
+    rw [integral_withDensity_eq_integral_toReal_smul (hdmeas w hw).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (mul_nonneg (hwnn x) (Real.exp_nonneg _)), smul_eq_mul,
+      zero_mul, Real.exp_zero]
+    ring
+  -- integrability of the `n`-th moment integrand, for the split into positive/negative parts
+  have hiterInt : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) →
+      Integrable (fun x => w x * ⟪u, E.stat x⟫_ℝ ^ n * Real.exp ⟪η, E.stat x⟫_ℝ) E.base := by
+    intro w hw hwnn hwle
+    have hI : Integrable (fun x => Y x ^ n * Real.exp (0 * Y x)) (μof w) := by
+      rw [hμof]
+      exact integrable_pow_mul_exp_of_mem_interior_integrableExpSet (hmem w hw hwnn hwle) n
+    rw [hμof, integrable_withDensity_iff (hdmeas w hw).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)] at hI
+    refine hI.congr (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (mul_nonneg (hwnn x) (Real.exp_nonneg _)), zero_mul, Real.exp_zero]
+    ring
+  -- weighted line-integrals for the two parts are integrable on the interior line
+  have hintw : ∀ (w : 𝓧 → ℝ), Measurable w → (∀ x, 0 ≤ w x) → (∀ x, w x ≤ |f x|) → ∀ t : ℝ,
+      η + t • u ∈ interior (E.weightedNatSet f) →
+      Integrable (fun x => w x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ) E.base := by
+    intro w hw hwnn hwle t ht
+    have htmem : η + t • u ∈ E.weightedNatSet f := interior_subset ht
+    have hint : Integrable (fun x => |f x| * Real.exp ⟪η + t • u, E.stat x⟫_ℝ) E.base := htmem
+    refine hint.mono' ((hw.aestronglyMeasurable).mul
+      (((innerSL ℝ (η + t • u)).continuous.measurable.comp E.stat_meas).exp.aestronglyMeasurable))
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hwnn x), abs_of_nonneg (Real.exp_nonneg _)]
+    exact mul_le_mul_of_nonneg_right (hwle x) (Real.exp_nonneg _)
+  -- the positive and negative parts of the weight
+  have hfp : Measurable fun x => max (f x) 0 := hf.max measurable_const
+  have hfm : Measurable fun x => max (-f x) 0 := hf.neg.max measurable_const
+  have hfp_nn : ∀ x, 0 ≤ max (f x) 0 := fun x => le_max_right _ _
+  have hfm_nn : ∀ x, 0 ≤ max (-f x) 0 := fun x => le_max_right _ _
+  have hfp_le : ∀ x, max (f x) 0 ≤ |f x| := fun x => max_le (le_abs_self _) (abs_nonneg _)
+  have hfm_le : ∀ x, max (-f x) 0 ≤ |f x| := fun x => max_le (neg_le_abs _) (abs_nonneg _)
+  -- near `0` the line integral splits as a difference of the two mgfs
+  have hΦeq : (fun t : ℝ => ∫ x, f x * Real.exp ⟪η + t • u, E.stat x⟫_ℝ ∂E.base)
+      =ᶠ[nhds 0] (mgf Y (μof fun x => max (f x) 0) - mgf Y (μof fun x => max (-f x) 0)) := by
+    have hUopen : IsOpen {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} :=
+      isOpen_interior.preimage hcont
+    have h0U : (0 : ℝ) ∈ {t : ℝ | η + t • u ∈ interior (E.weightedNatSet f)} := by
+      simp only [Set.mem_setOf_eq, zero_smul, add_zero]; exact hη
+    filter_upwards [hUopen.mem_nhds h0U] with t ht
+    rw [Pi.sub_apply, hmgf _ hfp hfp_nn t, hmgf _ hfm hfm_nn t,
+      ← integral_sub (hintw _ hfp hfp_nn hfp_le t ht) (hintw _ hfm hfm_nn hfm_le t ht)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    have hfsub : max (f x) 0 - max (-f x) 0 = f x := by
+      rcases le_total (f x) 0 with h | h
+      · simp [max_eq_right h, max_eq_left (neg_nonneg.mpr h)]
+      · simp [max_eq_left h, max_eq_right (neg_nonpos.mpr h)]
+    rw [← sub_mul, hfsub]
+  -- assemble: differentiate the difference termwise
+  rw [hΦeq.iteratedDeriv_eq n,
+    iteratedDeriv_sub (analyticAt_mgf (hmem _ hfp hfp_nn hfp_le)).contDiffAt
+      (analyticAt_mgf (hmem _ hfm hfm_nn hfm_le)).contDiffAt,
+    hiter _ hfp hfp_nn hfp_le, hiter _ hfm hfm_nn hfm_le,
+    ← integral_sub (hiterInt _ hfp hfp_nn hfp_le) (hiterInt _ hfm hfm_nn hfm_le)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  dsimp only
+  have hfsub : max (f x) 0 - max (-f x) 0 = f x := by
+    rcases le_total (f x) 0 with h | h
+    · simp [max_eq_right h, max_eq_left (neg_nonneg.mpr h)]
+    · simp [max_eq_left h, max_eq_right (neg_nonpos.mpr h)]
+  rw [← sub_mul, ← sub_mul, hfsub]
 
 /-- **Real-analyticity, one-dimensional case**: for a real natural statistic the weighted
 exponential integral is analytic at every interior point of the weighted natural parameter
