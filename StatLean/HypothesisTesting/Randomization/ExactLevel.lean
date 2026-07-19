@@ -154,6 +154,22 @@ theorem randGamma_smul (T : 𝓧 → ℝ) (α : ℝ) (g : G) (x : 𝓧) :
   unfold randGamma
   rw [randPlusCount_smul, randZeroCount_smul]
 
+/-! ### Private helpers: the critical value is an attained orbit value -/
+
+/-- The critical index minus one is a valid `Fin |G|` position. -/
+private lemma randCritIndex_sub_one_lt (α : ℝ) (hcard : 0 < Fintype.card G) :
+    randCritIndex G α - 1 < Fintype.card G := by
+  unfold randCritIndex; omega
+
+/-- The critical value is attained by some group element on the orbit. -/
+private lemma randCritValue_mem_orbit (T : 𝓧 → ℝ) (α : ℝ) (x : 𝓧)
+    (hk : randCritIndex G α - 1 < Fintype.card G) :
+    ∃ g : G, T (g • x) = randCritValue G T α x := by
+  refine ⟨(Fintype.equivFin G).symm
+    (Tuple.sort (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩), ?_⟩
+  rw [randCritValue, orbitOrderStat, dif_pos hk]
+  rfl
+
 /-! ### The pointwise orbit identity and exactness -/
 
 /-- **The randomization test is a critical function**: `0 ≤ φ ≤ 1` pointwise. The only
@@ -176,7 +192,35 @@ theorem sum_randTest_orbit (T : 𝓧 → ℝ) {α : ℝ}
     -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
     (hα₀ : 0 < α) (hα₁ : α < 1) (x : 𝓧) :
     ∑ g : G, randTest G T α (g • x) = (Fintype.card G : ℝ) * α := by
-  sorry
+  have hcardG : 0 < Fintype.card G := Fintype.card_pos
+  have hk : randCritIndex G α - 1 < Fintype.card G := randCritIndex_sub_one_lt α hcardG
+  have hM0 : 0 < randZeroCount G T α x := by
+    obtain ⟨g₀, hg₀⟩ := randCritValue_mem_orbit T α x hk
+    exact Finset.card_pos.mpr ⟨g₀, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hg₀⟩⟩
+  have hM0' : (randZeroCount G T α x : ℝ) ≠ 0 := by exact_mod_cast hM0.ne'
+  have key : ∀ g : G, randTest G T α (g • x)
+      = (if randCritValue G T α x < T (g • x) then (1 : ℝ) else 0)
+        + (if T (g • x) = randCritValue G T α x then randGamma G T α x else 0) := by
+    intro g
+    unfold randTest
+    simp only [randCritValue_smul, randGamma_smul]
+    split_ifs with h1 h2
+    · rw [h2] at h1; exact absurd h1 (lt_irrefl _)
+    all_goals ring
+  have hsum2 : (∑ g : G, if T (g • x) = randCritValue G T α x then randGamma G T α x else 0)
+      = randGamma G T α x * (randZeroCount G T α x : ℝ) := by
+    rw [show (fun g : G => if T (g • x) = randCritValue G T α x then randGamma G T α x else 0)
+          = (fun g => randGamma G T α x
+              * if T (g • x) = randCritValue G T α x then (1 : ℝ) else 0)
+          from by funext g; split_ifs <;> ring,
+      ← Finset.mul_sum, Finset.sum_boole]
+    rfl
+  rw [Finset.sum_congr rfl fun g _ => key g, Finset.sum_add_distrib, Finset.sum_boole, hsum2]
+  show (randPlusCount G T α x : ℝ) + randGamma G T α x * (randZeroCount G T α x : ℝ)
+    = (Fintype.card G : ℝ) * α
+  unfold randGamma
+  rw [div_mul_cancel₀ _ hM0']
+  ring
 
 /-- **Exact level of the randomization test.** Under the randomization hypothesis — the
 null law `P` is invariant under every element of the finite group `G` — the randomization
