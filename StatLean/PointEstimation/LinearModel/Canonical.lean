@@ -456,7 +456,37 @@ theorem canonicalStat_isCompleteStat
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     IsCompleteStat (canonicalModel (s := s) (m := m)) canonicalStat := by
-  sorry
+  -- Completeness of `T̃` from the full-rank exponential-family theorem.
+  have hcomplete := isCompleteStat_of_interior_nonempty
+    (canonicalExpFamily s m) (Set.range (canonicalEta (s := s)))
+    (by rintro _ ⟨p, rfl⟩; exact canonicalEta_mem_natSet p)
+    interior_range_canonicalEta_nonempty
+  -- Reindex by the (surjective) natural-parameter map and shear onto `canonicalStat`.
+  have hρ : Function.Surjective
+      (fun p : CanonicalParam s =>
+        (⟨canonicalEta p, Set.mem_range_self p⟩ : ↥(Set.range (canonicalEta (s := s))))) := by
+    rintro ⟨w, p, rfl⟩; exact ⟨p, rfl⟩
+  have htrans := isCompleteFamily_map_comp hcomplete hρ (measurable_canonicalShear (s := s))
+  -- Identify the transported family with the model pushed forward by `canonicalStat`.
+  show IsCompleteFamily (fun p => (canonicalModel p).map canonicalStat)
+  have hfun : (fun p : CanonicalParam s => (canonicalModel (m := m) p).map (canonicalStat (m := m)))
+      = fun p => (((canonicalExpFamily s m).P (canonicalEta p)).map
+          (canonicalExpFamily s m).stat).map canonicalShear := by
+    funext p
+    have hL : (canonicalModel (m := m) p).map (canonicalStat (m := m))
+        = ((canonicalExpFamily s m).P (canonicalEta p)).map
+            (fun y => canonicalStat
+              ((WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) y)) := by
+      rw [canonicalModel, gaussianVector,
+        Measure.map_map measurable_canonicalStat (WithLp.measurable_toLp 2 (Fin (s + m) → ℝ)),
+        show (fun i => (canonicalMean p.1) i) = Fin.append p.1 (0 : Fin m → ℝ) from rfl,
+        canonicalNormal_eq_P]
+      rfl
+    rw [hL, Measure.map_map measurable_canonicalShear (canonicalExpFamily s m).stat_meas]
+    congr 1
+    funext y
+    exact canonicalStat_toLp_eq_shear y
+  rw [hfun]; exact htrans
 
 /-- `(Y₁, …, Y_s, S²)` is a **complete sufficient statistic** for `(η, σ²)`. -/
 theorem canonical_complete_sufficient
