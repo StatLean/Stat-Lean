@@ -69,8 +69,9 @@ noncomputable def fisherInfo (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
 derivatives along the coordinate directions. -/
 noncomputable def scoreVec {s : ℕ} (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
     (θ : EuclideanSpace ℝ (Fin s)) (x : 𝓧) : EuclideanSpace ℝ (Fin s) :=
-  fun i => deriv (fun t : ℝ => M.density (θ + t • EuclideanSpace.single i 1) x) 0 /
-    M.density θ x
+  WithLp.toLp 2 fun i =>
+    deriv (fun t : ℝ => M.density (θ + t • EuclideanSpace.single i 1) x) 0 /
+      M.density θ x
 
 /-- The **Fisher information matrix** `I(θ)ᵢⱼ = E_θ [scoreᵢ · scoreⱼ]`. -/
 noncomputable def infoMatrix {s : ℕ} (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
