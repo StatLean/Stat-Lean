@@ -156,8 +156,22 @@ Integration gate after the first merge: 0 errors, `Build completed successfully`
 - Proof branches cut before an earlier merge land as normal merges; verify the earlier closure
   survived (`grep -c sorry`) rather than assuming.
 
-### Wave 2 — in flight
+### Waves 2–5 — merged results (PE sorry count 175 → 74, 58% closed)
 
-`pe/completeness-expfam` (MGFUniquenessPi + Completeness/ExpFamily — the batch's load-bearing
-item), `pe/umvu-core` (UMVU Basic/CovarianceCriterion/RaoBlackwell), `pe/hs-bricks`
-(ForMathlib HalmosSavage + CondExpWithDensity).
+| item | outcome | notes |
+|---|---|---|
+| `pe/completeness-expfam` | **0 sorry, axiom-clean** | Thm 6.22 + s-dim Laplace uniqueness. Multivariate case done by a **Cramér–Wold reduction reusing the closed 1-D brick as a black box** — the compositional payoff of the ForMathlib layering. |
+| `pe/umvu-core` | **0 sorry, axiom-clean** | `isUMVU_unique` via the **parallelogram identity** (Mathlib has no packaged covariance Cauchy–Schwarz). Rao–Blackwell exactly as designed: plain per-fiber Jensen; **fiber integrability derived** via `Measure.integrable_compProd_iff`, no added hypotheses. |
+| `pe/hs-bricks` | **0 sorry, axiom-clean** | Halmos–Savage by maximizing `ν₀(⋃ supp)` over countable subfamilies (`exists_seq_tendsto_sSup`, sequences merged with `Nat.unpair`), maximality forcing domination. |
+| `pe/equivariance-general` | 4/5 files 0-sorry | Thm 2.7 + argmin/convex/IBP bricks closed. **Thm 2.17's analytic core lifted to a named `private` debt** with a precise TODO (exponent-progression argument); the two public theorems are closed on top of it. |
+| `pe/cramer-rao` | 3/4 files 0-sorry | **Cramér–Rao itself closed**, plus score basics and Fisher additivity. One named debt: `diff_under_integral_core`, the dominated-convergence step of family-side differentiation under the integral — every downstream theorem is a genuine reduction to it. |
+| `pe/sufficiency-factorization` | 3/4 files 0-sorry | Halmos–Savage criterion, **Fisher–Neyman factorization (both directions)**, minimal sufficiency via the likelihood-ratio vector — all axiom-clean. Remaining sorry is exactly the **pre-agreed TSH 2.6.1 general deferral**; its comment records that no result in the area consumes it (all users route through the dominated version, which is closed). |
+| `pe/location` | 3/4 files 0-sorry | Location structure (Thms 1.4/1.8, Lems 1.6/1.7), the shared **conditional-risk engine**, Thm 1.10, Cor 1.12, and all risk-unbiasedness closed. Cor 1.11 (convex existence) and Cor 1.14 (bounded loss) cores remain named debts — exactly the renegotiation point the design predicted. |
+
+**No false statements found in any item to date.** Every debt is a named, documented `private`
+lemma with a TODO, never a weakened public statement.
+
+### In flight
+
+`pe/basu-lehmann` (Basu + Cor 6.16 + Lehmann–Scheffé), `pe/expfam-info` (smoothness/Stein +
+multiparameter information), `pe/linear-model` (all five LinearModel files).
