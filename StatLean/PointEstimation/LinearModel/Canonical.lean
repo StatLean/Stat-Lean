@@ -61,7 +61,7 @@ resulting minimum-variance property are due to E. L. Lehmann and H. Scheffé
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal InnerProductSpace
 
 namespace StatLean.PointEstimation
 
@@ -130,6 +130,119 @@ private lemma canonicalNormal_eq_withDensity {n : ℕ} (η : Fin n → ℝ) {σ2
     intro i; rw [← gaussianReal_of_var_ne_zero (η i) hσ]; infer_instance
   rw [canonicalNormal, h_each, ← pi_withDensity_prod (fun i => measurable_gaussianPDF (η i) σ2),
     ← volume_pi]
+
+/-! ## Exponential-family scaffolding (private)
+
+The completeness proof recognizes the canonical model as a full-rank exponential family with
+**total** sum of squares as the last natural coordinate (the residual form is *not* an
+exponential family: a `−(1/2σ²)∑_{i<s} yᵢ²` term survives), and transports completeness of
+that statistic to the frozen `canonicalStat = (head, RSS)` along the measurable shear
+`(a, total) ↦ (a, total − ∑ aᵢ²)`. -/
+
+/-- The exponential family underlying the canonical model, on the pi observation space
+`Fin (s+m) → ℝ` with reference measure `volume`. Its natural statistic is
+`ỹ ↦ (y₀,…,y_{s−1}, ∑ₖ yₖ²)` (head coordinates and the **total** sum of squares). -/
+private noncomputable def canonicalExpFamily (s m : ℕ) :
+    ExpFamily (Fin (s + m) → ℝ) (EuclideanSpace ℝ (Fin (s + 1))) where
+  base := volume
+  stat := fun y =>
+    (WithLp.toLp 2 : (Fin (s + 1) → ℝ) → EuclideanSpace ℝ (Fin (s + 1)))
+      (Fin.snoc (fun i : Fin s => y (Fin.castAdd m i)) (∑ k, y k ^ 2))
+  stat_meas := by
+    apply (WithLp.measurable_toLp 2 (Fin (s + 1) → ℝ)).comp
+    refine measurable_pi_iff.2 fun j => ?_
+    refine Fin.lastCases ?_ (fun i => ?_) j
+    · simp only [Fin.snoc_last]
+      exact Finset.measurable_sum _ fun k _ => (measurable_pi_apply k).pow_const 2
+    · simp only [Fin.snoc_castSucc]
+      exact measurable_pi_apply _
+
+private lemma canonicalExpFamily_stat (y : Fin (s + m) → ℝ) :
+    (canonicalExpFamily s m).stat y
+      = (WithLp.toLp 2 : (Fin (s + 1) → ℝ) → EuclideanSpace ℝ (Fin (s + 1)))
+          (Fin.snoc (fun i : Fin s => y (Fin.castAdd m i)) (∑ k, y k ^ 2)) := rfl
+
+private lemma canonicalExpFamily_base : (canonicalExpFamily s m).base = volume := rfl
+
+/-- The natural parameter attached to `(η, σ²)`: `(η₁/σ², …, η_s/σ², −1/(2σ²))`. -/
+private noncomputable def canonicalEta (p : CanonicalParam s) :
+    EuclideanSpace ℝ (Fin (s + 1)) :=
+  (WithLp.toLp 2 : (Fin (s + 1) → ℝ) → EuclideanSpace ℝ (Fin (s + 1)))
+    (Fin.snoc (fun i : Fin s => p.1 i / (p.2.1 : ℝ)) (-(1 / (2 * (p.2.1 : ℝ)))))
+
+/-- The normalizing constant of the tilted density (positive). -/
+private noncomputable def canonicalC (p : CanonicalParam s) : ℝ :=
+  (Real.sqrt (2 * Real.pi * (p.2.1 : ℝ)))⁻¹ ^ (s + m)
+    * Real.exp (-(∑ i, p.1 i ^ 2) / (2 * (p.2.1 : ℝ)))
+
+private lemma canonicalC_pos (p : CanonicalParam s) : 0 < canonicalC (m := m) p := by
+  have hv : (0 : ℝ) < (p.2.1 : ℝ) := by exact_mod_cast p.2.2
+  have h2πv : (0 : ℝ) < 2 * Real.pi * (p.2.1 : ℝ) :=
+    mul_pos (mul_pos two_pos Real.pi_pos) hv
+  exact mul_pos (pow_pos (inv_pos.2 (Real.sqrt_pos.2 h2πv)) _) (Real.exp_pos _)
+
+/-- The real inner product of two scalars is their product. -/
+private lemma real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  have h1 : ⟪(1 : ℝ), (1 : ℝ)⟫_ℝ = 1 := by
+    rw [real_inner_self_eq_norm_mul_norm]; simp
+  calc ⟪a, b⟫_ℝ = ⟪a • (1 : ℝ), b • (1 : ℝ)⟫_ℝ := by
+        rw [smul_eq_mul, smul_eq_mul, mul_one, mul_one]
+    _ = a * (b * ⟪(1 : ℝ), (1 : ℝ)⟫_ℝ) := by rw [real_inner_smul_left, real_inner_smul_right]
+    _ = a * b := by rw [h1, mul_one]
+
+/-- The inner product `⟪canonicalEta p, T̃ y⟫` in explicit coordinate form. -/
+private lemma canonicalEta_inner (p : CanonicalParam s) (y : Fin (s + m) → ℝ) :
+    ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ
+      = (∑ i, p.1 i / (p.2.1 : ℝ) * y (Fin.castAdd m i))
+        + -(1 / (2 * (p.2.1 : ℝ))) * (∑ k, y k ^ 2) := by
+  rw [canonicalEta, canonicalExpFamily_stat, PiLp.inner_apply, Fin.sum_univ_castSucc]
+  simp only [real_inner_mul, Fin.snoc_castSucc, Fin.snoc_last]
+
+/-- **Core density identity.** The product of per-coordinate Gaussian densities of the
+canonical model equals `C·exp⟪η, T̃⟫` — the exponential-family form. -/
+private lemma canonical_pdf_prod_eq (p : CanonicalParam s) (y : Fin (s + m) → ℝ) :
+    (∏ k, gaussianPDFReal ((Fin.append p.1 (0 : Fin m → ℝ)) k) p.2.1 (y k))
+      = canonicalC (m := m) p
+          * Real.exp ⟪canonicalEta p, (canonicalExpFamily s m).stat y⟫_ℝ := by
+  have hv : (0 : ℝ) < (p.2.1 : ℝ) := by exact_mod_cast p.2.2
+  have hvne : (p.2.1 : ℝ) ≠ 0 := ne_of_gt hv
+  set mean : Fin (s + m) → ℝ := Fin.append p.1 (0 : Fin m → ℝ) with hmean
+  -- Expand the product into constant × exp of a sum.
+  have hprod :
+      (∏ k, gaussianPDFReal (mean k) p.2.1 (y k))
+        = (Real.sqrt (2 * Real.pi * (p.2.1 : ℝ)))⁻¹ ^ (s + m)
+            * Real.exp (∑ k, -(y k - mean k) ^ 2 / (2 * (p.2.1 : ℝ))) := by
+    simp only [gaussianPDFReal_def]
+    rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+      ← Real.exp_sum]
+  rw [hprod, canonicalC,
+    mul_assoc ((Real.sqrt (2 * Real.pi * (p.2.1 : ℝ)))⁻¹ ^ (s + m)), ← Real.exp_add]
+  congr 1
+  congr 1
+  -- The exponent identity `∑ -(yₖ-meanₖ)²/(2v) = -(∑ηᵢ²)/(2v) + ⟪η, T̃⟫`.
+  rw [canonicalEta_inner]
+  have hmul : ∑ k, y k * mean k = ∑ i, y (Fin.castAdd m i) * p.1 i := by
+    rw [Fin.sum_univ_add]
+    simp only [hmean, Fin.append_left, Fin.append_right, Pi.zero_apply, mul_zero,
+      Finset.sum_const_zero, add_zero]
+  have hsq : ∑ k, mean k ^ 2 = ∑ i, p.1 i ^ 2 := by
+    rw [Fin.sum_univ_add]
+    simp only [hmean, Fin.append_left, Fin.append_right, Pi.zero_apply, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, zero_pow, Finset.sum_const_zero, add_zero]
+  have hnum : ∑ k, -(y k - mean k) ^ 2 / (2 * (p.2.1 : ℝ))
+      = (-(∑ k, y k ^ 2) + 2 * (∑ k, y k * mean k) - (∑ k, mean k ^ 2)) / (2 * (p.2.1 : ℝ)) := by
+    rw [← Finset.sum_div]
+    congr 1
+    rw [Finset.sum_congr rfl (fun k _ => show -(y k - mean k) ^ 2
+          = -(y k ^ 2) + 2 * (y k * mean k) - mean k ^ 2 from by ring),
+      Finset.sum_sub_distrib, Finset.sum_add_distrib, Finset.sum_neg_distrib, ← Finset.mul_sum]
+  have hR : (∑ i, p.1 i / (p.2.1 : ℝ) * y (Fin.castAdd m i))
+      = (∑ i, y (Fin.castAdd m i) * p.1 i) / (p.2.1 : ℝ) := by
+    rw [Finset.sum_div]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  rw [hnum, hmul, hsq, hR]
+  field_simp
+  ring
 
 /-! ## Completeness and sufficiency -/
 
