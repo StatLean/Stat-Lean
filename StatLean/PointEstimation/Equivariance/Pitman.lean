@@ -162,6 +162,35 @@ private lemma measurePreserving_pShear :
     simp only [pShear, diffs, Pi.sub_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
   rwa [hfun] at hcomp
 
+/-- Pushing `locationBase f` forward along the shear gives the joint law of the differences
+and the last coordinate, with density `(y, s) ↦ f (snoc y 0 + s·𝟙)` against `volume ⊗ volume`. -/
+private lemma map_pShear_locationBase (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f) :
+    (locationBase f).map pShear
+      = (volume.prod volume).withDensity (fun q => ENNReal.ofReal (f (pUnshear q))) := by
+  set p : (Fin m → ℝ) × ℝ → ℝ≥0∞ := fun q => ENNReal.ofReal (f (pUnshear q)) with hp_def
+  have hp_meas : Measurable p :=
+    ENNReal.measurable_ofReal.comp (hf.comp measurable_pUnshear)
+  have hd_meas : Measurable (fun x : Fin (m + 1) → ℝ => ENNReal.ofReal (f x)) :=
+    ENNReal.measurable_ofReal.comp hf
+  have hmap : (volume : Measure (Fin (m + 1) → ℝ)).map pShear = volume.prod volume := by
+    rw [measurePreserving_pShear.map_eq]; exact Measure.volume_eq_prod _ _
+  refine Measure.ext_of_lintegral _ fun φ hφ => ?_
+  have hpφ : Measurable (fun z => p z * φ z) := hp_meas.mul hφ
+  calc ∫⁻ z, φ z ∂((locationBase f).map pShear)
+      = ∫⁻ x, φ (pShear x) ∂(locationBase f) := lintegral_map hφ measurable_pShear
+    _ = ∫⁻ x, p (pShear x) * φ (pShear x) ∂volume := by
+          rw [show (locationBase f) = (volume : Measure (Fin (m + 1) → ℝ)).withDensity
+                (fun x => ENNReal.ofReal (f x)) from rfl,
+            lintegral_withDensity_eq_lintegral_mul _ hd_meas
+              (show Measurable fun x => φ (pShear x) from hφ.comp measurable_pShear)]
+          refine lintegral_congr fun x => ?_
+          simp only [Pi.mul_apply, hp_def, pUnshear_pShear]
+    _ = ∫⁻ z, p z * φ z ∂((volume : Measure (Fin (m + 1) → ℝ)).map pShear) :=
+          (lintegral_map hpφ measurable_pShear).symm
+    _ = ∫⁻ z, p z * φ z ∂(volume.prod volume) := by rw [hmap]
+    _ = ∫⁻ z, φ z ∂((volume.prod volume).withDensity p) :=
+          (lintegral_withDensity_eq_lintegral_mul _ hp_meas hφ).symm
+
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
 theorem measurable_pitmanEstimator (f : (Fin n → ℝ) → ℝ)
