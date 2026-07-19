@@ -1,5 +1,7 @@
 import StatLean.HypothesisTesting.Randomization.Defs
 import StatLean.MultipleTesting.PValues.Defs
+import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Exact finite-sample level of the randomization test
@@ -81,6 +83,45 @@ open StatLean.MultipleTesting (SuperUniform)
 variable {G : Type*} [Group G] [Fintype G] {𝓧 : Type*} [MeasurableSpace 𝓧]
   [MulAction G 𝓧]
 
+open StatLean.MultipleTesting (orderStat)
+
+/-! ### Private helpers: order statistics along orbits -/
+
+/-- Translating `x` by `g` reindexes the orbit tuple by right multiplication: it is the same
+tuple up to the permutation `i ↦ equivFin (equivFin⁻¹ i * g)` of `Fin |G|`. -/
+private lemma orbitValues_smul (T : 𝓧 → ℝ) (g : G) (x : 𝓧) :
+    orbitValues G T (g • x)
+      = orbitValues G T x ∘ ((Fintype.equivFin G).symm.trans
+          ((Equiv.mulRight g).trans (Fintype.equivFin G))) := by
+  funext i
+  simp only [orbitValues, Function.comp_apply, Equiv.trans_apply, Equiv.coe_mulRight,
+    Equiv.symm_apply_apply, mul_smul]
+
+/-- Every orbit order statistic is constant along orbits. -/
+private lemma orbitOrderStat_smul (T : 𝓧 → ℝ) (g : G) (x : 𝓧) (j : ℕ) :
+    orbitOrderStat G T (g • x) j = orbitOrderStat G T x j := by
+  unfold orbitOrderStat
+  by_cases h : j - 1 < Fintype.card G
+  · rw [dif_pos h, dif_pos h, orbitValues_smul T g x]
+    exact congrFun (Tuple.comp_perm_comp_sort_eq_comp_sort (f := orbitValues G T x)
+      (σ := (Fintype.equivFin G).symm.trans ((Equiv.mulRight g).trans (Fintype.equivFin G)))) _
+  · rw [dif_neg h, dif_neg h]
+
+/-- Reindexing a filtered count over `G` by right multiplication leaves the count unchanged. -/
+private lemma card_filter_mulRight (q : G → Prop) [DecidablePred q] (g : G) :
+    (Finset.univ.filter fun h : G => q (h * g)).card
+      = (Finset.univ.filter fun h : G => q h).card := by
+  refine Finset.card_bij' (fun h _ => h * g) (fun h _ => h * g⁻¹) ?_ ?_ ?_ ?_
+  · intro h hh
+    rw [Finset.mem_filter] at hh ⊢
+    exact ⟨Finset.mem_univ _, hh.2⟩
+  · intro h hh
+    rw [Finset.mem_filter] at hh ⊢
+    refine ⟨Finset.mem_univ _, ?_⟩
+    rw [inv_mul_cancel_right]; exact hh.2
+  · intro h _; simp
+  · intro h _; simp
+
 /-! ### The orbit data is constant along orbits -/
 
 /-- The critical orbit value is **constant along orbits**: `T^{(k)}(gx) = T^{(k)}(x)`.
@@ -88,22 +129,30 @@ Translating `x` by `g` permutes the orbit `{T(hx) : h ∈ G}`, hence leaves its 
 statistics unchanged. -/
 theorem randCritValue_smul (T : 𝓧 → ℝ) (α : ℝ) (g : G) (x : 𝓧) :
     randCritValue G T α (g • x) = randCritValue G T α x := by
-  sorry
+  unfold randCritValue
+  exact orbitOrderStat_smul T g x (randCritIndex G α)
 
 /-- `M⁺` is constant along orbits. -/
 theorem randPlusCount_smul (T : 𝓧 → ℝ) (α : ℝ) (g : G) (x : 𝓧) :
     randPlusCount G T α (g • x) = randPlusCount G T α x := by
-  sorry
+  unfold randPlusCount
+  rw [randCritValue_smul]
+  simp only [← mul_smul]
+  exact card_filter_mulRight (fun h => randCritValue G T α x < T (h • x)) g
 
 /-- `M⁰` is constant along orbits. -/
 theorem randZeroCount_smul (T : 𝓧 → ℝ) (α : ℝ) (g : G) (x : 𝓧) :
     randZeroCount G T α (g • x) = randZeroCount G T α x := by
-  sorry
+  unfold randZeroCount
+  rw [randCritValue_smul]
+  simp only [← mul_smul]
+  exact card_filter_mulRight (fun h => T (h • x) = randCritValue G T α x) g
 
 /-- The boundary-randomization weight `a(·)` is constant along orbits. -/
 theorem randGamma_smul (T : 𝓧 → ℝ) (α : ℝ) (g : G) (x : 𝓧) :
     randGamma G T α (g • x) = randGamma G T α x := by
-  sorry
+  unfold randGamma
+  rw [randPlusCount_smul, randZeroCount_smul]
 
 /-! ### The pointwise orbit identity and exactness -/
 
