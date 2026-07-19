@@ -200,9 +200,11 @@ theorem continuousOn_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ
 exponential integral is Fréchet differentiable, and its differential is represented by the
 vector `∫ (f x · e^{⟨η, T x⟩}) • T x dν` — the integral of the differentiated integrand. -/
 theorem hasFDerivAt_integral_exp_inner
-    -- LEAN-ONLY: completeness of the statistic's target space, so that the `V`-valued Bochner
-    -- integral representing the differential is meaningful; automatic in finite dimension
-    [CompleteSpace V] (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
+    -- LEAN-ONLY: `V` is finite-dimensional, so the `2^s` sign-vector envelope dominating the
+    -- local integrand is available and the `V`-valued Bochner integral is meaningful (finite
+    -- dimension gives `CompleteSpace V` for free). Every downstream consumer instantiates
+    -- `V = EuclideanSpace ℝ (Fin k)`, the classical setting.
+    [FiniteDimensional ℝ V] (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
     -- USER-INPUT: measurable weight; see `continuousOn_integral_exp_inner`
     (hf : Measurable f) {η : V}
     -- USER-INPUT: interior parameter; interiority is the classical hypothesis licensing
@@ -210,14 +212,137 @@ theorem hasFDerivAt_integral_exp_inner
     (hη : η ∈ interior (E.weightedNatSet f)) :
     HasFDerivAt (fun ζ => ∫ x, f x * Real.exp ⟪ζ, E.stat x⟫_ℝ ∂E.base)
       (innerSL ℝ (∫ x, (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • E.stat x ∂E.base)) η := by
-  -- TODO: differentiation under the integral via `hasFDerivAt_integral_of_dominated_loc_of_lip'`
-  -- with `F ζ x = f x · e^{⟪ζ, T x⟫}`, `F' x = (f x · e^{⟪η, T x⟫}) • innerSL ℝ (T x)` (whose
-  -- integral is `innerSL ℝ` of the stated vector, since `innerSL ℝ` is a CLM and commutes with
-  -- the Bochner integral). The Lipschitz bound needs `bound x = |f x|·‖T x‖·e^{⟪η,T x⟫+r‖T x‖}`
-  -- integrable on a ball `B(η, r) ⊆ interior (weightedNatSet f)`; absorbing the `‖T x‖` factor
-  -- (`t·e^{rt} ≤ C·e^{r't}`) and the `e^{r'‖T x‖}` factor via the `2^s` sign-vector envelope
-  -- (finite dimension) is the remaining work.
-  sorry
+  classical
+  set N := Module.finrank ℝ V with hN
+  -- a ball of radius `ρ` of parameters around `η` lies in the interior
+  obtain ⟨ρ, hρ_pos, hρ⟩ := Metric.isOpen_iff.mp isOpen_interior η hη
+  -- the domination ball radius, small enough to absorb the `2^s` sign vectors of scale `2r`
+  set r : ℝ := ρ / (4 * (N : ℝ) + 2) with hrdef
+  have hr : 0 < r := div_pos hρ_pos (by positivity)
+  have h42 : (4 * (N : ℝ) + 2) ≠ 0 := by positivity
+  have hrmul : r * (4 * (N : ℝ) + 2) = ρ := by rw [hrdef]; field_simp
+  -- helper: `e·y ≤ e^y`
+  have hey : ∀ y : ℝ, Real.exp 1 * y ≤ Real.exp y := by
+    intro y
+    calc Real.exp 1 * y ≤ Real.exp 1 * Real.exp (y - 1) := by
+          apply mul_le_mul_of_nonneg_left _ (Real.exp_nonneg 1)
+          have := Real.add_one_le_exp (y - 1); linarith
+      _ = Real.exp y := by rw [← Real.exp_add]; ring_nf
+  -- helper: `s·e^{rs} ≤ (e·r)⁻¹·e^{2rs}` and `s ≤ (e·r)⁻¹·e^{2rs}` for `s ≥ 0`
+  have her : (0 : ℝ) < Real.exp 1 * r := by positivity
+  have habsorb : ∀ s : ℝ, 0 ≤ s →
+      s * Real.exp (r * s) ≤ (Real.exp 1 * r)⁻¹ * Real.exp (2 * r * s) := by
+    intro s hs
+    rw [show (2 * r * s) = r * s + r * s by ring, Real.exp_add, inv_mul_eq_div, le_div_iff₀ her]
+    have h1 : Real.exp 1 * (r * s) ≤ Real.exp (r * s) := hey (r * s)
+    nlinarith [h1, Real.exp_pos (r * s), hs]
+  have habsorb2 : ∀ s : ℝ, 0 ≤ s → s ≤ (Real.exp 1 * r)⁻¹ * Real.exp (2 * r * s) := by
+    intro s hs
+    have h1 := habsorb s hs
+    have h2 : s ≤ s * Real.exp (r * s) := by
+      nlinarith [Real.one_le_exp_iff.mpr (by positivity : (0:ℝ) ≤ r * s), hs]
+    linarith
+  -- the dominating bound
+  set bound : 𝓧 → ℝ := fun x =>
+    (Real.exp 1 * r)⁻¹ * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + 2 * r * ‖E.stat x‖)) with hbound_def
+  have hinner_meas : ∀ ζ : V, Measurable fun x => ⟪ζ, E.stat x⟫_ℝ :=
+    fun ζ => (innerSL ℝ ζ).continuous.measurable.comp E.stat_meas
+  have hexp_asm : ∀ ζ : V, AEStronglyMeasurable (fun x => f x * Real.exp ⟪ζ, E.stat x⟫_ℝ) E.base :=
+    fun ζ => hf.aestronglyMeasurable.mul ((hinner_meas ζ).exp.aestronglyMeasurable)
+  -- `bound` is integrable via the sign-vector envelope (with `c = 2r`)
+  have henv : Integrable
+      (fun x => |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + 2 * r * ‖E.stat x‖)) E.base := by
+    apply integrable_abs_exp_inner_add_norm E hf (by positivity : (0:ℝ) ≤ 2 * r)
+    intro ww hww
+    have hlt : ‖ww‖ < ρ := by
+      calc ‖ww‖ ≤ 2 * (2 * r) * (N : ℝ) := hww
+        _ = ρ - 2 * r := by linear_combination hrmul
+        _ < ρ := by linarith
+    have hmem : η + ww ∈ Metric.ball η ρ := by
+      rw [Metric.mem_ball, dist_eq_norm]; simpa [add_sub_cancel_left] using hlt
+    exact interior_subset (hρ hmem)
+  have bound_int : Integrable bound E.base := henv.const_mul _
+  -- the domination bound absorbs the `‖T‖` factor of the differentiated integrand
+  have hbound_ge : ∀ x, |f x| * Real.exp ⟪η, E.stat x⟫_ℝ * ‖E.stat x‖ ≤ bound x := by
+    intro x
+    simp only [hbound_def, Real.exp_add]
+    calc |f x| * Real.exp ⟪η, E.stat x⟫_ℝ * ‖E.stat x‖
+        ≤ |f x| * Real.exp ⟪η, E.stat x⟫_ℝ
+            * ((Real.exp 1 * r)⁻¹ * Real.exp (2 * r * ‖E.stat x‖)) := by
+          gcongr; exact habsorb2 _ (norm_nonneg _)
+      _ = (Real.exp 1 * r)⁻¹ * (|f x| * (Real.exp ⟪η, E.stat x⟫_ℝ
+            * Real.exp (2 * r * ‖E.stat x‖))) := by ring
+  -- integrability of the `V`-valued and CLM-valued differentiated integrands
+  have hstat_asm : AEStronglyMeasurable (fun x => E.stat x) E.base := E.stat_meas.aestronglyMeasurable
+  have hgT_int : Integrable (fun x => (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • E.stat x) E.base := by
+    refine bound_int.mono' ((hexp_asm η).smul hstat_asm) (Filter.Eventually.of_forall fun x => ?_)
+    rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+    exact hbound_ge x
+  have hFη_int : Integrable
+      (fun x => (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • innerSL ℝ (E.stat x)) E.base := by
+    refine bound_int.mono' ((hexp_asm η).smul
+      ((innerSL ℝ).continuous.comp_aestronglyMeasurable hstat_asm))
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
+    exact hbound_ge x
+  -- differentiation under the integral sign
+  have key := hasFDerivAt_integral_of_dominated_of_fderiv_le
+    (μ := E.base) (bound := bound) (s := Metric.ball η r) (x₀ := η)
+    (F := fun ζ x => f x * Real.exp ⟪ζ, E.stat x⟫_ℝ)
+    (F' := fun ζ x => (f x * Real.exp ⟪ζ, E.stat x⟫_ℝ) • innerSL ℝ (E.stat x))
+    (Metric.ball_mem_nhds η hr)
+    (Filter.Eventually.of_forall hexp_asm)
+    (by
+      have hηmem : η ∈ E.weightedNatSet f := interior_subset hη
+      have hη' : Integrable (fun x => |f x| * Real.exp ⟪η, E.stat x⟫_ℝ) E.base := hηmem
+      refine hη'.mono' (hexp_asm η) (Filter.Eventually.of_forall fun x => ?_)
+      exact le_of_eq (by rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (Real.exp_nonneg _)]))
+    ((hexp_asm η).smul ((innerSL ℝ).continuous.comp_aestronglyMeasurable hstat_asm))
+    (Filter.Eventually.of_forall fun x ζ hζ => by
+      rw [norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
+        abs_of_nonneg (Real.exp_nonneg _)]
+      simp only [hbound_def]
+      have hζr : ‖ζ - η‖ ≤ r := le_of_lt (by rwa [Metric.mem_ball, dist_eq_norm] at hζ)
+      have hinner_le : ⟪ζ, E.stat x⟫_ℝ ≤ ⟪η, E.stat x⟫_ℝ + r * ‖E.stat x‖ := by
+        have hsplit : ⟪ζ, E.stat x⟫_ℝ = ⟪η, E.stat x⟫_ℝ + ⟪ζ - η, E.stat x⟫_ℝ := by
+          rw [← inner_add_left]; congr 1; abel
+        rw [hsplit]
+        gcongr
+        calc ⟪ζ - η, E.stat x⟫_ℝ ≤ ‖ζ - η‖ * ‖E.stat x‖ := real_inner_le_norm _ _
+          _ ≤ r * ‖E.stat x‖ := by gcongr
+      have hexpζ : Real.exp ⟪ζ, E.stat x⟫_ℝ
+          ≤ Real.exp ⟪η, E.stat x⟫_ℝ * Real.exp (r * ‖E.stat x‖) := by
+        rw [← Real.exp_add]; exact Real.exp_le_exp.mpr hinner_le
+      calc |f x| * Real.exp ⟪ζ, E.stat x⟫_ℝ * ‖E.stat x‖
+          ≤ |f x| * (Real.exp ⟪η, E.stat x⟫_ℝ * Real.exp (r * ‖E.stat x‖)) * ‖E.stat x‖ := by
+            gcongr
+        _ = Real.exp ⟪η, E.stat x⟫_ℝ * |f x|
+              * (‖E.stat x‖ * Real.exp (r * ‖E.stat x‖)) := by ring
+        _ ≤ Real.exp ⟪η, E.stat x⟫_ℝ * |f x|
+              * ((Real.exp 1 * r)⁻¹ * Real.exp (2 * r * ‖E.stat x‖)) :=
+            mul_le_mul_of_nonneg_left (habsorb _ (norm_nonneg _)) (by positivity)
+        _ = (Real.exp 1 * r)⁻¹ * (|f x|
+              * Real.exp (⟪η, E.stat x⟫_ℝ + 2 * r * ‖E.stat x‖)) := by
+            rw [Real.exp_add]; ring)
+    bound_int
+    (Filter.Eventually.of_forall fun x ζ _ => by
+      have hL : HasFDerivAt (fun ζ' : V => ⟪ζ', E.stat x⟫_ℝ) (innerSL ℝ (E.stat x)) ζ := by
+        have hfun : (fun ζ' : V => ⟪ζ', E.stat x⟫_ℝ) = fun ζ' => innerSL ℝ (E.stat x) ζ' := by
+          funext ζ'; rw [innerSL_apply_apply]; exact real_inner_comm _ _
+        rw [hfun]; exact (innerSL ℝ (E.stat x)).hasFDerivAt
+      have h2 := (hL.exp.const_mul (f x))
+      rwa [smul_smul] at h2)
+  -- rewrite the derivative into `innerSL ℝ` of the integrated integrand
+  have hcomm : (∫ x, (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • innerSL ℝ (E.stat x) ∂E.base)
+      = innerSL ℝ (∫ x, (f x * Real.exp ⟪η, E.stat x⟫_ℝ) • E.stat x ∂E.base) := by
+    ext v
+    rw [ContinuousLinearMap.integral_apply hFη_int, innerSL_apply_apply,
+      real_inner_comm, ← integral_inner hgT_int v]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [ContinuousLinearMap.smul_apply, innerSL_apply_apply, real_inner_smul_right,
+      real_inner_comm (E.stat x) v, smul_eq_mul]
+  rw [hcomm] at key
+  exact key
 
 /-- **Derivatives of all orders** along a fixed direction: the `n`-th derivative of
 `t ↦ ∫ f(x) e^{⟨η + t·u, T x⟩} dν` at `t = 0` is obtained by differentiating under the
