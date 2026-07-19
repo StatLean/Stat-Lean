@@ -1,3 +1,0 @@
-srun: job 33083636 queued and waiting for resources
-srun: job 33083636 has been allocated resources
-srun: error: eio_handle_mainloop: Abandoning IO 60 secs after job shutdown initiated
