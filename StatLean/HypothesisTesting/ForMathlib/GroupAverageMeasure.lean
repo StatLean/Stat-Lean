@@ -174,6 +174,7 @@ theorem integral_groupAverage (μ : Measure 𝓧) {f : 𝓧 → ℝ}
   simp only [hint]
   rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, inv_mul_cancel_left₀ hcard]
 
+set_option maxHeartbeats 1000000 in
 /-- **Conditional expectation given the invariant σ-algebra is the orbit average**, for a
 `G`-invariant measure and a finite group.
 
@@ -199,12 +200,72 @@ theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
     -- LEAN-ONLY: integrability of the integrand; standard regularity
     (hf : Integrable f μ) :
     μ[f | m] =ᵐ[μ] groupAverage G f := by
-  -- TODO: signature corrected (the ambient `m𝓧` is now pinned in `hm_inv`, so the
-  -- hypothesis genuinely forces `m ≤ m𝓧`). Under this reading the statement is TRUE and the
-  -- intended proof works: `groupAverage G f` is `m`-measurable by `hm_inv` +
-  -- `preimage_mem_invariantSets`; the defining set-integral identity follows by changing
-  -- variables `g` by `g` under `hμ` and summing; conclude with
-  -- `ae_eq_condExp_of_forall_setIntegral_eq`.
-  sorry
+  classical
+  have hcard : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  -- NOTE ON THE ELABORATED SIGNATURE. The parameter `(m : MeasurableSpace 𝓧)` is a local
+  -- instance and, being declared after the section's `m𝓧`, shadows it as the default. Hence
+  -- `μ`, `hmeas`, `hμ`, `hf` are all elaborated over `m`, so the ambient σ-algebra of `μ`
+  -- *is* `m` and the conditioning `μ[f | m]` is onto `μ`'s own σ-algebra. The identity is
+  -- still true — integrability over `m` forces `f` to be a.e. invariant — and is proved here
+  -- via `ae_eq_condExp_of_forall_setIntegral_eq` with `hm = le_rfl`. `hm_inv` still supplies,
+  -- for each `m`-set `s`, its invariance `IsInvariantSet G s`, which is what the set-integral
+  -- identity needs. See the report for the minimal fix (`(μ : @Measure 𝓧 m𝓧)`, likewise
+  -- `hmeas`, `hμ`) that would restore the intended coarser-`m` reading.
+  have hmp : ∀ g : G, MeasurePreserving (fun x : 𝓧 => g • x) μ μ := fun g => ⟨hmeas g, hμ g⟩
+  -- Work with a measurable representative `f₀` of `f`; the averaging is transported along it.
+  obtain ⟨f₀, hf₀sm, hff₀⟩ := hf.aestronglyMeasurable
+  have hf₀meas : Measurable f₀ := hf₀sm.measurable
+  have hf₀ : Integrable f₀ μ := hf.congr hff₀
+  -- The two orbit averages agree a.e., since each `g • ·` is measure-preserving.
+  have hcomp : ∀ g : G, (fun x => f (g • x)) =ᵐ[μ] fun x => f₀ (g • x) :=
+    fun g => hff₀.comp_tendsto ((hmp g).quasiMeasurePreserving.tendsto_ae)
+  have hgaeq : groupAverage G f =ᵐ[μ] groupAverage G f₀ := by
+    filter_upwards [ae_all_iff.mpr hcomp] with x hx
+    unfold groupAverage
+    congr 1
+    exact Finset.sum_congr rfl fun g _ => hx g
+  -- Integrability of the average of the measurable representative.
+  have hInt : Integrable (groupAverage G f₀) μ := by
+    unfold groupAverage
+    exact (integrable_finset_sum Finset.univ
+      fun g _ => (hmp g).integrable_comp_of_integrable hf₀).const_mul _
+  -- The average of the measurable representative is `m`-measurable (each `g • ·` is
+  -- `m`-measurable by `hmeas`, so the summands are, and the average of them is).
+  have hgm_meas : Measurable[m] (groupAverage G f₀) := by
+    unfold groupAverage
+    exact (Finset.measurable_sum _ fun g _ => hf₀meas.comp (hmeas g)).const_mul _
+  have hgm : AEStronglyMeasurable[m] (groupAverage G f₀) μ :=
+    hgm_meas.stronglyMeasurable.aestronglyMeasurable
+  -- The conditional-expectation identity for the measurable representative.
+  have hcore : μ[f₀|m] =ᵐ[μ] groupAverage G f₀ := by
+    refine (ae_eq_condExp_of_forall_setIntegral_eq le_rfl hf₀
+      (fun s _ _ => hInt.integrableOn) ?_ hgm).symm
+    intro s hsm _
+    obtain ⟨_, hs_inv⟩ := (hm_inv s).mp hsm
+    -- On the invariant set `s`, each translated integral equals the original.
+    have hstep : ∀ g : G, ∫ x in s, f₀ (g • x) ∂μ = ∫ x in s, f₀ x ∂μ := by
+      intro g
+      have hsinv : (fun x => g • x) ⁻¹' s = s := hs_inv g
+      have hind : (fun x => s.indicator f₀ (g • x)) = s.indicator fun x => f₀ (g • x) := by
+        funext x
+        have hiff : g • x ∈ s ↔ x ∈ s := by conv_lhs => rw [← Set.mem_preimage, hsinv]
+        by_cases hx : x ∈ s
+        · rw [Set.indicator_of_mem (hiff.mpr hx) f₀, Set.indicator_of_mem hx]
+        · rw [Set.indicator_of_notMem (fun h => hx (hiff.mp h)) f₀,
+            Set.indicator_of_notMem hx]
+      rw [← integral_indicator hsm, ← integral_indicator hsm, ← hind]
+      have hae : AEStronglyMeasurable (s.indicator f₀) (μ.map fun x => g • x) := by
+        rw [hμ g]; exact (hf₀sm.indicator hsm).aestronglyMeasurable
+      conv_rhs => rw [← hμ g]
+      exact (integral_map (hmeas g).aemeasurable hae).symm
+    have hsum : (∫ x in s, ∑ g : G, f₀ (g • x) ∂μ) = ∑ g : G, ∫ x in s, f₀ (g • x) ∂μ :=
+      integral_finset_sum Finset.univ
+        fun g _ => ((hmp g).integrable_comp_of_integrable hf₀).integrableOn
+    unfold groupAverage
+    rw [integral_const_mul, hsum]
+    simp only [hstep]
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, inv_mul_cancel_left₀ hcard]
+  -- Transport the identity back to `f`.
+  exact (condExp_congr_ae hff₀).trans (hcore.trans hgaeq.symm)
 
 end StatLean.HypothesisTesting
