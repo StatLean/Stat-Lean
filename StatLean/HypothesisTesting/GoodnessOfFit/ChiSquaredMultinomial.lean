@@ -1,0 +1,237 @@
+import StatLean.HypothesisTesting.Tests.Defs
+import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
+import StatLean.MultipleTesting.ForMathlib.ChiSquared
+import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
+import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
+
+/-!
+# Pearson's chi-squared statistic for a simple multinomial null
+
+`n` independent trials, each resulting in one of `k + 1` outcomes, outcome `j` occurring
+with probability `pⱼ`. Writing `Yⱼ` for the number of trials resulting in outcome `j`, the
+vector `(Y₁, …, Y_{k+1})` is multinomial. For the simple null `pⱼ = πⱼ`, the classical
+statistic rejects for large values of
+$$ Q_n \;=\; \sum_{j=1}^{k+1} \frac{(Y_j - n\pi_j)^2}{n\pi_j}. $$
+This file fixes the cell counts and the statistic, and states the three asymptotic facts
+about it:
+
+* `multinomialCount`, `pearsonQ` — the cell counts `Yⱼ` and the statistic `Qₙ`;
+* `pearsonQ_weakConverges_chiSquared` — under the null, `Qₙ ⇒ χ²_k`;
+* `pearsonQ_weakConverges_noncentral` — under the local alternatives
+  `p⁽ⁿ⁾ⱼ = πⱼ + hⱼ n^{-1/2}` with `∑ⱼ hⱼ = 0`, `Qₙ ⇒ χ²_k(λ)` with `λ = ∑ⱼ hⱼ²/πⱼ`;
+* `pearsonQ_consistent` — against a fixed alternative `p ≠ π` the power tends to one;
+* `pearsonQ_local_power_nondegenerate` — against the local alternatives with some `hⱼ ≠ 0`
+  the power tends to a limit strictly between `α` and `1`.
+
+The degrees of freedom are `k`, one less than the number of cells `k + 1`: the counts are
+constrained by `∑ⱼ Yⱼ = n`, so only `k` of the centred and scaled cell frequencies are
+free. Correspondingly, the noncentrality parameter is a sum over all `k + 1` cells, of the
+squared local shifts standardized by the null cell probabilities.
+
+**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
+comments below.
+
+**Proof formalization notes.**
+* `multinomialCount` and `pearsonQ` are defined directly on categorical observations
+  `X : Fin n → Ω → Fin (k+1)` rather than on a multinomial random vector: the counts are
+  then genuine functions of the sample, the multinomial law is a consequence of
+  independence rather than an assumption, and independence enters as `iIndepFun` exactly
+  as in the other sampling models of the area.
+* Cell probabilities are recorded as `((μ) {j}).toReal = πⱼ`, i.e. through the law of a
+  single observation; this keeps the null and the local alternatives in one and the same
+  format and avoids carrying a multinomial p.m.f. as data.
+* The null hypothesis `π` is required to have all cells strictly positive (`0 < πⱼ`) —
+  the "interior point" condition. It is genuinely needed: `Qₙ` divides by `nπⱼ`, and the
+  limiting covariance matrix is singular without it.
+* Convergence in law is `AsymptoticStatistics.WeakConverges` applied to the pushforwards
+  of the stage-`n` sampling laws under the statistic, matching the convention of that
+  area's `ForMathlib/Contiguity.lean`.
+* The intended proof of the first two items is the multivariate central limit theorem
+  (`ProbabilityTheory.tendstoInDistribution_multivariate_clt`) applied to the vector of
+  the first `k` centred cell frequencies, followed by the continuous mapping theorem for
+  the quadratic form with matrix `Σ⁻¹`; the algebraic identity that this quadratic form
+  equals `Qₙ` (which reintroduces the `(k+1)`-st cell) is the only combinatorial step.
+* The third item is the law of large numbers: if `pⱼ ≠ πⱼ` for some `j` then
+  `Qₙ ≥ n (Yⱼ/n − πⱼ)²/πⱼ → ∞` in probability.
+* `noncentralChiSquared` of `ForMathlib/NoncentralChiSquared.lean` takes its noncentrality
+  parameter in `ℝ≥0`, while `multinomialNoncentrality` is a real sum; the two are joined
+  by `Real.toNNReal`, which is the identity here because all `πⱼ > 0` makes the sum
+  nonnegative.
+
+**Bibliographic comments.** The statistic and the chi-squared approximation to its null
+distribution are due to K. Pearson ("On the criterion that a given system of deviations
+from the probable in the case of a correlated system of variables is such that it can be
+reasonably supposed to have arisen from random sampling," *Philosophical Magazine*,
+Series 5, **50** (1900), 157–175). The noncentral chi-squared limit under local
+alternatives, and the resulting local power calculation, go back to R. A. Fisher
+("The conditions under which χ² measures the discrepancy between observation and
+hypothesis," *J. Roy. Statist. Soc.* **87** (1924), 442–450) and to
+E. S. Pearson ("The probability integral transformation for testing goodness of fit and
+combining independent tests of significance," *Biometrika* **30** (1938), 134–148); the
+modern treatment via the multivariate central limit theorem is standard.
+-/
+
+open MeasureTheory ProbabilityTheory Filter Topology
+open scoped ENNReal BigOperators
+
+namespace StatLean.HypothesisTesting
+
+open AsymptoticStatistics (WeakConverges)
+open StatLean.MultipleTesting (chiSquared)
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-! ### The cell counts and Pearson's statistic -/
+
+/-- The **multinomial cell count** `Yⱼ = #{ i : Xᵢ = j }`: the number of the `n` trials
+resulting in outcome `j`, for categorical observations taking values in the `k + 1`
+outcomes `Fin (k+1)`. -/
+noncomputable def multinomialCount {n k : ℕ} (X : Fin n → Ω → Fin (k + 1))
+    (j : Fin (k + 1)) (ω : Ω) : ℕ :=
+  (Finset.univ.filter fun i => X i ω = j).card
+
+/-- **Pearson's chi-squared statistic**
+`Qₙ = ∑_{j=1}^{k+1} (Yⱼ − nπⱼ)² / (nπⱼ)` for the simple null `p = π`, where `Yⱼ` are the
+cell counts of the sample `X`. Degenerate cells (`πⱼ = 0`) or an empty sample (`n = 0`)
+produce division by zero, i.e. the junk value `0` in that summand; every statement below
+assumes `0 < n` and `0 < πⱼ` for all `j`. -/
+noncomputable def pearsonQ {n k : ℕ} (π : Fin (k + 1) → ℝ) (X : Fin n → Ω → Fin (k + 1))
+    (ω : Ω) : ℝ :=
+  ∑ j : Fin (k + 1), ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) ^ 2 / ((n : ℝ) * π j)
+
+/-- The **noncentrality parameter** attached to a local shift `h` of the cell
+probabilities: `λ = ∑_{j=1}^{k+1} hⱼ² / πⱼ`. This is `|I^{1/2}(π) h|²` for the multinomial
+information matrix, which is why it is the noncentrality of the limiting law. -/
+noncomputable def multinomialNoncentrality {k : ℕ} (π h : Fin (k + 1) → ℝ) : ℝ :=
+  ∑ j : Fin (k + 1), (h j) ^ 2 / π j
+
+/-! ### (i) The null limit -/
+
+/-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
+`j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
+`k` degrees of freedom. -/
+theorem pearsonQ_weakConverges_chiSquared {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : Measure (Fin (k + 1))}
+    -- USER-INPUT: at least one degree of freedom; `χ²₀` is degenerate
+    (hk : 0 < k)
+    -- USER-INPUT: the null cell probabilities are an interior point of the simplex
+    (hπpos : ∀ j, 0 < π j)
+    -- USER-INPUT: the null cell probabilities sum to one
+    (hπsum : ∑ j, π j = 1)
+    -- USER-INPUT: at every stage each observation is measurable
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    -- USER-INPUT: at every stage the trials are i.i.d.; Pearson 1900
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    -- USER-INPUT: at every stage every trial has the common law `μ`
+    (hlaw : ∀ n, ∀ i, Measure.map (X n i) (P n) = μ)
+    -- USER-INPUT: the null hypothesis: the cell probabilities of `μ` are `π`
+    (hcell : ∀ j, (μ {j}).toReal = π j) :
+    WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n)) (chiSquared k) := by
+  sorry
+
+/-! ### (ii) Local alternatives and the noncentral limit -/
+
+/-- **Limiting distribution under local alternatives.** Under the alternative sequence
+`p⁽ⁿ⁾ⱼ = πⱼ + hⱼ n^{-1/2}` with `∑_{j=1}^{k+1} hⱼ = 0`, Pearson's statistic converges in
+law to the noncentral chi-squared distribution with `k` degrees of freedom and
+noncentrality parameter
+$$ \lambda \;=\; \sum_{j=1}^{k+1} \frac{h_j^2}{\pi_j}. $$
+The constraint `∑ⱼ hⱼ = 0` is what makes `p⁽ⁿ⁾` a probability vector; positivity of the
+perturbed cells is assumed separately, since it fails for small `n` when some `hⱼ < 0`. -/
+theorem pearsonQ_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : ℕ → Measure (Fin (k + 1))}
+    -- USER-INPUT: at least one degree of freedom
+    (hk : 0 < k)
+    -- USER-INPUT: the null cell probabilities are an interior point of the simplex
+    (hπpos : ∀ j, 0 < π j)
+    -- USER-INPUT: the null cell probabilities sum to one
+    (hπsum : ∑ j, π j = 1)
+    -- USER-INPUT: the local shifts sum to zero, so the perturbed vector is a probability
+    -- vector
+    (hhsum : ∑ j, h j = 0)
+    -- USER-INPUT: at every stage each observation is measurable
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    -- USER-INPUT: at every stage the trials are i.i.d.; Pearson 1900
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    -- USER-INPUT: at stage `n` every trial has the stage-`n` law `μ n`
+    (hlaw : ∀ n, ∀ i, Measure.map (X n i) (P n) = μ n)
+    -- USER-INPUT: the local alternative: the stage-`n` cell probabilities are
+    -- `πⱼ + hⱼ n^{-1/2}`
+    (hcell : ∀ n, ∀ j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
+    WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n))
+      (noncentralChiSquared k (multinomialNoncentrality π h).toNNReal) := by
+  sorry
+
+/-! ### (iii) Power -/
+
+/-- **Consistency against a fixed alternative.** If the true cell probabilities differ
+from `π` in at least one cell, the power of the chi-squared test tends to one. The reason
+is that `Qₙ ≥ n (Yⱼ/n − πⱼ)²/πⱼ` for the offending cell `j`, and `Yⱼ/n → pⱼ ≠ πⱼ` in
+probability by the law of large numbers, so `Qₙ → ∞` in probability. -/
+theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : Measure (Fin (k + 1))}
+    -- USER-INPUT: at least one degree of freedom
+    (hk : 0 < k)
+    -- USER-INPUT: the nominal level is a nondegenerate probability
+    (hα : 0 < α) (hα1 : α < 1)
+    -- USER-INPUT: `c` is the `1 − α` quantile of `χ²_k`, i.e. the critical value
+    (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α)
+    -- USER-INPUT: the null cell probabilities are an interior point of the simplex
+    (hπpos : ∀ j, 0 < π j)
+    -- USER-INPUT: the null cell probabilities sum to one
+    (hπsum : ∑ j, π j = 1)
+    -- USER-INPUT: at every stage each observation is measurable
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    -- USER-INPUT: at every stage the trials are i.i.d.; Pearson 1900
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    -- USER-INPUT: at every stage every trial has the common alternative law `μ`
+    (hlaw : ∀ n, ∀ i, Measure.map (X n i) (P n) = μ)
+    -- USER-INPUT: the alternative cell probabilities of `μ` are `p`
+    (hcell : ∀ j, (μ {j}).toReal = p j)
+    -- USER-INPUT: the alternative genuinely differs from the null in some cell
+    (hne : ∃ j, p j ≠ π j) :
+    Tendsto (fun n => ((P n) {ω | c < pearsonQ π (X n) ω}).toReal) atTop (nhds 1) := by
+  sorry
+
+/-- **Nondegenerate local power.** Against the local alternatives of
+`pearsonQ_weakConverges_noncentral` with not all `hⱼ` equal to zero, the power of the
+chi-squared test tends to a limit strictly greater than `α` and strictly less than one,
+namely `P{χ²_k(λ) > c}` with `λ = ∑ⱼ hⱼ²/πⱼ > 0`. -/
+theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : ℕ → Measure (Fin (k + 1))}
+    -- USER-INPUT: at least one degree of freedom
+    (hk : 0 < k)
+    -- USER-INPUT: the nominal level is a nondegenerate probability
+    (hα : 0 < α) (hα1 : α < 1)
+    -- USER-INPUT: `c` is the `1 − α` quantile of `χ²_k`, i.e. the critical value
+    (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α)
+    -- USER-INPUT: the null cell probabilities are an interior point of the simplex
+    (hπpos : ∀ j, 0 < π j)
+    -- USER-INPUT: the null cell probabilities sum to one
+    (hπsum : ∑ j, π j = 1)
+    -- USER-INPUT: the local shifts sum to zero
+    (hhsum : ∑ j, h j = 0)
+    -- USER-INPUT: the local alternative is nondegenerate: not all shifts vanish
+    (hhne : ∃ j, h j ≠ 0)
+    -- USER-INPUT: at every stage each observation is measurable
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    -- USER-INPUT: at every stage the trials are i.i.d.; Pearson 1900
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    -- USER-INPUT: at stage `n` every trial has the stage-`n` law `μ n`
+    (hlaw : ∀ n, ∀ i, Measure.map (X n i) (P n) = μ n)
+    -- USER-INPUT: the local alternative cell probabilities are `πⱼ + hⱼ n^{-1/2}`
+    (hcell : ∀ n, ∀ j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
+    Tendsto (fun n => ((P n) {ω | c < pearsonQ π (X n) ω}).toReal) atTop
+        (nhds ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
+          (Set.Ioi c)).toReal)
+      ∧ α < ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
+          (Set.Ioi c)).toReal
+      ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
+          (Set.Ioi c)).toReal < 1 := by
+  sorry
+
+end StatLean.HypothesisTesting
