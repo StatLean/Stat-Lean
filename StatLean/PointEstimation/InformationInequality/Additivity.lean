@@ -99,7 +99,62 @@ theorem fisherInfo_prod (M : ParametricFamily 𝓧 ℝ) (N : ParametricFamily �
     (hMint1 : Integrable (fun x => score M θ x * M.density θ x) μ)
     (hNint1 : Integrable (fun y => score N θ y * N.density θ y) ν) :
     fisherInfo (prodFamily M N) (μ.prod ν) θ = fisherInfo M μ θ + fisherInfo N ν θ := by
-  sorry
+  -- pointwise: the joint integrand splits into three product terms
+  have key : ∀ z : 𝓧 × 𝓨, score (prodFamily M N) θ z ^ 2 * (prodFamily M N).density θ z
+      = score M θ z.1 ^ 2 * M.density θ z.1 * N.density θ z.2
+        + 2 * (score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2))
+        + M.density θ z.1 * (score N θ z.2 ^ 2 * N.density θ z.2) := by
+    intro z
+    simp only [score, prodFamily]
+    rcases eq_or_lt_of_le (M.density_nonneg θ z.1) with hp | hp
+    · rw [← hp]; ring
+    · rcases eq_or_lt_of_le (N.density_nonneg θ z.2) with hq | hq
+      · rw [← hq]; ring
+      · have hprodderiv : deriv (fun t => M.density t z.1 * N.density t z.2) θ
+            = deriv (fun t => M.density t z.1) θ * N.density θ z.2
+              + M.density θ z.1 * deriv (fun t => N.density t z.2) θ :=
+          (((hMdiff z.1 hp).hasDerivAt).mul ((hNdiff z.2 hq).hasDerivAt)).deriv
+        rw [hprodderiv]
+        have hpne := hp.ne'
+        have hqne := hq.ne'
+        field_simp
+        ring
+  simp only [fisherInfo]
+  have hcongr : (∫ z, score (prodFamily M N) θ z ^ 2 * (prodFamily M N).density θ z ∂(μ.prod ν))
+      = ∫ z, (score M θ z.1 ^ 2 * M.density θ z.1 * N.density θ z.2
+        + 2 * (score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2))
+        + M.density θ z.1 * (score N θ z.2 ^ 2 * N.density θ z.2)) ∂(μ.prod ν) :=
+    integral_congr_ae (Filter.Eventually.of_forall key)
+  rw [hcongr]
+  have iF1 : Integrable (fun z : 𝓧 × 𝓨 =>
+      score M θ z.1 ^ 2 * M.density θ z.1 * N.density θ z.2) (μ.prod ν) :=
+    Integrable.mul_prod hMint (hN.density_integrable θ)
+  have iF2 : Integrable (fun z : 𝓧 × 𝓨 =>
+      score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2)) (μ.prod ν) :=
+    Integrable.mul_prod hMint1 hNint1
+  have iF3 : Integrable (fun z : 𝓧 × 𝓨 =>
+      M.density θ z.1 * (score N θ z.2 ^ 2 * N.density θ z.2)) (μ.prod ν) :=
+    Integrable.mul_prod (hM.density_integrable θ) hNint
+  have iF2c : Integrable (fun z : 𝓧 × 𝓨 =>
+      2 * (score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2))) (μ.prod ν) :=
+    iF2.const_mul 2
+  have iF12 : Integrable (fun z : 𝓧 × 𝓨 =>
+      score M θ z.1 ^ 2 * M.density θ z.1 * N.density θ z.2
+        + 2 * (score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2)))
+      (μ.prod ν) := iF1.add iF2c
+  rw [integral_add iF12 iF3, integral_add iF1 iF2c, integral_const_mul]
+  have eF1 : (∫ z, score M θ z.1 ^ 2 * M.density θ z.1 * N.density θ z.2 ∂(μ.prod ν))
+      = (∫ x, score M θ x ^ 2 * M.density θ x ∂μ) * (∫ y, N.density θ y ∂ν) :=
+    integral_prod_mul (fun x => score M θ x ^ 2 * M.density θ x) (fun y => N.density θ y)
+  have eF2 : (∫ z, score M θ z.1 * M.density θ z.1 * (score N θ z.2 * N.density θ z.2) ∂(μ.prod ν))
+      = (∫ x, score M θ x * M.density θ x ∂μ) * (∫ y, score N θ y * N.density θ y ∂ν) :=
+    integral_prod_mul (fun x => score M θ x * M.density θ x)
+      (fun y => score N θ y * N.density θ y)
+  have eF3 : (∫ z, M.density θ z.1 * (score N θ z.2 ^ 2 * N.density θ z.2) ∂(μ.prod ν))
+      = (∫ x, M.density θ x ∂μ) * (∫ y, score N θ y ^ 2 * N.density θ y ∂ν) :=
+    integral_prod_mul (fun x => M.density θ x) (fun y => score N θ y ^ 2 * N.density θ y)
+  rw [eF1, eF2, eF3, hM0, hN0, hM.density_integral_eq_one θ, hN.density_integral_eq_one θ]
+  ring
 
 /-! ## An independent identically distributed sample -/
 
