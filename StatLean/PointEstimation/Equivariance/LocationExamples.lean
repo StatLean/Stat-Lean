@@ -49,7 +49,7 @@ C. R. Rao, *Characterization Problems in Mathematical Statistics*, Wiley, 1973.
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.PointEstimation
 
