@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Invariance.Defs
+import StatLean.HypothesisTesting.NeymanPearson.Lemma
 
 /-!
 # UMP invariant tests under a finite group with transitive induced action
@@ -66,6 +67,73 @@ open StatLean.PointEstimation (IsInvariantModel)
 variable {G Θ 𝓧 : Type*} [Group G] [MeasurableSpace G] [MeasurableSpace 𝓧]
   [MulAction G 𝓧] [MulAction G Θ]
 
+/-! ### Change-of-variables helpers under an invariant dominating measure -/
+
+/-- Pushing a `withDensity` forward along a `G`-invariant group action re-indexes the
+density by `g⁻¹`. This is the density-level reading of `μ.map (g • ·) = μ`. -/
+private theorem map_smul_withDensity [MeasurableSMul G 𝓧] {μ : Measure 𝓧} (g : G)
+    {f : 𝓧 → ℝ≥0∞} (hf : Measurable f) (hμ : μ.map (fun x => g • x) = μ) :
+    (μ.withDensity f).map (fun x => g • x) = μ.withDensity (fun x => f (g⁻¹ • x)) := by
+  have hgm : Measurable (fun x : 𝓧 => g • x) := measurable_const_smul g
+  have hFm : Measurable (fun x : 𝓧 => f (g⁻¹ • x)) := hf.comp (measurable_const_smul g⁻¹)
+  refine Measure.ext fun A hA => ?_
+  rw [Measure.map_apply hgm hA, withDensity_apply _ (hgm hA), withDensity_apply _ hA,
+    ← lintegral_indicator (hgm hA), ← lintegral_indicator hA]
+  conv_rhs => rw [← hμ, lintegral_map (hFm.indicator hA) hgm]
+  refine lintegral_congr fun a => ?_
+  by_cases h : g • a ∈ A
+  · rw [Set.indicator_of_mem (Set.mem_preimage.mpr h) f,
+      Set.indicator_of_mem h (fun x => f (g⁻¹ • x)), inv_smul_smul]
+  · rw [Set.indicator_of_notMem (by rwa [Set.mem_preimage]) f,
+      Set.indicator_of_notMem h (fun x => f (g⁻¹ • x))]
+
+/-- For a nonnegative real `a`, `ofReal` turns multiplication by any real into a product. -/
+private theorem ofReal_mul_nonneg {k a : ℝ} (ha : 0 ≤ a) :
+    ENNReal.ofReal k * ENNReal.ofReal a = ENNReal.ofReal (k * a) := by
+  rcases le_or_gt 0 k with hk | hk
+  · exact (ENNReal.ofReal_mul hk).symm
+  · rw [ENNReal.ofReal_eq_zero.mpr hk.le, zero_mul,
+      ENNReal.ofReal_eq_zero.mpr (by nlinarith [mul_nonneg (neg_nonneg.mpr hk.le) ha])]
+
+/-- Strictness transfers back across `ofReal`. -/
+private theorem ofReal_lt_of_ofReal_lt {a b : ℝ}
+    (h : ENNReal.ofReal a < ENNReal.ofReal b) : a < b := by
+  by_contra hc
+  exact absurd (ENNReal.ofReal_le_ofReal (not_lt.mp hc)) (not_le.mpr h)
+
+/-- Change of variables for a real integral under a `G`-invariant dominating measure. -/
+private theorem integral_smul_invariant [MeasurableSMul G 𝓧] {μ : Measure 𝓧} (g : G)
+    {F : 𝓧 → ℝ} (hF : Measurable F) (hμ : μ.map (fun x => g • x) = μ) :
+    ∫ x, F (g • x) ∂μ = ∫ x, F x ∂μ := by
+  conv_rhs => rw [← hμ]
+  rw [integral_map (measurable_const_smul g).aemeasurable hF.aestronglyMeasurable]
+
+/-- The integral of a test against a real density equals the integral of the product. -/
+private theorem power_withDensity_eq {μ : Measure 𝓧} {q : 𝓧 → ℝ} (hqm : Measurable q)
+    (hqnn : ∀ x, 0 ≤ q x) (ψ : 𝓧 → ℝ) :
+    ∫ x, ψ x ∂(μ.withDensity fun x => ENNReal.ofReal (q x)) = ∫ x, ψ x * q x ∂μ := by
+  rw [integral_withDensity_eq_integral_toReal_smul hqm.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hqnn x)]; ring
+
+/-- The orbit average integrates to the same value as the original density. -/
+private theorem integral_orbitAverage_eq [Fintype G] [MeasurableSMul G 𝓧] {μ : Measure 𝓧}
+    {q : 𝓧 → ℝ} (hqm : Measurable q) (hqi : Integrable q μ)
+    (hμ : ∀ g : G, μ.map (fun x => g • x) = μ) :
+    ∫ x, orbitAverage G q x ∂μ = ∫ x, q x ∂μ := by
+  haveI : Nonempty G := ⟨1⟩
+  have hcard : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hint : ∀ g : G, Integrable (fun x => q (g • x)) μ := fun g =>
+    (⟨measurable_const_smul g, hμ g⟩ :
+      MeasurePreserving _ μ μ).integrable_comp_of_integrable hqi
+  have hcov : ∀ g : G, ∫ x, q (g • x) ∂μ = ∫ x, q x ∂μ := fun g =>
+    integral_smul_invariant g hqm (hμ g)
+  unfold orbitAverage
+  rw [integral_const_mul, integral_finset_sum _ (fun g _ => hint g),
+    Finset.sum_congr rfl (fun g _ => hcov g), Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hcard, one_mul]
+
 /-- **Orbit averages are invariant.** Averaging over a finite group produces a function
 constant on orbits, since left translation permutes the group. -/
 theorem isInvariantTest_orbitAverage [Fintype G] (f : 𝓧 → ℝ) :
@@ -92,19 +160,26 @@ theorem orbitAverage_eq_avg_translated_density [Fintype G] [MeasurableSMul G �
     -- USER-INPUT: the dominating measure is invariant under the group
     (hμ : ∀ g : G, μ.map (g • ·) = μ) :
     orbitAverage G (p θ) =ᵐ[μ] fun x => (Fintype.card G : ℝ)⁻¹ * ∑ g : G, p (g • θ) x := by
-  -- TODO: under-hypothesized — missing `[SigmaFinite μ]` (or `[∀ θ, IsProbabilityMeasure (P θ)]`).
-  -- `[MeasurableSMul G 𝓧]` is now present, so the change of variables goes through: combining
-  -- `IsInvariantModel` (`P (g • θ) = (P θ).map (g • ·)`) with `hμ` (`μ` is `G`-invariant) and the
-  -- pushforward of a `withDensity` yields equality of the *measures*
-  -- `μ.withDensity (ofReal ∘ p (g • θ)) = μ.withDensity (fun x => ofReal (p θ (g⁻¹ • x)))`; after
-  -- reindexing `g ↦ g⁻¹` in the finite sum this is exactly the claim. But extracting the a.e.
-  -- equality of the density *functions* from equality of the *measures* needs density uniqueness,
-  -- `withDensity_eq_iff_of_sigmaFinite` (needs `[SigmaFinite μ]`) or `withDensity_eq_iff` (needs
-  -- `∫⁻ ofReal (p (g • θ)) ∂μ ≠ ∞`, i.e. finite mass — supplied by `[∀ θ, IsProbabilityMeasure
-  -- (P θ)]`). Neither is in the signature, and without it density uniqueness genuinely fails on a
-  -- non-σ-finite `μ`. Fix = add `[SigmaFinite μ]` (as the two downstream headline theorems already
-  -- carry) to the signature.
-  sorry
+  -- Per group element, `p_{gθ}(x) = p_θ(g⁻¹·x)` a.e., from equality of the pushed-forward
+  -- densities and `withDensity` uniqueness (σ-finiteness).
+  have key : ∀ g : G, (fun x => p (g • θ) x) =ᵐ[μ] fun x => p θ (g⁻¹ • x) := by
+    intro g
+    have hmeq : (μ.withDensity fun x => ENNReal.ofReal (p (g • θ) x))
+        = μ.withDensity fun x => ENNReal.ofReal (p θ (g⁻¹ • x)) := by
+      rw [← hdens (g • θ), ← hP g θ, hdens θ]
+      exact map_smul_withDensity g (hpmeas θ).ennreal_ofReal (hμ g)
+    have hae := (withDensity_eq_iff_of_sigmaFinite
+      (hpmeas (g • θ)).ennreal_ofReal.aemeasurable
+      ((hpmeas θ).comp (measurable_const_smul g⁻¹)).ennreal_ofReal.aemeasurable).mp hmeq
+    filter_upwards [hae] with x hx
+    exact (ENNReal.ofReal_eq_ofReal_iff (hpnonneg (g • θ) x) (hpnonneg θ (g⁻¹ • x))).mp hx
+  have hall : ∀ᵐ x ∂μ, ∀ g : G, p (g • θ) x = p θ (g⁻¹ • x) := ae_all_iff.mpr key
+  filter_upwards [hall] with x hx
+  show orbitAverage G (p θ) x = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, p (g • θ) x
+  unfold orbitAverage
+  congr 1
+  rw [Finset.sum_congr rfl (fun g _ => hx g)]
+  exact (Equiv.sum_comp (Equiv.inv G) (fun g => p θ (g • x))).symm
 
 /-- **A Neyman–Pearson test for the orbit-averaged densities is UMP invariant.** For a
 finite group whose induced action is transitive on the null class and on the alternative
