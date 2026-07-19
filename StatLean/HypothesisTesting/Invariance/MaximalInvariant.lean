@@ -104,11 +104,14 @@ def PreservesFamily (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) : Prop :=
 
 /-- The identity transformation preserves the family, with induced map the identity. -/
 theorem inducesOn_one : InducesOn P (1 : Equiv.Perm 𝓧) id := by
-  sorry
+  intro θ
+  simp only [Equiv.Perm.coe_one, Measure.map_id, id_eq]
 
 /-- The identity transformation is family-preserving. -/
 theorem preservesFamily_one : PreservesFamily P (1 : Equiv.Perm 𝓧) := by
-  sorry
+  refine ⟨?_, ?_, id, Function.surjective_id, inducesOn_one⟩
+  · exact measurable_id
+  · exact measurable_id
 
 /-- Composition of induced maps: `(g'g)‾ = gbar' ∘ gbar` (the first homomorphism identity).
 Recall `(g' * g) x = g' (g x)` for permutations. -/
@@ -121,6 +124,14 @@ theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {gbar gbar' : Θ → Θ}
     -- automatic for the bimeasurable transformations the theory quantifies over
     (hg : Measurable ⇑g) :
     InducesOn P (g' * g) (gbar' ∘ gbar) := by
+  -- TODO: under-hypothesized for general measurable spaces. The composite pushforward
+  -- `(P θ).map ⇑(g'*g) = ((P θ).map ⇑g).map ⇑g'` (`Measure.map_map`) needs `Measurable ⇑g'`,
+  -- which is NOT among the hypotheses (only `hg : Measurable ⇑g`). Without it the identity
+  -- can fail: on a non-standard-Borel `𝓧`, `⇑g'` can be non-measurable while `⇑g'∘⇑g` is
+  -- measurable (a measurable bijection can have a non-measurable inverse), so
+  -- `(P θ).map ⇑(g'*g) ≠ ((P θ).map ⇑g).map ⇑g' = 0`. The intended (standard-Borel /
+  -- bimeasurable) setting supplies `Measurable ⇑g'`; the content is discharged inline in
+  -- `PreservesFamily.mul`, where it is available. Fix = add `Measurable ⇑g'` to the signature.
   sorry
 
 /-- Family-preserving transformations are closed under composition. -/
@@ -128,7 +139,17 @@ theorem PreservesFamily.mul {g g' : Equiv.Perm 𝓧}
     -- USER-INPUT: both factors preserve the family
     (h : PreservesFamily P g) (h' : PreservesFamily P g') :
     PreservesFamily P (g' * g) := by
-  sorry
+  obtain ⟨hgm, hgm', gbar, hsurj, hind⟩ := h
+  obtain ⟨hg'm, hg'm', gbar', hsurj', hind'⟩ := h'
+  refine ⟨?_, ?_, gbar' ∘ gbar, hsurj'.comp hsurj, ?_⟩
+  · rw [Equiv.Perm.coe_mul]; exact hg'm.comp hgm
+  · have hsymm : (⇑(g' * g).symm : 𝓧 → 𝓧) = ⇑g.symm ∘ ⇑g'.symm := funext fun x => by
+      rw [Function.comp_apply, Equiv.symm_apply_eq, Equiv.Perm.coe_mul, Function.comp_apply,
+        Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+    rw [hsymm]; exact hgm'.comp hg'm'
+  · intro θ
+    rw [Equiv.Perm.coe_mul, ← Measure.map_map hg'm hgm, hind θ]
+    exact hind' (gbar θ)
 
 /-- **Identifiability makes the induced map injective.** If distinct parameters index
 distinct distributions, an induced parameter map is one-to-one. -/
@@ -140,7 +161,11 @@ theorem InducesOn.bar_injective {g : Equiv.Perm 𝓧} {gbar : Θ → Θ}
     -- LEAN-ONLY: bimeasurability of `g`, used to undo the pushforward
     (hg : Measurable ⇑g) (hg' : Measurable ⇑g.symm) :
     Function.Injective gbar := by
-  sorry
+  intro θ₁ θ₂ hθ
+  apply hP
+  have e1 : (P θ₁).map ⇑g = (P θ₂).map ⇑g := by rw [h θ₁, h θ₂, hθ]
+  have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) e1
+  simpa only [Measure.map_map hg' hg, Equiv.symm_comp_self, Measure.map_id] using e2
 
 /-- Inverse of an induced map: `(g⁻¹)‾ = (gbar)⁻¹` (the second homomorphism identity),
 stated for an induced map already known to be bijective. -/
@@ -150,6 +175,13 @@ theorem InducesOn.inv {g : Equiv.Perm 𝓧} {gbar : Equiv.Perm Θ}
     -- LEAN-ONLY: measurability of `g⁻¹`, needed to push forward along the inverse
     (hg : Measurable ⇑g.symm) :
     InducesOn P g⁻¹ ⇑gbar⁻¹ := by
+  -- TODO: under-hypothesized for general measurable spaces. Inverting the pushforward
+  -- `((P θ').map ⇑g).map ⇑g.symm = P θ'` (`Measure.map_map`) needs BOTH `Measurable ⇑g` and
+  -- `Measurable ⇑g.symm`, but only `hg : Measurable ⇑g.symm` is supplied. On a non-standard
+  -- measurable space a bijection may be measurable in one direction only, and then the
+  -- cancellation fails. The intended bimeasurable setting supplies `Measurable ⇑g`; the
+  -- content is discharged inline in `PreservesFamily.inv`, where both are available. Fix =
+  -- add `Measurable ⇑g` to the signature.
   sorry
 
 /-- Family-preserving transformations are closed under inversion, given identifiability
@@ -160,7 +192,16 @@ theorem PreservesFamily.inv {g : Equiv.Perm 𝓧}
     -- USER-INPUT: `g` preserves the family
     (h : PreservesFamily P g) :
     PreservesFamily P g⁻¹ := by
-  sorry
+  obtain ⟨hgm, hgm', gbar, hsurj, hind⟩ := h
+  have hinj : Function.Injective gbar := hind.bar_injective hP hgm hgm'
+  let e : Θ ≃ Θ := Equiv.ofBijective gbar ⟨hinj, hsurj⟩
+  have hcoe : ∀ φ, e φ = gbar φ := fun φ => Equiv.ofBijective_apply _ _ _
+  refine ⟨hgm', hgm, ⇑e.symm, e.symm.surjective, fun θ => ?_⟩
+  have hkey : (P (e.symm θ)).map ⇑g = P θ := by
+    rw [hind (e.symm θ), ← hcoe, Equiv.apply_symm_apply]
+  have e2 := congrArg (fun ν : Measure 𝓧 => ν.map ⇑g.symm) hkey
+  simp only [Measure.map_map hgm' hgm, Equiv.symm_comp_self, Measure.map_id] at e2
+  exact e2.symm
 
 /-- **The family-preserving transformations form a group.** For an identifiable model,
 the bimeasurable bijections preserving `P` are a subgroup of the permutation group of the
@@ -188,7 +229,17 @@ theorem isInvariantTest_iff_factors {G : Type*} [Group G] [MulAction G 𝓧] {M 
     -- USER-INPUT: `M` is a maximal invariant for the action of `G` on the sample space
     (hM : IsMaximalInvariant G M) (φ : 𝓧 → ℝ) :
     IsInvariantTest G φ ↔ ∃ h : 𝓘 → ℝ, ∀ x, φ x = h (M x) := by
-  sorry
+  constructor
+  · intro hInv
+    classical
+    refine ⟨fun i => if hx : ∃ x, M x = i then φ (Classical.choose hx) else 0, fun x => ?_⟩
+    have hx : ∃ x', M x' = M x := ⟨x, rfl⟩
+    obtain ⟨g, hg⟩ := hM.2 (Classical.choose hx) x (Classical.choose_spec hx)
+    simp only [dif_pos hx]
+    exact (congrArg φ hg).trans (hInv g (Classical.choose hx))
+  · rintro ⟨h, hφ⟩
+    intro g x
+    simp only [hφ, hM.1]
 
 /-- **Measurable factorization through a maximal invariant.** The set-level
 factorization does not by itself make the factor `h` measurable; the classical structural
@@ -205,7 +256,19 @@ theorem isInvariantTest_iff_factors_measurable {G : Type*} [Group G] [MulAction 
     (hMY : MeasurableEmbedding fun x => (M x, Y x))
     (φ : 𝓧 → ℝ) :
     (Measurable φ ∧ IsInvariantTest G φ) ↔ ∃ h : 𝓘 → ℝ, Measurable h ∧ ∀ x, φ x = h (M x) := by
-  sorry
+  have hMmeas : Measurable M := measurable_fst.comp hMY.measurable
+  constructor
+  · rintro ⟨_, hInv⟩
+    -- TODO: (⇒) requires measurable uniformization/selection. From `hM` we obtain a set-level
+    -- factor `h₀` with `h₀ ∘ M = φ`; upgrading it to a *measurable* `h` needs a measurable
+    -- section of `M`. `MeasurableEmbedding (M, Y)` makes `e '' (φ⁻¹ B)` measurable in `𝓘 × 𝓨`,
+    -- but the factor's superlevel set `{i | h₀ i < a}` is the 𝓘-*projection* of that set, which
+    -- is analytic, not measurable, on a general measurable space (it is measurable under a
+    -- standard-Borel / measurable-selection hypothesis, e.g. Jankov–von Neumann). Not available
+    -- from the bare `MeasurableEmbedding` here. Fix = a standard-Borel hypothesis on `𝓘`, `𝓨`.
+    sorry
+  · rintro ⟨h, hmeas_h, hφ⟩
+    exact ⟨by rw [funext hφ]; exact hmeas_h.comp hMmeas, fun g x => by simp only [hφ, hM.1]⟩
 
 end Factorization
 
@@ -240,7 +303,23 @@ theorem isMaximalInvariant_comp_of_subgroups {G : Type*} [Group G] [MulAction G 
     -- USER-INPUT: `t` separates the `E^*`-orbits
     (ht_max : ∀ x₁ x₂ : 𝓧, t (s x₁) = t (s x₂) → ∃ e : ↥E, s x₂ = s ((e : G) • x₁)) :
     IsMaximalInvariant G (fun x => t (s x)) := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- invariance: `{g | ∀ x, t (s (g • x)) = t (s x)}` is a subgroup containing `D` and `E`
+    let H : Subgroup G :=
+      { carrier := {g | ∀ x, t (s (g • x)) = t (s x)}
+        one_mem' := fun x => by rw [one_smul]
+        mul_mem' := fun {a b} ha hb x => by rw [mul_smul, ha (b • x), hb x]
+        inv_mem' := fun {a} ha x => by
+          have h := ha (a⁻¹ • x); rw [smul_smul, mul_inv_cancel, one_smul] at h
+          rw [← h] }
+    have hDH : D ≤ H := fun d hd x => congrArg t (hs.1 ⟨d, hd⟩ x)
+    have hEH : E ≤ H := fun e he x => ht_inv ⟨e, he⟩ x
+    have htop : (⊤ : Subgroup G) ≤ H := hgen ▸ sup_le hDH hEH
+    exact fun g x => htop (Subgroup.mem_top g) x
+  · intro x y hxy
+    obtain ⟨e, he⟩ := ht_max x y hxy
+    obtain ⟨d, hd⟩ := hs.2 ((e : G) • x) y he.symm
+    exact ⟨(d : G) * (e : G), by rw [mul_smul]; exact hd⟩
 
 end Stepwise
 
@@ -273,6 +352,13 @@ theorem map_maximalInvariant_eq_of_orbit {P : Θ → Measure 𝓧} {M : 𝓧 →
     -- USER-INPUT: the two parameters lie on a common induced orbit
     (hθ : v θ₁ = v θ₂) :
     (P θ₁).map M = (P θ₂).map M := by
+  -- TODO: under-hypothesized for general measurable spaces. From `hv_max` pick `g` with
+  -- `θ₂ = g • θ₁`; then `P θ₂ = (P θ₁).map (g • ·)` (`hP`), and the claim reduces to
+  -- `((P θ₁).map (g • ·)).map M = (P θ₁).map M`, i.e. `(P θ₁).map (M ∘ (g • ·)) = (P θ₁).map M`
+  -- via `Measure.map_map` — which needs `Measurable (g • ·)`. That is NOT a hypothesis (no
+  -- `MeasurableSMul G 𝓧`), and evaluating a pushforward along a non-measurable map is `0`, so
+  -- the identity can fail. Everything else (`M ∘ (g • ·) = M` from `hMinv`) is available. Fix =
+  -- add `Measurable (g • ·)` / a `MeasurableSMul G 𝓧` instance to the signature.
   sorry
 
 end Shrinkage

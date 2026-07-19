@@ -95,7 +95,39 @@ equivariant exactly when the acceptance regions themselves are equivariant. -/
 theorem isEquivariantConfidence_iff_acceptance_equivariant {A : Θ → Set 𝓧} :
     IsEquivariantConfidence G (confidenceSet A) ↔
       ∀ (g : G) (θ : Θ), A (g • θ) = (fun x => g • x) '' A θ := by
-  sorry
+  have hinj : ∀ (g : G) (a b : Θ), g • a = g • b → a = b := fun g a b h => by
+    have := congrArg (g⁻¹ • ·) h; simpa only [inv_smul_smul] using this
+  constructor
+  · -- equivariance of the confidence family ⇒ equivariance of the acceptance regions
+    intro hEq g θ
+    ext y
+    constructor
+    · intro hy
+      refine ⟨g⁻¹ • y, ?_, smul_inv_smul g y⟩
+      have hx := Set.ext_iff.mp (hEq g (g⁻¹ • y)) (g • θ)
+      simp only [confidenceSet, smul_inv_smul, Set.mem_image, Set.mem_setOf_eq] at hx
+      obtain ⟨θ', hθ', hθ'eq⟩ := hx.mpr hy
+      rwa [hinj g θ' θ hθ'eq] at hθ'
+    · rintro ⟨x, hx, rfl⟩
+      have hx2 := Set.ext_iff.mp (hEq g x) (g • θ)
+      simp only [confidenceSet, Set.mem_image, Set.mem_setOf_eq] at hx2
+      exact hx2.mp ⟨θ, hx, rfl⟩
+  · -- equivariance of the acceptance regions ⇒ equivariance of the confidence family
+    intro hA g x
+    ext θ'
+    simp only [confidenceSet, Set.mem_image, Set.mem_setOf_eq]
+    constructor
+    · rintro ⟨θ, hθ, rfl⟩
+      rw [hA g θ]; exact ⟨x, hθ, rfl⟩
+    · intro h
+      refine ⟨g⁻¹ • θ', ?_, smul_inv_smul g θ'⟩
+      have hAe : A θ' = (fun x => g • x) '' A (g⁻¹ • θ') := by
+        have := hA g (g⁻¹ • θ'); rwa [smul_inv_smul] at this
+      rw [hAe, Set.mem_image] at h
+      obtain ⟨a, ha, hae⟩ := h
+      have hax : a = x := by
+        have := congrArg (g⁻¹ • ·) hae; simpa only [inv_smul_smul] using this
+      rwa [hax] at ha
 
 /-- **Equivariant confidence sets have stabilizer-invariant acceptance regions** (part (i)
 of the source's lemma). For each parameter value, the acceptance region of the hypothesis
@@ -108,7 +140,19 @@ theorem acceptance_invariant_of_equivariantConfidence {S : 𝓧 → Set Θ}
     -- `θ' = θ` invariant
     (hg : g • θ = θ) :
     (fun x => g • x) '' {x | θ ∈ S x} = {x | θ ∈ S x} := by
-  sorry
+  have hmem : ∀ (g : G) (x : 𝓧) (θ' : Θ), θ' ∈ S (g • x) ↔ g⁻¹ • θ' ∈ S x := by
+    intro g x θ'
+    rw [← hS g x]
+    constructor
+    · rintro ⟨θ'', hθ'', rfl⟩; rwa [inv_smul_smul]
+    · intro h; exact ⟨g⁻¹ • θ', h, smul_inv_smul _ _⟩
+  have hgθ : g⁻¹ • θ = θ := inv_smul_eq_iff.mpr hg.symm
+  ext y
+  simp only [Set.mem_image, Set.mem_setOf_eq]
+  constructor
+  · rintro ⟨x, hx, rfl⟩; rw [hmem g x θ, hgθ]; exact hx
+  · intro hy
+    exact ⟨g⁻¹ • y, by rw [hmem g⁻¹ y θ, inv_inv, hg]; exact hy, smul_inv_smul _ _⟩
 
 /-- **UMP invariant acceptance regions give uniformly most accurate equivariant confidence
 sets** (part (ii) of the source's lemma). If the dual confidence family is equivariant and
@@ -128,6 +172,23 @@ theorem isUMAEquivariant_of_isUMPInvariant {P : Θ → Measure 𝓧}
     (hUMP : ∀ θ : Θ, IsUMPInvariant ↥(MulAction.stabilizer G θ) P {θ} {θ' | θ' ≠ θ} α
       ((A θ)ᶜ.indicator fun _ => (1 : ℝ))) :
     IsUMAEquivariant G P (1 - α) (confidenceSet A) := by
+  refine ⟨hS, hlvl, ?_⟩
+  -- TODO: the optimality transfer (Lehmann Lemma 6.11.1(ii)). The argument: for a competitor
+  -- equivariant confidence family `S'` at level `1 - α` and `θ ≠ θ'`, the acceptance region
+  -- `{x | θ' ∈ S' x}` is invariant under `stabilizer G θ'`
+  -- (`acceptance_invariant_of_equivariantConfidence`), its complement-indicator is a
+  -- stabilizer-invariant level-`α` test of `θ' = θ'` (from `S'`'s coverage `≥ 1 - α`), and
+  -- `hUMP θ'` makes the corresponding power at `θ` no larger than that of `(A θ')ᶜ.indicator 1`;
+  -- reading power back as false-coverage probability gives
+  -- `P θ {x | θ' ∈ confidenceSet A x} ≤ P θ {x | θ' ∈ S' x}`. Two obstructions keep this open
+  -- here: (1) the competitor `S'` is quantified with NO measurability of its slices
+  -- `{x | θ' ∈ S' x}`, so its complement-indicator need not be an `IsCriticalFn` and the
+  -- `P θ (·)` on the RHS is an *outer* measure — closing this needs a measurable-cover
+  -- argument (cf. the "measurable slices" caveat on `IsUMAConfidence`). (2) the power↔coverage
+  -- bridge relies on `power_acceptanceTest` / `isCriticalFn_acceptanceTest`, which are still
+  -- `sorry` in `Tests/Confidence.lean` (`ht/test-foundations`); using them would import that
+  -- debt. Fix = restrict competitors to measurable slices (as `IsUMAConfidence` does) and
+  -- discharge the `Tests/Confidence` bridge lemmas.
   sorry
 
 end StatLean.HypothesisTesting

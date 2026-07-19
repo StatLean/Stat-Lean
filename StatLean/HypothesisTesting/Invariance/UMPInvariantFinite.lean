@@ -69,7 +69,11 @@ variable {G Θ 𝓧 : Type*} [Group G] [MeasurableSpace 𝓧] [MulAction G 𝓧]
 constant on orbits, since left translation permutes the group. -/
 theorem isInvariantTest_orbitAverage [Fintype G] (f : 𝓧 → ℝ) :
     IsInvariantTest G (orbitAverage G f) := by
-  sorry
+  intro g x
+  unfold orbitAverage
+  congr 1
+  rw [← Equiv.sum_comp (Equiv.mulRight g) (fun b => f (b • x))]
+  simp only [Equiv.coe_mulRight, mul_smul]
 
 /-- **Sample-side and parameter-side orbit averages agree.** For a dominated invariant
 model whose dominating measure is itself `G`-invariant, the orbit average of the density
@@ -86,6 +90,13 @@ theorem orbitAverage_eq_avg_translated_density [Fintype G] {P : Θ → Measure �
     -- USER-INPUT: the dominating measure is invariant under the group
     (hμ : ∀ g : G, μ.map (g • ·) = μ) :
     orbitAverage G (p θ) =ᵐ[μ] fun x => (Fintype.card G : ℝ)⁻¹ * ∑ g : G, p (g • θ) x := by
+  -- TODO: blocked — needs measurability of the group action. The bridge is, per summand,
+  -- `p θ (g • x) =ᵐ[μ] p (g • θ) x`, obtained from `IsInvariantModel` + `hμ` (`μ` is
+  -- `G`-invariant) via the density transport `P (g • θ) = (P θ).map (g • ·)` and
+  -- `rnDeriv`/`withDensity` change of variables. That change of variables requires
+  -- `Measurable (fun x => g • x)`, which is absent (no `MeasurableSMul G 𝓧` instance and no
+  -- such hypothesis). It is not synthesizable here. Fix = add `[MeasurableSMul G 𝓧]` (or a
+  -- `∀ g, Measurable (g • ·)` hypothesis) to the signature.
   sorry
 
 /-- **A Neyman–Pearson test for the orbit-averaged densities is UMP invariant.** For a
@@ -119,6 +130,15 @@ theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] {P : Θ → Measure �
     -- USER-INPUT: `φ` has size exactly `α` at the null representative
     (hsize : power P φ θ₀ = α) :
     IsUMPInvariant G P Θ₀ Θ₁ α φ := by
+  -- TODO: blocked — needs measurability of the group action. The Neyman–Pearson optimality
+  -- argument is: (i) for an *invariant* test `ψ`, `power P ψ` is constant on each induced
+  -- orbit, since `power P ψ (g • θ) = ∫ ψ d((P θ).map (g • ·)) = ∫ ψ (g • x) dP θ =
+  -- ∫ ψ dP θ` (the middle step is `integral_map`, the last is `ψ`'s invariance); (ii)
+  -- `∫ ψ · orbitAverage (p θᵢ) dμ = power P ψ θᵢ` by the same change of variables using
+  -- `hμ`-invariance of `μ`; (iii) the pointwise NP inequality `(φ - ψ)·(orbitAverage (p θ₁)
+  -- - k·orbitAverage (p θ₀)) ≥ 0` from `hrej`/`hacc`, integrated. Steps (i),(ii) both need
+  -- `Measurable (fun x => g • x)` — absent here (no `MeasurableSMul G 𝓧`) and not
+  -- synthesizable. Fix = add `[MeasurableSMul G 𝓧]` to the signature.
   sorry
 
 /-- **Existence of a UMP invariant test under a finite transitive group.** -/
@@ -141,6 +161,15 @@ theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] {P : Θ → Measu
     -- USER-INPUT: the prescribed level is a probability
     (hα0 : 0 ≤ α) (hα1 : α ≤ 1) :
     ∃ φ : 𝓧 → ℝ, IsUMPInvariant G P Θ₀ Θ₁ α φ := by
+  -- TODO: blocked on two counts. (1) It invokes `isUMPInvariant_of_orbitAverage_ratio`, which
+  -- is itself blocked on the missing `Measurable (fun x => g • x)` (no `MeasurableSMul G 𝓧`).
+  -- (2) Even granting that, one must *construct* an invariant critical `φ` with `power P φ θ₀`
+  -- *exactly* `α` (`hsize`): this is the existence half of the Neyman–Pearson fundamental
+  -- lemma, which for a fixed size requires randomization on the boundary `{ratio = k}`. That
+  -- fundamental lemma is only *planned* for the sibling `Tests` layer (`ht/test-foundations`);
+  -- it is not available in the current codebase (`Tests/Defs.lean` has the *definitions*
+  -- `IsMostPowerful`/`IsLevel`/`power` but no NP existence/optimality theorem). Fix = add
+  -- `[MeasurableSMul G 𝓧]` and the Neyman–Pearson fundamental lemma.
   sorry
 
 end StatLean.HypothesisTesting
