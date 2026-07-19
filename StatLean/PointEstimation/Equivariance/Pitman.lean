@@ -137,11 +137,13 @@ theorem pitmanEstimator_eq_sub_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
     -- USER-INPUT: the denominator integral converges at every sample point
     (hden : ∀ x, Integrable fun u : ℝ => f (x - u • (1 : Fin (m + 1) → ℝ)))
     -- USER-INPUT: the denominator does not vanish
-    (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0)
-    (x : Fin (m + 1) → ℝ) :
-    pitmanEstimator f x = x (Fin.last m) -
-      ∫ z, z (Fin.last m)
-        ∂(orbitCondKernel (locationBase f) diffs (diffs x)) := by
+    (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0) :
+    -- Stated almost everywhere, not pointwise: `orbitCondKernel` is a `condDistrib`, which is
+    -- only determined up to a null set, so an `∀ x` form is not provable by any route.
+    ∀ᵐ x ∂(locationBase f),
+      pitmanEstimator f x = x (Fin.last m) -
+        ∫ z, z (Fin.last m)
+          ∂(orbitCondKernel (locationBase f) diffs (diffs x)) := by
   -- Contract-level debt (reported). This is the substantive change of variables.
   -- `ForMathlib.CondDistribDensity.condDistrib_withDensity_prod_ae_eq` is now CLOSED and
   -- axiom-clean, so the upstream blocker is gone; what remains is the det-1 shear geometry
