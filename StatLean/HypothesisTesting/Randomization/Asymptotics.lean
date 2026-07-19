@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Randomization.Defs
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.CDF
+import Mathlib.MeasureTheory.Measure.Portmanteau
 
 /-!
 # Asymptotics of the randomization distribution
@@ -121,6 +122,27 @@ written out with an explicit `ε`. -/
 def TendstoInProbTriangular {𝓨 : ℕ → Type*} [∀ n, MeasurableSpace (𝓨 n)]
     (P : ∀ n, Measure (𝓨 n)) (f : ∀ n, 𝓨 n → ℝ) (c : ℝ) : Prop :=
   ∀ ε > (0 : ℝ), Tendsto (fun n => (P n).real {x | ε ≤ |f n x - c|}) atTop (𝓝 0)
+
+/-! ### Portmanteau bridge -/
+
+/-- **Portmanteau, `Measure.real` form.** If `μ n` converges weakly to `ν` (all probability
+measures) and the boundary of `s` is `ν`-null, then `(μ n).real s → ν.real s`. This is the
+`WeakConverges`/`Measure.real` packaging of `tendsto_measure_of_null_frontier`. -/
+private lemma tendsto_real_of_weakConverges_of_null_frontier {E : Type*}
+    [MeasurableSpace E] [TopologicalSpace E] [OpensMeasurableSpace E] [HasOuterApproxClosed E]
+    {μ : ℕ → Measure E} {ν : Measure E}
+    [∀ n, IsProbabilityMeasure (μ n)] [IsProbabilityMeasure ν]
+    (h : WeakConverges μ ν) {s : Set E} (hs : ν (frontier s) = 0) :
+    Tendsto (fun n => (μ n).real s) atTop (𝓝 (ν.real s)) := by
+  let pn : ℕ → ProbabilityMeasure E := fun n => ⟨μ n, inferInstance⟩
+  let pμ : ProbabilityMeasure E := ⟨ν, inferInstance⟩
+  have hpm : Tendsto pn atTop (𝓝 pμ) := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f; simpa [pn, pμ] using h f
+  have key := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hpm
+    (E := s) (by simpa [pμ] using hs)
+  have := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
+  simpa [Measure.real, pn, pμ] using this
 
 /-! ### The asymptotic randomization theorem -/
 
