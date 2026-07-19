@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Randomization.Defs
 import StatLean.HypothesisTesting.Invariance.Defs
 import StatLean.HypothesisTesting.ForMathlib.GroupAverageMeasure
 import Mathlib.Probability.ConditionalExpectation
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The conditional law given the orbit is the randomization distribution
@@ -88,6 +89,69 @@ lemma invariantSigmaAlgebra_le : invariantSigmaAlgebra (𝓧 := 𝓧) G ≤ m�
   intro s hs
   exact hs.1
 
+/-! ### Private helpers: the orbit average is invariant and reproduces integrals -/
+
+/-- The orbit average is constant along orbits (reindex the sum by right multiplication). -/
+private lemma orbitAverage_smul (f : 𝓧 → ℝ) (g : G) (x : 𝓧) :
+    orbitAverage G f (g • x) = orbitAverage G f x := by
+  unfold orbitAverage
+  congr 1
+  have hstep : ∀ h : G, f (h • (g • x)) = f ((h * g) • x) := fun h => by rw [mul_smul]
+  simp_rw [hstep]
+  exact Equiv.sum_comp (Equiv.mulRight g) (fun h => f (h • x))
+
+/-- The orbit average of a measurable function is measurable. -/
+private lemma measurable_orbitAverage {f : 𝓧 → ℝ} (hf : Measurable f)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (orbitAverage G f) := by
+  unfold orbitAverage
+  exact (Finset.measurable_sum _ fun g _ => hf.comp (hsmul g)).const_mul _
+
+/-- The orbit average is measurable for the invariant `σ`-algebra. -/
+private lemma measurable_orbitAverage_invariant {f : 𝓧 → ℝ} (hf : Measurable f)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable[invariantSigmaAlgebra G] (orbitAverage G f) := by
+  intro B hB
+  refine ⟨(measurable_orbitAverage hf hsmul) hB, fun g => ?_⟩
+  ext x
+  simp only [Set.mem_preimage, orbitAverage_smul]
+
+/-- The orbit average is bounded by the same bound as `f`. -/
+private lemma abs_orbitAverage_le {f : 𝓧 → ℝ} {C : ℝ} (hfb : ∀ x, |f x| ≤ C) (x : 𝓧) :
+    |orbitAverage G f x| ≤ C := by
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (0 : ℝ) < Fintype.card G := by exact_mod_cast hcard
+  unfold orbitAverage
+  rw [abs_mul, abs_of_nonneg (by positivity)]
+  calc (Fintype.card G : ℝ)⁻¹ * |∑ g : G, f (g • x)|
+      ≤ (Fintype.card G : ℝ)⁻¹ * ∑ g : G, |f (g • x)| :=
+        mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
+    _ ≤ (Fintype.card G : ℝ)⁻¹ * ∑ _g : G, C :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => hfb (g • x)) (by positivity)
+    _ = C := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+          inv_mul_cancel₀ hcardR.ne', one_mul]
+
+/-- On an invariant set, translating the integrand by `g` preserves the set integral (change
+of variables using invariance of both the set and the measure). -/
+private lemma setIntegral_smul_eq (P : Measure 𝓧) (f : 𝓧 → ℝ) (hf : Measurable f)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x))
+    (hrand : RandomizationHypothesis G P) {s : Set 𝓧} (hs : MeasurableSet s)
+    (hsinv : ∀ g : G, (fun x : 𝓧 => g • x) ⁻¹' s = s) (g : G) :
+    ∫ x in s, f (g • x) ∂P = ∫ x in s, f x ∂P := by
+  rw [← integral_indicator hs, ← integral_indicator hs]
+  have hind : s.indicator (fun y => f (g • y)) = fun y => s.indicator f (g • y) := by
+    funext y
+    have hmem : (g • y ∈ s) ↔ (y ∈ s) := by rw [← Set.mem_preimage, hsinv g]
+    by_cases hy : y ∈ s
+    · rw [Set.indicator_of_mem hy, Set.indicator_of_mem (hmem.mpr hy)]
+    · rw [Set.indicator_of_notMem hy, Set.indicator_of_notMem (fun h => hy (hmem.mp h))]
+  rw [hind]
+  have h := integral_map (μ := P) (φ := fun x => g • x) (f := s.indicator f)
+    (hsmul g).aemeasurable (hf.indicator hs).aestronglyMeasurable
+  rw [hrand g] at h
+  rw [← h]
+
 /-! ### Conditioning on the orbit -/
 
 /-- **Conditional expectation given the orbit is the orbit average.** Under the
@@ -108,7 +172,29 @@ theorem condExp_orbit_eq_orbitAverage (P : Measure 𝓧) [IsProbabilityMeasure P
     -- USER-INPUT: the null law is `G`-invariant; the randomization hypothesis
     (hrand : RandomizationHypothesis G P) :
     condExp (invariantSigmaAlgebra G) P f =ᵐ[P] orbitAverage G f := by
-  sorry
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (Fintype.card G : ℝ) ≠ 0 := by exact_mod_cast hcard.ne'
+  haveI : SigmaFinite (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) := by
+    haveI : IsFiniteMeasure (P.trim (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))) :=
+      isFiniteMeasure_trim _
+    infer_instance
+  have hfint : Integrable f P := (integrable_const C).mono' hf.aestronglyMeasurable
+    (ae_of_all P fun x => by rw [Real.norm_eq_abs]; exact hfb x)
+  have hoaint : Integrable (orbitAverage G f) P :=
+    (integrable_const C).mono' (measurable_orbitAverage hf hsmul).aestronglyMeasurable
+      (ae_of_all P fun x => by rw [Real.norm_eq_abs]; exact abs_orbitAverage_le hfb x)
+  have hfg_int : ∀ g : G, Integrable (fun x => f (g • x)) P := fun g =>
+    (integrable_const C).mono' (hf.comp (hsmul g)).aestronglyMeasurable
+      (ae_of_all P fun x => by rw [Real.norm_eq_abs]; exact hfb (g • x))
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (invariantSigmaAlgebra_le (𝓧 := 𝓧) (G := G))
+    hfint (fun s _ _ => hoaint.integrableOn) (fun s hs_m _ => ?_) ?_).symm
+  · obtain ⟨hs, hsinv⟩ := hs_m
+    unfold orbitAverage
+    rw [integral_const_mul, integral_finset_sum _ fun g _ => (hfg_int g).integrableOn]
+    simp_rw [setIntegral_smul_eq P f hf hsmul hrand hs hsinv]
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+      inv_mul_cancel₀ hcardR, one_mul]
+  · exact (measurable_orbitAverage_invariant hf hsmul).stronglyMeasurable.aestronglyMeasurable
 
 /-- **The conditional law of a statistic given the orbit, set form.** For every Borel
 set `B`,
@@ -130,7 +216,19 @@ theorem condExp_orbit_indicator (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     condExp (invariantSigmaAlgebra G) P ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
       =ᵐ[P] fun x => (Fintype.card G : ℝ)⁻¹ *
         ∑ g : G, B.indicator (fun _ => (1 : ℝ)) (T (g • x)) := by
-  sorry
+  have hfmeas : Measurable ((T ⁻¹' B).indicator (fun _ => (1 : ℝ))) :=
+    measurable_const.indicator (hT hB)
+  have hfb : ∀ x, |(T ⁻¹' B).indicator (fun _ => (1 : ℝ)) x| ≤ 1 := by
+    classical
+    intro x; rw [Set.indicator_apply]; split_ifs <;> simp
+  have hmain := condExp_orbit_eq_orbitAverage P ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
+    hfmeas hfb hsmul hrand
+  have heq : orbitAverage G ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
+      = fun x => (Fintype.card G : ℝ)⁻¹ *
+        ∑ g : G, B.indicator (fun _ => (1 : ℝ)) (T (g • x)) := by
+    funext x
+    rfl
+  exact heq ▸ hmain
 
 /-- **The conditional law given the orbit *is* the randomization distribution.** Taking
 `B = (-∞, t]` in the set form identifies the conditional c.d.f. of `T(X)` given the orbit
@@ -146,6 +244,12 @@ theorem randDist_eq_condExp_orbit (P : Measure 𝓧) [IsProbabilityMeasure P] (T
     (hrand : RandomizationHypothesis G P) (t : ℝ) :
     condExp (invariantSigmaAlgebra G) P ((T ⁻¹' Set.Iic t).indicator (fun _ => (1 : ℝ)))
       =ᵐ[P] fun x => randDist G T x t := by
-  sorry
+  have hmain := condExp_orbit_indicator P T hT (B := Set.Iic t) measurableSet_Iic hsmul hrand
+  have heq : (fun x => (Fintype.card G : ℝ)⁻¹ *
+        ∑ g : G, (Set.Iic t).indicator (fun _ => (1 : ℝ)) (T (g • x)))
+      = fun x => randDist G T x t := by
+    funext x
+    rfl
+  exact heq ▸ hmain
 
 end StatLean.HypothesisTesting
