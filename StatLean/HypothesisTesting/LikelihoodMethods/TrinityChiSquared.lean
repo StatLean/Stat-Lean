@@ -170,6 +170,40 @@ theorem trinity_asymptotically_equivalent
           atTop (𝓝 0)) := by
   sorry
 
+/-- Continuity of the quadratic form `z ↦ ⟪z, A·z⟫` on `EuclideanSpace ℝ (Fin k)`; the matrix
+action `mulVecE A` is definitionally `AsymptoticStatistics.GaussianShift.matrixAction A`, so
+its continuity is inherited. -/
+private lemma continuous_gaussQuadratic (A : Matrix (Fin k) (Fin k) ℝ) :
+    Continuous (fun z : EuclideanSpace ℝ (Fin k) => ⟪z, mulVecE A z⟫) :=
+  continuous_id.inner (GaussianShift.matrixAction_continuous A)
+
+/-- Measurability of the normalized score sum. -/
+private lemma measurable_scoreSum (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (n : ℕ) : Measurable (scoreSum ℓ n) := by
+  unfold scoreSum
+  exact (Finset.univ.measurable_sum (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul _
+
+/-- **Gaussian quadratic form is chi-squared.** For a positive-definite `k×k` matrix `J`
+(`k > 0`), the pushforward of `N(0, J)` under the quadratic form `z ↦ ⟪z, J⁻¹ z⟫` is the
+`χ²ₖ` distribution.
+
+This is the exact distributional identity `Zᵀ J⁻¹ Z ∼ χ²ₖ` for `Z ∼ N(0, J)`. It is **not**
+available anywhere in the current library (there is no Gaussian↔chi-squared bridge in the
+`AsymptoticStatistics` tree). The intended proof is the whitening argument: with
+`C = CFC.sqrt J⁻¹` one has `J⁻¹ = C²`, and since `C`, `J`, `J⁻¹` are continuous-functional-
+calculus functions of one matrix they commute, so `C J C = J C² = J J⁻¹ = I`; hence
+`(multivariateGaussian 0 J).map (matrixAction C) = multivariateGaussian 0 I = stdGaussian`
+(via `multivariateGaussian_map_toEuclideanCLM`), while `⟪z, J⁻¹ z⟫ = ‖C z‖² = ∑ᵢ (C z)ᵢ²`;
+the standard Gaussian's coordinates are i.i.d. `N(0,1)`, so `map_sum_sq_eq_chiSquared`
+finishes. -/
+-- TODO: discharge via the whitening argument above (CFC matrix square root + coordinate iid
+-- of `stdGaussian` + `MultipleTesting.map_sum_sq_eq_chiSquared`). Sanctioned lifted sorry.
+private lemma multivariateGaussian_map_quadratic_eq_chiSquared
+    (hk : 0 < k) (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef) :
+    (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun z => ⟪z, mulVecE J⁻¹ z⟫) = MultipleTesting.chiSquared k := by
+  sorry
+
 /-- **The Rao score statistic is asymptotically chi-squared.**
 
 Under `P^n_{θ₀}`, `Zₙᵀ I⁻¹(θ₀) Zₙ ⇝ χ²ₖ`. This part needs no estimator and no envelope
@@ -200,7 +234,26 @@ theorem score_tendsto_chiSquared
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (scoreStatistic J ℓ n))
       (MultipleTesting.chiSquared k) := by
-  sorry
+  -- Score CLT under the null: `Zₙ ⇝ N(0, J)`.
+  have hScore : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (scoreSum ℓ n))
+      (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
+    scoreSum_weakly_converges M μ θ₀ ℓ hℓ (hPDF.density_integral_eq_one θ₀)
+      (hPDF.density_integrable θ₀)
+      (fun t u => hPDF.density_integral_eq_one _) (fun t u => hPDF.density_integrable _)
+      hDQM J hJ_pd.posSemidef hJ
+  -- The quadratic form `q z = ⟪z, J⁻¹ z⟫` is continuous, and `scoreStatistic = q ∘ scoreSum`.
+  have hcont := continuous_gaussQuadratic (k := k) J⁻¹
+  have hmeas := hcont.measurable
+  -- Rewrite the pushforward of the statistic as a composed pushforward of the score sum.
+  have hseq : (fun n => (productMeasure M μ θ₀ n).map (scoreStatistic J ℓ n))
+      = (fun n => ((productMeasure M μ θ₀ n).map (scoreSum ℓ n)).map
+          (fun z => ⟪z, mulVecE J⁻¹ z⟫)) := by
+    funext n
+    rw [Measure.map_map hmeas (measurable_scoreSum ℓ hℓ n)]
+    rfl
+  rw [hseq, ← multivariateGaussian_map_quadratic_eq_chiSquared hk J hJ_pd]
+  exact hScore.map hcont hmeas
 
 /-- **The Wald statistic is asymptotically chi-squared.**
 
