@@ -227,7 +227,7 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     -- USER-INPUT: convergence of the first absolute moments to that of the limit law; this is
     -- the uniform-integrability substitute that upgrades weak convergence to a weak law
     (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
-    TendstoInMeasure Pr (fun n ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
+    TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
       (fun _ => ∫ t, t ∂ν) := by
   sorry
 
