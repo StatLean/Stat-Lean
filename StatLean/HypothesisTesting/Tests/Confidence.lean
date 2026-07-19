@@ -185,8 +185,8 @@ theorem isUMA_of_UMP (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P 
         ENNReal.toReal_one]
     have hc2 : (P θ {x : 𝓧 | θ₀ ∈ S' x}ᶜ).toReal
         = 1 - (P θ {x : 𝓧 | θ₀ ∈ S' x}).toReal := by
-      rw [prob_compl_eq_one_sub (hS'meas θ₀), ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top,
-        ENNReal.toReal_one]
+      rw [prob_compl_eq_one_sub (hS'meas θ₀),
+        ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one]
     rw [hc1, hc2] at hpow
     linarith
   have hset : {x : 𝓧 | θ₀ ∈ confidenceSet A x} = A θ₀ :=
