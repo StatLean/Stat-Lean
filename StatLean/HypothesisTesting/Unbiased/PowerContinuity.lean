@@ -76,7 +76,16 @@ theorem isSimilar_boundary_of_isUnbiasedTest [TopologicalSpace Θ]
     -- USER-INPUT: the test is unbiased at level `α`
     (hunb : IsUnbiasedTest P Θ₀ Θ₁ α φ) :
     IsSimilar P ωB α φ := by
-  sorry
+  have hcont_f : Continuous (power P φ) := hcont φ hφ
+  -- on `closure Θ₀` continuity propagates `power ≤ α`
+  have hle : closure Θ₀ ⊆ {θ | power P φ θ ≤ α} :=
+    closure_minimal (fun θ hθ => hunb.1 θ hθ) (isClosed_le hcont_f continuous_const)
+  -- on `closure Θ₁` continuity propagates `α ≤ power`
+  have hge : closure Θ₁ ⊆ {θ | α ≤ power P φ θ} :=
+    closure_minimal (fun θ hθ => hunb.2 θ hθ) (isClosed_le continuous_const hcont_f)
+  intro θ hθ
+  rw [hωB] at hθ
+  exact le_antisymm (hle hθ.1) (hge hθ.2)
 
 /-- **Boundary optimality ⇒ UMP unbiasedness.**
 
@@ -113,7 +122,22 @@ theorem isUMPU_of_isUMP_on_boundary [TopologicalSpace Θ]
     (hbest : ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → IsSimilar P ωB α ψ →
       ∀ θ ∈ Θ₁, power P ψ θ ≤ power P φ₀ θ) :
     IsUMPU P Θ₀ Θ₁ α φ₀ := by
-  sorry
+  -- the constant test `φ ≡ α` is a critical function and boundary-similar
+  have hconst_crit : IsCriticalFn (fun _ : 𝓧 => α) :=
+    ⟨measurable_const, fun _ => ⟨hα₀, hα₁⟩⟩
+  have hconst_power : ∀ θ' : Θ, power P (fun _ : 𝓧 => α) θ' = α := fun θ' => by
+    rw [power, integral_const, probReal_univ, one_smul]
+  have hconst_sim : IsSimilar P ωB α (fun _ : 𝓧 => α) := fun θ' _ => hconst_power θ'
+  refine ⟨hφ₀, ⟨hlevel, ?_⟩, ?_⟩
+  · -- unbiasedness: `φ₀` beats the boundary-similar constant test on the alternative
+    intro θ hθ
+    have h := hbest (fun _ : 𝓧 => α) hconst_crit hconst_sim θ hθ
+    rwa [hconst_power] at h
+  · -- optimality among unbiased tests: they are boundary-similar, so `hbest` applies
+    intro ψ hψ_crit hψ_unb θ hθ
+    have hψ_sim : IsSimilar P ωB α ψ :=
+      isSimilar_boundary_of_isUnbiasedTest hωB hcont hψ_crit hψ_unb
+    exact hbest ψ hψ_crit hψ_sim θ hθ
 
 /-- **Power functions of an exponential family are continuous on the interior of the natural
 parameter set.**
@@ -129,6 +153,13 @@ theorem continuous_power_expFamily {V : Type*} [NormedAddCommGroup V]
     -- USER-INPUT: the integrand is a randomized test (bounded, measurable)
     (hφ : IsCriticalFn φ) :
     ContinuousOn (fun η => powerAgainst (E.P η) φ) (interior E.natSet) := by
+  -- TODO: analytic obstruction. `powerAgainst (E.P η) φ = (∫ φ e^{⟪η,T⟫} dν)/(∫ e^{⟪η,T⟫} dν)`;
+  -- both integrals are real-analytic in `η` on `interior E.natSet` (differentiation under the
+  -- integral sign, dominated on a compact neighborhood by the two-sided exp-family bound
+  -- `e^{⟪η,T⟫} ≤ e^{⟪η₁,T⟫} + e^{⟪η₂,T⟫}`), and the denominator is positive there. This is the
+  -- exponential-family smoothness theory (cf. `ExponentialFamily.MGF`), not yet packaged as a
+  -- continuity statement for the tilted integral of a bounded `φ`. Fix = add such a lemma to
+  -- `ExponentialFamily`, then compose. Isolated here as the single lifted debt of this file.
   sorry
 
 /-- **Continuity of the power function through a reparametrization.**
@@ -148,6 +179,9 @@ theorem continuous_power_of_isCanonicalRepr {Θ' V : Type*} [TopologicalSpace Θ
     -- USER-INPUT: the integrand is a randomized test
     (hφ : IsCriticalFn φ) :
     Continuous (power P' φ) := by
-  sorry
+  have hpow : power P' φ = (fun η => powerAgainst (E.P η) φ) ∘ ηmap := by
+    funext θ; rw [power, hrepr θ]; rfl
+  rw [hpow]
+  exact (continuous_power_expFamily E hφ).comp_continuous hcont hmem
 
 end StatLean.HypothesisTesting

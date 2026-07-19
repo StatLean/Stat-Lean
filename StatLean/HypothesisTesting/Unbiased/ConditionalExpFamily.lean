@@ -105,6 +105,14 @@ theorem condDistrib_expFamily_of_isCanonicalUT
       ∀ p ∈ Ω, ∀ᵐ t ∂((P p).map T),
         condDistrib U T (P p) t
           = (νt t).withDensity fun u => ENNReal.ofReal (Ct t p.1 * Real.exp (p.1 * u)) := by
+  -- TODO: blocked on the intended engine. The `ϑ`-factor cancellation is exactly
+  -- `ForMathlib/CondDistribTilt.lean`'s `condDistrib_fst_withDensity_tilt` (with the joint
+  -- density `exp(θu + ⟪ϑ,t⟫) = g(u)·k(t)`, `g u = exp(θu)`, `k t = C·exp⟪ϑ,t⟫`), applied to the
+  -- swapped-coordinate joint law from `hUT`. That engine currently carries FOUR open sorries
+  -- (`measurable_condTiltNormalizer`, `condTiltNormalizer_pos_lt_top_ae`,
+  -- `condDistrib_fst_withDensity_tilt`, and the finite-measure reduction), so this theorem
+  -- cannot be discharged without either closing that file (out of the editable scope here) or
+  -- re-deriving the product-form disintegration-tilt inline. Reported as an upstream block.
   sorry
 
 /-- **The conditional law does not depend on the nuisance parameter.**
@@ -127,6 +135,11 @@ theorem condDistrib_eq_of_fst_eq
     -- USER-INPUT: the two parameters agree in the coordinate of interest
     (hfst : p.1 = q.1) :
     ∀ᵐ t ∂((P p).map T), condDistrib U T (P p) t = condDistrib U T (P q) t := by
+  -- TODO: downstream of `condDistrib_expFamily_of_isCanonicalUT` (both p- and q-tilts equal
+  -- the same `p.1 = q.1`-indexed exponential form a.e.). It also needs `(P p).map T ≪ (P q).map T`
+  -- to transfer the q-side a.e. equality onto the p-side `T`-marginal — the mutual absolute
+  -- continuity of the two `T`-marginals, itself a consequence of the shared base measure `ν` in
+  -- the canonical form. Blocked by the same un-closed `CondDistribTilt` engine; see above.
   sorry
 
 /-- **Overall power is the average of conditional powers.**
@@ -151,6 +164,20 @@ theorem integral_eq_integral_condDistrib
     (hint : Integrable (fun x => φ (U x, T x)) (P p)) :
     ∫ x, φ (U x, T x) ∂(P p)
       = ∫ t, (∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ∂((P p).map T) := by
-  sorry
+  have hfm : Measurable (fun x => (T x, U x)) := hT.prodMk hU
+  have hgm : Measurable (fun z : Ξ × ℝ => φ (z.2, z.1)) :=
+    hφ.comp (measurable_snd.prodMk measurable_fst)
+  -- disintegrate the joint law of `(T, U)` along `T`
+  have hmap : (P p).map (fun x => (T x, U x)) = (P p).map T ⊗ₘ condDistrib U T (P p) :=
+    (compProd_map_condDistrib hU.aemeasurable).symm
+  have hint' : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1))
+      ((P p).map (fun x => (T x, U x))) := by
+    rw [integrable_map_measure hgm.aestronglyMeasurable hfm.aemeasurable]; exact hint
+  calc ∫ x, φ (U x, T x) ∂(P p)
+      = ∫ z, φ (z.2, z.1) ∂((P p).map (fun x => (T x, U x))) :=
+        (integral_map hfm.aemeasurable hgm.aestronglyMeasurable).symm
+    _ = ∫ z, φ (z.2, z.1) ∂((P p).map T ⊗ₘ condDistrib U T (P p)) := by rw [hmap]
+    _ = ∫ t, (∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ∂((P p).map T) :=
+        Measure.integral_compProd (hmap ▸ hint')
 
 end StatLean.HypothesisTesting

@@ -139,6 +139,16 @@ theorem isUMPU_conditional_oneSided
       ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₀} {p ∈ Ω | θ₀ < p.1} α
       (fun x => condOneSidedTest C₀ γ₀ (U x, T x)) := by
+  -- TODO: full conditional UMPU assembly, blocked upstream. Route: (1) reduce to the boundary
+  -- surface `θ = θ₀` via `PowerContinuity.isUMPU_of_isUMP_on_boundary`; (2) on that surface,
+  -- similar ⟺ Neyman structure by `SimilarityCompleteness` + completeness of the `T`-laws on
+  -- the slice (`Completeness.ExpFamily.isCompleteStat_of_interior_nonempty`, whose interior
+  -- input is `hΩ_convex`+`hΩ_span`); (3) surface-by-surface the conditional problem is a
+  -- one-parameter exp family (`ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`)
+  -- to which the conditional Neyman–Pearson one-sided optimality applies. Step (3) is blocked
+  -- by the un-closed `CondDistribTilt` engine (see `ConditionalExpFamily`), and the file's
+  -- continuous-power hypothesis needs `PowerContinuity.continuous_power_expFamily` (the analytic
+  -- debt). Reported, not lifted here.
   sorry
 
 /-- **Null outside an interval.** For `H : θ ≤ θ₁ or θ ≥ θ₂` against `K : θ₁ < θ < θ₂`, the
@@ -177,6 +187,9 @@ theorem isUMPU_conditional_inside
       ∫ u, condInsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₁ ∨ θ₂ ≤ p.1} {p ∈ Ω | θ₁ < p.1 ∧ p.1 < θ₂} α
       (fun x => condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
+  -- TODO: as `isUMPU_conditional_oneSided`, with the two boundary surfaces `θ = θ₁, θ = θ₂`
+  -- and the conditional generalized Neyman–Pearson (two size constraints) for the reject-inside
+  -- test. Same upstream blocks (`CondDistribTilt`, `continuous_power_expFamily`). Reported.
   sorry
 
 /-- **Interval null.** For `H : θ₁ ≤ θ ≤ θ₂` against `K : θ < θ₁ or θ > θ₂`, the conditional
@@ -215,6 +228,8 @@ theorem isUMPU_conditional_outside
       ∫ u, condOutsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | θ₁ ≤ p.1 ∧ p.1 ≤ θ₂} {p ∈ Ω | p.1 < θ₁ ∨ θ₂ < p.1} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
+  -- TODO: interval-null dual of `isUMPU_conditional_inside` (reject-outside test, two size
+  -- constraints on the surfaces `θ = θ₁, θ = θ₂`). Same upstream blocks. Reported.
   sorry
 
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
@@ -260,6 +275,10 @@ theorem isUMPU_conditional_point
         = α * ∫ u, u ∂(condDistrib U T (P p) t)) :
     IsUMPU P {p ∈ Ω | p.1 = θ₀} {p ∈ Ω | p.1 ≠ θ₀} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
+  -- TODO: point-null conditional UMPU. As `isUMPU_conditional_outside` but with the single
+  -- boundary surface `θ = θ₀` carrying BOTH the conditional size and conditional derivative
+  -- (`hsize`, `hderiv`) constraints — the analytic content of unbiasedness at the interior
+  -- minimum. Same upstream blocks. Reported.
   sorry
 
 /-! ## Measurable selection of the conditional constants -/
@@ -294,6 +313,14 @@ theorem exists_measurable_conditional_constants
       (∀ t, γ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
       ∀ᵐ t ∂((P p₀).map T),
         ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p₀) t) = α := by
+  -- TODO: measurable selection of `(C₀, γ₀)`. Construct from the conditional CDF
+  -- `F_t(u) = (condDistrib U T (P p₀) t)(Iic u)`: `C₀(t) = inf{u | F_t(u) ≥ 1 − α}` (a
+  -- conditional quantile) and the matching interpolation weight `γ₀(t)`. Measurability of both
+  -- follows from joint measurability of `(u,t) ↦ F_t(u)` via the rational-approximation identity
+  -- in the docstring. The building block is a measurable conditional-quantile of `condDistrib`;
+  -- Mathlib has `condCDF`/`stieltjesOfMeasurableRat` but a packaged measurable conditional
+  -- quantile is not yet available, and the size equation itself needs the conditional-law
+  -- exponential form (`CondDistribTilt`, blocked). Reported.
   sorry
 
 /-! ## Reduction to canonical form -/
@@ -322,7 +349,9 @@ theorem inner_exponent_reparam {a₀ : ℝ} (a : Ξ) (θ : ℝ) (ϑ : Ξ) (u : �
     (ha₀ : a₀ ≠ 0) :
     θ * u + ⟪ϑ, t⟫_ℝ
       = (a₀ * θ + ⟪a, ϑ⟫_ℝ) * (u / a₀) + ⟪ϑ, t - (u / a₀) • a⟫_ℝ := by
-  sorry
+  rw [inner_sub_right, real_inner_smul_right, real_inner_comm a ϑ]
+  field_simp
+  ring
 
 /-- **Reduction to canonical form.**
 
@@ -340,6 +369,15 @@ theorem isCanonicalUT_reparam
     IsCanonicalUT (fun q => P (reparamUTInv a₀ a q)) (reparamUT a₀ a '' Ω)
       (fun x => U x / a₀) (fun x => T x - (U x / a₀) • a)
       (ν.map (statTransformUT a₀ a)) (fun q => C (reparamUTInv a₀ a q)) := by
+  -- TODO: change of variables. `statTransformUT a₀ a` is a bimeasurable bijection (a₀ ≠ 0), so
+  -- `(P (reparamUTInv q)).map (statMap) = ((P p).map (U,T)).map statTransform` (`map_map`, since
+  -- `statMap = statTransform ∘ (U,T)`), and by `hUT` this is `(ν.withDensity density_p).map
+  -- statTransform`. The target is `(ν.map statTransform).withDensity density_q`; these agree by
+  -- the identity `(μ.withDensity f).map g = (μ.map g).withDensity (f ∘ g.symm)` for a
+  -- `MeasurableEquiv g`, with `density_p ∘ statTransform.symm = density_q` supplied by
+  -- `inner_exponent_reparam` (closed above) and `reparamUTInv (reparamUT p) = p`. Mathlib lacks a
+  -- packaged `MeasurableEquiv.map_withDensity`; the identity must be built from `lintegral`
+  -- (setLIntegral over the embedding). Self-contained but out of this session's budget. Reported.
   sorry
 
 end StatLean.HypothesisTesting
