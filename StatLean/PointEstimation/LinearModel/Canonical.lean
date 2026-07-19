@@ -107,7 +107,12 @@ def canonicalStat (y : EuclideanSpace ℝ (Fin (s + m))) : (Fin s → ℝ) × �
 model forward along it). -/
 theorem measurable_canonicalStat :
     Measurable (canonicalStat (s := s) (m := m)) := by
-  sorry
+  have hcoord : ∀ k : Fin (s + m),
+      Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) => y k) :=
+    fun k => (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 (Fin (s + m) → ℝ))
+  refine Measurable.prodMk ?_ ?_
+  · exact measurable_pi_lambda _ (fun i => hcoord (Fin.castAdd m i))
+  · exact Finset.measurable_sum _ (fun j _ => (hcoord (Fin.natAdd s j)).pow_const 2)
 
 /-! ## Completeness and sufficiency -/
 
