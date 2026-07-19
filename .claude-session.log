@@ -1,0 +1,52 @@
+srun: job 33167201 queued and waiting for resources
+srun: job 33167201 has been allocated resources
+Everything is clean, committed, and building. Let me give my final report.
+
+---
+
+## Final Report
+
+### What I closed
+
+**Target 1 — `LocationExamples.isLocMRE_mean_gaussian`: CLOSED, 0-sorry, axiom-clean.**
+
+```
+'StatLean.PointEstimation.isLocMRE_mean_gaussian' depends on axioms:
+  [propext, Classical.choice, Quot.sound]
+```
+
+Route as the prompt anticipated: `IsLocMRE f ρ δ` depends on `f` only through `locationBase f` (new helper `isLocMRE_congr_locationBase`), so I transferred from the abstract `f` to the explicit product-Gaussian density `gaussDensity v`; its Pitman estimator evaluates to the sample mean by completing the square (the pre-existing `prod_gaussianPDFReal_sub_eq`), and `pitmanEstimator_isLocMRE` (0-sorry in `Pitman.lean`) delivers the MRE property. New helpers: `gaussDensity_sub_smul`, `integral_id_mul_gaussianPDFReal` (Gaussian mean via `integral_withDensity_eq_integral_toReal_smul`), `integrable_gaussianPDFReal_mul_id`, `pitmanEstimator_gaussDensity`. Committed (`bac5a83`).
+
+**Important:** `LocationExamples.lean` did **not build at HEAD** — a predecessor reported it "building now" but it was broken by two independent pre-existing faults masked behind the `sorry`:
+1. The identifier `X̄` (ASCII `X` + combining macron U+0304) is rejected as `error: expected token` under this v4.29.1 toolchain. Renamed all occurrences → `Xbar`.
+2. In `prod_gaussianPDFReal_sub_eq`: bare `meanVar v` (whose `m` appears only in the body, so it's undetermined) needed explicit `(m := m)`; `Finset.univ.card` needed a `(Finset.univ : Finset (Fin (m+1)))` ascription; `hsumsq`/`hexp_eq` proofs were broken and were rebuilt.
+
+### Build status (per module, all compile with only their sorries — no other toolchain breakage)
+
+| Module | sorries | status |
+|---|---|---|
+| `Equivariance/LocationExamples` | **0** | ✅ closed |
+| `LinearModel/LeastSquares` | 3 (1 already-proven, **2 real**) | open |
+| `LinearModel/Equivariant` | 4 | open |
+| `ExponentialFamily/Smoothness` | 4 (1 sanctioned deferral) | open |
+| `ExponentialFamily/MinimalSufficient` | 2 (1 proven, 1 real) | open |
+| `Equivariance/LocationMRE` | 2 | known-blocked (per prompt) |
+| `Equivariance/ScaleMRE` | 2 | known-blocked (per prompt) |
+
+### High-value correction (unblocks Targets 2 & 4)
+
+The `LeastSquares`/`Equivariant` docstrings claim the Gaussian isometry-transport infrastructure is **"missing from Mathlib" / a "named debt" (`stdGaussian_eq_map_pi_orthonormalBasis`). This is false.** `Mathlib/Probability/Distributions/Gaussian/Multivariate.lean` provides all of it:
+- `stdGaussian_map (f : E ≃ₗᵢ[ℝ] F) : (stdGaussian E).map f = stdGaussian F` — rotation/isometry invariance;
+- `map_pi_eq_stdGaussian : (Measure.pi fun _ => gaussianReal 0 1).map (toLp 2) = stdGaussian (EuclideanSpace ℝ ι)`;
+- `stdGaussian_eq_map_pi_orthonormalBasis`.
+
+I **verified** `gaussianVector 0 1 = stdGaussian` compiles via these. So `isUMVU_lse_functional`, `isUMVU_residualSumSq`, and `isSubspaceMRE_lse_functional` are **not blocked** — they are a large but ordinary development (skeleton recorded in memory): affine bridge → isometry-invariance `(gaussianVector ξ σ²).map L = gaussianVector (Lξ) σ²` → an `IsUMVU` sample-space transport lemma (~40 lines, `integral_map`/`variance_map`) → the block isometry `EuclideanSpace(Fin n) ≃ₗᵢ EuclideanSpace(Fin (s+m))` (`s = finrank W`, `m = n−s`, via `Orthonormal.exists_orthonormalBasis_extension`), then reuse the closed `Canonical.lean` results. The Fin-arithmetic/basis-reindex step (4) is genuinely ~150–250 lines — a full focused session — which is why I did not land it here rather than risk leaving the shared worktree half-edited.
+
+### Precise obstructions on the still-open reachable targets
+
+- **`Smoothness` (3 reachable):** `continuousOn`/`hasFDerivAt`/`iteratedDeriv` all need the finite-dimensional `2^s` sign-vector envelope `e^{c·Σ|Tᵢ|} ≤ Σ_ε e^{⟪c·ε,T⟫}`, but the section variables are only `[BorelSpace V] [SecondCountableTopology V]` — **no `[FiniteDimensional ℝ V]`**, and signatures are frozen. The 1-D `analyticAt_integral_exp_mul` (proven) sidesteps this via `analyticAt_mgf`; the multivariate versions cannot use the same trick. This is worth flagging: the intended proof route needs a hypothesis the statement lacks. I could not construct a counterexample (a finite convex integral map could still be continuous in ∞-dim via local boundedness), so I am **not** declaring it false — but it is under-hypothesized for the documented proof and merits a scope decision.
+- **`MinimalSufficient` (1 real):** `isMinimalSufficient_stat`. Half (1) sufficiency is now dischargeable (the file's note that `Sufficiency/Factorization` is a sorry is stale — it's closed). Half (2) minimality needs Doob–Dynkin log-likelihood inversion + measurable selection — substantial, unbuilt.
+- **`Equivariant` (4):** Gaussian conditional-risk minimization in canonical coordinates (analog of the location-MRE machinery, but for the canonical block model); `isSubspaceMRE_lse_functional` additionally rides on the same isometry transport as LeastSquares.
+- **`LocationMRE`/`ScaleMRE`:** confirmed left as documented debts per the prompt (measurable-argmin brick's continuity hypothesis genuinely fails for the objective). No route around the brick found.
+
+Memory updated with the closure details and the full LeastSquares/Equivariant unblock skeleton for a follow-up session.
