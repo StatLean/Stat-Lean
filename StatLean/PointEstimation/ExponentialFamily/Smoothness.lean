@@ -1,7 +1,13 @@
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import Mathlib.Analysis.Calculus.FDeriv.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.InnerProductSpace.LinearMap
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!
@@ -80,6 +86,100 @@ def weightedNatSet (E : ExpFamily 𝓧 V) (f : 𝓧 → ℝ) : Set V :=
 section Differentiation
 
 variable [BorelSpace V] [SecondCountableTopology V]
+
+open Module in
+/-- **Finite-dimensional local domination.** If a ball of parameters around `η` (of radius large
+enough to contain the `2^s` sign vectors of an orthonormal basis) lies in the weighted natural
+set, then the envelope `|f x|·e^{⟪η, T x⟩ + c‖T x‖}` is integrable. This is the analytic core of
+the domination bounds for the derivative and continuity results: `e^{c‖v‖}` is controlled by the
+finite sum `∑_S e^{⟪w_S, v⟫}` over the sign vectors `w_S` of an orthonormal basis. -/
+private lemma integrable_abs_exp_inner_add_norm [FiniteDimensional ℝ V]
+    (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ} (hf : Measurable f) {η : V} {c : ℝ} (hc : 0 ≤ c)
+    (hball : ∀ w : V, ‖w‖ ≤ 2 * c * (finrank ℝ V) → η + w ∈ E.weightedNatSet f) :
+    Integrable (fun x => |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) E.base := by
+  classical
+  set N := finrank ℝ V with hN
+  set b := stdOrthonormalBasis ℝ V with hb
+  -- the `2^N` sign vectors of the orthonormal basis
+  set w : Finset (Fin N) → V := fun t => (∑ i ∈ t, c • b i) - (∑ i ∈ tᶜ, c • b i) with hw
+  -- each shifted parameter lies in the weighted natural set
+  have hwmem : ∀ t, η + w t ∈ E.weightedNatSet f := by
+    intro t
+    apply hball
+    calc ‖w t‖ ≤ ‖∑ i ∈ t, c • b i‖ + ‖∑ i ∈ tᶜ, c • b i‖ := norm_sub_le _ _
+      _ ≤ (∑ i ∈ t, ‖c • b i‖) + (∑ i ∈ tᶜ, ‖c • b i‖) :=
+            add_le_add (norm_sum_le _ _) (norm_sum_le _ _)
+      _ ≤ (∑ _i ∈ t, c) + (∑ _i ∈ tᶜ, c) := by
+            gcongr with i _ i _ <;>
+              simp [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, b.norm_eq_one]
+      _ ≤ 2 * c * N := by
+            rw [Finset.sum_const, Finset.sum_const, nsmul_eq_mul, nsmul_eq_mul]
+            have h1 : (t.card : ℝ) ≤ N := by
+              exact_mod_cast (Finset.card_le_univ t).trans_eq (by simp)
+            have h2 : (tᶜ.card : ℝ) ≤ N := by
+              exact_mod_cast (Finset.card_le_univ tᶜ).trans_eq (by simp)
+            nlinarith [hc, h1, h2]
+  -- the sign-vector envelope: `e^{c‖v‖} ≤ ∑_t e^{⟪w t, v⟫}`
+  have hkey : ∀ v : V, Real.exp (c * ‖v‖) ≤ ∑ t : Finset (Fin N), Real.exp ⟪w t, v⟫_ℝ := by
+    intro v
+    have hrepr : v = ∑ i, ⟪b i, v⟫_ℝ • b i := by
+      conv_lhs => rw [← b.sum_repr v]
+      simp_rw [b.repr_apply_apply]
+    have hnorm : ‖v‖ ≤ ∑ i, |⟪b i, v⟫_ℝ| := by
+      calc ‖v‖ = ‖∑ i, ⟪b i, v⟫_ℝ • b i‖ := by rw [← hrepr]
+        _ ≤ ∑ i, ‖⟪b i, v⟫_ℝ • b i‖ := norm_sum_le _ _
+        _ = ∑ i, |⟪b i, v⟫_ℝ| := by
+              simp [norm_smul, Real.norm_eq_abs, b.norm_eq_one]
+    have hexp1 : Real.exp (c * ‖v‖) ≤ ∏ i, Real.exp (c * |⟪b i, v⟫_ℝ|) := by
+      rw [← Real.exp_sum]
+      apply Real.exp_le_exp.mpr
+      rw [← Finset.mul_sum]
+      exact mul_le_mul_of_nonneg_left hnorm hc
+    have hprod : ∏ i, Real.exp (c * |⟪b i, v⟫_ℝ|)
+        ≤ ∏ i, (Real.exp (c * ⟪b i, v⟫_ℝ) + Real.exp (-(c * ⟪b i, v⟫_ℝ))) := by
+      apply Finset.prod_le_prod (fun i _ => Real.exp_nonneg _)
+      intro i _
+      rcases le_total 0 (⟪b i, v⟫_ℝ) with h | h
+      · rw [abs_of_nonneg h]; linarith [Real.exp_pos (-(c * ⟪b i, v⟫_ℝ))]
+      · rw [abs_of_nonpos h, show c * -(⟪b i, v⟫_ℝ) = -(c * ⟪b i, v⟫_ℝ) by ring]
+        linarith [Real.exp_pos (c * ⟪b i, v⟫_ℝ)]
+    have hexpand : ∏ i, (Real.exp (c * ⟪b i, v⟫_ℝ) + Real.exp (-(c * ⟪b i, v⟫_ℝ)))
+        = ∑ t : Finset (Fin N), Real.exp ⟪w t, v⟫_ℝ := by
+      rw [Finset.prod_add, Finset.powerset_univ]
+      apply Finset.sum_congr rfl
+      intro t _
+      rw [← Real.exp_sum, ← Real.exp_sum, ← Real.exp_add]
+      congr 1
+      rw [hw]
+      simp only [inner_sub_left, sum_inner, real_inner_smul_left]
+      rw [Finset.compl_eq_univ_sdiff, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+    calc Real.exp (c * ‖v‖) ≤ ∏ i, Real.exp (c * |⟪b i, v⟫_ℝ|) := hexp1
+      _ ≤ ∏ i, (Real.exp (c * ⟪b i, v⟫_ℝ) + Real.exp (-(c * ⟪b i, v⟫_ℝ))) := hprod
+      _ = ∑ t : Finset (Fin N), Real.exp ⟪w t, v⟫_ℝ := hexpand
+  -- fold the envelope: `e^{⟪η,v⟫ + c‖v‖} ≤ ∑_t e^{⟪η + w t, v⟫}`
+  have hpt : ∀ v : V, Real.exp (⟪η, v⟫_ℝ + c * ‖v‖)
+      ≤ ∑ t : Finset (Fin N), Real.exp ⟪η + w t, v⟫_ℝ := by
+    intro v
+    rw [Real.exp_add]
+    calc Real.exp ⟪η, v⟫_ℝ * Real.exp (c * ‖v‖)
+        ≤ Real.exp ⟪η, v⟫_ℝ * ∑ t, Real.exp ⟪w t, v⟫_ℝ :=
+          mul_le_mul_of_nonneg_left (hkey v) (Real.exp_nonneg _)
+      _ = ∑ t : Finset (Fin N), Real.exp ⟪η + w t, v⟫_ℝ := by
+          rw [Finset.mul_sum]
+          apply Finset.sum_congr rfl
+          intro t _
+          rw [← Real.exp_add, inner_add_left]
+  -- the dominating function is a finite sum of integrable functions
+  have hinner_meas : Measurable fun x => ⟪η, E.stat x⟫_ℝ :=
+    (innerSL ℝ η).continuous.measurable.comp E.stat_meas
+  have hg_int : Integrable
+      (fun x => ∑ t : Finset (Fin N), |f x| * Real.exp ⟪η + w t, E.stat x⟫_ℝ) E.base :=
+    integrable_finset_sum _ (fun t _ => hwmem t)
+  refine hg_int.mono' ?_ (Filter.Eventually.of_forall fun x => ?_)
+  · exact (hf.abs.aestronglyMeasurable).mul
+      ((hinner_meas.add ((E.stat_meas.norm).const_mul c)).exp.aestronglyMeasurable)
+  · rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), ← Finset.mul_sum]
+    exact mul_le_mul_of_nonneg_left (hpt (E.stat x)) (abs_nonneg _)
 
 /-- **Continuity** of the weighted exponential integral on the interior of the weighted
 natural parameter set. -/
