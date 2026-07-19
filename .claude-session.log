@@ -1,0 +1,41 @@
+srun: job 32910552 queued and waiting for resources
+srun: job 32910552 has been allocated resources
+All three modules are closed. Here's the final report.
+
+## Report
+
+All three target modules build **0 errors, 0 sorries** and are axiom-clean.
+
+### `lake build` status
+| Module | Result | Sorries |
+|---|---|---|
+| `Sufficiency.Basic` | ✔ Built | 0 |
+| `Sufficiency.RiskEquality` | ✔ Built | 0 |
+| `Sufficiency.BayesianBridge` | ⚠ Built (1 benign linter warning) | 0 |
+
+The only warning is `linter.unusedSectionVars` on `isFactorizedDensity_of_isFactorizedLikelihood` — the frozen signature uses `Θ, 𝓧, S` but not their `MeasurableSpace` instances. It's a lint note, not an error; I left the signature untouched as required.
+
+### `#print axioms`
+```
+'StatLean.PointEstimation.exists_riskRand_eq_of_sufficient' depends on axioms:
+  [propext, Classical.choice, Quot.sound]
+```
+Exactly the three expected — no `sorryAx`, no custom axioms.
+
+### How each lemma closed
+- **`isProbabilityMeasure_statLaw`** — `Measure.isProbabilityMeasure_map`.
+- **`statLaw_snd`** — `Measure.snd` of the graph identity: `snd_compProd` (RHS) + `snd_map_prodMk hT` and `map_id'` (LHS, since `Prod.snd (T x, x) = x`).
+- **`isSufficient_of_hasSufficientKernel`** — `κA := t ↦ Q t A`; graph evaluated on the rectangle `B ×ˢ A` via `compProd_apply_prod`, change-of-variables `setLIntegral_map`. Needed `simp only [statLaw]` to expose `Measure.map T` and `measurable_id'` (not `measurable_id`) so the map function `fun x => (T x, x)` matched syntactically.
+- **`hasSufficientKernel_fiber`** — `letI := upgradeStandardBorel S` to obtain `MeasurableEq S`, giving measurability of the graph set via `measurableSet_eq_fun`; the joint law puts mass 1 on it; `compProd_apply` gives `∫⁻ t, Q t {x|Tx=t} = 1`, then `ae_eq_of_ae_le_of_lintegral_le` (integrand ≤ 1, integral = total mass) yields a.e. = 1.
+- **`riskRand_comp_eq_riskRand`** (Thm 6.1) — pure kernel-composition associativity: `Kernel.lintegral_comp` → `Measure.lintegral_bind` → `statLaw_snd`. No conditional expectation.
+- **`exists_riskRand_eq_of_sufficient`** — `κ' := κ ∘ₖ Q`, Markov by `IsMarkovKernel.comp`.
+- **`riskRand_deterministic`** — `Kernel.lintegral_deterministic'`.
+- **`exists_riskRand_eq_risk_of_sufficient`** — compose the previous two.
+- **`bayesian_isSufficient_of_hasSufficientKernel`** — reuse `Q`; per-θ `Kernel.comp_apply` + `deterministic_comp_eq_map`/`map_apply` to identify `statKernel K hT θ = statLaw ⇑K T θ`, then `statLaw_snd`.
+- **`isFactorizedDensity_of_isFactorizedLikelihood`** — pointwise ⇒ a.e. via `ae_of_all`.
+
+**No escape-hatch sorries used, and I found no false statements** — every target proved as stated under the graph/`⊗ₘ` definition, which (as the file headers anticipated) made Thm 6.1 an associativity argument rather than a conditional-expectation one.
+
+Each file was committed after it compiled (three commits on `pe/sufficiency-risk`).
+
+Note: the prompt's references to a repo `CLAUDE.md` (and its §7.x) don't correspond to any file that exists in this worktree — there is no `CLAUDE.md`. I proceeded from the frozen `Defs` files and Mathlib directly.
