@@ -78,6 +78,15 @@ theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     {γ : EuclideanSpace ℝ (Fin n)} (hγ : γ ∈ W) :
     IsUMVU (linearModelFull W) (fun p => ⟪γ, (p.1 : EuclideanSpace ℝ (Fin n))⟫_ℝ)
       (fun y => ⟪γ, lse W y⟫_ℝ) := by
+  -- DEFERRAL-ELIGIBLE (named planned debt: `stdGaussian_eq_map_pi_orthonormalBasis`).
+  -- The classical proof rotates `linearModelFull W` onto `canonicalModel` by an orthonormal
+  -- basis adapted to `W` (its first `dim W` vectors span `W`), under which `⟪γ, ξ̂⟫` becomes
+  -- a linear combination of the signal block (`isUMVU_linear_combination` in `Canonical`).
+  -- The missing infrastructure is the isometry-invariance of the product-Gaussian vector,
+  -- `(gaussianVector ξ σ²).map L = gaussianVector (L ξ) σ²` for an orthogonal `L`, together
+  -- with an `IsUMVU`-transport lemma along a measurable equivalence of the sample space —
+  -- a self-contained multi-lemma development independent of the canonical-model results,
+  -- which are all proved (`Canonical.lean`, 0-sorry). No result in this area consumes it.
   sorry
 
 /-- **Optimality of the residual variance estimator**: `‖y − ξ̂(y)‖²/(n − dim W)` is the
@@ -89,6 +98,12 @@ theorem isUMVU_residualSumSq (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     (hW : Module.finrank ℝ W < n) :
     IsUMVU (linearModelFull W) (fun p => (p.2.1 : ℝ))
       (fun y => residualSumSq W y / ((n : ℝ) - (Module.finrank ℝ W : ℝ))) := by
+  -- DEFERRAL-ELIGIBLE (named planned debt: `stdGaussian_eq_map_pi_orthonormalBasis`).
+  -- Under the same adapted-orthonormal-basis rotation as `isUMVU_lse_functional`, the
+  -- residual sum of squares `‖y − ξ̂‖²` becomes the canonical residual sum of squares and
+  -- `n − dim W` becomes the residual dimension `m`, reducing the claim to
+  -- `isUMVU_residual_variance` (proved, `Canonical.lean`). Blocked on the same missing
+  -- Gaussian isometry-invariance + `IsUMVU`-transport development.
   sorry
 
 /-- **Transfer of optimality along a linear reparametrization**: if an estimand `T` agrees
@@ -110,6 +125,18 @@ theorem isUMVU_linear_functional_of_mean (W : Submodule ℝ (EuclideanSpace ℝ 
     (hT : ∀ ζ ∈ W, T ζ = ⟪γ, ζ⟫_ℝ) :
     IsUMVU (linearModelFull W) (fun p => T (p.1 : EuclideanSpace ℝ (Fin n)))
       (fun y => T (lse W y)) := by
-  sorry
+  -- On the mean subspace, `T` agrees with the inner product against the *projected* vector
+  -- `P_W γ ∈ W`; the statement is then a relabelling of `isUMVU_lse_functional`.
+  have hkey : ∀ ζ ∈ W, T ζ = ⟪W.starProjection γ, ζ⟫_ℝ := by
+    intro ζ hζ
+    rw [hT ζ hζ, Submodule.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hζ]
+  have hbase := isUMVU_lse_functional W hW (γ := W.starProjection γ) (W.starProjection_apply_mem γ)
+  have hg : (fun p : ↥W × PosVar => T (p.1 : EuclideanSpace ℝ (Fin n)))
+      = fun p => ⟪W.starProjection γ, (p.1 : EuclideanSpace ℝ (Fin n))⟫_ℝ := by
+    funext p; exact hkey _ p.1.2
+  have hδ : (fun y => T (lse W y)) = fun y => ⟪W.starProjection γ, lse W y⟫_ℝ := by
+    funext y; exact hkey _ (W.starProjection_apply_mem y)
+  rw [hg, hδ]; exact hbase
 
 end StatLean.PointEstimation
