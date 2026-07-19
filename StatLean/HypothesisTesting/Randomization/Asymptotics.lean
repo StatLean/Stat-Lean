@@ -144,6 +144,81 @@ private lemma tendsto_real_of_weakConverges_of_null_frontier {E : Type*}
   have := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
   simpa [Measure.real, pn, pμ] using this
 
+/-! ### Moment identities linking `randDist` to `randPairLaw` -/
+
+section Identities
+
+variable (G : Type*) [Group G] [Fintype G] {𝓧 : Type*} [MeasurableSpace 𝓧] [MulAction G 𝓧]
+
+/-- **First-moment identity.** The mean of the randomization distribution at `t` is the mass
+that `randPairLaw` puts on `Iic t ×ˢ univ`:
+`∫ R̂(·,t) dP = randPairLaw(Iic t ×ˢ univ)`. Measurability of the statistic and of the
+action is genuinely required: `Measure.map` of a non-measurable map is the zero measure,
+so the two sides would otherwise use different junk conventions. -/
+lemma integral_randDist_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → ℝ) (t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    ∫ x, randDist G T x t ∂P = (randPairLaw G T P).real (Set.Iic t ×ˢ Set.univ) := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardℝ : (Fintype.card G : ℝ≥0∞) ≠ 0 := by exact_mod_cast hcard.ne'
+  have hcardtop : (Fintype.card G : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
+  have hmset : ∀ g : G, MeasurableSet {x : 𝓧 | T (g • x) ≤ t} := fun g =>
+    measurableSet_le (hT.comp (hsmul g)) measurable_const
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  -- per-`g` indicator integral
+  have hind : ∀ g : G, (fun x => if T (g • x) ≤ t then (1 : ℝ) else 0)
+      = Set.indicator {x | T (g • x) ≤ t} 1 := fun g => by
+    funext x; simp [Set.indicator_apply]
+  have hint : ∀ g : G, ∫ x, (if T (g • x) ≤ t then (1 : ℝ) else 0) ∂P
+      = P.real {x : 𝓧 | T (g • x) ≤ t} := by
+    intro g
+    rw [show (∫ x, (if T (g • x) ≤ t then (1 : ℝ) else 0) ∂P)
+        = ∫ x, Set.indicator {x | T (g • x) ≤ t} 1 x ∂P from by rw [hind g],
+      integral_indicator_one (hmset g)]
+  -- LHS
+  have hLHS : ∫ x, randDist G T x t ∂P
+      = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x : 𝓧 | T (g • x) ≤ t} := by
+    simp only [randDist]
+    rw [integral_const_mul, integral_finset_sum]
+    · simp_rw [hint]
+    · intro g _
+      rw [hind g]
+      exact (integrable_const (1 : ℝ)).indicator (hmset g)
+  -- RHS: measure of `randPairLaw` at the product set
+  have hmeasS : MeasurableSet (Set.Iic t ×ˢ (Set.univ : Set ℝ)) :=
+    measurableSet_Iic.prod MeasurableSet.univ
+  have hpre : ∀ g g' : G,
+      (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (Set.Iic t ×ˢ Set.univ)
+        = {x : 𝓧 | T (g • x) ≤ t} := by
+    intro g g'; ext x; simp [Set.mem_prod, Set.mem_Iic]
+  have hstep : ∀ g : G,
+      (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) (Set.Iic t ×ˢ Set.univ)
+        = (Fintype.card G : ℝ≥0∞) * P {x : 𝓧 | T (g • x) ≤ t} := by
+    intro g
+    rw [Measure.finset_sum_apply,
+      Finset.sum_congr rfl (fun g' _ => by
+        rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']),
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hcc : ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ * (Fintype.card G : ℝ≥0∞)
+      = (Fintype.card G : ℝ≥0∞)⁻¹ := by
+    rw [sq, ENNReal.mul_inv (Or.inl hcardℝ) (Or.inl hcardtop), mul_assoc,
+      ENNReal.inv_mul_cancel hcardℝ hcardtop, mul_one]
+  have hval : (randPairLaw G T P) (Set.Iic t ×ˢ Set.univ)
+      = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ≤ t} := by
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp_rw [hstep]
+    rw [← Finset.mul_sum, ← mul_assoc, hcc]
+  have hRHS : (randPairLaw G T P).real (Set.Iic t ×ˢ Set.univ)
+      = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x : 𝓧 | T (g • x) ≤ t} := by
+    rw [Measure.real, hval, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+      ENNReal.toReal_sum fun g _ => measure_ne_top P _]
+    rfl
+  rw [hLHS, hRHS]
+
+end Identities
+
 /-! ### The asymptotic randomization theorem -/
 
 section Asymptotics
