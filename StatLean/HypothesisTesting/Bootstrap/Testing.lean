@@ -149,7 +149,50 @@ theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure Pr]
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α)) :
     Tendsto (fun n => (Pr {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
       atTop (𝓝 1) := by
-  sorry
+  set qn : ℕ → Ω → ℝ := fun n ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α) with hqn
+  show Tendsto (fun n => (Pr {ω | qn n ω < T n ω}).toReal) atTop (𝓝 1)
+  have hmeasS : ∀ n, MeasurableSet {ω | T n ω ≤ qn n ω} :=
+    fun n => measurableSet_le (hTmeas n) (hqmeas n)
+  -- The acceptance probability vanishes: a divergent statistic overtakes a tight critical value.
+  have hzero : Tendsto (fun n => (Pr {ω | T n ω ≤ qn n ω}).toReal) atTop (𝓝 0) := by
+    rw [Metric.tendsto_atTop]
+    intro ε hε
+    obtain ⟨M, hM⟩ := hcrit (ε / 2) (by positivity)
+    obtain ⟨N, hN⟩ := (Metric.tendsto_atTop.mp (hT M)) (ε / 2) (by positivity)
+    refine ⟨N, fun n hn => ?_⟩
+    have hsub : {ω | T n ω ≤ qn n ω} ⊆ {ω | T n ω ≤ M} ∪ {ω | M < qn n ω} := by
+      intro ω hω
+      simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+      rcases le_or_gt (qn n ω) M with h | h
+      · exact Or.inl (le_trans hω h)
+      · exact Or.inr h
+    have hle : Pr {ω | T n ω ≤ qn n ω} ≤ Pr {ω | T n ω ≤ M} + Pr {ω | M < qn n ω} :=
+      le_trans (measure_mono hsub) (measure_union_le _ _)
+    have hleR : (Pr {ω | T n ω ≤ qn n ω}).toReal ≤
+        (Pr {ω | T n ω ≤ M}).toReal + (Pr {ω | M < qn n ω}).toReal := by
+      have := ENNReal.toReal_mono
+        (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+      rwa [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at this
+    have h1 : (Pr {ω | T n ω ≤ M}).toReal < ε / 2 := by
+      have hd := hN n hn
+      rw [Real.dist_eq, sub_zero] at hd
+      exact lt_of_le_of_lt (le_abs_self _) hd
+    have h2 : (Pr {ω | M < qn n ω}).toReal ≤ ε / 2 := hM n
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg]
+    linarith
+  -- The rejection event is the complement.
+  have hcompl : ∀ n, (Pr {ω | qn n ω < T n ω}).toReal
+      = 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal := by
+    intro n
+    have hset : {ω | qn n ω < T n ω} = {ω | T n ω ≤ qn n ω}ᶜ := by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    rw [hset, measure_compl (hmeasS n) (measure_ne_top _ _),
+      ENNReal.toReal_sub_of_le (measure_mono (Set.subset_univ _)) (measure_ne_top _ _),
+      measure_univ, ENNReal.toReal_one]
+  have hlim : Tendsto (fun n => 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal) atTop (𝓝 (1 - 0)) :=
+    Tendsto.const_sub 1 hzero
+  rw [sub_zero] at hlim
+  exact Tendsto.congr (fun n => (hcompl n).symm) hlim
 
 end BootstrapTest
 
