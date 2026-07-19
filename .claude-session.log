@@ -1,2 +1,41 @@
 srun: job 33096553 queued and waiting for resources
 srun: job 33096553 has been allocated resources
+All six target files are committed. Here's the final report.
+
+## Report
+
+**Final `lake build` status:** All six target modules build with **0 errors** (verified in one combined build). The full dependency tree also compiled (a cold Aesop cache forced a rebuild, but Mathlib oleans were content-hash-reused).
+
+### Per-file sorry counts (from `declaration uses 'sorry'` build warnings)
+
+| File | sorries | Closed this session |
+|---|---|---|
+| `Invariance/MaximalInvariant` | **1** | `InducesOn.mul`, `InducesOn.inv` |
+| `Unbiased/PowerContinuity` | **1** | `isSimilar_boundary_of_isUnbiasedTest`, `isUMPU_of_isUMP_on_boundary`, `continuous_power_of_isCanonicalRepr` |
+| `Unbiased/SimilarityCompleteness` | **1** | `hasNeymanStructure_of_boundedlyComplete` |
+| `Unbiased/ConditionalExpFamily` | **2** | `integral_eq_integral_condDistrib` |
+| `Unbiased/MultiparamUMPU` | **6** | `inner_exponent_reparam` |
+| `Unbiased/OneParamTwoSided` | **2** | — |
+
+**8 theorems closed**; **13 sorries remain**.
+
+### `#print axioms isUMPU_of_isUMP_on_boundary`
+```
+depends on axioms: [propext, Classical.choice, Quot.sound]
+```
+**Axiom-clean** (no `sorryAx`). The analytic escape-hatch sorry in the same file does not contaminate it. Also verified axiom-clean: `InducesOn.mul`, `InducesOn.inv`, `isSimilar_boundary_of_isUnbiasedTest`, `hasNeymanStructure_of_boundedlyComplete`, `integral_eq_integral_condDistrib`, `inner_exponent_reparam`. (`continuous_power_of_isCanonicalRepr` legitimately carries `sorryAx` since it reduces by composition to the lifted analytic lemma below.)
+
+### MaximalInvariant — done as instructed
+Both `InducesOn.mul` (used the added `hg'`) and `InducesOn.inv` (used the added `hgf`) close by mirroring the inline arguments in `PreservesFamily.mul/.inv`. `isInvariantTest_iff_factors_measurable` keeps its **named genuine obstruction** (Jankov–von Neumann measurable uniformization) untouched — the file's only remaining sorry.
+
+### Open sorries and their precise obstructions
+
+- **`PowerContinuity.continuous_power_expFamily`** (1, escape hatch): continuity of the tilted integral `η ↦ ∫φ e^{⟨η,T⟩}/∫e^{⟨η,T⟩}` on `interior natSet`. Genuine analytic theorem (differentiation under the integral, dominated by the two-sided exp-family bound). Needs a new continuity lemma in `ExponentialFamily`. `continuous_power_of_isCanonicalRepr` is proved *from* it by composition, so it is the file's single debt.
+
+- **`ConditionalExpFamily`** (2): both `condDistrib_expFamily_of_isCanonicalUT` and `condDistrib_eq_of_fst_eq` are **blocked upstream**. The intended engine `ForMathlib/CondDistribTilt.lean` is **not closed — it carries 4 open sorries** (`measurable_condTiltNormalizer`, `condTiltNormalizer_pos_lt_top_ae`, `condDistrib_fst_withDensity_tilt`, plus the finite-measure reduction). Routing around it means re-deriving the product-form disintegration-tilt inline (out of editable scope). `condDistrib_eq_of_fst_eq` additionally needs mutual absolute continuity of the two `T`-marginals.
+
+- **`SimilarityCompleteness.boundedlyComplete_of_forall_similar_hasNeymanStructure`** (1, escape hatch): the perturbation argument is set up, but closing needs the fibre-support `∀ᵐ (t,x) ∂(statLaw ⊗ₘ Q), T x = t`, whose derivation needs `{(t,x) | T x = t}` measurable — i.e. a **countably-separated / `StandardBorelSpace 𝓣`** hypothesis absent from the signature. **Flagged as a probable hypothesis gap**: the converse looks under-hypothesized for a bare `MeasurableSpace 𝓣` (the forward direction needs no such structure).
+
+- **`MultiparamUMPU`** (6) and **`OneParamTwoSided`** (2): the four conditional UMPU theorems, the measurable-quantile selection, and the two one-parameter two-sided theorems. Each needs (a) `continuous_power_expFamily` (the analytic debt) to run the boundary device, (b) the conditional exponential-family reduction (blocked on `CondDistribTilt`), and (c) a **two-constraint generalized Neyman–Pearson optimality lemma not yet present** in `NeymanPearson`. `isCanonicalUT_reparam` is the one purely change-of-variables item (not engine-blocked) but Mathlib lacks a packaged `MeasurableEquiv.map_withDensity`, so it must be built from `lintegral` primitives — deferred for budget.
+
+All work is committed (4 commits on `ht/unbiased`); working tree clean.
