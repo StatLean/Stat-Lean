@@ -237,3 +237,35 @@ blocked `Pitman.pitmanEstimator_eq_sub_condMean` and `LocationExamples.isLocMRE_
 
 `pe/conddensity-pitman` (the unblock above), `ht/test-foundations` (Batch 12's first item:
 NP lemma, quantiles, p-values, confidence duality), `ht/invariance-core` (Batch 12).
+
+## Corrections the proof sessions made to MY briefs (2026-07-19)
+
+Recording these because they were errors in the orchestration, not in the mathematics, and
+the same mistakes would otherwise recur in Batch 12.
+
+1. **Wrong natural statistic for the canonical normal model.** My brief prescribed
+   `T y = (y₀,…,y_{s−1}, Σ_{j≥s} yⱼ²)` (residual SS). That is **not** a canonical exponential
+   family: the Gaussian log-density retains `−(1/2σ²)·Σ_{i<s} yᵢ²`, which depends on both the
+   data and `σ²`, so it is neither part of `⟨η,T⟩` nor absorbable into a θ-free carrier.
+   Correct route: use the **total** sum of squares `Σ_all k yₖ²` with `base = volume`, `h = 1`,
+   then transport completeness along the measurable bijection
+   `(a, total) ↔ (a, total − Σ aᵢ²) = (head, RSS)`.
+
+2. **Sorry-taint propagation through Lehmann–Scheffé.** `isUMVU_of_complete_sufficient` calls
+   the private `variance_rbEstimator_le_of_complete`, which is the OPEN `IsUMVU`
+   measurability debt. Anything routed through it therefore reports `sorryAx`, even though the
+   file itself looks closed. **This is exactly the trap the charter warns about: a clean-looking
+   compile can still be axiom-tainted.** The axiom-clean alternative is
+   `isUMVU_iff_uncorrelated_unbiasedZero` (fully proven). For the normal linear model the
+   measurability gap is *locally* closable, because all `canonicalModel` members are mutually
+   absolutely continuous (strictly positive Gaussian densities), so a `P p₀`-a.e. representative
+   is automatically a `P p'`-a.e. representative for every `p'`.
+
+   **Implication for the endgame audit:** the `#print axioms` sweep must cover every public
+   headline, not a sample — the taint is invisible to `grep -c sorry` on the consuming file.
+
+3. **Realistic sizing.** `gaussianVector` had *zero* existing helper lemmas; the whole
+   moment / density / mutual-a.c. / exp-family-recognition / orthonormal-transport theory has to
+   be built from scratch (~250–350 lines for the completeness hinge alone). The LinearModel group
+   is multi-session work and has been re-scoped to a single-hinge item
+   (`pe/canonical-completeness`) with commit-after-every-lemma discipline.
