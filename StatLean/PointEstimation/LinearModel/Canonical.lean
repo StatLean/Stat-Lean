@@ -799,7 +799,30 @@ theorem isUMVU_linear_combination
     (lam : Fin s → ℝ) :
     IsUMVU (canonicalModel (s := s) (m := m)) (fun p => ∑ i, lam i * p.1 i)
       (fun y => ∑ i, lam i * canonicalHead y i) := by
-  sorry
+  have hφ : Measurable (fun t : (Fin s → ℝ) × ℝ => ∑ i, lam i * t.1 i) :=
+    Finset.measurable_sum _ fun i _ =>
+      measurable_const.mul ((measurable_pi_apply i).comp measurable_fst)
+  have hcoordMemLp : ∀ (p : CanonicalParam s) (i : Fin s),
+      MemLp (fun y : EuclideanSpace ℝ (Fin (s + m)) => y (Fin.castAdd m i)) 2
+        (canonicalModel p) := fun p i =>
+    canonicalModel_memLp_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+      (memLp_id_gaussianReal 2)
+  have hcoordmean : ∀ (p : CanonicalParam s) (i : Fin s),
+      ∫ y, y (Fin.castAdd m i) ∂(canonicalModel p) = p.1 i := by
+    intro p i
+    have hc := canonicalModel_integral_coord (m := m) p (Fin.castAdd m i) (f := id) measurable_id
+    simp only [id_eq] at hc
+    rw [hc, integral_id_gaussianReal, Fin.append_left]
+  refine isUMVU_canonical_of_stat hm hφ ?_ ?_
+  · intro p
+    show ∫ y, ∑ i, lam i * y (Fin.castAdd m i) ∂(canonicalModel p) = ∑ i, lam i * p.1 i
+    rw [integral_finset_sum _
+      (fun i _ => ((hcoordMemLp p i).integrable one_le_two).const_mul (lam i))]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_const_mul, hcoordmean p i]
+  · intro p
+    show MemLp (fun y => ∑ i, lam i * y (Fin.castAdd m i)) 2 (canonicalModel p)
+    exact memLp_finset_sum _ fun i _ => (hcoordMemLp p i).const_mul (lam i)
 
 /-- The rescaled residual sum of squares `S²/m` (that is, `S²/(n − s)`) is UMVU for the
 variance `σ²`. -/
