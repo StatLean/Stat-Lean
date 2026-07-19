@@ -226,14 +226,16 @@ characteristic function `t ↦ exp(−t²/2)`. This is the content of Lindeberg'
 swapping/telescoping estimate; `lindeberg_clt` merely feeds this pointwise statement through
 Lévy's continuity theorem.
 
-TODO: prove the swapping estimate. The classical argument bounds
-`|∏ᵢ φₙᵢ(t) − ∏ᵢ (1 − t²σₙᵢ²/2)| ≤ ∑ᵢ |φₙᵢ(t) − (1 − t²σₙᵢ²/2)|` (product telescoping with
-all factors of modulus ≤ 1), estimates each summand by
-`E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]` (the third-order remainder of `e^{iy}`) and splits the
-expectation at `|Xₙᵢ| = ε` — the small part is `≤ |t|³ε ∑ᵢ σₙᵢ² /6` and the large part is
-`≤ t² ∑ᵢ E[Xₙᵢ² 1{|Xₙᵢ|>ε}]`, the Lindeberg sum. The missing ingredient is the quantitative
-pointwise bound `‖e^{iy} − (1 + iy − y²/2)‖ ≤ min(|y|³/6, y²)`, which Mathlib does not yet
-provide (`taylor_charFun_two` gives only the non-uniform `o(t²)` near `0`). -/
+TODO: assemble the swapping estimate. The quantitative pointwise remainder bound
+`‖e^{iy} − (1 + iy − y²/2)‖ ≤ min(|y|³/6, y²)` — the ingredient Mathlib lacked — is now
+available as `norm_cexp_sub_taylor_le`. What remains is the classical assembly on top of it:
+(1) telescoping `‖∏ᵢ φₙᵢ − ∏ᵢ (1 − t²σₙᵢ²/2)‖ ≤ ∑ᵢ ‖φₙᵢ − (1 − t²σₙᵢ²/2)‖`, valid once the
+row is uniformly negligible so every factor has modulus ≤ 1; (2) the per-term bound
+`‖φₙᵢ − (1 − t²σₙᵢ²/2)‖ ≤ E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]` via `norm_cexp_sub_taylor_le` and
+centering; (3) the split at `|Xₙᵢ| = ε` (small part `≤ |t|³ε ∑ᵢ σₙᵢ²/6`, large part
+`≤ t² ∑ᵢ E[Xₙᵢ² 1{|Xₙᵢ|>ε}]` — the Lindeberg sum, which `hlin` sends to 0); and (4)
+`∏ᵢ (1 − t²σₙᵢ²/2) → exp(−t²/2)` from `hvar`, uniform negligibility (a consequence of `hlin`)
+and `log(1 − u) = −u + O(u²)`. -/
 private lemma tendsto_prod_charFun_lindeberg
     {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) → Ω → ℝ}
     (hmeas : ∀ n i, Measurable (X n i))
