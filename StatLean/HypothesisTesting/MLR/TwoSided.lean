@@ -74,6 +74,75 @@ noncomputable def twoSidedTest (T : 𝓧 → ℝ) (C₁ C₂ γ₁ γ₂ : ℝ) 
   else if C₁ < T x ∧ T x < C₂ then 1
   else 0
 
+/-- The scalar value of the two-sided test as a function of the statistic level `t`,
+written with nested `if`s (so `split_ifs` produces atomic order conditions). -/
+private noncomputable def twoSidedVal (C₁ C₂ γ₁ γ₂ t : ℝ) : ℝ :=
+  if t = C₁ then γ₁ else if t = C₂ then γ₂ else if C₁ < t then if t < C₂ then 1 else 0 else 0
+
+/-- `twoSidedTest` factors through the statistic via `twoSidedVal`. -/
+private lemma twoSidedTest_eq_val (T : 𝓧 → ℝ) (C₁ C₂ γ₁ γ₂ : ℝ) (x : 𝓧) :
+    twoSidedTest T C₁ C₂ γ₁ γ₂ x = twoSidedVal C₁ C₂ γ₁ γ₂ (T x) := by
+  unfold twoSidedTest twoSidedVal
+  by_cases h1 : T x = C₁
+  · rw [if_pos h1, if_pos h1]
+  · rw [if_neg h1, if_neg h1]
+    by_cases h2 : T x = C₂
+    · rw [if_pos h2, if_pos h2]
+    · rw [if_neg h2, if_neg h2]
+      by_cases h3 : C₁ < T x
+      · rw [if_pos h3]; by_cases h4 : T x < C₂
+        · rw [if_pos ⟨h3, h4⟩, if_pos h4]
+        · rw [if_neg (fun h => h4 h.2), if_neg h4]
+      · rw [if_neg h3, if_neg (fun h => h3 h.1)]
+
+/-- With `γᵢ ∈ [0,1]` and `C₁ < C₂`, the scalar value lies in `[0,1]`. -/
+private lemma twoSidedVal_mem_Icc {C₁ C₂ γ₁ γ₂ : ℝ}
+    (hγ₁ : γ₁ ∈ Set.Icc (0 : ℝ) 1) (hγ₂ : γ₂ ∈ Set.Icc (0 : ℝ) 1) (t : ℝ) :
+    twoSidedVal C₁ C₂ γ₁ γ₂ t ∈ Set.Icc (0 : ℝ) 1 := by
+  unfold twoSidedVal
+  split_ifs
+  · exact hγ₁
+  · exact hγ₂
+  · exact ⟨zero_le_one, le_refl 1⟩
+  · exact ⟨le_refl 0, zero_le_one⟩
+  · exact ⟨le_refl 0, zero_le_one⟩
+
+set_option maxHeartbeats 1000000 in
+/-- **Separation of the difference of two right-shifted two-sided values.** Write
+`D t = twoSidedVal C₁' C₂' γ₁' γ₂' t − twoSidedVal C₁ C₂ γ₁ γ₂ t`. If the second rejection
+interval lies to the right of the first (`hright`), then every level `s` at which `D s > 0`
+lies strictly to the right of every level `t` at which `D t < 0`: the positive part of the
+difference sits above the negative part. This is the single sign-change structure that
+drives the Lehmann comparison. -/
+private lemma twoSidedVal_sub_sep {C₁ C₂ C₁' C₂' γ₁ γ₂ γ₁' γ₂' : ℝ}
+    (hC : C₁ < C₂) (hC' : C₁' < C₂')
+    (hγ₁ : γ₁ ∈ Set.Icc (0 : ℝ) 1) (hγ₂ : γ₂ ∈ Set.Icc (0 : ℝ) 1)
+    (hγ₁' : γ₁' ∈ Set.Icc (0 : ℝ) 1) (hγ₂' : γ₂' ∈ Set.Icc (0 : ℝ) 1)
+    (hright : C₁ < C₁' ∨ (C₁ = C₁' ∧ γ₁' < γ₁)) {s t : ℝ}
+    (hs : 0 < twoSidedVal C₁' C₂' γ₁' γ₂' s - twoSidedVal C₁ C₂ γ₁ γ₂ s)
+    (ht : twoSidedVal C₁' C₂' γ₁' γ₂' t - twoSidedVal C₁ C₂ γ₁ γ₂ t < 0) :
+    t < s := by
+  obtain ⟨hγ₁0, hγ₁1⟩ := hγ₁; obtain ⟨hγ₂0, hγ₂1⟩ := hγ₂
+  obtain ⟨hγ₁'0, hγ₁'1⟩ := hγ₁'; obtain ⟨hγ₂'0, hγ₂'1⟩ := hγ₂'
+  by_contra hst
+  push_neg at hst
+  -- `s ≤ t`; derive a contradiction with `D s > 0`, `D t < 0`.
+  unfold twoSidedVal at hs ht
+  rcases hright with hr | ⟨hrEq, hrγ⟩
+  · split_ifs at hs ht <;>
+      first
+        | linarith
+        | (exfalso; subst_vars; simp_all)
+        | (exfalso; subst_vars; linarith)
+        | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
+  · subst hrEq
+    split_ifs at hs ht <;>
+      first
+        | linarith
+        | (exfalso; subst_vars; simp_all)
+        | (exfalso; subst_vars; linarith)
+        | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
+
 /-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
 parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
 `γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
