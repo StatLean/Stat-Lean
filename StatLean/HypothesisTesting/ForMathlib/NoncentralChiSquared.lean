@@ -5,6 +5,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Adjoint
+import Mathlib.Analysis.Matrix.Order
 import Mathlib.Probability.Independence.Basic
 
 /-!
@@ -84,7 +85,7 @@ and some probability inequalities," *Proc. Amer. Math. Soc.* **6** (1955), 170�
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped Topology ENNReal NNReal RealInnerProductSpace
+open scoped Topology ENNReal NNReal RealInnerProductSpace Matrix MatrixOrder
 
 namespace StatLean.HypothesisTesting
 
@@ -226,9 +227,9 @@ theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
   classical
   -- The whitening matrix `A = (√S)⁻¹`.
   set B : Matrix (Fin k) (Fin k) ℝ := CFC.sqrt S with hB_def
-  have hB_sa : IsSelfAdjoint B := (CFC.sqrt_nonneg S).isSelfAdjoint
-  have hBB : B * B = S := CFC.sqrt_mul_sqrt_self S hS.nonneg
-  have hB_unit : IsUnit B := hS.posDef_sqrt.isUnit
+  have hB_sa : IsSelfAdjoint B := by rw [hB_def]; exact (CFC.sqrt_nonneg S).isSelfAdjoint
+  have hBB : B * B = S := by rw [hB_def]; exact CFC.sqrt_mul_sqrt_self S hS.posSemidef.nonneg
+  have hB_unit : IsUnit B := by rw [hB_def]; exact hS.posDef_sqrt.isUnit
   have hBdet : IsUnit B.det := (Matrix.isUnit_iff_isUnit_det B).mp hB_unit
   have hBl : B⁻¹ * B = 1 := Matrix.nonsing_inv_mul B hBdet
   have hBr : B * B⁻¹ = 1 := Matrix.mul_nonsing_inv B hBdet
@@ -244,31 +245,20 @@ theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
   -- `A · S · Aᴴ = I`.
   have hASA : A * S * Aᴴ = 1 := by
     rw [hAH, hA_def, ← hBB, Matrix.mul_assoc, Matrix.mul_assoc, hBr, Matrix.mul_one, hBl]
-  -- CLM-level self-adjointness and `A ∘ A = S⁻¹`.
-  have hAclSA : IsSelfAdjoint (Matrix.toEuclideanCLM (𝕜 := ℝ) A) :=
-    hA_sa.map (Matrix.toEuclideanCLM (𝕜 := ℝ))
-  have hAAcl :
-      (Matrix.toEuclideanCLM (𝕜 := ℝ) A) ∘L (Matrix.toEuclideanCLM (𝕜 := ℝ) A)
-        = Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ := by
-    change Matrix.toEuclideanCLM (𝕜 := ℝ) A * Matrix.toEuclideanCLM (𝕜 := ℝ) A = _
-    rw [← map_mul, hAA]
-  -- Pointwise: `‖A z‖² = ⟪z, S⁻¹ z⟫`.
+  -- `Aᵀ = A` for the real self-adjoint whitening matrix.
+  have hAt : Aᵀ = A := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial, ← Matrix.star_eq_conjTranspose]
+    exact hA_sa
+  -- Pointwise: `‖A z‖² = ⟪z, S⁻¹ z⟫`, via `inner_toEuclideanCLM` and matrix algebra.
   have hnorm : ∀ z : EuclideanSpace ℝ (Fin k),
       ‖Matrix.toEuclideanCLM (𝕜 := ℝ) A z‖ ^ 2
         = ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫ := by
     intro z
-    rw [sq, ← real_inner_self_eq_norm_mul_norm]
-    have hswap :
-        ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A z, Matrix.toEuclideanCLM (𝕜 := ℝ) A z⟫
-          = ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) A (Matrix.toEuclideanCLM (𝕜 := ℝ) A z)⟫ := by
-      have := (Matrix.toEuclideanCLM (𝕜 := ℝ) A).adjoint_inner_right z
-        (Matrix.toEuclideanCLM (𝕜 := ℝ) A z)
-      rw [hAclSA.adjoint_eq] at this
-      exact this.symm
-    rw [hswap]
-    congr 1
-    change (Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L Matrix.toEuclideanCLM (𝕜 := ℝ) A) z = _
-    rw [hAAcl]
+    rw [sq, ← real_inner_self_eq_norm_mul_norm, Matrix.inner_toEuclideanCLM,
+      Matrix.inner_toEuclideanCLM]
+    show (A *ᵥ z) ⬝ᵥ (A *ᵥ z) = z ⬝ᵥ S⁻¹ *ᵥ z
+    rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, Matrix.mulVec_mulVec, hAt, hAA,
+      dotProduct_comm]
   -- Assemble via the whitening pushforward and the squared-norm law of `N(Aμ, I)`.
   have hqnn : 0 ≤ ⟪μ, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ μ⟫ := by
     rw [← hnorm μ]; positivity
