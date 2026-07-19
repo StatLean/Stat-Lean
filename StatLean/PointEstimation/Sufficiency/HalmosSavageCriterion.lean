@@ -1,4 +1,5 @@
 import StatLean.PointEstimation.Sufficiency.Defs
+import StatLean.PointEstimation.ForMathlib.CondExpWithDensity
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
@@ -59,6 +60,14 @@ namespace StatLean.PointEstimation
 
 variable {Θ 𝓧 S : Type*} [MeasurableSpace 𝓧] [MeasurableSpace S]
 
+/-- If `dPθ/dν` factors through `T` a.e. then `Pθ` is `ν` tilted by that composed density. -/
+private theorem eq_withDensity_of_rnDeriv_comp (ν : Measure 𝓧) {Pθ : Measure 𝓧}
+    [Pθ.HaveLebesgueDecomposition ν] (hdomθ : Pθ ≪ ν) {T : 𝓧 → S} {g : S → ℝ≥0∞}
+    (hfacθ : Pθ.rnDeriv ν =ᵐ[ν] fun x => g (T x)) :
+    Pθ = ν.withDensity (fun x => g (T x)) := by
+  calc Pθ = ν.withDensity (Pθ.rnDeriv ν) := (Measure.withDensity_rnDeriv_eq Pθ ν hdomθ).symm
+    _ = ν.withDensity (fun x => g (T x)) := withDensity_congr_ae hfacθ
+
 /-- **Halmos–Savage, forward direction.** If `T` is sufficient then, relative to an
 equivalent countable mixture `ν` of members of the family, every member's density with
 respect to `ν` is a measurable function of `T`. -/
@@ -76,7 +85,48 @@ theorem rnDeriv_comp_of_isSufficient (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     ∀ θ, ∃ g : S → ℝ≥0∞, Measurable g ∧ (P θ).rnDeriv ν =ᵐ[ν] fun x => g (T x) := by
-  sorry
+  haveI : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
+  intro θ
+  set gmap := (P θ).map T with hgmap
+  haveI : IsProbabilityMeasure gmap := Measure.isProbabilityMeasure_map hT.aemeasurable
+  have hac : gmap ≪ ν.map T := (hdom θ).map hT
+  have hPmapwd : (ν.map T).withDensity (gmap.rnDeriv (ν.map T)) = gmap :=
+    Measure.withDensity_rnDeriv_eq gmap (ν.map T) hac
+  set g := gmap.rnDeriv (ν.map T) with hgdef
+  have hg : Measurable g := Measure.measurable_rnDeriv gmap (ν.map T)
+  have hwd : P θ = ν.withDensity (fun x => g (T x)) := by
+    refine Measure.ext fun A hA => ?_
+    obtain ⟨κA, hκAm, -, hdetθ⟩ := hsuf hA
+    have hdetν : ∀ ⦃B : Set S⦄, MeasurableSet B →
+        ∫⁻ x in T ⁻¹' B, κA (T x) ∂ν = ν (A ∩ T ⁻¹' B) := by
+      intro B hB
+      have hs : MeasurableSet (T ⁻¹' B) := hT hB
+      rw [hν, Measure.restrict_sum _ hs, lintegral_sum_measure,
+          Measure.sum_apply _ (hA.inter hs)]
+      refine tsum_congr fun i => ?_
+      rw [Measure.restrict_smul, lintegral_smul_measure, Measure.smul_apply, smul_eq_mul]
+      exact congrArg (fun z => c i * z) (hdetθ (θs i) hB)
+    have hI : (ν.restrict A).map T = (ν.map T).withDensity κA :=
+      map_restrict_eq_withDensity_map hT hA hκAm hdetν
+    have hII : ((P θ).restrict A).map T = ((P θ).map T).withDensity κA :=
+      map_restrict_eq_withDensity_map hT hA hκAm (fun B hB => hdetθ θ hB)
+    rw [withDensity_apply _ hA]
+    calc (P θ) A = ∫⁻ y, κA y ∂gmap := by
+          rw [← Measure.restrict_apply_univ (μ := P θ), ← Set.preimage_univ (f := T),
+              ← Measure.map_apply hT MeasurableSet.univ, hII,
+              withDensity_apply _ MeasurableSet.univ, setLIntegral_univ]
+      _ = ∫⁻ y, (g * κA) y ∂(ν.map T) := by
+          rw [← hPmapwd, lintegral_withDensity_eq_lintegral_mul _ hg hκAm]
+      _ = ∫⁻ y, g y ∂((ν.map T).withDensity κA) := by
+          rw [lintegral_withDensity_eq_lintegral_mul _ hκAm hg]
+          exact lintegral_congr fun y => mul_comm (g y) (κA y)
+      _ = ∫⁻ y, g y ∂((ν.restrict A).map T) := by rw [hI]
+      _ = ∫⁻ x, g (T x) ∂(ν.restrict A) := lintegral_map hg hT
+      _ = ∫⁻ x in A, g (T x) ∂ν := rfl
+  refine ⟨g, hg, ?_⟩
+  have hwdrn := Measure.rnDeriv_withDensity ν (show Measurable (fun x => g (T x)) from hg.comp hT)
+  rw [← hwd] at hwdrn
+  exact hwdrn
 
 /-- **Halmos–Savage, converse direction.** If every member's density with respect to the
 equivalent mixture `ν` factors through `T`, then `T` is sufficient: the conditional
@@ -95,7 +145,31 @@ theorem isSufficient_of_rnDeriv_comp (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- USER-INPUT: the densities factor through `T`
     (hfac : ∀ θ, ∃ g : S → ℝ≥0∞, Measurable g ∧ (P θ).rnDeriv ν =ᵐ[ν] fun x => g (T x)) :
     IsSufficient P T := by
-  sorry
+  haveI : IsFiniteMeasure (ν.map T) := ν.isFiniteMeasure_map T
+  intro A hA
+  have hmaple : (ν.restrict A).map T ≤ ν.map T :=
+    Measure.map_mono Measure.restrict_le_self hT
+  have hac' : (ν.restrict A).map T ≪ ν.map T := hmaple.absolutelyContinuous
+  set ρ := ((ν.restrict A).map T).rnDeriv (ν.map T) with hρdef
+  have hρm : Measurable ρ := Measure.measurable_rnDeriv _ _
+  have hρle1 : ρ ≤ᵐ[ν.map T] 1 := Measure.rnDeriv_le_one_of_le hmaple
+  have heq : (fun y => min (ρ y) 1) =ᵐ[ν.map T] ρ := by
+    filter_upwards [hρle1] with y hy using min_eq_left hy
+  have hdetν : ∀ ⦃B : Set S⦄, MeasurableSet B →
+      ∫⁻ x in T ⁻¹' B, min (ρ (T x)) 1 ∂ν = ν (A ∩ T ⁻¹' B) := by
+    intro B hB
+    have h1 : (∫⁻ x in T ⁻¹' B, min (ρ (T x)) 1 ∂ν)
+        = ∫⁻ y in B, min (ρ y) 1 ∂(ν.map T) :=
+      (setLIntegral_map hB (hρm.min measurable_const) hT).symm
+    rw [h1, lintegral_congr_ae (ae_restrict_of_ae heq), Measure.setLIntegral_rnDeriv hac' B,
+        Measure.map_apply hT hB, Measure.restrict_apply (hT hB), Set.inter_comm]
+  refine ⟨fun t => min (ρ t) 1, hρm.min measurable_const, fun t => min_le_right _ _, ?_⟩
+  intro θ B hB
+  obtain ⟨g, hg, hfacθ⟩ := hfac θ
+  have hPeq : P θ = ν.withDensity (fun x => g (T x)) :=
+    eq_withDensity_of_rnDeriv_comp ν (hdom θ) hfacθ
+  rw [hPeq]
+  exact setLIntegral_comp_withDensity_comap_eq hT hA (hρm.min measurable_const) hdetν hg hB
 
 /-- **Halmos–Savage criterion.** Relative to an equivalent countable mixture `ν` of members
 of the family, `T` is sufficient if and only if every member's density with respect to `ν` is
@@ -112,6 +186,7 @@ theorem isSufficient_iff_rnDeriv_comp (P : Θ → Measure 𝓧) [∀ θ, IsProba
     (hdom : ∀ θ, P θ ≪ ν) :
     IsSufficient P T ↔
       ∀ θ, ∃ g : S → ℝ≥0∞, Measurable g ∧ (P θ).rnDeriv ν =ᵐ[ν] fun x => g (T x) := by
-  sorry
+  refine ⟨fun hsuf => rnDeriv_comp_of_isSufficient P hT θs c ν hν hdom hsuf,
+    fun hfac => isSufficient_of_rnDeriv_comp P hT θs c ν hν hdom hfac⟩
 
 end StatLean.PointEstimation

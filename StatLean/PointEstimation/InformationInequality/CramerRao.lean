@@ -1,5 +1,8 @@
 import StatLean.PointEstimation.InformationInequality.Basic
 import StatLean.PointEstimation.UMVU.Defs
+import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import Mathlib.Algebra.QuadraticDiscriminant
 
 /-!
 # The information inequality (Cramér–Rao bound)
@@ -61,6 +64,73 @@ open AsymptoticStatistics (ParametricFamily IsPDFOf)
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- Cauchy–Schwarz for the Bochner integral against a probability measure:
+`(∫ X·Y)² ≤ (∫ X²)(∫ Y²)`, via nonnegativity of `∫ (X - tY)²` (a quadratic in `t`). -/
+private lemma sq_integral_mul_le {P : Measure 𝓧} [IsProbabilityMeasure P] {X Y : 𝓧 → ℝ}
+    (hX : MemLp X 2 P) (hY : MemLp Y 2 P) :
+    (∫ x, X x * Y x ∂P) ^ 2 ≤ (∫ x, X x ^ 2 ∂P) * (∫ x, Y x ^ 2 ∂P) := by
+  have iX2 : Integrable (fun x => X x ^ 2) P := hX.integrable_sq
+  have iY2 : Integrable (fun x => Y x ^ 2) P := hY.integrable_sq
+  have iXY : Integrable (fun x => X x * Y x) P := memLp_one_iff_integrable.mp (hY.mul' hX)
+  have hquad : ∀ t : ℝ,
+      0 ≤ (∫ x, Y x ^ 2 ∂P) * (t * t) + (-2 * ∫ x, X x * Y x ∂P) * t + (∫ x, X x ^ 2 ∂P) := by
+    intro t
+    have hnn : 0 ≤ ∫ x, (X x - t * Y x) ^ 2 ∂P := integral_nonneg fun x => sq_nonneg _
+    have hfun : (fun x => (X x - t * Y x) ^ 2)
+        = fun x => (X x ^ 2 - (2 * t) * (X x * Y x)) + t ^ 2 * Y x ^ 2 := by funext x; ring
+    rw [hfun,
+      integral_add (show Integrable (fun x => X x ^ 2 - (2 * t) * (X x * Y x)) P from
+          iX2.sub (iXY.const_mul (2 * t)))
+        (show Integrable (fun x => t ^ 2 * Y x ^ 2) P from iY2.const_mul (t ^ 2)),
+      integral_sub iX2 (show Integrable (fun x => (2 * t) * (X x * Y x)) P from
+          iXY.const_mul (2 * t)),
+      integral_const_mul, integral_const_mul] at hnn
+    nlinarith [hnn]
+  have hdisc := discrim_le_zero hquad
+  rw [discrim] at hdisc
+  nlinarith [hdisc]
+
+/-- Shared core of the information inequality: with the derivative of the expectation given
+as `g'` (identified with `∫ δ ∂_θ p_θ` by `hswap`), the bound `g'² / I ≤ var δ` follows from
+Cauchy–Schwarz applied to the centered statistic and the mean-zero score. -/
+private theorem cramer_rao_core (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
+    (hpdf : IsPDFOf M μ) (hsupp : HasCommonSupport M) (θ : ℝ) (δ : 𝓧 → ℝ) (g' : ℝ)
+    (hmeas : AEStronglyMeasurable (score M θ) μ)
+    (hδ2 : MemLp δ 2 (M.toMeasure μ θ))
+    (hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ)
+    (hI : 0 < fisherInfo M μ θ)
+    (hswap : g' = ∫ x, δ x * deriv (fun t => M.density t x) θ ∂μ)
+    (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0) :
+    g' ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) := by
+  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
+  set m := ∫ x, δ x ∂(M.toMeasure μ θ) with hm
+  have hXL2 : MemLp (fun x => δ x - m) 2 (M.toMeasure μ θ) := hδ2.sub (memLp_const m)
+  have hmean0P : ∫ x, score M θ x ∂(M.toMeasure μ θ) = 0 := by
+    rw [integral_toMeasure_eq M μ θ (score M θ)]; exact hmean0
+  have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two
+  have hδscore : Integrable (fun x => δ x * score M θ x) (M.toMeasure μ θ) :=
+    memLp_one_iff_integrable.mp (hscoreL2.mul' hδ2)
+  have hg'core : ∫ x, δ x * score M θ x ∂(M.toMeasure μ θ) = g' := by
+    rw [integral_toMeasure_eq M μ θ (fun x => δ x * score M θ x), hswap]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only []
+    rw [mul_assoc, score_mul_density_eq_deriv hsupp]
+  have hcenter : ∫ x, (δ x - m) * score M θ x ∂(M.toMeasure μ θ) = g' := by
+    have hsplit : (fun x => (δ x - m) * score M θ x)
+        = fun x => δ x * score M θ x - m * score M θ x := by funext x; ring
+    rw [hsplit, integral_sub hδscore (hscore_intP.const_mul m), integral_const_mul, hmean0P,
+      mul_zero, sub_zero, hg'core]
+  have hvar : variance δ (M.toMeasure μ θ) = ∫ x, (δ x - m) ^ 2 ∂(M.toMeasure μ θ) := by
+    rw [variance_eq_integral hδ2.aemeasurable, ← hm]
+  have hI_eq : fisherInfo M μ θ = ∫ x, score M θ x ^ 2 ∂(M.toMeasure μ θ) := by
+    rw [fisherInfo]
+    exact (integral_toMeasure_eq M μ θ (fun x => score M θ x ^ 2)).symm
+  have hcs := sq_integral_mul_le hXL2 hscoreL2
+  rw [hcenter, ← hvar, ← hI_eq] at hcs
+  rw [div_le_iff₀ hI]
+  exact hcs
+
 /-- **The information inequality (Cramér–Rao bound).** For a dominated family with a
 common support, mean-zero score and positive information, and for a square-integrable
 statistic `δ` whose expectation `t ↦ E_t δ` is differentiable at `θ` with derivative `g'`
@@ -97,8 +167,8 @@ theorem cramer_rao (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     -- USER-INPUT: the score has mean zero; classical regularity condition, implied by
     -- differentiation under the integral sign in the normalisation identity
     (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0) :
-    g' ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) := by
-  sorry
+    g' ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) :=
+  cramer_rao_core M μ hpdf hsupp θ δ g' hmeas hδ2 hscore_int hI hswap hmean0
 
 /-- **The information inequality with bias.** If `δ` estimates `g` with bias `b`, so that
 `E_t δ = g(t) + b(t)`, and both `g` and `b` are differentiable at `θ`, then
@@ -132,7 +202,7 @@ theorem cramer_rao_of_deriv (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     (hswap : b' + g' = ∫ x, δ x * deriv (fun t => M.density t x) θ ∂μ)
     -- USER-INPUT: the score has mean zero; classical regularity condition
     (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0) :
-    (b' + g') ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) := by
-  sorry
+    (b' + g') ^ 2 / fisherInfo M μ θ ≤ variance δ (M.toMeasure μ θ) :=
+  cramer_rao_core M μ hpdf hsupp θ δ (b' + g') hmeas hδ2 hscore_int hI hswap hmean0
 
 end StatLean.PointEstimation

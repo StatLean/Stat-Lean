@@ -67,7 +67,13 @@ theorem isUnbiased_iff_sub_unbiasedZero (P : Θ → Measure 𝓧) [∀ θ, IsPro
     -- LEAN-ONLY: integrability of the candidate estimator, same reason
     (hδi : ∀ θ, Integrable δ (P θ)) :
     IsUnbiased P g δ ↔ IsUnbiasedZero P (fun x => δ₀ x - δ x) := by
-  sorry
+  constructor
+  · intro hδu θ
+    rw [integral_sub (hδ₀i θ) (hδi θ), hδ₀ θ, hδu θ, sub_self]
+  · intro hz θ
+    have h := hz θ
+    rw [integral_sub (hδ₀i θ) (hδi θ), hδ₀ θ] at h
+    linarith
 
 /-- **Uniqueness of the UMVU estimator.** Two uniformly minimum variance unbiased estimators
 of the same estimand agree almost everywhere under every member of the model. -/
@@ -78,6 +84,38 @@ theorem isUMVU_unique (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P
     -- USER-INPUT: the second UMVU estimator of the same estimand
     (h₂ : IsUMVU P g δ₂) (θ : Θ) :
     δ₁ =ᵐ[P θ] δ₂ := by
-  sorry
+  obtain ⟨h1u, h1L2, h1min⟩ := h₁
+  obtain ⟨h2u, h2L2, h2min⟩ := h₂
+  have int1 : ∀ θ', Integrable δ₁ (P θ') := fun θ' => (h1L2 θ').integrable one_le_two
+  have int2 : ∀ θ', Integrable δ₂ (P θ') := fun θ' => (h2L2 θ').integrable one_le_two
+  -- the average `η = (δ₁ + δ₂)/2` is again an unbiased square-integrable competitor
+  have hηu : IsUnbiased P g (fun x => 2⁻¹ * (δ₁ x + δ₂ x)) := by
+    intro θ'
+    rw [integral_const_mul, integral_add (int1 θ') (int2 θ'), h1u θ', h2u θ']
+    ring
+  have hηL2 : MemEstL2 P (fun x => 2⁻¹ * (δ₁ x + δ₂ x)) := fun θ' =>
+    ((h1L2 θ').add (h2L2 θ')).const_mul 2⁻¹
+  -- both variances are equal by mutual minimality
+  have hv : variance δ₁ (P θ) = variance δ₂ (P θ) :=
+    le_antisymm (h1min δ₂ h2u h2L2 θ) (h2min δ₁ h1u h1L2 θ)
+  -- minimality of `δ₁` bounds the covariance from below
+  have hmin_η : variance δ₁ (P θ) ≤ variance (fun x => 2⁻¹ * (δ₁ x + δ₂ x)) (P θ) :=
+    h1min _ hηu hηL2 θ
+  rw [variance_const_mul, variance_fun_add (h1L2 θ) (h2L2 θ)] at hmin_η
+  -- the difference has zero variance and zero mean, hence vanishes a.e.
+  have hsub : variance (fun ω => δ₁ ω - δ₂ ω) (P θ)
+      = variance δ₁ (P θ) - 2 * covariance δ₁ δ₂ (P θ) + variance δ₂ (P θ) :=
+    variance_fun_sub (h1L2 θ) (h2L2 θ)
+  have hDvar : variance (fun ω => δ₁ ω - δ₂ ω) (P θ) = 0 := by
+    have hnn := variance_nonneg (fun ω => δ₁ ω - δ₂ ω) (P θ)
+    rw [hsub] at hnn ⊢
+    nlinarith [hnn, hmin_η, hv]
+  have hint : ∫ x, (δ₁ x - δ₂ x) ∂ P θ = 0 := by
+    rw [integral_sub (int1 θ) (int2 θ), h1u θ, h2u θ, sub_self]
+  have hae := ae_eq_integral_of_variance_eq_zero ((h1L2 θ).sub (h2L2 θ)) hDvar
+  filter_upwards [hae] with ω hω
+  simp only [Pi.sub_apply] at hω
+  rw [hint] at hω
+  linarith
 
 end StatLean.PointEstimation

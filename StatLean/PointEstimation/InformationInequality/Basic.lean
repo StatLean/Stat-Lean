@@ -3,7 +3,9 @@ import StatLean.PointEstimation.Model.Defs
 import StatLean.AsymptoticStatistics.ParametricFamily.FisherInformation
 import Mathlib.Probability.Moments.Variance
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Score identities and elementary properties of the Fisher information
@@ -112,6 +114,46 @@ lemma score_mul_density_eq_deriv {M : ParametricFamily 𝓧 ℝ}
   · simp only [score]
     exact div_mul_cancel₀ _ h
 
+/-! ## Auxiliary bridges between `μ` and the model measure `P_θ` -/
+
+/-- Integration against the model measure `P_θ = μ.withDensity p_θ` is integration of
+`g · p_θ` against `μ`. -/
+lemma integral_toMeasure_eq (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (θ : ℝ)
+    (g : 𝓧 → ℝ) :
+    ∫ x, g x ∂(M.toMeasure μ θ) = ∫ x, g x * M.density θ x ∂μ := by
+  rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+    integral_withDensity_eq_integral_toReal_smul (M.density_meas θ).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [ENNReal.toReal_ofReal (M.density_nonneg θ x), smul_eq_mul]
+  ring
+
+/-- The model measure `P_θ` of a probability-density family is a probability measure. -/
+lemma isProbabilityMeasure_toMeasure (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
+    (hpdf : IsPDFOf M μ) (θ : ℝ) : IsProbabilityMeasure (M.toMeasure μ θ) := by
+  refine ⟨?_⟩
+  rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+    withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    ← ofReal_integral_eq_lintegral_ofReal (hpdf.density_integrable θ)
+      (Filter.Eventually.of_forall (M.density_nonneg θ)), hpdf.density_integral_eq_one θ,
+    ENNReal.ofReal_one]
+
+/-- The score is square-integrable under the model measure `P_θ`, from measurability and
+finiteness of the information. -/
+lemma memLp_score (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (θ : ℝ)
+    (hmeas : AEStronglyMeasurable (score M θ) μ)
+    (hint : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ) :
+    MemLp (score M θ) 2 (M.toMeasure μ θ) := by
+  have hmeasP : AEStronglyMeasurable (score M θ) (M.toMeasure μ θ) :=
+    hmeas.mono_ac (withDensity_absolutelyContinuous _ _)
+  have hintP : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := by
+    rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+      integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine (integrable_congr (Filter.Eventually.of_forall fun x => ?_)).2 hint
+    rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+  exact (memLp_two_iff_integrable_sq hmeasP).2 hintP
+
 /-! ## Mean-zero score and the two expressions for the information -/
 
 /-- **The score has mean zero**: `E_θ[ℓ̇_θ(X)] = 0`.
@@ -131,7 +173,14 @@ theorem integral_score_eq_zero (M : ParametricFamily 𝓧 ℝ) (μ : Measure �
     (hswap : HasDerivAt (fun t => ∫ x, M.density t x ∂μ)
       (∫ x, deriv (fun t => M.density t x) θ ∂μ) θ) :
     ∫ x, score M θ x * M.density θ x ∂μ = 0 := by
-  sorry
+  have hconst : (fun t => ∫ x, M.density t x ∂μ) = fun _ => (1 : ℝ) :=
+    funext fun t => hpdf.density_integral_eq_one t
+  have hderiv0 : HasDerivAt (fun t => ∫ x, M.density t x ∂μ) 0 θ := by
+    rw [hconst]; exact hasDerivAt_const θ 1
+  have hzero : (∫ x, deriv (fun t => M.density t x) θ ∂μ) = 0 := hswap.unique hderiv0
+  rw [← hzero]
+  exact integral_congr_ae
+    (Filter.Eventually.of_forall fun x => score_mul_density_eq_deriv hsupp θ x)
 
 /-- **The information is the variance of the score**: `I(θ) = var_θ ℓ̇_θ(X)`, the score
 being centered by the previous theorem. -/
@@ -151,7 +200,26 @@ theorem fisherInfo_eq_variance_score (M : ParametricFamily 𝓧 ℝ) (μ : Measu
     -- the second moment of the score a genuine variance
     (hint : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ) :
     fisherInfo M μ θ = variance (score M θ) (M.toMeasure μ θ) := by
-  sorry
+  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hmean : ∫ x, score M θ x ∂(M.toMeasure μ θ) = 0 := by
+    rw [integral_toMeasure_eq]
+    exact integral_score_eq_zero M μ hpdf hsupp θ hswap
+  have hmeasP : AEStronglyMeasurable (score M θ) (M.toMeasure μ θ) :=
+    hmeas.mono_ac (withDensity_absolutelyContinuous _ _)
+  have hintP : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := by
+    rw [show M.toMeasure μ θ = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) from rfl,
+      integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    refine (integrable_congr (Filter.Eventually.of_forall fun x => ?_)).2 hint
+    rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+  have hL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) :=
+    (memLp_two_iff_integrable_sq hmeasP).2 hintP
+  have hkey : (M.toMeasure μ θ)[score M θ ^ 2] = fisherInfo M μ θ := by
+    rw [fisherInfo]
+    simp_rw [Pi.pow_apply]
+    exact integral_toMeasure_eq M μ θ (fun x => score M θ x ^ 2)
+  rw [variance_eq_sub hL2, hmean, hkey]
+  simp
 
 /-- **Negated-curvature expression for the information**:
 `I(θ) = -E_θ[∂²_θ log p_θ(X)]`.
@@ -192,7 +260,48 @@ theorem fisherInfo_eq_neg_integral_secondDeriv (M : ParametricFamily 𝓧 ℝ) (
     fisherInfo M μ θ
       = -∫ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ
           * M.density θ x ∂μ := by
-  sorry
+  -- pointwise: `∂²(log p)·p = ∂²p − (score)²·p`
+  have hpt : ∀ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ * M.density θ x
+      = deriv (fun u => deriv (fun s => M.density s x) u) θ - score M θ x ^ 2 * M.density θ x := by
+    intro x
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with hpx | hpos
+    · have hz : (fun s => M.density s x) = fun _ => (0 : ℝ) :=
+        funext fun s => density_eq_zero_of_commonSupport hsupp hpx.symm
+      rw [← hpx, hz]
+      simp
+    · have hdiffθ : DifferentiableAt ℝ (fun s => M.density s x) θ := (hdiff x hpos).self_of_nhds
+      have hcont : ContinuousAt (fun s => M.density s x) θ := hdiffθ.continuousAt
+      have hlog_ev : (fun u => deriv (fun s => Real.log (M.density s x)) u)
+          =ᶠ[nhds θ] fun u => deriv (fun s => M.density s x) u / M.density u x := by
+        filter_upwards [hdiff x hpos, continuousAt_const.eventually_lt hcont hpos]
+          with u hu hpu
+        exact (hu.hasDerivAt.log hpu.ne').deriv
+      rw [hlog_ev.deriv_eq,
+        show (fun u => deriv (fun s => M.density s x) u / M.density u x)
+            = (fun u => deriv (fun s => M.density s x) u) / fun u => M.density u x from rfl,
+        deriv_div (hdiff2 x hpos) hdiffθ hpos.ne', score]
+      have hne := hpos.ne'
+      field_simp
+  -- the first derivative of the normalisation vanishes at every parameter value
+  have h1 : ∀ t, ∫ x, deriv (fun s => M.density s x) t ∂μ = 0 := by
+    intro t
+    refine (hswap t).unique ?_
+    rw [show (fun u => ∫ x, M.density u x ∂μ) = fun _ => (1 : ℝ) from
+      funext hpdf.density_integral_eq_one]
+    exact hasDerivAt_const t 1
+  -- hence the second derivative of the normalisation vanishes at `θ`
+  have h2 : ∫ x, deriv (fun u => deriv (fun s => M.density s x) u) θ ∂μ = 0 := by
+    refine hswap2.unique ?_
+    rw [show (fun t => ∫ x, deriv (fun s => M.density s x) t ∂μ) = fun _ => (0 : ℝ) from
+      funext h1]
+    exact hasDerivAt_const θ 0
+  -- split the curvature integral
+  have key : ∫ x, deriv (fun u => deriv (fun s => Real.log (M.density s x)) u) θ
+        * M.density θ x ∂μ
+      = (∫ x, deriv (fun u => deriv (fun s => M.density s x) u) θ ∂μ) - fisherInfo M μ θ := by
+    rw [fisherInfo, ← integral_sub hint hI]
+    exact integral_congr_ae (Filter.Eventually.of_forall hpt)
+  rw [key, h2, zero_sub, neg_neg]
 
 /-! ## Reparametrization -/
 
@@ -218,7 +327,20 @@ theorem fisherInfo_reparam (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧) (
     -- sides vanish, the junk-safe score being `0` there)
     (hdiff : ∀ x, 0 < M.density (h ξ) x → DifferentiableAt ℝ (fun t => M.density t x) (h ξ)) :
     fisherInfo (reparam M h) μ ξ = fisherInfo M μ (h ξ) * h' ^ 2 := by
-  sorry
+  simp only [fisherInfo]
+  rw [← integral_mul_const]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  rcases eq_or_lt_of_le (M.density_nonneg (h ξ) x) with hden | hden
+  · simp only [score, reparam]
+    rw [← hden]; ring
+  · have hf : HasDerivAt (fun s => M.density s x)
+        (deriv (fun s => M.density s x) (h ξ)) (h ξ) := (hdiff x hden).hasDerivAt
+    have hderiv : deriv (fun t => M.density (h t) x) ξ
+        = deriv (fun s => M.density s x) (h ξ) * h' := (hf.comp ξ hh).deriv
+    have hne : M.density (h ξ) x ≠ 0 := ne_of_gt hden
+    simp only [score, reparam]
+    rw [hderiv]
+    field_simp
 
 /-! ## Bridge to the bilinear Fisher information of the asymptotics area -/
 
@@ -232,6 +354,11 @@ the two notions comparable. -/
 theorem fisherInfo_eq_asymptoticStatistics (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     (θ : ℝ) :
     fisherInfo M μ θ = AsymptoticStatistics.fisherInformation M μ θ (score M θ) 1 1 := by
-  sorry
+  rw [fisherInfo, AsymptoticStatistics.fisherInformation]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only []
+  have h1 : inner ℝ (1 : ℝ) (score M θ x) = score M θ x := by
+    rw [show inner ℝ (1 : ℝ) (score M θ x) = _ from RCLike.inner_apply 1 (score M θ x)]; simp
+  rw [h1]; ring
 
 end StatLean.PointEstimation

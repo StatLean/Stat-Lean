@@ -82,7 +82,49 @@ theorem isMinimalSufficient_likelihoodRatioVec {k : ℕ} (μ : Measure 𝓧) [Si
     -- USER-INPUT: the family is dominated by `μ` with densities `p`; the classical setup
     (hP : ∀ i, P i = μ.withDensity (p i)) :
     IsMinimalSufficient P (likelihoodRatioVec p) := by
-  sorry
+  have hLRVm : Measurable (likelihoodRatioVec p) :=
+    measurable_pi_lambda _ fun i => (hp i.succ).div (hp 0)
+  -- sufficiency: the densities factor through the ratio vector with carrier `p 0`
+  have hgm : ∀ i : Fin (k + 1),
+      Measurable (fun v : Fin k → ℝ≥0∞ => (Fin.cons (1 : ℝ≥0∞) v : Fin (k + 1) → ℝ≥0∞) i) := by
+    intro i
+    refine Fin.cases ?_ ?_ i
+    · simp only [Fin.cons_zero]; exact measurable_const
+    · intro i'; simp only [Fin.cons_succ]; exact measurable_pi_apply i'
+  have hLRVsuf : IsSufficient P (likelihoodRatioVec p) := by
+    refine isSufficient_of_isFactorizedDensity P μ p hp hP hLRVm
+      (g := fun i v => (Fin.cons (1 : ℝ≥0∞) v : Fin (k + 1) → ℝ≥0∞) i) hgm (h := p 0) (hp 0) ?_
+    intro i
+    refine Fin.cases ?_ ?_ i
+    · filter_upwards with x; simp [Fin.cons_zero]
+    · intro i'
+      filter_upwards [hpos 0, hfin 0] with x h0pos h0fin
+      simp only [Fin.cons_succ]
+      show p i'.succ x = p i'.succ x / p 0 x * p 0 x
+      rw [ENNReal.div_mul_cancel h0pos.ne' h0fin]
+  refine ⟨hLRVsuf, ?_⟩
+  rintro S' _ U hU hUsuf
+  obtain ⟨g', h', hg'm, _, hfacU⟩ := isFactorizedDensity_of_isSufficient P μ p hp hP hU hUsuf
+  refine ⟨fun s i' => g' i'.succ s / g' 0 s,
+    measurable_pi_lambda _ fun i' => (hg'm i'.succ).div (hg'm 0), fun i => ?_⟩
+  have hac : P i ≪ μ := (hP i) ▸ withDensity_absolutelyContinuous μ (p i)
+  refine hac.ae_eq ?_
+  have hcomp : ∀ᵐ x ∂μ, ∀ i',
+      g' i'.succ (U x) / g' 0 (U x) = likelihoodRatioVec p x i' := by
+    rw [ae_all_iff]
+    intro i'
+    filter_upwards [hpos 0, hfin 0, hfacU i'.succ, hfacU 0] with x h0pos h0fin hfsucc hf0
+    show g' i'.succ (U x) / g' 0 (U x) = p i'.succ x / p 0 x
+    have hh'0 : h' x ≠ 0 := by
+      intro he; rw [hf0, he, mul_zero] at h0pos; exact lt_irrefl _ h0pos
+    have hh't : h' x ≠ ⊤ := by
+      intro he
+      rcases eq_or_ne (g' 0 (U x)) 0 with hg0 | hg0
+      · rw [hf0, hg0, zero_mul] at h0pos; exact lt_irrefl _ h0pos
+      · rw [hf0, he, ENNReal.mul_top hg0] at h0fin; exact h0fin rfl
+    rw [hfsucc, hf0, ENNReal.mul_div_mul_right _ _ hh'0 hh't]
+  filter_upwards [hcomp] with x hx
+  exact funext hx
 
 /-- **Sufficiency ⟺ the density ratios factor through the statistic.** For a dominated family
 with a common support, a statistic `U` is sufficient exactly when, for every pair of
@@ -103,6 +145,31 @@ theorem isSufficient_iff_ratio_factors {S' : Type*} [MeasurableSpace S'] (μ : M
     IsSufficient P U ↔
       ∀ θ θ₀, ∃ r : S' → ℝ≥0∞, Measurable r ∧
         (fun x => p θ x / p θ₀ x) =ᵐ[μ] fun x => r (U x) := by
-  sorry
+  constructor
+  · intro hsuf θ θ₀
+    obtain ⟨g, h', hgm, _, hfacUgh⟩ := isFactorizedDensity_of_isSufficient P μ p hp hP hU hsuf
+    refine ⟨fun s => g θ s / g θ₀ s, (hgm θ).div (hgm θ₀), ?_⟩
+    filter_upwards [hpos θ₀, hfin θ₀, hfacUgh θ, hfacUgh θ₀] with x h0pos h0fin hfx hfx0
+    show p θ x / p θ₀ x = g θ (U x) / g θ₀ (U x)
+    have hh'0 : h' x ≠ 0 := by
+      intro he; rw [hfx0, he, mul_zero] at h0pos; exact lt_irrefl _ h0pos
+    have hh't : h' x ≠ ⊤ := by
+      intro he
+      rcases eq_or_ne (g θ₀ (U x)) 0 with hg0 | hg0
+      · rw [hfx0, hg0, zero_mul] at h0pos; exact lt_irrefl _ h0pos
+      · rw [hfx0, he, ENNReal.mul_top hg0] at h0fin; exact h0fin rfl
+    rw [hfx, hfx0, ENNReal.mul_div_mul_right _ _ hh'0 hh't]
+  · intro hratio
+    rcases isEmpty_or_nonempty Θ with hΘ | hΘ
+    · exact fun A _ => ⟨fun _ => 0, measurable_const, fun _ => zero_le_one,
+        fun θ => (hΘ.false θ).elim⟩
+    · have θ₀ : Θ := Classical.arbitrary Θ
+      refine isSufficient_of_isFactorizedDensity P μ p hp hP hU
+        (g := fun θ => (hratio θ θ₀).choose) (fun θ => (hratio θ θ₀).choose_spec.1)
+        (h := p θ₀) (hp θ₀) ?_
+      intro θ
+      filter_upwards [hpos θ₀, hfin θ₀, (hratio θ θ₀).choose_spec.2] with x h0pos h0fin hrx
+      show p θ x = (hratio θ θ₀).choose (U x) * p θ₀ x
+      rw [← hrx, ENNReal.div_mul_cancel h0pos.ne' h0fin]
 
 end StatLean.PointEstimation

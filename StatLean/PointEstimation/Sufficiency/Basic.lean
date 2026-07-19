@@ -63,7 +63,8 @@ theorem isProbabilityMeasure_statLaw (P : Θ → Measure 𝓧) [∀ θ, IsProbab
     -- LEAN-ONLY: measurability of the statistic; needed for `Measure.map` to be the law
     (hT : Measurable T) (θ : Θ) :
     IsProbabilityMeasure (statLaw P T θ) := by
-  sorry
+  unfold statLaw
+  exact Measure.isProbabilityMeasure_map hT.aemeasurable
 
 /-- **Reconstruction from the statistic.** If the joint law of `(T(X), X)` disintegrates as
 `(law of T) ⊗ₘ Q`, then feeding the law of `T` through `Q` returns the law of `X`:
@@ -75,7 +76,10 @@ theorem statLaw_snd (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     Q ∘ₘ (statLaw P T θ) = P θ := by
-  sorry
+  haveI := isProbabilityMeasure_statLaw P hT θ
+  have h := congrArg Measure.snd (hgraph θ)
+  rw [Measure.snd_compProd, Measure.snd_map_prodMk hT, Measure.map_id'] at h
+  exact h.symm
 
 /-- **Kernel form implies the per-event form.** A θ-free Markov disintegration of the graph
 law provides, for every measurable `A`, the θ-free determination `t ↦ Q t A` of the
@@ -88,7 +92,21 @@ theorem isSufficient_of_hasSufficientKernel (P : Θ → Measure 𝓧)
     -- of sufficiency
     (h : HasSufficientKernel P T) :
     IsSufficient P T := by
-  sorry
+  obtain ⟨Q, hQ, hgraph⟩ := h
+  haveI := hQ
+  refine fun A hA => ⟨fun t => Q t A, Q.measurable_coe hA, fun t => prob_le_one, ?_⟩
+  intro θ B hB
+  haveI := isProbabilityMeasure_statLaw P hT θ
+  have e := congrArg (· (B ×ˢ A)) (hgraph θ)
+  simp only [statLaw] at e
+  rw [Measure.map_apply (hT.prodMk measurable_id') (hB.prod hA),
+    Measure.compProd_apply_prod hB hA,
+    setLIntegral_map hB (Q.measurable_coe hA) hT] at e
+  rw [← e]
+  congr 1
+  ext x
+  simp only [Set.mem_preimage, Set.mem_prod, Set.mem_inter_iff]
+  tauto
 
 /-- **The sufficiency kernel is carried by the fibers of `T`.** For almost every value `t` of
 the statistic, the reconstruction kernel puts all its mass on `{x | T x = t}`: the regenerated
@@ -100,6 +118,22 @@ theorem hasSufficientKernel_fiber [StandardBorelSpace S] (P : Θ → Measure �
     -- USER-INPUT: the θ-free disintegration of the graph law; classical sufficiency input
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q) (θ : Θ) :
     ∀ᵐ t ∂(statLaw P T θ), Q t {x | T x = t} = 1 := by
-  sorry
+  haveI := isProbabilityMeasure_statLaw P hT θ
+  letI := upgradeStandardBorel S
+  have hG : MeasurableSet {p : S × 𝓧 | T p.2 = p.1} :=
+    measurableSet_eq_fun (hT.comp measurable_snd) measurable_fst
+  have hone : ∫⁻ t, Q t {x | T x = t} ∂(statLaw P T θ) = 1 := by
+    have h1 : (statLaw P T θ ⊗ₘ Q) {p : S × 𝓧 | T p.2 = p.1} = 1 := by
+      rw [← hgraph θ, Measure.map_apply (hT.prodMk measurable_id') hG]
+      have hpre : (fun x => (T x, x)) ⁻¹' {p : S × 𝓧 | T p.2 = p.1} = Set.univ := by
+        ext x; simp
+      rw [hpre, measure_univ]
+    rw [Measure.compProd_apply hG] at h1
+    exact h1
+  have hle : (fun t => Q t {x | T x = t}) ≤ᵐ[statLaw P T θ] fun _ => 1 :=
+    Filter.Eventually.of_forall fun t => prob_le_one
+  exact ae_eq_of_ae_le_of_lintegral_le hle (by rw [hone]; exact ENNReal.one_ne_top)
+    aemeasurable_const
+    (le_of_eq (by rw [lintegral_const, measure_univ, mul_one, hone]))
 
 end StatLean.PointEstimation

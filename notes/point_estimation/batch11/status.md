@@ -80,7 +80,11 @@ See outline.md for the 73-item book↔Lean dictionary (Lean names filled as stub
   elaborate to `EuclideanSpace`. Must be built with `WithLp.toLp 2 (fun i => …)` — the idiom the
   rest of the repo already uses (`ParametricFamily/SubmodelDQM.lean:52`). Everything else green.
 - ExponentialFamily + Completeness + InformationInequality (post-fix): **GREEN**, 2840 jobs, 0 errors.
-- Equivariance + LinearModel: gate running.
+- Equivariance + LinearModel: **GREEN** after two fixes (open scoped NNReal for the `ℝ≥0`
+  notation; annotate the competitor binder `δ'` so `IsCanonicalMRE`'s implicit dimensions infer).
+- **FULL-AREA GATE GREEN (2026-07-18): `lake build StatLean.PointEstimation` — 0 errors,
+  175 sorries, `Build completed successfully`.** Area umbrella `StatLean/PointEstimation.lean`
+  created (laptop-only surface); not yet imported by `StatLean.lean` (that happens at merge).
 
 ### Statement decisions & honest corrections made during drafting
 
@@ -123,3 +127,83 @@ Scope/route decisions:
 - 2026-07-15: design frozen (19 items ≈7 waves, ~42 files); pe/batch11 cut off main 31c61ed, pushed to cannon; ledgers committed.
 - 2026-07-18: weekly-quota interruption killed 13 of 14 draft agents; scratchpad worktrees lost (committed work intact). Worktrees recreated, cluster re-authed, full fan-out relaunched.
 - 2026-07-18: stub phase COMPLETE — 57 files / 176 stubs committed; ForMathlib and ExpFamily/Completeness/InfoIneq gates green; scoreVec contract bug found by gate + agent and fixed.
+
+## Proof-closure phase (started 2026-07-18)
+
+Rolling 3-lane cluster fan-out (`lean-fasrc-fan-out`, detached tmux + srun). Per-item prompts
+under `.claude/prompts/pe-*.md`. Each item: closed on its own `pe/<topic>` branch → harvested →
+touch-set audit → merged `--no-ff` into `pe/batch11` → integration gate.
+
+### Wave 1 — COMPLETE, all three items 0-sorry and axiom-clean
+
+| item | files | sorries closed | axioms | notes |
+|---|---|---|---|---|
+| `pe/mgf-uniqueness` | ForMathlib/MGFUniqueness | 4 → 0 | clean | Laplace-transform uniqueness. Route: tilt at an interior point so `0 ∈ interior (integrableExpSet)`, local `Set.EqOn` mgf identity theorem seeded via `interior_maximal` (Mathlib's needs *global* equality), strip preconnectedness from `Convex.inter`/`.linear_preimage Complex.reLm`, restrict to the imaginary axis (`complexMGF_id_mul_I`) → `Measure.ext_of_charFun`, untilt with `withDensity_inv_same`. |
+| `pe/sufficiency-risk` | Sufficiency/{Basic,RiskEquality,BayesianBridge} | 9 → 0 | clean | Thm 6.1 came out as pure kernel-composition associativity, exactly as the graph/`⊗ₘ` design predicted — no conditional expectation anywhere. `hasSufficientKernel_fiber` needed `upgradeStandardBorel` for `MeasurableEq S`. |
+| `pe/expfam-core` | ExponentialFamily/{Basic,MGF,NaturalStatistic} | 17 → 0 | clean | `natSet_convex` via weighted AM–GM (`Real.geom_mean_le_arith_mean2_weighted`) + `Integrable.mono'`. The `E.base ≠ 0` nondegeneracy hypotheses were **used, not circumvented**. Imports `AsymptoticStatistics.ForMathlib.PiWithDensity` — sanctioned (ForMathlib layer, DAG-forward). |
+
+**No false statements found; no escape-hatch sorries used.** PE sorry count 175 → 146.
+Integration gate after the first merge: 0 errors, `Build completed successfully`.
+
+### Process findings
+
+- **`CLAUDE.md` is gitignored, so it does not exist in cluster worktrees.** Prompts that said
+  "read the repo `CLAUDE.md` first" were pointing at a missing file. All prompts now inline the
+  rules they need. (Same applies to `notes/`, `tools/`, `.claude/` — use `git add -f`.)
+- Do **not** pre-create a cluster worktree with `lean-fasrc-worktree-add` for a branch you intend
+  to hand to `lean-fasrc-fan-out`: the wrapper creates its own and dies with
+  "already used by worktree". Let fan-out own the lifecycle.
+- Proof branches cut before an earlier merge land as normal merges; verify the earlier closure
+  survived (`grep -c sorry`) rather than assuming.
+
+### Waves 2–5 — merged results (PE sorry count 175 → 74, 58% closed)
+
+| item | outcome | notes |
+|---|---|---|
+| `pe/completeness-expfam` | **0 sorry, axiom-clean** | Thm 6.22 + s-dim Laplace uniqueness. Multivariate case done by a **Cramér–Wold reduction reusing the closed 1-D brick as a black box** — the compositional payoff of the ForMathlib layering. |
+| `pe/umvu-core` | **0 sorry, axiom-clean** | `isUMVU_unique` via the **parallelogram identity** (Mathlib has no packaged covariance Cauchy–Schwarz). Rao–Blackwell exactly as designed: plain per-fiber Jensen; **fiber integrability derived** via `Measure.integrable_compProd_iff`, no added hypotheses. |
+| `pe/hs-bricks` | **0 sorry, axiom-clean** | Halmos–Savage by maximizing `ν₀(⋃ supp)` over countable subfamilies (`exists_seq_tendsto_sSup`, sequences merged with `Nat.unpair`), maximality forcing domination. |
+| `pe/equivariance-general` | 4/5 files 0-sorry | Thm 2.7 + argmin/convex/IBP bricks closed. **Thm 2.17's analytic core lifted to a named `private` debt** with a precise TODO (exponent-progression argument); the two public theorems are closed on top of it. |
+| `pe/cramer-rao` | 3/4 files 0-sorry | **Cramér–Rao itself closed**, plus score basics and Fisher additivity. One named debt: `diff_under_integral_core`, the dominated-convergence step of family-side differentiation under the integral — every downstream theorem is a genuine reduction to it. |
+| `pe/sufficiency-factorization` | 3/4 files 0-sorry | Halmos–Savage criterion, **Fisher–Neyman factorization (both directions)**, minimal sufficiency via the likelihood-ratio vector — all axiom-clean. Remaining sorry is exactly the **pre-agreed TSH 2.6.1 general deferral**; its comment records that no result in the area consumes it (all users route through the dominated version, which is closed). |
+| `pe/location` | 3/4 files 0-sorry | Location structure (Thms 1.4/1.8, Lems 1.6/1.7), the shared **conditional-risk engine**, Thm 1.10, Cor 1.12, and all risk-unbiasedness closed. Cor 1.11 (convex existence) and Cor 1.14 (bounded loss) cores remain named debts — exactly the renegotiation point the design predicted. |
+
+| `pe/basu-lehmann` | 1/3 files 0-sorry | **Basu (Thm 6.21) closed axiom-clean.** Lehmann–Scheffé uniqueness (Lem 1.10) and the convex-risk form (Thm 1.11b) closed. Two **contract-level** gaps surfaced — see below. |
+
+**No false statements found in any item to date.** Every debt is a named, documented `private`
+lemma with a TODO, never a weakened public statement.
+
+## OPEN DESIGN QUESTION — two gaps in contracts I froze (needs a scope decision)
+
+These are not proof difficulties. They are places where the frozen `Defs` are too weak (or the
+ambient structure too poor) for the intended route, found and documented by the proof session
+rather than worked around.
+
+**(1) `IsUMVU`'s competitor class is not measurable enough for kernel Rao–Blackwell.**
+The frozen `IsUMVU` quantifies minimality over competitors carrying only `MemEstL2 P δ'`, i.e. a
+*per-parameter* `AEStronglyMeasurable` representative. The kernel route needs one **global
+measurable** representative (the kernel average `t ↦ ∫ δ' dQ_t` and the completeness test
+function must be genuinely measurable with identically zero mean). Per-parameter representatives
+do **not** glue into a global one — the session gives **Dirac families as a counterexample** —
+and the signature supplies no dominating measure.
+Options: **(a)** add `Measurable δ'` to the competitor condition in `IsUMVU`/`IsLMVU` (faithful to
+the classical convention that an *estimator* is a measurable function, but formally a weakening,
+and it forces a re-gate of everything that consumes `IsUMVU`); **(b)** build a `condExp`-based
+Rao–Blackwell layer, which needs only integrability and avoids the kernel entirely; **(c)** keep
+the strong statement and carry the gap as a standing named debt.
+Currently **(c)** — statement intact, `variance_rbEstimator_le_of_complete` left as a documented
+`private` debt. Recommend **(b)** as the principled fix; it is additive (new layer, no re-gate).
+
+**(2) Cor 1.12 (`isUMVU_of_fullRank_expFamily`) lacks the structure to build its sufficiency
+kernel.** It consumes `HasSufficientKernel P E.stat`; for a general reference measure that kernel
+comes from `hasSufficientKernel_of_isSufficient`, which needs `[StandardBorelSpace 𝓧]` (and
+`[Nonempty 𝓧]`) — neither is in the frozen signature, and an exponential family supplies no
+explicit reconstruction kernel without such structure. Completeness itself transfers cleanly; the
+sufficiency kernel is the only missing input.
+Fix: add the two instance binders to that corollary's signature (standard throughout this
+literature — every sufficiency theorem in the area already carries them). Cheap and local.
+
+### In flight
+
+`pe/expfam-info` (smoothness/Stein + multiparameter information), `pe/linear-model` (all five
+LinearModel files).

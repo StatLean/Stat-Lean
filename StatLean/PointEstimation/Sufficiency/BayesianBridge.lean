@@ -67,7 +67,16 @@ theorem bayesian_isSufficient_of_hasSufficientKernel (K : Kernel Θ 𝓧) [IsMar
     -- USER-INPUT: `T` is sufficient in the regular-conditional (graph) sense
     (h : HasSufficientKernel (⇑K) T) :
     _root_.StatLean.Bayesian.IsSufficient K hT := by
-  sorry
+  obtain ⟨Q, hQ, hgraph⟩ := h
+  haveI := hQ
+  haveI : ∀ θ, IsProbabilityMeasure ((⇑K) θ) := fun θ => inferInstance
+  refine ⟨Q, hQ, ?_⟩
+  ext θ
+  have hsk : StatLean.Bayesian.statKernel K hT θ = statLaw (⇑K) T θ := by
+    unfold StatLean.Bayesian.statKernel
+    rw [Kernel.deterministic_comp_eq_map hT, Kernel.map_apply K hT]
+    rfl
+  rw [Kernel.comp_apply, hsk, statLaw_snd (⇑K) hT hgraph θ]
 
 /-- **From a pointwise factorized likelihood to factorized densities.** A pointwise
 Fisher–Neyman factorization `p(θ, x) = g(θ, T x) · h(x)` implies the almost-everywhere
@@ -77,6 +86,7 @@ theorem isFactorizedDensity_of_isFactorizedLikelihood (p : Θ → 𝓧 → ℝ�
     -- USER-INPUT: the pointwise Fisher–Neyman factorization of the likelihood
     (hfac : _root_.StatLean.Bayesian.IsFactorizedLikelihood p T g h) :
     IsFactorizedDensity p μ T g h := by
-  sorry
+  intro θ
+  exact ae_of_all μ fun x => hfac θ x
 
 end StatLean.PointEstimation

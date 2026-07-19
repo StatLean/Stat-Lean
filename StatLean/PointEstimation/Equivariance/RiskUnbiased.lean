@@ -1,5 +1,6 @@
 import StatLean.PointEstimation.Equivariance.General
 import StatLean.PointEstimation.Equivariance.LocationStructure
+import StatLean.PointEstimation.ForMathlib.ConvexMinimizers
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -87,7 +88,10 @@ theorem IsEquivariant.smul {δ : 𝓧 → D}
     (hcomm : ∀ (g g' : G) (d : D), g • g' • d = g' • g • d)
     (g : G) :
     IsEquivariant (G := G) fun x => g • δ x := by
-  sorry
+  intro h x
+  show g • δ (h • x) = h • g • δ x
+  rw [hδeq h x]
+  exact hcomm g h (δ x)
 
 /-- **A risk-minimizing equivariant estimator is risk-unbiased**, provided the induced
 action on the parameter space is transitive and the action on the decision space is
@@ -112,7 +116,19 @@ theorem isRiskUnbiased_of_equivariant_min [MulAction.IsPretransitive G Θ]
     (hmin : ∀ δ', Measurable δ' → IsEquivariant (G := G) δ' →
       ∀ θ, risk P L δ θ ≤ risk P L δ' θ) :
     IsRiskUnbiased P L δ := by
-  sorry
+  intro θ θ'
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G θ' θ
+  have hδ'meas : Measurable (fun x => g • δ x) := hδ.const_smul g
+  have hδ'eq : IsEquivariant (G := G) (fun x => g • δ x) := hδeq.smul hcomm g
+  have hkey := hmin (fun x => g • δ x) hδ'meas hδ'eq θ
+  have hoff : crossRisk P L δ θ θ' = risk P L (fun x => g • δ x) θ := by
+    unfold crossRisk risk crossRisk
+    refine lintegral_congr fun x => ?_
+    rw [← hg]
+    exact (hL g θ' (δ x)).symm
+  show crossRisk P L δ θ θ ≤ crossRisk P L δ θ θ'
+  rw [hoff]
+  exact hkey
 
 end General
 
@@ -121,6 +137,40 @@ end General
 section Location
 
 variable {n : ℕ}
+
+/-- The conditional mean minimizes mean squared error at the `ℝ≥0∞` level with no
+second-moment hypothesis: outside `L²` both sides are `∞`. (Local copy of the same fact
+used in `LocationMRE`; kept private to respect the file's frozen surface.) -/
+private lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {φ : Ω → ℝ} (hφ : Measurable φ) (w : ℝ) :
+    ∫⁻ x, ENNReal.ofReal ((φ x - ∫ z, φ z ∂μ) ^ 2) ∂μ ≤
+      ∫⁻ x, ENNReal.ofReal ((φ x - w) ^ 2) ∂μ := by
+  set m := ∫ z, φ z ∂μ with hm
+  by_cases hL2 : MemLp φ 2 μ
+  · have hf1 : Integrable (fun x => (φ x - m) ^ 2) μ :=
+      (hL2.sub (memLp_const m)).integrable_sq
+    have hf2 : Integrable (fun x => (φ x - w) ^ 2) μ :=
+      (hL2.sub (memLp_const w)).integrable_sq
+    rw [← ofReal_integral_eq_lintegral_ofReal hf1 (ae_of_all _ fun x => sq_nonneg _),
+        ← ofReal_integral_eq_lintegral_ofReal hf2 (ae_of_all _ fun x => sq_nonneg _)]
+    exact ENNReal.ofReal_le_ofReal (integral_sq_sub_mean_le hL2 w)
+  · have hnotMemLp : ∀ c : ℝ, ¬ MemLp (fun x => φ x - c) 2 μ := by
+      intro c hc
+      have h2 := hc.add (memLp_const c)
+      rw [show (fun x => φ x - c) + (fun _ : Ω => c) = φ from by
+            funext x; simp only [Pi.add_apply]; ring] at h2
+      exact hL2 h2
+    have hinf : ∀ c : ℝ, ∫⁻ x, ENNReal.ofReal ((φ x - c) ^ 2) ∂μ = ⊤ := by
+      intro c
+      by_contra hne
+      have hlt : ∫⁻ x, ENNReal.ofReal ((φ x - c) ^ 2) ∂μ < ⊤ := lt_top_iff_ne_top.mpr hne
+      have hfin : HasFiniteIntegral (fun x => (φ x - c) ^ 2) μ :=
+        (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x => sq_nonneg _)).mpr hlt
+      have hasm : AEStronglyMeasurable (fun x => (φ x - c) ^ 2) μ :=
+        ((hφ.sub_const c).pow_const 2).aestronglyMeasurable
+      exact hnotMemLp c
+        ((memLp_two_iff_integrable_sq (hφ.sub_const c).aestronglyMeasurable).mpr ⟨hasm, hfin⟩)
+    rw [hinf m, hinf w]
 
 /-- **A minimum risk equivariant location estimator is risk-unbiased.** Concretely: no
 translate `δ − a` of the estimator has smaller expected loss at the base parameter.
@@ -133,7 +183,7 @@ theorem isLocRiskUnbiased_of_isLocMRE (f : (Fin n → ℝ) → ℝ) (ρ : ℝ �
     (hδ : IsLocMRE f ρ δ)
     (a : ℝ) :
     locRisk f ρ δ ≤ ∫⁻ x, ENNReal.ofReal (ρ (δ x - a)) ∂(locationBase f) := by
-  sorry
+  exact hδ.2.2 (fun x => δ x - a) (hδ.1.sub_const a) (hδ.2.1.sub_const a)
 
 /-- The same statement in the general vocabulary: a minimum risk equivariant location
 estimator is risk-unbiased for the location model with loss `ρ(d − ξ)`. -/
@@ -145,7 +195,25 @@ theorem isRiskUnbiased_of_isLocMRE (f : (Fin n → ℝ) → ℝ) (ρ : ℝ → �
     -- USER-INPUT: `δ` is a minimum risk equivariant estimator
     (hδ : IsLocMRE f ρ δ) :
     IsRiskUnbiased (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ := by
-  sorry
+  intro ξ ξ'
+  have hmeas := hδ.1
+  have heq := hδ.2.1
+  have hdiag : crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ
+      = locRisk f ρ δ := locRisk_const f ρ δ hρ hmeas heq ξ
+  have hoff : crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ'
+      = ∫⁻ x, ENNReal.ofReal (ρ (δ x - (ξ' - ξ))) ∂(locationBase f) := by
+    show ∫⁻ x, ENNReal.ofReal (ρ (δ x - ξ')) ∂(locationFamily f ξ) = _
+    unfold locationFamily
+    have hg : Measurable (fun x : Fin n → ℝ => ENNReal.ofReal (ρ (δ x - ξ'))) :=
+      ENNReal.measurable_ofReal.comp (hρ.comp (hmeas.sub_const ξ'))
+    have hmap : Measurable (fun x : Fin n → ℝ => x + ξ • (1 : Fin n → ℝ)) := by fun_prop
+    rw [lintegral_map hg hmap]
+    refine lintegral_congr fun x => ?_
+    rw [heq ξ x, show δ x + ξ - ξ' = δ x - (ξ' - ξ) from by ring]
+  show crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ ≤
+      crossRisk (locationFamily f) (fun ξ d => ENNReal.ofReal (ρ (d - ξ))) δ ξ ξ'
+  rw [hdiag, hoff]
+  exact isLocRiskUnbiased_of_isLocMRE f ρ hδ (ξ' - ξ)
 
 /-! ### Squared error: recentring at the bias -/
 
@@ -167,7 +235,14 @@ theorem locEquivariant_sub_bias (f : (Fin n → ℝ) → ℝ)
       (∫ x, (δ x - ∫ y, δ y ∂(locationBase f)) ∂(locationBase f) = 0) ∧
       locRisk f (fun t : ℝ => t ^ 2) (fun x => δ x - ∫ y, δ y ∂(locationBase f)) ≤
         locRisk f (fun t : ℝ => t ^ 2) δ := by
-  sorry
+  set b := ∫ y, δ y ∂(locationBase f) with hb
+  refine ⟨heq.sub_const b, ?_, ?_⟩
+  · have hreal1 : (locationBase f).real Set.univ = 1 := by
+      simp [Measure.real, measure_univ]
+    rw [integral_sub hint (integrable_const b), integral_const, hreal1, one_smul, hb, sub_self]
+  · have hmin0 := lintegral_ofReal_sq_min (μ := locationBase f) (φ := δ) hδ 0
+    simp only [sub_zero] at hmin0
+    exact hmin0
 
 /-- **A finite-risk minimum risk equivariant estimator is unbiased under squared error.**
 
@@ -185,7 +260,37 @@ theorem integral_eq_zero_of_isLocMRE_sq (f : (Fin n → ℝ) → ℝ)
     -- USER-INPUT: the estimator has finite risk; replaces the classical uniqueness
     (hfin : locRisk f (fun t : ℝ => t ^ 2) δ ≠ ∞) :
     ∫ x, δ x ∂(locationBase f) = 0 := by
-  sorry
+  have hmeas := hMRE.1
+  have heq := hMRE.2.1
+  set b := ∫ x, δ x ∂(locationBase f) with hb
+  have hL2 : MemLp δ 2 (locationBase f) := by
+    refine (memLp_two_iff_integrable_sq hmeas.aestronglyMeasurable).mpr ?_
+    refine ⟨(hmeas.pow_const 2).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x => sq_nonneg _)]
+    exact lt_top_iff_ne_top.mpr hfin
+  obtain ⟨heq', _, hle⟩ := locEquivariant_sub_bias f hmeas heq hint
+  have hge := hMRE.2.2 (fun x => δ x - b) (hmeas.sub_const b) heq'
+  have hrisk_eq : locRisk f (fun t : ℝ => t ^ 2) (fun x => δ x - b)
+      = locRisk f (fun t : ℝ => t ^ 2) δ := le_antisymm hle hge
+  have hInt_d : Integrable (fun x => (δ x) ^ 2) (locationBase f) := hL2.integrable_sq
+  have hInt_db : Integrable (fun x => (δ x - b) ^ 2) (locationBase f) :=
+    (hL2.sub (memLp_const b)).integrable_sq
+  have hr_d : locRisk f (fun t : ℝ => t ^ 2) δ
+      = ENNReal.ofReal (∫ x, (δ x) ^ 2 ∂(locationBase f)) :=
+    (ofReal_integral_eq_lintegral_ofReal hInt_d (ae_of_all _ fun x => sq_nonneg _)).symm
+  have hr_db : locRisk f (fun t : ℝ => t ^ 2) (fun x => δ x - b)
+      = ENNReal.ofReal (∫ x, (δ x - b) ^ 2 ∂(locationBase f)) :=
+    (ofReal_integral_eq_lintegral_ofReal hInt_db (ae_of_all _ fun x => sq_nonneg _)).symm
+  rw [hr_db, hr_d] at hrisk_eq
+  have hreal : ∫ x, (δ x - b) ^ 2 ∂(locationBase f) = ∫ x, (δ x) ^ 2 ∂(locationBase f) :=
+    (ENNReal.ofReal_eq_ofReal_iff (integral_nonneg fun x => sq_nonneg _)
+      (integral_nonneg fun x => sq_nonneg _)).mp hrisk_eq
+  have hbv := integral_sq_sub_eq_variance_add_sq hL2 0
+  simp only [sub_zero] at hbv
+  rw [← hb] at hbv
+  rw [hreal] at hbv
+  have hbsq : b ^ 2 = 0 := by linarith
+  exact (pow_eq_zero_iff (by norm_num : 2 ≠ 0)).mp hbsq
 
 end Location
 

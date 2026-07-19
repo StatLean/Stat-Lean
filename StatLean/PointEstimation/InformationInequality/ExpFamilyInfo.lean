@@ -1,8 +1,10 @@
 import StatLean.PointEstimation.InformationInequality.Basic
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.MGF
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.Probability.Moments.Covariance
+import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!
 # The Fisher information of an exponential family
@@ -94,7 +96,47 @@ theorem fisherInfo_expFamily (E : ExpFamily 𝓧 ℝ) (η : ℝ)
     -- the only regularity input of the statement)
     (hη : η ∈ interior E.natSet) :
     fisherInfo E.toParametricFamily E.base η = deriv (deriv E.logPartition) η := by
-  sorry
+  have hηnat : η ∈ E.natSet := interior_subset hη
+  have hmem : η ∈ interior (integrableExpSet E.stat E.base) := by
+    rw [← E.natSet_eq_integrableExpSet]; exact hη
+  -- inner product on ℝ is multiplication
+  have hinner : ∀ a b : ℝ, ⟪a, b⟫_ℝ = a * b := fun a b => by rw [← real_inner_comm]; rfl
+  -- the log-partition function is differentiable at `η`
+  have hA : HasDerivAt E.logPartition (deriv E.logPartition η) η := by
+    rw [E.logPartition_eq_cgf]
+    exact (analyticAt_cgf hmem).differentiableAt.hasDerivAt
+  -- derivative of the density in the parameter
+  have hden_deriv : ∀ x, HasDerivAt (fun t => E.toParametricFamily.density t x)
+      (E.toParametricFamily.density η x * (E.stat x - deriv E.logPartition η)) η := by
+    intro x
+    have hfun : (fun t : ℝ => ⟪t, E.stat x⟫_ℝ) = fun t => t * E.stat x :=
+      funext fun t => hinner t (E.stat x)
+    have h1 : HasDerivAt (fun t : ℝ => ⟪t, E.stat x⟫_ℝ) (E.stat x) η := by
+      rw [hfun]; simpa using (hasDerivAt_id η).mul_const (E.stat x)
+    have hlin : HasDerivAt (fun t : ℝ => ⟪t, E.stat x⟫_ℝ - E.logPartition t)
+        (E.stat x - deriv E.logPartition η) η := h1.sub hA
+    exact hlin.exp
+  -- the score equals the centered natural statistic `T − A'(η)`
+  have hscore_id : ∀ x, score E.toParametricFamily η x = E.stat x - deriv E.logPartition η := by
+    intro x
+    have hpos : (0 : ℝ) < E.toParametricFamily.density η x := Real.exp_pos _
+    rw [score, (hden_deriv x).deriv, mul_comm, mul_div_assoc, div_self hpos.ne', mul_one]
+  have hPeq : E.toParametricFamily.toMeasure E.base η = E.P η := by
+    rw [E.P_eq_withDensity hηnat]; rfl
+  rw [fisherInfo]
+  calc ∫ x, score E.toParametricFamily η x ^ 2 * E.toParametricFamily.density η x ∂E.base
+      = ∫ x, (E.stat x - deriv E.logPartition η) ^ 2 * E.toParametricFamily.density η x ∂E.base
+        := by
+        refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+        simp only [hscore_id]
+    _ = ∫ x, (E.stat x - deriv E.logPartition η) ^ 2 ∂(E.toParametricFamily.toMeasure E.base η) :=
+        (integral_toMeasure_eq E.toParametricFamily E.base η
+          (fun x => (E.stat x - deriv E.logPartition η) ^ 2)).symm
+    _ = ∫ x, (E.stat x - deriv E.logPartition η) ^ 2 ∂(E.P η) := by rw [hPeq]
+    _ = variance E.stat (E.P η) := by
+        rw [variance_eq_integral E.stat_meas.aemeasurable, E.integral_stat_P hη]
+    _ = iteratedDeriv 2 E.logPartition η := E.variance_stat_P hη
+    _ = deriv (deriv E.logPartition) η := by rw [iteratedDeriv_succ, iteratedDeriv_one]
 
 /-- **The information matrix of a canonical exponential family is the covariance matrix of
 its natural statistic**: `I(η)_{ij} = cov_η(T_i, T_j)`, equivalently the Hessian of the
@@ -108,6 +150,13 @@ theorem infoMatrix_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpace ℝ (
     (hη : η ∈ interior E.natSet) (i j : Fin s) :
     infoMatrix E.toParametricFamily E.base η i j
       = covariance (fun x => E.stat x i) (fun x => E.stat x j) (E.P η) := by
+  -- TODO: sanctioned per-file escape. The coordinate score is `scoreVecᵢ = Tᵢ − ∂ᵢA(η)`,
+  -- where the directional derivative `∂ᵢA(η) = deriv (fun t => A(η + t•eᵢ)) 0` equals the mean
+  -- `E_η[Tᵢ]` by the directional-MGF identity: along the line `η + t•eᵢ`, `integral_exp_inner_P`
+  -- gives `mgf Tᵢ (P η) t = exp(A(η + t•eᵢ) − A η)`, so `A(η + t•eᵢ) = cgf Tᵢ (P η) t + A η` on a
+  -- neighborhood of `0` (needs `0 ∈ interior (integrableExpSet Tᵢ (P η))`, from `η ∈ interior
+  -- natSet`), and `deriv_cgf_zero` gives `∂ᵢA(η) = E_η[Tᵢ]`. With the coordinate scores centered
+  -- at their means, `infoMatrixᵢⱼ = ∫ scoreVecᵢ·scoreVecⱼ dP = cov_η(Tᵢ, Tⱼ)`.
   sorry
 
 end StatLean.PointEstimation

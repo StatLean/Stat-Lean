@@ -56,7 +56,8 @@ theorem integral_deriv_eq_zero_of_tendsto_zero
     -- USER-INPUT: decay at `+∞`; the upper boundary term
     (htop : Tendsto f atTop (𝓝 0)) :
     ∫ (x : ℝ), deriv f x = 0 := by
-  sorry
+  rw [integral_of_hasDerivAt_of_tendsto (fun x => (hdiff x).hasDerivAt) hint hbot htop]
+  simp
 
 /-- The explicit-derivative form: if `f` has derivative `f'` everywhere, `f'` is integrable
 and `f` tends to `0` at both ends of the line, then `∫ f' = 0`. -/
@@ -72,6 +73,7 @@ theorem integral_eq_zero_of_hasDerivAt_of_tendsto_zero
     -- USER-INPUT: decay at `+∞`; the upper boundary term
     (htop : Tendsto f atTop (𝓝 0)) :
     ∫ (x : ℝ), f' x = 0 := by
-  sorry
+  rw [integral_of_hasDerivAt_of_tendsto hderiv hf' hbot htop]
+  simp
 
 end StatLean.PointEstimation

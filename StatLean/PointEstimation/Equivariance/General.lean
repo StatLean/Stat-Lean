@@ -71,7 +71,11 @@ theorem risk_smul {P : Θ → Measure 𝓧} {L : Θ → D → ℝ≥0∞} {δ : 
     (hδeq : IsEquivariant (G := G) δ)
     (g : G) (θ : Θ) :
     risk P L δ (g • θ) = risk P L δ θ := by
-  sorry
+  unfold risk crossRisk
+  have hgm : Measurable (fun x => L (g • θ) (δ x)) := (hLmeas (g • θ)).comp hδ
+  rw [← hP g θ, lintegral_map hgm (measurable_const_smul g)]
+  refine lintegral_congr fun x => ?_
+  rw [hδeq g x, hL g θ (δ x)]
 
 /-- **Constant risk under a transitive induced action.** If the induced action on the
 parameter space is transitive, the risk function of an equivariant estimator is a
@@ -92,7 +96,8 @@ theorem risk_const_of_pretransitive [MulAction.IsPretransitive G Θ]
     (hδeq : IsEquivariant (G := G) δ)
     (θ θ' : Θ) :
     risk P L δ θ = risk P L δ θ' := by
-  sorry
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G θ θ'
+  exact (risk_smul hP hL hLmeas hδ hδeq g θ).symm
 
 /-- **Constant risk on orbits.** Without transitivity the risk of an equivariant
 estimator is still constant on each orbit of the induced action on the parameter
@@ -112,7 +117,8 @@ theorem risk_const_on_orbit {P : Θ → Measure 𝓧} {L : Θ → D → ℝ≥0�
     -- USER-INPUT: the two parameter points lie on a common orbit
     (hθ : θ' ∈ MulAction.orbit G θ) :
     risk P L δ θ' = risk P L δ θ := by
-  sorry
+  obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.mp hθ
+  exact risk_smul hP hL hLmeas hδ hδeq g θ
 
 end General
 

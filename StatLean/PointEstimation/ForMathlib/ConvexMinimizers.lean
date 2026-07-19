@@ -1,4 +1,5 @@
 import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Continuous
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
@@ -74,7 +75,37 @@ theorem lintegral_convex_even_min_at_zero
     -- USER-INPUT: the competing shift
     (c : ℝ) :
     ∫⁻ x, ρ x ∂μ ≤ ∫⁻ x, ρ (x - c) ∂μ := by
-  sorry
+  set h : ℝ≥0 := 2⁻¹ with hh
+  have hhalf : h + h = 1 := by rw [hh]; norm_num
+  have key : ∀ x : ℝ, ρ x ≤ (h : ℝ≥0∞) * ρ (x - c) + (h : ℝ≥0∞) * ρ (x + c) := by
+    intro x
+    have hconv := hρ_conv.2 (Set.mem_univ (x - c)) (Set.mem_univ (x + c))
+      (by positivity : (0 : ℝ≥0) ≤ h) (by positivity : (0 : ℝ≥0) ≤ h) hhalf
+    rw [ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul] at hconv
+    have hx : h • (x - c) + h • (x + c) = x := by
+      rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul, hh]
+      push_cast; ring
+    rwa [hx] at hconv
+  have hmc : Measurable (fun x : ℝ => ρ (x - c)) := hρ_meas.comp (measurable_id.sub_const c)
+  have hpc : Measurable (fun x : ℝ => ρ (x + c)) := hρ_meas.comp (measurable_id.add_const c)
+  have hsymm : ∫⁻ x, ρ (x + c) ∂μ = ∫⁻ x, ρ (x - c) ∂μ := by
+    conv_lhs => rw [← hμ_symm]
+    rw [lintegral_map hpc measurable_neg]
+    refine lintegral_congr fun x => ?_
+    rw [show -x + c = -(x - c) by ring, hρ_even]
+  calc
+    ∫⁻ x, ρ x ∂μ
+        ≤ ∫⁻ x, ((h : ℝ≥0∞) * ρ (x - c) + (h : ℝ≥0∞) * ρ (x + c)) ∂μ :=
+          lintegral_mono key
+    _ = ∫⁻ x, (h : ℝ≥0∞) * ρ (x - c) ∂μ + ∫⁻ x, (h : ℝ≥0∞) * ρ (x + c) ∂μ :=
+          lintegral_add_left (hmc.const_mul _) _
+    _ = (h : ℝ≥0∞) * ∫⁻ x, ρ (x - c) ∂μ + (h : ℝ≥0∞) * ∫⁻ x, ρ (x + c) ∂μ := by
+          rw [lintegral_const_mul _ hmc, lintegral_const_mul _ hpc]
+    _ = (h : ℝ≥0∞) * ∫⁻ x, ρ (x - c) ∂μ + (h : ℝ≥0∞) * ∫⁻ x, ρ (x - c) ∂μ := by
+          rw [hsymm]
+    _ = ((h : ℝ≥0∞) + (h : ℝ≥0∞)) * ∫⁻ x, ρ (x - c) ∂μ := by rw [add_mul]
+    _ = ∫⁻ x, ρ (x - c) ∂μ := by
+          rw [← ENNReal.coe_add, hhalf, ENNReal.coe_one, one_mul]
 
 /-- A convex coercive function on the line attains its minimum. -/
 theorem exists_min_of_convexOn_of_coercive
@@ -84,8 +115,8 @@ theorem exists_min_of_convexOn_of_coercive
     (hg : ConvexOn ℝ Set.univ g)
     -- USER-INPUT: coercivity; compactness of a nontrivial sublevel set
     (hcoer : Tendsto g (cocompact ℝ) atTop) :
-    ∃ v : ℝ, ∀ w : ℝ, g v ≤ g w := by
-  sorry
+    ∃ v : ℝ, ∀ w : ℝ, g v ≤ g w :=
+  (ConvexOn.locallyLipschitz hg).continuous.exists_forall_le hcoer
 
 /-- A strictly convex function on the line has at most one minimizer. -/
 theorem argmin_unique_of_strictConvexOn
@@ -95,8 +126,9 @@ theorem argmin_unique_of_strictConvexOn
     (hg : StrictConvexOn ℝ Set.univ g)
     -- USER-INPUT: two points, each minimizing `g`
     {v w : ℝ} (hv : ∀ u : ℝ, g v ≤ g u) (hw : ∀ u : ℝ, g w ≤ g u) :
-    v = w := by
-  sorry
+    v = w :=
+  hg.eq_of_isMinOn (isMinOn_iff.mpr fun u _ => hv u) (isMinOn_iff.mpr fun u _ => hw u)
+    (Set.mem_univ v) (Set.mem_univ w)
 
 /-- **Bias–variance identity.** `E (X − c)² = E (X − E X)² + (E X − c)²`. -/
 theorem integral_sq_sub_eq_variance_add_sq {Ω : Type*} [MeasurableSpace Ω]
@@ -112,7 +144,27 @@ theorem integral_sq_sub_eq_variance_add_sq {Ω : Type*} [MeasurableSpace Ω]
     (c : ℝ) :
     ∫ ω, (X ω - c) ^ 2 ∂μ
       = (∫ ω, (X ω - ∫ ω', X ω' ∂μ) ^ 2 ∂μ) + ((∫ ω', X ω' ∂μ) - c) ^ 2 := by
-  sorry
+  set m := ∫ ω, X ω ∂μ with hm
+  have hXint : Integrable X μ := hX.integrable (by norm_num)
+  have hmemf : MemLp (fun ω => X ω - m) 2 μ := hX.sub (memLp_const m)
+  have hf2 : Integrable (fun ω => (X ω - m) ^ 2) μ := hmemf.integrable_sq
+  have hfint : Integrable (fun ω => X ω - m) μ := hmemf.integrable (by norm_num)
+  have hBint : Integrable (fun ω => 2 * (m - c) * (X ω - m)) μ := hfint.const_mul _
+  have hAB : Integrable (fun ω => (X ω - m) ^ 2 + 2 * (m - c) * (X ω - m)) μ := hf2.add hBint
+  have hexp : ∀ ω, (X ω - c) ^ 2
+      = (X ω - m) ^ 2 + 2 * (m - c) * (X ω - m) + (m - c) ^ 2 := fun ω => by ring
+  have hfmean : ∫ ω, (X ω - m) ∂μ = 0 := by
+    rw [integral_sub hXint (integrable_const m), integral_const]
+    simp [hm]
+  calc
+    ∫ ω, (X ω - c) ^ 2 ∂μ
+        = ∫ ω, ((X ω - m) ^ 2 + 2 * (m - c) * (X ω - m) + (m - c) ^ 2) ∂μ := by
+          simp_rw [hexp]
+    _ = ∫ ω, (X ω - m) ^ 2 ∂μ + ∫ ω, 2 * (m - c) * (X ω - m) ∂μ
+          + ∫ ω, (m - c) ^ 2 ∂μ := by
+          rw [integral_add hAB (integrable_const _), integral_add hf2 hBint]
+    _ = ∫ ω, (X ω - m) ^ 2 ∂μ + (m - c) ^ 2 := by
+          rw [integral_const_mul, hfmean, integral_const]; simp
 
 /-- **The mean minimizes mean squared error.** -/
 theorem integral_sq_sub_mean_le {Ω : Type*} [MeasurableSpace Ω]
@@ -127,6 +179,7 @@ theorem integral_sq_sub_mean_le {Ω : Type*} [MeasurableSpace Ω]
     -- USER-INPUT: the competing constant
     (c : ℝ) :
     ∫ ω, (X ω - ∫ ω', X ω' ∂μ) ^ 2 ∂μ ≤ ∫ ω, (X ω - c) ^ 2 ∂μ := by
-  sorry
+  rw [integral_sq_sub_eq_variance_add_sq hX c]
+  exact le_add_of_nonneg_right (sq_nonneg _)
 
 end StatLean.PointEstimation

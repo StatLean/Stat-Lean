@@ -1,6 +1,11 @@
-import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Basic
+import StatLean.PointEstimation.ForMathlib.IntegrationByPartsReal
 import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Probability.Notation
 
 /-!
@@ -86,7 +91,102 @@ theorem stein_identity (E : ExpFamily ℝ ℝ) (densityH g : ℝ → ℝ) (η : 
     (hBot : Tendsto (fun x => g x * Real.exp ⟪η, E.stat x⟫_ℝ * densityH x) atBot (𝓝 0)) :
     ∫ x, (deriv densityH x / densityH x + η * deriv E.stat x) * g x ∂(E.P η)
       = -∫ x, deriv g x ∂(E.P η) := by
-  sorry
+  -- inner product on ℝ is multiplication
+  have hinner : ∀ a b : ℝ, ⟪a, b⟫_ℝ = a * b := fun a b => by rw [← real_inner_comm]; rfl
+  have hHmeas : Measurable densityH := hHdiff.continuous.measurable
+  have hexpmeas : Measurable
+      (fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) :=
+    ((((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
+      measurable_const).exp).ennreal_ofReal
+  -- the member measure as a Lebesgue density
+  have hPwd : E.P η = volume.withDensity (fun x => ENNReal.ofReal (densityH x)
+      * ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) := by
+    rw [E.P_eq_withDensity hη, hbase, ← withDensity_mul volume hHmeas.ennreal_ofReal hexpmeas]
+    rfl
+  have hDmeas : Measurable (fun x => ENNReal.ofReal (densityH x)
+      * ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) :=
+    hHmeas.ennreal_ofReal.mul hexpmeas
+  have hDlt : ∀ᵐ x ∂(volume : Measure ℝ), (ENNReal.ofReal (densityH x)
+      * ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) < ⊤ :=
+    Filter.Eventually.of_forall fun _ =>
+      ENNReal.mul_lt_top ENNReal.ofReal_lt_top ENNReal.ofReal_lt_top
+  -- conversion of a `P_η`-integral into a Lebesgue integral against the weight
+  have hconv : ∀ φ : ℝ → ℝ, ∫ x, φ x ∂(E.P η)
+      = ∫ x, densityH x * Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η) * φ x ∂volume := by
+    intro φ
+    rw [hPwd, integral_withDensity_eq_integral_toReal_smul hDmeas hDlt]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hH0 x),
+      ENNReal.toReal_ofReal (Real.exp_nonneg _), smul_eq_mul]
+  -- factor out the constant `exp(-A(η))`
+  have hpull : ∀ φ : ℝ → ℝ,
+      ∫ x, densityH x * Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η) * φ x ∂volume
+      = Real.exp (-E.logPartition η)
+        * ∫ x, densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * φ x ∂volume := by
+    intro φ
+    rw [← integral_const_mul (Real.exp (-E.logPartition η))]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [Real.exp_sub, Real.exp_neg]; ring
+  -- integrability of the weighted integrands against Lebesgue measure
+  have hDtoReal : ∀ x, (ENNReal.ofReal (densityH x)
+      * ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))).toReal
+      = densityH x * Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η) := fun x => by
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (hH0 x),
+      ENNReal.toReal_ofReal (Real.exp_nonneg _)]
+  have hweight : ∀ φ : ℝ → ℝ, Integrable φ (E.P η) →
+      Integrable (fun x => densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * φ x) volume := by
+    intro φ hφ
+    have hiff := (integrable_withDensity_iff hDmeas hDlt).1 (hPwd ▸ hφ)
+    have hc := hiff.const_mul (Real.exp (E.logPartition η))
+    refine hc.congr (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [hDtoReal x, Real.exp_sub]; field_simp [Real.exp_ne_zero]
+  have hGL : Integrable (fun x => densityH x * Real.exp ⟪η, E.stat x⟫_ℝ
+      * ((deriv densityH x / densityH x + η * deriv E.stat x) * g x)) volume := hweight _ hscore
+  have hGR : Integrable (fun x => densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * deriv g x) volume :=
+    hweight _ hg'
+  -- the anti-derivative and its derivative (the summed integrand)
+  set G : ℝ → ℝ := fun x => g x * Real.exp ⟪η, E.stat x⟫_ℝ * densityH x with hG
+  set S : ℝ → ℝ := fun x =>
+    densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * ((deriv densityH x / densityH x
+        + η * deriv E.stat x) * g x)
+    + densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * deriv g x with hSdef
+  have hderivG : ∀ x, HasDerivAt G (S x) x := by
+    intro x
+    have hu : HasDerivAt g (deriv g x) x := (hgdiff x).hasDerivAt
+    have hw : HasDerivAt densityH (deriv densityH x) x := (hHdiff x).hasDerivAt
+    have hv : HasDerivAt (fun y => Real.exp ⟪η, E.stat y⟫_ℝ)
+        (Real.exp ⟪η, E.stat x⟫_ℝ * (η * deriv E.stat x)) x := by
+      have := (((hTdiff x).hasDerivAt.const_mul η).exp)
+      simpa only [hinner] using this
+    have hGx := (hu.mul hv).mul hw
+    convert hGx using 1
+    rcases eq_or_ne (densityH x) 0 with hx | hx
+    · have hmin : deriv densityH x = 0 := by
+        have hlm : IsLocalMin densityH x :=
+          Filter.Eventually.of_forall fun y => by rw [hx]; exact hH0 y
+        exact hlm.deriv_eq_zero
+      simp only [hSdef, Pi.mul_apply, hx, hmin]; ring
+    · simp only [hSdef, Pi.mul_apply]; field_simp; ring
+  -- `S = G'` integrates to zero on the line
+  have hboundary : ∫ x, S x = 0 :=
+    integral_eq_zero_of_hasDerivAt_of_tendsto_zero hderivG (hGL.add hGR) hBot hTop
+  have hsum : (∫ x, densityH x * Real.exp ⟪η, E.stat x⟫_ℝ
+        * ((deriv densityH x / densityH x + η * deriv E.stat x) * g x) ∂volume)
+      + ∫ x, densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * deriv g x ∂volume = 0 := by
+    rw [← integral_add hGL hGR]; exact hboundary
+  -- assemble
+  have hL : ∫ x, (deriv densityH x / densityH x + η * deriv E.stat x) * g x ∂(E.P η)
+      = Real.exp (-E.logPartition η) * ∫ x, densityH x * Real.exp ⟪η, E.stat x⟫_ℝ
+          * ((deriv densityH x / densityH x + η * deriv E.stat x) * g x) ∂volume := by
+    rw [hconv, hpull]
+  have hR : ∫ x, deriv g x ∂(E.P η) = Real.exp (-E.logPartition η)
+      * ∫ x, densityH x * Real.exp ⟪η, E.stat x⟫_ℝ * deriv g x ∂volume := by
+    rw [hconv, hpull]
+  rw [hL, hR]
+  linear_combination (Real.exp (-E.logPartition η)) * hsum
 
 end ExpFamily
 
