@@ -154,21 +154,22 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
     {wStar : (Fin m → ℝ) × ℝ → ℝ}
     -- USER-INPUT: the fibrewise minimizer, supplied measurably and positively
     (hwStar : Measurable wStar) (hwpos : ∀ z, 0 < wStar z)
-    -- USER-INPUT: `w*` minimizes the conditional expected loss in almost every fibre
-    (hmin : ∀ᵐ z ∂(P₀.map scaleZ), ∀ w : ℝ, 0 < w →
+    -- USER-INPUT: `w*` minimizes the conditional expected loss in almost every fibre, over
+    -- ALL nonzero `w` — not merely positive ones. The `0 < w` form is unsound: the
+    -- equivariant class is `δ₀ / w` with `w` ranging over the nonzero reals, so a
+    -- positive-only hypothesis never sees the opposite-signed competitors that
+    -- `IsScaleMRE` quantifies over. (Counterexample with the old form, r = 0: δ₀ ≡ 1,
+    -- wStar ≡ 1, γ v = (v−1)²+1 for v > −1 and 0 for v ≤ −1; `hmin` holds tightly yet
+    -- δ' ≡ −2 has strictly smaller risk.) This matches the location case, which quantifies
+    -- over all `w`.
+    (hmin : ∀ᵐ z ∂(P₀.map scaleZ), ∀ w : ℝ, w ≠ 0 →
       ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / wStar z)) ∂(orbitCondKernel P₀ scaleZ z) ≤
         ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / w)) ∂(orbitCondKernel P₀ scaleZ z)) :
     IsScaleMRE P₀ γ r (fun x => δ₀ x / wStar (scaleZ x)) := by
-  -- FALSE AS STATED. `hmin` only constrains the fibrewise minimizer over *positive* `w`
-  -- (the positive multiplicative orbit), but `IsScaleMRE` requires minimality against
-  -- *every* measurable equivariant competitor, including opposite-signed ones that the
-  -- `0 < w →` guard never sees. Counterexample (m arbitrary, r = 0): δ₀ ≡ 1, wStar ≡ 1,
-  -- and `γ v = (v-1)² + 1` for `v > -1`, `γ v = 0` for `v ≤ -1` (measurable, ≥ 0). Then
-  -- every hypothesis holds — `hmin` tightly, since `min_{v>0} γ = γ 1 = 1` is hit at
-  -- `1/wStar = 1` — yet the competitor `δ' ≡ -2` (measurable, `IsScaleEquivariant 0`) has
-  -- `scaleRisk = ofReal (γ (-2)) = 0 < 1 = scaleRisk` of the constructed estimator, so
-  -- minimality `1 ≤ 0` fails. The engine (`lintegral_le_of_condMinimizer`) needs the
-  -- all-`w` hypothesis of the location case; the scale `0 < w →` weakening is unsound.
+  -- Statement corrected: `hmin` now ranges over all nonzero `w`, which is what the engine
+  -- `lintegral_le_of_condMinimizer` consumes and what `IsScaleMRE`'s competitor class
+  -- requires. Route: `ScaleStructure.isScaleEquivariant_iff_div_invariant` represents an
+  -- arbitrary equivariant competitor as `δ₀ / w(scaleZ ·)`; then the engine applies fibrewise.
   sorry
 
 /-- **Existence of a minimum risk equivariant scale estimator for a logarithmically

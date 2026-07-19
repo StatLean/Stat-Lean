@@ -203,7 +203,69 @@ sufficiency kernel is the only missing input.
 Fix: add the two instance binders to that corollary's signature (standard throughout this
 literature — every sufficiency theorem in the area already carries them). Cheap and local.
 
+### Waves 6–8 — merged results (PE sorry count now **46**, from 175: **74% closed**)
+
+| item | outcome | notes |
+|---|---|---|
+| `pe/expfam-info` | 2/5 files 0-sorry | **Multiparameter Cramér–Rao (Thms 6.1/6.6) closed** (matrix Cauchy–Schwarz), **Stein identity closed**, 1-D analyticity closed, `cramer_rao_attained_of_affine` (⇐) closed. Multivariate smoothness (4 gaps) and the Attainment ⇒ direction remain — both were pre-identified fallback candidates. |
+| `pe/scale-pitman` | partial | Scale structure (6/7), Stein-loss + standardized-squared scale MRE, Pitman measurability/equivariance, **Thm 1.17 (normal least favourable) closed**. **TWO FALSE STATEMENTS FOUND — see below.** Pitman/LocationExamples debts were blocked by an unscheduled dependency (my error, now scheduled). |
+| `pe/linear-model` | 1/5 files 0-sorry | **Gauss–Markov + BLUE closed (Thm 4.12/Cor 4.13)** — pure projection geometry, as designed. Canonical-model completeness transport and the orthonormal-basis reduction did not land in one session; 15 gaps remain across the other four files. |
+
+## FALSE STATEMENTS FOUND (with counterexamples) — statements need fixing
+
+Both were found by proof sessions instructed to stop and report rather than weaken. Neither
+has been "fixed" by weakening; both are recorded as sorried with the counterexample in-file.
+
+1. **`isScaleMRE_of_conditional_min` is FALSE as stated.** The conditional-minimality
+   hypothesis `hmin` quantifies only over **positive** `w`, but `IsScaleEquivariant` admits
+   competitors of either sign, so `hmin` cannot dominate an opposite-sign competitor.
+   Verified counterexample in the session report. Fix options: quantify `hmin` over all
+   `w ≠ 0`, or restrict the competitor class to positive-valued estimators (the classical
+   reading, since the estimand `τʳ > 0`). `exists_isScaleMRE_of_convex` is blocked by it.
+2. **The `mpr` direction of the measurable scale factorization is FALSE.** A non-Borel subset
+   of the null hyperplane `{xₙ = 0}` breaks it. The set-level version and the `mp` direction
+   are fine and closed.
+
+## Scheduling error (mine, corrected)
+
+`ForMathlib/CondDistribDensity.lean` was never assigned to a work item, so its 3 stubs
+blocked `Pitman.pitmanEstimator_eq_sub_condMean` and `LocationExamples.isLocMRE_mean_gaussian`
+— those debts are *dependency* artifacts, not mathematical obstacles. Item
+`pe/conddensity-pitman` now closes the brick and the two downstream results.
+
 ### In flight
 
-`pe/expfam-info` (smoothness/Stein + multiparameter information), `pe/linear-model` (all five
-LinearModel files).
+`pe/conddensity-pitman` (the unblock above), `ht/test-foundations` (Batch 12's first item:
+NP lemma, quantiles, p-values, confidence duality), `ht/invariance-core` (Batch 12).
+
+## Corrections the proof sessions made to MY briefs (2026-07-19)
+
+Recording these because they were errors in the orchestration, not in the mathematics, and
+the same mistakes would otherwise recur in Batch 12.
+
+1. **Wrong natural statistic for the canonical normal model.** My brief prescribed
+   `T y = (y₀,…,y_{s−1}, Σ_{j≥s} yⱼ²)` (residual SS). That is **not** a canonical exponential
+   family: the Gaussian log-density retains `−(1/2σ²)·Σ_{i<s} yᵢ²`, which depends on both the
+   data and `σ²`, so it is neither part of `⟨η,T⟩` nor absorbable into a θ-free carrier.
+   Correct route: use the **total** sum of squares `Σ_all k yₖ²` with `base = volume`, `h = 1`,
+   then transport completeness along the measurable bijection
+   `(a, total) ↔ (a, total − Σ aᵢ²) = (head, RSS)`.
+
+2. **Sorry-taint propagation through Lehmann–Scheffé.** `isUMVU_of_complete_sufficient` calls
+   the private `variance_rbEstimator_le_of_complete`, which is the OPEN `IsUMVU`
+   measurability debt. Anything routed through it therefore reports `sorryAx`, even though the
+   file itself looks closed. **This is exactly the trap the charter warns about: a clean-looking
+   compile can still be axiom-tainted.** The axiom-clean alternative is
+   `isUMVU_iff_uncorrelated_unbiasedZero` (fully proven). For the normal linear model the
+   measurability gap is *locally* closable, because all `canonicalModel` members are mutually
+   absolutely continuous (strictly positive Gaussian densities), so a `P p₀`-a.e. representative
+   is automatically a `P p'`-a.e. representative for every `p'`.
+
+   **Implication for the endgame audit:** the `#print axioms` sweep must cover every public
+   headline, not a sample — the taint is invisible to `grep -c sorry` on the consuming file.
+
+3. **Realistic sizing.** `gaussianVector` had *zero* existing helper lemmas; the whole
+   moment / density / mutual-a.c. / exp-family-recognition / orthonormal-transport theory has to
+   be built from scratch (~250–350 lines for the completeness hinge alone). The LinearModel group
+   is multi-session work and has been re-scoped to a single-hinge item
+   (`pe/canonical-completeness`) with commit-after-every-lemma discipline.
