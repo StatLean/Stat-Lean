@@ -353,14 +353,15 @@ theorem map_maximalInvariant_eq_of_orbit [MeasurableSMul G 𝓧] {P : Θ → Mea
     -- USER-INPUT: the two parameters lie on a common induced orbit
     (hθ : v θ₁ = v θ₂) :
     (P θ₁).map M = (P θ₂).map M := by
-  -- TODO: under-hypothesized for general measurable spaces. From `hv_max` pick `g` with
-  -- `θ₂ = g • θ₁`; then `P θ₂ = (P θ₁).map (g • ·)` (`hP`), and the claim reduces to
-  -- `((P θ₁).map (g • ·)).map M = (P θ₁).map M`, i.e. `(P θ₁).map (M ∘ (g • ·)) = (P θ₁).map M`
-  -- via `Measure.map_map` — which needs `Measurable (g • ·)`. That is NOT a hypothesis (no
-  -- `MeasurableSMul G 𝓧`), and evaluating a pushforward along a non-measurable map is `0`, so
-  -- the identity can fail. Everything else (`M ∘ (g • ·) = M` from `hMinv`) is available. Fix =
-  -- add `Measurable (g • ·)` / a `MeasurableSMul G 𝓧` instance to the signature.
-  sorry
+  -- From `hv_max` pick `g` with `θ₂ = g • θ₁`; then `P θ₂ = (P θ₁).map (g • ·)` (`hP`), and
+  -- the claim reduces to `((P θ₁).map (g • ·)).map M = (P θ₁).map M`, i.e.
+  -- `(P θ₁).map (M ∘ (g • ·)) = (P θ₁).map M` via `Measure.map_map`. `MeasurableSMul G 𝓧`
+  -- supplies `Measurable (g • ·)`; `M ∘ (g • ·) = M` is `hMinv`.
+  obtain ⟨g, hg⟩ := hv_max θ₁ θ₂ hθ
+  have hgmeas : Measurable (fun x : 𝓧 => g • x) := measurable_const_smul g
+  rw [hg, ← hP g θ₁, Measure.map_map hMmeas hgmeas]
+  congr 1
+  exact funext fun x => hMinv g x
 
 end Shrinkage
 
