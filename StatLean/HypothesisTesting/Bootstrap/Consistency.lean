@@ -506,6 +506,14 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
     TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
       (fun _ => ∫ t, t ∂ν) := by
+  -- TODO: reduces to the closed brick `ForMathlib.triangular_wlln_of_L1` after building the row
+  -- laws `Gm n := Pr.map (Y n 0)` (all row entries share this law by `hGrow` + `Measure.ext_of_Iic`),
+  -- transferring `habs`/`hint` by `integral_map`, and reindexing `Fin n ↔ range n`. The one
+  -- genuinely missing step is `hweak` (integration of bounded-continuous test functions), i.e. the
+  -- one-direction portmanteau theorem "CDF convergence at every continuity point ⟹ weak
+  -- convergence" specialised to `ℝ`, which is not yet available in Mathlib in this form
+  -- (`IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` needs convergence at *all* `Iic x`,
+  -- not merely at continuity points, so it does not apply directly).
   sorry
 
 end StatLean.HypothesisTesting
