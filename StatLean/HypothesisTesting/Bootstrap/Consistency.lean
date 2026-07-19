@@ -371,7 +371,108 @@ theorem tendsto_bootstrapCoverage [IsProbabilityMeasure Pr]
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) :
     Tendsto (fun n => (Pr {ω | R n ω ≤ cdfPseudoInverse (J n (Phat n ω)) (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
-  sorry
+  set q := cdfPseudoInverse Jlim (1 - α) with hqdef
+  have hq : Jlim q = 1 - α :=
+    cdf_quantile_eq hJlim_cdf hJlim_cont (by linarith [hα.2]) (by linarith [hα.1])
+  set qn : ℕ → Ω → ℝ := fun n ω => cdfPseudoInverse (J n (Phat n ω)) (1 - α) with hqndef
+  -- The bootstrap critical values converge in probability to the limit quantile `q`.
+  have hquant : ∀ᵐ ω ∂Pr, Tendsto (fun n => qn n ω) atTop (𝓝 q) :=
+    tendsto_bootstrapQuantile hP_mem hJconv hJlim_cont hJlim_cdf hJcdf hPhat_mem hα hstrict
+  have hInMeas : TendstoInMeasure Pr qn atTop (fun _ => q) :=
+    tendstoInMeasure_of_tendsto_ae (fun n => (hqmeas n).aestronglyMeasurable) hquant
+  show Tendsto (fun n => (Pr {ω | R n ω ≤ qn n ω}).toReal) atTop (𝓝 (1 - α))
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- Continuity of `Jlim` at `q` fixes a window `δ` on which `Jlim` stays within `ε/4` of `1−α`.
+  have hcont : ContinuousAt Jlim q := hJlim_cont.continuousAt
+  rw [Metric.continuousAt_iff] at hcont
+  obtain ⟨δ', hδ'pos, hδ'⟩ := hcont (ε / 4) (by positivity)
+  set δ := δ' / 2 with hδdef
+  have hδpos : 0 < δ := by positivity
+  have hupabs : |Jlim (q + δ) - (1 - α)| < ε / 4 := by
+    have hd : dist (q + δ) q < δ' := by
+      rw [Real.dist_eq, add_sub_cancel_left, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq, hq] at this
+  have hloabs : |Jlim (q - δ) - (1 - α)| < ε / 4 := by
+    have hd : dist (q - δ) q < δ' := by
+      rw [Real.dist_eq]
+      have hne : q - δ - q = -δ := by ring
+      rw [hne, abs_neg, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq, hq] at this
+  rw [abs_lt] at hupabs hloabs
+  -- `Dp ⊆ S` and `Dm ⊆ S`, where `S` is the "quantile off by `δ`" event whose measure vanishes.
+  have hSconv : Tendsto (fun n => (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal)
+      atTop (𝓝 0) := by
+    have h := hInMeas (ENNReal.ofReal δ) (ENNReal.ofReal_pos.mpr hδpos)
+    simpa using (ENNReal.tendsto_toReal (by simp)).comp h
+  have hDplus : ∀ n, {ω | q + δ < qn n ω} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    rw [edist_dist, Real.dist_eq, abs_of_pos (by linarith : (0:ℝ) < qn n ω - q)]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hDminus : ∀ n, {ω | qn n ω < q - δ} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    rw [edist_dist, Real.dist_eq, abs_of_neg (by linarith : qn n ω - q < 0)]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  -- Coupling inclusions.
+  have hUp : ∀ n, {ω | R n ω ≤ qn n ω} ⊆
+      {ω | R n ω ≤ q + δ} ∪ {ω | q + δ < qn n ω} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases le_or_gt (qn n ω) (q + δ) with h | h
+    · exact Or.inl (le_trans hω h)
+    · exact Or.inr h
+  have hLo : ∀ n, {ω | R n ω ≤ q - δ} ⊆
+      {ω | R n ω ≤ qn n ω} ∪ {ω | qn n ω < q - δ} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases lt_or_ge (qn n ω) (q - δ) with h | h
+    · exact Or.inr h
+    · exact Or.inl (le_trans hω h)
+  -- Assemble on the eventual event.
+  have e1 : ∀ᶠ n in atTop, J n P (q + δ) < 1 - α + ε / 2 :=
+    (hJconv (fun _ => P) hP_mem (q + δ)).eventually_lt_const (by linarith [hupabs.2])
+  have e2 : ∀ᶠ n in atTop, 1 - α - ε / 2 < J n P (q - δ) :=
+    (hJconv (fun _ => P) hP_mem (q - δ)).eventually_const_lt (by linarith [hloabs.1])
+  have e3 : ∀ᶠ n in atTop, (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal < ε / 2 :=
+    hSconv.eventually_lt_const (by positivity)
+  rw [Filter.eventually_atTop] at e1 e2 e3
+  obtain ⟨N₁, hN₁⟩ := e1
+  obtain ⟨N₂, hN₂⟩ := e2
+  obtain ⟨N₃, hN₃⟩ := e3
+  refine ⟨max (max N₁ N₂) N₃, fun n hn => ?_⟩
+  have hn1 := hN₁ n (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn)
+  have hn2 := hN₂ n (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn)
+  have hn3 := hN₃ n (le_trans (le_max_right _ _) hn)
+  -- Real forms of the two measure inequalities.
+  have hSfin : (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}) ≠ ⊤ := measure_ne_top _ _
+  have hdp : (Pr {ω | q + δ < qn n ω}).toReal ≤
+      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
+    ENNReal.toReal_mono hSfin (measure_mono (hDplus n))
+  have hdm : (Pr {ω | qn n ω < q - δ}).toReal ≤
+      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
+    ENNReal.toReal_mono hSfin (measure_mono (hDminus n))
+  have hcn_up : (Pr {ω | R n ω ≤ qn n ω}).toReal ≤
+      J n P (q + δ) + (Pr {ω | q + δ < qn n ω}).toReal := by
+    have hle : Pr {ω | R n ω ≤ qn n ω} ≤
+        Pr {ω | R n ω ≤ q + δ} + Pr {ω | q + δ < qn n ω} :=
+      le_trans (measure_mono (hUp n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q + δ)] at this
+    exact this
+  have hcn_lo : J n P (q - δ) ≤
+      (Pr {ω | R n ω ≤ qn n ω}).toReal + (Pr {ω | qn n ω < q - δ}).toReal := by
+    have hle : Pr {ω | R n ω ≤ q - δ} ≤
+        Pr {ω | R n ω ≤ qn n ω} + Pr {ω | qn n ω < q - δ} :=
+      le_trans (measure_mono (hLo n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q - δ)] at this
+    exact this
+  rw [Real.dist_eq, abs_lt]
+  constructor <;> [linarith; linarith]
 
 end Consistency
 
