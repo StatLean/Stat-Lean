@@ -1,0 +1,49 @@
+srun: job 33127283 queued and waiting for resources
+srun: job 33127283 has been allocated resources
+Now the final report.
+
+---
+
+## Report — PointEstimation tail sweep (`pe/final-3`)
+
+### Final `lake build` status
+**All eight target modules build green** (combined build: exit 0, 2932 jobs). Remaining `sorry`s compile as warnings, not errors. No file was left broken.
+
+### Per-file real-`sorry` inventory (excluding docstring/comment mentions)
+
+| File | real sorries | status |
+|---|---|---|
+| `LinearModel/LeastSquares` | 2 (`isUMVU_lse_functional`, `isUMVU_residualSumSq`) | open — deep |
+| `LinearModel/Equivariant` | 4 | open — deep |
+| `ExponentialFamily/Smoothness` | 4 (3 DCT + 1 sanctioned) | open — deep |
+| `ExponentialFamily/MinimalSufficient` | 1 (`isMinimalSufficient_stat`) | open — deep |
+| `Equivariance/LocationMRE` | 2 | open — deep |
+| `Equivariance/LocationExamples` | 1 (`isLocMRE_mean_gaussian`) | open — deep |
+| `Equivariance/ScaleStructure` | 1 (`…mpr`) | **FALSE-as-stated, verified, sanctioned** |
+| `Equivariance/ScaleMRE` | 1 (`exists_isScaleMRE_of_convex`) | **FALSE-as-stated, verified & documented** |
+
+`#print axioms StatLean.PointEstimation.isUMVU_lse_functional` → `[propext, sorryAx, Classical.choice, Quot.sound]` (still `sorryAx`; the lemma is a direct `sorry`).
+
+### What I changed (committed, `1f49ba9`)
+
+The prompt's highest-value ask is catching false statements. I found one **beyond** the two flagged, at the theorem level:
+
+**`ScaleMRE.exists_isScaleMRE_of_convex` is FALSE as stated.** The stale in-file comment blamed a now-corrected engine. The real obstruction survives the correction: `isScaleMRE_of_conditional_min` was fixed to demand fibrewise domination over **all** `w : ℝ`, but the theorem's only shape hypothesis, `hconv` (log-convexity of `γ∘exp`), constrains `γ` only on `(0,∞)`. Clean `r = 0` counterexample (now in the file):
+- `δ₀ ≡ 1`, `P₀` any prob. law with `P₀{xₙ=0}=0`;
+- `γ u = (log u)² + 1` for `u>0` (so `γ∘exp = (·)²+1`, convex & non-monotone — `hconv`, `hnotmono` hold), `γ u = 1/2 + 1/(2(1+|u|))` for `u≤0`.
+
+At `r=0` an equivariant estimator is an arbitrary measurable value per orbit, with risk `∫ ofReal(γ(value))`. `inf_{u∈ℝ} γ = 1/2` is approached only as `u→−∞` and **never attained**, so every equivariant `δ` is beaten by `δ' ≡ −M`; no MRE exists. A sound restatement needs a hypothesis controlling `γ` on non-positive arguments. Kept sorried as a named obstruction with the counterexample.
+
+### Verifications (no change needed)
+
+- **`ScaleStructure.isScaleInvariant_iff_factors_scaleZ_measurable` mpr — confirmed genuinely FALSE**, exactly as the existing counterexample states: `{xₙ=0}` is Borel-isomorphic to `ℝᵐ` and carries non-Borel subsets, so an off-null-set factorization (with `w=0`) cannot recover global `Measurable u`. Already correctly sorried with the counterexample; left as-is.
+
+### The six genuinely-open developments (not attempted — each is a multi-lemma analytic core; I did not risk breaking a green file with a half-proof)
+
+- **`LeastSquares` (2)** — needs the adapted-orthonormal-basis isometry, Gaussian isometry-invariance `(gaussianVector ξ σ²).map L = gaussianVector (Lξ) σ²`, and `IsUMVU`-transport along a sample-space measurable equiv. `stdGaussian_map` exists but the affine bridge + transport is a self-contained multi-lemma build.
+- **`Smoothness` (3 + 1)** — the DCT trio (continuity, `HasFDerivAt`, `iteratedDeriv`) all hinge on the `2^s` sign-vector envelope `e^{c·Σ|Tᵢ|} ≤ Σ_ε e^{⟪cε,T⟫}`, which needs coordinates. **Caveat worth flagging:** these three statements carry `[BorelSpace V] [SecondCountableTopology V]` but **not** `[FiniteDimensional V]`, yet the envelope recipe (and multi-dim ball domination generally) requires finite dimension — a segment bound suffices in 1-D but not for a ball. Either the proof needs a route avoiding the envelope, or the statements need `[FiniteDimensional ℝ V]` added. `analyticOnNhd_integral_exp_inner` is the sanctioned deferral (untouched).
+- **`MinimalSufficient` (1)** — part (2), minimality, is a measurable-selection / log-likelihood-inversion development (Doob–Dynkin on the LR vector) beyond the imported API.
+- **`LocationMRE` (2)** — `exists_measurable_condMinimizer_convex` (continuity of the finite→∞-jumping `ℝ≥0∞` convex objective feeding `MeasurableArgmin`) and `exists_isLocMRE_of_bounded_loss` (DCT translation-continuity + EVT).
+- **`LocationExamples` (1)** — `isLocMRE_mean_gaussian`: route is clear (transfer `IsLocMRE` through `locationBase`, Gaussian completing-the-square ⇒ `pitmanEstimator g = X̄`, chain `pitmanEstimator_isLocMRE`), but the completing-the-square + product-density construction + Gaussian integrability side-conditions is a real analytic core.
+
+Net: one false statement newly pinned down and documented at theorem level, one confirmed, two memory notes written; the six analytic developments are precisely scoped and remain open.
