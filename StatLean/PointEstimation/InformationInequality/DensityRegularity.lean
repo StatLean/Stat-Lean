@@ -1,5 +1,7 @@
 import StatLean.PointEstimation.InformationInequality.CramerRao
 import StatLean.PointEstimation.InformationInequality.Additivity
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
 # Family-side regularity: the information inequality for *every* square-integrable statistic
@@ -63,7 +65,7 @@ R. A. Fisher's ("Theory of statistical estimation," *Proc. Camb. Phil. Soc.* **2
 700–725).
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Filter Topology
 
 namespace StatLean.PointEstimation
 
@@ -152,6 +154,38 @@ theorem integral_score_eq_zero_of_density_regular (M : ParametricFamily 𝓧 ℝ
   have hzero := hd.unique h0
   simpa using hzero
 
+/-- The score is measurable, as the a.e. limit of the (measurable) difference quotients
+`slope (p_· x) θ (θ + 1/(n+1))`: on the support the quotients converge to the derivative by
+differentiability, and off the support (where the parameter map is constant `0`) they vanish. -/
+private lemma measurable_score_of_regular (M : ParametricFamily 𝓧 ℝ)
+    (hsupp : HasCommonSupport M) (θ : ℝ)
+    (hdiff : ∀ x, 0 < M.density θ x → DifferentiableAt ℝ (fun t => M.density t x) θ) :
+    Measurable (score M θ) := by
+  set a : ℕ → ℝ := fun n => θ + 1 / ((n : ℝ) + 1) with ha
+  have ha_tendsto : Tendsto a atTop (𝓝[≠] θ) := by
+    rw [tendsto_nhdsWithin_iff]
+    refine ⟨?_, Eventually.of_forall fun n => ?_⟩
+    · simpa [ha] using
+        tendsto_const_nhds.add (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+    · simp only [ha, Set.mem_compl_iff, Set.mem_singleton_iff]
+      have hpos : 0 < 1 / ((n : ℝ) + 1) := by positivity
+      intro h; nlinarith [h]
+  have hderiv_meas : Measurable (fun x => deriv (fun t => M.density t x) θ) := by
+    refine measurable_of_tendsto_metrizable
+      (f := fun n x => slope (fun t => M.density t x) θ (a n)) (fun n => ?_)
+      (tendsto_pi_nhds.2 (fun x => ?_))
+    · simp only [slope_def_field]
+      exact ((M.density_meas _).sub (M.density_meas θ)).div measurable_const
+    · rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+      · have hf0 : (fun t => M.density t x) = fun _ => (0 : ℝ) :=
+          funext fun t => density_eq_zero_of_commonSupport hsupp h0.symm
+        rw [hf0]
+        simp only [slope_def_field, sub_self, zero_div, deriv_const']
+        exact tendsto_const_nhds
+      · exact (hdiff x hpos).hasDerivAt.tendsto_slope.comp ha_tendsto
+  show Measurable (fun x => deriv (fun t => M.density t x) θ / M.density θ x)
+  exact hderiv_meas.div (M.density_meas θ)
+
 /-- **The information inequality under family-side regularity.** If the family has a common
 support, is differentiable in the parameter on that support, has positive information and
 satisfies the dominated-difference-quotient condition at `θ`, then for *every* statistic
@@ -181,7 +215,22 @@ theorem cramer_rao_of_density_regular (M : ParametricFamily 𝓧 ℝ) (μ : Meas
         (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ ∧
       (∫ x, δ x * score M θ x * M.density θ x ∂μ) ^ 2 / fisherInfo M μ θ
         ≤ variance δ (M.toMeasure μ θ) := by
-  sorry
+  have hderiv := diff_under_integral_of_density_regular M μ hpdf hsupp θ hdiff hreg δ hδ2
+  refine ⟨hderiv, ?_⟩
+  have hmeas : AEStronglyMeasurable (score M θ) μ :=
+    (measurable_score_of_regular M hsupp θ hdiff).aestronglyMeasurable
+  have hmean0 := integral_score_eq_zero_of_density_regular M μ hpdf hsupp θ hdiff hreg
+  have hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ := by
+    by_contra h
+    rw [fisherInfo, integral_undef h] at hI
+    exact lt_irrefl 0 hI
+  have hswap : (∫ x, δ x * score M θ x * M.density θ x ∂μ)
+      = ∫ x, δ x * deriv (fun t => M.density t x) θ ∂μ := by
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only []
+    rw [mul_assoc, score_mul_density_eq_deriv hsupp]
+  exact cramer_rao M μ hpdf hsupp θ δ (∫ x, δ x * score M θ x * M.density θ x ∂μ)
+    hmeas hδ2 hscore_int hI hderiv hswap hmean0
 
 /-- **The information inequality for an independent identically distributed sample.** For a
 sample of size `n ≥ 1` the information in the sample is `n I(θ)`, so the bound on the
