@@ -253,6 +253,42 @@ private lemma integrable_slice_num (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Mea
   rw [this]
   exact hrefl.neg
 
+/-- **The Pitman ratio in shear coordinates.** Pointwise, the closed form equals the last
+coordinate minus the ratio of the first moment to the mass of the density slice through
+`x`, obtained by the reflection change of variables `s = xₙ − u`. -/
+private lemma pitmanEstimator_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
+    (hnum : ∀ x, Integrable fun u : ℝ => u * f (x - u • (1 : Fin (m + 1) → ℝ)))
+    (hden : ∀ x, Integrable fun u : ℝ => f (x - u • (1 : Fin (m + 1) → ℝ)))
+    (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0)
+    (x : Fin (m + 1) → ℝ) :
+    pitmanEstimator f x = x (Fin.last m)
+      - (∫ s : ℝ, s * f (pUnshear (diffs x, s)))
+        / (∫ s : ℝ, f (pUnshear (diffs x, s))) := by
+  set b := x (Fin.last m) with hb
+  -- denominator: reflection change of variables
+  have hDl : (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ)))
+      = ∫ s : ℝ, f (pUnshear (diffs x, s)) := by
+    simp_rw [sub_smul_one_eq_pUnshear]
+    exact integral_const_sub_comm (fun s => f (pUnshear (diffs x, s))) b
+  -- numerator: reflection then split off the constant part
+  have hNl : (∫ u : ℝ, u * f (x - u • (1 : Fin (m + 1) → ℝ)))
+      = b * (∫ s : ℝ, f (pUnshear (diffs x, s)))
+        - ∫ s : ℝ, s * f (pUnshear (diffs x, s)) := by
+    have hstep : (∫ u : ℝ, u * f (x - u • (1 : Fin (m + 1) → ℝ)))
+        = ∫ s : ℝ, (b - s) * f (pUnshear (diffs x, s)) := by
+      rw [← integral_const_sub_comm (fun s => (b - s) * f (pUnshear (diffs x, s))) b]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+      simp only [sub_smul_one_eq_pUnshear, ← hb, sub_sub_cancel]
+    rw [hstep, show (fun s : ℝ => (b - s) * f (pUnshear (diffs x, s)))
+          = fun s => b * f (pUnshear (diffs x, s)) - s * f (pUnshear (diffs x, s)) from by
+        funext s; ring,
+      integral_sub ((integrable_slice_den f hf hden (diffs x)).const_mul b)
+        (integrable_slice_num f hf hnum (diffs x)), integral_const_mul]
+  unfold pitmanEstimator
+  have hD0 : (∫ s : ℝ, f (pUnshear (diffs x, s))) ≠ 0 := hDl ▸ hden0 x
+  rw [hNl, hDl]
+  field_simp
+
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
 theorem measurable_pitmanEstimator (f : (Fin n → ℝ) → ℝ)
