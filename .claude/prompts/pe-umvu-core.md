@@ -1,6 +1,6 @@
 # Close the sorries in PointEstimation/UMVU/{Basic,CovarianceCriterion,RaoBlackwell}.lean
 
-Lean 4 / Mathlib proof engineer on `StatLean` (read the repo `CLAUDE.md` first). Pin `v4.29.1`.
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
 
 You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.UMVU.Basic` (then `.CovarianceCriterion`, then `.RaoBlackwell`). **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
 

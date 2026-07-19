@@ -1,6 +1,6 @@
 # Close the sorries in PointEstimation/Sufficiency/{Basic,RiskEquality,BayesianBridge}.lean
 
-Lean 4 / Mathlib proof engineer on `StatLean` (read the repo `CLAUDE.md` first). Pin `v4.29.1`.
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
 
 You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.Sufficiency.Basic` (then `.RiskEquality`, then `.BayesianBridge`). **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
 
@@ -27,10 +27,10 @@ Risk lives in `Model/Defs.lean` as `∫⁻` in `ℝ≥0∞` (junk-value discipli
 ## Notes on specific targets
 
 - `isProbabilityMeasure_statLaw`, `statLaw_snd`: bookkeeping. For `statLaw_snd` note Mathlib's `Measure.snd_compProd : (μ ⊗ₘ κ).snd = κ ∘ₘ μ` puts the kernel on the **left** of `∘ₘ` — the file's statement is already shaped to match, don't fight it.
-- `isSufficient_of_hasSufficientKernel`: take `κA := fun t => Q t A`; the defining identity falls out of `Measure.compProd_apply` on the rectangle `B ×ˢ A`. Expect un-β-reduced redexes after the rewrite — `simp_rw`/`dsimp only` before the next `rw` (`CLAUDE.md` §7.12).
+- `isSufficient_of_hasSufficientKernel`: take `κA := fun t => Q t A`; the defining identity falls out of `Measure.compProd_apply` on the rectangle `B ×ˢ A`. Expect un-β-reduced redexes after the rewrite — `simp_rw`/`dsimp only` before the next `rw` (un-β-reduced redexes after a rewrite are a known trap).
 - `hasSufficientKernel_fiber`: the graph has full measure under the joint law, so the fiber `{x | T x = t}` carries `Q t`-mass 1 for a.e. `t`. Needs `Measurable T` and standard-Borel `S` (both are hypotheses).
 - **`exists_riskRand_eq_of_sufficient` (Thm 6.1) should be easy under this definition** — it is kernel-composition associativity plus the second-marginal identity, not a conditional-expectation argument. `κ ∘ₖ Q : Kernel S D` is the T-based randomized estimator. Get the composition order right; there is an ASCII diagram in the file header.
-- `BayesianBridge`: `HasSufficientKernel ⇑K T → StatLean.Bayesian.IsSufficient K hT` — take second marginals of the graph identity to land on the Bayesian reconstruction form. Note `Kernel.IsMarkovKernel.comp` lives in the `ProbabilityTheory.Kernel` namespace (`CLAUDE.md` §7.16).
+- `BayesianBridge`: `HasSufficientKernel ⇑K T → StatLean.Bayesian.IsSufficient K hT` — take second marginals of the graph identity to land on the Bayesian reconstruction form. Note `Kernel.IsMarkovKernel.comp` lives in the `ProbabilityTheory.Kernel` namespace.
 
 ## Report
 

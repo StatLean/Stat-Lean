@@ -1,6 +1,6 @@
 # Close the 4 sorries in PointEstimation/ForMathlib/MGFUniqueness.lean
 
-Lean 4 / Mathlib proof engineer on `StatLean` (read the repo `CLAUDE.md` first). Pin `v4.29.1`.
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
 
 You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.ForMathlib.MGFUniqueness` and read its output directly. **Never** background the build, never wrap it in `srun`/`sbatch`, never poll with `until pgrep` — you are already inside the allocation and a nested job will hang this session.
 
