@@ -78,6 +78,21 @@ variable {Pr : Measure Ω} [IsProbabilityMeasure Pr]
   {Jpar : ℕ → EuclideanSpace ℝ (Fin k) → ℝ → ℝ} {Jlim : EuclideanSpace ℝ (Fin k) → ℝ → ℝ}
   {θ : EuclideanSpace ℝ (Fin k)} {thHat : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
 
+/-- Reduce convergence in measure to `0` to the real-`ε` measure of the excess set
+`{ω | ε ≤ |f n ω|}`. -/
+private theorem tendstoInMeasure_absOf {f : ℕ → Ω → ℝ}
+    (h : ∀ ε : ℝ, 0 < ε → Tendsto (fun n => Pr {ω | ε ≤ |f n ω|}) atTop (𝓝 (0 : ℝ≥0∞))) :
+    TendstoInMeasure Pr f atTop (fun _ => 0) := by
+  refine tendstoInMeasure_of_ne_top (fun ε hε hε_top => ?_)
+  lift ε to ℝ≥0 using hε_top
+  rw [ENNReal.coe_pos, ← NNReal.coe_pos] at hε
+  have hiff : ∀ a : ℝ, ((ε : ℝ≥0∞) ≤ edist a (0 : ℝ)) ↔ ((ε : ℝ) ≤ |a|) := by
+    intro a
+    rw [edist_dist, Real.dist_eq, sub_zero, ← ENNReal.ofReal_coe_nnreal,
+      ENNReal.ofReal_le_ofReal_iff (abs_nonneg a)]
+  simp only [hiff]
+  exact h (ε : ℝ) hε
+
 /-- **Sampling distribution at the true parameter converges uniformly to the limit law.**
 
 Pointwise convergence of the sampling distribution functions at the fixed parameter `θ`,
@@ -92,8 +107,8 @@ theorem tendsto_supCDFDist_parametric_fixed
     (hlim_cont : Continuous (Jlim θ))
     -- USER-INPUT: pointwise convergence of the sampling distribution functions at `θ`
     (hptwise : ∀ x : ℝ, Tendsto (fun n => Jpar n θ x) atTop (𝓝 (Jlim θ x))) :
-    Tendsto (fun n => supCDFDist (Jpar n θ) (Jlim θ)) atTop (𝓝 0) := by
-  sorry
+    Tendsto (fun n => supCDFDist (Jpar n θ) (Jlim θ)) atTop (𝓝 0) :=
+  tendsto_supCDFDist_zero hcdf hlim_cont hlim_cdf hptwise
 
 /-- **Plug-in display for the parametric bootstrap.**
 
@@ -120,6 +135,16 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
     (hmeas : ∀ n, Measurable (thHat n)) :
     TendstoInMeasure Pr (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)) atTop
       (fun _ => 0) := by
+  -- TODO / SIGNATURE GAP: the conclusion compares `Jpar n (thHat n ω)` with `Jpar n θ`,
+  -- and the only bridge available is `Jlim θ` through the triangle inequality
+  -- `supCDFDist (Jpar n θ̂) (Jpar n θ) ≤ supCDFDist (Jpar n θ̂) (Jlim θ)`
+  --   `+ supCDFDist (Jlim θ) (Jpar n θ)`.
+  -- `supCDFDist_triangle` (indeed any pointwise extraction from `hlocunif`) needs `IsCDF (Jlim θ)`
+  -- — equivalently boundedness of `Jlim θ`. This file's `hlocunif` supplies only `hlim_cont`.
+  -- With `Real.iSup_of_not_bddAbove`, an *unbounded* continuous `Jlim θ` makes every
+  -- `supCDFDist (·) (Jlim θ) = 0` (junk sup), so `hlocunif` holds vacuously while the conclusion
+  -- can fail: the statement is provable only after adding `hlim_cdf : IsCDF (Jlim θ)` (which the
+  -- downstream `_bootstrap` result carries and which lets the argument below go through verbatim).
   sorry
 
 /-- **Parametric bootstrap consistency**, the two displays combined: the sampling distribution
@@ -140,7 +165,36 @@ theorem tendstoInMeasure_supCDFDist_parametric_bootstrap
     (hmeas : ∀ n, Measurable (thHat n)) :
     TendstoInMeasure Pr (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jlim θ)) atTop
       (fun _ => 0) := by
-  sorry
+  -- Direct: on the high-probability event `‖√n(θ̂ − θ)‖ ≤ M`, the estimator is a local parameter,
+  -- so `hlocunif` bounds the sampling distribution's distance to the limit law directly.
+  refine tendstoInMeasure_absOf (fun ε hε => ?_)
+  rw [ENNReal.tendsto_nhds_zero]
+  intro δ hδ
+  obtain ⟨δ₀, hδ₀pos, hδ₀δ⟩ : ∃ δ₀ : ℝ, 0 < δ₀ ∧ ENNReal.ofReal δ₀ ≤ δ := by
+    rcases eq_or_ne δ ∞ with h | h
+    · exact ⟨1, one_pos, by simp [h]⟩
+    · exact ⟨δ.toReal, ENNReal.toReal_pos hδ.ne' h, by rw [ENNReal.ofReal_toReal h]⟩
+  obtain ⟨M, hMpos, htightM⟩ := htight δ₀ hδ₀pos
+  filter_upwards [hlocunif M hMpos (ε / 2) (by positivity), eventually_ge_atTop 1] with n hn hn1
+  have hnpos : (0 : ℝ) < (n : ℝ) := by
+    have hn0 : 0 < n := by omega
+    exact_mod_cast hn0
+  have hsqrtne : Real.sqrt (n : ℝ) ≠ 0 := ne_of_gt (Real.sqrt_pos.mpr hnpos)
+  refine le_trans (measure_mono (?_ : _ ⊆
+    {ω | M < ‖Real.sqrt (n : ℝ) • (thHat n ω - θ)‖})) ?_
+  · intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    by_contra hcon
+    push_neg at hcon
+    set v := Real.sqrt (n : ℝ) • (thHat n ω - θ) with hv
+    have hthHat : θ + (Real.sqrt (n : ℝ))⁻¹ • v = thHat n ω := by
+      rw [hv, smul_smul, inv_mul_cancel₀ hsqrtne, one_smul, add_sub_cancel]
+    have hb1 : supCDFDist (Jpar n (thHat n ω)) (Jlim θ) ≤ ε / 2 := by
+      rw [← hthHat]; exact hn v hcon
+    rw [abs_of_nonneg (supCDFDist_nonneg (hcdf n (thHat n ω)) hlim_cdf)] at hω
+    linarith
+  · rw [← ENNReal.ofReal_toReal (measure_ne_top Pr _)]
+    exact le_trans (ENNReal.ofReal_le_ofReal (htightM n)) hδ₀δ
 
 /-- **Limiting local power of the bootstrap test.**
 

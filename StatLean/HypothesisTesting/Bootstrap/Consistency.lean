@@ -1,4 +1,7 @@
 import StatLean.HypothesisTesting.Bootstrap.Defs
+import StatLean.HypothesisTesting.ForMathlib.PolyaUniformCDF
+import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
+import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Basic
@@ -101,6 +104,160 @@ noncomputable def stdNormalCDF (x : ℝ) : ℝ := normalCDF 0 1 x
 /-- The **standard normal quantile** `z_p = Φ⁻¹(p)`, via the generalized inverse. -/
 noncomputable def stdNormalQuantile (p : ℝ) : ℝ := cdfPseudoInverse stdNormalCDF p
 
+/-! ## Sup-CDF distance: elementary calculus -/
+
+section SupCDFDist
+
+variable {F G H : ℝ → ℝ}
+
+/-- A distribution function takes values in `[0,1]` (a consequence of the fields, recorded
+here for the boundedness estimates below). -/
+theorem IsCDF.mem_Icc (h : IsCDF F) (t : ℝ) : F t ∈ Set.Icc (0 : ℝ) 1 :=
+  mem_Icc_of_monotone_of_tendsto h.mono h.tendsto_atBot h.tendsto_atTop t
+
+/-- The pointwise `|F − G|` of two distribution functions is bounded above by `1`, hence the
+sup defining `supCDFDist` is a genuine supremum. -/
+theorem bddAbove_absSub (hF : IsCDF F) (hG : IsCDF G) :
+    BddAbove (Set.range fun t => |F t - G t|) := by
+  refine ⟨1, ?_⟩
+  rintro _ ⟨t, rfl⟩
+  have hf := hF.mem_Icc t
+  have hg := hG.mem_Icc t
+  exact abs_le.mpr ⟨by linarith [hf.1, hf.2, hg.1, hg.2], by linarith [hf.1, hf.2, hg.1, hg.2]⟩
+
+/-- `supCDFDist` is symmetric. -/
+theorem supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
+  unfold supCDFDist
+  congr 1
+  ext t
+  rw [abs_sub_comm]
+
+/-- Nonnegativity of the sup-CDF distance between two distribution functions. -/
+theorem supCDFDist_nonneg (hF : IsCDF F) (hG : IsCDF G) : 0 ≤ supCDFDist F G :=
+  le_trans (abs_nonneg _) (le_ciSup (bddAbove_absSub hF hG) 0)
+
+/-- Triangle inequality for the sup-CDF distance among distribution functions. -/
+theorem supCDFDist_triangle (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H) :
+    supCDFDist F H ≤ supCDFDist F G + supCDFDist G H := by
+  refine ciSup_le (fun t => ?_)
+  have h1 : |F t - G t| ≤ supCDFDist F G := le_ciSup (bddAbove_absSub hF hG) t
+  have h2 : |G t - H t| ≤ supCDFDist G H := le_ciSup (bddAbove_absSub hG hH) t
+  calc |F t - H t| ≤ |F t - G t| + |G t - H t| := abs_sub_le _ _ _
+    _ ≤ _ := by linarith
+
+/-- **Pólya, sup-distance form.** If distribution functions `Fn` converge pointwise to a
+continuous distribution function `F`, then their sup-CDF distance to `F` tends to `0`. -/
+theorem tendsto_supCDFDist_zero {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ}
+    (hFn : ∀ n, IsCDF (Fn n)) (hFcont : Continuous F) (hFcdf : IsCDF F)
+    (hconv : ∀ x : ℝ, Tendsto (fun n => Fn n x) atTop (𝓝 (F x))) :
+    Tendsto (fun n => supCDFDist (Fn n) F) atTop (𝓝 0) := by
+  have hunif : TendstoUniformly Fn F atTop :=
+    tendstoUniformly_of_monotone_of_continuous (fun n => (hFn n).mono)
+      (fun n => (hFn n).tendsto_atBot) (fun n => (hFn n).tendsto_atTop) hFcont
+      hFcdf.tendsto_atBot hFcdf.tendsto_atTop hconv
+  rw [Metric.tendstoUniformly_iff] at hunif
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (hunif (ε / 2) (by positivity))
+  refine ⟨N, fun n hn => ?_⟩
+  have hn' := hN n hn
+  have hle : supCDFDist (Fn n) F ≤ ε / 2 := by
+    refine ciSup_le (fun t => ?_)
+    have := hn' t
+    rw [Real.dist_eq, abs_sub_comm] at this
+    exact this.le
+  have hnn : 0 ≤ supCDFDist (Fn n) F := supCDFDist_nonneg (hFn n) hFcdf
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg hnn]
+  linarith
+
+end SupCDFDist
+
+/-! ## Quantile of a continuous distribution function -/
+
+section QuantileCDF
+
+variable {F : ℝ → ℝ}
+
+/-- Nonemptiness of the sublevel set `{t | p ≤ F t}` for a distribution function and a level
+strictly below `1`: the total-mass-`1` tail eventually clears the level. -/
+theorem sublevel_nonempty (hF : IsCDF F) {p : ℝ} (hp : p < 1) :
+    {t : ℝ | p ≤ F t}.Nonempty := by
+  obtain ⟨y, hy⟩ := (hF.tendsto_atTop.eventually_const_lt hp).exists
+  exact ⟨y, hy.le⟩
+
+/-- Bounded-belowness of the sublevel set `{t | p ≤ F t}` for a distribution function and a
+level strictly above `0`: the vanishing left tail keeps the set away from `−∞`. -/
+theorem sublevel_bddBelow (hF : IsCDF F) {p : ℝ} (hp : 0 < p) :
+    BddBelow {t : ℝ | p ≤ F t} := by
+  obtain ⟨b, hb⟩ := eventually_atBot.mp (hF.tendsto_atBot.eventually_lt_const hp)
+  refine ⟨b, fun y hy => ?_⟩
+  by_contra h
+  push_neg at h
+  simp only [Set.mem_setOf_eq] at hy
+  exact absurd (hb y h.le) (not_lt.mpr hy)
+
+/-- For a continuous distribution function `F` and a level `p ∈ (0,1)`, the generalized inverse
+attains the level exactly: `F (cdfPseudoInverse F p) = p`. -/
+theorem cdf_quantile_eq (hF : IsCDF F) (hcont : Continuous F) {p : ℝ}
+    (hp0 : 0 < p) (hp1 : p < 1) : F (cdfPseudoInverse F p) = p := by
+  set q := cdfPseudoInverse F p with hq
+  have hne : {t : ℝ | p ≤ F t}.Nonempty := sublevel_nonempty hF hp1
+  have hbdd : BddBelow {t : ℝ | p ≤ F t} := sublevel_bddBelow hF hp0
+  have hglb : IsGLB {t : ℝ | p ≤ F t} q := Real.isGLB_sInf hne hbdd
+  -- `p ≤ F q`, since `q` lies in the (closed) sublevel set.
+  have hge : p ≤ F q := by
+    have hmem : q ∈ closure {t : ℝ | p ≤ F t} := hglb.mem_closure hne
+    have hclosed : IsClosed {t : ℝ | p ≤ F t} :=
+      isClosed_le continuous_const hcont
+    rw [hclosed.closure_eq] at hmem
+    exact hmem
+  -- `F q ≤ p`: otherwise continuity yields points below `q` still in the set.
+  refine le_antisymm ?_ hge
+  by_contra hlt
+  push_neg at hlt
+  have hopen : IsOpen {y : ℝ | p < F y} := isOpen_lt continuous_const hcont
+  have hev : ∀ᶠ y in 𝓝 q, p < F y := hopen.mem_nhds hlt
+  have hev' : ∀ᶠ y in 𝓝[<] q, p < F y := hev.filter_mono nhdsWithin_le_nhds
+  obtain ⟨y, hyF, hylt⟩ := (hev'.and self_mem_nhdsWithin).exists
+  exact absurd (hglb.1 hyF.le) (not_le.mpr hylt)
+
+/-- **Deterministic quantile convergence at a point of strict increase.** If nondecreasing
+`Fn` converge pointwise to `F` and `F` is strictly increasing at `q` with `F q = p`, then the
+generalized inverses at level `p` converge to `q`. (A `StrictIncAt`-localized twin of the
+brick `tendsto_quantile_of_tendsto`, which needs global strict monotonicity.) -/
+theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ} {p q : ℝ}
+    (hmono : ∀ n, Monotone (Fn n)) (hstrict : StrictIncAt F q) (hq : F q = p)
+    (hconv : ∀ x : ℝ, Tendsto (fun n => Fn n x) atTop (𝓝 (F x))) :
+    Tendsto (fun n => cdfPseudoInverse (Fn n) p) atTop (𝓝 q) := by
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  set e := ε / 2 with he
+  have hepos : 0 < e := by positivity
+  have he1 : F (q - e) < p := by rw [← hq]; exact hstrict.1 _ (by linarith)
+  have he2 : p < F (q + e) := by rw [← hq]; exact hstrict.2 _ (by linarith)
+  have hlowev : ∀ᶠ n in atTop, Fn n (q - e) < p := (hconv (q - e)).eventually_lt_const he1
+  have hupev : ∀ᶠ n in atTop, p < Fn n (q + e) := (hconv (q + e)).eventually_const_lt he2
+  rw [Filter.eventually_atTop] at hlowev hupev
+  obtain ⟨N₁, hN₁⟩ := hlowev
+  obtain ⟨N₂, hN₂⟩ := hupev
+  refine ⟨max N₁ N₂, fun n hn => ?_⟩
+  have hlow : Fn n (q - e) < p := hN₁ n (le_of_max_le_left hn)
+  have hup : p < Fn n (q + e) := hN₂ n (le_of_max_le_right hn)
+  have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fn n x} := by
+    intro x hx
+    simp only [Set.mem_setOf_eq] at hx
+    by_contra h
+    push_neg at h
+    exact absurd ((hmono n) h.le) (not_le.mpr (lt_of_lt_of_le hlow hx))
+  have hmemup : (q + e) ∈ {x : ℝ | p ≤ Fn n x} := hup.le
+  have h1 : q - e ≤ cdfPseudoInverse (Fn n) p := le_csInf ⟨q + e, hmemup⟩ hlb
+  have h2 : cdfPseudoInverse (Fn n) p ≤ q + e := csInf_le ⟨q - e, hlb⟩ hmemup
+  rw [Real.dist_eq]
+  have hb : |cdfPseudoInverse (Fn n) p - q| ≤ e := abs_le.mpr ⟨by linarith, by linarith⟩
+  linarith
+
+end QuantileCDF
+
 /-! ## Consistency of the bootstrap sampling distribution -/
 
 section Consistency
@@ -133,7 +290,21 @@ theorem tendsto_supCDFDist_bootstrap
     -- stochastic ingredient of the criterion
     (hPhat_mem : ∀ᵐ ω ∂Pr, (fun n => Phat n ω) ∈ C_P) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (J n P) (J n (Phat n ω))) atTop (𝓝 0) := by
-  sorry
+  filter_upwards [hPhat_mem] with ω hω
+  -- Both `J n P` and `J n (Phat n ω)` converge pointwise to the continuous limit `Jlim`.
+  have hPconv : ∀ x, Tendsto (fun n => J n P x) atTop (𝓝 (Jlim x)) := hJconv _ hP_mem
+  have hHconv : ∀ x, Tendsto (fun n => J n (Phat n ω) x) atTop (𝓝 (Jlim x)) := hJconv _ hω
+  have hA : Tendsto (fun n => supCDFDist (J n P) Jlim) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero (fun n => hJcdf n P) hJlim_cont hJlim_cdf hPconv
+  have hB : Tendsto (fun n => supCDFDist Jlim (J n (Phat n ω))) atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero (fun n => hJcdf n (Phat n ω)) hJlim_cont hJlim_cdf hHconv
+    simpa only [supCDFDist_comm] using h
+  -- Squeeze between `0` and `supCDFDist (J n P) Jlim + supCDFDist Jlim (J n Phat)`.
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (J n P) Jlim + supCDFDist Jlim (J n (Phat n ω)))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hJcdf n P) (hJcdf n (Phat n ω))
+  · exact supCDFDist_triangle (hJcdf n P) hJlim_cdf (hJcdf n (Phat n ω))
 
 /-- **Bootstrap quantile consistency.**
 
@@ -160,7 +331,12 @@ theorem tendsto_bootstrapQuantile
     (hstrict : StrictIncAt Jlim (cdfPseudoInverse Jlim (1 - α))) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) atTop
       (𝓝 (cdfPseudoInverse Jlim (1 - α))) := by
-  sorry
+  set q := cdfPseudoInverse Jlim (1 - α) with hqdef
+  have hq : Jlim q = 1 - α :=
+    cdf_quantile_eq hJlim_cdf hJlim_cont (by linarith [hα.2]) (by linarith [hα.1])
+  filter_upwards [hPhat_mem] with ω hω
+  have hHconv : ∀ x, Tendsto (fun n => J n (Phat n ω) x) atTop (𝓝 (Jlim x)) := hJconv _ hω
+  exact tendsto_cdfPseudoInverse_of_tendsto (fun n => (hJcdf n (Phat n ω)).mono) hstrict hq hHconv
 
 /-- **Asymptotic coverage of the bootstrap confidence set.**
 
@@ -195,7 +371,108 @@ theorem tendsto_bootstrapCoverage [IsProbabilityMeasure Pr]
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) :
     Tendsto (fun n => (Pr {ω | R n ω ≤ cdfPseudoInverse (J n (Phat n ω)) (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
-  sorry
+  set q := cdfPseudoInverse Jlim (1 - α) with hqdef
+  have hq : Jlim q = 1 - α :=
+    cdf_quantile_eq hJlim_cdf hJlim_cont (by linarith [hα.2]) (by linarith [hα.1])
+  set qn : ℕ → Ω → ℝ := fun n ω => cdfPseudoInverse (J n (Phat n ω)) (1 - α) with hqndef
+  -- The bootstrap critical values converge in probability to the limit quantile `q`.
+  have hquant : ∀ᵐ ω ∂Pr, Tendsto (fun n => qn n ω) atTop (𝓝 q) :=
+    tendsto_bootstrapQuantile hP_mem hJconv hJlim_cont hJlim_cdf hJcdf hPhat_mem hα hstrict
+  have hInMeas : TendstoInMeasure Pr qn atTop (fun _ => q) :=
+    tendstoInMeasure_of_tendsto_ae (fun n => (hqmeas n).aestronglyMeasurable) hquant
+  show Tendsto (fun n => (Pr {ω | R n ω ≤ qn n ω}).toReal) atTop (𝓝 (1 - α))
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- Continuity of `Jlim` at `q` fixes a window `δ` on which `Jlim` stays within `ε/4` of `1−α`.
+  have hcont : ContinuousAt Jlim q := hJlim_cont.continuousAt
+  rw [Metric.continuousAt_iff] at hcont
+  obtain ⟨δ', hδ'pos, hδ'⟩ := hcont (ε / 4) (by positivity)
+  set δ := δ' / 2 with hδdef
+  have hδpos : 0 < δ := by positivity
+  have hupabs : |Jlim (q + δ) - (1 - α)| < ε / 4 := by
+    have hd : dist (q + δ) q < δ' := by
+      rw [Real.dist_eq, add_sub_cancel_left, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq, hq] at this
+  have hloabs : |Jlim (q - δ) - (1 - α)| < ε / 4 := by
+    have hd : dist (q - δ) q < δ' := by
+      rw [Real.dist_eq]
+      have hne : q - δ - q = -δ := by ring
+      rw [hne, abs_neg, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq, hq] at this
+  rw [abs_lt] at hupabs hloabs
+  -- `Dp ⊆ S` and `Dm ⊆ S`, where `S` is the "quantile off by `δ`" event whose measure vanishes.
+  have hSconv : Tendsto (fun n => (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal)
+      atTop (𝓝 0) := by
+    have h := hInMeas (ENNReal.ofReal δ) (ENNReal.ofReal_pos.mpr hδpos)
+    simpa using (ENNReal.tendsto_toReal (by simp)).comp h
+  have hDplus : ∀ n, {ω | q + δ < qn n ω} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    rw [edist_dist, Real.dist_eq, abs_of_pos (by linarith : (0:ℝ) < qn n ω - q)]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hDminus : ∀ n, {ω | qn n ω < q - δ} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    rw [edist_dist, Real.dist_eq, abs_of_neg (by linarith : qn n ω - q < 0)]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  -- Coupling inclusions.
+  have hUp : ∀ n, {ω | R n ω ≤ qn n ω} ⊆
+      {ω | R n ω ≤ q + δ} ∪ {ω | q + δ < qn n ω} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases le_or_gt (qn n ω) (q + δ) with h | h
+    · exact Or.inl (le_trans hω h)
+    · exact Or.inr h
+  have hLo : ∀ n, {ω | R n ω ≤ q - δ} ⊆
+      {ω | R n ω ≤ qn n ω} ∪ {ω | qn n ω < q - δ} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases lt_or_ge (qn n ω) (q - δ) with h | h
+    · exact Or.inr h
+    · exact Or.inl (le_trans hω h)
+  -- Assemble on the eventual event.
+  have e1 : ∀ᶠ n in atTop, J n P (q + δ) < 1 - α + ε / 2 :=
+    (hJconv (fun _ => P) hP_mem (q + δ)).eventually_lt_const (by linarith [hupabs.2])
+  have e2 : ∀ᶠ n in atTop, 1 - α - ε / 2 < J n P (q - δ) :=
+    (hJconv (fun _ => P) hP_mem (q - δ)).eventually_const_lt (by linarith [hloabs.1])
+  have e3 : ∀ᶠ n in atTop, (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal < ε / 2 :=
+    hSconv.eventually_lt_const (by positivity)
+  rw [Filter.eventually_atTop] at e1 e2 e3
+  obtain ⟨N₁, hN₁⟩ := e1
+  obtain ⟨N₂, hN₂⟩ := e2
+  obtain ⟨N₃, hN₃⟩ := e3
+  refine ⟨max (max N₁ N₂) N₃, fun n hn => ?_⟩
+  have hn1 := hN₁ n (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn)
+  have hn2 := hN₂ n (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn)
+  have hn3 := hN₃ n (le_trans (le_max_right _ _) hn)
+  -- Real forms of the two measure inequalities.
+  have hSfin : (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}) ≠ ⊤ := measure_ne_top _ _
+  have hdp : (Pr {ω | q + δ < qn n ω}).toReal ≤
+      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
+    ENNReal.toReal_mono hSfin (measure_mono (hDplus n))
+  have hdm : (Pr {ω | qn n ω < q - δ}).toReal ≤
+      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
+    ENNReal.toReal_mono hSfin (measure_mono (hDminus n))
+  have hcn_up : (Pr {ω | R n ω ≤ qn n ω}).toReal ≤
+      J n P (q + δ) + (Pr {ω | q + δ < qn n ω}).toReal := by
+    have hle : Pr {ω | R n ω ≤ qn n ω} ≤
+        Pr {ω | R n ω ≤ q + δ} + Pr {ω | q + δ < qn n ω} :=
+      le_trans (measure_mono (hUp n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q + δ)] at this
+    exact this
+  have hcn_lo : J n P (q - δ) ≤
+      (Pr {ω | R n ω ≤ qn n ω}).toReal + (Pr {ω | qn n ω < q - δ}).toReal := by
+    have hle : Pr {ω | R n ω ≤ q - δ} ≤
+        Pr {ω | R n ω ≤ qn n ω} + Pr {ω | qn n ω < q - δ} :=
+      le_trans (measure_mono (hLo n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q - δ)] at this
+    exact this
+  rw [Real.dist_eq, abs_lt]
+  constructor <;> [linarith; linarith]
 
 end Consistency
 
@@ -229,6 +506,14 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
     TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
       (fun _ => ∫ t, t ∂ν) := by
+  -- TODO: reduces to the closed brick `ForMathlib.triangular_wlln_of_L1` after building the row
+  -- laws `Gm n := Pr.map (Y n 0)` (all row entries share this law by `hGrow` + `Measure.ext_of_Iic`),
+  -- transferring `habs`/`hint` by `integral_map`, and reindexing `Fin n ↔ range n`. The one
+  -- genuinely missing step is `hweak` (integration of bounded-continuous test functions), i.e. the
+  -- one-direction portmanteau theorem "CDF convergence at every continuity point ⟹ weak
+  -- convergence" specialised to `ℝ`, which is not yet available in Mathlib in this form
+  -- (`IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` needs convergence at *all* `Iic x`,
+  -- not merely at continuity points, so it does not apply directly).
   sorry
 
 end StatLean.HypothesisTesting
