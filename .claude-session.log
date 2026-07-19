@@ -1,7 +1,0 @@
-srun: job 33058746 queued and waiting for resources
-srun: job 33058746 has been allocated resources
-I've completed the setup phase. Status so far:
-- **GroupAverageMeasure**: builds clean (exit 0).
-- **MaximalInvariant**: `map_maximalInvariant_eq_of_orbit` closed via the now-available `[MeasurableSMul G 𝓧]`; build in progress. Remaining 3 sorries are genuinely under-hypothesized (will report).
-
-I'll continue once the build notification arrives.
