@@ -1,6 +1,7 @@
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import Mathlib.Probability.CDF
 
 /-!
 # Quantile (generalized inverse) of a distribution function — ForMathlib brick
@@ -52,7 +53,7 @@ E. S. Pearson ("On the problem of the most efficient tests of statistical hypoth
 *Phil. Trans. R. Soc. A* **231** (1933), 289–337).
 -/
 
-open Filter MeasureTheory
+open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal Topology
 
 namespace StatLean.HypothesisTesting
@@ -126,7 +127,56 @@ theorem exists_critical_constants (P : Measure ℝ) [IsProbabilityMeasure P] {α
     (hα0 : 0 < α) (hα1 : α < 1) :
     ∃ C γ : ℝ, 0 ≤ γ ∧ γ ≤ 1 ∧
       (P {x : ℝ | C < x}).toReal + γ * (P {x : ℝ | x = C}).toReal = α := by
-  sorry
+  set F : ℝ → ℝ := fun x => cdf P x with hFdef
+  have hmono : Monotone F := monotone_cdf (μ := P)
+  have hrc : ∀ y, ContinuousWithinAt F (Set.Ici y) y := fun y => (cdf P).right_continuous y
+  have hne : {y : ℝ | 1 - α ≤ F y}.Nonempty := by
+    obtain ⟨y, hy⟩ := ((tendsto_cdf_atTop P).eventually_const_lt
+        (show 1 - α < 1 by linarith)).exists
+    exact ⟨y, le_of_lt hy⟩
+  have hbdd : BddBelow {y : ℝ | 1 - α ≤ F y} := by
+    obtain ⟨b, hb⟩ := eventually_atBot.mp
+      ((tendsto_cdf_atBot P).eventually_lt_const (show (0 : ℝ) < 1 - α by linarith))
+    refine ⟨b, fun y hy => ?_⟩
+    by_contra h
+    push_neg at h
+    simp only [Set.mem_setOf_eq] at hy
+    exact absurd (hb y h.le) (not_lt.mpr hy)
+  set C := quantile F (1 - α) with hCdef
+  have hA : 1 - α ≤ F C := (quantile_le_iff hmono hrc hne hbdd).mp le_rfl
+  have hB : ∀ y, y < C → F y < 1 - α := by
+    intro y hy
+    by_contra h
+    push_neg at h
+    exact absurd ((quantile_le_iff hmono hrc hne hbdd).mpr h) (not_le.mpr hy)
+  set L := Function.leftLim F C with hLdef
+  have hLle : L ≤ F C := Monotone.leftLim_le hmono le_rfl
+  have hLbound : L ≤ 1 - α := by
+    have htend : Tendsto F (𝓝[<] C) (𝓝 L) := hmono.tendsto_leftLim C
+    refine le_of_tendsto htend ?_
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    exact (hB y hy).le
+  have hg : (P {x : ℝ | C < x}).toReal = 1 - F C := by
+    have hset : {x : ℝ | C < x} = Set.Ioi C := rfl
+    rw [hset, ← measure_cdf (μ := P), (cdf P).measure_Ioi (tendsto_cdf_atTop P) C,
+      ENNReal.toReal_ofReal (by linarith [cdf_le_one (μ := P) C])]
+  have hj : (P {x : ℝ | x = C}).toReal = F C - L := by
+    have hset : {x : ℝ | x = C} = {C} := by ext x; simp
+    rw [hset, ← measure_cdf (μ := P), (cdf P).measure_singleton C,
+      ENNReal.toReal_ofReal (by linarith [hLle])]
+  have hgle : 1 - F C ≤ α := by linarith [hA]
+  have hgnn : 0 ≤ 1 - F C := by linarith [cdf_le_one (μ := P) C]
+  have hjnn : 0 ≤ F C - L := by linarith [hLle]
+  have hαle : α ≤ (1 - F C) + (F C - L) := by linarith [hLbound]
+  rcases eq_or_lt_of_le hjnn with hj0 | hjpos
+  · refine ⟨C, 0, le_refl _, zero_le_one, ?_⟩
+    rw [hg, hj]
+    have hval : (1 - F C) = α := le_antisymm hgle (by linarith [hαle, hj0])
+    rw [hval]; ring
+  · refine ⟨C, (α - (1 - F C)) / (F C - L), div_nonneg (by linarith [hgle]) (le_of_lt hjpos),
+      ?_, ?_⟩
+    · rw [div_le_one hjpos]; linarith [hαle]
+    · rw [hg, hj, div_mul_cancel₀ _ (ne_of_gt hjpos)]; ring
 
 /-- **Inverse-transform sampling**: the quantile function of the distribution function of `P`
 pushes the uniform law on `[0,1]` forward to `P`.
