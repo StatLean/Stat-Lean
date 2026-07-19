@@ -80,7 +80,11 @@ See outline.md for the 73-item book↔Lean dictionary (Lean names filled as stub
   elaborate to `EuclideanSpace`. Must be built with `WithLp.toLp 2 (fun i => …)` — the idiom the
   rest of the repo already uses (`ParametricFamily/SubmodelDQM.lean:52`). Everything else green.
 - ExponentialFamily + Completeness + InformationInequality (post-fix): **GREEN**, 2840 jobs, 0 errors.
-- Equivariance + LinearModel: gate running.
+- Equivariance + LinearModel: **GREEN** after two fixes (open scoped NNReal for the `ℝ≥0`
+  notation; annotate the competitor binder `δ'` so `IsCanonicalMRE`'s implicit dimensions infer).
+- **FULL-AREA GATE GREEN (2026-07-18): `lake build StatLean.PointEstimation` — 0 errors,
+  175 sorries, `Build completed successfully`.** Area umbrella `StatLean/PointEstimation.lean`
+  created (laptop-only surface); not yet imported by `StatLean.lean` (that happens at merge).
 
 ### Statement decisions & honest corrections made during drafting
 
