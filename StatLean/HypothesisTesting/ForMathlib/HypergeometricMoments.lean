@@ -365,7 +365,89 @@ theorem var_linear {n m : ℕ}
           - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s')) ^ 2)
       = ((m : ℝ) * ((n : ℝ) - m)) / ((n : ℝ) * ((n : ℝ) - 1))
           * ∑ i, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2 := by
-  sorry
+  have hnr : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have hn0 : (n : ℝ) ≠ 0 := (by linarith : (0 : ℝ) < n).ne'
+  have hn1 : (n : ℝ) - 1 ≠ 0 := (by linarith : (0 : ℝ) < (n : ℝ) - 1).ne'
+  -- The centred mean of `∑ cᵢWᵢ`.
+  have hEY : expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s')
+      = ∑ i, c i * ((m : ℝ) / n) := by
+    rw [expect_sum]
+    exact Finset.sum_congr rfl fun i _ => by rw [expect_smul, expect_weight hm i]
+  -- Expand the square of the centred statistic as a double sum.
+  have hint : ∀ s : SubsetsOfCard n m,
+      ((∑ i, c i * weight i s)
+          - expect (fun s' : SubsetsOfCard n m => ∑ i, c i * weight i s')) ^ 2
+        = ∑ i, ∑ j, (c i * (weight i s - (m : ℝ) / n)) * (c j * (weight j s - (m : ℝ) / n)) := by
+    intro s
+    rw [hEY, show (∑ i, c i * weight i s) - ∑ i, c i * ((m : ℝ) / n)
+          = ∑ i, c i * (weight i s - (m : ℝ) / n) from by
+          rw [← Finset.sum_sub_distrib]; exact Finset.sum_congr rfl fun i _ => by ring,
+      sq, Finset.sum_mul_sum]
+  -- Expectation of each cross term reduces to a pair moment.
+  have hpair : ∀ i j : Fin n,
+      expect (fun s : SubsetsOfCard n m =>
+          (c i * (weight i s - (m : ℝ) / n)) * (c j * (weight j s - (m : ℝ) / n)))
+        = c i * c j * (expect (fun s : SubsetsOfCard n m => weight i s * weight j s)
+            - ((m : ℝ) / n) ^ 2) := by
+    intro i j
+    have hexp : (fun s : SubsetsOfCard n m =>
+          (c i * (weight i s - (m : ℝ) / n)) * (c j * (weight j s - (m : ℝ) / n)))
+        = fun s => c i * c j * (weight i s * weight j s)
+            - c i * c j * ((m : ℝ) / n * weight i s) - c i * c j * ((m : ℝ) / n * weight j s)
+            + c i * c j * ((m : ℝ) / n) ^ 2 := by
+      funext s; ring
+    rw [hexp]
+    simp only [expect_add, expect_sub, expect_smul, expect_const hm, expect_weight hm]
+    ring
+  -- The paired expectations, `p` on the diagonal and `q` off it.
+  have hEij : ∀ i j : Fin n, expect (fun s : SubsetsOfCard n m => weight i s * weight j s)
+      = if i = j then (m : ℝ) / n
+        else (m : ℝ) * ((m : ℝ) - 1) / ((n : ℝ) * ((n : ℝ) - 1)) := by
+    intro i j
+    by_cases h : i = j
+    · subst h
+      rw [if_pos rfl,
+        show (fun s : SubsetsOfCard n m => weight i s * weight i s)
+            = fun s => weight i s from by
+            funext s; simp only [weight]; split_ifs <;> ring]
+      exact expect_weight hm i
+    · rw [if_neg h]; exact expect_weight_pair hm h
+  -- The closed form of the resulting `if`-double sum.
+  have hsum : ∀ p q : ℝ,
+      ∑ i, ∑ j, c i * c j * ((if i = j then p else q) - p ^ 2)
+        = (q - p ^ 2) * (∑ i, c i) ^ 2 + (p - q) * ∑ i, (c i) ^ 2 := by
+    intro p q
+    have hg : ∀ i j : Fin n, c i * c j * ((if i = j then p else q) - p ^ 2)
+        = c i * c j * (q - p ^ 2) + (if i = j then c i * c j * (p - q) else 0) := by
+      intro i j; by_cases h : i = j <;> simp [h] <;> ring
+    have hA : ∑ i, ∑ j, c i * c j * (q - p ^ 2) = (q - p ^ 2) * (∑ i, c i) ^ 2 := by
+      rw [pow_two (∑ i, c i), Finset.sum_mul_sum, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.mul_sum]; exact Finset.sum_congr rfl fun j _ => by ring
+    have hB : ∑ i, ∑ j : Fin n, (if i = j then c i * c j * (p - q) else 0)
+        = (p - q) * ∑ i, (c i) ^ 2 := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.sum_ite_eq, if_pos (Finset.mem_univ i)]
+      ring
+    simp_rw [hg, Finset.sum_add_distrib]
+    rw [hA, hB]
+  -- The centred sum of squares in terms of raw power sums.
+  have hVsum : ∑ i : Fin n, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2
+      = ∑ i, (c i) ^ 2 - (∑ i, c i) ^ 2 * (n : ℝ)⁻¹ := by
+    have h1 : ∑ i : Fin n, (c i - (n : ℝ)⁻¹ * ∑ j, c j) ^ 2
+        = ∑ i, ((c i) ^ 2 - 2 * ((n : ℝ)⁻¹ * ∑ j, c j) * c i + ((n : ℝ)⁻¹ * ∑ j, c j) ^ 2) :=
+      Finset.sum_congr rfl fun i _ => by ring
+    rw [h1, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+      Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    field_simp
+    ring
+  -- Assemble.
+  rw [congrArg expect (funext hint)]
+  simp_rw [expect_sum, hpair, hEij]
+  rw [hsum, hVsum]
+  field_simp
+  ring
 
 /-- **`O(1/m)` variance bound for the group average.** With `s²_n = n⁻¹ ∑ᵢ (cᵢ - c̄)²` the
 population dispersion of the coefficients,
