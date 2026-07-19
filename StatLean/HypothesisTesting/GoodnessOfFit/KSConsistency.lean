@@ -153,7 +153,7 @@ theorem measurable_ksStat {n : ℕ} (X : Fin n → Ω → ℝ) (F₀ : ℝ → �
 
 /-- The DKW envelope evaluated at the calibrated threshold equals the nominal level:
 `4·exp(−(ksThreshold α)²/8) = α`. This is the defining equation of `ksThreshold`. -/
-private lemma dkw_envelope_threshold {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
+lemma dkw_envelope_threshold {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
     4 * Real.exp (-(ksThreshold α) ^ 2 / 8) = α := by
   have h4a : 1 ≤ 4 / α := by rw [le_div_iff₀ hα]; linarith
   have hlog : 0 ≤ Real.log (4 / α) := Real.log_nonneg h4a
@@ -235,12 +235,12 @@ theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : 
 /-! ### Kolmogorov-distance geometry (triangle inequality) -/
 
 /-- The sup (Kolmogorov) distance is symmetric. -/
-private lemma supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
+lemma supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
   unfold supCDFDist
   exact iSup_congr fun t => abs_sub_comm _ _
 
 /-- The absolute difference of two `[0,1]`-valued functions is bounded (by `1`). -/
-private lemma bddAbove_absCDFDiff {F G : ℝ → ℝ} (hF : ∀ t, F t ∈ Set.Icc (0 : ℝ) 1)
+lemma bddAbove_absCDFDiff {F G : ℝ → ℝ} (hF : ∀ t, F t ∈ Set.Icc (0 : ℝ) 1)
     (hG : ∀ t, G t ∈ Set.Icc (0 : ℝ) 1) :
     BddAbove (Set.range fun t => |F t - G t|) := by
   refine ⟨1, ?_⟩
@@ -250,7 +250,7 @@ private lemma bddAbove_absCDFDiff {F G : ℝ → ℝ} (hF : ∀ t, F t ∈ Set.I
   rw [abs_le]; constructor <;> linarith
 
 /-- Triangle inequality for the sup distance (given boundedness of the two sups). -/
-private lemma supCDFDist_triangle {F G H : ℝ → ℝ}
+lemma supCDFDist_triangle {F G H : ℝ → ℝ}
     (hFG : BddAbove (Set.range fun t => |F t - G t|))
     (hGH : BddAbove (Set.range fun t => |G t - H t|)) :
     supCDFDist F H ≤ supCDFDist F G + supCDFDist G H := by
