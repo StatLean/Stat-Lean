@@ -125,7 +125,7 @@ noncomputable def normMeanRootCDF (F : Measure (EuclideanSpace ℝ (Fin k)))
 section MeanVector
 
 variable {Q : Measure (EuclideanSpace ℝ (Fin k))} {F : ℕ → Measure (EuclideanSpace ℝ (Fin k))}
-  {nrm : EuclideanSpace ℝ (Fin k) → ℝ} {ℙ : Measure Ω} {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
+  {nrm : EuclideanSpace ℝ (Fin k) → ℝ} {Pr : Measure Ω} {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
 
 /-- **Limit law of the mean vector along the class.**
 
@@ -188,13 +188,13 @@ theorem norm_root_cdf_tendsto [IsProbabilityMeasure Q]
 For an independent identically distributed sample from a square-integrable law on `ℝᵏ` with a
 nondegenerate covariance, the bootstrap sampling distribution of the norm of the root is
 uniformly close to the true one, almost surely, for every norm. -/
-theorem bootstrap_meanVec_consistent [IsProbabilityMeasure ℙ] [IsProbabilityMeasure Q]
+theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
     -- LEAN-ONLY: the observations are measurable
     (hmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `Q`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) Q ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: square-integrable sampling law
     (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
     -- USER-INPUT: the norm is subadditive
@@ -205,7 +205,7 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure ℙ] [IsProbabilityMe
     (hnrm_def : ∀ y, nrm y = 0 → y = 0)
     -- USER-INPUT: nondegeneracy of the covariance
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n)
+    ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n)
       (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
   sorry
 
@@ -225,7 +225,7 @@ noncomputable def bootstrapLaw {n : ℕ} (x : Fin n → 𝓢) : Measure (Fin n �
 
 section SmoothFunctions
 
-variable {P : Measure 𝓢} {ℙ : Measure Ω} {X : ℕ → Ω → 𝓢} {h : Fin p → 𝓢 → ℝ}
+variable {P : Measure 𝓢} {Pr : Measure Ω} {X : ℕ → Ω → 𝓢} {h : Fin p → 𝓢 → ℝ}
   {f : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin q)}
   {Df : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin q)} {D : Matrix (Fin q) (Fin p) ℝ}
   {covH : Matrix (Fin p) (Fin p) ℝ} {nrm : EuclideanSpace ℝ (Fin q) → ℝ}
@@ -267,13 +267,13 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
 Almost surely, the law of the resampled and recentred image is asymptotically indistinguishable
 from the sampling law of the centred and scaled image, tested against bounded continuous
 functions. -/
-theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsProbabilityMeasure ℙ]
+theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsProbabilityMeasure Pr]
     -- LEAN-ONLY: the observations are measurable
     (hXmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `P`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) P ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) P Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: the coordinate functions are measurable and square-integrable
     (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P)
     -- USER-INPUT: `f` is differentiable at the parameter with nonzero continuous differential
@@ -282,7 +282,7 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
     (hf_cont : ContinuousAt (fderiv ℝ f) (WithLp.toLp 2 fun j => ∫ s, h j s ∂P))
     -- LEAN-ONLY: argument quantified by the conclusion, not a hypothesis
     (φ : EuclideanSpace ℝ (Fin q) →ᵇ ℝ) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n : ℕ =>
+    ∀ᵐ ω ∂Pr, Tendsto (fun n : ℕ =>
         ∫ z, φ z ∂((Measure.pi fun _ : Fin n => P).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P))) -
@@ -298,13 +298,13 @@ uniformly approximated by its resampled counterpart. Taking the maximum norm on 
 this is the statement behind simultaneous confidence rectangles for the coordinates of
 `f(θ)`; the reference develops that construction as an illustration rather than as part of the
 result, so it is not stated separately here. -/
-theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabilityMeasure ℙ]
+theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabilityMeasure Pr]
     -- LEAN-ONLY: the observations are measurable
     (hXmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `P`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) P ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) P Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: the coordinate functions are measurable and square-integrable
     (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P)
     -- USER-INPUT: `f` is differentiable at the parameter with nonzero continuous differential
@@ -317,8 +317,8 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
     (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
     -- USER-INPUT: the norm is positive definite
     (hnrm_def : ∀ y, nrm y = 0 → y = 0) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n : ℕ => supCDFDist
-        (fun s => (ℙ {ω' | nrm (f (meanStatistic h fun i : Fin n => X i ω') -
+    ∀ᵐ ω ∂Pr, Tendsto (fun n : ℕ => supCDFDist
+        (fun s => (Pr {ω' | nrm (f (meanStatistic h fun i : Fin n => X i ω') -
           f (WithLp.toLp 2 fun j => ∫ t, h j t ∂P)) ≤ s}).toReal)
         (fun s => ((bootstrapLaw fun i : Fin n => X i ω)
           {w | nrm (f (meanStatistic h w) -

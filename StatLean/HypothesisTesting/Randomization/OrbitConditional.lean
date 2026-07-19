@@ -129,7 +129,7 @@ theorem condExp_orbit_indicator (P : Measure 𝓧) [IsProbabilityMeasure P] (T :
     (hrand : RandomizationHypothesis G P) :
     condExp (invariantSigmaAlgebra G) P ((T ⁻¹' B).indicator (fun _ => (1 : ℝ)))
       =ᵐ[P] fun x => (Fintype.card G : ℝ)⁻¹ *
-        ∑ g : G, if T (g • x) ∈ B then (1 : ℝ) else 0 := by
+        ∑ g : G, B.indicator (fun _ => (1 : ℝ)) (T (g • x)) := by
   sorry
 
 /-- **The conditional law given the orbit *is* the randomization distribution.** Taking

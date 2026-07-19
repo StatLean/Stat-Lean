@@ -82,14 +82,14 @@ class agrees with the random sequence *at those very indices*. Index preservatio
 the classes of this area pair the index of a law with the sample size, so a class member cannot
 be produced by reindexing. Almost sure membership is the special case obtained with the identity
 subsequence. -/
-def MemClassInProbability (ℙ : Measure Ω) (Qhat : ℕ → Ω → Measure 𝓧)
+def MemClassInProbability (Pr : Measure Ω) (Qhat : ℕ → Ω → Measure 𝓧)
     (C : Set (ℕ → Measure 𝓧)) : Prop :=
   ∀ ϕ : ℕ → ℕ, StrictMono ϕ → ∃ ψ : ℕ → ℕ, StrictMono ψ ∧
-    ∀ᵐ ω ∂ℙ, ∃ Qs ∈ C, ∀ m : ℕ, Qs (ϕ (ψ m)) = Qhat (ϕ (ψ m)) ω
+    ∀ᵐ ω ∂Pr, ∃ Qs ∈ C, ∀ m : ℕ, Qs (ϕ (ψ m)) = Qhat (ϕ (ψ m)) ω
 
 section BootstrapTest
 
-variable {ℙ : Measure Ω} {P : Measure 𝓧} {T : ℕ → Ω → ℝ} {G : ℕ → Measure 𝓧 → ℝ → ℝ}
+variable {Pr : Measure Ω} {P : Measure 𝓧} {T : ℕ → Ω → ℝ} {G : ℕ → Measure 𝓧 → ℝ → ℝ}
   {C_Q : Set (ℕ → Measure 𝓧)} {Glim : ℝ → ℝ} {Qhat : ℕ → Ω → Measure 𝓧} {α : ℝ}
 
 /-- **Asymptotic level of the bootstrap test.**
@@ -99,7 +99,7 @@ distribution functions of the statistic converge to a common continuous limit, a
 null-restricted estimator lies in the null class in probability. Then the test rejecting when
 the statistic exceeds the estimated `1 − α` quantile has rejection probability tending to the
 nominal level `α`. -/
-theorem tendsto_bootstrapTest_level [IsProbabilityMeasure ℙ]
+theorem tendsto_bootstrapTest_level [IsProbabilityMeasure Pr]
     -- USER-INPUT: the data-generating law belongs to the null class, as the constant sequence
     (hP_mem : (fun _ => P) ∈ C_Q)
     -- USER-INPUT: along every sequence of the null class the distribution functions of the
@@ -112,7 +112,7 @@ theorem tendsto_bootstrapTest_level [IsProbabilityMeasure ℙ]
     -- USER-INPUT: every sampling distribution of the statistic is a distribution function
     (hGcdf : ∀ (n : ℕ) (Q : Measure 𝓧), IsCDF (G n Q))
     -- USER-INPUT: the null-restricted estimator lies in the null class, in probability
-    (hQhat : MemClassInProbability ℙ Qhat C_Q)
+    (hQhat : MemClassInProbability Pr Qhat C_Q)
     -- USER-INPUT: nominal level strictly between `0` and `1`
     (hα : α ∈ Set.Ioo (0 : ℝ) 1)
     -- USER-INPUT: the limit law is strictly increasing at the critical value being estimated;
@@ -120,13 +120,13 @@ theorem tendsto_bootstrapTest_level [IsProbabilityMeasure ℙ]
     (hstrict : StrictIncAt Glim (cdfPseudoInverse Glim (1 - α)))
     -- USER-INPUT: at the data-generating law the field `G` is the exact sampling distribution
     -- function of the statistic
-    (hGP : ∀ (n : ℕ) (x : ℝ), G n P x = (ℙ {ω | T n ω ≤ x}).toReal)
+    (hGP : ∀ (n : ℕ) (x : ℝ), G n P x = (Pr {ω | T n ω ≤ x}).toReal)
     -- LEAN-ONLY: the statistic is measurable
     (hTmeas : ∀ n, Measurable (T n))
     -- LEAN-ONLY: the estimated critical value is measurable in the sample; no measurability in
     -- the measure argument of `G` is assumed, so this is recorded directly
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α)) :
-    Tendsto (fun n => (ℙ {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
+    Tendsto (fun n => (Pr {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
       atTop (𝓝 α) := by
   sorry
 
@@ -136,18 +136,18 @@ Accompanying claim, not part of the level statement above. If under the law gene
 the statistic diverges in probability, while the estimated critical value stays bounded in
 probability — which is what resampling under the null constraints buys — then the rejection
 probability tends to one. -/
-theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure ℙ]
+theorem tendsto_bootstrapTest_power_one [IsProbabilityMeasure Pr]
     -- USER-INPUT: under the alternative the test statistic diverges in probability
-    (hT : ∀ M : ℝ, Tendsto (fun n => (ℙ {ω | T n ω ≤ M}).toReal) atTop (𝓝 0))
+    (hT : ∀ M : ℝ, Tendsto (fun n => (Pr {ω | T n ω ≤ M}).toReal) atTop (𝓝 0))
     -- USER-INPUT: the estimated critical value is bounded in probability; under an alternative
     -- the null-restricted estimator approaches a null law, whose critical value is finite
     (hcrit : ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, ∀ n : ℕ,
-      (ℙ {ω | M < cdfPseudoInverse (G n (Qhat n ω)) (1 - α)}).toReal ≤ ε)
+      (Pr {ω | M < cdfPseudoInverse (G n (Qhat n ω)) (1 - α)}).toReal ≤ ε)
     -- LEAN-ONLY: the statistic is measurable
     (hTmeas : ∀ n, Measurable (T n))
     -- LEAN-ONLY: the estimated critical value is measurable in the sample
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α)) :
-    Tendsto (fun n => (ℙ {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
+    Tendsto (fun n => (Pr {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
       atTop (𝓝 1) := by
   sorry
 

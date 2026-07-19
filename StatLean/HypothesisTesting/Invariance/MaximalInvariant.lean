@@ -7,11 +7,11 @@ This file assembles the structural backbone of the invariance reduction.
 
 **The transformation group.** A bijection `g` of the sample space *preserves* the model
 `P : Θ → Measure 𝓧` when the law of `g(X)` is again a member of the family: there is an
-*induced* parameter map `ḡ` with
+*induced* parameter map `gbar` with
 $$ P_\theta\{g X \in A\} \;=\; P_{\bar g\theta}\{X \in A\},
    \qquad\text{equivalently}\qquad (P_\theta)\circ g^{-1} \;=\; P_{\bar g\theta}, $$
-and `ḡ` maps the parameter space *onto* itself. Family-preserving bimeasurable bijections
-are closed under composition and inversion — they form a group — and `g ↦ ḡ` is a
+and `gbar` maps the parameter space *onto* itself. Family-preserving bimeasurable bijections
+are closed under composition and inversion — they form a group — and `g ↦ gbar` is a
 homomorphism, $\overline{g'g} = \bar g'\,\bar g$ and $\overline{g^{-1}} = \bar g^{-1}$.
 Consequently any class of transformations leaving a testing problem invariant may be
 enlarged to a group without loss.
@@ -41,9 +41,9 @@ parameter points lying on a common induced orbit.
   parameter only through a maximal invariant of the induced group.
 
 **Proof formalization notes.**
-* `PreservesFamily` is deliberately *set-level*: the induced map `ḡ : Θ → Θ` is packaged
+* `PreservesFamily` is deliberately *set-level*: the induced map `gbar : Θ → Θ` is packaged
   existentially together with the surjectivity demanded of it (the "onto" half of
-  parameter preservation), rather than being bundled as an `Equiv`. Injectivity of `ḡ` is
+  parameter preservation), rather than being bundled as an `Equiv`. Injectivity of `gbar` is
   **not** part of the definition — it is a consequence of identifiability of the model,
   proved separately in `InducesOn.bar_injective`; this keeps the definition honest about
   what preservation alone delivers.
@@ -86,11 +86,11 @@ section Preserving
 
 variable {Θ 𝓧 : Type*} [MeasurableSpace 𝓧] {P : Θ → Measure 𝓧}
 
-/-- `ḡ` is an **induced parameter map** for the sample-space bijection `g`: pushing a
-member of the family forward along `g` lands on the member indexed by `ḡ θ`, i.e.
-`P_θ(g⁻¹A) = P_{ḡθ}(A)` for all measurable `A`. -/
-def InducesOn (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) (ḡ : Θ → Θ) : Prop :=
-  ∀ θ, (P θ).map ⇑g = P (ḡ θ)
+/-- `gbar` is an **induced parameter map** for the sample-space bijection `g`: pushing a
+member of the family forward along `g` lands on the member indexed by `gbar θ`, i.e.
+`P_θ(g⁻¹A) = P_{gbarθ}(A)` for all measurable `A`. -/
+def InducesOn (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) (gbar : Θ → Θ) : Prop :=
+  ∀ θ, (P θ).map ⇑g = P (gbar θ)
 
 /-- **Family-preserving transformation**: a bimeasurable bijection of the sample space
 admitting an induced parameter map that carries the parameter space *onto* itself.
@@ -100,7 +100,7 @@ is deliberately *not* required here — it follows from identifiability of the m
 (`InducesOn.bar_injective`). -/
 def PreservesFamily (P : Θ → Measure 𝓧) (g : Equiv.Perm 𝓧) : Prop :=
   Measurable ⇑g ∧ Measurable ⇑g.symm ∧
-    ∃ ḡ : Θ → Θ, Function.Surjective ḡ ∧ InducesOn P g ḡ
+    ∃ gbar : Θ → Θ, Function.Surjective gbar ∧ InducesOn P g gbar
 
 /-- The identity transformation preserves the family, with induced map the identity. -/
 theorem inducesOn_one : InducesOn P (1 : Equiv.Perm 𝓧) id := by
@@ -110,17 +110,17 @@ theorem inducesOn_one : InducesOn P (1 : Equiv.Perm 𝓧) id := by
 theorem preservesFamily_one : PreservesFamily P (1 : Equiv.Perm 𝓧) := by
   sorry
 
-/-- Composition of induced maps: `(g'g)‾ = ḡ' ∘ ḡ` (the first homomorphism identity).
+/-- Composition of induced maps: `(g'g)‾ = gbar' ∘ gbar` (the first homomorphism identity).
 Recall `(g' * g) x = g' (g x)` for permutations. -/
-theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {ḡ ḡ' : Θ → Θ}
-    -- USER-INPUT: `g` preserves the family with induced map `ḡ`
-    (h : InducesOn P g ḡ)
-    -- USER-INPUT: `g'` preserves the family with induced map `ḡ'`
-    (h' : InducesOn P g' ḡ')
+theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {gbar gbar' : Θ → Θ}
+    -- USER-INPUT: `g` preserves the family with induced map `gbar`
+    (h : InducesOn P g gbar)
+    -- USER-INPUT: `g'` preserves the family with induced map `gbar'`
+    (h' : InducesOn P g' gbar')
     -- LEAN-ONLY: measurability of `g`, needed to push forward along the composite;
     -- automatic for the bimeasurable transformations the theory quantifies over
     (hg : Measurable ⇑g) :
-    InducesOn P (g' * g) (ḡ' ∘ ḡ) := by
+    InducesOn P (g' * g) (gbar' ∘ gbar) := by
   sorry
 
 /-- Family-preserving transformations are closed under composition. -/
@@ -132,24 +132,24 @@ theorem PreservesFamily.mul {g g' : Equiv.Perm 𝓧}
 
 /-- **Identifiability makes the induced map injective.** If distinct parameters index
 distinct distributions, an induced parameter map is one-to-one. -/
-theorem InducesOn.bar_injective {g : Equiv.Perm 𝓧} {ḡ : Θ → Θ}
+theorem InducesOn.bar_injective {g : Equiv.Perm 𝓧} {gbar : Θ → Θ}
     -- USER-INPUT: the model is identifiable (distinct parameters, distinct laws)
     (hP : Function.Injective P)
-    -- USER-INPUT: `ḡ` is induced by `g`
-    (h : InducesOn P g ḡ)
+    -- USER-INPUT: `gbar` is induced by `g`
+    (h : InducesOn P g gbar)
     -- LEAN-ONLY: bimeasurability of `g`, used to undo the pushforward
     (hg : Measurable ⇑g) (hg' : Measurable ⇑g.symm) :
-    Function.Injective ḡ := by
+    Function.Injective gbar := by
   sorry
 
-/-- Inverse of an induced map: `(g⁻¹)‾ = (ḡ)⁻¹` (the second homomorphism identity),
+/-- Inverse of an induced map: `(g⁻¹)‾ = (gbar)⁻¹` (the second homomorphism identity),
 stated for an induced map already known to be bijective. -/
-theorem InducesOn.inv {g : Equiv.Perm 𝓧} {ḡ : Equiv.Perm Θ}
-    -- USER-INPUT: `ḡ` is induced by `g`
-    (h : InducesOn P g ⇑ḡ)
+theorem InducesOn.inv {g : Equiv.Perm 𝓧} {gbar : Equiv.Perm Θ}
+    -- USER-INPUT: `gbar` is induced by `g`
+    (h : InducesOn P g ⇑gbar)
     -- LEAN-ONLY: measurability of `g⁻¹`, needed to push forward along the inverse
     (hg : Measurable ⇑g.symm) :
-    InducesOn P g⁻¹ ⇑ḡ⁻¹ := by
+    InducesOn P g⁻¹ ⇑gbar⁻¹ := by
   sorry
 
 /-- Family-preserving transformations are closed under inversion, given identifiability

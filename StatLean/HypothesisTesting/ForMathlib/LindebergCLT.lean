@@ -1,4 +1,5 @@
 import Mathlib.Probability.CentralLimitTheorem
+import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Measure.LevyConvergence
@@ -69,7 +70,7 @@ bibliographic comments below.
 is P. Lévy, *Calcul des probabilités*, Gauthier-Villars, 1925.
 -/
 
-open MeasureTheory ProbabilityTheory Filter
+open MeasureTheory ProbabilityTheory Filter BoundedContinuousFunction
 open scoped Topology ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
@@ -196,14 +197,14 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
     (hindep : ∀ n, iIndepFun (Y n) P)
     -- USER-INPUT: the `n`-th row is identically distributed with law `G n`.
     (hlaw : ∀ n (i : Fin n), P.map (Y n i) = G n)
-    -- USER-INPUT: the row laws converge weakly to `ν`.
-    (hweak : Tendsto (fun n => (⟨G n, inferInstance⟩ : ProbabilityMeasure ℝ)) atTop
-      (𝓝 (⟨ν, inferInstance⟩ : ProbabilityMeasure ℝ)))
+    -- USER-INPUT: the row laws converge weakly to `ν` (portmanteau form: integration against
+    -- bounded continuous test functions; matches the convention used elsewhere in the library).
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ y, f y ∂(G n)) atTop (𝓝 (∫ y, f y ∂ν)))
     -- USER-INPUT: the limit law has a finite first moment.
     (hν : Integrable id ν)
     -- USER-INPUT: the first absolute moments converge.
     (hL1 : Tendsto (fun n => ∫ y, |y| ∂(G n)) atTop (𝓝 (∫ y, |y| ∂ν))) :
-    TendstoInMeasure P (fun n ω => (n : ℝ)⁻¹ * ∑ i, Y n i ω) atTop
+    TendstoInMeasure P (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i, Y n i ω) atTop
       (fun _ => ∫ y, y ∂ν) := by
   sorry
 

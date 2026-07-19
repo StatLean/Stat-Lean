@@ -106,7 +106,7 @@ noncomputable def studentizedRootCDF (F : Measure ℝ) (n : ℕ) (x : ℝ) : ℝ
 
 section MeanBootstrap
 
-variable {Q : Measure ℝ} {F : ℕ → Measure ℝ} {ℙ : Measure Ω} {X : ℕ → Ω → ℝ} {α : ℝ}
+variable {Q : Measure ℝ} {F : ℕ → Measure ℝ} {Pr : Measure Ω} {X : ℕ → Ω → ℝ} {α : ℝ}
 
 /-- **Convergence of the sampling distribution of the mean along the class.**
 
@@ -130,34 +130,34 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
 For an independent identically distributed sample from a square-integrable law, the sequence of
 empirical measures satisfies the three defining convergences of the mean class with probability
 one. -/
-theorem empirical_mem_meanSeqClass [IsProbabilityMeasure ℙ] [IsProbabilityMeasure Q]
+theorem empirical_mem_meanSeqClass [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
     -- LEAN-ONLY: the observations are measurable
     (hmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: the observations are independent
-    (hindep : iIndepFun X ℙ)
+    (hindep : iIndepFun X Pr)
     -- USER-INPUT: the observations are identically distributed with law `Q`
-    (hlaw : HasLaw (X 0) Q ℙ)
+    (hlaw : HasLaw (X 0) Q Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: the sampling law is square-integrable, so means and variances converge
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) :
-    ∀ᵐ ω ∂ℙ, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanSeqClass Q := by
+    ∀ᵐ ω ∂Pr, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanSeqClass Q := by
   sorry
 
 /-- **Consistency of the nonparametric bootstrap for a mean.**
 
 The bootstrap sampling distribution — the sampling distribution of the root computed at the
 empirical measure — is uniformly close to the true sampling distribution, almost surely. -/
-theorem bootstrap_mean_consistent [IsProbabilityMeasure ℙ] [IsProbabilityMeasure Q]
+theorem bootstrap_mean_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
     -- LEAN-ONLY: the observations are measurable
     (hmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `Q`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) Q ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: square-integrable sampling law with nonzero variance
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n => supCDFDist (meanRootCDF Q n)
+    ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (meanRootCDF Q n)
       (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
   sorry
 
@@ -165,18 +165,18 @@ theorem bootstrap_mean_consistent [IsProbabilityMeasure ℙ] [IsProbabilityMeasu
 
 The one-sided bootstrap confidence set for the mean, obtained by comparing the root to the
 `1 − α` quantile of the bootstrap sampling distribution, has asymptotic coverage `1 − α`. -/
-theorem bootstrap_mean_coverage [IsProbabilityMeasure ℙ] [IsProbabilityMeasure Q]
+theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
     -- LEAN-ONLY: the observations are measurable
     (hmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `Q`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) Q ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: square-integrable sampling law with nonzero variance
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q])
     -- USER-INPUT: nominal level strictly between `0` and `1`
     (hα : α ∈ Set.Ioo (0 : ℝ) 1) :
-    Tendsto (fun n => (ℙ {ω |
+    Tendsto (fun n => (Pr {ω |
         Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
           ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)
               (1 - α)}).toReal)
@@ -204,16 +204,16 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
 
 The bootstrap sampling distribution of the studentized root, computed at the empirical measure,
 is uniformly close to the true one, almost surely. -/
-theorem bootstrap_t_consistent [IsProbabilityMeasure ℙ] [IsProbabilityMeasure Q]
+theorem bootstrap_t_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
     -- LEAN-ONLY: the observations are measurable
     (hmeas : ∀ i, Measurable (X i))
     -- USER-INPUT: independent identically distributed observations with law `Q`
-    (hindep : iIndepFun X ℙ) (hlaw : HasLaw (X 0) Q ℙ)
+    (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
     -- USER-INPUT: the observations are identically distributed
-    (hident : ∀ i, IdentDistrib (X i) (X 0) ℙ ℙ)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: square-integrable sampling law with nonzero variance
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n => supCDFDist (studentizedRootCDF Q n)
+    ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (studentizedRootCDF Q n)
       (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
   sorry
 

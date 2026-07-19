@@ -88,7 +88,7 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
     -- USER-INPUT: `F₀` is the c.d.f. of the null law
     (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
     -- USER-INPUT: the alternatives approach the null at the rate `δ / n^{1/2}`
-    (hrate : Tendsto (fun n => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀) atTop (nhds δ))
+    (hrate : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀) atTop (nhds δ))
     -- USER-INPUT: the approach rate is below the critical value (classical `δ < s_{1−α}`)
     (hδ : δ < ksThreshold α) :
     limsup (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal) atTop
@@ -117,7 +117,7 @@ theorem ks_no_local_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabil
     -- USER-INPUT: `F₀` is the c.d.f. of the null law
     (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
     -- USER-INPUT: the alternatives approach the null faster than `n^{-1/2}`
-    (hrate : Tendsto (fun n => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀) atTop (nhds 0)) :
+    (hrate : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀) atTop (nhds 0)) :
     limsup (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal) atTop ≤ α := by
   sorry
 

@@ -74,7 +74,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {k : ℕ}
 
 section ParametricBootstrap
 
-variable {ℙ : Measure Ω} [IsProbabilityMeasure ℙ]
+variable {Pr : Measure Ω} [IsProbabilityMeasure Pr]
   {Jpar : ℕ → EuclideanSpace ℝ (Fin k) → ℝ → ℝ} {Jlim : EuclideanSpace ℝ (Fin k) → ℝ → ℝ}
   {θ : EuclideanSpace ℝ (Fin k)} {thHat : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
 
@@ -110,7 +110,7 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
     -- USER-INPUT: uniform tightness of the rescaled estimation error; strictly stronger than
     -- consistency and exactly what the local uniformity above consumes
     (htight : ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, 0 < M ∧
-      ∀ n : ℕ, (ℙ {ω | M < ‖Real.sqrt n • (thHat n ω - θ)‖}).toReal ≤ ε)
+      ∀ n : ℕ, (Pr {ω | M < ‖Real.sqrt n • (thHat n ω - θ)‖}).toReal ≤ ε)
     -- USER-INPUT: every sampling distribution is a distribution function
     (hcdf : ∀ (n : ℕ) (t : EuclideanSpace ℝ (Fin k)), IsCDF (Jpar n t))
     -- USER-INPUT: the limit law is continuous
@@ -118,7 +118,7 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
     -- LEAN-ONLY: the estimator is measurable; needed for the tightness sets and the conclusion
     -- to carry their measures
     (hmeas : ∀ n, Measurable (thHat n)) :
-    TendstoInMeasure ℙ (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)) atTop
+    TendstoInMeasure Pr (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)) atTop
       (fun _ => 0) := by
   sorry
 
@@ -131,14 +131,14 @@ theorem tendstoInMeasure_supCDFDist_parametric_bootstrap
         supCDFDist (Jpar n (θ + (Real.sqrt n)⁻¹ • t)) (Jlim θ) ≤ ε)
     -- USER-INPUT: uniform tightness of the rescaled estimation error
     (htight : ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, 0 < M ∧
-      ∀ n : ℕ, (ℙ {ω | M < ‖Real.sqrt n • (thHat n ω - θ)‖}).toReal ≤ ε)
+      ∀ n : ℕ, (Pr {ω | M < ‖Real.sqrt n • (thHat n ω - θ)‖}).toReal ≤ ε)
     -- USER-INPUT: every sampling distribution is a distribution function
     (hcdf : ∀ (n : ℕ) (t : EuclideanSpace ℝ (Fin k)), IsCDF (Jpar n t))
     -- USER-INPUT: the limit law is a distribution function and is continuous
     (hlim_cdf : IsCDF (Jlim θ)) (hlim_cont : Continuous (Jlim θ))
     -- LEAN-ONLY: measurability of the estimator
     (hmeas : ∀ n, Measurable (thHat n)) :
-    TendstoInMeasure ℙ (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jlim θ)) atTop
+    TendstoInMeasure Pr (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jlim θ)) atTop
       (fun _ => 0) := by
   sorry
 

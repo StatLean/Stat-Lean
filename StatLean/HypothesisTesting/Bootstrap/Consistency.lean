@@ -105,7 +105,7 @@ noncomputable def stdNormalQuantile (p : ℝ) : ℝ := cdfPseudoInverse stdNorma
 
 section Consistency
 
-variable {ℙ : Measure Ω} {P : Measure 𝓧} {J : ℕ → Measure 𝓧 → ℝ → ℝ}
+variable {Pr : Measure Ω} {P : Measure 𝓧} {J : ℕ → Measure 𝓧 → ℝ → ℝ}
   {C_P : Set (ℕ → Measure 𝓧)} {Jlim : ℝ → ℝ} {Phat : ℕ → Ω → Measure 𝓧} {R : ℕ → Ω → ℝ} {α : ℝ}
 
 /-- **Bootstrap consistency, uniform (sup-distance) form.**
@@ -131,8 +131,8 @@ theorem tendsto_supCDFDist_bootstrap
     (hJcdf : ∀ (n : ℕ) (Q : Measure 𝓧), IsCDF (J n Q))
     -- USER-INPUT: the estimated sequence of laws belongs to the class almost surely; the only
     -- stochastic ingredient of the criterion
-    (hPhat_mem : ∀ᵐ ω ∂ℙ, (fun n => Phat n ω) ∈ C_P) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n => supCDFDist (J n P) (J n (Phat n ω))) atTop (𝓝 0) := by
+    (hPhat_mem : ∀ᵐ ω ∂Pr, (fun n => Phat n ω) ∈ C_P) :
+    ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (J n P) (J n (Phat n ω))) atTop (𝓝 0) := by
   sorry
 
 /-- **Bootstrap quantile consistency.**
@@ -152,13 +152,13 @@ theorem tendsto_bootstrapQuantile
     -- USER-INPUT: every sampling distribution is a distribution function
     (hJcdf : ∀ (n : ℕ) (Q : Measure 𝓧), IsCDF (J n Q))
     -- USER-INPUT: almost sure membership of the estimated sequence in the class
-    (hPhat_mem : ∀ᵐ ω ∂ℙ, (fun n => Phat n ω) ∈ C_P)
+    (hPhat_mem : ∀ᵐ ω ∂Pr, (fun n => Phat n ω) ∈ C_P)
     -- USER-INPUT: nominal level strictly between `0` and `1`
     (hα : α ∈ Set.Ioo (0 : ℝ) 1)
     -- USER-INPUT: the limit law is strictly increasing at the quantile being estimated; without
     -- it the quantile is not uniquely determined and need not converge
     (hstrict : StrictIncAt Jlim (cdfPseudoInverse Jlim (1 - α))) :
-    ∀ᵐ ω ∂ℙ, Tendsto (fun n => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) atTop
+    ∀ᵐ ω ∂Pr, Tendsto (fun n => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) atTop
       (𝓝 (cdfPseudoInverse Jlim (1 - α))) := by
   sorry
 
@@ -168,7 +168,7 @@ The bootstrap confidence set for the parameter of interest consists of those par
 whose root does not exceed the estimated `1 − α` quantile; the true parameter is covered
 exactly when `R n ω ≤ cdfPseudoInverse (J n (Phat n ω)) (1 − α)`, where `R n` is the root
 evaluated at the true parameter. Its coverage probability converges to the nominal level. -/
-theorem tendsto_bootstrapCoverage [IsProbabilityMeasure ℙ]
+theorem tendsto_bootstrapCoverage [IsProbabilityMeasure Pr]
     -- USER-INPUT: the constant sequence at the data-generating law belongs to the class
     (hP_mem : (fun _ => P) ∈ C_P)
     -- USER-INPUT: convergence of the sampling distribution functions along the class
@@ -180,20 +180,20 @@ theorem tendsto_bootstrapCoverage [IsProbabilityMeasure ℙ]
     -- USER-INPUT: every sampling distribution is a distribution function
     (hJcdf : ∀ (n : ℕ) (Q : Measure 𝓧), IsCDF (J n Q))
     -- USER-INPUT: almost sure membership of the estimated sequence in the class
-    (hPhat_mem : ∀ᵐ ω ∂ℙ, (fun n => Phat n ω) ∈ C_P)
+    (hPhat_mem : ∀ᵐ ω ∂Pr, (fun n => Phat n ω) ∈ C_P)
     -- USER-INPUT: nominal level strictly between `0` and `1`
     (hα : α ∈ Set.Ioo (0 : ℝ) 1)
     -- USER-INPUT: strict increase of the limit law at the estimated quantile
     (hstrict : StrictIncAt Jlim (cdfPseudoInverse Jlim (1 - α)))
     -- USER-INPUT: at the data-generating law the field `J` is the exact sampling distribution
     -- function of the root; this is what makes `J` the object being bootstrapped
-    (hJP : ∀ (n : ℕ) (x : ℝ), J n P x = (ℙ {ω | R n ω ≤ x}).toReal)
+    (hJP : ∀ (n : ℕ) (x : ℝ), J n P x = (Pr {ω | R n ω ≤ x}).toReal)
     -- LEAN-ONLY: the root is measurable; needed for the coverage event to carry its measure
     (hRmeas : ∀ n, Measurable (R n))
     -- LEAN-ONLY: the estimated critical value is measurable in the sample; no measurability in
     -- the measure argument of `J` is assumed, so this is recorded directly
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (J n (Phat n ω)) (1 - α)) :
-    Tendsto (fun n => (ℙ {ω | R n ω ≤ cdfPseudoInverse (J n (Phat n ω)) (1 - α)}).toReal)
+    Tendsto (fun n => (Pr {ω | R n ω ≤ cdfPseudoInverse (J n (Phat n ω)) (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
   sorry
 
@@ -208,15 +208,15 @@ row `n` all having distribution function `G n`. If `G n` converges in distributi
 `ν` (with distribution function `Glim`) and the first absolute moments converge to the — finite
 — first absolute moment of `ν`, then the row averages converge in probability to the mean of
 `ν`. This is the moment-convergence tool behind the nonparametric-mean applications. -/
-theorem tendstoInMeasure_rowMean_triangular {ℙ : Measure Ω} [IsProbabilityMeasure ℙ]
+theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeasure Pr]
     {Y : ℕ → ℕ → Ω → ℝ} {G : ℕ → ℝ → ℝ} {Glim : ℝ → ℝ} {ν : Measure ℝ} [IsProbabilityMeasure ν]
     -- LEAN-ONLY: the array entries are measurable; the distribution-function hypotheses below
     -- would otherwise refer to outer measures of non-measurable sets
     (hYmeas : ∀ n i, Measurable (Y n i))
     -- USER-INPUT: the entries within each row are independent
-    (hindep : ∀ n : ℕ, iIndepFun (fun i : Fin n => Y n i) ℙ)
+    (hindep : ∀ n : ℕ, iIndepFun (fun i : Fin n => Y n i) Pr)
     -- USER-INPUT: the entries of row `n` all have distribution function `G n`
-    (hGrow : ∀ n : ℕ, ∀ i < n, ∀ x : ℝ, G n x = (ℙ {ω | Y n i ω ≤ x}).toReal)
+    (hGrow : ∀ n : ℕ, ∀ i < n, ∀ x : ℝ, G n x = (Pr {ω | Y n i ω ≤ x}).toReal)
     -- USER-INPUT: `Glim` is the distribution function of the limit law `ν`
     (hGlim : ∀ x : ℝ, Glim x = (ν (Set.Iic x)).toReal)
     -- USER-INPUT: the row laws converge in distribution to `ν`, i.e. their distribution
@@ -226,8 +226,8 @@ theorem tendstoInMeasure_rowMean_triangular {ℙ : Measure Ω} [IsProbabilityMea
     (hint : Integrable (fun t : ℝ => t) ν)
     -- USER-INPUT: convergence of the first absolute moments to that of the limit law; this is
     -- the uniform-integrability substitute that upgrades weak convergence to a weak law
-    (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂ℙ) atTop (𝓝 (∫ t, |t| ∂ν))) :
-    TendstoInMeasure ℙ (fun n ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
+    (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
+    TendstoInMeasure Pr (fun n ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
       (fun _ => ∫ t, t ∂ν) := by
   sorry
 
