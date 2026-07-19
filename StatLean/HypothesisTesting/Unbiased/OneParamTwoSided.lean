@@ -112,6 +112,14 @@ theorem isUMPU_twoSided_expFamily
     -- USER-INPUT: derivative (unbiasedness) condition: `E_{θ₀}[Tφ] = α E_{θ₀}[T]`
     (hderiv : ∫ x, T x * φ x ∂(P θ₀) = α * ∫ x, T x ∂(P θ₀)) :
     IsUMPU P {θ₀} {θ ∈ Ξ | θ ≠ θ₀} α φ := by
+  -- TODO: point-null two-sided UMPU. The boundary device `isUMPU_of_isUMP_on_boundary` reduces
+  -- this to optimality among tests similar at `θ₀` and satisfying the derivative constraint
+  -- `∫ T·ψ dP_{θ₀} = α ∫ T dP_{θ₀}`; the reject-outside test with `hsize`+`hderiv` is optimal by
+  -- the two-constraint generalized Neyman–Pearson lemma. Requires: (a) `continuous_power_expFamily`
+  -- (the analytic debt lifted in `PowerContinuity`) to run the boundary device, and (b) a
+  -- generalized (two-constraint) NP optimality lemma not yet present in `NeymanPearson`. This is
+  -- the one-parameter (`Ξ`-trivial-nuisance) specialization of `MultiparamUMPU.isUMPU_conditional_
+  -- point`. Reported.
   sorry
 
 /-- **UMP unbiased test of an interval null in a one-parameter exponential family.**
@@ -154,6 +162,11 @@ theorem isUMPU_outside_interval_expFamily
     -- USER-INPUT: size condition at the upper endpoint
     (hsize₂ : power P φ θ₂ = α) :
     IsUMPU P {θ ∈ Ξ | θ₁ ≤ θ ∧ θ ≤ θ₂} {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ} α φ := by
+  -- TODO: interval-null two-sided UMPU. Boundary `ωB = {θ₁, θ₂}`; the two size equations
+  -- `hsize₁`, `hsize₂` pin the reject-outside test, optimal by the two-constraint generalized NP
+  -- lemma among tests similar on `{θ₁, θ₂}`. Same requirements as `isUMPU_twoSided_expFamily`
+  -- (`continuous_power_expFamily` + generalized NP); the one-parameter case of
+  -- `MultiparamUMPU.isUMPU_conditional_outside`. Reported.
   sorry
 
 end StatLean.HypothesisTesting
