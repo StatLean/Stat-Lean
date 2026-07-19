@@ -1,0 +1,40 @@
+# Close the sorries in PointEstimation/Equivariance/{LocationStructure,ConditionalRiskEngine,LocationMRE,RiskUnbiased}.lean
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.Equivariance.LocationStructure`, then `.ConditionalRiskEngine`, `.LocationMRE`, `.RiskUnbiased`. **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
+
+## Hard constraints
+
+- **Only edit** those four files under `StatLean/PointEstimation/Equivariance/`. Touch nothing else — in particular NOT `Equivariance/Defs.lean` (frozen, laptop-only).
+- **Signatures, hypothesis tags, docstrings FROZEN.** You may add `import Mathlib.*`, import already-closed project modules, and add `private` helpers. Lines ≤ 100 characters.
+- Goal: **0 sorries, 0 errors**. Escape hatch: at most one lifted `private` sorry per file with a precise `-- TODO:`; report each.
+- **Do not weaken any statement.** If one looks false, STOP, leave it sorried, report the counterexample.
+- Commit after each lemma compiles.
+- After green: `#print axioms isLocMRE_of_conditional_min`, `#print axioms locRisk_const` — expect only `propext, Classical.choice, Quot.sound`.
+
+## Already closed, treat as black boxes (import them)
+
+- `ForMathlib.ConvexMinimizers.{lintegral_convex_even_min_at_zero, exists_min_of_convexOn_of_coercive, argmin_unique_of_strictConvexOn, integral_sq_sub_eq_variance_add_sq, integral_sq_sub_mean_le}`
+- `ForMathlib.MeasurableArgmin.exists_measurable_argmin` — measurable selection of a 1-D argmin under continuity + coercivity, with attainment derived.
+- `Equivariance.General.{risk_smul, risk_const_of_pretransitive, risk_const_on_orbit}`
+
+## Frozen design you must work with
+
+The location model is **concrete** on `Fin n → ℝ`: `locationBase f = volume.withDensity (ofReal ∘ f)`, `locationFamily f ξ = (locationBase f).map (· + ξ • 1)`, `IsLocEquivariant δ := ∀ a x, δ (x + a • 1) = δ x + a`, and the maximal invariant is `diffs x i = x i.castSucc - x (Fin.last m)`. Risks are `∫⁻` in `ℝ≥0∞`.
+
+`ConditionalRiskEngine` is the shared machine that `LocationMRE` (and later the scale files) instantiate: given an orbit statistic `Z`, a template `F`, and a measurable `v*` that a.e.-pointwise minimizes the conditional expected loss, the induced estimator minimizes total risk. Prove the engine **first** — the location results are then instantiations, not fresh arguments.
+
+## Notes on specific targets
+
+- `measurable_diffs`, `diffs_snoc`, the `IsLocEquivariant` closure lemmas: bookkeeping.
+- `locRisk_const` (Thm 1.4): change of variables `x ↦ x + ξ • 1` through `Measure.map`; translation invariance of `volume` on `Fin n → ℝ` is `Measure.IsAddHaarMeasure` (`measurePreserving_add_right`-style). Equivariance moves the `ξ` out of `δ`.
+- `isLocEquivariant_iff_sub_invariant` (Lem 1.6) and `isLocInvariant_iff_factors_diffs` (Lem 1.7): the measurable-factor direction is Doob–Dynkin (`Measurable.exists_eq_measurable_comp`) after checking `diffs` generates the translation-invariant σ-algebra; the set-level direction is direct.
+- `lintegral_eq_lintegral_condDistrib` (engine helper): total expectation through `condDistrib`. Note Mathlib's argument order is `condDistrib Y X μ` — the **conditioned** variable comes first, so the fiber kernel here is `condDistrib id Z P₀`. It needs `[StandardBorelSpace 𝓧] [Nonempty 𝓧] [IsFiniteMeasure P₀]`. Pair it with `compProd_map_condDistrib` and `lintegral_compProd`.
+- `lintegral_le_of_condMinimizer` (the engine): a.e.-pointwise minimality integrates to global minimality — monotonicity of `∫⁻` under an a.e. inequality, after disintegration.
+- `isLocMRE_of_conditional_min` (Thm 1.10), `exists_isLocMRE_of_convex` (Cor 1.11), `isLocMRE_sq_of_condMean` (Cor 1.12), `exists_isLocMRE_of_bounded_loss` (Cor 1.14): instantiate the engine with `F w x = δ₀ x − w` and `Z = diffs`. Cor 1.11 uses the argmin brick; Cor 1.12 is the squared-error case where the conditional minimizer is the conditional mean.
+- `RiskUnbiased`: Thm 2.15 (general) and the location specializations. Note **Thm 1.27 needs neither convexity nor evenness** — the proof just applies MRE minimality to the equivariant `δ − a`; the frozen statement reflects that. Don't add hypotheses back.
+
+## Report
+
+Final `lake build` status per module, per-file sorry counts, both `#print axioms` outputs, and any statement you believe is false (with the counterexample).

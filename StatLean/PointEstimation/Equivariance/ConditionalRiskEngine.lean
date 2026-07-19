@@ -97,7 +97,14 @@ theorem lintegral_eq_lintegral_condDistrib (P₀ : Measure 𝓧) [IsProbabilityM
     -- LEAN-ONLY: joint measurability of the integrand, required by `lintegral_compProd`
     (hg : Measurable fun p : 𝓩 × 𝓧 => g p.1 p.2) :
     ∫⁻ x, g (Z x) x ∂P₀ = ∫⁻ z, ∫⁻ x, g z x ∂(orbitCondKernel P₀ Z z) ∂(P₀.map Z) := by
-  sorry
+  have hprod : Measurable (fun x => (Z x, x) : 𝓧 → 𝓩 × 𝓧) := hZ.prodMk measurable_id
+  have h1 : ∫⁻ x, g (Z x) x ∂P₀
+      = ∫⁻ p, g p.1 p.2 ∂(P₀.map (fun x => (Z x, x))) := by
+    rw [lintegral_map hg hprod]
+  rw [h1, show (fun x => (Z x, x) : 𝓧 → 𝓩 × 𝓧) = (fun x => (Z x, id x)) from rfl,
+    ← compProd_map_condDistrib (μ := P₀) (X := Z) (Y := id) aemeasurable_id,
+    Measure.lintegral_compProd hg]
+  rfl
 
 /-- The conditional mean of a measurable function against the fibre kernel is a
 measurable function of the fibre index. This is what makes the explicit
@@ -113,7 +120,7 @@ theorem measurable_integral_orbitCondKernel (P₀ : Measure 𝓧) [IsProbability
     -- USER-INPUT: the conditional mean exists in every fibre
     (hint : ∀ z, Integrable φ (orbitCondKernel P₀ Z z)) :
     Measurable fun z => ∫ x, φ x ∂(orbitCondKernel P₀ Z z) := by
-  sorry
+  exact (hφ.stronglyMeasurable.integral_kernel (κ := orbitCondKernel P₀ Z)).measurable
 
 /-- **The conditional-risk engine.** Let `F : ℝ → 𝓧 → ℝ` be a template family of
 estimators indexed by a real parameter and let `ρ` be a loss. If a measurable `v*`
@@ -151,7 +158,23 @@ theorem lintegral_le_of_condMinimizer (P₀ : Measure 𝓧) [IsProbabilityMeasur
     (hv : Measurable v) :
     ∫⁻ x, ENNReal.ofReal (ρ (F (vStar (Z x)) x)) ∂P₀ ≤
       ∫⁻ x, ENNReal.ofReal (ρ (F (v (Z x)) x)) ∂P₀ := by
-  sorry
+  have hmeasP : Measurable (fun p : 𝓩 × 𝓧 => (vStar p.1, p.2)) :=
+    (hvStar.comp measurable_fst).prodMk measurable_snd
+  have hmeasPv : Measurable (fun p : 𝓩 × 𝓧 => (v p.1, p.2)) :=
+    (hv.comp measurable_fst).prodMk measurable_snd
+  have hg1 : Measurable
+      (fun p : 𝓩 × 𝓧 => ENNReal.ofReal (ρ (F (vStar p.1) p.2))) :=
+    ENNReal.measurable_ofReal.comp (hρ.comp (hF.comp hmeasP))
+  have hg2 : Measurable
+      (fun p : 𝓩 × 𝓧 => ENNReal.ofReal (ρ (F (v p.1) p.2))) :=
+    ENNReal.measurable_ofReal.comp (hρ.comp (hF.comp hmeasPv))
+  rw [lintegral_eq_lintegral_condDistrib P₀ hZ
+        (g := fun z x => ENNReal.ofReal (ρ (F (vStar z) x))) hg1,
+      lintegral_eq_lintegral_condDistrib P₀ hZ
+        (g := fun z x => ENNReal.ofReal (ρ (F (v z) x))) hg2]
+  apply lintegral_mono_ae
+  filter_upwards [hmin] with z hz
+  exact hz (v z)
 
 end Engine
 
