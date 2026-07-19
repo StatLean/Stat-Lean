@@ -267,6 +267,77 @@ theorem tendstoInMeasure_quantile {Ω : Type*} [MeasurableSpace Ω] (μ : Measur
     -- USER-INPUT: pointwise convergence in probability of the random distribution functions
     (hconv : ∀ x : ℝ, TendstoInMeasure μ (fun n ω => Fhat n ω x) atTop (fun _ => F x)) :
     TendstoInMeasure μ (fun n ω => quantile (Fhat n ω) p) atTop (fun _ => quantile F p) := by
-  sorry
+  have hqeq : quantile F p = q := quantile_eq_of_strictMono hF hq
+  intro ε hε
+  simp only [hqeq]
+  -- Choose a positive real `e` with `ofReal e < ε`.
+  obtain ⟨e, he0, heε⟩ : ∃ e : ℝ, 0 < e ∧ ENNReal.ofReal e < ε := by
+    rcases eq_or_ne ε ∞ with h | h
+    · exact ⟨1, one_pos, by simp [h]⟩
+    · have hpos : 0 < ε.toReal := ENNReal.toReal_pos hε.ne' h
+      refine ⟨ε.toReal / 2, by positivity, ?_⟩
+      calc ENNReal.ofReal (ε.toReal / 2) < ENNReal.ofReal ε.toReal :=
+            (ENNReal.ofReal_lt_ofReal_iff hpos).mpr (by linarith)
+        _ = ε := ENNReal.ofReal_toReal h
+  have e1 : F (q - e) < p := by
+    have := hF (show q - e < q by linarith); rw [hq] at this; linarith
+  have e2 : p < F (q + e) := by
+    have := hF (show q < q + e by linarith); rw [hq] at this; linarith
+  -- The two "distribution function off by δ" sets whose measures vanish.
+  have h1 : Tendsto (fun n => μ {ω | ENNReal.ofReal (p - F (q - e)) ≤
+      edist (Fhat n ω (q - e)) (F (q - e))}) atTop (𝓝 0) := by
+    simpa using hconv (q - e) (ENNReal.ofReal (p - F (q - e)))
+      (ENNReal.ofReal_pos.mpr (by linarith [e1]))
+  have h2 : Tendsto (fun n => μ {ω | ENNReal.ofReal (F (q + e) - p) ≤
+      edist (Fhat n ω (q + e)) (F (q + e))}) atTop (𝓝 0) := by
+    simpa using hconv (q + e) (ENNReal.ofReal (F (q + e) - p))
+      (ENNReal.ofReal_pos.mpr (by linarith [e2]))
+  -- Inclusion of the "quantile off by ε" set into the union.
+  have hsub : ∀ n, {ω | ε ≤ edist (quantile (Fhat n ω) p) q} ⊆
+      {ω | ENNReal.ofReal (p - F (q - e)) ≤ edist (Fhat n ω (q - e)) (F (q - e))} ∪
+      {ω | ENNReal.ofReal (F (q + e) - p) ≤ edist (Fhat n ω (q + e)) (F (q + e))} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    have hgt : e < |quantile (Fhat n ω) p - q| := by
+      by_contra hle'
+      push_neg at hle'
+      have hd : edist (quantile (Fhat n ω) p) q ≤ ENNReal.ofReal e := by
+        rw [edist_dist, Real.dist_eq]; exact ENNReal.ofReal_le_ofReal hle'
+      exact absurd (le_trans hω hd) (not_le.mpr heε)
+    by_cases hleft : p ≤ Fhat n ω (q - e)
+    · refine Or.inl ?_
+      simp only [Set.mem_setOf_eq]
+      rw [edist_dist, Real.dist_eq]
+      apply ENNReal.ofReal_le_ofReal
+      rw [abs_of_nonneg (by linarith [e1] : (0 : ℝ) ≤ Fhat n ω (q - e) - F (q - e))]
+      linarith
+    · push_neg at hleft
+      refine Or.inr ?_
+      have hR : Fhat n ω (q + e) ≤ p := by
+        by_contra hnot
+        push_neg at hnot
+        have hlb : q - e ∈ lowerBounds {x : ℝ | p ≤ Fhat n ω x} := by
+          intro x hx
+          simp only [Set.mem_setOf_eq] at hx
+          by_contra hc
+          push_neg at hc
+          exact absurd hx (not_le.mpr (lt_of_le_of_lt ((hmono n ω) hc.le) hleft))
+        have hmem : (q + e) ∈ {x : ℝ | p ≤ Fhat n ω x} := hnot.le
+        have hle1 : q - e ≤ quantile (Fhat n ω) p := le_csInf ⟨q + e, hmem⟩ hlb
+        have hle2 : quantile (Fhat n ω) p ≤ q + e := csInf_le ⟨q - e, hlb⟩ hmem
+        have : |quantile (Fhat n ω) p - q| ≤ e := abs_le.mpr ⟨by linarith, by linarith⟩
+        exact absurd this (not_le.mpr hgt)
+      simp only [Set.mem_setOf_eq]
+      rw [edist_dist, Real.dist_eq]
+      apply ENNReal.ofReal_le_ofReal
+      rw [abs_of_nonpos (by linarith [e2] : Fhat n ω (q + e) - F (q + e) ≤ 0)]
+      linarith
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using h1.add h2) (fun n => zero_le _) (fun n => ?_)
+  calc μ {ω | ε ≤ edist (quantile (Fhat n ω) p) q}
+      ≤ μ ({ω | ENNReal.ofReal (p - F (q - e)) ≤ edist (Fhat n ω (q - e)) (F (q - e))} ∪
+          {ω | ENNReal.ofReal (F (q + e) - p) ≤ edist (Fhat n ω (q + e)) (F (q + e))}) :=
+        measure_mono (hsub n)
+    _ ≤ _ := measure_union_le _ _
 
 end StatLean.HypothesisTesting
