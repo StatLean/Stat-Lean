@@ -90,7 +90,38 @@ theorem cramer_rao_attained_of_affine (M : ParametricFamily 𝓧 ℝ) (μ : Meas
     (haffine : ∀ᵐ x ∂(M.toMeasure μ θ), δ x = a * score M θ x + b) :
     variance δ (M.toMeasure μ θ)
       = (∫ x, δ x * score M θ x * M.density θ x ∂μ) ^ 2 / fisherInfo M μ θ := by
-  sorry
+  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
+  -- positivity of the information makes the second moment of the score genuinely integrable
+  have hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ := by
+    by_contra h
+    rw [fisherInfo, integral_undef h] at hI
+    exact lt_irrefl 0 hI
+  have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
+  have hmean0P : ∫ x, score M θ x ∂(M.toMeasure μ θ) = 0 := by
+    rw [integral_toMeasure_eq]; exact hmean0
+  have hI_eq : fisherInfo M μ θ = ∫ x, score M θ x ^ 2 ∂(M.toMeasure μ θ) := by
+    rw [fisherInfo, integral_toMeasure_eq]
+  -- the score is centered, so its variance is the information
+  have hvarscore : variance (score M θ) (M.toMeasure μ θ) = fisherInfo M μ θ := by
+    rw [variance_of_integral_eq_zero hscoreL2.aemeasurable hmean0P, hI_eq]
+  -- `∫ δ · ℓ̇ = a · I`
+  have hδscore : ∫ x, δ x * score M θ x ∂(M.toMeasure μ θ) = a * fisherInfo M μ θ := by
+    have hae : (fun x => δ x * score M θ x)
+        =ᵐ[M.toMeasure μ θ] fun x => a * score M θ x ^ 2 + b * score M θ x := by
+      filter_upwards [haffine] with x hx; rw [hx]; ring
+    rw [integral_congr_ae hae, integral_add (hscoreL2.integrable_sq.const_mul a)
+      ((hscoreL2.integrable one_le_two).const_mul b), integral_const_mul, integral_const_mul,
+      hmean0P, mul_zero, add_zero, hI_eq]
+  -- variance of `δ = a·ℓ̇ + b` is `a²·I`
+  have hvarδ : variance δ (M.toMeasure μ θ) = a ^ 2 * fisherInfo M μ θ := by
+    rw [variance_congr haffine,
+      variance_add_const (hscoreL2.const_mul a).aestronglyMeasurable b,
+      variance_const_mul, hvarscore]
+  rw [hvarδ, show (∫ x, δ x * score M θ x * M.density θ x ∂μ) = a * fisherInfo M μ θ from by
+    rw [← integral_toMeasure_eq]; exact hδscore]
+  rw [eq_div_iff hIne]
+  ring
 
 /-- **Attainment forces an exponential family.** If one statistic `δ` attains the
 information bound at *every* parameter value, then the densities admit the exponential
@@ -132,6 +163,11 @@ theorem expFamily_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ : M
     (hattain : ∀ θ, variance δ (M.toMeasure μ θ) = g' θ ^ 2 / fisherInfo M μ θ) :
     ∃ (η B : ℝ → ℝ) (h : 𝓧 → ℝ), ContDiff ℝ 1 η ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
       ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x := by
+  -- TODO: sanctioned escape-hatch (see file header "documented deviation"). The pointwise
+  -- Cauchy–Schwarz equality case gives `δ = a(θ)·ℓ̇_θ + b(θ)` a.e. at every `θ`; integrating
+  -- the resulting ODE `∂_θ log p_θ(x) = η'(θ)·δ(x) + B'(θ)`-type relation in `θ` (uniformly
+  -- in `x`, using the joint-measurability / a.e.-C¹ / continuity regularity) by the FTC to the
+  -- exponential form is the remaining functional-equation step.
   sorry
 
 end StatLean.PointEstimation
