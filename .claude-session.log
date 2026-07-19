@@ -1,0 +1,27 @@
+srun: job 32906045 queued and waiting for resources
+srun: job 32906045 has been allocated resources
+All four sorries are closed. Summary:
+
+## Result
+
+**Final `lake build` status:** `Build completed successfully (2802 jobs)` — 0 errors.
+
+**Sorry count in the file:** `0`
+
+**`#print axioms` (verified before removing the diagnostic lines):**
+- `StatLean.PointEstimation.ext_of_integral_exp_eqOn` depends on axioms: `[propext, Classical.choice, Quot.sound]`
+- `StatLean.PointEstimation.ae_eq_zero_of_integral_exp_smul_eq_zero` depends on axioms: `[propext, Classical.choice, Quot.sound]`
+
+Both are axiom-clean.
+
+**No lifted sorry left.** All four statements proved as written; no signature, hypothesis, or docstring was touched, and only the target file was edited.
+
+### How each was done
+1. **`integral_exp_tilted_mul`** — one-liner off Mathlib's unconditional `integral_exp_tilted`, then `simp only [Pi.add_apply, add_mul]` to match `(t₀+t)·x = t₀·x + t·x`.
+2. **`eqOn_complexMGF_of_mgf_eqOn`** — re-ran the identity-theorem argument from `eqOn_complexMGF_of_mgf'`, but seeded from a point `s` of the *open* `S` (via `interior_maximal`), with the frequently-equal hypothesis coming from the local `Set.EqOn` on the neighbourhood `S` instead of a global `mgf` equality. Preconnectedness of the intersection strip via `Convex.inter`/`.linear_preimage Complex.reLm`.
+3. **`ext_of_integral_exp_eqOn`** — degenerate `μ=0` branch via `integral_exp_pos`; otherwise tilt both measures at an interior point `η₀`, transfer transform-agreement to `mgf` agreement on the shifted open set `S' = (η₀+·)⁻¹'(interior S)`, feed the local helper, restrict to the imaginary axis (`complexMGF_id_mul_I`) to get `charFun` equality, conclude `μ.tilted = ν.tilted` with `Measure.ext_of_charFun`, then untilt with `withDensity_inv_same` using `Zμ = Zν` to kill the scalar ambiguity.
+4. **`ae_eq_zero_of_integral_exp_smul_eq_zero`** — split into the two finite measures `ν.withDensity (ofReal ∘ (f·e^{η₀·})^±)`, showed their transforms agree on `S'` (their difference is `∫ f e^{s·} = 0`), applied result (3), read off `ofReal(F⁺) =ᵐ ofReal(F⁻)` via `withDensity_eq_iff_of_sigmaFinite`, and concluded `f =ᵐ 0` from `max(F,0)=max(-F,0)` plus `e^{η₀·}>0`.
+
+Note: the two remaining build warnings are `unused variable h₀`/`ht` on `integral_exp_tilted_mul` — those are the frozen integrability hypotheses, which the underlying Mathlib lemma happens not to need; they cannot be removed since the signature is frozen.
+
+Committed as `2e97ebe`.
