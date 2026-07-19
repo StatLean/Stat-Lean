@@ -1,5 +1,7 @@
 import StatLean.PointEstimation.Equivariance.ConditionalRiskEngine
 import StatLean.PointEstimation.Equivariance.LocationStructure
+import StatLean.PointEstimation.ForMathlib.ConvexMinimizers
+import StatLean.PointEstimation.ForMathlib.MeasurableArgmin
 import Mathlib.Analysis.Convex.Function
 
 /-!
@@ -62,6 +64,39 @@ section LocationMRE
 
 variable {m : ℕ}
 
+/-- The conditional mean minimizes the conditional expected squared error, phrased at the
+`ℝ≥0∞` level with no second-moment hypothesis: outside `L²` both sides are `∞`. -/
+private lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {φ : Ω → ℝ} (hφ : Measurable φ) (w : ℝ) :
+    ∫⁻ x, ENNReal.ofReal ((φ x - ∫ z, φ z ∂μ) ^ 2) ∂μ ≤
+      ∫⁻ x, ENNReal.ofReal ((φ x - w) ^ 2) ∂μ := by
+  set m := ∫ z, φ z ∂μ with hm
+  by_cases hL2 : MemLp φ 2 μ
+  · have hf1 : Integrable (fun x => (φ x - m) ^ 2) μ :=
+      (hL2.sub (memLp_const m)).integrable_sq
+    have hf2 : Integrable (fun x => (φ x - w) ^ 2) μ :=
+      (hL2.sub (memLp_const w)).integrable_sq
+    rw [← ofReal_integral_eq_lintegral_ofReal hf1 (ae_of_all _ fun x => sq_nonneg _),
+        ← ofReal_integral_eq_lintegral_ofReal hf2 (ae_of_all _ fun x => sq_nonneg _)]
+    exact ENNReal.ofReal_le_ofReal (integral_sq_sub_mean_le hL2 w)
+  · have hnotMemLp : ∀ c : ℝ, ¬ MemLp (fun x => φ x - c) 2 μ := by
+      intro c hc
+      have h2 := hc.add (memLp_const c)
+      rw [show (fun x => φ x - c) + (fun _ : Ω => c) = φ from by
+            funext x; simp only [Pi.add_apply]; ring] at h2
+      exact hL2 h2
+    have hinf : ∀ c : ℝ, ∫⁻ x, ENNReal.ofReal ((φ x - c) ^ 2) ∂μ = ⊤ := by
+      intro c
+      by_contra hne
+      have hlt : ∫⁻ x, ENNReal.ofReal ((φ x - c) ^ 2) ∂μ < ⊤ := lt_top_iff_ne_top.mpr hne
+      have hfin : HasFiniteIntegral (fun x => (φ x - c) ^ 2) μ :=
+        (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x => sq_nonneg _)).mpr hlt
+      have hasm : AEStronglyMeasurable (fun x => (φ x - c) ^ 2) μ :=
+        ((hφ.sub_const c).pow_const 2).aestronglyMeasurable
+      exact hnotMemLp c
+        ((memLp_two_iff_integrable_sq (hφ.sub_const c).aestronglyMeasurable).mpr ⟨hasm, hfin⟩)
+    rw [hinf m, hinf w]
+
 /-- **The minimum risk equivariant location estimator.** Let `δ₀` be a measurable
 equivariant estimator with finite risk and let `v*` be a measurable function of the
 differences which, in almost every fibre, minimizes the conditional expected loss
@@ -94,7 +129,20 @@ theorem isLocMRE_of_conditional_min (f : (Fin (m + 1) → ℝ) → ℝ)
         ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
           ∂(orbitCondKernel (locationBase f) diffs y)) :
     IsLocMRE f ρ (fun x => δ₀ x - vStar (diffs x)) := by
-  sorry
+  refine ⟨hδ₀.sub (hvStar.comp measurable_diffs), ?_, ?_⟩
+  · exact (isLocEquivariant_iff_exists_diffs_rep heq₀ _).mpr ⟨vStar, fun x => rfl⟩
+  · intro δ' hδ'meas hδ'eq
+    obtain ⟨v, hvmeas, hv⟩ :=
+      (isLocEquivariant_iff_exists_diffs_rep_measurable heq₀ hδ₀ δ').mp ⟨hδ'meas, hδ'eq⟩
+    have hFmeas : Measurable (fun p : ℝ × (Fin (m + 1) → ℝ) => δ₀ p.2 - p.1) :=
+      (hδ₀.comp measurable_snd).sub measurable_fst
+    have key := lintegral_le_of_condMinimizer (locationBase f) (Z := diffs)
+      measurable_diffs (F := fun w x => δ₀ x - w) hFmeas (ρ := ρ) hρ
+      (vStar := vStar) hvStar hmin (v := v) hvmeas
+    have hrisk' : locRisk f ρ δ' =
+        ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - v (diffs x))) ∂(locationBase f) := by
+      unfold locRisk; exact lintegral_congr fun x => by rw [hv x]
+    rw [hrisk']; unfold locRisk; exact key
 
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
 loss.** For such a loss the fibrewise minimization always has a solution, and the
@@ -138,7 +186,19 @@ theorem isLocMRE_sq_of_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
     IsLocMRE f (fun t : ℝ => t ^ 2)
       (fun x => δ₀ x -
         ∫ z, δ₀ z ∂(orbitCondKernel (locationBase f) diffs (diffs x))) := by
-  sorry
+  have hρmeas : Measurable (fun t : ℝ => t ^ 2) := by fun_prop
+  set vStar : (Fin m → ℝ) → ℝ :=
+    fun y => ∫ z, δ₀ z ∂(orbitCondKernel (locationBase f) diffs y) with hvStarDef
+  have hvStar : Measurable vStar :=
+    measurable_integral_orbitCondKernel (locationBase f) measurable_diffs hδ₀ hint
+  have hmin : ∀ᵐ y ∂((locationBase f).map diffs), ∀ w : ℝ,
+      ∫⁻ x, ENNReal.ofReal ((δ₀ x - vStar y) ^ 2)
+          ∂(orbitCondKernel (locationBase f) diffs y) ≤
+        ∫⁻ x, ENNReal.ofReal ((δ₀ x - w) ^ 2)
+          ∂(orbitCondKernel (locationBase f) diffs y) := by
+    refine ae_of_all _ fun y w => ?_
+    exact lintegral_ofReal_sq_min hδ₀ w
+  exact isLocMRE_of_conditional_min f (fun t => t ^ 2) hρmeas hδ₀ heq₀ hfin hvStar hmin
 
 /-- **A single observation and a bounded loss.** For one observation the equivariant
 estimators are exactly `X − c`, so an MRE estimator exists as soon as
