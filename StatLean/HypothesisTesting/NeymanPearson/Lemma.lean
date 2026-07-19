@@ -251,6 +251,30 @@ private lemma np_fundamental (μ : Measure 𝓧) [SigmaFinite μ]
   · subst hC; exact np_fundamental_top μ P₀ P₁ h₀ h₁ hφc hψc hshape hsize
   · exact np_fundamental_finite μ P₀ P₁ h₀ h₁ hC hφc hψc hshape hsize
 
+/-- The likelihood-ratio test has (exact, everywhere) Neyman–Pearson shape. -/
+private lemma hasNPShape_npTest (μ : Measure 𝓧) (p₀ p₁ : 𝓧 → ℝ) (C : ℝ≥0∞) (γ : ℝ) :
+    HasNPShape μ p₀ p₁ C (npTest p₀ p₁ C γ) := by
+  refine ⟨Filter.Eventually.of_forall fun x hx => ?_, Filter.Eventually.of_forall fun x hx => ?_⟩
+  · show npTest p₀ p₁ C γ x = 1
+    unfold npTest; rw [if_pos hx]
+  · show npTest p₀ p₁ C γ x = 0
+    unfold npTest; rw [if_neg (not_lt.mpr hx.le), if_neg (ne_of_lt hx)]
+
+/-- The likelihood-ratio test with a `[0,1]` boundary weight is a critical function. -/
+private lemma isCriticalFn_npTest {p₀ p₁ : 𝓧 → ℝ} (hp0 : Measurable p₀) (hp1 : Measurable p₁)
+    {C : ℝ≥0∞} {γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) :
+    IsCriticalFn (npTest p₀ p₁ C γ) := by
+  refine ⟨?_, fun x => ?_⟩
+  · unfold npTest
+    refine Measurable.ite ?_ measurable_const (Measurable.ite ?_ measurable_const measurable_const)
+    · exact measurableSet_lt (measurable_const.mul hp0.ennreal_ofReal) hp1.ennreal_ofReal
+    · exact measurableSet_eq_fun hp1.ennreal_ofReal (measurable_const.mul hp0.ennreal_ofReal)
+  · unfold npTest
+    split_ifs
+    · exact ⟨zero_le_one, le_refl 1⟩
+    · exact hγ
+    · exact ⟨le_refl 0, zero_le_one⟩
+
 /-- **Existence (i).** For every level `α ∈ [0,1]` there are a threshold `C` and a
 boundary weight `γ ∈ [0,1]` for which the likelihood-ratio test has size **exactly** `α`
 and is most powerful at that level. The corner cases `α = 0` and `α = 1` are covered by
@@ -293,7 +317,9 @@ theorem isMostPowerful_of_npShape
     -- USER-INPUT: the test has likelihood-ratio shape at threshold `C` — condition (3.8)
     (hshape : HasNPShape μ p₀ p₁ C φ) :
     IsMostPowerful P₀ P₁ α φ := by
-  sorry
+  refine ⟨hφ, hsize.le, fun ψ hψ hψsize => ?_⟩
+  refine np_fundamental μ P₀ P₁ h₀ h₁ hφ hψ hshape ?_
+  rw [hsize]; exact hψsize
 
 /-- **Sufficiency (ii), specialized.** The likelihood-ratio test itself is most powerful
 at its own size, for every threshold `C` and every boundary weight `γ ∈ [0,1]`. -/
@@ -311,8 +337,9 @@ theorem isMostPowerful_npTest
     (hγ : γ ∈ Set.Icc (0 : ℝ) 1)
     -- USER-INPUT: the threshold/weight pair realizes size exactly `α`
     (hsize : powerAgainst P₀ (npTest p₀ p₁ C γ) = α) :
-    IsMostPowerful P₀ P₁ α (npTest p₀ p₁ C γ) := by
-  sorry
+    IsMostPowerful P₀ P₁ α (npTest p₀ p₁ C γ) :=
+  isMostPowerful_of_npShape μ P₀ P₁ h₀ h₁ (isCriticalFn_npTest h₀.1 h₁.1 hγ) hsize
+    (hasNPShape_npTest μ p₀ p₁ C γ)
 
 /-- **Necessity (iii).** A most powerful level-`α` test has likelihood-ratio shape almost
 everywhere for some threshold `C`; and its size is exactly `α` **unless** there already
@@ -374,6 +401,17 @@ theorem power_eq_alpha_of_eq
     -- USER-INPUT: the excluded case of the previous theorem
     (heq : P₀ = P₁) :
     powerAgainst P₁ φ = α := by
-  sorry
+  obtain ⟨hφc, hle, hmax⟩ := hφ
+  have hconst : IsCriticalFn (fun _ : 𝓧 => α) := ⟨measurable_const, fun _ => ⟨hα₀.le, hα₁.le⟩⟩
+  have hcP0 : powerAgainst P₀ (fun _ : 𝓧 => α) = α := by
+    unfold powerAgainst
+    rw [integral_const]; simp
+  have hcP1 : powerAgainst P₁ (fun _ : 𝓧 => α) = α := by
+    unfold powerAgainst
+    rw [integral_const]; simp
+  have h1 : powerAgainst P₁ (fun _ : 𝓧 => α) ≤ powerAgainst P₁ φ := hmax _ hconst hcP0.le
+  rw [hcP1] at h1
+  have hp01 : powerAgainst P₁ φ = powerAgainst P₀ φ := by rw [heq]
+  linarith [hle]
 
 end StatLean.HypothesisTesting
