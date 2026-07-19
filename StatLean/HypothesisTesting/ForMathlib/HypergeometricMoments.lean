@@ -99,12 +99,146 @@ noncomputable def sampleUnif (n m : ℕ) [Nonempty (SubsetsOfCard n m)] :
     PMF (SubsetsOfCard n m) :=
   PMF.uniformOfFintype (SubsetsOfCard n m)
 
+/-! ### Private helpers: cardinalities, `expect` linearity, and split counts -/
+
+/-- The sample space has `binom(n, m)` points. -/
+private lemma card_subsetsOfCard (n m : ℕ) :
+    Fintype.card (SubsetsOfCard n m) = n.choose m := by
+  simp
+
+/-- `expect` of a function of the underlying finset, as a normalized sum over
+`powersetCard`. -/
+private lemma expect_eq_powersetCard {n m : ℕ} (F : Finset (Fin n) → ℝ) :
+    expect (fun s : SubsetsOfCard n m => F s.val)
+      = (n.choose m : ℝ)⁻¹ * ∑ s ∈ Finset.powersetCard m Finset.univ, F s := by
+  unfold expect
+  rw [card_subsetsOfCard]
+  congr 1
+  refine (Finset.sum_subtype (Finset.powersetCard m Finset.univ) ?_ F).symm
+  intro s
+  simp [Finset.mem_powersetCard]
+
+/-- `expect` of a constant is the constant (uses `binom(n, m) > 0`, i.e. `m ≤ n`). -/
+private lemma expect_const {n m : ℕ} (hm : m ≤ n) (c : ℝ) :
+    expect (fun _ : SubsetsOfCard n m => c) = c := by
+  have hcard : Fintype.card (SubsetsOfCard n m) ≠ 0 := by
+    rw [card_subsetsOfCard]; exact (Nat.choose_pos hm).ne'
+  unfold expect
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  exact inv_mul_cancel_left₀ (by exact_mod_cast hcard) c
+
+/-- `expect` is additive. -/
+private lemma expect_add {n m : ℕ} (f g : SubsetsOfCard n m → ℝ) :
+    expect (fun s => f s + g s) = expect f + expect g := by
+  unfold expect; rw [Finset.sum_add_distrib, mul_add]
+
+/-- `expect` is subtractive. -/
+private lemma expect_sub {n m : ℕ} (f g : SubsetsOfCard n m → ℝ) :
+    expect (fun s => f s - g s) = expect f - expect g := by
+  unfold expect; rw [Finset.sum_sub_distrib, mul_sub]
+
+/-- `expect` pulls out a scalar. -/
+private lemma expect_smul {n m : ℕ} (a : ℝ) (f : SubsetsOfCard n m → ℝ) :
+    expect (fun s => a * f s) = a * expect f := by
+  unfold expect; rw [← Finset.mul_sum]; ring
+
+/-- `expect` commutes with a finite sum. -/
+private lemma expect_sum {n m : ℕ} {ι : Type*} (t : Finset ι)
+    (g : ι → SubsetsOfCard n m → ℝ) :
+    expect (fun s => ∑ i ∈ t, g i s) = ∑ i ∈ t, expect (g i) := by
+  unfold expect
+  conv_rhs => rw [← Finset.mul_sum]
+  rw [Finset.sum_comm]
+
+/-- The `m`-subsets of `Fin n` containing a fixed index `i` number `binom(n-1, m-1)`. -/
+private lemma card_filter_one {n m : ℕ} (hm1 : 1 ≤ m) (i : Fin n) :
+    ((Finset.powersetCard m (Finset.univ : Finset (Fin n))).filter
+        (fun s => i ∈ s)).card = (n - 1).choose (m - 1) := by
+  have hcard : (Finset.univ.erase i).card = n - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Fintype.card_fin]
+  rw [← hcard, ← Finset.card_powersetCard (m - 1) (Finset.univ.erase i)]
+  refine Finset.card_bij' (fun s _ => s.erase i) (fun t _ => insert i t) ?_ ?_ ?_ ?_
+  · intro s hs
+    rw [Finset.mem_filter, Finset.mem_powersetCard] at hs
+    obtain ⟨⟨_, hsc⟩, hi⟩ := hs
+    rw [Finset.mem_powersetCard]
+    refine ⟨fun x hx => ?_, ?_⟩
+    · rw [Finset.mem_erase] at hx ⊢
+      exact ⟨hx.1, Finset.mem_univ x⟩
+    · rw [Finset.card_erase_of_mem hi, hsc]
+  · intro t ht
+    rw [Finset.mem_powersetCard] at ht
+    obtain ⟨htsub, htc⟩ := ht
+    have hint : i ∉ t := fun h => (Finset.mem_erase.mp (htsub h)).1 rfl
+    rw [Finset.mem_filter, Finset.mem_powersetCard]
+    refine ⟨⟨Finset.subset_univ _, ?_⟩, Finset.mem_insert_self i t⟩
+    rw [Finset.card_insert_of_notMem hint, htc, Nat.sub_add_cancel hm1]
+  · intro s hs
+    rw [Finset.mem_filter] at hs
+    exact Finset.insert_erase hs.2
+  · intro t ht
+    rw [Finset.mem_powersetCard] at ht
+    have hint : i ∉ t := fun h => (Finset.mem_erase.mp (ht.1 h)).1 rfl
+    exact Finset.erase_insert hint
+
+/-- The `m`-subsets containing two fixed distinct indices number `binom(n-2, m-2)`. -/
+private lemma card_filter_two {n m : ℕ} (hm2 : 2 ≤ m) {i j : Fin n} (hij : i ≠ j) :
+    ((Finset.powersetCard m (Finset.univ : Finset (Fin n))).filter
+        (fun s => i ∈ s ∧ j ∈ s)).card = (n - 2).choose (m - 2) := by
+  have hj' : j ∈ Finset.univ.erase i :=
+    Finset.mem_erase.mpr ⟨Ne.symm hij, Finset.mem_univ j⟩
+  have hbase : ((Finset.univ.erase i).erase j).card = n - 2 := by
+    rw [Finset.card_erase_of_mem hj', Finset.card_erase_of_mem (Finset.mem_univ i),
+        Finset.card_univ, Fintype.card_fin]
+    omega
+  rw [← hbase, ← Finset.card_powersetCard (m - 2) ((Finset.univ.erase i).erase j)]
+  refine Finset.card_bij' (fun s _ => (s.erase i).erase j)
+    (fun t _ => insert i (insert j t)) ?_ ?_ ?_ ?_
+  · intro s hs
+    rw [Finset.mem_filter, Finset.mem_powersetCard] at hs
+    obtain ⟨⟨_, hsc⟩, hi, hjs⟩ := hs
+    rw [Finset.mem_powersetCard]
+    refine ⟨fun x hx => ?_, ?_⟩
+    · rw [Finset.mem_erase, Finset.mem_erase] at hx
+      rw [Finset.mem_erase, Finset.mem_erase]
+      exact ⟨hx.1, hx.2.1, Finset.mem_univ x⟩
+    · rw [Finset.card_erase_of_mem (Finset.mem_erase.mpr ⟨Ne.symm hij, hjs⟩),
+          Finset.card_erase_of_mem hi, hsc]
+      omega
+  · intro t ht
+    rw [Finset.mem_powersetCard] at ht
+    obtain ⟨htsub, htc⟩ := ht
+    have hjt : j ∉ t := fun h => (Finset.mem_erase.mp (htsub h)).1 rfl
+    have hit : i ∉ t := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp (htsub h)).2).1 rfl
+    have hijt : i ∉ insert j t := by
+      rw [Finset.mem_insert]; push_neg; exact ⟨hij, hit⟩
+    rw [Finset.mem_filter, Finset.mem_powersetCard]
+    refine ⟨⟨Finset.subset_univ _, ?_⟩,
+      Finset.mem_insert_self i _, Finset.mem_insert_of_mem (Finset.mem_insert_self j t)⟩
+    rw [Finset.card_insert_of_notMem hijt, Finset.card_insert_of_notMem hjt, htc]
+    omega
+  · intro s hs
+    rw [Finset.mem_filter] at hs
+    obtain ⟨_, hi, hjs⟩ := hs
+    simp only [Finset.insert_erase (Finset.mem_erase.mpr ⟨Ne.symm hij, hjs⟩),
+      Finset.insert_erase hi]
+  · intro t ht
+    rw [Finset.mem_powersetCard] at ht
+    have hjt : j ∉ t := fun h => (Finset.mem_erase.mp (ht.1 h)).1 rfl
+    have hit : i ∉ t := fun h => (Finset.mem_erase.mp (Finset.mem_erase.mp (ht.1 h)).2).1 rfl
+    have hijt : i ∉ insert j t := by
+      rw [Finset.mem_insert]; push_neg; exact ⟨hij, hit⟩
+    simp only [Finset.erase_insert hijt, Finset.erase_insert hjt]
+
 /-- `expect` is the expectation under the uniform law on splits: each of the
 `binom(n, m)` splits carries mass `binom(n, m)⁻¹`. -/
 lemma expect_eq_sum_uniform {n m : ℕ} [Nonempty (SubsetsOfCard n m)]
     (f : SubsetsOfCard n m → ℝ) :
     expect f = ∑ s, (sampleUnif n m s).toReal * f s := by
-  sorry
+  unfold expect sampleUnif
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun s _ => ?_)
+  rw [PMF.uniformOfFintype_apply, ENNReal.toReal_inv, ENNReal.toReal_natCast]
 
 /-- **First moment**: `E Wᵢ = m/n`. Counting: the `m`-subsets containing a fixed index are
 `binom(n-1, m-1)` out of `binom(n, m)`. -/
@@ -112,7 +246,28 @@ theorem expect_weight {n m : ℕ}
     -- USER-INPUT: the split exists (for `m > n` the sample space is empty).
     (hm : m ≤ n) (i : Fin n) :
     expect (fun s : SubsetsOfCard n m => weight i s) = (m : ℝ) / n := by
-  sorry
+  rcases Nat.eq_zero_or_pos m with rfl | hm1
+  · have h0 : (fun s : SubsetsOfCard n 0 => weight i s) = fun _ => (0 : ℝ) := by
+      funext s
+      have he : s.val = ∅ := Finset.card_eq_zero.mp s.2
+      simp [weight, he]
+    rw [h0, expect_const (Nat.zero_le n), Nat.cast_zero, zero_div]
+  · have hnpos : 0 < n := lt_of_lt_of_le hm1 hm
+    have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hnpos.ne'
+    have hcm : (n.choose m : ℝ) ≠ 0 := by exact_mod_cast (Nat.choose_pos hm).ne'
+    have e1 : (n : ℝ) * ((n - 1).choose (m - 1) : ℝ) = (n.choose m : ℝ) * m := by
+      obtain ⟨a, rfl⟩ : ∃ a, n = a + 1 := ⟨n - 1, by omega⟩
+      obtain ⟨b, rfl⟩ : ∃ b, m = b + 1 := ⟨m - 1, by omega⟩
+      simp only [Nat.add_sub_cancel]
+      have h := Nat.succ_mul_choose_eq a b
+      simp only [Nat.succ_eq_add_one] at h
+      exact_mod_cast h
+    rw [show (fun s : SubsetsOfCard n m => weight i s)
+          = (fun s => (fun t => if i ∈ t then (1 : ℝ) else 0) s.val) from rfl,
+      expect_eq_powersetCard (fun t => if i ∈ t then (1 : ℝ) else 0)]
+    simp only [Finset.sum_boole, card_filter_one hm1 i]
+    rw [inv_mul_eq_div, div_eq_div_iff hcm hn0]
+    linear_combination e1
 
 /-- **Second cross moment**: for `i ≠ j`, `E WᵢWⱼ = m(m-1)/(n(n-1))`. Counting: the
 `m`-subsets containing two fixed indices are `binom(n-2, m-2)` out of `binom(n, m)`. -/
@@ -123,7 +278,53 @@ theorem expect_weight_pair {n m : ℕ}
     (hij : i ≠ j) :
     expect (fun s : SubsetsOfCard n m => weight i s * weight j s)
       = ((m : ℝ) * ((m : ℝ) - 1)) / ((n : ℝ) * ((n : ℝ) - 1)) := by
-  sorry
+  have hijv : (i : ℕ) ≠ (j : ℕ) := fun h => hij (Fin.ext h)
+  have hn2 : 2 ≤ n := by have := i.isLt; have := j.isLt; omega
+  rcases lt_or_ge m 2 with hm2 | hm2
+  · have h0 : (fun s : SubsetsOfCard n m => weight i s * weight j s) = fun _ => (0 : ℝ) := by
+      funext s
+      by_cases hi : i ∈ s.val
+      · by_cases hj : j ∈ s.val
+        · exfalso
+          have hsub : ({i, j} : Finset (Fin n)) ⊆ s.val := by
+            intro x hx
+            rw [Finset.mem_insert, Finset.mem_singleton] at hx
+            rcases hx with rfl | rfl <;> assumption
+          have : 2 ≤ s.val.card := by
+            rw [← Finset.card_pair hij]; exact Finset.card_le_card hsub
+          rw [s.2] at this; omega
+        · simp [weight, hj]
+      · simp [weight, hi]
+    rw [h0, expect_const hm]
+    have hnum : (m : ℝ) * ((m : ℝ) - 1) = 0 := by interval_cases m <;> norm_num
+    rw [hnum, zero_div]
+  · have hcm : (n.choose m : ℝ) ≠ 0 := by exact_mod_cast (Nat.choose_pos hm).ne'
+    have hnr : (2 : ℝ) ≤ n := by exact_mod_cast hn2
+    have hn0 : (n : ℝ) ≠ 0 := (by linarith : (0 : ℝ) < n).ne'
+    have hn1 : (n : ℝ) - 1 ≠ 0 := (by linarith : (0 : ℝ) < (n : ℝ) - 1).ne'
+    have key : (n : ℝ) * ((n : ℝ) - 1) * ((n - 2).choose (m - 2) : ℝ)
+        = (m : ℝ) * ((m : ℝ) - 1) * (n.choose m : ℝ) := by
+      obtain ⟨a, rfl⟩ : ∃ a, n = a + 2 := ⟨n - 2, by omega⟩
+      obtain ⟨b, rfl⟩ : ∃ b, m = b + 2 := ⟨m - 2, by omega⟩
+      simp only [Nat.add_sub_cancel]
+      have h1 := Nat.succ_mul_choose_eq (a + 1) (b + 1)
+      have h2 := Nat.succ_mul_choose_eq a b
+      simp only [Nat.succ_eq_add_one] at h1 h2
+      have h1' : ((a + 2 : ℕ) : ℝ) * ((a + 1).choose (b + 1) : ℝ)
+          = ((a + 2).choose (b + 2) : ℝ) * ((b + 2 : ℕ) : ℝ) := by exact_mod_cast h1
+      have h2' : ((a + 1 : ℕ) : ℝ) * (a.choose b : ℝ)
+          = ((a + 1).choose (b + 1) : ℝ) * ((b + 1 : ℕ) : ℝ) := by exact_mod_cast h2
+      push_cast at h1' h2' ⊢
+      linear_combination ((a : ℝ) + 2) * h2' + ((b : ℝ) + 1) * h1'
+    have hfun : (fun s : SubsetsOfCard n m => weight i s * weight j s)
+        = fun s => (fun t => if i ∈ t ∧ j ∈ t then (1 : ℝ) else 0) s.val := by
+      funext s
+      simp only [weight]
+      by_cases hi : i ∈ s.val <;> by_cases hj : j ∈ s.val <;> simp [hi, hj]
+    rw [hfun, expect_eq_powersetCard (fun t => if i ∈ t ∧ j ∈ t then (1 : ℝ) else 0)]
+    simp only [Finset.sum_boole, card_filter_two hm2 hij]
+    rw [inv_mul_eq_div, div_eq_div_iff hcm (mul_ne_zero hn0 hn1)]
+    linear_combination key
 
 /-- **Negative correlation**: for `i ≠ j`,
 `Cov(Wᵢ, Wⱼ) = −m(n−m)/(n²(n−1))`.
@@ -138,7 +339,14 @@ theorem cov_weight {n m : ℕ}
         - expect (fun s : SubsetsOfCard n m => weight i s)
           * expect (fun s : SubsetsOfCard n m => weight j s)
       = -((m : ℝ) * ((n : ℝ) - m)) / ((n : ℝ) ^ 2 * ((n : ℝ) - 1)) := by
-  sorry
+  have hijv : (i : ℕ) ≠ (j : ℕ) := fun h => hij (Fin.ext h)
+  have hn2 : 2 ≤ n := by have := i.isLt; have := j.isLt; omega
+  have hnr : (2 : ℝ) ≤ n := by exact_mod_cast hn2
+  have hn0 : (n : ℝ) ≠ 0 := (by linarith : (0 : ℝ) < n).ne'
+  have hn1 : (n : ℝ) - 1 ≠ 0 := (by linarith : (0 : ℝ) < (n : ℝ) - 1).ne'
+  rw [expect_weight_pair hm hij, expect_weight hm i, expect_weight hm j]
+  field_simp
+  ring
 
 /-- **Exact variance of a linear statistic.** For deterministic coefficients `c` with mean
 `c̄ = n⁻¹ ∑ᵢ cᵢ`,
