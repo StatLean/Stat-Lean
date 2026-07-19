@@ -1,5 +1,6 @@
 import StatLean.PointEstimation.Sufficiency.Factorization
 import Mathlib.Probability.Kernel.Disintegration.StandardBorel
+import Mathlib.Probability.Kernel.CompProdEqIff
 
 /-!
 # From per-event determinations to a θ-free regular conditional distribution
@@ -59,6 +60,25 @@ namespace StatLean.PointEstimation
 
 variable {Θ 𝓧 S : Type*} [MeasurableSpace 𝓧] [MeasurableSpace S]
 
+/-- Tilting the first marginal of a compProd by a density of the first coordinate. -/
+private theorem compProd_withDensity_left (μ : Measure S) [SFinite μ] (Q : Kernel S 𝓧)
+    [IsSFiniteKernel Q] {w : S → ℝ≥0∞} (hw : Measurable w) :
+    (μ.withDensity w) ⊗ₘ Q = (μ ⊗ₘ Q).withDensity (fun p => w p.1) := by
+  ext s hs
+  rw [Measure.compProd_apply hs, withDensity_apply _ hs, ← lintegral_indicator hs,
+      Measure.lintegral_compProd
+        ((show Measurable fun p : S × 𝓧 => w p.1 from hw.comp measurable_fst).indicator hs),
+      lintegral_withDensity_eq_lintegral_mul _ hw (Kernel.measurable_kernel_prodMk_left hs)]
+  refine lintegral_congr fun a => ?_
+  rw [Pi.mul_apply]
+  have hind : (fun x => s.indicator (fun p => w p.1) (a, x))
+      = (Prod.mk a ⁻¹' s).indicator (fun _ => w a) := by
+    funext x
+    by_cases hx : (a, x) ∈ s
+    · rw [Set.indicator_of_mem hx, Set.indicator_of_mem (Set.mem_preimage.mpr hx)]
+    · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem (mt Set.mem_preimage.mp hx)]
+  rw [hind, lintegral_indicator_const (measurable_prodMk_left hs)]
+
 /-- **Dominated existence of a θ-free reconstruction kernel.** On a standard Borel sample
 space, a sufficient statistic for a family dominated by a σ-finite measure admits a single
 θ-free Markov kernel disintegrating the graph law of `(T, id)` under every member. -/
@@ -71,7 +91,45 @@ theorem hasSufficientKernel_of_isSufficient_dominated [StandardBorelSpace 𝓧] 
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
-  sorry
+  rcases isEmpty_or_nonempty Θ with hΘ | hΘ
+  · haveI : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
+      Measure.dirac.isProbabilityMeasure
+    exact ⟨Kernel.const S (Measure.dirac (Classical.arbitrary 𝓧)), inferInstance,
+      fun θ => (hΘ.false θ).elim⟩
+  obtain ⟨θs, c, ν, hν, hcpos, hcsum, hdomν, -⟩ :=
+    exists_equivalent_countable_mixture P μ hdom
+  haveI : IsProbabilityMeasure ν := ⟨by
+    rw [hν, Measure.sum_apply _ MeasurableSet.univ]
+    simp only [Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]; exact hcsum⟩
+  have he : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id
+  haveI : IsProbabilityMeasure (ν.map fun x => (T x, x)) :=
+    Measure.isProbabilityMeasure_map he.aemeasurable
+  have hρfst : (ν.map fun x => (T x, x)).fst = ν.map T :=
+    Measure.fst_map_prodMk measurable_id
+  set Q : Kernel S 𝓧 := (ν.map fun x => (T x, x)).condKernel with hQdef
+  have hρcompProd : (ν.map T) ⊗ₘ Q = ν.map fun x => (T x, x) := by
+    rw [hQdef, ← hρfst]; exact Measure.disintegrate _ _
+  refine ⟨Q, Measure.instIsMarkovKernelCondKernel _, fun θ => ?_⟩
+  obtain ⟨w, hw, hweq⟩ := rnDeriv_comp_of_isSufficient P hT θs c ν hν hdomν hsuf θ
+  have hPθ : P θ = ν.withDensity (fun x => w (T x)) :=
+    calc P θ = ν.withDensity ((P θ).rnDeriv ν) :=
+          (Measure.withDensity_rnDeriv_eq (P θ) ν (hdomν θ)).symm
+      _ = ν.withDensity (fun x => w (T x)) := withDensity_congr_ae hweq
+  have hmapwd : (ν.withDensity (fun x => w (T x))).map (fun x => (T x, x))
+      = (ν.map fun x => (T x, x)).withDensity (fun q => w q.1) := by
+    refine Measure.ext fun C hC => ?_
+    rw [Measure.map_apply he hC, withDensity_apply _ (he hC), withDensity_apply _ hC,
+        setLIntegral_map hC (show Measurable fun q : S × 𝓧 => w q.1 from hw.comp measurable_fst) he]
+  have hmapT : (ν.withDensity (fun x => w (T x))).map T = (ν.map T).withDensity w := by
+    refine Measure.ext fun C hC => ?_
+    rw [Measure.map_apply hT hC, withDensity_apply _ (hT hC), withDensity_apply _ hC,
+        setLIntegral_map hC hw hT]
+  have hstat : statLaw P T θ = (ν.map T).withDensity w := by rw [statLaw, hPθ, hmapT]
+  calc (P θ).map (fun x => (T x, x))
+      = (ν.map fun x => (T x, x)).withDensity (fun q => w q.1) := by rw [hPθ, hmapwd]
+    _ = ((ν.map T) ⊗ₘ Q).withDensity (fun q => w q.1) := by rw [hρcompProd]
+    _ = ((ν.map T).withDensity w) ⊗ₘ Q := (compProd_withDensity_left (ν.map T) Q hw).symm
+    _ = (statLaw P T θ) ⊗ₘ Q := by rw [hstat]
 
 /-- **General existence of a θ-free reconstruction kernel** on a standard Borel sample space,
 without any domination assumption.
@@ -88,6 +146,13 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
+  -- TODO (DEFERRAL-ELIGIBLE, named planned debt): glue the per-event determinations of
+  -- `hsuf` into a single Markov kernel. Choose determinations `κ_{A_n}` along a countable
+  -- generating algebra `{A_n}` of `𝓧`, repair finite additivity in `A` and continuity at
+  -- `∅` off a `statLaw`-null set of `t`, and extend by Carathéodory to a genuine kernel
+  -- `Q : S ⇝ 𝓧`; on a standard Borel `𝓧` this goes through the regularity of the associated
+  -- conditional distribution functions. No result in this area consumes this theorem: every
+  -- downstream user routes through `hasSufficientKernel_of_isSufficient_dominated`.
   sorry
 
 end StatLean.PointEstimation
