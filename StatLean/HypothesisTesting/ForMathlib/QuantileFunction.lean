@@ -187,7 +187,70 @@ theorem map_quantile_uniform (P : Measure ℝ) [IsProbabilityMeasure P] (F : ℝ
     -- USER-INPUT: `F` is the distribution function of `P`; classical
     (hF : ∀ x : ℝ, F x = (P (Set.Iic x)).toReal) :
     (volume.restrict (Set.Icc (0 : ℝ) 1)).map (quantile F) = P := by
-  sorry
+  have hFeq : F = ⇑(cdf P) := by
+    funext x; rw [hF, cdf_eq_real]; rfl
+  subst hFeq
+  have hmono : Monotone ⇑(cdf P) := monotone_cdf (μ := P)
+  have hrc : ∀ y, ContinuousWithinAt ⇑(cdf P) (Set.Ici y) y :=
+    fun y => (cdf P).right_continuous y
+  have hbdd : ∀ a : ℝ, 0 < a → BddBelow {x : ℝ | a ≤ cdf P x} := by
+    intro a ha
+    obtain ⟨b, hb⟩ := eventually_atBot.mp ((tendsto_cdf_atBot P).eventually_lt_const ha)
+    refine ⟨b, fun y hy => ?_⟩
+    simp only [Set.mem_setOf_eq] at hy
+    by_contra hc; push_neg at hc
+    exact absurd (hb y hc.le) (not_lt.mpr hy)
+  have hne : ∀ a : ℝ, a < 1 → {x : ℝ | a ≤ cdf P x}.Nonempty := by
+    intro a ha
+    obtain ⟨y, hy⟩ := ((tendsto_cdf_atTop P).eventually_const_lt ha).exists
+    exact ⟨y, hy.le⟩
+  have hmonoOn : MonotoneOn (quantile ⇑(cdf P)) (Set.Ioo 0 1) := by
+    intro a ha b hb hab
+    exact quantile_mono _ hab (hbdd a ha.1) (hne b hb.2)
+  have hIccIoo : Set.Icc (0 : ℝ) 1 =ᵐ[volume] Set.Ioo 0 1 := Ioo_ae_eq_Icc.symm
+  have haem : AEMeasurable (quantile ⇑(cdf P)) (volume.restrict (Set.Icc (0 : ℝ) 1)) := by
+    rw [Measure.restrict_congr_set hIccIoo]
+    exact aemeasurable_restrict_of_monotoneOn measurableSet_Ioo hmonoOn
+  haveI : IsFiniteMeasure ((volume.restrict (Set.Icc (0 : ℝ) 1)).map (quantile ⇑(cdf P))) := by
+    constructor
+    rw [Measure.map_apply_of_aemeasurable haem MeasurableSet.univ, Set.preimage_univ,
+      Measure.restrict_apply_univ]
+    exact measure_Icc_lt_top
+  refine Measure.ext_of_Iic ((volume.restrict (Set.Icc 0 1)).map (quantile ⇑(cdf P))) P
+    (fun t => ?_)
+  rw [Measure.map_apply_of_aemeasurable haem measurableSet_Iic,
+    Measure.restrict_apply' measurableSet_Icc, ← ofReal_cdf P t]
+  set a := cdf P t with hadef
+  have ha0 : 0 ≤ a := cdf_nonneg P t
+  have ha1 : a ≤ 1 := cdf_le_one P t
+  -- On `Ioo 0 1` the Galois property turns the quantile preimage into an interval.
+  have hstep : (quantile ⇑(cdf P) ⁻¹' Set.Iic t) ∩ Set.Ioo 0 1 = Set.Ioo 0 1 ∩ Set.Iic a := by
+    ext u
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_Iic, Set.mem_Ioo]
+    constructor
+    · rintro ⟨hqt, hu⟩
+      exact ⟨hu, (quantile_le_iff hmono hrc (hne u hu.2) (hbdd u hu.1)).mp hqt⟩
+    · rintro ⟨hu, hle⟩
+      exact ⟨(quantile_le_iff hmono hrc (hne u hu.2) (hbdd u hu.1)).mpr hle, hu⟩
+  have hcong : ((quantile ⇑(cdf P) ⁻¹' Set.Iic t) ∩ Set.Icc (0 : ℝ) 1 : Set ℝ)
+      =ᵐ[volume] (Set.Ioo 0 1 ∩ Set.Iic a : Set ℝ) := by
+    refine (Filter.EventuallyEq.inter (ae_eq_refl _) hIccIoo).trans ?_
+    rw [hstep]
+  rw [measure_congr hcong]
+  -- The interval `Ioo 0 1 ∩ Iic a` has the same volume as `Ioc 0 a`, namely `ofReal a`.
+  have hae : (Set.Ioo (0 : ℝ) 1 ∩ Set.Iic a : Set ℝ) =ᵐ[volume] (Set.Ioc (0 : ℝ) a : Set ℝ) := by
+    rw [ae_eq_set]
+    refine ⟨?_, ?_⟩
+    · convert measure_empty (μ := volume)
+      rw [Set.diff_eq_empty]
+      rintro u ⟨⟨h0, _⟩, hle⟩
+      exact ⟨h0, hle⟩
+    · refine measure_mono_null ?_ (Real.volume_singleton (a := 1))
+      rintro u ⟨⟨h0, hle⟩, hnot⟩
+      rw [Set.mem_singleton_iff]
+      by_contra hu1
+      exact hnot ⟨⟨h0, lt_of_le_of_ne (le_trans hle ha1) hu1⟩, hle⟩
+  rw [measure_congr hae, Real.volume_Ioc, sub_zero]
 
 /-- For a strictly increasing `F`, the quantile at an attained level is the attaining point.
 The helper that identifies the limit in the two convergence statements below. -/
