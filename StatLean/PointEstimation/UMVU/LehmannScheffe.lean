@@ -284,7 +284,13 @@ full rank, every estimable function admits a uniformly minimum variance unbiased
 and it is a function of the natural statistic. Statement only: the proof combines the
 completeness of the natural statistic of a full-rank family with the two theorems above. -/
 theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ → Measure 𝓧)
-    [∀ θ, IsProbabilityMeasure (P θ)] (ηmap : Θ → V)
+    [∀ θ, IsProbabilityMeasure (P θ)]
+    -- LEAN-ONLY: the sufficiency kernel of the natural statistic is produced by
+    -- `Sufficiency.RegularConditional`, which needs a standard Borel sample space; an
+    -- exponential family supplies no explicit reconstruction kernel without such structure.
+    -- Standard throughout this literature: every sufficiency theorem in the area carries it.
+    [StandardBorelSpace 𝓧] [Nonempty 𝓧]
+    (ηmap : Θ → V)
     -- USER-INPUT: the family is a reparametrization of the canonical exponential family `E`
     (hrepr : IsCanonicalRepr P E ηmap)
     -- USER-INPUT: the parametrization covers the full-rank parameter set

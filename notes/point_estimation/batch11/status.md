@@ -168,10 +168,42 @@ Integration gate after the first merge: 0 errors, `Build completed successfully`
 | `pe/sufficiency-factorization` | 3/4 files 0-sorry | Halmos–Savage criterion, **Fisher–Neyman factorization (both directions)**, minimal sufficiency via the likelihood-ratio vector — all axiom-clean. Remaining sorry is exactly the **pre-agreed TSH 2.6.1 general deferral**; its comment records that no result in the area consumes it (all users route through the dominated version, which is closed). |
 | `pe/location` | 3/4 files 0-sorry | Location structure (Thms 1.4/1.8, Lems 1.6/1.7), the shared **conditional-risk engine**, Thm 1.10, Cor 1.12, and all risk-unbiasedness closed. Cor 1.11 (convex existence) and Cor 1.14 (bounded loss) cores remain named debts — exactly the renegotiation point the design predicted. |
 
+| `pe/basu-lehmann` | 1/3 files 0-sorry | **Basu (Thm 6.21) closed axiom-clean.** Lehmann–Scheffé uniqueness (Lem 1.10) and the convex-risk form (Thm 1.11b) closed. Two **contract-level** gaps surfaced — see below. |
+
 **No false statements found in any item to date.** Every debt is a named, documented `private`
 lemma with a TODO, never a weakened public statement.
 
+## OPEN DESIGN QUESTION — two gaps in contracts I froze (needs a scope decision)
+
+These are not proof difficulties. They are places where the frozen `Defs` are too weak (or the
+ambient structure too poor) for the intended route, found and documented by the proof session
+rather than worked around.
+
+**(1) `IsUMVU`'s competitor class is not measurable enough for kernel Rao–Blackwell.**
+The frozen `IsUMVU` quantifies minimality over competitors carrying only `MemEstL2 P δ'`, i.e. a
+*per-parameter* `AEStronglyMeasurable` representative. The kernel route needs one **global
+measurable** representative (the kernel average `t ↦ ∫ δ' dQ_t` and the completeness test
+function must be genuinely measurable with identically zero mean). Per-parameter representatives
+do **not** glue into a global one — the session gives **Dirac families as a counterexample** —
+and the signature supplies no dominating measure.
+Options: **(a)** add `Measurable δ'` to the competitor condition in `IsUMVU`/`IsLMVU` (faithful to
+the classical convention that an *estimator* is a measurable function, but formally a weakening,
+and it forces a re-gate of everything that consumes `IsUMVU`); **(b)** build a `condExp`-based
+Rao–Blackwell layer, which needs only integrability and avoids the kernel entirely; **(c)** keep
+the strong statement and carry the gap as a standing named debt.
+Currently **(c)** — statement intact, `variance_rbEstimator_le_of_complete` left as a documented
+`private` debt. Recommend **(b)** as the principled fix; it is additive (new layer, no re-gate).
+
+**(2) Cor 1.12 (`isUMVU_of_fullRank_expFamily`) lacks the structure to build its sufficiency
+kernel.** It consumes `HasSufficientKernel P E.stat`; for a general reference measure that kernel
+comes from `hasSufficientKernel_of_isSufficient`, which needs `[StandardBorelSpace 𝓧]` (and
+`[Nonempty 𝓧]`) — neither is in the frozen signature, and an exponential family supplies no
+explicit reconstruction kernel without such structure. Completeness itself transfers cleanly; the
+sufficiency kernel is the only missing input.
+Fix: add the two instance binders to that corollary's signature (standard throughout this
+literature — every sufficiency theorem in the area already carries them). Cheap and local.
+
 ### In flight
 
-`pe/basu-lehmann` (Basu + Cor 6.16 + Lehmann–Scheffé), `pe/expfam-info` (smoothness/Stein +
-multiparameter information), `pe/linear-model` (all five LinearModel files).
+`pe/expfam-info` (smoothness/Stein + multiparameter information), `pe/linear-model` (all five
+LinearModel files).
