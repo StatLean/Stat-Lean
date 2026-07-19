@@ -81,7 +81,15 @@ theorem riskRand_comp_eq_riskRand (P : Θ → Measure 𝓧) [∀ θ, IsProbabili
     -- USER-INPUT: the (possibly randomized) estimator whose risk is to be matched
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] (θ : Θ) :
     riskRand (statLaw P T) L (κ ∘ₖ Q) θ = riskRand P L κ θ := by
-  sorry
+  haveI := isProbabilityMeasure_statLaw P hT θ
+  have hF : Measurable fun x => ∫⁻ d, L θ d ∂(κ x) := (hL θ).lintegral_kernel
+  calc riskRand (statLaw P T) L (κ ∘ₖ Q) θ
+      = ∫⁻ t, ∫⁻ x, (∫⁻ d, L θ d ∂κ x) ∂Q t ∂(statLaw P T θ) := by
+        simp_rw [riskRand, Kernel.lintegral_comp _ _ _ (hL θ)]
+    _ = ∫⁻ x, (∫⁻ d, L θ d ∂κ x) ∂(Q ∘ₘ (statLaw P T θ)) :=
+        (Measure.lintegral_bind Q.aemeasurable hF.aemeasurable).symm
+    _ = ∫⁻ x, (∫⁻ d, L θ d ∂κ x) ∂(P θ) := by rw [statLaw_snd P hT hgraph θ]
+    _ = riskRand P L κ θ := rfl
 
 /-- **Sufficiency ⇒ risk-equal randomized estimator based on `T`.** For any randomized
 estimator there is a randomized estimator depending on the data only through the sufficient
@@ -98,7 +106,9 @@ theorem exists_riskRand_eq_of_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsPr
     (κ : Kernel 𝓧 D) [IsMarkovKernel κ] :
     ∃ κ' : Kernel S D, IsMarkovKernel κ' ∧
       ∀ θ, riskRand (statLaw P T) L κ' θ = riskRand P L κ θ := by
-  sorry
+  obtain ⟨Q, hQ, hgraph⟩ := hsuf
+  haveI := hQ
+  exact ⟨κ ∘ₖ Q, inferInstance, fun θ => riskRand_comp_eq_riskRand P L hT hL hgraph κ θ⟩
 
 /-- A nonrandomized estimator, regarded as the Dirac kernel `x ↦ δ_{δ(x)}`, has its own risk
 as a randomized estimator. The bridge between `risk` and `riskRand`. -/
@@ -108,7 +118,7 @@ theorem riskRand_deterministic (P : Θ → Measure 𝓧) (L : Θ → D → ℝ�
     -- LEAN-ONLY: measurability of the loss in the decision argument
     (hL : ∀ θ, Measurable (L θ)) (θ : Θ) :
     riskRand P L (Kernel.deterministic δ hδ) θ = risk P L δ θ := by
-  sorry
+  simp only [riskRand, risk, crossRisk, Kernel.lintegral_deterministic' hδ (hL θ)]
 
 /-- **Sufficiency ⇒ risk-equal estimator based on `T`, nonrandomized case.** Every
 nonrandomized estimator is matched, risk function for risk function, by the randomized
@@ -125,6 +135,8 @@ theorem exists_riskRand_eq_risk_of_sufficient (P : Θ → Measure 𝓧)
     (hδ : Measurable δ) :
     ∃ κ' : Kernel S D, IsMarkovKernel κ' ∧
       ∀ θ, riskRand (statLaw P T) L κ' θ = risk P L δ θ := by
-  sorry
+  obtain ⟨κ', hκ', hrisk⟩ :=
+    exists_riskRand_eq_of_sufficient P L hT hL hsuf (Kernel.deterministic δ hδ)
+  exact ⟨κ', hκ', fun θ => (hrisk θ).trans (riskRand_deterministic P L hδ hL θ)⟩
 
 end StatLean.PointEstimation
