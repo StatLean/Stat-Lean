@@ -144,6 +144,35 @@ theorem isLocMRE_of_conditional_min (f : (Fin (m + 1) → ℝ) → ℝ)
       unfold locRisk; exact lintegral_congr fun x => by rw [hv x]
     rw [hrisk']; unfold locRisk; exact key
 
+/-- Analytic core (named debt): for a convex, non-monotone loss the fibrewise conditional
+risk `w ↦ ∫⁻ x, ofReal (ρ (δ₀ x − w)) ∂(orbitCondKernel (locationBase f) diffs z)` is
+convex, continuous and coercive in `w`, so the measurable-argmin brick
+`exists_measurable_argmin` produces a measurable `v*` minimizing it in every fibre. -/
+private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) → ℝ)
+    [IsProbabilityMeasure (locationBase f)] {ρ : ℝ → ℝ} (hρ : Measurable ρ)
+    (hconv : ConvexOn ℝ Set.univ ρ) (hnotmono : ¬ Monotone ρ ∧ ¬ Antitone ρ)
+    {δ₀ : (Fin (m + 1) → ℝ) → ℝ} (hδ₀ : Measurable δ₀) :
+    ∃ vStar : (Fin m → ℝ) → ℝ, Measurable vStar ∧
+      ∀ᵐ y ∂((locationBase f).map diffs), ∀ w : ℝ,
+        ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - vStar y))
+            ∂(orbitCondKernel (locationBase f) diffs y) ≤
+          ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
+            ∂(orbitCondKernel (locationBase f) diffs y) := by
+  -- TODO: analytic core of the convex location MRE. Set
+  --   `fObj z w = ∫⁻ x, ofReal (ρ (δ₀ x - w)) ∂(orbitCondKernel (locationBase f) diffs z)`
+  -- and discharge the four hypotheses of `exists_measurable_argmin`:
+  --   * joint measurability of `Function.uncurry fObj` (kernel-parametrized `∫⁻`);
+  --   * `ConvexOn ℝ≥0 univ (fObj z)` from convexity of `ρ` composed with the affine shift,
+  --     pushed through `ENNReal.ofReal` and `∫⁻`-monotonicity/additivity;
+  --   * `Continuous (fObj z)` — the delicate step: continuity of the ℝ≥0∞-valued integral
+  --     in the shift `w` (a convex ℝ≥0∞ objective can jump from finite to ∞ at the
+  --     boundary of its finiteness domain, so this needs a genuine regularity argument);
+  --   * `Tendsto (fObj z) (cocompact ℝ) (𝓝 ⊤)` from coercivity of the convex non-monotone
+  --     `ρ` (via `hnotmono`) and Fatou.
+  -- Then `exists_measurable_argmin` gives measurable `v*` with `fObj z (v* z) = ⨅ w, fObj z w`,
+  -- whence the fibrewise minimality holds for every `z` (a fortiori `∀ᵐ`).
+  sorry
+
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
 loss.** For such a loss the fibrewise minimization always has a solution, and the
 solution can be chosen measurably; uniqueness holds when the loss is strictly convex, a
@@ -166,7 +195,9 @@ theorem exists_isLocMRE_of_convex (f : (Fin (m + 1) → ℝ) → ℝ)
     (heq₀ : IsLocEquivariant δ₀)
     (hfin : locRisk f ρ δ₀ ≠ ∞) :
     ∃ δ, IsLocMRE f ρ δ := by
-  sorry
+  obtain ⟨vStar, hvStar, hmin⟩ :=
+    exists_measurable_condMinimizer_convex f hρ hconv hnotmono hδ₀
+  exact ⟨_, isLocMRE_of_conditional_min f ρ hρ hδ₀ heq₀ hfin hvStar hmin⟩
 
 /-- **Squared error: the minimum risk equivariant estimator subtracts the conditional
 mean.** With `ρ(t) = t²` the fibrewise minimizer is the conditional expectation of the
@@ -223,6 +254,22 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     -- USER-INPUT: the density is continuous almost everywhere
     (hcont : ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)), ContinuousAt f x) :
     ∃ δ, IsLocMRE f ρ δ := by
+  -- TODO: second analytic core (named debt), independent of the convex one above.
+  -- For a single observation `diffs : (Fin 1 → ℝ) → (Fin 0 → ℝ)` is constant, so the
+  -- equivariant class is exactly `{x ↦ x 0 − c : c ∈ ℝ}` (via
+  -- `isLocEquivariant_iff_exists_diffs_rep_measurable` with `δ₀ x = x 0`, using that
+  -- `Fin 0 → ℝ` is a subsingleton so `v (diffs x)` is a constant `c`). Minimizing the
+  -- constant risk reduces to producing `c*` minimizing
+  --   `g c = ∫⁻ x, ofReal (ρ (x 0 − c)) ∂(locationBase f)`.
+  -- Here `g` is bounded by `ofReal M` (loss `≤ M`, probability law) and, by `hatTop`/
+  -- `hatBot`, `g c → ofReal M` as `c → ±∞`; the minimum is then attained by
+  -- `Continuous.exists_forall_le'` (extreme value theorem away from a compact set).
+  -- The delicate input is continuity of `g` in the shift `c`: since `ρ` is only
+  -- measurable (not continuous), continuity comes from `hcont` (a.e. continuity of the
+  -- density) via translation-continuity of the convolution `c ↦ ∫ ρ(t − c) f(t) dt`,
+  -- together with dominated convergence (dominating constant `M`, integrable on the
+  -- probability law). This convolution/DCT regularity is a genuinely separate analytic
+  -- fact from the convex-objective regularity above and cannot be folded into it.
   sorry
 
 end LocationMRE
