@@ -129,4 +129,23 @@ Design/route decisions:
 
 - 2026-07-15: design frozen (17 items, 6 waves); stubs pending.
 - 2026-07-18: weekly-quota interruption killed the first fan-out; relaunched.
-- 2026-07-18: stub phase COMPLETE — 63 files / 243 stubs committed; `pe/batch11` merged in; full-tree stub gate running.
+- 2026-07-18: stub phase COMPLETE — 63 files / 243 stubs committed; `pe/batch11` merged in.
+- 2026-07-18: **FULL-AREA GATE GREEN — `lake build StatLean.HypothesisTesting`: 0 errors,
+  243 sorries, `Build completed successfully`.** Took four rounds; the fixes were all
+  mechanical, not mathematical:
+  1. `ℙ` used as a `variable` binder in five Bootstrap files — `ℙ` is notation, not a legal
+     identifier; the broken `variable` block cascaded into 48 downstream unknown-identifier
+     errors (65 → 17 by renaming to `Pr`).
+  2. `ḡ` (U+1E21) as an identifier in `Invariance/MaximalInvariant` — precomposed Latin
+     Extended Additional is outside Lean's identifier alphabet. Renamed to `gbar`. (The same
+     glyph inside docstrings elsewhere is harmless.)
+  3. Numeric-coercion binders: `fun n => … Real.sqrt n …` retypes `n` to `ℝ`, breaking
+     `Fin n` / `F n` / `Y n` downstream. Fixed by annotating `fun n : ℕ =>` in
+     `KSLocalPower`, `LindebergCLT`, `Bootstrap/{Consistency,NonparametricMean}`.
+  4. `ProbabilityMeasure ℝ` built by anonymous constructor loses its topology instance —
+     restated row-law weak convergence in portmanteau form (`∀ f : ℝ →ᵇ ℝ, …`), matching
+     `AsymptoticStatistics/ForMathlib/Contiguity.lean`'s own `WeakConverges`.
+  5. `if T (g • x) ∈ B then …` needs `Decidable` for an arbitrary set — used `Set.indicator`.
+  6. `cov[fun y => WithLp.ofLp y i, …]` — the lambda binder's type does not infer through the
+     covariance notation; annotated.
+  Area umbrella `StatLean/HypothesisTesting.lean` created (laptop-only surface).
