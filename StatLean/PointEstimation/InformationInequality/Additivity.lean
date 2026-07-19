@@ -1,6 +1,7 @@
 import StatLean.PointEstimation.InformationInequality.Basic
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Pi
 
 /-!
 # Additivity of the Fisher information over independent observations
@@ -189,6 +190,112 @@ theorem fisherInfo_pi (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     -- LEAN-ONLY: integrability of the mean score, needed to factorize the cross terms
     (hint1 : Integrable (fun x => score M θ x * M.density θ x) μ) :
     fisherInfo (piFamily M n) (Measure.pi fun _ : Fin n => μ) θ = (n : ℝ) * fisherInfo M μ θ := by
-  sorry
+  -- product-rule reduction of the joint score on the support
+  have hderiv_pi : ∀ x : Fin n → 𝓧, (∀ i, 0 < M.density θ (x i)) →
+      deriv (fun t => ∏ i, M.density t (x i)) θ
+        = (∑ i, score M θ (x i)) * ∏ i, M.density θ (x i) := by
+    intro x hx
+    rw [deriv_fun_finset_prod (fun i _ => hdiff (x i) (hx i)), Finset.sum_mul]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    have hne := (hx i).ne'
+    rw [smul_eq_mul, score,
+      ← Finset.mul_prod_erase Finset.univ (fun k => M.density θ (x k)) (Finset.mem_univ i)]
+    field_simp
+  -- pointwise: joint integrand = (∑ scoreᵢ)² · ∏ pⱼ
+  have key_pi : ∀ x : Fin n → 𝓧, score (piFamily M n) θ x ^ 2 * (piFamily M n).density θ x
+      = (∑ i, score M θ (x i)) ^ 2 * ∏ i, M.density θ (x i) := by
+    intro x
+    rcases eq_or_ne (∏ i, M.density θ (x i)) 0 with h0 | h0
+    · have hpi : (piFamily M n).density θ x = 0 := by simp only [piFamily]; exact h0
+      rw [hpi, h0]; ring
+    · have hx : ∀ i, 0 < M.density θ (x i) := fun i =>
+        lt_of_le_of_ne (M.density_nonneg θ (x i))
+          (Ne.symm fun hi => h0 (Finset.prod_eq_zero (Finset.mem_univ i) hi))
+      have hscore_eq : score (piFamily M n) θ x = ∑ i, score M θ (x i) := by
+        rw [score]
+        simp only [piFamily]
+        rw [hderiv_pi x hx, mul_div_assoc, div_self h0, mul_one]
+      rw [hscore_eq]
+      simp only [piFamily]
+  -- expand the square into a double sum
+  have hexpand : ∀ x : Fin n → 𝓧, (∑ i, score M θ (x i)) ^ 2 * ∏ k, M.density θ (x k)
+      = ∑ i, ∑ j, score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k) := by
+    intro x
+    rw [sq, Finset.sum_mul_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_mul]
+  -- per-coordinate integrability of the guarded product factors
+  have hf_int : ∀ i j k : Fin n, Integrable (fun a => (if k = i then score M θ a else 1)
+      * (if k = j then score M θ a else 1) * M.density θ a) μ := by
+    intro i j k
+    by_cases hki : k = i
+    · by_cases hkj : k = j
+      · simp only [if_pos hki, if_pos hkj]
+        exact hint.congr (Filter.Eventually.of_forall fun a => by ring)
+      · simp only [if_pos hki, if_neg hkj, mul_one]
+        exact hint1
+    · by_cases hkj : k = j
+      · simp only [if_neg hki, if_pos hkj, one_mul]
+        exact hint1
+      · simp only [if_neg hki, if_neg hkj, one_mul, mul_one]
+        exact hM.density_integrable θ
+  -- factorisation of the (i,j)-term integrand into a coordinatewise product
+  have hpt : ∀ (i j : Fin n) (x : Fin n → 𝓧),
+      score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k)
+        = ∏ k, (if k = i then score M θ (x k) else 1) * (if k = j then score M θ (x k) else 1)
+            * M.density θ (x k) := by
+    intro i j x
+    rw [Finset.prod_mul_distrib, Finset.prod_mul_distrib, Finset.prod_ite_eq', Finset.prod_ite_eq',
+      if_pos (Finset.mem_univ i), if_pos (Finset.mem_univ j)]
+  -- integrability of each base term over the product measure
+  have hbase_int : ∀ i j : Fin n, Integrable
+      (fun x => score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k))
+      (Measure.pi fun _ : Fin n => μ) := by
+    intro i j
+    refine (Integrable.fintype_prod (f := fun k a => (if k = i then score M θ a else 1)
+      * (if k = j then score M θ a else 1) * M.density θ a) (fun k => hf_int i j k)).congr ?_
+    exact Filter.Eventually.of_forall fun x => (hpt i j x).symm
+  -- the (i,j)-term evaluates to `I` on the diagonal and `0` off it
+  have hterm : ∀ i j : Fin n,
+      (∫ x, score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k)
+        ∂(Measure.pi fun _ : Fin n => μ)) = if i = j then fisherInfo M μ θ else 0 := by
+    intro i j
+    rw [integral_congr_ae (Filter.Eventually.of_forall (hpt i j)),
+      integral_fintype_prod_eq_prod (fun k a => (if k = i then score M θ a else 1)
+        * (if k = j then score M θ a else 1) * M.density θ a)]
+    by_cases hij : i = j
+    · subst hij
+      have hoff : ∀ k ∈ (Finset.univ : Finset (Fin n)), k ≠ i →
+          (∫ a, (if k = i then score M θ a else 1) * (if k = i then score M θ a else 1)
+            * M.density θ a ∂μ) = 1 := by
+        intro k _ hk
+        simp only [if_neg hk, one_mul]
+        exact hM.density_integral_eq_one θ
+      rw [if_pos rfl, Finset.prod_eq_single i hoff (fun h => absurd (Finset.mem_univ i) h)]
+      simp only [↓reduceIte]
+      rw [fisherInfo]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun a => ?_)
+      ring
+    · rw [if_neg hij]
+      refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
+      simp only [if_pos rfl, if_neg hij, mul_one]
+      exact hmean0
+  -- integrability of the inner sum
+  have hsum_int : ∀ i : Fin n, Integrable
+      (fun x => ∑ j, score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k))
+      (Measure.pi fun _ : Fin n => μ) :=
+    fun i => integrable_finset_sum Finset.univ (fun j _ => hbase_int i j)
+  -- assemble
+  rw [fisherInfo, integral_congr_ae (Filter.Eventually.of_forall key_pi),
+    integral_congr_ae (Filter.Eventually.of_forall hexpand),
+    integral_finset_sum Finset.univ (fun i _ => hsum_int i)]
+  have hinner : ∀ i : Fin n, (∫ x, ∑ j, score M θ (x i) * score M θ (x j) * ∏ k, M.density θ (x k)
+      ∂(Measure.pi fun _ : Fin n => μ)) = ∑ j, if i = j then fisherInfo M μ θ else 0 := by
+    intro i
+    rw [integral_finset_sum Finset.univ (fun j _ => hbase_int i j)]
+    exact Finset.sum_congr rfl (fun j _ => hterm i j)
+  rw [Finset.sum_congr rfl (fun i _ => hinner i)]
+  simp only [Finset.sum_ite_eq, Finset.mem_univ, if_true]
+  rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 end StatLean.PointEstimation
