@@ -106,14 +106,30 @@ noncomputable def regressionModel (A : Matrix (Fin s) (Fin n) ℝ) (p : Regressi
 /-- The regression mean vector lies in the span of the rows of the design. -/
 theorem designMean_mem_designSpace (A : Matrix (Fin s) (Fin n) ℝ) (θ : Fin s → ℝ) :
     designMean A θ ∈ designSpace A := by
-  sorry
+  rw [designMean, designSpace]
+  have hsum : (θ ᵥ* A) = ∑ i, θ i • A i := by
+    funext j
+    simp only [Matrix.vecMul, dotProduct, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  rw [hsum]
+  have he : (WithLp.toLp 2 (∑ i, θ i • A i) : EuclideanSpace ℝ (Fin n))
+      = ∑ i, θ i • (WithLp.toLp 2 (A i) : EuclideanSpace ℝ (Fin n)) :=
+    (map_sum (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm (fun i => θ i • A i) Finset.univ).trans
+      (Finset.sum_congr rfl (fun i _ => map_smul _ (θ i) (A i)))
+  rw [he]
+  exact Submodule.sum_mem _ (fun i _ => Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
 
 /-- A design of full row rank identifies its coefficient vector. -/
 theorem injective_designMean {A : Matrix (Fin s) (Fin n) ℝ}
     -- USER-INPUT: the design has full row rank `s` (the full-rank regression model)
     (hA : A.rank = s) :
     Function.Injective (designMean A) := by
-  sorry
+  have hli : LinearIndependent ℝ A.row := by
+    rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
+        ← Matrix.rank_eq_finrank_span_row, hA]
+    simp
+  have hvec : Function.Injective A.vecMul := Matrix.vecMul_injective_iff.mpr hli
+  intro θ φ h
+  exact hvec ((WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm.injective h)
 
 /-- **The coefficient LSE is the mean LSE**: applying the design to `θ̂(y)` returns the
 orthogonal projection of `y` onto the mean subspace. This is the bridge that transports the
