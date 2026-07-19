@@ -112,12 +112,12 @@ variable {F G H : ℝ → ℝ}
 
 /-- A distribution function takes values in `[0,1]` (a consequence of the fields, recorded
 here for the boundedness estimates below). -/
-private theorem IsCDF.mem_Icc (h : IsCDF F) (t : ℝ) : F t ∈ Set.Icc (0 : ℝ) 1 :=
+theorem IsCDF.mem_Icc (h : IsCDF F) (t : ℝ) : F t ∈ Set.Icc (0 : ℝ) 1 :=
   mem_Icc_of_monotone_of_tendsto h.mono h.tendsto_atBot h.tendsto_atTop t
 
 /-- The pointwise `|F − G|` of two distribution functions is bounded above by `1`, hence the
 sup defining `supCDFDist` is a genuine supremum. -/
-private theorem bddAbove_absSub (hF : IsCDF F) (hG : IsCDF G) :
+theorem bddAbove_absSub (hF : IsCDF F) (hG : IsCDF G) :
     BddAbove (Set.range fun t => |F t - G t|) := by
   refine ⟨1, ?_⟩
   rintro _ ⟨t, rfl⟩
@@ -126,18 +126,18 @@ private theorem bddAbove_absSub (hF : IsCDF F) (hG : IsCDF G) :
   exact abs_le.mpr ⟨by linarith [hf.1, hf.2, hg.1, hg.2], by linarith [hf.1, hf.2, hg.1, hg.2]⟩
 
 /-- `supCDFDist` is symmetric. -/
-private theorem supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
+theorem supCDFDist_comm (F G : ℝ → ℝ) : supCDFDist F G = supCDFDist G F := by
   unfold supCDFDist
   congr 1
   ext t
   rw [abs_sub_comm]
 
 /-- Nonnegativity of the sup-CDF distance between two distribution functions. -/
-private theorem supCDFDist_nonneg (hF : IsCDF F) (hG : IsCDF G) : 0 ≤ supCDFDist F G :=
+theorem supCDFDist_nonneg (hF : IsCDF F) (hG : IsCDF G) : 0 ≤ supCDFDist F G :=
   le_trans (abs_nonneg _) (le_ciSup (bddAbove_absSub hF hG) 0)
 
 /-- Triangle inequality for the sup-CDF distance among distribution functions. -/
-private theorem supCDFDist_triangle (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H) :
+theorem supCDFDist_triangle (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H) :
     supCDFDist F H ≤ supCDFDist F G + supCDFDist G H := by
   refine ciSup_le (fun t => ?_)
   have h1 : |F t - G t| ≤ supCDFDist F G := le_ciSup (bddAbove_absSub hF hG) t
@@ -147,7 +147,7 @@ private theorem supCDFDist_triangle (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H)
 
 /-- **Pólya, sup-distance form.** If distribution functions `Fn` converge pointwise to a
 continuous distribution function `F`, then their sup-CDF distance to `F` tends to `0`. -/
-private theorem tendsto_supCDFDist_zero {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ}
+theorem tendsto_supCDFDist_zero {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ}
     (hFn : ∀ n, IsCDF (Fn n)) (hFcont : Continuous F) (hFcdf : IsCDF F)
     (hconv : ∀ x : ℝ, Tendsto (fun n => Fn n x) atTop (𝓝 (F x))) :
     Tendsto (fun n => supCDFDist (Fn n) F) atTop (𝓝 0) := by
@@ -180,14 +180,14 @@ variable {F : ℝ → ℝ}
 
 /-- Nonemptiness of the sublevel set `{t | p ≤ F t}` for a distribution function and a level
 strictly below `1`: the total-mass-`1` tail eventually clears the level. -/
-private theorem sublevel_nonempty (hF : IsCDF F) {p : ℝ} (hp : p < 1) :
+theorem sublevel_nonempty (hF : IsCDF F) {p : ℝ} (hp : p < 1) :
     {t : ℝ | p ≤ F t}.Nonempty := by
   obtain ⟨y, hy⟩ := (hF.tendsto_atTop.eventually_const_lt hp).exists
   exact ⟨y, hy.le⟩
 
 /-- Bounded-belowness of the sublevel set `{t | p ≤ F t}` for a distribution function and a
 level strictly above `0`: the vanishing left tail keeps the set away from `−∞`. -/
-private theorem sublevel_bddBelow (hF : IsCDF F) {p : ℝ} (hp : 0 < p) :
+theorem sublevel_bddBelow (hF : IsCDF F) {p : ℝ} (hp : 0 < p) :
     BddBelow {t : ℝ | p ≤ F t} := by
   obtain ⟨b, hb⟩ := eventually_atBot.mp (hF.tendsto_atBot.eventually_lt_const hp)
   refine ⟨b, fun y hy => ?_⟩
@@ -198,7 +198,7 @@ private theorem sublevel_bddBelow (hF : IsCDF F) {p : ℝ} (hp : 0 < p) :
 
 /-- For a continuous distribution function `F` and a level `p ∈ (0,1)`, the generalized inverse
 attains the level exactly: `F (cdfPseudoInverse F p) = p`. -/
-private theorem cdf_quantile_eq (hF : IsCDF F) (hcont : Continuous F) {p : ℝ}
+theorem cdf_quantile_eq (hF : IsCDF F) (hcont : Continuous F) {p : ℝ}
     (hp0 : 0 < p) (hp1 : p < 1) : F (cdfPseudoInverse F p) = p := by
   set q := cdfPseudoInverse F p with hq
   have hne : {t : ℝ | p ≤ F t}.Nonempty := sublevel_nonempty hF hp1
@@ -225,7 +225,7 @@ private theorem cdf_quantile_eq (hF : IsCDF F) (hcont : Continuous F) {p : ℝ}
 `Fn` converge pointwise to `F` and `F` is strictly increasing at `q` with `F q = p`, then the
 generalized inverses at level `p` converge to `q`. (A `StrictIncAt`-localized twin of the
 brick `tendsto_quantile_of_tendsto`, which needs global strict monotonicity.) -/
-private theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ} {p q : ℝ}
+theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ → ℝ} {p q : ℝ}
     (hmono : ∀ n, Monotone (Fn n)) (hstrict : StrictIncAt F q) (hq : F q = p)
     (hconv : ∀ x : ℝ, Tendsto (fun n => Fn n x) atTop (𝓝 (F x))) :
     Tendsto (fun n => cdfPseudoInverse (Fn n) p) atTop (𝓝 q) := by
