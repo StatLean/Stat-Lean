@@ -62,7 +62,7 @@ admissibility of Pitman's estimator of a single location parameter," *Ann. Math.
 -/
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal ProbabilityTheory
 
 namespace StatLean.PointEstimation
 
@@ -125,7 +125,54 @@ private lemma integral_orbitCondKernel_eq_self_of_invariant
     (hnull : P₀ {x | x (Fin.last m) = 0} = 0)
     (hint : ∀ z, Integrable φ (orbitCondKernel P₀ scaleZ z)) :
     ∀ᵐ x ∂P₀, ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)) = φ x := by
-  sorry
+  -- `φ` is scale-invariant off the null set, so it factors measurably through `scaleZ`.
+  have hφinv : ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → φ (b • x) = φ x := by
+    intro b hb x _; rw [hinv hb x, pow_zero, one_mul]
+  obtain ⟨w, hwm, hw⟩ := isScaleInvariant_factors_scaleZ_measurable φ hφ hφinv
+  -- `φ = w ∘ scaleZ` almost everywhere.
+  have hφae : φ =ᵐ[P₀] fun x => w (scaleZ x) := by
+    have hn : ∀ᵐ x ∂P₀, x (Fin.last m) ≠ 0 := by
+      rw [ae_iff]; simp only [not_ne_iff]; exact hnull
+    filter_upwards [hn] with x hx using hw x hx
+  -- The joint law `(scaleZ x, x)` sits on `{(z, y) | scaleZ y = z}`, so the fibre kernel is
+  -- concentrated on that fibre; both facts come from `compProd_map_condDistrib`.
+  have hcompProd : (P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ
+      = P₀.map (fun x => (scaleZ x, x)) := by
+    unfold orbitCondKernel
+    exact ProbabilityTheory.compProd_map_condDistrib aemeasurable_id
+  have hprodMeas : Measurable (fun x : Fin (m + 1) → ℝ => (scaleZ x, x)) :=
+    measurable_scaleZ.prodMk measurable_id
+  have hconc_cp : ∀ᵐ q ∂((P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ),
+      scaleZ q.2 = q.1 := by
+    rw [hcompProd]
+    exact (ae_map_iff hprodMeas.aemeasurable
+        (measurableSet_eq_fun (measurable_scaleZ.comp measurable_snd) measurable_fst)).mpr
+      (ae_of_all _ fun x => rfl)
+  have hconc := Measure.ae_ae_of_ae_compProd hconc_cp
+  have hφfib_cp : ∀ᵐ q ∂((P₀.map scaleZ) ⊗ₘ orbitCondKernel P₀ scaleZ),
+      φ q.2 = w (scaleZ q.2) := by
+    rw [hcompProd]
+    exact (ae_map_iff hprodMeas.aemeasurable
+        (measurableSet_eq_fun (hφ.comp measurable_snd)
+          (hwm.comp (measurable_scaleZ.comp measurable_snd)))).mpr hφae
+  have hφfib := Measure.ae_ae_of_ae_compProd hφfib_cp
+  -- Fibrewise: the conditional mean of `φ` recovers `w z`.
+  have hZ : ∀ᵐ z ∂(P₀.map scaleZ),
+      ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ z) = w z := by
+    filter_upwards [hφfib, hconc] with z hz1 hz2
+    calc ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ z)
+        = ∫ y, w (scaleZ y) ∂(orbitCondKernel P₀ scaleZ z) := integral_congr_ae hz1
+      _ = ∫ y, w z ∂(orbitCondKernel P₀ scaleZ z) := by
+          apply integral_congr_ae; filter_upwards [hz2] with y hy; rw [hy]
+      _ = w z := by simp
+  -- Pull back to `P₀` and undo the representation of `φ`.
+  have hg : Measurable fun z => ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ z) :=
+    measurable_integral_orbitCondKernel P₀ measurable_scaleZ hφ hint
+  have hZpull : ∀ᵐ x ∂P₀,
+      ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)) = w (scaleZ x) :=
+    (ae_map_iff measurable_scaleZ.aemeasurable (measurableSet_eq_fun hg hwm)).mp hZ
+  filter_upwards [hZpull, hφae] with x hx1 hx2
+  rw [hx1, hx2]
 
 /-- **The minimum risk equivariant scale estimator.** Let `δ₀` be a measurable
 scale-equivariant estimator of `τ^r` with finite risk, nowhere zero, and let `w*` be a
