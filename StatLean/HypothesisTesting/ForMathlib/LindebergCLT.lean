@@ -219,6 +219,57 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     rw [hnn, abs_of_neg hy, show (y : ℝ) ^ 2 = (-y) ^ 2 from by ring]
     exact key (-y) hz
 
+-- H1: telescoping product bound.
+private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s : Finset ι)
+    (f g : ι → 𝕜) (hf : ∀ i ∈ s, ‖f i‖ ≤ 1) (hg : ∀ i ∈ s, ‖g i‖ ≤ 1) :
+    ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp
+  | @insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha]
+    have hf' := fun i hi => hf i (Finset.mem_insert_of_mem hi)
+    have hg' := fun i hi => hg i (Finset.mem_insert_of_mem hi)
+    have hfa := hf a (Finset.mem_insert_self a s)
+    have key : f a * ∏ i ∈ s, f i - g a * ∏ i ∈ s, g i
+        = f a * ((∏ i ∈ s, f i) - ∏ i ∈ s, g i) + (f a - g a) * ∏ i ∈ s, g i := by ring
+    rw [key]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_mul, norm_mul]
+    have hpg : ‖∏ i ∈ s, g i‖ ≤ 1 := by
+      rw [norm_prod]; exact Finset.prod_le_one (fun i _ => norm_nonneg _) hg'
+    have h1 : ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ ≤ ∑ i ∈ s, ‖f i - g i‖ :=
+      calc ‖f a‖ * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖
+            ≤ 1 * ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ :=
+              mul_le_mul_of_nonneg_right hfa (norm_nonneg _)
+        _ = ‖(∏ i ∈ s, f i) - ∏ i ∈ s, g i‖ := one_mul _
+        _ ≤ ∑ i ∈ s, ‖f i - g i‖ := ih hf' hg'
+    have h2 : ‖f a - g a‖ * ‖∏ i ∈ s, g i‖ ≤ ‖f a - g a‖ :=
+      calc ‖f a - g a‖ * ‖∏ i ∈ s, g i‖
+            ≤ ‖f a - g a‖ * 1 := mul_le_mul_of_nonneg_left hpg (norm_nonneg _)
+        _ = ‖f a - g a‖ := mul_one _
+    linarith
+
+-- H2: real quadratic remainder for `exp (-u)`.
+private lemma abs_exp_neg_sub_one_sub_le {u : ℝ} (hu : |u| ≤ 1) :
+    |Real.exp (-u) - (1 - u)| ≤ (3 / 4) * u ^ 2 := by
+  have h := Real.exp_bound (x := -u) (by rwa [abs_neg]) (n := 2) (by norm_num)
+  have hs : ∑ m ∈ Finset.range 2, (-u) ^ m / (m.factorial : ℝ) = 1 - u := by
+    simp [Finset.sum_range_succ]; ring
+  rw [hs, abs_neg, sq_abs] at h
+  refine h.trans (le_of_eq ?_)
+  norm_num [Nat.factorial]
+  ring
+
+-- H3: diagonal tendsto-to-zero.
+private lemma tendsto_zero_of_eventually_le {F : ℕ → ℝ}
+    (hF : ∀ᶠ n in atTop, 0 ≤ F n) (h : ∀ δ : ℝ, 0 < δ → ∀ᶠ n in atTop, F n ≤ δ) :
+    Tendsto F atTop (𝓝 0) := by
+  rw [tendsto_order]
+  refine ⟨fun b hb => ?_, fun b hb => ?_⟩
+  · filter_upwards [hF] with n hn using lt_of_lt_of_le hb hn
+  · filter_upwards [h (b / 2) (by linarith)] with n hn using lt_of_le_of_lt hn (by linarith)
+
 open Complex in
 /-- **The analytic core of the Lindeberg CLT.** Under the Lindeberg hypotheses the product
 of the row characteristic functions converges pointwise to the standard-normal
@@ -226,16 +277,10 @@ characteristic function `t ↦ exp(−t²/2)`. This is the content of Lindeberg'
 swapping/telescoping estimate; `lindeberg_clt` merely feeds this pointwise statement through
 Lévy's continuity theorem.
 
-TODO: assemble the swapping estimate. The quantitative pointwise remainder bound
-`‖e^{iy} − (1 + iy − y²/2)‖ ≤ min(|y|³/6, y²)` — the ingredient Mathlib lacked — is now
-available as `norm_cexp_sub_taylor_le`. What remains is the classical assembly on top of it:
-(1) telescoping `‖∏ᵢ φₙᵢ − ∏ᵢ (1 − t²σₙᵢ²/2)‖ ≤ ∑ᵢ ‖φₙᵢ − (1 − t²σₙᵢ²/2)‖`, valid once the
-row is uniformly negligible so every factor has modulus ≤ 1; (2) the per-term bound
-`‖φₙᵢ − (1 − t²σₙᵢ²/2)‖ ≤ E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]` via `norm_cexp_sub_taylor_le` and
-centering; (3) the split at `|Xₙᵢ| = ε` (small part `≤ |t|³ε ∑ᵢ σₙᵢ²/6`, large part
-`≤ t² ∑ᵢ E[Xₙᵢ² 1{|Xₙᵢ|>ε}]` — the Lindeberg sum, which `hlin` sends to 0); and (4)
-`∏ᵢ (1 − t²σₙᵢ²/2) → exp(−t²/2)` from `hvar`, uniform negligibility (a consequence of `hlin`)
-and `log(1 − u) = −u + O(u²)`. -/
+Lindeberg's swapping/telescoping estimate, assembled on top of the uniform remainder
+bound `norm_cexp_sub_taylor_le`: telescope the two products, bound each factor's
+difference by `E[min(|t Xₙᵢ|³/6, t² Xₙᵢ²)]`, split at the level `ε` (the large part is
+the Lindeberg sum killed by `hlin`), and match `∏ᵢ (1 − t²σₙᵢ²/2) → exp(−t²/2)`. -/
 private lemma tendsto_prod_charFun_lindeberg
     {m : ℕ → ℕ} {X : (n : ℕ) → Fin (m n) → Ω → ℝ}
     (hmeas : ∀ n i, Measurable (X n i))
@@ -248,7 +293,302 @@ private lemma tendsto_prod_charFun_lindeberg
     (t : ℝ) :
     Tendsto (fun n => ∏ i, charFun (P.map (X n i)) t) atTop
       (𝓝 (charFun (gaussianReal 0 1) t)) := by
-  sorry
+  -- The `t = 0` case is `∏ 1 → 1`; handle it first, then assume `t ≠ 0`.
+  rcases eq_or_ne t 0 with rfl | ht
+  · have hone : ∀ n i, charFun (P.map (X n i)) 0 = 1 := by
+      intro n i
+      haveI : IsProbabilityMeasure (P.map (X n i)) :=
+        Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+      rw [charFun_zero, probReal_univ, Complex.ofReal_one]
+    have hR : charFun (gaussianReal 0 1) 0 = 1 := by
+      rw [charFun_zero, probReal_univ, Complex.ofReal_one]
+    simp only [hone, Finset.prod_const_one, hR]
+    exact tendsto_const_nhds
+  -- Basic facts about the row entries.
+  have hvnn : ∀ n i, (0:ℝ) ≤ Var[X n i; P] := fun n i => variance_nonneg _ _
+  have hunn : ∀ n i, (0:ℝ) ≤ t ^ 2 * Var[X n i; P] / 2 :=
+    fun n i => div_nonneg (mul_nonneg (sq_nonneg t) (hvnn n i)) (by norm_num)
+  have hI2 : ∀ n i, Integrable (fun ω => (X n i ω) ^ 2) P := fun n i => (hL2 n i).integrable_sq
+  have hI1 : ∀ n i, Integrable (X n i) P := fun n i => (hL2 n i).integrable one_le_two
+  have hVeq : ∀ n i, Var[X n i; P] = ∫ ω, (X n i ω) ^ 2 ∂P :=
+    fun n i => variance_of_integral_eq_zero (hmeas n i).aemeasurable (hmean n i)
+  -- The RHS constant as a genuine exponential.
+  have hc : charFun (gaussianReal 0 1) t = Complex.exp (-(↑t ^ 2 / 2)) := by
+    rw [charFun_gaussianReal]; push_cast; ring_nf
+  -- Measurability of the truncation sets.
+  have hset : ∀ ε n i, MeasurableSet {ω | ε < |X n i ω|} := fun ε n i =>
+    measurableSet_lt measurable_const (hmeas n i).abs
+  -- Nonnegativity of the Lindeberg terms.
+  have hLnn : ∀ ε n i, 0 ≤ ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P :=
+    fun ε n i => setIntegral_nonneg (hset ε n i) fun ω _ => sq_nonneg _
+  -- CENTRAL per-term estimate (crux of the swapping argument).
+  have hterm : ∀ ε : ℝ, 0 < ε → ∀ n i,
+      ‖charFun (P.map (X n i)) t - ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ)‖
+        ≤ |t| ^ 3 * ε / 6 * Var[X n i; P]
+          + t ^ 2 * ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P := by
+    intro ε hε n i
+    have hsm := hset ε n i
+    -- Integrability of the integrand pieces.
+    have hIsecond : Integrable (fun ω => Complex.I * (↑(t * X n i ω) : ℂ)) P :=
+      (((hI1 n i).const_mul t).ofReal).const_mul Complex.I
+    have hIrp : Integrable (fun ω => ((1 - t ^ 2 * (X n i ω) ^ 2 / 2 : ℝ) : ℂ)) P :=
+      ((integrable_const (1 : ℝ)).sub (((hI2 n i).const_mul (t ^ 2)).div_const 2)).ofReal
+    have hItX2 : Integrable (fun ω => (t * X n i ω) ^ 2) P := by
+      simpa [mul_pow] using (hI2 n i).const_mul (t ^ 2)
+    have hIthird : Integrable (fun ω => ((↑(t * X n i ω) : ℂ)) ^ 2 / 2) P := by
+      have he : (fun ω => ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)
+          = fun ω => (↑((t * X n i ω) ^ 2) : ℂ) / 2 := by ext ω; rw [← Complex.ofReal_pow]
+      rw [he]; exact (hItX2.ofReal).div_const (2 : ℂ)
+    have hFmeas : Measurable (fun ω => Complex.exp (Complex.I * ↑(t * X n i ω))) :=
+      Complex.continuous_exp.measurable.comp
+        ((Complex.continuous_ofReal.measurable.comp ((hmeas n i).const_mul t)).const_mul Complex.I)
+    have hIF : Integrable (fun ω => Complex.exp (Complex.I * ↑(t * X n i ω))) P :=
+      (integrable_const (1 : ℝ)).mono' hFmeas.aestronglyMeasurable
+        (ae_of_all _ fun ω => le_of_eq (by rw [Complex.norm_exp]; simp))
+    have hIG : Integrable (fun ω => 1 + Complex.I * ↑(t * X n i ω)
+        - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2) P :=
+      ((integrable_const (1 : ℂ)).add hIsecond).sub hIthird
+    -- `charFun = ∫ exp`.
+    have hFcf : charFun (P.map (X n i)) t
+        = ∫ ω, Complex.exp (Complex.I * ↑(t * X n i ω)) ∂P := by
+      rw [charFun_apply_real, integral_map (hmeas n i).aemeasurable
+        (Continuous.aestronglyMeasurable (by fun_prop))]
+      refine integral_congr_ae (ae_of_all _ fun x => ?_)
+      congr 1; push_cast; ring
+    -- The real (variance) part and the vanishing imaginary part.
+    have hRp : ∫ ω, (1 - t ^ 2 * (X n i ω) ^ 2 / 2 : ℝ) ∂P = 1 - t ^ 2 * Var[X n i; P] / 2 := by
+      rw [integral_sub (integrable_const 1) (((hI2 n i).const_mul (t ^ 2)).div_const 2),
+        integral_const, probReal_univ, smul_eq_mul, mul_one, integral_div]
+      simp only [integral_const_mul]
+      rw [← hVeq n i]
+    have hTX : ∫ ω, t * X n i ω ∂P = 0 := by
+      rw [integral_const_mul t (X n i), hmean n i, mul_zero]
+    have hImC : ∫ ω, Complex.I * ((t * X n i ω : ℝ) : ℂ) ∂P = 0 := by
+      have key : ∫ ω, Complex.I * ((t * X n i ω : ℝ) : ℂ) ∂P
+          = Complex.I * ∫ ω, ((t * X n i ω : ℝ) : ℂ) ∂P := integral_const_mul _ _
+      rw [key, integral_complex_ofReal, hTX, Complex.ofReal_zero, mul_zero]
+    -- `∫ G = 1 - t²σ²/2`.
+    have hGint : ∫ ω, (1 + Complex.I * ↑(t * X n i ω)
+        - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2) ∂P = ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ) := by
+      have hEq : (fun ω => 1 + Complex.I * (↑(t * X n i ω) : ℂ) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)
+          = fun ω => ((1 - t ^ 2 * (X n i ω) ^ 2 / 2 : ℝ) : ℂ)
+              + Complex.I * ((t * X n i ω : ℝ) : ℂ) := by
+        ext ω; push_cast; ring
+      rw [hEq, integral_add hIrp hIsecond, integral_complex_ofReal, hRp, hImC, add_zero]
+    -- Assemble the difference as one integral.
+    have hab : charFun (P.map (X n i)) t - ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ)
+        = ∫ ω, (Complex.exp (Complex.I * ↑(t * X n i ω))
+            - (1 + Complex.I * ↑(t * X n i ω) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)) ∂P := by
+      rw [integral_sub hIF hIG, ← hFcf, hGint]
+    -- Pointwise remainder bound.
+    set g : Ω → ℝ := fun ω => |t| ^ 3 * ε / 6 * (X n i ω) ^ 2
+        + t ^ 2 * Set.indicator {ω | ε < |X n i ω|} (fun ω => (X n i ω) ^ 2) ω with hgdef
+    have hbound : ∀ ω, ‖Complex.exp (Complex.I * ↑(t * X n i ω))
+        - (1 + Complex.I * ↑(t * X n i ω) - ((↑(t * X n i ω) : ℂ)) ^ 2 / 2)‖ ≤ g ω := by
+      intro ω
+      refine (norm_cexp_sub_taylor_le (t * X n i ω)).trans ?_
+      have hnn0 : (0:ℝ) ≤ |t| ^ 3 * ε / 6 * (X n i ω) ^ 2 :=
+        mul_nonneg (div_nonneg (mul_nonneg (pow_nonneg (abs_nonneg t) 3) hε.le) (by norm_num))
+          (sq_nonneg _)
+      by_cases hω : ε < |X n i ω|
+      · have hωm : ω ∈ {ω | ε < |X n i ω|} := hω
+        simp only [hgdef, Set.indicator_of_mem hωm]
+        refine (min_le_right _ _).trans ?_
+        have h2 : (t * X n i ω) ^ 2 = t ^ 2 * (X n i ω) ^ 2 := by ring
+        rw [h2]; linarith [hnn0]
+      · have hωm : ω ∉ {ω | ε < |X n i ω|} := hω
+        simp only [hgdef, Set.indicator_of_notMem hωm, mul_zero, add_zero]
+        refine (min_le_left _ _).trans ?_
+        have habs : |t * X n i ω| ^ 3 = |t| ^ 3 * |X n i ω| ^ 3 := by rw [abs_mul, mul_pow]
+        have hcube : |X n i ω| ^ 3 ≤ ε * (X n i ω) ^ 2 := by
+          have he : |X n i ω| ^ 3 = |X n i ω| * (X n i ω) ^ 2 := by rw [← sq_abs]; ring
+          rw [he]; exact mul_le_mul_of_nonneg_right (not_lt.1 hω) (sq_nonneg _)
+        rw [habs]; nlinarith [hcube, pow_nonneg (abs_nonneg t) 3]
+    have hbint : Integrable g P := by
+      rw [hgdef]
+      exact ((hI2 n i).const_mul _).add (((hI2 n i).indicator hsm).const_mul _)
+    have hg_int : ∫ ω, g ω ∂P
+        = |t| ^ 3 * ε / 6 * Var[X n i; P]
+          + t ^ 2 * ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P := by
+      rw [hgdef, integral_add ((hI2 n i).const_mul _) (((hI2 n i).indicator hsm).const_mul _)]
+      simp only [integral_const_mul, integral_indicator hsm]
+      rw [← hVeq n i]
+    rw [hab]
+    exact (norm_integral_le_of_norm_le hbint (ae_of_all _ hbound)).trans (le_of_eq hg_int)
+  -- Uniform asymptotic negligibility of the row variances.
+  have hsmall : ∀ c : ℝ, 0 < c → ∀ᶠ n in atTop, ∀ i, Var[X n i; P] ≤ c := by
+    intro c hc
+    have hεpos : (0:ℝ) < Real.sqrt (c / 2) := Real.sqrt_pos.2 (by linarith)
+    have hε2 : Real.sqrt (c / 2) ^ 2 = c / 2 := Real.sq_sqrt (by linarith)
+    set ε := Real.sqrt (c / 2) with hεdef
+    have hSlt : ∀ᶠ n in atTop,
+        ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P ≤ c / 2 :=
+      (hlin ε hεpos).eventually_le_const (show (0:ℝ) < c / 2 by linarith)
+    filter_upwards [hSlt] with n hn i
+    have hsm := hset ε n i
+    have hdecomp : Var[X n i; P]
+        = ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P
+          + ∫ ω in {ω | ε < |X n i ω|}ᶜ, (X n i ω) ^ 2 ∂P := by
+      rw [hVeq n i]; exact (integral_add_compl hsm (hI2 n i)).symm
+    have hpart1 : ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P ≤ c / 2 :=
+      le_trans (Finset.single_le_sum (fun j _ => hLnn ε n j) (Finset.mem_univ i)) hn
+    have hpart2 : ∫ ω in {ω | ε < |X n i ω|}ᶜ, (X n i ω) ^ 2 ∂P ≤ c / 2 := by
+      rw [← hε2]
+      calc ∫ ω in {ω | ε < |X n i ω|}ᶜ, (X n i ω) ^ 2 ∂P
+          ≤ ∫ ω in {ω | ε < |X n i ω|}ᶜ, ε ^ 2 ∂P := by
+            refine setIntegral_mono_on ((hI2 n i).integrableOn) integrableOn_const hsm.compl
+              (fun ω hω => ?_)
+            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_lt] at hω
+            rw [← sq_abs (X n i ω)]
+            exact pow_le_pow_left₀ (abs_nonneg _) hω 2
+        _ ≤ ∫ _ω, ε ^ 2 ∂P :=
+            setIntegral_le_integral (integrable_const _) (ae_of_all _ fun _ => by positivity)
+        _ = ε ^ 2 := by rw [integral_const, probReal_univ, smul_eq_mul, one_mul]
+    rw [hdecomp]; linarith
+  have ht2 : (0:ℝ) < t ^ 2 := by positivity
+  -- Eventually every row term satisfies `uᵢ = t²σᵢ²/2 ≤ 1`.
+  have hev1 : ∀ᶠ n in atTop, ∀ i, t ^ 2 * Var[X n i; P] / 2 ≤ 1 := by
+    filter_upwards [hsmall (2 / t ^ 2) (by positivity)] with n hn i
+    have hb := (le_div_iff₀ ht2).1 (hn i)
+    have hcomm : t ^ 2 * Var[X n i; P] = Var[X n i; P] * t ^ 2 := mul_comm _ _
+    linarith
+  -- Abbreviations for the two products (`A` characteristic, `B` its quadratic surrogate).
+  set A : ℕ → ℂ := fun n => ∏ i, charFun (P.map (X n i)) t with hA
+  set B : ℕ → ℂ := fun n => ∏ i, ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ) with hB
+  -- `∑ᵢ uᵢ → t²/2`.
+  have hsum : Tendsto (fun n => ∑ i, t ^ 2 * Var[X n i; P] / 2) atTop (𝓝 (t ^ 2 / 2)) := by
+    have h := hvar.const_mul (t ^ 2 / 2)
+    have he : ∀ n, ∑ i, t ^ 2 * Var[X n i; P] / 2 = t ^ 2 / 2 * ∑ i, Var[X n i; P] := by
+      intro n; rw [Finset.mul_sum]; apply Finset.sum_congr rfl; intro i _; ring
+    simpa [he, mul_one] using h
+  ------------------------------------------------------------------
+  -- Claim G : `∑ᵢ uᵢ² → 0`.
+  ------------------------------------------------------------------
+  have hGsq : Tendsto (fun n => ∑ i, (t ^ 2 * Var[X n i; P] / 2) ^ 2) atTop (𝓝 0) := by
+    refine tendsto_zero_of_eventually_le (Eventually.of_forall fun n =>
+      Finset.sum_nonneg fun i _ => sq_nonneg _) (fun δ hδ => ?_)
+    set M : ℝ := δ / (t ^ 2 / 2 + 2) with hMdef
+    have hMpos : 0 < M := by rw [hMdef]; exact div_pos hδ (by positivity)
+    have hsmallM := hsmall (2 * M / t ^ 2) (div_pos (mul_pos (by norm_num) hMpos) ht2)
+    have hsumlt : ∀ᶠ n in atTop, ∑ i, t ^ 2 * Var[X n i; P] / 2 < t ^ 2 / 2 + 1 :=
+      hsum.eventually_lt_const (by linarith)
+    filter_upwards [hsmallM, hsumlt] with n hnM hnsum
+    have huM : ∀ i, t ^ 2 * Var[X n i; P] / 2 ≤ M := by
+      intro i
+      have hb := (le_div_iff₀ ht2).1 (hnM i)
+      have hcomm : t ^ 2 * Var[X n i; P] = Var[X n i; P] * t ^ 2 := mul_comm _ _
+      linarith
+    calc ∑ i, (t ^ 2 * Var[X n i; P] / 2) ^ 2
+        ≤ ∑ i, M * (t ^ 2 * Var[X n i; P] / 2) := by
+          apply Finset.sum_le_sum; intro i _
+          rw [sq]; exact mul_le_mul_of_nonneg_right (huM i) (hunn n i)
+      _ = M * ∑ i, t ^ 2 * Var[X n i; P] / 2 := by rw [Finset.mul_sum]
+      _ ≤ M * (t ^ 2 / 2 + 1) := by
+          apply mul_le_mul_of_nonneg_left hnsum.le hMpos.le
+      _ ≤ δ := by
+          rw [hMdef]; rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]; nlinarith [hδ.le]
+  ------------------------------------------------------------------
+  -- T2 : `B n → charFun gaussian`.
+  ------------------------------------------------------------------
+  have T2 : Tendsto B atTop (𝓝 (charFun (gaussianReal 0 1) t)) := by
+    rw [hc, hB]
+    -- Reduce to a real product.
+    have hLC : Complex.exp (-(↑t ^ 2 / 2)) = ((Real.exp (-(t ^ 2 / 2)) : ℝ) : ℂ) := by
+      rw [Complex.ofReal_exp]; push_cast; ring_nf
+    have hBreal : (fun n => ∏ i, ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ))
+        = fun n => ((∏ i, (1 - t ^ 2 * Var[X n i; P] / 2) : ℝ) : ℂ) := by
+      ext n; rw [Complex.ofReal_prod]
+    rw [hLC, hBreal]
+    -- Now prove the real limit and lift by `ofReal`.
+    refine (Complex.continuous_ofReal.tendsto _).comp ?_
+    -- Real statement: `∏ (1 - uᵢ) → exp(-t²/2)`.
+    have hprodexp : ∀ n, ∏ i, Real.exp (-(t ^ 2 * Var[X n i; P] / 2))
+        = Real.exp (-(∑ i, t ^ 2 * Var[X n i; P] / 2)) := by
+      intro n; rw [← Real.exp_sum]; rw [← Finset.sum_neg_distrib]
+    have hEprod : Tendsto (fun n => ∏ i, Real.exp (-(t ^ 2 * Var[X n i; P] / 2))) atTop
+        (𝓝 (Real.exp (-(t ^ 2 / 2)))) := by
+      simp_rw [hprodexp]
+      exact (Real.continuous_exp.tendsto _).comp hsum.neg
+    have hdiff : Tendsto (fun n => (∏ i, (1 - t ^ 2 * Var[X n i; P] / 2))
+        - ∏ i, Real.exp (-(t ^ 2 * Var[X n i; P] / 2))) atTop (𝓝 0) := by
+      rw [tendsto_zero_iff_norm_tendsto_zero]
+      refine tendsto_zero_of_eventually_le (Eventually.of_forall fun n => norm_nonneg _)
+        (fun δ hδ => ?_)
+      have hsqlt : ∀ᶠ n in atTop, (3 / 4) * ∑ i, (t ^ 2 * Var[X n i; P] / 2) ^ 2 < δ := by
+        have hlim : Tendsto (fun n => (3 / 4) * ∑ i, (t ^ 2 * Var[X n i; P] / 2) ^ 2) atTop
+            (𝓝 0) := by simpa using hGsq.const_mul (3 / 4)
+        exact hlim.eventually_lt_const (by linarith)
+      filter_upwards [hev1, hsqlt] with n hn1 hn2
+      have htel := norm_prod_sub_prod_le (𝕜 := ℝ) Finset.univ
+        (fun i => 1 - t ^ 2 * Var[X n i; P] / 2)
+        (fun i => Real.exp (-(t ^ 2 * Var[X n i; P] / 2)))
+        (fun i _ => by
+          rw [Real.norm_eq_abs, abs_le]
+          exact ⟨by linarith [hn1 i, hunn n i], by linarith [hunn n i]⟩)
+        (fun i _ => by
+          rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+          exact (Real.exp_le_one_iff).2 (by linarith [hunn n i]))
+      refine htel.trans (le_of_lt (lt_of_le_of_lt ?_ hn2))
+      rw [Finset.mul_sum]
+      refine Finset.sum_le_sum fun i _ => ?_
+      have h2 := abs_exp_neg_sub_one_sub_le (u := t ^ 2 * Var[X n i; P] / 2)
+        (by rw [abs_le]; exact ⟨by linarith [hunn n i], hn1 i⟩)
+      rw [Real.norm_eq_abs, abs_sub_comm]
+      exact h2
+    have hRealP1 : Tendsto (fun n => ∏ i, (1 - t ^ 2 * Var[X n i; P] / 2)) atTop
+        (𝓝 (Real.exp (-(t ^ 2 / 2)))) := by
+      have := hdiff.add hEprod
+      simpa using this
+    exact hRealP1
+  ------------------------------------------------------------------
+  -- T1 : `A n - B n → 0`.
+  ------------------------------------------------------------------
+  have T1 : Tendsto (fun n => A n - B n) atTop (𝓝 0) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine tendsto_zero_of_eventually_le (Eventually.of_forall fun n => norm_nonneg _)
+      (fun δ hδ => ?_)
+    set ε : ℝ := δ / (|t| ^ 3 + 1) with hεdef
+    have hεpos : 0 < ε := by rw [hεdef]; exact div_pos hδ (by positivity)
+    have hle : |t| ^ 3 * ε ≤ δ := by
+      have h0 : (0:ℝ) < |t| ^ 3 + 1 := by positivity
+      rw [hεdef, ← mul_div_assoc, div_le_iff₀ h0]; nlinarith [abs_nonneg t, hδ.le]
+    have hVarlt : ∀ᶠ n in atTop, ∑ i, Var[X n i; P] ≤ 2 :=
+      (hvar.eventually_lt_const (by norm_num : (1:ℝ) < 2)).mono fun n h => h.le
+    have hLinlt : ∀ᶠ n in atTop,
+        t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P < δ / 3 := by
+      have hlim : Tendsto (fun n => t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P)
+          atTop (𝓝 0) := by simpa using (hlin ε hεpos).const_mul (t ^ 2)
+      exact hlim.eventually_lt_const (by linarith)
+    filter_upwards [hev1, hVarlt, hLinlt] with n hn1 hn2 hn3
+    -- telescoping
+    have hpm : ∀ i, IsProbabilityMeasure (P.map (X n i)) := fun i =>
+      Measure.isProbabilityMeasure_map (hmeas n i).aemeasurable
+    have htel := norm_prod_sub_prod_le (𝕜 := ℂ) Finset.univ
+      (fun i => charFun (P.map (X n i)) t)
+      (fun i => ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ))
+      (fun i _ => norm_charFun_le_one _)
+      (fun i _ => by
+        rw [Complex.norm_real, Real.norm_eq_abs, abs_le]
+        exact ⟨by linarith [hn1 i], by linarith [hunn n i]⟩)
+    refine htel.trans ?_
+    -- sum of per-term bounds
+    have hsum2 : ∑ i, ‖charFun (P.map (X n i)) t - ((1 - t ^ 2 * Var[X n i; P] / 2 : ℝ) : ℂ)‖
+        ≤ |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P]
+          + t ^ 2 * ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P := by
+      rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      exact Finset.sum_le_sum fun i _ => hterm ε hεpos n i
+    refine hsum2.trans ?_
+    have hterm1 : |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P] ≤ δ / 3 := by
+      have hnn : (0:ℝ) ≤ |t| ^ 3 * ε / 6 := by positivity
+      calc |t| ^ 3 * ε / 6 * ∑ i, Var[X n i; P]
+          ≤ |t| ^ 3 * ε / 6 * 2 := by apply mul_le_mul_of_nonneg_left hn2 hnn
+        _ ≤ δ / 3 := by nlinarith [hle, hεpos.le, abs_nonneg t]
+    linarith [hn3]
+  ------------------------------------------------------------------
+  -- Combine.
+  ------------------------------------------------------------------
+  have hcomb := T1.add T2
+  simpa using hcomb
 
 /-- **Lindeberg's central limit theorem for triangular arrays.**
 
