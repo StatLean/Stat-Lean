@@ -81,7 +81,9 @@ theorem map_restrict_eq_withDensity_map
     (hdet : ∀ ⦃B : Set S⦄, MeasurableSet B →
       ∫⁻ x in T ⁻¹' B, κA (T x) ∂μ = μ (A ∩ T ⁻¹' B)) :
     (μ.restrict A).map T = (μ.map T).withDensity κA := by
-  sorry
+  refine Measure.ext fun B hB => ?_
+  rw [Measure.map_apply hT hB, Measure.restrict_apply (hT hB),
+      withDensity_apply κA hB, setLIntegral_map hB hκA hT, hdet hB, Set.inter_comm]
 
 /-- A determination of `P(A ∣ T = ·)` for `μ` is still a determination after `μ` is tilted by
 a density that factors through `T`. -/
@@ -103,7 +105,24 @@ theorem setLIntegral_comp_withDensity_comap_eq
     ⦃B : Set S⦄ (hB : MeasurableSet B) :
     ∫⁻ x in T ⁻¹' B, κA (T x) ∂(μ.withDensity fun x => g (T x))
       = (μ.withDensity fun x => g (T x)) (A ∩ T ⁻¹' B) := by
-  sorry
+  have hgT : Measurable fun x => g (T x) := hg.comp hT
+  have hκAT : Measurable fun x => κA (T x) := hκA.comp hT
+  have hmap := map_restrict_eq_withDensity_map hT hA hκA hdet
+  have key : ∫⁻ x in T ⁻¹' B, g (T x) * κA (T x) ∂μ
+      = ∫⁻ x in A ∩ T ⁻¹' B, g (T x) ∂μ := by
+    have h : ∫⁻ y in B, g y ∂((μ.restrict A).map T)
+        = ∫⁻ y in B, g y ∂((μ.map T).withDensity κA) := by rw [hmap]
+    rw [setLIntegral_map hB hg hT, Measure.restrict_restrict (hT hB), Set.inter_comm,
+        restrict_withDensity hB, lintegral_withDensity_eq_lintegral_mul _ hκA hg] at h
+    simp only [Pi.mul_apply] at h
+    rw [setLIntegral_map hB (hκA.mul hg) hT] at h
+    rw [h]
+    refine lintegral_congr fun x => ?_
+    rw [mul_comm]
+  rw [withDensity_apply _ (hA.inter (hT hB)), ← key, restrict_withDensity (hT hB),
+      lintegral_withDensity_eq_lintegral_mul _ hgT hκAT]
+  refine lintegral_congr fun x => ?_
+  simp only [Pi.mul_apply]
 
 /-- Conditional expectation given `σ(T)` is invariant under a tilt by a `T`-measurable
 density. -/
