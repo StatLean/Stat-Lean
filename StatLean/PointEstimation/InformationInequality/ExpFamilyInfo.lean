@@ -150,6 +150,13 @@ theorem infoMatrix_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpace ℝ (
     (hη : η ∈ interior E.natSet) (i j : Fin s) :
     infoMatrix E.toParametricFamily E.base η i j
       = covariance (fun x => E.stat x i) (fun x => E.stat x j) (E.P η) := by
+  -- TODO: sanctioned per-file escape. The coordinate score is `scoreVecᵢ = Tᵢ − ∂ᵢA(η)`,
+  -- where the directional derivative `∂ᵢA(η) = deriv (fun t => A(η + t•eᵢ)) 0` equals the mean
+  -- `E_η[Tᵢ]` by the directional-MGF identity: along the line `η + t•eᵢ`, `integral_exp_inner_P`
+  -- gives `mgf Tᵢ (P η) t = exp(A(η + t•eᵢ) − A η)`, so `A(η + t•eᵢ) = cgf Tᵢ (P η) t + A η` on a
+  -- neighborhood of `0` (needs `0 ∈ interior (integrableExpSet Tᵢ (P η))`, from `η ∈ interior
+  -- natSet`), and `deriv_cgf_zero` gives `∂ᵢA(η) = E_η[Tᵢ]`. With the coordinate scores centered
+  -- at their means, `infoMatrixᵢⱼ = ∫ scoreVecᵢ·scoreVecⱼ dP = cov_η(Tᵢ, Tⱼ)`.
   sorry
 
 end StatLean.PointEstimation
