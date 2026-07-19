@@ -170,6 +170,55 @@ private lemma randCritValue_mem_orbit (T : 𝓧 → ℝ) (α : ℝ) (x : 𝓧)
   rw [randCritValue, orbitOrderStat, dif_pos hk]
   rfl
 
+/-- The number of orbit values `≤ a` equals the number of sorted values `≤ a`, via the sort
+bijection; hence `T^{(n)} ≤ a ↔ n < #{orbit values ≤ a}`. -/
+private lemma orderStat_le_iff_card_lt {m : ℕ} (v : Fin m → ℝ) (n : Fin m) (a : ℝ) :
+    orderStat v n ≤ a ↔ n.val < (Finset.univ.filter (fun k => v k ≤ a)).card := by
+  have h_card : (Finset.univ.filter (fun i : Fin m => orderStat v i ≤ a)).card =
+                (Finset.univ.filter (fun k : Fin m => v k ≤ a)).card :=
+    Finset.card_bij' (fun i _ => Tuple.sort v i) (fun k _ => (Tuple.sort v).symm k)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢; exact hi)
+      (fun k hk => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
+        simp only [orderStat, Equiv.apply_symm_apply]; exact hk)
+      (fun i _ => by simp [Equiv.symm_apply_apply])
+      (fun k _ => by simp [Equiv.apply_symm_apply])
+  rw [show orderStat v n ≤ a ↔ n.val < (Finset.univ.filter (fun i => orderStat v i ≤ a)).card
+    from (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort v)).symm, h_card]
+
+/-- Strict analogue of `orderStat_le_iff_card_lt`. -/
+private lemma orderStat_lt_iff_card_lt {m : ℕ} (v : Fin m → ℝ) (n : Fin m) (a : ℝ) :
+    orderStat v n < a ↔ n.val < (Finset.univ.filter (fun k => v k < a)).card := by
+  have h_card : (Finset.univ.filter (fun i : Fin m => orderStat v i < a)).card =
+                (Finset.univ.filter (fun k : Fin m => v k < a)).card :=
+    Finset.card_bij' (fun i _ => Tuple.sort v i) (fun k _ => (Tuple.sort v).symm k)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢; exact hi)
+      (fun k hk => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
+        simp only [orderStat, Equiv.apply_symm_apply]; exact hk)
+      (fun i _ => by simp [Equiv.symm_apply_apply])
+      (fun k _ => by simp [Equiv.apply_symm_apply])
+  rw [show orderStat v n < a ↔ n.val < (Finset.univ.filter (fun i => orderStat v i < a)).card
+    from (Tuple.lt_card_lt_iff_apply_lt_of_monotone (Tuple.monotone_sort v)).symm, h_card]
+
+/-- A filtered count over `G` of a property of `T(g·x)` equals the count over `Fin |G|` of the
+same property of the orbit tuple. -/
+private lemma card_filter_orbit (P : ℝ → Prop) [DecidablePred P] (T : 𝓧 → ℝ) (x : 𝓧) :
+    (Finset.univ.filter fun g : G => P (T (g • x))).card
+      = (Finset.univ.filter fun i : Fin (Fintype.card G) => P (orbitValues G T x i)).card := by
+  refine Finset.card_bij' (fun g _ => Fintype.equivFin G g)
+    (fun i _ => (Fintype.equivFin G).symm i) ?_ ?_ ?_ ?_
+  · intro g hg
+    rw [Finset.mem_filter] at hg ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues, Equiv.symm_apply_apply] using hg.2⟩
+  · intro i hi
+    rw [Finset.mem_filter] at hi ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues] using hi.2⟩
+  · intro g _; simp
+  · intro i _; simp
+
 /-! ### The pointwise orbit identity and exactness -/
 
 /-- **The randomization test is a critical function**: `0 ≤ φ ≤ 1` pointwise. The only
@@ -179,7 +228,114 @@ theorem randTest_mem_Icc (T : 𝓧 → ℝ) {α : ℝ}
     -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
     (hα₀ : 0 < α) (hα₁ : α < 1) (x : 𝓧) :
     randTest G T α x ∈ Set.Icc (0 : ℝ) 1 := by
-  sorry
+  have hcardG : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (0 : ℝ) < Fintype.card G := by exact_mod_cast hcardG
+  have hk : randCritIndex G α - 1 < Fintype.card G := randCritIndex_sub_one_lt α hcardG
+  have hn0α : (0 : ℝ) ≤ (Fintype.card G : ℝ) * α := by positivity
+  have hFlt : ⌊(Fintype.card G : ℝ) * α⌋₊ < Fintype.card G := by
+    rw [Nat.floor_lt hn0α]
+    calc (Fintype.card G : ℝ) * α < (Fintype.card G : ℝ) * 1 :=
+          mul_lt_mul_of_pos_left hα₁ hcardR
+      _ = Fintype.card G := mul_one _
+  have hvdef : randCritValue G T α x
+      = orderStat (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩ := by
+    rw [randCritValue, orbitOrderStat, dif_pos hk]
+  -- `M⁺ ≤ ⌊|G|α⌋`.
+  have hMplus : randPlusCount G T α x ≤ ⌊(Fintype.card G : ℝ) * α⌋₊ := by
+    have e1 : randPlusCount G T α x
+        = (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            randCritValue G T α x < orbitValues G T x i).card :=
+      card_filter_orbit (fun r => randCritValue G T α x < r) T x
+    have e2 : (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            randCritValue G T α x < orbitValues G T x i).card
+          + (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            orbitValues G T x i ≤ randCritValue G T α x).card = Fintype.card G := by
+      classical
+      have h := Finset.card_filter_add_card_filter_not
+        (s := (Finset.univ : Finset (Fin (Fintype.card G))))
+        (p := fun i => randCritValue G T α x < orbitValues G T x i)
+      simp only [not_lt] at h
+      rwa [Finset.card_univ, Fintype.card_fin] at h
+    have e3 : randCritIndex G α - 1 < (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            orbitValues G T x i ≤ randCritValue G T α x).card :=
+      (orderStat_le_iff_card_lt (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩
+        (randCritValue G T α x)).mp (by rw [hvdef])
+    rw [e1]
+    unfold randCritIndex at e3
+    omega
+  -- `⌊|G|α⌋ + 1 ≤ M⁺ + M⁰`.
+  have hMsum : ⌊(Fintype.card G : ℝ) * α⌋₊ + 1
+      ≤ randPlusCount G T α x + randZeroCount G T α x := by
+    classical
+    have hunion : (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x))
+        = (Finset.univ.filter fun g : G => randCritValue G T α x < T (g • x))
+          ∪ (Finset.univ.filter fun g : G => T (g • x) = randCritValue G T α x) := by
+      ext g
+      simp only [Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and]
+      constructor
+      · intro h; rcases lt_or_eq_of_le h with h' | h'
+        · exact Or.inl h'
+        · exact Or.inr h'.symm
+      · rintro (h | h)
+        · exact le_of_lt h
+        · exact le_of_eq h.symm
+    have hdisj : Disjoint (Finset.univ.filter fun g : G => randCritValue G T α x < T (g • x))
+        (Finset.univ.filter fun g : G => T (g • x) = randCritValue G T α x) := by
+      rw [Finset.disjoint_left]
+      intro g hg1 hg2
+      rw [Finset.mem_filter] at hg1 hg2
+      rw [hg2.2] at hg1
+      exact absurd hg1.2 (lt_irrefl _)
+    have esum : randPlusCount G T α x + randZeroCount G T α x
+        = (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x)).card := by
+      show (Finset.univ.filter fun g : G => randCritValue G T α x < T (g • x)).card
+          + (Finset.univ.filter fun g : G => T (g • x) = randCritValue G T α x).card
+        = (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x)).card
+      rw [← Finset.card_union_of_disjoint hdisj, ← hunion]
+    have e4 : (Finset.univ.filter fun g : G => randCritValue G T α x ≤ T (g • x)).card
+        = (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            randCritValue G T α x ≤ orbitValues G T x i).card :=
+      card_filter_orbit (fun r => randCritValue G T α x ≤ r) T x
+    have e5 : (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            orbitValues G T x i < randCritValue G T α x).card
+          + (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            randCritValue G T α x ≤ orbitValues G T x i).card = Fintype.card G := by
+      classical
+      have h := Finset.card_filter_add_card_filter_not
+        (s := (Finset.univ : Finset (Fin (Fintype.card G))))
+        (p := fun i => orbitValues G T x i < randCritValue G T α x)
+      simp only [not_lt] at h
+      rwa [Finset.card_univ, Fintype.card_fin] at h
+    have e6 : (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+            orbitValues G T x i < randCritValue G T α x).card ≤ randCritIndex G α - 1 := by
+      by_contra hcon
+      push_neg at hcon
+      have := (orderStat_lt_iff_card_lt (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩
+        (randCritValue G T α x)).mpr hcon
+      rw [← hvdef] at this
+      exact absurd this (lt_irrefl _)
+    rw [esum, e4]
+    unfold randCritIndex at e6
+    omega
+  have hM0 : 0 < randZeroCount G T α x := by
+    obtain ⟨g₀, hg₀⟩ := randCritValue_mem_orbit T α x hk
+    exact Finset.card_pos.mpr ⟨g₀, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hg₀⟩⟩
+  have hFle : (⌊(Fintype.card G : ℝ) * α⌋₊ : ℝ) ≤ (Fintype.card G : ℝ) * α := Nat.floor_le hn0α
+  have hlt : (Fintype.card G : ℝ) * α < ⌊(Fintype.card G : ℝ) * α⌋₊ + 1 := Nat.lt_floor_add_one _
+  have hM0R : (0 : ℝ) < randZeroCount G T α x := by exact_mod_cast hM0
+  have hMplusR : (randPlusCount G T α x : ℝ) ≤ ⌊(Fintype.card G : ℝ) * α⌋₊ := by
+    exact_mod_cast hMplus
+  have hMsumR : (⌊(Fintype.card G : ℝ) * α⌋₊ : ℝ) + 1
+      ≤ (randPlusCount G T α x : ℝ) + randZeroCount G T α x := by exact_mod_cast hMsum
+  rw [randTest]
+  split_ifs with h1 h2
+  · exact ⟨zero_le_one, le_refl 1⟩
+  · rw [Set.mem_Icc, randGamma]
+    refine ⟨div_nonneg ?_ hM0R.le, ?_⟩
+    · have : (randPlusCount G T α x : ℝ) ≤ (Fintype.card G : ℝ) * α := le_trans hMplusR hFle
+      linarith
+    · rw [div_le_one hM0R]; linarith
+  · exact ⟨le_refl 0, zero_le_one⟩
 
 /-- **Pointwise orbit identity.** Summing the randomization test over the orbit of any
 point returns exactly `M·α`:
