@@ -75,7 +75,15 @@ theorem iInf_eq_iInf_rat_of_continuous
     -- USER-INPUT: continuity; the density argument fails for a merely measurable `g`
     (hg : Continuous g) :
     (⨅ x : ℝ, g x) = ⨅ q : ℚ, g (q : ℝ) := by
-  sorry
+  refine le_antisymm (le_iInf fun q => iInf_le _ _) (le_iInf fun x => ?_)
+  haveI hnb : (𝓝[Set.range ((↑) : ℚ → ℝ)] x).NeBot :=
+    mem_closure_iff_nhdsWithin_neBot.mp (Rat.denseRange_cast x)
+  have htend : Tendsto g (𝓝[Set.range ((↑) : ℚ → ℝ)] x) (𝓝 (g x)) :=
+    (hg.tendsto x).mono_left nhdsWithin_le_nhds
+  refine ge_of_tendsto htend ?_
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  obtain ⟨q, rfl⟩ := hy
+  exact iInf_le _ q
 
 /-- A continuous coercive `ℝ≥0∞`-valued function on `ℝ` attains its infimum. -/
 theorem exists_forall_le_of_continuous_of_coercive
@@ -87,7 +95,31 @@ theorem exists_forall_le_of_continuous_of_coercive
     -- why the target filter is `𝓝 ⊤` rather than `atTop`.
     (hcoer : Tendsto g (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞))) :
     ∃ x : ℝ, ∀ y : ℝ, g x ≤ g y := by
-  sorry
+  set s : ℝ≥0∞ := ⨅ y, g y with hs
+  by_cases hstop : s = ⊤
+  · exact ⟨0, fun y => by rw [iInf_eq_top.mp hstop y]; exact le_top⟩
+  · -- choose a finite level `c` strictly above the infimum
+    have hslt : s < ⊤ := lt_top_iff_ne_top.mpr hstop
+    set c : ℝ≥0∞ := s + 1 with hc
+    have hctop : c < ⊤ := by
+      rw [hc]; exact ENNReal.add_lt_top.mpr ⟨hslt, ENNReal.one_lt_top⟩
+    have hsc : s < c := by rw [hc]; exact ENNReal.lt_add_right hstop one_ne_zero
+    obtain ⟨y₀, hy₀⟩ := iInf_lt_iff.mp hsc
+    -- the sublevel set `{y | g y ≤ c}` is compact and nonempty
+    have hmem : g ⁻¹' Set.Ioi c ∈ cocompact ℝ := hcoer (Ioi_mem_nhds hctop)
+    obtain ⟨t, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hclosed : IsClosed {y | g y ≤ c} := isClosed_Iic.preimage hg
+    have hsub : {y | g y ≤ c} ⊆ t := by
+      intro y hy
+      by_contra hyt
+      exact absurd (ht_sub hyt) (by simpa using hy)
+    have hcompact : IsCompact {y | g y ≤ c} := ht_comp.of_isClosed_subset hclosed hsub
+    have hne : {y | g y ≤ c}.Nonempty := ⟨y₀, hy₀.le⟩
+    obtain ⟨x, hx_mem, hx_min⟩ := hcompact.exists_isMinOn hne hg.continuousOn
+    refine ⟨x, fun y => ?_⟩
+    by_cases hy : g y ≤ c
+    · exact isMinOn_iff.mp hx_min y hy
+    · exact le_trans hx_mem (not_le.mp hy).le
 
 /-- **Measurable argmin.** A jointly measurable family of convex, continuous, coercive
 functions of a real scan variable admits a measurable minimizer selection. -/
