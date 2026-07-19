@@ -80,6 +80,53 @@ junk for non-positive arguments; every statement below constrains the estimator 
 positive. -/
 noncomputable def steinLoss (v : ℝ) : ℝ := v - Real.log v - 1
 
+/-- Positive scalings leave `scaleZ` unchanged (private re-derivation of the same fact
+proved in `ScaleStructure`, needed here for the equivariance of the explicit estimators). -/
+private lemma scaleZ_smul' {b : ℝ} (hb : 0 < b) (x : Fin (m + 1) → ℝ) :
+    scaleZ (b • x) = scaleZ x := by
+  have hb0 : b ≠ 0 := ne_of_gt hb
+  have h1 : ∀ i : Fin m, (b • x) i.castSucc / (b • x) (Fin.last m)
+      = x i.castSucc / x (Fin.last m) := by
+    intro i
+    show b * x i.castSucc / (b * x (Fin.last m)) = x i.castSucc / x (Fin.last m)
+    rw [mul_div_mul_left _ _ hb0]
+  have h2 : (b • x) (Fin.last m) / |(b • x) (Fin.last m)|
+      = x (Fin.last m) / |x (Fin.last m)| := by
+    show b * x (Fin.last m) / |b * x (Fin.last m)| = x (Fin.last m) / |x (Fin.last m)|
+    rw [abs_mul, abs_of_pos hb, mul_div_mul_left _ _ hb0]
+  exact Prod.ext_iff.mpr ⟨funext h1, h2⟩
+
+/-- A strictly positive scale-equivariant estimator can only have degree `0`: evaluating
+equivariance at `x = 0`, `τ = 2` gives `δ₀ 0 = 2^r · δ₀ 0`, forcing `2^r = 1`. -/
+private lemma degree_eq_zero_of_pos {r : ℕ} {δ₀ : (Fin (m + 1) → ℝ) → ℝ}
+    (heq₀ : IsScaleEquivariant r δ₀) (h₀pos : ∀ x, 0 < δ₀ x) : r = 0 := by
+  rcases Nat.eq_zero_or_pos r with h | h
+  · exact h
+  · exfalso
+    have hkey : δ₀ 0 = 2 ^ r * δ₀ 0 := by
+      have h2 := heq₀ (show (0 : ℝ) < 2 by norm_num) 0
+      rwa [smul_zero] at h2
+    have h1 : (1 : ℝ) < 2 ^ r := one_lt_pow₀ one_lt_two h.ne'
+    nlinarith [h₀pos 0, mul_pos (by linarith : (0 : ℝ) < 2 ^ r - 1) (h₀pos 0)]
+
+/-- Analytic core (named debt, the one lifted `private` sorry of this file): a degree-0
+equivariant (i.e. `scaleZ`-invariant) measurable `φ` equals its own conditional mean given
+the maximal invariant. Intended proof: the disintegration identity
+`lintegral_eq_lintegral_condDistrib` applied to `g z x = if scaleZ x = z then 0 else 1`
+gives `∫⁻ z, (orbitCondKernel P₀ scaleZ z) {scaleZ ≠ z} ∂(P₀.map scaleZ) = 0`, so almost
+every fibre kernel is concentrated on `{scaleZ = z}`; on that set the invariant `φ` is
+constant (two points with equal `scaleZ` and nonzero last coordinate are positive
+multiples of one another — using `hnull` for `x (Fin.last m) ≠ 0` a.e.), so
+`∫ φ ∂(orbitCondKernel P₀ scaleZ (scaleZ x)) = φ x` almost everywhere. -/
+private lemma integral_orbitCondKernel_eq_self_of_invariant
+    (P₀ : Measure (Fin (m + 1) → ℝ)) [IsProbabilityMeasure P₀]
+    {φ : (Fin (m + 1) → ℝ) → ℝ} (hφ : Measurable φ)
+    (hinv : IsScaleEquivariant 0 φ)
+    (hnull : P₀ {x | x (Fin.last m) = 0} = 0)
+    (hint : ∀ z, Integrable φ (orbitCondKernel P₀ scaleZ z)) :
+    ∀ᵐ x ∂P₀, ∫ y, φ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)) = φ x := by
+  sorry
+
 /-- **The minimum risk equivariant scale estimator.** Let `δ₀` be a measurable
 scale-equivariant estimator of `τ^r` with finite risk, nowhere zero, and let `w*` be a
 measurable positive function of the maximal invariant which, in almost every fibre,
@@ -112,6 +159,16 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
       ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / wStar z)) ∂(orbitCondKernel P₀ scaleZ z) ≤
         ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / w)) ∂(orbitCondKernel P₀ scaleZ z)) :
     IsScaleMRE P₀ γ r (fun x => δ₀ x / wStar (scaleZ x)) := by
+  -- FALSE AS STATED. `hmin` only constrains the fibrewise minimizer over *positive* `w`
+  -- (the positive multiplicative orbit), but `IsScaleMRE` requires minimality against
+  -- *every* measurable equivariant competitor, including opposite-signed ones that the
+  -- `0 < w →` guard never sees. Counterexample (m arbitrary, r = 0): δ₀ ≡ 1, wStar ≡ 1,
+  -- and `γ v = (v-1)² + 1` for `v > -1`, `γ v = 0` for `v ≤ -1` (measurable, ≥ 0). Then
+  -- every hypothesis holds — `hmin` tightly, since `min_{v>0} γ = γ 1 = 1` is hit at
+  -- `1/wStar = 1` — yet the competitor `δ' ≡ -2` (measurable, `IsScaleEquivariant 0`) has
+  -- `scaleRisk = ofReal (γ (-2)) = 0 < 1 = scaleRisk` of the constructed estimator, so
+  -- minimality `1 ≤ 0` fails. The engine (`lintegral_le_of_condMinimizer`) needs the
+  -- all-`w` hypothesis of the location case; the scale `0 < w →` weakening is unsound.
   sorry
 
 /-- **Existence of a minimum risk equivariant scale estimator for a logarithmically
@@ -141,6 +198,16 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- USER-INPUT: the maximal invariant is defined almost everywhere
     (hnull : P₀ {x | x (Fin.last m) = 0} = 0) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
+  -- Contract-level debt (reported). The intended route builds `wStar` by a measurable
+  -- convex argmin over `w > 0` (the log-convex reparametrisation, mirroring the sorried
+  -- `exists_measurable_condMinimizer_convex` of `LocationMRE`) and then invokes
+  -- `isScaleMRE_of_conditional_min`. But that engine theorem is FALSE as stated (see its
+  -- proof), because the `0 < w →` fibrewise minimality it establishes does not dominate
+  -- opposite-signed equivariant competitors; for a convex non-monotone `γ` whose values
+  -- on the negative axis dip below its positive-axis minimum, no equivariant estimator is
+  -- minimum risk equivariant at all, so `∃ δ, IsScaleMRE …` fails. A sound version needs
+  -- either a positivity constraint on the competitor class or `γ ≥ 0` with the minimum on
+  -- the positive axis. Left as debt pending a corrected upstream statement.
   sorry
 
 /-- **The minimum risk equivariant estimator of `τ^r` under Stein's loss** is the
@@ -167,7 +234,36 @@ theorem isScaleMRE_steinLoss (P₀ : Measure (Fin (m + 1) → ℝ))
     (hcondpos : ∀ z, 0 < ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ z)) :
     IsScaleMRE P₀ steinLoss r
       (fun x => δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) := by
-  sorry
+  -- A strictly positive equivariant estimator forces `r = 0` (else `δ₀ 0 = 2^r · δ₀ 0`
+  -- gives `δ₀ 0 = 0`). At `r = 0` the reference is `scaleZ`-invariant, so its conditional
+  -- mean recovers it and the estimator collapses to `1`, where Stein's loss vanishes:
+  -- the risk is `0`, hence minimum against every competitor.
+  obtain rfl : r = 0 := degree_eq_zero_of_pos heq₀ h₀pos
+  have hgMeas : Measurable
+      (fun x => ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) :=
+    (measurable_integral_orbitCondKernel P₀ measurable_scaleZ hδ₀ hint).comp measurable_scaleZ
+  have hself := integral_orbitCondKernel_eq_self_of_invariant P₀ hδ₀ heq₀ hnull hint
+  refine ⟨hδ₀.div hgMeas, ?_, ?_⟩
+  · intro τ hτ x
+    show δ₀ (τ • x) / (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x))))
+      = τ ^ 0 * (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))
+    rw [scaleZ_smul' hτ x, heq₀ hτ x]
+    simp only [pow_zero, one_mul]
+  · intro δ' _ _
+    have hrisk0 : scaleRisk P₀ steinLoss
+        (fun x => δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) = 0 := by
+      have hae : (fun x => ENNReal.ofReal (steinLoss
+          (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))))) =ᵐ[P₀] 0 := by
+        filter_upwards [hself] with x hx
+        show ENNReal.ofReal (steinLoss
+          (δ₀ x / ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))) = 0
+        rw [hx, div_self (h₀pos x).ne']
+        simp [steinLoss, Real.log_one]
+      unfold scaleRisk
+      rw [lintegral_congr_ae hae]
+      simp
+    rw [hrisk0]
+    exact zero_le _
 
 /-- **The minimum risk equivariant estimator of `τ^r` under the standardized
 squared-error loss** `γ(v) = (v − 1)²`, i.e. `L(τ, d) = (d − τ^r)²/τ^{2r}`: the ratio of
@@ -196,7 +292,50 @@ theorem isScaleMRE_standardizedSquared (P₀ : Measure (Fin (m + 1) → ℝ))
     IsScaleMRE P₀ (fun v : ℝ => (v - 1) ^ 2) r
       (fun x => δ₀ x * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) /
         (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))) := by
-  sorry
+  -- As for Stein's loss, `r = 0`, both conditional moments recover the ( `scaleZ`-invariant)
+  -- reference: `E₁[δ₀|z] = δ₀`, `E₁[δ₀²|z] = δ₀²`, so the estimator collapses to
+  -- `δ₀ · δ₀ / δ₀² = 1`, where the standardized squared error vanishes and the risk is `0`.
+  obtain rfl : r = 0 := degree_eq_zero_of_pos heq₀ h₀pos
+  have hinv₂ : IsScaleEquivariant 0 (fun x => δ₀ x ^ 2) := by
+    intro τ hτ x
+    show δ₀ (τ • x) ^ 2 = τ ^ 0 * δ₀ x ^ 2
+    rw [heq₀ hτ x]
+    simp only [pow_zero, one_mul]
+  have hg₁Meas : Measurable
+      (fun x => ∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) :=
+    (measurable_integral_orbitCondKernel P₀ measurable_scaleZ hδ₀ hint₁).comp measurable_scaleZ
+  have hg₂Meas : Measurable
+      (fun x => ∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) :=
+    (measurable_integral_orbitCondKernel P₀ measurable_scaleZ (hδ₀.pow_const 2) hint₂).comp
+      measurable_scaleZ
+  have hself₁ := integral_orbitCondKernel_eq_self_of_invariant P₀ hδ₀ heq₀ hnull hint₁
+  have hself₂ := integral_orbitCondKernel_eq_self_of_invariant P₀ (hδ₀.pow_const 2) hinv₂
+    hnull hint₂
+  refine ⟨(hδ₀.mul hg₁Meas).div hg₂Meas, ?_, ?_⟩
+  · intro τ hτ x
+    show δ₀ (τ • x) * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x)))) /
+        (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ (τ • x))))
+      = τ ^ 0 * (δ₀ x * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) /
+        (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x))))
+    rw [scaleZ_smul' hτ x, heq₀ hτ x]
+    simp only [pow_zero, one_mul]
+  · intro δ' _ _
+    have hrisk0 : scaleRisk P₀ (fun v : ℝ => (v - 1) ^ 2)
+        (fun x => δ₀ x * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) /
+          (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x)))) = 0 := by
+      have hae : (fun x => ENNReal.ofReal
+          ((δ₀ x * (∫ y, δ₀ y ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) /
+            (∫ y, δ₀ y ^ 2 ∂(orbitCondKernel P₀ scaleZ (scaleZ x))) - 1) ^ 2)) =ᵐ[P₀] 0 := by
+        filter_upwards [hself₁, hself₂] with x hx₁ hx₂
+        rw [hx₁, hx₂,
+          show δ₀ x * δ₀ x / δ₀ x ^ 2 = 1 by
+            rw [sq]; exact div_self (mul_ne_zero (h₀pos x).ne' (h₀pos x).ne')]
+        simp
+      unfold scaleRisk
+      rw [lintegral_congr_ae hae]
+      simp
+    rw [hrisk0]
+    exact zero_le _
 
 end ScaleMRE
 
