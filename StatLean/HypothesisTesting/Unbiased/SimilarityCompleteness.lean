@@ -1,6 +1,8 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.PointEstimation.Sufficiency.Defs
 import StatLean.PointEstimation.Completeness.Defs
+import Mathlib.Probability.Kernel.Composition.IntegralCompProd
+import Mathlib.Probability.Kernel.MeasurableIntegral
 
 /-!
 # Similar tests have Neyman structure iff the sufficient statistic is boundedly complete
@@ -85,7 +87,58 @@ theorem hasNeymanStructure_of_boundedlyComplete
     -- USER-INPUT: `φ` is similar of size `α` on the boundary set
     (hsim : IsSimilar P ω α φ) :
     ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ := by
-  sorry
+  haveI := hQ
+  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+    rw [statLaw]; exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  -- the conditional size `t ↦ ∫ φ dQ_t`, measurable and bounded by `1`
+  have hcond_meas : Measurable (fun t => ∫ x, φ x ∂(Q t)) :=
+    (StronglyMeasurable.integral_kernel (κ := Q) hφ.1.stronglyMeasurable).measurable
+  have hcond_bd : ∀ t, |∫ x, φ x ∂(Q t)| ≤ 1 := fun t => by
+    rw [← Real.norm_eq_abs]
+    calc ‖∫ x, φ x ∂(Q t)‖ ≤ 1 * (Q t Set.univ).toReal :=
+          norm_integral_le_of_norm_le_const (ae_of_all _ fun x => by
+            rw [Real.norm_eq_abs, abs_le]
+            exact ⟨by linarith [(hφ.2 x).1], (hφ.2 x).2⟩)
+      _ = 1 := by rw [measure_univ, ENNReal.toReal_one, mul_one]
+  have hcond_int : ∀ θ, Integrable (fun t => ∫ x, φ x ∂(Q t)) (statLaw P T θ) := fun θ =>
+    Integrable.of_bound hcond_meas.aestronglyMeasurable 1
+      (ae_of_all _ fun t => by rw [Real.norm_eq_abs]; exact hcond_bd t)
+  -- the disintegration identity `∫ φ dP_θ = ∫ (∫ φ dQ_t) d(statLaw)`
+  have hdis : ∀ θ ∈ ω, ∫ x, φ x ∂(P θ) = ∫ t, (∫ x, φ x ∂(Q t)) ∂(statLaw P T θ) := by
+    intro θ hθ
+    have hfm : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id
+    have hgm : Measurable (fun z : 𝓣 × 𝓧 => φ z.2) := hφ.1.comp measurable_snd
+    have hint' : Integrable (fun z : 𝓣 × 𝓧 => φ z.2) ((statLaw P T θ) ⊗ₘ Q) :=
+      Integrable.of_bound hgm.aestronglyMeasurable 1 (ae_of_all _ fun z => by
+        rw [Real.norm_eq_abs, abs_le]; exact ⟨by linarith [(hφ.2 z.2).1], (hφ.2 z.2).2⟩)
+    calc ∫ x, φ x ∂(P θ)
+        = ∫ z, φ z.2 ∂((P θ).map (fun x => (T x, x))) :=
+          (integral_map hfm.aemeasurable hgm.aestronglyMeasurable).symm
+      _ = ∫ z, φ z.2 ∂((statLaw P T θ) ⊗ₘ Q) := by rw [hsuff θ hθ]
+      _ = ∫ t, (∫ x, φ x ∂(Q t)) ∂(statLaw P T θ) := Measure.integral_compProd hint'
+  -- the deviation `ψ t = ∫ φ dQ_t − α` integrates to `0` over every boundary law
+  set ψ : 𝓣 → ℝ := fun t => (∫ x, φ x ∂(Q t)) - α with hψ_def
+  have hψ_meas : Measurable ψ := hcond_meas.sub measurable_const
+  have hψ_bdd : ∃ C, ∀ s, |ψ s| ≤ C := ⟨1 + |α|, fun t => by
+    have h1 := hcond_bd t
+    have h2 : |ψ t| ≤ |∫ x, φ x ∂(Q t)| + |α| := by
+      show |(∫ x, φ x ∂(Q t)) - α| ≤ |∫ x, φ x ∂(Q t)| + |α|
+      rw [sub_eq_add_neg]; refine (abs_add_le _ _).trans_eq ?_; rw [abs_neg]
+    linarith⟩
+  have hzero : ∀ θ : ω, ∫ s, ψ s ∂(statLaw P T (θ : Θ)) = 0 := by
+    intro θ
+    have hθω : (θ : Θ) ∈ ω := θ.2
+    simp only [hψ_def]
+    rw [integral_sub (hcond_int _) (integrable_const α), integral_const,
+      probReal_univ, smul_eq_mul, one_mul, ← hdis (θ : Θ) hθω]
+    have hval : ∫ x, φ x ∂(P (θ : Θ)) = α := hsim (θ : Θ) hθω
+    rw [hval, sub_self]
+  -- bounded completeness forces `ψ = 0` a.e., i.e. conditional size `α`
+  have hae := hcomplete ψ hψ_meas hψ_bdd hzero
+  intro θ hθ
+  filter_upwards [hae ⟨θ, hθ⟩] with t ht
+  have : (∫ x, φ x ∂(Q t)) - α = 0 := ht
+  linarith
 
 /-- **Neyman structure for all similar tests ⇒ bounded completeness.**
 
@@ -111,6 +164,16 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
     (hall : ∀ φ : 𝓧 → ℝ, IsCriticalFn φ → IsSimilar P ω α φ →
       ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ) :
     IsBoundedlyCompleteFamily fun θ : ω => statLaw P T (θ : Θ) := by
+  -- TODO: lifted debt of this file. The perturbation `φ = c·(f∘T) + α` (with
+  -- `c = min(α,1−α)/M`) is a critical function and is similar (its power is
+  -- `c·∫ f d(statLaw) + α = α`), so `hall` gives `∀ᵐ t, ∫ φ dQ_t = α`, i.e.
+  -- `∀ᵐ t, c·(∫ f(T x) dQ_t) = 0`, hence `∫ f(T x) dQ_t = 0` a.e. To conclude `f = 0` a.e.
+  -- one needs `∫ f(T x) dQ_t = f t` for a.e. `t` — the fibre-support of `Q` from `hsuff`,
+  -- `∀ᵐ (t,x) ∂(statLaw ⊗ₘ Q), T x = t`. Establishing that a.e. identity requires the diagonal
+  -- `{(t,x) | T x = t}` to be measurable in `𝓣 × 𝓧` (`measurableSet_eq_fun`), which needs a
+  -- countably-separated / standard-Borel structure on `𝓣` not present in the signature. Fix =
+  -- add `[StandardBorelSpace 𝓣]` (as the point-estimation `Sufficiency.Basic` fibre lemmas do),
+  -- then transport the fibre-support along `hsuff`. See the report for the flagged hypothesis gap.
   sorry
 
 end StatLean.HypothesisTesting

@@ -105,6 +105,14 @@ theorem condDistrib_expFamily_of_isCanonicalUT
       ∀ p ∈ Ω, ∀ᵐ t ∂((P p).map T),
         condDistrib U T (P p) t
           = (νt t).withDensity fun u => ENNReal.ofReal (Ct t p.1 * Real.exp (p.1 * u)) := by
+  -- TODO: blocked on the intended engine. The `ϑ`-factor cancellation is exactly
+  -- `ForMathlib/CondDistribTilt.lean`'s `condDistrib_fst_withDensity_tilt` (with the joint
+  -- density `exp(θu + ⟪ϑ,t⟫) = g(u)·k(t)`, `g u = exp(θu)`, `k t = C·exp⟪ϑ,t⟫`), applied to the
+  -- swapped-coordinate joint law from `hUT`. That engine currently carries FOUR open sorries
+  -- (`measurable_condTiltNormalizer`, `condTiltNormalizer_pos_lt_top_ae`,
+  -- `condDistrib_fst_withDensity_tilt`, and the finite-measure reduction), so this theorem
+  -- cannot be discharged without either closing that file (out of the editable scope here) or
+  -- re-deriving the product-form disintegration-tilt inline. Reported as an upstream block.
   sorry
 
 /-- **The conditional law does not depend on the nuisance parameter.**
@@ -127,6 +135,11 @@ theorem condDistrib_eq_of_fst_eq
     -- USER-INPUT: the two parameters agree in the coordinate of interest
     (hfst : p.1 = q.1) :
     ∀ᵐ t ∂((P p).map T), condDistrib U T (P p) t = condDistrib U T (P q) t := by
+  -- TODO: downstream of `condDistrib_expFamily_of_isCanonicalUT` (both p- and q-tilts equal
+  -- the same `p.1 = q.1`-indexed exponential form a.e.). It also needs `(P p).map T ≪ (P q).map T`
+  -- to transfer the q-side a.e. equality onto the p-side `T`-marginal — the mutual absolute
+  -- continuity of the two `T`-marginals, itself a consequence of the shared base measure `ν` in
+  -- the canonical form. Blocked by the same un-closed `CondDistribTilt` engine; see above.
   sorry
 
 /-- **Overall power is the average of conditional powers.**
