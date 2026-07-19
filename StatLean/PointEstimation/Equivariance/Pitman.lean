@@ -4,6 +4,7 @@ import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # The Pitman estimator of location
@@ -190,6 +191,67 @@ private lemma map_pShear_locationBase (f : (Fin (m + 1) → ℝ) → ℝ) (hf : 
     _ = ∫⁻ z, p z * φ z ∂(volume.prod volume) := by rw [hmap]
     _ = ∫⁻ z, φ z ∂((volume.prod volume).withDensity p) :=
           (lintegral_withDensity_eq_lintegral_mul _ hp_meas hφ).symm
+
+/-- Reflection of a Lebesgue integral on `ℝ`: `∫ u, φ (b − u) = ∫ s, φ s`. -/
+private lemma integral_const_sub_comm (φ : ℝ → ℝ) (b : ℝ) :
+    (∫ u : ℝ, φ (b - u)) = ∫ s : ℝ, φ s := by
+  have h1 : (∫ u : ℝ, φ (b - u)) = ∫ u : ℝ, φ (b + u) := by
+    rw [← integral_neg_eq_self (fun u : ℝ => φ (b + u)) volume]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+    simp only [sub_eq_add_neg]
+  rw [h1]
+  simpa [add_comm] using integral_add_right_eq_self φ b
+
+/-- The shift identity underlying the change of variables: subtracting `u·𝟙` from `x` shifts
+the last-coordinate argument of the shear inverse. -/
+private lemma sub_smul_one_eq_pUnshear (x : Fin (m + 1) → ℝ) (u : ℝ) :
+    x - u • (1 : Fin (m + 1) → ℝ) = pUnshear (diffs x, x (Fin.last m) - u) := by
+  have hx : Fin.snoc (diffs x) (0 : ℝ) + (x (Fin.last m)) • (1 : Fin (m + 1) → ℝ) = x :=
+    pUnshear_pShear x
+  show x - u • (1 : Fin (m + 1) → ℝ)
+      = Fin.snoc (diffs x) 0 + (x (Fin.last m) - u) • (1 : Fin (m + 1) → ℝ)
+  rw [sub_smul, ← add_sub_assoc, hx]
+
+/-- Measurability of the one-dimensional density slice `s ↦ f (snoc y 0 + s·𝟙)`. -/
+private lemma measurable_slice (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
+    (y : Fin m → ℝ) : Measurable (fun s : ℝ => f (pUnshear (y, s))) :=
+  hf.comp (measurable_pUnshear.comp (measurable_const.prodMk measurable_id))
+
+/-- The density slice is integrable at every `y` (reflection of `hden` at `snoc y 0`). -/
+private lemma integrable_slice_den (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
+    (hden : ∀ x, Integrable fun u : ℝ => f (x - u • (1 : Fin (m + 1) → ℝ)))
+    (y : Fin m → ℝ) : Integrable (fun s : ℝ => f (pUnshear (y, s))) := by
+  set x₀ : Fin (m + 1) → ℝ := Fin.snoc y (0 : ℝ) with hx₀
+  have hy1 : diffs x₀ = y := diffs_snoc y
+  have hy2 : x₀ (Fin.last m) = 0 := by rw [hx₀]; simp [Fin.snoc_last]
+  have hrefl := hden x₀
+  simp_rw [sub_smul_one_eq_pUnshear, hy1, hy2, zero_sub] at hrefl
+  -- `hrefl : Integrable (fun u => f (pUnshear (y, -u)))`; undo the reflection
+  have hmp : MeasurePreserving (fun u : ℝ => -u) (volume : Measure ℝ) volume := by
+    simpa using Measure.measurePreserving_neg (volume : Measure ℝ)
+  refine (hmp.integrable_comp (measurable_slice f hf y).aestronglyMeasurable).mp ?_
+  simpa [Function.comp] using hrefl
+
+/-- The first moment of the density slice is integrable at every `y`. -/
+private lemma integrable_slice_num (f : (Fin (m + 1) → ℝ) → ℝ) (hf : Measurable f)
+    (hnum : ∀ x, Integrable fun u : ℝ => u * f (x - u • (1 : Fin (m + 1) → ℝ)))
+    (y : Fin m → ℝ) : Integrable (fun s : ℝ => s * f (pUnshear (y, s))) := by
+  set x₀ : Fin (m + 1) → ℝ := Fin.snoc y (0 : ℝ) with hx₀
+  have hy1 : diffs x₀ = y := diffs_snoc y
+  have hy2 : x₀ (Fin.last m) = 0 := by rw [hx₀]; simp [Fin.snoc_last]
+  have hrefl := hnum x₀
+  simp_rw [sub_smul_one_eq_pUnshear, hy1, hy2, zero_sub] at hrefl
+  -- `hrefl : Integrable (fun u => u * f (pUnshear (y, -u)))`
+  have hmp : MeasurePreserving (fun u : ℝ => -u) (volume : Measure ℝ) volume := by
+    simpa using Measure.measurePreserving_neg (volume : Measure ℝ)
+  have hmeas : Measurable (fun s : ℝ => s * f (pUnshear (y, s))) :=
+    measurable_id.mul (measurable_slice f hf y)
+  refine (hmp.integrable_comp hmeas.aestronglyMeasurable).mp ?_
+  have : (fun s : ℝ => s * f (pUnshear (y, s))) ∘ (fun u : ℝ => -u)
+      = fun u : ℝ => -(u * f (pUnshear (y, -u))) := by
+    funext u; simp only [Function.comp]; ring
+  rw [this]
+  exact hrefl.neg
 
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
