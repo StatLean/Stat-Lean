@@ -181,8 +181,13 @@ The invariant σ-algebra enters as a parameter `m` characterized by `hm_inv`; th
 sub-σ-algebra of the ambient one is forced by `hm_inv` and derived in the proof, not
 assumed. -/
 theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
-    -- USER-INPUT: `m` is the σ-algebra of invariant sets; Hunt–Stein (1946)
-    (hm_inv : ∀ s : Set 𝓧, MeasurableSet[m] s ↔ s ∈ invariantSets G 𝓧)
+    -- USER-INPUT: `m` is the σ-algebra of invariant sets; Hunt–Stein (1946).
+    -- The ambient instance `m𝓧` is pinned explicitly: without it, the local parameter `m`
+    -- captures the implicit `[MeasurableSpace 𝓧]` of `invariantSets`, and the hypothesis
+    -- degenerates to "every `m`-measurable set is invariant" — which does not force
+    -- `m ≤ m𝓧` and makes the conclusion false (a non-measurable symmetric set in a
+    -- reflection-invariant Gaussian model is a counterexample).
+    (hm_inv : ∀ s : Set 𝓧, MeasurableSet[m] s ↔ s ∈ @invariantSets G 𝓧 _ m𝓧 _)
     (μ : Measure 𝓧)
     -- LEAN-ONLY: finiteness gives σ-finiteness of the trimmed measure, required by `condExp`
     [IsFiniteMeasure μ]
@@ -194,18 +199,12 @@ theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
     -- LEAN-ONLY: integrability of the integrand; standard regularity
     (hf : Integrable f μ) :
     μ[f | m] =ᵐ[μ] groupAverage G f := by
-  -- TODO: FALSE AS ELABORATED — do not close. In this frozen signature the parameter
-  -- `(m : MeasurableSpace 𝓧)` shadows the ambient `[m𝓧]`: Lean's local-instance
-  -- resolution picks the more recent local hypothesis `m` for the implicit
-  -- `[MeasurableSpace 𝓧]` of `invariantSets G 𝓧` inside `hm_inv`. So `hm_inv` reads
-  --   `MeasurableSet[m] s ↔ (MeasurableSet[m] s ∧ IsInvariantSet G s)`,
-  -- i.e. only "every m-measurable set is invariant"; it does NOT force `m ≤ m𝓧`, which
-  -- `ae_eq_condExp_of_forall_setIntegral_eq` requires. Counterexample: 𝓧 = ℝ, G = ℤ/2
-  -- acting by `x ↦ -x`, μ = standard Gaussian (G-invariant), m = {∅, ℝ, N, Nᶜ} with N a
-  -- non-Lebesgue-measurable symmetric set. Then `hm_inv` holds but `m ⊄ m𝓧`, so
-  -- `μ[f|m] = 0` while `groupAverage G f x = (f x + f (-x))/2 ≠ᵐ 0`. Under the *intended*
-  -- reading (invariantSets at `m𝓧`) the statement is true and the proof below works; the
-  -- fix is a signature change (e.g. pass the ambient instance explicitly) — out of scope.
+  -- TODO: signature corrected (the ambient `m𝓧` is now pinned in `hm_inv`, so the
+  -- hypothesis genuinely forces `m ≤ m𝓧`). Under this reading the statement is TRUE and the
+  -- intended proof works: `groupAverage G f` is `m`-measurable by `hm_inv` +
+  -- `preimage_mem_invariantSets`; the defining set-integral identity follows by changing
+  -- variables `g` by `g` under `hμ` and summing; conclude with
+  -- `ae_eq_condExp_of_forall_setIntegral_eq`.
   sorry
 
 end StatLean.HypothesisTesting
