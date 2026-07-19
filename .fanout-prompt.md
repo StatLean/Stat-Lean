@@ -1,0 +1,60 @@
+# Land the completeness hinge in PointEstimation/LinearModel/Canonical.lean
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.LinearModel.Canonical`. **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
+
+## Scope: ONE file, the highest-leverage theorem
+
+**Only edit** `StatLean/PointEstimation/LinearModel/Canonical.lean`. Nothing else. This is deliberately a single-file, single-hinge item — a previous session correctly judged the full LinearModel group to be multi-session work, so we are landing the hinge alone.
+
+**Commit after every sub-lemma that compiles.** Keep the tree green at all times; never leave a large non-compiling diff. At most **one** documented `private sorry` in this file at the end (for a residual arithmetic identity), and only after a bounded number of build cycles.
+
+Signatures/tags/docstrings of the existing public theorems are FROZEN. You may add `import Mathlib.*`, import closed project modules, and add any number of `private` helpers.
+
+## Two corrections from the previous session — both are RIGHT, follow them
+
+1. **Use the TOTAL sum of squares as the natural statistic, not the residual.** With
+   `T y = (y₀,…,y_{s−1}, Σ_{j≥s} yⱼ²)` the Gaussian log-density retains a
+   `−(1/2σ²)·Σ_{i<s} yᵢ²` term depending on both `y` and `σ²`, so it is **not** a canonical
+   exponential family in that form. Use `T̃ y = (y₀,…,y_{s−1}, Σ_{all k} yₖ²)` with
+   `base = volume`, `h = 1`. Then transport completeness of `T̃` to the frozen
+   `canonicalStat = (head, RSS)` along the **measurable bijection**
+   `(a, total) ↔ (a, total − Σᵢ aᵢ²)`. Completeness transfers along a measurable equivalence.
+2. **Do NOT route the UMVU conclusions through `isUMVU_of_complete_sufficient`.** That theorem
+   depends on the private `variance_rbEstimator_le_of_complete`, which is an **open sorry**
+   (the frozen `MemEstL2` competitor class has no global measurable representative), so any
+   proof through it would show `sorryAx`. Use the fully-proven
+   `UMVU.CovarianceCriterion.isUMVU_iff_uncorrelated_unbiasedZero` instead. The measurable-
+   representative gap **is closable for this model**: all `canonicalModel` members are
+   **mutually absolutely continuous** (strictly positive Gaussian densities), so a
+   `P p₀`-a.e. representative of a competitor is automatically a `P p'`-a.e. representative for
+   every `p'`. Establish that as a `private` helper — it is the key that unlocks the UMVU
+   theorems axiom-cleanly.
+
+## Priority order (land in this order, committing as you go)
+
+1. `private` helpers for the exponential-family recognition: build the `ExpFamily` with
+   `base = volume`, statistic `T̃`, and prove `canonicalNormal η σ² = E.P (ηmap (η, σ²))`
+   where `ηmap (η,σ²) = (η₁/σ², …, η_s/σ², −1/(2σ²))`. Your committed
+   `canonicalNormal_eq_withDensity` is the starting point; the remaining work is density
+   algebra (`Fin.snoc`/inner-product bookkeeping plus the tilted normalization constant).
+2. `Ξ' = range ηmap` has **nonempty interior** in `ℝ^{s+1}` (free `η`, positive `σ²` — that is
+   exactly what `PosVar` gives) and `Ξ' ⊆ E.natSet` (Gaussian integrability).
+3. Apply **`Completeness.ExpFamily.isCompleteStat_of_interior_nonempty`** (closed, axiom-clean)
+   to get completeness of `T̃`, then transport to `canonicalStat_isCompleteStat`.
+4. `canonicalStat_hasSufficientKernel` — factorization (reuses the density helper) plus
+   `Sufficiency.Factorization.isSufficient_of_isFactorizedDensity` and the dominated
+   `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient_dominated`.
+5. The three UMVU theorems (`isUMVU_coord`, `isUMVU_linear_combination`,
+   `isUMVU_residual_variance`) via the covariance criterion + the mutual-a.c. helper.
+
+If you run short of budget, **stop after step 3 with everything committed and green** — completeness alone unblocks `LeastSquares` and the UMVU theorems for a later session. Say clearly in your report where you stopped.
+
+## Already closed, axiom-clean, treat as black boxes
+
+`Completeness.ExpFamily.isCompleteStat_of_interior_nonempty`; `ExponentialFamily.{Basic,MGF,NaturalStatistic}` (incl. `P_eq_withDensity`, `map_stat_P`, `natSet_convex`); `Sufficiency.Factorization.*`; `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient_dominated`; `UMVU.CovarianceCriterion.isUMVU_iff_uncorrelated_unbiasedZero`; `AsymptoticStatistics.ForMathlib.{PiGaussian, PiWithDensity}`; `MultipleTesting.ForMathlib.ChiSquared`.
+
+## Report
+
+Final `lake build` status, the file's sorry count, `#print axioms canonicalStat_isCompleteStat` (must be only `propext, Classical.choice, Quot.sound`), exactly which priority step you reached, and any statement you believe is false (with the counterexample).
