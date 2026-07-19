@@ -122,7 +122,11 @@ theorem InducesOn.mul {g g' : Equiv.Perm 𝓧} {gbar gbar' : Θ → Θ}
     (h' : InducesOn P g' gbar')
     -- LEAN-ONLY: measurability of `g`, needed to push forward along the composite;
     -- automatic for the bimeasurable transformations the theory quantifies over
-    (hg : Measurable ⇑g) :
+    (hg : Measurable ⇑g)
+    -- LEAN-ONLY: measurability of `g'`. `Measure.map_map` splits the composite pushforward
+    -- into two maps and needs BOTH factors measurable; with only `hg` the identity can fail
+    -- on a non-standard-Borel space where `⇑g'` is non-measurable but `⇑g' ∘ ⇑g` is not.
+    (hg' : Measurable ⇑g') :
     InducesOn P (g' * g) (gbar' ∘ gbar) := by
   -- TODO: under-hypothesized for general measurable spaces. The composite pushforward
   -- `(P θ).map ⇑(g'*g) = ((P θ).map ⇑g).map ⇑g'` (`Measure.map_map`) needs `Measurable ⇑g'`,
@@ -173,7 +177,10 @@ theorem InducesOn.inv {g : Equiv.Perm 𝓧} {gbar : Equiv.Perm Θ}
     -- USER-INPUT: `gbar` is induced by `g`
     (h : InducesOn P g ⇑gbar)
     -- LEAN-ONLY: measurability of `g⁻¹`, needed to push forward along the inverse
-    (hg : Measurable ⇑g.symm) :
+    (hg : Measurable ⇑g.symm)
+    -- LEAN-ONLY: measurability of `g` as well. Inverting the pushforward via `Measure.map_map`
+    -- needs both directions; the transformations the theory quantifies over are bimeasurable.
+    (hgf : Measurable ⇑g) :
     InducesOn P g⁻¹ ⇑gbar⁻¹ := by
   -- TODO: under-hypothesized for general measurable spaces. Inverting the pushforward
   -- `((P θ').map ⇑g).map ⇑g.symm = P θ'` (`Measure.map_map`) needs BOTH `Measurable ⇑g` and
