@@ -139,7 +139,63 @@ theorem designMean_lseCoeff {A : Matrix (Fin s) (Fin n) ℝ}
     -- USER-INPUT: the design has full row rank `s` (the full-rank regression model)
     (hA : A.rank = s) (y : EuclideanSpace ℝ (Fin n)) :
     designMean A (lseCoeff A y) = lse (designSpace A) y := by
-  sorry
+  classical
+  have hli : LinearIndependent ℝ A.row := by
+    rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
+        ← Matrix.rank_eq_finrank_span_row, hA]; simp
+  have hvecA : Function.Injective A.vecMul := Matrix.vecMul_injective_iff.mpr hli
+  have hunit : IsUnit (A * Aᵀ) := by
+    rw [← Matrix.vecMul_injective_iff_isUnit]
+    intro x z h
+    have hx0 : (x - z) ᵥ* (A * Aᵀ) = 0 := by rw [Matrix.sub_vecMul, sub_eq_zero]; exact h
+    have hself : ((x - z) ᵥ* A) ⬝ᵥ ((x - z) ᵥ* A) = 0 := by
+      have e1 : ((x - z) ᵥ* A) ⬝ᵥ ((x - z) ᵥ* A)
+          = ((x - z) ᵥ* A) ⬝ᵥ (Aᵀ *ᵥ (x - z)) := by rw [Matrix.mulVec_transpose]
+      rw [e1, Matrix.dotProduct_mulVec,
+        show ((x - z) ᵥ* A) ᵥ* Aᵀ = (x - z) ᵥ* (A * Aᵀ) from Matrix.vecMul_vecMul _ _ _,
+        hx0, zero_dotProduct]
+    have hxA : (x - z) ᵥ* A = 0 := by rw [← dotProduct_self_eq_zero]; exact hself
+    have hxz : x - z = 0 := hvecA (by simpa using hxA)
+    exact sub_eq_zero.mp hxz
+  have hunitdet : IsUnit (A * Aᵀ).det := by rw [← Matrix.isUnit_iff_isUnit_det]; exact hunit
+  have hAAT_symm : (A * Aᵀ)ᵀ = A * Aᵀ := by rw [Matrix.transpose_mul, Matrix.transpose_transpose]
+  have hinv_symm : ((A * Aᵀ)⁻¹)ᵀ = (A * Aᵀ)⁻¹ := by
+    rw [Matrix.transpose_nonsing_inv, hAAT_symm]
+  set c := lseCoeff A y with hc_def
+  have hnormal : A *ᵥ (c ᵥ* A) = A *ᵥ (fun i => y i) := by
+    have hcv : c = (A *ᵥ (fun i => y i)) ᵥ* (A * Aᵀ)⁻¹ := by
+      rw [hc_def, lseCoeff, Matrix.vecMul_transpose]
+    calc A *ᵥ (c ᵥ* A)
+        = A *ᵥ (Aᵀ *ᵥ c) := by rw [Matrix.mulVec_transpose]
+      _ = (A * Aᵀ) *ᵥ c := by rw [Matrix.mulVec_mulVec]
+      _ = (A * Aᵀ) *ᵥ ((A *ᵥ (fun i => y i)) ᵥ* (A * Aᵀ)⁻¹) := by rw [hcv]
+      _ = (A * Aᵀ) *ᵥ (((A * Aᵀ)⁻¹)ᵀ *ᵥ (A *ᵥ (fun i => y i))) := by rw [Matrix.mulVec_transpose]
+      _ = (A * Aᵀ) *ᵥ ((A * Aᵀ)⁻¹ *ᵥ (A *ᵥ (fun i => y i))) := by rw [hinv_symm]
+      _ = ((A * Aᵀ) * (A * Aᵀ)⁻¹) *ᵥ (A *ᵥ (fun i => y i)) := by rw [Matrix.mulVec_mulVec]
+      _ = 1 *ᵥ (A *ᵥ (fun i => y i)) := by rw [Matrix.mul_nonsing_inv _ hunitdet]
+      _ = A *ᵥ (fun i => y i) := by rw [Matrix.one_mulVec]
+  have hgen : ∀ r : Fin s,
+      ⟪y - designMean A c, (WithLp.toLp 2 (A r) : EuclideanSpace ℝ (Fin n))⟫_ℝ = 0 := by
+    intro r
+    have hsub : (y - designMean A c : EuclideanSpace ℝ (Fin n))
+        = WithLp.toLp 2 ((fun i => y i) - c ᵥ* A) := by
+      rw [designMean]
+      exact (map_sub (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm _ _)
+    rw [hsub]
+    show (A r) ⬝ᵥ star ((fun i => y i) - c ᵥ* A) = 0
+    have hstar : star ((fun i => y i) - c ᵥ* A) = (fun i => y i) - c ᵥ* A := by
+      funext i; exact star_trivial _
+    rw [hstar, dotProduct_sub]
+    have h1 : (A r) ⬝ᵥ (fun i => y i) = (A *ᵥ (fun i => y i)) r := rfl
+    have h2 : (A r) ⬝ᵥ (c ᵥ* A) = (A *ᵥ (c ᵥ* A)) r := rfl
+    rw [h1, h2, hnormal, sub_self]
+  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero
+    (designMean_mem_designSpace A c) (fun w hw => ?_)).symm
+  induction hw using Submodule.span_induction with
+  | mem w hwm => obtain ⟨r, rfl⟩ := hwm; exact hgen r
+  | zero => exact inner_zero_right _
+  | add a b _ _ ha hb => rw [inner_add_right, ha, hb, add_zero]
+  | smul t a _ ha => rw [real_inner_smul_right, ha, mul_zero]
 
 /-! ## Optimality and covariance of the coefficient estimator -/
 
