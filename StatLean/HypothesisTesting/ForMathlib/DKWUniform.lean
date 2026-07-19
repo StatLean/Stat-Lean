@@ -2,6 +2,7 @@ import Mathlib.Probability.CDF
 import Mathlib.Probability.Independence.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # A uniform-in-`n` exponential tail for the empirical process
@@ -164,6 +165,50 @@ theorem dkw_uniform {n : ℕ}
     {d : ℝ} (hd : 0 ≤ d) :
     P {ω | d ≤ Real.sqrt n * ksDist X μ ω}
       ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
-  sorry
+  by_cases hbig : 1 ≤ 4 * Real.exp (-(d ^ 2) / 8)
+  · -- the envelope is `≥ 1`; the bound is vacuous
+    calc P {ω | d ≤ Real.sqrt n * ksDist X μ ω}
+        ≤ 1 := (measure_mono (Set.subset_univ _)).trans_eq measure_univ
+      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
+          rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hbig
+  · push_neg at hbig
+    -- `4 e^{-d²/8} < 1` forces `d > 2`
+    have hlog4 : (1 : ℝ) ≤ Real.log 4 := by
+      rw [Real.le_log_iff_exp_le (by norm_num)]
+      exact le_of_lt (lt_trans Real.exp_one_lt_three (by norm_num))
+    have hexp14 : Real.exp (-(d ^ 2) / 8) < 1 / 4 := by nlinarith [Real.exp_pos (-(d ^ 2) / 8)]
+    have hdsq : 8 * Real.log 4 < d ^ 2 := by
+      have h2 : -(d ^ 2) / 8 < Real.log (1 / 4) := by
+        calc -(d ^ 2) / 8 = Real.log (Real.exp (-(d ^ 2) / 8)) := (Real.log_exp _).symm
+          _ < Real.log (1 / 4) := Real.log_lt_log (Real.exp_pos _) hexp14
+      rw [show (1 : ℝ) / 4 = 4⁻¹ by norm_num, Real.log_inv] at h2
+      linarith
+    have hd2 : 0 ≤ d - 2 := by nlinarith [hlog4, hdsq]
+    -- mean bound: `√n · E[Dₙ] ≤ 2`
+    have hsqrt_pos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hn)
+    have hEle : Real.sqrt (n : ℝ) * ∫ ω, ksDist X μ ω ∂P ≤ 2 := by
+      calc Real.sqrt (n : ℝ) * ∫ ω, ksDist X μ ω ∂P
+          ≤ Real.sqrt (n : ℝ) * (2 / Real.sqrt (n : ℝ)) :=
+            mul_le_mul_of_nonneg_left (integral_ksDist_le hn μ X hmeas hindep hlaw)
+              (le_of_lt hsqrt_pos)
+        _ = 2 := by field_simp
+    -- deviation event forces a bounded-differences deviation
+    have hsub : {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
+        ⊆ {ω | d - 2 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} := by
+      intro ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      rw [mul_sub]
+      linarith
+    have hconc := ksDist_concentration hn μ X hmeas hindep hd2
+    calc P {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
+        ≤ P {ω | d - 2 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} :=
+          measure_mono hsub
+      _ ≤ ENNReal.ofReal (Real.exp (-2 * (d - 2) ^ 2)) := hconc
+      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
+          apply ENNReal.ofReal_le_ofReal
+          rw [show (4 : ℝ) = Real.exp (Real.log 4) from (Real.exp_log (by norm_num)).symm,
+            ← Real.exp_add]
+          apply Real.exp_le_exp.mpr
+          nlinarith [hlog4, sq_nonneg (15 * d - 32)]
 
 end StatLean.HypothesisTesting

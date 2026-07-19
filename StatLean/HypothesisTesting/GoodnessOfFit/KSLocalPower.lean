@@ -93,7 +93,69 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
     (hδ : δ < ksThreshold α) :
     limsup (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal) atTop
       ≤ 4 * Real.exp (-((ksThreshold α - δ) ^ 2) / 8) := by
-  sorry
+  set s := ksThreshold α with hs
+  set dseq := fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀ with hdseq
+  have hsd : Tendsto (fun n => s - dseq n) atTop (nhds (s - δ)) := tendsto_const_nhds.sub hrate
+  have hb : Tendsto (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) atTop
+      (nhds (4 * Real.exp (-((s - δ) ^ 2) / 8))) := by
+    have harg : Tendsto (fun n => -((s - dseq n) ^ 2) / 8) atTop
+        (nhds (-((s - δ) ^ 2) / 8)) := ((hsd.pow 2).neg).div_const 8
+    have hexp : Tendsto (fun n => Real.exp (-((s - dseq n) ^ 2) / 8)) atTop
+        (nhds (Real.exp (-((s - δ) ^ 2) / 8))) := (Real.continuous_exp.tendsto _).comp harg
+    exact hexp.const_mul 4
+  have hev : (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal)
+      ≤ᶠ[atTop] (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) := by
+    filter_upwards [hrate.eventually (eventually_lt_nhds hδ), eventually_ge_atTop 1]
+      with n hlt hn1
+    have hn : 0 < n := hn1
+    have hd0 : 0 ≤ s - dseq n := by linarith
+    have hFnIcc : ∀ t, F n t ∈ Set.Icc (0 : ℝ) 1 := fun t => by
+      rw [hF n t]; exact ⟨cdf_nonneg (μ n) t, cdf_le_one (μ n) t⟩
+    have hF₀Icc : ∀ t, F₀ t ∈ Set.Icc (0 : ℝ) 1 := fun t => by
+      rw [hF₀ t]; exact ⟨cdf_nonneg μ₀ t, cdf_le_one μ₀ t⟩
+    have hEIcc : ∀ ω, ∀ t, empCDF (X n) ω t ∈ Set.Icc (0 : ℝ) 1 := fun ω t => by
+      rw [← empiricalCDF_eq_empCDF]
+      exact ⟨StatLean.MultipleTesting.empiricalCDF_nonneg (X n) t ω,
+        StatLean.MultipleTesting.empiricalCDF_le_one (X n) t ω⟩
+    have hsubset : {ω | s < ksStat (X n) F₀ ω}
+        ⊆ {ω | s - dseq n ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω} := by
+      intro ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      have hEval := hEIcc ω
+      have htri : supCDFDist (fun t => empCDF (X n) ω t) F₀
+          ≤ supCDFDist (fun t => empCDF (X n) ω t) (F n) + supCDFDist (F n) F₀ :=
+        supCDFDist_triangle (bddAbove_absCDFDiff hEval hFnIcc)
+          (bddAbove_absCDFDiff hFnIcc hF₀Icc)
+      have hks : ksStat (X n) F₀ ω
+          = Real.sqrt (n : ℝ) * supCDFDist (fun t => empCDF (X n) ω t) F₀ := by
+        simp only [ksStat, supCDFDist, empiricalCDF_eq_empCDF]
+      have hdist : ksDist (X n) (μ n) ω = supCDFDist (fun t => empCDF (X n) ω t) (F n) := by
+        unfold ksDist supCDFDist
+        exact iSup_congr fun t => by rw [hF n t]
+      have hsqrt_nonneg : 0 ≤ Real.sqrt (n : ℝ) := Real.sqrt_nonneg _
+      have hchain : ksStat (X n) F₀ ω
+          ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω + dseq n := by
+        rw [hks, hdist, hdseq]
+        calc Real.sqrt (n : ℝ) * supCDFDist (fun t => empCDF (X n) ω t) F₀
+            ≤ Real.sqrt (n : ℝ) * (supCDFDist (fun t => empCDF (X n) ω t) (F n)
+                + supCDFDist (F n) F₀) := mul_le_mul_of_nonneg_left htri hsqrt_nonneg
+          _ = Real.sqrt (n : ℝ) * supCDFDist (fun t => empCDF (X n) ω t) (F n)
+                + Real.sqrt (n : ℝ) * supCDFDist (F n) F₀ := by rw [mul_add]
+      linarith
+    have hdkw := dkw_uniform hn (μ n) (X n) (hX n) (hindep n) (hlaw n) hd0
+    calc ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal
+        ≤ ((P n) {ω | s - dseq n ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω}).toReal :=
+          ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsubset)
+      _ ≤ (ENNReal.ofReal (4 * Real.exp (-((s - dseq n) ^ 2) / 8))).toReal :=
+          ENNReal.toReal_mono ENNReal.ofReal_ne_top hdkw
+      _ = 4 * Real.exp (-((s - dseq n) ^ 2) / 8) := ENNReal.toReal_ofReal (by positivity)
+  have hbelow : IsBoundedUnder (· ≥ ·) atTop
+      (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal) :=
+    ⟨0, Filter.eventually_map.mpr (Eventually.of_forall fun n => ENNReal.toReal_nonneg)⟩
+  calc limsup (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal) atTop
+      ≤ limsup (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) atTop :=
+        limsup_le_limsup hev hbelow.isCoboundedUnder_le hb.isBoundedUnder_le
+    _ = 4 * Real.exp (-((s - δ) ^ 2) / 8) := hb.limsup_eq
 
 /-- **No power against `o(n^{-1/2})` alternatives.** For testing `F = F₀` at level `α`,
 the limiting power of the calibrated Kolmogorov–Smirnov test is no better than `α` against
@@ -119,6 +181,13 @@ theorem ks_no_local_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabil
     -- USER-INPUT: the alternatives approach the null faster than `n^{-1/2}`
     (hrate : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀) atTop (nhds 0)) :
     limsup (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal) atTop ≤ α := by
-  sorry
+  have hspos : 0 < ksThreshold α := by
+    rw [ksThreshold]
+    apply Real.sqrt_pos.mpr
+    have h1 : 1 < 4 / α := by rw [lt_div_iff₀ hα]; linarith
+    have := Real.log_pos h1
+    positivity
+  have hmain := ks_local_power_le hα hα1 hX hindep hlaw hF hF₀ hrate hspos
+  rwa [sub_zero, dkw_envelope_threshold hα hα1] at hmain
 
 end StatLean.HypothesisTesting
