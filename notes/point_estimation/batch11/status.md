@@ -269,3 +269,73 @@ the same mistakes would otherwise recur in Batch 12.
    be built from scratch (~250–350 lines for the completeness hinge alone). The LinearModel group
    is multi-session work and has been re-scoped to a single-hinge item
    (`pe/canonical-completeness`) with commit-after-every-lemma discipline.
+
+## Proof-closure scoreboard (2026-07-19) — PE sorry count **175 → 29 (83% closed)**
+
+Closed and merged, axiom-clean unless noted. Every item was independently harvested, audited
+against its touch-set, and merged `--no-ff` into `pe/batch11`.
+
+**Fully closed files:** all of `ForMathlib` (8), `Model`, `ExponentialFamily/{Basic,MGF,
+NaturalStatistic}`, `Sufficiency/{Basic,RiskEquality,BayesianBridge,HalmosSavageCriterion,
+Factorization,Minimal}`, `Completeness/{Basu,ExpFamily}`, `UMVU/{Basic,CovarianceCriterion,
+RaoBlackwell}`, `InformationInequality/{Basic,CramerRao,Additivity,Multiparameter}`,
+`Equivariance/{General,LocationStructure,ConditionalRiskEngine,RiskUnbiased,Pitman}`,
+`LinearModel/{Canonical,GaussMarkov}`.
+
+**Headline theorems proven:** Laplace-transform uniqueness (1-D and s-dim, the latter by a
+Cramér–Wold reduction reusing the 1-D brick); exponential-family completeness (Thm 6.22);
+Fisher–Neyman factorization both directions; Halmos–Savage; minimal sufficiency; Basu
+(Thm 6.21); Rao–Blackwell; the covariance criterion (Thm 1.7); Cramér–Rao (Thm 5.10) and its
+multiparameter matrix form (Thms 6.1/6.6); Stein's identity; sufficiency risk-equality
+(Thm 6.1, which came out as pure kernel-composition associativity exactly as the graph/⊗ₘ
+design predicted); the location MRE theory including the shared conditional-risk engine
+(Thm 1.10, Cors 1.12); **Pitman (Thm 1.20)**; Thm 1.17; Gauss–Markov and BLUE (Thm 4.12,
+Cor 4.13); the canonical normal model end to end — complete sufficiency plus the UMVU trio
+(Thm 4.3a); random-design regression UMVU and covariance (Thm 4.14a,b).
+
+## Statement defects found and FIXED (each caught by a session that refused to prove it)
+
+1. **`scoreVec` did not elaborate** — at this pin `WithLp` is a structure, not a type synonym;
+   fixed with `WithLp.toLp 2`. (Also caught independently by the stub gate.)
+2. **`isScaleMRE_of_conditional_min` was FALSE** — `hmin` ranged only over positive `w` while
+   the equivariant class is `δ₀/w` over the *nonzero* reals, so opposite-signed competitors
+   were never dominated. Explicit counterexample (r = 0, δ₀ ≡ 1, wStar ≡ 1, γ rewarding
+   negatives). **Fixed:** quantify over all `w ≠ 0`, matching the location case.
+3. **`pitmanEstimator_eq_sub_condMean` was unprovable as stated** — a pointwise (`∀ x`) claim
+   about a `condDistrib`, which is only determined a.e. **Fixed:** relaxed to `∀ᵐ x`; the whole
+   Pitman development then closed 0-sorry.
+4. **Cor 1.12 lacked the structure to build its sufficiency kernel** — added
+   `[StandardBorelSpace 𝓧] [Nonempty 𝓧]`, standard throughout this literature.
+5. **Thm 4.14(c) is false as printed** for an a.s. constant design; carries an explicit
+   nondegeneracy hypothesis and remains a sanctioned deferral.
+
+## Orchestration errors of mine, corrected
+
+- Prescribed the **residual** sum of squares as the canonical model's natural statistic; that
+  leaves a `−(1/2σ²)Σ_{i<s} yᵢ²` term depending on both data and parameter, so it is not an
+  exponential family. Correct route: **total** SS plus a shear transport. The session caught it.
+- **Sorry-taint propagation:** `isUMVU_of_complete_sufficient` compiles and its file greps clean,
+  yet it calls the private lemma holding the `IsUMVU` measurability debt — so anything proven
+  through Lehmann–Scheffé reports `sorryAx`. The endgame audit must `#print axioms` **every**
+  public headline, not a sample.
+- `ForMathlib/CondDistribDensity` was never assigned to a work item; two downstream results were
+  blocked by a missing dependency rather than by mathematics.
+
+## Remaining 29, by kind
+
+- **Awaiting a scope decision (2):** the `IsUMVU` competitor-measurability gap in
+  `LehmannScheffe`. Options recorded above; recommendation remains a `condExp`-based
+  Rao–Blackwell layer (purely additive, no re-gate).
+- **Genuine analytic work (≈17):** multivariate smoothness (4), the Gaussian isometry transport
+  in `LeastSquares` (3), the canonical/subspace MRE clauses in `Equivariant` (4), scale MRE (4,
+  now unblocked by fix #2), `LocationMRE`'s two regularity cores.
+- **Sanctioned deferrals (5):** TSH 2.6.1 general gluing, Thm 4.14(c), Thm 5.12 (⇒),
+  Thm 5.8 s-dim joint analyticity, Thm 2.17's analytic core — each a named `private` lemma with
+  a precise TODO, none consumed by any other result.
+
+### VERIFIED integration gate (2026-07-19)
+
+`lake build StatLean.PointEstimation` on the cluster: **0 errors, `Build completed successfully`,
+26 sorried declarations** (down from 175 at the stub gate — **85% closed**). The build warning
+count is the authoritative inventory; a `grep -c sorry` over the tree reports 29 because it also
+matches docstring and TODO mentions.
