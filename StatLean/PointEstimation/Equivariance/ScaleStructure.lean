@@ -200,6 +200,22 @@ theorem isScaleInvariant_iff_factors_scaleZ (u : (Fin (m + 1) → ℝ) → ℝ) 
       exact mul_ne_zero (ne_of_gt hb) hx
     rw [hw (b • x) hbx, scaleZ_smul hb x, hw x hx]
 
+/-- **Forward (sorry-free) half of the measurable factorization.** A measurable function
+that is scale-invariant off the null set factors *measurably* through `scaleZ` there, via
+the explicit section `scaleSect`. This is the only direction consumed by the
+conditional-minimization argument; the converse (recovering global measurability) is false
+and is isolated in `isScaleInvariant_iff_factors_scaleZ_measurable`. -/
+theorem isScaleInvariant_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) → ℝ)
+    (hum : Measurable u)
+    (hu : ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 → u (b • x) = u x) :
+    ∃ w : (Fin m → ℝ) × ℝ → ℝ, Measurable w ∧
+      ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
+  refine ⟨fun p => u (scaleSect p), hum.comp measurable_scaleSect, fun x hx => ?_⟩
+  have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
+  show u x = u (scaleSect (scaleZ x))
+  rw [scaleSect_scaleZ x hx]
+  exact (hu hb x hx).symm
+
 /-- Measurable version of the factorization through `scaleZ`, as consumed by the
 conditional-minimization argument. -/
 theorem isScaleInvariant_iff_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ) → ℝ) :
@@ -209,11 +225,7 @@ theorem isScaleInvariant_iff_factors_scaleZ_measurable (u : (Fin (m + 1) → ℝ
         ∀ x, x (Fin.last m) ≠ 0 → u x = w (scaleZ x) := by
   constructor
   · rintro ⟨hum, hu⟩
-    refine ⟨fun p => u (scaleSect p), hum.comp measurable_scaleSect, fun x hx => ?_⟩
-    have hb : (0 : ℝ) < (|x (Fin.last m)|)⁻¹ := inv_pos.mpr (abs_pos.mpr hx)
-    show u x = u (scaleSect (scaleZ x))
-    rw [scaleSect_scaleZ x hx]
-    exact (hu hb x hx).symm
+    exact isScaleInvariant_factors_scaleZ_measurable u hum hu
   · -- FALSE AS STATED (mpr). The right-hand side constrains `u` only off the null set
     -- `{x (Fin.last m) = 0}`; on that Borel set (which is Borel-isomorphic to `ℝ^m`,
     -- hence carries non-Borel subsets) `u` is unconstrained, so `Measurable u` cannot be

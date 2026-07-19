@@ -155,22 +155,65 @@ theorem isScaleMRE_of_conditional_min (P₀ : Measure (Fin (m + 1) → ℝ))
     -- USER-INPUT: the fibrewise minimizer, supplied measurably and positively
     (hwStar : Measurable wStar) (hwpos : ∀ z, 0 < wStar z)
     -- USER-INPUT: `w*` minimizes the conditional expected loss in almost every fibre, over
-    -- ALL nonzero `w` — not merely positive ones. The `0 < w` form is unsound: the
-    -- equivariant class is `δ₀ / w` with `w` ranging over the nonzero reals, so a
-    -- positive-only hypothesis never sees the opposite-signed competitors that
-    -- `IsScaleMRE` quantifies over. (Counterexample with the old form, r = 0: δ₀ ≡ 1,
-    -- wStar ≡ 1, γ v = (v−1)²+1 for v > −1 and 0 for v ≤ −1; `hmin` holds tightly yet
-    -- δ' ≡ −2 has strictly smaller risk.) This matches the location case, which quantifies
-    -- over all `w`.
-    (hmin : ∀ᵐ z ∂(P₀.map scaleZ), ∀ w : ℝ, w ≠ 0 →
+    -- ALL `w : ℝ` — including `w = 0`, not merely the nonzero ones. Two successive
+    -- corrections led here. (i) The original `0 < w` form is unsound: it never sees the
+    -- opposite-signed equivariant competitors `δ₀ / w`, `w < 0`. (ii) The intermediate
+    -- `w ≠ 0` form is *also* unsound: Lean's `x / 0 = 0` convention makes the constant-zero
+    -- estimator `δ' ≡ 0` a member of the equivariant class (`0 = τʳ · 0`), and its
+    -- representation `δ' = δ₀ / w(scaleZ ·)` forces `w ≡ 0` (since `δ₀ x ≠ 0`), so a
+    -- `w ≠ 0` hypothesis cannot dominate it. Counterexample to the `w ≠ 0` form, r = 0:
+    -- δ₀ ≡ 1, wStar ≡ 1, γ v = (if v = 0 then 0 else 2); `hmin` holds tightly over `w ≠ 0`
+    -- (both sides `ofReal 2`) yet δ' ≡ 0 has risk `0 < 2`. This now matches the location
+    -- case `isLocMRE_of_conditional_min`, which quantifies over all `w` unrestricted, and
+    -- the engine `lintegral_le_of_condMinimizer`, whose `hmin` is over all `w : ℝ`.
+    (hmin : ∀ᵐ z ∂(P₀.map scaleZ), ∀ w : ℝ,
       ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / wStar z)) ∂(orbitCondKernel P₀ scaleZ z) ≤
         ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / w)) ∂(orbitCondKernel P₀ scaleZ z)) :
     IsScaleMRE P₀ γ r (fun x => δ₀ x / wStar (scaleZ x)) := by
-  -- Statement corrected: `hmin` now ranges over all nonzero `w`, which is what the engine
-  -- `lintegral_le_of_condMinimizer` consumes and what `IsScaleMRE`'s competitor class
-  -- requires. Route: `ScaleStructure.isScaleEquivariant_iff_div_invariant` represents an
-  -- arbitrary equivariant competitor as `δ₀ / w(scaleZ ·)`; then the engine applies fibrewise.
-  sorry
+  -- Mirror of `isLocMRE_of_conditional_min` with the multiplicative template `F w x = δ₀ x / w`.
+  refine ⟨hδ₀.div (hwStar.comp measurable_scaleZ), ?_, ?_⟩
+  · -- Equivariance: `wStar ∘ scaleZ` is scale-invariant, so `δ₀ / (wStar ∘ scaleZ)` stays
+    -- equivariant of degree `r`.
+    have hinv : IsScaleInvariant (fun x => wStar (scaleZ x)) := by
+      intro b hb x
+      show wStar (scaleZ (b • x)) = wStar (scaleZ x)
+      rw [scaleZ_smul' hb x]
+    exact heq₀.div_invariant hinv
+  · intro δ' hδ'meas hδ'eq
+    -- Represent the competitor `δ'` measurably as `δ₀ / w(scaleZ ·)` off the null set, via
+    -- the measurable factorization of the scale-invariant `u = δ₀ / δ'`.
+    have hum : Measurable (fun x => δ₀ x / δ' x) := hδ₀.div hδ'meas
+    have huinv : ∀ ⦃b : ℝ⦄, 0 < b → ∀ x, x (Fin.last m) ≠ 0 →
+        (fun x => δ₀ x / δ' x) (b • x) = (fun x => δ₀ x / δ' x) x := by
+      intro b hb x _
+      have hbr : (b : ℝ) ^ r ≠ 0 := by positivity
+      show δ₀ (b • x) / δ' (b • x) = δ₀ x / δ' x
+      rw [heq₀ hb x, hδ'eq hb x, mul_div_mul_left _ _ hbr]
+    obtain ⟨w, hwm, hw⟩ :=
+      isScaleInvariant_factors_scaleZ_measurable (fun x => δ₀ x / δ' x) hum huinv
+    -- The engine, at the scale template.
+    have hFmeas : Measurable (fun p : ℝ × (Fin (m + 1) → ℝ) => δ₀ p.2 / p.1) :=
+      (hδ₀.comp measurable_snd).div measurable_fst
+    have key := lintegral_le_of_condMinimizer P₀ (Z := scaleZ)
+      measurable_scaleZ (F := fun w x => δ₀ x / w) hFmeas (ρ := γ) hγ
+      (vStar := wStar) hwStar hmin (v := w) hwm
+    -- Off the null set the competitor's loss agrees with the template at `w`, so its risk
+    -- rewrites into the engine's right-hand side.
+    have hnull' : ∀ᵐ x ∂P₀, x (Fin.last m) ≠ 0 := by
+      rw [ae_iff]; simp only [not_ne_iff]; exact hnull
+    have hae : (fun x => ENNReal.ofReal (γ (δ' x)))
+        =ᵐ[P₀] (fun x => ENNReal.ofReal (γ (δ₀ x / w (scaleZ x)))) := by
+      filter_upwards [hnull'] with x hx
+      have hwx : δ₀ x / δ' x = w (scaleZ x) := hw x hx
+      have : δ₀ x / w (scaleZ x) = δ' x := by
+        rw [← hwx, div_div_eq_mul_div, mul_comm (δ₀ x) (δ' x), mul_div_assoc,
+          div_self (h₀ne x), mul_one]
+      rw [this]
+    have hrisk' : scaleRisk P₀ γ δ'
+        = ∫⁻ x, ENNReal.ofReal (γ (δ₀ x / w (scaleZ x))) ∂P₀ := by
+      unfold scaleRisk; exact lintegral_congr_ae hae
+    show scaleRisk P₀ γ (fun x => δ₀ x / wStar (scaleZ x)) ≤ scaleRisk P₀ γ δ'
+    rw [hrisk']; unfold scaleRisk; exact key
 
 /-- **Existence of a minimum risk equivariant scale estimator for a logarithmically
 convex, non-monotone loss.** Reparametrising `w = eᵛ` turns the multiplicative fibrewise
