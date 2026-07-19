@@ -1,8 +1,10 @@
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Anderson
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
+import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Probability.Independence.Basic
 
 /-!
@@ -82,7 +84,7 @@ and some probability inequalities," *Proc. Amer. Math. Soc.* **6** (1955), 170�
 -/
 
 open MeasureTheory ProbabilityTheory Filter
-open scoped Topology ENNReal NNReal
+open scoped Topology ENNReal NNReal RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -203,6 +205,98 @@ theorem noncentralChiSquared_zero {k : ℕ}
     (fun i x => x i) (fun i => measurable_pi_apply i)
     (fun i => (measurePreserving_eval _ i).map_eq)
     (iIndepFun_pi (fun _ => aemeasurable_id))
+
+/-- **The Gaussian ↔ chi-squared bridge (noncentral case).** For a positive-definite
+covariance `S` and any mean `μ`, the Gaussian quadratic form `z ↦ ⟪z, S⁻¹ z⟫` pushes
+`N(μ, S)` forward to the noncentral chi-squared law with `k` degrees of freedom and
+noncentrality parameter `⟪μ, S⁻¹ μ⟫`.
+
+Proof by whitening. With `A = (√S)⁻¹` (the inverse of the positive-definite matrix square
+root) one has `A · S · Aᴴ = I` and `A · A = S⁻¹`, so
+`(N(μ, S)).map A = N(Aμ, I)` (`multivariateGaussian_map_toEuclideanCLM`), while
+`⟪z, S⁻¹ z⟫ = ‖A z‖²` because `A` is self-adjoint and `A² = S⁻¹`. Pushing the squared norm
+through the whitened Gaussian `N(Aμ, I)` gives `noncentralChiSquared k ‖Aμ‖²`, and
+`‖Aμ‖² = ⟪μ, S⁻¹ μ⟫`, whose `toNNReal` is the stated noncentrality. -/
+theorem multivariateGaussian_map_inner_inv_eq_noncentralChiSquared {k : ℕ}
+    {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosDef) (μ : EuclideanSpace ℝ (Fin k)) :
+    (multivariateGaussian μ S).map
+        (fun z => ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫)
+      = noncentralChiSquared k
+          (⟪μ, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ μ⟫).toNNReal := by
+  classical
+  -- The whitening matrix `A = (√S)⁻¹`.
+  set B : Matrix (Fin k) (Fin k) ℝ := CFC.sqrt S with hB_def
+  have hB_sa : IsSelfAdjoint B := (CFC.sqrt_nonneg S).isSelfAdjoint
+  have hBB : B * B = S := CFC.sqrt_mul_sqrt_self S hS.nonneg
+  have hB_unit : IsUnit B := hS.posDef_sqrt.isUnit
+  have hBdet : IsUnit B.det := (Matrix.isUnit_iff_isUnit_det B).mp hB_unit
+  have hBl : B⁻¹ * B = 1 := Matrix.nonsing_inv_mul B hBdet
+  have hBr : B * B⁻¹ = 1 := Matrix.mul_nonsing_inv B hBdet
+  set A : Matrix (Fin k) (Fin k) ℝ := B⁻¹ with hA_def
+  -- `A` is self-adjoint.
+  have hA_sa : IsSelfAdjoint A := by
+    show star A = A
+    rw [hA_def, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_nonsing_inv,
+      ← Matrix.star_eq_conjTranspose, hB_sa]
+  have hAH : Aᴴ = A := by rw [← Matrix.star_eq_conjTranspose]; exact hA_sa
+  -- `A · A = S⁻¹`.
+  have hAA : A * A = S⁻¹ := by rw [hA_def, ← Matrix.mul_inv_rev, hBB]
+  -- `A · S · Aᴴ = I`.
+  have hASA : A * S * Aᴴ = 1 := by
+    rw [hAH, hA_def, ← hBB, Matrix.mul_assoc, Matrix.mul_assoc, hBr, Matrix.mul_one, hBl]
+  -- CLM-level self-adjointness and `A ∘ A = S⁻¹`.
+  have hAclSA : IsSelfAdjoint (Matrix.toEuclideanCLM (𝕜 := ℝ) A) :=
+    hA_sa.map (Matrix.toEuclideanCLM (𝕜 := ℝ))
+  have hAAcl :
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) A) ∘L (Matrix.toEuclideanCLM (𝕜 := ℝ) A)
+        = Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ := by
+    change Matrix.toEuclideanCLM (𝕜 := ℝ) A * Matrix.toEuclideanCLM (𝕜 := ℝ) A = _
+    rw [← map_mul, hAA]
+  -- Pointwise: `‖A z‖² = ⟪z, S⁻¹ z⟫`.
+  have hnorm : ∀ z : EuclideanSpace ℝ (Fin k),
+      ‖Matrix.toEuclideanCLM (𝕜 := ℝ) A z‖ ^ 2
+        = ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫ := by
+    intro z
+    rw [sq, ← real_inner_self_eq_norm_mul_norm]
+    have hswap :
+        ⟪Matrix.toEuclideanCLM (𝕜 := ℝ) A z, Matrix.toEuclideanCLM (𝕜 := ℝ) A z⟫
+          = ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) A (Matrix.toEuclideanCLM (𝕜 := ℝ) A z)⟫ := by
+      have := (Matrix.toEuclideanCLM (𝕜 := ℝ) A).adjoint_inner_right z
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) A z)
+      rw [hAclSA.adjoint_eq] at this
+      exact this.symm
+    rw [hswap]
+    congr 1
+    change (Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L Matrix.toEuclideanCLM (𝕜 := ℝ) A) z = _
+    rw [hAAcl]
+  -- Assemble via the whitening pushforward and the squared-norm law of `N(Aμ, I)`.
+  have hqnn : 0 ≤ ⟪μ, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ μ⟫ := by
+    rw [← hnorm μ]; positivity
+  have hv : ‖Matrix.toEuclideanCLM (𝕜 := ℝ) A μ‖
+      = Real.sqrt ((⟪μ, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ μ⟫).toNNReal : ℝ) := by
+    rw [Real.coe_toNNReal _ hqnn, ← hnorm μ, Real.sqrt_sq (norm_nonneg _)]
+  have hcomp :
+      (fun z : EuclideanSpace ℝ (Fin k) => ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫)
+        = (fun w => ‖w‖ ^ 2) ∘ (Matrix.toEuclideanCLM (𝕜 := ℝ) A) := by
+    funext z; simp only [Function.comp_apply]; exact (hnorm z).symm
+  rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+    multivariateGaussian_map_toEuclideanCLM A μ hS.posSemidef, hASA]
+  exact map_normSq_multivariateGaussian_of_norm_eq k _ hv
+
+/-- **The Gaussian ↔ chi-squared bridge (central case).** For a positive-definite covariance
+`S` (with `0 < k`), the Gaussian quadratic form `z ↦ ⟪z, S⁻¹ z⟫` pushes the centred Gaussian
+`N(0, S)` forward to the central chi-squared law `χ²_k`. The exact distributional identity
+`Zᵀ S⁻¹ Z ∼ χ²_k` for `Z ∼ N(0, S)`, the `μ = 0` specialisation of
+`multivariateGaussian_map_inner_inv_eq_noncentralChiSquared`. -/
+theorem multivariateGaussian_map_inner_inv_eq_chiSquared {k : ℕ} (hk : 0 < k)
+    {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosDef) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S).map
+        (fun z => ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫)
+      = StatLean.MultipleTesting.chiSquared k := by
+  rw [multivariateGaussian_map_inner_inv_eq_noncentralChiSquared hS 0,
+    show (⟪(0 : EuclideanSpace ℝ (Fin k)), Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ 0⟫).toNNReal
+        = 0 from by rw [inner_zero_left]; simp]
+  exact noncentralChiSquared_zero hk
 
 /-- The upper tail of `noncentralChiSquared` as a standard-Gaussian ball-complement measure. -/
 private lemma noncentralChiSquared_Ioi_eq {k : ℕ} (l : ℝ≥0) (t : ℝ) :
