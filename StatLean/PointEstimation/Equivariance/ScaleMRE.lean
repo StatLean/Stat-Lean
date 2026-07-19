@@ -289,16 +289,23 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- USER-INPUT: the maximal invariant is defined almost everywhere
     (hnull : P₀ {x | x (Fin.last m) = 0} = 0) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
-  -- Contract-level debt (reported). The intended route builds `wStar` by a measurable
-  -- convex argmin over `w > 0` (the log-convex reparametrisation, mirroring the sorried
-  -- `exists_measurable_condMinimizer_convex` of `LocationMRE`) and then invokes
-  -- `isScaleMRE_of_conditional_min`. But that engine theorem is FALSE as stated (see its
-  -- proof), because the `0 < w →` fibrewise minimality it establishes does not dominate
-  -- opposite-signed equivariant competitors; for a convex non-monotone `γ` whose values
-  -- on the negative axis dip below its positive-axis minimum, no equivariant estimator is
-  -- minimum risk equivariant at all, so `∃ δ, IsScaleMRE …` fails. A sound version needs
-  -- either a positivity constraint on the competitor class or `γ ≥ 0` with the minimum on
-  -- the positive axis. Left as debt pending a corrected upstream statement.
+  -- FALSE AS STATED (reported; kept as a named genuine obstruction). The engine
+  -- `isScaleMRE_of_conditional_min` was since corrected to require fibrewise domination
+  -- over ALL `w : ℝ`, which does not unblock this: `hconv` (log-convexity of `γ ∘ exp`)
+  -- constrains `γ` only on `(0, ∞)`, where its minimum is attained, but says nothing about
+  -- `γ` on non-positive arguments, over which the corrected `hmin` must still dominate.
+  -- Explicit counterexample (so no `wStar` and indeed no MRE can exist), `r = 0`:
+  --   δ₀ ≡ 1 (degree-0 equivariant, positive), `P₀` any prob. law with `P₀{xₙ=0}=0`, and
+  --   `γ u = (Real.log u)² + 1` for `u > 0`, `γ u = 1/2 + 1/(2(1+|u|))` for `u ≤ 0`.
+  -- Then `γ ∘ exp = (·)² + 1` is convex and non-monotone (`hconv`, `hnotmono` hold), and
+  -- `δ₀` has finite risk `ofReal 1`. At `r = 0` an equivariant estimator is a `scaleZ`-
+  -- function `δ = 1 / (w ∘ scaleZ)`, i.e. an arbitrary measurable value per orbit, so its
+  -- risk is `∫ ofReal(γ(value))`. Now `inf_{u∈ℝ} γ u = 1/2`, approached only as `u → -∞`
+  -- and never attained (on `(0,∞)` the min is `1 > 1/2`; on `(-∞,0]`, `γ ∈ (1/2, 1]`
+  -- decreasing to `1/2`). Hence every equivariant `δ` has risk `> 1/2` and is beaten by
+  -- `δ' ≡ -M` for `M` large, so `∃ δ, IsScaleMRE …` FAILS. A sound restatement needs a
+  -- hypothesis controlling `γ` on non-positive arguments (e.g. `γ ≥ 0` with the minimum on
+  -- the positive axis, or restricting the competitor class to positive estimators).
   sorry
 
 /-- **The minimum risk equivariant estimator of `τ^r` under Stein's loss** is the
