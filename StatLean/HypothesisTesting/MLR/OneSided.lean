@@ -201,7 +201,10 @@ theorem hasMLR_expFamily
     -- "`Q` is strictly monotone", in its increasing case
     {ηmap : ℝ → ℝ} (hη : StrictMono ηmap) :
     HasMLR (fun θ x => Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))) E.stat := by
-  sorry
+  intro θ θ' hθθ' x y hTxy
+  have hηlt : ηmap θ < ηmap θ' := hη hθθ'
+  rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+  nlinarith [mul_nonneg (sub_pos.mpr hηlt).le (sub_nonneg.mpr hTxy)]
 
 /-- **UMP one-sided test in a one-parameter exponential family.** For a family presented
 in canonical form through a strictly increasing `η`, the test rejecting for large values of
