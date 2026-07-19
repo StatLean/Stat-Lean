@@ -1,0 +1,27 @@
+srun: job 32926166 queued and waiting for resources
+srun: job 32926166 has been allocated resources
+Done. Both files are closed.
+
+## Report
+
+**Final `lake build` status** — both modules build successfully:
+- `StatLean.PointEstimation.ForMathlib.HalmosSavage` ✔
+- `StatLean.PointEstimation.ForMathlib.CondExpWithDensity` ✔
+
+**Per-file sorry counts:** `0` in each.
+
+**`#print axioms`** (all four theorems, exactly the expected three):
+```
+exists_equivalent_countable_mixture   → [propext, Classical.choice, Quot.sound]
+map_restrict_eq_withDensity_map        → [propext, Classical.choice, Quot.sound]
+setLIntegral_comp_withDensity_comap_eq → [propext, Classical.choice, Quot.sound]
+condExp_withDensity_comap_ae_eq        → [propext, Classical.choice, Quot.sound]
+```
+
+**No escape-hatch sorries used** — everything is genuinely proved. **No statement is false.**
+
+**What was proved:**
+- **`exists_equivalent_countable_mixture`** (Halmos–Savage): reduced to a finite equivalent reference `ν₀`, maximized `ν₀(⋃ supp)` over countable subfamilies via `exists_seq_tendsto_sSup`, merged the maximizing sequences with `Nat.unpair`, and used maximality (prepend-a-member argument, finite cancellation) to force `P θ ≪ lam`. The null-set equivalence for arbitrary `A` follows from `Measure.sum_apply_eq_zero` (→) and the domination (←); `AbsolutelyContinuous.mk` lifts the measurable-set argument to all sets. Weights `c i = 2⁻¹^(i+1)` sum to 1.
+- **The three `CondExpWithDensity` lemmas**: `map_restrict_eq_withDensity_map` (a `Measure.ext` chain), `setLIntegral_comp_withDensity_comap_eq` (reusing the first, via `restrict_withDensity` + `lintegral_withDensity_eq_lintegral_mul`), and `condExp_withDensity_comap_ae_eq` (uniqueness of conditional expectation + the pull-out property + `setIntegral`-level density change of measure).
+
+**Notes:** Two `import Mathlib.*` lines were added per file (all Mathlib-only, as required). One harmless linter warning remains — `unused variable hA` in `map_restrict_eq_withDensity_map` — because that hypothesis is part of the **frozen signature** and the proof genuinely doesn't need measurability of `A`; I left the signature untouched. Each theorem was committed after it compiled.
