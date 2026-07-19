@@ -190,17 +190,33 @@ theorem pitmanEstimator_isLocMRE (f : (Fin (m + 1) → ℝ) → ℝ)
     (hfin : locRisk f (fun t : ℝ => t ^ 2) (fun x => x (Fin.last m)) ≠ ∞) :
     IsLocMRE f (fun t : ℝ => t ^ 2) (pitmanEstimator f) := by
   -- The closed form equals the squared-error conditional-mean MRE estimator with reference
-  -- `δ₀ x = x n` (`pitmanEstimator_eq_sub_condMean`), which is MRE by `isLocMRE_sq_of_condMean`.
+  -- `δ₀ x = x n` (`pitmanEstimator_eq_sub_condMean`, an a.e. identity under `locationBase f`),
+  -- which is MRE by `isLocMRE_sq_of_condMean`. Since `locRisk` is an integral against
+  -- `locationBase f`, a.e. equality of the estimators suffices to transfer the risk bound.
   have heq₀ : IsLocEquivariant (fun x : Fin (m + 1) → ℝ => x (Fin.last m)) := by
     intro a x
     show (x + a • (1 : Fin (m + 1) → ℝ)) (Fin.last m) = x (Fin.last m) + a
-    simp [Pi.add_apply, Pi.smul_apply, Pi.one_apply]
-  have heqform : pitmanEstimator f = fun x => x (Fin.last m) -
-      ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs (diffs x)) :=
-    funext (pitmanEstimator_eq_sub_condMean f hf hfnn hnum hden hden0)
-  rw [heqform]
-  exact isLocMRE_sq_of_condMean f (measurable_pi_apply (Fin.last m)) heq₀ hfin
-    (integrable_lastCoord_orbitCondKernel f)
+    simp [Pi.add_apply, Pi.smul_apply]
+  -- The conditional-mean estimator with reference the last coordinate.
+  set g : (Fin (m + 1) → ℝ) → ℝ := fun x => x (Fin.last m) -
+    ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs (diffs x)) with hg
+  have hgMRE : IsLocMRE f (fun t : ℝ => t ^ 2) g :=
+    isLocMRE_sq_of_condMean f (measurable_pi_apply (Fin.last m)) heq₀ hfin
+      (integrable_lastCoord_orbitCondKernel f)
+  -- `pitmanEstimator f = g` almost everywhere under `locationBase f`.
+  have hae : ∀ᵐ x ∂(locationBase f), pitmanEstimator f x = g x :=
+    pitmanEstimator_eq_sub_condMean f hf hfnn hnum hden hden0
+  -- The risks coincide, so the Pitman estimator inherits `g`'s minimality.
+  have hrisk : ∀ ρ : ℝ → ℝ, locRisk f ρ (pitmanEstimator f) = locRisk f ρ g := by
+    intro ρ
+    unfold locRisk
+    refine lintegral_congr_ae ?_
+    filter_upwards [hae] with x hx
+    rw [hx]
+  refine ⟨measurable_pitmanEstimator f hf hnum hden,
+    pitmanEstimator_isLocEquivariant f hnum hden hden0, fun δ' hδ'meas hδ'eq => ?_⟩
+  rw [hrisk (fun t : ℝ => t ^ 2)]
+  exact hgMRE.2.2 δ' hδ'meas hδ'eq
 
 end Pitman
 
