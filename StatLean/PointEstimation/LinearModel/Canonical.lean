@@ -1,7 +1,9 @@
 import StatLean.PointEstimation.LinearModel.Defs
 import StatLean.PointEstimation.UMVU.Defs
 import StatLean.PointEstimation.Completeness.Defs
+import StatLean.PointEstimation.Completeness.ExpFamily
 import StatLean.PointEstimation.Sufficiency.Defs
+import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 
 /-!
 # The canonical normal linear model
@@ -113,6 +115,21 @@ theorem measurable_canonicalStat :
   refine Measurable.prodMk ?_ ?_
   · exact measurable_pi_lambda _ (fun i => hcoord (Fin.castAdd m i))
   · exact Finset.measurable_sum _ (fun j _ => (hcoord (Fin.natAdd s j)).pow_const 2)
+
+/-- **Product-Gaussian density.** The canonical normal law is the Lebesgue measure on
+`Fin n → ℝ` weighted by the product of the per-coordinate Gaussian densities. -/
+private lemma canonicalNormal_eq_withDensity {n : ℕ} (η : Fin n → ℝ) {σ2 : ℝ≥0}
+    (hσ : σ2 ≠ 0) :
+    canonicalNormal η σ2
+      = (volume : Measure (Fin n → ℝ)).withDensity
+          (fun x => ∏ i, gaussianPDF (η i) σ2 (x i)) := by
+  have h_each : (fun i => gaussianReal (η i) σ2)
+      = fun i => (volume : Measure ℝ).withDensity (gaussianPDF (η i) σ2) := by
+    funext i; exact gaussianReal_of_var_ne_zero (η i) hσ
+  haveI : ∀ i : Fin n, SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (η i) σ2)) := by
+    intro i; rw [← gaussianReal_of_var_ne_zero (η i) hσ]; infer_instance
+  rw [canonicalNormal, h_each, ← pi_withDensity_prod (fun i => measurable_gaussianPDF (η i) σ2),
+    ← volume_pi]
 
 /-! ## Completeness and sufficiency -/
 
