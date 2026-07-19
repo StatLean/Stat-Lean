@@ -69,6 +69,23 @@ noncomputable def powerSeriesFamily (a : ℕ → ℝ≥0∞) (θ : ℝ) : Measur
   Measure.count.withDensity fun k =>
     (a k * (ENNReal.ofReal θ) ^ k) / (∑' j, a j * (ENNReal.ofReal θ) ^ j)
 
+/-- Analytic core of `powerSeriesFamily_invariant_affine`: density matching plus the
+coefficient-ratio / exponent arithmetic-progression argument. Isolated as the single
+lifted debt of this file. -/
+private theorem powerSeriesFamily_invariant_affine_core {a : ℕ → ℝ≥0∞}
+    (ha₀ : ∀ k, a k ≠ 0) (ha : ∀ k, a k ≠ ∞) {R : ℝ} (hR : 0 < R)
+    (hconv : ∀ θ ∈ Set.Ioo (0 : ℝ) R, (∑' j, a j * (ENNReal.ofReal θ) ^ j) ≠ ∞)
+    (g : Equiv.Perm ℕ)
+    (hg : ∀ θ ∈ Set.Ioo (0 : ℝ) R, ∃ θ' ∈ Set.Ioo (0 : ℝ) R,
+      (powerSeriesFamily a θ).map (g : ℕ → ℕ) = powerSeriesFamily a θ') :
+    ∃ d : ℤ, ∀ k : ℕ, (g (k + 1) : ℤ) - (g k : ℤ) = d := by
+  -- TODO: prove the analytic core. From `(P θ).map g = P θ'` and `g`-invariance of the
+  -- counting measure, matching point masses gives `a k θ^k / Z(θ) = a (g k) θ'^(g k) / Z(θ')`
+  -- for all `k`; taking ratios of consecutive `k` twice forces `μ^{a_{k+2}-a_{k+1}}` to be
+  -- proportional to `μ^{a_{k+1}-a_k}` throughout an interval of the transported parameter,
+  -- whence the exponents agree and `g (k+1) - g k` is constant.
+  sorry
+
 /-- **Structural step towards triviality of the invariance group.** A bijection of the
 sample space that maps every member of a power series family to another member has
 constant successive increments, `g(k+1) − g(k) = Δ` for all `k`. -/
@@ -85,8 +102,8 @@ theorem powerSeriesFamily_invariant_affine {a : ℕ → ℝ≥0∞}
     -- USER-INPUT: `g` leaves the family invariant — it maps each member to a member
     (hg : ∀ θ ∈ Set.Ioo (0 : ℝ) R, ∃ θ' ∈ Set.Ioo (0 : ℝ) R,
       (powerSeriesFamily a θ).map (g : ℕ → ℕ) = powerSeriesFamily a θ') :
-    ∃ d : ℤ, ∀ k : ℕ, (g (k + 1) : ℤ) - (g k : ℤ) = d := by
-  sorry
+    ∃ d : ℤ, ∀ k : ℕ, (g (k + 1) : ℤ) - (g k : ℤ) = d :=
+  powerSeriesFamily_invariant_affine_core ha₀ ha hR hconv g hg
 
 /-- **A power series family with strictly positive coefficients admits no nontrivial
 symmetry of the sample space.** Any bijection of `ℕ` mapping every member of the family
@@ -109,7 +126,54 @@ theorem powerSeriesFamily_invariant_perm_eq_one {a : ℕ → ℝ≥0∞}
     (hg : ∀ θ ∈ Set.Ioo (0 : ℝ) R, ∃ θ' ∈ Set.Ioo (0 : ℝ) R,
       (powerSeriesFamily a θ).map (g : ℕ → ℕ) = powerSeriesFamily a θ') :
     g = 1 := by
-  sorry
+  obtain ⟨d, hd⟩ := powerSeriesFamily_invariant_affine ha₀ ha hR hconv g hg
+  -- closed form of the (integer) values along the arithmetic progression
+  have hform : ∀ k : ℕ, (g k : ℤ) = (g 0 : ℤ) + k * d := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ n ih =>
+      have hstep : (g (n + 1) : ℤ) = (g n : ℤ) + d := by linarith [hd n]
+      rw [hstep, ih]; push_cast; ring
+  have hnn : ∀ k : ℕ, (0 : ℤ) ≤ (g k : ℤ) := fun k => Int.natCast_nonneg _
+  -- `d ≠ 0` (else `g` is not injective)
+  have hd_ne : d ≠ 0 := by
+    intro h0
+    have h1 : (g 1 : ℤ) = (g 0 : ℤ) := by rw [hform 1, h0]; simp
+    exact one_ne_zero (g.injective (by exact_mod_cast h1))
+  -- `d > 0` (else the values eventually go negative)
+  have hd_pos : 0 < d := by
+    rcases lt_or_gt_of_ne hd_ne with hneg | hpos
+    · exfalso
+      have hk := hform (g 0 + 1)
+      have hge := hnn (g 0 + 1)
+      rw [hk] at hge
+      push_cast at hge
+      nlinarith [hnn 0, hge, hneg]
+    · exact hpos
+  -- `g 0 = 0` (surjectivity hits `0`)
+  have hg0 : (g 0 : ℤ) = 0 := by
+    obtain ⟨k, hk⟩ := g.surjective 0
+    have := hform k
+    rw [hk] at this
+    push_cast at this
+    nlinarith [hnn 0, mul_nonneg (Int.natCast_nonneg k) hd_pos.le, this]
+  -- `d = 1` (surjectivity hits `1`)
+  have hd1 : d = 1 := by
+    obtain ⟨k, hk⟩ := g.surjective 1
+    have hval := hform k
+    rw [hk, hg0] at hval
+    push_cast at hval
+    -- `1 = k * d`, with `d > 0`, forces `d = 1`
+    have hdvd : d ∣ 1 := ⟨(k : ℤ), by linarith [hval]⟩
+    exact Int.eq_one_of_dvd_one hd_pos.le hdvd
+  -- conclude `g = id`
+  ext k
+  have := hform k
+  rw [hg0, hd1] at this
+  simp only [Equiv.Perm.coe_one, id_eq]
+  have hgk : (g k : ℤ) = (k : ℤ) := by rw [this]; ring
+  exact_mod_cast hgk
 
 /-- The invariance group of a power series family with strictly positive coefficients is
 trivial: the set of permutations of the sample space leaving the family invariant is the
@@ -125,6 +189,9 @@ theorem powerSeriesFamily_invariantPerms_eq_singleton {a : ℕ → ℝ≥0∞}
     (hconv : ∀ θ ∈ Set.Ioo (0 : ℝ) R, (∑' j, a j * (ENNReal.ofReal θ) ^ j) ≠ ∞) :
     {g : Equiv.Perm ℕ | ∀ θ ∈ Set.Ioo (0 : ℝ) R, ∃ θ' ∈ Set.Ioo (0 : ℝ) R,
       (powerSeriesFamily a θ).map (g : ℕ → ℕ) = powerSeriesFamily a θ'} = {1} := by
-  sorry
+  refine Set.eq_singleton_iff_unique_mem.mpr ⟨fun θ hθ => ⟨θ, hθ, ?_⟩, ?_⟩
+  · rw [Equiv.Perm.coe_one, Measure.map_id]
+  · intro g hg
+    exact powerSeriesFamily_invariant_perm_eq_one ha₀ ha hR hconv g hg
 
 end StatLean.PointEstimation
