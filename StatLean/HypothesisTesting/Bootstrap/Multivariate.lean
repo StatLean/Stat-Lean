@@ -85,7 +85,9 @@ variable {Ω 𝓢 : Type*} [MeasurableSpace Ω] [MeasurableSpace 𝓢] {k p q : 
 
 /-- The **covariance matrix** of a law on `ℝᵏ`, entry by entry. -/
 noncomputable def covMatrix (F : Measure (EuclideanSpace ℝ (Fin k))) : Matrix (Fin k) (Fin k) ℝ :=
-  Matrix.of fun i j => cov[fun y => WithLp.ofLp y i, fun y => WithLp.ofLp y j; F]
+  Matrix.of fun i j =>
+    cov[fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i,
+        fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j; F]
 
 /-- The **sequence class for the mean-vector problem**: sequences of laws on `ℝᵏ` converging
 weakly to `Q` — tested against bounded continuous functions — with mean vectors and covariance
