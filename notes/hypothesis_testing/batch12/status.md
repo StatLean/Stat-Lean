@@ -149,3 +149,41 @@ Design/route decisions:
   6. `cov[fun y => WithLp.ofLp y i, …]` — the lambda binder's type does not infer through the
      covariance notation; annotated.
   Area umbrella `StatLean/HypothesisTesting.lean` created (laptop-only surface).
+
+## Proof-closure phase — findings (2026-07-19)
+
+### FALSE STATEMENT found and FIXED: instance capture in `condExp_eq_groupAverage`
+
+The `ht/invariance-core` session refused to close it and gave a complete counterexample.
+The frozen signature was
+
+```
+theorem condExp_eq_groupAverage (m : MeasurableSpace 𝓧)
+    (hm_inv : ∀ s, MeasurableSet[m] s ↔ s ∈ invariantSets G 𝓧) …
+```
+
+`invariantSets G 𝓧` takes `[MeasurableSpace 𝓧]` as an *instance*, and Lean's local-instance
+resolution picks the most recent local hypothesis — the explicit parameter `m` — not the
+ambient `m𝓧`. So `hm_inv` elaborated to
+`MeasurableSet[m] s ↔ (MeasurableSet[m] s ∧ IsInvariantSet G s)`, i.e. merely "every
+`m`-measurable set is invariant". It did **not** force `m ≤ m𝓧`, which
+`ae_eq_condExp_of_forall_setIntegral_eq` requires.
+
+**Counterexample**: `𝓧 = ℝ`, `G = ℤ/2` acting by `x ↦ −x`, `μ` = standard Gaussian
+(`G`-invariant), `m = {∅, ℝ, N, Nᶜ}` with `N` a non-Lebesgue-measurable symmetric set. Then
+`hm_inv` holds, `m ⊄ m𝓧`, so `μ[f|m] = 0` while `groupAverage G f x = (f x + f (−x))/2 ≢ 0`.
+
+**Fix applied (laptop):** pin the ambient instance — `s ∈ @invariantSets G 𝓧 _ m𝓧 _`. Under
+that reading the statement is true and the intended proof works.
+
+**Generalizable lesson:** any statement that takes a `MeasurableSpace` (or any other class) as
+an *explicit* parameter while also relying on the ambient instance is at risk of silent
+capture. Audit the other places where a σ-algebra is passed explicitly.
+
+### Other results
+
+| item | outcome |
+|---|---|
+| `ht/test-foundations` | Critical functions, quantiles (**incl. the randomization-constant existence lemma**), p-value super-uniformity, and **all six confidence-duality theorems** closed. NP existence/necessity + least-favorable left for a second pass. |
+| `ht/mlr-np2` | **NP existence (`exists_mostPowerful`) closed**, `hasMLR_expFamily` closed, `integral_mono_of_hasMLR` closed. |
+| `ht/invariance-core` | Group averaging 8/9, maximal invariants 7/11, orbit-average invariance, equivariant-confidence dictionary. 4 `MaximalInvariant` statements reported **under-hypothesized** (missing measurability) — needs a signature review like the one above. |
