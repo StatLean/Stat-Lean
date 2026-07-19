@@ -315,10 +315,10 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
     [IsProbabilityMeasure (locationBase f)] (hf : Measurable f) (hfnn : ∀ x, 0 ≤ f x)
     (hden : ∀ x, Integrable fun u : ℝ => f (x - u • (1 : Fin (m + 1) → ℝ)))
     (hden0 : ∀ x, (∫ u : ℝ, f (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0) :
-    ∀ᵐ x ∂(locationBase f),
-      ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs (diffs x))
-        = (∫ s : ℝ, s * f (pUnshear (diffs x, s)))
-          / (∫ s : ℝ, f (pUnshear (diffs x, s))) := by
+    ∀ᵐ t ∂((locationBase f).map diffs),
+      ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs t)
+        = (∫ s : ℝ, s * f (pUnshear (t, s)))
+          / (∫ s : ℝ, f (pUnshear (t, s))) := by
   set P₀ := locationBase f with hP₀
   set δ₀ : (Fin (m + 1) → ℝ) → ℝ := fun x => x (Fin.last m) with hδ₀
   have hδ₀meas : Measurable δ₀ := measurable_pi_apply (Fin.last m)
@@ -387,7 +387,7 @@ private lemma condMean_last_eq_ratio (f : (Fin (m + 1) → ℝ) → ℝ)
     rw [hpush, ← hcm, hkt, integral_smul_measure, hlint t, hwd, ENNReal.toReal_inv,
         ENNReal.toReal_ofReal (le_of_lt (slice_den_pos f hf hfnn hden0 t)), smul_eq_mul,
         div_eq_inv_mul]
-  exact ae_of_ae_map measurable_diffs.aemeasurable hae
+  exact hae
 
 /-- The closed form is measurable whenever the density is and the defining integrals
 converge. -/
@@ -482,20 +482,9 @@ theorem pitmanEstimator_eq_sub_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
   -- via the reflection change of variables) with the a.e. identification of the conditional
   -- mean of the last coordinate as that same ratio (`condMean_last_eq_ratio`, via the
   -- unit-Jacobian shear and `condDistrib_withDensity_prod_ae_eq`).
-  filter_upwards [condMean_last_eq_ratio f hf hfnn hden hden0] with x hx
+  filter_upwards [ae_of_ae_map measurable_diffs.aemeasurable
+    (condMean_last_eq_ratio f hf hfnn hden hden0)] with x hx
   rw [pitmanEstimator_eq_ratio f hf hnum hden hden0 x, hx]
-
-/-- Conditional integrability of the reference estimator `δ₀ x = x n` against the fibre
-kernel of the differences, in *every* fibre — the hypothesis `isLocMRE_sq_of_condMean`
-consumes. Named debt (the one lifted `private` sorry of this file): it is not implied by
-the pointwise convergence of the Pitman integrals `hnum`/`hden`, and establishing it
-requires the same conditional-law-as-normalized-slice identification
-(`ForMathlib.CondDistribDensity`, itself a `sorry` stub) plus the unit-Jacobian shear used
-in `pitmanEstimator_eq_sub_condMean`. -/
-private lemma integrable_lastCoord_orbitCondKernel (f : (Fin (m + 1) → ℝ) → ℝ)
-    [IsProbabilityMeasure (locationBase f)] (y : Fin m → ℝ) :
-    Integrable (fun x => x (Fin.last m)) (orbitCondKernel (locationBase f) diffs y) := by
-  sorry
 
 /-- **The Pitman estimator is the minimum risk equivariant estimator of location under
 squared error.** -/
@@ -516,34 +505,46 @@ theorem pitmanEstimator_isLocMRE (f : (Fin (m + 1) → ℝ) → ℝ)
     -- risk, which is what makes the conditional minimization meaningful
     (hfin : locRisk f (fun t : ℝ => t ^ 2) (fun x => x (Fin.last m)) ≠ ∞) :
     IsLocMRE f (fun t : ℝ => t ^ 2) (pitmanEstimator f) := by
-  -- The closed form equals the squared-error conditional-mean MRE estimator with reference
-  -- `δ₀ x = x n` (`pitmanEstimator_eq_sub_condMean`, an a.e. identity under `locationBase f`),
-  -- which is MRE by `isLocMRE_sq_of_condMean`. Since `locRisk` is an integral against
-  -- `locationBase f`, a.e. equality of the estimators suffices to transfer the risk bound.
-  have heq₀ : IsLocEquivariant (fun x : Fin (m + 1) → ℝ => x (Fin.last m)) := by
+  -- By `pitmanEstimator_eq_ratio` the closed form is exactly `δ₀ − v* ∘ diffs` with `δ₀` the
+  -- last coordinate and `v* y` the (directly measurable) ratio of slice integrals. By
+  -- `condMean_last_eq_ratio` that ratio is a.e. the conditional mean of `δ₀` given the
+  -- differences, so `v*` minimizes the conditional squared error fibrewise
+  -- (`lintegral_ofReal_sq_min`), and `isLocMRE_of_conditional_min` delivers the result. This
+  -- routes through the a.e. conditional-minimizer engine, avoiding any every-fibre
+  -- integrability hypothesis on the reference estimator.
+  set δ₀ : (Fin (m + 1) → ℝ) → ℝ := fun x => x (Fin.last m) with hδ₀def
+  have hδ₀meas : Measurable δ₀ := measurable_pi_apply (Fin.last m)
+  have heq₀ : IsLocEquivariant δ₀ := by
     intro a x
     show (x + a • (1 : Fin (m + 1) → ℝ)) (Fin.last m) = x (Fin.last m) + a
     simp [Pi.add_apply, Pi.smul_apply]
-  -- The conditional-mean estimator with reference the last coordinate.
-  set g : (Fin (m + 1) → ℝ) → ℝ := fun x => x (Fin.last m) -
-    ∫ z, z (Fin.last m) ∂(orbitCondKernel (locationBase f) diffs (diffs x)) with hg
-  have hgMRE : IsLocMRE f (fun t : ℝ => t ^ 2) g :=
-    isLocMRE_sq_of_condMean f (measurable_pi_apply (Fin.last m)) heq₀ hfin
-      (integrable_lastCoord_orbitCondKernel f)
-  -- `pitmanEstimator f = g` almost everywhere under `locationBase f`.
-  have hae : ∀ᵐ x ∂(locationBase f), pitmanEstimator f x = g x :=
-    pitmanEstimator_eq_sub_condMean f hf hfnn hnum hden hden0
-  -- The risks coincide, so the Pitman estimator inherits `g`'s minimality.
-  have hrisk : ∀ ρ : ℝ → ℝ, locRisk f ρ (pitmanEstimator f) = locRisk f ρ g := by
-    intro ρ
-    unfold locRisk
-    refine lintegral_congr_ae ?_
-    filter_upwards [hae] with x hx
-    rw [hx]
-  refine ⟨measurable_pitmanEstimator f hf hnum hden,
-    pitmanEstimator_isLocEquivariant f hnum hden hden0, fun δ' hδ'meas hδ'eq => ?_⟩
-  rw [hrisk (fun t : ℝ => t ^ 2)]
-  exact hgMRE.2.2 δ' hδ'meas hδ'eq
+  set vStar : (Fin m → ℝ) → ℝ :=
+    fun y => (∫ s : ℝ, s * f (pUnshear (y, s))) / (∫ s : ℝ, f (pUnshear (y, s))) with hvStarDef
+  -- `v*` is measurable: it is a ratio of parametrized Bochner integrals.
+  have hjoint_num : Measurable fun p : (Fin m → ℝ) × ℝ => p.2 * f (pUnshear p) :=
+    measurable_snd.mul (hf.comp measurable_pUnshear)
+  have hjoint_den : Measurable fun p : (Fin m → ℝ) × ℝ => f (pUnshear p) :=
+    hf.comp measurable_pUnshear
+  have hvStar : Measurable vStar :=
+    ((StronglyMeasurable.integral_prod_right' hjoint_num.stronglyMeasurable).measurable).div
+      (StronglyMeasurable.integral_prod_right' hjoint_den.stronglyMeasurable).measurable
+  -- The closed form is `δ₀ − v* ∘ diffs`.
+  have hform : pitmanEstimator f = fun x => δ₀ x - vStar (diffs x) := by
+    funext x
+    rw [pitmanEstimator_eq_ratio f hf hnum hden hden0 x]
+  -- Fibrewise minimality: `v* y` is the conditional mean, which minimizes squared error.
+  have hmin : ∀ᵐ y ∂((locationBase f).map diffs), ∀ w : ℝ,
+      ∫⁻ x, ENNReal.ofReal ((δ₀ x - vStar y) ^ 2)
+          ∂(orbitCondKernel (locationBase f) diffs y) ≤
+        ∫⁻ x, ENNReal.ofReal ((δ₀ x - w) ^ 2)
+          ∂(orbitCondKernel (locationBase f) diffs y) := by
+    filter_upwards [condMean_last_eq_ratio f hf hfnn hden hden0] with y hy w
+    have hmean : ∫ z, δ₀ z ∂(orbitCondKernel (locationBase f) diffs y) = vStar y := hy
+    rw [← hmean]
+    exact lintegral_ofReal_sq_min hδ₀meas w
+  rw [hform]
+  exact isLocMRE_of_conditional_min f (fun t : ℝ => t ^ 2) (by fun_prop) hδ₀meas heq₀ hfin
+    hvStar hmin
 
 end Pitman
 
