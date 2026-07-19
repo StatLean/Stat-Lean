@@ -138,14 +138,16 @@ private lemma twoSidedVal_sub_sep {C₁ C₂ C₁' C₂' γ₁ γ₂ γ₁' γ�
   · split_ifs at hs ht <;>
       first
         | linarith
-        | (exfalso; subst_vars; simp_all)
+        | (exfalso; subst_vars; simp_all <;>
+            exact absurd (le_antisymm hst (by assumption : t ≤ s)) (by assumption : ¬ s = t))
         | (exfalso; subst_vars; linarith)
         | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
   · subst hrEq
     split_ifs at hs ht <;>
       first
         | linarith
-        | (exfalso; subst_vars; simp_all)
+        | (exfalso; subst_vars; simp_all <;>
+            exact absurd (le_antisymm hst (by assumption : t ≤ s)) (by assumption : ¬ s = t))
         | (exfalso; subst_vars; linarith)
         | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
 
