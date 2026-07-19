@@ -1,0 +1,56 @@
+srun: job 33106900 queued and waiting for resources
+srun: job 33106900 has been allocated resources
+All changes committed, all four modules build clean. Here is the final report.
+
+## Summary
+
+### Primary deliverable — closed ✅
+
+**`isScaleMRE_of_conditional_min` (ScaleMRE.lean) is closed, 0-sorry, axiom-clean.**
+
+But I have to report a correctness finding first, per protocol:
+
+> **The `w ≠ 0` fix was still unsound.** The predecessor's `0<w → w≠0` correction catches opposite-signed competitors but **misses the zero estimator**. `δ' ≡ 0` is equivariant of degree `r` (`0 = τʳ·0`), measurable, and its representation `δ₀/w∘scaleZ` forces `w ≡ 0` (since `δ₀` is nowhere zero and `x/0 = 0`), so a `w ≠ 0` hypothesis can never dominate it.
+>
+> Airtight counterexample (r=0): `δ₀≡1, wStar≡1, γ v = (if v=0 then 0 else 2)`. Then `hmin` holds tightly over `w≠0` (both sides `ofReal 2`), yet `δ'≡0` has risk `0 < 2`, so `IsScaleMRE` fails.
+>
+> The correct form is **`∀ w : ℝ` unrestricted** — exactly what the closed twin `isLocMRE_of_conditional_min` uses and what the engine `lintegral_le_of_condMinimizer` consumes (both `∀ w : ℝ`, no restriction). I applied that fix (dropped `w ≠ 0`) and closed the theorem by mirroring the location proof (multiplicative template `F w x = δ₀ x / w`). This is the same class of false-hypothesis correction the predecessor made.
+
+Extra work to keep it axiom-clean: the proof needs a *measurable* factorization `δ' = δ₀/w∘scaleZ`, but the only vehicle was `.mp` of `isScaleInvariant_iff_factors_scaleZ_measurable`, whose (genuinely false) `mpr` sorry taints the whole iff with `sorryAx`. I extracted the sorry-free forward half as a standalone lemma **`isScaleInvariant_factors_scaleZ_measurable`** in ScaleStructure.lean and used that.
+
+### Bonus — analytic core also closed ✅
+
+**`integral_orbitCondKernel_eq_self_of_invariant` (the "named debt" private sorry) is now closed, 0-sorry, axiom-clean.** This makes **`isScaleMRE_steinLoss` and `isScaleMRE_standardizedSquared` axiom-clean** too. Route: fibre concentration via `compProd_map_condDistrib` (the joint `(scaleZ x, x)` sits on the diagonal) + `Measure.ae_ae_of_ae_compProd`, with `integral_congr_ae` collapsing the fibre integral — deliberately avoiding `condExp`, which would have required global `P₀`-integrability of `φ` that isn't available (only fibrewise).
+
+### `#print axioms`
+
+```
+isScaleMRE_of_conditional_min : [propext, Classical.choice, Quot.sound]
+isScaleMRE_steinLoss          : [propext, Classical.choice, Quot.sound]
+isScaleMRE_standardizedSquared: [propext, Classical.choice, Quot.sound]
+```
+
+### Final `lake build` status — all four modules build, 0 errors
+
+| Module | Build | Code sorries left |
+|---|---|---|
+| ScaleStructure | ✅ | 1 |
+| ScaleMRE | ✅ | 1 |
+| LocationMRE | ✅ | 2 |
+| LocationExamples | ✅ | 1 |
+
+### Remaining open — precise obstructions
+
+- **ScaleStructure `isScaleInvariant_iff_factors_scaleZ_measurable` mpr** (line 240) — **verified genuinely false** for `m ≥ 1`: the RHS constrains `u` only off the null hyperplane `{xₙ=0} ≅ ℝᵐ`, which carries non-Borel subsets, so global `Measurable u` is not recoverable (`w=0`, `u=𝟙_A` on a non-Borel `A ⊆ {xₙ=0}`). Left sorried with counterexample comment. (For `m=0` the hyperplane is a single point and it would be true, but the statement is general.)
+
+- **ScaleMRE `exists_isScaleMRE_of_convex`** (line 302) — **false as stated.** The hypotheses constrain only `v ↦ γ(eᵛ)`, i.e. `γ` on `(0,∞)`; `γ` on `(-∞,0]` is entirely free. The equivariant competitor class includes negative- and zero-valued estimators whose risk is therefore uncontrolled, so for suitable `γ` no MRE exists (same mechanism as the headline's `w=0` hole). Needs a positivity restriction on the competitor class or `γ ≥ 0` with its minimum on the positive axis. Already documented as debt in-file.
+
+- **LocationMRE `exists_measurable_condMinimizer_convex`** (line 174) — delicate: continuity of the `ℝ≥0∞`-valued convex objective `w ↦ ∫⁻ ofReal(ρ(δ₀·−w))` across its finite→∞ boundary, plus coercivity via Fatou, feeding `MeasurableArgmin.exists_measurable_argmin`.
+
+- **LocationMRE `exists_isLocMRE_of_bounded_loss`** (line 273) — DCT translation-continuity of `c ↦ ∫ ρ(t−c)f(t)dt` + extreme value on a compact sublevel set.
+
+- **LocationExamples `isLocMRE_mean_gaussian`** (line 105) — the Pitman route is open (`pitmanEstimator_isLocMRE` is closed/axiom-clean), but it is not "cheap": it requires generalizing `PiGaussian` from `v=1` to general variance, discharging Pitman's per-slice integrability side conditions for the product Gaussian, and the completing-the-square computation `pitmanEstimator g = X̄`. There is no shortcut via `isLocMRE_sq_of_condMean` either — that still reduces to the same Gaussian conditional-mean `E[xₙ | diffs] = xₙ − X̄`. A genuine self-contained analytic core; left as reported debt.
+
+### Commits
+- `d9f083f` — close `isScaleMRE_of_conditional_min` (w=0 hole → `∀ w`)
+- `a6dd10b` — close `integral_orbitCondKernel_eq_self_of_invariant`
