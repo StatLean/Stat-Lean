@@ -337,7 +337,8 @@ invariant of the induced group.** If `M` is invariant under `G` and `v` is maxim
 invariant under the induced action on the parameter space, then parameters with the same
 `v`-value give `M` the same distribution — invariance identifies all parameter points on a
 common induced orbit. -/
-theorem map_maximalInvariant_eq_of_orbit {P : Θ → Measure 𝓧} {M : 𝓧 → 𝓘} {v : Θ → 𝓥}
+theorem map_maximalInvariant_eq_of_orbit [MeasurableSMul G 𝓧] {P : Θ → Measure 𝓧}
+    {M : 𝓧 → 𝓘} {v : Θ → 𝓥}
     -- USER-INPUT: the model intertwines the two actions
     (hP : IsInvariantModel (G := G) P)
     -- LEAN-ONLY: measurability of the statistic, needed to form its law

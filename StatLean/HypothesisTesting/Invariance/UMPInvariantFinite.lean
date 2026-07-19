@@ -79,7 +79,8 @@ theorem isInvariantTest_orbitAverage [Fintype G] (f : 𝓧 → ℝ) :
 model whose dominating measure is itself `G`-invariant, the orbit average of the density
 at a fixed parameter coincides almost everywhere with the average of the densities at the
 translated parameters — the quantity appearing in the classical rejection region. -/
-theorem orbitAverage_eq_avg_translated_density [Fintype G] {P : Θ → Measure 𝓧}
+theorem orbitAverage_eq_avg_translated_density [Fintype G] [MeasurableSMul G 𝓧]
+    {P : Θ → Measure 𝓧}
     {μ : Measure 𝓧} {p : Θ → 𝓧 → ℝ} (θ : Θ)
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
     (hP : IsInvariantModel (G := G) P)
@@ -104,7 +105,8 @@ finite group whose induced action is transitive on the null class and on the alt
 class, an invariant test that rejects where the orbit-averaged likelihood ratio exceeds a
 threshold, accepts where it falls short, and has size `α`, is uniformly most powerful
 among invariant level-`α` tests. -/
-theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] {P : Θ → Measure 𝓧}
+theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] [MeasurableSMul G 𝓧]
+    {P : Θ → Measure 𝓧}
     [∀ θ, IsProbabilityMeasure (P θ)] {μ : Measure 𝓧} [SigmaFinite μ] {p : Θ → 𝓧 → ℝ}
     {Θ₀ Θ₁ : Set Θ} {θ₀ θ₁ : Θ} {α k : ℝ} {φ : 𝓧 → ℝ}
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
@@ -142,7 +144,8 @@ theorem isUMPInvariant_of_orbitAverage_ratio [Fintype G] {P : Θ → Measure �
   sorry
 
 /-- **Existence of a UMP invariant test under a finite transitive group.** -/
-theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] {P : Θ → Measure 𝓧}
+theorem exists_isUMPInvariant_of_finite_transitive [Fintype G] [MeasurableSMul G 𝓧]
+    {P : Θ → Measure 𝓧}
     [∀ θ, IsProbabilityMeasure (P θ)] {μ : Measure 𝓧} [SigmaFinite μ] {p : Θ → 𝓧 → ℝ}
     {Θ₀ Θ₁ : Set Θ} {α : ℝ}
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
