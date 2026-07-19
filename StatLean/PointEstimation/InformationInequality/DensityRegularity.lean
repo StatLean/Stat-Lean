@@ -273,6 +273,100 @@ theorem cramer_rao_iid (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
       ∂(Measure.pi fun _ : Fin n => μ)) :
     g' ^ 2 / ((n : ℝ) * fisherInfo M μ θ)
       ≤ variance δ ((piFamily M n).toMeasure (Measure.pi fun _ : Fin n => μ) θ) := by
-  sorry
+  -- every coordinate map is differentiable at `θ` (on the support, or constant `0` off it)
+  have hdiff_all : ∀ x : 𝓧, DifferentiableAt ℝ (fun t => M.density t x) θ := by
+    intro x
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+    · have hc : (fun t => M.density t x) = fun _ => (0 : ℝ) :=
+        funext fun t => density_eq_zero_of_commonSupport hsupp h0.symm
+      rw [hc]; exact differentiableAt_const 0
+    · exact hdiff x hpos
+  -- `∫ ∂_θ p_θ dμ = 0` for one observation
+  have hderiv0 : ∫ x, deriv (fun t => M.density t x) θ ∂μ = 0 := by
+    rw [← hmean0]
+    exact integral_congr_ae
+      (Filter.Eventually.of_forall fun x => (score_mul_density_eq_deriv hsupp θ x).symm)
+  have hderiv_int : Integrable (fun a => deriv (fun t => M.density t a) θ) μ :=
+    hint1.congr (Filter.Eventually.of_forall fun a => score_mul_density_eq_deriv hsupp θ a)
+  -- the product family is a probability-density family
+  have hpdf_pi : IsPDFOf (piFamily M n) (Measure.pi fun _ : Fin n => μ) := by
+    refine ⟨fun t => ?_, fun t => ?_⟩
+    · show ∫ x, ∏ i, M.density t (x i) ∂(Measure.pi fun _ : Fin n => μ) = 1
+      rw [integral_fintype_prod_eq_prod (fun _ a => M.density t a)]
+      simp [hpdf.density_integral_eq_one t]
+    · exact Integrable.fintype_prod (fun _ => hpdf.density_integrable t)
+  -- the product family has common support
+  have hsupp_pi : HasCommonSupport (piFamily M n) := by
+    intro t t' x hx
+    simp only [piFamily] at hx ⊢
+    have hpos_i : ∀ i, 0 < M.density t (x i) := fun i =>
+      lt_of_le_of_ne (M.density_nonneg t (x i))
+        (Ne.symm fun h => (ne_of_gt hx) (Finset.prod_eq_zero (Finset.mem_univ i) h))
+    exact Finset.prod_pos (fun i _ => hsupp t t' (x i) (hpos_i i))
+  have hdiff_pi : ∀ x, 0 < (piFamily M n).density θ x →
+      DifferentiableAt ℝ (fun t => (piFamily M n).density t x) θ := by
+    intro x _
+    simp only [piFamily]
+    exact DifferentiableAt.fun_finset_prod (fun i _ => hdiff_all (x i))
+  have hmeas_pi : AEStronglyMeasurable (score (piFamily M n) θ)
+      (Measure.pi fun _ : Fin n => μ) :=
+    (measurable_score_of_regular (piFamily M n) hsupp_pi θ hdiff_pi).aestronglyMeasurable
+  -- `∫ ∂_θ (∏ p) dπ = 0`: product rule + Fubini, with the diagonal coordinate vanishing
+  have hpideriv0 : ∫ x, deriv (fun t => (piFamily M n).density t x) θ
+      ∂(Measure.pi fun _ : Fin n => μ) = 0 := by
+    have hpt : ∀ x : Fin n → 𝓧, deriv (fun t => (piFamily M n).density t x) θ
+        = ∑ i, ∏ k, (if k = i then deriv (fun t => M.density t (x k)) θ
+            else M.density θ (x k)) := by
+      intro x
+      simp only [piFamily]
+      rw [deriv_fun_finset_prod (fun i _ => hdiff_all (x i))]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [smul_eq_mul, ← Finset.mul_prod_erase Finset.univ
+          (fun k => if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k))
+          (Finset.mem_univ i), if_pos rfl,
+        Finset.prod_congr rfl (fun k hk => if_neg (Finset.ne_of_mem_erase hk))]
+      ring
+    have hint_i : ∀ i : Fin n, Integrable (fun x : Fin n → 𝓧 =>
+        ∏ k, (if k = i then deriv (fun t => M.density t (x k)) θ else M.density θ (x k)))
+        (Measure.pi fun _ : Fin n => μ) := by
+      intro i
+      refine Integrable.fintype_prod (f := fun k a =>
+        if k = i then deriv (fun t => M.density t a) θ else M.density θ a) (fun k => ?_)
+      by_cases hk : k = i
+      · simp only [hk, if_pos]; exact hderiv_int
+      · simp only [if_neg hk]; exact hpdf.density_integrable θ
+    rw [integral_congr_ae (Filter.Eventually.of_forall hpt),
+      integral_finset_sum Finset.univ (fun i _ => hint_i i)]
+    refine Finset.sum_eq_zero (fun i _ => ?_)
+    rw [integral_fintype_prod_eq_prod (fun k a =>
+      if k = i then deriv (fun t => M.density t a) θ else M.density θ a)]
+    refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
+    simp only [↓reduceIte]
+    exact hderiv0
+  -- the sample score has mean zero
+  have hswap_pi : HasDerivAt (fun t => ∫ x, (piFamily M n).density t x
+        ∂(Measure.pi fun _ : Fin n => μ))
+      (∫ x, deriv (fun t => (piFamily M n).density t x) θ
+        ∂(Measure.pi fun _ : Fin n => μ)) θ := by
+    rw [hpideriv0, show (fun t => ∫ x, (piFamily M n).density t x
+        ∂(Measure.pi fun _ : Fin n => μ)) = fun _ => (1 : ℝ) from
+      funext fun t => hpdf_pi.density_integral_eq_one t]
+    exact hasDerivAt_const θ (1 : ℝ)
+  have hmean0_pi := integral_score_eq_zero (piFamily M n) (Measure.pi fun _ : Fin n => μ)
+    hpdf_pi hsupp_pi θ hswap_pi
+  -- the sample information is `n · I(θ) > 0`, hence its integrand is integrable
+  have hint_single : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ := by
+    by_contra h; rw [fisherInfo, integral_undef h] at hI; exact lt_irrefl 0 hI
+  have hfisher_pi : fisherInfo (piFamily M n) (Measure.pi fun _ : Fin n => μ) θ
+      = (n : ℝ) * fisherInfo M μ θ :=
+    fisherInfo_pi M μ n θ hpdf hsupp hdiff hmean0 hint_single hint1
+  have hI_pi : 0 < fisherInfo (piFamily M n) (Measure.pi fun _ : Fin n => μ) θ := by
+    rw [hfisher_pi]; exact mul_pos (Nat.cast_pos.mpr hn) hI
+  have hscore_int_pi : Integrable (fun x => score (piFamily M n) θ x ^ 2
+      * (piFamily M n).density θ x) (Measure.pi fun _ : Fin n => μ) := by
+    by_contra h; rw [fisherInfo, integral_undef h] at hI_pi; exact lt_irrefl 0 hI_pi
+  have hbound := cramer_rao (piFamily M n) (Measure.pi fun _ : Fin n => μ) hpdf_pi hsupp_pi θ
+    δ g' hmeas_pi hδ2 hscore_int_pi hI_pi hdiffδ hswap hmean0_pi
+  rwa [hfisher_pi] at hbound
 
 end StatLean.PointEstimation
