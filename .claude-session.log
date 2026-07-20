@@ -1,2 +1,43 @@
 srun: job 33666107 queued and waiting for resources
 srun: job 33666107 has been allocated resources
+All work is committed and both modules build green. Here is the final report.
+
+## Report — `LehmannScheffe.lean` + `Attainment.lean`
+
+### Per-file `lake build` status
+| File | Build | Remaining sorries |
+|---|---|---|
+| `UMVU/LehmannScheffe.lean` | ✅ green (2820 jobs) | **2** (lines 220, 313) |
+| `InformationInequality/Attainment.lean` | ✅ green (2653 jobs) | **1** (line 147) |
+
+Baseline was 2 + 1. Net sorry count is unchanged, but one previously-open lemma is now a genuinely proven, axiom-clean, reusable result (see Task 2).
+
+### Task 1 — `isUMVU_of_fullRank_expFamily` — **LIFTED (blocked as frozen)**
+**Not closable at the frozen signature.** Empirically confirmed by attempting the two named bricks (exact compiler errors captured):
+- `isCompleteStat_of_interior_nonempty E Ξ …` → **type mismatch**: `E : ExpFamily 𝓧 V` / `Ξ : Set V` cannot unify with the required `ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s))` / `Set (EuclideanSpace ℝ (Fin s))`. The only natural-statistic completeness theorems are `EuclideanSpace`- or `ℝ`-specific (Laplace/MGF uniqueness is a finite-dimensional fact); the private generic `isCompleteFamily_of_signed` still needs `[BorelSpace V][SecondCountableTopology V]` **and** the Euclidean-only `hsigned`. There is **no completeness theorem for abstract `V`**.
+- `E.isMinimalSufficient_stat …` → **unresolvable** for `E : ExpFamily 𝓧 V`: requires `[BorelSpace V][SecondCountableTopology V][SigmaFinite E.base]` + `E.base ≠ 0` + a spanning configuration, none present. So even producing the estimator `η` (a Rao–Blackwellization along the sufficiency kernel) is impossible.
+
+The added `[StandardBorelSpace 𝓧] [Nonempty 𝓧]` fix the 𝓧-side kernel construction only; the **`V`-side and `E.base`-side gaps remain**. The statement is **true** for finite-dimensional Euclidean `V` with `[SigmaFinite E.base]` and `E.base ≠ 0`, but not provable polymorphically. The original TODO's claim "Completeness (`hcomp`) transfers cleanly … only missing input is the sufficiency kernel" is **incorrect** — `hcomp` is not even a hypothesis, and no abstract-`V` completeness exists. Left sorried with a corrected, precise obstruction note. `#print axioms` would show `sorryAx` (expected — it's the blocked declaration).
+
+### Task 2 — `variance_rbEstimator_le_of_complete` — **CLOSED, axiom-clean**
+`#print axioms` → `[propext, Classical.choice, Quot.sound]` (verified in-file, then removed).
+- **Hypothesis added (pre-authorized, private lemma):** `hδ'm : Measurable δ'`.
+- **Proof:** Rao–Blackwellize the competitor `δ'` through `T`; both `rbEstimator Q δ` and `rbEstimator Q δ'` are unbiased functions of the complete `T`, hence a.e. equal (`unique_unbiased_function_of_complete`); transport across `T` (`ae_eq_comp`), then `variance_rbEstimator_le`. Only `Measurable δ'` is needed.
+- **Consequence for `isUMVU_of_complete_sufficient` (reported precisely, as instructed):** the private lemma is now **provable and true**, but the consumer **cannot discharge `Measurable δ'`** — its competitor carries only `MemEstL2 P δ'` (per-θ `AEStronglyMeasurable`), and with no dominating measure these do not glue to one global measurable representative. So its minimality step now carries a **documented `sorry`** (line 220). This is a debt *relocation to where the obstruction genuinely lives*, not a laundering: the theorem was already `sorryAx`-tainted through the old private sorry. A `condExp`-based RB layer (needs only integrability) would close it but isn't among the imported kernel lemmas.
+
+### Task 3 — `expFamily_of_cramer_rao_attained_core` — **LIFTED (already the one named private brick)**
+Analyzed the three bricks; **not closable** and no productive edit possible without breaking the frozen public theorem:
+- **Brick 1 (blocked):** CS-equality needs `cov_θ(δ,ℓ̇_θ) = g'(θ)`. But `hg` supplies only the *value* of `deriv(fun t => ∫ δ p_t) θ = g'θ`, **not** the interchange `∫ δ (∂_θ p_θ) = g'θ`. Verified that `hattain` (`var·I = g'²`) alone does **not** force CS-equality: without the swap one only gets `cov² ≤ g'²`, so proportionality can fail. The swap requires a differentiation-under-integral/domination datum the public signature omits (Mathlib's `hasDerivAt_integral_of_dominated_loc_of_deriv_le` needs a dominating bound; `hC1` gives pointwise-in-`t` smoothness only).
+- **Brick 2 (mechanically available but unusable):** CS-equality ⇒ a.e. proportionality via a `variance = 0 ⇒ ae_eq` lemma — but it consumes brick 1's output.
+- **Brick 3 (absent from Mathlib v4.29.1):** parametric FTC uniform in `x` integrating `θ ↦ log p_θ(x)` to the exponential form.
+
+The core is already correctly isolated as **one** `private` lemma with an accurate 3-part `-- TODO:`. Adding the missing swap/domination hypothesis would break the frozen public `expFamily_of_cramer_rao_attained` (not authorized here), so it is left as sanctioned debt. Its docstring already states the deviation precisely.
+
+### Statements believed problematic
+None **false**, but two are **under-hypothesized / unprovable as frozen**:
+- `isUMVU_of_fullRank_expFamily` — needs `V`-side finite-dim/Euclidean + Borel/second-countable instances and `[SigmaFinite E.base]`, `E.base ≠ 0`.
+- `expFamily_of_cramer_rao_attained_core` — needs an explicit differentiation-under-integral (swap) datum; without it attainment does not force Cauchy–Schwarz equality, so the conclusion could fail (I did not construct an explicit counterexample — the safer reading is "missing hypothesis", not "false").
+
+### Commits (branch `pe/umvu`)
+1. Prove `variance_rbEstimator_le_of_complete` (add `Measurable δ'`); relocate consumer debt.
+2. Document `isUMVU_of_fullRank_expFamily` blocker with corrected obstruction analysis.
