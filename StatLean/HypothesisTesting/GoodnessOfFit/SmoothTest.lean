@@ -209,10 +209,11 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
     (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ (fun j => hψmeas j))
   set Y : ℕ → Ω₀ → EuclideanSpace ℝ (Fin k) := fun i ω => g (Z i ω) with hY
   -- an integral of `F ∘ Z 0` reduces to an integral over `P₀`
-  have hkey : ∀ (F : 𝓧 → ℝ), Integrable F P₀ → ∫ ω, F (Z 0 ω) ∂P₀c = ∫ x, F x ∂P₀ := by
+  have hkey : ∀ (F : 𝓧 → ℝ), AEStronglyMeasurable F P₀ →
+      ∫ ω, F (Z 0 ω) ∂P₀c = ∫ x, F x ∂P₀ := by
     intro F hF
     rw [show (∫ ω, F (Z 0 ω) ∂P₀c) = ∫ x, F x ∂(P₀c.map (Z 0)) from
-          (integral_map (hZmeas 0).aemeasurable hF.aestronglyMeasurable).symm,
+          (integral_map (hZmeas 0).aemeasurable (by rw [(hZlaw 0).map_eq]; exact hF)).symm,
         (hZlaw 0).map_eq]
   -- inputs to `clt_finDim`
   have hYmeas : ∀ i, Measurable (Y i) := fun i => hgmeas.comp (hZmeas i)
@@ -229,7 +230,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
         funext x; rw [inner_euclidean_sum]; rfl
       rw [hpt]
       exact integrable_finset_sum _ (fun i _ => (hψint i).const_mul (u i))
-    rw [hkey _ hFint]
+    rw [hkey _ hFint.aestronglyMeasurable]
     have hpt : (fun x => ⟪u, g x⟫_ℝ) = (fun x => ∑ i, u i * ψ i x) := by
       funext x; rw [inner_euclidean_sum]; rfl
     rw [hpt, integral_finset_sum _ (fun i _ => (hψint i).const_mul (u i))]
@@ -250,7 +251,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
       rw [hpt]
       exact integrable_finset_sum _
         (fun i _ => integrable_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))
-    rw [hkey _ hFint, hpt,
+    rw [hkey _ hFint.aestronglyMeasurable, hpt,
       integral_finset_sum _
         (fun i _ => integrable_finset_sum _ (fun j _ => (hψψint i j).const_mul (u i * v j)))]
     have hRHS : u.ofLp ⬝ᵥ (1 : Matrix (Fin k) (Fin k) ℝ).mulVec v.ofLp = ∑ i, u i * v i := by
@@ -272,6 +273,7 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
         rw [EuclideanSpace.norm_eq, Real.sq_sqrt (Finset.sum_nonneg (fun i _ => sq_nonneg _))]
         refine Finset.sum_congr rfl (fun i _ => ?_)
         rw [Real.norm_eq_abs, sq_abs]
+        rfl
       rw [hnorm]
       exact integrable_finset_sum _ (fun i _ => hsqint i)
     have hmap : MemLp g 2 (P₀c.map (Z 0)) := by rw [(hZlaw 0).map_eq]; exact hg_L2
@@ -287,9 +289,9 @@ private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
     intro n
     set F : (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
       fun d => (Real.sqrt n)⁻¹ • ∑ i : Fin n, g (d i) with hF
-    have hFmeas : Measurable F :=
-      (Finset.univ.measurable_sum
-        (fun i _ => hgmeas.comp (measurable_pi_apply i))).const_smul _
+    have hsum : Measurable (fun d : Fin n → 𝓧 => ∑ i : Fin n, g (d i)) :=
+      Finset.univ.measurable_sum (fun i _ => hgmeas.comp (measurable_pi_apply i))
+    have hFmeas : Measurable F := by rw [hF]; exact measurable_const.smul hsum
     have hgZ : Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
       measurable_pi_lambda _ (fun i => hZmeas i)
     have hgX : Measurable (fun ω (i : Fin n) => X n i ω) :=
@@ -354,7 +356,7 @@ theorem smoothStat_weakConverges_chiSquared {k : ℕ} {P₀ : Measure 𝓧}
   have hq : ∀ n ω, q (scoreVec ψ (X n) ω) = smoothStat ψ (X n) ω := by
     intro n ω
     simp only [hqdef, hTdef]
-    rw [Matrix.inner_toEuclideanCLM, Matrix.inv_one, Matrix.one_mulVec]
+    rw [Matrix.inner_toEuclideanCLM, inv_one, Matrix.one_mulVec]
     simp only [smoothStat, dotProduct]
     exact Finset.sum_congr rfl (fun j _ => by rw [sq]; rfl)
   -- the lifted CLT brick, then continuous mapping
@@ -421,6 +423,59 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  -- TODO (genuine deep gap; NOT closeable from the imported deferral as stated). Two pieces:
+  --   1. Asymptotic-normality data for `smoothModel` to invoke `asymptotic_maximin_upper_bound`
+  --      with `I = Iₖ`: the centring `Zₙ = scoreVec` (with `Zₙ ⇒ N(0, Iₖ)` under `Q n 0 = P₀`
+  --      from `scoreVec_weakConverges_gaussian`) is available, but the log-likelihood field
+  --      `L n h` and its quadratic LAN expansion (`hdens`, `hLAN`) still have to be built from
+  --      the exponential-family log-partition `A` (its Fisher information at `0` is `Iₖ` by
+  --      orthonormality); this needs `PointEstimation.ExponentialFamily.Smoothness`.
+  --   2. A *bounded*-shell (`b ≤ ‖h‖ ≤ B`) transfer. The imported
+  --      `asymptotic_maximin_upper_bound` concludes only for the UNBOUNDED shell
+  --      `{b² ≤ h⊤ I h} = {b ≤ ‖h‖}` (with `I = Iₖ`), which is the a-fortiori WEAKER bound:
+  --      `sInf` over the bounded shell (a subset) is ≥ `sInf` over the unbounded one, so the
+  --      lemma's bound does not transfer in the needed direction (see the module docstring's
+  --      "a fortiori" remark — bounded ⟹ unbounded, not the reverse). The bounded bound is
+  --      provable by the SAME mixture–Neyman–Pearson argument (the least-favourable `σ` sits
+  --      on the inner sphere `‖h‖ = b ⊆` the bounded shell), but that machinery lives inside
+  --      the deferred `asymptotic_maximin_upper_bound`; a bounded-shell restatement of it is
+  --      needed and is absent from `AsymptoticMaximin.lean` (which must not be edited here).
+  sorry
+
+/-- **The smooth test attains the maximin value on the local shell** (LIFTED — the deep half
+of `smoothTest_asymptotically_maximin`). Under the local alternatives `θ = h n^{-1/2}` with
+`b ≤ |h| ≤ B`, the minimum power of the smooth test `1{Sₙ > c}` converges to
+`P{χ²_k(b²) > c_{k,1−α}}`.
+
+TODO (genuine deep gap): this is the noncentral analogue of
+`smoothStat_weakConverges_chiSquared`. Its intended proof is: (i) the weak limit of `Sₙ`
+under the *local alternatives* is `χ²_k(‖h‖²)` — a multivariate *triangular-array* CLT
+giving `scoreVec ⇒ N((hⱼ)ⱼ, Iₖ)`, hence `Sₙ ⇒ χ²_k(‖h‖²)` by the same continuous-mapping /
+`multivariateGaussian_map_inner_inv_eq_noncentralChiSquared` bridge used in the null case;
+(ii) the map `h ↦ P{χ²_k(‖h‖²) > c}` is increasing in `‖h‖` (`noncentralChiSquared_tail_mono`),
+so the minimum over the shell is asymptotically attained at the inner boundary `‖h‖ = b`,
+giving `P{χ²_k(b²) > c}`. The triangular-array CLT brick is the same one deferred in
+`ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` (the drifting per-observation
+law `μ n` puts it outside the fixed-i.i.d. `clt_finDim` used for the null limit); it is not
+available in this file, so the statement is lifted here as a single named debt. -/
+private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
+    [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
+    {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
+    {X : (n : ℕ) → Fin n → Ω → 𝓧}
+    (hk : 0 < k) (hb : 0 < b) (hbB : b < B) (hα : 0 < α) (hα1 : α < 1)
+    (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α)
+    (hψ : Measurable fun x => (WithLp.toLp 2 fun j => ψ j x : EuclideanSpace ℝ (Fin k)))
+    (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
+    (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0)
+    (hint : (0 : EuclideanSpace ℝ (Fin k)) ∈ interior (smoothModel P₀ ψ hψ).natSet)
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    (hindep : ∀ n h, iIndepFun (X n) (Q n h))
+    (hlaw : ∀ n h, ∀ i, (Q n h).map (X n i)
+      = (smoothModel P₀ ψ hψ).P ((Real.sqrt (n : ℝ))⁻¹ • h)) :
+    Tendsto (fun n => sInf ((fun h => power (Q n)
+          (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h)
+        '' {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
+        (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
   sorry
 
 /-- **The smooth test is asymptotically maximin.** For any radii `0 < b < B < ∞`, the
@@ -470,6 +525,13 @@ theorem smoothTest_asymptotically_maximin {k : ℕ} {α b B c : ℝ} {P₀ : Mea
         limsup (fun n => sInf ((fun h => power (Q n) (ψtest n) h) ''
             {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- Attainment on the shell: the deep noncentral-limit half (lifted).
+    exact smoothTest_shell_minPower_tendsto hk hb hbB hα hα1 hc hψ hortho hcentred hint
+      hX hindep hlaw
+  · -- Optimality: for any level-`α` test this is exactly `smoothTest_maximin_upper_bound`.
+    intro ψtest hψt hlvl
+    exact smoothTest_maximin_upper_bound hk hb hbB hα hα1 hc hψ hortho hcentred hint
+      hX hindep hlaw hψt hlvl
 
 end StatLean.HypothesisTesting
