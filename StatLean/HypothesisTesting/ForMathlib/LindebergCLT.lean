@@ -903,6 +903,25 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
     (hL1 : Tendsto (fun n => ∫ y, |y| ∂(G n)) atTop (𝓝 (∫ y, |y| ∂ν))) :
     TendstoInMeasure P (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i, Y n i ω) atTop
       (fun _ => ∫ y, y ∂ν) := by
+  -- TODO (planned debt): the faithful proof is the classical Feller weak law via
+  -- truncation at an `n`-dependent level `Cₙ = n`.  Split each row entry
+  -- `Y n i = U n i + V n i` with `U n i := Y n i · 1{|Y n i| ≤ n}` and control the
+  -- three resulting terms of `n⁻¹∑ Y n i − ∫ y dν`:
+  --   • centered truncated part `n⁻¹∑ (U n i − 𝔼[U n i])` by Chebyshev, using
+  --     `Var[n⁻¹∑ U] ≤ 𝔼[U₀²]/n` and `n⁻¹∫_{|y|≤n} y² dGₙ → 0`
+  --     (from `n⁻¹∫_{|y|≤K} y² → 0` plus the uniform tail `∫_{|y|>K}|y| dGₙ`);
+  --   • centering shift `𝔼[U n i] − ∫ y dν = ∫_{|y|≤n} y dGₙ − ∫ y dν → 0`, from
+  --     weak convergence (`hweak`) together with `L¹` convergence of first moments
+  --     (`hL1`), which give `∫ y dGₙ → ∫ y dν` and vanishing truncation error;
+  --   • tail part `V n i` by the union bound `n · Gₙ{|y| > n} ≤ ∫_{|y|>n}|y| dGₙ → 0`.
+  -- The single nontrivial analytic input is the **uniform integrability** of `{Gₙ}`
+  -- (`∀ ε, ∃ K, ∀ n, ∫_{|y|>K}|y| dGₙ < ε`), a standard consequence of `hL1` + `hweak`.
+  -- A fixed-level truncation does NOT suffice here: the statement (correctly) permits
+  -- heavy-tailed, non-integrable `Gₙ` — e.g. `Gₙ = (1−1/n)·δ₀ + (1/n)·Cauchy`, for
+  -- which every hypothesis holds (junk `∫|y| dGₙ = 0 → 0 = ∫|y| dδ₀`, weak `→ δ₀`) and
+  -- the average still concentrates at `0`, yet the `L¹` tail bound is vacuous.  This
+  -- makes the `n`-dependent Feller truncation essential and the proof a self-contained
+  -- project rather than a corollary of `lindeberg_clt`.
   sorry
 
 end StatLean.HypothesisTesting
