@@ -426,22 +426,18 @@ private lemma reducedCount_eq_smul_sum {n k : ℕ} (π : Fin (k + 1) → ℝ)
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
   rw [div_eq_inv_mul]
 
-/-- **Multivariate CLT for the reduced cell frequencies** (LIFTED — the single deep analytic
-brick of the null-limit proof). The standardised reduced count vector converges in law to
-the centred Gaussian with the reduced covariance `Σ = diag π' − π' π'ᵀ`.
+/-- **Multivariate CLT for the reduced cell frequencies** (the single deep analytic brick of
+the null-limit proof). The standardised reduced count vector converges in law to the centred
+Gaussian with the reduced covariance `Σ = diag π' − π' π'ᵀ`.
 
-The intended proof is the imported multivariate i.i.d. CLT
-`ProbabilityTheory.tendstoInDistribution_multivariate_clt` applied to the per-observation
-indicator vectors `V i ω = (1[X i ω = 0], …, 1[X i ω = k−1])`, whose common covariance is
-exactly `reducedCov π`, followed by the `TendstoInDistribution → WeakConverges` translation
-(the pattern of `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`).
-
-TODO: the residual gap is the *canonical i.i.d. transfer*. The CLT brick consumes a single
-fixed i.i.d. sequence on one probability space `(Ω, P)`, whereas the hypotheses supply a
-triangular family `(P n, X n : Fin n → Ω → …)`. One must (a) build the per-observation
-covariance identity `Var[⟪t, V 0⟫] = t ⬝ᵥ (reducedCov π) *ᵥ t` from `hcell`, and (b) transfer
-the law of `reducedCount` under `P n` to a fixed product-measure model, using that
-`iIndepFun` with identical marginals gives joint law `= Measure.pi`. -/
+The proof realises `reducedCount` as the standardised sum of the centred per-observation
+indicator vectors `g x = indicatorVec x − piVec π` (`reducedCount_eq_smul_sum`), transfers the
+per-stage law to the canonical infinite-product i.i.d. model produced by
+`ProbabilityTheory.exists_iid` (matching both sequences to `(Measure.pi …).map` via
+`iIndepFun_iff_map_fun_eq_pi_map`), and applies the reusable fixed-i.i.d. CLT
+`AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`. The covariance side-condition
+`∫ ⟪u, g⟫⟪v, g⟫ = u ⬝ᵥ Σ v` is the finite computation `sum_pi_center_prod`, and the zero-mean
+side-condition is `sum_pi_ite_castSucc`. -/
 private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) → ℝ}
     {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : Measure (Fin (k + 1))}
@@ -452,7 +448,129 @@ private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) �
     (hcell : ∀ j, (μ {j}).toReal = π j) :
     WeakConverges (fun n => (P n).map (reducedCount π (X n)))
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)) := by
-  sorry
+  classical
+  -- `μ` is the common observation law, a probability measure.
+  haveI hP1prob : IsProbabilityMeasure (P 1) := ‹∀ n, IsProbabilityMeasure (P n)› 1
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [← hlaw 1 0]
+    exact Measure.isProbabilityMeasure_map (μ := P 1) (hX 1 0).aemeasurable
+  -- the canonical i.i.d. model `(Ω₀, P₀, Z)` with marginal law `μ`
+  obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
+    ProbabilityTheory.exists_iid ℕ μ
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  -- centred per-observation indicator map `g` and per-observation vectors `Y`
+  set g : Fin (k + 1) → EuclideanSpace ℝ (Fin k) := fun x => indicatorVec x - piVec π with hg
+  have hgmeas : Measurable g := (measurable_of_finite indicatorVec).sub measurable_const
+  set Y : ℕ → Ω₀ → EuclideanSpace ℝ (Fin k) := fun i ω => g (Z i ω) with hY
+  -- an integral of `F ∘ Z 0` reduces to a finite `π`-weighted sum
+  have hkey : ∀ (F : Fin (k + 1) → ℝ), ∫ ω, F (Z 0 ω) ∂P₀ = ∑ x, π x * F x := by
+    intro F
+    have hFmeas : Measurable F := measurable_of_finite F
+    rw [show (∫ ω, F (Z 0 ω) ∂P₀) = ∫ x, F x ∂(P₀.map (Z 0)) from
+          (integral_map (hZmeas 0).aemeasurable hFmeas.aestronglyMeasurable).symm,
+        (hZlaw 0).map_eq, integral_fintype (f := F) Integrable.of_finite]
+    refine Finset.sum_congr rfl (fun x _ => ?_)
+    rw [MeasureTheory.Measure.real, hcell x, smul_eq_mul]
+  -- inputs to `clt_finDim`
+  have hYmeas : ∀ i, Measurable (Y i) := fun i => hgmeas.comp (hZmeas i)
+  have hYindep : iIndepFun Y P₀ := hZindep.comp (fun _ => g) (fun _ => hgmeas)
+  have hYident : ∀ i, IdentDistrib (Y i) (Y 0) P₀ P₀ := fun i =>
+    (show IdentDistrib (Z i) (Z 0) P₀ P₀ from
+      ⟨(hZmeas i).aemeasurable, (hZmeas 0).aemeasurable,
+        (hZlaw i).map_eq.trans (hZlaw 0).map_eq.symm⟩).comp hgmeas
+  -- the centred indicators have zero mean
+  have h_zero_mean : ∀ u : EuclideanSpace ℝ (Fin k), ∫ ω, ⟪u, Y 0 ω⟫ ∂P₀ = 0 := by
+    intro u
+    have hint : (∫ ω, ⟪u, Y 0 ω⟫ ∂P₀) = ∑ x, π x * ⟪u, g x⟫ := hkey (fun x => ⟪u, g x⟫)
+    rw [hint]
+    simp_rw [hg, inner_u_g, Finset.mul_sum]
+    rw [Finset.sum_comm]
+    refine Finset.sum_eq_zero (fun i _ => ?_)
+    have hterm : ∀ x : Fin (k + 1),
+        π x * (u i * ((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc))
+          = u i * (π x * (if x = i.castSucc then 1 else 0)) - u i * π i.castSucc * π x := by
+      intro x; ring
+    simp_rw [hterm]
+    rw [Finset.sum_sub_distrib, ← Finset.mul_sum, sum_pi_ite_castSucc, ← Finset.mul_sum, hπsum]
+    ring
+  -- the covariance identity `∫ ⟪u,·⟫⟪v,·⟫ = u ⬝ Σ v`
+  have h_cov : ∀ u v : EuclideanSpace ℝ (Fin k),
+      ∫ ω, ⟪u, Y 0 ω⟫ * ⟪v, Y 0 ω⟫ ∂P₀ = u.ofLp ⬝ᵥ (reducedCov π).mulVec v.ofLp := by
+    intro u v
+    have hRHS : u.ofLp ⬝ᵥ (reducedCov π).mulVec v.ofLp
+        = ∑ i, ∑ j, (u i * v j) * reducedCov π i j := by
+      simp only [dotProduct, Matrix.mulVec]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl (fun j _ => ?_)
+      show u i * (reducedCov π i j * v j) = (u i * v j) * reducedCov π i j
+      ring
+    have hint : (∫ ω, ⟪u, Y 0 ω⟫ * ⟪v, Y 0 ω⟫ ∂P₀) = ∑ x, π x * (⟪u, g x⟫ * ⟪v, g x⟫) :=
+      hkey (fun x => ⟪u, g x⟫ * ⟪v, g x⟫)
+    rw [hint, hRHS]
+    simp_rw [hg, inner_u_g, Finset.sum_mul_sum]
+    have hswap : ∀ x : Fin (k + 1),
+        π x * ∑ i, ∑ j, (u i * ((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc))
+              * (v j * ((if x = j.castSucc then 1 else 0) - π j.castSucc))
+          = ∑ i, ∑ j, (u i * v j)
+              * (π x * (((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc)
+                  * ((if x = j.castSucc then 1 else 0) - π j.castSucc))) := by
+      intro x
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl (fun i _ => ?_)
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl (fun j _ => by ring)
+    simp_rw [hswap]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl (fun j _ => ?_)
+    rw [← Finset.mul_sum, sum_pi_center_prod π hπsum i j]
+  -- the centred indicators are square-integrable (bounded, factoring through a finite type)
+  have h_L2 : MemLp (Y 0) 2 P₀ := by
+    obtain ⟨C, hC⟩ := (Set.finite_range (fun x => ‖g x‖)).bddAbove
+    have hbd : ∀ ω, ‖Y 0 ω‖ ≤ C := fun ω => hC ⟨Z 0 ω, rfl⟩
+    exact (memLp_top_of_bound (hYmeas 0).aestronglyMeasurable C
+      (Filter.Eventually.of_forall hbd)).mono_exponent le_top
+  -- the fixed-i.i.d. CLT for the canonical model
+  have hclt := AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim
+    P₀ Y hYmeas hYindep hYident h_zero_mean (reducedCov π)
+    (reducedCov_posDef hπpos hπsum).posSemidef h_cov h_L2
+  -- the canonical standardised sum has, at each `n`, the same law as `reducedCount`
+  have hmatch : ∀ n : ℕ,
+      P₀.map (fun ω => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i ω)
+        = (P n).map (reducedCount π (X n)) := by
+    intro n
+    set F : (Fin n → Fin (k + 1)) → EuclideanSpace ℝ (Fin k) :=
+      fun d => (Real.sqrt n)⁻¹ • ∑ i : Fin n, g (d i) with hF
+    have hFmeas : Measurable F := measurable_of_finite F
+    have hgZ : Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
+      measurable_pi_lambda _ (fun i => hZmeas i)
+    have hgX : Measurable (fun ω (i : Fin n) => X n i ω) :=
+      measurable_pi_lambda _ (fun i => hX n i)
+    have hLHSfun : (fun ω => (Real.sqrt n)⁻¹ • ∑ i ∈ Finset.range n, Y i ω)
+        = F ∘ (fun ω (i : Fin n) => Z (i : ℕ) ω) := by
+      funext ω
+      simp only [hF, hY, Function.comp]
+      rw [← Fin.sum_univ_eq_sum_range (fun i => g (Z i ω)) n]
+    have hRHSfun : reducedCount π (X n) = F ∘ (fun ω (i : Fin n) => X n i ω) := by
+      funext ω
+      rw [reducedCount_eq_smul_sum π (X n) ω]
+      simp only [hF, hg, Function.comp]
+    have hpiZ : P₀.map (fun ω (i : Fin n) => Z (i : ℕ) ω) = Measure.pi (fun _ : Fin n => μ) := by
+      have hsub : iIndepFun (fun (i : Fin n) => Z (i : ℕ)) P₀ :=
+        hZindep.precomp Fin.val_injective
+      rw [(iIndepFun_iff_map_fun_eq_pi_map (f := fun (i : Fin n) => Z (i : ℕ))
+        (fun i => (hZmeas (i : ℕ)).aemeasurable)).1 hsub]
+      congr 1; funext i; exact (hZlaw (i : ℕ)).map_eq
+    have hpiX : (P n).map (fun ω (i : Fin n) => X n i ω) = Measure.pi (fun _ : Fin n => μ) := by
+      rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX n i).aemeasurable)).1 (hindep n)]
+      congr 1; funext i; exact hlaw n i
+    rw [hLHSfun, hRHSfun, ← Measure.map_map hFmeas hgZ, ← Measure.map_map hFmeas hgX,
+      hpiZ, hpiX]
+  simp only [hmatch] at hclt
+  exact hclt
 
 /-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
 `j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
