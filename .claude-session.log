@@ -1,0 +1,35 @@
+srun: job 33295054 queued and waiting for resources
+srun: job 33295054 has been allocated resources
+## Report
+
+### Final status
+- **Build:** `lake build StatLean.HypothesisTesting.ForMathlib.LindebergCLT` → **`Build completed successfully (2882 jobs)`**, green.
+- **Remaining sorry count in the file: 1** (theorem 2, documented planned debt).
+
+### `#print axioms`
+```
+weighted_iid_clt      : [propext, Classical.choice, Quot.sound]           ← CLEAN
+triangular_wlln_of_L1 : [propext, sorryAx, Classical.choice, Quot.sound]  ← sorryAx (documented debt)
+lindeberg_clt         : [propext, Classical.choice, Quot.sound]           ← core unchanged, still clean
+```
+
+### Sorry 1 — `weighted_iid_clt` — **CLOSED, 0-sorry, axiom-clean** ✅
+Proved exactly as the docstring specified: `lindeberg_clt` applied to the normalised row `Xₙ,ᵢ = wₙ,ᵢ·Yᵢ / (σ·(∑ⱼwₙ,ⱼ²)^{1/2})`. Discharged all of `lindeberg_clt`'s hypotheses:
+- **independence** via `iIndepFun.precomp Fin.val_injective` (reindex ℕ→Fin) + `.comp` with the scaling maps;
+- **L², centering** from `IdentDistrib` transfer of `Y 0`;
+- **row variance ≡ 1 exactly** via `variance_const_mul` + the `(s n)² = σ²∑wₙ,ⱼ²` identity;
+- **Lindeberg condition** (the substantive step) from weight negligibility `hneg`: feeding `hneg` at level `σ²(ε/K)²` gives the uniform bound `|(sₙ)⁻¹wₙ,ᵢ| ≤ ε/K`, so each truncation set `{ε<|Xₙ,ᵢ|} ⊆ {K<|Yᵢ|}`, and the shared L²-tail `∫_{K<|Y₀|}Y₀² → 0` (via `tendsto_setIntegral_of_antitone`, `⋂ₖ{k<|Y₀|}=∅`) kills it uniformly.
+
+Committed.
+
+### Sorry 2 — `triangular_wlln_of_L1` — **left as precisely-documented planned debt** (not closed)
+This is **not** a corollary of `lindeberg_clt`, and the "standard truncation" is materially harder than the docstring suggests, for a concrete reason I verified:
+
+The statement carries **no `Integrable id (G n)` hypothesis**, so the rows may be **heavy-tailed and non-integrable**. Concretely `Gₙ = (1−1/n)·δ₀ + (1/n)·Cauchy` satisfies *every* hypothesis (`∫|y|dGₙ` is the junk value `0 → 0 = ∫|y|dδ₀`; `Gₙ → δ₀` weakly; `Integrable id ν`), and the average still concentrates at `0` — so **the statement is TRUE** (no counterexample), but a fixed-level truncation is useless there because its `L¹`/Markov tail bound is vacuous. The faithful proof therefore requires the classical **Feller weak law with an `n`-dependent truncation level `Cₙ=n`**, whose one genuinely hard analytic input is **uniform integrability of `{Gₙ}`** (a standard but nontrivial consequence of `hL1`+`hweak`). That is a self-contained ~300-line project, not a short corollary.
+
+Per your instructions ("if a genuine gap remains… a precise `-- TODO:`, never fake, never weaken the public statement, honest refusal desired"), I replaced the bare `sorry` with a multi-line TODO laying out the exact three-term decomposition, the UI requirement, and the heavy-tail obstruction. The public signature/docstring are frozen. Committed.
+
+### No false statements found
+Both statements are true as written; theorem 2 is deferred honestly, not because it is false.
+
+Two commits on `ht/lindeberg-2` (theorem 1 proof; theorem 2 documentation). The untracked `.claude-session.log` / `.fanout-prompt.md` were left as-is (not mine).
