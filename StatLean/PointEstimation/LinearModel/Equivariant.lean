@@ -1,6 +1,8 @@
 import StatLean.PointEstimation.LinearModel.Canonical
+import StatLean.PointEstimation.LinearModel.LeastSquares
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Continuous
 import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
@@ -95,6 +97,100 @@ def IsCanonicalMRE (σ2 : PosVar) (lam : Fin s → ℝ) (ρ : ℝ → ℝ)
       Measurable δ' → IsCanonicalEquivariant lam δ' →
         canonicalRisk σ2 ρ δ ≤ canonicalRisk σ2 ρ δ'
 
+/-! ### Convex-symmetric core (private scaffolding)
+
+The reflection of the signal block, `Y ↦ (-Y_head, Y_res)`, is a symmetry of the base law
+`canonicalModel (0, σ²)` (each coordinate is centred Gaussian), it negates `∑ λᵢ Yᵢ`, and it
+is a signal-block translation, so it fixes `δ' − δ₀` for every equivariant `δ'`. Combined
+with the pointwise midpoint convexity `ρ(δ₀) ≤ ½ρ(δ₀+h) + ½ρ(δ₀−h)` this gives the
+minimality without any explicit head/residual independence decomposition. -/
+
+/-- The reflection of the signal block: negates the first `s` coordinates, fixes the rest. -/
+private noncomputable def canonicalReflect (y : EuclideanSpace ℝ (Fin (s + m))) :
+    EuclideanSpace ℝ (Fin (s + m)) :=
+  (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
+    (fun k => if (k : ℕ) < s then -(y k) else y k)
+
+private lemma measurable_canonicalReflect :
+    Measurable (canonicalReflect (s := s) (m := m)) := by
+  refine (WithLp.measurable_toLp 2 _).comp (measurable_pi_lambda _ (fun k => ?_))
+  by_cases h : (k : ℕ) < s
+  · simp only [h, if_true]
+    exact ((measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _)).neg
+  · simp only [h, if_false]
+    exact (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _)
+
+/-- The reflection is a translation of the signal block by `-2 Y_head`. -/
+private lemma canonicalReflect_eq (y : EuclideanSpace ℝ (Fin (s + m))) :
+    canonicalReflect y = y + canonicalMean (fun i => -2 * canonicalHead y i) := by
+  ext k
+  refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+  · show (if ((Fin.castAdd m a : Fin (s + m)) : ℕ) < s then -(y (Fin.castAdd m a))
+          else y (Fin.castAdd m a))
+        = y (Fin.castAdd m a) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
+    rw [if_pos (by simpa using a.isLt)]
+    rw [show (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.castAdd m a)
+          = Fin.append (fun i => -2 * canonicalHead y i) (0 : Fin m → ℝ) (Fin.castAdd m a) from rfl,
+        Fin.append_left]
+    show -(y (Fin.castAdd m a)) = y (Fin.castAdd m a) + -2 * y (Fin.castAdd m a)
+    ring
+  · show (if ((Fin.natAdd s b : Fin (s + m)) : ℕ) < s then -(y (Fin.natAdd s b))
+          else y (Fin.natAdd s b))
+        = y (Fin.natAdd s b) + (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.natAdd s b)
+    rw [if_neg (by simp)]
+    rw [show (canonicalMean (fun i => -2 * canonicalHead y i)) (Fin.natAdd s b)
+          = Fin.append (fun i => -2 * canonicalHead y i) (0 : Fin m → ℝ) (Fin.natAdd s b) from rfl,
+        Fin.append_right, Pi.zero_apply, add_zero]
+
+/-- The reflection preserves the base law `canonicalModel (0, σ²)`. -/
+private lemma canonicalModel_zero_map_reflect (σ2 : PosVar) :
+    (canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), σ2)).map canonicalReflect
+      = canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), σ2) := by
+  have hmeas_toLp :
+      Measurable (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m))) :=
+    WithLp.measurable_toLp 2 _
+  set f : Fin (s + m) → ℝ → ℝ := fun k t => if (k : ℕ) < s then -t else t with hf
+  have hmeas_f : ∀ k, Measurable (f k) := by
+    intro k; by_cases h : (k : ℕ) < s <;> simp only [hf, h, if_true, if_false] <;> fun_prop
+  have hcoord : ∀ k, (gaussianReal (0 : ℝ) σ2.1).map (f k) = gaussianReal 0 σ2.1 := by
+    intro k
+    by_cases h : (k : ℕ) < s
+    · have hfk : f k = (fun t => -t) := by funext t; simp only [hf, h, if_true]
+      rw [hfk, gaussianReal_map_neg, neg_zero]
+    · have hfk : f k = fun t => t := by funext t; simp only [hf, h, if_false]
+      rw [hfk, Measure.map_id']
+  haveI hsf : ∀ k, SigmaFinite ((gaussianReal (0 : ℝ) σ2.1).map (f k)) := by
+    intro k; rw [hcoord k]; infer_instance
+  have hfam : (fun i : Fin (s + m) => gaussianReal ((canonicalMean (0 : Fin s → ℝ)) i) σ2.1)
+      = (fun _ => gaussianReal (0 : ℝ) σ2.1) := by
+    funext i
+    congr 1
+    refine Fin.addCases (fun a => ?_) (fun b => ?_) i
+    · show (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a) = 0
+      rw [Fin.append_left]; rfl
+    · show (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd s b) = 0
+      rw [Fin.append_right]; rfl
+  have hbase : canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), σ2)
+      = (Measure.pi (fun _ : Fin (s + m) => gaussianReal (0 : ℝ) σ2.1)).map (WithLp.toLp 2) := by
+    rw [canonicalModel]
+    show (Measure.pi
+          (fun i => gaussianReal ((canonicalMean (0 : Fin s → ℝ)) i) σ2.1)).map (WithLp.toLp 2)
+        = (Measure.pi (fun _ => gaussianReal (0 : ℝ) σ2.1)).map (WithLp.toLp 2)
+    rw [hfam]
+  rw [hbase, Measure.map_map measurable_canonicalReflect hmeas_toLp]
+  have hcomp :
+      canonicalReflect ∘ (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
+        = (WithLp.toLp 2 : (Fin (s + m) → ℝ) → EuclideanSpace ℝ (Fin (s + m)))
+            ∘ (fun x k => f k (x k)) := by
+    funext x
+    show canonicalReflect (WithLp.toLp 2 x) = WithLp.toLp 2 (fun k => f k (x k))
+    rfl
+  have hprod : Measurable (fun x : Fin (s + m) → ℝ => fun k => f k (x k)) :=
+    measurable_pi_lambda _ (fun k => (hmeas_f k).comp (measurable_pi_apply k))
+  rw [hcomp, ← Measure.map_map hmeas_toLp hprod,
+    Measure.pi_map_pi (f := f) (fun k => (hmeas_f k).aemeasurable)]
+  simp only [hcoord]
+
 /-- The unbiased optimal estimator `∑ λᵢ Yᵢ` of `∑ λᵢ ηᵢ` is also minimum risk equivariant
 under translations of the signal block, for every convex even loss. -/
 theorem isCanonicalMRE_linear_combination
@@ -107,16 +203,97 @@ theorem isCanonicalMRE_linear_combination
     -- USER-INPUT: even loss in the estimation error
     (heven : ∀ t : ℝ, ρ (-t) = ρ t) :
     IsCanonicalMRE (m := m) σ2 lam ρ (fun y => ∑ i, lam i * canonicalHead y i) := by
-  -- DEBT (Pitman convex-symmetric core). Every equivariant `δ'` differs from
-  -- `δ₀ = ∑ λᵢ Yᵢ` by a function of the residual block only (`δ' - δ₀` is invariant under
-  -- head translations). Under the base law `canonicalModel (0, σ²)` the head block and the
-  -- residual block are independent, and `δ₀ = ∑ λᵢ Yᵢ ~ N(0, σ²∑λᵢ²)` is symmetric and
-  -- independent of the residual. For each residual value `r`, `t ↦ E[ρ(δ₀ + t)]` is convex
-  -- (ρ convex) and even (ρ even + `δ₀` symmetric), hence minimized at `t = 0`; integrating
-  -- over `r` gives `canonicalRisk σ² ρ δ₀ ≤ canonicalRisk σ² ρ δ'`. Formalizing needs the
-  -- product/independence split of `canonicalModel (0,σ²)` into head × residual plus the
-  -- 1-D convex-even minimization (analogous to `Equivariance/LocationMRE`).
-  sorry
+  set δ₀ : EuclideanSpace ℝ (Fin (s + m)) → ℝ := fun y => ∑ i, lam i * canonicalHead y i with hδ₀
+  set M := canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), σ2) with hM
+  -- `δ₀` is measurable and equivariant.
+  have hδ₀meas : Measurable δ₀ := by
+    rw [hδ₀]
+    refine Finset.measurable_sum _ (fun i _ => measurable_const.mul ?_)
+    exact (measurable_pi_apply (Fin.castAdd m i)).comp (WithLp.measurable_ofLp 2 _)
+  have hHD : ∀ (a : Fin s → ℝ) (y : EuclideanSpace ℝ (Fin (s + m))) (i : Fin s),
+      canonicalHead (y + canonicalMean a) i = canonicalHead y i + a i := by
+    intro a y i
+    have hsum : canonicalHead (y + canonicalMean a) i
+        = canonicalHead y i + canonicalHead (canonicalMean (m := m) a) i := rfl
+    have hcm : canonicalHead (canonicalMean (m := m) a) i = a i := by
+      have hval : canonicalHead (canonicalMean (m := m) a) i
+          = Fin.append a (0 : Fin m → ℝ) (Fin.castAdd m i) := rfl
+      rw [hval, Fin.append_left]
+    rw [hsum, hcm]
+  have hδ₀equiv : IsCanonicalEquivariant lam δ₀ := by
+    intro a y
+    show ∑ i, lam i * canonicalHead (y + canonicalMean a) i
+        = (∑ i, lam i * canonicalHead y i) + ∑ i, lam i * a i
+    simp_rw [hHD, mul_add]
+    rw [Finset.sum_add_distrib]
+  refine ⟨hδ₀meas, hδ₀equiv, fun δ' hδ'meas hδ'equiv => ?_⟩
+  -- `ρ` is continuous, hence measurable.
+  have hρmeas : Measurable ρ :=
+    (continuousOn_univ.mp (ConvexOn.continuousOn isOpen_univ hconv)).measurable
+  -- `h := δ' − δ₀`; the reflection sends `δ'` to `δ₀ − (δ' − δ₀)` up to the even loss.
+  set h : EuclideanSpace ℝ (Fin (s + m)) → ℝ := fun y => δ' y - δ₀ y with hh
+  have hδ'eq : ∀ y, δ' y = δ₀ y + h y := fun y => by rw [hh]; ring
+  -- reflection identity via equivariance of `δ'`
+  have hsa : ∀ y, ∑ i, lam i * (-2 * canonicalHead y i) = -2 * δ₀ y := by
+    intro y; rw [hδ₀, Finset.mul_sum]; exact Finset.sum_congr rfl (fun i _ => by ring)
+  have hδ'R : ∀ y, δ' (canonicalReflect y) = -δ₀ y + h y := by
+    intro y
+    rw [canonicalReflect_eq y, hδ'equiv (fun i => -2 * canonicalHead y i) y, hsa y, hδ'eq y]
+    ring
+  -- pointwise midpoint convexity: `2 ρ(δ₀) ≤ ρ(δ₀+h) + ρ(δ₀−h)`
+  have hpt : ∀ y, 2 * ρ (δ₀ y) ≤ ρ (δ₀ y + h y) + ρ (δ₀ y - h y) := by
+    intro y
+    have hc := hconv.2 (Set.mem_univ (δ₀ y + h y)) (Set.mem_univ (δ₀ y - h y))
+      (show (0 : ℝ) ≤ 1 / 2 by norm_num) (show (0 : ℝ) ≤ 1 / 2 by norm_num)
+      (show (1 : ℝ) / 2 + 1 / 2 = 1 by norm_num)
+    simp only [smul_eq_mul] at hc
+    rw [show (1 / 2 : ℝ) * (δ₀ y + h y) + (1 / 2 : ℝ) * (δ₀ y - h y) = δ₀ y by ring] at hc
+    linarith
+  -- measurability of the ENNReal integrands
+  have hmeas0 : Measurable (fun y => ENNReal.ofReal (ρ (δ₀ y))) :=
+    ENNReal.measurable_ofReal.comp (hρmeas.comp hδ₀meas)
+  have hhmeas : Measurable h := hδ'meas.sub hδ₀meas
+  have hmeasP : Measurable (fun y => ENNReal.ofReal (ρ (δ₀ y + h y))) :=
+    ENNReal.measurable_ofReal.comp (hρmeas.comp (hδ₀meas.add hhmeas))
+  have hmeasM : Measurable (fun y => ENNReal.ofReal (ρ (δ₀ y - h y))) :=
+    ENNReal.measurable_ofReal.comp (hρmeas.comp (hδ₀meas.sub hhmeas))
+  have hmeas' : Measurable (fun y => ENNReal.ofReal (ρ (δ' y))) :=
+    ENNReal.measurable_ofReal.comp (hρmeas.comp hδ'meas)
+  -- write the risk of `δ'` two ways using the reflection symmetry of the base law
+  have hJp : canonicalRisk σ2 ρ δ' = ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y + h y)) ∂M := by
+    show ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
+    refine lintegral_congr (fun y => ?_)
+    rw [hδ'eq y]
+  have hJm : canonicalRisk σ2 ρ δ' = ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y - h y)) ∂M := by
+    show ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M = _
+    calc ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂M
+        = ∫⁻ y, ENNReal.ofReal (ρ (δ' y)) ∂(M.map canonicalReflect) := by
+          rw [hM, canonicalModel_zero_map_reflect]
+      _ = ∫⁻ y, ENNReal.ofReal (ρ (δ' (canonicalReflect y))) ∂M :=
+          lintegral_map hmeas' measurable_canonicalReflect
+      _ = ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y - h y)) ∂M := by
+          refine lintegral_congr (fun y => ?_)
+          rw [hδ'R y, show -δ₀ y + h y = -(δ₀ y - h y) by ring, heven]
+  -- assemble: `2 · risk δ₀ ≤ 2 · risk δ'`
+  have hfinal : 2 * canonicalRisk σ2 ρ δ₀ ≤ 2 * canonicalRisk σ2 ρ δ' := by
+    calc 2 * canonicalRisk σ2 ρ δ₀
+        = ∫⁻ y, 2 * ENNReal.ofReal (ρ (δ₀ y)) ∂M := by
+          show 2 * ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y)) ∂M = _
+          rw [← lintegral_const_mul 2 hmeas0]
+      _ ≤ ∫⁻ y, (ENNReal.ofReal (ρ (δ₀ y + h y)) + ENNReal.ofReal (ρ (δ₀ y - h y))) ∂M := by
+          refine lintegral_mono (fun y => ?_)
+          calc 2 * ENNReal.ofReal (ρ (δ₀ y))
+              = ENNReal.ofReal (2 * ρ (δ₀ y)) := by
+                rw [ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
+            _ ≤ ENNReal.ofReal (ρ (δ₀ y + h y) + ρ (δ₀ y - h y)) := ENNReal.ofReal_le_ofReal (hpt y)
+            _ ≤ ENNReal.ofReal (ρ (δ₀ y + h y)) + ENNReal.ofReal (ρ (δ₀ y - h y)) :=
+                ENNReal.ofReal_add_le
+      _ = (∫⁻ y, ENNReal.ofReal (ρ (δ₀ y + h y)) ∂M)
+            + ∫⁻ y, ENNReal.ofReal (ρ (δ₀ y - h y)) ∂M :=
+          lintegral_add_left hmeasP _
+      _ = canonicalRisk σ2 ρ δ' + canonicalRisk σ2 ρ δ' := by rw [← hJp, ← hJm]
+      _ = 2 * canonicalRisk σ2 ρ δ' := (two_mul _).symm
+  exact (ENNReal.mul_le_mul_left (by norm_num) (by norm_num)).mp hfinal
 
 /-! ## Translations of the signal block together with scale changes -/
 
@@ -295,14 +472,80 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
     -- USER-INPUT: even loss in the estimation error
     (heven : ∀ t : ℝ, ρ (-t) = ρ t) :
     IsSubspaceMRE W σ2 γ ρ (fun y => ⟪γ, lse W y⟫_ℝ) := by
-  -- DEBT (coordinate-free image of `isCanonicalMRE_linear_combination`). Under the
-  -- adapted-basis isometry `L` (`LeastSquares.exists_headSubspace_isometry`), the base law
-  -- `gaussianVector 0 σ²` is `L`-invariant (`gaussianVector_map_linearIsometryEquiv`, `L 0 = 0`)
-  -- and equals `canonicalModel (0, σ²)`; `linearBaseRisk` transports to `canonicalRisk` by the
-  -- lintegral change of variables, `IsSubspaceEquivariant W γ` corresponds to
-  -- `IsCanonicalEquivariant (canonicalHead (L γ))`, and `⟪γ, lse W ·⟫` corresponds to
-  -- `∑ (canonicalHead (L γ))ᵢ · canonicalHead ·ᵢ`. The claim is then the `L`-image of
-  -- `isCanonicalMRE_linear_combination` (itself the convex-symmetric core above).
-  sorry
+  classical
+  obtain ⟨m, hm, hsm, L, hmean, hsurj, hRSS, hlse⟩ := exists_headSubspace_isometry W hW
+  set δ : EuclideanSpace ℝ (Fin n) → ℝ := fun y => ⟪γ, lse W y⟫_ℝ with hδdef
+  set lam : Fin (Module.finrank ℝ W) → ℝ := canonicalHead (L γ) with hlam
+  have hρmeas : Measurable ρ :=
+    (continuousOn_univ.mp (ConvexOn.continuousOn isOpen_univ hconv)).measurable
+  have hLmeas : Measurable L := L.continuous.measurable
+  have hLsymm : Measurable (L.symm : _ → EuclideanSpace ℝ (Fin n)) := L.symm.continuous.measurable
+  -- the base law transports to the canonical base law
+  have hcm0 : canonicalMean (0 : Fin (Module.finrank ℝ W) → ℝ)
+      = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) := by
+    ext k
+    refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+    · show (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a)
+          = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) (Fin.castAdd m a)
+      rw [Fin.append_left]; rfl
+    · show (Fin.append (0 : Fin (Module.finrank ℝ W) → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd _ b)
+          = (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))) (Fin.natAdd _ b)
+      rw [Fin.append_right]; rfl
+  have hbaseL : (gaussianVector (0 : EuclideanSpace ℝ (Fin n)) σ2.1).map L
+      = canonicalModel (s := Module.finrank ℝ W) (m := m)
+          ((0 : Fin (Module.finrank ℝ W) → ℝ), σ2) := by
+    rw [gaussianVector_map_linearIsometryEquiv L 0 σ2.1, map_zero, canonicalModel, hcm0]
+  -- risk change of variables `linearBaseRisk f = canonicalRisk (f ∘ L⁻¹)`
+  have hbridge : ∀ f : EuclideanSpace ℝ (Fin n) → ℝ, Measurable f →
+      linearBaseRisk σ2 ρ f = canonicalRisk σ2 ρ (fun z => f (L.symm z)) := by
+    intro f hf
+    have hφ : Measurable (fun z => ENNReal.ofReal (ρ (f (L.symm z)))) :=
+      ENNReal.measurable_ofReal.comp (hρmeas.comp (hf.comp hLsymm))
+    show ∫⁻ y, ENNReal.ofReal (ρ (f y)) ∂(gaussianVector (0 : EuclideanSpace ℝ (Fin n)) σ2.1)
+        = ∫⁻ z, ENNReal.ofReal (ρ (f (L.symm z)))
+            ∂(canonicalModel (s := Module.finrank ℝ W) (m := m) (_, σ2))
+    rw [← hbaseL, lintegral_map hφ hLmeas]
+    refine lintegral_congr (fun y => ?_)
+    rw [L.symm_apply_apply]
+  -- the estimator, transported, is exactly `δ₀` of the canonical core
+  have hδL : (fun z => δ (L.symm z)) = fun z => ∑ i, lam i * canonicalHead z i := by
+    funext z
+    rw [hδdef]
+    show ⟪γ, lse W (L.symm z)⟫_ℝ = ∑ i, lam i * canonicalHead z i
+    rw [hlse γ hγ (L.symm z), L.apply_symm_apply]
+  have hδmeas : Measurable δ := by
+    rw [hδdef]
+    exact (continuous_const.inner W.starProjection.continuous).measurable
+  refine ⟨hδmeas, ?_, fun δ' hδ'meas hδ'equiv => ?_⟩
+  · -- subspace-equivariance of `δ`
+    intro b hb y
+    rw [hδdef]
+    show ⟪γ, lse W (y + b)⟫_ℝ = ⟪γ, lse W y⟫_ℝ + ⟪γ, b⟫_ℝ
+    rw [show lse W (y + b) = W.starProjection (y + b) from rfl,
+      show lse W y = W.starProjection y from rfl, map_add,
+      Submodule.starProjection_eq_self_iff.mpr hb, inner_add_right]
+  · -- minimality via the canonical convex-symmetric core
+    obtain ⟨_, _, hmin⟩ :=
+      isCanonicalMRE_linear_combination (s := Module.finrank ℝ W) (m := m) hm lam σ2 hconv heven
+    rw [hbridge δ hδmeas, hbridge δ' hδ'meas, hδL]
+    refine hmin (fun z => δ' (L.symm z)) (hδ'meas.comp hLsymm) ?_
+    -- `δ' ∘ L⁻¹` is canonically equivariant with coefficient vector `lam`
+    intro a z
+    show δ' (L.symm (z + canonicalMean a)) = δ' (L.symm z) + ∑ i, lam i * a i
+    obtain ⟨x, hx⟩ := hsurj a
+    change canonicalHead (L (x : EuclideanSpace ℝ (Fin n))) = a at hx
+    have hLx : L (x : EuclideanSpace ℝ (Fin n)) = canonicalMean a := by
+      rw [hmean (x : EuclideanSpace ℝ (Fin n)) x.2, hx]
+    have hsymm : L.symm (canonicalMean a) = (x : EuclideanSpace ℝ (Fin n)) := by
+      rw [← hLx, L.symm_apply_apply]
+    rw [map_add, hsymm, hδ'equiv (x : EuclideanSpace ℝ (Fin n)) x.2 (L.symm z)]
+    congr 1
+    have hxproj : lse W (x : EuclideanSpace ℝ (Fin n)) = (x : EuclideanSpace ℝ (Fin n)) :=
+      Submodule.starProjection_eq_self_iff.mpr x.2
+    have hxval := hlse γ hγ (x : EuclideanSpace ℝ (Fin n))
+    rw [hxproj] at hxval
+    rw [hxval]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [hlam, hx]
 
 end StatLean.PointEstimation

@@ -140,7 +140,7 @@ open scoped RealInnerProductSpace in
 /-- **Gaussian isometry invariance.** The isotropic Gaussian vector transforms covariantly
 under an orthogonal change of coordinates. This is the measure-theoretic core enabling the
 transport of the linear-model optimality statements to the canonical form. -/
-private lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
+lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
     (L : EuclideanSpace ℝ (Fin N₁) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N₂))
     (ξ : EuclideanSpace ℝ (Fin N₁)) (σ2 : ℝ≥0) :
     (gaussianVector ξ σ2).map L = gaussianVector (L ξ) σ2 := by
@@ -231,7 +231,7 @@ optimality statements. This isolates the *only* remaining debt behind `isUMVU_ls
 and `isUMVU_residualSumSq`: the measure-theoretic core (Gaussian isometry invariance,
 `gaussianVector_map_linearIsometryEquiv`, and the `IsUMVU` sample transport,
 `isUMVU_map_equiv`) is proved above, 0-sorry. -/
-private lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
+lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (hW : Module.finrank ℝ W < n) :
     ∃ (m : ℕ) (_ : 0 < m) (_ : Module.finrank ℝ W + m = n)
       (L : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ]
@@ -241,16 +241,128 @@ private lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace �
       (∀ y, canonicalRSS (L y) = residualSumSq W y) ∧
       (∀ γ ∈ W, ∀ y, ⟪γ, lse W y⟫_ℝ
         = ∑ i, canonicalHead (L γ) i * canonicalHead (L y) i) := by
-  -- TODO(orthonormal-basis rotation): build an orthonormal basis of `EuclideanSpace ℝ (Fin n)`
-  -- whose first `finrank W` vectors are an orthonormal basis of `W` and whose last `m` one of
-  -- `Wᗮ` (Mathlib: `stdOrthonormalBasis ℝ W`, `stdOrthonormalBasis ℝ Wᗮ` reindexed by
-  -- `finrank_add_finrank_orthogonal`, `DirectSum.IsInternal.collectedOrthonormalBasis` for the
-  -- `W ⊕ Wᗮ` decomposition, then `OrthonormalBasis.reindex` along `finSumFinEquiv`), and set
-  -- `L := b.equiv (EuclideanSpace.basisFun _) (.refl _)`. The four consequences are routine:
-  -- `L` maps `W` onto the head subspace (fact 1), `canonicalHead ∘ L` is a linear iso `W ≅ ℝ^s`
-  -- (fact 2), `L` maps `Wᗮ` onto the residual subspace giving the RSS identity (fact 3), and
-  -- `L` preserves inner products giving the least-squares functional identity (fact 4).
-  sorry
+  classical
+  -- Build an orthonormal basis whose first `s = finrank W` vectors are an orthonormal basis of
+  -- `W` and whose last `m = finrank Wᗮ` vectors are an orthonormal basis of `Wᗮ`; the isometry
+  -- `L` is its Riesz representation. The four facts read off the block structure.
+  set s := Module.finrank ℝ W with hs
+  set m := Module.finrank ℝ Wᗮ with hm
+  have hsum : s + m = n := by
+    have h := W.finrank_add_finrank_orthogonal
+    rw [finrank_euclideanSpace_fin] at h
+    exact h
+  have hmpos : 0 < m := by omega
+  let bW : OrthonormalBasis (Fin s) ℝ ↥W := stdOrthonormalBasis ℝ W
+  let bP : OrthonormalBasis (Fin m) ℝ ↥Wᗮ := stdOrthonormalBasis ℝ Wᗮ
+  set g : Fin (s + m) → EuclideanSpace ℝ (Fin n) :=
+    Fin.append (fun i => (bW i : EuclideanSpace ℝ (Fin n)))
+      (fun j => (bP j : EuclideanSpace ℝ (Fin n))) with hgdef
+  have hne : ∀ (a : Fin s) (b : Fin m), Fin.castAdd m a ≠ Fin.natAdd s b := by
+    intro a b hh
+    have ha := a.isLt
+    have h2 : (Fin.castAdd m a).val = (Fin.natAdd s b).val := by rw [hh]
+    simp only [Fin.coe_castAdd, Fin.coe_natAdd] at h2
+    omega
+  have hgon : Orthonormal ℝ g := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    refine Fin.addCases (fun i' => ?_) (fun i' => ?_) i <;>
+      refine Fin.addCases (fun j' => ?_) (fun j' => ?_) j
+    · simp only [hgdef, Fin.append_left, ← Submodule.coe_inner]
+      by_cases h : i' = j'
+      · subst h; rw [orthonormal_iff_ite.mp bW.orthonormal i' i', if_pos rfl, if_pos rfl]
+      · rw [orthonormal_iff_ite.mp bW.orthonormal i' j', if_neg h,
+          if_neg (fun hc => h (Fin.castAdd_injective _ _ hc))]
+    · simp only [hgdef, Fin.append_left, Fin.append_right]
+      rw [Submodule.inner_right_of_mem_orthogonal (SetLike.coe_mem (bW i'))
+            (SetLike.coe_mem (bP j')), if_neg (hne i' j')]
+    · simp only [hgdef, Fin.append_left, Fin.append_right]
+      rw [Submodule.inner_left_of_mem_orthogonal (SetLike.coe_mem (bW j'))
+            (SetLike.coe_mem (bP i')), if_neg (hne j' i').symm]
+    · simp only [hgdef, Fin.append_right, ← Submodule.coe_inner]
+      by_cases h : i' = j'
+      · subst h; rw [orthonormal_iff_ite.mp bP.orthonormal i' i', if_pos rfl, if_pos rfl]
+      · rw [orthonormal_iff_ite.mp bP.orthonormal i' j', if_neg h,
+          if_neg (fun hc => h (Fin.natAdd_injective _ _ hc))]
+  haveI : Nonempty (Fin (s + m)) := ⟨⟨0, by omega⟩⟩
+  have hcard : Fintype.card (Fin (s + m))
+      = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) := by
+    rw [Fintype.card_fin, finrank_euclideanSpace_fin]; exact hsum
+  let ob : OrthonormalBasis (Fin (s + m)) ℝ (EuclideanSpace ℝ (Fin n)) :=
+    (basisOfOrthonormalOfCardEqFinrank hgon hcard).toOrthonormalBasis
+      (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact hgon)
+  have hob : ⇑ob = g := by
+    show ⇑((basisOfOrthonormalOfCardEqFinrank hgon hcard).toOrthonormalBasis _) = g
+    rw [Module.Basis.coe_toOrthonormalBasis, coe_basisOfOrthonormalOfCardEqFinrank]
+  have hLapp : ∀ (v : EuclideanSpace ℝ (Fin n)) (k : Fin (s + m)),
+      ob.repr v k = ⟪g k, v⟫_ℝ := by
+    intro v k
+    rw [OrthonormalBasis.repr_apply_apply, hob]
+  have hhead : ∀ (v : EuclideanSpace ℝ (Fin n)) (i : Fin s),
+      canonicalHead (ob.repr v) i = ⟪(bW i : EuclideanSpace ℝ (Fin n)), v⟫_ℝ := by
+    intro v i
+    show ob.repr v (Fin.castAdd m i) = _
+    rw [hLapp v (Fin.castAdd m i)]
+    simp only [hgdef, Fin.append_left]
+  have hres : ∀ (v : EuclideanSpace ℝ (Fin n)) (j : Fin m),
+      ob.repr v (Fin.natAdd s j) = ⟪(bP j : EuclideanSpace ℝ (Fin n)), v⟫_ℝ := by
+    intro v j
+    rw [hLapp v (Fin.natAdd s j)]
+    simp only [hgdef, Fin.append_right]
+  refine ⟨m, hmpos, hsum, ob.repr, ?_, ?_, ?_, ?_⟩
+  · -- fact 1: `L x` has vanishing residual block for `x ∈ W`
+    intro x hx
+    ext k
+    refine Fin.addCases (fun i => ?_) (fun j => ?_) k
+    · show ob.repr x (Fin.castAdd m i)
+        = (canonicalMean (canonicalHead (ob.repr x))) (Fin.castAdd m i)
+      rw [show (canonicalMean (canonicalHead (ob.repr x))) (Fin.castAdd m i)
+            = Fin.append (canonicalHead (ob.repr x)) (0 : Fin m → ℝ) (Fin.castAdd m i) from rfl,
+          Fin.append_left]
+      rfl
+    · show ob.repr x (Fin.natAdd s j)
+        = (canonicalMean (canonicalHead (ob.repr x))) (Fin.natAdd s j)
+      rw [show (canonicalMean (canonicalHead (ob.repr x))) (Fin.natAdd s j)
+            = Fin.append (canonicalHead (ob.repr x)) (0 : Fin m → ℝ) (Fin.natAdd s j) from rfl,
+          Fin.append_right, Pi.zero_apply, hres x j]
+      exact Submodule.inner_left_of_mem_orthogonal hx (SetLike.coe_mem (bP j))
+  · -- fact 2: surjectivity of the head block on `W`
+    intro t
+    refine ⟨bW.repr.symm ((WithLp.toLp 2 : (Fin s → ℝ) → EuclideanSpace ℝ (Fin s)) t), ?_⟩
+    funext i
+    show canonicalHead (ob.repr
+        ((bW.repr.symm ((WithLp.toLp 2 : (Fin s → ℝ) → EuclideanSpace ℝ (Fin s)) t) :
+          EuclideanSpace ℝ (Fin n)))) i = t i
+    rw [hhead, ← Submodule.coe_inner, ← OrthonormalBasis.repr_apply_apply,
+      LinearIsometryEquiv.apply_symm_apply]
+  · -- fact 3: the residual sum of squares
+    intro y
+    have hcoord : ∀ j : Fin m,
+        ob.repr y (Fin.natAdd s j)
+          = ⟪(bP j : EuclideanSpace ℝ (Fin n)), y - W.starProjection y⟫_ℝ := by
+      intro j
+      rw [hres y j, inner_sub_right,
+        Submodule.inner_left_of_mem_orthogonal (W.starProjection_apply_mem y)
+          (SetLike.coe_mem (bP j)), sub_zero]
+    have hnorm : ∑ j : Fin m,
+        ⟪(bP j : EuclideanSpace ℝ (Fin n)), y - W.starProjection y⟫_ℝ ^ 2
+          = ‖y - W.starProjection y‖ ^ 2 :=
+      OrthonormalBasis.sum_sq_inner_right bP
+        (⟨y - W.starProjection y, Submodule.sub_starProjection_mem_orthogonal y⟩ : ↥Wᗮ)
+    show ∑ j : Fin m, (ob.repr y (Fin.natAdd s j)) ^ 2 = residualSumSq W y
+    rw [show residualSumSq W y = ‖y - W.starProjection y‖ ^ 2 from rfl, ← hnorm]
+    exact Finset.sum_congr rfl (fun j _ => by rw [hcoord j])
+  · -- fact 4: the least-squares functional
+    intro γ hγ y
+    have hproj : W.starProjection y
+        = ∑ i, ⟪(bW i : EuclideanSpace ℝ (Fin n)), y⟫_ℝ • (bW i : EuclideanSpace ℝ (Fin n)) := by
+      rw [Submodule.starProjection_apply, bW.orthogonalProjection_apply_eq_sum y,
+        Submodule.coe_sum]
+      exact Finset.sum_congr rfl (fun i _ => by rw [Submodule.coe_smul])
+    rw [show lse W y = W.starProjection y from rfl, hproj, inner_sum]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [real_inner_smul_right, hhead γ i, hhead y i,
+      real_inner_comm γ (bW i : EuclideanSpace ℝ (Fin n)), mul_comm]
 
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
