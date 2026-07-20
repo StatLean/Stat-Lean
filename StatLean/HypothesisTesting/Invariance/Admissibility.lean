@@ -165,6 +165,15 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
     -- USER-INPUT: `A` is nowhere on the alternatives a better acceptance region than `A₀`
     (hpow : ∀ θ ∈ Θ', statScaleFamily E θ A ≤ statScaleFamily E θ A₀) :
     statScaleBase E (A \ A₀) = 0 := by
+  -- TODO: deep geometric core (Birnbaum–Stein), not yet formalized. Argument: if
+  -- `statScaleBase E (A \ A₀) > 0`, pick a base-positive point `p ∈ A \ A₀`; since `A₀` is
+  -- closed convex and `p ∉ A₀`, `geometric_hahn_banach_closed_point` yields `a, c` with
+  -- `⟪a, p⟫ > c ≥ ⟪a, t⟫` on `A₀`, so the open half-space `{t | c < ⟪a,t⟫}` misses `A₀`.
+  -- `hray` then gives `θ* ∈ Θ'` and `λₙ → ∞` with `θ* + λₙ a ∈ Θ'`; the exponential tilt
+  -- `statScaleFamily E (θ* + λₙ a)` concentrates on `{⟪a,t⟫ large}` (dominated-convergence
+  -- for `e^{λₙ⟪a,t⟫}/∫e^{λₙ⟪a,·⟫}`), forcing `statScaleFamily E θₙ A > statScaleFamily E θₙ A₀`
+  -- for large `n`, contradicting `hpow`. Missing Mathlib pieces: the tilt-asymptotic
+  -- domination lemma on `EuclideanSpace ℝ (Fin s)`. No false hypothesis; statement is TRUE.
   sorry
 
 /-- **A closed convex acceptance region is d-admissible.** -/
@@ -185,6 +194,13 @@ theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace �
           Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ') :
     IsDAdmissible (statScaleFamily E) Θ_H Θ'
       (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
+  -- TODO: Birnbaum–Stein convexity criterion, not yet formalized. A randomized competitor
+  -- `φ` two-sidedly dominating `φ₀ = 1_{A₀ᶜ}` is first reduced (via the Neyman–Pearson
+  -- structure of the domination) to an acceptance-region comparison, then
+  -- `acceptance_subset_of_power_le` nests the regions and the separating-hyperplane /
+  -- tilt-asymptotic argument makes the power comparison strict unless the power functions
+  -- coincide. Depends on `acceptance_subset_of_power_le` above plus the reduction of the
+  -- randomized competitor to a set. No false hypothesis; statement is TRUE.
   sorry
 
 /-- **A closed convex acceptance region whose size is attained is `α`-admissible.** If in
@@ -214,6 +230,13 @@ theorem isAlphaAdmissible_of_size_attained (E : ExpFamily 𝓧 (EuclideanSpace �
     (hθ₀size : power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) θ₀ = α) :
     IsAlphaAdmissible (statScaleFamily E) Θ_H Θ' α
       (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
+  -- TODO: `α`-admissibility, not yet formalized. Reuses `isDAdmissible_of_convex_acceptance`
+  -- but additionally needs continuity of the power function
+  -- `θ ↦ power (statScaleFamily E) φ₀ θ` at the finite point `θ₀ ∈ closure Θ_H ∩ natSet`
+  -- (an exponential-family regularity property, a *derivation* obligation) to turn the
+  -- level-`α` hypothesis and size-attainment at `θ₀` into the two-sided power domination on
+  -- `Θ_H` required by the d-admissibility theorem. Depends on the two results above plus
+  -- exp-family power-continuity. No false hypothesis; statement is TRUE.
   sorry
 
 end Convex
