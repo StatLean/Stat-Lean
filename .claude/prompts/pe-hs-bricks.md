@@ -1,0 +1,36 @@
+# Close the sorries in PointEstimation/ForMathlib/{HalmosSavage,CondExpWithDensity}.lean
+
+Lean 4 / Mathlib proof engineer on `StatLean`. Pin `v4.29.1`. (Note: the repo `CLAUDE.md` is gitignored and is NOT present in this worktree — everything you need is below. Project rules that matter here: never `lake update`; `sorry` is planned debt tied to a named lemma; do not launder unproven content into hypotheses.)
+
+You are ON the cluster. Iterate with plain foreground `lake build StatLean.PointEstimation.ForMathlib.HalmosSavage` then `lake build StatLean.PointEstimation.ForMathlib.CondExpWithDensity`. **Never** background a build, never nest `srun`/`sbatch`, never poll with `until pgrep`.
+
+## Hard constraints
+
+- **Only edit** `StatLean/PointEstimation/ForMathlib/HalmosSavage.lean` and `.../CondExpWithDensity.lean`. Touch nothing else. These are `ForMathlib`-layer files: **imports must stay Mathlib-only**.
+- **Signatures, hypothesis tags, docstrings FROZEN.** You may add `import Mathlib.*` and `private` helpers. Lines ≤ 100 characters.
+- Goal: **0 sorries, 0 errors**. Escape hatch: at most one lifted `private` sorry per file with a `-- TODO:`; report it.
+- **Do not weaken any statement.** If one looks false, STOP, leave it sorried, report the counterexample.
+- Commit after each lemma compiles.
+- After green: `#print axioms exists_equivalent_countable_mixture` — expect only `propext, Classical.choice, Quot.sound`.
+
+## What to prove
+
+**`exists_equivalent_countable_mixture`** — the Halmos–Savage device: a `μ`-dominated family of probability measures admits an equivalent countable convex mixture `ν = Σ cᵢ • P (θs i)` with `∀ θ, P θ ≪ ν` and the null-set equivalence `∀ A, (∀ θ, P θ A = 0) ↔ ν A = 0`.
+
+Classical route: consider the collection of countable subfamilies and maximise the measure of the union of their supports (a Zorn / supremum-of-a-countable-chain argument), or — usually smoother in Lean — take a sequence `θs` realising the supremum of `ν'(support)` over countable mixtures and show maximality forces domination. Note:
+- `[Nonempty Θ]` is present precisely so the sequence can be padded by repetition; it is tagged `LEAN-ONLY`.
+- The null-set equivalence is stated for **arbitrary** `A` (no `MeasurableSet`). That is deliberate and safe: `Measure.sum_apply_eq_zero` and `≪` are measurability-free at this pin. Do not add a measurability hypothesis.
+- Useful: `Measure.sum`, `Measure.sum_apply_eq_zero`, `Measure.AbsolutelyContinuous`, `Measure.rnDeriv`, `MeasureTheory.exists_isFiniteMeasure_absolutelyContinuous`-style helpers if present.
+
+**`CondExpWithDensity`** — three transfer lemmas showing a θ-free determination of a conditional probability survives a `comap T`-measurable density tilt:
+- `map_restrict_eq_withDensity_map` — a determination of `P(A ∣ T)` is a density of `(μ.restrict A).map T` w.r.t. `μ.map T`.
+- `setLIntegral_comp_withDensity_comap_eq` — the same determination still works under `μ.withDensity (g ∘ T)`.
+- `condExp_withDensity_comap_ae_eq` — conditional expectation given `MeasurableSpace.comap T` is unchanged by the tilt.
+
+Densities are taken in composed form `g ∘ T` (every `comap T`-measurable `ℝ≥0∞` density has this form — that is what `Measurable.exists_eq_measurable_comp`, Doob–Dynkin, gives you). The two `SigmaFinite (·.trim hT.comap_le)` instances and the a.e.-finiteness hypothesis in the signatures are there to make `condExp` well-behaved; use them.
+
+Useful: `ae_eq_condExp_of_forall_setIntegral_eq`, `setIntegral_condExp`, `condExp_congr_ae`, `withDensity_apply`, `lintegral_withDensity_eq_lintegral_mul`, `Measurable.comap_le`.
+
+## Report
+
+Final `lake build` status for both modules, per-file sorry counts, the `#print axioms` output, and any statement you believe is false.
