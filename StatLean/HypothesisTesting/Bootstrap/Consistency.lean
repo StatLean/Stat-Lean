@@ -141,7 +141,7 @@ theorem supCDFDist_nonneg (hF : IsCDF F) (hG : IsCDF G) : 0 ≤ supCDFDist F G :
   le_trans (abs_nonneg _) (le_ciSup (bddAbove_absSub hF hG) 0)
 
 /-- Triangle inequality for the sup-CDF distance among distribution functions. -/
-theorem supCDFDist_triangle (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H) :
+theorem supCDFDist_triangle_of_isCDF (hF : IsCDF F) (hG : IsCDF G) (hH : IsCDF H) :
     supCDFDist F H ≤ supCDFDist F G + supCDFDist G H := by
   refine ciSup_le (fun t => ?_)
   have h1 : |F t - G t| ≤ supCDFDist F G := le_ciSup (bddAbove_absSub hF hG) t
@@ -308,7 +308,7 @@ theorem tendsto_supCDFDist_bootstrap
     (h := fun n => supCDFDist (J n P) Jlim + supCDFDist Jlim (J n (Phat n ω)))
     tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
   · exact supCDFDist_nonneg (hJcdf n P) (hJcdf n (Phat n ω))
-  · exact supCDFDist_triangle (hJcdf n P) hJlim_cdf (hJcdf n (Phat n ω))
+  · exact supCDFDist_triangle_of_isCDF (hJcdf n P) hJlim_cdf (hJcdf n (Phat n ω))
 
 /-- **Bootstrap quantile consistency.**
 
