@@ -196,7 +196,7 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
   have hspan_d : Submodule.span ℝ (Set.range d) = (⊤ : Submodule ℝ V) := by
     have hvs : vectorSpan ℝ (Set.range η') = (⊤ : Submodule ℝ V) := by
       have h := congrArg AffineSubspace.direction hAS
-      rwa [AffineSubspace.direction_affineSpan, AffineSubspace.direction_top] at h
+      rwa [direction_affineSpan, AffineSubspace.direction_top] at h
     have hdeq : d = (fun w => w -ᵥ η' 0) ∘ η' := by funext i; simp [hddef, vsub_eq_sub]
     rw [hdeq, Set.range_comp, ← vectorSpan_eq_span_vsub_set_right ℝ
       (show η' 0 ∈ Set.range η' from ⟨0, rfl⟩), hvs]
@@ -238,15 +238,15 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
     have hprodi : 0 < (g' (θi i) (U x)).toReal * (h' x).toReal := hEi ▸ Real.exp_pos _
     have hprod0 : 0 < (g' (θi 0) (U x)).toReal * (h' x).toReal := hE0 ▸ Real.exp_pos _
     have hbpos : 0 < (h' x).toReal := by
-      rcases lt_or_le 0 (h' x).toReal with hb | hb
+      rcases lt_or_ge 0 (h' x).toReal with hb | hb
       · exact hb
       · nlinarith [hprod0, ha0_nn, hb]
     have hapos_i : 0 < (g' (θi i) (U x)).toReal := by
-      rcases lt_or_le 0 (g' (θi i) (U x)).toReal with ha | ha
+      rcases lt_or_ge 0 (g' (θi i) (U x)).toReal with ha | ha
       · exact ha
       · nlinarith [hprodi, hb_nn, ha]
     have hapos_0 : 0 < (g' (θi 0) (U x)).toReal := by
-      rcases lt_or_le 0 (g' (θi 0) (U x)).toReal with ha | ha
+      rcases lt_or_ge 0 (g' (θi 0) (U x)).toReal with ha | ha
       · exact ha
       · nlinarith [hprod0, hb_nn, ha]
     have hlogi : ⟪η' i, E.stat x⟫_ℝ - E.logPartition (η' i)
