@@ -316,9 +316,31 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
     refine Finset.sum_nonneg fun i _ => mul_nonneg (hk i) (hdiffnn i)
   linarith
 
+/-- **Closedness of the attainable-moment set** — the hard half of `convex_isClosed_momentSet`,
+isolated as a named debt.
+
+Closedness is the weak-* compactness of the class of critical functions, transported through the
+bounded moment map `φ ↦ (∫ φ fᵢ dμ)` into `Fin m → ℝ`. **LIFTED (deep debt).** No honest proof is
+available at pin `v4.29.1`. The classical route needs weak-* compactness of the closed unit ball
+of `L^∞(μ)` viewed as the dual of the predual `L¹(μ)` (Banach–Alaoglu, `WeakDual.isCompact_closedBall`,
+`ProperSpace ℝ`), together with the **surjective** isometry `L^∞(μ) ≃ (L¹(μ))*`. Mathlib has
+`isCompact_closedBall`, `geometric_hahn_banach_*` and the Fréchet–Riesz self-duality of `L²`
+(`InnerProductSpace.toDual`), but the *precise missing brick* is `L^∞ = (L¹)*`: only the
+**non-surjective** natural map `Lp (StrongDual E) q μ →L StrongDual (Lp E p μ)`
+(`MeasureTheory.Function.Holder`) exists, and the surjectivity `L^∞ = (L¹)*` (which needs
+localizability of `μ`) is absent, so the `[SigmaFinite μ]` form stated here cannot be discharged.
+The finite-measure `L²` specialization — still open — lives in `ForMathlib/TestsWeakCompact`
+(`isCompact_toWeakDualL2_image_constrained`), but it does **not** apply here: that file assumes
+`[IsFiniteMeasure μ]`, whereas the frozen signature below is `[SigmaFinite μ]`. -/
+private lemma isClosed_momentSet {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
+    (f : Fin m → 𝓧 → ℝ) (hmeas : ∀ i, Measurable (f i)) (hint : ∀ i, Integrable (f i) μ) :
+    IsClosed (momentSet μ f) := by
+  sorry
+
 /-- **Geometry of the moment set (iv, first clause).** The attainable-moment set is convex
 and closed. Convexity is immediate from convexity of the class of critical functions;
-closedness is the weak compactness theorem for critical functions. -/
+closedness is the weak compactness theorem for critical functions (lifted to the named private
+lemma `isClosed_momentSet`; see its docstring for the exact missing Mathlib brick). -/
 theorem convex_isClosed_momentSet {m : ℕ}
     -- USER-INPUT: dominating measure, σ-finite
     (μ : Measure 𝓧) [SigmaFinite μ]
@@ -355,10 +377,9 @@ theorem convex_isClosed_momentSet {m : ℕ}
           = fun x => a * (φ x * f i x) + b * (ψ x * f i x) from by funext x; ring]
       rw [integral_add ((hfi i).const_mul a) ((hgi i).const_mul b),
         integral_const_mul, integral_const_mul]
-  · -- TODO(TestsWeakCompact): closedness of the moment set is the weak-sequential-compactness
-    -- theorem for critical functions (ForMathlib/TestsWeakCompact, still open). No honest
-    -- proof is available without it; convexity above is complete.
-    sorry
+  · -- Closedness is lifted to the named private lemma `isClosed_momentSet`; its docstring
+    -- pins the exact missing Mathlib brick (`L^∞ = (L¹)*`). Convexity above is complete.
+    exact isClosed_momentSet μ f hmeas hint
 
 /-- **Multipliers exist, and are forced (iv, second clause).** If the constraint vector is
 an inner point of the attainable-moment set, then there are multipliers `k` such that
