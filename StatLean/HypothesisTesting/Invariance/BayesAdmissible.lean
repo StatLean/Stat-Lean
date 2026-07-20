@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Invariance.Admissibility
+import StatLean.Bayesian.Conjugacy.NormalNormal
 import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
@@ -68,7 +69,7 @@ that of J. Neyman and E. S. Pearson (*Phil. Trans. R. Soc. A* **231** (1933), 28
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -169,6 +170,19 @@ end Bayes
 
 /-! ## The Gaussian scale-mixture identity -/
 
+open StatLean.Bayesian in
+/-- The Gaussian known-variance kernel evaluated at `m'` is the Gaussian law `N(m', v)`
+(re-derivation of the private `gaussKernel_apply_eq` for use here). -/
+private theorem gaussKernel_apply_eq' {v : ℝ≥0} (hv : v ≠ 0) (m' : ℝ) :
+    gaussKernel v m' = gaussianReal m' v := by
+  have hmeas : Measurable (Function.uncurry fun θ x => gaussianPDF θ v x) := by
+    change Measurable fun z : ℝ × ℝ => ENNReal.ofReal (gaussianPDFReal z.1 v z.2)
+    refine Measurable.ennreal_ofReal ?_
+    unfold gaussianPDFReal
+    fun_prop
+  rw [gaussKernel, Kernel.withDensity_apply _ hmeas, Kernel.const_apply,
+    gaussianReal_of_var_ne_zero _ hv]
+
 /-- **Mixing a Gaussian location family over its mean reproduces a wider centred
 Gaussian.** For a variance `σ² > 0` and any larger `M²`, there is a prior on the mean
 under which the mixture of `N(ζ, σ²)` over `ζ` is exactly `N(0, M²)` — stated both as the
@@ -188,6 +202,22 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
       (∀ z : ℝ, ∫ ζ, gaussianPDFReal ζ σ2 z ∂Λ = gaussianPDFReal 0 M2 z) ∧
       (∀ B : Set ℝ, MeasurableSet B →
         ∫⁻ ζ, gaussianReal ζ σ2 B ∂Λ = gaussianReal 0 M2 B) := by
-  sorry
+  classical
+  refine ⟨gaussianReal 0 (M2 - σ2), inferInstance, ?_, ?_⟩
+  · -- pointwise density identity (product of Gaussians)
+    sorry
+  · -- measure-level mixture identity, via the Gaussian convolution kernel
+    intro B hB
+    haveI hmark := StatLean.Bayesian.isMarkovKernel_gaussKernel hσ
+    have key : StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)
+        = gaussianReal 0 M2 := by
+      rw [StatLean.Bayesian.comp_gaussKernel_gaussianReal hσ, tsub_add_cancel_of_le hσM.le]
+    calc ∫⁻ ζ, gaussianReal ζ σ2 B ∂(gaussianReal 0 (M2 - σ2))
+        = ∫⁻ ζ, StatLean.Bayesian.gaussKernel σ2 ζ B ∂(gaussianReal 0 (M2 - σ2)) := by
+          refine lintegral_congr fun ζ => ?_
+          rw [gaussKernel_apply_eq' hσ]
+      _ = (StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)) B :=
+          (Measure.bind_apply hB (Kernel.measurable _).aemeasurable).symm
+      _ = gaussianReal 0 M2 B := by rw [key]
 
 end StatLean.HypothesisTesting
