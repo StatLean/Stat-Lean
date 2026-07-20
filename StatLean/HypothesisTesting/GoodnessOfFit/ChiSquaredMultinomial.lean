@@ -3,6 +3,8 @@ import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
+import StatLean.AsymptoticStatistics.ParametricFamily.ScoreCLT
+import Mathlib.Probability.HasLawExists
 
 /-!
 # Pearson's chi-squared statistic for a simple multinomial null
@@ -316,6 +318,113 @@ private lemma measurable_reducedCount {n k : ℕ} {π : Fin (k + 1) → ℝ}
     simp only [reducedVec]
     exact ((measurable_multinomialCount hX i.castSucc).sub measurable_const).div measurable_const
   exact (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp hg
+
+/-! #### The canonical i.i.d. transfer
+
+We realise `reducedCount` as the standardised sum of the centred per-observation indicator
+vectors `g x = indicatorVec x − piVec π`, transfer the per-stage law to the canonical
+infinite-product i.i.d. model (via `iIndepFun_iff_map_fun_eq_pi_map`), and apply the
+reusable fixed-i.i.d. CLT `clt_finDim`. -/
+
+/-- The cell count as a real-valued sum of indicators. -/
+private lemma multinomialCount_cast_eq_sum {n k : ℕ} (X : Fin n → Ω → Fin (k + 1))
+    (j : Fin (k + 1)) (ω : Ω) :
+    (multinomialCount X j ω : ℝ) = ∑ i : Fin n, if X i ω = j then (1 : ℝ) else 0 := by
+  classical
+  rw [multinomialCount, Finset.card_filter, Nat.cast_sum]
+  exact Finset.sum_congr rfl (fun i _ => by by_cases h : X i ω = j <;> simp [h])
+
+/-- The per-observation indicator vector in the reduced space:
+`(indicatorVec x)_i = 1[x = i.castSucc]`. -/
+private noncomputable def indicatorVec {k : ℕ} (x : Fin (k + 1)) : EuclideanSpace ℝ (Fin k) :=
+  WithLp.toLp 2 (fun i => if x = i.castSucc then (1 : ℝ) else 0)
+
+/-- The reduced null-probability vector `(piVec π)_i = π i.castSucc`. -/
+private noncomputable def piVec {k : ℕ} (π : Fin (k + 1) → ℝ) : EuclideanSpace ℝ (Fin k) :=
+  WithLp.toLp 2 (fun i => π i.castSucc)
+
+/-- The real inner product on `EuclideanSpace ℝ (Fin k)` as a coordinate sum. -/
+private lemma inner_euclidean_eq_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
+    ⟪u, w⟫ = ∑ i, u i * w i := by
+  simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+  exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
+
+/-- The centred indicator vector `g x = indicatorVec x − piVec π` paired with a direction
+`u`, in coordinate form. -/
+private lemma inner_u_g {k : ℕ} (π : Fin (k + 1) → ℝ) (u : EuclideanSpace ℝ (Fin k))
+    (x : Fin (k + 1)) :
+    ⟪u, indicatorVec x - piVec π⟫
+      = ∑ i, u i * ((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc) := by
+  rw [inner_euclidean_eq_sum]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rfl
+
+/-- The `∑_x π_x 1[x = i.castSucc] = π i.castSucc` pick identity. -/
+private lemma sum_pi_ite_castSucc {k : ℕ} (π : Fin (k + 1) → ℝ) (i : Fin k) :
+    ∑ x : Fin (k + 1), π x * (if x = i.castSucc then (1 : ℝ) else 0) = π i.castSucc := by
+  simp only [mul_ite, mul_one, mul_zero]
+  rw [Finset.sum_ite_eq' Finset.univ i.castSucc (fun x => π x)]
+  simp
+
+/-- The `∑_x π_x 1[x = i.cs] 1[x = j.cs] = δ_{ij} π i.castSucc` product-pick identity. -/
+private lemma sum_pi_ite_ite {k : ℕ} (π : Fin (k + 1) → ℝ) (i j : Fin k) :
+    ∑ x : Fin (k + 1),
+        π x * ((if x = i.castSucc then (1 : ℝ) else 0) * (if x = j.castSucc then 1 else 0))
+      = if i = j then π i.castSucc else 0 := by
+  by_cases hij : i = j
+  · subst hij
+    rw [if_pos rfl]
+    have hx : ∀ x : Fin (k + 1),
+        π x * ((if x = i.castSucc then (1 : ℝ) else 0) * (if x = i.castSucc then 1 else 0))
+          = π x * (if x = i.castSucc then 1 else 0) := by
+      intro x; by_cases hx : x = i.castSucc <;> simp [hx]
+    simp_rw [hx]; exact sum_pi_ite_castSucc π i
+  · rw [if_neg hij]
+    refine Finset.sum_eq_zero (fun x _ => ?_)
+    by_cases hxi : x = i.castSucc
+    · by_cases hxj : x = j.castSucc
+      · exact absurd (Fin.castSucc_injective k (hxi.symm.trans hxj)) hij
+      · simp [hxj]
+    · simp [hxi]
+
+/-- The covariance-entry integral: `∑_x π_x (b_i − π'_i)(b_j − π'_j) = reducedCov π i j`. -/
+private lemma sum_pi_center_prod {k : ℕ} (π : Fin (k + 1) → ℝ) (hπsum : ∑ j, π j = 1)
+    (i j : Fin k) :
+    ∑ x : Fin (k + 1),
+        π x * (((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc)
+          * ((if x = j.castSucc then 1 else 0) - π j.castSucc))
+      = reducedCov π i j := by
+  have hexp : ∀ x : Fin (k + 1),
+      π x * (((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc)
+          * ((if x = j.castSucc then 1 else 0) - π j.castSucc))
+        = π x * ((if x = i.castSucc then 1 else 0) * (if x = j.castSucc then 1 else 0))
+          - π j.castSucc * (π x * (if x = i.castSucc then 1 else 0))
+          - π i.castSucc * (π x * (if x = j.castSucc then 1 else 0))
+          + π i.castSucc * π j.castSucc * π x := by
+    intro x; ring
+  simp_rw [hexp]
+  rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_sub_distrib,
+    sum_pi_ite_ite, ← Finset.mul_sum, sum_pi_ite_castSucc, ← Finset.mul_sum, sum_pi_ite_castSucc,
+    ← Finset.mul_sum, hπsum]
+  simp only [reducedCov, Matrix.of_apply]
+  ring
+
+/-- `reducedCount` is the standardised sum of the centred per-observation indicator vectors. -/
+private lemma reducedCount_eq_smul_sum {n k : ℕ} (π : Fin (k + 1) → ℝ)
+    (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    reducedCount π X ω
+      = (Real.sqrt n)⁻¹ • ∑ i : Fin n, (indicatorVec (X i ω) - piVec π) := by
+  classical
+  rw [reducedCount]
+  simp only [indicatorVec, piVec]
+  simp_rw [← WithLp.toLp_sub]
+  rw [← WithLp.toLp_sum, ← WithLp.toLp_smul]
+  refine congrArg (WithLp.toLp 2) ?_
+  funext j
+  simp only [Finset.sum_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+  rw [reducedVec, multinomialCount_cast_eq_sum, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  rw [div_eq_inv_mul]
 
 /-- **Multivariate CLT for the reduced cell frequencies** (LIFTED — the single deep analytic
 brick of the null-limit proof). The standardised reduced count vector converges in law to
