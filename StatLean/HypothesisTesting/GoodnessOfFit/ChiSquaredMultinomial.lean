@@ -72,7 +72,7 @@ modern treatment via the multivariate central limit theorem is standard.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal BigOperators
+open scoped ENNReal BigOperators Matrix
 
 namespace StatLean.HypothesisTesting
 
@@ -165,6 +165,115 @@ private lemma pearsonQ_eq_reducedQ {n k : ℕ} {π : Fin (k + 1) → ℝ}
   · refine Finset.sum_congr rfl (fun i _ => ?_)
     rw [hsq]
   · rw [← Finset.sum_div, hsq, hlast, neg_sq]
+
+/-- The reduced `k × k` covariance `Σ = diag(π') − π' π'ᵀ` of the first `k` cell
+frequencies (`π' j = π j.castSucc`). It is `PosDef` (`reducedCov_posDef`), unlike the full
+`(k+1)`-dimensional covariance which is singular. -/
+private noncomputable def reducedCov {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Matrix (Fin k) (Fin k) ℝ :=
+  Matrix.of fun i j =>
+    (if i = j then π i.castSucc else 0) - π i.castSucc * π j.castSucc
+
+/-- The Sherman–Morrison inverse of `reducedCov`: `Σ⁻¹ = diag(1/π') + (1/π_{k}) 𝟙 𝟙ᵀ`. -/
+private noncomputable def reducedCovInv {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Matrix (Fin k) (Fin k) ℝ :=
+  Matrix.of fun i j =>
+    (if i = j then (π i.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹
+
+/-- The action of `Σ⁻¹` on a vector: `(Σ⁻¹ z)_i = z_i/π_i + (∑_j z_j)/π_{k}`. -/
+private lemma reducedCovInv_mulVec {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin k → ℝ) (i : Fin k) :
+    (reducedCovInv π *ᵥ z) i
+      = (π i.castSucc)⁻¹ * z i + (π (Fin.last k))⁻¹ * ∑ j, z j := by
+  simp only [reducedCovInv, Matrix.mulVec, dotProduct, Matrix.of_apply]
+  have h : ∀ j : Fin k,
+      ((if i = j then (π i.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹) * z j
+        = (if i = j then (π i.castSucc)⁻¹ * z j else 0) + (π (Fin.last k))⁻¹ * z j := by
+    intro j
+    by_cases hij : i = j
+    · simp only [if_pos hij, add_mul]
+    · simp only [if_neg hij, zero_add, add_mul]
+  rw [Finset.sum_congr rfl (fun j _ => h j), Finset.sum_add_distrib,
+    Finset.sum_ite_eq Finset.univ i (fun j => (π i.castSucc)⁻¹ * z j), ← Finset.mul_sum]
+  simp
+
+/-- **The quadratic form.** `z ⬝ᵥ Σ⁻¹ z = reducedQ π z`. -/
+private lemma dotProduct_reducedCovInv {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin k → ℝ) :
+    z ⬝ᵥ (reducedCovInv π) *ᵥ z = reducedQ π z := by
+  rw [reducedQ]
+  simp only [dotProduct]
+  simp_rw [reducedCovInv_mulVec, mul_add]
+  rw [Finset.sum_add_distrib]
+  congr 1
+  · exact Finset.sum_congr rfl (fun i _ => by rw [div_eq_mul_inv]; ring)
+  · rw [← Finset.sum_mul, div_eq_mul_inv]; ring
+
+/-- **Sherman–Morrison.** `Σ · Σ⁻¹ = 1`.  The cancellation uses `π_{k} = 1 − ∑_{j<k} π_j`
+(the last cell probability), i.e. the null-probability normalisation. -/
+private lemma reducedCov_mul_inv {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    reducedCov π * reducedCovInv π = 1 := by
+  have hlne : π (Fin.last k) ≠ 0 := (hπpos _).ne'
+  ext i l
+  rw [Matrix.mul_apply, Matrix.one_apply]
+  simp only [reducedCov, reducedCovInv, Matrix.of_apply]
+  have step : ∀ j : Fin k,
+      (((if i = j then π i.castSucc else 0) - π i.castSucc * π j.castSucc) *
+        ((if j = l then (π j.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹))
+      = (if i = j then (if j = l then (1 : ℝ) else 0) else 0)
+        + (if i = j then π i.castSucc * (π (Fin.last k))⁻¹ else 0)
+        - (if j = l then π i.castSucc else 0)
+        - π i.castSucc * π j.castSucc * (π (Fin.last k))⁻¹ := by
+    intro j
+    have hj : π j.castSucc ≠ 0 := (hπpos _).ne'
+    split_ifs <;> subst_vars <;> field_simp <;> ring
+  rw [Finset.sum_congr rfl (fun j _ => step j), Finset.sum_sub_distrib, Finset.sum_sub_distrib,
+    Finset.sum_add_distrib,
+    Finset.sum_ite_eq Finset.univ i (fun j => if j = l then (1 : ℝ) else 0),
+    Finset.sum_ite_eq Finset.univ i (fun _ => π i.castSucc * (π (Fin.last k))⁻¹),
+    Finset.sum_ite_eq' Finset.univ l (fun _ => π i.castSucc)]
+  simp only [Finset.mem_univ, if_true]
+  have hD : (∑ j : Fin k, π i.castSucc * π j.castSucc * (π (Fin.last k))⁻¹)
+      = π i.castSucc * (π (Fin.last k))⁻¹ * ∑ j : Fin k, π j.castSucc := by
+    rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun j _ => by ring)
+  have hs : (∑ j : Fin k, π j.castSucc) = 1 - π (Fin.last k) := by
+    have := hπsum; rw [Fin.sum_univ_castSucc] at this; linarith
+  rw [hD, hs]
+  have hz : π i.castSucc * (π (Fin.last k))⁻¹ - π i.castSucc
+      - π i.castSucc * (π (Fin.last k))⁻¹ * (1 - π (Fin.last k)) = 0 := by
+    field_simp; ring
+  linear_combination hz
+
+/-- `Σ⁻¹` is positive definite (`∑ z_i²/π_i + (∑ z_i)²/π_{k} > 0` for `z ≠ 0`). -/
+private lemma reducedCovInv_posDef {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) : (reducedCovInv π).PosDef := by
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, reducedCovInv, Matrix.of_apply, star_trivial]
+    by_cases h : i = j <;> simp [h, eq_comm]
+  · intro x hx
+    rw [star_trivial, dotProduct_reducedCovInv, reducedQ]
+    have hA : 0 < ∑ i : Fin k, x i ^ 2 / π i.castSucc := by
+      obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+      refine Finset.sum_pos' (fun j _ => ?_) ⟨i, Finset.mem_univ _, ?_⟩
+      · exact div_nonneg (sq_nonneg _) (hπpos _).le
+      · exact div_pos (lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hi))) (hπpos _)
+    have hB : 0 ≤ (∑ i : Fin k, x i) ^ 2 / π (Fin.last k) :=
+      div_nonneg (sq_nonneg _) (hπpos _).le
+    linarith
+
+/-- `Σ = reducedCov` is positive definite (inverse of the `PosDef` matrix `Σ⁻¹`). -/
+private lemma reducedCov_posDef {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) : (reducedCov π).PosDef := by
+  have hinv : (reducedCovInv π)⁻¹ = reducedCov π :=
+    Matrix.inv_eq_left_inv (reducedCov_mul_inv hπpos hπsum)
+  rw [← hinv]
+  exact (reducedCovInv_posDef hπpos).inv
+
+/-- `Σ⁻¹ = reducedCovInv` as matrices. -/
+private lemma reducedCov_inv_eq {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    (reducedCov π)⁻¹ = reducedCovInv π :=
+  Matrix.inv_eq_right_inv (reducedCov_mul_inv hπpos hπsum)
 
 /-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
 `j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
