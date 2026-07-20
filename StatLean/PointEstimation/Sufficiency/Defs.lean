@@ -20,8 +20,10 @@ area, plus minimal sufficiency:
 * `IsMinimalSufficient P T` — sufficient, and a.e.-factoring through every other
   sufficient statistic.
 
-**Reference.** Classical sufficiency theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), the definition of a sufficient statistic via θ-free conditional
+distributions. (`TPE2 §1.6`.)
 
 **Proof formalization notes.**
 * The compProd (graph) form of `HasSufficientKernel` is deliberately stronger-looking

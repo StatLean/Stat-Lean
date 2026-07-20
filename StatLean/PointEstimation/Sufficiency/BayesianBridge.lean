@@ -16,8 +16,10 @@ notions agree:
 * `isFactorizedDensity_of_isFactorizedLikelihood` — the pointwise Fisher–Neyman factorization
   of a likelihood implies the almost-everywhere factorization of the densities.
 
-**Reference.** Classical sufficiency theory; the two formulations are the reconstruction
-(kernel-factorization) definition and the factorization criterion.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), the equivalence of the conditional-distribution and factorization
+carriers of sufficiency. (`TPE2 §1.6`.)
 
 **Proof formalization notes.**
 * **Import direction.** This is a bridge file and is the one place where the point-estimation

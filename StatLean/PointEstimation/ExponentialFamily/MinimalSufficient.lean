@@ -27,8 +27,10 @@ equivalent to the minimal sufficient statistic of the finite subfamily.
 * `ExpFamily.isMinimalSufficient_stat` — minimal sufficiency of the natural statistic under
   the affine-span condition.
 
-**Reference.** Classical exponential-family and sufficiency theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), Corollary 6.16 (in a canonical exponential family of full rank the
+natural statistic is minimal sufficient). (`TPE2 §1.6 Cor 6.16`.)
 
 **Proof formalization notes.**
 * The two classical hypotheses — full rank, and the existence of an affinely spanning

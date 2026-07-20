@@ -21,8 +21,11 @@ This is `pitmanEstimator`, fixed in the data model of this area. The file proves
 equivariant, that it coincides with the conditional-mean form, and that it is minimum
 risk equivariant.
 
-**Reference.** Classical location-equivariant estimation; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Corollary 1.12 (for squared error the MRE estimator is `E₀[δ₀ ∣ y]`) and Theorem
+1.20 (the Pitman estimator in closed form as a ratio of integrals). (`TPE2 §3.1 Cor 1.12, Thm
+1.20`.)
 
 **Proof formalization notes.**
 * Equivariance is the substitution `u ↦ u + a` in both integrals: the denominator is

@@ -25,8 +25,10 @@ Contents:
 * `infoMatrix_expFamily` — the information matrix is the covariance matrix of the natural
   statistic.
 
-**Reference.** Classical computation of the Fisher information of an exponential family in
-its natural parametrization. Original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), Theorem 5.4 (the Fisher information of an exponential family is
+`A″`). (`TPE2 §2.5 Thm 5.4`.)
 
 **Proof formalization notes.**
 * Both statements are given in the *natural* parametrization, where the score is

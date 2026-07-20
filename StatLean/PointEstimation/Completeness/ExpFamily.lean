@@ -21,8 +21,10 @@ everywhere.
 * `isCompleteStat_of_interior_nonempty` — the multivariate statement;
 * `isCompleteStat_of_interior_nonempty_real` — its one-dimensional specialization.
 
-**Reference.** Classical exponential-family and completeness theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), Theorem 6.22 (in an exponential family of full rank the natural
+statistic is complete). (`TPE2 §1.6 Thm 6.22`.)
 
 **Proof formalization notes.**
 * Only **nonempty interior** of the parameter set is assumed, not the full rank condition.

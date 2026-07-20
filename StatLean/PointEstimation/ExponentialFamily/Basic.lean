@@ -25,8 +25,10 @@ The elementary facts that make the data model of `ExponentialFamily.Defs` usable
   i.i.d. sampling: the `n`-fold product of members is the member of the product family whose
   natural statistic is `x ↦ ∑ i, T(xᵢ)`.
 
-**Reference.** Classical exponential-family theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), equation (5.2) and the convexity of the natural parameter space.
+(`TPE2 §1.5 (5.2)`.)
 
 **Proof formalization notes.**
 * Convexity of the natural parameter set is Hölder's inequality applied to the factorization

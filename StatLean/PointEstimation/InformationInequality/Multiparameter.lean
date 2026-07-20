@@ -24,9 +24,11 @@ Contents:
 * `multiparameter_cramer_rao` — its specialization to the coordinate scores: the variance of
   a statistic is at least `∇(E_θ δ)ᵀ I(θ)⁻¹ ∇(E_θ δ)`.
 
-**Reference.** Classical multiparameter (matrix) form of the information inequality, and the
-quadratic-form covariance inequality it rests on. Original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.6 (The
+Multiparameter Case and Other Extensions), Theorem 6.1 (the covariance-matrix inequality),
+Theorem 6.2 (the exponential-family information matrix) and Theorem 6.6 (the multiparameter
+Cramér–Rao bound `(∂g)ᵀ I(θ)⁻¹ (∂g)`). (`TPE2 §2.6 Thm 6.1, Thm 6.2, Thm 6.6`.)
 
 **Proof formalization notes.**
 * The quadratic-form inequality is stated at a *fixed* measure: it is a statement of

@@ -19,8 +19,10 @@ construction — is run against this `λ`.
 
 * `exists_equivalent_countable_mixture` — the existence statement.
 
-**Reference.** Classical theory of dominated families; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 2 (The Probability
+Background), §2.6 (Sufficient Statistics), supporting material for Theorem 2.6.2: every
+dominated family admits an equivalent countable mixture. (`TSH4 Thm 2.6.2`.)
 
 **Proof formalization notes.**
 * **Route.** Reduce to a finite dominating measure (`μ` σ-finite admits an equivalent finite

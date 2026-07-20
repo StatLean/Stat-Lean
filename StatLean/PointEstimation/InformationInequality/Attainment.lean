@@ -18,10 +18,10 @@ Contents:
 * `expFamily_of_cramer_rao_attained` — the converse: attainment at every parameter value
   forces the exponential form.
 
-**Reference.** Classical characterization of equality in the information inequality: the
-bound is attained if and only if the underlying family is a one-parameter exponential family
-with the estimator as natural statistic. Original sources in the bibliographic comments
-below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), Theorem 5.12 (the bound is attained iff the family is exponential and
+the estimator is affine in the natural statistic). (`TPE2 §2.5 Thm 5.12`.)
 
 **Proof formalization notes.**
 * The easy direction is stated at a *single* parameter value and assumes nothing about the

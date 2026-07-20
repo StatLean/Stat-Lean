@@ -19,8 +19,10 @@ Constancy of the conditional probability is exactly independence.
   implies bounded completeness for families of probability measures;
 * `indepFun_of_boundedlyComplete_sufficient` — the independence theorem.
 
-**Reference.** Classical completeness and ancillarity theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), Theorem 6.21 (Basu: a complete sufficient statistic is independent of
+every ancillary statistic). (`TPE2 §1.6 Thm 6.21`.)
 
 **Proof formalization notes.**
 * The theorem is stated with **bounded** completeness, which is all the proof consumes: the

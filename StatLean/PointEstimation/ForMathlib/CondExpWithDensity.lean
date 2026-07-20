@@ -20,8 +20,10 @@ respect to that σ-algebra:
 * `condExp_withDensity_comap_ae_eq` — the vector-valued counterpart: conditional expectation
   given `σ(T)` is unchanged by a `T`-measurable tilt.
 
-**Reference.** Classical conditional-expectation theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), supporting material for the factorization criterion: conditional
+expectations and determinations of `P(A ∣ T)` under a `T`-measurable tilt. (`TPE2 §1.6`.)
 
 **Proof formalization notes.**
 * **Densities are taken in composed form `g ∘ T`.** Every `MeasurableSpace.comap T`-measurable

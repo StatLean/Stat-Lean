@@ -22,9 +22,10 @@ Contents:
 * `cramer_rao_of_deriv` — the bias form, for an estimator of a differentiable estimand
   which need not be unbiased.
 
-**Reference.** Classical information (Cramér–Rao) inequality for a real parameter, in the
-version whose regularity conditions are imposed on the estimator. Original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), Theorem 5.10 (the information inequality: `var δ ≥ g′(θ)²/I(θ)`).
+(`TPE2 §2.5 Thm 5.10`.)
 
 **Proof formalization notes.**
 * The proof is the covariance inequality `var(δ) ≥ cov(δ, ψ)² / var(ψ)` (Cauchy–Schwarz

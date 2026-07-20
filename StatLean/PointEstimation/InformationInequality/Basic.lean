@@ -35,9 +35,10 @@ Contents:
   information with the bilinear Fisher-information form of the asymptotics area,
   evaluated on the derived score.
 
-**Reference.** Classical Fisher-information theory: the mean-zero score identity, the
-variance and negated-curvature expressions for the information, and its behavior under
-reparametrization. Original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), the score identities (zero mean, information as the score variance).
+(`TPE2 §2.5`.)
 
 **Proof formalization notes.**
 * The score is junk-safe (`0/0 = 0`), so off the support `ℓ̇_θ · p_θ = 0` while

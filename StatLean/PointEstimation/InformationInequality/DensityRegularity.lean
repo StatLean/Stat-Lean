@@ -29,9 +29,10 @@ Contents:
   only, valid for every square-integrable statistic;
 * `cramer_rao_iid` — the sample-size-`n` form, with `n I(θ)` in the denominator.
 
-**Reference.** Classical family-side (Lipschitz-type) regularity conditions for the
-information inequality, replacing the per-estimator differentiation-under-the-integral
-condition. Original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), Theorem 5.15 (the family-side regularity form, valid for every
+square-integrable statistic). (`TPE2 §2.5 Thm 5.15`.)
 
 **Proof formalization notes.**
 * The domination condition is transcribed exactly as the classical one: the envelope `b` is

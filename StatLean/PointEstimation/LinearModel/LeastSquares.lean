@@ -21,8 +21,11 @@ unbiased estimator of `σ²`:
   whose coordinates are linear functions of the mean vector (the mechanism behind the
   regression forms, both of full rank and of deficient rank with side conditions).
 
-**Reference.** Classical least-squares theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), Theorem 4.8 (the least-squares projection is UMVU and MRE for the subspace
+mean) and Theorem 4.10 (the general `s`-dimensional extension). (`TPE2 §3.4 Thm 4.8, Thm
+4.10`.)
 
 **Proof formalization notes.**
 * *Estimand normalization.* The estimand is stated for `γ ∈ W`. This is no restriction:

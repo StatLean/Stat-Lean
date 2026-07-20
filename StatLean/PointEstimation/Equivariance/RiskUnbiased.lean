@@ -29,8 +29,10 @@ Both hypotheses of the general theorem are genuinely needed: dropping transitivi
 commutativity produces counterexamples, both of which are exhibited classically by the
 normal location-scale problem with a standardized squared-error loss.
 
-**Reference.** Classical equivariance and unbiasedness theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Lemma 1.23, Definition 1.24 (risk-unbiasedness) and Theorem 1.27 (an MRE estimator
+for a convex even loss is risk-unbiased). (`TPE2 §3.1 Lem 1.23, Def 1.24, Thm 1.27`.)
 
 **Proof formalization notes.**
 * The general proof is three lines and does **not** use model invariance: transitivity

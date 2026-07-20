@@ -18,8 +18,9 @@ Carrier conventions for the point-estimation area:
 * `riskRand P L κ θ` — the risk of a **randomized** estimator, a Markov kernel
   `κ : 𝓧 ⇝ D`.
 
-**Reference.** Classical statistical decision theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.1 (The
+Problem), the decision-theoretic framework (model, estimand, loss and risk). (`TPE2 §1.1`.)
 
 **Proof formalization notes.**
 * Risks are `ℝ≥0∞`-valued lower Lebesgue integrals (junk-value discipline): a

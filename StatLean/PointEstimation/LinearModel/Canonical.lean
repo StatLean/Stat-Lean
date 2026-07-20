@@ -32,8 +32,11 @@ and transported back afterwards.
 * `isUMVU_coord`, `isUMVU_linear_combination`, `isUMVU_residual_variance` — the unbiased
   optimality statements: `Yᵢ` for `ηᵢ`, `∑ λᵢ Yᵢ` for `∑ λᵢ ηᵢ`, and `S²/m` for `σ²`.
 
-**Reference.** Classical normal linear-model theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), Theorem 4.3 (in the canonical model each `Yᵢ` is UMVU and MRE for `ηᵢ`, and
+`c·Sʳ` for `σʳ`) and Theorem 4.4 (the UMVU estimators of `Σγᵢηᵢ` and `σ²`). (`TPE2 §3.4 Thm
+4.3, Thm 4.4`.)
 
 **Proof formalization notes.**
 * *Parameter packaging.* The mean is indexed by a free `η : Fin s → ℝ` together with a

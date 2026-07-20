@@ -15,8 +15,10 @@ product `f = u · v`, they turn `∫ u' v = − ∫ u v'` whenever the product v
 which is exactly the mechanism by which the Stein identity for an exponential family drops
 its boundary contributions.
 
-**Reference.** Classical integration by parts on the line; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), supporting material for Lemma 5.15 (Stein's identity): vanishing
+boundary terms on the whole line. (`TPE2 §1.5 Lem 5.15`.)
 
 **Proof formalization notes.**
 * Both statements wrap `MeasureTheory.integral_of_hasDerivAt_of_tendsto`, the whole-line
