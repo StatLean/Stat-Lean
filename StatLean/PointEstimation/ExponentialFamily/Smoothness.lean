@@ -31,8 +31,11 @@ covariance identities for the natural statistic are what one gets by differentia
 * `ExpFamily.analyticOnNhd_integral_exp_inner` — the full multivariate joint analyticity
   (DEFERRAL-ELIGIBLE, see below).
 
-**Reference.** Classical exponential-family theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), Theorem 5.8 (continuity and infinite differentiability on the interior
+of the natural parameter space; differentiation under the integral sign). (`TPE2 §1.5 Thm
+5.8`.)
 
 **Proof formalization notes.**
 * The weighted parameter set is defined with `|f|` so that membership is a genuine absolute

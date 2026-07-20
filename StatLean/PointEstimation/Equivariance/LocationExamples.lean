@@ -18,8 +18,10 @@ Two results about the normal location family.
   (`locRisk_isLocMRE_gaussian_eq`). In this sense the normal distribution is least
   favourable for equivariant location estimation.
 
-**Reference.** Classical location-equivariant estimation; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Theorem 1.17 (the characterization of the normal mean as MRE) and Corollary 1.14
+(the one-observation bounded-loss case). (`TPE2 §3.1 Thm 1.17, Cor 1.14`.)
 
 **Proof formalization notes.**
 * The least-favourable statement is proved exactly as classically, by a one-line

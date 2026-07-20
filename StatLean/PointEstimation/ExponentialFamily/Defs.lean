@@ -26,8 +26,10 @@ This file fixes the data model:
 * `StatAffineIndep` — no nontrivial affine relation `⟨a, T⟩ = c` holds a.e.;
 * `FullRank` — parameter set with nonempty interior + affinely independent statistic.
 
-**Reference.** Classical exponential-family theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), equations (5.1)–(5.2) (general and canonical form, natural parameter
+space) and Definition 5.2 (identifiability). (`TPE2 §1.5 (5.1)–(5.2), Def 5.2`.)
 
 **Proof formalization notes.**
 * Members are built with `Measure.tilted`, inheriting Mathlib's API

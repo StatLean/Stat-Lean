@@ -13,7 +13,13 @@ $$ p_\theta(x) \;=\; g_\theta\bigl(T(x)\bigr)\, h(x) \qquad (\mu\text{-a.e.}). $
 * `isSufficient_of_isFactorizedDensity` — a factorization makes `T` sufficient;
 * `isFactorizedDensity_of_isSufficient` — a sufficient `T` produces a factorization.
 
-**Reference.** Classical factorization criterion for sufficiency in dominated models.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), the factorization criterion; in the general dominated form it is E.L.
+Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed., Springer Nature
+Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 2 (The Probability Background), §2.6
+(Sufficient Statistics), Corollary 2.6.1 (Fisher–Neyman factorization). (`TPE2 §1.6`; `TSH4
+Cor 2.6.1`.)
 
 **Proof formalization notes.**
 * Both directions are stated relative to an arbitrary σ-finite dominating measure `μ` and

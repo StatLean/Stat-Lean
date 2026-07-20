@@ -17,8 +17,11 @@ it, so any sufficient statistic determines `T`, and `T` is itself sufficient.
 * `isSufficient_iff_ratio_factors` — sufficiency of a statistic `U` is equivalent to every
   density ratio factoring through `U` almost everywhere.
 
-**Reference.** Classical construction of a minimal sufficient statistic for a finite family
-with common support, and the likelihood-ratio criterion for sufficiency.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), Theorem 6.12 and Corollary 6.13 (the likelihood-ratio vector is
+minimal sufficient; a statistic is sufficient iff the density ratios factor through it).
+(`TPE2 §1.6 Thm 6.12, Cor 6.13`.)
 
 **Proof formalization notes.**
 * Ratios are formed in `ℝ≥0∞`, where division is total (`a / 0 = ∞` for `a ≠ 0`, `0 / 0 = 0`),

@@ -21,7 +21,10 @@ only decrease the risk, for every loss that is convex in the decision:
 * `risk_rbEstimator_le` — the risk decreases, for every nonnegative convex loss;
 * `variance_rbEstimator_le` — the squared-error case.
 
-**Reference.** Classical conditioning (Rao–Blackwell) theorem for sufficient statistics.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.7 (Convex
+Loss Functions), Theorem 1.7.8 (Rao–Blackwell: conditioning on a sufficient statistic does not
+increase the risk for any convex loss). (`TPE2 §1.7 Thm 1.7.8`.)
 
 **Proof formalization notes.**
 * **Plain Jensen, not conditional Jensen.** Because the reconstruction kernel is available as

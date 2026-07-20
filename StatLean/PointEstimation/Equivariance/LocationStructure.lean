@@ -23,8 +23,11 @@ The last item is what turns "minimize risk over the equivariant class" into "cho
 number `v(y)` per value of the maximal invariant", i.e. the conditional minimization
 carried out in `LocationMRE`.
 
-**Reference.** Classical location-equivariant estimation; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Theorem 1.4 (equivariance forces constant bias, risk and variance), Lemmas 1.6 and
+1.7, and Theorem 1.8 (the general equivariant estimator is `δ₀ − v` of the differences).
+(`TPE2 §3.1 Thm 1.4, Lem 1.6–1.7, Thm 1.8`.)
 
 **Proof formalization notes.**
 * `diffs` is indexed so that `n = m + 1` observations produce `m` differences. The

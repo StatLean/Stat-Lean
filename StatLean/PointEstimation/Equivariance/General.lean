@@ -14,8 +14,11 @@ induced parameter action**. This file proves that fact and its two standard coro
   risk over the equivariant class" collapses to "minimize one number";
 * `risk_const_on_orbit` — without transitivity one still gets constancy on each orbit.
 
-**Reference.** Classical equivariance theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.2 (The
+Principle of Equivariance), Theorem 2.7 (the risk of an equivariant estimator is invariant
+under the induced group) with Corollaries 2.8 and 2.13 (constant risk under transitivity; risk
+constant on orbits). (`TPE2 §3.2 Thm 2.7, Cor 2.8, Cor 2.13`.)
 
 **Proof formalization notes.**
 * The one-line computation is a change of variables: `P (g • θ) = (P θ).map (g • ·)` by

@@ -23,8 +23,12 @@ decision-space actions. This file fixes:
   the maximal-invariant `scaleZ` statistic, `scaleRisk`, `IsScaleMRE`;
 * the **Pitman estimator** in closed form.
 
-**Reference.** Classical equivariance theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Definitions 1.2, 1.3 and 1.5 (the location-invariant problem, equivariant
+estimators, and the MRE estimator), together with Definitions 2.1, 2.4 and 2.5 of §3.2
+(`G`-invariant model, invariant loss, equivariant estimator). (`TPE2 §3.1 Def 1.2–1.5; §3.2
+Def 2.1–2.5`.)
 
 **Proof formalization notes.**
 * The induced parameter action is *data* (a `MulAction G Θ` instance), with the

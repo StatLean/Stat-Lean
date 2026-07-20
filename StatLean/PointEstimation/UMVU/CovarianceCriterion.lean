@@ -21,9 +21,10 @@ only when its right-hand side does not depend on the particular unbiased estimat
   reference statistic `ψ` depends on the estimator only through its mean function exactly when
   `ψ` is uncorrelated with every square-integrable unbiased estimator of zero.
 
-**Reference.** Classical characterization of uniformly minimum variance unbiased estimators
-by uncorrelatedness with the unbiased estimators of zero, and the corresponding condition for
-covariance-type variance bounds.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.1 (UMVU
+Estimators), Theorem 1.7 (an estimator is UMVU iff it is uncorrelated with every unbiased
+estimator of zero). (`TPE2 §2.1 Thm 1.7`.)
 
 **Proof formalization notes.**
 * Mathlib's covariance takes its two arguments before the measure,

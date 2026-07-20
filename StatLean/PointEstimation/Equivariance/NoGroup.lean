@@ -22,8 +22,10 @@ trivial and the equivariance principle has no content.
 * `powerSeriesFamily_invariantPerms_eq_singleton` — the same statement packaged as "the
   set of invariance-preserving permutations is `{1}`".
 
-**Reference.** Classical equivariance theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.2 (The
+Principle of Equivariance), Theorem 2.17 (the power-series family application, where the
+invariance group is trivial). (`TPE2 §3.2 Thm 2.17`.)
 
 **Proof formalization notes.**
 * The classical conclusion really is the general "the transformation is the identity"

@@ -20,8 +20,11 @@ This file provides:
   completeness of a full-rank exponential family (a candidate unbiased estimator of `0` has
   vanishing tilted integrals throughout the natural parameter set, hence vanishes a.e.).
 
-**Reference.** Classical Laplace-transform uniqueness; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), supporting material for the identifiability of the canonical
+parametrization (equation (5.2) and Definition 5.2): uniqueness of a Laplace transform on a
+set with nonempty interior. (`TPE2 §1.5 (5.2), Def 5.2`.)
 
 **Proof formalization notes.**
 * **Route for `ext_of_integral_exp_eqOn`.** Pick `t₀ ∈ interior S`. Tilt both measures to

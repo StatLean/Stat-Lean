@@ -24,9 +24,12 @@ simultaneously optimal — not only for squared error, but for every convex loss
 * `isUMVU_of_fullRank_expFamily` — the specialization to a full-rank exponential family, whose
   natural statistic is complete and sufficient.
 
-**Reference.** Classical Lehmann–Scheffé theory: uniqueness of unbiased functions of a
-complete statistic, optimality of the resulting estimator for convex losses, and the
-exponential-family specialization.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.1 (UMVU
+Estimators), Lemma 1.10 (uniqueness of the unbiased function of a complete sufficient
+statistic), Theorem 1.11 (Lehmann–Scheffé: minimum risk for every convex loss) and Corollary
+1.12 (the full-rank exponential-family specialization). (`TPE2 §2.1 Lem 1.10, Thm 1.11, Cor
+1.12`.)
 
 **Proof formalization notes.**
 * `unique_unbiased_function_of_complete` uses **only completeness**, not sufficiency: the

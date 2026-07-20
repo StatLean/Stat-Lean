@@ -23,8 +23,10 @@ with division replacing subtraction and the coordinate ratios replacing the diff
   where the location-equivariant estimators are `δ₀ − w(z)·δ₁` with `δ₁` a positive
   scale-equivariant estimator and `z` the maximal invariant of the differences.
 
-**Reference.** Classical scale- and location-scale-equivariant estimation; original
-sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.3
+(Location-Scale Families), Theorem 3.1 (the scale-equivariant estimator is `δ₀/w(z)`) and
+Theorem 3.17 (the location-scale characterization). (`TPE2 §3.3 Thm 3.1, Thm 3.17`.)
 
 **Proof formalization notes.**
 * `scaleZ` is defined only meaningfully off `{xₙ = 0}`, a null set for any of the models

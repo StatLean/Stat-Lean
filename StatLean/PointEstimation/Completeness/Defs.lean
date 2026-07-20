@@ -13,8 +13,10 @@ on `θ`, and **first-order ancillary** when its mean does not.
 * `IsCompleteStat P T`, `IsBoundedlyCompleteStat P T` — statistic forms (laws of `T`);
 * `IsAncillary P V`, `IsFirstOrderAncillary P V`.
 
-**Reference.** Classical completeness/ancillarity theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), the definitions of a complete statistic and of an ancillary
+statistic. (`TPE2 §1.6`.)
 
 **Proof formalization notes.**
 * Completeness is stated family-first so that it applies uniformly to laws of

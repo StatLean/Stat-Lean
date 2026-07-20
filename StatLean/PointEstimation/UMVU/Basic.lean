@@ -14,8 +14,10 @@ Two structural facts underlying the whole theory of minimum-variance unbiased es
   everywhere equality under every member of the model. This is why one speaks of *the* UMVU
   estimator.
 
-**Reference.** Classical unbiased-estimation theory: the parametrization of the unbiased class
-and the uniqueness of the minimum-variance element.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.1 (UMVU
+Estimators), Lemma 1.4 (the unbiased estimators of `g` are `δ₀` minus the unbiased estimators
+of zero) and the uniqueness of the UMVU estimator. (`TPE2 §2.1 Lem 1.4`.)
 
 **Proof formalization notes.**
 * The equivalence is stated in the "difference" form `IsUnbiasedZero P (δ₀ - δ)` rather than

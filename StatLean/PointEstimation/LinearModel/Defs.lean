@@ -21,8 +21,9 @@ this canonical form. This file fixes:
   onto `W` (as a map of the full space, `Submodule.starProjection`);
 * `residualSumSq W` — the squared residual norm `‖y − lse W y‖²` (the `S²` statistic).
 
-**Reference.** Classical normal linear-model theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), the canonical and subspace forms of the normal linear model. (`TPE2 §3.4`.)
 
 **Proof formalization notes.**
 * The product Gaussian lives naturally on the pi-type; `gaussianVector` transports it to
