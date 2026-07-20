@@ -109,6 +109,69 @@ private lemma gaussianVector_zero_eq_map_smul_stdGaussian {N : ℕ} (σ2 : ℝ�
       (fun _ => (show Measurable (fun c : ℝ => a * c) by fun_prop).aemeasurable)]
   simp only [hcoord]
 
+/-- **Translation of the Gaussian vector**: shifting by a constant shifts the mean. -/
+private lemma gaussianVector_map_add_const {N : ℕ} (ξ b : EuclideanSpace ℝ (Fin N)) (σ2 : ℝ≥0) :
+    (gaussianVector ξ σ2).map (fun z => z + b) = gaussianVector (ξ + b) σ2 := by
+  have hmeas_toLp : Measurable (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) :=
+    WithLp.measurable_toLp 2 _
+  have hmeas_add : Measurable (fun z : EuclideanSpace ℝ (Fin N) => z + b) := by fun_prop
+  have hmeas_g : Measurable (fun x : Fin N → ℝ => fun i => x i + b i) := by fun_prop
+  have hcoord : ∀ i : Fin N,
+      (gaussianReal (ξ i) σ2).map (fun x => x + b i) = gaussianReal (ξ i + b i) σ2 :=
+    fun i => gaussianReal_map_add_const (b i)
+  haveI hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (ξ i) σ2).map (fun x => x + b i)) := by
+    intro i; rw [hcoord i]; infer_instance
+  have hLHS : gaussianVector ξ σ2
+      = (Measure.pi (fun i : Fin N => gaussianReal (ξ i) σ2)).map (WithLp.toLp 2) := rfl
+  have hRHS : gaussianVector (ξ + b) σ2
+      = (Measure.pi (fun i : Fin N => gaussianReal ((ξ + b) i) σ2)).map (WithLp.toLp 2) := rfl
+  rw [hLHS, hRHS, Measure.map_map hmeas_add hmeas_toLp]
+  have hcomp : (fun z : EuclideanSpace ℝ (Fin N) => z + b) ∘
+      (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N))
+      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘ (fun x => fun i => x i + b i) := by
+    funext x; rfl
+  rw [hcomp, ← Measure.map_map hmeas_toLp hmeas_g,
+    Measure.pi_map_pi (f := fun (i : Fin N) (c : ℝ) => c + b i)
+      (fun i => (show Measurable (fun c : ℝ => c + b i) by fun_prop).aemeasurable)]
+  simp only [hcoord]
+  rfl
+
+open scoped RealInnerProductSpace in
+/-- **Gaussian isometry invariance.** The isotropic Gaussian vector transforms covariantly
+under an orthogonal change of coordinates. This is the measure-theoretic core enabling the
+transport of the linear-model optimality statements to the canonical form. -/
+private lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
+    (L : EuclideanSpace ℝ (Fin N₁) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N₂))
+    (ξ : EuclideanSpace ℝ (Fin N₁)) (σ2 : ℝ≥0) :
+    (gaussianVector ξ σ2).map L = gaussianVector (L ξ) σ2 := by
+  have hLmeas : Measurable (L : EuclideanSpace ℝ (Fin N₁) → EuclideanSpace ℝ (Fin N₂)) :=
+    L.continuous.measurable
+  have hsmul₁ : Measurable (fun z : EuclideanSpace ℝ (Fin N₁) => Real.sqrt (σ2 : ℝ) • z) :=
+    measurable_const_smul _
+  have hsmul₂ : Measurable (fun z : EuclideanSpace ℝ (Fin N₂) => Real.sqrt (σ2 : ℝ) • z) :=
+    measurable_const_smul _
+  have haddξ : Measurable (fun z : EuclideanSpace ℝ (Fin N₁) => z + ξ) := by fun_prop
+  -- rotation invariance of the centred vector
+  have hrot : (gaussianVector (0 : EuclideanSpace ℝ (Fin N₁)) σ2).map L
+      = gaussianVector (0 : EuclideanSpace ℝ (Fin N₂)) σ2 := by
+    rw [gaussianVector_zero_eq_map_smul_stdGaussian, Measure.map_map hLmeas hsmul₁]
+    have hcomm : (L : EuclideanSpace ℝ (Fin N₁) → EuclideanSpace ℝ (Fin N₂)) ∘
+        (fun z => Real.sqrt (σ2 : ℝ) • z)
+        = (fun z : EuclideanSpace ℝ (Fin N₂) => Real.sqrt (σ2 : ℝ) • z) ∘ L := by
+      funext z; simp [map_smul]
+    rw [hcomm, ← Measure.map_map hsmul₂ hLmeas, ProbabilityTheory.stdGaussian_map L,
+      ← gaussianVector_zero_eq_map_smul_stdGaussian]
+  -- decompose the general vector into rotation ∘ translation
+  have hξ : gaussianVector ξ σ2
+      = (gaussianVector (0 : EuclideanSpace ℝ (Fin N₁)) σ2).map (fun z => z + ξ) := by
+    rw [gaussianVector_map_add_const, zero_add]
+  rw [hξ, Measure.map_map hLmeas haddξ]
+  have hcomm : (L : EuclideanSpace ℝ (Fin N₁) → EuclideanSpace ℝ (Fin N₂)) ∘ (fun z => z + ξ)
+      = (fun z : EuclideanSpace ℝ (Fin N₂) => z + L ξ) ∘ L := by
+    funext z; simp [map_add]
+  rw [hcomm, ← Measure.map_map (by fun_prop) hLmeas, hrot,
+    gaussianVector_map_add_const, zero_add]
+
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
 theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
