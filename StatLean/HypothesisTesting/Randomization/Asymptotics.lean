@@ -527,21 +527,21 @@ theorem randDist_tendstoInProb_cdf (P : ∀ n, Measure (𝓧 n))
     [∀ n, IsProbabilityMeasure (P n)] (T : ∀ n, 𝓧 n → ℝ) (R : Measure ℝ)
     -- USER-INPUT: the limit is a probability law; it is the limiting c.d.f. `R`
     [IsProbabilityMeasure R]
+    -- USER-INPUT: the statistic is measurable (data regularity). Not derivable from the
+    -- other hypotheses, and genuinely needed: for a non-measurable statistic every
+    -- `randPairLaw` degenerates to the zero measure and the moment identities fail.
+    (hT : ∀ n, Measurable (T n))
+    -- USER-INPUT: the group acts measurably (data regularity); required by the same
+    -- moment identities `integral_randDist_..._randPairLaw`
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable (fun x : 𝓧 n => g • x))
     -- USER-INPUT: joint weak convergence to a product law — asymptotic independence of
     -- the statistic at two independent uniform group elements, with common limit `R`
     (hjoint : WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R))
     {t : ℝ}
     -- USER-INPUT: `t` is a continuity point of the limit c.d.f.
     (ht : ContinuousAt (cdf R) t) :
-    TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t) := by
-  -- The full second-moment/Chebyshev argument is proved in `randDist_tendstoInProb_cdf_aux`:
-  --   exact randDist_tendstoInProb_cdf_aux P T R hTmeas hsmul hjoint ht
-  -- TODO: the frozen signature omits `Measurable (T n)` and measurability of the group action,
-  -- which the moment identities `integral_randDist_..._randPairLaw` genuinely require (a
-  -- non-measurable statistic makes every `randPairLaw` the zero measure). These are NOT derivable
-  -- from the stated hypotheses; the general (possibly non-measurable) case would additionally
-  -- need a negligible-defect approximation. See the accompanying report.
-  sorry
+    TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t) :=
+  randDist_tendstoInProb_cdf_aux P T R hT hsmul hjoint ht
 
 /-- **Quantile-convergence engine.** Given the forward convergence at continuity points
 (`randDist_tendstoInProb_cdf_aux`), the `(1-α)`-quantile of the randomization distribution
@@ -625,6 +625,11 @@ $$ \hat r_n(1-\alpha) \;\xrightarrow{P}\; r(1-\alpha) = \inf\{t : R(t) \ge 1-\al
 theorem randQuantile_tendstoInProb (P : ∀ n, Measure (𝓧 n))
     [∀ n, IsProbabilityMeasure (P n)] (T : ∀ n, 𝓧 n → ℝ) (R : Measure ℝ)
     [IsProbabilityMeasure R]
+    -- USER-INPUT: the statistic is measurable (data regularity); see
+    -- `randDist_tendstoInProb_cdf` for why this is not derivable from the other hypotheses
+    (hT : ∀ n, Measurable (T n))
+    -- USER-INPUT: the group acts measurably (data regularity); same reason
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable (fun x : 𝓧 n => g • x))
     -- USER-INPUT: joint weak convergence to a product law (asymptotic independence)
     (hjoint : WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R))
     {α : ℝ}
@@ -636,12 +641,9 @@ theorem randQuantile_tendstoInProb (P : ∀ n, Measure (𝓧 n))
     (hstrict : ∀ ε > (0 : ℝ), cdf R (cdfQuantile R (1 - α) - ε) < 1 - α ∧
       1 - α < cdf R (cdfQuantile R (1 - α) + ε)) :
     TendstoInProbTriangular P (fun n x => randQuantile (G n) (T n) (1 - α) x)
-      (cdfQuantile R (1 - α)) := by
-  -- The bracketing/quantile-transfer argument is proved in `randQuantile_tendstoInProb_aux`
-  -- (which uses only `hα₁` and `hstrict`, not `hcont`):
-  --   exact randQuantile_tendstoInProb_aux P T R hTmeas hsmul hjoint hα₁ hstrict
-  -- TODO: same measurability gap as `randDist_tendstoInProb_cdf` (frozen signature). See report.
-  sorry
+      (cdfQuantile R (1 - α)) :=
+  -- The bracketing/quantile-transfer argument uses only `hα₁` and `hstrict`, not `hcont`.
+  randQuantile_tendstoInProb_aux P T R hT hsmul hjoint hα₁ hstrict
 
 /-- **Converse.** If the randomization distribution converges in probability to some
 limiting c.d.f. at every continuity point, then the joint asymptotic-independence
