@@ -1,8 +1,60 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-15 (campaign start; design frozen, stubs pending).
+Last update: 2026-07-20 (all stubs landed; area builds GREEN; proof-closure fan-out in progress).
 
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
+
+## Current state — 2026-07-20
+
+**Area gate: GREEN.** `lean-fasrc-build --worktree ht/batch12 StatLean.HypothesisTesting` →
+`Build completed successfully (3271 jobs)`, exit 0, `sorry_uses_in_err=0`. This is the first
+whole-area green build (earlier gates were per-module and silently skipped broken siblings —
+that is how a red `MLR/TwoSided.lean` hid for a day; see the failure-mode notes).
+
+**Open sorries: 121**, distributed as:
+
+| count | file |
+|---|---|
+| 7 | ForMathlib/TestsWeakCompact.lean |
+| 7 | Bootstrap/Multivariate.lean |
+| 6 | Unbiased/MultiparamUMPU.lean |
+| 6 | Bootstrap/NonparametricMean.lean |
+| 5 | LikelihoodMethods/TrinityChiSquared.lean |
+| 5 | GoodnessOfFit/ChiSquaredMaximin.lean |
+| 4 | Randomization/SignChange.lean, Randomization/MultivariateQuadratic.lean, NeymanPearson/Generalized.lean, MLR/TwoSided.lean, Invariance/BayesAdmissible.lean, ForMathlib/NoncentralChiSquared.lean |
+| 3 | Randomization/TwoSamplePermutation.lean, Randomization/Studentized.lean, MLR/OneSided.lean, LikelihoodMethods/EstimatorUnderAlternatives.lean, Invariance/Admissibility.lean, GoodnessOfFit/SmoothTestLargeK.lean, ForMathlib/CondDistribTilt.lean, Bootstrap/Edgeworth.lean |
+| 2 | Unbiased/{OneParamTwoSided,ConditionalExpFamily}, NeymanPearson/Lemma, MLR/StochasticDominance, Invariance/{SymmetryIdentity,AlmostInvariance}, GoodnessOfFit/{SmoothTest,KSConsistency,ChiSquaredMultinomial}, ForMathlib/DKWUniform, Bootstrap/ParametricLocal |
+| 1 | 13 further files |
+
+### Structural blocker — ~21 sorries, one root cause
+
+`ForMathlib/TestsWeakCompact.lean` (7), `Unbiased/MultiparamUMPU.lean` (6),
+`NeymanPearson/Generalized.lean` (4) and `MLR/TwoSided.lean` (4) all reduce to the **same**
+missing ingredient: **surjectivity of `L^∞(μ) → (L¹(μ))*`** (weak-* compactness of the set of
+critical functions). Mathlib v4.29.1 has no such duality result. Until that lands (upstream or
+as a large in-repo brick), these are not closable at any reasonable effort. **This means the
+area will NOT reach 0 sorries**; the endgame is a merge with named, documented debts (the
+precedent is Bayesian batch 2, merged with 1 debt).
+
+### Sanctioned deferrals (unchanged from the plan)
+Edgeworth 18.4.1 / 18.4.2 (3 sorries in `Bootstrap/Edgeworth.lean`) — the book itself gives no
+proof (cites Hall 1992). Lem 16.4.1 Bentkus.
+
+### Statement amendments made during closure (all verified necessary)
+- `Randomization/Asymptotics.lean` — `randDist_tendstoInProb_cdf` and
+  `randQuantile_tendstoInProb` gained `hT : ∀ n, Measurable (T n)` and a measurable-action
+  hypothesis: without measurability every `randPairLaw` degenerates to the zero measure and the
+  moment identities fail. Unblocked already-proven engines.
+- `MLR/OneSided.lean` — `hα : α ∈ Icc 0 1` → `Ioo 0 1` on `isUMP_oneSided` + its exp-family
+  corollary (**the `Icc` form is FALSE at the endpoints**; 4 counterexamples were verified by a
+  cluster session, which correctly refused to prove it); `isUMP_oneSided_shifted` gained
+  `hz : ∃ z, C ≤ T z ∧ 0 < p θ' z`.
+- `Bootstrap/Consistency.lean` — `supCDFDist_triangle` renamed `supCDFDist_triangle_of_isCDF`
+  (name collision).
+
+### Closed this session (representative)
+`GoodnessOfFit/AsymptoticMaximin.sphereAverage_lr_monotone` — axiom-clean, via reflection
+isometry + `cosh` monotonicity, no Bessel theory.
 
 ## Design decisions (frozen)
 
