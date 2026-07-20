@@ -222,7 +222,136 @@ theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbability
     (hbdry : μ {x | mixtureDensity f Λ₁ x = k * mixtureDensity f Λ₀ x} = 0) :
     IsDAdmissible P Θ_H Θ_K
       (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
-  sorry
+  intro φ hφ hdomK hdomH
+  set φ₀ := bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k with hφ0def
+  -- measurability and bounds
+  have hsm : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
+    (hjoint.comp measurable_swap).stronglyMeasurable
+  have hh0meas : Measurable (mixtureDensity f Λ₀) :=
+    (hsm.integral_prod_right (ν := Λ₀)).measurable
+  have hh1meas : Measurable (mixtureDensity f Λ₁) :=
+    (hsm.integral_prod_right (ν := Λ₁)).measurable
+  have hh0nn : ∀ x, 0 ≤ mixtureDensity f Λ₀ x := fun x => integral_nonneg fun θ => hfnonneg θ x
+  have hh1nn : ∀ x, 0 ≤ mixtureDensity f Λ₁ x := fun x => integral_nonneg fun θ => hfnonneg θ x
+  have hφ0meas : Measurable φ₀ := by
+    simp only [hφ0def, bayesTest]
+    exact Measurable.ite (measurableSet_le (measurable_const.mul hh0meas) hh1meas)
+      measurable_const measurable_const
+  have hφ0mem : ∀ x, φ₀ x ∈ Set.Icc (0 : ℝ) 1 := by
+    intro x; simp only [hφ0def, bayesTest]; split <;> simp
+  have hgφmeas : Measurable fun x => φ₀ x - φ x := hφ0meas.sub hφ.1
+  have hgφb : ∀ x, |φ₀ x - φ x| ≤ 1 := by
+    intro x; rw [abs_le]
+    exact ⟨by linarith [(hφ0mem x).1, (hφ.2 x).2], by linarith [(hφ0mem x).2, (hφ.2 x).1]⟩
+  have hh0int : Integrable (mixtureDensity f Λ₀) μ := bayes_mix_integrable hdens hjoint hfnonneg
+  have hh1int : Integrable (mixtureDensity f Λ₁) μ := bayes_mix_integrable hdens hjoint hfnonneg
+  have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
+    bayes_bounded_integrable hφ.1 fun x => abs_le.mpr ⟨by linarith [(hφ.2 x).1], (hφ.2 x).2⟩
+  have hφ0int : ∀ θ, Integrable φ₀ (P θ) := fun θ =>
+    bayes_bounded_integrable hφ0meas fun x => abs_le.mpr ⟨by linarith [(hφ0mem x).1], (hφ0mem x).2⟩
+  -- Fubini identity for the difference against a prior
+  have hfubi : ∀ (Λ : Measure Θ) [IsProbabilityMeasure Λ],
+      ∫ x, (φ₀ x - φ x) * mixtureDensity f Λ x ∂μ
+        = ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ := by
+    intro Λ _
+    rw [bayes_fubini_mix hdens hjoint hfnonneg hgφmeas hgφb]
+    refine integral_congr_ae (ae_of_all _ fun θ => ?_)
+    simp only [power]
+    exact integral_sub (hφ0int θ) (hφint θ)
+  -- `Θ_K` is nonempty
+  obtain ⟨θ₁, hθ₁K⟩ : Θ_K.Nonempty := by
+    by_contra hcon
+    rw [Set.not_nonempty_iff_eq_empty] at hcon
+    rw [hcon, measure_empty] at hΛ₁; exact zero_ne_one hΛ₁
+  -- main a.e. equality against the fixed alternative parameter
+  have hae1 : φ =ᵐ[P θ₁] φ₀ := by
+    rcases le_or_gt 0 k with hk | hk
+    · -- `k ≥ 0`: `φ = φ₀` `μ`-a.e. by the vanishing Bayes objective
+      have hμae : φ =ᵐ[μ] φ₀ := by
+        have hIpt : ∀ x, 0 ≤ (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) := by
+          intro x
+          by_cases hcond : k * mixtureDensity f Λ₀ x ≤ mixtureDensity f Λ₁ x
+          · have e0 : φ₀ x = 1 := by rw [hφ0def]; simp only [bayesTest, if_pos hcond]
+            exact mul_nonneg (by rw [e0]; linarith [(hφ.2 x).2]) (by linarith)
+          · push_neg at hcond
+            have e0 : φ₀ x = 0 := by rw [hφ0def]; simp only [bayesTest, if_neg (not_le.mpr hcond)]
+            have hg0 : φ₀ x - φ x ≤ 0 := by rw [e0]; linarith [(hφ.2 x).1]
+            have hd0 : mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x ≤ 0 := by linarith
+            exact mul_nonneg_iff.mpr (Or.inr ⟨hg0, hd0⟩)
+        have hI1 : Integrable (fun x => (φ₀ x - φ x) * mixtureDensity f Λ₁ x) μ :=
+          hh1int.bdd_mul hgφmeas.aestronglyMeasurable
+            (ae_of_all _ fun x => by rw [Real.norm_eq_abs]; exact hgφb x)
+        have hI0 : Integrable (fun x => (φ₀ x - φ x) * mixtureDensity f Λ₀ x) μ :=
+          hh0int.bdd_mul hgφmeas.aestronglyMeasurable
+            (ae_of_all _ fun x => by rw [Real.norm_eq_abs]; exact hgφb x)
+        have hIint : Integrable
+            (fun x => (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x)) μ := by
+          have heq : (fun x => (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x))
+              = fun x => (φ₀ x - φ x) * mixtureDensity f Λ₁ x
+                - k * ((φ₀ x - φ x) * mixtureDensity f Λ₀ x) := by funext x; ring
+          rw [heq]; exact hI1.sub (hI0.const_mul k)
+        have hIval : ∫ x, (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) ∂μ
+            = (∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₁)
+              - k * ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₀ := by
+          have hsplit : ∫ x, (φ₀ x - φ x) * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) ∂μ
+              = (∫ x, (φ₀ x - φ x) * mixtureDensity f Λ₁ x ∂μ)
+                - k * ∫ x, (φ₀ x - φ x) * mixtureDensity f Λ₀ x ∂μ := by
+            rw [← integral_const_mul, ← integral_sub hI1 (hI0.const_mul k)]
+            exact integral_congr_ae (ae_of_all _ fun x => by ring)
+          rw [hsplit, hfubi Λ₁, hfubi Λ₀]
+        have haeK : ∀ᵐ θ ∂Λ₁, θ ∈ Θ_K := by
+          rw [ae_iff, show {θ | ¬ θ ∈ Θ_K} = Θ_Kᶜ from rfl, measure_compl hΘK (measure_ne_top _ _),
+            measure_univ, hΛ₁, tsub_self]
+        have haeH : ∀ᵐ θ ∂Λ₀, θ ∈ Θ_H := by
+          rw [ae_iff, show {θ | ¬ θ ∈ Θ_H} = Θ_Hᶜ from rfl, measure_compl hΘH (measure_ne_top _ _),
+            measure_univ, hΛ₀, tsub_self]
+        have hT1 : ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₁ ≤ 0 := by
+          refine integral_nonpos_of_ae ?_
+          filter_upwards [haeK] with θ hθ
+          simp only [Pi.zero_apply]; linarith [hdomK θ hθ]
+        have hT2 : 0 ≤ ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₀ := by
+          refine integral_nonneg_of_ae ?_
+          filter_upwards [haeH] with θ hθ
+          simp only [Pi.zero_apply]; linarith [hdomH θ hθ]
+        have hIzero : ∫ x, (φ₀ x - φ x)
+            * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) ∂μ = 0 :=
+          le_antisymm (by rw [hIval]; nlinarith [hT1, hT2, hk]) (integral_nonneg hIpt)
+        have hIae := (integral_eq_zero_iff_of_nonneg hIpt hIint).mp hIzero
+        have hbdry' : ∀ᵐ x ∂μ, mixtureDensity f Λ₁ x ≠ k * mixtureDensity f Λ₀ x := by
+          rw [ae_iff]; simp only [ne_eq, not_not]; exact hbdry
+        filter_upwards [hIae, hbdry'] with x hx hxne
+        simp only [Pi.zero_apply] at hx
+        rcases mul_eq_zero.mp hx with h | h
+        · exact (sub_eq_zero.mp h).symm
+        · exact absurd (by linarith [h] : mixtureDensity f Λ₁ x = k * mixtureDensity f Λ₀ x) hxne
+      exact ((hdens θ₁ ▸ withDensity_absolutelyContinuous μ _ : P θ₁ ≪ μ)).ae_eq hμae
+    · -- `k < 0`: the Bayes test rejects everywhere, so mutual a.c. forces `φ = 1`
+      have hφ01 : ∀ x, φ₀ x = 1 := by
+        intro x; simp only [hφ0def, bayesTest]
+        exact if_pos (le_trans (mul_nonpos_iff.mpr (Or.inr ⟨hk.le, hh0nn x⟩)) (hh1nn x))
+      have hPunit : (P θ₁).real Set.univ = 1 := by
+        show (P θ₁ Set.univ).toReal = 1; rw [measure_univ, ENNReal.toReal_one]
+      have hp0 : power P φ₀ θ₁ = 1 := by
+        simp only [power]; simp_rw [hφ01]
+        rw [integral_const, hPunit, smul_eq_mul, mul_one]
+      have hple : power P φ θ₁ ≤ 1 := by
+        simp only [power]
+        calc ∫ x, φ x ∂P θ₁ ≤ ∫ _x, (1 : ℝ) ∂P θ₁ :=
+              integral_mono_ae (hφint θ₁) (integrable_const 1) (ae_of_all _ fun x => (hφ.2 x).2)
+          _ = 1 := by rw [integral_const, hPunit, smul_eq_mul, mul_one]
+      have hpow1 : power P φ θ₁ = 1 :=
+        le_antisymm hple (by have := hdomK θ₁ hθ₁K; rwa [hp0] at this)
+      have hzero : ∫ x, (1 - φ x) ∂P θ₁ = 0 := by
+        rw [integral_sub (integrable_const 1) (hφint θ₁), integral_const, hPunit, smul_eq_mul,
+          mul_one, show (∫ x, φ x ∂P θ₁) = power P φ θ₁ from rfl, hpow1, sub_self]
+      have hae01 := (integral_eq_zero_iff_of_nonneg
+        (fun x => sub_nonneg.mpr (hφ.2 x).2) ((integrable_const 1).sub (hφint θ₁))).mp hzero
+      filter_upwards [hae01] with x hx
+      simp only [Pi.sub_apply, Pi.one_apply, Pi.zero_apply, sub_eq_zero] at hx
+      rw [hφ01 x]; exact hx.symm
+  intro θ _
+  simp only [power]
+  exact integral_congr_ae ((bayes_ac hdens hjoint hfnonneg hsupp θ θ₁).ae_eq hae1)
 
 /-- **A Bayes test whose null prior concentrates on the size-attaining parameters is
 `α`-admissible.** -/
