@@ -138,6 +138,126 @@ theorem fisherInfo_expFamily (E : ExpFamily 𝓧 ℝ) (η : ℝ)
     _ = iteratedDeriv 2 E.logPartition η := E.variance_stat_P hη
     _ = deriv (deriv E.logPartition) η := by rw [iteratedDeriv_succ, iteratedDeriv_one]
 
+/-- The inner product of the `i`-th coordinate unit vector with `v` is the `i`-th coordinate. -/
+private lemma inner_single_coord {s : ℕ} (i : Fin s) (v : EuclideanSpace ℝ (Fin s)) :
+    ⟪EuclideanSpace.single i (1 : ℝ), v⟫_ℝ = v i := by
+  have h := EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ) v
+  simp only [map_one, one_mul] at h
+  exact h
+
+/-- Measurability of the (extended-real) density in the exact `exp`-form produced by
+`P_eq_withDensity`, so that `withDensity` rewrites match syntactically. -/
+private lemma measurable_density_exp {s : ℕ}
+    (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s))) (η : EuclideanSpace ℝ (Fin s)) :
+    Measurable (fun x => ENNReal.ofReal (Real.exp (⟪η, E.stat x⟫_ℝ - E.logPartition η))) :=
+  (E.toParametricFamily.density_meas η).ennreal_ofReal
+
+/-- Bridge `∫ g dP_η = ∫ g · p_η dν` for the multiparameter member, mirroring
+`integral_toMeasure_eq` (which is phrased only for real parameters). -/
+private lemma integral_P_eq {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    {η : EuclideanSpace ℝ (Fin s)} (hη : η ∈ E.natSet) (g : 𝓧 → ℝ) :
+    ∫ x, g x ∂(E.P η) = ∫ x, g x * E.toParametricFamily.density η x ∂E.base := by
+  rw [E.P_eq_withDensity hη,
+    integral_withDensity_eq_integral_toReal_smul (measurable_density_exp E η)
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  dsimp only [ExpFamily.toParametricFamily]
+  rw [ENNReal.toReal_ofReal (Real.exp_nonneg _), smul_eq_mul, mul_comm]
+
+/-- **Directional derivative of the log-partition function is the coordinate mean.** Along the
+line `η + t·eᵢ` the log-partition function is `A(η) + cgf Tᵢ(P η)` on a neighborhood of `0`, so
+its derivative at `0` is the mean `E_η[Tᵢ]` of the `i`-th coordinate statistic. -/
+private lemma hasDerivAt_logPartition_dir {s : ℕ}
+    (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s))) {η : EuclideanSpace ℝ (Fin s)}
+    (hb : E.base ≠ 0) (hη : η ∈ interior E.natSet) (i : Fin s) :
+    HasDerivAt (fun t : ℝ => E.logPartition (η + t • EuclideanSpace.single i 1))
+      (∫ x, E.stat x i ∂(E.P η)) 0 := by
+  haveI hPprob : IsProbabilityMeasure (E.P η) :=
+    E.isProbabilityMeasure_P hb (interior_subset hη)
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp isOpen_interior η hη
+  -- membership of the line in the natural parameter set, for small increments
+  have hmemb : ∀ t : ℝ, t ∈ Set.Ioo (-r) r →
+      η + t • EuclideanSpace.single i 1 ∈ E.natSet := by
+    intro t ht
+    apply interior_subset; apply hball
+    rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul]
+    have hns : ‖EuclideanSpace.single i (1 : ℝ)‖ = 1 := by simp
+    rw [hns, mul_one, Real.norm_eq_abs]; exact abs_lt.mpr ⟨ht.1, ht.2⟩
+  -- the coordinate statistic is integrable-exp near `0`, so `0` is an interior point
+  have hint_line : ∀ t : ℝ, t ∈ Set.Ioo (-r) r →
+      Integrable (fun x => Real.exp (t * E.stat x i)) (E.P η) := by
+    intro t ht
+    rw [E.P_eq_withDensity (interior_subset hη),
+      integrable_withDensity_iff (measurable_density_exp E η)
+        (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+    have hb_int : Integrable
+        (fun x => Real.exp ⟪η + t • EuclideanSpace.single i 1, E.stat x⟫_ℝ) E.base := hmemb t ht
+    refine (hb_int.const_mul (Real.exp (- E.logPartition η))).congr
+      (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (Real.exp_nonneg _), ← Real.exp_add, ← Real.exp_add]
+    congr 1
+    rw [inner_add_left, real_inner_smul_left, inner_single_coord]
+    ring
+  have h0 : (0 : ℝ) ∈ interior (integrableExpSet (fun x => E.stat x i) (E.P η)) := by
+    have hIoo : Set.Ioo (-r) r ⊆ integrableExpSet (fun x => E.stat x i) (E.P η) :=
+      fun t ht => hint_line t ht
+    exact (isOpen_Ioo.subset_interior_iff.mpr hIoo) ⟨by linarith, hr⟩
+  -- derivative of the cumulant generating function at `0` is the mean
+  have hderiv_val : deriv (cgf (fun x => E.stat x i) (E.P η)) 0
+      = ∫ x, E.stat x i ∂(E.P η) := by
+    rw [deriv_cgf_zero h0, probReal_univ, div_one]
+  have hcgf_HDA : HasDerivAt (cgf (fun x => E.stat x i) (E.P η))
+      (∫ x, E.stat x i ∂(E.P η)) 0 := by
+    rw [← hderiv_val]; exact (analyticAt_cgf h0).differentiableAt.hasDerivAt
+  -- the log-partition line agrees with `cgf + A(η)` near `0`
+  have hcgf_eq : (fun t : ℝ => E.logPartition (η + t • EuclideanSpace.single i 1))
+      =ᶠ[nhds (0 : ℝ)] (fun t => cgf (fun x => E.stat x i) (E.P η) t + E.logPartition η) := by
+    filter_upwards [Ioo_mem_nhds (show (-r : ℝ) < 0 by linarith) hr] with t ht
+    have hmgf : mgf (fun x => E.stat x i) (E.P η) t
+        = Real.exp (E.logPartition (η + t • EuclideanSpace.single i 1) - E.logPartition η) := by
+      rw [mgf, ← E.integral_exp_inner_P hb (interior_subset hη) (hmemb t ht)]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+      dsimp only
+      rw [real_inner_smul_left, inner_single_coord]
+    have hcgf_t : cgf (fun x => E.stat x i) (E.P η) t
+        = E.logPartition (η + t • EuclideanSpace.single i 1) - E.logPartition η := by
+      rw [cgf, hmgf, Real.log_exp]
+    rw [hcgf_t]; ring
+  exact (hcgf_HDA.add_const (E.logPartition η)).congr_of_eventuallyEq hcgf_eq
+
+/-- **The coordinate score of the canonical family is the centered natural statistic**:
+`scoreVecᵢ(x) = Tᵢ(x) − ∂ᵢA(η)`, where `∂ᵢA(η)` is the derivative supplied as `m`. -/
+private lemma scoreVec_expFamily_coord {s : ℕ}
+    (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s))) (η : EuclideanSpace ℝ (Fin s))
+    (i : Fin s) (m : ℝ)
+    (hd : HasDerivAt (fun t : ℝ => E.logPartition (η + t • EuclideanSpace.single i 1)) m 0)
+    (x : 𝓧) :
+    scoreVec E.toParametricFamily η x i = E.stat x i - m := by
+  have hinner : HasDerivAt
+      (fun t : ℝ => ⟪η + t • EuclideanSpace.single i 1, E.stat x⟫_ℝ) (E.stat x i) 0 := by
+    have hfun : (fun t : ℝ => ⟪η + t • EuclideanSpace.single i 1, E.stat x⟫_ℝ)
+        = fun t => ⟪η, E.stat x⟫_ℝ + E.stat x i * t := by
+      funext t
+      rw [inner_add_left, real_inner_smul_left, inner_single_coord]
+      ring
+    rw [hfun]
+    simpa using (((hasDerivAt_id (0 : ℝ)).const_mul (E.stat x i)).const_add ⟪η, E.stat x⟫_ℝ)
+  have hexpo : HasDerivAt
+      (fun t : ℝ => ⟪η + t • EuclideanSpace.single i 1, E.stat x⟫_ℝ
+          - E.logPartition (η + t • EuclideanSpace.single i 1)) (E.stat x i - m) 0 :=
+    hinner.sub hd
+  have hdens : HasDerivAt
+      (fun t : ℝ => E.toParametricFamily.density (η + t • EuclideanSpace.single i 1) x)
+      (E.toParametricFamily.density η x * (E.stat x i - m)) 0 := by
+    have h := hexpo.exp
+    simp only [zero_smul, add_zero] at h
+    exact h
+  have hpos : (0 : ℝ) < E.toParametricFamily.density η x := Real.exp_pos _
+  change deriv (fun t : ℝ => E.toParametricFamily.density (η + t • EuclideanSpace.single i 1) x) 0
+      / E.toParametricFamily.density η x = E.stat x i - m
+  rw [hdens.deriv, mul_comm, mul_div_assoc, div_self hpos.ne', mul_one]
+
 /-- **The information matrix of a canonical exponential family is the covariance matrix of
 its natural statistic**: `I(η)_{ij} = cov_η(T_i, T_j)`, equivalently the Hessian of the
 log-partition function.
@@ -150,13 +270,23 @@ theorem infoMatrix_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpace ℝ (
     (hη : η ∈ interior E.natSet) (i j : Fin s) :
     infoMatrix E.toParametricFamily E.base η i j
       = covariance (fun x => E.stat x i) (fun x => E.stat x j) (E.P η) := by
-  -- TODO: sanctioned per-file escape. The coordinate score is `scoreVecᵢ = Tᵢ − ∂ᵢA(η)`,
-  -- where the directional derivative `∂ᵢA(η) = deriv (fun t => A(η + t•eᵢ)) 0` equals the mean
-  -- `E_η[Tᵢ]` by the directional-MGF identity: along the line `η + t•eᵢ`, `integral_exp_inner_P`
-  -- gives `mgf Tᵢ (P η) t = exp(A(η + t•eᵢ) − A η)`, so `A(η + t•eᵢ) = cgf Tᵢ (P η) t + A η` on a
-  -- neighborhood of `0` (needs `0 ∈ interior (integrableExpSet Tᵢ (P η))`, from `η ∈ interior
-  -- natSet`), and `deriv_cgf_zero` gives `∂ᵢA(η) = E_η[Tᵢ]`. With the coordinate scores centered
-  -- at their means, `infoMatrixᵢⱼ = ∫ scoreVecᵢ·scoreVecⱼ dP = cov_η(Tᵢ, Tⱼ)`.
-  sorry
+  rcases eq_or_ne E.base 0 with hb | hb
+  · -- degenerate reference measure: both sides vanish
+    have hP0 : E.P η = 0 := by
+      rw [show E.P η = E.base.tilted (fun x => ⟪η, E.stat x⟫_ℝ) from rfl, hb, tilted_zero_measure]
+    simp only [infoMatrix, hb, integral_zero_measure, hP0, covariance_zero_measure]
+  · -- coordinate scores are centered statistics; the entry is their covariance
+    have hscore_i := scoreVec_expFamily_coord E η i _ (hasDerivAt_logPartition_dir E hb hη i)
+    have hscore_j := scoreVec_expFamily_coord E η j _ (hasDerivAt_logPartition_dir E hb hη j)
+    simp only [infoMatrix]
+    have hcong : (fun x => scoreVec E.toParametricFamily η x i
+          * scoreVec E.toParametricFamily η x j * E.toParametricFamily.density η x)
+        = fun x => ((E.stat x i - ∫ y, E.stat y i ∂(E.P η))
+            * (E.stat x j - ∫ y, E.stat y j ∂(E.P η))) * E.toParametricFamily.density η x := by
+      funext x; rw [hscore_i x, hscore_j x]
+    rw [hcong, ← integral_P_eq E (interior_subset hη)
+      (fun x => (E.stat x i - ∫ y, E.stat y i ∂(E.P η))
+        * (E.stat x j - ∫ y, E.stat y j ∂(E.P η)))]
+    simp only [covariance]
 
 end StatLean.PointEstimation
