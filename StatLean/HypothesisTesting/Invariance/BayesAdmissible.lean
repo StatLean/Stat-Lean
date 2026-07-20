@@ -203,26 +203,46 @@ private lemma bayes_fubini_mix {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityM
   rw [hleft, ← hswap]
   exact integral_congr_ae (ae_of_all _ fun θ => hright θ)
 
-/-- **A Bayes test with null boundary is d-admissible.** -/
-theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
-    {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ₀ Λ₁ : Measure Θ}
-    [IsProbabilityMeasure Λ₀] [IsProbabilityMeasure Λ₁] {Θ_H Θ_K : Set Θ} {k : ℝ}
-    -- USER-INPUT: the model is dominated by `μ` with densities `f`, jointly measurable
-    -- in parameter and observation
+/-- The power function `θ ↦ ∫ g dP_θ` of a bounded measurable test is measurable in the
+parameter (through the joint density). -/
+private lemma bayes_power_measurable {P : Θ → Measure 𝓧} {μ : Measure 𝓧} [SigmaFinite μ]
+    {f : Θ → 𝓧 → ℝ}
     (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
-    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2)
-    (hfnonneg : ∀ θ x, 0 ≤ f θ x)
-    -- USER-INPUT: the support of the density does not depend on the parameter
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x)
+    {g : 𝓧 → ℝ} (hg : Measurable g) : Measurable fun θ => power P g θ := by
+  have heq : (fun θ => power P g θ) = fun θ => ∫ x, g x * f θ x ∂μ := by
+    funext θ
+    have hmθ : Measurable fun x => ENNReal.ofReal (f θ x) :=
+      (hjoint.comp (measurable_const.prodMk measurable_id)).ennreal_ofReal
+    simp only [power]
+    rw [hdens θ, integral_withDensity_eq_integral_toReal_smul hmθ
+      (ae_of_all _ fun x => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only [ENNReal.toReal_ofReal (hfnonneg θ x), smul_eq_mul]; ring
+  rw [heq]
+  have hsm : StronglyMeasurable (Function.uncurry fun (θ : Θ) (x : 𝓧) => g x * f θ x) := by
+    change StronglyMeasurable fun p : Θ × 𝓧 => g p.2 * f p.1 p.2
+    exact ((hg.comp measurable_snd).mul hjoint).stronglyMeasurable
+  exact (hsm.integral_prod_right (ν := μ)).measurable
+
+/-- **Core of the Bayes admissibility arguments.** Given the alternative-side domination
+pointwise on `Θ_K` and the null-side domination `Λ₀`-almost everywhere, the competitor has
+the same power function as the Bayes test everywhere. -/
+private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
+    {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ₀ Λ₁ : Measure Θ}
+    [IsProbabilityMeasure Λ₀] [IsProbabilityMeasure Λ₁] {Θ_K : Set Θ} {k : ℝ}
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x)
     (hsupp : ∀ (θ θ' : Θ) (x : 𝓧), 0 < f θ x ↔ 0 < f θ' x)
-    -- USER-INPUT: the null and alternative classes are measurable
-    (hΘH : MeasurableSet Θ_H) (hΘK : MeasurableSet Θ_K)
-    -- USER-INPUT: the priors are carried by the null and alternative classes
-    (hΛ₀ : Λ₀ Θ_H = 1) (hΛ₁ : Λ₁ Θ_K = 1)
-    -- USER-INPUT: the Bayes boundary is null
-    (hbdry : μ {x | mixtureDensity f Λ₁ x = k * mixtureDensity f Λ₀ x} = 0) :
-    IsDAdmissible P Θ_H Θ_K
-      (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
-  intro φ hφ hdomK hdomH
+    (hΘK : MeasurableSet Θ_K) (hΛ₁ : Λ₁ Θ_K = 1)
+    (hbdry : μ {x | mixtureDensity f Λ₁ x = k * mixtureDensity f Λ₀ x} = 0)
+    {φ : 𝓧 → ℝ} (hφ : IsCriticalFn φ)
+    (hdomK : ∀ θ ∈ Θ_K,
+      power P (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) θ ≤ power P φ θ)
+    (hdomH_ae : ∀ᵐ θ ∂Λ₀,
+      power P φ θ ≤ power P (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) θ) :
+    ∀ θ, power P φ θ
+      = power P (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) θ := by
   set φ₀ := bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k with hφ0def
   -- measurability and bounds
   have hsm : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
@@ -302,17 +322,14 @@ theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbability
         have haeK : ∀ᵐ θ ∂Λ₁, θ ∈ Θ_K := by
           rw [ae_iff, show {θ | ¬ θ ∈ Θ_K} = Θ_Kᶜ from rfl, measure_compl hΘK (measure_ne_top _ _),
             measure_univ, hΛ₁, tsub_self]
-        have haeH : ∀ᵐ θ ∂Λ₀, θ ∈ Θ_H := by
-          rw [ae_iff, show {θ | ¬ θ ∈ Θ_H} = Θ_Hᶜ from rfl, measure_compl hΘH (measure_ne_top _ _),
-            measure_univ, hΛ₀, tsub_self]
         have hT1 : ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₁ ≤ 0 := by
           refine integral_nonpos_of_ae ?_
           filter_upwards [haeK] with θ hθ
           simp only [Pi.zero_apply]; linarith [hdomK θ hθ]
         have hT2 : 0 ≤ ∫ θ, (power P φ₀ θ - power P φ θ) ∂Λ₀ := by
           refine integral_nonneg_of_ae ?_
-          filter_upwards [haeH] with θ hθ
-          simp only [Pi.zero_apply]; linarith [hdomH θ hθ]
+          filter_upwards [hdomH_ae] with θ hθ
+          simp only [Pi.zero_apply]; linarith [hθ]
         have hIzero : ∫ x, (φ₀ x - φ x)
             * (mixtureDensity f Λ₁ x - k * mixtureDensity f Λ₀ x) ∂μ = 0 :=
           le_antisymm (by rw [hIval]; nlinarith [hT1, hT2, hk]) (integral_nonneg hIpt)
@@ -349,9 +366,35 @@ theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbability
       filter_upwards [hae01] with x hx
       simp only [Pi.sub_apply, Pi.one_apply, Pi.zero_apply, sub_eq_zero] at hx
       rw [hφ01 x]; exact hx.symm
-  intro θ _
+  intro θ
   simp only [power]
   exact integral_congr_ae ((bayes_ac hdens hjoint hfnonneg hsupp θ θ₁).ae_eq hae1)
+
+/-- **A Bayes test with null boundary is d-admissible.** -/
+theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
+    {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ₀ Λ₁ : Measure Θ}
+    [IsProbabilityMeasure Λ₀] [IsProbabilityMeasure Λ₁] {Θ_H Θ_K : Set Θ} {k : ℝ}
+    -- USER-INPUT: the model is dominated by `μ` with densities `f`, jointly measurable
+    -- in parameter and observation
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2)
+    (hfnonneg : ∀ θ x, 0 ≤ f θ x)
+    -- USER-INPUT: the support of the density does not depend on the parameter
+    (hsupp : ∀ (θ θ' : Θ) (x : 𝓧), 0 < f θ x ↔ 0 < f θ' x)
+    -- USER-INPUT: the null and alternative classes are measurable
+    (hΘH : MeasurableSet Θ_H) (hΘK : MeasurableSet Θ_K)
+    -- USER-INPUT: the priors are carried by the null and alternative classes
+    (hΛ₀ : Λ₀ Θ_H = 1) (hΛ₁ : Λ₁ Θ_K = 1)
+    -- USER-INPUT: the Bayes boundary is null
+    (hbdry : μ {x | mixtureDensity f Λ₁ x = k * mixtureDensity f Λ₀ x} = 0) :
+    IsDAdmissible P Θ_H Θ_K
+      (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
+  intro φ hφ hdomK hdomH θ _
+  refine bayes_admissible_core hdens hjoint hfnonneg hsupp hΘK hΛ₁ hbdry hφ hdomK ?_ θ
+  have haeH : ∀ᵐ θ ∂Λ₀, θ ∈ Θ_H := by
+    rw [ae_iff, show {θ | ¬ θ ∈ Θ_H} = Θ_Hᶜ from rfl, measure_compl hΘH (measure_ne_top _ _),
+      measure_univ, hΛ₀, tsub_self]
+  filter_upwards [haeH] with θ hθ'; exact hdomH θ hθ'
 
 /-- **A Bayes test whose null prior concentrates on the size-attaining parameters is
 `α`-admissible.** -/
