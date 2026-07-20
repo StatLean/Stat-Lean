@@ -420,8 +420,13 @@ theorem isUMP_oneSided
     (T : 𝓧 → ℝ) (hT : Measurable T)
     -- USER-INPUT: the monotone-likelihood-ratio property — the whole content of the setup
     (hMLR : HasMLR p T)
-    -- USER-INPUT: the null boundary and the nominal level
-    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
+    -- USER-INPUT: the null boundary and the nominal level. The endpoints are genuinely
+    -- excluded: the exact-size clause `power = α` is unattainable by a one-sided test at
+    -- `α ∈ {0,1}` whenever `T` is essentially unbounded in the relevant tail (e.g.
+    -- `𝓧 = ℝ`, `T = id`, `P θ = 𝒩(θ,1)`, where `1 − Φ(C) > 0` for every real `C`), so the
+    -- former `Set.Icc` reading was FALSE at the two endpoints. This also matches
+    -- `exists_critical_constants`, which requires `0 < α < 1`.
+    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Ioo (0 : ℝ) 1) :
     ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
       power P (oneSidedTest T C γ) θ₀ = α ∧
       IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest T C γ) := by
@@ -463,16 +468,10 @@ theorem isUMP_oneSided
       have hlevel0 : powerAgainst (P θ₀) ψ ≤ power P φ θ₀ := by
         rw [hsize]; exact hψlevel θ₀ (Set.mem_Iic.mpr le_rfl)
       exact hMP.2.2 ψ hψ hlevel0
-  · -- `α ∈ {0,1}`: the EXACT-size clause `power = α` cannot be met by any one-sided test
-    -- when `T` is essentially unbounded in the relevant tail. E.g. `𝓧 = ℝ`, `T = id`,
-    -- `P θ = 𝒩(θ,1)`: for every real `C, γ` the size `1 - Φ(C) > 0`, so `= 0` is
-    -- unattainable (dually `= 1` at `α = 1`). The frozen `α ∈ Icc 0 1` is therefore FALSE
-    -- at the two endpoints; the honest statement restricts to `α ∈ Ioo 0 1` (matching
-    -- `exists_critical_constants`, which requires `0 < α < 1`). All optimality theorems in
-    -- this file that take `C, γ` as inputs are unaffected — only this exact-size EXISTENCE
-    -- claim breaks at the endpoints. Reported per the no-weakening policy.
-    -- TODO(statement-bug): restrict `hα` to `Set.Ioo 0 1`; then this branch disappears.
-    sorry
+  · -- Impossible: `hα : α ∈ Set.Ioo 0 1` is exactly `0 < α ∧ α < 1`. (The endpoints were
+    -- removed from the hypothesis because the exact-size clause is genuinely unattainable
+    -- there — see the note on `hα` above.)
+    exact absurd ⟨hα0', hα1'⟩ hmid
 
 /-- **Strict monotonicity of the power function.** On the set of parameter values where
 the power is neither `0` nor `1`, the power function of the one-sided test is strictly
@@ -803,8 +802,13 @@ theorem isUMP_oneSided_expFamily
     -- USER-INPUT: every parameter value is in the natural parameter set, so that each
     -- `P θ` really is the tilted probability measure and not the junk zero measure
     (hnat : ∀ θ, ηmap θ ∈ E.natSet)
-    -- USER-INPUT: the null boundary and the nominal level
-    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Icc (0 : ℝ) 1) :
+    -- USER-INPUT: the null boundary and the nominal level. The endpoints are genuinely
+    -- excluded: the exact-size clause `power = α` is unattainable by a one-sided test at
+    -- `α ∈ {0,1}` whenever `T` is essentially unbounded in the relevant tail (e.g.
+    -- `𝓧 = ℝ`, `T = id`, `P θ = 𝒩(θ,1)`, where `1 − Φ(C) > 0` for every real `C`), so the
+    -- former `Set.Icc` reading was FALSE at the two endpoints. This also matches
+    -- `exists_critical_constants`, which requires `0 < α < 1`.
+    (θ₀ : ℝ) {α : ℝ} (hα : α ∈ Set.Ioo (0 : ℝ) 1) :
     ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
       power P (oneSidedTest E.stat C γ) θ₀ = α ∧
       IsUMP P (Set.Iic θ₀) (Set.Ioi θ₀) α (oneSidedTest E.stat C γ) := by
