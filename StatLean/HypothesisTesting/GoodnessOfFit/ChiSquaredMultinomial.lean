@@ -72,7 +72,7 @@ modern treatment via the multivariate central limit theorem is standard.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal BigOperators
+open scoped ENNReal BigOperators Matrix RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -105,7 +105,245 @@ information matrix, which is why it is the noncentrality of the limiting law. -/
 noncomputable def multinomialNoncentrality {k : ℕ} (π h : Fin (k + 1) → ℝ) : ℝ :=
   ∑ j : Fin (k + 1), (h j) ^ 2 / π j
 
-/-! ### (i) The null limit -/
+/-! ### Algebraic core: reduction to the first `k` cells
+
+The proof drops the last cell and works with the first `k` centred, scaled cell
+frequencies `reducedVec`.  The `(k+1)`-st cell is reconstructed from the linear constraint
+`∑ⱼ (Yⱼ − nπⱼ) = 0`, which is the algebraic content of `pearsonQ_eq_reducedQ` below:
+Pearson's `Qₙ` equals the reduced quadratic form `reducedQ`, a sum over the first `k` cells
+plus a single term standing in for the dropped cell.  The matrix realisation of `reducedQ`
+as `⟪z, Σ⁻¹ z⟫` (Sherman–Morrison) is `reducedQ_eq_quadForm`. -/
+
+/-- The number of trials is the sum of the cell counts (partition of `Fin n` by outcome). -/
+private lemma sum_multinomialCount {n k : ℕ} (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    ∑ j : Fin (k + 1), multinomialCount X j ω = n := by
+  classical
+  have h := Finset.card_eq_sum_card_fiberwise
+    (s := (Finset.univ : Finset (Fin n))) (t := (Finset.univ : Finset (Fin (k + 1))))
+    (f := fun i => X i ω) (fun i _ => Finset.mem_univ _)
+  simpa [multinomialCount, Finset.card_univ, Fintype.card_fin] using h.symm
+
+/-- The centred cell frequencies sum to zero: this is the linear constraint that makes the
+limiting covariance singular and lets the last cell be reconstructed from the first `k`. -/
+private lemma sum_centered_eq_zero {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπsum : ∑ j, π j = 1) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    ∑ j : Fin (k + 1), ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) = 0 := by
+  have hcount : (∑ j : Fin (k + 1), (multinomialCount X j ω : ℝ)) = (n : ℝ) := by
+    rw [← Nat.cast_sum, sum_multinomialCount]
+  rw [Finset.sum_sub_distrib, ← Finset.mul_sum, hπsum, mul_one, hcount, sub_self]
+
+/-- The reduced quadratic form: a sum over the first `k` cells plus one term for the dropped
+cell (reconstructed via the linear constraint). -/
+private noncomputable def reducedQ {k : ℕ} (π : Fin (k + 1) → ℝ) (z : Fin k → ℝ) : ℝ :=
+  (∑ i : Fin k, z i ^ 2 / π i.castSucc) + (∑ i : Fin k, z i) ^ 2 / π (Fin.last k)
+
+/-- The first `k` centred, scaled cell frequencies `(Yⱼ − nπⱼ)/√n`, `j < k`. -/
+private noncomputable def reducedVec {n k : ℕ} (π : Fin (k + 1) → ℝ)
+    (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) (i : Fin k) : ℝ :=
+  ((multinomialCount X i.castSucc ω : ℝ) - (n : ℝ) * π i.castSucc) / Real.sqrt n
+
+/-- **The combinatorial step.** Pearson's statistic equals the reduced quadratic form of the
+first `k` centred frequencies; the dropped `(k+1)`-st cell reappears through the constraint
+`∑ⱼ (Yⱼ − nπⱼ) = 0`.  Holds for every `n` (both sides are the junk value `0` when `n = 0`). -/
+private lemma pearsonQ_eq_reducedQ {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπsum : ∑ j, π j = 1) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    pearsonQ π X ω = reducedQ π (reducedVec π X ω) := by
+  -- the square-and-divide identity `(c/√n)² / p = c² / (n p)`
+  have hsq : ∀ (c p : ℝ), (c / Real.sqrt n) ^ 2 / p = c ^ 2 / ((n : ℝ) * p) := by
+    intro c p
+    rw [div_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_div]
+  -- the reconstruction: `∑_{i<k} (Y_{i} − nπ_{i}) = − (Y_last − nπ_last)`
+  have hlast : (∑ i : Fin k, ((multinomialCount X i.castSucc ω : ℝ) - (n : ℝ) * π i.castSucc))
+      = - ((multinomialCount X (Fin.last k) ω : ℝ) - (n : ℝ) * π (Fin.last k)) := by
+    have h0 := sum_centered_eq_zero hπsum X ω
+    rw [Fin.sum_univ_castSucc] at h0
+    linarith [h0]
+  rw [pearsonQ, reducedQ]
+  simp only [reducedVec]
+  rw [Fin.sum_univ_castSucc]
+  congr 1
+  · refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [hsq]
+  · rw [← Finset.sum_div, hsq, hlast, neg_sq]
+
+/-- **The noncentrality identity.** The multinomial noncentrality `∑ⱼ hⱼ²/πⱼ` equals the
+reduced quadratic form of the first `k` drift components; the dropped cell reappears via the
+constraint `∑ⱼ hⱼ = 0`. This is `pearsonQ_eq_reducedQ` for the drift `h` in place of the
+centred counts. -/
+private lemma multinomialNoncentrality_eq_reducedQ {k : ℕ} {π h : Fin (k + 1) → ℝ}
+    (hhsum : ∑ j, h j = 0) :
+    multinomialNoncentrality π h = reducedQ π (fun i => h i.castSucc) := by
+  rw [multinomialNoncentrality, reducedQ, Fin.sum_univ_castSucc]
+  have hlast : (∑ i : Fin k, h i.castSucc) = - h (Fin.last k) := by
+    have := hhsum; rw [Fin.sum_univ_castSucc] at this; linarith
+  congr 1
+  rw [hlast, neg_sq]
+
+/-- The reduced `k × k` covariance `Σ = diag(π') − π' π'ᵀ` of the first `k` cell
+frequencies (`π' j = π j.castSucc`). It is `PosDef` (`reducedCov_posDef`), unlike the full
+`(k+1)`-dimensional covariance which is singular. -/
+private noncomputable def reducedCov {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Matrix (Fin k) (Fin k) ℝ :=
+  Matrix.of fun i j =>
+    (if i = j then π i.castSucc else 0) - π i.castSucc * π j.castSucc
+
+/-- The Sherman–Morrison inverse of `reducedCov`: `Σ⁻¹ = diag(1/π') + (1/π_{k}) 𝟙 𝟙ᵀ`. -/
+private noncomputable def reducedCovInv {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Matrix (Fin k) (Fin k) ℝ :=
+  Matrix.of fun i j =>
+    (if i = j then (π i.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹
+
+/-- The action of `Σ⁻¹` on a vector: `(Σ⁻¹ z)_i = z_i/π_i + (∑_j z_j)/π_{k}`. -/
+private lemma reducedCovInv_mulVec {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin k → ℝ) (i : Fin k) :
+    (reducedCovInv π *ᵥ z) i
+      = (π i.castSucc)⁻¹ * z i + (π (Fin.last k))⁻¹ * ∑ j, z j := by
+  simp only [reducedCovInv, Matrix.mulVec, dotProduct, Matrix.of_apply]
+  have h : ∀ j : Fin k,
+      ((if i = j then (π i.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹) * z j
+        = (if i = j then (π i.castSucc)⁻¹ * z j else 0) + (π (Fin.last k))⁻¹ * z j := by
+    intro j
+    by_cases hij : i = j
+    · simp only [if_pos hij, add_mul]
+    · simp only [if_neg hij, zero_add, add_mul]
+  rw [Finset.sum_congr rfl (fun j _ => h j), Finset.sum_add_distrib,
+    Finset.sum_ite_eq Finset.univ i (fun j => (π i.castSucc)⁻¹ * z j), ← Finset.mul_sum]
+  simp
+
+/-- **The quadratic form.** `z ⬝ᵥ Σ⁻¹ z = reducedQ π z`. -/
+private lemma dotProduct_reducedCovInv {k : ℕ} {π : Fin (k + 1) → ℝ} (z : Fin k → ℝ) :
+    z ⬝ᵥ (reducedCovInv π) *ᵥ z = reducedQ π z := by
+  rw [reducedQ]
+  simp only [dotProduct]
+  simp_rw [reducedCovInv_mulVec, mul_add]
+  rw [Finset.sum_add_distrib]
+  congr 1
+  · exact Finset.sum_congr rfl (fun i _ => by rw [div_eq_mul_inv]; ring)
+  · rw [← Finset.sum_mul, div_eq_mul_inv]; ring
+
+/-- **Sherman–Morrison.** `Σ · Σ⁻¹ = 1`.  The cancellation uses `π_{k} = 1 − ∑_{j<k} π_j`
+(the last cell probability), i.e. the null-probability normalisation. -/
+private lemma reducedCov_mul_inv {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    reducedCov π * reducedCovInv π = 1 := by
+  have hlne : π (Fin.last k) ≠ 0 := (hπpos _).ne'
+  ext i l
+  rw [Matrix.mul_apply, Matrix.one_apply]
+  simp only [reducedCov, reducedCovInv, Matrix.of_apply]
+  have step : ∀ j : Fin k,
+      (((if i = j then π i.castSucc else 0) - π i.castSucc * π j.castSucc) *
+        ((if j = l then (π j.castSucc)⁻¹ else 0) + (π (Fin.last k))⁻¹))
+      = (if i = j then (if j = l then (1 : ℝ) else 0) else 0)
+        + (if i = j then π i.castSucc * (π (Fin.last k))⁻¹ else 0)
+        - (if j = l then π i.castSucc else 0)
+        - π i.castSucc * π j.castSucc * (π (Fin.last k))⁻¹ := by
+    intro j
+    have hj : π j.castSucc ≠ 0 := (hπpos _).ne'
+    split_ifs <;> subst_vars <;> field_simp <;> ring
+  rw [Finset.sum_congr rfl (fun j _ => step j), Finset.sum_sub_distrib, Finset.sum_sub_distrib,
+    Finset.sum_add_distrib,
+    Finset.sum_ite_eq Finset.univ i (fun j => if j = l then (1 : ℝ) else 0),
+    Finset.sum_ite_eq Finset.univ i (fun _ => π i.castSucc * (π (Fin.last k))⁻¹),
+    Finset.sum_ite_eq' Finset.univ l (fun _ => π i.castSucc)]
+  simp only [Finset.mem_univ, if_true]
+  have hD : (∑ j : Fin k, π i.castSucc * π j.castSucc * (π (Fin.last k))⁻¹)
+      = π i.castSucc * (π (Fin.last k))⁻¹ * ∑ j : Fin k, π j.castSucc := by
+    rw [Finset.mul_sum]; exact Finset.sum_congr rfl (fun j _ => by ring)
+  have hs : (∑ j : Fin k, π j.castSucc) = 1 - π (Fin.last k) := by
+    have := hπsum; rw [Fin.sum_univ_castSucc] at this; linarith
+  rw [hD, hs]
+  have hz : π i.castSucc * (π (Fin.last k))⁻¹ - π i.castSucc
+      - π i.castSucc * (π (Fin.last k))⁻¹ * (1 - π (Fin.last k)) = 0 := by
+    field_simp; ring
+  linear_combination hz
+
+/-- `Σ⁻¹` is positive definite (`∑ z_i²/π_i + (∑ z_i)²/π_{k} > 0` for `z ≠ 0`). -/
+private lemma reducedCovInv_posDef {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) : (reducedCovInv π).PosDef := by
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, reducedCovInv, Matrix.of_apply, star_trivial]
+    by_cases h : i = j <;> simp [h, eq_comm]
+  · intro x hx
+    rw [star_trivial, dotProduct_reducedCovInv, reducedQ]
+    have hA : 0 < ∑ i : Fin k, x i ^ 2 / π i.castSucc := by
+      obtain ⟨i, hi⟩ := Function.ne_iff.mp hx
+      refine Finset.sum_pos' (fun j _ => ?_) ⟨i, Finset.mem_univ _, ?_⟩
+      · exact div_nonneg (sq_nonneg _) (hπpos _).le
+      · exact div_pos (lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hi))) (hπpos _)
+    have hB : 0 ≤ (∑ i : Fin k, x i) ^ 2 / π (Fin.last k) :=
+      div_nonneg (sq_nonneg _) (hπpos _).le
+    linarith
+
+/-- `Σ = reducedCov` is positive definite (inverse of the `PosDef` matrix `Σ⁻¹`). -/
+private lemma reducedCov_posDef {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) : (reducedCov π).PosDef := by
+  have hinv : (reducedCovInv π)⁻¹ = reducedCov π :=
+    Matrix.inv_eq_left_inv (reducedCov_mul_inv hπpos hπsum)
+  rw [← hinv]
+  exact (reducedCovInv_posDef hπpos).inv
+
+/-- `Σ⁻¹ = reducedCovInv` as matrices. -/
+private lemma reducedCov_inv_eq {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    (reducedCov π)⁻¹ = reducedCovInv π :=
+  Matrix.inv_eq_right_inv (reducedCov_mul_inv hπpos hπsum)
+
+/-- The cell count as a real-valued measurable function of the sample. -/
+private lemma measurable_multinomialCount {n k : ℕ} {X : Fin n → Ω → Fin (k + 1)}
+    (hX : ∀ i, Measurable (X i)) (j : Fin (k + 1)) :
+    Measurable (fun ω => (multinomialCount X j ω : ℝ)) := by
+  classical
+  have hrw : (fun ω => (multinomialCount X j ω : ℝ))
+      = fun ω => ∑ i : Fin n, if X i ω = j then (1 : ℝ) else 0 := by
+    funext ω
+    rw [multinomialCount, Finset.card_filter, Nat.cast_sum]
+    exact Finset.sum_congr rfl (fun i _ => by by_cases h : X i ω = j <;> simp [h])
+  rw [hrw]
+  refine Finset.univ.measurable_sum (fun i _ => ?_)
+  exact Measurable.ite ((hX i) (measurableSet_singleton j)) measurable_const measurable_const
+
+/-- The standardised reduced cell-count vector `((Yⱼ − nπⱼ)/√n)_{j<k}` as an element of
+`EuclideanSpace ℝ (Fin k)`; the object the multivariate CLT is applied to. -/
+private noncomputable def reducedCount {n k : ℕ} (π : Fin (k + 1) → ℝ)
+    (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) : EuclideanSpace ℝ (Fin k) :=
+  WithLp.toLp 2 (reducedVec π X ω)
+
+private lemma measurable_reducedCount {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    {X : Fin n → Ω → Fin (k + 1)} (hX : ∀ i, Measurable (X i)) :
+    Measurable (reducedCount π X) := by
+  have hg : Measurable (fun ω => reducedVec π X ω) := by
+    refine measurable_pi_iff.mpr (fun i => ?_)
+    simp only [reducedVec]
+    exact ((measurable_multinomialCount hX i.castSucc).sub measurable_const).div measurable_const
+  exact (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp hg
+
+/-- **Multivariate CLT for the reduced cell frequencies** (LIFTED — the single deep analytic
+brick of the null-limit proof). The standardised reduced count vector converges in law to
+the centred Gaussian with the reduced covariance `Σ = diag π' − π' π'ᵀ`.
+
+The intended proof is the imported multivariate i.i.d. CLT
+`ProbabilityTheory.tendstoInDistribution_multivariate_clt` applied to the per-observation
+indicator vectors `V i ω = (1[X i ω = 0], …, 1[X i ω = k−1])`, whose common covariance is
+exactly `reducedCov π`, followed by the `TendstoInDistribution → WeakConverges` translation
+(the pattern of `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`).
+
+TODO: the residual gap is the *canonical i.i.d. transfer*. The CLT brick consumes a single
+fixed i.i.d. sequence on one probability space `(Ω, P)`, whereas the hypotheses supply a
+triangular family `(P n, X n : Fin n → Ω → …)`. One must (a) build the per-observation
+covariance identity `Var[⟪t, V 0⟫] = t ⬝ᵥ (reducedCov π) *ᵥ t` from `hcell`, and (b) transfer
+the law of `reducedCount` under `P n` to a fixed product-measure model, using that
+`iIndepFun` with identical marginals gives joint law `= Measure.pi`. -/
+private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : Measure (Fin (k + 1))}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1)
+    (hX : ∀ n i, Measurable (X n i))
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    (hlaw : ∀ n i, Measure.map (X n i) (P n) = μ)
+    (hcell : ∀ j, (μ {j}).toReal = π j) :
+    WeakConverges (fun n => (P n).map (reducedCount π (X n)))
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)) := by
+  sorry
 
 /-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
 `j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
@@ -128,9 +366,60 @@ theorem pearsonQ_weakConverges_chiSquared {k : ℕ} {π : Fin (k + 1) → ℝ}
     -- USER-INPUT: the null hypothesis: the cell probabilities of `μ` are `π`
     (hcell : ∀ j, (μ {j}).toReal = π j) :
     WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n)) (chiSquared k) := by
-  sorry
+  -- the continuous quadratic form `q z = ⟪z, Σ⁻¹ z⟫`
+  set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ with hTdef
+  set q : EuclideanSpace ℝ (Fin k) → ℝ := fun z => ⟪z, T z⟫ with hqdef
+  have hq_cont : Continuous q := continuous_id.inner T.continuous
+  -- pointwise: `q (reducedCount ω) = pearsonQ ω` (bridge algebra)
+  have hq : ∀ n ω, q (reducedCount π (X n) ω) = pearsonQ π (X n) ω := by
+    intro n ω
+    simp only [hqdef, hTdef]
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, pearsonQ_eq_reducedQ hπsum,
+      ← dotProduct_reducedCovInv]
+    rfl
+  -- the lifted CLT brick, then continuous mapping
+  have hbrick := reducedCount_weakConverges_gaussian (π := π) (P := P) (X := X) (μ := μ)
+    hπpos hπsum hX hindep hlaw hcell
+  have hmapped := hbrick.map hq_cont hq_cont.measurable
+  -- the target is `χ²_k` (Gaussian → chi-squared bridge)
+  have htarget : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)).map q
+      = chiSquared k := by
+    simp only [hqdef, hTdef]
+    exact multivariateGaussian_map_inner_inv_eq_chiSquared hk (reducedCov_posDef hπpos hπsum)
+  -- each pushforward term equals the law of `pearsonQ`
+  have hseq : (fun n => ((P n).map (reducedCount π (X n))).map q)
+      = fun n => Measure.map (pearsonQ π (X n)) (P n) := by
+    funext n
+    rw [Measure.map_map hq_cont.measurable (measurable_reducedCount (hX n))]
+    exact Measure.map_congr (Filter.Eventually.of_forall (fun ω => hq n ω))
+  rw [hseq, htarget] at hmapped
+  exact hmapped
 
 /-! ### (ii) Local alternatives and the noncentral limit -/
+
+/-- **Multivariate CLT for the reduced cell frequencies under local alternatives** (LIFTED —
+the deep analytic brick of the noncentral-limit proof). Under `p⁽ⁿ⁾ = π + h/√n` the
+standardised reduced count vector converges in law to `N(ν, Σ)` with drift
+`ν = (hⱼ)_{j<k}` and covariance `Σ = reducedCov π`.
+
+TODO: unlike the null case this is a *triangular array* — the per-observation law `μ n`
+drifts with `n` — so the fixed-i.i.d. brick `tendstoInDistribution_multivariate_clt` does
+not apply directly. The intended route is a multivariate Lindeberg / Cramér–Wold CLT (the
+repo has the scalar `HypothesisTesting.ForMathlib.LindebergCLT.lindeberg_clt`), or Le Cam's
+third lemma (`AsymptoticStatistics.ForMathlib.Contiguity`), plus the same canonical transfer
+as `reducedCount_weakConverges_gaussian`. The drift `ν = hⱼ` is the limit of
+`E[reducedCount]ⱼ = (n p⁽ⁿ⁾ⱼ − nπⱼ)/√n = hⱼ`, and `Σ → diag π − π πᵀ` since `p⁽ⁿ⁾ → π`. -/
+private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : ℕ → Measure (Fin (k + 1))}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) (hhsum : ∑ j, h j = 0)
+    (hX : ∀ n i, Measurable (X n i))
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    (hlaw : ∀ n i, Measure.map (X n i) (P n) = μ n)
+    (hcell : ∀ n j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
+    WeakConverges (fun n => (P n).map (reducedCount π (X n)))
+      (multivariateGaussian (WithLp.toLp 2 (fun i => h i.castSucc)) (reducedCov π)) := by
+  sorry
 
 /-- **Limiting distribution under local alternatives.** Under the alternative sequence
 `p⁽ⁿ⁾ⱼ = πⱼ + hⱼ n^{-1/2}` with `∑_{j=1}^{k+1} hⱼ = 0`, Pearson's statistic converges in
@@ -162,7 +451,36 @@ theorem pearsonQ_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
     (hcell : ∀ n, ∀ j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
     WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n))
       (noncentralChiSquared k (multinomialNoncentrality π h).toNNReal) := by
-  sorry
+  set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ with hTdef
+  set q : EuclideanSpace ℝ (Fin k) → ℝ := fun z => ⟪z, T z⟫ with hqdef
+  have hq_cont : Continuous q := continuous_id.inner T.continuous
+  have hq : ∀ n ω, q (reducedCount π (X n) ω) = pearsonQ π (X n) ω := by
+    intro n ω
+    simp only [hqdef, hTdef]
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, pearsonQ_eq_reducedQ hπsum,
+      ← dotProduct_reducedCovInv]
+    rfl
+  have hbrick := reducedCount_weakConverges_noncentral (π := π) (h := h) (P := P) (X := X) (μ := μ)
+    hπpos hπsum hhsum hX hindep hlaw hcell
+  set ν : EuclideanSpace ℝ (Fin k) := WithLp.toLp 2 (fun i => h i.castSucc) with hνdef
+  have hmapped := hbrick.map hq_cont hq_cont.measurable
+  have hnc_id : (⟪ν, Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ ν⟫ : ℝ)
+      = multinomialNoncentrality π h := by
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, dotProduct_reducedCovInv,
+      hνdef]
+    exact (multinomialNoncentrality_eq_reducedQ hhsum).symm
+  have htarget : (multivariateGaussian ν (reducedCov π)).map q
+      = noncentralChiSquared k (multinomialNoncentrality π h).toNNReal := by
+    simp only [hqdef, hTdef]
+    rw [multivariateGaussian_map_inner_inv_eq_noncentralChiSquared
+      (reducedCov_posDef hπpos hπsum) ν, hnc_id]
+  have hseq : (fun n => ((P n).map (reducedCount π (X n))).map q)
+      = fun n => Measure.map (pearsonQ π (X n)) (P n) := by
+    funext n
+    rw [Measure.map_map hq_cont.measurable (measurable_reducedCount (hX n))]
+    exact Measure.map_congr (Filter.Eventually.of_forall (fun ω => hq n ω))
+  rw [hseq, htarget] at hmapped
+  exact hmapped
 
 /-! ### (iii) Power -/
 
@@ -194,6 +512,15 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
     -- USER-INPUT: the alternative genuinely differs from the null in some cell
     (hne : ∃ j, p j ≠ π j) :
     Tendsto (fun n => ((P n) {ω | c < pearsonQ π (X n) ω}).toReal) atTop (nhds 1) := by
+  -- TODO (planned debt): consistency is a law-of-large-numbers argument, not a CLT one, so
+  -- neither supplied brick applies. The intended proof:
+  --   (1) a WLLN for the offending cell frequency `Yⱼ/n → pⱼ` in `P n`-probability (an
+  --       offending `j` with `pⱼ ≠ πⱼ` exists by `hne`); the repo's
+  --       `HypothesisTesting.ForMathlib.LindebergCLT.triangular_wlln_of_L1` or a direct
+  --       Chebyshev bound on the Bernoulli indicators `1[Xᵢ = j]` supplies it;
+  --   (2) the one-summand lower bound `pearsonQ π (X n) ω ≥ n (Yⱼ/n − πⱼ)²/πⱼ` (drop the
+  --       other nonnegative summands), whence `pearsonQ → ∞` in `P n`-probability and
+  --       therefore `P n {ω | c < pearsonQ} → 1` for the fixed critical value `c`.
   sorry
 
 /-- **Nondegenerate local power.** Against the local alternatives of
@@ -232,6 +559,18 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
           (Set.Ioi c)).toReal
       ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
           (Set.Ioi c)).toReal < 1 := by
+  -- TODO (planned debt): the three conjuncts build on `pearsonQ_weakConverges_noncentral`
+  -- (ii) but need analytic facts about the limit that are not among the supplied bricks:
+  --   (1) a portmanteau step upgrading the weak limit (ii) to convergence of the tail
+  --       probability `((P n).map pearsonQ)(Ioi c) → noncentralChiSquared k λ (Ioi c)`,
+  --       valid because `{c}` is `noncentralChiSquared`-null (absolute continuity); the
+  --       `WeakConverges` API in `ForMathlib.Contiguity` has no such continuity-set lemma;
+  --   (2) `α < tail` is STRICT: `chiSquared_tail_le_noncentralChiSquared` gives only `≤`;
+  --       strictness needs `λ = multinomialNoncentrality π h > 0` (from `hhne` + `hπpos`,
+  --       provable) together with STRICT monotonicity of `l ↦ noncentralChiSquared k l (Ioi c)`
+  --       at `l > 0` — only the non-strict `noncentralChiSquared_tail_mono` is imported;
+  --   (3) `tail < 1`: `noncentralChiSquared` is absolutely continuous with support `(0,∞)`,
+  --       so `Iic c` carries positive mass for the finite `c` fixed by `hc` (`0 < α < 1`).
   sorry
 
 end StatLean.HypothesisTesting
