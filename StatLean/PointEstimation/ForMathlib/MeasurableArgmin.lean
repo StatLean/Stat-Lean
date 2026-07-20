@@ -564,4 +564,137 @@ private theorem iInf_Iic_eq_iInf_rat_min_of_convex {g : ℝ → ℝ≥0∞}
         exact hrtop hfin
       rw [hgw]; exact le_top
 
+/-- **Measurable argmin, convex (lower-semicontinuous) form.** A jointly measurable family of
+convex, lower-semicontinuous, coercive functions of a real scan variable, each **finite at
+`0`**, admits a measurable minimizer selection. This is the exact strengthening the frozen
+`exists_measurable_argmin` cannot supply: continuity is replaced by lower semicontinuity, at
+the cost of a single finiteness point `f ω 0 < ⊤` (convexity + one finiteness point make the
+rational-relaxed-sublevel construction valid, since the infimum is then approached from the
+`0`-side along the rationals — see `convex_iInf_le_aux`). See the a.e. wrapper
+`exists_measurable_argmin_of_convex` for the version the conditional-risk consumers use. -/
+theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpace Ω]
+    {f : Ω → ℝ → ℝ≥0∞} (hf : Measurable (Function.uncurry f))
+    (hlsc : ∀ ω, LowerSemicontinuous (f ω))
+    (hconv : ∀ ω, ConvexOn ℝ≥0 Set.univ (f ω))
+    (hcoer : ∀ ω, Tendsto (f ω) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)))
+    (hf0 : ∀ ω, f ω 0 < ⊤) :
+    ∃ u : Ω → ℝ, Measurable u ∧ ∀ ω, f ω (u ω) = ⨅ v : ℝ, f ω v := by
+  classical
+  have hfq : ∀ q : ℚ, Measurable (fun ω => f ω (q : ℝ)) := fun q =>
+    hf.comp (measurable_id.prodMk measurable_const)
+  set M : Ω → ℝ≥0∞ := fun ω => ⨅ v : ℝ, f ω v with hMdef
+  have hM_meas : Measurable M := by
+    have hEq : M = fun ω => ⨅ q : ℚ, f ω (q : ℝ) := by
+      funext ω; exact iInf_eq_iInf_rat_of_convex (hconv ω) (hf0 ω)
+    rw [hEq]; exact Measurable.iInf hfq
+  have hLq_meas : ∀ q : ℚ, Measurable (fun ω => ⨅ v ∈ Set.Iic (q : ℝ), f ω v) := by
+    intro q
+    have hEq : (fun ω => ⨅ v ∈ Set.Iic (q : ℝ), f ω v)
+        = fun ω => ⨅ p : ℚ, f ω (min (p : ℝ) (q : ℝ)) := by
+      funext ω
+      exact iInf_Iic_eq_iInf_rat_min_of_convex (hconv ω) (hf0 ω) q
+    rw [hEq]
+    exact Measurable.iInf fun p => hf.comp (measurable_id.prodMk measurable_const)
+  set S : Ω → Set ℝ := fun ω => {v | f ω v = M ω} with hSdef
+  set u : Ω → ℝ := fun ω => sInf (S ω) with hudef
+  have hMle : ∀ ω (v : ℝ), M ω ≤ f ω v := fun ω v => iInf_le (f ω) v
+  have hclosedS : ∀ ω, IsClosed (S ω) := by
+    intro ω
+    have hset : S ω = {v | f ω v ≤ M ω} := by
+      ext v
+      simp only [hSdef, Set.mem_setOf_eq]
+      exact ⟨fun h => h.le, fun h => le_antisymm h (hMle ω v)⟩
+    rw [hset]
+    exact (hlsc ω).isClosed_preimage (M ω)
+  have hneS : ∀ ω, (S ω).Nonempty := by
+    intro ω
+    obtain ⟨x, hx⟩ := exists_forall_le_of_lsc_of_coercive (hlsc ω) (hcoer ω)
+    exact ⟨x, le_antisymm (le_iInf hx) (iInf_le _ x)⟩
+  have hbddS : ∀ ω, M ω < ⊤ → BddBelow (S ω) := by
+    intro ω hlt
+    have hmem : f ω ⁻¹' Set.Ioi (M ω) ∈ cocompact ℝ := (hcoer ω) (Ioi_mem_nhds hlt)
+    obtain ⟨t, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hSsub : S ω ⊆ t := by
+      intro v hv
+      by_contra hvt
+      have hlt2 : M ω < f ω v := ht_sub hvt
+      rw [show f ω v = M ω from hv] at hlt2
+      exact lt_irrefl _ hlt2
+    exact ht_comp.bddBelow.mono hSsub
+  have hattain : ∀ ω, f ω (u ω) = M ω := by
+    intro ω
+    by_cases hMtop : M ω = ⊤
+    · have h1 : M ω ≤ f ω (u ω) := hMle ω (u ω)
+      rw [hMtop] at h1 ⊢
+      exact top_le_iff.mp h1
+    · have hlt : M ω < ⊤ := lt_top_iff_ne_top.mpr hMtop
+      exact (hclosedS ω).csInf_mem (hneS ω) (hbddS ω hlt)
+  have hMle_biInf : ∀ ω (q : ℚ), M ω ≤ ⨅ v ∈ Set.Iic (q : ℝ), f ω v := fun ω q =>
+    le_iInf₂ fun v _ => hMle ω v
+  have hchar : ∀ ω (q : ℚ), u ω ≤ (q : ℝ) ↔
+      (M ω = ⊤ ∧ (0 : ℝ) ≤ (q : ℝ)) ∨
+      (M ω < ⊤ ∧ (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω) := by
+    intro ω q
+    by_cases hMtop : M ω = ⊤
+    · have hSuniv : S ω = Set.univ := by
+        ext v
+        refine ⟨fun _ => Set.mem_univ _, fun _ => ?_⟩
+        show f ω v = M ω
+        exact le_antisymm (by rw [hMtop]; exact le_top) (hMle ω v)
+      have hu0 : u ω = 0 := by
+        show sInf (S ω) = 0
+        rw [hSuniv]
+        exact Real.sInf_of_not_bddBelow
+          (not_bddBelow_iff.mpr fun x => ⟨x - 1, Set.mem_univ _, by linarith⟩)
+      rw [hu0]
+      constructor
+      · intro h; exact Or.inl ⟨hMtop, h⟩
+      · rintro (⟨_, h⟩ | ⟨hlt, _⟩)
+        · exact h
+        · exact absurd hMtop (ne_of_lt hlt)
+    · have hlt : M ω < ⊤ := lt_top_iff_ne_top.mpr hMtop
+      have hmem : u ω ∈ S ω := (hclosedS ω).csInf_mem (hneS ω) (hbddS ω hlt)
+      constructor
+      · intro h
+        refine Or.inr ⟨hlt, le_antisymm ?_ (hMle_biInf ω q)⟩
+        calc ⨅ v ∈ Set.Iic (q : ℝ), f ω v
+            ≤ f ω (u ω) := iInf₂_le (u ω) (Set.mem_Iic.mpr h)
+          _ = M ω := hmem
+      · rintro (⟨hcontra, _⟩ | ⟨_, hbi⟩)
+        · exact absurd hcontra hMtop
+        · obtain ⟨w, hwq, hfw⟩ := exists_argmin_Iic_lsc (hlsc ω) (hcoer ω) (q : ℝ)
+          have hwS : w ∈ S ω := by show f ω w = M ω; rw [hfw, hbi]
+          exact le_trans (csInf_le (hbddS ω hlt) hwS) hwq
+  refine ⟨u, ?_, fun ω => (hattain ω)⟩
+  apply measurable_of_Iic
+  intro r
+  have hset : u ⁻¹' Set.Iic r
+      = ⋂ (q : ℚ) (_ : r < (q : ℝ)), {ω | u ω ≤ (q : ℝ)} := by
+    ext ω
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_iInter, Set.mem_setOf_eq]
+    constructor
+    · intro h q _; exact le_trans h (le_of_lt ‹r < (q : ℝ)›)
+    · intro h
+      by_contra hlt
+      rw [not_le] at hlt
+      obtain ⟨q, hrq, hqu⟩ := exists_rat_btwn hlt
+      exact absurd (h q hrq) (not_le.mpr hqu)
+  rw [hset]
+  refine MeasurableSet.iInter fun q => MeasurableSet.iInter fun _ => ?_
+  have hqset : {ω | u ω ≤ (q : ℝ)}
+      = ((M ⁻¹' {⊤}) ∩ {ω | (0 : ℝ) ≤ (q : ℝ)}) ∪
+        ((M ⁻¹' Set.Iio ⊤) ∩ {ω | (⨅ v ∈ Set.Iic (q : ℝ), f ω v) = M ω}) := by
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_inter_iff, Set.mem_preimage,
+      Set.mem_singleton_iff, Set.mem_Iio]
+    rw [hchar ω q]
+  rw [hqset]
+  refine MeasurableSet.union (MeasurableSet.inter ?_ ?_) (MeasurableSet.inter ?_ ?_)
+  · exact hM_meas (measurableSet_singleton ⊤)
+  · by_cases h : (0 : ℝ) ≤ (q : ℝ)
+    · simp only [h, Set.setOf_true]; exact MeasurableSet.univ
+    · simp only [h, Set.setOf_false]; exact MeasurableSet.empty
+  · exact hM_meas measurableSet_Iio
+  · exact measurableSet_eq_fun (hLq_meas q) hM_meas
+
 end StatLean.PointEstimation
