@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.LikelihoodMethods.UniformLAN
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
+import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -71,7 +72,7 @@ of maximum likelihood estimates," *Ann. Math. Statist.* **41** (1970), 802–828
 
 open MeasureTheory ProbabilityTheory Filter Topology
 open AsymptoticStatistics AsymptoticStatistics.AsymptoticRepresentation
-open scoped RealInnerProductSpace ENNReal
+open scoped RealInnerProductSpace ENNReal Matrix
 
 namespace StatLean.HypothesisTesting
 
@@ -181,7 +182,8 @@ private lemma continuous_gaussQuadratic (A : Matrix (Fin k) (Fin k) ℝ) :
 private lemma measurable_scoreSum (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
     (n : ℕ) : Measurable (scoreSum ℓ n) := by
   unfold scoreSum
-  exact (Finset.univ.measurable_sum (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul _
+  exact (Finset.measurable_sum Finset.univ
+    (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul (Real.sqrt n)⁻¹
 
 /-- **Gaussian quadratic form is chi-squared.** For a positive-definite `k×k` matrix `J`
 (`k > 0`), the pushforward of `N(0, J)` under the quadratic form `z ↦ ⟪z, J⁻¹ z⟫` is the
@@ -196,13 +198,29 @@ calculus functions of one matrix they commute, so `C J C = J C² = J J⁻¹ = I`
 (via `multivariateGaussian_map_toEuclideanCLM`), while `⟪z, J⁻¹ z⟫ = ‖C z‖² = ∑ᵢ (C z)ᵢ²`;
 the standard Gaussian's coordinates are i.i.d. `N(0,1)`, so `map_sum_sq_eq_chiSquared`
 finishes. -/
--- TODO: discharge via the whitening argument above (CFC matrix square root + coordinate iid
--- of `stdGaussian` + `MultipleTesting.map_sum_sq_eq_chiSquared`). Sanctioned lifted sorry.
 private lemma multivariateGaussian_map_quadratic_eq_chiSquared
     (hk : 0 < k) (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef) :
     (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
-        (fun z => ⟪z, mulVecE J⁻¹ z⟫) = MultipleTesting.chiSquared k := by
-  sorry
+        (fun z => ⟪z, mulVecE J⁻¹ z⟫) = MultipleTesting.chiSquared k :=
+  multivariateGaussian_map_inner_inv_eq_chiSquared hk hJ_pd
+
+/-- The matrix action `mulVecE J` is `ℝ`-linear in its vector argument (scalar homogeneity). -/
+private lemma mulVecE_smul (J : Matrix (Fin k) (Fin k) ℝ) (c : ℝ)
+    (v : EuclideanSpace ℝ (Fin k)) : mulVecE J (c • v) = c • mulVecE J v := by
+  change Matrix.toEuclideanCLM (𝕜 := ℝ) J (c • v) = c • Matrix.toEuclideanCLM (𝕜 := ℝ) J v
+  rw [map_smul]
+
+/-- The Wald statistic is the quadratic form `⟪·, J ·⟫` evaluated at the normalized deviation
+`√n·(θ̂ₙ − θ₀)`: `Wₙ = ⟪√n(θ̂ₙ−θ₀), J √n(θ̂ₙ−θ₀)⟫`. The two `√n` factors collapse the `n` in
+front of the definition. -/
+private lemma waldStatistic_eq_quadratic (J : Matrix (Fin k) (Fin k) ℝ)
+    (θ₀ : EuclideanSpace ℝ (Fin k))
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (n : ℕ) (ω : Fin n → 𝓧) :
+    waldStatistic J θ₀ est n ω
+      = ⟪Real.sqrt n • (est n ω - θ₀), mulVecE J (Real.sqrt n • (est n ω - θ₀))⟫ := by
+  unfold waldStatistic
+  rw [mulVecE_smul, real_inner_smul_left, real_inner_smul_right, ← mul_assoc,
+    Real.mul_self_sqrt (Nat.cast_nonneg n)]
 
 /-- **The Rao score statistic is asymptotically chi-squared.**
 
@@ -289,7 +307,87 @@ theorem wald_tendsto_chiSquared
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (waldStatistic J θ₀ est n))
       (MultipleTesting.chiSquared k) := by
-  sorry
+  -- Score CLT under the null: `Zₙ ⇝ N(0, J)`.
+  have hScore : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (scoreSum ℓ n))
+      (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
+    scoreSum_weakly_converges M μ θ₀ ℓ hℓ (hPDF.density_integral_eq_one θ₀)
+      (hPDF.density_integrable θ₀)
+      (fun t u => hPDF.density_integral_eq_one _) (fun t u => hPDF.density_integrable _)
+      hDQM J hJ_pd.posSemidef hJ
+  have hJinv_pd : J⁻¹.PosDef := hJ_pd.inv
+  have hdet : IsUnit J.det := (Matrix.isUnit_iff_isUnit_det J).mp hJ_pd.isUnit
+  -- The pushforward of `N(0, J)` under `mulVecE J⁻¹` is `N(0, J⁻¹)`.
+  have hpush : (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+      (GaussianShift.matrixAction J⁻¹)
+      = ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹ := by
+    have hfun : GaussianShift.matrixAction J⁻¹
+        = (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ :
+            EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k)) :=
+      funext (GaussianShift.matrixAction_eq_toEuclideanCLM J⁻¹)
+    rw [hfun, ProbabilityTheory.multivariateGaussian_map_toEuclideanCLM J⁻¹ 0
+      hJ_pd.posSemidef]
+    have hHerm : J⁻¹ᴴ = J⁻¹ := hJ_pd.inv.isHermitian
+    congr 1
+    · simp
+    · rw [hHerm, Matrix.nonsing_inv_mul J hdet, Matrix.one_mul]
+  -- `Vₙ = mulVecE J⁻¹ Zₙ ⇝ N(0, J⁻¹)`.
+  have hV : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (fun ω => mulVecE J⁻¹ (scoreSum ℓ n ω)))
+      (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := by
+    have hmap := hScore.map (GaussianShift.matrixAction_continuous J⁻¹)
+      (GaussianShift.matrixAction_measurable J⁻¹)
+    rw [hpush] at hmap
+    have hseqV : (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => mulVecE J⁻¹ (scoreSum ℓ n ω)))
+        = (fun n => ((productMeasure M μ θ₀ n).map (scoreSum ℓ n)).map
+            (GaussianShift.matrixAction J⁻¹)) := by
+      funext n
+      rw [Measure.map_map (GaussianShift.matrixAction_measurable J⁻¹)
+        (measurable_scoreSum ℓ hℓ n)]
+      rfl
+    rw [hseqV]; exact hmap
+  -- `Uₙ = √n·(θ̂ₙ − θ₀) ⇝ N(0, J⁻¹)` by Slutsky, since `‖Uₙ − Vₙ‖ →_P 0`.
+  have hUmeas : ∀ n, Measurable (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hVmeas : ∀ n, Measurable (fun ω : Fin n → 𝓧 => mulVecE J⁻¹ (scoreSum ℓ n ω)) :=
+    fun n => (GaussianShift.matrixAction_measurable J⁻¹).comp (measurable_scoreSum ℓ hℓ n)
+  have hU : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (fun ω => Real.sqrt n • (est n ω - θ₀)))
+      (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := by
+    refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+      (X := fun n ω => mulVecE J⁻¹ (scoreSum ℓ n ω))
+      (Y := fun n ω => Real.sqrt n • (est n ω - θ₀))
+      (fun n => (hVmeas n).aemeasurable) (fun n => (hUmeas n).aemeasurable) hV ?_
+    intro ε hε
+    have hset : (fun n => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ dist (mulVecE J⁻¹ (scoreSum ℓ n ω))
+          (Real.sqrt n • (est n ω - θ₀))})
+        = (fun n => (productMeasure M μ θ₀ n).real
+          {ω : Fin n → 𝓧 |
+            ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖}) := by
+      funext n; congr 1; ext ω
+      simp only [Set.mem_setOf_eq]
+      rw [dist_eq_norm, norm_sub_rev]
+    rw [hset]; exact hlin ε hε
+  -- Continuous mapping: `Wₙ = ⟪Uₙ, J Uₙ⟫`, and `N(0, J⁻¹)` pushes to `χ²ₖ`.
+  have hcont := continuous_gaussQuadratic (k := k) J
+  have hmeas := hcont.measurable
+  have hmapU := hU.map hcont hmeas
+  have hlim : (ProbabilityTheory.multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹).map
+      (fun z => ⟪z, mulVecE J z⟫) = MultipleTesting.chiSquared k := by
+    have h := multivariateGaussian_map_quadratic_eq_chiSquared hk J⁻¹ hJinv_pd
+    rwa [Matrix.nonsing_inv_nonsing_inv J hdet] at h
+  rw [hlim] at hmapU
+  have hseq : (fun n => (productMeasure M μ θ₀ n).map (waldStatistic J θ₀ est n))
+      = (fun n => ((productMeasure M μ θ₀ n).map
+          (fun ω => Real.sqrt n • (est n ω - θ₀))).map (fun z => ⟪z, mulVecE J z⟫)) := by
+    funext n
+    rw [Measure.map_map hmeas (hUmeas n)]
+    congr 1
+    funext ω
+    exact waldStatistic_eq_quadratic J θ₀ est n ω
+  rw [hseq]; exact hmapU
 
 /-- **The likelihood ratio statistic is asymptotically chi-squared (simple null).**
 
