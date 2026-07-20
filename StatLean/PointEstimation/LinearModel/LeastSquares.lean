@@ -140,7 +140,7 @@ open scoped RealInnerProductSpace in
 /-- **Gaussian isometry invariance.** The isotropic Gaussian vector transforms covariantly
 under an orthogonal change of coordinates. This is the measure-theoretic core enabling the
 transport of the linear-model optimality statements to the canonical form. -/
-private lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
+lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
     (L : EuclideanSpace ℝ (Fin N₁) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin N₂))
     (ξ : EuclideanSpace ℝ (Fin N₁)) (σ2 : ℝ≥0) :
     (gaussianVector ξ σ2).map L = gaussianVector (L ξ) σ2 := by
@@ -231,7 +231,7 @@ optimality statements. This isolates the *only* remaining debt behind `isUMVU_ls
 and `isUMVU_residualSumSq`: the measure-theoretic core (Gaussian isometry invariance,
 `gaussianVector_map_linearIsometryEquiv`, and the `IsUMVU` sample transport,
 `isUMVU_map_equiv`) is proved above, 0-sorry. -/
-private lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
+lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     [W.HasOrthogonalProjection] (hW : Module.finrank ℝ W < n) :
     ∃ (m : ℕ) (_ : 0 < m) (_ : Module.finrank ℝ W + m = n)
       (L : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ]
