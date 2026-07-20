@@ -166,6 +166,19 @@ private lemma pearsonQ_eq_reducedQ {n k : ℕ} {π : Fin (k + 1) → ℝ}
     rw [hsq]
   · rw [← Finset.sum_div, hsq, hlast, neg_sq]
 
+/-- **The noncentrality identity.** The multinomial noncentrality `∑ⱼ hⱼ²/πⱼ` equals the
+reduced quadratic form of the first `k` drift components; the dropped cell reappears via the
+constraint `∑ⱼ hⱼ = 0`. This is `pearsonQ_eq_reducedQ` for the drift `h` in place of the
+centred counts. -/
+private lemma multinomialNoncentrality_eq_reducedQ {k : ℕ} {π h : Fin (k + 1) → ℝ}
+    (hhsum : ∑ j, h j = 0) :
+    multinomialNoncentrality π h = reducedQ π (fun i => h i.castSucc) := by
+  rw [multinomialNoncentrality, reducedQ, Fin.sum_univ_castSucc]
+  have hlast : (∑ i : Fin k, h i.castSucc) = - h (Fin.last k) := by
+    have := hhsum; rw [Fin.sum_univ_castSucc] at this; linarith
+  congr 1
+  rw [hlast, neg_sq]
+
 /-- The reduced `k × k` covariance `Σ = diag(π') − π' π'ᵀ` of the first `k` cell
 frequencies (`π' j = π j.castSucc`). It is `PosDef` (`reducedCov_posDef`), unlike the full
 `(k+1)`-dimensional covariance which is singular. -/
@@ -384,6 +397,30 @@ theorem pearsonQ_weakConverges_chiSquared {k : ℕ} {π : Fin (k + 1) → ℝ}
 
 /-! ### (ii) Local alternatives and the noncentral limit -/
 
+/-- **Multivariate CLT for the reduced cell frequencies under local alternatives** (LIFTED —
+the deep analytic brick of the noncentral-limit proof). Under `p⁽ⁿ⁾ = π + h/√n` the
+standardised reduced count vector converges in law to `N(ν, Σ)` with drift
+`ν = (hⱼ)_{j<k}` and covariance `Σ = reducedCov π`.
+
+TODO: unlike the null case this is a *triangular array* — the per-observation law `μ n`
+drifts with `n` — so the fixed-i.i.d. brick `tendstoInDistribution_multivariate_clt` does
+not apply directly. The intended route is a multivariate Lindeberg / Cramér–Wold CLT (the
+repo has the scalar `HypothesisTesting.ForMathlib.LindebergCLT.lindeberg_clt`), or Le Cam's
+third lemma (`AsymptoticStatistics.ForMathlib.Contiguity`), plus the same canonical transfer
+as `reducedCount_weakConverges_gaussian`. The drift `ν = hⱼ` is the limit of
+`E[reducedCount]ⱼ = (n p⁽ⁿ⁾ⱼ − nπⱼ)/√n = hⱼ`, and `Σ → diag π − π πᵀ` since `p⁽ⁿ⁾ → π`. -/
+private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : ℕ → Measure (Fin (k + 1))}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) (hhsum : ∑ j, h j = 0)
+    (hX : ∀ n i, Measurable (X n i))
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    (hlaw : ∀ n i, Measure.map (X n i) (P n) = μ n)
+    (hcell : ∀ n j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
+    WeakConverges (fun n => (P n).map (reducedCount π (X n)))
+      (multivariateGaussian (WithLp.toLp 2 (fun i => h i.castSucc)) (reducedCov π)) := by
+  sorry
+
 /-- **Limiting distribution under local alternatives.** Under the alternative sequence
 `p⁽ⁿ⁾ⱼ = πⱼ + hⱼ n^{-1/2}` with `∑_{j=1}^{k+1} hⱼ = 0`, Pearson's statistic converges in
 law to the noncentral chi-squared distribution with `k` degrees of freedom and
@@ -414,7 +451,36 @@ theorem pearsonQ_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
     (hcell : ∀ n, ∀ j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
     WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n))
       (noncentralChiSquared k (multinomialNoncentrality π h).toNNReal) := by
-  sorry
+  set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ with hTdef
+  set q : EuclideanSpace ℝ (Fin k) → ℝ := fun z => ⟪z, T z⟫ with hqdef
+  have hq_cont : Continuous q := continuous_id.inner T.continuous
+  have hq : ∀ n ω, q (reducedCount π (X n) ω) = pearsonQ π (X n) ω := by
+    intro n ω
+    simp only [hqdef, hTdef]
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, pearsonQ_eq_reducedQ hπsum,
+      ← dotProduct_reducedCovInv]
+    rfl
+  have hbrick := reducedCount_weakConverges_noncentral (π := π) (h := h) (P := P) (X := X) (μ := μ)
+    hπpos hπsum hhsum hX hindep hlaw hcell
+  set ν : EuclideanSpace ℝ (Fin k) := WithLp.toLp 2 (fun i => h i.castSucc) with hνdef
+  have hmapped := hbrick.map hq_cont hq_cont.measurable
+  have hnc_id : (⟪ν, Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ ν⟫ : ℝ)
+      = multinomialNoncentrality π h := by
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, dotProduct_reducedCovInv,
+      hνdef]
+    exact (multinomialNoncentrality_eq_reducedQ hhsum).symm
+  have htarget : (multivariateGaussian ν (reducedCov π)).map q
+      = noncentralChiSquared k (multinomialNoncentrality π h).toNNReal := by
+    simp only [hqdef, hTdef]
+    rw [multivariateGaussian_map_inner_inv_eq_noncentralChiSquared
+      (reducedCov_posDef hπpos hπsum) ν, hnc_id]
+  have hseq : (fun n => ((P n).map (reducedCount π (X n))).map q)
+      = fun n => Measure.map (pearsonQ π (X n)) (P n) := by
+    funext n
+    rw [Measure.map_map hq_cont.measurable (measurable_reducedCount (hX n))]
+    exact Measure.map_congr (Filter.Eventually.of_forall (fun ω => hq n ω))
+  rw [hseq, htarget] at hmapped
+  exact hmapped
 
 /-! ### (iii) Power -/
 
