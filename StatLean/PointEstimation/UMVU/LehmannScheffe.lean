@@ -176,26 +176,46 @@ theorem unique_unbiased_function_of_complete (P : Θ → Measure 𝓧)
 
 /-- Lehmann–Scheffé minimality for an **arbitrary** square-integrable unbiased competitor.
 
-TODO: the sole open step of the variance form. The classical argument Rao–Blackwellizes the
-competitor `δ'` through `T` and compares by `variance_rbEstimator_le`, then identifies the two
-Rao–Blackwellizations by `unique_unbiased_function_of_complete`. Both steps require `δ'` to be
-`Measurable` (the kernel average `t ↦ ∫ δ' dQ_t` and the completeness test function must be
-genuinely measurable with identically zero mean). The frozen `IsUMVU` minimality quantifies
-over competitors carrying only `MemEstL2 P δ'`, i.e. a *per-parameter* `AEStronglyMeasurable`
-representative; these do not glue to a single global measurable representative (false in
-general — Dirac families are a counterexample), and the signature provides no dominating
-measure. Closing this needs a `condExp`-based Rao–Blackwell layer (which requires only
-integrability), not available among the imported kernel lemmas. The statement is left intact;
-only this measurability-selection gap is deferred. -/
+The classical argument Rao–Blackwellizes the competitor `δ'` through `T` and compares by
+`variance_rbEstimator_le`, then identifies the two Rao–Blackwellizations via
+`unique_unbiased_function_of_complete`: both `rbEstimator Q δ` and `rbEstimator Q δ'` are
+unbiased functions of the complete statistic `T`, hence a.e. equal, so the variance of the
+former equals that of `rbEstimator Q δ' ∘ T`, which does not exceed `var δ'`.
+
+**Added hypothesis (private lemma, pre-authorized).** `hδ'm : Measurable δ'`. Both the kernel
+average `t ↦ ∫ δ' dQ_t = rbEstimator Q δ'` and the completeness test function require `δ'` to
+carry a genuine (global) measurable representative. The `IsUMVU` minimality quantifies over
+competitors holding only `MemEstL2 P δ'`, i.e. a *per-parameter* `AEStronglyMeasurable`
+version; with no dominating measure these do not glue to a single measurable function (false
+in general — Dirac families are a counterexample). This private lemma is therefore stated for
+measurable competitors; the consumer `isUMVU_of_complete_sufficient` cannot discharge that
+hypothesis for an arbitrary `MemEstL2` competitor (see the note there). -/
 private lemma variance_rbEstimator_le_of_complete (P : Θ → Measure 𝓧)
     [∀ θ, IsProbabilityMeasure (P θ)] (g : Θ → ℝ) {T : 𝓧 → S} (hT : Measurable T)
     {Q : Kernel S 𝓧} [IsMarkovKernel Q]
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q)
     (hcomp : IsCompleteStat P T) {δ : 𝓧 → ℝ} (hδm : Measurable δ) (hδu : IsUnbiased P g δ)
-    (hδ2 : MemEstL2 P δ) {δ' : 𝓧 → ℝ} (hδ'u : IsUnbiased P g δ') (hδ'2 : MemEstL2 P δ')
-    (θ : Θ) :
+    (hδ2 : MemEstL2 P δ) {δ' : 𝓧 → ℝ} (hδ'm : Measurable δ') (hδ'u : IsUnbiased P g δ')
+    (hδ'2 : MemEstL2 P δ') (θ : Θ) :
     variance (fun x => rbEstimator Q δ (T x)) (P θ) ≤ variance δ' (P θ) := by
-  sorry
+  have hδi : ∀ θ', Integrable δ (P θ') := fun θ' => (hδ2 θ').integrable one_le_two
+  have hδ'i : ∀ θ', Integrable δ' (P θ') := fun θ' => (hδ'2 θ').integrable one_le_two
+  have hrbδm : Measurable (rbEstimator Q δ) :=
+    (hδm.stronglyMeasurable.integral_kernel (κ := Q)).measurable
+  have hrbδ'm : Measurable (rbEstimator Q δ') :=
+    (hδ'm.stronglyMeasurable.integral_kernel (κ := Q)).measurable
+  -- both Rao–Blackwellizations are unbiased functions of the complete `T`, hence a.e. equal
+  have huniq : rbEstimator Q δ =ᵐ[statLaw P T θ] rbEstimator Q δ' :=
+    unique_unbiased_function_of_complete P g hT hcomp hrbδm hrbδ'm
+      (fun θ' => integrable_rbEstimator_statLaw P hT hgraph hδm hδi θ')
+      (fun θ' => integrable_rbEstimator_statLaw P hT hgraph hδ'm hδ'i θ')
+      (isUnbiased_rbEstimator P g hT hgraph hδm hδi hδu)
+      (isUnbiased_rbEstimator P g hT hgraph hδ'm hδ'i hδ'u) θ
+  have hEq : (fun x => rbEstimator Q δ (T x)) =ᵐ[P θ] fun x => rbEstimator Q δ' (T x) :=
+    ae_eq_comp hT.aemeasurable huniq
+  rw [variance_congr hEq]
+  -- Rao–Blackwellization of the competitor does not increase its variance
+  exact variance_rbEstimator_le P hT hgraph hδ'm hδ'2 θ
 
 /-- **Lehmann–Scheffé, variance form.** Averaging any unbiased square-integrable estimator
 over the fibers of a *complete* sufficient statistic produces the uniformly minimum variance
@@ -223,7 +243,14 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
     exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
   · -- minimality against every square-integrable unbiased competitor
     intro δ' hδ'u hδ'2 θ
-    exact variance_rbEstimator_le_of_complete P g hT hgraph hcomp hδm hδu hδ2 hδ'u hδ'2 θ
+    -- The Rao–Blackwell comparison is `variance_rbEstimator_le_of_complete`, now proven, but it
+    -- requires `Measurable δ'` to form the kernel average `t ↦ ∫ δ' dQ_t`. Here `δ'` carries
+    -- only `MemEstL2 P δ'` — a per-parameter `AEStronglyMeasurable` version — and with no
+    -- dominating measure these do not glue to one global measurable representative. So the
+    -- measurability hypothesis of the private lemma is not dischargeable at this frozen
+    -- `IsUMVU` interface. A `condExp`-based Rao–Blackwell layer (which needs only
+    -- integrability) would close this, but is not among the imported kernel lemmas.
+    sorry
 
 /-- **Lehmann–Scheffé, convex-loss form.** The estimator of `isUMVU_of_complete_sufficient`
 minimizes the risk among *all* unbiased estimators, simultaneously for every loss that is
@@ -308,15 +335,26 @@ theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ
     -- USER-INPUT: the witness lies in the estimator class `Δ`
     (hδ2 : MemEstL2 P δ) :
     ∃ η : V → ℝ, Measurable η ∧ IsUMVU P g (fun x => η (E.stat x)) := by
-  -- TODO: assemble from completeness of the natural statistic (`Completeness.ExpFamily`) and
-  -- `isUMVU_of_complete_sufficient`. The latter consumes `HasSufficientKernel P E.stat`, the
-  -- θ-free graph/compProd carrier. For a general reference measure this kernel is produced by
-  -- `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient`, which requires
-  -- `[StandardBorelSpace 𝓧]` (and `[Nonempty 𝓧]`) — neither is available in this frozen
-  -- signature, and an exponential family gives no explicit reconstruction kernel without such
-  -- structure. Completeness (`hcomp`) transfers cleanly through `hrepr`/`hcover`/`hFR` via the
-  -- mutual absolute continuity of the members; the only missing input is the sufficiency
-  -- kernel, which the ambient measurable space is too weak to supply.
+  -- BLOCKED at this frozen signature: `V` is an abstract inner-product space
+  -- (`[NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]`), and BOTH ingredients
+  -- named in the TODO are unavailable for such `V`.
+  --
+  -- 1. *Completeness of `E.stat`.* The only completeness theorems for the natural statistic —
+  --    `Completeness.ExpFamily.isCompleteStat_of_interior_nonempty` (and its `_real` twin) — are
+  --    stated for `V = EuclideanSpace ℝ (Fin s)` (resp. `ℝ`): the Laplace/MGF-uniqueness brick
+  --    they consume (`ae_eq_zero_of_integral_exp_inner_eq_zero`) is a finite-dimensional fact.
+  --    Applying either to our `E : ExpFamily 𝓧 V` is a type mismatch (`V ≠ EuclideanSpace …`).
+  --    The generic `isCompleteFamily_of_signed` is `private` and additionally needs
+  --    `[BorelSpace V] [SecondCountableTopology V]` plus the very `hsigned` corollary that only
+  --    exists Euclidean-side. So `IsCompleteStat P E.stat` cannot be produced here.
+  -- 2. *Sufficiency kernel.* `E.isMinimalSufficient_stat` (the sole route to `IsSufficient`)
+  --    requires `[BorelSpace V] [SecondCountableTopology V] [SigmaFinite E.base]`, `E.base ≠ 0`,
+  --    and an affinely-spanning configuration — none present. Even producing the estimator `η`
+  --    (a Rao–Blackwellization along the sufficiency kernel) is therefore impossible.
+  --
+  -- The statement is TRUE for finite-dimensional Euclidean `V` with `[SigmaFinite E.base]` and
+  -- `E.base ≠ 0`, but not provable at this polymorphic frozen signature; adding those V-side
+  -- instances/hypotheses is outside the authorized signature change. Left as sanctioned debt.
   sorry
 
 end StatLean.PointEstimation
