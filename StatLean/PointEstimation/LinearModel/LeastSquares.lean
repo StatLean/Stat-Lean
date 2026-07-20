@@ -1,5 +1,7 @@
 import StatLean.PointEstimation.LinearModel.Canonical
 import Mathlib.LinearAlgebra.Dimension.Finrank
+import Mathlib.Probability.Distributions.Gaussian.Multivariate
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # Least squares: unbiased optimality in the original coordinates
@@ -65,6 +67,47 @@ theorem inner_lse_eq_inner_starProjection (W : Submodule ℝ (EuclideanSpace ℝ
     ⟪γ, lse W y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ := by
   show ⟪γ, W.starProjection y⟫_ℝ = ⟪W.starProjection γ, y⟫_ℝ
   rw [← Submodule.inner_starProjection_left_eq_right]
+
+/-! ## Gaussian isometry-invariance (private scaffolding)
+
+The optimality statements are transported to the canonical model by an orthonormal-basis
+rotation. The measure-theoretic core is that the isotropic Gaussian vector is invariant
+under an orthogonal change of coordinates: `(gaussianVector ξ σ²).map L = gaussianVector (L ξ)
+σ²` for any linear isometry equivalence `L`. This is built from Mathlib's `stdGaussian_map`
+(isometry invariance of the standard Gaussian) together with the affine representation of
+`gaussianVector` as a scaled-and-shifted standard Gaussian. -/
+
+/-- **Centered isotropic Gaussian vector as a scaled standard Gaussian.** -/
+private lemma gaussianVector_zero_eq_map_smul_stdGaussian {N : ℕ} (σ2 : ℝ≥0) :
+    gaussianVector (0 : EuclideanSpace ℝ (Fin N)) σ2
+      = (ProbabilityTheory.stdGaussian (EuclideanSpace ℝ (Fin N))).map
+          (fun z => (Real.sqrt (σ2 : ℝ)) • z) := by
+  set a : ℝ := Real.sqrt (σ2 : ℝ) with ha
+  have hmeas_toLp : Measurable (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) :=
+    WithLp.measurable_toLp 2 _
+  have hmeas_smul : Measurable (fun z : EuclideanSpace ℝ (Fin N) => a • z) :=
+    measurable_const_smul a
+  have hmeas_g : Measurable (fun x : Fin N → ℝ => fun i => a * x i) := by fun_prop
+  have hcoord : (gaussianReal (0 : ℝ) 1).map (fun x => a * x) = gaussianReal 0 σ2 := by
+    rw [gaussianReal_map_const_mul, mul_zero]
+    congr 1
+    apply NNReal.coe_injective
+    simp [ha, Real.sq_sqrt (NNReal.coe_nonneg σ2)]
+  haveI hsf : ∀ i : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun x => a * x)) := by
+    intro _; rw [hcoord]; infer_instance
+  -- rewrite the left-hand side into the same product-of-Gaussians form
+  have hLHS : gaussianVector (0 : EuclideanSpace ℝ (Fin N)) σ2
+      = (Measure.pi (fun _ : Fin N => gaussianReal (0 : ℝ) σ2)).map (WithLp.toLp 2) := rfl
+  rw [hLHS, ← ProbabilityTheory.map_pi_eq_stdGaussian (ι := Fin N),
+    Measure.map_map hmeas_smul hmeas_toLp]
+  have hcomp : (fun z : EuclideanSpace ℝ (Fin N) => a • z) ∘
+      (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N))
+      = (WithLp.toLp 2 : (Fin N → ℝ) → EuclideanSpace ℝ (Fin N)) ∘ (fun x => fun i => a * x i) := by
+    funext x; rfl
+  rw [hcomp, ← Measure.map_map hmeas_toLp hmeas_g,
+    Measure.pi_map_pi (f := fun (_ : Fin N) (c : ℝ) => a * c)
+      (fun _ => (show Measurable (fun c : ℝ => a * c) by fun_prop).aemeasurable)]
+  simp only [hcoord]
 
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
