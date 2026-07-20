@@ -109,7 +109,151 @@ private theorem diff_under_integral_core (M : ParametricFamily 𝓧 ℝ) (μ : M
     (hδ2 : MemLp δ 2 (M.toMeasure μ θ)) :
     HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ)
       (∫ x, δ x * score M θ x * M.density θ x ∂μ) θ := by
-  sorry
+  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  obtain ⟨ε, hε, b, hb2, hbound⟩ := hreg
+  have htoM : M.toMeasure μ θ
+      = μ.withDensity (fun x => ENNReal.ofReal (M.density θ x)) := rfl
+  -- Replace `δ` by a genuinely measurable a.e. version `g`; all integrals only see it on the
+  -- common support, where it agrees with `δ`, and vanish off it.
+  set g : 𝓧 → ℝ := hδ2.aestronglyMeasurable.mk δ with hg_def
+  have hg_meas : Measurable g := hδ2.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+  have hδg : δ =ᵐ[M.toMeasure μ θ] g := hδ2.aestronglyMeasurable.ae_eq_mk
+  have hg2 : MemLp g 2 (M.toMeasure μ θ) := hδ2.ae_eq hδg
+  have hδg_mu : ∀ᵐ x ∂μ, 0 < M.density θ x → δ x = g x := by
+    rw [htoM] at hδg
+    filter_upwards [(ae_withDensity_iff (M.density_meas θ).ennreal_ofReal).1 hδg] with x hx hpos
+    exact hx (by simp [ENNReal.ofReal_eq_zero, not_le.mpr hpos])
+  -- the parametrized integrand and its centered target agree a.e. after the substitution
+  have hprod_ae : ∀ t : ℝ, (fun x => δ x * M.density t x) =ᵐ[μ] fun x => g x * M.density t x := by
+    intro t
+    filter_upwards [hδg_mu] with x hx
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+    · rw [density_eq_zero_of_commonSupport hsupp h0.symm, mul_zero, mul_zero]
+    · rw [hx hpos]
+  have htarget_ae : (fun x => δ x * score M θ x * M.density θ x)
+      =ᵐ[μ] fun x => g x * score M θ x * M.density θ x := by
+    filter_upwards [hδg_mu] with x hx
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+    · rw [← h0, mul_zero, mul_zero]
+    · rw [hx hpos]
+  have hfun_eq : (fun t => ∫ x, δ x * M.density t x ∂μ)
+      = fun t => ∫ x, g x * M.density t x ∂μ := funext fun t => integral_congr_ae (hprod_ae t)
+  have hval_full : (∫ x, δ x * score M θ x * M.density θ x ∂μ)
+      = ∫ x, g x * deriv (fun t => M.density t x) θ ∂μ := by
+    rw [integral_congr_ae htarget_ae]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [mul_assoc, score_mul_density_eq_deriv hsupp]
+  rw [hfun_eq, hval_full]
+  set F : ℝ → ℝ := fun t => ∫ x, g x * M.density t x ∂μ with hF_def
+  rw [hasDerivAt_iff_tendsto_slope]
+  -- the difference-quotient integrand and its dominating envelope
+  set Q : ℝ → 𝓧 → ℝ :=
+    fun t x => g x * ((M.density t x - M.density θ x) / (t - θ)) with hQ_def
+  set D : 𝓧 → ℝ := fun x => |g x| * b x * M.density θ x with hD_def
+  have hQ_meas : ∀ t, AEStronglyMeasurable (Q t) μ := fun t =>
+    (hg_meas.mul (((M.density_meas t).sub (M.density_meas θ)).div_const _)).aestronglyMeasurable
+  -- `g · p_θ` is integrable (`g ∈ L¹(P_θ)`)
+  have hgpθ_int : Integrable (fun x => g x * M.density θ x) μ := by
+    have h := (integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)).1 (hg2.integrable one_le_two)
+    refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+  -- the envelope is integrable (Cauchy–Schwarz: `|g|, b ∈ L²(P_θ)`)
+  have hD_int : Integrable D μ := by
+    simp only [hD_def]
+    have hgabsL2 : MemLp (fun x => |g x|) 2 (M.toMeasure μ θ) := by
+      simpa [Real.norm_eq_abs] using hg2.norm
+    have hmul : Integrable (fun x => |g x| * b x) (M.toMeasure μ θ) :=
+      memLp_one_iff_integrable.mp (hb2.mul' hgabsL2)
+    have h := (integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+      (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)).1 hmul
+    refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+  -- eventual facts on the punctured neighborhood
+  have hball : ∀ᶠ t in 𝓝[≠] θ, |t - θ| < ε := by
+    filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds θ hε)] with t ht
+    rwa [Metric.mem_ball, Real.dist_eq] at ht
+  have hne : ∀ᶠ t in 𝓝[≠] θ, t ≠ θ := self_mem_nhdsWithin
+  -- the difference quotient is dominated by the envelope (transferred to `μ` via the support)
+  have hQ_bound : ∀ t : ℝ, 0 < |t - θ| → |t - θ| < ε → ∀ᵐ x ∂μ, ‖Q t x‖ ≤ D x := by
+    intro t htpos htlt
+    have htne : t ≠ θ := sub_ne_zero.mp (abs_pos.mp htpos)
+    have hbt := hbound (t - θ) htpos htlt
+    have hθt : θ + (t - θ) = t := by ring
+    simp only [hθt] at hbt
+    rw [htoM] at hbt
+    have hbt_mu : ∀ᵐ x ∂μ, 0 < M.density θ x →
+        |(M.density t x - M.density θ x) / ((t - θ) * M.density θ x)| ≤ b x := by
+      filter_upwards [(ae_withDensity_iff (M.density_meas θ).ennreal_ofReal).1 hbt]
+        with x hx hpos
+      exact hx (by simp [ENNReal.ofReal_eq_zero, not_le.mpr hpos])
+    filter_upwards [hbt_mu] with x hx
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+    · have hpt0 : M.density t x = 0 := density_eq_zero_of_commonSupport hsupp h0.symm
+      have hQ0 : Q t x = 0 := by simp [hQ_def, hpt0, ← h0]
+      have hD0 : D x = 0 := by simp [hD_def, ← h0]
+      simp [hQ0, hD0]
+    · have hbx := hx hpos
+      have heq : (M.density t x - M.density θ x) / (t - θ)
+          = (M.density t x - M.density θ x) / ((t - θ) * M.density θ x) * M.density θ x := by
+        rw [← div_div, div_mul_cancel₀ _ hpos.ne']
+      have hq : |(M.density t x - M.density θ x) / (t - θ)| ≤ b x * M.density θ x := by
+        rw [heq, abs_mul, abs_of_pos hpos]
+        exact mul_le_mul_of_nonneg_right hbx hpos.le
+      calc ‖Q t x‖ = |g x| * |(M.density t x - M.density θ x) / (t - θ)| := by
+            simp only [hQ_def, Real.norm_eq_abs, abs_mul]
+        _ ≤ |g x| * (b x * M.density θ x) := mul_le_mul_of_nonneg_left hq (abs_nonneg _)
+        _ = D x := by simp only [hD_def]; ring
+  -- `g · p_t` is integrable near `θ` (`g p_t = g p_θ + (t - θ)·Q t`)
+  have hgpt_int : ∀ t : ℝ, 0 < |t - θ| → |t - θ| < ε →
+      Integrable (fun x => g x * M.density t x) μ := by
+    intro t htpos htlt
+    have htne : t ≠ θ := sub_ne_zero.mp (abs_pos.mp htpos)
+    have hQint : Integrable (Q t) μ :=
+      Integrable.mono' hD_int (hQ_meas t) (hQ_bound t htpos htlt)
+    have hsplit : (fun x => g x * M.density t x)
+        = fun x => g x * M.density θ x + (t - θ) * Q t x := by
+      funext x
+      have hc : (t - θ) * Q t x = g x * (M.density t x - M.density θ x) := by
+        simp only [hQ_def]
+        rw [mul_comm, mul_assoc, div_mul_cancel₀ _ (sub_ne_zero.mpr htne)]
+      rw [hc]; ring
+    rw [hsplit]
+    exact hgpθ_int.add (hQint.const_mul (t - θ))
+  -- the slope equals the integral of the difference quotient
+  have hslope_eq : slope F θ =ᶠ[𝓝[≠] θ] fun t => ∫ x, Q t x ∂μ := by
+    filter_upwards [hball, hne] with t htlt htne
+    have htpos : 0 < |t - θ| := abs_pos.mpr (sub_ne_zero.mpr htne)
+    rw [slope_def_field]
+    simp only [hF_def]
+    rw [← integral_sub (hgpt_int t htpos htlt) hgpθ_int, ← integral_div]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hQ_def]; ring
+  -- the pointwise limit of the difference quotient is `g · ∂_θ p_θ`
+  have h_lim : ∀ᵐ x ∂μ, Tendsto (fun t => Q t x) (𝓝[≠] θ)
+      (𝓝 (g x * deriv (fun t => M.density t x) θ)) := by
+    refine Filter.Eventually.of_forall fun x => ?_
+    rcases eq_or_lt_of_le (M.density_nonneg θ x) with h0 | hpos
+    · have hz : (fun s => M.density s x) = fun _ => (0 : ℝ) :=
+        funext fun s => density_eq_zero_of_commonSupport hsupp h0.symm
+      have hQz : ∀ t, Q t x = 0 := by
+        intro t
+        have hpt0 : M.density t x = 0 := density_eq_zero_of_commonSupport hsupp h0.symm
+        simp [hQ_def, hpt0, ← h0]
+      simp only [hz, deriv_const', mul_zero]
+      simp only [hQz]
+      exact tendsto_const_nhds
+    · have hs := (hdiff x hpos).hasDerivAt.tendsto_slope
+      refine (hs.const_mul (g x)).congr (fun b => ?_)
+      simp only [hQ_def, slope_def_field]
+  -- conclude by dominated convergence
+  refine (tendsto_integral_filter_of_dominated_convergence D (Filter.Eventually.of_forall hQ_meas)
+    ?_ hD_int h_lim).congr' hslope_eq.symm
+  filter_upwards [hball, hne] with t htlt htne
+  exact hQ_bound t (abs_pos.mpr (sub_ne_zero.mpr htne)) htlt
 
 theorem diff_under_integral_of_density_regular (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     -- USER-INPUT: `M` is a family of `μ`-probability densities
