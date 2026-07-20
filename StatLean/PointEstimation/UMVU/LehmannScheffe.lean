@@ -332,15 +332,26 @@ theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ
     -- USER-INPUT: the witness lies in the estimator class `Δ`
     (hδ2 : MemEstL2 P δ) :
     ∃ η : V → ℝ, Measurable η ∧ IsUMVU P g (fun x => η (E.stat x)) := by
-  -- TODO: assemble from completeness of the natural statistic (`Completeness.ExpFamily`) and
-  -- `isUMVU_of_complete_sufficient`. The latter consumes `HasSufficientKernel P E.stat`, the
-  -- θ-free graph/compProd carrier. For a general reference measure this kernel is produced by
-  -- `Sufficiency.RegularConditional.hasSufficientKernel_of_isSufficient`, which requires
-  -- `[StandardBorelSpace 𝓧]` (and `[Nonempty 𝓧]`) — neither is available in this frozen
-  -- signature, and an exponential family gives no explicit reconstruction kernel without such
-  -- structure. Completeness (`hcomp`) transfers cleanly through `hrepr`/`hcover`/`hFR` via the
-  -- mutual absolute continuity of the members; the only missing input is the sufficiency
-  -- kernel, which the ambient measurable space is too weak to supply.
+  -- BLOCKED at this frozen signature: `V` is an abstract inner-product space
+  -- (`[NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]`), and BOTH ingredients
+  -- named in the TODO are unavailable for such `V`.
+  --
+  -- 1. *Completeness of `E.stat`.* The only completeness theorems for the natural statistic —
+  --    `Completeness.ExpFamily.isCompleteStat_of_interior_nonempty` (and its `_real` twin) — are
+  --    stated for `V = EuclideanSpace ℝ (Fin s)` (resp. `ℝ`): the Laplace/MGF-uniqueness brick
+  --    they consume (`ae_eq_zero_of_integral_exp_inner_eq_zero`) is a finite-dimensional fact.
+  --    Applying either to our `E : ExpFamily 𝓧 V` is a type mismatch (`V ≠ EuclideanSpace …`).
+  --    The generic `isCompleteFamily_of_signed` is `private` and additionally needs
+  --    `[BorelSpace V] [SecondCountableTopology V]` plus the very `hsigned` corollary that only
+  --    exists Euclidean-side. So `IsCompleteStat P E.stat` cannot be produced here.
+  -- 2. *Sufficiency kernel.* `E.isMinimalSufficient_stat` (the sole route to `IsSufficient`)
+  --    requires `[BorelSpace V] [SecondCountableTopology V] [SigmaFinite E.base]`, `E.base ≠ 0`,
+  --    and an affinely-spanning configuration — none present. Even producing the estimator `η`
+  --    (a Rao–Blackwellization along the sufficiency kernel) is therefore impossible.
+  --
+  -- The statement is TRUE for finite-dimensional Euclidean `V` with `[SigmaFinite E.base]` and
+  -- `E.base ≠ 0`, but not provable at this polymorphic frozen signature; adding those V-side
+  -- instances/hypotheses is outside the authorized signature change. Left as sanctioned debt.
   sorry
 
 end StatLean.PointEstimation
