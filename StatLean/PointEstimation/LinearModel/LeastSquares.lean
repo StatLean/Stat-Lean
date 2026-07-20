@@ -172,6 +172,45 @@ private lemma gaussianVector_map_linearIsometryEquiv {N₁ N₂ : ℕ}
   rw [hcomm, ← Measure.map_map (by fun_prop) hLmeas, hrot,
     gaussianVector_map_add_const, zero_add]
 
+/-- **Transport of `IsUMVU` along a measurable equivalence of the sample space.** If the
+model `P` pushes forward to `Q` under `e`, then a UMVU estimator for `Q` pulls back to a UMVU
+estimator for `P`: unbiasedness and `L²`-membership transfer along the change of variables,
+and the variance-minimality transfers because competitors correspond bijectively. -/
+private theorem isUMVU_map_equiv {Θ 𝓧 𝓨 : Type*} [MeasurableSpace 𝓧] [MeasurableSpace 𝓨]
+    {P : Θ → Measure 𝓧} {Q : Θ → Measure 𝓨} (e : 𝓧 ≃ᵐ 𝓨)
+    (hPQ : ∀ θ, (P θ).map e = Q θ)
+    {g : Θ → ℝ} {δ : 𝓨 → ℝ} (h : IsUMVU Q g δ) :
+    IsUMVU P g (fun x => δ (e x)) := by
+  obtain ⟨hunb, hL2, hmin⟩ := h
+  have hemeas : Measurable e := e.measurable
+  have hδae : ∀ θ, AEStronglyMeasurable δ ((P θ).map e) := by
+    intro θ; rw [hPQ θ]; exact (hL2 θ).aestronglyMeasurable
+  have hPθ' : ∀ θ', P θ' = (Q θ').map e.symm := by
+    intro θ'; rw [← hPQ θ', Measure.map_map e.symm.measurable hemeas]; simp
+  refine ⟨fun θ => ?_, fun θ => ?_, fun δ' hunb' hL2' θ => ?_⟩
+  · rw [← integral_map hemeas.aemeasurable (hδae θ), hPQ θ]
+    exact hunb θ
+  · have hm : MemLp δ 2 ((P θ).map e) := by rw [hPQ θ]; exact hL2 θ
+    exact (memLp_map_measure_iff (hδae θ) hemeas.aemeasurable).mp hm
+  · -- competitor `δ'` on `𝓧` corresponds to `δ' ∘ e.symm` on `𝓨`
+    have hL2Y : ∀ θ', MemLp (fun y => δ' (e.symm y)) 2 (Q θ') := by
+      intro θ'
+      have hm : MemLp δ' 2 ((Q θ').map e.symm) := by rw [← hPθ' θ']; exact hL2' θ'
+      exact (memLp_map_measure_iff (hPθ' θ' ▸ (hL2' θ').aestronglyMeasurable)
+        e.symm.measurable.aemeasurable).mp hm
+    have hunbY : IsUnbiased Q g (fun y => δ' (e.symm y)) := by
+      intro θ'
+      rw [← integral_map e.symm.measurable.aemeasurable
+            (hPθ' θ' ▸ (hL2' θ').aestronglyMeasurable), ← hPθ' θ']
+      exact hunb' θ'
+    have hkey := hmin (fun y => δ' (e.symm y)) hunbY hL2Y θ
+    have hv1 : variance (fun x => δ (e x)) (P θ) = variance δ (Q θ) := by
+      rw [← hPQ θ]; exact (variance_map_equiv δ e).symm
+    have hv2 : variance δ' (P θ) = variance (fun y => δ' (e.symm y)) (Q θ) := by
+      rw [← hPQ θ, variance_map_equiv (fun y => δ' (e.symm y)) e]
+      congr 1; funext x; simp
+    rw [hv1, hv2]; exact hkey
+
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
 theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
