@@ -116,6 +116,42 @@ private lemma bayes_ac {P : Θ → Measure 𝓧} {μ : Measure 𝓧} {f : Θ →
   rw [← hsupp θ θ' x] at hf'0
   exact not_lt.mp hf'0
 
+/-- The mixture density is a.e.-strongly measurable. -/
+private lemma mixtureDensity_aestronglyMeasurable {f : Θ → 𝓧 → ℝ}
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) {Λ : Measure Θ} [SFinite Λ]
+    {μ : Measure 𝓧} : AEStronglyMeasurable (mixtureDensity f Λ) μ := by
+  have h : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
+    (hjoint.comp measurable_swap).stronglyMeasurable
+  exact (h.integral_prod_right (ν := Λ)).aestronglyMeasurable
+
+/-- The mixture density of a probability model against a prior is integrable (total mass one). -/
+private lemma bayes_mix_integrable {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
+    {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ : Measure Θ} [IsProbabilityMeasure Λ]
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x) :
+    Integrable (mixtureDensity f Λ) μ := by
+  have hmass : ∀ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ = 1 := by
+    intro θ
+    have h2 : (P θ) Set.univ = 1 := measure_univ
+    rwa [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
+  refine ⟨mixtureDensity_aestronglyMeasurable hjoint, ?_⟩
+  show ∫⁻ x, ‖mixtureDensity f Λ x‖ₑ ∂μ < ∞
+  refine lt_of_le_of_lt ?_ ENNReal.one_lt_top
+  have hle : ∀ x, ‖mixtureDensity f Λ x‖ₑ ≤ ∫⁻ θ, ENNReal.ofReal (f θ x) ∂Λ := by
+    intro x
+    simp only [mixtureDensity]
+    rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs,
+      abs_of_nonneg (integral_nonneg fun θ => hfnonneg θ x),
+      integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun θ => hfnonneg θ x)
+        ((hjoint.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable)]
+    exact ENNReal.ofReal_toReal_le
+  calc ∫⁻ x, ‖mixtureDensity f Λ x‖ₑ ∂μ
+      ≤ ∫⁻ x, ∫⁻ θ, ENNReal.ofReal (f θ x) ∂Λ ∂μ := lintegral_mono hle
+    _ = ∫⁻ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ ∂Λ :=
+        lintegral_lintegral_swap ((hjoint.comp measurable_swap).ennreal_ofReal).aemeasurable
+    _ = ∫⁻ _θ, 1 ∂Λ := lintegral_congr fun θ => hmass θ
+    _ = 1 := by rw [lintegral_const, one_mul, measure_univ]
+
 /-- **Fubini for the mixture density**: integrating a bounded test against the mixture density is
 the same as averaging its power over the prior. -/
 private lemma bayes_fubini_mix {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
