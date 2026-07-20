@@ -420,7 +420,27 @@ theorem bayesTest_isAlphaAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
       power P (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) θ = α} = 1) :
     IsAlphaAdmissible P Θ_H Θ_K α
       (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
-  sorry
+  intro φ hφ hφlevel hdomK θ _
+  refine bayes_admissible_core hdens hjoint hfnonneg hsupp hΘK hΛ₁ hbdry hφ hdomK ?_ θ
+  set φ₀ := bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k with hφ0def
+  have hsm : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
+    (hjoint.comp measurable_swap).stronglyMeasurable
+  have hφ0meas : Measurable φ₀ := by
+    simp only [hφ0def, bayesTest]
+    exact Measurable.ite (measurableSet_le
+      (measurable_const.mul (hsm.integral_prod_right (ν := Λ₀)).measurable)
+      (hsm.integral_prod_right (ν := Λ₁)).measurable)
+      measurable_const measurable_const
+  have hpm : Measurable fun θ => power P φ₀ θ :=
+    bayes_power_measurable hdens hjoint hfnonneg hφ0meas
+  have hSmeas : MeasurableSet {θ ∈ Θ_H | power P φ₀ θ = α} :=
+    hΘH.inter (hpm (measurableSet_singleton α))
+  have hScompl : Λ₀ {θ ∈ Θ_H | power P φ₀ θ = α}ᶜ = 0 := by
+    rw [measure_compl hSmeas (measure_ne_top _ _), measure_univ, hω, tsub_self]
+  have haeS : ∀ᵐ θ ∂Λ₀, θ ∈ {θ ∈ Θ_H | power P φ₀ θ = α} := by
+    rw [ae_iff]; exact hScompl
+  filter_upwards [haeS] with θ hθS
+  rw [hθS.2]; exact hφlevel θ hθS.1
 
 /-- **Admissibility against any subclass carrying the alternative prior.** If `Λ₁` gives
 probability one to a subclass `Θ'` of the alternatives, both conclusions hold with `Θ'` in
