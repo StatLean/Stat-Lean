@@ -203,10 +203,11 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
       (∀ B : Set ℝ, MeasurableSet B →
         ∫⁻ ζ, gaussianReal ζ σ2 B ∂Λ = gaussianReal 0 M2 B) := by
   classical
-  refine ⟨gaussianReal 0 (M2 - σ2), inferInstance, ?_, ?_⟩
-  · -- pointwise density identity (product of Gaussians)
-    sorry
-  · -- measure-level mixture identity, via the Gaussian convolution kernel
+  have hM2pos : (0 : NNReal) < M2 := lt_of_le_of_lt (zero_le _) hσM
+  have hM2 : M2 ≠ 0 := hM2pos.ne'
+  -- The measure-level mixture identity, via the Gaussian convolution kernel.
+  have hkey : ∀ B : Set ℝ, MeasurableSet B →
+      ∫⁻ ζ, gaussianReal ζ σ2 B ∂(gaussianReal 0 (M2 - σ2)) = gaussianReal 0 M2 B := by
     intro B hB
     haveI hmark := StatLean.Bayesian.isMarkovKernel_gaussKernel hσ
     have key : StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)
@@ -219,5 +220,69 @@ theorem exists_gaussian_scale_mixture {σ2 M2 : NNReal}
       _ = (StatLean.Bayesian.gaussKernel σ2 ∘ₘ gaussianReal 0 (M2 - σ2)) B :=
           (Measure.bind_apply hB (Kernel.measurable _).aemeasurable).symm
       _ = gaussianReal 0 M2 B := by rw [key]
+  refine ⟨gaussianReal 0 (M2 - σ2), inferInstance, ?_, hkey⟩
+  -- Pointwise density identity, obtained from `hkey` by density uniqueness + continuity.
+  -- Joint measurability of `(w, ζ) ↦ gaussianPDF ζ σ2 w`.
+  have hjm : Measurable (Function.uncurry fun w ζ => gaussianPDF ζ σ2 w) := by
+    change Measurable fun p : ℝ × ℝ => ENNReal.ofReal (gaussianPDFReal p.2 σ2 p.1)
+    refine Measurable.ennreal_ofReal ?_
+    unfold gaussianPDFReal
+    fun_prop
+  have hLmeas : Measurable
+      fun w => ∫⁻ ζ, gaussianPDF ζ σ2 w ∂(gaussianReal 0 (M2 - σ2)) :=
+    hjm.lintegral_prod_right (ν := gaussianReal 0 (M2 - σ2))
+  -- The mixture measure has marginal density `w ↦ ∫⁻ ζ, gaussianPDF ζ σ2 w ∂Λ`.
+  have hwd : (volume : Measure ℝ).withDensity
+      (fun w => ∫⁻ ζ, gaussianPDF ζ σ2 w ∂(gaussianReal 0 (M2 - σ2)))
+      = gaussianReal 0 M2 := by
+    ext B hB
+    rw [withDensity_apply _ hB, ← hkey B hB,
+      lintegral_lintegral_swap (μ := volume.restrict B)
+        (ν := gaussianReal 0 (M2 - σ2)) hjm.aemeasurable]
+    refine lintegral_congr fun ζ => ?_
+    rw [gaussianReal_of_var_ne_zero ζ hσ, withDensity_apply _ hB]
+  -- Density uniqueness gives the a.e. identity at the `ℝ≥0∞` level.
+  have hae : (fun w => ∫⁻ ζ, gaussianPDF ζ σ2 w ∂(gaussianReal 0 (M2 - σ2)))
+      =ᵐ[volume] gaussianPDF 0 M2 := by
+    have h1 : (volume : Measure ℝ).withDensity
+        (fun w => ∫⁻ ζ, gaussianPDF ζ σ2 w ∂(gaussianReal 0 (M2 - σ2)))
+        = (volume : Measure ℝ).withDensity (gaussianPDF 0 M2) := by
+      rw [hwd, gaussianReal_of_var_ne_zero 0 hM2]
+    exact (withDensity_eq_iff_of_sigmaFinite hLmeas.aemeasurable
+      (measurable_gaussianPDF 0 M2).aemeasurable).mp h1
+  -- The Bochner density is the `toReal` of the `ℝ≥0∞` one.
+  have hdL : ∀ z, ∫ ζ, gaussianPDFReal ζ σ2 z ∂(gaussianReal 0 (M2 - σ2))
+      = (∫⁻ ζ, gaussianPDF ζ σ2 z ∂(gaussianReal 0 (M2 - σ2))).toReal := by
+    intro z
+    rw [integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ fun ζ => gaussianPDFReal_nonneg ζ σ2 z)
+      (Continuous.aestronglyMeasurable (by unfold gaussianPDFReal; fun_prop))]
+    rfl
+  -- Transport the a.e. identity to the real level.
+  have hae_real : (fun z => ∫ ζ, gaussianPDFReal ζ σ2 z ∂(gaussianReal 0 (M2 - σ2)))
+      =ᵐ[volume] fun z => gaussianPDFReal 0 M2 z := by
+    filter_upwards [hae] with z hz
+    rw [hdL z, hz, gaussianPDF, ENNReal.toReal_ofReal (gaussianPDFReal_nonneg 0 M2 z)]
+  -- Both densities are continuous, so a.e. equality upgrades to everywhere.
+  have hcont_g : Continuous fun z => gaussianPDFReal 0 M2 z := by
+    unfold gaussianPDFReal; fun_prop
+  have hcont_d : Continuous
+      fun z => ∫ ζ, gaussianPDFReal ζ σ2 z ∂(gaussianReal 0 (M2 - σ2)) := by
+    refine continuous_of_dominated (bound := fun _ => (Real.sqrt (2 * Real.pi * σ2))⁻¹)
+      (fun z => ?_) (fun z => ?_) (integrable_const _) (ae_of_all _ fun ζ => ?_)
+    · exact (Continuous.aestronglyMeasurable (by unfold gaussianPDFReal; fun_prop))
+    · refine ae_of_all _ fun ζ => ?_
+      rw [Real.norm_eq_abs, abs_of_nonneg (gaussianPDFReal_nonneg ζ σ2 z)]
+      calc gaussianPDFReal ζ σ2 z
+          = (Real.sqrt (2 * Real.pi * σ2))⁻¹ * Real.exp (-(z - ζ) ^ 2 / (2 * σ2)) := rfl
+        _ ≤ (Real.sqrt (2 * Real.pi * σ2))⁻¹ * 1 :=
+            mul_le_mul_of_nonneg_left
+              (Real.exp_le_one_iff.mpr (by
+                rw [div_nonpos_iff]
+                exact Or.inr ⟨neg_nonpos.mpr (sq_nonneg _), by positivity⟩))
+              (by positivity)
+        _ = (Real.sqrt (2 * Real.pi * σ2))⁻¹ := mul_one _
+    · unfold gaussianPDFReal; fun_prop
+  exact fun z => congrFun (Measure.eq_of_ae_eq hae_real hcont_d hcont_g) z
 
 end StatLean.HypothesisTesting
