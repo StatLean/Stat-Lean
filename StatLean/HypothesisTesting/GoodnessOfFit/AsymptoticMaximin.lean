@@ -4,6 +4,7 @@ import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-!
 # The asymptotic maximin transfer for multisided local alternatives
@@ -124,7 +125,132 @@ theorem sphereAverage_lr_monotone {k : ℕ} {b : ℝ}
     ∃ g : ℝ → ℝ, MonotoneOn g (Set.Ici 0) ∧
       ∀ x : EuclideanSpace ℝ (Fin k),
         (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ) = g ‖x‖ := by
-  sorry
+  classical
+  set E := EuclideanSpace ℝ (Fin k)
+  -- Radial invariance: the sphere average depends on `x` only through `‖x‖`.  This is the
+  -- one place the rotation invariance of `σ` is used.
+  have hradial : ∀ x y : E, ‖x‖ = ‖y‖ →
+      (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (⟪h, y⟫_ℝ - b ^ 2 / 2) ∂σ := by
+    intro x y hxy
+    obtain ⟨e, he⟩ : ∃ e : E ≃ₗᵢ[ℝ] E, e y = x := ⟨_, Submodule.reflection_sub hxy.symm⟩
+    have hmeas : Measurable (⇑e) := e.continuous.measurable
+    have hg : AEStronglyMeasurable
+        (fun h : E => Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) (σ.map e) := by
+      rw [hrot e]
+      exact (by fun_prop : Continuous fun h : E =>
+        Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
+    calc (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂(σ.map e) := by rw [hrot e]
+      _ = ∫ h, Real.exp (⟪e h, x⟫_ℝ - b ^ 2 / 2) ∂σ := integral_map hmeas.aemeasurable hg
+      _ = ∫ h, Real.exp (⟪h, y⟫_ℝ - b ^ 2 / 2) ∂σ := by
+          apply integral_congr_ae; filter_upwards with h
+          rw [show (⟪e h, x⟫_ℝ) = ⟪h, y⟫_ℝ from by rw [← he]; exact e.inner_map_map h y]
+  rcases Nat.eq_zero_or_pos k with hk0 | hk
+  · -- `k = 0`: the space is a point, so the average is constant.
+    subst hk0
+    refine ⟨fun _ => Real.exp (-(b ^ 2 / 2)), fun a _ b' _ _ => le_refl _, ?_⟩
+    intro x
+    have hx : x = 0 := Subsingleton.elim x 0
+    subst hx
+    simp only [inner_zero_right, zero_sub, norm_zero, integral_const, probReal_univ, one_smul]
+  · -- `k ≥ 1`: fix a unit vector `u` and set `g r = ∫ exp(r ⟪h,u⟫ − b²/2)`; then
+    -- `g ‖x‖` is the radial value, and the reflection `h ↦ -h` turns `g` into a `cosh`
+    -- average, which is monotone in `r ≥ 0`.
+    haveI : NeZero k := ⟨hk.ne'⟩
+    set u : E := EuclideanSpace.single (0 : Fin k) (1 : ℝ) with hu
+    have hunorm : ‖u‖ = 1 := by rw [hu, EuclideanSpace.single, PiLp.norm_single, norm_one]
+    -- Integrability of the (one-parameter) integrand, uniformly bounded on the sphere.
+    have hintu : ∀ s : ℝ,
+        Integrable (fun h : E => Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)) σ := by
+      intro s
+      refine (integrable_const (Real.exp (|s| * b))).mono'
+        ((by fun_prop : Continuous fun h : E =>
+          Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable) ?_
+      filter_upwards [hsphere] with h hh
+      rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+      apply Real.exp_le_exp.mpr
+      have ht : |⟪h, u⟫_ℝ| ≤ b := by
+        have := abs_real_inner_le_norm h u; rw [hh, hunorm, mul_one] at this; exact this
+      have hsb : s * ⟪h, u⟫_ℝ ≤ |s| * b := by
+        calc s * ⟪h, u⟫_ℝ ≤ |s * ⟪h, u⟫_ℝ| := le_abs_self _
+          _ = |s| * |⟪h, u⟫_ℝ| := abs_mul s _
+          _ ≤ |s| * b := mul_le_mul_of_nonneg_left ht (abs_nonneg s)
+      nlinarith [sq_nonneg b]
+    -- Integrability of the `cosh` form.
+    have hcosh_int : ∀ r : ℝ,
+        Integrable (fun h : E => Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))) σ := by
+      intro r
+      refine (integrable_const (Real.cosh (|r| * b) * Real.exp (-(b ^ 2 / 2)))).mono'
+        ((by fun_prop : Continuous fun h : E =>
+          Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))).aestronglyMeasurable) ?_
+      filter_upwards [hsphere] with h hh
+      rw [Real.norm_of_nonneg (by positivity)]
+      apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
+      rw [Real.cosh_le_cosh, abs_mul, abs_mul, abs_abs, abs_of_pos hb]
+      have ht : |⟪h, u⟫_ℝ| ≤ b := by
+        have := abs_real_inner_le_norm h u; rw [hh, hunorm, mul_one] at this; exact this
+      exact mul_le_mul_of_nonneg_left ht (abs_nonneg r)
+    -- The reflection identity `I(r) = I(−r)`.
+    have hR : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
+      intro r
+      have hmeas : Measurable (⇑(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) :=
+        (LinearIsometryEquiv.neg ℝ).continuous.measurable
+      have hg : AEStronglyMeasurable
+          (fun h : E => Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2))
+          (σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
+        rw [hrot (LinearIsometryEquiv.neg ℝ)]
+        exact (by fun_prop : Continuous fun h : E =>
+          Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
+      calc (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+          = ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)
+              ∂(σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
+            rw [hrot (LinearIsometryEquiv.neg ℝ)]
+        _ = ∫ h, Real.exp (r * ⟪(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h, u⟫_ℝ - b ^ 2 / 2) ∂σ :=
+            integral_map hmeas.aemeasurable hg
+        _ = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
+            apply integral_congr_ae; filter_upwards with h
+            have hneg : (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h = -h := by
+              simp [LinearIsometryEquiv.coe_neg]
+            rw [hneg, inner_neg_left]
+            congr 1; ring
+    -- Symmetrization: the one-exponential average equals the `cosh` average.
+    have hsymm : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) ∂σ := by
+      intro r
+      have hint₂ : Integrable (fun h : E => Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2)) σ := by
+        have h1 := hintu (-r)
+        simp only [neg_mul] at h1
+        exact h1
+      have havg : (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+          = (1 / 2) * ((∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+              + ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ) := by
+        rw [← hR r]; ring
+      rw [havg, ← integral_add (hintu r) hint₂, ← integral_const_mul]
+      apply integral_congr_ae; filter_upwards with h
+      rw [Real.cosh_eq, sub_eq_add_neg (r * ⟪h, u⟫_ℝ), sub_eq_add_neg (-(r * ⟪h, u⟫_ℝ)),
+        Real.exp_add, Real.exp_add]
+      ring
+    refine ⟨fun r => ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ, ?_, ?_⟩
+    · -- Monotonicity via the `cosh` average.
+      intro r₁ hr₁ r₂ hr₂ hr
+      simp only [Set.mem_Ici] at hr₁ hr₂
+      simp only
+      rw [hsymm r₁, hsymm r₂]
+      apply integral_mono_ae (hcosh_int r₁) (hcosh_int r₂)
+      filter_upwards with h
+      apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
+      rw [Real.cosh_le_cosh, abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
+      exact mul_le_mul_of_nonneg_right hr (abs_nonneg _)
+    · -- The radial value is `g ‖x‖`.
+      intro x
+      have hxu : ‖x‖ = ‖(‖x‖ : ℝ) • u‖ := by
+        rw [norm_smul, hunorm, mul_one, Real.norm_of_nonneg (norm_nonneg x)]
+      rw [hradial x ((‖x‖ : ℝ) • u) hxu]
+      simp only
+      apply integral_congr_ae; filter_upwards with h
+      rw [real_inner_smul_right]
 
 /-! ### The transfer lemma -/
 
@@ -179,6 +305,23 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt).  Intended mixture–NP–Le Cam
+  -- proof (module docstring):  the shell infimum is ≤ the average power against the uniform
+  -- mixture `σ` on the sphere `{|I^{1/2}h| = b}`; by Neyman–Pearson this is ≤ the power of
+  -- the likelihood-ratio test of `Q_{n,0}` against `∫ Q_{n,h} dσ(h)`; asymptotic normality
+  -- (the `hZ`/`hdens`/`hLAN` package, Le Cam's third lemma) identifies the limit of that
+  -- power with the Gaussian-shift quantity, where `sphereAverage_lr_monotone` makes the
+  -- limiting NP test the χ² test `{|x|² > c}`, whose power against the least-favourable
+  -- sphere mixture is `ncχ²_k(b²)(c, ∞)`.  Requires a weak-convergence + Neyman–Pearson +
+  -- Le Cam apparatus not yet present in the project.
+  --
+  -- NOTE for the `SmoothTest` consumer: the *bounded* shell `{b ≤ |I^{1/2}h| ≤ B}` (for any
+  -- `B ≥ b`) is reachable by the *same* argument, because the least-favourable mixture `σ`
+  -- is supported on the sphere `{|I^{1/2}h| = b}`, which lies inside the bounded shell just
+  -- as it lies inside this unbounded one; the mixture bound `sInf … ≤ average power vs σ`
+  -- therefore holds verbatim for the bounded shell.  (It cannot be *derived* from this
+  -- unbounded statement — `sInf` over a subset is larger — but the proof, once written,
+  -- yields both.)
   sorry
 
 end StatLean.HypothesisTesting

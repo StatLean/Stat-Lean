@@ -138,6 +138,15 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  -- TODO: the multinomial instance of `asymptotic_maximin_upper_bound` (itself the
+  -- deferral-eligible transfer lemma, currently a documented sorry).  Instantiating it
+  -- requires assembling the multinomial local-experiment data — the laws `Q n h`, the
+  -- centring statistics `Z n` (the standardized cell counts), the log-likelihood ratios
+  -- `L n h`, and the information matrix `I` whose quadratic form on centred shifts is
+  -- `multinomialNoncentrality π` — and discharging its two asymptotic-normality
+  -- hypotheses (the multivariate CLT for the counts giving `Z n ⇒ N(0, I)`, and the LAN
+  -- quadratic expansion of `L n h`).  That multinomial-LAN reduction is not yet available
+  -- in the project.
   sorry
 
 /-! ### (ii) Attainment by Pearson's test -/
@@ -183,6 +192,16 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
         limsup (fun n => sInf ((fun h => power (Q n) (ψ n) h)
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  -- TODO: two-part attainment argument.
+  -- • First conjunct (Pearson attains the value): the local power of `1{Qₙ > c}` against
+  --   the shift `h` converges to `ncχ²_k(λ(h))(c, ∞)` — this is
+  --   `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral` composed with a
+  --   portmanteau tail step — but that lemma's engine
+  --   `reducedCount_weakConverges_noncentral` is itself an OPEN sorry in
+  --   `ChiSquaredMultinomial.lean`.  The worst case over the shell is then pinned to the
+  --   boundary `λ(h) = b²` by the monotone likelihood ratio of the noncentral family
+  --   (`noncentralChiSquared_tail_mono`), and diverging shifts force power one.
+  -- • Second conjunct is exactly `chiSquared_maximin_upper_bound` above.
   sorry
 
 /-! ### The noncentral tail function as the number of cells grows -/
@@ -206,6 +225,13 @@ theorem noncentralTail_antitone {α h : ℝ} {c : ℕ → ℝ}
         noncentralTail k₂ (c k₂) h ≤ noncentralTail k₁ (c k₁) h)
       ∧ (h ≠ 0 → ∀ k₁ k₂ : ℕ, 0 < k₁ → k₁ < k₂ →
           noncentralTail k₂ (c k₂) h < noncentralTail k₁ (c k₁) h) := by
+  -- TODO: cross-degrees-of-freedom monotonicity of the noncentral χ² power at a *fixed*
+  -- noncentrality `h²` and matched upper-α critical values `c k`.  This is the classical
+  -- fact that the power of the χ² test decreases as degrees of freedom are added in
+  -- directions where the alternative does not move (Das Gupta; Cochran 1952).  It is not a
+  -- corollary of any single available brick: it compares the tails of `ncχ²_{k₁}(h²)` and
+  -- `ncχ²_{k₂}(h²)` at the *different* thresholds `c k₁`, `c k₂`, and needs a genuine
+  -- analytic comparison across the family (no such lemma exists in the project yet).
   sorry
 
 /-- **(ii) A bounded noncentrality is asymptotically invisible.** If `h_k` converges to a
@@ -220,6 +246,18 @@ theorem noncentralTail_tendsto_level {α : ℝ} {c : ℕ → ℝ} {hseq : ℕ �
     -- USER-INPUT: the noncentralities converge to a finite limit
     (hconv : Tendsto hseq atTop (nhds h)) :
     Tendsto (fun k => noncentralTail k (c k) (hseq k)) atTop (nhds α) := by
+  -- TODO: assembly of the large-`k` normalisations.  With `l k = (hseq k)²`, boundedness
+  -- of `hseq` gives `l k / √(2k) → 0`, so `weakConverges_noncentralChiSquared_standardized`
+  -- yields `(χ²_k(l k) − k)/√(2k) ⇒ N(0,1)`, while
+  -- `tendsto_chiSquared_quantile_standardized` gives `(c k − k)/√(2k) → z` with
+  -- `N(0,1)(z, ∞) = α`.  Then `M(k, hseq k) = μ_k((t_k, ∞))` with `μ_k ⇒ N(0,1)` and
+  -- `t_k → z`, and a moving-threshold portmanteau tail step (N(0,1) is atomless) gives
+  -- `→ N(0,1)(z, ∞) = α`.
+  -- TAINT: both `weakConverges_noncentralChiSquared_standardized` and
+  -- `tendsto_chiSquared_quantile_standardized` are OPEN sorries in
+  -- `ForMathlib/NoncentralChiSquared.lean`, so this lemma would inherit `sorryAx` from
+  -- them; additionally the moving-threshold portmanteau step is absent from the
+  -- `WeakConverges` API in `ForMathlib/Contiguity.lean`.
   sorry
 
 /-- **(iii) The signal must grow like `(2k)^{1/2}` to be seen.** If
@@ -239,6 +277,15 @@ theorem noncentralTail_tendsto_normal {α γ z : ℝ} {c : ℕ → ℝ} {hseq : 
       (nhds γ)) :
     Tendsto (fun k => noncentralTail k (c k) (hseq k)) atTop
       (nhds ((gaussianReal 0 1 (Set.Ioi (z - γ))).toReal)) := by
+  -- TODO: same assembly as `noncentralTail_tendsto_level`, now with drift.  With
+  -- `l k = (hseq k)²` and `l k / √(2k) → γ`, `weakConverges_noncentralChiSquared_standardized`
+  -- gives `(χ²_k(l k) − k)/√(2k) ⇒ N(γ, 1)`, `tendsto_chiSquared_quantile_standardized`
+  -- gives `(c k − k)/√(2k) → z`, and the moving-threshold portmanteau tail step yields
+  -- `M(k, hseq k) → N(γ,1)(z, ∞) = N(0,1)(z − γ, ∞)`, which is the stated limit.
+  -- TAINT: inherits `sorryAx` from the two OPEN sorries
+  -- `weakConverges_noncentralChiSquared_standardized` and
+  -- `tendsto_chiSquared_quantile_standardized` in `ForMathlib/NoncentralChiSquared.lean`;
+  -- also needs the moving-threshold portmanteau step absent from the `WeakConverges` API.
   sorry
 
 end StatLean.HypothesisTesting
