@@ -18,8 +18,9 @@ $$ \dot\ell_\theta(x) = \frac{\partial_\theta p_\theta(x)}{p_\theta(x)}, \qquad
   family (`EuclideanSpace ℝ (Fin s)`);
 * `infoMatrix M μ θ` — the Fisher information matrix.
 
-**Reference.** Classical Fisher-information theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), the score function and the Fisher information. (`TPE2 §2.5`.)
 
 **Proof formalization notes.**
 * The score is *derived from the densities* (a `deriv` in `θ`), unlike the free

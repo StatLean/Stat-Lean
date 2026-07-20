@@ -21,8 +21,10 @@ linear estimators unbiased throughout `W`, and it is the *only* one that does so
 * `isMRE_lse_among_linear_equivariant` — consequently, under squared error the
   least-squares functional is minimum risk equivariant among linear equivariant estimators.
 
-**Reference.** Classical least-squares optimality among linear unbiased estimators;
-original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), Theorem 4.12 (Gauss–Markov: least squares is UMVU among linear estimators) and
+Corollary 4.13 (BLUE). (`TPE2 §3.4 Thm 4.12, Cor 4.13`.)
 
 **Proof formalization notes.**
 * *Moments only.* The unknown law is a single probability measure `P` on the observation

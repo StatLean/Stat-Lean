@@ -24,8 +24,10 @@ This file isolates that reduction once:
 The location instantiation uses `F w x = δ₀ x − w` (`LocationMRE`); the scale
 instantiation uses `F w x = δ₀ x / w` (`ScaleMRE`).
 
-**Reference.** The classical "minimize the integrand" step in the derivation of minimum
-risk equivariant estimators; original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), the conditional-minimization engine behind Theorem 1.10 (location) and Theorem 3.3
+of §3.3 (scale). (`TPE2 §3.1 Thm 1.10; §3.3 Thm 3.3`.)
 
 **Proof formalization notes.**
 * **Argument order.** Mathlib's `condDistrib Y X μ` is the conditional law of `Y` *given*

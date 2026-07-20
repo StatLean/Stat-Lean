@@ -20,8 +20,11 @@ The multivariate form is what completeness of an `s`-parameter full-rank exponen
 consumes: the natural parameter set has nonempty interior in `ℝ^s`, and the vanishing
 condition on an unbiased estimator of `0` holds only there.
 
-**Reference.** Classical Laplace-transform uniqueness; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), supporting material for the identifiability of the canonical
+parametrization in `s` dimensions (equation (5.2), Definition 5.2). (`TPE2 §1.5 (5.2), Def
+5.2`.)
 
 **Proof formalization notes.**
 * **Route.** Fix `t₀ ∈ interior S` and a small box `t₀ + (-ε, ε)^s ⊆ S`. Recenter by tilting

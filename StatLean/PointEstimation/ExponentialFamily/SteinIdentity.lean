@@ -22,8 +22,9 @@ sample argument" — so the identity says that this score is orthogonal to diffe
 
 * `ExpFamily.stein_identity` — the identity for a support equal to the whole line.
 
-**Reference.** Classical exponential-family theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), Lemma 5.15 (Stein's identity). (`TPE2 §1.5 Lem 5.15`.)
 
 **Proof formalization notes.**
 * The setup is pinned by the hypothesis `E.base = volume.withDensity (ENNReal.ofReal ∘ h)`

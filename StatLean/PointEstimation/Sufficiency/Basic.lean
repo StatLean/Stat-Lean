@@ -16,9 +16,10 @@ of sufficiency fixed in `Sufficiency.Defs`:
 * `hasSufficientKernel_fiber` — the kernel is carried by the fibers of `T`:
   `Q t {x | T x = t} = 1` for almost every `t`.
 
-**Reference.** Classical sufficiency theory: the reconstruction property of a sufficient
-statistic (data can be regenerated from `T` alone using a θ-free random mechanism) and the
-equivalence between the per-event and regular-conditional formulations on nice spaces.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), first consequences of the conditional-distribution definition of
+sufficiency. (`TPE2 §1.6`.)
 
 **Proof formalization notes.**
 * `statLaw_snd` is stated in the shape dictated by Mathlib's composition API: the relevant

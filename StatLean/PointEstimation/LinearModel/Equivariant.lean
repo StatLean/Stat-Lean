@@ -25,8 +25,10 @@ Contents: `IsCanonicalEquivariant`, `canonicalRisk`, `IsCanonicalMRE`;
 `IsCanonicalScaleEquivariant`, `canonicalScaleRisk`, `IsCanonicalScaleMRE`,
 `residualScaleConst`; `IsSubspaceEquivariant`, `linearBaseRisk`, `IsSubspaceMRE`.
 
-**Reference.** Classical equivariant estimation in normal linear models; original sources
-in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), Corollary 4.5 (the equivariance of the canonical estimators). (`TPE2 §3.4 Cor
+4.5`.)
 
 **Proof formalization notes.**
 * *Lightweight group formalization.* Equivariance is expressed by explicit functional

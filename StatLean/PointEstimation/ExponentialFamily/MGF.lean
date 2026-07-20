@@ -20,8 +20,10 @@ function.
 * `ExpFamily.integral_stat_P` — the mean of the natural statistic is `A'(η)`;
 * `ExpFamily.variance_stat_P` — the variance of the natural statistic is `A''(η)`.
 
-**Reference.** Classical exponential-family theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), Theorem 5.10 (moment and cumulant generating functions of the natural
+statistic). (`TPE2 §1.5 Thm 5.10`.)
 
 **Proof formalization notes.**
 * `integral_exp_inner_P` is `MeasureTheory.integral_exp_tilted` (which computes

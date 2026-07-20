@@ -21,8 +21,10 @@ matrix `A` of full row rank; the least-squares estimator of the coefficient vect
   whose second moment `E(A Aᵀ)` is known, no best linear unbiased estimator exists
   (DEFERRAL-ELIGIBLE, see below).
 
-**Reference.** Classical regression theory and its random-design variants; original sources
-in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
+Linear Models), Theorem 4.14 (the regression-coefficient form and its covariance). (`TPE2 §3.4
+Thm 4.14`.)
 
 **Proof formalization notes.**
 * *Row convention.* Coefficient vectors multiply the design on the left, `ξ = θ A` with `A`

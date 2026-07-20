@@ -22,8 +22,11 @@ equivariant (MRE) location estimator.
 * `exists_isLocMRE_of_bounded_loss` — a single observation and a bounded loss vanishing
   at the origin's antipodes: an MRE estimator exists even though the loss is not convex.
 
-**Reference.** Classical location-equivariant estimation; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), Theorem 1.10 (the MRE estimator via conditional minimization given the differences)
+and Corollary 1.11 (existence for a convex non-monotone loss). (`TPE2 §3.1 Thm 1.10, Cor
+1.11`.)
 
 **Proof formalization notes.**
 * The conditional distribution of the data given the differences is written through the

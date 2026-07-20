@@ -16,8 +16,11 @@ $$ \frac{dP_\theta}{d\nu}(x) \;=\; g_\theta\bigl(T(x)\bigr) \qquad (\nu\text{-a.
 * `isSufficient_of_rnDeriv_comp` — the converse;
 * `isSufficient_iff_rnDeriv_comp` — the two combined.
 
-**Reference.** Classical characterization of sufficiency for dominated families relative to
-an equivalent countable mixture of members of the family.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 2 (The Probability
+Background), §2.6 (Sufficient Statistics), Theorem 2.6.2 (Halmos–Savage: `T` is sufficient iff
+the densities with respect to an equivalent countable mixture factor through `T`). (`TSH4 Thm
+2.6.2`.)
 
 **Proof formalization notes.**
 * The mixture is passed as data (`θs`, `c`) together with the defining equation `hν`, rather

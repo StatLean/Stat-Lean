@@ -31,8 +31,10 @@ the top row being the composed kernel `κ ∘ₖ Q : S ⇝ D` and the bottom row
   original risk;
 * `exists_riskRand_eq_risk_of_sufficient` — the corollary for nonrandomized estimators.
 
-**Reference.** Classical sufficiency theory: the operational significance of sufficiency,
-stated as risk-equality of a randomized estimator based on the sufficient statistic.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), Theorem 6.1 (any estimator is matched in risk by a randomized
+estimator depending on the data only through a sufficient statistic). (`TPE2 §1.6 Thm 6.1`.)
 
 **Proof formalization notes.**
 * **Composition order.** `Q : Kernel S 𝓧` and `κ : Kernel 𝓧 D` compose as `κ ∘ₖ Q :

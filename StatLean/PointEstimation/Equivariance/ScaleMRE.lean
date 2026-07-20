@@ -21,8 +21,11 @@ engine as in the location case with the template `F w x = δ₀ x / w` in place 
   squared-error loss `γ(v) = (v − 1)²`, a ratio of conditional moments
   `δ₀(X)·E₁[δ₀(X)|z] / E₁[δ₀²(X)|z]`.
 
-**Reference.** Classical scale-equivariant estimation; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.3
+(Location-Scale Families), Theorem 3.3 (the scale MRE estimator by conditional minimization)
+with Corollaries 3.4 and 3.8 (the convex form and the explicit MRE of `τʳ`). (`TPE2 §3.3 Thm
+3.3, Cor 3.4, Cor 3.8`.)
 
 **Proof formalization notes.**
 * The multiplicative group acts transitively on the scale parameter, so the risk of a

@@ -20,8 +20,10 @@ This is the brick that makes "minimize the conditional risk pointwise, then read
 off as an estimator" legitimate: the pointwise minimizer must be a *measurable* function of
 the conditioning variable before it can be called an estimator at all.
 
-**Reference.** Classical measurable-selection theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), supporting material for Theorem 1.10 and Corollary 1.11: a measurable selection of
+minimizers of a parametrized convex scan. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
 
 **Proof formalization notes.**
 * **Continuity, not lower semicontinuity — deliberate.** The natural hypothesis for a

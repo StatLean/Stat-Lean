@@ -18,8 +18,10 @@ The optimization facts behind conditional-risk minimization on the real line:
   `E (X − c)² = E (X − E X)² + (E X − c)²`;
 * `integral_sq_sub_mean_le` — its immediate corollary: the mean minimizes squared error.
 
-**Reference.** Classical convexity and least-squares theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
+Examples), supporting material for Theorem 1.10 and Corollary 1.11: minimizers of convex
+integral criteria on the line. (`TPE2 §3.1 Thm 1.10, Cor 1.11`.)
 
 **Proof formalization notes.**
 * **`lintegral_convex_even_min_at_zero` is stated for an ARBITRARY measure.** The argument is

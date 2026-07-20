@@ -17,9 +17,10 @@ sample space the two coincide.
 * `hasSufficientKernel_of_isSufficient` — the general standard Borel version, without
   domination. Named planned debt (see below).
 
-**Reference.** Classical theorem on the existence of θ-free regular conditional distributions
-given a sufficient statistic, for sample spaces that are Euclidean or, more generally,
-standard Borel.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 2 (The Probability
+Background), §2.6 (Sufficient Statistics), Theorem 2.6.1 (existence of a θ-free regular
+conditional distribution given a sufficient statistic). (`TSH4 Thm 2.6.1`.)
 
 **Proof formalization notes.**
 * The dominated route avoids gluing per-event determinations altogether. Fix an equivalent

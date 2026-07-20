@@ -21,9 +21,10 @@ Contents:
 * `fisherInfo_pi` — the information in an independent identically distributed sample of
   size `n` is `n` times the information in one observation.
 
-**Reference.** Classical additivity of the Fisher information under independence, together
-with its identically-distributed specialization. Original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
+Information Inequality), Theorem 5.8 (additivity of the Fisher information over independent
+observations). (`TPE2 §2.5 Thm 5.8`.)
 
 **Proof formalization notes.**
 * The product family is built at the level of *densities*, `p_θ(x) q_θ(y)`, so that the

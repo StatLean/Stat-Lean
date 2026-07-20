@@ -14,8 +14,10 @@ parameter simultaneously, and **LMVU at `θ₀`** when it does so at a single pa
 * `MemEstL2 P δ` — the estimator class `Δ`: square-integrable under every `P θ`;
 * `IsUMVU P g δ`, `IsLMVU P g δ θ₀`.
 
-**Reference.** Classical unbiased-estimation theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.1 (UMVU
+Estimators), Definition 1.1 (unbiased estimator) and Definition 1.6 (UMVU estimator). (`TPE2
+§2.1 Def 1.1, Def 1.6`.)
 
 **Proof formalization notes.**
 * UMVU is variance-based (the covariance characterization is an `L²` statement); the

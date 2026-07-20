@@ -20,8 +20,10 @@ the reduction under which completeness of `T` is proved.
 * `ExpFamily.natSet_statFamily` — the two families share their natural parameter set;
 * `ExpFamily.logPartition_statFamily` — and their log-partition function.
 
-**Reference.** Classical exponential-family theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
+(Exponential Families), Theorem 5.17 (the natural statistic is itself exponentially
+distributed). (`TPE2 §1.5 Thm 5.17`.)
 
 **Proof formalization notes.**
 * `map_stat_P` is stated for **every** `η`, not only for natural parameters: off the natural

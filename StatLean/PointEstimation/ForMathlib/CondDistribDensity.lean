@@ -17,8 +17,10 @@ distribution of the second coordinate given the first is the normalized slice
 * `condDistrib_withDensity_prod_ae_eq` — Mathlib's `ProbabilityTheory.condDistrib` for
   `(Prod.snd ∣ Prod.fst)` is almost everywhere the normalized-slice measure.
 
-**Reference.** Classical disintegration of an absolutely continuous joint law; original
-sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
+Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.6
+(Sufficient Statistics), supporting material for Theorem 6.12 and Corollary 6.13: conditional
+distributions of a jointly absolutely continuous law. (`TPE2 §1.6 Thm 6.12, Cor 6.13`.)
 
 **Proof formalization notes.**
 * **No `Kernel` is defined here.** Packaging `t ↦ (∫⁻ p (t, ·))⁻¹ • volume.withDensity (p (t, ·))`
