@@ -264,16 +264,49 @@ theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     {γ : EuclideanSpace ℝ (Fin n)} (hγ : γ ∈ W) :
     IsUMVU (linearModelFull W) (fun p => ⟪γ, (p.1 : EuclideanSpace ℝ (Fin n))⟫_ℝ)
       (fun y => ⟪γ, lse W y⟫_ℝ) := by
-  -- DEFERRAL-ELIGIBLE (named planned debt: `stdGaussian_eq_map_pi_orthonormalBasis`).
-  -- The classical proof rotates `linearModelFull W` onto `canonicalModel` by an orthonormal
-  -- basis adapted to `W` (its first `dim W` vectors span `W`), under which `⟪γ, ξ̂⟫` becomes
-  -- a linear combination of the signal block (`isUMVU_linear_combination` in `Canonical`).
-  -- The missing infrastructure is the isometry-invariance of the product-Gaussian vector,
-  -- `(gaussianVector ξ σ²).map L = gaussianVector (L ξ) σ²` for an orthogonal `L`, together
-  -- with an `IsUMVU`-transport lemma along a measurable equivalence of the sample space —
-  -- a self-contained multi-lemma development independent of the canonical-model results,
-  -- which are all proved (`Canonical.lean`, 0-sorry). No result in this area consumes it.
-  sorry
+  -- Rotate onto the canonical model by the adapted-basis isometry `L`, reducing to
+  -- `isUMVU_linear_combination` via the reparametrization + sample-transport lemmas.
+  obtain ⟨m, hm, hsm, L, hmean, hsurj, _, hlse⟩ := exists_headSubspace_isometry W hW
+  have hφsurj : Function.Surjective
+      (fun p : ↥W × PosVar =>
+        ((canonicalHead (L p.1), p.2) : CanonicalParam (Module.finrank ℝ W))) := by
+    rintro ⟨a, σ2⟩; obtain ⟨x, hx⟩ := hsurj a; exact ⟨(x, σ2), by simp [hx]⟩
+  have hPQ : ∀ p : ↥W × PosVar,
+      (linearModelFull W p).map L.toHomeomorph.toMeasurableEquiv
+        = canonicalModel (canonicalHead (L p.1), p.2) := by
+    intro p
+    have hmap : (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+          L.toHomeomorph.toMeasurableEquiv
+        = gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1 :=
+      gaussianVector_map_linearIsometryEquiv L (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1
+    show (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+        L.toHomeomorph.toMeasurableEquiv = _
+    rw [hmap]
+    show gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
+      = gaussianVector (canonicalMean (canonicalHead (L (p.1 : EuclideanSpace ℝ (Fin n))))) p.2.1
+    congr 1
+    exact hmean (p.1 : EuclideanSpace ℝ (Fin n)) p.1.2
+  have hrep := isUMVU_reparam' (canonicalModel (s := Module.finrank ℝ W) (m := m))
+    (fun p : ↥W × PosVar => (canonicalHead (L p.1), p.2)) hφsurj
+    (fun q => ∑ i, canonicalHead (L γ) i * q.1 i)
+    (fun z => ∑ i, canonicalHead (L γ) i * canonicalHead z i)
+    (isUMVU_linear_combination (s := Module.finrank ℝ W) (m := m) hm (canonicalHead (L γ)))
+  have htrans := isUMVU_map_equiv L.toHomeomorph.toMeasurableEquiv hPQ hrep
+  have hgm : (fun p : ↥W × PosVar => ⟪γ, (p.1 : EuclideanSpace ℝ (Fin n))⟫_ℝ)
+      = fun p => ∑ i, canonicalHead (L γ) i * canonicalHead (L (p.1 : _)) i := by
+    funext p
+    have hself : lse W (p.1 : EuclideanSpace ℝ (Fin n)) = (p.1 : EuclideanSpace ℝ (Fin n)) :=
+      Submodule.starProjection_eq_self_iff.mpr p.1.2
+    conv_lhs => rw [← hself]
+    exact hlse γ hγ (p.1 : EuclideanSpace ℝ (Fin n))
+  have hgδ : (fun y => ⟪γ, lse W y⟫_ℝ)
+      = fun y => ∑ i, canonicalHead (L γ) i
+          * canonicalHead (L.toHomeomorph.toMeasurableEquiv y) i := by
+    funext y
+    rw [show L.toHomeomorph.toMeasurableEquiv y = L y from rfl]
+    exact hlse γ hγ y
+  rw [hgm, hgδ]
+  exact htrans
 
 /-- **Optimality of the residual variance estimator**: `‖y − ξ̂(y)‖²/(n − dim W)` is the
 UMVU estimator of `σ²`. -/
