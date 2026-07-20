@@ -539,13 +539,17 @@ theorem isUMP_oneSided_shifted
   by_cases hz : ∃ z, C ≤ T z ∧ 0 < p θ' z
   · have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ hz
     exact hMP.2.2 ψ hψ (hψlevel θ' (Set.mem_Iic.mpr le_rfl))
-  · -- Degenerate boundary: `p θ' = 0` on `{T ≥ C}`, so `power P φ θ' = 0` and the level is
-    -- `0`. Here the frozen statement is DEFECTIVE: at level `0` a competitor may reject on
-    -- the *whole* `P θ'`-null set `{p θ' = 0}` (which can strictly contain `{T ≥ C}` when a
-    -- density vanishes below `C`), beating `φ`, so `φ` need not be UMP. The classical result
-    -- carries the omitted hypothesis that the densities are strictly positive (equivalently,
-    -- that the level `power P φ θ'` is positive); under `hz` — which positivity guarantees —
-    -- the branch above is a complete proof. Reported per the no-weakening policy.
+  · -- Degenerate boundary: `p θ' = 0` on `{T ≥ C}`, so the level is `power P φ θ' = 0`, and
+    -- the frozen statement is FALSE here (verified counterexample). Take `𝓧 = ℝ`,
+    -- `μ = volume`, `T = id`, and the reflected shifted-exponential family
+    -- `p θ x = exp (x - θ) · 1_{x ≤ θ}` (a genuine MLR family: the ratio is `e^(θ-θ')` on
+    -- `{x ≤ θ}` and `0` above, nondecreasing in `x`), with `C = θ' + 1` so `p θ' = 0` on
+    -- `{x ≥ C}`. Then `power P φ θ' = 0`, but the level-`0` competitor `ψ = 1_{x > θ'}` (it is
+    -- `P θ`-a.e. `0` for every `θ ≤ θ'`, since `P θ` sits on `(-∞, θ]`) satisfies, for any
+    -- `θ'' > θ' + 1`, `power ψ θ'' = 1 - e^(θ'-θ'') > 1 - e^(θ'+1-θ'') = power P φ θ''`; so `ψ`
+    -- strictly beats `φ` and `φ` is NOT UMP. The classical result needs strictly positive
+    -- densities (equivalently `0 < power P φ θ'`, which supplies `hz`); under `hz` the branch
+    -- above is a complete proof. Reported per the no-weakening policy.
     -- TODO(statement-bug): add `0 < power P φ θ'` (or positive densities) to discharge this.
     sorry
 
@@ -712,11 +716,15 @@ theorem power_min_oneSided
     rw [hcoψdef, powerAgainst_one_sub (hψint θ), hcoφdef, powerAgainst_one_sub (hφint θ)] at hcmp
     show powerAgainst (P θ) φ ≤ powerAgainst (P θ) ψ
     linarith [hcmp]
-  · -- Degenerate: `p θ₀ = 0` on `{T ≤ C}`, forcing `power P φ θ₀ = 1`, i.e. `α = 1`. At
-    -- `α = 1` the size constraint `power ψ θ₀ = 1` forces `ψ = 1` `P θ₀`-a.e., but says
-    -- nothing about `P θ`, so the frozen statement is DEFECTIVE here for the same reason as
-    -- `isUMP_oneSided_shifted`: the classical result needs strictly positive densities (which
-    -- supply `hz`) or `α < 1`. Under either the branch above is a complete proof. Reported.
+  · -- Degenerate: `p θ₀ = 0` on `{T ≤ C}`, forcing `power P φ θ₀ = 1`, i.e. `α = 1`, and the
+    -- frozen statement is FALSE here (verified counterexample). Take `𝓧 = ℝ`, `μ = volume`,
+    -- `T = id`, and the shifted-exponential family `p θ x = exp (-(x - θ)) · 1_{x ≥ θ}` (a
+    -- genuine MLR family), with `C = θ₀ - 1` so `p θ₀ = 0` on `{x ≤ C}`. Then
+    -- `α = power P φ θ₀ = 1`, but the size-`1` competitor `ψ = 1_{x ≥ θ₀}` (`power ψ θ₀ = 1`)
+    -- has, for every `θ < θ₀ - 1`, `power ψ θ = e^(θ-θ₀) < e^(θ-θ₀+1) = power P φ θ`; so `φ`
+    -- does NOT minimize the rejection probability below `θ₀`. The classical result needs
+    -- strictly positive densities (which supply `hz`) or `α < 1`; under either the branch
+    -- above is a complete proof. Reported per the no-weakening policy.
     -- TODO(statement-bug): add positive densities (or `α < 1`) to discharge this.
     sorry
 
@@ -753,6 +761,15 @@ theorem essentiallyComplete_oneSidedTest
   -- and the `hz`/positive-density corner of `isMostPowerful_oneSided` / `power_min_oneSided`.
   -- Under strictly positive densities and `0 < power P ψ θ₀ < 1` the roadmap is a complete
   -- proof; the general frozen statement needs those omitted hypotheses.
+  -- COUNTEREXAMPLE (the frozen statement is FALSE, not merely unproven): take `ψ = 1` (reject
+  -- always), a critical function with `power P ψ θ₀ = 1`. With `𝓧 = ℝ`, `μ = volume`,
+  -- `T = id`, `P θ = 𝒩(θ,1)`, `θ₀ = 0`, `L₀ = 0`, `L₁ θ = -θ` (so `L₁ - L₀ > 0` below `0`
+  -- and `< 0` above, as required), `testRisk P L₀ L₁ ψ θ = -θ`. Any one-sided test with a
+  -- REAL `C` has `power P φ θ = 1 - Φ(C - θ) < 1`, so for every `θ > 0`,
+  -- `testRisk P L₀ L₁ φ θ = power P φ θ · (-θ) > 1 · (-θ) = testRisk P L₀ L₁ ψ θ`; hence no
+  -- real-`C` one-sided test dominates `ψ` everywhere. The one-sided class is essentially
+  -- complete only when the trivial `C = ±∞` tests are admitted — see the frozen docstring
+  -- note that "`C` here is a real number, not an extended one".
   -- TODO: discharge once the positivity hypothesis is added (mirrors the sibling theorems).
   sorry
 
