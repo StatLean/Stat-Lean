@@ -534,6 +534,13 @@ theorem randDist_tendstoInProb_cdf (P : ∀ n, Measure (𝓧 n))
     -- USER-INPUT: `t` is a continuity point of the limit c.d.f.
     (ht : ContinuousAt (cdf R) t) :
     TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t) := by
+  -- The full second-moment/Chebyshev argument is proved in `randDist_tendstoInProb_cdf_aux`:
+  --   exact randDist_tendstoInProb_cdf_aux P T R hTmeas hsmul hjoint ht
+  -- TODO: the frozen signature omits `Measurable (T n)` and measurability of the group action,
+  -- which the moment identities `integral_randDist_..._randPairLaw` genuinely require (a
+  -- non-measurable statistic makes every `randPairLaw` the zero measure). These are NOT derivable
+  -- from the stated hypotheses; the general (possibly non-measurable) case would additionally
+  -- need a negligible-defect approximation. See the accompanying report.
   sorry
 
 /-- **Quantile-convergence engine.** Given the forward convergence at continuity points
@@ -630,6 +637,10 @@ theorem randQuantile_tendstoInProb (P : ∀ n, Measure (𝓧 n))
       1 - α < cdf R (cdfQuantile R (1 - α) + ε)) :
     TendstoInProbTriangular P (fun n x => randQuantile (G n) (T n) (1 - α) x)
       (cdfQuantile R (1 - α)) := by
+  -- The bracketing/quantile-transfer argument is proved in `randQuantile_tendstoInProb_aux`
+  -- (which uses only `hα₁` and `hstrict`, not `hcont`):
+  --   exact randQuantile_tendstoInProb_aux P T R hTmeas hsmul hjoint hα₁ hstrict
+  -- TODO: same measurability gap as `randDist_tendstoInProb_cdf` (frozen signature). See report.
   sorry
 
 /-- **Converse.** If the randomization distribution converges in probability to some
@@ -643,6 +654,17 @@ theorem weakConverges_randPairLaw_of_randDist_tendstoInProb (P : ∀ n, Measure 
     (h : ∀ t, ContinuousAt (cdf R) t →
       TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t)) :
     WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R) := by
+  -- TODO (genuine gap, deferred). The intended route: convergence in probability of the random
+  -- CDF at continuity points `s, t`, together with boundedness in `[0,1]`, gives (bounded
+  -- convergence) `∫ R̂ₙ(s)·R̂ₙ(t) dP → R(s)R(t)`; the left side equals
+  -- `randPairLaw(Iic s ×ˢ Iic t)` by a cross-moment identity generalising
+  -- `integral_randDist_sq_eq_real_randPairLaw`. This yields convergence of the joint c.d.f. at
+  -- every continuity-point rectangle. Upgrading that to weak convergence needs a
+  -- convergence-determining-class argument (the rectangles form a π-system, but Mathlib's
+  -- `IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` demands convergence on the *whole*
+  -- π-system, whereas we only control continuity-point rectangles — the standard right-continuity
+  -- patch is not yet formalised). The proof also needs the same measurability of `T n`/action as
+  -- the forward direction, which the frozen signature omits. See the accompanying report.
   sorry
 
 end Asymptotics

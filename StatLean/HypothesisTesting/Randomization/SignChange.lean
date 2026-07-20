@@ -100,6 +100,16 @@ lemma signChange_smul_apply {n : ℕ} (ε : Fin n → ℤˣ) (x : Fin n → ℝ)
 lemma card_signChangeGroup (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ n := by
   simp [Fintype.card_fun, Fintype.card_units_int]
 
+/-- The sign-change action of a fixed group element is measurable: componentwise it is
+multiplication by the constant `±1`. (Unlike the abstract action of `Randomization/Asymptotics`,
+here the action is concrete and its measurability is available, so only `Measurable (T n)` is left
+implicit in the frozen signatures below.) -/
+lemma measurable_signChange_smul {n : ℕ} (ε : Fin n → ℤˣ) :
+    Measurable (fun x : Fin n → ℝ => ε • x) := by
+  refine measurable_pi_lambda _ (fun i => ?_)
+  simp only [signChange_smul_apply]
+  exact (measurable_pi_apply i).const_mul _
+
 /-- **Symmetrization** of a law on the line: the equal mixture of `P` and its reflection,
 i.e. the law of the data multiplied by an independent random sign. Its c.d.f. is
 `t ↦ ½(F(t) + 1 − F(−t))` at every continuity point of `F` (see the file notes for the
@@ -138,6 +148,19 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
       (fun n => randPairLaw (Fin n → ℤˣ) (T n) (Measure.pi fun _ : Fin n => P))
       ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
         (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+  -- TODO (deep, deferred). Intended route (bivariate CLT):
+  -- 1. By oddness `ψ(εᵢ xᵢ) = εᵢ ψ(xᵢ)` (`hodd`, `εᵢ = ±1`), the linear part of `T n(ε • x)` is
+  --    `(√n)⁻¹ ∑ᵢ εᵢ ψ(xᵢ)`; `hlin` together with symmetry `hsymm` (so `ε • X =_d X`) transfers
+  --    the `o_P(1)` remainder to the randomized argument.
+  -- 2. On the product space of the data `X ~ πP` and two independent Rademacher sign vectors
+  --    `ε, ε'`, the pairs `Vᵢ = (εᵢ ψ(Xᵢ), ε'ᵢ ψ(Xᵢ))` are i.i.d. in `ℝ²` with mean `0` and
+  --    covariance `τ² · I₂` (cross term `E[εᵢ]E[ε'ᵢ]E[ψ²] = 0`).
+  -- 3. `tendstoInDistribution_multivariate_clt` (Cramér–Wold) then gives
+  --    `(√n)⁻¹ ∑ᵢ Vᵢ ⇝ N(0, τ² I₂) = N(0,τ²) ⊗ N(0,τ²)`; identifying `randPairLaw` as the law of
+  --    `(T n(ε•X), T n(ε'•X))` and pushing the `o_P(1)` through (Slutsky) yields the claim.
+  --    The hint's `weighted_iid_clt` supplies each marginal; the joint needs the multivariate
+  --    version. `measurable_signChange_smul` supplies the action measurability;
+  --    `Measurable (T n)` is still implicit (frozen signature). See report.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** Under the
@@ -163,6 +186,10 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randDist (Fin n → ℤˣ) (T n) x t)
       (cdf (gaussianReal 0 1) (t / τ)) := by
+  -- TODO (deferred). Combine `weakConverges_randPairLaw_signChange` (sorry above) with the
+  -- forward engine `randDist_tendstoInProb_cdf` of `Randomization/Asymptotics`, then rewrite the
+  -- limit c.d.f. via the Gaussian scaling `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` (`hτpos`).
+  -- Blocked on the CLT above and on the forward engine's measurability gap. See report.
   sorry
 
 /-! ### Asymmetric case, via the symmetrized model -/
@@ -191,6 +218,13 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randDist (Fin n → ℤˣ) (T n) x t)
       (cdf (gaussianReal 0 1) (t / τ)) := by
+  -- TODO (deferred). The randomization distribution depends on the data only through
+  -- `|x₁|, …, |xₙ|`, whose law is identical under `P` and `symmetrize P` (the sign-change orbit is
+  -- the same set for `x` and any reflection of its coordinates). Hence `randDist (Fin n → ℤˣ)
+  -- (T n) x t` has the same law under `Measure.pi P` as under `Measure.pi (symmetrize P)`, and the
+  -- claim transfers from `randDist_signChange_tendstoInProb` applied under `symmetrize P` (where
+  -- `hsymm` holds and `hlin`/`hτ` are assumed). Needs the `|·|`-invariance lemma plus the previous
+  -- (deferred) result. See report.
   sorry
 
 /-- **The randomization critical value converges to `τ z_{1−α}`.** Companion of the
