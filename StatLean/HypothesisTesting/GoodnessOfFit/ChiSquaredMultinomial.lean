@@ -105,7 +105,66 @@ information matrix, which is why it is the noncentrality of the limiting law. -/
 noncomputable def multinomialNoncentrality {k : ℕ} (π h : Fin (k + 1) → ℝ) : ℝ :=
   ∑ j : Fin (k + 1), (h j) ^ 2 / π j
 
-/-! ### (i) The null limit -/
+/-! ### Algebraic core: reduction to the first `k` cells
+
+The proof drops the last cell and works with the first `k` centred, scaled cell
+frequencies `reducedVec`.  The `(k+1)`-st cell is reconstructed from the linear constraint
+`∑ⱼ (Yⱼ − nπⱼ) = 0`, which is the algebraic content of `pearsonQ_eq_reducedQ` below:
+Pearson's `Qₙ` equals the reduced quadratic form `reducedQ`, a sum over the first `k` cells
+plus a single term standing in for the dropped cell.  The matrix realisation of `reducedQ`
+as `⟪z, Σ⁻¹ z⟫` (Sherman–Morrison) is `reducedQ_eq_quadForm`. -/
+
+/-- The number of trials is the sum of the cell counts (partition of `Fin n` by outcome). -/
+private lemma sum_multinomialCount {n k : ℕ} (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    ∑ j : Fin (k + 1), multinomialCount X j ω = n := by
+  classical
+  have h := Finset.card_eq_sum_card_fiberwise
+    (s := (Finset.univ : Finset (Fin n))) (t := (Finset.univ : Finset (Fin (k + 1))))
+    (f := fun i => X i ω) (fun i _ => Finset.mem_univ _)
+  simpa [multinomialCount, Finset.card_univ, Fintype.card_fin] using h.symm
+
+/-- The centred cell frequencies sum to zero: this is the linear constraint that makes the
+limiting covariance singular and lets the last cell be reconstructed from the first `k`. -/
+private lemma sum_centered_eq_zero {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπsum : ∑ j, π j = 1) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    ∑ j : Fin (k + 1), ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) = 0 := by
+  have hcount : (∑ j : Fin (k + 1), (multinomialCount X j ω : ℝ)) = (n : ℝ) := by
+    rw [← Nat.cast_sum, sum_multinomialCount]
+  rw [Finset.sum_sub_distrib, ← Finset.mul_sum, hπsum, mul_one, hcount, sub_self]
+
+/-- The reduced quadratic form: a sum over the first `k` cells plus one term for the dropped
+cell (reconstructed via the linear constraint). -/
+private noncomputable def reducedQ {k : ℕ} (π : Fin (k + 1) → ℝ) (z : Fin k → ℝ) : ℝ :=
+  (∑ i : Fin k, z i ^ 2 / π i.castSucc) + (∑ i : Fin k, z i) ^ 2 / π (Fin.last k)
+
+/-- The first `k` centred, scaled cell frequencies `(Yⱼ − nπⱼ)/√n`, `j < k`. -/
+private noncomputable def reducedVec {n k : ℕ} (π : Fin (k + 1) → ℝ)
+    (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) (i : Fin k) : ℝ :=
+  ((multinomialCount X i.castSucc ω : ℝ) - (n : ℝ) * π i.castSucc) / Real.sqrt n
+
+/-- **The combinatorial step.** Pearson's statistic equals the reduced quadratic form of the
+first `k` centred frequencies; the dropped `(k+1)`-st cell reappears through the constraint
+`∑ⱼ (Yⱼ − nπⱼ) = 0`.  Holds for every `n` (both sides are the junk value `0` when `n = 0`). -/
+private lemma pearsonQ_eq_reducedQ {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπsum : ∑ j, π j = 1) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    pearsonQ π X ω = reducedQ π (reducedVec π X ω) := by
+  -- the square-and-divide identity `(c/√n)² / p = c² / (n p)`
+  have hsq : ∀ (c p : ℝ), (c / Real.sqrt n) ^ 2 / p = c ^ 2 / ((n : ℝ) * p) := by
+    intro c p
+    rw [div_pow, Real.sq_sqrt (Nat.cast_nonneg n), div_div]
+  -- the reconstruction: `∑_{i<k} (Y_{i} − nπ_{i}) = − (Y_last − nπ_last)`
+  have hlast : (∑ i : Fin k, ((multinomialCount X i.castSucc ω : ℝ) - (n : ℝ) * π i.castSucc))
+      = - ((multinomialCount X (Fin.last k) ω : ℝ) - (n : ℝ) * π (Fin.last k)) := by
+    have h0 := sum_centered_eq_zero hπsum X ω
+    rw [Fin.sum_univ_castSucc] at h0
+    linarith [h0]
+  rw [pearsonQ, reducedQ]
+  simp only [reducedVec]
+  rw [Fin.sum_univ_castSucc]
+  congr 1
+  · refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [hsq]
+  · rw [← Finset.sum_div, hsq, hlast, neg_sq]
 
 /-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
 `j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
