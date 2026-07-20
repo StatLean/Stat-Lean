@@ -853,7 +853,8 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
     set K : ℝ := (d / 2) ^ 2 / π j₀ with hK_def
     have hK : 0 < K := by rw [hK_def]; positivity
     have h1 : ∀ᶠ n in atTop,
-        |((Finset.univ.filter fun (i : Fin n) => Z (i : ℕ) ω = j₀).card : ℝ) / n - p j₀| < d / 2 := by
+        |((Finset.univ.filter fun (i : Fin n) => Z (i : ℕ) ω = j₀).card : ℝ) / n - p j₀|
+          < d / 2 := by
       have := (Metric.tendsto_atTop.mp hω) (d / 2) (by positivity)
       obtain ⟨N, hN⟩ := this
       exact Filter.eventually_atTop.mpr ⟨N, fun n hn => by
