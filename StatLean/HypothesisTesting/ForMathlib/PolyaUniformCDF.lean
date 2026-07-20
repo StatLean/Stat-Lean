@@ -56,7 +56,10 @@ theorem mem_Icc_of_monotone_of_tendsto {f : ℝ → ℝ}
     (h1 : Tendsto f atTop (𝓝 1))
     (x : ℝ) :
     f x ∈ Set.Icc (0 : ℝ) 1 := by
-  sorry
+  rw [Set.mem_Icc]
+  refine ⟨?_, ?_⟩
+  · exact le_of_tendsto h0 ((eventually_le_atBot x).mono fun y hy => hmono hy)
+  · exact ge_of_tendsto h1 ((eventually_ge_atTop x).mono fun y hy => hmono hy)
 
 /-- **Pólya's theorem**: pointwise convergence of distribution functions to a *continuous*
 distribution function is uniform. -/
