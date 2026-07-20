@@ -143,6 +143,11 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
     -- USER-INPUT: `τ²` is the variance of the influence function (equal to its second
     -- moment, since oddness and symmetry force the mean to vanish)
     (hτ : ∫ t, (ψ t) ^ 2 ∂P = τ ^ 2)
+    -- USER-INPUT: the statistic is measurable (data regularity). NOT derivable from the
+    -- other hypotheses and genuinely needed: for a non-measurable statistic every
+    -- `randPairLaw` degenerates to the zero measure (Bernstein-set construction), so the
+    -- conclusion is false without it. Mirrors `Randomization/Asymptotics.lean`.
+    (hT : ∀ n, Measurable (T n))
     -- USER-INPUT: the statistic is asymptotically linear with influence function `ψ`
     (hlin : TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => T n x - (Real.sqrt n)⁻¹ * ∑ i, ψ (x i)) 0) :
@@ -193,6 +198,11 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
     (hτpos : 0 < τ)
     -- USER-INPUT: `τ²` is the variance of the influence function
     (hτ : ∫ t, (ψ t) ^ 2 ∂P = τ ^ 2)
+    -- USER-INPUT: the statistic is measurable (data regularity). NOT derivable from the
+    -- other hypotheses and genuinely needed: for a non-measurable statistic every
+    -- `randPairLaw` degenerates to the zero measure (Bernstein-set construction), so the
+    -- conclusion is false without it. Mirrors `Randomization/Asymptotics.lean`.
+    (hT : ∀ n, Measurable (T n))
     -- USER-INPUT: the statistic is asymptotically linear with influence function `ψ`
     (hlin : TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => T n x - (Real.sqrt n)⁻¹ * ∑ i, ψ (x i)) 0)
@@ -231,6 +241,11 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     (hτpos : 0 < τ)
     -- USER-INPUT: `τ²` is the variance of `ψ` under the **symmetrized** law
     (hτ : ∫ t, (ψ t) ^ 2 ∂(symmetrize P) = τ ^ 2)
+    -- USER-INPUT: the statistic is measurable (data regularity). NOT derivable from the
+    -- other hypotheses and genuinely needed: for a non-measurable statistic every
+    -- `randPairLaw` degenerates to the zero measure (Bernstein-set construction), so the
+    -- conclusion is false without it. Mirrors `Randomization/Asymptotics.lean`.
+    (hT : ∀ n, Measurable (T n))
     -- USER-INPUT: the statistic is asymptotically linear **under the symmetrized law**
     (hlin : TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => symmetrize P)
       (fun n x => T n x - (Real.sqrt n)⁻¹ * ∑ i, ψ (x i)) 0)
@@ -269,6 +284,11 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     (hτ : ∫ t, (ψ t) ^ 2 ∂(symmetrize P) = τ ^ 2)
     -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
     (hα₀ : 0 < α) (hα₁ : α < 1)
+    -- USER-INPUT: the statistic is measurable (data regularity). NOT derivable from the
+    -- other hypotheses and genuinely needed: for a non-measurable statistic every
+    -- `randPairLaw` degenerates to the zero measure (Bernstein-set construction), so the
+    -- conclusion is false without it. Mirrors `Randomization/Asymptotics.lean`.
+    (hT : ∀ n, Measurable (T n))
     -- USER-INPUT: the statistic is asymptotically linear **under the symmetrized law**
     (hlin : TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => symmetrize P)
       (fun n x => T n x - (Real.sqrt n)⁻¹ * ∑ i, ψ (x i)) 0) :
