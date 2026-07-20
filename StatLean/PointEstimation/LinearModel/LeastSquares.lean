@@ -211,6 +211,47 @@ private theorem isUMVU_map_equiv {Θ 𝓧 𝓨 : Type*} [MeasurableSpace 𝓧] [
       congr 1; funext x; simp
     rw [hv1, hv2]; exact hkey
 
+/-- Reparametrization transport of `IsUMVU` along a surjective reindexing of the parameter. -/
+private theorem isUMVU_reparam' {Θ Θ' 𝓧 : Type*} [MeasurableSpace 𝓧]
+    (P : Θ → Measure 𝓧) (φ : Θ' → Θ) (hφ : Function.Surjective φ)
+    (g : Θ → ℝ) (δ : 𝓧 → ℝ) (h : IsUMVU P g δ) :
+    IsUMVU (fun t => P (φ t)) (fun t => g (φ t)) δ := by
+  obtain ⟨hunb, hL2, hmin⟩ := h
+  refine ⟨fun t => hunb (φ t), fun t => hL2 (φ t), ?_⟩
+  intro δ' hunb' hL2' t
+  have hunbP : IsUnbiased P g δ' := fun θ => by obtain ⟨t', rfl⟩ := hφ θ; exact hunb' t'
+  have hL2P : MemEstL2 P δ' := fun θ => by obtain ⟨t', rfl⟩ := hφ θ; exact hL2' t'
+  exact hmin δ' hunbP hL2P (φ t)
+
+open scoped RealInnerProductSpace in
+/-- **Adapted-basis rotation to canonical coordinates (remaining geometric brick).** An
+orthonormal change of coordinates `L` carrying the mean subspace `W` onto the canonical head
+subspace, together with the four consequences needed to transport the canonical-model
+optimality statements. This isolates the *only* remaining debt behind `isUMVU_lse_functional`
+and `isUMVU_residualSumSq`: the measure-theoretic core (Gaussian isometry invariance,
+`gaussianVector_map_linearIsometryEquiv`, and the `IsUMVU` sample transport,
+`isUMVU_map_equiv`) is proved above, 0-sorry. -/
+private lemma exists_headSubspace_isometry (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
+    [W.HasOrthogonalProjection] (hW : Module.finrank ℝ W < n) :
+    ∃ (m : ℕ) (_ : 0 < m) (_ : Module.finrank ℝ W + m = n)
+      (L : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ]
+          EuclideanSpace ℝ (Fin (Module.finrank ℝ W + m))),
+      (∀ x ∈ W, L x = canonicalMean (canonicalHead (L x))) ∧
+      Function.Surjective (fun x : ↥W => canonicalHead (L (x : EuclideanSpace ℝ (Fin n)))) ∧
+      (∀ y, canonicalRSS (L y) = residualSumSq W y) ∧
+      (∀ γ ∈ W, ∀ y, ⟪γ, lse W y⟫_ℝ
+        = ∑ i, canonicalHead (L γ) i * canonicalHead (L y) i) := by
+  -- TODO(orthonormal-basis rotation): build an orthonormal basis of `EuclideanSpace ℝ (Fin n)`
+  -- whose first `finrank W` vectors are an orthonormal basis of `W` and whose last `m` one of
+  -- `Wᗮ` (Mathlib: `stdOrthonormalBasis ℝ W`, `stdOrthonormalBasis ℝ Wᗮ` reindexed by
+  -- `finrank_add_finrank_orthogonal`, `DirectSum.IsInternal.collectedOrthonormalBasis` for the
+  -- `W ⊕ Wᗮ` decomposition, then `OrthonormalBasis.reindex` along `finSumFinEquiv`), and set
+  -- `L := b.equiv (EuclideanSpace.basisFun _) (.refl _)`. The four consequences are routine:
+  -- `L` maps `W` onto the head subspace (fact 1), `canonicalHead ∘ L` is a linear iso `W ≅ ℝ^s`
+  -- (fact 2), `L` maps `Wᗮ` onto the residual subspace giving the RSS identity (fact 3), and
+  -- `L` preserves inner products giving the least-squares functional identity (fact 4).
+  sorry
+
 /-- **Optimality of the least-squares functional**: with the mean vector constrained to `W`
 and the variance unknown, `y ↦ ⟪γ, ξ̂(y)⟫` is the UMVU estimator of `ξ ↦ ⟪γ, ξ⟫`. -/
 theorem isUMVU_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
@@ -243,13 +284,42 @@ theorem isUMVU_residualSumSq (W : Submodule ℝ (EuclideanSpace ℝ (Fin n)))
     (hW : Module.finrank ℝ W < n) :
     IsUMVU (linearModelFull W) (fun p => (p.2.1 : ℝ))
       (fun y => residualSumSq W y / ((n : ℝ) - (Module.finrank ℝ W : ℝ))) := by
-  -- DEFERRAL-ELIGIBLE (named planned debt: `stdGaussian_eq_map_pi_orthonormalBasis`).
-  -- Under the same adapted-orthonormal-basis rotation as `isUMVU_lse_functional`, the
-  -- residual sum of squares `‖y − ξ̂‖²` becomes the canonical residual sum of squares and
-  -- `n − dim W` becomes the residual dimension `m`, reducing the claim to
-  -- `isUMVU_residual_variance` (proved, `Canonical.lean`). Blocked on the same missing
-  -- Gaussian isometry-invariance + `IsUMVU`-transport development.
-  sorry
+  -- Rotate onto the canonical model by the adapted-basis isometry `L`, reducing to
+  -- `isUMVU_residual_variance` via the reparametrization + sample-transport lemmas.
+  obtain ⟨m, hm, hsm, L, hmean, hsurj, hRSS, _⟩ := exists_headSubspace_isometry W hW
+  have hφsurj : Function.Surjective
+      (fun p : ↥W × PosVar =>
+        ((canonicalHead (L p.1), p.2) : CanonicalParam (Module.finrank ℝ W))) := by
+    rintro ⟨a, σ2⟩; obtain ⟨x, hx⟩ := hsurj a; exact ⟨(x, σ2), by simp [hx]⟩
+  have hPQ : ∀ p : ↥W × PosVar,
+      (linearModelFull W p).map L.toHomeomorph.toMeasurableEquiv
+        = canonicalModel (canonicalHead (L p.1), p.2) := by
+    intro p
+    have hmap : (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+          L.toHomeomorph.toMeasurableEquiv
+        = gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1 :=
+      gaussianVector_map_linearIsometryEquiv L (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1
+    show (gaussianVector (p.1 : EuclideanSpace ℝ (Fin n)) p.2.1).map
+        L.toHomeomorph.toMeasurableEquiv = _
+    rw [hmap]
+    show gaussianVector (L (p.1 : EuclideanSpace ℝ (Fin n))) p.2.1
+      = gaussianVector (canonicalMean (canonicalHead (L (p.1 : EuclideanSpace ℝ (Fin n))))) p.2.1
+    congr 1
+    exact hmean (p.1 : EuclideanSpace ℝ (Fin n)) p.1.2
+  have hrep := isUMVU_reparam' (canonicalModel (s := Module.finrank ℝ W) (m := m))
+    (fun p : ↥W × PosVar => (canonicalHead (L p.1), p.2)) hφsurj
+    (fun q => (q.2.1 : ℝ)) (fun z => canonicalRSS z / (m : ℝ))
+    (isUMVU_residual_variance (s := Module.finrank ℝ W) (m := m) hm)
+  have htrans := isUMVU_map_equiv L.toHomeomorph.toMeasurableEquiv hPQ hrep
+  have hns : (n : ℝ) - (Module.finrank ℝ W : ℝ) = (m : ℝ) := by
+    have : (Module.finrank ℝ W : ℝ) + (m : ℝ) = (n : ℝ) := by exact_mod_cast hsm
+    linarith
+  have hfinal : (fun y => residualSumSq W y / ((n : ℝ) - (Module.finrank ℝ W : ℝ)))
+      = fun y => canonicalRSS (L.toHomeomorph.toMeasurableEquiv y) / (m : ℝ) := by
+    funext y
+    rw [show L.toHomeomorph.toMeasurableEquiv y = L y from rfl, hRSS y, hns]
+  rw [hfinal]
+  exact htrans
 
 /-- **Transfer of optimality along a linear reparametrization**: if an estimand `T` agrees
 on the mean subspace with a linear functional of the mean vector, then evaluating `T` at
