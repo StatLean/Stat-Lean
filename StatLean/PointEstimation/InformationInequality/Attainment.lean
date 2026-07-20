@@ -123,6 +123,40 @@ theorem cramer_rao_attained_of_affine (M : ParametricFamily 𝓧 ℝ) (μ : Meas
   rw [eq_div_iff hIne]
   ring
 
+/-- **Analytic core of the attainment characterization (sanctioned debt).**
+
+This is the one lifted analytic brick of the file (see the file header "documented
+deviation"); the public `expFamily_of_cramer_rao_attained` is a direct reduction to it.
+
+TODO: three genuinely missing bricks stand between the hypotheses and the exponential form.
+1. *Differentiation under the integral is not available.* The attainment hypothesis gives
+   `var_θ(δ)·I(θ) = g'(θ)²`, whereas the Cauchy–Schwarz *equality* case needs
+   `cov_θ(δ, ℓ̇_θ)² = var_θ(δ)·I(θ)`. These agree only once `cov_θ(δ, ℓ̇_θ) = g'(θ)`, i.e.
+   `deriv (fun t => ∫ δ p_t) θ = ∫ δ (∂_θ p_θ)`. That swap is *not* a hypothesis here; it has
+   to be extracted from `hjoint` / `hC1` together with a domination/integrability input the
+   present statement does not carry. Without it one only gets `cov² ≤ g'²`, not equality.
+2. *Cauchy–Schwarz equality ⇒ a.e. proportionality.* Given the swap, `var_θ(δ − c·ℓ̇_θ) = 0`
+   with `c = g'(θ)/I(θ)`, so `ae_eq_integral_of_variance_eq_zero` yields
+   `ℓ̇_θ =ᵐ[P_θ] (I(θ)/g'(θ))·(δ − E_θ δ)` (with a separate `g'(θ) = 0` branch, where δ is
+   a.e. constant under `P_θ`).
+3. *Parametric FTC, uniform in `x`.* Fubini turns the per-`θ` a.e.-`x` relation into an
+   a.e.-`(θ, x)` one; for a.e. `x` the C¹ map `θ ↦ log p_θ(x)` then has derivative
+   `η'(θ)·δ(x) − B'(θ)` for a.e. `θ`, hence (by continuity) for all `θ`, and the FTC
+   integrates this to `log p_θ(x) = η(θ)·δ(x) − B(θ) + log h(x)`. No Mathlib lemma packages
+   this uniform-in-`x` integration at the current pin. -/
+private theorem expFamily_of_cramer_rao_attained_core (M : ParametricFamily 𝓧 ℝ)
+    (μ : Measure 𝓧) (hpdf : IsPDFOf M μ) (hsupp : HasCommonSupport M) (δ : 𝓧 → ℝ) (g' : ℝ → ℝ)
+    (hδ2 : ∀ θ, MemLp δ 2 (M.toMeasure μ θ)) (hmeas : ∀ θ, AEStronglyMeasurable (score M θ) μ)
+    (hI : ∀ θ, 0 < fisherInfo M μ θ) (hmean0 : ∀ θ, ∫ x, score M θ x * M.density θ x ∂μ = 0)
+    (hg : ∀ θ, HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ) (g' θ) θ)
+    (hjoint : Measurable (fun p : ℝ × 𝓧 => M.density p.1 p.2))
+    (hC1 : ∀ᵐ x ∂μ, ContDiff ℝ 1 (fun t => M.density t x))
+    (hIcont : Continuous (fun θ => fisherInfo M μ θ)) (hg'cont : Continuous g')
+    (hattain : ∀ θ, variance δ (M.toMeasure μ θ) = g' θ ^ 2 / fisherInfo M μ θ) :
+    ∃ (η B : ℝ → ℝ) (h : 𝓧 → ℝ), ContDiff ℝ 1 η ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
+      ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x :=
+  sorry
+
 /-- **Attainment forces an exponential family.** If one statistic `δ` attains the
 information bound at *every* parameter value, then the densities admit the exponential
 representation `p_θ(x) = exp(η(θ) δ(x) − B(θ)) h(x)` with `η` continuously differentiable:
@@ -162,12 +196,8 @@ theorem expFamily_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ : M
     -- USER-INPUT: the information bound is attained at every parameter value
     (hattain : ∀ θ, variance δ (M.toMeasure μ θ) = g' θ ^ 2 / fisherInfo M μ θ) :
     ∃ (η B : ℝ → ℝ) (h : 𝓧 → ℝ), ContDiff ℝ 1 η ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
-      ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x := by
-  -- TODO: sanctioned escape-hatch (see file header "documented deviation"). The pointwise
-  -- Cauchy–Schwarz equality case gives `δ = a(θ)·ℓ̇_θ + b(θ)` a.e. at every `θ`; integrating
-  -- the resulting ODE `∂_θ log p_θ(x) = η'(θ)·δ(x) + B'(θ)`-type relation in `θ` (uniformly
-  -- in `x`, using the joint-measurability / a.e.-C¹ / continuity regularity) by the FTC to the
-  -- exponential form is the remaining functional-equation step.
-  sorry
+      ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x :=
+  expFamily_of_cramer_rao_attained_core M μ hpdf hsupp δ g' hδ2 hmeas hI hmean0 hg hjoint hC1
+    hIcont hg'cont hattain
 
 end StatLean.PointEstimation

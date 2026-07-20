@@ -287,18 +287,28 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- generality the estimator is nonnegative", made explicit
     (h₀pos : ∀ x, 0 < δ₀ x)
     -- USER-INPUT: the maximal invariant is defined almost everywhere
-    (hnull : P₀ {x | x (Fin.last m) = 0} = 0) :
+    (hnull : P₀ {x | x (Fin.last m) = 0} = 0)
+    -- USER-INPUT: nothing off the positive axis beats the positive axis. Without this the
+    -- statement is FALSE: `hconv` constrains `γ` only on `(0, ∞)`, while minimality must
+    -- dominate competitors of either sign, so `γ` can dip below its positive-axis infimum
+    -- on `(-∞, 0]` and no equivariant estimator attains the infimum. (Counterexample at
+    -- `r = 0`: `γ u = (log u)² + 1` for `u > 0`, `γ u = 1/2 + 1/(2(1+|u|))` for `u ≤ 0`;
+    -- `γ ∘ exp` is convex and non-monotone, yet every equivariant estimator has risk
+    -- `> 1/2` while `δ' ≡ -M` does better.) In the classical development the loss is a
+    -- function of the ratio `d / τʳ > 0`, so only positive arguments occur and this holds
+    -- vacuously.
+    (hposmin : ∀ u : ℝ, ∃ v : ℝ, 0 < v ∧ γ v ≤ γ u) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
-  -- Contract-level debt (reported). The intended route builds `wStar` by a measurable
-  -- convex argmin over `w > 0` (the log-convex reparametrisation, mirroring the sorried
-  -- `exists_measurable_condMinimizer_convex` of `LocationMRE`) and then invokes
-  -- `isScaleMRE_of_conditional_min`. But that engine theorem is FALSE as stated (see its
-  -- proof), because the `0 < w →` fibrewise minimality it establishes does not dominate
-  -- opposite-signed equivariant competitors; for a convex non-monotone `γ` whose values
-  -- on the negative axis dip below its positive-axis minimum, no equivariant estimator is
-  -- minimum risk equivariant at all, so `∃ δ, IsScaleMRE …` fails. A sound version needs
-  -- either a positivity constraint on the competitor class or `γ ≥ 0` with the minimum on
-  -- the positive axis. Left as debt pending a corrected upstream statement.
+  -- RETAINED DEBT (pe/equivariance-close): tainted by the same obstruction as the location
+  -- twin `exists_measurable_condMinimizer_convex` — the fibrewise minimizer needs continuity
+  -- of the ℝ≥0∞-valued conditional-risk objective in the log-shift, which the frozen
+  -- `exists_measurable_argmin` brick demands as full continuity and which fails at the
+  -- finiteness boundary for an unbounded (log-)convex loss.
+  -- Statement corrected: `hposmin` rules out the counterexample below by forbidding `γ` from
+  -- dipping under its positive-axis values off the positive axis. Route: apply the corrected
+  -- `isScaleMRE_of_conditional_min` (closed) with a fibrewise minimizer produced by
+  -- `ForMathlib.MeasurableArgmin.exists_measurable_argmin`; `hposmin` lets the all-`w`
+  -- domination be reduced to the positive axis, where `hconv`/`hnotmono` give attainment.
   sorry
 
 /-- **The minimum risk equivariant estimator of `τ^r` under Stein's loss** is the

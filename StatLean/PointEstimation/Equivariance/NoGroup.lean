@@ -69,9 +69,44 @@ noncomputable def powerSeriesFamily (a : ℕ → ℝ≥0∞) (θ : ℝ) : Measur
   Measure.count.withDensity fun k =>
     (a k * (ENNReal.ofReal θ) ^ k) / (∑' j, a j * (ENNReal.ofReal θ) ^ j)
 
+/-- Point mass of the power series family at `{k}`: the density value. -/
+private lemma powerSeriesFamily_singleton (a : ℕ → ℝ≥0∞) (θ : ℝ) (k : ℕ) :
+    powerSeriesFamily a θ {k}
+      = (a k * (ENNReal.ofReal θ) ^ k) / (∑' j, a j * (ENNReal.ofReal θ) ^ j) := by
+  unfold powerSeriesFamily
+  rw [withDensity_apply _ (measurableSet_singleton k),
+    ← lintegral_indicator (measurableSet_singleton k), lintegral_count,
+    tsum_eq_single k fun b hb => Set.indicator_of_notMem (by simpa using hb) _]
+  exact Set.indicator_of_mem (Set.mem_singleton_iff.mpr rfl) _
+
+/-- A linear relation `α · log θ = C` holding throughout an interval of `θ`, with `C`
+independent of `θ`, forces `α = 0` (`log` is nonconstant on any interval of positives). -/
+private lemma eq_zero_of_mul_log_eq_const {R C : ℝ} (hR : 0 < R) {α : ℝ}
+    (h : ∀ θ ∈ Set.Ioo (0 : ℝ) R, α * Real.log θ = C) : α = 0 := by
+  have h2 := h (R / 2) ⟨by linarith, by linarith⟩
+  have h3 := h (R / 3) ⟨by linarith, by linarith⟩
+  have hlog : Real.log (R / 2) ≠ Real.log (R / 3) := by
+    intro he
+    have hRR : R / 2 = R / 3 :=
+      Real.log_injOn_pos (Set.mem_Ioi.mpr (by linarith)) (Set.mem_Ioi.mpr (by linarith)) he
+    exact absurd (by linarith : R = 0) hR.ne'
+  have hd : α * (Real.log (R / 2) - Real.log (R / 3)) = 0 := by
+    rw [mul_sub, h2, h3, sub_self]
+  rcases mul_eq_zero.mp hd with h0 | h0
+  · exact h0
+  · exact absurd (sub_eq_zero.mp h0) hlog
+
 /-- Analytic core of `powerSeriesFamily_invariant_affine`: density matching plus the
-coefficient-ratio / exponent arithmetic-progression argument. Isolated as the single
-lifted debt of this file. -/
+coefficient-ratio / exponent arithmetic-progression argument.
+
+Matching point masses of `(P θ).map g = P θ'` gives, for every `k`,
+`a k · θ^k / Z(θ) = a (g k) · θ'^(g k) / Z(θ')`. Passing to positive reals and taking
+`log`, the equation for index `k` minus that for index `0` reads
+`(log Rₖ − log R₀) + k·log θ = (log R_{gk} − log R_{g0}) + (gk − g0)·log θ'`,
+where `Rᵢ = (a i).toReal`. Eliminating `log θ'` between the relations for indices `k` and
+`1` (a linear combination) yields `(e·k − (gk−g0))·log θ = C` with `e = g1 − g0` and `C`
+independent of `θ`; as this holds throughout the interval, `e·k = gk − g0`, i.e.
+`gk = g0 + k·e`, so `g(k+1) − gk = e` is constant. -/
 private theorem powerSeriesFamily_invariant_affine_core {a : ℕ → ℝ≥0∞}
     (ha₀ : ∀ k, a k ≠ 0) (ha : ∀ k, a k ≠ ∞) {R : ℝ} (hR : 0 < R)
     (hconv : ∀ θ ∈ Set.Ioo (0 : ℝ) R, (∑' j, a j * (ENNReal.ofReal θ) ^ j) ≠ ∞)
@@ -79,12 +114,85 @@ private theorem powerSeriesFamily_invariant_affine_core {a : ℕ → ℝ≥0∞}
     (hg : ∀ θ ∈ Set.Ioo (0 : ℝ) R, ∃ θ' ∈ Set.Ioo (0 : ℝ) R,
       (powerSeriesFamily a θ).map (g : ℕ → ℕ) = powerSeriesFamily a θ') :
     ∃ d : ℤ, ∀ k : ℕ, (g (k + 1) : ℤ) - (g k : ℤ) = d := by
-  -- TODO: prove the analytic core. From `(P θ).map g = P θ'` and `g`-invariance of the
-  -- counting measure, matching point masses gives `a k θ^k / Z(θ) = a (g k) θ'^(g k) / Z(θ')`
-  -- for all `k`; taking ratios of consecutive `k` twice forces `μ^{a_{k+2}-a_{k+1}}` to be
-  -- proportional to `μ^{a_{k+1}-a_k}` throughout an interval of the transported parameter,
-  -- whence the exponents agree and `g (k+1) - g k` is constant.
-  sorry
+  classical
+  -- real coefficients, all strictly positive
+  set Rr : ℕ → ℝ := fun i => (a i).toReal with hRr
+  have hRrpos : ∀ i, 0 < Rr i := fun i => ENNReal.toReal_pos (ha₀ i) (ha i)
+  have hgmeas : Measurable (g : ℕ → ℕ) := measurable_of_countable _
+  have hpre : ∀ j : ℕ, (g : ℕ → ℕ) ⁻¹' {g j} = {j} := by
+    intro j; ext y
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, g.injective.eq_iff]
+  -- the leftmost increment
+  set e : ℤ := (g 1 : ℤ) - (g 0 : ℤ) with hedef
+  -- the closed form `g k = g 0 + k · e`
+  have hform : ∀ k : ℕ, (g k : ℤ) = (g 0 : ℤ) + (k : ℤ) * e := by
+    intro k
+    -- per-`θ` log-linear relation, then eliminate `log θ'` and pass to the interval
+    have hα : ((g 1 : ℝ) - (g 0 : ℝ)) * (k : ℝ) - ((g k : ℝ) - (g 0 : ℝ)) = 0 := by
+      refine eq_zero_of_mul_log_eq_const (C :=
+        ((g 1 : ℝ) - (g 0 : ℝ)) * (Real.log (Rr (g k)) - Real.log (Rr (g 0)))
+          - ((g k : ℝ) - (g 0 : ℝ)) * (Real.log (Rr (g 1)) - Real.log (Rr (g 0)))
+          - ((g 1 : ℝ) - (g 0 : ℝ)) * (Real.log (Rr k) - Real.log (Rr 0))
+          + ((g k : ℝ) - (g 0 : ℝ)) * (Real.log (Rr 1) - Real.log (Rr 0))) hR ?_
+      intro θ hθ
+      obtain ⟨θ', hθ'mem, hmap⟩ := hg θ hθ
+      -- point-mass matching, then to positive reals
+      have hmatch : ∀ j : ℕ,
+          (a j * (ENNReal.ofReal θ) ^ j) / (∑' i, a i * (ENNReal.ofReal θ) ^ i)
+            = (a (g j) * (ENNReal.ofReal θ') ^ (g j))
+              / (∑' i, a i * (ENNReal.ofReal θ') ^ i) := by
+        intro j
+        have h1 : ((powerSeriesFamily a θ).map (g : ℕ → ℕ)) {g j}
+            = powerSeriesFamily a θ' {g j} := by rw [hmap]
+        rw [Measure.map_apply hgmeas (measurableSet_singleton (g j)), hpre j,
+          powerSeriesFamily_singleton, powerSeriesFamily_singleton] at h1
+        exact h1
+      -- positivity of the normalisers as reals
+      set Wθ : ℝ := (∑' i, a i * (ENNReal.ofReal θ) ^ i).toReal with hWθ
+      set Wθ' : ℝ := (∑' i, a i * (ENNReal.ofReal θ') ^ i).toReal with hWθ'
+      have hZθ0 : (∑' i, a i * (ENNReal.ofReal θ) ^ i) ≠ 0 := by
+        refine ne_of_gt (lt_of_lt_of_le ?_ (ENNReal.le_tsum 0))
+        simpa using (pos_iff_ne_zero.mpr (ha₀ 0))
+      have hZθ'0 : (∑' i, a i * (ENNReal.ofReal θ') ^ i) ≠ 0 := by
+        refine ne_of_gt (lt_of_lt_of_le ?_ (ENNReal.le_tsum 0))
+        simpa using (pos_iff_ne_zero.mpr (ha₀ 0))
+      have hWθpos : 0 < Wθ := ENNReal.toReal_pos hZθ0 (hconv θ hθ)
+      have hWθ'pos : 0 < Wθ' := ENNReal.toReal_pos hZθ'0 (hconv θ' hθ'mem)
+      -- real division form of the matching
+      have hRE : ∀ j : ℕ, Rr j * θ ^ j / Wθ = Rr (g j) * θ' ^ (g j) / Wθ' := by
+        intro j
+        have := congrArg ENNReal.toReal (hmatch j)
+        rwa [ENNReal.toReal_div, ENNReal.toReal_div, ENNReal.toReal_mul, ENNReal.toReal_mul,
+          ENNReal.toReal_pow, ENNReal.toReal_pow, ENNReal.toReal_ofReal hθ.1.le,
+          ENNReal.toReal_ofReal hθ'mem.1.le] at this
+      -- log-linear relation for each index
+      have hLG : ∀ j : ℕ, Real.log (Rr j) + (j : ℝ) * Real.log θ - Real.log Wθ
+          = Real.log (Rr (g j)) + (g j : ℝ) * Real.log θ' - Real.log Wθ' := by
+        intro j
+        have hnum : Rr j * θ ^ j ≠ 0 :=
+          ne_of_gt (mul_pos (hRrpos j) (pow_pos hθ.1 j))
+        have hnum' : Rr (g j) * θ' ^ (g j) ≠ 0 :=
+          ne_of_gt (mul_pos (hRrpos (g j)) (pow_pos hθ'mem.1 (g j)))
+        have := congrArg Real.log (hRE j)
+        rwa [Real.log_div hnum hWθpos.ne', Real.log_div hnum' hWθ'pos.ne',
+          Real.log_mul (hRrpos j).ne' (pow_ne_zero _ hθ.1.ne'),
+          Real.log_mul (hRrpos (g j)).ne' (pow_ne_zero _ hθ'mem.1.ne'),
+          Real.log_pow, Real.log_pow] at this
+      -- differences against index 0 remove the normalisers; eliminate `log θ'`
+      have hIk := hLG k
+      have hI1 := hLG 1
+      have hI0 := hLG 0
+      -- combine: `e·(hLG k − hLG 0) − (gk−g0)·(hLG 1 − hLG 0)`
+      linear_combination ((g 1 : ℝ) - (g 0 : ℝ)) * hIk - ((g k : ℝ) - (g 0 : ℝ)) * hI1
+        - (((g 1 : ℝ) - (g 0 : ℝ)) - ((g k : ℝ) - (g 0 : ℝ))) * hI0
+    -- turn the real identity into the integer closed form
+    have hαr : (g k : ℝ) - (g 0 : ℝ) = ((g 1 : ℝ) - (g 0 : ℝ)) * (k : ℝ) := by linarith
+    have : ((g k : ℤ) : ℝ) = (((g 0 : ℤ) + (k : ℤ) * e : ℤ) : ℝ) := by
+      push_cast [hedef]; push_cast at hαr; linarith
+    exact_mod_cast this
+  -- conclude the constant increment
+  refine ⟨e, fun k => ?_⟩
+  rw [hform (k + 1), hform k]; push_cast; ring
 
 /-- **Structural step towards triviality of the invariance group.** A bijection of the
 sample space that maps every member of a power series family to another member has

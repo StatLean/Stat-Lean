@@ -158,6 +158,11 @@ private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) 
             ∂(orbitCondKernel (locationBase f) diffs y) ≤
           ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
             ∂(orbitCondKernel (locationBase f) diffs y) := by
+  -- RETAINED DEBT (pe/equivariance-close): not closable without proving continuity of an
+  -- ℝ≥0∞-valued conditional-risk integral, which the frozen `exists_measurable_argmin`
+  -- brick requires as *full* continuity (its docstring notes an LSC weakening is not done);
+  -- for an unbounded convex loss the objective genuinely jumps to ∞ at its finiteness
+  -- boundary, so no side hypothesis on `ρ` closes it without laundering the analytic core.
   -- TODO: analytic core of the convex location MRE. Set
   --   `fObj z w = ∫⁻ x, ofReal (ρ (δ₀ x - w)) ∂(orbitCondKernel (locationBase f) diffs z)`
   -- and discharge the four hypotheses of `exists_measurable_argmin`:
@@ -254,6 +259,10 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     -- USER-INPUT: the density is continuous almost everywhere
     (hcont : ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)), ContinuousAt f x) :
     ∃ δ, IsLocMRE f ρ δ := by
+  -- RETAINED DEBT (pe/equivariance-close): the attainment of the minimum needs continuity
+  -- of `g c = ∫⁻ x, ofReal (ρ (x 0 − c)) ∂(locationBase f)` in the shift `c`, i.e. the
+  -- convolution/DCT regularity spelled out below; a bounded merely-measurable `g` on `ℝ`
+  -- need not attain its infimum, so this analytic fact cannot be sidestepped.
   -- TODO: second analytic core (named debt), independent of the convex one above.
   -- For a single observation `diffs : (Fin 1 → ℝ) → (Fin 0 → ℝ)` is constant, so the
   -- equivariant class is exactly `{x ↦ x 0 − c : c ∈ ℝ}` (via

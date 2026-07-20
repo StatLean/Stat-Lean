@@ -1,4 +1,6 @@
 import StatLean.PointEstimation.Equivariance.LocationMRE
+import StatLean.PointEstimation.Equivariance.Pitman
+import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.Variance
 
@@ -63,7 +65,7 @@ private lemma measurable_sampleMean :
     Measurable (fun x : Fin (m + 1) → ℝ => (∑ i, x i) / ((m : ℝ) + 1)) := by
   fun_prop
 
-/-- The sample mean is location equivariant: `X̄(x + a𝟙) = X̄(x) + a`. -/
+/-- The sample mean is location equivariant: `Xbar(x + a𝟙) = Xbar(x) + a`. -/
 private lemma isLocEquivariant_sampleMean :
     IsLocEquivariant (fun x : Fin (m + 1) → ℝ => (∑ i, x i) / ((m : ℝ) + 1)) := by
   intro a x
@@ -78,6 +80,177 @@ private lemma isLocEquivariant_sampleMean :
   rw [hsum]
   field_simp
 
+/-! ### The explicit product-Gaussian density and its Pitman estimator
+
+We transfer `isLocMRE_mean_gaussian` to the explicit joint density
+`gaussDensity v x = ∏ i, gaussianPDFReal 0 v (x i)`, whose `locationBase` is the product
+Gaussian, and for which the Pitman estimator is the sample mean by completing the square. -/
+
+/-- The explicit product-Gaussian density on `Fin (m + 1) → ℝ`. -/
+private noncomputable def gaussDensity (v : ℝ≥0) (x : Fin (m + 1) → ℝ) : ℝ :=
+  ∏ i, gaussianPDFReal 0 v (x i)
+
+private lemma gaussDensity_nonneg {v : ℝ≥0} (x : Fin (m + 1) → ℝ) : 0 ≤ gaussDensity v x :=
+  Finset.prod_nonneg fun i _ => gaussianPDFReal_nonneg _ _ _
+
+private lemma measurable_gaussDensity (v : ℝ≥0) :
+    Measurable (gaussDensity (m := m) v) := by
+  unfold gaussDensity
+  exact Finset.measurable_prod _ fun i _ => (measurable_gaussianPDFReal 0 v).comp
+    (measurable_pi_apply i)
+
+/-- **STEP A.** The `locationBase` of the explicit product-Gaussian density is the product
+Gaussian measure. -/
+private lemma locationBase_gaussDensity {v : ℝ≥0} (hv : v ≠ 0) :
+    locationBase (gaussDensity (m := m) v)
+      = Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v := by
+  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF 0 v)) := by
+    rw [← gaussianReal_of_var_ne_zero 0 hv]; infer_instance
+  have h_each : (fun _ : Fin (m + 1) => gaussianReal 0 v)
+      = fun _ : Fin (m + 1) => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
+    funext _; exact gaussianReal_of_var_ne_zero 0 hv
+  rw [h_each, ← MeasureTheory.pi_withDensity_prod (fun _ : Fin (m + 1) => measurable_gaussianPDF 0 v)]
+  show (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ENNReal.ofReal (gaussDensity v x))
+    = (volume : Measure (Fin (m + 1) → ℝ)).withDensity (fun x => ∏ i, gaussianPDF 0 v (x i))
+  refine withDensity_congr_ae (ae_of_all _ fun x => ?_)
+  simp only [gaussDensity]
+  rw [ENNReal.ofReal_prod_of_nonneg fun i _ => gaussianPDFReal_nonneg _ _ _]
+  rfl
+
+/-- The variance of the sample mean, as an `ℝ≥0`: `v / (m + 1)`. -/
+private noncomputable def meanVar (v : ℝ≥0) : ℝ≥0 := v / ((m : ℝ≥0) + 1)
+
+private lemma meanVar_ne_zero {v : ℝ≥0} (hv : v ≠ 0) : meanVar (m := m) v ≠ 0 := by
+  rw [meanVar, ne_eq, div_eq_zero_iff]
+  push_neg
+  exact ⟨hv, by positivity⟩
+
+private lemma coe_meanVar (v : ℝ≥0) : (meanVar (m := m) v : ℝ) = (v : ℝ) / ((m : ℝ) + 1) := by
+  rw [meanVar, NNReal.coe_div]
+  push_cast
+  ring
+
+/-- **STEP B core.** Completing the square: the product of `m + 1` centred Gaussian slices
+`x i − u` equals a `u`-independent positive constant times the density of
+`𝒩(Xbar, v/(m+1))` evaluated at `u`, where `Xbar = (∑ x i)/(m+1)`. -/
+private lemma prod_gaussianPDFReal_sub_eq {v : ℝ≥0} (hv : v ≠ 0) (x : Fin (m + 1) → ℝ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ u : ℝ,
+      (∏ i, gaussianPDFReal 0 v (x i - u))
+        = C * gaussianPDFReal ((∑ i, x i) / ((m : ℝ) + 1)) (meanVar (m := m) v) u := by
+  set N : ℝ := (m : ℝ) + 1 with hNdef
+  have hNpos : (0 : ℝ) < N := by rw [hNdef]; positivity
+  set S : ℝ := ∑ i, x i with hSdef
+  set Xbar : ℝ := S / N with hXbardef
+  set vr : ℝ := (v : ℝ) with hvr
+  have hvrpos : 0 < vr := by rw [hvr]; positivity
+  set Q : ℝ := (∑ i, (x i) ^ 2) - N * Xbar ^ 2 with hQdef
+  -- the product of the normalising constants times exp of the residual `Q`
+  set C : ℝ := (Real.sqrt (2 * Real.pi * vr))⁻¹ ^ (m + 1)
+      * Real.sqrt (2 * Real.pi * (meanVar (m := m) v : ℝ)) * Real.exp (-Q / (2 * vr)) with hCdef
+  have hsqrt_pos : 0 < Real.sqrt (2 * Real.pi * vr) :=
+    Real.sqrt_pos.mpr (by positivity)
+  have hsqrt_mv : 0 < Real.sqrt (2 * Real.pi * (meanVar (m := m) v : ℝ)) :=
+    Real.sqrt_pos.mpr (by
+      have : (0 : ℝ) < (meanVar (m := m) v : ℝ) := by
+        rw [coe_meanVar]; positivity
+      positivity)
+  refine ⟨C, by rw [hCdef]; positivity, fun u => ?_⟩
+  -- sum-of-squares expansion
+  have hsumsq : ∑ i, (x i - u) ^ 2 = N * (u - Xbar) ^ 2 + Q := by
+    have hexpand : ∑ i, (x i - u) ^ 2 = (∑ i, (x i) ^ 2) - 2 * u * S + N * u ^ 2 := by
+      have h1 : ∑ i, (x i - u) ^ 2 = ∑ i, ((x i) ^ 2 - 2 * u * x i + u ^ 2) :=
+        Finset.sum_congr rfl fun i _ => by ring
+      rw [h1, Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_const,
+        Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum, ← hSdef, hNdef]
+      push_cast; ring
+    rw [hexpand, hQdef, hXbardef]
+    have hNne : N ≠ 0 := hNpos.ne'
+    field_simp
+    ring
+  -- rewrite the product as a single exp
+  have hprod : (∏ i, gaussianPDFReal 0 v (x i - u))
+      = (Real.sqrt (2 * Real.pi * vr))⁻¹ ^ (m + 1)
+        * Real.exp (-(∑ i, (x i - u) ^ 2) / (2 * vr)) := by
+    simp only [gaussianPDFReal, sub_zero, hvr]
+    rw [Finset.prod_mul_distrib, Finset.prod_const, ← Real.exp_sum]
+    congr 1
+    · rw [Finset.card_univ, Fintype.card_fin]
+    · rw [← Finset.sum_div, Finset.sum_neg_distrib, neg_div]
+  rw [hprod, hsumsq]
+  -- the target density
+  have hmv : (meanVar (m := m) v : ℝ) = vr / N := by rw [coe_meanVar, hvr, hNdef]
+  simp only [gaussianPDFReal]
+  rw [hCdef, hmv]
+  rw [neg_add, add_div, Real.exp_add]
+  have h2v : (2 : ℝ) * (vr / N) = (2 * vr) / N := by ring
+  rw [h2v]
+  have hne : (2 * vr) ≠ 0 := by positivity
+  have hNne : N ≠ 0 := hNpos.ne'
+  -- match the exponentials on the `(u - Xbar)²` term
+  have hexp_eq : -(N * (u - Xbar) ^ 2) / (2 * vr)
+      = -(u - Xbar) ^ 2 / ((2 * vr) / N) := by
+    rw [div_div_eq_mul_div]; ring
+  rw [hexp_eq]
+  have hsq : Real.sqrt (Real.pi * vr * N⁻¹ * 2) ≠ 0 :=
+    (Real.sqrt_pos.mpr (by positivity)).ne'
+  field_simp
+
+/-- The `gaussDensity` slice through `x` in direction `𝟙`, shifted by `u`, is the plain
+product of centred Gaussian coordinate densities. -/
+private lemma gaussDensity_sub_smul (v : ℝ≥0) (x : Fin (m + 1) → ℝ) (u : ℝ) :
+    gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))
+      = ∏ i, gaussianPDFReal 0 v (x i - u) := by
+  unfold gaussDensity
+  refine Finset.prod_congr rfl fun i _ => ?_
+  simp only [Pi.sub_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
+
+/-- The Gaussian first moment against Lebesgue measure: `∫ gaussianPDFReal μ v x · x = μ`. -/
+private lemma integral_id_mul_gaussianPDFReal (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    ∫ x, gaussianPDFReal μ v x * x ∂(volume : Measure ℝ) = μ := by
+  have h := integral_id_gaussianReal (μ := μ) (v := v)
+  rw [gaussianReal_of_var_ne_zero μ hv,
+    integral_withDensity_eq_integral_toReal_smul (measurable_gaussianPDF μ v)
+      (ae_of_all _ fun _ => gaussianPDF_lt_top) (fun x => x)] at h
+  simpa only [toReal_gaussianPDF, smul_eq_mul] using h
+
+/-- Integrability of the Gaussian first-moment integrand against Lebesgue measure. -/
+private lemma integrable_gaussianPDFReal_mul_id (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    Integrable (fun x => gaussianPDFReal μ v x * x) (volume : Measure ℝ) := by
+  have hint : Integrable (fun x : ℝ => x) (gaussianReal μ v) :=
+    (memLp_id_gaussianReal (μ := μ) (v := v) 1).integrable le_rfl
+  rw [gaussianReal_of_var_ne_zero μ hv,
+    integrable_withDensity_iff_integrable_smul' (measurable_gaussianPDF μ v)
+      (ae_of_all _ fun _ => gaussianPDF_lt_top)] at hint
+  simpa only [id_eq, toReal_gaussianPDF, smul_eq_mul] using hint
+
+/-- **STEP B.** The Pitman estimator of the explicit product-Gaussian density is the sample
+mean, by completing the square (`prod_gaussianPDFReal_sub_eq`). -/
+private lemma pitmanEstimator_gaussDensity {v : ℝ≥0} (hv : v ≠ 0) (x : Fin (m + 1) → ℝ) :
+    pitmanEstimator (gaussDensity (m := m) v) x = (∑ i, x i) / ((m : ℝ) + 1) := by
+  obtain ⟨C, hCpos, hC⟩ := prod_gaussianPDFReal_sub_eq hv x
+  set Xbar : ℝ := (∑ i, x i) / ((m : ℝ) + 1) with hXbar
+  have hfun : ∀ u, gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))
+      = C * gaussianPDFReal Xbar (meanVar (m := m) v) u :=
+    fun u => by rw [gaussDensity_sub_smul]; exact hC u
+  unfold pitmanEstimator
+  have hden : (∫ u : ℝ, gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))) = C := by
+    simp_rw [hfun]
+    rw [integral_const_mul, integral_gaussianPDFReal_eq_one Xbar (meanVar_ne_zero hv), mul_one]
+  have hnum : (∫ u : ℝ, u * gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))) = C * Xbar := by
+    simp_rw [hfun]
+    rw [show (fun u => u * (C * gaussianPDFReal Xbar (meanVar (m := m) v) u))
+          = fun u => C * (gaussianPDFReal Xbar (meanVar (m := m) v) u * u) from by
+        funext u; ring,
+      integral_const_mul, integral_id_mul_gaussianPDFReal Xbar (meanVar_ne_zero hv)]
+  rw [hnum, hden, mul_comm C Xbar, mul_div_assoc, div_self hCpos.ne', mul_one]
+
+/-- `IsLocMRE` depends on the density only through its `locationBase`, since both the risk
+and the equivariant class do. -/
+private lemma isLocMRE_congr_locationBase {n : ℕ} {f g : (Fin n → ℝ) → ℝ}
+    (h : locationBase f = locationBase g) {ρ : ℝ → ℝ} {δ : (Fin n → ℝ) → ℝ} :
+    IsLocMRE f ρ δ ↔ IsLocMRE g ρ δ := by
+  unfold IsLocMRE locRisk; rw [h]
+
 /-- **The sample mean is the minimum risk equivariant estimator in the normal location
 family** under squared error, for any known variance. -/
 theorem isLocMRE_mean_gaussian (f : (Fin (m + 1) → ℝ) → ℝ)
@@ -89,20 +262,61 @@ theorem isLocMRE_mean_gaussian (f : (Fin (m + 1) → ℝ) → ℝ)
     -- USER-INPUT: the base member is an independent normal sample with mean `0`
     (hf : locationBase f = Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v) :
     IsLocMRE f (fun t : ℝ => t ^ 2) (fun x => (∑ i, x i) / ((m : ℝ) + 1)) := by
-  -- Named debt. `pitmanEstimator_isLocMRE` (in `Pitman`) is now CLOSED and axiom-clean, so
-  -- the route is unblocked; what remains is the Gaussian-specific computation.
-  -- Route: `IsLocMRE f ρ δ` depends on `f` only through `locationBase f` (both the risk and
-  -- the equivariant class do), so transfer to the explicit density
-  -- `g x = ∏ i, gaussianPDFReal 0 v (x i)` (with `locationBase g = Measure.pi (gaussianReal 0 v)`
-  -- by the same `pi_withDensity_prod` argument as `AsymptoticStatistics.PiGaussian`,
-  -- generalized from `v = 1`). For `g`, complete the square: `g (x − u𝟙) = C · exp(−(m+1)
-  -- (u − X̄)²/(2v))` is (up to normalization) the density of `𝒩(X̄, v/(m+1))` in `u`, whence
-  -- `pitmanEstimator g = X̄` by `integral_id_gaussianReal`, and `pitmanEstimator_isLocMRE g`
-  -- (its Gaussian integrability/finite-risk side conditions all discharged from Gaussian
-  -- moment finiteness) gives `IsLocMRE g ρ X̄`. The Gaussian first-moment/completing-the-square
-  -- development is a self-contained analytic core, left as reported debt this session. The
-  -- Kagan–Linnik–Rao converse is out of scope (see the docstring).
-  sorry
+  -- `IsLocMRE f ρ δ` depends on `f` only through `locationBase f`; transfer to the explicit
+  -- product-Gaussian density, whose Pitman estimator is the sample mean by completing the
+  -- square (STEP A/B above). The Kagan–Linnik–Rao converse is out of scope (see docstring).
+  have hbase : locationBase f = locationBase (gaussDensity (m := m) v) :=
+    hf.trans (locationBase_gaussDensity hv).symm
+  rw [isLocMRE_congr_locationBase hbase]
+  haveI : IsProbabilityMeasure (locationBase (gaussDensity (m := m) v)) := by
+    rw [locationBase_gaussDensity hv]; infer_instance
+  -- The three slice side conditions and the finite reference risk.
+  have hslice : ∀ x : Fin (m + 1) → ℝ,
+      (fun u : ℝ => gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ)))
+        = fun u => (Classical.choose (prod_gaussianPDFReal_sub_eq hv x))
+            * gaussianPDFReal ((∑ i, x i) / ((m : ℝ) + 1)) (meanVar (m := m) v) u := by
+    intro x
+    funext u
+    rw [gaussDensity_sub_smul]
+    exact (Classical.choose_spec (prod_gaussianPDFReal_sub_eq hv x)).2 u
+  have hden : ∀ x, Integrable
+      fun u : ℝ => gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ)) := by
+    intro x; rw [hslice x]; exact (integrable_gaussianPDFReal _ _).const_mul _
+  have hnum : ∀ x, Integrable
+      fun u : ℝ => u * gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ)) := by
+    intro x
+    have hpt : (fun u : ℝ => u * gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ)))
+        = fun u => (Classical.choose (prod_gaussianPDFReal_sub_eq hv x))
+            * (gaussianPDFReal ((∑ i, x i) / ((m : ℝ) + 1)) (meanVar (m := m) v) u * u) := by
+      funext u; rw [show gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))
+        = _ from congrFun (hslice x) u]; ring
+    rw [hpt]
+    exact ((integrable_gaussianPDFReal_mul_id _ (meanVar_ne_zero hv)).const_mul _)
+  have hden0 : ∀ x, (∫ u : ℝ, gaussDensity v (x - u • (1 : Fin (m + 1) → ℝ))) ≠ 0 := by
+    intro x
+    rw [hslice x, integral_const_mul,
+      integral_gaussianPDFReal_eq_one _ (meanVar_ne_zero hv), mul_one]
+    exact (Classical.choose_spec (prod_gaussianPDFReal_sub_eq hv x)).1.ne'
+  have hfin : locRisk (gaussDensity (m := m) v) (fun t : ℝ => t ^ 2)
+      (fun x => x (Fin.last m)) ≠ ∞ := by
+    unfold locRisk
+    rw [locationBase_gaussDensity hv]
+    have hmp : MeasurePreserving (fun x : Fin (m + 1) → ℝ => x (Fin.last m))
+        (Measure.pi fun _ : Fin (m + 1) => gaussianReal 0 v) (gaussianReal 0 v) :=
+      measurePreserving_eval (fun _ : Fin (m + 1) => gaussianReal 0 v) (Fin.last m)
+    rw [hmp.lintegral_comp (by fun_prop : Measurable
+      fun t : ℝ => ENNReal.ofReal (t ^ 2))]
+    have hI2 : Integrable (fun t : ℝ => t ^ 2) (gaussianReal 0 v) :=
+      (memLp_id_gaussianReal (μ := (0 : ℝ)) (v := v) 2).integrable_sq
+    rw [← ofReal_integral_eq_lintegral_ofReal hI2 (ae_of_all _ fun t => sq_nonneg t)]
+    exact ENNReal.ofReal_ne_top
+  -- The Pitman estimator equals the sample mean, so its MRE property is the claim.
+  have hpit := pitmanEstimator_isLocMRE (gaussDensity (m := m) v)
+    (measurable_gaussDensity v) gaussDensity_nonneg hnum hden hden0 hfin
+  have hpe : pitmanEstimator (gaussDensity (m := m) v)
+      = fun x => (∑ i, x i) / ((m : ℝ) + 1) := by
+    funext x; exact pitmanEstimator_gaussDensity hv x
+  rwa [hpe] at hpit
 
 /-- The risk of the sample mean in an independent unit-variance location family is
 `1/n`, whatever the shape of the underlying distribution. This is the observation that
@@ -173,7 +387,7 @@ theorem locRisk_mean_eq_inv (f : (Fin (m + 1) → ℝ) → ℝ)
     simp only [hinner]
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, hNdef]
     push_cast; ring
-  -- Assemble: `∫ X̄² = (1/N²) · N = 1/N`.
+  -- Assemble: `∫ Xbar² = (1/N²) · N = 1/N`.
   have hmean_sq_int : Integrable (fun x : Fin (m + 1) → ℝ => ((∑ i, x i) / N) ^ 2)
       (Measure.pi fun _ => P₁) := by
     have : (fun x : Fin (m + 1) → ℝ => ((∑ i, x i) / N) ^ 2)
