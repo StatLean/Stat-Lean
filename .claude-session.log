@@ -1,3 +1,55 @@
 srun: job 33548292 queued and waiting for resources
 srun: job 33548292 has been allocated resources
 srun: error: eio_handle_mainloop: Abandoning IO 60 secs after job shutdown initiated
+srun: job 33581847 queued and waiting for resources
+srun: job 33581847 has been allocated resources
+Both target files build green with the working tree clean (only pre-existing `.fanout-prompt.md`/session-log changes, not my edits). Here is my final report.
+
+## Summary
+
+Two sorries, two genuinely different situations. One is a deep-but-true theorem (partially closed, remainder precisely isolated); the other is **false as stated**.
+
+### `lake build` status
+- `StatLean.PointEstimation.LinearModel.Equivariant` — **builds, exit 0**
+- `StatLean.PointEstimation.LinearModel.RandomDesign` — **builds, exit 0** (untouched)
+- Full `PointEstimation` area rebuilds clean (3111 jobs).
+
+### Remaining sorry count per file
+- `Equivariant.lean`: **1** (line 470 — the lifted analytic core)
+- `RandomDesign.lean`: **1** (line 479 — the false statement)
+
+---
+
+### Sorry 1 — `isCanonicalScaleMRE_residual_pow` → PARTIALLY CLOSED + LIFTED
+
+The task's hint that the sibling `isCanonicalScaleMRE_residual_variance` is "already closed" is **not accurate**: that theorem is just the `r = 1` specialization of `_pow` (it does `have h := isCanonicalScaleMRE_residual_pow …`), so there was no closed proof to mirror — `_pow` itself was the open work.
+
+**What I closed (real, axiom-free content):**
+- **Measurability** of `residualScaleConst m r · (S²)^r` — proven.
+- **Location-scale equivariance** of the estimator — proven, via a new helper `canonicalRSS_smul_add_canonicalMean` establishing `canonicalRSS (c • (y + canonicalMean a)) = c² · canonicalRSS y` (the signal shift misses every residual coordinate; scaling multiplies each by `c`).
+
+**What I lifted:** only the **minimality** clause, now the single named `private lemma canonicalScaleRisk_residualScaleConst_le`, carrying a precise, paper-verified TODO. The public theorem is `⟨measurability, equivariance, canonicalScaleRisk_residualScaleConst_le …⟩`.
+
+**Exact obstruction** (in the TODO): the minimality is the Pitman location-scale reduction. Head-translation equivariance forces `δ'(y)=f(y_res)` with `f` degree-`2r` positively-homogeneous; the risk becomes an `L²(γₘ)` projection of `1` onto the homogeneous subspace, and optimality is equivalent to the moment identity `∫ g dγₘ = t⋆ ∫ ‖w‖^{2r} g dγₘ`. That reduces to the base recursion `∫ h‖w‖² dγₘ = (m+2q)∫ h dγₘ` (for degree-`2q` homogeneous `h`), obtainable from the exact variance-scaling identity `∫ h d N(0,σ²I) = σ^{2q}∫ h dγₘ` by **differentiating in the variance at σ²=1**. The irreducible difficulty is a differentiation-under-the-integral step (`hasDerivAt_integral_of_dominated_loc_of_deriv_le`) requiring a Cauchy–Schwarz-dominated envelope for a **merely measurable** `h ∈ L²`. **Mathlib has no isotropic-Gaussian polar decomposition** (`‖w‖ ⊥ w/‖w‖`), which would otherwise give the moment identity directly — confirmed by search. Fully assembling this + the `L²` expansion + χ² moment calibration (`map_sum_sq_eq_chiSquared`, `integrable_pow_chiSquared`) is a large multi-hundred-line development I could not responsibly complete to axiom-clean within a single foreground-build session, so I banked the closeable parts and isolated the rest.
+
+`#print axioms isCanonicalScaleMRE_residual_pow`: `[propext, sorryAx, Classical.choice, Quot.sound]` — the `sorryAx` is the lifted core (documented debt, as expected).
+
+---
+
+### Sorry 2 — `not_exists_blue_of_known_design_moment` → **FALSE AS STATED** (reported, not proven)
+
+Per instructions, I did **not** fabricate a proof or weaken the frozen public statement; I verified the counterexample and left the documented sorry.
+
+**Counterexample:** `s=1, n=2, c=1`, `Q = ½δ_a + ½δ_{-a}` (`a≠0`, so non-Dirac — satisfies `hQ`), `K p a = gaussianVector (designMean (of a) θ) σ²` (satisfies `hmean`, `hcov`). For any linear unbiased `δ(a,y)=⟨c(a),y⟩`, the law of total variance gives
+`variance δ = σ²·E_a‖c(a)‖² + θ²·Var_a(v_a)`, `v_a=⟨c(a),a⟩`, with the unbiasedness constraint `E_a[v_a]=1`. Because `‖a‖²=‖-a‖²`, the min-norm bound `‖c(a)‖²≥v_a²/‖a‖²` makes **both** terms minimized simultaneously at `v_a=v_{-a}=1`. Hence the conditional least-squares estimator `δ*(a,y)=⟨a/‖a‖²,y⟩` attains variance `σ²/‖a‖²` at **every** `(θ,σ²)` and is a BLUE. So `∃ δ, IsBLUERandomDesign …` holds and the theorem's `¬∃` conclusion is false, while all its hypotheses are met. The `hQ` (non-Dirac) hypothesis is insufficient — exactly what the file's own docstring already suspected. A correct statement needs a nondegeneracy ruling out constant-`‖a‖²` designs (e.g. nonconstant design Gram/Fisher information). This matches the memory note `pe-linearmodel-lm-retry-status` ("RandomDesign BLUE FALSE (½δ_a+½δ_{-a})").
+
+`#print axioms not_exists_blue_of_known_design_moment`: `[propext, sorryAx, Classical.choice, Quot.sound]`.
+
+---
+
+### Statements I believe false
+- `not_exists_blue_of_known_design_moment` — false as stated (counterexample above); the public statement is frozen, so it remains documented debt pending renegotiation of its nondegeneracy hypothesis.
+
+### Net
+- Committed: `Equivariant: prove meas+equivariance of residual_pow MRE; isolate minimality to named private analytic core…`
+- Neither `Canonical.lean` nor any `Defs.lean` touched; `RandomDesign.lean` unmodified; no public signature/docstring changed; the temporary `AxiomCheck.lean` I used for `#print axioms` was removed.
