@@ -72,7 +72,7 @@ modern treatment via the multivariate central limit theorem is standard.
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal BigOperators Matrix
+open scoped ENNReal BigOperators Matrix RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -275,6 +275,63 @@ private lemma reducedCov_inv_eq {k : ℕ} {π : Fin (k + 1) → ℝ}
     (reducedCov π)⁻¹ = reducedCovInv π :=
   Matrix.inv_eq_right_inv (reducedCov_mul_inv hπpos hπsum)
 
+/-- The cell count as a real-valued measurable function of the sample. -/
+private lemma measurable_multinomialCount {n k : ℕ} {X : Fin n → Ω → Fin (k + 1)}
+    (hX : ∀ i, Measurable (X i)) (j : Fin (k + 1)) :
+    Measurable (fun ω => (multinomialCount X j ω : ℝ)) := by
+  classical
+  have hrw : (fun ω => (multinomialCount X j ω : ℝ))
+      = fun ω => ∑ i : Fin n, if X i ω = j then (1 : ℝ) else 0 := by
+    funext ω
+    rw [multinomialCount, Finset.card_filter, Nat.cast_sum]
+    exact Finset.sum_congr rfl (fun i _ => by by_cases h : X i ω = j <;> simp [h])
+  rw [hrw]
+  refine Finset.univ.measurable_sum (fun i _ => ?_)
+  exact Measurable.ite ((hX i) (measurableSet_singleton j)) measurable_const measurable_const
+
+/-- The standardised reduced cell-count vector `((Yⱼ − nπⱼ)/√n)_{j<k}` as an element of
+`EuclideanSpace ℝ (Fin k)`; the object the multivariate CLT is applied to. -/
+private noncomputable def reducedCount {n k : ℕ} (π : Fin (k + 1) → ℝ)
+    (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) : EuclideanSpace ℝ (Fin k) :=
+  WithLp.toLp 2 (reducedVec π X ω)
+
+private lemma measurable_reducedCount {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    {X : Fin n → Ω → Fin (k + 1)} (hX : ∀ i, Measurable (X i)) :
+    Measurable (reducedCount π X) := by
+  have hg : Measurable (fun ω => reducedVec π X ω) := by
+    refine measurable_pi_iff.mpr (fun i => ?_)
+    simp only [reducedVec]
+    exact ((measurable_multinomialCount hX i.castSucc).sub measurable_const).div measurable_const
+  exact (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp hg
+
+/-- **Multivariate CLT for the reduced cell frequencies** (LIFTED — the single deep analytic
+brick of the null-limit proof). The standardised reduced count vector converges in law to
+the centred Gaussian with the reduced covariance `Σ = diag π' − π' π'ᵀ`.
+
+The intended proof is the imported multivariate i.i.d. CLT
+`ProbabilityTheory.tendstoInDistribution_multivariate_clt` applied to the per-observation
+indicator vectors `V i ω = (1[X i ω = 0], …, 1[X i ω = k−1])`, whose common covariance is
+exactly `reducedCov π`, followed by the `TendstoInDistribution → WeakConverges` translation
+(the pattern of `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`).
+
+TODO: the residual gap is the *canonical i.i.d. transfer*. The CLT brick consumes a single
+fixed i.i.d. sequence on one probability space `(Ω, P)`, whereas the hypotheses supply a
+triangular family `(P n, X n : Fin n → Ω → …)`. One must (a) build the per-observation
+covariance identity `Var[⟪t, V 0⟫] = t ⬝ᵥ (reducedCov π) *ᵥ t` from `hcell`, and (b) transfer
+the law of `reducedCount` under `P n` to a fixed product-measure model, using that
+`iIndepFun` with identical marginals gives joint law `= Measure.pi`. -/
+private lemma reducedCount_weakConverges_gaussian {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : Measure (Fin (k + 1))}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1)
+    (hX : ∀ n i, Measurable (X n i))
+    (hindep : ∀ n, iIndepFun (X n) (P n))
+    (hlaw : ∀ n i, Measure.map (X n i) (P n) = μ)
+    (hcell : ∀ j, (μ {j}).toReal = π j) :
+    WeakConverges (fun n => (P n).map (reducedCount π (X n)))
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)) := by
+  sorry
+
 /-- **Null limiting distribution.** Under the simple null hypothesis `pⱼ = πⱼ` for
 `j = 1, …, k+1`, Pearson's statistic converges in law to the chi-squared distribution with
 `k` degrees of freedom. -/
@@ -296,7 +353,34 @@ theorem pearsonQ_weakConverges_chiSquared {k : ℕ} {π : Fin (k + 1) → ℝ}
     -- USER-INPUT: the null hypothesis: the cell probabilities of `μ` are `π`
     (hcell : ∀ j, (μ {j}).toReal = π j) :
     WeakConverges (fun n => Measure.map (pearsonQ π (X n)) (P n)) (chiSquared k) := by
-  sorry
+  -- the continuous quadratic form `q z = ⟪z, Σ⁻¹ z⟫`
+  set T := Matrix.toEuclideanCLM (𝕜 := ℝ) (reducedCov π)⁻¹ with hTdef
+  set q : EuclideanSpace ℝ (Fin k) → ℝ := fun z => ⟪z, T z⟫ with hqdef
+  have hq_cont : Continuous q := continuous_id.inner T.continuous
+  -- pointwise: `q (reducedCount ω) = pearsonQ ω` (bridge algebra)
+  have hq : ∀ n ω, q (reducedCount π (X n) ω) = pearsonQ π (X n) ω := by
+    intro n ω
+    simp only [hqdef, hTdef]
+    rw [Matrix.inner_toEuclideanCLM, reducedCov_inv_eq hπpos hπsum, pearsonQ_eq_reducedQ hπsum,
+      ← dotProduct_reducedCovInv]
+    rfl
+  -- the lifted CLT brick, then continuous mapping
+  have hbrick := reducedCount_weakConverges_gaussian (π := π) (P := P) (X := X) (μ := μ)
+    hπpos hπsum hX hindep hlaw hcell
+  have hmapped := hbrick.map hq_cont hq_cont.measurable
+  -- the target is `χ²_k` (Gaussian → chi-squared bridge)
+  have htarget : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (reducedCov π)).map q
+      = chiSquared k := by
+    simp only [hqdef, hTdef]
+    exact multivariateGaussian_map_inner_inv_eq_chiSquared hk (reducedCov_posDef hπpos hπsum)
+  -- each pushforward term equals the law of `pearsonQ`
+  have hseq : (fun n => ((P n).map (reducedCount π (X n))).map q)
+      = fun n => Measure.map (pearsonQ π (X n)) (P n) := by
+    funext n
+    rw [Measure.map_map hq_cont.measurable (measurable_reducedCount (hX n))]
+    exact Measure.map_congr (Filter.Eventually.of_forall (fun ω => hq n ω))
+  rw [hseq, htarget] at hmapped
+  exact hmapped
 
 /-! ### (ii) Local alternatives and the noncentral limit -/
 
