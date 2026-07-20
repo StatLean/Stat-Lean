@@ -302,6 +302,23 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt).  Intended mixture–NP–Le Cam
+  -- proof (module docstring):  the shell infimum is ≤ the average power against the uniform
+  -- mixture `σ` on the sphere `{|I^{1/2}h| = b}`; by Neyman–Pearson this is ≤ the power of
+  -- the likelihood-ratio test of `Q_{n,0}` against `∫ Q_{n,h} dσ(h)`; asymptotic normality
+  -- (the `hZ`/`hdens`/`hLAN` package, Le Cam's third lemma) identifies the limit of that
+  -- power with the Gaussian-shift quantity, where `sphereAverage_lr_monotone` makes the
+  -- limiting NP test the χ² test `{|x|² > c}`, whose power against the least-favourable
+  -- sphere mixture is `ncχ²_k(b²)(c, ∞)`.  Requires a weak-convergence + Neyman–Pearson +
+  -- Le Cam apparatus not yet present in the project.
+  --
+  -- NOTE for the `SmoothTest` consumer: the *bounded* shell `{b ≤ |I^{1/2}h| ≤ B}` (for any
+  -- `B ≥ b`) is reachable by the *same* argument, because the least-favourable mixture `σ`
+  -- is supported on the sphere `{|I^{1/2}h| = b}`, which lies inside the bounded shell just
+  -- as it lies inside this unbounded one; the mixture bound `sInf … ≤ average power vs σ`
+  -- therefore holds verbatim for the bounded shell.  (It cannot be *derived* from this
+  -- unbounded statement — `sInf` over a subset is larger — but the proof, once written,
+  -- yields both.)
   sorry
 
 end StatLean.HypothesisTesting
