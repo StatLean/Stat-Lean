@@ -107,6 +107,15 @@ theorem isCanonicalMRE_linear_combination
     -- USER-INPUT: even loss in the estimation error
     (heven : ∀ t : ℝ, ρ (-t) = ρ t) :
     IsCanonicalMRE (m := m) σ2 lam ρ (fun y => ∑ i, lam i * canonicalHead y i) := by
+  -- DEBT (Pitman convex-symmetric core). Every equivariant `δ'` differs from
+  -- `δ₀ = ∑ λᵢ Yᵢ` by a function of the residual block only (`δ' - δ₀` is invariant under
+  -- head translations). Under the base law `canonicalModel (0, σ²)` the head block and the
+  -- residual block are independent, and `δ₀ = ∑ λᵢ Yᵢ ~ N(0, σ²∑λᵢ²)` is symmetric and
+  -- independent of the residual. For each residual value `r`, `t ↦ E[ρ(δ₀ + t)]` is convex
+  -- (ρ convex) and even (ρ even + `δ₀` symmetric), hence minimized at `t = 0`; integrating
+  -- over `r` gives `canonicalRisk σ² ρ δ₀ ≤ canonicalRisk σ² ρ δ'`. Formalizing needs the
+  -- product/independence split of `canonicalModel (0,σ²)` into head × residual plus the
+  -- 1-D convex-even minimization (analogous to `Equivariance/LocationMRE`).
   sorry
 
 /-! ## Translations of the signal block together with scale changes -/
@@ -225,6 +234,13 @@ theorem isCanonicalScaleMRE_residual_pow
     {r : ℕ} (hr : 0 < r) :
     IsCanonicalScaleMRE (s := s) (m := m) r
       (fun y => residualScaleConst m r * canonicalRSS y ^ r) := by
+  -- DEBT (Pitman scale core + χ² moments). Under the base law `(0, 1)` the residual sum of
+  -- squares `S² ~ χ²ₘ` (`integrable_pow_chiSquared` supplies the needed moments) is a maximal
+  -- invariant for the location-scale group among degree-`2r` equivariant estimators, which all
+  -- take the form `S^{2r}·φ(angular invariants)`. Minimizing `E[(c·S^{2r} − 1)²]` over the
+  -- constant `c` gives `c = E[S^{2r}]/E[S^{4r}] = residualScaleConst m r`; conditioning shows no
+  -- non-constant `φ` improves on the constant. Needs the conditional-minimization machinery
+  -- (analogous to the χ²-moment argument used for `residualScaleConst_one`).
   sorry
 
 /-- The classical variance clause: under the loss `(d − σ²)²/σ⁴`, the minimum risk
@@ -233,7 +249,14 @@ theorem isCanonicalScaleMRE_residual_variance
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     IsCanonicalScaleMRE (s := s) (m := m) 1 (fun y => canonicalRSS y / ((m : ℝ) + 2)) := by
-  sorry
+  -- The variance clause is the `r = 1` case of `isCanonicalScaleMRE_residual_pow`, with the
+  -- chi-square moment ratio evaluated by `residualScaleConst_one`.
+  have h := isCanonicalScaleMRE_residual_pow (s := s) (m := m) hm (r := 1) one_pos
+  have heq : (fun y : EuclideanSpace ℝ (Fin (s + m)) => residualScaleConst m 1 * canonicalRSS y ^ 1)
+      = fun y => canonicalRSS y / ((m : ℝ) + 2) := by
+    funext y; rw [residualScaleConst_one hm, pow_one]; ring
+  rw [heq] at h
+  exact h
 
 /-! ## Translations by the mean subspace, in the original coordinates -/
 
@@ -272,6 +295,14 @@ theorem isSubspaceMRE_lse_functional (W : Submodule ℝ (EuclideanSpace ℝ (Fin
     -- USER-INPUT: even loss in the estimation error
     (heven : ∀ t : ℝ, ρ (-t) = ρ t) :
     IsSubspaceMRE W σ2 γ ρ (fun y => ⟪γ, lse W y⟫_ℝ) := by
+  -- DEBT (coordinate-free image of `isCanonicalMRE_linear_combination`). Under the
+  -- adapted-basis isometry `L` (`LeastSquares.exists_headSubspace_isometry`), the base law
+  -- `gaussianVector 0 σ²` is `L`-invariant (`gaussianVector_map_linearIsometryEquiv`, `L 0 = 0`)
+  -- and equals `canonicalModel (0, σ²)`; `linearBaseRisk` transports to `canonicalRisk` by the
+  -- lintegral change of variables, `IsSubspaceEquivariant W γ` corresponds to
+  -- `IsCanonicalEquivariant (canonicalHead (L γ))`, and `⟪γ, lse W ·⟫` corresponds to
+  -- `∑ (canonicalHead (L γ))ᵢ · canonicalHead ·ᵢ`. The claim is then the `L`-image of
+  -- `isCanonicalMRE_linear_combination` (itself the convex-symmetric core above).
   sorry
 
 end StatLean.PointEstimation

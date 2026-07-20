@@ -461,6 +461,21 @@ theorem not_exists_blue_of_known_design_moment
     -- USER-INPUT: a nontrivial linear functional of the coefficients is estimated
     {c : Fin s → ℝ} (hc : c ≠ 0) :
     ¬ ∃ δ, IsBLUERandomDesign (randomDesignModel Q K) (fun p => ∑ i, c i * p.1 i) δ := by
+  -- FALSE AS STATED (the `hQ : Q ≠ Measure.dirac` nondegeneracy is insufficient, as the
+  -- docstring above already suspects). COUNTEREXAMPLE: `s = 1`, `n = 2`, `c = 1`,
+  -- `Q = ½·δ_a + ½·δ_(-a)` for `a ≠ 0` (non-Dirac), `K p a = gaussianVector (θ·a) σ²`.
+  -- By the law of total variance, for a linear unbiased `δ(a,y) = ⟪c(a), y⟫`,
+  --   `variance δ (Q ⊗ₘ K p) = σ²·E_a‖c(a)‖² + θ²·Var_a(v_a)`,   `v_a := (of a) *ᵥ c(a)`,
+  -- with the unbiasedness constraint `E_a[v_a] = 1`. The two designs `a` and `-a` have the
+  -- SAME `‖a‖²`, so the min-norm bound `‖c(a)‖² ≥ v_a² / ‖a‖²` yields
+  --   `variance δ ≥ σ²·(v₁² + v₂²)/(2‖a‖²) + θ²·Var_a(v)`,
+  -- and BOTH terms are minimized simultaneously at `v₁ = v₂ = 1`. Hence the conditional
+  -- least-squares estimator attains the minimum variance at EVERY `(θ, σ²)` — it is a BLUE,
+  -- so `∃ δ, IsBLUERandomDesign …` holds and the negation is false. (When `‖a‖²` varies over
+  -- the support of `Q`, the σ²-term and the θ²-term are minimized at different `v`, and no
+  -- BLUE exists — the intended Shaffer phenomenon; a correct hypothesis must rule out the
+  -- constant-`‖a‖²` degeneracy, e.g. via nonconstancy of the design Gram/Fisher information.)
+  -- Left as documented debt: the printed statement is to be renegotiated per its docstring.
   sorry
 
 end StatLean.PointEstimation
