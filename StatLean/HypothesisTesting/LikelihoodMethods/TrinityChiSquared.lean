@@ -121,6 +121,75 @@ noncomputable def restrictFamily {m : ℕ} (M : ParametricFamily 𝓧 (Euclidean
 
 /-! ## Asymptotic equivalence and the chi-squared limits -/
 
+/-- **Measurability of the likelihood-ratio statistic.** For measurable estimator sequences the
+map `ω ↦ 2 ∑ᵢ log(p_{θ̂}(ωᵢ)/p_{θ̂₀}(ωᵢ))` is measurable. -/
+-- TODO: This holds under standard regularity, but the proof needs *joint* measurability of
+-- `(θ, x) ↦ M.density θ x` (Carathéodory measurability of the density in both arguments), so
+-- that `ω ↦ M.density (est n ω) (ω i)` is measurable.  The abstract `ParametricFamily` structure
+-- only records per-`θ` measurability (`density_meas : ∀ θ, Measurable (density θ)`), so this
+-- input is not available from the frozen hypotheses.  Sanctioned lifted sorry.
+private lemma measurable_logLRStatistic
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
+    (est est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
+    (hest : ∀ n, Measurable (est n)) (hest₀ : ∀ n, Measurable (est₀ n)) (n : ℕ) :
+    Measurable (logLRStatistic M est est₀ n) := by
+  sorry
+
+/-- **Wald − score is `o_P(1)`.** Under `P^n_{θ₀}` the Wald and Rao score statistics differ by a
+quantity tending to zero in probability. -/
+-- TODO: Writing `Uₙ = √n(θ̂ₙ−θ₀)` and `Vₙ = J⁻¹Zₙ`, one has `Wₙ = ⟪Uₙ, J Uₙ⟫` and
+-- `Rₙ = ⟪Vₙ, J Vₙ⟫` (cf. `waldStatistic_eq_quadratic`), so `Wₙ − Rₙ` is the bilinear remainder
+-- `⟪Uₙ−Vₙ, J Uₙ⟫ + ⟪Vₙ, J(Uₙ−Vₙ)⟫`.  `IsAsymptoticallyLinear` gives `‖Uₙ−Vₙ‖ →_P 0`, and the
+-- score CLT (`scoreSum_weakly_converges`) makes `‖Vₙ‖`, `‖Uₙ‖` tight, whence the product is
+-- `o_P(1)`.  Completing this needs the `o_P · O_P = o_P` product lemma (tightness ×
+-- convergence-in-probability), which is not yet in the library.  Sanctioned lifted sorry.
+private lemma wald_sub_score_tendstoInMeasure
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) :
+    ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |waldStatistic J θ₀ est n ω - scoreStatistic J ℓ n ω|})
+        atTop (𝓝 0) := by
+  sorry
+
+/-- **logLR − score is `o_P(1)`** (simple null). Under `P^n_{θ₀}` and the second-order envelope
+condition, the likelihood-ratio and Rao score statistics differ by a quantity tending to zero
+in probability. -/
+-- TODO: The uniform LAN expansion `sup_LAN_remainder_tendsto` (in `UniformLAN.lean`, itself an
+-- open sorry) evaluated at the random direction `ĥₙ = √n(θ̂ₙ−θ₀)` gives
+-- `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ − ⟪ĥₙ, J ĥₙ⟫ + o_P(1)`; substituting `ĥₙ = J⁻¹Zₙ + o_P(1)`
+-- (`IsAsymptoticallyLinear`) collapses the leading terms to `⟪Zₙ, J⁻¹Zₙ⟫ = Rₙ`.  Blocked on the
+-- upstream expansion plus tightness bookkeeping.  Sanctioned lifted sorry.
+private lemma logLR_sub_score_tendstoInMeasure
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
+    (Menv : 𝓧 → ℝ) (hMenv_meas : Measurable Menv)
+    (hMenv_int : Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
+    (δ : ℝ) (hδ : 0 < δ)
+    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
+        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|})
+        atTop (𝓝 0) := by
+  sorry
+
 /-- **Asymptotic equivalence of the trinity.**
 
 Under `P^n_{θ₀}`, the Wald and likelihood ratio statistics each differ from the Rao score
@@ -168,8 +237,10 @@ theorem trinity_asymptotically_equivalent
         Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω : Fin n → 𝓧 |
             ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|})
-          atTop (𝓝 0)) := by
-  sorry
+          atTop (𝓝 0)) :=
+  ⟨wald_sub_score_tendstoInMeasure M μ hPDF θ₀ ℓ hℓ hDQM J hJ_pd hJ est hest hlin,
+    logLR_sub_score_tendstoInMeasure M μ hPDF θ₀ ℓ hℓ hDQM J hJ_pd hJ est hest hlin
+      Menv hMenv_meas hMenv_int δ hδ henv⟩
 
 /-- Continuity of the quadratic form `z ↦ ⟪z, A·z⟫` on `EuclideanSpace ℝ (Fin k)`; the matrix
 action `mulVecE A` is definitionally `AsymptoticStatistics.GaussianShift.matrixAction A`, so
@@ -432,6 +503,95 @@ theorem logLR_tendsto_chiSquared
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (logLRStatistic M est (fun _ _ => θ₀) n))
       (MultipleTesting.chiSquared k) := by
+  -- Rao score statistic converges to `χ²ₖ`; the LR statistic differs from it by `o_P(1)`.
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have hscore := score_tendsto_chiSquared M μ hPDF hk θ₀ ℓ hℓ hDQM J hJ_pd hJ
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n => scoreStatistic J ℓ n)
+    (Y := fun n => logLRStatistic M est (fun _ _ => θ₀) n)
+    (fun n => ((continuous_gaussQuadratic J⁻¹).measurable.comp
+        (measurable_scoreSum ℓ hℓ n)).aemeasurable)
+    (fun n => (measurable_logLRStatistic M est (fun _ _ => θ₀) hest
+        (fun _ => measurable_const) n).aemeasurable)
+    hscore ?_
+  intro ε hε
+  have h := logLR_sub_score_tendstoInMeasure M μ hPDF θ₀ ℓ hℓ hDQM J hJ_pd hJ est hest hlin
+    Menv hMenv_meas hMenv_int δ hδ henv ε hε
+  have hset : (fun n => (productMeasure M μ θ₀ n).real
+      {ω : Fin n → 𝓧 | ε ≤ dist (scoreStatistic J ℓ n ω)
+        (logLRStatistic M est (fun _ _ => θ₀) n ω)})
+      = (fun n => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|}) := by
+    funext n; congr 1; ext ω
+    simp only [Set.mem_setOf_eq, Real.dist_eq, abs_sub_comm]
+  rw [hset]; exact h
+
+/-- **Score-difference surrogate converges to `χ²ₚ`** (affine composite null). The difference of
+the full-model and restricted-model Rao score statistics converges in law to `χ²ₚ`, `p = k − m`
+the codimension. -/
+-- TODO: The classical fact `Zₙᵀ J⁻¹ Zₙ − (B*Zₙ)ᵀ JB⁻¹ (B*Zₙ) = ‖Π Zₙ‖²_{J⁻¹} ⇝ χ²ₚ`, where `Π`
+-- is the rank-`p` `J`-orthogonal projection off `range B` (`B* = adjoint B`, and
+-- `scoreSum ℓB = B* (scoreSum ℓ)` by linearity of `B*`).  Needs the restricted-model score CLT
+-- together with a *degenerate* (rank-`p`) Gaussian-quadratic ↔ chi-squared bridge, which
+-- generalises `multivariateGaussian_map_inner_inv_eq_chiSquared` (full-rank only) and is not yet
+-- available.  Sanctioned lifted sorry.
+private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (hdim : m + p = k) (hp : 0 < p)
+    (a : EuclideanSpace ℝ (Fin k)) (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (hB : Function.Injective B)
+    (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ = a + B β₀)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hℓB : ℓB = fun x => ContinuousLinearMap.adjoint B (ℓ x))
+    (JB : Matrix (Fin m) (Fin m) ℝ)
+    (hJB : ∀ u v : EuclideanSpace ℝ (Fin m),
+      fisherInformation (restrictFamily M a B) μ β₀ ℓB u v = ⟪u, mulVecE JB v⟫)
+    [∀ β : EuclideanSpace ℝ (Fin m), ∀ n,
+      IsProbabilityMeasure (productMeasure (restrictFamily M a B) μ β n)] :
+    WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω))
+      (MultipleTesting.chiSquared p) := by
+  sorry
+
+/-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine likelihood-ratio
+statistic differs from the score-difference surrogate by a quantity tending to zero in
+probability. -/
+-- TODO: Apply the uniform LAN expansion (`sup_LAN_remainder_tendsto`, open sorry upstream) in the
+-- full model at `ĥₙ = √n(θ̂ₙ−θ₀)` and in the restricted model at `√n(β̂ₙ−β₀)`, then subtract; the
+-- efficient-estimator substitutions (`hlin`, `hlin₀`) collapse each expansion to its score
+-- quadratic, leaving `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Blocked on the upstream expansion.
+-- Sanctioned lifted sorry.
+private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (a : EuclideanSpace ℝ (Fin k)) (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ) (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (JB : Matrix (Fin m) (Fin m) ℝ)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
+    (est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin m)) (hest₀ : ∀ n, Measurable (est₀ n))
+    (hlin₀ : IsAsymptoticallyLinear (restrictFamily M a B) μ β₀ ℓB JB est₀)
+    (Menv : 𝓧 → ℝ) (hMenv_meas : Measurable Menv)
+    (hMenv_int : Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
+    (δ : ℝ) (hδ : 0 < δ)
+    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
+        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+          - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|})
+        atTop (𝓝 0) := by
   sorry
 
 /-- **The likelihood ratio statistic is asymptotically chi-squared (affine composite null).**
@@ -500,6 +660,33 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
       (fun n => (productMeasure M μ θ₀ n).map
         (logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n))
       (MultipleTesting.chiSquared p) := by
-  sorry
+  -- Score-difference surrogate converges to `χ²ₚ`; the affine LR differs from it by `o_P(1)`.
+  haveI : NeZero p := ⟨hp.ne'⟩
+  have hℓB' : Measurable ℓB := by
+    rw [hℓB]; exact (ContinuousLinearMap.adjoint B).continuous.measurable.comp hℓ
+  have hscorediff := affineScoreDiff_tendsto_chiSquared M μ hPDF hdim hp a B hB β₀ θ₀ hθ₀
+    ℓ hℓ hDQM J hJ_pd hJ ℓB hℓB JB hJB
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)
+    (Y := fun n => logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n)
+    (fun n => (((continuous_gaussQuadratic J⁻¹).measurable.comp
+        (measurable_scoreSum ℓ hℓ n)).sub
+        ((continuous_gaussQuadratic JB⁻¹).measurable.comp
+          (measurable_scoreSum ℓB hℓB' n))).aemeasurable)
+    (fun n => (measurable_logLRStatistic M est (fun n ω => a + B (est₀ n ω)) hest
+        (fun n => (B.continuous.measurable.comp (hest₀ n)).const_add a) n).aemeasurable)
+    hscorediff ?_
+  intro ε hε
+  have h := logLR_affine_sub_scoreDiff_tendstoInMeasure M μ hPDF θ₀ a B β₀ ℓ hℓ J ℓB JB
+    est hest hlin est₀ hest₀ hlin₀ Menv hMenv_meas hMenv_int δ hδ henv ε hε
+  have hset : (fun n => (productMeasure M μ θ₀ n).real
+      {ω : Fin n → 𝓧 | ε ≤ dist (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)
+        (logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω)})
+      = (fun n => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+          - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|}) := by
+    funext n; congr 1; ext ω
+    simp only [Set.mem_setOf_eq, Real.dist_eq, abs_sub_comm]
+  rw [hset]; exact h
 
 end StatLean.HypothesisTesting
