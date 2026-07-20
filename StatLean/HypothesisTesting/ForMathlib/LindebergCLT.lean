@@ -712,7 +712,165 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
     TendstoInDistribution
       (fun n ω => (σ * Real.sqrt (∑ i, (w n i) ^ 2))⁻¹ * ∑ i, w n i * Y (i : ℕ) ω)
       atTop Z (fun _ => P) P' := by
-  sorry
+  -- Abbreviations for the weight-square sum `S n`, the normalising scale `s n = σ √(S n)`,
+  -- and the normalised row `X n i = (s n)⁻¹ · wₙ,ᵢ · Yᵢ`.
+  obtain ⟨S, hSdef⟩ : ∃ S : ℕ → ℝ, S = fun n => ∑ i, (w n i) ^ 2 := ⟨_, rfl⟩
+  obtain ⟨s, hsdef⟩ : ∃ s : ℕ → ℝ, s = fun n => σ * Real.sqrt (S n) := ⟨_, rfl⟩
+  obtain ⟨X, hXdef⟩ : ∃ X : (n : ℕ) → Fin (m n) → Ω → ℝ,
+      X = fun n i ω => (s n)⁻¹ * w n i * Y (i : ℕ) ω := ⟨_, rfl⟩
+  have hσ2 : (0 : ℝ) < σ ^ 2 := pow_pos hσ 2
+  have hσ0 : σ ≠ 0 := ne_of_gt hσ
+  have hSpos : ∀ n, 0 < S n := by intro n; rw [hSdef]; exact hw n
+  have hspos : ∀ n, 0 < s n := by
+    intro n; simp only [hsdef]; exact mul_pos hσ (Real.sqrt_pos.2 (hSpos n))
+  have hsn2 : ∀ n, (s n) ^ 2 = σ ^ 2 * ∑ i, (w n i) ^ 2 := by
+    intro n; simp only [hsdef, hSdef]
+    rw [mul_pow, Real.sq_sqrt (by positivity)]
+  -- The normalised weight squares sum to `1/σ²` on every row.
+  have hasum : ∀ n, ∑ i, ((s n)⁻¹ * w n i) ^ 2 = (σ ^ 2)⁻¹ := by
+    intro n
+    have e : ∑ i, ((s n)⁻¹ * w n i) ^ 2 = (∑ i, (w n i) ^ 2) * ((s n) ^ 2)⁻¹ := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun i _ => by rw [mul_pow, inv_pow, mul_comm]
+    rw [e, hsn2 n, mul_inv, mul_comm ((σ ^ 2)⁻¹) ((∑ i, (w n i) ^ 2)⁻¹), ← mul_assoc,
+      mul_inv_cancel₀ (ne_of_gt (hw n)), one_mul]
+  -- Row regularity: measurable, `L²`, centered, independent.
+  have hmeas' : ∀ n i, Measurable (X n i) := by
+    intro n i; simp only [hXdef]; exact (hmeas ↑i).const_mul _
+  have hL2' : ∀ n i, MemLp (X n i) 2 P := by
+    intro n i; simp only [hXdef]; exact ((hident ↑i).symm.memLp_snd hL2).const_mul _
+  have hmean' : ∀ n i, ∫ ω, X n i ω ∂P = 0 := by
+    intro n i; simp only [hXdef]
+    rw [integral_const_mul, ((hident ↑i).integral_eq).trans hmean, mul_zero]
+  have hindep' : ∀ n, iIndepFun (X n) P := by
+    intro n
+    have h1 : iIndepFun (fun i : Fin (m n) => Y (↑i : ℕ)) P :=
+      iIndepFun.precomp Fin.val_injective hindep
+    have h2 := h1.comp (fun i : Fin (m n) => fun y : ℝ => (s n)⁻¹ * w n i * y)
+      (fun i => measurable_id.const_mul _)
+    refine (iIndepFun_congr (fun i => ?_)).2 h2
+    filter_upwards with ω; simp only [hXdef, Function.comp]
+  -- Row variances sum to `1`, hence trivially tend to `1`.
+  have hvarval : ∀ n, ∑ i, Var[X n i; P] = 1 := by
+    intro n
+    have hVi : ∀ i, Var[X n i; P] = ((s n)⁻¹ * w n i) ^ 2 * σ ^ 2 := by
+      intro i; simp only [hXdef]
+      rw [variance_const_mul, (hident ↑i).variance_eq, hvar]
+    simp_rw [hVi]
+    rw [← Finset.sum_mul, hasum n, inv_mul_cancel₀ (ne_of_gt hσ2)]
+  have hvar' : Tendsto (fun n => ∑ i, Var[X n i; P]) atTop (𝓝 1) := by
+    have hcongr : (fun n => ∑ i, Var[X n i; P]) = fun _ => (1 : ℝ) := funext hvarval
+    rw [hcongr]; exact tendsto_const_nhds
+  -- The `L²`-tail of the sampling law vanishes: `∫_{K < |Y₀|} Y₀² → 0` as `K → ∞`.
+  have hsq0 : Integrable (fun ω => (Y 0 ω) ^ 2) P := hL2.integrable_sq
+  obtain ⟨tail, htaildef⟩ : ∃ tail : ℕ → ℝ,
+      tail = fun (K : ℕ) => ∫ ω in {ω | (K : ℝ) < |Y 0 ω|}, (Y 0 ω) ^ 2 ∂P := ⟨_, rfl⟩
+  have htail0 : Tendsto tail atTop (𝓝 0) := by
+    simp only [htaildef]
+    have hsm : ∀ K : ℕ, MeasurableSet {ω | (K : ℝ) < |Y 0 ω|} := fun K =>
+      measurableSet_lt measurable_const (hmeas 0).abs
+    have hanti : Antitone fun K : ℕ => {ω | (K : ℝ) < |Y 0 ω|} := by
+      intro a b hab ω hω
+      simp only [Set.mem_setOf_eq] at hω ⊢
+      exact lt_of_le_of_lt (by exact_mod_cast hab) hω
+    have hint : ∃ K : ℕ, IntegrableOn (fun ω => (Y 0 ω) ^ 2) {ω | (K : ℝ) < |Y 0 ω|} P :=
+      ⟨0, hsq0.integrableOn⟩
+    have hlim := tendsto_setIntegral_of_antitone hsm hanti hint
+    have hempty : ⋂ K : ℕ, {ω | (K : ℝ) < |Y 0 ω|} = ∅ := by
+      ext ω
+      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        not_forall, not_lt]
+      obtain ⟨K, hK⟩ := exists_nat_gt |Y 0 ω|
+      exact ⟨K, hK.le⟩
+    rw [hempty] at hlim
+    simpa using hlim
+  -- Identically-distributed rows share the same tail integral.
+  have htaileq : ∀ (i K : ℕ),
+      ∫ ω in {ω | (K : ℝ) < |Y i ω|}, (Y i ω) ^ 2 ∂P = tail K := by
+    intro i K
+    have hset : ∀ j : ℕ, MeasurableSet {ω | (K : ℝ) < |Y j ω|} := fun j =>
+      measurableSet_lt measurable_const (hmeas j).abs
+    have hg : Measurable fun y : ℝ => if (K : ℝ) < |y| then y ^ 2 else 0 :=
+      Measurable.ite (measurableSet_lt measurable_const measurable_id.abs)
+        (measurable_id.pow_const 2) measurable_const
+    have hcomp : ∀ j : ℕ, ∫ ω, (if (K : ℝ) < |Y j ω| then (Y j ω) ^ 2 else 0) ∂P
+        = ∫ ω in {ω | (K : ℝ) < |Y j ω|}, (Y j ω) ^ 2 ∂P := by
+      intro j
+      rw [← integral_indicator (hset j)]
+      refine integral_congr_ae (Eventually.of_forall fun ω => ?_)
+      by_cases h : (K : ℝ) < |Y j ω| <;> simp [Set.indicator, h]
+    simp only [htaildef]
+    rw [← hcomp i, ← hcomp 0]
+    simpa [Function.comp] using ((hident i).comp hg).integral_eq
+  -- Lindeberg's condition for the normalised row, from weight negligibility.
+  have hlin : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) atTop (𝓝 0) := by
+    intro ε hε
+    refine tendsto_order.2 ⟨fun b hb => ?_, fun b hb => ?_⟩
+    · -- Each Lindeberg sum is nonnegative.
+      refine Eventually.of_forall fun n => hb.trans_le (Finset.sum_nonneg fun i _ => ?_)
+      exact setIntegral_nonneg (measurableSet_lt measurable_const (hmeas' n i).abs)
+        fun ω _ => sq_nonneg _
+    · -- Upper bound: pick a tail level `K` making `tail K < σ² b`, then use negligibility.
+      obtain ⟨K, hKtail, hK1⟩ :=
+        (((tendsto_order.1 htail0).2 (σ ^ 2 * b) (mul_pos hσ2 hb)).and
+          (eventually_ge_atTop 1)).exists
+      have hKpos : (0 : ℝ) < K := by exact_mod_cast hK1
+      filter_upwards [hneg (σ ^ 2 * (ε / K) ^ 2) (by positivity)] with n hn
+      -- Uniform bound on the normalised weights from negligibility.
+      have haik : ∀ i, |(s n)⁻¹ * w n i| ≤ ε / K := by
+        intro i
+        have hsq : ((s n)⁻¹ * w n i) ^ 2 ≤ (ε / K) ^ 2 := by
+          have e1 : ((s n)⁻¹ * w n i) ^ 2 = (w n i) ^ 2 / (s n) ^ 2 := by
+            rw [mul_pow, inv_pow]; ring
+          rw [e1, hsn2 n, div_le_iff₀ (mul_pos hσ2 (hw n))]
+          calc (w n i) ^ 2 ≤ σ ^ 2 * (ε / K) ^ 2 * ∑ i, (w n i) ^ 2 := hn i
+            _ = (ε / K) ^ 2 * (σ ^ 2 * ∑ i, (w n i) ^ 2) := by ring
+        calc |(s n)⁻¹ * w n i| = Real.sqrt (((s n)⁻¹ * w n i) ^ 2) :=
+              (Real.sqrt_sq_eq_abs _).symm
+          _ ≤ Real.sqrt ((ε / K) ^ 2) := Real.sqrt_le_sqrt hsq
+          _ = ε / K := by rw [Real.sqrt_sq_eq_abs, abs_of_nonneg (by positivity)]
+      -- Per-entry bound of the truncated second moment by the shared tail.
+      have hterm : ∀ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P
+          ≤ ((s n)⁻¹ * w n i) ^ 2 * tail K := by
+        intro i
+        have hXsq : ∀ ω, (X n i ω) ^ 2 = ((s n)⁻¹ * w n i) ^ 2 * (Y (↑i : ℕ) ω) ^ 2 := by
+          intro ω; simp only [hXdef]; rw [mul_pow]
+        rw [setIntegral_congr_fun (measurableSet_lt measurable_const (hmeas' n i).abs)
+              (fun ω _ => hXsq ω), integral_const_mul]
+        refine mul_le_mul_of_nonneg_left ?_ (sq_nonneg _)
+        rw [← htaileq (↑i) K]
+        refine setIntegral_mono_set (((hident ↑i).symm.memLp_snd hL2).integrable_sq).integrableOn
+          (Eventually.of_forall fun ω => sq_nonneg _) (Eventually.of_forall fun ω hω => ?_)
+        -- `{ε < |X n i|} ⊆ {K < |Y i|}`.
+        have h1 : ε < |(s n)⁻¹ * w n i| * |Y (↑i : ℕ) ω| := by
+          rw [← abs_mul]; simpa only [hXdef] using hω
+        have h3 : ε < (ε / K) * |Y (↑i : ℕ) ω| :=
+          lt_of_lt_of_le h1 (mul_le_mul_of_nonneg_right (haik i) (abs_nonneg _))
+        show (K : ℝ) < |Y (↑i : ℕ) ω|
+        by_contra hcon
+        push_neg at hcon
+        have hle : (ε / K) * |Y (↑i : ℕ) ω| ≤ (ε / K) * K :=
+          mul_le_mul_of_nonneg_left hcon (by positivity)
+        rw [div_mul_cancel₀ ε (ne_of_gt hKpos)] at hle
+        exact absurd (lt_of_lt_of_le h3 hle) (lt_irrefl ε)
+      -- Sum the per-entry bounds and conclude.
+      calc ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P
+          ≤ ∑ i, ((s n)⁻¹ * w n i) ^ 2 * tail K := Finset.sum_le_sum fun i _ => hterm i
+        _ = (σ ^ 2)⁻¹ * tail K := by rw [← Finset.sum_mul, hasum n]
+        _ < b := by
+            have hlt : (σ ^ 2)⁻¹ * tail K < (σ ^ 2)⁻¹ * (σ ^ 2 * b) :=
+              mul_lt_mul_of_pos_left hKtail (inv_pos.2 hσ2)
+            rwa [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hσ2), one_mul] at hlt
+  -- Assemble: rewrite the target row sum and apply the triangular-array CLT.
+  have hgoaleq : (fun n ω => (σ * Real.sqrt (∑ i, (w n i) ^ 2))⁻¹ * ∑ i, w n i * Y (↑i : ℕ) ω)
+      = fun n ω => ∑ i, X n i ω := by
+    funext n ω
+    simp only [hXdef, hsdef, hSdef]
+    rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => by ring
+  rw [hgoaleq]
+  exact lindeberg_clt hmeas' hindep' hL2' hmean' hvar' hlin hZ
 
 /-- **Weak law of large numbers for a triangular array** (first-absolute-moment form).
 
