@@ -370,6 +370,28 @@ private lemma bayes_admissible_core {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
   simp only [power]
   exact integral_congr_ae ((bayes_ac hdens hjoint hfnonneg hsupp θ θ₁).ae_eq hae1)
 
+/-- From a level-`α` competitor and a null prior concentrated on the size-attaining
+parameters, the competitor is `Λ₀`-a.e. no more powerful than the reference test on the
+null class. -/
+private lemma bayes_domH_ae {P : Θ → Measure 𝓧} {μ : Measure 𝓧} [SigmaFinite μ]
+    {f : Θ → 𝓧 → ℝ} {Λ₀ : Measure Θ} [IsProbabilityMeasure Λ₀]
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x)
+    {Θ_H : Set Θ} (hΘH : MeasurableSet Θ_H) {α : ℝ} {ψ : 𝓧 → ℝ} (hψmeas : Measurable ψ)
+    {φ : 𝓧 → ℝ} (hφlevel : IsLevel P Θ_H φ α)
+    (hω : Λ₀ {θ ∈ Θ_H | power P ψ θ = α} = 1) :
+    ∀ᵐ θ ∂Λ₀, power P φ θ ≤ power P ψ θ := by
+  have hpm : Measurable fun θ => power P ψ θ :=
+    bayes_power_measurable hdens hjoint hfnonneg hψmeas
+  have hSmeas : MeasurableSet {θ ∈ Θ_H | power P ψ θ = α} :=
+    hΘH.inter (hpm (measurableSet_singleton α))
+  have hScompl : Λ₀ {θ ∈ Θ_H | power P ψ θ = α}ᶜ = 0 := by
+    rw [measure_compl hSmeas (measure_ne_top _ _), measure_univ, hω, tsub_self]
+  have haeS : ∀ᵐ θ ∂Λ₀, θ ∈ {θ ∈ Θ_H | power P ψ θ = α} := by
+    rw [ae_iff]; exact hScompl
+  filter_upwards [haeS] with θ hθS
+  rw [hθS.2]; exact hφlevel θ hθS.1
+
 /-- **A Bayes test with null boundary is d-admissible.** -/
 theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
     {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ₀ Λ₁ : Measure Θ}
@@ -422,25 +444,14 @@ theorem bayesTest_isAlphaAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabi
       (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
   intro φ hφ hφlevel hdomK θ _
   refine bayes_admissible_core hdens hjoint hfnonneg hsupp hΘK hΛ₁ hbdry hφ hdomK ?_ θ
-  set φ₀ := bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k with hφ0def
   have hsm : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
     (hjoint.comp measurable_swap).stronglyMeasurable
-  have hφ0meas : Measurable φ₀ := by
-    simp only [hφ0def, bayesTest]
-    exact Measurable.ite (measurableSet_le
+  have hφ0meas : Measurable (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) :=
+    Measurable.ite (measurableSet_le
       (measurable_const.mul (hsm.integral_prod_right (ν := Λ₀)).measurable)
       (hsm.integral_prod_right (ν := Λ₁)).measurable)
       measurable_const measurable_const
-  have hpm : Measurable fun θ => power P φ₀ θ :=
-    bayes_power_measurable hdens hjoint hfnonneg hφ0meas
-  have hSmeas : MeasurableSet {θ ∈ Θ_H | power P φ₀ θ = α} :=
-    hΘH.inter (hpm (measurableSet_singleton α))
-  have hScompl : Λ₀ {θ ∈ Θ_H | power P φ₀ θ = α}ᶜ = 0 := by
-    rw [measure_compl hSmeas (measure_ne_top _ _), measure_univ, hω, tsub_self]
-  have haeS : ∀ᵐ θ ∂Λ₀, θ ∈ {θ ∈ Θ_H | power P φ₀ θ = α} := by
-    rw [ae_iff]; exact hScompl
-  filter_upwards [haeS] with θ hθS
-  rw [hθS.2]; exact hφlevel θ hθS.1
+  exact bayes_domH_ae hdens hjoint hfnonneg hΘH hφ0meas hφlevel hω
 
 /-- **Admissibility against any subclass carrying the alternative prior.** If `Λ₁` gives
 probability one to a subclass `Θ'` of the alternatives, both conclusions hold with `Θ'` in
@@ -469,7 +480,25 @@ theorem bayesTest_admissible_of_subset {P : Θ → Measure 𝓧} [∀ θ, IsProb
         (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) ∧
       IsAlphaAdmissible P Θ_H Θ' α
         (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) := by
-  sorry
+  have hsm : StronglyMeasurable (Function.uncurry fun (x : 𝓧) (θ : Θ) => f θ x) :=
+    (hjoint.comp measurable_swap).stronglyMeasurable
+  have hφ0meas : Measurable (bayesTest (mixtureDensity f Λ₀) (mixtureDensity f Λ₁) k) :=
+    Measurable.ite (measurableSet_le
+      (measurable_const.mul (hsm.integral_prod_right (ν := Λ₀)).measurable)
+      (hsm.integral_prod_right (ν := Λ₁)).measurable)
+      measurable_const measurable_const
+  refine ⟨?_, ?_⟩
+  · -- d-admissibility against the subclass: pointwise null domination
+    intro φ hφ hdomK hdomH θ _
+    refine bayes_admissible_core hdens hjoint hfnonneg hsupp hΘ' hΛ₁ hbdry hφ hdomK ?_ θ
+    have haeH : ∀ᵐ θ ∂Λ₀, θ ∈ Θ_H := by
+      rw [ae_iff, show {θ | ¬ θ ∈ Θ_H} = Θ_Hᶜ from rfl, measure_compl hΘH (measure_ne_top _ _),
+        measure_univ, hΛ₀, tsub_self]
+    filter_upwards [haeH] with θ hθ'; exact hdomH θ hθ'
+  · -- α-admissibility against the subclass: level + concentration null domination
+    intro φ hφ hφlevel hdomK θ _
+    refine bayes_admissible_core hdens hjoint hfnonneg hsupp hΘ' hΛ₁ hbdry hφ hdomK ?_ θ
+    exact bayes_domH_ae hdens hjoint hfnonneg hΘH hφ0meas hφlevel hω
 
 end Bayes
 
