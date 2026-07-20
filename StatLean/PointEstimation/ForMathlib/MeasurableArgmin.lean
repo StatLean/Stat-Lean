@@ -427,4 +427,141 @@ theorem iInf_eq_iInf_rat_of_convex {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ�
     obtain ⟨q, rfl⟩ := hx
     exact iInf_le _ q
 
+/-- A lower semicontinuous coercive `ℝ≥0∞`-valued function on `ℝ` attains its infimum. The
+lower-semicontinuous replacement for `exists_forall_le_of_continuous_of_coercive`. -/
+theorem exists_forall_le_of_lsc_of_coercive {g : ℝ → ℝ≥0∞}
+    (hg : LowerSemicontinuous g)
+    (hcoer : Tendsto g (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞))) :
+    ∃ x : ℝ, ∀ y : ℝ, g x ≤ g y := by
+  set s : ℝ≥0∞ := ⨅ y, g y with hs
+  by_cases hstop : s = ⊤
+  · exact ⟨0, fun y => by rw [iInf_eq_top.mp hstop y]; exact le_top⟩
+  · have hslt : s < ⊤ := lt_top_iff_ne_top.mpr hstop
+    set c : ℝ≥0∞ := s + 1 with hc
+    have hctop : c < ⊤ := by
+      rw [hc]; exact ENNReal.add_lt_top.mpr ⟨hslt, ENNReal.one_lt_top⟩
+    have hsc : s < c := by rw [hc]; exact ENNReal.lt_add_right hstop one_ne_zero
+    obtain ⟨y₀, hy₀⟩ := iInf_lt_iff.mp hsc
+    have hmem : g ⁻¹' Set.Ioi c ∈ cocompact ℝ := hcoer (Ioi_mem_nhds hctop)
+    obtain ⟨tt, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hclosed : IsClosed {y | g y ≤ c} := hg.isClosed_preimage c
+    have hsub : {y | g y ≤ c} ⊆ tt := by
+      intro y hy
+      by_contra hyt
+      exact absurd (ht_sub hyt) (by simpa using hy)
+    have hcompact : IsCompact {y | g y ≤ c} := ht_comp.of_isClosed_subset hclosed hsub
+    have hne : {y | g y ≤ c}.Nonempty := ⟨y₀, hy₀.le⟩
+    obtain ⟨x, hx_mem, hx_min⟩ :=
+      LowerSemicontinuousOn.exists_isMinOn hne hcompact (hg.lowerSemicontinuousOn _)
+    refine ⟨x, fun y => ?_⟩
+    by_cases hy : g y ≤ c
+    · exact isMinOn_iff.mp hx_min y hy
+    · exact le_trans hx_mem (not_le.mp hy).le
+
+/-- A lower semicontinuous coercive function attains its infimum over a lower half-line
+`Iic q`. The lower-semicontinuous replacement for `exists_argmin_Iic`. -/
+private theorem exists_argmin_Iic_lsc {g : ℝ → ℝ≥0∞} (hg : LowerSemicontinuous g)
+    (hcoer : Tendsto g (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞))) (q : ℝ) :
+    ∃ w ≤ q, g w = ⨅ v ∈ Set.Iic q, g v := by
+  set mq : ℝ≥0∞ := ⨅ v ∈ Set.Iic q, g v with hmq
+  by_cases hmqtop : mq = ⊤
+  · refine ⟨q, le_refl q, ?_⟩
+    have h : mq ≤ g q := by
+      rw [hmq]; exact iInf₂_le q (Set.mem_Iic.mpr le_rfl)
+    rw [hmqtop] at h ⊢
+    exact top_le_iff.mp h
+  · have hmqlt : mq < ⊤ := lt_top_iff_ne_top.mpr hmqtop
+    set c : ℝ≥0∞ := mq + 1 with hc
+    have hctop : c < ⊤ := by
+      rw [hc]; exact ENNReal.add_lt_top.mpr ⟨hmqlt, ENNReal.one_lt_top⟩
+    have hmc : mq < c := by rw [hc]; exact ENNReal.lt_add_right hmqtop one_ne_zero
+    obtain ⟨v₀, hv₀q, hv₀c⟩ : ∃ v₀ ≤ q, g v₀ < c := by
+      have h : (⨅ v ∈ Set.Iic q, g v) < c := hmc
+      rw [iInf_lt_iff] at h
+      obtain ⟨v, hv⟩ := h
+      rw [iInf_lt_iff] at hv
+      obtain ⟨hvq, hvc⟩ := hv
+      exact ⟨v, hvq, hvc⟩
+    have hmem : g ⁻¹' Set.Ioi c ∈ cocompact ℝ := hcoer (Ioi_mem_nhds hctop)
+    obtain ⟨tt, ht_comp, ht_sub⟩ := mem_cocompact.mp hmem
+    have hclosed : IsClosed (Set.Iic q ∩ {v | g v ≤ c}) :=
+      isClosed_Iic.inter (hg.isClosed_preimage c)
+    have hsub : (Set.Iic q ∩ {v | g v ≤ c}) ⊆ tt := by
+      intro v hv
+      by_contra hvt
+      exact absurd (ht_sub hvt) (by simpa using hv.2)
+    have hcompact : IsCompact (Set.Iic q ∩ {v | g v ≤ c}) :=
+      ht_comp.of_isClosed_subset hclosed hsub
+    have hne : (Set.Iic q ∩ {v | g v ≤ c}).Nonempty := ⟨v₀, hv₀q, hv₀c.le⟩
+    obtain ⟨w, hw_mem, hw_min⟩ :=
+      LowerSemicontinuousOn.exists_isMinOn hne hcompact (hg.lowerSemicontinuousOn _)
+    refine ⟨w, hw_mem.1, ?_⟩
+    rw [hmq]
+    refine le_antisymm ?_ (iInf₂_le w hw_mem.1)
+    refine le_iInf₂ fun v hv => ?_
+    by_cases hvc : g v ≤ c
+    · exact isMinOn_iff.mp hw_min v ⟨hv, hvc⟩
+    · exact le_trans hw_mem.2 (not_le.mp hvc).le
+
+/-- A convex `ℝ≥0∞`-valued function is finite on the segment spanned by two finiteness
+points. -/
+private theorem lt_top_of_convex_segment {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ≥0 Set.univ g)
+    {a b : ℝ} (ha : g a < ⊤) (hb : g b < ⊤) {u v : ℝ≥0} (huv : u + v = 1) :
+    g (u • a + v • b) < ⊤ := by
+  refine lt_of_le_of_lt (hg.2 (Set.mem_univ a) (Set.mem_univ b) (zero_le u) (zero_le v) huv) ?_
+  rw [ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
+  exact ENNReal.add_lt_top.mpr ⟨ENNReal.mul_lt_top ENNReal.coe_lt_top ha,
+    ENNReal.mul_lt_top ENNReal.coe_lt_top hb⟩
+
+/-- The infimum over a lower half-line `Iic q`, for a convex function finite at `0`, is an
+infimum over the rationals. Convex replacement for the density step relativized to `Iic q`. -/
+private theorem iInf_Iic_eq_iInf_rat_min_of_convex {g : ℝ → ℝ≥0∞}
+    (hg : ConvexOn ℝ≥0 Set.univ g) (h0 : g 0 < ⊤) (q : ℚ) :
+    (⨅ v ∈ Set.Iic (q : ℝ), g v) = ⨅ p : ℚ, g (min (p : ℝ) (q : ℝ)) := by
+  apply le_antisymm
+  · refine le_iInf fun p => iInf₂_le (min (p : ℝ) (q : ℝ)) ?_
+    exact Set.mem_Iic.mpr (min_le_right _ _)
+  · refine le_iInf₂ fun w hw => ?_
+    have hwq : w ≤ (q : ℝ) := hw
+    set r : ℝ := min (0 : ℝ) (q : ℝ) with hr
+    set c : ℝ≥0∞ := ⨅ p : ℚ, g (min (p : ℝ) (q : ℝ)) with hcdef
+    have hrq : r ≤ (q : ℝ) := min_le_right _ _
+    by_cases hrtop : g r < ⊤
+    · have hmax : max r w ≤ (q : ℝ) := max_le hrq hwq
+      refine convex_iInf_le_aux hg (r := r) (w := w) hrtop (c := c) ?_ ?_
+      · calc c ≤ g (min ((0 : ℚ) : ℝ) (q : ℝ)) := iInf_le _ (0 : ℚ)
+          _ = g r := by rw [hr]; norm_num
+      · intro x hx hxr
+        obtain ⟨p, rfl⟩ := hxr
+        have hxq : (p : ℝ) ≤ (q : ℝ) := le_trans hx.2.le hmax
+        exact (iInf_le _ p).trans_eq (by rw [min_eq_left hxq])
+    · -- `g r = ⊤`: forces `q < 0`, `r = q`, and `g` is `⊤` on all of `Iic q`
+      have hqneg : (q : ℝ) < 0 := by
+        by_contra hq
+        push_neg at hq
+        exact hrtop (by rw [hr, min_eq_left hq]; exact h0)
+      have hrq' : r = (q : ℝ) := by rw [hr, min_eq_right hqneg.le]
+      have hgw : g w = ⊤ := by
+        by_contra hwne
+        have hwlt : g w < ⊤ := lt_top_iff_ne_top.mpr hwne
+        have hwneg : w < 0 := lt_of_le_of_lt hwq hqneg
+        set a : ℝ≥0 := ((q : ℝ) / w).toNNReal with ha
+        set b : ℝ≥0 := (1 - (q : ℝ) / w).toNNReal with hb
+        have haq : 0 ≤ (q : ℝ) / w := div_nonneg_of_nonpos hqneg.le hwneg.le
+        have hbq : 0 ≤ 1 - (q : ℝ) / w := by
+          have : 1 - (q : ℝ) / w = (w - q) / w := by field_simp [hwneg.ne]
+          rw [this]; exact div_nonneg_of_nonpos (by linarith) hwneg.le
+        have hab : a + b = 1 := by
+          rw [ha, hb, ← Real.toNNReal_add haq hbq, show (q : ℝ) / w + (1 - (q : ℝ) / w) = 1 by
+            ring, Real.toNNReal_one]
+        have hpt : a • w + b • (0 : ℝ) = (q : ℝ) := by
+          rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul, ha,
+            Real.coe_toNNReal _ haq, mul_zero, add_zero]
+          field_simp [hwneg.ne]
+        have hfin := lt_top_of_convex_segment hg (a := w) (b := (0 : ℝ)) hwlt h0 hab
+        rw [hpt] at hfin
+        rw [hrq'] at hrtop
+        exact hrtop hfin
+      rw [hgw]; exact le_top
+
 end StatLean.PointEstimation
