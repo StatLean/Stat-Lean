@@ -15,4 +15,8 @@ notes/
 tools/
 AGENTS.md
 CLAUDE.md
-classicallimits-build.log
+classicallimits-build.log# lean-fasrc-fan-out session artifacts: the launcher writes these INTO each cluster
+# worktree, and its auto-close runs `git add -A`, so without this they get committed
+# onto every harvested proof branch.
+.fanout-prompt.md
+.claude-session.log
