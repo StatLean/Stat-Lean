@@ -311,4 +311,120 @@ theorem exists_measurable_argmin {Ω : Type*} [MeasurableSpace Ω]
   · exact hM_meas measurableSet_Iio
   · exact measurableSet_eq_fun (hLq_meas q) hM_meas
 
+/-!
+### The convex (lower-semicontinuous) variant
+
+The `Continuous` hypothesis of `exists_measurable_argmin` cannot simply be weakened to lower
+semicontinuity: for a *convex* `ℝ≥0∞`-valued objective the finiteness domain can be a single
+irrational point (e.g. `g w = ∫⁻ x, e^{(δ₀ x - w)²/2} dκ` for a heavy fibre `κ` is finite at
+exactly one `w`), where the minimum is *not* approached along the rationals, so
+`⨅ q : ℚ, g q ≠ ⨅ v, g v` and the rational-relaxed-sublevel measurability of
+`exists_measurable_argmin` genuinely breaks. Convexity together with **one finiteness point**
+`g 0 < ⊤` rules out exactly this pathology: the finiteness domain is then a nondegenerate (or
+singleton-at-`0`) interval containing `0`, on whose rationals the infimum is approached from
+the `0`-side by the convexity inequality — no continuity required. This is the exact
+regularity the conditional-risk consumers can supply (their finiteness point comes from the
+finite-risk hypothesis via disintegration). -/
+
+/-- **Convexity replaces continuity (the density step).** For a convex `ℝ≥0∞`-valued `g`
+finite at a base point `r`, any quantity `c` bounded by `g` on the rationals of the open
+segment between `r` and `w` (and at `r` itself) is bounded by `g w`: rationals on that segment
+approach `w`, and the convexity inequality against the finite `g r` passes to the limit. This
+survives the jump to `⊤` at the boundary of the finiteness domain, where continuity fails. -/
+private theorem convex_iInf_le_aux {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ≥0 Set.univ g)
+    {r w : ℝ} (hr : g r < ⊤) {c : ℝ≥0∞} (hcr : c ≤ g r)
+    (hc : ∀ x ∈ Set.Ioo (min r w) (max r w), x ∈ Set.range ((↑) : ℚ → ℝ) → c ≤ g x) :
+    c ≤ g w := by
+  rcases eq_or_ne w r with rfl | hwr
+  · exact hcr
+  by_cases hgw : g w = ⊤
+  · simp [hgw]
+  have hwr' : w - r ≠ 0 := sub_ne_zero.mpr hwr
+  set t : ℝ → ℝ := fun x => (x - r) / (w - r) with ht
+  have hcont_t : Continuous t := (continuous_id.sub continuous_const).div_const _
+  set B : ℝ → ℝ≥0∞ :=
+    fun x => ENNReal.ofReal (1 - t x) * g r + ENNReal.ofReal (t x) * g w with hB
+  have htw : Filter.Tendsto t (𝓝 w) (𝓝 1) := by
+    have hval : t w = 1 := by rw [ht]; simp [div_self hwr']
+    rw [← hval]; exact hcont_t.tendsto w
+  have hB_tendsto : Filter.Tendsto B (𝓝 w) (𝓝 (g w)) := by
+    have h1 : Filter.Tendsto (fun x => ENNReal.ofReal (1 - t x)) (𝓝 w) (𝓝 0) := by
+      have h0 : Filter.Tendsto (fun x => 1 - t x) (𝓝 w) (𝓝 (0 : ℝ)) := by
+        have := (tendsto_const_nhds (x := (1 : ℝ))).sub htw
+        simpa using this
+      have := (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp h0
+      simpa using this
+    have h2 : Filter.Tendsto (fun x => ENNReal.ofReal (t x)) (𝓝 w) (𝓝 1) := by
+      have := (ENNReal.continuous_ofReal.tendsto (1 : ℝ)).comp htw
+      simpa using this
+    have hL : Filter.Tendsto (fun x => ENNReal.ofReal (1 - t x) * g r) (𝓝 w) (𝓝 0) := by
+      have := ENNReal.Tendsto.mul_const h1 (Or.inr hr.ne)
+      simpa using this
+    have hR : Filter.Tendsto (fun x => ENNReal.ofReal (t x) * g w) (𝓝 w) (𝓝 (g w)) := by
+      have h := ENNReal.Tendsto.mul_const h2
+        (show (1 : ℝ≥0∞) ≠ 0 ∨ g w ≠ ⊤ from Or.inl one_ne_zero)
+      simpa using h
+    have := hL.add hR
+    simpa [hB] using this
+  have hbound : ∀ x ∈ Set.Ioo (min r w) (max r w), g x ≤ B x := by
+    intro x hx
+    have e1t : 1 - t x = (w - x) / (w - r) := by rw [ht]; field_simp; ring
+    have h0t : 0 ≤ t x := by
+      rcases le_or_gt r w with hrw | hrw
+      · rw [min_eq_left hrw, max_eq_right hrw] at hx
+        exact div_nonneg (by linarith [hx.1]) (by linarith)
+      · rw [min_eq_right hrw.le, max_eq_left hrw.le] at hx
+        exact div_nonneg_of_nonpos (by linarith [hx.2]) (by linarith)
+    have h1t : 0 ≤ 1 - t x := by
+      rw [e1t]
+      rcases le_or_gt r w with hrw | hrw
+      · rw [min_eq_left hrw, max_eq_right hrw] at hx
+        exact div_nonneg (by linarith [hx.2]) (by linarith)
+      · rw [min_eq_right hrw.le, max_eq_left hrw.le] at hx
+        exact div_nonneg_of_nonpos (by linarith [hx.1]) (by linarith)
+    set α : ℝ≥0 := (1 - t x).toNNReal with hα
+    set β : ℝ≥0 := (t x).toNNReal with hβ
+    have hαβ : α + β = 1 := by
+      have hsum : (1 - t x) + t x = 1 := by ring
+      rw [hα, hβ, ← Real.toNNReal_add h1t h0t, hsum, Real.toNNReal_one]
+    have hpt : α • r + β • w = x := by
+      rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul, hα, hβ,
+        Real.coe_toNNReal _ h1t, Real.coe_toNNReal _ h0t, ht]
+      field_simp
+      ring
+    have hconv := hg.2 (Set.mem_univ r) (Set.mem_univ w) (zero_le α) (zero_le β) hαβ
+    rw [hpt] at hconv
+    refine hconv.trans_eq ?_
+    simp only [hB, hα, hβ, ENNReal.smul_def, smul_eq_mul]
+    rfl
+  haveI hne : (𝓝[Set.Ioo (min r w) (max r w) ∩ Set.range ((↑) : ℚ → ℝ)] w).NeBot := by
+    apply mem_closure_iff_nhdsWithin_neBot.mp
+    have hlt : min r w < max r w := min_lt_max.mpr (Ne.symm hwr)
+    have hdense := Rat.denseRange_cast.open_subset_closure_inter
+      (isOpen_Ioo (a := min r w) (b := max r w))
+    have hsub : closure (Set.Ioo (min r w) (max r w))
+        ⊆ closure (Set.Ioo (min r w) (max r w) ∩ Set.range ((↑) : ℚ → ℝ)) :=
+      closure_minimal hdense isClosed_closure
+    have hwIcc : w ∈ Set.Icc (min r w) (max r w) := ⟨min_le_right r w, le_max_right r w⟩
+    rw [← closure_Ioo hlt.ne] at hwIcc
+    exact hsub hwIcc
+  refine ge_of_tendsto (hB_tendsto.mono_left (nhdsWithin_le_nhds
+    (s := Set.Ioo (min r w) (max r w) ∩ Set.range ((↑) : ℚ → ℝ)))) ?_
+  filter_upwards [self_mem_nhdsWithin] with x hx
+  exact (hc x hx.1 hx.2).trans (hbound x hx.1)
+
+/-- The infimum of a convex `ℝ≥0∞`-valued function over `ℝ`, finite at `0`, is already
+attained as an infimum over the rationals. The convex replacement for
+`iInf_eq_iInf_rat_of_continuous`. -/
+theorem iInf_eq_iInf_rat_of_convex {g : ℝ → ℝ≥0∞} (hg : ConvexOn ℝ≥0 Set.univ g)
+    (h0 : g 0 < ⊤) :
+    (⨅ x : ℝ, g x) = ⨅ q : ℚ, g (q : ℝ) := by
+  refine le_antisymm (le_iInf fun q => iInf_le _ _) (le_iInf fun w => ?_)
+  refine convex_iInf_le_aux hg (r := 0) (w := w) (by simpa using h0)
+    (c := ⨅ q : ℚ, g (q : ℝ)) ?_ ?_
+  · exact (iInf_le _ (0 : ℚ)).trans_eq (by norm_num)
+  · intro x _ hx
+    obtain ⟨q, rfl⟩ := hx
+    exact iInf_le _ q
+
 end StatLean.PointEstimation
