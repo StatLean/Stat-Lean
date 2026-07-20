@@ -512,6 +512,15 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
     -- USER-INPUT: the alternative genuinely differs from the null in some cell
     (hne : ∃ j, p j ≠ π j) :
     Tendsto (fun n => ((P n) {ω | c < pearsonQ π (X n) ω}).toReal) atTop (nhds 1) := by
+  -- TODO (planned debt): consistency is a law-of-large-numbers argument, not a CLT one, so
+  -- neither supplied brick applies. The intended proof:
+  --   (1) a WLLN for the offending cell frequency `Yⱼ/n → pⱼ` in `P n`-probability (an
+  --       offending `j` with `pⱼ ≠ πⱼ` exists by `hne`); the repo's
+  --       `HypothesisTesting.ForMathlib.LindebergCLT.triangular_wlln_of_L1` or a direct
+  --       Chebyshev bound on the Bernoulli indicators `1[Xᵢ = j]` supplies it;
+  --   (2) the one-summand lower bound `pearsonQ π (X n) ω ≥ n (Yⱼ/n − πⱼ)²/πⱼ` (drop the
+  --       other nonnegative summands), whence `pearsonQ → ∞` in `P n`-probability and
+  --       therefore `P n {ω | c < pearsonQ} → 1` for the fixed critical value `c`.
   sorry
 
 /-- **Nondegenerate local power.** Against the local alternatives of
@@ -550,6 +559,18 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
           (Set.Ioi c)).toReal
       ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
           (Set.Ioi c)).toReal < 1 := by
+  -- TODO (planned debt): the three conjuncts build on `pearsonQ_weakConverges_noncentral`
+  -- (ii) but need analytic facts about the limit that are not among the supplied bricks:
+  --   (1) a portmanteau step upgrading the weak limit (ii) to convergence of the tail
+  --       probability `((P n).map pearsonQ)(Ioi c) → noncentralChiSquared k λ (Ioi c)`,
+  --       valid because `{c}` is `noncentralChiSquared`-null (absolute continuity); the
+  --       `WeakConverges` API in `ForMathlib.Contiguity` has no such continuity-set lemma;
+  --   (2) `α < tail` is STRICT: `chiSquared_tail_le_noncentralChiSquared` gives only `≤`;
+  --       strictness needs `λ = multinomialNoncentrality π h > 0` (from `hhne` + `hπpos`,
+  --       provable) together with STRICT monotonicity of `l ↦ noncentralChiSquared k l (Ioi c)`
+  --       at `l > 0` — only the non-strict `noncentralChiSquared_tail_mono` is imported;
+  --   (3) `tail < 1`: `noncentralChiSquared` is absolutely continuous with support `(0,∞)`,
+  --       so `Iic c` carries positive mass for the finite `c` fixed by `hc` (`0 < α < 1`).
   sorry
 
 end StatLean.HypothesisTesting
