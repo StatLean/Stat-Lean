@@ -233,7 +233,14 @@ theorem isCanonicalScaleMRE_residual_variance
     -- USER-INPUT: at least one residual coordinate (`s < n`); standing dimension condition
     (hm : 0 < m) :
     IsCanonicalScaleMRE (s := s) (m := m) 1 (fun y => canonicalRSS y / ((m : ℝ) + 2)) := by
-  sorry
+  -- The variance clause is the `r = 1` case of `isCanonicalScaleMRE_residual_pow`, with the
+  -- chi-square moment ratio evaluated by `residualScaleConst_one`.
+  have h := isCanonicalScaleMRE_residual_pow (s := s) (m := m) hm (r := 1) one_pos
+  have heq : (fun y : EuclideanSpace ℝ (Fin (s + m)) => residualScaleConst m 1 * canonicalRSS y ^ 1)
+      = fun y => canonicalRSS y / ((m : ℝ) + 2) := by
+    funext y; rw [residualScaleConst_one hm, pow_one]; ring
+  rw [heq] at h
+  exact h
 
 /-! ## Translations by the mean subspace, in the original coordinates -/
 
