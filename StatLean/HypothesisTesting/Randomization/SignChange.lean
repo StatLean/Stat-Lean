@@ -163,6 +163,18 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
   --    The hint's `weighted_iid_clt` supplies each marginal; the joint needs the multivariate
   --    version. `measurable_signChange_smul` supplies the action measurability;
   --    `Measurable (T n)` is still implicit (frozen signature). See report.
+  -- ⚠ OBSTRUCTION (verified this session): the statement is FALSE as stated. The frozen
+  -- signature omits `hT : ∀ n, Measurable (T n)`, which the forward engine and the moment
+  -- identities genuinely require (a non-measurable statistic makes every `P.map` the zero
+  -- measure). Counterexample: fix `P = N(0,1)`, `ψ = id`, `τ = 1` (so hsymm/hodd/hψmeas/
+  -- hψL2/hτpos/hτ all hold) and take `T n x = (√n)⁻¹ ∑ᵢ ψ (x i) + (n+1)⁻¹ · 1_{Bₙ} x` with
+  -- `Bₙ ⊆ ℝ^{Fin n}` a Bernstein set. Then `|remainder| ≤ (n+1)⁻¹ → 0` uniformly, so `hlin`
+  -- holds; but for every sign vector `g` the set `g · Bₙ` is again Bernstein, so `1_{Bₙ}(g•·)`
+  -- is not AEMeasurable, hence every pushforward `P.map (x ↦ (T (g•x), T (g'•x)))` is `0` and
+  -- `randPairLaw ≡ 0`. The zero measure does not weakly converge to the probability measure
+  -- `N(0,τ²) ⊗ N(0,τ²)` (test against `f ≡ 1`: `0 ↛ 1`). WITH `Measurable (T n)` added this is
+  -- the genuine Thm 17.2.4 bivariate CLT, still beyond `weighted_iid_clt` (which is univariate
+  -- with deterministic weights): it needs the conditional-on-data bivariate CLT + Slutsky.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** Under the
@@ -192,6 +204,12 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
   -- forward engine `randDist_tendstoInProb_cdf` of `Randomization/Asymptotics`, then rewrite the
   -- limit c.d.f. via the Gaussian scaling `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` (`hτpos`).
   -- Blocked on the CLT above and on the forward engine's measurability gap. See report.
+  -- ⚠ OBSTRUCTION (verified this session): `randDist_tendstoInProb_cdf` requires
+  -- `hT : ∀ n, Measurable (T n)`, which THIS signature omits and which is NOT derivable
+  -- (`hlin` is convergence in probability, indifferent to non-measurability via outer measure).
+  -- The Gaussian-scaling rewrite and `ContinuousAt (cdf (N(0,τ²)))` (from `noAtoms_gaussianReal`)
+  -- are both routine; the blocker is the missing `hT` plus the (currently false-as-stated)
+  -- weak-convergence input `weakConverges_randPairLaw_signChange`. See report.
   sorry
 
 /-! ### Asymmetric case, via the symmetrized model -/
@@ -227,6 +245,11 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
   -- claim transfers from `randDist_signChange_tendstoInProb` applied under `symmetrize P` (where
   -- `hsymm` holds and `hlin`/`hτ` are assumed). Needs the `|·|`-invariance lemma plus the previous
   -- (deferred) result. See report.
+  -- ⚠ OBSTRUCTION (verified this session): reduces to `randDist_signChange_tendstoInProb`
+  -- under `symmetrize P` (where `hsymm` holds via `symmetrize` being reflection-invariant),
+  -- plus the `|·|`-invariance transfer of the randomization law from `Measure.pi (symmetrize P)`
+  -- back to `Measure.pi P`. Both the invariance transfer and the forward result need
+  -- `hT : ∀ n, Measurable (T n)`, absent from this frozen signature (see above). See report.
   sorry
 
 /-- **The randomization critical value converges to `τ z_{1−α}`.** Companion of the
@@ -252,6 +275,14 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randQuantile (Fin n → ℤˣ) (T n) (1 - α) x)
       (τ * cdfQuantile (gaussianReal 0 1) (1 - α)) := by
+  -- ⚠ OBSTRUCTION (verified this session): the companion of the previous theorem. Apply
+  -- `randQuantile_tendstoInProb` to the limit `R = N(0,τ²)` under `symmetrize P`, discharging
+  -- `hcont` from `noAtoms_gaussianReal` and `hstrict` from strict monotonicity of the Gaussian
+  -- c.d.f. (positive density), then rewrite `cdfQuantile (N(0,τ²)) (1-α) = τ · cdfQuantile
+  -- (N(0,1)) (1-α)` via the Gaussian scaling. All routine EXCEPT: `randQuantile_tendstoInProb`
+  -- requires `hT : ∀ n, Measurable (T n)` (absent from this frozen signature, not derivable),
+  -- and the `|·|`-invariance transfer to `Measure.pi P` shared with the previous theorem. See
+  -- report.
   sorry
 
 end StatLean.HypothesisTesting
