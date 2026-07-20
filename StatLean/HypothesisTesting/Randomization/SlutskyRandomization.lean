@@ -20,8 +20,10 @@ then
 $$ \hat R_n^{AT+B}(t) \;\xrightarrow{P}\; R^{aT+b}(t) $$
 at every continuity point of the law $R^{aT+b}$ of $aT + b$.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.3 (Two-Sample Permutation Tests), Theorem 17.3.2 (a Slutsky theorem
+for randomization distributions). (`TSH4 §17.3 Thm 17.3.2`.)
 
 **Proof formalization notes.**
 * *The exact requirement on the random scalings.* No invariance of $A_n$ or $B_n$ under

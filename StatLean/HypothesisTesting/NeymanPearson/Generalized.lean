@@ -26,6 +26,12 @@ Contents:
   distributions whose power against the `(m+1)`-st strictly exceeds `α`;
 * `isMax_of_lagrangian` — the abstract Lagrangian sufficiency principle behind all of it.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.6 (A Generalization of the Fundamental Lemma), Theorem 3.6.1 (the
+generalized fundamental lemma with `m` side conditions), Corollary 3.6.1 and Lemma 3.6.1
+(Lagrangian sufficiency). (`TSH4 §3.6 Thm 3.6.1, Cor 3.6.1, Lem 3.6.1`.)
+
 **Proof formalization notes.**
 * The classical statement is set on a Euclidean sample space; the only role of that
   assumption is to support the weak compactness theorem for critical functions, which

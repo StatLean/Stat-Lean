@@ -30,8 +30,10 @@ with $\psi$ an **odd** function. Then:
 The second part is the reason the sign-change test is usable without symmetry: the
 randomization distribution still stabilizes, at the symmetrized model's scale.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), Theorem 17.2.4 (the
+sign-change randomization distribution is asymptotically normal). (`TSH4 §17.2 Thm 17.2.4`.)
 
 **Proof formalization notes.**
 * *The sign-change group.* It is `Fin n → ℤˣ`: the units of `ℤ` are exactly `±1`, so this

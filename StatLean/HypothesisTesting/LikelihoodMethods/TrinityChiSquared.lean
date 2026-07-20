@@ -29,8 +29,11 @@ $$ \bigl|\log p_\theta(x) - \log p_{\theta_0}(x)
 for `θ` in a neighbourhood of `θ₀` — it is what makes the local expansion uniform over
 bounded directions, and hence usable at the random direction `√n(θ̂ₙ − θ₀)`.
 
-**Reference.** Classical asymptotic likelihood theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
+Differentiable Families), §14.4 (Likelihood Methods in Parametric Models), Theorem 14.4.2
+(§14.4.2–14.4.4, Wald Tests, Rao Score Tests and Likelihood Ratio Tests): the three statistics
+are asymptotically equivalent and chi-squared. (`TSH4 §14.4 Thm 14.4.2`.)
 
 **Proof formalization notes.**
 * *Hypotheses are assigned per statistic, not globally.* The source states the whole theorem

@@ -22,6 +22,11 @@ passing also makes the UMP almost invariant test unique.
 hypothesis on the UMP unbiased test, a UMP unbiased test and a UMP almost invariant test
 coincide almost everywhere, and the latter is itself a.e. unique.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.6
+(Unbiasedness and Invariance), Theorem 6.6.1 (a unique UMP unbiased test and a UMP
+almost-invariant test coincide). (`TSH4 §6.6 Thm 6.6.1`.)
+
 **Proof formalization notes.**
 * The uniqueness of the unbiased solution is an **explicit hypothesis** (`huniq`), exactly
   as in the source, which assumes "there exists a UMP unbiased test `φ*` which is unique

@@ -19,8 +19,10 @@ predicates the whole area quantifies over:
 * `IsSimilar P ω α φ` — power identically `α` on `ω`;
 * `HasNeymanStructure T Q ν α φ` — conditional size `α` given a sufficient statistic.
 
-**Reference.** Classical testing theory; original sources in the bibliographic comments
-below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.1 (Stating the Problem), the formulation of a randomized test, its level
+and its power function. (`TSH4 §3.1`.)
 
 **Proof formalization notes.**
 * Powers are real Bochner integrals: for probability measures and `0 ≤ φ ≤ 1` they are

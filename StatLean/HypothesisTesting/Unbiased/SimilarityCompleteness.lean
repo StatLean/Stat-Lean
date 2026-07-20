@@ -21,8 +21,12 @@ family of laws of `T` on `ω` is **boundedly complete**:
 This is the engine that reduces optimal similar tests to a family of one-dimensional
 conditional Neyman–Pearson problems, one on each surface `T = t`.
 
-**Reference.** Classical theory of similar regions; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.3 (Similarity and Completeness), Theorem 4.3.2 (similar tests have
+Neyman structure iff the sufficient statistic is boundedly complete), together with Theorem
+4.3.1 (completeness of the natural statistic of a full-rank family). (`TSH4 §4.3 Thm 4.3.2,
+Thm 4.3.1`.)
 
 **Proof formalization notes.**
 * *The almost-everywhere carrier.* The source states both the Neyman-structure condition and

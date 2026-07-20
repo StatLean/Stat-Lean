@@ -25,6 +25,13 @@ power, by an almost invariant (and, under the structural conditions for almost i
 by a genuinely invariant) test of the statistic, so nothing is lost by performing the two
 reductions in that order.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.5
+(Almost Invariance), Lemma 6.5.1 (for a boundedly complete sufficient statistic, invariance of
+the power function is equivalent to almost invariance), Theorem 6.5.2 and Theorem 6.5.3
+(legitimacy of reducing by sufficiency before invariance). (`TSH4 §6.5 Lem 6.5.1, Thm 6.5.2,
+Thm 6.5.3`.)
+
 **Main results.**
 * `power_invariant_iff_almostInvariant` — for a boundedly complete family of laws of the
   statistic, invariance of the power function ⟺ almost invariance of the test;

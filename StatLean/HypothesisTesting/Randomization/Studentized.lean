@@ -24,8 +24,10 @@ different variances and the sample sizes are unbalanced**. When the populations 
 identical the randomization hypothesis holds and the test is additionally *exact* at every
 finite sample size, so studentization costs nothing.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.3 (Two-Sample Permutation Tests), Theorem 17.3.3 (asymptotic
+validity of the studentized two-sample permutation test). (`TSH4 §17.3 Thm 17.3.3`.)
 
 **Proof formalization notes.**
 * *The exact studentization.* The scale is the one displayed above, $D^2 = S_Y^2 +

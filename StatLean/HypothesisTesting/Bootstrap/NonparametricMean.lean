@@ -25,8 +25,11 @@ This file contains:
   coverage statements for the mean;
 * `studentized_root_cdf_tendsto`, `bootstrap_t_consistent` — the studentized versions.
 
-**Reference.** Classical nonparametric bootstrap theory for a mean; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.3 (Bootstrap Sampling Distributions), Theorem 18.3.3 (§18.3.2, The
+Nonparametric Mean), Theorem 18.3.4 (the studentized bootstrap-`t`) and Lemma 18.3.1 (the
+first-absolute-moment convergence tool). (`TSH4 §18.3 Thm 18.3.3, Thm 18.3.4, Lem 18.3.1`.)
 
 **Proof formalization notes.**
 * Convergence of the sampling distribution along the class is a Lindeberg central limit theorem

@@ -23,8 +23,11 @@ level. This file fixes:
 * `randTest G T α` — the exact level-`α` randomization test;
 * `randPValue G T x` — the randomization p-value `M⁻¹ #{g : T(g·x) ≥ T(x)}`.
 
-**Reference.** Classical permutation/randomization testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), Definition 17.2.1 (§17.2.1,
+The Basic Construction): the randomization hypothesis `gX =_d X` under `H₀`. (`TSH4 §17.2 Def
+17.2.1`.)
 
 **Proof formalization notes.**
 * Only invariance of the *null* law is assumed anywhere (the alternative need not be

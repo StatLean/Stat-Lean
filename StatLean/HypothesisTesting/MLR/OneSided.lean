@@ -31,6 +31,13 @@ Contents:
   has monotone likelihood ratio in its natural statistic, hence a UMP one-sided test;
 * `integral_mono_of_hasMLR` — a monotone statistic has monotone expectation.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.4 (Distributions with Monotone Likelihood Ratio), Theorem 3.4.1 (existence
+of a UMP one-sided test under a monotone likelihood ratio), Corollary 3.4.1 (the one-parameter
+exponential-family case) and Theorem 3.4.2 (the one-sided tests form an essentially complete
+class). (`TSH4 §3.4 Thm 3.4.1, Cor 3.4.1, Thm 3.4.2`.)
+
 **Proof formalization notes.**
 * The frozen `HasMLR` is the division-free cross-product condition; it does **not**
   include the classical requirement that `P_θ ≠ P_{θ'}` for `θ < θ'`. That requirement is

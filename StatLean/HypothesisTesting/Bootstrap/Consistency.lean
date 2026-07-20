@@ -30,8 +30,12 @@ This file contains:
 * `tendstoInMeasure_rowMean_triangular` — the triangular-array weak law used by the
   nonparametric-mean applications downstream.
 
-**Reference.** Classical bootstrap consistency theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.3 (Bootstrap Sampling Distributions), Theorem 18.3.1 (§18.3.1,
+Introduction and Consistency): general bootstrap consistency via the sequence-class criterion,
+with Theorem 18.3.2 (the uniform version and quantile consistency). (`TSH4 §18.3 Thm 18.3.1,
+Thm 18.3.2`.)
 
 **Designed deviation (metric-free formulation).** The reference tradition often describes
 smoothness of `J` in `P` through a metric `d` on the space of laws (`d(P_n, P) → 0` implies

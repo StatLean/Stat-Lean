@@ -24,6 +24,12 @@ Contents:
   likelihood-ratio test against the mixture, whose power is constant `= α` on a
   `Λ`-carrier `ω' ⊆ ω` and `≤ α` on all of `ω`, is most powerful.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.8 (Least Favorable Distributions), Theorem 3.8.1 and Corollary 3.8.1
+(reduction of a composite null to a simple one via a least favorable distribution). (`TSH4
+§3.8 Thm 3.8.1, Cor 3.8.1`.)
+
 **Proof formalization notes.**
 * The prior is carried as a measure `Λ : Measure Θ` on the parameter space together with
   `Λ ω = 1`, rather than as a measure on the subtype `ω`. This keeps `power P φ θ` and

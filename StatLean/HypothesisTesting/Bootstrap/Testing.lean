@@ -22,8 +22,10 @@ This file contains:
 * `tendsto_bootstrapTest_power_one` — the accompanying consistency claim against fixed
   alternatives.
 
-**Reference.** Bootstrap hypothesis testing; original sources in the bibliographic comments
-below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.5 (Hypothesis Testing), Theorem 18.5.1 (a bootstrap test has
+asymptotic level `α`). (`TSH4 §18.5 Thm 18.5.1`.)
 
 **Designed deviation (metric-free formulation, and its cost here).** The reference states this
 result with a metric `d` on laws: smoothness is `d(P_n, P) → 0 ⇒ G_n(·, P_n) ⇒ G(·, P)`, and the

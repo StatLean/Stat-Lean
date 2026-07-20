@@ -36,8 +36,10 @@ from the limit law plus a separate deviation step) is not needed. The general-`�
 statement below is the calibrated analogue of that classical bound, and reduces to it when
 the brick's constants are sharpened to `2` and `2`.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.2 (The Kolmogorov–Smirnov Test), Theorem 16.2.3 (the Kolmogorov–Smirnov test has no
+power against alternatives at distance `o(n^{-1/2})`). (`TSH4 §16.2 Thm 16.2.3`.)
 
 **Proof formalization notes.**
 * Powers are real numbers in `[0,1]` (`ENNReal.toReal` of the rejection probability), so

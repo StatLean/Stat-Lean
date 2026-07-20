@@ -17,6 +17,11 @@ Contents:
   at every confidence level `1 - α`, together with its characterization as the root of the
   displayed equation.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.5 (Confidence Bounds), Corollary 3.5.1 (uniformly most accurate one-sided
+confidence bounds under a monotone likelihood ratio). (`TSH4 §3.5 Cor 3.5.1`.)
+
 **Proof formalization notes.**
 * The optimality predicates `IsConfidenceFamily` and `IsUMAConfidence` come from the
   test/confidence-set duality development; this file consumes them and adds nothing to the

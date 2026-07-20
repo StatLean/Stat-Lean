@@ -23,6 +23,11 @@ variance `M²`; choosing `M²` above all the variances in play makes the contrib
 nuisance means to the likelihood ratio cancel, so that the ratio reduces to the one
 computed with the means known.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.7
+(Admissibility), Theorem 6.7.2 (a unique Bayes test is admissible) and Lemma 6.7.1 (the
+Gaussian scale-mixture integral identity). (`TSH4 §6.7 Thm 6.7.2, Lem 6.7.1`.)
+
 **Main results.**
 * `mixtureDensity`, `bayesTest` — the two-prior mixture densities and the nonrandomized
   Bayes test;

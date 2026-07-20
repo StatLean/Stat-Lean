@@ -16,8 +16,10 @@ randomized `{accept, reject}` decision rules). This file builds the bridge:
 
 Theorem-agnostic and Mathlib-only: nothing here mentions models, levels or power.
 
-**Reference.** Classical randomized-test formulation; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.1 (Stating the Problem), supporting material for the formulation of a
+randomized test as a critical function. (`TSH4 §3.1`.)
 
 **Proof formalization notes.**
 * The Bernoulli weights are `ENNReal.ofReal (φ x)` and `ENNReal.ofReal (1 − φ x)`, which makes

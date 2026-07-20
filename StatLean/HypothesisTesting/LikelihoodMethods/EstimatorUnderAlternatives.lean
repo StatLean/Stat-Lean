@@ -25,8 +25,11 @@ mutually contiguous:
 This "weak robustness" of the limiting law under perturbations of size `n^{-1/2}` is what
 makes such estimator sequences usable as the backbone of asymptotic testing theory.
 
-**Reference.** Classical asymptotic likelihood theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
+Differentiable Families), §14.4 (Likelihood Methods in Parametric Models), Theorem 14.4.1
+(§14.4.1, Efficient Likelihood Estimation): the limit law of an asymptotically linear
+estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
 
 **Proof formalization notes.**
 * Statements are built on the area conventions of the asymptotic-statistics development:

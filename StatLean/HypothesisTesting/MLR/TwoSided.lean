@@ -23,6 +23,12 @@ Contents:
   below;
 * `twoSided_ae_unique` — the two size conditions determine the test almost everywhere.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.7 (Two-Sided Hypotheses), Theorem 3.7.1 (the UMP two-sided test `C₁ < T <
+C₂` in a one-parameter exponential family) and Lemma 3.7.1 (the comparison/uniqueness step).
+(`TSH4 §3.7 Thm 3.7.1, Lem 3.7.1`.)
+
 **Proof formalization notes.**
 * The rejection region is an interval of the natural statistic, so the test cannot be
   obtained from a single likelihood-ratio comparison; the two size conditions are handled

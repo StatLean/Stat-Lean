@@ -49,8 +49,11 @@ edit required is the numeral `8 * Real.log (4 / α)` in `ksThreshold`: every sta
 this file and in `KSLocalPower.lean` continues to hold verbatim, because each of them is
 phrased through `ksThreshold` and re-derives the level from the same equation.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.2 (The Kolmogorov–Smirnov Test), Theorem 16.2.1 (pointwise consistency of the
+Kolmogorov–Smirnov test) and Theorem 16.2.2 (uniform power when `√n · d_K ≥ εₙ → ∞`). (`TSH4
+§16.2 Thm 16.2.1, Thm 16.2.2`.)
 
 **Proof formalization notes.**
 * `ksStat` reuses `MultipleTesting.empiricalCDF` (the counting c.d.f. `card {j | Xⱼ ≤ t}/n`)

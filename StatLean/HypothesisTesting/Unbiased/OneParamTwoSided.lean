@@ -30,8 +30,10 @@ sign turns `β'(θ₀) = 0` into exactly `E_{θ₀}[T φ] − E_{θ₀}[T]·E_{�
 with the size equation to give the displayed form. Both equations are transcribed literally
 below; neither may be dropped.
 
-**Reference.** Classical one-parameter exponential-family testing theory; original sources in
-the bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.2 (One-Parameter Exponential Families), the UMP unbiased two-sided
+tests of a one-parameter exponential family. (`TSH4 §4.2`.)
 
 **Proof formalization notes.**
 * *Dependency.* The critical function above is the complement `1 − φ` of the

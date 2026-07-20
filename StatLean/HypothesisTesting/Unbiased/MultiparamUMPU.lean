@@ -36,8 +36,11 @@ Contents:
 * `reparamUT`, `statTransformUT`, `inner_exponent_reparam`, `isCanonicalUT_reparam` — the
   reduction to canonical form for a parameter of interest `θ* = a₀θ + ⟪a, ϑ⟫`.
 
-**Reference.** Classical multiparameter exponential-family testing theory; original sources
-in the bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.4 (UMP Unbiased Tests for Multiparameter Exponential Families),
+Theorem 4.4.1 (the UMP unbiased tests `φ₁`–`φ₄` for a multiparameter exponential family).
+(`TSH4 §4.4 Thm 4.4.1`.)
 
 **Proof formalization notes.**
 * "The parameter set is not contained in a linear space of dimension less than `k+1`" is

@@ -19,6 +19,13 @@ $$ \frac{|G|^{-1}\sum_{g \in G} p_{\bar g\theta_1}(x)}
 where `θ₀` and `θ₁` are *any* members of the null and alternative classes — the ratio does
 not depend on which representatives are chosen.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.3
+(Uniformly Most Powerful Invariant Tests), Theorem 6.3.1 (for a finite group with transitive
+induced action the orbit-averaged likelihood ratio gives the UMP invariant test) and Theorem
+6.3.2 (the law of an invariant statistic depends only on the maximal invariant). (`TSH4 §6.3
+Thm 6.3.1, Thm 6.3.2`.)
+
 **Main results.**
 * `isInvariantTest_orbitAverage` — the orbit average of any function is invariant;
 * `orbitAverage_eq_avg_translated_density` — the orbit average of a density agrees a.e.

@@ -27,6 +27,11 @@ The right-translation condition holds in particular for a **right-invariant** me
 whose existence is guaranteed for a large class of groups by Haar theory, but the weaker
 null-set form is what the proof needs and is often easy to check directly.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.5
+(Almost Invariance), Theorem 6.5.1 (conditions under which an almost invariant test is
+equivalent to an invariant one) and Corollary 6.5.1. (`TSH4 §6.5 Thm 6.5.1, Cor 6.5.1`.)
+
 **Main results.**
 * `exists_invariant_ae_eq_of_almostInvariant` — almost invariant ⟹ equal a.e. to invariant;
 * `IsUMPAlmostInvariant` — UMP within the class of almost-invariant tests;

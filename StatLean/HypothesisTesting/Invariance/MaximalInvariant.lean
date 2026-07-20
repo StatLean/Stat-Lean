@@ -31,6 +31,12 @@ and `E` can be computed in two stages — first the `D`-maximal invariant `s`, t
 parameter through a maximal invariant of the induced group: invariance identifies all
 parameter points lying on a common induced orbit.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.2
+(Maximal Invariants), Lemma 6.1.1 (the family-preserving transformations form a group),
+Theorem 6.2.1 (a function is invariant iff it factors through a maximal invariant) and Theorem
+6.2.2 (stepwise maximal invariants). (`TSH4 §6.1 Lem 6.1.1; §6.2 Thm 6.2.1, Thm 6.2.2`.)
+
 **Main results.**
 * `PreservesFamily.mul`, `PreservesFamily.inv`, `familyPreservingSubgroup` — the group
   property, with `InducesOn.mul` / `InducesOn.inv` recording the homomorphism identities;

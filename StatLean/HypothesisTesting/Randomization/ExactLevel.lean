@@ -28,8 +28,11 @@ It also records the companion **super-uniformity** of the randomization $p$-valu
 $\hat p(x) = M^{-1}\#\{g : T(gx) \ge T(x)\}$, so that the nonrandomized test rejecting
 when $\hat p \le \alpha$ has level $\alpha$.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), Theorem 17.2.1 (the
+randomization test has exact finite-sample level `α` for a finite group). (`TSH4 §17.2 Thm
+17.2.1`.)
 
 **Proof formalization notes.**
 * *No integrality caveat.* The orbit identity is exact for every $x$: the boundary weight

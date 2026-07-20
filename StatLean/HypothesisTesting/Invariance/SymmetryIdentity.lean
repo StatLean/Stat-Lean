@@ -25,6 +25,11 @@ patterns* of the test to equal `α` pointwise, and sign-change invariance of the
 makes the conditional distribution of the signs given the absolute values uniform over
 those `2^N` patterns — so the pointwise average is exactly the conditional expectation.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.10
+(The Hypothesis of Symmetry), Lemma 6.10.1 (the sign-change identity for testing symmetry).
+(`TSH4 §6.10 Lem 6.10.1`.)
+
 **Main results.**
 * `signFlip` — the coordinatewise sign-change transformation;
 * `measurable_signFlip` — its measurability;

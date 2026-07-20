@@ -31,8 +31,10 @@ constrained by `∑ⱼ Yⱼ = n`, so only `k` of the centred and scaled cell fre
 free. Correspondingly, the noncentrality parameter is a sum over all `k + 1` cells, of the
 squared local shifts standardized by the null cell probabilities.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.3 (Pearson's Chi-Squared Statistic), Theorem 16.3.1 (§16.3.1, Simple Null
+Hypothesis): Pearson's chi-squared statistic converges to `χ²_k`. (`TSH4 §16.3 Thm 16.3.1`.)
 
 **Proof formalization notes.**
 * `multinomialCount` and `pearsonQ` are defined directly on categorical observations

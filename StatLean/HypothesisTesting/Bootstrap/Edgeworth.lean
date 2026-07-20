@@ -24,8 +24,11 @@ This file contains **statements only**:
 * `cornishFisher_studentized_quantile` — the attached expansion of the quantile function with
   its `O(n^{-1})` accuracy, uniform over levels bounded away from `0` and `1`.
 
-**Reference.** Higher-order asymptotics for the bootstrap; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.4.1 and 18.4.2
+(the one-term Edgeworth expansion for the studentized mean and its uniform form, giving the
+`O(n⁻¹)` bootstrap accuracy). (`TSH4 §18.4 Thm 18.4.1, Thm 18.4.2`.)
 
 **Proof formalization notes.**
 * Cramér's condition `limsup_{|s| → ∞} |ψ_F(s)| < 1` is rendered as: some constant below `1`

@@ -20,8 +20,10 @@ needs before it may pass from a pointwise limit law to a statement about the lev
 
 Mathlib-only; the conclusion is stated with Mathlib's `TendstoUniformly`.
 
-**Reference.** Classical distribution-function theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 11 (Basic Large-Sample
+Theory), §11.2 (Weak Convergence and Central Limit Theorems), Pólya's theorem: pointwise
+convergence of distribution functions to a continuous limit is uniform. (`TSH4 §11.2`.)
 
 **Proof formalization notes.**
 * Standard proof: fix `ε > 0` and choose a finite grid `x₀ < ⋯ < x_k` with `F x₀ < ε`,

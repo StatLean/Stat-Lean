@@ -27,8 +27,11 @@ The converse also holds: pointwise convergence in probability of $\hat R_n$ to a
 c.d.f. forces the joint asymptotic-independence condition. Nothing here assumes the
 randomization hypothesis.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), Theorem 17.2.3 (§17.2.2,
+Asymptotic Results): the limiting behaviour of the randomization distribution for a triangular
+array. (`TSH4 §17.2 Thm 17.2.3`.)
 
 **Proof formalization notes.**
 * *Triangular array.* The sample space, the group, the law and the statistic all change

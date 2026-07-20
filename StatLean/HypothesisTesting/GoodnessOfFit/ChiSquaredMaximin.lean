@@ -29,8 +29,11 @@ it is the same phenomenon that governs the large-`k` smooth test.
 * `noncentralTail_tendsto_normal` — `M(k, h_k) → 1 − Φ(z_{1−α} − γ)` when
   `(2k)^{-1/2} h_k² → γ`.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.3 (Pearson's Chi-Squared Statistic), Theorem 16.3.2 (the asymptotic maximin property
+of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail function `M(k,h)`).
+(`TSH4 §16.3 Thm 16.3.2, Lem 16.3.1`.)
 
 **Proof formalization notes.**
 * The local experiments are carried as data: `Q n h` is the law of a sample of size `n`

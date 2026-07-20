@@ -31,6 +31,12 @@ worse somewhere on the alternatives. Admissibility of `φ₀` follows; if in add
 size `α` is attained at a point of the closure of the null class, the sharper
 `α`-admissibility follows too.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.7
+(Admissibility), Theorem 6.7.1 (in an exponential family a test with closed convex acceptance
+region is d-admissible) and Corollary 6.7.1 (α-admissibility). (`TSH4 §6.7 Thm 6.7.1, Cor
+6.7.1`.)
+
 **Main results.**
 * `IsDAdmissible`, `IsAlphaAdmissible` — the two admissibility notions;
 * `statScaleFamily`, `statScaleBase` — the induced family and dominating measure on the

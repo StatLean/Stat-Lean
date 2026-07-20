@@ -24,6 +24,13 @@ Contents:
 * `power_gt_alpha_of_ne`, `power_eq_alpha_of_eq` — strict unbiasedness, and the honest
   degenerate case.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.2 (The Neyman–Pearson Fundamental Lemma), Theorem 3.2.1 (the fundamental
+lemma: existence, sufficiency and necessity of the likelihood-ratio form) and Corollary 3.2.1
+(strict unbiasedness unless the two distributions coincide). (`TSH4 §3.2 Thm 3.2.1, Cor
+3.2.1`.)
+
 **Proof formalization notes.**
 * The threshold lives in `ℝ≥0∞`: this is what admits the corner value `C = ∞` needed for
   `α = 0`, and it makes the convention "`0 · ∞ = 0`" (used exactly at that corner) the

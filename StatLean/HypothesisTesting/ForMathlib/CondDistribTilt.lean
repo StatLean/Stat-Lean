@@ -32,8 +32,11 @@ cancellation.
 * `condDistrib_fst_withDensity_tilt` — the tilt identity above, as an almost-everywhere
   equality of the two `condDistrib` kernels.
 
-**Reference.** Classical disintegration theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.4 (UMP Unbiased Tests for Multiparameter Exponential Families),
+supporting material for Lemma 4.4.1: conditional distributions under a product-form density
+tilt. (`TSH4 §4.4 Lem 4.4.1`.)
 
 **Proof formalization notes.**
 * Densities are `ℝ≥0∞`-valued (`g k : 𝓤 → ℝ≥0∞`, `𝓣 → ℝ≥0∞`), matching

@@ -20,8 +20,11 @@ The **quantile function** of a nondecreasing `F : ℝ → ℝ` is
 
 Mathlib-only; nothing here mentions tests or models.
 
-**Reference.** Classical distribution-function theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), supporting material for the
+randomization critical value: the generalized inverse of a distribution function. (`TSH4
+§17.2`.)
 
 **Proof formalization notes.**
 * `quantile` uses the `Real.sInf` junk conventions: the infimum of an empty or

@@ -29,8 +29,10 @@ unstudentized permutation test can fail to be asymptotically level $\alpha$ for 
 equality of *means* when the variances differ and the sample sizes are unbalanced, and why
 the studentized version of the companion file is needed.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.3 (Two-Sample Permutation Tests), Theorem 17.3.1 (the two-sample
+permutation central limit theorem). (`TSH4 §17.3 Thm 17.3.1`.)
 
 **Proof formalization notes.**
 * *The permutation action.* `Equiv.Perm (Fin N)` acts on `Fin N → ℝ` through Mathlib's

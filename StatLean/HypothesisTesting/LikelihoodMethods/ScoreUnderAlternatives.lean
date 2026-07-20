@@ -13,8 +13,11 @@ This is the exact statement that turns the score into a usable test statistic ag
 alternatives: the alternative moves the mean of the limiting law by `I(θ₀)h` while leaving
 the covariance unchanged, which is what makes the score test's local power computable.
 
-**Reference.** Classical asymptotic likelihood theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
+Differentiable Families), §14.4 (Likelihood Methods in Parametric Models), Corollary 14.4.1
+(under local alternatives the normalized score vector converges to `N(I(θ₀)h, I(θ₀))`). (`TSH4
+§14.4 Cor 14.4.1`.)
 
 **Proof formalization notes.**
 * The proof is the model application of Le Cam's third lemma. The area supplies every

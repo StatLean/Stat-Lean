@@ -38,8 +38,11 @@ bodies, not an application of anything in this library). The limit theorem
 `smoothStat_largeK_weakConverges_gaussian` is *not* deferral-eligible: it closes modulo
 the ball bound.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.4 (Neyman's Smooth Tests), Theorem 16.4.2 (§16.4.2, Neyman's Smooth Tests With Large
+`k`) and Lemma 16.4.1 (the multivariate Berry–Esseen-type bound). (`TSH4 §16.4 Thm 16.4.2, Lem
+16.4.1`.)
 
 **Proof formalization notes.**
 * Both Berry–Esseen statements are phrased at the level of laws — a probability measure

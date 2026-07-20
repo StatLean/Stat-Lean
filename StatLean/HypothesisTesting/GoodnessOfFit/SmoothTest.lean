@@ -35,8 +35,10 @@ the Fisher information of the embedding family at `θ = 0` equal to `Iₖ`, so t
 of the transfer lemma is the Euclidean shell `b ≤ |h| ≤ B` and the maximin value is the
 same noncentral chi-squared number that appeared for Pearson's test.
 
-**Reference.** Classical goodness-of-fit theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.4 (Neyman's Smooth Tests), Theorem 16.4.1 (§16.4.1, Fixed `k` Asymptotics): Neyman's
+smooth test is asymptotically maximin. (`TSH4 §16.4 Thm 16.4.1`.)
 
 **Proof formalization notes.**
 * `smoothModel` is `ExpFamily.ofDensity P₀ 1 ψ⃗ _`: the carrier is trivial and the base of

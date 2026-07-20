@@ -20,8 +20,10 @@ The sampling-CDF field `J : ℕ → Measure 𝓧 → ℝ → ℝ` and the class
 `C_P : Set (ℕ → Measure 𝓧)` are theorem-level *data*, supplied with their defining
 properties as hypotheses; no measurability in the measure argument is ever assumed.
 
-**Reference.** Classical bootstrap theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.3 (Bootstrap Sampling Distributions), the bootstrap sampling
+distribution and the empirical-measure resampling scheme. (`TSH4 §18.3`.)
 
 **Proof formalization notes.**
 * `empiricalMeasure` is a probability measure for `n > 0` (proved where used); `n = 0`

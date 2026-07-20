@@ -47,8 +47,11 @@ but if that route stalls it is the pre-agreed named debt for this work item, and
 consuming maximin theorems (`ChiSquaredMaximin.lean`, `SmoothTest.lean`) close modulo it.
 `sphereAverage_lr_monotone` is not deferral-eligible.
 
-**Reference.** Classical large-sample optimality theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.3 (Pearson's Chi-Squared Statistic), the least-favorable spherical mixture
+underlying Theorem 16.3.2, in the form transferred to the smooth tests of §16.4 (Theorem
+16.4.1). (`TSH4 §16.3 Thm 16.3.2; §16.4 Thm 16.4.1`.)
 
 **Proof formalization notes.**
 * The alternative shell is written `b² ≤ h⊤ I h` rather than `b ≤ |I^{1/2} h|`, which

@@ -17,8 +17,10 @@ separates the orbits — and tests by **invariant tests**. This file fixes:
 * `IsUMPInvariant P Θ₀ Θ₁ α φ` — UMP among invariant level-`α` tests;
 * `orbitAverage G φ` — the finite-group symmetrization `|G|⁻¹ ∑_g φ(g·x)`.
 
-**Reference.** Classical invariance theory for tests; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.1
+(Symmetry and Invariance), the definitions of an invariant testing problem and of an invariant
+test. (`TSH4 §6.1`.)
 
 **Proof formalization notes.**
 * The induced parameter action is data (a `MulAction G Θ` instance) with the model

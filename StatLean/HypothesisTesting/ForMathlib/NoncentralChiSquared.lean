@@ -39,8 +39,10 @@ noncentrality parameter.
   `(χ²_k − k)/√(2k) ⇝ N(0,1)`, the matching convergence of standardised upper quantiles,
   and the noncentral version with a drift.
 
-**Reference.** Classical distribution theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.3 (Pearson's Chi-Squared Statistic), supporting material for Lemma 16.3.1: the
+noncentral chi-squared distribution and its tail function. (`TSH4 §16.3 Lem 16.3.1`.)
 
 **Proof formalization notes.**
 * Edge cases of the definition. For `k = 0` the ambient space is a single point, so

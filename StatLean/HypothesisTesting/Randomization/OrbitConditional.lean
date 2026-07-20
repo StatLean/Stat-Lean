@@ -22,8 +22,10 @@ distribution $\hat R(t \mid x)$ of `Randomization/Defs`. In particular, when the
 values of $T$ are distinct, the uniform law on those $M$ values is a conditional
 distribution of $T(X)$ given the orbit.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.2 (Permutation and Randomization Tests), Theorem 17.2.2 (the
+conditional law given the orbit is the randomization distribution). (`TSH4 §17.2 Thm 17.2.2`.)
 
 **Proof formalization notes.**
 * The orbit $\sigma$-field is realized here as `invariantSigmaAlgebra G`, the

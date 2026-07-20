@@ -23,8 +23,10 @@ This file fixes:
 
 and states the two directions of the duality together with the optimality transfer.
 
-**Reference.** Classical confidence-set theory; original sources in the bibliographic comments
-below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.5 (Confidence Bounds), Theorem 3.5.1 (the duality between families of
+tests and confidence sets). (`TSH4 §3.5 Thm 3.5.1`.)
 
 **Proof formalization notes.**
 * `IsConfidenceFamily` compares in `ℝ≥0∞` (`ENNReal.ofReal γ ≤ P θ {x | θ ∈ S x}`), which

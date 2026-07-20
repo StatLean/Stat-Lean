@@ -28,8 +28,11 @@ Hilbert space". We therefore transport the class along the Fréchet–Riesz isom
 the image determines the class, and `exists_max_inner_of_constraints` — the statement the
 consumers actually use — is phrased back in `L²` with no weak-dual vocabulary at all.
 
-**Reference.** Classical functional analysis of the test class; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.6 (A Generalization of the Fundamental Lemma), supporting material for
+Theorem 3.6.1: weak compactness of the class of `[0,1]`-valued test functions. (`TSH4 §3.6 Thm
+3.6.1`.)
 
 **Proof formalization notes.**
 * Intended route for `isCompact_toWeakDualL2_image_testClass`: (i) `μ` finite gives

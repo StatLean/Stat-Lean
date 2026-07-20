@@ -20,8 +20,11 @@ $$ \bigl|\log p_\theta(x) - \log p_{\theta_0}(x)
 for `θ` in a neighbourhood of `θ₀` — the hypothesis under which the trinity of likelihood
 tests is analysed.
 
-**Reference.** Classical asymptotic likelihood theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
+Differentiable Families), §14.2 (Quadratic Mean Differentiability (q.m.d.)), the quadratic
+mean differentiability expansion, in the locally asymptotically normal form used uniformly
+over bounded directions. (`TSH4 §14.2`.)
 
 **Proof formalization notes.**
 * The supremum over the uncountable ball is avoided at statement level: instead of asserting

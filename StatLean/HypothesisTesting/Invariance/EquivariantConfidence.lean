@@ -24,6 +24,11 @@ family at level `1 − α` yields invariant tests that are no more powerful, hen
 every false parameter value at least as often. The original family is therefore uniformly
 most accurate among equivariant families.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.11
+(Equivariant Confidence Sets), Lemma 6.11.1 (equivariant confidence sets correspond to
+invariant acceptance regions). (`TSH4 §6.11 Lem 6.11.1`.)
+
 **Main results.**
 * `IsEquivariantConfidence`, `IsUMAEquivariant` — equivariance and uniform accuracy;
 * `isEquivariantConfidence_iff_acceptance_equivariant` — the dictionary, both directions;

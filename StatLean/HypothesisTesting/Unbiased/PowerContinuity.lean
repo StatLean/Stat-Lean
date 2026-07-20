@@ -21,8 +21,10 @@ Main results:
   the interior of the natural parameter set (statement only here);
 * `continuous_power_of_isCanonicalRepr` — the same for any continuous reparametrization.
 
-**Reference.** Classical theory of unbiased tests; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.1 (Unbiasedness for Hypothesis Testing), Lemma 4.1.1 (a test with
+continuous power that is UMP on the boundary is UMP unbiased). (`TSH4 §4.1 Lem 4.1.1`.)
 
 **Proof formalization notes.**
 * The boundary set is supplied as data together with the defining equation

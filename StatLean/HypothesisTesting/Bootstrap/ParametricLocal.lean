@@ -22,8 +22,11 @@ This file contains:
 * `tendsto_bootstrapTest_local_power` — the limiting power of the bootstrap test against
   contiguous alternatives `θ + n^{-1/2} hdir`.
 
-**Reference.** Classical parametric-bootstrap theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.3 (Bootstrap Sampling Distributions), Theorem 18.3.2 (the uniform
+consistency form, applied to a plug-in at an estimated parameter) and Corollary 18.3.1
+(bootstrap test local power). (`TSH4 §18.3 Thm 18.3.2, Cor 18.3.1`.)
 
 **Designed deviation (subsequence route replaces the almost sure representation).** The
 reference argument passes to an almost sure representation: it constructs, on a new probability

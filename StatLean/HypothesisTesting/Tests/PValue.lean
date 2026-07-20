@@ -16,7 +16,10 @@ each `R α` has null probability at most `α`, then `P_θ{\hat p ≤ u} ≤ u` f
 The converse direction is recorded too: the test that rejects when `\hat p ≤ α` is a level-`α`
 test.
 
-**Reference.** Classical p-value theory; original sources in the bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.3 (p-values), Lemma 3.3.1 (super-uniformity of the p-value obtained from a
+nested family of rejection regions). (`TSH4 §3.3 Lem 3.3.1`.)
 
 **Proof formalization notes.**
 * `nestedPValue` is the literal infimum, with the usual `Real.sInf` junk conventions (empty or

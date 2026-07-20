@@ -35,8 +35,10 @@ every group element" discharges `hm_inv` by `fun _ => Iff.rfl`.
 `groupAverage`; the intended end state is for the concept-layer name to abbreviate this one,
 which the bottom layer cannot arrange itself (it must not import the concept layer).
 
-**Reference.** Classical invariance and ergodic-averaging theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invariance), §6.3
+(Uniformly Most Powerful Invariant Tests), supporting material for Theorem 6.3.1: orbit
+averaging under a finite group action and the invariant σ-algebra. (`TSH4 §6.3 Thm 6.3.1`.)
 
 **Proof formalization notes.**
 * Measurability of the action is never an instance here: each statement that needs it takes

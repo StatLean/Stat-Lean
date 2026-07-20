@@ -29,8 +29,11 @@ theorem.
 * `var_linear` — the exact variance of a linear statistic.
 * `var_mean_linear_le` — the `O(1/m)` bound on the variance of the group average.
 
-**Reference.** Classical sampling theory; original sources in the bibliographic comments
-below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 12 (Extensions of the
+CLT to Sums of Dependent Random Variables), §12.2 (Random Sampling Without Replacement from a
+Finite Population), the moments of sampling without replacement from a finite population.
+(`TSH4 §12.2`.)
 
 **Proof formalization notes.**
 * Randomness is carried by the **finite-set** model: the sample space is the subtype

@@ -22,6 +22,12 @@ Contents:
   uniform on `(0,1)` (the substantive direction, stated constructively);
 * `cdf_le_iff_exists_monotone_coupling` — the two combined.
 
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.4 (Distributions with Monotone Likelihood Ratio), Lemma 3.4.1 (the
+monotone quantile coupling for stochastically ordered families) and Lemma 3.4.2 (monotone
+likelihood ratio makes `E_θ ψ` monotone for monotone `ψ`). (`TSH4 §3.4 Lem 3.4.1, Lem 3.4.2`.)
+
 **Proof formalization notes.**
 * Distribution functions are written as `fun x => (μ (Set.Iic x)).toReal` rather than
   through a separate cumulative-distribution-function object, so that the statement is

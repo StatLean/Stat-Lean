@@ -27,8 +27,11 @@ Contents:
 * `integral_eq_integral_condDistrib` — the overall power of a test is the average of its
   conditional powers over the law of `T`.
 
-**Reference.** Classical multiparameter exponential-family testing theory; original sources
-in the bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 4 (Unbiasedness: Theory
+and First Applications), §4.4 (UMP Unbiased Tests for Multiparameter Exponential Families),
+Lemma 4.4.1 (the canonical `(U,T)` form and the conditional exponential family obtained by
+conditioning on `T`). (`TSH4 §4.4 Lem 4.4.1`.)
 
 **Proof formalization notes.**
 * The conditional law is Mathlib's `condDistrib U T (P p)`, a Markov kernel `Ξ ⇝ ℝ`

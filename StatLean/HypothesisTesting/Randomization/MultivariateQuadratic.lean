@@ -35,8 +35,11 @@ either statistic has rejection probability tending to the nominal level under an
 mean $0$ and finite second moments — and retains *exact* level whenever $X_i$ and $-X_i$
 are identically distributed.
 
-**Reference.** Classical randomization/permutation testing; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 17 (Permutation and
+Randomization Tests), §17.4 (Further Examples), Lemmas 17.4.1–17.4.3 (the quadratic-form
+building block, joint convergence under two independent assignments, and the independent
+chi-squared pair limit). (`TSH4 §17.4 Lem 17.4.1–17.4.3`.)
 
 **Proof formalization notes.**
 * *Group.* The acting group is `Fin n → ℤˣ` (i.e. `{±1}ⁿ`) acting componentwise on

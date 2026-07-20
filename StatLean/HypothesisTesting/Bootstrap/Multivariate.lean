@@ -26,8 +26,11 @@ This file contains:
   functions, in the two forms stated for them: closeness of the resampled law to the sampling
   law, and uniform closeness of the distribution functions of the norm.
 
-**Reference.** Classical multivariate bootstrap theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 18 (Bootstrap and
+Subsampling Methods), §18.3 (Bootstrap Sampling Distributions), Theorem 18.3.5 (the
+multivariate bootstrap) and Theorem 18.3.6 (smooth functions of means), §18.3.3 (Further
+Examples). (`TSH4 §18.3 Thm 18.3.5, Thm 18.3.6`.)
 
 **Designed deviation (metric-free formulation).** Closeness of two laws on `ℝᵏ` is classically
 expressed through a metric metrizing weak convergence (bounded-Lipschitz, Lévy–Prokhorov, …).

@@ -40,8 +40,11 @@ Sharpening `c` to `2` would require the sharp in-expectation constant, which the
 does not have; a more careful chaining bound tightens `C` and `c` without changing any
 consumer, since the calibration statements only need *some* explicit pair `(C, c)`.
 
-**Reference.** Classical empirical-process theory; original sources in the bibliographic
-comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
+Fit), §16.2 (The Kolmogorov–Smirnov Test), supporting material for Theorems 16.2.1 and 16.2.2:
+a uniform-in-`n` exponential tail for the empirical process. (`TSH4 §16.2 Thm 16.2.1, Thm
+16.2.2`.)
 
 **Proof formalization notes.**
 * The empirical distribution function is defined locally, as a plain average of indicators,

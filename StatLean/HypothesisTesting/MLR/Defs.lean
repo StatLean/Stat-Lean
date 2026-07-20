@@ -11,8 +11,10 @@ positivity of order 2) form:
 * `HasMLR p T` — for all `θ < θ'` and all `x, y` with `T x ≤ T y`,
   `p_{θ'}(x)·p_θ(y) ≤ p_θ(x)·p_{θ'}(y)`.
 
-**Reference.** Classical monotone-likelihood-ratio theory; original sources in the
-bibliographic comments below.
+**Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
+Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 3 (Uniformly Most
+Powerful Tests), §3.4 (Distributions with Monotone Likelihood Ratio), the definition of a
+family with monotone likelihood ratio. (`TSH4 §3.4`.)
 
 **Proof formalization notes.**
 * The TP2 cross-product form avoids division junk entirely (no `0/0` cases) and is
