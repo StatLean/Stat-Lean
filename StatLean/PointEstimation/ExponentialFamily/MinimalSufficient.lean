@@ -1,5 +1,5 @@
-import StatLean.PointEstimation.ExponentialFamily.Defs
-import StatLean.PointEstimation.Sufficiency.Defs
+import StatLean.PointEstimation.ExponentialFamily.Basic
+import StatLean.PointEstimation.Sufficiency.Factorization
 import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 import Mathlib.LinearAlgebra.AffineSpace.Independent
 import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
@@ -115,6 +115,41 @@ theorem fullRank_exists_affineSpan [FiniteDimensional ℝ V] (E : ExpFamily 𝓧
   refine ⟨fun i => ((e i : t) : V), fun i => hts (e i).2, ?_⟩
   rw [hrange]; exact htspan
 
+/-- **Linear reconstruction from spanning inner products.** If a finite family `d : ι → V`
+spans the parameter space, the coordinate vector `v ↦ (⟨d i, v⟩)_i` determines `v`, and the
+inverse is realized by a continuous (hence measurable) map on the finite-dimensional coordinate
+space `ι → ℝ`. This is the linear-algebra core of the minimal-sufficiency inversion. -/
+private theorem exists_reconstruction {ι : Type*} [Fintype ι] (d : ι → V)
+    (hspan : Submodule.span ℝ (Set.range d) = (⊤ : Submodule ℝ V)) :
+    ∃ Ψ : (ι → ℝ) → V, Continuous Ψ ∧ ∀ v : V, Ψ (fun i => ⟪d i, v⟫_ℝ) = v := by
+  classical
+  -- the coordinate map `Φ v = (⟨d i, v⟩)_i` as a linear map
+  let Φ : V →ₗ[ℝ] (ι → ℝ) :=
+    { toFun := fun v i => ⟪d i, v⟫_ℝ
+      map_add' := fun v w => by funext i; simp only [Pi.add_apply]; rw [inner_add_right]
+      map_smul' := fun c v => by
+        funext i; simp only [RingHom.id_apply, Pi.smul_apply, smul_eq_mul]
+        rw [real_inner_smul_right] }
+  -- `Φ` is injective: `Φ v = 0` means `v ⟂ span (range d) = ⊤`, so `v = 0`
+  have hker : LinearMap.ker Φ = ⊥ := by
+    rw [LinearMap.ker_eq_bot']
+    intro v hv
+    have hvi : ∀ i, ⟪d i, v⟫_ℝ = 0 := fun i => congrFun hv i
+    have hvspan : ∀ w ∈ Submodule.span ℝ (Set.range d), ⟪w, v⟫_ℝ = 0 := by
+      intro w hw
+      induction hw using Submodule.span_induction with
+      | mem w hw => obtain ⟨i, rfl⟩ := hw; exact hvi i
+      | zero => simp
+      | add a b _ _ ha hb => rw [inner_add_left, ha, hb, add_zero]
+      | smul c a _ ha => rw [real_inner_smul_left, ha, mul_zero]
+    have hvv : ⟪v, v⟫_ℝ = 0 := hvspan v (by rw [hspan]; exact Submodule.mem_top)
+    exact inner_self_eq_zero.mp hvv
+  obtain ⟨Ψ, hΨ⟩ := Φ.exists_leftInverse_of_injective hker
+  refine ⟨Ψ, Ψ.continuous_of_finiteDimensional, fun v => ?_⟩
+  have h := LinearMap.congr_fun hΨ v
+  rw [LinearMap.comp_apply, LinearMap.id_apply] at h
+  exact h
+
 /-- **The natural statistic is minimal sufficient** for a canonical exponential family whose
 parameter set contains `s + 1` natural parameters spanning the parameter space affinely. -/
 theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
@@ -131,21 +166,109 @@ theorem isMinimalSufficient_stat {s : ℕ} (E : ExpFamily 𝓧 V)
     (hspan : ∃ η' : Fin (s + 1) → V, (∀ i, η' i ∈ Ξ') ∧
       affineSpan ℝ (Set.range η') = (⊤ : AffineSubspace ℝ V)) :
     IsMinimalSufficient (fun θ : Ξ' => E.P (θ : V)) E.stat := by
-  -- TODO: the two halves of `IsMinimalSufficient`.
-  -- (1) Sufficiency of `E.stat`: the density of `E.P η` against `E.base` is
-  --     `exp(⟨η, T⟩ - A(η))`, a function of `T` alone, giving the Fisher–Neyman factorization
-  --     `IsFactorizedDensity`; `Sufficiency.Factorization.isSufficient_of_isFactorizedDensity`
-  --     then yields `IsSufficient`. (That bridging lemma is itself an open `sorry` in this
-  --     worktree's `Sufficiency/Factorization.lean`, so this half cannot currently be
-  --     discharged without laundering another file's debt.)
-  -- (2) Minimality: for a competing sufficient `U`, the likelihood ratios
-  --     `p_{η^{(j)}}/p_{η^{(0)}} = exp(⟨η^{(j)} - η^{(0)}, T⟩ - ΔA)` are `U`-measurable; the
-  --     affine-span hypothesis makes the vector `(⟨η^{(j)} - η^{(0)}, T⟩)_j` determine `T` up
-  --     to `a.e.` equality, so `T` factors through `U` by Doob–Dynkin
-  --     (`Measurable.exists_eq_measurable_comp`). This is a substantial development
-  --     (log-likelihood inversion + measurable selection) beyond the imported API.
-  -- The statement is left exactly as posed; only the proof is deferred.
-  sorry
+  classical
+  set P : Ξ' → Measure 𝓧 := fun θ => E.P (θ : V) with hPdef
+  haveI hProb : ∀ θ : Ξ', IsProbabilityMeasure (P θ) :=
+    fun θ => isProbabilityMeasure_P E hbase (hΞ θ.2)
+  -- the density `dP_θ/dν = exp(⟨θ, T⟩ - A(θ))`
+  set p : Ξ' → 𝓧 → ℝ≥0∞ :=
+    fun θ x => ENNReal.ofReal (Real.exp (⟪(θ : V), E.stat x⟫_ℝ - E.logPartition (θ : V)))
+    with hpdef
+  have hp : ∀ θ : Ξ', Measurable (p θ) := fun θ =>
+    (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
+      measurable_const).exp.ennreal_ofReal
+  have hP : ∀ θ : Ξ', P θ = E.base.withDensity (p θ) := fun θ => P_eq_withDensity E (hΞ θ.2)
+  -- (1) Sufficiency of `E.stat` via the Fisher–Neyman factorization `p_θ = (g_θ ∘ T)·1`.
+  have hSuf : IsSufficient P E.stat :=
+    isSufficient_of_isFactorizedDensity P E.base p hp hP E.stat_meas
+      (g := fun θ t => ENNReal.ofReal (Real.exp (⟪(θ : V), t⟫_ℝ - E.logPartition (θ : V))))
+      (h := fun _ => 1)
+      (fun θ => (((continuous_const.inner continuous_id).measurable).sub
+        measurable_const).exp.ennreal_ofReal)
+      measurable_const
+      (fun θ => Filter.Eventually.of_forall fun x => (mul_one _).symm)
+  refine ⟨hSuf, ?_⟩
+  -- (2) Minimality: reconstruct `T` from any competing sufficient statistic `U`.
+  intro S' _ U hU hSufU
+  obtain ⟨η', hmem, hAS⟩ := hspan
+  set d : Fin (s + 1) → V := fun i => η' i - η' 0 with hddef
+  -- the differences `η' i - η' 0` span `V`
+  have hspan_d : Submodule.span ℝ (Set.range d) = (⊤ : Submodule ℝ V) := by
+    have hvs : vectorSpan ℝ (Set.range η') = (⊤ : Submodule ℝ V) := by
+      have h := congrArg AffineSubspace.direction hAS
+      rwa [direction_affineSpan, AffineSubspace.direction_top] at h
+    have hdeq : d = (fun w => w -ᵥ η' 0) ∘ η' := by funext i; simp [hddef, vsub_eq_sub]
+    rw [hdeq, Set.range_comp, ← vectorSpan_eq_span_vsub_set_right ℝ
+      (show η' 0 ∈ Set.range η' from ⟨0, rfl⟩), hvs]
+  obtain ⟨Ψ, hΨcont, hΨv⟩ := exists_reconstruction d hspan_d
+  -- `U` sufficient ⇒ densities factor through `U`
+  obtain ⟨g', h', hg'meas, _, hfac⟩ :=
+    isFactorizedDensity_of_isSufficient P E.base p hp hP hU hSufU
+  set θi : Fin (s + 1) → Ξ' := fun i => ⟨η' i, hmem i⟩ with hθidef
+  have hpθi : ∀ (i : Fin (s + 1)) (x : 𝓧),
+      p (θi i) x = ENNReal.ofReal (Real.exp (⟪η' i, E.stat x⟫_ℝ - E.logPartition (η' i))) :=
+    fun _ _ => rfl
+  -- the reconstruction coordinates, a `U`-measurable function
+  set φ : Fin (s + 1) → S' → ℝ :=
+    fun i u => (E.logPartition (η' i) - E.logPartition (η' 0))
+      + Real.log ((g' (θi i) u).toReal) - Real.log ((g' (θi 0) u).toReal) with hφdef
+  have hφmeas : ∀ i, Measurable (φ i) := fun i =>
+    (measurable_const.add (Real.measurable_log.comp (hg'meas (θi i)).ennreal_toReal)).sub
+      (Real.measurable_log.comp (hg'meas (θi 0)).ennreal_toReal)
+  set H : S' → V := fun u => Ψ (fun i => φ i u) with hHdef
+  have hHmeas : Measurable H :=
+    hΨcont.measurable.comp (measurable_pi_lambda _ fun i => hφmeas i)
+  -- core: `φ i (U x) = ⟨d i, T x⟩` a.e. under the reference measure
+  have hphi : ∀ i, ∀ᵐ x ∂E.base, φ i (U x) = ⟪d i, E.stat x⟫_ℝ := by
+    intro i
+    filter_upwards [hfac (θi i), hfac (θi 0)] with x hxi hx0
+    have hEi : Real.exp (⟪η' i, E.stat x⟫_ℝ - E.logPartition (η' i))
+        = (g' (θi i) (U x)).toReal * (h' x).toReal := by
+      have h := congrArg ENNReal.toReal hxi
+      rw [hpθi i x, ENNReal.toReal_ofReal (Real.exp_pos _).le, ENNReal.toReal_mul] at h
+      exact h
+    have hE0 : Real.exp (⟪η' 0, E.stat x⟫_ℝ - E.logPartition (η' 0))
+        = (g' (θi 0) (U x)).toReal * (h' x).toReal := by
+      have h := congrArg ENNReal.toReal hx0
+      rw [hpθi 0 x, ENNReal.toReal_ofReal (Real.exp_pos _).le, ENNReal.toReal_mul] at h
+      exact h
+    have hb_nn : (0 : ℝ) ≤ (h' x).toReal := ENNReal.toReal_nonneg
+    have hai_nn : (0 : ℝ) ≤ (g' (θi i) (U x)).toReal := ENNReal.toReal_nonneg
+    have ha0_nn : (0 : ℝ) ≤ (g' (θi 0) (U x)).toReal := ENNReal.toReal_nonneg
+    have hprodi : 0 < (g' (θi i) (U x)).toReal * (h' x).toReal := hEi ▸ Real.exp_pos _
+    have hprod0 : 0 < (g' (θi 0) (U x)).toReal * (h' x).toReal := hE0 ▸ Real.exp_pos _
+    have hbpos : 0 < (h' x).toReal := by
+      rcases lt_or_ge 0 (h' x).toReal with hb | hb
+      · exact hb
+      · nlinarith [hprod0, ha0_nn, hb]
+    have hapos_i : 0 < (g' (θi i) (U x)).toReal := by
+      rcases lt_or_ge 0 (g' (θi i) (U x)).toReal with ha | ha
+      · exact ha
+      · nlinarith [hprodi, hb_nn, ha]
+    have hapos_0 : 0 < (g' (θi 0) (U x)).toReal := by
+      rcases lt_or_ge 0 (g' (θi 0) (U x)).toReal with ha | ha
+      · exact ha
+      · nlinarith [hprod0, hb_nn, ha]
+    have hlogi : ⟪η' i, E.stat x⟫_ℝ - E.logPartition (η' i)
+        = Real.log ((g' (θi i) (U x)).toReal) + Real.log ((h' x).toReal) := by
+      rw [← Real.log_exp (⟪η' i, E.stat x⟫_ℝ - E.logPartition (η' i)), hEi,
+        Real.log_mul (ne_of_gt hapos_i) (ne_of_gt hbpos)]
+    have hlog0 : ⟪η' 0, E.stat x⟫_ℝ - E.logPartition (η' 0)
+        = Real.log ((g' (θi 0) (U x)).toReal) + Real.log ((h' x).toReal) := by
+      rw [← Real.log_exp (⟪η' 0, E.stat x⟫_ℝ - E.logPartition (η' 0)), hE0,
+        Real.log_mul (ne_of_gt hapos_0) (ne_of_gt hbpos)]
+    simp only [hφdef, hddef, inner_sub_left]
+    linarith [hlogi, hlog0]
+  -- assemble `H ∘ U = T` a.e. under the reference, then transport to every member
+  have hbaseAE : (fun x => H (U x)) =ᵐ[E.base] E.stat := by
+    have hall : ∀ᵐ x ∂E.base, ∀ i, φ i (U x) = ⟪d i, E.stat x⟫_ℝ := (ae_all_iff).2 hphi
+    filter_upwards [hall] with x hx
+    show Ψ (fun i => φ i (U x)) = E.stat x
+    rw [show (fun i => φ i (U x)) = fun i => ⟪d i, E.stat x⟫_ℝ from funext hx]
+    exact hΨv (E.stat x)
+  refine ⟨H, hHmeas, fun θ => ?_⟩
+  have hac : P θ ≪ E.base := by rw [hP θ]; exact withDensity_absolutelyContinuous E.base (p θ)
+  exact hbaseAE.filter_mono hac.ae_le
 
 end ExpFamily
 
