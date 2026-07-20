@@ -402,6 +402,73 @@ theorem residualScaleConst_one
   rw [div_eq_div_iff (by positivity) (by positivity)]
   ring
 
+/-- Measurability of the residual sum of squares. -/
+private lemma measurable_canonicalRSS :
+    Measurable (canonicalRSS (s := s) (m := m)) :=
+  Finset.measurable_sum _ (fun j _ =>
+    (((measurable_pi_apply (Fin.natAdd s j)).comp (WithLp.measurable_ofLp 2 _))).pow_const 2)
+
+/-- The residual sum of squares scales by `c²` under the location-scale group action
+`y ↦ c(y + (a, 0))`: the signal shift `a` leaves every residual coordinate untouched and the
+scaling multiplies each by `c`. -/
+private lemma canonicalRSS_smul_add_canonicalMean (c : ℝ) (a : Fin s → ℝ)
+    (y : EuclideanSpace ℝ (Fin (s + m))) :
+    canonicalRSS (c • (y + canonicalMean a)) = c ^ 2 * canonicalRSS y := by
+  simp only [canonicalRSS, Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun j _ => ?_)
+  have hmean : (canonicalMean a) (Fin.natAdd s j) = 0 := by
+    show (Fin.append a (0 : Fin m → ℝ)) (Fin.natAdd s j) = 0
+    rw [Fin.append_right]; rfl
+  rw [PiLp.smul_apply, PiLp.add_apply, hmean, add_zero, smul_eq_mul, mul_pow]
+
+/-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
+the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
+against every measurable degree-`2r` location-scale-equivariant competitor.
+
+TODO. This is the Pitman location-scale optimality reduction and is the single remaining
+open piece of the file. Precise route and obstruction, both verified on paper:
+
+* *Reduction.* Head-translation equivariance (`c = 1`) makes any equivariant `δ'` invariant
+  under `y ↦ y + (a, 0)`, so `δ'(y) = f(y_res)` depends only on the residual block; the
+  scaling clause then makes `f : ℝᵐ → ℝ` positively homogeneous of degree `2r`
+  (`f(c • w) = c^{2r} f(w)`). Under the base law `(0, 1)` the residual block is standard
+  Gaussian `γₘ = N(0, Iₘ)`, so the risk is `∫ (f(w) − 1)² dγₘ`, with the reference
+  `f₀(w) = t⋆‖w‖^{2r}`, `t⋆ = residualScaleConst m r = E[V^r]/E[V^{2r}]`, `V = ‖w‖² ∼ χ²ₘ`.
+
+* *L²-projection identity.* In `L²(γₘ)` the degree-`2r` homogeneous functions form a linear
+  subspace, and `f₀` is exactly the orthogonal projection of the constant `1` onto it:
+  `∫ (f − f₀)(f₀ − 1) dγₘ = 0` for every such `f`, whence
+  `∫ (f − 1)² = ∫ (f − f₀)² + ∫ (f₀ − 1)² ≥ ∫ (f₀ − 1)²`. The orthogonality is equivalent to
+  the moment identity `∫ g dγₘ = t⋆ ∫ ‖w‖^{2r} g dγₘ` for every degree-`2r` homogeneous `g`.
+
+* *The moment identity* follows by iterating the base recursion
+  `∫ h ‖w‖² dγₘ = (m + 2q) ∫ h dγₘ` for `h` positively homogeneous of degree `2q` (giving
+  `∫ ‖w‖^{2r} g dγₘ = ∏_{j<r}(m + 2r + 2j) · ∫ g dγₘ`, and `t⋆ = 1/∏_{j<r}(m + 2r + 2j)`
+  by taking `g = ‖w‖^{2r}` and `map_sum_sq_eq_chiSquared` + `integrable_pow_chiSquared`).
+
+* *The base recursion* is the only genuinely analytic step. It is obtained from the exact
+  variance-scaling identity `∫ h d(N(0, σ²Iₘ)) = σ^{2q} ∫ h dγₘ` (immediate from
+  `gaussianReal_map_const_mul` + homogeneity, no calculus) by differentiating the Gaussian
+  expectation in the variance `σ²` at `σ² = 1`, where the density-side derivative equals
+  `½(∫ h‖w‖² dγₘ − m ∫ h dγₘ)` and the scaling side equals `q ∫ h dγₘ`.
+
+* *Obstruction.* The differentiation-under-the-integral step
+  (`hasDerivAt_integral_of_dominated_loc_of_deriv_le`) must dominate the `σ²`-derivative of
+  `h(w)·(density)` on a neighbourhood of `σ² = 1` by a fixed integrable envelope, for a
+  merely *measurable* homogeneous `h ∈ L²(γₘ)` — the envelope
+  `|h|(1 + ‖w‖²)e^{-c‖w‖²}`, `¼ < c < ½`, is integrable by Cauchy–Schwarz against the
+  `L²(γₘ)` bound, but assembling this and the full `L²` orthogonality expansion is a large
+  development. Mathlib has no isotropic-Gaussian polar decomposition
+  (`‖w‖ ⊥ w/‖w‖`) that would give the moment identity directly, so this analytic route is
+  the available one. -/
+private lemma canonicalScaleRisk_residualScaleConst_le
+    (hm : 0 < m) {r : ℕ} (hr : 0 < r)
+    (δ' : EuclideanSpace ℝ (Fin (s + m)) → ℝ) (hδ'meas : Measurable δ')
+    (hδ'equiv : IsCanonicalScaleEquivariant r δ') :
+    canonicalScaleRisk (s := s) (m := m) (fun y => residualScaleConst m r * canonicalRSS y ^ r)
+      ≤ canonicalScaleRisk δ' := by
+  sorry
+
 /-- A fixed multiple of `(S²)^r` is minimum risk equivariant for `(σ²)^r` under the
 location-scale group, the multiplier being the chi-square moment ratio. -/
 theorem isCanonicalScaleMRE_residual_pow
@@ -411,14 +478,16 @@ theorem isCanonicalScaleMRE_residual_pow
     {r : ℕ} (hr : 0 < r) :
     IsCanonicalScaleMRE (s := s) (m := m) r
       (fun y => residualScaleConst m r * canonicalRSS y ^ r) := by
-  -- DEBT (Pitman scale core + χ² moments). Under the base law `(0, 1)` the residual sum of
-  -- squares `S² ~ χ²ₘ` (`integrable_pow_chiSquared` supplies the needed moments) is a maximal
-  -- invariant for the location-scale group among degree-`2r` equivariant estimators, which all
-  -- take the form `S^{2r}·φ(angular invariants)`. Minimizing `E[(c·S^{2r} − 1)²]` over the
-  -- constant `c` gives `c = E[S^{2r}]/E[S^{4r}] = residualScaleConst m r`; conditioning shows no
-  -- non-constant `φ` improves on the constant. Needs the conditional-minimization machinery
-  -- (analogous to the χ²-moment argument used for `residualScaleConst_one`).
-  sorry
+  refine ⟨measurable_const.mul (measurable_canonicalRSS.pow_const r), ?_, ?_⟩
+  · -- equivariance: `S²` scales by `c²`, so `(S²)^r` scales by `c^{2r}`
+    intro c _ a y
+    show residualScaleConst m r * canonicalRSS (c • (y + canonicalMean a)) ^ r
+        = c ^ (2 * r) * (residualScaleConst m r * canonicalRSS y ^ r)
+    rw [canonicalRSS_smul_add_canonicalMean, mul_pow, ← pow_mul]
+    ring
+  · -- minimality: the analytic core, lifted to a named `private` lemma
+    exact fun δ' hδ'meas hδ'equiv =>
+      canonicalScaleRisk_residualScaleConst_le hm hr δ' hδ'meas hδ'equiv
 
 /-- The classical variance clause: under the loss `(d − σ²)²/σ⁴`, the minimum risk
 equivariant estimator of `σ²` is `S²/(m + 2)`, that is `S²/(n − s + 2)`. -/
