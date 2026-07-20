@@ -1,8 +1,40 @@
 # PointEstimation Batch 11 — orchestration status
 
-Last update: 2026-07-15 (campaign start; design frozen, stubs in progress).
+Last update: 2026-07-20 (area CLOSED to 10 documented deferrals; merged to LOCAL main; citations rewritten).
 
 Integration branch: `pe/batch11` (off main 31c61ed). Proof branches `pe/<topic>` base off it. Merge to local `main` after full close (never GitHub origin without user request).
+
+## Current state — 2026-07-20
+
+**Merged to LOCAL `main`** (commit `a7410a2`; NOT pushed to GitHub origin). Area builds green.
+`StatLean.lean` imports `StatLean.PointEstimation`.
+
+**Open sorries: 10**, all documented deferrals:
+
+| count | file | nature |
+|---|---|---|
+| 2 | UMVU/LehmannScheffe.lean | `isUMVU_of_fullRank_expFamily` unprovable at its frozen polymorphic signature (no completeness theorem for abstract `V`; needs Euclidean + `[SigmaFinite E.base]`, `E.base ≠ 0`). Second: minimality step needs a global `Measurable δ'` the competitor's `MemEstL2` cannot supply without a dominating measure. |
+| 2 | Equivariance/LocationMRE.lean | measurable-argmin selection under a convex (possibly `∞`-valued) loss |
+| 1 | Equivariance/ScaleMRE.lean | scale twin of the above |
+| 1 | InformationInequality/Attainment.lean | `expFamily_of_cramer_rao_attained_core` needs a differentiation-under-integral (swap) datum the frozen signature omits; attainment alone does NOT force Cauchy–Schwarz equality |
+| 1 | Sufficiency/RegularConditional.lean | general standard-Borel gluing (pre-agreed deferral; the dominated version consumed by Batch 12 IS fully proved) |
+| 1 | ExponentialFamily/Smoothness.lean | — |
+| 1 | LinearModel/RandomDesign.lean | — |
+| 1 | LinearModel/Equivariant.lean | — |
+
+**Correction to an earlier ledger claim:** the note that completeness "transfers cleanly, the
+only missing input is the sufficiency kernel" for `isUMVU_of_fullRank_expFamily` is **wrong** —
+`hcomp` is not even a hypothesis there, and no abstract-`V` completeness result exists.
+
+**Genuinely proved late additions:** `variance_rbEstimator_le_of_complete` (axiom-clean;
+Rao–Blackwellize the competitor through `T`, both are unbiased functions of the complete `T`,
+hence a.e. equal).
+
+### Citations
+All 57 `**Reference.**` paragraphs rewritten to concrete Lehmann & Casella *Theory of Point
+Estimation* 2nd ed. numbers (chapter/section/theorem, plus a `TPE2 §X.Y Thm Z` tag). Note the
+distinct convention: the *Bibliographic comments.* paragraphs cite primary literature and
+deliberately do NOT name the textbook; `**Reference.**` now does.
 
 ## Design decisions (frozen)
 
