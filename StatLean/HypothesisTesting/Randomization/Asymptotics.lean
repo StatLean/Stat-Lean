@@ -316,6 +316,34 @@ lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Meas
   rw [Finset.sum_congr rfl (fun g _ => hstep g), Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     ← pow_two, ENNReal.inv_mul_cancel (pow_ne_zero 2 hcardℝ) (ENNReal.pow_ne_top hcardtop)]
 
+/-- The randomization distribution is nondecreasing in the threshold `t`. -/
+lemma randDist_mono (T : 𝓧 → ℝ) (x : 𝓧) : Monotone (fun t => randDist G T x t) := by
+  intro s t hst
+  refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => ?_) (by positivity)
+  split_ifs with h1 h2
+  · exact le_refl _
+  · exact absurd (h1.trans hst) h2
+  · norm_num
+  · exact le_refl _
+
+/-- The `p`-sublevel set `{t : p ≤ R̂(t ∣ x)}` of the randomization distribution is bounded below
+whenever `0 < p`: for `t` below every orbit value `R̂(t ∣ x) = 0 < p`. -/
+lemma bddBelow_randDist_sublevel (T : 𝓧 → ℝ) (x : 𝓧) {p : ℝ} (hp : 0 < p) :
+    BddBelow {t : ℝ | p ≤ randDist G T x t} := by
+  refine ⟨⨅ g : G, T (g • x), fun t ht => ?_⟩
+  simp only [Set.mem_setOf_eq] at ht
+  have hex : ∃ g : G, T (g • x) ≤ t := by
+    by_contra hcon
+    push_neg at hcon
+    have hz : randDist G T x t = 0 := by
+      rw [randDist]
+      have : ∀ g : G, (if T (g • x) ≤ t then (1 : ℝ) else 0) = 0 := fun g =>
+        if_neg (not_le.mpr (hcon g))
+      simp [this]
+    rw [hz] at ht; linarith
+  obtain ⟨g, hg⟩ := hex
+  exact le_trans (ciInf_le (Finite.bddBelow_range _) g) hg
+
 end Identities
 
 /-! ### The asymptotic randomization theorem -/
@@ -507,6 +535,80 @@ theorem randDist_tendstoInProb_cdf (P : ∀ n, Measure (𝓧 n))
     (ht : ContinuousAt (cdf R) t) :
     TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t) := by
   sorry
+
+/-- **Quantile-convergence engine.** Given the forward convergence at continuity points
+(`randDist_tendstoInProb_cdf_aux`), the `(1-α)`-quantile of the randomization distribution
+converges in probability to the limiting quantile. The argument brackets the random quantile
+between two nearby continuity points `a < q < b` with `cdf R a < 1-α < cdf R b`, obtained by
+density of continuity points of the monotone `cdf R`; at those points the forward convergence
+controls the two failure events. Requires the same measurability as the forward engine. -/
+private lemma randQuantile_tendstoInProb_aux (P : ∀ n, Measure (𝓧 n))
+    [∀ n, IsProbabilityMeasure (P n)] (T : ∀ n, 𝓧 n → ℝ) (R : Measure ℝ)
+    [IsProbabilityMeasure R]
+    (hT : ∀ n, Measurable (T n))
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable (fun x : 𝓧 n => g • x))
+    (hjoint : WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R))
+    {α : ℝ} (hα₁ : α < 1)
+    (hstrict : ∀ ε > (0 : ℝ), cdf R (cdfQuantile R (1 - α) - ε) < 1 - α ∧
+      1 - α < cdf R (cdfQuantile R (1 - α) + ε)) :
+    TendstoInProbTriangular P (fun n x => randQuantile (G n) (T n) (1 - α) x)
+      (cdfQuantile R (1 - α)) := by
+  set p := 1 - α with hp
+  set q := cdfQuantile R p with hq
+  have hp0 : 0 < p := by rw [hp]; linarith
+  have hcountable : Set.Countable {x | ¬ ContinuousAt (cdf R) x} :=
+    (monotone_cdf (μ := R)).countable_not_continuousAt
+  -- Density of continuity points in any open interval.
+  have hCP : ∀ {a b : ℝ}, a < b → ∃ x ∈ Set.Ioo a b, ContinuousAt (cdf R) x := by
+    intro a b hab
+    by_contra hcon
+    push_neg at hcon
+    have hsub : Set.Ioo a b ⊆ {x | ¬ ContinuousAt (cdf R) x} := fun x hx => hcon x hx
+    have hz : volume (Set.Ioo a b) = 0 := measure_mono_null hsub (hcountable.measure_zero volume)
+    rw [Real.volume_Ioo] at hz
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hz
+  intro ε hε
+  obtain ⟨hlo, hhi⟩ := hstrict (ε / 2) (by linarith)
+  obtain ⟨a, ha_mem, ha_cont⟩ := hCP (show q - ε < q - ε / 2 by linarith)
+  obtain ⟨b, hb_mem, hb_cont⟩ := hCP (show q + ε / 2 < q + ε by linarith)
+  have hca : cdf R a < p := lt_of_le_of_lt (monotone_cdf (μ := R) ha_mem.2.le) hlo
+  have hcb : p < cdf R b := lt_of_lt_of_le hhi (monotone_cdf (μ := R) hb_mem.1.le)
+  have hδa : 0 < p - cdf R a := by linarith
+  have hδb : 0 < cdf R b - p := by linarith
+  have hAa := randDist_tendstoInProb_cdf_aux P T R hT hsmul hjoint ha_cont (p - cdf R a) hδa
+  have hBb := randDist_tendstoInProb_cdf_aux P T R hT hsmul hjoint hb_cont (cdf R b - p) hδb
+  -- Inclusion of the "quantile off by ε" event into the two forward-controlled events.
+  have hincl : ∀ n, {x | ε ≤ |randQuantile (G n) (T n) p x - q|} ⊆
+      {x | p - cdf R a ≤ |randDist (G n) (T n) x a - cdf R a|} ∪
+      {x | cdf R b - p ≤ |randDist (G n) (T n) x b - cdf R b|} := by
+    intro n x hx
+    simp only [Set.mem_setOf_eq] at hx
+    by_contra hnot
+    rw [Set.mem_union, not_or] at hnot
+    obtain ⟨hna, hnb⟩ := hnot
+    simp only [Set.mem_setOf_eq, not_le] at hna hnb
+    have hrda : randDist (G n) (T n) x a < p := by
+      have := (abs_lt.mp hna).2; linarith
+    have hrdb : p ≤ randDist (G n) (T n) x b := by
+      have := (abs_lt.mp hnb).1; linarith
+    have hup : randQuantile (G n) (T n) p x ≤ b :=
+      csInf_le (bddBelow_randDist_sublevel (G n) (T n) x hp0) hrdb
+    have hlo' : a ≤ randQuantile (G n) (T n) p x := by
+      refine le_csInf ⟨b, hrdb⟩ (fun s hs => ?_)
+      simp only [Set.mem_setOf_eq] at hs
+      by_contra hcon
+      push_neg at hcon
+      exact absurd (le_trans hs (randDist_mono (G n) (T n) x hcon.le)) (not_le.mpr hrda)
+    have hcontra : |randQuantile (G n) (T n) p x - q| < ε := by
+      rw [abs_lt]
+      exact ⟨by linarith [ha_mem.1], by linarith [hb_mem.2]⟩
+    linarith
+  refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_)
+    (by simpa only [add_zero] using hAa.add hBb)
+  calc (P n).real {x | ε ≤ |randQuantile (G n) (T n) p x - q|}
+      ≤ (P n).real ({x | p - cdf R a ≤ |randDist (G n) (T n) x a - cdf R a|} ∪
+          {x | cdf R b - p ≤ |randDist (G n) (T n) x b - cdf R b|}) := measureReal_mono (hincl n)
+    _ ≤ _ := measureReal_union_le _ _
 
 /-- **The randomization critical value converges in probability.** Under the same joint
 condition, if the limit c.d.f. is continuous and strictly increasing at its
