@@ -1,0 +1,3 @@
+srun: job 33555839 queued and waiting for resources
+srun: job 33555839 has been allocated resources
+The build is running in the background (compiling the module and any stale dependencies). I'm waiting on the monitor to report completion. I'll continue as soon as it finishes.
