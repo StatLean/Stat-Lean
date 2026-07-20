@@ -90,6 +90,83 @@ mixture density. -/
 noncomputable def bayesTest (h₀ h₁ : 𝓧 → ℝ) (k : ℝ) : 𝓧 → ℝ :=
   fun x => if k * h₀ x ≤ h₁ x then 1 else 0
 
+/-- A `[-1,1]`-valued measurable function is integrable against a finite measure. -/
+private lemma bayes_bounded_integrable {ν : Measure 𝓧} [IsFiniteMeasure ν]
+    {g : 𝓧 → ℝ} (hg : Measurable g) (hb : ∀ x, |g x| ≤ 1) : Integrable g ν :=
+  (integrable_const (1 : ℝ)).mono' hg.aestronglyMeasurable
+    (ae_of_all _ fun x => by rw [Real.norm_eq_abs]; exact hb x)
+
+/-- With a parameter-free support, the members of a dominated family are mutually absolutely
+continuous. -/
+private lemma bayes_ac {P : Θ → Measure 𝓧} {μ : Measure 𝓧} {f : Θ → 𝓧 → ℝ}
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x)
+    (hsupp : ∀ (θ θ' : Θ) (x : 𝓧), 0 < f θ x ↔ 0 < f θ' x) (θ θ' : Θ) : P θ ≪ P θ' := by
+  have hmθ : Measurable fun x => ENNReal.ofReal (f θ x) :=
+    (hjoint.comp (measurable_const.prodMk measurable_id)).ennreal_ofReal
+  have hmθ' : Measurable fun x => ENNReal.ofReal (f θ' x) :=
+    (hjoint.comp (measurable_const.prodMk measurable_id)).ennreal_ofReal
+  refine Measure.AbsolutelyContinuous.mk fun s hs hs0 => ?_
+  rw [hdens θ', withDensity_apply _ hs, setLIntegral_eq_zero_iff hs hmθ'] at hs0
+  rw [hdens θ, withDensity_apply _ hs, setLIntegral_eq_zero_iff hs hmθ]
+  filter_upwards [hs0] with x hx hxs
+  have hx0 := hx hxs
+  simp only [ENNReal.ofReal_eq_zero] at hx0 ⊢
+  have hf'0 : ¬ (0 < f θ' x) := not_lt.mpr hx0
+  rw [← hsupp θ θ' x] at hf'0
+  exact not_lt.mp hf'0
+
+/-- **Fubini for the mixture density**: integrating a bounded test against the mixture density is
+the same as averaging its power over the prior. -/
+private lemma bayes_fubini_mix {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
+    {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ : Measure Θ} [IsProbabilityMeasure Λ]
+    (hdens : ∀ θ, P θ = μ.withDensity fun x => ENNReal.ofReal (f θ x))
+    (hjoint : Measurable fun q : Θ × 𝓧 => f q.1 q.2) (hfnonneg : ∀ θ x, 0 ≤ f θ x)
+    {g : 𝓧 → ℝ} (hg : Measurable g) (hgb : ∀ x, |g x| ≤ 1) :
+    ∫ x, g x * mixtureDensity f Λ x ∂μ = ∫ θ, (∫ x, g x ∂(P θ)) ∂Λ := by
+  -- each `f θ` has unit mass
+  have hmass : ∀ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ = 1 := by
+    intro θ
+    have h2 : (P θ) Set.univ = 1 := measure_univ
+    rwa [hdens θ, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
+  -- the joint density has unit mass, hence is integrable
+  have hfInt : Integrable (fun q : Θ × 𝓧 => f q.1 q.2) (Λ.prod μ) := by
+    refine ⟨hjoint.aestronglyMeasurable, ?_⟩
+    have henorm : (fun q : Θ × 𝓧 => ‖f q.1 q.2‖ₑ)
+        = fun q => ENNReal.ofReal (f q.1 q.2) := by
+      funext q; rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs, abs_of_nonneg (hfnonneg _ _)]
+    have : ∫⁻ q : Θ × 𝓧, ‖f q.1 q.2‖ₑ ∂(Λ.prod μ) = 1 := by
+      rw [henorm, lintegral_prod _ (hjoint.ennreal_ofReal).aemeasurable]
+      calc ∫⁻ θ, ∫⁻ x, ENNReal.ofReal (f θ x) ∂μ ∂Λ
+          = ∫⁻ _θ, 1 ∂Λ := by exact lintegral_congr fun θ => hmass θ
+        _ = 1 := by rw [lintegral_const, one_mul, measure_univ]
+    show ∫⁻ q : Θ × 𝓧, ‖f q.1 q.2‖ₑ ∂(Λ.prod μ) < ∞
+    rw [this]; exact ENNReal.one_lt_top
+  -- dominate `g·f` by `f`
+  have hFInt : Integrable (Function.uncurry fun θ x => g x * f θ x) (Λ.prod μ) := by
+    refine hfInt.mono' ((hg.comp measurable_snd).mul hjoint).aestronglyMeasurable ?_
+    refine ae_of_all _ fun q => ?_
+    simp only [Function.uncurry, norm_mul, Real.norm_eq_abs, abs_of_nonneg (hfnonneg _ _)]
+    exact mul_le_of_le_one_left (hfnonneg q.1 q.2) (hgb q.2)
+  -- assemble
+  have hswap := integral_integral_swap hFInt
+  have hleft : ∫ x, g x * mixtureDensity f Λ x ∂μ
+      = ∫ x, ∫ θ, g x * f θ x ∂Λ ∂μ := by
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only [mixtureDensity]
+    rw [integral_const_mul]
+  have hright : ∀ θ, ∫ x, g x * f θ x ∂μ = ∫ x, g x ∂(P θ) := by
+    intro θ
+    have hmθ : Measurable fun x => ENNReal.ofReal (f θ x) :=
+      (hjoint.comp (measurable_const.prodMk measurable_id)).ennreal_ofReal
+    rw [hdens θ, integral_withDensity_eq_integral_toReal_smul hmθ
+      (ae_of_all _ fun x => ENNReal.ofReal_lt_top)]
+    refine integral_congr_ae (ae_of_all _ fun x => ?_)
+    simp only [ENNReal.toReal_ofReal (hfnonneg θ x), smul_eq_mul]
+    ring
+  rw [hleft, ← hswap]
+  exact integral_congr_ae (ae_of_all _ fun θ => hright θ)
+
 /-- **A Bayes test with null boundary is d-admissible.** -/
 theorem bayesTest_isDAdmissible {P : Θ → Measure 𝓧} [∀ θ, IsProbabilityMeasure (P θ)]
     {μ : Measure 𝓧} [SigmaFinite μ] {f : Θ → 𝓧 → ℝ} {Λ₀ Λ₁ : Measure Θ}
