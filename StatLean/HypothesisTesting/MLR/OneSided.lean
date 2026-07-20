@@ -520,7 +520,15 @@ theorem isUMP_oneSided_shifted
     -- USER-INPUT: the statistic and the monotone-likelihood-ratio property
     (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
     -- USER-INPUT: the critical value and the boundary weight
-    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (θ' : ℝ) :
+    {C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1) (θ' : ℝ)
+    -- USER-INPUT: the boundary density does not vanish on the rejection region — i.e. the
+    -- test has positive size at `θ'`. This is genuinely needed: without it the statement is
+    -- FALSE. Verified counterexample: `𝓧 = ℝ`, `μ = volume`, `T = id`, reflected shifted
+    -- exponential `p θ x = exp (x − θ)·1_{x ≤ θ}` (a genuine MLR family) with `C = θ' + 1`,
+    -- so `p θ' = 0` on `{T ≥ C}` and `power P φ θ' = 0`; the level-`0` competitor
+    -- `ψ = 1_{x > θ'}` then satisfies `power ψ θ'' > power P φ θ''` for every `θ'' > θ' + 1`,
+    -- so `φ` is not UMP. The classical result assumes strictly positive densities.
+    (hz : ∃ z, C ≤ T z ∧ 0 < p θ' z) :
     IsUMP P (Set.Iic θ') (Set.Ioi θ') (power P (oneSidedTest T C γ) θ')
       (oneSidedTest T C γ) := by
   set φ := oneSidedTest T C γ with hφdef
@@ -535,22 +543,10 @@ theorem isUMP_oneSided_shifted
   refine ⟨hφc, fun θ hθ => hmono (Set.mem_Iic.mp hθ), ?_⟩
   intro ψ hψ hψlevel θ'' hθ''
   have hlt : θ' < θ'' := Set.mem_Ioi.mp hθ''
-  by_cases hz : ∃ z, C ≤ T z ∧ 0 < p θ' z
-  · have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ hz
-    exact hMP.2.2 ψ hψ (hψlevel θ' (Set.mem_Iic.mpr le_rfl))
-  · -- Degenerate boundary: `p θ' = 0` on `{T ≥ C}`, so the level is `power P φ θ' = 0`, and
-    -- the frozen statement is FALSE here (verified counterexample). Take `𝓧 = ℝ`,
-    -- `μ = volume`, `T = id`, and the reflected shifted-exponential family
-    -- `p θ x = exp (x - θ) · 1_{x ≤ θ}` (a genuine MLR family: the ratio is `e^(θ-θ')` on
-    -- `{x ≤ θ}` and `0` above, nondecreasing in `x`), with `C = θ' + 1` so `p θ' = 0` on
-    -- `{x ≥ C}`. Then `power P φ θ' = 0`, but the level-`0` competitor `ψ = 1_{x > θ'}` (it is
-    -- `P θ`-a.e. `0` for every `θ ≤ θ'`, since `P θ` sits on `(-∞, θ]`) satisfies, for any
-    -- `θ'' > θ' + 1`, `power ψ θ'' = 1 - e^(θ'-θ'') > 1 - e^(θ'+1-θ'') = power P φ θ''`; so `ψ`
-    -- strictly beats `φ` and `φ` is NOT UMP. The classical result needs strictly positive
-    -- densities (equivalently `0 < power P φ θ'`, which supplies `hz`); under `hz` the branch
-    -- above is a complete proof. Reported per the no-weakening policy.
-    -- TODO(statement-bug): add `0 < power P φ θ'` (or positive densities) to discharge this.
-    sorry
+  -- `hz` (positive boundary density on the rejection region) is now a hypothesis; see the
+  -- note on it above for the counterexample showing it cannot be dropped.
+  have hMP := isMostPowerful_oneSided hp hT hMLR hlt hγ hz
+  exact hMP.2.2 ψ hψ (hψlevel θ' (Set.mem_Iic.mpr le_rfl))
 
 /-- Power of the co-test `1 − g` is `1 −` the power of `g`. -/
 private lemma powerAgainst_one_sub {P : Measure 𝓧} [IsProbabilityMeasure P] {g : 𝓧 → ℝ}
