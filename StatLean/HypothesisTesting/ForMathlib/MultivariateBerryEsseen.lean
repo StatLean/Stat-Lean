@@ -116,4 +116,104 @@ theorem gaussian_slab_measure_le (u : EuclideanSpace ℝ (Fin k)) (hu : ‖u‖ 
 
 end AntiConcentration
 
+/-! ### The remaining ingredients of the elementary route (planned debt)
+
+The two analytic bricks below are the pieces of the Lindeberg-swap route that are *not*
+proved here. Each is a **true** statement (recorded as named `private` planned debt, per the
+project charter), and each is blocked on a specific Mathlib gap, stated in its `TODO`. They
+are deliberately *not* assembled into a `sorry`-free theorem: the honest final bound
+`berryEsseen_convex_elementary` records the exact statement the route delivers, and its
+exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the module docstring). -/
+
+section ElementaryRoute
+
+/-- **[Planned debt — Mathlib gap: no multivariate Taylor remainder in v4.29.1]**
+Third-order Taylor remainder on a normed space: for `C³` `f` with `‖D³f‖ ≤ M`, the second-order
+Taylor error at `x` in direction `h` is at most `M ‖h‖³ / 6`. This is the analytic heart of the
+Lindeberg swap. Mathlib has only the one-dimensional `taylor_mean_remainder_bound`.
+
+TODO: restrict to the segment `t ↦ f (x + t • h)` (a `C³` map `ℝ → ℝ`), apply the 1-D bound,
+and identify `(d/dt)³ f(x+t•h) = iteratedFDeriv ℝ 3 f (x+t•h) (fun _ => h)`, whose norm is at
+most `‖iteratedFDeriv ℝ 3 f (x+t•h)‖ * ‖h‖³`. -/
+private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : E → ℝ} (hf : ContDiff ℝ 3 f) {M : ℝ}
+    (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) (x h : E) :
+    |f (x + h) - f x - fderiv ℝ f x h - (1 / 2) * iteratedFDeriv ℝ 2 f x (fun _ => h)|
+      ≤ M / 6 * ‖h‖ ^ 3 := by
+  -- TODO (planned debt): 1-D Taylor of `t ↦ f (x + t • h)` on `[0,1]`; see docstring.
+  sorry
+
+/-- **[Planned debt]** Smoothed convex indicator with controlled third derivative.
+In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `ε`, so the bound
+is not vacuous) such that every convex `B` and width `ε > 0` admit a smooth `f : ℝ^k → [0,1]`
+equal to `1` on `B`, supported inside the `ε`-thickening of `B`, with `‖D³f‖ ≤ C₃ / ε³`.
+
+TODO: convolve the indicator of the `(ε/2)`-thickening with `(ContDiffBump …).normed` of
+radius `ε/2`; then `C₃ = ‖D³ φ‖_{L¹(ℝ^k)}` (dimension-dependent — this is one source of the
+`k`-factor in `berryEsseen_convex_elementary`). Uses `ContDiffBump.contDiff_normed` and
+`convolution` derivative bounds. -/
+private lemma exists_smoothed_convex_indicator (k : ℕ) :
+    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
+      ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
+        ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
+        (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
+  -- TODO (planned debt): ContDiffBump convolution; see docstring.
+  sorry
+
+/-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
+For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
+identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
+where `β = ∫‖y‖³ dν` and `β_G = ∫‖z‖³ dN(0,I_k)`. This is `n^{-1/2}` for fixed `f`; the
+degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indicator with
+`M ~ ε^{-3}` and optimising `ε`.
+
+TODO: telescoping swap over the `n` independent summands (the vector-valued analogue of
+`StatLean.HypothesisTesting.ForMathlib.LindebergCLT`), with the first- and second-order Taylor
+terms cancelled by `hmean`/`hcov`, and the third-order term controlled by
+`norm_taylor_remainder_three_le`. -/
+private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) {M : ℝ} (hM0 : 0 ≤ M)
+    (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) :
+    |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+      ≤ M / 6 * ((∫ y, ‖y‖ ^ 3 ∂ν)
+          + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
+          / Real.sqrt (n : ℝ) := by
+  -- TODO (planned debt): telescoping Lindeberg swap over the n summands; see docstring.
+  sorry
+
+/-- **Elementary convex-set Berry–Esseen bound (honest, non-sharp).**
+The strongest bound the elementary "smooth the indicator + Lindeberg swap" route yields.
+Optimising `ε` in `ε^{-3} β/√n + C ε` balances steps 2–3 at `ε ~ (β/√n)^{1/4}`, giving an
+error of order `(β/√n)^{1/4} = n^{-1/8}` — **not** the `n^{-1/2}` rate of the frozen
+`bentkus_berry_esseen_convex`. The constant `C` also carries a dimension factor (from the
+smoothed-indicator third-derivative bound `exists_smoothed_convex_indicator` and the convex
+boundary covering). Both deviations are intrinsic to the mollifier method; the sharp
+`400 k^{1/4} · β/√n` needs Bentkus's Fourier analysis and is not attempted.
+
+TODO: assemble from `exists_smoothed_convex_indicator`, `abs_integral_smooth_sub_gaussian_le`
+and `gaussian_slab_measure_le` (the latter, applied to a covering of `∂B^ε` by slabs, gives the
+dimension factor). -/
+theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))),
+      0 < n → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      |((((Measure.pi fun _ : Fin n => ν)).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
+  -- TODO (planned debt): optimise ε; see docstring and the three lemmas above.
+  sorry
+
+end ElementaryRoute
+
 end StatLean.HypothesisTesting
