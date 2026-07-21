@@ -2,11 +2,13 @@ import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Anderson
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
+import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.Probability.Independence.Basic
+import Mathlib.Probability.HasLawExists
 
 /-!
 # The noncentral chi-squared distribution
@@ -387,7 +389,146 @@ theorem weakConverges_chiSquared_standardized :
       (fun k : ℕ => (StatLean.MultipleTesting.chiSquared k).map
         (fun x => (x - k) / Real.sqrt (2 * k)))
       (gaussianReal 0 1) := by
-  sorry
+  classical
+  -- canonical i.i.d. `N(0,1)` sequence
+  obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
+    ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  -- mean-zero squared-normal increments `Y i = (Z i)² - 1`
+  set Y : ℕ → Ω₀ → ℝ := fun i ω => (Z i ω) ^ 2 - 1 with hY
+  have hYmeas : ∀ i, Measurable (Y i) :=
+    fun i => ((hZmeas i).pow_const 2).sub measurable_const
+  -- the law of a single square is `χ²₁`
+  have hsq1 : Measure.map (fun ω => (Z 0 ω) ^ 2) P₀
+      = StatLean.MultipleTesting.chiSquared 1 := by
+    have h := StatLean.MultipleTesting.map_sum_sq_eq_chiSquared (n := 1) one_pos P₀
+      (fun i : Fin 1 => Z (i : ℕ)) (fun i => hZmeas _) (fun i => (hZlaw _).map_eq)
+      (hZindep.precomp Fin.val_injective)
+    simpa [Fin.sum_univ_one] using h
+  -- `L²`-membership of the increments (Gaussian fourth moment is finite)
+  have hL2 : MemLp (Y 0) 2 P₀ := by
+    haveI : ENNReal.HolderTriple (4 : ℝ≥0∞) 4 2 := ⟨by
+      rw [← two_mul, show (4 : ℝ≥0∞) = 2 * 2 from by norm_num,
+        ENNReal.mul_inv (by norm_num) (by norm_num), ← mul_assoc,
+        ENNReal.mul_inv_cancel (by norm_num) (by norm_num), one_mul]⟩
+    have h4 : MemLp (fun x : ℝ => x) 4 (gaussianReal 0 1) :=
+      memLp_id_gaussianReal' (4 : ℝ≥0∞) (by simp)
+    have hx2 : MemLp (fun x : ℝ => x ^ 2) 2 (gaussianReal 0 1) := by
+      have hmul : MemLp (fun x : ℝ => x * x) 2 (gaussianReal 0 1) := h4.mul' h4
+      simpa [pow_two] using hmul
+    have hg : MemLp (fun x : ℝ => x ^ 2 - 1) 2 (gaussianReal 0 1) :=
+      hx2.sub (memLp_const (1 : ℝ))
+    rw [← (hZlaw 0).map_eq] at hg
+    have := (memLp_map_measure_iff hg.aestronglyMeasurable (hZmeas 0).aemeasurable).mp hg
+    simpa [hY, Function.comp] using this
+  -- integrability of `Y 0` and of a single square
+  have hiY0 : Integrable (Y 0) P₀ := hL2.integrable one_le_two
+  have hi2 : Integrable (fun ω => (Z 0 ω) ^ 2) P₀ := by
+    have heq : (fun ω => (Z 0 ω) ^ 2) = fun ω => Y 0 ω + 1 := by funext ω; simp [hY]
+    rw [heq]; exact hiY0.add (integrable_const 1)
+  -- second moment of the standard normal is `1`
+  have hE2 : ∫ ω, (Z 0 ω) ^ 2 ∂ P₀ = 1 := by
+    have h := integral_map (μ := P₀) (φ := fun ω => (Z 0 ω) ^ 2)
+      ((hZmeas 0).pow_const 2).aemeasurable (f := fun x : ℝ => x) (by fun_prop)
+    rw [hsq1, StatLean.MultipleTesting.integral_id_chiSquared one_pos] at h
+    simpa using h.symm
+  -- mean of the increments is `0`
+  have hmean : ∫ ω, Y 0 ω ∂ P₀ = 0 := by
+    simp only [hY]
+    rw [integral_sub hi2 (integrable_const 1), hE2, integral_const]
+    simp
+  -- fourth-moment identity: the increments have variance `2`
+  have hYsq : ∫ ω, (Y 0 ω) ^ 2 ∂ P₀ = 2 := by
+    have h := integral_map (μ := P₀) (φ := fun ω => (Z 0 ω) ^ 2)
+      ((hZmeas 0).pow_const 2).aemeasurable (f := fun x : ℝ => (x - 1) ^ 2) (by fun_prop)
+    rw [hsq1] at h
+    have hv := StatLean.MultipleTesting.variance_chiSquared (k := 1) one_pos
+    rw [Nat.cast_one] at hv
+    rw [show (fun ω => (Y 0 ω) ^ 2) = fun ω => ((Z 0 ω) ^ 2 - 1) ^ 2 from by
+      funext ω; simp [hY]]
+    rw [← h, hv]; norm_num
+  have hvar : Var[Y 0 ; P₀] = (Real.sqrt 2) ^ 2 := by
+    rw [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), variance_eq_integral (hYmeas 0).aemeasurable]
+    have hmz : P₀[Y 0] = 0 := hmean
+    rw [hmz]; simp only [sub_zero]; exact hYsq
+  have hσpos : (0 : ℝ) < Real.sqrt 2 := Real.sqrt_pos.mpr (by norm_num)
+  -- independence and identical distribution of the increments
+  have hindep : iIndepFun Y P₀ :=
+    hZindep.comp (fun _ : ℕ => fun z : ℝ => z ^ 2 - 1) (fun _ => by fun_prop)
+  have hident : ∀ i, IdentDistrib (Y i) (Y 0) P₀ P₀ := by
+    intro i
+    have hZid : IdentDistrib (Z i) (Z 0) P₀ P₀ :=
+      ⟨(hZmeas i).aemeasurable, (hZmeas 0).aemeasurable,
+        (hZlaw i).map_eq.trans (hZlaw 0).map_eq.symm⟩
+    exact hZid.comp (by fun_prop : Measurable (fun z : ℝ => z ^ 2 - 1))
+  -- weight negligibility: the constant unit weights satisfy `1 ≤ ε · (n+1)` eventually
+  have hw : ∀ n : ℕ, 0 < ∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2 := by
+    intro n
+    simp only [one_pow, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      mul_one]
+    positivity
+  have hneg : ∀ ε : ℝ, 0 < ε → ∀ᶠ n in atTop,
+      ∀ i : Fin (n + 1), ((1 : ℝ)) ^ 2 ≤ ε * ∑ _j : Fin (n + 1), ((1 : ℝ)) ^ 2 := by
+    intro ε hε
+    have htend : Tendsto (fun n : ℕ => ε * ((n : ℝ) + 1)) atTop atTop :=
+      Filter.Tendsto.const_mul_atTop hε
+        (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+    filter_upwards [htend.eventually_ge_atTop 1] with n hn i
+    simp only [one_pow, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      mul_one]
+    push_cast at hn ⊢
+    linarith
+  -- the standardised statistic in clean `g ∘ (sum of squares)` form
+  set clean : ℕ → Ω₀ → ℝ :=
+    fun n ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+      / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) with hclean
+  -- the weighted i.i.d. CLT applied to the constant-unit-weight rows
+  have hclt := weighted_iid_clt (m := fun n => n + 1) (w := fun _ _ => (1 : ℝ))
+    (σ := Real.sqrt 2) (Z := (id : ℝ → ℝ)) hYmeas hindep hident hL2 hmean hσpos hvar hw hneg
+    HasLaw.id
+  -- rewrite the CLT statistic into the clean form
+  have hclt' : TendstoInDistribution clean atTop (id : ℝ → ℝ) (fun _ => P₀) (gaussianReal 0 1) := by
+    refine hclt.congr (fun n => ?_) Filter.EventuallyEq.rfl
+    refine Filter.Eventually.of_forall (fun ω => ?_)
+    simp only [hclean]
+    have e1 : (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2) = ((n + 1 : ℕ) : ℝ) := by simp
+    have e2 : (∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω)
+        = (∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ) := by
+      simp only [one_mul, hY]
+      rw [Finset.sum_sub_distrib]; simp
+    show (Real.sqrt 2 * Real.sqrt (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2))⁻¹
+          * ∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω
+        = ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+          / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))
+    rw [e1, e2, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2), div_eq_inv_mul]
+  -- per-`k` law identity: the clean pushforward is the standardised `χ²_{n+1}`
+  have hmap : ∀ n : ℕ, P₀.map (clean n)
+      = (StatLean.MultipleTesting.chiSquared (n + 1)).map
+          (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) := by
+    intro n
+    have hSS : Measure.map (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) P₀
+        = StatLean.MultipleTesting.chiSquared (n + 1) :=
+      StatLean.MultipleTesting.map_sum_sq_eq_chiSquared n.succ_pos P₀
+        (fun i => Z (i : ℕ)) (fun i => hZmeas _) (fun i => (hZlaw _).map_eq)
+        (hZindep.precomp Fin.val_injective)
+    simp only [hclean]
+    rw [show (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+              / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+          = (fun x : ℝ => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+              ∘ (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) from rfl,
+      ← Measure.map_map (by fun_prop) (by fun_prop), hSS]
+  -- the `TendstoInDistribution → WeakConverges` bridge
+  intro f
+  have hPM := hclt'.tendsto
+  have hint := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hPM) f
+  simp only [Measure.map_id] at hint
+  rw [← tendsto_add_atTop_iff_nat 1]
+  have hpt_int : ∀ n : ℕ,
+      ∫ ω, f ω ∂((StatLean.MultipleTesting.chiSquared (n + 1)).map
+        (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))))
+      = ∫ ω, f ω ∂(P₀.map (clean n)) := fun n => by rw [hmap n]
+  simpa only [hpt_int, ProbabilityMeasure.coe_mk] using hint
 
 /-- **Large-`k` normalisation of the chi-squared upper quantiles.**
 If `c k` is the upper-`α` quantile of `χ²_k` and `z` the upper-`α` quantile of `N(0,1)`,
