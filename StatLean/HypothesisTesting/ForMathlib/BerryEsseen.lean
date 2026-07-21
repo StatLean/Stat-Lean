@@ -208,5 +208,84 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
         _ = ‖f a - g a‖ := mul_one _
     linarith
 
+/-! ### Characteristic-function Gaussian approximation
+
+The analytic heart of Berry–Esseen: the characteristic function of a centered
+square-integrable law with finite third moment is close to its second-order Taylor
+polynomial `1 - v u²/2`, uniformly, with error `ρ|u|³/6`. This is `norm_cexp_sub_taylor_le`
+integrated against the law, and needs no Fourier theory. -/
+
+/-- **Second-order approximation of a characteristic function.** For a probability measure
+`μ` on `ℝ` with mean `0`, second moment `v`, and finite third absolute moment `ρ = ∫|x|³`,
+the characteristic function satisfies
+`‖charFun μ u − (1 − v u²/2)‖ ≤ ρ |u|³ / 6` for all `u`. -/
+theorem norm_charFun_sub_quadratic_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => |x| ^ 3) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) (u : ℝ) :
+    ‖charFun μ u - (1 - (v : ℂ) * (u : ℂ) ^ 2 / 2)‖ ≤ (∫ x, |x| ^ 3 ∂μ) * |u| ^ 3 / 6 := by
+  -- The complex exponential integrand of `charFun`.
+  have hExpInt : Integrable (fun x : ℝ => Complex.exp (↑u * ↑x * I)) μ := by
+    refine (integrable_const (1 : ℝ)).mono'
+      ((Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable) (ae_of_all _ fun x => ?_)
+    have hre : ((u : ℂ) * (x : ℂ) * I).re = 0 := by simp
+    rw [Complex.norm_exp, hre, Real.exp_zero]
+  -- The quadratic Taylor integrand.
+  set p : ℝ → ℂ := fun x => 1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 with hp
+  have hxC : Integrable (fun x : ℝ => (x : ℂ)) μ := hint1.ofReal
+  have hx2C : Integrable (fun x : ℝ => ((x ^ 2 : ℝ) : ℂ)) μ := hint2.ofReal
+  have t2 : Integrable (fun x : ℝ => (↑u * ↑x * I : ℂ)) μ := by
+    have := (hxC.const_mul (↑u * I : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); ring
+  have t3 : Integrable (fun x : ℝ => ((↑u * ↑x) ^ 2 / 2 : ℂ)) μ := by
+    have := (hx2C.const_mul (↑u ^ 2 / 2 : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); push_cast; ring
+  have hPolyInt : Integrable p μ := by
+    simp only [hp]; exact ((integrable_const (1 : ℂ)).add t2).sub t3
+  -- Compute `∫ p = 1 - v u²/2`.
+  have e1 : ∫ _x : ℝ, (1 : ℂ) ∂μ = 1 := by simp
+  have e2 : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = 0 := by
+    have hc : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = ∫ x : ℝ, ((↑u * I) • (↑x : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hmean]; simp
+  have e3 : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ = (v : ℂ) * (u : ℂ) ^ 2 / 2 := by
+    have hc : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ
+        = ∫ x : ℝ, (((↑u : ℂ) ^ 2 / 2) • ((x ^ 2 : ℝ) : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; push_cast; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hvar, smul_eq_mul]; ring
+  have hsum : Integrable (fun x : ℝ => (1 + ↑u * ↑x * I : ℂ)) μ :=
+    ((integrable_const (1 : ℂ)).add t2).congr (ae_of_all _ fun x => rfl)
+  have hIntP : ∫ x, p x ∂μ = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 := by
+    calc ∫ x, p x ∂μ
+        = ∫ x, ((1 + ↑u * ↑x * I : ℂ) - (↑u * ↑x) ^ 2 / 2) ∂μ := by simp only [hp]
+      _ = (∫ x, (1 + ↑u * ↑x * I : ℂ) ∂μ) - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ :=
+            integral_sub hsum t3
+      _ = ((∫ _x : ℝ, (1 : ℂ) ∂μ) + ∫ x, (↑u * ↑x * I : ℂ) ∂μ)
+            - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ := by
+            rw [integral_add (integrable_const 1) t2]
+      _ = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 := by rw [e1, e2, e3]; ring
+  -- Pointwise Taylor bound.
+  have hpt : ∀ x : ℝ, ‖Complex.exp (↑u * ↑x * I) - p x‖ ≤ |u| ^ 3 * |x| ^ 3 / 6 := by
+    intro x
+    have h := norm_cexp_sub_taylor_le (u * x)
+    have harg : (↑u * ↑x * I : ℂ) = I * ↑(u * x) := by push_cast; ring
+    have hsq : ((↑u * ↑x : ℂ)) ^ 2 = (↑(u * x) : ℂ) ^ 2 := by push_cast; ring
+    rw [hp]; simp only []
+    rw [harg, hsq]
+    calc ‖Complex.exp (I * ↑(u * x)) - (1 + I * ↑(u * x) - (↑(u * x) : ℂ) ^ 2 / 2)‖
+        ≤ min (|u * x| ^ 3 / 6) ((u * x) ^ 2) := h
+      _ ≤ |u * x| ^ 3 / 6 := min_le_left _ _
+      _ = |u| ^ 3 * |x| ^ 3 / 6 := by rw [abs_mul, mul_pow]
+  -- Assemble.
+  rw [charFun_apply_real, ← hIntP, ← integral_sub hExpInt hPolyInt]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  have hbound : Integrable (fun x : ℝ => |u| ^ 3 * |x| ^ 3 / 6) μ := by
+    have := (hint3.const_mul (|u| ^ 3)).div_const 6
+    exact this
+  calc ∫ x, ‖Complex.exp (↑u * ↑x * I) - p x‖ ∂μ
+      ≤ ∫ x, |u| ^ 3 * |x| ^ 3 / 6 ∂μ :=
+        integral_mono ((hExpInt.sub hPolyInt).norm) hbound hpt
+    _ = (∫ x, |x| ^ 3 ∂μ) * |u| ^ 3 / 6 := by
+        rw [integral_div, integral_const_mul]; ring
 
 end StatLean.HypothesisTesting
