@@ -3,6 +3,9 @@ import StatLean.PointEstimation.Equivariance.LocationStructure
 import StatLean.PointEstimation.ForMathlib.ConvexMinimizers
 import StatLean.PointEstimation.ForMathlib.MeasurableArgmin
 import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Slope
+import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
 # The minimum risk equivariant location estimator
@@ -99,6 +102,54 @@ lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω
       exact hnotMemLp c
         ((memLp_two_iff_integrable_sq (hφ.sub_const c).aestronglyMeasurable).mpr ⟨hasm, hfin⟩)
     rw [hinf m, hinf w]
+
+/-- A convex function on the line that is not antitone blows up at `+∞`: from a strictly
+increasing secant, convexity forces a positive linear minorant. -/
+private lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
+    (hconv : ConvexOn ℝ Set.univ ρ) (hna : ¬ Antitone ρ) :
+    Filter.Tendsto ρ Filter.atTop Filter.atTop := by
+  obtain ⟨a, b, hab, hlt⟩ : ∃ a b : ℝ, a < b ∧ ρ a < ρ b := by
+    rw [Antitone] at hna
+    push_neg at hna
+    obtain ⟨a, b, hab, hlt⟩ := hna
+    exact ⟨a, b, lt_of_le_of_ne hab (by rintro rfl; exact lt_irrefl _ hlt), hlt⟩
+  set s₀ : ℝ := (ρ b - ρ a) / (b - a) with hs₀
+  have hs₀pos : 0 < s₀ := div_pos (by linarith) (by linarith)
+  have hlb : ∀ x, b < x → ρ b + s₀ * (x - b) ≤ ρ x := by
+    intro x hbx
+    have hslope := hconv.slope_mono_adjacent (Set.mem_univ a) (Set.mem_univ x) hab hbx
+    simp only [slope_def_field] at hslope
+    have hxb : 0 < x - b := by linarith
+    have hstep : s₀ * (x - b) ≤ ρ x - ρ b := by
+      calc s₀ * (x - b) = (ρ b - ρ a) / (b - a) * (x - b) := by rw [hs₀]
+        _ ≤ (ρ x - ρ b) / (x - b) * (x - b) := mul_le_mul_of_nonneg_right hslope hxb.le
+        _ = ρ x - ρ b := by field_simp
+    linarith
+  have hlin : Filter.Tendsto (fun x => ρ b + s₀ * (x - b)) Filter.atTop Filter.atTop := by
+    apply Filter.tendsto_atTop_add_const_left
+    exact Filter.Tendsto.const_mul_atTop hs₀pos
+      (Filter.tendsto_atTop_add_const_right _ _ Filter.tendsto_id)
+  refine Filter.tendsto_atTop_mono' _ ?_ hlin
+  filter_upwards [Filter.eventually_gt_atTop b] with x hx using hlb x hx
+
+/-- A convex function on the line that is not monotone blows up at `−∞` (the reflection of
+`tendsto_atTop_of_convex_not_antitone`). -/
+private lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
+    (hconv : ConvexOn ℝ Set.univ ρ) (hnm : ¬ Monotone ρ) :
+    Filter.Tendsto ρ Filter.atBot Filter.atTop := by
+  have hconv' : ConvexOn ℝ Set.univ (fun x => ρ (-x)) := by
+    have := hconv.comp_affineMap (AffineMap.const ℝ ℝ (0 : ℝ) - AffineMap.id ℝ ℝ)
+    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using
+      this.subset (Set.subset_univ _) convex_univ
+  have hna' : ¬ Antitone (fun x => ρ (-x)) := by
+    intro h
+    apply hnm
+    intro p q hpq
+    have := h (neg_le_neg hpq)
+    simpa using this
+  have hcomp := (tendsto_atTop_of_convex_not_antitone hconv' hna').comp
+    Filter.tendsto_neg_atBot_atTop
+  exact hcomp.congr (fun x => by simp)
 
 /-- **The minimum risk equivariant location estimator.** Let `δ₀` be a measurable
 equivariant estimator with finite risk and let `v*` be a measurable function of the
