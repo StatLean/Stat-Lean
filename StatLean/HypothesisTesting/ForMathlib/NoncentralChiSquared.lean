@@ -544,7 +544,101 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
     -- USER-INPUT: `z` is the upper-`α` quantile of the standard normal law.
     (hz : (gaussianReal 0 1) (Set.Ioi z) = ENNReal.ofReal α) :
     Tendsto (fun k : ℕ => (c k - k) / Real.sqrt (2 * k)) atTop (𝓝 z) := by
-  sorry
+  classical
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  set S : ℕ → ℝ := fun k => (c k - (k : ℝ)) / Real.sqrt (2 * (k : ℝ)) with hS
+  -- standardised `χ²_{n+1}` pushforwards (indexed so the d.o.f. is positive)
+  set μ' : ℕ → Measure ℝ := fun n => (StatLean.MultipleTesting.chiSquared (n + 1)).map
+    (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) with hμ'
+  have hμ'prob : ∀ n, IsProbabilityMeasure (μ' n) := by
+    intro n
+    haveI : NeZero (n + 1) := ⟨n.succ_ne_zero⟩
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  set μs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨μ' n, hμ'prob n⟩ with hμs
+  set ν' : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, by infer_instance⟩ with hν'
+  -- weak convergence, as `ProbabilityMeasure` convergence (via target `A`, reindexed by `+1`)
+  have htend : Tendsto μs atTop (𝓝 ν') := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f
+    have hA := weakConverges_chiSquared_standardized f
+    have := (tendsto_add_atTop_iff_nat (f := fun k => ∫ x, f x
+      ∂((StatLean.MultipleTesting.chiSquared k).map
+        (fun x => (x - (k : ℝ)) / Real.sqrt (2 * (k : ℝ))))) 1).mpr hA
+    simpa [hμs, hμ', hν'] using this
+  -- fixed-threshold portmanteau convergence
+  have hconv : ∀ t : ℝ,
+      Tendsto (fun n => μ' n (Set.Ioi t)) atTop (𝓝 (gaussianReal 0 1 (Set.Ioi t))) := by
+    intro t
+    have hfront : (ν' : Measure ℝ) (frontier (Set.Ioi t)) = 0 := by
+      rw [frontier_Ioi]; simp [hν']
+    have := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto'
+      htend (E := Set.Ioi t) hfront
+    simpa [hμs, hμ', hν'] using this
+  -- the standardised tail as a `χ²` tail
+  have hpre : ∀ n : ℕ, ∀ t : ℝ,
+      μ' n (Set.Ioi t) = StatLean.MultipleTesting.chiSquared (n + 1)
+        (Set.Ioi (t * Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) + ((n + 1 : ℕ) : ℝ))) := by
+    intro n t
+    have hsk : (0 : ℝ) < Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) :=
+      Real.sqrt_pos.mpr (by positivity)
+    rw [hμ', Measure.map_apply (by fun_prop) measurableSet_Ioi]
+    congr 1
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Ioi, lt_div_iff₀ hsk]
+    constructor <;> intro h <;> linarith
+  -- at the standardised upper quantile the tail equals `α`
+  have hquant : ∀ n : ℕ, μ' n (Set.Ioi (S (n + 1))) = ENNReal.ofReal α := by
+    intro n
+    have hsk : Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) ≠ 0 :=
+      (Real.sqrt_pos.mpr (by positivity)).ne'
+    have hthr : S (n + 1) * Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) + ((n + 1 : ℕ) : ℝ)
+        = c (n + 1) := by
+      rw [hS]; simp only []; rw [div_mul_cancel₀ _ hsk]; ring
+    rw [hpre n (S (n + 1)), hthr]
+    exact hc (n + 1) n.succ_pos
+  -- the standard normal tail is strictly decreasing (positive Gaussian mass on intervals)
+  have hstrict : ∀ a b : ℝ, a < b →
+      gaussianReal 0 1 (Set.Ioi b) < gaussianReal 0 1 (Set.Ioi a) := by
+    intro a b hab
+    have hpos : 0 < gaussianReal 0 1 (Set.Ioc a b) := by
+      rw [gaussianReal_apply_eq_integral 0 one_ne_zero, ENNReal.ofReal_pos,
+        ← intervalIntegral.integral_of_le hab.le]
+      exact intervalIntegral.intervalIntegral_pos_of_pos
+        ((integrable_gaussianPDFReal 0 1).intervalIntegrable)
+        (fun x => gaussianPDFReal_pos 0 1 x one_ne_zero) hab
+    have hadd : gaussianReal 0 1 (Set.Ioi a)
+        = gaussianReal 0 1 (Set.Ioc a b) + gaussianReal 0 1 (Set.Ioi b) := by
+      rw [← Set.Ioc_union_Ioi_eq_Ioi hab.le,
+        measure_union (Set.Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi]
+    rw [hadd, add_comm]
+    exact ENNReal.lt_add_right (measure_ne_top _ _) hpos.ne'
+  -- squeeze `S (n+1)` into `(z - ε, z + ε)` eventually, then reindex
+  rw [← tendsto_add_atTop_iff_nat (f := S) 1]
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  have hup : ∀ᶠ n in atTop, S (n + 1) < z + ε := by
+    have hlt : gaussianReal 0 1 (Set.Ioi (z + ε)) < ENNReal.ofReal α := by
+      rw [← hz]; exact hstrict z (z + ε) (by linarith)
+    filter_upwards [(hconv (z + ε)).eventually_lt_const hlt] with n hn
+    by_contra hcon
+    push_neg at hcon
+    have := measure_mono (μ := μ' n) (Set.Ioi_subset_Ioi hcon)
+    rw [hquant n] at this
+    exact absurd (this.trans_lt hn) (lt_irrefl _)
+  have hlo : ∀ᶠ n in atTop, z - ε < S (n + 1) := by
+    have hgt : ENNReal.ofReal α < gaussianReal 0 1 (Set.Ioi (z - ε)) := by
+      rw [← hz]; exact hstrict (z - ε) z (by linarith)
+    filter_upwards [(hconv (z - ε)).eventually_const_lt hgt] with n hn
+    by_contra hcon
+    push_neg at hcon
+    have := measure_mono (μ := μ' n) (Set.Ioi_subset_Ioi hcon)
+    rw [hquant n] at this
+    exact absurd (hn.trans_le this) (lt_irrefl _)
+  have hfin : ∀ᶠ n in atTop, dist (S (n + 1)) z < ε := by
+    filter_upwards [hup, hlo] with n hu hl
+    rw [Real.dist_eq, abs_lt]
+    constructor <;> linarith
+  exact eventually_atTop.mp hfin
 
 /-- **Large-`k` normalisation of the noncentral chi-squared law.**
 If the noncentrality parameters satisfy `l k / √(2k) → c`, then
