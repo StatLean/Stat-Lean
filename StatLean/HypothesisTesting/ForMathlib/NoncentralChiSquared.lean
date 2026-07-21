@@ -372,13 +372,47 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
       _ = μ {x | (0 : E) + x ∈ C} := h0.symm
   exact tsub_le_tsub_left key' _
 
+/-- **Anderson shrink-shift monotonicity for the standard-Gaussian ball measure** (LIFTED).
+For a convex symmetric closed ball `{z | ‖z‖² ≤ t}`, shifting its centre further from the
+origin along the first axis can only decrease the standard-Gaussian mass:
+`ℓ ↦ μ{x | ‖√ℓ·e₁ + x‖² ≤ t}` is nonincreasing.
+
+TODO (obstruction). This is Anderson's inequality in its *scaled* form
+`μ(C − b·e₁) ≤ μ(C − a·e₁)` for `0 ≤ a ≤ b` and `C` convex symmetric. The repository's
+Anderson infrastructure (`AsymptoticStatistics.anderson_lemma_set_stdGaussian`) only supplies
+the **`a = 0`** endpoint `μ(C − y) ≤ μ(C)`; the shrink monotonicity between two nonzero shifts
+is *not* a corollary of it. The intended proof does not use `anderson_lemma_set_stdGaussian`
+at all: the shift profile `f(c) := μ(C − c·e₁)` is **even** (Gaussian/`C` reflection symmetry)
+and **log-concave in `c`** (Prékopa–Leindler applied to the log-concave density and convex `C`
+— the raw `prekopaLeindler` engine underlying `AsymptoticStatistics._pl_anderson_pi_general`,
+used with *unequal* endpoint masses rather than the symmetric `½`-midpoint cancellation);
+an even log-concave function on `ℝ` is nonincreasing on `[0, ∞)`. Formalising the
+shift-log-concavity (a two-variable Prékopa–Leindler on `C − a·e₁`, `C − b·e₁`,
+`C − ½(a+b)·e₁`) plus the "even + log-concave ⇒ unimodal" step is the remaining work. -/
+private lemma stdGaussian_normSq_le_antitone {k : ℕ} (t : ℝ) {l₁ l₂ : ℝ≥0} (h : l₁ ≤ l₂) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₂ + x‖ ^ 2 ≤ t}
+      ≤ (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₁ + x‖ ^ 2 ≤ t} := by
+  sorry
+
 /-- **The upper tail increases with the noncentrality parameter.** The noncentral
-chi-squared family is stochastically ordered in `l`. Proved by the one-dimensional
-reduction described in the file header (symmetric unimodal shift inequality), Anderson's
-inequality covering the special case `l = 0`. -/
+chi-squared family is stochastically ordered in `l`. Reduces (via `noncentralChiSquared_Ioi_eq`
+and complementation of the closed ball) to the scaled Anderson shrink monotonicity
+`stdGaussian_normSq_le_antitone`. -/
 theorem noncentralChiSquared_tail_mono (k : ℕ) (t : ℝ) :
     Monotone fun l : ℝ≥0 => (noncentralChiSquared k l) (Set.Ioi t) := by
-  sorry
+  intro l₁ l₂ h
+  show (noncentralChiSquared k l₁) (Set.Ioi t) ≤ (noncentralChiSquared k l₂) (Set.Ioi t)
+  rw [noncentralChiSquared_Ioi_eq, noncentralChiSquared_Ioi_eq]
+  set E := EuclideanSpace ℝ (Fin k)
+  have hmeas : ∀ l : ℝ≥0, MeasurableSet {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := by
+    intro l
+    exact measurableSet_le (by fun_prop) measurable_const
+  have hcompl : ∀ l : ℝ≥0, {x : E | t < ‖noncentralMean k l + x‖ ^ 2}
+      = {x : E | ‖noncentralMean k l + x‖ ^ 2 ≤ t}ᶜ := by
+    intro l; ext x; simp [not_le]
+  rw [hcompl l₁, hcompl l₂, measure_compl (hmeas l₁) (measure_ne_top _ _),
+    measure_compl (hmeas l₂) (measure_ne_top _ _)]
+  exact tsub_le_tsub_left (stdGaussian_normSq_le_antitone t h) _
 
 /-- **Central i.i.d. CLT for the standardised sum of squares** (random-variable form).
 For any i.i.d. `N(0,1)` sequence `Z`, the standardised partial sum of squares
