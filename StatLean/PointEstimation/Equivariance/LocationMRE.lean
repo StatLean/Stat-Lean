@@ -3,6 +3,10 @@ import StatLean.PointEstimation.Equivariance.LocationStructure
 import StatLean.PointEstimation.ForMathlib.ConvexMinimizers
 import StatLean.PointEstimation.ForMathlib.MeasurableArgmin
 import Mathlib.Analysis.Convex.Function
+import Mathlib.Analysis.Convex.Slope
+import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Probability.Kernel.MeasurableLIntegral
+import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 
 /-!
 # The minimum risk equivariant location estimator
@@ -58,8 +62,8 @@ that estimator was established by C. Stein, "The admissibility of Pitman's estim
 single location parameter," *Ann. Math. Statist.* **30** (1959), 970–979.
 -/
 
-open MeasureTheory
-open scoped ENNReal
+open MeasureTheory Filter Topology
+open scoped ENNReal NNReal
 
 namespace StatLean.PointEstimation
 
@@ -99,6 +103,179 @@ lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω
       exact hnotMemLp c
         ((memLp_two_iff_integrable_sq (hφ.sub_const c).aestronglyMeasurable).mpr ⟨hasm, hfin⟩)
     rw [hinf m, hinf w]
+
+/-- A convex function on the line that is not antitone blows up at `+∞`: from a strictly
+increasing secant, convexity forces a positive linear minorant. -/
+private lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
+    (hconv : ConvexOn ℝ Set.univ ρ) (hna : ¬ Antitone ρ) :
+    Filter.Tendsto ρ Filter.atTop Filter.atTop := by
+  obtain ⟨a, b, hab, hlt⟩ : ∃ a b : ℝ, a < b ∧ ρ a < ρ b := by
+    rw [Antitone] at hna
+    push_neg at hna
+    obtain ⟨a, b, hab, hlt⟩ := hna
+    exact ⟨a, b, lt_of_le_of_ne hab (by rintro rfl; exact lt_irrefl _ hlt), hlt⟩
+  set s₀ : ℝ := (ρ b - ρ a) / (b - a) with hs₀
+  have hs₀pos : 0 < s₀ := div_pos (by linarith) (by linarith)
+  have hlb : ∀ x, b < x → ρ b + s₀ * (x - b) ≤ ρ x := by
+    intro x hbx
+    have hslope := hconv.slope_mono_adjacent (Set.mem_univ a) (Set.mem_univ x) hab hbx
+    simp only [slope_def_field] at hslope
+    have hxb : 0 < x - b := by linarith
+    have hstep : s₀ * (x - b) ≤ ρ x - ρ b := by
+      calc s₀ * (x - b) = (ρ b - ρ a) / (b - a) * (x - b) := by rw [hs₀]
+        _ ≤ (ρ x - ρ b) / (x - b) * (x - b) := mul_le_mul_of_nonneg_right hslope hxb.le
+        _ = ρ x - ρ b := by field_simp
+    linarith
+  have hlin : Filter.Tendsto (fun x => ρ b + s₀ * (x - b)) Filter.atTop Filter.atTop := by
+    apply Filter.tendsto_atTop_add_const_left
+    exact Filter.Tendsto.const_mul_atTop hs₀pos
+      (Filter.tendsto_atTop_add_const_right _ _ Filter.tendsto_id)
+  refine Filter.tendsto_atTop_mono' _ ?_ hlin
+  filter_upwards [Filter.eventually_gt_atTop b] with x hx using hlb x hx
+
+/-- A convex function on the line that is not monotone blows up at `−∞` (the reflection of
+`tendsto_atTop_of_convex_not_antitone`). -/
+private lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
+    (hconv : ConvexOn ℝ Set.univ ρ) (hnm : ¬ Monotone ρ) :
+    Filter.Tendsto ρ Filter.atBot Filter.atTop := by
+  have hconv' : ConvexOn ℝ Set.univ (fun x => ρ (-x)) := by
+    have := hconv.comp_affineMap (AffineMap.const ℝ ℝ (0 : ℝ) - AffineMap.id ℝ ℝ)
+    simpa [AffineMap.coe_sub, AffineMap.coe_const, Function.const, sub_eq_neg_add] using
+      this.subset (Set.subset_univ _) convex_univ
+  have hna' : ¬ Antitone (fun x => ρ (-x)) := by
+    intro h
+    apply hnm
+    intro p q hpq
+    have := h (neg_le_neg hpq)
+    simpa using this
+  have hcomp := (tendsto_atTop_of_convex_not_antitone hconv' hna').comp
+    Filter.tendsto_neg_atBot_atTop
+  exact hcomp.congr (fun x => by simp)
+
+section LocObj
+
+variable {𝓧 : Type*} [MeasurableSpace 𝓧]
+
+/-- The fibrewise conditional-risk objective `w ↦ ∫⁻ ofReal (ρ (δ₀ x − w))` is convex:
+convexity of `ρ` through the affine shift, pushed through `ENNReal.ofReal` and `∫⁻`. -/
+private lemma locObj_convexOn (μ : Measure 𝓧) {ρ : ℝ → ℝ} (hρm : Measurable ρ)
+    (hρ : ConvexOn ℝ Set.univ ρ) {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    ConvexOn ℝ≥0 Set.univ (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) := by
+  refine ⟨convex_univ, fun a _ b _ u v hu hv huv => ?_⟩
+  have huv' : (u : ℝ) + (v : ℝ) = 1 := by exact_mod_cast huv
+  have hmeasA : Measurable (fun x => ENNReal.ofReal (ρ (δ₀ x - a))) :=
+    ENNReal.measurable_ofReal.comp (hρm.comp (hδ₀.sub_const a))
+  have hmeasB : Measurable (fun x => ENNReal.ofReal (ρ (δ₀ x - b))) :=
+    ENNReal.measurable_ofReal.comp (hρm.comp (hδ₀.sub_const b))
+  have hpoint : ∀ x, ENNReal.ofReal (ρ (δ₀ x - (u • a + v • b)))
+      ≤ (u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+        (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b)) := by
+    intro x
+    have hsplit : δ₀ x - (u • a + v • b)
+        = (u : ℝ) • (δ₀ x - a) + (v : ℝ) • (δ₀ x - b) := by
+      rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul, smul_eq_mul, smul_eq_mul]
+      linear_combination (-(δ₀ x)) * huv'
+    rw [hsplit]
+    have hc := hρ.2 (Set.mem_univ (δ₀ x - a)) (Set.mem_univ (δ₀ x - b))
+      u.coe_nonneg v.coe_nonneg huv'
+    calc ENNReal.ofReal (ρ ((u : ℝ) • (δ₀ x - a) + (v : ℝ) • (δ₀ x - b)))
+        ≤ ENNReal.ofReal ((u : ℝ) • ρ (δ₀ x - a) + (v : ℝ) • ρ (δ₀ x - b)) :=
+          ENNReal.ofReal_le_ofReal hc
+      _ ≤ ENNReal.ofReal ((u : ℝ) • ρ (δ₀ x - a)) + ENNReal.ofReal ((v : ℝ) • ρ (δ₀ x - b)) :=
+          ENNReal.ofReal_add_le
+      _ = (u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+            (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b)) := by
+          rw [smul_eq_mul, smul_eq_mul, ENNReal.ofReal_mul u.coe_nonneg,
+            ENNReal.ofReal_mul v.coe_nonneg, ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_coe_nnreal]
+  calc ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - (u • a + v • b))) ∂μ
+      ≤ ∫⁻ x, ((u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+          (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b))) ∂μ := lintegral_mono hpoint
+    _ = (u : ℝ≥0∞) * ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - a)) ∂μ +
+          (v : ℝ≥0∞) * ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - b)) ∂μ := by
+        rw [lintegral_add_left (hmeasA.const_mul _), lintegral_const_mul _ hmeasA,
+          lintegral_const_mul _ hmeasB]
+    _ = u • (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - a)) ∂μ) +
+          v • (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - b)) ∂μ) := by
+        rw [ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
+
+/-- The fibrewise conditional-risk objective is lower semicontinuous in the shift: the
+integrand is continuous in `w`, and `∫⁻` is lower semicontinuous under `liminf` (Fatou). -/
+private lemma locObj_lowerSemicontinuous (μ : Measure 𝓧) {ρ : ℝ → ℝ} (hρc : Continuous ρ)
+    {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    LowerSemicontinuous (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) := by
+  intro w y hy
+  by_contra hcon
+  rw [Filter.not_eventually] at hcon
+  simp only [not_lt] at hcon
+  obtain ⟨wseq, hwtend, hwle⟩ := exists_seq_forall_of_frequently hcon
+  set g : ℕ → 𝓧 → ℝ≥0∞ := fun n x => ENNReal.ofReal (ρ (δ₀ x - wseq n)) with hgdef
+  have hg_meas : ∀ n, Measurable (g n) := fun n =>
+    ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.sub_const _))
+  have hlim : ∀ x, Filter.Tendsto (fun n => g n x) Filter.atTop
+      (𝓝 (ENNReal.ofReal (ρ (δ₀ x - w)))) := by
+    intro x
+    exact (ENNReal.continuous_ofReal.tendsto _).comp
+      ((hρc.tendsto _).comp (tendsto_const_nhds.sub hwtend))
+  have key : ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ ≤ y := by
+    have heq : (fun x => ENNReal.ofReal (ρ (δ₀ x - w)))
+        = fun x => Filter.liminf (fun n => g n x) Filter.atTop := by
+      funext x; exact ((hlim x).liminf_eq).symm
+    rw [show (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ)
+        = ∫⁻ x, Filter.liminf (fun n => g n x) Filter.atTop ∂μ from by rw [heq]]
+    refine le_trans (lintegral_liminf_le hg_meas) ?_
+    refine Filter.liminf_le_of_le (h := fun b hb => ?_)
+    obtain ⟨n, hn⟩ := (hb.and (Filter.Eventually.of_forall hwle)).exists
+    exact le_trans hn.1 hn.2
+  exact absurd key (not_le.mpr hy)
+
+/-- The fibrewise conditional-risk objective is coercive (blows up at `±∞`): the loss `ρ`
+tends to `+∞` at both ends (convex, non-monotone), so the integrand tends to `⊤` pointwise
+and Fatou pushes the integral to `⊤`. -/
+private lemma locObj_tendsto_top (μ : Measure 𝓧) [IsProbabilityMeasure μ] {ρ : ℝ → ℝ}
+    (hρc : Continuous ρ) (hconv : ConvexOn ℝ Set.univ ρ)
+    (hnotmono : ¬ Monotone ρ ∧ ¬ Antitone ρ) {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    Tendsto (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) (cocompact ℝ) (𝓝 ⊤) := by
+  have hρtop : Tendsto ρ (cocompact ℝ) atTop := by
+    rw [cocompact_eq_atBot_atTop, Filter.tendsto_sup]
+    exact ⟨tendsto_atBot_of_convex_not_monotone hconv hnotmono.1,
+      tendsto_atTop_of_convex_not_antitone hconv hnotmono.2⟩
+  have hsub : ∀ c : ℝ, Tendsto (fun w => c - w) (cocompact ℝ) (cocompact ℝ) := by
+    intro c
+    rw [cocompact_eq_atBot_atTop]
+    refine Filter.tendsto_sup.mpr ⟨?_, ?_⟩
+    · refine Filter.Tendsto.mono_right ?_ le_sup_right
+      exact (Filter.tendsto_atTop_add_const_left atBot c
+        Filter.tendsto_neg_atBot_atTop).congr (fun w => by ring)
+    · refine Filter.Tendsto.mono_right ?_ le_sup_left
+      exact (Filter.tendsto_atBot_add_const_left atTop c
+        Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
+  haveI : (cocompact ℝ).IsCountablyGenerated := by
+    rw [cocompact_eq_atBot_atTop]; infer_instance
+  rw [ENNReal.tendsto_nhds_top_iff_nnreal]
+  intro N
+  by_contra hcon
+  rw [Filter.not_eventually] at hcon
+  simp only [not_lt] at hcon
+  obtain ⟨wseq, hwtend, hwle⟩ := exists_seq_forall_of_frequently hcon
+  set g : ℕ → 𝓧 → ℝ≥0∞ := fun n x => ENNReal.ofReal (ρ (δ₀ x - wseq n)) with hgdef
+  have hg_meas : ∀ n, Measurable (g n) := fun n =>
+    ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.sub_const _))
+  have hlim : ∀ x, Tendsto (fun n => g n x) atTop (𝓝 ⊤) := by
+    intro x
+    exact ENNReal.tendsto_ofReal_nhds_top.2 (hρtop.comp ((hsub (δ₀ x)).comp hwtend))
+  have hkey : (⊤ : ℝ≥0∞) ≤ (N : ℝ≥0∞) := by
+    calc (⊤ : ℝ≥0∞) = ∫⁻ _x : 𝓧, (⊤ : ℝ≥0∞) ∂μ := by rw [lintegral_const]; simp
+      _ = ∫⁻ x, Filter.liminf (fun n => g n x) atTop ∂μ := by
+          refine lintegral_congr fun x => ?_
+          exact ((hlim x).liminf_eq).symm
+      _ ≤ Filter.liminf (fun n => ∫⁻ x, g n x ∂μ) atTop := lintegral_liminf_le hg_meas
+      _ ≤ (N : ℝ≥0∞) := by
+          refine Filter.liminf_le_of_le (h := fun b hb => ?_)
+          obtain ⟨n, hn⟩ := (hb.and (Filter.Eventually.of_forall hwle)).exists
+          exact le_trans hn.1 hn.2
+  exact absurd hkey (not_le.mpr ENNReal.coe_lt_top)
+
+end LocObj
 
 /-- **The minimum risk equivariant location estimator.** Let `δ₀` be a measurable
 equivariant estimator with finite risk and let `v*` be a measurable function of the
@@ -147,39 +324,72 @@ theorem isLocMRE_of_conditional_min (f : (Fin (m + 1) → ℝ) → ℝ)
       unfold locRisk; exact lintegral_congr fun x => by rw [hv x]
     rw [hrisk']; unfold locRisk; exact key
 
-/-- Analytic core (named debt): for a convex, non-monotone loss the fibrewise conditional
-risk `w ↦ ∫⁻ x, ofReal (ρ (δ₀ x − w)) ∂(orbitCondKernel (locationBase f) diffs z)` is
-convex, continuous and coercive in `w`, so the measurable-argmin brick
-`exists_measurable_argmin` produces a measurable `v*` minimizing it in every fibre. -/
+/-- Analytic core: for a convex, non-monotone loss the fibrewise conditional risk
+`w ↦ ∫⁻ x, ofReal (ρ (δ₀ x − w)) ∂(orbitCondKernel (locationBase f) diffs z)` is convex,
+lower semicontinuous and coercive in `w`, so the measurable-argmin brick
+`exists_measurable_argmin_of_convex` produces a measurable `v*` minimizing it in almost every
+fibre. The finiteness point `fObj z 0 < ⊤` that the brick's convex form needs comes from the
+finite reference risk via disintegration. -/
 private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) → ℝ)
     [IsProbabilityMeasure (locationBase f)] {ρ : ℝ → ℝ} (hρ : Measurable ρ)
     (hconv : ConvexOn ℝ Set.univ ρ) (hnotmono : ¬ Monotone ρ ∧ ¬ Antitone ρ)
-    {δ₀ : (Fin (m + 1) → ℝ) → ℝ} (hδ₀ : Measurable δ₀) :
+    {δ₀ : (Fin (m + 1) → ℝ) → ℝ} (hδ₀ : Measurable δ₀) (hfin : locRisk f ρ δ₀ ≠ ∞) :
     ∃ vStar : (Fin m → ℝ) → ℝ, Measurable vStar ∧
       ∀ᵐ y ∂((locationBase f).map diffs), ∀ w : ℝ,
         ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - vStar y))
             ∂(orbitCondKernel (locationBase f) diffs y) ≤
           ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
             ∂(orbitCondKernel (locationBase f) diffs y) := by
-  -- RETAINED DEBT (pe/equivariance-close): not closable without proving continuity of an
-  -- ℝ≥0∞-valued conditional-risk integral, which the frozen `exists_measurable_argmin`
-  -- brick requires as *full* continuity (its docstring notes an LSC weakening is not done);
-  -- for an unbounded convex loss the objective genuinely jumps to ∞ at its finiteness
-  -- boundary, so no side hypothesis on `ρ` closes it without laundering the analytic core.
-  -- TODO: analytic core of the convex location MRE. Set
-  --   `fObj z w = ∫⁻ x, ofReal (ρ (δ₀ x - w)) ∂(orbitCondKernel (locationBase f) diffs z)`
-  -- and discharge the four hypotheses of `exists_measurable_argmin`:
-  --   * joint measurability of `Function.uncurry fObj` (kernel-parametrized `∫⁻`);
-  --   * `ConvexOn ℝ≥0 univ (fObj z)` from convexity of `ρ` composed with the affine shift,
-  --     pushed through `ENNReal.ofReal` and `∫⁻`-monotonicity/additivity;
-  --   * `Continuous (fObj z)` — the delicate step: continuity of the ℝ≥0∞-valued integral
-  --     in the shift `w` (a convex ℝ≥0∞ objective can jump from finite to ∞ at the
-  --     boundary of its finiteness domain, so this needs a genuine regularity argument);
-  --   * `Tendsto (fObj z) (cocompact ℝ) (𝓝 ⊤)` from coercivity of the convex non-monotone
-  --     `ρ` (via `hnotmono`) and Fatou.
-  -- Then `exists_measurable_argmin` gives measurable `v*` with `fObj z (v* z) = ⨅ w, fObj z w`,
-  -- whence the fibrewise minimality holds for every `z` (a fortiori `∀ᵐ`).
-  sorry
+  have hρc : Continuous ρ := (hconv.locallyLipschitz).continuous
+  set fObj : (Fin m → ℝ) → ℝ → ℝ≥0∞ :=
+    fun z w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
+      ∂(orbitCondKernel (locationBase f) diffs z) with hfObjdef
+  -- (1) joint measurability of the objective through the fibre kernel
+  have hmeas : Measurable (Function.uncurry fObj) := by
+    have hf_meas : Measurable (fun p : ((Fin m → ℝ) × ℝ) × (Fin (m + 1) → ℝ) =>
+        ENNReal.ofReal (ρ (δ₀ p.2 - p.1.2))) :=
+      ENNReal.measurable_ofReal.comp (hρc.measurable.comp
+        ((hδ₀.comp measurable_snd).sub (measurable_snd.comp measurable_fst)))
+    set κ' : ProbabilityTheory.Kernel ((Fin m → ℝ) × ℝ) (Fin (m + 1) → ℝ) :=
+      (orbitCondKernel (locationBase f) diffs).comap Prod.fst measurable_fst with hκ'
+    have heq : Function.uncurry fObj
+        = fun p : (Fin m → ℝ) × ℝ => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - p.2)) ∂(κ' p) := by
+      funext p
+      rw [hκ', ProbabilityTheory.Kernel.comap_apply]
+      simp only [Function.uncurry, hfObjdef]
+    rw [heq]
+    exact Measurable.lintegral_kernel_prod_right' (κ := κ') hf_meas
+  -- (2)–(4) convexity / lower semicontinuity / coercivity of each fibre objective
+  have hconvex : ∀ z, ConvexOn ℝ≥0 Set.univ (fObj z) := fun z =>
+    locObj_convexOn _ hρ hconv hδ₀
+  have hlsc : ∀ z, LowerSemicontinuous (fObj z) := fun z =>
+    locObj_lowerSemicontinuous _ hρc hδ₀
+  have hcoer : ∀ z, Tendsto (fObj z) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)) := fun z =>
+    locObj_tendsto_top _ hρc hconv hnotmono hδ₀
+  -- (5) finiteness at `0` for a.e. fibre, from the finite reference risk via disintegration
+  have hint_meas : Measurable (fun z => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+      ∂(orbitCondKernel (locationBase f) diffs z)) :=
+    Measurable.lintegral_kernel_prod_right'
+      (κ := orbitCondKernel (locationBase f) diffs)
+      (ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.comp measurable_snd)))
+  have hfin0 : ∀ᵐ z ∂((locationBase f).map diffs), fObj z 0 < ⊤ := by
+    have hdis := lintegral_eq_lintegral_condDistrib (locationBase f) measurable_diffs
+      (g := fun _z x => ENNReal.ofReal (ρ (δ₀ x)))
+      (ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.comp measurable_snd)))
+    have hne : (∫⁻ z, ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+        ∂(orbitCondKernel (locationBase f) diffs z) ∂((locationBase f).map diffs)) ≠ ⊤ := by
+      rw [← hdis]; exact hfin
+    filter_upwards [ae_lt_top hint_meas hne] with z hz
+    have hz0 : fObj z 0 = ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+        ∂(orbitCondKernel (locationBase f) diffs z) := by simp only [hfObjdef, sub_zero]
+    rw [hz0]; exact hz
+  obtain ⟨vStar, hvStar_meas, hvStar_min⟩ :=
+    exists_measurable_argmin_of_convex (μ := (locationBase f).map diffs) hmeas hlsc hconvex
+      hcoer hfin0
+  refine ⟨vStar, hvStar_meas, ?_⟩
+  filter_upwards [hvStar_min] with z hz w
+  show fObj z (vStar z) ≤ fObj z w
+  rw [hz]; exact iInf_le _ w
 
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
 loss.** For such a loss the fibrewise minimization always has a solution, and the
@@ -204,7 +414,7 @@ theorem exists_isLocMRE_of_convex (f : (Fin (m + 1) → ℝ) → ℝ)
     (hfin : locRisk f ρ δ₀ ≠ ∞) :
     ∃ δ, IsLocMRE f ρ δ := by
   obtain ⟨vStar, hvStar, hmin⟩ :=
-    exists_measurable_condMinimizer_convex f hρ hconv hnotmono hδ₀
+    exists_measurable_condMinimizer_convex f hρ hconv hnotmono hδ₀ hfin
   exact ⟨_, isLocMRE_of_conditional_min f ρ hρ hδ₀ heq₀ hfin hvStar hmin⟩
 
 /-- **Squared error: the minimum risk equivariant estimator subtracts the conditional

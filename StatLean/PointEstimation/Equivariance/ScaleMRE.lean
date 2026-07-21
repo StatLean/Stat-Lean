@@ -302,16 +302,22 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- vacuously.
     (hposmin : ∀ u : ℝ, ∃ v : ℝ, 0 < v ∧ γ v ≤ γ u) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
-  -- RETAINED DEBT (pe/equivariance-close): tainted by the same obstruction as the location
-  -- twin `exists_measurable_condMinimizer_convex` — the fibrewise minimizer needs continuity
-  -- of the ℝ≥0∞-valued conditional-risk objective in the log-shift, which the frozen
-  -- `exists_measurable_argmin` brick demands as full continuity and which fails at the
-  -- finiteness boundary for an unbounded (log-)convex loss.
-  -- Statement corrected: `hposmin` rules out the counterexample below by forbidding `γ` from
-  -- dipping under its positive-axis values off the positive axis. Route: apply the corrected
-  -- `isScaleMRE_of_conditional_min` (closed) with a fibrewise minimizer produced by
-  -- `ForMathlib.MeasurableArgmin.exists_measurable_argmin`; `hposmin` lets the all-`w`
-  -- domination be reduced to the positive axis, where `hconv`/`hnotmono` give attainment.
+  -- RETAINED DEBT (pe/argmin-2): the measurable-argmin obstruction is now RESOLVED — the
+  -- location twin `exists_measurable_condMinimizer_convex` is CLOSED axiom-clean, and its
+  -- three fibrewise inputs generalize verbatim through the log-reparametrization `w = eᵛ`:
+  -- with `δ₀ x / w = e^{log(δ₀ x) − v}` (using `h₀pos`), the fibre objective becomes the
+  -- location objective `tObj z v = ∫⁻ x, ofReal ((γ ∘ exp) (log (δ₀ x) − v)) ∂κ_z`, whose
+  -- convexity/LSC/coercivity are `locObj_convexOn`/`locObj_lowerSemicontinuous`/
+  -- `locObj_tendsto_top` (in `LocationMRE`) at `ρ := γ ∘ exp` (convex non-monotone by
+  -- hypothesis) and `δ₀ := log ∘ δ₀`, and `exists_measurable_argmin_of_convex` then yields a
+  -- measurable `vStar` with `wStar := exp ∘ vStar > 0` a.e. minimizing over all POSITIVE `w`.
+  -- The genuinely remaining step is the all-`w` (incl. `w ≤ 0`) domination: `hposmin` gives
+  -- it, but only after an `∫⁻`-level argument reducing `∫⁻ ofReal (γ (δ₀ x / w))` for `w ≤ 0`
+  -- to the positive axis (not pointwise — `hposmin` is per-value), which is separate
+  -- bookkeeping not yet formalized. TODO: (i) build `tObj` and its finiteness point at `v=0`
+  -- via disintegration (mirror `exists_measurable_condMinimizer_convex`); (ii) transport the
+  -- positive-`w` minimality to all `w` through `hposmin`; (iii) apply
+  -- `isScaleMRE_of_conditional_min`.
   sorry
 
 /-- **The minimum risk equivariant estimator of `τ^r` under Stein's loss** is the
