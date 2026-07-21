@@ -657,6 +657,43 @@ theorem tendsto_chiSquared_quantile_standardized {α : ℝ} {c : ℕ → ℝ} {z
     constructor <;> linarith
   exact eventually_atTop.mp hfin
 
+/-- **Sum-of-squares realisation of the noncentral chi-squared law.** For an i.i.d. `N(0,1)`
+sequence `Z`, the pushforward of `∑ᵢ ((√l·[i=0]) + Zᵢ)²` (the squared norm of the shifted
+Gaussian vector with mean `√l` on the first axis) is `noncentralChiSquared k l`. -/
+private lemma map_noncentral_sumSq_eq {k : ℕ} {Ω₀ : Type*} [MeasurableSpace Ω₀]
+    {P₀ : Measure Ω₀} [IsProbabilityMeasure P₀] (Z : ℕ → Ω₀ → ℝ)
+    (hZmeas : ∀ i, Measurable (Z i)) (hZlaw : ∀ i, Measure.map (Z i) P₀ = gaussianReal 0 1)
+    (hZindep : iIndepFun Z P₀) (l : ℝ≥0) :
+    Measure.map (fun ω => ∑ i : Fin k,
+        ((if (i : ℕ) = 0 then Real.sqrt (l : ℝ) else 0) + Z (i : ℕ) ω) ^ 2) P₀
+      = noncentralChiSquared k l := by
+  classical
+  -- the coordinate vector is standard Gaussian on `EuclideanSpace ℝ (Fin k)`
+  have hXlaw : Measure.map (fun ω => (WithLp.toLp 2 (fun i : Fin k => Z (i : ℕ) ω)
+      : EuclideanSpace ℝ (Fin k))) P₀ = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
+    have hcomp : (fun ω => (WithLp.toLp 2 (fun i : Fin k => Z (i : ℕ) ω)
+        : EuclideanSpace ℝ (Fin k)))
+        = (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
+            ∘ (fun ω (i : Fin k) => Z (i : ℕ) ω) := rfl
+    rw [hcomp, ← Measure.map_map (by fun_prop)
+        (measurable_pi_lambda _ (fun i => hZmeas _)), ← map_pi_eq_stdGaussian]
+    congr 1
+    rw [(iIndepFun_iff_map_fun_eq_pi_map
+        (f := fun i : Fin k => Z (i : ℕ)) (fun i => (hZmeas (i : ℕ)).aemeasurable)).1
+      (hZindep.precomp Fin.val_injective)]
+    congr 1; funext i; exact hZlaw (i : ℕ)
+  rw [noncentralChiSquared, multivariateGaussian_one_eq_map_add,
+    Measure.map_map (by fun_prop) (by fun_prop), ← hXlaw,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext ω
+  simp only [Function.comp_apply, EuclideanSpace.real_norm_sq_eq]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  have hcoord : (noncentralMean k l + WithLp.toLp 2 (fun j : Fin k => Z (j : ℕ) ω)) i
+      = (if (i : ℕ) = 0 then Real.sqrt (l : ℝ) else 0) + Z (i : ℕ) ω := by
+    rw [noncentralMean]; rfl
+  rw [hcoord]
+
 /-- **Large-`k` normalisation of the noncentral chi-squared law.**
 If the noncentrality parameters satisfy `l k / √(2k) → c`, then
 `(χ²_k(l k) − k)/√(2k)` converges weakly to `N(c, 1)`: writing the noncentral variable as
@@ -670,6 +707,122 @@ theorem weakConverges_noncentralChiSquared_standardized {l : ℕ → ℝ≥0} {c
       (fun k : ℕ => (noncentralChiSquared k (l k)).map
         (fun x => (x - k) / Real.sqrt (2 * k)))
       (gaussianReal c 1) := by
-  sorry
+  classical
+  obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
+    ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  have hZlaw' : ∀ i, Measure.map (Z i) P₀ = gaussianReal 0 1 := fun i => (hZlaw i).map_eq
+  -- central standardised statistic ⟹ N(0,1), then shifted by the drift `c` ⟹ N(c,1)
+  have hcentral := tendstoInDistribution_central_standardized Z hZmeas hZlaw' hZindep
+  have hshift := hcentral.continuous_comp (g := fun x : ℝ => x + c) (by fun_prop)
+  -- the noncentral (shifted-Gaussian squared-norm) standardised statistic
+  set Yfun : ℕ → Ω₀ → ℝ := fun n ω =>
+    ((∑ i : Fin (n + 1),
+        ((if (i : ℕ) = 0 then Real.sqrt ((l (n + 1) : ℝ)) else 0) + Z (i : ℕ) ω) ^ 2)
+      - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) with hYfun
+  have hYmeas : ∀ n, Measurable (Yfun n) := by
+    intro n; rw [hYfun]; fun_prop
+  -- reindexed convergence of the standardised noncentrality
+  have hl1 : Tendsto (fun n : ℕ => (l (n + 1) : ℝ) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+      atTop (𝓝 c) :=
+    (tendsto_add_atTop_iff_nat (f := fun k => (l k : ℝ) / Real.sqrt (2 * (k : ℝ))) 1).mpr hl
+  have hsqrtpos : ∀ n : ℕ, (0 : ℝ) < Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) :=
+    fun n => Real.sqrt_pos.mpr (by positivity)
+  -- the drift-corrected difference `b n → 0`
+  have hb : Tendsto (fun n : ℕ =>
+      (l (n + 1) : ℝ) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) - c) atTop (𝓝 0) := by
+    simpa using hl1.sub (tendsto_const_nhds (x := c))
+  -- the cross-term coefficient `a n → 0`
+  have hsqrt_inf : Tendsto (fun n : ℕ => Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp (Filter.Tendsto.const_mul_atTop (by norm_num)
+      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1)))
+  have hratio0 : Tendsto (fun n : ℕ =>
+      (l (n + 1) : ℝ) / (2 * ((n + 1 : ℕ) : ℝ))) atTop (𝓝 0) := by
+    have heq : (fun n : ℕ => (l (n + 1) : ℝ) / (2 * ((n + 1 : ℕ) : ℝ)))
+        = fun n => ((l (n + 1) : ℝ) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+            / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) := by
+      funext n; rw [div_div, Real.mul_self_sqrt (by positivity)]
+    rw [heq]
+    exact hl1.div_atTop hsqrt_inf
+  have ha0 : Tendsto (fun n : ℕ =>
+      2 * Real.sqrt ((l (n + 1) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) atTop (𝓝 0) := by
+    have hcoef : (fun n : ℕ =>
+          2 * Real.sqrt ((l (n + 1) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+        = fun n => 2 * Real.sqrt ((l (n + 1) : ℝ) / (2 * ((n + 1 : ℕ) : ℝ))) := by
+      funext n
+      rw [Real.sqrt_div (l (n + 1)).coe_nonneg, mul_div_assoc]
+    rw [hcoef]
+    have hcomp := (Real.continuous_sqrt.tendsto 0).comp hratio0
+    rw [Real.sqrt_zero] at hcomp
+    simpa using hcomp.const_mul 2
+  -- the Slutsky remainder is a pointwise limit `a n · Z₀ + b n → 0`, hence tends to 0 in measure
+  have hpt : ∀ n : ℕ, ∀ ω, (Yfun - fun n => (fun x : ℝ => x + c) ∘
+      (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+        / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))) n ω
+      = (2 * Real.sqrt ((l (n + 1) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) * Z 0 ω
+        + ((l (n + 1) : ℝ) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) - c) := by
+    intro n ω
+    have hsne : Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) ≠ 0 := (hsqrtpos n).ne'
+    have hdiff : (∑ i : Fin (n + 1),
+          ((if (i : ℕ) = 0 then Real.sqrt ((l (n + 1) : ℝ)) else 0) + Z (i : ℕ) ω) ^ 2)
+        - (∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2)
+        = 2 * Real.sqrt ((l (n + 1) : ℝ)) * Z 0 ω + (l (n + 1) : ℝ) := by
+      rw [← Finset.sum_sub_distrib, Finset.sum_eq_single (0 : Fin (n + 1))]
+      · have h0 : ((0 : Fin (n + 1)) : ℕ) = 0 := rfl
+        simp only [h0, if_pos]
+        have hsq : (Real.sqrt ((l (n + 1) : ℝ))) ^ 2 = (l (n + 1) : ℝ) :=
+          Real.sq_sqrt (l (n + 1)).coe_nonneg
+        nlinarith [hsq]
+      · intro i _ hi
+        have : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
+        simp [this]
+      · intro h; exact absurd (Finset.mem_univ _) h
+    simp only [Pi.sub_apply, hYfun, Function.comp_apply]
+    rw [div_add' _ _ _ hsne]
+    field_simp
+    linear_combination hdiff
+  have hXY : TendstoInMeasure P₀ (Yfun - fun n => (fun x : ℝ => x + c) ∘
+      (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+        / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))) atTop 0 := by
+    refine tendstoInMeasure_of_tendsto_ae (fun n => ?_) (Filter.Eventually.of_forall ?_)
+    · simp only [Pi.sub_apply, Function.comp_apply]
+      exact ((hYmeas n).sub (by fun_prop)).aestronglyMeasurable
+    · intro ω
+      have hlim0 : Tendsto (fun n : ℕ =>
+          (2 * Real.sqrt ((l (n + 1) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) * Z 0 ω
+            + ((l (n + 1) : ℝ) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) - c)) atTop (𝓝 0) := by
+        simpa using (ha0.mul_const (Z 0 ω)).add hb
+      simpa only [Pi.zero_apply] using (tendsto_congr (fun n => hpt n ω)).mpr hlim0
+  -- Slutsky: `Yfun ⟹ N(c,1)`
+  have hYdist := tendstoInDistribution_of_tendstoInMeasure_sub Yfun (fun x : ℝ => x + c)
+    hshift hXY (fun n => (hYmeas n).aemeasurable)
+  -- law identity: `Yfun n` pushes `P₀` to the standardised `χ²_{n+1}(l(n+1))`
+  have hlawY : ∀ n : ℕ, P₀.map (Yfun n)
+      = (noncentralChiSquared (n + 1) (l (n + 1))).map
+          (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) := by
+    intro n
+    have hcomp : Yfun n
+        = (fun x : ℝ => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+            ∘ (fun ω => ∑ i : Fin (n + 1),
+              ((if (i : ℕ) = 0 then Real.sqrt ((l (n + 1) : ℝ)) else 0) + Z (i : ℕ) ω) ^ 2) := by
+      funext ω; simp only [hYfun, Function.comp_apply]
+    rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+      map_noncentral_sumSq_eq Z hZmeas hZlaw' hZindep (l (n + 1))]
+  -- the limit law is `N(c,1)`
+  have hlim : (gaussianReal 0 1).map (fun x : ℝ => x + c) = gaussianReal c 1 := by
+    have := (gaussianReal_add_const (X := (id : ℝ → ℝ)) (μ := 0) (v := 1)
+      (P := gaussianReal 0 1) HasLaw.id c).map_eq
+    simpa using this
+  -- bridge `TendstoInDistribution → WeakConverges` and reindex
+  intro f
+  have hint := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hYdist.tendsto) f
+  rw [← tendsto_add_atTop_iff_nat 1]
+  have hpt_int : ∀ n : ℕ,
+      ∫ ω, f ω ∂((noncentralChiSquared (n + 1) (l (n + 1))).map
+        (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))))
+      = ∫ ω, f ω ∂(P₀.map (Yfun n)) := fun n => by rw [hlawY n]
+  simp only [hlim] at hint
+  simpa only [hpt_int, ProbabilityMeasure.coe_mk] using hint
 
 end StatLean.HypothesisTesting
