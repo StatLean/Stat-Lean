@@ -1,4 +1,5 @@
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Probability.CDF
 import Mathlib.Probability.Distributions.Gaussian.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -375,5 +376,29 @@ theorem norm_charFun_pow_sub_gaussian_le (μ : Measure ℝ) [IsProbabilityMeasur
     _ ≤ (n : ℝ) * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + z ^ 2 / 2) :=
         mul_le_mul_of_nonneg_left hfac (by positivity)
     _ = n * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + (v * w ^ 2 / 2) ^ 2 / 2) := by rw [hz_def]
+
+/-- **Berry–Esseen rate for the characteristic function of a standardized i.i.d. sum.**
+Combining `norm_charFun_pow_sub_gaussian_le` with Mathlib's factorization
+`charFun_inv_sqrt_mul_sum`, the characteristic function of `(√n)⁻¹ ∑ₖ Xₖ` is within an
+explicit `O(1/√n)` distance (the right-hand side, with `w = (√n)⁻¹ t`) of the Gaussian
+characteristic function. This is the *entire* characteristic-function half of Berry–Esseen;
+converting it into a bound on cumulative distribution functions is Esseen's smoothing
+inequality (Target 1), which is blocked at this Mathlib pin — see the module docstring. -/
+theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
+    (hindep : iIndepFun X P) (hident : ∀ i, IdentDistrib (X i) (X 0) P P)
+    {v : ℝ} (hv : 0 ≤ v)
+    (hint1 : Integrable (fun x => x) (P.map (X 0)))
+    (hint2 : Integrable (fun x => x ^ 2) (P.map (X 0)))
+    (hint3 : Integrable (fun x => |x| ^ 3) (P.map (X 0)))
+    (hmean : ∫ x, x ∂(P.map (X 0)) = 0) (hvar : ∫ x, x ^ 2 ∂(P.map (X 0)) = v)
+    (t : ℝ) (n : ℕ) :
+    ‖charFun (P.map (fun ω => (√n)⁻¹ * ∑ k ∈ Finset.range n, X k ω)) t
+        - Complex.exp (-(n : ℂ) * v * (((√n)⁻¹ * t : ℝ) : ℂ) ^ 2 / 2)‖
+      ≤ n * ((∫ x, |x| ^ 3 ∂(P.map (X 0))) * |(√n)⁻¹ * t| ^ 3 / 6
+        + (v * ((√n)⁻¹ * t) ^ 2 / 2) ^ 2 / 2) := by
+  haveI : IsProbabilityMeasure (P.map (X 0)) :=
+    Measure.isProbabilityMeasure_map (hident 0).aemeasurable_fst
+  rw [charFun_inv_sqrt_mul_sum hindep hident]
+  exact norm_charFun_pow_sub_gaussian_le (P.map (X 0)) hv hint1 hint2 hint3 hmean hvar _ n
 
 end StatLean.HypothesisTesting
