@@ -697,4 +697,85 @@ theorem exists_measurable_argmin_of_convex_of_finite {Ω : Type*} [MeasurableSpa
   · exact hM_meas measurableSet_Iio
   · exact measurableSet_eq_fun (hLq_meas q) hM_meas
 
+/-- The surgery function `w ↦ ofReal (w²)`: convex, used to overwrite `f` on the null set
+where `f ω 0 = ⊤` so that the everywhere-core hypotheses hold. -/
+private lemma convexOn_ofReal_sq :
+    ConvexOn ℝ≥0 Set.univ (fun w : ℝ => ENNReal.ofReal (w ^ 2)) := by
+  refine ⟨convex_univ, fun a _ b _ u v hu hv huv => ?_⟩
+  have hpt : u • a + v • b = (u : ℝ) * a + (v : ℝ) * b := by
+    rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul]
+  rw [hpt, ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul,
+    show ((u : ℝ≥0∞)) = ENNReal.ofReal (u : ℝ) from (ENNReal.ofReal_coe_nnreal).symm,
+    show ((v : ℝ≥0∞)) = ENNReal.ofReal (v : ℝ) from (ENNReal.ofReal_coe_nnreal).symm,
+    ← ENNReal.ofReal_mul u.coe_nonneg, ← ENNReal.ofReal_mul v.coe_nonneg,
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  apply ENNReal.ofReal_le_ofReal
+  have huv' : (u : ℝ) + (v : ℝ) = 1 := by exact_mod_cast huv
+  nlinarith [mul_nonneg (mul_nonneg u.coe_nonneg v.coe_nonneg) (sq_nonneg (a - b)),
+    huv', u.coe_nonneg, v.coe_nonneg]
+
+private lemma continuous_ofReal_sq : Continuous (fun w : ℝ => ENNReal.ofReal (w ^ 2)) :=
+  ENNReal.continuous_ofReal.comp (continuous_pow 2)
+
+private lemma tendsto_ofReal_sq_cocompact :
+    Tendsto (fun w : ℝ => ENNReal.ofReal (w ^ 2)) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)) := by
+  refine ENNReal.tendsto_ofReal_nhds_top.2 ?_
+  rw [cocompact_eq_atBot_atTop, Filter.tendsto_sup]
+  refine ⟨?_, tendsto_pow_atTop two_ne_zero⟩
+  exact Tendsto.congr (fun w => by rw [Function.comp_apply]; ring)
+    ((tendsto_pow_atTop (two_ne_zero)).comp tendsto_neg_atBot_atTop)
+
+/-- **Measurable argmin, convex form (almost-everywhere).** The version the conditional-risk
+consumers use: a jointly measurable family of convex, lower-semicontinuous, coercive functions
+of a real scan variable, finite at `0` **for almost every** parameter, admits a measurable
+minimizer selection valid almost everywhere. The a.e. finiteness point is exactly what the
+finite-risk hypothesis of the location/scale MRE consumers supplies (via disintegration). -/
+theorem exists_measurable_argmin_of_convex {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {f : Ω → ℝ → ℝ≥0∞} (hf : Measurable (Function.uncurry f))
+    (hlsc : ∀ ω, LowerSemicontinuous (f ω))
+    (hconv : ∀ ω, ConvexOn ℝ≥0 Set.univ (f ω))
+    (hcoer : ∀ ω, Tendsto (f ω) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)))
+    (h0 : ∀ᵐ ω ∂μ, f ω 0 < ⊤) :
+    ∃ u : Ω → ℝ, Measurable u ∧ ∀ᵐ ω ∂μ, f ω (u ω) = ⨅ v : ℝ, f ω v := by
+  classical
+  have hf00 : Measurable (fun ω => f ω 0) := hf.comp (measurable_id.prodMk measurable_const)
+  -- overwrite `f` by `w ↦ ofReal (w²)` on the null set `{f ω 0 = ⊤}`
+  set f' : Ω → ℝ → ℝ≥0∞ :=
+    fun ω => if f ω 0 = ⊤ then (fun w => ENNReal.ofReal (w ^ 2)) else f ω with hf'def
+  have hf'meas : Measurable (Function.uncurry f') := by
+    have hB' : MeasurableSet {p : Ω × ℝ | f p.1 0 = ⊤} :=
+      (hf00.comp measurable_fst) (measurableSet_singleton ⊤)
+    have huncurry : Function.uncurry f'
+        = fun p : Ω × ℝ => if f p.1 0 = ⊤ then ENNReal.ofReal (p.2 ^ 2) else f p.1 p.2 := by
+      funext p
+      simp only [Function.uncurry, hf'def]
+      rw [apply_ite (fun g : ℝ → ℝ≥0∞ => g p.2)]
+    rw [huncurry]
+    exact Measurable.ite hB'
+      (continuous_ofReal_sq.measurable.comp measurable_snd) hf
+  have hlsc' : ∀ ω, LowerSemicontinuous (f' ω) := by
+    intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
+    · rw [if_pos h]; exact continuous_ofReal_sq.lowerSemicontinuous
+    · rw [if_neg h]; exact hlsc ω
+  have hconv' : ∀ ω, ConvexOn ℝ≥0 Set.univ (f' ω) := by
+    intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
+    · rw [if_pos h]; exact convexOn_ofReal_sq
+    · rw [if_neg h]; exact hconv ω
+  have hcoer' : ∀ ω, Tendsto (f' ω) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)) := by
+    intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
+    · rw [if_pos h]; exact tendsto_ofReal_sq_cocompact
+    · rw [if_neg h]; exact hcoer ω
+  have hf'0 : ∀ ω, f' ω 0 < ⊤ := by
+    intro ω; simp only [hf'def]; by_cases h : f ω 0 = ⊤
+    · rw [if_pos h]; simp
+    · rw [if_neg h]; exact lt_top_iff_ne_top.mpr h
+  obtain ⟨u, hu_meas, hu_min⟩ :=
+    exists_measurable_argmin_of_convex_of_finite hf'meas hlsc' hconv' hcoer' hf'0
+  refine ⟨u, hu_meas, ?_⟩
+  filter_upwards [h0] with ω hω
+  have heq : f' ω = f ω := by simp only [hf'def, if_neg (lt_top_iff_ne_top.mp hω)]
+  have := hu_min ω
+  rw [heq] at this
+  exact this
+
 end StatLean.PointEstimation
