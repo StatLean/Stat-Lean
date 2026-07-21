@@ -6,6 +6,7 @@ import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 
 /-!
 # The minimum risk equivariant location estimator
@@ -61,8 +62,8 @@ that estimator was established by C. Stein, "The admissibility of Pitman's estim
 single location parameter," *Ann. Math. Statist.* **30** (1959), 970–979.
 -/
 
-open MeasureTheory
-open scoped ENNReal
+open MeasureTheory Filter Topology
+open scoped ENNReal NNReal
 
 namespace StatLean.PointEstimation
 
@@ -150,6 +151,84 @@ private lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
   have hcomp := (tendsto_atTop_of_convex_not_antitone hconv' hna').comp
     Filter.tendsto_neg_atBot_atTop
   exact hcomp.congr (fun x => by simp)
+
+section LocObj
+
+variable {𝓧 : Type*} [MeasurableSpace 𝓧]
+
+/-- The fibrewise conditional-risk objective `w ↦ ∫⁻ ofReal (ρ (δ₀ x − w))` is convex:
+convexity of `ρ` through the affine shift, pushed through `ENNReal.ofReal` and `∫⁻`. -/
+private lemma locObj_convexOn (μ : Measure 𝓧) {ρ : ℝ → ℝ} (hρm : Measurable ρ)
+    (hρ : ConvexOn ℝ Set.univ ρ) {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    ConvexOn ℝ≥0 Set.univ (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) := by
+  refine ⟨convex_univ, fun a _ b _ u v hu hv huv => ?_⟩
+  have huv' : (u : ℝ) + (v : ℝ) = 1 := by exact_mod_cast huv
+  have hmeasA : Measurable (fun x => ENNReal.ofReal (ρ (δ₀ x - a))) :=
+    ENNReal.measurable_ofReal.comp (hρm.comp (hδ₀.sub_const a))
+  have hmeasB : Measurable (fun x => ENNReal.ofReal (ρ (δ₀ x - b))) :=
+    ENNReal.measurable_ofReal.comp (hρm.comp (hδ₀.sub_const b))
+  have hpoint : ∀ x, ENNReal.ofReal (ρ (δ₀ x - (u • a + v • b)))
+      ≤ (u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+        (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b)) := by
+    intro x
+    have hsplit : δ₀ x - (u • a + v • b)
+        = (u : ℝ) • (δ₀ x - a) + (v : ℝ) • (δ₀ x - b) := by
+      rw [NNReal.smul_def, NNReal.smul_def, smul_eq_mul, smul_eq_mul, smul_eq_mul, smul_eq_mul]
+      linear_combination (-(δ₀ x)) * huv'
+    rw [hsplit]
+    have hc := hρ.2 (Set.mem_univ (δ₀ x - a)) (Set.mem_univ (δ₀ x - b))
+      u.coe_nonneg v.coe_nonneg huv'
+    calc ENNReal.ofReal (ρ ((u : ℝ) • (δ₀ x - a) + (v : ℝ) • (δ₀ x - b)))
+        ≤ ENNReal.ofReal ((u : ℝ) • ρ (δ₀ x - a) + (v : ℝ) • ρ (δ₀ x - b)) :=
+          ENNReal.ofReal_le_ofReal hc
+      _ ≤ ENNReal.ofReal ((u : ℝ) • ρ (δ₀ x - a)) + ENNReal.ofReal ((v : ℝ) • ρ (δ₀ x - b)) :=
+          ENNReal.ofReal_add_le
+      _ = (u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+            (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b)) := by
+          rw [smul_eq_mul, smul_eq_mul, ENNReal.ofReal_mul u.coe_nonneg,
+            ENNReal.ofReal_mul v.coe_nonneg, ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_coe_nnreal]
+  calc ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - (u • a + v • b))) ∂μ
+      ≤ ∫⁻ x, ((u : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - a)) +
+          (v : ℝ≥0∞) * ENNReal.ofReal (ρ (δ₀ x - b))) ∂μ := lintegral_mono hpoint
+    _ = (u : ℝ≥0∞) * ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - a)) ∂μ +
+          (v : ℝ≥0∞) * ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - b)) ∂μ := by
+        rw [lintegral_add_left (hmeasA.const_mul _), lintegral_const_mul _ hmeasA,
+          lintegral_const_mul _ hmeasB]
+    _ = u • (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - a)) ∂μ) +
+          v • (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - b)) ∂μ) := by
+        rw [ENNReal.smul_def, ENNReal.smul_def, smul_eq_mul, smul_eq_mul]
+
+/-- The fibrewise conditional-risk objective is lower semicontinuous in the shift: the
+integrand is continuous in `w`, and `∫⁻` is lower semicontinuous under `liminf` (Fatou). -/
+private lemma locObj_lowerSemicontinuous (μ : Measure 𝓧) {ρ : ℝ → ℝ} (hρc : Continuous ρ)
+    {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    LowerSemicontinuous (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) := by
+  intro w y hy
+  by_contra hcon
+  rw [Filter.not_eventually] at hcon
+  simp only [not_lt] at hcon
+  obtain ⟨wseq, hwtend, hwle⟩ := exists_seq_forall_of_frequently hcon
+  set g : ℕ → 𝓧 → ℝ≥0∞ := fun n x => ENNReal.ofReal (ρ (δ₀ x - wseq n)) with hgdef
+  have hg_meas : ∀ n, Measurable (g n) := fun n =>
+    ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.sub_const _))
+  have hlim : ∀ x, Filter.Tendsto (fun n => g n x) Filter.atTop
+      (𝓝 (ENNReal.ofReal (ρ (δ₀ x - w)))) := by
+    intro x
+    exact (ENNReal.continuous_ofReal.tendsto _).comp
+      ((hρc.tendsto _).comp (tendsto_const_nhds.sub hwtend))
+  have key : ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ ≤ y := by
+    have heq : (fun x => ENNReal.ofReal (ρ (δ₀ x - w)))
+        = fun x => Filter.liminf (fun n => g n x) Filter.atTop := by
+      funext x; exact ((hlim x).liminf_eq).symm
+    rw [show (∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ)
+        = ∫⁻ x, Filter.liminf (fun n => g n x) Filter.atTop ∂μ from by rw [heq]]
+    refine le_trans (lintegral_liminf_le hg_meas) ?_
+    refine Filter.liminf_le_of_le (h := fun b hb => ?_)
+    obtain ⟨n, hn⟩ := (hb.and (Filter.Eventually.of_forall hwle)).exists
+    exact le_trans hn.1 hn.2
+  exact absurd key (not_le.mpr hy)
+
+end LocObj
 
 /-- **The minimum risk equivariant location estimator.** Let `δ₀` be a measurable
 equivariant estimator with finite risk and let `v*` be a measurable function of the
