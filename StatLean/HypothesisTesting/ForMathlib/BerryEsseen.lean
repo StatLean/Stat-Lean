@@ -18,7 +18,23 @@ Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, 1971, §XVI.3
 
 * `norm_cexp_sub_taylor_le`, `norm_prod_sub_prod_le` — elementary complex-analytic
   estimates (restated here from `LindebergCLT.lean`, where they are `private`).
-* Fejér-kernel facts and Esseen's smoothing inequality (in progress).
+* `norm_charFun_sub_quadratic_le` — the characteristic function of a centered law is within
+  `ρ|u|³/6` of its quadratic Taylor polynomial `1 − v u²/2`.
+* `norm_charFun_pow_sub_gaussian_le` — `‖(charFun μ w)ⁿ − exp(−n v w²/2)‖ ≤ n(ρ|w|³/6 +
+  (v w²/2)²/2)`, the full characteristic-function content of Berry–Esseen (steps (i)–(iii)).
+* `norm_charFun_iidSum_sub_gaussian_le` — the same bound applied to the standardized i.i.d.
+  sum `(√n)⁻¹ ∑ₖ Xₖ` via Mathlib's `charFun_inv_sqrt_mul_sum`.
+* `fejerKernel`, `fejerKernel_nonneg`, `fejerKernel_even` — a partial foundation for Esseen's
+  smoothing inequality.
+
+## Status
+
+The **characteristic-function half of Berry–Esseen is complete and axiom-clean**
+(`norm_charFun_iidSum_sub_gaussian_le` and its inputs). **Target 1, Esseen's smoothing
+inequality — and hence the CDF-level Berry–Esseen bound — is blocked** at this Mathlib pin:
+the classical Fourier/Fejér route needs the sinc integral `∫(sin x/x)² = π`, the Fejér
+kernel's Fourier transform, and a Lévy/Esseen inversion formula for CDF differences, none of
+which exist in Mathlib v4.29.1. See the Fejér-kernel section for the precise obstructions.
 
 ## Formalization notes
 
@@ -400,5 +416,40 @@ theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
     Measure.isProbabilityMeasure_map (hident 0).aemeasurable_fst
   rw [charFun_inv_sqrt_mul_sum hindep hident]
   exact norm_charFun_pow_sub_gaussian_le (P.map (X 0)) hv hint1 hint2 hint3 hmean hvar _ n
+
+/-! ### The Fejér kernel — partial foundation for Esseen's smoothing inequality
+
+Target 1 (Esseen's smoothing inequality) is proved classically by convolving `F − G` with
+the **Fejér kernel** `K_T`, whose Fourier transform is the triangle function supported in
+`[−T, T]` — the compact support is what truncates the inversion integral. Three ingredients
+of that route are **absent from Mathlib v4.29.1** (all verified by search):
+
+1. the normalization `∫ K_T = 1`, which reduces to the sinc integral
+   `∫ (sin x / x)² dx = π` (Mathlib has neither this nor the Dirichlet integral
+   `∫ sin x / x = π/2`);
+2. the Fejér kernel and its Fourier transform (the triangle function);
+3. a Lévy/Esseen inversion formula relating `∫_{−T}^{T} (F̂ − Ĝ)/t dt` to the *smoothed*
+   distribution-function difference `(F − G) ∗ K_T` (Mathlib's Fourier inversion,
+   `Integrable.fourier_inversion`, is for `L¹` functions, not Stieltjes/CDF differences).
+
+Building any one of these is a substantial standalone project. We therefore record only the
+Fejér-kernel definition together with the elementary facts that need no Fourier theory
+(nonnegativity, evenness); the normalization and inversion steps are the genuine
+obstructions and are documented, not sorried. -/
+
+/-- The **Fejér kernel** `K_T(x) = (T / 2π) · (sin(Tx/2) / (Tx/2))²`. Its total integral is
+`1` and its Fourier transform is the triangle function on `[−T, T]`; both facts require the
+sinc integral, which is absent from Mathlib at this pin. -/
+noncomputable def fejerKernel (T x : ℝ) : ℝ :=
+  (T / (2 * π)) * (Real.sin (T * x / 2) / (T * x / 2)) ^ 2
+
+/-- The Fejér kernel is nonnegative for `T ≥ 0`. -/
+lemma fejerKernel_nonneg {T : ℝ} (hT : 0 ≤ T) (x : ℝ) : 0 ≤ fejerKernel T x :=
+  mul_nonneg (div_nonneg hT (by positivity)) (sq_nonneg _)
+
+/-- The Fejér kernel is even. -/
+lemma fejerKernel_even (T x : ℝ) : fejerKernel T (-x) = fejerKernel T x := by
+  unfold fejerKernel
+  rw [show T * (-x) / 2 = -(T * x / 2) by ring, Real.sin_neg, neg_div_neg_eq]
 
 end StatLean.HypothesisTesting
