@@ -158,6 +158,118 @@ lemma multivariateGaussian_shell_eq_chiSquared (hk : 0 < k) {t ε : ℝ} (ht : 0
       exact ⟨by nlinarith, by nlinarith⟩
   rw [hset, ← Measure.map_apply (by fun_prop) measurableSet_Ioc, hmap]
 
+/-- The elementary primitive `√x` of `1/(2√x)`: for `0 ≤ a ≤ b`,
+`∫_{(a,b]} (2√x)⁻¹ dx = √b − √a`. This is the change-of-variables factor that turns the
+chi-squared interval width `(t+ε)² − t²` back into the shell width `ε`. -/
+lemma integral_Ioc_inv_two_sqrt {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) :
+    ∫ x in Set.Ioc a b, (2 * Real.sqrt x)⁻¹ = Real.sqrt b - Real.sqrt a := by
+  rw [← intervalIntegral.integral_of_le hab]
+  have hcont : ContinuousOn Real.sqrt (Set.Icc a b) := Real.continuous_sqrt.continuousOn
+  have hderiv : ∀ x ∈ Set.Ioo a b,
+      HasDerivWithinAt Real.sqrt ((2 * Real.sqrt x)⁻¹) (Set.Ioi x) x := by
+    intro x hx
+    have hx0 : x ≠ 0 := ne_of_gt (lt_of_le_of_lt ha hx.1)
+    have h := (Real.hasDerivAt_sqrt hx0).hasDerivWithinAt (s := Set.Ioi x)
+    rwa [one_div] at h
+  have hint : IntervalIntegrable (fun x => (2 * Real.sqrt x)⁻¹) volume a b := by
+    have hrpow : IntervalIntegrable (fun x => (1 / 2) * x ^ (-(1 / 2) : ℝ)) volume a b :=
+      (intervalIntegral.intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
+    refine (intervalIntegrable_congr (fun x hx => ?_)).mp hrpow
+    have hx0 : 0 < x := by
+      rw [Set.uIoc_of_le hab] at hx; exact lt_of_le_of_lt ha hx.1
+    rw [Real.sqrt_eq_rpow, mul_inv, Real.rpow_neg hx0.le]; ring
+  exact intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hab hcont hderiv hint
+
+/-- **[Planned debt — Stirling on `Γ` at half-integers, absent from Mathlib v4.29.1]**
+The chi density peak is bounded by an **absolute** constant, uniformly in the dimension `k`:
+`2√x · gammaPDF (k/2) (1/2) x ≤ C` for all `k > 0`, `x > 0`. The left side is exactly the chi
+density `f_k(√x) = √x^{k-1} e^{-x/2} / (2^{k/2-1} Γ(k/2))`; its maximum over `x` is attained at
+`x = k-1` with value `→ e^{1/2}/√π < 1` as `k → ∞`, and stays below an absolute constant for all
+`k`. **This is the one genuinely dimension-free crux of the ball route.**
+
+TODO: `2√x · gammaPDF (k/2)(1/2) x = 2 (1/2)^{k/2} Γ(k/2)⁻¹ x^{k/2-1/2} e^{-x/2}`; maximise
+`x^{k/2-1/2} e^{-x/2}` at `x = k-1` (value `(k-1)^{(k-1)/2} e^{-(k-1)/2}`), reducing the claim to
+`(k-1)^{(k-1)/2} e^{-(k-1)/2} ≤ C · 2^{k/2-1} Γ(k/2)`, i.e. a **Stirling lower bound**
+`Γ(k/2) ≥ c₀ (k/2)^{(k-1)/2} e^{-k/2}`. For even `k` this follows from Mathlib's factorial
+Stirling `le_factorial_stirling`; for odd `k` (half-integer `k/2`) it needs the Gamma doubling
+formula `Real.Gamma_mul_Gamma_add_half` together with a Stirling *upper* bound on `n!`
+(`stirlingSeq` antitone + `stirlingSeq_one`). Mathlib v4.29.1 has no ready real-`Γ` Stirling
+bound, so this half-integer estimate is the isolated missing brick. -/
+private lemma chiSquared_density_mul_sqrt_le :
+    ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 0 < k → ∀ x : ℝ, 0 < x →
+      2 * Real.sqrt x * gammaPDFReal ((k : ℝ) / 2) (1 / 2) x ≤ C := by
+  -- TODO (planned debt): uniform chi-density peak bound via Stirling on Γ; see docstring.
+  sorry
+
+/-- **Dimension-free ball (shell) anti-concentration.** There is an *absolute* constant `C`
+(independent of the dimension `k`, the radius `t` and the shell width `ε`) such that the standard
+multivariate Gaussian mass of the spherical shell `{t < ‖z‖ ≤ t + ε}` is at most `C · ε`. This is
+the radial analogue of `gaussian_slab_measure_le` and the ingredient the ball Berry–Esseen bound
+consumes. Everything here is proved from the measure-theoretic reduction
+`multivariateGaussian_shell_eq_chiSquared` and the elementary primitive `integral_Ioc_inv_two_sqrt`;
+the only debt is the uniform chi-density peak bound `chiSquared_density_mul_sqrt_le`. -/
+theorem gaussian_ball_shell_measure_le :
+    ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 0 < k → ∀ t ε : ℝ, 0 ≤ t → 0 ≤ ε →
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+          {z | t < ‖z‖ ∧ ‖z‖ ≤ t + ε}).toReal ≤ C * ε := by
+  obtain ⟨C, hC, hCbound⟩ := chiSquared_density_mul_sqrt_le
+  refine ⟨C, hC, ?_⟩
+  intro k hk t ε ht hε
+  rw [multivariateGaussian_shell_eq_chiSquared hk ht hε]
+  set a := t ^ 2 with ha
+  set b := (t + ε) ^ 2 with hb
+  have h0a : (0 : ℝ) ≤ a := by rw [ha]; positivity
+  have hab : a ≤ b := by rw [ha, hb]; nlinarith
+  -- Pointwise density bound `gammaPDFReal ≤ C · (2√x)⁻¹` for `x > 0`.
+  have hden : ∀ x : ℝ, 0 < x →
+      gammaPDFReal ((k : ℝ) / 2) (1 / 2) x ≤ C * (2 * Real.sqrt x)⁻¹ := by
+    intro x hx0
+    have hsx : 0 < Real.sqrt x := Real.sqrt_pos.mpr hx0
+    have h2 : 0 < 2 * Real.sqrt x := by positivity
+    rw [← div_eq_mul_inv, le_div_iff₀ h2, mul_comm]
+    exact hCbound k hk x hx0
+  -- Reduce the chi-squared interval mass to a Lebesgue integral of the density.
+  have hcs : StatLean.MultipleTesting.chiSquared k (Set.Ioc a b)
+      = ∫⁻ x in Set.Ioc a b, gammaPDF ((k : ℝ) / 2) (1 / 2) x := by
+    unfold StatLean.MultipleTesting.chiSquared ProbabilityTheory.gammaMeasure
+    rw [withDensity_apply _ measurableSet_Ioc]
+  rw [hcs]
+  -- Integrability and nonnegativity of the majorant `C · (2√x)⁻¹` on `(a, b]`.
+  have hInt0 : IntegrableOn (fun x => (2 * Real.sqrt x)⁻¹) (Set.Ioc a b) volume := by
+    have hint : IntervalIntegrable (fun x => (2 * Real.sqrt x)⁻¹) volume a b := by
+      have hrpow : IntervalIntegrable (fun x => (1 / 2) * x ^ (-(1 / 2) : ℝ)) volume a b :=
+        (intervalIntegral.intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
+      refine (intervalIntegrable_congr (fun x hx => ?_)).mp hrpow
+      have hx0 : 0 < x := by
+        rw [Set.uIoc_of_le hab] at hx; exact lt_of_le_of_lt h0a hx.1
+      rw [Real.sqrt_eq_rpow, mul_inv, Real.rpow_neg hx0.le]; ring
+    exact (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).mp hint
+  have hIntC : IntegrableOn (fun x => C * (2 * Real.sqrt x)⁻¹) (Set.Ioc a b) volume :=
+    hInt0.const_mul C
+  have hnn : 0 ≤ᵐ[volume.restrict (Set.Ioc a b)] fun x => C * (2 * Real.sqrt x)⁻¹ :=
+    ae_of_all _ fun x => mul_nonneg hC.le (by positivity)
+  -- The majorant integrates to `C · ε`.
+  have hmaj : ∫ x in Set.Ioc a b, C * (2 * Real.sqrt x)⁻¹ = C * ε := by
+    rw [integral_const_mul, integral_Ioc_inv_two_sqrt h0a hab, hb, ha,
+      Real.sqrt_sq (by linarith), Real.sqrt_sq ht]; ring
+  -- Bound the lintegral by `ofReal (C · ε)`.
+  have hlint : ∫⁻ x in Set.Ioc a b, gammaPDF ((k : ℝ) / 2) (1 / 2) x
+      ≤ ENNReal.ofReal (C * ε) := by
+    calc ∫⁻ x in Set.Ioc a b, gammaPDF ((k : ℝ) / 2) (1 / 2) x
+        ≤ ∫⁻ x in Set.Ioc a b, ENNReal.ofReal (C * (2 * Real.sqrt x)⁻¹) := by
+          apply setLIntegral_mono_ae (by fun_prop)
+          refine ae_of_all _ (fun x hx => ?_)
+          have hx0 : 0 < x := lt_of_le_of_lt h0a hx.1
+          rw [show gammaPDF ((k : ℝ) / 2) (1 / 2) x
+              = ENNReal.ofReal (gammaPDFReal ((k : ℝ) / 2) (1 / 2) x) from rfl]
+          exact ENNReal.ofReal_le_ofReal (hden x hx0)
+      _ = ENNReal.ofReal (∫ x in Set.Ioc a b, C * (2 * Real.sqrt x)⁻¹) :=
+          (ofReal_integral_eq_lintegral_ofReal hIntC hnn).symm
+      _ = ENNReal.ofReal (C * ε) := by rw [hmaj]
+  calc (∫⁻ x in Set.Ioc a b, gammaPDF ((k : ℝ) / 2) (1 / 2) x).toReal
+      ≤ (ENNReal.ofReal (C * ε)).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hlint
+    _ = C * ε := ENNReal.toReal_ofReal (mul_nonneg hC.le hε)
+
 end BallAntiConcentration
 
 /-! ### The remaining ingredients of the elementary route (planned debt)
