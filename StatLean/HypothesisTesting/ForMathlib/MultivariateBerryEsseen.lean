@@ -127,21 +127,78 @@ exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the mod
 
 section ElementaryRoute
 
-/-- **[Planned debt — Mathlib gap: no multivariate Taylor remainder in v4.29.1]**
-Third-order Taylor remainder on a normed space: for `C³` `f` with `‖D³f‖ ≤ M`, the second-order
-Taylor error at `x` in direction `h` is at most `M ‖h‖³ / 6`. This is the analytic heart of the
-Lindeberg swap. Mathlib has only the one-dimensional `taylor_mean_remainder_bound`.
-
-TODO: restrict to the segment `t ↦ f (x + t • h)` (a `C³` map `ℝ → ℝ`), apply the 1-D bound,
-and identify `(d/dt)³ f(x+t•h) = iteratedFDeriv ℝ 3 f (x+t•h) (fun _ => h)`, whose norm is at
-most `‖iteratedFDeriv ℝ 3 f (x+t•h)‖ * ‖h‖³`. -/
+/-- **Third-order Taylor remainder on a normed space.** For `C³` `f` with `‖D³f‖ ≤ M`, the
+second-order Taylor error at `x` in direction `h` is at most `M ‖h‖³ / 6`. This is the analytic
+heart of the Lindeberg swap. Mathlib v4.29.1 has only the one-dimensional Taylor remainder, so we
+reduce to the segment `t ↦ f (x + t • h)` (a `C³` map `ℝ → ℝ`), apply the 1-D Lagrange bound, and
+identify `(d/dt)ᵐ f(x+t•h) = iteratedFDeriv ℝ m f (x+t•h) (fun _ => h)` via the composition of the
+translation `w ↦ f (x + w)` with the continuous linear map `t ↦ t • h`. -/
 private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {f : E → ℝ} (hf : ContDiff ℝ 3 f) {M : ℝ}
     (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) (x h : E) :
     |f (x + h) - f x - fderiv ℝ f x h - (1 / 2) * iteratedFDeriv ℝ 2 f x (fun _ => h)|
       ≤ M / 6 * ‖h‖ ^ 3 := by
-  -- TODO (planned debt): 1-D Taylor of `t ↦ f (x + t • h)` on `[0,1]`; see docstring.
-  sorry
+  -- The line restriction `g s = f (x + s • h)`.
+  set g : ℝ → ℝ := fun s => f (x + s • h) with hg
+  -- The continuous linear map `L : t ↦ t • h`, so that `g = (fun w => f (x + w)) ∘ L`.
+  set L : ℝ →L[ℝ] E := (1 : ℝ →L[ℝ] ℝ).smulRight h with hLdef
+  have hLapp : ∀ t : ℝ, L t = t • h := by
+    intro t
+    simp only [hLdef, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.one_apply]
+  have hF : ContDiff ℝ 3 (fun w : E => f (x + w)) := hf.comp (contDiff_const.add contDiff_id)
+  -- Core identity: `(d/ds)ᵐ g = iteratedFDeriv ℝ m f (x + s•h) (fun _ => h)` for `m ≤ 3`.
+  have key : ∀ (m : ℕ), m ≤ 3 → ∀ s : ℝ,
+      iteratedDeriv m g s = iteratedFDeriv ℝ m f (x + s • h) (fun _ => h) := by
+    intro m hm s
+    have hcomp : g = (fun w : E => f (x + w)) ∘ L := by funext t; simp [hg, hLapp]
+    rw [iteratedDeriv_eq_iteratedFDeriv, hcomp,
+      ContinuousLinearMap.iteratedFDeriv_comp_right L hF s (by exact_mod_cast hm),
+      ContinuousMultilinearMap.compContinuousLinearMap_apply, iteratedFDeriv_comp_add_left]
+    rw [hLapp]
+    congr 1
+    funext i; rw [hLapp]; simp
+  -- `g` is `C³`, hence `C³` on `[0,1]`.
+  have hgcd : ContDiff ℝ 3 g := hf.comp (contDiff_const.add (contDiff_id.smul contDiff_const))
+  have hgcdOn : ContDiffOn ℝ 3 g (Set.Icc 0 1) := hgcd.contDiffOn
+  -- 1-D Lagrange remainder of order 2 on `[0,1]` (so the remainder is `g'''(x')/6`).
+  obtain ⟨x', _hx', heq⟩ :=
+    taylor_mean_remainder_lagrange_iteratedDeriv (n := 2) (by norm_num : (0 : ℝ) < 1)
+      (by exact_mod_cast hgcdOn)
+  -- Convert `iteratedDerivWithin k g (Icc 0 1) 0` to the multilinear derivative of `f` at `x`.
+  have hud : UniqueDiffOn ℝ (Set.Icc (0 : ℝ) 1) := uniqueDiffOn_Icc (by norm_num)
+  have hmem : (0 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := by constructor <;> norm_num
+  have hidw : ∀ k, k ≤ 3 →
+      iteratedDerivWithin k g (Set.Icc 0 1) 0 = iteratedFDeriv ℝ k f x (fun _ => h) := by
+    intro k hk
+    rw [iteratedDerivWithin_eq_iteratedDeriv hud (hgcd.contDiffAt.of_le (by exact_mod_cast hk)) hmem,
+      key k hk 0]
+    simp
+  -- Expand the Taylor polynomial into the three visible terms.
+  have htaylor : taylorWithinEval g 2 (Set.Icc 0 1) 0 1
+      = f x + fderiv ℝ f x h + (1 / 2) * iteratedFDeriv ℝ 2 f x (fun _ => h) := by
+    rw [taylor_within_apply, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one,
+      hidw 0 (by norm_num), hidw 1 (by norm_num), hidw 2 (by norm_num),
+      iteratedFDeriv_zero_apply, iteratedFDeriv_one_apply]
+    norm_num [Nat.factorial, smul_eq_mul]
+  -- Bound the third-order term.
+  have hb3 : |iteratedDeriv 3 g x'| ≤ M * ‖h‖ ^ 3 := by
+    rw [key 3 le_rfl x', ← Real.norm_eq_abs]
+    calc ‖iteratedFDeriv ℝ 3 f (x + x' • h) (fun _ => h)‖
+        ≤ ‖iteratedFDeriv ℝ 3 f (x + x' • h)‖ * ∏ _i : Fin 3, ‖h‖ :=
+          ContinuousMultilinearMap.le_opNorm _ _
+      _ = ‖iteratedFDeriv ℝ 3 f (x + x' • h)‖ * ‖h‖ ^ 3 := by
+          rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+      _ ≤ M * ‖h‖ ^ 3 := by gcongr; exact hM _
+  -- Assemble.
+  have hg1 : g 1 = f (x + h) := by simp [hg]
+  have hrw : f (x + h) - f x - fderiv ℝ f x h - (1 / 2) * iteratedFDeriv ℝ 2 f x (fun _ => h)
+      = g 1 - taylorWithinEval g 2 (Set.Icc 0 1) 0 1 := by rw [hg1, htaylor]; ring
+  rw [hrw, heq]
+  have hfact : (Nat.factorial (2 + 1) : ℝ) = 6 := by norm_num [Nat.factorial]
+  rw [hfact, show ((1 : ℝ) - 0) ^ 3 = 1 by norm_num, mul_one, abs_div,
+    show |(6 : ℝ)| = 6 by norm_num]
+  calc |iteratedDeriv 3 g x'| / 6 ≤ M * ‖h‖ ^ 3 / 6 := by gcongr
+    _ = M / 6 * ‖h‖ ^ 3 := by ring
 
 /-- **[Planned debt]** Smoothed convex indicator with controlled third derivative.
 In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `ε`, so the bound
