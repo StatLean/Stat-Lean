@@ -228,6 +228,53 @@ private lemma locObj_lowerSemicontinuous (μ : Measure 𝓧) {ρ : ℝ → ℝ} 
     exact le_trans hn.1 hn.2
   exact absurd key (not_le.mpr hy)
 
+/-- The fibrewise conditional-risk objective is coercive (blows up at `±∞`): the loss `ρ`
+tends to `+∞` at both ends (convex, non-monotone), so the integrand tends to `⊤` pointwise
+and Fatou pushes the integral to `⊤`. -/
+private lemma locObj_tendsto_top (μ : Measure 𝓧) [IsProbabilityMeasure μ] {ρ : ℝ → ℝ}
+    (hρc : Continuous ρ) (hconv : ConvexOn ℝ Set.univ ρ)
+    (hnotmono : ¬ Monotone ρ ∧ ¬ Antitone ρ) {δ₀ : 𝓧 → ℝ} (hδ₀ : Measurable δ₀) :
+    Tendsto (fun w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w)) ∂μ) (cocompact ℝ) (𝓝 ⊤) := by
+  have hρtop : Tendsto ρ (cocompact ℝ) atTop := by
+    rw [cocompact_eq_atBot_atTop, Filter.tendsto_sup]
+    exact ⟨tendsto_atBot_of_convex_not_monotone hconv hnotmono.1,
+      tendsto_atTop_of_convex_not_antitone hconv hnotmono.2⟩
+  have hsub : ∀ c : ℝ, Tendsto (fun w => c - w) (cocompact ℝ) (cocompact ℝ) := by
+    intro c
+    rw [cocompact_eq_atBot_atTop]
+    refine Filter.tendsto_sup.mpr ⟨?_, ?_⟩
+    · refine Filter.Tendsto.mono_right ?_ le_sup_right
+      exact (Filter.tendsto_atTop_add_const_left atBot c
+        Filter.tendsto_neg_atBot_atTop).congr (fun w => by ring)
+    · refine Filter.Tendsto.mono_right ?_ le_sup_left
+      exact (Filter.tendsto_atBot_add_const_left atTop c
+        Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
+  haveI : (cocompact ℝ).IsCountablyGenerated := by
+    rw [cocompact_eq_atBot_atTop]; infer_instance
+  rw [ENNReal.tendsto_nhds_top_iff_nnreal]
+  intro N
+  by_contra hcon
+  rw [Filter.not_eventually] at hcon
+  simp only [not_lt] at hcon
+  obtain ⟨wseq, hwtend, hwle⟩ := exists_seq_forall_of_frequently hcon
+  set g : ℕ → 𝓧 → ℝ≥0∞ := fun n x => ENNReal.ofReal (ρ (δ₀ x - wseq n)) with hgdef
+  have hg_meas : ∀ n, Measurable (g n) := fun n =>
+    ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.sub_const _))
+  have hlim : ∀ x, Tendsto (fun n => g n x) atTop (𝓝 ⊤) := by
+    intro x
+    exact ENNReal.tendsto_ofReal_nhds_top.2 (hρtop.comp ((hsub (δ₀ x)).comp hwtend))
+  have hkey : (⊤ : ℝ≥0∞) ≤ (N : ℝ≥0∞) := by
+    calc (⊤ : ℝ≥0∞) = ∫⁻ _x : 𝓧, (⊤ : ℝ≥0∞) ∂μ := by rw [lintegral_const]; simp
+      _ = ∫⁻ x, Filter.liminf (fun n => g n x) atTop ∂μ := by
+          refine lintegral_congr fun x => ?_
+          exact ((hlim x).liminf_eq).symm
+      _ ≤ Filter.liminf (fun n => ∫⁻ x, g n x ∂μ) atTop := lintegral_liminf_le hg_meas
+      _ ≤ (N : ℝ≥0∞) := by
+          refine Filter.liminf_le_of_le (h := fun b hb => ?_)
+          obtain ⟨n, hn⟩ := (hb.and (Filter.Eventually.of_forall hwle)).exists
+          exact le_trans hn.1 hn.2
+  exact absurd hkey (not_le.mpr ENNReal.coe_lt_top)
+
 end LocObj
 
 /-- **The minimum risk equivariant location estimator.** Let `δ₀` be a measurable
