@@ -14,11 +14,26 @@ variable, depending measurably on a parameter `ω`, there is a **measurable** ma
   infimum over `ℝ` as over `ℚ`;
 * `exists_forall_le_of_continuous_of_coercive` — a continuous coercive function attains its
   infimum;
-* `exists_measurable_argmin` — the measurable selection.
+* `exists_measurable_argmin` — the measurable selection (continuous form);
+* `exists_measurable_argmin_of_convex_of_finite` / `exists_measurable_argmin_of_convex` — the
+  **convex** strengthening: continuity is replaced by lower semicontinuity, at the cost of a
+  single finiteness point `f ω 0 < ⊤` (everywhere, resp. almost everywhere). This is what the
+  conditional-risk consumers use, since an unbounded convex loss makes the objective jump to
+  `∞` and the plain-continuity form does not apply.
 
 This is the brick that makes "minimize the conditional risk pointwise, then read the answer
 off as an estimator" legitimate: the pointwise minimizer must be a *measurable* function of
 the conditioning variable before it can be called an estimator at all.
+
+**On the lower-semicontinuous strengthening.** A *naive* weakening of `hcont` to plain
+`LowerSemicontinuous (f ω)` is FALSE for the rational-relaxed-sublevel construction: a convex
+lsc objective can be finite at a single *irrational* point (its finiteness domain a
+singleton), where the minimum is invisible to the rationals, so `⨅ q : ℚ, f ω q ≠ ⨅ v, f ω v`
+and measurability of `M` breaks. Convexity together with **one finiteness point** `f ω 0 < ⊤`
+rules out exactly this pathology — the domain is then a nondegenerate (or singleton-at-`0`)
+interval containing `0`, on whose rationals the infimum is approached from the `0`-side by the
+convexity inequality (`convex_iInf_le_aux`), no continuity required. The consumers get their
+finiteness point from the finite-risk hypothesis via disintegration.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.1 (First
