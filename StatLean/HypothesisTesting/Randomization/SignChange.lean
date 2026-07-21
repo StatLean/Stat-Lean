@@ -82,7 +82,7 @@ J. P. Romano ("Exact and asymptotically robust permutation tests," *Ann. Statist
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -118,6 +118,39 @@ i.e. the law of the data multiplied by an independent random sign. Its c.d.f. is
 atom convention). -/
 noncomputable def symmetrize (P : Measure ℝ) : Measure ℝ :=
   (2 : ℝ≥0∞)⁻¹ • (P + P.map (fun t => -t))
+
+/-! ### Gaussian c.d.f. helpers -/
+
+/-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. Right-continuity is
+built into the Stieltjes packaging; left-continuity is the vanishing of the atom at `t`. -/
+private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [NoAtoms μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
+  have hmono : Monotone (cdf μ) := monotone_cdf μ
+  rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
+  have hright : Function.rightLim (cdf μ) t = cdf μ t :=
+    (hmono.continuousWithinAt_Ioi_iff_rightLim_eq).1
+      (((cdf μ).right_continuous t).mono Set.Ioi_subset_Ici_self)
+  have hle : Function.leftLim (cdf μ) t ≤ cdf μ t := hmono.leftLim_le le_rfl
+  have hge : cdf μ t ≤ Function.leftLim (cdf μ) t := by
+    have h0 := (cdf μ).measure_singleton t
+    rw [measure_cdf, measure_singleton, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos] at h0
+    exact h0
+  rw [le_antisymm hle hge, hright]
+
+/-- Gaussian scaling of the c.d.f.: `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` for `τ > 0`. -/
+private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
+    cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t = cdf (gaussianReal 0 1) (t / τ) := by
+  have hmap : gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)
+      = (gaussianReal 0 1).map (fun x => τ * x) := by
+    rw [gaussianReal_map_const_mul]
+    congr 1
+    · rw [mul_zero]
+    · rw [mul_one]
+  have hset : (fun x : ℝ => τ * x) ⁻¹' Set.Iic t = Set.Iic (t / τ) := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Iic, le_div_iff₀ hτ, mul_comm τ x]
+  rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
+    Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
 /-! ### Symmetric case -/
 
@@ -210,17 +243,20 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randDist (Fin n → ℤˣ) (T n) x t)
       (cdf (gaussianReal 0 1) (t / τ)) := by
-  -- TODO (deferred). Combine `weakConverges_randPairLaw_signChange` (sorry above) with the
-  -- forward engine `randDist_tendstoInProb_cdf` of `Randomization/Asymptotics`, then rewrite the
-  -- limit c.d.f. via the Gaussian scaling `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` (`hτpos`).
-  -- Blocked on the CLT above and on the forward engine's measurability gap. See report.
-  -- ⚠ OBSTRUCTION (verified this session): `randDist_tendstoInProb_cdf` requires
-  -- `hT : ∀ n, Measurable (T n)`, which THIS signature omits and which is NOT derivable
-  -- (`hlin` is convergence in probability, indifferent to non-measurability via outer measure).
-  -- The Gaussian-scaling rewrite and `ContinuousAt (cdf (N(0,τ²)))` (from `noAtoms_gaussianReal`)
-  -- are both routine; the blocker is the missing `hT` plus the (currently false-as-stated)
-  -- weak-convergence input `weakConverges_randPairLaw_signChange`. See report.
-  sorry
+  -- Feed the bivariate CLT (`weakConverges_randPairLaw_signChange`) into the forward engine
+  -- `randDist_tendstoInProb_cdf`, discharging measurability of the action with
+  -- `measurable_signChange_smul` and continuity of the Gaussian c.d.f. with
+  -- `continuousAt_cdf_of_noAtoms`, then rewrite the limit via `cdf_gaussianReal_scale`.
+  have hjoint := weakConverges_randPairLaw_signChange P ψ T hsymm hodd hψmeas hψL2 hτpos hτ hT hlin
+  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+    NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
+  haveI : NoAtoms (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) := noAtoms_gaussianReal hvne
+  have hcont : ContinuousAt (cdf (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))) t :=
+    continuousAt_cdf_of_noAtoms _ t
+  have hmain := randDist_tendstoInProb_cdf (G := fun n => Fin n → ℤˣ)
+    (fun n => Measure.pi fun _ : Fin n => P) T (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    hT (fun n => measurable_signChange_smul) hjoint hcont
+  rwa [cdf_gaussianReal_scale hτpos t] at hmain
 
 /-! ### Asymmetric case, via the symmetrized model -/
 
