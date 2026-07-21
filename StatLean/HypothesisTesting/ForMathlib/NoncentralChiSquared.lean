@@ -380,21 +380,21 @@ theorem noncentralChiSquared_tail_mono (k : ℕ) (t : ℝ) :
     Monotone fun l : ℝ≥0 => (noncentralChiSquared k l) (Set.Ioi t) := by
   sorry
 
-/-- **Large-`k` normalisation of the central chi-squared law.**
-`(χ²_k − k)/√(2k)` converges weakly to the standard normal law as the number of degrees of
-freedom grows: the chi-squared variable is a sum of `k` i.i.d. squared standard normals
-with mean `1` and variance `2`, so this is the i.i.d. central limit theorem. -/
-theorem weakConverges_chiSquared_standardized :
-    AsymptoticStatistics.WeakConverges
-      (fun k : ℕ => (StatLean.MultipleTesting.chiSquared k).map
-        (fun x => (x - k) / Real.sqrt (2 * k)))
-      (gaussianReal 0 1) := by
+/-- **Central i.i.d. CLT for the standardised sum of squares** (random-variable form).
+For any i.i.d. `N(0,1)` sequence `Z`, the standardised partial sum of squares
+`(∑_{i<n+1} Zᵢ² − (n+1))/√(2(n+1))` converges in distribution to `N(0,1)`. This is the
+`weighted_iid_clt` applied to the mean-zero variance-two increments `Zᵢ² − 1` with unit
+weights and scale `√2`; used both for the central and the noncentral large-`k`
+normalisations. -/
+private lemma tendstoInDistribution_central_standardized {Ω₀ : Type*} [MeasurableSpace Ω₀]
+    {P₀ : Measure Ω₀} [IsProbabilityMeasure P₀] (Z : ℕ → Ω₀ → ℝ)
+    (hZmeas : ∀ i, Measurable (Z i)) (hZlaw : ∀ i, Measure.map (Z i) P₀ = gaussianReal 0 1)
+    (hZindep : iIndepFun Z P₀) :
+    TendstoInDistribution
+      (fun n (ω : Ω₀) => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+        / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+      atTop (id : ℝ → ℝ) (fun _ => P₀) (gaussianReal 0 1) := by
   classical
-  -- canonical i.i.d. `N(0,1)` sequence
-  obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
-    ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
-  letI : MeasurableSpace Ω₀ := mΩ₀
-  haveI : IsProbabilityMeasure P₀ := hP₀prob
   -- mean-zero squared-normal increments `Y i = (Z i)² - 1`
   set Y : ℕ → Ω₀ → ℝ := fun i ω => (Z i ω) ^ 2 - 1 with hY
   have hYmeas : ∀ i, Measurable (Y i) :=
@@ -403,7 +403,7 @@ theorem weakConverges_chiSquared_standardized :
   have hsq1 : Measure.map (fun ω => (Z 0 ω) ^ 2) P₀
       = StatLean.MultipleTesting.chiSquared 1 := by
     have h := StatLean.MultipleTesting.map_sum_sq_eq_chiSquared (n := 1) one_pos P₀
-      (fun i : Fin 1 => Z (i : ℕ)) (fun i => hZmeas _) (fun i => (hZlaw _).map_eq)
+      (fun i : Fin 1 => Z (i : ℕ)) (fun i => hZmeas _) (fun i => hZlaw _)
       (hZindep.precomp Fin.val_injective)
     simpa [Fin.sum_univ_one] using h
   -- `L²`-membership of the increments (Gaussian fourth moment is finite)
@@ -419,7 +419,7 @@ theorem weakConverges_chiSquared_standardized :
       simpa [pow_two] using hmul
     have hg : MemLp (fun x : ℝ => x ^ 2 - 1) 2 (gaussianReal 0 1) :=
       hx2.sub (memLp_const (1 : ℝ))
-    rw [← (hZlaw 0).map_eq] at hg
+    rw [← hZlaw 0] at hg
     have := (memLp_map_measure_iff hg.aestronglyMeasurable (hZmeas 0).aemeasurable).mp hg
     simpa [hY, Function.comp] using this
   -- integrability of `Y 0` and of a single square
@@ -460,7 +460,7 @@ theorem weakConverges_chiSquared_standardized :
     intro i
     have hZid : IdentDistrib (Z i) (Z 0) P₀ P₀ :=
       ⟨(hZmeas i).aemeasurable, (hZmeas 0).aemeasurable,
-        (hZlaw i).map_eq.trans (hZlaw 0).map_eq.symm⟩
+        (hZlaw i).trans (hZlaw 0).symm⟩
     exact hZid.comp (by fun_prop : Measurable (fun z : ℝ => z ^ 2 - 1))
   -- weight negligibility: the constant unit weights satisfy `1 ≤ ε · (n+1)` eventually
   have hw : ∀ n : ℕ, 0 < ∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2 := by
@@ -479,55 +479,72 @@ theorem weakConverges_chiSquared_standardized :
       mul_one]
     push_cast at hn ⊢
     linarith
-  -- the standardised statistic in clean `g ∘ (sum of squares)` form
-  set clean : ℕ → Ω₀ → ℝ :=
-    fun n ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
-      / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)) with hclean
-  -- the weighted i.i.d. CLT applied to the constant-unit-weight rows
+  -- the weighted i.i.d. CLT applied to the constant-unit-weight rows, rewritten to clean form
   have hclt := weighted_iid_clt (m := fun n => n + 1) (w := fun _ _ => (1 : ℝ))
     (σ := Real.sqrt 2) (Z := (id : ℝ → ℝ)) hYmeas hindep hident hL2 hmean hσpos hvar hw hneg
     HasLaw.id
-  -- rewrite the CLT statistic into the clean form
-  have hclt' : TendstoInDistribution clean atTop (id : ℝ → ℝ) (fun _ => P₀) (gaussianReal 0 1) := by
-    refine hclt.congr (fun n => ?_) Filter.EventuallyEq.rfl
-    refine Filter.Eventually.of_forall (fun ω => ?_)
-    simp only [hclean]
-    have e1 : (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2) = ((n + 1 : ℕ) : ℝ) := by simp
-    have e2 : (∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω)
-        = (∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ) := by
-      simp only [one_mul, hY]
-      rw [Finset.sum_sub_distrib]; simp
-    show (Real.sqrt 2 * Real.sqrt (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2))⁻¹
-          * ∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω
-        = ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
-          / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))
-    rw [e1, e2, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2), div_eq_inv_mul]
-  -- per-`k` law identity: the clean pushforward is the standardised `χ²_{n+1}`
-  have hmap : ∀ n : ℕ, P₀.map (clean n)
+  refine hclt.congr (fun n => ?_) Filter.EventuallyEq.rfl
+  refine Filter.Eventually.of_forall (fun ω => ?_)
+  have e1 : (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2) = ((n + 1 : ℕ) : ℝ) := by simp
+  have e2 : (∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω)
+      = (∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ) := by
+    simp only [one_mul, hY]
+    rw [Finset.sum_sub_distrib]; simp
+  show (Real.sqrt 2 * Real.sqrt (∑ _i : Fin (n + 1), ((1 : ℝ)) ^ 2))⁻¹
+        * ∑ i : Fin (n + 1), (1 : ℝ) * Y (i : ℕ) ω
+      = ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+        / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))
+  rw [e1, e2, ← Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 2), div_eq_inv_mul]
+
+/-- **The standardised pushforward of a sum of squares is the standardised `χ²_{n+1}`.**
+Bridges the random-variable CLT statistic to the measure-level statement. -/
+private lemma map_sumSq_standardized {Ω₀ : Type*} [MeasurableSpace Ω₀]
+    {P₀ : Measure Ω₀} [IsProbabilityMeasure P₀] (Z : ℕ → Ω₀ → ℝ)
+    (hZmeas : ∀ i, Measurable (Z i)) (hZlaw : ∀ i, Measure.map (Z i) P₀ = gaussianReal 0 1)
+    (hZindep : iIndepFun Z P₀) (n : ℕ) :
+    P₀.map (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+        / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
       = (StatLean.MultipleTesting.chiSquared (n + 1)).map
           (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))) := by
-    intro n
-    have hSS : Measure.map (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) P₀
-        = StatLean.MultipleTesting.chiSquared (n + 1) :=
-      StatLean.MultipleTesting.map_sum_sq_eq_chiSquared n.succ_pos P₀
-        (fun i => Z (i : ℕ)) (fun i => hZmeas _) (fun i => (hZlaw _).map_eq)
-        (hZindep.precomp Fin.val_injective)
-    simp only [hclean]
-    rw [show (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
-              / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
-          = (fun x : ℝ => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
-              ∘ (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) from rfl,
-      ← Measure.map_map (by fun_prop) (by fun_prop), hSS]
+  have hSS : Measure.map (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) P₀
+      = StatLean.MultipleTesting.chiSquared (n + 1) :=
+    StatLean.MultipleTesting.map_sum_sq_eq_chiSquared n.succ_pos P₀
+      (fun i => Z (i : ℕ)) (fun i => hZmeas _) (fun i => hZlaw _)
+      (hZindep.precomp Fin.val_injective)
+  rw [show (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) - ((n + 1 : ℕ) : ℝ))
+            / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+        = (fun x : ℝ => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))
+            ∘ (fun ω => ∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2) from rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop), hSS]
+
+/-- **Large-`k` normalisation of the central chi-squared law.**
+`(χ²_k − k)/√(2k)` converges weakly to the standard normal law as the number of degrees of
+freedom grows: the chi-squared variable is a sum of `k` i.i.d. squared standard normals
+with mean `1` and variance `2`, so this is the i.i.d. central limit theorem. -/
+theorem weakConverges_chiSquared_standardized :
+    AsymptoticStatistics.WeakConverges
+      (fun k : ℕ => (StatLean.MultipleTesting.chiSquared k).map
+        (fun x => (x - k) / Real.sqrt (2 * k)))
+      (gaussianReal 0 1) := by
+  classical
+  -- canonical i.i.d. `N(0,1)` sequence
+  obtain ⟨Ω₀, mΩ₀, P₀, Z, hZmeas, hZlaw, hZindep, hP₀prob⟩ :=
+    ProbabilityTheory.exists_iid ℕ (gaussianReal 0 1)
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P₀ := hP₀prob
+  have hclt' := tendstoInDistribution_central_standardized Z hZmeas
+    (fun i => (hZlaw i).map_eq) hZindep
   -- the `TendstoInDistribution → WeakConverges` bridge
   intro f
-  have hPM := hclt'.tendsto
-  have hint := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hPM) f
+  have hint := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hclt'.tendsto) f
   simp only [Measure.map_id] at hint
   rw [← tendsto_add_atTop_iff_nat 1]
   have hpt_int : ∀ n : ℕ,
       ∫ ω, f ω ∂((StatLean.MultipleTesting.chiSquared (n + 1)).map
         (fun x => (x - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ))))
-      = ∫ ω, f ω ∂(P₀.map (clean n)) := fun n => by rw [hmap n]
+      = ∫ ω, f ω ∂(P₀.map (fun ω => ((∑ i : Fin (n + 1), (Z (i : ℕ) ω) ^ 2)
+          - ((n + 1 : ℕ) : ℝ)) / Real.sqrt (2 * ((n + 1 : ℕ) : ℝ)))) :=
+    fun n => by rw [map_sumSq_standardized Z hZmeas (fun i => (hZlaw i).map_eq) hZindep n]
   simpa only [hpt_int, ProbabilityMeasure.coe_mk] using hint
 
 /-- **Large-`k` normalisation of the chi-squared upper quantiles.**
