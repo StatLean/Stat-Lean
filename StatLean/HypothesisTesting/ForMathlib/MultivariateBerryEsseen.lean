@@ -1,4 +1,6 @@
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
+import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
+import Mathlib.Probability.Distributions.Gamma
 
 /-!
 # A multivariate Berry–Esseen bound via Lindeberg swapping (honest, non-sharp)
@@ -115,6 +117,48 @@ theorem gaussian_slab_measure_le (u : EuclideanSpace ℝ (Fin k)) (hu : ‖u‖ 
   exact gaussianReal_stdNormal_Ioc_le hab
 
 end AntiConcentration
+
+/-! ### Dimension-free ball anti-concentration (the radial analogue)
+
+For the *ball* route the relevant anti-concentration statement is the mass of a thin spherical
+**shell** `{t < ‖z‖ ≤ t + ε}` under `N(0, I_k)`. Its clean reduction is that the law of `‖z‖²`
+under `N(0, I_k)` is exactly the chi-squared law `χ²_k`, so the shell mass is a chi-squared
+interval mass. The genuinely dimension-free fact is that the **chi density** `f_k(r) = c_k r^{k-1}
+e^{-r²/2}` (equivalently `2√x · gammaPDF (k/2) (1/2) x`) has a maximum bounded by an *absolute*
+constant, uniformly in `k` — its peak `≈ e^{1/2}/√π < 1` sits at `r = √(k-1)` and does not grow
+with `k`. That single uniform bound (`chiSquared_density_mul_sqrt_le`) is the crux; everything else
+is the measure-theoretic reduction and an elementary `∫ 1/(2√x) dx = √x` computation. -/
+
+section BallAntiConcentration
+
+open scoped Real
+
+variable {k : ℕ}
+
+/-- **Shell mass is a chi-squared interval mass.** For `0 < k`, `0 ≤ t`, `0 ≤ ε`, the standard
+multivariate Gaussian mass of the spherical shell `{t < ‖z‖ ≤ t + ε}` equals the chi-squared mass
+of the interval `(t², (t+ε)²]`, because `‖z‖² ∼ χ²_k` under `N(0, I_k)` and `r ↦ r²` is strictly
+monotone on `[0, ∞)`. -/
+lemma multivariateGaussian_shell_eq_chiSquared (hk : 0 < k) {t ε : ℝ} (ht : 0 ≤ t)
+    (hε : 0 ≤ ε) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 {z | t < ‖z‖ ∧ ‖z‖ ≤ t + ε}
+      = StatLean.MultipleTesting.chiSquared k (Set.Ioc (t ^ 2) ((t + ε) ^ 2)) := by
+  have hmap : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map (fun z => ‖z‖ ^ 2)
+      = StatLean.MultipleTesting.chiSquared k := by
+    rw [map_normSq_multivariateGaussian_of_norm_eq k 0 (by simp), noncentralChiSquared_zero hk]
+  have hset : {z : EuclideanSpace ℝ (Fin k) | t < ‖z‖ ∧ ‖z‖ ≤ t + ε}
+      = (fun z => ‖z‖ ^ 2) ⁻¹' Set.Ioc (t ^ 2) ((t + ε) ^ 2) := by
+    ext z
+    simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_Ioc]
+    have hz : 0 ≤ ‖z‖ := norm_nonneg z
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact ⟨by nlinarith, by nlinarith⟩
+    · rintro ⟨h1, h2⟩
+      exact ⟨by nlinarith, by nlinarith⟩
+  rw [hset, ← Measure.map_apply (by fun_prop) measurableSet_Ioc, hmap]
+
+end BallAntiConcentration
 
 /-! ### The remaining ingredients of the elementary route (planned debt)
 
