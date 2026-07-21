@@ -324,39 +324,72 @@ theorem isLocMRE_of_conditional_min (f : (Fin (m + 1) → ℝ) → ℝ)
       unfold locRisk; exact lintegral_congr fun x => by rw [hv x]
     rw [hrisk']; unfold locRisk; exact key
 
-/-- Analytic core (named debt): for a convex, non-monotone loss the fibrewise conditional
-risk `w ↦ ∫⁻ x, ofReal (ρ (δ₀ x − w)) ∂(orbitCondKernel (locationBase f) diffs z)` is
-convex, continuous and coercive in `w`, so the measurable-argmin brick
-`exists_measurable_argmin` produces a measurable `v*` minimizing it in every fibre. -/
+/-- Analytic core: for a convex, non-monotone loss the fibrewise conditional risk
+`w ↦ ∫⁻ x, ofReal (ρ (δ₀ x − w)) ∂(orbitCondKernel (locationBase f) diffs z)` is convex,
+lower semicontinuous and coercive in `w`, so the measurable-argmin brick
+`exists_measurable_argmin_of_convex` produces a measurable `v*` minimizing it in almost every
+fibre. The finiteness point `fObj z 0 < ⊤` that the brick's convex form needs comes from the
+finite reference risk via disintegration. -/
 private lemma exists_measurable_condMinimizer_convex (f : (Fin (m + 1) → ℝ) → ℝ)
     [IsProbabilityMeasure (locationBase f)] {ρ : ℝ → ℝ} (hρ : Measurable ρ)
     (hconv : ConvexOn ℝ Set.univ ρ) (hnotmono : ¬ Monotone ρ ∧ ¬ Antitone ρ)
-    {δ₀ : (Fin (m + 1) → ℝ) → ℝ} (hδ₀ : Measurable δ₀) :
+    {δ₀ : (Fin (m + 1) → ℝ) → ℝ} (hδ₀ : Measurable δ₀) (hfin : locRisk f ρ δ₀ ≠ ∞) :
     ∃ vStar : (Fin m → ℝ) → ℝ, Measurable vStar ∧
       ∀ᵐ y ∂((locationBase f).map diffs), ∀ w : ℝ,
         ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - vStar y))
             ∂(orbitCondKernel (locationBase f) diffs y) ≤
           ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
             ∂(orbitCondKernel (locationBase f) diffs y) := by
-  -- RETAINED DEBT (pe/equivariance-close): not closable without proving continuity of an
-  -- ℝ≥0∞-valued conditional-risk integral, which the frozen `exists_measurable_argmin`
-  -- brick requires as *full* continuity (its docstring notes an LSC weakening is not done);
-  -- for an unbounded convex loss the objective genuinely jumps to ∞ at its finiteness
-  -- boundary, so no side hypothesis on `ρ` closes it without laundering the analytic core.
-  -- TODO: analytic core of the convex location MRE. Set
-  --   `fObj z w = ∫⁻ x, ofReal (ρ (δ₀ x - w)) ∂(orbitCondKernel (locationBase f) diffs z)`
-  -- and discharge the four hypotheses of `exists_measurable_argmin`:
-  --   * joint measurability of `Function.uncurry fObj` (kernel-parametrized `∫⁻`);
-  --   * `ConvexOn ℝ≥0 univ (fObj z)` from convexity of `ρ` composed with the affine shift,
-  --     pushed through `ENNReal.ofReal` and `∫⁻`-monotonicity/additivity;
-  --   * `Continuous (fObj z)` — the delicate step: continuity of the ℝ≥0∞-valued integral
-  --     in the shift `w` (a convex ℝ≥0∞ objective can jump from finite to ∞ at the
-  --     boundary of its finiteness domain, so this needs a genuine regularity argument);
-  --   * `Tendsto (fObj z) (cocompact ℝ) (𝓝 ⊤)` from coercivity of the convex non-monotone
-  --     `ρ` (via `hnotmono`) and Fatou.
-  -- Then `exists_measurable_argmin` gives measurable `v*` with `fObj z (v* z) = ⨅ w, fObj z w`,
-  -- whence the fibrewise minimality holds for every `z` (a fortiori `∀ᵐ`).
-  sorry
+  have hρc : Continuous ρ := (hconv.locallyLipschitz).continuous
+  set fObj : (Fin m → ℝ) → ℝ → ℝ≥0∞ :=
+    fun z w => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - w))
+      ∂(orbitCondKernel (locationBase f) diffs z) with hfObjdef
+  -- (1) joint measurability of the objective through the fibre kernel
+  have hmeas : Measurable (Function.uncurry fObj) := by
+    have hf_meas : Measurable (fun p : ((Fin m → ℝ) × ℝ) × (Fin (m + 1) → ℝ) =>
+        ENNReal.ofReal (ρ (δ₀ p.2 - p.1.2))) :=
+      ENNReal.measurable_ofReal.comp (hρc.measurable.comp
+        ((hδ₀.comp measurable_snd).sub (measurable_snd.comp measurable_fst)))
+    set κ' : ProbabilityTheory.Kernel ((Fin m → ℝ) × ℝ) (Fin (m + 1) → ℝ) :=
+      (orbitCondKernel (locationBase f) diffs).comap Prod.fst measurable_fst with hκ'
+    have heq : Function.uncurry fObj
+        = fun p : (Fin m → ℝ) × ℝ => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x - p.2)) ∂(κ' p) := by
+      funext p
+      rw [hκ', ProbabilityTheory.Kernel.comap_apply]
+      simp only [Function.uncurry, hfObjdef]
+    rw [heq]
+    exact Measurable.lintegral_kernel_prod_right' (κ := κ') hf_meas
+  -- (2)–(4) convexity / lower semicontinuity / coercivity of each fibre objective
+  have hconvex : ∀ z, ConvexOn ℝ≥0 Set.univ (fObj z) := fun z =>
+    locObj_convexOn _ hρ hconv hδ₀
+  have hlsc : ∀ z, LowerSemicontinuous (fObj z) := fun z =>
+    locObj_lowerSemicontinuous _ hρc hδ₀
+  have hcoer : ∀ z, Tendsto (fObj z) (cocompact ℝ) (𝓝 (⊤ : ℝ≥0∞)) := fun z =>
+    locObj_tendsto_top _ hρc hconv hnotmono hδ₀
+  -- (5) finiteness at `0` for a.e. fibre, from the finite reference risk via disintegration
+  have hint_meas : Measurable (fun z => ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+      ∂(orbitCondKernel (locationBase f) diffs z)) :=
+    Measurable.lintegral_kernel_prod_right'
+      (κ := orbitCondKernel (locationBase f) diffs)
+      (ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.comp measurable_snd)))
+  have hfin0 : ∀ᵐ z ∂((locationBase f).map diffs), fObj z 0 < ⊤ := by
+    have hdis := lintegral_eq_lintegral_condDistrib (locationBase f) measurable_diffs
+      (g := fun _z x => ENNReal.ofReal (ρ (δ₀ x)))
+      (ENNReal.measurable_ofReal.comp (hρc.measurable.comp (hδ₀.comp measurable_snd)))
+    have hne : (∫⁻ z, ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+        ∂(orbitCondKernel (locationBase f) diffs z) ∂((locationBase f).map diffs)) ≠ ⊤ := by
+      rw [← hdis]; exact hfin
+    filter_upwards [ae_lt_top hint_meas hne] with z hz
+    have hz0 : fObj z 0 = ∫⁻ x, ENNReal.ofReal (ρ (δ₀ x))
+        ∂(orbitCondKernel (locationBase f) diffs z) := by simp only [hfObjdef, sub_zero]
+    rw [hz0]; exact hz
+  obtain ⟨vStar, hvStar_meas, hvStar_min⟩ :=
+    exists_measurable_argmin_of_convex (μ := (locationBase f).map diffs) hmeas hlsc hconvex
+      hcoer hfin0
+  refine ⟨vStar, hvStar_meas, ?_⟩
+  filter_upwards [hvStar_min] with z hz w
+  show fObj z (vStar z) ≤ fObj z w
+  rw [hz]; exact iInf_le _ w
 
 /-- **Existence of a minimum risk equivariant estimator for a convex, non-monotone
 loss.** For such a loss the fibrewise minimization always has a solution, and the
@@ -381,7 +414,7 @@ theorem exists_isLocMRE_of_convex (f : (Fin (m + 1) → ℝ) → ℝ)
     (hfin : locRisk f ρ δ₀ ≠ ∞) :
     ∃ δ, IsLocMRE f ρ δ := by
   obtain ⟨vStar, hvStar, hmin⟩ :=
-    exists_measurable_condMinimizer_convex f hρ hconv hnotmono hδ₀
+    exists_measurable_condMinimizer_convex f hρ hconv hnotmono hδ₀ hfin
   exact ⟨_, isLocMRE_of_conditional_min f ρ hρ hδ₀ heq₀ hfin hvStar hmin⟩
 
 /-- **Squared error: the minimum risk equivariant estimator subtracts the conditional
