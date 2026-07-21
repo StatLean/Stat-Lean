@@ -288,4 +288,92 @@ theorem norm_charFun_sub_quadratic_le (μ : Measure ℝ) [IsProbabilityMeasure �
     _ = (∫ x, |x| ^ 3 ∂μ) * |u| ^ 3 / 6 := by
         rw [integral_div, integral_const_mul]; ring
 
+/-- **Quadratic upper bound for `e^{-z}`.** For `z ≥ 0`, `e^{-z} ≤ 1 - z + z²/2`. Combined
+with `1 - z ≤ e^{-z}` (`Real.add_one_le_exp`) this pins `|e^{-z} - (1 - z)| ≤ z²/2`. -/
+private lemma exp_neg_le_quadratic {z : ℝ} (hz : 0 ≤ z) :
+    Real.exp (-z) ≤ 1 - z + z ^ 2 / 2 := by
+  set f : ℝ → ℝ := fun t => 1 - t + t ^ 2 / 2 - Real.exp (-t) with hf
+  have hderiv : ∀ x, HasDerivAt f (-1 + x + Real.exp (-x)) x := by
+    intro x
+    have h1 : HasDerivAt (fun t : ℝ => 1 - t + t ^ 2 / 2) (0 - 1 + 2 * x ^ 1 / 2) x :=
+      ((hasDerivAt_const x (1 : ℝ)).sub (hasDerivAt_id x)).add ((hasDerivAt_pow 2 x).div_const 2)
+    have h2 : HasDerivAt (fun t : ℝ => Real.exp (-t)) (-Real.exp (-x)) x := by
+      simpa using (Real.hasDerivAt_exp (-x)).comp x (hasDerivAt_neg x)
+    have := h1.sub h2
+    convert this using 1; ring
+  have hdiff : Differentiable ℝ f := fun x => (hderiv x).differentiableAt
+  have hmono : Monotone f := monotone_of_deriv_nonneg hdiff fun x => by
+    rw [(hderiv x).deriv]; linarith [Real.add_one_le_exp (-x)]
+  have h0 : f 0 = 0 := by simp [hf]
+  have hle := hmono hz
+  rw [h0] at hle
+  simp only [hf] at hle
+  linarith
+
+/-! ### Gaussian approximation of `charFun^n`
+
+The characteristic function of an `n`-fold sum (which is `(charFun μ)^n` for a convolution)
+compared to the Gaussian `exp(-n v w²/2)`. This packages steps (i)–(iii) of the classical
+Berry–Esseen argument at the level of characteristic functions, with no Fourier theory. -/
+
+/-- **Gaussian approximation of the `n`-th power of a characteristic function.** For a
+centered law with second moment `v ≥ 0` and finite third moment,
+`‖(charFun μ w)ⁿ − exp(−n v w²/2)‖ ≤ n·(ρ|w|³/6 + (v w²/2)²/2)`. Telescoping
+(`norm_prod_sub_prod_le`) reduces to the single-factor bound
+`‖charFun μ w − exp(−v w²/2)‖`, itself split into the Taylor error
+(`norm_charFun_sub_quadratic_le`) and `‖(1 − z) − e^{−z}‖ ≤ z²/2`. -/
+theorem norm_charFun_pow_sub_gaussian_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v : ℝ} (hv : 0 ≤ v) (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => |x| ^ 3) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) (w : ℝ) (n : ℕ) :
+    ‖(charFun μ w) ^ n - Complex.exp (-(n : ℂ) * v * w ^ 2 / 2)‖
+      ≤ n * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + (v * w ^ 2 / 2) ^ 2 / 2) := by
+  set z : ℝ := v * w ^ 2 / 2 with hz_def
+  have hznn : 0 ≤ z := by rw [hz_def]; positivity
+  have hzc : (z : ℂ) = (v : ℂ) * (w : ℂ) ^ 2 / 2 := by rw [hz_def]; push_cast; ring
+  -- Rewrite the Gaussian as `(exp(-z))ⁿ`.
+  have hgauss : Complex.exp (-(n : ℂ) * v * w ^ 2 / 2) = (Complex.exp (-(z : ℂ))) ^ n := by
+    rw [← Complex.exp_nat_mul]; congr 1; rw [hzc]; ring
+  rw [hgauss]
+  -- Both bases have norm ≤ 1.
+  have hbase1 : ‖charFun μ w‖ ≤ 1 := norm_charFun_le_one w
+  have hbase2 : ‖Complex.exp (-(z : ℂ))‖ ≤ 1 := by
+    rw [Complex.norm_exp]
+    have : (-(z : ℂ)).re = -z := by simp
+    rw [this]; exact Real.exp_le_one_iff.mpr (by linarith)
+  -- Telescoping product bound.
+  have htel : ‖(charFun μ w) ^ n - (Complex.exp (-(z : ℂ))) ^ n‖
+      ≤ (n : ℝ) * ‖charFun μ w - Complex.exp (-(z : ℂ))‖ := by
+    have hp := norm_prod_sub_prod_le (Finset.range n) (fun _ => charFun μ w)
+      (fun _ => Complex.exp (-(z : ℂ))) (fun i _ => hbase1) (fun i _ => hbase2)
+    simpa [Finset.prod_const, Finset.sum_const, Finset.card_range, nsmul_eq_mul] using hp
+  -- Single-factor bound.
+  have hfac : ‖charFun μ w - Complex.exp (-(z : ℂ))‖
+      ≤ (∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + z ^ 2 / 2 := by
+    have h1 := norm_charFun_sub_quadratic_le μ hint1 hint2 hint3 hmean hvar w
+    rw [← hzc] at h1
+    -- `‖(1 - z) - exp(-z)‖ ≤ z²/2`.
+    have hexpR : Complex.exp (-(z : ℂ)) = ((Real.exp (-z) : ℝ) : ℂ) := by
+      rw [Complex.ofReal_exp]; push_cast; ring_nf
+    have h2 : ‖(1 - (z : ℂ)) - Complex.exp (-(z : ℂ))‖ ≤ z ^ 2 / 2 := by
+      rw [hexpR]
+      have hcast : (1 - (z : ℂ)) - ((Real.exp (-z) : ℝ) : ℂ)
+          = ((1 - z - Real.exp (-z) : ℝ) : ℂ) := by push_cast; ring
+      rw [hcast, Complex.norm_real, Real.norm_eq_abs]
+      rw [abs_le]
+      constructor
+      · linarith [exp_neg_le_quadratic hznn]
+      · linarith [Real.add_one_le_exp (-z), sq_nonneg z]
+    calc ‖charFun μ w - Complex.exp (-(z : ℂ))‖
+        = ‖(charFun μ w - (1 - (z : ℂ))) + ((1 - (z : ℂ)) - Complex.exp (-(z : ℂ)))‖ := by
+          ring_nf
+      _ ≤ ‖charFun μ w - (1 - (z : ℂ))‖ + ‖(1 - (z : ℂ)) - Complex.exp (-(z : ℂ))‖ :=
+          norm_add_le _ _
+      _ ≤ (∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + z ^ 2 / 2 := add_le_add h1 h2
+  calc ‖(charFun μ w) ^ n - (Complex.exp (-(z : ℂ))) ^ n‖
+      ≤ (n : ℝ) * ‖charFun μ w - Complex.exp (-(z : ℂ))‖ := htel
+    _ ≤ (n : ℝ) * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + z ^ 2 / 2) :=
+        mul_le_mul_of_nonneg_left hfac (by positivity)
+    _ = n * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + (v * w ^ 2 / 2) ^ 2 / 2) := by rw [hz_def]
+
 end StatLean.HypothesisTesting
