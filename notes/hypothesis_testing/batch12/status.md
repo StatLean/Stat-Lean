@@ -1,60 +1,124 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-20 (all stubs landed; area builds GREEN; proof-closure fan-out in progress).
+Last update: 2026-07-25 (area GREEN 3287 jobs; extensive closures; cluster campaign paused —
+FAS-RC saturated by an unrelated `radon11-*` job workflow, staged lanes ready to resume).
 
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
 
-## Current state — 2026-07-20
+## Current state — 2026-07-25
 
 **Area gate: GREEN.** `lean-fasrc-build --worktree ht/batch12 StatLean.HypothesisTesting` →
-`Build completed successfully (3271 jobs)`, exit 0, `sorry_uses_in_err=0`. This is the first
-whole-area green build (earlier gates were per-module and silently skipped broken siblings —
-that is how a red `MLR/TwoSided.lean` hid for a day; see the failure-mode notes).
+`Build completed successfully (3287 jobs)`, exit 0. Build-reported sorry-uses **112**; literal
+`grep` count **118** (the two differ because some sorries sit in unreachable/private branches).
+Integration branch tip `cd1ae5b`. Both counts are down from the 2026-07-20 baseline of 121.
 
-**Open sorries: 121**, distributed as:
+**Open sorries (118 literal), distributed as:**
 
 | count | file |
 |---|---|
 | 7 | ForMathlib/TestsWeakCompact.lean |
 | 7 | Bootstrap/Multivariate.lean |
 | 6 | Unbiased/MultiparamUMPU.lean |
+| 6 | **ForMathlib/MultivariateBerryEsseen.lean** (NEW brick; 6 named ball-route debts) |
 | 6 | Bootstrap/NonparametricMean.lean |
 | 5 | LikelihoodMethods/TrinityChiSquared.lean |
 | 5 | GoodnessOfFit/ChiSquaredMaximin.lean |
-| 4 | Randomization/SignChange.lean, Randomization/MultivariateQuadratic.lean, NeymanPearson/Generalized.lean, MLR/TwoSided.lean, Invariance/BayesAdmissible.lean, ForMathlib/NoncentralChiSquared.lean |
-| 3 | Randomization/TwoSamplePermutation.lean, Randomization/Studentized.lean, MLR/OneSided.lean, LikelihoodMethods/EstimatorUnderAlternatives.lean, Invariance/Admissibility.lean, GoodnessOfFit/SmoothTestLargeK.lean, ForMathlib/CondDistribTilt.lean, Bootstrap/Edgeworth.lean |
-| 2 | Unbiased/{OneParamTwoSided,ConditionalExpFamily}, NeymanPearson/Lemma, MLR/StochasticDominance, Invariance/{SymmetryIdentity,AlmostInvariance}, GoodnessOfFit/{SmoothTest,KSConsistency,ChiSquaredMultinomial}, ForMathlib/DKWUniform, Bootstrap/ParametricLocal |
+| 4 | Randomization/MultivariateQuadratic.lean, NeymanPearson/Generalized.lean, MLR/TwoSided.lean |
+| 3 | Randomization/{TwoSamplePermutation,Studentized,SignChange}, MLR/OneSided, LikelihoodMethods/EstimatorUnderAlternatives, Invariance/Admissibility, GoodnessOfFit/SmoothTestLargeK, Bootstrap/Edgeworth |
+| 2 | Unbiased/{OneParamTwoSided,ConditionalExpFamily}, NeymanPearson/Lemma, MLR/StochasticDominance, Invariance/{SymmetryIdentity,AlmostInvariance}, GoodnessOfFit/{SmoothTest,KSConsistency,ChiSquaredMultinomial}, ForMathlib/{DKWUniform,CondDistribTilt}, Bootstrap/ParametricLocal |
 | 1 | 13 further files |
 
-### Structural blocker — ~21 sorries, one root cause
+Note `Invariance/BayesAdmissible.lean` and `ForMathlib/BerryEsseen.lean` are absent from the list
+(both 0-sorry), and `ForMathlib/NoncentralChiSquared.lean` dropped 4→1 — see below.
 
-`ForMathlib/TestsWeakCompact.lean` (7), `Unbiased/MultiparamUMPU.lean` (6),
-`NeymanPearson/Generalized.lean` (4) and `MLR/TwoSided.lean` (4) all reduce to the **same**
-missing ingredient: **surjectivity of `L^∞(μ) → (L¹(μ))*`** (weak-* compactness of the set of
-critical functions). Mathlib v4.29.1 has no such duality result. Until that lands (upstream or
-as a large in-repo brick), these are not closable at any reasonable effort. **This means the
-area will NOT reach 0 sorries**; the endgame is a merge with named, documented debts (the
-precedent is Bayesian batch 2, merged with 1 debt).
+### Closed / added since 2026-07-20
 
-### Sanctioned deferrals (unchanged from the plan)
-Edgeworth 18.4.1 / 18.4.2 (3 sorries in `Bootstrap/Edgeworth.lean`) — the book itself gives no
-proof (cites Hall 1992). Lem 16.4.1 Bentkus.
+- **`Invariance/BayesAdmissible.lean` → 0-sorry** (was 4). thm4 `bayesTest_isDAdmissible`
+  (axiom-clean; Bayes-risk vanishing-objective + `k≥0`/`k<0` mutual-a.c. split), thm5
+  `bayesTest_isAlphaAdmissible` (via `bayes_admissible_core`), thm6 `bayesTest_admissible_of_subset`,
+  thm7 `exists_gaussian_scale_mixture` (axiom-clean; density-uniqueness reusing `comp_gaussKernel`).
+- **`ForMathlib/NoncentralChiSquared.lean` 4→1.** Targets A/B/C closed:
+  A `weakConverges_chiSquared_standardized` (`(χ²_k−k)/√(2k) ⟹ N(0,1)` via
+  `map_sum_sq_eq_chiSquared` + `weighted_iid_clt` at `w≡1, Y=Z²−1, σ=√2`, so `σ√(∑w²)=√(2k)`
+  makes the CLT statistic literally the target); B `tendsto_chiSquared_quantile_standardized`
+  (portmanteau on open half-lines); C `weakConverges_noncentralChiSquared_standardized`
+  (Slutsky on A). D `noncentralChiSquared_tail_mono` reduced to a lifted Anderson lemma (open).
+  **This unblocks the two lifted `AsymptoticMaximin` theorems + the `ChiSquaredMaximin` chain**
+  (staged lane `ht/maximin-3b`).
+- **`ForMathlib/BerryEsseen.lean` — NEW, 0-sorry, axiom-clean.** The characteristic-function
+  half of Berry–Esseen: `norm_charFun_sub_quadratic_le`, `norm_charFun_pow_sub_gaussian_le`,
+  `norm_charFun_iidSum_sub_gaussian_le` — a complete explicit `O(1/√n)` charFun bound. Restates
+  `LindebergCLT`'s private Taylor/product bounds (they cannot be imported). Fejér-kernel
+  foundations laid but the CDF-level Esseen smoothing inequality is NOT included (blocked — see
+  Edgeworth below).
+- **`ForMathlib/MultivariateBerryEsseen.lean` — NEW.** `gaussian_slab_measure_le` (dimension-free
+  slab anti-concentration, const `1/√(2π)`, no `k`-factor, axiom-clean) + `norm_taylor_remainder_three_le`
+  (3rd-order Taylor on a normed space — fills a genuine Mathlib gap, only 1-D existed) +
+  Step-1 ball reduction (Gaussian shell mass = `chiSquared` interval mass). 6 named ball-route
+  debts remain (`exists_smoothed_radial_indicator`, the Lindeberg swap, `berryEsseen_ball_elementary`,
+  the convex case); staged lane `ht/bentkus-3` finishes them.
+- **`ForMathlib/CondDistribTilt.lean` Target 1** `measurable_condTiltNormalizer` merged.
+  Targets 2 & 3 (`condTiltNormalizer_pos_lt_top_ae`, `condDistrib_fst_withDensity_tilt`) staged
+  (`ht/condtilt-2`); a prior attempt's quota-killed auto-close was a BROKEN mid-edit (build
+  errors at lines 151 + 304) and was reverted — do NOT trust its "0-sorry" grep. Closing these
+  2 unblocks the 6 in `Unbiased/MultiparamUMPU.lean`.
+- **`Randomization/SignChange.lean`** — `hT : ∀ n, Measurable (T n)` added to all 4 signatures
+  (thm1 `weakConverges_randPairLaw_signChange` was proven **FALSE as stated** without it — a
+  Bernstein-set statistic makes every `randPairLaw` the zero measure while `hlin` holds, since
+  `TendstoInProbTriangular` uses outer measure). thm2 `randDist_signChange_tendstoInProb` now
+  CLOSED; thm3/thm4 staged (`ht/signchange-4`); thm1 needs a bivariate CLT (hard, may stay debt).
+- `GoodnessOfFit/AsymptoticMaximin.sphereAverage_lr_monotone` — axiom-clean (reflection isometry
+  + `cosh` monotonicity, no Bessel theory).
+
+### CORRECTION to the 2026-07-20 "structural blocker" claim
+The earlier note said ~21 sorries (TestsWeakCompact, MultiparamUMPU, NP/Generalized, MLR/TwoSided)
+all reduce to missing `L^∞ ≅ (L¹)*`. **That was overstated.** Re-reading the files: only
+`NeymanPearson/Generalized.isClosed_momentSet` (1 sorry) genuinely needs it — and **even that
+dissolves** via a change of measure into `L²` (dominate the `m` constraint functions by a weight
+`w=(∑|fᵢ|+h)/Z`, push the `[0,1]` test class into `L²(ν=wμ)`, use Hilbert self-duality which
+Mathlib HAS). `TestsWeakCompact` is deliberately stated in `L²` over a finite measure to avoid
+the duality (needs only Fréchet–Riesz + Banach–Alaoglu); `MultiparamUMPU` blocks on `CondDistribTilt`
++ measurable selection; `MLR/TwoSided` has no duality reference. Full write-up + the ball-vs-convex
+Route-A/B analysis in the conversation's `informal-L1-duality.md`; the momentset+TestsWeakCompact
+close is staged (`ht/momentset-l2`, 8 sorries). The standalone `L^∞ ≅ (L¹)*` theorem was
+explored (all Radon–Nikodym/simple-function ingredients verified present in Mathlib) then dropped
+per user instruction as unnecessary for any consumer.
+
+### Sanctioned deferrals — status
+- **Edgeworth 18.4.1/18.4.2** (`Bootstrap/Edgeworth.lean`, 3 sorries): **recommend permanent
+  deferral.** Verified they have ZERO downstream consumers (nothing imports the file's decls).
+  The CDF-level Esseen smoothing inequality they need is blocked on THREE separately-absent
+  Mathlib foundations: the sinc integral `∫(sin x/x)²=π` (and Dirichlet `∫ sin x/x=π/2` — Mathlib
+  has neither), the Fejér-kernel Fourier transform, and a Stieltjes/CDF-level Lévy inversion
+  (`Integrable.fourier_inversion` is `L¹`-only). The charFun *half* is done and banked in
+  `ForMathlib/BerryEsseen.lean`.
+- **Bentkus multivariate Berry–Esseen** (`GoodnessOfFit/SmoothTestLargeK.lean`,
+  `bentkus_berry_esseen_{convex,ball}`): the sharp `400·k^{1/4}` convex bound stays deferred
+  (needs Bentkus 2003's Gaussian-surface-area bound). BUT the **ball** case is attackable by the
+  elementary mollifier route, which yields rate `(β/√n)^{1/4}` — worse than the book's `β/√n`,
+  intrinsic to the method, but the consumer `smoothStat_largeK_weakConverges_gaussian` **still
+  closes under the book's own `kₙ³/n→0`** because `(k^{3/2}/√n)^{1/4}→0 ⟺ k³/n→0`. So amend the
+  frozen `bentkus_berry_esseen_ball` to the honest `(β/√n)^{1/4}` form (documented deviation)
+  and close the consumer — staged (`ht/bentkus-3`).
 
 ### Statement amendments made during closure (all verified necessary)
-- `Randomization/Asymptotics.lean` — `randDist_tendstoInProb_cdf` and
-  `randQuantile_tendstoInProb` gained `hT : ∀ n, Measurable (T n)` and a measurable-action
-  hypothesis: without measurability every `randPairLaw` degenerates to the zero measure and the
-  moment identities fail. Unblocked already-proven engines.
-- `MLR/OneSided.lean` — `hα : α ∈ Icc 0 1` → `Ioo 0 1` on `isUMP_oneSided` + its exp-family
-  corollary (**the `Icc` form is FALSE at the endpoints**; 4 counterexamples were verified by a
-  cluster session, which correctly refused to prove it); `isUMP_oneSided_shifted` gained
-  `hz : ∃ z, C ≤ T z ∧ 0 < p θ' z`.
-- `Bootstrap/Consistency.lean` — `supCDFDist_triangle` renamed `supCDFDist_triangle_of_isCDF`
-  (name collision).
+- `Randomization/Asymptotics.lean` — `randDist_tendstoInProb_cdf` / `randQuantile_tendstoInProb`
+  gained `hT : ∀ n, Measurable (T n)` + a measurable-action hyp (zero-measure degeneracy without it).
+- `Randomization/SignChange.lean` — `hT` on all 4 signatures (thm1 false without it; see above).
+- `MLR/OneSided.lean` — `hα : α ∈ Icc 0 1` → `Ioo 0 1` (Icc form FALSE at endpoints, 4
+  counterexamples); `isUMP_oneSided_shifted` gained `hz : ∃ z, C ≤ T z ∧ 0 < p θ' z`.
+- `Bootstrap/Consistency.lean` — `supCDFDist_triangle` → `supCDFDist_triangle_of_isCDF` (collision).
+- (planned) `GoodnessOfFit/SmoothTestLargeK.bentkus_berry_esseen_ball` → honest `(β/√n)^{1/4}` rate.
 
-### Closed this session (representative)
-`GoodnessOfFit/AsymptoticMaximin.sphereAverage_lr_monotone` — axiom-clean, via reflection
-isometry + `cosh` monotonicity, no Bessel theory.
+### Infra
+- `.gitignore` now excludes `.fanout-prompt.md` + `.claude-session.log` (the fan-out launcher
+  writes these into each worktree and its auto-close `git add -A` was committing them onto every
+  harvested branch). Fixed 2026-07-25.
+- **Cluster campaign paused 2026-07-25:** FAS-RC account saturated by an unrelated `radon11-*`
+  job workflow (cycles 15↔140 jobs, ~90 running at peak; drives login load to ~43). srun blocked
+  on all normal partitions; `bigmem_intermediate` needs >1000GB/node; login-node `SRUN=0` claude
+  hangs at startup. Staged lanes (`condtilt-2`, `maximin-3b`, `bentkus-3`, `bootmean`, `momentset-l2`,
+  `signchange-4`) are ready to fire the instant serial_requeue has room.
 
 ## Design decisions (frozen)
 
