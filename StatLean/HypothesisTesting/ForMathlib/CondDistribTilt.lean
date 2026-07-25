@@ -99,8 +99,8 @@ lemma measurable_condTiltNormalizer (ρ : Measure (𝓤 × 𝓣)) [IsFiniteMeasu
     {g : 𝓤 → ℝ≥0∞}
     -- USER-INPUT: the `u`-density is measurable.
     (hg : Measurable g) :
-    Measurable (condTiltNormalizer ρ g) := by
-  sorry
+    Measurable (condTiltNormalizer ρ g) :=
+  hg.lintegral_kernel
 
 /-- Under the tilted measure, the conditional normalising constant is strictly positive and
 finite almost everywhere in the conditioning variable.
