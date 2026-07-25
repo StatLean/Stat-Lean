@@ -1,26 +1,40 @@
 # PointEstimation Batch 11 — orchestration status
 
-Last update: 2026-07-20 (area CLOSED to 10 documented deferrals; merged to LOCAL main; citations rewritten).
+Last update: 2026-07-25 (down to 9 deferrals; measurable-argmin brick landed + first consumer closed).
 
 Integration branch: `pe/batch11` (off main 31c61ed). Proof branches `pe/<topic>` base off it. Merge to local `main` after full close (never GitHub origin without user request).
 
-## Current state — 2026-07-20
+## Current state — 2026-07-25
 
-**Merged to LOCAL `main`** (commit `a7410a2`; NOT pushed to GitHub origin). Area builds green.
+**Merged to LOCAL `main`** (base `a7410a2`; NOT pushed to GitHub origin). Integration branch
+`pe/batch11` tip `b2c1013`, area builds green (`StatLean.PointEstimation`, 3151 jobs).
 `StatLean.lean` imports `StatLean.PointEstimation`.
 
-**Open sorries: 10**, all documented deferrals:
+**Open sorries: 9** (down from 10), all documented deferrals:
 
 | count | file | nature |
 |---|---|---|
 | 2 | UMVU/LehmannScheffe.lean | `isUMVU_of_fullRank_expFamily` unprovable at its frozen polymorphic signature (no completeness theorem for abstract `V`; needs Euclidean + `[SigmaFinite E.base]`, `E.base ≠ 0`). Second: minimality step needs a global `Measurable δ'` the competitor's `MemEstL2` cannot supply without a dominating measure. |
-| 2 | Equivariance/LocationMRE.lean | measurable-argmin selection under a convex (possibly `∞`-valued) loss |
-| 1 | Equivariance/ScaleMRE.lean | scale twin of the above |
+| 1 | Equivariance/LocationMRE.lean | one residual (the bounded-loss existence `exists_isLocMRE_of_bounded_loss`); the convex twin `exists_isLocMRE_of_convex` is now CLOSED — see below |
+| 1 | Equivariance/ScaleMRE.lean | scale twin `exists_isScaleMRE_of_convex`; should follow the location-convex pattern via the new brick |
 | 1 | InformationInequality/Attainment.lean | `expFamily_of_cramer_rao_attained_core` needs a differentiation-under-integral (swap) datum the frozen signature omits; attainment alone does NOT force Cauchy–Schwarz equality |
 | 1 | Sufficiency/RegularConditional.lean | general standard-Borel gluing (pre-agreed deferral; the dominated version consumed by Batch 12 IS fully proved) |
 | 1 | ExponentialFamily/Smoothness.lean | — |
 | 1 | LinearModel/RandomDesign.lean | — |
 | 1 | LinearModel/Equivariant.lean | — |
+
+### Closed / added since 2026-07-20
+
+- **`ForMathlib/MeasurableArgmin.lean` — new convex/LSC brick** (~484 lines): `exists_measurable_argmin_of_convex`
+  and its finite core + convex-density machinery. **Route A**: the consumers' objective
+  `fObj z w = ∫⁻ ENnorm ρ(δ₀x−w) …` jumps to `∞` at the boundary of its finiteness domain, so the
+  original brick's `Continuous (f ω)` hypothesis was unsatisfiable; the variant replaces it by
+  **lower semicontinuity**, which consumers get for free from Fatou. A convex function on `ℝ` is
+  continuous on the interior of its finiteness domain and coercivity confines the argmin there.
+- **`Equivariance/LocationMRE.exists_isLocMRE_of_convex` CLOSED** via the new brick, plus reusable
+  helpers `locObj_convexOn`, `locObj_lowerSemicontinuous` (Fatou), `locObj_tendsto_top` (Fatou
+  coercivity). This is the 10→9 drop. The remaining LocationMRE/ScaleMRE sorries are the
+  bounded-loss existence and the scale twin, both now reducible to the same brick.
 
 **Correction to an earlier ledger claim:** the note that completeness "transfers cleanly, the
 only missing input is the sufficiency kernel" for `isUMVU_of_fullRank_expFamily` is **wrong** —
