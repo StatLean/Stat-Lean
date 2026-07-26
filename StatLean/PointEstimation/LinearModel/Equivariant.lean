@@ -808,6 +808,216 @@ private lemma chiSquared_moment_pos {m : ℕ} (hm : 0 < m) {k : ℕ} (hk : 0 < k
   exact zero_lt_one
 
 
+/-- **Radius independence, `ℝ≥0∞` one-sided form.** -/
+private lemma lintegral_ofReal_hom_mul_pow {m : ℕ} (hm : 0 < m) {g : (Fin m → ℝ) → ℝ}
+    (hg : Measurable g) (hghom : ∀ c : ℝ, 0 < c → ∀ w, g (c • w) = g w) (k : ℕ) :
+    ∫⁻ w, ENNReal.ofReal (g w * sqSum w ^ k) ∂(piGauss m 1)
+      = ENNReal.ofReal (∫ v, v ^ k ∂(chiSquared m))
+          * ∫⁻ w, ENNReal.ofReal (g w) ∂(piGauss m 1) := by
+  have hSnn : ∀ w : Fin m → ℝ, (0 : ℝ) ≤ sqSum w ^ k := fun w => pow_nonneg (sqSum_nonneg w) k
+  have hφ : Measurable (fun v : ℝ => ENNReal.ofReal (v ^ k)) :=
+    ENNReal.measurable_ofReal.comp ((continuous_pow k).measurable)
+  have hu : Measurable (fun w => ENNReal.ofReal (g w)) := ENNReal.measurable_ofReal.comp hg
+  have huhom : ∀ c : ℝ, 0 < c → ∀ w, ENNReal.ofReal (g (c • w)) = ENNReal.ofReal (g w) :=
+    fun c hc w => by rw [hghom c hc w]
+  have hmain := lintegral_hom_mul (N := m) hu huhom hφ
+  calc ∫⁻ w, ENNReal.ofReal (g w * sqSum w ^ k) ∂(piGauss m 1)
+      = ∫⁻ w, ENNReal.ofReal (g w) * ENNReal.ofReal (sqSum w ^ k) ∂(piGauss m 1) :=
+        lintegral_congr (fun w => ENNReal.ofReal_mul' (hSnn w))
+    _ = (∫⁻ w, ENNReal.ofReal (g w) ∂(piGauss m 1))
+          * ∫⁻ w, ENNReal.ofReal (sqSum w ^ k) ∂(piGauss m 1) := hmain
+    _ = ENNReal.ofReal (∫ v, v ^ k ∂(chiSquared m))
+          * ∫⁻ w, ENNReal.ofReal (g w) ∂(piGauss m 1) := by
+        rw [lintegral_sqSum_pow hm k, mul_comm]
+
+/-- **Signed radius independence.** For a `0`-homogeneous `h`, the `k`-th radial moment
+factorizes: `∫ h ‖w‖^{2k} dγ = E[V^k] ∫ h dγ`. -/
+private lemma integral_hom_mul_pow {m : ℕ} (hm : 0 < m) {h : (Fin m → ℝ) → ℝ}
+    (hmeas : Measurable h) (hhom : ∀ c : ℝ, 0 < c → ∀ w, h (c • w) = h w) (k : ℕ)
+    (hint : Integrable h (piGauss m 1))
+    (hintS : Integrable (fun w => h w * sqSum w ^ k) (piGauss m 1)) :
+    ∫ w, h w * sqSum w ^ k ∂(piGauss m 1)
+      = (∫ v, v ^ k ∂(chiSquared m)) * ∫ w, h w ∂(piGauss m 1) := by
+  set μ : Measure (Fin m → ℝ) := piGauss m 1 with hμ
+  set Ak : ℝ := ∫ v, v ^ k ∂(chiSquared m) with hAk
+  have hAknn : 0 ≤ Ak := by
+    rw [hAk, ← integral_sqSum_pow hm k]
+    exact integral_nonneg (fun w => pow_nonneg (sqSum_nonneg w) k)
+  have hpos := lintegral_ofReal_hom_mul_pow hm hmeas hhom k
+  have hneg := lintegral_ofReal_hom_mul_pow hm hmeas.neg
+    (fun c hc w => by simp only [hhom c hc w]) k
+  rw [integral_eq_lintegral_pos_part_sub_lintegral_neg_part hintS,
+    integral_eq_lintegral_pos_part_sub_lintegral_neg_part hint]
+  have hrw2 : ∫⁻ w, ENNReal.ofReal (-(h w * sqSum w ^ k)) ∂μ
+      = ENNReal.ofReal Ak * ∫⁻ w, ENNReal.ofReal (-h w) ∂μ := by
+    rw [← hneg]
+    exact lintegral_congr (fun w => by rw [neg_mul])
+  rw [hpos, hrw2, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal hAknn]
+  ring
+
+/-- **The location-scale `L²` minimization on the residual block.** Among the functions of
+the residual vector that are positively homogeneous of degree `2r`, the multiple
+`t⋆ ‖w‖^{2r}` of the radial power with `t⋆ = E[V^r]/E[V^{2r}]` minimizes `∫ (f − 1)² dγₘ`. -/
+private lemma lintegral_scale_risk_le {m : ℕ} (hm : 0 < m) {r : ℕ} (hr : 0 < r)
+    {f : (Fin m → ℝ) → ℝ} (hf : Measurable f)
+    (hhom : ∀ c : ℝ, 0 < c → ∀ w, f (c • w) = c ^ (2 * r) * f w) :
+    ∫⁻ w, ENNReal.ofReal ((residualScaleConst m r * sqSum w ^ r - 1) ^ 2) ∂(piGauss m 1)
+      ≤ ∫⁻ w, ENNReal.ofReal ((f w - 1) ^ 2) ∂(piGauss m 1) := by
+  set μ : Measure (Fin m → ℝ) := piGauss m 1 with hμ
+  set Ar : ℝ := ∫ v, v ^ r ∂(chiSquared m) with hAr
+  set A2r : ℝ := ∫ v, v ^ (2 * r) ∂(chiSquared m) with hA2r
+  have hArpos : 0 < Ar := chiSquared_moment_pos hm hr
+  have hA2rpos : 0 < A2r := chiSquared_moment_pos hm (by omega)
+  have htdef : residualScaleConst m r = Ar / A2r := rfl
+  have hsq : ∀ w : Fin m → ℝ, (sqSum w ^ r) ^ 2 = sqSum w ^ (2 * r) := fun w => by
+    rw [← pow_mul, mul_comm]
+  have habs : ∀ t : ℝ, |t| ≤ 1 + t ^ 2 := by
+    intro t
+    rcases le_or_gt |t| 1 with h | h
+    · nlinarith [sq_nonneg t]
+    · nlinarith [sq_abs t]
+  -- the reference risk, computed exactly
+  have hrefexp : ∀ w : Fin m → ℝ, (residualScaleConst m r * sqSum w ^ r - 1) ^ 2
+      = residualScaleConst m r ^ 2 * sqSum w ^ (2 * r)
+          - 2 * residualScaleConst m r * sqSum w ^ r + 1 := by
+    intro w; rw [← hsq w]; ring
+  have hrefint : Integrable (fun w => (residualScaleConst m r * sqSum w ^ r - 1) ^ 2) μ := by
+    refine Integrable.congr ?_ (ae_of_all _ (fun w => (hrefexp w).symm))
+    exact (((integrable_sqSum_pow hm (2 * r)).const_mul _).sub
+      ((integrable_sqSum_pow hm r).const_mul _)).add (integrable_const 1)
+  have href : ∫ w, (residualScaleConst m r * sqSum w ^ r - 1) ^ 2 ∂μ = 1 - Ar ^ 2 / A2r := by
+    have hPa : Integrable
+        (fun w : Fin m → ℝ => residualScaleConst m r ^ 2 * sqSum w ^ (2 * r)) μ :=
+      (integrable_sqSum_pow hm (2 * r)).const_mul _
+    have hPb : Integrable
+        (fun w : Fin m → ℝ => 2 * residualScaleConst m r * sqSum w ^ r) μ :=
+      (integrable_sqSum_pow hm r).const_mul _
+    have hPab : Integrable (fun w : Fin m → ℝ => residualScaleConst m r ^ 2 * sqSum w ^ (2 * r)
+        - 2 * residualScaleConst m r * sqSum w ^ r) μ := hPa.sub hPb
+    rw [integral_congr_ae (ae_of_all _ hrefexp),
+      integral_add hPab (integrable_const 1), integral_sub hPa hPb,
+      integral_const_mul, integral_const_mul, integral_sqSum_pow hm, integral_sqSum_pow hm,
+      integral_const, probReal_univ, smul_eq_mul, one_mul, htdef]
+    field_simp
+    ring
+  by_cases htop : ∫⁻ w, ENNReal.ofReal ((f w - 1) ^ 2) ∂μ = ⊤
+  · rw [htop]; exact le_top
+  -- integrability of the competitor
+  have hI1 : Integrable (fun w => (f w - 1) ^ 2) μ := by
+    refine ⟨((hf.sub measurable_const).pow_const 2).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ (fun w => sq_nonneg (f w - 1)))]
+    exact lt_top_iff_ne_top.mpr htop
+  have hI2 : Integrable f μ := by
+    refine Integrable.mono' ((integrable_const (2 : ℝ)).add hI1) hf.aestronglyMeasurable
+      (ae_of_all _ (fun w => ?_))
+    have h2 := habs (f w - 1)
+    have h3 : f w - 1 ≤ |f w - 1| := le_abs_self _
+    have h4 : -(f w - 1) ≤ |f w - 1| := neg_le_abs _
+    have h5 : |f w| ≤ 2 + (f w - 1) ^ 2 := by
+      rcases abs_cases (f w) with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] <;> linarith
+    calc ‖f w‖ = |f w| := rfl
+      _ ≤ 2 + (f w - 1) ^ 2 := h5
+  have hI3 : Integrable (fun w => f w ^ 2) μ := by
+    have hsum : Integrable (fun w : Fin m → ℝ => (f w - 1) ^ 2 + (2 * f w - 1)) μ :=
+      hI1.add ((hI2.const_mul 2).sub (integrable_const 1))
+    exact hsum.congr (ae_of_all _ (fun w => by ring))
+  -- the scale-invariant factor `u = f / ‖w‖^{2r}`
+  set u : (Fin m → ℝ) → ℝ := fun w => f w / sqSum w ^ r with hudef
+  have humeas : Measurable u := hf.div (measurable_sqSum.pow_const r)
+  have hf0 : f 0 = 0 := by
+    have h2 := hhom 2 (by norm_num) 0
+    rw [smul_zero] at h2
+    have hgt : (1 : ℝ) < 2 ^ (2 * r) := by
+      calc (1 : ℝ) < 2 := by norm_num
+        _ = 2 ^ 1 := (pow_one 2).symm
+        _ ≤ 2 ^ (2 * r) := pow_le_pow_right₀ (by norm_num) (by omega)
+    nlinarith [h2, hgt]
+  have hsq0 : sqSum (0 : Fin m → ℝ) = 0 := by simp [sqSum]
+  have hfu : ∀ w, f w = u w * sqSum w ^ r := by
+    intro w
+    by_cases hw : sqSum w = 0
+    · have hw0 : w = 0 := by
+        funext i
+        have hi := (Finset.sum_eq_zero_iff_of_nonneg
+          (fun i _ => sq_nonneg (w i))).mp hw i (Finset.mem_univ i)
+        simpa using sq_eq_zero_iff.mp hi
+      rw [hw0, hf0, hsq0, zero_pow hr.ne', mul_zero]
+    · simp only [hudef]
+      exact (div_mul_cancel₀ _ (pow_ne_zero r hw)).symm
+  have huhom : ∀ c : ℝ, 0 < c → ∀ w, u (c • w) = u w := by
+    intro c hc w
+    have hcne : (c : ℝ) ^ (2 * r) ≠ 0 := by positivity
+    simp only [hudef]
+    rw [hhom c hc w, sqSum_smul, mul_pow, ← pow_mul, mul_div_mul_left _ _ hcne]
+  have hu2hom : ∀ c : ℝ, 0 < c → ∀ w, u (c • w) ^ 2 = u w ^ 2 :=
+    fun c hc w => by rw [huhom c hc w]
+  have hfsq : ∀ w, f w ^ 2 = u w ^ 2 * sqSum w ^ (2 * r) := by
+    intro w; rw [hfu w, mul_pow, hsq w]
+  have hu2S : Integrable (fun w => u w ^ 2 * sqSum w ^ (2 * r)) μ :=
+    hI3.congr (ae_of_all _ hfsq)
+  -- `u ∈ L²`, from finiteness of the tilted integral
+  have hlin := lintegral_ofReal_hom_mul_pow hm (humeas.pow_const 2) hu2hom (2 * r)
+  have hLfin : ∫⁻ w, ENNReal.ofReal (u w ^ 2 * sqSum w ^ (2 * r)) ∂μ ≠ ⊤ :=
+    ne_of_lt ((hasFiniteIntegral_iff_ofReal (ae_of_all _ (fun w =>
+      mul_nonneg (sq_nonneg (u w)) (pow_nonneg (sqSum_nonneg w) _)))).mp hu2S.2)
+  have hu2fin : ∫⁻ w, ENNReal.ofReal (u w ^ 2) ∂μ ≠ ⊤ := by
+    intro hc
+    have hne : ENNReal.ofReal A2r ≠ 0 := by
+      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+      exact hA2rpos
+    rw [hlin, hc, ENNReal.mul_top hne] at hLfin
+    exact hLfin rfl
+  have hu2 : Integrable (fun w => u w ^ 2) μ :=
+    ⟨(humeas.pow_const 2).aestronglyMeasurable,
+      (hasFiniteIntegral_iff_ofReal (ae_of_all _ (fun w => sq_nonneg (u w)))).mpr
+        (lt_top_iff_ne_top.mpr hu2fin)⟩
+  have huint : Integrable u μ := by
+    refine Integrable.mono' ((integrable_const (1 : ℝ)).add hu2) humeas.aestronglyMeasurable
+      (ae_of_all _ (fun w => ?_))
+    calc ‖u w‖ = |u w| := rfl
+      _ ≤ 1 + u w ^ 2 := habs (u w)
+  have hIu : Integrable (fun w => u w * sqSum w ^ r) μ := hI2.congr (ae_of_all _ hfu)
+  -- the two moment identities
+  have hmom1 : ∫ w, f w ∂μ = Ar * ∫ w, u w ∂μ := by
+    rw [integral_congr_ae (ae_of_all _ hfu)]
+    exact integral_hom_mul_pow hm humeas huhom r huint hIu
+  have hmom2 : ∫ w, f w ^ 2 ∂μ = A2r * ∫ w, u w ^ 2 ∂μ := by
+    rw [integral_congr_ae (ae_of_all _ hfsq)]
+    exact integral_hom_mul_pow hm (humeas.pow_const 2) hu2hom (2 * r) hu2 hu2S
+  set a : ℝ := ∫ w, u w ∂μ with hadef
+  set B : ℝ := ∫ w, u w ^ 2 ∂μ with hBdef
+  have hCS : a ^ 2 ≤ B := by
+    have hnn : 0 ≤ ∫ w, (u w - a) ^ 2 ∂μ := integral_nonneg (fun w => sq_nonneg _)
+    have hCa : Integrable (fun w : Fin m → ℝ => u w ^ 2) μ := hu2
+    have hCb : Integrable (fun w : Fin m → ℝ => 2 * a * u w) μ := huint.const_mul (2 * a)
+    have hCab : Integrable (fun w : Fin m → ℝ => u w ^ 2 - 2 * a * u w) μ := hCa.sub hCb
+    rw [integral_congr_ae (ae_of_all _ (fun w => show (u w - a) ^ 2
+        = u w ^ 2 - 2 * a * u w + a ^ 2 from by ring)),
+      integral_add hCab (integrable_const _),
+      integral_sub hCa hCb, integral_const_mul,
+      integral_const, probReal_univ, smul_eq_mul, one_mul] at hnn
+    linarith
+  have hfexp : ∫ w, (f w - 1) ^ 2 ∂μ = A2r * B - 2 * (Ar * a) + 1 := by
+    have hFa : Integrable (fun w : Fin m → ℝ => f w ^ 2) μ := hI3
+    have hFb : Integrable (fun w : Fin m → ℝ => 2 * f w) μ := hI2.const_mul 2
+    have hFab : Integrable (fun w : Fin m → ℝ => f w ^ 2 - 2 * f w) μ := hFa.sub hFb
+    rw [integral_congr_ae (ae_of_all _ (fun w => show (f w - 1) ^ 2
+        = f w ^ 2 - 2 * f w + 1 from by ring)),
+      integral_add hFab (integrable_const _),
+      integral_sub hFa hFb, integral_const_mul,
+      integral_const, probReal_univ, smul_eq_mul, one_mul, hmom1, hmom2]
+  have hfinal : 1 - Ar ^ 2 / A2r ≤ ∫ w, (f w - 1) ^ 2 ∂μ := by
+    rw [hfexp]
+    have key : 2 * (Ar * a) - A2r * B ≤ Ar ^ 2 / A2r := by
+      rw [le_div_iff₀ hA2rpos]
+      nlinarith [sq_nonneg (A2r * a - Ar), mul_le_mul_of_nonneg_left hCS hA2rpos.le,
+        hA2rpos, sq_nonneg A2r]
+    linarith
+  rw [← ofReal_integral_eq_lintegral_ofReal hrefint (ae_of_all _ (fun w => sq_nonneg _)),
+    ← ofReal_integral_eq_lintegral_ofReal hI1 (ae_of_all _ (fun w => sq_nonneg _)), href]
+  exact ENNReal.ofReal_le_ofReal hfinal
+
+
 /-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
 the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
 against every measurable degree-`2r` location-scale-equivariant competitor.
