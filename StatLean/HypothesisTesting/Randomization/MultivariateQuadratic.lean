@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Randomization.SignChange
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
+import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
@@ -97,7 +98,7 @@ permutation tests," *Ann. Statist.* **41** (2013), 484–507).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal RealInnerProductSpace Matrix
 
 namespace StatLean.HypothesisTesting
 
@@ -149,7 +150,16 @@ theorem map_quadraticForm_multivariateGaussian_eq_chiSquared [NeZero p]
     (hpd : S.PosDef) :
     (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun z => z.ofLp ⬝ᵥ S⁻¹.mulVec z.ofLp) = chiSquared p := by
-  sorry
+  -- The quadratic-form spelling `z.ofLp ⬝ᵥ S⁻¹ *ᵥ z.ofLp` is `Matrix.inner_toEuclideanCLM`
+  -- of the inner-product spelling `⟪z, toEuclideanCLM S⁻¹ z⟫`, whose pushforward is the
+  -- whitening bridge `multivariateGaussian_map_inner_inv_eq_chiSquared`.
+  have hp : 0 < p := Nat.pos_of_ne_zero (NeZero.ne p)
+  have hfun : (fun z : EuclideanSpace ℝ (Fin p) => z.ofLp ⬝ᵥ S⁻¹.mulVec z.ofLp)
+      = fun z => ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫ := by
+    funext z
+    exact (Matrix.inner_toEuclideanCLM S⁻¹ z z).symm
+  rw [hfun]
+  exact multivariateGaussian_map_inner_inv_eq_chiSquared hp hpd
 
 /-! ### The vector building block -/
 
@@ -178,6 +188,18 @@ theorem weakConverges_randPairLaw_signChange_sum
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
         (Measure.pi fun _ : Fin n => P))
       ((multivariateGaussian 0 S).prod (multivariateGaussian 0 S)) := by
+  -- TODO (deep, deferred): the vector building block = multivariate sign-change bivariate CLT.
+  -- Route: on the product space of the data `X ~ πP` and two independent Rademacher sign
+  -- vectors `ε, ε'`, the pairs `Vᵢ = (εᵢ Xᵢ, ε'ᵢ Xᵢ) ∈ ℝ^{2p}` are i.i.d. mean 0 with block
+  -- covariance `diag(S, S)` — the cross block vanishes because `E[εᵢ]E[ε'ᵢ] = 0`. A
+  -- multivariate Lindeberg / Cramér–Wold CLT gives `n^{-1/2} ∑ᵢ Vᵢ ⇝ N(0,S) ⊗ N(0,S)`;
+  -- identifying `randPairLaw` as the law of `(n^{-1/2}∑ εᵢXᵢ, n^{-1/2}∑ ε'ᵢXᵢ)` and pushing
+  -- the `o_P(1)` remainder through Slutsky yields the claim.
+  -- BLOCKED: the repo's CLT bricks `weighted_iid_clt` / `lindeberg_clt` are univariate with
+  -- deterministic weights; there is no multivariate triangular-array CLT nor a Cramér–Wold
+  -- device at the `randPairLaw`/`WeakConverges` level. This is the vector-valued analogue of
+  -- the still-open scalar `weakConverges_randPairLaw_signChange` in `Randomization/SignChange`
+  -- (that theorem's own `sorry` documents the identical obstruction).
   sorry
 
 /-! ### Quadratic-form limits -/
@@ -201,6 +223,17 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
       (fun n => randPairLaw (Fin n → ℤˣ) (modifiedTSq (p := p) (n := n))
         (Measure.pi fun _ : Fin n => P))
       ((chiSquared p).prod (chiSquared p)) := by
+  -- TODO (deep, deferred): continuous-mapping reduction onto the vector building block.
+  -- Since `modifiedCovMatrix` is sign-invariant, `modifiedTSq (ε • x) = Vₙᵀ Σ̃ₙ(x)⁻¹ Vₙ` with
+  -- `Vₙ = n^{-1/2} ∑ᵢ εᵢ Xᵢ` the vector statistic of `weakConverges_randPairLaw_signChange_sum`.
+  -- With `Σ̃ₙ(x) → S` in probability (law of large numbers on the uncentred second moments),
+  -- the quadratic form converges to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, whose marginals are `χ²_p` by
+  -- `map_quadraticForm_multivariateGaussian_eq_chiSquared`, independent because the pair limit
+  -- is a product law.
+  -- BLOCKED: depends on `weakConverges_randPairLaw_signChange_sum` (itself an open multivariate
+  -- CLT `sorry`), plus a `randPairLaw`-level Slutsky that replaces the data-coupled random
+  -- matrix `Σ̃ₙ(x)⁻¹` by `S⁻¹` — no such brick exists (`WeakConverges` API has `.map` for a
+  -- fixed continuous map only, not a converging-random-parameter continuous mapping theorem).
   sorry
 
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
@@ -225,6 +258,14 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
       (fun n => randPairLaw (Fin n → ℤˣ) (hotellingTSq (p := p) (n := n))
         (Measure.pi fun _ : Fin n => P))
       ((chiSquared p).prod (chiSquared p)) := by
+  -- TODO (deep, deferred): same limit and route as the modified statistic, but Hotelling's
+  -- `sampleCovMatrix Σ̂ₙ` is NOT sign-invariant, so its treatment goes through the consistency
+  -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
+  -- mean-zero (`hmean`) is used a second time; then the argument coincides with
+  -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
+  -- BLOCKED: on `weakConverges_randPairLaw_signChange_sum` (open multivariate CLT) + the same
+  -- missing `randPairLaw`-level random-parameter Slutsky, plus the sign-uniform sample-covariance
+  -- consistency (no such brick in the repo).
   sorry
 
 end StatLean.HypothesisTesting
