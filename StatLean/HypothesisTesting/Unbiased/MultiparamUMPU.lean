@@ -364,15 +364,55 @@ theorem inner_exponent_reparam {a₀ : ℝ} (a : Ξ) (θ : ℝ) (ϑ : Ξ) (u : �
   field_simp
   ring
 
+/-- Push-forward of a `withDensity` along a measurable map whose density is a pull-back:
+if the density on the source is `D ∘ S`, then `S`-image of the tilt is the `D`-tilt of the
+`S`-image. No injectivity of `S` is needed — only that the source density factors through
+`S`. Change-of-variables for `withDensity`, proved set by set with `setLIntegral_map`. -/
+private lemma map_withDensity_comp {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) {S : α → β} {D : β → ℝ≥0∞} (hS : Measurable S) (hD : Measurable D) :
+    (μ.withDensity fun z => D (S z)).map S = (μ.map S).withDensity D := by
+  ext B hB
+  rw [Measure.map_apply hS hB, withDensity_apply _ (hS hB), withDensity_apply _ hB,
+    setLIntegral_map hB hD hS]
+
+/-- Measurability of the canonical exponential density on `ℝ × Ξ` (local copy of the
+namesake in `ConditionalExpFamily`, which is `private` to that file). -/
+private lemma measurable_canonicalDensity' [OpensMeasurableSpace Ξ] (c θ : ℝ) (ϑ : Ξ) :
+    Measurable fun z : ℝ × Ξ => ENNReal.ofReal (c * Real.exp (θ * z.1 + ⟪ϑ, z.2⟫_ℝ)) := by
+  have h : Measurable fun z : ℝ × Ξ => ⟪ϑ, z.2⟫_ℝ :=
+    ((innerSL ℝ ϑ).continuous.measurable).comp measurable_snd
+  exact (((measurable_const.mul measurable_fst).add h).exp.const_mul c).ennreal_ofReal
+
 /-- **Reduction to canonical form.**
 
 A canonical `(U, T)` family is again canonical after the change of parameter of interest
 `θ* = a₀θ + ⟪a, ϑ⟫` (`a₀ ≠ 0`), with statistic `U* = U/a₀`, `T* = T − (U/a₀)·a` and base
 measure the image of `ν` under the same transformation. Consequently the four optimality
-theorems above apply verbatim to hypotheses about `θ*`. -/
+theorems above apply verbatim to hypotheses about `θ*`.
+
+The proof is the change of variables `map_withDensity_comp` along `S = statTransformUT a₀ a`
+— whose defining property is exactly `inner_exponent_reparam`, i.e. the reparametrized
+density pulled back along `S` is the original density — together with `map_map` to move `S`
+past the statistic. The measurability of `(U, T)` is *not* a hypothesis, and is not needed:
+if it fails, the left-hand side is the zero measure by `Measure.map_of_not_aemeasurable`, and
+so is the right-hand side, because `S` has a measurable left inverse `(v,s) ↦ (a₀v, s + v·a)`
+(so `S ∘ (U,T)` is no more measurable than `(U,T)`) and the change of variables identifies
+the right-hand side with the `S`-image of `(P p).map (U,T) = 0`.
+
+**FLAGGED SIGNATURE AMENDMENT.** The instances `[BorelSpace Ξ]` and
+`[SecondCountableTopology Ξ]` were *added*. They are what makes the shear
+`S : (u,t) ↦ (u/a₀, t − (u/a₀)·a)` — a continuous map `ℝ × Ξ → ℝ × Ξ` — measurable: the
+frozen `[MeasurableSpace Ξ]` is unrelated to the topology of `Ξ`, and even with
+`[BorelSpace Ξ]` alone the product σ-algebra of `ℝ × Ξ` need not contain the Borel sets of
+the product topology, which is what second countability supplies (`Prod.borelSpace`). Both
+hold for every intended instantiation `Ξ = EuclideanSpace ℝ (Fin k)`. Nothing else in the
+statement changes. -/
 theorem isCanonicalUT_reparam
     {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → ℝ} {T : 𝓧 → Ξ}
     {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ} {a₀ : ℝ} {a : Ξ}
+    -- LEAN-ONLY (AMENDMENT): the σ-algebra of `Ξ` is the Borel one and `Ξ` is second
+    -- countable, so that the continuous shear `statTransformUT a₀ a` is measurable
+    [BorelSpace Ξ] [SecondCountableTopology Ξ]
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
     (hUT : IsCanonicalUT P Ω U T ν C)
     -- USER-INPUT: the coefficient of the parameter of interest is nonzero
@@ -380,16 +420,59 @@ theorem isCanonicalUT_reparam
     IsCanonicalUT (fun q => P (reparamUTInv a₀ a q)) (reparamUT a₀ a '' Ω)
       (fun x => U x / a₀) (fun x => T x - (U x / a₀) • a)
       (ν.map (statTransformUT a₀ a)) (fun q => C (reparamUTInv a₀ a q)) := by
-  -- BLOCKED. Pure change-of-variables, but `statTransformUT a₀ a` (`z ↦ (z.1/a₀, z.2 -
-  -- (z.1/a₀)•a)`) is measurable only with `[MeasurableSMul ℝ Ξ]` and `[MeasurableSub₂ Ξ]` (or a
-  -- Borel structure on `Ξ`): `fun r : ℝ => r • a` and vector subtraction are continuous but the
-  -- frozen `[MeasurableSpace Ξ]` is Borel-incompatible, so `map_map` for the statistic transform
-  -- is unavailable (confirmed: `fun_prop` fails on `fun z : ℝ×Ξ => z.2 - (z.1/a₀)•a`). Given those
-  -- instances the route: `(P (reparamUTInv q)).map statMap = ((P p).map (U,T)).map statTransform`
-  -- (`map_map`), `= (ν.withDensity density_p).map statTransform` by `hUT`, `= (ν.map
-  -- statTransform).withDensity density_q` via `MeasurableEquiv.map_withDensity`, with
-  -- `density_p ∘ statTransform.symm = density_q` from `inner_exponent_reparam` (closed above).
-  -- Reported.
-  sorry
+  -- the shear and its left inverse are continuous, hence measurable
+  have hScont : Continuous (statTransformUT a₀ a) := by
+    unfold statTransformUT; fun_prop
+  have hS : Measurable (statTransformUT a₀ a) := hScont.measurable
+  have hS' : Measurable fun w : ℝ × Ξ => (a₀ * w.1, w.2 + w.1 • a) :=
+    (by fun_prop : Continuous fun w : ℝ × Ξ => (a₀ * w.1, w.2 + w.1 • a)).measurable
+  have hSS' : ∀ z : ℝ × Ξ,
+      (fun w : ℝ × Ξ => (a₀ * w.1, w.2 + w.1 • a)) (statTransformUT a₀ a z) = z := by
+    intro z
+    have h1 : a₀ * (z.1 / a₀) = z.1 := by field_simp
+    have h2 : z.2 - (z.1 / a₀) • a + (z.1 / a₀) • a = z.2 := by abel
+    simp only [statTransformUT, h1, h2]
+  intro q hq
+  obtain ⟨p, hp, rfl⟩ := hq
+  have hinv : reparamUTInv a₀ a (reparamUT a₀ a p) = p := by
+    have h1 : (a₀ * p.1 + ⟪a, p.2⟫_ℝ - ⟪a, p.2⟫_ℝ) / a₀ = p.1 := by
+      rw [add_sub_cancel_right]; field_simp
+    simp only [reparamUTInv, reparamUT, h1]
+  simp only [hinv]
+  -- the reparametrized density pulled back along the shear is the original density
+  have hD : Measurable fun z : ℝ × Ξ => ENNReal.ofReal (C p *
+      Real.exp ((reparamUT a₀ a p).1 * z.1 + ⟪(reparamUT a₀ a p).2, z.2⟫_ℝ)) :=
+    measurable_canonicalDensity' _ _ _
+  have hdens : ∀ z : ℝ × Ξ, ENNReal.ofReal (C p *
+      Real.exp ((reparamUT a₀ a p).1 * (statTransformUT a₀ a z).1
+        + ⟪(reparamUT a₀ a p).2, (statTransformUT a₀ a z).2⟫_ℝ))
+      = ENNReal.ofReal (C p * Real.exp (p.1 * z.1 + ⟪p.2, z.2⟫_ℝ)) := by
+    intro z
+    simp only [reparamUT, statTransformUT]
+    rw [← inner_exponent_reparam a p.1 p.2 z.1 z.2 ha₀]
+  have hkey : (ν.map (statTransformUT a₀ a)).withDensity (fun z => ENNReal.ofReal (C p *
+        Real.exp ((reparamUT a₀ a p).1 * z.1 + ⟪(reparamUT a₀ a p).2, z.2⟫_ℝ)))
+      = ((P p).map fun x => (U x, T x)).map (statTransformUT a₀ a) := by
+    rw [hUT p hp, ← map_withDensity_comp ν hS hD]
+    congr 1
+    congr 1
+    funext z
+    exact hdens z
+  rw [hkey]
+  -- move the shear past the statistic; both sides vanish if the statistic is not measurable
+  by_cases hf : AEMeasurable (fun x => (U x, T x)) (P p)
+  · rw [AEMeasurable.map_map_of_aemeasurable hS.aemeasurable hf]
+    rfl
+  · have hf' : ¬ AEMeasurable (fun x => (U x / a₀, T x - (U x / a₀) • a)) (P p) := by
+      intro hc
+      have hcomp : ((fun w : ℝ × Ξ => (a₀ * w.1, w.2 + w.1 • a)) ∘
+          fun x => (U x / a₀, T x - (U x / a₀) • a)) = fun x => (U x, T x) := by
+        funext x
+        exact hSS' (U x, T x)
+      have := hS'.comp_aemeasurable hc
+      rw [hcomp] at this
+      exact hf this
+    rw [Measure.map_of_not_aemeasurable hf, Measure.map_of_not_aemeasurable hf']
+    simp
 
 end StatLean.HypothesisTesting
