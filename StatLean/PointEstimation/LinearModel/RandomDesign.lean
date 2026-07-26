@@ -475,26 +475,49 @@ functional, and the amendment below says exactly that.
 
 DEFERRAL-ELIGIBLE (planned debt): the amended statement is believed true and its classical
 proof is delegated to exercises in the source; it is *not* discharged here. Route, verified
-on paper:
+on paper, with the Lean-level obstructions re-examined (an earlier reading of this note
+overstated two of them):
 
 * If `δ` is a best linear unbiased estimator and `d` is any linear estimator that is
   unbiased for `0` at every parameter, then `δ + t·d` is linear unbiased for every `t ∈ ℝ`,
   so `t ↦ variance (δ + t·d)` is a nonnegative-definite quadratic minimized at `t = 0`;
   hence `covariance δ d (P p) = 0` at every `p` (an orthogonality condition, not merely an
-  inequality — the mean-zero linear estimators form a linear space).
+  inequality — the mean-zero linear estimators form a linear space). In Lean this step is
+  *bilinearity of variance on `L²`*, `ProbabilityTheory.variance_add` and the covariance
+  API; it needs no law of total covariance.
 * Writing `δ(a, y) = ⟪c(a), y⟫`, `v := (Matrix.of a) *ᵥ c(a)` and, for a bounded measurable
-  `ψ` with `E_Q[ψ] = 0`, taking `d(a, y) = ψ(a)·⟪Aᵀ (A Aᵀ)⁻¹ c, y⟫`, the covariance splits
-  as `σ²·E_Q[ψ·⟪c(a), Aᵀ(A Aᵀ)⁻¹c⟫] + E_Q[ψ·(θ ⬝ᵥ v)·(θ ⬝ᵥ c)]`. Both terms must vanish
+  `ψ` with `E_Q[ψ] = 0`, taking `d(a, y) = ψ(a)·⟪Aᵀ (A Aᵀ)⁻¹ c, y⟫` (which is unbiased for
+  `0` at *every* parameter, since `A *ᵥ Aᵀ (A Aᵀ)⁻¹ c = c` makes its conditional mean
+  `ψ(a)·(θ ⬝ᵥ c)`), the covariance splits as
+  `σ²·E_Q[ψ·⟪c(a), Aᵀ(A Aᵀ)⁻¹c⟫] + E_Q[ψ·(θ ⬝ᵥ v)·(θ ⬝ᵥ c)]`. Both terms must vanish
   for all `(θ, σ²)` separately (the first is the only one carrying `σ²`). The second forces
   `v = c` `Q`-a.e. (conditional unbiasedness), and then the first forces
   `a ↦ cᵀ (A Aᵀ)⁻¹ c` to be `Q`-a.e. constant — contradicting `hinfo`.
-* *What is missing for a Lean discharge.* (i) `IsRandomDesignLinear` provides no
+* *Integrability of the perturbation.* `E_Q[cᵀ(A Aᵀ)⁻¹c]` may be infinite, in which case the
+  conditional least-squares estimator is not even in `MemEstL2` and cannot serve as a
+  competitor. The perturbations must therefore be *supported where the information is
+  bounded*: with `E := {a | cᵀ(A Aᵀ)⁻¹c ≤ r}` take `ψ := α·1_{E₁} + β·1_{E₂}` for disjoint
+  `E₁, E₂ ⊆ E` and `α·Q E₁ + β·Q E₂ = 0`. The vanishing of the first term then says that
+  `a ↦ vᵀ(A Aᵀ)⁻¹c` has equal averages over all disjoint subsets of `E`, hence is a.e.
+  constant on `E`, and `r ↑ ∞` globalizes it. No `E_Q`-finiteness hypothesis is needed.
+* *What is genuinely missing for a Lean discharge.* (i) `IsRandomDesignLinear` provides no
   measurability of the coefficient map `a ↦ c(a)`, and none can be extracted from
-  `MemEstL2` alone; the discharge needs either a `Measurable δ` conjunct in the existential
-  (then `c a i = δ (a, EuclideanSpace.single i 1)` is measurable) or a measurable-selection
-  step. (ii) The covariance computation over `Q ⊗ₘ K p` needs Fubini for `Measure.compProd`
-  together with the conditional-moment hypotheses, i.e. a law-of-total-covariance brick that
-  the repository does not yet have. Neither is a defect of the statement. -/
+  `MemEstL2` alone (the fibres `{y}` are `K p a`-null, so `δ` determines `c a` only through
+  integrals). The fix is a `Measurable c` conjunct in the existential of
+  `IsRandomDesignLinear`; it is a *minimal* amendment — the definition is used nowhere else
+  in the library, every competitor exhibited above is explicitly measurable, and restricting
+  the candidate class is precisely what a nonexistence statement can afford. (ii) The
+  conditional second-moment identity
+  `E_{Q ⊗ₘ K p}[⟪b(a), Y⟫·⟪b'(a), Y⟫] = ∫ σ²·⟪b, b'⟫ + (θ ⬝ᵥ A b)(θ ⬝ᵥ A b') ∂Q`, i.e.
+  `MeasureTheory.Measure.integral_compProd` plus bilinearity of `covariance` in the fibre,
+  together with the integrability side conditions. (iii) Measurability of
+  `a ↦ (A Aᵀ)⁻¹` (a polynomial adjugate over a measurable determinant) and the extraction
+  of `E₁, E₂` from `hinfo`.
+* *Not* missing, contrary to an earlier reading of this note: conditional square-integrability
+  of the response coordinates. Mathlib's `covariance X Y μ` is the junk-tolerant integral
+  `∫ (X - μ[X])(Y - μ[Y])`, so `hcov` at `i = j` says `∫ (y i - E)² ∂(K p a) = σ² > 0`, and
+  `MeasureTheory.integral_undef` turns that into genuine integrability of `(y i - E)²`, hence
+  `MemLp (fun y => y i) 2 (K p a)` — the hypothesis as stated already carries it. -/
 theorem not_exists_blue_of_known_design_moment
     (Q : Measure (DesignSample s n)) [IsProbabilityMeasure Q]
     (K : RegressionParam s → Kernel (DesignSample s n) (EuclideanSpace ℝ (Fin n)))
