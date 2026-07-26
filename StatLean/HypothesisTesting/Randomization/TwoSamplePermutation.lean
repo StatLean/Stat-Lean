@@ -83,7 +83,7 @@ robust permutation tests," *Ann. Statist.* **41** (2013), 484–507).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -115,6 +115,75 @@ theorems never reach. -/
 noncomputable def twoSampleMeanDiff (m n : ℕ) (x : Fin (m + n) → ℝ) : ℝ :=
   Real.sqrt (m : ℝ) * ((m : ℝ)⁻¹ * ∑ i : Fin m, x (Fin.castAdd n i)
     - (n : ℝ)⁻¹ * ∑ j : Fin n, x (Fin.natAdd m j))
+
+/-! ### Measurability and probability-measure bricks -/
+
+/-- The difference-of-means statistic is measurable: a fixed linear combination of coordinate
+projections. -/
+private lemma measurable_twoSampleMeanDiff (m n : ℕ) :
+    Measurable (twoSampleMeanDiff m n) := by
+  unfold twoSampleMeanDiff
+  fun_prop
+
+/-- The permutation action `σ • x = x ∘ σ⁻¹` is measurable in `x` (coordinate relabelling). -/
+private lemma measurable_perm_smul (N : ℕ) (σ : Equiv.Perm (Fin N)) :
+    Measurable (fun x : Fin N → ℝ => σ • x) := by
+  have hfun : (fun x : Fin N → ℝ => σ • x) = fun x i => x (σ⁻¹ i) := by
+    ext x i; exact perm_smul_apply σ x i
+  rw [hfun]
+  exact measurable_pi_lambda _ fun i => measurable_pi_apply _
+
+/-- The pooled two-sample law is a probability measure. -/
+instance isProbabilityMeasure_twoSampleLaw (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] :
+    IsProbabilityMeasure (twoSampleLaw m n PY PZ) := by
+  unfold twoSampleLaw
+  haveI : ∀ i, IsProbabilityMeasure
+      (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i) := by
+    intro i
+    refine Fin.addCases (m := m) (n := n)
+      (motive := fun i => IsProbabilityMeasure
+        (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i))
+      (fun j => ?_) (fun j => ?_) i
+    · first
+        | infer_instance
+        | · simp only [Fin.addCases_left]; infer_instance
+    · first
+        | infer_instance
+        | · simp only [Fin.addCases_right]; infer_instance
+  infer_instance
+
+/-! ### Gaussian c.d.f. helpers -/
+
+/-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. -/
+private lemma continuousAt_cdf_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [NoAtoms μ] (t : ℝ) : ContinuousAt (cdf μ) t := by
+  have hmono : Monotone (cdf μ) := monotone_cdf μ
+  rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
+  have hright : Function.rightLim (cdf μ) t = cdf μ t :=
+    (hmono.continuousWithinAt_Ioi_iff_rightLim_eq).1
+      (((cdf μ).right_continuous t).mono Set.Ioi_subset_Ici_self)
+  have hle : Function.leftLim (cdf μ) t ≤ cdf μ t := hmono.leftLim_le le_rfl
+  have hge : cdf μ t ≤ Function.leftLim (cdf μ) t := by
+    have h0 := (cdf μ).measure_singleton t
+    rw [measure_cdf, measure_singleton, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos] at h0
+    exact h0
+  rw [le_antisymm hle hge, hright]
+
+/-- Gaussian scaling of the c.d.f.: `cdf (N(0,τ²)) t = cdf (N(0,1)) (t/τ)` for `τ > 0`. -/
+private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
+    cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t = cdf (gaussianReal 0 1) (t / τ) := by
+  have hmap : gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)
+      = (gaussianReal 0 1).map (fun x => τ * x) := by
+    rw [gaussianReal_map_const_mul]
+    congr 1
+    · rw [mul_zero]
+    · rw [mul_one]
+  have hset : (fun x : ℝ => τ * x) ⁻¹' Set.Iic t = Set.Iic (t / τ) := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Iic, le_div_iff₀ hτ, mul_comm τ x]
+  rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
+    Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
 /-! ### The permutation limit -/
 
@@ -171,7 +240,22 @@ theorem randDist_twoSample_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityMea
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (twoSampleMeanDiff (m k) (n k)) x t)
       (cdf (gaussianReal 0 1) (t / τ)) := by
-  sorry
+  -- Feed the permutation bivariate CLT into the forward engine `randDist_tendstoInProb_cdf`,
+  -- discharging action measurability with `measurable_perm_smul` and continuity of the
+  -- Gaussian c.d.f. with `continuousAt_cdf_of_noAtoms`, then rescale via `cdf_gaussianReal_scale`.
+  have hjoint := weakConverges_randPairLaw_twoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
+  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+    NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
+  haveI : NoAtoms (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) := noAtoms_gaussianReal hvne
+  have hcont : ContinuousAt (cdf (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))) t :=
+    continuousAt_cdf_of_noAtoms _ t
+  have hmain := randDist_tendstoInProb_cdf (G := fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (fun k => twoSampleMeanDiff (m k) (n k))
+    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    (fun k => measurable_twoSampleMeanDiff (m k) (n k))
+    (fun k g => measurable_perm_smul _ g) hjoint hcont
+  rwa [cdf_gaussianReal_scale hτpos t] at hmain
 
 /-! ### The unconditional limit, for contrast -/
 
