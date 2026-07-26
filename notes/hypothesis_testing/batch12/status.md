@@ -1,7 +1,7 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-26 (HT 97; autonomous wave closed KSConsistency+DKW+randomization+invariance+signchange; trinity/umpu/bootmulti genuinely blocked; throughput now fairshare-limited behind the radon11 workflow).
-
+Last update: 2026-07-26 (HT 77 literal / 76 build-reported, area gate GREEN 3304 jobs.
+The opus-4.8 "genuinely blocked" verdicts were RE-TESTED on opus-5 and OVERTURNED wholesale).
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
 
 ## Current state — 2026-07-25
@@ -118,6 +118,36 @@ per user instruction as unnecessary for any consumer.
   on all normal partitions; `bigmem_intermediate` needs >1000GB/node; login-node `SRUN=0` claude
   hangs at startup. Staged lanes (`condtilt-2`, `maximin-3b`, `bentkus-3`, `bootmean`, `momentset-l2`,
   `signchange-4`) are ready to fire the instant serial_requeue has room.
+
+## Re-test wave — 2026-07-26 (area gate GREEN, 3304 jobs, 76 sorry-uses)
+
+**HT 88 -> 77.** The cluster env had `ANTHROPIC_MODEL=claude-opus-4-8` pinned for the whole
+earlier campaign. After switching to `claude-opus-5`, the three targets that 4.8 had
+documented as *genuinely blocked on absent Mathlib infrastructure* were re-run with prompts
+that explicitly declared the earlier verdicts unreliable. **All three verdicts were wrong.**
+
+* **`ht/retest-umpu`** — 4.8 said the UMPU chain was blocked on "a Xi-Borel measurability
+  gap". Reality: `Unbiased/ConditionalExpFamily.lean` -> **0-sorry**
+  (`condDistrib_expFamily_of_isCanonicalUT`, `condDistrib_eq_of_fst_eq`), plus
+  `exists_measurable_conditional_constants` and `isCanonicalUT_reparam` closed in
+  `MultiparamUMPU`; and the **four conditional-UMPU statements are FALSE**, shown by a
+  formalized counterexample.
+* **`ht/retest-boot`** — 4.8 said all 7 `Bootstrap/Multivariate` sorries needed "a
+  triangular-array multivariate CLT + delta-method infra not present". Reality: 14 commits
+  closing `meanVec_root_tendsto` (Cramer-Wold onto the drifting-row CLT),
+  `mean_root_cdf_tendsto` (CDF->weak bridge + array CLT + portmanteau),
+  `empirical_mem_meanVecSeqClass` (SLLN + Levy) and `bootstrap_meanVec_consistent` —
+  **TSH Thm 18.3.5 complete** — plus charFun-equicontinuity and empirical-measure bricks.
+* **`ht/retest-trinity`** — closed `measurable_logLRStatistic` (forced joint-measurability
+  amendment), `wald_sub_score_tendstoInMeasure`, and `affineScoreDiff_tendsto_chiSquared`
+  (rank-p Gaussian projection bridge); and `sup_LAN_remainder_tendsto` is **FALSE as stated**,
+  counterexample recorded.
+
+### Methodological conclusion
+Nine theorems that opus-4.8 documented as impossible or unprovable have now been proved, and
+the re-tests additionally produced five FALSE-as-stated counterexamples. **Any remaining
+blocked-verdict in this area that predates the opus-5 switch should be treated as unverified
+until re-derived.** Model-attributed impossibility is not evidence of impossibility.
 
 ## Design decisions (frozen)
 
