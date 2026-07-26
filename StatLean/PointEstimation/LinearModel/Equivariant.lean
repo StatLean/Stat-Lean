@@ -555,6 +555,147 @@ private lemma lintegral_hom_exp_tilt {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0�
   exact lintegral_congr (fun x => hhom c hcpos x)
 
 
+/-- The squared radius on the pi space. -/
+private def sqSum {N : ℕ} (x : Fin N → ℝ) : ℝ := ∑ i, x i ^ 2
+
+private lemma measurable_sqSum {N : ℕ} : Measurable (sqSum (N := N)) :=
+  Finset.measurable_sum _ (fun i _ => (measurable_pi_apply i).pow_const 2)
+
+/-- **Radius independence, bounded form.** A bounded, positively-scale-invariant `u` is
+uncorrelated with every measurable function of the squared radius under the standard
+product Gaussian. -/
+private lemma lintegral_hom_mul_bounded {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0∞}
+    (hu : Measurable u) (hhom : ∀ c : ℝ, 0 < c → ∀ x, u (c • x) = u x)
+    {K : ℝ≥0∞} (hK : K ≠ ⊤) (hbdd : ∀ x, u x ≤ K)
+    {φ : ℝ → ℝ≥0∞} (hφ : Measurable φ) :
+    ∫⁻ x, u x * φ (sqSum x) ∂(piGauss N 1)
+      = (∫⁻ x, u x ∂(piGauss N 1)) * ∫⁻ x, φ (sqSum x) ∂(piGauss N 1) := by
+  set μ : Measure (Fin N → ℝ) := piGauss N 1 with hμ
+  set C : ℝ≥0∞ := ∫⁻ x, u x ∂μ with hC
+  have hCfin : C ≠ ⊤ := by
+    have h1 : C ≤ K := by
+      calc C ≤ ∫⁻ _, K ∂μ := lintegral_mono hbdd
+        _ = K := by rw [lintegral_const, measure_univ, mul_one]
+    exact ne_top_of_le_ne_top hK h1
+  set ν₁ : Measure ℝ := (μ.withDensity u).map sqSum with hν₁
+  set ν₂ : Measure ℝ := C • (μ.map sqSum) with hν₂
+  have hval₁ : ∀ ψ : ℝ → ℝ≥0∞, Measurable ψ →
+      ∫⁻ y, ψ y ∂ν₁ = ∫⁻ x, u x * ψ (sqSum x) ∂μ := by
+    intro ψ hψ
+    have hcomp : Measurable (fun x : Fin N → ℝ => ψ (sqSum x)) := hψ.comp measurable_sqSum
+    rw [hν₁, lintegral_map hψ measurable_sqSum,
+      lintegral_withDensity_eq_lintegral_mul _ hu hcomp]
+    rfl
+  have hval₂ : ∀ ψ : ℝ → ℝ≥0∞, Measurable ψ →
+      ∫⁻ y, ψ y ∂ν₂ = C * ∫⁻ x, ψ (sqSum x) ∂μ := by
+    intro ψ hψ
+    rw [hν₂, lintegral_smul_measure, lintegral_map hψ measurable_sqSum, smul_eq_mul]
+  haveI hfin₁ : IsFiniteMeasure ν₁ := by
+    constructor
+    rw [hν₁, Measure.map_apply measurable_sqSum MeasurableSet.univ, Set.preimage_univ,
+      withDensity_apply u MeasurableSet.univ, setLIntegral_univ]
+    exact hCfin.lt_top
+  haveI hfin₂ : IsFiniteMeasure ν₂ := by
+    constructor
+    rw [hν₂, Measure.smul_apply, smul_eq_mul,
+      Measure.map_apply measurable_sqSum MeasurableSet.univ, Set.preimage_univ,
+      measure_univ, mul_one]
+    exact hCfin.lt_top
+  -- the two Laplace transforms agree on `(-∞, 1/2)`
+  have hexpmeas : ∀ t : ℝ, Measurable (fun y : ℝ => ENNReal.ofReal (Real.exp (t * y))) :=
+    fun t => ENNReal.measurable_ofReal.comp (Real.measurable_exp.comp (measurable_const_mul t))
+  have hlap : ∀ t : ℝ, t < 1 / 2 →
+      (∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν₁
+          = ENNReal.ofReal ((Real.sqrt (1 - 2 * t))⁻¹ ^ N) * C
+        ∧ ∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν₂
+          = ENNReal.ofReal ((Real.sqrt (1 - 2 * t))⁻¹ ^ N) * C) := by
+    intro t ht
+    have hlam : (0 : ℝ) < 1 - 2 * t := by linarith
+    have hcoef : -((1 - 2 * t - 1) / 2) = t := by ring
+    constructor
+    · rw [hval₁ _ (hexpmeas t)]
+      have := lintegral_hom_exp_tilt (N := N) hu hhom hlam
+      rw [hcoef] at this
+      rw [show (fun x : Fin N → ℝ => u x * ENNReal.ofReal (Real.exp (t * sqSum x)))
+            = fun x => u x * ENNReal.ofReal (Real.exp (t * ∑ i, x i ^ 2)) from rfl]
+      exact this
+    · rw [hval₂ _ (hexpmeas t)]
+      have := lintegral_hom_exp_tilt (N := N) (u := fun _ => 1) measurable_const
+        (fun c _ x => rfl) hlam
+      rw [hcoef] at this
+      simp only [one_mul, lintegral_const, measure_univ, mul_one] at this
+      rw [show (fun x : Fin N → ℝ => ENNReal.ofReal (Real.exp (t * sqSum x)))
+            = fun x => ENNReal.ofReal (Real.exp (t * ∑ i, x i ^ 2)) from rfl, this,
+        mul_comm]
+  have hfinlap : ∀ t : ℝ, t < 1 / 2 →
+      ∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν₁ ≠ ⊤ := by
+    intro t ht
+    rw [(hlap t ht).1]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hCfin
+  have hint : ∀ (ν : Measure ℝ) (t : ℝ),
+      (∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν ≠ ⊤) →
+      Integrable (fun y => Real.exp (t * y)) ν := by
+    intro ν t htop
+    refine ⟨(Real.measurable_exp.comp (measurable_const_mul t)).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ (fun y => (Real.exp_pos _).le))]
+    exact lt_top_iff_ne_top.mpr htop
+  have hbochner : ∀ (ν : Measure ℝ) (t : ℝ),
+      ∫ y, Real.exp (t * y) ∂ν = (∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν).toReal := by
+    intro ν t
+    exact integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (fun y => (Real.exp_pos _).le))
+      (Real.measurable_exp.comp (measurable_const_mul t)).aestronglyMeasurable
+  have hfinlap₂ : ∀ t : ℝ, t < 1 / 2 →
+      ∫⁻ y, ENNReal.ofReal (Real.exp (t * y)) ∂ν₂ ≠ ⊤ := by
+    intro t ht
+    rw [(hlap t ht).2]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hCfin
+  have hkey : ν₁ = ν₂ := by
+    refine ext_of_integral_exp_eqOn (S := Set.Iio (1 / 2 : ℝ))
+      (by rw [interior_Iio]; exact ⟨0, by norm_num⟩)
+      (fun t ht => hint _ t (hfinlap t ht))
+      (fun t ht => hint _ t (hfinlap₂ t ht))
+      (fun t ht => ?_)
+    rw [hbochner, hbochner, (hlap t ht).1, (hlap t ht).2]
+  rw [← hval₁ φ hφ, hkey, hval₂ φ hφ]
+
+/-- **Radius independence.** A positively-scale-invariant `u` is uncorrelated with every
+measurable function of the squared radius under the standard product Gaussian. -/
+private lemma lintegral_hom_mul {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0∞}
+    (hu : Measurable u) (hhom : ∀ c : ℝ, 0 < c → ∀ x, u (c • x) = u x)
+    {φ : ℝ → ℝ≥0∞} (hφ : Measurable φ) :
+    ∫⁻ x, u x * φ (sqSum x) ∂(piGauss N 1)
+      = (∫⁻ x, u x ∂(piGauss N 1)) * ∫⁻ x, φ (sqSum x) ∂(piGauss N 1) := by
+  set μ : Measure (Fin N → ℝ) := piGauss N 1 with hμ
+  set w : ℕ → (Fin N → ℝ) → ℝ≥0∞ := fun n x => min (u x) (n : ℝ≥0∞) with hw
+  have hwmeas : ∀ n, Measurable (w n) := fun n => hu.min measurable_const
+  have hwhom : ∀ n, ∀ c : ℝ, 0 < c → ∀ x, w n (c • x) = w n x := by
+    intro n c hc x; rw [hw]; simp only [hhom c hc x]
+  have hwmono : Monotone w := by
+    intro a b hab x
+    exact min_le_min le_rfl (by exact_mod_cast Nat.cast_le.mpr hab)
+  have hwsup : ∀ x, ⨆ n, w n x = u x := by
+    intro x
+    refine le_antisymm (iSup_le (fun n => min_le_left _ _)) ?_
+    exact le_of_forall_lt (fun b hb => by
+      obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (ne_top_of_lt hb)
+      exact lt_of_lt_of_le (lt_min hb hn) (le_iSup (fun n => w n x) n))
+  have hstep : ∀ n, ∫⁻ x, w n x * φ (sqSum x) ∂μ
+      = (∫⁻ x, w n x ∂μ) * ∫⁻ x, φ (sqSum x) ∂μ :=
+    fun n => lintegral_hom_mul_bounded (hwmeas n) (hwhom n)
+      (ENNReal.natCast_ne_top n) (fun x => min_le_right _ _) hφ
+  have hφc : Measurable (fun x : Fin N → ℝ => φ (sqSum x)) := hφ.comp measurable_sqSum
+  have hL : ∫⁻ x, u x * φ (sqSum x) ∂μ = ⨆ n, ∫⁻ x, w n x * φ (sqSum x) ∂μ := by
+    rw [← lintegral_iSup (fun n => (hwmeas n).mul hφc)
+      (fun a b hab x => mul_le_mul' (hwmono hab x) le_rfl)]
+    refine lintegral_congr (fun x => ?_)
+    rw [← hwsup x, ENNReal.iSup_mul]
+  have hR : ∫⁻ x, u x ∂μ = ⨆ n, ∫⁻ x, w n x ∂μ := by
+    rw [← lintegral_iSup hwmeas (fun a b hab x => hwmono hab x)]
+    exact lintegral_congr (fun x => (hwsup x).symm)
+  rw [hL, hR, ENNReal.iSup_mul]
+  exact iSup_congr hstep
+
+
 /-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
 the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
 against every measurable degree-`2r` location-scale-equivariant competitor.
