@@ -1,5 +1,6 @@
 import StatLean.PointEstimation.Equivariance.ConditionalRiskEngine
 import StatLean.PointEstimation.Equivariance.ScaleStructure
+import StatLean.PointEstimation.Equivariance.LocationMRE
 import Mathlib.Analysis.Convex.Function
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
@@ -42,6 +43,17 @@ with Corollaries 3.4 and 3.8 (the convex form and the explicit MRE of `τʳ`). (
   which is what turns the multiplicative fibrewise minimization into the additive one
   solved in the location case; the accompanying positivity of the reference estimator is
   the "without loss of generality `δ ≥ 0`" of the classical argument, made explicit.
+* **The existence statement degenerates and does not use the conditional minimization.**
+  A *strictly positive* equivariant estimator forces `r = 0` (`degree_eq_zero_of_pos`:
+  equivariance at `x = 0` gives `δ₀ 0 = τʳ · δ₀ 0`), and at degree `0` every constant is
+  equivariant. So it is enough that `γ` attain its minimum at a positive point — convexity
+  and non-monotonicity of `v ↦ γ(eᵛ)` give a minimizer `v₀` on the positive axis, and
+  `hposmin` says nothing off it undercuts that value — and then the *constant* estimator
+  `e^{v₀}` beats every competitor pointwise, hence in risk. The hypotheses `hγ`, `hδ₀`,
+  `hfin` and `hnull` are therefore not consumed; they are kept because the statement is the
+  classical Corollary 3.4, whose intended proof route (fibrewise minimization through
+  `isScaleMRE_of_conditional_min`) does need them. The same degeneracy is what collapses
+  `isScaleMRE_steinLoss` and `isScaleMRE_standardizedSquared` to risk `0`.
 * Stein's loss is stated with the conditional mean, matching the classical form. The
   classical statement asserts *uniqueness* of the minimizer; only optimality is
   formalized here.
@@ -64,7 +76,7 @@ admissibility of Pitman's estimator of a single location parameter," *Ann. Math.
 **30** (1959), 970–979.
 -/
 
-open MeasureTheory
+open MeasureTheory Filter
 open scoped ENNReal ProbabilityTheory
 
 namespace StatLean.PointEstimation
@@ -302,23 +314,38 @@ theorem exists_isScaleMRE_of_convex (P₀ : Measure (Fin (m + 1) → ℝ))
     -- vacuously.
     (hposmin : ∀ u : ℝ, ∃ v : ℝ, 0 < v ∧ γ v ≤ γ u) :
     ∃ δ, IsScaleMRE P₀ γ r δ := by
-  -- RETAINED DEBT (pe/argmin-2): the measurable-argmin obstruction is now RESOLVED — the
-  -- location twin `exists_measurable_condMinimizer_convex` is CLOSED axiom-clean, and its
-  -- three fibrewise inputs generalize verbatim through the log-reparametrization `w = eᵛ`:
-  -- with `δ₀ x / w = e^{log(δ₀ x) − v}` (using `h₀pos`), the fibre objective becomes the
-  -- location objective `tObj z v = ∫⁻ x, ofReal ((γ ∘ exp) (log (δ₀ x) − v)) ∂κ_z`, whose
-  -- convexity/LSC/coercivity are `locObj_convexOn`/`locObj_lowerSemicontinuous`/
-  -- `locObj_tendsto_top` (in `LocationMRE`) at `ρ := γ ∘ exp` (convex non-monotone by
-  -- hypothesis) and `δ₀ := log ∘ δ₀`, and `exists_measurable_argmin_of_convex` then yields a
-  -- measurable `vStar` with `wStar := exp ∘ vStar > 0` a.e. minimizing over all POSITIVE `w`.
-  -- The genuinely remaining step is the all-`w` (incl. `w ≤ 0`) domination: `hposmin` gives
-  -- it, but only after an `∫⁻`-level argument reducing `∫⁻ ofReal (γ (δ₀ x / w))` for `w ≤ 0`
-  -- to the positive axis (not pointwise — `hposmin` is per-value), which is separate
-  -- bookkeeping not yet formalized. TODO: (i) build `tObj` and its finiteness point at `v=0`
-  -- via disintegration (mirror `exists_measurable_condMinimizer_convex`); (ii) transport the
-  -- positive-`w` minimality to all `w` through `hposmin`; (iii) apply
-  -- `isScaleMRE_of_conditional_min`.
-  sorry
+  -- The fibrewise route through `isScaleMRE_of_conditional_min` is not needed: under these
+  -- hypotheses the problem collapses, exactly as it does for `isScaleMRE_steinLoss` and
+  -- `isScaleMRE_standardizedSquared`. Indeed `h₀pos` forces `r = 0` (`degree_eq_zero_of_pos`),
+  -- and at degree `0` every constant is equivariant, so it suffices to exhibit a positive
+  -- global minimizer of the loss: the constant estimator at that point beats *every*
+  -- estimator pointwise, equivariant or not.
+  obtain rfl : r = 0 := degree_eq_zero_of_pos heq₀ h₀pos
+  -- `ρ = γ ∘ exp` is convex and, being neither monotone nor antitone, blows up at both ends,
+  -- so it attains its minimum at some `v₀`; put `u₀ = e^{v₀} > 0`.
+  have hcoer : Tendsto (fun v => γ (Real.exp v)) (cocompact ℝ) atTop := by
+    rw [cocompact_eq_atBot_atTop, Filter.tendsto_sup]
+    exact ⟨tendsto_atBot_of_convex_not_monotone hconv hnotmono.1,
+      tendsto_atTop_of_convex_not_antitone hconv hnotmono.2⟩
+  obtain ⟨v₀, hv₀⟩ := exists_min_of_convexOn_of_coercive hconv hcoer
+  set u₀ : ℝ := Real.exp v₀ with hu₀def
+  have hu₀pos : 0 < u₀ := Real.exp_pos v₀
+  -- `u₀` minimizes `γ` on the positive axis by construction, and `hposmin` extends this to
+  -- the whole line: nothing off the positive axis undercuts the positive-axis minimum.
+  have hglob : ∀ u : ℝ, γ u₀ ≤ γ u := by
+    have hpos : ∀ u : ℝ, 0 < u → γ u₀ ≤ γ u := by
+      intro u hu
+      simpa [hu₀def, Real.exp_log hu] using hv₀ (Real.log u)
+    intro u
+    rcases lt_or_ge 0 u with hu | hu
+    · exact hpos u hu
+    · obtain ⟨v, hvpos, hvle⟩ := hposmin u
+      exact (hpos v hvpos).trans hvle
+  -- The constant estimator `u₀` is measurable, equivariant of degree `0`, and its loss is
+  -- everywhere the smallest value of `γ`, so its risk dominates no competitor's.
+  refine ⟨fun _ => u₀, measurable_const, fun τ _ x => by simp, fun δ' _ _ => ?_⟩
+  unfold scaleRisk
+  exact lintegral_mono fun x => ENNReal.ofReal_le_ofReal (hglob (δ' x))
 
 /-- **The minimum risk equivariant estimator of `τ^r` under Stein's loss** is the
 reference equivariant estimator divided by its conditional mean given the maximal
