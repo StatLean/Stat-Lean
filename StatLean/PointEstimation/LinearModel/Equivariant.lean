@@ -423,6 +423,138 @@ private lemma canonicalRSS_smul_add_canonicalMean (c : ℝ) (a : Fin s → ℝ)
     rw [Fin.append_right]; rfl
   rw [PiLp.smul_apply, PiLp.add_apply, hmean, add_zero, smul_eq_mul, mul_pow]
 
+/-! ### Gaussian scaling bricks (private scaffolding)
+
+The location-scale optimality below rests on one analytic fact about the isotropic Gaussian:
+a function invariant under positive scalings is *uncorrelated with the radius*. It is derived
+here from the exact Gaussian tilt identity — tilting the standard product Gaussian by
+`exp(-((λ−1)/2)‖x‖²)` is the same as changing the variance from `1` to `1/λ`, which a
+scale-invariant integrand cannot see. -/
+
+/-- Product of `N` centred Gaussians of variance `v` on `Fin N → ℝ`. -/
+private noncomputable def piGauss (N : ℕ) (v : ℝ≥0) : Measure (Fin N → ℝ) :=
+  Measure.pi fun _ : Fin N => gaussianReal 0 v
+
+private instance instIsProbPiGauss (N : ℕ) (v : ℝ≥0) :
+    IsProbabilityMeasure (piGauss N v) := by
+  unfold piGauss; infer_instance
+
+private lemma piGauss_withDensity (N : ℕ) {v : ℝ≥0} (hv : v ≠ 0) :
+    piGauss N v
+      = (volume : Measure (Fin N → ℝ)).withDensity
+          (fun x => ∏ i, gaussianPDF 0 v (x i)) := by
+  have h_each : (fun _ : Fin N => gaussianReal (0 : ℝ) v)
+      = fun _ : Fin N => (volume : Measure ℝ).withDensity (gaussianPDF 0 v) := by
+    funext _; exact gaussianReal_of_var_ne_zero 0 hv
+  haveI : SigmaFinite ((volume : Measure ℝ).withDensity (gaussianPDF (0 : ℝ) v)) := by
+    rw [← gaussianReal_of_var_ne_zero (0 : ℝ) hv]; infer_instance
+  rw [piGauss, h_each, ← pi_withDensity_prod (fun _ : Fin N => measurable_gaussianPDF (0 : ℝ) v),
+    ← volume_pi]
+
+private lemma piGauss_map_smul (N : ℕ) (c : ℝ) :
+    (piGauss N 1).map (fun x => c • x) = piGauss N ⟨c ^ 2, sq_nonneg c⟩ := by
+  have hf : ∀ _ : Fin N, AEMeasurable (fun t : ℝ => c * t) (gaussianReal 0 1) :=
+    fun _ => (measurable_const_mul c).aemeasurable
+  have hmap : ∀ _ : Fin N, (gaussianReal (0 : ℝ) 1).map (fun t : ℝ => c * t)
+      = gaussianReal 0 ⟨c ^ 2, sq_nonneg c⟩ := by
+    intro _
+    rw [gaussianReal_map_const_mul (c := c), mul_zero, mul_one]
+  haveI : ∀ _ : Fin N, SigmaFinite ((gaussianReal (0 : ℝ) 1).map (fun t : ℝ => c * t)) := by
+    intro i; rw [hmap i]; infer_instance
+  have hcast : (fun x : Fin N → ℝ => c • x) = fun (x : Fin N → ℝ) (i : Fin N) => c * x i := rfl
+  rw [piGauss, piGauss, hcast, Measure.pi_map_pi hf]
+  exact congrArg Measure.pi (funext hmap)
+
+/-- The product of `N` centred Gaussian densities of variance `w`, in closed form. -/
+private lemma prod_gaussianPDFReal (N : ℕ) (w : ℝ≥0) (x : Fin N → ℝ) :
+    ∏ i, gaussianPDFReal 0 w (x i)
+      = (Real.sqrt (2 * Real.pi * w))⁻¹ ^ N
+          * Real.exp (-(∑ i, x i ^ 2) / (2 * (w : ℝ))) := by
+  simp only [gaussianPDFReal, sub_zero]
+  rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  congr 1
+  rw [← Real.exp_sum]
+  congr 1
+  rw [neg_div, ← Finset.sum_div, Finset.sum_neg_distrib, neg_div]
+
+/-- **Gaussian tilt identity.** For a measurable function `u` that is invariant under positive
+scalings, tilting the standard product Gaussian by `exp(-((λ−1)/2)‖x‖²)` only multiplies the
+integral of `u` by the constant `λ^{−N/2}` — the tilt is exactly a change of variance, and `u`
+does not see it. -/
+private lemma lintegral_hom_exp_tilt {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0∞}
+    (hu : Measurable u) (hhom : ∀ c : ℝ, 0 < c → ∀ x, u (c • x) = u x)
+    {lam : ℝ} (hlam : 0 < lam) :
+    ∫⁻ x, u x * ENNReal.ofReal (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2)) ∂(piGauss N 1)
+      = ENNReal.ofReal ((Real.sqrt lam)⁻¹ ^ N) * ∫⁻ x, u x ∂(piGauss N 1) := by
+  have hsl : 0 < Real.sqrt lam := Real.sqrt_pos.mpr hlam
+  set c : ℝ := (Real.sqrt lam)⁻¹ with hc_def
+  have hcpos : 0 < c := by rw [hc_def]; positivity
+  set v : ℝ≥0 := ⟨c ^ 2, sq_nonneg c⟩ with hv_def
+  have hvcoe : (v : ℝ) = lam⁻¹ := by
+    rw [hv_def]
+    show c ^ 2 = lam⁻¹
+    rw [hc_def, inv_pow, Real.sq_sqrt hlam.le]
+  have hvne : v ≠ 0 := by
+    intro h
+    have : (v : ℝ) = 0 := by rw [h]; simp
+    rw [hvcoe] at this
+    exact absurd this (by positivity)
+  -- the pointwise density identity
+  have hdens : ∀ x : Fin N → ℝ,
+      (∏ i, gaussianPDF 0 1 (x i)) * ENNReal.ofReal
+          (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2))
+        = ENNReal.ofReal ((Real.sqrt lam)⁻¹ ^ N) * ∏ i, gaussianPDF 0 v (x i) := by
+    intro x
+    have hprod : ∀ w : ℝ≥0, ∏ i, gaussianPDF 0 w (x i)
+        = ENNReal.ofReal (∏ i, gaussianPDFReal 0 w (x i)) := by
+      intro w
+      simp only [gaussianPDF_def]
+      rw [← ENNReal.ofReal_prod_of_nonneg (fun i _ => gaussianPDFReal_nonneg _ _ _)]
+    rw [hprod, hprod, ← ENNReal.ofReal_mul (Finset.prod_nonneg
+        (fun i _ => gaussianPDFReal_nonneg _ _ _)),
+      ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
+    rw [prod_gaussianPDFReal, prod_gaussianPDFReal, hvcoe, NNReal.coe_one, mul_one]
+    have hlne : lam ≠ 0 := hlam.ne'
+    have hconst : (Real.sqrt lam)⁻¹ ^ N * (Real.sqrt (2 * Real.pi * lam⁻¹))⁻¹ ^ N
+        = (Real.sqrt (2 * Real.pi))⁻¹ ^ N := by
+      have hcancel : lam * (2 * Real.pi * lam⁻¹) = 2 * Real.pi := by field_simp
+      rw [← mul_pow, ← mul_inv, ← Real.sqrt_mul hlam.le, hcancel]
+    have hexp : (-(∑ i, x i ^ 2)) / (2 * 1) + -((lam - 1) / 2) * ∑ i, x i ^ 2
+        = (-(∑ i, x i ^ 2)) / (2 * lam⁻¹) := by
+      field_simp
+      ring
+    rw [mul_assoc, ← Real.exp_add, ← mul_assoc, hconst, hexp]
+  -- rewrite both sides as Lebesgue integrals against the explicit densities
+  have hmeasD : ∀ w : ℝ≥0, Measurable (fun x : Fin N → ℝ => ∏ i, gaussianPDF 0 w (x i)) :=
+    fun w => Finset.measurable_prod _
+      (fun i _ => (measurable_gaussianPDF 0 w).comp (measurable_pi_apply i))
+  have hmeasE : Measurable (fun x : Fin N → ℝ =>
+      ENNReal.ofReal (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2))) := by
+    refine ENNReal.measurable_ofReal.comp (Real.measurable_exp.comp ?_)
+    exact measurable_const.mul (Finset.measurable_sum _
+      (fun i _ => (measurable_pi_apply i).pow_const 2))
+  have hstep1 : ∫⁻ x, u x * ENNReal.ofReal
+        (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2)) ∂(piGauss N 1)
+      = ENNReal.ofReal ((Real.sqrt lam)⁻¹ ^ N) * ∫⁻ x, u x ∂(piGauss N v) := by
+    rw [piGauss_withDensity N (one_ne_zero), piGauss_withDensity N hvne,
+      lintegral_withDensity_eq_lintegral_mul _ (hmeasD 1) (hu.mul hmeasE),
+      lintegral_withDensity_eq_lintegral_mul _ (hmeasD v) hu]
+    simp only [Pi.mul_apply]
+    rw [← lintegral_const_mul _ ((hmeasD v).mul hu)]
+    refine lintegral_congr (fun x => ?_)
+    rw [show (∏ i, gaussianPDF 0 1 (x i)) * (u x * ENNReal.ofReal
+          (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2)))
+        = ((∏ i, gaussianPDF 0 1 (x i)) * ENNReal.ofReal
+          (Real.exp (-((lam - 1) / 2) * ∑ i, x i ^ 2))) * u x from by ring,
+      hdens x, mul_assoc]
+  rw [hstep1]
+  congr 1
+  rw [show v = ⟨c ^ 2, sq_nonneg c⟩ from rfl, ← piGauss_map_smul N c,
+    lintegral_map hu (measurable_const_smul c)]
+  exact lintegral_congr (fun x => hhom c hcpos x)
+
+
 /-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
 the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
 against every measurable degree-`2r` location-scale-equivariant competitor.
