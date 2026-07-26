@@ -374,6 +374,43 @@ private lemma exists_smoothed_convex_indicator (k : ℕ) :
   -- TODO (planned debt): ContDiffBump convolution; see docstring.
   sorry
 
+/-- **[Planned debt — dimension-free norm derivative bounds absent from Mathlib v4.29.1]**
+Smoothed **radial** indicator with an *absolute* (dimension-free) third-derivative constant.
+There is a constant `C₃` (independent of the dimension `k`, the radius `a` and the width `ε`)
+such that for every ball `{‖z‖ ≤ a}` with `0 ≤ a` and every width `0 < ε ≤ a` there is a smooth
+`f : ℝ^k → [0,1]`, equal to `1` on `{‖z‖ ≤ a}`, vanishing on `{‖z‖ > a + ε}`, with
+`‖D³f‖ ≤ C₃ / ε³`. This is the radial analogue of `exists_smoothed_convex_indicator`, and unlike
+the convex one its constant is genuinely dimension-free, because it is built from a
+*one-dimensional* cutoff composed with the norm.
+
+Construction: `f = χ ∘ ‖·‖`, where `χ : ℝ → [0,1]` is a fixed smooth cutoff with `χ = 1` on
+`(-∞, a]`, `χ = 0` on `[a + ε, ∞)` and `‖χ⁽ʲ⁾‖ ≤ Bⱼ ε⁻ʲ` (e.g.
+`1 - Real.smoothTransition ((· - a)/ε)`, whose derivatives are bounded by absolute constants
+`Bⱼ` since `smoothTransition` is constant off
+`[0,1]`). Since `a > 0`, `f ≡ 1` on a neighbourhood of `0`, so the non-smoothness of `‖·‖` at the
+origin is invisible and `f` is globally `C³`. The third-derivative bound is Faà di Bruno
+(`norm_iteratedFDeriv_comp_le`): on the support `‖z‖ ∈ [a, a+ε]` one has `‖Dⁱ‖·‖‖ ≤ cᵢ ‖z‖^{1-i}`
+with **dimension-free** `cᵢ` (`‖D‖·‖‖ = 1`, `‖D²‖·‖‖ ≲ ‖z‖⁻¹`, `‖D³‖·‖‖ ≲ ‖z‖⁻²`), and combining
+with `‖χ⁽ʲ⁾‖ ≤ Bⱼ ε⁻ʲ` and `‖z‖ ≥ a ≥ ε` gives `‖D³f‖ ≤ C₃ ε⁻³` with `C₃` absolute.
+
+TODO: the two missing quantitative bricks are (i) an explicit `∀ x, |smoothTransition⁽ʲ⁾ x| ≤ Bⱼ`
+(provable from `smoothTransition` constant off `[0,1]` + continuity on the compact `[0,1]`), and
+(ii) **dimension-free iterated-derivative bounds for the Euclidean norm away from `0`**,
+`‖iteratedFDeriv ℝ i (‖·‖) z‖ ≤ cᵢ ‖z‖^{1-i}` for `‖z‖ > 0`, which Mathlib v4.29.1 does not
+provide (it has `contDiffAt_norm`/smoothness away from `0` but no quantitative iterated bounds).
+The hypothesis `ε ≤ a` records honestly that the elementary `χ ∘ ‖·‖` route yields a
+dimension-free, `a`-uniform `C₃` only for `ε ≤ a`; for tiny balls (`ε > a`) the norm's second
+derivative `≈ ‖z‖⁻¹` is not controlled by `ε⁻¹`, which is exactly the small-radius gap the ball
+assembly `berryEsseen_ball_elementary` handles separately. -/
+private lemma exists_smoothed_radial_indicator :
+    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ (k : ℕ) (a : ℝ), 0 ≤ a → ∀ {ε : ℝ}, 0 < ε → ε ≤ a →
+      ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
+        ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
+        (∀ x, ‖x‖ ≤ a → f x = 1) ∧ (∀ x, a + ε < ‖x‖ → f x = 0) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
+  -- TODO (planned debt): 1-D cutoff composed with the norm; see docstring.
+  sorry
+
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
 For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
 identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
@@ -399,6 +436,48 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
           + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
           / Real.sqrt (n : ℝ) := by
   -- TODO (planned debt): telescoping Lindeberg swap over the n summands; see docstring.
+  sorry
+
+/-- **Elementary ball Berry–Esseen bound, with a dimension-free constant (honest, non-sharp).**
+There is an *absolute* constant `C` — independent of the dimension `k`, the sample size `n` and
+the sampling law `ν` — such that the normal approximation to the law of `‖n^{-1/2} ∑ᵢ Yᵢ‖²` over
+half-lines `{‖z‖² ≤ t}` is accurate to `C · (β/√n)^{1/4}`, where `β = ∫‖y‖³ dν`. This is the
+*honest* output of the elementary "smooth the indicator + Lindeberg swap" route for **balls**:
+the constant is dimension-free (the ball anti-concentration `gaussian_ball_shell_measure_le` and
+the radial smoothing `exists_smoothed_radial_indicator` both have dimension-free constants), but
+the rate is `(β/√n)^{1/4} = n^{-1/8}`, **not** Bentkus's `β/√n = n^{-1/2}`. The degradation is
+intrinsic to the mollifier method (see the module docstring).
+
+Assembly (the `ε`-optimisation): for the set `{‖z‖ ≤ s}` (`s = √t`) sandwich the indicator between
+two smoothed radial indicators of widths `ε` (`exists_smoothed_radial_indicator`); the swap
+`abs_integral_smooth_sub_gaussian_le` bounds `|E f(Sₙ) − E f(G)| ≤ (C₃/ε³)(β + β_G)/(6√n)`, and the
+Gaussian shell mass of `{s < ‖z‖ ≤ s+ε}` is `≤ C_ac ε` (`gaussian_ball_shell_measure_le`). Adding
+and choosing `ε = (β/√n)^{1/4}` balances `ε⁻³ · β/√n` against `ε` at `(β/√n)^{1/4}`.
+
+TODO (planned debt): the assembly still consumes four bricks — `exists_smoothed_radial_indicator`
+and `abs_integral_smooth_sub_gaussian_le` (both `sorry`, on the Mathlib gaps stated at those
+lemmas), `gaussian_ball_shell_measure_le` (proved modulo the `Γ`-Stirling brick
+`chiSquared_density_mul_sqrt_le`), and two elementary facts recorded here for the final assembly:
+(a) `β_G := ∫‖z‖³ dN(0,I_k) ≤ 3 β` under identity covariance (via Lyapunov `β ≥ (E‖Y‖²)^{3/2} =
+k^{3/2}` and the Gaussian moment `E‖G‖⁴ = k(k+2)`, giving `β_G ≤ (k(k+2))^{3/4} ≤ 3 k^{3/2}`), and
+(b) `β > 0` (so `ε > 0`), again from `∫‖y‖² dν = k > 0`. The small-radius case `√t < ε`, where
+`exists_smoothed_radial_indicator`'s `ε ≤ a` hypothesis fails, is handled by comparing at the
+enlarged radius `ε`: `G{‖z‖ ≤ √t} ≤ G{‖z‖ ≤ ε} ≤ C_ac ε` (shell at `t = 0`) and the swap at width
+`ε` bounds `μ_S{‖z‖ ≤ √t}` accordingly. None of these is blocked on new mathematics; they are
+deferred only because the two principal bricks above are. -/
+theorem berryEsseen_ball_elementary :
+    ∃ C : ℝ, 0 < C ∧ ∀ (k n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (t : ℝ),
+      0 < n → 0 < k → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k),
+        (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν →
+      |((((Measure.pi fun _ : Fin n => ν)).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) {z | ‖z‖ ^ 2 ≤ t}).toReal
+          - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+              {z | ‖z‖ ^ 2 ≤ t}).toReal|
+        ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
+  -- TODO (planned debt): ε-optimisation assembly from the four bricks; see docstring.
   sorry
 
 /-- **Elementary convex-set Berry–Esseen bound (honest, non-sharp).**
