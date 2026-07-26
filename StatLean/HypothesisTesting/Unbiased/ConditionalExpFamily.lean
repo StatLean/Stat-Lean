@@ -47,6 +47,11 @@ conditioning on `T`). (`TSH4 §4.4 Lem 4.4.1`.)
   here (`νt`, `Ct`) is meant to be read off from that brick applied to the joint density
   `exp(θu + ⟪ϑ,t⟫)`, in which the `ϑ`-dependent factor `exp⟪ϑ,t⟫` is `u`-free and hence
   cancels between numerator and normalizer.
+* **Signature amendment.** `condDistrib_expFamily_of_isCanonicalUT` and
+  `condDistrib_eq_of_fst_eq` carry an added instance `[OpensMeasurableSpace Ξ]`: without it
+  the σ-algebra of `Ξ` is unrelated to its topology, the canonical density need not be
+  measurable, and neither `withDensity_mul` nor the tilt engine applies. It is documented at
+  each theorem; `[SecondCountableTopology Ξ]` is *not* needed.
 * `IsCanonicalUT` is a predicate on a supplied family rather than a bundled structure, so
   that a model may be presented in any parametrization and identified with the canonical
   form only on the parameter set `Ω` actually used. Off `Ω` it says nothing.

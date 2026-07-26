@@ -23,6 +23,13 @@ problem **conditionally on `T = t`** and reinterpreting the result as a test of 
 The names `_inside` / `_outside` refer to the shape of the rejection region in `u`, not to
 the shape of the null set.
 
+**⚠ The four optimality theorems are FALSE in the frozen form transcribed here** — not
+because the classical result fails, but because the transcription drops the source's
+standing convention that the observation *is* the sufficient statistic. Explicit
+counterexamples are formalized in the section
+`ConditionalUMPUCounterexample` below, one per theorem; the diagnosis and the minimal repair
+are stated there.
+
 The constants are functions of `t`, determined by conditional size equations; the point-null
 case carries in addition the conditional derivative condition
 `E_{θ₀}[U·φ ∣ t] = α·E_{θ₀}[U ∣ t]`, which is what unbiasedness contributes and which may
@@ -35,6 +42,8 @@ Contents:
 * `isUMPU_conditional_oneSided` / `_inside` / `_outside` / `_point` — the four optimality
   theorems;
 * `exists_measurable_conditional_constants` — measurable selection of the constants;
+* `ConditionalUMPUCounterexample.not_isUMPU_conditional_*_counterexample` — the four
+  refutations of the frozen optimality statements;
 * `reparamUT`, `statTransformUT`, `inner_exponent_reparam`, `isCanonicalUT_reparam` — the
   reduction to canonical form for a parameter of interest `θ* = a₀θ + ⟪a, ϑ⟫`.
 
@@ -520,15 +529,23 @@ theorem isUMPU_conditional_oneSided
       ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₀} {p ∈ Ω | θ₀ < p.1} α
       (fun x => condOneSidedTest C₀ γ₀ (U x, T x)) := by
-  -- BLOCKED. Route unchanged — (1) reduce to the boundary surface `θ = θ₀` via
-  -- `PowerContinuity.isUMPU_of_isUMP_on_boundary`; (2) similar ⟺ Neyman structure by
-  -- `SimilarityCompleteness` + completeness of the `T`-laws on the slice; (3) apply conditional
-  -- Neyman–Pearson to the one-parameter conditional exp family — but the two binding obstructions
-  -- are now: (a) `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`, itself blocked on
-  -- `[OpensMeasurableSpace Ξ] [SecondCountableTopology Ξ]` (the nuisance factor `t ↦ exp⟪ϑ,t⟫`
-  -- measurability — `CondDistribTilt` is now CLOSED, so it is no longer the block); and
-  -- (b) `PowerContinuity.continuous_power_expFamily`, still an open analytic debt (differentiation
-  -- under the integral for the exp-family power). Both are required by the assembly. Reported.
+  -- FALSE AS STATED — refuted by the formalized counterexample
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_oneSided_counterexample`, which
+  -- exhibits data satisfying *every* hypothesis above (with `θ₀ = 0`, `α = 1/2`, `Ω = univ`)
+  -- and disproves the conclusion. Diagnosis: `IsCanonicalUT` constrains only the law of
+  -- `(U, T)`, while `IsUMPU` demands optimality against every critical function on `𝓧`; with
+  -- `U`, `T` constant the hypothesis holds vacuously and the auxiliary randomness of `𝓧` beats
+  -- the conditional test. See the file's counterexample section for the diagnosis and the
+  -- minimal repair (state the theorem for the model of the sufficient statistic, or assume
+  -- `(U, T)` sufficient). Two further gaps survive the repair and are NOT addressed here:
+  -- `PowerContinuity.isUMPU_of_isUMP_on_boundary` needs power continuity, which for
+  -- exponential families is false without `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`
+  -- (see the counterexample in `continuous_power_expFamily`), and the similar ⟹ Neyman
+  -- structure step needs completeness of the `T`-laws on the boundary slice, available in the
+  -- repository (`PointEstimation.Completeness.ExpFamily.isCompleteStat_of_interior_nonempty`)
+  -- only for `EuclideanSpace ℝ (Fin s)`. Both earlier cited blockers are now CLOSED:
+  -- `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT` and
+  -- `PowerContinuity.continuous_power_expFamily`.
   sorry
 
 /-- **Null outside an interval.** For `H : θ ≤ θ₁ or θ ≥ θ₂` against `K : θ₁ < θ < θ₂`, the
@@ -567,11 +584,10 @@ theorem isUMPU_conditional_inside
       ∫ u, condInsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₁ ∨ θ₂ ≤ p.1} {p ∈ Ω | θ₁ < p.1 ∧ p.1 < θ₂} α
       (fun x => condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- BLOCKED as `isUMPU_conditional_oneSided`, with two boundary surfaces `θ = θ₁, θ = θ₂` and the
-  -- conditional generalized Neyman–Pearson (two size constraints) for the reject-inside test. Same
-  -- two blocks: the conditional exp-family form (needs `[OpensMeasurableSpace Ξ]
-  -- [SecondCountableTopology Ξ]`; `CondDistribTilt` is now closed) and the open
-  -- `continuous_power_expFamily`. Reported.
+  -- FALSE AS STATED — refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_inside_counterexample`
+  -- (`θ₁ = 0 < θ₂ = 1`, `α = 1/2`, `Ω = univ`), same diagnosis and same repair as
+  -- `isUMPU_conditional_oneSided`.
   sorry
 
 /-- **Interval null.** For `H : θ₁ ≤ θ ≤ θ₂` against `K : θ < θ₁ or θ > θ₂`, the conditional
@@ -610,10 +626,10 @@ theorem isUMPU_conditional_outside
       ∫ u, condOutsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | θ₁ ≤ p.1 ∧ p.1 ≤ θ₂} {p ∈ Ω | p.1 < θ₁ ∨ θ₂ < p.1} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- BLOCKED: interval-null dual of `isUMPU_conditional_inside` (reject-outside test, two size
-  -- constraints on `θ = θ₁, θ = θ₂`). Same two blocks — conditional exp-family form (needs
-  -- `[OpensMeasurableSpace Ξ] [SecondCountableTopology Ξ]`; `CondDistribTilt` now closed) and the
-  -- open `continuous_power_expFamily`. Reported.
+  -- FALSE AS STATED — refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_outside_counterexample`
+  -- (`θ₁ = 0 < θ₂ = 1`, `α = 1/2`, `Ω = univ`), same diagnosis and same repair as
+  -- `isUMPU_conditional_oneSided`.
   sorry
 
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
@@ -659,11 +675,11 @@ theorem isUMPU_conditional_point
         = α * ∫ u, u ∂(condDistrib U T (P p) t)) :
     IsUMPU P {p ∈ Ω | p.1 = θ₀} {p ∈ Ω | p.1 ≠ θ₀} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- BLOCKED: point-null conditional UMPU. As `isUMPU_conditional_outside` but the single surface
-  -- `θ = θ₀` carries BOTH the conditional size and conditional derivative (`hsize`, `hderiv`)
-  -- constraints — unbiasedness at the interior minimum. Same two blocks: conditional exp-family
-  -- form (needs `[OpensMeasurableSpace Ξ] [SecondCountableTopology Ξ]`; `CondDistribTilt` now
-  -- closed) and the open `continuous_power_expFamily`. Reported.
+  -- FALSE AS STATED — refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample` (`θ₀ = 0`,
+  -- `α = 1/2`, `Ω = univ`); there the conditional derivative condition `hderiv` also holds,
+  -- both sides being `0` because the interest statistic is constant. Same diagnosis and same
+  -- repair as `isUMPU_conditional_oneSided`.
   sorry
 
 /-! ## Measurable selection of the conditional constants -/
