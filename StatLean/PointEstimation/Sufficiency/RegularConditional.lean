@@ -34,12 +34,18 @@ conditional distribution given a sufficient statistic). (`TSH4 Thm 2.6.1`.)
 * `[Nonempty 𝓧]` is a technical requirement of Mathlib's disintegration API (a Markov kernel
   must have somewhere to put its mass) and is no restriction: the family consists of
   probability measures, so the sample space is nonempty whenever the parameter set is.
-* The general (undominated) version genuinely needs the gluing argument — choose
-  determinations along a countable generating algebra, repair finite additivity and
-  continuity at `∅` on a null set, and extend by Carathéodory — which on standard Borel
-  spaces goes through the regularity of the associated conditional distribution functions.
-  It is **DEFERRAL-ELIGIBLE**: a named planned debt, pre-agreed for this campaign. Nothing in
-  the area consumes it; every downstream user routes through the dominated version.
+* The general (undominated) version genuinely needs the gluing argument: the per-`θ`
+  disintegrations `Q_θ` agree only `statLaw P T θ`-almost everywhere, and for an uncountable
+  parameter set no single `Q_θ` can serve (take `P θ = δ_θ` on `ℝ` with `T = id`: the kernel
+  is pinned down at *every* point of `S`). One has to build the kernel from the θ-free
+  per-event determinations themselves. On a standard Borel sample space that is done through
+  the conditional distribution *functions*: embed `𝓧` into `ℝ`, read a rational CDF off the
+  determinations of the half-lines, and let Mathlib's `stieltjesOfMeasurableRat` perform the
+  repair off the bad set. It is **DEFERRAL-ELIGIBLE**: a named planned debt, pre-agreed for
+  this campaign. Nothing in the area consumes it; every downstream user routes through the
+  dominated version. The full route, with the Mathlib declarations it uses, is written out on
+  the theorem itself — the obstruction is the volume of `Unit`-indexed kernel/measure
+  plumbing and the two π-system extensions, not a missing brick.
 * Both statements deliver the graph/compProd carrier `HasSufficientKernel` rather than a
   bare reconstruction identity, so that the fiber property of `Sufficiency.Basic` comes for
   free at the point of use.
@@ -147,13 +153,40 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
-  -- TODO (DEFERRAL-ELIGIBLE, named planned debt): glue the per-event determinations of
-  -- `hsuf` into a single Markov kernel. Choose determinations `κ_{A_n}` along a countable
-  -- generating algebra `{A_n}` of `𝓧`, repair finite additivity in `A` and continuity at
-  -- `∅` off a `statLaw`-null set of `t`, and extend by Carathéodory to a genuine kernel
-  -- `Q : S ⇝ 𝓧`; on a standard Borel `𝓧` this goes through the regularity of the associated
-  -- conditional distribution functions. No result in this area consumes this theorem: every
-  -- downstream user routes through `hasSufficientKernel_of_isSufficient_dominated`.
+  -- TODO (DEFERRAL-ELIGIBLE, named planned debt). No result in this area consumes this
+  -- theorem: every downstream user routes through
+  -- `hasSufficientKernel_of_isSufficient_dominated`.
+  --
+  -- The obstruction is *not* a missing Mathlib brick — the whole toolchain is present at
+  -- this pin — but the volume of gluing it still takes. The concrete route, verified against
+  -- `Mathlib.Probability.Kernel.Disintegration.{MeasurableStieltjes, CDFToKernel,
+  -- StandardBorel}`:
+  --
+  -- 1. `e := MeasureTheory.embeddingReal 𝓧` is a measurable embedding of the standard Borel
+  --    sample space into `ℝ` (`measurableEmbedding_embeddingReal`). Put `A q := e ⁻¹' Iic q`
+  --    for `q : ℚ` and let `k q : S → ℝ≥0∞` be the θ-free determination supplied by `hsuf`
+  --    for `A q`. Set `f : S → ℚ → ℝ := fun t q => (k q t).toReal`; it is measurable into the
+  --    countable product, so `ProbabilityTheory.stieltjesOfMeasurableRat f hf` is a *θ-free*
+  --    measurable family of Stieltjes functions (`toRatCDF` performs the repair off the bad
+  --    set for free), and `IsCondKernelCDF.toKernel` reads a Markov kernel `S ⇝ ℝ` off it —
+  --    the kernel depends only on `f`, which is the whole point.
+  -- 2. `ProbabilityTheory.Kernel.borelMarkovFromReal 𝓧` transports that kernel back to a
+  --    Markov kernel `Q : S ⇝ 𝓧` (piecewise `comapRight` along `e`, with a Dirac default
+  --    where the mass escapes `range e`), again θ-free.
+  -- 3. For each `θ`, `IsRatCondKernelCDF f (Kernel.const Unit ρ_θ) (Kernel.const Unit ν_θ)`
+  --    — with `ρ_θ` the graph law of `(T, e)` and `ν_θ = statLaw P T θ` — follows from the
+  --    per-event identity of `hsuf` (transported through `setLIntegral_map`) for the
+  --    `setIntegral` field, and its `isRatStieltjesPoint_ae` field can be *imported* rather
+  --    than reproved: Mathlib's own `isRatCondKernelCDF_density_Iic` provides a rational CDF
+  --    `g_θ` for `ρ_θ`, `f · q =ᵐ[ν_θ] g_θ · q` for each `q` by uniqueness of set integrals,
+  --    and `ℚ` is countable, so the Stieltjes-point property transfers off a single null set.
+  -- 4. `Kernel.compProd_fst_borelMarkovFromReal` then delivers `ν_θ ⊗ₘ Q = ρ_θ` for every
+  --    `θ`, which is `HasSufficientKernel P T`.
+  --
+  -- What remains is the `Unit`-indexed bridge between the measure-level statement here and
+  -- the kernel-level API above, plus the two π-system extensions (rectangles `B ×ˢ Iic q`
+  -- for the CDF identity, `B ×ˢ A` for the transport back through `e`). That is a few
+  -- hundred lines of routine but unavoidable plumbing, and it is what is deferred.
   sorry
 
 end StatLean.PointEstimation
