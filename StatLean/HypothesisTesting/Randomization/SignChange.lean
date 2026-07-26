@@ -2,6 +2,8 @@ import StatLean.HypothesisTesting.Randomization.Asymptotics
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.Data.Real.Pointwise
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # The sign-change randomization test is asymptotically normal
@@ -152,6 +154,24 @@ private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
   rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
+/-- The Gaussian c.d.f. is strictly increasing: for a nondegenerate variance the measure of
+every `Ioc a b` with `a < b` is positive (`volume ≪ gaussianReal`), so `cdf` strictly grows. -/
+private lemma strictMono_cdf_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal 0 v)) := by
+  have hac : volume ≪ gaussianReal 0 v := gaussianReal_absolutelyContinuous' 0 hv
+  intro a b hab
+  have hIocpos : 0 < (gaussianReal 0 v).real (Set.Ioc a b) := by
+    rw [Measure.real]
+    refine ENNReal.toReal_pos ?_ (measure_ne_top _ _)
+    intro hz
+    have hvol := hac hz
+    rw [Real.volume_Ioc, ENNReal.ofReal_eq_zero] at hvol
+    linarith
+  rw [cdf_eq_real, cdf_eq_real, ← Set.Iic_union_Ioc_eq_Iic hab.le,
+    measureReal_union (Set.disjoint_left.mpr fun x hx hx' => (not_lt.mpr hx) hx'.1)
+      measurableSet_Ioc]
+  linarith
+
 /-! ### Symmetric case -/
 
 /-- **The sign-change randomization distribution is asymptotically Gaussian (symmetric
@@ -258,6 +278,119 @@ theorem randDist_signChange_tendstoInProb (P : Measure ℝ) [IsProbabilityMeasur
     hT (fun n => measurable_signChange_smul) hjoint hcont
   rwa [cdf_gaussianReal_scale hτpos t] at hmain
 
+/-! ### Symmetrization: probability, reflection-invariance, and the `|·|`-transfer -/
+
+/-- The symmetrization of a probability measure is a probability measure. -/
+private lemma isProbabilityMeasure_symmetrize (P : Measure ℝ) [IsProbabilityMeasure P] :
+    IsProbabilityMeasure (symmetrize P) := by
+  constructor
+  rw [symmetrize, Measure.smul_apply, Measure.add_apply,
+    Measure.map_apply measurable_neg MeasurableSet.univ, Set.preimage_univ, measure_univ,
+    smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by norm_num) (by norm_num)] <;> norm_num
+
+/-- The symmetrization is invariant under reflection: `(symmetrize P).map (·↦ -·) = symmetrize P`.
+This is the symmetry hypothesis needed to apply the symmetric-case theorem under `symmetrize P`. -/
+private lemma symmetrize_reflection_invariant (P : Measure ℝ) :
+    (symmetrize P).map (fun t => -t) = symmetrize P := by
+  have hcomp : (fun t : ℝ => -t) ∘ (fun t : ℝ => -t) = id := by funext t; simp
+  rw [symmetrize, Measure.map_smul, Measure.map_add _ _ measurable_neg,
+    Measure.map_map measurable_neg measurable_neg, hcomp, Measure.map_id, add_comm]
+
+/-- **Product/mixture representation of the symmetrized law.** The `n`-fold product of
+`symmetrize P` is the uniform average, over the sign-change group, of the sign-changed images of
+the product of `P`. This makes the sign-change action move `symmetrize P` back to `P`. -/
+private lemma pi_symmetrize_eq_smul_sum (n : ℕ) (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Measure.pi (fun _ : Fin n => symmetrize P)
+      = (Fintype.card (Fin n → ℤˣ) : ℝ≥0∞)⁻¹ •
+        ∑ g : Fin n → ℤˣ, (Measure.pi (fun _ : Fin n => P)).map (fun x => g • x) := by
+  haveI := isProbabilityMeasure_symmetrize P
+  refine Measure.pi_eq (fun B hB => ?_)
+  have hmB : MeasurableSet (Set.univ.pi B) := MeasurableSet.univ_pi hB
+  have hsym_i : ∀ i, symmetrize P (B i) = 2⁻¹ * (P (B i) + (P.map (fun t => -t)) (B i)) := by
+    intro i; rw [symmetrize, Measure.smul_apply, Measure.add_apply, smul_eq_mul]
+  have hu_sum : ∀ i, ∑ u : ℤˣ, (P.map (fun t => ((u : ℤ) : ℝ) * t)) (B i)
+      = P (B i) + (P.map (fun t => -t)) (B i) := by
+    intro i
+    rw [show (Finset.univ : Finset ℤˣ) = {1, -1} from by
+          ext u
+          simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, true_iff]
+          exact Int.units_eq_one_or u,
+        Finset.sum_pair (by decide)]
+    congr 1
+    · rw [show (fun t => (((1 : ℤˣ) : ℤ) : ℝ) * t) = (fun t : ℝ => t) from by funext t; simp,
+        Measure.map_id']
+    · rw [show (fun t => (((-1 : ℤˣ) : ℤ) : ℝ) * t) = (fun t : ℝ => -t) from by funext t; simp]
+  have hterm : ∀ g : Fin n → ℤˣ,
+      ((Measure.pi (fun _ : Fin n => P)).map (fun x => g • x)) (Set.univ.pi B)
+        = ∏ i, (P.map (fun t => ((g i : ℤ) : ℝ) * t)) (B i) := by
+    intro g
+    rw [Measure.map_apply (measurable_signChange_smul g) hmB,
+      show (fun x : Fin n → ℝ => g • x) ⁻¹' (Set.univ.pi B)
+          = Set.univ.pi (fun i => (fun t => ((g i : ℤ) : ℝ) * t) ⁻¹' (B i)) from by
+        ext x
+        simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_true_left,
+          signChange_smul_apply],
+      Measure.pi_pi]
+    exact Finset.prod_congr rfl (fun i _ => (Measure.map_apply (by fun_prop) (hB i)).symm)
+  rw [Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  simp_rw [hterm]
+  have hsumprod : (∑ g : Fin n → ℤˣ, ∏ i, (P.map (fun t => ((g i : ℤ) : ℝ) * t)) (B i))
+      = ∏ i, (P (B i) + (P.map (fun t => -t)) (B i)) := by
+    symm
+    calc ∏ i, (P (B i) + (P.map (fun t => -t)) (B i))
+        = ∏ i, ∑ u : ℤˣ, (P.map (fun t => ((u : ℤ) : ℝ) * t)) (B i) :=
+          Finset.prod_congr rfl (fun i _ => (hu_sum i).symm)
+      _ = ∑ g ∈ Fintype.piFinset (fun _ : Fin n => (Finset.univ : Finset ℤˣ)),
+            ∏ i, (P.map (fun t => ((g i : ℤ) : ℝ) * t)) (B i) := Finset.prod_univ_sum _ _
+      _ = ∑ g : Fin n → ℤˣ, ∏ i, (P.map (fun t => ((g i : ℤ) : ℝ) * t)) (B i) := by
+          rw [Fintype.piFinset_univ]
+  rw [hsumprod, Finset.prod_congr rfl (fun i _ => hsym_i i), Finset.prod_mul_distrib,
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  congr 1
+  rw [card_signChangeGroup, ENNReal.inv_pow]
+
+/-- **`|·|`-invariance transfer.** For a set `A` invariant under every sign change, its mass is
+the same under `Measure.pi P` and `Measure.pi (symmetrize P)`. This is what lets the symmetric-case
+theorem, proved for `symmetrize P`, be read back under the original law `P`. -/
+private lemma pi_symmetrize_real_eq_of_invariant {n : ℕ} (P : Measure ℝ) [IsProbabilityMeasure P]
+    {A : Set (Fin n → ℝ)} (hA : MeasurableSet A)
+    (hinv : ∀ g : Fin n → ℤˣ, (fun x : Fin n → ℝ => g • x) ⁻¹' A = A) :
+    (Measure.pi (fun _ : Fin n => symmetrize P)).real A
+      = (Measure.pi (fun _ : Fin n => P)).real A := by
+  have hcard : (Fintype.card (Fin n → ℤˣ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
+  have hcardtop : (Fintype.card (Fin n → ℤˣ) : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
+  have hval : Measure.pi (fun _ : Fin n => symmetrize P) A
+      = Measure.pi (fun _ : Fin n => P) A := by
+    rw [pi_symmetrize_eq_smul_sum, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    have hstep : ∀ g : Fin n → ℤˣ,
+        ((Measure.pi (fun _ : Fin n => P)).map (fun x => g • x)) A
+          = Measure.pi (fun _ : Fin n => P) A := fun g => by
+      rw [Measure.map_apply (measurable_signChange_smul g) hA, hinv g]
+    simp_rw [hstep]
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+      ENNReal.inv_mul_cancel hcard hcardtop, one_mul]
+  rw [Measure.real, Measure.real, hval]
+
+/-- The randomization distribution is invariant under the sign-change action: it depends on the
+data only through `|x₁|, …, |xₙ|`. Reindexing the orbit sum by right multiplication does it. -/
+private lemma randDist_signChange_smul {n : ℕ} (T : (Fin n → ℝ) → ℝ)
+    (g : Fin n → ℤˣ) (x : Fin n → ℝ) (t : ℝ) :
+    randDist (Fin n → ℤˣ) T (g • x) t = randDist (Fin n → ℤˣ) T x t := by
+  simp only [randDist]
+  congr 1
+  refine Fintype.sum_equiv (Equiv.mulRight g) _ _ (fun h => ?_)
+  rw [Equiv.coe_mulRight, mul_smul]
+
+/-- Consequently the randomization quantile is invariant under the sign-change action. -/
+private lemma randQuantile_signChange_smul {n : ℕ} (T : (Fin n → ℝ) → ℝ) (p : ℝ)
+    (g : Fin n → ℤˣ) (x : Fin n → ℝ) :
+    randQuantile (Fin n → ℤˣ) T p (g • x) = randQuantile (Fin n → ℤˣ) T p x := by
+  simp only [randQuantile]
+  congr 1
+  ext t
+  simp only [Set.mem_setOf_eq, randDist_signChange_smul]
+
 /-! ### Asymmetric case, via the symmetrized model -/
 
 /-- **The randomization distribution stabilizes even without symmetry.** If the common law
@@ -289,19 +422,26 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randDist (Fin n → ℤˣ) (T n) x t)
       (cdf (gaussianReal 0 1) (t / τ)) := by
-  -- TODO (deferred). The randomization distribution depends on the data only through
-  -- `|x₁|, …, |xₙ|`, whose law is identical under `P` and `symmetrize P` (the sign-change orbit is
-  -- the same set for `x` and any reflection of its coordinates). Hence `randDist (Fin n → ℤˣ)
-  -- (T n) x t` has the same law under `Measure.pi P` as under `Measure.pi (symmetrize P)`, and the
-  -- claim transfers from `randDist_signChange_tendstoInProb` applied under `symmetrize P` (where
-  -- `hsymm` holds and `hlin`/`hτ` are assumed). Needs the `|·|`-invariance lemma plus the previous
-  -- (deferred) result. See report.
-  -- ⚠ OBSTRUCTION (verified this session): reduces to `randDist_signChange_tendstoInProb`
-  -- under `symmetrize P` (where `hsymm` holds via `symmetrize` being reflection-invariant),
-  -- plus the `|·|`-invariance transfer of the randomization law from `Measure.pi (symmetrize P)`
-  -- back to `Measure.pi P`. Both the invariance transfer and the forward result need
-  -- `hT : ∀ n, Measurable (T n)`, absent from this frozen signature (see above). See report.
-  sorry
+  -- The randomization distribution depends on the data only through `|x₁|, …, |xₙ|`, and any set
+  -- of the form `{x | ε ≤ |R̂ₙ(x,t) − c|}` is invariant under sign changes. Its `Measure.pi P`
+  -- mass therefore equals its `Measure.pi (symmetrize P)` mass (`pi_symmetrize_real_eq_of_invariant`),
+  -- and under `symmetrize P` the symmetric-case theorem applies directly.
+  haveI := isProbabilityMeasure_symmetrize P
+  have hsymm : (symmetrize P).map (fun t => -t) = symmetrize P := symmetrize_reflection_invariant P
+  have hmain := randDist_signChange_tendstoInProb (symmetrize P) ψ T hsymm hodd hψmeas hψL2 hτpos
+    hτ hT hlin t
+  intro ε hε
+  refine Filter.Tendsto.congr (fun n => ?_) (hmain ε hε)
+  have hmeas : Measurable (fun x : Fin n → ℝ => randDist (Fin n → ℤˣ) (T n) x t) := by
+    simp only [randDist]
+    refine Measurable.const_mul (Finset.measurable_sum _ (fun g _ => ?_)) _
+    exact Measurable.ite
+      (measurableSet_le ((hT n).comp (measurable_signChange_smul g)) measurable_const)
+      measurable_const measurable_const
+  refine pi_symmetrize_real_eq_of_invariant P
+    (measurableSet_le measurable_const (hmeas.sub measurable_const).abs) (fun g => ?_)
+  ext x
+  simp only [Set.mem_preimage, Set.mem_setOf_eq, randDist_signChange_smul]
 
 /-- **The randomization critical value converges to `τ z_{1−α}`.** Companion of the
 previous statement: the data-dependent critical value of the sign-change test converges in
