@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Randomization.SignChange
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
+import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 
@@ -97,7 +98,7 @@ permutation tests," *Ann. Statist.* **41** (2013), 484–507).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal RealInnerProductSpace Matrix
 
 namespace StatLean.HypothesisTesting
 
@@ -149,7 +150,16 @@ theorem map_quadraticForm_multivariateGaussian_eq_chiSquared [NeZero p]
     (hpd : S.PosDef) :
     (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
         (fun z => z.ofLp ⬝ᵥ S⁻¹.mulVec z.ofLp) = chiSquared p := by
-  sorry
+  -- The quadratic-form spelling `z.ofLp ⬝ᵥ S⁻¹ *ᵥ z.ofLp` is `Matrix.inner_toEuclideanCLM`
+  -- of the inner-product spelling `⟪z, toEuclideanCLM S⁻¹ z⟫`, whose pushforward is the
+  -- whitening bridge `multivariateGaussian_map_inner_inv_eq_chiSquared`.
+  have hp : 0 < p := Nat.pos_of_ne_zero (NeZero.ne p)
+  have hfun : (fun z : EuclideanSpace ℝ (Fin p) => z.ofLp ⬝ᵥ S⁻¹.mulVec z.ofLp)
+      = fun z => ⟪z, Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ z⟫ := by
+    funext z
+    exact (Matrix.inner_toEuclideanCLM S⁻¹ z z).symm
+  rw [hfun]
+  exact multivariateGaussian_map_inner_inv_eq_chiSquared hp hpd
 
 /-! ### The vector building block -/
 
