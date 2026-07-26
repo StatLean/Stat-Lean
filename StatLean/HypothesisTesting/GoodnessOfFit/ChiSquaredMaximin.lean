@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMultinomial
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
+import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 
 /-!
 # Asymptotic maximin optimality of Pearson's chi-squared test
@@ -81,7 +82,7 @@ W. G. Cochran ("The χ² test of goodness of fit," *Ann. Math. Statist.* **23** 
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal BigOperators
+open scoped ENNReal BigOperators NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -234,6 +235,173 @@ theorem noncentralTail_antitone {α h : ℝ} {c : ℕ → ℝ}
   -- analytic comparison across the family (no such lemma exists in the project yet).
   sorry
 
+/-! ### Private assembly infrastructure for the large-`k` tail limits -/
+
+/-- **Moving-threshold portmanteau tail.** If probability measures `μs k` on `ℝ` converge
+weakly to an *atomless* limit `ν` and the thresholds `tk k` converge to `t`, then the upper
+tails converge: `μs k (t_k, ∞) → ν (t, ∞)`.
+
+Squeeze between the open sets `(t + εₘ, ∞)` and the closed sets `[t − εₘ, ∞)` with
+`εₘ = 1/(m+1) ↓ 0`, using the open/closed portmanteau inequalities. -/
+private lemma tendsto_measure_Ioi_of_weakLimit
+    {μs : ℕ → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ}
+    [NoAtoms (ν : Measure ℝ)]
+    (hconv : Tendsto μs atTop (𝓝 ν))
+    {t : ℝ} {tk : ℕ → ℝ} (htk : Tendsto tk atTop (𝓝 t)) :
+    Tendsto (fun k => (μs k : Measure ℝ) (Set.Ioi (tk k))) atTop
+      (𝓝 ((ν : Measure ℝ) (Set.Ioi t))) := by
+  set a : ℕ → ℝ≥0∞ := fun k => (μs k : Measure ℝ) (Set.Ioi (tk k)) with ha
+  -- Lower bound: `ν(t, ∞) ≤ liminf a`.
+  have hlow : (ν : Measure ℝ) (Set.Ioi t) ≤ liminf a atTop := by
+    set G : ℕ → Set ℝ := fun m => Set.Ioi (t + 1 / (m + 1 : ℝ)) with hG
+    have hGmono : Monotone G := by
+      intro m m' hmm
+      refine Set.Ioi_subset_Ioi ?_
+      have hcast : (m : ℝ) ≤ m' := by exact_mod_cast hmm
+      have : (1 : ℝ) / (m' + 1) ≤ 1 / (m + 1) :=
+        one_div_le_one_div_of_le (by positivity) (by linarith)
+      linarith
+    have hGunion : (⋃ m, G m) = Set.Ioi t := by
+      ext x
+      simp only [Set.mem_iUnion, hG, Set.mem_Ioi]
+      constructor
+      · rintro ⟨m, hm⟩
+        have : (0 : ℝ) < 1 / (m + 1) := by positivity
+        linarith
+      · intro hx
+        obtain ⟨m, hm⟩ := exists_nat_one_div_lt (show (0 : ℝ) < x - t by linarith)
+        exact ⟨m, by linarith⟩
+    have hνG : Tendsto (fun m => (ν : Measure ℝ) (G m)) atTop
+        (𝓝 ((ν : Measure ℝ) (Set.Ioi t))) := by
+      have := tendsto_measure_iUnion_atTop (μ := (ν : Measure ℝ)) hGmono
+      rwa [hGunion] at this
+    refine le_of_tendsto hνG ?_
+    filter_upwards with m
+    have hopen : IsOpen (G m) := isOpen_Ioi
+    refine (ProbabilityMeasure.le_liminf_measure_open_of_tendsto hconv hopen).trans ?_
+    refine liminf_le_liminf ?_
+    have hev : ∀ᶠ k in atTop, tk k < t + 1 / (m + 1 : ℝ) :=
+      htk.eventually (eventually_lt_nhds (lt_add_of_pos_right t (by positivity)))
+    filter_upwards [hev] with k hk
+    exact measure_mono (Set.Ioi_subset_Ioi hk.le)
+  -- Upper bound: `limsup a ≤ ν(t, ∞)`.
+  have hup : limsup a atTop ≤ (ν : Measure ℝ) (Set.Ioi t) := by
+    set F : ℕ → Set ℝ := fun m => Set.Ici (t - 1 / (m + 1 : ℝ)) with hF
+    have hFanti : Antitone F := by
+      intro m m' hmm
+      refine Set.Ici_subset_Ici.mpr ?_
+      have hcast : (m : ℝ) ≤ m' := by exact_mod_cast hmm
+      have : (1 : ℝ) / (m' + 1) ≤ 1 / (m + 1) :=
+        one_div_le_one_div_of_le (by positivity) (by linarith)
+      linarith
+    have hFinter : (⋂ m, F m) = Set.Ici t := by
+      ext x
+      simp only [Set.mem_iInter, hF, Set.mem_Ici]
+      constructor
+      · intro hx
+        by_contra h
+        push_neg at h
+        obtain ⟨m, hm⟩ := exists_nat_one_div_lt (show (0 : ℝ) < t - x by linarith)
+        have := hx m
+        linarith
+      · intro hx m
+        have : (0 : ℝ) < 1 / (m + 1) := by positivity
+        linarith
+    have hνF : Tendsto (fun m => (ν : Measure ℝ) (F m)) atTop
+        (𝓝 ((ν : Measure ℝ) (Set.Ici t))) := by
+      have := tendsto_measure_iInter_atTop (μ := (ν : Measure ℝ))
+        (fun m => (measurableSet_Ici).nullMeasurableSet) hFanti ⟨0, measure_ne_top _ _⟩
+      rwa [hFinter] at this
+    have hIci : (ν : Measure ℝ) (Set.Ici t) = (ν : Measure ℝ) (Set.Ioi t) :=
+      measure_congr (MeasureTheory.Ioi_ae_eq_Ici (μ := (ν : Measure ℝ)) (a := t)).symm
+    rw [hIci] at hνF
+    refine ge_of_tendsto hνF ?_
+    filter_upwards with m
+    have hclosed : IsClosed (F m) := isClosed_Ici
+    refine le_trans ?_ (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto hconv hclosed)
+    refine limsup_le_limsup ?_
+    have hev : ∀ᶠ k in atTop, t - 1 / (m + 1 : ℝ) < tk k :=
+      htk.eventually (eventually_gt_nhds (sub_lt_self t (by positivity)))
+    filter_upwards [hev] with k hk
+    exact measure_mono (Set.Ioi_subset_Ici_self.trans (Set.Ici_subset_Ici.mpr hk.le))
+  exact tendsto_of_le_liminf_of_limsup_le hlow hup
+
+/-- **Existence of a standard-normal upper quantile.** For `α ∈ (0,1)` there is a `z` with
+`N(0,1)(z, ∞) = α`. Atomless case of `exists_critical_constants`. -/
+private lemma exists_gaussian_upper_quantile {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
+    ∃ z : ℝ, gaussianReal 0 1 (Set.Ioi z) = ENNReal.ofReal α := by
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  obtain ⟨C, γ, _, _, hCeq⟩ := exists_critical_constants (gaussianReal 0 1) hα hα1
+  have hatom : (gaussianReal 0 1 {x : ℝ | x = C}).toReal = 0 := by
+    have hsingle : {x : ℝ | x = C} = ({C} : Set ℝ) := by ext x; simp
+    rw [hsingle, measure_singleton C, ENNReal.toReal_zero]
+  rw [hatom, mul_zero, add_zero] at hCeq
+  refine ⟨C, ?_⟩
+  have hset : {x : ℝ | C < x} = Set.Ioi C := rfl
+  rw [hset] at hCeq
+  rw [← ENNReal.ofReal_toReal (measure_ne_top (gaussianReal 0 1) (Set.Ioi C)), hCeq]
+
+/-- **Assembly of the large-`k` tail limit.** With standardised noncentralities `l k / √(2k)`
+converging to `cc`, the noncentral tail `M(k, hseq k)` converges to `N(cc,1)(z, ∞)`, where `z`
+is the standard-normal upper-`α` quantile. Combines
+`weakConverges_noncentralChiSquared_standardized`, `tendsto_chiSquared_quantile_standardized`
+and the moving-threshold portmanteau tail. -/
+private lemma noncentralTail_tendsto_aux {α cc z : ℝ} {c : ℕ → ℝ} {hseq : ℕ → ℝ}
+    (hc : ∀ k, 0 < k → chiSquared k (Set.Ioi (c k)) = ENNReal.ofReal α)
+    (hz : gaussianReal 0 1 (Set.Ioi z) = ENNReal.ofReal α)
+    (hl : Tendsto (fun k : ℕ => (hseq k) ^ 2 / Real.sqrt (2 * k)) atTop (𝓝 cc)) :
+    Tendsto (fun k => noncentralTail k (c k) (hseq k)) atTop
+      (𝓝 ((gaussianReal cc 1 (Set.Ioi z)).toReal)) := by
+  classical
+  set l : ℕ → ℝ≥0 := fun k => ((hseq k) ^ 2).toNNReal with hldef
+  have hlcoe : ∀ k, (l k : ℝ) = (hseq k) ^ 2 := fun k => Real.coe_toNNReal _ (sq_nonneg _)
+  have hl' : Tendsto (fun k : ℕ => (l k : ℝ) / Real.sqrt (2 * k)) atTop (𝓝 cc) := by
+    apply hl.congr
+    intro k
+    rw [hlcoe]
+  set μ' : ℕ → Measure ℝ := fun k => (noncentralChiSquared k (l k)).map
+    (fun x => (x - k) / Real.sqrt (2 * k)) with hμ'
+  have hwc := weakConverges_noncentralChiSquared_standardized (l := l) (c := cc) hl'
+  have hμ'prob : ∀ k, IsProbabilityMeasure (μ' k) := by
+    intro k
+    have hmap : μ' k = (noncentralChiSquared k (l k)).map
+        (fun x => (x - k) / Real.sqrt (2 * k)) := rfl
+    rw [hmap]
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  set μs : ℕ → ProbabilityMeasure ℝ := fun k => ⟨μ' k, hμ'prob k⟩ with hμs
+  set ν : ProbabilityMeasure ℝ := ⟨gaussianReal cc 1, by infer_instance⟩ with hν
+  haveI : NoAtoms (ν : Measure ℝ) := by
+    show NoAtoms (gaussianReal cc 1); exact noAtoms_gaussianReal one_ne_zero
+  have htend : Tendsto μs atTop (𝓝 ν) := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f
+    have hA := hwc f
+    simpa only [hμs, hμ', hν, ProbabilityMeasure.coe_mk] using hA
+  set tk : ℕ → ℝ := fun k => (c k - k) / Real.sqrt (2 * k) with htk_def
+  have htk : Tendsto tk atTop (𝓝 z) := tendsto_chiSquared_quantile_standardized hc hz
+  have hport := tendsto_measure_Ioi_of_weakLimit htend htk
+  have hportR : Tendsto (fun k => ((μs k : Measure ℝ) (Set.Ioi (tk k))).toReal) atTop
+      (𝓝 (((ν : Measure ℝ) (Set.Ioi z)).toReal)) :=
+    (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+  refine hportR.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with k hk
+  have hskpos : (0 : ℝ) < Real.sqrt (2 * (k : ℝ)) := Real.sqrt_pos.mpr (by positivity)
+  have hcoe : ((μs k : Measure ℝ)) = μ' k := rfl
+  have hpre : (μ' k) (Set.Ioi (tk k)) = noncentralChiSquared k (l k) (Set.Ioi (c k)) := by
+    have hmap : μ' k = (noncentralChiSquared k (l k)).map
+        (fun x => (x - k) / Real.sqrt (2 * k)) := rfl
+    rw [hmap, Measure.map_apply (by fun_prop) measurableSet_Ioi]
+    congr 1
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Ioi]
+    rw [lt_div_iff₀ hskpos]
+    have hval : tk k * Real.sqrt (2 * (k : ℝ)) = c k - k := by
+      simp only [htk_def]; rw [div_mul_cancel₀ _ hskpos.ne']
+    rw [hval]; constructor <;> intro h <;> linarith
+  show ((μs k : Measure ℝ) (Set.Ioi (tk k))).toReal
+      = ((noncentralChiSquared k ((hseq k) ^ 2).toNNReal) (Set.Ioi (c k))).toReal
+  rw [hcoe, hpre, hldef]
+
 /-- **(ii) A bounded noncentrality is asymptotically invisible.** If `h_k` converges to a
 finite limit then `M(k, h_k) → α`: with a fixed amount of signal, the chi-squared test
 with growing degrees of freedom degenerates to a test of level `α` and no power. In
@@ -246,19 +414,18 @@ theorem noncentralTail_tendsto_level {α : ℝ} {c : ℕ → ℝ} {hseq : ℕ �
     -- USER-INPUT: the noncentralities converge to a finite limit
     (hconv : Tendsto hseq atTop (nhds h)) :
     Tendsto (fun k => noncentralTail k (c k) (hseq k)) atTop (nhds α) := by
-  -- TODO: assembly of the large-`k` normalisations.  With `l k = (hseq k)²`, boundedness
-  -- of `hseq` gives `l k / √(2k) → 0`, so `weakConverges_noncentralChiSquared_standardized`
-  -- yields `(χ²_k(l k) − k)/√(2k) ⇒ N(0,1)`, while
-  -- `tendsto_chiSquared_quantile_standardized` gives `(c k − k)/√(2k) → z` with
-  -- `N(0,1)(z, ∞) = α`.  Then `M(k, hseq k) = μ_k((t_k, ∞))` with `μ_k ⇒ N(0,1)` and
-  -- `t_k → z`, and a moving-threshold portmanteau tail step (N(0,1) is atomless) gives
-  -- `→ N(0,1)(z, ∞) = α`.
-  -- TAINT: both `weakConverges_noncentralChiSquared_standardized` and
-  -- `tendsto_chiSquared_quantile_standardized` are OPEN sorries in
-  -- `ForMathlib/NoncentralChiSquared.lean`, so this lemma would inherit `sorryAx` from
-  -- them; additionally the moving-threshold portmanteau step is absent from the
-  -- `WeakConverges` API in `ForMathlib/Contiguity.lean`.
-  sorry
+  -- Standard-normal upper-`α` quantile.
+  obtain ⟨z, hz⟩ := exists_gaussian_upper_quantile hα hα1
+  -- Boundedness of `hseq` forces the standardised noncentrality to `0`.
+  have hl : Tendsto (fun k : ℕ => (hseq k) ^ 2 / Real.sqrt (2 * k)) atTop (𝓝 0) := by
+    have hnum : Tendsto (fun k : ℕ => (hseq k) ^ 2) atTop (𝓝 (h ^ 2)) := hconv.pow 2
+    have hden : Tendsto (fun k : ℕ => Real.sqrt (2 * (k : ℝ))) atTop atTop :=
+      Real.tendsto_sqrt_atTop.comp
+        (Filter.Tendsto.const_mul_atTop (by norm_num) tendsto_natCast_atTop_atTop)
+    exact hnum.div_atTop hden
+  -- The assembly gives the limit `N(0,1)(z, ∞) = α`.
+  have key := noncentralTail_tendsto_aux hc hz hl
+  rwa [hz, ENNReal.toReal_ofReal hα.le] at key
 
 /-- **(iii) The signal must grow like `(2k)^{1/2}` to be seen.** If
 `(2k)^{-1/2} h_k² → γ` then `M(k, h_k) → 1 − Φ(z_{1−α} − γ)`, where `Φ` is the standard
@@ -277,15 +444,17 @@ theorem noncentralTail_tendsto_normal {α γ z : ℝ} {c : ℕ → ℝ} {hseq : 
       (nhds γ)) :
     Tendsto (fun k => noncentralTail k (c k) (hseq k)) atTop
       (nhds ((gaussianReal 0 1 (Set.Ioi (z - γ))).toReal)) := by
-  -- TODO: same assembly as `noncentralTail_tendsto_level`, now with drift.  With
-  -- `l k = (hseq k)²` and `l k / √(2k) → γ`, `weakConverges_noncentralChiSquared_standardized`
-  -- gives `(χ²_k(l k) − k)/√(2k) ⇒ N(γ, 1)`, `tendsto_chiSquared_quantile_standardized`
-  -- gives `(c k − k)/√(2k) → z`, and the moving-threshold portmanteau tail step yields
-  -- `M(k, hseq k) → N(γ,1)(z, ∞) = N(0,1)(z − γ, ∞)`, which is the stated limit.
-  -- TAINT: inherits `sorryAx` from the two OPEN sorries
-  -- `weakConverges_noncentralChiSquared_standardized` and
-  -- `tendsto_chiSquared_quantile_standardized` in `ForMathlib/NoncentralChiSquared.lean`;
-  -- also needs the moving-threshold portmanteau step absent from the `WeakConverges` API.
-  sorry
+  -- The standardised noncentrality converges to the drift `γ` by hypothesis.
+  have key := noncentralTail_tendsto_aux hc hz hrate
+  -- Translation of the Gaussian shift: `N(γ,1)(z, ∞) = N(0,1)(z − γ, ∞)`.
+  have htrans : gaussianReal γ 1 (Set.Ioi z) = gaussianReal 0 1 (Set.Ioi (z - γ)) := by
+    have h1 : (gaussianReal 0 1).map (· + γ) = gaussianReal γ 1 := by
+      rw [gaussianReal_map_add_const]; norm_num
+    rw [← h1, Measure.map_apply (by fun_prop) measurableSet_Ioi]
+    congr 1
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Ioi]
+    constructor <;> intro h <;> linarith
+  rwa [htrans] at key
 
 end StatLean.HypothesisTesting
