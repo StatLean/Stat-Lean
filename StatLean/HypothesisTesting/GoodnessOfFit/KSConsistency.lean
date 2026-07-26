@@ -201,40 +201,6 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
         dkw_uniform hn μ₀ X hX hindep hlaw hthr
     _ = ENNReal.ofReal α := by rw [dkw_envelope_threshold hα hα1]
 
-/-! ### Pointwise consistency against a fixed alternative -/
-
-/-- **Pointwise consistency of the Kolmogorov–Smirnov test.** Against any fixed
-alternative `F ≠ F₀` — equivalently, any `F` at positive Kolmogorov distance from `F₀` —
-the power of the calibrated test tends to one.
-
-The classical proof runs the Glivenko–Cantelli theorem (`d_K(F̂ₙ, F) → 0` a.s., hence
-`Tₙ → ∞` a.s.) together with `s_{n,1−α} → s_{1−α} < ∞`; under the calibration of this file
-the second ingredient is vacuous, since the critical value is a constant. The elementary
-alternative argument fixes a `t` with `F(t) ≠ F₀(t)` and observes that
-`n^{1/2}[F̂ₙ(t) − F(t)]` is bounded in probability while `s − n^{1/2}[F(t) − F₀(t)] → −∞`;
-that route needs only Chebyshev's inequality and is the intended formalization. -/
-theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : ℕ → Ω → ℝ}
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀]
-    {F F₀ : ℝ → ℝ}
-    -- USER-INPUT: the nominal level is a nondegenerate probability
-    (hα : 0 < α) (hα1 : α < 1)
-    -- USER-INPUT: each observation is measurable; part of the sampling model
-    (hX : ∀ i, Measurable (X i))
-    -- USER-INPUT: the observations are i.i.d.; Kolmogorov 1933
-    (hindep : iIndepFun X P)
-    -- USER-INPUT: the alternative: every observation has law `μ`
-    (hlaw : ∀ i, P.map (X i) = μ)
-    -- USER-INPUT: `F` is the c.d.f. of the sampling law
-    (hF : ∀ t : ℝ, F t = cdf μ t)
-    -- USER-INPUT: `F₀` is the c.d.f. of the null law
-    (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
-    -- USER-INPUT: the alternative is genuinely different from the null: `d_K(F, F₀) > 0`
-    (hne : 0 < supCDFDist F F₀) :
-    Tendsto
-      (fun n => (P {ω | ksThreshold α < ksStat (fun i : Fin n => X (i : ℕ)) F₀ ω}).toReal)
-      atTop (nhds 1) := by
-  sorry
-
 /-! ### Kolmogorov-distance geometry (triangle inequality) -/
 
 /-- The sup (Kolmogorov) distance is symmetric. -/
@@ -415,5 +381,50 @@ theorem ks_uniform_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabili
     have h1 : (P n) {ω | s < ksStat (X n) F₀ ω} ≤ 1 :=
       (measure_mono (Set.subset_univ _)).trans_eq (measure_univ)
     simpa using ENNReal.toReal_mono ENNReal.one_ne_top h1
+
+/-! ### Pointwise consistency against a fixed alternative -/
+
+/-- **Pointwise consistency of the Kolmogorov–Smirnov test.** Against any fixed
+alternative `F ≠ F₀` — equivalently, any `F` at positive Kolmogorov distance from `F₀` —
+the power of the calibrated test tends to one.
+
+The classical proof runs the Glivenko–Cantelli theorem (`d_K(F̂ₙ, F) → 0` a.s., hence
+`Tₙ → ∞` a.s.) together with `s_{n,1−α} → s_{1−α} < ∞`; under the calibration of this file
+the second ingredient is vacuous, since the critical value is a constant. Here the fixed
+alternative is the constant selection of `ks_uniform_power` (`μ n = μ`, `F n = F`), whose
+diverging separation `εₙ = √n · d_K(F, F₀) → ∞` is supplied by `d_K(F, F₀) > 0`. -/
+theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : ℕ → Ω → ℝ}
+    {μ : Measure ℝ} [IsProbabilityMeasure μ] {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀]
+    {F F₀ : ℝ → ℝ}
+    -- USER-INPUT: the nominal level is a nondegenerate probability
+    (hα : 0 < α) (hα1 : α < 1)
+    -- USER-INPUT: each observation is measurable; part of the sampling model
+    (hX : ∀ i, Measurable (X i))
+    -- USER-INPUT: the observations are i.i.d.; Kolmogorov 1933
+    (hindep : iIndepFun X P)
+    -- USER-INPUT: the alternative: every observation has law `μ`
+    (hlaw : ∀ i, P.map (X i) = μ)
+    -- USER-INPUT: `F` is the c.d.f. of the sampling law
+    (hF : ∀ t : ℝ, F t = cdf μ t)
+    -- USER-INPUT: `F₀` is the c.d.f. of the null law
+    (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
+    -- USER-INPUT: the alternative is genuinely different from the null: `d_K(F, F₀) > 0`
+    (hne : 0 < supCDFDist F F₀) :
+    Tendsto
+      (fun n => (P {ω | ksThreshold α < ksStat (fun i : Fin n => X (i : ℕ)) F₀ ω}).toReal)
+      atTop (nhds 1) := by
+  -- A fixed alternative is the constant selection `μ n = μ`, `F n = F`, with the diverging
+  -- separation `εₙ = √n · d_K(F, F₀)`; the result is exactly `ks_uniform_power`.
+  haveI hPinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => P) n) := fun _ => inferInstance
+  haveI hμinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => μ) n) := fun _ => inferInstance
+  -- the separation `εₙ = √n · d_K(F, F₀)` diverges since `d_K(F, F₀) > 0`
+  have hsqrt : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hε : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist F F₀) atTop atTop :=
+    hsqrt.atTop_mul_const' hne
+  exact ks_uniform_power (P := fun _ => P) (X := fun n i => X (i : ℕ)) (μ := fun _ => μ)
+    (F := fun _ => F) (ε := fun n => Real.sqrt (n : ℝ) * supCDFDist F F₀)
+    hα hα1 (fun n i => hX (i : ℕ)) (fun n => hindep.precomp Fin.val_injective)
+    (fun n i => hlaw (i : ℕ)) (fun n t => hF t) hF₀ (fun n => le_refl _) hε
 
 end StatLean.HypothesisTesting
