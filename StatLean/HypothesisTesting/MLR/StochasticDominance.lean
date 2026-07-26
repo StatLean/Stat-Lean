@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.MLR.Defs
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
 # Stochastic ordering and the monotone quantile coupling
@@ -56,9 +57,117 @@ decision procedures for distributions with monotone likelihood ratio," *Ann. Mat
 Statist.* **27** (1956), 272–299).
 -/
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 
 namespace StatLean.HypothesisTesting
+
+/-! ### The arctangent reparametrization of the unit interval
+
+The classical coupling uses the quantile functions on `(0,1)`, which are monotone only
+*there*: the junk values `quantile F p = 0` for `p ∉ (0,1)` destroy global monotonicity, and
+no globally monotone map can push a compactly supported law onto a full-support one (see
+`exists_monotone_coupling_of_cdf_le`). Precomposing with an increasing homeomorphism
+`unitParam : ℝ ≃ (0,1)` repairs this: `quantile F ∘ unitParam` is monotone on all of `ℝ`,
+and the coupling variable becomes `unitParamInv`-pushed uniform noise instead of uniform
+noise itself. -/
+
+/-- The increasing parametrization `ℝ → (0,1)`, `v ↦ arctan v / π + 1/2`. -/
+private noncomputable def unitParam (v : ℝ) : ℝ := Real.arctan v / Real.pi + 1 / 2
+
+/-- Its inverse on `(0,1)`, `p ↦ tan (π (p - 1/2))`. -/
+private noncomputable def unitParamInv (p : ℝ) : ℝ := Real.tan (Real.pi * (p - 1 / 2))
+
+private lemma unitParam_mem_Ioo (v : ℝ) : unitParam v ∈ Set.Ioo (0 : ℝ) 1 := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h1 : -(Real.pi / 2) < Real.arctan v := Real.neg_pi_div_two_lt_arctan v
+  have h2 : Real.arctan v < Real.pi / 2 := Real.arctan_lt_pi_div_two v
+  have hlo : -(1 / 2 : ℝ) < Real.arctan v / Real.pi := by rw [lt_div_iff₀ hπ]; linarith
+  have hhi : Real.arctan v / Real.pi < 1 / 2 := by rw [div_lt_iff₀ hπ]; linarith
+  unfold unitParam
+  exact ⟨by linarith, by linarith⟩
+
+private lemma monotone_unitParam : Monotone unitParam := by
+  intro a b hab
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h : Real.arctan a ≤ Real.arctan b := Real.arctan_mono hab
+  have hd : 0 ≤ (Real.arctan b - Real.arctan a) / Real.pi :=
+    div_nonneg (by linarith) hπ.le
+  rw [sub_div] at hd
+  unfold unitParam
+  linarith
+
+private lemma unitParam_unitParamInv {p : ℝ} (hp : p ∈ Set.Ioo (0 : ℝ) 1) :
+    unitParam (unitParamInv p) = p := by
+  obtain ⟨hp0, hp1⟩ := hp
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h1 : -(Real.pi / 2) < Real.pi * (p - 1 / 2) := by nlinarith
+  have h2 : Real.pi * (p - 1 / 2) < Real.pi / 2 := by nlinarith
+  unfold unitParam unitParamInv
+  rw [Real.arctan_tan h1 h2]
+  have hcancel : Real.pi * (p - 1 / 2) / Real.pi = p - 1 / 2 := by
+    rw [mul_comm Real.pi (p - 1 / 2), mul_div_assoc, div_self (ne_of_gt hπ), mul_one]
+  rw [hcancel]
+  ring
+
+private lemma measurable_unitParamInv : Measurable unitParamInv := by
+  have htan : Measurable Real.tan := by
+    have h : Real.tan = fun x => Real.sin x / Real.cos x := funext Real.tan_eq_sin_div_cos
+    rw [h]
+    exact Real.continuous_sin.measurable.div Real.continuous_cos.measurable
+  exact htan.comp (measurable_const.mul (measurable_id.sub_const _))
+
+/-! ### Regularity of the sublevel sets of a distribution function -/
+
+/-- Above level `0` the sublevel set of a distribution function is bounded below, so the
+`quantile` infimum is not the `sInf`-of-an-unbounded-set junk value. -/
+private lemma bddBelow_setOf_le_cdf (μ : Measure ℝ) [IsProbabilityMeasure μ] {a : ℝ}
+    (ha : 0 < a) : BddBelow {x : ℝ | a ≤ cdf μ x} := by
+  obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually_lt_const ha)
+  refine ⟨b, fun y hy => ?_⟩
+  simp only [Set.mem_setOf_eq] at hy
+  by_contra hc
+  push_neg at hc
+  exact absurd (hb y hc.le) (not_lt.mpr hy)
+
+/-- Below level `1` the sublevel set of a distribution function is nonempty, so the
+`quantile` infimum is not the `sInf ∅` junk value. -/
+private lemma nonempty_setOf_le_cdf (μ : Measure ℝ) [IsProbabilityMeasure μ] {a : ℝ}
+    (ha : a < 1) : {x : ℝ | a ≤ cdf μ x}.Nonempty := by
+  obtain ⟨y, hy⟩ := ((tendsto_cdf_atTop μ).eventually_const_lt ha).exists
+  exact ⟨y, hy.le⟩
+
+/-- The reparametrized quantile function `quantile (cdf μ) ∘ unitParam` is monotone on the
+whole line — the junk levels `p ∉ (0,1)` are never reached. -/
+private lemma monotone_quantile_unitParam (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    Monotone fun v => quantile (⇑(cdf μ)) (unitParam v) := by
+  intro a b hab
+  exact quantile_mono _ (monotone_unitParam hab)
+    (bddBelow_setOf_le_cdf μ (unitParam_mem_Ioo a).1)
+    (nonempty_setOf_le_cdf μ (unitParam_mem_Ioo b).2)
+
+/-- The uniform law on `[0,1]` is a probability measure. -/
+private lemma isProbabilityMeasure_unitUniform :
+    IsProbabilityMeasure (volume.restrict (Set.Icc (0 : ℝ) 1)) := by
+  constructor
+  rw [Measure.restrict_apply_univ, Real.volume_Icc]
+  simp
+
+/-- **The coupling identity.** Pushing the `unitParamInv`-image of the uniform law forward
+by the reparametrized quantile function recovers `μ`: the reparametrization cancels on
+`(0,1)`, which is a full-measure subset, and `map_quantile_uniform` finishes. -/
+private lemma map_quantile_unitParam (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    ((volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv).map
+        (fun v => quantile (⇑(cdf μ)) (unitParam v)) = μ := by
+  rw [Measure.map_map (monotone_quantile_unitParam μ).measurable measurable_unitParamInv]
+  have hres : volume.restrict (Set.Icc (0 : ℝ) 1) = volume.restrict (Set.Ioo (0 : ℝ) 1) :=
+    Measure.restrict_congr_set Ioo_ae_eq_Icc.symm
+  have hcongr : ((fun v => quantile (⇑(cdf μ)) (unitParam v)) ∘ unitParamInv)
+      =ᵐ[volume.restrict (Set.Icc (0 : ℝ) 1)] quantile (⇑(cdf μ)) := by
+    rw [hres]
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with p hp
+    simp only [Function.comp_apply, unitParam_unitParamInv hp]
+  rw [Measure.map_congr hcongr]
+  exact map_quantile_uniform μ (⇑(cdf μ)) fun x => by rw [cdf_eq_real, measureReal_def]
 
 /-- **A monotone coupling orders the distribution functions.** If `f₀ ≤ f₁` are
 nondecreasing and push a common law `ν` forward to `μ₀` and `μ₁`, then `μ₁` puts less mass
@@ -120,10 +229,32 @@ theorem cdf_le_iff_exists_monotone_coupling
         Monotone f₀ ∧ Monotone f₁ ∧ (∀ v, f₀ v ≤ f₁ v) ∧
           ν.map f₀ = μ₀ ∧ ν.map f₁ = μ₁ := by
   constructor
-  · intro hcdf
-    -- Forward direction depends on `exists_monotone_coupling_of_cdf_le`, which is FALSE as
-    -- stated (globally `Monotone` map for a full-support law is unsatisfiable — see there).
-    sorry
+  · -- The existential over `ν` here (absent from `exists_monotone_coupling_of_cdf_le`, which
+    -- pins `ν` to the uniform law and is FALSE for that reason) is exactly the freedom
+    -- needed: take `ν` supported on the whole line and the coupling maps to be the quantile
+    -- functions read through the increasing reparametrization `unitParam : ℝ → (0,1)`.
+    intro hcdf
+    have hcdfc : ∀ x : ℝ, cdf μ₁ x ≤ cdf μ₀ x := by
+      intro x
+      simp only [cdf_eq_real, measureReal_def]
+      exact hcdf x
+    haveI := isProbabilityMeasure_unitUniform
+    refine ⟨(volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv,
+      Measure.isProbabilityMeasure_map measurable_unitParamInv.aemeasurable,
+      (fun v => quantile (⇑(cdf μ₀)) (unitParam v)),
+      (fun v => quantile (⇑(cdf μ₁)) (unitParam v)),
+      monotone_quantile_unitParam μ₀, monotone_quantile_unitParam μ₁, ?_,
+      map_quantile_unitParam μ₀, map_quantile_unitParam μ₁⟩
+    -- `F₁ ≤ F₀` transfers to the quantiles through the Galois property.
+    intro v
+    obtain ⟨hp0, hp1⟩ := unitParam_mem_Ioo v
+    set p := unitParam v with hpdef
+    have hq1 : p ≤ cdf μ₁ (quantile (⇑(cdf μ₁)) p) :=
+      (quantile_le_iff (monotone_cdf (μ := μ₁)) (fun y => (cdf μ₁).right_continuous y)
+        (nonempty_setOf_le_cdf μ₁ hp1) (bddBelow_setOf_le_cdf μ₁ hp0)).mp le_rfl
+    exact (quantile_le_iff (monotone_cdf (μ := μ₀)) (fun y => (cdf μ₀).right_continuous y)
+      (nonempty_setOf_le_cdf μ₀ hp1) (bddBelow_setOf_le_cdf μ₀ hp0)).mpr
+      (le_trans hq1 (hcdfc _))
   · rintro ⟨ν, hν, f₀, f₁, hf₀, hf₁, hle, hmap₀, hmap₁⟩
     haveI := hν
     exact cdf_le_of_monotone_coupling μ₀ μ₁ ν f₀ f₁ hf₀ hf₁ hle hmap₀ hmap₁

@@ -151,6 +151,249 @@ private lemma twoSidedVal_sub_sep {C₁ C₂ C₁' C₂' γ₁ γ₂ γ₁' γ�
         | (exfalso; subst_vars; linarith)
         | (exfalso; have : s = t := le_antisymm hst ‹t ≤ s›; subst this; simp_all)
 
+/-- Widening the rejection interval on the right can only raise the test: with a common left
+boundary and `C₂ < C₂'`, the value is pointwise nondecreasing. -/
+private lemma twoSidedVal_le_of_lt_right {C₁ C₂ C₂' γ₁ γ₂ γ₂' : ℝ} (hC : C₁ < C₂)
+    (hγ₂ : γ₂ ∈ Set.Icc (0 : ℝ) 1) (hγ₂' : 0 ≤ γ₂') (hlt : C₂ < C₂') (u : ℝ) :
+    twoSidedVal C₁ C₂ γ₁ γ₂ u ≤ twoSidedVal C₁ C₂' γ₁ γ₂' u := by
+  obtain ⟨hγ₂0, hγ₂1⟩ := hγ₂
+  unfold twoSidedVal
+  split_ifs <;> linarith
+
+/-- Raising the right boundary weight can only raise the test. -/
+private lemma twoSidedVal_le_of_le_gamma₂ {C₁ C₂ γ₁ γ₂ γ₂' : ℝ} (hle : γ₂ ≤ γ₂') (u : ℝ) :
+    twoSidedVal C₁ C₂ γ₁ γ₂ u ≤ twoSidedVal C₁ C₂ γ₁ γ₂' u := by
+  unfold twoSidedVal
+  split_ifs <;> linarith
+
+/-- **The equal-left-data case of the separation.** When the two rejection intervals share
+their left boundary *and* its randomization weight, the difference of the two values has a
+constant sign, so it can never be both positive somewhere and negative somewhere. This is
+the case `twoSidedVal_sub_sep` does not cover (its `hright` requires the left data to
+differ), and together the two exhaust the trichotomy on `(C₁, γ₁)`. -/
+private lemma twoSidedVal_sub_sep_eqLeft {C₁ C₂ C₂' γ₁ γ₂ γ₂' : ℝ}
+    (hC : C₁ < C₂) (hC' : C₁ < C₂')
+    (hγ₂ : γ₂ ∈ Set.Icc (0 : ℝ) 1) (hγ₂' : γ₂' ∈ Set.Icc (0 : ℝ) 1) {s t : ℝ}
+    (hs : 0 < twoSidedVal C₁ C₂' γ₁ γ₂' s - twoSidedVal C₁ C₂ γ₁ γ₂ s)
+    (ht : twoSidedVal C₁ C₂' γ₁ γ₂' t - twoSidedVal C₁ C₂ γ₁ γ₂ t < 0) :
+    False := by
+  rcases lt_trichotomy C₂ C₂' with h | h | h
+  · linarith [twoSidedVal_le_of_lt_right (γ₁ := γ₁) hC hγ₂ hγ₂'.1 h t]
+  · subst h
+    rcases le_total γ₂ γ₂' with hg | hg
+    · linarith [twoSidedVal_le_of_le_gamma₂ (C₁ := C₁) (C₂ := C₂) (γ₁ := γ₁) hg t]
+    · linarith [twoSidedVal_le_of_le_gamma₂ (C₁ := C₁) (C₂ := C₂) (γ₁ := γ₁) hg s]
+  · linarith [twoSidedVal_le_of_lt_right (γ₁ := γ₁) hC' hγ₂' hγ₂.1 h s]
+
+/-- **The analytic core of the two-sided uniqueness theorem.** Let `D` be a function of the
+statistic `T` whose negative part lies strictly below its positive part along `T` (the
+single-sign-change structure produced by `twoSidedVal_sub_sep`), and let `p₁, p₂` be
+strictly positive densities whose likelihood ratio is strictly increasing along `T`. If `D`
+integrates to zero against both densities, then `D` vanishes `μ`-almost everywhere.
+
+The mechanism: the sign change gives a real `k` separating the ratio `p₂/p₁` across the sign
+change, so `D·(p₂ − k·p₁) ≥ 0` pointwise while its integral is `0 − k·0 = 0`; hence
+`D = 0` or `p₂ = k·p₁` a.e. Strict monotonicity of the ratio confines `{p₂ = k·p₁}` to a
+single level set of `T`, on which `D` is constant, and the vanishing of `∫ D·p₁` kills that
+last constant too. -/
+private lemma ae_eq_zero_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → ℝ}
+    (hp₁ : ∀ x, 0 < p₁ x) (hp₁int : Integrable p₁ μ)
+    (hstrict : ∀ x y, T x < T y → p₂ x * p₁ y < p₁ x * p₂ y)
+    (hsep : ∀ x y, D x < 0 → 0 < D y → T x < T y)
+    (hDT : ∀ x y, T x = T y → D x = D y)
+    (hint₁ : Integrable (fun x => D x * p₁ x) μ)
+    (hint₂ : Integrable (fun x => D x * p₂ x) μ)
+    (h₁ : ∫ x, D x * p₁ x ∂μ = 0) (h₂ : ∫ x, D x * p₂ x ∂μ = 0) :
+    D =ᵐ[μ] 0 := by
+  have hcancel : ∀ x, D x * p₁ x = 0 → D x = 0 := fun x hx =>
+    (mul_eq_zero.mp hx).resolve_right (ne_of_gt (hp₁ x))
+  by_cases hneg : ∃ x, D x < 0
+  swap
+  · -- `D ≥ 0` everywhere: a nonnegative integrand with zero integral.
+    push_neg at hneg
+    have hnn : 0 ≤ᵐ[μ] fun x => D x * p₁ x :=
+      Filter.Eventually.of_forall fun x => mul_nonneg (hneg x) (hp₁ x).le
+    filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hnn hint₁).mp h₁] with x hx
+    simp only [Pi.zero_apply] at hx ⊢
+    exact hcancel x hx
+  by_cases hpos : ∃ y, 0 < D y
+  swap
+  · -- `D ≤ 0` everywhere: the same, applied to `−D·p₁`.
+    push_neg at hpos
+    have hnn : 0 ≤ᵐ[μ] fun x => -(D x * p₁ x) :=
+      Filter.Eventually.of_forall fun x => by
+        change (0 : ℝ) ≤ -(D x * p₁ x)
+        nlinarith [mul_nonneg (neg_nonneg.mpr (hpos x)) (hp₁ x).le]
+    have hz : ∫ x, -(D x * p₁ x) ∂μ = 0 := by rw [integral_neg, h₁, neg_zero]
+    filter_upwards [(integral_eq_zero_iff_of_nonneg_ae hnn hint₁.neg).mp hz] with x hx
+    simp only [Pi.zero_apply, neg_eq_zero] at hx ⊢
+    exact hcancel x hx
+  obtain ⟨x₀, hx₀⟩ := hneg
+  obtain ⟨y₀, hy₀⟩ := hpos
+  -- The likelihood ratio is strictly larger on `{D > 0}` than on `{D < 0}`.
+  have hratio : ∀ x y, D x < 0 → 0 < D y → p₂ x / p₁ x < p₂ y / p₁ y := by
+    intro x y hx hy
+    rw [div_lt_div_iff₀ (hp₁ x) (hp₁ y), mul_comm (p₂ y) (p₁ x)]
+    exact hstrict x y (hsep x y hx hy)
+  have hSne : {c : ℝ | ∃ x, D x < 0 ∧ c = p₂ x / p₁ x}.Nonempty :=
+    ⟨p₂ x₀ / p₁ x₀, x₀, hx₀, rfl⟩
+  have hSub : ∀ y, 0 < D y →
+      ∀ c ∈ {c : ℝ | ∃ x, D x < 0 ∧ c = p₂ x / p₁ x}, c ≤ p₂ y / p₁ y := by
+    rintro y hy c ⟨x, hx, rfl⟩
+    exact (hratio x y hx hy).le
+  have hbdd : BddAbove {c : ℝ | ∃ x, D x < 0 ∧ c = p₂ x / p₁ x} :=
+    ⟨p₂ y₀ / p₁ y₀, hSub y₀ hy₀⟩
+  set k := sSup {c : ℝ | ∃ x, D x < 0 ∧ c = p₂ x / p₁ x} with hkdef
+  have hkle : ∀ x, D x < 0 → p₂ x / p₁ x ≤ k := fun x hx => le_csSup hbdd ⟨x, hx, rfl⟩
+  have hkge : ∀ y, 0 < D y → k ≤ p₂ y / p₁ y := fun y hy => csSup_le hSne (hSub y hy)
+  -- `D·(p₂ − k·p₁) ≥ 0` pointwise, with zero integral.
+  have hg : ∀ x, 0 ≤ D x * p₂ x - k * (D x * p₁ x) := by
+    intro x
+    rcases lt_trichotomy (D x) 0 with h | h | h
+    · have h2 := hkle x h
+      rw [div_le_iff₀ (hp₁ x)] at h2
+      nlinarith [mul_nonneg (neg_nonneg.mpr h.le) (sub_nonneg.mpr h2)]
+    · rw [h]; simp
+    · have h2 := hkge x h
+      rw [le_div_iff₀ (hp₁ x)] at h2
+      nlinarith [mul_nonneg h.le (sub_nonneg.mpr h2)]
+  have hkint : Integrable (fun x => k * (D x * p₁ x)) μ := hint₁.const_mul k
+  have hgint : Integrable (fun x => D x * p₂ x - k * (D x * p₁ x)) μ := hint₂.sub hkint
+  have hgzero : ∫ x, (D x * p₂ x - k * (D x * p₁ x)) ∂μ = 0 := by
+    rw [integral_sub hint₂ hkint, integral_const_mul, h₁, h₂]
+    ring
+  have hdisj : ∀ᵐ x ∂μ, D x = 0 ∨ p₂ x = k * p₁ x := by
+    filter_upwards [(integral_eq_zero_iff_of_nonneg_ae
+      (Filter.Eventually.of_forall hg) hgint).mp hgzero] with x hx
+    simp only [Pi.zero_apply] at hx
+    have hrw : D x * (p₂ x - k * p₁ x) = 0 := by linear_combination hx
+    rcases mul_eq_zero.mp hrw with h | h
+    · exact Or.inl h
+    · exact Or.inr (by linarith)
+  by_cases hexc : ∃ x, D x ≠ 0 ∧ p₂ x = k * p₁ x
+  swap
+  · push_neg at hexc
+    filter_upwards [hdisj] with x hx
+    simp only [Pi.zero_apply]
+    rcases hx with h | h
+    · exact h
+    · by_contra hD
+      exact hexc x hD h
+  obtain ⟨x₁, hx₁D, hx₁r⟩ := hexc
+  -- Strict monotonicity of the ratio pins `{p₂ = k·p₁} ∩ {D ≠ 0}` to one level of `T`.
+  have hlevel : ∀ x, D x ≠ 0 → p₂ x = k * p₁ x → T x = T x₁ := by
+    intro x hxD hxr
+    by_contra hne
+    rcases lt_or_gt_of_ne hne with h | h
+    · have hlt := hstrict x x₁ h
+      rw [hxr, hx₁r] at hlt; linarith
+    · have hlt := hstrict x₁ x h
+      rw [hxr, hx₁r] at hlt; linarith
+  have hDzero : ∀ᵐ x ∂μ, x ∉ {y : 𝓧 | T y = T x₁} → D x = 0 := by
+    filter_upwards [hdisj] with x hx hxE
+    rcases hx with h | h
+    · exact h
+    · by_contra hD
+      exact hxE (hlevel x hD h)
+  -- Multiplying by the CONSTANT `D x₁` makes `D·p₁` a.e. nonnegative — a.e. either `D`
+  -- vanishes or `D = D x₁` — while its integral is `0 · D x₁ = 0`. So a.e. either `D x = 0`
+  -- or `D x₁ ^ 2 · p₁ x = 0`, and the latter is impossible since `p₁ > 0` and `D x₁ ≠ 0`.
+  have hqnn : 0 ≤ᵐ[μ] fun x => D x * p₁ x * D x₁ := by
+    filter_upwards [hDzero] with x hx
+    change (0 : ℝ) ≤ D x * p₁ x * D x₁
+    by_cases hxE : x ∈ {y : 𝓧 | T y = T x₁}
+    · rw [hDT x x₁ hxE]
+      nlinarith [mul_nonneg (mul_self_nonneg (D x₁)) (hp₁ x).le]
+    · rw [hx hxE]; simp
+  have hqint : Integrable (fun x => D x * p₁ x * D x₁) μ := hint₁.mul_const (D x₁)
+  have hqz : ∫ x, D x * p₁ x * D x₁ ∂μ = 0 := by rw [integral_mul_const, h₁, zero_mul]
+  filter_upwards [hDzero, (integral_eq_zero_iff_of_nonneg_ae hqnn hqint).mp hqz] with x hx hq
+  simp only [Pi.zero_apply] at hq ⊢
+  by_cases hxE : x ∈ {y : 𝓧 | T y = T x₁}
+  · rw [hDT x x₁ hxE] at hq ⊢
+    have h0 : D x₁ * D x₁ * p₁ x = 0 := by linear_combination hq
+    exact absurd (mul_self_eq_zero.mp
+      ((mul_eq_zero.mp h0).resolve_right (ne_of_gt (hp₁ x)))) hx₁D
+  · exact hx hxE
+
+/-- The two orientations of the sign change are handled at once: replacing `D` by `−D` turns
+the second alternative into the first. -/
+private lemma ae_eq_zero_of_sep_or {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → ℝ}
+    (hp₁ : ∀ x, 0 < p₁ x) (hp₁int : Integrable p₁ μ)
+    (hstrict : ∀ x y, T x < T y → p₂ x * p₁ y < p₁ x * p₂ y)
+    (hsep : (∀ x y, D x < 0 → 0 < D y → T x < T y) ∨
+      (∀ x y, 0 < D x → D y < 0 → T x < T y))
+    (hDT : ∀ x y, T x = T y → D x = D y)
+    (hint₁ : Integrable (fun x => D x * p₁ x) μ)
+    (hint₂ : Integrable (fun x => D x * p₂ x) μ)
+    (h₁ : ∫ x, D x * p₁ x ∂μ = 0) (h₂ : ∫ x, D x * p₂ x ∂μ = 0) :
+    D =ᵐ[μ] 0 := by
+  rcases hsep with h | h
+  · exact ae_eq_zero_of_sep hp₁ hp₁int hstrict h hDT hint₁ hint₂ h₁ h₂
+  · have hneg : ∀ (q : 𝓧 → ℝ), Integrable (fun x => D x * q x) μ →
+        Integrable (fun x => (-D x) * q x) μ := by
+      intro q hq
+      have h0 : Integrable (fun x => (-1 : ℝ) * (D x * q x)) μ := hq.const_mul (-1)
+      refine h0.congr (Filter.Eventually.of_forall fun x => ?_)
+      change (-1 : ℝ) * (D x * q x) = (-D x) * q x
+      ring
+    have hnegz : ∀ (q : 𝓧 → ℝ), ∫ x, D x * q x ∂μ = 0 → ∫ x, (-D x) * q x ∂μ = 0 := by
+      intro q hq
+      rw [show (fun x => (-D x) * q x) = fun x => -(D x * q x) from funext fun x => by ring,
+        integral_neg, hq, neg_zero]
+    have hres := ae_eq_zero_of_sep (D := fun x => -D x) hp₁ hp₁int hstrict
+      (fun x y hx hy => by
+        have hx' : -D x < 0 := hx
+        have hy' : (0 : ℝ) < -D y := hy
+        exact h x y (by linarith) (by linarith))
+      (fun x y hxy => by simp only [hDT x y hxy])
+      (hneg p₁ hint₁) (hneg p₂ hint₂) (hnegz p₁ h₁) (hnegz p₂ h₂)
+    filter_upwards [hres] with x hx
+    have hx' : -D x = 0 := hx
+    simp only [Pi.zero_apply]
+    linarith
+
+/-- Expectation against a density-carrying measure equals the integral against the density
+(local copy: the `MLR/OneSided` version is `private` to that file). -/
+private lemma ts_integral_density_eq {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (ψ : 𝓧 → ℝ) : ∫ x, ψ x ∂P = ∫ x, ψ x * p x ∂μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq, integral_withDensity_eq_integral_toReal_smul hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hnn x)]; ring
+
+/-- A density of a probability measure is integrable (local copy). -/
+private lemma ts_density_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : Integrable p μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall hnn)]
+  have h1 : (μ.withDensity fun x => ENNReal.ofReal (p x)) Set.univ = 1 := by
+    rw [← hPeq]; exact measure_univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  rw [h1]; exact ENNReal.one_lt_top
+
+/-- If `ψ` is `P`-integrable and `P` has density `p`, then `ψ·p` is `μ`-integrable
+(local copy). -/
+private lemma ts_density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (hψ : Integrable ψ P) : Integrable (fun x => ψ x * p x) μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq] at hψ
+  refine ((integrable_withDensity_iff hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mp hψ).congr ?_
+  filter_upwards with x
+  rw [ENNReal.toReal_ofReal (hnn x)]
+
+/-- The two-sided test is measurable when the statistic is. -/
+private lemma measurable_twoSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C₁ C₂ γ₁ γ₂ : ℝ) :
+    Measurable (twoSidedTest T C₁ C₂ γ₁ γ₂) := by
+  unfold twoSidedTest
+  refine Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const
+    (Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const
+      (Measurable.ite ?_ measurable_const measurable_const))
+  exact (measurableSet_lt measurable_const hT).inter (measurableSet_lt hT measurable_const)
+
 /-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
 parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
 `γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
@@ -177,6 +420,28 @@ theorem isUMP_twoSided
       power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α ∧
       IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
         (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
+  -- BLOCKED upstream, on two distinct open sorries of `NeymanPearson/Generalized.lean`.
+  -- ROADMAP (TSH4 Thm 3.7.1): apply the `m = 2` generalized fundamental lemma with
+  -- `f₁ = p_{θ₁}`, `f₂ = p_{θ₂}`, `f₃ = p_θ` for `θ ∈ (θ₁, θ₂)` and constraint vector
+  -- `c = (α, α)`. Two ingredients are needed and both are `sorry` there:
+  --   • `exists_test_with_prescribed_sizes` — produces a test meeting the two size
+  --     conditions with multipliers; it is `sorry` (Generalized.lean:567);
+  --   • `exists_test_max_integral_of_constraints` — existence of a maximizer over the
+  --     constraint class; `sorry` (Generalized.lean:127), and genuinely a compactness
+  --     statement (weak-* sequential compactness of the unit ball of `L∞(μ)`).
+  -- NOTE: the previously recorded obstruction "momentSet closedness" is now only partly
+  -- relevant — `isClosed_momentSet`/`convex_isClosed_momentSet` are proven and
+  -- `ForMathlib/TestsWeakCompact` is 0-sorry — but `exists_multipliers_of_max`
+  -- (Generalized.lean:540) and the two above are still open, so no honest reduction exists
+  -- yet. `isMax_of_multiplier_form` (proven) only certifies a *given* candidate.
+  -- A THIRD gap is specific to this file and is NOT covered by the generalized lemma: the
+  -- multiplier shape `{p_θ > k₁p_{θ₁} + k₂p_{θ₂}}` must be identified with an *interval*
+  -- `C₁ < T < C₂` of the natural statistic. In canonical form this is the strict convexity
+  -- of `t ↦ exp(η₁ t) ` combinations — `k₁e^{a₁t} + k₂e^{a₂t} < e^{a₃t}` on an interval and
+  -- `>` outside it, for `a₁ < a₃ < a₂` — which has no Mathlib brick and needs its own
+  -- development (a strictly-convex-crossing lemma for exponential sums).
+  -- TODO: close `exists_test_with_prescribed_sizes` upstream, then add the
+  -- exponential-sum two-crossing lemma here.
   sorry
 
 /-- **Minimum rejection probability outside the interval.** Among all tests whose size is
@@ -201,6 +466,19 @@ theorem power_min_twoSided
     ∀ ψ, IsCriticalFn ψ → power P ψ θ₁ = α → power P ψ θ₂ = α →
       ∀ θ : ℝ, θ < θ₁ ∨ θ₂ < θ →
         power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ ≤ power P ψ θ := by
+  -- BLOCKED upstream. ROADMAP (TSH4 Thm 3.7.1, minimizing clause): outside `[θ₁, θ₂]` apply
+  -- the `m = 2` generalized fundamental lemma to the CO-test `1 − φ` — i.e. maximize
+  -- `∫(1 − φ)p_θ` subject to the same two size conditions, which by
+  -- `isMax_le_of_multiplier_form_nonneg` needs multipliers of the right sign. The
+  -- multipliers come from `exists_multipliers_of_max` (`sorry`, Generalized.lean:540), which
+  -- rests on the inner-point condition for `momentSet`, and the maximizer they are attached
+  -- to comes from `exists_test_max_integral_of_constraints` (`sorry`,
+  -- Generalized.lean:127). Unlike the one-sided case there is no single-likelihood-ratio
+  -- shortcut: `power_min_oneSided` could reduce to the plain NP lemma because one constraint
+  -- means one multiplier, whereas here the sign pattern of `(k₁, k₂)` outside `[θ₁, θ₂]` is
+  -- exactly what the undetermined-multiplier existence theorem supplies.
+  -- TODO: close `exists_multipliers_of_max` / `exists_test_max_integral_of_constraints`
+  -- upstream, then this is the `isMax_le_of_multiplier_form_nonneg` assembly.
   sorry
 
 /-- **Comparison of two two-sided tests with a common size at `θ₁`.** If the rejection
@@ -235,6 +513,26 @@ theorem power_lt_of_twoSided_right
         power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ) ∧
       ∀ θ : ℝ, θ < θ₁ → power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ <
         power P (twoSidedTest T C₁ C₂ γ₁ γ₂) θ := by
+  -- FALSE AS STATED (verified counterexample). The conclusion is a STRICT inequality, but
+  -- nothing forces the statistic to be non-degenerate: `hstrict` is vacuous when `T` is
+  -- constant, since it only constrains pairs with `T x < T y`.
+  --
+  -- COUNTEREXAMPLE. `𝓧 = ℝ`, `μ = volume`, `p θ x = ϕ(x − θ)` (so `hpos : 0 < p θ x` holds),
+  -- and `T = fun _ => 0`, a measurable constant. Then `hstrict` holds vacuously. Take
+  -- `C₁ = -2 < C₂ = -1`, `C₁' = 1 < C₂' = 2`, all four `γ = 0`; `hright` holds as
+  -- `C₁ = -2 < 1 = C₁'`. Both tests are identically `0`: for `t = 0` neither `t = Cᵢ` nor
+  -- `Cᵢ < t < Cᵢ₊₁` holds in either configuration. So `hsize` holds (`0 = 0`), and the
+  -- conclusion demands `0 < 0` at every `θ > θ₁`. False.
+  --
+  -- The counterexample is not an artefact of the constant statistic: the same failure occurs
+  -- whenever both rejection intervals miss the (essential) range of `T`.
+  -- TODO(statement-bug): add a non-degeneracy hypothesis putting `T`-mass strictly inside
+  -- both rejection intervals — e.g. `0 < power P (twoSidedTest T C₁ C₂ γ₁ γ₂) θ₁ < 1` — or
+  -- assume `T` surjective. Under such a hypothesis the proof is the Lehmann comparison:
+  -- `twoSidedVal_sub_sep` (already proven in this file) says the positive part of
+  -- `D = φ' − φ` sits strictly above its negative part in `T`, so strict MLR gives a
+  -- separating ratio constant `k` with `∫D p_θ = ∫D(p_θ/p_{θ₁} − k)p_{θ₁} + k∫D p_{θ₁}`,
+  -- the first term being strictly signed for `θ ≠ θ₁` and the second vanishing by `hsize`.
   sorry
 
 /-- **The size conditions determine the test.** Two two-sided tests with size exactly `α`
@@ -263,6 +561,82 @@ theorem twoSided_ae_unique
     (hsize₁' : power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ₁ = α)
     (hsize₂' : power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ₂ = α) :
     twoSidedTest T C₁ C₂ γ₁ γ₂ =ᵐ[μ] twoSidedTest T C₁' C₂' γ₁' γ₂' := by
-  sorry
+  -- Unlike its sibling `power_lt_of_twoSided_right` (which is FALSE as stated), the
+  -- degenerate constant-`T` configuration is harmless here: it forces the two tests to take
+  -- the same constant value once their sizes agree. The proof is the Lehmann comparison in
+  -- its equality form: the difference of the two tests changes sign at most once along `T`
+  -- (`twoSidedVal_sub_sep` and `twoSidedVal_sub_sep_eqLeft`, exhausting the trichotomy on
+  -- the left data), and a difference with a single sign change that integrates to zero
+  -- against two members with a strict monotone likelihood ratio vanishes a.e.
+  -- (`ae_eq_zero_of_sep_or`).
+  set φ := twoSidedTest T C₁ C₂ γ₁ γ₂ with hφdef
+  set φ' := twoSidedTest T C₁' C₂' γ₁' γ₂' with hφ'def
+  have hφc : IsCriticalFn φ := by
+    refine ⟨measurable_twoSidedTest hT C₁ C₂ γ₁ γ₂, fun x => ?_⟩
+    rw [hφdef, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁ hγ₂ (T x)
+  have hφ'c : IsCriticalFn φ' := by
+    refine ⟨measurable_twoSidedTest hT C₁' C₂' γ₁' γ₂', fun x => ?_⟩
+    rw [hφ'def, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁' hγ₂' (T x)
+  have hcrit_int : ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → ∀ ϑ : ℝ, Integrable ψ (P ϑ) := by
+    intro ψ hψ ϑ
+    refine (integrable_const (1 : ℝ)).mono' hψ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]
+    exact (hψ.2 x).2
+  have hmul : ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → ∀ ϑ : ℝ,
+      Integrable (fun x => ψ x * p ϑ x) μ := fun ψ hψ ϑ =>
+    ts_density_mul_integrable (hp ϑ) (hcrit_int ψ hψ ϑ)
+  have hpow : ∀ (ψ : 𝓧 → ℝ) (ϑ : ℝ), power P ψ ϑ = ∫ x, ψ x * p ϑ x ∂μ := by
+    intro ψ ϑ
+    unfold power
+    exact ts_integral_density_eq (hp ϑ) ψ
+  -- The difference of the two tests is a function of the statistic.
+  have hDval : ∀ x, φ' x - φ x
+      = twoSidedVal C₁' C₂' γ₁' γ₂' (T x) - twoSidedVal C₁ C₂ γ₁ γ₂ (T x) := by
+    intro x
+    rw [hφdef, hφ'def, twoSidedTest_eq_val, twoSidedTest_eq_val]
+  have hDT : ∀ x y, T x = T y → φ' x - φ x = φ' y - φ y := by
+    intro x y h
+    rw [hDval x, hDval y, h]
+  have hDint : ∀ ϑ : ℝ, Integrable (fun x => (φ' x - φ x) * p ϑ x) μ := by
+    intro ϑ
+    refine ((hmul φ' hφ'c ϑ).sub (hmul φ hφc ϑ)).congr
+      (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.sub_apply]
+    ring
+  -- Equal sizes at a parameter value make the difference integrate to zero there.
+  have hDzero : ∀ ϑ : ℝ, power P φ ϑ = power P φ' ϑ →
+      ∫ x, (φ' x - φ x) * p ϑ x ∂μ = 0 := by
+    intro ϑ heq
+    have hcg : ∫ x, (φ' x - φ x) * p ϑ x ∂μ = ∫ x, (φ' x * p ϑ x - φ x * p ϑ x) ∂μ :=
+      integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+    rw [hcg, integral_sub (hmul φ' hφ'c ϑ) (hmul φ hφc ϑ), ← hpow φ' ϑ, ← hpow φ ϑ, heq,
+      sub_self]
+  have h₁ := hDzero θ₁ (hsize₁.trans hsize₁'.symm)
+  have h₂ := hDzero θ₂ (hsize₂.trans hsize₂'.symm)
+  -- The single sign change, in whichever of its two orientations applies.
+  have hsep : (∀ x y, φ' x - φ x < 0 → 0 < φ' y - φ y → T x < T y) ∨
+      (∀ x y, 0 < φ' x - φ x → φ' y - φ y < 0 → T x < T y) := by
+    rcases lt_trichotomy C₁ C₁' with hc | hc | hc
+    · exact Or.inl fun x y hx hy => twoSidedVal_sub_sep hC hC' hγ₁ hγ₂ hγ₁' hγ₂'
+        (Or.inl hc) (by linarith [hDval y]) (by linarith [hDval x])
+    · rcases lt_trichotomy γ₁' γ₁ with hg | hg | hg
+      · exact Or.inl fun x y hx hy => twoSidedVal_sub_sep hC hC' hγ₁ hγ₂ hγ₁' hγ₂'
+          (Or.inr ⟨hc, hg⟩) (by linarith [hDval y]) (by linarith [hDval x])
+      · subst hc
+        subst hg
+        exact Or.inl fun x y hx hy => (twoSidedVal_sub_sep_eqLeft hC hC' hγ₂ hγ₂'
+          (by linarith [hDval y]) (by linarith [hDval x])).elim
+      · exact Or.inr fun x y hx hy => twoSidedVal_sub_sep hC' hC hγ₁' hγ₂' hγ₁ hγ₂
+          (Or.inr ⟨hc.symm, hg⟩) (by linarith [hDval y]) (by linarith [hDval x])
+    · exact Or.inr fun x y hx hy => twoSidedVal_sub_sep hC' hC hγ₁' hγ₂' hγ₁ hγ₂
+        (Or.inl hc) (by linarith [hDval y]) (by linarith [hDval x])
+  have hcore := ae_eq_zero_of_sep_or (D := fun x => φ' x - φ x) (hpos θ₁)
+    (ts_density_integrable (hp θ₁)) (hstrict θ₁ θ₂ hθ) hsep hDT (hDint θ₁) (hDint θ₂) h₁ h₂
+  filter_upwards [hcore] with x hx
+  have hx' : φ' x - φ x = 0 := hx
+  linarith
 
 end StatLean.HypothesisTesting

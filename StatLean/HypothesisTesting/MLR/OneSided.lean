@@ -504,16 +504,122 @@ theorem power_strictMono_oneSided
       0 < power P (oneSidedTest T C γ) θ → power P (oneSidedTest T C γ) θ < 1 →
       0 < power P (oneSidedTest T C γ) θ' → power P (oneSidedTest T C γ) θ' < 1 →
       power P (oneSidedTest T C γ) θ < power P (oneSidedTest T C γ) θ' := by
-  -- OBSTRUCTION: this is precisely the *strict* half of unbiasedness of the MP test, the
-  -- same content as `NeymanPearson.Lemma.power_gt_alpha_of_ne`, which is itself still an
-  -- open `sorry` upstream. The monotone (`≤`) direction is `integral_mono_of_hasMLR`; the
-  -- STRICT inequality needs the correlation identity `2·(β(θ') − β(θ)) = ∫∫ F d(μ×μ)` with
-  -- `F = (φ(x')−φ(x))·(p_θ(x)p_θ'(x') − p_θ'(x)p_θ(x'))` shown to be *strictly* positive on
-  -- a μ×μ-positive set — which is where `hdist` (the family is non-constant) and the strict
-  -- bracketing `0 < β < 1` (φ genuinely randomizes: both `{φ=1}` and `{φ=0}` carry mass)
-  -- enter. No shortcut through the NP layer exists while `power_gt_alpha_of_ne` is open.
-  -- TODO: port the strict-unbiasedness argument (shared with the NP layer) here.
-  sorry
+  -- The argument runs entirely through the Karlin–Rubin separation constant `k` of
+  -- `exists_sep_const` — no appeal to the (still open) strict-unbiasedness lemma of the
+  -- Neyman–Pearson layer is needed. Write `A = β(θ)`, `B = β(θ')`. Because `p_{θ'} ≤ k p_θ`
+  -- below the threshold, `k p_θ ≤ p_{θ'}` above it, and hence `p_{θ'} = k p_θ` *on* it, the
+  -- two integrands
+  --   `φ·(p_{θ'} − k p_θ)`   and   `(1 − φ)·(k p_θ − p_{θ'})`
+  -- are pointwise nonnegative (each vanishes identically on two of the three level sets of
+  -- `φ` and is a signed separation inequality on the third). Integrating gives
+  --   `B ≥ k·A`  and  `B ≥ 1 − k·(1 − A)`.
+  -- For `k > 1` the first is strict because `A > 0`; for `k < 1` the second is strict
+  -- because `A < 1`. At `k = 1` the two bounds degenerate to `B ≥ A`, and equality forces
+  -- both nonnegative integrands to vanish a.e.; their difference is `p_{θ'} − p_θ`, so
+  -- `P θ = P θ'`, contradicting `hdist`. This is exactly where the non-degeneracy clause of
+  -- the classical monotone-likelihood-ratio definition is consumed.
+  intro θ θ' hlt ha0 ha1 _ _
+  set φ := oneSidedTest T C γ with hφdef
+  have ha0' : 0 < power P (oneSidedTest T C γ) θ := by rw [← hφdef]; exact ha0
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
+  have hφint : ∀ ϑ : ℝ, Integrable φ (P ϑ) := fun ϑ =>
+    (integrable_const (1 : ℝ)).mono' hφc.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφc.2 x).1]; exact (hφc.2 x).2)
+  have haeq : power P φ θ = ∫ x, φ x * p θ x ∂μ := by
+    unfold power; exact integral_density_eq (hp θ) φ
+  have hbeq : power P φ θ' = ∫ x, φ x * p θ' x ∂μ := by
+    unfold power; exact integral_density_eq (hp θ') φ
+  rw [haeq, hbeq]
+  rw [haeq] at ha0 ha1
+  -- The separation constant at the threshold `C`.
+  obtain ⟨k, hk0, hkle, hkge⟩ :=
+    exists_sep_const hp hMLR hlt (exists_pos_density_of_power_pos hp hT ha0')
+  -- The three level sets of `φ`, and the exact identity on the boundary one.
+  have hφ0 : ∀ x, T x < C → φ x = 0 := by
+    intro x hx
+    rw [hφdef]; unfold oneSidedTest
+    rw [if_neg (not_lt.mpr hx.le), if_neg (ne_of_lt hx)]
+  have hφ1 : ∀ x, C < T x → φ x = 1 := by
+    intro x hx
+    rw [hφdef]; unfold oneSidedTest
+    rw [if_pos hx]
+  have hEq : ∀ x, T x = C → p θ' x = k * p θ x := fun x hx =>
+    le_antisymm (hkle x hx.le) (hkge x hx.ge)
+  -- Integrability bookkeeping.
+  have hiA : Integrable (fun x => φ x * p θ x) μ := density_mul_integrable (hp θ) (hφint θ)
+  have hiB : Integrable (fun x => φ x * p θ' x) μ := density_mul_integrable (hp θ') (hφint θ')
+  have hipθ : Integrable (p θ) μ := density_integrable (hp θ)
+  have hipθ' : Integrable (p θ') μ := density_integrable (hp θ')
+  have honeθ : ∫ x, p θ x ∂μ = 1 := density_integral_one (hp θ)
+  have honeθ' : ∫ x, p θ' x ∂μ = 1 := density_integral_one (hp θ')
+  -- The scaled integrands are ascribed explicitly: `Integrable.const_mul` otherwise returns
+  -- an un-β-reduced `fun x => k * (fun y => …) x`, which `rw` cannot match.
+  have hkA : Integrable (fun x => k * (φ x * p θ x)) μ := hiA.const_mul k
+  have hkp : Integrable (fun x => k * p θ x) μ := hipθ.const_mul k
+  have hd1 : Integrable (fun x => k * p θ x - p θ' x) μ := hkp.sub hipθ'
+  have hd2 : Integrable (fun x => k * (φ x * p θ x) - φ x * p θ' x) μ := hkA.sub hiB
+  have hg1i : Integrable (fun x => φ x * p θ' x - k * (φ x * p θ x)) μ := hiB.sub hkA
+  have hg2i : Integrable
+      (fun x => (k * p θ x - p θ' x) - (k * (φ x * p θ x) - φ x * p θ' x)) μ := hd1.sub hd2
+  have e1 : ∫ x, (φ x * p θ' x - k * (φ x * p θ x)) ∂μ
+      = (∫ x, φ x * p θ' x ∂μ) - k * ∫ x, φ x * p θ x ∂μ := by
+    rw [integral_sub hiB hkA, integral_const_mul]
+  have e2 : ∫ x, ((k * p θ x - p θ' x) - (k * (φ x * p θ x) - φ x * p θ' x)) ∂μ
+      = (k * (∫ x, p θ x ∂μ) - ∫ x, p θ' x ∂μ)
+        - (k * (∫ x, φ x * p θ x ∂μ) - ∫ x, φ x * p θ' x ∂μ) := by
+    rw [integral_sub hd1 hd2, integral_sub hkp hipθ', integral_sub hkA hiB,
+      integral_const_mul, integral_const_mul]
+  -- Pointwise nonnegativity of the two separation integrands.
+  have hpt1 : 0 ≤ᵐ[μ] fun x => φ x * p θ' x - k * (φ x * p θ x) := by
+    refine Filter.Eventually.of_forall fun x => ?_
+    have hrw : φ x * p θ' x - k * (φ x * p θ x) = φ x * (p θ' x - k * p θ x) := by ring
+    simp only [Pi.zero_apply]
+    rw [hrw]
+    rcases lt_trichotomy (T x) C with h | h | h
+    · rw [hφ0 x h]; simp
+    · rw [hEq x h]; simp
+    · rw [hφ1 x h, one_mul]; linarith [hkge x h.le]
+  have hpt2 : 0 ≤ᵐ[μ]
+      fun x => (k * p θ x - p θ' x) - (k * (φ x * p θ x) - φ x * p θ' x) := by
+    refine Filter.Eventually.of_forall fun x => ?_
+    have hrw : (k * p θ x - p θ' x) - (k * (φ x * p θ x) - φ x * p θ' x)
+        = (1 - φ x) * (k * p θ x - p θ' x) := by ring
+    simp only [Pi.zero_apply]
+    rw [hrw]
+    rcases lt_trichotomy (T x) C with h | h | h
+    · rw [hφ0 x h]; simp only [sub_zero, one_mul]; linarith [hkle x h.le]
+    · rw [hEq x h]; simp
+    · rw [hφ1 x h]; simp
+  have hS1 : 0 ≤ ∫ x, (φ x * p θ' x - k * (φ x * p θ x)) ∂μ := integral_nonneg_of_ae hpt1
+  have hS2 : 0 ≤ ∫ x, ((k * p θ x - p θ' x) - (k * (φ x * p θ x) - φ x * p θ' x)) ∂μ :=
+    integral_nonneg_of_ae hpt2
+  have hS1' : 0 ≤ (∫ x, φ x * p θ' x ∂μ) - k * ∫ x, φ x * p θ x ∂μ := by
+    have h := hS1; rw [e1] at h; exact h
+  have hS2' : 0 ≤ (k - 1) - (k * (∫ x, φ x * p θ x ∂μ) - ∫ x, φ x * p θ' x ∂μ) := by
+    have h := hS2; rw [e2, honeθ, honeθ'] at h; linarith
+  rcases lt_trichotomy k 1 with hk | hk | hk
+  · -- `k < 1`: the lower bound `B ≥ 1 − k(1 − A)` is strict because `A < 1`.
+    nlinarith [mul_pos (sub_pos.mpr hk) (sub_pos.mpr ha1)]
+  · -- `k = 1`: equality would force `p_θ = p_{θ'}` a.e., contradicting `hdist`.
+    subst hk
+    by_contra hcon
+    push_neg at hcon
+    have hz1 : ∫ x, (φ x * p θ' x - 1 * (φ x * p θ x)) ∂μ = 0 := by rw [e1]; linarith
+    have hz2 : ∫ x, ((1 * p θ x - p θ' x) - (1 * (φ x * p θ x) - φ x * p θ' x)) ∂μ = 0 := by
+      rw [e2, honeθ, honeθ']; linarith
+    have hae1 := (integral_eq_zero_iff_of_nonneg_ae hpt1 hg1i).mp hz1
+    have hae2 := (integral_eq_zero_iff_of_nonneg_ae hpt2 hg2i).mp hz2
+    have haep : p θ =ᵐ[μ] p θ' := by
+      filter_upwards [hae1, hae2] with x hx1 hx2
+      simp only [Pi.zero_apply] at hx1 hx2
+      linarith
+    have hPeq : P θ = P θ' := by
+      rw [(hp θ).2.2, (hp θ').2.2]
+      exact withDensity_congr_ae (haep.mono fun x hx => by simp only [hx])
+    exact absurd hPeq (hdist θ θ' hlt)
+  · -- `k > 1`: the lower bound `B ≥ k·A` is strict because `A > 0`.
+    nlinarith [mul_pos (sub_pos.mpr hk) ha0]
 
 /-- **The same test is UMP at every null boundary.** For any `θ'`, the one-sided test is
 uniformly most powerful for `H' : θ ≤ θ'` against `K' : θ > θ'` at the level it happens to
