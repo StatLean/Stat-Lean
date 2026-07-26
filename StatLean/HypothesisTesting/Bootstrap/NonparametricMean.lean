@@ -262,6 +262,23 @@ private lemma memLp_id_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
   rw [memLp_two_iff_integrable_sq (by fun_prop)]
   exact integrable_empiricalMeasure x (fun t => t ^ 2)
 
+/-- An empirical measure is finite. -/
+private lemma isFiniteMeasure_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
+    IsFiniteMeasure (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    simp only [empiricalMeasure, Finset.univ_eq_empty, Finset.sum_empty, smul_zero]
+    infer_instance
+  · haveI := isProbabilityMeasure_empiricalMeasure hn x; infer_instance
+
+/-- The empirical distribution function is the sample average of the half-line indicators. -/
+private lemma empiricalMeasure_Iic_toReal {n : ℕ} (x : Fin n → ℝ) (y : ℝ) :
+    ((empiricalMeasure x) (Set.Iic y)).toReal
+      = (n : ℝ)⁻¹ * ∑ i, Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (x i) := by
+  haveI := isFiniteMeasure_empiricalMeasure x
+  rw [← measureReal_def, ← integral_indicator_one (μ := empiricalMeasure x) measurableSet_Iic,
+    integral_empiricalMeasure x (Set.indicator (Set.Iic y) (1 : ℝ → ℝ))]
+
 /-- The `n`-fold product of a probability law is a probability measure. -/
 private lemma isProbabilityMeasure_pi_const (n : ℕ) (F : Measure ℝ) [IsProbabilityMeasure F] :
     IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) := by
@@ -326,7 +343,127 @@ theorem empirical_mem_meanSeqClass [IsProbabilityMeasure Pr] [IsProbabilityMeasu
     -- USER-INPUT: the sampling law is square-integrable, so means and variances converge
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) :
     ∀ᵐ ω ∂Pr, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanSeqClass Q := by
-  sorry
+  classical
+  -- Transfer the first two moments of `X 0` from the limit law `Q`.
+  have hidQ : IdentDistrib (X 0) (fun t : ℝ => t) Pr Q :=
+    ⟨(hmeas 0).aemeasurable, measurable_id.aemeasurable, by rw [hlaw.map_eq, Measure.map_id']⟩
+  have hXmem : MemLp (X 0) 2 Pr := hidQ.memLp_iff.mpr hQ2
+  have hXint : Integrable (X 0) Pr := hXmem.integrable one_le_two
+  have hXsqint : Integrable (fun ω => X 0 ω ^ 2) Pr := hXmem.integrable_sq
+  have hmeanQ : Pr[X 0] = ∫ t, t ∂Q := hlaw.integral_comp (f := fun t : ℝ => t) (by fun_prop)
+  have hsqQ : Pr[fun ω => X 0 ω ^ 2] = ∫ t, t ^ 2 ∂Q :=
+    hlaw.integral_comp (f := fun t : ℝ => t ^ 2) (by fun_prop)
+  -- Three strong laws: of `X`, of `X²`, and of the indicator of a half-line at each point.
+  have hSLLN_mean : ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) atTop (𝓝 (∫ t, t ∂Q)) := by
+    rw [← hmeanQ]; exact strong_law_ae X hXint (fun i j hij => hindep.indepFun hij) hident
+  have hSLLN_sq : ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω ^ 2) atTop (𝓝 (∫ t, t ^ 2 ∂Q)) := by
+    rw [← hsqQ]
+    exact strong_law_ae (fun i ω => X i ω ^ 2) hXsqint
+      (fun i j hij =>
+        (hindep.comp (fun _ => fun t : ℝ => t ^ 2) (fun _ => by fun_prop)).indepFun hij)
+      (fun i => (hident i).comp (by fun_prop : Measurable fun t : ℝ => t ^ 2))
+  have hCDF : ∀ y : ℝ, ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic y)).toReal)
+      atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
+    intro y
+    have hind_meas : Measurable (Set.indicator (Set.Iic y) (1 : ℝ → ℝ)) :=
+      measurable_one.indicator measurableSet_Iic
+    have hb : Integrable (fun ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)) Pr := by
+      refine (memLp_top_of_bound ((hind_meas.comp (hmeas 0)).aestronglyMeasurable) 1 ?_).integrable
+        le_top
+      filter_upwards with ω
+      calc ‖Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)‖
+          ≤ ‖(1 : ℝ → ℝ) (X 0 ω)‖ := norm_indicator_le_norm_self _ _
+        _ = 1 := by simp
+    have hPrind : Pr[fun ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)]
+        = (Q (Set.Iic y)).toReal := by
+      have h := hlaw.integral_comp (f := Set.indicator (Set.Iic y) (1 : ℝ → ℝ))
+        hind_meas.aestronglyMeasurable
+      rw [Function.comp_def] at h
+      rw [h]; exact integral_indicator_one measurableSet_Iic
+    have hsl := strong_law_ae (fun i ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X i ω)) hb
+      (fun i j hij =>
+        (hindep.comp (fun _ => Set.indicator (Set.Iic y) (1 : ℝ → ℝ))
+          (fun _ => hind_meas)).indepFun hij)
+      (fun i => (hident i).comp hind_meas)
+    filter_upwards [hsl] with ω hω
+    rw [← hPrind]
+    refine hω.congr' (Filter.Eventually.of_forall fun n => ?_)
+    simp only [empiricalMeasure_Iic_toReal, smul_eq_mul]
+    rw [Fin.sum_univ_eq_sum_range (fun k => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X k ω)) n]
+  have hCDFrat : ∀ᵐ ω ∂Pr, ∀ q : ℚ, Tendsto
+      (fun n : ℕ => ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic (q : ℝ))).toReal)
+      atTop (𝓝 ((Q (Set.Iic (q : ℝ))).toReal)) := ae_all_iff.mpr (fun q => hCDF (q : ℝ))
+  -- Assemble the five clauses on the intersection of the almost sure events.
+  filter_upwards [hSLLN_mean, hSLLN_sq, hCDFrat] with ω hmean hsq hcdf
+  -- The mean and second-moment integrals against the empirical measure, as sample averages.
+  have hEmean : (fun n => ∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω))
+      = fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω := by
+    funext n
+    rw [← Fin.sum_univ_eq_sum_range (fun i => X i ω) n]
+    exact integral_empiricalMeasure (fun i : Fin n => X i ω) (fun t : ℝ => t)
+  have hEsq : (fun n => ∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω))
+      = fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω ^ 2 := by
+    funext n
+    rw [← Fin.sum_univ_eq_sum_range (fun i => X i ω ^ 2) n]
+    exact integral_empiricalMeasure (fun i : Fin n => X i ω) (fun t : ℝ => t ^ 2)
+  refine ⟨fun n hn => isProbabilityMeasure_empiricalMeasure hn _,
+    fun n => memLp_id_empiricalMeasure _, ?_, ?_, ?_⟩
+  · -- Weak convergence: rational sandwich at each continuity point.
+    intro x hx
+    rw [Metric.tendsto_atTop]
+    intro ε hε
+    rw [Metric.continuousAt_iff] at hx
+    obtain ⟨δ, hδpos, hδ⟩ := hx (ε / 3) (by positivity)
+    obtain ⟨q1, hq1l, hq1r⟩ := exists_rat_btwn (show x - δ < x by linarith)
+    obtain ⟨q2, hq2l, hq2r⟩ := exists_rat_btwn (show x < x + δ by linarith)
+    have hc1 := hcdf q1
+    have hc2 := hcdf q2
+    rw [Metric.tendsto_atTop] at hc1 hc2
+    obtain ⟨N1, hN1⟩ := hc1 (ε / 3) (by positivity)
+    obtain ⟨N2, hN2⟩ := hc2 (ε / 3) (by positivity)
+    refine ⟨max N1 N2, fun n hn => ?_⟩
+    haveI := isFiniteMeasure_empiricalMeasure (fun i : Fin n => X i ω)
+    have hmono : ∀ a b : ℝ, a ≤ b →
+        ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic a)).toReal
+          ≤ ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic b)).toReal := fun a b hab =>
+      ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono (Set.Iic_subset_Iic.mpr hab))
+    have hQ1 : |(Q (Set.Iic (q1 : ℝ))).toReal - (Q (Set.Iic x)).toReal| < ε / 3 := by
+      have hd : dist (q1 : ℝ) x < δ := by
+        rw [Real.dist_eq, abs_of_neg (by linarith : (q1 : ℝ) - x < 0)]; linarith
+      have := hδ hd; rwa [Real.dist_eq] at this
+    have hQ2' : |(Q (Set.Iic (q2 : ℝ))).toReal - (Q (Set.Iic x)).toReal| < ε / 3 := by
+      have hd : dist (q2 : ℝ) x < δ := by
+        rw [Real.dist_eq, abs_of_pos (by linarith : (0 : ℝ) < (q2 : ℝ) - x)]; linarith
+      have := hδ hd; rwa [Real.dist_eq] at this
+    have hb1 := hN1 n (le_of_max_le_left hn)
+    have hb2 := hN2 n (le_of_max_le_right hn)
+    have hle1 := hmono (q1 : ℝ) x hq1r.le
+    have hle2 := hmono x (q2 : ℝ) hq2l.le
+    rw [Real.dist_eq] at hb1 hb2 ⊢
+    rw [abs_lt] at hQ1 hQ2' hb1 hb2 ⊢
+    constructor <;> linarith [hQ1.1, hQ1.2, hQ2'.1, hQ2'.2, hb1.1, hb1.2, hb2.1, hb2.2, hle1, hle2]
+  · -- Convergence of the mean.
+    rw [hEmean]; exact hmean
+  · -- Convergence of the variance.
+    have hVarQ : Var[fun t : ℝ => t; Q] = (∫ t, t ^ 2 ∂Q) - (∫ t, t ∂Q) ^ 2 :=
+      variance_eq_sub hQ2
+    rw [hVarQ]
+    have hcongr : ∀ᶠ n in atTop,
+        (∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω))
+            - (∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω)) ^ 2
+          = Var[fun t : ℝ => t; empiricalMeasure fun i : Fin n => X i ω] := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+      exact (variance_eq_sub (memLp_id_empiricalMeasure _)).symm
+    refine Tendsto.congr' hcongr ?_
+    have h1 : Tendsto (fun n => ∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω)) atTop
+        (𝓝 (∫ t, t ^ 2 ∂Q)) := by rw [hEsq]; exact hsq
+    have h2 : Tendsto (fun n => ∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω)) atTop
+        (𝓝 (∫ t, t ∂Q)) := by rw [hEmean]; exact hmean
+    exact h1.sub (h2.pow 2)
 
 /-- **Consistency of the nonparametric bootstrap for a mean.**
 
