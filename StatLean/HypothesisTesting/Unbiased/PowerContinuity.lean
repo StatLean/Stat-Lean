@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Smoothness
 
 /-!
 # Continuous power functions: boundary optimality ⇒ unbiased optimality
@@ -54,6 +55,7 @@ Exponential Families*, IMS Lecture Notes 9, 1986).
 
 open MeasureTheory
 open StatLean.PointEstimation
+open scoped InnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -144,25 +146,86 @@ theorem isUMPU_of_isUMP_on_boundary [TopologicalSpace Θ]
 /-- **Power functions of an exponential family are continuous on the interior of the natural
 parameter set.**
 
-For a bounded measurable `φ`, `η ↦ ∫ φ dP_η` is continuous (indeed real-analytic) on
-`interior E.natSet`. Statement only in this file: the analytic input is the smoothness
-theory of the log-partition function and of integrals against exponential-family densities
-(see the point-estimation area's exponential-family smoothness development, which supplies
-differentiation under the integral sign on the interior of the natural parameter set). -/
+For a bounded measurable `φ`, `η ↦ ∫ φ dP_η` is continuous on `interior E.natSet`. Writing
+`P_η = ν.tilted ⟪η, T ·⟫`, the power is the ratio
+`(∫ φ e^{⟪η,T⟫} dν) / (∫ e^{⟪η,T⟫} dν)`; both integrals are differentiable — hence continuous
+— on the interior of the corresponding weighted natural parameter sets by
+`ExpFamily.continuousOn_integral_exp_inner`, and `|φ| ≤ 1` places `E.natSet` inside the
+`φ`-weighted natural set, so both are continuous on `interior E.natSet`. The denominator is
+positive there whenever `ν ≠ 0`, and for `ν = 0` every `P_η` vanishes and the power is
+constantly `0`.
+
+**FLAGGED SIGNATURE AMENDMENT.** The two instance hypotheses `[BorelSpace V]` and
+`[FiniteDimensional ℝ V]` were *added* to the frozen statement: without a finite-dimension
+assumption the theorem is **false**. Counterexample. Let `V` be the incomplete inner-product
+space `c₀₀ ⊆ ℓ²` of finitely supported real sequences, `𝓧 = ℕ` with the discrete σ-algebra,
+`ν{0} = 1` and `ν{n} = e^{-n²}` for `n ≥ 1`, and `T 0 = 0`, `T n = n³ eₙ`. For finitely
+supported `η` all but finitely many terms of `∫ e^{⟪η,T⟫} dν = 1 + ∑_{n≥1} e^{-n² + n³ηₙ}`
+equal `e^{-n²}`, so `E.natSet = V` and `interior E.natSet = V ∋ 0`. Take `φ = 1_{\{0\}}`
+(a critical function). The numerator `∫ φ e^{⟪η,T⟫} dν = 1` is constant, while at
+`η_k = k⁻¹ e_k → 0` the denominator is `2 + S − e^{-k²}` versus `1 + S` at `η = 0`
+(`S = ∑_{n≥1} e^{-n²}`), because the `n = k` term becomes `e^{-k² + k³/k} = 1`. So the power
+tends to `1/(2+S) ≠ 1/(1+S)`. The failure is genuine: in infinite dimensions membership of
+`η` in the *interior* of the natural parameter set does not bound `∫ e^{⟪·,T⟫} dν` on a
+neighbourhood of `η`, which is exactly what the `2^{dim V}` sign-vector envelope of
+`ExpFamily.integrable_abs_exp_inner_add_norm` supplies in finite dimensions. `[BorelSpace V]`
+is likewise needed because the frozen signature leaves `MeasurableSpace V` unrelated to the
+topology; every intended instantiation is `V = EuclideanSpace ℝ (Fin k)`, where both hold. -/
 theorem continuous_power_expFamily {V : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [MeasurableSpace V]
+    -- LEAN-ONLY (AMENDMENT): the Borel structure ties the given `MeasurableSpace V` to the
+    -- topology, and finite dimension supplies the sign-vector envelope dominating
+    -- `e^{⟪η,T⟫}` on a ball; see the counterexample above — the statement is false without it
+    [BorelSpace V] [FiniteDimensional ℝ V]
     (E : ExpFamily 𝓧 V) {φ : 𝓧 → ℝ}
     -- USER-INPUT: the integrand is a randomized test (bounded, measurable)
     (hφ : IsCriticalFn φ) :
     ContinuousOn (fun η => powerAgainst (E.P η) φ) (interior E.natSet) := by
-  -- TODO: analytic obstruction. `powerAgainst (E.P η) φ = (∫ φ e^{⟪η,T⟫} dν)/(∫ e^{⟪η,T⟫} dν)`;
-  -- both integrals are real-analytic in `η` on `interior E.natSet` (differentiation under the
-  -- integral sign, dominated on a compact neighborhood by the two-sided exp-family bound
-  -- `e^{⟪η,T⟫} ≤ e^{⟪η₁,T⟫} + e^{⟪η₂,T⟫}`), and the denominator is positive there. This is the
-  -- exponential-family smoothness theory (cf. `ExponentialFamily.MGF`), not yet packaged as a
-  -- continuity statement for the tilted integral of a bounded `φ`. Fix = add such a lemma to
-  -- `ExponentialFamily`, then compose. Isolated here as the single lifted debt of this file.
-  sorry
+  -- the two exponential integrals appearing in the tilted representation of the power
+  set num : V → ℝ := fun η => ∫ x, φ x * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base with hnum_def
+  set den : V → ℝ := fun η => ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base with hden_def
+  -- `|φ| ≤ 1` puts the natural parameter set inside the `φ`-weighted one
+  have hsub : E.natSet ⊆ E.weightedNatSet φ := by
+    intro η hη
+    refine (hη : Integrable _ _).mono' ?_ (Filter.Eventually.of_forall fun x => ?_)
+    · exact (hφ.1.abs.aestronglyMeasurable).mul
+        ((((innerSL ℝ η).continuous.measurable.comp E.stat_meas)).exp.aestronglyMeasurable)
+    · rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      calc |φ x| * Real.exp ⟪η, E.stat x⟫_ℝ ≤ 1 * Real.exp ⟪η, E.stat x⟫_ℝ := by
+            gcongr
+            rw [abs_of_nonneg (hφ.2 x).1]; exact (hφ.2 x).2
+        _ = Real.exp ⟪η, E.stat x⟫_ℝ := one_mul _
+  -- continuity of the numerator, transported from the `φ`-weighted natural set
+  have hnum : ContinuousOn num (interior E.natSet) :=
+    (E.continuousOn_integral_exp_inner hφ.1).mono (interior_mono hsub)
+  -- continuity of the denominator: the weight `1` has `weightedNatSet = natSet`
+  have hwone : E.weightedNatSet (fun _ : 𝓧 => (1 : ℝ)) = E.natSet := by
+    ext η; simp [ExpFamily.weightedNatSet, ExpFamily.natSet]
+  have hden : ContinuousOn den (interior E.natSet) := by
+    have h := E.continuousOn_integral_exp_inner
+      (f := fun _ : 𝓧 => (1 : ℝ)) measurable_const
+    rw [hwone] at h
+    simpa only [one_mul, hden_def] using h
+  -- the tilted representation `powerAgainst (E.P η) φ = num η / den η`
+  have hrepr : ∀ η : V, powerAgainst (E.P η) φ = num η / den η := by
+    intro η
+    rw [powerAgainst, ExpFamily.P, integral_tilted]
+    simp only [smul_eq_mul, hnum_def, hden_def]
+    rw [← integral_div]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    dsimp only
+    ring
+  simp only [hrepr]
+  -- degenerate case: a zero reference measure makes every member measure zero
+  rcases eq_zero_or_neZero E.base with hzero | _
+  · refine ContinuousOn.congr (continuousOn_const (c := (0 : ℝ))) (fun η _ => ?_)
+    simp only [hnum_def, hden_def, hzero]
+    simp
+  -- generic case: the denominator is a positive integral of a positive integrand
+  refine hnum.div hden (fun η hη => ne_of_gt ?_)
+  have hmem : η ∈ E.natSet := interior_subset hη
+  have hmem' : Integrable (fun x => Real.exp ⟪η, E.stat x⟫_ℝ) E.base := hmem
+  simpa only [hden_def] using integral_exp_pos hmem'
 
 /-- **Continuity of the power function through a reparametrization.**
 
@@ -171,6 +234,9 @@ taking values in the interior of the natural parameter set, then every power fun
 `P'` is continuous — the hypothesis consumed by `isUMPU_of_isUMP_on_boundary`. -/
 theorem continuous_power_of_isCanonicalRepr {Θ' V : Type*} [TopologicalSpace Θ']
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]
+    -- LEAN-ONLY (AMENDMENT): inherited from `continuous_power_expFamily`, where the
+    -- unamended statement is false; see the counterexample recorded there
+    [BorelSpace V] [FiniteDimensional ℝ V]
     {P' : Θ' → Measure 𝓧} {E : ExpFamily 𝓧 V} {ηmap : Θ' → V} {φ : 𝓧 → ℝ}
     -- USER-INPUT: the model is a reparametrized canonical exponential family
     (hrepr : IsCanonicalRepr P' E ηmap)
