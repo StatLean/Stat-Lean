@@ -61,10 +61,15 @@ statistic), Theorem 1.11 (Lehmann–Scheffé: minimum risk for every convex loss
   globally measurable), and the `condExp` form, which needs only integrability. They agree
   (`condExp_comap_eq_rbEstimator`), and the variance half of Rao–Blackwell holds for the
   `condExp` form with no measurability input at all (`variance_condExp_le`, the law of total
-  variance). The `IsUMVU` minimality clause quantifies over competitors carrying only
-  `MemEstL2`, i.e. a *per-parameter* a.e. measurable version, which is precisely the class the
-  globally-measurable completeness test cannot reach; see the note inside
-  `isUMVU_of_complete_sufficient`.
+  variance).
+* The `IsUMVU` minimality clause quantifies over competitors carrying only `MemEstL2`, i.e. a
+  *per-parameter* a.e. measurable version, whereas the completeness test function of the
+  uniqueness step must be globally measurable. The two classes are reconciled by domination:
+  `isUMVU_of_complete_sufficient` carries a σ-finite dominating measure (an added hypothesis,
+  documented there and discharged for free by its only consumer), and the equivalent countable
+  mixture of `exists_equivalent_countable_mixture` turns a per-parameter version into one that
+  serves at *every* parameter. The measurable-competitor case is isolated in the private lemma
+  `variance_rbEstimator_le_of_complete`, which the general case reduces to.
 * `isUMVU_of_fullRank_expFamily` combines the completeness of the natural statistic of a
   full-rank exponential family with the two theorems above. It is phrased as the *existence*
   of a measurable function of the natural statistic which is UMVU, since the function itself
@@ -346,11 +351,34 @@ private lemma variance_rbEstimator_le_of_complete (P : Θ → Measure 𝓧)
 
 /-- **Lehmann–Scheffé, variance form.** Averaging any unbiased square-integrable estimator
 over the fibers of a *complete* sufficient statistic produces the uniformly minimum variance
-unbiased estimator of the estimand. -/
+unbiased estimator of the estimand.
+
+**Added hypothesis (authorized signature amendment): the family is dominated.** `μ` σ-finite
+with `∀ θ, P θ ≪ μ` — the standing hypothesis of the whole dominated theory of sufficiency
+(and the setting of the source: completeness and sufficiency are developed there for
+dominated families), already carried by the only consumer of this theorem,
+`isUMVU_of_fullRank_expFamily`, where it is discharged by `E.base`.
+
+*What it buys, and why some such hypothesis is needed.* The minimality clause of `IsUMVU`
+quantifies over competitors `δ'` holding only `MemEstL2 P δ'`, i.e. a *per-parameter*
+`AEStronglyMeasurable` version, whereas `IsCompleteStat` tests globally measurable functions,
+and Rao–Blackwellization `rbEstimator Q δ'` needs a genuine measurable representative to be a
+legitimate test function. Domination bridges exactly that gap: `exists_equivalent_countable_mixture`
+produces a countable mixture `ν` of members with `P θ ≪ ν` for *every* `θ`, the competitor is
+`AEStronglyMeasurable` for `ν` because it is so for each mixed member
+(`AEStronglyMeasurable.sum_measure`), and its `ν`-measurable version is then a version of it
+simultaneously under every member — so it is unbiased and square-integrable throughout, and
+the classical argument (`variance_rbEstimator_le_of_complete`) applies verbatim. Without a
+dominating measure the per-parameter versions need not glue (Dirac-type families), which is
+the obstruction recorded in earlier drafts of this file. -/
 theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
     (g : Θ → ℝ) {T : 𝓧 → S}
     -- LEAN-ONLY: measurability of the statistic
-    (hT : Measurable T) {Q : Kernel S 𝓧} [IsMarkovKernel Q]
+    (hT : Measurable T)
+    -- USER-INPUT (AMENDMENT): the model is dominated by the σ-finite measure `μ`; the
+    -- standing hypothesis of the dominated theory, used only to glue the per-parameter a.e.
+    -- versions of a competitor into one measurable representative
+    (μ : Measure 𝓧) [SigmaFinite μ] (hdom : ∀ θ, P θ ≪ μ) {Q : Kernel S 𝓧} [IsMarkovKernel Q]
     -- USER-INPUT: the θ-free disintegration of the graph law; sufficiency of the statistic
     (hgraph : ∀ θ, (P θ).map (fun x => (T x, x)) = (statLaw P T θ) ⊗ₘ Q)
     -- USER-INPUT: completeness of the statistic; the classical hypothesis
@@ -370,40 +398,24 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
     exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
   · -- minimality against every square-integrable unbiased competitor
     intro δ' hδ'u hδ'2 θ
-    -- STATUS: the `condExp` Rao–Blackwell layer above closes the *averaging* half of the
-    -- argument and localizes the debt to a single, precisely identified step.
-    --
-    -- What the layer gives, with no measurability input on `δ'` at all: writing
-    -- `m := MeasurableSpace.comap T inferInstance`, `variance_condExp_le` yields
-    --   `variance ((P θ)[δ' | m]) (P θ) ≤ variance δ' (P θ)`
-    -- from `hδ'2 θ : MemLp δ' 2 (P θ)` alone. So it suffices to identify
-    --   `(P θ)[δ' | m] =ᵐ[P θ] fun x => rbEstimator Q δ (T x)`.                          (†)
-    --
-    -- Why (†) is not reachable here. Choose a measurable `P θ`-version `d` of `δ'`
-    -- (`(hδ'2 θ).aestronglyMeasurable.mk`). By `condExp_comap_eq_rbEstimator`,
-    -- `(P θ)[δ' | m] = (P θ)[d | m] =ᵐ[P θ] fun x => rbEstimator Q d (T x)`, so (†) is
-    -- exactly `rbEstimator Q d =ᵐ[statLaw P T θ] rbEstimator Q δ`. Both sides are genuinely
-    -- measurable functions on `S`, so `unique_unbiased_function_of_complete` applies — but it
-    -- consumes unbiasedness of `rbEstimator Q d` at *every* parameter, i.e. `∫ d dP θ' = g θ'`
-    -- for all `θ'`, while `d` agrees with `δ'` only `P θ`-a.e.; off that class `d` is
-    -- arbitrary, and the model carries no dominating measure that would let the per-parameter
-    -- versions of `δ'` be glued into one representative unbiased throughout (Dirac-type
-    -- families show the gluing fails in general).
-    --
-    -- Equivalently: `rbEstimator Q δ'` (junk-valued where `δ'` is not `Q s`-integrable) *is*
-    -- unbiased at every `θ'` and is `AEStronglyMeasurable` for every `statLaw P T θ'`, so what
-    -- remains is completeness of `T` tested against functions that are only *per-parameter*
-    -- a.e. measurable. `IsCompleteStat`, by definition, tests globally measurable functions,
-    -- and the strengthening does not follow from it. The same obstruction is reached from the
-    -- covariance criterion (`isUMVU_iff_uncorrelated_unbiasedZero`): one needs
-    -- `E_θ[U | T] = 0` for competitors `U` of zero mean that are only a.e. measurable.
-    --
-    -- Consequently this is *not* a missing-lemma gap but a gap between the frozen `IsUMVU`
-    -- competitor class (`MemEstL2`, per-parameter a.e. measurable) and the frozen
-    -- `IsCompleteStat` test class (globally measurable). For competitors that do carry a
-    -- global measurable representative the theorem is proved, without debt, by the private
-    -- lemma `variance_rbEstimator_le_of_complete` above. Left as sanctioned debt.
-    sorry
+    haveI : Nonempty Θ := ⟨θ⟩
+    -- an equivalent countable mixture of members of the family: it dominates *every* member,
+    -- so a version of the competitor under the mixture is a version under every member
+    obtain ⟨θs, c, ν, hνdef, -, -, hdomν, -⟩ := exists_equivalent_countable_mixture P μ hdom
+    have hae : AEStronglyMeasurable δ' ν := by
+      rw [hνdef]
+      exact AEStronglyMeasurable.sum_measure
+        fun i => ((hδ'2 (θs i)).aestronglyMeasurable).smul_measure (c i)
+    -- the glued measurable representative, and its a.e. agreement with `δ'` at every parameter
+    have hdm : Measurable (hae.mk δ') := hae.stronglyMeasurable_mk.measurable
+    have hdae : ∀ θ', δ' =ᵐ[P θ'] hae.mk δ' :=
+      fun θ' => hae.ae_eq_mk.filter_mono (hdomν θ').ae_le
+    have hdu : IsUnbiased P g (hae.mk δ') :=
+      fun θ' => (integral_congr_ae (hdae θ')).symm.trans (hδ'u θ')
+    have hd2 : MemEstL2 P (hae.mk δ') := fun θ' => (hδ'2 θ').ae_eq (hdae θ')
+    rw [variance_congr (hdae θ)]
+    exact variance_rbEstimator_le_of_complete P g hT hgraph hcomp hδm hδu hδ2 hdm hdu hd2 θ
+
 
 /-- **Lehmann–Scheffé, convex-loss form.** The estimator of `isUMVU_of_complete_sufficient`
 minimizes the risk among *all* unbiased estimators, simultaneously for every loss that is
@@ -533,10 +545,11 @@ theorem isUMVU_of_fullRank_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpa
         measurable_const).exp.ennreal_ofReal)
       measurable_const
       (fun θ => Filter.Eventually.of_forall fun x => (mul_one _).symm)
+  have hdomE : ∀ θ, P θ ≪ E.base :=
+    fun θ => (hP θ) ▸ withDensity_absolutelyContinuous E.base (p θ)
   -- the θ-free reconstruction kernel, from sufficiency and domination by `E.base`
   obtain ⟨Q, hQm, hgraph⟩ :=
-    hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base
-      (fun θ => (hP θ) ▸ withDensity_absolutelyContinuous E.base (p θ)) hsuf
+    hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base hdomE hsuf
   haveI := hQm
   -- completeness of the natural statistic, transported from the `Ξ`-indexed subfamily
   have hcomp : IsCompleteStat P E.stat := by
@@ -561,6 +574,6 @@ theorem isUMVU_of_fullRank_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpa
     have h2 : E.base ≪ E.P ξ₀ := absolutelyContinuous_tilted (hΞnat hξ₀)
     exact hzero.filter_mono ((h1.trans h2).map E.stat_meas).ae_le
   exact ⟨rbEstimator Q δ, (hδm.stronglyMeasurable.integral_kernel (κ := Q)).measurable,
-    isUMVU_of_complete_sufficient P g E.stat_meas hgraph hcomp hδm hδu hδ2⟩
+    isUMVU_of_complete_sufficient P g E.stat_meas E.base hdomE hgraph hcomp hδm hδu hδ2⟩
 
 end StatLean.PointEstimation
