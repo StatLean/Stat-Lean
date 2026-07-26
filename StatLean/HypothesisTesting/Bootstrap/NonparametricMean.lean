@@ -4,6 +4,7 @@ import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.HasLaw
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.CDF
+import Mathlib.Topology.ContinuousMap.Bounded.Basic
 
 /-!
 # The nonparametric bootstrap for a mean
@@ -65,7 +66,7 @@ J. P. Romano and M. Wolf, *Subsampling*, Springer, 1999. The superiority of the 
 -/
 
 open Filter MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology BoundedContinuousFunction
 
 namespace StatLean.HypothesisTesting
 
@@ -323,6 +324,199 @@ private lemma Jmean_eq_meanRootCDF (n : ℕ) (F : Measure ℝ)
     [h : IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
     Jmean n F = meanRootCDF F n := by
   unfold Jmean; rw [if_pos h]
+
+/-! ## Uniform square-integrability along a weakly convergent sequence -/
+
+section Vitali
+
+/-- The shifted truncated square `t ↦ min ((t - b)²) (M²)`, as a bounded continuous function. -/
+private noncomputable def truncSq (M b : ℝ) : ℝ →ᵇ ℝ :=
+  BoundedContinuousFunction.ofNormedAddCommGroup (fun t => min ((t - b) ^ 2) (M ^ 2))
+    (by fun_prop) (M ^ 2)
+    (fun t => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (le_min (sq_nonneg _) (sq_nonneg M))]
+      exact min_le_right _ _)
+
+private lemma truncSq_apply (M b t : ℝ) : truncSq M b t = min ((t - b) ^ 2) (M ^ 2) := rfl
+
+/-- The truncated square is `2M`-Lipschitz. -/
+private lemma abs_truncSq_sub_le {M : ℝ} (hM : 0 ≤ M) (u w : ℝ) :
+    |min (u ^ 2) (M ^ 2) - min (w ^ 2) (M ^ 2)| ≤ 2 * M * |u - w| := by
+  have hmin_le : ∀ x y : ℝ, min x M - min y M ≤ |x - y| := by
+    intro x y
+    rcases le_total y M with h | h
+    · rw [min_eq_left h]
+      calc min x M - y ≤ x - y := by linarith [min_le_left x M]
+        _ ≤ |x - y| := le_abs_self _
+    · rw [min_eq_right h]
+      calc min x M - M ≤ 0 := by linarith [min_le_right x M]
+        _ ≤ |x - y| := abs_nonneg _
+  have hminabs : |min |u| M - min |w| M| ≤ |u - w| := by
+    refine abs_sub_le_iff.2 ⟨(hmin_le |u| |w|).trans (abs_abs_sub_abs_le_abs_sub u w), ?_⟩
+    refine (hmin_le |w| |u|).trans ((abs_abs_sub_abs_le_abs_sub w u).trans ?_)
+    exact le_of_eq (abs_sub_comm w u)
+  have hsq : ∀ x : ℝ, min (x ^ 2) (M ^ 2) = (min |x| M) ^ 2 := by
+    intro x
+    rcases le_total |x| M with h | h
+    · rw [min_eq_left h, sq_abs, min_eq_left (by nlinarith [abs_nonneg x, sq_abs x])]
+    · rw [min_eq_right h, min_eq_right (by nlinarith [abs_nonneg x, sq_abs x])]
+  rw [hsq, hsq]
+  have hx : 0 ≤ min |u| M := le_min (abs_nonneg u) hM
+  have hy : 0 ≤ min |w| M := le_min (abs_nonneg w) hM
+  have hxM : min |u| M ≤ M := min_le_right _ _
+  have hyM : min |w| M ≤ M := min_le_right _ _
+  have hfac : (min |u| M) ^ 2 - (min |w| M) ^ 2
+      = (min |u| M - min |w| M) * (min |u| M + min |w| M) := by ring
+  rw [hfac, abs_mul, abs_of_nonneg (by linarith : (0:ℝ) ≤ min |u| M + min |w| M)]
+  calc |min |u| M - min |w| M| * (min |u| M + min |w| M)
+      ≤ |u - w| * (2 * M) := by
+        refine mul_le_mul hminabs (by linarith) (by linarith) (abs_nonneg _)
+    _ = 2 * M * |u - w| := by ring
+
+/-- **Vitali's uniform square-integrability upgrade (with a drifting centre).**
+
+If the laws `F n` converge weakly to `Q` and the second moments about the drifting centres
+`a n → b` converge to the second moment of `Q` about `b`, then the squares are uniformly
+integrable: the tail integrals over `{|t - a n| > c n}` vanish for every threshold sequence
+`c n → ∞`.
+
+This is Lehmann–Romano Lemma 18.3.1 in the exact form the Lindeberg condition needs. The proof
+uses only the truncated squares `min ((t - b)²) (M²)` as bounded continuous test functions,
+together with their `2M`-Lipschitz dependence on the centre. -/
+private lemma tendsto_setIntegral_sq_tail
+    {F : ℕ → Measure ℝ} {Q : Measure ℝ} [∀ n, IsProbabilityMeasure (F n)] [IsProbabilityMeasure Q]
+    {a : ℕ → ℝ} {b : ℝ}
+    (hF2 : ∀ n, MemLp (fun t : ℝ => t) 2 (F n)) (hQ2 : MemLp (fun t : ℝ => t) 2 Q)
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ t, f t ∂(F n)) atTop (𝓝 (∫ t, f t ∂Q)))
+    (ha : Tendsto a atTop (𝓝 b))
+    (hsq : Tendsto (fun n => ∫ t, (t - a n) ^ 2 ∂(F n)) atTop (𝓝 (∫ t, (t - b) ^ 2 ∂Q)))
+    {c : ℕ → ℝ} (hc : Tendsto c atTop atTop) :
+    Tendsto (fun n => ∫ t in {t : ℝ | c n < |t - a n|}, (t - a n) ^ 2 ∂(F n)) atTop (𝓝 0) := by
+  classical
+  have hshiftLp : ∀ (n : ℕ) (r : ℝ), MemLp (fun t : ℝ => t - r) 2 (F n) := fun n r =>
+    (hF2 n).sub (memLp_const r)
+  have hint : ∀ (n : ℕ) (r : ℝ), Integrable (fun t : ℝ => (t - r) ^ 2) (F n) := fun n r =>
+    (hshiftLp n r).integrable_sq
+  have hintQ : Integrable (fun t : ℝ => (t - b) ^ 2) Q := (hQ2.sub (memLp_const b)).integrable_sq
+  -- the defect of the truncation at level `m` vanishes as `m → ∞`
+  have hδ : Tendsto (fun m : ℕ => ∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2)) ∂Q)
+      atTop (𝓝 0) := by
+    have hlim : ∀ t : ℝ,
+        Tendsto (fun m : ℕ => (t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2)) atTop (𝓝 0) := by
+      intro t
+      have hev : ∀ᶠ m : ℕ in atTop, (t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2) = 0 := by
+        filter_upwards [eventually_ge_atTop (Nat.ceil |t - b|)] with m hm
+        have h1 : |t - b| ≤ (m : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hm)
+        have h2 : (t - b) ^ 2 ≤ (m : ℝ) ^ 2 := by nlinarith [sq_abs (t - b), abs_nonneg (t - b)]
+        rw [min_eq_left h2, sub_self]
+      exact tendsto_const_nhds.congr' (hev.mono fun m hm => hm.symm)
+    have hdom : Tendsto (fun m : ℕ => ∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2)) ∂Q)
+        atTop (𝓝 (∫ _t : ℝ, (0 : ℝ) ∂Q)) := by
+      refine tendsto_integral_of_dominated_convergence (fun t => (t - b) ^ 2) ?_ hintQ ?_ ?_
+      · exact fun m => (by fun_prop : Measurable fun t : ℝ =>
+          (t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2)).aestronglyMeasurable
+      · intro m
+        filter_upwards with t
+        rw [Real.norm_eq_abs, abs_of_nonneg (by simp [sub_nonneg])]
+        simp [sq_nonneg]
+      · filter_upwards with t using hlim t
+    simpa using hdom
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro η hη
+  -- choose the truncation level
+  obtain ⟨m, hm⟩ : ∃ m : ℕ, ∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) ((m : ℝ) ^ 2)) ∂Q < 3 * η / 8 :=
+    (hδ.eventually (eventually_lt_nhds (by positivity : (0 : ℝ) < 3 * η / 8))).exists
+  set M : ℝ := (m : ℝ) with hM
+  have hMnn : 0 ≤ M := Nat.cast_nonneg m
+  -- the truncated integrals with drifting centre converge
+  have hI : ∀ (r : ℝ) (n : ℕ), Integrable (fun t : ℝ => min ((t - r) ^ 2) (M ^ 2)) (F n) :=
+    fun r n => (truncSq M r).integrable (F n)
+  have hIQ : Integrable (fun t : ℝ => min ((t - b) ^ 2) (M ^ 2)) Q := (truncSq M b).integrable Q
+  have htruncconv : Tendsto (fun n => ∫ t, min ((t - a n) ^ 2) (M ^ 2) ∂(F n)) atTop
+      (𝓝 (∫ t, min ((t - b) ^ 2) (M ^ 2) ∂Q)) := by
+    have hbase := hweak (truncSq M b)
+    simp only [truncSq_apply] at hbase
+    have hdiff : Tendsto (fun n => (∫ t, min ((t - a n) ^ 2) (M ^ 2) ∂(F n))
+        - ∫ t, min ((t - b) ^ 2) (M ^ 2) ∂(F n)) atTop (𝓝 0) := by
+      have hbd : ∀ n, |(∫ t, min ((t - a n) ^ 2) (M ^ 2) ∂(F n))
+          - ∫ t, min ((t - b) ^ 2) (M ^ 2) ∂(F n)| ≤ 2 * M * |a n - b| := by
+        intro n
+        rw [← integral_sub (hI (a n) n) (hI b n)]
+        refine (abs_integral_le_integral_abs).trans ?_
+        have hmono : ∫ t, |min ((t - a n) ^ 2) (M ^ 2) - min ((t - b) ^ 2) (M ^ 2)| ∂(F n)
+            ≤ ∫ _t : ℝ, 2 * M * |a n - b| ∂(F n) := by
+          refine integral_mono ((hI (a n) n).sub (hI b n)).abs (integrable_const _) (fun t => ?_)
+          have h := abs_truncSq_sub_le hMnn (t - a n) (t - b)
+          have heq : (t - a n) - (t - b) = b - a n := by ring
+          rw [heq] at h
+          rwa [abs_sub_comm b (a n)] at h
+        refine hmono.trans ?_
+        simp
+      have hto : Tendsto (fun n => 2 * M * |a n - b|) atTop (𝓝 0) := by
+        have h1 : Tendsto (fun n => |a n - b|) atTop (𝓝 0) := by
+          simpa using (ha.sub_const b).abs
+        simpa using h1.const_mul (2 * M)
+      refine squeeze_zero_norm (fun n => ?_) hto
+      simpa using hbd n
+    have := hdiff.add hbase
+    simpa using this
+  -- the defect for `F n` converges to the defect for `Q`
+  have hgm : Tendsto (fun n => ∫ t, ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n)) atTop
+      (𝓝 (∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) (M ^ 2)) ∂Q)) := by
+    have hrw : ∀ n, ∫ t, ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n)
+        = (∫ t, (t - a n) ^ 2 ∂(F n)) - ∫ t, min ((t - a n) ^ 2) (M ^ 2) ∂(F n) :=
+      fun n => integral_sub (hint n (a n)) (hI (a n) n)
+    have hrwQ : ∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) (M ^ 2)) ∂Q
+        = (∫ t, (t - b) ^ 2 ∂Q) - ∫ t, min ((t - b) ^ 2) (M ^ 2) ∂Q :=
+      integral_sub hintQ hIQ
+    simp only [hrw, hrwQ]
+    exact hsq.sub htruncconv
+  have hdefect : ∀ᶠ n in atTop,
+      ∫ t, ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n) < η / 2 := by
+    refine hgm.eventually (eventually_lt_nhds ?_)
+    have h : ∫ t, ((t - b) ^ 2 - min ((t - b) ^ 2) (M ^ 2)) ∂Q < 3 * η / 8 := hm
+    linarith
+  filter_upwards [hdefect, hc.eventually_ge_atTop (2 * M)] with n hn1 hn2
+  have hmeasS : MeasurableSet {t : ℝ | c n < |t - a n|} :=
+    measurableSet_lt measurable_const (by fun_prop)
+  have hmeasT : MeasurableSet {t : ℝ | 2 * M < |t - a n|} :=
+    measurableSet_lt measurable_const (by fun_prop)
+  have hnn : 0 ≤ ∫ t in {t : ℝ | c n < |t - a n|}, (t - a n) ^ 2 ∂(F n) :=
+    setIntegral_nonneg hmeasS (fun t _ => sq_nonneg _)
+  rw [Real.norm_eq_abs, abs_of_nonneg hnn]
+  have hdnn : (0 : ℝ → ℝ) ≤ᵐ[F n] fun t => (t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2) := by
+    filter_upwards with t
+    simp [sub_nonneg]
+  have hdint : Integrable (fun t : ℝ => (t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) (F n) :=
+    (hint n (a n)).sub (hI (a n) n)
+  calc ∫ t in {t : ℝ | c n < |t - a n|}, (t - a n) ^ 2 ∂(F n)
+      ≤ ∫ t in {t : ℝ | 2 * M < |t - a n|}, (t - a n) ^ 2 ∂(F n) := by
+        refine setIntegral_mono_set ((hint n (a n)).integrableOn) ?_ ?_
+        · filter_upwards with t using sq_nonneg _
+        · filter_upwards with t ht using lt_of_le_of_lt hn2 ht
+    _ ≤ ∫ t in {t : ℝ | 2 * M < |t - a n|},
+          (4 / 3) * ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n) := by
+        refine setIntegral_mono_on ((hint n (a n)).integrableOn)
+          ((hdint.const_mul (4 / 3)).integrableOn) hmeasT ?_
+        intro t ht
+        simp only [Set.mem_setOf_eq] at ht
+        have hsq4 : 4 * M ^ 2 ≤ (t - a n) ^ 2 := by
+          nlinarith [sq_abs (t - a n), abs_nonneg (t - a n)]
+        have hmin : min ((t - a n) ^ 2) (M ^ 2) = M ^ 2 := by
+          refine min_eq_right ?_
+          nlinarith [sq_nonneg M]
+        rw [hmin]
+        nlinarith
+    _ ≤ ∫ t, (4 / 3) * ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n) := by
+        refine setIntegral_le_integral (hdint.const_mul (4 / 3)) ?_
+        filter_upwards [hdnn] with t ht
+        have h : (0 : ℝ) ≤ (t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2) := ht
+        positivity
+    _ = (4 / 3) * ∫ t, ((t - a n) ^ 2 - min ((t - a n) ^ 2) (M ^ 2)) ∂(F n) :=
+        integral_const_mul _ _
+    _ < η := by nlinarith [hn1]
+
+end Vitali
 
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
