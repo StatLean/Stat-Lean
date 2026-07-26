@@ -108,14 +108,17 @@ theorem condDistrib_expFamily_of_isCanonicalUT
       ∀ p ∈ Ω, ∀ᵐ t ∂((P p).map T),
         condDistrib U T (P p) t
           = (νt t).withDensity fun u => ENNReal.ofReal (Ct t p.1 * Real.exp (p.1 * u)) := by
-  -- TODO: blocked on the intended engine. The `ϑ`-factor cancellation is exactly
-  -- `ForMathlib/CondDistribTilt.lean`'s `condDistrib_fst_withDensity_tilt` (with the joint
-  -- density `exp(θu + ⟪ϑ,t⟫) = g(u)·k(t)`, `g u = exp(θu)`, `k t = C·exp⟪ϑ,t⟫`), applied to the
-  -- swapped-coordinate joint law from `hUT`. That engine currently carries FOUR open sorries
-  -- (`measurable_condTiltNormalizer`, `condTiltNormalizer_pos_lt_top_ae`,
-  -- `condDistrib_fst_withDensity_tilt`, and the finite-measure reduction), so this theorem
-  -- cannot be discharged without either closing that file (out of the editable scope here) or
-  -- re-deriving the product-form disintegration-tilt inline. Reported as an upstream block.
+  -- BLOCKED — obstruction relocated: `ForMathlib/CondDistribTilt.lean` is now CLOSED. The intended
+  -- proof fixes a reference `p₀ ∈ Ω` and applies `condDistrib_fst_withDensity_tilt` to the
+  -- factorisation `Q p = (Q p₀).withDensity (fun z => g z.1 * k z.2)` (`Q p := (P p).map (U,T)`,
+  -- `g u = exp((θ-θ₀)·u)`, `k t = (C p / C p₀)·exp⟪ϑ-ϑ₀, t⟫`), giving
+  -- `νt t = (condDistrib fst snd (Q p₀) t).withDensity (exp(-θ₀·u))` and `Ct t θ = C_norm(t)⁻¹`.
+  -- Both that engine and the `withDensity_mul` used to establish the factorisation require
+  -- `Measurable k`, i.e. measurability of the nuisance factor `t ↦ exp⟪ϑ-ϑ₀, t⟫`. `const_inner`
+  -- needs `[OpensMeasurableSpace Ξ] [SecondCountableTopology Ξ]`, which the frozen signature omits
+  -- (`Ξ` carries only `[MeasurableSpace Ξ]`, opaque and Borel-incompatible). Adding those two
+  -- instances to the signature discharges `hk` and closes this via the reference-tilt route; they
+  -- are the exact missing hypotheses. Reported (not lifted: `Ξ`-measurability is a real gap).
   sorry
 
 /-- **The conditional law does not depend on the nuisance parameter.**
@@ -138,11 +141,16 @@ theorem condDistrib_eq_of_fst_eq
     -- USER-INPUT: the two parameters agree in the coordinate of interest
     (hfst : p.1 = q.1) :
     ∀ᵐ t ∂((P p).map T), condDistrib U T (P p) t = condDistrib U T (P q) t := by
-  -- TODO: downstream of `condDistrib_expFamily_of_isCanonicalUT` (both p- and q-tilts equal
-  -- the same `p.1 = q.1`-indexed exponential form a.e.). It also needs `(P p).map T ≪ (P q).map T`
-  -- to transfer the q-side a.e. equality onto the p-side `T`-marginal — the mutual absolute
-  -- continuity of the two `T`-marginals, itself a consequence of the shared base measure `ν` in
-  -- the canonical form. Blocked by the same un-closed `CondDistribTilt` engine; see above.
+  -- BLOCKED — same relocated obstruction (`CondDistribTilt` is closed). With `p.1 = q.1`,
+  -- `Q p = (Q q).withDensity (fun z => k z.2)` is a pure-`t` reweighting
+  -- (`k t = (C p / C q)·exp⟪ϑp-ϑq, t⟫`), which leaves the conditional law of `U` given `T`
+  -- unchanged — the `g ≡ 1` case of `condDistrib_fst_withDensity_tilt` (there
+  -- `condTiltNormalizer = 1`). It still requires `Measurable k`, i.e.
+  -- `[OpensMeasurableSpace Ξ] [SecondCountableTopology Ξ]` for the nuisance factor
+  -- `t ↦ exp⟪ϑp-ϑq, t⟫` (`Measurable.const_inner`); the frozen `[MeasurableSpace Ξ]` alone does
+  -- not suffice. The `(P p).map T ≪ (P q).map T` transfer needed to move the q-side a.e. equality
+  -- onto the p-side marginal is then immediate from mutual absolute continuity via the shared base
+  -- `ν` (`withDensity` of `ν`-a.e.-positive densities). Reported.
   sorry
 
 /-- **Overall power is the average of conditional powers.**
