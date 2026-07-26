@@ -8,6 +8,8 @@ import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.Probability.HasLawExists
 import Mathlib.MeasureTheory.Measure.LevyConvergence
+import Mathlib.Topology.Algebra.Module.Cardinality
+import Mathlib.MeasureTheory.Measure.Portmanteau
 
 /-!
 # The nonparametric bootstrap for a mean
@@ -521,6 +523,98 @@ private lemma tendsto_setIntegral_sq_tail
 
 end Vitali
 
+/-! ## From distribution functions to weak convergence -/
+
+section CDFtoWeak
+
+/-- **Distribution-function convergence implies weak convergence.**
+
+If the distribution functions of `F n` converge to that of `Q` at every continuity point of the
+limit, then `F n` converges weakly to `Q`. The continuity points of a monotone function are
+co-countable, hence dense, and the half-open intervals with endpoints there form a π-system of
+arbitrarily small neighbourhoods; Mathlib's
+`IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` then gives convergence in the weak
+topology. -/
+private lemma tendsto_integral_of_tendsto_cdf
+    {F : ℕ → Measure ℝ} {Q : Measure ℝ} (hFp : ∀ n, IsProbabilityMeasure (F n))
+    [IsProbabilityMeasure Q]
+    (hcdf : ∀ x : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) x →
+      Tendsto (fun n => ((F n) (Set.Iic x)).toReal) atTop (𝓝 ((Q (Set.Iic x)).toReal)))
+    (f : ℝ →ᵇ ℝ) :
+    Tendsto (fun n => ∫ t, f t ∂(F n)) atTop (𝓝 (∫ t, f t ∂Q)) := by
+  classical
+  set cdfQ : ℝ → ℝ := fun t => (Q (Set.Iic t)).toReal with hcdfQ
+  have hmono : Monotone cdfQ := fun a b hab =>
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono (Set.Iic_subset_Iic.2 hab))
+  set C : Set ℝ := {x | ContinuousAt cdfQ x} with hCdef
+  have hCdense : Dense C := by
+    have hcount : Set.Countable {x : ℝ | ¬ ContinuousAt cdfQ x} :=
+      hmono.countable_not_continuousAt
+    have hd := Set.Countable.dense_compl ℝ hcount
+    have heq : {x : ℝ | ¬ ContinuousAt cdfQ x}ᶜ = C := by
+      rw [hCdef]; ext x; simp
+    rwa [heq] at hd
+  set S : Set (Set ℝ) := {s | ∃ a ∈ C, ∃ b ∈ C, s = Set.Ioc a b} with hSdef
+  -- `S` is a π-system
+  have hpi : IsPiSystem S := by
+    rintro s ⟨a, ha, b, hb, rfl⟩ t ⟨c, hc, d, hd, rfl⟩ -
+    refine ⟨max a c, ?_, min b d, ?_, Set.Ioc_inter_Ioc⟩
+    · rcases le_total a c with h | h
+      · rwa [max_eq_right h]
+      · rwa [max_eq_left h]
+    · rcases le_total b d with h | h
+      · rwa [min_eq_left h]
+      · rwa [min_eq_right h]
+  have hmeas : ∀ s ∈ S, MeasurableSet s := by
+    rintro s ⟨a, -, b, -, rfl⟩
+    exact measurableSet_Ioc
+  -- `S` contains arbitrarily small neighbourhoods
+  have hnbhd : ∀ u : Set ℝ, IsOpen u → ∀ x ∈ u, ∃ s ∈ S, s ∈ 𝓝 x ∧ s ⊆ u := by
+    intro u hu x hx
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hu x hx
+    have hne1 : (Set.Ioo (x - ε) x).Nonempty :=
+      ⟨x - ε / 2, by simp only [Set.mem_Ioo]; constructor <;> linarith⟩
+    have hne2 : (Set.Ioo x (x + ε)).Nonempty :=
+      ⟨x + ε / 2, by simp only [Set.mem_Ioo]; constructor <;> linarith⟩
+    obtain ⟨a, haC, ha⟩ := hCdense.exists_mem_open isOpen_Ioo hne1
+    obtain ⟨b, hbC, hb⟩ := hCdense.exists_mem_open isOpen_Ioo hne2
+    refine ⟨Set.Ioc a b, ⟨a, haC, b, hbC, rfl⟩, ?_, ?_⟩
+    · exact Filter.mem_of_superset (Ioo_mem_nhds ha.2 hb.1) Set.Ioo_subset_Ioc_self
+    · intro y hy
+      refine hball ?_
+      rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+      constructor
+      · have := ha.1; have := hy.1; linarith
+      · have := hb.2; have := hy.2; linarith
+  -- convergence on the π-system
+  set μs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨F n, hFp n⟩ with hμs
+  set νQ : ProbabilityMeasure ℝ := ⟨Q, inferInstance⟩ with hνQ
+  have hstep : ∀ s ∈ S, Tendsto (fun n => μs n s) atTop (𝓝 (νQ s)) := by
+    rintro s ⟨a, haC, b, hbC, rfl⟩
+    rw [← NNReal.tendsto_coe]
+    have hcoe1 : ∀ n : ℕ, ((μs n (Set.Ioc a b) : ℝ≥0) : ℝ)
+        = ((F n) (Set.Ioc a b)).toReal := fun n => rfl
+    have hcoe2 : ((νQ (Set.Ioc a b) : ℝ≥0) : ℝ) = (Q (Set.Ioc a b)).toReal := rfl
+    simp only [hcoe1, hcoe2]
+    rcases lt_or_ge b a with hba | hab
+    · have hempty : Set.Ioc a b = (∅ : Set ℝ) := Set.Ioc_eq_empty (not_lt.2 hba.le)
+      simp [hempty]
+    · have hsplit : ∀ μ : Measure ℝ, IsProbabilityMeasure μ →
+          (μ (Set.Ioc a b)).toReal = (μ (Set.Iic b)).toReal - (μ (Set.Iic a)).toReal := by
+        intro μ hμ
+        have hdisj : μ (Set.Iic b) = μ (Set.Iic a) + μ (Set.Ioc a b) := by
+          rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+            Set.Iic_union_Ioc_eq_Iic hab]
+        rw [hdisj, ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+        ring
+      simp only [hsplit _ (hFp _), hsplit _ ‹IsProbabilityMeasure Q›]
+      exact (hcdf b hbC).sub (hcdf a haC)
+  have hconv : Tendsto μs atTop (𝓝 νQ) :=
+    hpi.tendsto_probabilityMeasure_of_tendsto_of_mem hmeas hnbhd hstep
+  exact ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f
+
+end CDFtoWeak
+
 /-! ## The triangular-array central limit theorem with a drifting row law -/
 
 section TriangularCLT
@@ -841,21 +935,69 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => meanRootCDF (F n) n x) atTop
       (𝓝 (normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x)) := by
-  -- TODO (triangular-array CLT, drifting row law). `meanRootCDF (F n) n` is the CDF of the
-  -- standardised sum of `n` i.i.d. draws from the `n`-th law `F n`; realise it on the canonical
-  -- product space `Π n, (Fin n → ℝ)` (measure `Measure.pi n ↦ Measure.pi (fun _ : Fin n => F n)`,
-  -- coordinates `X n i ω = ω n i`, row-`n` internal independence via
-  -- `iIndepFun_iff_map_fun_eq_pi_map`) and apply the proven `LindebergCLT.lindeberg_clt`. Two
-  -- genuinely missing bricks remain:
-  --   (1) the Lindeberg condition for the drifting rows follows from `Var[id; F n] → Var[id; Q]`
-  --       plus weak convergence via *uniform square-integrability* (Lehmann–Romano Lemma 18.3.1 /
-  --       Vitali): `X_n ⇒ X` with `E X_n² → E X² < ∞` forces `{X_n²}` uniformly integrable; this
-  --       Vitali-type upgrade is not yet in Mathlib;
-  --   (2) transporting the resulting `TendstoInDistribution` of the standardised sum to pointwise
-  --       CDF convergence at the (continuity) point `x` is the one-direction portmanteau theorem
-  --       "CDF convergence at every continuity point ⟸ weak convergence" on `ℝ`, which is absent
-  --       from Mathlib v4.29.1 (the same gap recorded on `tendstoInMeasure_rowMean_triangular`).
-  sorry
+  classical
+  -- Replace the unconstrained `n = 0` entry of the sequence by `Q`.
+  set F' : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hF'def
+  have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
+    intro n hn; simp only [hF'def, if_neg hn.ne']
+  haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · rw [hF'eq n hn]; exact hF.1 n hn
+  obtain ⟨-, hF2, hFcdf, hFmean, hFvar⟩ := hF
+  have hF'2 : ∀ n, MemLp (fun t : ℝ => t) 2 (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using hQ2
+    · rw [hF'eq n hn]; exact hF2 n
+  have hF'cdf : ∀ y : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) y →
+      Tendsto (fun n => ((F' n) (Set.Iic y)).toReal) atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
+    intro y hy
+    refine (hFcdf y hy).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'mean : Tendsto (fun n => ∫ t, t ∂(F' n)) atTop (𝓝 (∫ t, t ∂Q)) := by
+    refine hFmean.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'var : Tendsto (fun n => Var[fun t : ℝ => t; F' n]) atTop
+      (𝓝 Var[fun t : ℝ => t; Q]) := by
+    refine hFvar.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  -- distribution-function convergence upgrades to weak convergence, then the array CLT applies
+  have hF'weak := tendsto_integral_of_tendsto_cdf hF'prob hF'cdf
+  have huni := tendsto_meanRootLaw hF'2 hQ2 hF'weak hF'mean hF'var
+  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := fun n =>
+    isProbabilityMeasure_pi_const n (F' n)
+  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (F' n) n) := by
+    intro n
+    haveI := hpi n
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨meanRootLaw (F' n) n, hroot n⟩ with hρs
+  set ρ : ProbabilityMeasure ℝ :=
+    ⟨gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q]), inferInstance⟩ with hρ
+  have hconv : Tendsto ρs atTop (𝓝 ρ) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 huni
+  -- the nondegenerate normal limit has no atoms, so the portmanteau theorem applies at `Iic x`
+  have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  haveI : NoAtoms (gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) :=
+    noAtoms_gaussianReal hvne
+  have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
+    rw [hρ]; simp [frontier_Iic]
+  have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+  have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+  have hL : ∀ n : ℕ, ((ρs n : Measure ℝ) (Set.Iic x)).toReal = meanRootCDF (F' n) n x := by
+    intro n
+    haveI := hpi n
+    exact (meanRootCDF_eq (F' n) n x).symm
+  have hR : ((ρ : Measure ℝ) (Set.Iic x)).toReal
+      = normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x := rfl
+  simp only [Function.comp_def, hL, hR] at htoreal
+  refine htoreal.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  rw [hF'eq n hn]
 
 /-- **The empirical sequence belongs to the mean class, almost surely.**
 
