@@ -239,6 +239,24 @@ private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
   rw [heq]
   exact isCDF_toReal_measure_Iic _
 
+/-- The `n`-fold product of a probability law is a probability measure. -/
+private lemma isProbabilityMeasure_pi_const (n : ℕ) (F : Measure ℝ) [IsProbabilityMeasure F] :
+    IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) := by
+  haveI : ∀ _ : Fin n, IsProbabilityMeasure F := fun _ => ‹_›
+  infer_instance
+
+/-- The `n`-fold product of the empirical measure of a sample is a probability measure (for the
+empty sample it is the point mass on the empty tuple). -/
+private lemma isProbabilityMeasure_pi_empirical (n : ℕ) (X : ℕ → Ω → ℝ) (ω : Ω) :
+    IsProbabilityMeasure
+      (Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    rw [Measure.pi_of_empty]
+    infer_instance
+  · haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+    exact isProbabilityMeasure_pi_const n _
+
 /-- The constant sequence at a square-integrable probability law belongs to its own mean class. -/
 private lemma const_mem_meanSeqClass (Q : Measure ℝ) [IsProbabilityMeasure Q]
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) : (fun _ => Q) ∈ meanSeqClass Q :=
@@ -302,7 +320,32 @@ theorem bootstrap_mean_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasur
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (meanRootCDF Q n)
       (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
-  sorry
+  set Jlim := normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) with hJlim
+  have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  have hcont : Continuous Jlim := continuous_normalCDF 0 hvne
+  have hcdflim : IsCDF Jlim := isCDF_normalCDF 0 _
+  have hQcdf : ∀ n, IsCDF (meanRootCDF Q n) := fun n => by
+    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_meanRootCDF Q n
+  have hQconv : ∀ x, Tendsto (fun n => meanRootCDF Q n x) atTop (𝓝 (Jlim x)) := fun x =>
+    mean_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
+  filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hEcdf : ∀ n, IsCDF (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) := fun n => by
+    haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_meanRootCDF _ n
+  have hEconv : ∀ x, Tendsto
+      (fun n => meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop (𝓝 (Jlim x)) :=
+    fun x => mean_root_cdf_tendsto hQ2 hQvar hω x
+  have hA : Tendsto (fun n => supCDFDist (meanRootCDF Q n) Jlim) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQcdf hcont hcdflim hQconv
+  have hB : Tendsto (fun n =>
+      supCDFDist Jlim (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hEcdf hcont hcdflim hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (meanRootCDF Q n) Jlim
+      + supCDFDist Jlim (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQcdf n) (hEcdf n)
+  · exact supCDFDist_triangle_of_isCDF (hQcdf n) hcdflim (hEcdf n)
 
 /-- **Asymptotic coverage of the bootstrap confidence bound for a mean.**
 
@@ -358,7 +401,31 @@ theorem bootstrap_t_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (studentizedRootCDF Q n)
       (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
-  sorry
+  have hcont : Continuous stdNormalCDF := continuous_stdNormalCDF
+  have hcdflim : IsCDF stdNormalCDF := isCDF_stdNormalCDF
+  have hQcdf : ∀ n, IsCDF (studentizedRootCDF Q n) := fun n => by
+    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_studentizedRootCDF Q n
+  have hQconv : ∀ x, Tendsto (fun n => studentizedRootCDF Q n x) atTop (𝓝 (stdNormalCDF x)) :=
+    fun x => studentized_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
+  filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hEcdf : ∀ n, IsCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) :=
+    fun n => by haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_studentizedRootCDF _ n
+  have hEconv : ∀ x, Tendsto
+      (fun n => studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop
+      (𝓝 (stdNormalCDF x)) := fun x => studentized_root_cdf_tendsto hQ2 hQvar hω x
+  have hA : Tendsto (fun n => supCDFDist (studentizedRootCDF Q n) stdNormalCDF) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQcdf hcont hcdflim hQconv
+  have hB : Tendsto (fun n =>
+      supCDFDist stdNormalCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+      atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hEcdf hcont hcdflim hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (studentizedRootCDF Q n) stdNormalCDF
+      + supCDFDist stdNormalCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQcdf n) (hEcdf n)
+  · exact supCDFDist_triangle_of_isCDF (hQcdf n) hcdflim (hEcdf n)
 
 end MeanBootstrap
 
