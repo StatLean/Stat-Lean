@@ -1,6 +1,7 @@
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.WeakDual
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -115,6 +116,30 @@ private lemma integrable_L2_mul (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
     Integrable (fun x => f x * g x) μ :=
   (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun x => real_inner_eq_mul _ _)
 
+/-- Pairing an `L²` function against the indicator of a measurable set is its set-integral. -/
+private lemma inner_indicator_eq_setIntegral (μ : Measure 𝓧) [IsFiniteMeasure μ]
+    (f : Lp ℝ 2 μ) {s : Set 𝓧} (hs : MeasurableSet s) :
+    ⟪f, indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)⟫_ℝ = ∫ x in s, f x ∂μ := by
+  rw [inner_L2_eq_integral, ← integral_indicator hs]
+  refine integral_congr_ae ?_
+  have hcoe : ⇑(indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)) =ᵐ[μ]
+      s.indicator (fun _ => (1 : ℝ)) := indicatorConstLp_coeFn
+  filter_upwards [hcoe] with x hx
+  rw [hx]
+  by_cases hxs : x ∈ s
+  · simp [Set.indicator_of_mem hxs]
+  · simp [Set.indicator_of_notMem hxs]
+
+/-- The indicator of a finite-measure set is `≥ 0` almost everywhere. -/
+private lemma indicatorConstLp_one_nonneg (μ : Measure 𝓧) [IsFiniteMeasure μ]
+    {s : Set 𝓧} (hs : MeasurableSet s) :
+    (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑(indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)) := by
+  have hcoe : ⇑(indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)) =ᵐ[μ]
+      s.indicator (fun _ => (1 : ℝ)) := indicatorConstLp_coeFn
+  filter_upwards [hcoe] with x hx
+  rw [Pi.zero_apply, hx]
+  exact Set.indicator_nonneg (fun _ _ => zero_le_one) x
+
 /-- **Weak continuity of the moment functionals**: `f ↦ ⟪g, f⟫` is continuous for the weak
 topology, in the weak-dual packaging. -/
 theorem continuous_eval_weakDual (μ : Measure 𝓧) (g : Lp ℝ 2 μ) :
@@ -132,7 +157,82 @@ theorem isCompact_toWeakDualL2_image_testClass (μ : Measure 𝓧)
     -- USER-INPUT: the dominating measure is finite; without it the class is unbounded in `L²`
     [IsFiniteMeasure μ] :
     IsCompact (toWeakDualL2 μ '' testClassL2 μ) := by
-  sorry
+  -- The constant-`1` element of `L²(μ)` (available since `μ` is finite).
+  set one : Lp ℝ 2 μ := indicatorConstLp 2 MeasurableSet.univ (measure_ne_top μ Set.univ) (1 : ℝ)
+    with hone_def
+  have hone : ⇑one =ᵐ[μ] (fun _ => (1 : ℝ)) := by
+    have hcoe : ⇑one =ᵐ[μ] Set.univ.indicator (fun _ => (1 : ℝ)) := indicatorConstLp_coeFn
+    simpa [Set.indicator_univ] using hcoe
+  -- The image is cut out by the weak-* closed order conditions.
+  have himg : toWeakDualL2 μ '' testClassL2 μ =
+      {L : WeakDual ℝ (Lp ℝ 2 μ) | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → 0 ≤ L h}
+        ∩ {L | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → L h ≤ toWeakDualL2 μ one h} := by
+    ext L
+    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_image, testClassL2]
+    constructor
+    · rintro ⟨f, ⟨hf0, hf1⟩, rfl⟩
+      refine ⟨fun h hh => ?_, fun h hh => ?_⟩
+      · rw [toWeakDualL2_apply_eq_integral]
+        refine integral_nonneg_of_ae ?_
+        filter_upwards [hf0, hh] with x hx0 hxh
+        exact mul_nonneg hx0 hxh
+      · rw [toWeakDualL2_apply_eq_integral, toWeakDualL2_apply_eq_integral]
+        refine integral_mono_ae (integrable_L2_mul μ f h) (integrable_L2_mul μ one h) ?_
+        filter_upwards [hf1, hh, hone] with x hx1 hxh hxone
+        rw [hxone, one_mul]
+        exact mul_le_of_le_one_left hxh hx1
+    · rintro ⟨hpos, hle⟩
+      set f : Lp ℝ 2 μ :=
+        (InnerProductSpace.toDual ℝ (Lp ℝ 2 μ)).symm (WeakDual.toStrongDual L) with hf_def
+      have hLf : ∀ g, ⟪f, g⟫_ℝ = L g := by
+        intro g
+        rw [hf_def, InnerProductSpace.toDual_symm_apply, WeakDual.toStrongDual_apply]
+      have hInt : Integrable (⇑f) μ := (Lp.memLp f).integrable (by norm_num)
+      have hf0 : (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑f := by
+        refine ae_nonneg_of_forall_setIntegral_nonneg hInt fun s hs _ => ?_
+        have h1 : 0 ≤ L (indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)) :=
+          hpos _ (indicatorConstLp_one_nonneg μ hs)
+        rwa [← hLf, inner_indicator_eq_setIntegral] at h1
+      have hf1 : ⇑f ≤ᵐ[μ] (1 : 𝓧 → ℝ) := by
+        refine ae_le_of_forall_setIntegral_le hInt (integrable_const 1) fun s hs _ => ?_
+        have h2 : L (indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ))
+            ≤ toWeakDualL2 μ one (indicatorConstLp 2 hs (measure_ne_top μ s) (1 : ℝ)) :=
+          hle _ (indicatorConstLp_one_nonneg μ hs)
+        rw [← hLf, inner_indicator_eq_setIntegral, toWeakDualL2_apply,
+          inner_indicator_eq_setIntegral] at h2
+        have hone_s : ∫ x in s, (one : 𝓧 → ℝ) x ∂μ = ∫ x in s, (1 : ℝ) ∂μ :=
+          setIntegral_congr_ae hs (hone.mono fun x hx _ => hx)
+        rw [hone_s] at h2
+        simpa using h2
+      refine ⟨f, ⟨hf0, hf1⟩, ?_⟩
+      apply DFunLike.ext
+      intro g
+      rw [toWeakDualL2_apply, hLf]
+  -- Closedness of the cut-out set.
+  have hclosed : IsClosed
+      ({L : WeakDual ℝ (Lp ℝ 2 μ) | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → 0 ≤ L h}
+        ∩ {L | ∀ h : Lp ℝ 2 μ, (0 : 𝓧 → ℝ) ≤ᵐ[μ] ⇑h → L h ≤ toWeakDualL2 μ one h}) := by
+    refine IsClosed.inter ?_ ?_
+    · simp only [Set.setOf_forall]
+      exact isClosed_iInter fun h => isClosed_iInter fun _ =>
+        isClosed_Ici.preimage (continuous_eval_weakDual μ h)
+    · simp only [Set.setOf_forall]
+      exact isClosed_iInter fun h => isClosed_iInter fun _ =>
+        isClosed_Iic.preimage (continuous_eval_weakDual μ h)
+  -- The image lies in a weak-* compact closed ball.
+  have hsub : toWeakDualL2 μ '' testClassL2 μ ⊆
+      WeakDual.toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual ℝ (Lp ℝ 2 μ)) ‖one‖ := by
+    rintro L ⟨f, ⟨hf0, hf1⟩, rfl⟩
+    simp only [Set.mem_preimage, Metric.mem_closedBall, dist_zero_right]
+    have hts : WeakDual.toStrongDual (toWeakDualL2 μ f)
+        = InnerProductSpace.toDual ℝ (Lp ℝ 2 μ) f := rfl
+    rw [hts, LinearIsometryEquiv.norm_map]
+    refine Lp.norm_le_norm_of_ae_le ?_
+    filter_upwards [hf0, hf1, hone] with x hx0 hx1 hxone
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, hxone, abs_of_nonneg hx0, abs_one]
+    exact hx1
+  exact IsCompact.of_isClosed_subset (WeakDual.isCompact_closedBall 0 ‖one‖)
+    (himg ▸ hclosed) hsub
 
 /-- **Weak compactness of the constrained test class** over a finite measure: the moment
 constraints cut a closed subset out of a compact set. -/
