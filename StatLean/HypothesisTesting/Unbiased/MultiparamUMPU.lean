@@ -320,14 +320,18 @@ theorem exists_measurable_conditional_constants
       (∀ t, γ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
       ∀ᵐ t ∂((P p₀).map T),
         ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p₀) t) = α := by
-  -- TODO: measurable selection of `(C₀, γ₀)`. Construct from the conditional CDF
-  -- `F_t(u) = (condDistrib U T (P p₀) t)(Iic u)`: `C₀(t) = inf{u | F_t(u) ≥ 1 − α}` (a
-  -- conditional quantile) and the matching interpolation weight `γ₀(t)`. Measurability of both
-  -- follows from joint measurability of `(u,t) ↦ F_t(u)` via the rational-approximation identity
-  -- in the docstring. The building block is a measurable conditional-quantile of `condDistrib`;
-  -- Mathlib has `condCDF`/`stieltjesOfMeasurableRat` but a packaged measurable conditional
-  -- quantile is not yet available, and the size equation itself needs the conditional-law
-  -- exponential form (`CondDistribTilt`, blocked). Reported.
+  -- BLOCKED on a packaged measurable conditional quantile — NOTE this target needs NEITHER
+  -- `Ξ`-measurability NOR the exp-family form (`CondDistribTilt`): the size equation
+  -- `κt(Ioi C₀) + γ₀·κt{C₀} = α` for `κ = condDistrib U T (P p₀)` (a Markov kernel) is attainable
+  -- for ANY conditional law by the quantile construction (`ForMathlib/QuantileFunction`'s
+  -- `exists_critical_constants` gives it per-`t`; `quantile_le_iff` is the Galois input). The gap
+  -- is MEASURABILITY in `t`: set `C₀ t = quantile (condCDF ρ t) (1-α)` for `ρ = (P p₀).map (T,U)`
+  -- (so `κ = ρ.condKernel`); `measurable_condCDF` + `quantile_le_iff` give `Measurable C₀`, but the
+  -- atom weight `γ₀ t` needs a measurable `Function.leftLim (condCDF ρ t)`, and relating the
+  -- real-point masses `κt(Ioi C₀ t)`, `κt{C₀ t}` back to `condCDF ρ t` uses only the a.e.-at-
+  -- rationals bridge `condCDF_ae_eq` — Mathlib packages no measurable conditional quantile of a
+  -- kernel. Self-contained (~250 lines) but out of a single non-interactive pass's safe budget.
+  -- Reported (not lifted: this is a real missing Mathlib brick, not a false statement).
   sorry
 
 /-! ## Reduction to canonical form -/
