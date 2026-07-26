@@ -1,7 +1,6 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-25 (HT down to 104 after two waves; L² change-of-measure DISSOLVED the
-former "duality blocker" — TestsWeakCompact 7→0 + isClosed_momentSet closed; area gate re-running).
+Last update: 2026-07-26 (HT 103, area gate GREEN 3288 jobs; signchange thm3/4 closed; UMPU chain re-blocked on Xi-Borel measurability, not CondDistribTilt).
 
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
 
