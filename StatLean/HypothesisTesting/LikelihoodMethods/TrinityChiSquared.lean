@@ -26,8 +26,11 @@ additional second-order remainder condition
 $$ \bigl|\log p_\theta(x) - \log p_{\theta_0}(x)
    - \langle\theta-\theta_0, \tilde\eta_{\theta_0}(x)\rangle\bigr| \le M(x)\|\theta-\theta_0\|^2,
    \qquad E_{\theta_0}[M(X)]<\infty, $$
-for `θ` in a neighbourhood of `θ₀` — it is what makes the local expansion uniform over
-bounded directions, and hence usable at the random direction `√n(θ̂ₙ − θ₀)`.
+for `θ` in a neighbourhood of `θ₀` — the source uses it to make the local expansion uniform
+over bounded directions, and hence usable at the random direction `√n(θ̂ₙ − θ₀)`. (It is not
+by itself sufficient for that uniformity: see the counterexample recorded at
+`sup_LAN_remainder_tendsto` in `UniformLAN.lean`, which is why the two likelihood-ratio
+statements below are still open.)
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
@@ -504,11 +507,16 @@ private lemma wald_sub_score_tendstoInMeasure
 /-- **logLR − score is `o_P(1)`** (simple null). Under `P^n_{θ₀}` and the second-order envelope
 condition, the likelihood-ratio and Rao score statistics differ by a quantity tending to zero
 in probability. -/
--- TODO: The uniform LAN expansion `sup_LAN_remainder_tendsto` (in `UniformLAN.lean`, itself an
--- open sorry) evaluated at the random direction `ĥₙ = √n(θ̂ₙ−θ₀)` gives
--- `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ − ⟪ĥₙ, J ĥₙ⟫ + o_P(1)`; substituting `ĥₙ = J⁻¹Zₙ + o_P(1)`
--- (`IsAsymptoticallyLinear`) collapses the leading terms to `⟪Zₙ, J⁻¹Zₙ⟫ = Rₙ`.  Blocked on the
--- upstream expansion plus tightness bookkeeping.  Sanctioned lifted sorry.
+-- TODO: The intended route is the uniform LAN expansion at the random direction
+-- `ĥₙ = √n(θ̂ₙ−θ₀)`: it gives `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ − ⟪ĥₙ, J ĥₙ⟫ + o_P(1)`, and
+-- substituting `ĥₙ = J⁻¹Zₙ + o_P(1)` (`IsAsymptoticallyLinear`) collapses the leading terms to
+-- `⟪Zₙ, J⁻¹Zₙ⟫ = Rₙ`.  That route is currently unavailable: `sup_LAN_remainder_tendsto`
+-- (`UniformLAN.lean`) is *false* at its printed hypotheses — see the counterexample recorded
+-- there — so the uniform expansion has to be re-established under an added regularity
+-- hypothesis (a.e. continuity of `θ ↦ log p_θ(x)`), which needs a triangular-array
+-- Glivenko–Cantelli theorem the library does not have.  The envelope condition alone gives only
+-- `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ + O_P(1)`, and the `O_P(1)` is exactly the `−⟪ĥₙ, J ĥₙ⟫` that
+-- has to be identified, so it cannot be bypassed.  Sanctioned lifted sorry.
 private lemma logLR_sub_score_tendstoInMeasure
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
@@ -1121,11 +1129,13 @@ private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
 /-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine likelihood-ratio
 statistic differs from the score-difference surrogate by a quantity tending to zero in
 probability. -/
--- TODO: Apply the uniform LAN expansion (`sup_LAN_remainder_tendsto`, open sorry upstream) in the
--- full model at `ĥₙ = √n(θ̂ₙ−θ₀)` and in the restricted model at `√n(β̂ₙ−β₀)`, then subtract; the
--- efficient-estimator substitutions (`hlin`, `hlin₀`) collapse each expansion to its score
--- quadratic, leaving `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Blocked on the upstream expansion.
--- Sanctioned lifted sorry.
+-- TODO: Apply the uniform LAN expansion in the full model at `ĥₙ = √n(θ̂ₙ−θ₀)` and in the
+-- restricted model at `√n(β̂ₙ−β₀)`, then subtract; the efficient-estimator substitutions
+-- (`hlin`, `hlin₀`) collapse each expansion to its score quadratic, leaving
+-- `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Blocked exactly as `logLR_sub_score_tendstoInMeasure`:
+-- `sup_LAN_remainder_tendsto` is false at its printed hypotheses (counterexample recorded in
+-- `UniformLAN.lean`), so the uniform expansion must first be re-established under an added
+-- a.e.-continuity hypothesis.  Sanctioned lifted sorry.
 private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
