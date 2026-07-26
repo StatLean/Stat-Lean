@@ -87,6 +87,20 @@ theorem umpu_eq_umpAlmostInvariant_ae {P : Θ → Measure 𝓧} [∀ θ, IsProba
     -- USER-INPUT: `φ` is UMP among almost invariant level-`α` tests
     (hφ : IsUMPAlmostInvariant G P Θ₀ Θ₁ α φ) :
     φ =ᵐ[μ] φstar ∧ ∀ ψ : 𝓧 → ℝ, IsUMPAlmostInvariant G P Θ₀ Θ₁ α ψ → ψ =ᵐ[μ] φ := by
+  -- TODO (single lifted gap: missing `[MeasurableSMul G 𝓧]`). The proof runs: (1) each
+  -- translate `ψ_g := φstar ∘ (g • ·)` is UMPU — its power at `θ` equals `power P φstar (g•θ)`
+  -- by `hP`/`IsInvariantModel`, and `hΘ₀`/`hΘ₁` permute the null/alternative classes — so by
+  -- `huniq` `ψ_g =ᵐ[μ] φstar`, making `φstar` almost invariant w.r.t. `μ`, hence (via `hdom`)
+  -- w.r.t. every `P θ`; (2) `φstar` is then a critical almost-invariant level-`α` competitor,
+  -- so `hφ`'s UMP-almost-invariant clause gives `power P φstar θ ≤ power P φ θ` on `Θ₁`;
+  -- (3) comparing `φ` against the constant test `x ↦ α` (critical by `hα0`/`hα1`, almost
+  -- invariant, level `α`) shows `φ` unbiased, so `hstar`'s UMPU clause gives the reverse
+  -- `power P φ θ ≤ power P φstar θ`; (4) equality makes `φ` itself UMPU, so `huniq φ` closes
+  -- the first conjunct, and the same run on any UMP-almost-invariant `ψ` closes the second.
+  -- OBSTRUCTION: step (1) needs `ψ_g` to be an `IsCriticalFn`, i.e. `Measurable (g • ·)`,
+  -- which the frozen signature does not provide (`[MulAction G 𝓧]` only). Under the intended
+  -- measurable action `[MeasurableSMul G 𝓧]` this is `measurable_const_smul g`. Same lifted
+  -- gap as `exists_measurable_aeEq_smul_statLaw` in `SufficiencyReduction`. Statement is TRUE.
   sorry
 
 end StatLean.HypothesisTesting
