@@ -1018,53 +1018,139 @@ private lemma lintegral_scale_risk_le {m : ℕ} (hm : 0 < m) {r : ℕ} (hr : 0 <
   exact ENNReal.ofReal_le_ofReal hfinal
 
 
-/-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
-the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
-against every measurable degree-`2r` location-scale-equivariant competitor.
+/-- **Analytic core of the location-scale MRE clause.** Minimality of the χ²-calibrated
+multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares, against every
+measurable degree-`2r` location-scale-equivariant competitor.
 
-TODO. This is the Pitman location-scale optimality reduction and is the single remaining
-open piece of the file. Precise route and obstruction, both verified on paper:
+Route (every step is a lemma proved above):
 
-* *Reduction.* Head-translation equivariance (`c = 1`) makes any equivariant `δ'` invariant
-  under `y ↦ y + (a, 0)`, so `δ'(y) = f(y_res)` depends only on the residual block; the
-  scaling clause then makes `f : ℝᵐ → ℝ` positively homogeneous of degree `2r`
-  (`f(c • w) = c^{2r} f(w)`). Under the base law `(0, 1)` the residual block is standard
-  Gaussian `γₘ = N(0, Iₘ)`, so the risk is `∫ (f(w) − 1)² dγₘ`, with the reference
-  `f₀(w) = t⋆‖w‖^{2r}`, `t⋆ = residualScaleConst m r = E[V^r]/E[V^{2r}]`, `V = ‖w‖² ∼ χ²ₘ`.
+* *Reduction.* Head-translation equivariance (the `c = 1` case) makes an equivariant `δ'`
+  invariant under `y ↦ y + (a, 0)`, so `δ'(y) = f(y_res)` with `f w := δ'(0, w)`, and the
+  scaling clause makes `f` positively homogeneous of degree `2r`. Under the base parameter
+  `(0, 1)` the residual block is a standard Gaussian `γₘ` (`piGauss_map_tail`), so the risk
+  is `∫ (f − 1)² dγₘ`; the reference estimator is `f₀(w) = t⋆‖w‖^{2r}` with
+  `t⋆ = residualScaleConst m r = E[V^r]/E[V^{2r}]` and `V = ‖w‖² ∼ χ²ₘ`
+  (`piGauss_map_sqSum`).
 
-* *L²-projection identity.* In `L²(γₘ)` the degree-`2r` homogeneous functions form a linear
-  subspace, and `f₀` is exactly the orthogonal projection of the constant `1` onto it:
-  `∫ (f − f₀)(f₀ − 1) dγₘ = 0` for every such `f`, whence
-  `∫ (f − 1)² = ∫ (f − f₀)² + ∫ (f₀ − 1)² ≥ ∫ (f₀ − 1)²`. The orthogonality is equivalent to
-  the moment identity `∫ g dγₘ = t⋆ ∫ ‖w‖^{2r} g dγₘ` for every degree-`2r` homogeneous `g`.
+* *Factorization.* Writing `f = u · ‖w‖^{2r}` with `u` invariant under positive scalings,
+  the two moment identities `∫ f dγₘ = E[V^r] ∫ u dγₘ` and `∫ f² dγₘ = E[V^{2r}] ∫ u² dγₘ`
+  hold (`integral_hom_mul_pow`): a scale-invariant function is *uncorrelated with the
+  radius*. Cauchy–Schwarz `∫ u² ≥ (∫ u)²` and completing the square in `a = ∫ u dγₘ` give
+  `∫ (f − 1)² ≥ 1 − E[V^r]²/E[V^{2r}] = ∫ (f₀ − 1)²` (`lintegral_scale_risk_le`).
 
-* *The moment identity* follows by iterating the base recursion
-  `∫ h ‖w‖² dγₘ = (m + 2q) ∫ h dγₘ` for `h` positively homogeneous of degree `2q` (giving
-  `∫ ‖w‖^{2r} g dγₘ = ∏_{j<r}(m + 2r + 2j) · ∫ g dγₘ`, and `t⋆ = 1/∏_{j<r}(m + 2r + 2j)`
-  by taking `g = ‖w‖^{2r}` and `map_sum_sq_eq_chiSquared` + `integrable_pow_chiSquared`).
-
-* *The base recursion* is the only genuinely analytic step. It is obtained from the exact
-  variance-scaling identity `∫ h d(N(0, σ²Iₘ)) = σ^{2q} ∫ h dγₘ` (immediate from
-  `gaussianReal_map_const_mul` + homogeneity, no calculus) by differentiating the Gaussian
-  expectation in the variance `σ²` at `σ² = 1`, where the density-side derivative equals
-  `½(∫ h‖w‖² dγₘ − m ∫ h dγₘ)` and the scaling side equals `q ∫ h dγₘ`.
-
-* *Obstruction.* The differentiation-under-the-integral step
-  (`hasDerivAt_integral_of_dominated_loc_of_deriv_le`) must dominate the `σ²`-derivative of
-  `h(w)·(density)` on a neighbourhood of `σ² = 1` by a fixed integrable envelope, for a
-  merely *measurable* homogeneous `h ∈ L²(γₘ)` — the envelope
-  `|h|(1 + ‖w‖²)e^{-c‖w‖²}`, `¼ < c < ½`, is integrable by Cauchy–Schwarz against the
-  `L²(γₘ)` bound, but assembling this and the full `L²` orthogonality expansion is a large
-  development. Mathlib has no isotropic-Gaussian polar decomposition
-  (`‖w‖ ⊥ w/‖w‖`) that would give the moment identity directly, so this analytic route is
-  the available one. -/
+* *Radius independence* (`lintegral_hom_mul`) is the single analytic input, and it is
+  obtained **without** differentiating under the integral sign — the obstruction recorded in
+  earlier versions of this file. The exact Gaussian tilt identity
+  `∫ u · e^{−((λ−1)/2)‖x‖²} dγ = λ^{−N/2} ∫ u dγ` (`lintegral_hom_exp_tilt`; immediate from
+  `gaussianReal_map_const_mul` and the product-density formula, because the tilt *is* a
+  change of variance, which a scale-invariant `u` cannot see) says that the Laplace
+  transforms of the two finite measures `(u·γ) ∘ ‖·‖²` and `(∫ u dγ) · χ²ₘ` agree on
+  `(−∞, 1/2)`. Laplace-transform uniqueness (`ext_of_integral_exp_eqOn`) identifies the two
+  measures, and monotone convergence removes the boundedness assumption on `u`. -/
 private lemma canonicalScaleRisk_residualScaleConst_le
     (hm : 0 < m) {r : ℕ} (hr : 0 < r)
     (δ' : EuclideanSpace ℝ (Fin (s + m)) → ℝ) (hδ'meas : Measurable δ')
     (hδ'equiv : IsCanonicalScaleEquivariant r δ') :
     canonicalScaleRisk (s := s) (m := m) (fun y => residualScaleConst m r * canonicalRSS y ^ r)
       ≤ canonicalScaleRisk δ' := by
-  sorry
+  classical
+  have hcm0 : canonicalMean (m := m) (0 : Fin s → ℝ)
+      = (0 : EuclideanSpace ℝ (Fin (s + m))) := by
+    ext k
+    refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+    · change (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.castAdd m a)
+        = (0 : EuclideanSpace ℝ (Fin (s + m))) (Fin.castAdd m a)
+      rw [Fin.append_left]; rfl
+    · change (Fin.append (0 : Fin s → ℝ) (0 : Fin m → ℝ)) (Fin.natAdd s b)
+        = (0 : EuclideanSpace ℝ (Fin (s + m))) (Fin.natAdd s b)
+      rw [Fin.append_right]; rfl
+  have hmodel : canonicalModel (s := s) (m := m) ((0 : Fin s → ℝ), ⟨1, zero_lt_one⟩)
+      = (piGauss (s + m) 1).map (WithLp.toLp 2) := by
+    rw [canonicalModel, hcm0, gaussianVector, canonicalNormal, piGauss]
+    exact congrArg (fun ν => Measure.map (WithLp.toLp 2) ν)
+      (congrArg Measure.pi (funext (fun i => rfl)))
+  have hrisk : ∀ δ : EuclideanSpace ℝ (Fin (s + m)) → ℝ, Measurable δ →
+      canonicalScaleRisk (s := s) (m := m) δ
+        = ∫⁻ x, ENNReal.ofReal ((δ (WithLp.toLp 2 x) - 1) ^ 2) ∂(piGauss (s + m) 1) := by
+    intro δ hδ
+    have hmeasφ : Measurable (fun y : EuclideanSpace ℝ (Fin (s + m)) =>
+        ENNReal.ofReal ((δ y - 1) ^ 2)) :=
+      ENNReal.measurable_ofReal.comp ((hδ.sub measurable_const).pow_const 2)
+    rw [canonicalScaleRisk, hmodel, lintegral_map hmeasφ (WithLp.measurable_toLp 2 _)]
+  set tl : (Fin (s + m) → ℝ) → (Fin m → ℝ) := fun x j => x (Fin.natAdd s j) with htl
+  have htlmeas : Measurable tl := measurable_pi_lambda _ (fun j => measurable_pi_apply _)
+  have htail : ∀ F : (Fin m → ℝ) → ℝ≥0∞, Measurable F →
+      ∫⁻ x, F (tl x) ∂(piGauss (s + m) 1) = ∫⁻ w, F w ∂(piGauss m 1) := by
+    intro F hF
+    rw [← piGauss_map_tail s m, lintegral_map hF htlmeas]
+  set f : (Fin m → ℝ) → ℝ :=
+    fun w => δ' (WithLp.toLp 2 (Fin.append (0 : Fin s → ℝ) w)) with hfdef
+  have hap : Measurable
+      (fun w : Fin m → ℝ => (Fin.append (0 : Fin s → ℝ) w : Fin (s + m) → ℝ)) := by
+    refine measurable_pi_lambda _ (fun k => ?_)
+    refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+    · simp only [Fin.append_left]; exact measurable_const
+    · simp only [Fin.append_right]; exact measurable_pi_apply b
+  have hfmeas : Measurable f := hδ'meas.comp ((WithLp.measurable_toLp 2 _).comp hap)
+  have hdecomp : ∀ x : Fin (s + m) → ℝ,
+      (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin (s + m)))
+        = WithLp.toLp 2 (Fin.append (0 : Fin s → ℝ) (tl x))
+            + canonicalMean (fun i => x (Fin.castAdd m i)) := by
+    intro x
+    ext k
+    refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+    · change x (Fin.castAdd m a)
+        = Fin.append (0 : Fin s → ℝ) (tl x) (Fin.castAdd m a)
+          + Fin.append (fun i => x (Fin.castAdd m i)) (0 : Fin m → ℝ) (Fin.castAdd m a)
+      rw [Fin.append_left, Fin.append_left]
+      change x (Fin.castAdd m a) = 0 + x (Fin.castAdd m a)
+      rw [zero_add]
+    · change x (Fin.natAdd s b)
+        = Fin.append (0 : Fin s → ℝ) (tl x) (Fin.natAdd s b)
+          + Fin.append (fun i => x (Fin.castAdd m i)) (0 : Fin m → ℝ) (Fin.natAdd s b)
+      rw [Fin.append_right, Fin.append_right]
+      change x (Fin.natAdd s b) = x (Fin.natAdd s b) + 0
+      rw [add_zero]
+  have hδ'f : ∀ x : Fin (s + m) → ℝ, δ' (WithLp.toLp 2 x) = f (tl x) := by
+    intro x
+    rw [hdecomp x]
+    have h1 := hδ'equiv (c := 1) zero_lt_one (fun i => x (Fin.castAdd m i))
+      (WithLp.toLp 2 (Fin.append (0 : Fin s → ℝ) (tl x)))
+    rw [one_smul, one_pow, one_mul] at h1
+    rw [h1]
+  have hfhom : ∀ c : ℝ, 0 < c → ∀ w, f (c • w) = c ^ (2 * r) * f w := by
+    intro c hc w
+    have happ : (Fin.append (0 : Fin s → ℝ) (c • w) : Fin (s + m) → ℝ)
+        = c • Fin.append (0 : Fin s → ℝ) w := by
+      funext k
+      refine Fin.addCases (fun a => ?_) (fun b => ?_) k
+      · rw [Fin.append_left]
+        change (0 : ℝ) = c * Fin.append (0 : Fin s → ℝ) w (Fin.castAdd m a)
+        rw [Fin.append_left]
+        change (0 : ℝ) = c * (0 : ℝ)
+        rw [mul_zero]
+      · rw [Fin.append_right]
+        change c * w b = c * Fin.append (0 : Fin s → ℝ) w (Fin.natAdd s b)
+        rw [Fin.append_right]
+    simp only [hfdef]
+    rw [happ]
+    have h1 := hδ'equiv hc (0 : Fin s → ℝ)
+      (WithLp.toLp 2 (Fin.append (0 : Fin s → ℝ) w))
+    rw [hcm0, add_zero] at h1
+    exact h1
+  rw [hrisk _ (measurable_const.mul (measurable_canonicalRSS.pow_const r)), hrisk _ hδ'meas]
+  have hL : ∀ x : Fin (s + m) → ℝ,
+      residualScaleConst m r * canonicalRSS (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin (s + m))) ^ r
+        = residualScaleConst m r * sqSum (tl x) ^ r := fun x => rfl
+  simp only [hL, hδ'f]
+  have hF1 : Measurable (fun w : Fin m → ℝ =>
+      ENNReal.ofReal ((residualScaleConst m r * sqSum w ^ r - 1) ^ 2)) :=
+    ENNReal.measurable_ofReal.comp
+      (((measurable_const.mul (measurable_sqSum.pow_const r)).sub measurable_const).pow_const 2)
+  have hF2 : Measurable (fun w : Fin m → ℝ => ENNReal.ofReal ((f w - 1) ^ 2)) :=
+    ENNReal.measurable_ofReal.comp ((hfmeas.sub measurable_const).pow_const 2)
+  rw [htail _ hF1, htail _ hF2]
+  exact lintegral_scale_risk_le hm hr hfmeas hfhom
 
 /-- A fixed multiple of `(S²)^r` is minimum risk equivariant for `(σ²)^r` under the
 location-scale group, the multiplier being the chi-square moment ratio. -/
@@ -1082,7 +1168,7 @@ theorem isCanonicalScaleMRE_residual_pow
         = c ^ (2 * r) * (residualScaleConst m r * canonicalRSS y ^ r)
     rw [canonicalRSS_smul_add_canonicalMean, mul_pow, ← pow_mul]
     ring
-  · -- minimality: the analytic core, lifted to a named `private` lemma
+  · -- minimality: the analytic core, factored out as a named `private` lemma
     exact fun δ' hδ'meas hδ'equiv =>
       canonicalScaleRisk_residualScaleConst_le hm hr δ' hδ'meas hδ'equiv
 
