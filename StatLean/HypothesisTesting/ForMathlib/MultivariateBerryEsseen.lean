@@ -911,6 +911,105 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
   -- TODO (planned debt): telescoping Lindeberg swap over the n summands; see docstring.
   sorry
 
+/-! #### Moment facts consumed by the ball assembly
+
+Two elementary consequences of the standing hypotheses (`hcov`, `hβ`, `ν` a probability
+measure) that the `ε`-optimisation needs: the second moment is exactly the dimension, and
+`β = ∫‖y‖³ dν` is bounded below by `k^{3/2}` (Lyapunov) — in particular `β > 0`, so that
+`ε := (β/√n)^{1/4}` is a legitimate positive smoothing width. -/
+
+/-- `L³ ⊆ L²` on a probability space, in the only form needed here: `t² ≤ 1 + t³`. -/
+private lemma integrable_normSq_of_cube {k : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν := by
+  have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
+    (integrable_const 1).add hβ
+  refine Integrable.mono' hdom (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  have ht : (0 : ℝ) ≤ ‖y‖ := norm_nonneg y
+  rcases le_or_gt ‖y‖ 1 with h | h
+  · nlinarith
+  · nlinarith
+
+/-- **The second moment is the dimension.** Under identity covariance,
+`∫ ‖y‖² dν = k`. Expand `‖y‖² = ∑ᵢ ⟪eᵢ, y⟫²` over the standard orthonormal basis and apply
+`hcov` coordinatewise; the interchange is legitimate because `hβ` makes each coordinate square
+integrable. -/
+private lemma integral_normSq_eq_dim {k : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν]
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    (∫ y, ‖y‖ ^ 2 ∂ν) = (k : ℝ) := by
+  have hnormsq : ∀ y : EuclideanSpace ℝ (Fin k), ‖y‖ ^ 2 = ∑ i, y i ^ 2 := by
+    intro y
+    rw [EuclideanSpace.norm_eq, Real.sq_sqrt (by positivity)]
+    exact Finset.sum_congr rfl fun i _ => by rw [Real.norm_eq_abs, sq_abs]
+  have hcoord : ∀ (i : Fin k) (y : EuclideanSpace ℝ (Fin k)),
+      ⟪(EuclideanSpace.single i (1 : ℝ)), y⟫_ℝ = y i := by
+    intro i y
+    have h := EuclideanSpace.inner_single_left (𝕜 := ℝ) i (1 : ℝ) y
+    simpa using h
+  have hsq2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν :=
+    integrable_normSq_of_cube hβ
+  have hcomp : ∀ i : Fin k, Integrable (fun y : EuclideanSpace ℝ (Fin k) => y i ^ 2) ν := by
+    intro i
+    refine Integrable.mono' hsq2 (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), hnormsq y]
+    exact Finset.single_le_sum (f := fun j => y j ^ 2) (fun j _ => sq_nonneg (y j))
+      (Finset.mem_univ i)
+  calc (∫ y, ‖y‖ ^ 2 ∂ν) = ∫ y, ∑ i, y i ^ 2 ∂ν := by
+        exact integral_congr_ae (ae_of_all _ fun y => hnormsq y)
+    _ = ∑ i, ∫ y, y i ^ 2 ∂ν := integral_finset_sum _ fun i _ => hcomp i
+    _ = ∑ _i : Fin k, (1 : ℝ) := by
+        refine Finset.sum_congr rfl fun i _ => ?_
+        have hone : ⟪(EuclideanSpace.single i (1 : ℝ)),
+            (EuclideanSpace.single i (1 : ℝ))⟫_ℝ = 1 := by rw [hcoord]; simp
+        have h := hcov (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single i (1 : ℝ))
+        rw [hone] at h
+        simp only [hcoord] at h
+        rw [← h]
+        exact integral_congr_ae (ae_of_all _ fun y => by simp [sq])
+    _ = (k : ℝ) := by simp
+
+/-- **Lyapunov lower bound.** `k^{3/2} ≤ β` under identity covariance. Elementary: for every
+`t ≥ 0` one has the pointwise inequality `3t‖y‖² ≤ 2‖y‖³ + t³` (it is
+`(‖y‖ − t)²(2‖y‖ + t) ≥ 0`); integrating and taking `t = √k` gives `√k · k ≤ β`. -/
+private lemma sqrt_dim_mul_dim_le_integral_norm_cube {k : ℕ}
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    Real.sqrt (k : ℝ) * (k : ℝ) ≤ ∫ y, ‖y‖ ^ 3 ∂ν := by
+  set t : ℝ := Real.sqrt (k : ℝ) with htdef
+  have ht0 : 0 ≤ t := Real.sqrt_nonneg _
+  have htsq : t ^ 2 = (k : ℝ) := Real.sq_sqrt (Nat.cast_nonneg k)
+  have hsq2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν :=
+    integrable_normSq_of_cube hβ
+  have hmono : (∫ y, 3 * t * ‖y‖ ^ 2 ∂ν) ≤ ∫ y, (2 * ‖y‖ ^ 3 + t ^ 3) ∂ν := by
+    refine integral_mono (hsq2.const_mul (3 * t)) ((hβ.const_mul 2).add (integrable_const _)) ?_
+    intro y
+    have hy : (0 : ℝ) ≤ ‖y‖ := norm_nonneg y
+    have hprod : (0 : ℝ) ≤ (‖y‖ - t) ^ 2 * (2 * ‖y‖ + t) :=
+      mul_nonneg (sq_nonneg _) (by linarith)
+    nlinarith [hprod]
+  rw [integral_const_mul, integral_add (hβ.const_mul 2) (integrable_const _), integral_const_mul,
+    integral_const, integral_normSq_eq_dim hcov hβ] at hmono
+  simp only [probReal_univ, smul_eq_mul, one_mul] at hmono
+  nlinarith [hmono, htsq, ht0]
+
+/-- **`β > 0`.** If `β = ∫‖y‖³ dν` vanished then `ν` would be the Dirac mass at the origin, whose
+second moment is `0` and not `k > 0`. -/
+private lemma integral_norm_cube_pos {k : ℕ} (hk : 0 < k)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    0 < ∫ y, ‖y‖ ^ 3 ∂ν := by
+  have hk0 : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hk
+  have hsk : 0 < Real.sqrt (k : ℝ) := Real.sqrt_pos.mpr hk0
+  have h := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβ
+  nlinarith [h, hsk, hk0]
+
 /-- **Elementary ball Berry–Esseen bound, with a dimension-free constant (honest, non-sharp).**
 There is an *absolute* constant `C` — independent of the dimension `k`, the sample size `n` and
 the sampling law `ν` — such that the normal approximation to the law of `‖n^{-1/2} ∑ᵢ Yᵢ‖²` over
@@ -937,15 +1036,20 @@ and with dimension-free constants:
   which the older `χ ∘ ‖·‖` formulation had to treat separately (its `ε ≤ a` hypothesis is
   gone), no longer needs any special handling.
 
-TODO (planned debt): what the assembly still consumes is
-(i) `abs_integral_smooth_sub_gaussian_le` — the multivariate Lindeberg swap, still `sorry`;
-(ii) `β_G := ∫‖z‖³ dN(0,I_k) ≤ 3 β` under identity covariance (via Lyapunov
-`β ≥ (E‖Y‖²)^{3/2} = k^{3/2}` and the Gaussian moment `E‖G‖⁴ = k(k+2)`, giving
-`β_G ≤ (k(k+2))^{3/4} ≤ 3 k^{3/2}`); and (iii) `β > 0` (so that `ε := (β/√n)^{1/4} > 0`), again
-from `∫‖y‖² dν = k > 0`. Items (ii)–(iii) are elementary but not free: each needs the identity
-`∫‖y‖² dν = k` (expand `‖y‖² = ∑ᵢ ⟪eᵢ,y⟫²` over an orthonormal basis and use `hcov`, together
-with the `L³ ⊆ L²` integrability that `hβ` supplies) plus a `χ²` second moment. They are
-recorded here rather than proved because the assembly cannot be completed without (i) anyway. -/
+The moment facts the `ε`-optimisation needs are also proved here:
+`integral_normSq_eq_dim` (`∫‖y‖² dν = k`), `sqrt_dim_mul_dim_le_integral_norm_cube` (Lyapunov,
+`k^{3/2} ≤ β`) and `integral_norm_cube_pos` (`β > 0`, so `ε := (β/√n)^{1/4}` is a legitimate
+positive width).
+
+TODO (planned debt): what the assembly still consumes is exactly two things.
+(i) `abs_integral_smooth_sub_gaussian_le` — the third-order multivariate Lindeberg swap, still
+`sorry` (see its own `TODO`); and
+(ii) the *Gaussian* side of the third moment, `β_G := ∫‖z‖³ dN(0,I_k) ≤ 3 β`. Given the
+Lyapunov bound `k^{3/2} ≤ β` already proved here, (ii) reduces to the Gaussian moment
+`E‖G‖⁴ = k(k+2)` (whence `β_G ≤ (E‖G‖²)^{1/2}(E‖G‖⁴)^{1/2} = √k·√(k²+2k) ≤ √3·k^{3/2}` by
+Cauchy–Schwarz), i.e. to the second moment of `χ²_k`, which Mathlib v4.29.1 does not provide
+and which this file does not develop. Both are recorded rather than proved; the assembly cannot
+be completed without (i) in any case. -/
 theorem berryEsseen_ball_elementary :
     ∃ C : ℝ, 0 < C ∧ ∀ (k n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (t : ℝ),
       0 < n → 0 < k → IsProbabilityMeasure ν →
