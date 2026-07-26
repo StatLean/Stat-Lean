@@ -343,6 +343,20 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => meanRootCDF (F n) n x) atTop
       (𝓝 (normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x)) := by
+  -- TODO (triangular-array CLT, drifting row law). `meanRootCDF (F n) n` is the CDF of the
+  -- standardised sum of `n` i.i.d. draws from the `n`-th law `F n`; realise it on the canonical
+  -- product space `Π n, (Fin n → ℝ)` (measure `Measure.pi n ↦ Measure.pi (fun _ : Fin n => F n)`,
+  -- coordinates `X n i ω = ω n i`, row-`n` internal independence via
+  -- `iIndepFun_iff_map_fun_eq_pi_map`) and apply the proven `LindebergCLT.lindeberg_clt`. Two
+  -- genuinely missing bricks remain:
+  --   (1) the Lindeberg condition for the drifting rows follows from `Var[id; F n] → Var[id; Q]`
+  --       plus weak convergence via *uniform square-integrability* (Lehmann–Romano Lemma 18.3.1 /
+  --       Vitali): `X_n ⇒ X` with `E X_n² → E X² < ∞` forces `{X_n²}` uniformly integrable; this
+  --       Vitali-type upgrade is not yet in Mathlib;
+  --   (2) transporting the resulting `TendstoInDistribution` of the standardised sum to pointwise
+  --       CDF convergence at the (continuity) point `x` is the one-direction portmanteau theorem
+  --       "CDF convergence at every continuity point ⟸ weak convergence" on `ℝ`, which is absent
+  --       from Mathlib v4.29.1 (the same gap recorded on `tendstoInMeasure_rowMean_triangular`).
   sorry
 
 /-- **The empirical sequence belongs to the mean class, almost surely.**
@@ -645,6 +659,15 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
+  -- TODO (studentized CLT = target-1 CLT + Slutsky). This is `mean_root_cdf_tendsto` divided by
+  -- the sample standard deviation. Beyond the two bricks missing for `mean_root_cdf_tendsto`
+  -- (triangular-array Lindeberg CLT with drifting law + portmanteau CDF-inversion), it needs the
+  -- triangular-array weak law `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
+  -- (itself an open debt) applied to the squares to give `sampleVariance → Var[id; Q]` in
+  -- probability along the class, and then Slutsky's theorem to divide the asymptotically normal
+  -- numerator by the consistent denominator (`√(sampleVariance) → √Var[id; Q] > 0`), yielding the
+  -- standard normal limit. The junk convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible since
+  -- `Var[id; Q] > 0`.
   sorry
 
 /-- **Consistency of the bootstrap-t.**
