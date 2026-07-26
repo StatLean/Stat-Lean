@@ -1,5 +1,8 @@
 import StatLean.HypothesisTesting.NeymanPearson.Lemma
+import StatLean.HypothesisTesting.ForMathlib.TestsWeakCompact
 import Mathlib.Analysis.Convex.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
 # The generalized fundamental lemma: maximization under several side conditions
@@ -322,26 +325,133 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
     refine Finset.sum_nonneg fun i _ => mul_nonneg (hk i) (hdiffnn i)
   linarith
 
-/-- **Closedness of the attainable-moment set** — the hard half of `convex_isClosed_momentSet`,
-isolated as a named debt.
+/-- **Closedness of the attainable-moment set** — the hard half of `convex_isClosed_momentSet`.
 
 Closedness is the weak-* compactness of the class of critical functions, transported through the
-bounded moment map `φ ↦ (∫ φ fᵢ dμ)` into `Fin m → ℝ`. **LIFTED (deep debt).** No honest proof is
-available at pin `v4.29.1`. The classical route needs weak-* compactness of the closed unit ball
-of `L^∞(μ)` viewed as the dual of the predual `L¹(μ)` (Banach–Alaoglu, `WeakDual.isCompact_closedBall`,
-`ProperSpace ℝ`), together with the **surjective** isometry `L^∞(μ) ≃ (L¹(μ))*`. Mathlib has
-`isCompact_closedBall`, `geometric_hahn_banach_*` and the Fréchet–Riesz self-duality of `L²`
-(`InnerProductSpace.toDual`), but the *precise missing brick* is `L^∞ = (L¹)*`: only the
-**non-surjective** natural map `Lp (StrongDual E) q μ →L StrongDual (Lp E p μ)`
-(`MeasureTheory.Function.Holder`) exists, and the surjectivity `L^∞ = (L¹)*` (which needs
-localizability of `μ`) is absent, so the `[SigmaFinite μ]` form stated here cannot be discharged.
-The finite-measure `L²` specialization — still open — lives in `ForMathlib/TestsWeakCompact`
-(`isCompact_toWeakDualL2_image_constrained`), but it does **not** apply here: that file assumes
-`[IsFiniteMeasure μ]`, whereas the frozen signature below is `[SigmaFinite μ]`. -/
+bounded moment map `φ ↦ (∫ φ fᵢ dμ)` into `Fin m → ℝ`.
+
+**Proof (change of measure into `L²`).** The classical route via `L^∞(μ) ≅ (L¹(μ))*` is *not*
+needed. Because there are only `m` constraint functions, one may reweight the measure so that the
+`L¹` pairing becomes an `L²` pairing and invoke Hilbert self-duality (Fréchet–Riesz) plus
+Banach–Alaoglu on a *finite* measure — all available in Mathlib. Concretely: pick a strictly
+positive integrable `h` (`exists_pos_lintegral_lt_of_sigmaFinite`), set `w = (∑ᵢ|fᵢ|) + h > 0`
+(integrable), and let `ν = μ.withDensity (ENNReal.ofReal ∘ w)`, a **finite** measure with the same
+null sets as `μ`. The functions `gᵢ = fᵢ / w` lie in `L²(ν)` — the weight `w` dominates each `fᵢ`,
+so `∫ gᵢ² dν = ∫ fᵢ²/w dμ ≤ ∫ |fᵢ| dμ < ∞` — and the pairing is preserved:
+`∫ φ gᵢ dν = ∫ φ fᵢ dμ`. Hence `momentSet μ f` is the continuous image, under
+`L ↦ (L gᵢ)ᵢ`, of the weak-* compact class of `[0,1]`-valued `L²(ν)` functions
+(`isCompact_toWeakDualL2_image_testClass`, whose `[IsFiniteMeasure]` hypothesis `ν` satisfies).
+A continuous image of a compact set is compact, and a compact subset of `ℝᵐ` is closed. -/
 private lemma isClosed_momentSet {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
     (f : Fin m → 𝓧 → ℝ) (hmeas : ∀ i, Measurable (f i)) (hint : ∀ i, Integrable (f i) μ) :
     IsClosed (momentSet μ f) := by
-  sorry
+  classical
+  -- A strictly positive integrable weight (σ-finiteness).
+  obtain ⟨g0, hg0pos, hg0meas, hg0int⟩ :=
+    exists_pos_lintegral_lt_of_sigmaFinite μ (ε := 1) one_ne_zero
+  let h : 𝓧 → ℝ := fun x => (g0 x : ℝ)
+  have hhpos : ∀ x, 0 < h x := fun x => by exact_mod_cast hg0pos x
+  have hhmeas : Measurable h := hg0meas.coe_nnreal_real
+  have hhint : Integrable h μ :=
+    ⟨hhmeas.aestronglyMeasurable, hasFiniteIntegral_iff_ofNNReal.mpr (hg0int.trans_le le_top)⟩
+  -- The dominating weight `w = (∑ᵢ |fᵢ|) + h` and the reweighted probability-like measure `ν`.
+  let S : 𝓧 → ℝ := fun x => ∑ i, |f i x|
+  have hSmeas : Measurable S :=
+    Finset.measurable_sum Finset.univ fun i _ => _root_.continuous_abs.measurable.comp (hmeas i)
+  have hSint : Integrable S μ := integrable_finset_sum Finset.univ fun i _ => (hint i).abs
+  let w : 𝓧 → ℝ := fun x => S x + h x
+  have hwval : ∀ x, w x = S x + h x := fun _ => rfl
+  have hwpos : ∀ x, 0 < w x := fun x =>
+    add_pos_of_nonneg_of_pos (Finset.sum_nonneg fun i _ => abs_nonneg _) (hhpos x)
+  have hwmeas : Measurable w := hSmeas.add hhmeas
+  have hwint : Integrable w μ := hSint.add hhint
+  set ν : Measure 𝓧 := μ.withDensity (fun x => ENNReal.ofReal (w x)) with hν
+  haveI : IsFiniteMeasure ν := by rw [hν]; exact isFiniteMeasure_withDensity_ofReal hwint.2
+  have hμν : μ ≪ ν := by
+    rw [hν]
+    exact withDensity_absolutelyContinuous' hwmeas.ennreal_ofReal.aemeasurable
+      (Filter.Eventually.of_forall fun x => by
+        simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact hwpos x)
+  -- Each `gᵢ = fᵢ / w` lies in `L²(ν)`.
+  have hgmemLp : ∀ i, MemLp (fun x => f i x / w x) 2 ν := by
+    intro i
+    have hgmeas : Measurable (fun x => f i x / w x) := (hmeas i).div hwmeas
+    rw [memLp_two_iff_integrable_sq hgmeas.aestronglyMeasurable, hν,
+      integrable_withDensity_iff hwmeas.ennreal_ofReal
+        (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+    refine Integrable.mono' (hint i).abs
+      (((hgmeas.pow_const 2).mul hwmeas.ennreal_ofReal.ennreal_toReal).aestronglyMeasurable) ?_
+    filter_upwards with x
+    have hwx := hwpos x
+    rw [Real.norm_eq_abs, ENNReal.toReal_ofReal hwx.le,
+      abs_of_nonneg (mul_nonneg (sq_nonneg _) hwx.le)]
+    have hkey : (f i x / w x) ^ 2 * w x = (f i x) ^ 2 / w x := by
+      field_simp
+    rw [hkey, div_le_iff₀ hwx]
+    have hfw : |f i x| ≤ w x := by
+      have hSi : |f i x| ≤ S x :=
+        Finset.single_le_sum (f := fun j => |f j x|) (fun j _ => abs_nonneg _) (Finset.mem_univ i)
+      exact hSi.trans (by rw [hwval]; linarith [(hhpos x)])
+    calc (f i x) ^ 2 = |f i x| * |f i x| := by rw [← sq_abs]; ring
+      _ ≤ |f i x| * w x := mul_le_mul_of_nonneg_left hfw (abs_nonneg _)
+  let gL : Fin m → Lp ℝ 2 ν := fun i => (hgmemLp i).toLp _
+  -- The reduction identity: pairing in `L²(ν)` equals the moment in `μ`.
+  have reduction : ∀ (φ : 𝓧 → ℝ) (φ' : Lp ℝ 2 ν), ⇑φ' =ᵐ[ν] φ → ∀ i,
+      toWeakDualL2 ν φ' (gL i) = ∫ x, φ x * f i x ∂μ := by
+    intro φ φ' hφ' i
+    rw [toWeakDualL2_apply_eq_integral]
+    have hφμ : ⇑φ' =ᵐ[μ] φ := hμν.ae_eq hφ'
+    have hgμ : ⇑(gL i) =ᵐ[μ] (fun x => f i x / w x) :=
+      hμν.ae_eq (MemLp.coeFn_toLp (hgmemLp i))
+    -- Abstract the integrand to hide `ν` from the coercions' types before rewriting `ν`.
+    set F : 𝓧 → ℝ := fun x => ⇑φ' x * ⇑(gL i) x with hF
+    rw [hν, integral_withDensity_eq_integral_toReal_smul hwmeas.ennreal_ofReal
+        (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top) F]
+    refine integral_congr_ae ?_
+    filter_upwards [hφμ, hgμ] with x hx hgx
+    have hwx := hwpos x
+    simp only [hF]
+    rw [ENNReal.toReal_ofReal hwx.le, smul_eq_mul, hx, hgx]
+    field_simp
+  -- The continuous moment map `Φ : WeakDual ℝ (L²(ν)) → ℝᵐ`.
+  set Φ : WeakDual ℝ (Lp ℝ 2 ν) → (Fin m → ℝ) := fun L i => L (gL i) with hΦ
+  have hΦcont : Continuous Φ := continuous_pi fun i => continuous_eval_weakDual ν (gL i)
+  -- `momentSet μ f` is the continuous image of the weak-* compact test class.
+  have hset : momentSet μ f = Φ '' (toWeakDualL2 ν '' testClassL2 ν) := by
+    ext u
+    constructor
+    · rintro ⟨φ, hφcrit, hφmom⟩
+      have hφmemLp : MemLp φ 2 ν :=
+        MemLp.of_bound hφcrit.1.aestronglyMeasurable 1
+          (Filter.Eventually.of_forall fun x => by
+            rw [Real.norm_eq_abs, abs_of_nonneg (hφcrit.2 x).1]; exact (hφcrit.2 x).2)
+      refine ⟨toWeakDualL2 ν (hφmemLp.toLp φ), ⟨hφmemLp.toLp φ, ⟨?_, ?_⟩, rfl⟩, ?_⟩
+      · filter_upwards [MemLp.coeFn_toLp hφmemLp] with x hx
+        rw [Pi.zero_apply, hx]; exact (hφcrit.2 x).1
+      · filter_upwards [MemLp.coeFn_toLp hφmemLp] with x hx
+        rw [hx]; exact (hφcrit.2 x).2
+      · funext i
+        show toWeakDualL2 ν (hφmemLp.toLp φ) (gL i) = u i
+        rw [reduction φ (hφmemLp.toLp φ) (MemLp.coeFn_toLp hφmemLp) i, hφmom i]
+    · rintro ⟨L, ⟨φ', hφ'test, rfl⟩, rfl⟩
+      -- Truncate the `L²`-representative to an honest `[0,1]`-valued critical function.
+      have hae : AEStronglyMeasurable (⇑φ') ν := Lp.aestronglyMeasurable φ'
+      let φ : 𝓧 → ℝ := fun x => max 0 (min 1 (hae.mk _ x))
+      have hφmeas : Measurable φ :=
+        (measurable_const.max ((measurable_const.min hae.measurable_mk)))
+      have hφcrit : IsCriticalFn φ := by
+        refine ⟨hφmeas, fun x => ?_⟩
+        refine ⟨le_max_left _ _, ?_⟩
+        exact max_le zero_le_one (min_le_left _ _)
+      have hφφ' : ⇑φ' =ᵐ[ν] φ := by
+        filter_upwards [hae.ae_eq_mk, hφ'test.1, hφ'test.2] with x hmk hpos hle
+        simp only [φ, ← hmk]
+        rw [min_eq_right (by exact hle), max_eq_right (by exact hpos)]
+      refine ⟨φ, hφcrit, fun i => ?_⟩
+      show ∫ x, φ x * f i x ∂μ = Φ (toWeakDualL2 ν φ') i
+      exact (reduction φ φ' hφφ' i).symm
+  rw [hset]
+  exact (((isCompact_toWeakDualL2_image_testClass ν).image hΦcont)).isClosed
 
 /-- **Geometry of the moment set (iv, first clause).** The attainable-moment set is convex
 and closed. Convexity is immediate from convexity of the class of critical functions;
