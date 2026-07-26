@@ -401,6 +401,37 @@ private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k
 
 end NormOfGaussian
 
+/-! ## Cramér–Wold: projecting the mean-vector root onto a direction -/
+
+section CramerWold
+
+/-- The image of the mean-vector root law under a linear functional is the univariate root law
+of the image sequence. This is the Cramér–Wold reduction, at the level of the laws. -/
+private lemma meanVecRootLaw_map_inner {k : ℕ} (F : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure F] (hF2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 F)
+    (t : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    (meanVecRootLaw F n).map (fun z => inner ℝ t z)
+      = meanRootLaw (F.map (fun z => inner ℝ t z)) n := by
+  classical
+  have hcoe : (fun z : EuclideanSpace ℝ (Fin k) => inner ℝ t z) = ⇑(innerSL ℝ t) := rfl
+  simp only [hcoe]
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ := innerSL ℝ t with hL
+  have hLc : Continuous L := L.continuous
+  have hFint : Integrable (fun z : EuclideanSpace ℝ (Fin k) => z) F := hF2.integrable one_le_two
+  have hint2 : ∫ s, s ∂(F.map L) = L (∫ z, z ∂F) := by
+    rw [integral_map hLc.aemeasurable (by fun_prop), L.integral_comp_comm hFint]
+  have hpi : Measure.pi (fun _ : Fin n => F.map L)
+      = (Measure.pi fun _ : Fin n => F).map (fun y i => L (y i)) :=
+    (Measure.pi_map_pi (fun _ => hLc.aemeasurable)).symm
+  rw [meanVecRootLaw, meanRootLaw, hpi,
+    Measure.map_map hLc.measurable (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext y
+  simp only [Function.comp_def, hint2, map_smul, map_sub, map_sum, smul_eq_mul]
+
+end CramerWold
+
 /-! ## The mean vector -/
 
 section MeanVector
