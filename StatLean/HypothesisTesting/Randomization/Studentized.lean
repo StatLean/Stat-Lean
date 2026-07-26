@@ -168,6 +168,16 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (studentizedTwoSample (m k) (n k)) x t)
       (cdf (gaussianReal 0 1) t) := by
+  -- TODO (deep, deferred): the studentized randomization limit. Since
+  -- `studentizedTwoSample = (1/twoSampleScale)·twoSampleMeanDiff + 0`, the Slutsky transfer
+  -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
+  -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
+  -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
+  -- BLOCKED on three open pieces: (i) `weakConverges_randPairLaw_twoSample` (sorry above);
+  -- (ii) `randDist_affine_tendstoInProb` is itself `sorry` in `SlutskyRandomization`; and
+  -- (iii) the scale consistency `twoSampleScale (π X) → τ` in `TendstoInProbRandomized`, a
+  -- first-two-moments statement about sampling without replacement from the pooled data, for
+  -- which no brick exists.
   sorry
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard
@@ -190,6 +200,14 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
     WeakConverges
       (fun k => (twoSampleLaw (m k) (n k) PY PZ).map (studentizedTwoSample (m k) (n k)))
       (gaussianReal 0 1) := by
+  -- TODO (deep, deferred): unconditional law of the studentized statistic. Numerator
+  -- `twoSampleMeanDiff ⇝ N(0, s²)` (`weakConverges_twoSampleMeanDiff`) and denominator
+  -- `twoSampleScale → s` in probability (the unconditional variance is exactly `s²` here), so
+  -- the ratio `⇝ N(0,1)` by Slutsky at the level of laws.
+  -- BLOCKED on `weakConverges_twoSampleMeanDiff` (sorry above) and the unconditional scale
+  -- consistency `twoSampleScale → s` in probability (a WLLN on the two sample variances), plus
+  -- a measure-level Slutsky-ratio lemma (`WeakConverges` API currently offers `.map` for a
+  -- fixed continuous map, not a converging-random-denominator continuous mapping theorem).
   sorry
 
 /-- **The studentized permutation test is pointwise consistent in level.** Its rejection
@@ -216,6 +234,14 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     Tendsto (fun k => powerAgainst (twoSampleLaw (m k) (n k) PY PZ)
         (randTest (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) α))
       atTop (𝓝 α) := by
+  -- TODO (deep, deferred): pointwise consistency in level. Assembles the two limits above —
+  -- the studentized randomization distribution `→P Φ` (`randDist_studentized_tendstoInProb`)
+  -- and the unconditional law `⇝ N(0,1)` (`weakConverges_studentizedTwoSample`) — through the
+  -- randomized critical value `randQuantile → z_{1-α}` (`randQuantile_tendstoInProb`) and a
+  -- portmanteau evaluation of `powerAgainst` at the limiting rejection region, whose frontier
+  -- is `N(0,1)`-null.
+  -- BLOCKED on both prerequisite theorems above (both `sorry`), and there is no packaged
+  -- "matching limits ⇒ asymptotic level α" engine in `Randomization/Asymptotics` to invoke.
   sorry
 
 end StatLean.HypothesisTesting

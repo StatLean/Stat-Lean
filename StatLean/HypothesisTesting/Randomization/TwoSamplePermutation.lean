@@ -218,6 +218,19 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
         (twoSampleMeanDiff (m k) (n k)) (twoSampleLaw (m k) (n k) PY PZ))
       ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
         (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+  -- TODO (deep, deferred): the two-sample permutation bivariate CLT (Thm 17.3.1).
+  -- Route: conditionally on the two independent uniform permutations, `Tₘₙ(π X)` is a weighted
+  -- sum of the independent pooled observations, the weights being sampling-without-replacement
+  -- indicators; the Cramér–Wold device reduces the bivariate `randPairLaw` claim to a scalar
+  -- linear combination, and the weighted i.i.d. CLT `weighted_iid_clt` supplies the scalar
+  -- limit. The weight moments — `Var` of the weight average and the cross-permutation
+  -- covariance giving asymptotic independence — are `HypergeometricMoments.var_mean_linear_le`
+  -- and `HypergeometricMoments.cov_weight`.
+  -- BLOCKED: there is no conditional-on-weights CLT assembly nor a Cramér–Wold device at the
+  -- `randPairLaw`/`WeakConverges` level (the same bivariate-CLT gap as the still-open scalar
+  -- `weakConverges_randPairLaw_signChange` in `Randomization/SignChange`); `weighted_iid_clt`
+  -- delivers only a single scalar marginal as `TendstoInDistribution`, and the joint /
+  -- test-function bridge is missing.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** -/
@@ -284,6 +297,16 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
     WeakConverges
       (fun k => (twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k)))
       (gaussianReal 0 ⟨s ^ 2, sq_nonneg s⟩) := by
+  -- TODO (self-contained, substantial): the ordinary (unconditional) two-sample CLT.
+  -- Write `Tₘₙ = m^{-1/2} ∑ᵢ (Yᵢ − μ) − √(m/n) · n^{-1/2} ∑ⱼ (Zⱼ − μ)` (equal means). The two
+  -- blocks are independent under `twoSampleLaw`, each block obeys the i.i.d. CLT, and
+  -- `√(m/n) → √λ`, so the sum is asymptotically `N(0, varY + λ·varZ) = N(0, s²)` by Slutsky.
+  -- NOT upstream-blocked: reducible to `weighted_iid_clt` (or `lindeberg_clt`) applied per
+  -- block plus the `TendstoInDistribution → WeakConverges` test-function bridge (cf.
+  -- `ParametricFamily/ScoreCLT`). Deferred here only for length: it needs the joint two-block
+  -- independent-sum construction and the distribution-to-WeakConverges translation assembled in
+  -- full, which is a self-standing ~150-line development rather than a reuse of an existing
+  -- bivariate-CLT brick.
   sorry
 
 end StatLean.HypothesisTesting
