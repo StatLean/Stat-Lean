@@ -253,6 +253,67 @@ theorem condDistrib_fst_withDensity_tilt (ρ P : Measure (𝓤 × 𝓣)) [IsFini
       condDistrib Prod.fst Prod.snd P t
         = (condTiltNormalizer ρ g t)⁻¹ •
             ((condDistrib Prod.fst Prod.snd ρ t).withDensity g) := by
-  sorry
+  have hC := measurable_condTiltNormalizer ρ hg
+  have hd : Measurable (Function.uncurry fun t u => (condTiltNormalizer ρ g t)⁻¹ * g u) := by
+    have hrw : (Function.uncurry fun t u => (condTiltNormalizer ρ g t)⁻¹ * g u)
+        = fun p : 𝓣 × 𝓤 => (condTiltNormalizer ρ g p.1)⁻¹ * g p.2 := rfl
+    rw [hrw]; exact ((hC.inv).comp measurable_fst).mul (hg.comp measurable_snd)
+  set κρ := condDistrib Prod.fst Prod.snd ρ with hκρ
+  set cand : Kernel 𝓣 𝓤 := Kernel.withDensity κρ (fun t u => (condTiltNormalizer ρ g t)⁻¹ * g u)
+    with hcand
+  haveI hcandFin : IsFiniteKernel cand := by
+    refine ⟨⟨1, ENNReal.one_lt_top, fun t => ?_⟩⟩
+    rw [hcand, Kernel.withDensity_apply' _ hd, Measure.restrict_univ, lintegral_const_mul _ hg]
+    exact condTilt_inv_mul_le_one _
+  have hMS : P.map Prod.snd
+      = (ρ.map Prod.snd).withDensity fun t => k t * condTiltNormalizer ρ g t := by
+    rw [hP]; exact map_snd_withDensity_tilt ρ hg hk
+  have hfin_ae : ∀ᵐ t ∂(ρ.map Prod.snd), k t * condTiltNormalizer ρ g t < ⊤ := by
+    refine ae_lt_top (hk.mul hC) ?_
+    have hmass : ∫⁻ t, k t * condTiltNormalizer ρ g t ∂(ρ.map Prod.snd)
+        = (P.map Prod.snd) Set.univ := by
+      rw [hMS, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    rw [hmass]; exact measure_ne_top _ _
+  have hfst : (P.map fun a => (Prod.snd a, Prod.fst a)).fst = P.map Prod.snd :=
+    Measure.fst_map_prodMk measurable_fst
+  -- The candidate kernel disintegrates `P` (swapped); this is where Target 2's cancellation enters.
+  have hcompProd : (P.map fun a => (Prod.snd a, Prod.fst a)) = (P.map Prod.snd) ⊗ₘ cand := by
+    refine Measure.ext_of_lintegral _ fun F hF => ?_
+    have hFswap : Measurable fun p : 𝓤 × 𝓣 => F (p.2, p.1) := by fun_prop
+    have hLHS : ∫⁻ z, F z ∂(P.map fun a => (Prod.snd a, Prod.fst a))
+        = ∫⁻ t, ∫⁻ u, g u * k t * F (t, u) ∂(κρ t) ∂(ρ.map Prod.snd) := by
+      rw [lintegral_map hF (by fun_prop : Measurable fun a : 𝓤 × 𝓣 => (Prod.snd a, Prod.fst a)),
+        hP, lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) hFswap]
+      simp only [Pi.mul_apply]
+      rw [lintegral_condDistrib_swap ρ
+        (show Measurable fun p : 𝓤 × 𝓣 => g p.1 * k p.2 * F (p.2, p.1) by fun_prop)]
+    have hRHS : ∫⁻ z, F z ∂((P.map Prod.snd) ⊗ₘ cand)
+        = ∫⁻ t, (k t * condTiltNormalizer ρ g t)
+            * ∫⁻ u, ((condTiltNormalizer ρ g t)⁻¹ * g u) * F (t, u) ∂(κρ t)
+            ∂(ρ.map Prod.snd) := by
+      rw [Measure.lintegral_compProd hF, hMS,
+        lintegral_withDensity_eq_lintegral_mul _ (hk.mul hC) hF.lintegral_kernel_prod_right']
+      simp only [Pi.mul_apply]
+      refine lintegral_congr fun t => ?_
+      congr 1
+      rw [hcand, Kernel.lintegral_withDensity κρ hd t
+        (show Measurable fun u => F (t, u) from hF.comp measurable_prodMk_left)]
+    rw [hLHS, hRHS]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hfin_ae] with t htfin
+    exact condTilt_integrand_eq (κρ t) hg (hF.comp measurable_prodMk_left) (k t) htfin
+  haveI : IsFiniteMeasure (P.map fun a => (Prod.snd a, Prod.fst a)) := by
+    rw [hcompProd]; infer_instance
+  have hκeq : (P.map fun a => (Prod.snd a, Prod.fst a))
+      = (P.map fun a => (Prod.snd a, Prod.fst a)).fst ⊗ₘ cand := by
+    rw [hfst]; exact hcompProd
+  have huniq := eq_condKernel_of_measure_eq_compProd cand hκeq
+  rw [hfst] at huniq
+  filter_upwards [huniq] with t ht
+  have hden : (fun u => (condTiltNormalizer ρ g t)⁻¹ * g u)
+      = (condTiltNormalizer ρ g t)⁻¹ • g := by funext u; simp [smul_eq_mul]
+  rw [show condDistrib Prod.fst Prod.snd P
+        = (P.map fun a => (Prod.snd a, Prod.fst a)).condKernel from by rw [condDistrib],
+      ← ht, hcand, Kernel.withDensity_apply _ hd, hden, withDensity_smul _ hg]
 
 end StatLean.HypothesisTesting
