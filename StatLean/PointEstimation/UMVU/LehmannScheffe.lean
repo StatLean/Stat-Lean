@@ -354,13 +354,39 @@ theorem isUMVU_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProba
     exact (memLp_map_measure_iff hstat.aestronglyMeasurable hT.aemeasurable).mp hstat
   · -- minimality against every square-integrable unbiased competitor
     intro δ' hδ'u hδ'2 θ
-    -- The Rao–Blackwell comparison is `variance_rbEstimator_le_of_complete`, now proven, but it
-    -- requires `Measurable δ'` to form the kernel average `t ↦ ∫ δ' dQ_t`. Here `δ'` carries
-    -- only `MemEstL2 P δ'` — a per-parameter `AEStronglyMeasurable` version — and with no
-    -- dominating measure these do not glue to one global measurable representative. So the
-    -- measurability hypothesis of the private lemma is not dischargeable at this frozen
-    -- `IsUMVU` interface. A `condExp`-based Rao–Blackwell layer (which needs only
-    -- integrability) would close this, but is not among the imported kernel lemmas.
+    -- STATUS: the `condExp` Rao–Blackwell layer above closes the *averaging* half of the
+    -- argument and localizes the debt to a single, precisely identified step.
+    --
+    -- What the layer gives, with no measurability input on `δ'` at all: writing
+    -- `m := MeasurableSpace.comap T inferInstance`, `variance_condExp_le` yields
+    --   `variance ((P θ)[δ' | m]) (P θ) ≤ variance δ' (P θ)`
+    -- from `hδ'2 θ : MemLp δ' 2 (P θ)` alone. So it suffices to identify
+    --   `(P θ)[δ' | m] =ᵐ[P θ] fun x => rbEstimator Q δ (T x)`.                          (†)
+    --
+    -- Why (†) is not reachable here. Choose a measurable `P θ`-version `d` of `δ'`
+    -- (`(hδ'2 θ).aestronglyMeasurable.mk`). By `condExp_comap_eq_rbEstimator`,
+    -- `(P θ)[δ' | m] = (P θ)[d | m] =ᵐ[P θ] fun x => rbEstimator Q d (T x)`, so (†) is
+    -- exactly `rbEstimator Q d =ᵐ[statLaw P T θ] rbEstimator Q δ`. Both sides are genuinely
+    -- measurable functions on `S`, so `unique_unbiased_function_of_complete` applies — but it
+    -- consumes unbiasedness of `rbEstimator Q d` at *every* parameter, i.e. `∫ d dP θ' = g θ'`
+    -- for all `θ'`, while `d` agrees with `δ'` only `P θ`-a.e.; off that class `d` is
+    -- arbitrary, and the model carries no dominating measure that would let the per-parameter
+    -- versions of `δ'` be glued into one representative unbiased throughout (Dirac-type
+    -- families show the gluing fails in general).
+    --
+    -- Equivalently: `rbEstimator Q δ'` (junk-valued where `δ'` is not `Q s`-integrable) *is*
+    -- unbiased at every `θ'` and is `AEStronglyMeasurable` for every `statLaw P T θ'`, so what
+    -- remains is completeness of `T` tested against functions that are only *per-parameter*
+    -- a.e. measurable. `IsCompleteStat`, by definition, tests globally measurable functions,
+    -- and the strengthening does not follow from it. The same obstruction is reached from the
+    -- covariance criterion (`isUMVU_iff_uncorrelated_unbiasedZero`): one needs
+    -- `E_θ[U | T] = 0` for competitors `U` of zero mean that are only a.e. measurable.
+    --
+    -- Consequently this is *not* a missing-lemma gap but a gap between the frozen `IsUMVU`
+    -- competitor class (`MemEstL2`, per-parameter a.e. measurable) and the frozen
+    -- `IsCompleteStat` test class (globally measurable). For competitors that do carry a
+    -- global measurable representative the theorem is proved, without debt, by the private
+    -- lemma `variance_rbEstimator_le_of_complete` above. Left as sanctioned debt.
     sorry
 
 /-- **Lehmann–Scheffé, convex-loss form.** The estimator of `isUMVU_of_complete_sufficient`
