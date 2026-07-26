@@ -76,7 +76,14 @@ def signFlip {N : ℕ} (ε : Fin N → Bool) (z : Fin N → ℝ) : Fin N → ℝ
 /-- Sign changes are measurable. -/
 theorem measurable_signFlip {N : ℕ} (ε : Fin N → Bool) :
     Measurable (signFlip ε) := by
-  sorry
+  refine measurable_pi_iff.mpr fun i => ?_
+  by_cases h : ε i = true
+  · have : (fun z : Fin N → ℝ => signFlip ε z i) = fun z => -(z i) := by
+      funext z; simp only [signFlip, if_pos h]
+    rw [this]; exact (measurable_pi_apply i).neg
+  · have : (fun z : Fin N → ℝ => signFlip ε z i) = fun z => z i := by
+      funext z; simp only [signFlip, if_neg h]
+    rw [this]; exact measurable_pi_apply i
 
 /-- **A symmetric test calibrated on continuous symmetric distributions keeps its level
 under any sign-change-invariant law.** If a symmetric critical function has mean `α` under
