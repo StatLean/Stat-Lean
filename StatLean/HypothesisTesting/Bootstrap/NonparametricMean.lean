@@ -303,6 +303,25 @@ private lemma const_mem_meanSeqClass (Q : Measure ℝ) [IsProbabilityMeasure Q]
   ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ _ => tendsto_const_nhds,
     tendsto_const_nhds, tendsto_const_nhds⟩
 
+open Classical in
+/-- A distribution-function-valued wrapper of `meanRootCDF`: it is `meanRootCDF F n` whenever
+the `n`-fold product of `F` is a probability measure, and the standard normal otherwise. This
+makes `IsCDF (Jmean n F)` hold for **every** measure `F`, so the general bootstrap criterion of
+`Bootstrap/Consistency` applies with `J := Jmean`. -/
+private noncomputable def Jmean (n : ℕ) (F : Measure ℝ) : ℝ → ℝ :=
+  if IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) then meanRootCDF F n else stdNormalCDF
+
+private lemma isCDF_Jmean (n : ℕ) (F : Measure ℝ) : IsCDF (Jmean n F) := by
+  unfold Jmean
+  split_ifs with h
+  · haveI := h; exact isCDF_meanRootCDF F n
+  · exact isCDF_stdNormalCDF
+
+private lemma Jmean_eq_meanRootCDF (n : ℕ) (F : Measure ℝ)
+    [h : IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    Jmean n F = meanRootCDF F n := by
+  unfold Jmean; rw [if_pos h]
+
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
 section MeanBootstrap
@@ -507,6 +526,43 @@ theorem bootstrap_mean_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasur
   · exact supCDFDist_nonneg (hQcdf n) (hEcdf n)
   · exact supCDFDist_triangle_of_isCDF (hQcdf n) hcdflim (hEcdf n)
 
+/-- **The sampling distribution at `Q` is the law of the root.** At the data-generating law the
+value of `meanRootCDF Q n` is the true distribution function of the centred-and-scaled sample
+mean of the i.i.d. sample, so `meanRootCDF` is genuinely the object being bootstrapped. -/
+private lemma meanRootCDF_eq_law_of_root [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr) (n : ℕ) (x : ℝ) :
+    meanRootCDF Q n x
+      = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
+  have hφmeas : Measurable (fun ω (i : Fin n) => X i ω) :=
+    measurable_pi_lambda _ (fun i => hmeas i)
+  have hmap : Pr.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => Q) := by
+    have h := (iIndepFun_iff_map_fun_eq_pi_map (μ := Pr) (f := fun i : Fin n => X (i : ℕ))
+      (fun i => (hmeas (i : ℕ)).aemeasurable)).1 (hindep.precomp Fin.val_injective)
+    rw [h]
+    congr 1; funext i
+    exact ((hident (i : ℕ)).map_eq).trans hlaw.map_eq
+  have hSmeas : Measurable fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂Q) := by fun_prop
+  unfold meanRootCDF
+  rw [← hmap, Measure.map_apply hφmeas (measurableSet_le hSmeas measurable_const)]
+  rfl
+
+/-- **Debt: measurability of the bootstrap critical value.** The estimated `1 − α` quantile is
+measurable in the sample. `cdfPseudoInverse F p = sInf {t | p ≤ F t}` with
+`F = meanRootCDF (empiricalMeasure fun i => X i ω) n` is the generalised inverse of a
+distribution function that depends measurably on `ω` (its sublevel sets are measure images of
+`ω`-measurable sets); the `sInf` of that family is therefore measurable. This requires a
+measurable-generalised-inverse brick (joint measurability of `(ω, t) ↦ meanRootCDF (P̂ₙ ω) n t`
+and measurability of `sInf` of a measurable family of closed half-lines) that is not yet
+developed in this cluster. -/
+private lemma measurable_bootstrapCriticalValue (hmeas : ∀ i, Measurable (X i)) (n : ℕ) :
+    Measurable fun ω => cdfPseudoInverse
+      (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α) := by
+  -- TODO: joint measurability of the empirical sampling CDF in `(ω, t)` plus measurability of
+  -- the generalised inverse `sInf {t | p ≤ ·}`; no such brick exists in this file yet.
+  sorry
+
 /-- **Asymptotic coverage of the bootstrap confidence bound for a mean.**
 
 The one-sided bootstrap confidence set for the mean, obtained by comparing the root to the
@@ -527,7 +583,52 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
           ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)
               (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
-  sorry
+  have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  -- Convergence of the sampling distribution functions along the class, packaged for `Jmean`.
+  have hJconv : ∀ G ∈ meanSeqClass Q, ∀ x, Tendsto (fun n => Jmean n (G n) x) atTop
+      (𝓝 (normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x)) := by
+    intro G hG x
+    have hagree : ∀ n, Jmean n (G n) x = meanRootCDF (G n) n x := by
+      intro n
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn
+        haveI : IsProbabilityMeasure (Measure.pi fun _ : Fin 0 => G 0) := by
+          rw [Measure.pi_of_empty]; infer_instance
+        rw [Jmean_eq_meanRootCDF]
+      · haveI := hG.1 n hn
+        haveI := isProbabilityMeasure_pi_const n (G n)
+        rw [Jmean_eq_meanRootCDF]
+    simp_rw [hagree]
+    exact mean_root_cdf_tendsto hQ2 hQvar hG x
+  -- The field `J := Jmean` is the sampling distribution of the root at the true law.
+  have hJP : ∀ (n : ℕ) (x : ℝ), Jmean n Q x
+      = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
+    intro n x
+    haveI := isProbabilityMeasure_pi_const n Q
+    rw [Jmean_eq_meanRootCDF, meanRootCDF_eq_law_of_root hmeas hindep hlaw hident]
+  have hRmeas : ∀ n : ℕ, Measurable fun ω : Ω =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) := by
+    intro n
+    have hsum : Measurable fun ω : Ω => ∑ i : Fin n, X i ω :=
+      Finset.measurable_sum _ (fun i _ => hmeas i)
+    fun_prop
+  have hconv := tendsto_bootstrapCoverage (P := Q) (J := Jmean)
+    (Jlim := normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) (C_P := meanSeqClass Q)
+    (Phat := fun n ω => empiricalMeasure fun i : Fin n => X i ω)
+    (R := fun n ω => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)) (α := α)
+    (const_mem_meanSeqClass Q hQ2) hJconv (continuous_normalCDF 0 hvne) (isCDF_normalCDF 0 _)
+    isCDF_Jmean (empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2) hα
+    (strictIncAt_normalCDF 0 hvne _) hJP hRmeas
+    (fun n => measurable_bootstrapCriticalValue hmeas n)
+  refine hconv.congr fun n => ?_
+  have hset : {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
+        ≤ cdfPseudoInverse (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α)}
+      = {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
+        ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) (1 - α)} := by
+    ext ω
+    haveI := isProbabilityMeasure_pi_empirical n X ω
+    rw [Set.mem_setOf_eq, Set.mem_setOf_eq, Jmean_eq_meanRootCDF]
+  rw [hset]
 
 /-! ## The studentized root and the bootstrap-t -/
 
