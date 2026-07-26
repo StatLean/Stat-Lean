@@ -1,5 +1,7 @@
 import Mathlib.Probability.Kernel.CondDistrib
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import Mathlib.Probability.Kernel.WithDensity
+import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -102,6 +104,92 @@ lemma measurable_condTiltNormalizer (ρ : Measure (𝓤 × 𝓣)) [IsFiniteMeasu
     Measurable (condTiltNormalizer ρ g) :=
   hg.lintegral_kernel
 
+/-- In `ℝ≥0∞`, `a⁻¹ * a ≤ 1` for every `a` (equal to `1` when `0 < a < ∞`, and to `0` at the two
+degenerate values). Used to bound the total mass of the normalised `g`-tilt kernel by `1`. -/
+private lemma condTilt_inv_mul_le_one (a : ℝ≥0∞) : a⁻¹ * a ≤ 1 := by
+  rcases eq_or_ne a 0 with h | h
+  · simp [h]
+  rcases eq_or_ne a ⊤ with h' | h'
+  · simp [h']
+  · rw [ENNReal.inv_mul_cancel h h']
+
+/-- Pointwise algebraic identity behind the tilt cancellation: for a measure `μ` on `Ω`, writing
+`C = ∫ g dμ`, the `F`-weighted mass of `g` equals `C` times the `F`-weighted mass of the normalised
+tilt `C⁻¹ · g`. Both degenerate values `C = 0` and `C = ∞` are handled (using finiteness of
+`c · C`), which is why this holds `ρ_T`-almost everywhere and not just where `0 < C < ∞`. -/
+private lemma condTilt_integrand_eq {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    {g F : Ω → ℝ≥0∞} (hg : Measurable g) (hF : Measurable F) (c : ℝ≥0∞)
+    (hfin : c * (∫⁻ u, g u ∂μ) < ⊤) :
+    ∫⁻ u, g u * c * F u ∂μ
+      = (c * (∫⁻ u, g u ∂μ)) * ∫⁻ u, ((∫⁻ u, g u ∂μ)⁻¹ * g u) * F u ∂μ := by
+  set C := ∫⁻ u, g u ∂μ with hCdef
+  have hG : ∫⁻ u, (C⁻¹ * g u) * F u ∂μ = C⁻¹ * ∫⁻ u, g u * F u ∂μ := by
+    rw [← lintegral_const_mul C⁻¹ (hg.mul hF)]
+    exact lintegral_congr fun u => by rw [mul_assoc]
+  have hL : ∫⁻ u, g u * c * F u ∂μ = c * ∫⁻ u, g u * F u ∂μ := by
+    rw [← lintegral_const_mul c (hg.mul hF)]
+    exact lintegral_congr fun u => by rw [mul_comm (g u) c, mul_assoc]
+  rw [hL, hG]
+  set G := ∫⁻ u, g u * F u ∂μ with hGdef
+  rcases eq_or_ne C 0 with hC0 | hC0
+  · have hgae : g =ᵐ[μ] 0 := (lintegral_eq_zero_iff hg).mp hC0
+    have hG0 : G = 0 :=
+      (lintegral_eq_zero_iff (hg.mul hF)).mpr (by filter_upwards [hgae] with u hu; simp [hu])
+    rw [hG0, hC0]; simp
+  rcases eq_or_ne C ⊤ with hCtop | hCtop
+  · have hc0 : c = 0 := by
+      by_contra hc
+      rw [hCtop, ENNReal.mul_top hc] at hfin
+      exact absurd hfin (lt_irrefl _)
+    rw [hc0]; simp
+  · rw [← mul_assoc, mul_assoc c C C⁻¹, ENNReal.mul_inv_cancel hC0 hCtop, mul_one]
+
+/-- Master disintegration identity: integrating a measurable `F` against `ρ` equals integrating
+its swapped section against the conditional law of the first coordinate given the second, averaged
+over the second marginal. This is `Measure.compProd_map_condDistrib` composed with the swap. -/
+private lemma lintegral_condDistrib_swap (ρ : Measure (𝓤 × 𝓣)) [IsFiniteMeasure ρ]
+    {F : 𝓤 × 𝓣 → ℝ≥0∞} (hF : Measurable F) :
+    ∫⁻ p, F p ∂ρ
+      = ∫⁻ t, ∫⁻ u, F (u, t) ∂(condDistrib Prod.fst Prod.snd ρ t) ∂(ρ.map Prod.snd) := by
+  have hswap : (ρ.map Prod.snd) ⊗ₘ condDistrib Prod.fst Prod.snd ρ
+      = ρ.map fun a => (Prod.snd a, Prod.fst a) :=
+    compProd_map_condDistrib measurable_fst.aemeasurable
+  have hmap : Measurable fun a : 𝓤 × 𝓣 => (Prod.snd a, Prod.fst a) := by fun_prop
+  have hmeas : Measurable fun q : 𝓣 × 𝓤 => F (q.2, q.1) := by fun_prop
+  calc ∫⁻ p, F p ∂ρ
+      = ∫⁻ q, F (q.2, q.1) ∂(ρ.map fun a => (Prod.snd a, Prod.fst a)) := by
+        rw [lintegral_map hmeas hmap]
+    _ = ∫⁻ q, F (q.2, q.1) ∂((ρ.map Prod.snd) ⊗ₘ condDistrib Prod.fst Prod.snd ρ) := by
+        rw [hswap]
+    _ = ∫⁻ t, ∫⁻ u, F (u, t) ∂(condDistrib Prod.fst Prod.snd ρ t) ∂(ρ.map Prod.snd) :=
+        Measure.lintegral_compProd hmeas
+
+/-- The second marginal of the product-form tilt `ρ · (g(u) k(t))` is the `t`-marginal of `ρ`
+reweighted by `k(t)·C(t)`, with `C` the conditional normaliser. Key structural identity behind both
+the positivity/finiteness and the cancellation. -/
+private lemma map_snd_withDensity_tilt (ρ : Measure (𝓤 × 𝓣)) [IsFiniteMeasure ρ]
+    {g : 𝓤 → ℝ≥0∞} {k : 𝓣 → ℝ≥0∞} (hg : Measurable g) (hk : Measurable k) :
+    (ρ.withDensity fun p => g p.1 * k p.2).map Prod.snd
+      = (ρ.map Prod.snd).withDensity fun t => k t * condTiltNormalizer ρ g t := by
+  have hdens : Measurable fun p : 𝓤 × 𝓣 => g p.1 * k p.2 := by fun_prop
+  have hkC : Measurable fun t => k t * condTiltNormalizer ρ g t :=
+    hk.mul (measurable_condTiltNormalizer ρ hg)
+  ext B hB
+  rw [Measure.map_apply measurable_snd hB, withDensity_apply _ (measurable_snd hB),
+    ← lintegral_indicator (measurable_snd hB) (fun p => g p.1 * k p.2),
+    lintegral_condDistrib_swap ρ (hdens.indicator (measurable_snd hB)),
+    withDensity_apply _ hB, ← lintegral_indicator hB (fun t => k t * condTiltNormalizer ρ g t)]
+  refine lintegral_congr fun t => ?_
+  by_cases htB : t ∈ B
+  · have hind : ∀ u, (Prod.snd ⁻¹' B).indicator (fun p => g p.1 * k p.2) (u, t) = g u * k t :=
+      fun u => Set.indicator_of_mem (Set.mem_preimage.mpr htB) _
+    simp only [hind]
+    rw [lintegral_mul_const _ hg, Set.indicator_of_mem htB]
+    exact mul_comm _ _
+  · have hind : ∀ u, (Prod.snd ⁻¹' B).indicator (fun p => g p.1 * k p.2) (u, t) = 0 :=
+      fun u => Set.indicator_of_notMem (fun h => htB (Set.mem_preimage.mp h)) _
+    simp only [hind, lintegral_zero, Set.indicator_of_notMem htB]
+
 /-- Under the tilted measure, the conditional normalising constant is strictly positive and
 finite almost everywhere in the conditioning variable.
 
@@ -119,7 +207,29 @@ lemma condTiltNormalizer_pos_lt_top_ae (ρ P : Measure (𝓤 × 𝓣)) [IsFinite
     (hP : P = ρ.withDensity fun p => g p.1 * k p.2) :
     ∀ᵐ t ∂(P.map Prod.snd),
       0 < condTiltNormalizer ρ g t ∧ condTiltNormalizer ρ g t < ⊤ := by
-  sorry
+  have hC := measurable_condTiltNormalizer ρ hg
+  have hMS : P.map Prod.snd
+      = (ρ.map Prod.snd).withDensity fun t => k t * condTiltNormalizer ρ g t := by
+    rw [hP]; exact map_snd_withDensity_tilt ρ hg hk
+  -- The total `k·C` mass is finite (it is the mass of `P`), so `k·C < ∞` a.e. on `ρ_T`.
+  have hfin : ∀ᵐ t ∂(ρ.map Prod.snd), k t * condTiltNormalizer ρ g t < ⊤ := by
+    refine ae_lt_top (hk.mul hC) ?_
+    have hmass : ∫⁻ t, k t * condTiltNormalizer ρ g t ∂(ρ.map Prod.snd)
+        = (P.map Prod.snd) Set.univ := by
+      rw [hMS, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    rw [hmass]; exact measure_ne_top _ _
+  rw [hMS, ae_withDensity_iff (hk.mul hC)]
+  filter_upwards [hfin] with t htfin hne0
+  refine ⟨?_, ?_⟩
+  · rcases eq_or_ne (condTiltNormalizer ρ g t) 0 with h | h
+    · exact (hne0 (by rw [h, mul_zero])).elim
+    · exact pos_iff_ne_zero.mpr h
+  · rcases eq_or_ne (condTiltNormalizer ρ g t) ⊤ with h | h
+    · exfalso
+      have hk0 : k t ≠ 0 := fun hk0 => hne0 (by rw [hk0, zero_mul])
+      rw [h, ENNReal.mul_top hk0] at htfin
+      exact absurd htfin (lt_irrefl _)
+    · exact lt_top_iff_ne_top.mpr h
 
 /-- **Conditional law under a product-form tilt.**
 
