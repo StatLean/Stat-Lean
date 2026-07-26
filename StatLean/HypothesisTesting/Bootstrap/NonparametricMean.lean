@@ -530,7 +530,7 @@ noncomputable def meanRootLaw (G : Measure ℝ) (n : ℕ) : Measure ℝ :=
   (Measure.pi fun _ : Fin n => G).map
     fun y => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂G)
 
-private lemma meanRootCDF_eq (G : Measure ℝ) (n : ℕ) (x : ℝ)
+lemma meanRootCDF_eq (G : Measure ℝ) (n : ℕ) (x : ℝ)
     [IsProbabilityMeasure (Measure.pi fun _ : Fin n => G)] :
     meanRootCDF G n x = (meanRootLaw G n (Set.Iic x)).toReal := by
   rw [meanRootLaw, Measure.map_apply (by fun_prop) measurableSet_Iic]
@@ -544,7 +544,7 @@ If the row laws `G n` converge weakly to `Q₁`, with converging means and varia
 law of the centred and scaled sample mean of `n` independent draws from `G n` converges weakly
 to the centred normal law with the limiting variance. Degenerate limits (`Var = 0`) are
 allowed. -/
-private theorem tendsto_meanRootLaw
+theorem tendsto_meanRootLaw
     [∀ n, IsProbabilityMeasure (G n)] [IsProbabilityMeasure Q₁]
     (hG2 : ∀ n, MemLp (fun t : ℝ => t) 2 (G n)) (hQ2 : MemLp (fun t : ℝ => t) 2 Q₁)
     (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ t, f t ∂(G n)) atTop (𝓝 (∫ t, f t ∂Q₁)))
