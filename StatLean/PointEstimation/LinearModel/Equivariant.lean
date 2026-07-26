@@ -696,6 +696,118 @@ private lemma lintegral_hom_mul {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0∞}
   exact iSup_congr hstep
 
 
+private lemma sqSum_nonneg {N : ℕ} (x : Fin N → ℝ) : 0 ≤ sqSum x :=
+  Finset.sum_nonneg (fun i _ => sq_nonneg _)
+
+private lemma sqSum_smul {N : ℕ} (c : ℝ) (x : Fin N → ℝ) :
+    sqSum (c • x) = c ^ 2 * sqSum x := by
+  simp only [sqSum, Finset.mul_sum]
+  exact Finset.sum_congr rfl (fun i _ => by
+    rw [Pi.smul_apply, smul_eq_mul, mul_pow])
+
+/-- The last `m` coordinates of a standard product Gaussian are again a standard product
+Gaussian. -/
+private lemma piGauss_map_tail (s m : ℕ) :
+    (piGauss (s + m) 1).map (fun (x : Fin (s + m) → ℝ) (j : Fin m) => x (Fin.natAdd s j))
+      = piGauss m 1 := by
+  classical
+  have hmeas : Measurable (fun (x : Fin (s + m) → ℝ) (j : Fin m) => x (Fin.natAdd s j)) :=
+    measurable_pi_lambda _ (fun j => measurable_pi_apply _)
+  change (Measure.pi fun _ : Fin (s + m) => gaussianReal (0 : ℝ) 1).map _
+      = Measure.pi fun _ : Fin m => gaussianReal (0 : ℝ) 1
+  refine (Measure.pi_eq (μ := fun _ : Fin m => gaussianReal (0 : ℝ) 1) (fun t ht => ?_)).symm
+  set t' : Fin (s + m) → Set ℝ := Fin.addCases (fun _ => Set.univ) t with ht'
+  have hleft : ∀ i : Fin s, t' (Fin.castAdd m i) = Set.univ := fun i => by
+    rw [ht']; exact Fin.addCases_left i
+  have hright : ∀ j : Fin m, t' (Fin.natAdd s j) = t j := fun j => by
+    rw [ht']; exact Fin.addCases_right j
+  have hpre : (fun (x : Fin (s + m) → ℝ) (j : Fin m) => x (Fin.natAdd s j)) ⁻¹'
+      (Set.univ.pi t) = Set.univ.pi t' := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_univ_pi]
+    constructor
+    · intro h k
+      refine Fin.addCases (fun i => ?_) (fun j => ?_) k
+      · rw [hleft i]; exact Set.mem_univ _
+      · rw [hright j]; exact h j
+    · intro h j
+      have hk := h (Fin.natAdd s j)
+      rwa [hright j] at hk
+  rw [Measure.map_apply hmeas (MeasurableSet.univ_pi ht), hpre, Measure.pi_pi,
+    Fin.prod_univ_add]
+  have hone : ∀ i : Fin s, (gaussianReal (0 : ℝ) 1) (t' (Fin.castAdd m i)) = 1 := by
+    intro i; rw [hleft i]; exact measure_univ
+  rw [Finset.prod_congr rfl (fun i _ => hone i), Finset.prod_const_one, one_mul]
+  exact Finset.prod_congr rfl (fun j _ => by rw [hright j])
+
+/-- The squared radius of a standard product Gaussian is `χ²ₘ`. -/
+private lemma piGauss_map_sqSum {m : ℕ} (hm : 0 < m) :
+    (piGauss m 1).map sqSum = chiSquared m := by
+  have hlaw : ∀ i : Fin m,
+      Measure.map (fun x : Fin m → ℝ => x i) (piGauss m 1) = gaussianReal 0 1 := fun i =>
+    (measurePreserving_eval (fun _ : Fin m => gaussianReal (0 : ℝ) 1) i).map_eq
+  have hindep : iIndepFun (fun (i : Fin m) (x : Fin m → ℝ) => x i) (piGauss m 1) :=
+    iIndepFun_pi (fun _ => aemeasurable_id)
+  exact StatLean.MultipleTesting.map_sum_sq_eq_chiSquared hm (piGauss m 1)
+    (fun i x => x i) (fun i => measurable_pi_apply i) hlaw hindep
+
+/-- Integrability of the powers of the squared radius. -/
+private lemma integrable_sqSum_pow {m : ℕ} (hm : 0 < m) (k : ℕ) :
+    Integrable (fun w : Fin m → ℝ => sqSum w ^ k) (piGauss m 1) := by
+  have hasm : AEStronglyMeasurable (fun v : ℝ => v ^ k) ((piGauss m 1).map sqSum) :=
+    (continuous_pow k).measurable.aestronglyMeasurable
+  have h := integrable_pow_chiSquared hm k
+  rw [← piGauss_map_sqSum hm] at h
+  exact (integrable_map_measure hasm measurable_sqSum.aemeasurable).mp h
+
+/-- The moments of the squared radius are the `χ²ₘ` moments. -/
+private lemma integral_sqSum_pow {m : ℕ} (hm : 0 < m) (k : ℕ) :
+    ∫ w : Fin m → ℝ, sqSum w ^ k ∂(piGauss m 1) = ∫ v, v ^ k ∂(chiSquared m) := by
+  have hasm : AEStronglyMeasurable (fun v : ℝ => v ^ k) ((piGauss m 1).map sqSum) :=
+    (continuous_pow k).measurable.aestronglyMeasurable
+  rw [← piGauss_map_sqSum hm, integral_map measurable_sqSum.aemeasurable hasm]
+
+/-- The `ℝ≥0∞` form of the moments of the squared radius. -/
+private lemma lintegral_sqSum_pow {m : ℕ} (hm : 0 < m) (k : ℕ) :
+    ∫⁻ w : Fin m → ℝ, ENNReal.ofReal (sqSum w ^ k) ∂(piGauss m 1)
+      = ENNReal.ofReal (∫ v, v ^ k ∂(chiSquared m)) := by
+  rw [← integral_sqSum_pow hm k,
+    ← ofReal_integral_eq_lintegral_ofReal (integrable_sqSum_pow hm k)
+      (ae_of_all _ (fun w => pow_nonneg (sqSum_nonneg w) k))]
+
+/-- Positivity of the `χ²ₘ` moments (`m ≥ 1`). -/
+private lemma chiSquared_moment_pos {m : ℕ} (hm : 0 < m) {k : ℕ} (hk : 0 < k) :
+    0 < ∫ v, v ^ k ∂(chiSquared m) := by
+  classical
+  rw [← integral_sqSum_pow hm k]
+  rw [integral_pos_iff_support_of_nonneg (fun w => pow_nonneg (sqSum_nonneg w) k)
+    (integrable_sqSum_pow hm k)]
+  obtain ⟨j₀⟩ : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+  have hZ : MeasurableSet {w : Fin m → ℝ | sqSum w = 0} :=
+    measurableSet_eq_fun measurable_sqSum measurable_const
+  have hnull : (piGauss m 1) {w : Fin m → ℝ | sqSum w = 0} = 0 := by
+    have hsub : {w : Fin m → ℝ | sqSum w = 0} ⊆ {w : Fin m → ℝ | w j₀ = 0} := by
+      intro w hw
+      have := (Finset.sum_eq_zero_iff_of_nonneg (fun i _ => sq_nonneg (w i))).mp hw
+      have h0 := this j₀ (Finset.mem_univ j₀)
+      exact sq_eq_zero_iff.mp h0
+    refine measure_mono_null hsub ?_
+    have hev : {w : Fin m → ℝ | w j₀ = 0} = (fun x : Fin m → ℝ => x j₀) ⁻¹' {(0 : ℝ)} := rfl
+    haveI : NoAtoms (gaussianReal (0 : ℝ) 1) := noAtoms_gaussianReal one_ne_zero
+    have hmapev : Measure.map (fun x : Fin m → ℝ => x j₀) (piGauss m 1) = gaussianReal 0 1 :=
+      (measurePreserving_eval (fun _ : Fin m => gaussianReal (0 : ℝ) 1) j₀).map_eq
+    rw [hev, ← Measure.map_apply (measurable_pi_apply j₀) (measurableSet_singleton _), hmapev]
+    exact measure_singleton 0
+  have hsupp : (Function.support fun w : Fin m → ℝ => sqSum w ^ k)
+      = {w : Fin m → ℝ | sqSum w = 0}ᶜ := by
+    ext w
+    simp only [Function.mem_support, Set.mem_compl_iff, Set.mem_setOf_eq]
+    exact ⟨fun h hc => h (by rw [hc, zero_pow hk.ne']), fun h hc =>
+      h ((pow_eq_zero_iff hk.ne').mp hc)⟩
+  rw [hsupp, prob_compl_eq_one_sub hZ, hnull, tsub_zero]
+  exact zero_lt_one
+
+
 /-- **Analytic core of the location-scale MRE clause (lifted `private` debt).** Minimality of
 the χ²-calibrated multiple `residualScaleConst m r · (S²)^r` of the residual sum of squares,
 against every measurable degree-`2r` location-scale-equivariant competitor.
