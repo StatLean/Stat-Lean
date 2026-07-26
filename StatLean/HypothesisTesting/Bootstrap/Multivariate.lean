@@ -3,6 +3,10 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Moments.Covariance
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The multivariate bootstrap: mean vectors and smooth functions of means
@@ -48,16 +52,27 @@ requires the means to converge. We therefore include mean-vector convergence in
 weakened.
 
 **Proof formalization notes.**
-* Part (i) is the Cramér–Wold reduction of the multivariate limit to the univariate one: apply
-  `mean_root_cdf_tendsto` in each direction and recombine. The multivariate central limit
-  theorem in the repository (`ForMathlib/MultivariateCLT`) provides the recombination, and
-  `multivariateGaussian` is the limit law.
+* Part (i) is the Cramér–Wold reduction of the multivariate limit to the univariate one: the
+  image of `meanVecRootLaw` under `⟪t, ·⟫` is the univariate root law of the image sequence
+  (`meanVecRootLaw_map_inner`), so the triangular-array central limit theorem with a drifting
+  row law (`NonparametricMean.tendsto_meanRootLaw`) applies in each direction; the directions
+  are recombined by Lévy's continuity theorem
+  (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`) after identifying the limits through
+  `charFun_gaussianReal` and `charFun_multivariateGaussian`. Degenerate directions
+  (`tᵀ Σ t = 0`) are covered: the univariate theorem allows a vanishing limiting variance.
 * Part (ii) is the continuous mapping theorem for the norm: a norm is continuous everywhere, and
-  the boundary spheres of a nondegenerate Gaussian are null, so the distribution function of the
-  norm is continuous — recorded separately as `continuous_normLimitCDF`, since the almost sure
-  part needs it to run the uniform (Polya) step.
-* Part (iii) is the general sequence-class criterion applied to the empirical sequence, whose
-  membership follows from the multivariate Glivenko–Cantelli theorem and the strong law.
+  the spheres of a norm are null for the limit law — `measure_multivariateGaussian_norm_level`,
+  proved by writing the Gaussian as the image of the standard Gaussian under `√Σ`, which turns
+  the norm into a (possibly degenerate) seminorm whose level sets are frontiers of convex sets
+  and hence Lebesgue-null, and transporting through `stdGaussian ≪ volume`. Continuity of the
+  limiting distribution function is recorded separately as `continuous_normLimitCDF`, since the
+  almost sure part needs it to run the uniform (Pólya) step.
+* Part (iii) is the general sequence-class criterion applied to the empirical sequence. Its
+  membership (`empirical_mem_meanVecSeqClass`) needs no separate Glivenko–Cantelli theorem: the
+  characteristic functions of the empirical measures are sample averages of bounded functions,
+  so the strong law gives their convergence along a countable dense set of directions, the
+  strong law for `‖·‖` makes the family equi-Lipschitz in the direction, and Lévy's theorem
+  upgrades this to weak convergence.
 * The norm is passed as data with the three defining hypotheses (subadditive, absolutely
   homogeneous, positive definite) rather than as a `NormedAddCommGroup` instance, because the
   statement quantifies over norms on a space that already carries its Euclidean one.
@@ -125,6 +140,605 @@ noncomputable def normMeanRootCDF (F : Measure (EuclideanSpace ℝ (Fin k)))
     (nrm : EuclideanSpace ℝ (Fin k) → ℝ) (n : ℕ) (x : ℝ) : ℝ :=
   ((meanVecRootLaw F n) {z | nrm z ≤ x}).toReal
 
+/-! ## Analytic infrastructure for the norm of a Gaussian vector
+
+The limiting distribution function of a norm of the Gaussian limit is continuous because the
+spheres of the norm are null for the limit law. The chain of facts below establishes that,
+degeneracy of the covariance included: the Gaussian is the image of the standard Gaussian under
+the square root of the covariance, that image turns the norm into a **seminorm** `g`, the level
+sets of a nonzero seminorm are frontiers of convex sets and hence Lebesgue-null, and the standard
+Gaussian is absolutely continuous with respect to the volume. -/
+
+section NormOfGaussian
+
+/-- Absolute continuity is inherited by finite powers of a measure on the line. Mathlib
+v4.29.1 has `Measure.AbsolutelyContinuous.prod` for binary products but no `Measure.pi`
+counterpart; this is the induction that turns one into the other. -/
+private lemma pi_absolutelyContinuous_pi {μ ν : Measure ℝ} [SigmaFinite μ] [SigmaFinite ν]
+    (h : μ ≪ ν) (n : ℕ) :
+    (Measure.pi fun _ : Fin n => μ) ≪ (Measure.pi fun _ : Fin n => ν) := by
+  induction n with
+  | zero =>
+      rw [Measure.pi_of_empty (fun _ : Fin 0 => μ), Measure.pi_of_empty (fun _ : Fin 0 => ν)]
+  | succ n ih =>
+      have hμ := (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => μ) 0).symm
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0)
+      have hν := (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => ν) 0).symm
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0)
+      rw [← hμ.map_eq, ← hν.map_eq]
+      exact (h.prod ih).map
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm.measurable
+
+/-- The standard Gaussian measure on a Euclidean space is absolutely continuous with respect to
+the volume: it is the image under `WithLp.toLp` of a product of one-dimensional Gaussians, and
+`WithLp.toLp` also transports the volume to the volume. -/
+private lemma stdGaussian_absolutelyContinuous_volume (k : ℕ) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))) ≪ (volume : Measure (EuclideanSpace ℝ (Fin k))) := by
+  have h1 : (stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1).map (WithLp.toLp 2) :=
+    map_pi_eq_stdGaussian.symm
+  have h2 : (volume : Measure (EuclideanSpace ℝ (Fin k)))
+      = (Measure.pi fun _ : Fin k => (volume : Measure ℝ)).map (WithLp.toLp 2) := by
+    rw [← volume_pi]
+    exact (PiLp.volume_preserving_toLp (Fin k)).map_eq.symm
+  rw [h1, h2]
+  exact (pi_absolutelyContinuous_pi (gaussianReal_absolutelyContinuous 0 one_ne_zero) k).map
+    (PiLp.volume_preserving_toLp (Fin k)).measurable
+
+section Seminorm
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- An absolutely homogeneous functional vanishes at the origin. -/
+private lemma seminorm_zero {g : E → ℝ} (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) :
+    g 0 = 0 := by simpa using hsmul 0 0
+
+/-- A subadditive absolutely homogeneous functional is nonnegative. -/
+private lemma seminorm_nonneg {g : E → ℝ} (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) (y : E) : 0 ≤ g y := by
+  have h0 : g 0 = 0 := seminorm_zero hsmul
+  have hneg : g ((-1 : ℝ) • y) = g y := by rw [hsmul]; simp
+  have hy : y + (-1 : ℝ) • y = 0 := by module
+  have h := hadd y ((-1 : ℝ) • y)
+  rw [hneg, hy, h0] at h
+  linarith
+
+/-- A subadditive absolutely homogeneous functional is even. -/
+private lemma seminorm_neg {g : E → ℝ} (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) (y : E) :
+    g (-y) = g y := by
+  have h := hsmul (-1) y
+  simpa using h
+
+/-- A subadditive absolutely homogeneous functional is convex. -/
+private lemma convexOn_of_seminorm {g : E → ℝ} (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) : ConvexOn ℝ Set.univ g := by
+  refine ⟨convex_univ, fun x _ y _ a b ha hb _ => ?_⟩
+  calc g (a • x + b • y) ≤ g (a • x) + g (b • y) := hadd _ _
+    _ = a * g x + b * g y := by rw [hsmul, hsmul, abs_of_nonneg ha, abs_of_nonneg hb]
+
+/-- A subadditive absolutely homogeneous functional on a finite-dimensional space is continuous:
+it is convex and finite everywhere, hence locally Lipschitz. -/
+private lemma continuous_of_seminorm [FiniteDimensional ℝ E] {g : E → ℝ}
+    (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) : Continuous g :=
+  (convexOn_of_seminorm hadd hsmul).locallyLipschitz.continuous
+
+end Seminorm
+
+/-- **The level sets of a nonvanishing seminorm are Lebesgue-null.**
+
+For `x < 0` the level set is empty. For `x ≥ 0` it is contained in the frontier of the convex
+sublevel set `{g ≤ x}`, which is Haar-null. The two ingredients that keep the point `y` off the
+interior are: for `x > 0`, that `(1 + t) • y` leaves the sublevel set; and for `x = 0`, that a
+proper subspace has empty interior. -/
+private lemma volume_seminorm_level_eq_zero {k : ℕ} {g : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : EuclideanSpace ℝ (Fin k)), g (c • y) = |c| * g y)
+    (hne : ∃ u, g u ≠ 0) (x : ℝ) :
+    (volume : Measure (EuclideanSpace ℝ (Fin k))) {y | g y = x} = 0 := by
+  have hnn := seminorm_nonneg hadd hsmul
+  have h0 : g 0 = 0 := seminorm_zero hsmul
+  obtain ⟨u, hu⟩ := hne
+  have hupos : 0 < g u := lt_of_le_of_ne (hnn u) (Ne.symm hu)
+  have hune : u ≠ 0 := fun h => by rw [h, h0] at hupos; exact lt_irrefl _ hupos
+  have hunorm : 0 < ‖u‖ := norm_pos_iff.2 hune
+  rcases lt_or_ge x 0 with hx | hx
+  · have hempty : {y : EuclideanSpace ℝ (Fin k) | g y = x} = ∅ := by
+      ext y
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      intro h
+      exact absurd (h ▸ hnn y) (not_le.mpr hx)
+    rw [hempty, measure_empty]
+  · have hconv : Convex ℝ {y : EuclideanSpace ℝ (Fin k) | g y ≤ x} := by
+      have h := (convexOn_of_seminorm hadd hsmul).convex_le x
+      simpa using h
+    refine measure_mono_null ?_ (Convex.addHaar_frontier _ hconv)
+    intro y hy
+    simp only [Set.mem_setOf_eq] at hy
+    refine ⟨subset_closure (by simp only [Set.mem_setOf_eq, hy]; exact le_rfl), ?_⟩
+    intro hmem
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hmem)
+    have hune' : ‖u‖ ≠ 0 := hunorm.ne'
+    rcases eq_or_lt_of_le hx with hx0 | hxpos
+    · -- the level `x = 0` is the kernel of `g`, a proper subspace, so it has empty interior
+      obtain ⟨s, hs, hnormsu⟩ : ∃ s : ℝ, 0 < s ∧ s * ‖u‖ = ε / 2 :=
+        ⟨ε / (2 * ‖u‖), by positivity, by field_simp⟩
+      have hzmem : y + s • u ∈ Metric.ball y ε := by
+        rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_pos hs, hnormsu]
+        linarith
+      have hz : g (y + s • u) ≤ x := hball hzmem
+      have hsplit : g (s • u) ≤ g (y + s • u) + g (-y) := by
+        have := hadd (y + s • u) (-y)
+        simpa using this
+      rw [seminorm_neg hsmul, hsmul, abs_of_pos hs, hy, ← hx0] at hsplit
+      nlinarith [hsplit, hz, hupos, hs]
+    · -- a positive level: scaling `y` slightly leaves the sublevel set
+      have hyne : y ≠ 0 := fun h => by rw [h, h0] at hy; exact hxpos.ne hy
+      have hynorm : 0 < ‖y‖ := norm_pos_iff.2 hyne
+      have hyne' : ‖y‖ ≠ 0 := hynorm.ne'
+      obtain ⟨t, ht, hnormty⟩ : ∃ t : ℝ, 0 < t ∧ t * ‖y‖ = ε / 2 :=
+        ⟨ε / (2 * ‖y‖), by positivity, by field_simp⟩
+      have hzmem : (1 + t) • y ∈ Metric.ball y ε := by
+        rw [Metric.mem_ball, dist_eq_norm]
+        have hrw : (1 + t) • y - y = t • y := by module
+        rw [hrw, norm_smul, Real.norm_eq_abs, abs_of_pos ht, hnormty]
+        linarith
+      have hz : g ((1 + t) • y) ≤ x := hball hzmem
+      rw [hsmul, abs_of_pos (by linarith : (0 : ℝ) < 1 + t), hy] at hz
+      nlinarith [hz, ht, hxpos]
+
+open scoped MatrixOrder
+
+/-- The coordinates of a square-integrable law on a Euclidean space are square-integrable. -/
+private lemma memLp_coord {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) (i : Fin k) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) 2 Q := by
+  have h := (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).comp_memLp' hQ2
+  simpa [Function.comp_def] using h
+
+/-- The covariance bilinear form of a square-integrable law on a Euclidean space is the
+quadratic form of its covariance matrix. -/
+private lemma covarianceBilin_eq_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
+    (x y : EuclideanSpace ℝ (Fin k)) :
+    covarianceBilin Q x y = ∑ i, ∑ j, WithLp.ofLp x i * WithLp.ofLp y j * covMatrix Q i j := by
+  have hmap : Q.map (fun y : EuclideanSpace ℝ (Fin k) =>
+      WithLp.toLp 2 fun i => WithLp.ofLp y i) = Q := by
+    simp
+  have h := covarianceBilin_apply_pi (μ := Q)
+    (X := fun (i : Fin k) (y : EuclideanSpace ℝ (Fin k)) => WithLp.ofLp y i) (memLp_coord hQ2) x y
+  rwa [hmap] at h
+
+/-- The variance of a linear functional is the quadratic form of the covariance matrix. -/
+private lemma variance_inner_eq_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
+    (t : EuclideanSpace ℝ (Fin k)) :
+    Var[fun z : EuclideanSpace ℝ (Fin k) => inner ℝ t z; Q]
+      = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := by
+  rw [← covarianceBilin_self hQ2 t, covarianceBilin_eq_covMatrix hQ2]
+
+/-- **The covariance matrix of a square-integrable law is positive semidefinite.**
+
+Square-integrability is what makes this true: the Mathlib `covariance` returns its junk value `0`
+on entries whose integrand is not integrable, and a matrix built from a mixture of genuine and
+junk entries need not be positive semidefinite. -/
+private lemma posSemidef_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) :
+    (covMatrix Q).PosSemidef := by
+  classical
+  have hbil := covarianceBilin_eq_covMatrix hQ2
+  refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, star_trivial, covMatrix, Matrix.of_apply]
+    exact covariance_comm _ _
+  · intro x
+    have h := covarianceBilin_self_nonneg (μ := Q) (WithLp.toLp 2 x)
+    rw [hbil] at h
+    have hrw : dotProduct (star x) ((covMatrix Q).mulVec x)
+        = ∑ i, ∑ j, x i * x j * covMatrix Q i j := by
+      simp only [star_trivial, dotProduct, Matrix.mulVec, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+    rw [hrw]
+    exact h
+
+/-- **The spheres of a norm are null for a nondegenerate Gaussian limit.**
+
+The analytic core: `multivariateGaussian 0 S` is the image of the standard Gaussian under the
+square root of `S`, and that image turns `nrm` into a seminorm `g = nrm ∘ √S` which does not
+vanish identically as soon as `S ≠ 0`. Degeneracy of `S` is allowed. -/
+private lemma measure_multivariateGaussian_norm_level {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
+    {nrm : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hpsd : S.PosSemidef) (hSne : S ≠ 0)
+    (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
+    (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0) (x : ℝ) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S {z | nrm z = x} = 0 := by
+  classical
+  set A := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) with hAdef
+  set g : EuclideanSpace ℝ (Fin k) → ℝ := fun y => nrm (A y) with hgdef
+  have hgadd : ∀ y z, g (y + z) ≤ g y + g z := by
+    intro y z; simp only [hgdef, map_add]; exact hnrm_add _ _
+  have hgsmul : ∀ (c : ℝ) (y), g (c • y) = |c| * g y := by
+    intro c y; simp only [hgdef, map_smul]; exact hnrm_smul _ _
+  -- the square root of a nonzero positive semidefinite matrix is nonzero
+  have hsqrt_ne : CFC.sqrt S ≠ 0 := fun h => hSne ((CFC.sqrt_eq_zero_iff S hpsd.nonneg).1 h)
+  have hAne : A ≠ 0 := by
+    intro h
+    exact hsqrt_ne ((Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k)).injective
+      (a₁ := CFC.sqrt S) (a₂ := 0) (by simpa [hAdef, map_zero] using h))
+  -- hence `g` is a seminorm that does not vanish identically
+  have hgne : ∃ u, g u ≠ 0 := by
+    obtain ⟨u, hu⟩ := DFunLike.ne_iff.1 hAne
+    refine ⟨u, fun h => hu ?_⟩
+    simpa using hnrm_def _ h
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  have hset : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | nrm z = x} :=
+    measurableSet_eq_fun hnrm_cont.measurable measurable_const
+  have hpre : (fun y : EuclideanSpace ℝ (Fin k) => (0 : EuclideanSpace ℝ (Fin k)) + A y) ⁻¹'
+      {z | nrm z = x} = {y | g y = x} := by
+    ext y; simp [hgdef]
+  rw [multivariateGaussian,
+    Measure.map_apply (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) =>
+      (0 : EuclideanSpace ℝ (Fin k)) + A y) hset, hpre]
+  exact stdGaussian_absolutelyContinuous_volume k
+    (volume_seminorm_level_eq_zero hgadd hgsmul hgne x)
+
+/-- **Continuity of the limiting norm distribution function, for a general covariance.**
+
+The general engine behind `continuous_normLimitCDF`: for any nonzero positive semidefinite `S`
+the distribution function of `nrm` under `multivariateGaussian 0 S` is continuous. Degeneracy of
+`S` is allowed — only `S ≠ 0` is used. -/
+private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
+    {nrm : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hpsd : S.PosSemidef) (hSne : S ≠ 0)
+    (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
+    (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0) :
+    Continuous (normLimitCDF S nrm) := by
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  set ρ := (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S).map nrm with hρdef
+  haveI : IsProbabilityMeasure ρ :=
+    Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+  haveI : NoAtoms ρ := by
+    refine ⟨fun x => ?_⟩
+    rw [hρdef, Measure.map_apply hnrm_cont.measurable (measurableSet_singleton x)]
+    exact measure_multivariateGaussian_norm_level hpsd hSne hnrm_add hnrm_smul hnrm_def x
+  have heq : normLimitCDF S nrm = fun x => (ρ (Set.Iic x)).toReal := by
+    funext x
+    rw [normLimitCDF, hρdef, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact continuous_toReal_measure_Iic ρ
+
+end NormOfGaussian
+
+/-! ## Empirical measures on a Euclidean space -/
+
+section EmpiricalBasics
+
+/-- Every strongly measurable function is integrable against an empirical measure. -/
+private lemma integrable_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (x : Fin n → EuclideanSpace ℝ (Fin k))
+    (f : EuclideanSpace ℝ (Fin k) → E) : Integrable f (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [empiricalMeasure]
+  · unfold empiricalMeasure
+    refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
+    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+
+/-- The integral against an empirical measure is the sample average. -/
+private lemma integral_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (x : Fin n → EuclideanSpace ℝ (Fin k))
+    (f : EuclideanSpace ℝ (Fin k) → E) :
+    ∫ y, f y ∂(empiricalMeasure x) = (n : ℝ)⁻¹ • ∑ i, f (x i) := by
+  unfold empiricalMeasure
+  rw [integral_smul_measure,
+    integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+  simp only [integral_dirac]
+  rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+
+/-- The empirical measure of a nonempty sample is a probability measure. -/
+private lemma isProbabilityMeasure_empiricalMeasure {n : ℕ} (hn : 0 < n)
+    (x : Fin n → EuclideanSpace ℝ (Fin k)) : IsProbabilityMeasure (empiricalMeasure x) := by
+  refine ⟨?_⟩
+  unfold empiricalMeasure
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
+
+/-- The identity is square-integrable against an empirical measure. -/
+private lemma memLp_id_empiricalMeasure {n : ℕ} (x : Fin n → EuclideanSpace ℝ (Fin k)) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 (empiricalMeasure x) := by
+  rw [memLp_two_iff_integrable_sq_norm (by fun_prop)]
+  exact integrable_empiricalMeasure x (fun y => ‖y‖ ^ 2)
+
+/-- **Strong law of large numbers, in the form the empirical class needs.** -/
+private lemma tendsto_sample_average {Pr : Measure Ω}
+    [IsProbabilityMeasure Pr] {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
+    (g : EuclideanSpace ℝ (Fin k) → E) (hg : Measurable g) (hint : Integrable g Q) :
+    ∀ᵐ ω ∂Pr, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, g (X i ω)) atTop
+      (𝓝 (∫ y, g y ∂Q)) := by
+  have hintmap : Integrable g (Pr.map (X 0)) := by rw [hlaw.map_eq]; exact hint
+  have hint' : Integrable (fun ω => g (X 0 ω)) Pr :=
+    (integrable_map_measure hintmap.aestronglyMeasurable (hmeas 0).aemeasurable).1 hintmap
+  have hmean : Pr[fun ω => g (X 0 ω)] = ∫ y, g y ∂Q :=
+    hlaw.integral_comp hg.aestronglyMeasurable
+  rw [← hmean]
+  exact strong_law_ae (fun i ω => g (X i ω)) hint'
+    (fun i j hij => (hindep.comp (fun _ => g) (fun _ => hg)).indepFun hij)
+    (fun i => (hident i).comp hg)
+
+/-- A complex exponential of a linear functional is integrable against any finite measure. -/
+private lemma integrable_charFun_integrand (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsFiniteMeasure μ] (t : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      Complex.exp ((inner ℝ y t : ℝ) * Complex.I)) μ := by
+  refine (memLp_top_of_bound (by fun_prop) 1 ?_).integrable le_top
+  filter_upwards with y
+  simp [Complex.norm_exp_ofReal_mul_I]
+
+/-- **The characteristic function is Lipschitz with the first absolute moment as constant.**
+
+This is the equicontinuity that turns characteristic-function convergence on a countable dense
+set of directions into convergence in every direction. -/
+private lemma norm_charFun_sub_charFun_le (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure μ] (hint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) μ)
+    (t s : EuclideanSpace ℝ (Fin k)) :
+    ‖charFun μ t - charFun μ s‖ ≤ ‖t - s‖ * ∫ y, ‖y‖ ∂μ := by
+  have hb : ∀ y : EuclideanSpace ℝ (Fin k),
+      ‖Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)‖ ≤ ‖t - s‖ * ‖y‖ := by
+    intro y
+    have hfac : Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)
+        = Complex.exp ((inner ℝ y s : ℝ) * Complex.I)
+          * (Complex.exp (Complex.I * (((inner ℝ y t : ℝ) - (inner ℝ y s : ℝ) : ℝ) : ℂ))
+            - 1) := by
+      rw [mul_sub, mul_one, ← Complex.exp_add]
+      push_cast
+      ring_nf
+    rw [hfac, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+    refine le_trans Real.norm_exp_I_mul_ofReal_sub_one_le ?_
+    have hinner : (inner ℝ y t : ℝ) - (inner ℝ y s : ℝ) = inner ℝ y (t - s) := by
+      rw [inner_sub_right]
+    rw [Real.norm_eq_abs, hinner]
+    calc |(inner ℝ y (t - s) : ℝ)| ≤ ‖y‖ * ‖t - s‖ := abs_real_inner_le_norm y (t - s)
+      _ = ‖t - s‖ * ‖y‖ := by ring
+  rw [charFun_apply, charFun_apply,
+    ← integral_sub (integrable_charFun_integrand μ t) (integrable_charFun_integrand μ s)]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  calc ∫ y, ‖Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)‖ ∂μ
+      ≤ ∫ y, ‖t - s‖ * ‖y‖ ∂μ := by
+        refine integral_mono ?_ (hint.const_mul _) hb
+        exact ((integrable_charFun_integrand μ t).sub (integrable_charFun_integrand μ s)).norm
+    _ = ‖t - s‖ * ∫ y, ‖y‖ ∂μ := integral_const_mul _ _
+
+set_option maxHeartbeats 1600000 in
+/-- **The empirical sequence belongs to the mean-vector class, almost surely.**
+
+The weak-convergence clause — the multivariate Glivenko–Cantelli / Varadarajan input — is
+obtained from the strong law alone: the characteristic functions of the empirical measures are
+sample averages of bounded functions, so they converge almost surely along a *countable* dense
+set of directions; the first absolute moment (also a strong law) makes the family equi-Lipschitz
+in the direction, which upgrades the countable statement to every direction, and Lévy's
+continuity theorem concludes. -/
+private theorem empirical_mem_meanVecSeqClass {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    {Pr : Measure Ω} [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
+    {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) :
+    ∀ᵐ ω ∂Pr, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanVecSeqClass Q := by
+  classical
+  have hcoordLp := memLp_coord hQ2
+  have hcoordint : ∀ i : Fin k,
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) Q :=
+    fun i => (hcoordLp i).integrable one_le_two
+  have hprodint : ∀ i j : Fin k,
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i * WithLp.ofLp y j) Q :=
+    fun i j => (hcoordLp i).integrable_mul (hcoordLp j)
+  have hnormint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) Q :=
+    (hQ2.integrable one_le_two).norm
+  set T : ℕ → EuclideanSpace ℝ (Fin k) :=
+    TopologicalSpace.denseSeq (EuclideanSpace ℝ (Fin k)) with hT
+  have hTdense : DenseRange T := TopologicalSpace.denseRange_denseSeq _
+  -- four families of strong laws, all indexed countably
+  have hA : ∀ᵐ ω ∂Pr, ∀ i : Fin k,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, WithLp.ofLp (X j ω) i) atTop
+        (𝓝 (∫ y, WithLp.ofLp y i ∂Q)) :=
+    ae_all_iff.2 fun i =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) (hcoordint i)
+  have hB : ∀ᵐ ω ∂Pr, ∀ i j : Fin k,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n,
+          WithLp.ofLp (X jj ω) i * WithLp.ofLp (X jj ω) j) atTop
+        (𝓝 (∫ y, WithLp.ofLp y i * WithLp.ofLp y j ∂Q)) :=
+    ae_all_iff.2 fun i => ae_all_iff.2 fun j =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) (hprodint i j)
+  have hC : ∀ᵐ ω ∂Pr, ∀ m : ℕ,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n,
+          Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I)) atTop
+        (𝓝 (∫ y, Complex.exp ((inner ℝ y (T m) : ℝ) * Complex.I) ∂Q)) :=
+    ae_all_iff.2 fun m =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop)
+        (integrable_charFun_integrand Q (T m))
+  have hD : ∀ᵐ ω ∂Pr,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, ‖X j ω‖) atTop
+        (𝓝 (∫ y, ‖y‖ ∂Q)) :=
+    tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) hnormint
+  filter_upwards [hA, hB, hC, hD] with ω hAω hBω hCω hDω
+  have hprob : ∀ n : ℕ, 0 < n →
+      IsProbabilityMeasure (empiricalMeasure fun j : Fin n => X j ω) :=
+    fun n hn => isProbabilityMeasure_empiricalMeasure hn _
+  refine ⟨hprob, fun n => memLp_id_empiricalMeasure _, ?_, ?_, ?_⟩
+  · -- weak convergence, via Lévy's continuity theorem
+    intro f
+    set R : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := fun n =>
+      ⟨empiricalMeasure fun j : Fin (n + 1) => X j ω, hprob (n + 1) n.succ_pos⟩ with hR
+    set νQ : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := ⟨Q, inferInstance⟩ with hνQ
+    have hRcoe : ∀ n : ℕ, ((R n : Measure (EuclideanSpace ℝ (Fin k))))
+        = empiricalMeasure fun j : Fin (n + 1) => X j ω := fun n => rfl
+    have hmom : Tendsto (fun n : ℕ => ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))))
+        atTop (𝓝 (∫ y, ‖y‖ ∂Q)) := by
+      have hrw : ∀ n : ℕ, ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k)))
+          = ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ j ∈ Finset.range (n + 1), ‖X j ω‖ := by
+        intro n
+        rw [hRcoe, integral_empiricalMeasure]
+        congr 1
+        exact Fin.sum_univ_eq_sum_range (fun j => ‖X j ω‖) (n + 1)
+      simp only [hrw]
+      exact (Filter.tendsto_add_atTop_iff_nat 1).2 hDω
+    have hmomint : ∀ n : ℕ,
+        Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖)
+          (R n : Measure (EuclideanSpace ℝ (Fin k))) := by
+      intro n
+      rw [hRcoe]
+      exact integrable_empiricalMeasure _ _
+    have hcfT : ∀ m : ℕ, Tendsto
+        (fun n : ℕ => charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)) atTop
+        (𝓝 (charFun Q (T m))) := by
+      intro m
+      have hrw : ∀ n : ℕ, charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)
+          = ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ j ∈ Finset.range (n + 1),
+              Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I) := by
+        intro n
+        rw [charFun_apply, hRcoe, integral_empiricalMeasure]
+        congr 1
+        exact Fin.sum_univ_eq_sum_range
+          (fun j => Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I)) (n + 1)
+      simp only [hrw]
+      exact (Filter.tendsto_add_atTop_iff_nat 1).2 (hCω m)
+    have hcf : ∀ t : EuclideanSpace ℝ (Fin k), Tendsto
+        (fun n : ℕ => charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t) atTop
+        (𝓝 (charFun Q t)) := by
+      intro t
+      set C : ℝ := ∫ y, ‖y‖ ∂Q with hCdef
+      have hCnn : 0 ≤ C := integral_nonneg fun y => norm_nonneg y
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      obtain ⟨m, hm⟩ : ∃ m : ℕ, ‖t - T m‖ < ε / (3 * (C + 2)) := by
+        have hpos : 0 < ε / (3 * (C + 2)) := by positivity
+        obtain ⟨-, ⟨m, rfl⟩, hlt⟩ := Metric.mem_closure_iff.1 (hTdense t) _ hpos
+        exact ⟨m, by rwa [← dist_eq_norm]⟩
+      obtain ⟨N₁, hN₁⟩ := Metric.tendsto_atTop.1 hmom 1 one_pos
+      obtain ⟨N₂, hN₂⟩ := Metric.tendsto_atTop.1 (hcfT m) (ε / 3) (by positivity)
+      refine ⟨max N₁ N₂, fun n hn => ?_⟩
+      have hn₁ := hN₁ n (le_of_max_le_left hn)
+      have hn₂ := hN₂ n (le_of_max_le_right hn)
+      have hbound : ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))) ≤ C + 1 := by
+        have hx := abs_lt.1 (by rwa [Real.dist_eq] at hn₁)
+        linarith [hx.2]
+      have hnn : (0 : ℝ) ≤ ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))) :=
+        integral_nonneg fun y => norm_nonneg y
+      have hfrac : (ε / (3 * (C + 2))) * (C + 1) ≤ ε / 3 := by
+        rw [div_mul_eq_mul_div, div_le_div_iff₀ (by positivity) (by positivity)]
+        nlinarith [hε.le, hCnn]
+      have h1 : ‖charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t
+          - charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)‖ ≤ ε / 3 := by
+        refine (norm_charFun_sub_charFun_le _ (hmomint n) t (T m)).trans ?_
+        refine le_trans (mul_le_mul hm.le hbound hnn (by positivity)) hfrac
+      have h3 : ‖charFun Q (T m) - charFun Q t‖ ≤ ε / 3 := by
+        refine (norm_charFun_sub_charFun_le Q hnormint (T m) t).trans ?_
+        rw [← neg_sub t (T m), norm_neg]
+        exact le_trans (mul_le_mul hm.le (by linarith) hCnn (by positivity)) hfrac
+      have h2 : ‖charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)
+          - charFun Q (T m)‖ < ε / 3 := by rwa [dist_eq_norm] at hn₂
+      rw [dist_eq_norm]
+      have hsplit : charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t - charFun Q t
+          = (charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t
+              - charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m))
+            + (charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m) - charFun Q (T m))
+            + (charFun Q (T m) - charFun Q t) := by ring
+      rw [hsplit]
+      calc ‖_ + _ + _‖ ≤ _ := norm_add₃_le
+        _ < ε := by linarith
+    have hlevy : Tendsto R atTop (𝓝 νQ) := ProbabilityMeasure.tendsto_of_tendsto_charFun hcf
+    have hint := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hlevy f
+    simp only [hRcoe, hνQ] at hint
+    exact (Filter.tendsto_add_atTop_iff_nat 1).1 hint
+  · -- convergence of the mean vectors
+    intro i
+    have heq : ∀ n : ℕ, ∫ y, WithLp.ofLp y i ∂(empiricalMeasure fun j : Fin n => X j ω)
+        = (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, WithLp.ofLp (X j ω) i := by
+      intro n
+      rw [integral_empiricalMeasure]
+      congr 1
+      exact Fin.sum_univ_eq_sum_range (fun j => WithLp.ofLp (X j ω) i) n
+    simp only [heq]
+    exact hAω i
+  · -- convergence of the covariance matrices
+    intro i j
+    have hI : ∀ (n : ℕ) (g : EuclideanSpace ℝ (Fin k) → ℝ),
+        ∫ y, g y ∂(empiricalMeasure fun jj : Fin n => X jj ω)
+          = (n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, g (X jj ω) := by
+      intro n g
+      rw [integral_empiricalMeasure]
+      congr 1
+      exact Fin.sum_univ_eq_sum_range (fun jj => g (X jj ω)) n
+    have hQsub : covMatrix Q i j
+        = (∫ y, WithLp.ofLp y i * WithLp.ofLp y j ∂Q)
+          - (∫ y, WithLp.ofLp y i ∂Q) * ∫ y, WithLp.ofLp y j ∂Q :=
+      covariance_eq_sub (hcoordLp i) (hcoordLp j)
+    have heq : ∀ᶠ n : ℕ in atTop,
+        ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n,
+            WithLp.ofLp (X jj ω) i * WithLp.ofLp (X jj ω) j)
+          - ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, WithLp.ofLp (X jj ω) i)
+            * ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, WithLp.ofLp (X jj ω) j)
+          = covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := hprob n hn
+      rw [show covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j
+        = cov[fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i,
+              fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j;
+              empiricalMeasure fun jj : Fin n => X jj ω] from rfl,
+        covariance_eq_sub (memLp_coord (memLp_id_empiricalMeasure _) i)
+          (memLp_coord (memLp_id_empiricalMeasure _) j)]
+      simp only [Pi.mul_apply]
+      rw [hI n (fun y => WithLp.ofLp y i * WithLp.ofLp y j), hI n (fun y => WithLp.ofLp y i),
+        hI n (fun y => WithLp.ofLp y j)]
+    refine Tendsto.congr' heq ?_
+    rw [hQsub]
+    exact (hBω i j).sub ((hAω i).mul (hAω j))
+
+end EmpiricalBasics
+
+/-! ## Cramér–Wold: projecting the mean-vector root onto a direction -/
+
+section CramerWold
+
+/-- The image of the mean-vector root law under a linear functional is the univariate root law
+of the image sequence. This is the Cramér–Wold reduction, at the level of the laws. -/
+private lemma meanVecRootLaw_map_inner {k : ℕ} (F : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure F] (hF2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 F)
+    (t : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    (meanVecRootLaw F n).map (fun z => inner ℝ t z)
+      = meanRootLaw (F.map (fun z => inner ℝ t z)) n := by
+  classical
+  have hcoe : (fun z : EuclideanSpace ℝ (Fin k) => inner ℝ t z) = ⇑(innerSL ℝ t) := rfl
+  simp only [hcoe]
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ := innerSL ℝ t with hL
+  have hLc : Continuous L := L.continuous
+  have hFint : Integrable (fun z : EuclideanSpace ℝ (Fin k) => z) F := hF2.integrable one_le_two
+  have hint2 : ∫ s, s ∂(F.map L) = L (∫ z, z ∂F) := by
+    rw [integral_map hLc.aemeasurable (by fun_prop), L.integral_comp_comm hFint]
+  have hpi : Measure.pi (fun _ : Fin n => F.map L)
+      = (Measure.pi fun _ : Fin n => F).map (fun y i => L (y i)) :=
+    (Measure.pi_map_pi (fun _ => hLc.aemeasurable)).symm
+  rw [meanVecRootLaw, meanRootLaw, hpi,
+    Measure.map_map hLc.measurable (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext y
+  simp only [Function.comp_def, hint2, map_smul, map_sub, map_sum, smul_eq_mul]
+
+end CramerWold
+
 /-! ## The mean vector -/
 
 section MeanVector
@@ -146,26 +760,202 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
     (f : EuclideanSpace ℝ (Fin k) →ᵇ ℝ) :
     Tendsto (fun n => ∫ z, f z ∂(meanVecRootLaw (F n) n)) atTop
       (𝓝 (∫ z, f z ∂(multivariateGaussian 0 (covMatrix Q)))) := by
-  -- TODO (triangular-array multivariate CLT, drifting row law — Vitali gap). Cramér–Wold: for
-  -- each direction `t`, `⟪t, ·⟫` of the root is the univariate standardised sum of the i.i.d.
-  -- draws `⟪t, X_{n,i}⟫`, `X_{n,i} ~ F n`. Realise on `Π n, (Fin n → ℝᵏ)`, reduce to
-  -- `ForMathlib.LindebergCLT.lindeberg_clt`, and identify the limit `charFun` with
-  -- `multivariateGaussian 0 (covMatrix Q)` via `charFun_multivariateGaussian` + Lévy
-  -- (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`), exactly as the proven fixed-law brick
-  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` does. The ONE genuinely missing
-  -- step is the Lindeberg condition for the *drifting* rows: it follows from
-  -- `Var[⟪t,·⟫; F n] → Var[⟪t,·⟫; Q]` plus weak convergence via *uniform square-integrability*
-  -- (Lehmann–Romano Lemma 18.3.1 / Vitali): `Xₙ ⇒ X` with `E Xₙ² → E X² < ∞` forces `{Xₙ²}`
-  -- uniformly integrable. This Vitali-type upgrade is absent from Mathlib v4.29.1 (the same gap
-  -- recorded on `mean_root_cdf_tendsto`). Being a weak-convergence (bounded-continuous) target,
-  -- this needs NO portmanteau CDF-inversion, unlike its univariate sibling.
-  sorry
+  classical
+  -- Replace the unconstrained `n = 0` entry of the sequence by `Q`, so that every entry is a
+  -- probability measure; the conclusion only sees the tail.
+  set F' : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => if n = 0 then Q else F n with hF'def
+  have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
+    intro n hn; simp only [hF'def, if_neg hn.ne']
+  haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · rw [hF'eq n hn]; exact hF.1 n hn
+  obtain ⟨-, hF2, hFweak, hFmean, hFcov⟩ := hF
+  have hF'2 : ∀ n, MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using hQ2
+    · rw [hF'eq n hn]; exact hF2 n
+  have hF'weak : ∀ g : EuclideanSpace ℝ (Fin k) →ᵇ ℝ,
+      Tendsto (fun n => ∫ y, g y ∂(F' n)) atTop (𝓝 (∫ y, g y ∂Q)) := by
+    intro g
+    refine (hFweak g).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'mean : ∀ i : Fin k, Tendsto (fun n => ∫ y, WithLp.ofLp y i ∂(F' n)) atTop
+      (𝓝 (∫ y, WithLp.ofLp y i ∂Q)) := by
+    intro i
+    refine (hFmean i).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'cov : ∀ i j : Fin k,
+      Tendsto (fun n => covMatrix (F' n) i j) atTop (𝓝 (covMatrix Q i j)) := by
+    intro i j
+    refine (hFcov i j).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  -- the root laws are probability measures
+  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := by
+    intro n
+    haveI : ∀ _ : Fin n, IsProbabilityMeasure (F' n) := fun _ => hF'prob n
+    infer_instance
+  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F' n) n) := by
+    intro n
+    haveI := hpi n
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  -- Cramér–Wold, direction by direction, through the characteristic functions
+  set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => ⟨meanVecRootLaw (F' n) n, hroot n⟩ with hμs
+  set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    ⟨multivariateGaussian 0 (covMatrix Q), inferInstance⟩ with hν
+  have hconv : Tendsto μs atTop (𝓝 ν) := by
+    refine ProbabilityMeasure.tendsto_iff_tendsto_charFun.2 fun t => ?_
+    -- the projected sequence
+    have hLc : Continuous fun z : EuclideanSpace ℝ (Fin k) => (inner ℝ t z : ℝ) :=
+      (innerSL ℝ t).continuous
+    set G : ℕ → Measure ℝ := fun n => (F' n).map (fun z => inner ℝ t z) with hG
+    set Q₁ : Measure ℝ := Q.map (fun z => inner ℝ t z) with hQ₁
+    haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := fun n =>
+      Measure.isProbabilityMeasure_map hLc.aemeasurable
+    haveI hQ₁prob : IsProbabilityMeasure Q₁ := Measure.isProbabilityMeasure_map hLc.aemeasurable
+    haveI hGpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => G n) := by
+      intro n
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (G n) := fun _ => hGprob n
+      infer_instance
+    haveI hGroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (G n) n) := by
+      intro n
+      haveI := hGpi n
+      exact Measure.isProbabilityMeasure_map (by fun_prop)
+    -- square-integrability of the projections
+    have hproj2 : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))),
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          MemLp (fun s : ℝ => s) 2 (μ.map (fun z => inner ℝ t z)) := by
+      intro μ hμ
+      refine (memLp_map_measure_iff (by fun_prop) hLc.aemeasurable).2 ?_
+      have h : MemLp (fun z : EuclideanSpace ℝ (Fin k) => (inner ℝ t z : ℝ)) 2 μ := by
+        simpa [Function.comp_def] using (innerSL ℝ t).comp_memLp' hμ
+      simpa [Function.comp_def] using h
+    have hG2 : ∀ n, MemLp (fun s : ℝ => s) 2 (G n) := fun n => hproj2 _ (hF'2 n)
+    have hQ₁2 : MemLp (fun s : ℝ => s) 2 Q₁ := hproj2 _ hQ2
+    -- weak convergence of the projections
+    have hGweak : ∀ g : ℝ →ᵇ ℝ,
+        Tendsto (fun n => ∫ s, g s ∂(G n)) atTop (𝓝 (∫ s, g s ∂Q₁)) := by
+      intro g
+      have hcomp : ∀ μ : Measure (EuclideanSpace ℝ (Fin k)),
+          ∫ s, g s ∂(μ.map (fun z => inner ℝ t z))
+            = ∫ y, (g.compContinuous ⟨fun z => inner ℝ t z, hLc⟩) y ∂μ := by
+        intro μ
+        rw [integral_map hLc.aemeasurable g.continuous.aestronglyMeasurable]
+        rfl
+      simp only [hG, hQ₁, hcomp]
+      exact hF'weak _
+    -- the means of the projections
+    have hprojmean : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ],
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          ∫ s, s ∂(μ.map (fun z => inner ℝ t z))
+            = ∑ i, WithLp.ofLp t i * ∫ y, WithLp.ofLp y i ∂μ := by
+      intro μ _ hμ
+      have hint : Integrable (fun z : EuclideanSpace ℝ (Fin k) => z) μ := hμ.integrable one_le_two
+      have hcomm : ∫ z, (inner ℝ t z : ℝ) ∂μ = inner ℝ t (∫ z, z ∂μ) :=
+        (innerSL ℝ t).integral_comp_comm hint
+      have hcoordint : ∀ i : Fin k, ∫ y, WithLp.ofLp y i ∂μ = WithLp.ofLp (∫ z, z ∂μ) i :=
+        fun i => (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).integral_comp_comm hint
+      rw [integral_map hLc.aemeasurable (by fun_prop), hcomm]
+      simp only [hcoordint]
+      simp [PiLp.inner_apply, real_inner_eq_re_inner, mul_comm]
+    have hGmean : Tendsto (fun n => ∫ s, s ∂(G n)) atTop (𝓝 (∫ s, s ∂Q₁)) := by
+      simp only [hG, hQ₁, hprojmean _ (hF'2 _), hprojmean _ hQ2]
+      exact tendsto_finset_sum _ fun i _ => (hF'mean i).const_mul _
+    -- the variances of the projections
+    have hprojvar : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ],
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          Var[fun s : ℝ => s; μ.map (fun z => inner ℝ t z)]
+            = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix μ i j := by
+      intro μ _ hμ
+      rw [variance_map (by fun_prop) hLc.aemeasurable]
+      exact variance_inner_eq_covMatrix hμ t
+    have hGvar : Tendsto (fun n => Var[fun s : ℝ => s; G n]) atTop
+        (𝓝 Var[fun s : ℝ => s; Q₁]) := by
+      simp only [hG, hQ₁, hprojvar _ (hF'2 _), hprojvar _ hQ2]
+      exact tendsto_finset_sum _ fun i _ => tendsto_finset_sum _ fun j _ =>
+        (hF'cov i j).const_mul _
+    -- the univariate triangular-array central limit theorem in this direction
+    have huni := tendsto_meanRootLaw hG2 hQ₁2 hGweak hGmean hGvar
+    set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨meanRootLaw (G n) n, hGroot n⟩ with hρs
+    set ρ : ProbabilityMeasure ℝ :=
+      ⟨gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁]), inferInstance⟩ with hρ
+    have hprobconv : Tendsto ρs atTop (𝓝 ρ) :=
+      ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 huni
+    have hcf := ProbabilityMeasure.tendsto_iff_tendsto_charFun.1 hprobconv 1
+    -- transport back to the characteristic function of the vector law
+    have hproject : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))),
+        charFun μ t = charFun (μ.map (fun z => inner ℝ t z)) 1 := by
+      intro μ
+      have h1 : ∀ a : ℝ, (inner ℝ a (1 : ℝ) : ℝ) = a := fun a => by
+        simp [real_inner_eq_re_inner]
+      rw [charFun_apply, charFun_apply, integral_map hLc.aemeasurable (by fun_prop)]
+      simp only [h1]
+      simp_rw [real_inner_comm t]
+    have hcoeμ : ∀ n : ℕ, ((μs n : Measure (EuclideanSpace ℝ (Fin k))))
+        = meanVecRootLaw (F' n) n := fun n => rfl
+    have hcoeν : ((ν : Measure (EuclideanSpace ℝ (Fin k))))
+        = multivariateGaussian 0 (covMatrix Q) := rfl
+    have hcoeρs : ∀ n : ℕ, ((ρs n : Measure ℝ)) = meanRootLaw (G n) n := fun n => rfl
+    have hcoeρ : ((ρ : Measure ℝ))
+        = gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁]) := rfl
+    have hlhs : ∀ n : ℕ, charFun (meanVecRootLaw (F' n) n) t
+        = charFun (meanRootLaw (G n) n) 1 := by
+      intro n
+      rw [hproject]
+      congr 1
+      exact meanVecRootLaw_map_inner (F' n) (hF'2 n) t n
+    have hrhs : charFun (multivariateGaussian 0 (covMatrix Q)) t
+        = charFun (gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁])) 1 := by
+      have hvarQ : Var[fun s : ℝ => s; Q₁]
+          = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := hprojvar _ hQ2
+      have hquad : WithLp.ofLp t ⬝ᵥ (covMatrix Q).mulVec (WithLp.ofLp t)
+          = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := by
+        simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+      have hqnn : 0 ≤ WithLp.ofLp t ⬝ᵥ (covMatrix Q).mulVec (WithLp.ofLp t) := by
+        simpa using (posSemidef_covMatrix hQ2).dotProduct_mulVec_nonneg (WithLp.ofLp t)
+      rw [charFun_multivariateGaussian (posSemidef_covMatrix hQ2), charFun_gaussianReal,
+        hvarQ, ← hquad]
+      simp [max_eq_left hqnn]
+    simp only [hcoeμ, hcoeν, hlhs, hrhs]
+    simp only [hcoeρs, hcoeρ] at hcf
+    exact hcf
+  -- unpack the weak convergence and undo the `n = 0` patch
+  have hgoal := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f
+  refine hgoal.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  rw [hμs]
+  simp only [hF'eq n hn]
+  rfl
 
 /-- **The limiting distribution function of the norm is continuous.**
 
 If the limiting covariance matrix has a nonzero entry, the norm of the Gaussian limit has no
-atoms: the spheres of a norm are boundaries of convex sets and hence null for the limit law. -/
-theorem continuous_normLimitCDF
+atoms: the spheres of a norm are boundaries of convex sets and hence null for the limit law.
+
+**Signature amendment (square-integrability of the limit law).** The reference's statement is
+*false* as frozen, and the added hypotheses `[IsFiniteMeasure Q]` and `hQ2` are exactly what
+repairs it. In Mathlib v4.29.1, `multivariateGaussian 0 S = Measure.dirac 0` as soon as `S` is
+not positive semidefinite (`ProbabilityTheory.multivariateGaussian_of_not_posSemidef`); for that
+law `normLimitCDF S nrm` is the indicator of `{0 ≤ x}`, which jumps at `0`, so no norm makes it
+continuous. And `covMatrix Q` is positive semidefinite only under square-integrability: the
+Mathlib `covariance` returns its junk value `0` whenever the integrand is not integrable, so a
+law with one non-integrable coordinate can have a vanishing diagonal entry next to a genuine
+nonzero off-diagonal one (on `ℝ²`, the law of `(Z, Z / (1 + Z²))` for a Cauchy `Z` has junk
+`(1,1)` entry `0` — `Z` is not integrable and `Z²` is not either — while the `(1,2)` entry
+`∫ Z² / (1 + Z²)` is finite and positive, giving a negative determinant). Both added hypotheses
+are already carried by the two siblings `norm_root_cdf_tendsto` and
+`bootstrap_meanVec_consistent`, so no application is weakened. -/
+theorem continuous_normLimitCDF [IsFiniteMeasure Q]
+    -- USER-INPUT (signature amendment): the limit law is square-integrable, so its covariance
+    -- matrix is positive semidefinite and the Gaussian limit is a genuine Gaussian
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
     -- USER-INPUT: the norm is subadditive
     (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
     -- USER-INPUT: the norm is absolutely homogeneous
@@ -175,25 +965,9 @@ theorem continuous_normLimitCDF
     -- USER-INPUT: the limiting covariance is not identically zero, so the limit is nondegenerate
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     Continuous (normLimitCDF (covMatrix Q) nrm) := by
-  -- TODO (norm-CDF of a possibly-degenerate Gaussian — two missing bricks). Continuity of the
-  -- monotone `x ↦ (μ {nrm ≤ x}).toReal` (μ := multivariateGaussian 0 (covMatrix Q)) is
-  -- equivalent to `μ {nrm z = x} = 0` for every `x`. Intended clean route, degeneracy-robust:
-  -- `μ = (toEuclideanCLM (CFC.sqrt S))_* stdGaussian` (the DEFINITION), so
-  -- `μ {nrm z = x} = stdGaussian {z | g z = x}` with `g := nrm ∘ √S` a *seminorm*
-  -- (subadditive+absolutely homogeneous from `hnrm_add`/`hnrm_smul`; possibly degenerate). For
-  -- `x > 0`, `{g = x} ⊆ frontier {g ≤ x}` (a convex set), null by `Convex.addHaar_frontier`;
-  -- for `x = 0`, `{g = 0} = ker √S`, a proper subspace (hence hyperplane-null) since `√S ≠ 0`;
-  -- for `x < 0`, `{g = x} = ∅`. Two bricks are missing in Mathlib v4.29.1:
-  --   (1) `stdGaussian ≪ volume` (to transfer the `volume`-null frontier to the Gaussian): NOT
-  --       in Mathlib; buildable from `Measure.pi (gaussianReal 0 1) ≪ volume` (no `Measure.pi`
-  --       absolute-continuity lemma exists yet) transported through the orthonormal-basis iso
-  --       `∑ xᵢ • bᵢ`, but the `WithLp`/`EuclideanSpace` volume-preservation is heavy;
-  --   (2) `(covMatrix Q).PosSemidef`, needed to get `√S ≠ 0` from `hS : S ≠ 0`. It is NOT a
-  --       hypothesis here (the frozen signature lacks `hQ2`), and `covMatrix Q` is provably PSD
-  --       only under `MemLp id 2 Q` (via `covarianceBilin_apply_eq_cov` +
-  --       `isPosSemidef_covarianceBilin`). Without PSD, `multivariateGaussian 0 S = dirac 0`
-  --       and the CDF jumps at `0`; so the statement is true exactly under square-integrability.
-  sorry
+  obtain ⟨i, j, hij⟩ := hS
+  exact continuous_normLimitCDF_of_posSemidef (posSemidef_covMatrix hQ2)
+    (fun h => hij (by rw [h]; simp)) hnrm_add hnrm_smul hnrm_def
 
 /-- **Limit law of the norm of the root along the class.**
 
@@ -217,16 +991,49 @@ theorem norm_root_cdf_tendsto [IsProbabilityMeasure Q]
     (x : ℝ) :
     Tendsto (fun n => normMeanRootCDF (F n) nrm n x) atTop
       (𝓝 (normLimitCDF (covMatrix Q) nrm x)) := by
-  -- TODO (continuous mapping for the norm — portmanteau on top of the two blocked cores).
-  -- From `meanVec_root_tendsto` the laws `meanVecRootLaw (F n) n` converge weakly (against
-  -- bounded continuous test functions) to `multivariateGaussian 0 (covMatrix Q)`; promote to
-  -- `ProbabilityMeasure` weak convergence and apply
-  -- `MeasureTheory.tendsto_measure_of_null_frontier` to the sublevel set `{z | nrm z ≤ x}`,
-  -- whose frontier `⊆ {nrm z = x}` is Gaussian-null. That null-frontier fact is exactly the
-  -- analytic core of `continuous_normLimitCDF`, so this target is blocked transitively on both
-  -- (a) `meanVec_root_tendsto` (Vitali/Lindeberg gap) and (b) the norm-sphere nullity of the
-  -- limit Gaussian (`stdGaussian ≪ volume` + `covMatrix Q` PosSemidef gaps).
-  sorry
+  classical
+  obtain ⟨i₀, j₀, hij⟩ := hS
+  have hSne : covMatrix Q ≠ 0 := fun h => hij (by rw [h]; simp)
+  have hpsd := posSemidef_covMatrix hQ2
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  -- all the laws in sight are probability measures (`n = 0` gives the Dirac at the empty tuple)
+  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; rw [Measure.pi_of_empty]; infer_instance
+    · haveI := hF.1 n hn
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (F n) := fun _ => ‹_›
+      infer_instance
+  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F n) n) := by
+    intro n
+    haveI := hpi n
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  -- weak convergence of the root laws, packaged as `ProbabilityMeasure` convergence
+  set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    ⟨multivariateGaussian 0 (covMatrix Q), inferInstance⟩ with hν
+  set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => ⟨meanVecRootLaw (F n) n, hroot n⟩ with hμs
+  have hconv : Tendsto μs atTop (𝓝 ν) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 fun f =>
+      meanVec_root_tendsto hQ2 hF f
+  -- the frontier of the sublevel set is contained in the sphere, which is Gaussian-null
+  have hfrontier :
+      (ν : Measure (EuclideanSpace ℝ (Fin k)))
+        (frontier {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x}) = 0 := by
+    refine measure_mono_null ?_
+      (measure_multivariateGaussian_norm_level hpsd hSne hnrm_add hnrm_smul hnrm_def x)
+    intro z hz
+    have hclosed : IsClosed {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x} :=
+      isClosed_le hnrm_cont continuous_const
+    have hz1 : nrm z ≤ x := by
+      have h := hz.1
+      rwa [hclosed.closure_eq] at h
+    exact le_antisymm hz1 (not_lt.1 fun hlt => hz.2
+      (mem_interior_iff_mem_nhds.2
+        (Filter.mem_of_superset ((isOpen_lt hnrm_cont continuous_const).mem_nhds hlt)
+          (fun w hw => (le_of_lt hw : nrm w ≤ x)))))
+  have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfrontier
+  exact (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
 
 /-- **Consistency of the multivariate bootstrap.**
 
@@ -252,19 +1059,78 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n)
       (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
-  -- TODO (bootstrap consistency assembly — needs multivariate empirical membership + the blocked
-  -- norm cores). Structurally this is `tendsto_supCDFDist_bootstrap` (or the direct triangle
-  -- squeeze of `bootstrap_mean_consistent`) with `J n F := normMeanRootCDF F nrm n`,
-  -- `Jlim := normLimitCDF (covMatrix Q) nrm`, and `Phat n ω := empiricalMeasure (X · ω)`. The
-  -- pointwise convergence along the class is `norm_root_cdf_tendsto`, continuity of the limit is
-  -- `continuous_normLimitCDF`. The remaining stochastic input — a.s. membership of the empirical
-  -- sequence in `meanVecSeqClass Q` — needs the *weak-convergence* clause `∀ f : ℝᵏ →ᵇ ℝ,
-  -- ∫ f dP̂ₙ → ∫ f dQ` a.s., i.e. almost-sure weak convergence of empirical measures for ALL
-  -- bounded continuous `f` (multivariate Glivenko–Cantelli / Varadarajan). Mathlib v4.29.1 has
-  -- no `empiricalMeasure` weak-convergence theorem (the univariate `empirical_mem_meanSeqClass`
-  -- dodges it with a rational CDF sandwich, unavailable for the BCF clause here). Blocked on that
-  -- plus `norm_root_cdf_tendsto` and `continuous_normLimitCDF`.
-  sorry
+  classical
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  -- the limiting distribution function of the norm
+  set Jlim : ℝ → ℝ := normLimitCDF (covMatrix Q) nrm with hJlim
+  have hcont : Continuous Jlim :=
+    continuous_normLimitCDF hQ2 hnrm_add hnrm_smul hnrm_def hS
+  have hJcdf : IsCDF Jlim := by
+    haveI : IsProbabilityMeasure
+        ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)).map nrm) :=
+      Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+    have heq : Jlim = fun x =>
+        (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)).map nrm)
+          (Set.Iic x)).toReal := by
+      funext x
+      rw [hJlim, normLimitCDF, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+      rfl
+    rw [heq]
+    exact isCDF_toReal_measure_Iic _
+  -- the sampling distribution functions of the norm are distribution functions
+  have hFcdf : ∀ (F : Measure (EuclideanSpace ℝ (Fin k))) (n : ℕ),
+      IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) →
+      IsCDF (normMeanRootCDF F nrm n) := by
+    intro F n hpi
+    haveI := hpi
+    haveI : IsProbabilityMeasure (meanVecRootLaw F n) :=
+      Measure.isProbabilityMeasure_map (by fun_prop)
+    haveI : IsProbabilityMeasure ((meanVecRootLaw F n).map nrm) :=
+      Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+    have heq : normMeanRootCDF F nrm n
+        = fun x => (((meanVecRootLaw F n).map nrm) (Set.Iic x)).toReal := by
+      funext x
+      rw [normMeanRootCDF, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+      rfl
+    rw [heq]
+    exact isCDF_toReal_measure_Iic _
+  have hpiQ : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => Q) := by
+    intro n
+    haveI : ∀ _ : Fin n, IsProbabilityMeasure Q := fun _ => ‹_›
+    infer_instance
+  have hconstmem : (fun _ : ℕ => Q) ∈ meanVecSeqClass Q :=
+    ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ => tendsto_const_nhds,
+      fun _ => tendsto_const_nhds, fun _ _ => tendsto_const_nhds⟩
+  have hQconv : ∀ x, Tendsto (fun n => normMeanRootCDF Q nrm n x) atTop (𝓝 (Jlim x)) :=
+    fun x => norm_root_cdf_tendsto hQ2 hconstmem hnrm_add hnrm_smul hnrm_def hS x
+  filter_upwards [empirical_mem_meanVecSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hpiE : ∀ n : ℕ, IsProbabilityMeasure
+      (Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; rw [Measure.pi_of_empty]; infer_instance
+    · haveI := hω.1 n hn
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (empiricalMeasure fun i : Fin n => X i ω) :=
+        fun _ => ‹_›
+      infer_instance
+  have hEconv : ∀ x, Tendsto
+      (fun n => normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n x) atTop
+      (𝓝 (Jlim x)) := fun x => norm_root_cdf_tendsto hQ2 hω hnrm_add hnrm_smul hnrm_def hS x
+  have hQ' : ∀ n, IsCDF (normMeanRootCDF Q nrm n) := fun n => hFcdf Q n (hpiQ n)
+  have hE' : ∀ n, IsCDF (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n) :=
+    fun n => hFcdf _ n (hpiE n)
+  have hA : Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n) Jlim) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQ' hcont hJcdf hQconv
+  have hB : Tendsto (fun n => supCDFDist Jlim
+      (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hE' hcont hJcdf hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (normMeanRootCDF Q nrm n) Jlim
+      + supCDFDist Jlim (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQ' n) (hE' n)
+  · exact supCDFDist_triangle_of_isCDF (hQ' n) hJcdf (hE' n)
 
 end MeanVector
 
@@ -317,16 +1183,30 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
-  -- TODO (delta method — Slutsky/Taylor bricks absent). The mean statistic `meanStatistic h w`
-  -- is the sample mean of the i.i.d. vector `(h j (·))ⱼ`, so the PROVEN fixed-law
-  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` gives
-  -- `√n (θ̂ₙ − θ) ⇒ N(0, covH)` with `θ := (∫ h j dP)ⱼ`. First-order Taylor at `θ`:
-  -- `√n (f(θ̂ₙ) − f(θ)) = Df (√n (θ̂ₙ − θ)) + √n · o(‖θ̂ₙ − θ‖)`, where the remainder → 0 in
-  -- probability (`θ̂ₙ − θ = O_p(n^{-1/2})` and `hf`/`hf_nhds`/`hf_cont`). Then Slutsky +
-  -- continuous mapping push `Df (N(0, covH))` to the limit; `isGaussian_map` identifies the
-  -- image as Gaussian and `hD` gives covariance `D covH Dᵀ`. Missing from Mathlib v4.29.1: the
-  -- Slutsky theorem for a vanishing (o_P) additive remainder attached to a weakly-convergent
-  -- sequence, i.e. the analytic engine of the multivariate delta method. Blocked there.
+  -- TODO (delta method — NOT blocked; deferred for size). Every ingredient is available; what
+  -- is missing is only the (long) assembly. Re-derived route, in four steps.
+  -- (1) The vector of sample means IS a mean-vector root: with `H := P.map (fun s => toLp 2
+  --     (h · s))` on `ℝᵖ`, `Measure.pi_map_pi` turns `(Measure.pi fun _ : Fin n => P).map
+  --     (fun w => √n • (meanStatistic h w − θ))` into `meanVecRootLaw H n`, and
+  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. So the now-PROVEN
+  --     `meanVec_root_tendsto`, applied to the constant sequence at `H`, gives
+  --     `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`.
+  -- (2) Realise the whole array on one space: `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
+  --     `S i` with law `P`, and `Zₙ ω := √n (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
+  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`). A single carrier space
+  --     is what `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (Mathlib's
+  --     Slutsky, present in v4.29.1 — the previous session's claim that it is absent is wrong)
+  --     requires.
+  -- (3) The Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
+  --     probability: `{Zₙ}` is tight (`isTightMeasureSet_of_tendsto_charFun` applied to the
+  --     charFun convergence of step (1)), so for `‖Zₙ‖ ≤ M` one has `‖Zₙ/√n‖ ≤ M/√n → 0` and
+  --     `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` for any `η > 0` eventually. (`hf_nhds`/`hf_cont` are
+  --     not needed for this step; they are the reference's extra regularity.)
+  -- (4) `Df` is continuous linear, so `TendstoInDistribution.continuous_comp` pushes the limit
+  --     to `(multivariateGaussian 0 covH).map Df`, and `Measure.ext_of_charFun` together with
+  --     `charFun_multivariateGaussian` and `hD` identifies that image with
+  --     `multivariateGaussian 0 (D * covH * Dᵀ)` (the quadratic form transforms as
+  --     `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`).
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
@@ -356,14 +1236,19 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, resampled-law form). Both integrals converge to
-  -- `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))`: the sampling-law term by
-  -- `smooth_function_of_means_tendsto`, the resampled term by its bootstrap analogue (the same
-  -- delta method applied to `n` i.i.d. draws from the empirical measure, recentred at the sample
-  -- mean statistic). Subtracting gives `→ 0`. Blocked on `smooth_function_of_means_tendsto`
-  -- (delta-method Slutsky brick, absent) together with a.s. convergence of the bootstrap CLT for
-  -- the resampled means — i.e. the empirical-measure weak-convergence gap already flagged on
-  -- `bootstrap_meanVec_consistent`.
+  -- TODO (bootstrap delta method, resampled-law form — deferred, one open input). Both
+  -- integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
+  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. The resampled
+  -- term is the same delta method run at the empirical measure: the resampled mean statistic is
+  -- the mean-vector root of `(empiricalMeasure (X · ω)).map (fun s => toLp 2 (h · s))`, and the
+  -- almost sure membership of THAT sequence in `meanVecSeqClass` is the exact analogue of the
+  -- now-PROVEN `empirical_mem_meanVecSeqClass` (push the strong laws used there forward through
+  -- `s ↦ toLp 2 (h · s)`; the four laws needed are for the coordinates `h j`, the products
+  -- `h i * h j`, `exp (i⟪(h · s), t⟫)` along a countable dense set of directions, and
+  -- `‖(h · s)‖`, all integrable by `hh2`). So this target is deferred only on
+  -- `smooth_function_of_means_tendsto` plus that transported membership lemma; no Mathlib brick
+  -- is missing. The empirical-measure weak-convergence "gap" recorded by the previous session
+  -- does not exist — see `empirical_mem_meanVecSeqClass`.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
@@ -399,13 +1284,17 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
           {w | nrm (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)) ≤ s}).toReal))
       atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, uniform Pólya form). The sup-CDF (uniform) upgrade of
-  -- `bootstrap_smooth_function_law_consistent`, obtained by feeding the smooth-function root into
-  -- `tendsto_supCDFDist_bootstrap`: the norm of the delta-method limit `N(0, D covH Dᵀ)` has a
-  -- continuous CDF (the `continuous_normLimitCDF` core, for the covariance `D covH Dᵀ`), turning
-  -- pointwise CDF convergence into sup-distance convergence via the `PolyaUniformCDF` brick.
-  -- Blocked on `smooth_function_of_means_tendsto` (delta-method Slutsky), the resampled-law
-  -- bootstrap CLT, and the norm-CDF continuity core (`stdGaussian ≪ volume` + PosSemidef gaps).
+  -- TODO (bootstrap delta method, uniform Pólya form — deferred). The sup-CDF upgrade of
+  -- `bootstrap_smooth_function_law_consistent`: run the smooth-function root through the same
+  -- triangle squeeze as the now-PROVEN `bootstrap_meanVec_consistent`. The continuity of the
+  -- limiting norm distribution function — which the previous session recorded as blocked on
+  -- `stdGaussian ≪ volume` and on positive semidefiniteness — is now available in the exact
+  -- form needed: `continuous_normLimitCDF_of_posSemidef` applies verbatim to the covariance
+  -- `D * covH * Dᵀ` (positive semidefinite as `Dᵀ`-congruence of the positive semidefinite
+  -- `covH`, by `Matrix.PosSemidef.conjTranspose_mul_mul_same`, and nonzero because `Df ≠ 0`).
+  -- What remains is `smooth_function_of_means_tendsto` and its resampled analogue, together
+  -- with the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to the image
+  -- space. No Mathlib brick is missing.
   sorry
 
 end SmoothFunctions
