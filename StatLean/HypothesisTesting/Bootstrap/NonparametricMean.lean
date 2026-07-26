@@ -239,6 +239,29 @@ private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
   rw [heq]
   exact isCDF_toReal_measure_Iic _
 
+/-- Every real function is integrable against an empirical (finite-support) measure. -/
+private lemma integrable_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ → ℝ) :
+    Integrable f (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [empiricalMeasure]
+  · unfold empiricalMeasure
+    refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
+    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+
+/-- The integral of a function against an empirical measure is the sample average of its values. -/
+private lemma integral_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ → ℝ) :
+    ∫ t, f t ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, f (x i) := by
+  unfold empiricalMeasure
+  rw [integral_smul_measure, integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+  simp only [integral_dirac]
+  rw [ENNReal.toReal_inv, ENNReal.toReal_natCast, smul_eq_mul]
+
+/-- The identity is square-integrable against an empirical measure. -/
+private lemma memLp_id_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
+    MemLp (fun t : ℝ => t) 2 (empiricalMeasure x) := by
+  rw [memLp_two_iff_integrable_sq (by fun_prop)]
+  exact integrable_empiricalMeasure x (fun t => t ^ 2)
+
 /-- The `n`-fold product of a probability law is a probability measure. -/
 private lemma isProbabilityMeasure_pi_const (n : ℕ) (F : Measure ℝ) [IsProbabilityMeasure F] :
     IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) := by
