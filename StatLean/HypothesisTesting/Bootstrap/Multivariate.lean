@@ -509,6 +509,192 @@ private lemma norm_charFun_sub_charFun_le (μ : Measure (EuclideanSpace ℝ (Fin
         exact ((integrable_charFun_integrand μ t).sub (integrable_charFun_integrand μ s)).norm
     _ = ‖t - s‖ * ∫ y, ‖y‖ ∂μ := integral_const_mul _ _
 
+set_option maxHeartbeats 1600000 in
+/-- **The empirical sequence belongs to the mean-vector class, almost surely.**
+
+The weak-convergence clause — the multivariate Glivenko–Cantelli / Varadarajan input — is
+obtained from the strong law alone: the characteristic functions of the empirical measures are
+sample averages of bounded functions, so they converge almost surely along a *countable* dense
+set of directions; the first absolute moment (also a strong law) makes the family equi-Lipschitz
+in the direction, which upgrades the countable statement to every direction, and Lévy's
+continuity theorem concludes. -/
+private theorem empirical_mem_meanVecSeqClass {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    {Pr : Measure Ω} [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
+    {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) :
+    ∀ᵐ ω ∂Pr, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanVecSeqClass Q := by
+  classical
+  have hcoordLp := memLp_coord hQ2
+  have hcoordint : ∀ i : Fin k,
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) Q :=
+    fun i => (hcoordLp i).integrable one_le_two
+  have hprodint : ∀ i j : Fin k,
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i * WithLp.ofLp y j) Q :=
+    fun i j => (hcoordLp i).integrable_mul (hcoordLp j)
+  have hnormint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) Q :=
+    (hQ2.integrable one_le_two).norm
+  set T : ℕ → EuclideanSpace ℝ (Fin k) :=
+    TopologicalSpace.denseSeq (EuclideanSpace ℝ (Fin k)) with hT
+  have hTdense : DenseRange T := TopologicalSpace.denseRange_denseSeq _
+  -- four families of strong laws, all indexed countably
+  have hA : ∀ᵐ ω ∂Pr, ∀ i : Fin k,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, WithLp.ofLp (X j ω) i) atTop
+        (𝓝 (∫ y, WithLp.ofLp y i ∂Q)) :=
+    ae_all_iff.2 fun i =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) (hcoordint i)
+  have hB : ∀ᵐ ω ∂Pr, ∀ i j : Fin k,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n,
+          WithLp.ofLp (X jj ω) i * WithLp.ofLp (X jj ω) j) atTop
+        (𝓝 (∫ y, WithLp.ofLp y i * WithLp.ofLp y j ∂Q)) :=
+    ae_all_iff.2 fun i => ae_all_iff.2 fun j =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) (hprodint i j)
+  have hC : ∀ᵐ ω ∂Pr, ∀ m : ℕ,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n,
+          Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I)) atTop
+        (𝓝 (∫ y, Complex.exp ((inner ℝ y (T m) : ℝ) * Complex.I) ∂Q)) :=
+    ae_all_iff.2 fun m =>
+      tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop)
+        (integrable_charFun_integrand Q (T m))
+  have hD : ∀ᵐ ω ∂Pr,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, ‖X j ω‖) atTop
+        (𝓝 (∫ y, ‖y‖ ∂Q)) :=
+    tendsto_sample_average hmeas hindep hlaw hident _ (by fun_prop) hnormint
+  filter_upwards [hA, hB, hC, hD] with ω hAω hBω hCω hDω
+  have hprob : ∀ n : ℕ, 0 < n →
+      IsProbabilityMeasure (empiricalMeasure fun j : Fin n => X j ω) :=
+    fun n hn => isProbabilityMeasure_empiricalMeasure hn _
+  refine ⟨hprob, fun n => memLp_id_empiricalMeasure _, ?_, ?_, ?_⟩
+  · -- weak convergence, via Lévy's continuity theorem
+    intro f
+    set R : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := fun n =>
+      ⟨empiricalMeasure fun j : Fin (n + 1) => X j ω, hprob (n + 1) n.succ_pos⟩ with hR
+    set νQ : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := ⟨Q, inferInstance⟩ with hνQ
+    have hRcoe : ∀ n : ℕ, ((R n : Measure (EuclideanSpace ℝ (Fin k))))
+        = empiricalMeasure fun j : Fin (n + 1) => X j ω := fun n => rfl
+    have hmom : Tendsto (fun n : ℕ => ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))))
+        atTop (𝓝 (∫ y, ‖y‖ ∂Q)) := by
+      have hrw : ∀ n : ℕ, ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k)))
+          = ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ j ∈ Finset.range (n + 1), ‖X j ω‖ := by
+        intro n
+        rw [hRcoe, integral_empiricalMeasure]
+        congr 1
+        exact Fin.sum_univ_eq_sum_range (fun j => ‖X j ω‖) (n + 1)
+      simp only [hrw]
+      exact (Filter.tendsto_add_atTop_iff_nat 1).2 hDω
+    have hmomint : ∀ n : ℕ,
+        Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖)
+          (R n : Measure (EuclideanSpace ℝ (Fin k))) := by
+      intro n
+      rw [hRcoe]
+      exact integrable_empiricalMeasure _ _
+    have hcfT : ∀ m : ℕ, Tendsto
+        (fun n : ℕ => charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)) atTop
+        (𝓝 (charFun Q (T m))) := by
+      intro m
+      have hrw : ∀ n : ℕ, charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)
+          = ((n + 1 : ℕ) : ℝ)⁻¹ • ∑ j ∈ Finset.range (n + 1),
+              Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I) := by
+        intro n
+        rw [charFun_apply, hRcoe, integral_empiricalMeasure]
+        congr 1
+        exact Fin.sum_univ_eq_sum_range
+          (fun j => Complex.exp ((inner ℝ (X j ω) (T m) : ℝ) * Complex.I)) (n + 1)
+      simp only [hrw]
+      exact (Filter.tendsto_add_atTop_iff_nat 1).2 (hCω m)
+    have hcf : ∀ t : EuclideanSpace ℝ (Fin k), Tendsto
+        (fun n : ℕ => charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t) atTop
+        (𝓝 (charFun Q t)) := by
+      intro t
+      set C : ℝ := ∫ y, ‖y‖ ∂Q with hCdef
+      have hCnn : 0 ≤ C := integral_nonneg fun y => norm_nonneg y
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      obtain ⟨m, hm⟩ : ∃ m : ℕ, ‖t - T m‖ < ε / (3 * (C + 2)) := by
+        have hpos : 0 < ε / (3 * (C + 2)) := by positivity
+        obtain ⟨-, ⟨m, rfl⟩, hlt⟩ := Metric.mem_closure_iff.1 (hTdense t) _ hpos
+        exact ⟨m, by rwa [← dist_eq_norm]⟩
+      obtain ⟨N₁, hN₁⟩ := Metric.tendsto_atTop.1 hmom 1 one_pos
+      obtain ⟨N₂, hN₂⟩ := Metric.tendsto_atTop.1 (hcfT m) (ε / 3) (by positivity)
+      refine ⟨max N₁ N₂, fun n hn => ?_⟩
+      have hn₁ := hN₁ n (le_of_max_le_left hn)
+      have hn₂ := hN₂ n (le_of_max_le_right hn)
+      have hbound : ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))) ≤ C + 1 := by
+        have hx := abs_lt.1 (by rwa [Real.dist_eq] at hn₁)
+        linarith [hx.2]
+      have hnn : (0 : ℝ) ≤ ∫ y, ‖y‖ ∂(R n : Measure (EuclideanSpace ℝ (Fin k))) :=
+        integral_nonneg fun y => norm_nonneg y
+      have hfrac : (ε / (3 * (C + 2))) * (C + 1) ≤ ε / 3 := by
+        rw [div_mul_eq_mul_div, div_le_div_iff₀ (by positivity) (by positivity)]
+        nlinarith [hε.le, hCnn]
+      have h1 : ‖charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t
+          - charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)‖ ≤ ε / 3 := by
+        refine (norm_charFun_sub_charFun_le _ (hmomint n) t (T m)).trans ?_
+        refine le_trans (mul_le_mul hm.le hbound hnn (by positivity)) hfrac
+      have h3 : ‖charFun Q (T m) - charFun Q t‖ ≤ ε / 3 := by
+        refine (norm_charFun_sub_charFun_le Q hnormint (T m) t).trans ?_
+        rw [← neg_sub t (T m), norm_neg]
+        exact le_trans (mul_le_mul hm.le (by linarith) hCnn (by positivity)) hfrac
+      have h2 : ‖charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m)
+          - charFun Q (T m)‖ < ε / 3 := by rwa [dist_eq_norm] at hn₂
+      rw [dist_eq_norm]
+      have hsplit : charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t - charFun Q t
+          = (charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) t
+              - charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m))
+            + (charFun ((R n : Measure (EuclideanSpace ℝ (Fin k)))) (T m) - charFun Q (T m))
+            + (charFun Q (T m) - charFun Q t) := by ring
+      rw [hsplit]
+      calc ‖_ + _ + _‖ ≤ _ := norm_add₃_le
+        _ < ε := by linarith
+    have hlevy : Tendsto R atTop (𝓝 νQ) := ProbabilityMeasure.tendsto_of_tendsto_charFun hcf
+    have hint := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hlevy f
+    simp only [hRcoe, hνQ] at hint
+    exact (Filter.tendsto_add_atTop_iff_nat 1).1 hint
+  · -- convergence of the mean vectors
+    intro i
+    have heq : ∀ n : ℕ, ∫ y, WithLp.ofLp y i ∂(empiricalMeasure fun j : Fin n => X j ω)
+        = (n : ℝ)⁻¹ • ∑ j ∈ Finset.range n, WithLp.ofLp (X j ω) i := by
+      intro n
+      rw [integral_empiricalMeasure]
+      congr 1
+      exact Fin.sum_univ_eq_sum_range (fun j => WithLp.ofLp (X j ω) i) n
+    simp only [heq]
+    exact hAω i
+  · -- convergence of the covariance matrices
+    intro i j
+    have hI : ∀ (n : ℕ) (g : EuclideanSpace ℝ (Fin k) → ℝ),
+        ∫ y, g y ∂(empiricalMeasure fun jj : Fin n => X jj ω)
+          = (n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, g (X jj ω) := by
+      intro n g
+      rw [integral_empiricalMeasure]
+      congr 1
+      exact Fin.sum_univ_eq_sum_range (fun jj => g (X jj ω)) n
+    have hQsub : covMatrix Q i j
+        = (∫ y, WithLp.ofLp y i * WithLp.ofLp y j ∂Q)
+          - (∫ y, WithLp.ofLp y i ∂Q) * ∫ y, WithLp.ofLp y j ∂Q :=
+      covariance_eq_sub (hcoordLp i) (hcoordLp j)
+    have heq : ∀ᶠ n : ℕ in atTop,
+        ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n,
+            WithLp.ofLp (X jj ω) i * WithLp.ofLp (X jj ω) j)
+          - ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, WithLp.ofLp (X jj ω) i)
+            * ((n : ℝ)⁻¹ • ∑ jj ∈ Finset.range n, WithLp.ofLp (X jj ω) j)
+          = covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := hprob n hn
+      rw [show covMatrix (empiricalMeasure fun jj : Fin n => X jj ω) i j
+        = cov[fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i,
+              fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j;
+              empiricalMeasure fun jj : Fin n => X jj ω] from rfl,
+        covariance_eq_sub (memLp_coord (memLp_id_empiricalMeasure _) i)
+          (memLp_coord (memLp_id_empiricalMeasure _) j)]
+      simp only [Pi.mul_apply]
+      rw [hI n (fun y => WithLp.ofLp y i * WithLp.ofLp y j), hI n (fun y => WithLp.ofLp y i),
+        hI n (fun y => WithLp.ofLp y j)]
+    refine Tendsto.congr' heq ?_
+    rw [hQsub]
+    exact (hBω i j).sub ((hAω i).mul (hAω j))
+
 end EmpiricalBasics
 
 /-! ## Cramér–Wold: projecting the mean-vector root onto a direction -/
