@@ -285,6 +285,27 @@ private lemma memLp_coord {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
   have h := (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).comp_memLp' hQ2
   simpa [Function.comp_def] using h
 
+/-- The covariance bilinear form of a square-integrable law on a Euclidean space is the
+quadratic form of its covariance matrix. -/
+private lemma covarianceBilin_eq_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
+    (x y : EuclideanSpace ℝ (Fin k)) :
+    covarianceBilin Q x y = ∑ i, ∑ j, WithLp.ofLp x i * WithLp.ofLp y j * covMatrix Q i j := by
+  have hmap : Q.map (fun y : EuclideanSpace ℝ (Fin k) =>
+      WithLp.toLp 2 fun i => WithLp.ofLp y i) = Q := by
+    simp
+  have h := covarianceBilin_apply_pi (μ := Q)
+    (X := fun (i : Fin k) (y : EuclideanSpace ℝ (Fin k)) => WithLp.ofLp y i) (memLp_coord hQ2) x y
+  rwa [hmap] at h
+
+/-- The variance of a linear functional is the quadratic form of the covariance matrix. -/
+private lemma variance_inner_eq_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
+    (t : EuclideanSpace ℝ (Fin k)) :
+    Var[fun z : EuclideanSpace ℝ (Fin k) => inner ℝ t z; Q]
+      = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := by
+  rw [← covarianceBilin_self hQ2 t, covarianceBilin_eq_covMatrix hQ2]
+
 /-- **The covariance matrix of a square-integrable law is positive semidefinite.**
 
 Square-integrability is what makes this true: the Mathlib `covariance` returns its junk value `0`
@@ -294,16 +315,7 @@ private lemma posSemidef_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (F
     [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) :
     (covMatrix Q).PosSemidef := by
   classical
-  have hcoord := memLp_coord hQ2
-  have hmap : Q.map (fun y : EuclideanSpace ℝ (Fin k) =>
-      WithLp.toLp 2 fun i => WithLp.ofLp y i) = Q := by
-    simp
-  have hbil : ∀ x y : EuclideanSpace ℝ (Fin k), covarianceBilin Q x y
-      = ∑ i, ∑ j, WithLp.ofLp x i * WithLp.ofLp y j * covMatrix Q i j := by
-    intro x y
-    have h := covarianceBilin_apply_pi (μ := Q)
-      (X := fun (i : Fin k) (y : EuclideanSpace ℝ (Fin k)) => WithLp.ofLp y i) hcoord x y
-    rwa [hmap] at h
+  have hbil := covarianceBilin_eq_covMatrix hQ2
   refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ ?_
   · ext i j
     simp only [Matrix.conjTranspose_apply, star_trivial, covMatrix, Matrix.of_apply]
