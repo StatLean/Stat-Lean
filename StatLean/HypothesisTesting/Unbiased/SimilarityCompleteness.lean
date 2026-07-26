@@ -126,7 +126,7 @@ theorem hasNeymanStructure_of_boundedlyComplete
   have hψ_bdd : ∃ C, ∀ s, |ψ s| ≤ C := ⟨1 + |α|, fun t => by
     have h1 := hcond_bd t
     have h2 : |ψ t| ≤ |∫ x, φ x ∂(Q t)| + |α| := by
-      show |(∫ x, φ x ∂(Q t)) - α| ≤ |∫ x, φ x ∂(Q t)| + |α|
+      change |(∫ x, φ x ∂(Q t)) - α| ≤ |∫ x, φ x ∂(Q t)| + |α|
       rw [sub_eq_add_neg]; refine (abs_add_le _ _).trans_eq ?_; rw [abs_neg]
     linarith⟩
   have hzero : ∀ θ : ω, ∫ s, ψ s ∂(statLaw P T (θ : Θ)) = 0 := by
@@ -146,10 +146,18 @@ theorem hasNeymanStructure_of_boundedlyComplete
 
 /-- **Neyman structure for all similar tests ⇒ bounded completeness.**
 
-Converse direction. If bounded completeness failed, a bounded `f` with `∫ f d(statLaw) = 0`
-for all boundary parameters and `f ≠ 0` with positive probability would yield the similar
-test `φ = c·f(T ·) + α` (with `c = min(α, 1−α)/M`, `M` a bound for `|f|`), whose conditional
-size is `c·f(t) + α ≠ α` on a non-null set — contradicting the assumed Neyman structure. -/
+Converse direction. Let `f` be bounded measurable with `∫ f d(statLaw) = 0` at every boundary
+parameter. The perturbation `ψ = c·f(T ·) + α`, with `c = min(α, 1−α)/M` and `M` a positive
+bound for `|f|`, is a critical function of power `c·∫ f d(statLaw) + α = α`, hence similar; so
+`hall` gives `∀ᵐ t, ∫ ψ dQ_t = α`, i.e. `h t := ∫ f(T x) dQ_t = 0` for a.e. `t`.
+
+It remains to identify `h` with `f`. Rather than exhibiting the fibre support of `Q` — which
+would need the diagonal `{(t,x) | T x = t}` to be measurable, hence a standard-Borel structure
+on `𝓣` absent from the signature — we test the graph identity `hsuff` against the *bounded
+measurable weight* `g = h − f`: integrating `(t,x) ↦ g t · f (T x)` over
+`(P θ).map (x ↦ (T x, x)) = statLaw ⊗ₘ Q` two ways gives `∫ g·f = ∫ g·h` over `statLaw`,
+i.e. `∫ (h − f)² d(statLaw) = 0`, whence `h = f` a.e. Combining with `h = 0` a.e. yields
+`f = 0` a.e. This route needs no hypothesis beyond the frozen signature. -/
 theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
     {P : Θ → Measure 𝓧} {ω : Set Θ} {T : 𝓧 → 𝓣} {Q : Kernel 𝓣 𝓧} {α : ℝ}
     -- LEAN-ONLY: the family members are probability measures; the model's standing setting
@@ -168,16 +176,126 @@ theorem boundedlyComplete_of_forall_similar_hasNeymanStructure
     (hall : ∀ φ : 𝓧 → ℝ, IsCriticalFn φ → IsSimilar P ω α φ →
       ∀ θ ∈ ω, HasNeymanStructure T Q (statLaw P T θ) α φ) :
     IsBoundedlyCompleteFamily fun θ : ω => statLaw P T (θ : Θ) := by
-  -- TODO: lifted debt of this file. The perturbation `φ = c·(f∘T) + α` (with
-  -- `c = min(α,1−α)/M`) is a critical function and is similar (its power is
-  -- `c·∫ f d(statLaw) + α = α`), so `hall` gives `∀ᵐ t, ∫ φ dQ_t = α`, i.e.
-  -- `∀ᵐ t, c·(∫ f(T x) dQ_t) = 0`, hence `∫ f(T x) dQ_t = 0` a.e. To conclude `f = 0` a.e.
-  -- one needs `∫ f(T x) dQ_t = f t` for a.e. `t` — the fibre-support of `Q` from `hsuff`,
-  -- `∀ᵐ (t,x) ∂(statLaw ⊗ₘ Q), T x = t`. Establishing that a.e. identity requires the diagonal
-  -- `{(t,x) | T x = t}` to be measurable in `𝓣 × 𝓧` (`measurableSet_eq_fun`), which needs a
-  -- countably-separated / standard-Borel structure on `𝓣` not present in the signature. Fix =
-  -- add `[StandardBorelSpace 𝓣]` (as the point-estimation `Sufficiency.Basic` fibre lemmas do),
-  -- then transport the fibre-support along `hsuff`. See the report for the flagged hypothesis gap.
-  sorry
+  haveI := hQ
+  haveI hstatprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+    rw [statLaw]; exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  intro f hf hbd hzero θ
+  obtain ⟨C₀, hC₀⟩ := hbd
+  -- a strictly positive bound for `f`, so that the perturbation constant is well defined
+  set M : ℝ := max C₀ 1 with hM_def
+  have hM : (0 : ℝ) < M := lt_of_lt_of_le one_pos (le_max_right _ _)
+  have hfM : ∀ s, |f s| ≤ M := fun s => (hC₀ s).trans (le_max_left _ _)
+  have hfT : Measurable fun x => f (T x) := hf.comp hT
+  -- the conditional average `h t = ∫ f(T x) dQ_t`, measurable and bounded by `M`
+  set h : 𝓣 → ℝ := fun t => ∫ x, f (T x) ∂(Q t) with hh_def
+  have hh_meas : Measurable h :=
+    (StronglyMeasurable.integral_kernel (κ := Q) hfT.stronglyMeasurable).measurable
+  have hh_bd : ∀ t, |h t| ≤ M := fun t => by
+    rw [hh_def, ← Real.norm_eq_abs]
+    calc ‖∫ x, f (T x) ∂(Q t)‖ ≤ M * (Q t Set.univ).toReal :=
+          norm_integral_le_of_norm_le_const (ae_of_all _ fun x => by
+            rw [Real.norm_eq_abs]; exact hfM (T x))
+      _ = M := by rw [measure_univ, ENNReal.toReal_one, mul_one]
+  -- ## Step 1: the perturbation `ψ = c·(f∘T) + α` is a similar critical function
+  set m : ℝ := min α (1 - α) with hm_def
+  have hm : 0 < m := lt_min hα₀ (by linarith)
+  have hmα : m ≤ α := min_le_left _ _
+  have hmα' : m ≤ 1 - α := min_le_right _ _
+  set c : ℝ := m / M with hc_def
+  have hc : 0 < c := div_pos hm hM
+  have hcM : c * M = m := by rw [hc_def]; field_simp
+  set ψ : 𝓧 → ℝ := fun x => c * f (T x) + α with hψ_def
+  have hcf_bd : ∀ x, |c * f (T x)| ≤ m := fun x => by
+    rw [abs_mul, abs_of_pos hc]
+    calc c * |f (T x)| ≤ c * M := by gcongr; exact hfM (T x)
+      _ = m := hcM
+  have hψ_crit : IsCriticalFn ψ := by
+    refine ⟨(measurable_const.mul hfT).add measurable_const, fun x => ?_⟩
+    have h1 := abs_le.mp (hcf_bd x)
+    exact Set.mem_Icc.mpr ⟨by simp only [hψ_def]; linarith [h1.1],
+      by simp only [hψ_def]; linarith [h1.2]⟩
+  -- integrability of the perturbing summand against any probability measure
+  have hcf_int : ∀ (μ : Measure 𝓧) [IsProbabilityMeasure μ],
+      Integrable (fun x => c * f (T x)) μ := fun μ _ =>
+    Integrable.of_bound (measurable_const.mul hfT).aestronglyMeasurable m
+      (ae_of_all _ fun x => by rw [Real.norm_eq_abs]; exact hcf_bd x)
+  have hψ_sim : IsSimilar P ω α ψ := by
+    intro θ' hθ'
+    have hmap : ∫ x, f (T x) ∂(P θ') = ∫ t, f t ∂(statLaw P T θ') := by
+      rw [statLaw, integral_map hT.aemeasurable hf.aestronglyMeasurable]
+    rw [power]
+    simp only [hψ_def]
+    rw [integral_add (hcf_int (P θ')) (integrable_const α), integral_const, probReal_univ,
+      one_smul, integral_const_mul, hmap, hzero ⟨θ', hθ'⟩, mul_zero, zero_add]
+  -- Neyman structure of `ψ` at the chosen boundary parameter forces `h = 0` a.e.
+  have hns := hall ψ hψ_crit hψ_sim (θ : Θ) θ.2
+  have hh0 : ∀ᵐ t ∂(statLaw P T (θ : Θ)), h t = 0 := by
+    filter_upwards [hns] with t ht
+    simp only [hψ_def] at ht
+    rw [integral_add (hcf_int (Q t)) (integrable_const α), integral_const, probReal_univ,
+      one_smul, integral_const_mul] at ht
+    have : c * h t = 0 := by rw [hh_def]; linarith
+    exact (mul_eq_zero.mp this).resolve_left hc.ne'
+  -- ## Step 2: `h = f` a.e. — no fibre-support argument needed, only the graph identity
+  -- tested against the bounded measurable weight `g = h − f`
+  set ν : Measure 𝓣 := statLaw P T (θ : Θ) with hν_def
+  set g : 𝓣 → ℝ := fun t => h t - f t with hg_def
+  have hg_meas : Measurable g := hh_meas.sub hf
+  have hg_bd : ∀ t, |g t| ≤ 2 * M := fun t => by
+    rw [hg_def]
+    calc |h t - f t| ≤ |h t| + |f t| := abs_sub _ _
+      _ ≤ M + M := add_le_add (hh_bd t) (hfM t)
+      _ = 2 * M := by ring
+  have hFmeas : Measurable fun z : 𝓣 × 𝓧 => g z.1 * f (T z.2) :=
+    (hg_meas.comp measurable_fst).mul (hfT.comp measurable_snd)
+  have hFint : Integrable (fun z : 𝓣 × 𝓧 => g z.1 * f (T z.2)) (ν ⊗ₘ Q) :=
+    Integrable.of_bound hFmeas.aestronglyMeasurable ((2 * M) * M) (ae_of_all _ fun z => by
+      rw [Real.norm_eq_abs, abs_mul]
+      exact mul_le_mul (hg_bd z.1) (hfM (T z.2)) (abs_nonneg _) (by positivity))
+  -- the graph identity: integrating `g(t)·f(T x)` two ways
+  have hchain : ∫ t, g t * f t ∂ν = ∫ t, g t * h t ∂ν := by
+    have e1 : ∫ t, g t * f t ∂ν = ∫ x, g (T x) * f (T x) ∂(P (θ : Θ)) := by
+      rw [hν_def, statLaw, integral_map hT.aemeasurable (hg_meas.mul hf).aestronglyMeasurable]
+    have e2 : ∫ x, g (T x) * f (T x) ∂(P (θ : Θ))
+        = ∫ z, g z.1 * f (T z.2) ∂((P (θ : Θ)).map (fun x => (T x, x))) := by
+      have hfm : Measurable (fun x => (T x, x)) := hT.prodMk measurable_id
+      rw [integral_map hfm.aemeasurable hFmeas.aestronglyMeasurable]
+    have e3 : ∫ z, g z.1 * f (T z.2) ∂((P (θ : Θ)).map (fun x => (T x, x)))
+        = ∫ t, (∫ x, g t * f (T x) ∂(Q t)) ∂ν := by
+      rw [hsuff (θ : Θ) θ.2, ← hν_def]; exact Measure.integral_compProd hFint
+    have e4 : ∫ t, (∫ x, g t * f (T x) ∂(Q t)) ∂ν = ∫ t, g t * h t ∂ν := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
+      dsimp only
+      rw [integral_const_mul]
+    rw [e1, e2, e3, e4]
+  -- bounded measurable products are integrable against the probability law `ν`
+  have hgh_int : Integrable (fun t => g t * h t) ν :=
+    Integrable.of_bound ((hg_meas.mul hh_meas)).aestronglyMeasurable ((2 * M) * M)
+      (ae_of_all _ fun t => by
+        rw [Real.norm_eq_abs, abs_mul]
+        exact mul_le_mul (hg_bd t) (hh_bd t) (abs_nonneg _) (by positivity))
+  have hgf_int : Integrable (fun t => g t * f t) ν :=
+    Integrable.of_bound ((hg_meas.mul hf)).aestronglyMeasurable ((2 * M) * M)
+      (ae_of_all _ fun t => by
+        rw [Real.norm_eq_abs, abs_mul]
+        exact mul_le_mul (hg_bd t) (hfM t) (abs_nonneg _) (by positivity))
+  -- hence `∫ (h − f)² dν = 0`, so `h = f` a.e.
+  have hsq : ∫ t, (g t) ^ 2 ∂ν = 0 := by
+    have hrw : (fun t => (g t) ^ 2) = fun t => g t * h t - g t * f t := by
+      funext t; rw [hg_def]; ring
+    rw [hrw, integral_sub hgh_int hgf_int, ← hchain, sub_self]
+  have hg0 : ∀ᵐ t ∂ν, g t = 0 := by
+    have hsq_int : Integrable (fun t => (g t) ^ 2) ν := by
+      have hrw : (fun t => (g t) ^ 2) = fun t => g t * h t - g t * f t := by
+        funext t; rw [hg_def]; ring
+      rw [hrw]; exact hgh_int.sub hgf_int
+    have := (integral_eq_zero_iff_of_nonneg (fun t => sq_nonneg (g t)) hsq_int).mp hsq
+    filter_upwards [this] with t ht
+    exact pow_eq_zero_iff two_ne_zero |>.mp ht
+  -- ## Step 3: combine `h = 0` a.e. with `h − f = 0` a.e.
+  filter_upwards [hh0, hg0] with t ht0 htg
+  rw [hg_def] at htg
+  simp only [Pi.zero_apply]
+  linarith [ht0, htg]
 
 end StatLean.HypothesisTesting
