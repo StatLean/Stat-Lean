@@ -5,6 +5,9 @@ import Mathlib.Probability.HasLaw
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.CDF
 import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
+import Mathlib.Probability.HasLawExists
+import Mathlib.MeasureTheory.Measure.LevyConvergence
 
 /-!
 # The nonparametric bootstrap for a mean
@@ -517,6 +520,305 @@ private lemma tendsto_setIntegral_sq_tail
     _ < η := by nlinarith [hn1]
 
 end Vitali
+
+/-! ## The triangular-array central limit theorem with a drifting row law -/
+
+section TriangularCLT
+
+/-- The law of the centred and scaled sample mean under `n` independent draws from `G`. -/
+noncomputable def meanRootLaw (G : Measure ℝ) (n : ℕ) : Measure ℝ :=
+  (Measure.pi fun _ : Fin n => G).map
+    fun y => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂G)
+
+private lemma meanRootCDF_eq (G : Measure ℝ) (n : ℕ) (x : ℝ)
+    [IsProbabilityMeasure (Measure.pi fun _ : Fin n => G)] :
+    meanRootCDF G n x = (meanRootLaw G n (Set.Iic x)).toReal := by
+  rw [meanRootLaw, Measure.map_apply (by fun_prop) measurableSet_Iic]
+  rfl
+
+variable {G : ℕ → Measure ℝ} {Q₁ : Measure ℝ}
+
+/-- **Triangular-array central limit theorem with a drifting row law.**
+
+If the row laws `G n` converge weakly to `Q₁`, with converging means and variances, then the
+law of the centred and scaled sample mean of `n` independent draws from `G n` converges weakly
+to the centred normal law with the limiting variance. Degenerate limits (`Var = 0`) are
+allowed. -/
+private theorem tendsto_meanRootLaw
+    [∀ n, IsProbabilityMeasure (G n)] [IsProbabilityMeasure Q₁]
+    (hG2 : ∀ n, MemLp (fun t : ℝ => t) 2 (G n)) (hQ2 : MemLp (fun t : ℝ => t) 2 Q₁)
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ t, f t ∂(G n)) atTop (𝓝 (∫ t, f t ∂Q₁)))
+    (hmean : Tendsto (fun n => ∫ t, t ∂(G n)) atTop (𝓝 (∫ t, t ∂Q₁)))
+    (hvar : Tendsto (fun n => Var[fun t : ℝ => t; G n]) atTop (𝓝 Var[fun t : ℝ => t; Q₁]))
+    (f : ℝ →ᵇ ℝ) :
+    Tendsto (fun n => ∫ z, f z ∂(meanRootLaw (G n) n)) atTop
+      (𝓝 (∫ z, f z ∂(gaussianReal 0 (Real.toNNReal Var[fun t : ℝ => t; Q₁])))) := by
+  classical
+  set m : ℕ → ℝ := fun n => ∫ t, t ∂(G n) with hm
+  set v : ℕ → ℝ := fun n => Var[fun t : ℝ => t; G n] with hv
+  set σ2 : ℝ := Var[fun t : ℝ => t; Q₁] with hσ2
+  have hvnn : ∀ n, 0 ≤ v n := fun n => variance_nonneg _ _
+  have hσ2nn : 0 ≤ σ2 := variance_nonneg _ _
+  -- the canonical independent model with the prescribed row laws
+  obtain ⟨Ω, mΩ, P, Y, hYmeas, hYlaw, hYindep, hPprob⟩ :=
+    ProbabilityTheory.exists_hasLaw_indepFun (ι := ℕ × ℕ) (fun _ : ℕ × ℕ => ℝ)
+      (fun p : ℕ × ℕ => G p.1)
+  letI : MeasurableSpace Ω := mΩ
+  haveI : IsProbabilityMeasure P := hPprob
+  -- moments of the coordinates
+  have hYint : ∀ p : ℕ × ℕ, ∫ ω, Y p ω ∂P = m p.1 := fun p =>
+    (hYlaw p).integral_comp (f := fun t : ℝ => t) (by fun_prop)
+  have hYL2 : ∀ p : ℕ × ℕ, MemLp (Y p) 2 P := by
+    intro p
+    have h : MemLp (fun t : ℝ => t) 2 (P.map (Y p)) := by rw [(hYlaw p).map_eq]; exact hG2 p.1
+    have h2 := (memLp_map_measure_iff (by fun_prop) (hYmeas p).aemeasurable).1 h
+    simpa [Function.comp_def] using h2
+  have hYvar : ∀ p : ℕ × ℕ, Var[Y p; P] = v p.1 := by
+    intro p
+    have h : Var[fun t : ℝ => t; P.map (Y p)] = Var[Y p; P] := by
+      rw [variance_map (by fun_prop) (hYmeas p).aemeasurable]
+      rfl
+    rw [← h, (hYlaw p).map_eq]
+  -- the row law is the `n`-fold product
+  have hinj : ∀ n : ℕ, Function.Injective (fun i : Fin n => ((n, (i : ℕ)) : ℕ × ℕ)) := by
+    intro n a b hab
+    exact Fin.val_injective (congrArg Prod.snd hab)
+  have hpimap : ∀ n : ℕ, P.map (fun ω (i : Fin n) => Y (n, (i : ℕ)) ω)
+      = Measure.pi (fun _ : Fin n => G n) := by
+    intro n
+    have hsub : iIndepFun (fun i : Fin n => Y (n, (i : ℕ))) P := hYindep.precomp (hinj n)
+    rw [(iIndepFun_iff_map_fun_eq_pi_map
+      (fun i : Fin n => (hYmeas (n, (i : ℕ))).aemeasurable)).1 hsub]
+    congr 1
+    funext i
+    exact (hYlaw (n, (i : ℕ))).map_eq
+  -- the root law, realised on the common space
+  have hroot : ∀ n : ℕ, meanRootLaw (G n) n
+      = P.map (fun ω => (Real.sqrt n)⁻¹ * ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n)) := by
+    intro n
+    have hψmeas : Measurable (fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ * ∑ i, (y i - m n)) := by
+      fun_prop
+    have h1 : meanRootLaw (G n) n
+        = (Measure.pi fun _ : Fin n => G n).map
+            (fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ * ∑ i, (y i - m n)) := by
+      rw [meanRootLaw]
+      congr 1
+      funext y
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn; simp
+      · have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+        have hgoal : ∀ r S : ℝ, r ≠ 0 → r * r = (n : ℝ) →
+            r * ((n : ℝ)⁻¹ * S - m n) = r⁻¹ * (S - (n : ℝ) * m n) := by
+          intro r S hr0 hrsq
+          rw [← hrsq]
+          field_simp
+        rw [Finset.sum_sub_distrib]
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        exact hgoal (Real.sqrt n) _ (Real.sqrt_pos.2 hnR).ne'
+          (Real.mul_self_sqrt hnR.le)
+    rw [h1, ← hpimap n, Measure.map_map hψmeas (by fun_prop)]
+    rfl
+  -- second moments about the drifting centres
+  have hsqmom : ∀ n : ℕ, ∫ t, (t - m n) ^ 2 ∂(G n) = v n := fun n =>
+    (variance_eq_integral (by fun_prop)).symm
+  have hsqmomQ : ∫ t, (t - ∫ u, u ∂Q₁) ^ 2 ∂Q₁ = σ2 := (variance_eq_integral (by fun_prop)).symm
+  rcases hσ2nn.lt_or_eq with hσpos | hσzero
+  case inr =>
+    -- degenerate limit: the root converges to `0` in probability
+    have hσ0 : σ2 = 0 := hσzero.symm
+    set R : ℕ → Ω → ℝ :=
+      fun n ω => (Real.sqrt n)⁻¹ * ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n) with hRdef
+    have hZL2 : ∀ (n : ℕ) (i : Fin n),
+        MemLp (fun ω => Y (n, (i : ℕ)) ω - m n) 2 P := fun n i =>
+      (hYL2 (n, (i : ℕ))).sub (memLp_const _)
+    have hZint : ∀ (n : ℕ) (i : Fin n), ∫ ω, (Y (n, (i : ℕ)) ω - m n) ∂P = 0 := by
+      intro n i
+      rw [integral_sub ((hYL2 _).integrable one_le_two) (integrable_const _)]
+      simp [hYint (n, (i : ℕ))]
+    have hfun : ∀ n : ℕ, (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n))
+        = ∑ i : Fin n, fun ω => Y (n, (i : ℕ)) ω - m n := by
+      intro n; funext ω; simp
+    have hRmeas : ∀ n, Measurable (R n) := by intro n; simp only [hRdef]; fun_prop
+    have hsumL2 : ∀ n : ℕ, MemLp (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n)) 2 P := by
+      intro n
+      have h := memLp_finset_sum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
+      rw [← hfun n] at h
+      exact h
+    have hRL2 : ∀ n, MemLp (R n) 2 P := by
+      intro n
+      simp only [hRdef]
+      exact (hsumL2 n).const_mul _
+    have hRmean : ∀ n, ∫ ω, R n ω ∂P = 0 := by
+      intro n
+      simp only [hRdef]
+      rw [integral_const_mul,
+        integral_finset_sum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
+      simp [hZint n]
+    have hRvar : ∀ n : ℕ, 0 < n → Var[R n; P] = v n := by
+      intro n hn
+      have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hpair : Set.Pairwise (↑(Finset.univ : Finset (Fin n)) : Set (Fin n))
+          fun i j => IndepFun (fun ω => Y (n, (i : ℕ)) ω - m n)
+            (fun ω => Y (n, (j : ℕ)) ω - m n) P := by
+        intro i _ j _ hij
+        exact ((hYindep.precomp (hinj n)).comp (fun _ => fun t : ℝ => t - m n)
+          (fun _ => by fun_prop)).indepFun hij
+      have hsum : Var[fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - m n); P] = (n : ℝ) * v n := by
+        rw [hfun n, IndepFun.variance_sum (fun i _ => hZL2 n i) hpair]
+        simp only [variance_sub_const (hYmeas _).aestronglyMeasurable, hYvar]
+        simp
+      simp only [hRdef]
+      rw [variance_const_mul, hsum, inv_pow, Real.sq_sqrt hnR.le]
+      field_simp
+    -- convergence in probability to zero, by Chebyshev
+    have hRmeasure : TendstoInMeasure P R atTop 0 := by
+      rw [tendstoInMeasure_iff_norm]
+      intro r hr
+      have hcheb : ∀ n : ℕ, P {ω | r ≤ ‖R n ω - (0 : Ω → ℝ) ω‖}
+          ≤ ENNReal.ofReal (Var[R n; P] / r ^ 2) := by
+        intro n
+        have h := meas_ge_le_variance_div_sq (μ := P) (hRL2 n) hr
+        rw [hRmean n] at h
+        simpa using h
+      have hto : Tendsto (fun n : ℕ => ENNReal.ofReal (Var[R n; P] / r ^ 2)) atTop (𝓝 0) := by
+        have h1 : Tendsto (fun n : ℕ => Var[R n; P] / r ^ 2) atTop (𝓝 0) := by
+          have heq : ∀ᶠ n : ℕ in atTop, Var[R n; P] / r ^ 2 = v n / r ^ 2 := by
+            filter_upwards [eventually_gt_atTop 0] with n hn
+            rw [hRvar n hn]
+          refine Tendsto.congr' (heq.mono fun n h => h.symm) ?_
+          have h2 := hvar.div_const (r ^ 2)
+          rw [← hσzero] at h2
+          simpa using h2
+        have := (ENNReal.continuous_ofReal.tendsto 0).comp h1
+        simpa using this
+      exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hto
+        (fun n => zero_le _) hcheb
+    -- convergence in probability implies convergence in distribution
+    have hdist := hRmeasure.tendstoInDistribution (fun n => (hRmeas n).aemeasurable)
+    have hint := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hdist.tendsto f
+    have hlhs : ∀ n : ℕ, P.map (R n) = meanRootLaw (G n) n := fun n => (hroot n).symm
+    have hrhs : P.map (0 : Ω → ℝ) = Measure.dirac (0 : ℝ) := by
+      rw [show (0 : Ω → ℝ) = fun _ : Ω => (0 : ℝ) from rfl, Measure.map_const]
+      simp
+    have hgauss : gaussianReal 0 (Real.toNNReal σ2) = Measure.dirac (0 : ℝ) := by
+      rw [hσ0]
+      simp [gaussianReal_zero_var]
+    simp only [hlhs, hrhs] at hint
+    rw [hgauss]
+    exact hint
+  -- the standardisation constants
+  set σ : ℝ := Real.sqrt σ2 with hσdef
+  have hσ0 : 0 < σ := Real.sqrt_pos.2 hσpos
+  have hσsq : σ ^ 2 = σ2 := Real.sq_sqrt hσ2nn
+  set c : ℕ → ℝ := fun n => (Real.sqrt n * σ)⁻¹ with hcdef
+  set X : (n : ℕ) → Fin n → Ω → ℝ := fun n i ω => c n * (Y (n, (i : ℕ)) ω - m n) with hXdef
+  have hXmeas : ∀ (n : ℕ) (i : Fin n), Measurable (X n i) := by
+    intro n i; simp only [hXdef]; fun_prop
+  have hXindep : ∀ n : ℕ, iIndepFun (X n) P := by
+    intro n
+    have hsub : iIndepFun (fun i : Fin n => Y (n, (i : ℕ))) P := hYindep.precomp (hinj n)
+    exact hsub.comp (fun _ => fun t : ℝ => c n * (t - m n)) (fun _ => by fun_prop)
+  have hXL2 : ∀ (n : ℕ) (i : Fin n), MemLp (X n i) 2 P := fun n i =>
+    ((hYL2 (n, (i : ℕ))).sub (memLp_const _)).const_mul _
+  have hXmean : ∀ (n : ℕ) (i : Fin n), ∫ ω, X n i ω ∂P = 0 := by
+    intro n i
+    have hint : Integrable (Y (n, (i : ℕ))) P := (hYL2 _).integrable one_le_two
+    simp only [hXdef]
+    rw [integral_const_mul, integral_sub hint (integrable_const _)]
+    simp [hYint (n, (i : ℕ))]
+  have hXvarterm : ∀ (n : ℕ) (i : Fin n), Var[X n i; P] = c n ^ 2 * v n := by
+    intro n i
+    simp only [hXdef]
+    rw [variance_const_mul, variance_sub_const (hYmeas _).aestronglyMeasurable,
+      hYvar (n, (i : ℕ))]
+  have hcsq : ∀ n : ℕ, 0 < n → c n ^ 2 = ((n : ℝ) * σ2)⁻¹ := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    simp only [hcdef, inv_pow, mul_pow, Real.sq_sqrt hnR.le, hσsq]
+  have hXvar : Tendsto (fun n => ∑ i, Var[X n i; P]) atTop (𝓝 1) := by
+    have heq : ∀ᶠ n : ℕ in atTop, (∑ i, Var[X n i; P]) = v n / σ2 := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      simp only [hXvarterm, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+        hcsq n hn]
+      field_simp
+    refine Tendsto.congr' (heq.mono fun n h => h.symm) ?_
+    have h := hvar.div_const σ2
+    rwa [div_self hσpos.ne'] at h
+  -- the Lindeberg condition, from the Vitali uniform-integrability brick
+  have hXlin : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P) atTop (𝓝 0) := by
+    intro ε hε
+    have hterm : ∀ n : ℕ, 0 < n → ∀ i : Fin n,
+        (∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P)
+          = c n ^ 2 *
+              ∫ t in {t : ℝ | ε * σ * Real.sqrt n < |t - m n|}, (t - m n) ^ 2 ∂(G n) := by
+      intro n hn i
+      have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hrpos : (0 : ℝ) < Real.sqrt n * σ := mul_pos (Real.sqrt_pos.2 hnR) hσ0
+      have hcpos : 0 < c n := by simp only [hcdef]; exact inv_pos.2 hrpos
+      have hSmeas : MeasurableSet {t : ℝ | ε * σ * Real.sqrt n < |t - m n|} :=
+        measurableSet_lt measurable_const (by fun_prop)
+      have hiff : ∀ z : ℝ, ε < |c n * z| ↔ ε * σ * Real.sqrt n < |z| := by
+        intro z
+        rw [abs_mul, abs_of_pos hcpos]
+        simp only [hcdef]
+        rw [inv_mul_eq_div, lt_div_iff₀ hrpos,
+          show ε * (Real.sqrt n * σ) = ε * σ * Real.sqrt n by ring]
+      have hpre : {ω | ε < |X n i ω|}
+          = (Y (n, (i : ℕ))) ⁻¹' {t : ℝ | ε * σ * Real.sqrt n < |t - m n|} := by
+        ext ω
+        simp only [Set.mem_setOf_eq, Set.mem_preimage, hXdef]
+        exact hiff _
+      rw [hpre, ← setIntegral_map hSmeas
+        (f := fun t : ℝ => (c n * (t - m n)) ^ 2) (by fun_prop) (hYmeas _).aemeasurable,
+        (hYlaw (n, (i : ℕ))).map_eq]
+      simp only [mul_pow]
+      exact integral_const_mul _ _
+    have hsum : ∀ᶠ n : ℕ in atTop,
+        (∑ i, ∫ ω in {ω | ε < |X n i ω|}, (X n i ω) ^ 2 ∂P)
+          = σ2⁻¹ * ∫ t in {t : ℝ | ε * σ * Real.sqrt n < |t - m n|}, (t - m n) ^ 2 ∂(G n) := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      rw [Finset.sum_congr rfl (fun i _ => hterm n hn i)]
+      simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hcsq n hn]
+      rw [← mul_assoc]
+      congr 1
+      field_simp
+    have hthr : Tendsto (fun n : ℕ => ε * σ * Real.sqrt n) atTop atTop :=
+      Filter.Tendsto.const_mul_atTop (by positivity)
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    have hV := tendsto_setIntegral_sq_tail (F := G) (Q := Q₁) (a := m) (b := ∫ u, u ∂Q₁)
+      hG2 hQ2 hweak hmean (by simpa only [hsqmom, hsqmomQ] using hvar) hthr
+    refine Tendsto.congr' (hsum.mono fun n h => h.symm) ?_
+    simpa using hV.const_mul σ2⁻¹
+  -- the Lindeberg central limit theorem, then a fixed rescaling by `σ`
+  have hclt := lindeberg_clt (P := P) (P' := gaussianReal 0 1) hXmeas hXindep hXL2 hXmean hXvar
+    hXlin (Z := (id : ℝ → ℝ)) HasLaw.id
+  have hcomp := TendstoInDistribution.continuous_comp
+    (g := fun z : ℝ => σ * z) (by fun_prop) hclt
+  have hint := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hcomp.tendsto f
+  have hlhs : ∀ n : ℕ, P.map ((fun z : ℝ => σ * z) ∘ (fun ω => ∑ i, X n i ω))
+      = meanRootLaw (G n) n := by
+    intro n
+    rw [hroot n]
+    congr 1
+    funext ω
+    simp only [Function.comp_def, hXdef, hcdef, ← Finset.mul_sum, ← mul_assoc]
+    congr 1
+    field_simp
+  have hrhs : (gaussianReal 0 1).map ((fun z : ℝ => σ * z) ∘ (id : ℝ → ℝ))
+      = gaussianReal 0 (Real.toNNReal σ2) := by
+    have h1 : ((fun z : ℝ => σ * z) ∘ (id : ℝ → ℝ)) = fun z : ℝ => σ * z := rfl
+    rw [h1, gaussianReal_map_const_mul σ]
+    congr 1
+    · simp
+    · refine NNReal.eq ?_
+      simp [Real.coe_toNNReal σ2 hσ2nn, hσsq]
+  simp only [hlhs, hrhs] at hint
+  exact hint
+
+end TriangularCLT
 
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
