@@ -5,7 +5,7 @@ import Mathlib.Probability.Moments.Covariance
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
-# Regression coefficients and random designs
+# Regression coefficients in the normal linear model
 
 In the regression form of the linear model the mean vector is `ξ = θ A` for a known design
 matrix `A` of full row rank; the least-squares estimator of the coefficient vector is
@@ -17,10 +17,21 @@ matrix `A` of full row rank; the least-squares estimator of the coefficient vect
 * `isUMVU_regression_coeff` — every linear function of `θ̂` is UMVU for the corresponding
   linear function of `θ`;
 * `covariance_regression_coeff` — the covariance matrix of `θ̂` is `σ² (A Aᵀ)⁻¹`;
-* `not_exists_blue_of_known_design_moment` — when the design is itself random with a law
-  whose second moment `E(A Aᵀ)` is known *and whose information about the estimated
-  functional is not almost surely constant*, no best linear unbiased estimator exists
-  (statement amended, DEFERRAL-ELIGIBLE, see below).
+
+**Not present: the random-design nonexistence clause.** The source's claim that no best
+linear unbiased estimator exists when the design is random with a known second moment
+(Shaffer's phenomenon) was formalized and found to be **false as printed**, and has been
+removed rather than carried as a debt. Its nondegeneracy hypothesis — "the design law is not
+a point mass" — is strictly too weak: for the two-point law `½·δ_a + ½·δ_{-a}` the designs
+`a` and `-a` carry the *same* information `1/‖a‖²`, so in the total-variance decomposition
+`σ²·E[λ² i] + θ²·Var(λ)` (subject to `E λ = 1`) both terms are minimised at the same weighting
+`λ ≡ 1`, and the conditional least-squares estimator *is* best linear unbiased. Shaffer's
+phenomenon needs the two terms to be minimised at *different* weightings, which happens
+exactly when the design information `cᵀ (A Aᵀ)⁻¹ c` genuinely varies. Restoring the clause is
+a **statement change** — replace the point-mass hypothesis by "the design information is not
+`Q`-a.s. constant", plus a.s. full row rank — and a decision for the library, not a proof
+obligation. The full analysis, with the counterexample and the repair, is in
+`notes/point_estimation/defective-statements.tex`.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 3 (Equivariance), §3.4 (Normal
@@ -32,25 +43,6 @@ Thm 4.14`.)
   of size `s × n`, matching `Matrix.vecMul`; `lseCoeff` is the total function
   `y ↦ y Aᵀ (A Aᵀ)⁻¹`, which is junk (zero) when `A A ᵀ` is singular, i.e. exactly when the
   full-row-rank hypothesis fails.
-* *Measurable carrier for a random design.* `Matrix` is a non-reducible definition and
-  carries no `MeasurableSpace` instance, so a random design is carried by the plain
-  function type `DesignSample s n = Fin s → Fin n → ℝ` (product measurable structure) and
-  read as a matrix through `Matrix.of`.
-* *Random-design model.* The joint law of design and response is `Q ⊗ₘ K p`: a fixed design
-  law `Q` (the same under every parameter) and a Markov kernel `K p` giving the conditional
-  law of the response, constrained only through its conditional mean and covariance. This
-  keeps the moments-only spirit of the fixed-design theorem while making "expectations are
-  taken over the joint distribution" precise.
-* *The nonexistence clause is a planned debt, and its statement has been renegotiated.*
-  The printed nondegeneracy ("the design law is not a point mass") is **not** enough: for
-  the two-point law `½·δ_a + ½·δ_{-a}` the two designs carry the same information, and the
-  conditional least-squares estimator *is* best linear unbiased, so the printed statement is
-  false. `not_exists_blue_of_known_design_moment` therefore assumes instead that the design
-  information `cᵀ (A Aᵀ)⁻¹ c` for the estimated functional is not almost surely constant
-  (plus almost sure full row rank, the regime of the fixed-design theorems above). Its
-  docstring records the counterexample, the exact amendment, the perturbation/orthogonality
-  proof route, and the two bricks still missing for a Lean discharge.
-
 **Bibliographic comments.** The regression form of the linear model and the covariance
 formula `σ²(A Aᵀ)⁻¹` are classical, going back to C. F. Gauss (*Theoria combinationis
 observationum erroribus minimis obnoxiae*, 1821/1823) and A. A. Markov
@@ -77,7 +69,6 @@ abbrev RegressionParam (k : ℕ) : Type := (Fin k → ℝ) × PosVar
 /-- Random designs are carried by the plain function type `Fin k → Fin l → ℝ`, which has
 the product measurable structure, and are read as matrices through `Matrix.of`: `Matrix` is
 a non-reducible definition and carries no `MeasurableSpace` instance. -/
-abbrev DesignSample (k l : ℕ) : Type := Fin k → Fin l → ℝ
 
 variable {s n : ℕ}
 
@@ -416,135 +407,5 @@ theorem covariance_regression_coeff {A : Matrix (Fin s) (Fin n) ℝ}
   rw [show (∑ l, M l i * M l j * (p.2.1 : ℝ)) = (∑ l, M l i * M l j) * (p.2.1 : ℝ) from by
         rw [Finset.sum_mul], hgram]
   rw [mul_comm]
-
-/-! ## Random designs -/
-
-/-- A **linear estimator for a random design**: linear in the response vector, with
-coefficients allowed to depend on the observed design. -/
-def IsRandomDesignLinear (δ : DesignSample s n × EuclideanSpace ℝ (Fin n) → ℝ) : Prop :=
-  ∃ c : DesignSample s n → EuclideanSpace ℝ (Fin n), ∀ a y, δ (a, y) = ⟪c a, y⟫_ℝ
-
-/-- The **joint model of design and response**: the design has the parameter-free law `Q`,
-and given the design the response follows the kernel `K p`. -/
-noncomputable def randomDesignModel (Q : Measure (DesignSample s n))
-    (K : RegressionParam s → Kernel (DesignSample s n) (EuclideanSpace ℝ (Fin n)))
-    (p : RegressionParam s) : Measure (DesignSample s n × EuclideanSpace ℝ (Fin n)) :=
-  Q ⊗ₘ K p
-
-/-- A **best linear unbiased estimator** for a random design: linear, unbiased,
-square-integrable, and of minimal variance at every parameter among the linear unbiased
-estimators. -/
-def IsBLUERandomDesign
-    (P : RegressionParam s → Measure (DesignSample s n × EuclideanSpace ℝ (Fin n)))
-    (g : RegressionParam s → ℝ)
-    (δ : DesignSample s n × EuclideanSpace ℝ (Fin n) → ℝ) : Prop :=
-  IsRandomDesignLinear δ ∧ IsUnbiased P g δ ∧ MemEstL2 P δ ∧
-    ∀ δ', IsRandomDesignLinear δ' → IsUnbiased P g δ' → MemEstL2 P δ' →
-      ∀ p, variance δ (P p) ≤ variance δ' (P p)
-
-/-- **Nonexistence of a best linear unbiased estimator for a random design with known second
-moment** (Shaffer's phenomenon).
-
-**AMENDED STATEMENT** (the printed form is false). The printed hypothesis is only that the
-design law is not a point mass; that is *not* enough. What the classical argument really
-needs is that the design carry a genuinely varying amount of information about the estimated
-functional, and the amendment below says exactly that.
-
-* *What was removed.* `hQ : ∀ a₀, Q ≠ Measure.dirac a₀` (non-Dirac design law).
-* *What was added.* `hinfo`: the **design information for the functional `c`**,
-  `a ↦ cᵀ (A Aᵀ)⁻¹ c` with `A = Matrix.of a`, is not `Q`-almost surely constant; together
-  with `hrank`, which puts the designs in the full-row-rank regime in which `(A Aᵀ)⁻¹` is
-  the genuine Gram inverse rather than Mathlib's junk value `0`. `hinfo` implies the deleted
-  `hQ`, since a Dirac design law has constant information.
-
-* *Why the printed form is false.* Take `s = 1`, `n = 2`, `c = 1`, a nonzero row `a ∈ ℝ²`,
-  `Q = ½·δ_a + ½·δ_{-a}` (not a Dirac, so the printed `hQ` holds) and
-  `K p a = gaussianVector (θ·a) σ²`. For a linear estimator `δ(a, y) = ⟪c(a), y⟫` write
-  `v(a) := (Matrix.of a) *ᵥ c(a)`; the law of total variance gives
-  `variance δ (Q ⊗ₘ K p) = σ²·E_a‖c(a)‖² + θ²·Var_a(v)`, and unbiasedness is `E_a[v] = 1`.
-  Minimizing `‖c(a)‖²` subject to `(Matrix.of a) *ᵥ c(a) = v(a)` gives
-  `‖c(a)‖² ≥ v(a)ᵀ (A Aᵀ)⁻¹ v(a) = v(a)²/‖a‖²`, so
-  `variance δ ≥ σ²·(v(a)² + v(−a)²)/(2‖a‖²) + θ²·Var_a(v)`. The two designs `a` and `−a`
-  have the *same* `‖a‖²`, hence the same information, so both terms are minimized
-  simultaneously at `v(a) = v(−a) = 1`: the conditional least-squares estimator attains the
-  minimum variance at *every* `(θ, σ²)`. A best linear unbiased estimator therefore exists
-  and the printed negation fails. When the information `cᵀ(A Aᵀ)⁻¹c` does vary over the
-  support of `Q`, the `σ²`-term (minimized by the information-weighted `v`) and the
-  `θ²`-term (minimized by the constant `v ≡ c`) are minimized at *different* `v`, and no
-  single linear unbiased estimator is best at all parameters — Shaffer's phenomenon.
-
-DEFERRAL-ELIGIBLE (planned debt): the amended statement is believed true and its classical
-proof is delegated to exercises in the source; it is *not* discharged here. Route, verified
-on paper, with the Lean-level obstructions re-examined (an earlier reading of this note
-overstated two of them):
-
-* If `δ` is a best linear unbiased estimator and `d` is any linear estimator that is
-  unbiased for `0` at every parameter, then `δ + t·d` is linear unbiased for every `t ∈ ℝ`,
-  so `t ↦ variance (δ + t·d)` is a nonnegative-definite quadratic minimized at `t = 0`;
-  hence `covariance δ d (P p) = 0` at every `p` (an orthogonality condition, not merely an
-  inequality — the mean-zero linear estimators form a linear space). In Lean this step is
-  *bilinearity of variance on `L²`*, `ProbabilityTheory.variance_add` and the covariance
-  API; it needs no law of total covariance.
-* Writing `δ(a, y) = ⟪c(a), y⟫`, `v := (Matrix.of a) *ᵥ c(a)` and, for a bounded measurable
-  `ψ` with `E_Q[ψ] = 0`, taking `d(a, y) = ψ(a)·⟪Aᵀ (A Aᵀ)⁻¹ c, y⟫` (which is unbiased for
-  `0` at *every* parameter, since `A *ᵥ Aᵀ (A Aᵀ)⁻¹ c = c` makes its conditional mean
-  `ψ(a)·(θ ⬝ᵥ c)`), the covariance splits as
-  `σ²·E_Q[ψ·⟪c(a), Aᵀ(A Aᵀ)⁻¹c⟫] + E_Q[ψ·(θ ⬝ᵥ v)·(θ ⬝ᵥ c)]`. Both terms must vanish
-  for all `(θ, σ²)` separately (the first is the only one carrying `σ²`). The second forces
-  `v = c` `Q`-a.e. (conditional unbiasedness), and then the first forces
-  `a ↦ cᵀ (A Aᵀ)⁻¹ c` to be `Q`-a.e. constant — contradicting `hinfo`.
-* *Integrability of the perturbation.* `E_Q[cᵀ(A Aᵀ)⁻¹c]` may be infinite, in which case the
-  conditional least-squares estimator is not even in `MemEstL2` and cannot serve as a
-  competitor. The perturbations must therefore be *supported where the information is
-  bounded*: with `E := {a | cᵀ(A Aᵀ)⁻¹c ≤ r}` take `ψ := α·1_{E₁} + β·1_{E₂}` for disjoint
-  `E₁, E₂ ⊆ E` and `α·Q E₁ + β·Q E₂ = 0`. The vanishing of the first term then says that
-  `a ↦ vᵀ(A Aᵀ)⁻¹c` has equal averages over all disjoint subsets of `E`, hence is a.e.
-  constant on `E`, and `r ↑ ∞` globalizes it. No `E_Q`-finiteness hypothesis is needed.
-* *What is genuinely missing for a Lean discharge.* (i) `IsRandomDesignLinear` provides no
-  measurability of the coefficient map `a ↦ c(a)`, and none can be extracted from
-  `MemEstL2` alone (the fibres `{y}` are `K p a`-null, so `δ` determines `c a` only through
-  integrals). The fix is a `Measurable c` conjunct in the existential of
-  `IsRandomDesignLinear`; it is a *minimal* amendment — the definition is used nowhere else
-  in the library, every competitor exhibited above is explicitly measurable, and restricting
-  the candidate class is precisely what a nonexistence statement can afford. (ii) The
-  conditional second-moment identity
-  `E_{Q ⊗ₘ K p}[⟪b(a), Y⟫·⟪b'(a), Y⟫] = ∫ σ²·⟪b, b'⟫ + (θ ⬝ᵥ A b)(θ ⬝ᵥ A b') ∂Q`, i.e.
-  `MeasureTheory.Measure.integral_compProd` plus bilinearity of `covariance` in the fibre,
-  together with the integrability side conditions. (iii) Measurability of
-  `a ↦ (A Aᵀ)⁻¹` (a polynomial adjugate over a measurable determinant) and the extraction
-  of `E₁, E₂` from `hinfo`.
-* *Not* missing, contrary to an earlier reading of this note: conditional square-integrability
-  of the response coordinates. Mathlib's `covariance X Y μ` is the junk-tolerant integral
-  `∫ (X - μ[X])(Y - μ[Y])`, so `hcov` at `i = j` says `∫ (y i - E)² ∂(K p a) = σ² > 0`, and
-  `MeasureTheory.integral_undef` turns that into genuine integrability of `(y i - E)²`, hence
-  `MemLp (fun y => y i) 2 (K p a)` — the hypothesis as stated already carries it. -/
-theorem not_exists_blue_of_known_design_moment
-    (Q : Measure (DesignSample s n)) [IsProbabilityMeasure Q]
-    (K : RegressionParam s → Kernel (DesignSample s n) (EuclideanSpace ℝ (Fin n)))
-    [∀ p, IsMarkovKernel (K p)]
-    -- USER-INPUT: given the design, the response has mean `θ A` (the regression form,
-    -- now conditional on the observed design)
-    (hmean : ∀ p a i, ∫ y, y i ∂(K p a) = designMean (Matrix.of a) p.1 i)
-    -- USER-INPUT: given the design, the response coordinates are uncorrelated with common
-    -- variance σ² (the moment assumptions, now conditional)
-    (hcov : ∀ p a i j, covariance (fun y => y i) (fun y => y j) (K p a)
-      = if i = j then (p.2.1 : ℝ) else 0)
-    -- USER-INPUT (AMENDMENT, regularity): almost every realized design has full row rank
-    -- `s`, the regime of every fixed-design theorem above; outside it `(A Aᵀ)⁻¹` is
-    -- Mathlib's junk value `0` and the information below degenerates
-    (hrank : ∀ᵐ a ∂Q, (Matrix.of a).rank = s)
-    -- USER-INPUT: a nontrivial linear functional of the coefficients is estimated
-    {c : Fin s → ℝ} (hc : c ≠ 0)
-    -- USER-INPUT (AMENDMENT, substantive): the design information for the functional `c`,
-    -- `cᵀ (A Aᵀ)⁻¹ c`, is not almost surely constant. This replaces the printed
-    -- `∀ a₀, Q ≠ Measure.dirac a₀`, which it implies and which is too weak: see the
-    -- `½·δ_a + ½·δ_{-a}` counterexample in the docstring
-    (hinfo : ¬ ∃ κ : ℝ, ∀ᵐ a ∂Q,
-      c ⬝ᵥ ((Matrix.of a * (Matrix.of a)ᵀ)⁻¹ *ᵥ c) = κ) :
-    ¬ ∃ δ, IsBLUERandomDesign (randomDesignModel Q K) (fun p => ∑ i, c i * p.1 i) δ := by
-  -- Documented debt: see the docstring for the amendment, the counterexample invalidating
-  -- the printed form, the perturbation/orthogonality route for the amended form, and the
-  -- two missing bricks (measurable coefficient map; law of total covariance for `⊗ₘ`).
-  sorry
 
 end StatLean.PointEstimation
