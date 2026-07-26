@@ -26,6 +26,14 @@ Differentiable Families), §14.2 (Quadratic Mean Differentiability (q.m.d.)), th
 mean differentiability expansion, in the locally asymptotically normal form used uniformly
 over bounded directions. (`TSH4 §14.2`.)
 
+**Status.** The uniform statement `sup_LAN_remainder_tendsto` below is **false at the
+hypotheses transcribed here** — quadratic-mean differentiability and the pointwise envelope
+condition do not by themselves make the local log-likelihood class Glivenko–Cantelli, and a
+data-dependent direction can defeat the uniformity while every fixed direction behaves. An
+explicit counterexample is recorded at the declaration, together with the regularity
+hypothesis (a.e. continuity of `θ ↦ log p_θ(x)`) that the source uses implicitly and that
+repairs it. Nothing in the library depends on the statement.
+
 **Proof formalization notes.**
 * The supremum over the uncountable ball is avoided at statement level: instead of asserting
   that a (possibly non-measurable) supremum converges in probability, the statement says
@@ -83,7 +91,45 @@ LAN remainder is uniformly small over every bounded set of directions: for every
 has remainder at least `ε` tends to zero.
 
 This is the statement consumed by the likelihood ratio analysis, where the direction is the
-random `ĥₙ = √n(θ̂ₙ − θ₀)`, bounded in probability but not fixed. -/
+random `ĥₙ = √n(θ̂ₙ − θ₀)`, bounded in probability but not fixed.
+
+**WARNING — this statement is FALSE at the hypotheses printed below.** Quadratic-mean
+differentiability and the pointwise envelope condition do *not* imply uniformity in `h`: they
+constrain `θ ↦ log p_θ(x)` only through a *bound*, and leave the class of functions
+`{x ↦ n·(log p_{θ₀ + h/√n}(x) − log p_{θ₀}(x) − ⟪h/√n, ℓ x⟫) : ‖h‖ ≤ c}` completely
+unrestricted apart from the envelope `c²·M`. Such a class need not be Glivenko–Cantelli, and
+then the empirical average over the sample can be far from its mean at a *data-dependent*
+direction `h` even though it converges for every fixed one. A counterexample:
+
+* `𝓧 = ℝ`, `μ` Lebesgue measure, `k = 1`, base law `P_{θ₀}` uniform on `[0,1]` with score
+  `ℓ x = x − 1/2` (so `E_{θ₀}[ℓ] = 0` and `J = 1/12 > 0`), and the exponential-family core
+  `q_θ(x) = p_{θ₀}(x)·exp((θ−θ₀)·ℓ x)/Z₀(θ)`.
+* Fix a bijection `s ↦ A_s` from `(0, c]` onto the finite subsets of `ℝ`, arranged so that for
+  every `n` and every `n`-element set `S` there is `h ∈ (c√n/√(n+1), c]` with
+  `A_{h/√n} = S` (possible: both sides have the cardinality of the continuum), and put
+  `p_θ(x) = q_θ(x)·exp(|θ−θ₀|²·(2·1_{A_{|θ−θ₀|}}(x) − 1))/Z(θ)`.
+  Every `p_θ` is Borel and normalized, the envelope condition holds with the *constant*
+  `Menv ≡ 2`, and the model is q.m.d. at `θ₀` with score `ℓ` and information `J` — the
+  perturbation is `O(|θ−θ₀|²)` uniformly, hence `o(|θ−θ₀|)` in `L²`.
+* For each **fixed** `h`, the set `A_{|h|/√n}` is a fixed finite set, which the sample misses
+  almost surely (the base law is atomless), so the perturbation contributes exactly its mean
+  and `lanRemainder M θ₀ ℓ J h n = 0` almost surely: the fixed-`h` expansion
+  (`AsymptoticRepresentation.lanResidual_tendsto_productMeasure`) holds, as it must.
+* But for **each `n`**, on the almost-sure event that `ω₁, …, ωₙ` are distinct, the direction
+  `h(ω)` with `A_{|h(ω)|/√n} = {ω₁, …, ωₙ}` satisfies `‖h(ω)‖ ≤ c` and
+  `lanRemainder M θ₀ ℓ J (h ω) n ω = 2‖h ω‖² ≥ 2c²·n/(n+1)`.
+  So for `ε < c²` the probability in the conclusion tends to `1`, not to `0`.
+
+What is missing is a regularity hypothesis making that class manageable — in the source, the
+densities are (implicitly) jointly measurable and continuous in `θ` for a.e. `x`, which with
+the integrable envelope makes the class Glivenko–Cantelli over compacts and restores
+uniformity. Adding that hypothesis and proving the amended statement needs a
+triangular-array Glivenko–Cantelli theorem, which the library does not have (the closest
+statement, `LindebergCLT.triangular_wlln_of_L1`, is itself open and is only the
+*fixed-function* weak law). The statement is therefore left as printed, with this warning;
+it is not used anywhere in the library.
+
+Sanctioned lifted sorry — **false as stated**, see the counterexample above. -/
 theorem sup_LAN_remainder_tendsto
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     -- LEAN-ONLY: instance plumbing for the i.i.d. laws; forced by `hPDF` through
