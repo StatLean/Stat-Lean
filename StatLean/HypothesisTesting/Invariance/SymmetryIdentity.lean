@@ -85,6 +85,32 @@ theorem measurable_signFlip {N : ℕ} (ε : Fin N → Bool) :
       funext z; simp only [signFlip, if_neg h]
     rw [this]; exact measurable_pi_apply i
 
+/-- **Named deferral (completeness step).** For a symmetric critical function calibrated on
+continuous symmetric distributions, the *average of `φ` over the `2^N` sign patterns* equals
+`α` off a `Q`-null set. This is the completeness-style content flagged in the module note:
+under an i.i.d. continuous symmetric `D` the conditional law of the signs given the absolute
+values is uniform over the `2^N` patterns (continuity kills ties, symmetry makes each pattern
+equally likely), so `hnull` forces the sign-average — a function of the absolute values — to
+be `α` for the rich class of such `D`, and completeness of that class collapses it to `α`.
+
+It is isolated as a separate lemma so the gap stays visible; the headline
+`integral_eq_of_sign_invariant` is proved from it by an exact change-of-variables average
+(no further gap). Not proved here: the completeness argument itself is not available from
+Mathlib v4.29.1 (it needs the conditional-uniformity-of-signs disintegration and completeness
+of the family of continuous symmetric product measures). -/
+private theorem signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ) → ℝ}
+    (hφ : IsCriticalFn φ)
+    (hsym : ∀ (σ : Equiv.Perm (Fin N)) (z : Fin N → ℝ), φ (z ∘ σ) = φ z)
+    (hnull : ∀ D : Measure ℝ, IsProbabilityMeasure D → (∀ t : ℝ, D {t} = 0) →
+      D.map (fun t => -t) = D →
+      ∫ z, φ z ∂(Measure.pi fun _ : Fin N => D) = α)
+    {Q : Measure (Fin N → ℝ)} [IsProbabilityMeasure Q]
+    (hQ : ∀ ε : Fin N → Bool, Q.map (signFlip ε) = Q) :
+    (fun z => (Fintype.card (Fin N → Bool) : ℝ)⁻¹ *
+        ∑ ε : Fin N → Bool, φ (signFlip ε z)) =ᵐ[Q] (fun _ => α) := by
+  -- TODO: completeness of the continuous-symmetric family + conditional-uniformity of signs.
+  sorry
+
 /-- **A symmetric test calibrated on continuous symmetric distributions keeps its level
 under any sign-change-invariant law.** If a symmetric critical function has mean `α` under
 every i.i.d. sample from a continuous distribution symmetric about the origin, then it has
@@ -104,6 +130,35 @@ theorem integral_eq_of_sign_invariant {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
     -- USER-INPUT: the joint law is unchanged by all `2^N` coordinatewise sign changes
     (hQ : ∀ ε : Fin N → Bool, Q.map (signFlip ε) = Q) :
     ∫ z, φ z ∂Q = α := by
-  sorry
+  have hφmeas : Measurable φ := hφ.1
+  -- `φ` and each of its sign-translates are bounded by `1`, hence `Q`-integrable.
+  have hbound : ∀ (f : (Fin N → ℝ) → ℝ), Measurable f → (∀ z, f z ∈ Set.Icc (0 : ℝ) 1) →
+      Integrable f Q := by
+    intro f hfm hfb
+    refine (integrable_const (1 : ℝ)).mono' hfm.aestronglyMeasurable (ae_of_all _ ?_)
+    intro z; rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [(hfb z).1], (hfb z).2⟩
+  have hInt : Integrable φ Q := hbound φ hφmeas hφ.2
+  have hIntg : ∀ ε : Fin N → Bool, Integrable (fun z => φ (signFlip ε z)) Q := fun ε =>
+    hbound _ (hφmeas.comp (measurable_signFlip ε)) (fun z => hφ.2 _)
+  -- each sign change is `Q`-measure preserving, so it leaves the integral of `φ` unchanged.
+  have hEach : ∀ ε : Fin N → Bool, ∫ z, φ (signFlip ε z) ∂Q = ∫ z, φ z ∂Q := by
+    intro ε
+    have h : ∫ y, φ y ∂(Q.map (signFlip ε)) = ∫ z, φ (signFlip ε z) ∂Q :=
+      integral_map (measurable_signFlip ε).aemeasurable hφmeas.aestronglyMeasurable
+    rw [hQ ε] at h; exact h.symm
+  -- the average over the `2^N` patterns has the same `Q`-integral as `φ` itself.
+  set M : ℝ := (Fintype.card (Fin N → Bool) : ℝ) with hMdef
+  have hMne : M ≠ 0 := by
+    rw [hMdef]; exact_mod_cast Fintype.card_ne_zero
+  have hAvg : ∫ z, M⁻¹ * ∑ ε : Fin N → Bool, φ (signFlip ε z) ∂Q = ∫ z, φ z ∂Q := by
+    rw [integral_const_mul, integral_finset_sum Finset.univ (fun ε _ => hIntg ε)]
+    rw [Finset.sum_congr rfl (fun ε _ => hEach ε), Finset.sum_const, Finset.card_univ,
+      nsmul_eq_mul, ← hMdef, ← mul_assoc, inv_mul_cancel₀ hMne, one_mul]
+  -- the deferred completeness step makes that average `α` off a `Q`-null set.
+  have hConst : ∫ z, M⁻¹ * ∑ ε : Fin N → Bool, φ (signFlip ε z) ∂Q = α := by
+    rw [hMdef, integral_congr_ae (signAverage_ae_eq_const hφ hsym hnull hQ)]
+    simp
+  rw [← hAvg, hConst]
 
 end StatLean.HypothesisTesting
