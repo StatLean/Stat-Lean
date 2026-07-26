@@ -105,8 +105,11 @@ lemma lintegral_ofReal_sq_min {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω
     rw [hinf m, hinf w]
 
 /-- A convex function on the line that is not antitone blows up at `+∞`: from a strictly
-increasing secant, convexity forces a positive linear minorant. -/
-private lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
+increasing secant, convexity forces a positive linear minorant.
+
+Not `private`: the scale twin `ScaleMRE` reuses it for the logarithmic reparametrization
+`v ↦ γ(eᵛ)` of a scale loss. -/
+lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
     (hconv : ConvexOn ℝ Set.univ ρ) (hna : ¬ Antitone ρ) :
     Filter.Tendsto ρ Filter.atTop Filter.atTop := by
   obtain ⟨a, b, hab, hlt⟩ : ∃ a b : ℝ, a < b ∧ ρ a < ρ b := by
@@ -134,8 +137,10 @@ private lemma tendsto_atTop_of_convex_not_antitone {ρ : ℝ → ℝ}
   filter_upwards [Filter.eventually_gt_atTop b] with x hx using hlb x hx
 
 /-- A convex function on the line that is not monotone blows up at `−∞` (the reflection of
-`tendsto_atTop_of_convex_not_antitone`). -/
-private lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
+`tendsto_atTop_of_convex_not_antitone`).
+
+Not `private`: reused by the scale twin `ScaleMRE`, as its companion above. -/
+lemma tendsto_atBot_of_convex_not_monotone {ρ : ℝ → ℝ}
     (hconv : ConvexOn ℝ Set.univ ρ) (hnm : ¬ Monotone ρ) :
     Filter.Tendsto ρ Filter.atBot Filter.atTop := by
   have hconv' : ConvexOn ℝ Set.univ (fun x => ρ (-x)) := by
