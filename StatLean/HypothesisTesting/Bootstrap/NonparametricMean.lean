@@ -132,7 +132,8 @@ private lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMea
   set f := ProbabilityTheory.cdf ν with hf
   refine continuous_iff_continuousAt.2 (fun x => ?_)
   have hleft : Function.leftLim f x = f x := by
-    have hsing : f.measure {x} = 0 := by rw [ProbabilityTheory.measure_cdf]; exact measure_singleton x
+    have hsing : f.measure {x} = 0 := by
+      rw [ProbabilityTheory.measure_cdf]; exact measure_singleton x
     have hval := f.measure_singleton x
     rw [hsing] at hval
     have hle : Function.leftLim f x ≤ f x := f.mono.leftLim_le le_rfl
@@ -157,7 +158,8 @@ private lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Cont
   continuous_toReal_measure_Iic (gaussianReal m v)
 
 /-- The standard normal distribution function is continuous. -/
-private lemma continuous_stdNormalCDF : Continuous stdNormalCDF := continuous_normalCDF 0 one_ne_zero
+private lemma continuous_stdNormalCDF : Continuous stdNormalCDF :=
+  continuous_normalCDF 0 one_ne_zero
 
 /-- A nondegenerate normal distribution function is strictly increasing. -/
 private lemma strictMono_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : StrictMono (normalCDF m v) := by
