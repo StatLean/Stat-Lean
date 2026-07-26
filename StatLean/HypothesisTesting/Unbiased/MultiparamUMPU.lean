@@ -114,6 +114,382 @@ noncomputable def condOutsideTest (C₁ C₂ γ₁ γ₂ : Ξ → ℝ) : ℝ × 
     else if z.1 = C₁ z.2 then γ₁ z.2
     else if z.1 = C₂ z.2 then γ₂ z.2 else 0
 
+/-! ## ⚠ The four optimality statements are FALSE as stated: an explicit counterexample
+
+`IsCanonicalUT P Ω U T ν C` constrains **only the law of the pair `(U, T)`**; it says nothing
+about the rest of the sample space `𝓧`. `IsUMPU`, on the other hand, demands optimality
+against *every* critical function on `𝓧`. So as soon as `𝓧` carries information about the
+parameter of interest that `(U, T)` does not see, a test built from `(U, T)` alone loses.
+Taking `U` and `T` **constant** makes `IsCanonicalUT` hold vacuously (with `ν` a Dirac mass
+and `C ≡ 1`) while leaving `P` completely free, which is the counterexample below:
+
+* `𝓧 = Bool`, `Ξ = ℝ`, `U ≡ 0`, `T ≡ 0`, `ν = δ₍₀,₀₎`, `C ≡ 1`, `Ω = univ`, `α = 1/2`;
+* `P p =` the Dirac mass at `true` when `p` is in the alternative set, the fair coin
+  otherwise;
+* the conditional test with `C₀ ≡ 0` and boundary weight `γ₀ ≡ 1/2` is the **constant**
+  `1/2`, and its conditional size is `1/2 = α` on every surface, so all hypotheses hold;
+* but `ψ = 1{bit = true}` is a critical function, unbiased at level `1/2` (power `1/2` on the
+  null set, power `1` on the alternative), and strictly beats the conditional test.
+
+The construction is uniform in the alternative set, so the *same* family refutes all four
+theorems (`_oneSided`, `_inside`, `_outside`, `_point`); the four refutations are
+`not_isUMPU_conditional_oneSided_counterexample` and its siblings below.
+
+**REPAIR.** The source (TSH4 §4.4 Thm 4.4.1) states the theorem for the model *of the
+sufficient statistic*: there `𝓧` **is** the range of `(U, T)`. The minimal repair is either
+to specialize `𝓧 = ℝ × Ξ` with `U = Prod.fst`, `T = Prod.snd`, or to add the hypothesis that
+`(U, T)` is sufficient for `P` on `Ω` (and then transport optimality along the sufficiency
+reduction). The repair is *not* applied here: public signatures are frozen for this pass.
+
+Two further gaps would remain even after that repair, and are recorded at the theorems: the
+boundary device needs the power functions to be continuous, which for exponential families
+requires finite-dimensionality of `Ξ` (see the counterexample in
+`PowerContinuity.continuous_power_expFamily`) and `Ω` inside the interior of the natural
+parameter set; and the step from similarity to Neyman structure needs completeness of the
+laws of `T` on each boundary slice, available in the repository only for
+`EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`).
+-/
+
+namespace ConditionalUMPUCounterexample
+
+/-- Interest statistic of the counterexample: constant, hence carrying no information. -/
+def cxU : Bool → ℝ := fun _ => 0
+
+/-- Nuisance statistic of the counterexample: constant. -/
+def cxT : Bool → ℝ := fun _ => 0
+
+lemma measurable_cxU : Measurable cxU := measurable_const
+
+lemma measurable_cxT : Measurable cxT := measurable_const
+
+/-- The fair coin on `Bool`. -/
+noncomputable def cxCoin : Measure Bool :=
+  (1 / 2 : ℝ≥0∞) • Measure.dirac true + (1 / 2 : ℝ≥0∞) • Measure.dirac false
+
+instance : IsProbabilityMeasure cxCoin := by
+  refine ⟨?_⟩
+  simp only [cxCoin, Measure.coe_add, Pi.add_apply, Measure.coe_smul, Pi.smul_apply,
+    measure_univ, smul_eq_mul, mul_one]
+  exact ENNReal.add_halves 1
+
+lemma cxCoin_true : cxCoin {true} = 1 / 2 := by simp [cxCoin]
+
+open Classical in
+/-- The model: an auxiliary bit which is deterministically `true` on the alternative set `K`
+and a fair coin elsewhere. The statistic `(U, T)` is blind to it. -/
+noncomputable def cxP (K : Set (ℝ × ℝ)) : ℝ × ℝ → Measure Bool :=
+  fun p => if p ∈ K then Measure.dirac true else cxCoin
+
+instance cxP_isProbabilityMeasure (K : Set (ℝ × ℝ)) (p : ℝ × ℝ) :
+    IsProbabilityMeasure (cxP K p) := by
+  rw [cxP]; split <;> infer_instance
+
+/-- The base measure of the counterexample: the Dirac mass at the only value `(U, T)`
+takes. -/
+noncomputable def cxν : Measure (ℝ × ℝ) := Measure.dirac (0, 0)
+
+/-- The competitor: reject exactly when the auxiliary bit is `true`. -/
+def cxψ : Bool → ℝ := fun b => if b then 1 else 0
+
+/-- **The canonical form holds vacuously.** With a constant statistic the law of `(U, T)` is
+a Dirac mass for every parameter, and the canonical density evaluates to `1` there. -/
+theorem isCanonicalUT_cx (K : Set (ℝ × ℝ)) :
+    IsCanonicalUT (cxP K) Set.univ cxU cxT cxν (fun _ => 1) := by
+  intro p _
+  have hmap : (cxP K p).map (fun x => (cxU x, cxT x)) = Measure.dirac ((0 : ℝ), (0 : ℝ)) := by
+    simp only [cxU, cxT]
+    rw [Measure.map_const, measure_univ, one_smul]
+  have hae : (fun z : ℝ × ℝ => ENNReal.ofReal (1 * Real.exp (p.1 * z.1 + ⟪p.2, z.2⟫_ℝ)))
+      =ᵐ[Measure.dirac ((0 : ℝ), (0 : ℝ))] 1 := by
+    rw [ae_dirac_eq]
+    refine Filter.eventually_pure.mpr ?_
+    simp
+  rw [hmap, cxν, withDensity_congr_ae hae, withDensity_one]
+
+/-- **The conditional size of any test is its value at the single atom.** The disintegration
+identity `integral_eq_integral_condDistrib` computes the conditional size without identifying
+the conditional distribution: the law of `T` is a Dirac mass, so the average of the
+conditional sizes *is* the conditional size, and it equals the (constant) unconditional
+power. -/
+theorem condSize_cx (K : Set (ℝ × ℝ)) (p : ℝ × ℝ) (ψ : ℝ × ℝ → ℝ) (hψ : Measurable ψ)
+    (v : ℝ) (hv : ψ (0, 0) = v) :
+    ∀ᵐ t ∂((cxP K p).map cxT),
+      ∫ u, ψ (u, t) ∂(condDistrib cxU cxT (cxP K p) t) = v := by
+  have hcxT : cxT = fun _ : Bool => (0 : ℝ) := rfl
+  have hmapT : (cxP K p).map cxT = Measure.dirac (0 : ℝ) := by
+    rw [hcxT, Measure.map_const, measure_univ, one_smul]
+  have hdis := integral_eq_integral_condDistrib (P := cxP K) (U := cxU) (T := cxT) (p := p)
+    (φ := ψ) measurable_cxU measurable_cxT hψ
+    (by simp only [cxU, cxT]; exact integrable_const _)
+  have hLHS : ∫ x, ψ (cxU x, cxT x) ∂(cxP K p) = v := by
+    simp only [cxU, cxT, hv]
+    rw [integral_const, measureReal_def, measure_univ, ENNReal.toReal_one, one_smul]
+  rw [hmapT] at hdis ⊢
+  rw [integral_dirac] at hdis
+  rw [ae_dirac_eq]
+  exact Filter.eventually_pure.mpr (hdis.symm.trans hLHS)
+
+/-- On the alternative set the competitor has power `1`. -/
+theorem power_cxψ_mem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∈ K) :
+    power (cxP K) cxψ p = 1 := by
+  have hP : cxP K p = Measure.dirac true := by simp only [cxP, if_pos h]
+  rw [power, hP, integral_dirac]
+  simp [cxψ]
+
+/-- Off the alternative set the competitor has power `1/2`. -/
+theorem power_cxψ_notMem {K : Set (ℝ × ℝ)} {p : ℝ × ℝ} (h : p ∉ K) :
+    power (cxP K) cxψ p = 1 / 2 := by
+  have hP : cxP K p = cxCoin := by simp only [cxP, if_neg h]
+  have hint : Integrable cxψ cxCoin := Integrable.of_finite
+  rw [power, hP, integral_fintype hint]
+  simp only [Fintype.sum_bool, cxψ, if_true, if_false, smul_eq_mul, mul_one, mul_zero,
+    add_zero]
+  rw [measureReal_def, cxCoin_true]
+  norm_num
+
+/-- A constant test has constant power. -/
+theorem power_const_cx (K : Set (ℝ × ℝ)) (v : ℝ) (p : ℝ × ℝ) :
+    power (cxP K) (fun _ => v) p = v := by
+  rw [power, integral_const, measureReal_def, measure_univ, ENNReal.toReal_one, one_smul]
+
+/-- **The refutation engine.** In the counterexample family, a conditional test that is
+constantly equal to the level `α < 1` cannot be UMP unbiased: the auxiliary-bit test is
+unbiased and has power `1` on the alternative. -/
+theorem not_isUMPU_cx {K Θ₀ Θ₁ : Set (ℝ × ℝ)} {α : ℝ} {φ : Bool → ℝ}
+    (hα : α = 1 / 2) (hφc : ∀ x, φ x = α)
+    (hnull : ∀ q ∈ Θ₀, q ∉ K) (halt : Θ₁ ⊆ K) {q₁ : ℝ × ℝ} (hq₁ : q₁ ∈ Θ₁) :
+    ¬ IsUMPU (cxP K) Θ₀ Θ₁ α φ := by
+  classical
+  intro h
+  have hψcrit : IsCriticalFn cxψ :=
+    ⟨Measurable.of_discrete, fun b => by cases b <;> norm_num [cxψ]⟩
+  have hψunb : IsUnbiasedTest (cxP K) Θ₀ Θ₁ α cxψ := by
+    constructor
+    · intro q hq
+      rw [power_cxψ_notMem (hnull q hq)]
+      linarith
+    · intro q hq
+      rw [power_cxψ_mem (halt hq)]
+      linarith
+  have hcmp := h.2.2 cxψ hψcrit hψunb q₁ hq₁
+  rw [power_cxψ_mem (halt hq₁)] at hcmp
+  have hpow : power (cxP K) φ q₁ = α := by
+    have : φ = fun _ => α := funext hφc
+    rw [this, power_const_cx]
+  rw [hpow] at hcmp
+  linarith
+
+/-! ### The constants of the counterexample and the four refutations -/
+
+/-- Threshold of the counterexample's conditional test. -/
+def cxC₀ : ℝ → ℝ := fun _ => 0
+
+/-- Boundary weight of the counterexample's conditional test. -/
+noncomputable def cxγ₀ : ℝ → ℝ := fun _ => 1 / 2
+
+lemma measurable_cxC₀ : Measurable cxC₀ := measurable_const
+
+lemma measurable_cxγ₀ : Measurable cxγ₀ := measurable_const
+
+lemma cxγ₀_mem (t : ℝ) : cxγ₀ t ∈ Set.Icc (0 : ℝ) 1 := by
+  constructor <;> norm_num [cxγ₀]
+
+lemma cxC₀_le (t : ℝ) : cxC₀ t ≤ cxC₀ t := le_rfl
+
+private lemma measurableSet_cx_pos : MeasurableSet {z : ℝ × ℝ | (0 : ℝ) < z.1} :=
+  measurableSet_lt measurable_const measurable_fst
+
+private lemma measurableSet_cx_neg : MeasurableSet {z : ℝ × ℝ | z.1 < (0 : ℝ)} :=
+  measurableSet_lt measurable_fst measurable_const
+
+private lemma measurableSet_cx_eq : MeasurableSet {z : ℝ × ℝ | z.1 = (0 : ℝ)} :=
+  measurableSet_eq_fun measurable_fst measurable_const
+
+lemma measurable_cxOneSided : Measurable (condOneSidedTest cxC₀ cxγ₀) := by
+  have h : condOneSidedTest cxC₀ cxγ₀
+      = fun z : ℝ × ℝ => if (0 : ℝ) < z.1 then 1 else if z.1 = 0 then 1 / 2 else 0 := rfl
+  rw [h]
+  exact Measurable.ite measurableSet_cx_pos measurable_const
+    (Measurable.ite measurableSet_cx_eq measurable_const measurable_const)
+
+lemma measurable_cxInside : Measurable (condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀) := by
+  have h : condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀
+      = fun z : ℝ × ℝ => if (0 : ℝ) < z.1 ∧ z.1 < 0 then 1
+        else if z.1 = 0 then 1 / 2 else if z.1 = 0 then 1 / 2 else 0 := rfl
+  rw [h]
+  exact Measurable.ite (measurableSet_cx_pos.inter measurableSet_cx_neg) measurable_const
+    (Measurable.ite measurableSet_cx_eq measurable_const
+      (Measurable.ite measurableSet_cx_eq measurable_const measurable_const))
+
+lemma measurable_cxOutside : Measurable (condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀) := by
+  have h : condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀
+      = fun z : ℝ × ℝ => if z.1 < 0 ∨ (0 : ℝ) < z.1 then 1
+        else if z.1 = 0 then 1 / 2 else if z.1 = 0 then 1 / 2 else 0 := rfl
+  rw [h]
+  exact Measurable.ite (measurableSet_cx_neg.union measurableSet_cx_pos) measurable_const
+    (Measurable.ite measurableSet_cx_eq measurable_const
+      (Measurable.ite measurableSet_cx_eq measurable_const measurable_const))
+
+lemma cxOneSided_val : condOneSidedTest cxC₀ cxγ₀ ((0 : ℝ), (0 : ℝ)) = 1 / 2 := by
+  norm_num [condOneSidedTest, cxC₀, cxγ₀]
+
+lemma cxInside_val : condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0 : ℝ)) = 1 / 2 := by
+  norm_num [condInsideTest, cxC₀, cxγ₀]
+
+lemma cxOutside_val : condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0 : ℝ)) = 1 / 2 := by
+  norm_num [condOutsideTest, cxC₀, cxγ₀]
+
+/-- **`isUMPU_conditional_oneSided` is false as stated.** Every hypothesis of that theorem is
+satisfied by the counterexample family (with `θ₀ = 0`, `α = 1/2`, `Ω = univ`), yet the
+conclusion fails. -/
+theorem not_isUMPU_conditional_oneSided_counterexample :
+    Measurable cxU ∧ Measurable cxT ∧
+      IsCanonicalUT (cxP {p : ℝ × ℝ | 0 < p.1}) Set.univ cxU cxT cxν (fun _ => 1) ∧
+      Convex ℝ (Set.univ : Set (ℝ × ℝ)) ∧
+      Submodule.span ℝ (Set.univ : Set (ℝ × ℝ)) = ⊤ ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 0) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (0 : ℝ) < p.1) ∧
+      (0 : ℝ) < 1 / 2 ∧ (1 : ℝ) / 2 < 1 ∧
+      Measurable cxC₀ ∧ Measurable cxγ₀ ∧ (∀ t, cxγ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
+      (∀ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 = 0 →
+        ∀ᵐ t ∂((cxP {p : ℝ × ℝ | 0 < p.1} p).map cxT),
+          ∫ u, condOneSidedTest cxC₀ cxγ₀ (u, t)
+            ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | 0 < p.1} p) t) = 1 / 2) ∧
+      ¬ IsUMPU (cxP {p : ℝ × ℝ | 0 < p.1})
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | p.1 ≤ 0}
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | (0 : ℝ) < p.1} (1 / 2)
+          (fun x => condOneSidedTest cxC₀ cxγ₀ (cxU x, cxT x)) := by
+  refine ⟨measurable_cxU, measurable_cxT, isCanonicalUT_cx _, convex_univ, by simp,
+    ⟨(-1, 0), Set.mem_univ _, by norm_num⟩, ⟨(1, 0), Set.mem_univ _, by norm_num⟩,
+    by norm_num, by norm_num,
+    measurable_cxC₀, measurable_cxγ₀, cxγ₀_mem, fun p _ _ =>
+      condSize_cx _ p _ measurable_cxOneSided _ cxOneSided_val, ?_⟩
+  refine not_isUMPU_cx rfl (fun x => ?_) (fun q hq => ?_) (fun q hq => hq.2)
+    (q₁ := (1, 0)) ⟨Set.mem_univ _, by norm_num⟩
+  · simpa [cxU, cxT] using cxOneSided_val
+  · simpa using not_lt.mpr hq.2
+
+/-- **`isUMPU_conditional_inside` is false as stated**, by the same counterexample family
+(here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{0 < θ < 1}`). -/
+theorem not_isUMPU_conditional_inside_counterexample :
+    Measurable cxU ∧ Measurable cxT ∧
+      IsCanonicalUT (cxP {p : ℝ × ℝ | 0 < p.1 ∧ p.1 < 1}) Set.univ cxU cxT cxν (fun _ => 1) ∧
+      Convex ℝ (Set.univ : Set (ℝ × ℝ)) ∧
+      Submodule.span ℝ (Set.univ : Set (ℝ × ℝ)) = ⊤ ∧
+      (0 : ℝ) < 1 ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 0) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (0 : ℝ) < p.1) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 1) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (1 : ℝ) < p.1) ∧
+      (0 : ℝ) < 1 / 2 ∧ (1 : ℝ) / 2 < 1 ∧
+      Measurable cxC₀ ∧ Measurable cxγ₀ ∧ (∀ t, cxγ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
+      (∀ t, cxC₀ t ≤ cxC₀ t) ∧
+      (∀ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 = 0 ∨ p.1 = 1 →
+        ∀ᵐ t ∂((cxP {p : ℝ × ℝ | 0 < p.1 ∧ p.1 < 1} p).map cxT),
+          ∫ u, condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (u, t)
+            ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | 0 < p.1 ∧ p.1 < 1} p) t) = 1 / 2) ∧
+      ¬ IsUMPU (cxP {p : ℝ × ℝ | 0 < p.1 ∧ p.1 < 1})
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | p.1 ≤ 0 ∨ 1 ≤ p.1}
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | (0 : ℝ) < p.1 ∧ p.1 < 1} (1 / 2)
+          (fun x => condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (cxU x, cxT x)) := by
+  refine ⟨measurable_cxU, measurable_cxT, isCanonicalUT_cx _, convex_univ, by simp,
+    by norm_num, ⟨(-1, 0), Set.mem_univ _, by norm_num⟩,
+    ⟨(1, 0), Set.mem_univ _, by norm_num⟩, ⟨(0, 0), Set.mem_univ _, by norm_num⟩,
+    ⟨(2, 0), Set.mem_univ _, by norm_num⟩, by norm_num, by norm_num,
+    measurable_cxC₀, measurable_cxγ₀, cxγ₀_mem, cxC₀_le, fun p _ _ =>
+      condSize_cx _ p _ measurable_cxInside _ cxInside_val, ?_⟩
+  refine not_isUMPU_cx rfl (fun x => ?_) (fun q hq => ?_) (fun q hq => hq.2)
+    (q₁ := (1 / 2, 0)) ⟨Set.mem_univ _, by norm_num⟩
+  · simpa [cxU, cxT] using cxInside_val
+  · rcases hq.2 with h | h
+    · exact fun hmem => absurd hmem.1 (not_lt.mpr h)
+    · exact fun hmem => absurd hmem.2 (not_lt.mpr h)
+
+/-- **`isUMPU_conditional_outside` is false as stated**, by the same counterexample family
+(here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{θ < 0 ∨ 1 < θ}`). -/
+theorem not_isUMPU_conditional_outside_counterexample :
+    Measurable cxU ∧ Measurable cxT ∧
+      IsCanonicalUT (cxP {p : ℝ × ℝ | p.1 < 0 ∨ 1 < p.1}) Set.univ cxU cxT cxν (fun _ => 1) ∧
+      Convex ℝ (Set.univ : Set (ℝ × ℝ)) ∧
+      Submodule.span ℝ (Set.univ : Set (ℝ × ℝ)) = ⊤ ∧
+      (0 : ℝ) < 1 ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 0) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (0 : ℝ) < p.1) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 1) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (1 : ℝ) < p.1) ∧
+      (0 : ℝ) < 1 / 2 ∧ (1 : ℝ) / 2 < 1 ∧
+      Measurable cxC₀ ∧ Measurable cxγ₀ ∧ (∀ t, cxγ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
+      (∀ t, cxC₀ t ≤ cxC₀ t) ∧
+      (∀ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 = 0 ∨ p.1 = 1 →
+        ∀ᵐ t ∂((cxP {p : ℝ × ℝ | p.1 < 0 ∨ 1 < p.1} p).map cxT),
+          ∫ u, condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (u, t)
+            ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 < 0 ∨ 1 < p.1} p) t) = 1 / 2) ∧
+      ¬ IsUMPU (cxP {p : ℝ × ℝ | p.1 < 0 ∨ 1 < p.1})
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | (0 : ℝ) ≤ p.1 ∧ p.1 ≤ 1}
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | p.1 < 0 ∨ 1 < p.1} (1 / 2)
+          (fun x => condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (cxU x, cxT x)) := by
+  refine ⟨measurable_cxU, measurable_cxT, isCanonicalUT_cx _, convex_univ, by simp,
+    by norm_num, ⟨(-1, 0), Set.mem_univ _, by norm_num⟩,
+    ⟨(1, 0), Set.mem_univ _, by norm_num⟩, ⟨(0, 0), Set.mem_univ _, by norm_num⟩,
+    ⟨(2, 0), Set.mem_univ _, by norm_num⟩, by norm_num, by norm_num,
+    measurable_cxC₀, measurable_cxγ₀, cxγ₀_mem, cxC₀_le, fun p _ _ =>
+      condSize_cx _ p _ measurable_cxOutside _ cxOutside_val, ?_⟩
+  refine not_isUMPU_cx rfl (fun x => ?_) (fun q hq => ?_) (fun q hq => hq.2)
+    (q₁ := (2, 0)) ⟨Set.mem_univ _, by norm_num⟩
+  · simpa [cxU, cxT] using cxOutside_val
+  · rintro (h | h)
+    · exact absurd hq.2.1 (not_le.mpr h)
+    · exact absurd hq.2.2 (not_le.mpr h)
+
+/-- **`isUMPU_conditional_point` is false as stated**, by the same counterexample family
+(here `θ₀ = 0`, `α = 1/2`); note that the conditional derivative condition `hderiv` also
+holds, both sides being `0` because the interest statistic is constant `0`. -/
+theorem not_isUMPU_conditional_point_counterexample :
+    Measurable cxU ∧ Measurable cxT ∧
+      IsCanonicalUT (cxP {p : ℝ × ℝ | p.1 ≠ 0}) Set.univ cxU cxT cxν (fun _ => 1) ∧
+      Convex ℝ (Set.univ : Set (ℝ × ℝ)) ∧
+      Submodule.span ℝ (Set.univ : Set (ℝ × ℝ)) = ⊤ ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 < 0) ∧
+      (∃ p ∈ (Set.univ : Set (ℝ × ℝ)), (0 : ℝ) < p.1) ∧
+      (0 : ℝ) < 1 / 2 ∧ (1 : ℝ) / 2 < 1 ∧
+      Measurable cxC₀ ∧ Measurable cxγ₀ ∧ (∀ t, cxγ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
+      (∀ t, cxC₀ t ≤ cxC₀ t) ∧
+      (∀ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 = 0 →
+        ∀ᵐ t ∂((cxP {p : ℝ × ℝ | p.1 ≠ 0} p).map cxT),
+          ∫ u, condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (u, t)
+            ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 ≠ 0} p) t) = 1 / 2) ∧
+      (∀ p ∈ (Set.univ : Set (ℝ × ℝ)), p.1 = 0 →
+        ∀ᵐ t ∂((cxP {p : ℝ × ℝ | p.1 ≠ 0} p).map cxT),
+          ∫ u, u * condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (u, t)
+              ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 ≠ 0} p) t)
+            = 1 / 2 * ∫ u, u ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 ≠ 0} p) t)) ∧
+      ¬ IsUMPU (cxP {p : ℝ × ℝ | p.1 ≠ 0})
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | p.1 = 0}
+          {p ∈ (Set.univ : Set (ℝ × ℝ)) | p.1 ≠ 0} (1 / 2)
+          (fun x => condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (cxU x, cxT x)) := by
+  have hderiv : ∀ p : ℝ × ℝ, ∀ᵐ t ∂((cxP {p : ℝ × ℝ | p.1 ≠ 0} p).map cxT),
+      ∫ u, u * condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ (u, t)
+          ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 ≠ 0} p) t)
+        = 1 / 2 * ∫ u, u ∂(condDistrib cxU cxT (cxP {p : ℝ × ℝ | p.1 ≠ 0} p) t) := by
+    intro p
+    have h₁ := condSize_cx {p : ℝ × ℝ | p.1 ≠ 0} p
+      (fun z => z.1 * condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ z)
+      (measurable_fst.mul measurable_cxOutside) 0 (by simp)
+    have h₂ := condSize_cx {p : ℝ × ℝ | p.1 ≠ 0} p (fun z => z.1) measurable_fst 0 rfl
+    filter_upwards [h₁, h₂] with t ht₁ ht₂
+    rw [ht₁, ht₂, mul_zero]
+  refine ⟨measurable_cxU, measurable_cxT, isCanonicalUT_cx _, convex_univ, by simp,
+    ⟨(-1, 0), Set.mem_univ _, by norm_num⟩, ⟨(1, 0), Set.mem_univ _, by norm_num⟩,
+    by norm_num, by norm_num,
+    measurable_cxC₀, measurable_cxγ₀, cxγ₀_mem, cxC₀_le, fun p _ _ =>
+      condSize_cx _ p _ measurable_cxOutside _ cxOutside_val, fun p _ _ => hderiv p, ?_⟩
+  refine not_isUMPU_cx rfl (fun x => ?_) (fun q hq => ?_) (fun q hq => hq.2)
+    (q₁ := (1, 0)) ⟨Set.mem_univ _, by norm_num⟩
+  · simpa [cxU, cxT] using cxOutside_val
+  · simpa using hq.2
+
+end ConditionalUMPUCounterexample
+
 /-! ## The four UMP unbiased tests -/
 
 /-- **One-sided null.** For `H : θ ≤ θ₀` against `K : θ > θ₀`, the conditional one-sided test
