@@ -240,7 +240,27 @@ theorem isCompact_toWeakDualL2_image_constrained (μ : Measure 𝓧)
     -- USER-INPUT: the dominating measure is finite; without it the class is unbounded in `L²`
     [IsFiniteMeasure μ] {ι : Type*} (g : ι → Lp ℝ 2 μ) (c : ι → ℝ) :
     IsCompact (toWeakDualL2 μ '' constrainedTestClassL2 μ g c) := by
-  sorry
+  have hset : toWeakDualL2 μ '' constrainedTestClassL2 μ g c
+      = (toWeakDualL2 μ '' testClassL2 μ)
+        ∩ ⋂ i, {L : WeakDual ℝ (Lp ℝ 2 μ) | L (g i) = c i} := by
+    ext L
+    constructor
+    · rintro ⟨f, ⟨hf, hcon⟩, rfl⟩
+      refine ⟨⟨f, hf, rfl⟩, ?_⟩
+      simp only [Set.mem_iInter, Set.mem_setOf_eq]
+      intro i
+      rw [toWeakDualL2_apply, real_inner_comm]
+      exact hcon i
+    · rintro ⟨⟨f, hf, rfl⟩, hcon⟩
+      simp only [Set.mem_iInter, Set.mem_setOf_eq] at hcon
+      refine ⟨f, ⟨hf, fun i => ?_⟩, rfl⟩
+      have hi := hcon i
+      rw [toWeakDualL2_apply] at hi
+      rw [real_inner_comm]
+      exact hi
+  rw [hset]
+  exact (isCompact_toWeakDualL2_image_testClass μ).inter_right
+    (isClosed_iInter fun i => isClosed_setOf_eval_eq μ (g i) (c i))
 
 /-- **Existence of an optimal constrained test**: a linear functional attains its maximum over
 the (nonempty) class of `[0,1]`-valued `L²` functions meeting the moment constraints.
@@ -254,6 +274,16 @@ theorem exists_max_inner_of_constraints (μ : Measure 𝓧)
     (hne : (constrainedTestClassL2 μ g c).Nonempty) :
     ∃ f ∈ constrainedTestClassL2 μ g c,
       ∀ f' ∈ constrainedTestClassL2 μ g c, ⟪h, f'⟫_ℝ ≤ ⟪h, f⟫_ℝ := by
-  sorry
+  have hKcompact : IsCompact (toWeakDualL2 μ '' constrainedTestClassL2 μ g c) :=
+    isCompact_toWeakDualL2_image_constrained μ g c
+  have hKne : (toWeakDualL2 μ '' constrainedTestClassL2 μ g c).Nonempty := hne.image _
+  obtain ⟨L₀, hL₀K, hL₀max⟩ :=
+    hKcompact.exists_isMaxOn hKne (continuous_eval_weakDual μ h).continuousOn
+  obtain ⟨f₀, hf₀, rfl⟩ := hL₀K
+  refine ⟨f₀, hf₀, fun f' hf' => ?_⟩
+  have hle : toWeakDualL2 μ f' h ≤ toWeakDualL2 μ f₀ h :=
+    hL₀max (Set.mem_image_of_mem (toWeakDualL2 μ) hf')
+  rw [toWeakDualL2_apply, toWeakDualL2_apply, ← real_inner_comm f' h, ← real_inner_comm f₀ h] at hle
+  exact hle
 
 end StatLean.HypothesisTesting
