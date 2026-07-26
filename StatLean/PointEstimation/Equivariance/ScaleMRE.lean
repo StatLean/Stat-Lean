@@ -124,7 +124,7 @@ private lemma degree_eq_zero_of_pos {r : ℕ} {δ₀ : (Fin (m + 1) → ℝ) →
     have h1 : (1 : ℝ) < 2 ^ r := one_lt_pow₀ one_lt_two h.ne'
     nlinarith [h₀pos 0, mul_pos (by linarith : (0 : ℝ) < 2 ^ r - 1) (h₀pos 0)]
 
-/-- Analytic core (named debt, the one lifted `private` sorry of this file): a degree-0
+/-- Analytic core of the scale-MRE argument: a degree-0
 equivariant (i.e. `scaleZ`-invariant) measurable `φ` equals its own conditional mean given
 the maximal invariant. Intended proof: the disintegration identity
 `lintegral_eq_lintegral_condDistrib` applied to `g z x = if scaleZ x = z then 0 else 1`

@@ -66,10 +66,6 @@ namespace StatLean.PointEstimation
 variance (the same packaging as in the canonical model). -/
 abbrev RegressionParam (k : ℕ) : Type := (Fin k → ℝ) × PosVar
 
-/-- Random designs are carried by the plain function type `Fin k → Fin l → ℝ`, which has
-the product measurable structure, and are read as matrices through `Matrix.of`: `Matrix` is
-a non-reducible definition and carries no `MeasurableSpace` instance. -/
-
 variable {s n : ℕ}
 
 /-! ## The regression form -/
