@@ -30,15 +30,30 @@ route for a half-space, and it is the one-dimensional marginal statement: the pr
 
 ## Honest accounting of the elementary route (see the module docstring below for the report)
 
-The remaining two ingredients — the smoothed convex indicator with third-derivative bounds
-(`ContDiffBump` convolution) and the third-order multivariate Lindeberg swap — are recorded
-as **named `private` lemmas carrying a `sorry` and a precise `TODO`**; Mathlib v4.29.1 has no
-multivariate Taylor remainder bound, which is the analytic obstruction. Crucially, even once
-those are filled, the elementary balance of steps 2–3 does **not** reach the `β/√n` *rate* of
-the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error of order
-`(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the mollifier
-method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and it is
-reported precisely rather than papered over.
+For the **ball** route the picture is now considerably better than the module originally
+recorded. Three of the four ingredients are proved here unconditionally, each with a
+dimension-free constant:
+
+* `gaussian_slab_measure_le` — slab anti-concentration (`1/√(2π)`);
+* `gaussian_ball_shell_measure_le` — *shell* anti-concentration (`C_ac = 7`), resting on the
+  uniform chi-density peak bound `chiSquared_density_mul_sqrt_le`, which is obtained **without
+  any Stirling asymptotics for `Γ`** by restricting Euler's integral to the length-`√p` window
+  at the peak (`le_Gamma_add_half`);
+* `norm_taylor_remainder_three_le` — the third-order Taylor remainder on a normed space
+  (Mathlib v4.29.1 has only the one-dimensional version, so this is reduced to a segment);
+* `exists_smoothed_radial_indicator` — the smoothed radial indicator with an absolute
+  third-derivative constant, built by composing a fixed 1-D cutoff with `‖·‖²` (**not** with
+  `‖·‖`), which avoids the quantitative iterated-derivative bounds for the Euclidean norm that
+  Mathlib does not have.
+
+What remains as **named `private` planned debt** is the third-order multivariate Lindeberg swap
+`abs_integral_smooth_sub_gaussian_le` (and, for the *convex* route only, the smoothed convex
+indicator `exists_smoothed_convex_indicator`, whose constant is dimension-dependent anyway).
+Crucially, even once those are filled, the elementary balance of steps 2–3 does **not** reach
+the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
+of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
+mollifier method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and
+it is reported precisely rather than papered over.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -499,14 +514,17 @@ theorem gaussian_ball_shell_measure_le :
 
 end BallAntiConcentration
 
-/-! ### The remaining ingredients of the elementary route (planned debt)
+/-! ### The remaining ingredients of the elementary route
 
-The two analytic bricks below are the pieces of the Lindeberg-swap route that are *not*
-proved here. Each is a **true** statement (recorded as named `private` planned debt, per the
-project charter), and each is blocked on a specific Mathlib gap, stated in its `TODO`. They
-are deliberately *not* assembled into a `sorry`-free theorem: the honest final bound
-`berryEsseen_convex_elementary` records the exact statement the route delivers, and its
-exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the module docstring). -/
+Of the analytic bricks of the Lindeberg-swap route, the third-order Taylor remainder
+(`norm_taylor_remainder_three_le`) and — for the **ball** route — the smoothed radial
+indicator (`exists_smoothed_radial_indicator`) are now proved here, unconditionally and with
+dimension-free constants. What is still recorded as named `private` planned debt is the
+**multivariate Lindeberg swap** `abs_integral_smooth_sub_gaussian_le` (and, for the *convex*
+route only, `exists_smoothed_convex_indicator`). The honest final bounds
+`berryEsseen_ball_elementary` / `berryEsseen_convex_elementary` record the exact statements the
+route delivers; their exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the
+module docstring). -/
 
 section ElementaryRoute
 
@@ -909,17 +927,25 @@ two smoothed radial indicators of widths `ε` (`exists_smoothed_radial_indicator
 Gaussian shell mass of `{s < ‖z‖ ≤ s+ε}` is `≤ C_ac ε` (`gaussian_ball_shell_measure_le`). Adding
 and choosing `ε = (β/√n)^{1/4}` balances `ε⁻³ · β/√n` against `ε` at `(β/√n)^{1/4}`.
 
-TODO (planned debt): the assembly still consumes four bricks — `exists_smoothed_radial_indicator`
-and `abs_integral_smooth_sub_gaussian_le` (both `sorry`, on the Mathlib gaps stated at those
-lemmas), `gaussian_ball_shell_measure_le` (proved modulo the `Γ`-Stirling brick
-`chiSquared_density_mul_sqrt_le`), and two elementary facts recorded here for the final assembly:
-(a) `β_G := ∫‖z‖³ dN(0,I_k) ≤ 3 β` under identity covariance (via Lyapunov `β ≥ (E‖Y‖²)^{3/2} =
-k^{3/2}` and the Gaussian moment `E‖G‖⁴ = k(k+2)`, giving `β_G ≤ (k(k+2))^{3/4} ≤ 3 k^{3/2}`), and
-(b) `β > 0` (so `ε > 0`), again from `∫‖y‖² dν = k > 0`. The small-radius case `√t < ε`, where
-`exists_smoothed_radial_indicator`'s `ε ≤ a` hypothesis fails, is handled by comparing at the
-enlarged radius `ε`: `G{‖z‖ ≤ √t} ≤ G{‖z‖ ≤ ε} ≤ C_ac ε` (shell at `t = 0`) and the swap at width
-`ε` bounds `μ_S{‖z‖ ≤ √t}` accordingly. None of these is blocked on new mathematics; they are
-deferred only because the two principal bricks above are. -/
+**State of the assembly.** Two of the three geometric bricks are now *proved unconditionally*
+and with dimension-free constants:
+
+* `gaussian_ball_shell_measure_le` (`C_ac = 7`) — no longer conditional on any `Γ`-Stirling
+  estimate, see `chiSquared_density_mul_sqrt_le`;
+* `exists_smoothed_radial_indicator` (`C₃ = 48 B`) — proved through the squared-norm route, so
+  it holds for **every** `0 ≤ a` and `ε > 0`. In particular the small-radius case `√t < ε`,
+  which the older `χ ∘ ‖·‖` formulation had to treat separately (its `ε ≤ a` hypothesis is
+  gone), no longer needs any special handling.
+
+TODO (planned debt): what the assembly still consumes is
+(i) `abs_integral_smooth_sub_gaussian_le` — the multivariate Lindeberg swap, still `sorry`;
+(ii) `β_G := ∫‖z‖³ dN(0,I_k) ≤ 3 β` under identity covariance (via Lyapunov
+`β ≥ (E‖Y‖²)^{3/2} = k^{3/2}` and the Gaussian moment `E‖G‖⁴ = k(k+2)`, giving
+`β_G ≤ (k(k+2))^{3/4} ≤ 3 k^{3/2}`); and (iii) `β > 0` (so that `ε := (β/√n)^{1/4} > 0`), again
+from `∫‖y‖² dν = k > 0`. Items (ii)–(iii) are elementary but not free: each needs the identity
+`∫‖y‖² dν = k` (expand `‖y‖² = ∑ᵢ ⟪eᵢ,y⟫²` over an orthonormal basis and use `hcov`, together
+with the `L³ ⊆ L²` integrability that `hβ` supplies) plus a `χ²` second moment. They are
+recorded here rather than proved because the assembly cannot be completed without (i) anyway. -/
 theorem berryEsseen_ball_elementary :
     ∃ C : ℝ, 0 < C ∧ ∀ (k n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k))) (t : ℝ),
       0 < n → 0 < k → IsProbabilityMeasure ν →
