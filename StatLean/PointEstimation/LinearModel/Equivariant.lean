@@ -492,7 +492,7 @@ private lemma lintegral_hom_exp_tilt {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0�
   set v : ℝ≥0 := ⟨c ^ 2, sq_nonneg c⟩ with hv_def
   have hvcoe : (v : ℝ) = lam⁻¹ := by
     rw [hv_def]
-    show c ^ 2 = lam⁻¹
+    change c ^ 2 = lam⁻¹
     rw [hc_def, inv_pow, Real.sq_sqrt hlam.le]
   have hvne : v ≠ 0 := by
     intro h
@@ -697,7 +697,7 @@ private lemma lintegral_hom_mul {N : ℕ} {u : (Fin N → ℝ) → ℝ≥0∞}
 
 
 private lemma sqSum_nonneg {N : ℕ} (x : Fin N → ℝ) : 0 ≤ sqSum x :=
-  Finset.sum_nonneg (fun i _ => sq_nonneg _)
+  Finset.sum_nonneg (fun _ _ => sq_nonneg _)
 
 private lemma sqSum_smul {N : ℕ} (c : ℝ) (x : Fin N → ℝ) :
     sqSum (c • x) = c ^ 2 * sqSum x := by
