@@ -1,6 +1,7 @@
 import StatLean.PointEstimation.Sufficiency.Factorization
 import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 import Mathlib.Probability.Kernel.CompProdEqIff
+import Mathlib.Probability.Kernel.Disintegration.CondCDF
 
 /-!
 # From per-event determinations to a θ-free regular conditional distribution
@@ -15,7 +16,7 @@ sample space the two coincide.
   dominated by a σ-finite measure on a standard Borel sample space, a sufficient statistic
   admits a θ-free reconstruction kernel. This is the version the rest of the area consumes.
 * `hasSufficientKernel_of_isSufficient` — the general standard Borel version, without
-  domination. Named planned debt (see below).
+  domination.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 2 (The Probability
@@ -37,15 +38,22 @@ conditional distribution given a sufficient statistic). (`TSH4 Thm 2.6.1`.)
 * The general (undominated) version genuinely needs the gluing argument: the per-`θ`
   disintegrations `Q_θ` agree only `statLaw P T θ`-almost everywhere, and for an uncountable
   parameter set no single `Q_θ` can serve (take `P θ = δ_θ` on `ℝ` with `T = id`: the kernel
-  is pinned down at *every* point of `S`). One has to build the kernel from the θ-free
-  per-event determinations themselves. On a standard Borel sample space that is done through
-  the conditional distribution *functions*: embed `𝓧` into `ℝ`, read a rational CDF off the
-  determinations of the half-lines, and let Mathlib's `stieltjesOfMeasurableRat` perform the
-  repair off the bad set. It is **DEFERRAL-ELIGIBLE**: a named planned debt, pre-agreed for
-  this campaign. Nothing in the area consumes it; every downstream user routes through the
-  dominated version. The full route, with the Mathlib declarations it uses, is written out on
-  the theorem itself — the obstruction is the volume of `Unit`-indexed kernel/measure
-  plumbing and the two π-system extensions, not a missing brick.
+  is pinned down at *every* point of `S`). The kernel is therefore built from the θ-free
+  per-event determinations themselves, through the conditional distribution *functions*:
+  `e := embeddingReal 𝓧` embeds the sample space into `ℝ`, the determinations `k q` of the
+  half-lines `e ⁻¹' Iic q` (`q : ℚ`) form a θ-free rational CDF `f (·, t) q = (k q t).toReal`,
+  `ProbabilityTheory.stieltjesOfMeasurableRat` repairs it off the bad set,
+  `IsCondKernelCDF.toKernel` reads a Markov kernel `S ⇝ ℝ` off the repair, and
+  `Kernel.borelMarkovFromReal` transports it back to `S ⇝ 𝓧`. Sufficiency enters exactly once,
+  as the set-`lintegral` identity
+  `∫⁻ b in B, k q b ∂(statLaw P T θ) = ρ_θ (B ×ˢ Iic q)` for the graph law `ρ_θ` of `(T, e)`,
+  which is `IsRatCondKernelCDF.setIntegral` after the `ENNReal`-to-real passage. The
+  almost-sure Stieltjes-point property is *imported* rather than reproved: it holds for
+  Mathlib's `preCDF ρ_θ`, and `f` agrees with it `statLaw P T θ`-a.e. at every rational by
+  uniqueness of set integrals, `ℚ` being countable. The `Unit`-indexed kernel API
+  (`Kernel.const Unit ·`) is what carries the measure-level statement into the kernel-level
+  disintegration lemmas, and `Measure.compProd` is definitionally the `Unit`-fibre of
+  `Kernel.compProd`, which is how the conclusion comes back down.
 * Both statements deliver the graph/compProd carrier `HasSufficientKernel` rather than a
   bare reconstruction identity, so that the fiber property of `Sufficiency.Basic` comes for
   free at the point of use.
@@ -138,14 +146,26 @@ theorem hasSufficientKernel_of_isSufficient_dominated [StandardBorelSpace 𝓧] 
     _ = ((ν.map T).withDensity w) ⊗ₘ Q := (compProd_withDensity_left (ν.map T) Q hw).symm
     _ = (statLaw P T θ) ⊗ₘ Q := by rw [hstat]
 
+private lemma kernel_fst_const {S' α : Type*} [MeasurableSpace S'] [MeasurableSpace α]
+    (μ : Measure (S' × α)) :
+    Kernel.fst (Kernel.const Unit μ) = Kernel.const Unit μ.fst := by
+  ext u s hs
+  rw [Kernel.fst_apply' _ _ hs, Kernel.const_apply, Kernel.const_apply, Measure.fst_apply hs]
+  rfl
+
 /-- **General existence of a θ-free reconstruction kernel** on a standard Borel sample space,
 without any domination assumption.
 
-**DEFERRAL-ELIGIBLE (named planned debt).** The proof requires gluing the per-event
-determinations of `IsSufficient` into a single kernel — choosing determinations along a
-countable generating algebra and repairing additivity and continuity at `∅` off a null set —
-rather than reading the kernel off a disintegration. No result in this area depends on it:
-every consumer uses `hasSufficientKernel_of_isSufficient_dominated`. -/
+The per-event determinations are glued into a single kernel through the conditional
+distribution *functions*, not through any disintegration of a single member: the sample space
+is embedded into `ℝ` by `e := embeddingReal 𝓧`, the determinations `k q` of the rational
+half-lines `e ⁻¹' Iic q` assemble into a θ-free rational CDF `f (·, t) q = (k q t).toReal`,
+`stieltjesOfMeasurableRat` repairs it off the bad set, and `borelMarkovFromReal` transports
+the resulting Markov kernel `S ⇝ ℝ` back to `S ⇝ 𝓧`. The one place where a *single* member
+enters is the almost-sure Stieltjes-point property, and there it is harmless: it is imported
+from Mathlib's own rational CDF `preCDF (ρ θ)` of the graph law of `(T, e)` under that member,
+to which `f` is a.e. equal at every rational (both have set-`lintegral` `ρ θ (B ×ˢ Iic q)`,
+and `ℚ` is countable). The kernel itself never depends on the member. -/
 theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 𝓧]
     (P : Θ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)] {T : 𝓧 → S}
     -- LEAN-ONLY: measurability of the statistic
@@ -153,40 +173,125 @@ theorem hasSufficientKernel_of_isSufficient [StandardBorelSpace 𝓧] [Nonempty 
     -- USER-INPUT: sufficiency of `T` in the per-event sense
     (hsuf : IsSufficient P T) :
     HasSufficientKernel P T := by
-  -- TODO (DEFERRAL-ELIGIBLE, named planned debt). No result in this area consumes this
-  -- theorem: every downstream user routes through
-  -- `hasSufficientKernel_of_isSufficient_dominated`.
-  --
-  -- The obstruction is *not* a missing Mathlib brick — the whole toolchain is present at
-  -- this pin — but the volume of gluing it still takes. The concrete route, verified against
-  -- `Mathlib.Probability.Kernel.Disintegration.{MeasurableStieltjes, CDFToKernel,
-  -- StandardBorel}`:
-  --
-  -- 1. `e := MeasureTheory.embeddingReal 𝓧` is a measurable embedding of the standard Borel
-  --    sample space into `ℝ` (`measurableEmbedding_embeddingReal`). Put `A q := e ⁻¹' Iic q`
-  --    for `q : ℚ` and let `k q : S → ℝ≥0∞` be the θ-free determination supplied by `hsuf`
-  --    for `A q`. Set `f : S → ℚ → ℝ := fun t q => (k q t).toReal`; it is measurable into the
-  --    countable product, so `ProbabilityTheory.stieltjesOfMeasurableRat f hf` is a *θ-free*
-  --    measurable family of Stieltjes functions (`toRatCDF` performs the repair off the bad
-  --    set for free), and `IsCondKernelCDF.toKernel` reads a Markov kernel `S ⇝ ℝ` off it —
-  --    the kernel depends only on `f`, which is the whole point.
-  -- 2. `ProbabilityTheory.Kernel.borelMarkovFromReal 𝓧` transports that kernel back to a
-  --    Markov kernel `Q : S ⇝ 𝓧` (piecewise `comapRight` along `e`, with a Dirac default
-  --    where the mass escapes `range e`), again θ-free.
-  -- 3. For each `θ`, `IsRatCondKernelCDF f (Kernel.const Unit ρ_θ) (Kernel.const Unit ν_θ)`
-  --    — with `ρ_θ` the graph law of `(T, e)` and `ν_θ = statLaw P T θ` — follows from the
-  --    per-event identity of `hsuf` (transported through `setLIntegral_map`) for the
-  --    `setIntegral` field, and its `isRatStieltjesPoint_ae` field can be *imported* rather
-  --    than reproved: Mathlib's own `isRatCondKernelCDF_density_Iic` provides a rational CDF
-  --    `g_θ` for `ρ_θ`, `f · q =ᵐ[ν_θ] g_θ · q` for each `q` by uniqueness of set integrals,
-  --    and `ℚ` is countable, so the Stieltjes-point property transfers off a single null set.
-  -- 4. `Kernel.compProd_fst_borelMarkovFromReal` then delivers `ν_θ ⊗ₘ Q = ρ_θ` for every
-  --    `θ`, which is `HasSufficientKernel P T`.
-  --
-  -- What remains is the `Unit`-indexed bridge between the measure-level statement here and
-  -- the kernel-level API above, plus the two π-system extensions (rectangles `B ×ˢ Iic q`
-  -- for the CDF identity, `B ×ˢ A` for the transport back through `e`). That is a few
-  -- hundred lines of routine but unavoidable plumbing, and it is what is deferred.
-  sorry
+  rcases isEmpty_or_nonempty Θ with hΘ | hΘ
+  · haveI : IsProbabilityMeasure (Measure.dirac (Classical.arbitrary 𝓧)) :=
+      Measure.dirac.isProbabilityMeasure
+    exact ⟨Kernel.const S (Measure.dirac (Classical.arbitrary 𝓧)), inferInstance,
+      fun θ => (hΘ.false θ).elim⟩
+  -- the measurable embedding of the standard Borel sample space into `ℝ`
+  have he : MeasurableEmbedding (embeddingReal 𝓧) := measurableEmbedding_embeddingReal 𝓧
+  set e := embeddingReal 𝓧 with hedef
+  have hemb : Measurable fun x => (T x, e x) := hT.prodMk he.measurable
+  have hA : ∀ q : ℚ, MeasurableSet (e ⁻¹' (Set.Iic (q : ℝ))) :=
+    fun _ => he.measurable measurableSet_Iic
+  -- the θ-free determinations of the rational half-lines
+  choose k hkm hk1 hk using fun q : ℚ => hsuf (hA q)
+  -- the graph law of `(T, e)`, a measure on `S × ℝ`
+  set ρ : Θ → Measure (S × ℝ) := fun θ => (P θ).map fun x => (T x, e x) with hρdef
+  haveI hρprob : ∀ θ, IsProbabilityMeasure (ρ θ) :=
+    fun θ => Measure.isProbabilityMeasure_map hemb.aemeasurable
+  haveI hνprob : ∀ θ, IsProbabilityMeasure (statLaw P T θ) := fun θ => by
+    unfold statLaw; exact Measure.isProbabilityMeasure_map hT.aemeasurable
+  have hρfst : ∀ θ, (ρ θ).fst = statLaw P T θ :=
+    fun _ => Measure.fst_map_prodMk he.measurable
+  -- the defining identity of the determinations, read on the graph law
+  have hkey : ∀ (θ : Θ) (q : ℚ) {B : Set S}, MeasurableSet B →
+      ∫⁻ b in B, k q b ∂(statLaw P T θ) = ρ θ (B ×ˢ Set.Iic (q : ℝ)) := by
+    intro θ q B hB
+    rw [statLaw, setLIntegral_map hB (hkm q) hT, hρdef]
+    simp only
+    rw [Measure.map_apply hemb (hB.prod measurableSet_Iic), hk q θ hB]
+    congr 1
+    ext x
+    simp only [Set.mem_preimage, Set.mem_prod, Set.mem_inter_iff, Set.mem_Iic]
+    exact and_comm
+  -- the θ-free rational conditional CDF
+  set f : Unit × S → ℚ → ℝ := fun p q => (k q p.2).toReal with hfdef
+  have hfapp : ∀ (p : Unit × S) (q : ℚ), f p q = (k q p.2).toReal := fun _ _ => rfl
+  have hfm : Measurable f := by
+    rw [measurable_pi_iff]
+    exact fun q => ((hkm q).comp measurable_snd).ennreal_toReal
+  have hf1 : ∀ (p : Unit × S) (q : ℚ), f p q ≤ 1 := by
+    intro p q
+    rw [hfapp]
+    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (hk1 q p.2)
+  have hint : ∀ (θ : Θ) (q : ℚ) (a : Unit),
+      Integrable (fun b : S => f (a, b) q) (statLaw P T θ) := by
+    intro θ q a
+    refine ⟨(((hkm q).ennreal_toReal).comp measurable_id).aestronglyMeasurable, ?_⟩
+    refine HasFiniteIntegral.of_bounded (C := 1) ?_
+    filter_upwards with b
+    rw [Real.norm_eq_abs, abs_of_nonneg (by rw [hfapp]; exact ENNReal.toReal_nonneg)]
+    exact hf1 (a, b) q
+  -- the Stieltjes-point property, imported from Mathlib's own rational CDF of `ρ θ`
+  have hstp : ∀ (θ : Θ) (a : Unit), ∀ᵐ b ∂(statLaw P T θ), IsRatStieltjesPoint f (a, b) := by
+    intro θ a
+    have hmain := (isRatCondKernelCDF_preCDF (ρ θ)).isRatStieltjesPoint_ae ()
+    rw [Kernel.const_apply, hρfst θ] at hmain
+    have hq : ∀ q : ℚ, k q =ᵐ[statLaw P T θ] preCDF (ρ θ) q := by
+      intro q
+      refine ae_eq_of_forall_setLIntegral_eq_of_sigmaFinite (hkm q) measurable_preCDF ?_
+      intro B hB _
+      rw [hkey θ q hB, ← hρfst θ, setLIntegral_preCDF_fst (ρ θ) q hB,
+        Measure.IicSnd_apply _ _ hB]
+    have hall : ∀ᵐ b ∂(statLaw P T θ), ∀ q : ℚ, k q b = preCDF (ρ θ) q b :=
+      ae_all_iff.2 hq
+    filter_upwards [hmain, hall] with b hb hball
+    have hfun : f (a, b) = fun r : ℚ => (preCDF (ρ θ) r b).toReal := by
+      funext r
+      rw [hfapp, hball r]
+    exact ⟨by rw [hfun]; exact hb.mono, by rw [hfun]; exact hb.tendsto_atTop_one,
+      by rw [hfun]; exact hb.tendsto_atBot_zero, by rw [hfun]; exact hb.iInf_rat_gt_eq⟩
+  -- `f` is a rational conditional kernel CDF of the graph law under *every* member
+  have hrat : ∀ θ, IsRatCondKernelCDF f (Kernel.const Unit (ρ θ))
+      (Kernel.const Unit (statLaw P T θ)) := by
+    intro θ
+    refine ⟨hfm, fun a => ?_, fun a q => ?_, fun a B hB q => ?_⟩
+    · rw [Kernel.const_apply]; exact hstp θ a
+    · rw [Kernel.const_apply]; exact hint θ q a
+    · rw [Kernel.const_apply, Kernel.const_apply]
+      simp only [hfapp]
+      rw [integral_toReal ((hkm q).aemeasurable.restrict)
+        (.of_forall fun b => lt_of_le_of_lt (hk1 q b) ENNReal.one_lt_top),
+        hkey θ q hB, measureReal_def]
+  -- the θ-free Stieltjes family and the kernel it defines
+  set F : Unit × S → StieltjesFunction ℝ := stieltjesOfMeasurableRat f hfm with hFdef
+  have hCDF : ∀ θ, IsCondKernelCDF F (Kernel.const Unit (ρ θ))
+      (Kernel.const Unit (statLaw P T θ)) :=
+    fun θ => isCondKernelCDF_stieltjesOfMeasurableRat (hrat θ)
+  set η : Kernel (Unit × S) ℝ := (hCDF (Classical.arbitrary Θ)).toKernel F with hηdef
+  haveI : IsMarkovKernel η := instIsMarkovKernel_toKernel
+  have hcp : ∀ θ, (Kernel.const Unit (statLaw P T θ)) ⊗ₖ η = Kernel.const Unit (ρ θ) := by
+    intro θ
+    have h := compProd_toKernel (hCDF θ)
+    rwa [show (hCDF θ).toKernel F = η from rfl] at h
+  -- transport the real kernel back to the sample space
+  refine ⟨Kernel.comap (Kernel.borelMarkovFromReal 𝓧 η) (fun s => ((), s))
+    (measurable_const.prodMk measurable_id), inferInstance, fun θ => ?_⟩
+  have hgraphfst : ((P θ).map fun x => (T x, x)).fst = statLaw P T θ :=
+    Measure.fst_map_prodMk measurable_id'
+  have hmain : Kernel.fst (Kernel.const Unit ((P θ).map fun x => (T x, x)))
+      ⊗ₖ Kernel.borelMarkovFromReal 𝓧 η
+      = Kernel.const Unit ((P θ).map fun x => (T x, x)) := by
+    refine Kernel.compProd_fst_borelMarkovFromReal _ η ?_
+    have hmapeq : Kernel.map (Kernel.const Unit ((P θ).map fun x => (T x, x)))
+        (Prod.map (id : S → S) e) = Kernel.const Unit (ρ θ) := by
+      rw [Kernel.map_const _ (measurable_id.prodMap he.measurable),
+        Measure.map_map (measurable_id.prodMap he.measurable) (hT.prodMk measurable_id')]
+      rfl
+    rw [hmapeq, kernel_fst_const, hρfst θ]
+    exact hcp θ
+  rw [kernel_fst_const, hgraphfst] at hmain
+  have hpm : Kernel.prodMkLeft Unit (Kernel.comap (Kernel.borelMarkovFromReal 𝓧 η)
+      (fun s => ((), s)) (measurable_const.prodMk measurable_id))
+      = Kernel.borelMarkovFromReal 𝓧 η := by
+    ext p s hs
+    rw [Kernel.prodMkLeft_apply, Kernel.comap_apply]
+  calc (P θ).map (fun x => (T x, x))
+      = (Kernel.const Unit (statLaw P T θ) ⊗ₖ Kernel.borelMarkovFromReal 𝓧 η) () := by
+        rw [hmain, Kernel.const_apply]
+    _ = statLaw P T θ ⊗ₘ Kernel.comap (Kernel.borelMarkovFromReal 𝓧 η) (fun s => ((), s))
+          (measurable_const.prodMk measurable_id) := by
+        rw [Measure.compProd, hpm]
 
 end StatLean.PointEstimation
