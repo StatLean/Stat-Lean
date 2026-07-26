@@ -561,35 +561,82 @@ theorem twoSided_ae_unique
     (hsize₁' : power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ₁ = α)
     (hsize₂' : power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ₂ = α) :
     twoSidedTest T C₁ C₂ γ₁ γ₂ =ᵐ[μ] twoSidedTest T C₁' C₂' γ₁' γ₂' := by
-  -- TRUE (unlike its sibling `power_lt_of_twoSided_right`, which is FALSE as stated: the
-  -- degenerate constant-`T` configuration that kills the strict power comparison is harmless
-  -- here, because it forces the two tests to take the same constant value once their sizes
-  -- agree). Not closed; the argument below is complete but long, and is left as debt.
-  --
-  -- ROADMAP. Write `D t = twoSidedVal C₁' C₂' γ₁' γ₂' t − twoSidedVal C₁ C₂ γ₁ γ₂ t` and
-  -- `r x = p_{θ₂} x / p_{θ₁} x` (well defined: `hpos`). By `hsize₁`/`hsize₁'` and
-  -- `hsize₂`/`hsize₂'`, `∫ D(T x) p_{θ₁} x dμ = ∫ D(T x) p_{θ₂} x dμ = 0`.
-  --  (1) SIGN CHANGE. `twoSidedVal_sub_sep` (proven above) gives, under
-  --      `hright : C₁ < C₁' ∨ (C₁ = C₁' ∧ γ₁' < γ₁)`, that `D t < 0 < D s → t < s`. The
-  --      trichotomy on the left data splits into: `hright`; its mirror (swap the two tests,
-  --      which negates `D`); and `C₁ = C₁' ∧ γ₁ = γ₁'`, in which case `D` has CONSTANT sign
-  --      (compare `C₂` with `C₂'`), so both separation statements hold vacuously. A helper
-  --      `twoSidedVal_sub_sep_eqLeft` covering that third case is missing.
-  --  (2) SEPARATING RATIO. If `{x : D (T x) < 0}` is empty then `D ∘ T ≥ 0`, and
-  --      `∫ D(T x) p_{θ₁} x dμ = 0` with `p_{θ₁} > 0` forces `D ∘ T = 0` a.e., done;
-  --      likewise if `{x : 0 < D (T x)}` is empty. Otherwise `k = sSup {r x : D (T x) < 0}`
-  --      exists (bounded above by `r y` for any `y` with `D (T y) > 0`, via (1) and
-  --      `hstrict`), and `r ≤ k` on `{D ∘ T < 0}`, `k ≤ r` on `{D ∘ T > 0}`.
-  --  (3) VANISHING. `g x = D (T x) · (p_{θ₂} x − k · p_{θ₁} x) ≥ 0` pointwise by (2), and
-  --      `∫ g dμ = ∫ D(T x) p_{θ₂} − k ∫ D(T x) p_{θ₁} = 0`, so `g = 0` a.e.
-  --  (4) LEVEL SET. Where `D ∘ T ≠ 0` and `g = 0` one has `r x = k`; `hstrict` makes `r`
-  --      strictly increasing along `T`, so all such `x` share one value `T x = c`. Hence
-  --      `D ∘ T = 0` a.e. off `{T = c}`, and then `D c · ∫_{T = c} p_{θ₁} dμ = 0` with
-  --      `p_{θ₁} > 0` gives `D c = 0` whenever `μ {T = c} > 0`. Either way `D ∘ T = 0` a.e.,
-  --      which is the conclusion via `twoSidedTest_eq_val`.
-  -- TODO: add `twoSidedVal_sub_sep_eqLeft` (the equal-left-data constant-sign case) and
-  -- formalize steps (2)–(4) as a private lemma taking the separation of (1) as a hypothesis,
-  -- so it can be applied twice (once per orientation).
-  sorry
+  -- Unlike its sibling `power_lt_of_twoSided_right` (which is FALSE as stated), the
+  -- degenerate constant-`T` configuration is harmless here: it forces the two tests to take
+  -- the same constant value once their sizes agree. The proof is the Lehmann comparison in
+  -- its equality form: the difference of the two tests changes sign at most once along `T`
+  -- (`twoSidedVal_sub_sep` and `twoSidedVal_sub_sep_eqLeft`, exhausting the trichotomy on
+  -- the left data), and a difference with a single sign change that integrates to zero
+  -- against two members with a strict monotone likelihood ratio vanishes a.e.
+  -- (`ae_eq_zero_of_sep_or`).
+  set φ := twoSidedTest T C₁ C₂ γ₁ γ₂ with hφdef
+  set φ' := twoSidedTest T C₁' C₂' γ₁' γ₂' with hφ'def
+  have hφc : IsCriticalFn φ := by
+    refine ⟨measurable_twoSidedTest hT C₁ C₂ γ₁ γ₂, fun x => ?_⟩
+    rw [hφdef, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁ hγ₂ (T x)
+  have hφ'c : IsCriticalFn φ' := by
+    refine ⟨measurable_twoSidedTest hT C₁' C₂' γ₁' γ₂', fun x => ?_⟩
+    rw [hφ'def, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁' hγ₂' (T x)
+  have hcrit_int : ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → ∀ ϑ : ℝ, Integrable ψ (P ϑ) := by
+    intro ψ hψ ϑ
+    refine (integrable_const (1 : ℝ)).mono' hψ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]
+    exact (hψ.2 x).2
+  have hmul : ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → ∀ ϑ : ℝ,
+      Integrable (fun x => ψ x * p ϑ x) μ := fun ψ hψ ϑ =>
+    ts_density_mul_integrable (hp ϑ) (hcrit_int ψ hψ ϑ)
+  have hpow : ∀ (ψ : 𝓧 → ℝ) (ϑ : ℝ), power P ψ ϑ = ∫ x, ψ x * p ϑ x ∂μ := by
+    intro ψ ϑ
+    unfold power
+    exact ts_integral_density_eq (hp ϑ) ψ
+  -- The difference of the two tests is a function of the statistic.
+  have hDval : ∀ x, φ' x - φ x
+      = twoSidedVal C₁' C₂' γ₁' γ₂' (T x) - twoSidedVal C₁ C₂ γ₁ γ₂ (T x) := by
+    intro x
+    rw [hφdef, hφ'def, twoSidedTest_eq_val, twoSidedTest_eq_val]
+  have hDT : ∀ x y, T x = T y → φ' x - φ x = φ' y - φ y := by
+    intro x y h
+    rw [hDval x, hDval y, h]
+  have hDint : ∀ ϑ : ℝ, Integrable (fun x => (φ' x - φ x) * p ϑ x) μ := by
+    intro ϑ
+    refine ((hmul φ' hφ'c ϑ).sub (hmul φ hφc ϑ)).congr
+      (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.sub_apply]
+    ring
+  -- Equal sizes at a parameter value make the difference integrate to zero there.
+  have hDzero : ∀ ϑ : ℝ, power P φ ϑ = power P φ' ϑ →
+      ∫ x, (φ' x - φ x) * p ϑ x ∂μ = 0 := by
+    intro ϑ heq
+    have hcg : ∫ x, (φ' x - φ x) * p ϑ x ∂μ = ∫ x, (φ' x * p ϑ x - φ x * p ϑ x) ∂μ :=
+      integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+    rw [hcg, integral_sub (hmul φ' hφ'c ϑ) (hmul φ hφc ϑ), ← hpow φ' ϑ, ← hpow φ ϑ, heq,
+      sub_self]
+  have h₁ := hDzero θ₁ (hsize₁.trans hsize₁'.symm)
+  have h₂ := hDzero θ₂ (hsize₂.trans hsize₂'.symm)
+  -- The single sign change, in whichever of its two orientations applies.
+  have hsep : (∀ x y, φ' x - φ x < 0 → 0 < φ' y - φ y → T x < T y) ∨
+      (∀ x y, 0 < φ' x - φ x → φ' y - φ y < 0 → T x < T y) := by
+    rcases lt_trichotomy C₁ C₁' with hc | hc | hc
+    · exact Or.inl fun x y hx hy => twoSidedVal_sub_sep hC hC' hγ₁ hγ₂ hγ₁' hγ₂'
+        (Or.inl hc) (by linarith [hDval y]) (by linarith [hDval x])
+    · rcases lt_trichotomy γ₁' γ₁ with hg | hg | hg
+      · exact Or.inl fun x y hx hy => twoSidedVal_sub_sep hC hC' hγ₁ hγ₂ hγ₁' hγ₂'
+          (Or.inr ⟨hc, hg⟩) (by linarith [hDval y]) (by linarith [hDval x])
+      · subst hc
+        subst hg
+        exact Or.inl fun x y hx hy => (twoSidedVal_sub_sep_eqLeft hC hC' hγ₂ hγ₂'
+          (by linarith [hDval y]) (by linarith [hDval x])).elim
+      · exact Or.inr fun x y hx hy => twoSidedVal_sub_sep hC' hC hγ₁' hγ₂' hγ₁ hγ₂
+          (Or.inr ⟨hc.symm, hg⟩) (by linarith [hDval y]) (by linarith [hDval x])
+    · exact Or.inr fun x y hx hy => twoSidedVal_sub_sep hC' hC hγ₁' hγ₂' hγ₁ hγ₂
+        (Or.inl hc) (by linarith [hDval y]) (by linarith [hDval x])
+  have hcore := ae_eq_zero_of_sep_or (D := fun x => φ' x - φ x) (hpos θ₁)
+    (ts_density_integrable (hp θ₁)) (hstrict θ₁ θ₂ hθ) hsep hDT (hDint θ₁) (hDint θ₂) h₁ h₂
+  filter_upwards [hcore] with x hx
+  have hx' : φ' x - φ x = 0 := hx
+  linarith
 
 end StatLean.HypothesisTesting
