@@ -2,6 +2,9 @@ import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import Mathlib.Probability.Distributions.Gamma
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # A multivariate Berry–Esseen bound via Lindeberg swapping (honest, non-sharp)
@@ -598,42 +601,270 @@ private lemma exists_smoothed_convex_indicator (k : ℕ) :
   -- TODO (planned debt): ContDiffBump convolution; see docstring.
   sorry
 
-/-- **[Planned debt — dimension-free norm derivative bounds absent from Mathlib v4.29.1]**
-Smoothed **radial** indicator with an *absolute* (dimension-free) third-derivative constant.
-There is a constant `C₃` (independent of the dimension `k`, the radius `a` and the width `ε`)
-such that for every ball `{‖z‖ ≤ a}` with `0 ≤ a` and every width `0 < ε ≤ a` there is a smooth
+/-! #### The smoothed radial indicator
+
+The construction composes a **fixed** one-dimensional cutoff with the *squared* norm `‖·‖²`
+rather than with `‖·‖`. This is what makes the third-derivative constant genuinely
+dimension-free *and* elementary: `‖·‖²` is a quadratic polynomial, so `D¹‖·‖² = 2⟪z,·⟫`,
+`D²‖·‖² = 2⟪·,·⟫` and `D³‖·‖² = 0`, with dimension-free norms `2‖z‖`, `2`, `0` — all obtained
+from Mathlib's bilinear iterated-derivative bound applied to `innerSL ℝ`. In particular the
+quantitative iterated-derivative bounds for `‖·‖` away from the origin (which Mathlib v4.29.1
+does not provide, and which the `χ ∘ ‖·‖` route would need) are never used. -/
+
+section RadialSmoothing
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The fixed one-dimensional cutoff `χ = 1 - smoothTransition`: smooth, equal to `1` on
+`(-∞, 0]`, to `0` on `[1, ∞)`, with values in `[0,1]`. -/
+private noncomputable def radialCutoff (t : ℝ) : ℝ := 1 - Real.smoothTransition t
+
+private lemma contDiff_radialCutoff : ContDiff ℝ 3 radialCutoff :=
+  contDiff_const.sub Real.smoothTransition.contDiff
+
+private lemma radialCutoff_nonneg (t : ℝ) : 0 ≤ radialCutoff t :=
+  sub_nonneg.mpr (Real.smoothTransition.le_one t)
+
+private lemma radialCutoff_le_one (t : ℝ) : radialCutoff t ≤ 1 := by
+  have := Real.smoothTransition.nonneg t
+  simp only [radialCutoff]; linarith
+
+private lemma radialCutoff_of_nonpos {t : ℝ} (h : t ≤ 0) : radialCutoff t = 1 := by
+  simp [radialCutoff, Real.smoothTransition.zero_of_nonpos h]
+
+private lemma radialCutoff_of_one_le {t : ℝ} (h : 1 ≤ t) : radialCutoff t = 0 := by
+  simp [radialCutoff, Real.smoothTransition.one_of_one_le h]
+
+/-- The derivatives of the fixed cutoff are bounded on the transition window `[0,1]` by an
+absolute constant `B ≥ 1` (continuity on a compact). Off `[0,1]` the cutoff is locally
+constant, so this is all that is ever needed. -/
+private lemma exists_radialCutoff_bound :
+    ∃ B : ℝ, 1 ≤ B ∧ ∀ i ≤ 3, ∀ t ∈ Set.Icc (0 : ℝ) 1,
+      ‖iteratedFDeriv ℝ i radialCutoff t‖ ≤ B := by
+  have hc : ∀ i : ℕ, (i : WithTop ℕ∞) ≤ 3 →
+      ContinuousOn (iteratedFDeriv ℝ i radialCutoff) (Set.Icc (0 : ℝ) 1) := fun i hi =>
+    (contDiff_radialCutoff.continuous_iteratedFDeriv hi).continuousOn
+  obtain ⟨B0, hB0⟩ := isCompact_Icc.exists_bound_of_continuousOn (hc 0 (by norm_num))
+  obtain ⟨B1, hB1⟩ := isCompact_Icc.exists_bound_of_continuousOn (hc 1 (by norm_num))
+  obtain ⟨B2, hB2⟩ := isCompact_Icc.exists_bound_of_continuousOn (hc 2 (by norm_num))
+  obtain ⟨B3, hB3⟩ := isCompact_Icc.exists_bound_of_continuousOn (hc 3 (by norm_num))
+  refine ⟨max 1 (max B0 (max B1 (max B2 B3))), le_max_left _ _, ?_⟩
+  intro i hi t ht
+  interval_cases i
+  · exact (hB0 t ht).trans (by simp)
+  · exact (hB1 t ht).trans (by simp)
+  · exact (hB2 t ht).trans (by simp)
+  · exact (hB3 t ht).trans (by simp)
+
+/-! ##### Iterated derivatives of the squared norm (dimension-free) -/
+
+private lemma norm_iteratedFDeriv_id_one_le (x : E) :
+    ‖iteratedFDeriv ℝ 1 (fun y : E => y) x‖ ≤ 1 := by
+  rw [norm_iteratedFDeriv_one, fderiv_id']
+  exact ContinuousLinearMap.norm_id_le
+
+private lemma norm_iteratedFDeriv_id_of_two_le {i : ℕ} (hi : 2 ≤ i) (x : E) :
+    ‖iteratedFDeriv ℝ i (fun y : E => y) x‖ = 0 := by
+  obtain ⟨m, rfl⟩ : ∃ m, i = m + 2 := ⟨i - 2, by omega⟩
+  rw [← norm_iteratedFDeriv_fderiv]
+  have h : (fderiv ℝ fun y : E => y) = fun _ : E => ContinuousLinearMap.id ℝ E := by
+    funext y; exact fderiv_id'
+  rw [h, iteratedFDeriv_const_of_ne (by omega : m + 1 ≠ 0)]
+  simp
+
+/-- Mathlib's bilinear iterated-derivative bound applied to `‖y‖² = ⟪y, y⟫`. -/
+private lemma norm_iteratedFDeriv_normSq_le (n : ℕ) (x : E) :
+    ‖iteratedFDeriv ℝ n (fun y : E => ‖y‖ ^ 2) x‖
+      ≤ ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ)
+          * ‖iteratedFDeriv ℝ i (fun y : E => y) x‖
+          * ‖iteratedFDeriv ℝ (n - i) (fun y : E => y) x‖ := by
+  have hfun : (fun y : E => ‖y‖ ^ 2)
+      = fun y : E => (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) y y := by
+    funext y
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq]
+  rw [hfun]
+  exact ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_le_one _
+    (contDiff_id (n := (n : WithTop ℕ∞))) (contDiff_id (n := (n : WithTop ℕ∞))) x le_rfl
+    (norm_innerSL_le ℝ)
+
+private lemma norm_iteratedFDeriv_normSq_one (x : E) :
+    ‖iteratedFDeriv ℝ 1 (fun y : E => ‖y‖ ^ 2) x‖ ≤ 2 * ‖x‖ := by
+  refine (norm_iteratedFDeriv_normSq_le 1 x).trans ?_
+  have h1 := norm_iteratedFDeriv_id_one_le x
+  have h0 : ‖iteratedFDeriv ℝ 0 (fun y : E => y) x‖ = ‖x‖ := norm_iteratedFDeriv_zero
+  have hx : (0 : ℝ) ≤ ‖x‖ := norm_nonneg x
+  rw [Finset.sum_range_succ, Finset.sum_range_one]
+  simp only [Nat.sub_zero, Nat.choose_zero_right, Nat.choose_self, Nat.cast_one,
+    one_mul, h0]
+  nlinarith [h1, hx]
+
+private lemma norm_iteratedFDeriv_normSq_two (x : E) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ 2) x‖ ≤ 2 := by
+  refine (norm_iteratedFDeriv_normSq_le 2 x).trans ?_
+  have h1 := norm_iteratedFDeriv_id_one_le x
+  have h2 : ‖iteratedFDeriv ℝ 2 (fun y : E => y) x‖ = 0 :=
+    norm_iteratedFDeriv_id_of_two_le le_rfl x
+  have h0 : ‖iteratedFDeriv ℝ 0 (fun y : E => y) x‖ = ‖x‖ := norm_iteratedFDeriv_zero
+  have hn1 : (0 : ℝ) ≤ ‖iteratedFDeriv ℝ 1 (fun y : E => y) x‖ := norm_nonneg _
+  rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+  simp only [Nat.sub_zero, Nat.choose_zero_right, Nat.choose_one_right,
+    Nat.choose_self, Nat.cast_one, Nat.cast_ofNat, one_mul, h0, h2, mul_zero, zero_mul,
+    zero_add, add_zero]
+  nlinarith [h1, hn1]
+
+private lemma norm_iteratedFDeriv_normSq_three (x : E) :
+    ‖iteratedFDeriv ℝ 3 (fun y : E => ‖y‖ ^ 2) x‖ ≤ 0 := by
+  refine (norm_iteratedFDeriv_normSq_le 3 x).trans ?_
+  have h2 : ‖iteratedFDeriv ℝ 2 (fun y : E => y) x‖ = 0 :=
+    norm_iteratedFDeriv_id_of_two_le le_rfl x
+  have h3 : ‖iteratedFDeriv ℝ 3 (fun y : E => y) x‖ = 0 :=
+    norm_iteratedFDeriv_id_of_two_le (by norm_num) x
+  rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
+  simp only [Nat.sub_zero, h2, h3, mul_zero, zero_mul, add_zero]
+  exact le_rfl
+
+end RadialSmoothing
+
+/-- **Smoothed radial indicator with an absolute (dimension-free) third-derivative constant.**
+There is a constant `C₃` — independent of the dimension `k`, the radius `a` and the width `ε` —
+such that for every ball `{‖z‖ ≤ a}` with `0 ≤ a` and every width `ε > 0` there is a smooth
 `f : ℝ^k → [0,1]`, equal to `1` on `{‖z‖ ≤ a}`, vanishing on `{‖z‖ > a + ε}`, with
 `‖D³f‖ ≤ C₃ / ε³`. This is the radial analogue of `exists_smoothed_convex_indicator`, and unlike
-the convex one its constant is genuinely dimension-free, because it is built from a
-*one-dimensional* cutoff composed with the norm.
+the convex one its constant is genuinely dimension-free.
 
-Construction: `f = χ ∘ ‖·‖`, where `χ : ℝ → [0,1]` is a fixed smooth cutoff with `χ = 1` on
-`(-∞, a]`, `χ = 0` on `[a + ε, ∞)` and `‖χ⁽ʲ⁾‖ ≤ Bⱼ ε⁻ʲ` (e.g.
-`1 - Real.smoothTransition ((· - a)/ε)`, whose derivatives are bounded by absolute constants
-`Bⱼ` since `smoothTransition` is constant off
-`[0,1]`). Since `a > 0`, `f ≡ 1` on a neighbourhood of `0`, so the non-smoothness of `‖·‖` at the
-origin is invisible and `f` is globally `C³`. The third-derivative bound is Faà di Bruno
-(`norm_iteratedFDeriv_comp_le`): on the support `‖z‖ ∈ [a, a+ε]` one has `‖Dⁱ‖·‖‖ ≤ cᵢ ‖z‖^{1-i}`
-with **dimension-free** `cᵢ` (`‖D‖·‖‖ = 1`, `‖D²‖·‖‖ ≲ ‖z‖⁻¹`, `‖D³‖·‖‖ ≲ ‖z‖⁻²`), and combining
-with `‖χ⁽ʲ⁾‖ ≤ Bⱼ ε⁻ʲ` and `‖z‖ ≥ a ≥ ε` gives `‖D³f‖ ≤ C₃ ε⁻³` with `C₃` absolute.
+**Construction.** `f = χ(( ‖·‖² − a²)/W)` with `W = (a+ε)² − a² = ε(2a+ε)` and `χ` the *fixed*
+cutoff `radialCutoff` (`1` on `(-∞,0]`, `0` on `[1,∞)`). Composing with `‖·‖²` rather than with
+`‖·‖` is essential: `‖·‖²` is a quadratic polynomial, hence globally smooth (no singularity at
+the origin) with `‖D¹‖·‖²‖ = 2‖z‖`, `‖D²‖·‖²‖ ≤ 2`, `D³‖·‖² = 0`, all dimension-free.
 
-TODO: the two missing quantitative bricks are (i) an explicit `∀ x, |smoothTransition⁽ʲ⁾ x| ≤ Bⱼ`
-(provable from `smoothTransition` constant off `[0,1]` + continuity on the compact `[0,1]`), and
-(ii) **dimension-free iterated-derivative bounds for the Euclidean norm away from `0`**,
-`‖iteratedFDeriv ℝ i (‖·‖) z‖ ≤ cᵢ ‖z‖^{1-i}` for `‖z‖ > 0`, which Mathlib v4.29.1 does not
-provide (it has `contDiffAt_norm`/smoothness away from `0` but no quantitative iterated bounds).
-The hypothesis `ε ≤ a` records honestly that the elementary `χ ∘ ‖·‖` route yields a
-dimension-free, `a`-uniform `C₃` only for `ε ≤ a`; for tiny balls (`ε > a`) the norm's second
-derivative `≈ ‖z‖⁻¹` is not controlled by `ε⁻¹`, which is exactly the small-radius gap the ball
-assembly `berryEsseen_ball_elementary` handles separately. -/
+**Third-derivative bound.** Write `u = ‖·‖²/W`, so `f = χ(· − a²/W) ∘ u`. On the transition
+shell `a ≤ ‖z‖ ≤ a+ε` one has `‖D¹u‖ = 2‖z‖/W ≤ 2(a+ε)/(ε(2a+ε)) ≤ 2/ε` and
+`‖D²u‖ = 2/W ≤ 4/ε² = (2/ε)²`, while `D³u = 0`; so `‖Dⁱu‖ ≤ D^i` with the *single* geometric
+ratio `D = 2/ε`, and Mathlib's `norm_iteratedFDeriv_comp_le` gives
+`‖D³f‖ ≤ 3! · B · (2/ε)³ = 48B/ε³` with `B` the absolute bound of `exists_radialCutoff_bound`.
+Off that shell `f` is locally constant, so `D³f = 0`.
+
+Note the hypothesis `ε ≤ a` of the earlier `χ ∘ ‖·‖` formulation is **not** needed here: the
+squared-norm route is uniform down to `a = 0`. -/
 private lemma exists_smoothed_radial_indicator :
-    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ (k : ℕ) (a : ℝ), 0 ≤ a → ∀ {ε : ℝ}, 0 < ε → ε ≤ a →
+    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ (k : ℕ) (a : ℝ), 0 ≤ a → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x, ‖x‖ ≤ a → f x = 1) ∧ (∀ x, a + ε < ‖x‖ → f x = 0) ∧
         (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
-  -- TODO (planned debt): 1-D cutoff composed with the norm; see docstring.
-  sorry
+  obtain ⟨B, hB1, hB⟩ := exists_radialCutoff_bound
+  refine ⟨48 * B, by linarith, ?_⟩
+  intro k a ha ε hε
+  set W : ℝ := 2 * a * ε + ε ^ 2 with hWdef
+  have hW0 : 0 < W := by rw [hWdef]; nlinarith
+  set c : ℝ := a ^ 2 / W with hcdef
+  set u : EuclideanSpace ℝ (Fin k) → ℝ := fun y => W⁻¹ • ‖y‖ ^ 2 with hudef
+  set g : ℝ → ℝ := fun t => radialCutoff (-c + t) with hgdef
+  have huCD : ContDiff ℝ 3 u := (contDiff_norm_sq ℝ).const_smul W⁻¹
+  have hgCD : ContDiff ℝ 3 g :=
+    contDiff_radialCutoff.comp (contDiff_const.add contDiff_id)
+  -- `g (u y) = χ((‖y‖² − a²)/W)`
+  have hval : ∀ y : EuclideanSpace ℝ (Fin k),
+      (g ∘ u) y = radialCutoff ((‖y‖ ^ 2 - a ^ 2) / W) := by
+    intro y
+    simp only [Function.comp_apply, hgdef, hudef, hcdef, smul_eq_mul]
+    congr 1
+    field_simp
+    try ring
+  refine ⟨g ∘ u, hgCD.comp huCD, fun x => ?_, fun x => ?_, fun x hx => ?_, fun x hx => ?_,
+    fun x => ?_⟩
+  · rw [hval]; exact radialCutoff_nonneg _
+  · rw [hval]; exact radialCutoff_le_one _
+  · rw [hval]
+    refine radialCutoff_of_nonpos ?_
+    apply div_nonpos_of_nonpos_of_nonneg _ hW0.le
+    have : ‖x‖ ^ 2 ≤ a ^ 2 := by nlinarith [norm_nonneg x]
+    linarith
+  · rw [hval]
+    refine radialCutoff_of_one_le ?_
+    rw [le_div_iff₀ hW0]
+    have hxa : a + ε < ‖x‖ := hx
+    nlinarith [norm_nonneg x]
+  · -- the third-derivative bound
+    set v : ℝ := (‖x‖ ^ 2 - a ^ 2) / W with hvdef
+    by_cases hcase : 0 ≤ v ∧ v ≤ 1
+    · -- transition shell: Faà di Bruno with the geometric ratio `D = 2/ε`
+      obtain ⟨hv0, hv1⟩ := hcase
+      have hxle : ‖x‖ ≤ a + ε := by
+        rw [hvdef, div_le_one hW0] at hv1
+        nlinarith [norm_nonneg x]
+      have hCb : ∀ i, i ≤ 3 → ‖iteratedFDeriv ℝ i g (u x)‖ ≤ B := by
+        intro i hi
+        have hshift : iteratedFDeriv ℝ i g = fun t => iteratedFDeriv ℝ i radialCutoff (-c + t) :=
+          iteratedFDeriv_comp_add_left' i (-c)
+        have harg : -c + u x = v := by
+          simp only [hudef, hcdef, hvdef, smul_eq_mul]
+          field_simp
+          try ring
+        rw [hshift]
+        change ‖iteratedFDeriv ℝ i radialCutoff (-c + u x)‖ ≤ B
+        rw [harg]
+        exact hB i hi v ⟨hv0, hv1⟩
+      have hD : ∀ i, 1 ≤ i → i ≤ 3 → ‖iteratedFDeriv ℝ i u x‖ ≤ (2 / ε) ^ i := by
+        intro i _ hi3
+        have hsc : iteratedFDeriv ℝ i u x
+            = W⁻¹ • iteratedFDeriv ℝ i (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) x :=
+          iteratedFDeriv_const_smul_apply' ((contDiff_norm_sq ℝ).contDiffAt)
+        rw [hsc, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hW0)]
+        interval_cases i
+        · rw [pow_one, inv_mul_le_iff₀ hW0]
+          have hWid : W * (2 / ε) = 2 * (2 * a + ε) := by
+            rw [hWdef]; field_simp; try ring
+          rw [hWid]
+          have h := norm_iteratedFDeriv_normSq_one x
+          nlinarith [h, hxle, ha, norm_nonneg x]
+        · rw [inv_mul_le_iff₀ hW0]
+          have hWid : W * (2 / ε) ^ 2 = 4 * (2 * a + ε) / ε := by
+            rw [hWdef]; field_simp; try ring
+          rw [hWid]
+          have h := norm_iteratedFDeriv_normSq_two x
+          have h2 : (2 : ℝ) ≤ 4 * (2 * a + ε) / ε := by
+            rw [le_div_iff₀ hε]; nlinarith
+          linarith
+        · rw [inv_mul_le_iff₀ hW0]
+          have h := norm_iteratedFDeriv_normSq_three x
+          have hz : ‖iteratedFDeriv ℝ 3
+              (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) x‖ = 0 :=
+            le_antisymm h (norm_nonneg _)
+          rw [hz]
+          positivity
+      have hcomp := norm_iteratedFDeriv_comp_le hgCD huCD le_rfl x hCb hD
+      refine hcomp.trans ?_
+      have hfact : ((Nat.factorial 3 : ℕ) : ℝ) = 6 := by norm_num [Nat.factorial]
+      rw [hfact]
+      have : (6 : ℝ) * B * (2 / ε) ^ 3 = 48 * B / ε ^ 3 := by
+        field_simp; ring
+      rw [this]
+    · -- off the shell `f` is locally constant, so the third derivative vanishes
+      have hcont : Continuous fun y : EuclideanSpace ℝ (Fin k) => (‖y‖ ^ 2 - a ^ 2) / W := by
+        fun_prop
+      have hzero : iteratedFDeriv ℝ 3 (g ∘ u) x = 0 := by
+        rcases not_and_or.mp hcase with hlt | hgt
+        · have hvx : (‖x‖ ^ 2 - a ^ 2) / W < 0 := lt_of_not_ge hlt
+          have hmem : {y : EuclideanSpace ℝ (Fin k) | (‖y‖ ^ 2 - a ^ 2) / W < 0} ∈ nhds x :=
+            (isOpen_lt hcont continuous_const).mem_nhds hvx
+          have heq : (g ∘ u) =ᶠ[nhds x] fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ) :=
+            Filter.eventually_of_mem hmem fun y hy => by
+              rw [hval y]; exact radialCutoff_of_nonpos (le_of_lt hy)
+          have := (Filter.EventuallyEq.iteratedFDeriv ℝ heq 3).self_of_nhds
+          rw [this, iteratedFDeriv_const_of_ne (by norm_num)]
+          rfl
+        · have hvx : (1 : ℝ) < (‖x‖ ^ 2 - a ^ 2) / W := lt_of_not_ge hgt
+          have hmem : {y : EuclideanSpace ℝ (Fin k) | 1 < (‖y‖ ^ 2 - a ^ 2) / W} ∈ nhds x :=
+            (isOpen_lt continuous_const hcont).mem_nhds hvx
+          have heq : (g ∘ u) =ᶠ[nhds x] fun _ : EuclideanSpace ℝ (Fin k) => (0 : ℝ) :=
+            Filter.eventually_of_mem hmem fun y hy => by
+              rw [hval y]; exact radialCutoff_of_one_le (le_of_lt hy)
+          have := (Filter.EventuallyEq.iteratedFDeriv ℝ heq 3).self_of_nhds
+          rw [this, iteratedFDeriv_const_of_ne (by norm_num)]
+          rfl
+      rw [hzero, norm_zero]
+      positivity
 
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
 For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
