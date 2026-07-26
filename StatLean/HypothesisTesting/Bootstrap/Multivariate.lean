@@ -3,6 +3,9 @@ import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Moments.Covariance
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The multivariate bootstrap: mean vectors and smooth functions of means
@@ -125,6 +128,252 @@ noncomputable def normMeanRootCDF (F : Measure (EuclideanSpace ℝ (Fin k)))
     (nrm : EuclideanSpace ℝ (Fin k) → ℝ) (n : ℕ) (x : ℝ) : ℝ :=
   ((meanVecRootLaw F n) {z | nrm z ≤ x}).toReal
 
+/-! ## Analytic infrastructure for the norm of a Gaussian vector
+
+The limiting distribution function of a norm of the Gaussian limit is continuous because the
+spheres of the norm are null for the limit law. The chain of facts below establishes that,
+degeneracy of the covariance included: the Gaussian is the image of the standard Gaussian under
+the square root of the covariance, that image turns the norm into a **seminorm** `g`, the level
+sets of a nonzero seminorm are frontiers of convex sets and hence Lebesgue-null, and the standard
+Gaussian is absolutely continuous with respect to the volume. -/
+
+section NormOfGaussian
+
+/-- Absolute continuity is inherited by finite powers of a measure on the line. Mathlib
+v4.29.1 has `Measure.AbsolutelyContinuous.prod` for binary products but no `Measure.pi`
+counterpart; this is the induction that turns one into the other. -/
+private lemma pi_absolutelyContinuous_pi {μ ν : Measure ℝ} [SigmaFinite μ] [SigmaFinite ν]
+    (h : μ ≪ ν) (n : ℕ) :
+    (Measure.pi fun _ : Fin n => μ) ≪ (Measure.pi fun _ : Fin n => ν) := by
+  induction n with
+  | zero =>
+      rw [Measure.pi_of_empty (fun _ : Fin 0 => μ), Measure.pi_of_empty (fun _ : Fin 0 => ν)]
+  | succ n ih =>
+      have hμ := (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => μ) 0).symm
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0)
+      have hν := (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => ν) 0).symm
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0)
+      rw [← hμ.map_eq, ← hν.map_eq]
+      exact (h.prod ih).map
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm.measurable
+
+/-- The standard Gaussian measure on a Euclidean space is absolutely continuous with respect to
+the volume: it is the image under `WithLp.toLp` of a product of one-dimensional Gaussians, and
+`WithLp.toLp` also transports the volume to the volume. -/
+private lemma stdGaussian_absolutelyContinuous_volume (k : ℕ) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))) ≪ (volume : Measure (EuclideanSpace ℝ (Fin k))) := by
+  have h1 : (stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1).map (WithLp.toLp 2) :=
+    map_pi_eq_stdGaussian.symm
+  have h2 : (volume : Measure (EuclideanSpace ℝ (Fin k)))
+      = (Measure.pi fun _ : Fin k => (volume : Measure ℝ)).map (WithLp.toLp 2) := by
+    rw [← volume_pi]
+    exact (PiLp.volume_preserving_toLp (Fin k)).map_eq.symm
+  rw [h1, h2]
+  exact (pi_absolutelyContinuous_pi (gaussianReal_absolutelyContinuous 0 one_ne_zero) k).map
+    (PiLp.volume_preserving_toLp (Fin k)).measurable
+
+section Seminorm
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- An absolutely homogeneous functional vanishes at the origin. -/
+private lemma seminorm_zero {g : E → ℝ} (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) :
+    g 0 = 0 := by simpa using hsmul 0 0
+
+/-- A subadditive absolutely homogeneous functional is nonnegative. -/
+private lemma seminorm_nonneg {g : E → ℝ} (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) (y : E) : 0 ≤ g y := by
+  have h0 : g 0 = 0 := seminorm_zero hsmul
+  have hneg : g ((-1 : ℝ) • y) = g y := by rw [hsmul]; simp
+  have hy : y + (-1 : ℝ) • y = 0 := by module
+  have h := hadd y ((-1 : ℝ) • y)
+  rw [hneg, hy, h0] at h
+  linarith
+
+/-- A subadditive absolutely homogeneous functional is even. -/
+private lemma seminorm_neg {g : E → ℝ} (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) (y : E) :
+    g (-y) = g y := by
+  have h := hsmul (-1) y
+  simpa using h
+
+/-- A subadditive absolutely homogeneous functional is convex. -/
+private lemma convexOn_of_seminorm {g : E → ℝ} (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) : ConvexOn ℝ Set.univ g := by
+  refine ⟨convex_univ, fun x _ y _ a b ha hb _ => ?_⟩
+  calc g (a • x + b • y) ≤ g (a • x) + g (b • y) := hadd _ _
+    _ = a * g x + b * g y := by rw [hsmul, hsmul, abs_of_nonneg ha, abs_of_nonneg hb]
+
+/-- A subadditive absolutely homogeneous functional on a finite-dimensional space is continuous:
+it is convex and finite everywhere, hence locally Lipschitz. -/
+private lemma continuous_of_seminorm [FiniteDimensional ℝ E] {g : E → ℝ}
+    (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : E), g (c • y) = |c| * g y) : Continuous g :=
+  (convexOn_of_seminorm hadd hsmul).locallyLipschitz.continuous
+
+end Seminorm
+
+/-- **The level sets of a nonvanishing seminorm are Lebesgue-null.**
+
+For `x < 0` the level set is empty. For `x ≥ 0` it is contained in the frontier of the convex
+sublevel set `{g ≤ x}`, which is Haar-null. The two ingredients that keep the point `y` off the
+interior are: for `x > 0`, that `(1 + t) • y` leaves the sublevel set; and for `x = 0`, that a
+proper subspace has empty interior. -/
+private lemma volume_seminorm_level_eq_zero {k : ℕ} {g : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hadd : ∀ y z, g (y + z) ≤ g y + g z)
+    (hsmul : ∀ (c : ℝ) (y : EuclideanSpace ℝ (Fin k)), g (c • y) = |c| * g y)
+    (hne : ∃ u, g u ≠ 0) (x : ℝ) :
+    (volume : Measure (EuclideanSpace ℝ (Fin k))) {y | g y = x} = 0 := by
+  have hnn := seminorm_nonneg hadd hsmul
+  have h0 : g 0 = 0 := seminorm_zero hsmul
+  obtain ⟨u, hu⟩ := hne
+  have hupos : 0 < g u := lt_of_le_of_ne (hnn u) (Ne.symm hu)
+  have hune : u ≠ 0 := fun h => by rw [h, h0] at hupos; exact lt_irrefl _ hupos
+  have hunorm : 0 < ‖u‖ := norm_pos_iff.2 hune
+  rcases lt_or_ge x 0 with hx | hx
+  · have hempty : {y : EuclideanSpace ℝ (Fin k) | g y = x} = ∅ := by
+      ext y
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      intro h
+      exact absurd (h ▸ hnn y) (not_le.mpr hx)
+    rw [hempty, measure_empty]
+  · have hconv : Convex ℝ {y : EuclideanSpace ℝ (Fin k) | g y ≤ x} := by
+      have h := (convexOn_of_seminorm hadd hsmul).convex_le x
+      simpa using h
+    refine measure_mono_null ?_ (Convex.addHaar_frontier _ hconv)
+    intro y hy
+    simp only [Set.mem_setOf_eq] at hy
+    refine ⟨subset_closure (by simp only [Set.mem_setOf_eq, hy]; exact le_rfl), ?_⟩
+    intro hmem
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hmem)
+    have hune' : ‖u‖ ≠ 0 := hunorm.ne'
+    rcases eq_or_lt_of_le hx with hx0 | hxpos
+    · -- the level `x = 0` is the kernel of `g`, a proper subspace, so it has empty interior
+      obtain ⟨s, hs, hnormsu⟩ : ∃ s : ℝ, 0 < s ∧ s * ‖u‖ = ε / 2 :=
+        ⟨ε / (2 * ‖u‖), by positivity, by field_simp⟩
+      have hzmem : y + s • u ∈ Metric.ball y ε := by
+        rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_pos hs, hnormsu]
+        linarith
+      have hz : g (y + s • u) ≤ x := hball hzmem
+      have hsplit : g (s • u) ≤ g (y + s • u) + g (-y) := by
+        have := hadd (y + s • u) (-y)
+        simpa using this
+      rw [seminorm_neg hsmul, hsmul, abs_of_pos hs, hy, ← hx0] at hsplit
+      nlinarith [hsplit, hz, hupos, hs]
+    · -- a positive level: scaling `y` slightly leaves the sublevel set
+      have hyne : y ≠ 0 := fun h => by rw [h, h0] at hy; exact hxpos.ne hy
+      have hynorm : 0 < ‖y‖ := norm_pos_iff.2 hyne
+      have hyne' : ‖y‖ ≠ 0 := hynorm.ne'
+      obtain ⟨t, ht, hnormty⟩ : ∃ t : ℝ, 0 < t ∧ t * ‖y‖ = ε / 2 :=
+        ⟨ε / (2 * ‖y‖), by positivity, by field_simp⟩
+      have hzmem : (1 + t) • y ∈ Metric.ball y ε := by
+        rw [Metric.mem_ball, dist_eq_norm]
+        have hrw : (1 + t) • y - y = t • y := by module
+        rw [hrw, norm_smul, Real.norm_eq_abs, abs_of_pos ht, hnormty]
+        linarith
+      have hz : g ((1 + t) • y) ≤ x := hball hzmem
+      rw [hsmul, abs_of_pos (by linarith : (0 : ℝ) < 1 + t), hy] at hz
+      nlinarith [hz, ht, hxpos]
+
+open scoped MatrixOrder
+
+/-- The coordinates of a square-integrable law on a Euclidean space are square-integrable. -/
+private lemma memLp_coord {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) (i : Fin k) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) 2 Q := by
+  have h := (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).comp_memLp' hQ2
+  simpa [Function.comp_def] using h
+
+/-- **The covariance matrix of a square-integrable law is positive semidefinite.**
+
+Square-integrability is what makes this true: the Mathlib `covariance` returns its junk value `0`
+on entries whose integrand is not integrable, and a matrix built from a mixture of genuine and
+junk entries need not be positive semidefinite. -/
+private lemma posSemidef_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsFiniteMeasure Q] (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q) :
+    (covMatrix Q).PosSemidef := by
+  classical
+  have hcoord := memLp_coord hQ2
+  have hmap : Q.map (fun y : EuclideanSpace ℝ (Fin k) =>
+      WithLp.toLp 2 fun i => WithLp.ofLp y i) = Q := by
+    simp
+  have hbil : ∀ x y : EuclideanSpace ℝ (Fin k), covarianceBilin Q x y
+      = ∑ i, ∑ j, WithLp.ofLp x i * WithLp.ofLp y j * covMatrix Q i j := by
+    intro x y
+    have h := covarianceBilin_apply_pi (μ := Q)
+      (X := fun (i : Fin k) (y : EuclideanSpace ℝ (Fin k)) => WithLp.ofLp y i) hcoord x y
+    rwa [hmap] at h
+  refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ ?_
+  · ext i j
+    simp only [Matrix.conjTranspose_apply, star_trivial, covMatrix, Matrix.of_apply]
+    exact covariance_comm _ _
+  · intro x
+    have h := covarianceBilin_self_nonneg (μ := Q) (WithLp.toLp 2 x)
+    rw [hbil] at h
+    have hrw : dotProduct (star x) ((covMatrix Q).mulVec x)
+        = ∑ i, ∑ j, x i * x j * covMatrix Q i j := by
+      simp only [star_trivial, dotProduct, Matrix.mulVec, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+    rw [hrw]
+    exact h
+
+/-- **Continuity of the limiting norm distribution function, for a general covariance.**
+
+The general engine behind `continuous_normLimitCDF`: for any nonzero positive semidefinite `S`
+the distribution function of `nrm` under `multivariateGaussian 0 S` is continuous. Degeneracy of
+`S` is allowed — only `S ≠ 0` is used. -/
+private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
+    {nrm : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hpsd : S.PosSemidef) (hSne : S ≠ 0)
+    (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
+    (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0) :
+    Continuous (normLimitCDF S nrm) := by
+  classical
+  set A := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) with hAdef
+  set g : EuclideanSpace ℝ (Fin k) → ℝ := fun y => nrm (A y) with hgdef
+  have hgadd : ∀ y z, g (y + z) ≤ g y + g z := by
+    intro y z; simp only [hgdef, map_add]; exact hnrm_add _ _
+  have hgsmul : ∀ (c : ℝ) (y), g (c • y) = |c| * g y := by
+    intro c y; simp only [hgdef, map_smul]; exact hnrm_smul _ _
+  -- the square root of a nonzero positive semidefinite matrix is nonzero
+  have hsqrt_ne : CFC.sqrt S ≠ 0 := fun h => hSne ((CFC.sqrt_eq_zero_iff S hpsd.nonneg).1 h)
+  have hAne : A ≠ 0 := by
+    intro h
+    exact hsqrt_ne ((Matrix.toEuclideanCLM (𝕜 := ℝ) (n := Fin k)).injective
+      (a₁ := CFC.sqrt S) (a₂ := 0) (by simpa [hAdef, map_zero] using h))
+  -- hence `g` is a seminorm that does not vanish identically
+  have hgne : ∃ u, g u ≠ 0 := by
+    obtain ⟨u, hu⟩ := DFunLike.ne_iff.1 hAne
+    refine ⟨u, fun h => hu ?_⟩
+    simpa using hnrm_def _ h
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  have hg_cont : Continuous g := hnrm_cont.comp A.continuous
+  -- the law of `g` under the standard Gaussian has no atoms
+  set ρ := (stdGaussian (EuclideanSpace ℝ (Fin k))).map g with hρdef
+  haveI : IsProbabilityMeasure ρ := Measure.isProbabilityMeasure_map hg_cont.measurable.aemeasurable
+  haveI : NoAtoms ρ := by
+    refine ⟨fun x => ?_⟩
+    rw [hρdef, Measure.map_apply hg_cont.measurable (measurableSet_singleton x)]
+    exact stdGaussian_absolutelyContinuous_volume k
+      (volume_seminorm_level_eq_zero hgadd hgsmul hgne x)
+  have heq : normLimitCDF S nrm = fun x => (ρ (Set.Iic x)).toReal := by
+    funext x
+    have hset : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x} :=
+      measurableSet_le hnrm_cont.measurable measurable_const
+    have hpre : (fun y : EuclideanSpace ℝ (Fin k) => (0 : EuclideanSpace ℝ (Fin k)) + A y) ⁻¹'
+        {z | nrm z ≤ x} = g ⁻¹' (Set.Iic x) := by
+      ext y; simp [hgdef]
+    rw [normLimitCDF, multivariateGaussian,
+      Measure.map_apply (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) =>
+        (0 : EuclideanSpace ℝ (Fin k)) + A y) hset,
+      hpre, hρdef, Measure.map_apply hg_cont.measurable measurableSet_Iic]
+  rw [heq]
+  exact continuous_toReal_measure_Iic ρ
+
+end NormOfGaussian
+
 /-! ## The mean vector -/
 
 section MeanVector
@@ -164,8 +413,25 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
 /-- **The limiting distribution function of the norm is continuous.**
 
 If the limiting covariance matrix has a nonzero entry, the norm of the Gaussian limit has no
-atoms: the spheres of a norm are boundaries of convex sets and hence null for the limit law. -/
-theorem continuous_normLimitCDF
+atoms: the spheres of a norm are boundaries of convex sets and hence null for the limit law.
+
+**Signature amendment (square-integrability of the limit law).** The reference's statement is
+*false* as frozen, and the added hypotheses `[IsFiniteMeasure Q]` and `hQ2` are exactly what
+repairs it. In Mathlib v4.29.1, `multivariateGaussian 0 S = Measure.dirac 0` as soon as `S` is
+not positive semidefinite (`ProbabilityTheory.multivariateGaussian_of_not_posSemidef`); for that
+law `normLimitCDF S nrm` is the indicator of `{0 ≤ x}`, which jumps at `0`, so no norm makes it
+continuous. And `covMatrix Q` is positive semidefinite only under square-integrability: the
+Mathlib `covariance` returns its junk value `0` whenever the integrand is not integrable, so a
+law with one non-integrable coordinate can have a vanishing diagonal entry next to a genuine
+nonzero off-diagonal one (on `ℝ²`, the law of `(Z, Z / (1 + Z²))` for a Cauchy `Z` has junk
+`(1,1)` entry `0` — `Z` is not integrable and `Z²` is not either — while the `(1,2)` entry
+`∫ Z² / (1 + Z²)` is finite and positive, giving a negative determinant). Both added hypotheses
+are already carried by the two siblings `norm_root_cdf_tendsto` and
+`bootstrap_meanVec_consistent`, so no application is weakened. -/
+theorem continuous_normLimitCDF [IsFiniteMeasure Q]
+    -- USER-INPUT (signature amendment): the limit law is square-integrable, so its covariance
+    -- matrix is positive semidefinite and the Gaussian limit is a genuine Gaussian
+    (hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q)
     -- USER-INPUT: the norm is subadditive
     (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
     -- USER-INPUT: the norm is absolutely homogeneous
@@ -175,25 +441,9 @@ theorem continuous_normLimitCDF
     -- USER-INPUT: the limiting covariance is not identically zero, so the limit is nondegenerate
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     Continuous (normLimitCDF (covMatrix Q) nrm) := by
-  -- TODO (norm-CDF of a possibly-degenerate Gaussian — two missing bricks). Continuity of the
-  -- monotone `x ↦ (μ {nrm ≤ x}).toReal` (μ := multivariateGaussian 0 (covMatrix Q)) is
-  -- equivalent to `μ {nrm z = x} = 0` for every `x`. Intended clean route, degeneracy-robust:
-  -- `μ = (toEuclideanCLM (CFC.sqrt S))_* stdGaussian` (the DEFINITION), so
-  -- `μ {nrm z = x} = stdGaussian {z | g z = x}` with `g := nrm ∘ √S` a *seminorm*
-  -- (subadditive+absolutely homogeneous from `hnrm_add`/`hnrm_smul`; possibly degenerate). For
-  -- `x > 0`, `{g = x} ⊆ frontier {g ≤ x}` (a convex set), null by `Convex.addHaar_frontier`;
-  -- for `x = 0`, `{g = 0} = ker √S`, a proper subspace (hence hyperplane-null) since `√S ≠ 0`;
-  -- for `x < 0`, `{g = x} = ∅`. Two bricks are missing in Mathlib v4.29.1:
-  --   (1) `stdGaussian ≪ volume` (to transfer the `volume`-null frontier to the Gaussian): NOT
-  --       in Mathlib; buildable from `Measure.pi (gaussianReal 0 1) ≪ volume` (no `Measure.pi`
-  --       absolute-continuity lemma exists yet) transported through the orthonormal-basis iso
-  --       `∑ xᵢ • bᵢ`, but the `WithLp`/`EuclideanSpace` volume-preservation is heavy;
-  --   (2) `(covMatrix Q).PosSemidef`, needed to get `√S ≠ 0` from `hS : S ≠ 0`. It is NOT a
-  --       hypothesis here (the frozen signature lacks `hQ2`), and `covMatrix Q` is provably PSD
-  --       only under `MemLp id 2 Q` (via `covarianceBilin_apply_eq_cov` +
-  --       `isPosSemidef_covarianceBilin`). Without PSD, `multivariateGaussian 0 S = dirac 0`
-  --       and the CDF jumps at `0`; so the statement is true exactly under square-integrability.
-  sorry
+  obtain ⟨i, j, hij⟩ := hS
+  exact continuous_normLimitCDF_of_posSemidef (posSemidef_covMatrix hQ2)
+    (fun h => hij (by rw [h]; simp)) hnrm_add hnrm_smul hnrm_def
 
 /-- **Limit law of the norm of the root along the class.**
 

@@ -123,7 +123,7 @@ private lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure 
       tendsto_atTop := ProbabilityTheory.tendsto_cdf_atTop ν }
 
 /-- The distribution function of a probability law with no atoms is continuous. -/
-private lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
+lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
   have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
     funext x
