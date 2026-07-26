@@ -3,6 +3,7 @@ import StatLean.HypothesisTesting.ForMathlib.DKWUniform
 import StatLean.MultipleTesting.ForMathlib.EmpiricalCDF
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.MeasureTheory.Order.Group.Lattice
 
 /-!
 # The Kolmogorov–Smirnov test: calibration and consistency
@@ -140,6 +141,68 @@ theorem ksStat_eq_sqrt_mul_ksDist {n : ℕ} (X : Fin n → Ω → ℝ) (μ : Mea
     ksStat X (fun t => cdf μ t) ω = Real.sqrt (n : ℝ) * ksDist X μ ω := by
   simp only [ksStat, supCDFDist, ksDist, empiricalCDF_eq_empCDF]
 
+/-- The step indicator `t ↦ 1{a ≤ t}` is right continuous: it is eventually constant on
+every right neighbourhood. -/
+private lemma rightCont_stepIndicator (a s : ℝ) :
+    Tendsto (fun t => if a ≤ t then (1 : ℝ) else 0)
+      (nhdsWithin s (Set.Ioi s)) (nhds (if a ≤ s then (1 : ℝ) else 0)) := by
+  have hl : (fun _ : ℝ => if a ≤ s then (1 : ℝ) else 0)
+      =ᶠ[nhdsWithin s (Set.Ioi s)] (fun t => if a ≤ t then (1 : ℝ) else 0) := by
+    by_cases h : a ≤ s
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      rw [if_pos h, if_pos (h.trans ht.le)]
+    · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.mp h))] with t ht
+      rw [if_neg h, if_neg (not_le.mpr ht)]
+  exact Tendsto.congr' hl tendsto_const_nhds
+
+/-- The empirical c.d.f. is right continuous in the threshold (it is a finite average of the
+right-continuous step indicators of the sample points). -/
+private lemma rightCont_empiricalCDF {n : ℕ} (X : Fin n → Ω → ℝ) (ω : Ω) (s : ℝ) :
+    Tendsto (fun t => empiricalCDF X t ω) (nhdsWithin s (Set.Ioi s))
+      (nhds (empiricalCDF X s ω)) := by
+  have heq : ∀ t, empiricalCDF X t ω
+      = (n : ℝ)⁻¹ * ∑ i, if X i ω ≤ t then (1 : ℝ) else 0 := by
+    intro t; rw [empiricalCDF_eq_empCDF]; rfl
+  simp_rw [heq]
+  exact (tendsto_finset_sum Finset.univ
+    (fun i _ => rightCont_stepIndicator (X i ω) s)).const_mul _
+
+/-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over
+the rationals: the rationals are dense from the right, so every value is approximated. -/
+private lemma iSup_real_eq_iSup_rat (g : ℝ → ℝ)
+    (hrc : ∀ s, Tendsto g (nhdsWithin s (Set.Ioi s)) (nhds (g s))) :
+    ⨆ t : ℝ, g t = ⨆ q : ℚ, g (q : ℝ) := by
+  by_cases hbdd : BddAbove (Set.range fun q : ℚ => g (q : ℝ))
+  · -- The rational supremum is finite; right continuity makes it an upper bound on all of `ℝ`.
+    have hle : ∀ t : ℝ, g t ≤ ⨆ q : ℚ, g (q : ℝ) := by
+      intro t
+      obtain ⟨u, hu_gt, hu_lt⟩ : ∃ u : ℕ → ℚ,
+          (∀ k, t < (u k : ℝ)) ∧ (∀ k, (u k : ℝ) < t + 1 / ((k : ℝ) + 1)) := by
+        choose u hu using fun k : ℕ =>
+          exists_rat_btwn (show t < t + 1 / ((k : ℝ) + 1) from
+            lt_add_of_pos_right t (by positivity))
+        exact ⟨u, fun k => (hu k).1, fun k => (hu k).2⟩
+      have hupper : Tendsto (fun k : ℕ => t + 1 / ((k : ℝ) + 1)) atTop (nhds t) := by
+        have := (tendsto_const_nhds (x := t)).add tendsto_one_div_add_atTop_nhds_zero_nat
+        simpa using this
+      have hnhds : Tendsto (fun k => (u k : ℝ)) atTop (nhds t) :=
+        tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
+          (Eventually.of_forall fun k => (hu_gt k).le)
+          (Eventually.of_forall fun k => (hu_lt k).le)
+      have htend : Tendsto (fun k => (u k : ℝ)) atTop (nhdsWithin t (Set.Ioi t)) :=
+        tendsto_nhdsWithin_iff.mpr ⟨hnhds, Eventually.of_forall fun k => hu_gt k⟩
+      exact le_of_tendsto ((hrc t).comp htend)
+        (Eventually.of_forall fun k => le_ciSup hbdd (u k))
+    have hbddR : BddAbove (Set.range g) :=
+      ⟨⨆ q : ℚ, g (q : ℝ), by rintro _ ⟨t, rfl⟩; exact hle t⟩
+    exact le_antisymm (ciSup_le hle) (ciSup_le fun q => le_ciSup hbddR (q : ℝ))
+  · -- The rational supremum is unbounded, hence so is the real one; both are junk (`sSup ∅`).
+    have hbddR : ¬ BddAbove (Set.range g) := by
+      intro hR
+      obtain ⟨M, hM⟩ := hR
+      exact hbdd ⟨M, by rintro _ ⟨q, rfl⟩; exact hM ⟨(q : ℝ), rfl⟩⟩
+    rw [ciSup_of_not_bddAbove hbddR, ciSup_of_not_bddAbove hbdd]
+
 /-- Measurability of the Kolmogorov–Smirnov statistic. The supremum defining `d_K` ranges
 over all of `ℝ`, but both competing functions are right continuous — the empirical c.d.f.
 by construction, `F₀` by hypothesis — so the supremum is attained along the rationals and
@@ -150,7 +213,25 @@ theorem measurable_ksStat {n : ℕ} (X : Fin n → Ω → ℝ) (F₀ : ℝ → �
     -- USER-INPUT: `F₀` is a c.d.f., in particular right continuous; Kolmogorov 1933
     (hF₀ : ∀ t : ℝ, Tendsto F₀ (nhdsWithin t (Set.Ioi t)) (nhds (F₀ t))) :
     Measurable (ksStat X F₀) := by
-  sorry
+  -- measurability of `ω ↦ empiricalCDF X q ω` at a fixed threshold
+  have hmeasEmp : ∀ t : ℝ, Measurable fun ω => empiricalCDF X t ω := by
+    intro t
+    simp_rw [empiricalCDF_eq_empCDF]
+    unfold empCDF
+    exact (Finset.univ.measurable_sum fun i _ =>
+      Measurable.ite (measurableSet_le (hX i) measurable_const)
+        measurable_const measurable_const).const_mul _
+  -- reduce the real supremum to a countable (rational) one, pointwise in `ω`
+  have hpt : ksStat X F₀
+      = fun ω => Real.sqrt (n : ℝ) * ⨆ q : ℚ, |empiricalCDF X (q : ℝ) ω - F₀ (q : ℝ)| := by
+    funext ω
+    simp only [ksStat, supCDFDist]
+    congr 1
+    exact iSup_real_eq_iSup_rat (fun t => |empiricalCDF X t ω - F₀ t|)
+      (fun s => Tendsto.abs ((rightCont_empiricalCDF X ω s).sub (hF₀ s)))
+  rw [hpt]
+  exact Measurable.const_mul
+    (Measurable.iSup fun q : ℚ => Measurable.abs ((hmeasEmp (q : ℝ)).sub measurable_const)) _
 
 /-! ### Level: the DKW calibration is exact -/
 
@@ -200,40 +281,6 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
     _ ≤ ENNReal.ofReal (4 * Real.exp (-(ksThreshold α) ^ 2 / 8)) :=
         dkw_uniform hn μ₀ X hX hindep hlaw hthr
     _ = ENNReal.ofReal α := by rw [dkw_envelope_threshold hα hα1]
-
-/-! ### Pointwise consistency against a fixed alternative -/
-
-/-- **Pointwise consistency of the Kolmogorov–Smirnov test.** Against any fixed
-alternative `F ≠ F₀` — equivalently, any `F` at positive Kolmogorov distance from `F₀` —
-the power of the calibrated test tends to one.
-
-The classical proof runs the Glivenko–Cantelli theorem (`d_K(F̂ₙ, F) → 0` a.s., hence
-`Tₙ → ∞` a.s.) together with `s_{n,1−α} → s_{1−α} < ∞`; under the calibration of this file
-the second ingredient is vacuous, since the critical value is a constant. The elementary
-alternative argument fixes a `t` with `F(t) ≠ F₀(t)` and observes that
-`n^{1/2}[F̂ₙ(t) − F(t)]` is bounded in probability while `s − n^{1/2}[F(t) − F₀(t)] → −∞`;
-that route needs only Chebyshev's inequality and is the intended formalization. -/
-theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : ℕ → Ω → ℝ}
-    {μ : Measure ℝ} [IsProbabilityMeasure μ] {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀]
-    {F F₀ : ℝ → ℝ}
-    -- USER-INPUT: the nominal level is a nondegenerate probability
-    (hα : 0 < α) (hα1 : α < 1)
-    -- USER-INPUT: each observation is measurable; part of the sampling model
-    (hX : ∀ i, Measurable (X i))
-    -- USER-INPUT: the observations are i.i.d.; Kolmogorov 1933
-    (hindep : iIndepFun X P)
-    -- USER-INPUT: the alternative: every observation has law `μ`
-    (hlaw : ∀ i, P.map (X i) = μ)
-    -- USER-INPUT: `F` is the c.d.f. of the sampling law
-    (hF : ∀ t : ℝ, F t = cdf μ t)
-    -- USER-INPUT: `F₀` is the c.d.f. of the null law
-    (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
-    -- USER-INPUT: the alternative is genuinely different from the null: `d_K(F, F₀) > 0`
-    (hne : 0 < supCDFDist F F₀) :
-    Tendsto
-      (fun n => (P {ω | ksThreshold α < ksStat (fun i : Fin n => X (i : ℕ)) F₀ ω}).toReal)
-      atTop (nhds 1) := by
-  sorry
 
 /-! ### Kolmogorov-distance geometry (triangle inequality) -/
 
@@ -415,5 +462,50 @@ theorem ks_uniform_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabili
     have h1 : (P n) {ω | s < ksStat (X n) F₀ ω} ≤ 1 :=
       (measure_mono (Set.subset_univ _)).trans_eq (measure_univ)
     simpa using ENNReal.toReal_mono ENNReal.one_ne_top h1
+
+/-! ### Pointwise consistency against a fixed alternative -/
+
+/-- **Pointwise consistency of the Kolmogorov–Smirnov test.** Against any fixed
+alternative `F ≠ F₀` — equivalently, any `F` at positive Kolmogorov distance from `F₀` —
+the power of the calibrated test tends to one.
+
+The classical proof runs the Glivenko–Cantelli theorem (`d_K(F̂ₙ, F) → 0` a.s., hence
+`Tₙ → ∞` a.s.) together with `s_{n,1−α} → s_{1−α} < ∞`; under the calibration of this file
+the second ingredient is vacuous, since the critical value is a constant. Here the fixed
+alternative is the constant selection of `ks_uniform_power` (`μ n = μ`, `F n = F`), whose
+diverging separation `εₙ = √n · d_K(F, F₀) → ∞` is supplied by `d_K(F, F₀) > 0`. -/
+theorem ks_consistent {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : ℕ → Ω → ℝ}
+    {μ : Measure ℝ} [IsProbabilityMeasure μ] {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀]
+    {F F₀ : ℝ → ℝ}
+    -- USER-INPUT: the nominal level is a nondegenerate probability
+    (hα : 0 < α) (hα1 : α < 1)
+    -- USER-INPUT: each observation is measurable; part of the sampling model
+    (hX : ∀ i, Measurable (X i))
+    -- USER-INPUT: the observations are i.i.d.; Kolmogorov 1933
+    (hindep : iIndepFun X P)
+    -- USER-INPUT: the alternative: every observation has law `μ`
+    (hlaw : ∀ i, P.map (X i) = μ)
+    -- USER-INPUT: `F` is the c.d.f. of the sampling law
+    (hF : ∀ t : ℝ, F t = cdf μ t)
+    -- USER-INPUT: `F₀` is the c.d.f. of the null law
+    (hF₀ : ∀ t : ℝ, F₀ t = cdf μ₀ t)
+    -- USER-INPUT: the alternative is genuinely different from the null: `d_K(F, F₀) > 0`
+    (hne : 0 < supCDFDist F F₀) :
+    Tendsto
+      (fun n => (P {ω | ksThreshold α < ksStat (fun i : Fin n => X (i : ℕ)) F₀ ω}).toReal)
+      atTop (nhds 1) := by
+  -- A fixed alternative is the constant selection `μ n = μ`, `F n = F`, with the diverging
+  -- separation `εₙ = √n · d_K(F, F₀)`; the result is exactly `ks_uniform_power`.
+  haveI hPinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => P) n) := fun _ => inferInstance
+  haveI hμinst : ∀ n : ℕ, IsProbabilityMeasure ((fun _ : ℕ => μ) n) := fun _ => inferInstance
+  -- the separation `εₙ = √n · d_K(F, F₀)` diverges since `d_K(F, F₀) > 0`
+  have hsqrt : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hε : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist F F₀) atTop atTop :=
+    hsqrt.atTop_mul_const' hne
+  exact ks_uniform_power (P := fun _ => P) (X := fun n i => X (i : ℕ)) (μ := fun _ => μ)
+    (F := fun _ => F) (ε := fun n => Real.sqrt (n : ℝ) * supCDFDist F F₀)
+    hα hα1 (fun n i => hX (i : ℕ)) (fun n => hindep.precomp Fin.val_injective)
+    (fun n i => hlaw (i : ℕ)) (fun n t => hF t) hF₀ (fun n => le_refl _) hε
 
 end StatLean.HypothesisTesting

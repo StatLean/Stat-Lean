@@ -1,8 +1,10 @@
 import Mathlib.Probability.CDF
 import Mathlib.Probability.Independence.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Complex.ExponentialBounds
+import StatLean.ConcentrationInequalities.McDiarmid.McDiarmid
 
 /-!
 # A uniform-in-`n` exponential tail for the empirical process
@@ -89,7 +91,7 @@ with the two-sample and tabulated forms due to N. V. Smirnov, "Table for estimat
 goodness of fit of empirical distributions," *Ann. Math. Statist.* **19** (1948), 279–281.
 -/
 
-open MeasureTheory ProbabilityTheory
+open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
@@ -110,6 +112,55 @@ the supremum over the rationals, which is how measurability of `Dₙ` is obtaine
 noncomputable def ksDist {n : ℕ} (X : Fin n → Ω → ℝ) (μ : Measure ℝ) (ω : Ω) : ℝ :=
   ⨆ t : ℝ, |empCDF X ω t - cdf μ t|
 
+/-! ### Deterministic reduction to a rational supremum -/
+
+/-- The step indicator `t ↦ 1{a ≤ t}` is right continuous. -/
+private lemma dkw_rightCont_step (a s : ℝ) :
+    Filter.Tendsto (fun t => if a ≤ t then (1 : ℝ) else 0)
+      (nhdsWithin s (Set.Ioi s)) (nhds (if a ≤ s then (1 : ℝ) else 0)) := by
+  have hl : (fun _ : ℝ => if a ≤ s then (1 : ℝ) else 0)
+      =ᶠ[nhdsWithin s (Set.Ioi s)] (fun t => if a ≤ t then (1 : ℝ) else 0) := by
+    by_cases h : a ≤ s
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      rw [if_pos h, if_pos (h.trans ht.le)]
+    · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.mp h))] with t ht
+      rw [if_neg h, if_neg (not_le.mpr ht)]
+  exact Filter.Tendsto.congr' hl tendsto_const_nhds
+
+/-- A real supremum of a right-continuous function over `ℝ` agrees with the supremum over
+the rationals. -/
+private lemma dkw_iSup_real_eq_iSup_rat (g : ℝ → ℝ)
+    (hrc : ∀ s, Filter.Tendsto g (nhdsWithin s (Set.Ioi s)) (nhds (g s))) :
+    ⨆ t : ℝ, g t = ⨆ q : ℚ, g (q : ℝ) := by
+  by_cases hbdd : BddAbove (Set.range fun q : ℚ => g (q : ℝ))
+  · have hle : ∀ t : ℝ, g t ≤ ⨆ q : ℚ, g (q : ℝ) := by
+      intro t
+      obtain ⟨u, hu_gt, hu_lt⟩ : ∃ u : ℕ → ℚ,
+          (∀ k, t < (u k : ℝ)) ∧ (∀ k, (u k : ℝ) < t + 1 / ((k : ℝ) + 1)) := by
+        choose u hu using fun k : ℕ =>
+          exists_rat_btwn (show t < t + 1 / ((k : ℝ) + 1) from
+            lt_add_of_pos_right t (by positivity))
+        exact ⟨u, fun k => (hu k).1, fun k => (hu k).2⟩
+      have hupper : Filter.Tendsto (fun k : ℕ => t + 1 / ((k : ℝ) + 1)) Filter.atTop (nhds t) := by
+        have := (tendsto_const_nhds (x := t)).add tendsto_one_div_add_atTop_nhds_zero_nat
+        simpa using this
+      have hnhds : Filter.Tendsto (fun k => (u k : ℝ)) Filter.atTop (nhds t) :=
+        tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hupper
+          (Filter.Eventually.of_forall fun k => (hu_gt k).le)
+          (Filter.Eventually.of_forall fun k => (hu_lt k).le)
+      have htend : Filter.Tendsto (fun k => (u k : ℝ)) Filter.atTop (nhdsWithin t (Set.Ioi t)) :=
+        tendsto_nhdsWithin_iff.mpr ⟨hnhds, Filter.Eventually.of_forall fun k => hu_gt k⟩
+      exact le_of_tendsto ((hrc t).comp htend)
+        (Filter.Eventually.of_forall fun k => le_ciSup hbdd (u k))
+    have hbddR : BddAbove (Set.range g) :=
+      ⟨⨆ q : ℚ, g (q : ℝ), by rintro _ ⟨t, rfl⟩; exact hle t⟩
+    exact le_antisymm (ciSup_le hle) (ciSup_le fun q => le_ciSup hbddR (q : ℝ))
+  · have hbddR : ¬ BddAbove (Set.range g) := by
+      intro hR
+      obtain ⟨M, hM⟩ := hR
+      exact hbdd ⟨M, by rintro _ ⟨q, rfl⟩; exact hM ⟨(q : ℝ), rfl⟩⟩
+    rw [ciSup_of_not_bddAbove hbddR, ciSup_of_not_bddAbove hbdd]
+
 /-- **Mean of the Kolmogorov distance.** For an i.i.d. sample of size `n ≥ 1`,
 `E Dₙ ≤ 2/√n`, uniformly in the sampling law.
 
@@ -125,7 +176,25 @@ theorem integral_ksDist_le {n : ℕ}
     -- USER-INPUT: each observation has law `μ`.
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 2 / Real.sqrt n := by
+  -- TODO: the sharp in-expectation constant `2` (true value ≈ 0.63) requires the half-line
+  -- entropy integral directly. The project's `ConcentrationInequalities.glivenko_cantelli`
+  -- proves EXACTLY this integrand bounded by `5400 / √n` (via the generic VC bound at
+  -- `vcDim = 1`); that constant is far too lossy here — `dkw_uniform` below needs the mean
+  -- `√n · E Dₙ ≤ 2` for the `d ≥ 2` split and the arithmetic `2(d−2)² ≥ d²/8 − log 4`, both
+  -- of which fail at `5400`. Closing this requires a symmetrisation + Dudley chaining bound
+  -- specialised to the half-line class with the numerical factors tracked (not the generic
+  -- VC route). No such sharp brick is present in the project.
   sorry
+
+/-- The empirical distribution function as a function of the *sample vector*
+`x : Fin n → ℝ`: `F̂ₙ(t) = n⁻¹ #{i : xᵢ ≤ t}`. Equal to `empCDF X ω` at `x = (Xᵢ ω)ᵢ`. -/
+private noncomputable def dkwEmp {n : ℕ} (x : Fin n → ℝ) (t : ℝ) : ℝ :=
+  (n : ℝ)⁻¹ * ∑ i, if x i ≤ t then (1 : ℝ) else 0
+
+/-- The Kolmogorov distance as a function of the sample vector `x : Fin n → ℝ`.
+Equal to `ksDist X μ ω` at `x = (Xᵢ ω)ᵢ`; the bounded-differences function of McDiarmid. -/
+private noncomputable def dkwF {n : ℕ} (μ : Measure ℝ) (x : Fin n → ℝ) : ℝ :=
+  ⨆ t : ℝ, |dkwEmp x t - cdf μ t|
 
 /-- **Concentration of the Kolmogorov distance around its mean.**
 Changing one observation moves `Dₙ` by at most `1/n`, so the bounded-differences inequality
@@ -145,7 +214,177 @@ theorem ksDist_concentration {n : ℕ}
     {d : ℝ} (hd : 0 ≤ d) :
     P {ω | d ≤ Real.sqrt n * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)}
       ≤ ENNReal.ofReal (Real.exp (-2 * d ^ 2)) := by
-  sorry
+  classical
+  set mP : ℝ := ∫ ω, ksDist X μ ω ∂P with hmP_def
+  -- `ksDist X μ ω` is the sample-vector Kolmogorov distance evaluated at `(Xᵢ ω)ᵢ`.
+  have hksF : ∀ ω, ksDist X μ ω = dkwF μ (StatLean.ConcentrationInequalities.allVars X ω) := by
+    intro ω; rfl
+  -- basic `[0,1]` bounds on the empirical CDF and hence on the integrand
+  have hsum_nonneg : ∀ (z : Fin n → ℝ) (t : ℝ),
+      (0 : ℝ) ≤ ∑ i, if z i ≤ t then (1 : ℝ) else 0 :=
+    fun z t => Finset.sum_nonneg fun i _ => by split_ifs <;> norm_num
+  have hsum_le : ∀ (z : Fin n → ℝ) (t : ℝ),
+      (∑ i, if z i ≤ t then (1 : ℝ) else 0) ≤ n := fun z t => by
+    calc (∑ i, if z i ≤ t then (1 : ℝ) else 0) ≤ ∑ _i : Fin n, (1 : ℝ) :=
+          Finset.sum_le_sum fun i _ => by split_ifs <;> norm_num
+      _ = n := by simp
+  have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
+  have hemp0 : ∀ (z : Fin n → ℝ) t, 0 ≤ dkwEmp z t := fun z t => by
+    simp only [dkwEmp]; exact mul_nonneg (by positivity) (hsum_nonneg z t)
+  have hemp1 : ∀ (z : Fin n → ℝ) t, dkwEmp z t ≤ 1 := fun z t => by
+    simp only [dkwEmp]
+    rw [inv_mul_le_iff₀ (by positivity), mul_one]
+    exact hsum_le z t
+  have hA1 : ∀ (z : Fin n → ℝ) t, |dkwEmp z t - cdf μ t| ≤ 1 := fun z t => by
+    rw [abs_le]
+    exact ⟨by linarith [hemp0 z t, cdf_le_one μ t], by linarith [hemp1 z t, cdf_nonneg μ t]⟩
+  have hbddAx : ∀ z : Fin n → ℝ,
+      BddAbove (Set.range fun t => |dkwEmp z t - cdf μ t|) :=
+    fun z => ⟨1, by rintro _ ⟨t, rfl⟩; exact hA1 z t⟩
+  have hF0 : ∀ z, 0 ≤ dkwF μ z := fun z => by
+    simp only [dkwF]
+    exact le_ciSup_of_le (hbddAx z) 0 (abs_nonneg _)
+  have hF1 : ∀ z, dkwF μ z ≤ 1 := fun z => by
+    simp only [dkwF]; exact ciSup_le fun t => hA1 z t
+  -- measurability of `dkwF μ` (reduce the real sup to a rational one)
+  have hf : Measurable (dkwF (n := n) μ) := by
+    have hFrat : ∀ x : Fin n → ℝ,
+        dkwF μ x = ⨆ q : ℚ, |dkwEmp x (q : ℝ) - cdf μ (q : ℝ)| := by
+      intro x
+      refine dkw_iSup_real_eq_iSup_rat (fun t => |dkwEmp x t - cdf μ t|) fun s => ?_
+      have hempRC : Tendsto (fun t => dkwEmp x t) (nhdsWithin s (Set.Ioi s))
+          (nhds (dkwEmp x s)) := by
+        simp only [dkwEmp]
+        exact (tendsto_finset_sum Finset.univ
+          fun i _ => dkw_rightCont_step (x i) s).const_mul _
+      have hcdfRC : Tendsto (fun t => cdf μ t) (nhdsWithin s (Set.Ioi s)) (nhds (cdf μ s)) :=
+        ((cdf μ).right_continuous s).mono Set.Ioi_subset_Ici_self
+      exact Filter.Tendsto.abs (hempRC.sub hcdfRC)
+    rw [show dkwF μ = fun x => ⨆ q : ℚ, |dkwEmp x (q : ℝ) - cdf μ (q : ℝ)| from funext hFrat]
+    refine Measurable.iSup fun q : ℚ => Measurable.abs (Measurable.sub ?_ measurable_const)
+    simp only [dkwEmp]
+    exact (Finset.univ.measurable_sum fun i _ =>
+      Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const)
+        measurable_const measurable_const).const_mul _
+  -- bounded differences: changing one coordinate moves `dkwF` by at most `n⁻¹`
+  have hbd : ∀ (k : Fin n) (x : Fin n → ℝ) (y : ℝ),
+      |dkwF μ x - dkwF μ (Function.update x k y)| ≤ (n : ℝ)⁻¹ := by
+    intro k x y
+    have hemp_diff : ∀ t, |dkwEmp (Function.update x k y) t - dkwEmp x t| ≤ (n : ℝ)⁻¹ := by
+      intro t
+      have hsum : (∑ i, if (Function.update x k y) i ≤ t then (1 : ℝ) else 0)
+          - (∑ i, if x i ≤ t then (1 : ℝ) else 0)
+          = (if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0) := by
+        rw [← Finset.sum_sub_distrib,
+          Finset.sum_eq_single k
+            (fun i _ hik => by rw [Function.update_of_ne hik, sub_self])
+            (fun h => absurd (Finset.mem_univ k) h),
+          Function.update_self]
+      have hind : |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)| ≤ 1 := by
+        by_cases hy : y ≤ t <;> by_cases hxk : x k ≤ t
+        · rw [if_pos hy, if_pos hxk]; norm_num
+        · rw [if_pos hy, if_neg hxk]; norm_num
+        · rw [if_neg hy, if_pos hxk]; norm_num
+        · rw [if_neg hy, if_neg hxk]; norm_num
+      simp only [dkwEmp]
+      rw [← mul_sub, hsum, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+      calc (n : ℝ)⁻¹ * |(if y ≤ t then (1 : ℝ) else 0) - (if x k ≤ t then (1 : ℝ) else 0)|
+          ≤ (n : ℝ)⁻¹ * 1 := mul_le_mul_of_nonneg_left hind (by positivity)
+        _ = (n : ℝ)⁻¹ := mul_one _
+    have hApt : ∀ t, |(|dkwEmp (Function.update x k y) t - cdf μ t|)
+        - (|dkwEmp x t - cdf μ t|)| ≤ (n : ℝ)⁻¹ := by
+      intro t
+      have h1 : |(|dkwEmp (Function.update x k y) t - cdf μ t|) - (|dkwEmp x t - cdf μ t|)|
+          ≤ |(dkwEmp (Function.update x k y) t - cdf μ t) - (dkwEmp x t - cdf μ t)| :=
+        abs_abs_sub_abs_le_abs_sub _ _
+      have h2 : (dkwEmp (Function.update x k y) t - cdf μ t) - (dkwEmp x t - cdf μ t)
+          = dkwEmp (Function.update x k y) t - dkwEmp x t := by ring
+      rw [h2] at h1
+      exact h1.trans (hemp_diff t)
+    have hle1 : dkwF μ (Function.update x k y) ≤ dkwF μ x + (n : ℝ)⁻¹ := by
+      simp only [dkwF]
+      refine ciSup_le fun t => ?_
+      have hb : |dkwEmp x t - cdf μ t| ≤ ⨆ t', |dkwEmp x t' - cdf μ t'| := le_ciSup (hbddAx x) t
+      have hh := hApt t; rw [abs_le] at hh
+      linarith [hh.2, hb]
+    have hle2 : dkwF μ x ≤ dkwF μ (Function.update x k y) + (n : ℝ)⁻¹ := by
+      simp only [dkwF]
+      refine ciSup_le fun t => ?_
+      have hb : |dkwEmp (Function.update x k y) t - cdf μ t|
+          ≤ ⨆ t', |dkwEmp (Function.update x k y) t' - cdf μ t'| := le_ciSup (hbddAx _) t
+      have hh := hApt t; rw [abs_le] at hh
+      linarith [hh.1, hb]
+    rw [abs_le]
+    exact ⟨by linarith [hle1], by linarith [hle2]⟩
+  -- transfer to the standard-Borel product space `(Fin n → ℝ, Q)`, `Q = P.map (Xᵢ)ᵢ`
+  set μi : Fin n → Measure ℝ := fun i => P.map (X i) with hμi
+  haveI hμiP : ∀ i, IsProbabilityMeasure (μi i) := fun i => by
+    rw [hμi]; exact Measure.isProbabilityMeasure_map (hmeas i).aemeasurable
+  set Q : Measure (Fin n → ℝ) := Measure.pi μi with hQ
+  have hmeasAV : Measurable (StatLean.ConcentrationInequalities.allVars X) :=
+    measurable_pi_lambda _ fun i => hmeas i
+  have hQeq : P.map (StatLean.ConcentrationInequalities.allVars X) = Q :=
+    (iIndepFun_iff_map_fun_eq_pi_map fun i => (hmeas i).aemeasurable).1 hindep
+  set Y : ∀ _ : Fin n, (Fin n → ℝ) → ℝ := fun i x => x i with hY_def
+  have hYmeas : ∀ i, Measurable (Y i) := fun i => measurable_pi_apply i
+  have hYindep : iIndepFun Y Q := by
+    rw [hQ]; exact iIndepFun_pi (X := fun _ => id) fun i => aemeasurable_id
+  have hAVYx : ∀ x, StatLean.ConcentrationInequalities.allVars Y x = x := fun _ => rfl
+  have hFint : Integrable
+      (dkwF μ ∘ StatLean.ConcentrationInequalities.allVars Y) Q := by
+    have hInt : Integrable (dkwF μ) Q := by
+      refine Integrable.mono' (integrable_const (1 : ℝ)) hf.aestronglyMeasurable ?_
+      filter_upwards with x
+      rw [Real.norm_eq_abs, abs_of_nonneg (hF0 x)]
+      exact hF1 x
+    simpa [Function.comp_def, hAVYx] using hInt
+  -- the McDiarmid sub-Gaussian MGF bound and its Chernoff tail
+  have hsg := StatLean.ConcentrationInequalities.mgf_sub_expectation_le
+    Y hYmeas (dkwF μ) hf (fun _ => (n : ℝ)⁻¹) (fun _ => by positivity) hbd hYindep hFint
+  set t : ℝ := d / Real.sqrt (n : ℝ) with ht_def
+  have hsqrt_pos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr (by positivity)
+  have htge : (0 : ℝ) ≤ t := div_nonneg hd hsqrt_pos.le
+  have hchern := hsg.measure_ge_le htge
+  -- the sub-Gaussian proxy `∑ (‖n⁻¹‖₊/2)² = 1/(4n)`, giving the exponent `-2 d²`
+  have hσcoe : ((∑ _k : Fin n, (‖(n : ℝ)⁻¹‖₊ / 2) ^ 2 : ℝ≥0) : ℝ) = 1 / (4 * (n : ℝ)) := by
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+    field_simp
+    ring
+  have ht_sq : t ^ 2 = d ^ 2 / n := by
+    rw [ht_def, div_pow, Real.sq_sqrt (by positivity)]
+  have hexp : -t ^ 2 / (2 * ((∑ _k : Fin n, (‖(n : ℝ)⁻¹‖₊ / 2) ^ 2 : ℝ≥0) : ℝ))
+      = -2 * d ^ 2 := by
+    rw [hσcoe, ht_sq]
+    field_simp
+    ring
+  rw [hexp] at hchern
+  -- rewrite the product-space tail back to the original space
+  have hint_eq : (∫ x, dkwF μ x ∂Q) = mP := by
+    rw [← hQeq, integral_map hmeasAV.aemeasurable hf.aestronglyMeasurable]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun ω => (hksF ω).symm)
+  have hset_eq : Q {x | t ≤ dkwF μ (StatLean.ConcentrationInequalities.allVars Y x)
+        - ∫ x', dkwF μ (StatLean.ConcentrationInequalities.allVars Y x') ∂Q}
+      = P {ω | t ≤ ksDist X μ ω - mP} := by
+    simp only [hAVYx]
+    rw [hint_eq, ← hQeq,
+      Measure.map_apply hmeasAV (measurableSet_le measurable_const (hf.sub measurable_const))]
+    rfl
+  have hbound : Q {x | t ≤ dkwF μ (StatLean.ConcentrationInequalities.allVars Y x)
+        - ∫ x', dkwF μ (StatLean.ConcentrationInequalities.allVars Y x') ∂Q}
+      ≤ ENNReal.ofReal (Real.exp (-2 * d ^ 2)) := by
+    rw [← ENNReal.ofReal_toReal (measure_ne_top Q _)]
+    exact ENNReal.ofReal_le_ofReal hchern
+  rw [hset_eq] at hbound
+  -- finally match the target event via `d ≤ √n · z ↔ d/√n ≤ z`
+  have hfinal : {ω | d ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - mP)}
+      = {ω | t ≤ ksDist X μ ω - mP} := by
+    ext ω
+    simp only [Set.mem_setOf_eq]
+    rw [ht_def, div_le_iff₀' hsqrt_pos]
+  rw [hfinal]
+  exact hbound
 
 /-- **Uniform exponential tail for the empirical process.**
 For an i.i.d. sample of size `n ≥ 1` from any law `μ` and any `d ≥ 0`,
