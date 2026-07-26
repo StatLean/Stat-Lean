@@ -3,6 +3,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.HasLaw
 import Mathlib.Probability.StrongLaw
+import Mathlib.Probability.CDF
 
 /-!
 # The nonparametric bootstrap for a mean
@@ -105,6 +106,224 @@ noncomputable def studentizedRootCDF (F : Measure ℝ) (n : ℕ) (x : ℝ) : ℝ
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) /
         Real.sqrt (sampleVariance y) ≤ x}).toReal
 
+/-! ## Distribution-function and continuity infrastructure -/
+
+/-- The `toReal` of the `Iic`-measure of a probability law on the line is a distribution
+function: this is exactly `ProbabilityTheory.cdf`, dressed as `IsCDF`. -/
+private lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    IsCDF (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  exact
+    { mono := (ProbabilityTheory.cdf ν).mono
+      right_continuous := fun x => (ProbabilityTheory.cdf ν).right_continuous x
+      tendsto_atBot := ProbabilityTheory.tendsto_cdf_atBot ν
+      tendsto_atTop := ProbabilityTheory.tendsto_cdf_atTop ν }
+
+/-- The distribution function of a probability law with no atoms is continuous. -/
+private lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  set f := ProbabilityTheory.cdf ν with hf
+  refine continuous_iff_continuousAt.2 (fun x => ?_)
+  have hleft : Function.leftLim f x = f x := by
+    have hsing : f.measure {x} = 0 := by
+      rw [ProbabilityTheory.measure_cdf]; exact measure_singleton x
+    have hval := f.measure_singleton x
+    rw [hsing] at hval
+    have hle : Function.leftLim f x ≤ f x := f.mono.leftLim_le le_rfl
+    have h0 : f x - Function.leftLim f x ≤ 0 := by
+      by_contra h
+      push_neg at h
+      exact (ENNReal.ofReal_pos.mpr h).ne' hval.symm
+    linarith
+  have hright : Function.rightLim f x = f x := (f.right_continuous x).rightLim_eq
+  exact (f.mono.continuousAt_iff_leftLim_eq_rightLim).2 (hleft.trans hright.symm)
+
+/-- `normalCDF m v` is a distribution function. -/
+private lemma isCDF_normalCDF (m : ℝ) (v : ℝ≥0) : IsCDF (normalCDF m v) :=
+  isCDF_toReal_measure_Iic (gaussianReal m v)
+
+/-- `stdNormalCDF` is a distribution function. -/
+private lemma isCDF_stdNormalCDF : IsCDF stdNormalCDF := isCDF_normalCDF 0 1
+
+/-- A nondegenerate normal distribution function is continuous. -/
+private lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Continuous (normalCDF m v) :=
+  haveI : NoAtoms (gaussianReal m v) := noAtoms_gaussianReal hv
+  continuous_toReal_measure_Iic (gaussianReal m v)
+
+/-- The standard normal distribution function is continuous. -/
+private lemma continuous_stdNormalCDF : Continuous stdNormalCDF :=
+  continuous_normalCDF 0 one_ne_zero
+
+/-- A nondegenerate normal distribution function is strictly increasing. -/
+private lemma strictMono_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : StrictMono (normalCDF m v) := by
+  intro y z hyz
+  have hpos : 0 < gaussianReal m v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]
+    intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' m hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal m v (Set.Iic z)
+      = gaussianReal m v (Set.Iic y) + gaussianReal m v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  have hfin : gaussianReal m v (Set.Iic y) ≠ ⊤ := measure_ne_top _ _
+  unfold normalCDF
+  rw [hdisj, ENNReal.toReal_add hfin (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal m v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- The `1 − α` quantile of a nondegenerate normal distribution function is a point of strict
+increase. -/
+private lemma strictIncAt_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x₀ : ℝ) :
+    StrictIncAt (normalCDF m v) x₀ :=
+  ⟨fun y hy => strictMono_normalCDF m hv hy, fun z hz => strictMono_normalCDF m hv hz⟩
+
+/-- The empirical measure of a nonempty sample is a probability measure. -/
+private lemma isProbabilityMeasure_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
+    IsProbabilityMeasure (empiricalMeasure x) := by
+  refine ⟨?_⟩
+  unfold empiricalMeasure
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
+
+/-- The sampling distribution function of the centred sample mean is a distribution function
+(whenever the underlying `n`-fold product is a probability measure). -/
+private lemma isCDF_meanRootCDF (F : Measure ℝ) (n : ℕ)
+    [IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    IsCDF (meanRootCDF F n) := by
+  have hSmeas : Measurable (fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)) := by fun_prop
+  haveI : IsProbabilityMeasure
+      ((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F))) :=
+    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+  have heq : meanRootCDF F n = fun x =>
+      (((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)))
+        (Set.Iic x)).toReal := by
+    funext x
+    rw [Measure.map_apply hSmeas measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- The sampling distribution function of the studentized sample mean is a distribution function
+(whenever the underlying `n`-fold product is a probability measure). -/
+private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
+    [IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    IsCDF (studentizedRootCDF F n) := by
+  have hSmeas : Measurable (fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y)) := by
+    unfold sampleVariance; fun_prop
+  haveI : IsProbabilityMeasure
+      ((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y))) :=
+    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+  have heq : studentizedRootCDF F n = fun x =>
+      (((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y)))
+        (Set.Iic x)).toReal := by
+    funext x
+    rw [Measure.map_apply hSmeas measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- Every real function is integrable against an empirical (finite-support) measure. -/
+private lemma integrable_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ → ℝ) :
+    Integrable f (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [empiricalMeasure]
+  · unfold empiricalMeasure
+    refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
+    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+
+/-- The integral of a function against an empirical measure is the sample average of its values. -/
+private lemma integral_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) (f : ℝ → ℝ) :
+    ∫ t, f t ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, f (x i) := by
+  unfold empiricalMeasure
+  rw [integral_smul_measure, integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+  simp only [integral_dirac]
+  rw [ENNReal.toReal_inv, ENNReal.toReal_natCast, smul_eq_mul]
+
+/-- The identity is square-integrable against an empirical measure. -/
+private lemma memLp_id_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
+    MemLp (fun t : ℝ => t) 2 (empiricalMeasure x) := by
+  rw [memLp_two_iff_integrable_sq (by fun_prop)]
+  exact integrable_empiricalMeasure x (fun t => t ^ 2)
+
+/-- An empirical measure is finite. -/
+private lemma isFiniteMeasure_empiricalMeasure {n : ℕ} (x : Fin n → ℝ) :
+    IsFiniteMeasure (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    simp only [empiricalMeasure, Finset.univ_eq_empty, Finset.sum_empty, smul_zero]
+    infer_instance
+  · haveI := isProbabilityMeasure_empiricalMeasure hn x; infer_instance
+
+/-- The empirical distribution function is the sample average of the half-line indicators. -/
+private lemma empiricalMeasure_Iic_toReal {n : ℕ} (x : Fin n → ℝ) (y : ℝ) :
+    ((empiricalMeasure x) (Set.Iic y)).toReal
+      = (n : ℝ)⁻¹ * ∑ i, Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (x i) := by
+  haveI := isFiniteMeasure_empiricalMeasure x
+  rw [← measureReal_def, ← integral_indicator_one (μ := empiricalMeasure x) measurableSet_Iic,
+    integral_empiricalMeasure x (Set.indicator (Set.Iic y) (1 : ℝ → ℝ))]
+
+/-- The `n`-fold product of a probability law is a probability measure. -/
+private lemma isProbabilityMeasure_pi_const (n : ℕ) (F : Measure ℝ) [IsProbabilityMeasure F] :
+    IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) := by
+  haveI : ∀ _ : Fin n, IsProbabilityMeasure F := fun _ => ‹_›
+  infer_instance
+
+/-- The `n`-fold product of the empirical measure of a sample is a probability measure (for the
+empty sample it is the point mass on the empty tuple). -/
+private lemma isProbabilityMeasure_pi_empirical (n : ℕ) (X : ℕ → Ω → ℝ) (ω : Ω) :
+    IsProbabilityMeasure
+      (Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn
+    rw [Measure.pi_of_empty]
+    infer_instance
+  · haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+    exact isProbabilityMeasure_pi_const n _
+
+/-- The constant sequence at a square-integrable probability law belongs to its own mean class. -/
+private lemma const_mem_meanSeqClass (Q : Measure ℝ) [IsProbabilityMeasure Q]
+    (hQ2 : MemLp (fun t : ℝ => t) 2 Q) : (fun _ => Q) ∈ meanSeqClass Q :=
+  ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ _ => tendsto_const_nhds,
+    tendsto_const_nhds, tendsto_const_nhds⟩
+
+open Classical in
+/-- A distribution-function-valued wrapper of `meanRootCDF`: it is `meanRootCDF F n` whenever
+the `n`-fold product of `F` is a probability measure, and the standard normal otherwise. This
+makes `IsCDF (Jmean n F)` hold for **every** measure `F`, so the general bootstrap criterion of
+`Bootstrap/Consistency` applies with `J := Jmean`. -/
+private noncomputable def Jmean (n : ℕ) (F : Measure ℝ) : ℝ → ℝ :=
+  if IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) then meanRootCDF F n else stdNormalCDF
+
+private lemma isCDF_Jmean (n : ℕ) (F : Measure ℝ) : IsCDF (Jmean n F) := by
+  unfold Jmean
+  split_ifs with h
+  · haveI := h; exact isCDF_meanRootCDF F n
+  · exact isCDF_stdNormalCDF
+
+private lemma Jmean_eq_meanRootCDF (n : ℕ) (F : Measure ℝ)
+    [h : IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    Jmean n F = meanRootCDF F n := by
+  unfold Jmean; rw [if_pos h]
+
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
 section MeanBootstrap
@@ -126,6 +345,20 @@ theorem mean_root_cdf_tendsto [IsProbabilityMeasure Q]
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => meanRootCDF (F n) n x) atTop
       (𝓝 (normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x)) := by
+  -- TODO (triangular-array CLT, drifting row law). `meanRootCDF (F n) n` is the CDF of the
+  -- standardised sum of `n` i.i.d. draws from the `n`-th law `F n`; realise it on the canonical
+  -- product space `Π n, (Fin n → ℝ)` (measure `Measure.pi n ↦ Measure.pi (fun _ : Fin n => F n)`,
+  -- coordinates `X n i ω = ω n i`, row-`n` internal independence via
+  -- `iIndepFun_iff_map_fun_eq_pi_map`) and apply the proven `LindebergCLT.lindeberg_clt`. Two
+  -- genuinely missing bricks remain:
+  --   (1) the Lindeberg condition for the drifting rows follows from `Var[id; F n] → Var[id; Q]`
+  --       plus weak convergence via *uniform square-integrability* (Lehmann–Romano Lemma 18.3.1 /
+  --       Vitali): `X_n ⇒ X` with `E X_n² → E X² < ∞` forces `{X_n²}` uniformly integrable; this
+  --       Vitali-type upgrade is not yet in Mathlib;
+  --   (2) transporting the resulting `TendstoInDistribution` of the standardised sum to pointwise
+  --       CDF convergence at the (continuity) point `x` is the one-direction portmanteau theorem
+  --       "CDF convergence at every continuity point ⟸ weak convergence" on `ℝ`, which is absent
+  --       from Mathlib v4.29.1 (the same gap recorded on `tendstoInMeasure_rowMean_triangular`).
   sorry
 
 /-- **The empirical sequence belongs to the mean class, almost surely.**
@@ -145,7 +378,127 @@ theorem empirical_mem_meanSeqClass [IsProbabilityMeasure Pr] [IsProbabilityMeasu
     -- USER-INPUT: the sampling law is square-integrable, so means and variances converge
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) :
     ∀ᵐ ω ∂Pr, (fun n => empiricalMeasure fun i : Fin n => X i ω) ∈ meanSeqClass Q := by
-  sorry
+  classical
+  -- Transfer the first two moments of `X 0` from the limit law `Q`.
+  have hidQ : IdentDistrib (X 0) (fun t : ℝ => t) Pr Q :=
+    ⟨(hmeas 0).aemeasurable, measurable_id.aemeasurable, by rw [hlaw.map_eq, Measure.map_id']⟩
+  have hXmem : MemLp (X 0) 2 Pr := hidQ.memLp_iff.mpr hQ2
+  have hXint : Integrable (X 0) Pr := hXmem.integrable one_le_two
+  have hXsqint : Integrable (fun ω => X 0 ω ^ 2) Pr := hXmem.integrable_sq
+  have hmeanQ : Pr[X 0] = ∫ t, t ∂Q := hlaw.integral_comp (f := fun t : ℝ => t) (by fun_prop)
+  have hsqQ : Pr[fun ω => X 0 ω ^ 2] = ∫ t, t ^ 2 ∂Q :=
+    hlaw.integral_comp (f := fun t : ℝ => t ^ 2) (by fun_prop)
+  -- Three strong laws: of `X`, of `X²`, and of the indicator of a half-line at each point.
+  have hSLLN_mean : ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω) atTop (𝓝 (∫ t, t ∂Q)) := by
+    rw [← hmeanQ]; exact strong_law_ae X hXint (fun i j hij => hindep.indepFun hij) hident
+  have hSLLN_sq : ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω ^ 2) atTop (𝓝 (∫ t, t ^ 2 ∂Q)) := by
+    rw [← hsqQ]
+    exact strong_law_ae (fun i ω => X i ω ^ 2) hXsqint
+      (fun i j hij =>
+        (hindep.comp (fun _ => fun t : ℝ => t ^ 2) (fun _ => by fun_prop)).indepFun hij)
+      (fun i => (hident i).comp (by fun_prop : Measurable fun t : ℝ => t ^ 2))
+  have hCDF : ∀ y : ℝ, ∀ᵐ ω ∂Pr, Tendsto
+      (fun n : ℕ => ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic y)).toReal)
+      atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
+    intro y
+    have hind_meas : Measurable (Set.indicator (Set.Iic y) (1 : ℝ → ℝ)) :=
+      measurable_one.indicator measurableSet_Iic
+    have hb : Integrable (fun ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)) Pr := by
+      refine (memLp_top_of_bound ((hind_meas.comp (hmeas 0)).aestronglyMeasurable) 1 ?_).integrable
+        le_top
+      filter_upwards with ω
+      calc ‖Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)‖
+          ≤ ‖(1 : ℝ → ℝ) (X 0 ω)‖ := norm_indicator_le_norm_self _ _
+        _ = 1 := by simp
+    have hPrind : Pr[fun ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X 0 ω)]
+        = (Q (Set.Iic y)).toReal := by
+      have h := hlaw.integral_comp (f := Set.indicator (Set.Iic y) (1 : ℝ → ℝ))
+        hind_meas.aestronglyMeasurable
+      rw [Function.comp_def] at h
+      rw [h]; exact integral_indicator_one measurableSet_Iic
+    have hsl := strong_law_ae (fun i ω => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X i ω)) hb
+      (fun i j hij =>
+        (hindep.comp (fun _ => Set.indicator (Set.Iic y) (1 : ℝ → ℝ))
+          (fun _ => hind_meas)).indepFun hij)
+      (fun i => (hident i).comp hind_meas)
+    filter_upwards [hsl] with ω hω
+    rw [← hPrind]
+    refine hω.congr' (Filter.Eventually.of_forall fun n => ?_)
+    simp only [empiricalMeasure_Iic_toReal, smul_eq_mul]
+    rw [Fin.sum_univ_eq_sum_range (fun k => Set.indicator (Set.Iic y) (1 : ℝ → ℝ) (X k ω)) n]
+  have hCDFrat : ∀ᵐ ω ∂Pr, ∀ q : ℚ, Tendsto
+      (fun n : ℕ => ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic (q : ℝ))).toReal)
+      atTop (𝓝 ((Q (Set.Iic (q : ℝ))).toReal)) := ae_all_iff.mpr (fun q => hCDF (q : ℝ))
+  -- Assemble the five clauses on the intersection of the almost sure events.
+  filter_upwards [hSLLN_mean, hSLLN_sq, hCDFrat] with ω hmean hsq hcdf
+  -- The mean and second-moment integrals against the empirical measure, as sample averages.
+  have hEmean : (fun n => ∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω))
+      = fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω := by
+    funext n
+    rw [← Fin.sum_univ_eq_sum_range (fun i => X i ω) n]
+    exact integral_empiricalMeasure (fun i : Fin n => X i ω) (fun t : ℝ => t)
+  have hEsq : (fun n => ∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω))
+      = fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, X i ω ^ 2 := by
+    funext n
+    rw [← Fin.sum_univ_eq_sum_range (fun i => X i ω ^ 2) n]
+    exact integral_empiricalMeasure (fun i : Fin n => X i ω) (fun t : ℝ => t ^ 2)
+  refine ⟨fun n hn => isProbabilityMeasure_empiricalMeasure hn _,
+    fun n => memLp_id_empiricalMeasure _, ?_, ?_, ?_⟩
+  · -- Weak convergence: rational sandwich at each continuity point.
+    intro x hx
+    rw [Metric.tendsto_atTop]
+    intro ε hε
+    rw [Metric.continuousAt_iff] at hx
+    obtain ⟨δ, hδpos, hδ⟩ := hx (ε / 3) (by positivity)
+    obtain ⟨q1, hq1l, hq1r⟩ := exists_rat_btwn (show x - δ < x by linarith)
+    obtain ⟨q2, hq2l, hq2r⟩ := exists_rat_btwn (show x < x + δ by linarith)
+    have hc1 := hcdf q1
+    have hc2 := hcdf q2
+    rw [Metric.tendsto_atTop] at hc1 hc2
+    obtain ⟨N1, hN1⟩ := hc1 (ε / 3) (by positivity)
+    obtain ⟨N2, hN2⟩ := hc2 (ε / 3) (by positivity)
+    refine ⟨max N1 N2, fun n hn => ?_⟩
+    haveI := isFiniteMeasure_empiricalMeasure (fun i : Fin n => X i ω)
+    have hmono : ∀ a b : ℝ, a ≤ b →
+        ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic a)).toReal
+          ≤ ((empiricalMeasure fun i : Fin n => X i ω) (Set.Iic b)).toReal := fun a b hab =>
+      ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono (Set.Iic_subset_Iic.mpr hab))
+    have hQ1 : |(Q (Set.Iic (q1 : ℝ))).toReal - (Q (Set.Iic x)).toReal| < ε / 3 := by
+      have hd : dist (q1 : ℝ) x < δ := by
+        rw [Real.dist_eq, abs_of_neg (by linarith : (q1 : ℝ) - x < 0)]; linarith
+      have := hδ hd; rwa [Real.dist_eq] at this
+    have hQ2' : |(Q (Set.Iic (q2 : ℝ))).toReal - (Q (Set.Iic x)).toReal| < ε / 3 := by
+      have hd : dist (q2 : ℝ) x < δ := by
+        rw [Real.dist_eq, abs_of_pos (by linarith : (0 : ℝ) < (q2 : ℝ) - x)]; linarith
+      have := hδ hd; rwa [Real.dist_eq] at this
+    have hb1 := hN1 n (le_of_max_le_left hn)
+    have hb2 := hN2 n (le_of_max_le_right hn)
+    have hle1 := hmono (q1 : ℝ) x hq1r.le
+    have hle2 := hmono x (q2 : ℝ) hq2l.le
+    rw [Real.dist_eq] at hb1 hb2 ⊢
+    rw [abs_lt] at hQ1 hQ2' hb1 hb2 ⊢
+    constructor <;> linarith [hQ1.1, hQ1.2, hQ2'.1, hQ2'.2, hb1.1, hb1.2, hb2.1, hb2.2, hle1, hle2]
+  · -- Convergence of the mean.
+    rw [hEmean]; exact hmean
+  · -- Convergence of the variance.
+    have hVarQ : Var[fun t : ℝ => t; Q] = (∫ t, t ^ 2 ∂Q) - (∫ t, t ∂Q) ^ 2 :=
+      variance_eq_sub hQ2
+    rw [hVarQ]
+    have hcongr : ∀ᶠ n in atTop,
+        (∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω))
+            - (∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω)) ^ 2
+          = Var[fun t : ℝ => t; empiricalMeasure fun i : Fin n => X i ω] := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := isProbabilityMeasure_empiricalMeasure hn (fun i : Fin n => X i ω)
+      exact (variance_eq_sub (memLp_id_empiricalMeasure _)).symm
+    refine Tendsto.congr' hcongr ?_
+    have h1 : Tendsto (fun n => ∫ t, t ^ 2 ∂(empiricalMeasure fun i : Fin n => X i ω)) atTop
+        (𝓝 (∫ t, t ^ 2 ∂Q)) := by rw [hEsq]; exact hsq
+    have h2 : Tendsto (fun n => ∫ t, t ∂(empiricalMeasure fun i : Fin n => X i ω)) atTop
+        (𝓝 (∫ t, t ∂Q)) := by rw [hEmean]; exact hmean
+    exact h1.sub (h2.pow 2)
 
 /-- **Consistency of the nonparametric bootstrap for a mean.**
 
@@ -162,6 +515,68 @@ theorem bootstrap_mean_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasur
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (meanRootCDF Q n)
       (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
+  set Jlim := normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) with hJlim
+  have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  have hcont : Continuous Jlim := continuous_normalCDF 0 hvne
+  have hcdflim : IsCDF Jlim := isCDF_normalCDF 0 _
+  have hQcdf : ∀ n, IsCDF (meanRootCDF Q n) := fun n => by
+    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_meanRootCDF Q n
+  have hQconv : ∀ x, Tendsto (fun n => meanRootCDF Q n x) atTop (𝓝 (Jlim x)) := fun x =>
+    mean_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
+  filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hEcdf : ∀ n, IsCDF (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) := fun n => by
+    haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_meanRootCDF _ n
+  have hEconv : ∀ x, Tendsto
+      (fun n => meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop (𝓝 (Jlim x)) :=
+    fun x => mean_root_cdf_tendsto hQ2 hQvar hω x
+  have hA : Tendsto (fun n => supCDFDist (meanRootCDF Q n) Jlim) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQcdf hcont hcdflim hQconv
+  have hB : Tendsto (fun n =>
+      supCDFDist Jlim (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hEcdf hcont hcdflim hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (meanRootCDF Q n) Jlim
+      + supCDFDist Jlim (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQcdf n) (hEcdf n)
+  · exact supCDFDist_triangle_of_isCDF (hQcdf n) hcdflim (hEcdf n)
+
+/-- **The sampling distribution at `Q` is the law of the root.** At the data-generating law the
+value of `meanRootCDF Q n` is the true distribution function of the centred-and-scaled sample
+mean of the i.i.d. sample, so `meanRootCDF` is genuinely the object being bootstrapped. -/
+private lemma meanRootCDF_eq_law_of_root [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q]
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr) (n : ℕ) (x : ℝ) :
+    meanRootCDF Q n x
+      = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
+  have hφmeas : Measurable (fun ω (i : Fin n) => X i ω) :=
+    measurable_pi_lambda _ (fun i => hmeas i)
+  have hmap : Pr.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => Q) := by
+    have h := (iIndepFun_iff_map_fun_eq_pi_map (μ := Pr) (f := fun i : Fin n => X (i : ℕ))
+      (fun i => (hmeas (i : ℕ)).aemeasurable)).1 (hindep.precomp Fin.val_injective)
+    rw [h]
+    congr 1; funext i
+    exact ((hident (i : ℕ)).map_eq).trans hlaw.map_eq
+  have hSmeas : Measurable fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂Q) := by fun_prop
+  unfold meanRootCDF
+  rw [← hmap, Measure.map_apply hφmeas (measurableSet_le hSmeas measurable_const)]
+  rfl
+
+/-- **Debt: measurability of the bootstrap critical value.** The estimated `1 − α` quantile is
+measurable in the sample. `cdfPseudoInverse F p = sInf {t | p ≤ F t}` with
+`F = meanRootCDF (empiricalMeasure fun i => X i ω) n` is the generalised inverse of a
+distribution function that depends measurably on `ω` (its sublevel sets are measure images of
+`ω`-measurable sets); the `sInf` of that family is therefore measurable. This requires a
+measurable-generalised-inverse brick (joint measurability of `(ω, t) ↦ meanRootCDF (P̂ₙ ω) n t`
+and measurability of `sInf` of a measurable family of closed half-lines) that is not yet
+developed in this cluster. -/
+private lemma measurable_bootstrapCriticalValue (hmeas : ∀ i, Measurable (X i)) (n : ℕ) :
+    Measurable fun ω => cdfPseudoInverse
+      (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α) := by
+  -- TODO: joint measurability of the empirical sampling CDF in `(ω, t)` plus measurability of
+  -- the generalised inverse `sInf {t | p ≤ ·}`; no such brick exists in this file yet.
   sorry
 
 /-- **Asymptotic coverage of the bootstrap confidence bound for a mean.**
@@ -184,7 +599,52 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
           ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)
               (1 - α)}).toReal)
       atTop (𝓝 (1 - α)) := by
-  sorry
+  have hvne : Real.toNNReal Var[fun t : ℝ => t; Q] ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  -- Convergence of the sampling distribution functions along the class, packaged for `Jmean`.
+  have hJconv : ∀ G ∈ meanSeqClass Q, ∀ x, Tendsto (fun n => Jmean n (G n) x) atTop
+      (𝓝 (normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q]) x)) := by
+    intro G hG x
+    have hagree : ∀ n, Jmean n (G n) x = meanRootCDF (G n) n x := by
+      intro n
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn
+        haveI : IsProbabilityMeasure (Measure.pi fun _ : Fin 0 => G 0) := by
+          rw [Measure.pi_of_empty]; infer_instance
+        rw [Jmean_eq_meanRootCDF]
+      · haveI := hG.1 n hn
+        haveI := isProbabilityMeasure_pi_const n (G n)
+        rw [Jmean_eq_meanRootCDF]
+    simp_rw [hagree]
+    exact mean_root_cdf_tendsto hQ2 hQvar hG x
+  -- The field `J := Jmean` is the sampling distribution of the root at the true law.
+  have hJP : ∀ (n : ℕ) (x : ℝ), Jmean n Q x
+      = (Pr {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) ≤ x}).toReal := by
+    intro n x
+    haveI := isProbabilityMeasure_pi_const n Q
+    rw [Jmean_eq_meanRootCDF, meanRootCDF_eq_law_of_root hmeas hindep hlaw hident]
+  have hRmeas : ∀ n : ℕ, Measurable fun ω : Ω =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q) := by
+    intro n
+    have hsum : Measurable fun ω : Ω => ∑ i : Fin n, X i ω :=
+      Finset.measurable_sum _ (fun i _ => hmeas i)
+    fun_prop
+  have hconv := tendsto_bootstrapCoverage (P := Q) (J := Jmean)
+    (Jlim := normalCDF 0 (Real.toNNReal Var[fun t : ℝ => t; Q])) (C_P := meanSeqClass Q)
+    (Phat := fun n ω => empiricalMeasure fun i : Fin n => X i ω)
+    (R := fun n ω => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)) (α := α)
+    (const_mem_meanSeqClass Q hQ2) hJconv (continuous_normalCDF 0 hvne) (isCDF_normalCDF 0 _)
+    isCDF_Jmean (empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2) hα
+    (strictIncAt_normalCDF 0 hvne _) hJP hRmeas
+    (fun n => measurable_bootstrapCriticalValue hmeas n)
+  refine hconv.congr fun n => ?_
+  have hset : {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
+        ≤ cdfPseudoInverse (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α)}
+      = {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
+        ≤ cdfPseudoInverse (meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) (1 - α)} := by
+    ext ω
+    haveI := isProbabilityMeasure_pi_empirical n X ω
+    rw [Set.mem_setOf_eq, Set.mem_setOf_eq, Jmean_eq_meanRootCDF]
+  rw [hset]
 
 /-! ## The studentized root and the bootstrap-t -/
 
@@ -201,6 +661,15 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
+  -- TODO (studentized CLT = target-1 CLT + Slutsky). This is `mean_root_cdf_tendsto` divided by
+  -- the sample standard deviation. Beyond the two bricks missing for `mean_root_cdf_tendsto`
+  -- (triangular-array Lindeberg CLT with drifting law + portmanteau CDF-inversion), it needs the
+  -- triangular-array weak law `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
+  -- (itself an open debt) applied to the squares to give `sampleVariance → Var[id; Q]` in
+  -- probability along the class, and then Slutsky's theorem to divide the asymptotically normal
+  -- numerator by the consistent denominator (`√(sampleVariance) → √Var[id; Q] > 0`), yielding the
+  -- standard normal limit. The junk convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible since
+  -- `Var[id; Q] > 0`.
   sorry
 
 /-- **Consistency of the bootstrap-t.**
@@ -218,7 +687,31 @@ theorem bootstrap_t_consistent [IsProbabilityMeasure Pr] [IsProbabilityMeasure Q
     (hQ2 : MemLp (fun t : ℝ => t) 2 Q) (hQvar : 0 < Var[fun t : ℝ => t; Q]) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (studentizedRootCDF Q n)
       (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n)) atTop (𝓝 0) := by
-  sorry
+  have hcont : Continuous stdNormalCDF := continuous_stdNormalCDF
+  have hcdflim : IsCDF stdNormalCDF := isCDF_stdNormalCDF
+  have hQcdf : ∀ n, IsCDF (studentizedRootCDF Q n) := fun n => by
+    haveI := isProbabilityMeasure_pi_const n Q; exact isCDF_studentizedRootCDF Q n
+  have hQconv : ∀ x, Tendsto (fun n => studentizedRootCDF Q n x) atTop (𝓝 (stdNormalCDF x)) :=
+    fun x => studentized_root_cdf_tendsto hQ2 hQvar (const_mem_meanSeqClass Q hQ2) x
+  filter_upwards [empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hEcdf : ∀ n, IsCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n) :=
+    fun n => by haveI := isProbabilityMeasure_pi_empirical n X ω; exact isCDF_studentizedRootCDF _ n
+  have hEconv : ∀ x, Tendsto
+      (fun n => studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n x) atTop
+      (𝓝 (stdNormalCDF x)) := fun x => studentized_root_cdf_tendsto hQ2 hQvar hω x
+  have hA : Tendsto (fun n => supCDFDist (studentizedRootCDF Q n) stdNormalCDF) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQcdf hcont hcdflim hQconv
+  have hB : Tendsto (fun n =>
+      supCDFDist stdNormalCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+      atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hEcdf hcont hcdflim hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (studentizedRootCDF Q n) stdNormalCDF
+      + supCDFDist stdNormalCDF (studentizedRootCDF (empiricalMeasure fun i : Fin n => X i ω) n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQcdf n) (hEcdf n)
+  · exact supCDFDist_triangle_of_isCDF (hQcdf n) hcdflim (hEcdf n)
 
 end MeanBootstrap
 
