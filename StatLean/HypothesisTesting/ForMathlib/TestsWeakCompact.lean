@@ -71,6 +71,11 @@ namespace StatLean.HypothesisTesting
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
+/-- On the real field, the inner product is the product (the RCLike inner
+`⟪a, b⟫ = b * conj a` reduces definitionally to `b * a`). -/
+private lemma real_inner_eq_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  change b * a = a * b; ring
+
 /-- The **`L²` test class**: the (a.e.) `[0,1]`-valued elements of `L²(μ)`. These are exactly
 the critical functions of the testing theory, viewed in `L²`. -/
 def testClassL2 (μ : Measure 𝓧) : Set (Lp ℝ 2 μ) :=
@@ -90,25 +95,37 @@ noncomputable def toWeakDualL2 (μ : Measure 𝓧) (f : Lp ℝ 2 μ) : WeakDual 
 /-- The embedding evaluates as the inner product. -/
 theorem toWeakDualL2_apply (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
     toWeakDualL2 μ f g = ⟪f, g⟫_ℝ := by
-  sorry
+  simp only [toWeakDualL2, StrongDual.toWeakDual_apply, InnerProductSpace.toDual_apply_apply]
 
 /-- On real `L²` the embedding evaluates as an integral: the moment functionals
 `f ↦ ∫ f·g dμ` are exactly the evaluations of the weak dual. -/
 theorem toWeakDualL2_apply_eq_integral (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
     toWeakDualL2 μ f g = ∫ x, f x * g x ∂μ := by
-  sorry
+  rw [toWeakDualL2_apply, L2.inner_def]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  exact real_inner_eq_mul _ _
+
+/-- On real `L²` the inner product is the integral of the pointwise product. -/
+private lemma inner_L2_eq_integral (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
+    ⟪f, g⟫_ℝ = ∫ x, f x * g x ∂μ :=
+  (toWeakDualL2_apply μ f g).symm.trans (toWeakDualL2_apply_eq_integral μ f g)
+
+/-- The pointwise product of two `L²` functions is integrable. -/
+private lemma integrable_L2_mul (μ : Measure 𝓧) (f g : Lp ℝ 2 μ) :
+    Integrable (fun x => f x * g x) μ :=
+  (L2.integrable_inner f g).congr (Filter.Eventually.of_forall fun x => real_inner_eq_mul _ _)
 
 /-- **Weak continuity of the moment functionals**: `f ↦ ⟪g, f⟫` is continuous for the weak
 topology, in the weak-dual packaging. -/
 theorem continuous_eval_weakDual (μ : Measure 𝓧) (g : Lp ℝ 2 μ) :
-    Continuous fun L : WeakDual ℝ (Lp ℝ 2 μ) => L g := by
-  sorry
+    Continuous fun L : WeakDual ℝ (Lp ℝ 2 μ) => L g :=
+  WeakDual.eval_continuous g
 
 /-- **Moment-constraint slices are closed**: a level set of a moment functional is weakly
 closed. -/
 theorem isClosed_setOf_eval_eq (μ : Measure 𝓧) (g : Lp ℝ 2 μ) (c : ℝ) :
-    IsClosed {L : WeakDual ℝ (Lp ℝ 2 μ) | L g = c} := by
-  sorry
+    IsClosed {L : WeakDual ℝ (Lp ℝ 2 μ) | L g = c} :=
+  isClosed_singleton.preimage (continuous_eval_weakDual μ g)
 
 /-- **Weak compactness of the test class** over a finite measure. -/
 theorem isCompact_toWeakDualL2_image_testClass (μ : Measure 𝓧)
