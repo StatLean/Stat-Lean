@@ -1,5 +1,7 @@
 import StatLean.HypothesisTesting.Unbiased.ConditionalExpFamily
 import StatLean.HypothesisTesting.Unbiased.PowerContinuity
+import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
+import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
 # UMP unbiased tests for multiparameter exponential families
@@ -290,19 +292,161 @@ theorem isUMPU_conditional_point
 
 /-! ## Measurable selection of the conditional constants -/
 
+/-- The conditional critical value at level `α`: the `(1−α)`-quantile of the distribution
+function of `μ`. Explicit — this is what makes the selection measurable in the conditioning
+variable, `t ↦ critC (κ t) α` being a quantile of a measurable family of CDFs. -/
+private noncomputable def critC (μ : Measure ℝ) (α : ℝ) : ℝ := quantile (⇑(cdf μ)) (1 - α)
+
+/-- The matching randomization weight: the fraction of the atom at `critC μ α` needed to make
+the size exactly `α`. Division by zero returns `0`, which is precisely the correct value when
+there is no atom (there the size is already exactly `α`). -/
+private noncomputable def critGamma (μ : Measure ℝ) (α : ℝ) : ℝ :=
+  (α - (μ {x : ℝ | critC μ α < x}).toReal) / (μ {x : ℝ | x = critC μ α}).toReal
+
+/-- The `(1−α)`-sublevel set of a distribution function is nonempty (the CDF tends to `1`)
+and bounded below (it tends to `0`), for `0 < α < 1`. -/
+private lemma cdf_sublevel_nonempty_bddBelow (μ : Measure ℝ) [IsProbabilityMeasure μ] {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α < 1) :
+    {y : ℝ | 1 - α ≤ cdf μ y}.Nonempty ∧ BddBelow {y : ℝ | 1 - α ≤ cdf μ y} := by
+  constructor
+  · obtain ⟨y, hy⟩ := ((tendsto_cdf_atTop μ).eventually_const_lt
+      (show 1 - α < 1 by linarith)).exists
+    exact ⟨y, le_of_lt hy⟩
+  · obtain ⟨b, hb⟩ := Filter.eventually_atBot.mp
+      ((tendsto_cdf_atBot μ).eventually_lt_const (show (0 : ℝ) < 1 - α by linarith))
+    refine ⟨b, fun y hy => ?_⟩
+    simp only [Set.mem_setOf_eq] at hy
+    by_contra hcon
+    exact absurd (hb y (not_le.mp hcon).le) (not_lt.mpr hy)
+
+/-- **Galois property of the conditional critical value.** `critC μ α ≤ x` iff the CDF has
+already reached `1 − α` at `x`. This is what turns the measurability of `t ↦ cdf (κ t) x`
+into the measurability of `t ↦ critC (κ t) α`. -/
+private lemma critC_le_iff (μ : Measure ℝ) [IsProbabilityMeasure μ] {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α < 1) (x : ℝ) : critC μ α ≤ x ↔ 1 - α ≤ cdf μ x :=
+  quantile_le_iff (monotone_cdf (μ := μ)) (fun y => (cdf μ).right_continuous y)
+    (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).1 (cdf_sublevel_nonempty_bddBelow μ hα0 hα1).2
+
+/-- **The explicit constants attain the level exactly.** The one-sided test with threshold
+`critC μ α` and boundary weight `critGamma μ α` has size exactly `α`, and the weight is a
+probability. Same computation as `QuantileFunction.exists_critical_constants`, carried out
+for the *named* constants rather than existentially. -/
+private lemma critical_constants_explicit (μ : Measure ℝ) [IsProbabilityMeasure μ] {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α < 1) :
+    0 ≤ critGamma μ α ∧ critGamma μ α ≤ 1 ∧
+      (μ {x : ℝ | critC μ α < x}).toReal
+        + critGamma μ α * (μ {x : ℝ | x = critC μ α}).toReal = α := by
+  have hmono : Monotone (⇑(cdf μ)) := monotone_cdf (μ := μ)
+  set C := critC μ α with hCdef
+  set L := Function.leftLim (⇑(cdf μ)) C with hLdef
+  have hA : 1 - α ≤ cdf μ C := (critC_le_iff μ hα0 hα1 C).mp le_rfl
+  have hB : ∀ y, y < C → cdf μ y < 1 - α := by
+    intro y hy
+    by_contra h
+    exact absurd ((critC_le_iff μ hα0 hα1 y).mpr (not_lt.mp h)) (not_le.mpr hy)
+  have hLle : L ≤ cdf μ C := Monotone.leftLim_le hmono le_rfl
+  have hLbound : L ≤ 1 - α := by
+    have htend : Filter.Tendsto (⇑(cdf μ)) (nhdsWithin C (Set.Iio C)) (nhds L) :=
+      hmono.tendsto_leftLim C
+    refine le_of_tendsto htend ?_
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    exact (hB y hy).le
+  have hg : (μ {x : ℝ | C < x}).toReal = 1 - cdf μ C := by
+    have hIoi := (cdf μ).measure_Ioi (tendsto_cdf_atTop μ) C
+    rw [measure_cdf] at hIoi
+    have hset : {x : ℝ | C < x} = Set.Ioi C := rfl
+    rw [hset, hIoi, ENNReal.toReal_ofReal (by linarith [cdf_le_one (μ := μ) C])]
+  have hj : (μ {x : ℝ | x = C}).toReal = cdf μ C - L := by
+    have hsing := (cdf μ).measure_singleton C
+    rw [measure_cdf] at hsing
+    have hset : {x : ℝ | x = C} = {C} := by ext x; simp
+    rw [hset, hsing, ENNReal.toReal_ofReal (by linarith [hLle])]
+  have hgle : 1 - cdf μ C ≤ α := by linarith [hA]
+  have hgnn : 0 ≤ 1 - cdf μ C := by linarith [cdf_le_one (μ := μ) C]
+  have hjnn : 0 ≤ cdf μ C - L := by linarith [hLle]
+  have hαle : α ≤ (1 - cdf μ C) + (cdf μ C - L) := by linarith [hLbound]
+  have hγ : critGamma μ α = (α - (1 - cdf μ C)) / (cdf μ C - L) := by
+    rw [critGamma, hg, hj]
+  rcases eq_or_lt_of_le hjnn with hj0 | hjpos
+  · -- no atom: the size is already exactly `α` and the weight is `0`
+    have hval : (1 - cdf μ C) = α := le_antisymm hgle (by linarith [hαle, hj0])
+    have hγ0 : critGamma μ α = 0 := by rw [hγ, ← hj0, div_zero]
+    refine ⟨by rw [hγ0], by rw [hγ0]; norm_num, ?_⟩
+    rw [hg, hj, hγ0, hval]
+    ring
+  · refine ⟨by rw [hγ]; exact div_nonneg (by linarith [hgle]) (le_of_lt hjpos), ?_, ?_⟩
+    · rw [hγ, div_le_one hjpos]; linarith [hαle]
+    · rw [hg, hj, hγ, div_mul_cancel₀ _ (ne_of_gt hjpos)]; ring
+
+/-- The distribution function of a Markov kernel is measurable in the conditioning variable,
+for each fixed argument. -/
+private lemma measurable_cdf_kernel (κ : Kernel Ξ ℝ) [IsMarkovKernel κ] (x : ℝ) :
+    Measurable fun t => cdf (κ t) x := by
+  simp only [cdf_eq_real, measureReal_def]
+  exact ENNReal.measurable_toReal.comp (κ.measurable_coe measurableSet_Iic)
+
+/-- The one-sided conditional test integrates to `size = tail + weight · atom`. -/
+private lemma integral_condOneSidedTest (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (C₀ γ₀ : Ξ → ℝ) (t : Ξ) :
+    ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂μ
+      = (μ {x : ℝ | C₀ t < x}).toReal + γ₀ t * (μ {x : ℝ | x = C₀ t}).toReal := by
+  have hs₁ : MeasurableSet {x : ℝ | C₀ t < x} := measurableSet_Ioi
+  have hs₂ : MeasurableSet {x : ℝ | x = C₀ t} := by
+    have : {x : ℝ | x = C₀ t} = {C₀ t} := by ext x; simp
+    rw [this]; exact measurableSet_singleton _
+  have hfun : (fun u => condOneSidedTest C₀ γ₀ (u, t))
+      = fun u => ({x : ℝ | C₀ t < x}.indicator (fun _ => (1 : ℝ)) u
+          + γ₀ t * {x : ℝ | x = C₀ t}.indicator (fun _ => (1 : ℝ)) u) := by
+    funext u
+    simp only [condOneSidedTest]
+    by_cases h1 : C₀ t < u
+    · have hm1 : u ∈ {x : ℝ | C₀ t < x} := h1
+      have hn2 : u ∉ {x : ℝ | x = C₀ t} := by
+        simp only [Set.mem_setOf_eq]; linarith
+      rw [if_pos h1, Set.indicator_of_mem hm1, Set.indicator_of_notMem hn2]
+      ring
+    · have hn1 : u ∉ {x : ℝ | C₀ t < x} := h1
+      rw [if_neg h1, Set.indicator_of_notMem hn1]
+      by_cases h2 : u = C₀ t
+      · have hm2 : u ∈ {x : ℝ | x = C₀ t} := h2
+        rw [if_pos h2, Set.indicator_of_mem hm2]
+        ring
+      · have hn2 : u ∉ {x : ℝ | x = C₀ t} := h2
+        rw [if_neg h2, Set.indicator_of_notMem hn2]
+        ring
+  rw [hfun, integral_add ((integrable_const (1 : ℝ)).indicator hs₁)
+    (((integrable_const (1 : ℝ)).indicator hs₂).const_mul _), integral_const_mul,
+    integral_indicator_const _ hs₁, integral_indicator_const _ hs₂]
+  simp [measureReal_def]
+
 /-- **Existence of measurable conditional constants (one-sided case).**
 
 There is a measurable choice of critical value `C₀(t)` and randomization probability `γ₀(t)`
 achieving conditional size `α` on the surface `T = t`, for almost every `t`.
 
-Construction: with `F_t(u) = P_{θ₀}{U ≤ u ∣ t}` the conditional distribution function
-(Mathlib's `condCDF` of the conditional law), the size equation reads
-`F_t(C) − γ·[F_t(C) − F_t(C−)] = 1 − α`, solved by the conditional quantile
-`C₀(t) = inf {u | F_t(u) ≥ 1 − α}` together with the matching interpolation weight.
-Joint measurability of `(u, t) ↦ F_t(u)` — which follows from monotonicity and right
-continuity in `u` via the countable rational approximation
-`{(u,t) | F_t(u) ≥ c} = ⋂ₙ ⋃ᵣ {(u,t) | 0 ≤ r − u < 1/n, F_t(r) ≥ c}` — makes both `C₀` and
-`γ₀` measurable in `t`. -/
+Construction: with `F_t(u) = P_{θ₀}{U ≤ u ∣ t}` the conditional distribution function (the
+`cdf` of the Markov kernel `condDistrib U T (P p₀)` evaluated at `t`), the size equation
+reads `[1 − F_t(C)] + γ·[F_t(C) − F_t(C−)] = α`, solved by the conditional quantile
+`C₀(t) = inf {u | F_t(u) ≥ 1 − α}` (`critC`) together with the matching interpolation weight
+`γ₀(t) = (α − P_t(C₀(t), ∞)) / P_t{C₀(t)}` (`critGamma`; the junk value `x / 0 = 0` is the
+correct one, since with no atom the tail already has mass exactly `α`).
+
+The two measurability steps are, in this proof, both cheap, and *no* joint measurability of
+`(u, t) ↦ F_t(u)` is needed:
+
+* `C₀` is measurable because its sublevel sets are superlevel sets of a fixed-argument CDF:
+  `C₀(t) ≤ x ↔ 1 − α ≤ F_t(x)` (the Galois property `quantile_le_iff`, here `critC_le_iff`),
+  and `t ↦ F_t(x) = (κ t (Iic x)).toReal` is measurable for each fixed `x` because `κ` is a
+  kernel;
+* the tail and the atom at the *varying* threshold `C₀(t)` are measurable because
+  `{(t,u) | C₀(t) < u}` and `{(t,u) | u = C₀(t)}` are measurable subsets of the product and
+  a kernel evaluated on the sections of a measurable set is measurable
+  (`Kernel.measurable_kernel_prodMk_left`).
+
+The conclusion is in fact obtained for *every* `t`, not just almost every `t`: the
+conditional laws are probability measures for every `t` since `condDistrib` is a Markov
+kernel. Neither the exponential-family form `hUT` nor the measurability of `U` and `T` is
+used; they are kept in the signature as stated. -/
 theorem exists_measurable_conditional_constants
     {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → ℝ} {T : 𝓧 → Ξ}
     {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ} {α : ℝ} {p₀ : ℝ × Ξ}
@@ -320,19 +464,33 @@ theorem exists_measurable_conditional_constants
       (∀ t, γ₀ t ∈ Set.Icc (0 : ℝ) 1) ∧
       ∀ᵐ t ∂((P p₀).map T),
         ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p₀) t) = α := by
-  -- BLOCKED on a packaged measurable conditional quantile — NOTE this target needs NEITHER
-  -- `Ξ`-measurability NOR the exp-family form (`CondDistribTilt`): the size equation
-  -- `κt(Ioi C₀) + γ₀·κt{C₀} = α` for `κ = condDistrib U T (P p₀)` (a Markov kernel) is attainable
-  -- for ANY conditional law by the quantile construction (`ForMathlib/QuantileFunction`'s
-  -- `exists_critical_constants` gives it per-`t`; `quantile_le_iff` is the Galois input). The gap
-  -- is MEASURABILITY in `t`: set `C₀ t = quantile (condCDF ρ t) (1-α)` for `ρ = (P p₀).map (T,U)`
-  -- (so `κ = ρ.condKernel`); `measurable_condCDF` + `quantile_le_iff` give `Measurable C₀`, but the
-  -- atom weight `γ₀ t` needs a measurable `Function.leftLim (condCDF ρ t)`, and relating the
-  -- real-point masses `κt(Ioi C₀ t)`, `κt{C₀ t}` back to `condCDF ρ t` uses only the a.e.-at-
-  -- rationals bridge `condCDF_ae_eq` — Mathlib packages no measurable conditional quantile of a
-  -- kernel. Self-contained (~250 lines) but out of a single non-interactive pass's safe budget.
-  -- Reported (not lifted: this is a real missing Mathlib brick, not a false statement).
-  sorry
+  classical
+  set κ : Kernel Ξ ℝ := condDistrib U T (P p₀) with hκ
+  -- the critical value is measurable because its sublevel sets are CDF superlevel sets
+  have hC₀m : Measurable fun t => critC (κ t) α := by
+    refine measurable_of_Iic fun x => ?_
+    have hset : (fun t => critC (κ t) α) ⁻¹' Set.Iic x = {t | 1 - α ≤ cdf (κ t) x} := by
+      ext t
+      simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+      exact critC_le_iff (κ t) hα₀ hα₁ x
+    rw [hset]
+    exact measurableSet_le measurable_const (measurable_cdf_kernel κ x)
+  -- the tail and the atom at a *varying* threshold are measurable, by the joint
+  -- measurability of a kernel on sections of a measurable set of the product
+  have htail : Measurable fun t => (κ t {x : ℝ | critC (κ t) α < x}).toReal :=
+    ENNReal.measurable_toReal.comp (Kernel.measurable_kernel_prodMk_left
+      (measurableSet_lt (hC₀m.comp measurable_fst) measurable_snd))
+  have hatom : Measurable fun t => (κ t {x : ℝ | x = critC (κ t) α}).toReal :=
+    ENNReal.measurable_toReal.comp (Kernel.measurable_kernel_prodMk_left
+      (measurableSet_eq_fun measurable_snd (hC₀m.comp measurable_fst)))
+  refine ⟨fun t => critC (κ t) α, fun t => critGamma (κ t) α, hC₀m, ?_, ?_, ?_⟩
+  · simp only [critGamma]
+    exact (measurable_const.sub htail).div hatom
+  · exact fun t => ⟨(critical_constants_explicit (κ t) hα₀ hα₁).1,
+      (critical_constants_explicit (κ t) hα₀ hα₁).2.1⟩
+  · refine Filter.Eventually.of_forall fun t => ?_
+    rw [integral_condOneSidedTest (κ t) _ _ t]
+    exact (critical_constants_explicit (κ t) hα₀ hα₁).2.2
 
 /-! ## Reduction to canonical form -/
 
