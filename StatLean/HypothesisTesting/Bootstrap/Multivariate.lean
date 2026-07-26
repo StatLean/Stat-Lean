@@ -401,6 +401,69 @@ private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k
 
 end NormOfGaussian
 
+/-! ## Empirical measures on a Euclidean space -/
+
+section EmpiricalBasics
+
+/-- Every strongly measurable function is integrable against an empirical measure. -/
+private lemma integrable_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (x : Fin n → EuclideanSpace ℝ (Fin k))
+    (f : EuclideanSpace ℝ (Fin k) → E) : Integrable f (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [empiricalMeasure]
+  · unfold empiricalMeasure
+    refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
+    exact integrable_finset_sum_measure.2 (fun i _ => integrable_dirac (by simp))
+
+/-- The integral against an empirical measure is the sample average. -/
+private lemma integral_empiricalMeasure {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (x : Fin n → EuclideanSpace ℝ (Fin k))
+    (f : EuclideanSpace ℝ (Fin k) → E) :
+    ∫ y, f y ∂(empiricalMeasure x) = (n : ℝ)⁻¹ • ∑ i, f (x i) := by
+  unfold empiricalMeasure
+  rw [integral_smul_measure,
+    integral_finset_sum_measure (fun i _ => integrable_dirac (by simp))]
+  simp only [integral_dirac]
+  rw [ENNReal.toReal_inv, ENNReal.toReal_natCast]
+
+/-- The empirical measure of a nonempty sample is a probability measure. -/
+private lemma isProbabilityMeasure_empiricalMeasure {n : ℕ} (hn : 0 < n)
+    (x : Fin n → EuclideanSpace ℝ (Fin k)) : IsProbabilityMeasure (empiricalMeasure x) := by
+  refine ⟨?_⟩
+  unfold empiricalMeasure
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
+
+/-- The identity is square-integrable against an empirical measure. -/
+private lemma memLp_id_empiricalMeasure {n : ℕ} (x : Fin n → EuclideanSpace ℝ (Fin k)) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 (empiricalMeasure x) := by
+  rw [memLp_two_iff_integrable_sq_norm (by fun_prop)]
+  exact integrable_empiricalMeasure x (fun y => ‖y‖ ^ 2)
+
+/-- **Strong law of large numbers, in the form the empirical class needs.** -/
+private lemma tendsto_sample_average {Pr : Measure Ω}
+    [IsProbabilityMeasure Pr] {Q : Measure (EuclideanSpace ℝ (Fin k))}
+    {X : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    (hmeas : ∀ i, Measurable (X i)) (hindep : iIndepFun X Pr) (hlaw : HasLaw (X 0) Q Pr)
+    (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
+    (g : EuclideanSpace ℝ (Fin k) → E) (hg : Measurable g) (hint : Integrable g Q) :
+    ∀ᵐ ω ∂Pr, Tendsto (fun n : ℕ => (n : ℝ)⁻¹ • ∑ i ∈ Finset.range n, g (X i ω)) atTop
+      (𝓝 (∫ y, g y ∂Q)) := by
+  have hintmap : Integrable g (Pr.map (X 0)) := by rw [hlaw.map_eq]; exact hint
+  have hint' : Integrable (fun ω => g (X 0 ω)) Pr :=
+    (integrable_map_measure hintmap.aestronglyMeasurable (hmeas 0).aemeasurable).1 hintmap
+  have hmean : Pr[fun ω => g (X 0 ω)] = ∫ y, g y ∂Q :=
+    hlaw.integral_comp hg.aestronglyMeasurable
+  rw [← hmean]
+  exact strong_law_ae (fun i ω => g (X i ω)) hint'
+    (fun i j hij => (hindep.comp (fun _ => g) (fun _ => hg)).indepFun hij)
+    (fun i => (hident i).comp hg)
+
+end EmpiricalBasics
+
 /-! ## Cramér–Wold: projecting the mean-vector root onto a direction -/
 
 section CramerWold
