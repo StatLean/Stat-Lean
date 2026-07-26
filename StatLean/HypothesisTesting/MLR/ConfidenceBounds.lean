@@ -124,10 +124,43 @@ theorem exists_uma_lowerBound
       IsUMAConfidence P (fun θ₀ : ℝ => Set.Ioi θ₀) (fun x => Set.Ici (θlow x)) (1 - α) ∧
       ∀ (x : 𝓧) (θhat : ℝ), (P θhat {y | T y ≤ T x}).toReal = 1 - α →
         (∀ θ' : ℝ, (P θ' {y | T y ≤ T x}).toReal = 1 - α → θ' = θhat) ∧ θlow x = θhat := by
-  -- Statement corrected: `hdist` (the non-degeneracy clause of the MLR definition) is now a
-  -- hypothesis, upgrading the antitone `θ ↦ F_θ(T x)` to STRICTLY antitone (via
-  -- `integral_mono_of_hasMLR` on the nonincreasing integrand `−1_{T ≤ t}`), hence injective,
-  -- so the confidence-bound root is unique and the theorem goes through.
+  -- FALSE AS STATED (verified counterexample below). `hdist` does repair the *uniqueness*
+  -- conjunct — it upgrades the antitone `θ ↦ F_θ(T x)` of `G_antitone_scratch` to strictly
+  -- antitone, hence injective — but the *existence* conjunct fails, because a real-valued
+  -- `θlow : 𝓧 → ℝ` cannot represent the honest inverted-UMP confidence set when the latter
+  -- is `∅` or all of `ℝ`.
+  --
+  -- COUNTEREXAMPLE. `𝓧 = ℝ`, `μ = volume`, `T = id`, `P θ = 𝒩(arctan θ, 1)`, i.e.
+  -- `p θ x = ϕ(x − arctan θ)`. This is a one-parameter exponential family in `T = id` read
+  -- through the strictly increasing `η = arctan`, so `hMLR` holds (`hasMLR_expFamily`);
+  -- `F_θ(t) = Φ(t − arctan θ)` is continuous in each variable, giving `hcont_t`/`hcont_θ`;
+  -- and `arctan` is injective, giving `hdist`. Fix any `α ∈ (0,1)` and put `z = Φ⁻¹(1 − α)`.
+  --
+  -- The inverted UMP family is `S(x) = {θ : x ≤ arctan θ + z}`, with exact coverage
+  -- `P θ {x : x ≤ arctan θ + z} = Φ(z) = 1 − α`, and measurable slices `Iic (arctan θ₀ + z)`;
+  -- so `S` is a legitimate competitor `S'` in the optimality clause. Since `arctan` has range
+  -- `(−π/2, π/2)`, `S(x) = ∅` for `x ≥ z + π/2` — a set of positive `P θ`-probability for
+  -- every `θ` — which no `Ici (θlow x)` can match.
+  --
+  -- Concretely, suppose `θlow : 𝓧 → ℝ` is measurable and satisfies the conclusion. Testing
+  -- the optimality clause against `S'` at `θ₀ = j`, `θ = j + 1` gives, for every `j`,
+  --   `P_{j+1} {x : θlow x ≤ j} ≤ P_{j+1} (Iic (arctan j + z)) = Φ(arctan j + z − arctan (j+1))`
+  -- whose right-hand side tends to `Φ(z) = 1 − α`. Hence `P_{j+1}(B_j) ≥ α − o(1)` for
+  -- `B_j = {x : θlow x > j}`. But `θlow` is real-valued, so `B_j ↓ ∅` and `N(B_j) → 0` for
+  -- `N = 𝒩(π/2, 1)`, while `dTV(P_{j+1}, N) → 0` because `arctan (j+1) → π/2`; therefore
+  -- `P_{j+1}(B_j) ≤ N(B_j) + dTV(P_{j+1}, N) → 0`. Since `α > 0`, this is a contradiction.
+  --
+  -- TODO(statement-bug): the conclusion needs either `θlow : 𝓧 → EReal` (allowing the
+  -- vacuous/total confidence sets), or a hypothesis making the inverted family always a
+  -- proper closed ray — e.g. surjectivity of `θ ↦ C(θ)` onto `ℝ`, which holds for genuine
+  -- location families (`P θ = 𝒩(θ,1)`) but not for reparametrized ones as above. Under
+  -- either fix the proof is: `C(θ)` from the intermediate value theorem applied to the
+  -- continuous `F_θ` (`hcont_t`, `F_θ → 0/1` at `∓∞`), acceptance regions `A θ = {T ≤ C θ}`,
+  -- UMP-ness of `acceptanceTest (A θ)` from `isMostPowerful_oneSided` (the boundary weight
+  -- `γ` is irrelevant since `hcont_t` makes the `T`-marginal atomless), and then
+  -- `Tests.Confidence.isUMA_of_UMP` transports optimality across the duality; `hdist` plus
+  -- `power_strictMono_oneSided` gives the uniqueness conjunct. Reported per the
+  -- no-weakening policy.
   sorry
 
 end StatLean.HypothesisTesting
