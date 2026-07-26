@@ -3,6 +3,7 @@ import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.Probability.Moments.Variance
 import Mathlib.Probability.HasLaw
 import Mathlib.Probability.StrongLaw
+import Mathlib.Probability.CDF
 
 /-!
 # The nonparametric bootstrap for a mean
@@ -104,6 +105,85 @@ noncomputable def studentizedRootCDF (F : Measure ℝ) (n : ℕ) (x : ℝ) : ℝ
     {y : Fin n → ℝ |
       Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) /
         Real.sqrt (sampleVariance y) ≤ x}).toReal
+
+/-! ## Distribution-function and continuity infrastructure -/
+
+/-- The `toReal` of the `Iic`-measure of a probability law on the line is a distribution
+function: this is exactly `ProbabilityTheory.cdf`, dressed as `IsCDF`. -/
+private lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    IsCDF (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  exact
+    { mono := (ProbabilityTheory.cdf ν).mono
+      right_continuous := fun x => (ProbabilityTheory.cdf ν).right_continuous x
+      tendsto_atBot := ProbabilityTheory.tendsto_cdf_atBot ν
+      tendsto_atTop := ProbabilityTheory.tendsto_cdf_atTop ν }
+
+/-- The distribution function of a probability law with no atoms is continuous. -/
+private lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  set f := ProbabilityTheory.cdf ν with hf
+  refine continuous_iff_continuousAt.2 (fun x => ?_)
+  have hleft : Function.leftLim f x = f x := by
+    have hsing : f.measure {x} = 0 := by rw [ProbabilityTheory.measure_cdf]; exact measure_singleton x
+    have hval := f.measure_singleton x
+    rw [hsing] at hval
+    have hle : Function.leftLim f x ≤ f x := f.mono.leftLim_le le_rfl
+    have h0 : f x - Function.leftLim f x ≤ 0 := by
+      by_contra h
+      push_neg at h
+      exact (ENNReal.ofReal_pos.mpr h).ne' hval.symm
+    linarith
+  have hright : Function.rightLim f x = f x := (f.right_continuous x).rightLim_eq
+  exact (f.mono.continuousAt_iff_leftLim_eq_rightLim).2 (hleft.trans hright.symm)
+
+/-- `normalCDF m v` is a distribution function. -/
+private lemma isCDF_normalCDF (m : ℝ) (v : ℝ≥0) : IsCDF (normalCDF m v) :=
+  isCDF_toReal_measure_Iic (gaussianReal m v)
+
+/-- `stdNormalCDF` is a distribution function. -/
+private lemma isCDF_stdNormalCDF : IsCDF stdNormalCDF := isCDF_normalCDF 0 1
+
+/-- A nondegenerate normal distribution function is continuous. -/
+private lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Continuous (normalCDF m v) :=
+  haveI : NoAtoms (gaussianReal m v) := noAtoms_gaussianReal hv
+  continuous_toReal_measure_Iic (gaussianReal m v)
+
+/-- The standard normal distribution function is continuous. -/
+private lemma continuous_stdNormalCDF : Continuous stdNormalCDF := continuous_normalCDF 0 one_ne_zero
+
+/-- A nondegenerate normal distribution function is strictly increasing. -/
+private lemma strictMono_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : StrictMono (normalCDF m v) := by
+  intro y z hyz
+  have hpos : 0 < gaussianReal m v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]
+    intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' m hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal m v (Set.Iic z)
+      = gaussianReal m v (Set.Iic y) + gaussianReal m v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  have hfin : gaussianReal m v (Set.Iic y) ≠ ⊤ := measure_ne_top _ _
+  unfold normalCDF
+  rw [hdisj, ENNReal.toReal_add hfin (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal m v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- The `1 − α` quantile of a nondegenerate normal distribution function is a point of strict
+increase. -/
+private lemma strictIncAt_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x₀ : ℝ) :
+    StrictIncAt (normalCDF m v) x₀ :=
+  ⟨fun y hy => strictMono_normalCDF m hv hy, fun z hz => strictMono_normalCDF m hv hz⟩
 
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
