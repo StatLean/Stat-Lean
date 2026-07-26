@@ -96,6 +96,17 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     -- USER-INPUT: `φ` is almost invariant with respect to `μ`
     (hφ : IsAlmostInvariant G μ φ) :
     ∃ ψ : 𝓧 → ℝ, Measurable ψ ∧ IsInvariantTest G ψ ∧ φ =ᵐ[μ] ψ := by
+  -- TODO (Hunt–Stein averaging, not yet formalized). Argument (TSH4 §6.5 Thm 6.5.1): joint
+  -- measurability `[MeasurableSMul₂ G 𝓧]` + Fubini on `𝓧 × G` turn the per-`g` a.e. identity
+  -- `φ (g • ·) =ᵐ[μ] φ` (`hφ`) into: for `μ`-a.e. `x`, `φ (g • x) = φ x` for `ν`-a.e. `g`.
+  -- The invariant representative is the group average `ψ x := ∫ g, φ (g • x) ∂ν̄` for the
+  -- normalized `ν̄`; `hν` (right-translation-stable null sets) makes `ψ (g • x) = ψ x` and
+  -- `ψ =ᵐ[μ] φ`. Missing Mathlib pieces: (a) the normalization step needs `ν` FINITE (only
+  -- `SigmaFinite ν` + `hν0` are given — a σ-finite `ν` is not directly normalizable to a
+  -- probability measure, so the averaging integral requires either finiteness or an
+  -- invariant-mean / amenability device absent from Mathlib v4.29.1); (b) the quasi-invariance
+  -- Fubini transfer of the a.e. identity along right translation. Statement is TRUE for the
+  -- intended (Haar-carrying, amenable) groups. No false hypothesis.
   sorry
 
 /-! ## UMP almost invariant tests -/
@@ -129,6 +140,14 @@ theorem isUMPAlmostInvariant_of_isUMPInvariant [MeasurableSpace G] [MeasurableMu
     -- USER-INPUT: `φ₀` is UMP among invariant level-`α` tests
     (hφ₀ : IsUMPInvariant G P Θ₀ Θ₁ α φ₀) :
     IsUMPAlmostInvariant G P Θ₀ Θ₁ α φ₀ := by
+  -- TODO (depends on `exists_invariant_ae_eq_of_almostInvariant` above, Hunt–Stein). Argument:
+  -- a critical almost-invariant level-`α` competitor `ψ` is, by the averaging theorem above,
+  -- `=ᵐ[μ]` a genuinely invariant `ψ'`; `hdom`/`hequiv` make the family-a.e. and `μ`-a.e.
+  -- readings agree, so `ψ` and `ψ'` share every power `power P · θ`. `ψ'` is then an invariant
+  -- level-`α` competitor, so `hφ₀`'s UMP-invariant clause gives `power P ψ θ ≤ power P φ₀ θ` on
+  -- `Θ₁`, which is exactly the UMP-almost-invariant domination for `φ₀`. Blocked because the
+  -- averaging step `exists_invariant_ae_eq_of_almostInvariant` is itself the lifted Hunt–Stein
+  -- gap (see its TODO). Statement is TRUE for the intended amenable groups. No false hypothesis.
   sorry
 
 end StatLean.HypothesisTesting
