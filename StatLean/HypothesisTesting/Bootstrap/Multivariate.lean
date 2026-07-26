@@ -318,18 +318,18 @@ private lemma posSemidef_covMatrix {k : ℕ} {Q : Measure (EuclideanSpace ℝ (F
     rw [hrw]
     exact h
 
-/-- **Continuity of the limiting norm distribution function, for a general covariance.**
+/-- **The spheres of a norm are null for a nondegenerate Gaussian limit.**
 
-The general engine behind `continuous_normLimitCDF`: for any nonzero positive semidefinite `S`
-the distribution function of `nrm` under `multivariateGaussian 0 S` is continuous. Degeneracy of
-`S` is allowed — only `S ≠ 0` is used. -/
-private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
+The analytic core: `multivariateGaussian 0 S` is the image of the standard Gaussian under the
+square root of `S`, and that image turns `nrm` into a seminorm `g = nrm ∘ √S` which does not
+vanish identically as soon as `S ≠ 0`. Degeneracy of `S` is allowed. -/
+private lemma measure_multivariateGaussian_norm_level {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
     {nrm : EuclideanSpace ℝ (Fin k) → ℝ}
     (hpsd : S.PosSemidef) (hSne : S ≠ 0)
     (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
     (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
-    (hnrm_def : ∀ y, nrm y = 0 → y = 0) :
-    Continuous (normLimitCDF S nrm) := by
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0) (x : ℝ) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S {z | nrm z = x} = 0 := by
   classical
   set A := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) with hAdef
   set g : EuclideanSpace ℝ (Fin k) → ℝ := fun y => nrm (A y) with hgdef
@@ -349,26 +349,41 @@ private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k
     refine ⟨u, fun h => hu ?_⟩
     simpa using hnrm_def _ h
   have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
-  have hg_cont : Continuous g := hnrm_cont.comp A.continuous
-  -- the law of `g` under the standard Gaussian has no atoms
-  set ρ := (stdGaussian (EuclideanSpace ℝ (Fin k))).map g with hρdef
-  haveI : IsProbabilityMeasure ρ := Measure.isProbabilityMeasure_map hg_cont.measurable.aemeasurable
+  have hset : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | nrm z = x} :=
+    measurableSet_eq_fun hnrm_cont.measurable measurable_const
+  have hpre : (fun y : EuclideanSpace ℝ (Fin k) => (0 : EuclideanSpace ℝ (Fin k)) + A y) ⁻¹'
+      {z | nrm z = x} = {y | g y = x} := by
+    ext y; simp [hgdef]
+  rw [multivariateGaussian,
+    Measure.map_apply (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) =>
+      (0 : EuclideanSpace ℝ (Fin k)) + A y) hset, hpre]
+  exact stdGaussian_absolutelyContinuous_volume k
+    (volume_seminorm_level_eq_zero hgadd hgsmul hgne x)
+
+/-- **Continuity of the limiting norm distribution function, for a general covariance.**
+
+The general engine behind `continuous_normLimitCDF`: for any nonzero positive semidefinite `S`
+the distribution function of `nrm` under `multivariateGaussian 0 S` is continuous. Degeneracy of
+`S` is allowed — only `S ≠ 0` is used. -/
+private lemma continuous_normLimitCDF_of_posSemidef {k : ℕ} {S : Matrix (Fin k) (Fin k) ℝ}
+    {nrm : EuclideanSpace ℝ (Fin k) → ℝ}
+    (hpsd : S.PosSemidef) (hSne : S ≠ 0)
+    (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
+    (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0) :
+    Continuous (normLimitCDF S nrm) := by
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  set ρ := (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S).map nrm with hρdef
+  haveI : IsProbabilityMeasure ρ :=
+    Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
   haveI : NoAtoms ρ := by
     refine ⟨fun x => ?_⟩
-    rw [hρdef, Measure.map_apply hg_cont.measurable (measurableSet_singleton x)]
-    exact stdGaussian_absolutelyContinuous_volume k
-      (volume_seminorm_level_eq_zero hgadd hgsmul hgne x)
+    rw [hρdef, Measure.map_apply hnrm_cont.measurable (measurableSet_singleton x)]
+    exact measure_multivariateGaussian_norm_level hpsd hSne hnrm_add hnrm_smul hnrm_def x
   have heq : normLimitCDF S nrm = fun x => (ρ (Set.Iic x)).toReal := by
     funext x
-    have hset : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x} :=
-      measurableSet_le hnrm_cont.measurable measurable_const
-    have hpre : (fun y : EuclideanSpace ℝ (Fin k) => (0 : EuclideanSpace ℝ (Fin k)) + A y) ⁻¹'
-        {z | nrm z ≤ x} = g ⁻¹' (Set.Iic x) := by
-      ext y; simp [hgdef]
-    rw [normLimitCDF, multivariateGaussian,
-      Measure.map_apply (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) =>
-        (0 : EuclideanSpace ℝ (Fin k)) + A y) hset,
-      hpre, hρdef, Measure.map_apply hg_cont.measurable measurableSet_Iic]
+    rw [normLimitCDF, hρdef, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+    rfl
   rw [heq]
   exact continuous_toReal_measure_Iic ρ
 
@@ -467,16 +482,49 @@ theorem norm_root_cdf_tendsto [IsProbabilityMeasure Q]
     (x : ℝ) :
     Tendsto (fun n => normMeanRootCDF (F n) nrm n x) atTop
       (𝓝 (normLimitCDF (covMatrix Q) nrm x)) := by
-  -- TODO (continuous mapping for the norm — portmanteau on top of the two blocked cores).
-  -- From `meanVec_root_tendsto` the laws `meanVecRootLaw (F n) n` converge weakly (against
-  -- bounded continuous test functions) to `multivariateGaussian 0 (covMatrix Q)`; promote to
-  -- `ProbabilityMeasure` weak convergence and apply
-  -- `MeasureTheory.tendsto_measure_of_null_frontier` to the sublevel set `{z | nrm z ≤ x}`,
-  -- whose frontier `⊆ {nrm z = x}` is Gaussian-null. That null-frontier fact is exactly the
-  -- analytic core of `continuous_normLimitCDF`, so this target is blocked transitively on both
-  -- (a) `meanVec_root_tendsto` (Vitali/Lindeberg gap) and (b) the norm-sphere nullity of the
-  -- limit Gaussian (`stdGaussian ≪ volume` + `covMatrix Q` PosSemidef gaps).
-  sorry
+  classical
+  obtain ⟨i₀, j₀, hij⟩ := hS
+  have hSne : covMatrix Q ≠ 0 := fun h => hij (by rw [h]; simp)
+  have hpsd := posSemidef_covMatrix hQ2
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  -- all the laws in sight are probability measures (`n = 0` gives the Dirac at the empty tuple)
+  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; rw [Measure.pi_of_empty]; infer_instance
+    · haveI := hF.1 n hn
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (F n) := fun _ => ‹_›
+      infer_instance
+  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F n) n) := by
+    intro n
+    haveI := hpi n
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  -- weak convergence of the root laws, packaged as `ProbabilityMeasure` convergence
+  set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    ⟨multivariateGaussian 0 (covMatrix Q), inferInstance⟩ with hν
+  set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => ⟨meanVecRootLaw (F n) n, hroot n⟩ with hμs
+  have hconv : Tendsto μs atTop (𝓝 ν) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 fun f =>
+      meanVec_root_tendsto hQ2 hF f
+  -- the frontier of the sublevel set is contained in the sphere, which is Gaussian-null
+  have hfrontier :
+      (ν : Measure (EuclideanSpace ℝ (Fin k)))
+        (frontier {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x}) = 0 := by
+    refine measure_mono_null ?_
+      (measure_multivariateGaussian_norm_level hpsd hSne hnrm_add hnrm_smul hnrm_def x)
+    intro z hz
+    have hclosed : IsClosed {z : EuclideanSpace ℝ (Fin k) | nrm z ≤ x} :=
+      isClosed_le hnrm_cont continuous_const
+    have hz1 : nrm z ≤ x := by
+      have h := hz.1
+      rwa [hclosed.closure_eq] at h
+    exact le_antisymm hz1 (not_lt.1 fun hlt => hz.2
+      (mem_interior_iff_mem_nhds.2
+        (Filter.mem_of_superset ((isOpen_lt hnrm_cont continuous_const).mem_nhds hlt)
+          (fun w hw => (le_of_lt hw : nrm w ≤ x)))))
+  have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfrontier
+  exact (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
 
 /-- **Consistency of the multivariate bootstrap.**
 
