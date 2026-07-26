@@ -1,6 +1,6 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-26 (HT 103, area gate GREEN 3288 jobs; signchange thm3/4 closed; UMPU chain re-blocked on Xi-Borel measurability, not CondDistribTilt).
+Last update: 2026-07-26 (HT 97; autonomous wave closed KSConsistency+DKW+randomization+invariance+signchange; trinity/umpu/bootmulti genuinely blocked; throughput now fairshare-limited behind the radon11 workflow).
 
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
 
