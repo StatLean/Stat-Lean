@@ -52,16 +52,27 @@ requires the means to converge. We therefore include mean-vector convergence in
 weakened.
 
 **Proof formalization notes.**
-* Part (i) is the Cramér–Wold reduction of the multivariate limit to the univariate one: apply
-  `mean_root_cdf_tendsto` in each direction and recombine. The multivariate central limit
-  theorem in the repository (`ForMathlib/MultivariateCLT`) provides the recombination, and
-  `multivariateGaussian` is the limit law.
+* Part (i) is the Cramér–Wold reduction of the multivariate limit to the univariate one: the
+  image of `meanVecRootLaw` under `⟪t, ·⟫` is the univariate root law of the image sequence
+  (`meanVecRootLaw_map_inner`), so the triangular-array central limit theorem with a drifting
+  row law (`NonparametricMean.tendsto_meanRootLaw`) applies in each direction; the directions
+  are recombined by Lévy's continuity theorem
+  (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`) after identifying the limits through
+  `charFun_gaussianReal` and `charFun_multivariateGaussian`. Degenerate directions
+  (`tᵀ Σ t = 0`) are covered: the univariate theorem allows a vanishing limiting variance.
 * Part (ii) is the continuous mapping theorem for the norm: a norm is continuous everywhere, and
-  the boundary spheres of a nondegenerate Gaussian are null, so the distribution function of the
-  norm is continuous — recorded separately as `continuous_normLimitCDF`, since the almost sure
-  part needs it to run the uniform (Polya) step.
-* Part (iii) is the general sequence-class criterion applied to the empirical sequence, whose
-  membership follows from the multivariate Glivenko–Cantelli theorem and the strong law.
+  the spheres of a norm are null for the limit law — `measure_multivariateGaussian_norm_level`,
+  proved by writing the Gaussian as the image of the standard Gaussian under `√Σ`, which turns
+  the norm into a (possibly degenerate) seminorm whose level sets are frontiers of convex sets
+  and hence Lebesgue-null, and transporting through `stdGaussian ≪ volume`. Continuity of the
+  limiting distribution function is recorded separately as `continuous_normLimitCDF`, since the
+  almost sure part needs it to run the uniform (Pólya) step.
+* Part (iii) is the general sequence-class criterion applied to the empirical sequence. Its
+  membership (`empirical_mem_meanVecSeqClass`) needs no separate Glivenko–Cantelli theorem: the
+  characteristic functions of the empirical measures are sample averages of bounded functions,
+  so the strong law gives their convergence along a countable dense set of directions, the
+  strong law for `‖·‖` makes the family equi-Lipschitz in the direction, and Lévy's theorem
+  upgrades this to weak convergence.
 * The norm is passed as data with the three defining hypotheses (subadditive, absolutely
   homogeneous, positive definite) rather than as a `NormedAddCommGroup` instance, because the
   statement quantifies over norms on a space that already carries its Euclidean one.
@@ -1172,16 +1183,30 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
-  -- TODO (delta method — Slutsky/Taylor bricks absent). The mean statistic `meanStatistic h w`
-  -- is the sample mean of the i.i.d. vector `(h j (·))ⱼ`, so the PROVEN fixed-law
-  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` gives
-  -- `√n (θ̂ₙ − θ) ⇒ N(0, covH)` with `θ := (∫ h j dP)ⱼ`. First-order Taylor at `θ`:
-  -- `√n (f(θ̂ₙ) − f(θ)) = Df (√n (θ̂ₙ − θ)) + √n · o(‖θ̂ₙ − θ‖)`, where the remainder → 0 in
-  -- probability (`θ̂ₙ − θ = O_p(n^{-1/2})` and `hf`/`hf_nhds`/`hf_cont`). Then Slutsky +
-  -- continuous mapping push `Df (N(0, covH))` to the limit; `isGaussian_map` identifies the
-  -- image as Gaussian and `hD` gives covariance `D covH Dᵀ`. Missing from Mathlib v4.29.1: the
-  -- Slutsky theorem for a vanishing (o_P) additive remainder attached to a weakly-convergent
-  -- sequence, i.e. the analytic engine of the multivariate delta method. Blocked there.
+  -- TODO (delta method — NOT blocked; deferred for size). Every ingredient is available; what
+  -- is missing is only the (long) assembly. Re-derived route, in four steps.
+  -- (1) The vector of sample means IS a mean-vector root: with `H := P.map (fun s => toLp 2
+  --     (h · s))` on `ℝᵖ`, `Measure.pi_map_pi` turns `(Measure.pi fun _ : Fin n => P).map
+  --     (fun w => √n • (meanStatistic h w − θ))` into `meanVecRootLaw H n`, and
+  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. So the now-PROVEN
+  --     `meanVec_root_tendsto`, applied to the constant sequence at `H`, gives
+  --     `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`.
+  -- (2) Realise the whole array on one space: `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
+  --     `S i` with law `P`, and `Zₙ ω := √n (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
+  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`). A single carrier space
+  --     is what `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (Mathlib's
+  --     Slutsky, present in v4.29.1 — the previous session's claim that it is absent is wrong)
+  --     requires.
+  -- (3) The Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
+  --     probability: `{Zₙ}` is tight (`isTightMeasureSet_of_tendsto_charFun` applied to the
+  --     charFun convergence of step (1)), so for `‖Zₙ‖ ≤ M` one has `‖Zₙ/√n‖ ≤ M/√n → 0` and
+  --     `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` for any `η > 0` eventually. (`hf_nhds`/`hf_cont` are
+  --     not needed for this step; they are the reference's extra regularity.)
+  -- (4) `Df` is continuous linear, so `TendstoInDistribution.continuous_comp` pushes the limit
+  --     to `(multivariateGaussian 0 covH).map Df`, and `Measure.ext_of_charFun` together with
+  --     `charFun_multivariateGaussian` and `hD` identifies that image with
+  --     `multivariateGaussian 0 (D * covH * Dᵀ)` (the quadratic form transforms as
+  --     `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`).
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
@@ -1211,14 +1236,19 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, resampled-law form). Both integrals converge to
-  -- `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))`: the sampling-law term by
-  -- `smooth_function_of_means_tendsto`, the resampled term by its bootstrap analogue (the same
-  -- delta method applied to `n` i.i.d. draws from the empirical measure, recentred at the sample
-  -- mean statistic). Subtracting gives `→ 0`. Blocked on `smooth_function_of_means_tendsto`
-  -- (delta-method Slutsky brick, absent) together with a.s. convergence of the bootstrap CLT for
-  -- the resampled means — i.e. the empirical-measure weak-convergence gap already flagged on
-  -- `bootstrap_meanVec_consistent`.
+  -- TODO (bootstrap delta method, resampled-law form — deferred, one open input). Both
+  -- integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
+  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. The resampled
+  -- term is the same delta method run at the empirical measure: the resampled mean statistic is
+  -- the mean-vector root of `(empiricalMeasure (X · ω)).map (fun s => toLp 2 (h · s))`, and the
+  -- almost sure membership of THAT sequence in `meanVecSeqClass` is the exact analogue of the
+  -- now-PROVEN `empirical_mem_meanVecSeqClass` (push the strong laws used there forward through
+  -- `s ↦ toLp 2 (h · s)`; the four laws needed are for the coordinates `h j`, the products
+  -- `h i * h j`, `exp (i⟪(h · s), t⟫)` along a countable dense set of directions, and
+  -- `‖(h · s)‖`, all integrable by `hh2`). So this target is deferred only on
+  -- `smooth_function_of_means_tendsto` plus that transported membership lemma; no Mathlib brick
+  -- is missing. The empirical-measure weak-convergence "gap" recorded by the previous session
+  -- does not exist — see `empirical_mem_meanVecSeqClass`.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
@@ -1254,13 +1284,17 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
           {w | nrm (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)) ≤ s}).toReal))
       atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, uniform Pólya form). The sup-CDF (uniform) upgrade of
-  -- `bootstrap_smooth_function_law_consistent`, obtained by feeding the smooth-function root into
-  -- `tendsto_supCDFDist_bootstrap`: the norm of the delta-method limit `N(0, D covH Dᵀ)` has a
-  -- continuous CDF (the `continuous_normLimitCDF` core, for the covariance `D covH Dᵀ`), turning
-  -- pointwise CDF convergence into sup-distance convergence via the `PolyaUniformCDF` brick.
-  -- Blocked on `smooth_function_of_means_tendsto` (delta-method Slutsky), the resampled-law
-  -- bootstrap CLT, and the norm-CDF continuity core (`stdGaussian ≪ volume` + PosSemidef gaps).
+  -- TODO (bootstrap delta method, uniform Pólya form — deferred). The sup-CDF upgrade of
+  -- `bootstrap_smooth_function_law_consistent`: run the smooth-function root through the same
+  -- triangle squeeze as the now-PROVEN `bootstrap_meanVec_consistent`. The continuity of the
+  -- limiting norm distribution function — which the previous session recorded as blocked on
+  -- `stdGaussian ≪ volume` and on positive semidefiniteness — is now available in the exact
+  -- form needed: `continuous_normLimitCDF_of_posSemidef` applies verbatim to the covariance
+  -- `D * covH * Dᵀ` (positive semidefinite as `Dᵀ`-congruence of the positive semidefinite
+  -- `covH`, by `Matrix.PosSemidef.conjTranspose_mul_mul_same`, and nonzero because `Df ≠ 0`).
+  -- What remains is `smooth_function_of_means_tendsto` and its resampled analogue, together
+  -- with the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to the image
+  -- space. No Mathlib brick is missing.
   sorry
 
 end SmoothFunctions

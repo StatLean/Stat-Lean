@@ -40,10 +40,22 @@ first-absolute-moment convergence tool). (`TSH4 §18.3 Thm 18.3.3, Thm 18.3.4, L
 
 **Proof formalization notes.**
 * Convergence of the sampling distribution along the class is a Lindeberg central limit theorem
-  for a triangular array whose `n`-th row is drawn from the `n`-th law of the sequence; the
-  Lindeberg condition is verified from convergence of the second moments plus the continuous
-  mapping theorem. The array central limit theorem itself is the sibling
-  `ForMathlib/LindebergCLT` brick of this area.
+  for a triangular array whose `n`-th row is drawn from the `n`-th law of the sequence
+  (`tendsto_meanRootLaw`). Three points make it work. The rows are realised on one probability
+  space by `ProbabilityTheory.exists_hasLaw_indepFun` over the index set `ℕ × ℕ`. The
+  standardisation divides by the FIXED limiting standard deviation, not by the `n`-th one, so
+  the row variances tend to `1` and the residual rescaling is a fixed continuous map, disposed
+  of by `TendstoInDistribution.continuous_comp`. The Lindeberg condition is the uniform
+  square-integrability of the rows, `tendsto_setIntegral_sq_tail`, which is Lehmann–Romano's
+  Lemma 18.3.1 and needs only the truncated squares `min ((t − b)², M²)` as test functions.
+  A vanishing limiting variance is allowed: there the root converges to `0` in probability by
+  Chebyshev. The array central limit theorem itself is the sibling `ForMathlib/LindebergCLT`
+  brick of this area.
+* The class states weak convergence through distribution functions;
+  `tendsto_integral_of_tendsto_cdf` upgrades that to convergence of integrals of bounded
+  continuous functions, using that the
+  continuity points of a monotone function are co-countable, hence dense, and that the
+  half-open intervals with endpoints there form a π-system of arbitrarily small neighbourhoods.
 * Almost sure membership of the empirical sequence uses the Glivenko–Cantelli theorem for the
   weak-convergence clause and `ProbabilityTheory.strong_law_ae` for the convergence of the
   empirical means and of the empirical second moments (hence of the empirical variances).
@@ -1299,15 +1311,25 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
-  -- TODO (studentized CLT = target-1 CLT + Slutsky). This is `mean_root_cdf_tendsto` divided by
-  -- the sample standard deviation. Beyond the two bricks missing for `mean_root_cdf_tendsto`
-  -- (triangular-array Lindeberg CLT with drifting law + portmanteau CDF-inversion), it needs the
-  -- triangular-array weak law `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
-  -- (itself an open debt) applied to the squares to give `sampleVariance → Var[id; Q]` in
-  -- probability along the class, and then Slutsky's theorem to divide the asymptotically normal
-  -- numerator by the consistent denominator (`√(sampleVariance) → √Var[id; Q] > 0`), yielding the
-  -- standard normal limit. The junk convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible since
-  -- `Var[id; Q] > 0`.
+  -- TODO (studentized CLT = the closed array CLT + Slutsky — NOT blocked; deferred for size).
+  -- The two bricks the previous session recorded as missing are now supplied: the
+  -- triangular-array Lindeberg CLT with a drifting row law is `tendsto_meanRootLaw`, and the
+  -- portmanteau step is the one already used in `mean_root_cdf_tendsto`. What remains:
+  -- (1) A triangular-array weak law for the SQUARES along the class,
+  --     `(1/n) ∑ Y_{n,i}² → ∫ t² dQ` in probability, `Y_{n,i} ~ F n`. This follows from the
+  --     Vitali brick `tendsto_setIntegral_sq_tail` of this file by the standard truncation
+  --     argument: split `Y² = Y²1{|Y| ≤ c} + Y²1{|Y| > c}`, control the first term's variance
+  --     by `c² ∫ t² dF n / n` (Chebyshev) and the second by uniform integrability. Together
+  --     with the mean (`Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`, still an
+  --     open debt but avoidable the same way) this gives `sampleVariance → Var[id; Q]` in
+  --     probability. Note the L² hypothesis is exactly enough: no fourth moment is needed.
+  -- (2) Slutsky for the quotient. Mathlib v4.29.1 HAS
+  --     `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const`; the only care
+  --     needed is that `(u, v) ↦ u / √v` is not continuous at `v = 0`, so one runs it with the
+  --     globally continuous `(u, v) ↦ u / √(max v (σ²/2))` and removes the truncation on the
+  --     event `{sampleVariance > σ²/2}`, whose probability tends to `1` by (1). The junk
+  --     convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible for the same reason.
+  -- No Mathlib brick is missing; this is a sizeable but routine assembly.
   sorry
 
 /-- **Consistency of the bootstrap-t.**
