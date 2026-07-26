@@ -1,6 +1,7 @@
 # PointEstimation Batch 11 — orchestration status
 
-Last update: 2026-07-25 (down to 9 deferrals; measurable-argmin brick landed + first consumer closed).
+Last update: 2026-07-26 (BATCH 11 AT ITS FLOOR: 2 sorries, area gate GREEN 3152 jobs. Both
+survivors are STATEMENT problems, not proof gaps — every theorem true as written is proved).
 
 Integration branch: `pe/batch11` (off main 31c61ed). Proof branches `pe/<topic>` base off it. Merge to local `main` after full close (never GitHub origin without user request).
 
@@ -49,6 +50,41 @@ All 57 `**Reference.**` paragraphs rewritten to concrete Lehmann & Casella *Theo
 Estimation* 2nd ed. numbers (chapter/section/theorem, plus a `TPE2 §X.Y Thm Z` tag). Note the
 distinct convention: the *Bibliographic comments.* paragraphs cite primary literature and
 deliberately do NOT name the textbook; `**Reference.**` now does.
+
+## FLOOR REACHED — 2026-07-26 (area gate GREEN, 3152 jobs, 2 sorry-uses)
+
+**Batch 11 went 10 -> 2 sorries.** Everything closable is closed; the two survivors are both
+defects in the *printed statements*, verified as such, not missing formalization:
+
+| file | status |
+|---|---|
+| `InformationInequality/Attainment.lean` | `expFamily_of_cramer_rao_attained` is **FALSE AS STATED — verified by counterexample** (`δ ≡ 0` on a Bernoulli family makes the attainment hypothesis vacuous wherever `g'(θ)=0`, so it cannot force the exponential form). The Cauchy–Schwarz equality case IS closed. Not closable in this shape. |
+| `LinearModel/RandomDesign.lean` | `not_exists_blue_of_known_design_moment` is degenerate as printed (constant-`‖a‖²` / Shaffer phenomenon). Debt note sharpened; closing it requires deciding the renegotiated statement (a nonconstancy condition on the design Gram / Fisher information). |
+
+### Closed in the final waves (all on claude-opus-5)
+- `Equivariance/ScaleMRE.exists_isScaleMRE_of_convex` + `LocationMRE.exists_isLocMRE_of_bounded_loss` — via the measurable-argmin LSC brick.
+- `UMVU/LehmannScheffe.lean` -> **0-sorry**: a **condExp-based Rao–Blackwell layer**
+  (`variance_condExp_le`, `condExp_comap_eq_rbEstimator`) needs only integrability, sidestepping
+  the global-measurability gap that blocked the kernel route; plus
+  `isUMVU_of_fullRank_expFamily` PROVED under a documented, forced signature amendment
+  (`V` specialized to `EuclideanSpace ℝ (Fin s)` because the only completeness brick is
+  finite-dimensional; `[SigmaFinite E.base]` added; `E.base ≠ 0` **derived**, not assumed).
+- `LinearModel/Equivariant.lean` -> **0-sorry**: `canonicalScaleRisk_residualScaleConst_le`
+  (radius independence for scale-invariant integrands via Laplace, residual-block marginal +
+  chi-square transfer, L² minimization core, then differentiation-under-integral).
+- `ExponentialFamily/Smoothness.lean` -> **0-sorry**: `analyticOnNhd_integral_exp_inner` via
+  multivariate Taylor series.
+- `Sufficiency/RegularConditional.lean` -> **0-sorry**: `hasSufficientKernel_of_isSufficient`
+  (the general standard-Borel gluing — originally a *pre-agreed deferral*).
+
+### Model note (important for future planning)
+The cluster env had `ANTHROPIC_MODEL=claude-opus-4-8` pinned; the whole earlier campaign ran on
+it. After switching to `claude-opus-5`, **three theorems that 4.8 had documented as impossible
+or unprovable were closed** (`analyticOnNhd_integral_exp_inner` — "needs power-series machinery
+absent from the pin"; `isUMVU_of_fullRank_expFamily` — "unprovable at its frozen signature";
+`canonicalScaleRisk_residualScaleConst_le` — "a large development"), and the pre-agreed
+`RegularConditional` deferral fell too. **Treat model-attributed "blocked" verdicts as
+provisional.**
 
 ## Design decisions (frozen)
 
