@@ -53,6 +53,21 @@ and Corollary 1.11 (existence for a convex non-monotone loss). (`TPE2 §3.1 Thm 
   the median has no canonical measurable selection to state it with.
 * The bounded-loss existence result needs no separate finite-risk hypothesis: a loss
   bounded by `M` gives every estimator risk at most `M` under a probability law.
+* **The bounded-loss proof does not go through the conditional-risk engine.** For a single
+  observation equivariance pins the estimator down completely — `δ(x) = δ(0) + x₀`, read off
+  by evaluating `δ(x + a·𝟙) = δ(x) + a` at `x = 0` — so the equivariant class is literally
+  `{x ↦ x₀ − c : c ∈ ℝ}` and the problem is the one-dimensional minimization of
+  `G c = ∫⁻ ofReal (ρ (x₀ − c))`. `G` is bounded by `ofReal M` and, by dominated convergence
+  against the constant `M`, tends to `ofReal M` along `cocompact ℝ`; so either `G` is
+  constant (any `c` minimizes) or some `G c₀` is strictly below the bound and
+  `Continuous.exists_forall_le'` attains the minimum. The delicate input is continuity of
+  `G`, where the a.e. continuity of the density enters: substituting `x ↦ x + c·𝟙` moves the
+  shift off the loss and onto the density, and the shifted densities converge pointwise a.e.
+  with constant total mass. There is no dominating function for them, so ordinary dominated
+  convergence fails; `tendsto_lintegral_mul_of_tendsto_of_mass_eq` supplies the missing
+  uniform integrability from the equal masses (Scheffé's argument). A measurable version of
+  `f` is needed for that, and is obtained from `hcont`: the continuity set of any function is
+  `Gδ`, hence measurable, and `f` is continuous on it.
 
 **Bibliographic comments.** The reduction of best equivariant location estimation to a
 conditional minimization given the differences, and the resulting estimator, are due to
@@ -454,6 +469,91 @@ theorem isLocMRE_sq_of_condMean (f : (Fin (m + 1) → ℝ) → ℝ)
     exact lintegral_ofReal_sq_min hδ₀ w
   exact isLocMRE_of_conditional_min f (fun t => t ^ 2) hρmeas hδ₀ heq₀ hfin hvStar hmin
 
+/-- **Scheffé-type stability of bounded test integrals.** If measurable densities `h n`
+converge pointwise almost everywhere to `h₀` and all carry the same finite total mass, then
+integrals against a bounded test function converge. Pointwise convergence alone is not
+enough (no dominating function is available); the equal-mass hypothesis is what supplies
+the missing uniform integrability, through the two one-sided defects `h₀ − h n` and
+`h n − h₀`, which have equal integrals and tend to `0` by dominated convergence. -/
+private lemma tendsto_lintegral_mul_of_tendsto_of_mass_eq
+    {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    {h : ℕ → α → ℝ≥0∞} {h₀ : α → ℝ≥0∞}
+    (hmeas : ∀ n, Measurable (h n)) (hmeas₀ : Measurable h₀)
+    (hmass : ∀ n, ∫⁻ x, h n x ∂ν = ∫⁻ x, h₀ x ∂ν)
+    (hfin : ∫⁻ x, h₀ x ∂ν ≠ ∞)
+    (hae : ∀ᵐ x ∂ν, Tendsto (fun n => h n x) atTop (𝓝 (h₀ x)))
+    {ψ : α → ℝ≥0∞} (hψ : Measurable ψ) {K : ℝ≥0∞} (hKfin : K ≠ ∞) (hK : ∀ x, ψ x ≤ K) :
+    Tendsto (fun n => ∫⁻ x, ψ x * h n x ∂ν) atTop (𝓝 (∫⁻ x, ψ x * h₀ x ∂ν)) := by
+  have hlt : ∀ᵐ x ∂ν, h₀ x ≠ ∞ := (ae_lt_top hmeas₀ hfin).mono fun _ hx => hx.ne
+  set d : ℕ → α → ℝ≥0∞ := fun n x => h₀ x - h n x with hd
+  set e : ℕ → α → ℝ≥0∞ := fun n x => h n x - h₀ x with he
+  have hdm : ∀ n, Measurable (d n) := fun n => hmeas₀.sub (hmeas n)
+  have hem : ∀ n, Measurable (e n) := fun n => (hmeas n).sub hmeas₀
+  -- (i) the defect integrates to `0`, by dominated convergence with dominating function `h₀`
+  have hd0 : Tendsto (fun n => ∫⁻ x, d n x ∂ν) atTop (𝓝 0) := by
+    have key := tendsto_lintegral_of_dominated_convergence (μ := ν) (F := d) (f := fun _ => 0)
+      h₀ hdm (fun n => ae_of_all _ fun x => tsub_le_self) hfin ?_
+    · simpa using key
+    · filter_upwards [hae, hlt] with x hx hxfin
+      simpa using ENNReal.Tendsto.sub tendsto_const_nhds hx (Or.inl hxfin)
+  -- (ii) both one-sided defects have the same integral, since the masses agree
+  have hmax : ∀ n x, h n x + d n x = h₀ x + e n x := by
+    intro n x
+    simp only [hd, he, add_tsub_eq_max, max_comm]
+  have hde : ∀ n, ∫⁻ x, e n x ∂ν = ∫⁻ x, d n x ∂ν := by
+    intro n
+    have h1 : ∫⁻ x, (h n x + d n x) ∂ν = ∫⁻ x, (h₀ x + e n x) ∂ν :=
+      lintegral_congr fun x => hmax n x
+    rw [lintegral_add_left (hmeas n), lintegral_add_left hmeas₀, hmass n] at h1
+    exact ((ENNReal.add_right_inj hfin).mp h1).symm
+  -- (iii) a two-sided bound: `K` times the defect
+  have hub : ∀ n, ∫⁻ x, ψ x * h n x ∂ν ≤ (∫⁻ x, ψ x * h₀ x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
+    intro n
+    calc ∫⁻ x, ψ x * h n x ∂ν ≤ ∫⁻ x, (ψ x * h₀ x + K * e n x) ∂ν := by
+          refine lintegral_mono fun x => ?_
+          have hle : h n x ≤ h₀ x + e n x := by
+            simp only [he, add_tsub_eq_max]; exact le_max_right _ _
+          calc ψ x * h n x ≤ ψ x * (h₀ x + e n x) := by gcongr
+            _ = ψ x * h₀ x + ψ x * e n x := mul_add _ _ _
+            _ ≤ ψ x * h₀ x + K * e n x := by gcongr; exact hK x
+      _ = (∫⁻ x, ψ x * h₀ x ∂ν) + K * ∫⁻ x, e n x ∂ν := by
+          rw [lintegral_add_left (hψ.mul hmeas₀), lintegral_const_mul _ (hem n)]
+      _ = _ := by rw [hde n]
+  have hlb : ∀ n, ∫⁻ x, ψ x * h₀ x ∂ν ≤ (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
+    intro n
+    calc ∫⁻ x, ψ x * h₀ x ∂ν ≤ ∫⁻ x, (ψ x * h n x + K * d n x) ∂ν := by
+          refine lintegral_mono fun x => ?_
+          have hle : h₀ x ≤ h n x + d n x := by
+            simp only [hd, add_tsub_eq_max]; exact le_max_right _ _
+          calc ψ x * h₀ x ≤ ψ x * (h n x + d n x) := by gcongr
+            _ = ψ x * h n x + ψ x * d n x := mul_add _ _ _
+            _ ≤ ψ x * h n x + K * d n x := by gcongr; exact hK x
+      _ = (∫⁻ x, ψ x * h n x ∂ν) + K * ∫⁻ x, d n x ∂ν := by
+          rw [lintegral_add_left (hψ.mul (hmeas n)), lintegral_const_mul _ (hdm n)]
+  -- (iv) squeeze
+  have hAfin : ∫⁻ x, ψ x * h₀ x ∂ν ≠ ∞ := by
+    refine ne_top_of_le_ne_top (ENNReal.mul_ne_top hKfin hfin) ?_
+    calc ∫⁻ x, ψ x * h₀ x ∂ν ≤ ∫⁻ x, K * h₀ x ∂ν := by
+          refine lintegral_mono fun x => ?_; gcongr; exact hK x
+      _ = K * ∫⁻ x, h₀ x ∂ν := lintegral_const_mul _ hmeas₀
+  have ht0 : Tendsto (fun n => K * ∫⁻ x, d n x ∂ν) atTop (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul hd0 (Or.inr hKfin)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le
+    (g := fun n => (∫⁻ x, ψ x * h₀ x ∂ν) - K * ∫⁻ x, d n x ∂ν)
+    (h := fun n => (∫⁻ x, ψ x * h₀ x ∂ν) + K * ∫⁻ x, d n x ∂ν) ?_ ?_ ?_ ?_
+  · simpa using ENNReal.Tendsto.sub tendsto_const_nhds ht0 (Or.inl hAfin)
+  · simpa using tendsto_const_nhds.add ht0
+  · exact fun n => tsub_le_iff_right.mpr (hlb n)
+  · exact fun n => hub n
+
+/-- Translating an almost-everywhere statement on `Fin n → ℝ`; Lebesgue measure is
+translation invariant, so null sets stay null. -/
+private lemma ae_volume_translate {n : ℕ} (P : (Fin n → ℝ) → Prop) (a : Fin n → ℝ)
+    (hP : ∀ᵐ x ∂(volume : Measure (Fin n → ℝ)), P x) :
+    ∀ᵐ x ∂(volume : Measure (Fin n → ℝ)), P (x + a) := by
+  rw [ae_iff] at hP ⊢
+  exact (measure_add_right_null volume a).mpr hP
+
 /-- **A single observation and a bounded loss.** For one observation the equivariant
 estimators are exactly `X − c`, so an MRE estimator exists as soon as
 `c ↦ E₀[ρ(X − c)]` attains its infimum. That happens for a loss which is bounded, tends
@@ -477,27 +577,156 @@ theorem exists_isLocMRE_of_bounded_loss (f : (Fin 1 → ℝ) → ℝ)
     -- USER-INPUT: the density is continuous almost everywhere
     (hcont : ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)), ContinuousAt f x) :
     ∃ δ, IsLocMRE f ρ δ := by
-  -- RETAINED DEBT (pe/equivariance-close): the attainment of the minimum needs continuity
-  -- of `g c = ∫⁻ x, ofReal (ρ (x 0 − c)) ∂(locationBase f)` in the shift `c`, i.e. the
-  -- convolution/DCT regularity spelled out below; a bounded merely-measurable `g` on `ℝ`
-  -- need not attain its infimum, so this analytic fact cannot be sidestepped.
-  -- TODO: second analytic core (named debt), independent of the convex one above.
-  -- For a single observation `diffs : (Fin 1 → ℝ) → (Fin 0 → ℝ)` is constant, so the
-  -- equivariant class is exactly `{x ↦ x 0 − c : c ∈ ℝ}` (via
-  -- `isLocEquivariant_iff_exists_diffs_rep_measurable` with `δ₀ x = x 0`, using that
-  -- `Fin 0 → ℝ` is a subsingleton so `v (diffs x)` is a constant `c`). Minimizing the
-  -- constant risk reduces to producing `c*` minimizing
-  --   `g c = ∫⁻ x, ofReal (ρ (x 0 − c)) ∂(locationBase f)`.
-  -- Here `g` is bounded by `ofReal M` (loss `≤ M`, probability law) and, by `hatTop`/
-  -- `hatBot`, `g c → ofReal M` as `c → ±∞`; the minimum is then attained by
-  -- `Continuous.exists_forall_le'` (extreme value theorem away from a compact set).
-  -- The delicate input is continuity of `g` in the shift `c`: since `ρ` is only
-  -- measurable (not continuous), continuity comes from `hcont` (a.e. continuity of the
-  -- density) via translation-continuity of the convolution `c ↦ ∫ ρ(t − c) f(t) dt`,
-  -- together with dominated convergence (dominating constant `M`, integrable on the
-  -- probability law). This convolution/DCT regularity is a genuinely separate analytic
-  -- fact from the convex-objective regularity above and cannot be folded into it.
-  sorry
+  -- The equivariant class for a single observation is exactly `{x ↦ x 0 − c}` (step (7)),
+  -- so the whole problem is the one-dimensional minimization of the shifted risk `G`.
+  set G : ℝ → ℝ≥0∞ :=
+    fun c => ∫⁻ x, ENNReal.ofReal (ρ (x 0 - c)) ∂(locationBase f) with hGdef
+  have hπ : Measurable fun x : Fin 1 → ℝ => x 0 := measurable_pi_apply 0
+  have hρmeas : ∀ c : ℝ, Measurable fun x : Fin 1 → ℝ => ENNReal.ofReal (ρ (x 0 - c)) :=
+    fun c => ENNReal.measurable_ofReal.comp (hρ.comp (hπ.sub_const c))
+  -- (1) the objective is bounded by the bound of the loss
+  have hGle : ∀ c, G c ≤ ENNReal.ofReal M := by
+    intro c
+    calc G c ≤ ∫⁻ _x : Fin 1 → ℝ, ENNReal.ofReal M ∂(locationBase f) :=
+          lintegral_mono fun x => ENNReal.ofReal_le_ofReal (hρM _)
+      _ = ENNReal.ofReal M := by simp
+  -- (2) and tends to that bound at infinity
+  have hρcocompact : Tendsto ρ (cocompact ℝ) (𝓝 M) := by
+    rw [cocompact_eq_atBot_atTop, Filter.tendsto_sup]; exact ⟨hatBot, hatTop⟩
+  have hsub : ∀ c : ℝ, Tendsto (fun w => c - w) (cocompact ℝ) (cocompact ℝ) := by
+    intro c
+    rw [cocompact_eq_atBot_atTop]
+    refine Filter.tendsto_sup.mpr ⟨?_, ?_⟩
+    · refine Filter.Tendsto.mono_right ?_ le_sup_right
+      exact (Filter.tendsto_atTop_add_const_left atBot c
+        Filter.tendsto_neg_atBot_atTop).congr (fun w => by ring)
+    · refine Filter.Tendsto.mono_right ?_ le_sup_left
+      exact (Filter.tendsto_atBot_add_const_left atTop c
+        Filter.tendsto_neg_atTop_atBot).congr (fun w => by ring)
+  haveI : (cocompact ℝ).IsCountablyGenerated := by
+    rw [cocompact_eq_atBot_atTop]; infer_instance
+  have hGtend : Tendsto G (cocompact ℝ) (𝓝 (ENNReal.ofReal M)) := by
+    have key := tendsto_lintegral_filter_of_dominated_convergence
+      (μ := locationBase f) (l := cocompact ℝ)
+      (F := fun c (x : Fin 1 → ℝ) => ENNReal.ofReal (ρ (x 0 - c)))
+      (f := fun _ : Fin 1 → ℝ => ENNReal.ofReal M)
+      (fun _ => ENNReal.ofReal M)
+      (Eventually.of_forall hρmeas)
+      (Eventually.of_forall fun c => ae_of_all _ fun x => ENNReal.ofReal_le_ofReal (hρM _))
+      (by simp) (ae_of_all _ fun x =>
+        (ENNReal.continuous_ofReal.tendsto _).comp (hρcocompact.comp (hsub (x 0))))
+    simpa using key
+  -- (3) an a.e.-continuous density is a.e. measurable; fix a measurable version
+  have hfae : AEMeasurable f (volume : Measure (Fin 1 → ℝ)) := by
+    have h1 : ContinuousOn f {x | ContinuousAt f x} := fun x hx => hx.continuousWithinAt
+    have h2 := h1.aemeasurable (μ := (volume : Measure (Fin 1 → ℝ)))
+      (IsGδ.setOf_continuousAt f).measurableSet
+    have h3 : (volume : Measure (Fin 1 → ℝ)).restrict {x | ContinuousAt f x} = volume :=
+      Measure.restrict_eq_self_of_ae_mem hcont
+    rwa [h3] at h2
+  set g : (Fin 1 → ℝ) → ℝ := hfae.mk f with hgdef
+  have hgm : Measurable g := hfae.measurable_mk
+  have hgd : Measurable fun x : Fin 1 → ℝ => ENNReal.ofReal (g x) :=
+    ENNReal.measurable_ofReal.comp hgm
+  have hfg : f =ᵐ[(volume : Measure (Fin 1 → ℝ))] g := hfae.ae_eq_mk
+  have hbase : locationBase f = (volume : Measure (Fin 1 → ℝ)).withDensity
+      fun x => ENNReal.ofReal (g x) := by
+    unfold locationBase
+    refine withDensity_congr_ae (hfg.mono fun x hx => ?_)
+    show ENNReal.ofReal (f x) = ENNReal.ofReal (g x)
+    rw [hx]
+  have hmass1 : ∫⁻ x, ENNReal.ofReal (g x) ∂(volume : Measure (Fin 1 → ℝ)) = 1 := by
+    have h := measure_univ (μ := locationBase f)
+    rw [hbase, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h
+    exact h
+  -- (4) move the shift onto the density
+  have hGrep : ∀ c : ℝ, G c = ∫⁻ x, ENNReal.ofReal (ρ (x 0)) *
+      ENNReal.ofReal (g (x + c • (1 : Fin 1 → ℝ))) ∂(volume : Measure (Fin 1 → ℝ)) := by
+    intro c
+    have h1 : G c = ∫⁻ x, ENNReal.ofReal (g x) * ENNReal.ofReal (ρ (x 0 - c))
+        ∂(volume : Measure (Fin 1 → ℝ)) := by
+      rw [hGdef]
+      simp only []
+      rw [hbase, lintegral_withDensity_eq_lintegral_mul _ hgd (hρmeas c)]
+      rfl
+    rw [h1, ← lintegral_add_right_eq_self
+      (fun x : Fin 1 → ℝ => ENNReal.ofReal (g x) * ENNReal.ofReal (ρ (x 0 - c)))
+      (c • (1 : Fin 1 → ℝ))]
+    refine lintegral_congr fun x => ?_
+    have hx0 : (x + c • (1 : Fin 1 → ℝ)) 0 - c = x 0 := by simp
+    rw [hx0, mul_comm]
+  -- (5) continuity, by the Scheffé-type stability lemma
+  have hGcont : Continuous G := by
+    rw [continuous_iff_seqContinuous]
+    intro cs c₀ hcs
+    have hshiftm : ∀ c : ℝ, Measurable fun x : Fin 1 → ℝ =>
+        ENNReal.ofReal (g (x + c • (1 : Fin 1 → ℝ))) := fun c =>
+      ENNReal.measurable_ofReal.comp (hgm.comp (measurable_id.add_const _))
+    have hmassc : ∀ c : ℝ, ∫⁻ x, ENNReal.ofReal (g (x + c • (1 : Fin 1 → ℝ)))
+        ∂(volume : Measure (Fin 1 → ℝ)) = 1 := by
+      intro c
+      rw [lintegral_add_right_eq_self (fun x : Fin 1 → ℝ => ENNReal.ofReal (g x))
+        (c • (1 : Fin 1 → ℝ))]
+      exact hmass1
+    have hae : ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)),
+        Tendsto (fun n => ENNReal.ofReal (g (x + cs n • (1 : Fin 1 → ℝ)))) atTop
+          (𝓝 (ENNReal.ofReal (g (x + c₀ • (1 : Fin 1 → ℝ))))) := by
+      have hfg' : ∀ c : ℝ, ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)),
+          f (x + c • (1 : Fin 1 → ℝ)) = g (x + c • (1 : Fin 1 → ℝ)) := fun c =>
+        ae_volume_translate _ _ hfg
+      have hcont' : ∀ᵐ x ∂(volume : Measure (Fin 1 → ℝ)),
+          ContinuousAt f (x + c₀ • (1 : Fin 1 → ℝ)) :=
+        ae_volume_translate _ _ hcont
+      filter_upwards [hcont', hfg' c₀, ae_all_iff.mpr fun n => hfg' (cs n)]
+        with x hx hx₀ hxn
+      have hpt : Tendsto (fun n => x + cs n • (1 : Fin 1 → ℝ)) atTop
+          (𝓝 (x + c₀ • (1 : Fin 1 → ℝ))) := tendsto_const_nhds.add (hcs.smul_const _)
+      have hlimf := hx.tendsto.comp hpt
+      have hlimg : Tendsto (fun n => g (x + cs n • (1 : Fin 1 → ℝ))) atTop
+          (𝓝 (g (x + c₀ • (1 : Fin 1 → ℝ)))) := by
+        rw [← hx₀]
+        exact hlimf.congr fun n => hxn n
+      exact (ENNReal.continuous_ofReal.tendsto _).comp hlimg
+    have key := tendsto_lintegral_mul_of_tendsto_of_mass_eq
+      (ν := (volume : Measure (Fin 1 → ℝ)))
+      (h := fun n x => ENNReal.ofReal (g (x + cs n • (1 : Fin 1 → ℝ))))
+      (h₀ := fun x => ENNReal.ofReal (g (x + c₀ • (1 : Fin 1 → ℝ))))
+      (fun n => hshiftm _) (hshiftm _)
+      (fun n => by rw [hmassc, hmassc]) (by rw [hmassc]; exact ENNReal.one_ne_top) hae
+      (ψ := fun x : Fin 1 → ℝ => ENNReal.ofReal (ρ (x 0)))
+      (ENNReal.measurable_ofReal.comp (hρ.comp hπ))
+      (K := ENNReal.ofReal M) ENNReal.ofReal_ne_top
+      (fun x => ENNReal.ofReal_le_ofReal (hρM _))
+    simpa only [Function.comp_def, hGrep] using key
+  -- (6) the minimum is attained
+  obtain ⟨c₁, hc₁⟩ : ∃ c, ∀ c', G c ≤ G c' := by
+    by_cases hconstG : ∀ c, G c = ENNReal.ofReal M
+    · exact ⟨0, fun c' => by rw [hconstG 0, hconstG c']⟩
+    · obtain ⟨c₀, hc₀⟩ := not_forall.mp hconstG
+      have hlt : G c₀ < ENNReal.ofReal M := lt_of_le_of_ne (hGle c₀) hc₀
+      exact hGcont.exists_forall_le' c₀
+        ((hGtend.eventually_const_lt hlt).mono fun c hc => hc.le)
+  -- (7) assemble
+  refine ⟨fun x => x 0 - c₁, hπ.sub_const c₁, ?_, ?_⟩
+  · intro a x
+    show (x + a • (1 : Fin 1 → ℝ)) 0 - c₁ = (x 0 - c₁) + a
+    simp only [Pi.add_apply, Pi.smul_apply, Pi.one_apply, smul_eq_mul, mul_one]
+    ring
+  · intro δ' _ hδ'eq
+    set c := - δ' 0 with hc
+    have hrep : ∀ x : Fin 1 → ℝ, δ' x = x 0 - c := by
+      intro x
+      have hx : ((0 : Fin 1 → ℝ) + (x 0) • (1 : Fin 1 → ℝ)) = x := by
+        funext i; fin_cases i; simp
+      have h2 := hδ'eq (x 0) (0 : Fin 1 → ℝ)
+      rw [hx] at h2
+      rw [h2, hc]; ring
+    have hrisk : locRisk f ρ δ' = G c := by
+      unfold locRisk
+      exact lintegral_congr fun x => by rw [hrep x]
+    show G c₁ ≤ locRisk f ρ δ'
+    rw [hrisk]
+    exact hc₁ _
 
 end LocationMRE
 
