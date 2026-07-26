@@ -6,6 +6,7 @@ import Mathlib.Topology.ContinuousMap.Bounded.Basic
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Analysis.Convex.Continuous
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The multivariate bootstrap: mean vectors and smooth functions of means
@@ -462,6 +463,52 @@ private lemma tendsto_sample_average {Pr : Measure Ω}
     (fun i j hij => (hindep.comp (fun _ => g) (fun _ => hg)).indepFun hij)
     (fun i => (hident i).comp hg)
 
+/-- A complex exponential of a linear functional is integrable against any finite measure. -/
+private lemma integrable_charFun_integrand (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsFiniteMeasure μ] (t : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) =>
+      Complex.exp ((inner ℝ y t : ℝ) * Complex.I)) μ := by
+  refine (memLp_top_of_bound (by fun_prop) 1 ?_).integrable le_top
+  filter_upwards with y
+  simp [Complex.norm_exp_ofReal_mul_I]
+
+/-- **The characteristic function is Lipschitz with the first absolute moment as constant.**
+
+This is the equicontinuity that turns characteristic-function convergence on a countable dense
+set of directions into convergence in every direction. -/
+private lemma norm_charFun_sub_charFun_le (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure μ] (hint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) μ)
+    (t s : EuclideanSpace ℝ (Fin k)) :
+    ‖charFun μ t - charFun μ s‖ ≤ ‖t - s‖ * ∫ y, ‖y‖ ∂μ := by
+  have hb : ∀ y : EuclideanSpace ℝ (Fin k),
+      ‖Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)‖ ≤ ‖t - s‖ * ‖y‖ := by
+    intro y
+    have hfac : Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)
+        = Complex.exp ((inner ℝ y s : ℝ) * Complex.I)
+          * (Complex.exp (Complex.I * (((inner ℝ y t : ℝ) - (inner ℝ y s : ℝ) : ℝ) : ℂ))
+            - 1) := by
+      rw [mul_sub, mul_one, ← Complex.exp_add]
+      push_cast
+      ring_nf
+    rw [hfac, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
+    refine le_trans Real.norm_exp_I_mul_ofReal_sub_one_le ?_
+    have hinner : (inner ℝ y t : ℝ) - (inner ℝ y s : ℝ) = inner ℝ y (t - s) := by
+      rw [inner_sub_right]
+    rw [Real.norm_eq_abs, hinner]
+    calc |(inner ℝ y (t - s) : ℝ)| ≤ ‖y‖ * ‖t - s‖ := abs_real_inner_le_norm y (t - s)
+      _ = ‖t - s‖ * ‖y‖ := by ring
+  rw [charFun_apply, charFun_apply,
+    ← integral_sub (integrable_charFun_integrand μ t) (integrable_charFun_integrand μ s)]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  calc ∫ y, ‖Complex.exp ((inner ℝ y t : ℝ) * Complex.I)
+        - Complex.exp ((inner ℝ y s : ℝ) * Complex.I)‖ ∂μ
+      ≤ ∫ y, ‖t - s‖ * ‖y‖ ∂μ := by
+        refine integral_mono ?_ (hint.const_mul _) hb
+        exact ((integrable_charFun_integrand μ t).sub (integrable_charFun_integrand μ s)).norm
+    _ = ‖t - s‖ * ∫ y, ‖y‖ ∂μ := integral_const_mul _ _
+
 end EmpiricalBasics
 
 /-! ## Cramér–Wold: projecting the mean-vector root onto a direction -/
@@ -678,7 +725,7 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
         simpa using (posSemidef_covMatrix hQ2).dotProduct_mulVec_nonneg (WithLp.ofLp t)
       rw [charFun_multivariateGaussian (posSemidef_covMatrix hQ2), charFun_gaussianReal,
         hvarQ, ← hquad]
-      simp [Real.coe_toNNReal _ (variance_nonneg _ _), max_eq_left hqnn]
+      simp [max_eq_left hqnn]
     simp only [hcoeμ, hcoeν, hlhs, hrhs]
     simp only [hcoeρs, hcoeρ] at hcf
     exact hcf
