@@ -1,6 +1,7 @@
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import Mathlib.Probability.Distributions.Gamma
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # A multivariate Berry–Esseen bound via Lindeberg swapping (honest, non-sharp)
@@ -127,7 +128,13 @@ interval mass. The genuinely dimension-free fact is that the **chi density** `f_
 e^{-r²/2}` (equivalently `2√x · gammaPDF (k/2) (1/2) x`) has a maximum bounded by an *absolute*
 constant, uniformly in `k` — its peak `≈ e^{1/2}/√π < 1` sits at `r = √(k-1)` and does not grow
 with `k`. That single uniform bound (`chiSquared_density_mul_sqrt_le`) is the crux; everything else
-is the measure-theoretic reduction and an elementary `∫ 1/(2√x) dx = √x` computation. -/
+is the measure-theoretic reduction and an elementary `∫ 1/(2√x) dx = √x` computation.
+
+Both are now proved: the peak bound is obtained **without any Stirling asymptotics** for `Γ` by
+restricting Euler's integral to the length-`√p` window `(p, p+√p]` at the peak
+(`le_Gamma_add_half`), which is enough because the window's own width supplies exactly the
+`√p/√(3p) = 1/√3` that the `x^{-1/2}` factor costs. The resulting absolute constant is
+`e√6 < 7`. -/
 
 section BallAntiConcentration
 
@@ -173,41 +180,257 @@ lemma integral_Ioc_inv_two_sqrt {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) :
     rwa [one_div] at h
   have hint : IntervalIntegrable (fun x => (2 * Real.sqrt x)⁻¹) volume a b := by
     have hrpow : IntervalIntegrable (fun x => (1 / 2) * x ^ (-(1 / 2) : ℝ)) volume a b :=
-      (intervalIntegral.intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
+      (intervalIntegral.intervalIntegrable_rpow'
+        (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
     refine (intervalIntegrable_congr (fun x hx => ?_)).mp hrpow
     have hx0 : 0 < x := by
       rw [Set.uIoc_of_le hab] at hx; exact lt_of_le_of_lt ha hx.1
     rw [Real.sqrt_eq_rpow, mul_inv, Real.rpow_neg hx0.le]; ring
   exact intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hab hcont hderiv hint
 
-/-- **[Planned debt — Stirling on `Γ` at half-integers, absent from Mathlib v4.29.1]**
-The chi density peak is bounded by an **absolute** constant, uniformly in the dimension `k`:
-`2√x · gammaPDF (k/2) (1/2) x ≤ C` for all `k > 0`, `x > 0`. The left side is exactly the chi
-density `f_k(√x) = √x^{k-1} e^{-x/2} / (2^{k/2-1} Γ(k/2))`; its maximum over `x` is attained at
-`x = k-1` with value `→ e^{1/2}/√π < 1` as `k → ∞`, and stays below an absolute constant for all
-`k`. **This is the one genuinely dimension-free crux of the ball route.**
+/-- **Peak of the gamma kernel.** For `p > 0` the function `x ↦ x^p e^{-x/2}` attains its
+maximum over `x > 0` at `x = 2p`. Taking logarithms this is exactly `log t ≤ t - 1` at
+`t = x/(2p)`. -/
+private lemma rpow_mul_exp_neg_half_le {p x : ℝ} (hp : 0 < p) (hx : 0 < x) :
+    x ^ p * Real.exp (-x / 2) ≤ (2 * p) ^ p * Real.exp (-p) := by
+  have hpne : p ≠ 0 := ne_of_gt hp
+  have h2p : (0 : ℝ) < 2 * p := by linarith
+  have hlog : Real.log (x / (2 * p)) ≤ x / (2 * p) - 1 :=
+    Real.log_le_sub_one_of_pos (by positivity)
+  rw [Real.log_div (ne_of_gt hx) (ne_of_gt h2p)] at hlog
+  have hmul := mul_le_mul_of_nonneg_left hlog hp.le
+  have hxx : p * (x / (2 * p) - 1) = x / 2 - p := by field_simp
+  rw [hxx] at hmul
+  have hL : x ^ p * Real.exp (-x / 2) = Real.exp (p * Real.log x - x / 2) := by
+    rw [Real.rpow_def_of_pos hx, ← Real.exp_add]; congr 1; ring
+  have hR : (2 * p) ^ p * Real.exp (-p) = Real.exp (p * Real.log (2 * p) - p) := by
+    rw [Real.rpow_def_of_pos h2p, ← Real.exp_add]; congr 1; ring
+  rw [hL, hR]
+  exact Real.exp_le_exp.mpr (by nlinarith [hmul])
 
-TODO: `2√x · gammaPDF (k/2)(1/2) x = 2 (1/2)^{k/2} Γ(k/2)⁻¹ x^{k/2-1/2} e^{-x/2}`; maximise
-`x^{k/2-1/2} e^{-x/2}` at `x = k-1` (value `(k-1)^{(k-1)/2} e^{-(k-1)/2}`), reducing the claim to
-`(k-1)^{(k-1)/2} e^{-(k-1)/2} ≤ C · 2^{k/2-1} Γ(k/2)`, i.e. a **Stirling lower bound**
-`Γ(k/2) ≥ c₀ (k/2)^{(k-1)/2} e^{-k/2}`. For even `k` this follows from Mathlib's factorial
-Stirling `le_factorial_stirling`; for odd `k` (half-integer `k/2`) it needs the Gamma doubling
-formula `Real.Gamma_mul_Gamma_add_half` together with a Stirling *upper* bound on `n!`
-(`stirlingSeq` antitone + `stirlingSeq_one`). Mathlib v4.29.1 has no ready real-`Γ` Stirling
-bound, so this half-integer estimate is the isolated missing brick. -/
+/-- **Stirling-free lower bound for `Γ` at the half-integer shift.** For `p ≥ 1/2`,
+`Γ(p + 1/2) ≥ p^p e^{-p} / (e √3)`.
+
+This replaces the `Γ`-Stirling estimate that Mathlib v4.29.1 does not provide for
+half-integer arguments: instead of asymptotics one simply restricts Euler's integral
+`Γ(p+1/2) = ∫_{x>0} e^{-x} x^{p-1/2} dx` to the window `(p, p + √p]` of length `√p` sitting at
+the peak. On that window `e^{-x} x^p ≥ p^p e^{-p} e^{-1}` (from `log t ≥ 1 - 1/t`, since
+`(x-p)² ≤ p < x` there) and `x^{-1/2} ≥ (3p)^{-1/2}` (since `x ≤ p + √p ≤ 3p` for `p ≥ 1/4`);
+multiplying by the window length `√p` gives `√p/√(3p) = 1/√3`. -/
+private lemma le_Gamma_add_half {p : ℝ} (hp : 1 / 2 ≤ p) :
+    p ^ p * Real.exp (-p) / (Real.exp 1 * Real.sqrt 3) ≤ Real.Gamma (p + 1 / 2) := by
+  have hp0 : (0 : ℝ) < p := by linarith
+  have hsp : 0 < Real.sqrt p := Real.sqrt_pos.mpr hp0
+  have hspsq : Real.sqrt p ^ 2 = p := Real.sq_sqrt hp0.le
+  have hsple : Real.sqrt p ≤ 2 * p := by nlinarith [hspsq, hsp]
+  have hs : (0 : ℝ) < p + 1 / 2 := by linarith
+  have hGam : Real.Gamma (p + 1 / 2)
+      = ∫ x in Set.Ioi (0 : ℝ), Real.exp (-x) * x ^ (p + 1 / 2 - 1) :=
+    Real.Gamma_eq_integral hs
+  have hint : IntegrableOn (fun x : ℝ => Real.exp (-x) * x ^ (p + 1 / 2 - 1))
+      (Set.Ioi 0) := Real.GammaIntegral_convergent hs
+  set L : ℝ := p ^ p * Real.exp (-p) * Real.exp (-1) * (Real.sqrt (3 * p))⁻¹ with hLdef
+  have hsub : Set.Ioc p (p + Real.sqrt p) ⊆ Set.Ioi (0 : ℝ) := fun y hy => lt_trans hp0 hy.1
+  -- Pointwise lower bound of the Euler integrand on the peak window.
+  have hpt : ∀ y ∈ Set.Ioc p (p + Real.sqrt p), L ≤ Real.exp (-y) * y ^ (p + 1 / 2 - 1) := by
+    intro y hy
+    obtain ⟨hy1, hy2⟩ := hy
+    have hy0 : (0 : ℝ) < y := lt_trans hp0 hy1
+    have hsy : 0 < Real.sqrt y := Real.sqrt_pos.mpr hy0
+    have hsplit : y ^ (p + 1 / 2 - 1) = y ^ p * (Real.sqrt y)⁻¹ := by
+      rw [show p + 1 / 2 - 1 = p - 1 / 2 by ring, Real.rpow_sub hy0, Real.sqrt_eq_rpow,
+        div_eq_mul_inv]
+    -- (a) the exponential–power factor is within `e` of its peak value
+    have hA : p ^ p * Real.exp (-p) * Real.exp (-1) ≤ Real.exp (-y) * y ^ p := by
+      have hlt : Real.log (p / y) ≤ p / y - 1 := Real.log_le_sub_one_of_pos (by positivity)
+      rw [Real.log_div (ne_of_gt hp0) (ne_of_gt hy0)] at hlt
+      have hmul := mul_le_mul_of_nonneg_left hlt hp0.le
+      have hpy : p * (p / y - 1) = p ^ 2 / y - p := by field_simp
+      rw [hpy] at hmul
+      have hd : (y - p) ^ 2 ≤ y := by nlinarith [hspsq]
+      have hyy : p ^ 2 / y ≤ 2 * p + 1 - y := by
+        rw [div_le_iff₀ hy0]; nlinarith [hd]
+      have hlogineq : p * Real.log p - p - 1 ≤ -y + p * Real.log y := by linarith
+      have hE1 : p ^ p * Real.exp (-p) * Real.exp (-1)
+          = Real.exp (p * Real.log p - p - 1) := by
+        rw [Real.rpow_def_of_pos hp0, ← Real.exp_add, ← Real.exp_add]; congr 1; ring
+      have hE2 : Real.exp (-y) * y ^ p = Real.exp (-y + p * Real.log y) := by
+        rw [Real.rpow_def_of_pos hy0, ← Real.exp_add]; congr 1; ring
+      rw [hE1, hE2]
+      exact Real.exp_le_exp.mpr hlogineq
+    -- (b) the radial factor `x^{-1/2}` is at least `(3p)^{-1/2}` on the window
+    have hB : (Real.sqrt (3 * p))⁻¹ ≤ (Real.sqrt y)⁻¹ := by
+      have h1 : Real.sqrt y ≤ Real.sqrt (3 * p) := Real.sqrt_le_sqrt (by linarith)
+      exact inv_anti₀ hsy h1
+    rw [hsplit, hLdef]
+    calc p ^ p * Real.exp (-p) * Real.exp (-1) * (Real.sqrt (3 * p))⁻¹
+        ≤ p ^ p * Real.exp (-p) * Real.exp (-1) * (Real.sqrt y)⁻¹ := by
+          exact mul_le_mul_of_nonneg_left hB (by positivity)
+      _ ≤ Real.exp (-y) * y ^ p * (Real.sqrt y)⁻¹ :=
+          mul_le_mul_of_nonneg_right hA (by positivity)
+      _ = Real.exp (-y) * (y ^ p * (Real.sqrt y)⁻¹) := by ring
+  -- Integrate the pointwise bound over the window and drop to the whole half-line.
+  have hIc : IntegrableOn (fun _ : ℝ => L) (Set.Ioc p (p + Real.sqrt p)) :=
+    integrableOn_const (C := L) measure_Ioc_lt_top.ne
+  have hIf : IntegrableOn (fun y : ℝ => Real.exp (-y) * y ^ (p + 1 / 2 - 1))
+      (Set.Ioc p (p + Real.sqrt p)) := hint.mono_set hsub
+  have hwin : L * Real.sqrt p ≤ ∫ y in Set.Ioc p (p + Real.sqrt p),
+      Real.exp (-y) * y ^ (p + 1 / 2 - 1) := by
+    have hmono := setIntegral_mono_on hIc hIf measurableSet_Ioc hpt
+    rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+      ENNReal.toReal_ofReal (by linarith [Real.sqrt_nonneg p]), smul_eq_mul] at hmono
+    calc L * Real.sqrt p = (p + Real.sqrt p - p) * L := by ring
+      _ ≤ _ := hmono
+  have hnn : 0 ≤ᵐ[volume.restrict (Set.Ioi (0 : ℝ))]
+      fun x : ℝ => Real.exp (-x) * x ^ (p + 1 / 2 - 1) := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
+    have hx0 : (0 : ℝ) < x := hx
+    exact mul_nonneg (Real.exp_pos _).le (Real.rpow_nonneg hx0.le _)
+  have hLid : L * Real.sqrt p = p ^ p * Real.exp (-p) / (Real.exp 1 * Real.sqrt 3) := by
+    have h3 : (0 : ℝ) < Real.sqrt 3 := Real.sqrt_pos.mpr (by norm_num)
+    rw [hLdef, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 3) p,
+      show Real.exp (-1) = (Real.exp 1)⁻¹ from Real.exp_neg 1]
+    have hsne : Real.sqrt p ≠ 0 := ne_of_gt hsp
+    have h3ne : Real.sqrt 3 ≠ 0 := ne_of_gt h3
+    have hene : Real.exp 1 ≠ 0 := ne_of_gt (Real.exp_pos 1)
+    field_simp
+  rw [hGam, ← hLid]
+  exact hwin.trans (setIntegral_mono_set hint hnn hsub.eventuallyLE)
+
+/-- Numerical constant of the peak bound: `2 (√2)⁻¹ e √3 = e √6 < 7`. -/
+private lemma peak_const_le_seven :
+    2 * (Real.sqrt 2)⁻¹ * (Real.exp 1 * Real.sqrt 3) ≤ 7 := by
+  have h2 : (1.414 : ℝ) ≤ Real.sqrt 2 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_nonneg 2]
+  have h3 : Real.sqrt 3 ≤ 1.7321 := by
+    nlinarith [Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3), Real.sqrt_nonneg 3]
+  have he : Real.exp 1 ≤ 2.7182818286 := Real.exp_one_lt_d9.le
+  have hinv : (Real.sqrt 2)⁻¹ ≤ (1.414 : ℝ)⁻¹ := inv_anti₀ (by norm_num) h2
+  have hepos : (0 : ℝ) < Real.exp 1 := Real.exp_pos 1
+  have hs3 : (0 : ℝ) ≤ Real.sqrt 3 := Real.sqrt_nonneg 3
+  have hinv0 : (0 : ℝ) ≤ (Real.sqrt 2)⁻¹ := by positivity
+  calc 2 * (Real.sqrt 2)⁻¹ * (Real.exp 1 * Real.sqrt 3)
+      ≤ 2 * (1.414 : ℝ)⁻¹ * (2.7182818286 * 1.7321) := by gcongr
+    _ ≤ 7 := by norm_num
+
+/-- **The dimension-free chi-density peak bound.**
+`2√x · gammaPDF (k/2) (1/2) x ≤ 7` for all `k > 0` and `x > 0`. The left side is exactly the chi
+density `f_k(√x) = √x^{k-1} e^{-x/2} / (2^{k/2-1} Γ(k/2))`; its maximum over `x` is attained at
+`x = k-1` with value `→ e^{1/2}/√π < 1` as `k → ∞`, and the proof below shows it never exceeds
+`e√6 < 7`. **This is the one genuinely dimension-free crux of the ball route.**
+
+Proof. Write `a = k/2` and `p = a - 1/2`. Then
+`2√x · gammaPDFReal a (1/2) x = 2 (1/2)^a Γ(a)⁻¹ · x^p e^{-x/2}`; the kernel factor is maximised
+at `x = 2p` (`rpow_mul_exp_neg_half_le`), and `(1/2)^a (2p)^p = (√2)⁻¹ p^p`, so the whole
+expression is at most `√2 · p^p e^{-p} / Γ(p + 1/2)`, which `le_Gamma_add_half` bounds by
+`√2 · e √3 = e √6 < 7` — with **no dependence on `k`**. The degenerate case `k = 1` (`p = 0`) is
+separate and uses `Γ(1/2) = √π`. -/
 private lemma chiSquared_density_mul_sqrt_le :
     ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 0 < k → ∀ x : ℝ, 0 < x →
       2 * Real.sqrt x * gammaPDFReal ((k : ℝ) / 2) (1 / 2) x ≤ C := by
-  -- TODO (planned debt): uniform chi-density peak bound via Stirling on Γ; see docstring.
-  sorry
+  refine ⟨7, by norm_num, ?_⟩
+  intro k hk x hx
+  rcases Nat.lt_or_ge k 2 with h1 | h2
+  · -- `k = 1`: the density is `(1/2)^{1/2} Γ(1/2)⁻¹ x^{-1/2} e^{-x/2}`, and `√x · x^{-1/2} = 1`.
+    have hk1 : (k : ℝ) = 1 := by
+      have : k = 1 := by omega
+      rw [this]; norm_num
+    rw [hk1]
+    have hpdf : gammaPDFReal ((1 : ℝ) / 2) (1 / 2) x
+        = ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.Gamma (1 / 2) * x ^ ((1 : ℝ) / 2 - 1)
+          * Real.exp (-((1 / 2) * x)) := by
+      simp only [gammaPDFReal, if_pos hx.le]
+    rw [hpdf, Real.Gamma_one_half_eq]
+    have hsx : Real.sqrt x * x ^ ((1 : ℝ) / 2 - 1) = 1 := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_add hx]
+      norm_num
+    have hpi : (1 : ℝ) ≤ Real.sqrt π := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt (by linarith [Real.two_le_pi])
+    have hbase : ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) ≤ 1 :=
+      Real.rpow_le_one (by norm_num) (by norm_num) (by norm_num)
+    have hbase0 : (0 : ℝ) ≤ ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) :=
+      Real.rpow_nonneg (by norm_num) _
+    have hexp : Real.exp (-((1 / 2) * x)) ≤ 1 := by
+      rw [Real.exp_le_one_iff]; nlinarith
+    have hexp0 : (0 : ℝ) < Real.exp (-((1 / 2) * x)) := Real.exp_pos _
+    calc 2 * Real.sqrt x * (((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.sqrt π
+              * x ^ ((1 : ℝ) / 2 - 1) * Real.exp (-((1 / 2) * x)))
+        = 2 * (((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.sqrt π)
+            * (Real.sqrt x * x ^ ((1 : ℝ) / 2 - 1)) * Real.exp (-((1 / 2) * x)) := by ring
+      _ = 2 * (((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.sqrt π)
+            * Real.exp (-((1 / 2) * x)) := by rw [hsx, mul_one]
+      _ ≤ 2 * 1 * 1 := by
+          have hdiv : ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.sqrt π ≤ 1 := by
+            rw [div_le_one (by linarith)]; linarith
+          have hdiv0 : (0 : ℝ) ≤ ((1 : ℝ) / 2) ^ ((1 : ℝ) / 2) / Real.sqrt π := by positivity
+          nlinarith
+      _ ≤ 7 := by norm_num
+  · -- `k ≥ 2`: the peak bound plus the `Γ` lower bound, both dimension-free.
+    have hk2 : (2 : ℝ) ≤ (k : ℝ) := by exact_mod_cast h2
+    set a : ℝ := (k : ℝ) / 2 with hadef
+    set p : ℝ := a - 1 / 2 with hpdef
+    have hp : (1 : ℝ) / 2 ≤ p := by rw [hpdef, hadef]; linarith
+    have hp0 : (0 : ℝ) < p := by linarith
+    have hGa : 0 < Real.Gamma a := Real.Gamma_pos_of_pos (by rw [hadef]; linarith)
+    have hpdf : gammaPDFReal a (1 / 2) x
+        = ((1 : ℝ) / 2) ^ a / Real.Gamma a * x ^ (a - 1) * Real.exp (-((1 / 2) * x)) := by
+      simp only [gammaPDFReal, if_pos hx.le]
+    have hsx : Real.sqrt x * x ^ (a - 1) = x ^ p := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_add hx]
+      congr 1
+      rw [hpdef]; ring
+    have hrw : 2 * Real.sqrt x * gammaPDFReal a (1 / 2) x
+        = 2 * (((1 : ℝ) / 2) ^ a / Real.Gamma a) * (x ^ p * Real.exp (-x / 2)) := by
+      rw [hpdf, ← hsx]
+      rw [show Real.exp (-((1 / 2) * x)) = Real.exp (-x / 2) by congr 1; ring]
+      ring
+    rw [hrw]
+    have hc0 : (0 : ℝ) ≤ ((1 : ℝ) / 2) ^ a / Real.Gamma a := by positivity
+    have hstep1 : 2 * (((1 : ℝ) / 2) ^ a / Real.Gamma a) * (x ^ p * Real.exp (-x / 2))
+        ≤ 2 * (((1 : ℝ) / 2) ^ a / Real.Gamma a) * ((2 * p) ^ p * Real.exp (-p)) :=
+      mul_le_mul_of_nonneg_left (rpow_mul_exp_neg_half_le hp0 hx) (by linarith)
+    refine hstep1.trans ?_
+    -- `(1/2)^a · 2^p = 2^{p-a} = 2^{-1/2} = (√2)⁻¹`
+    have hhalf : ((1 : ℝ) / 2) ^ a * (2 : ℝ) ^ p = (Real.sqrt 2)⁻¹ := by
+      have hinv : ((1 : ℝ) / 2) ^ a = ((2 : ℝ) ^ a)⁻¹ := by
+        rw [show ((1 : ℝ) / 2) = (2 : ℝ)⁻¹ by norm_num,
+          Real.inv_rpow (by norm_num : (0 : ℝ) ≤ 2)]
+      rw [hinv, ← Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2),
+        ← Real.rpow_add (by norm_num : (0 : ℝ) < 2),
+        show -a + p = -(1 / 2) by rw [hpdef]; ring,
+        Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), Real.sqrt_eq_rpow]
+    have hnum : 2 * (((1 : ℝ) / 2) ^ a) * ((2 * p) ^ p * Real.exp (-p))
+        = 2 * (Real.sqrt 2)⁻¹ * (p ^ p * Real.exp (-p)) := by
+      calc 2 * (((1 : ℝ) / 2) ^ a) * ((2 * p) ^ p * Real.exp (-p))
+          = 2 * ((((1 : ℝ) / 2) ^ a) * (2 : ℝ) ^ p) * (p ^ p * Real.exp (-p)) := by
+            rw [Real.mul_rpow (by norm_num : (0 : ℝ) ≤ 2) hp0.le]; ring
+        _ = 2 * (Real.sqrt 2)⁻¹ * (p ^ p * Real.exp (-p)) := by rw [hhalf]
+    have hgoal : 2 * (((1 : ℝ) / 2) ^ a / Real.Gamma a) * ((2 * p) ^ p * Real.exp (-p))
+        = (2 * (Real.sqrt 2)⁻¹ * (p ^ p * Real.exp (-p))) / Real.Gamma a := by
+      rw [← hnum]; field_simp
+    rw [hgoal, div_le_iff₀ hGa]
+    have hGlb : p ^ p * Real.exp (-p) / (Real.exp 1 * Real.sqrt 3) ≤ Real.Gamma a := by
+      have h := le_Gamma_add_half hp
+      rwa [show p + 1 / 2 = a by rw [hpdef]; ring] at h
+    have hq : (0 : ℝ) < p ^ p * Real.exp (-p) := by positivity
+    have he3 : (0 : ℝ) < Real.exp 1 * Real.sqrt 3 := by
+      have : (0 : ℝ) < Real.sqrt 3 := Real.sqrt_pos.mpr (by norm_num)
+      positivity
+    calc 2 * (Real.sqrt 2)⁻¹ * (p ^ p * Real.exp (-p))
+        ≤ 7 * (p ^ p * Real.exp (-p) / (Real.exp 1 * Real.sqrt 3)) := by
+          rw [← mul_div_assoc, le_div_iff₀ he3]
+          nlinarith [mul_le_mul_of_nonneg_right peak_const_le_seven hq.le]
+      _ ≤ 7 * Real.Gamma a := by linarith
 
 /-- **Dimension-free ball (shell) anti-concentration.** There is an *absolute* constant `C`
 (independent of the dimension `k`, the radius `t` and the shell width `ε`) such that the standard
 multivariate Gaussian mass of the spherical shell `{t < ‖z‖ ≤ t + ε}` is at most `C · ε`. This is
-the radial analogue of `gaussian_slab_measure_le` and the ingredient the ball Berry–Esseen bound
-consumes. Everything here is proved from the measure-theoretic reduction
-`multivariateGaussian_shell_eq_chiSquared` and the elementary primitive `integral_Ioc_inv_two_sqrt`;
-the only debt is the uniform chi-density peak bound `chiSquared_density_mul_sqrt_le`. -/
+the radial analogue of `gaussian_slab_measure_le` and the ingredient the ball Berry-Esseen bound
+consumes. It is proved **unconditionally** (one may take `C = 7`) from the measure-theoretic
+reduction `multivariateGaussian_shell_eq_chiSquared`, the elementary primitive
+`integral_Ioc_inv_two_sqrt`, and the uniform chi-density peak bound
+`chiSquared_density_mul_sqrt_le`. -/
 theorem gaussian_ball_shell_measure_le :
     ∃ C : ℝ, 0 < C ∧ ∀ (k : ℕ), 0 < k → ∀ t ε : ℝ, 0 ≤ t → 0 ≤ ε →
       (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
@@ -238,7 +461,8 @@ theorem gaussian_ball_shell_measure_le :
   have hInt0 : IntegrableOn (fun x => (2 * Real.sqrt x)⁻¹) (Set.Ioc a b) volume := by
     have hint : IntervalIntegrable (fun x => (2 * Real.sqrt x)⁻¹) volume a b := by
       have hrpow : IntervalIntegrable (fun x => (1 / 2) * x ^ (-(1 / 2) : ℝ)) volume a b :=
-        (intervalIntegral.intervalIntegrable_rpow' (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
+        (intervalIntegral.intervalIntegrable_rpow'
+        (by norm_num : (-1 : ℝ) < -(1 / 2))).const_mul (1 / 2)
       refine (intervalIntegrable_congr (fun x hx => ?_)).mp hrpow
       have hx0 : 0 < x := by
         rw [Set.uIoc_of_le hab] at hx; exact lt_of_le_of_lt h0a hx.1
@@ -326,8 +550,8 @@ private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
   have hidw : ∀ k, k ≤ 3 →
       iteratedDerivWithin k g (Set.Icc 0 1) 0 = iteratedFDeriv ℝ k f x (fun _ => h) := by
     intro k hk
-    rw [iteratedDerivWithin_eq_iteratedDeriv hud (hgcd.contDiffAt.of_le (by exact_mod_cast hk)) hmem,
-      key k hk 0]
+    rw [iteratedDerivWithin_eq_iteratedDeriv hud
+        (hgcd.contDiffAt.of_le (by exact_mod_cast hk)) hmem, key k hk 0]
     simp
   -- Expand the Taylor polynomial into the three visible terms.
   have htaylor : taylorWithinEval g 2 (Set.Icc 0 1) 0 1
