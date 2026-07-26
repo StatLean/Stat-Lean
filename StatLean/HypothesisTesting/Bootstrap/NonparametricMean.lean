@@ -116,7 +116,7 @@ noncomputable def studentizedRootCDF (F : Measure ℝ) (n : ℕ) (x : ℝ) : ℝ
 
 /-- The `toReal` of the `Iic`-measure of a probability law on the line is a distribution
 function: this is exactly `ProbabilityTheory.cdf`, dressed as `IsCDF`. -/
-private lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
     IsCDF (fun x => (ν (Set.Iic x)).toReal) := by
   have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
     funext x

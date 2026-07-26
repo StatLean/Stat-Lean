@@ -1048,19 +1048,78 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n)
       (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
-  -- TODO (bootstrap consistency assembly — needs multivariate empirical membership + the blocked
-  -- norm cores). Structurally this is `tendsto_supCDFDist_bootstrap` (or the direct triangle
-  -- squeeze of `bootstrap_mean_consistent`) with `J n F := normMeanRootCDF F nrm n`,
-  -- `Jlim := normLimitCDF (covMatrix Q) nrm`, and `Phat n ω := empiricalMeasure (X · ω)`. The
-  -- pointwise convergence along the class is `norm_root_cdf_tendsto`, continuity of the limit is
-  -- `continuous_normLimitCDF`. The remaining stochastic input — a.s. membership of the empirical
-  -- sequence in `meanVecSeqClass Q` — needs the *weak-convergence* clause `∀ f : ℝᵏ →ᵇ ℝ,
-  -- ∫ f dP̂ₙ → ∫ f dQ` a.s., i.e. almost-sure weak convergence of empirical measures for ALL
-  -- bounded continuous `f` (multivariate Glivenko–Cantelli / Varadarajan). Mathlib v4.29.1 has
-  -- no `empiricalMeasure` weak-convergence theorem (the univariate `empirical_mem_meanSeqClass`
-  -- dodges it with a rational CDF sandwich, unavailable for the BCF clause here). Blocked on that
-  -- plus `norm_root_cdf_tendsto` and `continuous_normLimitCDF`.
-  sorry
+  classical
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  -- the limiting distribution function of the norm
+  set Jlim : ℝ → ℝ := normLimitCDF (covMatrix Q) nrm with hJlim
+  have hcont : Continuous Jlim :=
+    continuous_normLimitCDF hQ2 hnrm_add hnrm_smul hnrm_def hS
+  have hJcdf : IsCDF Jlim := by
+    haveI : IsProbabilityMeasure
+        ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)).map nrm) :=
+      Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+    have heq : Jlim = fun x =>
+        (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)).map nrm)
+          (Set.Iic x)).toReal := by
+      funext x
+      rw [hJlim, normLimitCDF, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+      rfl
+    rw [heq]
+    exact isCDF_toReal_measure_Iic _
+  -- the sampling distribution functions of the norm are distribution functions
+  have hFcdf : ∀ (F : Measure (EuclideanSpace ℝ (Fin k))) (n : ℕ),
+      IsProbabilityMeasure (Measure.pi fun _ : Fin n => F) →
+      IsCDF (normMeanRootCDF F nrm n) := by
+    intro F n hpi
+    haveI := hpi
+    haveI : IsProbabilityMeasure (meanVecRootLaw F n) :=
+      Measure.isProbabilityMeasure_map (by fun_prop)
+    haveI : IsProbabilityMeasure ((meanVecRootLaw F n).map nrm) :=
+      Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+    have heq : normMeanRootCDF F nrm n
+        = fun x => (((meanVecRootLaw F n).map nrm) (Set.Iic x)).toReal := by
+      funext x
+      rw [normMeanRootCDF, Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+      rfl
+    rw [heq]
+    exact isCDF_toReal_measure_Iic _
+  have hpiQ : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => Q) := by
+    intro n
+    haveI : ∀ _ : Fin n, IsProbabilityMeasure Q := fun _ => ‹_›
+    infer_instance
+  have hconstmem : (fun _ : ℕ => Q) ∈ meanVecSeqClass Q :=
+    ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ => tendsto_const_nhds,
+      fun _ => tendsto_const_nhds, fun _ _ => tendsto_const_nhds⟩
+  have hQconv : ∀ x, Tendsto (fun n => normMeanRootCDF Q nrm n x) atTop (𝓝 (Jlim x)) :=
+    fun x => norm_root_cdf_tendsto hQ2 hconstmem hnrm_add hnrm_smul hnrm_def hS x
+  filter_upwards [empirical_mem_meanVecSeqClass hmeas hindep hlaw hident hQ2] with ω hω
+  have hpiE : ∀ n : ℕ, IsProbabilityMeasure
+      (Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; rw [Measure.pi_of_empty]; infer_instance
+    · haveI := hω.1 n hn
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (empiricalMeasure fun i : Fin n => X i ω) :=
+        fun _ => ‹_›
+      infer_instance
+  have hEconv : ∀ x, Tendsto
+      (fun n => normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n x) atTop
+      (𝓝 (Jlim x)) := fun x => norm_root_cdf_tendsto hQ2 hω hnrm_add hnrm_smul hnrm_def hS x
+  have hQ' : ∀ n, IsCDF (normMeanRootCDF Q nrm n) := fun n => hFcdf Q n (hpiQ n)
+  have hE' : ∀ n, IsCDF (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n) :=
+    fun n => hFcdf _ n (hpiE n)
+  have hA : Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n) Jlim) atTop (𝓝 0) :=
+    tendsto_supCDFDist_zero hQ' hcont hJcdf hQconv
+  have hB : Tendsto (fun n => supCDFDist Jlim
+      (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
+    have h := tendsto_supCDFDist_zero hE' hcont hJcdf hEconv
+    simpa only [supCDFDist_comm] using h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ => (0 : ℝ))
+    (h := fun n => supCDFDist (normMeanRootCDF Q nrm n) Jlim
+      + supCDFDist Jlim (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n))
+    tendsto_const_nhds (by simpa using hA.add hB) (fun n => ?_) (fun n => ?_)
+  · exact supCDFDist_nonneg (hQ' n) (hE' n)
+  · exact supCDFDist_triangle_of_isCDF (hQ' n) hJcdf (hE' n)
 
 end MeanVector
 
