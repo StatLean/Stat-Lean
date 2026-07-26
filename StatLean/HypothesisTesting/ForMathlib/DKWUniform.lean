@@ -176,6 +176,14 @@ theorem integral_ksDist_le {n : ℕ}
     -- USER-INPUT: each observation has law `μ`.
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 2 / Real.sqrt n := by
+  -- TODO: the sharp in-expectation constant `2` (true value ≈ 0.63) requires the half-line
+  -- entropy integral directly. The project's `ConcentrationInequalities.glivenko_cantelli`
+  -- proves EXACTLY this integrand bounded by `5400 / √n` (via the generic VC bound at
+  -- `vcDim = 1`); that constant is far too lossy here — `dkw_uniform` below needs the mean
+  -- `√n · E Dₙ ≤ 2` for the `d ≥ 2` split and the arithmetic `2(d−2)² ≥ d²/8 − log 4`, both
+  -- of which fail at `5400`. Closing this requires a symmetrisation + Dudley chaining bound
+  -- specialised to the half-line class with the numerical factors tracked (not the generic
+  -- VC route). No such sharp brick is present in the project.
   sorry
 
 /-- The empirical distribution function as a function of the *sample vector*
