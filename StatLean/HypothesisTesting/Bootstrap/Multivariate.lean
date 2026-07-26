@@ -453,20 +453,179 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
     (f : EuclideanSpace ℝ (Fin k) →ᵇ ℝ) :
     Tendsto (fun n => ∫ z, f z ∂(meanVecRootLaw (F n) n)) atTop
       (𝓝 (∫ z, f z ∂(multivariateGaussian 0 (covMatrix Q)))) := by
-  -- TODO (triangular-array multivariate CLT, drifting row law — Vitali gap). Cramér–Wold: for
-  -- each direction `t`, `⟪t, ·⟫` of the root is the univariate standardised sum of the i.i.d.
-  -- draws `⟪t, X_{n,i}⟫`, `X_{n,i} ~ F n`. Realise on `Π n, (Fin n → ℝᵏ)`, reduce to
-  -- `ForMathlib.LindebergCLT.lindeberg_clt`, and identify the limit `charFun` with
-  -- `multivariateGaussian 0 (covMatrix Q)` via `charFun_multivariateGaussian` + Lévy
-  -- (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`), exactly as the proven fixed-law brick
-  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` does. The ONE genuinely missing
-  -- step is the Lindeberg condition for the *drifting* rows: it follows from
-  -- `Var[⟪t,·⟫; F n] → Var[⟪t,·⟫; Q]` plus weak convergence via *uniform square-integrability*
-  -- (Lehmann–Romano Lemma 18.3.1 / Vitali): `Xₙ ⇒ X` with `E Xₙ² → E X² < ∞` forces `{Xₙ²}`
-  -- uniformly integrable. This Vitali-type upgrade is absent from Mathlib v4.29.1 (the same gap
-  -- recorded on `mean_root_cdf_tendsto`). Being a weak-convergence (bounded-continuous) target,
-  -- this needs NO portmanteau CDF-inversion, unlike its univariate sibling.
-  sorry
+  classical
+  -- Replace the unconstrained `n = 0` entry of the sequence by `Q`, so that every entry is a
+  -- probability measure; the conclusion only sees the tail.
+  set F' : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => if n = 0 then Q else F n with hF'def
+  have hF'eq : ∀ n : ℕ, 0 < n → F' n = F n := by
+    intro n hn; simp only [hF'def, if_neg hn.ne']
+  haveI hF'prob : ∀ n, IsProbabilityMeasure (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · rw [hF'eq n hn]; exact hF.1 n hn
+  obtain ⟨-, hF2, hFweak, hFmean, hFcov⟩ := hF
+  have hF'2 : ∀ n, MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 (F' n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hF'def, if_pos rfl] using hQ2
+    · rw [hF'eq n hn]; exact hF2 n
+  have hF'weak : ∀ g : EuclideanSpace ℝ (Fin k) →ᵇ ℝ,
+      Tendsto (fun n => ∫ y, g y ∂(F' n)) atTop (𝓝 (∫ y, g y ∂Q)) := by
+    intro g
+    refine (hFweak g).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'mean : ∀ i : Fin k, Tendsto (fun n => ∫ y, WithLp.ofLp y i ∂(F' n)) atTop
+      (𝓝 (∫ y, WithLp.ofLp y i ∂Q)) := by
+    intro i
+    refine (hFmean i).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  have hF'cov : ∀ i j : Fin k,
+      Tendsto (fun n => covMatrix (F' n) i j) atTop (𝓝 (covMatrix Q i j)) := by
+    intro i j
+    refine (hFcov i j).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hF'eq n hn]
+  -- the root laws are probability measures
+  haveI hpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => F' n) := by
+    intro n
+    haveI : ∀ _ : Fin n, IsProbabilityMeasure (F' n) := fun _ => hF'prob n
+    infer_instance
+  haveI hroot : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (F' n) n) := by
+    intro n
+    haveI := hpi n
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  -- Cramér–Wold, direction by direction, through the characteristic functions
+  set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => ⟨meanVecRootLaw (F' n) n, hroot n⟩ with hμs
+  set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+    ⟨multivariateGaussian 0 (covMatrix Q), inferInstance⟩ with hν
+  have hconv : Tendsto μs atTop (𝓝 ν) := by
+    refine ProbabilityMeasure.tendsto_iff_tendsto_charFun.2 fun t => ?_
+    -- the projected sequence
+    have hLc : Continuous fun z : EuclideanSpace ℝ (Fin k) => (inner ℝ t z : ℝ) :=
+      (innerSL ℝ t).continuous
+    set G : ℕ → Measure ℝ := fun n => (F' n).map (fun z => inner ℝ t z) with hG
+    set Q₁ : Measure ℝ := Q.map (fun z => inner ℝ t z) with hQ₁
+    haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := fun n =>
+      Measure.isProbabilityMeasure_map hLc.aemeasurable
+    haveI hQ₁prob : IsProbabilityMeasure Q₁ := Measure.isProbabilityMeasure_map hLc.aemeasurable
+    haveI hGpi : ∀ n : ℕ, IsProbabilityMeasure (Measure.pi fun _ : Fin n => G n) := by
+      intro n
+      haveI : ∀ _ : Fin n, IsProbabilityMeasure (G n) := fun _ => hGprob n
+      infer_instance
+    haveI hGroot : ∀ n : ℕ, IsProbabilityMeasure (meanRootLaw (G n) n) := by
+      intro n
+      haveI := hGpi n
+      exact Measure.isProbabilityMeasure_map (by fun_prop)
+    -- square-integrability of the projections
+    have hproj2 : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))),
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          MemLp (fun s : ℝ => s) 2 (μ.map (fun z => inner ℝ t z)) := by
+      intro μ hμ
+      refine (memLp_map_measure_iff (by fun_prop) hLc.aemeasurable).2 ?_
+      have h : MemLp (fun z : EuclideanSpace ℝ (Fin k) => (inner ℝ t z : ℝ)) 2 μ := by
+        simpa [Function.comp_def] using (innerSL ℝ t).comp_memLp' hμ
+      simpa [Function.comp_def] using h
+    have hG2 : ∀ n, MemLp (fun s : ℝ => s) 2 (G n) := fun n => hproj2 _ (hF'2 n)
+    have hQ₁2 : MemLp (fun s : ℝ => s) 2 Q₁ := hproj2 _ hQ2
+    -- weak convergence of the projections
+    have hGweak : ∀ g : ℝ →ᵇ ℝ,
+        Tendsto (fun n => ∫ s, g s ∂(G n)) atTop (𝓝 (∫ s, g s ∂Q₁)) := by
+      intro g
+      have hcomp : ∀ μ : Measure (EuclideanSpace ℝ (Fin k)),
+          ∫ s, g s ∂(μ.map (fun z => inner ℝ t z))
+            = ∫ y, (g.compContinuous ⟨fun z => inner ℝ t z, hLc⟩) y ∂μ := by
+        intro μ
+        rw [integral_map hLc.aemeasurable g.continuous.aestronglyMeasurable]
+        rfl
+      simp only [hG, hQ₁, hcomp]
+      exact hF'weak _
+    -- the means of the projections
+    have hprojmean : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ],
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          ∫ s, s ∂(μ.map (fun z => inner ℝ t z))
+            = ∑ i, WithLp.ofLp t i * ∫ y, WithLp.ofLp y i ∂μ := by
+      intro μ _ hμ
+      have hint : Integrable (fun z : EuclideanSpace ℝ (Fin k) => z) μ := hμ.integrable one_le_two
+      have hcomm : ∫ z, (inner ℝ t z : ℝ) ∂μ = inner ℝ t (∫ z, z ∂μ) :=
+        (innerSL ℝ t).integral_comp_comm hint
+      have hcoordint : ∀ i : Fin k, ∫ y, WithLp.ofLp y i ∂μ = WithLp.ofLp (∫ z, z ∂μ) i :=
+        fun i => (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin k) i).integral_comp_comm hint
+      rw [integral_map hLc.aemeasurable (by fun_prop), hcomm]
+      simp only [hcoordint]
+      simp [PiLp.inner_apply, real_inner_eq_re_inner, mul_comm]
+    have hGmean : Tendsto (fun n => ∫ s, s ∂(G n)) atTop (𝓝 (∫ s, s ∂Q₁)) := by
+      simp only [hG, hQ₁, hprojmean _ (hF'2 _), hprojmean _ hQ2]
+      exact tendsto_finset_sum _ fun i _ => (hF'mean i).const_mul _
+    -- the variances of the projections
+    have hprojvar : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))) [IsFiniteMeasure μ],
+        MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 μ →
+          Var[fun s : ℝ => s; μ.map (fun z => inner ℝ t z)]
+            = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix μ i j := by
+      intro μ _ hμ
+      rw [variance_map (by fun_prop) hLc.aemeasurable]
+      exact variance_inner_eq_covMatrix hμ t
+    have hGvar : Tendsto (fun n => Var[fun s : ℝ => s; G n]) atTop
+        (𝓝 Var[fun s : ℝ => s; Q₁]) := by
+      simp only [hG, hQ₁, hprojvar _ (hF'2 _), hprojvar _ hQ2]
+      exact tendsto_finset_sum _ fun i _ => tendsto_finset_sum _ fun j _ =>
+        (hF'cov i j).const_mul _
+    -- the univariate triangular-array central limit theorem in this direction
+    have huni := tendsto_meanRootLaw hG2 hQ₁2 hGweak hGmean hGvar
+    set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨meanRootLaw (G n) n, hGroot n⟩ with hρs
+    set ρ : ProbabilityMeasure ℝ :=
+      ⟨gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁]), inferInstance⟩ with hρ
+    have hprobconv : Tendsto ρs atTop (𝓝 ρ) :=
+      ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 huni
+    have hcf := ProbabilityMeasure.tendsto_iff_tendsto_charFun.1 hprobconv 1
+    -- transport back to the characteristic function of the vector law
+    have hproject : ∀ (μ : Measure (EuclideanSpace ℝ (Fin k))),
+        charFun μ t = charFun (μ.map (fun z => inner ℝ t z)) 1 := by
+      intro μ
+      have h1 : ∀ a : ℝ, (inner ℝ a (1 : ℝ) : ℝ) = a := fun a => by
+        simp [real_inner_eq_re_inner]
+      rw [charFun_apply, charFun_apply, integral_map hLc.aemeasurable (by fun_prop)]
+      simp only [h1]
+      simp_rw [real_inner_comm t]
+    have hcoeμ : ∀ n : ℕ, ((μs n : Measure (EuclideanSpace ℝ (Fin k))))
+        = meanVecRootLaw (F' n) n := fun n => rfl
+    have hcoeν : ((ν : Measure (EuclideanSpace ℝ (Fin k))))
+        = multivariateGaussian 0 (covMatrix Q) := rfl
+    have hcoeρs : ∀ n : ℕ, ((ρs n : Measure ℝ)) = meanRootLaw (G n) n := fun n => rfl
+    have hcoeρ : ((ρ : Measure ℝ))
+        = gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁]) := rfl
+    have hlhs : ∀ n : ℕ, charFun (meanVecRootLaw (F' n) n) t
+        = charFun (meanRootLaw (G n) n) 1 := by
+      intro n
+      rw [hproject]
+      congr 1
+      exact meanVecRootLaw_map_inner (F' n) (hF'2 n) t n
+    have hrhs : charFun (multivariateGaussian 0 (covMatrix Q)) t
+        = charFun (gaussianReal 0 (Real.toNNReal Var[fun s : ℝ => s; Q₁])) 1 := by
+      have hvarQ : Var[fun s : ℝ => s; Q₁]
+          = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := hprojvar _ hQ2
+      have hquad : WithLp.ofLp t ⬝ᵥ (covMatrix Q).mulVec (WithLp.ofLp t)
+          = ∑ i, ∑ j, WithLp.ofLp t i * WithLp.ofLp t j * covMatrix Q i j := by
+        simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+      have hqnn : 0 ≤ WithLp.ofLp t ⬝ᵥ (covMatrix Q).mulVec (WithLp.ofLp t) := by
+        simpa using (posSemidef_covMatrix hQ2).dotProduct_mulVec_nonneg (WithLp.ofLp t)
+      rw [charFun_multivariateGaussian (posSemidef_covMatrix hQ2), charFun_gaussianReal,
+        hvarQ, ← hquad]
+      simp [Real.coe_toNNReal _ (variance_nonneg _ _), max_eq_left hqnn]
+    simp only [hcoeμ, hcoeν, hlhs, hrhs]
+    simp only [hcoeρs, hcoeρ] at hcf
+    exact hcf
+  -- unpack the weak convergence and undo the `n = 0` patch
+  have hgoal := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f
+  refine hgoal.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  rw [hμs]
+  simp only [hF'eq n hn]
+  rfl
 
 /-- **The limiting distribution function of the norm is continuous.**
 
