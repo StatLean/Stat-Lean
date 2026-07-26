@@ -316,6 +316,84 @@ private lemma ae_eq_zero_of_sep {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → �
       ((mul_eq_zero.mp h0).resolve_right (ne_of_gt (hp₁ x)))) hx₁D
   · exact hx hxE
 
+/-- The two orientations of the sign change are handled at once: replacing `D` by `−D` turns
+the second alternative into the first. -/
+private lemma ae_eq_zero_of_sep_or {μ : Measure 𝓧} {T D p₁ p₂ : 𝓧 → ℝ}
+    (hp₁ : ∀ x, 0 < p₁ x) (hp₁int : Integrable p₁ μ)
+    (hstrict : ∀ x y, T x < T y → p₂ x * p₁ y < p₁ x * p₂ y)
+    (hsep : (∀ x y, D x < 0 → 0 < D y → T x < T y) ∨
+      (∀ x y, 0 < D x → D y < 0 → T x < T y))
+    (hDT : ∀ x y, T x = T y → D x = D y)
+    (hint₁ : Integrable (fun x => D x * p₁ x) μ)
+    (hint₂ : Integrable (fun x => D x * p₂ x) μ)
+    (h₁ : ∫ x, D x * p₁ x ∂μ = 0) (h₂ : ∫ x, D x * p₂ x ∂μ = 0) :
+    D =ᵐ[μ] 0 := by
+  rcases hsep with h | h
+  · exact ae_eq_zero_of_sep hp₁ hp₁int hstrict h hDT hint₁ hint₂ h₁ h₂
+  · have hneg : ∀ (q : 𝓧 → ℝ), Integrable (fun x => D x * q x) μ →
+        Integrable (fun x => (-D x) * q x) μ := by
+      intro q hq
+      have h0 : Integrable (fun x => (-1 : ℝ) * (D x * q x)) μ := hq.const_mul (-1)
+      refine h0.congr (Filter.Eventually.of_forall fun x => ?_)
+      change (-1 : ℝ) * (D x * q x) = (-D x) * q x
+      ring
+    have hnegz : ∀ (q : 𝓧 → ℝ), ∫ x, D x * q x ∂μ = 0 → ∫ x, (-D x) * q x ∂μ = 0 := by
+      intro q hq
+      rw [show (fun x => (-D x) * q x) = fun x => -(D x * q x) from funext fun x => by ring,
+        integral_neg, hq, neg_zero]
+    have hres := ae_eq_zero_of_sep (D := fun x => -D x) hp₁ hp₁int hstrict
+      (fun x y hx hy => by
+        have hx' : -D x < 0 := hx
+        have hy' : (0 : ℝ) < -D y := hy
+        exact h x y (by linarith) (by linarith))
+      (fun x y hxy => by simp only [hDT x y hxy])
+      (hneg p₁ hint₁) (hneg p₂ hint₂) (hnegz p₁ h₁) (hnegz p₂ h₂)
+    filter_upwards [hres] with x hx
+    have hx' : -D x = 0 := hx
+    simp only [Pi.zero_apply]
+    linarith
+
+/-- Expectation against a density-carrying measure equals the integral against the density
+(local copy: the `MLR/OneSided` version is `private` to that file). -/
+private lemma ts_integral_density_eq {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (ψ : 𝓧 → ℝ) : ∫ x, ψ x ∂P = ∫ x, ψ x * p x ∂μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq, integral_withDensity_eq_integral_toReal_smul hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hnn x)]; ring
+
+/-- A density of a probability measure is integrable (local copy). -/
+private lemma ts_density_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : Integrable p μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall hnn)]
+  have h1 : (μ.withDensity fun x => ENNReal.ofReal (p x)) Set.univ = 1 := by
+    rw [← hPeq]; exact measure_univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  rw [h1]; exact ENNReal.one_lt_top
+
+/-- If `ψ` is `P`-integrable and `P` has density `p`, then `ψ·p` is `μ`-integrable
+(local copy). -/
+private lemma ts_density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (hψ : Integrable ψ P) : Integrable (fun x => ψ x * p x) μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq] at hψ
+  refine ((integrable_withDensity_iff hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mp hψ).congr ?_
+  filter_upwards with x
+  rw [ENNReal.toReal_ofReal (hnn x)]
+
+/-- The two-sided test is measurable when the statistic is. -/
+private lemma measurable_twoSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C₁ C₂ γ₁ γ₂ : ℝ) :
+    Measurable (twoSidedTest T C₁ C₂ γ₁ γ₂) := by
+  unfold twoSidedTest
+  refine Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const
+    (Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const
+      (Measurable.ite ?_ measurable_const measurable_const))
+  exact (measurableSet_lt measurable_const hT).inter (measurableSet_lt hT measurable_const)
+
 /-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
 parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
 `γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
