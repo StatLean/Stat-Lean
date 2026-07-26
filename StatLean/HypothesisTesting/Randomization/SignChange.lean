@@ -412,6 +412,85 @@ theorem randDist_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randDist_smul_invariant]
   rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
+/-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (its density is
+strictly positive, so every interval carries strictly positive mass). -/
+private lemma strictMono_cdf_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal 0 v)) := by
+  intro y z hyz
+  rw [cdf_eq_real, cdf_eq_real]
+  have hpos : 0 < gaussianReal 0 v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]; intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' 0 hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal 0 v (Set.Iic z)
+      = gaussianReal 0 v (Set.Iic y) + gaussianReal 0 v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  rw [measureReal_def, measureReal_def, hdisj,
+    ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal 0 v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- Every level `p ∈ (0,1)` is attained by a continuous c.d.f. of an atomless probability
+measure (intermediate value theorem, using the `0`/`1` limits at `∓∞`). -/
+private lemma exists_cdf_eq (μ : Measure ℝ) [IsProbabilityMeasure μ] [NoAtoms μ]
+    {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) : ∃ q, cdf μ q = p := by
+  have hcont : Continuous (cdf μ) :=
+    continuous_iff_continuousAt.mpr (fun x => continuousAt_cdf_of_noAtoms μ x)
+  obtain ⟨a, ha⟩ := ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds hp0)).exists
+  obtain ⟨b, hb⟩ := ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds hp1)).exists
+  have hab : min a b ≤ max a b := min_le_max
+  have hca' : cdf μ (min a b) < p := lt_of_le_of_lt (monotone_cdf (μ := μ) (min_le_left a b)) ha
+  have hcb' : p < cdf μ (max a b) := lt_of_lt_of_le hb (monotone_cdf (μ := μ) (le_max_right a b))
+  obtain ⟨q, _, hq⟩ := intermediate_value_Icc hab hcont.continuousOn ⟨hca'.le, hcb'.le⟩
+  exact ⟨q, hq⟩
+
+/-- The randomization quantile is constant on orbits (its sublevel set of `randDist` is). -/
+private lemma randQuantile_smul_invariant {G 𝓧 : Type*} [Group G] [Fintype G]
+    [MeasurableSpace 𝓧] [MulAction G 𝓧] (T : 𝓧 → ℝ) {p : ℝ} (σ : G) (x : 𝓧) :
+    randQuantile G T p (σ • x) = randQuantile G T p x := by
+  unfold randQuantile
+  congr 1; ext t
+  simp only [Set.mem_setOf_eq, randDist_smul_invariant]
+
+/-- The randomization quantile is a measurable function of the data: its strict sublevel set
+is a countable union (over rational thresholds) of `randDist` sublevel sets. -/
+private lemma measurable_randQuantile {G 𝓧 : Type*} [Group G] [Fintype G]
+    [MeasurableSpace 𝓧] [MulAction G 𝓧] {T : 𝓧 → ℝ} (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1) :
+    Measurable (fun x => randQuantile G T p x) := by
+  haveI : Nonempty G := ⟨1⟩
+  have hne : ∀ x : 𝓧, ({t : ℝ | p ≤ randDist G T x t}).Nonempty := by
+    intro x
+    refine ⟨Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x)), ?_⟩
+    have hone : randDist G T x
+        (Finset.univ.sup' Finset.univ_nonempty (fun g : G => T (g • x))) = 1 := by
+      unfold randDist
+      rw [Finset.sum_congr rfl (fun g _ => if_pos
+        (Finset.le_sup' (fun g : G => T (g • x)) (Finset.mem_univ g))),
+        Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
+        inv_mul_cancel₀ (by exact_mod_cast Fintype.card_ne_zero)]
+    rw [Set.mem_setOf_eq, hone]; exact hp1
+  apply measurable_of_Iio
+  intro r
+  have hset : (fun x => randQuantile G T p x) ⁻¹' Set.Iio r
+      = ⋃ s : {s : ℚ // (s : ℝ) < r}, {x | p ≤ randDist G T x (s : ℝ)} := by
+    ext x
+    simp only [Set.mem_preimage, Set.mem_Iio, Set.mem_iUnion, Set.mem_setOf_eq, Subtype.exists]
+    constructor
+    · intro hlt
+      obtain ⟨t, ht_mem, ht_lt⟩ :=
+        (csInf_lt_iff (bddBelow_randDist_sublevel G T x hp0) (hne x)).mp hlt
+      obtain ⟨s, hts, hsr⟩ := exists_rat_btwn ht_lt
+      exact ⟨s, hsr, le_trans ht_mem (randDist_mono G T x hts.le)⟩
+    · rintro ⟨s, hsr, hs⟩
+      exact lt_of_le_of_lt (csInf_le (bddBelow_randDist_sublevel G T x hp0) hs) hsr
+  rw [hset]
+  exact MeasurableSet.iUnion (fun s =>
+    measurableSet_le measurable_const (measurable_randDist hT hsmul (s : ℝ)))
+
 /-- **The randomization critical value converges to `τ z_{1−α}`.** Companion of the
 previous statement: the data-dependent critical value of the sign-change test converges in
 probability to the symmetrized model's Gaussian quantile. -/
@@ -440,14 +519,60 @@ theorem randQuantile_signChange_tendstoInProb_symmetrized (P : Measure ℝ)
     TendstoInProbTriangular (fun n => Measure.pi fun _ : Fin n => P)
       (fun n x => randQuantile (Fin n → ℤˣ) (T n) (1 - α) x)
       (τ * cdfQuantile (gaussianReal 0 1) (1 - α)) := by
-  -- ⚠ OBSTRUCTION (verified this session): the companion of the previous theorem. Apply
-  -- `randQuantile_tendstoInProb` to the limit `R = N(0,τ²)` under `symmetrize P`, discharging
-  -- `hcont` from `noAtoms_gaussianReal` and `hstrict` from strict monotonicity of the Gaussian
-  -- c.d.f. (positive density), then rewrite `cdfQuantile (N(0,τ²)) (1-α) = τ · cdfQuantile
-  -- (N(0,1)) (1-α)` via the Gaussian scaling. All routine EXCEPT: `randQuantile_tendstoInProb`
-  -- requires `hT : ∀ n, Measurable (T n)` (absent from this frozen signature, not derivable),
-  -- and the `|·|`-invariance transfer to `Measure.pi P` shared with the previous theorem. See
-  -- report.
-  sorry
+  -- Feed the joint law from `weakConverges_randPairLaw_signChange` (under `symmetrize P`) into
+  -- `randQuantile_tendstoInProb`, with the limit `R = N(0,τ²)`: continuity from
+  -- `noAtoms_gaussianReal`, the two-sided bracketing from `strictMono_cdf_gaussianReal` at the
+  -- level `1-α` (attained by `exists_cdf_eq`). Then rewrite the limiting quantile via the
+  -- Gaussian scaling (`cdf_gaussianReal_scale` + `quantile_eq_of_strictMono`) and transfer the
+  -- level-set masses back to `Measure.pi P` (sign invariance of `randQuantile`).
+  set R := gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) with hRdef
+  have hvne : (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0) ≠ 0 :=
+    NNReal.coe_ne_zero.mp (by rw [NNReal.coe_mk]; positivity)
+  haveI : NoAtoms R := noAtoms_gaussianReal hvne
+  have hp0 : (0 : ℝ) < 1 - α := by linarith
+  have hp1 : (1 : ℝ) - α < 1 := by linarith
+  have hSM : StrictMono (cdf R) := strictMono_cdf_gaussianReal hvne
+  obtain ⟨q, hq⟩ := exists_cdf_eq R hp0 hp1
+  have hqquant : cdfQuantile R (1 - α) = q := quantile_eq_of_strictMono hSM hq
+  have hcont : ContinuousAt (cdf R) (cdfQuantile R (1 - α)) :=
+    continuousAt_cdf_of_noAtoms R _
+  have hstrict : ∀ ε > (0 : ℝ), cdf R (cdfQuantile R (1 - α) - ε) < 1 - α ∧
+      1 - α < cdf R (cdfQuantile R (1 - α) + ε) := by
+    intro ε hε
+    rw [hqquant]
+    refine ⟨?_, ?_⟩
+    · rw [← hq]; exact hSM (by linarith)
+    · rw [← hq]; exact hSM (by linarith)
+  -- Gaussian scaling of the limiting quantile.
+  have hSM1 : StrictMono (cdf (gaussianReal 0 1)) := strictMono_cdf_gaussianReal one_ne_zero
+  have hscale : cdf (gaussianReal 0 1) (q / τ) = 1 - α := by
+    rw [← cdf_gaussianReal_scale hτpos q]; exact hq
+  have hq0 : cdfQuantile (gaussianReal 0 1) (1 - α) = q / τ :=
+    quantile_eq_of_strictMono hSM1 hscale
+  have hτ0 : τ ≠ 0 := ne_of_gt hτpos
+  have hlimit : cdfQuantile R (1 - α) = τ * cdfQuantile (gaussianReal 0 1) (1 - α) := by
+    rw [hqquant, hq0]; field_simp
+  -- The joint law under the symmetrized model, then the quantile engine.
+  have hjoint := weakConverges_randPairLaw_signChange (symmetrize P) ψ T (symmetrize_map_neg P)
+    hodd hψmeas hψL2 hτpos hτ hT hlin
+  rw [← hRdef] at hjoint
+  have hmain := randQuantile_tendstoInProb (G := fun n => Fin n → ℤˣ)
+    (fun n => Measure.pi fun _ : Fin n => symmetrize P) T R hT
+    (fun n => measurable_signChange_smul) hjoint hα₀ hα₁ hcont hstrict
+  rw [hlimit] at hmain
+  -- Transfer the level-set masses from `Measure.pi (symmetrize P)` to `Measure.pi P`.
+  intro ε hε
+  refine (hmain ε hε).congr (fun n => ?_)
+  set c := τ * cdfQuantile (gaussianReal 0 1) (1 - α) with hc
+  set S : Set (Fin n → ℝ) :=
+    {x | ε ≤ |randQuantile (Fin n → ℤˣ) (T n) (1 - α) x - c|} with hS
+  have hgq : Measurable (fun x : Fin n → ℝ => randQuantile (Fin n → ℤˣ) (T n) (1 - α) x) :=
+    measurable_randQuantile (hT n) (fun g => measurable_signChange_smul g) hp0 (le_of_lt hp1)
+  have hSmeas : MeasurableSet S :=
+    measurableSet_le measurable_const ((hgq.sub measurable_const).abs)
+  have hinv : ∀ σ : Fin n → ℤˣ, (fun x : Fin n → ℝ => σ • x) ⁻¹' S = S := by
+    intro σ; ext x
+    simp only [hS, Set.mem_preimage, Set.mem_setOf_eq, randQuantile_smul_invariant]
+  rw [measureReal_def, measureReal_def, pi_symmetrize_apply_invariant P n S hSmeas hinv]
 
 end StatLean.HypothesisTesting
