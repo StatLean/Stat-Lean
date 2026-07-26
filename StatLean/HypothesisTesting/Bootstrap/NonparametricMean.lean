@@ -185,6 +185,66 @@ private lemma strictIncAt_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x₀
     StrictIncAt (normalCDF m v) x₀ :=
   ⟨fun y hy => strictMono_normalCDF m hv hy, fun z hz => strictMono_normalCDF m hv hz⟩
 
+/-- The empirical measure of a nonempty sample is a probability measure. -/
+private lemma isProbabilityMeasure_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
+    IsProbabilityMeasure (empiricalMeasure x) := by
+  refine ⟨?_⟩
+  unfold empiricalMeasure
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
+
+/-- The sampling distribution function of the centred sample mean is a distribution function
+(whenever the underlying `n`-fold product is a probability measure). -/
+private lemma isCDF_meanRootCDF (F : Measure ℝ) (n : ℕ)
+    [IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    IsCDF (meanRootCDF F n) := by
+  have hSmeas : Measurable (fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)) := by fun_prop
+  haveI : IsProbabilityMeasure
+      ((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F))) :=
+    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+  have heq : meanRootCDF F n = fun x =>
+      (((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F)))
+        (Set.Iic x)).toReal := by
+    funext x
+    rw [Measure.map_apply hSmeas measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- The sampling distribution function of the studentized sample mean is a distribution function
+(whenever the underlying `n`-fold product is a probability measure). -/
+private lemma isCDF_studentizedRootCDF (F : Measure ℝ) (n : ℕ)
+    [IsProbabilityMeasure (Measure.pi fun _ : Fin n => F)] :
+    IsCDF (studentizedRootCDF F n) := by
+  have hSmeas : Measurable (fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y)) := by
+    unfold sampleVariance; fun_prop
+  haveI : IsProbabilityMeasure
+      ((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y))) :=
+    Measure.isProbabilityMeasure_map hSmeas.aemeasurable
+  have heq : studentizedRootCDF F n = fun x =>
+      (((Measure.pi fun _ : Fin n => F).map
+        (fun y : Fin n → ℝ =>
+          Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂F) / Real.sqrt (sampleVariance y)))
+        (Set.Iic x)).toReal := by
+    funext x
+    rw [Measure.map_apply hSmeas measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- The constant sequence at a square-integrable probability law belongs to its own mean class. -/
+private lemma const_mem_meanSeqClass (Q : Measure ℝ) [IsProbabilityMeasure Q]
+    (hQ2 : MemLp (fun t : ℝ => t) 2 Q) : (fun _ => Q) ∈ meanSeqClass Q :=
+  ⟨fun _ _ => inferInstance, fun _ => hQ2, fun _ _ => tendsto_const_nhds,
+    tendsto_const_nhds, tendsto_const_nhds⟩
+
 /-! ## Convergence along the class, and membership of the empirical sequence -/
 
 section MeanBootstrap
