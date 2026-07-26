@@ -56,6 +56,23 @@ tests of a one-parameter exponential family. (`TSH4 §4.2`.)
 * `C₁ ≤ C₂` is the degenerate-tolerant form of the source's `C₁ < C₂`; if `C₁ = C₂` the two
   boundary equations are compatible only when `γ₁ = γ₂`, which is the caller's obligation.
 
+**⚠ BOTH THEOREMS BELOW ARE FALSE AS STATED — a missing hypothesis on `Ξ`.**
+Nothing constrains `Ξ` beyond `Ξ ⊆ interior E.natSet`, so `Ξ` may be *sparse*: the null
+value(s) need not be limit points of the alternative set `Θ₁`. When they are not,
+unbiasedness imposes **no** equality constraint at the boundary (the boundary set
+`closure Θ₀ ∩ closure Θ₁` of `PowerContinuity.isUMPU_of_isUMP_on_boundary` is empty), the
+optimality problem degenerates to an ordinary one-sided Neyman–Pearson problem, and the
+two-sided test loses to the one-sided one. Explicit counterexamples are recorded at each
+theorem; both use the Gaussian location family `E.base = N(0,1)`, `E.stat = id`,
+`E.P θ = N(θ,1)`, `natSet = ℝ`, `P θ = E.P θ` everywhere, `α = 0.05`.
+The minimal repair is to require `Ξ` to be *open* (`IsOpen Ξ`), or more weakly to require
+the null value(s) to lie in `closure Θ₁`; with `Ξ` open, `θ₀ ∈ closure (Ξ \ {θ₀})` and
+`θ₁, θ₂ ∈ closure {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ}`, which is exactly what the boundary device
+consumes. The amendment is *not* applied here (public signatures are frozen for this pass);
+it is reported so that a signature revision can be made deliberately. Note that the
+amendment restores truth but does not by itself make the theorems provable from the current
+stock — see the per-theorem `TODO`s for the remaining analytic bricks.
+
 **Bibliographic comments.** UMP unbiased two-sided tests for exponential families are due to
 J. Neyman and E. S. Pearson ("Contributions to the theory of testing statistical
 hypotheses," *Statistical Research Memoirs* **1** (1936), 1–37), whose earlier fundamental
@@ -114,14 +131,31 @@ theorem isUMPU_twoSided_expFamily
     -- USER-INPUT: derivative (unbiasedness) condition: `E_{θ₀}[Tφ] = α E_{θ₀}[T]`
     (hderiv : ∫ x, T x * φ x ∂(P θ₀) = α * ∫ x, T x ∂(P θ₀)) :
     IsUMPU P {θ₀} {θ ∈ Ξ | θ ≠ θ₀} α φ := by
-  -- TODO: point-null two-sided UMPU. The boundary device `isUMPU_of_isUMP_on_boundary` reduces
-  -- this to optimality among tests similar at `θ₀` and satisfying the derivative constraint
-  -- `∫ T·ψ dP_{θ₀} = α ∫ T dP_{θ₀}`; the reject-outside test with `hsize`+`hderiv` is optimal by
-  -- the two-constraint generalized Neyman–Pearson lemma. Requires: (a) `continuous_power_expFamily`
-  -- (the analytic debt lifted in `PowerContinuity`) to run the boundary device, and (b) a
-  -- generalized (two-constraint) NP optimality lemma not yet present in `NeymanPearson`. This is
-  -- the one-parameter (`Ξ`-trivial-nuisance) specialization of `MultiparamUMPU.isUMPU_conditional_
-  -- point`. Reported.
+  -- FALSE AS STATED — verified counterexample (see the file header for the general diagnosis).
+  -- Gaussian location family: `E.base = N(0,1)`, `E.stat = id`, so `E.P θ = N(θ,1)` and
+  -- `E.natSet = interior E.natSet = ℝ`; put `P θ = E.P θ`, `α = 0.05`.
+  -- Take the SPARSE parameter set `Ξ = {0, 2}` and `θ₀ = 0`, so `Θ₁ = {2}`.
+  -- Take `C₁ = -1.959964`, `C₂ = 1.959964`, `γ₁ = γ₂ = 0`, `φ = 1{|x| > 1.959964}`.
+  --   `hφ_one/hφ_zero/hφ_γ₁/hφ_γ₂` hold; `hsize`: `P₀(|X| > 1.959964) = 0.05 = α`;
+  --   `hderiv`: `∫ x·φ dP₀ = 0` by symmetry and `α·∫ x dP₀ = 0.05·0 = 0`.
+  -- All hypotheses hold. But the one-sided competitor `ψ = 1{x > 1.644854}` is a critical
+  -- function that is UNBIASED at level `α` for this `Θ₀ = {0}`, `Θ₁ = {2}`:
+  --   `power ψ 0 = 0.05 ≤ α` and `power ψ 2 = 0.638760 ≥ α`,
+  -- while `power φ 2 = 0.516005 < 0.638760 = power ψ 2`, contradicting the optimality clause
+  -- of `IsUMPU`. (With `Ξ` an interval around `0`, `ψ` would fail unbiasedness at negative
+  -- `θ ∈ Θ₁`, where `power ψ θ < α`; sparseness of `Ξ` is exactly what breaks the theorem.)
+  -- REPAIR: add `(hΞopen : IsOpen Ξ)`, which puts `θ₀ ∈ closure Θ₁` and makes the boundary
+  -- device `isUMPU_of_isUMP_on_boundary` bite (its continuity input is now available from the
+  -- closed `continuous_power_expFamily`, via `continuous_power_of_isCanonicalRepr`).
+  -- STILL MISSING after the repair, so the `sorry` would remain:
+  --  (a) the derivative constraint on competitors: unbiasedness makes `θ₀` an interior minimum
+  --      of `power P ψ`, so `hasFDerivAt_integral_exp_inner` + `IsLocalMin.hasDerivAt_eq_zero`
+  --      give `∫ T·ψ dP_{θ₀} = α ∫ T dP_{θ₀}`; not yet packaged for `power`;
+  --  (b) the two-multiplier construction: `NeymanPearson.Generalized.isMax_of_multiplier_form`
+  --      (m = 2, PROVED) supplies optimality once `HasMultiplierShape` is verified, which needs
+  --      `k₁, k₂` solving `k₁e^{θ₀t} + k₂·t·e^{θ₀t} = e^{θ't}` at `t = C₁, C₂` together with the
+  --      sign lemma "`(a + bt)e^{θ₀t} − e^{θ't}` has at most two zeros" (Rolle on the ratio);
+  --      neither the solve nor the sign lemma exists in the repo.
   sorry
 
 /-- **UMP unbiased test of an interval null in a one-parameter exponential family.**
@@ -164,11 +198,35 @@ theorem isUMPU_outside_interval_expFamily
     -- USER-INPUT: size condition at the upper endpoint
     (hsize₂ : power P φ θ₂ = α) :
     IsUMPU P {θ ∈ Ξ | θ₁ ≤ θ ∧ θ ≤ θ₂} {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ} α φ := by
-  -- TODO: interval-null two-sided UMPU. Boundary `ωB = {θ₁, θ₂}`; the two size equations
-  -- `hsize₁`, `hsize₂` pin the reject-outside test, optimal by the two-constraint generalized NP
-  -- lemma among tests similar on `{θ₁, θ₂}`. Same requirements as `isUMPU_twoSided_expFamily`
-  -- (`continuous_power_expFamily` + generalized NP); the one-parameter case of
-  -- `MultiparamUMPU.isUMPU_conditional_outside`. Reported.
+  -- FALSE AS STATED — verified counterexample (see the file header for the general diagnosis).
+  -- Same Gaussian location family `E.P θ = N(θ,1)`, `P θ = E.P θ`, `α = 0.05`.
+  -- Take the SPARSE parameter set `Ξ = [0,1] ∪ {2}`, `θ₁ = 0`, `θ₂ = 1`, so
+  -- `Θ₀ = [0,1]` and `Θ₁ = {2}` (note `θ₁, θ₂ ∉ closure Θ₁ = {2}`).
+  -- Take `C₁ = -1.681477`, `C₂ = 2.681477`, `γ₁ = γ₂ = 0`, `φ = 1{x < C₁ ∨ x > C₂}`; by the
+  -- reflection `x ↦ 1 − x` the interval is symmetric about `1/2`, so
+  --   `hsize₁ : power φ 0 = 0.05 = α` and `hsize₂ : power φ 1 = 0.05 = α`.
+  -- All hypotheses hold. But `ψ = 1{x > 2.644854}` is a critical function, UNBIASED at level
+  -- `α`: `power ψ θ ≤ power ψ 1 = 0.05 ≤ α` for every `θ ∈ Θ₀ = [0,1]` (monotone in `θ`;
+  -- e.g. `0.004086` at `0`, `0.015982` at `1/2`), and `power ψ 2 = 0.259511 ≥ α`.
+  -- Yet `power φ 2 = 0.247901 < 0.259511 = power ψ 2`, contradicting the optimality clause of
+  -- `IsUMPU`. (`power φ 1/2 = 0.029148 ≤ α`, so `φ`'s own level on `Θ₀` is not the issue.)
+  -- REPAIR: add `(hΞopen : IsOpen Ξ)`, putting `θ₁, θ₂ ∈ closure Θ₁` so that unbiasedness
+  -- forces similarity at both endpoints and the boundary device `isUMPU_of_isUMP_on_boundary`
+  -- applies (`ωB = {θ₁, θ₂}`).
+  -- STILL MISSING after the repair, so the `sorry` would remain:
+  --  (a) `IsLevel P Θ₀ φ α`, i.e. `power φ θ ≤ α` for `θ₁ < θ < θ₂`. This is the
+  --      variation-diminishing property of the exponential kernel: `φ − α` changes sign in the
+  --      pattern `+,−,+` on the `T`-scale, so `θ ↦ ∫ (φ − α) dP_θ` has at most two zeros; they
+  --      are `θ₁, θ₂` by `hsize₁/hsize₂`, and the middle sign is negative. Karlin total
+  --      positivity; absent from the repo (`MLR/TwoSided.lean` has only the finite sign-change
+  --      separation `twoSidedVal_sub_sep`, and its four headline theorems are all `sorry`).
+  --  (b) the two-multiplier construction: `NeymanPearson.Generalized.isMax_of_multiplier_form`
+  --      (m = 2, PROVED) closes optimality once `HasMultiplierShape` is verified for
+  --      `f = (e^{θ₁t}, e^{θ₂t}, e^{θ'T})`, which needs `k₁, k₂` solving the 2×2 system
+  --      `k₁e^{θ₁Cᵢ} + k₂e^{θ₂Cᵢ} = e^{θ'Cᵢ}` (`i = 1,2`; nonsingular iff `C₁ ≠ C₂`, so the
+  --      `hC : C₁ ≤ C₂` tolerance needs the degenerate branch handled separately) plus the
+  --      three-term sign lemma "`k₁e^{θ₁t} + k₂e^{θ₂t} − e^{θ't}` has at most two zeros"
+  --      (Rolle after dividing by `e^{θ₁t}`). Neither exists in the repo.
   sorry
 
 end StatLean.HypothesisTesting
