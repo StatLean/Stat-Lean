@@ -146,6 +146,19 @@ theorem meanVec_root_tendsto [IsProbabilityMeasure Q]
     (f : EuclideanSpace ℝ (Fin k) →ᵇ ℝ) :
     Tendsto (fun n => ∫ z, f z ∂(meanVecRootLaw (F n) n)) atTop
       (𝓝 (∫ z, f z ∂(multivariateGaussian 0 (covMatrix Q)))) := by
+  -- TODO (triangular-array multivariate CLT, drifting row law — Vitali gap). Cramér–Wold: for
+  -- each direction `t`, `⟪t, ·⟫` of the root is the univariate standardised sum of the i.i.d.
+  -- draws `⟪t, X_{n,i}⟫`, `X_{n,i} ~ F n`. Realise on `Π n, (Fin n → ℝᵏ)`, reduce to
+  -- `ForMathlib.LindebergCLT.lindeberg_clt`, and identify the limit `charFun` with
+  -- `multivariateGaussian 0 (covMatrix Q)` via `charFun_multivariateGaussian` + Lévy
+  -- (`ProbabilityMeasure.tendsto_iff_tendsto_charFun`), exactly as the proven fixed-law brick
+  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` does. The ONE genuinely missing
+  -- step is the Lindeberg condition for the *drifting* rows: it follows from
+  -- `Var[⟪t,·⟫; F n] → Var[⟪t,·⟫; Q]` plus weak convergence via *uniform square-integrability*
+  -- (Lehmann–Romano Lemma 18.3.1 / Vitali): `Xₙ ⇒ X` with `E Xₙ² → E X² < ∞` forces `{Xₙ²}`
+  -- uniformly integrable. This Vitali-type upgrade is absent from Mathlib v4.29.1 (the same gap
+  -- recorded on `mean_root_cdf_tendsto`). Being a weak-convergence (bounded-continuous) target,
+  -- this needs NO portmanteau CDF-inversion, unlike its univariate sibling.
   sorry
 
 /-- **The limiting distribution function of the norm is continuous.**
@@ -162,6 +175,24 @@ theorem continuous_normLimitCDF
     -- USER-INPUT: the limiting covariance is not identically zero, so the limit is nondegenerate
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     Continuous (normLimitCDF (covMatrix Q) nrm) := by
+  -- TODO (norm-CDF of a possibly-degenerate Gaussian — two missing bricks). Continuity of the
+  -- monotone `x ↦ (μ {nrm ≤ x}).toReal` (μ := multivariateGaussian 0 (covMatrix Q)) is
+  -- equivalent to `μ {nrm z = x} = 0` for every `x`. Intended clean route, degeneracy-robust:
+  -- `μ = (toEuclideanCLM (CFC.sqrt S))_* stdGaussian` (the DEFINITION), so
+  -- `μ {nrm z = x} = stdGaussian {z | g z = x}` with `g := nrm ∘ √S` a *seminorm*
+  -- (subadditive+absolutely homogeneous from `hnrm_add`/`hnrm_smul`; possibly degenerate). For
+  -- `x > 0`, `{g = x} ⊆ frontier {g ≤ x}` (a convex set), null by `Convex.addHaar_frontier`;
+  -- for `x = 0`, `{g = 0} = ker √S`, a proper subspace (hence hyperplane-null) since `√S ≠ 0`;
+  -- for `x < 0`, `{g = x} = ∅`. Two bricks are missing in Mathlib v4.29.1:
+  --   (1) `stdGaussian ≪ volume` (to transfer the `volume`-null frontier to the Gaussian): NOT
+  --       in Mathlib; buildable from `Measure.pi (gaussianReal 0 1) ≪ volume` (no `Measure.pi`
+  --       absolute-continuity lemma exists yet) transported through the orthonormal-basis iso
+  --       `∑ xᵢ • bᵢ`, but the `WithLp`/`EuclideanSpace` volume-preservation is heavy;
+  --   (2) `(covMatrix Q).PosSemidef`, needed to get `√S ≠ 0` from `hS : S ≠ 0`. It is NOT a
+  --       hypothesis here (the frozen signature lacks `hQ2`), and `covMatrix Q` is provably PSD
+  --       only under `MemLp id 2 Q` (via `covarianceBilin_apply_eq_cov` +
+  --       `isPosSemidef_covarianceBilin`). Without PSD, `multivariateGaussian 0 S = dirac 0`
+  --       and the CDF jumps at `0`; so the statement is true exactly under square-integrability.
   sorry
 
 /-- **Limit law of the norm of the root along the class.**
@@ -186,6 +217,15 @@ theorem norm_root_cdf_tendsto [IsProbabilityMeasure Q]
     (x : ℝ) :
     Tendsto (fun n => normMeanRootCDF (F n) nrm n x) atTop
       (𝓝 (normLimitCDF (covMatrix Q) nrm x)) := by
+  -- TODO (continuous mapping for the norm — portmanteau on top of the two blocked cores).
+  -- From `meanVec_root_tendsto` the laws `meanVecRootLaw (F n) n` converge weakly (against
+  -- bounded continuous test functions) to `multivariateGaussian 0 (covMatrix Q)`; promote to
+  -- `ProbabilityMeasure` weak convergence and apply
+  -- `MeasureTheory.tendsto_measure_of_null_frontier` to the sublevel set `{z | nrm z ≤ x}`,
+  -- whose frontier `⊆ {nrm z = x}` is Gaussian-null. That null-frontier fact is exactly the
+  -- analytic core of `continuous_normLimitCDF`, so this target is blocked transitively on both
+  -- (a) `meanVec_root_tendsto` (Vitali/Lindeberg gap) and (b) the norm-sphere nullity of the
+  -- limit Gaussian (`stdGaussian ≪ volume` + `covMatrix Q` PosSemidef gaps).
   sorry
 
 /-- **Consistency of the multivariate bootstrap.**
@@ -212,6 +252,18 @@ theorem bootstrap_meanVec_consistent [IsProbabilityMeasure Pr] [IsProbabilityMea
     (hS : ∃ i j : Fin k, covMatrix Q i j ≠ 0) :
     ∀ᵐ ω ∂Pr, Tendsto (fun n => supCDFDist (normMeanRootCDF Q nrm n)
       (normMeanRootCDF (empiricalMeasure fun i : Fin n => X i ω) nrm n)) atTop (𝓝 0) := by
+  -- TODO (bootstrap consistency assembly — needs multivariate empirical membership + the blocked
+  -- norm cores). Structurally this is `tendsto_supCDFDist_bootstrap` (or the direct triangle
+  -- squeeze of `bootstrap_mean_consistent`) with `J n F := normMeanRootCDF F nrm n`,
+  -- `Jlim := normLimitCDF (covMatrix Q) nrm`, and `Phat n ω := empiricalMeasure (X · ω)`. The
+  -- pointwise convergence along the class is `norm_root_cdf_tendsto`, continuity of the limit is
+  -- `continuous_normLimitCDF`. The remaining stochastic input — a.s. membership of the empirical
+  -- sequence in `meanVecSeqClass Q` — needs the *weak-convergence* clause `∀ f : ℝᵏ →ᵇ ℝ,
+  -- ∫ f dP̂ₙ → ∫ f dQ` a.s., i.e. almost-sure weak convergence of empirical measures for ALL
+  -- bounded continuous `f` (multivariate Glivenko–Cantelli / Varadarajan). Mathlib v4.29.1 has
+  -- no `empiricalMeasure` weak-convergence theorem (the univariate `empirical_mem_meanSeqClass`
+  -- dodges it with a rational CDF sandwich, unavailable for the BCF clause here). Blocked on that
+  -- plus `norm_root_cdf_tendsto` and `continuous_normLimitCDF`.
   sorry
 
 end MeanVector
@@ -265,6 +317,16 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
+  -- TODO (delta method — Slutsky/Taylor bricks absent). The mean statistic `meanStatistic h w`
+  -- is the sample mean of the i.i.d. vector `(h j (·))ⱼ`, so the PROVEN fixed-law
+  -- `ProbabilityTheory.tendstoInDistribution_multivariate_clt` gives
+  -- `√n (θ̂ₙ − θ) ⇒ N(0, covH)` with `θ := (∫ h j dP)ⱼ`. First-order Taylor at `θ`:
+  -- `√n (f(θ̂ₙ) − f(θ)) = Df (√n (θ̂ₙ − θ)) + √n · o(‖θ̂ₙ − θ‖)`, where the remainder → 0 in
+  -- probability (`θ̂ₙ − θ = O_p(n^{-1/2})` and `hf`/`hf_nhds`/`hf_cont`). Then Slutsky +
+  -- continuous mapping push `Df (N(0, covH))` to the limit; `isGaussian_map` identifies the
+  -- image as Gaussian and `hD` gives covariance `D covH Dᵀ`. Missing from Mathlib v4.29.1: the
+  -- Slutsky theorem for a vanishing (o_P) additive remainder attached to a weakly-convergent
+  -- sequence, i.e. the analytic engine of the multivariate delta method. Blocked there.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
@@ -294,6 +356,14 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
+  -- TODO (bootstrap delta method, resampled-law form). Both integrals converge to
+  -- `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))`: the sampling-law term by
+  -- `smooth_function_of_means_tendsto`, the resampled term by its bootstrap analogue (the same
+  -- delta method applied to `n` i.i.d. draws from the empirical measure, recentred at the sample
+  -- mean statistic). Subtracting gives `→ 0`. Blocked on `smooth_function_of_means_tendsto`
+  -- (delta-method Slutsky brick, absent) together with a.s. convergence of the bootstrap CLT for
+  -- the resampled means — i.e. the empirical-measure weak-convergence gap already flagged on
+  -- `bootstrap_meanVec_consistent`.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
@@ -329,6 +399,13 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
           {w | nrm (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)) ≤ s}).toReal))
       atTop (𝓝 0) := by
+  -- TODO (bootstrap delta method, uniform Pólya form). The sup-CDF (uniform) upgrade of
+  -- `bootstrap_smooth_function_law_consistent`, obtained by feeding the smooth-function root into
+  -- `tendsto_supCDFDist_bootstrap`: the norm of the delta-method limit `N(0, D covH Dᵀ)` has a
+  -- continuous CDF (the `continuous_normLimitCDF` core, for the covariance `D covH Dᵀ`), turning
+  -- pointwise CDF convergence into sup-distance convergence via the `PolyaUniformCDF` brick.
+  -- Blocked on `smooth_function_of_means_tendsto` (delta-method Slutsky), the resampled-law
+  -- bootstrap CLT, and the norm-CDF continuity core (`stdGaussian ≪ volume` + PosSemidef gaps).
   sorry
 
 end SmoothFunctions
