@@ -5,6 +5,9 @@ import StatLean.PointEstimation.Sufficiency.Basic
 import StatLean.PointEstimation.Completeness.Defs
 import StatLean.PointEstimation.Completeness.ExpFamily
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Basic
+import StatLean.PointEstimation.Sufficiency.Factorization
+import StatLean.PointEstimation.Sufficiency.RegularConditional
 import Mathlib.Probability.CondVar
 
 /-!
@@ -23,7 +26,9 @@ simultaneously optimal — not only for squared error, but for every convex loss
 * `risk_le_of_complete_sufficient` — the same estimator minimizes the risk among all unbiased
   estimators, for every nonnegative convex loss;
 * `isUMVU_of_fullRank_expFamily` — the specialization to a full-rank exponential family, whose
-  natural statistic is complete and sufficient.
+  natural statistic is complete and sufficient;
+* `variance_condExp_le` and `condExp_comap_eq_rbEstimator` — the `condExp` form of the
+  Rao–Blackwell step, which needs integrability where the kernel form needs measurability.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.1 (UMVU
@@ -51,11 +56,22 @@ statistic), Theorem 1.11 (Lehmann–Scheffé: minimum risk for every convex loss
 * Integrability of the Rao–Blackwellized estimator under the laws of the statistic is derived
   from the corresponding property of `δ` through the reconstruction identity, not assumed
   (see the notes in `UMVU.RaoBlackwell`).
-* `isUMVU_of_fullRank_expFamily` is stated only; its proof combines the completeness of the
-  natural statistic of a full-rank exponential family with the two theorems above. It is
-  phrased as the *existence* of a measurable function of the natural statistic which is UMVU,
-  since the function itself is only determined almost everywhere. The full-rank condition is
-  imposed on a parameter set that the family is required to cover.
+* Rao–Blackwellization appears here in two forms. The kernel form `rbEstimator Q δ`, which is
+  what the Lehmann–Scheffé uniqueness step needs (its completeness test function must be
+  globally measurable), and the `condExp` form, which needs only integrability. They agree
+  (`condExp_comap_eq_rbEstimator`), and the variance half of Rao–Blackwell holds for the
+  `condExp` form with no measurability input at all (`variance_condExp_le`, the law of total
+  variance). The `IsUMVU` minimality clause quantifies over competitors carrying only
+  `MemEstL2`, i.e. a *per-parameter* a.e. measurable version, which is precisely the class the
+  globally-measurable completeness test cannot reach; see the note inside
+  `isUMVU_of_complete_sufficient`.
+* `isUMVU_of_fullRank_expFamily` combines the completeness of the natural statistic of a
+  full-rank exponential family with the two theorems above. It is phrased as the *existence*
+  of a measurable function of the natural statistic which is UMVU, since the function itself
+  is only determined almost everywhere. The full-rank condition is imposed on a parameter set
+  that the family is required to cover. Its signature deviates from the printed statement —
+  the natural statistic is `EuclideanSpace ℝ (Fin s)`-valued and the reference measure is
+  σ-finite; both deviations are documented at the theorem.
 
 **Bibliographic comments.** The theorem is due to E. L. Lehmann and H. Scheffé
 ("Completeness, similar regions, and unbiased estimation," *Sankhyā* **10** (1950), 305–340;
@@ -71,7 +87,7 @@ Scheffé (1955, ibid.).
 -/
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace StatLean.PointEstimation
 
@@ -448,16 +464,35 @@ theorem risk_le_of_complete_sufficient (P : Θ → Measure 𝓧) [∀ θ, IsProb
 
 /-- **Full-rank exponential families.** For a family that is a canonical exponential family of
 full rank, every estimable function admits a uniformly minimum variance unbiased estimator,
-and it is a function of the natural statistic. Statement only: the proof combines the
-completeness of the natural statistic of a full-rank family with the two theorems above. -/
-theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ → Measure 𝓧)
+and it is a function of the natural statistic.
+
+**Deviation from the printed statement (authorized signature amendment).** The natural
+statistic is specialized from an abstract real inner-product space `V` to
+`EuclideanSpace ℝ (Fin s)`, and one instance on the reference measure is added,
+`[SigmaFinite E.base]`. Both are forced:
+
+* the only completeness theorem for the natural statistic,
+  `isCompleteStat_of_interior_nonempty`, is `EuclideanSpace ℝ (Fin s)`-valued, because the
+  Laplace/MGF-uniqueness brick it consumes (`ae_eq_zero_of_integral_exp_inner_eq_zero`) is a
+  finite-dimensional fact; there is no completeness statement for an abstract `V`;
+* `[SigmaFinite E.base]` is what turns the Fisher–Neyman factorization of the densities into
+  sufficiency (`isSufficient_of_isFactorizedDensity`) and then into the θ-free reconstruction
+  kernel (`hasSufficientKernel_of_isSufficient_dominated`).
+
+Nothing else is added. In particular neither `E.base ≠ 0` nor membership of the parameters in
+the natural parameter set is assumed: both are *derived* from
+`[∀ θ, IsProbabilityMeasure (P θ)]`, since off the natural parameter set — and for a zero
+reference measure — every member of the family is the zero measure. -/
+theorem isUMVU_of_fullRank_expFamily {s : ℕ} (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    -- LEAN-ONLY (amendment): σ-finiteness of the reference measure, consumed by the
+    -- factorization ⇒ sufficiency ⇒ reconstruction-kernel chain
+    [SigmaFinite E.base] (Ξ : Set (EuclideanSpace ℝ (Fin s))) (P : Θ → Measure 𝓧)
     [∀ θ, IsProbabilityMeasure (P θ)]
     -- LEAN-ONLY: the sufficiency kernel of the natural statistic is produced by
     -- `Sufficiency.RegularConditional`, which needs a standard Borel sample space; an
     -- exponential family supplies no explicit reconstruction kernel without such structure.
     -- Standard throughout this literature: every sufficiency theorem in the area carries it.
-    [StandardBorelSpace 𝓧] [Nonempty 𝓧]
-    (ηmap : Θ → V)
+    [StandardBorelSpace 𝓧] [Nonempty 𝓧] (ηmap : Θ → EuclideanSpace ℝ (Fin s))
     -- USER-INPUT: the family is a reparametrization of the canonical exponential family `E`
     (hrepr : IsCanonicalRepr P E ηmap)
     -- USER-INPUT: the parametrization covers the full-rank parameter set
@@ -471,27 +506,61 @@ theorem isUMVU_of_fullRank_expFamily (E : ExpFamily 𝓧 V) (Ξ : Set V) (P : Θ
     (hδu : IsUnbiased P g δ)
     -- USER-INPUT: the witness lies in the estimator class `Δ`
     (hδ2 : MemEstL2 P δ) :
-    ∃ η : V → ℝ, Measurable η ∧ IsUMVU P g (fun x => η (E.stat x)) := by
-  -- BLOCKED at this frozen signature: `V` is an abstract inner-product space
-  -- (`[NormedAddCommGroup V] [InnerProductSpace ℝ V] [MeasurableSpace V]`), and BOTH ingredients
-  -- named in the TODO are unavailable for such `V`.
-  --
-  -- 1. *Completeness of `E.stat`.* The only completeness theorems for the natural statistic —
-  --    `Completeness.ExpFamily.isCompleteStat_of_interior_nonempty` (and its `_real` twin) — are
-  --    stated for `V = EuclideanSpace ℝ (Fin s)` (resp. `ℝ`): the Laplace/MGF-uniqueness brick
-  --    they consume (`ae_eq_zero_of_integral_exp_inner_eq_zero`) is a finite-dimensional fact.
-  --    Applying either to our `E : ExpFamily 𝓧 V` is a type mismatch (`V ≠ EuclideanSpace …`).
-  --    The generic `isCompleteFamily_of_signed` is `private` and additionally needs
-  --    `[BorelSpace V] [SecondCountableTopology V]` plus the very `hsigned` corollary that only
-  --    exists Euclidean-side. So `IsCompleteStat P E.stat` cannot be produced here.
-  -- 2. *Sufficiency kernel.* `E.isMinimalSufficient_stat` (the sole route to `IsSufficient`)
-  --    requires `[BorelSpace V] [SecondCountableTopology V] [SigmaFinite E.base]`, `E.base ≠ 0`,
-  --    and an affinely-spanning configuration — none present. Even producing the estimator `η`
-  --    (a Rao–Blackwellization along the sufficiency kernel) is therefore impossible.
-  --
-  -- The statement is TRUE for finite-dimensional Euclidean `V` with `[SigmaFinite E.base]` and
-  -- `E.base ≠ 0`, but not provable at this polymorphic frozen signature; adding those V-side
-  -- instances/hypotheses is outside the authorized signature change. Left as sanctioned debt.
-  sorry
+    ∃ η : EuclideanSpace ℝ (Fin s) → ℝ, Measurable η ∧
+      IsUMVU P g (fun x => η (E.stat x)) := by
+  obtain ⟨hΞnat, hint, -⟩ := hFR
+  -- every parameter lands in the natural parameter set: outside it the member would be `0`
+  have hnat : ∀ θ, ηmap θ ∈ E.natSet := by
+    intro θ
+    by_contra hθ
+    have h0 : P θ = 0 := by rw [hrepr θ]; exact E.P_eq_zero_of_notMem hθ
+    have huniv : (P θ) Set.univ = 1 := measure_univ
+    rw [h0] at huniv
+    simp at huniv
+  -- the densities over the reference measure, and their Fisher–Neyman factorization
+  set p : Θ → 𝓧 → ℝ≥0∞ := fun θ x =>
+    ENNReal.ofReal (Real.exp (⟪ηmap θ, E.stat x⟫_ℝ - E.logPartition (ηmap θ))) with hpdef
+  have hpm : ∀ θ, Measurable (p θ) := fun θ =>
+    (((continuous_const.inner continuous_id).measurable.comp E.stat_meas).sub
+      measurable_const).exp.ennreal_ofReal
+  have hP : ∀ θ, P θ = E.base.withDensity (p θ) := fun θ => by
+    rw [hrepr θ]; exact E.P_eq_withDensity (hnat θ)
+  have hsuf : IsSufficient P E.stat :=
+    isSufficient_of_isFactorizedDensity P E.base p hpm hP E.stat_meas
+      (g := fun θ t => ENNReal.ofReal (Real.exp (⟪ηmap θ, t⟫_ℝ - E.logPartition (ηmap θ))))
+      (h := fun _ => 1)
+      (fun θ => (((continuous_const.inner continuous_id).measurable).sub
+        measurable_const).exp.ennreal_ofReal)
+      measurable_const
+      (fun θ => Filter.Eventually.of_forall fun x => (mul_one _).symm)
+  -- the θ-free reconstruction kernel, from sufficiency and domination by `E.base`
+  obtain ⟨Q, hQm, hgraph⟩ :=
+    hasSufficientKernel_of_isSufficient_dominated P E.stat_meas E.base
+      (fun θ => (hP θ) ▸ withDensity_absolutelyContinuous E.base (p θ)) hsuf
+  haveI := hQm
+  -- completeness of the natural statistic, transported from the `Ξ`-indexed subfamily
+  have hcomp : IsCompleteStat P E.stat := by
+    have hcompΞ := isCompleteStat_of_interior_nonempty E Ξ hΞnat hint
+    obtain ⟨ξ₀, hξ₀int⟩ := hint
+    have hξ₀ : ξ₀ ∈ Ξ := interior_subset hξ₀int
+    -- a parameter of the model realizing each point of `Ξ`
+    choose θsel hθsel using fun ξ : ↥Ξ => hcover ξ.2
+    have hQeq : ∀ ξ : ↥Ξ, (E.P (ξ : EuclideanSpace ℝ (Fin s))).map E.stat
+        = (P (θsel ξ)).map E.stat := fun ξ => by rw [hrepr (θsel ξ), hθsel ξ]
+    intro f hfm hfi hf0 θ
+    have hfiΞ : ∀ ξ : ↥Ξ, Integrable f ((E.P (ξ : EuclideanSpace ℝ (Fin s))).map E.stat) := by
+      intro ξ; rw [hQeq ξ]; exact hfi (θsel ξ)
+    have hf0Ξ : ∀ ξ : ↥Ξ,
+        ∫ t, f t ∂((E.P (ξ : EuclideanSpace ℝ (Fin s))).map E.stat) = 0 := by
+      intro ξ; rw [hQeq ξ]; exact hf0 (θsel ξ)
+    have hzero : f =ᵐ[(E.P ξ₀).map E.stat] 0 := hcompΞ f hfm hfiΞ hf0Ξ ⟨ξ₀, hξ₀⟩
+    -- every member is mutually absolutely continuous with the reference measure, so the
+    -- conclusion at the single parameter `ξ₀` propagates to the whole model
+    have h1 : P θ ≪ E.base := by
+      rw [hrepr θ]; exact tilted_absolutelyContinuous E.base _
+    have h2 : E.base ≪ E.P ξ₀ := absolutelyContinuous_tilted (hΞnat hξ₀)
+    exact hzero.filter_mono ((h1.trans h2).map E.stat_meas).ae_le
+  exact ⟨rbEstimator Q δ, (hδm.stronglyMeasurable.integral_kernel (κ := Q)).measurable,
+    isUMVU_of_complete_sufficient P g E.stat_meas hgraph hcomp hδm hδu hδ2⟩
 
 end StatLean.PointEstimation
