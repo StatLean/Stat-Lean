@@ -105,7 +105,58 @@ theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
     (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
     HasDerivAt (steinSolution h)
       (w * steinSolution h w + (h w - stdGaussianExpect h)) w := by
-  sorry
+  have hgc : Continuous fun x : ℝ => h x - stdGaussianExpect h := hh.sub continuous_const
+  have hgb : ∀ x, |h x - stdGaussianExpect h| ≤ C + |stdGaussianExpect h| := by
+    intro x
+    have a1 := le_abs_self (h x)
+    have a2 := neg_abs_le (h x)
+    have b1 := le_abs_self (stdGaussianExpect h)
+    have b2 := neg_abs_le (stdGaussianExpect h)
+    have a3 := hC x
+    rw [abs_le]
+    constructor <;> linarith
+  have hFc : Continuous fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) :=
+    hgc.mul (by fun_prop)
+  have hFint : Integrable fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) :=
+    integrable_mul_exp_neg_sq_half hgc hgb
+  -- the tail integral, as a function of its upper endpoint, differentiates by the FTC
+  have hIic : ∀ u : ℝ,
+      (∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+        = (∫ x in Iic (0 : ℝ), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+          + ∫ x in (0 : ℝ)..u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) := by
+    intro u
+    have hsub := intervalIntegral.integral_Iic_sub_Iic (a := (0 : ℝ)) (b := u)
+      hFint.integrableOn hFint.integrableOn
+    linarith
+  have hderiv0 : HasDerivAt
+      (fun u : ℝ => ∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w := by
+    have hkey : HasDerivAt
+        (fun u : ℝ => ∫ x in (0 : ℝ)..u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+        ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w :=
+      intervalIntegral.integral_hasDerivAt_right hFint.intervalIntegrable
+        (hFc.stronglyMeasurableAtFilter _ _) hFc.continuousAt
+    refine (hkey.const_add
+      (∫ x in Iic (0 : ℝ), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))).congr_of_eventuallyEq ?_
+    filter_upwards with u using hIic u
+  have hexp : HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (w * Real.exp (w ^ 2 / 2)) w := by
+    have hq : HasDerivAt (fun u : ℝ => u ^ 2 / 2) w w := by
+      have h0 := (hasDerivAt_pow 2 w).div_const 2
+      convert h0 using 1
+      push_cast
+      ring
+    have he := hq.exp
+    rw [mul_comm] at he
+    exact he
+  have hmul := hexp.mul hderiv0
+  have hee : Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) = 1 := by
+    rw [← Real.exp_add]
+    rw [show w ^ 2 / 2 + -w ^ 2 / 2 = 0 by ring, Real.exp_zero]
+  have hfun : steinSolution h = fun u : ℝ => Real.exp (u ^ 2 / 2) *
+      ∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) := rfl
+  rw [hfun]
+  convert hmul using 1
+  linear_combination (stdGaussianExpect h - h w) * hee
 
 /-- **The Stein equation.** The derivative of the Stein solution minus `w` times the solution
 recovers the centred test function. -/
