@@ -690,7 +690,7 @@ Because `P` and `Q` are probability measures, the mass that the ramp carries off
 cancels in the difference, so a uniform bound over trapezoids transfers to the ramp. -/
 theorem abs_integral_ramp_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMeasure P]
     [IsProbabilityMeasure Q] {u δ E : ℝ} (hδ : 0 < δ)
-    (hE : ∀ v : ℝ, v ≤ u →
+    (hE : ∀ v : ℝ, v + δ ≤ u →
       |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) :
     |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q| ≤ E := by
   have hsplit : ∀ v : ℝ,
@@ -714,7 +714,7 @@ theorem abs_integral_ramp_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbability
         ((tendsto_integral_ramp_atBot P hδ).sub (tendsto_integral_ramp_atBot Q hδ))
     simpa using hmain.abs
   refine le_of_tendsto hlim ?_
-  filter_upwards [Filter.eventually_le_atBot u] with v hv using hE v hv
+  filter_upwards [Filter.eventually_le_atBot (u - δ)] with v hv using hE v (by linarith)
 
 /-- **De-smoothing in trapezoid form: the Kolmogorov distance from compactly supported tests.**
 
@@ -730,7 +730,7 @@ theorem abs_measure_Iic_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMe
     [IsProbabilityMeasure Q] {δ E A : ℝ} (hδ : 0 < δ)
     (hQ : ∀ a b : ℝ, a ≤ b →
       (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
-    (hE : ∀ v u : ℝ, v ≤ u →
+    (hE : ∀ v u : ℝ, v + δ ≤ u →
       |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) (x : ℝ) :
     |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ :=
   abs_measure_Iic_sub_le_of_integral_ramp hδ hQ
@@ -775,7 +775,7 @@ obtained here without any Stieltjes-level inversion theorem. -/
 theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤ u) :
     ∃ g : ℝ → ℂ, Integrable g ∧
       (∀ y : ℝ, 𝓕 g y = ((trapezoid v u δ y : ℝ) : ℂ)) ∧
-      (∀ ξ : ℝ, ‖g ξ‖ ≤ 1 / (π * |ξ|)) := by
+      (∀ ξ : ℝ, ‖g ξ‖ ≤ min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) := by
   have hπ : (0 : ℝ) < π := Real.pi_pos
   set w₁ : ℝ := (u - v + δ) / 2 with hw₁
   set w₂ : ℝ := (u - v - δ) / 2 with hw₂
@@ -862,9 +862,19 @@ theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤
     have hprod : |Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ))| * |Real.sin (π * δ * ξ)|
         ≤ π * δ * |ξ| :=
       (mul_le_mul h1 h2 (abs_nonneg _) zero_le_one).trans_eq (one_mul _)
-    rw [hAB, hsin, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2), abs_mul,
-      show ξ ^ 2 = |ξ| ^ 2 from (sq_abs ξ).symm,
-      div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [hprod, hξa, hδ, hπ, abs_nonneg (Real.sin (π * δ * ξ))]
+    refine le_min ?_ ?_
+    · rw [hAB, hsin, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2), abs_mul,
+        show ξ ^ 2 = |ξ| ^ 2 from (sq_abs ξ).symm,
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [hprod, hξa, hδ, hπ, abs_nonneg (Real.sin (π * δ * ξ))]
+    · have hb : |Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2| ≤ 1 := by
+        rw [abs_le]
+        constructor <;>
+          nlinarith [Real.sin_sq_le_one (π * (w₁ * ξ)), Real.sin_sq_le_one (π * (w₂ * ξ)),
+            sq_nonneg (Real.sin (π * (w₁ * ξ))), sq_nonneg (Real.sin (π * (w₂ * ξ)))]
+      rw [hAB, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2),
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      simpa using mul_le_mul_of_nonneg_right hb
+        (by positivity : (0 : ℝ) ≤ δ * π ^ 2 * ξ ^ 2)
 
 end StatLean.HypothesisTesting
