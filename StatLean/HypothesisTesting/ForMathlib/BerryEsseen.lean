@@ -31,10 +31,20 @@ Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, 1971, §XVI.3
 
 The **characteristic-function half of Berry–Esseen is complete and axiom-clean**
 (`norm_charFun_iidSum_sub_gaussian_le` and its inputs). **Target 1, Esseen's smoothing
-inequality — and hence the CDF-level Berry–Esseen bound — is blocked** at this Mathlib pin:
-the classical Fourier/Fejér route needs the sinc integral `∫(sin x/x)² = π`, the Fejér
-kernel's Fourier transform, and a Lévy/Esseen inversion formula for CDF differences, none of
-which exist in Mathlib v4.29.1. See the Fejér-kernel section for the precise obstructions.
+inequality — and hence the CDF-level Berry–Esseen bound — is still open**, but the obstruction
+is now narrower than this file originally recorded. Two of the three ingredients listed below
+have since been **built** in `StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing`:
+
+* the sinc integral `∫(sin x/x)² dx = π` (`integral_sin_div_sq`) and hence the Fejér
+  normalisation `∫ K_T = 1` (`integral_fejerKernel`);
+* the Fejér/triangle Fourier pair, in the form `𝓕 Λ = (sin πξ/πξ)²` (`fourier_tentC`) and its
+  dual `𝓕 ((sin πξ/πξ)²) = Λ` (`fourier_sqSincC`), the compactly supported transform that
+  truncates the inversion integral.
+
+What remains is the third ingredient only: a **Lévy/Esseen inversion formula at the level of
+distribution functions**, i.e. the identity expressing the *smoothed* difference `(F − G) ∗ K_T`
+as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]`. Mathlib's Fourier inversion is for `L¹`
+functions, and the Stieltjes/CDF version has to be built by hand.
 
 ## Formalization notes
 
@@ -422,24 +432,27 @@ theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
 Target 1 (Esseen's smoothing inequality) is proved classically by convolving `F − G` with
 the **Fejér kernel** `K_T`, whose Fourier transform is the triangle function supported in
 `[−T, T]` — the compact support is what truncates the inversion integral. Three ingredients
-of that route are **absent from Mathlib v4.29.1** (all verified by search):
+are needed:
 
 1. the normalization `∫ K_T = 1`, which reduces to the sinc integral
-   `∫ (sin x / x)² dx = π` (Mathlib has neither this nor the Dirichlet integral
-   `∫ sin x / x = π/2`);
+   `∫ (sin x / x)² dx = π`;
 2. the Fejér kernel and its Fourier transform (the triangle function);
 3. a Lévy/Esseen inversion formula relating `∫_{−T}^{T} (F̂ − Ĝ)/t dt` to the *smoothed*
-   distribution-function difference `(F − G) ∗ K_T` (Mathlib's Fourier inversion,
-   `Integrable.fourier_inversion`, is for `L¹` functions, not Stieltjes/CDF differences).
+   distribution-function difference `(F − G) ∗ K_T`.
 
-Building any one of these is a substantial standalone project. We therefore record only the
-Fejér-kernel definition together with the elementary facts that need no Fourier theory
-(nonnegativity, evenness); the normalization and inversion steps are the genuine
-obstructions and are documented, not sorried. -/
+Items 1 and 2 were originally recorded here as absent from Mathlib v4.29.1 and hence as hard
+obstructions. They are **no longer obstructions**: both are proved in
+`StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing` (`integral_sin_div_sq`,
+`integral_fejerKernel`, `fourier_tentC`, `fourier_sqSincC`), by Fourier inversion applied to
+the triangle function rather than by contour integration. Item 3 — the CDF-level (Stieltjes)
+inversion formula — is the one that remains. This section keeps only the Fejér-kernel
+definition and the facts that need no Fourier theory (nonnegativity, evenness); the
+normalisation now lives with the sinc integral it depends on. -/
 
 /-- The **Fejér kernel** `K_T(x) = (T / 2π) · (sin(Tx/2) / (Tx/2))²`. Its total integral is
-`1` and its Fourier transform is the triangle function on `[−T, T]`; both facts require the
-sinc integral, which is absent from Mathlib at this pin. -/
+`1` and its Fourier transform is the triangle function on `[−T, T]`; both facts rest on the
+sinc integral, which is proved in `ForMathlib.EsseenSmoothing` (see `integral_fejerKernel`
+there for the normalisation). -/
 noncomputable def fejerKernel (T x : ℝ) : ℝ :=
   (T / (2 * π)) * (Real.sin (T * x / 2) / (T * x / 2)) ^ 2
 
