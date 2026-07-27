@@ -42,6 +42,9 @@ open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation WeakConverges)
 open AsymptoticStatistics.AsymptoticRepresentation (productMeasure scoreSum logLikelihood)
+open AsymptoticStatistics.AsymptoticRepresentation (productMeasure_isProbabilityMeasure
+  logLikelihood_measurable scoreSum_weakly_converges lanResidual_tendsto_productMeasure
+  productMeasure_integral_comparison_boundedMeasurable)
 
 namespace StatLean.Bayesian
 
@@ -95,15 +98,14 @@ theorem logLikelihood_weakConverges
   classical
   haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
       IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
-    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
-      M μ hPDF θ n
+    productMeasure_isProbabilityMeasure M μ hPDF θ n
   have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
   have hint : Integrable (M.density θ₀) μ := hPDF.density_integrable θ₀
   have h_one_perturb : ∀ t : ℝ, ∀ w : EuclideanSpace ℝ (Fin k),
       ∫ x, M.density (θ₀ + t • w) x ∂μ = 1 := fun _ _ => hPDF.density_integral_eq_one _
   have hint_perturb : ∀ t : ℝ, ∀ w : EuclideanSpace ℝ (Fin k),
       Integrable (M.density (θ₀ + t • w)) μ := fun _ _ => hPDF.density_integrable _
-  have hScoreCLT := AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges
+  have hScoreCLT := scoreSum_weakly_converges
     M μ θ₀ sc hsc h_one hint h_one_perturb hint_perturb hDQM J hJ_pd.posSemidef hJ
   have hΔ_meas : ∀ n, Measurable (scoreSum sc n) := by
     intro n
@@ -152,12 +154,11 @@ theorem logLikelihood_weakConverges
     rwa [ProbabilityTheory.gaussianReal_map_sub_const ((v : ℝ) / 2), zero_sub,
       ← neg_div] at h_map
   -- Step C: Slutsky absorbs the LAN residual.
-  have h_lanRes := AsymptoticStatistics.AsymptoticRepresentation.lanResidual_tendsto_productMeasure
+  have h_lanRes := lanResidual_tendsto_productMeasure
     M μ θ₀ sc hsc h_one hint h_one_perturb hint_perturb hDQM J hJ h
   refine WeakConverges.slutsky_of_tendstoInMeasure_dist
     (fun n => ((h_inner_meas.comp (hΔ_meas n)).sub_const _).aemeasurable)
-    (fun n => (AsymptoticStatistics.AsymptoticRepresentation.logLikelihood_measurable
-      M θ₀ h n).aemeasurable) h_shiftedCLT ?_
+    (fun n => (logLikelihood_measurable M θ₀ h n).aemeasurable) h_shiftedCLT ?_
   intro ε hε
   have h_set_eq : ∀ n : ℕ,
       {ω : Fin n → 𝓧 | ε ≤ dist (⟪h, scoreSum sc n ω⟫ - (v : ℝ) / 2)
@@ -195,7 +196,23 @@ theorem mutuallyContiguous_local_alternative
       (Ω := fun n => Fin n → 𝓧) atTop
       (fun n => productMeasure M μ θ₀ n)
       (fun n => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n) := by
-  sorry
+  classical
+  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+      IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
+    productMeasure_isProbabilityMeasure M μ hPDF θ n
+  have hv_nn : 0 ≤ h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    have := hJ_pd.posSemidef.re_dotProduct_nonneg (x := (h.ofLp : Fin k → ℝ))
+    simpa using this
+  have hv : ((h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal : ℝ)
+      = ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫ := by
+    rw [Real.coe_toNNReal _ hv_nn]
+    change _ = inner ℝ h ((Matrix.toEuclideanCLM (𝕜 := ℝ) J) h)
+    rw [Matrix.inner_toEuclideanCLM]
+  have hcmp := productMeasure_integral_comparison_boundedMeasurable M μ θ₀ sc hsc hDQM hPDF h
+  exact AsymptoticStatistics.Contiguity.mutuallyContiguous_of_log_normal_of_integral_comparison
+    _ _ (fun n => logLikelihood M θ₀ h n)
+    (fun n => logLikelihood_measurable M θ₀ h n)
+    hcmp _ (logLikelihood_weakConverges hPDF hsc hDQM hJ_pd hJ h _ hv)
 
 /-- **The contiguity swap** (vdV p. 141: "`P_{n,U} ◁▷ P_{n,0}`"): the base law and the
 localized prior mixture are mutually contiguous, given the model and prior conditions of
