@@ -51,7 +51,37 @@ theorem exists_countable_measure_determining (𝓧 : Type*) [MeasurableSpace �
     ∃ A : ℕ → Set 𝓧, (∀ m, MeasurableSet (A m)) ∧
       ∀ (P Q : Measure 𝓧), IsProbabilityMeasure P → IsProbabilityMeasure Q →
         (∀ m, P (A m) = Q (A m)) → P = Q := by
-  sorry
+  classical
+  -- a countable generating sequence, closed under finite intersections
+  set b : ℕ → Set 𝓧 := MeasurableSpace.natGeneratingSequence 𝓧 with hb
+  set e : ℕ → Finset ℕ := fun n => (Encodable.decode n).getD ∅ with he
+  set A : ℕ → Set 𝓧 := fun n => ⋂ i ∈ (e n : Set ℕ), b i with hAdef
+  have hesurj : ∀ s : Finset ℕ, e (Encodable.encode s) = s := by
+    intro s; simp [he]
+  have hAmeas : ∀ n, MeasurableSet (A n) := by
+    intro n
+    exact MeasurableSet.biInter (Finset.countable_toSet _) fun i _ =>
+      MeasurableSpace.measurableSet_natGeneratingSequence i
+  have hpi : IsPiSystem (Set.range A) := by
+    rintro _ ⟨n, rfl⟩ _ ⟨m, rfl⟩ -
+    refine ⟨Encodable.encode (e n ∪ e m), ?_⟩
+    simp only [hAdef, hesurj, Finset.coe_union, Set.biInter_union]
+  have hgen : (inferInstance : MeasurableSpace 𝓧)
+      = MeasurableSpace.generateFrom (Set.range A) := by
+    refine le_antisymm ?_ (MeasurableSpace.generateFrom_le ?_)
+    · refine le_trans (le_of_eq
+        (MeasurableSpace.generateFrom_natGeneratingSequence 𝓧).symm)
+        (MeasurableSpace.generateFrom_mono ?_)
+      rintro _ ⟨i, rfl⟩
+      exact ⟨Encodable.encode ({i} : Finset ℕ), by simp [hAdef, hesurj, hb]⟩
+    · rintro _ ⟨n, rfl⟩
+      exact hAmeas n
+  refine ⟨A, hAmeas, fun P Q hP hQ hPQ => ?_⟩
+  haveI := hP
+  haveI := hQ
+  refine ext_of_generate_finite (Set.range A) hgen hpi ?_ (by simp)
+  rintro _ ⟨n, rfl⟩
+  exact hPQ n
 
 /-- **The strong law for empirical frequencies**: for every `θ` and measurable `A`,
 `K θ`-iid-almost-surely the empirical frequency of `A` among the first `n` observations
@@ -63,7 +93,34 @@ theorem empirical_freq_ae_tendsto (K : Kernel Θ 𝓧) [IsMarkovKernel K] (θ : 
     ∀ᵐ ω ∂(Measure.infinitePi fun _ : ℕ => K θ),
       Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, A.indicator 1 (ω i))
         atTop (𝓝 (K θ A).toReal) := by
-  sorry
+  classical
+  have hind : Measurable (A.indicator (1 : 𝓧 → ℝ)) := measurable_one.indicator hA
+  set μ : Measure (ℕ → 𝓧) := Measure.infinitePi fun _ : ℕ => K θ with hμ
+  set X : ℕ → (ℕ → 𝓧) → ℝ := fun i ω => A.indicator (1 : 𝓧 → ℝ) (ω i) with hX
+  have hXmeas : ∀ i, Measurable (X i) := fun i => hind.comp (measurable_pi_apply i)
+  have hmapeval : ∀ i : ℕ, μ.map (fun ω : ℕ → 𝓧 => ω i) = K θ := fun i =>
+    Measure.infinitePi_map_eval _ i
+  have hmap : ∀ i, μ.map (X i) = (K θ).map (A.indicator (1 : 𝓧 → ℝ)) := by
+    intro i
+    rw [show X i = (A.indicator (1 : 𝓧 → ℝ)) ∘ (fun ω : ℕ → 𝓧 => ω i) from rfl,
+      ← Measure.map_map hind (measurable_pi_apply i), hmapeval i]
+  have hindep : iIndepFun X μ :=
+    ProbabilityTheory.iIndepFun_infinitePi (Ω := fun _ : ℕ => 𝓧) (P := fun _ : ℕ => K θ)
+      (X := fun _ : ℕ => A.indicator (1 : 𝓧 → ℝ)) fun _ => hind
+  have hX0 : X 0 = ((fun ω : ℕ → 𝓧 => ω 0) ⁻¹' A).indicator (fun _ => (1 : ℝ)) := by
+    funext ω; simp [hX, Set.indicator_apply]
+  have hint : Integrable (X 0) μ := by
+    rw [hX0]
+    exact (integrable_const _).indicator (hA.preimage (measurable_pi_apply 0))
+  have hmean : ∫ ω, X 0 ω ∂μ = (K θ A).toReal := by
+    rw [hX0, integral_indicator_const _ (hA.preimage (measurable_pi_apply 0)),
+      measureReal_def, ← Measure.map_apply (measurable_pi_apply 0) hA, hmapeval 0]
+    simp
+  have hlln := ProbabilityTheory.strong_law_ae X hint (fun i j hij => hindep.indepFun hij)
+    (fun i => ⟨(hXmeas i).aemeasurable, (hXmeas 0).aemeasurable, by rw [hmap i, hmap 0]⟩)
+  rw [hmean] at hlln
+  filter_upwards [hlln] with ω hω
+  simpa only [smul_eq_mul] using hω
 
 /-- **Display (10.11)**: under identifiability (`θ ↦ K θ` injective), with `𝓧` standard
 Borel and `Θ` standard Borel and nonempty, there is a measurable `g : 𝓧^ℕ → Θ` recovering
