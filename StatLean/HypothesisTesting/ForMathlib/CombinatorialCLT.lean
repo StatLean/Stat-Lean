@@ -38,8 +38,16 @@ that is `tendsto_perm_cdf_blockSum` below.
 * `avg_measureReal_eq_integral_avg_indicator` — Fubini for a finite group: the group average
   of deviation *probabilities* is the integral of the group average of the *indicators*.
 * `blockSumScale` — the asymptotic standard deviation `√(m(N-m)/N)` used to standardize.
-* `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem** (open; see the
-  status note at the statement).
+* `blockSet`, `SwapIndex`, `stdBlockSum`, `stdBlockSumSwap` — the **exchangeable pair** of
+  Stein's method: swap one sampled position with one unsampled position.
+* `sum_blockSet_mul_swap` and `stdBlockSumSwap_sub` — the increment of the pair.
+* `sum_swap_exchangeable` — the pair is exchangeable.
+* `sum_swapIndex_increment` and `sum_swapIndex_increment'` — the linearity condition, exactly,
+  with `λ = N/(m(N-m))`.
+* `tendsto_perm_avg_lipschitz` — the combinatorial CLT tested against bounded Lipschitz
+  functions (the core brick; open, see the status note at the statement).
+* `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem**, derived from the
+  previous one by the elementary ramp de-smoothing.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 12 (Extensions of the
@@ -487,6 +495,63 @@ by the factor `√(N/(N-1) · N⁻¹ ∑ d²)`, which tends to `1` in the regime
 `tendsto_perm_cdf_blockSum`. -/
 noncomputable def blockSumScale (N m : ℕ) : ℝ := Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / (N : ℝ))
 
+/-- **The combinatorial central limit theorem, tested against Lipschitz functions** — the
+core analytic brick. Under the hypotheses of `tendsto_perm_cdf_blockSum`, the group average
+of `h` evaluated at the standardized block sum converges to the standard normal expectation
+of `h`, for every bounded Lipschitz `h`.
+
+STATUS (wave 7): OPEN, but no longer a bare statement — the whole apparatus it needs now
+exists in the repository and the *combinatorial* half of the proof is proved. Route (Stein's
+method for exchangeable pairs, `ForMathlib/SteinMethod`):
+
+* the engine `SteinMethod.abs_avg_sub_le` bounds `|avg h(W) − 𝔼h(Z)|` by
+  `B₁ · avg|1 − V/(2λ)| + B₂/(4λ) · avg|W' − W|³` for any exchangeable pair with
+  `𝔼[W' − W ∣ σ] = -λ W`, where `B₁` bounds `f_h'` and `B₂` is a Lipschitz constant for
+  `f_h'`; it is PROVED;
+* the pair itself is the swap pair of the section above: `Ω = Equiv.Perm (Fin (N k))`,
+  `K = SwapIndex (a k)`, `W = stdBlockSum`, `W' = stdBlockSumSwap`. Exchangeability
+  (`sum_swap_exchangeable`) and the linearity condition with `λ = N/(m(N−m))`
+  (`sum_swapIndex_increment'`) are PROVED;
+* what is left is (i) the three classical bounds on the Stein solution
+  (`SteinMethod.abs_steinSolution_le`, `abs_deriv_steinSolution_le`,
+  `lipschitz_deriv_steinSolution`, all sorried there), and (ii) the two moment estimates for
+  this particular pair, namely that both error terms vanish.
+
+WARNING on (ii). The third-moment term is **not** controlled by `hvar` and `hlind` alone:
+`λ⁻¹ 𝔼|W' − W|³ ≍ N⁻¹∑|d|³ / √(m(N−m)/N)`, and a Lindeberg condition does not bound
+`N⁻¹∑|d|³`. The classical proof therefore **truncates** the population at the Lindeberg
+scale `ε√(min (m k) (N k − m k))` first: on the truncated part `N⁻¹∑|d|³ ≤
+ε√(min(m,N−m))·N⁻¹∑d²`, which is `O(ε)` after dividing by the scale, and the discarded part
+is `o(1)` in probability by `hlind` together with the Chebyshev brick
+`perm_avg_indicator_blockAvg_le`. Any future attempt that states an untruncated
+third-moment brick will be stating something FALSE; this is recorded here so that the trap
+is not walked into twice. The variance-regression term `avg|1 − V/(2λ)|` is a genuine
+fourth-moment computation: with `A₂ σ = ∑_{p ∈ blockSet a} d(σ p)²` one has, exactly,
+`∑ₖ (W' σ k − W σ)² = u² (m ∑ d² + (N − 2m) A₂ σ + 2 (u⁻¹ W σ)²)`, so the term is small as
+soon as `A₂` concentrates at its mean `(m/N)∑d²` — again after truncation. -/
+theorem tendsto_perm_avg_lipschitz {N m : ℕ → ℕ}
+    -- USER-INPUT: at each stage the block is a set of `m k` distinct positions
+    (a : ∀ k, Fin (m k) → Fin (N k)) (ha : ∀ k, Function.Injective (a k))
+    -- USER-INPUT: the finite populations, centred
+    (d : ∀ k, Fin (N k) → ℝ) (hcent : ∀ k, ∑ l, d k l = 0)
+    -- USER-INPUT: both the block and its complement grow
+    (hm : Tendsto (fun k => (m k : ℝ)) atTop atTop)
+    (hNm : Tendsto (fun k => (N k : ℝ) - m k) atTop atTop)
+    -- USER-INPUT: the populations are normalized in the second moment
+    (hvar : Tendsto (fun k => (N k : ℝ)⁻¹ * ∑ l, d k l ^ 2) atTop (𝓝 1))
+    -- USER-INPUT: Hájek's Lindeberg condition at scale `√(min (m k) (N k - m k))`
+    (hlind : ∀ ε > (0 : ℝ), Tendsto (fun k => (N k : ℝ)⁻¹ *
+        ∑ l, (if ε * Real.sqrt (min (m k : ℝ) ((N k : ℝ) - m k)) ≤ |d k l|
+              then d k l ^ 2 else 0)) atTop (𝓝 0))
+    -- USER-INPUT: a bounded Lipschitz test function
+    (h : ℝ → ℝ) {L C : ℝ} (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|)
+    (hbdd : ∀ x, |h x| ≤ C) :
+    Tendsto (fun k => (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (N k)),
+          h ((blockSumScale (N k) (m k))⁻¹ * ∑ i, d k (σ (a k i))))
+      atTop (𝓝 (stdGaussianExpect h)) := by
+  sorry
+
 /-- **The combinatorial central limit theorem** (Wald–Wolfowitz, Noether, Hoeffding,
 Erdős–Rényi, Hájek). Let `d k` be a centred population on `Fin (N k)` with normalized second
 moment tending to `1`, and let `a k` sample `m k` distinct positions. If both block sizes
@@ -495,37 +560,13 @@ condition at scale `√(min (m k) (N k - m k))`, then the block sum standardized
 `blockSumScale` is asymptotically standard normal — stated here in the group-average
 c.d.f. form in which randomization distributions are defined.
 
-STATUS (wave 6): OPEN. This is the last deep analytic input of the two-sample permutation
-chain; everything else in `Randomization/TwoSamplePermutation` and
-`Randomization/Studentized` is reduced to it. Re-checked against Mathlib v4.29.1: there is no
-combinatorial CLT, no Stein's-method/exchangeable-pairs machinery, and no finite-population
-sampling limit theorem; `Mathlib.Probability.Distributions.Hypergeometric` does not exist.
-The repository stops at the first two moments — the two theorems above and the sibling brick
-`ForMathlib/HypergeometricMoments` — which is exactly the input the theorem *consumes*, not
-the theorem.
-
-The two routes, both genuinely long:
-1. *Lindeberg swap on the conditional characteristic function.* The weights are indicators of
-   sampling **without** replacement, hence dependent, so the average of `exp(i t Bσ)` is not
-   an `N`-th power and the factorization that makes the sign-change engine
-   (`Randomization/PairCLT.charFun_randPairLaw_signSum`) exact at every finite `N` is
-   unavailable. What replaces it is Hájek's coupling: `(W₁, …, W_N)` conditioned on
-   `∑ Wᵢ = m` has the law of i.i.d. `Bernoulli(m/N)` conditioned on the same event, so the
-   conditional characteristic function is a *ratio* of two independent-sum characteristic
-   functions, and a local limit theorem for the lattice variable `∑ Bᵢ` converts the
-   conditioning into a Gaussian factor. The varying-exponent bricks
-   `tendsto_one_add_pow_of_tendsto_nat_mul` and `tendsto_charFun_pow` of
-   `Randomization/TwoSamplePermutation` are exactly the shape the independent-sum half needs;
-   the missing half is the local limit theorem, which Mathlib does not have either.
-2. *Stein's method for exchangeable pairs.* Swap one sampled index with one unsampled index
-   to build the exchangeable pair; the linearity condition holds exactly with
-   `λ = 1/(m(N-m))`. This is the standard modern proof and gives a Berry–Esseen rate, but it
-   needs the whole Stein apparatus (solution of the Stein equation and its derivative bounds)
-   which is likewise absent.
-
-Neither route is blocked by a *false* statement or by a missing Mathlib API that cannot be
-built; both are simply large. The statement is recorded here, with its exact hypotheses, so
-that the consumers can be written against it. -/
+STATUS (wave 7): DISCHARGED to the single core brick `tendsto_perm_avg_lipschitz` below —
+the same theorem tested against *Lipschitz* functions instead of a half-line indicator. The
+de-smoothing step performed here is the elementary one: the indicator of `Iic t` is squeezed
+between two ramps of width `ε` (`ForMathlib/EsseenSmoothing.ramp`), the ramps are `ε⁻¹`-
+Lipschitz and bounded by `1`, their Gaussian expectations bracket `Φ(t ∓ ε)`, and `Φ` is
+1-Lipschitz (`ForMathlib/SteinMethod.lipschitzWith_cdf_gaussianReal`), hence continuous, so
+letting `ε → 0` costs nothing. -/
 theorem tendsto_perm_cdf_blockSum {N m : ℕ → ℕ}
     -- USER-INPUT: at each stage the block is a set of `m k` distinct positions
     (a : ∀ k, Fin (m k) → Fin (N k)) (ha : ∀ k, Function.Injective (a k))
@@ -547,6 +588,68 @@ theorem tendsto_perm_cdf_blockSum {N m : ℕ → ℕ}
         ∑ σ : Equiv.Perm (Fin (N k)),
           (if ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k) then (1 : ℝ) else 0))
       atTop (𝓝 (cdf (gaussianReal 0 1) t)) := by
-  sorry
+  classical
+  have hcont : ContinuousAt (fun s : ℝ => cdf (gaussianReal 0 1) s) t :=
+    lipschitzWith_cdf_gaussianReal.continuous.continuousAt
+  refine tendsto_of_squeeze_continuousAt hcont ?_
+  intro ε hε
+  -- the two ramp test functions: `ε⁻¹`-Lipschitz and bounded by `1`
+  have hrbdd : ∀ (u : ℝ) (x : ℝ), |ramp u ε x| ≤ 1 := fun u x => by
+    rw [abs_of_nonneg (ramp_nonneg u ε x)]; exact ramp_le_one u ε x
+  have hU := tendsto_perm_avg_lipschitz a ha d hcent hm hNm hvar hlind (ramp t ε)
+    (fun x y => abs_ramp_sub_ramp_le hε x y) (hrbdd t)
+  have hL := tendsto_perm_avg_lipschitz a ha d hcent hm hNm hvar hlind (ramp (t - ε) ε)
+    (fun x y => abs_ramp_sub_ramp_le hε x y) (hrbdd (t - ε))
+  -- the Gaussian expectations of the two ramps bracket the limit c.d.f.
+  have hUb : stdGaussianExpect (ramp t ε) ≤ cdf (gaussianReal 0 1) (t + ε) := by
+    have hb := integral_ramp_le_measure_Iic (gaussianReal 0 1) hε t
+    rw [stdGaussianExpect, cdf_eq_real, measureReal_def]
+    exact hb
+  have hLb : cdf (gaussianReal 0 1) (t - ε) ≤ stdGaussianExpect (ramp (t - ε) ε) := by
+    have hb := measure_Iic_le_integral_ramp (gaussianReal 0 1) hε (t - ε)
+    rw [stdGaussianExpect, cdf_eq_real, measureReal_def]
+    exact hb
+  -- the standardizing scale is eventually positive, and then the indicator is squeezed
+  have hscale : ∀ᶠ k in atTop, 0 < blockSumScale (N k) (m k) := by
+    filter_upwards [hm.eventually_gt_atTop 0, hNm.eventually_gt_atTop 0] with k h1 h2
+    have hN : (0 : ℝ) < (N k : ℝ) := by linarith
+    rw [blockSumScale, Real.sqrt_pos]
+    exact div_pos (mul_pos h1 h2) hN
+  have hsq : ∀ᶠ k in atTop,
+      ((Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+          ramp (t - ε) ε ((blockSumScale (N k) (m k))⁻¹ * ∑ i, d k (σ (a k i)))
+        ≤ (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+            (if ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k) then (1 : ℝ) else 0))
+      ∧ ((Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+            (if ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k) then (1 : ℝ) else 0)
+          ≤ (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+              ramp t ε ((blockSumScale (N k) (m k))⁻¹ * ∑ i, d k (σ (a k i)))) := by
+    filter_upwards [hscale] with k hk
+    have hiff : ∀ σ : Equiv.Perm (Fin (N k)),
+        (∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k))
+          ↔ (blockSumScale (N k) (m k))⁻¹ * (∑ i, d k (σ (a k i))) ≤ t := by
+      intro σ
+      rw [inv_mul_le_iff₀ hk, mul_comm]
+    have hcinv : (0 : ℝ) ≤ (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ :=
+      inv_nonneg.2 (Nat.cast_nonneg _)
+    constructor
+    · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => ?_) hcinv
+      by_cases hσ : ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k)
+      · rw [if_pos hσ]; exact ramp_le_one _ _ _
+      · rw [if_neg hσ]
+        refine le_of_eq (ramp_eq_zero_of_le hε ?_)
+        have hnot : ¬ ((blockSumScale (N k) (m k))⁻¹ * (∑ i, d k (σ (a k i))) ≤ t) :=
+          fun hcon => hσ ((hiff σ).2 hcon)
+        rw [not_le] at hnot
+        linarith
+    · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => ?_) hcinv
+      by_cases hσ : ∑ i, d k (σ (a k i)) ≤ t * blockSumScale (N k) (m k)
+      · rw [if_pos hσ, ramp_eq_one_of_le hε ((hiff σ).1 hσ)]
+      · rw [if_neg hσ]; exact ramp_nonneg _ _ _
+  -- close the squeeze
+  filter_upwards [hsq, Metric.tendsto_nhds.1 hU ε hε, Metric.tendsto_nhds.1 hL ε hε]
+    with k hk hUk hLk
+  rw [Real.dist_eq, abs_lt] at hUk hLk
+  exact ⟨by linarith [hk.1, hLk.1], by linarith [hk.2, hUk.2]⟩
 
 end StatLean.HypothesisTesting
