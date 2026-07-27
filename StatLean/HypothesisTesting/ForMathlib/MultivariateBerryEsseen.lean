@@ -46,10 +46,17 @@ dimension-free constant:
   `‖·‖`), which avoids the quantitative iterated-derivative bounds for the Euclidean norm that
   Mathlib does not have.
 
+* `map_normalized_sum_stdGaussian` — Gaussian stability of the normalized sum,
+  `(⨂ⁿ N(0,I_k)).map (n^{-1/2} ∑) = N(0,I_k)`, which is the right-hand endpoint of the
+  Lindeberg telescope. Proved by characteristic functions (`Measure.ext_of_charFun` plus the
+  product factorization `charFun_map_const_smul_sum`), not by iterated convolution.
+
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
 public χ² moments) these suffice, and the **ball headline `berryEsseen_ball_elementary` is now
 assembled in full**: it consumes exactly one named `private` debt, the third-order multivariate
-Lindeberg swap `abs_integral_smooth_sub_gaussian_le`.
+Lindeberg swap `abs_integral_smooth_sub_gaussian_le`, whose own decomposition is now down to two
+of four pieces (the telescope proper and the one-step Taylor/moment-matching comparison); see its
+docstring for the re-derived route, which avoids `Measure.pi` surgery entirely.
 
 For the *convex* route two further ingredients are missing: the smoothed convex indicator
 `exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
@@ -618,6 +625,17 @@ radius `ε/2`; then `C₃ = ‖D³ φ‖_{L¹(ℝ^k)}` (dimension-dependent — 
 `k`-factor in `berryEsseen_convex_elementary`). Uses `ContDiffBump.contDiff_normed` and
 `convolution` derivative bounds.
 
+Re-derived API status (Mathlib v4.29.1). Smoothness of the mollification is available off the
+shelf (`HasCompactSupport.contDiff_convolution_right`), but the *quantitative* step is not:
+the only differentiation lemma exported is the first-order
+`HasCompactSupport.hasFDerivAt_convolution_right`, `fderiv (f ⋆[L] g) = f ⋆[L.precompR G] fderiv g`.
+There is **no** iterated-derivative formula for convolutions and no `‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}`
+bound. So `‖D³f‖ ≤ C₃/ε³` has to be built by iterating `precompR` three times and then
+converting the resulting nested `fderiv` tower into `iteratedFDeriv` with the matching operator
+norms — that bookkeeping, not the analysis, is the actual cost of this lemma. (By contrast the
+radial analogue below is cheap precisely because it never mollifies: it composes a *fixed* 1-D
+cutoff with `‖·‖²`, for which `norm_iteratedFDeriv_comp_le` supplies the bound directly.)
+
 Note (re-derived): convexity of `B` is *not* used by this construction at all — the same
 mollification works for any measurable `B`, and the analogous radial statement
 `exists_smoothed_radial_indicator` is proved above by the cheaper route of composing a fixed
@@ -972,28 +990,48 @@ degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indic
 
 TODO (planned debt) — re-derived; this is the *only* thing `berryEsseen_ball_elementary` still
 consumes. The statement is true; the proof is the telescoping Lindeberg swap, and it decomposes
-into four pieces of which three are already available in the repository:
+into four pieces, of which **two are now proved in this file** and two remain:
 
 1. **Gaussian sum stability**: `(Measure.pi fun _ : Fin n => γ).map (n^{-1/2} • ∑) = γ`, needed
-   to identify the right-hand endpoint of the telescope. Available modulo an `n`-fold induction
-   from `AsymptoticStatistics.multivariateGaussian_conv_multivariateGaussian`
-   (`N(m₁,S₁) ∗ N(m₂,S₂) = N(m₁+m₂, S₁+S₂)`) together with the scaling
-   `(N(0,I)).map (c • ·) = N(0, c²I)`.
-2. **Hybrid telescope**: with `Qⱼ := Measure.pi (fun i => if i < j then γ else ν)`,
-   `∫f d(Q₀.map T) − ∫f d(Qₙ.map T) = ∑ⱼ (∫f d(Qⱼ.map T) − ∫f d(Qⱼ₊₁.map T))`, each summand
-   isolating coordinate `j` by Fubini on `Measure.pi` (`measurePreserving_piFinSuccAbove`).
-3. **Second-order moment matching**: for fixed `W`, `∫ D²f(W)(y,y) dν = ∫ D²f(W)(z,z) dγ`. Expand
-   the symmetric bilinear form in the standard orthonormal basis, `D²f(W)(y,y) = ∑_{a,b} c_{ab}
-   ⟪e_a,y⟫⟪e_b,y⟫`, and apply `hcov` coordinatewise (the same device as
-   `integral_normSq_eq_dim` in this file); the first-order term vanishes by `hmean` applied to
-   the Riesz representative of `Df(W)`. Integrability of every term is supplied by `hβ` through
-   `integrable_normSq_of_cube`.
-4. **Third-order remainder**: `norm_taylor_remainder_three_le` (proved above) applied at
+   to identify the right-hand endpoint of the telescope. **DONE** —
+   `map_normalized_sum_stdGaussian` above. The earlier note proposed an `n`-fold induction on
+   `multivariateGaussian_conv_multivariateGaussian`; that is unnecessary. The direct route is
+   characteristic functions: `Measure.ext_of_charFun`, `integral_fintype_prod_eq_prod` to
+   factorize the product-measure integral (`charFun_map_const_smul_sum`), and
+   `charFun_stdGaussian`. Note `multivariateGaussian 0 1 = stdGaussian _`
+   (`multivariateGaussian_zero_one`), which is what makes the whole Mathlib `stdGaussian` API
+   (`charFun_stdGaussian`, `integral_id_stdGaussian`, `covarianceBilin_stdGaussian`,
+   `integral_strongDual_stdGaussian`) applicable here.
+2. **Hybrid telescope**: OPEN, and the bulk of the remaining work. The cheapest formulation is
+   *not* the hybrid family `Qⱼ := Measure.pi (fun i => if i < j then γ else ν)` with Fubini on
+   `Measure.pi` (`measurePreserving_piFinSuccAbove`), which forces one to peel a coordinate out
+   of a product of *unequal* factors. Prefer the doubled space
+   `(Measure.pi fun _ => ν).prod (Measure.pi fun _ => γ)` with
+   `Φⱼ(y,z) := n^{-1/2} • ∑ᵢ (if i < j then zᵢ else yᵢ)`: then `Φⱼ = Vⱼ + n^{-1/2} • yⱼ` and
+   `Φⱼ₊₁ = Vⱼ + n^{-1/2} • zⱼ` with the *same* `Vⱼ`, and `Vⱼ` is independent of both `yⱼ` and
+   `zⱼ`, so `indepFun_iff_map_prod_eq_prod_map_map` together with `integral_prod` reduces each
+   telescope step to piece 3 integrated over the law of `Vⱼ` — no `Measure.pi` surgery at all.
+   The two endpoints `Φ₀`, `Φₙ` are plain marginalizations.
+3. **One-step swap / second-order moment matching**: OPEN. For fixed `v`,
+   `|∫ f(v + c•u) dν − ∫ f(v + c•w) dγ| ≤ (M/6) c³ (β + β_G)`: Taylor to second order at `v`
+   (piece 4), the first-order term vanishing by `hmean` applied to the Riesz representative of
+   `Df(v)` and by `integral_strongDual_stdGaussian` on the `γ` side, and the second-order terms
+   agreeing because both laws have identity covariance. The latter is
+   `∫ D²f(v)(y,y) dν = ∑ₐ D²f(v)(eₐ,eₐ) = ∫ D²f(v)(z,z) dγ`: expand
+   `D²f(v)(y,y) = ∑_{a,b} ⟪eₐ,y⟫⟪e_b,y⟫ D²f(v)(eₐ,e_b)` in the standard orthonormal basis and
+   apply `hcov` coordinatewise (the same device as `integral_normSq_eq_dim` in this file, with
+   `covarianceBilin_stdGaussian` on the `γ` side). Integrability of every term is supplied by
+   `hβ` through `integrable_normSq_of_cube`; integrability of `f` itself against `ν` and `γ`
+   also follows from `hβ`, since piece 4 applied at `x = 0` bounds `|f|` by a cubic polynomial.
+   The one point of friction: `iteratedFDeriv ℝ 2 f v` is a `ContinuousMultilinearMap` over
+   `Fin 2`, so it must first be transported to a genuine `E →L[ℝ] E →L[ℝ] ℝ` (via `curryLeft`,
+   or by hand) before `map_sum` becomes usable.
+4. **Third-order remainder**: DONE — `norm_taylor_remainder_three_le` (proved above), applied at
    `h = n^{-1/2} y` and `h = n^{-1/2} z`, giving `M/6 · n^{-3/2}(‖y‖³ + ‖z‖³)` per summand and
    `M/6 · (β + β_G)/√n` after summing the `n` terms.
 
-Nothing here is blocked on a missing Mathlib API; it is simply a multi-hundred-line development
-that has not been carried out. -/
+Nothing here is blocked on a missing Mathlib API; what is left is pieces 2 and 3, a
+several-hundred-line development that has not been carried out. -/
 private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
     {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
     (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)

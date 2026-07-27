@@ -35,7 +35,10 @@ row of independent summands whose law changes with `n`.
   negligibility condition `maxᵢ wₙ,ᵢ² / ∑ⱼ wₙ,ⱼ² → 0`.
 * `triangular_wlln_of_L1` — the companion weak law: row-i.i.d. arrays whose row laws
   converge weakly *and* whose first absolute moments converge have row averages converging
-  in probability to the limiting mean.
+  in probability to the limiting mean. **The frozen form of this statement was false** (the
+  `L¹` hypothesis was vacuous for non-integrable rows, because the Bochner integral takes its
+  junk value there); it carries one added hypothesis, `∀ n, Integrable id (G n)`, and is
+  proved. See its docstring for the counterexample and the repair.
 
 Convergence in distribution is stated with Mathlib's `MeasureTheory.TendstoInDistribution`
 (random-variable form, constant family of underlying spaces `fun _ => P`), which is the

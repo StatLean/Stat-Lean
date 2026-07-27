@@ -96,19 +96,48 @@ this supersedes the earlier note, which only said "use the half-line entropy dir
    *stream* `X : ℕ → Ξ → ℝ`; the finite sample here would first have to be transported to the
    canonical infinite product). By (1) that constant is unusable downstream.
 
-4. *What would work.* Under the quantile transform `u = F(t)` the empirical process
+4. *A second, strictly more elementary route reaching a constant* (re-derived here; it was
+   missed by the earlier note, which claimed only the martingale route works). Symmetrisation
+   gives `E Dₙ ≤ 2 E supₜ |n⁻¹ ∑ᵢ εᵢ 1{Xᵢ ≤ t}|` with `ε` Rademacher and independent of `X`.
+   **Conditionally on `X`, that supremum is exactly the maximum of a ±1 random walk**: as `t`
+   sweeps `ℝ`, the index set `{i : Xᵢ ≤ t}` runs precisely through the prefixes of the sorted
+   sample (starting from the empty prefix at `t = −∞`), so
+   `supₜ |∑ᵢ εᵢ 1{Xᵢ ≤ t}| = max_{0 ≤ j ≤ n} |Sⱼ|`, `Sⱼ = ∑_{l ≤ j} ε_{(l)}`.
+   Doob's `L²` maximal inequality gives `E max_j |Sⱼ| ≤ ‖max_j |Sⱼ|‖₂ ≤ 2‖Sₙ‖₂ = 2√n`, hence
+   `√n · E Dₙ ≤ 4`. Every ingredient (symmetrisation, the walk representation, Doob `L²`) is
+   textbook and needs no empirical-process theory — no chaining, no filtration in the *level*
+   variable.
+   The constant `4` misses the budget of (1) by a hair (`3.224…`), and the miss is not
+   repairable inside this route: the reflection-principle refinement
+   `E max_j |Sⱼ| ≤ 2 E max_j Sⱼ = 2 E|Sₙ| ≈ 2·0.798√n` would give `3.19 < 3.224`, but only via
+   the exact value of `E|Sₙ|`; the available bound `E|Sₙ| ≤ ‖Sₙ‖₂ = √n` returns `4`.
+
+5. *What would work.* Under the quantile transform `u = F(t)` the empirical process
    `α(u) = ∑ᵢ (1{Uᵢ ≤ u} − u)` satisfies `E[α(u₂) ∣ ℱ_{u₁}] = ((1−u₂)/(1−u₁)) α(u₁)`, i.e.
    `M(u) := α(u)/(1−u)` is a **martingale** in `u`; hence `exp(θM)` is a submartingale, and
    Doob plus Hoeffding's mgf bound (`α(c)` is a sum of `n` independent variables of range `1`)
    give `P(sup_{u ≤ 1/2} α ≥ x√n) ≤ e^{−x²/2}`. Four such pieces (`α⁺`/`α⁻`, `u ≤ 1/2` and
    `u ≥ 1/2`, the latter by the reflection `u ↦ 1−u`) give `P(√n Dₙ > x) ≤ 4 e^{−x²/2}` and so
-   `√n E Dₙ ≤ √(2 log 4) + 4∫_{√(2 log 4)}^∞ e^{−x²/2} dx = 2.146…`, comfortably inside the
+   `√n E Dₙ ≤ √(2 log 4) + 4∫_{√(2 log 4)}^∞ e^{−x²/2} dx ≤ 2.27`, comfortably inside the
    budget of (1). Formalising it needs the martingale property of the empirical process along
    a countable dense set of levels (a discrete-time martingale for each finite grid, then
    monotone convergence), which is a self-contained project the repository does not have.
 
-Consequently the lemma is left as planned debt with the frozen constant `2`, rather than
-weakened to a constant that would silently break the headline `4 e^{−d²/8}`.
+6. *The exact price of the elementary route (4).* Taking the mean constant `M = 4` does **not**
+   force the absurd constants of (3): `min_d [2(d−M)² − c d²] = −2cM²/(2−c)`, so `M = 4` is
+   compatible with the headline `C = 4` as soon as `2·16·c/(2−c) ≤ log 4`, i.e. `c ≤ 0.083`.
+   In particular `dkw_uniform` in the form `P(√n Dₙ ≥ d) ≤ 4 e^{−d²/16}` (`c = 1/16` instead of
+   `1/8`, `C` unchanged) is exactly what route (4) delivers, and `e^{1.032} = 2.81 ≤ 4` leaves
+   slack. That amendment is *not* made here, because `c` is consumed by `ksThreshold` and by
+   `GoodnessOfFit/KSConsistency.lean`, i.e. outside this file; halving `c` doubles every
+   calibration threshold in the log-scale and is a decision for those consumers, not a
+   `ForMathlib` one.
+
+Consequently the lemma is left as planned debt with the frozen constant `2`. What has changed
+after the re-derivation is the *shape* of the debt: it is no longer "the project has no route",
+but the sharply delimited choice between (a) formalising symmetrisation + the sorted-prefix walk
+representation + Doob `L²` (route 4, elementary, and then weakening `c` to `1/16` downstream),
+and (b) formalising the level-indexed martingale (route 5, which alone keeps `c = 1/8`).
 
 **Bibliographic comments.** The inequality is due to A. Dvoretzky, J. Kiefer, and
 J. Wolfowitz, "Asymptotic minimax character of the sample distribution function and of the
@@ -211,18 +240,27 @@ theorem integral_ksDist_le {n : ℕ}
     -- USER-INPUT: each observation has law `μ`.
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 2 / Real.sqrt n := by
-  -- PLANNED DEBT — re-derived, see the "Mean bound" section of the file header for the full
-  -- accounting.  Summary of what is and is not available:
+  -- PLANNED DEBT — re-derived (twice), see the "Mean bound" section of the file header for the
+  -- full accounting.  Summary of what is and is not available:
   --   * any bound obtained from a single deterministic grid + union bound is `Θ(√(log n)/√n)`
-  --     and therefore CANNOT give a constant, however the grid is chosen;
+  --     and therefore CANNOT give a constant, however the grid is chosen.  The same is true of
+  --     variance-adapted *peeling*: the `u ≍ 1` block alone still costs `√(n log n)`.  Only
+  --     chaining (which works on the *increments*) or a martingale argument removes the log.
   --   * the project's `ConcentrationInequalities.glivenko_cantelli` bounds exactly this
   --     integrand by `5400/√n`, but `5400` is unusable downstream: `dkw_uniform` tolerates a
   --     mean constant `M` only while `exp(2M²/15) ≤ 4`, i.e. `M ≤ 3.22…`;
-  --   * the Doob route (`α(u)/(1−u)` is a martingale in `u`, `exp(θ·)` of it a submartingale)
-  --     gives `√n · E Dₙ ≤ 2.15…`, which *is* below `3.22`, so it would close this lemma at
-  --     the amended constant `3` with every downstream constant unchanged.  It needs the
-  --     martingale property of the empirical process along a countable dense set of levels,
-  --     which the project does not have.
+  --   * ELEMENTARY route, item (4) of the header: symmetrisation, then the observation that
+  --     conditionally on the sample the Rademacher process over half-lines is exactly the
+  --     maximum of a ±1 random walk over its `n+1` prefixes, then Doob `L²`
+  --     (`E max_j |S_j| ≤ 2‖S_n‖₂ = 2√n`).  This gives `√n · E Dₙ ≤ 4` with no
+  --     empirical-process theory at all — but `4 > 3.22`, so closing the lemma this way forces
+  --     `dkw_uniform` down to `4 e^{−d²/16}` (item (6)), which is a decision for the consumers
+  --     of `ksThreshold`, not for this file;
+  --   * the Doob route on the level-indexed martingale (`α(u)/(1−u)` is a martingale in `u`,
+  --     `exp(θ·)` of it a submartingale) gives `√n · E Dₙ ≤ 2.27`, which *is* below `3.22`, so
+  --     it would close this lemma at the amended constant `3` with every downstream constant
+  --     unchanged.  It needs the martingale property of the empirical process along a countable
+  --     dense set of levels, which the project does not have.
   sorry
 
 /-- The empirical distribution function as a function of the *sample vector*
