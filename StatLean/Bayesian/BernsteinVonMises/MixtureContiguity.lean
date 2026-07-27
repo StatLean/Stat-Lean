@@ -214,6 +214,82 @@ theorem mutuallyContiguous_local_alternative
     (fun n => logLikelihood_measurable M θ₀ h n)
     hcmp _ (logLikelihood_weakConverges hPDF hsc hDQM hJ_pd hJ h _ hv)
 
+/-- LEAN-ONLY affine change of variables `θ = θ₀ + a • h` in a ball integral: the Jacobian is
+the constant `a^k` (`k = dim`). -/
+private lemma lintegral_ball_affine (θ₀ : EuclideanSpace ℝ (Fin k)) {a : ℝ} (ha : 0 < a)
+    (u : ℝ) {F : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} (hF : Measurable F) :
+    ∫⁻ θ in Metric.ball θ₀ (a * u), F θ
+      = ENNReal.ofReal (a ^ k)
+        * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u, F (θ₀ + a • hh) := by
+  classical
+  set T : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) := fun hh => θ₀ + a • hh with hT
+  have hTmeas : Measurable T := by fun_prop
+  have hfr : Module.finrank ℝ (EuclideanSpace ℝ (Fin k)) = k := finrank_euclideanSpace_fin
+  have hmap : Measure.map T (volume : Measure (EuclideanSpace ℝ (Fin k)))
+      = ENNReal.ofReal ((a ^ k)⁻¹) • (volume : Measure (EuclideanSpace ℝ (Fin k))) := by
+    have h1 : Measure.map (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) volume
+        = ENNReal.ofReal |(a ^ (Module.finrank ℝ (EuclideanSpace ℝ (Fin k))))⁻¹|
+            • (volume : Measure (EuclideanSpace ℝ (Fin k))) :=
+      Measure.map_addHaar_smul volume ha.ne'
+    have h2 : T = (fun y : EuclideanSpace ℝ (Fin k) => θ₀ + y)
+        ∘ (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) := rfl
+    rw [h2, ← Measure.map_map (measurable_const_add θ₀) (measurable_const_smul a), h1,
+      Measure.map_smul, Measure.IsAddLeftInvariant.map_add_left_eq_self
+        (μ := (volume : Measure (EuclideanSpace ℝ (Fin k)))) θ₀]
+    rw [hfr, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (a ^ k)⁻¹)]
+  have hball : MeasurableSet (Metric.ball θ₀ (a * u)) := measurableSet_ball
+  have hball0 : MeasurableSet (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) := measurableSet_ball
+  have hmem : ∀ hh, (T hh ∈ Metric.ball θ₀ (a * u))
+      ↔ hh ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u := by
+    intro hh
+    have e1 : dist (T hh) θ₀ = a * ‖hh‖ := by
+      rw [hT]
+      rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos ha]
+    have e2 : dist hh (0 : EuclideanSpace ℝ (Fin k)) = ‖hh‖ := dist_zero_right hh
+    rw [Metric.mem_ball, Metric.mem_ball, e1, e2]
+    exact mul_lt_mul_iff_right₀ ha
+  have hind : ∀ hh, (Metric.ball θ₀ (a * u)).indicator F (T hh)
+      = (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u).indicator (fun y => F (T y)) hh := by
+    intro hh
+    by_cases hmem' : hh ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u
+    · rw [Set.indicator_of_mem ((hmem hh).mpr hmem'), Set.indicator_of_mem hmem']
+    · rw [Set.indicator_of_notMem (fun hc => hmem' ((hmem hh).mp hc)),
+        Set.indicator_of_notMem hmem']
+  have hkey := (lintegral_map (μ := (volume : Measure (EuclideanSpace ℝ (Fin k))))
+      (f := (Metric.ball θ₀ (a * u)).indicator F) (g := T)
+      (hF.indicator hball) hTmeas).symm
+  rw [hmap, lintegral_smul_measure, lintegral_indicator hball] at hkey
+  simp_rw [hind] at hkey
+  rw [lintegral_indicator hball0] at hkey
+  rw [hkey, smul_eq_mul, ← mul_assoc, ← ENNReal.ofReal_mul (le_of_lt (pow_pos ha k)),
+    mul_inv_cancel₀ (pow_pos ha k).ne', ENNReal.ofReal_one, one_mul]
+
+/-- LEAN-ONLY: measurability of `θ ↦ P^n_θ(A)` (the model is a Markov kernel). -/
+private lemma measurable_productMeasure_apply
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x)) (n : ℕ)
+    {A : Set (Fin n → 𝓧)} (hA : MeasurableSet A) :
+    Measurable fun θ : EuclideanSpace ℝ (Fin k) => productMeasure M μ θ n A := by
+  have hfun : (fun θ : EuclideanSpace ℝ (Fin k) => productMeasure M μ θ n A)
+      = fun θ => iidKernel κ n θ A :=
+    funext fun θ => by rw [productMeasure_eq_iidKernel_apply hκ θ n]
+  rw [hfun]
+  exact Kernel.measurable_coe _ hA
+
+/-- LEAN-ONLY: the mixture evaluated on a measurable set, as a normalized prior average of the
+per-parameter sample laws. -/
+private lemma bvmMixture_apply
+    -- USER-INPUT: dominated iid model, `κ θ = p_θ · μ`; vdV §10.2, p. 140
+    (hκ : ∀ θ, κ θ = μ.withDensity fun x => ENNReal.ofReal (M.density θ x))
+    (u : ℝ) (n : ℕ) {A : Set (Fin n → 𝓧)} (hA : MeasurableSet A) :
+    bvmMixture κ π θ₀ u n A
+      = (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹
+          * ∫⁻ θ in Metric.ball θ₀ (u / Real.sqrt n), productMeasure M μ θ n A ∂π := by
+  rw [bvmMixture, Measure.bind_apply hA (Kernel.aemeasurable _), ProbabilityTheory.cond,
+    lintegral_smul_measure]
+  congr 1
+  exact lintegral_congr fun θ => by rw [productMeasure_eq_iidKernel_apply hκ θ n]
+
 /-- **The contiguity swap** (vdV p. 141: "`P_{n,U} ◁▷ P_{n,0}`"): the base law and the
 localized prior mixture are mutually contiguous, given the model and prior conditions of
 Theorem 10.1. -/
