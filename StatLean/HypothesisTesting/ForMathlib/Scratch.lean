@@ -627,4 +627,40 @@ private lemma sum_pow_four_le {N : ℕ} {B : ℝ} (f : Fin N → ℝ) (hB : ∀ 
   calc f l ^ 4 = f l ^ 2 * f l ^ 2 := by ring
     _ ≤ B ^ 2 * f l ^ 2 := mul_le_mul_of_nonneg_right hsq (sq_nonneg _)
 
+private lemma sum_truncKeep_eq_neg {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) (hd : ∑ l, d l = 0) :
+    ∑ l, truncKeep τ d l = -∑ l, truncDisc τ d l := by
+  have hsplit : (∑ l, truncKeep τ d l) + ∑ l, truncDisc τ d l = 0 := by
+    rw [← Finset.sum_add_distrib,
+      Finset.sum_congr rfl fun l _ => truncKeep_add_truncDisc τ d l, hd]
+  linarith
+
+/-- The recentring shift is controlled by the Lindeberg tail: `|μ| ≤ (N⁻¹ ∑ tail²)/τ`. -/
+private lemma abs_mean_truncKeep_le {N : ℕ} {τ : ℝ} (hτ : 0 < τ) (hN : 0 < N)
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) :
+    |(N : ℝ)⁻¹ * ∑ l, truncKeep τ d l| ≤ ((N : ℝ)⁻¹ * truncLoss τ d) * τ⁻¹ := by
+  have hNpos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  rw [abs_mul, abs_of_nonneg (inv_nonneg.2 hNpos.le), sum_truncKeep_eq_neg τ d hd, abs_neg]
+  have hstep := abs_sum_truncDisc_le hτ d
+  rw [div_eq_mul_inv] at hstep
+  calc (N : ℝ)⁻¹ * |∑ l, truncDisc τ d l|
+      ≤ (N : ℝ)⁻¹ * (truncLoss τ d * τ⁻¹) :=
+        mul_le_mul_of_nonneg_left hstep (inv_nonneg.2 hNpos.le)
+    _ = ((N : ℝ)⁻¹ * truncLoss τ d) * τ⁻¹ := by ring
+
+/-! ### From an `ε`-family of bounds to a limit -/
+
+/-- If a sequence is eventually within `C ε` of `A` for every `ε > 0`, it converges to `A`. -/
+private lemma tendsto_of_eventually_abs_sub_le {F : ℕ → ℝ} {A Cst : ℝ} (hC : 0 ≤ Cst)
+    (hF : ∀ ε > (0 : ℝ), ∀ᶠ k in atTop, |F k - A| ≤ Cst * ε) :
+    Tendsto F atTop (𝓝 A) := by
+  rw [Metric.tendsto_nhds]
+  intro δ hδ
+  have hpos : (0 : ℝ) < δ / (2 * (Cst + 1)) := by positivity
+  filter_upwards [hF (δ / (2 * (Cst + 1))) hpos] with k hk
+  rw [Real.dist_eq]
+  have hkey : Cst * (δ / (2 * (Cst + 1))) < δ := by
+    rw [← mul_div_assoc, div_lt_iff₀ (by linarith : (0 : ℝ) < 2 * (Cst + 1))]
+    nlinarith
+  linarith
+
 end StatLean.HypothesisTesting
