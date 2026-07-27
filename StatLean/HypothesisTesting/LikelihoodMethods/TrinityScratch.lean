@@ -234,4 +234,90 @@ lemma henv_restrict {m : ℕ}
         nlinarith
     _ = |Menv x| * ‖B‖ ^ 2 * (‖β - β₀‖ + ‖β' - β₀‖) * ‖β - β'‖ := by ring
 
+/-! ### Brick 6: assembly (the two simple-null conclusions as hypotheses) -/
+
+lemma assemble {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (hθ₀ : θ₀ = a + B β₀)
+    (hsupp : ∀ (θ : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ₀ x ≠ 0 → M.density θ x ≠ 0)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (J : Matrix (Fin k) (Fin k) ℝ)
+    (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m)) (JB : Matrix (Fin m) (Fin m) ℝ)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
+    (est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin m))
+    (h1 : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|})
+        atTop (𝓝 0))
+    (h2 : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure (restrictFamily M a B) μ β₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+            - scoreStatistic JB ℓB n ω|})
+        atTop (𝓝 0)) :
+    ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+          - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|})
+        atTop (𝓝 0) := by
+  intro ε hε
+  have hprod := fun n : ℕ => productMeasure_restrictFamily M μ a B β₀ θ₀ hθ₀ n
+  have h2' : Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+      {ω : Fin n → 𝓧 |
+        ε / 2 ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+          - scoreStatistic JB ℓB n ω|}) atTop (𝓝 0) := by
+    have := h2 (ε / 2) (by positivity)
+    simpa only [hprod] using this
+  refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_)
+    (by simpa using (h1 (ε / 2) (by positivity)).add h2')
+  -- the bad event is contained in the two half-events together with the null set where the
+  -- base density vanishes somewhere along the sample
+  set A1 : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 |
+    ε / 2 ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|} with hA1
+  set A2 : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 |
+    ε / 2 ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+      - scoreStatistic JB ℓB n ω|} with hA2
+  set G : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 | ∀ i, M.density θ₀ (ω i) ≠ 0} with hG
+  have hGnull : (productMeasure M μ θ₀ n).real Gᶜ = 0 := by
+    have hae := ae_forall_density_ne_zero M μ hPDF θ₀ n
+    rw [MeasureTheory.ae_iff] at hae
+    simp only [measureReal_def]
+    rw [show Gᶜ = {ω : Fin n → 𝓧 | ¬ ∀ i, M.density θ₀ (ω i) ≠ 0} from rfl, hae]
+    simp
+  have hincl : {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+      - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|} ⊆ A1 ∪ A2 ∪ Gᶜ := by
+    intro ω hω
+    by_cases hg : ω ∈ G
+    · have hsplit := logLRStatistic_affine_split M a B β₀ θ₀ hθ₀ hsupp est est₀ n ω hg
+      simp only [Set.mem_setOf_eq, hsplit] at hω
+      by_contra hcon
+      simp only [Set.mem_union, Set.mem_compl_iff, hA1, hA2, Set.mem_setOf_eq, not_or,
+        not_le] at hcon
+      obtain ⟨⟨hc1, hc2⟩, -⟩ := hcon
+      have : |logLRStatistic M est (fun _ _ => θ₀) n ω
+            - logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+            - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|
+          ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|
+            + |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+              - scoreStatistic JB ℓB n ω| := by
+        have heq : logLRStatistic M est (fun _ _ => θ₀) n ω
+              - logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+              - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)
+            = (logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω)
+              - (logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+                - scoreStatistic JB ℓB n ω) := by ring
+        rw [heq]
+        exact abs_sub _ _
+      linarith
+    · exact Or.inr hg
+  have hmono := measureReal_mono (μ := productMeasure M μ θ₀ n) hincl (measure_ne_top _ _)
+  have hu1 := measureReal_union_le (μ := productMeasure M μ θ₀ n) (A1 ∪ A2) Gᶜ
+  have hu2 := measureReal_union_le (μ := productMeasure M μ θ₀ n) A1 A2
+  linarith
+
 end StatLean.HypothesisTesting.Scratch
