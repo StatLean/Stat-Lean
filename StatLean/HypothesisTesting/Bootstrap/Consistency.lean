@@ -5,6 +5,10 @@ import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Independence.Basic
+import Mathlib.Probability.CDF
+import Mathlib.MeasureTheory.Measure.Portmanteau
+import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
 # Bootstrap consistency: the sequence-class criterion
@@ -72,7 +76,7 @@ Deutsch. Math.-Verein.* **86** (1984), 14–30) and D. N. Politis, J. P. Romano 
 -/
 
 open Filter MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology BoundedContinuousFunction
 
 namespace StatLean.HypothesisTesting
 
@@ -107,6 +111,105 @@ noncomputable def stdNormalCDF (x : ℝ) : ℝ := normalCDF 0 1 x
 
 /-- The **standard normal quantile** `z_p = Φ⁻¹(p)`, via the generalized inverse. -/
 noncomputable def stdNormalQuantile (p : ℝ) : ℝ := cdfPseudoInverse stdNormalCDF p
+
+/-! ## Distribution-function and continuity infrastructure -/
+
+/-- The `toReal` of the `Iic`-measure of a probability law on the line is a distribution
+function: this is exactly `ProbabilityTheory.cdf`, dressed as `IsCDF`. -/
+lemma isCDF_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    IsCDF (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  exact
+    { mono := (ProbabilityTheory.cdf ν).mono
+      right_continuous := fun x => (ProbabilityTheory.cdf ν).right_continuous x
+      tendsto_atBot := ProbabilityTheory.tendsto_cdf_atBot ν
+      tendsto_atTop := ProbabilityTheory.tendsto_cdf_atTop ν }
+
+/-- The distribution function of a probability law with no atoms is continuous. -/
+lemma continuous_toReal_measure_Iic (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NoAtoms ν] : Continuous (fun x => (ν (Set.Iic x)).toReal) := by
+  have heq : (fun x => (ν (Set.Iic x)).toReal) = fun x => (ProbabilityTheory.cdf ν) x := by
+    funext x
+    rw [ProbabilityTheory.cdf_eq_real, measureReal_def]
+  rw [heq]
+  set f := ProbabilityTheory.cdf ν with hf
+  refine continuous_iff_continuousAt.2 (fun x => ?_)
+  have hleft : Function.leftLim f x = f x := by
+    have hsing : f.measure {x} = 0 := by
+      rw [ProbabilityTheory.measure_cdf]; exact measure_singleton x
+    have hval := f.measure_singleton x
+    rw [hsing] at hval
+    have hle : Function.leftLim f x ≤ f x := f.mono.leftLim_le le_rfl
+    have h0 : f x - Function.leftLim f x ≤ 0 := by
+      by_contra h
+      push_neg at h
+      exact (ENNReal.ofReal_pos.mpr h).ne' hval.symm
+    linarith
+  have hright : Function.rightLim f x = f x := (f.right_continuous x).rightLim_eq
+  exact (f.mono.continuousAt_iff_leftLim_eq_rightLim).2 (hleft.trans hright.symm)
+
+/-- `normalCDF m v` is a distribution function. -/
+lemma isCDF_normalCDF (m : ℝ) (v : ℝ≥0) : IsCDF (normalCDF m v) :=
+  isCDF_toReal_measure_Iic (gaussianReal m v)
+
+/-- `stdNormalCDF` is a distribution function. -/
+lemma isCDF_stdNormalCDF : IsCDF stdNormalCDF := isCDF_normalCDF 0 1
+
+/-- A nondegenerate normal distribution function is continuous. -/
+lemma continuous_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : Continuous (normalCDF m v) :=
+  haveI : NoAtoms (gaussianReal m v) := noAtoms_gaussianReal hv
+  continuous_toReal_measure_Iic (gaussianReal m v)
+
+/-- The standard normal distribution function is continuous. -/
+lemma continuous_stdNormalCDF : Continuous stdNormalCDF :=
+  continuous_normalCDF 0 one_ne_zero
+
+/-- A nondegenerate normal distribution function is strictly increasing. -/
+lemma strictMono_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) : StrictMono (normalCDF m v) := by
+  intro y z hyz
+  have hpos : 0 < gaussianReal m v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]
+    intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' m hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal m v (Set.Iic z)
+      = gaussianReal m v (Set.Iic y) + gaussianReal m v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  have hfin : gaussianReal m v (Set.Iic y) ≠ ⊤ := measure_ne_top _ _
+  unfold normalCDF
+  rw [hdisj, ENNReal.toReal_add hfin (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal m v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- The `1 − α` quantile of a nondegenerate normal distribution function is a point of strict
+increase. -/
+lemma strictIncAt_normalCDF (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x₀ : ℝ) :
+    StrictIncAt (normalCDF m v) x₀ :=
+  ⟨fun _ hy => strictMono_normalCDF m hv hy, fun _ hz => strictMono_normalCDF m hv hz⟩
+
+/-- **Standardisation of a centred normal distribution function.** For a positive standard
+deviation `σ`, the distribution function of the centred normal law with variance `σ ^ 2` is the
+standard normal distribution function evaluated at `x / σ`. -/
+theorem normalCDF_sq_eq_stdNormalCDF {sigma : ℝ} (hsigma : 0 < sigma) (x : ℝ) :
+    normalCDF 0 (Real.toNNReal (sigma ^ 2)) x = stdNormalCDF (x / sigma) := by
+  have hv : Real.toNNReal (sigma ^ 2) = ⟨sigma ^ 2, sq_nonneg sigma⟩ :=
+    Real.toNNReal_of_nonneg (sq_nonneg sigma)
+  have hmap : (gaussianReal 0 1).map (fun z : ℝ => sigma * z)
+      = gaussianReal 0 (Real.toNNReal (sigma ^ 2)) := by
+    rw [hv]
+    simpa using gaussianReal_map_const_mul (μ := 0) (v := 1) sigma
+  have hmeas : Measurable (fun z : ℝ => sigma * z) := by fun_prop
+  have hpre : (fun z : ℝ => sigma * z) ⁻¹' Set.Iic x = Set.Iic (x / sigma) := by
+    ext z
+    simp only [Set.mem_preimage, Set.mem_Iic, le_div_iff₀ hsigma, mul_comm z sigma]
+  unfold stdNormalCDF normalCDF
+  rw [← hmap, Measure.map_apply hmeas measurableSet_Iic, hpre]
 
 /-! ## Sup-CDF distance: elementary calculus -/
 
@@ -262,6 +365,212 @@ theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ 
 
 end QuantileCDF
 
+/-! ## From distribution functions to weak convergence -/
+
+section CDFtoWeak
+
+/-- **Distribution-function convergence implies weak convergence.**
+
+If the distribution functions of `F n` converge to that of `Q` at every continuity point of the
+limit, then `F n` converges weakly to `Q`. The continuity points of a monotone function are
+co-countable, hence dense, and the half-open intervals with endpoints there form a π-system of
+arbitrarily small neighbourhoods; Mathlib's
+`IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` then gives convergence in the weak
+topology. -/
+lemma tendsto_integral_of_tendsto_cdf
+    {F : ℕ → Measure ℝ} {Q : Measure ℝ} (hFp : ∀ n, IsProbabilityMeasure (F n))
+    [IsProbabilityMeasure Q]
+    (hcdf : ∀ x : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) x →
+      Tendsto (fun n => ((F n) (Set.Iic x)).toReal) atTop (𝓝 ((Q (Set.Iic x)).toReal)))
+    (f : ℝ →ᵇ ℝ) :
+    Tendsto (fun n => ∫ t, f t ∂(F n)) atTop (𝓝 (∫ t, f t ∂Q)) := by
+  classical
+  set cdfQ : ℝ → ℝ := fun t => (Q (Set.Iic t)).toReal with hcdfQ
+  have hmono : Monotone cdfQ := fun a b hab =>
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono (Set.Iic_subset_Iic.2 hab))
+  set C : Set ℝ := {x | ContinuousAt cdfQ x} with hCdef
+  have hCdense : Dense C := by
+    have hcount : Set.Countable {x : ℝ | ¬ ContinuousAt cdfQ x} :=
+      hmono.countable_not_continuousAt
+    have hd := Set.Countable.dense_compl ℝ hcount
+    have heq : {x : ℝ | ¬ ContinuousAt cdfQ x}ᶜ = C := by
+      rw [hCdef]; ext x; simp
+    rwa [heq] at hd
+  set S : Set (Set ℝ) := {s | ∃ a ∈ C, ∃ b ∈ C, s = Set.Ioc a b} with hSdef
+  -- `S` is a π-system
+  have hpi : IsPiSystem S := by
+    rintro s ⟨a, ha, b, hb, rfl⟩ t ⟨c, hc, d, hd, rfl⟩ -
+    refine ⟨max a c, ?_, min b d, ?_, Set.Ioc_inter_Ioc⟩
+    · rcases le_total a c with h | h
+      · rwa [max_eq_right h]
+      · rwa [max_eq_left h]
+    · rcases le_total b d with h | h
+      · rwa [min_eq_left h]
+      · rwa [min_eq_right h]
+  have hmeas : ∀ s ∈ S, MeasurableSet s := by
+    rintro s ⟨a, -, b, -, rfl⟩
+    exact measurableSet_Ioc
+  -- `S` contains arbitrarily small neighbourhoods
+  have hnbhd : ∀ u : Set ℝ, IsOpen u → ∀ x ∈ u, ∃ s ∈ S, s ∈ 𝓝 x ∧ s ⊆ u := by
+    intro u hu x hx
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hu x hx
+    have hne1 : (Set.Ioo (x - ε) x).Nonempty :=
+      ⟨x - ε / 2, by simp only [Set.mem_Ioo]; constructor <;> linarith⟩
+    have hne2 : (Set.Ioo x (x + ε)).Nonempty :=
+      ⟨x + ε / 2, by simp only [Set.mem_Ioo]; constructor <;> linarith⟩
+    obtain ⟨a, haC, ha⟩ := hCdense.exists_mem_open isOpen_Ioo hne1
+    obtain ⟨b, hbC, hb⟩ := hCdense.exists_mem_open isOpen_Ioo hne2
+    refine ⟨Set.Ioc a b, ⟨a, haC, b, hbC, rfl⟩, ?_, ?_⟩
+    · exact Filter.mem_of_superset (Ioo_mem_nhds ha.2 hb.1) Set.Ioo_subset_Ioc_self
+    · intro y hy
+      refine hball ?_
+      rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+      constructor
+      · have := ha.1; have := hy.1; linarith
+      · have := hb.2; have := hy.2; linarith
+  -- convergence on the π-system
+  set μs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨F n, hFp n⟩ with hμs
+  set νQ : ProbabilityMeasure ℝ := ⟨Q, inferInstance⟩ with hνQ
+  have hstep : ∀ s ∈ S, Tendsto (fun n => μs n s) atTop (𝓝 (νQ s)) := by
+    rintro s ⟨a, haC, b, hbC, rfl⟩
+    rw [← NNReal.tendsto_coe]
+    have hcoe1 : ∀ n : ℕ, ((μs n (Set.Ioc a b) : ℝ≥0) : ℝ)
+        = ((F n) (Set.Ioc a b)).toReal := fun n => rfl
+    have hcoe2 : ((νQ (Set.Ioc a b) : ℝ≥0) : ℝ) = (Q (Set.Ioc a b)).toReal := rfl
+    simp only [hcoe1, hcoe2]
+    rcases lt_or_ge b a with hba | hab
+    · have hempty : Set.Ioc a b = (∅ : Set ℝ) := Set.Ioc_eq_empty (not_lt.2 hba.le)
+      simp [hempty]
+    · have hsplit : ∀ μ : Measure ℝ, IsProbabilityMeasure μ →
+          (μ (Set.Ioc a b)).toReal = (μ (Set.Iic b)).toReal - (μ (Set.Iic a)).toReal := by
+        intro μ hμ
+        have hdisj : μ (Set.Iic b) = μ (Set.Iic a) + μ (Set.Ioc a b) := by
+          rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+            Set.Iic_union_Ioc_eq_Iic hab]
+        rw [hdisj, ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+        ring
+      simp only [hsplit _ (hFp _), hsplit _ ‹IsProbabilityMeasure Q›]
+      exact (hcdf b hbC).sub (hcdf a haC)
+  have hconv : Tendsto μs atTop (𝓝 νQ) :=
+    hpi.tendsto_probabilityMeasure_of_tendsto_of_mem hmeas hnbhd hstep
+  exact ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hconv f
+
+end CDFtoWeak
+
+/-! ## Comparing a statistic with a random threshold -/
+
+section RandomThreshold
+
+/-- **Real form of convergence in probability to a constant.** Convergence in measure of `f n` to
+the constant `a` says that the `edist`-excess sets are asymptotically null; this is the same
+statement with the real absolute value and a real `ε`, which is the form the coupling argument
+below consumes. -/
+theorem tendsto_measure_abs_sub_of_tendstoInMeasure {Pr : Measure Ω} [IsFiniteMeasure Pr]
+    {f : ℕ → Ω → ℝ} {a : ℝ} (h : TendstoInMeasure Pr f atTop (fun _ => a))
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n => (Pr {ω | ε ≤ |f n ω - a|}).toReal) atTop (𝓝 0) := by
+  have hset : ∀ n : ℕ,
+      {ω | ε ≤ |f n ω - a|} = {ω | ENNReal.ofReal ε ≤ edist (f n ω) a} := by
+    intro n
+    ext ω
+    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq]
+    exact (ENNReal.ofReal_le_ofReal_iff (abs_nonneg _)).symm
+  simp only [hset]
+  have h' := h (ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
+  simpa using (ENNReal.tendsto_toReal (by simp)).comp h'
+
+/-- **Slutsky coupling at a random threshold.**
+
+If the distribution functions of `S n` converge pointwise to `F`, and the thresholds `c n`
+converge in probability to a point `a` at which `F` is continuous, then the probability that
+`S n` does not exceed the *random* threshold `c n` converges to `F a`.
+
+This is the analytic core shared by the bootstrap coverage statement, the asymptotic level of a
+bootstrap test and the local-power computation: in each of them a statistic is compared with an
+estimated critical value. No measurability is required — only monotonicity of measures — and the
+measures are allowed to vary with `n`, which is what the contiguous-alternative applications
+need. -/
+theorem tendsto_measure_le_of_tendsto_cdf {μ : ℕ → Measure Ω} [∀ n, IsFiniteMeasure (μ n)]
+    {S c : ℕ → Ω → ℝ} {F : ℝ → ℝ} {a : ℝ}
+    -- USER-INPUT: the limit law is continuous at the limiting threshold; without it the
+    -- probability can jump and the conclusion fails
+    (hFa : ContinuousAt F a)
+    -- USER-INPUT: the distribution functions of the statistic converge pointwise to `F`
+    (hcdf : ∀ x : ℝ, Tendsto (fun n => (μ n {ω | S n ω ≤ x}).toReal) atTop (𝓝 (F x)))
+    -- USER-INPUT: the thresholds converge to `a` in probability
+    (hc : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => (μ n {ω | ε ≤ |c n ω - a|}).toReal) atTop (𝓝 0)) :
+    Tendsto (fun n => (μ n {ω | S n ω ≤ c n ω}).toReal) atTop (𝓝 (F a)) := by
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  rw [Metric.continuousAt_iff] at hFa
+  obtain ⟨δ', hδ'pos, hδ'⟩ := hFa (ε / 4) (by positivity)
+  set δ := δ' / 2 with hδdef
+  have hδpos : 0 < δ := by positivity
+  have hupabs : |F (a + δ) - F a| < ε / 4 := by
+    have hd : dist (a + δ) a < δ' := by
+      rw [Real.dist_eq, add_sub_cancel_left, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq] at this
+  have hloabs : |F (a - δ) - F a| < ε / 4 := by
+    have hd : dist (a - δ) a < δ' := by
+      rw [Real.dist_eq]
+      have hne : a - δ - a = -δ := by ring
+      rw [hne, abs_neg, abs_of_pos hδpos]; linarith
+    have := hδ' hd; rwa [Real.dist_eq] at this
+  rw [abs_lt] at hupabs hloabs
+  -- the two coupling inclusions: a random threshold either behaves like the deterministic one
+  -- shifted by `δ`, or it is `δ`-far from `a`
+  have hUp : ∀ n, {ω | S n ω ≤ c n ω} ⊆
+      {ω | S n ω ≤ a + δ} ∪ {ω | δ ≤ |c n ω - a|} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases le_or_gt (c n ω) (a + δ) with h | h
+    · exact Or.inl (le_trans hω h)
+    · refine Or.inr ?_
+      rw [abs_of_pos (by linarith : (0 : ℝ) < c n ω - a)]; linarith
+  have hLo : ∀ n, {ω | S n ω ≤ a - δ} ⊆
+      {ω | S n ω ≤ c n ω} ∪ {ω | δ ≤ |c n ω - a|} := by
+    intro n ω hω
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
+    rcases lt_or_ge (c n ω) (a - δ) with h | h
+    · refine Or.inr ?_
+      rw [abs_of_neg (by linarith : c n ω - a < 0)]; linarith
+    · exact Or.inl (le_trans hω h)
+  have e1 : ∀ᶠ n in atTop, (μ n {ω | S n ω ≤ a + δ}).toReal < F a + ε / 2 :=
+    (hcdf (a + δ)).eventually_lt_const (by linarith [hupabs.2])
+  have e2 : ∀ᶠ n in atTop, F a - ε / 2 < (μ n {ω | S n ω ≤ a - δ}).toReal :=
+    (hcdf (a - δ)).eventually_const_lt (by linarith [hloabs.1])
+  have e3 : ∀ᶠ n in atTop, (μ n {ω | δ ≤ |c n ω - a|}).toReal < ε / 2 :=
+    (hc δ hδpos).eventually_lt_const (by positivity)
+  rw [Filter.eventually_atTop] at e1 e2 e3
+  obtain ⟨N₁, hN₁⟩ := e1
+  obtain ⟨N₂, hN₂⟩ := e2
+  obtain ⟨N₃, hN₃⟩ := e3
+  refine ⟨max (max N₁ N₂) N₃, fun n hn => ?_⟩
+  have hn1 := hN₁ n (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn)
+  have hn2 := hN₂ n (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn)
+  have hn3 := hN₃ n (le_trans (le_max_right _ _) hn)
+  have hup : (μ n {ω | S n ω ≤ c n ω}).toReal ≤
+      (μ n {ω | S n ω ≤ a + δ}).toReal + (μ n {ω | δ ≤ |c n ω - a|}).toReal := by
+    have hle : μ n {ω | S n ω ≤ c n ω} ≤
+        μ n {ω | S n ω ≤ a + δ} + μ n {ω | δ ≤ |c n ω - a|} :=
+      le_trans (measure_mono (hUp n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rwa [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at this
+  have hlo : (μ n {ω | S n ω ≤ a - δ}).toReal ≤
+      (μ n {ω | S n ω ≤ c n ω}).toReal + (μ n {ω | δ ≤ |c n ω - a|}).toReal := by
+    have hle : μ n {ω | S n ω ≤ a - δ} ≤
+        μ n {ω | S n ω ≤ c n ω} + μ n {ω | δ ≤ |c n ω - a|} :=
+      le_trans (measure_mono (hLo n)) (measure_union_le _ _)
+    have := ENNReal.toReal_mono
+      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
+    rwa [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)] at this
+  rw [Real.dist_eq, abs_lt]
+  constructor <;> [linarith; linarith]
+
+end RandomThreshold
+
 /-! ## Consistency of the bootstrap sampling distribution -/
 
 section Consistency
@@ -384,99 +693,14 @@ theorem tendsto_bootstrapCoverage [IsProbabilityMeasure Pr]
     tendsto_bootstrapQuantile hP_mem hJconv hJlim_cont hJlim_cdf hJcdf hPhat_mem hα hstrict
   have hInMeas : TendstoInMeasure Pr qn atTop (fun _ => q) :=
     tendstoInMeasure_of_tendsto_ae (fun n => (hqmeas n).aestronglyMeasurable) hquant
-  show Tendsto (fun n => (Pr {ω | R n ω ≤ qn n ω}).toReal) atTop (𝓝 (1 - α))
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  -- Continuity of `Jlim` at `q` fixes a window `δ` on which `Jlim` stays within `ε/4` of `1−α`.
-  have hcont : ContinuousAt Jlim q := hJlim_cont.continuousAt
-  rw [Metric.continuousAt_iff] at hcont
-  obtain ⟨δ', hδ'pos, hδ'⟩ := hcont (ε / 4) (by positivity)
-  set δ := δ' / 2 with hδdef
-  have hδpos : 0 < δ := by positivity
-  have hupabs : |Jlim (q + δ) - (1 - α)| < ε / 4 := by
-    have hd : dist (q + δ) q < δ' := by
-      rw [Real.dist_eq, add_sub_cancel_left, abs_of_pos hδpos]; linarith
-    have := hδ' hd; rwa [Real.dist_eq, hq] at this
-  have hloabs : |Jlim (q - δ) - (1 - α)| < ε / 4 := by
-    have hd : dist (q - δ) q < δ' := by
-      rw [Real.dist_eq]
-      have hne : q - δ - q = -δ := by ring
-      rw [hne, abs_neg, abs_of_pos hδpos]; linarith
-    have := hδ' hd; rwa [Real.dist_eq, hq] at this
-  rw [abs_lt] at hupabs hloabs
-  -- `Dp ⊆ S` and `Dm ⊆ S`, where `S` is the "quantile off by `δ`" event whose measure vanishes.
-  have hSconv : Tendsto (fun n => (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal)
-      atTop (𝓝 0) := by
-    have h := hInMeas (ENNReal.ofReal δ) (ENNReal.ofReal_pos.mpr hδpos)
-    simpa using (ENNReal.tendsto_toReal (by simp)).comp h
-  have hDplus : ∀ n, {ω | q + δ < qn n ω} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
-    intro n ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
-    rw [edist_dist, Real.dist_eq, abs_of_pos (by linarith : (0:ℝ) < qn n ω - q)]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
-  have hDminus : ∀ n, {ω | qn n ω < q - δ} ⊆ {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q} := by
-    intro n ω hω
-    simp only [Set.mem_setOf_eq] at hω ⊢
-    rw [edist_dist, Real.dist_eq, abs_of_neg (by linarith : qn n ω - q < 0)]
-    exact ENNReal.ofReal_le_ofReal (by linarith)
-  -- Coupling inclusions.
-  have hUp : ∀ n, {ω | R n ω ≤ qn n ω} ⊆
-      {ω | R n ω ≤ q + δ} ∪ {ω | q + δ < qn n ω} := by
-    intro n ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
-    rcases le_or_gt (qn n ω) (q + δ) with h | h
-    · exact Or.inl (le_trans hω h)
-    · exact Or.inr h
-  have hLo : ∀ n, {ω | R n ω ≤ q - δ} ⊆
-      {ω | R n ω ≤ qn n ω} ∪ {ω | qn n ω < q - δ} := by
-    intro n ω hω
-    simp only [Set.mem_setOf_eq, Set.mem_union] at hω ⊢
-    rcases lt_or_ge (qn n ω) (q - δ) with h | h
-    · exact Or.inr h
-    · exact Or.inl (le_trans hω h)
-  -- Assemble on the eventual event.
-  have e1 : ∀ᶠ n in atTop, J n P (q + δ) < 1 - α + ε / 2 :=
-    (hJconv (fun _ => P) hP_mem (q + δ)).eventually_lt_const (by linarith [hupabs.2])
-  have e2 : ∀ᶠ n in atTop, 1 - α - ε / 2 < J n P (q - δ) :=
-    (hJconv (fun _ => P) hP_mem (q - δ)).eventually_const_lt (by linarith [hloabs.1])
-  have e3 : ∀ᶠ n in atTop, (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal < ε / 2 :=
-    hSconv.eventually_lt_const (by positivity)
-  rw [Filter.eventually_atTop] at e1 e2 e3
-  obtain ⟨N₁, hN₁⟩ := e1
-  obtain ⟨N₂, hN₂⟩ := e2
-  obtain ⟨N₃, hN₃⟩ := e3
-  refine ⟨max (max N₁ N₂) N₃, fun n hn => ?_⟩
-  have hn1 := hN₁ n (le_trans (le_trans (le_max_left _ _) (le_max_left _ _)) hn)
-  have hn2 := hN₂ n (le_trans (le_trans (le_max_right _ _) (le_max_left _ _)) hn)
-  have hn3 := hN₃ n (le_trans (le_max_right _ _) hn)
-  -- Real forms of the two measure inequalities.
-  have hSfin : (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}) ≠ ⊤ := measure_ne_top _ _
-  have hdp : (Pr {ω | q + δ < qn n ω}).toReal ≤
-      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
-    ENNReal.toReal_mono hSfin (measure_mono (hDplus n))
-  have hdm : (Pr {ω | qn n ω < q - δ}).toReal ≤
-      (Pr {ω | ENNReal.ofReal δ ≤ edist (qn n ω) q}).toReal :=
-    ENNReal.toReal_mono hSfin (measure_mono (hDminus n))
-  have hcn_up : (Pr {ω | R n ω ≤ qn n ω}).toReal ≤
-      J n P (q + δ) + (Pr {ω | q + δ < qn n ω}).toReal := by
-    have hle : Pr {ω | R n ω ≤ qn n ω} ≤
-        Pr {ω | R n ω ≤ q + δ} + Pr {ω | q + δ < qn n ω} :=
-      le_trans (measure_mono (hUp n)) (measure_union_le _ _)
-    have := ENNReal.toReal_mono
-      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
-    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q + δ)] at this
-    exact this
-  have hcn_lo : J n P (q - δ) ≤
-      (Pr {ω | R n ω ≤ qn n ω}).toReal + (Pr {ω | qn n ω < q - δ}).toReal := by
-    have hle : Pr {ω | R n ω ≤ q - δ} ≤
-        Pr {ω | R n ω ≤ qn n ω} + Pr {ω | qn n ω < q - δ} :=
-      le_trans (measure_mono (hLo n)) (measure_union_le _ _)
-    have := ENNReal.toReal_mono
-      (ENNReal.add_ne_top.mpr ⟨measure_ne_top _ _, measure_ne_top _ _⟩) hle
-    rw [ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _), ← hJP n (q - δ)] at this
-    exact this
-  rw [Real.dist_eq, abs_lt]
-  constructor <;> [linarith; linarith]
+  -- The sampling distribution functions of the root at `P` are the ones supplied by `J`.
+  have hcdf : ∀ x : ℝ, Tendsto (fun n => (Pr {ω | R n ω ≤ x}).toReal) atTop (𝓝 (Jlim x)) := by
+    intro x
+    simpa only [hJP] using hJconv (fun _ => P) hP_mem x
+  have hmain := tendsto_measure_le_of_tendsto_cdf (μ := fun _ : ℕ => Pr) (S := R) (c := qn)
+    hJlim_cont.continuousAt hcdf
+    (fun ε hε => tendsto_measure_abs_sub_of_tendstoInMeasure hInMeas hε)
+  rwa [hq] at hmain
 
 end Consistency
 
@@ -510,14 +734,53 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
     TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω)) atTop
       (fun _ => ∫ t, t ∂ν) := by
-  -- TODO: reduces to the closed brick `ForMathlib.triangular_wlln_of_L1` after building the row
-  -- laws `Gm n := Pr.map (Y n 0)` (all row entries share this law by `hGrow` + `Measure.ext_of_Iic`),
-  -- transferring `habs`/`hint` by `integral_map`, and reindexing `Fin n ↔ range n`. The one
-  -- genuinely missing step is `hweak` (integration of bounded-continuous test functions), i.e. the
-  -- one-direction portmanteau theorem "CDF convergence at every continuity point ⟹ weak
-  -- convergence" specialised to `ℝ`, which is not yet available in Mathlib in this form
-  -- (`IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` needs convergence at *all* `Iic x`,
-  -- not merely at continuity points, so it does not apply directly).
-  sorry
+  -- the common law of the entries of row `n`
+  set Gm : ℕ → Measure ℝ := fun n => Pr.map (Y n 0) with hGm
+  haveI hGmprob : ∀ n, IsProbabilityMeasure (Gm n) := fun n =>
+    Measure.isProbabilityMeasure_map (hYmeas n 0).aemeasurable
+  -- every entry of a row carries the row law: they share a distribution function, and a finite
+  -- measure on the line is determined by its values on the rays `Iic x`
+  have hlaw : ∀ (n : ℕ) (i : Fin n), Pr.map (Y n (i : ℕ)) = Gm n := by
+    intro n i
+    refine Measure.ext_of_Iic _ _ (fun x => ?_)
+    have h1 : Pr.map (Y n (i : ℕ)) (Set.Iic x) = Pr {ω | Y n (i : ℕ) ω ≤ x} := by
+      rw [Measure.map_apply (hYmeas n (i : ℕ)) measurableSet_Iic]; rfl
+    have h2 : Gm n (Set.Iic x) = Pr {ω | Y n 0 ω ≤ x} := by
+      rw [hGm]
+      simp only []
+      rw [Measure.map_apply (hYmeas n 0) measurableSet_Iic]; rfl
+    have hre : (Pr {ω | Y n (i : ℕ) ω ≤ x}).toReal = (Pr {ω | Y n 0 ω ≤ x}).toReal := by
+      rw [← hGrow n (i : ℕ) i.isLt x, ← hGrow n 0 i.pos x]
+    rw [h1, h2]
+    exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 hre
+  -- weak convergence of the row laws: the distribution-function hypothesis upgraded by the
+  -- one-direction portmanteau brick of this file
+  have hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ y, f y ∂(Gm n)) atTop (𝓝 (∫ y, f y ∂ν)) := by
+    refine tendsto_integral_of_tendsto_cdf hGmprob (fun x hx => ?_)
+    have hxc : ContinuousAt Glim x :=
+      ContinuousAt.congr hx (Filter.Eventually.of_forall fun y => (hGlim y).symm)
+    have hconv := hGconv x hxc
+    rw [hGlim x] at hconv
+    refine hconv.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hGrow n 0 hn x, hGm]
+    simp only []
+    rw [Measure.map_apply (hYmeas n 0) measurableSet_Iic]
+    rfl
+  -- convergence of the first absolute moments, transported to the row laws
+  have hL1 : Tendsto (fun n => ∫ y, |y| ∂(Gm n)) atTop (𝓝 (∫ y, |y| ∂ν)) := by
+    refine habs.congr (fun n => ?_)
+    rw [hGm]
+    simp only []
+    rw [integral_map (hYmeas n 0).aemeasurable (by fun_prop)]
+  have hmain := triangular_wlln_of_L1 (P := Pr) (Y := fun n (i : Fin n) => Y n (i : ℕ))
+    (G := Gm) (ν := ν) (fun n i => hYmeas n (i : ℕ)) hindep hlaw hweak
+    (by simpa using hint) hL1
+  have hfun : (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω))
+      = fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i : Fin n, Y n (i : ℕ) ω := by
+    funext n ω
+    rw [Fin.sum_univ_eq_sum_range (fun i => Y n i ω) n]
+  rw [hfun]
+  exact hmain
 
 end StatLean.HypothesisTesting
