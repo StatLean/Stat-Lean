@@ -295,6 +295,47 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
     rfl
   rw [hLHS, hRHS]
 
+/-- **First-marginal identity.** The mass `randPairLaw` puts on a cylinder `S ×ˢ univ` is the
+group average of the masses `P{T(g·x) ∈ S}` — i.e. the first marginal of the doubly
+randomized law is the *singly* randomized mixture. This is the form in which tightness of
+the randomized statistic is read off a joint weak limit. -/
+lemma real_randPairLaw_prod_univ {E : Type*} [MeasurableSpace E] (P : Measure 𝓧)
+    [IsProbabilityMeasure P] (T : 𝓧 → E) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {S : Set E} (hS : MeasurableSet S) :
+    (randPairLaw G T P).real (S ×ˢ (Set.univ : Set E))
+      = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x : 𝓧 | T (g • x) ∈ S} := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardℝ : (Fintype.card G : ℝ≥0∞) ≠ 0 := by exact_mod_cast hcard.ne'
+  have hcardtop : (Fintype.card G : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hmeasS : MeasurableSet (S ×ˢ (Set.univ : Set E)) := hS.prod MeasurableSet.univ
+  have hpre : ∀ g g' : G,
+      (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (S ×ˢ (Set.univ : Set E))
+        = {x : 𝓧 | T (g • x) ∈ S} := by
+    intro g g'; ext x; simp [Set.mem_prod]
+  have hstep : ∀ g : G,
+      (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) (S ×ˢ (Set.univ : Set E))
+        = (Fintype.card G : ℝ≥0∞) * P {x : 𝓧 | T (g • x) ∈ S} := by
+    intro g
+    rw [Measure.finset_sum_apply,
+      Finset.sum_congr rfl (fun g' _ => by
+        rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']),
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hcc : ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ * (Fintype.card G : ℝ≥0∞)
+      = (Fintype.card G : ℝ≥0∞)⁻¹ := by
+    rw [sq, ENNReal.mul_inv (Or.inl hcardℝ) (Or.inl hcardtop), mul_assoc,
+      ENNReal.inv_mul_cancel hcardℝ hcardtop, mul_one]
+  have hval : (randPairLaw G T P) (S ×ˢ (Set.univ : Set E))
+      = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ∈ S} := by
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp_rw [hstep]
+    rw [← Finset.mul_sum, ← mul_assoc, hcc]
+  rw [Measure.real, hval, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+    ENNReal.toReal_sum fun g _ => measure_ne_top P _]
+  rfl
+
 /-- `randPairLaw` is a probability measure: it is `card⁻²` times a sum of `card²` pushforwards
 of the probability measure `P`, each of total mass `1` (the maps are measurable). -/
 lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Measure 𝓧)
