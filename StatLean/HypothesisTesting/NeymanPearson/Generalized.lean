@@ -579,8 +579,9 @@ private lemma isClosed_momentSet {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
 
 /-- **Geometry of the moment set (iv, first clause).** The attainable-moment set is convex
 and closed. Convexity is immediate from convexity of the class of critical functions;
-closedness is the weak compactness theorem for critical functions (lifted to the named private
-lemma `isClosed_momentSet`; see its docstring for the exact missing Mathlib brick). -/
+closedness is the weak compactness theorem for critical functions, proved in the private
+lemma `isClosed_momentSet` by transporting `ForMathlib/TestsWeakCompact` along
+`exists_l2_reduction`. -/
 theorem convex_isClosed_momentSet {m : ℕ}
     -- USER-INPUT: dominating measure, σ-finite
     (μ : Measure 𝓧) [SigmaFinite μ]
@@ -617,9 +618,7 @@ theorem convex_isClosed_momentSet {m : ℕ}
           = fun x => a * (φ x * f i x) + b * (ψ x * f i x) from by funext x; ring]
       rw [integral_add ((hfi i).const_mul a) ((hgi i).const_mul b),
         integral_const_mul, integral_const_mul]
-  · -- Closedness is lifted to the named private lemma `isClosed_momentSet`; its docstring
-    -- pins the exact missing Mathlib brick (`L^∞ = (L¹)*`). Convexity above is complete.
-    exact isClosed_momentSet μ f hmeas hint
+  · exact isClosed_momentSet μ f hmeas hint
 
 /-! ### The supporting hyperplane at the top of the constrained fibre -/
 
@@ -937,14 +936,33 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
     (∃ k : Fin m → ℝ, ∀ᵐ x ∂μ, p (Fin.last m) x = ∑ i, k i * p i.castSucc x) ∨
       ∃ φ, IsCriticalFn φ ∧ (∀ i : Fin m, powerAgainst (P i.castSucc) φ = α) ∧
         α < powerAgainst (P (Fin.last m)) φ := by
-  -- OBSTRUCTION (deep debt). This is the applied form of the inner-point clause. The vector
-  -- `c ≡ α` is an inner point of the moment set precisely when the last density is NOT an a.e.
-  -- linear combination of the others (the excluded left disjunct); in that case one invokes
-  -- `exists_multipliers_of_max` to obtain the multiplier test that maximizes the power against
-  -- `P_{m+1}`, and strict unbiasedness upgrades `α ≤` to `α <`. This routes entirely through
-  -- `exists_multipliers_of_max`, hence inherits its dependency on the open weak-compactness
-  -- theorem `ForMathlib/TestsWeakCompact` and the supporting-hyperplane argument. No honest
-  -- proof is available without them.
+  -- OBSTRUCTION (one named gap, re-derived; the previously recorded one is obsolete).
+  -- `exists_multipliers_of_max` is now PROVEN, and so is `exists_test_max_integral_of_constraints`,
+  -- so the compactness half of the old note no longer applies. What is missing is a
+  -- LINEAR-ALGEBRA reduction, and it is genuinely needed:
+  --
+  -- The direct route is elementary and gets most of the way. Assume the right disjunct fails.
+  -- The constant test `φ ≡ α` then maximizes `∫φp_{m+1}` over the class `{φ : ∫φpᵢ = α}`, and
+  -- for every BOUNDED measurable `g` with `∫g pᵢ dμ = 0 (i ≤ m)` the perturbation
+  -- `φ = α + εg` is critical for small `ε > 0` and lies in the class, so `∫ g p_{m+1} dμ ≤ 0`;
+  -- applying this to `−g` gives `∫ g p_{m+1} dμ = 0`. Hence the moment functional of `p_{m+1}`
+  -- annihilates the common kernel of those of `p₁,…,p_m` on the space of bounded measurable
+  -- functions.
+  --
+  -- MISSING BRICK: the finite-dimensional duality step "a linear functional vanishing on
+  -- `⋂ᵢ ker fᵢ` is a linear combination of the `fᵢ`", applied to the moment map into
+  -- `Fin (m+1) → ℝ`. In Lean this needs the space of bounded measurable functions packaged as a
+  -- `Submodule ℝ (𝓧 → ℝ)`, the moment map as a `LinearMap` into `Fin (m+1) → ℝ`, and then
+  -- `Submodule.liftQ`/`LinearMap.quotKerEquivRange`/`LinearMap.exists_extend` on its range; the
+  -- resulting `k` gives `∫ g (p_{m+1} − ∑ kᵢpᵢ) dμ = 0` for every bounded `g`, whence
+  -- `p_{m+1} = ∑ kᵢpᵢ` a.e.
+  --
+  -- Routing through `exists_multipliers_of_max` instead does NOT avoid this: its inner-point
+  -- hypothesis `α·𝟙 ∈ interior (momentSet …)` genuinely FAILS when `p₁,…,p_m` are linearly
+  -- dependent a.e. (e.g. `m = 2`, `p₁ = p₂`: the moment set is the diagonal of `[0,1]²`, whose
+  -- ambient interior is empty), and the classical proof silently reduces to a maximal
+  -- independent subfamily first. For `m = 1` the inner-point hypothesis IS automatic
+  -- (`momentSet μ ![p₁] = [0,1]` and `0 < α < 1`), so that case is already reachable.
   sorry
 
 /-- **Lagrangian sufficiency.** Abstract form of the multiplier argument, on an arbitrary
