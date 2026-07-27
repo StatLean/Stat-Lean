@@ -182,6 +182,25 @@ lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSp
   rw [hcoef, ← hc]
   exact RCLike.real_smul_eq_coe_mul _ _
 
+/-- **Equivariant reduction of `randPairLaw`.** If `Φ` intertwines the group actions, the
+doubly randomized law of `T ∘ Φ` under `P` is the doubly randomized law of `T` under the
+pushforward `P.map Φ`. -/
+lemma randPairLaw_comp {𝓧 𝓨 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSpace 𝓨]
+    [MeasurableSpace Z] {G : Type*} [Group G] [Fintype G] [MulAction G 𝓧] [MulAction G 𝓨]
+    (P : Measure 𝓧) {Φ : 𝓧 → 𝓨} (hΦ : Measurable Φ)
+    (hequiv : ∀ (g : G) (x : 𝓧), Φ (g • x) = g • Φ x)
+    {T : 𝓨 → Z} (hT : Measurable T) (hsmul : ∀ g : G, Measurable fun y : 𝓨 => g • y) :
+    randPairLaw G (fun x => T (Φ x)) P = randPairLaw G T (P.map Φ) := by
+  unfold randPairLaw
+  congr 1
+  refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
+  have h := Measure.map_map (μ := P) (g := fun y : 𝓨 => (T (g • y), T (g' • y))) (f := Φ)
+    ((hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))) hΦ
+  rw [h]
+  congr 1
+  funext x
+  simp only [Function.comp_apply, hequiv]
+
 /-! ### The sign-change group acting on vector-valued data -/
 
 /-- The sign-change action on vector data, written out: `(ε • x) i = εᵢ • xᵢ`, with the
