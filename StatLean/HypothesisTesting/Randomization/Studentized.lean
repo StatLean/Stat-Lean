@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Randomization.ExactLevel
+import StatLean.HypothesisTesting.ForMathlib.PermutationMarginals
 import StatLean.HypothesisTesting.Randomization.TwoSamplePermutation
 import StatLean.HypothesisTesting.Randomization.SlutskyRandomization
 import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
@@ -575,38 +576,43 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
       (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => twoSampleScale (m k) (n k) x) τ := by
   -- TODO (deferred, named brick): the hypergeometric half of Theorem 17.3.3.
-  -- STATUS (re-derived this session, wave 5). This is the *only* mathematical debt of the
-  -- studentized chain that is not the permutation CLT, and it is genuinely open work rather
-  -- than a missing upstream theorem — the wave-4 note in
-  -- `randDist_studentized_tendstoInProb` is accurate about that. The route, re-derived and
-  -- checked here:
-  -- (a) `|Perm(Fin N)|⁻¹ ∑_σ P.real {…}` is the mass of the *mixture* measure
-  --     `μ_k = |Perm|⁻¹ ∑_σ P.map (σ • ·)`, so the three closure properties above
-  --     (`tendstoInProb_comp/add/const_mul`, or their group-averaged twins) reduce the
-  --     square root, the sum and the factor `m/n` to the two block variances.
-  -- (b) Block sums at `σ • x` depend on `σ` only through the index set
-  --     `S(σ) = σ⁻¹ '' {Fin.castAdd n i}`: `m⁻¹ ∑_{i<m} f(x(σ⁻¹(castAdd i)))`
-  --     `= m⁻¹ ∑_l f(x l) · weight l (S σ)`. The pushforward of the uniform law on
-  --     `Perm (Fin N)` under `σ ↦ S σ` is uniform on `SubsetsOfCard N m`, because right
-  --     multiplication by `τ` maps the fibre over `s` bijectively onto the fibre over
-  --     `τ⁻¹ '' s` and the action on `m`-subsets is transitive. That bridge is what makes
-  --     `ForMathlib/HypergeometricMoments` applicable, and it is the one piece of new
-  --     combinatorics required.
-  -- (c) Conditionally on the pooled data, `expect_weight` gives the pooled empirical mean
-  --     as the first moment of the block average and `var_mean_linear_le` gives the
-  --     `O(1/m)` variance bound; Chebyshev on the finite uniform average then handles the
-  --     block *means*. The block *second* moments need one further step, because
-  --     `var_mean_linear_le` applied to `c l = (x l)²` costs a fourth pooled moment, which
-  --     `MemLp id 2` does not supply: truncate at level `K` (Chebyshev with the bound `K²`
-  --     for the truncated part, Markov with `∫ t² 1{t² > K}` for the tail, the latter small
-  --     uniformly in `k` by dominated convergence). This is the standard two-moment
-  --     argument for sampling without replacement and it is why the theorem holds with no
-  --     moment assumption beyond `L²`.
-  -- (d) The pooled empirical moments themselves converge by `tendsto_pi_real_lln`, giving
-  --     `v̄ = (λ varY + varZ)/(1 + λ)` for both blocks and `τ² = (1 + λ) v̄` for the scale.
-  -- Nothing above needs the permutation CLT, and nothing above is available off the shelf;
-  -- it is deliberately isolated here so that the two headline theorems below are complete
-  -- modulo exactly two named statements — this one and
+  -- STATUS (re-derived this session, wave 5). This is the only mathematical debt of the
+  -- studentized chain other than the permutation CLT, and it is genuinely open work rather
+  -- than a missing upstream theorem. The route, re-derived here, with the state of each step:
+  -- (a) DONE, by the two closure properties above. The group average
+  --     `|Perm|⁻¹ ∑_σ P.real {…}` is a convex combination of per-`σ` probabilities, so
+  --     `tendstoInProbRandomized_comp` (and the additive/`const_mul` twins of
+  --     `tendstoInProb_add`, `tendstoInProb_const_mul`, which are proved the same way)
+  --     reduce the square root, the sum and the factor `m/n` to the two block variances.
+  -- (b) DONE — this was the piece flagged as "the one new combinatorial input", and it is
+  --     now a `ForMathlib` brick, `ForMathlib/PermutationMarginals` (0-sorry, axiom-clean).
+  --     Under a uniform `σ`, one coordinate is uniform on the `N` pooled items
+  --     (`avg_perm_apply`) and two distinct coordinates are uniform on the `N(N-1)` ordered
+  --     distinct pairs (`avg_perm_apply_pair`); together they give the exact variance of a
+  --     permuted block average of centred coefficients,
+  --     `(1/m)((N-m)/(N-1))(N⁻¹ ∑ d²) ≤ (1/m)(N⁻¹ ∑ d²)`
+  --     (`avg_perm_blockAvg_sq_le`), and the Chebyshev step in exactly the group-average
+  --     shape `randDist` uses (`perm_avg_indicator_blockAvg_le`). Note this is the
+  --     *permutation* model; `ForMathlib/HypergeometricMoments` is the equivalent *subset*
+  --     model, and transporting between them (the uniformity of `σ ↦ σ⁻¹ '' block` on
+  --     `m`-subsets) is no longer needed on this route.
+  -- (c) LEFT, for the block **means**: integrate (b) over the pooled data. With
+  --     `d l = x l - x̄` the coefficients are centred by construction and the bound is
+  --     `ε⁻²(1/m)(N⁻¹ ∑ (x l - x̄)²)`, whose `P`-expectation is bounded by the two
+  --     population second moments; `1/m → 0` then gives the block mean of `σ • x`
+  --     converging to the pooled mean in probability, hence to `μ`.
+  -- (d) LEFT, for the block **second** moments, and this is the only step needing an idea
+  --     beyond (b)+(c): applying (b) to `c l = (x l)²` costs a fourth pooled moment, which
+  --     `MemLp id 2` does not supply. Truncate at level `K`: (b) with the truncated
+  --     coefficients has the bound `ε⁻²(1/m)K²`, and the discarded part is controlled in
+  --     `L¹` by `∫ t² 1{t² > K}` under each population, small uniformly in `k` by dominated
+  --     convergence. This is the standard two-moment argument for sampling without
+  --     replacement, and it is why the theorem needs no moment assumption beyond `L²`.
+  -- (e) LEFT, bookkeeping: the pooled empirical moments converge by `tendsto_pi_real_lln`
+  --     (through `tendsto_lln_blockY`/`_blockZ`), giving `v̄ = (λ varY + varZ)/(1 + λ)` for
+  --     both blocks and `τ² = (1 + λ) v̄` for the scale.
+  -- Nothing above needs the permutation CLT, so the two headline theorems below are complete
+  -- modulo exactly two named statements: this one and
   -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
   sorry
 
