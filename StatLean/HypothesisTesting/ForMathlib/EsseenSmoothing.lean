@@ -95,4 +95,104 @@ private lemma integral_linear_mul_cexp {a : ℂ} (ha : a ≠ 0) (c : ℂ) (p q :
     fun_prop
   simpa using intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => hderiv x) hint
 
+/-! ## The Fourier transform of the tent function -/
+
+/-- The complexification of the tent function. -/
+private noncomputable def tentC (x : ℝ) : ℂ := (tent x : ℂ)
+
+private lemma continuous_tentC : Continuous tentC :=
+  Complex.continuous_ofReal.comp continuous_tent
+
+/-- **The Fourier transform of the triangle function is the squared sinc.**
+
+With Mathlib's `e^{-2πi x ξ}` normalisation, `𝓕 Λ (ξ) = (sin(πξ)/(πξ))²` for `ξ ≠ 0`
+(at `ξ = 0` the right-hand side is the junk value `0`, while `𝓕 Λ (0) = ∫ Λ = 1`). -/
+theorem fourier_tentC {ξ : ℝ} (hξ : ξ ≠ 0) :
+    𝓕 tentC ξ = ((Real.sin (π * ξ) / (π * ξ)) ^ 2 : ℝ) := by
+  have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
+  obtain ⟨a, ha_def⟩ : ∃ a : ℂ, a = -2 * (π : ℂ) * (ξ : ℂ) * Complex.I := ⟨_, rfl⟩
+  have ha : a ≠ 0 := by
+    rw [ha_def]
+    refine mul_ne_zero (mul_ne_zero (mul_ne_zero (by norm_num) ?_) ?_) Complex.I_ne_zero
+    · exact_mod_cast hπ
+    · exact_mod_cast hξ
+  -- Step 1: rewrite the Fourier integral in the form `∫ Λ(v) e^{a v}`.
+  have hstep1 : 𝓕 tentC ξ = ∫ v : ℝ, tentC v * Complex.exp (a * v) := by
+    rw [Real.fourier_real_eq_integral_exp_smul]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun v => ?_)
+    have hexp : ((-2 * π * v * ξ : ℝ) : ℂ) * Complex.I = a * (v : ℂ) := by
+      rw [ha_def]; push_cast; ring
+    dsimp only
+    rw [smul_eq_mul, mul_comm, hexp]
+  -- Step 2: the integrand is supported in `[-1, 1]`.
+  have hsupp : ∀ v : ℝ, v ∉ Set.Icc (-1 : ℝ) 1 → tentC v * Complex.exp (a * v) = 0 := by
+    intro v hv
+    simp [tentC, tent_eq_zero_of_notMem hv]
+  have hcont : Continuous fun v : ℝ => tentC v * Complex.exp (a * v) := by
+    exact continuous_tentC.mul (by fun_prop)
+  have hstep2 : (∫ v : ℝ, tentC v * Complex.exp (a * v))
+      = ∫ v in (-1 : ℝ)..1, tentC v * Complex.exp (a * v) := by
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp,
+      MeasureTheory.integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le (by norm_num : (-1 : ℝ) ≤ 1)]
+  -- Step 3: split at the origin and evaluate each linear piece.
+  have hsplit : (∫ v in (-1 : ℝ)..1, tentC v * Complex.exp (a * v))
+      = (∫ v in (-1 : ℝ)..0, tentC v * Complex.exp (a * v)) +
+        ∫ v in (0 : ℝ)..1, tentC v * Complex.exp (a * v) :=
+    (intervalIntegral.integral_add_adjacent_intervals
+      (hcont.intervalIntegrable _ _) (hcont.intervalIntegrable _ _)).symm
+  have hleft : (∫ v in (-1 : ℝ)..0, tentC v * Complex.exp (a * v))
+      = ∫ v in (-1 : ℝ)..0, ((1 : ℂ) + (v : ℂ)) * Complex.exp (a * v) := by
+    refine intervalIntegral.integral_congr fun v hv => ?_
+    rw [Set.uIcc_of_le (by norm_num : (-1 : ℝ) ≤ 0)] at hv
+    simp [tentC, tent_of_mem_Icc_neg_one_zero hv]
+  have hright : (∫ v in (0 : ℝ)..1, tentC v * Complex.exp (a * v))
+      = ∫ v in (0 : ℝ)..1, -((((-1 : ℂ)) + (v : ℂ)) * Complex.exp (a * v)) := by
+    refine intervalIntegral.integral_congr fun v hv => ?_
+    rw [Set.uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1)] at hv
+    rw [tentC, tent_of_mem_Icc_zero_one hv]
+    push_cast
+    ring
+  rw [hstep1, hstep2, hsplit, hleft, hright, intervalIntegral.integral_neg,
+    integral_linear_mul_cexp ha, integral_linear_mul_cexp ha]
+  -- Step 4: the closed-form algebra.
+  have he0 : Complex.exp (a * ((0 : ℝ) : ℂ)) = 1 := by
+    norm_num
+  have he1 : Complex.exp (a * ((1 : ℝ) : ℂ)) = Complex.exp a := by
+    norm_num
+  have hem1 : Complex.exp (a * ((-1 : ℝ) : ℂ)) = Complex.exp (-a) := by
+    norm_num
+  have hcos : Complex.exp a + Complex.exp (-a) = 2 * Complex.cos (2 * (π : ℂ) * (ξ : ℂ)) := by
+    have h1 : a = (-(2 * (π : ℂ) * (ξ : ℂ))) * Complex.I := by rw [ha_def]; ring
+    rw [h1, show -(-(2 * (π : ℂ) * (ξ : ℂ)) * Complex.I)
+        = (2 * (π : ℂ) * (ξ : ℂ)) * Complex.I by ring,
+      Complex.exp_mul_I, Complex.exp_mul_I, Complex.cos_neg, Complex.sin_neg]
+    ring
+  have ha2 : a ^ 2 = -(4 * (π : ℂ) ^ 2 * (ξ : ℂ) ^ 2) := by
+    rw [ha_def]
+    rw [mul_pow, mul_pow, mul_pow, Complex.I_sq]
+    ring
+  have hsin : 2 - 2 * Complex.cos (2 * (π : ℂ) * (ξ : ℂ))
+      = 4 * Complex.sin ((π : ℂ) * (ξ : ℂ)) ^ 2 := by
+    have : (2 : ℂ) * (π : ℂ) * (ξ : ℂ) = 2 * ((π : ℂ) * (ξ : ℂ)) := by ring
+    rw [this, Complex.cos_two_mul', Complex.cos_sq']
+    ring
+  have hπξ : ((π : ℂ) * (ξ : ℂ)) ≠ 0 := by
+    refine mul_ne_zero ?_ ?_
+    · exact_mod_cast hπ
+    · exact_mod_cast hξ
+  have hsum : Complex.exp a + Complex.exp (-a) - 2
+      = -(4 * Complex.sin ((π : ℂ) * (ξ : ℂ)) ^ 2) := by
+    rw [hcos]
+    linear_combination -hsin
+  have hfinal : (Complex.exp a + Complex.exp (-a) - 2) / a ^ 2
+      = ((Real.sin (π * ξ) / (π * ξ)) ^ 2 : ℝ) := by
+    rw [hsum, ha2]
+    push_cast
+    field_simp
+  rw [he0, he1, hem1, ← hfinal]
+  field_simp
+  push_cast
+  ring
+
 end StatLean.HypothesisTesting
