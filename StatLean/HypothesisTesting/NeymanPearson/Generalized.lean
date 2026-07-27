@@ -621,6 +621,256 @@ theorem convex_isClosed_momentSet {m : ℕ}
     -- pins the exact missing Mathlib brick (`L^∞ = (L¹)*`). Convexity above is complete.
     exact isClosed_momentSet μ f hmeas hint
 
+/-! ### The supporting hyperplane at the top of the constrained fibre -/
+
+/-- **Undetermined multipliers exist.** If the constraint vector `c` is an inner point of the
+projected moment set and `φ₀` maximizes `∫ φ f_{m+1} dμ` over the constraint class, then there
+are multipliers `k` for which `φ₀` maximizes the *Lagrangian* over **all** critical functions.
+
+**Proof.** Work in the full moment body `M = momentSet μ f ⊆ ℝ^{m+1}`, a convex set whose last
+coordinate is bounded below by `−B` with `B = ∫|f_{m+1}|dμ`; put `β = ∫φ₀f_{m+1}dμ` and let `z`
+be the moment vector of `φ₀`. Fix `ε > 0` with the closed `ε`-ball around `c` inside the
+projected moment set. A reflection argument bounds the last coordinate along `M` by the
+*convex* function `u ↦ β + Lip‖u − c‖`, `Lip = (|β| + B)/ε`: for `y ∈ M` lying over `c + d`
+with `d ≠ 0`, the reflected point `c − (ε/‖d‖)d` is still in the projected moment set, and the
+convex combination of `y` with a lift of it lands over `c`, so cannot exceed `β`. Hence the open
+convex strict epigraph `U` of that function is disjoint from `M`, and `geometric_hahn_banach_open`
+separates them. Evaluating the separating functional along the vertical ray through `z` forces
+its last coefficient `b` to be negative and pins the separating constant to `L z`; the multipliers
+are `kᵢ = −wᵢ/b`.
+
+Note that no interior point of `M` itself is needed — the Lipschitz majorant replaces the usual
+supporting-hyperplane-at-a-boundary-point argument, which would require `M` to have nonempty
+interior (false exactly when `f_{m+1}` is an a.e. linear combination of the `fᵢ`). -/
+private lemma exists_lagrange_multipliers {m : ℕ} (μ : Measure 𝓧) [SigmaFinite μ]
+    (f : Fin (m + 1) → 𝓧 → ℝ) (hmeas : ∀ i, Measurable (f i)) (hint : ∀ i, Integrable (f i) μ)
+    {c : Fin m → ℝ} (hc : c ∈ interior (momentSet μ fun i => f i.castSucc))
+    {φ₀ : 𝓧 → ℝ} (hφ₀ : IsCriticalFn φ₀)
+    (hcon₀ : ∀ i, ∫ x, φ₀ x * f i.castSucc x ∂μ = c i)
+    (hmax₀ : ∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ = c i) →
+      ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ₀ x * f (Fin.last m) x ∂μ) :
+    ∃ k : Fin m → ℝ, ∀ ψ, IsCriticalFn ψ →
+      ∫ x, ψ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ
+        ≤ ∫ x, φ₀ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ := by
+  classical
+  set M : Set (Fin (m + 1) → ℝ) := momentSet μ f with hMdef
+  set β : ℝ := ∫ x, φ₀ x * f (Fin.last m) x ∂μ with hβdef
+  set z : Fin (m + 1) → ℝ := fun j => ∫ x, φ₀ x * f j x ∂μ with hzdef
+  have hzM : z ∈ M := ⟨φ₀, hφ₀, fun _ => rfl⟩
+  have hzc : ∀ i : Fin m, z i.castSucc = c i := hcon₀
+  have hzlast : z (Fin.last m) = β := rfl
+  have hMconv : Convex ℝ M := (convex_isClosed_momentSet μ f hmeas hint).1
+  -- Maximality of `β`, read on `M`.
+  have hmaxM : ∀ y ∈ M, (∀ i : Fin m, y i.castSucc = c i) → y (Fin.last m) ≤ β := by
+    rintro y ⟨ψ, hψ, hy⟩ hyc
+    rw [← hy (Fin.last m)]
+    exact hmax₀ ψ hψ fun i => by rw [hy i.castSucc]; exact hyc i
+  -- A uniform lower bound on the objective coordinate.
+  set B : ℝ := ∫ x, |f (Fin.last m) x| ∂μ with hBdef
+  have hB0 : 0 ≤ B := integral_nonneg fun x => abs_nonneg _
+  have hBbd : ∀ y ∈ M, -B ≤ y (Fin.last m) := by
+    rintro y ⟨ψ, hψ, hy⟩
+    rw [← hy (Fin.last m)]
+    have h1 : |∫ x, ψ x * f (Fin.last m) x ∂μ| ≤ ∫ x, |ψ x * f (Fin.last m) x| ∂μ := by
+      simpa [Real.norm_eq_abs] using
+        norm_integral_le_integral_norm (μ := μ) fun x => ψ x * f (Fin.last m) x
+    have h2 : ∫ x, |ψ x * f (Fin.last m) x| ∂μ ≤ B :=
+      integral_mono ((integrable_crit_mul (hint (Fin.last m)) hψ).abs)
+        (hint (Fin.last m)).abs fun x => by
+          rw [abs_mul, abs_of_nonneg (hψ.2 x).1]
+          exact mul_le_of_le_one_left (abs_nonneg _) (hψ.2 x).2
+    linarith [neg_abs_le (∫ x, ψ x * f (Fin.last m) x ∂μ)]
+  -- A closed `ε`-ball around `c` inside the projected moment set.
+  obtain ⟨ε₀, hε₀, hball₀⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hc)
+  set ε : ℝ := ε₀ / 2 with hεdef
+  have hε : 0 < ε := by rw [hεdef]; linarith
+  have hball : ∀ u : Fin m → ℝ, ‖u - c‖ ≤ ε → u ∈ momentSet μ fun i => f i.castSucc := by
+    intro u hu
+    refine hball₀ ?_
+    rw [Metric.mem_ball, dist_eq_norm]
+    have hlt : ε < ε₀ := by rw [hεdef]; linarith
+    linarith
+  -- The Lipschitz majorant of the last coordinate along `M`.
+  set Lip : ℝ := (|β| + B) / ε with hLipdef
+  have hLip0 : 0 ≤ Lip := by
+    rw [hLipdef]; exact div_nonneg (by linarith [abs_nonneg β]) hε.le
+  have hLipeq : ε * Lip = |β| + B := by
+    rw [hLipdef, mul_div_cancel₀ _ (ne_of_gt hε)]
+  have hlip : ∀ y ∈ M, y (Fin.last m) ≤ β + Lip * ‖(fun i : Fin m => y i.castSucc) - c‖ := by
+    intro y hy
+    set d : Fin m → ℝ := (fun i : Fin m => y i.castSucc) - c with hddef
+    have hdval : ∀ i : Fin m, d i = y i.castSucc - c i := fun _ => rfl
+    rcases eq_or_lt_of_le (norm_nonneg d) with hδ0 | hδ
+    · have hyc : ∀ i : Fin m, y i.castSucc = c i := by
+        intro i
+        have h := congrFun (norm_eq_zero.mp hδ0.symm) i
+        rw [hdval i] at h
+        simp only [Pi.zero_apply] at h
+        linarith
+      rw [← hδ0]
+      simpa using hmaxM y hy hyc
+    · set δ : ℝ := ‖d‖ with hδdef
+      have hδ' : 0 < δ := hδ
+      have hsum : 0 < ε + δ := by linarith
+      set g : Fin m → ℝ := (-(ε / δ)) • d with hgdef
+      have hgval : ∀ i : Fin m, g i = -(ε / δ) * d i := fun _ => rfl
+      have hgn : ‖g‖ = ε := by
+        rw [hgdef, norm_smul, Real.norm_eq_abs, abs_neg,
+          abs_of_nonneg (le_of_lt (div_pos hε hδ')), ← hδdef,
+          div_mul_cancel₀ _ (ne_of_gt hδ')]
+      obtain ⟨ψ, hψ, hψm⟩ : c + g ∈ momentSet μ fun i => f i.castSucc :=
+        hball _ (by rw [add_sub_cancel_left, hgn])
+      set y' : Fin (m + 1) → ℝ := fun j => ∫ x, ψ x * f j x ∂μ with hy'def
+      have hy'M : y' ∈ M := ⟨ψ, hψ, fun _ => rfl⟩
+      have hy'c : ∀ i : Fin m, y' i.castSucc = c i + g i := hψm
+      have hcomb : (ε / (ε + δ)) • y + (δ / (ε + δ)) • y' ∈ M :=
+        hMconv hy hy'M (div_nonneg hε.le hsum.le) (div_nonneg hδ'.le hsum.le)
+          (by field_simp)
+      have hfirst : ∀ i : Fin m,
+          ((ε / (ε + δ)) • y + (δ / (ε + δ)) • y') i.castSucc = c i := by
+        intro i
+        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+        have hyi : y i.castSucc = c i + d i := by linarith [hdval i]
+        rw [hyi, hy'c i, hgval i]
+        field_simp
+        ring
+      have hle := hmaxM _ hcomb hfirst
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] at hle
+      have h3 : ε * y (Fin.last m) + δ * y' (Fin.last m) ≤ (ε + δ) * β := by
+        have h := mul_le_mul_of_nonneg_left hle hsum.le
+        calc ε * y (Fin.last m) + δ * y' (Fin.last m)
+            = (ε + δ) * (ε / (ε + δ) * y (Fin.last m)
+              + δ / (ε + δ) * y' (Fin.last m)) := by field_simp
+          _ ≤ (ε + δ) * β := h
+      have hkey : ε * (β + Lip * δ) = ε * β + (|β| + B) * δ := by
+        rw [← hLipeq]; ring
+      refine le_of_mul_le_mul_left ?_ hε
+      rw [hkey]
+      nlinarith [h3, mul_le_mul_of_nonneg_left (le_abs_self β) hδ'.le,
+        mul_le_mul_of_nonneg_left (hBbd y' hy'M) hδ'.le]
+  -- The open convex set strictly above the majorant.
+  set U : Set (Fin (m + 1) → ℝ) :=
+    {y | β + Lip * ‖(fun i : Fin m => y i.castSucc) - c‖ < y (Fin.last m)} with hUdef
+  have hprojcont : Continuous fun y : Fin (m + 1) → ℝ => (fun i : Fin m => y i.castSucc) - c :=
+    (continuous_pi fun i => continuous_apply i.castSucc).sub continuous_const
+  have hUopen : IsOpen U :=
+    isOpen_lt (continuous_const.add (continuous_const.mul hprojcont.norm))
+      (continuous_apply (Fin.last m))
+  have hUconv : Convex ℝ U := by
+    rintro y₁ h₁ y₂ h₂ a b ha hb hab
+    simp only [hUdef, Set.mem_setOf_eq] at h₁ h₂ ⊢
+    have hproj : (fun i : Fin m => (a • y₁ + b • y₂) i.castSucc) - c
+        = a • ((fun i : Fin m => y₁ i.castSucc) - c)
+          + b • ((fun i : Fin m => y₂ i.castSucc) - c) := by
+      funext i
+      simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
+      linear_combination (c i) * hab
+    have hnorm : ‖(fun i : Fin m => (a • y₁ + b • y₂) i.castSucc) - c‖
+        ≤ a * ‖(fun i : Fin m => y₁ i.castSucc) - c‖
+          + b * ‖(fun i : Fin m => y₂ i.castSucc) - c‖ := by
+      rw [hproj]
+      refine le_trans (norm_add_le _ _) ?_
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg ha,
+        abs_of_nonneg hb]
+    have hstrict : a * (β + Lip * ‖(fun i : Fin m => y₁ i.castSucc) - c‖)
+        + b * (β + Lip * ‖(fun i : Fin m => y₂ i.castSucc) - c‖)
+        < a * y₁ (Fin.last m) + b * y₂ (Fin.last m) := by
+      rcases eq_or_lt_of_le ha with ha0 | ha0
+      · have hb1 : b = 1 := by linarith
+        rw [← ha0, hb1]; simpa using h₂
+      · rcases eq_or_lt_of_le hb with hb0 | hb0
+        · have ha1 : a = 1 := by linarith
+          rw [ha1, ← hb0]; simpa using h₁
+        · exact add_lt_add (mul_lt_mul_of_pos_left h₁ ha0) (mul_lt_mul_of_pos_left h₂ hb0)
+    have hβab : a * β + b * β = β := by rw [← add_mul, hab, one_mul]
+    have hlast : (a • y₁ + b • y₂) (Fin.last m)
+        = a * y₁ (Fin.last m) + b * y₂ (Fin.last m) := rfl
+    rw [hlast]
+    linarith [mul_le_mul_of_nonneg_left hnorm hLip0, hstrict, hβab]
+  have hdisj : Disjoint U M := by
+    rw [Set.disjoint_left]
+    intro y hyU hyM
+    exact absurd (hlip y hyM) (not_le.mpr hyU)
+  obtain ⟨L, u₀, hUlt, hMge⟩ := geometric_hahn_banach_open hUconv hUopen hMconv hdisj
+  -- Coordinates of the separating functional, in the standard basis.
+  set sb : Fin (m + 1) → (Fin (m + 1) → ℝ) := fun j l => if l = j then 1 else 0 with hsbdef
+  have hbasis : ∀ y : Fin (m + 1) → ℝ, ∑ j, y j • sb j = y := by
+    intro y
+    funext l
+    rw [Finset.sum_apply]
+    have hterm : ∀ j : Fin (m + 1), (y j • sb j) l = if l = j then y j else 0 := by
+      intro j
+      simp only [hsbdef, Pi.smul_apply, smul_eq_mul]
+      split_ifs <;> simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j]
+    simp
+  have hLcoeff : ∀ y : Fin (m + 1) → ℝ, L y = ∑ j, y j * L (sb j) := by
+    intro y
+    conv_lhs => rw [← hbasis y]
+    rw [map_sum]
+    exact Finset.sum_congr rfl fun j _ => by rw [map_smul, smul_eq_mul]
+  set w : Fin (m + 1) → ℝ := fun j => L (sb j) with hwdef
+  set b : ℝ := w (Fin.last m) with hbdef
+  have hLsb : L (sb (Fin.last m)) = b := by rw [hbdef, hwdef]
+  -- The vertical ray above `z` lies in `U`.
+  have hray : ∀ δ : ℝ, 0 < δ → z + δ • sb (Fin.last m) ∈ U := by
+    intro δ hδ
+    have hproj : (fun i : Fin m => (z + δ • sb (Fin.last m)) i.castSucc) - c = 0 := by
+      funext i
+      have hne : (i.castSucc : Fin (m + 1)) ≠ Fin.last m := (Fin.castSucc_lt_last i).ne
+      simp only [Pi.sub_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply,
+        hsbdef, if_neg hne, mul_zero, add_zero, hzc i, sub_self]
+    have hlast : (z + δ • sb (Fin.last m)) (Fin.last m) = β + δ := by
+      simp [hsbdef, hzlast]
+    simp only [hUdef, Set.mem_setOf_eq]
+    rw [hproj, hlast, norm_zero, mul_zero, add_zero]
+    linarith
+  have hLray : ∀ δ : ℝ, L (z + δ • sb (Fin.last m)) = L z + δ * b := by
+    intro δ
+    rw [map_add, map_smul, smul_eq_mul, hLsb]
+  have hzu : u₀ ≤ L z := hMge z hzM
+  have hbneg : b < 0 := by
+    have h1 := hUlt _ (hray 1 one_pos)
+    rw [hLray 1, one_mul] at h1
+    linarith
+  have hbne : b ≠ 0 := ne_of_lt hbneg
+  have hzeq : L z = u₀ := by
+    refine le_antisymm ?_ hzu
+    by_contra hcon
+    push_neg at hcon
+    have hδpos : 0 < (L z - u₀) / (-b) := div_pos (by linarith) (by linarith)
+    have h1 := hUlt _ (hray _ hδpos)
+    rw [hLray] at h1
+    have hcancel : (L z - u₀) / (-b) * b = -(L z - u₀) := by field_simp
+    rw [hcancel] at h1
+    linarith
+  -- The multipliers.
+  refine ⟨fun i => -(w i.castSucc) / b, fun ψ hψ => ?_⟩
+  have hsplit : ∀ v : Fin (m + 1) → ℝ,
+      ∑ j, v j * w j
+        = -b * (∑ i : Fin m, (-(w i.castSucc) / b) * v i.castSucc) + b * v (Fin.last m) := by
+    intro v
+    have h1 : -b * (∑ i : Fin m, (-(w i.castSucc) / b) * v i.castSucc)
+        = ∑ i : Fin m, v i.castSucc * w i.castSucc := by
+      rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      field_simp
+    rw [Fin.sum_univ_castSucc, h1, ← hbdef]
+    ring
+  have hyM : (fun j => ∫ x, ψ x * f j x ∂μ) ∈ M := ⟨ψ, hψ, fun _ => rfl⟩
+  have hge : ∑ j, z j * w j ≤ ∑ j, (∫ x, ψ x * f j x ∂μ) * w j := by
+    have e1 : ∑ j, z j * w j = L z := (hLcoeff z).symm
+    have e2 : ∑ j, (∫ x, ψ x * f j x ∂μ) * w j = L fun j => ∫ x, ψ x * f j x ∂μ :=
+      (hLcoeff _).symm
+    rw [e1, e2, hzeq]
+    exact hMge _ hyM
+  rw [hsplit, hsplit] at hge
+  simp only [hzdef, hzlast] at hge
+  rw [integral_lagrangian hint _ hψ, integral_lagrangian hint _ hφ₀]
+  by_contra hcon
+  push_neg at hcon
+  linarith [mul_lt_mul_of_neg_left hcon hbneg]
+
 /-- **Multipliers exist, and are forced (iv, second clause).** If the constraint vector is
 an inner point of the attainable-moment set, then there are multipliers `k` such that
 
