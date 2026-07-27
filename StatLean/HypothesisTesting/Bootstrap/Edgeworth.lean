@@ -91,8 +91,17 @@ centred and scaled sample mean equals the normal approximation `Φ(t/σ)` correc
 skewness term `−(1/6) γ φ(t/σ) (t²/σ² − 1) n^{-1/2}`, with a remainder bounded by `C/n`
 uniformly in the argument, for a constant `C` depending only on the sampling law.
 
-DEFERRAL-ELIGIBLE (planned debt): stated without proof in the reference tradition; full proofs
-are treatise-scale (cf. Hall 1992). -/
+DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (it is Hall (1992),
+Thm 2.2 with `j = 1`: under `E X⁴ < ∞` and Cramér's condition the two-term expansion has
+remainder `o(n⁻¹)`, so truncating after the `n^{-1/2}` term leaves `O(n⁻¹)`, and enlarging `C`
+absorbs the finitely many small `n`). It is not proved here. See the status note at the head of
+`ForMathlib/EsseenSmoothing.lean`: the analytic route needs (a) an expansion of `(charFun F)ⁿ`
+to order `n⁻¹` valid on a Cramér window plus a tail estimate off it, and (b) a CDF-level
+Lévy/Esseen inversion to turn that into a bound on the distribution function. Ingredient (b) is
+the one gap that survives this session's work — the sinc integral, the Fejér normalisation and
+the compactly supported Fejér/triangle Fourier pair are now proved
+(`integral_sin_div_sq`, `integral_fejerKernel`, `fourier_tentC`, `fourier_sqSincC`), as is the
+smoothing inequality in test-function form (`norm_integral_fourier_sub_le`). -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -117,8 +126,14 @@ uniformly in the argument. The `n^{-1/2}` term differs from the one for the cent
 is where the advantage of studentizing is located — and vanishes exactly when the sampling law
 is unskewed.
 
-DEFERRAL-ELIGIBLE (planned debt): stated without proof in the reference tradition; full proofs
-are treatise-scale (cf. Hall 1992). -/
+DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (TSH4 Thm 18.4.1; the
+studentized root is a smooth function of the pair of means `(X̄, X̄₂)`, absolute continuity of
+`F` supplies the joint Cramér condition, and `E X⁴ < ∞` gives the `O(n⁻¹)` remainder). It is
+not proved here, and it is strictly harder than `edgeworth_mean_uniform`: beyond the
+CDF-level Lévy/Esseen inversion recorded there, it needs the **bivariate** Edgeworth expansion
+for `(X̄, X̄₂)` together with the delta-method transfer to the smooth function
+`(u, v) ↦ u/√(v − u²)`. Neither is available at this pin; see the status note at the head of
+`ForMathlib/EsseenSmoothing.lean` for exactly which Fourier foundations now exist. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -141,8 +156,13 @@ the `1 − α` quantile of the studentized root equals the standard normal quant
 `−(1/6) γ (2 z²_{1−α} + 1) n^{-1/2}`, with an `O(n^{-1})` error holding uniformly over levels
 bounded away from `0` and `1`.
 
-DEFERRAL-ELIGIBLE (planned debt): stated without proof in the reference tradition; full proofs
-are treatise-scale (cf. Hall 1992). -/
+DEFERRAL-ELIGIBLE (planned debt). This is a *corollary* of
+`edgeworth_studentized_uniform`, not an independent analytic fact: given the studentized
+expansion, the quantile version follows by inverting it (the Cornish–Fisher step is the implicit
+function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
+below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
+`0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
+`edgeworth_studentized_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
