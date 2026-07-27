@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.CDF
+import Mathlib.Analysis.Real.Pi.Bounds
 
 /-!
 # Stein's method for exchangeable pairs on a finite space
@@ -61,6 +62,7 @@ Hypotheses*, 4th ed., 2022, §12.2 for the application to sampling without repla
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology Set
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -462,6 +464,66 @@ The output of Stein's method is a bound on `|𝔼 h(W) − 𝔼 h(Z)|` for *Lips
 statement wanted downstream is convergence of `P(W ≤ t)` to `Φ(t)`. Since `Φ` is continuous,
 sandwiching the indicator of `Iic t` between the ramps of `ForMathlib/EsseenSmoothing` at
 scale `ε` and letting `ε → 0` suffices — no rate is lost that matters. -/
+
+/-- The standard normal density is bounded by `1` (crudely: by `(2π)^{-1/2} < 1`). -/
+theorem gaussianPDFReal_std_le_one (x : ℝ) : gaussianPDFReal 0 1 x ≤ 1 := by
+  have hπ : (1 : ℝ) ≤ Real.sqrt (2 * Real.pi * ((1 : ℝ≥0) : ℝ)) := by
+    have h2 : (1 : ℝ) ≤ 2 * Real.pi * ((1 : ℝ≥0) : ℝ) := by
+      rw [NNReal.coe_one, mul_one]
+      linarith [Real.pi_gt_three]
+    calc (1 : ℝ) = Real.sqrt 1 := Real.sqrt_one.symm
+      _ ≤ _ := Real.sqrt_le_sqrt h2
+  have hexp : Real.exp (-(x - 0) ^ 2 / (2 * ((1 : ℝ≥0) : ℝ))) ≤ 1 := by
+    rw [Real.exp_le_one_iff, NNReal.coe_one, mul_one,
+      show -(x - 0) ^ 2 / 2 = -((x - 0) ^ 2 / 2) by ring, neg_nonpos]
+    positivity
+  have hinv : (Real.sqrt (2 * Real.pi * ((1 : ℝ≥0) : ℝ)))⁻¹ ≤ 1 := by
+    rw [inv_le_one₀ (by linarith : (0 : ℝ) < Real.sqrt (2 * Real.pi * ((1 : ℝ≥0) : ℝ)))]
+    exact hπ
+  rw [gaussianPDFReal]
+  calc (Real.sqrt (2 * Real.pi * ((1 : ℝ≥0) : ℝ)))⁻¹ *
+        Real.exp (-(x - 0) ^ 2 / (2 * ((1 : ℝ≥0) : ℝ)))
+      ≤ 1 * 1 := mul_le_mul hinv hexp (Real.exp_pos _).le zero_le_one
+    _ = 1 := one_mul 1
+
+/-- **The standard normal c.d.f. is 1-Lipschitz.** In particular it is continuous, which is
+all the de-smoothing step needs (a sharper constant `(2π)^{-1/2}` is available but not
+useful here). -/
+theorem lipschitzWith_cdf_gaussianReal :
+    LipschitzWith 1 (cdf (gaussianReal 0 1)) := by
+  have hmono : Monotone (cdf (gaussianReal 0 1)) := (cdf (gaussianReal 0 1)).mono
+  have hstep : ∀ a b : ℝ, a ≤ b →
+      cdf (gaussianReal 0 1) b - cdf (gaussianReal 0 1) a ≤ b - a := by
+    intro a b hab
+    have hIoc : gaussianReal 0 1 (Ioc a b) ≤ ENNReal.ofReal (b - a) := by
+      rw [gaussianReal_apply 0 one_ne_zero]
+      calc ∫⁻ x in Ioc a b, gaussianPDF 0 1 x ≤ ∫⁻ _ in Ioc a b, 1 := by
+            refine lintegral_mono fun x => ?_
+            rw [gaussianPDF, ← ENNReal.ofReal_one]
+            exact ENNReal.ofReal_le_ofReal (gaussianPDFReal_std_le_one x)
+        _ = volume (Ioc a b) := by rw [lintegral_one, Measure.restrict_apply_univ]
+        _ = ENNReal.ofReal (b - a) := Real.volume_Ioc
+    have hsplit : gaussianReal 0 1 (Iic b) = gaussianReal 0 1 (Iic a)
+        + gaussianReal 0 1 (Ioc a b) := by
+      rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+        Set.Iic_union_Ioc_eq_Iic hab]
+    have hfin : gaussianReal 0 1 (Iic a) ≠ ⊤ := measure_ne_top _ _
+    rw [cdf_eq_real, cdf_eq_real, measureReal_def, measureReal_def, hsplit,
+      ENNReal.toReal_add hfin (measure_ne_top _ _), add_sub_cancel_left]
+    calc (gaussianReal 0 1 (Ioc a b)).toReal ≤ (ENNReal.ofReal (b - a)).toReal :=
+          ENNReal.toReal_mono ENNReal.ofReal_ne_top hIoc
+      _ = b - a := ENNReal.toReal_ofReal (by linarith)
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  rw [Real.dist_eq, Real.dist_eq, NNReal.coe_one, one_mul, abs_le]
+  rcases le_total x y with hxy | hxy
+  · have h1 := hstep x y hxy
+    have h2 := hmono hxy
+    rw [abs_of_nonpos (by linarith : x - y ≤ 0)]
+    constructor <;> linarith
+  · have h1 := hstep y x hxy
+    have h2 := hmono hxy
+    rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - y)]
+    constructor <;> linarith
 
 /-- The ramp of width `δ` is `δ⁻¹`-Lipschitz. -/
 theorem abs_ramp_sub_ramp_le {u δ : ℝ} (hδ : 0 < δ) (x y : ℝ) :
