@@ -1241,17 +1241,23 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
   -- TODO (studentized CLT = the closed array CLT + Slutsky — NOT blocked; deferred for size).
-  -- The two bricks the previous session recorded as missing are now supplied: the
-  -- triangular-array Lindeberg CLT with a drifting row law is `tendsto_meanRootLaw`, and the
-  -- portmanteau step is the one already used in `mean_root_cdf_tendsto`. What remains:
-  -- (1) A triangular-array weak law for the SQUARES along the class,
-  --     `(1/n) ∑ Y_{n,i}² → ∫ t² dQ` in probability, `Y_{n,i} ~ F n`. This follows from the
-  --     Vitali brick `tendsto_setIntegral_sq_tail` of this file by the standard truncation
-  --     argument: split `Y² = Y²1{|Y| ≤ c} + Y²1{|Y| > c}`, control the first term's variance
-  --     by `c² ∫ t² dF n / n` (Chebyshev) and the second by uniform integrability. Together
-  --     with the mean (`Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`, still an
-  --     open debt but avoidable the same way) this gives `sampleVariance → Var[id; Q]` in
-  --     probability. Note the L² hypothesis is exactly enough: no fourth moment is needed.
+  -- The two bricks the previous session recorded as missing are supplied: the triangular-array
+  -- Lindeberg CLT with a drifting row law is `tendsto_meanRootLaw` and the portmanteau step is
+  -- `tendsto_integral_of_tendsto_cdf` (now in `Bootstrap/Consistency`). What remains:
+  -- (1) `sampleVariance → Var[id; Q]` in probability along the class. Realise row `n` as i.i.d.
+  --     `Y n i ~ F n` on one space exactly as `tendsto_meanRootLaw` does
+  --     (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`), then apply the now-CLOSED
+  --     `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular` TWICE: to the entries and to
+  --     their squares (`sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`). Its hypotheses are met by the
+  --     class: distribution-function convergence at continuity points is the class clause (for the
+  --     squares, transport it through `t ↦ t²`), and convergence of the first absolute moments is
+  --     the Vitali brick `tendsto_setIntegral_sq_tail` of this file (uniform square-integrability
+  --     upgrades weak convergence to convergence of `∫|t|`; for the squares it is the convergence
+  --     of mean and variance). NOTE: that brick currently carries the Feller debt of
+  --     `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, so this route inherits `sorryAx` until
+  --     that one is closed; a self-contained alternative is the fixed-level truncation, which
+  --     suffices here because the row laws are uniformly square-integrable (unlike in the general
+  --     statement of the brick).
   -- (2) Slutsky for the quotient. Mathlib v4.29.1 HAS
   --     `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const`; the only care
   --     needed is that `(u, v) ↦ u / √v` is not continuous at `v = 0`, so one runs it with the

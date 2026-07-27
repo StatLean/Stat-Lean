@@ -1345,30 +1345,46 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
-  -- TODO (delta method — NOT blocked; deferred for size). Every ingredient is available; what
-  -- is missing is only the (long) assembly. Re-derived route, in four steps.
-  -- (1) The vector of sample means IS a mean-vector root: with `H := P.map (fun s => toLp 2
-  --     (h · s))` on `ℝᵖ`, `Measure.pi_map_pi` turns `(Measure.pi fun _ : Fin n => P).map
-  --     (fun w => √n • (meanStatistic h w − θ))` into `meanVecRootLaw H n`, and
-  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. So the now-PROVEN
-  --     `meanVec_root_tendsto`, applied to the constant sequence at `H`, gives
-  --     `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`.
-  -- (2) Realise the whole array on one space: `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
-  --     `S i` with law `P`, and `Zₙ ω := √n (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
-  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`). A single carrier space
-  --     is what `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (Mathlib's
-  --     Slutsky, present in v4.29.1 — the previous session's claim that it is absent is wrong)
-  --     requires.
-  -- (3) The Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
-  --     probability: `{Zₙ}` is tight (`isTightMeasureSet_of_tendsto_charFun` applied to the
-  --     charFun convergence of step (1)), so for `‖Zₙ‖ ≤ M` one has `‖Zₙ/√n‖ ≤ M/√n → 0` and
-  --     `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` for any `η > 0` eventually. (`hf_nhds`/`hf_cont` are
-  --     not needed for this step; they are the reference's extra regularity.)
-  -- (4) `Df` is continuous linear, so `TendstoInDistribution.continuous_comp` pushes the limit
-  --     to `(multivariateGaussian 0 covH).map Df`, and `Measure.ext_of_charFun` together with
-  --     `charFun_multivariateGaussian` and `hD` identifies that image with
-  --     `multivariateGaussian 0 (D * covH * Dᵀ)` (the quadratic form transforms as
-  --     `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`).
+  -- TODO (delta method — steps (1) and (4) are now PROVED in this file; (2)-(3) remain).
+  -- Route, in four steps, with the state of each recorded.
+  -- (1) DONE: `map_meanStatistic_eq_meanVecRootLaw` identifies
+  --     `(Measure.pi fun _ : Fin n => P).map (fun w => √n • (meanStatistic h w − θ))` with
+  --     `meanVecRootLaw H n` for `H := P.map (hVec h)`, and `covMatrix_map_hVec` gives
+  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. Hence the PROVEN
+  --     `meanVec_root_tendsto`, at the constant sequence `fun _ => H` (a member of
+  --     `meanVecSeqClass H` by `⟨fun _ _ => inferInstance, fun _ => memLp_id_map_hVec …,
+  --     fun _ => tendsto_const_nhds, …⟩`), gives `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`
+  --     in the bounded-continuous-integral form.
+  -- (2) OPEN: realise the array on one space — `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
+  --     `S i` with law `P` and `Zₙ ω := √n • (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
+  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`), which is what
+  --     `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (present in v4.29.1)
+  --     requires. ALTERNATIVE, avoiding `exists_iid` entirely: `TendstoInDistribution` allows a
+  --     different carrier space per index, so one can stay on `Fin n → 𝓢` with
+  --     `Measure.pi fun _ : Fin n => P` and replace the Slutsky brick by the bounded-Lipschitz
+  --     estimate `|∫ F(Vₙ) − ∫ F(Df Zₙ)| ≤ L ε + 2‖F‖∞ μₙ{‖Rₙ‖ > ε}`, reducing to Lipschitz test
+  --     functions with `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`.
+  -- (3) OPEN: the Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
+  --     probability. Tightness of `{law of Zₙ}` is needed only *eventually* in `n`, so it follows
+  --     from step (1) alone with the test functions `φ_M z := max 0 (min 1 (‖z‖ − M))`
+  --     (`BoundedContinuousFunction.ofNormedAddCommGroup`, as in `NonparametricMean.truncSq`):
+  --     `μₙ{‖Zₙ‖ > M + 1} ≤ ∫ φ_M → ∫ φ_M dG ≤ G{‖z‖ > M}`. On `{‖Zₙ‖ ≤ M}` one has
+  --     `‖Zₙ/√n‖ ≤ M/√n → 0`, so `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` eventually, for every `η > 0`.
+  --     (`hf_nhds`/`hf_cont` are not needed here; they are the reference's extra regularity.)
+  -- (4) DONE: `map_multivariateGaussian_deriv` identifies `(multivariateGaussian 0 covH).map Df`
+  --     with `multivariateGaussian 0 (D * covH * Dᵀ)`.
+  --
+  -- SIGNATURE FINDING (a `LEAN-ONLY` measurability hypothesis on `f` is FORCED, and is not added
+  -- here because the statement is not yet proved). The conclusion is about
+  -- `Measure.map (fun w => √n • (f (meanStatistic h w) − f θ))`, and in Mathlib `Measure.map`
+  -- returns the junk value `0` when its argument is not `AEMeasurable`. The hypotheses constrain
+  -- `f` only on a neighbourhood of `θ` (`hf`, `hf_nhds`, `hf_cont`), so `f` may be an arbitrary —
+  -- in particular non-measurable — function away from `θ`, where the law of `θ̂ₙ` still puts mass:
+  -- take `p = q = 1`, `f y = y` for `y < 1/2` and `f y = 1_V(y)` for `y ≥ 1/2` with `V ⊆ [1/2, ∞)`
+  -- non-Lebesgue-measurable. Then every hypothesis holds, the left-hand side is `∫ φ d0 = 0`, and
+  -- the right-hand side is `∫ φ d(multivariateGaussian 0 (D covH Dᵀ)) ≠ 0` for suitable `φ`. The
+  -- fix is `(hfmeas : Measurable f)`, to be added together with the proof; the same remark applies
+  -- verbatim to the two siblings below.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
@@ -1398,19 +1414,21 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, resampled-law form — deferred, one open input). Both
-  -- integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
-  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. The resampled
-  -- term is the same delta method run at the empirical measure: the resampled mean statistic is
-  -- the mean-vector root of `(empiricalMeasure (X · ω)).map (fun s => toLp 2 (h · s))`, and the
-  -- almost sure membership of THAT sequence in `meanVecSeqClass` is the exact analogue of the
-  -- now-PROVEN `empirical_mem_meanVecSeqClass` (push the strong laws used there forward through
-  -- `s ↦ toLp 2 (h · s)`; the four laws needed are for the coordinates `h j`, the products
-  -- `h i * h j`, `exp (i⟪(h · s), t⟫)` along a countable dense set of directions, and
-  -- `‖(h · s)‖`, all integrable by `hh2`). So this target is deferred only on
-  -- `smooth_function_of_means_tendsto` plus that transported membership lemma; no Mathlib brick
-  -- is missing. The empirical-measure weak-convergence "gap" recorded by the previous session
-  -- does not exist — see `empirical_mem_meanVecSeqClass`.
+  -- TODO (bootstrap delta method, resampled-law form — deferred; route re-derived).
+  -- Both integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
+  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. For the resampled
+  -- term the transport layer of this file now applies verbatim at the empirical measure:
+  -- `(empiricalMeasure x).map (hVec h) = empiricalMeasure (fun i => hVec h (x i))` (a one-line
+  -- `Measure.map` of a finite Dirac combination), so the resampled mean statistic is the
+  -- mean-vector root of the empirical measure of the TRANSFORMED sample, and the almost sure
+  -- membership of that sequence in `meanVecSeqClass (P.map (hVec h))` is the PROVEN
+  -- `empirical_mem_meanVecSeqClass` applied to the i.i.d. variables `fun i ω => hVec h (X i ω)`
+  -- (i.i.d. with law `P.map (hVec h)`, square-integrable by `memLp_id_map_hVec`). What is genuinely
+  -- left is the delta-method Taylor step at the RANDOM centre `θ̂ₙ` rather than at `θ`: this is
+  -- where `hf_nhds` and `hf_cont` are consumed (uniform differentiability on a shrinking
+  -- neighbourhood of `θ`), and it is the only part not already reduced to proved lemmas.
+  -- The measurability finding recorded on `smooth_function_of_means_tendsto` applies here too:
+  -- `(hfmeas : Measurable f)` is forced by the two `Measure.map`s of the statement.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
@@ -1446,17 +1464,19 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
           {w | nrm (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)) ≤ s}).toReal))
       atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, uniform Pólya form — deferred). The sup-CDF upgrade of
-  -- `bootstrap_smooth_function_law_consistent`: run the smooth-function root through the same
-  -- triangle squeeze as the now-PROVEN `bootstrap_meanVec_consistent`. The continuity of the
-  -- limiting norm distribution function — which the previous session recorded as blocked on
-  -- `stdGaussian ≪ volume` and on positive semidefiniteness — is now available in the exact
-  -- form needed: `continuous_normLimitCDF_of_posSemidef` applies verbatim to the covariance
-  -- `D * covH * Dᵀ` (positive semidefinite as `Dᵀ`-congruence of the positive semidefinite
-  -- `covH`, by `Matrix.PosSemidef.conjTranspose_mul_mul_same`, and nonzero because `Df ≠ 0`).
-  -- What remains is `smooth_function_of_means_tendsto` and its resampled analogue, together
-  -- with the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to the image
-  -- space. No Mathlib brick is missing.
+  -- TODO (bootstrap delta method, uniform Pólya form — deferred; route re-derived).
+  -- The sup-CDF upgrade of `bootstrap_smooth_function_law_consistent`: run the smooth-function
+  -- root through the same triangle squeeze as the PROVEN `bootstrap_meanVec_consistent`. Every
+  -- analytic ingredient of the squeeze is available in the exact form needed:
+  -- `continuous_normLimitCDF_of_posSemidef` applies to the limiting covariance `D * covH * Dᵀ`,
+  -- which is positive semidefinite by `Matrix.PosSemidef.conjTranspose_mul_mul_same` (see the
+  -- proved `map_multivariateGaussian_deriv`, which establishes exactly this) and nonzero because
+  -- `Df ≠ 0`; `isCDF_toReal_measure_Iic` supplies the two `IsCDF` sides and
+  -- `tendsto_supCDFDist_zero` the Pólya step. What remains is the pointwise convergence of the two
+  -- distribution functions of the norm, i.e. `smooth_function_of_means_tendsto` and its resampled
+  -- analogue above, plus the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to
+  -- the image space. No Mathlib brick is missing. Measurability of `f` is forced here as well: the
+  -- statement measures the sets `{ω' | nrm (f (meanStatistic h …) − f θ) ≤ s}`.
   sorry
 
 end SmoothFunctions
