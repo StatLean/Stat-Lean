@@ -1603,6 +1603,78 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
 
 /-! ## The studentized root and the bootstrap-t -/
 
+/-- The **plug-in sample variance in mean-square form**: the average of the squares minus the
+square of the average. Both sides vanish for an empty sample. -/
+private lemma sampleVariance_eq {n : ℕ} (y : Fin n → ℝ) :
+    sampleVariance y = (n : ℝ)⁻¹ * ∑ i, (y i) ^ 2 - ((n : ℝ)⁻¹ * ∑ j, y j) ^ 2 := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [sampleVariance]
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
+  set b : ℝ := (n : ℝ)⁻¹ * ∑ j, y j with hb
+  have hexp : ∀ i : Fin n, (y i - b) ^ 2 = (y i) ^ 2 - 2 * b * y i + b ^ 2 := fun i => by ring
+  have hsum : ∑ i, (y i - b) ^ 2
+      = (∑ i, (y i) ^ 2) - 2 * b * (∑ i, y i) + (n : ℝ) * b ^ 2 := by
+    rw [Finset.sum_congr rfl fun i _ => hexp i, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+      ← Finset.mul_sum]
+    simp [Finset.card_univ, mul_comm]
+  have hsy : (∑ j, y j) = (n : ℝ) * b := by rw [hb]; field_simp
+  rw [sampleVariance, ← hb, hsum, hsy]
+  field_simp
+  ring
+
+/-- **Two-variable continuous mapping to a constant, in probability.** If `A n → a` and
+`B n → b` in probability and `g` is continuous at `(a, b)`, then `g (A n, B n) → g (a, b)` in
+probability. Mathlib has the continuous-mapping theorem for convergence in distribution but
+not this elementary two-variable version for convergence in probability to a constant. -/
+private lemma tendstoInMeasure_comp₂_of_continuousAt {μ : Measure Ω}
+    {A B : ℕ → Ω → ℝ} {a b : ℝ} {g : ℝ × ℝ → ℝ}
+    (hA : TendstoInMeasure μ A atTop fun _ => a)
+    (hB : TendstoInMeasure μ B atTop fun _ => b)
+    (hg : ContinuousAt g (a, b)) :
+    TendstoInMeasure μ (fun n ω => g (A n ω, B n ω)) atTop fun _ => g (a, b) := by
+  rw [tendstoInMeasure_iff_norm] at hA hB ⊢
+  intro ε hε
+  obtain ⟨δ, hδ, hball⟩ := Metric.continuousAt_iff.1 hg ε hε
+  have hsub : ∀ n : ℕ, {ω | ε ≤ ‖g (A n ω, B n ω) - g (a, b)‖}
+      ⊆ {ω | δ ≤ ‖A n ω - a‖} ∪ {ω | δ ≤ ‖B n ω - b‖} := by
+    intro n ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    have hd : dist ((A n ω, B n ω) : ℝ × ℝ) (a, b) < δ := by
+      rw [Prod.dist_eq]
+      exact max_lt (by rw [dist_eq_norm]; exact hcon.1) (by rw [dist_eq_norm]; exact hcon.2)
+    have hgd := hball hd
+    rw [dist_eq_norm] at hgd
+    exact absurd hω (not_le.2 hgd)
+  have hlim : Tendsto (fun n : ℕ => μ {ω | δ ≤ ‖A n ω - a‖} + μ {ω | δ ≤ ‖B n ω - b‖})
+      atTop (𝓝 0) := by
+    have := (hA δ hδ).add (hB δ hδ)
+    simpa using this
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+    (fun n => zero_le _) fun n => ?_
+  exact (measure_mono (hsub n)).trans (measure_union_le _ _)
+
+/-- **Shifting a null sequence by a converging sequence of constants.** -/
+private lemma tendstoInMeasure_add_tendsto {μ : Measure Ω} {A : ℕ → Ω → ℝ} {c : ℕ → ℝ} {a : ℝ}
+    (hA : TendstoInMeasure μ A atTop fun _ => (0 : ℝ)) (hc : Tendsto c atTop (𝓝 a)) :
+    TendstoInMeasure μ (fun n ω => A n ω + c n) atTop fun _ => a := by
+  rw [tendstoInMeasure_iff_norm] at hA ⊢
+  intro ε hε
+  have hev : ∀ᶠ n : ℕ in atTop,
+      {ω | ε ≤ ‖A n ω + c n - a‖} ⊆ {ω | ε / 2 ≤ ‖A n ω - 0‖} := by
+    filter_upwards [hc.eventually (Metric.ball_mem_nhds a (show (0 : ℝ) < ε / 2 by positivity))]
+      with n hn ω hω
+    simp only [Set.mem_setOf_eq, sub_zero] at hω ⊢
+    have hcn : ‖c n - a‖ < ε / 2 := by
+      rw [← dist_eq_norm]; exact hn
+    have htri : ‖A n ω + c n - a‖ ≤ ‖A n ω‖ + ‖c n - a‖ := by
+      have : A n ω + c n - a = A n ω + (c n - a) := by ring
+      rw [this]; exact norm_add_le _ _
+    linarith
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (hA (ε / 2) (by positivity)) (Eventually.of_forall fun n => zero_le _) ?_
+  exact hev.mono fun n hn => measure_mono hn
+
 /-- **Convergence of the studentized sampling distribution along the class.**
 
 Along every sequence of the mean class the sampling distribution function of the studentized
