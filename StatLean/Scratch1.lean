@@ -468,5 +468,67 @@ private lemma abs_signed_count_le_dkwMax (x : Fin n → ℝ) (s : Fin n → ℝ)
 
 end Sorting
 
+/-! ### The conditional sign integral -/
+
+section SignIntegral
+
+private lemma measurable_signSup (x : Fin n → ℝ) :
+    Measurable (fun s : Fin n → ℝ =>
+      ⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|) := by
+  refine Measurable.iSup fun q => Measurable.abs (Measurable.const_mul ?_ _)
+  exact Finset.measurable_sum _ fun i _ => (measurable_pi_apply i).mul measurable_const
+
+private lemma signSup_le (x : Fin n → ℝ) (s : Fin n → ℝ) :
+    (⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|)
+      ≤ (n : ℝ)⁻¹ * dkwMax (Tuple.sort x) s := by
+  refine ciSup_le fun q => ?_
+  rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+  exact mul_le_mul_of_nonneg_left (abs_signed_count_le_dkwMax x s _) (by positivity)
+
+private lemma signSup_bddAbove (x : Fin n → ℝ) (s : Fin n → ℝ) :
+    BddAbove (Set.range fun q : ℚ =>
+      |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|) := by
+  refine ⟨(n : ℝ)⁻¹ * dkwMax (Tuple.sort x) s, ?_⟩
+  rintro y ⟨q, rfl⟩
+  dsimp only
+  rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ)⁻¹)]
+  exact mul_le_mul_of_nonneg_left (abs_signed_count_le_dkwMax x s _) (by positivity)
+
+private lemma signSup_nonneg (x : Fin n → ℝ) (s : Fin n → ℝ) :
+    0 ≤ ⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)| :=
+  le_ciSup_of_le (signSup_bddAbove x s) 0 (abs_nonneg _)
+
+/-- **The conditional sign bound**: for every realisation `x` of the sample,
+`E_ε sup_q |n⁻¹ ∑ᵢ εᵢ 1{xᵢ ≤ q}| ≤ 2/√n`. -/
+private lemma integral_signSup_le (hn : 0 < n) (x : Fin n → ℝ) :
+    ∫ s, (⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|)
+        ∂signVec n ≤ 2 / Real.sqrt n := by
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsq : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR
+  have hss : Real.sqrt n * Real.sqrt n = (n : ℝ) := Real.mul_self_sqrt hnR.le
+  set σ : Equiv.Perm (Fin n) := Tuple.sort x with hσ
+  have hdom : Integrable (fun s => (n : ℝ)⁻¹ * dkwMax σ s) (signVec n) :=
+    (integrable_dkwMax σ).const_mul _
+  have hint : Integrable (fun s : Fin n → ℝ =>
+      ⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|)
+      (signVec n) := by
+    refine Integrable.mono' hdom (measurable_signSup x).aestronglyMeasurable ?_
+    filter_upwards with s
+    rw [Real.norm_eq_abs, abs_of_nonneg (signSup_nonneg x s)]
+    exact signSup_le x s
+  calc ∫ s, (⨆ q : ℚ, |(n : ℝ)⁻¹ * ∑ i, s i * (if x i ≤ (q : ℝ) then (1 : ℝ) else 0)|)
+        ∂signVec n
+      ≤ ∫ s, (n : ℝ)⁻¹ * dkwMax σ s ∂signVec n :=
+        integral_mono hint hdom (fun s => signSup_le x s)
+    _ = (n : ℝ)⁻¹ * ∫ s, dkwMax σ s ∂signVec n := integral_const_mul _ _
+    _ ≤ (n : ℝ)⁻¹ * (2 * Real.sqrt n) := by
+        exact mul_le_mul_of_nonneg_left (integral_dkwMax_le σ hn) (by positivity)
+    _ = 2 / Real.sqrt n := by
+        field_simp
+        nlinarith [hss]
+
+end SignIntegral
+
+
 
 end StatLean.HypothesisTesting
