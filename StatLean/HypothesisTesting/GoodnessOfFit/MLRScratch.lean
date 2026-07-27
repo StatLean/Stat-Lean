@@ -782,6 +782,86 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
   rw [hAval, hBval]
   exact (ENNReal.add_le_add_iff_right hfin).mp hmain
 
+
+/-! ### Support facts for the central chi-squared law -/
+
+/-- `χ²_k` charges every interval of positive length inside the positive half-line. -/
+private lemma chiSq_Ioo_pos {k : ℕ} (hk : 0 < k) {a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    0 < StatLean.MultipleTesting.chiSquared k (Set.Ioo a b) := by
+  have hkpos : (0 : ℝ) < (k : ℝ) / 2 := by positivity
+  have hpdfpos : ∀ x ∈ Set.Ioo a b, 0 < gammaPDF ((k : ℝ) / 2) (1 / 2) x := by
+    intro x hx
+    rw [gammaPDF]
+    exact ENNReal.ofReal_pos.mpr (gammaPDFReal_pos hkpos (by norm_num) (by linarith [hx.1]))
+  rw [StatLean.MultipleTesting.chiSquared, gammaMeasure, withDensity_apply _ measurableSet_Ioo,
+    pos_iff_ne_zero]
+  intro hz
+  have hmpdf : Measurable (gammaPDF ((k : ℝ) / 2) (1 / 2)) := fun t ht =>
+    (ENNReal.measurable_ofReal.comp (measurable_gammaPDFReal ((k : ℝ) / 2) (1 / 2))) ht
+  rw [lintegral_eq_zero_iff hmpdf] at hz
+  have hae : ∀ᵐ x ∂(volume : Measure ℝ), x ∈ Set.Ioo a b →
+      gammaPDF ((k : ℝ) / 2) (1 / 2) x = 0 := (ae_restrict_iff' measurableSet_Ioo).mp hz
+  have h2 : ∀ᵐ x ∂(volume : Measure ℝ), x ∉ Set.Ioo a b := by
+    filter_upwards [hae] with x hx hmem
+    exact (hpdfpos x hmem).ne' (hx hmem)
+  have h3 := ae_iff.mp h2
+  simp only [not_not, Set.setOf_mem_eq, Real.volume_Ioo, ENNReal.ofReal_eq_zero] at h3
+  linarith
+
+/-- The `χ²₁` upper tail is positive at every threshold. -/
+private lemma chiSq_one_Ioi_pos (u : ℝ) :
+    0 < StatLean.MultipleTesting.chiSquared 1 (Set.Ioi u) := by
+  refine lt_of_lt_of_le (chiSq_Ioo_pos (k := 1) one_pos
+    (a := max u 0 + 1) (b := max u 0 + 2) (by positivity) (by linarith)) (measure_mono ?_)
+  intro x hx
+  have := hx.1
+  have hmax : u ≤ max u 0 := le_max_left _ _
+  simp only [Set.mem_Ioi]
+  linarith
+
+/-- `χ²_k` puts no mass on the nonpositive half-line, so the `1 − α` critical value is
+positive whenever `α < 1`. -/
+private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α < 1)
+    (hc : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀) = ENNReal.ofReal α) :
+    0 < c₀ := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  by_contra hcon
+  push_neg at hcon
+  have hac : StatLean.MultipleTesting.chiSquared k (Set.Iic 0) = 0 := by
+    have hIio : StatLean.MultipleTesting.chiSquared k (Set.Iio 0) = 0 := by
+      rw [StatLean.MultipleTesting.chiSquared, gammaMeasure,
+        withDensity_apply _ measurableSet_Iio]
+      exact lintegral_gammaPDF_of_nonpos le_rfl
+    have hsing : StatLean.MultipleTesting.chiSquared k ({0} : Set ℝ) = 0 := by
+      rw [StatLean.MultipleTesting.chiSquared, gammaMeasure]
+      exact withDensity_absolutelyContinuous volume _ (by simp)
+    have hsub : (Set.Iic (0 : ℝ)) ⊆ Set.Iio 0 ∪ {0} := by
+      intro x hx
+      rcases lt_or_eq_of_le (Set.mem_Iic.mp hx) with h | h
+      · exact Or.inl h
+      · exact Or.inr h
+    refine le_antisymm ?_ (zero_le _)
+    calc StatLean.MultipleTesting.chiSquared k (Set.Iic 0)
+        ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0 ∪ {0}) := measure_mono hsub
+      _ ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0)
+          + StatLean.MultipleTesting.chiSquared k ({0} : Set ℝ) := measure_union_le _ _
+      _ = 0 := by rw [hIio, hsing, add_zero]
+  have hfull : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀) = 1 := by
+    have hcompl : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀)
+        = 1 - StatLean.MultipleTesting.chiSquared k (Set.Iic c₀) := by
+      rw [← measure_univ (μ := StatLean.MultipleTesting.chiSquared k),
+        ← Set.compl_Iic, measure_compl measurableSet_Iic (measure_ne_top _ _)]
+    have hle : StatLean.MultipleTesting.chiSquared k (Set.Iic c₀) = 0 :=
+      le_antisymm (hac ▸ measure_mono (Set.Iic_subset_Iic.mpr hcon)) (zero_le _)
+    rw [hcompl, hle, tsub_zero]
+  rw [hfull] at hc
+  have : (1 : ℝ≥0∞) < 1 := by
+    calc (1 : ℝ≥0∞) = ENNReal.ofReal α := hc
+      _ < 1 := by
+          rw [← ENNReal.ofReal_one]
+          exact ENNReal.ofReal_lt_ofReal_iff (by norm_num) |>.mpr hα1
+  exact lt_irrefl _ this
+
 end MLR
 
 end StatLean.HypothesisTesting
