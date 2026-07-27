@@ -547,6 +547,288 @@ private lemma exists_uniform_sq_trunc {F : ℕ → Measure ℝ} {Q : Measure ℝ
   · refine le_trans (integral_sq_excess_antitone (hF2 n) ?_) (hN n hn).le
     exact_mod_cast le_sup_right
 
+/-- **Weak law of large numbers for a triangular array with uniformly integrable nonnegative
+rows.**
+
+The entries of row `n` are independent and nonnegative with a common mean `s n → c`, and the
+excess above a common truncation level has arbitrarily small integral **uniformly in the row**.
+Then the row averages converge to `c` in probability.
+
+This is the self-contained replacement for `Bootstrap/Consistency`'s
+`tendstoInMeasure_rowMean_triangular`, which derives uniform integrability from a Feller-type
+weak law and therefore carries that file's `sorryAx`. Here uniform integrability is supplied
+directly — by `exists_uniform_sq_trunc` at the application site — and the proof is the classical
+truncation argument: split each entry as `min (Z, M) + (Z − M)⁺`, control the bounded part by
+Chebyshev (its variance is at most `M²/n`) and the excess by Markov. -/
+private lemma tendstoInMeasure_rowMean_of_uniform {Pr : Measure Ω} [IsProbabilityMeasure Pr]
+    {Z : ℕ → ℕ → Ω → ℝ} {s : ℕ → ℝ} {c : ℝ}
+    (hmeas : ∀ n i, Measurable (Z n i))
+    (hindep : ∀ n : ℕ, iIndepFun (fun i : Fin n => Z n (i : ℕ)) Pr)
+    (hnn : ∀ n i ω, 0 ≤ Z n i ω)
+    (hint : ∀ n i, Integrable (Z n i) Pr)
+    (hmean : ∀ n i : ℕ, i < n → ∫ ω, Z n i ω ∂Pr = s n)
+    (hs : Tendsto s atTop (𝓝 c))
+    (hUI : ∀ ρ : ℝ, 0 < ρ → ∃ M : ℝ, 0 ≤ M ∧
+      ∀ n i : ℕ, i < n → ∫ ω, max (Z n i ω - M) 0 ∂Pr ≤ ρ) :
+    TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i ω) atTop
+      (fun _ => c) := by
+  classical
+  refine tendstoInMeasure_iff_measureReal_norm.2 fun ε hε => ?_
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro η hη
+  -- the common truncation level
+  set ρ : ℝ := min (ε / 4) (η * ε / 8) with hρdef
+  have hρ : 0 < ρ := lt_min (by positivity) (by positivity)
+  obtain ⟨M, hM0, hMbound⟩ := hUI ρ hρ
+  -- the truncated entries and the excess
+  set A : ℕ → Ω → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M with hAdef
+  set B : ℕ → Ω → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0 with hBdef
+  have hsplit : ∀ (n : ℕ) (ω : Ω),
+      (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i ω = A n ω + B n ω := by
+    intro n ω
+    rw [hAdef, hBdef, ← Fin.sum_univ_eq_sum_range (fun i => Z n i ω) n, ← mul_add,
+      ← Finset.sum_add_distrib]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rcases le_total (Z n (i : ℕ) ω) M with hle | hle
+    · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+    · rw [min_eq_right hle, max_eq_left (by linarith)]; ring
+  have hAmeas : ∀ n, Measurable (A n) := by
+    intro n; rw [hAdef]; fun_prop
+  have hBmeas : ∀ n, Measurable (B n) := by
+    intro n; rw [hBdef]; fun_prop
+  have hBnn : ∀ n ω, 0 ≤ B n ω := by
+    intro n ω
+    rw [hBdef]
+    have : (0 : ℝ) ≤ ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0 :=
+      Finset.sum_nonneg fun i _ => le_max_right _ _
+    positivity
+  have hAbdd : ∀ n ω, |A n ω| ≤ M := by
+    intro n ω
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simp [hAdef, hM0]
+    · have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hlow : (0 : ℝ) ≤ ∑ i : Fin n, min (Z n (i : ℕ) ω) M :=
+        Finset.sum_nonneg fun i _ => le_min (hnn _ _ _) hM0
+      have hhigh : ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ (n : ℝ) * M := by
+        calc ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ ∑ _i : Fin n, M :=
+              Finset.sum_le_sum fun i _ => min_le_right _ _
+          _ = (n : ℝ) * M := by simp [mul_comm]
+      rw [hAdef, abs_le]
+      constructor
+      · have : (0 : ℝ) ≤ (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M := by positivity
+        linarith
+      · calc (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ (n : ℝ)⁻¹ * ((n : ℝ) * M) := by
+              exact mul_le_mul_of_nonneg_left hhigh (by positivity)
+          _ = M := by field_simp
+  have hAL2 : ∀ n, MemLp (A n) 2 Pr := fun n =>
+    MemLp.of_bound (hAmeas n).aestronglyMeasurable M
+      (Filter.Eventually.of_forall fun ω => by
+        rw [Real.norm_eq_abs]; exact hAbdd n ω)
+  have hminiG : ∀ n i : ℕ, Integrable (fun ω => min (Z n i ω) M) Pr := by
+    intro n i
+    refine Integrable.mono' (integrable_const (|M| + 1)) (by fun_prop)
+      (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, abs_le]
+    refine ⟨?_, ?_⟩
+    · have h1 : (0 : ℝ) ≤ min (Z n i ω) M := le_min (hnn _ _ _) hM0
+      have := abs_nonneg M; linarith
+    · have := min_le_right (Z n i ω) M
+      have := le_abs_self M; linarith
+  have hexiG : ∀ n i : ℕ, Integrable (fun ω => max (Z n i ω - M) 0) Pr := by
+    intro n i
+    have hbound : Integrable (fun ω => Z n i ω + |M|) Pr :=
+      (hint n i).add (integrable_const |M|)
+    refine Integrable.mono' hbound (by fun_prop) (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
+    refine max_le ?_ ?_
+    · have h1 := le_abs_self M
+      have h2 := hnn n i ω
+      have h3 := neg_abs_le M
+      linarith
+    · have h2 := hnn n i ω
+      have h3 := abs_nonneg M
+      linarith
+  -- the mean of the truncated average is within `ρ` of the row mean
+  have hAmean : ∀ n : ℕ, 0 < n → |(∫ ω, A n ω ∂Pr) - s n| ≤ ρ := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hmini : ∀ i : Fin n, Integrable (fun ω => min (Z n (i : ℕ) ω) M) Pr :=
+      fun i => hminiG n (i : ℕ)
+    have hexi : ∀ i : Fin n, Integrable (fun ω => max (Z n (i : ℕ) ω - M) 0) Pr :=
+      fun i => hexiG n (i : ℕ)
+    have hAint : ∫ ω, A n ω ∂Pr
+        = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr := by
+      rw [hAdef]
+      simp only []
+      rw [integral_const_mul, integral_finset_sum _ fun i _ => hmini i]
+    have hper : ∀ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr
+        = s n - ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+      intro i
+      have hid : ∫ ω, Z n (i : ℕ) ω ∂Pr
+          = ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr + ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        rw [← integral_add (hmini i) (hexi i)]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+        simp only []
+        rcases le_total (Z n (i : ℕ) ω) M with hle | hle
+        · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+        · rw [min_eq_right hle, max_eq_left (by linarith)]; ring
+      rw [hmean n (i : ℕ) i.isLt] at hid
+      linarith
+    have hnn' : ∀ i : Fin n, 0 ≤ ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := fun i =>
+      integral_nonneg fun ω => le_max_right _ _
+    rw [hAint]
+    simp only [hper, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+      Fintype.card_fin, nsmul_eq_mul]
+    have hsum_le : ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ (n : ℝ) * ρ := by
+      calc ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ∑ _i : Fin n, ρ :=
+            Finset.sum_le_sum fun i _ => hMbound n (i : ℕ) i.isLt
+        _ = (n : ℝ) * ρ := by simp
+    have hsum_nn : (0 : ℝ) ≤ ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr :=
+      Finset.sum_nonneg fun i _ => hnn' i
+    rw [mul_sub, abs_le]
+    constructor
+    · have h1 : (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ρ := by
+        calc (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr
+            ≤ (n : ℝ)⁻¹ * ((n : ℝ) * ρ) := by
+              exact mul_le_mul_of_nonneg_left hsum_le (by positivity)
+          _ = ρ := by field_simp
+      have h2 : (n : ℝ)⁻¹ * ((n : ℝ) * s n) = s n := by field_simp
+      rw [h2]; linarith
+    · have h1 : (0 : ℝ) ≤ (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        positivity
+      have h2 : (n : ℝ)⁻¹ * ((n : ℝ) * s n) = s n := by field_simp
+      rw [h2]; linarith
+  -- Chebyshev for the truncated average
+  have hAvar : ∀ n : ℕ, 0 < n → Var[A n; Pr] ≤ M ^ 2 / n := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    set W : Fin n → Ω → ℝ := fun i ω => min (Z n (i : ℕ) ω) M with hWdef
+    have hWmeas : ∀ i, Measurable (W i) := by intro i; rw [hWdef]; fun_prop
+    have hWbdd : ∀ i ω, |W i ω| ≤ M := by
+      intro i ω
+      rw [hWdef, abs_le]
+      exact ⟨by have := le_min (hnn n (i : ℕ) ω) hM0; linarith,
+        min_le_right _ _⟩
+    have hWL2 : ∀ i, MemLp (W i) 2 Pr := fun i =>
+      MemLp.of_bound (hWmeas i).aestronglyMeasurable M
+        (Filter.Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hWbdd i ω)
+    have hWindep : iIndepFun W Pr := by
+      have := (hindep n).comp (fun _ : Fin n => fun z : ℝ => min z M) (fun _ => by fun_prop)
+      simpa [Function.comp_def, hWdef] using this
+    have hvarsum : Var[∑ i : Fin n, W i; Pr] = ∑ i : Fin n, Var[W i; Pr] :=
+      IndepFun.variance_sum (fun i _ => hWL2 i)
+        (fun i _ j _ hij => hWindep.indepFun hij)
+    have hWvar : ∀ i, Var[W i; Pr] ≤ M ^ 2 := by
+      intro i
+      refine (variance_le_expectation_sq (hWmeas i).aestronglyMeasurable).trans ?_
+      have hb : ∫ ω, (W i ω) ^ 2 ∂Pr ≤ ∫ _ω : Ω, M ^ 2 ∂Pr := by
+        refine integral_mono ((hWL2 i).integrable_sq) (integrable_const _) fun ω => ?_
+        have := hWbdd i ω
+        nlinarith [abs_nonneg (W i ω), sq_abs (W i ω)]
+      simpa using hb
+    have hAeq : A n = fun ω => (n : ℝ)⁻¹ * (∑ i : Fin n, W i) ω := by
+      funext ω
+      rw [hAdef, hWdef]
+      simp [Finset.sum_apply]
+    rw [hAeq, variance_const_mul, hvarsum]
+    have hsumle : ∑ i : Fin n, Var[W i; Pr] ≤ (n : ℝ) * M ^ 2 := by
+      calc ∑ i : Fin n, Var[W i; Pr] ≤ ∑ _i : Fin n, M ^ 2 :=
+            Finset.sum_le_sum fun i _ => hWvar i
+        _ = (n : ℝ) * M ^ 2 := by simp
+    calc ((n : ℝ)⁻¹) ^ 2 * ∑ i : Fin n, Var[W i; Pr]
+        ≤ ((n : ℝ)⁻¹) ^ 2 * ((n : ℝ) * M ^ 2) := by
+          exact mul_le_mul_of_nonneg_left hsumle (by positivity)
+      _ = M ^ 2 / n := by field_simp
+  -- Markov for the excess average
+  have hMarkov : ∀ n : ℕ, 0 < n → Pr.real {ω | ε / 4 ≤ B n ω} ≤ η / 2 := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hexi : ∀ i : Fin n, Integrable (fun ω => max (Z n (i : ℕ) ω - M) 0) Pr :=
+      fun i => hexiG n (i : ℕ)
+    have hBint : Integrable (B n) Pr := by
+      have hb : Integrable (fun ω => (n : ℝ)⁻¹ * ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0) Pr :=
+        (integrable_finset_sum _ fun i _ => hexi i).const_mul _
+      exact hb
+    have hBle : ∫ ω, B n ω ∂Pr ≤ ρ := by
+      have hBeq : ∫ ω, B n ω ∂Pr
+          = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        rw [hBdef]
+        simp only []
+        rw [integral_const_mul, integral_finset_sum _ fun i _ => hexi i]
+      have hsum_le : ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ (n : ℝ) * ρ := by
+        calc ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ∑ _i : Fin n, ρ :=
+              Finset.sum_le_sum fun i _ => hMbound n (i : ℕ) i.isLt
+          _ = (n : ℝ) * ρ := by simp
+      rw [hBeq]
+      calc (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr
+          ≤ (n : ℝ)⁻¹ * ((n : ℝ) * ρ) := mul_le_mul_of_nonneg_left hsum_le (by positivity)
+        _ = ρ := by field_simp
+    have hmk := mul_meas_ge_le_integral_of_nonneg
+      (Filter.Eventually.of_forall fun ω => hBnn n ω) hBint (ε / 4)
+    have hρη : ρ ≤ η * ε / 8 := min_le_right _ _
+    have h4 : (ε / 4) * Pr.real {ω | ε / 4 ≤ B n ω} ≤ ρ := hmk.trans hBle
+    nlinarith [measureReal_nonneg (μ := Pr) (s := {ω | ε / 4 ≤ B n ω})]
+  -- Chebyshev for the truncated average
+  have hcheb : ∀ n : ℕ, 0 < n →
+      Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ≤ M ^ 2 / n / (ε / 4) ^ 2 := by
+    intro n hn
+    have h := meas_ge_le_variance_div_sq (hAL2 n) (show (0 : ℝ) < ε / 4 by positivity)
+    have h2 : Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|}
+        ≤ (ENNReal.ofReal (Var[A n; Pr] / (ε / 4) ^ 2)).toReal := by
+      rw [measureReal_def]
+      exact ENNReal.toReal_mono (by finiteness) h
+    refine h2.trans ?_
+    rw [ENNReal.toReal_ofReal (div_nonneg (variance_nonneg _ _) (by positivity))]
+    have := hAvar n hn
+    gcongr
+  -- the Chebyshev bound and the row means settle down
+  have hchebzero : Tendsto (fun n : ℕ => M ^ 2 / n / (ε / 4) ^ 2) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n : ℕ => (n : ℝ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
+    have h2 : Tendsto (fun n : ℕ => (M ^ 2 / (ε / 4) ^ 2) * (n : ℝ)⁻¹) atTop (𝓝 0) := by
+      simpa using h1.const_mul (M ^ 2 / (ε / 4) ^ 2)
+    exact h2.congr fun n => by ring
+  have hsev : ∀ᶠ n : ℕ in atTop, |s n - c| ≤ ε / 4 := by
+    obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hs (ε / 4) (by positivity)
+    filter_upwards [eventually_ge_atTop N] with n hn
+    have h := hN n hn
+    rw [Real.dist_eq] at h
+    exact h.le
+  filter_upwards [eventually_gt_atTop 0, hsev,
+    hchebzero.eventually_lt_const (show (0 : ℝ) < η / 2 by positivity)] with n hn hsn hchn
+  -- the deviation event is covered by the two small events
+  have hsub : {x | ε ≤ ‖(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c‖}
+      ⊆ {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω} := by
+    intro x hx
+    by_contra hcon
+    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have hxx : ε ≤ |(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c| := by
+      simpa [Real.norm_eq_abs] using hx
+    rw [hsplit n x] at hxx
+    have hEA := hAmean n hn
+    have hρle : ρ ≤ ε / 4 := min_le_left _ _
+    have hBx : |B n x| = B n x := abs_of_nonneg (hBnn n x)
+    have he : A n x + B n x - c
+        = ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n) + (s n - c)) + B n x := by
+      ring
+    rw [he] at hxx
+    have ht1 := abs_add_le ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n) + (s n - c))
+      (B n x)
+    have ht2 := abs_add_le ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n)) (s n - c)
+    have ht3 := abs_add_le (A n x - (∫ ω, A n ω ∂Pr)) ((∫ ω, A n ω ∂Pr) - s n)
+    linarith
+  have hunion : Pr.real ({ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω})
+      ≤ Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} + Pr.real {ω | ε / 4 ≤ B n ω} :=
+    measureReal_union_le _ _
+  have hmono : Pr.real {x | ε ≤ ‖(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c‖}
+      ≤ Pr.real ({ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω}) :=
+    measureReal_mono hsub (by finiteness)
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  have hc1 := hcheb n hn
+  have hc2 := hMarkov n hn
+  linarith
+
 end Vitali
 
 
