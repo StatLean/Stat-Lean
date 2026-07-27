@@ -42,12 +42,15 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   it.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
-* The three expansions are **statements only** at this pin. The analytic route is now open at
-  the Fourier end — `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing inequality at
-  the level of distribution functions (`abs_measure_Iic_sub_le_charFun`), and
-  `normalCDF_sub_le` below supplies its Lipschitz input — but the *characteristic-function*
-  input is still missing: a damped expansion of `(charFun F)ⁿ` to order `n⁻¹`. See the
-  re-derived status note (G1)–(G3) on `edgeworth_mean_uniform`.
+* The three expansions are **statements only** at this pin, but both analytic halves of the
+  route now exist. `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing inequality at the
+  level of distribution functions (`abs_measure_Iic_sub_le_charFun`), with `normalCDF_sub_le`
+  below supplying its Lipschitz input; and `ForMathlib/BerryEsseen.lean` now proves the damped
+  expansion of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`), which is
+  what the weighted Esseen integral needs in order to converge to a *rate* rather than to a
+  constant. What is left is the signed-density restatement of the smoothing chain, the Fourier
+  transform of the Edgeworth density, the Cramér tail, and the assembly. See the re-derived
+  status note (E1)–(E4) on `edgeworth_mean_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -169,35 +172,73 @@ the resulting compactly supported trapezoid is a difference of two co-centred di
 transforms cancel to exactly `1/(π|ξ|)`. The Lipschitz constant `A` for the Gaussian comparison
 is `normalCDF_sub_le` above.
 
-**Re-derivation: what actually remains.** Three items, in increasing order of difficulty.
+**(G2) is now CLOSED; the note that named it "the estimate that fails" is superseded.**
+`ForMathlib/BerryEsseen.lean` proves, axiom-clean,
 
-* (G1) **Signed comparison — bookkeeping, not an obstruction.** The Edgeworth approximant is not
-  the distribution function of a probability measure: it is a signed measure with the explicit
-  `L¹` density `y ↦ σ⁻¹φ(y/σ)(1 − (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`.
-  `abs_measure_Iic_sub_le_charFun` is stated for two probability measures, and uses that
-  hypothesis on `Q` only through (a) equality of total masses, which is what makes the ramp mass
-  at `−∞` cancel (`tendsto_integral_ramp_atBot`), and (b) Parseval against a finite measure
-  (`integral_fourier_measure`). Both survive verbatim for `volume.withDensity q` with `q` real
-  `L¹` of integral `1`; restating the chain for a density instead of a measure is the work.
-* (G2) **The damped characteristic-function expansion. This is the estimate that fails.** What is
-  needed is `‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}(1 + (γ/6)(it)³ n^{-1/2})‖ ≤ C (t⁴ + t⁶) e^{−t²/4} / n`
-  on the window `|t| ≤ c√n`. `ForMathlib/BerryEsseen.lean` supplies only the third-order Taylor
-  bound `norm_charFun_sub_quadratic_le` and the **undamped** power bound
-  `norm_charFun_pow_sub_gaussian_le`, whose right-hand side `n(ρ|w|³/6 + (v w²/2)²/2)` carries no
-  `e^{−t²/4}` factor. Undamped, the weighted integral in `abs_measure_Iic_sub_le_charFun` does
-  converge — the second envelope `1/(δπ²ξ²)` sees to that — but it converges to a *constant*, so
-  the rate is lost entirely. Producing the damped bound needs (i) a fourth-order Taylor expansion
-  of `φ_F` with an `E|X|⁴` remainder and (ii) the quadratic majorant `|φ_F(s)| ≤ e^{−σ²s²/4}` for
-  small `|s|`, iterated to the `n`-th power. Neither is present at this pin. Note that this same
-  missing estimate, not any Fourier gap, is now what blocks a *Kolmogorov-distance Berry–Esseen*
-  theorem as well.
-* (G3) **The Cramér tail.** Off the window one needs
+* `norm_charFun_sub_cubic_le` — the fourth-order Taylor expansion
+  `‖φ_F(u) − (1 − v u²/2 − i m₃ u³/6)‖ ≤ (E X⁴) |u|⁴/24`, retaining the third cumulant;
+* `norm_charFun_le_exp_neg_sq` — the quadratic majorant `‖φ_F(s)‖ ≤ e^{−v s²/4}` on the window
+  `v s² ≤ 2`, `ρ|s| ≤ 3v/2`;
+* `norm_pow_sub_pow_sub_lin_le` — the **second-order** telescoping bound
+  `‖aⁿ − bⁿ − n bⁿ⁻¹(a − b)‖ ≤ n(n−1)/2 · Mⁿ⁻² ‖a − b‖²`, which unlike the first-order
+  `norm_prod_sub_prod_le` *keeps* the damping factor `Mⁿ⁻²`;
+* and hence `norm_charFun_pow_sub_edgeworth_le`, the damped expansion itself:
+  `‖φ_F(s)ⁿ − e^{−n v s²/2}(1 − n i m₃ s³/6)‖ ≤ e^{−(n−2) v s²/4} · (n(n−1)/2 · D² + n(w + e₀))`
+  with `D = ρ|s|³/6 + (v s²/2)²/2`, `e₀ = (E X⁴)|s|⁴/24 + (v s²/2)²/2` and
+  `w = (v s²/2)(|m₃||s|³/6)`.
+
+Substituting the standardized scaling `s = t/(σ√n)`, `v = σ²`, `m₃ = γσ³` turns this into
+exactly the estimate that was called for:
+`‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}(1 + (γ/6)(it)³ n^{−1/2})‖ ≤ C (t⁴ + t⁵ + t⁶) e^{−t²/4}/n`
+on `|t| ≤ c√n` — the three terms of the bound scaling as `t⁶/n`, `t⁴/n` and `t⁵/n^{3/2}`
+respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted integral in
+`abs_measure_Iic_sub_le_charFun` therefore now converges to `O(n⁻¹)` rather than to a constant.
+
+**Re-derivation: what actually remains.** Four items.
+
+* (E1) **Signed comparison — bookkeeping, not an obstruction** (was (G1); unchanged). The
+  Edgeworth approximant is not the distribution function of a probability measure: it is a signed
+  measure with the explicit `L¹` density
+  `y ↦ σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`.
+  (*Sign correction.* An earlier version of this note wrote that density with a minus sign in
+  front of `(γ/6)`. That is wrong: differentiating the approximant
+  `Φ(y/σ) − (γ/6)φ(y/σ)(y²/σ² − 1)n^{-1/2}` in the statement below and using
+  `d/dx[φ(x)(x² − 1)] = −φ(x)(x³ − 3x)` gives a plus sign. The *statement* of the theorem is
+  correct; only the note was.) `abs_measure_Iic_sub_le_charFun` is stated for two probability
+  measures, and uses that hypothesis on `Q` only through (a) equality of total masses, which is
+  what makes the ramp mass at `−∞` cancel (`tendsto_integral_ramp_atBot`), and (b) Parseval
+  against a finite measure (`integral_fourier_measure`). Both survive verbatim for
+  `volume.withDensity q` with `q` real `L¹` of integral `1`; restating the chain for a density
+  instead of a measure is the work.
+* (E2) **The Fourier transform of the Edgeworth density.** To feed (E1) into
+  `norm_charFun_pow_sub_edgeworth_le` one needs
+  `∫ e^{i t y} q_n(y) dy = e^{−σ²t²/2}(1 − i m₃ t³/(6√n))`, i.e. after the substitution
+  `y = σu`, `θ = σt`, the Hermite identity
+  `∫ e^{iθu}(u³ − 3u)φ(u) du = (iθ)³ e^{−θ²/2}`.
+  Two integrations by parts against `u φ(u) = −φ'(u)` reduce this to Mathlib's Gaussian
+  characteristic function; neither the identity nor the intermediate
+  `∫ u² e^{iθu}φ(u) du = (1 − θ²)e^{−θ²/2}` is present at this pin. (This computation is what
+  verifies that the Edgeworth approximant of the *statement* below matches the approximant of
+  `norm_charFun_pow_sub_edgeworth_le`; the check has been carried out by hand and they agree.)
+* (E3) **The Cramér tail** (was (G3)). Off the window one needs
   `∫_{c√n ≤ |t|} ‖φ_F(t/(σ√n))‖ⁿ min(1/|t|, 1/(δπ²t²)) dt = o(n⁻¹)`. `CramerCondition` gives
   `‖φ_F s‖ ≤ c < 1` only *off a compact set*; the moderate range `ε ≤ |s| ≤ R` additionally needs
-  `sup_{ε ≤ |s| ≤ R} ‖φ_F s‖ < 1`. That is derivable from `CramerCondition` — if `‖φ_F s₀‖ = 1`
-  for some `s₀ ≠ 0` then `F` is carried by a lattice and `‖φ_F‖ = 1` at every multiple of `s₀`,
-  contradicting the cocompact bound — but the lattice characterisation
-  `‖φ_F s₀‖ = 1 ↔ F` lattice is absent from Mathlib v4.29.1 and would have to be proved. -/
+  `sup_{ε ≤ |s| ≤ R} ‖φ_F s‖ < 1`, which by compactness and `continuous_charFun` reduces to
+  `‖φ_F s‖ < 1` for every `s ≠ 0`.
+  *The earlier verdict on this item is too pessimistic.* It claimed the reduction goes through
+  the lattice characterisation `‖φ_F s₀‖ = 1 ↔ F` lattice, "absent from Mathlib v4.29.1". The
+  lattice statement is never needed: what is needed is only that the modulus-one set is closed
+  under integer multiples, and that follows from the *equality case in* `‖∫ f‖ ≤ ∫‖f‖`, which
+  on a probability space is elementary — if `‖∫ e^{is₀x} dF‖ = 1 = ∫ 1 dF` then
+  `Re(θ̄ e^{is₀x}) = 1` a.e. by nonnegativity of `1 − Re(θ̄ e^{is₀x})`, hence
+  `e^{is₀x} = θ` a.e., hence `φ_F(k s₀) = θᵏ` has modulus `1` for every `k`, contradicting the
+  cocompact bound once `k|s₀|` exceeds the compact set. So (E3) is a short elementary argument,
+  not a missing Mathlib theory; it is simply not written yet.
+* (E4) **The assembly.** Choose `δ ≍ n⁻¹` in `abs_measure_Iic_sub_le_charFun` (so that the
+  Lipschitz term `A δ` from `normalCDF_sub_le` is `O(n⁻¹)`), split the `ξ`-integral at
+  `|ξ| ≍ √n`, bound the inner range by (E2) + `norm_charFun_pow_sub_edgeworth_le` against the
+  weight `1/(π|ξ|)`, and the outer range by (E3). This is the only step that is genuinely long
+  rather than genuinely hard. -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -225,13 +266,19 @@ is unskewed.
 DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (TSH4 Thm 18.4.1; the
 studentized root is a smooth function of the pair of means `(X̄, X̄₂)`, absolute continuity of
 `F` supplies the joint Cramér condition, and `E X⁴ < ∞` gives the `O(n⁻¹)` remainder). It is
-not proved here, and it is strictly harder than `edgeworth_mean_uniform`: it inherits (G1)–(G3)
-recorded there — in particular the damped characteristic-function expansion (G2), which is the
-binding estimate — and needs in addition the **bivariate** Edgeworth expansion for `(X̄, X̄₂)`
-together with the delta-method transfer to the smooth function `(u, v) ↦ u/√(v − u²)`. The
-CDF-level Esseen inversion is *not* among the missing pieces any more: see
-`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`, and the status note at
-the head of that file. -/
+not proved here, and it is strictly harder than `edgeworth_mean_uniform`: it inherits (E1)–(E4)
+recorded there and needs in addition the **bivariate** Edgeworth expansion for `(X̄, X̄₂)`
+together with the delta-method transfer to the smooth function `(u, v) ↦ u/√(v − u²)`.
+
+Two of the pieces this note used to name as missing are now present, and the corresponding
+verdicts are dead. The CDF-level Esseen inversion is proved
+(`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`), and the damped
+characteristic-function expansion — recorded as *the* binding estimate — is proved
+(`norm_charFun_pow_sub_edgeworth_le` in `ForMathlib/BerryEsseen.lean`). What remains genuinely
+specific to this theorem is the bivariate expansion: the univariate damped bound above does not
+transfer to `(X̄, X̄₂)` without a two-dimensional analogue of
+`norm_charFun_le_exp_neg_sq`, whose window is governed by the smallest eigenvalue of the
+covariance of `(X, X²)` and therefore needs the nondegeneracy that `hFac` supplies. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -260,7 +307,7 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstructions recorded on
-`edgeworth_studentized_uniform` and, through it, (G1)–(G3) on `edgeworth_mean_uniform`. -/
+`edgeworth_studentized_uniform` and, through it, (E1)–(E4) on `edgeworth_mean_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)

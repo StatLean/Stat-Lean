@@ -16,35 +16,51 @@ Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, 1971, §XVI.3
 
 ## Main results
 
-* `norm_cexp_sub_taylor_le`, `norm_prod_sub_prod_le` — elementary complex-analytic
-  estimates (restated here from `LindebergCLT.lean`, where they are `private`).
+* `norm_cexp_sub_taylor_le`, `norm_cexp_sub_taylor3_le`, `norm_prod_sub_prod_le`,
+  `norm_pow_sub_pow_sub_lin_le` — elementary complex-analytic estimates (the first and third
+  restated here from `LindebergCLT.lean`, where they are `private`).
 * `norm_charFun_sub_quadratic_le` — the characteristic function of a centered law is within
   `ρ|u|³/6` of its quadratic Taylor polynomial `1 − v u²/2`.
+* `norm_charFun_sub_cubic_le` — the next order: within `(∫x⁴)|u|⁴/24` of
+  `1 − v u²/2 − i m₃ u³/6`, retaining the third cumulant.
+* `norm_charFun_le_exp_neg_sq` — the quadratic Gaussian majorant `‖charFun μ s‖ ≤ e^{−v s²/4}`
+  on the window `v s² ≤ 2`, `ρ|s| ≤ 3v/2`.
 * `norm_charFun_pow_sub_gaussian_le` — `‖(charFun μ w)ⁿ − exp(−n v w²/2)‖ ≤ n(ρ|w|³/6 +
   (v w²/2)²/2)`, the full characteristic-function content of Berry–Esseen (steps (i)–(iii)).
-* `norm_charFun_iidSum_sub_gaussian_le` — the same bound applied to the standardized i.i.d.
-  sum `(√n)⁻¹ ∑ₖ Xₖ` via Mathlib's `charFun_inv_sqrt_mul_sum`.
+* `norm_charFun_pow_sub_edgeworth_le` — the **damped one-term Edgeworth expansion** of
+  `(charFun μ)ⁿ`, the sharpening of the previous item that both retains the `n^{−1/2}` term and
+  keeps a Gaussian envelope in the argument.
+* `norm_charFun_iidSum_sub_gaussian_le` — the Berry–Esseen bound applied to the standardized
+  i.i.d. sum `(√n)⁻¹ ∑ₖ Xₖ` via Mathlib's `charFun_inv_sqrt_mul_sum`.
 * `fejerKernel`, `fejerKernel_nonneg`, `fejerKernel_even` — a partial foundation for Esseen's
   smoothing inequality.
 
 ## Status
 
 The **characteristic-function half of Berry–Esseen is complete and axiom-clean**
-(`norm_charFun_iidSum_sub_gaussian_le` and its inputs). **Target 1, Esseen's smoothing
-inequality — and hence the CDF-level Berry–Esseen bound — is still open**, but the obstruction
-is now narrower than this file originally recorded. Two of the three ingredients listed below
-have since been **built** in `StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing`:
+(`norm_charFun_iidSum_sub_gaussian_le` and its inputs).
+
+**Target 1, Esseen's smoothing inequality, is no longer open, and the verdict this file used
+to record is dead.** All three ingredients listed below are now built in
+`StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing`:
 
 * the sinc integral `∫(sin x/x)² dx = π` (`integral_sin_div_sq`) and hence the Fejér
   normalisation `∫ K_T = 1` (`integral_fejerKernel`);
 * the Fejér/triangle Fourier pair, in the form `𝓕 Λ = (sin πξ/πξ)²` (`fourier_tentC`) and its
-  dual `𝓕 ((sin πξ/πξ)²) = Λ` (`fourier_sqSincC`), the compactly supported transform that
-  truncates the inversion integral.
+  dual `𝓕 ((sin πξ/πξ)²) = Λ` (`fourier_sqSincC`);
+* the CDF-level smoothing inequality itself, `abs_measure_Iic_sub_le_charFun`. Crucially this
+  is obtained **without** the Lévy/Esseen inversion formula for distribution functions that
+  this file previously named as the binding obstruction: the argument runs on test functions
+  (ramps and trapezoids) rather than on `F − G` directly, so the non-`L¹`-ness of `F − G` never
+  arises.
 
-What remains is the third ingredient only: a **Lévy/Esseen inversion formula at the level of
-distribution functions**, i.e. the identity expressing the *smoothed* difference `(F − G) ∗ K_T`
-as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]`. Mathlib's Fourier inversion is for `L¹`
-functions, and the Stieltjes/CDF version has to be built by hand.
+What is genuinely missing for a *Kolmogorov-distance* Berry–Esseen theorem is therefore only
+the assembly — choosing the flank width `δ` and integrating
+`norm_charFun_pow_sub_gaussian_le` against the Esseen weight
+`min(1/(π|ξ|), 1/(δπ²ξ²))`. Note that the undamped right-hand side of that bound is *not*
+enough for the assembly to produce a rate; the damped
+`norm_charFun_pow_sub_edgeworth_le` below is what the weighted integral needs, and its Gaussian
+factor `e^{−v s²/4}` is supplied by `norm_charFun_le_exp_neg_sq`.
 
 ## Formalization notes
 
