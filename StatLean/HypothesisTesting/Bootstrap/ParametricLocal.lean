@@ -118,7 +118,22 @@ theorem tendsto_supCDFDist_parametric_fixed
 If the sampling distribution converges to the limit law uniformly over parameters in
 `n^{-1/2}`-neighbourhoods of `θ` of bounded rescaled radius, and if `n^{1/2}(thHat n − θ)` is
 uniformly tight, then substituting the estimator for the true parameter perturbs the sampling
-distribution by a uniformly negligible amount, in probability. -/
+distribution by a uniformly negligible amount, in probability.
+
+**Signature amendment (the limit law must be a distribution function).** As frozen — with
+`hlim_cont` as the only hypothesis on `Jlim θ` — the statement is **false**, and the added
+`hlim_cdf : IsCDF (Jlim θ)` is exactly what repairs it. The reason is the junk value of an
+unbounded real supremum: `supCDFDist F G = ⨆ t, |F t − G t|` is `0` whenever that family is
+unbounded (`Real.iSup_of_not_bddAbove`), so for an unbounded *continuous* `Jlim θ` every
+`supCDFDist (·) (Jlim θ)` collapses to `0` and `hlocunif` becomes vacuous while the conclusion
+still has content. Concretely, take `k = 1`, `θ = 0`, `Jlim θ = id` (continuous, unbounded),
+`Jpar n t x = stdNormalCDF (x − n^{1/2} t)` (a genuine distribution function for every `n, t`)
+and the deterministic estimator `thHat n ω = n^{-1/2}`. Then `n^{1/2}(thHat n − θ) ≡ 1` is
+tight, `hlocunif` holds vacuously, and yet
+`supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)` is the (positive, `n`-independent) Kolmogorov
+distance between the `N(1,1)` and `N(0,1)` distribution functions, so it does not tend to `0`.
+The hypothesis is already carried by the downstream sibling
+`tendstoInMeasure_supCDFDist_parametric_bootstrap`, so no application is weakened. -/
 theorem tendstoInMeasure_supCDFDist_parametric_plugIn
     -- USER-INPUT: local uniformity over compact sets of local parameters — convergence of the
     -- sampling distribution to the limit law, uniform over `θ + n^{-1/2} t` with `‖t‖ ≤ M`
@@ -131,6 +146,9 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
       ∀ n : ℕ, (Pr {ω | M < ‖Real.sqrt n • (thHat n ω - θ)‖}).toReal ≤ ε)
     -- USER-INPUT: every sampling distribution is a distribution function
     (hcdf : ∀ (n : ℕ) (t : EuclideanSpace ℝ (Fin k)), IsCDF (Jpar n t))
+    -- USER-INPUT (signature amendment): the limit law is a distribution function; without it
+    -- `hlocunif` is vacuous and the statement is false — see the docstring
+    (hlim_cdf : IsCDF (Jlim θ))
     -- USER-INPUT: the limit law is continuous
     (hlim_cont : Continuous (Jlim θ))
     -- LEAN-ONLY: the estimator is measurable; needed for the tightness sets and the conclusion
@@ -138,17 +156,44 @@ theorem tendstoInMeasure_supCDFDist_parametric_plugIn
     (hmeas : ∀ n, Measurable (thHat n)) :
     TendstoInMeasure Pr (fun n ω => supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)) atTop
       (fun _ => 0) := by
-  -- TODO / SIGNATURE GAP: the conclusion compares `Jpar n (thHat n ω)` with `Jpar n θ`,
-  -- and the only bridge available is `Jlim θ` through the triangle inequality
-  -- `supCDFDist (Jpar n θ̂) (Jpar n θ) ≤ supCDFDist (Jpar n θ̂) (Jlim θ)`
-  --   `+ supCDFDist (Jlim θ) (Jpar n θ)`.
-  -- `supCDFDist_triangle` (indeed any pointwise extraction from `hlocunif`) needs `IsCDF (Jlim θ)`
-  -- — equivalently boundedness of `Jlim θ`. This file's `hlocunif` supplies only `hlim_cont`.
-  -- With `Real.iSup_of_not_bddAbove`, an *unbounded* continuous `Jlim θ` makes every
-  -- `supCDFDist (·) (Jlim θ) = 0` (junk sup), so `hlocunif` holds vacuously while the conclusion
-  -- can fail: the statement is provable only after adding `hlim_cdf : IsCDF (Jlim θ)` (which the
-  -- downstream `_bootstrap` result carries and which lets the argument below go through verbatim).
-  sorry
+  -- The bridge is the limit law: on the high-probability event `‖√n(θ̂ − θ)‖ ≤ M` both `Jpar n θ̂`
+  -- and `Jpar n θ` (the local parameter `t = 0`) are within `ε/2` of `Jlim θ`.
+  refine tendstoInMeasure_absOf (fun ε hε => ?_)
+  rw [ENNReal.tendsto_nhds_zero]
+  intro δ hδ
+  obtain ⟨δ₀, hδ₀pos, hδ₀δ⟩ : ∃ δ₀ : ℝ, 0 < δ₀ ∧ ENNReal.ofReal δ₀ ≤ δ := by
+    rcases eq_or_ne δ ∞ with h | h
+    · exact ⟨1, one_pos, by simp [h]⟩
+    · exact ⟨δ.toReal, ENNReal.toReal_pos hδ.ne' h, by rw [ENNReal.ofReal_toReal h]⟩
+  obtain ⟨M, hMpos, htightM⟩ := htight δ₀ hδ₀pos
+  filter_upwards [hlocunif M hMpos (ε / 4) (by positivity), eventually_ge_atTop 1] with n hn hn1
+  have hnpos : (0 : ℝ) < (n : ℝ) := by
+    have hn0 : 0 < n := by omega
+    exact_mod_cast hn0
+  have hsqrtne : Real.sqrt (n : ℝ) ≠ 0 := ne_of_gt (Real.sqrt_pos.mpr hnpos)
+  -- the sampling distribution at the true parameter is the local parameter `t = 0`
+  have hb0 : supCDFDist (Jpar n θ) (Jlim θ) ≤ ε / 4 := by
+    have h0 := hn 0 (by simpa using hMpos.le)
+    simpa using h0
+  refine le_trans (measure_mono (?_ : _ ⊆
+    {ω | M < ‖Real.sqrt (n : ℝ) • (thHat n ω - θ)‖})) ?_
+  · intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    by_contra hcon
+    push_neg at hcon
+    set v := Real.sqrt (n : ℝ) • (thHat n ω - θ) with hv
+    have hthHat : θ + (Real.sqrt (n : ℝ))⁻¹ • v = thHat n ω := by
+      rw [hv, smul_smul, inv_mul_cancel₀ hsqrtne, one_smul, add_sub_cancel]
+    have hb1 : supCDFDist (Jpar n (thHat n ω)) (Jlim θ) ≤ ε / 4 := by
+      rw [← hthHat]; exact hn v hcon
+    have htri : supCDFDist (Jpar n (thHat n ω)) (Jpar n θ)
+        ≤ supCDFDist (Jpar n (thHat n ω)) (Jlim θ) + supCDFDist (Jlim θ) (Jpar n θ) :=
+      supCDFDist_triangle_of_isCDF (hcdf n (thHat n ω)) hlim_cdf (hcdf n θ)
+    rw [supCDFDist_comm] at hb0
+    rw [abs_of_nonneg (supCDFDist_nonneg (hcdf n (thHat n ω)) (hcdf n θ))] at hω
+    linarith
+  · rw [← ENNReal.ofReal_toReal (measure_ne_top Pr _)]
+    exact le_trans (ENNReal.ofReal_le_ofReal (htightM n)) hδ₀δ
 
 /-- **Parametric bootstrap consistency**, the two displays combined: the sampling distribution
 at the estimated parameter is uniformly close, in probability, to the limit law. -/
@@ -204,7 +249,16 @@ theorem tendstoInMeasure_supCDFDist_parametric_bootstrap
 Test `g(θ) = 0` against `g(θ) > 0` by rejecting when `n^{1/2} g(thHat n)` exceeds the estimated
 `1 − α` quantile. Against the contiguous alternatives `θ + n^{-1/2} hdir` the rejection
 probability converges to `1 − Φ(z_{1−α} − σ⁻¹ ⟪∇g(θ), hdir⟫)`, where `σ²` is the variance of
-the limiting law of the root at `θ`. -/
+the limiting law of the root at `θ`.
+
+**Signature amendment (two `LEAN-ONLY` measurability hypotheses).** The rejection event is the
+*complement* of `{n^{1/2} g(thHat n) ≤ ĉₙ}`, and the hypotheses `hlocalCLT`/`hcritval` control
+only events of the form `{· ≤ x}` and `{ε ≤ |·|}`. Passing to the complement needs
+`measure_compl`, hence measurability of the rejection region: for a non-measurable set `A` the
+Mathlib `Measure` is the outer-measure extension and `μ A + μ Aᶜ > μ univ` is possible, so the
+complement step is not available without it. The two hypotheses added are the ones the siblings
+of this cluster (`tendsto_bootstrapCoverage`, `tendsto_bootstrapTest_level`) already carry, and
+they are pure regularity: no probabilistic content is imported. -/
 theorem tendsto_bootstrapTest_local_power
     {Pn : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} {g : EuclideanSpace ℝ (Fin k) → ℝ}
     {gradg hdir : EuclideanSpace ℝ (Fin k)} {sigma α : ℝ}
@@ -235,13 +289,83 @@ theorem tendsto_bootstrapTest_local_power
     (hcritval : ∀ ε : ℝ, 0 < ε → Tendsto (fun n : ℕ =>
         ((Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
           {ω | ε ≤ |cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α)
-                - sigma * stdNormalQuantile (1 - α)|}).toReal) atTop (𝓝 0)) :
+                - sigma * stdNormalQuantile (1 - α)|}).toReal) atTop (𝓝 0))
+    -- LEAN-ONLY (signature amendment): the test statistic is measurable in the sample
+    (hstatmeas : ∀ n : ℕ, Measurable fun ω => Real.sqrt n * g (thHat n ω))
+    -- LEAN-ONLY (signature amendment): the estimated critical value is measurable in the sample
+    (hcritmeas : ∀ n : ℕ, Measurable fun ω =>
+      cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α)) :
     Tendsto (fun n : ℕ =>
         ((Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
           {ω | cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) < Real.sqrt n * g (thHat n ω)}).toReal)
       atTop
       (𝓝 (1 - stdNormalCDF (stdNormalQuantile (1 - α) - sigma⁻¹ * ⟪gradg, hdir⟫))) := by
-  sorry
+  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Pn n (θ + (Real.sqrt n)⁻¹ • hdir)) :=
+    fun n => hPn n _
+  have hvne : Real.toNNReal (sigma ^ 2) ≠ 0 :=
+    (Real.toNNReal_pos.mpr (by positivity)).ne'
+  -- The limiting threshold: the critical value of the limit law, recentred by the drift.
+  have hFcont : ContinuousAt (normalCDF 0 (Real.toNNReal (sigma ^ 2)))
+      (sigma * stdNormalQuantile (1 - α) - ⟪gradg, hdir⟫) :=
+    (continuous_normalCDF 0 hvne).continuousAt
+  -- Convergence in probability of the recentred critical values is `hcritval` verbatim: the two
+  -- drifts cancel.
+  have hcconv : ∀ ε : ℝ, 0 < ε → Tendsto (fun n : ℕ =>
+      ((Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
+        {ω | ε ≤ |(cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫)
+          - (sigma * stdNormalQuantile (1 - α) - ⟪gradg, hdir⟫)|}).toReal) atTop (𝓝 0) := by
+    intro ε hε
+    have hsets : ∀ n : ℕ,
+        {ω | ε ≤ |(cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫)
+            - (sigma * stdNormalQuantile (1 - α) - ⟪gradg, hdir⟫)|}
+          = {ω | ε ≤ |cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α)
+            - sigma * stdNormalQuantile (1 - α)|} := by
+      intro n
+      ext ω
+      simp only [Set.mem_setOf_eq, sub_sub_sub_cancel_right]
+    simp only [hsets]
+    exact hcritval ε hε
+  -- The Slutsky coupling: the statistic against the estimated critical value.
+  have hmain := tendsto_measure_le_of_tendsto_cdf
+    (μ := fun n : ℕ => Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
+    (S := fun (n : ℕ) ω => Real.sqrt n * g (thHat n ω) - ⟪gradg, hdir⟫)
+    (c := fun (n : ℕ) ω =>
+      cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫)
+    hFcont hlocalCLT hcconv
+  -- The rejection event is the complement of the acceptance event.
+  have hrej : ∀ n : ℕ,
+      {ω | cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) < Real.sqrt n * g (thHat n ω)}
+        = {ω | Real.sqrt n * g (thHat n ω) - ⟪gradg, hdir⟫
+            ≤ cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫}ᶜ := by
+    intro n
+    ext ω
+    simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le, sub_lt_sub_iff_right]
+  have hmeasA : ∀ n : ℕ, MeasurableSet
+      {ω | Real.sqrt n * g (thHat n ω) - ⟪gradg, hdir⟫
+        ≤ cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫} :=
+    fun n => measurableSet_le ((hstatmeas n).sub measurable_const)
+      ((hcritmeas n).sub measurable_const)
+  have hcompl : ∀ n : ℕ,
+      ((Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
+        {ω | cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α)
+          < Real.sqrt n * g (thHat n ω)}).toReal
+        = 1 - ((Pn n (θ + (Real.sqrt n)⁻¹ • hdir))
+          {ω | Real.sqrt n * g (thHat n ω) - ⟪gradg, hdir⟫
+            ≤ cdfPseudoInverse (Jpar n (thHat n ω)) (1 - α) - ⟪gradg, hdir⟫}).toReal := by
+    intro n
+    rw [hrej n, measure_compl (hmeasA n) (measure_ne_top _ _),
+      ENNReal.toReal_sub_of_le (measure_mono (Set.subset_univ _)) (measure_ne_top _ _),
+      measure_univ, ENNReal.toReal_one]
+  -- Identify the limit through the standardisation of the normal distribution function.
+  have hval : normalCDF 0 (Real.toNNReal (sigma ^ 2))
+      (sigma * stdNormalQuantile (1 - α) - ⟪gradg, hdir⟫)
+      = stdNormalCDF (stdNormalQuantile (1 - α) - sigma⁻¹ * ⟪gradg, hdir⟫) := by
+    rw [normalCDF_sq_eq_stdNormalCDF hsigma]
+    congr 1
+    field_simp
+  have hlim := Tendsto.const_sub 1 hmain
+  rw [hval] at hlim
+  exact Tendsto.congr (fun n => (hcompl n).symm) hlim
 
 end ParametricBootstrap
 
