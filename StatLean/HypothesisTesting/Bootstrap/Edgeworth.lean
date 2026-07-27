@@ -414,6 +414,288 @@ theorem charFun_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
 
 end RootLaw
 
+/-! ## The Edgeworth approximant on the standardized scale
+
+Item (E4).2 of the assembly programme. The comparison object of an Edgeworth expansion is a
+**signed** `L¹` density, and `abs_measure_Iic_sub_densityCDF_le_charFun` consumes it through two
+data: its `densityCDF`, which has to be the approximant appearing in the statement, and its
+total-variation modulus `∫_{(a,b]} |q| ≤ A(b − a)`, whose constant `A` has to be uniform in `n`.
+
+Everything here is written on the **standardized** scale — the density is
+`q_n(u) = φ(u)(1 + (γ/6)(u³ − 3u) n^{-1/2})`, with no `σ` in it. The `σ` of the theorem is then
+carried entirely by the argument, `u = t/σ`, which costs one `Measure.map` on the law side and
+nothing at all here. In particular no Gaussian scaling identity is needed: `∫_{(-∞,u]} φ = Φ(u)`
+is `gaussianReal_apply_eq_integral` verbatim. -/
+
+section Approximant
+
+/-- The **one-term Edgeworth density**, `q_n(u) = φ(u)(1 + (γ/6)(u³ − 3u) n^{-1/2})`. It is a
+signed `L¹` density, not a probability density: for `|γ| n^{-1/2}` large it takes both signs.
+Its distribution function is `edgeworthCDF` (`densityCDF_edgeworthDensity`). -/
+noncomputable def edgeworthDensity (γ : ℝ) (n : ℕ) (u : ℝ) : ℝ :=
+  stdNormalPDF u * (1 + γ / 6 * (u ^ 3 - 3 * u) * (Real.sqrt n)⁻¹)
+
+/-- The **one-term Edgeworth approximant**, `Φ(u) − (γ/6)φ(u)(u² − 1) n^{-1/2}`: the comparison
+distribution function of the expansion, on the standardized scale. -/
+noncomputable def edgeworthCDF (γ : ℝ) (n : ℕ) (u : ℝ) : ℝ :=
+  stdNormalCDF u - 1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹
+
+/-- The **antiderivative of the third Hermite weight**, `−φ(u)(u² − 1)`, whose derivative is
+`φ(u)(u³ − 3u)` and whose limit at `−∞` is `0`. -/
+noncomputable def hermiteAntideriv (u : ℝ) : ℝ := -(stdNormalPDF u * (u ^ 2 - 1))
+
+/-- The standard normal density in the repo's spelling is Mathlib's Gaussian density. -/
+lemma stdNormalPDF_eq_gaussianPDFReal (u : ℝ) : stdNormalPDF u = gaussianPDFReal 0 1 u := by
+  have hg : gaussianPDFReal 0 1 u
+      = (Real.sqrt (2 * Real.pi * ((1 : ℝ≥0) : ℝ)))⁻¹
+        * Real.exp (-(u - 0) ^ 2 / (2 * ((1 : ℝ≥0) : ℝ))) := rfl
+  rw [hg, stdNormalPDF, div_eq_inv_mul]
+  norm_num
+
+/-- `Φ(u) = ∫_{(-∞,u]} φ`: the standard normal distribution function *is* the `densityCDF` of
+the standard normal density. -/
+lemma stdNormalCDF_eq_setIntegral (u : ℝ) :
+    stdNormalCDF u = ∫ y in Set.Iic u, stdNormalPDF y := by
+  have hnn : 0 ≤ ∫ y in Set.Iic u, gaussianPDFReal 0 1 y :=
+    integral_nonneg fun y => gaussianPDFReal_nonneg 0 1 y
+  simp_rw [stdNormalPDF_eq_gaussianPDFReal]
+  rw [stdNormalCDF, normalCDF, gaussianReal_apply_eq_integral 0 one_ne_zero (Set.Iic u),
+    ENNReal.toReal_ofReal hnn]
+
+/-- `φ' = −u φ`. -/
+lemma hasDerivAt_stdNormalPDF (u : ℝ) :
+    HasDerivAt stdNormalPDF (-u * stdNormalPDF u) u := by
+  have h1 : HasDerivAt (fun x : ℝ => -x ^ 2 / 2) (-u) u := by
+    have := ((hasDerivAt_pow 2 u).neg).div_const 2
+    convert this using 1
+    push_cast
+    ring
+  have h2 := (h1.exp).div_const (Real.sqrt (2 * Real.pi))
+  change HasDerivAt (fun x : ℝ => Real.exp (-x ^ 2 / 2) / Real.sqrt (2 * Real.pi)) _ u
+  convert h2 using 1
+  rw [stdNormalPDF]
+  ring
+
+/-- `d/du[−φ(u)(u² − 1)] = φ(u)(u³ − 3u)`: the Hermite antiderivative identity. -/
+lemma hasDerivAt_hermiteAntideriv (u : ℝ) :
+    HasDerivAt hermiteAntideriv (stdNormalPDF u * (u ^ 3 - 3 * u)) u := by
+  have h := ((hasDerivAt_stdNormalPDF u).mul ((hasDerivAt_pow 2 u).sub_const 1)).neg
+  change HasDerivAt (fun x : ℝ => -(stdNormalPDF x * (x ^ 2 - 1))) _ u
+  convert h using 1
+  push_cast
+  ring
+
+/-- The Hermite antiderivative vanishes at `−∞`. -/
+lemma tendsto_hermiteAntideriv_atBot :
+    Filter.Tendsto hermiteAntideriv Filter.atBot (𝓝 0) := by
+  have hw : Filter.Tendsto (fun u : ℝ => u ^ 2 / 2) Filter.atBot Filter.atTop := by
+    have h1 : Filter.Tendsto (fun u : ℝ => |u| ^ 2) Filter.atBot Filter.atTop :=
+      (tendsto_pow_atTop (n := 2) (by norm_num)).comp tendsto_abs_atBot_atTop
+    have h2 : Filter.Tendsto (fun u : ℝ => u ^ 2) Filter.atBot Filter.atTop := by
+      simpa [sq_abs] using h1
+    exact h2.atTop_div_const (by norm_num)
+  have h1 : Filter.Tendsto (fun w : ℝ => w ^ 1 * Real.exp (-w)) Filter.atTop (𝓝 0) :=
+    Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1
+  have h2 : Filter.Tendsto (fun w : ℝ => Real.exp (-w)) Filter.atTop (𝓝 0) :=
+    Real.tendsto_exp_neg_atTop_nhds_zero
+  have h3 : Filter.Tendsto (fun w : ℝ => (2 * w - 1) * Real.exp (-w)) Filter.atTop (𝓝 0) := by
+    have h4 := (h1.const_mul (2 : ℝ)).sub h2
+    rw [mul_zero, sub_zero] at h4
+    exact h4.congr fun w => by ring
+  have hg : Filter.Tendsto
+      (fun w : ℝ => -((2 * w - 1) * Real.exp (-w) / Real.sqrt (2 * Real.pi)))
+      Filter.atTop (𝓝 0) := by
+    have := (h3.div_const (Real.sqrt (2 * Real.pi))).neg
+    rw [zero_div, neg_zero] at this
+    exact this
+  refine (hg.comp hw).congr fun u => ?_
+  simp only [Function.comp_apply, hermiteAntideriv, stdNormalPDF]
+  rw [neg_div]
+  ring_nf
+
+/-- The standard normal density is continuous. -/
+lemma continuous_stdNormalPDF : Continuous stdNormalPDF := by
+  change Continuous fun x : ℝ => Real.exp (-x ^ 2 / 2) / Real.sqrt (2 * Real.pi)
+  fun_prop
+
+/-- Gaussian polynomial moments: `y ↦ φ(y) yᵏ` is integrable. -/
+lemma integrable_stdNormalPDF_mul_pow (k : ℕ) :
+    Integrable (fun y : ℝ => stdNormalPDF y * y ^ k) := by
+  refine Integrable.mono' ((integrable_abs_pow_mul_exp_neg_half_sq k).const_mul
+      (Real.sqrt (2 * Real.pi))⁻¹)
+    (continuous_stdNormalPDF.mul (continuous_pow k)).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => ?_)
+  refine le_of_eq ?_
+  rw [Real.norm_eq_abs, abs_mul, abs_pow, stdNormalPDF, abs_div,
+    abs_of_nonneg (Real.exp_pos _).le, abs_of_nonneg (Real.sqrt_nonneg _), neg_div]
+  ring
+
+/-- The standard normal density is integrable. -/
+lemma integrable_stdNormalPDF : Integrable stdNormalPDF := by
+  simpa using integrable_stdNormalPDF_mul_pow 0
+
+/-- `y ↦ φ(y)(y³ − 3y)` is integrable: the derivative appearing in the FTC step. -/
+lemma integrable_stdNormalPDF_mul_hermite3 :
+    Integrable (fun y : ℝ => stdNormalPDF y * (y ^ 3 - 3 * y)) := by
+  have h3 := integrable_stdNormalPDF_mul_pow 3
+  have h1 := (integrable_stdNormalPDF_mul_pow 1).const_mul (3 : ℝ)
+  refine (h3.sub h1).congr (Filter.Eventually.of_forall fun y => ?_)
+  simp only [Pi.sub_apply]
+  ring
+
+/-- The Edgeworth density is integrable. -/
+lemma integrable_edgeworthDensity (γ : ℝ) (n : ℕ) :
+    Integrable (edgeworthDensity γ n) := by
+  have hh := integrable_stdNormalPDF_mul_hermite3.const_mul (γ / 6 * (Real.sqrt n)⁻¹)
+  refine (integrable_stdNormalPDF.fun_add hh).congr (Filter.Eventually.of_forall fun y => ?_)
+  rw [edgeworthDensity]
+  ring
+
+/-- **The FTC step.** `∫_{(-∞,u]} φ(y)(y³ − 3y) dy = −φ(u)(u² − 1)`. -/
+lemma setIntegral_Iic_stdNormalPDF_mul_hermite3 (u : ℝ) :
+    (∫ y in Set.Iic u, stdNormalPDF y * (y ^ 3 - 3 * y)) = hermiteAntideriv u := by
+  have h := integral_Iic_of_hasDerivAt_of_tendsto' (f := hermiteAntideriv)
+    (f' := fun y : ℝ => stdNormalPDF y * (y ^ 3 - 3 * y)) (a := u) (m := 0)
+    (fun x _ => hasDerivAt_hermiteAntideriv x)
+    integrable_stdNormalPDF_mul_hermite3.integrableOn tendsto_hermiteAntideriv_atBot
+  rw [h, sub_zero]
+
+/-- **(E4).2 — the approximant is the distribution function of the Edgeworth density.**
+`∫_{(-∞,u]} q_n = Φ(u) − (γ/6)φ(u)(u² − 1) n^{-1/2}`. -/
+theorem densityCDF_edgeworthDensity (γ : ℝ) (n : ℕ) (u : ℝ) :
+    densityCDF (edgeworthDensity γ n) u = edgeworthCDF γ n u := by
+  have hsplit : ∀ y : ℝ, edgeworthDensity γ n y
+      = stdNormalPDF y + (γ / 6 * (Real.sqrt n)⁻¹) * (stdNormalPDF y * (y ^ 3 - 3 * y)) := by
+    intro y
+    rw [edgeworthDensity]
+    ring
+  rw [densityCDF, setIntegral_congr_fun measurableSet_Iic fun y _ => hsplit y,
+    integral_add integrable_stdNormalPDF.integrableOn
+      (integrable_stdNormalPDF_mul_hermite3.const_mul _).integrableOn,
+    MeasureTheory.integral_const_mul, setIntegral_Iic_stdNormalPDF_mul_hermite3,
+    ← stdNormalCDF_eq_setIntegral, hermiteAntideriv, edgeworthCDF]
+  ring
+
+/-! ### The total-variation modulus
+
+The second datum `abs_measure_Iic_sub_densityCDF_le_charFun` consumes is a constant `A` with
+`∫_{(a,b]} |q_n| ≤ A(b − a)`. For a density this is just a uniform bound on `|q_n|`, and the
+whole point is that it must not depend on `n`: it does not, because `n^{-1/2} ≤ 1` and
+`φ(u)|u|ᵏ ≤ (2π)^{-1/2} 4ᵏ k!` by `abs_pow_le_const_mul_exp_sq_div_four`. -/
+
+/-- `e^{−u²/2}|u|ᵏ ≤ 4ᵏ k!`: the Gaussian kills every monomial, with an explicit constant. -/
+private lemma exp_neg_half_sq_mul_abs_pow_le (k : ℕ) (u : ℝ) :
+    Real.exp (-u ^ 2 / 2) * |u| ^ k ≤ 4 ^ k * (Nat.factorial k : ℝ) := by
+  have hmul : Real.exp (-u ^ 2 / 2) * |u| ^ k
+      ≤ Real.exp (-u ^ 2 / 2) * (4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4)) :=
+    mul_le_mul_of_nonneg_left (abs_pow_le_const_mul_exp_sq_div_four k u) (Real.exp_pos _).le
+  have heq : Real.exp (-u ^ 2 / 2) * (4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4))
+      = 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (-u ^ 2 / 4) := by
+    rw [show Real.exp (-u ^ 2 / 2) * (4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4))
+          = 4 ^ k * (Nat.factorial k : ℝ)
+            * (Real.exp (-u ^ 2 / 2) * Real.exp (u ^ 2 / 4)) from by ring,
+      ← Real.exp_add]
+    congr 2
+    ring
+  have hle1 : Real.exp (-u ^ 2 / 4) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by nlinarith [sq_nonneg u])
+  have hCnn : (0 : ℝ) ≤ 4 ^ k * (Nat.factorial k : ℝ) := by positivity
+  calc Real.exp (-u ^ 2 / 2) * |u| ^ k
+      ≤ Real.exp (-u ^ 2 / 2) * (4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4)) := hmul
+    _ = 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (-u ^ 2 / 4) := heq
+    _ ≤ 4 ^ k * (Nat.factorial k : ℝ) * 1 := by nlinarith
+    _ = 4 ^ k * (Nat.factorial k : ℝ) := mul_one _
+
+/-- `φ(u)|u|ᵏ ≤ (2π)^{-1/2} C` for any `C` dominating `4ᵏ k!`. -/
+private lemma stdNormalPDF_mul_abs_pow_le (k : ℕ) {C : ℝ}
+    (hC : 4 ^ k * (Nat.factorial k : ℝ) ≤ C) (u : ℝ) :
+    stdNormalPDF u * |u| ^ k ≤ (Real.sqrt (2 * Real.pi))⁻¹ * C := by
+  have hrw : stdNormalPDF u * |u| ^ k
+      = (Real.sqrt (2 * Real.pi))⁻¹ * (Real.exp (-u ^ 2 / 2) * |u| ^ k) := by
+    rw [stdNormalPDF]; ring
+  rw [hrw]
+  exact mul_le_mul_of_nonneg_left ((exp_neg_half_sq_mul_abs_pow_le k u).trans hC)
+    (by positivity)
+
+/-- **A uniform bound on the Edgeworth density.** For every `n ≥ 1` and every `u`,
+`|q_n(u)| ≤ (2π)^{-1/2}(1 + 66|γ|)`. The constant is *independent of `n`* — which is what the
+de-smoothing loss `2Aδ` of `abs_measure_Iic_sub_densityCDF_le_charFun` needs, since `δ` is
+taken to be `n⁻¹`. -/
+theorem abs_edgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (u : ℝ) :
+    |edgeworthDensity γ n u| ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) := by
+  have hpdfnn : 0 ≤ stdNormalPDF u := by rw [stdNormalPDF]; positivity
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    have h2 : (1 : ℝ) ≤ Real.sqrt n := by
+      simpa using Real.sqrt_le_sqrt h1
+    exact inv_le_one_of_one_le₀ h2
+  have habs3 : |u ^ 3 - 3 * u| ≤ |u| ^ 3 + 3 * |u| := by
+    have h := abs_add_le (u ^ 3) (-(3 * u))
+    rw [abs_neg] at h
+    calc |u ^ 3 - 3 * u| = |u ^ 3 + -(3 * u)| := by rw [sub_eq_add_neg]
+      _ ≤ |u ^ 3| + |3 * u| := h
+      _ = |u| ^ 3 + 3 * |u| := by
+          rw [abs_pow, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 3)]
+  have hbracket : |1 + γ / 6 * (u ^ 3 - 3 * u) * (Real.sqrt n)⁻¹|
+      ≤ 1 + |γ| / 6 * (|u| ^ 3 + 3 * |u|) := by
+    have htri := abs_add_le (1 : ℝ) (γ / 6 * (u ^ 3 - 3 * u) * (Real.sqrt n)⁻¹)
+    rw [abs_one] at htri
+    have hval : |γ / 6 * (u ^ 3 - 3 * u) * (Real.sqrt n)⁻¹|
+        = |γ| / 6 * |u ^ 3 - 3 * u| * (Real.sqrt n)⁻¹ := by
+      rw [abs_mul, abs_mul, abs_div, abs_of_nonneg hsqrt0]
+      try norm_num
+    have hnn : (0 : ℝ) ≤ |γ| / 6 * |u ^ 3 - 3 * u| := by positivity
+    have hstep : |γ / 6 * (u ^ 3 - 3 * u) * (Real.sqrt n)⁻¹|
+        ≤ |γ| / 6 * (|u| ^ 3 + 3 * |u|) := by
+      rw [hval]
+      calc |γ| / 6 * |u ^ 3 - 3 * u| * (Real.sqrt n)⁻¹
+          ≤ |γ| / 6 * |u ^ 3 - 3 * u| * 1 := mul_le_mul_of_nonneg_left hsqrt hnn
+        _ = |γ| / 6 * |u ^ 3 - 3 * u| := mul_one _
+        _ ≤ |γ| / 6 * (|u| ^ 3 + 3 * |u|) :=
+            mul_le_mul_of_nonneg_left habs3 (by positivity)
+    linarith [htri, hstep]
+  have hkey : |edgeworthDensity γ n u|
+      ≤ stdNormalPDF u * (1 + |γ| / 6 * (|u| ^ 3 + 3 * |u|)) := by
+    rw [edgeworthDensity, abs_mul, abs_of_nonneg hpdfnn]
+    exact mul_le_mul_of_nonneg_left hbracket hpdfnn
+  have hb0 := stdNormalPDF_mul_abs_pow_le 0 (C := 1) (by norm_num) u
+  have hb1 := stdNormalPDF_mul_abs_pow_le 1 (C := 4) (by norm_num [Nat.factorial]) u
+  have hb3 := stdNormalPDF_mul_abs_pow_le 3 (C := 384) (by norm_num [Nat.factorial]) u
+  rw [pow_zero, mul_one, mul_one] at hb0
+  rw [pow_one] at hb1
+  have e1 := mul_le_mul_of_nonneg_left hb1 (by positivity : (0 : ℝ) ≤ |γ| / 2)
+  have e3 := mul_le_mul_of_nonneg_left hb3 (by positivity : (0 : ℝ) ≤ |γ| / 6)
+  have hexp : stdNormalPDF u * (1 + |γ| / 6 * (|u| ^ 3 + 3 * |u|))
+      = stdNormalPDF u + |γ| / 6 * (stdNormalPDF u * |u| ^ 3)
+        + |γ| / 2 * (stdNormalPDF u * |u|) := by ring
+  rw [hexp] at hkey
+  linarith [hkey, hb0, e1, e3]
+
+/-- **(E4).2 — the total-variation modulus of the Edgeworth density**, with a constant
+independent of `n`. This is the hypothesis `hA` of
+`abs_measure_Iic_sub_densityCDF_le_charFun`. -/
+theorem setIntegral_abs_edgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) {a b : ℝ}
+    (hab : a ≤ b) :
+    (∫ y in Set.Ioc a b, |edgeworthDensity γ n y|)
+      ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) := by
+  calc (∫ y in Set.Ioc a b, |edgeworthDensity γ n y|)
+      ≤ ∫ _y in Set.Ioc a b, (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) :=
+        setIntegral_mono_on (integrable_edgeworthDensity γ n).abs.integrableOn
+          (continuous_const.integrableOn_Ioc) measurableSet_Ioc
+          fun y _ => abs_edgeworthDensity_le γ hn y
+    _ = (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) * (b - a) := by
+        rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+          ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
+
+/-- The Edgeworth total-variation constant is positive. -/
+lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) := by
+  have h : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+  have hg : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+  positivity
+
+end Approximant
+
 /-! ## The expansions -/
 
 section Edgeworth

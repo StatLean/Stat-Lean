@@ -1195,6 +1195,19 @@ theorem integral_sq_mul_cexp_mul_gaussian (θ : ℝ) :
   rw [← integral_pow2_cexpGauss θ]
   exact integral_congr_ae (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq])
 
+/-- **A monomial is dominated by a Gaussian of half the rate.** `|u|ᵏ ≤ 4ᵏ k! e^{u²/4}`, with
+an explicit constant. This is the elementary envelope behind every Gaussian moment bound used
+by the Edgeworth assembly: multiplied by `e^{−u²/2}` it gives `|u|ᵏ e^{−u²/2} ≤ 4ᵏ k!`, a
+*uniform* bound on the polynomial-times-Gaussian densities. -/
+theorem abs_pow_le_const_mul_exp_sq_div_four (k : ℕ) (u : ℝ) :
+    |u| ^ k ≤ 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4) :=
+  abs_pow_le_exp k u
+
+/-- **Polynomial multiples of the Gaussian kernel are integrable.** -/
+theorem integrable_abs_pow_mul_exp_neg_half_sq (k : ℕ) :
+    Integrable (fun u : ℝ => |u| ^ k * Real.exp (-(u ^ 2 / 2))) :=
+  integrable_abs_pow_mul_gauss k
+
 /-- **The Hermite Fourier identity.**
 `∫ e^{iθu} (u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`. -/
 theorem integral_hermite3_mul_cexp_mul_gaussian (θ : ℝ) :
