@@ -120,7 +120,19 @@ sampling law. Degenerate inputs (`α ≤ 0`) fall back on the junk conventions o
 and `Real.sqrt`; every statement below carries `0 < α < 1`.
 
 COUPLING: the numerals `4` and `16` are the constants `C` and `1/c` of `dkw_uniform` in
-`ForMathlib/DKWUniform`; see the module docstring for the reconciliation rule. -/
+`ForMathlib/DKWUniform`; see the module docstring for the reconciliation rule.
+
+DOCUMENTED DEVIATION (constant, not statement). This definition previously read
+`√(8 log(4/α))`, matching the frozen `dkw_uniform` exponent `c = 1/8`. That exponent was
+*not* provable: the only elementary route to the in-expectation half of the DKW inequality
+(symmetrisation, the sorted-prefix `±1` walk, and Lévy's maximal inequality) delivers
+`√n · E Dₙ ≤ 4`, and `M = 4` provably breaks `4 e^{−d²/8}` on the band `d ∈ (3.330, 4)`.
+Per the charter rule *state the constants that are actually provable*, `dkw_uniform` was
+amended to `4 e^{−d²/16}` and this numeral to `16`; see the `ForMathlib/DKWUniform` header
+for the full accounting and for the martingale route that would restore `8`. The effect is
+that every calibrated threshold in this file is `√2` times larger, i.e. the tests are more
+conservative; every statement below is phrased through `ksThreshold` and re-derives its
+level from `4 e^{−s²/16} = α`, so all of them hold verbatim. -/
 noncomputable def ksThreshold (α : ℝ) : ℝ :=
   Real.sqrt (16 * Real.log (4 / α))
 
