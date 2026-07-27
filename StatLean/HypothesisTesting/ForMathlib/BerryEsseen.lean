@@ -6,6 +6,8 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 
 /-!
 # Esseen's smoothing inequality and the univariate Berry–Esseen theorem
@@ -915,6 +917,308 @@ theorem norm_charFun_iidSum_sub_gaussian_le {X : ℕ → Ω → ℝ}
     Measure.isProbabilityMeasure_map (hident 0).aemeasurable_fst
   rw [charFun_inv_sqrt_mul_sum hindep hident]
   exact norm_charFun_pow_sub_gaussian_le (P.map (X 0)) hv hint1 hint2 hint3 hmean hvar _ n
+
+/-! ### Gaussian Fourier moments and the Hermite identity
+
+The Edgeworth approximant is not a probability law but the signed measure with density
+`y ↦ σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`, and feeding it into a smoothing inequality
+requires its Fourier transform. After the substitutions `y = σu`, `θ = σt` that reduces to the
+three Gaussian moment transforms below, of which the third — the **Hermite identity**
+
+`∫ e^{iθu} (u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}` —
+
+is the one that matches the cubic Edgeworth correction `1 − n i m₃ s³/6` of
+`norm_charFun_pow_sub_edgeworth_le`.
+
+Rather than integrating by parts twice (which needs two improper boundary evaluations), each
+identity is obtained from a **single explicit antiderivative**: for a quadratic `P`,
+
+`d/du [P(u) e^{iθu − u²/2}] = (P'(u) + (iθ − u) P(u)) e^{iθu − u²/2}`,
+
+so choosing `P` to make the bracket the desired polynomial minus a multiple of `1` turns the
+identity into "the integral of a derivative of an integrable function with integrable derivative
+vanishes" (`integral_eq_zero_of_hasDerivAt_of_integrable`). Concretely
+`P(u) = −u − iθ` produces the `u²` identity and `P(u) = −u² − iθu + (θ² + 1)` the Hermite one.
+The base value `∫ e^{iθu − u²/2} du = √(2π) e^{−θ²/2}` is Mathlib's `integral_cexp_quadratic`. -/
+
+/-- The modulated Gaussian `u ↦ e^{iθu − u²/2}`. -/
+private noncomputable def cexpGauss (θ u : ℝ) : ℂ :=
+  Complex.exp ((θ : ℂ) * (u : ℂ) * I - (u : ℂ) ^ 2 / 2)
+
+private lemma continuous_cexpGauss (θ : ℝ) : Continuous (cexpGauss θ) := by
+  unfold cexpGauss; fun_prop
+
+private lemma norm_cexpGauss (θ u : ℝ) : ‖cexpGauss θ u‖ = Real.exp (-(u ^ 2 / 2)) := by
+  have h : ((θ : ℂ) * (u : ℂ) * I - (u : ℂ) ^ 2 / 2)
+      = ((-(u ^ 2 / 2) : ℝ) : ℂ) + ((θ * u : ℝ) : ℂ) * I := by push_cast; ring
+  rw [cexpGauss, h, Complex.norm_exp, Complex.add_re, Complex.ofReal_re, Complex.mul_I_re,
+    Complex.ofReal_im, neg_zero, add_zero]
+
+private lemma hasDerivAt_cexpGauss (θ u : ℝ) :
+    HasDerivAt (cexpGauss θ) (cexpGauss θ u * ((θ : ℂ) * I - (u : ℂ))) u := by
+  have hbu : HasDerivAt (fun w : ℝ => (w : ℂ)) 1 u := by
+    simpa using Complex.ofRealCLM.hasDerivAt (x := u)
+  have hg : HasDerivAt (fun w : ℝ => (θ : ℂ) * (w : ℂ) * I - (w : ℂ) ^ 2 / 2)
+      ((θ : ℂ) * I - (u : ℂ)) u := by
+    have h1 : HasDerivAt (fun w : ℝ => (θ : ℂ) * (w : ℂ) * I) ((θ : ℂ) * I) u := by
+      simpa using (hbu.const_mul ((θ : ℂ))).mul_const I
+    have h2 : HasDerivAt (fun w : ℝ => (w : ℂ) ^ 2 / 2) ((u : ℂ)) u := by
+      have := (hbu.pow 2).div_const 2
+      convert this using 1
+      ring
+    exact h1.sub h2
+  unfold cexpGauss
+  exact hg.cexp
+
+/-- `|u|^k ≤ (4^k k!) e^{u²/4}`, the crude majorant behind Gaussian integrability. -/
+private lemma abs_pow_le_exp (k : ℕ) (u : ℝ) :
+    |u| ^ k ≤ 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4) := by
+  have hfac : (1 : ℝ) ≤ (Nat.factorial k : ℝ) := by
+    exact_mod_cast Nat.one_le_iff_ne_zero.2 (Nat.factorial_ne_zero k)
+  have h4 : (1 : ℝ) ≤ 4 ^ k := one_le_pow₀ (by norm_num)
+  have hpos : (0 : ℝ) < 4 ^ k * (Nat.factorial k : ℝ) := by positivity
+  have hC : (1 : ℝ) ≤ 4 ^ k * (Nat.factorial k : ℝ) := by nlinarith
+  have hexp : (1 : ℝ) ≤ Real.exp (u ^ 2 / 4) := by
+    linarith [Real.add_one_le_exp (u ^ 2 / 4), sq_nonneg u]
+  rcases le_or_gt |u| 1 with h | h
+  · calc |u| ^ k ≤ 1 ^ k := pow_le_pow_left₀ (abs_nonneg u) h k
+      _ = 1 := one_pow k
+      _ ≤ 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4) := by nlinarith
+  · have hkey : (u ^ 2 / 4) ^ k / (Nat.factorial k : ℝ) ≤ Real.exp (u ^ 2 / 4) :=
+      Real.pow_div_factorial_le_exp (u ^ 2 / 4) (by positivity) k
+    have hu2 : (u ^ 2 / 4) ^ k = |u| ^ (2 * k) / 4 ^ k := by
+      rw [div_pow, ← sq_abs u, ← pow_mul]
+    have hle : |u| ^ k ≤ |u| ^ (2 * k) := pow_le_pow_right₀ h.le (by omega)
+    rw [hu2, div_div, div_le_iff₀ hpos] at hkey
+    calc |u| ^ k ≤ |u| ^ (2 * k) := hle
+      _ ≤ Real.exp (u ^ 2 / 4) * (4 ^ k * (Nat.factorial k : ℝ)) := hkey
+      _ = 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4) := by ring
+
+private lemma integrable_abs_pow_mul_gauss (k : ℕ) :
+    Integrable (fun u : ℝ => |u| ^ k * Real.exp (-(u ^ 2 / 2))) := by
+  have hbase : Integrable (fun u : ℝ => Real.exp (-(1 / 4 : ℝ) * u ^ 2)) :=
+    integrable_exp_neg_mul_sq (by norm_num)
+  refine Integrable.mono' (g := fun u : ℝ =>
+      4 ^ k * (Nat.factorial k : ℝ) * Real.exp (-(1 / 4 : ℝ) * u ^ 2))
+    (hbase.const_mul _) (by fun_prop) (Filter.Eventually.of_forall fun u => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  have hmul := mul_le_mul_of_nonneg_right (abs_pow_le_exp k u)
+    (Real.exp_pos (-(u ^ 2 / 2))).le
+  refine hmul.trans_eq ?_
+  rw [mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
+
+private lemma integrable_pow_mul_cexpGauss (θ : ℝ) (k : ℕ) :
+    Integrable (fun u : ℝ => (u : ℂ) ^ k * cexpGauss θ u) := by
+  have hcont : Continuous fun u : ℝ => (u : ℂ) ^ k * cexpGauss θ u :=
+    (Complex.continuous_ofReal.pow k).mul (continuous_cexpGauss θ)
+  refine Integrable.mono' (integrable_abs_pow_mul_gauss k) hcont.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun u => ?_)
+  rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, norm_cexpGauss]
+
+private lemma integrable_cubic_cexpGauss (θ : ℝ) (α β γ δ : ℂ) :
+    Integrable (fun u : ℝ =>
+      (α * (u : ℂ) ^ 3 + β * (u : ℂ) ^ 2 + γ * (u : ℂ) + δ) * cexpGauss θ u) := by
+  have i0 : Integrable (fun u : ℝ => δ * ((u : ℂ) ^ 0 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 0).const_mul δ
+  have i1 : Integrable (fun u : ℝ => γ * ((u : ℂ) ^ 1 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 1).const_mul γ
+  have i2 : Integrable (fun u : ℝ => β * ((u : ℂ) ^ 2 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 2).const_mul β
+  have i3 : Integrable (fun u : ℝ => α * ((u : ℂ) ^ 3 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 3).const_mul α
+  exact (i3.fun_add (i2.fun_add (i1.fun_add i0))).congr
+    (Filter.Eventually.of_forall fun u => by ring)
+
+private lemma integral_cubic_cexpGauss (θ : ℝ) (α β γ δ : ℂ) :
+    (∫ u : ℝ, (α * (u : ℂ) ^ 3 + β * (u : ℂ) ^ 2 + γ * (u : ℂ) + δ) * cexpGauss θ u)
+      = α * (∫ u : ℝ, (u : ℂ) ^ 3 * cexpGauss θ u) + β * (∫ u : ℝ, (u : ℂ) ^ 2 * cexpGauss θ u)
+        + γ * (∫ u : ℝ, (u : ℂ) ^ 1 * cexpGauss θ u)
+        + δ * (∫ u : ℝ, (u : ℂ) ^ 0 * cexpGauss θ u) := by
+  have i0 : Integrable (fun u : ℝ => δ * ((u : ℂ) ^ 0 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 0).const_mul δ
+  have i1 : Integrable (fun u : ℝ => γ * ((u : ℂ) ^ 1 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 1).const_mul γ
+  have i2 : Integrable (fun u : ℝ => β * ((u : ℂ) ^ 2 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 2).const_mul β
+  have i3 : Integrable (fun u : ℝ => α * ((u : ℂ) ^ 3 * cexpGauss θ u)) :=
+    (integrable_pow_mul_cexpGauss θ 3).const_mul α
+  have key : ∀ u : ℝ, (α * (u : ℂ) ^ 3 + β * (u : ℂ) ^ 2 + γ * (u : ℂ) + δ) * cexpGauss θ u
+      = α * ((u : ℂ) ^ 3 * cexpGauss θ u) + (β * ((u : ℂ) ^ 2 * cexpGauss θ u)
+        + (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u))) :=
+    fun u => by ring
+  have s3 : (∫ u : ℝ, (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u)))
+      = (∫ u : ℝ, γ * ((u : ℂ) ^ 1 * cexpGauss θ u)) + ∫ u : ℝ, δ * ((u : ℂ) ^ 0 * cexpGauss θ u) :=
+    integral_add i1 i0
+  have s2 : (∫ u : ℝ, (β * ((u : ℂ) ^ 2 * cexpGauss θ u)
+        + (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u))))
+      = (∫ u : ℝ, β * ((u : ℂ) ^ 2 * cexpGauss θ u))
+        + ∫ u : ℝ, (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u)) :=
+    integral_add i2 (i1.fun_add i0)
+  have s1 : (∫ u : ℝ, (α * ((u : ℂ) ^ 3 * cexpGauss θ u) + (β * ((u : ℂ) ^ 2 * cexpGauss θ u)
+        + (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u)))))
+      = (∫ u : ℝ, α * ((u : ℂ) ^ 3 * cexpGauss θ u))
+        + ∫ u : ℝ, (β * ((u : ℂ) ^ 2 * cexpGauss θ u)
+          + (γ * ((u : ℂ) ^ 1 * cexpGauss θ u) + δ * ((u : ℂ) ^ 0 * cexpGauss θ u))) :=
+    integral_add i3 (i2.fun_add (i1.fun_add i0))
+  have m3 : (∫ u : ℝ, α * ((u : ℂ) ^ 3 * cexpGauss θ u))
+      = α * ∫ u : ℝ, (u : ℂ) ^ 3 * cexpGauss θ u :=
+    MeasureTheory.integral_const_mul α _
+  have m2 : (∫ u : ℝ, β * ((u : ℂ) ^ 2 * cexpGauss θ u))
+      = β * ∫ u : ℝ, (u : ℂ) ^ 2 * cexpGauss θ u :=
+    MeasureTheory.integral_const_mul β _
+  have m1 : (∫ u : ℝ, γ * ((u : ℂ) ^ 1 * cexpGauss θ u))
+      = γ * ∫ u : ℝ, (u : ℂ) ^ 1 * cexpGauss θ u :=
+    MeasureTheory.integral_const_mul γ _
+  have m0 : (∫ u : ℝ, δ * ((u : ℂ) ^ 0 * cexpGauss θ u))
+      = δ * ∫ u : ℝ, (u : ℂ) ^ 0 * cexpGauss θ u :=
+    MeasureTheory.integral_const_mul δ _
+  rw [integral_congr_ae (Filter.Eventually.of_forall key), s1, s2, s3, m3, m2, m1, m0]
+  ring
+
+/-- The integral of the exact derivative `d/du[(a u² + b u + c) e^{iθu − u²/2}]` vanishes. -/
+private lemma integral_poly_cexpGauss_deriv_eq_zero (θ : ℝ) (a b c : ℂ) :
+    (∫ u : ℝ, ((2 * a * (u : ℂ) + b)
+        + (a * (u : ℂ) ^ 2 + b * (u : ℂ) + c) * ((θ : ℂ) * I - (u : ℂ))) * cexpGauss θ u) = 0 := by
+  have hderiv : ∀ u : ℝ,
+      HasDerivAt (fun w : ℝ => (a * (w : ℂ) ^ 2 + b * (w : ℂ) + c) * cexpGauss θ w)
+      (((2 * a * (u : ℂ) + b)
+        + (a * (u : ℂ) ^ 2 + b * (u : ℂ) + c) * ((θ : ℂ) * I - (u : ℂ))) * cexpGauss θ u) u := by
+    intro u
+    have hbu : HasDerivAt (fun w : ℝ => (w : ℂ)) 1 u := by
+      simpa using Complex.ofRealCLM.hasDerivAt (x := u)
+    have hp : HasDerivAt (fun w : ℝ => a * (w : ℂ) ^ 2 + b * (w : ℂ) + c)
+        (2 * a * (u : ℂ) + b) u := by
+      have h1 : HasDerivAt (fun w : ℝ => a * (w : ℂ) ^ 2) (a * (2 * (u : ℂ))) u := by
+        have := (hbu.pow 2).const_mul a
+        convert this using 1
+        ring
+      have h2 : HasDerivAt (fun w : ℝ => b * (w : ℂ)) b u := by
+        simpa using hbu.const_mul b
+      have := (h1.add h2).add_const c
+      convert this using 1
+      ring
+    have := hp.mul (hasDerivAt_cexpGauss θ u)
+    convert this using 1
+    ring
+  have hInt : Integrable (fun w : ℝ => (a * (w : ℂ) ^ 2 + b * (w : ℂ) + c) * cexpGauss θ w) :=
+    (integrable_cubic_cexpGauss θ 0 a b c).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hInt' : Integrable (fun u : ℝ => ((2 * a * (u : ℂ) + b)
+      + (a * (u : ℂ) ^ 2 + b * (u : ℂ) + c) * ((θ : ℂ) * I - (u : ℂ))) * cexpGauss θ u) :=
+    (integrable_cubic_cexpGauss θ (-a) (a * ((θ : ℂ) * I) - b)
+      (2 * a + b * ((θ : ℂ) * I) - c) (b + c * ((θ : ℂ) * I))).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  exact integral_eq_zero_of_hasDerivAt_of_integrable hderiv hInt' hInt
+
+/-- The linear relation between the first four Gaussian-transform moments produced by the
+antiderivative `(a u² + b u + c) e^{iθu − u²/2}`. -/
+private lemma poly_cexpGauss_relation (θ : ℝ) (a b c : ℂ) :
+    (-a) * (∫ u : ℝ, (u : ℂ) ^ 3 * cexpGauss θ u)
+        + (a * ((θ : ℂ) * I) - b) * (∫ u : ℝ, (u : ℂ) ^ 2 * cexpGauss θ u)
+      + (2 * a + b * ((θ : ℂ) * I) - c) * (∫ u : ℝ, (u : ℂ) ^ 1 * cexpGauss θ u)
+      + (b + c * ((θ : ℂ) * I)) * (∫ u : ℝ, (u : ℂ) ^ 0 * cexpGauss θ u) = 0 := by
+  rw [← integral_cubic_cexpGauss θ (-a) (a * ((θ : ℂ) * I) - b) (2 * a + b * ((θ : ℂ) * I) - c)
+      (b + c * ((θ : ℂ) * I)), ← integral_poly_cexpGauss_deriv_eq_zero θ a b c]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun u => by ring)
+
+private lemma cexpGauss_eq (θ u : ℝ) :
+    cexpGauss θ u = Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2) := by
+  rw [cexpGauss, ← Complex.exp_add]
+  congr 1
+  ring
+
+private lemma integral_cexpGauss (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ) ^ 0 * cexpGauss θ u)
+      = ((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+  have hq := integral_cexp_quadratic (b := -(1 / 2 : ℂ)) (by norm_num) ((θ : ℂ) * I) 0
+  have hlhs : (∫ x : ℝ, Complex.exp (-(1 / 2 : ℂ) * (x : ℂ) ^ 2 + (θ : ℂ) * I * (x : ℂ) + 0))
+      = ∫ u : ℝ, (u : ℂ) ^ 0 * cexpGauss θ u := by
+    refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+    simp only [pow_zero, one_mul, cexpGauss]
+    congr 1
+    ring
+  have hcpow : ((π : ℂ) / -(-(1 / 2 : ℂ))) ^ (1 / 2 : ℂ) = ((Real.sqrt (2 * π) : ℝ) : ℂ) := by
+    have h2 : ((π : ℂ) / -(-(1 / 2 : ℂ))) = ((2 * π : ℝ) : ℂ) := by push_cast; ring
+    rw [h2, Real.sqrt_eq_rpow, Complex.ofReal_cpow (by positivity : (0 : ℝ) ≤ 2 * π)]
+    norm_num
+  have hexp : Complex.exp ((0 : ℂ) - ((θ : ℂ) * I) ^ 2 / (4 * -(1 / 2 : ℂ)))
+      = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+    congr 1
+    rw [mul_pow, Complex.I_sq]
+    ring
+  rw [← hlhs, hq, hcpow, hexp]
+
+private lemma integral_pow1_cexpGauss (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ) ^ 1 * cexpGauss θ u)
+      = ((θ : ℂ) * I) * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  have h := poly_cexpGauss_relation θ 0 0 1
+  rw [integral_cexpGauss θ] at h
+  linear_combination -h
+
+private lemma integral_pow2_cexpGauss (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ) ^ 2 * cexpGauss θ u)
+      = (1 - (θ : ℂ) ^ 2)
+          * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  have h := poly_cexpGauss_relation θ 0 1 0
+  rw [integral_cexpGauss θ, integral_pow1_cexpGauss θ] at h
+  have hI : (I : ℂ) ^ 2 = -1 := Complex.I_sq
+  linear_combination -h + ((θ : ℂ) ^ 2 * (((Real.sqrt (2 * π) : ℝ) : ℂ)
+    * Complex.exp (-(θ : ℂ) ^ 2 / 2))) * hI
+
+private lemma integral_pow3_cexpGauss (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ) ^ 3 * cexpGauss θ u)
+      = ((θ : ℂ) * I) * ((1 - (θ : ℂ) ^ 2)
+          * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)))
+        + 2 * (((θ : ℂ) * I)
+          * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2))) := by
+  have h := poly_cexpGauss_relation θ 1 0 0
+  rw [integral_pow1_cexpGauss θ, integral_pow2_cexpGauss θ] at h
+  linear_combination -h
+
+/-! ### The Gaussian Fourier moments -/
+
+/-- `∫ e^{iθu} e^{−u²/2} du = √(2π) e^{−θ²/2}`. -/
+theorem integral_cexp_mul_gaussian (θ : ℝ) :
+    (∫ u : ℝ, Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2))
+      = ((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+  rw [← integral_cexpGauss θ]
+  exact integral_congr_ae
+    (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq, pow_zero, one_mul])
+
+/-- `∫ u² e^{iθu} e^{−u²/2} du = (1 − θ²) √(2π) e^{−θ²/2}`. -/
+theorem integral_sq_mul_cexp_mul_gaussian (θ : ℝ) :
+    (∫ u : ℝ, (u : ℂ) ^ 2
+        * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = (1 - (θ : ℂ) ^ 2) * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  rw [← integral_pow2_cexpGauss θ]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq])
+
+/-- **The Hermite Fourier identity.**
+`∫ e^{iθu} (u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`. -/
+theorem integral_hermite3_mul_cexp_mul_gaussian (θ : ℝ) :
+    (∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ))
+        * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = ((θ : ℂ) * I) ^ 3
+          * (((Real.sqrt (2 * π) : ℝ) : ℂ) * Complex.exp (-(θ : ℂ) ^ 2 / 2)) := by
+  have hsplit : (∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ)) * cexpGauss θ u)
+      = (∫ u : ℝ, (u : ℂ) ^ 3 * cexpGauss θ u) - 3 * ∫ u : ℝ, (u : ℂ) ^ 1 * cexpGauss θ u := by
+    have := integral_cubic_cexpGauss θ 1 0 (-3) 0
+    rw [show (∫ u : ℝ,
+          ((1 : ℂ) * (u : ℂ) ^ 3 + 0 * (u : ℂ) ^ 2 + (-3) * (u : ℂ) + 0) * cexpGauss θ u)
+        = ∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ)) * cexpGauss θ u from
+      integral_congr_ae (Filter.Eventually.of_forall fun u => by ring)] at this
+    rw [this]
+    ring
+  have hgoal : (∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ))
+      * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2)))
+      = ∫ u : ℝ, ((u : ℂ) ^ 3 - 3 * (u : ℂ)) * cexpGauss θ u :=
+    integral_congr_ae (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq])
+  rw [hgoal, hsplit, integral_pow3_cexpGauss θ, integral_pow1_cexpGauss θ]
+  have hI : (I : ℂ) ^ 2 = -1 := Complex.I_sq
+  linear_combination (-(θ : ℂ) ^ 3 * I * (((Real.sqrt (2 * π) : ℝ) : ℂ)
+    * Complex.exp (-(θ : ℂ) ^ 2 / 2))) * hI
 
 /-! ### The Fejér kernel — partial foundation for Esseen's smoothing inequality
 
