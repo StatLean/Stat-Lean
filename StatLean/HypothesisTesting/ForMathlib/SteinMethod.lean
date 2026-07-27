@@ -423,6 +423,123 @@ private lemma exp_mul_integral_Iic_sub_le {w : ℝ} (hw : w ≤ 0) :
   rw [hrefl, show w ^ 2 = (-w) ^ 2 from (neg_sq w).symm]
   exact exp_mul_integral_Ioi_sub_le (by linarith)
 
+/-! ### The centred test function
+
+Two elementary facts about `g = h − 𝔼h(Z)`: it integrates to zero against the kernel — this
+is what makes the *tail* representation `f_h(w) = -e^{w²/2}∫_w^∞ g e^{-x²/2}` available — and
+it grows at most linearly, `|g(w)| ≤ L(|w| + 1)`, which is what makes the tail representation
+useful. -/
+
+/-- A function with a Lipschitz bound is continuous. -/
+theorem continuous_of_lipschitz_bound {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) : Continuous h :=
+  (LipschitzWith.of_dist_le_mul (K := L.toNNReal) fun x y => by
+    rw [Real.dist_eq, Real.dist_eq, Real.coe_toNNReal L hL]
+    exact hlip x y).continuous
+
+/-- **The Gaussian expectation against the unnormalised kernel.** -/
+theorem integral_mul_exp_neg_sq_half_eq {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
+    (hC : ∀ x, |h x| ≤ C) :
+    ∫ x : ℝ, h x * Real.exp (-x ^ 2 / 2) = Real.sqrt (2 * Real.pi) * stdGaussianExpect h := by
+  have hs : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+  have hpdf : ∀ x : ℝ, gaussianPDFReal 0 1 x
+      = (Real.sqrt (2 * Real.pi))⁻¹ * Real.exp (-x ^ 2 / 2) := by
+    intro x
+    rw [gaussianPDFReal]
+    norm_num
+  have hEq : stdGaussianExpect h
+      = (Real.sqrt (2 * Real.pi))⁻¹ * ∫ x : ℝ, h x * Real.exp (-x ^ 2 / 2) := by
+    rw [stdGaussianExpect, integral_gaussianReal_eq_integral_smul one_ne_zero,
+      ← integral_const_mul]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hpdf x, smul_eq_mul]
+    ring
+  rw [hEq, ← mul_assoc, mul_inv_cancel₀ hs.ne', one_mul]
+
+/-- **The centred test function integrates to zero against the Gaussian kernel.** -/
+theorem integral_centred_mul_exp_neg_sq_half {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
+    (hC : ∀ x, |h x| ≤ C) :
+    ∫ x : ℝ, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) = 0 := by
+  have h1 : Integrable fun x : ℝ => h x * Real.exp (-x ^ 2 / 2) :=
+    integrable_mul_exp_neg_sq_half hh hC
+  have h2 : Integrable fun x : ℝ => stdGaussianExpect h * Real.exp (-x ^ 2 / 2) :=
+    integrable_exp_neg_sq_half.const_mul _
+  rw [show (fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      = fun x : ℝ => h x * Real.exp (-x ^ 2 / 2)
+        - stdGaussianExpect h * Real.exp (-x ^ 2 / 2) from by funext x; ring,
+    integral_sub h1 h2, integral_mul_exp_neg_sq_half_eq hh hC, integral_const_mul,
+    integral_exp_neg_sq_half]
+  ring
+
+/-- **The centred test function grows at most linearly:** `|h(w) − 𝔼h(Z)| ≤ L(|w| + 1)`. The
+sharp constant is `𝔼|Z| = √(2/π) < 1` in place of the `1`, which is where the crude bound
+`2 ≤ √(2π)` is spent. -/
+theorem abs_sub_stdGaussianExpect_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
+    |h w - stdGaussianExpect h| ≤ L * (|w| + 1) := by
+  have hh : Continuous h := continuous_of_lipschitz_bound hL hlip
+  have hs : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+  have habs : Integrable fun y : ℝ => |y| * Real.exp (-y ^ 2 / 2) := by
+    refine integrable_id_mul_exp_neg_sq_half.abs.congr
+      (Filter.Eventually.of_forall fun y => ?_)
+    simp only [abs_mul, abs_of_pos (Real.exp_pos (-y ^ 2 / 2))]
+  -- the centred value as an average of increments
+  have hrep : h w - stdGaussianExpect h
+      = (Real.sqrt (2 * Real.pi))⁻¹ * ∫ y : ℝ, (h w - h y) * Real.exp (-y ^ 2 / 2) := by
+    have h1 : Integrable fun y : ℝ => h w * Real.exp (-y ^ 2 / 2) :=
+      integrable_exp_neg_sq_half.const_mul _
+    have h2 : Integrable fun y : ℝ => h y * Real.exp (-y ^ 2 / 2) :=
+      integrable_mul_exp_neg_sq_half hh hC
+    rw [show (fun y : ℝ => (h w - h y) * Real.exp (-y ^ 2 / 2))
+        = fun y : ℝ => h w * Real.exp (-y ^ 2 / 2) - h y * Real.exp (-y ^ 2 / 2) from by
+      funext y; ring, integral_sub h1 h2, integral_const_mul, integral_exp_neg_sq_half,
+      integral_mul_exp_neg_sq_half_eq hh hC]
+    field_simp
+  -- the increments are dominated by `L(|w| + |y|)`
+  have hmaj : Integrable fun y : ℝ => L * ((|w| + |y|) * Real.exp (-y ^ 2 / 2)) := by
+    refine (Integrable.const_mul ?_ L)
+    refine ((integrable_exp_neg_sq_half.const_mul |w|).add habs).congr
+      (Filter.Eventually.of_forall fun y => ?_)
+    simp only [Pi.add_apply]
+    ring
+  have hbound : |∫ y : ℝ, (h w - h y) * Real.exp (-y ^ 2 / 2)|
+      ≤ L * (|w| * Real.sqrt (2 * Real.pi) + 2) := by
+    have hstep : ∫ y : ℝ, L * ((|w| + |y|) * Real.exp (-y ^ 2 / 2))
+        = L * (|w| * Real.sqrt (2 * Real.pi) + 2) := by
+      rw [integral_const_mul, show (fun y : ℝ => (|w| + |y|) * Real.exp (-y ^ 2 / 2))
+          = fun y : ℝ => |w| * Real.exp (-y ^ 2 / 2) + |y| * Real.exp (-y ^ 2 / 2) from by
+        funext y; ring, integral_add (integrable_exp_neg_sq_half.const_mul _) habs,
+        integral_const_mul, integral_exp_neg_sq_half, integral_abs_mul_exp_neg_sq_half]
+    rw [← hstep]
+    refine (abs_integral_le_integral_abs).trans (integral_mono ?_ hmaj fun y => ?_)
+    · have hA : Integrable fun y : ℝ => h w * Real.exp (-y ^ 2 / 2) :=
+        integrable_exp_neg_sq_half.const_mul _
+      have hB : Integrable fun y : ℝ => h y * Real.exp (-y ^ 2 / 2) :=
+        integrable_mul_exp_neg_sq_half hh hC
+      refine (hA.sub hB).abs.congr (Filter.Eventually.of_forall fun y => ?_)
+      have hy : h w * Real.exp (-y ^ 2 / 2) - h y * Real.exp (-y ^ 2 / 2)
+          = (h w - h y) * Real.exp (-y ^ 2 / 2) := by ring
+      simp only [Pi.sub_apply, hy]
+    · simp only [abs_mul, abs_of_pos (Real.exp_pos (-y ^ 2 / 2))]
+      have h1 : |h w - h y| ≤ L * |w - y| := hlip w y
+      have h2 : |w - y| ≤ |w| + |y| := by
+        have hh2 := abs_add_le w (-y)
+        rw [← sub_eq_add_neg, abs_neg] at hh2
+        exact hh2
+      have h3 : (0 : ℝ) < Real.exp (-y ^ 2 / 2) := Real.exp_pos _
+      nlinarith [mul_le_mul_of_nonneg_right
+        (h1.trans (mul_le_mul_of_nonneg_left h2 hL)) h3.le]
+  have h2s : (2 : ℝ) ≤ Real.sqrt (2 * Real.pi) := by
+    have h4 : (4 : ℝ) ≤ 2 * Real.pi := by linarith [Real.pi_gt_three]
+    have := Real.sqrt_le_sqrt h4
+    rwa [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num : (0 : ℝ) ≤ 2)] at this
+  rw [hrep, abs_mul, abs_of_nonneg (inv_nonneg.2 hs.le)]
+  have hfin : (Real.sqrt (2 * Real.pi))⁻¹ * (L * (|w| * Real.sqrt (2 * Real.pi) + 2))
+      ≤ L * (|w| + 1) := by
+    rw [inv_mul_eq_div, div_le_iff₀ hs]
+    nlinarith [mul_nonneg hL (sub_nonneg.2 h2s), abs_nonneg w]
+  exact le_trans (mul_le_mul_of_nonneg_left hbound (inv_nonneg.2 hs.le)) hfin
+
 /-! ### Bounds on the Stein solution for a Lipschitz test function
 
 For an `L`-Lipschitz `h` the classical bounds are `‖f_h‖ ≤ L`, `‖f_h'‖ ≤ √(2/π)·L ≤ L` and
@@ -430,18 +547,160 @@ For an `L`-Lipschitz `h` the classical bounds are `‖f_h‖ ≤ L`, `‖f_h'‖
 gives `f_h ≡ -1`). They are recorded here in the weakest form the exchangeable-pair theorem
 needs, namely with the *provable* constants stated. -/
 
-/-- **Sup-norm bound on the Stein solution.** For an `L`-Lipschitz test function `h`,
-`|f_h(w)| ≤ L` for every `w`; the constant is sharp (take `h = id`, for which `f_h ≡ -1`).
+/-- **The unimodality engine.** A differentiable `ψ` whose derivative is `-e^{-v²/2}` times a
+*monotone* function increases and then decreases; if in addition `ψ` vanishes in the limit
+along `±n`, then `ψ ≥ 0` everywhere. -/
+private lemma nonneg_of_deriv_neg_mul_monotone {ψ ψ' q : ℝ → ℝ}
+    (hψ : ∀ v, HasDerivAt ψ (ψ' v) v)
+    (hsign : ∀ v, ψ' v = -(Real.exp (-v ^ 2 / 2) * q v))
+    (hmono : Monotone q)
+    (hbot : Tendsto (fun n : ℕ => ψ (-(n : ℝ))) atTop (𝓝 0))
+    (htop : Tendsto (fun n : ℕ => ψ (n : ℝ)) atTop (𝓝 0)) (w : ℝ) :
+    0 ≤ ψ w := by
+  have hdiff : Differentiable ℝ ψ := fun v => (hψ v).differentiableAt
+  have hderiv : ∀ v, deriv ψ v = ψ' v := fun v => (hψ v).deriv
+  rcases le_or_gt (q w) 0 with hq | hq
+  · have hmonoOn : MonotoneOn ψ (Iic w) := by
+      refine monotoneOn_of_deriv_nonneg (convex_Iic w) hdiff.continuous.continuousOn
+        hdiff.differentiableOn fun v hv => ?_
+      rw [interior_Iic] at hv
+      have hqv : q v ≤ 0 := le_trans (hmono (le_of_lt hv)) hq
+      rw [hderiv v, hsign v]
+      nlinarith [Real.exp_pos (-v ^ 2 / 2)]
+    refine le_of_tendsto hbot ?_
+    filter_upwards [eventually_ge_atTop ⌈|w|⌉₊] with n hn
+    have hnw : -(n : ℝ) ≤ w := by
+      have h1 : (⌈|w|⌉₊ : ℝ) ≤ (n : ℝ) := Nat.cast_le.2 hn
+      have h2 : |w| ≤ (⌈|w|⌉₊ : ℝ) := Nat.le_ceil _
+      have h3 := neg_abs_le w
+      linarith
+    exact hmonoOn (mem_Iic.2 hnw) (mem_Iic.2 le_rfl) hnw
+  · have hantiOn : AntitoneOn ψ (Ici w) := by
+      refine antitoneOn_of_deriv_nonpos (convex_Ici w) hdiff.continuous.continuousOn
+        hdiff.differentiableOn fun v hv => ?_
+      rw [interior_Ici] at hv
+      have hqv : 0 < q v := lt_of_lt_of_le hq (hmono (le_of_lt hv))
+      rw [hderiv v, hsign v]
+      nlinarith [Real.exp_pos (-v ^ 2 / 2)]
+    refine le_of_tendsto htop ?_
+    filter_upwards [eventually_ge_atTop ⌈w⌉₊] with n hn
+    have hnw : w ≤ (n : ℝ) := by
+      have h1 : (⌈w⌉₊ : ℝ) ≤ (n : ℝ) := Nat.cast_le.2 hn
+      have h2 : w ≤ (⌈w⌉₊ : ℝ) := Nat.le_ceil _
+      linarith
+    exact hantiOn (mem_Ici.2 le_rfl) (mem_Ici.2 hnw) hnw
 
-STATUS: OPEN. The classical proof integrates the antisymmetric decomposition
-`∫_{-∞}^w (h - 𝔼h)φ = ∫_{x<w}∫_{y>w}(h(x) - h(y))φ(x)φ(y)` and evaluates the resulting
-one-sided first moments `∫_w^∞ yφ(y)dy = φ(w)`; equivalently, `u(w) = ∫_{-∞}^w (h - 𝔼h)φ`
-satisfies `u(±∞) = 0` and `(Lφ ∓ u)' = -φ·(Lw ± (h - 𝔼h))` with a *monotone* second factor,
-so `Lφ ∓ u` is unimodal with vanishing limits, hence nonnegative. -/
+/-- **The tail integral of the centred test function is `L e^{-w²/2}` in absolute value.**
+This is the sup-norm bound in the form in which it is proved: `u(w) = ∫_{-∞}^w (h − 𝔼h)e^{-x²/2}`
+satisfies `u(±∞) = 0`, and `L e^{-w²/2} ∓ u` has derivative `-e^{-w²/2}(Lw ± (h − 𝔼h))` whose
+second factor is *monotone*, so both are unimodal with vanishing limits, hence nonnegative. -/
+theorem abs_gaussTail_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
+    |∫ x in Iic w, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2)|
+      ≤ L * Real.exp (-w ^ 2 / 2) := by
+  have hh : Continuous h := continuous_of_lipschitz_bound hL hlip
+  have hFint := integrable_centred_mul_exp_neg_sq_half hh hC
+  have hzero := integral_centred_mul_exp_neg_sq_half hh hC
+  -- the two limits of the tail integral along the integers
+  have hlimTop : Tendsto
+      (fun n : ℕ => ∫ x in Iic (n : ℝ), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      atTop (𝓝 0) := by
+    have hmono : Monotone fun n : ℕ => Iic (n : ℝ) := fun i j hij =>
+      Iic_subset_Iic.2 (Nat.cast_le.2 hij)
+    have huniv : (⋃ n : ℕ, Iic (n : ℝ)) = univ :=
+      eq_univ_of_forall fun x => mem_iUnion.2 ⟨⌈x⌉₊, Nat.le_ceil x⟩
+    have hres := tendsto_setIntegral_of_monotone (f := fun x : ℝ =>
+      (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      (fun _ => measurableSet_Iic) hmono (by rw [huniv]; exact hFint.integrableOn)
+    rwa [huniv, Measure.restrict_univ, hzero] at hres
+  have hlimBot : Tendsto
+      (fun n : ℕ => ∫ x in Iic (-(n : ℝ)), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      atTop (𝓝 0) := by
+    have hanti : Antitone fun n : ℕ => Iic (-(n : ℝ)) := fun i j hij =>
+      Iic_subset_Iic.2 (neg_le_neg (Nat.cast_le.2 hij))
+    have hinter : (⋂ n : ℕ, Iic (-(n : ℝ))) = (∅ : Set ℝ) := by
+      ext x
+      simp only [mem_iInter, mem_Iic, mem_empty_iff_false, iff_false, not_forall, not_le]
+      obtain ⟨n, hn⟩ := exists_nat_gt (-x)
+      exact ⟨n, by linarith⟩
+    have hres := tendsto_setIntegral_of_antitone (f := fun x : ℝ =>
+      (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      (fun _ => measurableSet_Iic) hanti ⟨0, hFint.integrableOn⟩
+    rw [hinter] at hres
+    simpa using hres
+  have hEnat : Tendsto (fun n : ℕ => Real.exp (-(n : ℝ) ^ 2 / 2)) atTop (𝓝 0) :=
+    tendsto_exp_neg_sq_half_atTop.comp tendsto_natCast_atTop_atTop
+  have hEnat' : Tendsto (fun n : ℕ => Real.exp (-(-(n : ℝ)) ^ 2 / 2)) atTop (𝓝 0) := by
+    refine hEnat.congr fun n => ?_
+    rw [neg_sq]
+  rw [abs_le]
+  constructor
+  · -- `L e^{-w²/2} + u(w) ≥ 0`
+    have hpsi := nonneg_of_deriv_neg_mul_monotone
+      (ψ := fun s : ℝ => L * Real.exp (-s ^ 2 / 2)
+        + ∫ x in Iic s, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      (ψ' := fun s : ℝ =>
+        -(Real.exp (-s ^ 2 / 2) * (L * s - (h s - stdGaussianExpect h))))
+      (q := fun s : ℝ => L * s - (h s - stdGaussianExpect h))
+      (fun v => by
+        have h1 := ((hasDerivAt_exp_neg_sq_half v).const_mul L).add
+          (hasDerivAt_gaussTail hh hC v)
+        convert h1 using 1
+        ring)
+      (fun _ => rfl)
+      (fun s t hst => by
+        have := hlip t s
+        rw [abs_le] at this
+        have habs : |t - s| = t - s := abs_of_nonneg (by linarith)
+        rw [habs] at this
+        simp only
+        linarith [this.1])
+      (by simpa using (hEnat'.const_mul L).add hlimBot)
+      (by simpa using (hEnat.const_mul L).add hlimTop) w
+    simp only at hpsi
+    linarith
+  · -- `L e^{-w²/2} - u(w) ≥ 0`
+    have hpsi := nonneg_of_deriv_neg_mul_monotone
+      (ψ := fun s : ℝ => L * Real.exp (-s ^ 2 / 2)
+        - ∫ x in Iic s, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      (ψ' := fun s : ℝ =>
+        -(Real.exp (-s ^ 2 / 2) * (L * s + (h s - stdGaussianExpect h))))
+      (q := fun s : ℝ => L * s + (h s - stdGaussianExpect h))
+      (fun v => by
+        have h1 := ((hasDerivAt_exp_neg_sq_half v).const_mul L).sub
+          (hasDerivAt_gaussTail hh hC v)
+        convert h1 using 1
+        ring)
+      (fun _ => rfl)
+      (fun s t hst => by
+        have := hlip t s
+        rw [abs_le] at this
+        have habs : |t - s| = t - s := abs_of_nonneg (by linarith)
+        rw [habs] at this
+        simp only
+        linarith [this.2])
+      (by simpa using (hEnat'.const_mul L).sub hlimBot)
+      (by simpa using (hEnat.const_mul L).sub hlimTop) w
+    simp only at hpsi
+    linarith
+
+/-- **Sup-norm bound on the Stein solution.** For an `L`-Lipschitz test function `h`,
+`|f_h(w)| ≤ L` for every `w`; the constant is sharp (take `h = id`, for which `f_h ≡ -1`). -/
 theorem abs_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
     |steinSolution h w| ≤ L := by
-  sorry
+  have hdef : steinSolution h w = Real.exp (w ^ 2 / 2) *
+      ∫ x in Iic w, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) := rfl
+  have hee : Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) = 1 := by
+    rw [← Real.exp_add, show w ^ 2 / 2 + -w ^ 2 / 2 = 0 by ring, Real.exp_zero]
+  rw [hdef, abs_mul, abs_of_pos (Real.exp_pos _)]
+  calc Real.exp (w ^ 2 / 2)
+        * |∫ x in Iic w, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2)|
+      ≤ Real.exp (w ^ 2 / 2) * (L * Real.exp (-w ^ 2 / 2)) :=
+        mul_le_mul_of_nonneg_left (abs_gaussTail_le hL hlip hC w) (Real.exp_pos _).le
+    _ = L := by
+        rw [show Real.exp (w ^ 2 / 2) * (L * Real.exp (-w ^ 2 / 2))
+          = L * (Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2)) by ring, hee, mul_one]
 
 /-- **Sup-norm bound on the derivative of the Stein solution.** For an `L`-Lipschitz test
 function, `|f_h'(w)| ≤ 2L`. (The sharp constant is `√(2/π) < 1`; `2` is what the elementary
