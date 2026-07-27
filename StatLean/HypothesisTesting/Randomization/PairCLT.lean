@@ -108,6 +108,40 @@ lemma weakConverges_prod_of_tendsto_charFun {E : Type*} [NormedAddCommGroup E]
       hid, Measure.map_id]
   simpa only [hcollapse] using hmap
 
+/-- Transporting a measure on `E × E` to the Hilbert model and back is the identity. -/
+private lemma map_toLp_map_ofLp {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [MeasurableSpace E] (ρ : Measure (E × E)) :
+    (ρ.map (WithLp.toLp (V := E × E) 2)).map WithLp.ofLp = ρ := by
+  have hid : (WithLp.ofLp : WithLp 2 (E × E) → E × E) ∘ (WithLp.toLp (V := E × E) 2) = id := rfl
+  rw [Measure.map_map (WithLp.measurable_ofLp 2 (E × E)) (WithLp.measurable_toLp 2 (E × E)),
+    hid, Measure.map_id]
+
+/-- Weak convergence on `E × E` is weak convergence on the Hilbert model `WithLp 2 (E × E)`:
+the two carry the same topology. -/
+private lemma weakConverges_map_toLp_iff {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+    {μ : ℕ → Measure (E × E)} {ν : Measure (E × E)} :
+    WeakConverges μ ν ↔
+      WeakConverges (fun n => (μ n).map (WithLp.toLp 2)) (ν.map (WithLp.toLp 2)) := by
+  constructor
+  · intro h
+    exact h.map (WithLp.prod_continuous_toLp 2 E E) (WithLp.measurable_toLp 2 (E × E))
+  · intro h
+    have hmap := h.map (WithLp.prod_continuous_ofLp 2 E E) (WithLp.measurable_ofLp 2 (E × E))
+    simpa only [map_toLp_map_ofLp] using hmap
+
+/-- The forward half of Lévy continuity in the `WeakConverges` packaging. -/
+private lemma tendsto_charFun_of_weakConverges {H : Type*} [NormedAddCommGroup H]
+    [InnerProductSpace ℝ H] [FiniteDimensional ℝ H] [MeasurableSpace H] [BorelSpace H]
+    {μ : ℕ → Measure H} [∀ n, IsProbabilityMeasure (μ n)] {ν : Measure H}
+    [IsProbabilityMeasure ν] (h : WeakConverges μ ν) (t : H) :
+    Tendsto (fun n => charFun (μ n) t) atTop (𝓝 (charFun ν t)) := by
+  set pn : ℕ → ProbabilityMeasure H := fun n => ⟨μ n, inferInstance⟩ with hpn
+  set pν : ProbabilityMeasure H := ⟨ν, inferInstance⟩ with hpν
+  have htend : Tendsto pn atTop (𝓝 pν) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mpr (by simpa [pn, pν] using h)
+  simpa [pn, pν] using (ProbabilityMeasure.tendsto_iff_tendsto_charFun.mp htend) t
+
 /-! ### Integrating a bounded test function against `randPairLaw` -/
 
 /-- **`randPairLaw` unfolded inside an integral.** For a bounded measurable `F`, the integral
