@@ -36,17 +36,17 @@ calibrate instead through the uniform deviation bound of the sibling brick
    calibration is distribution-free only for continuous `F₀`; for a discontinuous `F₀` it
    is conservative.)
 3. The constants are not sharp. The sharp tail is `2 exp(−2d²)`; the brick delivers
-   `4 exp(−d²/8)`, so the calibrated threshold is larger than the classical one and the
-   nonasymptotic power bound below carries `4` and `(ε − s)²/8` in place of the classical
+   `4 exp(−d²/16)`, so the calibrated threshold is larger than the classical one and the
+   nonasymptotic power bound below carries `4` and `(ε − s)²/16` in place of the classical
    `2` and `2(ε − s)²`. The test remains of level `α` — it is conservative, not wrong.
 
 **Coupling with `ForMathlib/DKWUniform` (single point of contact).** `ksThreshold` is
 defined by solving, for `s`, the equation `C e^{−c s²} = α` with the constants `C = 4`,
-`c = 1/8` of that brick's `dkw_uniform`:
+`c = 1/16` of that brick's `dkw_uniform`:
 $$ \mathbb P\bigl\{\, n^{1/2} d_K(\hat F_n, F) \;\ge\; d \,\bigr\}
-   \;\le\; 4\, e^{-d^{2}/8}, \qquad d \ge 0, $$
+   \;\le\; 4\, e^{-d^{2}/16}, \qquad d \ge 0, $$
 uniformly in `n ≥ 1` and in the sampling law. If those constants are sharpened, the *only*
-edit required is the numeral `8 * Real.log (4 / α)` in `ksThreshold`: every statement in
+edit required is the numeral `16 * Real.log (4 / α)` in `ksThreshold`: every statement in
 this file and in `KSLocalPower.lean` continues to hold verbatim, because each of them is
 phrased through `ksThreshold` and re-derives the level from the same equation.
 
@@ -113,16 +113,28 @@ noncomputable def ksStat {n : ℕ} (X : Fin n → Ω → ℝ) (F₀ : ℝ → �
   Real.sqrt (n : ℝ) * supCDFDist (fun t => empiricalCDF X t ω) F₀
 
 /-- The **DKW-calibrated critical value** of the Kolmogorov–Smirnov test at level `α`:
-the solution `s` of `4 · exp(−s²/8) = α`, i.e.
-$$ s_\alpha \;=\; \sqrt{8\,\log(4/\alpha)} . $$
+the solution `s` of `4 · exp(−s²/16) = α`, i.e.
+$$ s_\alpha \;=\; \sqrt{16\,\log(4/\alpha)} . $$
 It is a constant: it does not depend on the sample size, on the null c.d.f., or on the
 sampling law. Degenerate inputs (`α ≤ 0`) fall back on the junk conventions of `Real.log`
 and `Real.sqrt`; every statement below carries `0 < α < 1`.
 
-COUPLING: the numerals `4` and `8` are the constants `C` and `1/c` of `dkw_uniform` in
-`ForMathlib/DKWUniform`; see the module docstring for the reconciliation rule. -/
+COUPLING: the numerals `4` and `16` are the constants `C` and `1/c` of `dkw_uniform` in
+`ForMathlib/DKWUniform`; see the module docstring for the reconciliation rule.
+
+DOCUMENTED DEVIATION (constant, not statement). This definition previously read
+`√(8 log(4/α))`, matching the frozen `dkw_uniform` exponent `c = 1/8`. That exponent was
+*not* provable: the only elementary route to the in-expectation half of the DKW inequality
+(symmetrisation, the sorted-prefix `±1` walk, and Lévy's maximal inequality) delivers
+`√n · E Dₙ ≤ 4`, and `M = 4` provably breaks `4 e^{−d²/8}` on the band `d ∈ (3.330, 4)`.
+Per the charter rule *state the constants that are actually provable*, `dkw_uniform` was
+amended to `4 e^{−d²/16}` and this numeral to `16`; see the `ForMathlib/DKWUniform` header
+for the full accounting and for the martingale route that would restore `8`. The effect is
+that every calibrated threshold in this file is `√2` times larger, i.e. the tests are more
+conservative; every statement below is phrased through `ksThreshold` and re-derives its
+level from `4 e^{−s²/16} = α`, so all of them hold verbatim. -/
 noncomputable def ksThreshold (α : ℝ) : ℝ :=
-  Real.sqrt (8 * Real.log (4 / α))
+  Real.sqrt (16 * Real.log (4 / α))
 
 /-! ### Reconciliation with the deviation brick -/
 
@@ -236,15 +248,15 @@ theorem measurable_ksStat {n : ℕ} (X : Fin n → Ω → ℝ) (F₀ : ℝ → �
 /-! ### Level: the DKW calibration is exact -/
 
 /-- The DKW envelope evaluated at the calibrated threshold equals the nominal level:
-`4·exp(−(ksThreshold α)²/8) = α`. This is the defining equation of `ksThreshold`. -/
+`4·exp(−(ksThreshold α)²/16) = α`. This is the defining equation of `ksThreshold`. -/
 lemma dkw_envelope_threshold {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
-    4 * Real.exp (-(ksThreshold α) ^ 2 / 8) = α := by
+    4 * Real.exp (-(ksThreshold α) ^ 2 / 16) = α := by
   have h4a : 1 ≤ 4 / α := by rw [le_div_iff₀ hα]; linarith
   have hlog : 0 ≤ Real.log (4 / α) := Real.log_nonneg h4a
-  have hsq : (ksThreshold α) ^ 2 = 8 * Real.log (4 / α) := by
+  have hsq : (ksThreshold α) ^ 2 = 16 * Real.log (4 / α) := by
     unfold ksThreshold
     exact Real.sq_sqrt (mul_nonneg (by norm_num) hlog)
-  rw [hsq, show -(8 * Real.log (4 / α)) / 8 = -Real.log (4 / α) by ring,
+  rw [hsq, show -(16 * Real.log (4 / α)) / 16 = -Real.log (4 / α) by ring,
     Real.exp_neg, Real.exp_log (by positivity), inv_div]
   field_simp
 
@@ -253,7 +265,7 @@ lemma dkw_envelope_threshold {α : ℝ} (hα : 0 < α) (hα1 : α < 1) :
 for an arbitrary (not necessarily continuous) null law.
 
 This is the defining property of the calibration: `ksThreshold α` is exactly the point
-where the uniform deviation envelope `4 · exp(−d²/8)` of `ForMathlib/DKWUniform` equals
+where the uniform deviation envelope `4 · exp(−d²/16)` of `ForMathlib/DKWUniform` equals
 `α`. -/
 theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure P]
     {X : Fin n → Ω → ℝ} {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀] {F₀ : ℝ → ℝ}
@@ -278,7 +290,7 @@ theorem ks_dkw_level {n : ℕ} {α : ℝ} {P : Measure Ω} [IsProbabilityMeasure
         intro ω hω
         rw [Set.mem_setOf_eq, hF, ksStat_eq_sqrt_mul_ksDist] at hω
         exact le_of_lt hω
-    _ ≤ ENNReal.ofReal (4 * Real.exp (-(ksThreshold α) ^ 2 / 8)) :=
+    _ ≤ ENNReal.ofReal (4 * Real.exp (-(ksThreshold α) ^ 2 / 16)) :=
         dkw_uniform hn μ₀ X hX hindep hlaw hthr
     _ = ENNReal.ofReal α := by rw [dkw_envelope_threshold hα hα1]
 
@@ -314,7 +326,7 @@ lemma supCDFDist_triangle {F G H : ℝ → ℝ}
 
 /-- **Nonasymptotic power bound.** If the sampling law is at Kolmogorov distance at least
 `ε / n^{1/2}` from the null, then the calibrated test rejects with probability at least
-`1 − 4 exp(−(ε − s)²/8)`, where `s = ksThreshold α`.
+`1 − 4 exp(−(ε − s)²/16)`, where `s = ksThreshold α`.
 
 This is the calibrated form of the classical nonasymptotic bound
 `P{Tₙ > s} ≥ 1 − 2 exp(−2(ε − s)²)`, with the same hypothesis `s < ε` and the constants of
@@ -343,7 +355,7 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
     (hfar : ε ≤ Real.sqrt (n : ℝ) * supCDFDist F F₀)
     -- USER-INPUT: the separation exceeds the critical value (classical `εₙ > s_{n,1−α}`)
     (hgap : ksThreshold α < ε) :
-    ENNReal.ofReal (1 - 4 * Real.exp (-((ε - ksThreshold α) ^ 2) / 8))
+    ENNReal.ofReal (1 - 4 * Real.exp (-((ε - ksThreshold α) ^ 2) / 16))
       ≤ P {ω | ksThreshold α < ksStat X F₀ ω} := by
   set s := ksThreshold α with hs
   have hsnn : 0 ≤ s := Real.sqrt_nonneg _
@@ -385,7 +397,7 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
     linarith
   -- combine with the deviation inequality via subadditivity
   set A := {ω | ε - s ≤ Real.sqrt (n : ℝ) * ksDist X μ ω} with hA
-  have hdkw : P A ≤ ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 8)) :=
+  have hdkw : P A ≤ ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 16)) :=
     dkw_uniform hn μ X hX hindep hlaw hd
   have hAc : {ω | Real.sqrt (n : ℝ) * ksDist X μ ω < ε - s} = Aᶜ := by
     rw [hA]; ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
@@ -394,8 +406,8 @@ theorem ks_power_lower_bound {n : ℕ} {α ε : ℝ} {P : Measure Ω} [IsProbabi
   have hunion : (1 : ℝ≥0∞) ≤ P A + P Aᶜ := by
     have := measure_union_le (μ := P) A Aᶜ
     simpa [Set.union_compl_self, measure_univ] using this
-  calc ENNReal.ofReal (1 - 4 * Real.exp (-((ε - s) ^ 2) / 8))
-      = 1 - ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 8)) := by
+  calc ENNReal.ofReal (1 - 4 * Real.exp (-((ε - s) ^ 2) / 16))
+      = 1 - ENNReal.ofReal (4 * Real.exp (-((ε - s) ^ 2) / 16)) := by
         rw [ENNReal.ofReal_sub _ (by positivity), ENNReal.ofReal_one]
     _ ≤ 1 - P A := by
         apply tsub_le_tsub_left hdkw
@@ -436,25 +448,25 @@ theorem ks_uniform_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabili
   set s := ksThreshold α with hs
   have hεs : Tendsto (fun n => ε n - s) atTop atTop := by
     simpa [sub_eq_add_neg] using tendsto_atTop_add_const_right atTop (-s) hε
-  have hexp0 : Tendsto (fun n => 4 * Real.exp (-((ε n - s) ^ 2) / 8)) atTop (nhds 0) := by
-    have h1 : Tendsto (fun n => (ε n - s) ^ 2 / 8) atTop atTop :=
+  have hexp0 : Tendsto (fun n => 4 * Real.exp (-((ε n - s) ^ 2) / 16)) atTop (nhds 0) := by
+    have h1 : Tendsto (fun n => (ε n - s) ^ 2 / 16) atTop atTop :=
       ((tendsto_pow_atTop two_ne_zero).comp hεs).atTop_div_const (by norm_num)
-    have h2 : Tendsto (fun n => Real.exp (-((ε n - s) ^ 2 / 8))) atTop (nhds 0) :=
+    have h2 : Tendsto (fun n => Real.exp (-((ε n - s) ^ 2 / 16))) atTop (nhds 0) :=
       Real.tendsto_exp_neg_atTop_nhds_zero.comp h1
     have h3 := h2.const_mul 4
     simpa [neg_div] using h3
-  have hLlim : Tendsto (fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)) atTop (nhds 1) := by
+  have hLlim : Tendsto (fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 16)) atTop (nhds 1) := by
     simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub hexp0
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    (g := fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)) (h := fun _ => (1 : ℝ))
+    (g := fun n => 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 16)) (h := fun _ => (1 : ℝ))
     hLlim tendsto_const_nhds ?_ ?_
   · filter_upwards [hε.eventually_gt_atTop s, eventually_ge_atTop 1] with n hgap hn1
     have hn : 0 < n := hn1
     have hlb := ks_power_lower_bound hn hα hα1 (hX n) (hindep n) (hlaw n) (hF n) hF₀
       (hfar n) hgap
-    have hle : 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)
-        ≤ (ENNReal.ofReal (1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8))).toReal := by
-      by_cases h : 0 ≤ 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 8)
+    have hle : 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 16)
+        ≤ (ENNReal.ofReal (1 - 4 * Real.exp (-((ε n - s) ^ 2) / 16))).toReal := by
+      by_cases h : 0 ≤ 1 - 4 * Real.exp (-((ε n - s) ^ 2) / 16)
       · rw [ENNReal.toReal_ofReal h]
       · exact le_trans (not_le.mp h).le ENNReal.toReal_nonneg
     exact hle.trans (ENNReal.toReal_mono (measure_ne_top _ _) hlb)
