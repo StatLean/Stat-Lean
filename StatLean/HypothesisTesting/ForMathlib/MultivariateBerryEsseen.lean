@@ -996,6 +996,20 @@ section SwapStep
 
 variable {k : ℕ}
 
+/-- `L³ ⊆ L²` on a probability space, in the only form needed here: `t² ≤ 1 + t³`. -/
+private lemma integrable_normSq_of_cube {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν := by
+  have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
+    (integrable_const 1).add hβ
+  refine Integrable.mono' hdom (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  have ht : (0 : ℝ) ≤ ‖y‖ := norm_nonneg y
+  rcases le_or_gt ‖y‖ 1 with h | h
+  · nlinarith
+  · nlinarith
+
 /-- `L¹ ⊆ L³` on a probability space, in the only form needed here: `t ≤ 1 + t³`. -/
 private lemma integrable_norm_of_cube {ν : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
@@ -1097,6 +1111,116 @@ private lemma integral_bilin_eq_basis_sum {ν : Measure (EuclideanSpace ℝ (Fin
   rw [integral_finset_sum _ fun r _ => (integrable_inner_mul_inner h2 _ _).mul_const _]
   exact Finset.sum_congr rfl fun r _ => by rw [integral_mul_const, hcov]
 
+/-- **One step of the Lindeberg swap.** For a fixed shift `v` and scale `c ≥ 0`, replacing a
+summand of law `ν` by one of law `ρ` — both centred and with identity covariance — costs at most
+`(M/6) c³ (β_ν + β_ρ)`.
+
+Both integrals are compared with the *same* number `f v + (c²/2) S`, where `S` is the
+basis sum of `integral_bilin_eq_basis_sum`: the constant Taylor term is common, the linear term
+vanishes on either side by `integral_clm_eq_zero_of_centred`, and the quadratic term has the
+same value on either side because both laws have identity covariance. The two third-order
+remainders are then bounded separately by `norm_taylor_remainder_three_le`. -/
+private lemma abs_integral_swap_step_le {k : ℕ}
+    {ν ρ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ν) = ⟪u, w⟫_ℝ)
+    (hβν : Integrable (fun y => ‖y‖ ^ 3) ν)
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ρ) = ⟪u, w⟫_ℝ)
+    (hβρ : Integrable (fun y => ‖y‖ ^ 3) ρ)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {M : ℝ} (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M)
+    (v : EuclideanSpace ℝ (Fin k)) {c : ℝ} (hc : 0 ≤ c) :
+    |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+      ≤ M / 6 * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) := by
+  classical
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ := fderiv ℝ f v with hL
+  set B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ :=
+    iteratedFDeriv ℝ 2 f v with hB
+  set S : ℝ := ∑ r : Fin 2 → Fin k,
+    ⟪EuclideanSpace.basisFun (Fin k) ℝ (r 0), EuclideanSpace.basisFun (Fin k) ℝ (r 1)⟫_ℝ
+      * B fun i => EuclideanSpace.basisFun (Fin k) ℝ (r i) with hS
+  -- The pointwise Taylor estimate against the *common* second-order polynomial.
+  have htay : ∀ y : EuclideanSpace ℝ (Fin k),
+      |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)|
+        ≤ M / 6 * c ^ 3 * ‖y‖ ^ 3 := by
+    intro y
+    have h := norm_taylor_remainder_three_le hf hM v (c • y)
+    have h1 : fderiv ℝ f v (c • y) = c * L y := by rw [hL, map_smul, smul_eq_mul]
+    have h2 : (B fun _ : Fin 2 => c • y) = c ^ 2 * B fun _ => y := by
+      rw [show (fun _ : Fin 2 => c • y)
+          = fun i : Fin 2 => (fun _ : Fin 2 => c) i • (fun _ : Fin 2 => y) i from rfl,
+        ← ContinuousMultilinearMap.coe_coe, (B.toMultilinearMap).map_smul_univ,
+        Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+        ContinuousMultilinearMap.coe_coe, smul_eq_mul]
+    have h3 : ‖c • y‖ ^ 3 = c ^ 3 * ‖y‖ ^ 3 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, mul_pow]
+    rw [← hB, h1, h2, h3] at h
+    calc |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)|
+        = |f (v + c • y) - f v - c * L y - 1 / 2 * (c ^ 2 * B fun _ => y)| := by ring_nf
+      _ ≤ M / 6 * (c ^ 3 * ‖y‖ ^ 3) := h
+      _ = M / 6 * c ^ 3 * ‖y‖ ^ 3 := by ring
+  -- Each law is compared with the same number `f v + (c²/2) S`.
+  have key : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂σ) = 0) →
+      (∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂σ) = ⟪u, w⟫_ℝ) →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) σ →
+      |(∫ y, f (v + c • y) ∂σ) - (f v + c ^ 2 / 2 * S)|
+        ≤ M / 6 * c ^ 3 * ∫ y, ‖y‖ ^ 3 ∂σ := by
+    intro σ hσ hm hcv hβ
+    haveI := hσ
+    have h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) σ :=
+      integrable_norm_of_cube hβ
+    have h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) σ :=
+      integrable_normSq_of_cube hβ
+    have ha : Integrable (fun y : EuclideanSpace ℝ (Fin k) => f v + c * L y) σ :=
+      (integrable_const (f v)).add ((integrable_clm_of_norm h1 L).const_mul c)
+    have hb : Integrable
+        (fun y : EuclideanSpace ℝ (Fin k) => c ^ 2 / 2 * B fun _ => y) σ :=
+      (integrable_bilin_of_normSq h2 B).const_mul (c ^ 2 / 2)
+    have hPint : Integrable
+        (fun y : EuclideanSpace ℝ (Fin k) => f v + c * L y + c ^ 2 / 2 * B fun _ => y) σ :=
+      ha.add hb
+    have hfint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => f (v + c • y)) σ := by
+      refine Integrable.mono' (integrable_const (1 : ℝ))
+        (hf.continuous.comp (by fun_prop)).aestronglyMeasurable ?_
+      filter_upwards with y
+      rw [Real.norm_eq_abs]
+      exact hfb _
+    have hPval : (∫ y, (f v + c * L y + c ^ 2 / 2 * B fun _ => y) ∂σ)
+        = f v + c ^ 2 / 2 * S := by
+      rw [integral_add ha hb, integral_add (integrable_const (f v))
+          ((integrable_clm_of_norm h1 L).const_mul c), integral_const, integral_const_mul,
+        integral_const_mul, integral_clm_eq_zero_of_centred hm L,
+        integral_bilin_eq_basis_sum hcv h2 B, ← hS]
+      simp
+    calc |(∫ y, f (v + c • y) ∂σ) - (f v + c ^ 2 / 2 * S)|
+        = |∫ y, (f (v + c • y)
+            - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)) ∂σ| := by
+          rw [integral_sub hfint hPint, hPval]
+      _ ≤ ∫ y, |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)| ∂σ :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ y, M / 6 * c ^ 3 * ‖y‖ ^ 3 ∂σ :=
+          integral_mono (hfint.sub hPint).abs (hβ.const_mul _) htay
+      _ = M / 6 * c ^ 3 * ∫ y, ‖y‖ ^ 3 ∂σ := integral_const_mul _ _
+  have hkν := key ν ‹_› hmeanν hcovν hβν
+  have hkρ := key ρ ‹_› hmeanρ hcovρ hβρ
+  have habs := abs_sub_abs_le_abs_sub ((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+    ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))
+  have htri : |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+      ≤ |(∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S)|
+        + |(∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S)| := by
+    have := abs_sub ((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+      ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))
+    calc |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+        = |((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+            - ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))| := by ring_nf
+      _ ≤ _ := abs_sub _ _
+  have hc3 : 0 ≤ M / 6 * c ^ 3 := by positivity
+  nlinarith [hkν, hkρ, htri]
+
 end SwapStep
 
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
@@ -1172,20 +1296,6 @@ Two elementary consequences of the standing hypotheses (`hcov`, `hβ`, `ν` a pr
 measure) that the `ε`-optimisation needs: the second moment is exactly the dimension, and
 `β = ∫‖y‖³ dν` is bounded below by `k^{3/2}` (Lyapunov) — in particular `β > 0`, so that
 `ε := (β/√n)^{1/4}` is a legitimate positive smoothing width. -/
-
-/-- `L³ ⊆ L²` on a probability space, in the only form needed here: `t² ≤ 1 + t³`. -/
-private lemma integrable_normSq_of_cube {k : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
-    [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
-    Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν := by
-  have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
-    (integrable_const 1).add hβ
-  refine Integrable.mono' hdom (by fun_prop) ?_
-  filter_upwards with y
-  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-  have ht : (0 : ℝ) ≤ ‖y‖ := norm_nonneg y
-  rcases le_or_gt ‖y‖ 1 with h | h
-  · nlinarith
-  · nlinarith
 
 /-- **The second moment is the dimension.** Under identity covariance,
 `∫ ‖y‖² dν = k`. Expand `‖y‖² = ∑ᵢ ⟪eᵢ, y⟫²` over the standard orthonormal basis and apply
