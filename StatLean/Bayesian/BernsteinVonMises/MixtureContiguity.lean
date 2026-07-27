@@ -315,7 +315,278 @@ theorem mutuallyContiguous_mixture_base
       (Ω := fun n => Fin n → 𝓧) atTop
       (fun n => productMeasure M μ θ₀ n)
       (fun n => bvmMixture κ π θ₀ u n) := by
-  sorry
+  classical
+  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+      IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
+    productMeasure_isProbabilityMeasure M μ hPDF θ n
+  obtain ⟨D₁, hD₁pos, -, Cb, hCbT, hUp⟩ := prior_smallBall_upper hπ
+  obtain ⟨D₂, hD₂pos, -, cb, hcb0, hLo⟩ := prior_smallBall_lower hπ
+  obtain ⟨D, hDpos, hDD₁, hDD₂⟩ : ∃ D : ℝ, 0 < D ∧ D ≤ D₁ ∧ D ≤ D₂ :=
+    ⟨min D₁ D₂, lt_min hD₁pos hD₂pos, min_le_left _ _, min_le_right _ _⟩
+  -- Abbreviation for the fixed local ball `U = B(0, u)`.
+  have hvU0 : volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) ≠ 0 :=
+    (Metric.measure_ball_pos volume 0 hu).ne'
+  have hvUT : volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) ≠ ∞ :=
+    measure_ball_lt_top.ne
+  have hcbT : cb ≠ ∞ := by
+    intro hc
+    have hsub : Metric.ball θ₀ D ⊆ Metric.ball θ₀ D₂ := Metric.ball_subset_ball hDD₂
+    have hlow := hLo (Metric.ball θ₀ D) hsub measurableSet_ball
+    rw [hc, ENNReal.top_mul (Metric.measure_ball_pos volume θ₀ hDpos).ne'] at hlow
+    exact absurd (top_le_iff.mp hlow) (measure_ne_top π _)
+  have hcv0 : cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) ≠ 0 :=
+    mul_ne_zero hcb0.ne' hvU0
+  have hcvT : cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) ≠ ∞ :=
+    ENNReal.mul_ne_top hcbT hvUT
+  have hCvT : Cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) ≠ ∞ :=
+    ENNReal.mul_ne_top hCbT hvUT
+  -- Measurability of the localized integrand.
+  have hKmeas : ∀ (n : ℕ) (A : Set (Fin n → 𝓧)), MeasurableSet A →
+      Measurable fun hh : EuclideanSpace ℝ (Fin k) =>
+        productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A := by
+    intro n A hA
+    exact (measurable_productMeasure_apply hκ n hA).comp (by fun_prop)
+  -- `u/√n → 0`, so eventually the shrinking ball is inside the comparison zone.
+  have hsqrt : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hdivD : ∀ᶠ n : ℕ in atTop, u / Real.sqrt n ≤ D := by
+    have hdiv : Tendsto (fun n : ℕ => u / Real.sqrt n) atTop (𝓝 0) :=
+      tendsto_const_nhds.div_atTop hsqrt
+    filter_upwards [hdiv (Iio_mem_nhds hDpos)] with n hn using le_of_lt hn
+  -- **Core two-sided estimate**: the mixture mass and the localized Lebesgue average agree
+  -- up to the fixed constants `cb`, `Cb`.
+  have hcore : ∀ᶠ n : ℕ in atTop, ∀ A : Set (Fin n → 𝓧), MeasurableSet A →
+      bvmMixture κ π θ₀ u n A
+            * (cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+          ≤ Cb * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+              productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume
+        ∧ cb * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+              productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume
+          ≤ bvmMixture κ π θ₀ u n A
+              * (Cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)) := by
+    filter_upwards [eventually_ge_atTop 1, hdivD] with n hn1 hnD A hA
+    have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
+    have hsq : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnpos
+    have ha : 0 < (Real.sqrt n)⁻¹ := inv_pos.mpr hsq
+    have hau : u / Real.sqrt n = (Real.sqrt n)⁻¹ * u := div_eq_inv_mul u (Real.sqrt n)
+    have hBD : Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u) ⊆ Metric.ball θ₀ D :=
+      Metric.ball_subset_ball (by rw [← hau]; exact hnD)
+    have hB1 : Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u) ⊆ Metric.ball θ₀ D₁ :=
+      hBD.trans (Metric.ball_subset_ball hDD₁)
+    have hB2 : Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u) ⊆ Metric.ball θ₀ D₂ :=
+      hBD.trans (Metric.ball_subset_ball hDD₂)
+    -- Two-sided measure comparison, restricted to the shrinking ball.
+    have hπup : π.restrict (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u))
+        ≤ Cb • volume.restrict (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) := by
+      refine Measure.le_iff.mpr fun s hs => ?_
+      rw [Measure.restrict_apply hs, Measure.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
+      exact hUp _ (Set.inter_subset_right.trans hB1) (hs.inter measurableSet_ball)
+    have hπlo : cb • volume.restrict (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u))
+        ≤ π.restrict (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) := by
+      refine Measure.le_iff.mpr fun s hs => ?_
+      rw [Measure.restrict_apply hs, Measure.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
+      exact hLo _ (Set.inter_subset_right.trans hB2) (hs.inter measurableSet_ball)
+    -- Change of variables: the Jacobian `z` cancels in the ratio.
+    have hcv := lintegral_ball_affine θ₀ ha u (measurable_productMeasure_apply hκ n hA)
+    have hcv1 := lintegral_ball_affine θ₀ ha u (F := fun _ => (1 : ℝ≥0∞)) measurable_const
+    rw [setLIntegral_one, setLIntegral_one] at hcv1
+    have hz0 : ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) ≠ 0 :=
+      (ENNReal.ofReal_pos.mpr (pow_pos ha k)).ne'
+    have hzT : ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) ≠ ∞ := ENNReal.ofReal_ne_top
+    -- Numerator and denominator bounds.
+    have hNup : ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π
+        ≤ Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+            * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume) := by
+      have h1 := lintegral_mono' (f := fun θ => productMeasure M μ θ n A)
+        (g := fun θ => productMeasure M μ θ n A) hπup le_rfl
+      rwa [lintegral_smul_measure, smul_eq_mul, hcv] at h1
+    have hNlo : cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+            * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume)
+        ≤ ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := by
+      have h1 := lintegral_mono' (f := fun θ => productMeasure M μ θ n A)
+        (g := fun θ => productMeasure M μ θ n A) hπlo le_rfl
+      rwa [lintegral_smul_measure, smul_eq_mul, hcv] at h1
+    have hπBup : π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u))
+        ≤ Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+            * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)) := by
+      rw [← hcv1]
+      exact hUp _ hB1 measurableSet_ball
+    have hπBlo : cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+            * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+        ≤ π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) := by
+      rw [← hcv1]
+      exact hLo _ hB2 measurableSet_ball
+    have hπB0 : π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) ≠ 0 := by
+      intro hzero
+      rw [hzero, nonpos_iff_eq_zero, mul_eq_zero] at hπBlo
+      rcases hπBlo with hz | hz
+      · exact hcb0.ne' hz
+      · rcases mul_eq_zero.mp hz with hz' | hz'
+        · exact hz0 hz'
+        · exact hvU0 hz'
+    have hπBT : π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) ≠ ∞ := measure_ne_top π _
+    -- The mixture mass times the prior ball mass is the numerator.
+    have hQ := bvmMixture_apply (θ₀ := θ₀) (π := π) hκ u n hA
+    rw [hau] at hQ
+    have hQmul : bvmMixture κ π θ₀ u n A * π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u))
+        = ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := by
+      rw [hQ, mul_comm, ← mul_assoc, ENNReal.mul_inv_cancel hπB0 hπBT, one_mul]
+    constructor
+    · refine (ENNReal.mul_le_mul_right hz0 hzT).mp ?_
+      calc bvmMixture κ π θ₀ u n A
+              * (cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+              * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+          = bvmMixture κ π θ₀ u n A * (cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+              * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))) := by ring
+        _ ≤ bvmMixture κ π θ₀ u n A * π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) :=
+            mul_le_mul_left' hπBlo _
+        _ = ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := hQmul
+        _ ≤ Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+              * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                  productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume) := hNup
+        _ = Cb * (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                  productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume)
+              * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) := by ring
+    · refine (ENNReal.mul_le_mul_right hz0 hzT).mp ?_
+      calc cb * (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                  productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume)
+              * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+          = cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+              * ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+                  productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n A ∂volume) := by ring
+        _ ≤ ∫⁻ θ in Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u), productMeasure M μ θ n A ∂π := hNlo
+        _ = bvmMixture κ π θ₀ u n A * π (Metric.ball θ₀ ((Real.sqrt n)⁻¹ * u)) := hQmul.symm
+        _ ≤ bvmMixture κ π θ₀ u n A * (Cb * (ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k)
+              * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))) :=
+            mul_le_mul_left' hπBup _
+        _ = bvmMixture κ π θ₀ u n A
+              * (Cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+              * ENNReal.ofReal ((Real.sqrt n)⁻¹ ^ k) := by ring
+  constructor
+  · -- `P^n_{θ₀} ⊲ P_{n,U}`: the localized average vanishes by dominated convergence.
+    intro A hA_meas hA_tendsto
+    have hK : Tendsto (fun n : ℕ => ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+        productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n (A n) ∂volume) atTop (𝓝 0) := by
+      have hlim : ∀ᵐ hh ∂(volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)),
+          Tendsto (fun n : ℕ => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n (A n))
+            atTop (𝓝 0) :=
+        Filter.Eventually.of_forall fun hh =>
+          (mutuallyContiguous_local_alternative hPDF hsc hDQM hJ_pd hJ hh).1 A hA_meas hA_tendsto
+      have hdct := MeasureTheory.tendsto_lintegral_of_dominated_convergence
+        (μ := volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+        (F := fun (n : ℕ) hh => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n (A n))
+        (f := fun _ => (0 : ℝ≥0∞)) (bound := fun _ => (1 : ℝ≥0∞))
+        (fun n => hKmeas n (A n) (hA_meas n))
+        (fun n => Filter.Eventually.of_forall fun hh => prob_le_one)
+        (by simpa using hvUT) hlim
+      simpa using hdct
+    rw [ENNReal.tendsto_nhds_zero]
+    intro ε hε
+    have hCK : Tendsto (fun n : ℕ => Cb * ∫⁻ hh in Metric.ball
+        (0 : EuclideanSpace ℝ (Fin k)) u,
+        productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n (A n) ∂volume) atTop (𝓝 0) := by
+      have := ENNReal.Tendsto.const_mul hK (Or.inr hCbT)
+      simpa using this
+    have hεpos : 0 < ε * (cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)) :=
+      pos_iff_ne_zero.mpr (mul_ne_zero hε.ne' hcv0)
+    filter_upwards [hcore, (ENNReal.tendsto_nhds_zero.mp hCK) _ hεpos] with n hn hCKn
+    exact (ENNReal.mul_le_mul_right hcv0 hcvT).mp
+      (((hn (A n) (hA_meas n)).1).trans hCKn)
+  · -- `P_{n,U} ⊲ P^n_{θ₀}`: an `L¹` subsequence extraction plus per-`h` contiguity.
+    intro A hA_meas hA_tendsto
+    have hK : Tendsto (fun n : ℕ => ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+        productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • hh) n (A n) ∂volume) atTop (𝓝 0) := by
+      have hQ0 : Tendsto (fun n : ℕ => bvmMixture κ π θ₀ u n (A n)
+          * (Cb * volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))) atTop (𝓝 0) := by
+        have := ENNReal.Tendsto.mul_const hA_tendsto (Or.inr hCvT)
+        simpa using this
+      rw [ENNReal.tendsto_nhds_zero]
+      intro ε hε
+      have hεpos : 0 < cb * ε := pos_iff_ne_zero.mpr (mul_ne_zero hcb0.ne' hε.ne')
+      filter_upwards [hcore, (ENNReal.tendsto_nhds_zero.mp hQ0) _ hεpos] with n hn hQn
+      exact (ENNReal.mul_le_mul_left hcb0.ne' hcbT).mp
+        (((hn (A n) (hA_meas n)).2).trans hQn)
+    -- Suppose the base masses do not vanish; extract a bad subsequence.
+    by_contra hcon
+    rw [ENNReal.tendsto_nhds_zero] at hcon
+    push_neg at hcon
+    obtain ⟨ε, hε, hfreq⟩ := hcon
+    obtain ⟨φ, hφ, hφlt⟩ := Filter.extraction_of_frequently_atTop hfreq
+    -- Along `φ`, the localized average still vanishes; pass to a.e. convergence.
+    have hKφ : Tendsto (fun i : ℕ => ∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+        productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh) (φ i) (A (φ i)) ∂volume)
+        atTop (𝓝 0) := hK.comp hφ.tendsto_atTop
+    have hTIM : MeasureTheory.TendstoInMeasure
+        (volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+        (fun (i : ℕ) hh => (productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh)
+          (φ i) (A (φ i))).toReal) atTop (fun _ => (0 : ℝ)) := by
+      refine MeasureTheory.tendstoInMeasure_of_ne_top ?_
+      intro δ hδ hδT
+      have hbound : ∀ i : ℕ,
+          (volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+            {hh | δ ≤ edist ((productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh)
+              (φ i) (A (φ i))).toReal) (0 : ℝ)}
+          ≤ (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+              productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh) (φ i) (A (φ i)) ∂volume)
+              / δ := by
+        intro i
+        have hset : {hh : EuclideanSpace ℝ (Fin k) |
+              δ ≤ edist ((productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh)
+                (φ i) (A (φ i))).toReal) (0 : ℝ)}
+            = {hh | δ ≤ productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh)
+                (φ i) (A (φ i))} := by
+          ext hh
+          have hedist : edist ((productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh)
+              (φ i) (A (φ i))).toReal) (0 : ℝ)
+              = productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh) (φ i) (A (φ i)) := by
+            rw [edist_dist, Real.dist_eq, sub_zero, abs_of_nonneg ENNReal.toReal_nonneg,
+              ENNReal.ofReal_toReal (measure_ne_top _ _)]
+          simp only [Set.mem_setOf_eq, hedist]
+        rw [hset]
+        exact meas_ge_le_lintegral_div
+          (hKmeas (φ i) (A (φ i)) (hA_meas _)).aemeasurable hδ.ne' hδT
+      have hdivz : Tendsto (fun i : ℕ =>
+          (∫⁻ hh in Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u,
+            productMeasure M μ (θ₀ + (Real.sqrt (φ i))⁻¹ • hh) (φ i) (A (φ i)) ∂volume)
+              / δ) atTop (𝓝 0) := by
+        simp only [ENNReal.div_eq_inv_mul]
+        have := ENNReal.Tendsto.const_mul hKφ (Or.inr (ENNReal.inv_ne_top.mpr hδ.ne'))
+        simpa using this
+      exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hdivz
+        (fun _ => zero_le _) hbound
+    obtain ⟨ms, hms, hae⟩ := hTIM.exists_seq_tendsto_ae
+    -- A good local direction `hh₀` inside `U`.
+    obtain ⟨hh₀, -, hgood⟩ : ∃ hh₀, hh₀ ∈ Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u ∧
+        Tendsto (fun i : ℕ => (productMeasure M μ (θ₀ + (Real.sqrt (φ (ms i)))⁻¹ • hh₀)
+          (φ (ms i)) (A (φ (ms i)))).toReal) atTop (𝓝 0) := by
+      by_contra hno
+      push_neg at hno
+      rw [MeasureTheory.ae_iff] at hae
+      refine hvU0 (le_antisymm ?_ (zero_le _))
+      calc volume (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u)
+          = (volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+              (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u) :=
+            (Measure.restrict_apply_self _ _).symm
+        _ ≤ (volume.restrict (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) u))
+              {hh | ¬ Tendsto (fun i : ℕ => (productMeasure M μ
+                (θ₀ + (Real.sqrt (φ (ms i)))⁻¹ • hh) (φ (ms i)) (A (φ (ms i)))).toReal)
+                atTop (𝓝 0)} := measure_mono fun hh hhU => hno hh hhU
+        _ = 0 := hae
+    -- Lift to `ℝ≥0∞` and apply the per-`h` contiguity along the subsequence.
+    have hgood' : Tendsto (fun i : ℕ => productMeasure M μ
+        (θ₀ + (Real.sqrt (φ (ms i)))⁻¹ • hh₀) (φ (ms i)) (A (φ (ms i)))) atTop (𝓝 0) := by
+      have h1 := (ENNReal.continuous_ofReal.tendsto 0).comp hgood
+      simpa [Function.comp_def, ENNReal.ofReal_toReal (measure_ne_top _ _)] using h1
+    have hcontig :=
+      ((mutuallyContiguous_local_alternative hPDF hsc hDQM hJ_pd hJ hh₀).2).comp_subseq
+        (hφ.comp hms)
+    have hfin := hcontig (fun i => A (φ (ms i))) (fun i => hA_meas _) hgood'
+    have hev : ∀ᶠ i : ℕ in atTop,
+        productMeasure M μ θ₀ (φ (ms i)) (A (φ (ms i))) < ε := hfin (Iio_mem_nhds hε)
+    obtain ⟨i, hi⟩ := hev.exists
+    exact absurd hi (not_lt.mpr (le_of_lt (hφlt (ms i))))
 
 /-- **Predictive-null events are asymptotically base-null**: if measurable events `Nₙ` are
 null for the predictive `κₙ ∘ₘ π`, then `P^n_{θ₀}(Nₙ) → 0`. This discharges the exceptional
