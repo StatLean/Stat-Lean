@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Randomization.Asymptotics
+import StatLean.HypothesisTesting.Randomization.PairCLT
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Constructions.Pi
@@ -61,10 +62,17 @@ sign-change randomization distribution is asymptotically normal). (`TSH4 §17.2 
 * *Asymptotic linearity* is stated with the triangular-array convergence in probability of
   `Randomization/Asymptotics`, applied to the remainder
   `T n x − n^{-1/2} ∑ᵢ ψ(xᵢ)`; that is exactly the `o_P(1)` of the display.
-* The limit is reached through the bivariate central limit theorem applied to the i.i.d.
-  pairs `(εᵢψ(Xᵢ), ε'ᵢψ(Xᵢ))`, which have zero covariance since
-  `E[εᵢ]E[ε'ᵢ] = 0`; the Lindeberg-type machinery is the sibling brick
-  `StatLean.HypothesisTesting.ForMathlib.LindebergCLT`, imported here.
+* The limit is reached through the bivariate sign-change central limit theorem of the sibling
+  file `Randomization/PairCLT` (`weakConverges_randPairLaw_signSum`). That engine works at the
+  level of characteristic functions: averaging over the four sign pairs `(s,s') ∈ {±1}²`
+  factorizes the joint characteristic function across coordinates *exactly at every finite `n`*,
+  so asymptotic independence of the two randomized copies is not a limiting phenomenon but an
+  identity, and no mean-zero hypothesis is needed. The passage from the statistic to its linear
+  part is `PairCLT.weakConverges_randPairLaw_of_tendstoInProb`, a Slutsky transfer that consumes
+  exactly the `o_P(1)` of `hlin` together with sign-invariance of `⊗ⁿP` (which is `hsymm`).
+* Oddness of `ψ` enters through the equivariance `ψ(εᵢxᵢ) = εᵢψ(xᵢ)`, which lets the
+  coordinatewise map `x ↦ (ψ(xᵢ))ᵢ` intertwine the two sign actions; `randPairLaw_comp` then
+  transports the whole randomized pair to the pushforward law `P.map ψ`.
 
 **Bibliographic comments.** Sign-change (randomization) tests for a symmetric location
 model go back to R. A. Fisher (*The Design of Experiments*, Oliver & Boyd, Edinburgh,
@@ -82,7 +90,7 @@ J. P. Romano ("Exact and asymptotically robust permutation tests," *Ann. Statist
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -188,32 +196,117 @@ theorem weakConverges_randPairLaw_signChange (P : Measure ℝ) [IsProbabilityMea
       (fun n => randPairLaw (Fin n → ℤˣ) (T n) (Measure.pi fun _ : Fin n => P))
       ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
         (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
-  -- TODO (deep, deferred). Intended route (bivariate CLT):
-  -- 1. By oddness `ψ(εᵢ xᵢ) = εᵢ ψ(xᵢ)` (`hodd`, `εᵢ = ±1`), the linear part of `T n(ε • x)` is
-  --    `(√n)⁻¹ ∑ᵢ εᵢ ψ(xᵢ)`; `hlin` together with symmetry `hsymm` (so `ε • X =_d X`) transfers
-  --    the `o_P(1)` remainder to the randomized argument.
-  -- 2. On the product space of the data `X ~ πP` and two independent Rademacher sign vectors
-  --    `ε, ε'`, the pairs `Vᵢ = (εᵢ ψ(Xᵢ), ε'ᵢ ψ(Xᵢ))` are i.i.d. in `ℝ²` with mean `0` and
-  --    covariance `τ² · I₂` (cross term `E[εᵢ]E[ε'ᵢ]E[ψ²] = 0`).
-  -- 3. `tendstoInDistribution_multivariate_clt` (Cramér–Wold) then gives
-  --    `(√n)⁻¹ ∑ᵢ Vᵢ ⇝ N(0, τ² I₂) = N(0,τ²) ⊗ N(0,τ²)`; identifying `randPairLaw` as the law of
-  --    `(T n(ε•X), T n(ε'•X))` and pushing the `o_P(1)` through (Slutsky) yields the claim.
-  --    The hint's `weighted_iid_clt` supplies each marginal; the joint needs the multivariate
-  --    version. `measurable_signChange_smul` supplies the action measurability;
-  --    `Measurable (T n)` is still implicit (frozen signature). See report.
-  -- ⚠ OBSTRUCTION (verified this session): the statement is FALSE as stated. The frozen
-  -- signature omits `hT : ∀ n, Measurable (T n)`, which the forward engine and the moment
-  -- identities genuinely require (a non-measurable statistic makes every `P.map` the zero
-  -- measure). Counterexample: fix `P = N(0,1)`, `ψ = id`, `τ = 1` (so hsymm/hodd/hψmeas/
-  -- hψL2/hτpos/hτ all hold) and take `T n x = (√n)⁻¹ ∑ᵢ ψ (x i) + (n+1)⁻¹ · 1_{Bₙ} x` with
-  -- `Bₙ ⊆ ℝ^{Fin n}` a Bernstein set. Then `|remainder| ≤ (n+1)⁻¹ → 0` uniformly, so `hlin`
-  -- holds; but for every sign vector `g` the set `g · Bₙ` is again Bernstein, so `1_{Bₙ}(g•·)`
-  -- is not AEMeasurable, hence every pushforward `P.map (x ↦ (T (g•x), T (g'•x)))` is `0` and
-  -- `randPairLaw ≡ 0`. The zero measure does not weakly converge to the probability measure
-  -- `N(0,τ²) ⊗ N(0,τ²)` (test against `f ≡ 1`: `0 ↛ 1`). WITH `Measurable (T n)` added this is
-  -- the genuine Thm 17.2.4 bivariate CLT, still beyond `weighted_iid_clt` (which is univariate
-  -- with deterministic weights): it needs the conditional-on-data bivariate CLT + Slutsky.
-  sorry
+  classical
+  -- The linear part of the statistic, and the law of the influence function.
+  set Q : Measure ℝ := P.map ψ with hQdef
+  haveI hQprob : IsProbabilityMeasure Q := Measure.isProbabilityMeasure_map hψmeas.aemeasurable
+  have hQ2 : MemLp id 2 Q := by
+    rw [hQdef, memLp_map_measure_iff aestronglyMeasurable_id hψmeas.aemeasurable]
+    simpa using hψL2
+  have hτQ : ∫ y, y ^ 2 ∂Q = τ ^ 2 := by
+    rw [hQdef, integral_map hψmeas.aemeasurable (by fun_prop)]
+    exact hτ
+  -- The product law is invariant under every sign change (symmetry of `P`).
+  have hinv : ∀ (n : ℕ) (ε : Fin n → ℤˣ),
+      (Measure.pi fun _ : Fin n => P).map (fun x => ε • x) = Measure.pi fun _ : Fin n => P := by
+    intro n ε
+    refine (Measure.pi_eq (fun s hs => ?_)).symm
+    rw [Measure.map_apply (measurable_signChange_smul ε) (MeasurableSet.univ_pi hs)]
+    have hpre : (fun x : Fin n → ℝ => ε • x) ⁻¹' Set.pi Set.univ s
+        = Set.pi Set.univ (fun i => (fun xi : ℝ => ((ε i : ℤ) : ℝ) * xi) ⁻¹' s i) := by
+      ext x
+      simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, signChange_smul_apply]
+    rw [hpre, Measure.pi_pi]
+    refine Finset.prod_congr rfl fun i _ => ?_
+    rcases Int.units_eq_one_or (ε i) with h | h
+    · rw [h]
+      congr 1
+      ext xi
+      simp
+    · rw [h]
+      have hset : (fun xi : ℝ => (((-1 : ℤˣ) : ℤ) : ℝ) * xi) ⁻¹' s i
+          = (fun t : ℝ => -t) ⁻¹' s i := by
+        ext xi
+        simp
+      rw [hset, ← Measure.map_apply measurable_neg (hs i), hsymm]
+  -- Coordinatewise application of `ψ` pushes the product law to the product of `Q`.
+  have hΨmeas : ∀ n : ℕ, Measurable (fun x : Fin n → ℝ => fun i => ψ (x i)) := fun n =>
+    measurable_pi_lambda _ fun i => hψmeas.comp (measurable_pi_apply i)
+  have hpush : ∀ n : ℕ, (Measure.pi fun _ : Fin n => P).map (fun x : Fin n → ℝ => fun i => ψ (x i))
+      = Measure.pi fun _ : Fin n => Q := by
+    intro n
+    refine (Measure.pi_eq (fun s hs => ?_)).symm
+    rw [Measure.map_apply (hΨmeas n) (MeasurableSet.univ_pi hs)]
+    have hpre : (fun x : Fin n → ℝ => fun i => ψ (x i)) ⁻¹' Set.pi Set.univ s
+        = Set.pi Set.univ (fun i => ψ ⁻¹' s i) := by
+      ext x
+      simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies]
+    rw [hpre, Measure.pi_pi]
+    exact Finset.prod_congr rfl fun i _ => by rw [hQdef, Measure.map_apply hψmeas (hs i)]
+  -- Oddness makes the coordinatewise `ψ` equivariant for the sign-change action.
+  have hequiv : ∀ (n : ℕ) (ε : Fin n → ℤˣ) (x : Fin n → ℝ),
+      (fun i => ψ ((ε • x) i)) = ε • fun i => ψ (x i) := by
+    intro n ε x
+    funext i
+    rw [signChange_smul_apply, signChange_smul_apply]
+    rcases Int.units_eq_one_or (ε i) with h | h
+    · rw [h]; simp
+    · rw [h]
+      simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul]
+      exact hodd _
+  -- The randomized pair of the linear part is that of the plain sign-flipped sum under `Q`.
+  have hsumsmul : ∀ (n : ℕ) (ε : Fin n → ℤˣ),
+      Measurable fun y : Fin n → ℝ => ε • y := fun n ε => measurable_signChange_smul ε
+  have hsumT : ∀ n : ℕ,
+      Measurable fun y : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i := fun n =>
+    (Finset.measurable_sum _ fun i _ => measurable_pi_apply i).const_mul
+      ((Real.sqrt (n : ℝ))⁻¹)
+  have hid : ∀ n : ℕ,
+      randPairLaw (Fin n → ℤˣ) (fun x : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ * ∑ i, ψ (x i))
+          (Measure.pi fun _ : Fin n => P)
+        = randPairLaw (Fin n → ℤˣ)
+            (fun y : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+            (Measure.pi fun _ : Fin n => Q) := by
+    intro n
+    have hcomp := randPairLaw_comp (G := Fin n → ℤˣ) (Measure.pi fun _ : Fin n => P)
+      (hΨmeas n) (fun ε x => hequiv n ε x) (hsumT n) (hsumsmul n)
+    rw [hpush n] at hcomp
+    exact hcomp
+  -- The bivariate sign-change CLT for the plain sum, with the Gaussian identified.
+  have hchar : ∀ v : ℝ, charFun (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) v
+      = Complex.exp (-((∫ y, ⟪y, v⟫ ^ 2 ∂Q : ℝ) : ℂ) / 2) := by
+    intro v
+    have hmom : ∫ y, ⟪y, v⟫ ^ 2 ∂Q = v ^ 2 * τ ^ 2 := by
+      have hpt : ∀ y : ℝ, ⟪y, v⟫ ^ 2 = v ^ 2 * y ^ 2 := by
+        intro y
+        have : ⟪y, v⟫ = v * y := by
+          simp [real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+        rw [this]; ring
+      calc ∫ y, ⟪y, v⟫ ^ 2 ∂Q = ∫ y, v ^ 2 * y ^ 2 ∂Q :=
+            integral_congr_ae (Filter.Eventually.of_forall hpt)
+        _ = v ^ 2 * τ ^ 2 := by rw [integral_const_mul, hτQ]
+    rw [charFun_gaussianReal, hmom]
+    congr 1
+    push_cast
+    ring
+  have hCLT := weakConverges_randPairLaw_signSum Q hQ2
+    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0)) hchar
+  have hCLT' : WeakConverges
+      (fun n => randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → ℝ => (Real.sqrt (n : ℝ))⁻¹ * ∑ i, ψ (x i))
+        (Measure.pi fun _ : Fin n => P))
+      ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
+    simpa only [hid] using hCLT
+  -- Slutsky: replace the linear part by the statistic itself.
+  refine weakConverges_randPairLaw_of_tendstoInProb (G := fun n => Fin n → ℤˣ)
+    (fun n => Measure.pi fun _ : Fin n => P) T
+    (fun n x => (Real.sqrt (n : ℝ))⁻¹ * ∑ i, ψ (x i)) hT
+    (fun n => ((Finset.measurable_sum _ fun i _ =>
+      hψmeas.comp (measurable_pi_apply i))).const_mul _)
+    (fun n ε => measurable_signChange_smul ε) (fun n ε => hinv n ε) ?_ hCLT'
+  intro δ hδ
+  simpa only [Real.norm_eq_abs, sub_zero] using hlin δ hδ
+
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** Under the
 hypotheses above, `R̂ₙ(t) →P Φ(t/τ)` for every `t`. -/

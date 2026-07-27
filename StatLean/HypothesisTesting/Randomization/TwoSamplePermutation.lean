@@ -226,11 +226,18 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
   -- limit. The weight moments — `Var` of the weight average and the cross-permutation
   -- covariance giving asymptotic independence — are `HypergeometricMoments.var_mean_linear_le`
   -- and `HypergeometricMoments.cov_weight`.
-  -- BLOCKED: there is no conditional-on-weights CLT assembly nor a Cramér–Wold device at the
-  -- `randPairLaw`/`WeakConverges` level (the same bivariate-CLT gap as the still-open scalar
-  -- `weakConverges_randPairLaw_signChange` in `Randomization/SignChange`); `weighted_iid_clt`
-  -- delivers only a single scalar marginal as `TendstoInDistribution`, and the joint /
-  -- test-function bridge is missing.
+  -- STATUS (re-derived): the cross-reference to `weakConverges_randPairLaw_signChange` is now
+  -- obsolete — that theorem is closed, and `Randomization/PairCLT` provides the general
+  -- `randPairLaw`/`WeakConverges` characteristic-function machinery (Lévy packaging,
+  -- `integral_randPairLaw`, a Slutsky transfer). The permutation case is nevertheless a
+  -- *different* theorem: what makes the sign-change computation exact at every finite `n` is that
+  -- averaging `exp(i(sa+s'b))` over the four sign pairs factorizes across coordinates
+  -- (`charFun_randPairLaw_signSum`). `Equiv.Perm` has no such factorization — its randomization
+  -- weights are sampling-**without**-replacement indicators, so the coordinates are dependent and
+  -- the characteristic function does not become an `n`-th power. The honest remaining route is
+  -- Hoeffding's combinatorial CLT for permutation statistics (a Lindeberg/exchangeable-pairs
+  -- argument fed by `HypergeometricMoments.var_mean_linear_le` and `cov_weight`), which the
+  -- repository does not yet contain.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** -/
@@ -301,12 +308,13 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   -- Write `Tₘₙ = m^{-1/2} ∑ᵢ (Yᵢ − μ) − √(m/n) · n^{-1/2} ∑ⱼ (Zⱼ − μ)` (equal means). The two
   -- blocks are independent under `twoSampleLaw`, each block obeys the i.i.d. CLT, and
   -- `√(m/n) → √λ`, so the sum is asymptotically `N(0, varY + λ·varZ) = N(0, s²)` by Slutsky.
-  -- NOT upstream-blocked: reducible to `weighted_iid_clt` (or `lindeberg_clt`) applied per
-  -- block plus the `TendstoInDistribution → WeakConverges` test-function bridge (cf.
-  -- `ParametricFamily/ScoreCLT`). Deferred here only for length: it needs the joint two-block
-  -- independent-sum construction and the distribution-to-WeakConverges translation assembled in
-  -- full, which is a self-standing ~150-line development rather than a reuse of an existing
-  -- bivariate-CLT brick.
+  -- NOT upstream-blocked. With `Randomization/PairCLT.weakConverges_of_tendsto_charFun` the
+  -- `TendstoInDistribution → WeakConverges` bridge is no longer the obstacle: the law is a
+  -- product measure, so its characteristic function is literally
+  -- `(charFun P_Y (t/√m))^m · (charFun P_Z (−t√m/n))^n`. The one piece still to be written is a
+  -- variant of `Complex.tendsto_pow_exp_of_isLittleO_sub_add_div` along the *two* index sequences
+  -- `m k, n k` with a **varying** constant in the second factor (the argument `−t√(m k/n k)/√(n k)`
+  -- has a `k`-dependent numerator), which the fixed-`t` Mathlib lemma does not cover.
   sorry
 
 end StatLean.HypothesisTesting

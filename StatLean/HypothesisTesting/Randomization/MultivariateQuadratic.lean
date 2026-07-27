@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Randomization.SignChange
+import StatLean.HypothesisTesting.Randomization.PairCLT
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
@@ -169,7 +170,13 @@ patterns converge jointly in law to a pair of **independent, identically distrib
 centred Gaussians with covariance `S`:
 $$ n^{-1/2}\Bigl(\sum_i \varepsilon_i X_i,\; \sum_i \varepsilon_i' X_i\Bigr)
    \;\xrightarrow{d}\; (Z_1, Z_2), \qquad Z_1, Z_2 \text{ i.i.d. } N(0, S). $$
-Asymptotic independence comes from `E[εᵢ]E[ε'ᵢ] = 0`. -/
+Asymptotic independence comes from `E[εᵢ]E[ε'ᵢ] = 0`.
+
+*The mean-zero hypothesis `hmean` is not used in the proof*, confirming the remark in the
+file notes: the sign average symmetrizes each summand, so the first-order term of the
+characteristic-function expansion cancels identically and only the second-moment matrix `S`
+(as supplied by `hsecond`) enters. It is retained in the signature because it is the
+classical formulation and because the two quadratic-form corollaries below do use it. -/
 theorem weakConverges_randPairLaw_signChange_sum
     (P : Measure (EuclideanSpace ℝ (Fin p))) [IsProbabilityMeasure P]
     {S : Matrix (Fin p) (Fin p) ℝ}
@@ -188,19 +195,62 @@ theorem weakConverges_randPairLaw_signChange_sum
         (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
         (Measure.pi fun _ : Fin n => P))
       ((multivariateGaussian 0 S).prod (multivariateGaussian 0 S)) := by
-  -- TODO (deep, deferred): the vector building block = multivariate sign-change bivariate CLT.
-  -- Route: on the product space of the data `X ~ πP` and two independent Rademacher sign
-  -- vectors `ε, ε'`, the pairs `Vᵢ = (εᵢ Xᵢ, ε'ᵢ Xᵢ) ∈ ℝ^{2p}` are i.i.d. mean 0 with block
-  -- covariance `diag(S, S)` — the cross block vanishes because `E[εᵢ]E[ε'ᵢ] = 0`. A
-  -- multivariate Lindeberg / Cramér–Wold CLT gives `n^{-1/2} ∑ᵢ Vᵢ ⇝ N(0,S) ⊗ N(0,S)`;
-  -- identifying `randPairLaw` as the law of `(n^{-1/2}∑ εᵢXᵢ, n^{-1/2}∑ ε'ᵢXᵢ)` and pushing
-  -- the `o_P(1)` remainder through Slutsky yields the claim.
-  -- BLOCKED: the repo's CLT bricks `weighted_iid_clt` / `lindeberg_clt` are univariate with
-  -- deterministic weights; there is no multivariate triangular-array CLT nor a Cramér–Wold
-  -- device at the `randPairLaw`/`WeakConverges` level. This is the vector-valued analogue of
-  -- the still-open scalar `weakConverges_randPairLaw_signChange` in `Randomization/SignChange`
-  -- (that theorem's own `sorry` documents the identical obstruction).
-  sorry
+  -- The general bivariate sign-change CLT of `Randomization/PairCLT` applies verbatim with
+  -- `E = EuclideanSpace ℝ (Fin p)`: all that is left is to identify the limiting Gaussian
+  -- through its characteristic function, i.e. to check that the second-moment matrix `S`
+  -- represents the quadratic form `v ↦ ∫ ⟪y,v⟫² dP`. (Mean-zero is *not* used: the sign
+  -- average symmetrizes each summand, so the first-order term cancels identically.)
+  classical
+  have hcoord : ∀ j : Fin p,
+      MemLp (fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j) 2 P := by
+    intro j
+    have h := memLp_inner_right P hL2 (EuclideanSpace.single j (1 : ℝ))
+    have heq : (fun y : EuclideanSpace ℝ (Fin p) => ⟪y, EuclideanSpace.single j (1 : ℝ)⟫)
+        = fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j := by
+      funext y
+      simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+    rwa [heq] at h
+  have hinner_expand : ∀ y v : EuclideanSpace ℝ (Fin p),
+      ⟪y, v⟫ = ∑ j, y.ofLp j * v.ofLp j := by
+    intro y v
+    rw [PiLp.inner_apply]
+    exact Finset.sum_congr rfl fun j _ => by
+      simp [real_inner_eq_re_inner ℝ, RCLike.inner_apply, mul_comm]
+  have hmoment : ∀ v : EuclideanSpace ℝ (Fin p),
+      ∫ y, ⟪y, v⟫ ^ 2 ∂P = v.ofLp ⬝ᵥ S *ᵥ v.ofLp := by
+    intro v
+    have hpt : ∀ y : EuclideanSpace ℝ (Fin p), ⟪y, v⟫ ^ 2
+        = ∑ j, ∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k) := by
+      intro y
+      rw [hinner_expand y v, sq, Finset.sum_mul_sum]
+      exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+    have hint : ∀ j k : Fin p,
+        Integrable (fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j * y.ofLp k) P := by
+      intro j k
+      simpa using (hcoord j).integrable_mul (hcoord k)
+    have h1 : ∫ y, ⟪y, v⟫ ^ 2 ∂P
+        = ∫ y, (∑ j, ∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) ∂P :=
+      integral_congr_ae (Filter.Eventually.of_forall hpt)
+    rw [h1, integral_finset_sum (f := fun j : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
+        ∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) Finset.univ
+      (fun j _ => integrable_finset_sum Finset.univ fun k _ => (hint j k).const_mul _)]
+    have h2 : ∀ j : Fin p, ∫ y, (∑ k, (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) ∂P
+        = ∑ k, (v.ofLp j * v.ofLp k) * S j k := by
+      intro j
+      rw [integral_finset_sum (f := fun k : Fin p => fun y : EuclideanSpace ℝ (Fin p) =>
+          (v.ofLp j * v.ofLp k) * (y.ofLp j * y.ofLp k)) Finset.univ
+        (fun k _ => (hint j k).const_mul _)]
+      exact Finset.sum_congr rfl fun k _ => by rw [integral_const_mul, hsecond j k]
+    rw [Finset.sum_congr rfl (fun j (_ : j ∈ Finset.univ) => h2 j)]
+    simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+  have hchar : ∀ v : EuclideanSpace ℝ (Fin p),
+      charFun (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S) v
+        = Complex.exp (-((∫ y, ⟪y, v⟫ ^ 2 ∂P : ℝ) : ℂ) / 2) := by
+    intro v
+    rw [charFun_multivariateGaussian hpd.posSemidef, hmoment v]
+    simp [neg_div]
+  exact weakConverges_randPairLaw_signSum P hL2 (multivariateGaussian 0 S) hchar
 
 /-! ### Quadratic-form limits -/
 
@@ -230,10 +280,18 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   -- the quadratic form converges to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, whose marginals are `χ²_p` by
   -- `map_quadraticForm_multivariateGaussian_eq_chiSquared`, independent because the pair limit
   -- is a product law.
-  -- BLOCKED: depends on `weakConverges_randPairLaw_signChange_sum` (itself an open multivariate
-  -- CLT `sorry`), plus a `randPairLaw`-level Slutsky that replaces the data-coupled random
-  -- matrix `Σ̃ₙ(x)⁻¹` by `S⁻¹` — no such brick exists (`WeakConverges` API has `.map` for a
-  -- fixed continuous map only, not a converging-random-parameter continuous mapping theorem).
+  -- STATUS (re-derived): the CLT half is no longer blocked — the vector building block above is
+  -- now proved, and `Randomization/PairCLT` supplies both the Lévy packaging
+  -- (`weakConverges_of_tendsto_charFun`) and a randomization Slutsky transfer
+  -- (`weakConverges_randPairLaw_of_tendstoInProb`). What remains is genuinely two missing bricks:
+  --  (a) the law of large numbers `Σ̃ₙ → S` in probability under `Measure.pi P` (uncentred second
+  --      moments; sign-invariant, so no randomization enters), and
+  --  (b) a *product* Slutsky: the remainder is `Vₙᵀ(Σ̃ₙ⁻¹ − S⁻¹)Vₙ`, which vanishes in
+  --      probability only because `Vₙ = O_P(1)`; tightness of the randomized vector statistic is
+  --      not delivered by the remainder-→-0 transfer of `PairCLT` and has no brick here.
+  -- Once (a) and (b) exist, the fixed-map half is routine: `randPairLaw` of `q ∘ Vₙ` is the
+  -- pushforward of `randPairLaw` of `Vₙ` along `Prod.map q q`, so `WeakConverges.map` plus
+  -- `map_quadraticForm_multivariateGaussian_eq_chiSquared` gives `χ²_p ⊗ χ²_p`.
   sorry
 
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
@@ -263,9 +321,11 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
   -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
   -- mean-zero (`hmean`) is used a second time; then the argument coincides with
   -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
-  -- BLOCKED: on `weakConverges_randPairLaw_signChange_sum` (open multivariate CLT) + the same
-  -- missing `randPairLaw`-level random-parameter Slutsky, plus the sign-uniform sample-covariance
-  -- consistency (no such brick in the repo).
+  -- STATUS (re-derived): as for the modified statistic, the vector building block is now closed
+  -- and `Randomization/PairCLT` supplies the Lévy packaging and the remainder-→-0 Slutsky
+  -- transfer. The outstanding pieces are the same two — the sample-covariance law of large
+  -- numbers (here in its sign-uniform form, since `Σ̂ₙ` is *not* sign-invariant, which is where
+  -- `hmean` is used a second time) and the tightness-based product Slutsky.
   sorry
 
 end StatLean.HypothesisTesting
