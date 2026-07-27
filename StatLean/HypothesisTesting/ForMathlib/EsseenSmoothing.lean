@@ -330,6 +330,61 @@ theorem fourier_sqSincC : 𝓕 sqSincC = tentC := by
   rw [h1, h2, hinv]
   simp [tentC, tent_neg]
 
+/-! ## The dilated, translated tent as a Fourier transform -/
+
+/-- The `L¹` function whose Fourier transform is the dilated and translated tent
+`y ↦ Λ((y − m)/w)`: a modulated dilation of the squared sinc. -/
+private noncomputable def gTent (w m : ℝ) (ξ : ℝ) : ℂ :=
+  (w : ℂ) * (Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * sqSincC (w * ξ))
+
+private lemma integrable_gTent {w : ℝ} (hw : w ≠ 0) (m : ℝ) : Integrable (gTent w m) := by
+  have hbase : Integrable (fun ξ : ℝ => sqSincC (w * ξ)) :=
+    MeasureTheory.Integrable.comp_mul_left' integrable_sqSincC hw
+  have hmod : Integrable
+      (fun ξ : ℝ => Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * sqSincC (w * ξ)) := by
+    refine hbase.bdd_mul' (c := 1) ?_ (Filter.Eventually.of_forall fun ξ => ?_)
+    · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+    · rw [Complex.norm_exp_ofReal_mul_I]
+  exact hmod.const_mul _
+
+/-- **Fourier transform of a modulated dilation of the squared sinc.**
+
+`𝓕 (ξ ↦ w e^{2πi m ξ} (sin(πwξ)/(πwξ))²) (y) = Λ((y − m)/w)` for `w > 0`: dilation and
+translation of the Fejér/triangle pair `fourier_sqSincC`. -/
+private lemma fourier_gTent {w : ℝ} (hw : 0 < w) (m y : ℝ) :
+    𝓕 (gTent w m) y = tentC ((y - m) / w) := by
+  have hw' : (w : ℝ) ≠ 0 := ne_of_gt hw
+  set z : ℝ := (y - m) / w with hz
+  set G : ℝ → ℂ := fun η : ℝ => Complex.exp (((-2 * π * η * z : ℝ) : ℂ) * Complex.I) * sqSincC η
+    with hG
+  have hkey : ∀ ξ : ℝ,
+      Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) • gTent w m ξ = (w : ℂ) * G (w * ξ) := by
+    intro ξ
+    have hzw : w * z = y - m := by rw [hz]; field_simp
+    have hreal : (-2 * π * (w * ξ) * z : ℝ) = (-2 * π * ξ * y : ℝ) + (2 * π * m * ξ : ℝ) := by
+      rw [show (-2 * π * (w * ξ) * z : ℝ) = -2 * π * ξ * (w * z) from by ring, hzw]
+      ring
+    simp only [hG, smul_eq_mul, gTent]
+    rw [hreal]
+    push_cast
+    rw [add_mul, Complex.exp_add]
+    ring
+  rw [Real.fourier_real_eq_integral_exp_smul]
+  calc (∫ ξ : ℝ, Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) • gTent w m ξ)
+      = ∫ ξ : ℝ, (w : ℂ) * G (w * ξ) := integral_congr_ae (Filter.Eventually.of_forall hkey)
+    _ = (w : ℂ) * ∫ ξ : ℝ, G (w * ξ) := MeasureTheory.integral_const_mul _ _
+    _ = (w : ℂ) * (|w⁻¹| • ∫ η : ℝ, G η) := by
+          congr 1
+          exact MeasureTheory.Measure.integral_comp_mul_left G w
+    _ = ∫ η : ℝ, G η := by
+          rw [abs_of_pos (inv_pos.2 hw), Complex.real_smul, ← mul_assoc]
+          push_cast
+          rw [mul_inv_cancel₀ (by exact_mod_cast hw' : (w : ℂ) ≠ 0), one_mul]
+    _ = tentC z := by
+          rw [← fourier_sqSincC]
+          rw [Real.fourier_real_eq_integral_exp_smul]
+          exact integral_congr_ae (Filter.Eventually.of_forall fun η => rfl)
+
 /-! ## The smoothing (Parseval) identity against a finite measure -/
 
 /-- **Parseval's identity against a finite measure.** For every integrable `g : ℝ → ℂ`,
