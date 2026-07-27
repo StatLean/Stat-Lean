@@ -386,6 +386,173 @@ private lemma modifiedTSq_signChange {n : ℕ} (hn : 0 < n) (ε : Fin n → ℤ�
     quadFormInv_smul _ ((n : ℝ))⁻¹, quadFormInv_smul _ ((Real.sqrt (n : ℝ))⁻¹), hsq]
   field_simp
 
+/-! ### Perturbing the matrix inside the quadratic form
+
+The reduction of `modifiedTSq` onto the vector building block replaces the *population*
+matrix `S⁻¹` by the *sample* matrix `Σ̃ₙ⁻¹`. Everything needed to control that replacement is
+elementary and collected here: a coordinate bound on `EuclideanSpace`, the resulting
+entrywise estimate for the quadratic form, and the fact that matrix inversion is continuous
+at a nonsingular matrix in the explicit "entrywise tolerance" form that a
+convergence-in-probability argument consumes. -/
+
+/-- A coordinate of a vector is dominated by its norm. -/
+private lemma abs_ofLp_le_norm (v : EuclideanSpace ℝ (Fin p)) (j : Fin p) :
+    |v.ofLp j| ≤ ‖v‖ := by
+  have heq : v.ofLp j = ⟪v, EuclideanSpace.single j (1 : ℝ)⟫ := by
+    simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply]
+  rw [heq]
+  simpa [PiLp.norm_single] using
+    abs_real_inner_le_norm v (EuclideanSpace.single j (1 : ℝ))
+
+/-- The quadratic form written out in coordinates, for an arbitrary matrix. -/
+private lemma quadForm_eq (M : Matrix (Fin p) (Fin p) ℝ) (v : EuclideanSpace ℝ (Fin p)) :
+    v.ofLp ⬝ᵥ M.mulVec v.ofLp = ∑ j, ∑ k, M j k * (v.ofLp j * v.ofLp k) := by
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+
+/-- **Entrywise perturbation bound for a quadratic form.** If two matrices agree entrywise
+to within `η`, their quadratic forms at `v` differ by at most `p²η‖v‖²`. This is the estimate
+that splits the randomization remainder into a "matrix is close" event and a "vector is
+bounded" event. -/
+private lemma abs_quadForm_sub_le {M N : Matrix (Fin p) (Fin p) ℝ}
+    (v : EuclideanSpace ℝ (Fin p)) {η : ℝ} (hη : 0 ≤ η)
+    (h : ∀ j k, |M j k - N j k| ≤ η) :
+    |v.ofLp ⬝ᵥ M.mulVec v.ofLp - v.ofLp ⬝ᵥ N.mulVec v.ofLp| ≤ (p : ℝ) ^ 2 * η * ‖v‖ ^ 2 := by
+  have hdiff : v.ofLp ⬝ᵥ M.mulVec v.ofLp - v.ofLp ⬝ᵥ N.mulVec v.ofLp
+      = ∑ j, ∑ k, (M j k - N j k) * (v.ofLp j * v.ofLp k) := by
+    rw [quadForm_eq, quadForm_eq, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  rw [hdiff]
+  have hterm : ∀ j k : Fin p,
+      |(M j k - N j k) * (v.ofLp j * v.ofLp k)| ≤ η * ‖v‖ ^ 2 := by
+    intro j k
+    rw [abs_mul, abs_mul, sq]
+    exact mul_le_mul (h j k)
+      (mul_le_mul (abs_ofLp_le_norm v j) (abs_ofLp_le_norm v k) (abs_nonneg _) (norm_nonneg v))
+      (by positivity) ((abs_nonneg _).trans (h j k))
+  calc |∑ j, ∑ k, (M j k - N j k) * (v.ofLp j * v.ofLp k)|
+      ≤ ∑ j : Fin p, |∑ k, (M j k - N j k) * (v.ofLp j * v.ofLp k)| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _j : Fin p, ∑ _k : Fin p, η * ‖v‖ ^ 2 :=
+        Finset.sum_le_sum fun j _ =>
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun k _ => hterm j k)
+    _ = (p : ℝ) ^ 2 * η * ‖v‖ ^ 2 := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
+section MatrixInvContinuity
+
+attribute [local instance] Matrix.normedAddCommGroup
+
+/-- **Continuity of matrix inversion at a positive-definite matrix, entrywise form.** For
+every tolerance `η` there is a tolerance `ρ` such that matrices within `ρ` of `S` entrywise
+have inverses within `η` of `S⁻¹` entrywise.
+
+The `ε`-`δ` phrasing (rather than `ContinuousAt`) is what a convergence-in-probability
+argument can use: the law of large numbers controls the *entries* of the sample matrix, and
+this lemma converts that control into control of the entries of its inverse. -/
+private lemma exists_entrywise_tol_matrix_inv {S : Matrix (Fin p) (Fin p) ℝ}
+    -- USER-INPUT: nondegeneracy, so that `S` is a point of continuity of inversion
+    (hpd : S.PosDef) {η : ℝ} (hη : 0 < η) :
+    ∃ ρ > (0 : ℝ), ∀ M : Matrix (Fin p) (Fin p) ℝ,
+      (∀ j k, |M j k - S j k| < ρ) → ∀ j k, |M⁻¹ j k - S⁻¹ j k| < η := by
+  have hdet : S.det ≠ 0 := hpd.det_pos.ne'
+  have hCA : ContinuousAt (Inv.inv : Matrix (Fin p) (Fin p) ℝ → Matrix (Fin p) (Fin p) ℝ) S := by
+    refine continuousAt_matrix_inv S ?_
+    simp only [Ring.inverse_eq_inv']
+    exact continuousAt_inv₀ hdet
+  obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp hCA η hη
+  refine ⟨ρ, hρpos, fun M hM j k => ?_⟩
+  have hdist : dist M S < ρ := by
+    rw [dist_eq_norm, Matrix.norm_lt_iff hρpos]
+    intro j' k'
+    simpa [Matrix.sub_apply, Real.norm_eq_abs] using hM j' k'
+  have hlt := hρ hdist
+  rw [dist_eq_norm] at hlt
+  have hentry := Matrix.norm_entry_le_entrywise_sup_norm (M⁻¹ - S⁻¹) (i := j) (j := k)
+  simp only [Matrix.sub_apply, Real.norm_eq_abs] at hentry
+  linarith
+
+end MatrixInvContinuity
+
+/-! ### Measurability of the sample statistics
+
+`Matrix (Fin p) (Fin p) ℝ` carries no `MeasurableSpace` instance, so measurability of the
+matrix-valued sample functionals is established entrywise, through the Leibniz formula for
+the determinant and the cofactor formula for the adjugate. -/
+
+/-- Determinants of a measurable family of matrices are measurable. -/
+private lemma measurable_det_of_entries {α : Type*} [MeasurableSpace α]
+    {F : α → Matrix (Fin p) (Fin p) ℝ} (hF : ∀ j k, Measurable fun a => F a j k) :
+    Measurable fun a => (F a).det := by
+  simp only [Matrix.det_apply']
+  exact Finset.measurable_sum _ fun σ _ =>
+    (Finset.measurable_prod _ fun i _ => hF (σ i) i).const_mul _
+
+/-- Adjugates of a measurable family of matrices are measurable, entrywise. -/
+private lemma measurable_adjugate_of_entries {α : Type*} [MeasurableSpace α]
+    {F : α → Matrix (Fin p) (Fin p) ℝ} (hF : ∀ j k, Measurable fun a => F a j k) (j k : Fin p) :
+    Measurable fun a => (F a).adjugate j k := by
+  classical
+  simp only [Matrix.adjugate_apply]
+  refine measurable_det_of_entries (F := fun a => (F a).updateRow k (Pi.single j 1)) ?_
+  intro j' k'
+  by_cases h : j' = k
+  · subst h
+    simp only [Matrix.updateRow_self]
+    exact measurable_const
+  · simpa only [Matrix.updateRow_ne h] using hF j' k'
+
+/-- Inverses of a measurable family of matrices are measurable, entrywise. Mathlib's
+`Matrix.inv` is total (`0` on singular input), and so is this statement. -/
+private lemma measurable_inv_of_entries {α : Type*} [MeasurableSpace α]
+    {F : α → Matrix (Fin p) (Fin p) ℝ} (hF : ∀ j k, Measurable fun a => F a j k) (j k : Fin p) :
+    Measurable fun a => (F a)⁻¹ j k := by
+  have hpt : ∀ a, (F a)⁻¹ j k = ((F a).det)⁻¹ * (F a).adjugate j k := by
+    intro a
+    rw [Matrix.inv_def]
+    simp [Ring.inverse_eq_inv]
+  simp only [hpt]
+  exact ((measurable_det_of_entries hF).inv).mul (measurable_adjugate_of_entries hF j k)
+
+/-- A coordinate of a data vector is measurable. -/
+private lemma measurable_coord {n : ℕ} (i : Fin n) (j : Fin p) :
+    Measurable fun x : Fin n → EuclideanSpace ℝ (Fin p) => (x i).ofLp j :=
+  (continuous_ofLp_coord j).measurable.comp (measurable_pi_apply i)
+
+/-- The entries of the uncentred second-moment matrix are measurable. -/
+private lemma measurable_modifiedCovMatrix_entry {n : ℕ} (j k : Fin p) :
+    Measurable fun x : Fin n → EuclideanSpace ℝ (Fin p) => modifiedCovMatrix x j k := by
+  simp only [modifiedCovMatrix, Matrix.of_apply]
+  exact (Finset.measurable_sum _ fun i _ =>
+    (measurable_coord i j).mul (measurable_coord i k)).const_mul _
+
+/-- A coordinate of the sample mean is measurable. -/
+private lemma measurable_sampleMeanVec_coord {n : ℕ} (j : Fin p) :
+    Measurable fun x : Fin n → EuclideanSpace ℝ (Fin p) => (sampleMeanVec x).ofLp j := by
+  have hpt : ∀ x : Fin n → EuclideanSpace ℝ (Fin p),
+      (sampleMeanVec x).ofLp j = (n : ℝ)⁻¹ * ∑ i, (x i).ofLp j := by
+    intro x
+    simp [sampleMeanVec, Finset.sum_apply]
+  simp only [hpt]
+  exact (Finset.measurable_sum _ fun i _ => measurable_coord i j).const_mul _
+
+/-- The modified `T²` statistic is measurable. -/
+private lemma measurable_modifiedTSq {n : ℕ} :
+    Measurable (modifiedTSq (p := p) (n := n)) := by
+  have hfun : (modifiedTSq (p := p) (n := n))
+      = fun x => (n : ℝ) * ∑ j, ∑ k, (modifiedCovMatrix x)⁻¹ j k *
+          ((sampleMeanVec x).ofLp j * (sampleMeanVec x).ofLp k) := by
+    funext x
+    rw [modifiedTSq, quadForm_eq]
+  rw [hfun]
+  refine Measurable.const_mul (Finset.measurable_sum _ fun j _ =>
+    Finset.measurable_sum _ fun k _ => ?_) _
+  exact (measurable_inv_of_entries (fun j' k' => measurable_modifiedCovMatrix_entry j' k') j
+      k).mul ((measurable_sampleMeanVec_coord j).mul (measurable_sampleMeanVec_coord k))
+
 /-! ### Quadratic-form limits -/
 
 /-- **Sign-change randomization for the modified `T²` statistic.** The randomized pair
