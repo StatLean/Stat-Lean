@@ -195,6 +195,16 @@ private lemma scoreStatistic_eq_quadratic (J : Matrix (Fin k) (Fin k) ℝ) (hdet
   rw [mulVecE_mulVecE_inv J hdet, real_inner_comm]
   rfl
 
+omit [MeasurableSpace 𝓧] in
+/-- A Hermitian matrix acts as a self-adjoint operator. -/
+private lemma inner_mulVecE_comm {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.IsHermitian)
+    (x y : EuclideanSpace ℝ (Fin k)) : ⟪mulVecE A x, y⟫ = ⟪x, mulVecE A y⟫ := by
+  rw [real_inner_comm, mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM,
+    Matrix.inner_toEuclideanCLM, Matrix.inner_toEuclideanCLM]
+  have hAt : Aᵀ = A := by
+    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hA
+  rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, hAt, dotProduct_comm]
+
 /-- Polarization of the difference of two values of the quadratic form `q(z) = ⟪z, J z⟫`:
 `q(u) − q(v) = ⟪u−v, J u⟫ + ⟪v, J(u−v)⟫`, bilinear in the increment `u − v`. -/
 private lemma inner_mulVecE_quadratic_sub (J : Matrix (Fin k) (Fin k) ℝ)
@@ -504,19 +514,91 @@ private lemma wald_sub_score_tendstoInMeasure
   have := hmono n
   linarith
 
-/-- **logLR − score is `o_P(1)`** (simple null). Under `P^n_{θ₀}` and the second-order envelope
-condition, the likelihood-ratio and Rao score statistics differ by a quantity tending to zero
-in probability. -/
--- TODO: The intended route is the uniform LAN expansion at the random direction
--- `ĥₙ = √n(θ̂ₙ−θ₀)`: it gives `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ − ⟪ĥₙ, J ĥₙ⟫ + o_P(1)`, and
--- substituting `ĥₙ = J⁻¹Zₙ + o_P(1)` (`IsAsymptoticallyLinear`) collapses the leading terms to
--- `⟪Zₙ, J⁻¹Zₙ⟫ = Rₙ`.  That route is currently unavailable: `sup_LAN_remainder_tendsto`
--- (`UniformLAN.lean`) is *false* at its printed hypotheses — see the counterexample recorded
--- there — so the uniform expansion has to be re-established under an added regularity
--- hypothesis (a.e. continuity of `θ ↦ log p_θ(x)`), which needs a triangular-array
--- Glivenko–Cantelli theorem the library does not have.  The envelope condition alone gives only
--- `2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ + O_P(1)`, and the `O_P(1)` is exactly the `−⟪ĥₙ, J ĥₙ⟫` that
--- has to be identified, so it cannot be bypassed.  Sanctioned lifted sorry.
+omit [MeasurableSpace 𝓧] in
+/-- **Twice the quadratic form, polarized.**
+
+`2(⟪u, J v⟫ − ½⟪u, J u⟫) − ⟪v, J v⟫ = −⟪u − v, J(u − v)⟫` for a Hermitian `J`. This is the
+algebraic core of the likelihood-ratio/score comparison: substituting `ĥₙ = J⁻¹Zₙ + o_P(1)`
+into the LAN quadratic collapses it to the score statistic, with a *negative-definite*
+error that is quadratic in the linearization gap. -/
+private lemma two_inner_mulVecE_polarize {J : Matrix (Fin k) (Fin k) ℝ} (hHerm : J.IsHermitian)
+    (u v : EuclideanSpace ℝ (Fin k)) :
+    2 * (⟪u, mulVecE J v⟫ - (1 / 2 : ℝ) * ⟪u, mulVecE J u⟫) - ⟪v, mulVecE J v⟫
+      = -⟪u - v, mulVecE J (u - v)⟫ := by
+  have hmap : mulVecE J (u - v) = mulVecE J u - mulVecE J v := by
+    rw [mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM,
+      map_sub]
+  have hsymm : ⟪v, mulVecE J u⟫ = ⟪u, mulVecE J v⟫ := by
+    rw [← inner_mulVecE_comm hHerm v u, real_inner_comm]
+  rw [hmap, inner_sub_left, inner_sub_right, inner_sub_right, hsymm]
+  ring
+
+/-- **The likelihood-ratio statistic in terms of the LAN remainder.**
+
+For `n ≥ 1`, writing `ĥₙ = √n(θ̂ₙ − θ₀)` (so that `θ₀ + ĥₙ/√n = θ̂ₙ` exactly) and
+`Vₙ = J⁻¹Zₙ`,
+`2 log(Lₙ(θ̂ₙ)/Lₙ(θ₀)) − Rₙ = 2·lanRemainder(ĥₙ) − ⟪ĥₙ − Vₙ, J(ĥₙ − Vₙ)⟫`.
+Both terms on the right are small in probability: the first by the uniform LAN expansion
+(`sup_LAN_remainder_tendsto`), the second because `ĥₙ − Vₙ →_P 0`. -/
+private lemma logLRStatistic_sub_scoreStatistic_eq
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (J : Matrix (Fin k) (Fin k) ℝ)
+    (hdet : IsUnit J.det) (hHerm : J.IsHermitian)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (n : ℕ) (hn : 1 ≤ n)
+    (ω : Fin n → 𝓧) :
+    logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω
+      = 2 * lanRemainder M θ₀ ℓ J (Real.sqrt n • (est n ω - θ₀)) n ω
+        - ⟪Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω),
+            mulVecE J (Real.sqrt n • (est n ω - θ₀)
+              - mulVecE J⁻¹ (scoreSum ℓ n ω))⟫ := by
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 hnpos
+  -- `θ₀ + ĥₙ/√n` is exactly the estimator.
+  have hθ : θ₀ + (Real.sqrt n)⁻¹ • (Real.sqrt n • (est n ω - θ₀)) = est n ω := by
+    rw [smul_smul, inv_mul_cancel₀ (ne_of_gt hsq), one_smul]
+    abel
+  -- The log-likelihood ratio statistic is twice the LAN log-likelihood at `ĥₙ`.
+  have hlog : logLRStatistic M est (fun _ _ => θ₀) n ω
+      = 2 * logLikelihood M θ₀ (Real.sqrt n • (est n ω - θ₀)) n ω := by
+    simp only [logLRStatistic, logLikelihood, hθ]
+  -- The score sum is `J Vₙ`.
+  have hZ : scoreSum ℓ n ω = mulVecE J (mulVecE J⁻¹ (scoreSum ℓ n ω)) :=
+    (mulVecE_mulVecE_inv J hdet _).symm
+  have hscore : scoreStatistic J ℓ n ω
+      = ⟪mulVecE J⁻¹ (scoreSum ℓ n ω), mulVecE J (mulVecE J⁻¹ (scoreSum ℓ n ω))⟫ :=
+    scoreStatistic_eq_quadratic J hdet ℓ n ω
+  have hpol := two_inner_mulVecE_polarize hHerm (Real.sqrt n • (est n ω - θ₀))
+    (mulVecE J⁻¹ (scoreSum ℓ n ω))
+  have hlan : logLikelihood M θ₀ (Real.sqrt n • (est n ω - θ₀)) n ω
+      = lanRemainder M θ₀ ℓ J (Real.sqrt n • (est n ω - θ₀)) n ω
+        + (⟪Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω⟫
+            - (1 / 2 : ℝ) * ⟪Real.sqrt n • (est n ω - θ₀),
+                mulVecE J (Real.sqrt n • (est n ω - θ₀))⟫) := by
+    simp only [lanRemainder]
+    ring
+  rw [hlog, hlan, hscore]
+  rw [show ⟪Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω⟫
+      = ⟪Real.sqrt n • (est n ω - θ₀),
+          mulVecE J (mulVecE J⁻¹ (scoreSum ℓ n ω))⟫ from by rw [← hZ]]
+  linarith [hpol]
+
+/-- **logLR − score is `o_P(1)`** (simple null). Under `P^n_{θ₀}` and the two-point
+second-order envelope condition, the likelihood-ratio and Rao score statistics differ by a
+quantity tending to zero in probability.
+
+**AMENDED HYPOTHESIS.** `henv` is the *two-point* form of the source's second-order envelope
+condition (pairs `(θ, θ')` in the neighbourhood, not only `(θ, θ₀)`), which is what the
+uniform LAN expansion needs: at the source's one-point form the uniform expansion
+`sup_LAN_remainder_tendsto` is provably **false** (counterexample recorded in
+`UniformLAN.lean`), and the one-point form gives only
+`2[ℓₙ(θ̂)−ℓₙ(θ₀)] = 2⟪ĥₙ, Zₙ⟫ + O_P(1)` — the `O_P(1)` being exactly the `−⟪ĥₙ, J ĥₙ⟫` that
+has to be identified. Setting `θ' = θ₀` returns the printed condition. See
+`sup_LAN_remainder_tendsto` for the full discussion.
+
+Proof: apply the uniform expansion at the *random* direction `ĥₙ = √n(θ̂ₙ−θ₀)`, which is
+legitimate because `ĥₙ` is bounded in probability (`hlin` plus tightness of `Vₙ = J⁻¹Zₙ` from
+the score CLT), and then `logLRStatistic_sub_scoreStatistic_eq` reduces the difference to
+`2·lanRemainder(ĥₙ) − ⟪ĥₙ−Vₙ, J(ĥₙ−Vₙ)⟫`. -/
 private lemma logLR_sub_score_tendstoInMeasure
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
@@ -530,15 +612,115 @@ private lemma logLR_sub_score_tendstoInMeasure
     (Menv : 𝓧 → ℝ) (hMenv_meas : Measurable Menv)
     (hMenv_int : Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
     (δ : ℝ) (hδ : 0 < δ)
-    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
-      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
-        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
     ∀ ε : ℝ, 0 < ε →
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
         {ω : Fin n → 𝓧 |
           ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|})
         atTop (𝓝 0) := by
-  sorry
+  intro ε hε
+  have hdet : IsUnit J.det := (Matrix.isUnit_iff_isUnit_det J).mp hJ_pd.isUnit
+  have hHerm : J.IsHermitian := hJ_pd.isHermitian
+  set C : ℝ := ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ with hCdef
+  have hC0 : 0 ≤ C := norm_nonneg _
+  have hVmeas : ∀ n, Measurable (fun ω : Fin n → 𝓧 => mulVecE J⁻¹ (scoreSum ℓ n ω)) :=
+    fun n => (GaussianShift.matrixAction_measurable J⁻¹).comp (measurable_scoreSum ℓ hℓ n)
+  have hV := scoreSum_mulVecE_inv_weakConverges M μ hPDF θ₀ ℓ hℓ hDQM J hJ_pd hJ
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro α hα
+  obtain ⟨K, hK0, hKev⟩ :=
+    exists_radius_eventually_measureReal_norm_le hVmeas hV (α := α / 4) (by positivity)
+  -- Radius of directions: `‖ĥₙ‖ ≤ ‖Vₙ‖ + ‖ĥₙ − Vₙ‖ < K + 1` on the good event.
+  have hc0 : (0 : ℝ) < K + 1 := by positivity
+  -- Tolerance on the linearization gap making the quadratic error smaller than `ε/2`.
+  set η : ℝ := min 1 (Real.sqrt (ε / (2 * (C + 1)))) with hηdef
+  have hη0 : 0 < η :=
+    lt_min one_pos (Real.sqrt_pos.2 (by positivity))
+  have hη1 : η ≤ 1 := min_le_left _ _
+  have hηsq : C * η ^ 2 < ε / 2 := by
+    have hle : η ≤ Real.sqrt (ε / (2 * (C + 1))) := min_le_right _ _
+    have hpos : (0 : ℝ) < 2 * (C + 1) := by positivity
+    have hsq : η ^ 2 ≤ ε / (2 * (C + 1)) := by
+      have h := mul_self_le_mul_self hη0.le hle
+      rw [← pow_two, ← pow_two, Real.sq_sqrt (by positivity : (0:ℝ) ≤ ε / (2 * (C + 1)))] at h
+      exact h
+    have hmul : C * η ^ 2 ≤ C * (ε / (2 * (C + 1))) := mul_le_mul_of_nonneg_left hsq hC0
+    have hlt : C * (ε / (2 * (C + 1))) < ε / 2 := by
+      rw [mul_div_assoc', div_lt_div_iff₀ hpos (by norm_num : (0:ℝ) < 2)]
+      nlinarith
+    linarith
+  -- The uniform LAN expansion over the ball of radius `K + 1`.
+  have hULAN := sup_LAN_remainder_tendsto M μ hPDF θ₀ ℓ hℓ hDQM J hJ Menv hMenv_meas
+    hMenv_int δ hδ henv (K + 1) hc0 (ε / 4) (by positivity)
+  filter_upwards [hKev, (hlin η hη0).eventually_lt_const (u := α / 4) (by positivity),
+    (NormedAddGroup.tendsto_nhds_zero.1 hULAN) (α / 4) (by positivity),
+    eventually_ge_atTop 1] with n hnK hnlin hnLAN hn1
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg] at hnLAN
+  -- The bad event splits into three pieces.
+  have hincl : {ω : Fin n → 𝓧 |
+        ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|}
+      ⊆ {ω : Fin n → 𝓧 | K ≤ ‖mulVecE J⁻¹ (scoreSum ℓ n ω)‖}
+        ∪ ({ω : Fin n → 𝓧 |
+              η ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖}
+          ∪ {ω : Fin n → 𝓧 | ∃ h : EuclideanSpace ℝ (Fin k),
+              ‖h‖ ≤ K + 1 ∧ ε / 4 ≤ |lanRemainder M θ₀ ℓ J h n ω|}) := by
+    intro ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_exists, not_and, not_le] at hcon
+    obtain ⟨hVsmall, hgapsmall, hlanSmall⟩ := hcon
+    -- `ĥₙ` lies in the ball of radius `K + 1`.
+    have hball : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + 1 := by
+      have hsplit := norm_le_norm_add_norm_sub' (Real.sqrt n • (est n ω - θ₀))
+        (mulVecE J⁻¹ (scoreSum ℓ n ω))
+      linarith [hVsmall, hgapsmall, hη1]
+    have hlanval : |lanRemainder M θ₀ ℓ J (Real.sqrt n • (est n ω - θ₀)) n ω| < ε / 4 := by
+      by_contra hbad
+      exact absurd (hlanSmall _ hball) (not_lt.2 (not_lt.1 hbad))
+    -- The quadratic error is controlled by the linearization gap.
+    have hquad : |⟪Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω),
+        mulVecE J (Real.sqrt n • (est n ω - θ₀)
+          - mulVecE J⁻¹ (scoreSum ℓ n ω))⟫| < ε / 2 := by
+      set w : EuclideanSpace ℝ (Fin k) :=
+        Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω) with hwdef
+      have hop : ‖mulVecE J w‖ ≤ C * ‖w‖ := by
+        rw [mulVecE_eq_toEuclideanCLM, hCdef]
+        exact ContinuousLinearMap.le_opNorm _ w
+      have hb : |⟪w, mulVecE J w⟫| ≤ C * ‖w‖ ^ 2 := by
+        refine le_trans (abs_real_inner_le_norm _ _) ?_
+        calc ‖w‖ * ‖mulVecE J w‖ ≤ ‖w‖ * (C * ‖w‖) :=
+              mul_le_mul_of_nonneg_left hop (norm_nonneg _)
+          _ = C * ‖w‖ ^ 2 := by ring
+      have hwlt : ‖w‖ < η := by rw [hwdef]; exact hgapsmall
+      have hsq2 : ‖w‖ ^ 2 ≤ η ^ 2 := by
+        have h := mul_self_le_mul_self (norm_nonneg w) hwlt.le
+        rw [← pow_two, ← pow_two] at h
+        exact h
+      have : C * ‖w‖ ^ 2 ≤ C * η ^ 2 := mul_le_mul_of_nonneg_left hsq2 hC0
+      linarith
+    have hkey : |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω| < ε := by
+      rw [logLRStatistic_sub_scoreStatistic_eq M θ₀ ℓ J hdet hHerm est n hn1 ω]
+      refine lt_of_le_of_lt (abs_sub _ _) ?_
+      rw [abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+      linarith
+    exact absurd hω (not_le.2 hkey)
+  -- Subadditivity and the three eventual bounds.
+  have hmono := measureReal_mono (μ := productMeasure M μ θ₀ n) hincl (measure_ne_top _ _)
+  have hu1 := measureReal_union_le (μ := productMeasure M μ θ₀ n)
+    {ω : Fin n → 𝓧 | K ≤ ‖mulVecE J⁻¹ (scoreSum ℓ n ω)‖}
+    ({ω : Fin n → 𝓧 |
+        η ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖}
+      ∪ {ω : Fin n → 𝓧 | ∃ h : EuclideanSpace ℝ (Fin k),
+          ‖h‖ ≤ K + 1 ∧ ε / 4 ≤ |lanRemainder M θ₀ ℓ J h n ω|})
+  have hu2 := measureReal_union_le (μ := productMeasure M μ θ₀ n)
+    {ω : Fin n → 𝓧 |
+      η ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖}
+    {ω : Fin n → 𝓧 | ∃ h : EuclideanSpace ℝ (Fin k),
+      ‖h‖ ≤ K + 1 ∧ ε / 4 ≤ |lanRemainder M θ₀ ℓ J h n ω|}
+  linarith [hnlin.le]
 
 /-- **Asymptotic equivalence of the trinity.**
 
@@ -574,10 +756,13 @@ theorem trinity_asymptotically_equivalent
       Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
     -- USER-INPUT: radius of the neighbourhood on which the envelope condition holds
     (δ : ℝ) (hδ : 0 < δ)
-    -- USER-INPUT: second-order envelope condition on the log-density increment
-    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
-      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
-        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    -- USER-INPUT: two-point second-order envelope condition on the log-density increment.
+    -- AMENDED: the source's one-point condition (the case `θ' = θ₀`) makes the uniform LAN
+    -- expansion this proof needs provably false; see `sup_LAN_remainder_tendsto`.
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
     (∀ ε : ℝ, 0 < ε →
         Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω : Fin n → 𝓧 |
@@ -763,10 +948,13 @@ theorem logLR_tendsto_chiSquared
       Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
     -- USER-INPUT: radius of the neighbourhood on which the envelope condition holds
     (δ : ℝ) (hδ : 0 < δ)
-    -- USER-INPUT: second-order envelope condition on the log-density increment
-    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
-      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
-        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    -- USER-INPUT: two-point second-order envelope condition on the log-density increment.
+    -- AMENDED: the source's one-point condition (the case `θ' = θ₀`) makes the uniform LAN
+    -- expansion this proof needs provably false; see `sup_LAN_remainder_tendsto`.
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map (logLRStatistic M est (fun _ _ => θ₀) n))
       (MultipleTesting.chiSquared k) := by
@@ -808,16 +996,6 @@ omit [MeasurableSpace 𝓧] in
 private lemma mulVecE_one (z : EuclideanSpace ℝ (Fin k)) :
     mulVecE (1 : Matrix (Fin k) (Fin k) ℝ) z = z := by
   rw [mulVecE_eq_toEuclideanCLM, map_one]; rfl
-
-omit [MeasurableSpace 𝓧] in
-/-- A Hermitian matrix acts as a self-adjoint operator. -/
-private lemma inner_mulVecE_comm {A : Matrix (Fin k) (Fin k) ℝ} (hA : A.IsHermitian)
-    (x y : EuclideanSpace ℝ (Fin k)) : ⟪mulVecE A x, y⟫ = ⟪x, mulVecE A y⟫ := by
-  rw [real_inner_comm, mulVecE_eq_toEuclideanCLM, mulVecE_eq_toEuclideanCLM,
-    Matrix.inner_toEuclideanCLM, Matrix.inner_toEuclideanCLM]
-  have hAt : Aᵀ = A := by
-    rw [← Matrix.conjTranspose_eq_transpose_of_trivial]; exact hA
-  rw [Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, hAt, dotProduct_comm]
 
 /-- **Pushforward of a standard Gaussian under a coisometry.** If `φ` has norm at most one and
 admits an isometric right inverse `ψ`, then `φ` maps the standard Gaussian of `E` to the
@@ -1152,9 +1330,10 @@ private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (Menv : 𝓧 → ℝ) (hMenv_meas : Measurable Menv)
     (hMenv_int : Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
     (δ : ℝ) (hδ : 0 < δ)
-    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
-      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
-        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
     ∀ ε : ℝ, 0 < ε →
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
         {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
@@ -1223,10 +1402,13 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
       Integrable Menv (μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x)))
     -- USER-INPUT: radius of the neighbourhood on which the envelope condition holds
     (δ : ℝ) (hδ : 0 < δ)
-    -- USER-INPUT: second-order envelope condition on the log-density increment
-    (henv : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ∀ x : 𝓧,
-      |Real.log (M.density θ x) - Real.log (M.density θ₀ x) - ⟪θ - θ₀, ℓ x⟫|
-        ≤ Menv x * ‖θ - θ₀‖ ^ 2) :
+    -- USER-INPUT: two-point second-order envelope condition on the log-density increment.
+    -- AMENDED: the source's one-point condition (the case `θ' = θ₀`) makes the uniform LAN
+    -- expansion this proof needs provably false; see `sup_LAN_remainder_tendsto`.
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
     WeakConverges
       (fun n => (productMeasure M μ θ₀ n).map
         (logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n))
