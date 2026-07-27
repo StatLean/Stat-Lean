@@ -67,7 +67,10 @@ the inverse prior small-ball mass). In particular, predictive-null sets are
 `bvmMixture`-null. -/
 theorem bvmMixture_absolutelyContinuous (u : ℝ) (n : ℕ) :
     bvmMixture κ π θ₀ u n ≪ iidKernel κ n ∘ₘ π := by
-  sorry
+  have hc : (π[|Metric.ball θ₀ (u / Real.sqrt n)]) ≪ π := by
+    rw [ProbabilityTheory.cond]
+    exact (Measure.absolutelyContinuous_of_le Measure.restrict_le_self).smul_left _
+  exact Measure.AbsolutelyContinuous.comp_right hc (iidKernel κ n)
 
 /-- **Asymptotic log-normality of the local log-likelihood ratio** under `P^n_{θ₀}`:
 `log(dP^n_{θ₀+h/√n}/dP^n_{θ₀}) ⇝ N(−v/2, v)` with `v = ⟪h, J h⟫` (vdV Theorem 7.2 +
