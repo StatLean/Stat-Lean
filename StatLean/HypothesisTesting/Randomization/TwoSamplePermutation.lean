@@ -291,6 +291,62 @@ private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
     Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
 
+/-- **The two-sample randomization distribution as a *standardized* permuted block sum.**
+Dividing the centred pooled population by a deterministic `√v > 0` and dividing the threshold
+of `randDist_twoSampleMeanDiff_eq` by the same constant puts the left-hand side in exactly the
+shape of `ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum`, whose hypotheses ask for a
+population normalized in the second moment and a threshold measured in units of
+`blockSumScale`. The resulting threshold is
+`θ = t √(n/N) / √v`, and `θ → t/τ` precisely when `v → v̄ = τ²/(1+λ)` and `n/N → 1/(1+λ)`. -/
+private lemma randDist_twoSampleMeanDiff_eq_std (m n : ℕ) (hm : 0 < m) (hn : 0 < n)
+    {v : ℝ} (hv : 0 < v) (x : Fin (m + n) → ℝ) (t : ℝ) :
+    randDist (Equiv.Perm (Fin (m + n))) (twoSampleMeanDiff m n) x t
+      = (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)),
+          (if ∑ i : Fin m, (Real.sqrt v)⁻¹ * pooledCentred m n x (σ (Fin.castAdd n i))
+              ≤ t * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) / Real.sqrt v
+                * blockSumScale (m + n) m then (1 : ℝ) else 0) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+  have hNpos : (0 : ℝ) < ((m + n : ℕ) : ℝ) := by rw [hNcast]; linarith
+  have hsm : (0 : ℝ) < Real.sqrt (m : ℝ) := Real.sqrt_pos.2 hmR
+  have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.2 hv
+  -- the standardizing scale, factored
+  have hbss : blockSumScale (m + n) m
+      = Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) * Real.sqrt (m : ℝ) := by
+    rw [blockSumScale, ← Real.sqrt_mul (by positivity)]
+    congr 1
+    rw [hNcast]
+    field_simp
+    ring
+  -- the threshold identity
+  have hkey : t * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) / Real.sqrt v
+        * blockSumScale (m + n) m
+      = (Real.sqrt v)⁻¹ * (t * ((m : ℝ) * n / (Real.sqrt (m : ℝ) * ((m + n : ℕ) : ℝ)))) := by
+    rw [hbss]
+    have hA : Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ))
+        * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) = (n : ℝ) / ((m + n : ℕ) : ℝ) :=
+      Real.mul_self_sqrt (by positivity)
+    have hS : Real.sqrt (m : ℝ) * Real.sqrt (m : ℝ) = (m : ℝ) :=
+      Real.mul_self_sqrt hmR.le
+    set N' : ℝ := ((m + n : ℕ) : ℝ) with hN'
+    set A : ℝ := Real.sqrt ((n : ℝ) / N') with hAdef
+    set S : ℝ := Real.sqrt (m : ℝ) with hSdef
+    have hn' : (n : ℝ) = A * A * N' := by rw [hA]; field_simp
+    rw [← hS, hn']
+    field_simp
+  rw [randDist_twoSampleMeanDiff_eq m n hm hn x t]
+  congr 1
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  refine if_congr ?_ rfl rfl
+  rw [← Finset.mul_sum, hkey]
+  constructor
+  · intro h
+    exact mul_le_mul_of_nonneg_left h (by positivity)
+  · intro h
+    exact le_of_mul_le_mul_left h (by positivity)
+
 /-! ### The combinatorial central limit theorem at a moving threshold
 
 The two-sample statistic reaches the combinatorial central limit theorem through a threshold
