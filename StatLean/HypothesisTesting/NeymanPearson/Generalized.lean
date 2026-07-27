@@ -900,18 +900,25 @@ theorem exists_multipliers_of_max {m : ℕ}
         (∀ ψ, IsCriticalFn ψ → (∀ i, ∫ x, ψ x * f i.castSucc x ∂μ = c i) →
           ∫ x, ψ x * f (Fin.last m) x ∂μ ≤ ∫ x, φ x * f (Fin.last m) x ∂μ) →
         HasMultiplierShape μ f k φ := by
-  -- OBSTRUCTION (deep debt). This is the necessity/existence half of the inner-point clause
-  -- and it needs two ingredients neither of which is available. (1) The attainable-moment set
-  -- must be convex AND closed; convexity is proved in `convex_isClosed_momentSet`, but its
-  -- closedness is the open weak-sequential-compactness theorem `ForMathlib/TestsWeakCompact`.
-  -- (2) Given a convex closed set with `c` in its interior, one lifts `c` along the objective
-  -- to the boundary of the augmented moment body in `Fin (m+1) → ℝ` and applies a
-  -- separating-/supporting-hyperplane argument (`geometric_hahn_banach`/`Convex.exists_ge`);
-  -- the hyperplane's normal supplies the multipliers `k`, and every maximizer is then forced
-  -- onto the multiplier shape a.e. by the complementary-slackness of that hyperplane. Both the
-  -- compactness input and the hyperplane-to-a.e.-shape bridge are missing, so no honest proof
-  -- is available without `ForMathlib/TestsWeakCompact`.
-  sorry
+  -- The constraint class is nonempty: `c` lies in the moment set, being an inner point of it.
+  obtain ⟨φ₁, hφ₁c, hφ₁m⟩ : c ∈ momentSet μ fun i => f i.castSucc := interior_subset hc
+  obtain ⟨φ₀, hφ₀, hcon₀, hmax₀⟩ :=
+    exists_test_max_integral_of_constraints μ f hmeas hint c ⟨φ₁, hφ₁c, hφ₁m⟩
+  -- The supporting hyperplane at the top of the fibre over `c` supplies the multipliers.
+  obtain ⟨k, hk⟩ := exists_lagrange_multipliers μ f hmeas hint hc hφ₀ hcon₀ hmax₀
+  refine ⟨k, ⟨φ₀, hφ₀, hcon₀, hasMultiplierShape_of_lagrangian_max hmeas hint k hφ₀ hk⟩, ?_⟩
+  -- Every maximizer has the same objective value and the same constraints as `φ₀`, hence the
+  -- same Lagrangian value, hence — by the same brick — the same shape.
+  intro φ hφ hcon hmax
+  refine hasMultiplierShape_of_lagrangian_max hmeas hint k hφ fun ψ hψ => ?_
+  have hval : ∫ x, φ x * f (Fin.last m) x ∂μ = ∫ x, φ₀ x * f (Fin.last m) x ∂μ :=
+    le_antisymm (hmax₀ φ hφ hcon) (hmax φ₀ hφ₀ hcon₀)
+  have heq : ∫ x, φ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ
+      = ∫ x, φ₀ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ := by
+    rw [integral_lagrangian hint k hφ, integral_lagrangian hint k hφ₀, hval]
+    exact congrArg _ (Finset.sum_congr rfl fun i _ => by rw [hcon i, hcon₀ i])
+  rw [heq]
+  exact hk ψ hψ
 
 /-- **A test with prescribed sizes.** Given `m + 1` probability densities and a level
 `0 < α < 1`, there is a test whose size against each of the first `m` distributions is
