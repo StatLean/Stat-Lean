@@ -819,6 +819,86 @@ private lemma statLaw_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure 
   have := (mapUT_ac hU hT hUT hp hq).map (f := Prod.snd) measurable_snd
   rwa [hsnd p, hsnd q] at this
 
+/-- **Power is continuous along segments of `Ω`.** For a critical function of the pair
+`(U, T)`, the power at `(1−sₙ)p + sₙq` converges to the power at `p` as `sₙ → 0`. Both the
+numerator and the denominator of the ratio representation converge by dominated convergence,
+the dominating function being the two-point envelope `e^{⟪p,·⟫} + e^{⟪q,·⟫}`, which is
+`ν`-integrable because both endpoints lie in `Ω`. This is what upgrades the level inequality
+at a boundary parameter to similarity, and it uses only convexity of `Ω`. -/
+private lemma tendsto_integral_canonical_segment [OpensMeasurableSpace Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ : Convex ℝ Ω) {p q : ℝ × Ξ} (hp : p ∈ Ω) (hq : q ∈ Ω)
+    {g : ℝ × Ξ → ℝ} (hgm : Measurable g) (hgb : ∀ z, |g z| ≤ 1)
+    {s : ℕ → ℝ} (hs01 : ∀ n, s n ∈ Set.Icc (0 : ℝ) 1)
+    (hs : Filter.Tendsto s Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun n => ∫ x, g (U x, T x) ∂(P ((1 - s n) • p + s n • q)))
+      Filter.atTop (nhds (∫ x, g (U x, T x) ∂(P p))) := by
+  set r : ℕ → ℝ × Ξ := fun n => (1 - s n) • p + s n • q with hrdef
+  have hrΩ : ∀ n, r n ∈ Ω := fun n =>
+    hΩ hp hq (by linarith [(hs01 n).2]) (hs01 n).1 (by ring)
+  obtain ⟨hIp, hnormp⟩ := integrable_canExp hU hT hUT hp
+  obtain ⟨hIq, -⟩ := integrable_canExp hU hT hUT hq
+  have hCp := canonicalUT_const_pos hU hT hUT hp
+  -- the two-point envelope dominates every exponential on the segment
+  have hdom : ∀ n, ∀ z : ℝ × Ξ,
+      Real.exp (canExp (r n) z) ≤ Real.exp (canExp p z) + Real.exp (canExp q z) := by
+    intro n z
+    rw [hrdef, canExp_segment]
+    exact exp_segment_le (hs01 n).1 (hs01 n).2
+  -- dominated convergence for an arbitrary bounded weight
+  have hJ : ∀ h : ℝ × Ξ → ℝ, Measurable h → (∀ z, |h z| ≤ 1) →
+      Filter.Tendsto (fun n => ∫ z, h z * Real.exp (canExp (r n) z) ∂ν) Filter.atTop
+        (nhds (∫ z, h z * Real.exp (canExp p z) ∂ν)) := by
+    intro h hhm hhb
+    refine tendsto_integral_of_dominated_convergence
+      (fun z => Real.exp (canExp p z) + Real.exp (canExp q z))
+      (fun n => (hhm.mul (measurable_canExp (r n)).exp).aestronglyMeasurable)
+      (hIp.add hIq) (fun n => Filter.Eventually.of_forall fun z => ?_)
+      (Filter.Eventually.of_forall fun z => ?_)
+    · rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+      calc |h z| * Real.exp (canExp (r n) z) ≤ 1 * Real.exp (canExp (r n) z) := by
+            gcongr; exact hhb z
+        _ = Real.exp (canExp (r n) z) := one_mul _
+        _ ≤ _ := hdom n z
+    · have hlin : Filter.Tendsto (fun n => (1 - s n) * canExp p z + s n * canExp q z)
+          Filter.atTop (nhds (canExp p z)) := by
+        have h1 : Filter.Tendsto (fun n => 1 - s n) Filter.atTop (nhds (1 : ℝ)) := by
+          simpa using Filter.Tendsto.const_sub (1 : ℝ) hs
+        have h2 := (h1.mul_const (canExp p z)).add (hs.mul_const (canExp q z))
+        simpa using h2
+      have hcomp := ((Real.continuous_exp.tendsto (canExp p z)).comp hlin).const_mul (h z)
+      refine hcomp.congr fun n => ?_
+      rw [Function.comp_apply, hrdef, canExp_segment]
+  -- the ratio representation of the power
+  have hratio : ∀ n, ∫ x, g (U x, T x) ∂(P (r n))
+      = (∫ z, g z * Real.exp (canExp (r n) z) ∂ν)
+        / ∫ z, Real.exp (canExp (r n) z) ∂ν := by
+    intro n
+    obtain ⟨-, hnorm⟩ := integrable_canExp hU hT hUT (hrΩ n)
+    have hCn := canonicalUT_const_pos hU hT hUT (hrΩ n)
+    have hIn : (∫ z, Real.exp (canExp (r n) z) ∂ν) = 1 / C (r n) := by
+      field_simp
+      linarith [hnorm]
+    rw [integral_comp_UT_eq hU hT hUT (hrΩ n) hgm, hIn]
+    field_simp
+  have hratiop : ∫ x, g (U x, T x) ∂(P p)
+      = (∫ z, g z * Real.exp (canExp p z) ∂ν) / ∫ z, Real.exp (canExp p z) ∂ν := by
+    have hIn : (∫ z, Real.exp (canExp p z) ∂ν) = 1 / C p := by
+      field_simp
+      linarith [hnormp]
+    rw [integral_comp_UT_eq hU hT hUT hp hgm, hIn]
+    field_simp
+  have hden : (∫ z, Real.exp (canExp p z) ∂ν) ≠ 0 := by
+    intro h0
+    rw [h0, mul_zero] at hnormp
+    exact absurd hnormp (by norm_num)
+  have hnum := hJ g hgm hgb
+  have hdenlim := hJ (fun _ => (1 : ℝ)) measurable_const (fun _ => by norm_num)
+  simp only [one_mul] at hdenlim
+  simp only [hratiop]
+  exact (hnum.div hdenlim hden).congr fun n => (hratio n).symm
+
 /-- A convex parameter set reaching strictly below and strictly above `θ₀` meets the boundary
 surface `θ = θ₀`. -/
 private lemma exists_mem_fst_eq (hΩ : Convex ℝ Ω) {θ₀ : ℝ}
