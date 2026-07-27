@@ -421,6 +421,24 @@ private lemma smul_tent_eq_max {w δ : ℝ} (hw : 0 ≤ w) (hδ : 0 < δ) (t : �
   · subst hw'
     simp [max_eq_left (by simpa using abs_nonneg t : (0 : ℝ) - |t| ≤ 0)]
 
+private lemma integrable_gTent' {w : ℝ} (hw : 0 ≤ w) (m : ℝ) : Integrable (gTent w m) := by
+  rcases hw.lt_or_eq with h | h
+  · exact integrable_gTent (ne_of_gt h) m
+  · have hz : gTent w m = fun _ : ℝ => (0 : ℂ) := by funext ξ; simp [gTent, ← h]
+    rw [hz]
+    exact integrable_zero _ _ _
+
+/-- The scaled tent transform, including the degenerate width `w = 0` (where both sides
+vanish). -/
+private lemma smul_fourier_gTent {w : ℝ} (hw : 0 ≤ w) (δ m y : ℝ) :
+    ((w / δ : ℝ) : ℂ) * 𝓕 (gTent w m) y = (((w / δ) * tent ((y - m) / w) : ℝ) : ℂ) := by
+  rcases hw.lt_or_eq with h | h
+  · rw [fourier_gTent h m y]
+    simp [tentC]
+  · have hz : gTent w m = fun _ : ℝ => (0 : ℂ) := by funext ξ; simp [gTent, ← h]
+    rw [hz, ← h]
+    simp [Real.fourier_real_eq_integral_exp_smul]
+
 /-! ## The smoothing (Parseval) identity against a finite measure -/
 
 /-- **Parseval's identity against a finite measure.** For every integrable `g : ℝ → ℂ`,
@@ -737,5 +755,116 @@ private lemma trapezoid_eq_tent_combination {v u δ : ℝ} (hδ : 0 < δ) (hvu :
     ← mul_sub, trapezoid_core _ _ _ hw2 hδ, hw1,
     smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0:ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
   ring
+
+/-! ## The trapezoid as a Fourier transform, with the classical `1/|ξ|` envelope -/
+
+/-- **Every trapezoid is the Fourier transform of an integrable function obeying the classical
+`1/(π|ξ|)` envelope.**
+
+This is the Fourier half of Esseen's argument for the test functions produced by
+`abs_measure_Iic_sub_le_of_trapezoid`. Writing the trapezoid as a difference of two co-centred
+dilated tents (`trapezoid_eq_tent_combination`) and transforming each piece
+(`fourier_gTent`) gives
+
+`g ξ = e^{2πi m ξ} (sin²(π w₁ ξ) − sin²(π w₂ ξ)) / (δ π² ξ²)`,
+
+whose modulus is `|sin(π(w₁ + w₂)ξ) sin(πδξ)| / (δ π² ξ²) ≤ 1/(π|ξ|)`. The envelope is
+**independent of `v` and `u`** — the cancellation between the two tents is exactly what removes
+the length of the plateau from the bound. It is the `1/|t|` weight of Lévy's inversion formula,
+obtained here without any Stieltjes-level inversion theorem. -/
+theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤ u) :
+    ∃ g : ℝ → ℂ, Integrable g ∧
+      (∀ y : ℝ, 𝓕 g y = ((trapezoid v u δ y : ℝ) : ℂ)) ∧
+      (∀ ξ : ℝ, ‖g ξ‖ ≤ 1 / (π * |ξ|)) := by
+  have hπ : (0 : ℝ) < π := Real.pi_pos
+  set w₁ : ℝ := (u - v + δ) / 2 with hw₁
+  set w₂ : ℝ := (u - v - δ) / 2 with hw₂
+  set m : ℝ := (v + u + δ) / 2 with hm
+  have hw₂0 : 0 ≤ w₂ := by rw [hw₂]; linarith
+  have hw₁0 : 0 < w₁ := by rw [hw₁]; linarith
+  have hdiff : w₁ - w₂ = δ := by rw [hw₁, hw₂]; ring
+  refine ⟨fun ξ => ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ,
+    ((integrable_gTent (ne_of_gt hw₁0) m).const_mul _).sub
+      ((integrable_gTent' hw₂0 m).const_mul _), fun y => ?_, fun ξ => ?_⟩
+  · -- the Fourier transform is the trapezoid
+    have hI : ∀ w : ℝ, 0 ≤ w → Integrable (fun ξ : ℝ =>
+        Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w m ξ) := by
+      intro w hw
+      refine (integrable_gTent' hw m).bdd_mul' (c := 1) ?_
+        (Filter.Eventually.of_forall fun ξ => ?_)
+      · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+      · rw [Complex.norm_exp_ofReal_mul_I]
+    have hsplit : 𝓕 (fun ξ : ℝ => ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ
+          - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ) y
+        = ((w₁ / δ : ℝ) : ℂ) * 𝓕 (gTent w₁ m) y - ((w₂ / δ : ℝ) : ℂ) * 𝓕 (gTent w₂ m) y := by
+      have expand : ∀ ξ : ℝ, Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I)
+            * (((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ)
+          = ((w₁ / δ : ℝ) : ℂ)
+              * (Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w₁ m ξ)
+            - ((w₂ / δ : ℝ) : ℂ)
+              * (Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w₂ m ξ) :=
+        fun ξ => by ring
+      simp only [Real.fourier_real_eq_integral_exp_smul, smul_eq_mul]
+      have hc : ∀ (c : ℂ) (f : ℝ → ℂ), (∫ a : ℝ, c * f a) = c * ∫ a : ℝ, f a := by
+        intro c f
+        simpa using MeasureTheory.integral_smul c f
+      rw [integral_congr_ae (Filter.Eventually.of_forall expand),
+        MeasureTheory.integral_sub ((hI w₁ hw₁0.le).const_mul _) ((hI w₂ hw₂0).const_mul _),
+        hc, hc]
+    rw [hsplit, smul_fourier_gTent hw₁0.le δ m y, smul_fourier_gTent hw₂0 δ m y,
+      trapezoid_eq_tent_combination hδ hvu y, ← hw₁, ← hw₂, ← hm]
+    push_cast
+    ring
+  · -- the envelope
+    dsimp only
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · simp [gTent, sqSincC]
+    have hξa : (0 : ℝ) < |ξ| := abs_pos.2 hξ
+    have hval : ∀ w : ℝ,
+        (w / δ) * (w * ((Real.sin (π * (w * ξ)) / (π * (w * ξ))) ^ 2))
+          = Real.sin (π * (w * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) := by
+      intro w
+      rcases eq_or_ne w 0 with rfl | hw
+      · simp
+      · field_simp
+        try ring
+    set A : ℝ := Real.sin (π * (w₁ * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) with hAdef
+    set B : ℝ := Real.sin (π * (w₂ * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) with hBdef
+    have hg : ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ
+        = Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * ((A - B : ℝ) : ℂ) := by
+      have e : ∀ w : ℝ, ((w / δ : ℝ) : ℂ) * gTent w m ξ
+          = Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I)
+              * (((Real.sin (π * (w * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) : ℝ)) : ℂ) := by
+        intro w
+        simp only [gTent, sqSincC]
+        rw [← hval w]
+        push_cast
+        ring
+      rw [e w₁, e w₂, hAdef, hBdef]
+      push_cast
+      ring
+    rw [hg, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, Complex.norm_real,
+      Real.norm_eq_abs]
+    -- the sine-difference identity and the two elementary bounds
+    have hAB : A - B
+        = (Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2) / (δ * π ^ 2 * ξ ^ 2) := by
+      rw [hAdef, hBdef]; ring
+    have hsin : Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2
+        = Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ)) * Real.sin (π * δ * ξ) := by
+      have harg : π * (w₁ * ξ) - π * (w₂ * ξ) = π * δ * ξ := by
+        rw [← hdiff]; ring
+      rw [← harg, Real.sin_add, Real.sin_sub]
+      nlinarith [Real.sin_sq_add_cos_sq (π * (w₁ * ξ)), Real.sin_sq_add_cos_sq (π * (w₂ * ξ))]
+    have h1 : |Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ))| ≤ 1 := Real.abs_sin_le_one _
+    have h2 : |Real.sin (π * δ * ξ)| ≤ π * δ * |ξ| := by
+      refine Real.abs_sin_le_abs.trans_eq ?_
+      rw [abs_mul, abs_mul, abs_of_pos hπ, abs_of_pos hδ]
+    have hprod : |Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ))| * |Real.sin (π * δ * ξ)|
+        ≤ π * δ * |ξ| :=
+      (mul_le_mul h1 h2 (abs_nonneg _) zero_le_one).trans_eq (one_mul _)
+    rw [hAB, hsin, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2), abs_mul,
+      show ξ ^ 2 = |ξ| ^ 2 from (sq_abs ξ).symm,
+      div_le_div_iff₀ (by positivity) (by positivity)]
+    nlinarith [hprod, hξa, hδ, hπ, abs_nonneg (Real.sin (π * δ * ξ))]
 
 end StatLean.HypothesisTesting
