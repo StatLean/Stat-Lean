@@ -2597,6 +2597,106 @@ theorem isUMPU_conditional_outside
     rw [← hψ'pow p' hp'Ω]
     exact hfin
 
+/-! ### Bricks for the point null
+
+The point-null optimality argument needs, beyond the interval machinery above, a separation
+by an *affine* function (rather than by a three-exponential combination) and an exponential
+majorant for `|u|`. Both are proved here; what is still missing is recorded at
+`isUMPU_conditional_point`. -/
+
+/-- Three-point convexity of `u ↦ exp (c u)`, in cleared-denominator form. -/
+private lemma exp_three_point (c : ℝ) {x y z : ℝ} (hxy : x < y) (hyz : y < z) :
+    (z - x) * Real.exp (c * y)
+      ≤ (z - y) * Real.exp (c * x) + (y - x) * Real.exp (c * z) := by
+  have hzx : 0 < z - x := by linarith
+  have hzxne : z - x ≠ 0 := ne_of_gt hzx
+  set a : ℝ := (z - y) / (z - x) with ha
+  set b : ℝ := (y - x) / (z - x) with hb
+  have ha0 : 0 ≤ a := div_nonneg (by linarith) hzx.le
+  have hb0 : 0 ≤ b := div_nonneg (by linarith) hzx.le
+  have hab : a + b = 1 := by
+    rw [ha, hb]; field_simp; ring
+  have hmid : a * (c * x) + b * (c * z) = c * y := by
+    rw [ha, hb]; field_simp; ring
+  have hconv := convexOn_exp.2 (Set.mem_univ (c * x)) (Set.mem_univ (c * z)) ha0 hb0 hab
+  simp only [smul_eq_mul] at hconv
+  rw [hmid] at hconv
+  have h := mul_le_mul_of_nonneg_left hconv hzx.le
+  have hae : (z - x) * a = z - y := by rw [ha]; field_simp
+  have hbe : (z - x) * b = y - x := by rw [hb]; field_simp
+  have hrw : (z - x) * (a * Real.exp (c * x) + b * Real.exp (c * z))
+      = (z - y) * Real.exp (c * x) + (y - x) * Real.exp (c * z) := by
+    rw [mul_add, ← mul_assoc, ← mul_assoc, hae, hbe]
+  linarith [h, hrw.le, hrw.ge]
+
+/-- **Secant separation.** For `C₁ < C₂` there is an affine function `A + B u` which meets
+`exp (c u)` at `C₁` and at `C₂`, lies above it inside the interval and below it outside.
+
+This is the separation the *point* null needs, and it is the exact analogue of the
+three-exponential separations `exists_sep_exp3_gt` / `exists_sep_exp3_lt` used for the
+interval nulls: with `g = φ − ψ` — the difference of the outside-interval test and a
+competitor — one gets `g(u)·(exp (c u) − A − B u) ≥ 0` for every `u`, because `g ≥ 0`
+outside `[C₁, C₂]` and `g ≤ 0` inside, and the two side conditions of the point null
+(`∫ g dκ = 0` and `∫ u g(u) dκ = 0`) annihilate the two affine terms `A` and `B u`.
+
+The two endpoint equalities are what makes the interval closed on both sides: they let the
+boundary atoms be assigned to either side without changing the integral. -/
+private lemma exists_sep_line (c : ℝ) {C₁ C₂ : ℝ} (hC : C₁ < C₂) :
+    ∃ A B : ℝ,
+      Real.exp (c * C₁) - A - B * C₁ = 0 ∧ Real.exp (c * C₂) - A - B * C₂ = 0 ∧
+      (∀ u : ℝ, C₁ < u → u < C₂ → Real.exp (c * u) - A - B * u ≤ 0) ∧
+      (∀ u : ℝ, u < C₁ ∨ C₂ < u → 0 ≤ Real.exp (c * u) - A - B * u) := by
+  set E₁ : ℝ := Real.exp (c * C₁) with hE₁
+  set E₂ : ℝ := Real.exp (c * C₂) with hE₂
+  have hd : (0 : ℝ) < C₂ - C₁ := by linarith
+  set B : ℝ := (E₂ - E₁) / (C₂ - C₁) with hB
+  set A : ℝ := E₁ - B * C₁ with hA
+  have hBd : B * (C₂ - C₁) = E₂ - E₁ := by
+    rw [hB]; field_simp
+  refine ⟨A, B, by rw [hA]; ring, ?_, ?_, ?_⟩
+  · rw [hA]; linear_combination -hBd
+  · intro u h1 h2
+    have h3 := exp_three_point c h1 h2
+    have hzero : (C₂ - u) * E₁ + (u - C₁) * E₂ - (C₂ - C₁) * (A + B * u) = 0 := by
+      rw [hA]; linear_combination (C₁ - u) * hBd
+    nlinarith [h3, hzero, hd]
+  · intro u hu
+    rcases hu with h | h
+    · have h3 := exp_three_point c h hC
+      have hzero : (C₂ - u) * E₁ + (u - C₁) * E₂ - (C₂ - C₁) * (A + B * u) = 0 := by
+        rw [hA]; linear_combination (C₁ - u) * hBd
+      nlinarith [h3, hzero, hd]
+    · have h3 := exp_three_point c hC h
+      have hzero : (C₂ - u) * E₁ + (u - C₁) * E₂ - (C₂ - C₁) * (A + B * u) = 0 := by
+        rw [hA]; linear_combination (C₁ - u) * hBd
+      nlinarith [h3, hzero, hd]
+
+/-- **Two-point exponential majorant for `|u|`.** For every `δ > 0`,
+`|u| ≤ δ⁻¹ (e^{δu} + e^{−δu})`.
+
+This is what makes `u` conditionally integrable under every member of a canonical family
+that reaches strictly below and strictly above a given parameter: the two tilts by `±δ` are
+probability measures, so their densities are integrable, and the majorant transfers that to
+`|u|`. It is the missing integrability input of item (c) at
+`isUMPU_conditional_point`. -/
+private lemma abs_le_exp_add_exp_neg {δ : ℝ} (hδ : 0 < δ) (u : ℝ) :
+    |u| ≤ (Real.exp (δ * u) + Real.exp (-(δ * u))) / δ := by
+  have hpos : (0 : ℝ) < Real.exp (δ * u) := Real.exp_pos _
+  have hneg : (0 : ℝ) < Real.exp (-(δ * u)) := Real.exp_pos _
+  have habs : |δ * u| ≤ Real.exp |δ * u| := by
+    have := Real.add_one_le_exp |δ * u|
+    linarith
+  have hcase : Real.exp |δ * u| ≤ Real.exp (δ * u) + Real.exp (-(δ * u)) := by
+    rcases abs_cases (δ * u) with ⟨h, -⟩ | ⟨h, -⟩
+    · rw [h]; linarith
+    · rw [h]; linarith
+  have hdu : |δ * u| = δ * |u| := by
+    rw [abs_mul, abs_of_pos hδ]
+  rw [le_div_iff₀ hδ, mul_comm]
+  calc δ * |u| = |δ * u| := hdu.symm
+    _ ≤ Real.exp |δ * u| := habs
+    _ ≤ Real.exp (δ * u) + Real.exp (-(δ * u)) := hcase
+
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
 *outside* an interval in `u` is UMP unbiased at level `α`, provided its constants satisfy
 **both** conditional conditions on the boundary surface `θ = θ₀`:
@@ -2666,15 +2766,15 @@ theorem isUMPU_conditional_point
   --    which is now unconditional: `boundedlyComplete_boundary` is PROVED (this session), so
   --    the three other optimality theorems of this file are axiom-clean and only the point
   --    null is open;
-  --  * `exists_sep_line` is NOT yet ported, but is the only separation needed: for `c ≠ 0`
-  --    the secant/tangent of `t ↦ e^{ct}` at `C₁, C₂` gives, exactly as in the interval case,
-  --    `g(u)·(e^{cu} − A − Bu) ≥ 0` for `g = φ − ψ`, and the two side conditions kill the two
-  --    affine terms.
+  --  * `exists_sep_line` is now PROVED above (this session): the secant of `t ↦ e^{ct}` at
+  --    `C₁ < C₂` gives, exactly as in the interval case, `g(u)·(e^{cu} − A − Bu) ≥ 0` for
+  --    `g = φ − ψ`, and the two side conditions kill the two affine terms. So the separation
+  --    is no longer a gap; the previous note's "NOT yet ported" is superseded.
   --
   -- What is genuinely missing, and is specific to the point null, is the *derivative* side
   -- condition for the competitor, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]` a.e. `t`. Deriving it
-  -- from unbiasedness needs three further steps; the first is now available, the other two
-  -- are not in the file.
+  -- from unbiasedness needs three further steps; the first is available, the other two are
+  -- not — though (c) has shrunk again.
   --  (a) DONE. An interior point of `Ω` on the boundary surface — so that the *pure-`θ`*
   --      segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`, a general segment being useless because its
   --      derivative picks up the nuisance directions and is not `E[Uψ]` — is
@@ -2687,16 +2787,25 @@ theorem isUMPU_conditional_point
   --      `|b−a|·e^{(1−s)a+sb} ≤ 2η⁻¹(e^a + e^b)` on `[s₀−η, s₀+η]`, so this is routine but
   --      not short. Note the normalizer `C` also has to be differentiated: the power is the
   --      ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained.
-  --  (c) OPEN. A completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
-  --      i.e. `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary
-  --      slice. This is now a *strictly smaller* gap than before: the proof of
+  --  (c) OPEN, but only for the *transfer*: a completeness step for the **unbounded**
+  --      function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`, i.e. `IsCompleteFamily` rather than
+  --      `IsBoundedlyCompleteFamily` on the boundary slice. The proof of
   --      `boundedlyComplete_boundary` never uses boundedness of `f` except to produce the
   --      integrability hypothesis of
   --      `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`, which is already stated
-  --      for arbitrary measurable `f`. So (c) reduces to the *integrability* of
+  --      for arbitrary measurable `f`; so (c) reduces to the *integrability* of
   --      `t ↦ (E[Uψ ∣ t] − α·E[U ∣ t])·e^{⟪ϑ−ϑ₁,t⟫}` against `μ₁`, together with the
-  --      conditional integrability of `U`, which does follow from `hΩ_lt`/`hΩ_gt` by the
-  --      two-point bound `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` applied to the two conditional tilts.
+  --      conditional integrability of `U`. The pointwise half of the latter is now proved:
+  --      `abs_le_exp_add_exp_neg` gives `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` for every `δ > 0`, and
+  --      `hΩ_lt`/`hΩ_gt` supply two boundary parameters whose conditional tilts by `±δ` are
+  --      probability measures, so both exponentials are `κ_t`-integrable. What is left of (c)
+  --      is therefore the a.e.-`t` bookkeeping — from `ae_condDistrib_expTilt`, whose tilt is
+  --      in the *nuisance* direction, one needs the tilt in the `θ`-direction, which requires
+  --      the two parameters produced by `hΩ_lt`/`hΩ_gt` to be moved onto the *same* nuisance
+  --      coordinate `ϑ₀`; that is exactly what `exists_interior_boundary_point` (item (a))
+  --      provides, so the three items are not independent and (a) has to be threaded into (c).
+  -- Sanctioned lifted sorry: no false statement (the two repairs are already applied), and the
+  -- remaining bricks are named and concrete.
   sorry
 
 /-! ## Measurable selection of the conditional constants -/
