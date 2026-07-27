@@ -1884,6 +1884,9 @@ theorem isUMPU_conditional_inside
     {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ} {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {θ₁ θ₂ α : ℝ}
     -- LEAN-ONLY: the family members are probability measures; the model's standing setting
     [∀ p, IsProbabilityMeasure (P p)]
+    -- LEAN-ONLY (AMENDMENT): the σ-algebra of `Ξ` is the Borel one and `Ξ` is finite
+    -- dimensional; see `boundedlyComplete_boundary`
+    [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     -- USER-INPUT: the two components of the sufficient statistic are measurable
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
@@ -1916,30 +1919,165 @@ theorem isUMPU_conditional_inside
       ∫ u, condInsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₁ ∨ θ₂ ≤ p.1} {p ∈ Ω | θ₁ < p.1 ∧ p.1 < θ₂} α
       (fun x => condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_inside_counterexample`; the amendment
-  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
-  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
+  -- REPAIRED AND PROVED, over the one lifted brick `boundedlyComplete_boundary`. The frozen
+  -- form was FALSE, refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_inside_counterexample`; the
+  -- amendment `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample and
   -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
   -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
-  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
-  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
-  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
-  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
-  --      — CLOSED, available;
-  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
-  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
-  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
-  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
-  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
-  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
-  --      the frozen `Ξ`;
-  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
-  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
-  --      selection to glue the fibrewise optima — the gluing is not formalized.
-  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
-  -- signature, which is out of scope for this pass.
-  sorry
+  -- The proof is the one of `isUMPU_conditional_outside` read through `g ↦ −g`: here the
+  -- comparison function is `w − φ`, which is again nonnegative outside `[C₁, C₂]` and
+  -- nonpositive inside, so the same fibrewise three-exponential separation applies, with the
+  -- roles of the two branches exchanged (the alternative is now the *interior* of the
+  -- interval).
+  classical
+  have hφm : Measurable (condInsideTest C₁ C₂ γ₁ γ₂) :=
+    measurable_condInsideTest hC₁ hC₂ hγ₁ hγ₂
+  have hφIcc : ∀ z : ℝ × Ξ, condInsideTest C₁ C₂ γ₁ γ₂ z ∈ Set.Icc (0 : ℝ) 1 :=
+    condInsideTest_mem_Icc hγ₁_mem hγ₂_mem
+  have hφb : ∀ z : ℝ × Ξ, |condInsideTest C₁ C₂ γ₁ γ₂ z| ≤ 1 := abs_le_one_of_mem_Icc hφIcc
+  obtain ⟨p₁, hp₁, hp₁θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt₁ hΩ_gt₁
+  obtain ⟨p₂, hp₂, hp₂θ⟩ := exists_mem_fst_eq hΩ_convex hΩ_lt₂ hΩ_gt₂
+  haveI hstat : ∀ p : ℝ × Ξ, IsProbabilityMeasure ((P p).map T) := fun p =>
+    isProbabilityMeasure_statLaw (P := P) hT p
+  have hp₁₂ : p₁.1 < p₂.1 := by rw [hp₁θ, hp₂θ]; exact hθ
+  have hsz₁ := hsize p₁ hp₁ (Or.inl hp₁θ)
+  have hsz₂ := hsize p₂ hp₂ (Or.inr hp₂θ)
+  -- the midpoint of the two boundary parameters is an alternative
+  have hqmid : ((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂ ∈ Ω :=
+    hΩ_convex hp₁ hp₂ (by norm_num) (by norm_num) (by norm_num)
+  have hqmidθ : (((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂).1 = (θ₁ + θ₂) / 2 := by
+    simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul, hp₁θ, hp₂θ]
+    ring
+  -- the fibrewise comparison against an arbitrary competitor of the pair
+  have hcmp : ∀ w : ℝ × Ξ → ℝ, Measurable w → (∀ z, w z ∈ Set.Icc (0 : ℝ) 1) →
+      (∀ᵐ t ∂((P p₁).map T), ∫ u, w (u, t) ∂(condDistrib U T (P p₁) t) = α) →
+      (∀ᵐ t ∂((P p₂).map T), ∫ u, w (u, t) ∂(condDistrib U T (P p₂) t) = α) →
+      ∀ p ∈ Ω, ((p.1 < θ₁ ∨ θ₂ < p.1) →
+          ∫ x, condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x) ∂(P p) ≤ ∫ x, w (U x, T x) ∂(P p)) ∧
+        (θ₁ < p.1 → p.1 < θ₂ →
+          ∫ x, w (U x, T x) ∂(P p)
+            ≤ ∫ x, condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x) ∂(P p)) := by
+    intro w hwm hwIcc hw₁ hw₂ p hp
+    have hwb : ∀ z : ℝ × Ξ, |w z| ≤ 1 := abs_le_one_of_mem_Icc hwIcc
+    set g : ℝ × Ξ → ℝ := fun z => w z - condInsideTest C₁ C₂ γ₁ γ₂ z with hgdef
+    have hgm : Measurable g := hwm.sub hφm
+    have hgb : ∀ z, |g z| ≤ 1 := by
+      intro z
+      refine abs_le.mpr ⟨?_, ?_⟩
+      · have h1 := (hwIcc z).1
+        have h2 := (hφIcc z).2
+        simp only [hgdef]; linarith
+      · have h1 := (hwIcc z).2
+        have h2 := (hφIcc z).1
+        simp only [hgdef]; linarith
+    have hgpos : ∀ z : ℝ × Ξ, z.1 < C₁ z.2 ∨ C₂ z.2 < z.1 → 0 ≤ g z := by
+      intro z hz
+      have h1 : condInsideTest C₁ C₂ γ₁ γ₂ z = 0 := condInsideTest_eq_zero hC hz
+      have h2 := (hwIcc z).1
+      simp only [hgdef, h1]; linarith
+    have hgneg : ∀ z : ℝ × Ξ, C₁ z.2 < z.1 → z.1 < C₂ z.2 → g z ≤ 0 := by
+      intro z ha hb
+      have h1 : condInsideTest C₁ C₂ γ₁ γ₂ z = 1 := condInsideTest_eq_one ha hb
+      have h2 := (hwIcc z).2
+      simp only [hgdef, h1]; linarith
+    have hzc : ∀ (r : ℝ × Ξ),
+        (∀ᵐ t ∂((P r).map T),
+          ∫ u, condInsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P r) t) = α) →
+        (∀ᵐ t ∂((P r).map T), ∫ u, w (u, t) ∂(condDistrib U T (P r) t) = α) →
+        ∀ᵐ t ∂((P r).map T), ∫ u, g (u, t) ∂(condDistrib U T (P r) t) = 0 := by
+      intro r ha hb
+      filter_upwards [ha, hb] with t hta htb
+      haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
+      rw [hgdef, integral_sub (integrable_cond_slice (P r) hU hT hwm hwb t)
+        (integrable_cond_slice (P r) hU hT hφm hφb t), hta, htb, sub_self]
+    have hsplit : ∫ x, g (U x, T x) ∂(P p)
+        = (∫ x, w (U x, T x) ∂(P p))
+          - ∫ x, condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x) ∂(P p) := by
+      rw [hgdef]
+      exact integral_sub (integrable_comp_UT hU hT hwm hwb p)
+        (integrable_comp_UT hU hT hφm hφb p)
+    have h := integral_comp_sign_of_condZero_interval hU hT hUT hp₁ hp₂ hp hp₁₂ hC hgm hgb
+      hgpos hgneg (hzc p₁ hsz₁ hw₁) (hzc p₂ hsz₂ hw₂)
+    rw [hsplit] at h
+    refine ⟨fun hside => ?_, fun ha hb => ?_⟩
+    · have := h.1 (by rcases hside with hs | hs
+                      · exact Or.inl (by rw [hp₁θ]; exact hs)
+                      · exact Or.inr (by rw [hp₂θ]; exact hs))
+      linarith
+    · have := h.2 (by rw [hp₁θ]; exact ha) (by rw [hp₂θ]; exact hb)
+      linarith
+  have hconstsize : ∀ r : ℝ × Ξ,
+      ∀ᵐ t ∂((P r).map T), ∫ _u, (α : ℝ) ∂(condDistrib U T (P r) t) = α := by
+    intro r
+    refine Filter.Eventually.of_forall fun t => ?_
+    haveI : IsProbabilityMeasure (condDistrib U T (P r) t) := inferInstance
+    simp
+  have hconstIcc : ∀ _z : ℝ × Ξ, (α : ℝ) ∈ Set.Icc (0 : ℝ) 1 := fun _ => ⟨hα₀.le, hα₁.le⟩
+  have hconst := hcmp (fun _ => α) measurable_const hconstIcc (hconstsize p₁) (hconstsize p₂)
+  have hpowconst : ∀ p : ℝ × Ξ, ∫ _x, (α : ℝ) ∂(P p) = α := fun p => by simp
+  have hbdry : ∀ p ∈ Ω, (p.1 = θ₁ ∨ p.1 = θ₂) →
+      ∫ x, condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x) ∂(P p) = α := by
+    intro p hp hpθ
+    rw [integral_comp_eq_integral_condPower hU hT hφm hφb p,
+      integral_congr_ae (hsize p hp hpθ)]
+    simp
+  refine ⟨⟨hφm.comp (hU.prodMk hT), fun x => hφIcc _⟩, ⟨?_, ?_⟩, ?_⟩
+  · rintro p ⟨hpΩ, hside⟩
+    simp only [power]
+    rcases hside with h | h
+    · rcases eq_or_lt_of_le h with he | hl
+      · exact le_of_eq (hbdry p hpΩ (Or.inl he))
+      · have := (hconst p hpΩ).1 (Or.inl hl)
+        rw [hpowconst p] at this
+        exact this
+    · rcases eq_or_lt_of_le h with he | hl
+      · exact le_of_eq (hbdry p hpΩ (Or.inr he.symm))
+      · have := (hconst p hpΩ).1 (Or.inr hl)
+        rw [hpowconst p] at this
+        exact this
+  · rintro p ⟨hpΩ, hl, hr⟩
+    simp only [power]
+    have := (hconst p hpΩ).2 hl hr
+    rw [hpowconst p] at this
+    exact this
+  · rintro ψ hψ hunb p' ⟨hp'Ω, hp'l, hp'r⟩
+    obtain ⟨ψ', hψ'crit, hψ'pow⟩ := hsuff ψ hψ
+    have hψ'b : ∀ z : ℝ × Ξ, |ψ' z| ≤ 1 := abs_le_one_of_mem_Icc hψ'crit.2
+    have hsim : ∀ θ : ℝ, (θ = θ₁ ∨ θ = θ₂) →
+        ∀ p ∈ Ω, p.1 = θ → ∫ x, ψ' (U x, T x) ∂(P p) = α := by
+      intro θ hcase p hp hpθ
+      refine integral_comp_eq_of_le_of_segment hU hT hUT hΩ_convex hp hqmid
+        hψ'crit.1 hψ'b ?_ ?_
+      · rw [hψ'pow p hp]
+        have hnull : p ∈ {p ∈ Ω | p.1 ≤ θ₁ ∨ θ₂ ≤ p.1} := by
+          refine ⟨hp, ?_⟩
+          rcases hcase with he | he
+          · exact Or.inl (by rw [hpθ, he])
+          · exact Or.inr (by rw [hpθ, he])
+        simpa only [power] using hunb.1 p hnull
+      · intro s hs0 hs1
+        have hr : (1 - s) • p + s • (((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂) ∈ Ω :=
+          hΩ_convex hp hqmid (by linarith) hs0.le (by ring)
+        have hrfst : ((1 - s) • p + s • (((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂)).1
+            = (1 - s) * p.1 + s * ((θ₁ + θ₂) / 2) := by
+          simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul, hp₁θ, hp₂θ]
+          ring
+        have hralt : θ₁ < ((1 - s) • p + s • (((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂)).1 ∧
+            ((1 - s) • p + s • (((1 : ℝ) / 2) • p₁ + ((1 : ℝ) / 2) • p₂)).1 < θ₂ := by
+          rw [hrfst, hpθ]
+          rcases hcase with he | he <;> subst he <;>
+            constructor <;> nlinarith [mul_pos hs0 (sub_pos.mpr hθ)]
+        rw [hψ'pow _ hr]
+        simpa only [power] using hunb.2 _ ⟨hr, hralt.1, hralt.2⟩
+    have hns₁ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₁ hΩ_gt₁ hp₁
+      hp₁θ hψ'crit.1 hψ'b (hsim θ₁ (Or.inl rfl))
+    have hns₂ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₂ hΩ_gt₂ hp₂
+      hp₂θ hψ'crit.1 hψ'b (hsim θ₂ (Or.inr rfl))
+    have hfin := (hcmp ψ' hψ'crit.1 hψ'crit.2 hns₁ hns₂ p' hp'Ω).2 hp'l hp'r
+    simp only [power]
+    rw [← hψ'pow p' hp'Ω]
+    exact hfin
 
 /-- **Interval null.** For `H : θ₁ ≤ θ ≤ θ₂` against `K : θ < θ₁ or θ > θ₂`, the conditional
 test rejecting *outside* an interval in `u`, with conditional size `α` on both boundary
