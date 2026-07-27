@@ -165,7 +165,7 @@ private lemma card_signPattern (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ 
 section SignSum
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
 
 /-- The real linear form `y ↦ s⟪y,t₁⟫ + s'⟪y,t₂⟫` obtained by pairing the data with the two
 test directions through a sign pair. Averaging over the four sign pairs is what makes the two
@@ -207,6 +207,160 @@ private lemma exp_inner_pair_eq_prod (n : ℕ) (t : WithLp 2 (E × E)) (ε ε' :
     unfold signDir
     ring
   rw [hexp, Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+
+/-- The single-coordinate factor of the randomized characteristic function. -/
+private noncomputable def signFactor (n : ℕ) (t : WithLp 2 (E × E)) (s s' : ℤˣ) (y : E) : ℂ :=
+  Complex.exp ((((Real.sqrt (n : ℝ))⁻¹ * signDir t s s' y : ℝ) : ℂ) * Complex.I)
+
+private lemma measurable_signFactor (n : ℕ) (t : WithLp 2 (E × E)) (s s' : ℤˣ) :
+    Measurable (signFactor n t s s') := by
+  unfold signFactor
+  exact (Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp
+    ((continuous_signDir t s s').const_mul _)).mul continuous_const)).measurable
+
+private lemma norm_signFactor (n : ℕ) (t : WithLp 2 (E × E)) (s s' : ℤˣ) (y : E) :
+    ‖signFactor n t s s' y‖ = 1 := by
+  unfold signFactor
+  exact Complex.norm_exp_ofReal_mul_I _
+
+/-- Sum over sign patterns of a product = product of the coordinatewise sums, applied to the
+two independent sign vectors. -/
+private lemma prod_sum_signFactor (n : ℕ) (t : WithLp 2 (E × E)) (x : Fin n → E) :
+    ∏ i, (∑ s : ℤˣ, ∑ s' : ℤˣ, signFactor n t s s' (x i))
+      = ∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ,
+          ∏ i, signFactor n t (ε i) (ε' i) (x i) := by
+  classical
+  rw [Finset.prod_univ_sum (fun _ : Fin n => (Finset.univ : Finset ℤˣ))
+    (fun i s => ∑ s' : ℤˣ, signFactor n t s s' (x i)), Fintype.piFinset_univ]
+  refine Finset.sum_congr rfl fun ε _ => ?_
+  rw [Finset.prod_univ_sum (fun _ : Fin n => (Finset.univ : Finset ℤˣ))
+    (fun i s' => signFactor n t (ε i) s' (x i)), Fintype.piFinset_univ]
+
+/-- **The exact characteristic function of the sign-change randomized pair.**
+At every finite `n` the joint characteristic function of the pair
+`(n^{-1/2}∑ᵢεᵢXᵢ, n^{-1/2}∑ᵢε'ᵢXᵢ)` is the `n`-th power of the four-term sign average of
+one-dimensional characteristic functions. -/
+private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure Q]
+    (n : ℕ) (t : WithLp 2 (E × E)) :
+    charFun ((randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → E => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
+        (Measure.pi fun _ : Fin n => Q)).map (WithLp.toLp 2)) t
+      = ((4 : ℂ)⁻¹ * ∑ s : ℤˣ, ∑ s' : ℤˣ,
+          charFun (Q.map (signDir t s s')) (Real.sqrt (n : ℝ))⁻¹) ^ n := by
+  classical
+  set u : ℝ := (Real.sqrt (n : ℝ))⁻¹ with hudef
+  set T : (Fin n → E) → E := fun x => u • ∑ i, x i with hTdef
+  set πQ : Measure (Fin n → E) := Measure.pi fun _ : Fin n => Q with hπQ
+  -- The bounded test function on the product.
+  set F : E × E → ℂ := fun z =>
+    Complex.exp (((⟪z.1, (WithLp.ofLp t).1⟫ + ⟪z.2, (WithLp.ofLp t).2⟫ : ℝ) : ℂ) * Complex.I)
+    with hFdef
+  have hFcont : Continuous F := by
+    refine Complex.continuous_exp.comp (Continuous.mul ?_ continuous_const)
+    exact Complex.continuous_ofReal.comp
+      ((continuous_fst.inner continuous_const).add (continuous_snd.inner continuous_const))
+  have hFb : ∀ z, ‖F z‖ ≤ 1 := fun z => le_of_eq (Complex.norm_exp_ofReal_mul_I _)
+  -- Measurability of the action and of the statistic.
+  have hsmul : ∀ ε : Fin n → ℤˣ, Measurable fun x : Fin n → E => ε • x := by
+    intro ε
+    refine measurable_pi_lambda _ fun i => ?_
+    simp only [signChange_smul_apply_vec]
+    exact (measurable_pi_apply i).const_smul _
+  have hTmeas : Measurable T :=
+    (Finset.measurable_sum _ fun i _ => measurable_pi_apply i).const_smul u
+  have hTg : ∀ ε : Fin n → ℤˣ, Measurable fun x : Fin n → E => T (ε • x) :=
+    fun ε => hTmeas.comp (hsmul ε)
+  -- Step 1: the characteristic function as an integral against `randPairLaw`.
+  have hcontExp : Continuous fun y : WithLp 2 (E × E) =>
+      Complex.exp (((⟪y, t⟫ : ℝ) : ℂ) * Complex.I) :=
+    Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp
+      ((continuous_id (X := WithLp 2 (E × E))).inner continuous_const)).mul continuous_const)
+  have hstep1 : charFun ((randPairLaw (Fin n → ℤˣ) T πQ).map (WithLp.toLp 2)) t
+      = ∫ z, F z ∂(randPairLaw (Fin n → ℤˣ) T πQ) := by
+    rw [charFun_apply, integral_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+      hcontExp.aestronglyMeasurable]
+    rfl
+  -- Step 2: unfold the group average.
+  have hstep2 := integral_randPairLaw (G := Fin n → ℤˣ) πQ T hTg F hFcont.measurable hFb
+  -- Step 3: the per-pattern integrand factorizes across coordinates.
+  have hstep3 : ∀ (ε ε' : Fin n → ℤˣ) (x : Fin n → E),
+      F (T (ε • x), T (ε' • x)) = ∏ i, signFactor n t (ε i) (ε' i) (x i) := by
+    intro ε ε' x
+    exact exp_inner_pair_eq_prod n t ε ε' x
+  -- Integrability bookkeeping.
+  have hprodmeas : ∀ ε ε' : Fin n → ℤˣ,
+      Measurable fun x : Fin n → E => ∏ i, signFactor n t (ε i) (ε' i) (x i) := by
+    intro ε ε'
+    exact Finset.measurable_prod _ fun i _ =>
+      (measurable_signFactor n t (ε i) (ε' i)).comp (measurable_pi_apply i)
+  have hprodb : ∀ (ε ε' : Fin n → ℤˣ) (x : Fin n → E),
+      ‖∏ i, signFactor n t (ε i) (ε' i) (x i)‖ ≤ 1 := by
+    intro ε ε' x
+    rw [norm_prod]
+    simp [norm_signFactor]
+  have hprodint : ∀ ε ε' : Fin n → ℤˣ,
+      Integrable (fun x : Fin n → E => ∏ i, signFactor n t (ε i) (ε' i) (x i)) πQ := by
+    intro ε ε'
+    exact Integrable.mono' (integrable_const (1 : ℝ)) (hprodmeas ε ε').aestronglyMeasurable
+      (Filter.Eventually.of_forall (hprodb ε ε'))
+  have hkint : ∀ s s' : ℤˣ, Integrable (signFactor n t s s') Q :=
+    fun s s' => Integrable.mono' (integrable_const (1 : ℝ))
+      (measurable_signFactor n t s s').aestronglyMeasurable
+      (Filter.Eventually.of_forall fun y => le_of_eq (norm_signFactor n t s s' y))
+  -- Step 4: swap the finite sums with the integral and use Fubini for the product measure.
+  have hstep4 : (∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ,
+        ∫ x, F (T (ε • x), T (ε' • x)) ∂πQ)
+      = (∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, signFactor n t s s' y ∂Q) ^ n := by
+    have h1 : (∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ, ∫ x, F (T (ε • x), T (ε' • x)) ∂πQ)
+        = ∫ x, ∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ,
+            ∏ i, signFactor n t (ε i) (ε' i) (x i) ∂πQ := by
+      rw [integral_finset_sum _ (fun ε _ => integrable_finset_sum _ fun ε' _ => hprodint ε ε')]
+      refine Finset.sum_congr rfl fun ε _ => ?_
+      rw [integral_finset_sum _ (fun ε' _ => hprodint ε ε')]
+      refine Finset.sum_congr rfl fun ε' _ => ?_
+      exact integral_congr_ae (Filter.Eventually.of_forall fun x => hstep3 ε ε' x)
+    rw [h1]
+    have h2 : (fun x : Fin n → E => ∑ ε : Fin n → ℤˣ, ∑ ε' : Fin n → ℤˣ,
+          ∏ i, signFactor n t (ε i) (ε' i) (x i))
+        = fun x : Fin n → E => ∏ i, (∑ s : ℤˣ, ∑ s' : ℤˣ, signFactor n t s s' (x i)) := by
+      funext x
+      exact (prod_sum_signFactor n t x).symm
+    have h3 := integral_fintype_prod_eq_pow (ι := Fin n)
+      (f := fun y : E => ∑ s : ℤˣ, ∑ s' : ℤˣ, signFactor n t s s' y) (μ := Q)
+    rw [h2, hπQ]
+    refine h3.trans ?_
+    rw [Fintype.card_fin]
+    congr 1
+    have hsw1 : ∫ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, signFactor n t s s' y) ∂Q
+        = ∑ s : ℤˣ, ∫ y : E, (∑ s' : ℤˣ, signFactor n t s s' y) ∂Q :=
+      integral_finset_sum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signFactor n t s s' y)
+        Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hkint s s')
+    have hsw2 : ∀ s : ℤˣ, ∫ y : E, (∑ s' : ℤˣ, signFactor n t s s' y) ∂Q
+        = ∑ s' : ℤˣ, ∫ y : E, signFactor n t s s' y ∂Q := fun s =>
+      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => signFactor n t s s' y)
+        Finset.univ (fun s' _ => hkint s s')
+    exact hsw1.trans (Finset.sum_congr rfl fun s _ => hsw2 s)
+  -- Step 5: identify the coordinate integrals as one-dimensional characteristic functions.
+  have hstep5 : ∀ s s' : ℤˣ,
+      ∫ y, signFactor n t s s' y ∂Q = charFun (Q.map (signDir t s s')) u := by
+    intro s s'
+    have haes : AEStronglyMeasurable
+        (fun x : ℝ => Complex.exp ((u : ℂ) * (x : ℂ) * Complex.I)) (Q.map (signDir t s s')) :=
+      (Complex.continuous_exp.comp
+        ((continuous_const.mul Complex.continuous_ofReal).mul continuous_const)).aestronglyMeasurable
+    rw [charFun_apply_real, integral_map (measurable_signDir t s s').aemeasurable haes]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    unfold signFactor
+    rw [Complex.ofReal_mul]
+  -- Assemble.
+  rw [hstep1, hstep2, hstep4]
+  simp_rw [hstep5]
+  have hcard : ((Fintype.card (Fin n → ℤˣ) : ℂ) ^ 2)⁻¹ = ((4 : ℂ)⁻¹) ^ n := by
+    rw [card_signPattern]
+    push_cast
+    rw [← pow_mul, mul_comm n 2, pow_mul, ← inv_pow]
+    norm_num
+  rw [hcard, ← mul_pow]
 
 end SignSum
 
