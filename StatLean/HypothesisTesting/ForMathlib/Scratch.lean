@@ -317,4 +317,91 @@ private lemma avg_abs_one_sub_condSq_le {N m : ℕ} (hN : 2 ≤ N) (hm : 0 < m) 
               Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * S₄)
           + 2 * S₂ / ((N : ℝ) * ((N : ℝ) - 1)) := by rw [habs₁, habs₂]
 
+/-! ### The Berry-Esseen-type bound at a fixed stage -/
+
+/-- **A Berry–Esseen-type bound for a block sum, at a fixed stage.** For a centred population
+`d` on `Fin N` and a block of `m` distinct positions, standardized by any `u > 0` with
+`u² = N/(m(N−m))`, the group average of a bounded `L`-Lipschitz test function differs from its
+standard normal expectation by at most the sum of a *variance-regression* term — the defect of
+`(N−1)⁻¹∑d²` from `1` plus a fourth-moment fluctuation — and a *third-moment* term. Both are
+explicit finite-population quantities; the asymptotic statement
+`tendsto_perm_avg_lipschitz` is obtained by applying this bound to a truncated population. -/
+theorem abs_avg_blockSum_sub_stdGaussianExpect_le {N m : ℕ} (hN : 2 ≤ N) (hm : 0 < m)
+    (hmN : m < N) (a : Fin m → Fin N) (ha : Function.Injective a) (d : Fin N → ℝ)
+    (hd : ∑ l, d l = 0) {u : ℝ} (hu : 0 < u)
+    (hu2 : u ^ 2 = (N : ℝ) / ((m : ℝ) * ((N : ℝ) - m)))
+    {h : ℝ → ℝ} {L C : ℝ} (hL : 0 ≤ L) (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|)
+    (hbdd : ∀ x, |h x| ≤ C) :
+    |(Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d (σ (a i))) - stdGaussianExpect h|
+      ≤ 2 * L * (|1 - (∑ l, d l ^ 2) / ((N : ℝ) - 1)|
+          + |(N : ℝ) - 2 * (m : ℝ)| / (2 * (m : ℝ) * ((N : ℝ) - m)) *
+              Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, d l ^ 4)
+          + 2 * (∑ l, d l ^ 2) / ((N : ℝ) * ((N : ℝ) - 1)))
+        + 10 * L * u * ((N : ℝ)⁻¹ * ∑ l, |d l| ^ 3) := by
+  classical
+  have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hmNR : (0 : ℝ) < (N : ℝ) - (m : ℝ) := by
+    have : (m : ℝ) < (N : ℝ) := by exact_mod_cast hmN
+    linarith
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hlam : (0 : ℝ) < (N : ℝ) / ((m : ℝ) * ((N : ℝ) - m)) := by positivity
+  haveI : Nonempty (SwapIndex a) := by
+    have h1 : a ⟨0, hm⟩ ∈ blockSet a := by
+      rw [blockSet]; exact Finset.mem_image_of_mem a (Finset.mem_univ _)
+    have hcard : 0 < ((blockSet a)ᶜ).card := by
+      rw [Finset.card_compl, card_blockSet a ha, Fintype.card_fin]
+      omega
+    obtain ⟨q, hq⟩ := Finset.card_pos.1 hcard
+    exact ⟨(⟨a ⟨0, hm⟩, h1⟩, ⟨q, hq⟩)⟩
+  have hh : Continuous h := continuous_of_lipschitz_bound hL hlip
+  have hderiv : ∀ w : ℝ, HasDerivAt (steinSolution h) (deriv (steinSolution h) w) w := by
+    intro w
+    rw [(hasDerivAt_steinSolution hh hbdd w).deriv]
+    exact hasDerivAt_steinSolution hh hbdd w
+  have hengine := abs_avg_sub_le (Ω := Equiv.Perm (Fin N)) (K := SwapIndex a)
+    (W := stdBlockSum a d u) (W' := stdBlockSumSwap a d u)
+    (lam := (N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))) hlam (sum_swap_exchangeable a d u)
+    (sum_swapIndex_increment' a ha hm hmN d hd u) (h := h) (f := steinSolution h)
+    (f' := deriv (steinSolution h)) (c := stdGaussianExpect h) (B₁ := 2 * L) (B₂ := 5 * L)
+    (by linarith) hderiv (fun w => steinSolution_sub_mul hh hbdd w)
+    (abs_deriv_steinSolution_le hL hlip hbdd) (lipschitz_deriv_steinSolution hL hlip hbdd)
+  have hWeq : ∀ σ : Equiv.Perm (Fin N), stdBlockSum a d u σ = u * ∑ i, d (σ (a i)) := by
+    intro σ; rw [stdBlockSum, sum_blockSet a ha]
+  have hgoal : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d (σ (a i)))
+      = (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), h (stdBlockSum a d u σ) :=
+    congrArg _ (Finset.sum_congr rfl fun σ _ => by rw [hWeq σ])
+  rw [hgoal]
+  refine hengine.trans ?_
+  have hvar := avg_abs_one_sub_condSq_le hN hm hmN a ha d hd hu2
+  have hcube := avg_cube_increment_le a ha hm hmN d u
+  have hcoef : (0 : ℝ) ≤ (4 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ * (5 * L) := by
+    have : (0 : ℝ) < 4 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))) := by linarith
+    positivity
+  have hlast : (4 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ * (5 * L) *
+      (8 * |u| ^ 3 * ((N : ℝ)⁻¹ * ∑ l, |d l| ^ 3))
+      = 10 * L * u * ((N : ℝ)⁻¹ * ∑ l, |d l| ^ 3) := by
+    rw [abs_of_pos hu, ← hu2]
+    field_simp
+    ring
+  calc 2 * L * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N),
+            |1 - (2 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ *
+              condSqIncrement (stdBlockSum a d u) (stdBlockSumSwap a d u) σ|)
+        + (4 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ * (5 * L) *
+          ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ * (Fintype.card (SwapIndex a) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+              |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3)
+      ≤ 2 * L * (|1 - (∑ l, d l ^ 2) / ((N : ℝ) - 1)|
+            + |(N : ℝ) - 2 * (m : ℝ)| / (2 * (m : ℝ) * ((N : ℝ) - m)) *
+                Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, d l ^ 4)
+            + 2 * (∑ l, d l ^ 2) / ((N : ℝ) * ((N : ℝ) - 1)))
+          + (4 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ * (5 * L) *
+            (8 * |u| ^ 3 * ((N : ℝ)⁻¹ * ∑ l, |d l| ^ 3)) :=
+        add_le_add (mul_le_mul_of_nonneg_left hvar (by linarith))
+          (mul_le_mul_of_nonneg_left hcube hcoef)
+    _ = _ := by rw [hlast]
+
 end StatLean.HypothesisTesting
