@@ -76,6 +76,13 @@ Contents:
 * `isUMPU_conditional_oneSided` / `_inside` / `_outside` / `_point` — the four optimality
   theorems;
 * `exists_measurable_conditional_constants` — measurable selection of the constants;
+* `expTilt`, `integral_expTilt_signed`, `integral_expTilt_signed_interval` — the fibrewise
+  variation-diminishing inequalities, in one- and two-threshold form;
+* `ae_condDistrib_expTilt`, `integral_comp_sign_of_condZero`,
+  `integral_comp_sign_of_condZero_interval` — the conditional-to-unconditional engines;
+* `tendsto_integral_canonical_segment`, `integral_comp_eq_of_le_of_segment` — continuity of
+  the power along segments of `Ω`, and the similarity it yields at a boundary parameter;
+* `boundedlyComplete_boundary` — the one lifted brick;
 * `ConditionalUMPUCounterexample.not_isUMPU_conditional_*_counterexample` — the four
   refutations of the frozen optimality statements;
 * `reparamUT`, `statTransformUT`, `inner_exponent_reparam`, `isCanonicalUT_reparam` — the
@@ -216,13 +223,17 @@ with `ψ' = ψ`, in the source's setting `𝓧 = ℝ × Ξ`, `U = Prod.fst`, `T 
 constant and the auxiliary bit of `𝓧` is invisible to it — which is what makes the
 counterexample a counterexample.
 
-Two further gaps remain after the repair, and are recorded at the theorems: the boundary
-device needs the power functions to be continuous, which for exponential families requires
-finite-dimensionality of `Ξ` (see the counterexample in
-`PowerContinuity.continuous_power_expFamily`) and `Ω` inside the interior of the natural
-parameter set; and the step from similarity to Neyman structure needs completeness of the
-laws of `T` on each boundary slice, available in the repository only for
-`EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`).
+A second, independent defect of the frozen statements — the mis-transcribed non-degeneracy
+hypothesis — is described in the file docstring and at `boundedlyComplete_boundary`; it is
+repaired by the added `hΩ_aff : affineSpan ℝ Ω = ⊤`.
+
+After both repairs, `_oneSided`, `_inside` and `_outside` are proved. Contrary to what an
+earlier draft of this file recorded, the boundary device needs neither
+`PowerContinuity.continuous_power_expFamily` nor `Ω ⊆ interior natSet`: continuity of the
+power along a segment of `Ω` follows from convexity of `Ω` alone, by the two-point envelope
+(`tendsto_integral_canonical_segment`). What genuinely remains is completeness of the laws of
+`T` on a boundary slice, lifted to `boundedlyComplete_boundary`, plus — for the point null
+only — the derivative side condition, documented at `isUMPU_conditional_point`.
 -/
 
 namespace ConditionalUMPUCounterexample
