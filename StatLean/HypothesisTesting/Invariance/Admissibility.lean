@@ -191,30 +191,24 @@ private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpac
   exact measure_mono_null hsub
     ((measure_biUnion_null_iff hTc).mpr fun p _ => hcon (a p) (c p) (hemp p))
 
-/-- **A competitor no worse than a closed convex acceptance region is contained in it.**
-If `A₀` is closed and convex and every open half-space missing `A₀` points along a
-direction in which the alternative class contains an unbounded ray, then any acceptance
-region `A` whose acceptance probability is everywhere on the alternatives at most that of
-`A₀` satisfies `A ⊆ A₀` up to a null set. -/
-theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
-    {Θ_H Θ' A₀ A : Set (EuclideanSpace ℝ (Fin s))}
-    -- USER-INPUT: null and alternative classes sit inside the natural parameter set,
-    -- are nonempty and disjoint
-    (hΘH : Θ_H ⊆ E.natSet) (hΘ' : Θ' ⊆ E.natSet)
-    (hHne : Θ_H.Nonempty) (h'ne : Θ'.Nonempty) (hdisj : Disjoint Θ_H Θ')
-    -- USER-INPUT: the acceptance region is closed and convex
+/-- **Constant-factor form of the containment lemma.** If `A₀` is closed and convex, the
+ray condition holds, and the acceptance probability of `A` is bounded on the alternatives by
+a *fixed multiple* `K` of that of `A₀`, then `A ⊆ A₀` up to a null set. The multiple costs
+nothing: pushing the tilt to infinity beats any finite constant. `K = 1` gives
+`acceptance_subset_of_power_le`; `K = ε⁻¹` handles a randomized competitor through its
+`ε`-superlevel sets. -/
+private theorem acceptance_subset_of_power_le_const
+    (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    {Θ' A₀ A : Set (EuclideanSpace ℝ (Fin s))}
+    (hΘ' : Θ' ⊆ E.natSet)
     (hA₀closed : IsClosed A₀) (hA₀convex : Convex ℝ A₀)
-    -- LEAN-ONLY: measurability of the two acceptance regions, needed to speak of their
-    -- probabilities at all
     (hA₀meas : MeasurableSet A₀) (hAmeas : MeasurableSet A)
-    -- USER-INPUT: the ray condition — whenever an open half-space misses `A₀`, the
-    -- alternative class contains an unbounded ray in the direction of that half-space
     (hray : ∀ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
       A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ →
         ∃ θstar ∈ Θ', ∃ lam : ℕ → ℝ,
           Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ')
-    -- USER-INPUT: `A` is nowhere on the alternatives a better acceptance region than `A₀`
-    (hpow : ∀ θ ∈ Θ', statScaleFamily E θ A ≤ statScaleFamily E θ A₀) :
+    (K : ℝ≥0∞) (hK : K ≠ ⊤)
+    (hpow : ∀ θ ∈ Θ', statScaleFamily E θ A ≤ K * statScaleFamily E θ A₀) :
     statScaleBase E (A \ A₀) = 0 := by
   classical
   by_contra hne
@@ -261,6 +255,7 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
     rw [hMdef, hFdef, ← ofReal_integral_eq_lintegral_ofReal (hΘ' hθs)
       (ae_of_all _ fun x => (Real.exp_pos _).le)]
     exact ENNReal.ofReal_ne_top
+  have hMKfin : K * M ≠ ⊤ := ENNReal.mul_ne_top hK hMfin
   have hmM : m ≤ M := setLIntegral_le_lintegral _ _
   have hmfin : m ≠ ⊤ := ne_top_of_le_ne_top hMfin hmM
   have hmpos : m ≠ 0 := by
@@ -274,7 +269,7 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
     rw [h3, Measure.restrict_apply_univ] at h1
     exact hWpos h1
   -- **Step 4.** Pick the index at which the tilt already dominates.
-  set r : ℝ := M.toReal / m.toReal with hrdef
+  set r : ℝ := (K * M).toReal / m.toReal with hrdef
   have hmtoReal : 0 < m.toReal := ENNReal.toReal_pos hmpos hmfin
   have hrnn : (0:ℝ) ≤ r := by rw [hrdef]; positivity
   obtain ⟨n, hn⟩ :=
@@ -286,7 +281,7 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
     calc r + 1 = Real.exp (Real.log (r + 1)) := (Real.exp_log (by linarith)).symm
       _ < Real.exp (lam n * δ) := Real.exp_lt_exp.mpr (by linarith)
   -- **Step 5.** The analytic core: the tilted comparison at that index.
-  have hfinal : m * ENNReal.ofReal (Real.exp (lam n * δ)) ≤ M := by
+  have hfinal : m * ENNReal.ofReal (Real.exp (lam n * δ)) ≤ K * M := by
     set η : EuclideanSpace ℝ (Fin s) := θs + lam n • a with hηdef
     have hηnat : η ∈ E.natSet := hΘ' (hlamΘ n)
     have hsplit : ∀ x : 𝓧,
@@ -315,9 +310,9 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
       exact inv_pos.mpr hZpos
     have hIle :
         (∫⁻ x in E.stat ⁻¹' A, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
-          ≤ ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
+          ≤ K * ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
       have h := hpow η (hlamΘ n)
-      rw [hexpand A hAmeas, hexpand A₀ hA₀meas] at h
+      rw [hexpand A hAmeas, hexpand A₀ hA₀meas, ← mul_assoc] at h
       exact (ENNReal.mul_le_mul_right hκ0 ENNReal.ofReal_ne_top).mp h
     -- upper bound on the `A₀` side
     have hupper :
@@ -363,19 +358,21 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
             lintegral_mono' (Measure.restrict_mono (fun x hx => hx.1) le_rfl) le_rfl
     -- cancel the common factor `e^{λc}`
     have hchain : (m * ENNReal.ofReal (Real.exp (lam n * δ)))
-        * ENNReal.ofReal (Real.exp (lam n * c)) ≤ M * ENNReal.ofReal (Real.exp (lam n * c)) := by
-      refine le_trans (le_of_eq ?_) (le_trans hlower (le_trans hIle hupper))
-      rw [mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
-      ring_nf
+        * ENNReal.ofReal (Real.exp (lam n * c))
+          ≤ (K * M) * ENNReal.ofReal (Real.exp (lam n * c)) := by
+      refine le_trans (le_of_eq ?_) (le_trans hlower (le_trans hIle ?_))
+      · rw [mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+        ring_nf
+      · rw [mul_assoc]; exact mul_le_mul_left' hupper K
     refine (ENNReal.mul_le_mul_right ?_ ENNReal.ofReal_ne_top).mp hchain
     simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
     exact Real.exp_pos _
   -- **Step 6.** But the chosen index makes the left-hand side strictly bigger.
-  have hcontra : M < m * ENNReal.ofReal (Real.exp (lam n * δ)) := by
-    have hMr : M.toReal < m.toReal * (r + 1) := by
+  have hcontra : K * M < m * ENNReal.ofReal (Real.exp (lam n * δ)) := by
+    have hMr : (K * M).toReal < m.toReal * (r + 1) := by
       rw [hrdef, mul_add, mul_one, mul_div_cancel₀ _ hmtoReal.ne']
       linarith
-    calc M = ENNReal.ofReal M.toReal := (ENNReal.ofReal_toReal hMfin).symm
+    calc K * M = ENNReal.ofReal (K * M).toReal := (ENNReal.ofReal_toReal hMKfin).symm
       _ < ENNReal.ofReal (m.toReal * (r + 1)) := by
           exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg |>.mpr hMr
       _ ≤ ENNReal.ofReal (m.toReal * Real.exp (lam n * δ)) := by
@@ -384,6 +381,34 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
       _ = m * ENNReal.ofReal (Real.exp (lam n * δ)) := by
           rw [ENNReal.ofReal_mul hmtoReal.le, ENNReal.ofReal_toReal hmfin]
   exact absurd hfinal (not_le.mpr hcontra)
+
+/-- **A competitor no worse than a closed convex acceptance region is contained in it.**
+If `A₀` is closed and convex and every open half-space missing `A₀` points along a
+direction in which the alternative class contains an unbounded ray, then any acceptance
+region `A` whose acceptance probability is everywhere on the alternatives at most that of
+`A₀` satisfies `A ⊆ A₀` up to a null set. -/
+theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    {Θ_H Θ' A₀ A : Set (EuclideanSpace ℝ (Fin s))}
+    -- USER-INPUT: null and alternative classes sit inside the natural parameter set,
+    -- are nonempty and disjoint
+    (hΘH : Θ_H ⊆ E.natSet) (hΘ' : Θ' ⊆ E.natSet)
+    (hHne : Θ_H.Nonempty) (h'ne : Θ'.Nonempty) (hdisj : Disjoint Θ_H Θ')
+    -- USER-INPUT: the acceptance region is closed and convex
+    (hA₀closed : IsClosed A₀) (hA₀convex : Convex ℝ A₀)
+    -- LEAN-ONLY: measurability of the two acceptance regions, needed to speak of their
+    -- probabilities at all
+    (hA₀meas : MeasurableSet A₀) (hAmeas : MeasurableSet A)
+    -- USER-INPUT: the ray condition — whenever an open half-space misses `A₀`, the
+    -- alternative class contains an unbounded ray in the direction of that half-space
+    (hray : ∀ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
+      A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ →
+        ∃ θstar ∈ Θ', ∃ lam : ℕ → ℝ,
+          Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ')
+    -- USER-INPUT: `A` is nowhere on the alternatives a better acceptance region than `A₀`
+    (hpow : ∀ θ ∈ Θ', statScaleFamily E θ A ≤ statScaleFamily E θ A₀) :
+    statScaleBase E (A \ A₀) = 0 :=
+  acceptance_subset_of_power_le_const E hΘ' hA₀closed hA₀convex hA₀meas hAmeas hray 1
+    ENNReal.one_ne_top (by simpa using hpow)
 
 /-- **A closed convex acceptance region is d-admissible.** -/
 theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
