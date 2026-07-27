@@ -1,4 +1,6 @@
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation
+import StatLean.AsymptoticStatistics.ForMathlib.SlutskyVec
+import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import Mathlib.Analysis.Calculus.Gradient.Basic
 
 /-!
@@ -66,7 +68,7 @@ estimator sequence, are due to J. Hájek ("Asymptotically most powerful rank-ord
 
 open MeasureTheory ProbabilityTheory Filter Topology
 open AsymptoticStatistics AsymptoticStatistics.AsymptoticRepresentation
-open scoped RealInnerProductSpace ENNReal
+open scoped RealInnerProductSpace ENNReal Matrix BoundedContinuousFunction MatrixOrder
 
 namespace StatLean.HypothesisTesting
 
@@ -111,6 +113,186 @@ def IsAsymptoticallyLinear (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k
         ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖})
       atTop (𝓝 0)
 
+
+/-! ## Helpers -/
+
+open scoped MatrixOrder in
+/-- **Translating a multivariate Gaussian shifts its mean.** Immediate from the definition
+`multivariateGaussian m S = (stdGaussian).map (x ↦ m + √S x)`; no positive-semidefiniteness
+is needed (the degenerate `CFC.sqrt S = 0` branch translates a Dirac mass). -/
+private lemma multivariateGaussian_map_add_right
+    (m v : EuclideanSpace ℝ (Fin k)) (S : Matrix (Fin k) (Fin k) ℝ) :
+    (ProbabilityTheory.multivariateGaussian m S).map (fun y => y + v)
+      = ProbabilityTheory.multivariateGaussian (m + v) S := by
+  classical
+  have hmeas : Measurable fun x : EuclideanSpace ℝ (Fin k) =>
+      m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x :=
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)).continuous.measurable.const_add m
+  rw [ProbabilityTheory.multivariateGaussian, ProbabilityTheory.multivariateGaussian,
+    Measure.map_map (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) => y + v)
+      hmeas]
+  congr 1
+  funext x
+  simp only [Function.comp_apply]
+  abel
+
+/-- Weak convergence only depends on the tail of the sequence of measures. -/
+private lemma weakConverges_of_eventually_eq {E : Type*} [MeasurableSpace E]
+    [TopologicalSpace E] {νn νn' : ℕ → Measure E} {ν : Measure E}
+    (heq : ∀ᶠ n in atTop, νn n = νn' n) (hw : WeakConverges νn ν) : WeakConverges νn' ν := by
+  intro f
+  refine (hw f).congr' ?_
+  filter_upwards [heq] with n hn
+  rw [hn]
+
+/-- `mulVecE J` is the action of `Matrix.toEuclideanCLM J`; definitionally equal. -/
+lemma mulVecE_apply_clm (J : Matrix (Fin k) (Fin k) ℝ)
+    (v : EuclideanSpace ℝ (Fin k)) :
+    mulVecE J v = Matrix.toEuclideanCLM (𝕜 := ℝ) J v := rfl
+
+/-- **The Fisher information matrix is positive semidefinite.** The bilinear form
+`(u, v) ↦ ∫ ⟪u, ℓ⟫⟪v, ℓ⟫ p_{θ₀}` is symmetric with nonnegative diagonal, and `hJ` transports
+those two facts to the matrix. This is used to feed the Gaussian pushforward lemmas, which
+are vacuous for non-positive-semidefinite covariances; it makes the source's bare
+nonsingularity hypothesis `IsUnit J.det` equivalent to positive definiteness, so no extra
+hypothesis is needed. -/
+lemma posSemidef_of_fisherInformation
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k),
+      fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫) :
+    J.PosSemidef := by
+  classical
+  have hsymm : ∀ u v : EuclideanSpace ℝ (Fin k),
+      ⟪u, mulVecE J v⟫ = ⟪v, mulVecE J u⟫ := by
+    intro u v
+    rw [← hJ u v, ← hJ v u]
+    unfold fisherInformation
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+  have hnn : ∀ u : EuclideanSpace ℝ (Fin k), 0 ≤ ⟪u, mulVecE J u⟫ := by
+    intro u
+    rw [← hJ u u]
+    unfold fisherInformation
+    exact integral_nonneg fun x =>
+      mul_nonneg (mul_self_nonneg _) (M.density_nonneg θ₀ x)
+  -- Transport both facts to plain vectors through `Matrix.inner_toEuclideanCLM`.
+  have hsymm' : ∀ x y : Fin k → ℝ,
+      dotProduct x (J.mulVec y) = dotProduct y (J.mulVec x) := by
+    intro x y
+    have h := hsymm (WithLp.toLp 2 x) (WithLp.toLp 2 y)
+    simp only [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+  have hnn' : ∀ x : Fin k → ℝ, (0 : ℝ) ≤ dotProduct x (J.mulVec x) := by
+    intro x
+    have h := hnn (WithLp.toLp 2 x)
+    simp only [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+  rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+  refine ⟨?_, fun x => ?_⟩
+  · ext i j
+    have h := hsymm' (Pi.single j (1 : ℝ)) (Pi.single i (1 : ℝ))
+    simpa [Matrix.conjTranspose_apply, Matrix.mulVec_single, single_dotProduct] using h
+  · simpa using hnn' x
+
+/-- **Tightness from weak convergence.** If the laws of `V n` under probability measures
+`P n` converge weakly to a probability measure `ν`, then for every `α > 0` there is a radius
+`K` beyond which the `V n` sit with probability at most `α`, for all large `n`.
+
+The proof avoids the portmanteau theorem: the explicit bounded continuous cut-off
+`x ↦ max 0 (min 1 (‖x‖ − j))` is squeezed between the indicators of `{‖x‖ ≥ j+1}` and
+`{‖x‖ ≥ j}`, and `j` is chosen so that `ν{‖x‖ ≥ j}` is small — possible because the sets
+`{‖x‖ ≥ j}` decrease to `∅` and `ν` is finite. -/
+lemma exists_radius_eventually_measureReal_norm_le
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+    {P : ∀ n, Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
+    {V : ∀ n, Ω n → E} (hV : ∀ n, Measurable (V n))
+    {ν : Measure E} [IsProbabilityMeasure ν]
+    (hVw : WeakConverges (fun n => (P n).map (V n)) ν)
+    {α : ℝ} (hα : 0 < α) :
+    ∃ K : ℝ, 0 < K ∧ ∀ᶠ n in atTop, (P n).real {ω | K ≤ ‖V n ω‖} ≤ α := by
+  classical
+  -- The complements of the balls decrease to the empty set, so `ν` of them tends to `0`.
+  have hmeasset : ∀ j : ℕ, MeasurableSet {x : E | (j : ℝ) ≤ ‖x‖} := fun j =>
+    measurableSet_le measurable_const measurable_norm
+  have hanti : Antitone (fun j : ℕ => {x : E | (j : ℝ) ≤ ‖x‖}) := by
+    intro i j hij x hx
+    have : ((i : ℕ) : ℝ) ≤ ((j : ℕ) : ℝ) := Nat.cast_le.2 hij
+    exact this.trans hx
+  have hinter : (⋂ j : ℕ, {x : E | (j : ℝ) ≤ ‖x‖}) = ∅ := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+      not_le]
+    exact exists_nat_gt ‖x‖
+  have htend : Tendsto (fun j : ℕ => ν {x : E | (j : ℝ) ≤ ‖x‖}) atTop (𝓝 0) := by
+    have h := MeasureTheory.tendsto_measure_iInter_atTop (μ := ν)
+      (fun j : ℕ => (hmeasset j).nullMeasurableSet) hanti ⟨0, measure_ne_top ν _⟩
+    rwa [hinter, measure_empty] at h
+  obtain ⟨j, hj⟩ :=
+    (htend.eventually_lt_const (u := ENNReal.ofReal (α / 2)) (by simpa using hα)).exists
+  have hjreal : ν.real {x : E | (j : ℝ) ≤ ‖x‖} ≤ α / 2 := by
+    refine ENNReal.toReal_le_of_le_ofReal (by positivity) hj.le
+  -- The cut-off test function.
+  set c : ℝ := (j : ℝ) with hc
+  have hcont : Continuous fun x : E => max 0 (min 1 (‖x‖ - c)) :=
+    continuous_const.max (continuous_const.min (continuous_norm.sub continuous_const))
+  set g : E →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup
+      (fun x => max 0 (min 1 (‖x‖ - c))) hcont 1 (by
+        intro x
+        have h0 : (0 : ℝ) ≤ max 0 (min 1 (‖x‖ - c)) := le_max_left _ _
+        rw [Real.norm_eq_abs, abs_of_nonneg h0]
+        exact max_le zero_le_one (min_le_left _ _)) with hg
+  have hgval : ∀ x : E, g x = max 0 (min 1 (‖x‖ - c)) := fun _ => rfl
+  refine ⟨c + 1, by positivity, ?_⟩
+  -- Step 1: the event is dominated by the test function.
+  have hstep1 : ∀ n : ℕ, (P n).real {ω | c + 1 ≤ ‖V n ω‖} ≤ ∫ x, g x ∂((P n).map (V n)) := by
+    intro n
+    have hset : MeasurableSet {ω : Ω n | c + 1 ≤ ‖V n ω‖} :=
+      measurableSet_le measurable_const (hV n).norm
+    have hgint : Integrable (fun ω => g (V n ω)) (P n) :=
+      (integrable_const ‖g‖).mono'
+        ((g.continuous.measurable.comp (hV n)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun ω => g.norm_coe_le_norm _)
+    have hle : ∀ ω : Ω n,
+        Set.indicator {ω : Ω n | c + 1 ≤ ‖V n ω‖} (1 : Ω n → ℝ) ω ≤ g (V n ω) := by
+      intro ω
+      by_cases hω : ω ∈ {ω : Ω n | c + 1 ≤ ‖V n ω‖}
+      · have h1 : (1 : ℝ) ≤ ‖V n ω‖ - c := by
+          have := hω; simp only [Set.mem_setOf_eq] at this; linarith
+        rw [Set.indicator_of_mem hω, hgval, min_eq_left h1]
+        simp
+      · rw [Set.indicator_of_notMem hω, hgval]
+        exact le_max_left _ _
+    calc (P n).real {ω | c + 1 ≤ ‖V n ω‖}
+        = ∫ ω, Set.indicator {ω : Ω n | c + 1 ≤ ‖V n ω‖} (1 : Ω n → ℝ) ω ∂(P n) := by
+          rw [integral_indicator_one hset]
+      _ ≤ ∫ ω, g (V n ω) ∂(P n) :=
+          integral_mono ((integrable_const (1 : ℝ)).indicator hset) hgint hle
+      _ = ∫ x, g x ∂((P n).map (V n)) := by
+          rw [integral_map (hV n).aemeasurable g.continuous.aestronglyMeasurable]
+  -- Step 2: the limit of the test-function integrals is small.
+  have hlim : ∫ x, g x ∂ν ≤ α / 2 := by
+    have hle : ∀ x : E, g x ≤ Set.indicator {x : E | (j : ℝ) ≤ ‖x‖} (1 : E → ℝ) x := by
+      intro x
+      by_cases hx : x ∈ {x : E | (j : ℝ) ≤ ‖x‖}
+      · rw [Set.indicator_of_mem hx, hgval]
+        exact max_le zero_le_one (min_le_left _ _)
+      · have hx' : ‖x‖ - c < 0 := by
+          simp only [Set.mem_setOf_eq, not_le] at hx; rw [hc]; linarith
+        rw [Set.indicator_of_notMem hx, hgval]
+        exact max_le le_rfl ((min_le_right _ _).trans hx'.le)
+    have hgint : Integrable (fun x => g x) ν :=
+      (integrable_const ‖g‖).mono' g.continuous.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => g.norm_coe_le_norm _)
+    calc ∫ x, g x ∂ν
+        ≤ ∫ x, Set.indicator {x : E | (j : ℝ) ≤ ‖x‖} (1 : E → ℝ) x ∂ν :=
+          integral_mono hgint ((integrable_const (1 : ℝ)).indicator (hmeasset j)) hle
+      _ = ν.real {x : E | (j : ℝ) ≤ ‖x‖} := integral_indicator_one (hmeasset j)
+      _ ≤ α / 2 := hjreal
+  filter_upwards [(hVw g).eventually_le_const (u := α) (by linarith)] with n hn
+  exact (hstep1 n).trans hn
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
@@ -150,6 +332,28 @@ theorem weak_limit_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
+  -- TODO (obstruction re-derived).  The mathematical route is standard and the algebra is
+  -- already in place downstream (the two companion theorems below and
+  -- `ScoreUnderAlternatives` are *proved from this one*):
+  --   (i)  `√n(θ̂ₙ−θ₀) = Vₙ + o_P(1)` under `P^n_{θ₀}` (`hlin`, with `Vₙ = J⁻¹Zₙ`);
+  --   (ii) contiguity `P^n_{θₙ} ◅ P^n_{θ₀}` transfers that `o_P(1)` to `P^n_{θₙ}`;
+  --   (iii) Le Cam's third lemma gives `Vₙ ⇝ N(h, J⁻¹)` under `P^n_{θₙ}`;
+  --   (iv) `√n(θ̂ₙ−θₙ) = Vₙ − hₙ + o_P(1) ⇝ N(h,J⁻¹)` shifted by `−h`, i.e. `N(0, J⁻¹)`.
+  -- What blocks it is exactly that steps (ii)–(iii) are only available for a *fixed*
+  -- direction.  `AsymptoticRepresentation.contiguous_local_alternatives`,
+  -- `productMeasure_integral_comparison`, `lanResidual_tendsto_productMeasure` and
+  -- `slutsky_bridge_of_lanResidual` are all stated at a single `h : Θ k` and applied at the
+  -- parameter `θ₀ + h/√n`; here the parameter is `θ₀ + hₙ/√n` with `hₙ` varying, so the
+  -- comparison slack `ρ n` produced by `productMeasure_integral_comparison` — which depends
+  -- on `h` — has to be made uniform over a compact set of directions.  The one varying-`hₙ`
+  -- statement the library does have is `LANExpansion.LAN_expansion_iii` (it takes `h_n` with
+  -- `hconv : h_n → h`), but it lives on the abstract i.i.d. space and has no
+  -- `productMeasure` transfer, and `contiguous_local_alternatives` additionally consumes an
+  -- exact change-of-measure identity `hL_is_log_ratio` that is not among these hypotheses.
+  -- The missing bricks are therefore precisely: a `productMeasure`-level varying-direction
+  -- LAN residual, and a varying-direction version of `productMeasure_integral_comparison`.
+  -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane is
+  -- proved *from* it.
   sorry
 
 /-- **Limit law of an efficient estimator under local alternatives, centred at `θ₀`.**
@@ -190,7 +394,58 @@ theorem weak_limit_estimator_centered_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - θ₀)))
       (multivariateGaussian h J⁻¹) := by
-  sorry
+  -- The recentred limit.
+  have h1 := weak_limit_estimator_under_local_alternatives M μ hPDF θ₀ ℓ hℓ hDQM J hJ hJ_inv
+    est hest hlin h h_n hconv
+  -- `Xₙ = √n(θ̂ₙ − θₙ) + (hₙ − h)` has the same limit `N(0, I⁻¹)` (deterministic shift → 0).
+  have hXmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 =>
+        Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h)) :=
+    fun n => (((hest n).sub measurable_const).const_smul (Real.sqrt n)).add_const _
+  have hcn : Tendsto (fun n : ℕ => h - h_n n) atTop (𝓝 0) := by
+    have := (tendsto_const_nhds (x := h) (f := atTop (α := ℕ))).sub hconv
+    simpa using this
+  have hX : WeakConverges
+      (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h)))
+      (multivariateGaussian 0 J⁻¹) := by
+    refine AsymptoticStatistics.ForMathlib.vec_slutsky_recentering (cn := fun n => h - h_n n)
+      (fun n => (hXmeas n).aemeasurable) ?_ hcn
+    have hfun : (fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h) + (h - h_n n)))
+        = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+          (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) := by
+      funext n
+      congr 1
+      funext ω
+      abel
+    rw [hfun]
+    exact h1
+  -- Translate by `h`.
+  have hmap := hX.map (f := fun y : EuclideanSpace ℝ (Fin k) => y + h)
+    (by fun_prop) (by fun_prop)
+  rw [multivariateGaussian_map_add_right 0 h J⁻¹, zero_add] at hmap
+  have hcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h))).map
+        (fun y : EuclideanSpace ℝ (Fin k) => y + h))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h) + h) := by
+    funext n
+    rw [Measure.map_map (by fun_prop) (hXmeas n)]
+    rfl
+  rw [hcomp] at hmap
+  -- For `n ≥ 1` the composite is exactly `√n(θ̂ₙ − θ₀)`.
+  refine weakConverges_of_eventually_eq ?_ hmap
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  congr 1
+  funext ω
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+  have hs : Real.sqrt n • ((Real.sqrt n)⁻¹ • h_n n) = h_n n := by
+    rw [smul_smul, mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+  simp only [localAlt]
+  rw [show est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n)
+      = (est n ω - θ₀) - (Real.sqrt n)⁻¹ • h_n n from by abel, smul_sub, hs]
+  abel
 
 /-- **Delta-method form under local alternatives.**
 
@@ -237,6 +492,181 @@ theorem weak_limit_g_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))))
       (gaussianReal 0 σ) := by
-  sorry
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hJ_pd : J.PosDef :=
+    hJ_psd.posDef_iff_isUnit.mpr ((Matrix.isUnit_iff_isUnit_det J).mpr hJ_inv)
+  have hJinv_psd : J⁻¹.PosSemidef := hJ_pd.inv.posSemidef
+  have hgc : Continuous g :=
+    continuous_iff_continuousAt.2 fun θ => (hg θ).hasFDerivAt.differentiableAt.continuousAt
+  -- The recentred estimator limit.
+  have h1 := weak_limit_estimator_under_local_alternatives M μ hPDF θ₀ ℓ hℓ hDQM J hJ hJ_inv
+    est hest hlin h h_n hconv
+  have hWmeas : ∀ n : ℕ,
+      Measurable (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  -- Step 1: the linear functional of the recentred estimator is asymptotically `N(0, σ²)`.
+  have hLmeas : Measurable fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫ :=
+    (continuous_const.inner continuous_id).measurable
+  have hlinmap := h1.map (f := fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫)
+    (continuous_const.inner continuous_id) hLmeas
+  rw [ProbabilityTheory.multivariateGaussian_map_inner_eq_gaussianReal
+    (gr θ₀) hJinv_psd] at hlinmap
+  have hσeq : (dotProduct (gr θ₀).ofLp (J⁻¹.mulVec (gr θ₀).ofLp)).toNNReal = σ := by
+    have hd : dotProduct (gr θ₀).ofLp (J⁻¹.mulVec (gr θ₀).ofLp)
+        = ⟪gr θ₀, mulVecE J⁻¹ (gr θ₀)⟫ := by
+      rw [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+    rw [hd, ← hσ, Real.toNNReal_coe]
+  rw [hσeq] at hlinmap
+  have hXcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n))).map
+        (fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫) := by
+    funext n
+    rw [Measure.map_map hLmeas (hWmeas n)]
+    rfl
+  rw [hXcomp] at hlinmap
+  -- Step 2: Slutsky — the delta-method remainder is `o_P(1)`.
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+    (Y := fun n ω => Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n)))
+    (fun n => (hLmeas.comp (hWmeas n)).aemeasurable)
+    (fun n => ((((hgc.measurable).comp (hest n)).sub measurable_const).const_mul
+      (Real.sqrt n)).aemeasurable)
+    hlinmap ?_
+  -- The delta-method remainder.
+  intro ε hε
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro α hα
+  -- Tightness of `√n(θ̂ₙ − θₙ)`.
+  obtain ⟨K, hK0, hKev⟩ :=
+    exists_radius_eventually_measureReal_norm_le hWmeas h1 (α := α / 2) (by positivity)
+  set H : ℝ := ‖h‖ + 1 with hHdef
+  have hH0 : 0 < H := by positivity
+  have hHev : ∀ᶠ n : ℕ in atTop, ‖h_n n‖ ≤ H := by
+    have hnorm : Tendsto (fun n : ℕ => ‖h_n n‖) atTop (𝓝 ‖h‖) := hconv.norm
+    have hmem := hnorm (Iio_mem_nhds (show ‖h‖ < H by rw [hHdef]; linarith))
+    filter_upwards [hmem] with n hn using le_of_lt hn
+  -- The little-o constant of the first-order expansion at `θ₀`.
+  set c : ℝ := ε / (4 * (K + H + 1)) with hcdef
+  have hc0 : 0 < c := by rw [hcdef]; positivity
+  have hcKH : c * (K + H) < ε / 4 := by
+    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0:ℝ) < 4)]
+    nlinarith
+  -- First-order expansion of `g` at `θ₀`, with remainder `Rf`.
+  set Rf : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun θ => g θ - g θ₀ - ⟪gr θ₀, θ - θ₀⟫ with hRfdef
+  have hlo := (hg θ₀).hasFDerivAt.isLittleO
+  have hdef := hlo.def hc0
+  rw [Metric.eventually_nhds_iff] at hdef
+  obtain ⟨ρ0, hρ00, hρ⟩ := hdef
+  set ρ : ℝ := ρ0 / 2 with hρdef
+  have hρ0 : 0 < ρ := by rw [hρdef]; positivity
+  have hRf : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ ρ → |Rf θ| ≤ c * ‖θ - θ₀‖ := by
+    intro θ hθ
+    have hd : dist θ θ₀ < ρ0 := by
+      rw [dist_eq_norm]
+      rw [hρdef] at hθ
+      linarith
+    have := hρ hd
+    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply] using this
+  -- Eventually the whole picture sits inside the ball of radius `ρ`.
+  have hsqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * (K + H)) atTop (𝓝 0) := by
+    have h1' : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
+      Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+    have h2' : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp h1'
+    simpa using h2'.mul_const (K + H)
+  have hρev : ∀ᶠ n : ℕ in atTop, (Real.sqrt n)⁻¹ * (K + H) ≤ ρ := by
+    filter_upwards [hsqrt (Iio_mem_nhds hρ0)] with n hn using le_of_lt hn
+  filter_upwards [hKev, hHev, hρev, eventually_ge_atTop 1] with n hnK hnH hnρ hn1
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn1)
+  have hsqinv : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := le_of_lt (inv_pos.2 hsq)
+  have hincl : {ω : Fin n → 𝓧 |
+        ε ≤ dist (⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+          (Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n)))}
+      ⊆ {ω : Fin n → 𝓧 | K ≤ ‖Real.sqrt n • (est n ω - localAlt θ₀ h_n n)‖} := by
+    intro ω hω
+    by_contra hcon
+    simp only [Set.mem_setOf_eq, not_le] at hcon
+    -- Both `θ̂ₙ` and `θₙ` are within `ρ` of `θ₀`.
+    have hU : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + H := by
+      have hsplit : Real.sqrt n • (est n ω - θ₀)
+          = Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + h_n n := by
+        have hs : Real.sqrt n • ((Real.sqrt n)⁻¹ • h_n n) = h_n n := by
+          rw [smul_smul, mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+        have haux : Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + h_n n
+            = Real.sqrt n • (est n ω - θ₀) := by
+          simp only [localAlt]
+          rw [show est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n)
+              = (est n ω - θ₀) - (Real.sqrt n)⁻¹ • h_n n from by abel, smul_sub, hs]
+          abel
+        exact haux.symm
+      rw [hsplit]
+      exact le_trans (norm_add_le _ _) (by linarith)
+    have hnormsmul : ∀ u : EuclideanSpace ℝ (Fin k),
+        ‖Real.sqrt n • u‖ = Real.sqrt n * ‖u‖ := by
+      intro u
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+    have hestρ : ‖est n ω - θ₀‖ ≤ ρ := by
+      have h' : Real.sqrt n * ‖est n ω - θ₀‖ ≤ K + H := by
+        rw [← hnormsmul]; exact hU
+      have := mul_le_mul_of_nonneg_left h' hsqinv
+      rw [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hsq), one_mul] at this
+      exact le_trans this hnρ
+    have hθnρ : ‖localAlt θ₀ h_n n - θ₀‖ ≤ ρ := by
+      simp only [localAlt, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+        abs_of_nonneg hsqinv]
+      have : (Real.sqrt n)⁻¹ * ‖h_n n‖ ≤ (Real.sqrt n)⁻¹ * (K + H) :=
+        mul_le_mul_of_nonneg_left (by linarith) hsqinv
+      linarith [hnρ]
+    -- The remainder identity.
+    have hXY : ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫
+        - Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))
+        = Real.sqrt n * Rf (localAlt θ₀ h_n n) - Real.sqrt n * Rf (est n ω) := by
+      have hsplit : ⟪gr θ₀, est n ω - localAlt θ₀ h_n n⟫
+          = ⟪gr θ₀, est n ω - θ₀⟫ - ⟪gr θ₀, localAlt θ₀ h_n n - θ₀⟫ := by
+        rw [← inner_sub_right]
+        congr 1
+        abel
+      rw [real_inner_smul_right, hsplit, hRfdef]
+      ring
+    -- Both remainder terms are smaller than `ε/4`.
+    have hb1 : Real.sqrt n * |Rf (est n ω)| < ε / 4 := by
+      have := hRf _ hestρ
+      have h2 : Real.sqrt n * |Rf (est n ω)| ≤ Real.sqrt n * (c * ‖est n ω - θ₀‖) :=
+        mul_le_mul_of_nonneg_left this hsq.le
+      have h3 : Real.sqrt n * (c * ‖est n ω - θ₀‖) = c * (Real.sqrt n * ‖est n ω - θ₀‖) := by
+        ring
+      have h4 : c * (Real.sqrt n * ‖est n ω - θ₀‖) ≤ c * (K + H) := by
+        refine mul_le_mul_of_nonneg_left ?_ hc0.le
+        rw [← hnormsmul]; exact hU
+      linarith
+    have hb2 : Real.sqrt n * |Rf (localAlt θ₀ h_n n)| < ε / 4 := by
+      have hbase := hRf _ hθnρ
+      have hn' : ‖localAlt θ₀ h_n n - θ₀‖ = (Real.sqrt n)⁻¹ * ‖h_n n‖ := by
+        simp only [localAlt, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_nonneg hsqinv]
+      have h2 : Real.sqrt n * |Rf (localAlt θ₀ h_n n)|
+          ≤ Real.sqrt n * (c * ((Real.sqrt n)⁻¹ * ‖h_n n‖)) := by
+        refine mul_le_mul_of_nonneg_left ?_ hsq.le
+        rw [← hn']; exact hbase
+      have h3 : Real.sqrt n * (c * ((Real.sqrt n)⁻¹ * ‖h_n n‖)) = c * ‖h_n n‖ := by
+        field_simp
+      have h4 : c * ‖h_n n‖ ≤ c * (K + H) :=
+        mul_le_mul_of_nonneg_left (by linarith) hc0.le
+      linarith
+    have hfinal : dist (⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+        (Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))) < ε := by
+      rw [Real.dist_eq, hXY]
+      have := abs_sub (Real.sqrt n * Rf (localAlt θ₀ h_n n)) (Real.sqrt n * Rf (est n ω))
+      rw [abs_mul, abs_mul, abs_of_nonneg hsq.le] at this
+      linarith
+    exact absurd hω (not_le.2 hfinal)
+  have hmono := measureReal_mono (μ := productMeasure M μ (localAlt θ₀ h_n n) n) hincl
+    (measure_ne_top _ _)
+  linarith
 
 end StatLean.HypothesisTesting
