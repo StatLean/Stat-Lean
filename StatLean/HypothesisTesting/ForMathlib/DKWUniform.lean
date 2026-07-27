@@ -133,11 +133,52 @@ this supersedes the earlier note, which only said "use the half-line entropy dir
    calibration threshold in the log-scale and is a decision for those consumers, not a
    `ForMathlib` one.
 
+7. *Re-derived Mathlib inventory for route (4), and why route (4) is nevertheless not executable
+   inside this file.* Checked against Mathlib v4.29.1:
+
+   * the **walk step is available off the shelf**. Mathlib has Doob's *weak-type* maximal
+     inequality, `ProbabilityTheory.maximal_ineq` (`Probability/Martingale/OptionalStopping.lean`):
+     for a nonnegative submartingale, `ε · P(max_{j ≤ n} f j ≥ ε) ≤ ∫_{max ≥ ε} f n`. Applied to
+     the nonnegative submartingale `j ↦ Sⱼ²` this is exactly Kolmogorov's maximal inequality
+     `P(max_{j ≤ n} |Sⱼ| ≥ a) ≤ n/a²`, whence
+     `E max_j |Sⱼ| = ∫₀^∞ P(max ≥ a) da ≤ ∫₀^∞ min(1, n/a²) da = 2√n`.
+     Doob's `L^p` inequality — which Mathlib does *not* have — is therefore **not needed**; the
+     earlier note's `‖max_j |Sⱼ|‖₂ ≤ 2‖Sₙ‖₂` was an unnecessarily strong tool for the same
+     constant.
+   * the two genuinely missing ingredients are (i) the **symmetrisation** inequality
+     `E‖Pₙ − P‖_F ≤ 2 E‖Pₙ⁰‖_F` (no form of it is in Mathlib; it needs an independent copy, the
+     `2ⁿ` sign-flip measure-preserving randomisation, and Fubini) and (ii) the **sorted-prefix
+     walk representation** `supₜ |∑ᵢ εᵢ 1{Xᵢ ≤ t}| = max_{0 ≤ j ≤ n} |Sⱼ|` (a `Tuple.sort`
+     argument with tie handling).
+   * **the constant miss is not repairable by sharpening the tail bounds.** Combining *every*
+     elementary tail available for the `±1` walk — Kolmogorov `P ≤ n/a²`, Lévy plus Hoeffding
+     `P ≤ 4e^{−a²/2n}`, and the trivial `P ≤ 1` — gives
+     `E max_j |Sⱼ| ≤ ∫₀^∞ min(1, n/a², 4e^{−a²/2n}) da = 1.66185…·√n`, i.e. `M ≤ 3.3237`, which is
+     **still above** the budget `√(15 log 4/2) = 3.22447` of item (1). Adding the fourth moment
+     (`P ≤ 3n²/a⁴`) makes it worse (`1.7314·√n`). Only the exact reflection value
+     `E max_j Sⱼ = E|Sₙ| = √(2n/π)·(1+o(1))`, giving `M = 4√(2/π) = 3.19154`, crosses the line —
+     confirming and sharpening item (4): the miss survives every standard refinement, so it is
+     the *method*, not the bookkeeping, that is short.
+   * consequently, with `M = 4` the frozen headline genuinely breaks, and not merely by a
+     constant: `max_d [d²/8 − 2(d−4)²] = 32/15 = 2.1333 > log 4 = 1.3863` (at `d = 64/15`), while
+     the vacuous regime of `dkw_uniform` only reaches `d = √(8 log 4) = 3.3302 < 4`, so the whole
+     band `d ∈ (3.3302, 4)` is left uncovered by *both* regimes of the current proof.
+   * **scope.** Route (4) therefore forces `dkw_uniform` down to `4 e^{−d²/16}` (item 6), and
+     `c = 1/8` is hard-coded as the numeral `8` inside `ksThreshold` in
+     `GoodnessOfFit/KSConsistency.lean` — which that file's own header identifies as "the single
+     point of contact". So route (4) cannot be executed here in isolation: it requires a
+     coordinated edit to a file outside `ForMathlib`. Route (5) is the only option that closes
+     this lemma with **every** downstream constant unchanged.
+
 Consequently the lemma is left as planned debt with the frozen constant `2`. What has changed
-after the re-derivation is the *shape* of the debt: it is no longer "the project has no route",
-but the sharply delimited choice between (a) formalising symmetrisation + the sorted-prefix walk
-representation + Doob `L²` (route 4, elementary, and then weakening `c` to `1/16` downstream),
-and (b) formalising the level-indexed martingale (route 5, which alone keeps `c = 1/8`).
+after this second re-derivation is again the *shape* of the debt, now sharply:
+
+* the walk/maximal-inequality step is a solved problem (`ProbabilityTheory.maximal_ineq`);
+* route (4) is elementary but **provably lands at `M ≈ 3.32–4`, outside the `3.2245` budget**, so
+  it is a package deal with an out-of-file amendment to `ksThreshold`;
+* route (5) (the level-indexed martingale `α(u)/(1−u)`, `M ≤ 2.27`) is the only self-contained
+  closure, and its cost is the martingale property of the empirical process along a countable
+  dense set of levels — a discrete-time martingale per finite grid plus monotone convergence.
 
 **Bibliographic comments.** The inequality is due to A. Dvoretzky, J. Kiefer, and
 J. Wolfowitz, "Asymptotic minimax character of the sample distribution function and of the
@@ -251,11 +292,16 @@ theorem integral_ksDist_le {n : ℕ}
   --     mean constant `M` only while `exp(2M²/15) ≤ 4`, i.e. `M ≤ 3.22…`;
   --   * ELEMENTARY route, item (4) of the header: symmetrisation, then the observation that
   --     conditionally on the sample the Rademacher process over half-lines is exactly the
-  --     maximum of a ±1 random walk over its `n+1` prefixes, then Doob `L²`
-  --     (`E max_j |S_j| ≤ 2‖S_n‖₂ = 2√n`).  This gives `√n · E Dₙ ≤ 4` with no
-  --     empirical-process theory at all — but `4 > 3.22`, so closing the lemma this way forces
-  --     `dkw_uniform` down to `4 e^{−d²/16}` (item (6)), which is a decision for the consumers
-  --     of `ksThreshold`, not for this file;
+  --     maximum of a ±1 random walk over its `n+1` prefixes, then a maximal inequality.
+  --     Item (7) re-derives its exact status: the maximal-inequality step is available off the
+  --     shelf (Mathlib's `ProbabilityTheory.maximal_ineq` applied to the submartingale `S_j²`
+  --     IS Kolmogorov's inequality, giving `E max_j |S_j| ≤ 2√n`), and the two missing
+  --     ingredients are symmetrisation and the sorted-prefix representation.  But the route is
+  --     *provably* short of the budget: optimising over every elementary tail
+  --     (`min(1, n/a², 4e^{−a²/2n})`) still gives only `M ≤ 3.3237 > 3.2245`, so closing the
+  --     lemma this way forces `dkw_uniform` down to `4 e^{−d²/16}` (item (6)) and hence an edit
+  --     to the numeral `8` in `ksThreshold`, which lives in `GoodnessOfFit/KSConsistency.lean`
+  --     and is outside this file;
   --   * the Doob route on the level-indexed martingale (`α(u)/(1−u)` is a martingale in `u`,
   --     `exp(θ·)` of it a submartingale) gives `√n · E Dₙ ≤ 2.27`, which *is* below `3.22`, so
   --     it would close this lemma at the amended constant `3` with every downstream constant
