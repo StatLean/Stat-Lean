@@ -636,6 +636,37 @@ private lemma setLIntegral_sphereAverage {b c : ℝ} {σ : Measure (EuclideanSpa
     exact stdGaussian_shift_normSq_tail hb.le hh
   rw [lintegral_congr_ae hinner, lintegral_const, measure_univ, mul_one]
 
+/-- **The sphere-averaged likelihood ratio is a probability density.**  Same computation as
+`setLIntegral_sphereAverage` over the whole space, where every shifted Gaussian has total
+mass one. -/
+private lemma lintegral_sphereAverage_eq_one {b : ℝ} {σ : Measure (EuclideanSpace ℝ (Fin k))}
+    (hσ : IsProbabilityMeasure σ) (hsphere : ∀ᵐ h ∂σ, ‖h‖ = b) :
+    ∫⁻ x, (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) = 1 := by
+  haveI := hσ
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  have hjoint : AEMeasurable
+      (Function.uncurry fun (x : EuclideanSpace ℝ (Fin k)) (h : EuclideanSpace ℝ (Fin k)) =>
+        ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2))) (γ.prod σ) :=
+    Measurable.aemeasurable
+      (ENNReal.measurable_ofReal.comp (Real.continuous_exp.measurable.comp (by fun_prop)))
+  rw [lintegral_lintegral_swap hjoint]
+  have hinner : ∀ᵐ h ∂σ,
+      (∫⁻ x, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂γ) = 1 := by
+    filter_upwards [hsphere] with h hh
+    have hrew : ∀ x : EuclideanSpace ℝ (Fin k),
+        ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2))
+          = ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - ‖h‖ ^ 2 / 2)) := by
+      intro x; rw [hh]
+    simp_rw [hrew]
+    have := stdGaussian_map_add_eq_withDensity' (k := k) h
+    have h2 : (γ.withDensity
+        (fun z => ENNReal.ofReal (Real.exp (⟪h, z⟫_ℝ - ‖h‖ ^ 2 / 2)))) Set.univ = 1 := by
+      rw [hγ, ← this]
+      exact (Measure.isProbabilityMeasure_map (by fun_prop)).measure_univ
+    rwa [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h2
+  rw [lintegral_congr_ae hinner, lintegral_one, measure_univ]
+
 end CameronMartin
 
 /-! ### The transfer lemma -/
