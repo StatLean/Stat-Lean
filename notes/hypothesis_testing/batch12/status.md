@@ -416,3 +416,42 @@ Remaining 16: Edgeworth trio (proofless in source; deferral), `berryEsseen_conve
 deferral candidate), and 11 reachable targets under wave-5 (lanes: Studentized assembly,
 GoF shell/minPower chain + large-k consumer, MBE smoothed convex indicator, singles
 TwoSided/MultiparamUMPU/EstimatorUnderAlternatives).
+
+### Waves 5–11 (2026-07-27, Opus 5): 16 → 4
+
+**16 → 4** across waves 5–11. Chapters now fully 0-sorry: **Randomization (TSH ch. 17) entire**,
+Unbiased/MultiparamUMPU, GoodnessOfFit (except the quoted Bentkus reference statement),
+LikelihoodMethods, MLR, and the `ForMathlib` layer except `MultivariateBerryEsseen`'s quoted
+sharp bound.
+
+Landmark closures (all axiom-clean):
+- **The combinatorial central limit theorem** (`ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum`)
+  — Wald–Wolfowitz/Noether/Hoeffding/Hájek. Two earlier sessions recorded this as unreachable
+  ("no combinatorial CLT, no Stein machinery, no finite-population limit theorem in Mathlib").
+  Built from scratch: `ForMathlib/SteinMethod` (Stein equation, abstract exchangeable-pair
+  theorem, and the three classical solution bounds `‖f_h‖ ≤ L`, `‖f_h'‖ ≤ 2L`, `f_h'` 5L-Lipschitz),
+  the permutation swap pair with its exact conditional variance, and the Lindeberg-scale
+  truncation. A sharpened counterexample in the file records *why* the untruncated pair fails:
+  its third-moment error term can diverge under the theorem's own hypotheses.
+- **The Gaussian shell bound for convex sets** (`ForMathlib/GaussianShell.gaussian_thickening_le`),
+  `γ(Bᵋ) ≤ γ(B) + C_k ε` with `C_k = 8k^{3/2}/√(2π)`, proved elementarily — no Ball's theorem, no
+  Gaussian isoperimetry. Earlier notes deferred this as "Ball's Gaussian-surface-area theorem";
+  that verdict was too strong, since the consumer quantifies over a *fixed* dimension and so
+  needs only a dimension-dependent constant. It closed
+  `MultivariateBerryEsseen.berryEsseen_convex_elementary`.
+- `isUMPU_conditional_point` (TSH 4.4.1 conditional UMPU, point null), the two goodness-of-fit
+  shell-attainment lemmas, `isUMP_twoSided` (under the documented `hatom` amendment),
+  `weak_limit_estimator_under_local_alternatives` (under the common-support repair), the
+  studentized permutation chain end to end, and Edgeworth (E1)–(E3) + (E4.1)/(E4.2).
+
+**Remaining 4**, all documented deferrals or in flight:
+1. `edgeworth_mean_uniform` — (E4.3) window integral + (E4.4) outer range; every analytic core
+   is proved, the remainder is quantitative assembly. In flight.
+2. `edgeworth_studentized_uniform` and 3. `cornishFisher_studentized_quantile` — need the
+   **bivariate** Edgeworth expansion for `(X̄, X̄₂)` plus the delta-method transfer. The verdict
+   was independently re-derived twice; it stands, with a proof that no Slutsky-type reduction to
+   the centred root can work at any rate finer than `n^{-1/2}` (the two approximants differ by
+   exactly `(1/2)γt²φ(t)n^{-1/2}`).
+4. `bentkus_berry_esseen_convex` — quotes the **sharp** Bentkus 2003 rate `400 k^{1/4} β/√n`.
+   **Zero consumers** repository-wide; the weakened convex statement at the elementary rate
+   `C_k(β/√n)^{1/4}` is proved as `berryEsseen_convex_elementary`.
