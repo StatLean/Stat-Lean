@@ -58,6 +58,199 @@ theorem lintegral_loss_bvmGaussian {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0
     lintegral_map hw (by fun_prop)]
   simp_rw [sub_add_eq_sub_sub]
 
+/-! ### Elementary polynomial bookkeeping -/
+
+/-- `1 + (a+b)ᵖ ≤ 2ᵖ (1+aᵖ)(1+bᵖ)` for nonnegative `a`, `b`, `p`: the multiplicative
+splitting of the polynomial envelope used to detach the (random) centering from the
+integration variable. -/
+private lemma one_add_rpow_add_le {a b p : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0 ≤ p) :
+    1 + (a + b) ^ p ≤ 2 ^ p * (1 + a ^ p) * (1 + b ^ p) := by
+  have h2 : (1 : ℝ) ≤ 2 ^ p := by
+    simpa using Real.rpow_le_rpow_of_exponent_le (x := 2) (by norm_num) hp
+  have h2p : (0 : ℝ) ≤ 2 ^ p := Real.rpow_nonneg (by norm_num) p
+  have hap : (0 : ℝ) ≤ a ^ p := Real.rpow_nonneg ha p
+  have hbp : (0 : ℝ) ≤ b ^ p := Real.rpow_nonneg hb p
+  have hmax : (a + b) ^ p ≤ 2 ^ p * (a ^ p + b ^ p) := by
+    have hle : a + b ≤ 2 * max a b := by
+      rcases le_total a b with h | h
+      · rw [max_eq_right h]; linarith
+      · rw [max_eq_left h]; linarith
+    have h0 : (0 : ℝ) ≤ max a b := le_trans ha (le_max_left a b)
+    have hmm : (max a b) ^ p ≤ a ^ p + b ^ p := by
+      rcases le_total a b with h | h
+      · rw [max_eq_right h]; linarith
+      · rw [max_eq_left h]; linarith
+    calc (a + b) ^ p ≤ (2 * max a b) ^ p := Real.rpow_le_rpow (by linarith) hle hp
+      _ = 2 ^ p * (max a b) ^ p := Real.mul_rpow (by norm_num) h0
+      _ ≤ 2 ^ p * (a ^ p + b ^ p) := mul_le_mul_of_nonneg_left hmm h2p
+  nlinarith [mul_nonneg (mul_nonneg h2p hap) hbp]
+
+/-- The polynomially growing loss, evaluated at a point of norm at most `A + ‖h‖`, is
+dominated by `2ᵖ(1+Aᵖ)` times the envelope `1 + ‖h‖ᵖ`. -/
+private lemma poly_loss_le {p A : ℝ} (hp : 0 ≤ p) (hA : 0 ≤ A)
+    {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} (hpoly : PolyGrowthLoss p ℓ)
+    {x h : EuclideanSpace ℝ (Fin k)} (hx : ‖x‖ ≤ A + ‖h‖) :
+    ℓ x ≤ ENNReal.ofReal (2 ^ p * (1 + A ^ p)) * ENNReal.ofReal (1 + ‖h‖ ^ p) := by
+  have h2p : (0 : ℝ) ≤ 2 ^ p := Real.rpow_nonneg (by norm_num) p
+  have hAp : (0 : ℝ) ≤ A ^ p := Real.rpow_nonneg hA p
+  have hpos : (0 : ℝ) ≤ 2 ^ p * (1 + A ^ p) := by positivity
+  refine (hpoly x).trans ?_
+  rw [← ENNReal.ofReal_mul hpos]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have h1 : ‖x‖ ^ p ≤ (A + ‖h‖) ^ p := Real.rpow_le_rpow (norm_nonneg x) hx hp
+  have h2 := one_add_rpow_add_le hA (norm_nonneg h) hp
+  linarith
+
+/-! ### The Gaussian approximation as a kernel (measurability of the deviation) -/
+
+/-- The Gaussian family `m ↦ N(m, S)` as a kernel: the mean map is measurable because
+`N(m,S) A = N(0,S) {x | m + x ∈ A}` is a section measure of a jointly measurable set. -/
+private noncomputable def gaussMeanKernel (S : Matrix (Fin k) (Fin k) ℝ) :
+    Kernel (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin k)) where
+  toFun m := multivariateGaussian m S
+  measurable' := by
+    refine Measure.measurable_of_measurable_coe _ fun t ht => ?_
+    have hadd : Measurable fun q : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        q.1 + q.2 := measurable_fst.add measurable_snd
+    have hEq : ∀ m : EuclideanSpace ℝ (Fin k), multivariateGaussian m S t
+        = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S
+            (Prod.mk m ⁻¹' ((fun q : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+              q.1 + q.2) ⁻¹' t)) := by
+      intro m
+      rw [← AsymptoticStatistics.multivariateGaussian_map_const_add S m,
+        Measure.map_apply (by fun_prop) ht]
+      rfl
+    simp_rw [hEq]
+    exact measurable_measure_prodMk_left (hadd ht)
+
+private lemma gaussMeanKernel_apply (S : Matrix (Fin k) (Fin k) ℝ)
+    (m : EuclideanSpace ℝ (Fin k)) : gaussMeanKernel S m = multivariateGaussian m S := rfl
+
+private instance instIsMarkovKernel_gaussMeanKernel (S : Matrix (Fin k) (Fin k) ℝ) :
+    IsMarkovKernel (gaussMeanKernel S) :=
+  ⟨fun m => by rw [gaussMeanKernel_apply]; infer_instance⟩
+
+/-- The random Gaussian approximation `ω ↦ N(Δₙ(ω), J⁻¹)` as a kernel. -/
+private noncomputable def bvmGaussKernel (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) :
+    Kernel (Fin n → 𝓧) (EuclideanSpace ℝ (Fin k)) :=
+  (gaussMeanKernel J⁻¹).comap (bvmEffScore J sc n) (measurable_bvmEffScore J hsc n)
+
+private lemma bvmGaussKernel_apply (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) (ω : Fin n → 𝓧) :
+    bvmGaussKernel J hsc n ω = bvmGaussian J sc n ω := rfl
+
+private lemma isMarkovKernel_bvmGaussKernel (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) :
+    IsMarkovKernel (bvmGaussKernel J hsc n) := by
+  refine ⟨fun ω => ?_⟩
+  rw [bvmGaussKernel_apply]
+  change IsProbabilityMeasure (multivariateGaussian _ _)
+  infer_instance
+
+/-- Measurability of the Bernstein–von Mises deviation in the sample. -/
+private lemma measurable_bvmTV (hsc : Measurable sc) (n : ℕ) :
+    Measurable fun ω : Fin n → 𝓧 => bvmTV κ π θ₀ J sc n ω := by
+  haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+  exact measurable_tvDist_kernel (bvmLocalPosterior κ π θ₀ n) (bvmGaussKernel J hsc n)
+
+/-! ### Convergence in probability: sums, tight multiples, and rate extraction -/
+
+/-- A sum of two quantities that vanish in probability vanishes in probability. -/
+private lemma tendsto_prob_zero_add {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n)) {a b : ∀ n, Ω n → ℝ≥0∞}
+    (ha : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun n => P n {ω | δ ≤ a n ω}) atTop (𝓝 0))
+    (hb : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun n => P n {ω | δ ≤ b n ω}) atTop (𝓝 0))
+    (δ : ℝ≥0∞) (hδ : 0 < δ) :
+    Tendsto (fun n => P n {ω | δ ≤ a n ω + b n ω}) atTop (𝓝 0) := by
+  have hhalf : 0 < δ / 2 := ENNReal.div_pos hδ.ne' (by norm_num)
+  have hsub : ∀ n, {ω | δ ≤ a n ω + b n ω}
+      ⊆ {ω | δ / 2 ≤ a n ω} ∪ {ω | δ / 2 ≤ b n ω} := by
+    intro n ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    have hlt : a n ω + b n ω < δ / 2 + δ / 2 := ENNReal.add_lt_add hcon.1 hcon.2
+    rw [ENNReal.add_halves] at hlt
+    exact absurd hω (not_le.2 hlt)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
+    (h := fun n => P n {ω | δ / 2 ≤ a n ω} + P n {ω | δ / 2 ≤ b n ω})
+    tendsto_const_nhds ?_ (fun n => zero_le _) (fun n => ?_)
+  · simpa using (ha _ hhalf).add (hb _ hhalf)
+  · exact (measure_mono (hsub n)).trans (measure_union_le _ _)
+
+/-- A *tight* multiple of a quantity vanishing in probability still vanishes in
+probability. -/
+private lemma tendsto_prob_zero_mul_of_tight {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n)) {D T : ∀ n, Ω n → ℝ≥0∞}
+    (hD : ∀ ε : ℝ≥0∞, 0 < ε → ∃ C : ℝ≥0∞, C ≠ 0 ∧ C ≠ ∞ ∧
+      ∀ᶠ n in atTop, P n {ω | C < D n ω} ≤ ε)
+    (hT : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun n => P n {ω | δ ≤ T n ω}) atTop (𝓝 0))
+    (δ : ℝ≥0∞) (hδ : 0 < δ) :
+    Tendsto (fun n => P n {ω | δ ≤ D n ω * T n ω}) atTop (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨C, hC0, hCtop, hCev⟩ := hD (ε / 2) (ENNReal.div_pos hε.ne' (by norm_num))
+  have hδC : 0 < δ / C := ENNReal.div_pos hδ.ne' hCtop
+  have hTev : ∀ᶠ n in atTop, P n {ω | δ / C ≤ T n ω} ≤ ε / 2 :=
+    ENNReal.tendsto_nhds_zero.mp (hT _ hδC) (ε / 2) (ENNReal.div_pos hε.ne' (by norm_num))
+  filter_upwards [hCev, hTev] with n h1 h2
+  have hsub : {ω | δ ≤ D n ω * T n ω} ⊆ {ω | C < D n ω} ∪ {ω | δ / C ≤ T n ω} := by
+    intro ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hcon
+    have h3 : D n ω * T n ω ≤ C * T n ω := by gcongr; exact hcon.1
+    have h4 : T n ω * C < δ / C * C := ENNReal.mul_lt_mul_left hC0 hCtop hcon.2
+    rw [ENNReal.div_mul_cancel hC0 hCtop] at h4
+    have h5 : C * T n ω < δ := by rwa [mul_comm] at h4
+    exact absurd hω (not_le.2 (lt_of_le_of_lt h3 h5))
+  calc P n {ω | δ ≤ D n ω * T n ω}
+      ≤ P n ({ω | C < D n ω} ∪ {ω | δ / C ≤ T n ω}) := measure_mono hsub
+    _ ≤ P n {ω | C < D n ω} + P n {ω | δ / C ≤ T n ω} := measure_union_le _ _
+    _ ≤ ε / 2 + ε / 2 := add_le_add h1 h2
+    _ = ε := ENNReal.add_halves ε
+
+/-- **Rate extraction.** From the *mean* convergence `∫ Tₙ dPₙ → 0` one produces a diverging
+sequence `Mₙ → ∞` slow enough that `(1 + Mₙᵖ) Tₙ` still vanishes in probability (Markov's
+inequality against the explicit rate `∫ Tₙ dPₙ`). -/
+private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    (P : ∀ n, Measure (Ω n)) (T : ∀ n, Ω n → ℝ≥0∞) (hTmeas : ∀ n, Measurable (T n))
+    (hfin : ∀ n, ∫⁻ ω, T n ω ∂(P n) ≠ ∞)
+    (hint : Tendsto (fun n => ∫⁻ ω, T n ω ∂(P n)) atTop (𝓝 0))
+    {p : ℝ} (hp : 0 ≤ p) :
+    ∃ Mseq : ℕ → ℝ, Tendsto Mseq atTop atTop ∧ (∀ n, 0 ≤ Mseq n) ∧
+      ∀ δ : ℝ≥0∞, 0 < δ →
+        Tendsto (fun n => P n {ω | δ ≤ ENNReal.ofReal (1 + Mseq n ^ p) * T n ω})
+          atTop (𝓝 0) := by
+  sorry
+
+/-! ### The Gaussian tails -/
+
+/-- The polynomially weighted tails of the random Gaussian approximation vanish in
+probability: after recentring, the measure is the deterministic `N(0,J⁻¹)`, whose weighted
+tails vanish by dominated convergence, uniformly over the tight centering. -/
+private lemma gaussTail_tendsto_prob
+    (hPDF : IsPDFOf M μ) (hsc : Measurable sc)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
+      ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
+    {p : ℝ} (hp : 0 ≤ p) {Mseq : ℕ → ℝ} (hMdiv : Tendsto Mseq atTop atTop)
+    (δ : ℝ≥0∞) (hδ : 0 < δ) :
+    Tendsto (fun n => productMeasure M μ θ₀ n
+        {ω | δ ≤ ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+          ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω)}) atTop (𝓝 0) := by
+  sorry
+
+/-- Tightness of the polynomial envelope factor `2ᵖ(1 + (R + ‖Δₙ‖)ᵖ)`. -/
+private lemma tight_polyEnvelope
+    (hPDF : IsPDFOf M μ) (hsc : Measurable sc)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ sc u v =
+      ⟪u, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) v))⟫)
+    {p R : ℝ} (hp : 0 ≤ p) (hR : 0 ≤ R) (ε : ℝ≥0∞) (hε : 0 < ε) :
+    ∃ C : ℝ≥0∞, C ≠ 0 ∧ C ≠ ∞ ∧ ∀ᶠ n in atTop, productMeasure M μ θ₀ n
+      {ω | C < ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))} ≤ ε := by
+  sorry
+
 /-- **Majorant-form uniform approximation** (vdV pp. 148–149, recentred): there are
 measurable `Mₙ : (Fin n → 𝓧) → ℝ≥0∞` vanishing in `P^n_{θ₀}`-probability such that on the
 ball `‖τ‖ ≤ R`, the recentred posterior risk `Zₙ(τ + Δₙ)` and the deterministic criterion
