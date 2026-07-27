@@ -1620,6 +1620,59 @@ private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
   have hsplit := integral_add_compl hAmeas hInt
   linarith
 
+/-- The approximant of the statement, on the standardized scale: `(t/σ)² = t²/Var`. -/
+private lemma edgeworthCDF_eq_approx (F : Measure ℝ)
+    (hFvar : 0 < Var[fun t : ℝ => t; F]) (n : ℕ) (t : ℝ) :
+    edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])
+      = stdNormalCDF (t / Real.sqrt Var[fun t : ℝ => t; F]) -
+        1 / 6 * skewness F * stdNormalPDF (t / Real.sqrt Var[fun t : ℝ => t; F]) *
+          (t ^ 2 / Var[fun t : ℝ => t; F] - 1) * (Real.sqrt n)⁻¹ := by
+  have hsq : (t / Real.sqrt Var[fun t : ℝ => t; F]) ^ 2 = t ^ 2 / Var[fun t : ℝ => t; F] := by
+    rw [div_pow, Real.sq_sqrt hFvar.le]
+  rw [edgeworthCDF, hsq]
+
+/-- **One sample size of the assembly.** Esseen's signed-density inequality at flank width
+`δ = n⁻¹`, with the window/tail split of `esseen_split` supplying both its integrability
+hypothesis and the bound on its right-hand side. -/
+private lemma abs_meanRootCDF_sub_edgeworthCDF_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFvar : 0 < Var[fun t : ℝ => t; F]) {n : ℕ} (hn : 1 ≤ n) {c Kw M : ℝ} (hc : 0 < c)
+    (hKw : 0 ≤ Kw)
+    (hwin : ∀ ξ : ℝ, |ξ| ≤ c * Real.sqrt n →
+      ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+          - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖
+        ≤ Kw * windowEnvelope ξ)
+    (htail : ∀ ξ : ℝ, c * Real.sqrt n ≤ |ξ| →
+      ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+          - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖ ≤ M)
+    (t : ℝ) :
+    |meanRootCDF F n t - edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])|
+      ≤ Kw * (∫ ξ : ℝ, windowDom ξ)
+          + 2 * M / (1 / (n : ℝ) * Real.pi ^ 2 * (c * Real.sqrt n))
+        + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|) * (1 / (n : ℝ))) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hδ : (0 : ℝ) < 1 / (n : ℝ) := div_pos one_pos hnR
+  have hρpos : (0 : ℝ) < c * Real.sqrt n := mul_pos hc (Real.sqrt_pos.2 hnR)
+  have hgm : AEStronglyMeasurable (fun ξ : ℝ =>
+      ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+        - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖) volume := by
+    have h1 : Continuous fun ξ : ℝ => charFun (stdRootLaw F n) (-(2 * Real.pi * ξ)) :=
+      (continuous_charFun (μ := stdRootLaw F n)).comp (by fun_prop)
+    have h2 : Continuous fun ξ : ℝ =>
+        charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ)) := by
+      simp only [charFunDensity_edgeworthDensity]
+      fun_prop
+    exact (h1.sub h2).norm.aestronglyMeasurable
+  obtain ⟨hint, hbnd⟩ := esseen_split
+    (fun ξ : ℝ => ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+      - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖)
+    hδ hρpos hKw (fun ξ => norm_nonneg _) hgm hwin htail
+  have hmain := abs_measure_Iic_sub_densityCDF_le_charFun (P := stdRootLaw F n)
+    (integrable_edgeworthDensity (skewness F) n) hδ
+    (fun a b hab => setIntegral_abs_edgeworthDensity_le (skewness F) hn hab) hint
+    (t / Real.sqrt Var[fun t : ℝ => t; F])
+  rw [← meanRootCDF_eq_stdRootLaw F n hFvar t, densityCDF_edgeworthDensity] at hmain
+  exact hmain.trans (add_le_add hbnd le_rfl)
+
 end WindowEstimate
 
 
