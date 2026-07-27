@@ -2945,6 +2945,115 @@ private lemma hasDerivAt_integral_canExp {P : ℝ × Ξ → Measure 𝓧} {Ω : 
     (Filter.Eventually.of_forall fun z => hmaj z) hbound_int
     (Filter.Eventually.of_forall fun z => hdiff z)
 
+/-- **The derivative side condition, at the level of the full measure.** If a bounded
+measurable test `ψ` of `(U, T)` has power exactly `α` at the boundary parameter `(θ₀, ϑ₀)` and
+power at least `α` all along the pure-`θ` segment `(θ₀ ± η, ϑ₀) ⊆ Ω`, then
+
+`E_{(θ₀,ϑ₀)}[U·ψ] = α · E_{(θ₀,ϑ₀)}[U]`.
+
+This is item (b) of `isUMPU_conditional_point` in full: it is the analytic content of
+unbiasedness, namely that the power function of the conditional problem has a *minimum* at
+`θ₀` and therefore a vanishing derivative there.
+
+**Why no normalizer has to be differentiated.** `integrable_canExp` gives
+`C(θ,ϑ₀)·∫e^{canExp (θ,ϑ₀)} dν = 1`, so along the segment the power is the ratio
+`N(θ)/D(θ)` with `N(θ) = ∫ψ e^{canExp (θ,ϑ₀)} dν` and `D(θ) = ∫e^{canExp (θ,ϑ₀)} dν` — both
+differentiated by `hasDerivAt_integral_canExp` (at `g := ψ` and at `g := 1`), and `C` never
+appears. `HasDerivAt.div` plus `IsLocalMin.hasDerivAt_eq_zero` give `N'(θ₀)D(θ₀) =
+N(θ₀)D'(θ₀)`, and `integral_comp_UT_eq` reads `C·N'(θ₀) = E[Uψ]`, `C·D'(θ₀) = E[U]`,
+`N(θ₀)/D(θ₀) = α` off it. -/
+private lemma integral_U_mul_eq_of_boundary_min {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω)
+    {θ₀ α : ℝ} {ϑ₀ : Ξ} {η : ℝ} (hη : 0 < η)
+    (h0 : ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    (hlo : ((θ₀ - η, ϑ₀) : ℝ × Ξ) ∈ Ω) (hhi : ((θ₀ + η, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1)
+    (hval : ∫ x, ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ)) = α)
+    (hmin : ∀ θ : ℝ, |θ - θ₀| ≤ η → α ≤ ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ))) :
+    ∫ x, U x * ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = α * ∫ x, U x ∂(P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+  classical
+  have hηne : η ≠ 0 := ne_of_gt hη
+  -- the whole pure-`θ` window lies in `Ω`, by convexity between the two endpoints
+  have hseg : ∀ θ : ℝ, |θ - θ₀| ≤ η → ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω := by
+    intro θ hθ
+    obtain ⟨hθ1, hθ2⟩ := abs_le.1 hθ
+    have h2η : (0 : ℝ) < 2 * η := by linarith
+    have hb0 : (0 : ℝ) ≤ (θ - (θ₀ - η)) / (2 * η) := div_nonneg (by linarith) h2η.le
+    have ha0 : (0 : ℝ) ≤ 1 - (θ - (θ₀ - η)) / (2 * η) := by
+      rw [sub_nonneg, div_le_one h2η]; linarith
+    have hmem := hΩ_convex hlo hhi ha0 hb0 (by ring)
+    have hpt : (1 - (θ - (θ₀ - η)) / (2 * η)) • ((θ₀ - η, ϑ₀) : ℝ × Ξ)
+        + ((θ - (θ₀ - η)) / (2 * η)) • ((θ₀ + η, ϑ₀) : ℝ × Ξ) = ((θ, ϑ₀) : ℝ × Ξ) := by
+      have hsum : (1 - (θ - (θ₀ - η)) / (2 * η)) + (θ - (θ₀ - η)) / (2 * η) = 1 := by ring
+      refine Prod.ext ?_ ?_
+      · simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+        field_simp
+        ring
+      · simp only [Prod.snd_add, Prod.smul_snd, ← add_smul, hsum, one_smul]
+    rwa [hpt] at hmem
+  -- numerator and denominator of the power along the segment
+  set N : ℝ → ℝ := fun θ => ∫ z, ψ z * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) ∂ν with hN
+  set D : ℝ → ℝ := fun θ => ∫ z, Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) ∂ν with hD
+  have hCD : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω → C ((θ, ϑ₀) : ℝ × Ξ) * D θ = 1 := fun θ hθ =>
+    (integrable_canExp hU hT hUT hθ).2
+  have hDpos : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω → 0 < D θ := by
+    intro θ hθ
+    have hC := canonicalUT_const_pos hU hT hUT hθ
+    have h1 := hCD θ hθ
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+  have hpow : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω →
+      ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ)) = N θ / D θ := by
+    intro θ hθ
+    rw [integral_comp_UT_eq hU hT hUT hθ hψm, eq_div_iff (hDpos θ hθ).ne']
+    linear_combination N θ * hCD θ hθ
+  -- differentiate numerator and denominator
+  have hdN : HasDerivAt N
+      (∫ z, ψ z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν) θ₀ := by
+    have h := (hasDerivAt_integral_canExp hU hT hUT hη h0 hlo hhi hψm hψb).2
+    rw [hN]
+    exact h
+  have hdD : HasDerivAt D (∫ z, z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν) θ₀ := by
+    have h := (hasDerivAt_integral_canExp hU hT hUT hη h0 hlo hhi
+      (g := fun _ : ℝ × Ξ => (1 : ℝ)) measurable_const (fun _ => by norm_num)).2
+    simp only [one_mul] at h
+    rw [hD]
+    exact h
+  have hDne : D θ₀ ≠ 0 := (hDpos θ₀ h0).ne'
+  have hdiv := hdN.div hdD hDne
+  -- unbiasedness ⟹ the ratio has a local minimum at `θ₀`
+  have hlocmin : IsLocalMin (fun θ => N θ / D θ) θ₀ := by
+    filter_upwards [Metric.ball_mem_nhds θ₀ hη] with θ hθ
+    have hθ' : |θ - θ₀| ≤ η := by
+      rw [Metric.mem_ball, Real.dist_eq] at hθ
+      exact hθ.le
+    have hmem := hseg θ hθ'
+    show N θ₀ / D θ₀ ≤ N θ / D θ
+    rw [← hpow θ hmem, ← hpow θ₀ h0, hval]
+    exact hmin θ hθ'
+  have hzero := hlocmin.hasDerivAt_eq_zero hdiv
+  have hnum := (div_eq_zero_iff.1 hzero).resolve_right (pow_ne_zero 2 hDne)
+  -- read the two `ν`-integrals back as expectations
+  have hUψ : ∫ x, U x * ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = C ((θ₀, ϑ₀) : ℝ × Ξ)
+        * ∫ z, ψ z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν := by
+    rw [integral_comp_UT_eq hU hT hUT h0 (g := fun z : ℝ × Ξ => z.1 * ψ z)
+      (measurable_fst.mul hψm)]
+    congr 1
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  have hUonly : ∫ x, U x ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = C ((θ₀, ϑ₀) : ℝ × Ξ)
+        * ∫ z, z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν :=
+    integral_comp_UT_eq hU hT hUT h0 (g := fun z : ℝ × Ξ => z.1) measurable_fst
+  have hαval : α = N θ₀ / D θ₀ := by rw [← hpow θ₀ h0, hval]
+  rw [hUψ, hUonly, hαval, div_mul_eq_mul_div, eq_div_iff hDne]
+  linear_combination C ((θ₀, ϑ₀) : ℝ × Ξ) * hnum
+
 /-- **Two-point envelope for the derivative along a canonical segment.** For the affine
 exponent `L(s) = (1−s)a + sb` and a half-width `η > 0`,
 `|b − a|·e^{L(s)} ≤ η⁻¹(e^{L(s−η)} + e^{L(s+η)})`.
