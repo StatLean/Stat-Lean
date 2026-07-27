@@ -62,4 +62,79 @@ private lemma min_div_two_le_mul_div {x y : ℝ} (hx : 0 < x) (hy : 0 < y) :
   · rw [min_eq_left h]; nlinarith
   · rw [min_eq_right h]; nlinarith
 
+/-! ### The third-moment term of the swap pair -/
+
+/-- **The third-moment term of the swap pair.** The increment of the swap pair is
+`u (d(σq) − d(σp))`, so its cube is controlled by the third absolute moment of the population
+alone: the average over the group *and* the swap index of `|W' − W|³` is at most
+`8 |u|³ N⁻¹ ∑ |d|³`. Both `p` and `q` are single positions, so only the one-coordinate
+marginal `avg_perm_apply` is used. -/
+private lemma avg_cube_increment_le {N m : ℕ} (a : Fin m → Fin N) (ha : Function.Injective a)
+    (hm : 0 < m) (hmN : m < N) (d : Fin N → ℝ) (u : ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ * (Fintype.card (SwapIndex a) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+          |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3
+      ≤ 8 * |u| ^ 3 * ((N : ℝ)⁻¹ * ∑ l, |d l| ^ 3) := by
+  classical
+  have hcP : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin N)) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  have hcK : (0 : ℝ) < (Fintype.card (SwapIndex a) : ℝ) := by
+    rw [card_swapIndex a ha]
+    exact_mod_cast Nat.mul_pos hm (Nat.sub_pos_of_lt hmN)
+  set T : ℝ := (N : ℝ)⁻¹ * ∑ l, |d l| ^ 3 with hT
+  have h3 : (0 : ℝ) ≤ |u| ^ 3 := by positivity
+  -- the bound for a single elementary swap
+  have hper : ∀ k : SwapIndex a,
+      (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3
+        ≤ 8 * |u| ^ 3 * T := by
+    intro k
+    have hb : ∀ σ : Equiv.Perm (Fin N),
+        |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3
+          ≤ 4 * |u| ^ 3 * (|d (σ k.2.1)| ^ 3 + |d (σ k.1.1)| ^ 3) := by
+      intro σ
+      rw [stdBlockSumSwap_sub a d u σ k, abs_mul, mul_pow]
+      calc |u| ^ 3 * |d (σ k.2.1) - d (σ k.1.1)| ^ 3
+          ≤ |u| ^ 3 * (4 * (|d (σ k.2.1)| ^ 3 + |d (σ k.1.1)| ^ 3)) :=
+            mul_le_mul_of_nonneg_left (abs_sub_cube_le _ _) h3
+        _ = 4 * |u| ^ 3 * (|d (σ k.2.1)| ^ 3 + |d (σ k.1.1)| ^ 3) := by ring
+    have hq := avg_perm_apply (α := Fin N) k.2.1 fun l => |d l| ^ 3
+    have hp := avg_perm_apply (α := Fin N) k.1.1 fun l => |d l| ^ 3
+    rw [Fintype.card_fin] at hq hp
+    have hq' : ∑ σ : Equiv.Perm (Fin N), |d (σ k.2.1)| ^ 3
+        = (Fintype.card (Equiv.Perm (Fin N)) : ℝ) * T := by
+      rw [hT, ← hq, ← mul_assoc, mul_inv_cancel₀ hcP.ne', one_mul]
+    have hp' : ∑ σ : Equiv.Perm (Fin N), |d (σ k.1.1)| ^ 3
+        = (Fintype.card (Equiv.Perm (Fin N)) : ℝ) * T := by
+      rw [hT, ← hp, ← mul_assoc, mul_inv_cancel₀ hcP.ne', one_mul]
+    calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3
+        ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N),
+              4 * |u| ^ 3 * (|d (σ k.2.1)| ^ 3 + |d (σ k.1.1)| ^ 3) :=
+          mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hb σ) (inv_nonneg.2 hcP.le)
+      _ = 8 * |u| ^ 3 * T := by
+          rw [← Finset.mul_sum, Finset.sum_add_distrib, hq', hp']
+          field_simp
+          ring
+  -- average over the swap index
+  have hswap : ∀ (c₁ c₂ : ℝ) (g : SwapIndex a → ℝ),
+      c₁ * c₂ * ∑ k, g k = c₂ * ∑ k, c₁ * g k := by
+    intro c₁ c₂ g
+    rw [Finset.mul_sum, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ * (Fintype.card (SwapIndex a) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+            |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3
+      = (Fintype.card (SwapIndex a) : ℝ)⁻¹ * ∑ k : SwapIndex a,
+          ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N),
+              |stdBlockSumSwap a d u σ k - stdBlockSum a d u σ| ^ 3) := by
+        rw [Finset.sum_comm]; exact hswap _ _ _
+    _ ≤ (Fintype.card (SwapIndex a) : ℝ)⁻¹ * ∑ _k : SwapIndex a, 8 * |u| ^ 3 * T :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun k _ => hper k) (inv_nonneg.2 hcK.le)
+    _ = 8 * |u| ^ 3 * T := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+          inv_mul_cancel₀ hcK.ne', one_mul]
+
 end StatLean.HypothesisTesting
