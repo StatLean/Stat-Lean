@@ -44,6 +44,13 @@ that is `tendsto_perm_cdf_blockSum` below.
 * `sum_swap_exchangeable` — the pair is exchangeable.
 * `sum_swapIndex_increment` and `sum_swapIndex_increment'` — the linearity condition, exactly,
   with `λ = N/(m(N-m))`.
+* `sum_sq_swapIndex_increment` — the **conditional variance** of the pair, exactly:
+  `∑ₖ (W' − W)² = u²(m ∑ d² + (N − 2m) A₂(σ) + 2 B(σ)²)`, which reduces the
+  variance-regression defect of Stein's method to the concentration of the block sum of
+  squares `A₂`; `avg_perm_blockSumSq` and `avg_perm_blockSet_sq` are the two moments that
+  identity needs, and `avg_perm_sum_sq_swapIndex_increment` is its group average,
+  `u² · 2m(N−m)/(N−1) · ∑ d²` — so at the Stein normalisation the variance-regression term
+  is *exactly* centred at `(N−1)⁻¹ ∑ d² → 1`.
 * `tendsto_perm_avg_lipschitz` — the combinatorial CLT tested against bounded Lipschitz
   functions (the core brick; open, see the status note at the statement).
 * `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem**, derived from the
@@ -469,6 +476,140 @@ theorem sum_swapIndex_increment (a : Fin m → Fin N) (ha : Function.Injective a
   rw [hlast, stdBlockSum]
   ring
 
+/-- **The conditional variance of the swap pair, exactly.** For a *centred* population,
+$$ \sum_k \bigl(W'(\sigma,k) - W(\sigma)\bigr)^2
+   \;=\; u^2\Bigl( m\sum_l d_l^2 \;+\; (N - 2m)\,A_2(\sigma) \;+\; 2\,B(\sigma)^2 \Bigr), $$
+where `A₂(σ) = ∑_{r ∈ blockSet a} d(σ r)²` is the block sum of squares and
+`B(σ) = ∑_{r ∈ blockSet a} d(σ r) = u⁻¹ W(σ)` is the block sum itself. Expanding the square
+of the increment `u(d(σq) − d(σp))` produces the three terms: the `m(N−m)` cross terms of
+`∑_q d(σq)²` and `∑_p d(σp)²` are counted with multiplicities `m` and `N−m`, and the
+`-2 ∑_p ∑_q d(σp)d(σq)` term collapses to `+2B(σ)²` because the complement of the block sums
+to `-B(σ)`.
+
+This is the identity that turns the variance-regression defect
+`𝔼|1 − (2λ)⁻¹ ∑_k (W' − W)²|` of `SteinMethod.abs_avg_sub_le` into a statement about the
+concentration of `A₂` alone: with `λ = N/(m(N−m))` and `u² = N/(m(N−m))` one gets
+`(2λ)⁻¹∑_k (W' − W)² = ½(m N⁻¹ ∑ d² + (1 − 2m/N) A₂(σ) + 2N⁻¹ B(σ)²)`, and both `B(σ)²/N`
+and the deviation of `A₂` from its mean `(m/N)∑d²` are second-order. -/
+theorem sum_sq_swapIndex_increment (a : Fin m → Fin N) (ha : Function.Injective a)
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ) (σ : Equiv.Perm (Fin N)) :
+    ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ) ^ 2
+      = u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2
+          + ((N : ℝ) - 2 * (m : ℝ)) * ∑ r ∈ blockSet a, d (σ r) ^ 2
+          + 2 * (∑ r ∈ blockSet a, d (σ r)) ^ 2) := by
+  classical
+  have hmN : m ≤ N := by
+    have := card_blockSet a ha ▸ Finset.card_le_univ (blockSet a)
+    simpa using this
+  have htot : ∑ r : Fin N, d (σ r) = 0 := by rw [Equiv.sum_comp σ d]; exact hd
+  have htot2 : ∑ r : Fin N, d (σ r) ^ 2 = ∑ l, d l ^ 2 :=
+    Equiv.sum_comp σ fun l => d l ^ 2
+  have hs1 := Finset.sum_add_sum_compl (blockSet a) fun r => d (σ r)
+  have hs2 := Finset.sum_add_sum_compl (blockSet a) fun r => d (σ r) ^ 2
+  rw [htot] at hs1
+  rw [htot2] at hs2
+  have hcardc : ((blockSet a)ᶜ.card : ℝ) = (N : ℝ) - m := by
+    rw [Finset.card_compl, card_blockSet a ha, Fintype.card_fin, Nat.cast_sub hmN]
+  have hc1 : ∑ r ∈ (blockSet a)ᶜ, d (σ r) = -∑ r ∈ blockSet a, d (σ r) := by linarith
+  have hc2 : ∑ r ∈ (blockSet a)ᶜ, d (σ r) ^ 2
+      = (∑ l, d l ^ 2) - ∑ r ∈ blockSet a, d (σ r) ^ 2 := by linarith
+  rw [Finset.sum_congr rfl fun k _ => by rw [stdBlockSumSwap_sub a d u σ k],
+    Fintype.sum_prod_type]
+  have hinner : ∀ p : {p : Fin N // p ∈ blockSet a},
+      ∑ q : {q : Fin N // q ∈ (blockSet a)ᶜ}, (u * (d (σ q.1) - d (σ p.1))) ^ 2
+        = u ^ 2 * ((∑ l, d l ^ 2) - ∑ r ∈ blockSet a, d (σ r) ^ 2)
+          + (2 * u ^ 2 * (∑ r ∈ blockSet a, d (σ r))) * d (σ p.1)
+          + (((N : ℝ) - m) * u ^ 2) * d (σ p.1) ^ 2 := by
+    intro p
+    have hexp : ∀ q : {q : Fin N // q ∈ (blockSet a)ᶜ},
+        (u * (d (σ q.1) - d (σ p.1))) ^ 2
+          = u ^ 2 * d (σ q.1) ^ 2 - 2 * (u ^ 2 * d (σ p.1)) * d (σ q.1)
+            + u ^ 2 * d (σ p.1) ^ 2 := fun q => by ring
+    rw [Finset.sum_congr rfl fun q _ => hexp q, Finset.sum_add_distrib,
+      Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum, Finset.sum_const,
+      Finset.card_univ, Fintype.card_coe, nsmul_eq_mul, hcardc,
+      Finset.sum_coe_sort (blockSet a)ᶜ fun r => d (σ r) ^ 2,
+      Finset.sum_coe_sort (blockSet a)ᶜ fun r => d (σ r), hc1, hc2]
+    ring
+  rw [Finset.sum_congr rfl fun p _ => hinner p, Finset.sum_add_distrib,
+    Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_coe,
+    card_blockSet a ha, nsmul_eq_mul, ← Finset.mul_sum, ← Finset.mul_sum,
+    Finset.sum_coe_sort (blockSet a) fun r => d (σ r),
+    Finset.sum_coe_sort (blockSet a) fun r => d (σ r) ^ 2]
+  ring
+
+/-- The mean of the block sum of squares `A₂(σ) = ∑_{r ∈ blockSet a} d(σ r)²`, from the
+one-coordinate marginal: each sampled position is uniform on the population. -/
+theorem avg_perm_blockSumSq (a : Fin m → Fin N) (ha : Function.Injective a) (d : Fin N → ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2
+      = (m : ℝ) * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2) := by
+  rw [Finset.sum_congr rfl fun σ _ => sum_blockSet a ha fun r => d (σ r) ^ 2]
+  exact avg_perm_blockSum a fun l => d l ^ 2
+
+/-- The second moment of the block sum, written over the sampled *set* rather than the block
+*index* — the shape in which `sum_sq_swapIndex_increment` produces it. -/
+theorem avg_perm_blockSet_sq (hN : 2 ≤ N) (a : Fin m → Fin N) (ha : Function.Injective a)
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2
+      = (m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, d l ^ 2 := by
+  rw [Finset.sum_congr rfl fun σ _ => by rw [sum_blockSet a ha fun r => d (σ r)]]
+  exact avg_perm_blockSum_sq hN a ha d hd
+
+/-- **The mean of the conditional variance of the swap pair, exactly.** Averaging
+`sum_sq_swapIndex_increment` over the group and feeding in the two moment computations
+`avg_perm_blockSumSq` and `avg_perm_blockSet_sq` collapses the three terms to a single one:
+$$ \frac1{|\mathbf S_N|}\sum_\sigma \sum_k \bigl(W'(\sigma,k) - W(\sigma)\bigr)^2
+   \;=\; u^2\,\frac{2m(N-m)}{N-1}\sum_l d_l^2 . $$
+Consequently, with the Stein normalisation `λ = N/(m(N−m))` and `u² = N/(m(N−m))` the
+variance-regression *centring* is exact:
+`avg_σ (2λ)⁻¹ ∑ₖ (W' − W)² = (N − 1)⁻¹ ∑_l d_l²`, which tends to `1` precisely under the
+hypothesis `N⁻¹ ∑ d² → 1` of `tendsto_perm_avg_lipschitz`. What is left of the
+variance-regression term is therefore purely a *concentration* statement about `A₂`, i.e. a
+fourth-moment computation, and not a centring one. -/
+theorem avg_perm_sum_sq_swapIndex_increment (hN : 2 ≤ N) (a : Fin m → Fin N)
+    (ha : Function.Injective a) (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ) ^ 2
+      = u ^ 2 * (2 * (m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) - 1)) * ∑ l, d l ^ 2 := by
+  classical
+  have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hN1 : (0 : ℝ) < (N : ℝ) - 1 := by linarith
+  have hc : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin N)) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  have hexp : ∑ σ : Equiv.Perm (Fin N),
+      ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ) ^ 2
+      = ∑ σ : Equiv.Perm (Fin N), (u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2)
+          + (u ^ 2 * ((N : ℝ) - 2 * (m : ℝ))) * ∑ r ∈ blockSet a, d (σ r) ^ 2
+          + (2 * u ^ 2) * (∑ r ∈ blockSet a, d (σ r)) ^ 2) :=
+    Finset.sum_congr rfl fun σ _ => by
+      rw [sum_sq_swapIndex_increment a ha d hd u σ]; ring
+  have hconst : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ _σ : Equiv.Perm (Fin N), u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2)
+      = u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2) := by
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+      inv_mul_cancel₀ hc.ne', one_mul]
+  have hA := avg_perm_blockSumSq a ha d
+  have hB := avg_perm_blockSet_sq hN a ha d hd
+  rw [hexp, Finset.sum_add_distrib, Finset.sum_add_distrib, mul_add, mul_add, hconst,
+    ← Finset.mul_sum, ← Finset.mul_sum,
+    show (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ((u ^ 2 * ((N : ℝ) - 2 * (m : ℝ)))
+          * ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2)
+      = (u ^ 2 * ((N : ℝ) - 2 * (m : ℝ)))
+          * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹
+            * ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2) from by ring,
+    show (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ((2 * u ^ 2) * ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2)
+      = (2 * u ^ 2) * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹
+            * ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2) from by ring,
+    hA, hB]
+  field_simp
+  ring
+
 /-- The linearity condition in the exact shape consumed by
 `ForMathlib/SteinMethod.abs_avg_sub_le`, with `λ = N / (m (N − m))`. -/
 theorem sum_swapIndex_increment' (a : Fin m → Fin N) (ha : Function.Injective a)
@@ -500,35 +641,44 @@ core analytic brick. Under the hypotheses of `tendsto_perm_cdf_blockSum`, the gr
 of `h` evaluated at the standardized block sum converges to the standard normal expectation
 of `h`, for every bounded Lipschitz `h`.
 
-STATUS (wave 7): OPEN, but no longer a bare statement — the whole apparatus it needs now
-exists in the repository and the *combinatorial* half of the proof is proved. Route (Stein's
-method for exchangeable pairs, `ForMathlib/SteinMethod`):
+STATUS (wave 8): OPEN. Route (Stein's method for exchangeable pairs,
+`ForMathlib/SteinMethod`), with the *whole* Stein half now discharged:
 
 * the engine `SteinMethod.abs_avg_sub_le` bounds `|avg h(W) − 𝔼h(Z)|` by
   `B₁ · avg|1 − V/(2λ)| + B₂/(4λ) · avg|W' − W|³` for any exchangeable pair with
   `𝔼[W' − W ∣ σ] = -λ W`, where `B₁` bounds `f_h'` and `B₂` is a Lipschitz constant for
   `f_h'`; it is PROVED;
+* the three classical bounds on the Stein solution are now PROVED as well (wave 8):
+  `SteinMethod.abs_steinSolution_le` (`‖f_h‖ ≤ L`),
+  `SteinMethod.abs_deriv_steinSolution_le` (`‖f_h'‖ ≤ 2L`, so `B₁ = 2L`) and
+  `SteinMethod.lipschitz_deriv_steinSolution` (`f_h'` is `5L`-Lipschitz, so `B₂ = 5L`).
+  `SteinMethod` is 0-sorry;
 * the pair itself is the swap pair of the section above: `Ω = Equiv.Perm (Fin (N k))`,
   `K = SwapIndex (a k)`, `W = stdBlockSum`, `W' = stdBlockSumSwap`. Exchangeability
-  (`sum_swap_exchangeable`) and the linearity condition with `λ = N/(m(N−m))`
-  (`sum_swapIndex_increment'`) are PROVED;
-* what is left is (i) the three classical bounds on the Stein solution
-  (`SteinMethod.abs_steinSolution_le`, `abs_deriv_steinSolution_le`,
-  `lipschitz_deriv_steinSolution`, all sorried there), and (ii) the two moment estimates for
-  this particular pair, namely that both error terms vanish.
+  (`sum_swap_exchangeable`), the linearity condition with `λ = N/(m(N−m))`
+  (`sum_swapIndex_increment'`) and the exact conditional variance
+  (`sum_sq_swapIndex_increment`) are PROVED;
+* what is left is exactly the two moment estimates for this particular pair — but see the
+  warning: they must be made **after truncating the population**, not for the raw pair.
 
-WARNING on (ii). The third-moment term is **not** controlled by `hvar` and `hlind` alone:
-`λ⁻¹ 𝔼|W' − W|³ ≍ N⁻¹∑|d|³ / √(m(N−m)/N)`, and a Lindeberg condition does not bound
-`N⁻¹∑|d|³`. The classical proof therefore **truncates** the population at the Lindeberg
-scale `ε√(min (m k) (N k − m k))` first: on the truncated part `N⁻¹∑|d|³ ≤
-ε√(min(m,N−m))·N⁻¹∑d²`, which is `O(ε)` after dividing by the scale, and the discarded part
-is `o(1)` in probability by `hlind` together with the Chebyshev brick
-`perm_avg_indicator_blockAvg_le`. Any future attempt that states an untruncated
-third-moment brick will be stating something FALSE; this is recorded here so that the trap
-is not walked into twice. The variance-regression term `avg|1 − V/(2λ)|` is a genuine
-fourth-moment computation: with `A₂ σ = ∑_{p ∈ blockSet a} d(σ p)²` one has, exactly,
-`∑ₖ (W' σ k − W σ)² = u² (m ∑ d² + (N − 2m) A₂ σ + 2 (u⁻¹ W σ)²)`, so the term is small as
-soon as `A₂` concentrates at its mean `(m/N)∑d²` — again after truncation. -/
+WARNING (sharpened in wave 8). It is not merely that a naive bound on the third moment
+fails: the raw third-moment error term of `abs_avg_sub_le`, applied to the *untruncated*
+pair, can itself **diverge** under the hypotheses of this theorem, so any reduction of this
+statement to "the two error terms of the raw swap pair tend to `0`" is a reduction to
+something FALSE. Explicit witness: take `m k = ⌈log N⌉`, two coefficients
+`d₁ = -d₂ = √N / log log N` and the remaining `N − 2` coefficients `±1`, balanced. Then
+`∑ d = 0`, `N⁻¹∑d² → 1`, and for every `ε > 0` the Hájek–Lindeberg sum is eventually
+`2 (log log N)^{-2} → 0` (only `d₁, d₂` exceed the threshold `ε√(log N)`), so all hypotheses
+hold; yet, since `λ⁻¹ 𝔼|W' − W|³ ≍ N⁻¹∑|d|³ / √(m(N−m)/N)`,
+`≍ √N (log log N)^{-3} / √(log N) → ∞`. The classical proof therefore **truncates** the
+population at the Lindeberg scale `ε√(min (m k) (N k − m k))` and applies Stein's method to
+the truncated population: there `N⁻¹∑|d|³ ≤ ε√(min(m, N−m)) · N⁻¹∑d²`, which is `O(ε)`
+after dividing by the scale, while the discarded part is `o(1)` in probability by `hlind`
+together with the Chebyshev brick `perm_avg_indicator_blockAvg_le` and the Lipschitz
+property of `h`; a diagonal argument in `ε` then finishes. The variance-regression term
+`avg|1 − V/(2λ)|` is a genuine fourth-moment computation, and by
+`sum_sq_swapIndex_increment` it is exactly a statement about the concentration of
+`A₂ σ = ∑_{p ∈ blockSet a} d(σ p)²` at its mean `(m/N)∑d²` — again after truncation. -/
 theorem tendsto_perm_avg_lipschitz {N m : ℕ → ℕ}
     -- USER-INPUT: at each stage the block is a set of `m k` distinct positions
     (a : ∀ k, Fin (m k) → Fin (N k)) (ha : ∀ k, Function.Injective (a k))
