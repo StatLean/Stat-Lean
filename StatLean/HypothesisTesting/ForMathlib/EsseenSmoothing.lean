@@ -195,4 +195,66 @@ theorem fourier_tentC {ξ : ℝ} (hξ : ξ ≠ 0) :
   push_cast
   ring
 
+/-! ## Integrability and the value of the sinc integral -/
+
+/-- The elementary bound `(sin x / x)² ≤ 2/(1 + x²)`, from `sin²x ≤ min (1, x²)`. -/
+private lemma sq_sin_div_le (x : ℝ) : (Real.sin x / x) ^ 2 ≤ 2 * (1 + x ^ 2)⁻¹ := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · norm_num
+  have hx2 : (0 : ℝ) < x ^ 2 := by positivity
+  have hpos : (0 : ℝ) < 1 + x ^ 2 := by positivity
+  have h1 : Real.sin x ^ 2 ≤ 1 := Real.sin_sq_le_one x
+  have h2 : Real.sin x ^ 2 ≤ x ^ 2 := Real.sin_sq_le_sq
+  rw [div_pow, ← div_eq_mul_inv, div_le_div_iff₀ hx2 hpos]
+  rcases le_or_gt (x ^ 2) 1 with h | h
+  · nlinarith [sq_nonneg (Real.sin x)]
+  · nlinarith [sq_nonneg (Real.sin x)]
+
+/-- **The squared sinc function is integrable on the line.** -/
+theorem integrable_sin_div_sq : Integrable (fun x : ℝ => (Real.sin x / x) ^ 2) := by
+  refine Integrable.mono' (g := fun x : ℝ => 2 * (1 + x ^ 2)⁻¹)
+    (integrable_inv_one_add_sq.const_mul 2)
+    ((Real.continuous_sin.measurable.div measurable_id).pow_const 2).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+  exact sq_sin_div_le x
+
+/-- **The sinc integral.** `∫_ℝ (sin x / x)² dx = π`.
+
+The proof evaluates the Fourier inversion formula for the triangle function `Λ` at the
+origin: `𝓕 Λ` is the squared sinc `(sin(πξ)/(πξ))²` (`fourier_tentC`), which is integrable,
+so `∫ 𝓕 Λ = 𝓕⁻ (𝓕 Λ) 0 = Λ 0 = 1`; rescaling by `π` gives the stated value. -/
+theorem integral_sin_div_sq : ∫ x : ℝ, (Real.sin x / x) ^ 2 = π := by
+  have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
+  -- the `π`-rescaled squared sinc is integrable, and equals `𝓕 Λ` off the origin
+  have hscaled : Integrable (fun ξ : ℝ => (Real.sin (π * ξ) / (π * ξ)) ^ 2) :=
+    MeasureTheory.Integrable.comp_mul_left' integrable_sin_div_sq hπ
+  have hae : 𝓕 tentC =ᵐ[volume] fun ξ : ℝ => (((Real.sin (π * ξ) / (π * ξ)) ^ 2 : ℝ) : ℂ) := by
+    filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with ξ hξ
+    exact fourier_tentC (by simpa using hξ)
+  have hFint : Integrable (𝓕 tentC) := hscaled.ofReal.congr hae.symm
+  -- Fourier inversion at the origin
+  have hcs : HasCompactSupport tentC :=
+    HasCompactSupport.intro (isCompact_Icc (a := (-1 : ℝ)) (b := 1)) fun x hx => by
+      simp [tentC, tent_eq_zero_of_notMem hx]
+  have htent : Integrable tentC := continuous_tentC.integrable_of_hasCompactSupport hcs
+  have hinv : 𝓕⁻ (𝓕 tentC) (0 : ℝ) = tentC 0 :=
+    htent.fourierInv_fourier_eq hFint continuous_tentC.continuousAt
+  have h0 : 𝓕⁻ (𝓕 tentC) (0 : ℝ) = ∫ ξ : ℝ, 𝓕 tentC ξ := by
+    rw [Real.fourierInv_eq]
+    simp
+  -- hence the rescaled integral is `1`
+  have hone : (∫ ξ : ℝ, (Real.sin (π * ξ) / (π * ξ)) ^ 2) = 1 := by
+    have h : (∫ ξ : ℝ, (((Real.sin (π * ξ) / (π * ξ)) ^ 2 : ℝ) : ℂ)) = 1 := by
+      rw [← integral_congr_ae hae, ← h0, hinv, tentC, tent_zero]
+      norm_num
+    exact_mod_cast h
+  -- undo the rescaling
+  have hchange := MeasureTheory.Measure.integral_comp_mul_left
+    (fun u : ℝ => (Real.sin u / u) ^ 2) π
+  rw [hone, smul_eq_mul, abs_of_pos (inv_pos.2 Real.pi_pos)] at hchange
+  have h2 := congrArg (fun z : ℝ => π * z) hchange.symm
+  simp only [← mul_assoc, mul_inv_cancel₀ hπ, one_mul, mul_one] at h2
+  exact h2
+
 end StatLean.HypothesisTesting
