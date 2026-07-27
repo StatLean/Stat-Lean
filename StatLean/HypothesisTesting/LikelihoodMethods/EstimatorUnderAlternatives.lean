@@ -146,7 +146,7 @@ private lemma weakConverges_of_eventually_eq {E : Type*} [MeasurableSpace E]
   rw [hn]
 
 /-- `mulVecE J` is the action of `Matrix.toEuclideanCLM J`; definitionally equal. -/
-private lemma mulVecE_apply_clm (J : Matrix (Fin k) (Fin k) ℝ)
+lemma mulVecE_apply_clm (J : Matrix (Fin k) (Fin k) ℝ)
     (v : EuclideanSpace ℝ (Fin k)) :
     mulVecE J v = Matrix.toEuclideanCLM (𝕜 := ℝ) J v := rfl
 
@@ -156,7 +156,7 @@ those two facts to the matrix. This is used to feed the Gaussian pushforward lem
 are vacuous for non-positive-semidefinite covariances; it makes the source's bare
 nonsingularity hypothesis `IsUnit J.det` equivalent to positive definiteness, so no extra
 hypothesis is needed. -/
-private lemma posSemidef_of_fisherInformation
+lemma posSemidef_of_fisherInformation
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
     (θ₀ : EuclideanSpace ℝ (Fin k)) (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
     (J : Matrix (Fin k) (Fin k) ℝ)

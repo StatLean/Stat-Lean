@@ -88,6 +88,91 @@ theorem weak_limit_scoreSum_under_local_alternatives
     WeakConverges
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map (scoreSum ℓ n))
       (multivariateGaussian (mulVecE J h) J) := by
-  sorry
+  classical
+  -- The Fisher information is positive semidefinite, hence (being nonsingular) positive
+  -- definite; this is needed to make the Gaussian pushforward lemmas non-vacuous.
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hJ_pd : J.PosDef :=
+    hJ_psd.posDef_iff_isUnit.mpr ((Matrix.isUnit_iff_isUnit_det J).mpr hJ_inv)
+  have hJinv_psd : J⁻¹.PosSemidef := hJ_pd.inv.posSemidef
+  -- The canonical asymptotically linear estimator `θ̂ₙ = θ₀ + Vₙ/√n` with `Vₙ = J⁻¹Zₙ`: its
+  -- linearization remainder is identically zero, so the estimator theorem applies to it and
+  -- returns the law of `Vₙ` itself.
+  set est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
+    fun n ω => θ₀ + (Real.sqrt n)⁻¹ • mulVecE J⁻¹ (scoreSum ℓ n ω) with hestdef
+  have hVmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => mulVecE J⁻¹ (scoreSum ℓ n ω)) := by
+    intro n
+    have hsum : Measurable (fun ω : Fin n → 𝓧 => ∑ i, ℓ (ω i)) :=
+      Finset.univ.measurable_sum fun i _ => hℓ.comp (measurable_pi_apply i)
+    exact (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.measurable.comp
+      (hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ))
+  have hest : ∀ n, Measurable (est n) := fun n =>
+    ((hVmeas n).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)).const_add θ₀
+  -- The exact linearization identity, including the degenerate `n = 0` case.
+  have hid : ∀ (n : ℕ) (ω : Fin n → 𝓧),
+      Real.sqrt n • (est n ω - θ₀) = mulVecE J⁻¹ (scoreSum ℓ n ω) := by
+    intro n ω
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn
+      have hz : scoreSum ℓ 0 ω = 0 := by
+        simp [scoreSum]
+      have hz' : mulVecE J⁻¹ (scoreSum ℓ 0 ω) = 0 := by
+        rw [hz, mulVecE]
+        exact map_zero (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹)
+      simp [hestdef, hz']
+    · have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+      simp only [hestdef, add_sub_cancel_left, smul_smul,
+        mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+  have hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est := by
+    intro ε hε
+    have hempty : ∀ n : ℕ, {ω : Fin n → 𝓧 |
+        ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖} = ∅ := by
+      intro n
+      ext ω
+      simp only [hid n ω, sub_self, norm_zero, Set.mem_setOf_eq, Set.mem_empty_iff_false,
+        iff_false, not_le]
+      exact hε
+    simp only [hempty, measureReal_empty]
+    exact tendsto_const_nhds
+  -- The estimator theorem, centred at `θ₀`, is exactly the limit law of `Vₙ`.
+  have hVweak := weak_limit_estimator_centered_under_local_alternatives M μ hPDF θ₀ ℓ hℓ
+    hDQM J hJ hJ_inv est hest hlin h h_n hconv
+  have hVrw : (fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - θ₀)))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => mulVecE J⁻¹ (scoreSum ℓ n ω)) := by
+    funext n
+    congr 1
+    funext ω
+    exact hid n ω
+  rw [hVrw] at hVweak
+  -- Apply `J` to recover the score sum itself.
+  have hmap := hVweak.map (f := fun z : EuclideanSpace ℝ (Fin k) =>
+      Matrix.toEuclideanCLM (𝕜 := ℝ) J z)
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) J).continuous
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) J).continuous.measurable
+  rw [ProbabilityTheory.multivariateGaussian_map_toEuclideanCLM J h hJinv_psd] at hmap
+  -- `J · J⁻¹ · Jᴴ = J`.
+  have hcov : J * J⁻¹ * J.conjTranspose = J := by
+    rw [Matrix.mul_nonsing_inv J hJ_inv, Matrix.one_mul]
+    exact hJ_pd.isHermitian
+  rw [hcov] at hmap
+  -- `J (J⁻¹ Zₙ) = Zₙ`.
+  have hcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => mulVecE J⁻¹ (scoreSum ℓ n ω))).map
+        (fun z : EuclideanSpace ℝ (Fin k) => Matrix.toEuclideanCLM (𝕜 := ℝ) J z))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map (scoreSum ℓ n) := by
+    funext n
+    rw [Measure.map_map (Matrix.toEuclideanCLM (𝕜 := ℝ) J).continuous.measurable (hVmeas n)]
+    congr 1
+    funext ω
+    have hinv : Matrix.toEuclideanCLM (𝕜 := ℝ) J
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ (scoreSum ℓ n ω)) = scoreSum ℓ n ω := by
+      rw [← ContinuousLinearMap.mul_apply, ← map_mul, Matrix.mul_nonsing_inv J hJ_inv, map_one]
+      rfl
+    exact hinv
+  rw [hcomp] at hmap
+  exact hmap
 
 end StatLean.HypothesisTesting
