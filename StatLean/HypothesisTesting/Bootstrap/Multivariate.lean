@@ -1315,6 +1315,250 @@ private lemma map_multivariateGaussian_deriv (hpsd : covH.PosSemidef)
   rw [hquad]
   simp
 
+/-! ### The Taylor step
+
+The delta method compares the root of the smooth function with the linear image of the
+mean-vector root. The comparison is run on bounded **Lipschitz** test functions — enough for weak
+convergence by `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto` — and needs two
+carriers: the rescaling `z ↦ √n (f(θ + z/√n) − f(θ))`, whose composition with the mean-vector
+root *is* the root of the smooth function, and a bounded continuous tail cutoff that converts the
+tightness supplied by the mean-vector limit into a uniform bound outside a ball. -/
+
+/-- The **delta-method rescaling** `z ↦ √n (f(θ + z/√n) − f(θ))`. -/
+private noncomputable def deltaMap (f : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin q))
+    (θ : EuclideanSpace ℝ (Fin p)) (n : ℕ) (z : EuclideanSpace ℝ (Fin p)) :
+    EuclideanSpace ℝ (Fin q) :=
+  Real.sqrt n • (f (θ + (Real.sqrt n)⁻¹ • z) - f θ)
+
+private lemma measurable_deltaMap (hfmeas : Measurable f) (θ : EuclideanSpace ℝ (Fin p)) (n : ℕ) :
+    Measurable (deltaMap f θ n) := by
+  unfold deltaMap
+  fun_prop
+
+/-- The **tail cutoff** `z ↦ min 1 (max 0 (‖z‖ − M + 1))`: a bounded continuous function that
+vanishes on the ball of radius `M − 1` and equals `1` outside the ball of radius `M`. -/
+private noncomputable def tailCutoff (M : ℝ) : EuclideanSpace ℝ (Fin p) →ᵇ ℝ :=
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun z => min 1 (max 0 (‖z‖ - M + 1))) (by fun_prop) 1 (fun z => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (le_min zero_le_one (le_max_left _ _))]
+      exact min_le_left _ _)
+
+private lemma tailCutoff_apply (M : ℝ) (z : EuclideanSpace ℝ (Fin p)) :
+    tailCutoff M z = min 1 (max 0 (‖z‖ - M + 1)) := rfl
+
+private lemma tailCutoff_nonneg (M : ℝ) (z : EuclideanSpace ℝ (Fin p)) :
+    0 ≤ tailCutoff M z := le_min zero_le_one (le_max_left _ _)
+
+private lemma tailCutoff_eq_one {M : ℝ} {z : EuclideanSpace ℝ (Fin p)} (hz : M < ‖z‖) :
+    tailCutoff M z = 1 := by
+  rw [tailCutoff_apply, max_eq_right (by linarith), min_eq_left (by linarith)]
+
+/-- The mass the tail cutoff sees vanishes as the radius grows: for a finite measure, dominated
+convergence applies because each point is eventually outside every cutoff. -/
+private lemma tendsto_integral_tailCutoff (μ : Measure (EuclideanSpace ℝ (Fin p)))
+    [IsFiniteMeasure μ] :
+    Tendsto (fun j : ℕ => ∫ z, tailCutoff (j : ℝ) z ∂μ) atTop (𝓝 0) := by
+  have hzero : (0 : ℝ) = ∫ _z : EuclideanSpace ℝ (Fin p), (0 : ℝ) ∂μ := by simp
+  rw [hzero]
+  refine tendsto_integral_of_dominated_convergence (fun _ => (1 : ℝ))
+    (fun j => (tailCutoff (j : ℝ)).continuous.aestronglyMeasurable) (integrable_const _)
+    (fun j => Filter.Eventually.of_forall fun z => ?_) (Filter.Eventually.of_forall fun z => ?_)
+  · rw [Real.norm_eq_abs, abs_of_nonneg (tailCutoff_nonneg _ z), tailCutoff_apply]
+    exact min_le_left _ _
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ge_atTop ⌈‖z‖ + 1⌉₊] with j hj
+    have hjr : ‖z‖ + 1 ≤ (j : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.2 hj)
+    rw [tailCutoff_apply, max_eq_left (by linarith), min_eq_right zero_le_one]
+
+/-- **The delta-method engine.**
+
+If the mean-vector roots `νₙ` converge weakly to a limit `Gp`, and the centres `cₙ` converge to a
+point `θ` at which `f` is differentiable with a differential that is continuous there, then the
+rescaled images `√n (f(cₙ + ·/√n) − f(cₙ))` of the roots converge weakly to the image of `Gp`
+under the differential.
+
+The comparison is run on bounded **Lipschitz** test functions, which suffice for weak convergence
+by `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`; the tail cutoff turns the
+tightness carried by the weak limit into a uniform bound outside a ball, and inside the ball the
+mean-value inequality `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'` gives the Taylor
+estimate **uniformly in the centre**, which is what the drifting `cₙ` needs. -/
+private theorem tendsto_integral_map_deltaMap {θ : EuclideanSpace ℝ (Fin p)}
+    (hfmeas : Measurable f) (hf : HasFDerivAt f Df θ)
+    (hf_nhds : ∀ᶠ y in 𝓝 θ, DifferentiableAt ℝ f y)
+    (hf_cont : ContinuousAt (fderiv ℝ f) θ)
+    {ν : ℕ → Measure (EuclideanSpace ℝ (Fin p))} (hνprob : ∀ n, IsProbabilityMeasure (ν n))
+    {Gp : Measure (EuclideanSpace ℝ (Fin p))} (hGp : IsProbabilityMeasure Gp)
+    (hν : ∀ ψ : EuclideanSpace ℝ (Fin p) →ᵇ ℝ,
+      Tendsto (fun n => ∫ z, ψ z ∂(ν n)) atTop (𝓝 (∫ z, ψ z ∂Gp)))
+    {c : ℕ → EuclideanSpace ℝ (Fin p)} (hc : Tendsto c atTop (𝓝 θ))
+    (φ : EuclideanSpace ℝ (Fin q) →ᵇ ℝ) :
+    Tendsto (fun n : ℕ => ∫ y, φ y ∂((ν n).map (deltaMap f (c n) n))) atTop
+      (𝓝 (∫ y, φ y ∂(Gp.map Df))) := by
+  classical
+  haveI := hGp
+  haveI hνi : ∀ n, IsProbabilityMeasure (ν n) := hνprob
+  haveI hmapprob : ∀ n : ℕ, IsProbabilityMeasure ((ν n).map (deltaMap f (c n) n)) := fun n =>
+    Measure.isProbabilityMeasure_map (measurable_deltaMap hfmeas _ n).aemeasurable
+  haveI hDprob : IsProbabilityMeasure (Gp.map Df) :=
+    Measure.isProbabilityMeasure_map Df.continuous.measurable.aemeasurable
+  set Ps : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin q)) :=
+    fun n => ⟨(ν n).map (deltaMap f (c n) n), hmapprob n⟩ with hPs
+  set Pl : ProbabilityMeasure (EuclideanSpace ℝ (Fin q)) := ⟨Gp.map Df, hDprob⟩ with hPl
+  have hweak : Tendsto Ps atTop (𝓝 Pl) := by
+    refine tendsto_iff_forall_lipschitz_integral_tendsto.2 ?_
+    rintro ψ ⟨C, hCb⟩ ⟨L, hL⟩
+    have hψcont : Continuous ψ := hL.continuous
+    have hCnn : (0 : ℝ) ≤ C := by simpa using hCb 0 0
+    have hψabs : ∀ a b, |ψ a - ψ b| ≤ C := fun a b => by
+      simpa [Real.dist_eq] using hCb a b
+    have hψbdd : ∀ a, ‖ψ a‖ ≤ ‖ψ 0‖ + C := by
+      intro a
+      have hid : ψ a = ψ 0 + (ψ a - ψ 0) := by ring
+      have h2 : ‖ψ a - ψ 0‖ ≤ C := by rw [Real.norm_eq_abs]; exact hψabs a 0
+      calc ‖ψ a‖ = ‖ψ 0 + (ψ a - ψ 0)‖ := by rw [← hid]
+        _ ≤ ‖ψ 0‖ + ‖ψ a - ψ 0‖ := norm_add_le _ _
+        _ ≤ ‖ψ 0‖ + C := by linarith
+    set ψb : EuclideanSpace ℝ (Fin q) →ᵇ ℝ :=
+      BoundedContinuousFunction.ofNormedAddCommGroup ψ hψcont (‖ψ 0‖ + C) hψbdd with hψbdef
+    set ψD : EuclideanSpace ℝ (Fin p) →ᵇ ℝ := ψb.compContinuous ⟨Df, Df.continuous⟩ with hψDdef
+    have hψDapp : ∀ z, ψD z = ψ (Df z) := fun _ => rfl
+    -- the linear comparison term converges by the mean-vector limit
+    have hrhs : ∫ y, ψ y ∂(Gp.map Df) = ∫ z, ψD z ∂Gp := by
+      rw [integral_map Df.continuous.measurable.aemeasurable hψcont.aestronglyMeasurable]
+      rfl
+    have hB : Tendsto (fun n => ∫ z, ψD z ∂(ν n)) atTop (𝓝 (∫ y, ψ y ∂(Gp.map Df))) := by
+      rw [hrhs]; exact hν ψD
+    have hlhs : ∀ n : ℕ, ∫ y, ψ y ∂((ν n).map (deltaMap f (c n) n))
+        = ∫ z, ψ (deltaMap f (c n) n z) ∂(ν n) := fun n =>
+      integral_map (measurable_deltaMap hfmeas _ n).aemeasurable hψcont.aestronglyMeasurable
+    -- the Taylor difference is uniformly negligible
+    have hA : Tendsto (fun n : ℕ => ∫ y, ψ y ∂((ν n).map (deltaMap f (c n) n))
+        - ∫ z, ψD z ∂(ν n)) atTop (𝓝 0) := by
+      rw [NormedAddGroup.tendsto_nhds_zero]
+      intro ε hε
+      -- a radius outside which the limit has little mass
+      obtain ⟨M, hM0, hMtail⟩ : ∃ M : ℝ, 0 ≤ M ∧ (C + 1) * ∫ z, tailCutoff M z ∂Gp < ε / 3 := by
+        have hlim : Tendsto (fun j : ℕ => (C + 1) * ∫ z, tailCutoff (j : ℝ) z ∂Gp) atTop (𝓝 0) := by
+          simpa using (tendsto_integral_tailCutoff Gp).const_mul (C + 1)
+        obtain ⟨j, hj⟩ := (hlim.eventually_lt_const (by positivity : (0 : ℝ) < ε / 3)).exists
+        exact ⟨(j : ℝ), Nat.cast_nonneg j, hj⟩
+      -- the matching Taylor tolerance
+      have hden : (0 : ℝ) < (L : ℝ) * M + 1 := by positivity
+      obtain ⟨η, hη, hηM⟩ : ∃ η : ℝ, 0 < η ∧ (L : ℝ) * η * M ≤ ε / 3 := by
+        refine ⟨(ε / 3) / ((L : ℝ) * M + 1), by positivity, ?_⟩
+        have key : (L : ℝ) * ((ε / 3) / ((L : ℝ) * M + 1)) * M
+            = ((L : ℝ) * M) * (ε / 3) / ((L : ℝ) * M + 1) := by ring
+        rw [key, div_le_iff₀ hden]
+        nlinarith [hε.le, mul_nonneg (NNReal.coe_nonneg L) hM0]
+      -- uniform differentiability on a ball around the limiting centre
+      have hcontev : ∀ᶠ y in 𝓝 θ, ‖fderiv ℝ f y - Df‖ ≤ η := by
+        filter_upwards [Metric.tendsto_nhds.1 hf_cont η hη] with y hy
+        rw [← hf.fderiv, ← dist_eq_norm]
+        exact hy.le
+      obtain ⟨r, hr, hrball⟩ := Metric.eventually_nhds_iff.1 (hf_nhds.and hcontev)
+      have hMVT : ∀ x ∈ Metric.ball θ r, ∀ y ∈ Metric.ball θ r,
+          ‖f y - f x - Df (y - x)‖ ≤ η * ‖y - x‖ := by
+        intro x hx y hy
+        exact (convex_ball θ r).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+          (fun u hu => (hrball (Metric.mem_ball.1 hu)).1.hasFDerivAt.hasFDerivWithinAt)
+          (fun u hu => (hrball (Metric.mem_ball.1 hu)).2) hx hy
+      -- the three eventual constraints
+      have hcutev : ∀ᶠ n : ℕ in atTop,
+          (C + 1) * ∫ z, tailCutoff M z ∂(ν n) < 2 * ε / 3 :=
+        ((hν (tailCutoff M)).const_mul (C + 1)).eventually_lt_const (by linarith)
+      have hsqrt : Tendsto (fun n : ℕ => M * (Real.sqrt n)⁻¹) atTop (𝓝 0) := by
+        have h1 : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+          tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+        simpa using h1.const_mul M
+      have hcev : ∀ᶠ n : ℕ in atTop, dist (c n) θ < r / 2 :=
+        Metric.tendsto_nhds.1 hc (r / 2) (by linarith)
+      have hMev : ∀ᶠ n : ℕ in atTop, M * (Real.sqrt n)⁻¹ < r / 2 :=
+        hsqrt.eventually_lt_const (by linarith)
+      filter_upwards [hcutev, hcev, hMev, eventually_gt_atTop 0] with n hcutn hcn hMn hn
+      have hsn : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+      have hsni : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+      -- the pointwise estimate: Taylor inside the ball, oscillation outside
+      have hpt : ∀ z : EuclideanSpace ℝ (Fin p),
+          ‖ψ (deltaMap f (c n) n z) - ψD z‖ ≤ (L : ℝ) * η * M + C * tailCutoff M z := by
+        intro z
+        rcases le_or_gt ‖z‖ M with hz | hz
+        · have hvn : ‖(Real.sqrt n)⁻¹ • z‖ < r / 2 := by
+            rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsni]
+            calc (Real.sqrt n)⁻¹ * ‖z‖ ≤ (Real.sqrt n)⁻¹ * M := by gcongr
+              _ = M * (Real.sqrt n)⁻¹ := mul_comm _ _
+              _ < r / 2 := hMn
+          have hx : c n ∈ Metric.ball θ r := Metric.mem_ball.2 (by linarith)
+          have hd1 : dist (c n + (Real.sqrt n)⁻¹ • z) (c n) < r / 2 := by
+            rw [dist_eq_norm, add_sub_cancel_left]
+            exact hvn
+          have hy : c n + (Real.sqrt n)⁻¹ • z ∈ Metric.ball θ r := by
+            refine Metric.mem_ball.2 ?_
+            calc dist (c n + (Real.sqrt n)⁻¹ • z) θ
+                ≤ dist (c n + (Real.sqrt n)⁻¹ • z) (c n) + dist (c n) θ := dist_triangle _ _ _
+              _ < r / 2 + r / 2 := add_lt_add hd1 hcn
+              _ = r := by ring
+          have hmv := hMVT _ hx _ hy
+          rw [add_sub_cancel_left] at hmv
+          have hdel : ‖deltaMap f (c n) n z - Df z‖ ≤ η * ‖z‖ := by
+            have hid : deltaMap f (c n) n z - Df z
+                = Real.sqrt n • (f (c n + (Real.sqrt n)⁻¹ • z) - f (c n)
+                    - Df ((Real.sqrt n)⁻¹ • z)) := by
+              rw [deltaMap, map_smul, smul_sub, smul_sub, smul_smul,
+                mul_inv_cancel₀ hsn.ne', one_smul, smul_sub]
+            rw [hid, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsn.le]
+            calc Real.sqrt n * ‖f (c n + (Real.sqrt n)⁻¹ • z) - f (c n)
+                    - Df ((Real.sqrt n)⁻¹ • z)‖
+                ≤ Real.sqrt n * (η * ‖(Real.sqrt n)⁻¹ • z‖) := by gcongr
+              _ = η * ‖z‖ := by
+                  rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsni]
+                  field_simp
+          have hlip : ‖ψ (deltaMap f (c n) n z) - ψD z‖
+              ≤ (L : ℝ) * ‖deltaMap f (c n) n z - Df z‖ := by
+            rw [hψDapp, Real.norm_eq_abs, ← Real.dist_eq, ← dist_eq_norm]
+            exact hL.dist_le_mul _ _
+          have h1 : (L : ℝ) * ‖deltaMap f (c n) n z - Df z‖ ≤ (L : ℝ) * (η * M) := by
+            refine mul_le_mul_of_nonneg_left (hdel.trans ?_) (NNReal.coe_nonneg L)
+            exact mul_le_mul_of_nonneg_left hz hη.le
+          have h2 : (0 : ℝ) ≤ C * tailCutoff M z := mul_nonneg hCnn (tailCutoff_nonneg M z)
+          calc ‖ψ (deltaMap f (c n) n z) - ψD z‖ ≤ (L : ℝ) * (η * M) := hlip.trans h1
+            _ ≤ (L : ℝ) * η * M + C * tailCutoff M z := by rw [mul_assoc]; linarith
+        · have h1 : ‖ψ (deltaMap f (c n) n z) - ψD z‖ ≤ C := by
+            rw [hψDapp, Real.norm_eq_abs]; exact hψabs _ _
+          have h3 : (0 : ℝ) ≤ (L : ℝ) * η * M := by positivity
+          rw [tailCutoff_eq_one hz]
+          linarith
+      -- integrate the pointwise estimate
+      have hI1 : Integrable (fun z => ψ (deltaMap f (c n) n z)) (ν n) :=
+        Integrable.mono' (integrable_const (‖ψ 0‖ + C))
+          (hψcont.measurable.comp (measurable_deltaMap hfmeas _ n)).aestronglyMeasurable
+          (Filter.Eventually.of_forall fun z => hψbdd _)
+      have hI2 : Integrable (fun z => ψD z) (ν n) := BoundedContinuousFunction.integrable _ ψD
+      have hI3 : Integrable (fun z => C * tailCutoff M z) (ν n) :=
+        (BoundedContinuousFunction.integrable _ (tailCutoff M)).const_mul C
+      have hbound : ‖∫ y, ψ y ∂((ν n).map (deltaMap f (c n) n)) - ∫ z, ψD z ∂(ν n)‖
+          ≤ (L : ℝ) * η * M + C * ∫ z, tailCutoff M z ∂(ν n) := by
+        have hcm : ∫ z, (C * tailCutoff M z) ∂(ν n) = C * ∫ z, tailCutoff M z ∂(ν n) :=
+          integral_const_mul C _
+        have heq : ∫ z, ((L : ℝ) * η * M + C * tailCutoff M z) ∂(ν n)
+            = (L : ℝ) * η * M + C * ∫ z, tailCutoff M z ∂(ν n) := by
+          rw [integral_add (integrable_const _) hI3, hcm, integral_const]
+          simp
+        rw [hlhs n, ← integral_sub hI1 hI2]
+        refine (norm_integral_le_integral_norm _).trans ?_
+        calc ∫ z, ‖ψ (deltaMap f (c n) n z) - ψD z‖ ∂(ν n)
+            ≤ ∫ z, ((L : ℝ) * η * M + C * tailCutoff M z) ∂(ν n) :=
+              integral_mono ((hI1.sub hI2).norm) ((integrable_const _).add hI3) hpt
+          _ = (L : ℝ) * η * M + C * ∫ z, tailCutoff M z ∂(ν n) := heq
+      have hnn : (0 : ℝ) ≤ ∫ z, tailCutoff M z ∂(ν n) :=
+        integral_nonneg fun z => tailCutoff_nonneg M z
+      have hCle : C * ∫ z, tailCutoff M z ∂(ν n) ≤ (C + 1) * ∫ z, tailCutoff M z ∂(ν n) := by
+        nlinarith
+      calc ‖∫ y, ψ y ∂((ν n).map (deltaMap f (c n) n)) - ∫ z, ψD z ∂(ν n)‖
+          ≤ (L : ℝ) * η * M + C * ∫ z, tailCutoff M z ∂(ν n) := hbound
+        _ < ε := by linarith
+    simpa using hA.add hB
+  exact ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hweak φ
+
 /-- **Delta-method limit for a smooth function of means.**
 
 Let each coordinate of the parameter be an expectation `∫ h j dP` estimated by the corresponding
