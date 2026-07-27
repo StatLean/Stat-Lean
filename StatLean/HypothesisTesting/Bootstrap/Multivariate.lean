@@ -1153,6 +1153,168 @@ variable {P : Measure 𝓢} {Pr : Measure Ω} {X : ℕ → Ω → 𝓢} {h : Fin
   {Df : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin q)} {D : Matrix (Fin q) (Fin p) ℝ}
   {covH : Matrix (Fin p) (Fin p) ℝ} {nrm : EuclideanSpace ℝ (Fin q) → ℝ}
 
+/-! ### The vector of coordinate functions as a mean-vector problem
+
+The delta method is the mean-vector theory of this file, transported along `s ↦ (h₁ s, …, h_p s)`
+and then pushed through a differentiable map. The lemmas of this block do the transport: they
+identify the law of the vector of sample means with a `meanVecRootLaw`, its covariance matrix with
+`covH`, and the image of the Gaussian limit under the differential with the Gaussian limit of the
+image. -/
+
+/-- Coordinate extensionality on a Euclidean space. -/
+private lemma euclidean_ext {x y : EuclideanSpace ℝ (Fin p)}
+    (hxy : ∀ j, WithLp.ofLp x j = WithLp.ofLp y j) : x = y := by
+  have h : WithLp.ofLp x = WithLp.ofLp y := funext hxy
+  simpa using congrArg (WithLp.toLp 2) h
+
+/-- The **vector of coordinate functions** `s ↦ (h₁ s, …, h_p s)`, as a point of `ℝᵖ`. -/
+private noncomputable def hVec (h : Fin p → 𝓢 → ℝ) (s : 𝓢) : EuclideanSpace ℝ (Fin p) :=
+  WithLp.toLp 2 fun j => h j s
+
+private lemma ofLp_hVec (s : 𝓢) (j : Fin p) : WithLp.ofLp (hVec h s) j = h j s := rfl
+
+private lemma measurable_hVec (hhmeas : ∀ j, Measurable (h j)) : Measurable (hVec h) := by
+  unfold hVec
+  fun_prop
+
+private lemma measurable_ofLp_apply (a : Fin p) :
+    Measurable fun y : EuclideanSpace ℝ (Fin p) => WithLp.ofLp y a := by fun_prop
+
+/-- The vector of coordinate functions is square-integrable as soon as each coordinate is. -/
+private lemma memLp_hVec (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) :
+    MemLp (hVec h) 2 P := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  rw [memLp_two_iff_integrable_sq_norm hmeas.aestronglyMeasurable]
+  have hnorm : ∀ s : 𝓢, ‖hVec h s‖ ^ 2 = ∑ j, (h j s) ^ 2 := by
+    intro s
+    rw [EuclideanSpace.norm_eq, Real.sq_sqrt (Finset.sum_nonneg (fun j _ => by positivity))]
+    refine Finset.sum_congr rfl (fun j _ => ?_)
+    rw [ofLp_hVec, Real.norm_eq_abs, sq_abs]
+  simp only [hnorm]
+  exact integrable_finset_sum _ (fun j _ => (hh2 j).integrable_sq)
+
+/-- The law of the vector of coordinate functions is a probability measure. -/
+private lemma isProbabilityMeasure_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j)) :
+    IsProbabilityMeasure (P.map (hVec h)) :=
+  Measure.isProbabilityMeasure_map (measurable_hVec hhmeas).aemeasurable
+
+/-- The law of the vector of coordinate functions is square-integrable. -/
+private lemma memLp_id_map_hVec (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) := by
+  rw [memLp_map_measure_iff (by fun_prop) (measurable_hVec hhmeas).aemeasurable]
+  simpa [Function.comp_def] using memLp_hVec hhmeas hh2
+
+/-- The covariance matrix of the law of the vector of coordinate functions is the covariance
+matrix of the coordinate functions. -/
+private lemma covMatrix_map_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j))
+    (i j : Fin p) :
+    covMatrix (P.map (hVec h)) i j = cov[h i, h j; P] := by
+  rw [covMatrix, Matrix.of_apply, covariance_map (measurable_ofLp_apply i).aestronglyMeasurable
+    (measurable_ofLp_apply j).aestronglyMeasurable (measurable_hVec hhmeas).aemeasurable]
+  rfl
+
+/-- The mean vector of the law of the vector of coordinate functions is the parameter. -/
+private lemma integral_map_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j))
+    (hh2 : ∀ j, MemLp (h j) 2 P) :
+    ∫ z, z ∂(P.map (hVec h)) = WithLp.toLp 2 fun j => ∫ s, h j s ∂P := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  have hint : Integrable (hVec h) P := (memLp_hVec hhmeas hh2).integrable (by norm_num)
+  rw [integral_map hmeas.aemeasurable (by fun_prop)]
+  refine euclidean_ext (fun j => ?_)
+  have hproj : ∫ s, WithLp.ofLp (hVec h s) j ∂P = WithLp.ofLp (∫ s, hVec h s ∂P) j :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin p) j).integral_comp_comm hint
+  rw [← hproj]
+  simp only [ofLp_hVec]
+
+/-- **The vector of sample means is a mean-vector root.**
+
+The law of `n^{1/2}(θ̂ₙ − θ)`, where `θ̂ₙ` is the vector of sample means of the coordinate
+functions under `n` independent draws from `P`, is the mean-vector root law of the image of `P`
+under `s ↦ (h₁ s, …, h_p s)`. This is the identification that makes the whole multivariate
+chain of this file available for smooth functions of means. -/
+private lemma map_meanStatistic_eq_meanVecRootLaw [IsProbabilityMeasure P]
+    (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) (n : ℕ) :
+    (Measure.pi fun _ : Fin n => P).map
+        (fun w => Real.sqrt n • (meanStatistic h w - WithLp.toLp 2 fun j => ∫ s, h j s ∂P))
+      = meanVecRootLaw (P.map (hVec h)) n := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  have hpi : (Measure.pi fun _ : Fin n => P).map (fun w (i : Fin n) => hVec h (w i))
+      = Measure.pi fun _ : Fin n => P.map (hVec h) :=
+    Measure.pi_map_pi (fun _ => hmeas.aemeasurable)
+  have hstat : ∀ w : Fin n → 𝓢,
+      meanStatistic h w = (n : ℝ)⁻¹ • ∑ i, hVec h (w i) := by
+    intro w
+    refine euclidean_ext (fun j => ?_)
+    have hsum : WithLp.ofLp (∑ i, hVec h (w i)) j = ∑ i, WithLp.ofLp (hVec h (w i)) j :=
+      map_sum (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin p) j) _ _
+    simp only [meanStatistic, WithLp.ofLp_toLp, PiLp.smul_apply, smul_eq_mul, hsum, ofLp_hVec]
+  have hcomp : ((Measure.pi fun _ : Fin n => P).map (fun w (i : Fin n) => hVec h (w i))).map
+        (fun y : Fin n → EuclideanSpace ℝ (Fin p) =>
+          Real.sqrt n • ((n : ℝ)⁻¹ • (∑ i, y i) - ∫ z, z ∂(P.map (hVec h))))
+      = (Measure.pi fun _ : Fin n => P).map
+        (fun w => Real.sqrt n • ((n : ℝ)⁻¹ • (∑ i, hVec h (w i))
+          - ∫ z, z ∂(P.map (hVec h)))) := by
+    rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    simp only [Function.comp_def]
+  rw [meanVecRootLaw, ← hpi, hcomp, integral_map_hVec hhmeas hh2]
+  congr 1
+  funext w
+  rw [hstat w]
+
+/-- The real inner product of a Euclidean space, as a sum of products of coordinates. -/
+private lemma real_inner_euclidean {m : ℕ} (u v : EuclideanSpace ℝ (Fin m)) :
+    (inner ℝ u v : ℝ) = ∑ i, WithLp.ofLp u i * WithLp.ofLp v i := by
+  have hdef : (inner ℝ u v : ℝ) = ∑ i, WithLp.ofLp v i * star (WithLp.ofLp u i) := rfl
+  rw [hdef]
+  exact Finset.sum_congr rfl (fun i _ => by simp [mul_comm])
+
+/-- **The Gaussian limit transforms by the differential.**
+
+The image of the centred Gaussian law with covariance `covH` under the differential is the centred
+Gaussian law with covariance `D covH Dᵀ`: both characteristic functions are Gaussian, and the
+quadratic forms agree because `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`. -/
+private lemma map_multivariateGaussian_deriv (hpsd : covH.PosSemidef)
+    (hD : ∀ v, Df v = WithLp.toLp 2 (D.mulVec (WithLp.ofLp v))) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH).map Df
+      = multivariateGaussian (0 : EuclideanSpace ℝ (Fin q)) (D * covH * D.transpose) := by
+  classical
+  have hpsd' : (D * covH * D.transpose).PosSemidef := by
+    have hc := hpsd.conjTranspose_mul_mul_same (B := D.transpose)
+    simpa [Matrix.conjTranspose_transpose] using hc
+  haveI : IsProbabilityMeasure ((multivariateGaussian
+      (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  refine Measure.ext_of_charFun (funext fun t => ?_)
+  -- pairing with `Df y` is pairing with the transposed direction
+  set tD : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 (D.transpose.mulVec (WithLp.ofLp t)) with htD
+  have hinner : ∀ y : EuclideanSpace ℝ (Fin p),
+      (inner ℝ (Df y) t : ℝ) = inner ℝ y tD := by
+    intro y
+    rw [real_inner_euclidean, real_inner_euclidean, hD y]
+    simp only [htD, WithLp.ofLp_toLp, Matrix.mulVec, Matrix.transpose_apply, dotProduct,
+      Finset.sum_mul, Finset.mul_sum]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl (fun b _ => Finset.sum_congr rfl (fun a _ => by ring))
+  -- both characteristic functions are the Gaussian one
+  have hcf : charFun ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) t
+      = charFun (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH) tD := by
+    rw [charFun_apply, charFun_apply,
+      integral_map (by fun_prop) (by fun_prop : AEStronglyMeasurable
+        (fun z : EuclideanSpace ℝ (Fin q) => Complex.exp ((inner ℝ z t : ℝ) * Complex.I)) _)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only [hinner y]
+  rw [hcf, charFun_multivariateGaussian hpsd, charFun_multivariateGaussian hpsd']
+  have hquad : WithLp.ofLp tD ⬝ᵥ covH.mulVec (WithLp.ofLp tD)
+      = WithLp.ofLp t ⬝ᵥ (D * covH * D.transpose).mulVec (WithLp.ofLp t) := by
+    have hu : WithLp.ofLp tD = D.transpose.mulVec (WithLp.ofLp t) := by
+      simp only [htD, WithLp.ofLp_toLp]
+    rw [hu, Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.transpose_transpose,
+      Matrix.dotProduct_mulVec, ← Matrix.vecMul_vecMul, ← Matrix.vecMul_vecMul,
+      Matrix.vecMul_transpose, dotProduct_comm,
+      dotProduct_comm (D.mulVec _) (WithLp.ofLp t), Matrix.dotProduct_mulVec]
+  rw [hquad]
+  simp
+
 /-- **Delta-method limit for a smooth function of means.**
 
 Let each coordinate of the parameter be an expectation `∫ h j dP` estimated by the corresponding
