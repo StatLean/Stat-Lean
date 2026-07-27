@@ -47,6 +47,11 @@ noncomputable def doobJoint (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measur
     [IsFiniteMeasure π] : Measure ((ℕ → 𝓧) × Θ) :=
   (π ⊗ₘ iidSeqKernel K).map Prod.swap
 
+instance (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measure Θ) [IsProbabilityMeasure π] :
+    IsProbabilityMeasure (doobJoint K π) := by
+  unfold doobJoint
+  exact Measure.isProbabilityMeasure_map measurable_swap.aemeasurable
+
 /-- The first-`n`-observations statistic on the joint space. -/
 def doobData (n : ℕ) (ω : (ℕ → 𝓧) × Θ) : Fin n → 𝓧 :=
   fun i => ω.1 i.val

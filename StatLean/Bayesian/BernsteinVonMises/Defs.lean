@@ -58,8 +58,8 @@ noncomputable def bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
   fun θ => (Real.sqrt n) • (θ - θ₀)
 
 lemma measurable_bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
-    Measurable (bvmLocalScale θ₀ n) :=
-  (measurable_id.sub measurable_const).const_smul _
+    Measurable (bvmLocalScale θ₀ n) := by
+  unfold bvmLocalScale; fun_prop
 
 /-- The inverse local map `h ↦ θ₀ + h/√n` (a genuine two-sided inverse of
 `bvmLocalScale θ₀ n` for `n ≥ 1`). -/
@@ -68,8 +68,8 @@ noncomputable def bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ)
   fun h => θ₀ + (Real.sqrt n)⁻¹ • h
 
 lemma measurable_bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
-    Measurable (bvmLocalUnscale θ₀ n) :=
-  measurable_const.add (measurable_id.const_smul _)
+    Measurable (bvmLocalUnscale θ₀ n) := by
+  unfold bvmLocalUnscale; fun_prop
 
 
 
