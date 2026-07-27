@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.ForMathlib.PermutationMarginals
+import StatLean.HypothesisTesting.ForMathlib.SteinMethod
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.CDF
 
@@ -306,6 +307,177 @@ theorem avg_measureReal_eq_integral_avg_indicator {𝓨 : Type*} [MeasurableSpac
   congr 1
   refine Finset.sum_congr rfl fun g _ => ?_
   rw [hind g, integral_indicator_one (hset g)]
+
+/-! ### The exchangeable pair of Stein's method
+
+The modern proof of the combinatorial CLT builds an **exchangeable pair** out of a single
+elementary move: pick one sampled position and one unsampled position uniformly at random and
+interchange them. The three facts that Stein's method consumes — the increment formula, the
+exchangeability, and the exact linearity of the conditional drift — are proved here; they are
+all purely combinatorial, and together they instantiate the abstract engine
+`ForMathlib/SteinMethod.abs_avg_sub_le` at `Ω = Equiv.Perm (Fin N)` and
+`K = SwapIndex a`. -/
+
+section SwapPair
+
+variable {N m : ℕ}
+
+/-- The set of **sampled positions** of a block `a`. -/
+def blockSet (a : Fin m → Fin N) : Finset (Fin N) := Finset.image a Finset.univ
+
+/-- A sum over the sampled *set* is a sum over the block *index*, the block being injective. -/
+theorem sum_blockSet (a : Fin m → Fin N) (ha : Function.Injective a) (g : Fin N → ℝ) :
+    ∑ p ∈ blockSet a, g p = ∑ i, g (a i) := by
+  classical
+  rw [blockSet, Finset.sum_image fun i _ j _ hij => ha hij]
+
+/-- The sampled set has exactly `m` elements. -/
+theorem card_blockSet (a : Fin m → Fin N) (ha : Function.Injective a) :
+    (blockSet a).card = m := by
+  classical
+  rw [blockSet, Finset.card_image_of_injective _ ha, Finset.card_univ, Fintype.card_fin]
+
+/-- The **swap index**: an ordered pair consisting of one sampled and one unsampled position.
+Interchanging the two is the elementary move that generates the exchangeable pair. There are
+exactly `m (N - m)` of them. -/
+abbrev SwapIndex (a : Fin m → Fin N) : Type :=
+  {p : Fin N // p ∈ blockSet a} × {q : Fin N // q ∈ (blockSet a)ᶜ}
+
+/-- The number of elementary swaps is `m (N - m)`. -/
+theorem card_swapIndex (a : Fin m → Fin N) (ha : Function.Injective a) :
+    Fintype.card (SwapIndex a) = m * (N - m) := by
+  classical
+  rw [Fintype.card_prod, Fintype.card_coe, Fintype.card_coe, Finset.card_compl,
+    card_blockSet a ha, Fintype.card_fin]
+
+/-- The **standardized block sum**, as a function on the acting group: `u` is the reciprocal
+of the standardizing scale. -/
+noncomputable def stdBlockSum (a : Fin m → Fin N) (d : Fin N → ℝ) (u : ℝ)
+    (σ : Equiv.Perm (Fin N)) : ℝ := u * ∑ r ∈ blockSet a, d (σ r)
+
+/-- The second coordinate of the exchangeable pair: the standardized block sum after the
+elementary swap `k` has been applied to the positions. -/
+noncomputable def stdBlockSumSwap (a : Fin m → Fin N) (d : Fin N → ℝ) (u : ℝ)
+    (σ : Equiv.Perm (Fin N)) (k : SwapIndex a) : ℝ :=
+  stdBlockSum a d u (σ * Equiv.swap k.1.1 k.2.1)
+
+/-- **The elementary swap moves exactly one summand.** Interchanging a sampled position `p`
+with an unsampled position `q` removes `d(σ p)` from the block sum and inserts `d(σ q)`. -/
+theorem sum_blockSet_mul_swap (a : Fin m → Fin N) (d : Fin N → ℝ) (σ : Equiv.Perm (Fin N))
+    {p q : Fin N} (hp : p ∈ blockSet a) (hq : q ∈ (blockSet a)ᶜ) :
+    ∑ r ∈ blockSet a, d ((σ * Equiv.swap p q) r)
+      = (∑ r ∈ blockSet a, d (σ r)) - d (σ p) + d (σ q) := by
+  classical
+  rw [Finset.mem_compl] at hq
+  rw [← Finset.add_sum_erase _ (fun r => d ((σ * Equiv.swap p q) r)) hp,
+    ← Finset.add_sum_erase _ (fun r => d (σ r)) hp]
+  have h1 : d ((σ * Equiv.swap p q) p) = d (σ q) := by
+    simp [Equiv.Perm.mul_apply, Equiv.swap_apply_left]
+  have h2 : ∀ r ∈ (blockSet a).erase p, d ((σ * Equiv.swap p q) r) = d (σ r) := by
+    intro r hr
+    have hrp : r ≠ p := (Finset.mem_erase.1 hr).1
+    have hrq : r ≠ q := fun hcon => hq (hcon ▸ (Finset.mem_erase.1 hr).2)
+    simp [Equiv.Perm.mul_apply, Equiv.swap_apply_of_ne_of_ne hrp hrq]
+  rw [h1, Finset.sum_congr rfl h2]
+  ring
+
+/-- **The increment of the exchangeable pair.** -/
+theorem stdBlockSumSwap_sub (a : Fin m → Fin N) (d : Fin N → ℝ) (u : ℝ)
+    (σ : Equiv.Perm (Fin N)) (k : SwapIndex a) :
+    stdBlockSumSwap a d u σ k - stdBlockSum a d u σ = u * (d (σ k.2.1) - d (σ k.1.1)) := by
+  rw [stdBlockSumSwap, stdBlockSum, stdBlockSum, sum_blockSet_mul_swap a d σ k.1.2 k.2.2]
+  ring
+
+/-- **Exchangeability of the swap pair.** For every test function `F` of two variables the
+total sum over the group and the swap index is unchanged when the two coordinates of the pair
+are interchanged. The proof is a reindexing of the group by right multiplication with the
+transposition, which is an involution: `(σ s) s = σ`. -/
+theorem sum_swap_exchangeable (a : Fin m → Fin N) (d : Fin N → ℝ) (u : ℝ) (F : ℝ → ℝ → ℝ) :
+    ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+        F (stdBlockSum a d u σ) (stdBlockSumSwap a d u σ k)
+      = ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+        F (stdBlockSumSwap a d u σ k) (stdBlockSum a d u σ) := by
+  classical
+  have main : ∀ k : SwapIndex a,
+      ∑ σ : Equiv.Perm (Fin N), F (stdBlockSum a d u σ) (stdBlockSumSwap a d u σ k)
+        = ∑ σ : Equiv.Perm (Fin N), F (stdBlockSumSwap a d u σ k) (stdBlockSum a d u σ) := by
+    intro k
+    set s : Equiv.Perm (Fin N) := Equiv.swap k.1.1 k.2.1 with hs
+    have hss : s * s = 1 := Equiv.swap_mul_self _ _
+    have key := Equiv.sum_comp (Equiv.mulRight s)
+      (fun σ : Equiv.Perm (Fin N) =>
+        F (stdBlockSum a d u σ) (stdBlockSum a d u (σ * s)))
+    simp only [Equiv.coe_mulRight, mul_assoc, hss, mul_one] at key
+    exact key.symm
+  calc ∑ σ : Equiv.Perm (Fin N), ∑ k : SwapIndex a,
+          F (stdBlockSum a d u σ) (stdBlockSumSwap a d u σ k)
+      = ∑ k : SwapIndex a, ∑ σ : Equiv.Perm (Fin N),
+          F (stdBlockSum a d u σ) (stdBlockSumSwap a d u σ k) := Finset.sum_comm
+    _ = ∑ k : SwapIndex a, ∑ σ : Equiv.Perm (Fin N),
+          F (stdBlockSumSwap a d u σ k) (stdBlockSum a d u σ) :=
+        Finset.sum_congr rfl fun k _ => main k
+    _ = _ := Finset.sum_comm
+
+/-- **The linearity condition, exactly.** For a *centred* population the conditional drift of
+the swap pair is proportional to the current value:
+`∑ₖ (W' σ k − W σ) = -N · W σ`, i.e. `𝔼[W' − W ∣ σ] = -λ W σ` with
+
+`λ = N / (m (N − m))`,
+
+since there are `m (N − m)` elementary swaps. (The wave-6 status note of
+`tendsto_perm_cdf_blockSum` recorded `λ = 1/(m(N-m))`; the correct value carries the extra
+factor `N`, as the computation below shows.) -/
+theorem sum_swapIndex_increment (a : Fin m → Fin N) (ha : Function.Injective a)
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ) (σ : Equiv.Perm (Fin N)) :
+    ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ)
+      = -(N : ℝ) * stdBlockSum a d u σ := by
+  classical
+  have hmN : m ≤ N := by
+    have := card_blockSet a ha ▸ Finset.card_le_univ (blockSet a)
+    simpa using this
+  have htot : ∑ r : Fin N, d (σ r) = 0 := by rw [Equiv.sum_comp σ d]; exact hd
+  have hsplit := Finset.sum_add_sum_compl (blockSet a) (fun r => d (σ r))
+  have hcompl : ∑ r ∈ (blockSet a)ᶜ, d (σ r) = -∑ r ∈ blockSet a, d (σ r) := by
+    rw [htot] at hsplit; linarith
+  have hcardc : ((blockSet a)ᶜ.card : ℝ) = (N : ℝ) - m := by
+    rw [Finset.card_compl, card_blockSet a ha, Fintype.card_fin,
+      Nat.cast_sub hmN]
+  rw [Finset.sum_congr rfl fun k _ => stdBlockSumSwap_sub a d u σ k, Fintype.sum_prod_type]
+  have hinner : ∀ p : {p : Fin N // p ∈ blockSet a},
+      ∑ q : {q : Fin N // q ∈ (blockSet a)ᶜ}, u * (d (σ q.1) - d (σ p.1))
+        = u * (-∑ r ∈ blockSet a, d (σ r)) - ((N : ℝ) - m) * (u * d (σ p.1)) := by
+    intro p
+    have hdist : ∀ q : {q : Fin N // q ∈ (blockSet a)ᶜ},
+        u * (d (σ q.1) - d (σ p.1)) = u * d (σ q.1) - u * d (σ p.1) := fun q => by ring
+    rw [Finset.sum_congr rfl fun q _ => hdist q, Finset.sum_sub_distrib, Finset.sum_const,
+      Finset.card_univ, Fintype.card_coe, nsmul_eq_mul, hcardc, ← Finset.mul_sum,
+      Finset.sum_coe_sort (blockSet a)ᶜ (fun r => d (σ r)), hcompl]
+  rw [Finset.sum_congr rfl fun p _ => hinner p, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, Fintype.card_coe, card_blockSet a ha, nsmul_eq_mul]
+  have hlast : ∑ p : {p : Fin N // p ∈ blockSet a}, ((N : ℝ) - m) * (u * d (σ p.1))
+      = ((N : ℝ) - m) * (u * ∑ r ∈ blockSet a, d (σ r)) := by
+    rw [← Finset.mul_sum, ← Finset.mul_sum,
+      Finset.sum_coe_sort (blockSet a) (fun r => d (σ r))]
+  rw [hlast, stdBlockSum]
+  ring
+
+/-- The linearity condition in the exact shape consumed by
+`ForMathlib/SteinMethod.abs_avg_sub_le`, with `λ = N / (m (N − m))`. -/
+theorem sum_swapIndex_increment' (a : Fin m → Fin N) (ha : Function.Injective a)
+    (hm : 0 < m) (hmN : m < N) (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ)
+    (σ : Equiv.Perm (Fin N)) :
+    ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ)
+      = -((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))) * (Fintype.card (SwapIndex a) : ℝ)
+          * stdBlockSum a d u σ := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hNmR : (0 : ℝ) < (N : ℝ) - m := by
+    have : (m : ℝ) < (N : ℝ) := by exact_mod_cast hmN
+    linarith
+  rw [sum_swapIndex_increment a ha d hd u σ, card_swapIndex a ha,
+    Nat.cast_mul, Nat.cast_sub hmN.le]
+  field_simp
+
+end SwapPair
 
 /-! ### Standardization and the central limit theorem -/
 
