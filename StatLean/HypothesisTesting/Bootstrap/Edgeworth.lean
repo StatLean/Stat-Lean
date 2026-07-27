@@ -412,6 +412,84 @@ theorem charFun_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
       integral_map (by fun_prop : AEMeasurable (fun x : ℝ => x - m) F) hf3]
   rw [hstep1, hstep2, hstep3]
 
+instance isProbabilityMeasure_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
+    IsProbabilityMeasure (meanRootLaw F n) := by
+  rw [meanRootLaw]
+  exact Measure.isProbabilityMeasure_map (by fun_prop)
+
+/-- The **standardized root law**: the law of `√n(X̄ₙ − E_F X)/σ`.
+
+The whole Edgeworth comparison is run on this law rather than on `meanRootLaw`, because the
+comparison density is then the `σ`-free `edgeworthDensity` and no Gaussian scaling identity is
+needed. The `σ` reappears only in the *argument*, through `meanRootCDF_eq_stdRootLaw`. -/
+noncomputable def stdRootLaw (F : Measure ℝ) (n : ℕ) : Measure ℝ :=
+  (meanRootLaw F n).map fun y : ℝ => (Real.sqrt Var[fun t : ℝ => t; F])⁻¹ * y
+
+instance isProbabilityMeasure_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ) :
+    IsProbabilityMeasure (stdRootLaw F n) := by
+  rw [stdRootLaw]
+  exact Measure.isProbabilityMeasure_map (by fun_prop)
+
+/-- **The characteristic function of the standardized root**, as an `n`-th power. -/
+theorem charFun_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ} (hn : 0 < n)
+    (θ : ℝ) :
+    charFun (stdRootLaw F n) θ
+      = charFun (centredLaw F)
+          ((Real.sqrt n)⁻¹ * ((Real.sqrt Var[fun t : ℝ => t; F])⁻¹ * θ)) ^ n := by
+  rw [stdRootLaw, charFun_map_mul, charFun_meanRootLaw F hn]
+
+/-- **The sampling distribution function is the standardized law at the rescaled argument.**
+`meanRootCDF F n t = P'_n((-∞, t/σ])`. This is the identity that lets the whole comparison run
+on the standardized scale. -/
+theorem meanRootCDF_eq_stdRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] (n : ℕ)
+    (hFvar : 0 < Var[fun t : ℝ => t; F]) (t : ℝ) :
+    meanRootCDF F n t
+      = (stdRootLaw F n (Set.Iic (t / Real.sqrt Var[fun t : ℝ => t; F]))).toReal := by
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; F] with hσdef
+  have hσpos : 0 < σ := Real.sqrt_pos.2 hFvar
+  have hpre : (fun y : ℝ => σ⁻¹ * y) ⁻¹' Set.Iic (t / σ) = Set.Iic t := by
+    ext y
+    have hcancel : σ * (t / σ) = t := by field_simp
+    simp only [Set.mem_preimage, Set.mem_Iic]
+    rw [inv_mul_le_iff₀ hσpos, hcancel]
+  rw [meanRootCDF_eq F n t, stdRootLaw, ← hσdef,
+    Measure.map_apply (by fun_prop) measurableSet_Iic, hpre]
+
+/-! ### The moments of the centred law
+
+`norm_charFun_pow_sub_edgeworth_le` is stated for a law with vanishing mean, second moment `v`
+and third moment `m₃`. Under the centred law these are `0`, `Var_F` and `γ σ³` — the last being
+literally the definition of `skewness`. -/
+
+/-- Integration against the centred law is integration of the shifted integrand. -/
+lemma integral_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] {g : ℝ → ℝ}
+    (hg : AEStronglyMeasurable g (centredLaw F)) :
+    (∫ x, g x ∂(centredLaw F)) = ∫ t, g (t - ∫ s, s ∂F) ∂F := by
+  rw [centredLaw, integral_map (by fun_prop) hg]
+
+/-- The centred law has mean zero. -/
+lemma integral_id_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hint : Integrable (fun t : ℝ => t) F) :
+    (∫ x, x ∂(centredLaw F)) = 0 := by
+  rw [integral_centredLaw F (g := fun x : ℝ => x) (by fun_prop),
+    integral_sub hint (integrable_const _), integral_const]
+  simp
+
+/-- The second moment of the centred law is the variance of `F`. -/
+lemma integral_sq_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] :
+    (∫ x, x ^ 2 ∂(centredLaw F)) = Var[fun t : ℝ => t; F] := by
+  rw [integral_centredLaw F (g := fun x : ℝ => x ^ 2) (by fun_prop),
+    variance_eq_integral (by fun_prop)]
+
+/-- The third moment of the centred law is `γ σ³`: this *is* the definition of skewness. -/
+lemma integral_cube_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFvar : 0 < Var[fun t : ℝ => t; F]) :
+    (∫ x, x ^ 3 ∂(centredLaw F))
+      = skewness F * Real.sqrt Var[fun t : ℝ => t; F] ^ 3 := by
+  have hσ : Real.sqrt Var[fun t : ℝ => t; F] ≠ 0 := (Real.sqrt_pos.2 hFvar).ne'
+  rw [integral_centredLaw F (g := fun x : ℝ => x ^ 3) (by fun_prop), skewness,
+    div_mul_cancel₀ _ (pow_ne_zero 3 hσ)]
+
 end RootLaw
 
 /-! ## The Edgeworth approximant on the standardized scale
