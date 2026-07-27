@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
+import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
@@ -27,7 +28,7 @@ value `P{χ²_k(b²) > c_{k,1−α}}` in minimum power over that shell:
 * `asymptotic_maximin_upper_bound` — the upper bound (the transfer lemma);
 * `sphereAverage_lr_monotone` — the sphere-averaged likelihood-ratio helper.
 
-**Why these two, and how they fit together.** The bound is proved by the mixture route:
+**Why these two, and how they fit together.** The bound is proved by the mixture route (this is what is formalized):
 the minimum power over the shell is at most the *average* power against any probability
 distribution `σ` supported on the shell, i.e. the power against the mixture
 `∫ Q_{n,h} dσ(h)`; by the Neyman–Pearson lemma the latter is at most the power of the
@@ -42,11 +43,26 @@ against the least favourable shell is `P{χ²_k(b²) > c_{k,1−α}}`. The helpe
 step that turns an abstract mixture bound into the concrete chi-squared number, and it is
 also the reason the *same* number appears in both consumers.
 
-**DEFERRAL-ELIGIBLE.** `asymptotic_maximin_upper_bound` is registered in the batch ledger
-as a conditional fallback: it is to be proved by the mixture–Neyman–Pearson route above,
-but if that route stalls it is the pre-agreed named debt for this work item, and the two
-consuming maximin theorems (`ChiSquaredMaximin.lean`, `SmoothTest.lean`) close modulo it.
-`sphereAverage_lr_monotone` is not deferral-eligible.
+**Status.** `asymptotic_maximin_upper_bound` was registered in the batch ledger as a
+conditional fallback; the fallback was *not* taken — it is CLOSED, by the mixture–Neyman–
+Pearson route above. Two amendments to the frozen statement were forced and are recorded on
+the declaration: the conclusion is quantified over any family of alternatives containing the
+least-favourable sphere (the frozen single shell is a strict superset of both consumers'
+shells, so `sInf` transferred the wrong way), and the experiment is standardized to
+`I = Iₖ`, the general positive-definite case being the reparametrisation `η = I^{1/2}h` that
+the consumer now performs on its own shell.
+
+**Two devices make the proof elementary.** (i) The mixture likelihood ratio `Rₙ` has *exact*
+`Q_{n,0}`-mean one, so the usual uniform-integrability/contiguity package is not needed: the
+Neyman–Pearson bound is rearranged as
+`φ R ≤ (R − t)⁺ + tφ = (R − min(R,t)) + tφ`, whose only non-elementary ingredient is the
+convergence of `E[min(Rₙ, t)]` — a *bounded continuous* test function, so plain weak
+convergence suffices, and no portmanteau on sets and no atomlessness of the limit law is
+required. (ii) `Rₙ` is compared with the Gaussian sphere average `G(Zₙ)` by the two-sided
+sandwich `e^{−Dₙ} G(Zₙ) ≤ Rₙ ≤ e^{Dₙ} G(Zₙ)` coming from the uniform LAN envelope, and the
+resulting closeness in probability is quantified by Markov's inequality applied to `Rₙ`
+itself (mean one), so no tightness argument is needed either. Slutsky then transports the
+weak limit from `G(Zₙ)` to `Rₙ`.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 16 (Testing Goodness of
@@ -671,6 +687,7 @@ end CameronMartin
 
 /-! ### The transfer lemma -/
 
+set_option maxHeartbeats 1600000 in
 /-- **Asymptotic maximin upper bound for multisided local alternatives.**
 
 Let `{Q_{n,h}}` be an asymptotically normal array of local experiments, standardized so
@@ -1015,6 +1032,206 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     rw [← hR] at hstep
     exact (ENNReal.ofReal_le_ofReal_iff
       (integral_nonneg fun ω => mul_nonneg ((hφ n).2 ω).1 (hRnn n ω))).mp hstep
-  sorry
+  -- ### Step 5. The mixture ratio is close in probability to the Gaussian sphere average.
+  have hdist : ∀ ε > 0, Tendsto (fun n => (Q n 0).real {ω | ε ≤ dist (G (Z n ω)) (R n ω)})
+      atTop (𝓝 0) := by
+    intro ε hε
+    refine Metric.tendsto_atTop.2 fun η hη => ?_
+    obtain ⟨δ, hδpos, hδlt⟩ : ∃ δ > 0, (Real.exp δ - 1) * Real.exp δ / ε < η / 2 := by
+      have hcont : ContinuousAt (fun d : ℝ => (Real.exp d - 1) * Real.exp d / ε) 0 := by
+        fun_prop
+      have hev : ∀ᶠ d in 𝓝 (0 : ℝ), (Real.exp d - 1) * Real.exp d / ε < η / 2 := by
+        have hc2 := hcont.tendsto
+        simp only [Real.exp_zero, sub_self, zero_mul, zero_div] at hc2
+        exact hc2.eventually (eventually_lt_nhds (by positivity))
+      obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hev
+      refine ⟨r / 2, by linarith, hball ?_⟩
+      rw [Real.dist_eq, sub_zero, abs_of_pos (by linarith)]
+      linarith
+    have hexpδ : 1 < Real.exp δ := by nlinarith [Real.add_one_le_exp δ]
+    have hK : 0 < (Real.exp δ - 1) * Real.exp δ := by nlinarith [Real.exp_pos δ]
+    set M : ℝ := ε / ((Real.exp δ - 1) * Real.exp δ) with hMdef
+    have hMpos : 0 < M := div_pos hε hK
+    have hDlim := hD0 δ hδpos
+    rw [Metric.tendsto_atTop] at hDlim
+    obtain ⟨N, hN⟩ := hDlim (η / 2) (by positivity)
+    refine ⟨N, fun n hn => ?_⟩
+    have hsub : {ω | ε ≤ dist (G (Z n ω)) (R n ω)} ⊆
+        {ω | δ ≤ D n ω} ∪ {ω | M ≤ R n ω} := by
+      intro ω hω
+      by_contra hcon
+      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+      obtain ⟨hD, hR⟩ := hcon
+      have hexpD : Real.exp (D n ω) ≤ Real.exp δ := Real.exp_le_exp.mpr hD.le
+      have hRnn' : 0 ≤ R n ω := hRnn n ω
+      have hGnn' : 0 ≤ G (Z n ω) := hGnn _
+      have hA1 : G (Z n ω) ≤ Real.exp δ * R n ω := by
+        have := hGle n ω
+        nlinarith
+      have hA2 : R n ω ≤ Real.exp δ * G (Z n ω) := by
+        have := hRle n ω
+        nlinarith
+      have hb1 : G (Z n ω) - R n ω ≤ (Real.exp δ - 1) * Real.exp δ * R n ω := by
+        nlinarith [Real.exp_pos δ]
+      have hb2 : R n ω - G (Z n ω) ≤ (Real.exp δ - 1) * Real.exp δ * R n ω := by
+        nlinarith [Real.exp_pos δ]
+      have hdle : dist (G (Z n ω)) (R n ω) ≤ (Real.exp δ - 1) * Real.exp δ * R n ω := by
+        rw [Real.dist_eq]
+        exact abs_sub_le_iff.mpr ⟨hb1, hb2⟩
+      have hεle : ε ≤ (Real.exp δ - 1) * Real.exp δ * R n ω := le_trans hω hdle
+      rw [hMdef, lt_div_iff₀ hK] at hR
+      nlinarith
+    have hmono := measureReal_mono (μ := Q n 0) hsub (measure_ne_top _ _)
+    have hunion : (Q n 0).real ({ω | δ ≤ D n ω} ∪ {ω | M ≤ R n ω})
+        ≤ (Q n 0).real {ω | δ ≤ D n ω} + (Q n 0).real {ω | M ≤ R n ω} :=
+      measureReal_union_le _ _
+    have hmark : M * (Q n 0).real {ω | M ≤ R n ω} ≤ 1 := by
+      have h1 := mul_meas_ge_le_integral_of_nonneg
+        (Filter.Eventually.of_forall fun ω => hRnn n ω) (hRint n) M
+      rwa [hRmean n] at h1
+    have hmark2 : (Q n 0).real {ω | M ≤ R n ω} ≤ (Real.exp δ - 1) * Real.exp δ / ε := by
+      have h1 : (Q n 0).real {ω | M ≤ R n ω} ≤ 1 / M := by
+        rw [le_div_iff₀ hMpos]; linarith
+      rw [hMdef, one_div_div] at h1
+      exact h1
+    have hDsmall : (Q n 0).real {ω | δ ≤ D n ω} < η / 2 := by
+      have h1 := hN n hn
+      rw [Real.dist_eq, sub_zero] at h1
+      have h2 : ((Q n 0) {ω | δ ≤ D n ω}).toReal ≤ |((Q n 0) {ω | δ ≤ D n ω}).toReal| :=
+        le_abs_self _
+      rw [measureReal_def]
+      linarith
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
+    linarith
+  -- ### Step 6. The weak limit of the mixture ratio.
+  haveI hprobmap : IsProbabilityMeasure (γ.map G) :=
+    Measure.isProbabilityMeasure_map hGmeas.aemeasurable
+  have hGZlaw : WeakConverges (fun n => (Q n 0).map (fun ω => G (Z n ω))) (γ.map G) := by
+    have h1 := hZ.map hGcont hGmeas
+    have hseq : (fun n => ((Q n 0).map (Z n)).map G)
+        = fun n => (Q n 0).map (fun ω => G (Z n ω)) := by
+      funext n
+      rw [Measure.map_map hGmeas (hZmeas n)]
+      rfl
+    rwa [hseq] at h1
+  have hRlaw : WeakConverges (fun n => (Q n 0).map (R n)) (γ.map G) :=
+    AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
+      (fun n => (hGmeas.comp (hZmeas n)).aemeasurable)
+      (fun n => (hRmeas n).aemeasurable) hGZlaw hdist
+  -- ### Step 7. Neyman–Pearson at the threshold `t`, and the limit.
+  set ξ : ℝ → ℝ := fun x => min (max x 0) t with hξdef
+  have hξcont : Continuous ξ := (continuous_id.max continuous_const).min continuous_const
+  have hξ0 : ∀ x, 0 ≤ ξ x := fun x => le_min (le_max_right x 0) ht0
+  have hξt : ∀ x, ξ x ≤ t := fun x => min_le_right _ _
+  set ξb : BoundedContinuousFunction ℝ ℝ := BoundedContinuousFunction.mkOfBound ⟨ξ, hξcont⟩ t
+    (fun x y => by
+      simp only [ContinuousMap.coe_mk, Real.dist_eq]
+      rw [abs_le]
+      exact ⟨by linarith [hξ0 x, hξt y], by linarith [hξ0 y, hξt x]⟩) with hξbdef
+  have hξbval : ∀ x, ξb x = ξ x := fun x => rfl
+  have hξlim : Tendsto (fun n => ∫ ω, ξ (R n ω) ∂(Q n 0)) atTop (𝓝 (∫ x, ξ (G x) ∂γ)) := by
+    have h1 := hRlaw ξb
+    have h2 : ∀ n, ∫ x, ξb x ∂((Q n 0).map (R n)) = ∫ ω, ξ (R n ω) ∂(Q n 0) := by
+      intro n
+      simp only [hξbval]
+      rw [integral_map (hRmeas n).aemeasurable hξcont.aestronglyMeasurable]
+    have h3 : ∫ x, ξb x ∂(γ.map G) = ∫ x, ξ (G x) ∂γ := by
+      simp only [hξbval]
+      rw [integral_map hGmeas.aemeasurable hξcont.aestronglyMeasurable]
+    simp only [h2, h3] at h1
+    exact h1
+  have hξint : ∀ n, Integrable (fun ω => ξ (R n ω)) (Q n 0) := by
+    intro n
+    refine (integrable_const t).mono'
+      (hξcont.measurable.comp (hRmeas n)).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_of_nonneg (hξ0 _)]
+    exact hξt _
+  have hNP : ∀ n ω, φ n ω * R n ω ≤ (R n ω - ξ (R n ω)) + t * φ n ω := by
+    intro n ω
+    have h1 : 0 ≤ R n ω := hRnn n ω
+    have hξR : ξ (R n ω) = min (R n ω) t := by
+      rw [hξdef]
+      simp [max_eq_left h1]
+    have hφ0 := ((hφ n).2 ω).1
+    have hφ1 := ((hφ n).2 ω).2
+    rcases le_total (R n ω) t with hle | hge
+    · rw [hξR, min_eq_left hle]; nlinarith
+    · rw [hξR, min_eq_right hge]; nlinarith
+  have hφRint : ∀ n, Integrable (fun ω => φ n ω * R n ω) (Q n 0) := by
+    intro n
+    refine (hRint n).mono' ((hφ n).1.aestronglyMeasurable.mul
+      (hRmeas n).aestronglyMeasurable) (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_of_nonneg (mul_nonneg ((hφ n).2 ω).1 (hRnn n ω))]
+    nlinarith [((hφ n).2 ω).1, ((hφ n).2 ω).2, hRnn n ω]
+  have hAn : ∀ n, ∫ ω, φ n ω * R n ω ∂(Q n 0)
+      ≤ (1 - ∫ ω, ξ (R n ω) ∂(Q n 0)) + t * power (Q n) (φ n) 0 := by
+    intro n
+    have h3 : Integrable (fun ω => t * φ n ω) (Q n 0) := by
+      refine (integrable_const |t|).mono' ((hφ n).1.const_mul t).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_eq_abs, abs_mul]
+      have := ((hφ n).2 ω).2
+      have h0 := ((hφ n).2 ω).1
+      rw [abs_of_nonneg h0]
+      nlinarith [abs_nonneg t]
+    have h2 : Integrable (fun ω => R n ω - ξ (R n ω)) (Q n 0) := (hRint n).sub (hξint n)
+    have hmain := integral_mono (hφRint n) (h2.add h3)
+      (fun ω => hNP n ω)
+    simp only [Pi.add_apply] at hmain
+    rw [integral_add h2 h3, integral_sub (hRint n) (hξint n), hRmean n,
+      integral_const_mul] at hmain
+    simpa only [power] using hmain
+  -- the limiting value of the majorant
+  have hξGint : Integrable (fun x => ξ (G x)) γ := by
+    refine (integrable_const t).mono' (hξcont.measurable.comp hGmeas).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_of_nonneg (hξ0 _)]
+    exact hξt _
+  have hval : (1 - ∫ x, ξ (G x) ∂γ)
+      = ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal - t * α := by
+    have hpt : ∀ x, G x - ξ (G x)
+        = Set.indicator {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}
+            (fun x => G x - t) x := by
+      intro x
+      by_cases hx : c < ‖x‖ ^ 2
+      · rw [Set.indicator_of_mem
+          (show x ∈ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} from hx), hξdef]
+        have hgt : t < G x := (hthr x).mpr hx
+        simp [max_eq_left (hGnn x), min_eq_right hgt.le]
+      · rw [Set.indicator_of_notMem
+          (show x ∉ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} from hx), hξdef]
+        have hle : G x ≤ t := by
+          by_contra hcon
+          push_neg at hcon
+          exact hx ((hthr x).mp hcon)
+        simp [max_eq_left (hGnn x), min_eq_left hle]
+    have h1 : (1 : ℝ) - ∫ x, ξ (G x) ∂γ = ∫ x, (G x - ξ (G x)) ∂γ := by
+      rw [integral_sub hGint hξGint, hGmean]
+    have h2 : ∫ x, (G x - ξ (G x)) ∂γ
+        = ∫ x in {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}, (G x - t) ∂γ := by
+      rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_indicator hAmeas]
+    have h3 : ∫ x in {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}, (G x - t) ∂γ
+        = (∫ x in {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}, G x ∂γ)
+          - t * (γ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}).toReal := by
+      rw [integral_sub (hGint.restrict) (integrable_const t), setIntegral_const,
+        measureReal_def, smul_eq_mul, mul_comm]
+    rw [h1, h2, h3, hsetG, hcA, ENNReal.toReal_ofReal hα.le]
+  have hmajor : Tendsto (fun n => (1 - ∫ ω, ξ (R n ω) ∂(Q n 0)) + t * power (Q n) (φ n) 0)
+      atTop (𝓝 (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
+    have hone : Tendsto (fun _ : ℕ => (1 : ℝ)) atTop (𝓝 1) := tendsto_const_nhds
+    have hlim := (hone.sub hξlim).add (hlevel.const_mul t)
+    have hEq : (1 - ∫ x, ξ (G x) ∂γ) + t * α
+        = ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+      rw [hval]; ring
+    rwa [hEq] at hlim
+  -- ### Step 8. Assembly.
+  have hcob : Filter.IsCoboundedUnder (· ≤ ·) atTop
+      (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) := by
+    refine Filter.IsBoundedUnder.isCoboundedUnder_le ?_
+    exact ⟨0, Filter.eventually_map.mpr (Filter.Eventually.of_forall hsInfnn)⟩
+  refine le_trans (Filter.limsup_le_limsup
+    (Filter.Eventually.of_forall fun n => le_trans (hmix n) (hAn n)) hcob
+    hmajor.isBoundedUnder_le) (le_of_eq hmajor.limsup_eq)
 
 end StatLean.HypothesisTesting
