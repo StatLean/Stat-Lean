@@ -1,4 +1,5 @@
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation
+import StatLean.AsymptoticStatistics.ForMathlib.HellingerIntegralBound
 import StatLean.AsymptoticStatistics.ForMathlib.SlutskyVec
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -61,12 +62,13 @@ estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
   limit `(J⁻¹Δ, Δ)` outright, so Le Cam 3 in the form
   `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` *produces* the limit
   under the alternative rather than identifying a pre-supplied one). The three theorems
-  listed above are then reductions to it, and the whole file rests on exactly one named
-  analytic debt, `integral_close_varying_direction` — the `n`-fold Hellinger/total-variation
-  estimate that lets the *moving* direction `hₙ` be replaced by its limit `h`. Note that this
-  debt does not raise the `declaration uses 'sorry'` linter warning on the theorems that
-  consume it (they mention a constant, not `sorryAx`); it shows up as `sorryAx` under
-  `#print axioms`.
+  listed above are then reductions to it, over the `n`-fold Hellinger estimate
+  `integral_close_varying_direction` that lets the *moving* direction `hₙ` be replaced by
+  its limit `h`. That estimate is now PROVED as well, by tensorising the per-sample
+  Hellinger residual (`HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample`)
+  and feeding it the DQM limit `dqm_sqrt_density_l2_convergence` at the moving sequence and
+  at the constant one — both centred at the same `½⟪h, ℓ⟫√p_{θ₀}`, so the centrings cancel.
+  **The file is therefore 0-sorry and every theorem in it is axiom-clean.**
 
 **Bibliographic comments.** Contiguity, local asymptotic normality and the third lemma are
 due to L. Le Cam ("Locally asymptotically normal families of distributions," *Univ.
@@ -782,39 +784,78 @@ theorem weak_limit_estimator_under_fixed_local_alternative
   rw [hcompose, map_fst_withDensity_exp_tilt_graphJoint J hJ_psd hJ_inv h] at hlecam
   exact hlecam
 
-/-- **THE ONE REMAINING BRICK — brick (B), the varying-direction transfer.**
+/-- **The `L²`-norm of a square-integrable real function is the square root of the integral
+of its square.** A packaging of `MemLp.eLpNorm_eq_integral_rpow_norm` at `p = 2`, so that
+the `eLpNorm`-shaped Hellinger bounds of
+`AsymptoticStatistics.ForMathlib.HellingerProduct` can be fed the `∫ (·)²`-shaped limits
+that `DQM/Properties.lean` produces. -/
+private lemma eLpNorm_two_toReal_eq_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω]
+    {ν : Measure Ω} {f : Ω → ℝ} (hf : MemLp f 2 ν) :
+    (eLpNorm f 2 ν).toReal = Real.sqrt (∫ x, f x ^ 2 ∂ν) := by
+  have hpow : ∀ y : ℝ, ‖y‖ ^ (2 : ℝ) = y ^ 2 := by
+    intro y
+    rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast, Real.norm_eq_abs,
+      sq_abs]
+  have hform := hf.eLpNorm_eq_integral_rpow_norm (by norm_num) (by norm_num)
+  have hint : (∫ x, ‖f x‖ ^ ((2 : ℝ≥0∞).toReal) ∂ν) = ∫ x, f x ^ 2 ∂ν := by
+    simp only [ENNReal.toReal_ofNat]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => hpow (f x))
+  rw [hform, hint]
+  have hnn : (0 : ℝ) ≤ ∫ x, f x ^ 2 ∂ν := integral_nonneg fun _ => sq_nonneg _
+  simp only [ENNReal.toReal_ofNat]
+  rw [ENNReal.toReal_ofReal (Real.rpow_nonneg hnn _), Real.sqrt_eq_rpow]
+  norm_num
+
+/-- **Brick (B), the varying-direction transfer — PROVED.**
 
 `P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
 functions of the sample.
 
-**Why this is the whole remaining gap.** Everything else in this lane is now proved:
+**Why this is the whole remaining gap.** Everything else in this lane was already proved:
 `weak_limit_estimator_under_fixed_local_alternative` closes the *fixed*-direction statement
 for the full sequence, and `weakConverges_of_integral_close` above reduces the varying case
-to the fixed one over exactly this hypothesis. So the lane's debt has gone from "an
-existence-plus-identification Le Cam argument plus a Gaussian-MGF pair plus a common-support
-amendment" (the previous note) to this single analytic estimate.
+to the fixed one over exactly this hypothesis.
 
-**What it is mathematically.** `|∫g dQₙ − ∫g dQ'ₙ| ≤ 2‖g‖·‖Qₙ − Q'ₙ‖_TV`, and for a
-quadratic-mean differentiable family the two local alternatives are close in total variation
-because the `n`-fold Hellinger affinity is controlled:
-`n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0` (using `hconv`), and
-`‖·‖_TV ≤ √2·H`. Note this is a statement about the *model*, not about the estimator: it does
-not mention `est` at all beyond the test function.
+**What it is mathematically.** `|∫g dQₙ − ∫g dQ'ₙ| ≤ 2‖g‖·H(Qₙ, Q'ₙ)`, and for a
+quadratic-mean differentiable family the two local alternatives are close in Hellinger
+distance because the `n`-fold Hellinger residual tensorises:
+`n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → 0` (using `hconv`). This is a statement about the
+*model*, not about the estimator: it does not mention `est` beyond the test function.
 
-**Why it cannot be got from what is already here.** Every asymptotic tool in
-`AsymptoticRepresentation.lean` fixes the direction `h` in advance —
+**The route, and why it does not need the `h`-indexed LAN machinery.** Every asymptotic
+tool in `AsymptoticRepresentation.lean` fixes the direction `h` in advance —
 `logLikelihood M θ₀ h n` is defined with a single `h`, `productMeasure_integral_comparison`
 builds its slack `ρ n` from the `h`-dependent `goodSet M θ₀ h n`, and
 `lanResidual_tendsto_productMeasure` calls `LAN_expansion_iii` at the constant sequence.
-Re-running any of them at the *moving* parameter `hₙ` is not a re-parenthesization: it needs
-either uniformity of `ρ` over a compact set of directions, or the `n`-fold Hellinger bound
-above. The second is the smaller statement and is the one this brick asks for. It is a DQM
-property of the model and therefore belongs with `DQM/Properties.lean`, not here. -/
+Re-running any of them at the *moving* parameter `hₙ` would need uniformity of `ρ` over a
+compact set of directions. The Hellinger route sidesteps all of that, and the three pieces
+it needs are already in the library:
+
+* `HellingerIntegralBound.integral_diff_le_hellinger_product_iid` — the bounded-test
+  inequality `|∫F dμ^n − ∫F dν^n| ≤ 2‖F‖_∞ · ‖√(dμ^n/dξ^n) − √(dν^n/dξ^n)‖_{L²(ξ^n)}`;
+* `HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample` — tensorisation, which
+  turns the `n`-fold `L²(ξ^n)`-residual into `√n ×` the per-sample one;
+* `dqm_sqrt_density_l2_convergence` — the DQM limit, applied **twice**, once at the moving
+  sequence `hₙ` and once at the constant sequence `h`. Both limits have the *same* centring
+  `½⟪h, ℓ⟫√p_{θ₀}` (that is precisely what the `hconv`-form of the lemma buys over the
+  `h_n`-centred `dqm_residual_rate_along`), so the centrings cancel in the difference and
+
+      `√n · (√p_{θ₀+hₙ/√n} − √p_{θ₀+h/√n}) = Aₙ − Bₙ`
+
+  with `∫Aₙ² → 0` and `∫Bₙ² → 0`. The elementary `(a−b)² ≤ 2a² + 2b²`
+  (`L2Utils.sq_sub_le_two_mul_sq`) then gives `n·H² ≤ 2∫Aₙ² + 2∫Bₙ² → 0`, so no Minkowski
+  inequality is needed.
+
+The dominating measure of the Hellinger comparison is `μ` itself: each factor of
+`productMeasure M μ θ n` is `μ.withDensity (ENNReal.ofReal ∘ M.density θ)`, whose
+Radon–Nikodym derivative against `μ` is `μ`-a.e. `M.density θ` — so the per-sample
+`L²(μ)`-residual is literally `‖M.sqrtDensity θₙ − M.sqrtDensity θ'ₙ‖_{L²(μ)}`, the object
+the DQM layer speaks about. -/
 private lemma integral_close_varying_direction
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
     (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
-    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (_hℓ : Measurable ℓ)
     (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
     (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
     (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
@@ -826,9 +867,195 @@ private lemma integral_close_varying_direction
           - ∫ ω, g (Real.sqrt n • (est n ω - θ₀))
             ∂(productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n))
         atTop (𝓝 0) := by
-  -- Sanctioned lifted sorry: no false statement, and it is the single named analytic input
-  -- of `weak_limit_estimator_under_local_alternatives` (see the docstring above).
-  sorry
+  classical
+  intro g
+  -- The per-coordinate laws: `productMeasure M μ θ n` is their `n`-fold product.
+  set Q : EuclideanSpace ℝ (Fin k) → Measure 𝓧 :=
+    fun θ => μ.withDensity fun x => ENNReal.ofReal (M.density θ x) with hQdef
+  have hQpi : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      productMeasure M μ θ n = Measure.pi fun _ : Fin n => Q θ := fun _ _ => rfl
+  haveI hQprob : ∀ θ : EuclideanSpace ℝ (Fin k), IsProbabilityMeasure (Q θ) := by
+    intro θ
+    refine ⟨?_⟩
+    rw [hQdef]
+    simp only []
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+      ← ofReal_integral_eq_lintegral_ofReal (hPDF.density_integrable θ)
+        (Filter.Eventually.of_forall (M.density_nonneg θ)),
+      hPDF.density_integral_eq_one θ, ENNReal.ofReal_one]
+  have hQac : ∀ θ : EuclideanSpace ℝ (Fin k), Q θ ≪ μ := fun _ =>
+    withDensity_absolutelyContinuous _ _
+  -- `√(dQθ/dμ) = M.sqrtDensity θ` a.e.: the density of `Q θ` against `μ` is `M.density θ`.
+  have hsqrtRn : ∀ θ : EuclideanSpace ℝ (Fin k),
+      (fun x => Real.sqrt ((Q θ).rnDeriv μ x).toReal) =ᵐ[μ] M.sqrtDensity θ := by
+    intro θ
+    have hrn : (μ.withDensity fun x => ENNReal.ofReal (M.density θ x)).rnDeriv μ
+        =ᵐ[μ] fun x => ENNReal.ofReal (M.density θ x) :=
+      Measure.rnDeriv_withDensity μ (ENNReal.measurable_ofReal.comp (M.density_meas θ))
+    filter_upwards [hrn] with x hx
+    simp only [hQdef] at hx ⊢
+    rw [hx, ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+    rfl
+  -- Square-integrability of the root densities and of the score direction.
+  have hint : Integrable (M.density θ₀) μ := hPDF.density_integrable θ₀
+  have hint_perturb : ∀ (t : ℝ) (u : EuclideanSpace ℝ (Fin k)),
+      Integrable (M.density (θ₀ + t • u)) μ := fun _ _ => hPDF.density_integrable _
+  have hsd : ∀ θ : EuclideanSpace ℝ (Fin k), MemLp (M.sqrtDensity θ) 2 μ := by
+    intro θ
+    have hmeas : AEStronglyMeasurable (M.sqrtDensity θ) μ :=
+      (M.density_meas θ).sqrt.aestronglyMeasurable
+    rw [memLp_two_iff_integrable_sq hmeas]
+    have hsq : (fun x => M.sqrtDensity θ x ^ 2) = M.density θ :=
+      funext fun x => Real.sq_sqrt (M.density_nonneg θ x)
+    rw [hsq]
+    exact hPDF.density_integrable θ
+  have hscore : MemLp (fun x => (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) 2 μ := by
+    have h0 := dqm_score_memLp_two M μ θ₀ ℓ hint hDQM h (fun t => hint_perturb t h)
+    have heq : (fun x => (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x)
+        = fun x => (1 / 2 : ℝ) * (⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) :=
+      funext fun x => by ring
+    rw [heq]
+    exact h0.const_mul _
+  -- The two DQM limits, both centred at the *same* `½⟪h, ℓ⟫√p_{θ₀}`.
+  set aInt : ℕ → ℝ := fun n => ∫ x,
+    (Real.sqrt n * (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x - M.sqrtDensity θ₀ x)
+      - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ with haIntDef
+  set bInt : ℕ → ℝ := fun n => ∫ x,
+    (Real.sqrt n * (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x - M.sqrtDensity θ₀ x)
+      - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ with hbIntDef
+  have hfc := dqm_fisher_cont M μ θ₀ ℓ hint hDQM hint_perturb
+  have hA : Tendsto aInt atTop (𝓝 0) :=
+    dqm_sqrt_density_l2_convergence M μ θ₀ ℓ hint hint_perturb hDQM hfc hconv
+  have hB : Tendsto bInt atTop (𝓝 0) :=
+    dqm_sqrt_density_l2_convergence M μ θ₀ ℓ hint hint_perturb hDQM hfc
+      (tendsto_const_nhds : Tendsto (fun _ : ℕ => h) atTop (𝓝 h))
+  -- `Aₙ` and `Bₙ` are square-integrable, so their integrals of squares control the
+  -- difference `Aₙ − Bₙ = √n(√p_{θₙ} − √p_{θ'ₙ})`.
+  have hAmem : ∀ n : ℕ, MemLp (fun x => Real.sqrt n *
+      (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x - M.sqrtDensity θ₀ x)
+        - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) 2 μ := fun n =>
+    (((hsd _).sub (hsd θ₀)).const_mul (Real.sqrt n)).sub hscore
+  have hBmem : ∀ n : ℕ, MemLp (fun x => Real.sqrt n *
+      (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x - M.sqrtDensity θ₀ x)
+        - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) 2 μ := fun n =>
+    (((hsd _).sub (hsd θ₀)).const_mul (Real.sqrt n)).sub hscore
+  -- The per-`n` estimate.
+  have hbound : ∀ n : ℕ,
+      ‖∫ ω, g (Real.sqrt n • (est n ω - θ₀))
+            ∂(productMeasure M μ (localAlt θ₀ h_n n) n)
+          - ∫ ω, g (Real.sqrt n • (est n ω - θ₀))
+            ∂(productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n)‖
+        ≤ 2 * ‖g‖ * Real.sqrt (2 * aInt n + 2 * bInt n) := by
+    intro n
+    have hmeasF : Measurable (fun ω : Fin n → 𝓧 => g (Real.sqrt n • (est n ω - θ₀))) :=
+      g.continuous.measurable.comp (((hest n).sub measurable_const).const_smul (Real.sqrt n))
+    have hFb : ∀ ω : Fin n → 𝓧, |g (Real.sqrt n • (est n ω - θ₀))| ≤ ‖g‖ := fun ω => by
+      simpa [Real.norm_eq_abs] using g.norm_coe_le_norm (Real.sqrt n • (est n ω - θ₀))
+    -- (1) bounded-test inequality against the `n`-fold Hellinger residual
+    have h1 := ForMathlib.HellingerIntegralBound.integral_diff_le_hellinger_product_iid
+      (Ω := 𝓧) μ (Q (localAlt θ₀ h_n n))
+      (Q (θ₀ + (Real.sqrt n)⁻¹ • h)) (hQac _) (hQac _) n
+      (fun ω => g (Real.sqrt n • (est n ω - θ₀))) hmeasF ‖g‖ (norm_nonneg g) hFb
+    -- (2) tensorisation
+    have h2 := ForMathlib.HellingerProduct.hellinger_product_eLpNorm_le_sqrt_n_per_sample
+      (ξ := μ) (μ := Q (localAlt θ₀ h_n n)) (ν := Q (θ₀ + (Real.sqrt n)⁻¹ • h))
+      (hQac _) (hQac _) n
+    -- (3) the per-sample residual is the root-density difference
+    have h3 : eLpNorm (fun x : 𝓧 =>
+          Real.sqrt ((Q (localAlt θ₀ h_n n)).rnDeriv μ x).toReal
+            - Real.sqrt ((Q (θ₀ + (Real.sqrt n)⁻¹ • h)).rnDeriv μ x).toReal) 2 μ
+        = eLpNorm (fun x : 𝓧 => M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x) 2 μ := by
+      refine eLpNorm_congr_ae ?_
+      filter_upwards [hsqrtRn (localAlt θ₀ h_n n), hsqrtRn (θ₀ + (Real.sqrt n)⁻¹ • h)]
+        with x hx1 hx2
+      rw [hx1, hx2]
+    have hPerEq : (eLpNorm (fun x : 𝓧 => M.sqrtDensity (localAlt θ₀ h_n n) x
+          - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x) 2 μ).toReal
+        = Real.sqrt (∫ x, (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x) ^ 2 ∂μ) :=
+      eLpNorm_two_toReal_eq_sqrt_integral_sq ((hsd _).sub (hsd _))
+    -- (4) `√n · per-sample = √(∫ (Aₙ − Bₙ)²)`, and `(a−b)² ≤ 2a² + 2b²` closes it
+    have hDmem : MemLp (fun x : 𝓧 => Real.sqrt n *
+        (M.sqrtDensity (localAlt θ₀ h_n n) x
+          - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) 2 μ :=
+      ((hsd _).sub (hsd _)).const_mul (Real.sqrt n)
+    have hDsq : ∫ x, (Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+          - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2 ∂μ
+        ≤ 2 * aInt n + 2 * bInt n := by
+      have hmono : ∀ x : 𝓧, (Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2
+          ≤ 2 * (Real.sqrt n *
+              (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x - M.sqrtDensity θ₀ x)
+              - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2
+            + 2 * (Real.sqrt n *
+              (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x - M.sqrtDensity θ₀ x)
+              - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 := by
+        intro x
+        have hcancel : Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+              - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)
+            = (Real.sqrt n *
+                (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x - M.sqrtDensity θ₀ x)
+                - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x)
+              - (Real.sqrt n *
+                (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x - M.sqrtDensity θ₀ x)
+                - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) := by
+          simp only [localAlt]
+          ring
+        rw [hcancel]
+        exact L2Utils.sq_sub_le_two_mul_sq _ _
+      have hIntD : Integrable (fun x : 𝓧 => (Real.sqrt n *
+          (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2) μ := hDmem.integrable_sq
+      have hIntAB : Integrable (fun x : 𝓧 =>
+          2 * (Real.sqrt n *
+              (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h_n n) x - M.sqrtDensity θ₀ x)
+              - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2
+            + 2 * (Real.sqrt n *
+              (M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x - M.sqrtDensity θ₀ x)
+              - (1 / 2 : ℝ) * ⟪h, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2) μ :=
+        ((hAmem n).integrable_sq.const_mul 2).add ((hBmem n).integrable_sq.const_mul 2)
+      have := integral_mono hIntD hIntAB hmono
+      calc ∫ x, (Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+              - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2 ∂μ
+          ≤ _ := this
+        _ = 2 * aInt n + 2 * bInt n := by
+            rw [integral_add ((hAmem n).integrable_sq.const_mul 2)
+              ((hBmem n).integrable_sq.const_mul 2), integral_const_mul, integral_const_mul]
+    have hsqrtn : Real.sqrt n * Real.sqrt (∫ x, (M.sqrtDensity (localAlt θ₀ h_n n) x
+          - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x) ^ 2 ∂μ)
+        = Real.sqrt (∫ x, (Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2 ∂μ) := by
+      rw [← Real.sqrt_mul (by positivity : (0 : ℝ) ≤ (n : ℝ))]
+      congr 1
+      rw [← integral_const_mul]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+      change (n : ℝ) * (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x) ^ 2
+          = (Real.sqrt n * (M.sqrtDensity (localAlt θ₀ h_n n) x
+            - M.sqrtDensity (θ₀ + (Real.sqrt n)⁻¹ • h) x)) ^ 2
+      rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (n : ℝ))]
+    -- assemble
+    have hfin : (eLpNorm (fun X : Fin n → 𝓧 =>
+          Real.sqrt (∏ j, (Q (localAlt θ₀ h_n n)).rnDeriv μ (X j)).toReal
+          - Real.sqrt (∏ j, (Q (θ₀ + (Real.sqrt n)⁻¹ • h)).rnDeriv μ (X j)).toReal)
+          2 (Measure.pi fun _ : Fin n => μ)).toReal
+        ≤ Real.sqrt (2 * aInt n + 2 * bInt n) := by
+      refine h2.trans ?_
+      rw [h3, hPerEq, hsqrtn]
+      exact Real.sqrt_le_sqrt hDsq
+    rw [Real.norm_eq_abs, hQpi (localAlt θ₀ h_n n) n, hQpi (θ₀ + (Real.sqrt n)⁻¹ • h) n]
+    refine h1.trans ?_
+    have h2g : (0 : ℝ) ≤ 2 * ‖g‖ := by positivity
+    exact mul_le_mul_of_nonneg_left hfin h2g
+  -- The bound tends to zero.
+  refine squeeze_zero_norm hbound ?_
+  have hlim : Tendsto (fun n : ℕ => 2 * aInt n + 2 * bInt n) atTop (𝓝 0) := by
+    have := (hA.const_mul (2 : ℝ)).add (hB.const_mul (2 : ℝ))
+    simpa using this
+  have := (Real.continuous_sqrt.tendsto 0).comp hlim
+  simp only [Function.comp_def, Real.sqrt_zero] at this
+  simpa using this.const_mul (2 * ‖g‖)
 
 /-- **Limit law of an efficient estimator under local alternatives.**
 
@@ -888,11 +1115,13 @@ theorem weak_limit_estimator_under_local_alternatives
   --     `N(0, J)` on the nose, which is the only input of `GaussianMGF.integrable_exp_tilt`
   --     and `integral_exp_tilt_eq_one`, and the resulting tilt is evaluated in closed form by
   --     `map_fst_withDensity_exp_tilt_graphJoint`.
-  -- What is left is brick (B) alone — `integral_close_varying_direction`, the `n`-fold
-  -- Hellinger/total-variation estimate that makes the two local alternatives
-  -- `θ₀ + hₙ/√n` and `θ₀ + h/√n` indistinguishable. The reduction of the varying case to the
-  -- fixed one is `weakConverges_of_integral_close`, and it is spelled out below, so this
-  -- theorem now inherits exactly one named sorry.
+  -- Brick (B) — `integral_close_varying_direction`, the `n`-fold Hellinger estimate that
+  -- makes the two local alternatives `θ₀ + hₙ/√n` and `θ₀ + h/√n` indistinguishable — is
+  -- now PROVED too (see its docstring: tensorisation of the per-sample Hellinger residual
+  -- fed by the DQM `L²`-limit at the moving and at the constant sequence, whose common
+  -- centring `½⟪h, ℓ⟫√p_{θ₀}` cancels in the difference). The reduction of the varying case
+  -- to the fixed one is `weakConverges_of_integral_close`, spelled out below, so this
+  -- theorem is axiom-clean.
   classical
   have hTmeas : ∀ n : ℕ, Measurable
       (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
