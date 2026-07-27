@@ -1269,6 +1269,83 @@ private lemma integral_comp_UT_eq [OpensMeasurableSpace Ξ] [∀ p, IsProbabilit
     ← integral_const_mul]
   exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
 
+/-- **Integrability of a function of `(U, T)` is integrability of its canonical density.**
+The `Integrable` twin of `integral_comp_UT_eq`, and — unlike that lemma, which is about
+bounded `g` in every application — the form that an *unbounded* integrand needs. Both
+directions are used: the "`→`" one reads an integrability statement at one parameter down to
+`ν`, the "`←`" one reads it back up at another parameter, and composing them is exactly the
+tilt transfer `integrable_statLaw_tilt` below. -/
+private lemma integrable_comp_UT_iff [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) {g : ℝ × Ξ → ℝ} (hg : Measurable g) :
+    Integrable (fun x => g (U x, T x)) (P p)
+      ↔ Integrable (fun z => g z * Real.exp (canExp p z)) ν := by
+  have hCp := canonicalUT_const_pos hU hT hUT hp
+  have hdm : Measurable fun z : ℝ × Ξ => ENNReal.ofReal (C p * Real.exp (canExp p z)) :=
+    ((measurable_canExp p).exp.const_mul (C p)).ennreal_ofReal
+  have hstep : Integrable (fun x => g (U x, T x)) (P p)
+      ↔ Integrable g ((P p).map fun x => (U x, T x)) :=
+    (integrable_map_measure hg.aestronglyMeasurable (hU.prodMk hT).aemeasurable).symm
+  rw [hstep, hUT p hp]
+  simp only [← canExp_apply]
+  rw [integrable_withDensity_iff_integrable_smul' hdm
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  have hne : C p ≠ 0 := ne_of_gt hCp
+  constructor
+  · intro hI
+    refine (hI.const_mul (C p)⁻¹).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+    field_simp
+  · intro hI
+    refine (hI.const_mul (C p)).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+    ring
+
+/-- **Tilt transfer of integrability between two boundary laws of `T`.** If `f` is integrable
+for the law of `T` at `(θ₀, ϑ)`, then `f · e^{⟪ϑ − ϑ₁, ·⟫}` is integrable for the law of `T`
+at `(θ₀, ϑ₁)` — the two boundary laws differ exactly by that exponential tilt.
+
+This is the step that removes the boundedness hypothesis from `boundedlyComplete_boundary`:
+that proof used `|f| ≤ Cb` for one purpose only, namely to dominate the tilted integrand, and
+the domination is unnecessary once the integrability is *transported* rather than re-proved.
+The route is `integrable_comp_UT_iff` downwards at `(θ₀, ϑ)`, the pointwise identity
+`e^{canExp (θ₀,ϑ) z} = e^{⟪ϑ − ϑ₁, z.2⟫}·e^{canExp (θ₀,ϑ₁) z}` (the `u`-part of the canonical
+exponent is the same at both parameters because they share the first coordinate), and
+`integrable_comp_UT_iff` upwards at `(θ₀, ϑ₁)`. -/
+private lemma integrable_statLaw_tilt [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {θ₀ : ℝ} {ϑ ϑ₁ : Ξ} (hϑ : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω) (hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω)
+    {f : Ξ → ℝ} (hf : Measurable f)
+    (hfi : Integrable f ((P ((θ₀, ϑ) : ℝ × Ξ)).map T)) :
+    Integrable (fun t : Ξ => f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ)
+      ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map T) := by
+  have hinnerm : Measurable fun t : Ξ => ⟪ϑ - ϑ₁, t⟫_ℝ :=
+    (innerSL ℝ (ϑ - ϑ₁)).continuous.measurable
+  have h1 : Integrable (fun x => f (T x)) (P ((θ₀, ϑ) : ℝ × Ξ)) :=
+    (integrable_map_measure hf.aestronglyMeasurable hT.aemeasurable).1 hfi
+  have h2 : Integrable (fun z : ℝ × Ξ => f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z)) ν :=
+    (integrable_comp_UT_iff hU hT hUT hϑ (hf.comp measurable_snd)).1 h1
+  have heq : ∀ z : ℝ × Ξ,
+      (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) * Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z)
+        = f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) := by
+    intro z
+    rw [mul_assoc, ← Real.exp_add]
+    congr 2
+    simp only [canExp_apply, inner_sub_left]
+    ring
+  have h3 : Integrable (fun z : ℝ × Ξ =>
+      (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) * Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z)) ν :=
+    h2.congr (Filter.Eventually.of_forall fun z => (heq z).symm)
+  have h4 : Integrable
+      (fun x => (fun z : ℝ × Ξ => f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) (U x, T x))
+      (P ((θ₀, ϑ₁) : ℝ × Ξ)) :=
+    (integrable_comp_UT_iff hU hT hUT hϑ₁
+      ((hf.comp measurable_snd).mul ((hinnerm.comp measurable_snd).exp))).2 h3
+  exact (integrable_map_measure (hf.mul hinnerm.exp).aestronglyMeasurable
+    hT.aemeasurable).2 h4
+
 /-- **The laws of `(U, T)` are mutually equivalent across `Ω`**: the canonical density is
 finite and everywhere strictly positive, so each of them is equivalent to `ν`. -/
 private lemma mapUT_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
