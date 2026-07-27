@@ -629,8 +629,9 @@ Re-derived API status (Mathlib v4.29.1). Smoothness of the mollification is avai
 shelf (`HasCompactSupport.contDiff_convolution_right`), but the *quantitative* step is not:
 the only differentiation lemma exported is the first-order
 `HasCompactSupport.hasFDerivAt_convolution_right`, `fderiv (f ⋆[L] g) = f ⋆[L.precompR G] fderiv g`.
-There is **no** iterated-derivative formula for convolutions and no `‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}`
-bound. So `‖D³f‖ ≤ C₃/ε³` has to be built by iterating `precompR` three times and then
+There is **no** iterated-derivative formula for convolutions and no
+`‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}` bound. So `‖D³f‖ ≤ C₃/ε³` must be built by iterating
+`precompR` three times and then
 converting the resulting nested `fderiv` tower into `iteratedFDeriv` with the matching operator
 norms — that bookkeeping, not the analysis, is the actual cost of this lemma. (By contrast the
 radial analogue below is cheap precisely because it never mollifies: it composes a *fixed* 1-D
