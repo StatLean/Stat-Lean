@@ -751,6 +751,270 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     (hS : ∀ n, {h : EuclideanSpace ℝ (Fin k) | ‖h‖ = b} ⊆ S n) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  -- ### Step 0. The least-favourable mixing measure and its radial profile.
+  obtain ⟨σ, hσ, hsphere, hrot⟩ := exists_sphere_mixing_measure hk hb
+  haveI := hσ
+  obtain ⟨g, hgcont, hgmono, hgval⟩ := sphereAverage_radial hk hb hσ hsphere hrot
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  set G : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun x => ∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ with hGdef
+  set Gl : EuclideanSpace ℝ (Fin k) → ℝ≥0∞ :=
+    fun x => ∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ with hGldef
+  have hintG : ∀ x : EuclideanSpace ℝ (Fin k),
+      Integrable (fun h : EuclideanSpace ℝ (Fin k) =>
+        Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) σ := by
+    intro x
+    refine (integrable_const (Real.exp (b * ‖x‖))).mono'
+      ((by fun_prop : Continuous fun h : EuclideanSpace ℝ (Fin k) =>
+        Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable) ?_
+    filter_upwards [hsphere] with h hh
+    rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+    refine Real.exp_le_exp.mpr ?_
+    have hip : ⟪h, x⟫_ℝ ≤ b * ‖x‖ := by
+      calc ⟪h, x⟫_ℝ ≤ |⟪h, x⟫_ℝ| := le_abs_self _
+        _ ≤ ‖h‖ * ‖x‖ := abs_real_inner_le_norm h x
+        _ = b * ‖x‖ := by rw [hh]
+    nlinarith [sq_nonneg b]
+  have hGnn : ∀ x, 0 ≤ G x := fun x => integral_nonneg fun h => Real.exp_nonneg _
+  have hGlG : ∀ x, Gl x = ENNReal.ofReal (G x) := fun x =>
+    (ofReal_integral_eq_lintegral_ofReal (hintG x)
+      (Filter.Eventually.of_forall fun h => Real.exp_nonneg _)).symm
+  have hGg : ∀ x, G x = g ‖x‖ := hgval
+  have hGcont : Continuous G := by
+    have hEq : G = fun x => g ‖x‖ := funext hGg
+    rw [hEq]; exact hgcont.comp continuous_norm
+  have hGmeas : Measurable G := hGcont.measurable
+  have hGlmeas : Measurable Gl := by
+    have hEq : Gl = fun x => ENNReal.ofReal (G x) := funext hGlG
+    rw [hEq]; exact ENNReal.measurable_ofReal.comp hGmeas
+  have hGGl : ∀ x, G x = (Gl x).toReal := fun x => by
+    rw [hGlG x, ENNReal.toReal_ofReal (hGnn x)]
+  -- ### Step 1. The chi-squared region and the threshold.
+  have hAmeas : MeasurableSet {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} :=
+    measurableSet_normSq_gt c
+  have hcA : γ {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} = ENNReal.ofReal α := by
+    rw [hγ, stdGaussian_normSq_tail hk c]; exact hc
+  have hc0 : 0 ≤ c := by
+    by_contra hlt
+    push_neg at hlt
+    have huniv : {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} = Set.univ := by
+      ext x
+      simp only [Set.mem_setOf_eq, Set.mem_univ, iff_true]
+      exact lt_of_lt_of_le hlt (sq_nonneg _)
+    rw [huniv, measure_univ] at hcA
+    have : α = 1 := ENNReal.ofReal_eq_one.mp hcA.symm
+    linarith
+  set t : ℝ := g (Real.sqrt c) with htdef
+  have hsqcm : Real.sqrt c ∈ Set.Ici (0 : ℝ) := Set.mem_Ici.mpr (Real.sqrt_nonneg c)
+  have hsqsq : (Real.sqrt c) ^ 2 = c := Real.sq_sqrt hc0
+  have ht0 : 0 ≤ t := by
+    have hx : ‖(Real.sqrt c • EuclideanSpace.single (0 : Fin k) (1 : ℝ) :
+        EuclideanSpace ℝ (Fin k))‖ = Real.sqrt c := by
+      simp [norm_smul, abs_of_nonneg (Real.sqrt_nonneg c)]
+    have := hGnn (Real.sqrt c • EuclideanSpace.single (0 : Fin k) (1 : ℝ))
+    rwa [hGg, hx] at this
+  have hthr : ∀ x : EuclideanSpace ℝ (Fin k), t < G x ↔ c < ‖x‖ ^ 2 := by
+    intro x
+    rw [hGg x, htdef]
+    constructor
+    · intro hlt
+      have hn : Real.sqrt c < ‖x‖ := by
+        by_contra hle
+        push_neg at hle
+        exact absurd (hgmono.monotoneOn (Set.mem_Ici.mpr (norm_nonneg x)) hsqcm hle)
+          (not_le.mpr hlt)
+      nlinarith [Real.sqrt_nonneg c, norm_nonneg x]
+    · intro hlt
+      have hn : Real.sqrt c < ‖x‖ := by
+        nlinarith [Real.sqrt_nonneg c, norm_nonneg x]
+      exact hgmono hsqcm (Set.mem_Ici.mpr (norm_nonneg x)) hn
+  -- ### Step 2. Moments of the sphere average under the standard Gaussian.
+  have hGlmass : ∫⁻ x, Gl x ∂γ = 1 := lintegral_sphereAverage_eq_one hσ hsphere
+  have hGlfin : ∀ x, Gl x ≠ ⊤ := fun x => by rw [hGlG x]; exact ENNReal.ofReal_ne_top
+  have hGint : Integrable G γ := by
+    have hbase := integrable_toReal_of_lintegral_ne_top (μ := γ) (f := Gl)
+      hGlmeas.aemeasurable (by rw [hGlmass]; exact ENNReal.one_ne_top)
+    exact hbase.congr (Filter.Eventually.of_forall fun x => (hGGl x).symm)
+  have hGmean : ∫ x, G x ∂γ = 1 := by
+    have hEq : ∫ x, G x ∂γ = (∫⁻ x, Gl x ∂γ).toReal := by
+      rw [← integral_toReal hGlmeas.aemeasurable
+        (Filter.Eventually.of_forall fun x => lt_top_iff_ne_top.mpr (hGlfin x))]
+      exact integral_congr_ae (Filter.Eventually.of_forall hGGl)
+    rw [hEq, hGlmass, ENNReal.toReal_one]
+  have hsetG : ∫ x in {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}, G x ∂γ
+      = ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
+    have h1 := setLIntegral_sphereAverage (k := k) (b := b) (c := c) hb hσ hsphere
+    rw [← h1, ← integral_toReal hGlmeas.aemeasurable
+      (Filter.Eventually.of_forall fun x => lt_top_iff_ne_top.mpr (hGlfin x))]
+    exact integral_congr_ae (Filter.Eventually.of_forall hGGl)
+  -- ### Step 3. The mixture likelihood ratio.
+  set Rl : ℕ → Ω → ℝ≥0∞ :=
+    fun n ω => ∫⁻ h, ENNReal.ofReal (Real.exp (L n h ω)) ∂σ with hRldef
+  have hRlmeas : ∀ n, Measurable (Rl n) := by
+    intro n
+    have h1 : Measurable fun p : Ω × EuclideanSpace ℝ (Fin k) =>
+        ENNReal.ofReal (Real.exp (L n p.2 p.1)) :=
+      ENNReal.measurable_ofReal.comp (Real.continuous_exp.measurable.comp
+        ((hLmeas n).comp (measurable_snd.prodMk measurable_fst)))
+    exact h1.lintegral_prod_right'
+  set R : ℕ → Ω → ℝ := fun n ω => (Rl n ω).toReal with hRdef
+  have hRmeas : ∀ n, Measurable (R n) := fun n => (hRlmeas n).ennreal_toReal
+  have hRnn : ∀ n ω, 0 ≤ R n ω := fun n ω => ENNReal.toReal_nonneg
+  have hDnn : ∀ n ω, 0 ≤ D n ω := by
+    intro n ω
+    have hu : ‖(b • EuclideanSpace.single (0 : Fin k) (1 : ℝ) :
+        EuclideanSpace ℝ (Fin k))‖ = b := by
+      simp [norm_smul, abs_of_pos hb]
+    exact le_trans (abs_nonneg _) (hLAN n _ ω hu)
+  have hsandR : ∀ n ω, Rl n ω ≤ ENNReal.ofReal (Real.exp (D n ω)) * Gl (Z n ω) := by
+    intro n ω
+    have hmono : ∀ᵐ h ∂σ, ENNReal.ofReal (Real.exp (L n h ω))
+        ≤ ENNReal.ofReal (Real.exp (D n ω)) *
+            ENNReal.ofReal (Real.exp (⟪h, Z n ω⟫_ℝ - b ^ 2 / 2)) := by
+      filter_upwards [hsphere] with h hh
+      rw [← ENNReal.ofReal_mul (Real.exp_nonneg _), ← Real.exp_add]
+      refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+      have h2 := abs_le.mp (hLAN n h ω hh)
+      linarith [h2.2]
+    calc Rl n ω ≤ ∫⁻ h, ENNReal.ofReal (Real.exp (D n ω)) *
+            ENNReal.ofReal (Real.exp (⟪h, Z n ω⟫_ℝ - b ^ 2 / 2)) ∂σ := lintegral_mono_ae hmono
+      _ = ENNReal.ofReal (Real.exp (D n ω)) * Gl (Z n ω) :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+  have hsandG : ∀ n ω, Gl (Z n ω) ≤ ENNReal.ofReal (Real.exp (D n ω)) * Rl n ω := by
+    intro n ω
+    have hmono : ∀ᵐ h ∂σ, ENNReal.ofReal (Real.exp (⟪h, Z n ω⟫_ℝ - b ^ 2 / 2))
+        ≤ ENNReal.ofReal (Real.exp (D n ω)) * ENNReal.ofReal (Real.exp (L n h ω)) := by
+      filter_upwards [hsphere] with h hh
+      rw [← ENNReal.ofReal_mul (Real.exp_nonneg _), ← Real.exp_add]
+      refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+      have h2 := abs_le.mp (hLAN n h ω hh)
+      linarith [h2.1]
+    calc Gl (Z n ω) ≤ ∫⁻ h, ENNReal.ofReal (Real.exp (D n ω)) *
+            ENNReal.ofReal (Real.exp (L n h ω)) ∂σ := lintegral_mono_ae hmono
+      _ = ENNReal.ofReal (Real.exp (D n ω)) * Rl n ω :=
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+  have hRlfin : ∀ n ω, Rl n ω ≠ ⊤ := by
+    intro n ω
+    refine ne_top_of_le_ne_top ?_ (hsandR n ω)
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top (hGlfin _)
+  have hRRl : ∀ n ω, Rl n ω = ENNReal.ofReal (R n ω) := fun n ω =>
+    (ENNReal.ofReal_toReal (hRlfin n ω)).symm
+  have hRle : ∀ n ω, R n ω ≤ Real.exp (D n ω) * G (Z n ω) := by
+    intro n ω
+    have h1 := ENNReal.toReal_mono
+      (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (hGlfin (Z n ω))) (hsandR n ω)
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_nonneg _), ← hGGl] at h1
+  have hGle : ∀ n ω, G (Z n ω) ≤ Real.exp (D n ω) * R n ω := by
+    intro n ω
+    have h1 := ENNReal.toReal_mono
+      (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (hRlfin n ω)) (hsandG n ω)
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.exp_nonneg _), ← hGGl] at h1
+  -- total mass of the mixture ratio
+  have hexpmass : ∀ n h, ∫⁻ ω, ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0) = 1 := by
+    intro n h
+    have h1 : (Q n h) Set.univ = 1 := measure_univ
+    rwa [hdens n h, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  have hswapmeas : ∀ n, AEMeasurable
+      (Function.uncurry fun (h : EuclideanSpace ℝ (Fin k)) (ω : Ω) =>
+        ENNReal.ofReal (Real.exp (L n h ω))) (σ.prod (Q n 0)) := by
+    intro n
+    exact (ENNReal.measurable_ofReal.comp
+      (Real.continuous_exp.measurable.comp (hLmeas n))).aemeasurable
+  have hRlmass : ∀ n, ∫⁻ ω, Rl n ω ∂(Q n 0) = 1 := by
+    intro n
+    rw [hRldef]
+    rw [← lintegral_lintegral_swap (hswapmeas n)]
+    simp_rw [hexpmass n]
+    rw [lintegral_one, measure_univ]
+  have hRint : ∀ n, Integrable (R n) (Q n 0) := fun n =>
+    integrable_toReal_of_lintegral_ne_top (hRlmeas n).aemeasurable
+      (by rw [hRlmass n]; exact ENNReal.one_ne_top)
+  have hRmean : ∀ n, ∫ ω, R n ω ∂(Q n 0) = 1 := by
+    intro n
+    rw [hRdef, integral_toReal (hRlmeas n).aemeasurable
+      (Filter.Eventually.of_forall fun ω => lt_top_iff_ne_top.mpr (hRlfin n ω)), hRlmass n,
+      ENNReal.toReal_one]
+  -- ### Step 4. The mixture identity and the infimum bound.
+  have hpower : ∀ n h, power (Q n) (φ n) h
+      = (∫⁻ ω, ENNReal.ofReal (φ n ω) *
+          ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0)).toReal := by
+    intro n h
+    have hLm : Measurable fun ω => L n h ω :=
+      (hLmeas n).comp (measurable_const.prodMk measurable_id)
+    have hdm : Measurable fun ω => ENNReal.ofReal (Real.exp (L n h ω)) :=
+      hLm.exp.ennreal_ofReal
+    have hgm : Measurable fun ω => ENNReal.ofReal (φ n ω) := (hφ n).1.ennreal_ofReal
+    simp only [power]
+    rw [integral_eq_lintegral_of_nonneg_ae
+      (Filter.Eventually.of_forall fun ω => ((hφ n).2 ω).1) (hφ n).1.aestronglyMeasurable,
+      hdens n h, lintegral_withDensity_eq_lintegral_mul _ hdm hgm]
+    congr 1
+    refine lintegral_congr fun ω => ?_
+    simp only [Pi.mul_apply]
+    ring
+  have hpowernn : ∀ n h, 0 ≤ power (Q n) (φ n) h := by
+    intro n h
+    simp only [power]
+    exact integral_nonneg fun ω => ((hφ n).2 ω).1
+  have hspherept : ‖(b • EuclideanSpace.single (0 : Fin k) (1 : ℝ) :
+      EuclideanSpace ℝ (Fin k))‖ = b := by simp [norm_smul, abs_of_pos hb]
+  have hne : ∀ n, ((fun h => power (Q n) (φ n) h) '' S n).Nonempty := fun n =>
+    ⟨_, ⟨_, hS n hspherept, rfl⟩⟩
+  have hbdd : ∀ n, BddBelow ((fun h => power (Q n) (φ n) h) '' S n) := by
+    intro n
+    exact ⟨0, by rintro y ⟨h, -, rfl⟩; exact hpowernn n h⟩
+  have hsInfnn : ∀ n, 0 ≤ sInf ((fun h => power (Q n) (φ n) h) '' S n) := by
+    intro n
+    exact le_csInf (hne n) (by rintro y ⟨h, -, rfl⟩; exact hpowernn n h)
+  have hmix : ∀ n, sInf ((fun h => power (Q n) (φ n) h) '' S n)
+      ≤ ∫ ω, φ n ω * R n ω ∂(Q n 0) := by
+    intro n
+    have hφRint : Integrable (fun ω => φ n ω * R n ω) (Q n 0) := by
+      refine (hRint n).mono' ((hφ n).1.aestronglyMeasurable.mul
+        (hRmeas n).aestronglyMeasurable) (Filter.Eventually.of_forall fun ω => ?_)
+      rw [Real.norm_of_nonneg (mul_nonneg ((hφ n).2 ω).1 (hRnn n ω))]
+      nlinarith [((hφ n).2 ω).1, ((hφ n).2 ω).2, hRnn n ω]
+    have hstep : ENNReal.ofReal (sInf ((fun h => power (Q n) (φ n) h) '' S n))
+        ≤ ∫⁻ ω, ENNReal.ofReal (φ n ω * R n ω) ∂(Q n 0) := by
+      have hfin : ∀ h, ∫⁻ ω, ENNReal.ofReal (φ n ω) *
+          ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0) ≠ ⊤ := by
+        intro h
+        refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
+        rw [← hexpmass n h]
+        refine lintegral_mono fun ω => ?_
+        refine mul_le_of_le_one_left' ?_
+        exact ENNReal.ofReal_le_one.mpr ((hφ n).2 ω).2
+      have hle : ∀ᵐ h ∂σ, ENNReal.ofReal (sInf ((fun h => power (Q n) (φ n) h) '' S n))
+          ≤ ∫⁻ ω, ENNReal.ofReal (φ n ω) *
+              ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0) := by
+        filter_upwards [hsphere] with h hh
+        have hmem : h ∈ S n := hS n hh
+        have hcs : sInf ((fun h => power (Q n) (φ n) h) '' S n) ≤ power (Q n) (φ n) h :=
+          csInf_le (hbdd n) ⟨h, hmem, rfl⟩
+        rw [hpower n h] at hcs
+        exact (ENNReal.ofReal_le_iff_le_toReal (hfin h)).mpr hcs
+      calc ENNReal.ofReal (sInf ((fun h => power (Q n) (φ n) h) '' S n))
+          = ∫⁻ _ : EuclideanSpace ℝ (Fin k),
+              ENNReal.ofReal (sInf ((fun h => power (Q n) (φ n) h) '' S n)) ∂σ := by
+            rw [lintegral_const, measure_univ, mul_one]
+        _ ≤ ∫⁻ h, (∫⁻ ω, ENNReal.ofReal (φ n ω) *
+              ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0)) ∂σ := lintegral_mono_ae hle
+        _ = ∫⁻ ω, ENNReal.ofReal (φ n ω * R n ω) ∂(Q n 0) := by
+            rw [lintegral_lintegral_swap]
+            · refine lintegral_congr fun ω => ?_
+              rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+                show (∫⁻ a, ENNReal.ofReal (Real.exp (L n a ω)) ∂σ) = Rl n ω from rfl,
+                hRRl n ω, ← ENNReal.ofReal_mul ((hφ n).2 ω).1]
+            · exact ((ENNReal.measurable_ofReal.comp (hφ n).1).comp measurable_snd).mul
+                ((ENNReal.measurable_ofReal.comp
+                  (Real.continuous_exp.measurable.comp (hLmeas n)))) |>.aemeasurable
+    have hR := ofReal_integral_eq_lintegral_ofReal hφRint
+      (Filter.Eventually.of_forall fun ω => mul_nonneg ((hφ n).2 ω).1 (hRnn n ω))
+    rw [← hR] at hstep
+    exact (ENNReal.ofReal_le_ofReal_iff
+      (integral_nonneg fun ω => mul_nonneg ((hφ n).2 ω).1 (hRnn n ω))).mp hstep
   sorry
 
 end StatLean.HypothesisTesting
