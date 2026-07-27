@@ -181,29 +181,81 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   -- structure.  The minimal repair is therefore to restrict the competitors to tests based
   -- on the sample, which is `hφX` and is how the source states the theorem.
   --
-  -- WHAT REMAINS for the repaired statement.  It is the genuine multinomial instance of the
-  -- maximin bound and is *not* an instance of `asymptotic_maximin_upper_bound`, for two
-  -- independent reasons:
-  -- • The shells do not match, and mismatch in the unusable direction.  Under the reduction
-  --   `z = (h₁,…,h_k)` the transfer lemma's shell is all of `{z : b² ≤ zᵀ Σ⁻¹ z}`, whereas
-  --   `multinomialShell π b n` carries in addition the sample-size dependent positivity
-  --   constraint `πⱼ + hⱼ/√n ≥ 0`; so `multinomialShell` maps onto a SUBSET, and `sInf` over
-  --   a subset is `≥` `sInf` over the superset.  (The mixture proof does give the multinomial
-  --   statement, the least-favourable `σ` being carried by the compact sphere `λ(h) = b²`,
-  --   which lies inside the positivity constraint for all large `n`.  The recommended fix on
-  --   the `AsymptoticMaximin` side is a shell-parametrised restatement, quantified over any
-  --   set containing that sphere; it would serve this consumer and `SmoothTest` at once.)
-  -- • The local-experiment data required by that lemma is not derivable from the frozen
-  --   hypotheses, `Q` being abstract: the log-likelihood field `L n h` and its LAN quadratic
-  --   expansion (`hdens`, `hLAN`) would have to be added as hypotheses.  Only the centring
-  --   half is available (`ChiSquaredMultinomial.reducedCount_weakConverges_gaussian` gives
-  --   `Z n ⇒ N(0, Σ)`).
-  -- So the honest route is the mixture–Neyman–Pearson argument run directly on the moving
-  -- shell — the same missing apparatus as `asymptotic_maximin_upper_bound` (the pre-agreed
-  -- batch-ledger debt), not a corollary of it.
+  -- WHAT REMAINS for the repaired statement (RE-DERIVED this batch; the picture has changed
+  -- substantially, because `asymptotic_maximin_upper_bound` is now CLOSED and was restated in
+  -- exactly the shape this consumer needs).  Both obstructions recorded last batch are GONE:
+  -- • The shell mismatch is gone: that lemma is now quantified over an arbitrary family `S n`
+  --   of alternative sets subject only to `{h | ‖h‖ = b} ⊆ S n` *eventually*, which is
+  --   precisely what `multinomialShell π b n` satisfies — the positivity constraint
+  --   `πⱼ + hⱼ/√n ≥ 0` holds on the compact least-favourable sphere for all large `n`.
+  -- • The abstract-`Q` obstruction is gone as data: the sample space of that lemma may now
+  --   vary with `n`, so this consumer transfers along `hφX` to the CANONICAL experiment
+  --   `Q'ₙ,h := ⨂_{i<n} multinomial(π + h/√n)` on `Fin n → Fin (k+1)`, where the log-likelihood
+  --   field is explicit and `power (Q n) (φ n) h = power (Q'ₙ) (ψₙ) h` by `hφX` + `hcell` +
+  --   `hindep` (the law of the sample is pinned down by the frozen hypotheses).
+  -- What is left is therefore exactly the MULTINOMIAL LAN, on the canonical experiment:
+  --   (a) the whitening reparametrisation `η = Σ^{-1/2} z` of the reduced coordinates
+  --       `z = (h₁,…,h_k)`, under which `λ(h) = ∑ⱼ hⱼ²/πⱼ` becomes `‖η‖²`, so that the
+  --       standardized form of the transfer lemma applies and `multinomialShell` becomes an
+  --       `S n` containing the Euclidean sphere `‖η‖ = b`;
+  --   (b) `Zₙ ⇒ N(0, Iₖ)` in the whitened coordinates — available up to the whitening from
+  --       `ChiSquaredMultinomial.reducedCount_weakConverges_gaussian`, which gives
+  --       `Zₙ ⇒ N(0, Σ)`;
+  --   (c) the explicit log-likelihood `L n h ω = ∑_{i<n} log(1 + h_{ω i}/(√n π_{ω i}))`, its
+  --       joint measurability (immediate, the sample space being discrete), and the
+  --       expansion `L n h = ⟪η, Zₙ⟫ − ‖η‖²/2 + rₙ(h)` with `sup_{‖η‖=b} |rₙ| = o_P(1)` — a
+  --       `log(1+u) = u − u²/2 + O(u³)` estimate that is uniform over the compact sphere
+  --       because `π` is interior (`hπpos`) and `h` ranges over a bounded set, so
+  --       `|h_j|/(√n π_j) → 0` uniformly. This last item is the only genuine analysis left,
+  --       and it is a *finite-cell* computation, not a limit-theorem gap.
+  -- The mixture–Neyman–Pearson apparatus itself is no longer a debt of this file.
   sorry
 
 /-! ### (ii) Attainment by Pearson's test -/
+
+/-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
+of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
+`multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
+
+TODO (RE-DERIVED this batch).  This half is about Pearson's statistic, a function of the
+sample alone, so it is untouched by the abstract-`Q` counterexample recorded at
+`chiSquared_maximin_upper_bound`: the frozen hypotheses determine the law of
+`pearsonQ π (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and open.
+
+The `limsup ≤` half is routine and needs nothing new: evaluate at a FIXED centred `h` with
+`λ(h) = b²`, which lies in `multinomialShell π b n` for every large `n`, and use
+`ChiSquaredMultinomial.pearsonQ_local_power_nondegenerate`, which is closed axiom-clean and
+gives `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c, ∞)` together with `α < value < 1`.
+
+What is genuinely left is the `liminf ≥` half, and it is *not* supplied by the mixture
+apparatus closed this batch (`asymptotic_maximin_upper_bound` bounds every competitor from
+ABOVE; attainment is a different statement).  The shell is unbounded and moves with `n`, so
+the worst case is a *diagonal* sequence `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly
+`→ ∞`, and bounding `power_n(hₙ)` from below along such a sequence is a uniform
+(Berry–Esseen / tightness-over-the-shell) statement that no per-`h` weak limit supplies.
+Two tools now shorten it but do not close it:
+* the monotone likelihood ratio of `χ²_k(λ)` in `λ` (`exists_monotone_density`, in the MLR
+  section below) pins the worst case at `λ = b²` *once* the family of local powers is known
+  to be monotone in `λ` uniformly in `n`;
+* `noncentralChiSquared_tail_mono` gives the corresponding limit statement.
+The missing brick is a multinomial Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in
+the local parameter; the project has `ForMathlib/MultivariateBerryEsseen` only for slabs and
+balls of a *fixed* law, not for a triangular array of drifting multinomial rows. -/
+private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : Fin (k + 1) → ℝ}
+    {Q : ℕ → (Fin (k + 1) → ℝ) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
+    {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)}
+    (hk : 0 < k) (hb : 0 < b) (hα : 0 < α) (hα1 : α < 1)
+    (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α)
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1)
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    (hindep : ∀ n h, iIndepFun (X n) (Q n h))
+    (hcell : ∀ n h, ∀ i, ∀ j,
+      ((Measure.map (X n i) (Q n h)) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
+    Tendsto (fun n => sInf ((fun h => power (Q n)
+          (fun ω => if c < pearsonQ π (X n) ω then (1 : ℝ) else 0) h)
+        '' multinomialShell π b n)) atTop
+        (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
+  sorry
 
 /-- **Pearson's test is asymptotically maximin.** The nonrandomized test `1{Qₙ > c}`
 attains the bound of `chiSquared_maximin_upper_bound`: its minimum power over the local
@@ -251,36 +303,13 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
         limsup (fun n => sInf ((fun h => power (Q n) (ψ n) h)
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (RE-DERIVED this batch; the first conjunct is TRUE and the second is the repaired
-  -- `chiSquared_maximin_upper_bound`).
-  --
-  -- FIRST CONJUNCT (attainment).  Note that the Pearson test `1{Qₙ > c}` is a function of the
-  -- sample alone, so — unlike the second conjunct — this half is unaffected by the abstractness
-  -- of `Q`: the frozen hypotheses determine the law of `pearsonQ π (X n)` under every `Q n h`.
-  -- Two of the three obstructions previously listed are GONE:
-  -- • Tail monotonicity in the noncentrality is CLOSED (`noncentralChiSquared_tail_mono`), and
-  --   so, now, is the strictly stronger monotone likelihood ratio of the family
-  --   (`exists_monotone_density` in the MLR section of this file).
-  -- • The per-`h` local power is CLOSED: `ChiSquaredMultinomial.pearsonQ_local_power_nondegenerate`
-  --   gives, axiom-clean, `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` for every fixed centred
-  --   `h`, together with the two strict bounds `α < value < 1`.
-  -- Consequently the `limsup ≤` half is routine: evaluate at a FIXED `h` with `∑ⱼ hⱼ = 0` and
-  -- `λ(h) = b²`; such an `h` lies in `multinomialShell π b n` for every large `n`.
-  --
-  -- WHAT IS ACTUALLY LEFT is the `liminf ≥` half, a genuinely uniform statement:
-  -- `inf_{h ∈ multinomialShell π b n} power_n(h) ≥ ncχ²_k(b²)(c,∞) − ε` eventually.  The shell
-  -- is unbounded AND moves with `n`, so the competitor is a *diagonal* sequence
-  -- `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly `→ ∞`; controlling `power_n(hₙ)` from
-  -- below along such a sequence is a uniform (Berry–Esseen / tightness-over-the-shell)
-  -- statement that no per-`h` weak limit supplies.  The natural brick is a multinomial
-  -- Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in the local parameter; the project
-  -- has `ForMathlib/MultivariateBerryEsseen` only for slabs and balls of a *fixed* law, not
-  -- for a triangular array of drifting multinomial rows.
-  --
-  -- SECOND CONJUNCT is exactly `chiSquared_maximin_upper_bound` above, in its repaired form
-  -- (sample-based competitors); see its note for the counterexample that forced the repair
-  -- and for why it is NOT an instance of `asymptotic_maximin_upper_bound`.
-  sorry
+  refine ⟨?_, ?_⟩
+  · -- Attainment on the shell: the deep uniform-over-the-shell half (lifted).
+    exact chiSquared_shell_minPower_tendsto hk hb hα hα1 hc hπpos hπsum hX hindep hcell
+  · -- Optimality: for any level-`α` sample-based test this is exactly the upper bound.
+    intro ψ hψ hψX hlvl
+    exact chiSquared_maximin_upper_bound hk hb hα hα1 hc hπpos hπsum hX hindep hcell hψ
+      hψX hlvl
 
 /-! ### Monotone likelihood ratio of the noncentral chi-squared family
 
