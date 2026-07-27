@@ -401,4 +401,123 @@ theorem norm_integral_fourier_sub_le {P Q : Measure ℝ}
   dsimp only
   rw [← sub_mul, norm_mul]
 
+/-! ## De-smoothing: from test functions back to distribution functions
+
+The smoothing inequality above compares two laws through a *test function*. To turn such a
+comparison into a bound on the Kolmogorov distance one needs the converse step: a family of
+test functions that squeezes the indicator of a half-line tightly enough that the resulting
+loss is controlled by the modulus of continuity of the comparison law. The **ramp** below is
+that family, and `abs_measure_Iic_sub_le_of_integral_ramp` is the de-smoothing step in its
+sharp form: the Kolmogorov distance is bounded by the ramp-test discrepancy plus `A δ`, where
+`A` is a Lipschitz constant for the comparison distribution function and `δ` is the ramp
+width.
+
+This replaces the classical Fejér-convolution de-smoothing lemma and is strictly more
+elementary: no convolution of distribution functions, and no Fejér tail estimate, is needed.
+-/
+
+/-- The **ramp** (continuous smoothed indicator) `R_{u,δ}`: it equals `1` on `(-∞, u]`, falls
+linearly to `0` across `[u, u + δ]`, and vanishes on `[u + δ, ∞)`. -/
+noncomputable def ramp (u δ y : ℝ) : ℝ := min 1 (max 0 ((u + δ - y) / δ))
+
+lemma ramp_nonneg (u δ y : ℝ) : 0 ≤ ramp u δ y :=
+  le_min zero_le_one (le_max_left _ _)
+
+lemma ramp_le_one (u δ y : ℝ) : ramp u δ y ≤ 1 := min_le_left _ _
+
+lemma continuous_ramp (u δ : ℝ) : Continuous (ramp u δ) := by
+  unfold ramp; fun_prop
+
+/-- The ramp is `1` to the left of its shoulder. -/
+lemma ramp_eq_one_of_le {u δ y : ℝ} (hδ : 0 < δ) (hy : y ≤ u) : ramp u δ y = 1 := by
+  have h : (1 : ℝ) ≤ (u + δ - y) / δ := (one_le_div hδ).2 (by linarith)
+  exact min_eq_left (le_max_of_le_right h)
+
+/-- The ramp vanishes to the right of its foot. -/
+lemma ramp_eq_zero_of_le {u δ y : ℝ} (hδ : 0 < δ) (hy : u + δ ≤ y) : ramp u δ y = 0 := by
+  have h : (u + δ - y) / δ ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hδ.le
+  simp [ramp, max_eq_left h]
+
+/-- The ramp is monotone in its shoulder position. -/
+lemma ramp_mono_shoulder {v u δ : ℝ} (h : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    ramp v δ y ≤ ramp u δ y := by
+  refine min_le_min le_rfl (max_le_max le_rfl ?_)
+  have hinv : (0 : ℝ) ≤ δ⁻¹ := (inv_pos.2 hδ).le
+  have hmul : (v + δ - y) * δ⁻¹ ≤ (u + δ - y) * δ⁻¹ :=
+    mul_le_mul_of_nonneg_right (by linarith) hinv
+  simpa [div_eq_mul_inv] using hmul
+
+lemma integrable_ramp (P : Measure ℝ) [IsFiniteMeasure P] (u δ : ℝ) :
+    Integrable (ramp u δ) P :=
+  (integrable_const (1 : ℝ)).mono' (continuous_ramp u δ).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (ramp_nonneg u δ y)]; exact ramp_le_one u δ y)
+
+/-- The half-line indicator is dominated by the ramp sitting on it. -/
+lemma measure_Iic_le_integral_ramp (P : Measure ℝ) [IsFiniteMeasure P] {δ : ℝ} (hδ : 0 < δ)
+    (u : ℝ) : (P (Set.Iic u)).toReal ≤ ∫ y, ramp u δ y ∂P := by
+  have hbase : (∫ y, (Set.Iic u).indicator (fun _ => (1 : ℝ)) y ∂P) = (P (Set.Iic u)).toReal := by
+    rw [MeasureTheory.integral_indicator_const _ measurableSet_Iic]
+    simp [measureReal_def]
+  rw [← hbase]
+  refine integral_mono ((integrable_const (1 : ℝ)).indicator measurableSet_Iic)
+    (integrable_ramp P u δ) fun y => ?_
+  · by_cases hy : y ∈ Set.Iic u
+    · rw [Set.indicator_of_mem hy, ramp_eq_one_of_le hδ hy]
+    · rw [Set.indicator_of_notMem hy]; exact ramp_nonneg u δ y
+
+/-- The ramp is dominated by the indicator of the half-line ending at its foot. -/
+lemma integral_ramp_le_measure_Iic (P : Measure ℝ) [IsFiniteMeasure P] {δ : ℝ} (hδ : 0 < δ)
+    (u : ℝ) : (∫ y, ramp u δ y ∂P) ≤ (P (Set.Iic (u + δ))).toReal := by
+  have hbase : (∫ y, (Set.Iic (u + δ)).indicator (fun _ => (1 : ℝ)) y ∂P)
+      = (P (Set.Iic (u + δ))).toReal := by
+    rw [MeasureTheory.integral_indicator_const _ measurableSet_Iic]
+    simp [measureReal_def]
+  rw [← hbase]
+  refine integral_mono (integrable_ramp P u δ)
+    ((integrable_const (1 : ℝ)).indicator measurableSet_Iic) fun y => ?_
+  · by_cases hy : y ∈ Set.Iic (u + δ)
+    · rw [Set.indicator_of_mem hy]; exact ramp_le_one u δ y
+    · rw [Set.indicator_of_notMem hy,
+        ramp_eq_zero_of_le hδ (le_of_not_ge (by simpa using hy))]
+
+/-- **De-smoothing: the Kolmogorov distance is controlled by the ramp discrepancy.**
+
+If every ramp of width `δ` separates the two laws by at most `E`, and the distribution function
+of the comparison law `Q` has Lipschitz constant `A`, then the two distribution functions differ
+by at most `E + A δ` at *every* point.
+
+This is the converse half of Esseen's argument — the step that recovers a statement about
+distribution functions from a statement about smooth test functions. Combined with
+`norm_integral_fourier_sub_le` it reduces a Kolmogorov-distance bound to the single remaining
+task of exhibiting each ramp as a Fourier transform of an integrable function. -/
+theorem abs_measure_Iic_sub_le_of_integral_ramp {P Q : Measure ℝ}
+    [IsProbabilityMeasure P] [IsProbabilityMeasure Q] {δ E A : ℝ} (hδ : 0 < δ)
+    -- the comparison distribution function is `A`-Lipschitz
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    -- every ramp of width `δ` separates the two laws by at most `E`
+    (hE : ∀ u : ℝ, |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q| ≤ E) (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ := by
+  refine abs_le.2 ⟨?_, ?_⟩
+  · -- lower bound: use the ramp whose *foot* sits at `x`
+    have h1 : (∫ y, ramp (x - δ) δ y ∂P) ≤ (P (Set.Iic x)).toReal := by
+      have := integral_ramp_le_measure_Iic P hδ (x - δ)
+      simpa using this
+    have h2 : (Q (Set.Iic (x - δ))).toReal ≤ ∫ y, ramp (x - δ) δ y ∂Q :=
+      measure_Iic_le_integral_ramp Q hδ (x - δ)
+    have h3 := hQ (x - δ) x (by linarith)
+    have h4 := abs_le.1 (hE (x - δ))
+    simp only [sub_sub_cancel] at h3
+    linarith [h4.1, h4.2]
+  · -- upper bound: use the ramp whose *shoulder* sits at `x`
+    have h1 : (P (Set.Iic x)).toReal ≤ ∫ y, ramp x δ y ∂P :=
+      measure_Iic_le_integral_ramp P hδ x
+    have h2 : (∫ y, ramp x δ y ∂Q) ≤ (Q (Set.Iic (x + δ))).toReal :=
+      integral_ramp_le_measure_Iic Q hδ x
+    have h3 := hQ x (x + δ) (by linarith)
+    have h4 := abs_le.1 (hE x)
+    simp only [add_sub_cancel_left] at h3
+    linarith [h4.1, h4.2]
+
 end StatLean.HypothesisTesting
