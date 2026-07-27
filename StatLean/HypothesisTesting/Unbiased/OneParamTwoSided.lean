@@ -3,6 +3,7 @@ import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.HypothesisTesting.Unbiased.PowerContinuity
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import StatLean.PointEstimation.ExponentialFamily.Smoothness
+import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 
 /-!
 # UMP unbiased two-sided tests in a one-parameter exponential family
@@ -407,6 +408,136 @@ private lemma exists_chord_of_concaveOn {G : ℝ → ℝ} (hG : ConcaveOn ℝ (S
   · have := hout w hw hc
     simp only [Pi.neg_apply] at this
     linarith
+
+/-- Supporting line from below for `w ↦ w^λ` at `w₁ > 0`, for `λ ≥ 1` (Bernoulli). -/
+private lemma rpow_supporting_ge {lam w₁ : ℝ} (hlam : 1 ≤ lam) (h1 : 0 < w₁) :
+    ∀ w, 0 ≤ w → w₁ ^ lam + (lam * w₁ ^ lam / w₁) * (w - w₁) ≤ w ^ lam := by
+  intro w hw
+  have hdn : 0 ≤ w / w₁ := div_nonneg hw h1.le
+  have hs : (-1 : ℝ) ≤ w / w₁ - 1 := by linarith
+  have hB := one_add_mul_self_le_rpow_one_add hs hlam
+  rw [show (1 : ℝ) + (w / w₁ - 1) = w / w₁ by ring] at hB
+  have hsplit : w ^ lam = w₁ ^ lam * (w / w₁) ^ lam := by
+    rw [← Real.mul_rpow h1.le hdn]
+    congr 1
+    field_simp
+  have hp : (0 : ℝ) < w₁ ^ lam := Real.rpow_pos_of_pos h1 lam
+  have hmul := mul_le_mul_of_nonneg_left hB hp.le
+  have heq : w₁ ^ lam * (1 + lam * (w / w₁ - 1))
+      = w₁ ^ lam + (lam * w₁ ^ lam / w₁) * (w - w₁) := by
+    field_simp
+  rw [heq] at hmul
+  rw [hsplit]
+  exact hmul
+
+/-- Supporting line from above for `w ↦ w^λ` at `w₁ > 0`, for `0 ≤ λ ≤ 1` (Bernoulli). -/
+private lemma rpow_supporting_le {lam w₁ : ℝ} (hlam0 : 0 ≤ lam) (hlam1 : lam ≤ 1)
+    (h1 : 0 < w₁) :
+    ∀ w, 0 ≤ w → w ^ lam ≤ w₁ ^ lam + (lam * w₁ ^ lam / w₁) * (w - w₁) := by
+  intro w hw
+  have hdn : 0 ≤ w / w₁ := div_nonneg hw h1.le
+  have hs : (-1 : ℝ) ≤ w / w₁ - 1 := by linarith
+  have hB := rpow_one_add_le_one_add_mul_self hs hlam0 hlam1
+  rw [show (1 : ℝ) + (w / w₁ - 1) = w / w₁ by ring] at hB
+  have hsplit : w ^ lam = w₁ ^ lam * (w / w₁) ^ lam := by
+    rw [← Real.mul_rpow h1.le hdn]
+    congr 1
+    field_simp
+  have hp : (0 : ℝ) < w₁ ^ lam := Real.rpow_pos_of_pos h1 lam
+  have hmul := mul_le_mul_of_nonneg_left hB hp.le
+  have heq : w₁ ^ lam * (1 + lam * (w / w₁ - 1))
+      = w₁ ^ lam + (lam * w₁ ^ lam / w₁) * (w - w₁) := by
+    field_simp
+  rw [heq] at hmul
+  rw [hsplit]
+  exact hmul
+
+/-- The substitution `w = e^{(θ₂−θ₁)t}` turns a three-exponential combination into an affine
+function of `w` compared against `w^λ`, `λ = (ϑ−θ₁)/(θ₂−θ₁)`, all scaled by `e^{θ₁t} > 0`. -/
+private lemma exp3_factor (θ₁ θ₂ ϑ a b t : ℝ) (h12 : θ₁ < θ₂) :
+    a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t)
+        = Real.exp (θ₁ * t) * (a + b * Real.exp ((θ₂ - θ₁) * t)) ∧
+      Real.exp (ϑ * t)
+        = Real.exp (θ₁ * t) * Real.exp ((θ₂ - θ₁) * t) ^ ((ϑ - θ₁) / (θ₂ - θ₁)) := by
+  have hβ : θ₂ - θ₁ ≠ 0 := sub_ne_zero.mpr (ne_of_gt h12)
+  have hW : Real.exp (θ₁ * t) * Real.exp ((θ₂ - θ₁) * t) = Real.exp (θ₂ * t) := by
+    rw [← Real.exp_add]; congr 1; ring
+  have hrp : Real.exp ((θ₂ - θ₁) * t) ^ ((ϑ - θ₁) / (θ₂ - θ₁))
+      = Real.exp ((ϑ - θ₁) * t) := by
+    rw [Real.rpow_def_of_pos (Real.exp_pos _), Real.log_exp]
+    congr 1
+    field_simp
+  refine ⟨by rw [← hW]; ring, ?_⟩
+  rw [hrp, ← Real.exp_add]
+  congr 1
+  ring
+
+/-- **Three-exponential separation, alternative above the interval.** For `θ₁ < θ₂ < ϑ` there
+is a combination `a e^{θ₁t} + b e^{θ₂t}` dominating `e^{ϑt}` on `[C₁, C₂]` and dominated by it
+outside. (Strict convexity of `w ↦ w^λ`, `λ > 1`, in the variable `w = e^{(θ₂−θ₁)t}`.) -/
+private lemma exists_sep_exp3_gt {θ₁ θ₂ ϑ : ℝ} (h12 : θ₁ < θ₂) (hϑ : θ₂ < ϑ)
+    {C₁ C₂ : ℝ} (hC : C₁ ≤ C₂) :
+    ∃ a b : ℝ,
+      (∀ t, C₁ ≤ t → t ≤ C₂ →
+        Real.exp (ϑ * t) ≤ a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t)) ∧
+      (∀ t, t ≤ C₁ ∨ C₂ ≤ t →
+        a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t) ≤ Real.exp (ϑ * t)) := by
+  have hβ : (0 : ℝ) < θ₂ - θ₁ := by linarith
+  have hlam : 1 ≤ (ϑ - θ₁) / (θ₂ - θ₁) := by
+    rw [le_div_iff₀ hβ]; linarith
+  have hw₁pos : (0 : ℝ) < Real.exp ((θ₂ - θ₁) * C₁) := Real.exp_pos _
+  have hww : Real.exp ((θ₂ - θ₁) * C₁) ≤ Real.exp ((θ₂ - θ₁) * C₂) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hC hβ.le)
+  obtain ⟨a, b, hin, hout⟩ := exists_chord_of_convexOn (convexOn_rpow hlam) hw₁pos hww
+    ⟨_, rpow_supporting_ge hlam hw₁pos⟩
+  refine ⟨a, b, fun t ht1 ht2 => ?_, fun t ht => ?_⟩
+  · obtain ⟨hf1, hf2⟩ := exp3_factor θ₁ θ₂ ϑ a b t h12
+    rw [hf1, hf2]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+    exact hin _ (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left ht1 hβ.le))
+      (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left ht2 hβ.le))
+  · obtain ⟨hf1, hf2⟩ := exp3_factor θ₁ θ₂ ϑ a b t h12
+    rw [hf1, hf2]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+    refine hout _ (Real.exp_pos _).le ?_
+    rcases ht with h | h
+    · exact Or.inl (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h hβ.le))
+    · exact Or.inr (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h hβ.le))
+
+/-- **Three-exponential separation, parameter inside the interval.** For `θ₁ < ϑ < θ₂` the
+signs are reversed: the combination is dominated by `e^{ϑt}` on `[C₁, C₂]` and dominates it
+outside. (Strict concavity of `w ↦ w^λ`, `0 < λ < 1`.) -/
+private lemma exists_sep_exp3_mid {θ₁ θ₂ ϑ : ℝ} (h1 : θ₁ < ϑ) (h2 : ϑ < θ₂)
+    {C₁ C₂ : ℝ} (hC : C₁ ≤ C₂) :
+    ∃ a b : ℝ,
+      (∀ t, C₁ ≤ t → t ≤ C₂ →
+        a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t) ≤ Real.exp (ϑ * t)) ∧
+      (∀ t, t ≤ C₁ ∨ C₂ ≤ t →
+        Real.exp (ϑ * t) ≤ a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t)) := by
+  have h12 : θ₁ < θ₂ := lt_trans h1 h2
+  have hβ : (0 : ℝ) < θ₂ - θ₁ := by linarith
+  have hlam0 : (0 : ℝ) ≤ (ϑ - θ₁) / (θ₂ - θ₁) := div_nonneg (by linarith) hβ.le
+  have hlam1 : (ϑ - θ₁) / (θ₂ - θ₁) ≤ 1 := by
+    rw [div_le_one hβ]; linarith
+  have hw₁pos : (0 : ℝ) < Real.exp ((θ₂ - θ₁) * C₁) := Real.exp_pos _
+  have hww : Real.exp ((θ₂ - θ₁) * C₁) ≤ Real.exp ((θ₂ - θ₁) * C₂) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hC hβ.le)
+  obtain ⟨a, b, hin, hout⟩ :=
+    exists_chord_of_concaveOn (Real.concaveOn_rpow hlam0 hlam1) hw₁pos hww
+      ⟨_, rpow_supporting_le hlam0 hlam1 hw₁pos⟩
+  refine ⟨a, b, fun t ht1 ht2 => ?_, fun t ht => ?_⟩
+  · obtain ⟨hf1, hf2⟩ := exp3_factor θ₁ θ₂ ϑ a b t h12
+    rw [hf1, hf2]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+    exact hin _ (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left ht1 hβ.le))
+      (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left ht2 hβ.le))
+  · obtain ⟨hf1, hf2⟩ := exp3_factor θ₁ θ₂ ϑ a b t h12
+    rw [hf1, hf2]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+    refine hout _ (Real.exp_pos _).le ?_
+    rcases ht with h | h
+    · exact Or.inl (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h hβ.le))
+    · exact Or.inr (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h hβ.le))
 
 /-- **Two-constraint Neyman–Pearson comparison, unpacked.** The `Fin`-indexed
 `isMax_of_multiplier_form` at `m = 2`, restated with the three functions spelled out. -/
