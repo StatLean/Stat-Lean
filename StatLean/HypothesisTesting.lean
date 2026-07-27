@@ -14,6 +14,7 @@ import StatLean.HypothesisTesting.ForMathlib.CondDistribTilt
 import StatLean.HypothesisTesting.ForMathlib.CriticalFunction
 import StatLean.HypothesisTesting.ForMathlib.DKWUniform
 import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
+import StatLean.HypothesisTesting.ForMathlib.GaussianShell
 import StatLean.HypothesisTesting.ForMathlib.GroupAverageMeasure
 import StatLean.HypothesisTesting.ForMathlib.HypergeometricMoments
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
