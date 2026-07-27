@@ -3358,6 +3358,147 @@ private lemma integrable_condPower_of_integrable {P : ℝ × Ξ → Measure 𝓧
     exact hint
   exact h.integral_condDistrib_map hU.aemeasurable
 
+/-- **The point-null fibrewise engine, globalised.** The analogue of
+`integral_comp_sign_of_condZero_interval` for a *single* boundary surface: `g` is bounded,
+nonnegative outside the conditional interval and nonpositive inside, and satisfies at the
+reference parameter `p₀` **both** conditional side conditions — vanishing conditional
+integral and vanishing conditional first moment. Then its unconditional integral is
+nonnegative at **every** parameter of `Ω`, on either side of `θ₀`.
+
+Applied to `g = φ − α` this is simultaneously the level (equality on the surface) and the
+unbiasedness of the point-null conditional test; applied to `g = φ − ψ` it is its
+optimality. -/
+private lemma integral_comp_sign_of_condZero_point {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [BorelSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p₀ p : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp : p ∈ Ω)
+    {C₁ C₂ : Ξ → ℝ} (hCle : ∀ t, C₁ t ≤ C₂ t)
+    {g : ℝ × Ξ → ℝ} (hgm : Measurable g) (hgb : ∀ z, |g z| ≤ 1)
+    (hgpos : ∀ z : ℝ × Ξ, z.1 < C₁ z.2 ∨ C₂ z.2 < z.1 → 0 ≤ g z)
+    (hgneg : ∀ z : ℝ × Ξ, C₁ z.2 < z.1 → z.1 < C₂ z.2 → g z ≤ 0)
+    (hid : ∀ᵐ t ∂((P p₀).map T), Integrable (fun u : ℝ => u) (condDistrib U T (P p₀) t))
+    (hz : ∀ᵐ t ∂((P p₀).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0)
+    (hz' : ∀ᵐ t ∂((P p₀).map T), ∫ u, u * g (u, t) ∂(condDistrib U T (P p₀) t) = 0) :
+    0 ≤ ∫ x, g (U x, T x) ∂(P p) := by
+  haveI := isProbabilityMeasure_statLaw (P := P) hT p
+  have hac := (statLaw_ac hU hT hUT hp hp₀).ae_le
+  have e1 := Filter.Eventually.filter_mono hac hid
+  have e2 := Filter.Eventually.filter_mono hac hz
+  have e3 := Filter.Eventually.filter_mono hac hz'
+  have hkey : ∀ᵐ t ∂((P p).map T), 0 ≤ ∫ u, g (u, t) ∂(condDistrib U T (P p) t) := by
+    filter_upwards [e1, e2, e3, ae_condDistrib_expTilt hU hT hUT hp₀ hp] with t h1 h2 h3 hd
+    obtain ⟨k, hk, hteq⟩ := hd
+    haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+    haveI hQ : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
+      rw [← hteq]; infer_instance
+    have hgmt : Measurable fun u : ℝ => g (u, t) :=
+      hgm.comp (measurable_id.prodMk measurable_const)
+    rw [hteq]
+    exact integral_expTilt_signed_point (hCle t) hk hQ hgmt (fun u => hgb _)
+      (fun u hu => hgpos (u, t) hu) (fun u ha hb => hgneg (u, t) ha hb) h1 h2 h3
+  rw [integral_comp_eq_integral_condPower hU hT hgm hgb p]
+  exact integral_nonneg_of_ae hkey
+
+/-- **The conditional derivative side condition of an unbiased competitor.** *Item (d) of
+`isUMPU_conditional_point`.* A critical function of `(U, T)` which is similar of size `α` on
+the boundary surface `θ = θ₀` and has power at least `α` off it satisfies
+
+`E_{θ₀}[U·ψ ∣ t] = α · E_{θ₀}[U ∣ t]` for almost every `t`.
+
+The full-measure identity `E[Uψ] = α·E[U]` holds at every *interior* boundary parameter by
+`integral_U_mul_eq_of_boundary_min` (unbiasedness ⟹ vanishing derivative of the power along
+the pure-`θ` window supplied by `exists_pure_theta_window`). The passage to the conditional
+statement is `complete_boundary` applied to `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]` — completeness
+rather than *bounded* completeness, because `U` is unbounded — the disintegration of the
+full-measure identity being legitimate because `integrable_U_of_twoSided` makes `U`, hence
+`U·ψ`, integrable there, and `integrable_condPower_of_integrable` makes the two conditional
+halves separately integrable. -/
+private lemma ae_condDeriv_eq_of_similar {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [BorelSpace Ξ] [FiniteDimensional ℝ Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ α : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
+    {p₀ : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp₀θ : p₀.1 = θ₀)
+    {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1)
+    (hsim : ∀ p ∈ Ω, p.1 = θ₀ → ∫ x, ψ (U x, T x) ∂(P p) = α)
+    (hge : ∀ p ∈ Ω, p.1 ≠ θ₀ → α ≤ ∫ x, ψ (U x, T x) ∂(P p)) :
+    ∀ᵐ t ∂((P p₀).map T),
+      ∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t)
+        = α * ∫ u, u ∂(condDistrib U T (P p₀) t) := by
+  classical
+  have hmul : Measurable fun z : ℝ × Ξ => z.1 * ψ z := measurable_fst.mul hψm
+  have hfm : Measurable fun t : Ξ =>
+      (∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t))
+        - α * ∫ u, u ∂(condDistrib U T (P p₀) t) :=
+    (measurable_condPower hU hT hmul (P p₀)).sub
+      ((measurable_condPower hU hT measurable_fst (P p₀)).const_mul α)
+  -- at every interior boundary parameter the difference is integrable and averages to zero
+  have hboth : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
+      Integrable (fun t : Ξ => (∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t))
+          - α * ∫ u, u ∂(condDistrib U T (P p₀) t)) ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) ∧
+        ∫ t, ((∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t))
+          - α * ∫ u, u ∂(condDistrib U T (P p₀) t)) ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) = 0 := by
+    intro ϑ hϑint
+    have hq : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω := interior_subset hϑint
+    obtain ⟨δ, hδ, hwin⟩ := exists_pure_theta_window hϑint
+    have hlo : ((θ₀ - δ, ϑ) : ℝ × Ξ) ∈ Ω :=
+      hwin _ (by rw [show θ₀ - δ - θ₀ = -δ by ring, abs_neg, abs_of_pos hδ])
+    have hhi : ((θ₀ + δ, ϑ) : ℝ × Ξ) ∈ Ω :=
+      hwin _ (by rw [show θ₀ + δ - θ₀ = δ by ring, abs_of_pos hδ])
+    -- `U` and `U·ψ` are integrable at this parameter
+    have hIU : Integrable U (P ((θ₀, ϑ) : ℝ × Ξ)) :=
+      integrable_U_of_twoSided hU hT hUT hδ hlo hhi hq
+    have hIUψ : Integrable (fun x => U x * ψ (U x, T x)) (P ((θ₀, ϑ) : ℝ × Ξ)) :=
+      hIU.mul_bdd ((hψm.comp (hU.prodMk hT)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hψb _)
+    -- the conditional law does not depend on the nuisance coordinate
+    have hcd : ∀ᵐ t ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T),
+        condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t = condDistrib U T (P p₀) t :=
+      condDistrib_eq_of_fst_eq hU hT hUT hq hp₀ (by rw [hp₀θ])
+    have hfeq : (fun t : Ξ => (∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t))
+          - α * ∫ u, u ∂(condDistrib U T (P p₀) t))
+        =ᵐ[(P ((θ₀, ϑ) : ℝ × Ξ)).map T]
+        fun t : Ξ => (∫ u, u * ψ (u, t) ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t))
+          - α * ∫ u, u ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t) := by
+      filter_upwards [hcd] with t ht
+      rw [ht]
+    have hI1 : Integrable (fun t : Ξ => ∫ u, u * ψ (u, t)
+        ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t)) ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+      integrable_condPower_of_integrable hU hT hmul hIUψ
+    have hI2 : Integrable (fun t : Ξ => ∫ u, u
+        ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t)) ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+      integrable_condPower_of_integrable hU hT measurable_fst hIU
+    refine ⟨(hI1.sub' (hI2.const_mul α)).congr hfeq.symm, ?_⟩
+    -- the two conditional halves average to the two full-measure expectations
+    have hd1 : ∫ x, U x * ψ (U x, T x) ∂(P ((θ₀, ϑ) : ℝ × Ξ))
+        = ∫ t, (∫ u, u * ψ (u, t) ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t))
+            ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+      integral_eq_integral_condDistrib hU hT hmul hIUψ
+    have hd2 : ∫ x, U x ∂(P ((θ₀, ϑ) : ℝ × Ξ))
+        = ∫ t, (∫ u, u ∂(condDistrib U T (P ((θ₀, ϑ) : ℝ × Ξ)) t))
+            ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+      integral_eq_integral_condDistrib hU hT measurable_fst hIU
+    -- unbiasedness along the pure-`θ` window kills the derivative of the power
+    have hmin : ∀ θ : ℝ, |θ - θ₀| ≤ δ →
+        α ≤ ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ) : ℝ × Ξ)) := by
+      intro θ hθ
+      rcases eq_or_ne θ θ₀ with rfl | hne
+      · exact le_of_eq (hsim _ (hwin _ hθ) rfl).symm
+      · exact hge _ (hwin _ hθ) hne
+    have hres := integral_U_mul_eq_of_boundary_min hU hT hUT hΩ_convex hδ hq hlo hhi
+      hψm hψb (hsim _ hq rfl) hmin
+    rw [integral_congr_ae hfeq, integral_sub hI1 (hI2.const_mul α), integral_const_mul,
+      ← hd1, ← hd2]
+    linarith
+  have hae := complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hfm
+    (fun ϑ hϑ => (hboth ϑ hϑ).1) (fun ϑ hϑ => (hboth ϑ hϑ).2) hp₀
+  filter_upwards [hae] with t ht
+  have hz : (∫ u, u * ψ (u, t) ∂(condDistrib U T (P p₀) t))
+      - α * ∫ u, u ∂(condDistrib U T (P p₀) t) = 0 := ht
+  linarith
+
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
 *outside* an interval in `u` is UMP unbiased at level `α`, provided its constants satisfy
 **both** conditional conditions on the boundary surface `θ = θ₀`:
