@@ -428,14 +428,160 @@ theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace �
           Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ') :
     IsDAdmissible (statScaleFamily E) Θ_H Θ'
       (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
-  -- TODO: Birnbaum–Stein convexity criterion, not yet formalized. A randomized competitor
-  -- `φ` two-sidedly dominating `φ₀ = 1_{A₀ᶜ}` is first reduced (via the Neyman–Pearson
-  -- structure of the domination) to an acceptance-region comparison, then
-  -- `acceptance_subset_of_power_le` nests the regions and the separating-hyperplane /
-  -- tilt-asymptotic argument makes the power comparison strict unless the power functions
-  -- coincide. Depends on `acceptance_subset_of_power_le` above plus the reduction of the
-  -- randomized competitor to a set. No false hypothesis; statement is TRUE.
-  sorry
+  classical
+  intro φ hφ h1 h2 θ hθ
+  by_cases hb : E.base = 0
+  · simp [power, statScaleFamily, ExpFamily.P, hb, MeasureTheory.tilted_zero_measure]
+  haveI : NeZero E.base := ⟨hb⟩
+  have hφ₀meas : Measurable (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
+    measurable_const.indicator hA₀meas.compl
+  have hφ₀b : ∀ t, (A₀ᶜ.indicator fun _ => (1 : ℝ)) t ∈ Set.Icc (0 : ℝ) 1 := by
+    intro t
+    by_cases h : t ∈ A₀ᶜ
+    · rw [Set.indicator_of_mem h]; norm_num
+    · rw [Set.indicator_of_notMem h]; norm_num
+  have hprob : ∀ η ∈ E.natSet, IsProbabilityMeasure (statScaleFamily E η) := by
+    intro η hη
+    haveI : IsProbabilityMeasure (E.P η) :=
+      MeasureTheory.isProbabilityMeasure_tilted hη
+    exact Measure.isProbabilityMeasure_map E.stat_meas.aemeasurable
+  have hIntg : ∀ f : EuclideanSpace ℝ (Fin s) → ℝ, Measurable f →
+      (∀ t, f t ∈ Set.Icc (0 : ℝ) 1) → ∀ η ∈ E.natSet,
+      Integrable f (statScaleFamily E η) := by
+    intro f hf hbd η hη
+    haveI := hprob η hη
+    exact (integrable_const (1 : ℝ)).mono' hf.aestronglyMeasurable
+      (ae_of_all _ fun t => by
+        rw [Real.norm_eq_abs, abs_le]; exact ⟨by linarith [(hbd t).1], (hbd t).2⟩)
+  -- absolute continuity both ways between the tilted members and the base, on `natSet`
+  have hac : ∀ η : EuclideanSpace ℝ (Fin s), statScaleFamily E η ≪ statScaleBase E :=
+    fun η => Measure.AbsolutelyContinuous.map
+      (MeasureTheory.tilted_absolutelyContinuous _ _) E.stat_meas
+  have hacRev : ∀ η ∈ E.natSet, statScaleBase E ≪ statScaleFamily E η := fun η hη =>
+    Measure.AbsolutelyContinuous.map
+      (MeasureTheory.absolutelyContinuous_tilted hη) E.stat_meas
+  -- **Step A.** The competitor rejects (value `1`) almost everywhere off `A₀`.
+  have hkey : ∀ ε : ℝ, 0 < ε → ε < 1 →
+      statScaleBase E ({t | φ t < 1 - ε} \ A₀) = 0 := by
+    intro ε hε hε1
+    refine acceptance_subset_of_power_le_const E hΘ' hA₀closed hA₀convex hA₀meas
+      (measurableSet_lt hφ.1 measurable_const) hray (ENNReal.ofReal ε⁻¹)
+      ENNReal.ofReal_ne_top ?_
+    intro η hη
+    haveI := hprob η (hΘ' hη)
+    set Q : Measure (EuclideanSpace ℝ (Fin s)) := statScaleFamily E η with hQdef
+    set Aε : Set (EuclideanSpace ℝ (Fin s)) := {t | φ t < 1 - ε} with hAεdef
+    have hAεmeas : MeasurableSet Aε := measurableSet_lt hφ.1 measurable_const
+    have hφint : Integrable φ Q := hIntg φ hφ.1 hφ.2 η (hΘ' hη)
+    have hφ₀int : Integrable (A₀ᶜ.indicator fun _ => (1 : ℝ)) Q :=
+      hIntg _ hφ₀meas hφ₀b η (hΘ' hη)
+    -- `ε · Q(Aε) ≤ ∫ (1 − φ) ≤ ∫ (1 − φ₀) = Q(A₀)`
+    have hstep1 : ε * (Q Aε).toReal ≤ ∫ t in Aε, (1 - φ t) ∂Q := by
+      have hconst : ∫ _t in Aε, ε ∂Q = (Q Aε).toReal * ε := by
+        rw [setIntegral_const, smul_eq_mul, measureReal_def]
+      rw [mul_comm, ← hconst]
+      refine setIntegral_mono_on (integrableOn_const (by finiteness)) ?_ hAεmeas ?_
+      · exact ((integrable_const (1 : ℝ)).sub hφint).integrableOn
+      · intro t ht
+        have hlt : φ t < 1 - ε := ht
+        linarith
+    have hstep2 : ∫ t in Aε, (1 - φ t) ∂Q ≤ ∫ t, (1 - φ t) ∂Q :=
+      setIntegral_le_integral ((integrable_const (1 : ℝ)).sub hφint)
+        (ae_of_all _ fun t => by
+          simp only [Pi.zero_apply]
+          linarith [(hφ.2 t).2])
+    have hstep3 : ∫ t, (1 - φ t) ∂Q = 1 - power (statScaleFamily E) φ η := by
+      have hone : ∫ _t : EuclideanSpace ℝ (Fin s), (1 : ℝ) ∂Q = 1 := by simp
+      rw [integral_sub (integrable_const (1 : ℝ)) hφint, hone]
+      rfl
+    have hstep4 : ∫ t, ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂Q = (Q A₀ᶜ).toReal := by
+      have := integral_indicator_one (μ := Q) hA₀meas.compl
+      simpa [measureReal_def] using this
+    have hstep5 : 1 - power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η
+        = (Q A₀).toReal := by
+      have hc : (Q A₀ᶜ).toReal = 1 - (Q A₀).toReal := by
+        have h := measureReal_compl (μ := Q) hA₀meas
+        simpa [measureReal_def, measure_univ] using h
+      simp only [power, ← hQdef]
+      rw [hstep4, hc]; ring
+    have hreal : ε * (Q Aε).toReal ≤ (Q A₀).toReal := by
+      have hmono := h1 η hη
+      calc ε * (Q Aε).toReal ≤ ∫ t, (1 - φ t) ∂Q := le_trans hstep1 hstep2
+        _ = 1 - power (statScaleFamily E) φ η := hstep3
+        _ ≤ 1 - power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η := by linarith
+        _ = (Q A₀).toReal := hstep5
+    -- back to `ℝ≥0∞`
+    have hfin : Q Aε ≠ ⊤ := measure_ne_top _ _
+    have hfin0 : Q A₀ ≠ ⊤ := measure_ne_top _ _
+    calc Q Aε = ENNReal.ofReal (Q Aε).toReal := (ENNReal.ofReal_toReal hfin).symm
+      _ ≤ ENNReal.ofReal (ε⁻¹ * (Q A₀).toReal) := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          rw [← le_div_iff₀' hε, div_eq_inv_mul] at hreal
+          exact hreal
+      _ = ENNReal.ofReal ε⁻¹ * Q A₀ := by
+          rw [ENNReal.ofReal_mul (inv_nonneg.mpr hε.le), ENNReal.ofReal_toReal hfin0]
+  have hlt1 : statScaleBase E ({t | φ t < 1} \ A₀) = 0 := by
+    have hun : {t | φ t < 1} \ A₀
+        = ⋃ k : ℕ, ({t | φ t < 1 - 1 / ((k : ℝ) + 2)} \ A₀) := by
+      ext t
+      simp only [Set.mem_diff, Set.mem_setOf_eq, Set.mem_iUnion]
+      refine ⟨fun ⟨hlt, hA⟩ => ?_, fun ⟨k, hlt, hA⟩ => ?_⟩
+      · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
+        have hmono : 1 / ((k : ℝ) + 2) < 1 / ((k : ℝ) + 1) := by
+          apply one_div_lt_one_div_of_lt
+          · positivity
+          · linarith
+        exact ⟨k, by linarith, hA⟩
+      · have hp : (0:ℝ) < 1 / ((k : ℝ) + 2) := by positivity
+        exact ⟨by linarith, hA⟩
+    rw [hun]
+    refine measure_iUnion_null fun k => hkey _ (by positivity) ?_
+    have h1' : (1:ℝ) ≤ (k : ℝ) + 2 := by
+      have : (0:ℝ) ≤ (k : ℝ) := Nat.cast_nonneg k
+      linarith
+    have h2' : (0:ℝ) < (k : ℝ) + 2 := by positivity
+    rw [div_lt_one h2']; linarith
+  -- **Step B.** Hence `φ₀ ≤ φ` off a base-null set, so `φ` is never less powerful.
+  have hge : (A₀ᶜ.indicator fun _ => (1 : ℝ)) ≤ᵐ[statScaleBase E] φ := by
+    have hsub : {t | ¬ ((A₀ᶜ.indicator fun _ => (1 : ℝ)) t ≤ φ t)} ⊆ {t | φ t < 1} \ A₀ := by
+      intro t ht
+      simp only [Set.mem_setOf_eq, not_le] at ht
+      by_cases hA : t ∈ A₀
+      · rw [Set.indicator_of_notMem (by simpa using hA)] at ht
+        exact absurd ht (not_lt.mpr (hφ.2 t).1)
+      · rw [Set.indicator_of_mem (by simpa using hA)] at ht
+        exact ⟨ht, hA⟩
+    rw [Filter.EventuallyLE, ae_iff]
+    exact measure_mono_null hsub hlt1
+  have hpowge : ∀ η ∈ E.natSet,
+      power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η
+        ≤ power (statScaleFamily E) φ η := by
+    intro η hη
+    exact integral_mono_ae (hIntg _ hφ₀meas hφ₀b η hη) (hIntg φ hφ.1 hφ.2 η hη)
+      (hge.filter_mono (hac η).ae_le)
+  -- **Step C.** On the null class the two-sided domination forces `φ = φ₀` a.e.
+  obtain ⟨θH, hθH⟩ := hHne
+  have hθHnat : θH ∈ E.natSet := hΘH hθH
+  haveI := hprob θH hθHnat
+  have hint0 : ∫ t, (φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂(statScaleFamily E θH) = 0 := by
+    rw [integral_sub (hIntg φ hφ.1 hφ.2 θH hθHnat) (hIntg _ hφ₀meas hφ₀b θH hθHnat)]
+    have := le_antisymm (h2 θH hθH) (hpowge θH hθHnat)
+    simp only [power] at this
+    linarith
+  have haeH : φ =ᵐ[statScaleFamily E θH] (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
+    have hnn : (0 : EuclideanSpace ℝ (Fin s) → ℝ)
+        ≤ᵐ[statScaleFamily E θH] fun t => φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t := by
+      filter_upwards [hge.filter_mono (hac θH).ae_le] with t ht
+      simpa using ht
+    have hz := (integral_eq_zero_iff_of_nonneg_ae hnn
+      ((hIntg φ hφ.1 hφ.2 θH hθHnat).sub (hIntg _ hφ₀meas hφ₀b θH hθHnat))).mp hint0
+    filter_upwards [hz] with t ht
+    simpa [sub_eq_zero] using ht
+  have haeBase : φ =ᵐ[statScaleBase E] (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
+    haeH.filter_mono (hacRev θH hθHnat).ae_le
+  have hθnat : θ ∈ E.natSet := by rcases hθ with h | h; exacts [hΘH h, hΘ' h]
+  simp only [power]
+  exact integral_congr_ae (haeBase.filter_mono (hac θ).ae_le)
 
 /-- **A closed convex acceptance region whose size is attained is `α`-admissible.** If in
 addition the size of the test is `α` and there is an actual parameter point in the closure
