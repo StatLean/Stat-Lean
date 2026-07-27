@@ -204,6 +204,118 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     exact key (-y) hz
 
 
+open Complex in
+/-- **Uniform fourth-order remainder bound for `e^{iy}`.** The next order of
+`norm_cexp_sub_taylor_le`:
+`‖exp (I y) − (1 + I y − y²/2 − I y³/6)‖ ≤ min (|y|⁴/24) (|y|³/3)`.
+The quartic half is obtained by integrating the cubic bound of `norm_cexp_sub_taylor_le` once
+more; the cubic half is the triangle inequality against the extra monomial `I y³/6`. This is
+the pointwise input of the *one-term Edgeworth* expansion, where the third cumulant has to be
+retained rather than absorbed into the remainder. -/
+private lemma norm_cexp_sub_taylor3_le (y : ℝ) :
+    ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2 - I * (y : ℂ) ^ 3 / 6)‖
+      ≤ min (|y| ^ 4 / 24) (|y| ^ 3 / 3) := by
+  -- The third-order remainder, in the "`A₂`" shape that integrates to the fourth-order one.
+  have hA2 : ∀ u : ℝ, ‖Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2‖ ≤ |u| ^ 3 / 6 := by
+    intro u
+    have heq : Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2
+        = Complex.exp (I * ↑u) - (1 + I * ↑u - (↑u : ℂ) ^ 2 / 2) := by ring
+    rw [heq]
+    exact (norm_cexp_sub_taylor_le u).trans (min_le_left _ _)
+  -- Derivative of `u ↦ exp (I u)` (as a function of a real variable).
+  have he : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w))
+      (Complex.exp (I * ↑u) * I) u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℂ => I * w) I (↑u : ℂ) := by
+      simpa using (hasDerivAt_id (↑u : ℂ)).const_mul I
+    simpa using (h1.cexp).comp_ofReal
+  have hIu : ∀ u : ℝ, HasDerivAt (fun w : ℝ => I * ↑w) I u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℂ => I * w) I (↑u : ℂ) := by
+      simpa using (hasDerivAt_id (↑u : ℂ)).const_mul I
+    simpa using h1.comp_ofReal
+  have hof : ∀ u : ℝ, HasDerivAt (fun w : ℝ => (↑w : ℂ)) 1 u := by
+    intro u
+    simpa using (hasDerivAt_id (↑u : ℂ)).comp_ofReal
+  -- `A₃ w = exp (I w) − 1 − I w + w²/2 + I w³/6` has derivative `A₂ w · I`.
+  have hd3 : ∀ u : ℝ, HasDerivAt
+      (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w + (↑w : ℂ) ^ 2 / 2 + I * (↑w : ℂ) ^ 3 / 6)
+      ((Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I) u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℝ => (↑w : ℂ) ^ 2 / 2) (↑u : ℂ) u := by
+      have h := ((hof u).pow 2).div_const 2
+      simpa using h
+    have h2 : HasDerivAt (fun w : ℝ => I * (↑w : ℂ) ^ 3 / 6) (I * (↑u : ℂ) ^ 2 / 2) u := by
+      have h := (((hof u).pow 3).const_mul I).div_const 6
+      convert h using 1
+      push_cast
+      ring
+    have hbase := ((he u).sub (hasDerivAt_const u (1 : ℂ))).sub (hIu u)
+    have h := (hbase.add h1).add h2
+    convert h using 1
+    have hI2 : (I : ℂ) * I = -1 := Complex.I_mul_I
+    linear_combination (-(↑u : ℂ)) * hI2
+  have hcont3 : Continuous
+      (fun u : ℝ => (Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I) := by fun_prop
+  have hA3z : ∀ z : ℝ,
+      (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I)
+      = Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6 := by
+    intro z
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd3 u)
+      (hcont3.intervalIntegrable 0 z)]
+    simp
+  -- The `z ≥ 0` case of the quartic bound.
+  have key : ∀ z : ℝ, 0 ≤ z →
+      ‖Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6‖
+        ≤ z ^ 4 / 24 := by
+    intro z hz
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6‖
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 3 / 6 := by
+      rw [← hA3z z]
+      refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
+        ((by fun_prop : Continuous (fun u : ℝ => u ^ 3 / 6)).intervalIntegrable 0 z)
+      rw [norm_mul, Complex.norm_I, mul_one]
+      exact (hA2 u).trans_eq (by rw [abs_of_nonneg hu.1.le])
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 3 / 6) = z ^ 4 / 24 := by
+      rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
+    exact hb.trans_eq hintval
+  have hEq : Complex.exp (I * ↑y) - (1 + I * ↑y - (↑y : ℂ) ^ 2 / 2 - I * (↑y : ℂ) ^ 3 / 6)
+      = Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6 := by ring
+  rw [hEq]
+  refine le_min ?_ ?_
+  · -- Quartic half: reflect to `−y ≥ 0` when `y < 0`.
+    rcases le_or_gt 0 y with hy | hy
+    · rw [abs_of_nonneg hy]; exact key y hy
+    · have hz : (0 : ℝ) ≤ -y := by linarith
+      have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
+        rw [← Complex.exp_conj]; congr 1
+        simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
+      have hconj : (starRingEnd ℂ)
+            (Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6)
+          = Complex.exp (I * ↑(-y)) - 1 - I * ↑(-y) + (↑(-y) : ℂ) ^ 2 / 2
+              + I * (↑(-y) : ℂ) ^ 3 / 6 := by
+        simp only [map_add, map_sub, map_mul, map_div₀, map_one, map_pow, map_ofNat,
+          Complex.conj_I, Complex.conj_ofReal, hexp, Complex.ofReal_neg]
+        ring
+      have hnn : ‖Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6‖
+          = ‖Complex.exp (I * ↑(-y)) - 1 - I * ↑(-y) + (↑(-y) : ℂ) ^ 2 / 2
+              + I * (↑(-y) : ℂ) ^ 3 / 6‖ := by
+        rw [← hconj, Complex.norm_conj]
+      rw [hnn, abs_of_neg hy]
+      exact key (-y) hz
+  · -- Cubic half: triangle inequality against the extra monomial.
+    have hmon : ‖I * (↑y : ℂ) ^ 3 / 6‖ = |y| ^ 3 / 6 := by
+      rw [norm_div, norm_mul, Complex.norm_I, one_mul, norm_pow, Complex.norm_real,
+        Real.norm_eq_abs]
+      norm_num
+    have hsplit : Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6
+        = (Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2) + I * (↑y : ℂ) ^ 3 / 6 := by
+      ring
+    rw [hsplit]
+    refine (norm_add_le _ _).trans ?_
+    rw [hmon]
+    linarith [hA2 y]
+
 /-- **Telescoping product bound** (restated from `LindebergCLT`). -/
 private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s : Finset ι)
     (f g : ι → 𝕜) (hf : ∀ i ∈ s, ‖f i‖ ≤ 1) (hg : ∀ i ∈ s, ‖g i‖ ≤ 1) :
