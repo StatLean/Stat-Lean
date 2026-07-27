@@ -1559,6 +1559,67 @@ private lemma integrable_cond_slice (μ : Measure 𝓧) [IsFiniteMeasure μ]
   exact Integrable.mono' (integrable_const (1 : ℝ))
     ((ham.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable)
     (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hab _)
+
+/-- **The two-endpoint fibrewise engine.** The interval analogue of
+`integral_comp_sign_of_condZero`: `g` is nonnegative outside the interval
+`[C₁ t, C₂ t]` in `u`, nonpositive inside, and has vanishing conditional integral at both
+boundary parameters `p₁` (first coordinate `θ₁`) and `p₂` (first coordinate `θ₂`). Then its
+unconditional integral is nonnegative outside `[θ₁, θ₂]` and nonpositive strictly inside. -/
+private lemma integral_comp_sign_of_condZero_interval [BorelSpace Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p₁ p₂ p : ℝ × Ξ} (hp₁ : p₁ ∈ Ω) (hp₂ : p₂ ∈ Ω) (hp : p ∈ Ω) (hlt : p₁.1 < p₂.1)
+    {C₁ C₂ : Ξ → ℝ} (hCle : ∀ t, C₁ t ≤ C₂ t)
+    {g : ℝ × Ξ → ℝ} (hgm : Measurable g) (hgb : ∀ z, |g z| ≤ 1)
+    (hgpos : ∀ z : ℝ × Ξ, z.1 < C₁ z.2 ∨ C₂ z.2 < z.1 → 0 ≤ g z)
+    (hgneg : ∀ z : ℝ × Ξ, C₁ z.2 < z.1 → z.1 < C₂ z.2 → g z ≤ 0)
+    (hz₁ : ∀ᵐ t ∂((P p₁).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₁) t) = 0)
+    (hz₂ : ∀ᵐ t ∂((P p₂).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₂) t) = 0) :
+    ((p.1 < p₁.1 ∨ p₂.1 < p.1) → 0 ≤ ∫ x, g (U x, T x) ∂(P p)) ∧
+      (p₁.1 < p.1 → p.1 < p₂.1 → ∫ x, g (U x, T x) ∂(P p) ≤ 0) := by
+  haveI := isProbabilityMeasure_statLaw (P := P) hT p
+  have e1 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₁).ae_le hz₁
+  have e2 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₂).ae_le hz₂
+  have t2 := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₂).ae_le
+    (ae_condDistrib_expTilt hU hT hUT hp₁ hp₂)
+  have tp := ae_condDistrib_expTilt hU hT hUT hp₁ hp
+  have hkey : ∀ᵐ t ∂((P p).map T),
+      ((p.1 < p₁.1 ∨ p₂.1 < p.1) → 0 ≤ ∫ u, g (u, t) ∂(condDistrib U T (P p) t)) ∧
+        (p₁.1 < p.1 → p.1 < p₂.1 →
+          ∫ u, g (u, t) ∂(condDistrib U T (P p) t) ≤ 0) := by
+    filter_upwards [e1, e2, t2, tp] with t ht1 ht2 hd₂ hdp
+    obtain ⟨k₂, hk₂, hteq₂⟩ := hd₂
+    obtain ⟨k', hk', hteqp⟩ := hdp
+    haveI : IsProbabilityMeasure (condDistrib U T (P p₁) t) := inferInstance
+    haveI hQ₂ :
+        IsProbabilityMeasure (expTilt (condDistrib U T (P p₁) t) k₂ (p₂.1 - p₁.1)) := by
+      rw [← hteq₂]; infer_instance
+    haveI hQ' :
+        IsProbabilityMeasure (expTilt (condDistrib U T (P p₁) t) k' (p.1 - p₁.1)) := by
+      rw [← hteqp]; infer_instance
+    have h2' : ∫ u, g (u, t) ∂(expTilt (condDistrib U T (P p₁) t) k₂ (p₂.1 - p₁.1)) = 0 := by
+      rw [← hteq₂]; exact ht2
+    have hgmt : Measurable fun u : ℝ => g (u, t) :=
+      hgm.comp (measurable_id.prodMk measurable_const)
+    have hres := integral_expTilt_signed_interval (Q := condDistrib U T (P p₁) t)
+      (k₂ := k₂) (s := p₂.1 - p₁.1) (k' := k') (r := p.1 - p₁.1) (C₁ := C₁ t) (C₂ := C₂ t)
+      (by linarith) (hCle t) hQ₂ hQ' hgmt (fun u => hgb _)
+      (fun u hu => hgpos (u, t) hu) (fun u hu hu2 => hgneg (u, t) hu hu2) ht1 h2'
+    rw [hteqp]
+    refine ⟨fun h => hres.1 ?_, fun ha hb => hres.2 (by linarith) (by linarith)⟩
+    rcases h with h | h
+    · exact Or.inl (by linarith)
+    · exact Or.inr (by linarith)
+  rw [integral_comp_eq_integral_condPower hU hT hgm hgb p]
+  constructor
+  · intro hside
+    refine integral_nonneg_of_ae ?_
+    filter_upwards [hkey] with t ht
+    exact ht.1 hside
+  · intro ha hb
+    refine integral_nonpos_of_ae ?_
+    filter_upwards [hkey] with t ht
+    exact ht.2 ha hb
 end CanonicalGlobal
 
 /-! ### Measurability and range of the conditional tests -/
