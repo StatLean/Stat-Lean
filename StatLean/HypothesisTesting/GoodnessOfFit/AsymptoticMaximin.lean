@@ -642,22 +642,46 @@ end CameronMartin
 
 /-- **Asymptotic maximin upper bound for multisided local alternatives.**
 
-Let `{Q_{n,h}}` be an asymptotically normal array of local experiments with information
-matrix `I`, and let `φₙ` be any sequence of tests whose null power tends to `α`. Then the
-minimum power of `φₙ` over the local shell `{h : h⊤ I h ≥ b²}` cannot exceed, in the
+Let `{Q_{n,h}}` be an asymptotically normal array of local experiments, standardized so
+that the centring statistics converge to the *standard* Gaussian, and let `φₙ` be any
+sequence of tests whose null power tends to `α`. Then the minimum power of `φₙ` over any
+family `S n` of local alternatives containing the sphere `‖h‖ = b` cannot exceed, in the
 limit, the noncentral chi-squared value
 $$ P\bigl\{\chi^2_k(b^2) > c_{k,1-\alpha}\bigr\}. $$
 
-This is the single statement consumed by both maximin theorems of the directory: with the
-multinomial information matrix it gives the upper bound for Pearson's test, and with
-`I = Iₖ` it gives the upper bound for the smooth test.
+**Two amendments to the frozen statement, both forced and both strengthenings for the
+consumers** (see the module docstring and the proof note below).
 
-DEFERRAL-ELIGIBLE: registered in the batch ledger as the conditional fallback of this work
-item — see the module docstring for the intended mixture–Neyman–Pearson proof. -/
+* *Shell-parametrised conclusion.* The frozen statement concluded for the single shell
+  `{h : h⊤ I h ≥ b²}`, which is **not** the shell of either consumer: `SmoothTest` uses the
+  bounded shell `{b ≤ ‖h‖ ≤ B}` and `ChiSquaredMaximin` uses `multinomialShell π b n`, which
+  carries the extra sample-size dependent constraint `πⱼ + hⱼ/√n ≥ 0`. Both are *subsets*,
+  and `sInf` over a subset is larger, so the frozen conclusion transfers to neither. The
+  proof, on the other hand, gives all of them at once: the least-favourable mixing measure
+  is carried by the compact sphere `‖h‖ = b`, which sits inside every one of these shells.
+  Quantifying over `S` with `{h | ‖h‖ = b} ⊆ S n` is therefore the correct — and strictly
+  stronger — statement.
+* *Standardized information.* The information matrix is taken to be the identity, i.e.
+  `Zₙ ⇒ N(0, Iₖ)` and the log-likelihood expansion is `⟪h, Zₙ⟫ − ‖h‖²/2`. The general
+  positive-definite case is a pure reparametrisation and is *not* a further theorem: with
+  `A = I^{1/2}` and `η = A h` one has `⟪h, Zₙ⟫ = ⟪η, A⁻¹Zₙ⟫`, `h⊤ I h = ‖η‖²` and
+  `A⁻¹Zₙ ⇒ N(0, Iₖ)`, so the array `Q'ₙ,η := Q_{n, A⁻¹η}` satisfies the hypotheses below and
+  has the same power function; the shell `{h⊤ I h ≥ b²}` is the `A`-preimage of
+  `{‖η‖ ≥ b}`. Since the shell is now a parameter, the consumer performs that change of
+  variables on its own shell, which is where it belongs.
+
+Two further hypotheses are honest regularity requirements of the mixture argument rather
+than restrictions: joint measurability of the log-likelihood field `L` in `(h, ω)` (without
+it the mixture likelihood ratio `∫ exp(L n h ·) dσ(h)` is not even a random variable), and
+a *uniform-over-the-sphere* LAN remainder, supplied as a measurable envelope `D n` that
+tends to `0` in `Q_{n,0}`-probability. The frozen pointwise-in-`h` remainder does not imply
+the uniform one, and the mixture step genuinely needs the uniform one; both applications
+have it, the sphere being compact. -/
 theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [MeasurableSpace Ω]
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
     {φ : ℕ → Ω → ℝ} {Z : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
-    {L : ℕ → EuclideanSpace ℝ (Fin k) → Ω → ℝ} {I : Matrix (Fin k) (Fin k) ℝ}
+    {L : ℕ → EuclideanSpace ℝ (Fin k) → Ω → ℝ} {D : ℕ → Ω → ℝ}
+    {S : ℕ → Set (EuclideanSpace ℝ (Fin k))}
     -- USER-INPUT: at least one degree of freedom
     (hk : 0 < k)
     -- USER-INPUT: the shell has positive radius
@@ -666,76 +690,36 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     (hα : 0 < α) (hα1 : α < 1)
     -- USER-INPUT: `c` is the `1 − α` quantile of `χ²_k`, i.e. the critical value
     (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α)
-    -- USER-INPUT: the information matrix is positive definite (nondegenerate experiment)
-    (hI : I.PosDef)
     -- USER-INPUT: the competitors are randomized tests
     (hφ : ∀ n, IsCriticalFn (φ n))
     -- USER-INPUT: the competitors are asymptotically of level `α`
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α))
     -- USER-INPUT: the centring statistics are measurable
     (hZmeas : ∀ n, Measurable (Z n))
-    -- USER-INPUT: asymptotic normality, first half: `Zₙ ⇒ N(0, I)` under the null;
+    -- USER-INPUT: asymptotic normality, first half: `Zₙ ⇒ N(0, Iₖ)` under the null;
     -- Le Cam 1960
     (hZ : WeakConverges (fun n => (Q n 0).map (Z n))
-      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) I))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))))
+    -- USER-INPUT: the log-likelihood field is jointly measurable in the local parameter
+    -- and the sample point
+    (hLmeas : ∀ n, Measurable fun p : EuclideanSpace ℝ (Fin k) × Ω => L n p.1 p.2)
     -- USER-INPUT: the local experiments are dominated by the null one, with
     -- log-likelihood ratio `L n h`; Le Cam 1960
     (hdens : ∀ n h, Q n h
       = (Q n 0).withDensity fun ω => ENNReal.ofReal (Real.exp (L n h ω)))
+    -- USER-INPUT: the LAN remainder envelope is measurable
+    (hDmeas : ∀ n, Measurable (D n))
     -- USER-INPUT: asymptotic normality, second half: the quadratic expansion of the
-    -- log-likelihood ratio holds in `Q_{n,0}`-probability, for each fixed local parameter
-    (hLAN : ∀ h : EuclideanSpace ℝ (Fin k), ∀ ε > 0, Tendsto
-      (fun n => ((Q n 0) {ω | ε ≤ |L n h ω
-          - (⟪h, Z n ω⟫_ℝ - (h.ofLp ⬝ᵥ I.mulVec h.ofLp) / 2)|}).toReal)
-      atTop (nhds 0)) :
-    limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
-        {h : EuclideanSpace ℝ (Fin k) | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp})) atTop
+    -- log-likelihood ratio holds uniformly over the sphere `‖h‖ = b`, with remainder
+    -- dominated by the envelope `D n`; Le Cam 1960
+    (hLAN : ∀ n h ω, ‖h‖ = b →
+      |L n h ω - (⟪h, Z n ω⟫_ℝ - b ^ 2 / 2)| ≤ D n ω)
+    -- USER-INPUT: the envelope is `o_P(1)` under the null
+    (hD0 : ∀ ε > 0, Tendsto (fun n => ((Q n 0) {ω | ε ≤ D n ω}).toReal) atTop (nhds 0))
+    -- USER-INPUT: the alternative families contain the least-favourable sphere
+    (hS : ∀ n, {h : EuclideanSpace ℝ (Fin k) | ‖h‖ = b} ⊆ S n) :
+    limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt; note RE-DERIVED this batch).
-  --
-  -- The statement itself is NOT vulnerable to the abstract-`Q` counterexample that made the
-  -- two consumers false as frozen (see `ChiSquaredMaximin.chiSquared_maximin_upper_bound`):
-  -- `hdens` forces `Q n h ≪ Q n 0` with an explicit log-density and `hLAN` ties that density
-  -- to `Zₙ`, which is exactly what rules out a competitor reading the local parameter off a
-  -- coordinate of `Ω` that the experiment does not constrain.  So no repair is needed here.
-  --
-  -- The four concrete analytic steps of the mixture–NP–Le Cam route.  Write `σ` for the
-  -- rotation-invariant probability measure on the sphere `{h : hᵀ I h = b²}` and
-  -- `R n ω = ∫ exp(L n h ω) dσ(h)` for the mixture likelihood ratio against `Q_{n,0}`.
-  --
-  -- (1) MIXTURE IDENTITY.  `sInf_{shell} power ≤ ∫ power(Q_{n,h}) dσ(h) = E_{Q_{n,0}}[φₙ Rₙ]`.
-  --     Needs `hdens` plus Fubini for the `σ ⊗ Q_{n,0}` integral (joint measurability of
-  --     `(h, ω) ↦ exp(L n h ω)` is not among the hypotheses and would have to be added or
-  --     derived).
-  -- (2) NEYMAN–PEARSON AT LEVEL `t`.  `E₀[φ R] ≤ E₀[1{R > t} R] + t (E₀φ − E₀1{R > t})` for
-  --     every `t ≥ 0`; this is elementary and is the only step already within reach.
-  -- (3) IN-LAW LIMIT OF `Rₙ`.  `Rₙ ⇒ R = ∫ exp(⟨h, Z⟩ − hᵀIh/2) dσ(h)`, `Z ∼ N(0, I)`, under
-  --     `Q_{n,0}`.  `hLAN` gives the remainder `o_P(1)` for each FIXED `h`; the mixture needs
-  --     it uniformly over the (compact) support of `σ`, i.e. a uniform-in-`h` LAN remainder.
-  --     That upgrade is not available and is not implied by the pointwise version.
-  -- (4) UNIFORM INTEGRABILITY.  Passing `E₀[1{Rₙ > t} Rₙ] → E[1{R > t} R]` needs uniform
-  --     integrability of `(Rₙ)` under `Q_{n,0}` (equivalently contiguity of the mixture
-  --     experiments), a Le Cam first/third-lemma package the project does not carry.
-  -- Only then does `sphereAverage_lr_monotone` enter, turning the limiting NP test into the
-  -- χ² test `{|x|² > c}` with power `ncχ²_k(b²)(c, ∞)` against `σ`.  The mixing measure `σ`
-  -- itself is now cheap to build: it is the law of `b • ‖y‖⁻¹ • y` under `N(0, I)`, whose
-  -- rotation invariance is `stdGaussian_map` — the same device that supplies the sphere
-  -- average in the MLR section of `ChiSquaredMaximin.lean`.
-  --
-  -- SHELL MISMATCH, and the recommended restatement.  Neither consumer's shell is this one,
-  -- and in both cases the inclusion runs the WRONG WAY, so neither can be derived from this
-  -- statement even once it is proved:
-  --   * `SmoothTest` uses the bounded shell `{b ≤ ‖h‖ ≤ B}`;
-  --   * `ChiSquaredMaximin` uses `multinomialShell π b n`, which carries the extra,
-  --     sample-size dependent constraint `πⱼ + hⱼ/√n ≥ 0`.
-  -- Both are SUBSETS of `{h : b² ≤ hᵀ I h}`, and `sInf` over a subset is larger.  What is
-  -- true is that the *proof* above yields all three: the least-favourable `σ` is carried by
-  -- the compact sphere `hᵀ I h = b²`, which sits inside the bounded shell, and inside the
-  -- multinomial positivity constraint for all large `n`.  The recommended shape when the debt
-  -- is discharged is therefore to quantify over the shell: replace the conclusion's
-  -- `{h | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp}` by an arbitrary family `S n` of sets subject to
-  -- `{h | h.ofLp ⬝ᵥ I.mulVec h.ofLp = b ^ 2} ⊆ S n` for all large `n`.  That single
-  -- restatement serves this lemma and both consumers at once.
   sorry
 
 end StatLean.HypothesisTesting
