@@ -35,16 +35,43 @@ function rather than by contour integration.
   `∫ 𝓕 g dP = ∫ φ_P(−2πξ) g(ξ) dξ`;
 * `norm_integral_fourier_sub_le` — the resulting **smoothing inequality in test-function form**:
   `‖∫ 𝓕 g dP − ∫ 𝓕 g dQ‖ ≤ ∫ ‖φ_P − φ_Q‖ ‖g‖`, which for `g` supported in `[−T/2π, T/2π]`
-  uses the characteristic functions only on the window `|t| ≤ T`.
+  uses the characteristic functions only on the window `|t| ≤ T`;
+* `ramp`, `abs_measure_Iic_sub_le_of_integral_ramp` — **de-smoothing**: a family of continuous
+  test functions squeezing the half-line indicator, giving
+  `sup|F_P − F_Q| ≤ (ramp discrepancy) + A δ` for an `A`-Lipschitz `F_Q`;
+* `trapezoid`, `abs_integral_ramp_sub_le_of_trapezoid` — the reduction of the ramp discrepancy
+  to **compactly supported** test functions, using that `P − Q` has total mass zero;
+* `exists_fourier_trapezoid` — every trapezoid is `𝓕 g` for an integrable `g` with
+  `‖g ξ‖ ≤ min(1/(π|ξ|), 1/(δπ²ξ²))`, the envelope being *independent of the plateau*;
+* `abs_measure_Iic_sub_le_charFun` — **Esseen's smoothing inequality at the level of
+  distribution functions**.
 
-## What is still missing
+## The Stieltjes inversion is not needed
 
-The **CDF-level** (Stieltjes) Lévy/Esseen inversion — the identity expressing the smoothed
-difference `(F − G) ∗ K_T` as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]` — is not here.
-Mathlib's inversion theorem is for `L¹` functions; the version for a difference of distribution
-functions has to be built by hand, and it is the single remaining gap between the results above
-and a Kolmogorov-distance Berry–Esseen or Edgeworth bound. The test-function form
-`norm_integral_fourier_sub_le` is the part of Esseen's argument that the `L¹` theory does cover.
+Earlier notes in this repository recorded the **CDF-level (Stieltjes) Lévy/Esseen inversion** —
+the identity expressing `(F − G) ∗ K_T` as a Fourier integral of `(F̂ − Ĝ)/t` — as the single
+remaining obstruction to a Kolmogorov-distance bound, on the ground that Mathlib's inversion
+theorem is for `L¹` functions while `F − G` is not `L¹`. **That verdict is overturned here.**
+The `1/t` weight of Lévy's formula is recovered without any Stieltjes-level inversion, by
+running Esseen's argument entirely on test functions:
+
+* the half-line indicator is squeezed between two **ramps**, at a cost `A δ` — this needs only
+  monotonicity of `F_P` and Lipschitz continuity of `F_Q` (`ramp`);
+* a ramp is not `L¹`, but the difference of two ramps is compactly supported, and since `P − Q`
+  has total mass zero the ramp discrepancy is the limit of **trapezoid** discrepancies
+  (`abs_integral_ramp_sub_le_of_trapezoid`) — this is where the `1/t` singularity is absorbed;
+* a trapezoid is a difference of two **co-centred dilated tents**
+  (`trapezoid_eq_tent_combination`), so `fourier_sqSincC` transforms it explicitly, and the
+  cancellation `sin²(πw₁ξ) − sin²(πw₂ξ) = sin(π(w₁+w₂)ξ) sin(πδξ)` produces exactly the
+  `1/(π|ξ|)` weight, uniformly in the plateau length (`exists_fourier_trapezoid`).
+
+What remains between this file and a Kolmogorov-distance Berry–Esseen or Edgeworth bound is no
+longer a Fourier-inversion gap but a **characteristic-function** gap: `BerryEsseen.lean`'s
+`norm_charFun_pow_sub_gaussian_le` bounds `‖(φ_F)ⁿ − e^{−nvw²/2}‖` by `n(ρ|w|³/6 + …)` with **no
+Gaussian damping factor**, and an undamped bound is not integrable against the `1/|ξ|` weight at
+the rate needed. The missing estimate is the damped one,
+`‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}‖ ≤ C|t|³ e^{−t²/4}/√n` on `|t| ≤ c√n`. See the status note on
+`edgeworth_mean_uniform` in `Bootstrap/Edgeworth.lean`.
 -/
 
 open MeasureTheory intervalIntegral
