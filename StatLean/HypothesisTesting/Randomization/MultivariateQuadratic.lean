@@ -280,10 +280,18 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   -- the quadratic form converges to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, whose marginals are `χ²_p` by
   -- `map_quadraticForm_multivariateGaussian_eq_chiSquared`, independent because the pair limit
   -- is a product law.
-  -- BLOCKED: depends on `weakConverges_randPairLaw_signChange_sum` (itself an open multivariate
-  -- CLT `sorry`), plus a `randPairLaw`-level Slutsky that replaces the data-coupled random
-  -- matrix `Σ̃ₙ(x)⁻¹` by `S⁻¹` — no such brick exists (`WeakConverges` API has `.map` for a
-  -- fixed continuous map only, not a converging-random-parameter continuous mapping theorem).
+  -- STATUS (re-derived): the CLT half is no longer blocked — the vector building block above is
+  -- now proved, and `Randomization/PairCLT` supplies both the Lévy packaging
+  -- (`weakConverges_of_tendsto_charFun`) and a randomization Slutsky transfer
+  -- (`weakConverges_randPairLaw_of_tendstoInProb`). What remains is genuinely two missing bricks:
+  --  (a) the law of large numbers `Σ̃ₙ → S` in probability under `Measure.pi P` (uncentred second
+  --      moments; sign-invariant, so no randomization enters), and
+  --  (b) a *product* Slutsky: the remainder is `Vₙᵀ(Σ̃ₙ⁻¹ − S⁻¹)Vₙ`, which vanishes in
+  --      probability only because `Vₙ = O_P(1)`; tightness of the randomized vector statistic is
+  --      not delivered by the remainder-→-0 transfer of `PairCLT` and has no brick here.
+  -- Once (a) and (b) exist, the fixed-map half is routine: `randPairLaw` of `q ∘ Vₙ` is the
+  -- pushforward of `randPairLaw` of `Vₙ` along `Prod.map q q`, so `WeakConverges.map` plus
+  -- `map_quadraticForm_multivariateGaussian_eq_chiSquared` gives `χ²_p ⊗ χ²_p`.
   sorry
 
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
@@ -313,9 +321,11 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
   -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
   -- mean-zero (`hmean`) is used a second time; then the argument coincides with
   -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
-  -- BLOCKED: on `weakConverges_randPairLaw_signChange_sum` (open multivariate CLT) + the same
-  -- missing `randPairLaw`-level random-parameter Slutsky, plus the sign-uniform sample-covariance
-  -- consistency (no such brick in the repo).
+  -- STATUS (re-derived): as for the modified statistic, the vector building block is now closed
+  -- and `Randomization/PairCLT` supplies the Lévy packaging and the remainder-→-0 Slutsky
+  -- transfer. The outstanding pieces are the same two — the sample-covariance law of large
+  -- numbers (here in its sign-uniform form, since `Σ̂ₙ` is *not* sign-invariant, which is where
+  -- `hmean` is used a second time) and the tightness-based product Slutsky.
   sorry
 
 end StatLean.HypothesisTesting

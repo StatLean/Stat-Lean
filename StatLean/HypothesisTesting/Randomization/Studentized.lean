@@ -173,11 +173,14 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
   -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
   -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
   -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
-  -- BLOCKED on three open pieces: (i) `weakConverges_randPairLaw_twoSample` (sorry above);
-  -- (ii) `randDist_affine_tendstoInProb` is itself `sorry` in `SlutskyRandomization`; and
+  -- STATUS (re-derived): still blocked, on three pieces, none of which is affected by the new
+  -- sign-change engine of `Randomization/PairCLT` (that engine is specific to `{±1}ⁿ`):
+  -- (i) `weakConverges_randPairLaw_twoSample` — the permutation (combinatorial) CLT, still open;
+  -- (ii) `randDist_affine_tendstoInProb` in `SlutskyRandomization`, still open (its remaining
+  --      brick is tightness of the randomized statistic, see the note there);
   -- (iii) the scale consistency `twoSampleScale (π X) → τ` in `TendstoInProbRandomized`, a
-  -- first-two-moments statement about sampling without replacement from the pooled data, for
-  -- which no brick exists.
+  --      first-two-moments statement about sampling without replacement from the pooled data,
+  --      for which no brick exists.
   sorry
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard

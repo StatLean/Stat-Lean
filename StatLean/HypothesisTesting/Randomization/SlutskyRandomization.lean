@@ -130,6 +130,26 @@ theorem randDist_affine_tendstoInProb (P : ∀ n, Measure (𝓧 n))
     TendstoInProbTriangular P
       (fun n x => randDist (G n) (fun y => A n y * T n y + B n y) x t)
       (cdf (R.map (fun u => a * u + b)) t) := by
+  -- TODO (deferred; route re-derived this session, no false statement involved).
+  -- Reduction: `randPairLaw` of the *deterministic* affine image `a·Tₙ + b` is the pushforward
+  -- of `randPairLaw (Tₙ)` along `Prod.map (a·+b) (a·+b)`, so `WeakConverges.map` together with
+  -- `Measure.map_prod_map` turns `hjoint` into the joint hypothesis for the limit
+  -- `R^{aT+b} ⊗ R^{aT+b}`; feeding that into `randDist_tendstoInProb_cdf` gives the claim.
+  -- What is genuinely missing is the passage from the deterministic affine image to the random
+  -- one. `Randomization/PairCLT.weakConverges_randPairLaw_of_tendstoInProb` is the right
+  -- transfer, but two hypotheses of it are not available here:
+  --  (a) it assumes the data law is group-invariant, which is deliberately NOT assumed in this
+  --      file (`hA`/`hB` are stated as mixtures over the group precisely because no invariance
+  --      holds); a mixture-form variant of that lemma is needed — its proof collapses the group
+  --      average through `hinv`, and without invariance the group-averaged remainder bound has
+  --      to be carried through instead. That is a mechanical variant, not an obstruction.
+  --  (b) the remainder is `(Aₙ − a)·Tₙ + (Bₙ − b)`, and `(Aₙ − a)·Tₙ → 0` in probability needs
+  --      `Tₙ = O_P(1)` under the randomized law, i.e. **tightness** of the mixture laws — which
+  --      follows from `hjoint` (a weakly convergent sequence of probability measures is tight)
+  --      but has no packaged form in the repository. This is the real remaining brick.
+  -- Also note the frozen signature omits measurability of `T n`, `A n`, `B n` and of the action,
+  -- which every step above consumes; those would have to be added (as they were in
+  -- `Randomization/Asymptotics`) for the argument to go through.
   sorry
 
 end Slutsky
