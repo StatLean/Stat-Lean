@@ -59,7 +59,14 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   tail's analytic input is proved here (`exists_bound_lt_one_of_cramer`) and its bookkeeping in
   `ForMathlib/EsseenSmoothing.lean` (`setIntegral_mul_esseenWeight_tail_le`,
   `exists_pow_mul_geometric_le`). What is left for `edgeworth_mean_uniform` is the **assembly
-  alone**. See the re-derived status note (E1)–(E4) on that theorem.
+  alone**, and of its four pieces the first two are now also proved here: the law of the root
+  (`charFun_meanRootLaw`, `charFun_stdRootLaw`, `meanRootCDF_eq_stdRootLaw`, and the moments of
+  `centredLaw`) and the comparison density (`edgeworthDensity`, `edgeworthCDF`,
+  `densityCDF_edgeworthDensity`, `abs_edgeworthDensity_le`,
+  `setIntegral_abs_edgeworthDensity_le`, `charFunDensity_edgeworthDensity`,
+  `norm_charFunDensity_edgeworthDensity_le`). Only the two *quantitative* pieces are left — the
+  window integral and the outer range. See the re-derived status note (E1)–(E4) on that
+  theorem.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -839,6 +846,38 @@ theorem charFunDensity_edgeworthDensity (γ : ℝ) (n : ℕ) (t : ℝ) :
   field_simp
   ring
 
+/-- **(E4).4 — the Gaussian tail of the Edgeworth characteristic function.**
+`‖φ_{q_n}(θ)‖ ≤ e^{−θ²/2}(1 + |γ||θ|³/6)`, uniformly in `n ≥ 1`. This is the second half of
+the outer-range estimate: on `|ξ| ≥ ρ_n ≍ √n` the right-hand side is `e^{−2π²c²n}` up to a
+polynomial factor, hence geometric in `n`. -/
+theorem norm_charFunDensity_edgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (θ : ℝ) :
+    ‖charFunDensity (edgeworthDensity γ n) θ‖
+      ≤ Real.exp (-θ ^ 2 / 2) * (1 + |γ| * |θ| ^ 3 / 6) := by
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    exact inv_le_one_of_one_le₀ (by simpa using Real.sqrt_le_sqrt h1)
+  have hexp : Complex.exp (-(θ : ℂ) ^ 2 / 2) = ((Real.exp (-θ ^ 2 / 2) : ℝ) : ℂ) := by
+    rw [Complex.ofReal_exp]
+    congr 1
+    push_cast
+    ring
+  have hterm : ‖Complex.I * (γ : ℂ) * (θ : ℂ) ^ 3 * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖
+      = |γ| * |θ| ^ 3 * (Real.sqrt n)⁻¹ / 6 := by
+    simp only [norm_div, norm_mul, norm_pow, Complex.norm_I, Complex.norm_real,
+      Real.norm_eq_abs, one_mul]
+    rw [abs_of_nonneg hsqrt0]
+    norm_num
+  rw [charFunDensity_edgeworthDensity, norm_mul, hexp, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_nonneg (Real.exp_pos _).le]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+  have hnn : (0 : ℝ) ≤ |γ| * |θ| ^ 3 := by positivity
+  calc ‖1 - Complex.I * (γ : ℂ) * (θ : ℂ) ^ 3 * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖
+      ≤ ‖(1 : ℂ)‖ + ‖Complex.I * (γ : ℂ) * (θ : ℂ) ^ 3 * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6‖ :=
+        norm_sub_le _ _
+    _ = 1 + |γ| * |θ| ^ 3 * (Real.sqrt n)⁻¹ / 6 := by rw [norm_one, hterm]
+    _ ≤ 1 + |γ| * |θ| ^ 3 / 6 := by nlinarith
+
 /-- The Edgeworth total-variation constant is positive. -/
 lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) := by
   have h : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
@@ -960,30 +999,64 @@ respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted in
   (off the origin the flank term alone dominates the weight, and `∫ ξ⁻²` over the two tails is
   `2/ρ`), and `exists_pow_mul_geometric_le` bounds `nᵏ cⁿ`. With `δ ≍ n⁻¹`, `ρ ≍ √n` and
   `M = cⁿ` the outer contribution is `cⁿ · O(n^{3/2}) = o(n^{-k})` for every `k`.
-* (E4) **The assembly — the one item left.** It is long rather than hard, and the
-  re-derivation splits it into four named pieces, none of which is an obstruction:
-  1. *The law of the root.* `meanRootCDF F n x = (meanRootLaw F n) (Iic x)` (`meanRootCDF_eq`
-     in `Bootstrap/NonparametricMean.lean`), and one needs
-     `charFun (meanRootLaw F n) t = (charFun F₀ (t/√n))ⁿ` for the centred law `F₀`. Mathlib's
-     `charFun_inv_sqrt_mul_sum` is stated for `iIndepFun` on a probability space rather than
-     for `Measure.pi`, so this is a *transfer* through the canonical i.i.d. construction
-     (`exists_iid` / `iIndepFun_iff_map_fun_eq_pi_map`), of the kind already carried out in
-     `ChiSquaredMultinomial.lean` — not a new analytic fact.
-  2. *The approximant is the `densityCDF` of `q_n`.* One must check
-     `∫_{(-∞,x]} q_n = Φ(x/σ) − (γ/6)φ(x/σ)(x²/σ² − 1)n^{-1/2}`, i.e. an FTC computation
-     against `d/dx[φ(x)(x² − 1)] = −φ(x)(x³ − 3x)` with the limit `0` at `−∞`; and the
-     total-variation modulus `∫_{(a,b]} |q_n| ≤ A (b − a)` with `A = sup|q_n|` uniform in
-     `n ≥ 1`, which is elementary since `φ(u)(1 + (γ/6)(u³ − 3u))` is bounded.
-  3. *The window integral.* Take `δ = 1/n` and split at `|ξ| = ρ_n ≍ √n`, chosen so that
-     `|ξ| ≤ ρ_n` implies the window conditions `v s² ≤ 2`, `ρ₃|s| ≤ 3v/2` of
-     `norm_charFun_pow_sub_edgeworth_le` at `s = −2πξ/√n`. On that range the damped bound is
-     `e^{−(1 − 2/n) v π² ξ²} · O((ξ⁴ + ξ⁵ + ξ⁶)/n)` against the weight `1/(π|ξ|)`, so the
-     estimate reduces to the Gaussian moment integrals `∫ |ξ|^k e^{−aξ²} dξ`. This is the
-     genuinely long computation; it also needs the finitely many small `n` (where
-     `1 − 2/n ≤ 0`) absorbed into `C`, which is legitimate because both `meanRootCDF` and the
-     approximant are bounded.
-  4. *The outer range.* `‖φ_P − φ_q‖ ≤ cⁿ + ‖φ_{q_n}‖` there, the first term handled by (E3)
-     and the second by the Gaussian tail of `φ_{q_n}(−2πξ) = e^{−σ²(2πξ)²/2}(1 + …)`. -/
+* (E4) **The assembly — pieces 1 and 2 are now CLOSED; 3 and 4 remain.** It is long rather
+  than hard, and the re-derivation split it into four named pieces, none of which is an
+  obstruction. Two of them, and all the glue between them, are proved above.
+  1. *The law of the root — **CLOSED**.* `charFun_meanRootLaw`:
+     `charFun (meanRootLaw F n) t = (charFun (centredLaw F) (t/√n))ⁿ`.
+     *The recorded route is superseded, in the direction of being easier.* The note said this
+     needs a **transfer** through the canonical i.i.d. construction (`exists_iid` /
+     `iIndepFun_iff_map_fun_eq_pi_map`) because Mathlib's `charFun_inv_sqrt_mul_sum` is stated
+     for `iIndepFun` rather than for `Measure.pi`. No transfer is needed and
+     `charFun_inv_sqrt_mul_sum` is not used at all: `meanRootLaw` *lives* on `Measure.pi`, the
+     root map is `(√n)⁻¹ ∑ (yᵢ − m)` (`sqrt_mul_sub_mean_eq`), `Complex.exp_sum` turns the
+     exponential of that sum into a product of one-variable factors, and
+     `MeasureTheory.integral_fintype_prod_eq_pow` is precisely Fubini for such a product.
+     The glue is closed with it: `stdRootLaw` — the law of `√n(X̄ₙ − μ)/σ` — with
+     `charFun_stdRootLaw` and `meanRootCDF_eq_stdRootLaw`
+     (`meanRootCDF F n t = P'_n((-∞, t/σ])`), and the moments of the centred law
+     (`integral_id_centredLaw`, `integral_sq_centredLaw`, `integral_cube_centredLaw`:
+     mean `0`, second moment `Var_F`, third moment `γσ³`), which are the `0`, `v`, `m₃` that
+     `norm_charFun_pow_sub_edgeworth_le` consumes.
+  2. *The approximant is the `densityCDF` of `q_n` — **CLOSED**.*
+     `densityCDF_edgeworthDensity`:
+     `∫_{(-∞,u]} q_n = Φ(u) − (γ/6)φ(u)(u² − 1)n^{-1/2}`, by
+     `integral_Iic_of_hasDerivAt_of_tendsto'` against `hasDerivAt_hermiteAntideriv`
+     (`d/du[−φ(u)(u² − 1)] = φ(u)(u³ − 3u)`) and `tendsto_hermiteAntideriv_atBot`.
+     The total-variation modulus is `setIntegral_abs_edgeworthDensity_le`, with the
+     **`n`-free** constant `(2π)^{-1/2}(1 + 66|γ|)` of `abs_edgeworthDensity_le` — `n`-freeness
+     is what matters, since the de-smoothing loss is `2Aδ` with `δ ≍ n⁻¹`.
+     *One simplification over the recorded plan.* Everything is written on the **standardized**
+     scale, so the comparison density is the `σ`-free
+     `q_n(u) = φ(u)(1 + (γ/6)(u³ − 3u)n^{-1/2})` and no Gaussian scaling identity
+     (`normalCDF 0 σ² x = Φ(x/σ)`) is needed anywhere: `∫_{(-∞,u]} φ = Φ(u)` is
+     `gaussianReal_apply_eq_integral` verbatim (`stdNormalCDF_eq_setIntegral`), and the `σ` is
+     carried entirely by the *argument*, through `meanRootCDF_eq_stdRootLaw`.
+     The Fourier side of the comparison is closed too. `charFunDensity_edgeworthDensity` gives
+     `∫ e^{ity} q_n(y) dy = e^{−t²/2}(1 − i γ t³/(6√n))`, and that is *literally* the
+     approximant `e^{−n v s²/2}(1 − n i m₃ s³/6)` of `norm_charFun_pow_sub_edgeworth_le` at
+     `s = t/(σ√n)`, `v = σ²`, `m₃ = γσ³`. So the two objects
+     `abs_measure_Iic_sub_densityCDF_le_charFun` compares are exactly the two objects the
+     damped expansion estimates: the remaining work is quantitative only.
+  3. *The window integral — **OPEN**, and the long one.* Take `δ = 1/n` and split at
+     `|ξ| = ρ_n ≍ √n`, chosen so that `|ξ| ≤ ρ_n` implies the window conditions `v s² ≤ 2`,
+     `ρ₃|s| ≤ 3v/2` of `norm_charFun_pow_sub_edgeworth_le` at `s = −2πξ/(σ√n)`; explicitly
+     `v s² = 4π²ξ²/n ≤ 2` iff `ξ² ≤ n/(2π²)`, and `ρ₃|s| ≤ 3v/2` iff
+     `|ξ| ≤ 3σ³√n/(4πρ₃)`, so `ρ_n = c√n` with `c = min(1/(π√2), 3σ³/(4πρ₃))`. On that range
+     the damped bound is `e^{−(1 − 2/n)π²ξ²} · O((ξ⁴ + ξ⁵ + ξ⁶ + ξ⁸)/n)` against the weight
+     `1/(π|ξ|)`, so the estimate reduces to the Gaussian moment integrals
+     `∫ |ξ|^k e^{−aξ²} dξ` — whose *values* are irrelevant, only their finiteness. It also
+     needs the finitely many small `n` (where `1 − 2/n ≤ 0`) absorbed into `C`, which is
+     legitimate because both `meanRootCDF` and the approximant are bounded. Folded into this
+     piece is the integrability hypothesis `hint` of
+     `abs_measure_Iic_sub_densityCDF_le_charFun`, which is the same Gaussian-moment estimate.
+  4. *The outer range — **OPEN**, but short.* `‖φ_P − φ_q‖ ≤ cⁿ + ‖φ_{q_n}‖` there; the first
+     term is handled by (E3) (`exists_bound_lt_one_of_cramer`,
+     `setIntegral_mul_esseenWeight_tail_le`, `exists_pow_mul_geometric_le`), and for the second
+     `norm_charFunDensity_edgeworthDensity_le` above supplies the Gaussian tail
+     `‖φ_{q_n}(θ)‖ ≤ e^{−θ²/2}(1 + |γ||θ|³/6)`, uniformly in `n ≥ 1`. What is left is the
+     bookkeeping that `e^{−2π²ρ_n²} = e^{−2π²c²n}` is geometric in `n` and therefore, by
+     `exists_pow_mul_geometric_le` again, `o(n^{-k})` for every `k`. -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
