@@ -2954,6 +2954,48 @@ private lemma hasDerivAt_integral_canExp {P : ℝ × Ξ → Measure 𝓧} {Ω : 
     (Filter.Eventually.of_forall fun z => hmaj z) hbound_int
     (Filter.Eventually.of_forall fun z => hdiff z)
 
+/-- **`U` is integrable at a parameter with a pure-`θ` window.** If `(θ₀ ± δ, ϑ₀) ∈ Ω` then
+`U` is `P (θ₀, ϑ₀)`-integrable.
+
+The full-measure twin of `exists_boundary_ae_integrable_id`, and by the same two-point
+majorant `abs_le_exp_add_exp_neg` — but here the two tilted exponentials are integrable for a
+reason available only since `integrable_comp_UT_iff`: taking `g z := e^{±δ z₁}` in that
+equivalence turns `e^{±δ z₁}·e^{canExp (θ₀,ϑ₀) z}` into `e^{canExp (θ₀ ± δ, ϑ₀) z}`, which is
+`ν`-integrable by `integrable_canExp` precisely because the shifted parameters are in `Ω`.
+
+This is what the disintegration `∫ E[g ∣ T] d((P p).map T) = E[g]` needs at item (d) of
+`isUMPU_conditional_point`; the integrability of `U·ψ` for a critical `ψ` follows from it by
+`|U·ψ| ≤ |U|`. -/
+private lemma integrable_U_of_twoSided {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {θ₀ : ℝ} {ϑ₀ : Ξ} {δ : ℝ} (hδ : 0 < δ)
+    (hlo : ((θ₀ - δ, ϑ₀) : ℝ × Ξ) ∈ Ω) (hhi : ((θ₀ + δ, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    (h0 : ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω) :
+    Integrable U (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+  have htilt : ∀ (c : ℝ), ((θ₀ + c, ϑ₀) : ℝ × Ξ) ∈ Ω →
+      Integrable (fun x => Real.exp (c * U x)) (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+    intro c hc
+    refine (integrable_comp_UT_iff hU hT hUT h0 (g := fun z : ℝ × Ξ => Real.exp (c * z.1))
+      (measurable_const.mul measurable_fst).exp).2 ?_
+    refine ((integrable_canExp hU hT hUT hc).1).congr
+      (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [← Real.exp_add]
+    congr 1
+    simp only [canExp_apply]
+    ring
+  have hplus := htilt δ hhi
+  have hminus : Integrable (fun x => Real.exp (-δ * U x)) (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+    have h := htilt (-δ) (by simpa [sub_eq_add_neg] using hlo)
+    simpa using h
+  refine Integrable.mono' ((hplus.add hminus).const_mul δ⁻¹) hU.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => ?_)
+  have hmaj := abs_le_exp_add_exp_neg hδ (U x)
+  rw [div_eq_inv_mul, ← neg_mul] at hmaj
+  simpa [Real.norm_eq_abs] using hmaj
+
 /-- **The derivative side condition, at the level of the full measure.** If a bounded
 measurable test `ψ` of `(U, T)` has power exactly `α` at the boundary parameter `(θ₀, ϑ₀)` and
 power at least `α` all along the pure-`θ` segment `(θ₀ ± η, ϑ₀) ⊆ Ω`, then
@@ -3325,10 +3367,11 @@ theorem isUMPU_conditional_point
   --      `hfzero` is `integral_U_mul_eq_of_boundary_min` composed with the disintegration
   --      `∫ E[g ∣ T] d((P p).map T) = E[g]`. That disintegration needs `Integrable (U·ψ)` and
   --      `Integrable U` for `P (θ₀,ϑ)` at FULL-measure level — the twin of the conditional
-  --      `exists_boundary_ae_integrable_id`, and obtainable the same way now that
-  --      `integrable_comp_UT_iff` exists: `g z := e^{±δ z₁}` turns
+  --      `exists_boundary_ae_integrable_id`. That is `integrable_U_of_twoSided` above, PROVED
+  --      (this session) exactly that way: `g z := e^{±δ z₁}` in `integrable_comp_UT_iff` turns
   --      `e^{±δ z₁}·e^{canExp (θ₀,ϑ)}` into `e^{canExp (θ₀±δ,ϑ)}`, `ν`-integrable by
-  --      `integrable_canExp`, so `e^{±δU}` and hence `|U|` are `P (θ₀,ϑ)`-integrable.
+  --      `integrable_canExp`, so `e^{±δU}` and hence `|U|` are `P (θ₀,ϑ)`-integrable; and
+  --      `|U·ψ| ≤ |U|` gives the `ψ`-version. So (d) is now pure disintegration bookkeeping.
   --  (e) The outer UMPU assembly, which mirrors `isUMPU_conditional_outside` above line for
   --      line — the alternative `θ ≠ θ₀` is two-sided, and `exists_sep_line` already covers
   --      both signs of `c = θ − θ₀` because it is proved from convexity of `exp`, not from a
