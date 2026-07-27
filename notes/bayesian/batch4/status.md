@@ -27,11 +27,11 @@ Statements now FROZEN.
 | bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | MERGED 0-sorry | comp_subseq insulated |
 | bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | MERGED 0-sorry (after laptop statement fix) | pair-ratio Jensen insulated |
 | tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | IN_FLIGHT | mean-expansion insulated |
-| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | IN_FLIGHT | retraction insulated |
-| conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | STUBBED | tail-split insulated |
-| local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | STUBBED | local_tv_tendsto = headline debt |
+| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible,Theorem10_10} | — | **MERGED 0-sorry (incl. Thm 10.10)** | retraction insulated |
+| conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | IN_FLIGHT | tail-split insulated |
+| local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | IN_FLIGHT | local_tv_tendsto = headline debt |
 | bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |
-| doob-final (Theorem10_10 + Defs-lemmas closure) | 2/3 | Bay/DoobConsistency/Theorem10_10 | doob-core | STUBBED | — |
+| doob-final | — | (absorbed by doob-core; lane not needed) | — | DONE | — |
 | assembly (Theorem10_1, EfficientCentering) | 3 | Bay/BernsteinVonMises/{Theorem10_1,EfficientCentering} | conc, local, tests | STUBBED | lintegral form insulated |
 | bpe-approx (UniformApproximation) | 3 | Bay/BayesEstimators/UniformApproximation | assembly | STUBBED | — |
 | bpe-final (Theorem10_8) | 4 | Bay/BayesEstimators/Theorem10_8 | bpe-approx, bpe-aux | STUBBED | bowl-shaped corollary insulated |
@@ -83,4 +83,12 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   now takes `(hY : Measurable Y)` (LEAN-ONLY tag + counterexample recorded in its docstring);
   proved from the lane's argument; internal call site retargeted. TVDist.lean is 0-sorry.
   Remaining batch debt from wave 1: `gaussian_loss_convolution_continuous` only.
+- 2026-07-27: **bay/doob-core GATE GREEN, 0 sorries** (5cb3cb1, 2637 jobs). The lane closed its
+  whole scope *and* the Theorem10_10 assembly (prompt-sanctioned early extension), so the
+  planned `doob-final` lane is unnecessary. Audit: touch-set exact, 0 axioms, no frozen
+  signature touched. MERGED (1f62475). **vdV Theorem 10.10 (Doob consistency) is COMPLETE.**
+  Notable: `measurable_infinitePi_const_kernel` (cylinder π-system induction) is a clean
+  Mathlib upstream candidate (`Kernel.infinitePi`).
+- 2026-07-27: wave 2 launched: bay/bvm-local (Step B, 3h srun), bay/bvm-conc (Step A, 2.5h).
+  Still to launch: bpe-aux, then wave 3 (assembly, bpe-approx) and wave 4 (bpe-final).
 
