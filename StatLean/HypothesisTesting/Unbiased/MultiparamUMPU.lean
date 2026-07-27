@@ -1481,55 +1481,68 @@ private lemma integral_comp_eq_of_le_of_segment [BorelSpace Ξ]
     ge_of_tendsto' hlim fun n => hge _ (hpos n) (h01 n).2
   linarith
 
-/-- **An interior point of the boundary slice.** For a convex parameter set whose affine span
-is everything, in finite dimension, and which reaches strictly below and strictly above `θ₀`,
-the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` has nonempty interior in `Ξ`.
+/-- **An interior point of `Ω` on the boundary surface.** For a convex parameter set whose
+affine span is everything, in finite dimension, and which reaches strictly below and strictly
+above `θ₀`, the surface `θ = θ₀` meets the *interior* of `Ω`.
 
 The two hypotheses are exactly the two amendments discussed at `boundedlyComplete_boundary`:
-`affineSpan ℝ Ω = ⊤` (not the weaker `Submodule.span ℝ Ω = ⊤`) and finite dimension. -/
+`affineSpan ℝ Ω = ⊤` (not the weaker `Submodule.span ℝ Ω = ⊤`) and finite dimension.
+
+Besides feeding `interior_slice_nonempty`, this is the brick that lets the *pure-`θ`* segment
+`(θ₀ ± ε, ϑ₀)` be taken inside `Ω`, which is what the derivative side condition of the point
+null needs (see `isUMPU_conditional_point`); along a general segment of `Ω` the derivative of
+the power picks up the nuisance directions. -/
+private lemma exists_interior_boundary_point [FiniteDimensional ℝ Ξ]
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+  obtain ⟨z, hz⟩ := (Convex.interior_nonempty_iff_affineSpan_eq_top hΩ_convex).2 hΩ_aff
+  -- push an interior point of `Ω` onto the surface `θ = θ₀` along a segment
+  have hstep : ∀ q : ℝ × Ξ, q ∈ Ω → z.1 < θ₀ → θ₀ < q.1 →
+        ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+    intro q hq hz1 hq1
+    set s : ℝ := (θ₀ - z.1) / (q.1 - z.1) with hsdef
+    have hden : 0 < q.1 - z.1 := by linarith
+    have hs0 : 0 < s := div_pos (by linarith) hden
+    have hs1 : s < 1 := by
+      rw [hsdef, div_lt_one hden]; linarith
+    refine ⟨(1 - s) • z + s • q,
+      Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) hs0.le (by ring),
+      ?_⟩
+    have hfst : ((1 - s) • z + s • q).1 = (1 - s) * z.1 + s * q.1 := by
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+    have hkey : s * (q.1 - z.1) = θ₀ - z.1 := by
+      rw [hsdef]; field_simp
+    rw [hfst]
+    linear_combination hkey
+  rcases lt_trichotomy z.1 θ₀ with h | h | h
+  · obtain ⟨q, hq, hqθ⟩ := hΩ_gt
+    exact hstep q hq h hqθ
+  · exact ⟨z, hz, h⟩
+  · -- symmetric: reflect the first coordinate
+    obtain ⟨q, hq, hqθ⟩ := hΩ_lt
+    set t : ℝ := (z.1 - θ₀) / (z.1 - q.1) with htdef
+    have hden : 0 < z.1 - q.1 := by linarith
+    have ht0 : 0 < t := div_pos (by linarith) hden
+    have ht1 : t < 1 := by rw [htdef, div_lt_one hden]; linarith
+    refine ⟨(1 - t) • z + t • q,
+      Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) ht0.le (by ring),
+      ?_⟩
+    have hfst : ((1 - t) • z + t • q).1 = (1 - t) * z.1 + t * q.1 := by
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+    have hkey : t * (z.1 - q.1) = z.1 - θ₀ := by
+      rw [htdef]; field_simp
+    rw [hfst]
+    linear_combination -hkey
+
+/-- **An interior point of the boundary slice.** The slice `{ϑ | (θ₀, ϑ) ∈ Ω}` has nonempty
+interior in `Ξ`; this is what makes the boundary family of laws of `T` a `k`-dimensional
+exponential family, hence complete. -/
 private lemma interior_slice_nonempty [FiniteDimensional ℝ Ξ]
     (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
     (interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}).Nonempty := by
-  obtain ⟨z, hz⟩ := (Convex.interior_nonempty_iff_affineSpan_eq_top hΩ_convex).2 hΩ_aff
-  -- push an interior point of `Ω` onto the surface `θ = θ₀` along a segment
-  obtain ⟨w, hw, hwθ⟩ : ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
-    have hstep : ∀ q : ℝ × Ξ, q ∈ Ω → z.1 < θ₀ → θ₀ < q.1 →
-        ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
-      intro q hq hz1 hq1
-      set s : ℝ := (θ₀ - z.1) / (q.1 - z.1) with hsdef
-      have hden : 0 < q.1 - z.1 := by linarith
-      have hs0 : 0 < s := div_pos (by linarith) hden
-      have hs1 : s < 1 := by
-        rw [hsdef, div_lt_one hden]; linarith
-      refine ⟨(1 - s) • z + s • q,
-        Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) hs0.le (by ring),
-        ?_⟩
-      have hfst : ((1 - s) • z + s • q).1 = (1 - s) * z.1 + s * q.1 := by
-        simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
-      have hkey : s * (q.1 - z.1) = θ₀ - z.1 := by
-        rw [hsdef]; field_simp
-      rw [hfst]
-      linear_combination hkey
-    rcases lt_trichotomy z.1 θ₀ with h | h | h
-    · obtain ⟨q, hq, hqθ⟩ := hΩ_gt
-      exact hstep q hq h hqθ
-    · exact ⟨z, hz, h⟩
-    · -- symmetric: reflect the first coordinate
-      obtain ⟨q, hq, hqθ⟩ := hΩ_lt
-      set t : ℝ := (z.1 - θ₀) / (z.1 - q.1) with htdef
-      have hden : 0 < z.1 - q.1 := by linarith
-      have ht0 : 0 < t := div_pos (by linarith) hden
-      have ht1 : t < 1 := by rw [htdef, div_lt_one hden]; linarith
-      refine ⟨(1 - t) • z + t • q,
-        Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) ht0.le (by ring),
-        ?_⟩
-      have hfst : ((1 - t) • z + t • q).1 = (1 - t) * z.1 + t * q.1 := by
-        simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
-      have hkey : t * (z.1 - q.1) = z.1 - θ₀ := by
-        rw [htdef]; field_simp
-      rw [hfst]
-      linear_combination -hkey
+  obtain ⟨w, hw, hwθ⟩ := exists_interior_boundary_point hΩ_convex hΩ_aff hΩ_lt hΩ_gt
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior w hw
   have hsub : Metric.ball w.2 r ⊆ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
     intro ϑ hϑ
@@ -2649,8 +2662,10 @@ theorem isUMPU_conditional_point
   --  * the conditional laws are exponential tilts of one another (`ae_condDistrib_expTilt`);
   --  * similarity of an unbiased competitor on the boundary surface, from continuity of the
   --    power along segments of `Ω` (`integral_comp_eq_of_le_of_segment`);
-  --  * similar ⟹ Neyman structure for the *size* condition (`ae_condPower_eq_of_similar`,
-  --    over the lifted brick `boundedlyComplete_boundary`);
+  --  * similar ⟹ Neyman structure for the *size* condition (`ae_condPower_eq_of_similar`),
+  --    which is now unconditional: `boundedlyComplete_boundary` is PROVED (this session), so
+  --    the three other optimality theorems of this file are axiom-clean and only the point
+  --    null is open;
   --  * `exists_sep_line` is NOT yet ported, but is the only separation needed: for `c ≠ 0`
   --    the secant/tangent of `t ↦ e^{ct}` at `C₁, C₂` gives, exactly as in the interval case,
   --    `g(u)·(e^{cu} − A − Bu) ≥ 0` for `g = φ − ψ`, and the two side conditions kill the two
@@ -2658,19 +2673,28 @@ theorem isUMPU_conditional_point
   --
   -- What is genuinely missing, and is specific to the point null, is the *derivative* side
   -- condition for the competitor, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]` a.e. `t`. Deriving it
-  -- from unbiasedness needs three further steps, none of which is in the file:
-  --  (a) an interior point of `Ω` on the boundary surface (Mathlib's
-  --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push), so that the
-  --      *pure-`θ`* segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`; along a general segment the
-  --      derivative picks up the nuisance directions and is not `E[Uψ]`;
-  --  (b) differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
+  -- from unbiasedness needs three further steps; the first is now available, the other two
+  -- are not in the file.
+  --  (a) DONE. An interior point of `Ω` on the boundary surface — so that the *pure-`θ`*
+  --      segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`, a general segment being useless because its
+  --      derivative picks up the nuisance directions and is not `E[Uψ]` — is
+  --      `exists_interior_boundary_point` above (Mathlib's
+  --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push, both under the
+  --      amendments `hΩ_aff` and `[FiniteDimensional ℝ Ξ]` already in this signature).
+  --  (b) OPEN. Differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
   --      dominating function is available from the same two-point envelope used by
   --      `tendsto_integral_canonical_segment`, in the form
   --      `|b−a|·e^{(1−s)a+sb} ≤ 2η⁻¹(e^a + e^b)` on `[s₀−η, s₀+η]`, so this is routine but
-  --      not short;
-  --  (c) a completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
+  --      not short. Note the normalizer `C` also has to be differentiated: the power is the
+  --      ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained.
+  --  (c) OPEN. A completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
   --      i.e. `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary
-  --      slice — a second brick beyond `boundedlyComplete_boundary` — together with the
+  --      slice. This is now a *strictly smaller* gap than before: the proof of
+  --      `boundedlyComplete_boundary` never uses boundedness of `f` except to produce the
+  --      integrability hypothesis of
+  --      `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`, which is already stated
+  --      for arbitrary measurable `f`. So (c) reduces to the *integrability* of
+  --      `t ↦ (E[Uψ ∣ t] − α·E[U ∣ t])·e^{⟪ϑ−ϑ₁,t⟫}` against `μ₁`, together with the
   --      conditional integrability of `U`, which does follow from `hΩ_lt`/`hΩ_gt` by the
   --      two-point bound `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` applied to the two conditional tilts.
   sorry
