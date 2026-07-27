@@ -779,7 +779,22 @@ private lemma exists_pos_density_below_of_coPower_pos {μ : Measure 𝓧} {P : �
 
 /-- **Minimum rejection probability below the boundary.** Among all tests whose size at
 `θ₀` is exactly `α`, the one-sided test minimizes the probability of rejection — the
-probability of an error of the first kind — at every `θ < θ₀`. -/
+probability of an error of the first kind — at every `θ < θ₀`.
+
+**Documented deviation from the printed form (forced).** The nondegeneracy hypothesis
+`α < 1` is added. Without it the statement is **FALSE**.
+
+*Counterexample.* `𝓧 = ℝ`, `μ = volume`, `T = id`, and the shifted-exponential family
+`p θ x = exp(-(x - θ))·1_{x ≥ θ}`, which has monotone likelihood ratio in `T` (the
+exponential factors cancel in the cross-product, and `1_{x ≥ θ'}·1_{y ≥ θ} ≤
+1_{x ≥ θ}·1_{y ≥ θ'}` whenever `θ < θ'` and `x ≤ y`). Take `C = θ₀ - 1` and `γ = 0`. Then
+`p θ₀` vanishes on `{T ≤ C}`, so `α = power P φ θ₀ = 1`. The competitor
+`ψ = 1_{x ≥ θ₀}` is a critical function with `power P ψ θ₀ = 1 = α`, yet for every
+`θ < θ₀ - 1`, `power P ψ θ = e^{θ-θ₀} < e^{θ-θ₀+1} = power P φ θ`: the one-sided test does
+*not* minimize the rejection probability. The mechanism is exactly `α = 1`, and `α < 1` is
+the minimal repair: it forces some point at or below `C` to carry positive `θ₀`-density
+(`exists_pos_density_below_of_coPower_pos`), which is all the proof needs. The classical
+statement obtains the same effect from strictly positive densities. -/
 theorem power_min_oneSided
     -- USER-INPUT: dominating measure, σ-finite
     (μ : Measure 𝓧) [SigmaFinite μ]
@@ -790,11 +805,17 @@ theorem power_min_oneSided
     (T : 𝓧 → ℝ) (hT : Measurable T) (hMLR : HasMLR p T)
     -- USER-INPUT: the null boundary, level, and the constants of the test
     (θ₀ : ℝ) {α C γ : ℝ} (hγ : γ ∈ Set.Icc (0 : ℝ) 1)
+    -- USER-INPUT: nondegenerate level. This is the documented amendment: at `α = 1` the
+    -- conclusion is false (counterexample in the docstring)
+    (hα₁ : α < 1)
     -- USER-INPUT: the test is the one determined by the exact-size requirement
     (hsize : power P (oneSidedTest T C γ) θ₀ = α) :
     ∀ θ < θ₀, ∀ ψ, IsCriticalFn ψ → power P ψ θ₀ = α →
       power P (oneSidedTest T C γ) θ ≤ power P ψ θ := by
   intro θ hθ ψ hψ hψsize
+  -- `α < 1` rules out the degenerate configuration in which `p θ₀` vanishes on `{T ≤ C}`.
+  have hz : ∃ z, T z ≤ C ∧ 0 < p θ₀ z :=
+    exists_pos_density_below_of_coPower_pos hp hT (by rw [hsize]; exact hα₁)
   set φ := oneSidedTest T C γ with hφdef
   have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ
   have hφint : ∀ θ, Integrable φ (P θ) := fun θ =>
@@ -805,40 +826,45 @@ theorem power_min_oneSided
     (integrable_const (1 : ℝ)).mono' hψ.1.aestronglyMeasurable
       (Filter.Eventually.of_forall fun x => by
         rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]; exact (hψ.2 x).2)
-  by_cases hz : ∃ z, T z ≤ C ∧ 0 < p θ₀ z
-  · -- The co-test `1 − φ` is most powerful for `P θ₀` (null) against `P θ` (alt).
-    set coφ : 𝓧 → ℝ := fun x => 1 - φ x with hcoφdef
-    have hcoφc : IsCriticalFn coφ :=
-      ⟨measurable_const.sub hφc.1, fun x => ⟨by linarith [(hφc.2 x).2], by linarith [(hφc.2 x).1]⟩⟩
-    have hcoφsize : powerAgainst (P θ₀) coφ = 1 - α := by
-      rw [hcoφdef, powerAgainst_one_sub (hφint θ₀)]
-      exact congrArg (1 - ·) hsize
-    obtain ⟨K, hshape⟩ := hasNPShape_coOneSided hp hMLR hθ γ hz
-    have hMP := isMostPowerful_of_npShape μ (P θ₀) (P θ) (hp θ₀) (hp θ) hcoφc hcoφsize hshape
-    set coψ : 𝓧 → ℝ := fun x => 1 - ψ x with hcoψdef
-    have hcoψc : IsCriticalFn coψ :=
-      ⟨measurable_const.sub hψ.1, fun x => ⟨by linarith [(hψ.2 x).2], by linarith [(hψ.2 x).1]⟩⟩
-    have hcoψsize : powerAgainst (P θ₀) coψ ≤ 1 - α := by
-      rw [hcoψdef, powerAgainst_one_sub (hψint θ₀)]; exact le_of_eq (congrArg (1 - ·) hψsize)
-    have hcmp := hMP.2.2 coψ hcoψc hcoψsize
-    rw [hcoψdef, powerAgainst_one_sub (hψint θ), hcoφdef, powerAgainst_one_sub (hφint θ)] at hcmp
-    show powerAgainst (P θ) φ ≤ powerAgainst (P θ) ψ
-    linarith [hcmp]
-  · -- Degenerate: `p θ₀ = 0` on `{T ≤ C}`, forcing `power P φ θ₀ = 1`, i.e. `α = 1`, and the
-    -- frozen statement is FALSE here (verified counterexample). Take `𝓧 = ℝ`, `μ = volume`,
-    -- `T = id`, and the shifted-exponential family `p θ x = exp (-(x - θ)) · 1_{x ≥ θ}` (a
-    -- genuine MLR family), with `C = θ₀ - 1` so `p θ₀ = 0` on `{x ≤ C}`. Then
-    -- `α = power P φ θ₀ = 1`, but the size-`1` competitor `ψ = 1_{x ≥ θ₀}` (`power ψ θ₀ = 1`)
-    -- has, for every `θ < θ₀ - 1`, `power ψ θ = e^(θ-θ₀) < e^(θ-θ₀+1) = power P φ θ`; so `φ`
-    -- does NOT minimize the rejection probability below `θ₀`. The classical result needs
-    -- strictly positive densities (which supply `hz`) or `α < 1`; under either the branch
-    -- above is a complete proof. Reported per the no-weakening policy.
-    -- TODO(statement-bug): add positive densities (or `α < 1`) to discharge this.
-    sorry
+  -- The co-test `1 − φ` is most powerful for `P θ₀` (null) against `P θ` (alt).
+  set coφ : 𝓧 → ℝ := fun x => 1 - φ x with hcoφdef
+  have hcoφc : IsCriticalFn coφ :=
+    ⟨measurable_const.sub hφc.1, fun x => ⟨by linarith [(hφc.2 x).2], by linarith [(hφc.2 x).1]⟩⟩
+  have hcoφsize : powerAgainst (P θ₀) coφ = 1 - α := by
+    rw [hcoφdef, powerAgainst_one_sub (hφint θ₀)]
+    exact congrArg (1 - ·) hsize
+  obtain ⟨K, hshape⟩ := hasNPShape_coOneSided hp hMLR hθ γ hz
+  have hMP := isMostPowerful_of_npShape μ (P θ₀) (P θ) (hp θ₀) (hp θ) hcoφc hcoφsize hshape
+  set coψ : 𝓧 → ℝ := fun x => 1 - ψ x with hcoψdef
+  have hcoψc : IsCriticalFn coψ :=
+    ⟨measurable_const.sub hψ.1, fun x => ⟨by linarith [(hψ.2 x).2], by linarith [(hψ.2 x).1]⟩⟩
+  have hcoψsize : powerAgainst (P θ₀) coψ ≤ 1 - α := by
+    rw [hcoψdef, powerAgainst_one_sub (hψint θ₀)]; exact le_of_eq (congrArg (1 - ·) hψsize)
+  have hcmp := hMP.2.2 coψ hcoψc hcoψsize
+  rw [hcoψdef, powerAgainst_one_sub (hψint θ), hcoφdef, powerAgainst_one_sub (hφint θ)] at hcmp
+  change powerAgainst (P θ) φ ≤ powerAgainst (P θ) ψ
+  linarith [hcmp]
 
 /-- **The one-sided tests form an essentially complete class.** For the two-decision
 problem whose losses satisfy `L₁ - L₀ > 0` below the boundary and `< 0` above it, every
-test is matched or beaten, uniformly in `θ`, by a one-sided test. -/
+test is matched or beaten, uniformly in `θ`, by a one-sided test.
+
+**Documented deviation from the printed form (forced).** The competitor `ψ` is required to
+have a nondegenerate size at the boundary, `power P ψ θ₀ ∈ Set.Ioo 0 1`. Without that
+restriction the statement is **FALSE**, for the same reason that `isUMP_oneSided` must
+exclude `α ∈ {0,1}`: a one-sided test with a *real* critical value cannot match the size of
+a degenerate competitor when `T` is unbounded in the relevant tail, and the printed
+docstring's own caveat that "`C` here is a real number, not an extended one" is exactly the
+gap.
+
+*Counterexample.* `𝓧 = ℝ`, `μ = volume`, `T = id`, `P θ = 𝒩(θ,1)` (an MLR family),
+`θ₀ = 0`, `L₀ = 0`, `L₁ θ = -θ` — so `L₁ - L₀ > 0` strictly below `0` and `< 0` strictly
+above, as the hypotheses demand. Take `ψ ≡ 1`, a critical function, with
+`power P ψ θ = 1` for every `θ`, hence `testRisk P L₀ L₁ ψ θ = -θ`. Every one-sided test
+with a real `C` has `power P (oneSidedTest T C γ) θ = 1 - Φ(C - θ) < 1`, so for each
+`θ > 0`, `testRisk P L₀ L₁ (oneSidedTest T C γ) θ = (1 - Φ(C-θ))·(-θ) > -θ =
+testRisk P L₀ L₁ ψ θ`. No one-sided test dominates `ψ`. Here `power P ψ θ₀ = 1`, which the
+amended hypothesis excludes. -/
 theorem essentiallyComplete_oneSidedTest
     -- USER-INPUT: dominating measure, σ-finite
     (μ : Measure 𝓧) [SigmaFinite μ]
@@ -853,33 +879,47 @@ theorem essentiallyComplete_oneSidedTest
     (hloss_lt : ∀ θ < θ₀, 0 < L₁ θ - L₀ θ)
     -- USER-INPUT: … and less strictly above it (the monotone-loss condition)
     (hloss_gt : ∀ θ, θ₀ < θ → L₁ θ - L₀ θ < 0) :
-    ∀ ψ, IsCriticalFn ψ → ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
-      ∀ θ, testRisk P L₀ L₁ (oneSidedTest T C γ) θ ≤ testRisk P L₀ L₁ ψ θ := by
-  -- ROADMAP (regular case fully reduces to machinery already proven above): put
-  -- `α := power P ψ θ₀ ∈ (0,1)`; take `C, γ` from `exists_critical_constants` on the
-  -- `T`-marginal so `power P (oneSidedTest T C γ) θ₀ = α = power P ψ θ₀`. Then, with
-  -- `testRisk P L₀ L₁ φ θ = power P φ θ · (L₁ θ − L₀ θ) + L₀ θ`:
-  --   • `θ = θ₀`: equal powers ⇒ equal risk.
-  --   • `θ > θ₀` (`L₁−L₀ < 0`): `isMostPowerful_oneSided` at `(θ₀,θ)` gives
-  --     `power ψ θ ≤ power φ θ`, and the negative loss coefficient flips it to risk `φ ≤ ψ`.
-  --   • `θ < θ₀` (`L₁−L₀ > 0`): `power_min_oneSided` gives `power φ θ ≤ power ψ θ`, and the
-  --     positive coefficient keeps risk `φ ≤ ψ`.
-  -- OBSTRUCTION: the reduction inherits the two documented gaps of its ingredients — the
-  -- endpoint failure of the exact-size construction at `α ∈ {0,1}` (see `isUMP_oneSided`)
-  -- and the `hz`/positive-density corner of `isMostPowerful_oneSided` / `power_min_oneSided`.
-  -- Under strictly positive densities and `0 < power P ψ θ₀ < 1` the roadmap is a complete
-  -- proof; the general frozen statement needs those omitted hypotheses.
-  -- COUNTEREXAMPLE (the frozen statement is FALSE, not merely unproven): take `ψ = 1` (reject
-  -- always), a critical function with `power P ψ θ₀ = 1`. With `𝓧 = ℝ`, `μ = volume`,
-  -- `T = id`, `P θ = 𝒩(θ,1)`, `θ₀ = 0`, `L₀ = 0`, `L₁ θ = -θ` (so `L₁ - L₀ > 0` below `0`
-  -- and `< 0` above, as required), `testRisk P L₀ L₁ ψ θ = -θ`. Any one-sided test with a
-  -- REAL `C` has `power P φ θ = 1 - Φ(C - θ) < 1`, so for every `θ > 0`,
-  -- `testRisk P L₀ L₁ φ θ = power P φ θ · (-θ) > 1 · (-θ) = testRisk P L₀ L₁ ψ θ`; hence no
-  -- real-`C` one-sided test dominates `ψ` everywhere. The one-sided class is essentially
-  -- complete only when the trivial `C = ±∞` tests are admitted — see the frozen docstring
-  -- note that "`C` here is a real number, not an extended one".
-  -- TODO: discharge once the positivity hypothesis is added (mirrors the sibling theorems).
-  sorry
+    -- The size restriction on `ψ` is the documented amendment; see the docstring
+    ∀ ψ, IsCriticalFn ψ → power P ψ θ₀ ∈ Set.Ioo (0 : ℝ) 1 →
+      ∃ C γ : ℝ, γ ∈ Set.Icc (0 : ℝ) 1 ∧
+        ∀ θ, testRisk P L₀ L₁ (oneSidedTest T C γ) θ ≤ testRisk P L₀ L₁ ψ θ := by
+  intro ψ hψ hψsize
+  obtain ⟨hα0, hα1⟩ := hψsize
+  -- Match the size of `ψ` at the boundary with an honest one-sided test.
+  haveI : IsProbabilityMeasure ((P θ₀).map T) :=
+    Measure.isProbabilityMeasure_map hT.aemeasurable
+  obtain ⟨C, γ, hγ0, hγ1, hcrit⟩ :=
+    exists_critical_constants ((P θ₀).map T) hα0 hα1
+  have hγ' : γ ∈ Set.Icc (0 : ℝ) 1 := ⟨hγ0, hγ1⟩
+  set φ := oneSidedTest T C γ with hφdef
+  have hmR : MeasurableSet {x : ℝ | C < x} := measurableSet_Ioi
+  have hmB : MeasurableSet {x : ℝ | x = C} := by
+    rw [show {x : ℝ | x = C} = {C} from by ext x; simp [eq_comm]]
+    exact measurableSet_singleton C
+  have hReq : (P θ₀) {x | C < T x} = ((P θ₀).map T) {x : ℝ | C < x} := by
+    rw [Measure.map_apply hT hmR]; rfl
+  have hBeq : (P θ₀) {x | T x = C} = ((P θ₀).map T) {x : ℝ | x = C} := by
+    rw [Measure.map_apply hT hmB]; rfl
+  have hsize : power P φ θ₀ = power P ψ θ₀ := by
+    rw [hφdef, power_oneSidedTest_eq hT C γ θ₀, hReq, hBeq]; exact hcrit
+  have hφc : IsCriticalFn φ := isCriticalFn_oneSidedTest hT hγ'
+  -- The risk is affine in the power, with slope `L₁ θ − L₀ θ`.
+  have hrisk : ∀ (χ : 𝓧 → ℝ) (θ : ℝ),
+      testRisk P L₀ L₁ χ θ = power P χ θ * (L₁ θ - L₀ θ) + L₀ θ := by
+    intro χ θ; unfold testRisk; ring
+  refine ⟨C, γ, hγ', fun θ => ?_⟩
+  rw [hrisk φ θ, hrisk ψ θ]
+  rcases lt_trichotomy θ θ₀ with hθ | hθ | hθ
+  · -- Below the boundary: the one-sided test minimizes the rejection probability.
+    have hpow := power_min_oneSided μ P p hp T hT hMLR θ₀ hγ' hα1 hsize θ hθ ψ hψ rfl
+    nlinarith [hloss_lt θ hθ, hpow]
+  · subst hθ; rw [hsize]
+  · -- Above the boundary: the one-sided test is most powerful, and the slope is negative.
+    have hz : ∃ z, C ≤ T z ∧ 0 < p θ₀ z :=
+      exists_pos_density_of_power_pos hp hT (by rw [hsize]; exact hα0)
+    have hMP := isMostPowerful_oneSided hp hT hMLR hθ hγ' hz
+    have hpow : power P ψ θ ≤ power P φ θ := hMP.2.2 ψ hψ hsize.ge
+    nlinarith [hloss_gt θ hθ, hpow]
 
 /-- **The one-parameter exponential family has a monotone likelihood ratio** in its
 natural statistic, provided the parametrization `θ ↦ η(θ)` is strictly increasing. The
