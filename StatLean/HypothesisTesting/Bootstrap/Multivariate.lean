@@ -1335,6 +1335,11 @@ private lemma measurable_deltaMap (hfmeas : Measurable f) (θ : EuclideanSpace �
   unfold deltaMap
   fun_prop
 
+private lemma measurable_meanStatistic {n : ℕ} (hhmeas : ∀ j, Measurable (h j)) :
+    Measurable (meanStatistic h (n := n)) := by
+  unfold meanStatistic
+  fun_prop
+
 /-- The **tail cutoff** `z ↦ min 1 (max 0 (‖z‖ − M + 1))`: a bounded continuous function that
 vanishes on the ball of radius `M − 1` and equals `1` outside the ball of radius `M`. -/
 private noncomputable def tailCutoff (M : ℝ) : EuclideanSpace ℝ (Fin p) →ᵇ ℝ :=
@@ -1569,6 +1574,15 @@ of the vector of coordinate functions and `D` is the matrix of the differential.
 theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
     -- USER-INPUT: the coordinate functions are measurable and square-integrable
     (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P)
+    -- LEAN-ONLY (signature amendment, FORCED): the smooth function is measurable. The conclusion
+    -- is about `Measure.map (fun w => √n • (f (meanStatistic h w) − f θ))`, and in Mathlib
+    -- `Measure.map` returns the junk value `0` when its argument is not `AEMeasurable`. The
+    -- remaining hypotheses constrain `f` only near `θ` (`hf`, `hf_nhds`, `hf_cont`), so without
+    -- this clause `f` may be non-measurable away from `θ`, where the law of `θ̂ₙ` still puts mass:
+    -- take `p = q = 1`, `f y = y` for `y < 1/2` and `f y = 1_V(y)` for `y ≥ 1/2` with
+    -- `V ⊆ [1/2, ∞)` non-Lebesgue-measurable. Then every other hypothesis holds, the left-hand
+    -- side is `∫ φ d0 = 0`, and the right-hand side is nonzero for suitable `φ`.
+    (hfmeas : Measurable f)
     -- USER-INPUT: `f` is differentiable at the parameter with differential `Df`
     (hf : HasFDerivAt f Df (WithLp.toLp 2 fun j => ∫ s, h j s ∂P))
     -- USER-INPUT: the differential does not vanish
@@ -1589,47 +1603,56 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
-  -- TODO (delta method — steps (1) and (4) are now PROVED in this file; (2)-(3) remain).
-  -- Route, in four steps, with the state of each recorded.
-  -- (1) DONE: `map_meanStatistic_eq_meanVecRootLaw` identifies
-  --     `(Measure.pi fun _ : Fin n => P).map (fun w => √n • (meanStatistic h w − θ))` with
-  --     `meanVecRootLaw H n` for `H := P.map (hVec h)`, and `covMatrix_map_hVec` gives
-  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. Hence the PROVEN
-  --     `meanVec_root_tendsto`, at the constant sequence `fun _ => H` (a member of
-  --     `meanVecSeqClass H` by `⟨fun _ _ => inferInstance, fun _ => memLp_id_map_hVec …,
-  --     fun _ => tendsto_const_nhds, …⟩`), gives `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`
-  --     in the bounded-continuous-integral form.
-  -- (2) OPEN: realise the array on one space — `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
-  --     `S i` with law `P` and `Zₙ ω := √n • (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
-  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`), which is what
-  --     `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (present in v4.29.1)
-  --     requires. ALTERNATIVE, avoiding `exists_iid` entirely: `TendstoInDistribution` allows a
-  --     different carrier space per index, so one can stay on `Fin n → 𝓢` with
-  --     `Measure.pi fun _ : Fin n => P` and replace the Slutsky brick by the bounded-Lipschitz
-  --     estimate `|∫ F(Vₙ) − ∫ F(Df Zₙ)| ≤ L ε + 2‖F‖∞ μₙ{‖Rₙ‖ > ε}`, reducing to Lipschitz test
-  --     functions with `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`.
-  -- (3) OPEN: the Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
-  --     probability. Tightness of `{law of Zₙ}` is needed only *eventually* in `n`, so it follows
-  --     from step (1) alone with the test functions `φ_M z := max 0 (min 1 (‖z‖ − M))`
-  --     (`BoundedContinuousFunction.ofNormedAddCommGroup`, as in `NonparametricMean.truncSq`):
-  --     `μₙ{‖Zₙ‖ > M + 1} ≤ ∫ φ_M → ∫ φ_M dG ≤ G{‖z‖ > M}`. On `{‖Zₙ‖ ≤ M}` one has
-  --     `‖Zₙ/√n‖ ≤ M/√n → 0`, so `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` eventually, for every `η > 0`.
-  --     (`hf_nhds`/`hf_cont` are not needed here; they are the reference's extra regularity.)
-  -- (4) DONE: `map_multivariateGaussian_deriv` identifies `(multivariateGaussian 0 covH).map Df`
-  --     with `multivariateGaussian 0 (D * covH * Dᵀ)`.
-  --
-  -- SIGNATURE FINDING (a `LEAN-ONLY` measurability hypothesis on `f` is FORCED, and is not added
-  -- here because the statement is not yet proved). The conclusion is about
-  -- `Measure.map (fun w => √n • (f (meanStatistic h w) − f θ))`, and in Mathlib `Measure.map`
-  -- returns the junk value `0` when its argument is not `AEMeasurable`. The hypotheses constrain
-  -- `f` only on a neighbourhood of `θ` (`hf`, `hf_nhds`, `hf_cont`), so `f` may be an arbitrary —
-  -- in particular non-measurable — function away from `θ`, where the law of `θ̂ₙ` still puts mass:
-  -- take `p = q = 1`, `f y = y` for `y < 1/2` and `f y = 1_V(y)` for `y ≥ 1/2` with `V ⊆ [1/2, ∞)`
-  -- non-Lebesgue-measurable. Then every hypothesis holds, the left-hand side is `∫ φ d0 = 0`, and
-  -- the right-hand side is `∫ φ d(multivariateGaussian 0 (D covH Dᵀ)) ≠ 0` for suitable `φ`. The
-  -- fix is `(hfmeas : Measurable f)`, to be added together with the proof; the same remark applies
-  -- verbatim to the two siblings below.
-  sorry
+  classical
+  -- (1) transport the problem to the mean-vector theory of this file
+  set θ : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 fun j => ∫ s, h j s ∂P with hθdef
+  haveI hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
+  have hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) :=
+    memLp_id_map_hVec hhmeas hh2
+  have hcovEq : covMatrix (P.map (hVec h)) = covH := by
+    ext i j
+    rw [covMatrix_map_hVec hhmeas i j, hcovH i j]
+  have hpsd : covH.PosSemidef := hcovEq ▸ posSemidef_covMatrix hH2
+  have hclass : (fun _ : ℕ => P.map (hVec h)) ∈ meanVecSeqClass (P.map (hVec h)) :=
+    ⟨fun _ _ => inferInstance, fun _ => hH2, fun _ => tendsto_const_nhds,
+      fun _ => tendsto_const_nhds, fun _ _ => tendsto_const_nhds⟩
+  have hνprob : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw (P.map (hVec h)) n) := by
+    intro n
+    haveI : IsProbabilityMeasure (Measure.pi fun _ : Fin n => P.map (hVec h)) := inferInstance
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  have hν : ∀ ψ : EuclideanSpace ℝ (Fin p) →ᵇ ℝ,
+      Tendsto (fun n => ∫ z, ψ z ∂(meanVecRootLaw (P.map (hVec h)) n)) atTop
+        (𝓝 (∫ z, ψ z ∂(multivariateGaussian 0 covH))) := by
+    intro ψ
+    have hres := meanVec_root_tendsto hH2 hclass ψ
+    rwa [hcovEq] at hres
+  -- (4) the Gaussian limit transforms by the differential
+  have hGq : (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH).map Df
+      = multivariateGaussian (0 : EuclideanSpace ℝ (Fin q)) (D * covH * D.transpose) :=
+    map_multivariateGaussian_deriv hpsd hD
+  -- (2)-(3) the delta-method engine at the constant centre `θ`
+  have hmain := tendsto_integral_map_deltaMap (f := f) (Df := Df) (θ := θ)
+    (ν := fun n => meanVecRootLaw (P.map (hVec h)) n)
+    (Gp := multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH) (c := fun _ : ℕ => θ)
+    hfmeas hf hf_nhds hf_cont hνprob inferInstance hν tendsto_const_nhds φ
+  rw [hGq] at hmain
+  refine hmain.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  have hsq : Real.sqrt n ≠ 0 := Real.sqrt_ne_zero'.2 (by exact_mod_cast hn)
+  have hmroot : Measurable fun w : Fin n → 𝓢 => Real.sqrt n • (meanStatistic h w - θ) := by
+    have hms : Measurable (meanStatistic h (n := n)) := measurable_meanStatistic hhmeas
+    fun_prop
+  congr 1
+  rw [← map_meanStatistic_eq_meanVecRootLaw hhmeas hh2 n,
+    Measure.map_map (measurable_deltaMap hfmeas θ n) hmroot]
+  congr 1
+  funext w
+  have hcancel : θ + (Real.sqrt n)⁻¹ • (Real.sqrt n • (meanStatistic h w - θ))
+      = meanStatistic h w := by
+    rw [smul_smul, inv_mul_cancel₀ hsq, one_smul]
+    abel
+  simp only [Function.comp_apply, deltaMap, hcancel]
+
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
 
