@@ -52,7 +52,47 @@ theorem multivariateGaussian_map_const_add
     (S : Matrix ι ι ℝ) (m : EuclideanSpace ℝ ι) :
     (multivariateGaussian (0 : EuclideanSpace ℝ ι) S).map (fun x => m + x)
       = multivariateGaussian m S := by
-  sorry
+  rw [multivariateGaussian, multivariateGaussian, Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext x
+  simp
+
+-- General-index linear pushforward of a multivariate Gaussian: `N(μ,S).map (M·) = N(Mμ, M S Mᴴ)`.
+-- (`AsymptoticStatistics.multivariateGaussian_map_toEuclideanCLM` is stated only for `Fin k`.)
+private lemma map_toEuclideanCLM_multivariateGaussian
+    (M : Matrix ι ι ℝ) (μ : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    (multivariateGaussian μ S).map (Matrix.toEuclideanCLM (𝕜 := ℝ) M)
+      = multivariateGaussian (Matrix.toEuclideanCLM (𝕜 := ℝ) M μ) (M * S * Mᴴ) := by
+  classical
+  have hT : (M * S * Mᴴ).PosSemidef := by
+    have := hS.conjTranspose_mul_mul_same (B := Mᴴ)
+    rwa [Matrix.conjTranspose_conjTranspose] at this
+  have hInt : Integrable (fun x : EuclideanSpace ℝ ι => x) (multivariateGaussian μ S) :=
+    ProbabilityTheory.IsGaussian.integrable_id
+  have hMemLp : MeasureTheory.MemLp (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) 2
+      (multivariateGaussian μ S) := ProbabilityTheory.IsGaussian.memLp_two_id
+  refine IsGaussian.ext ?_ ?_
+  · simp only [id_eq]
+    rw [integral_id_multivariateGaussian, integral_map (by fun_prop) (by fun_prop),
+      ContinuousLinearMap.integral_comp_id_comm hInt, integral_id_multivariateGaussian]
+  · ext u v
+    set_option backward.isDefEq.respectTransparency false in
+    have h_adj : ContinuousLinearMap.adjoint (Matrix.toEuclideanCLM (𝕜 := ℝ) M)
+        = Matrix.toEuclideanCLM (𝕜 := ℝ) Mᴴ := by
+      rw [← ContinuousLinearMap.star_eq_adjoint]
+      exact (map_star (Matrix.toEuclideanCLM (𝕜 := ℝ)) M).symm
+    rw [covarianceBilin_map hMemLp, covarianceBilin_multivariateGaussian hS,
+      covarianceBilin_multivariateGaussian hT, h_adj]
+    simp only [Matrix.ofLp_toEuclideanCLM]
+    have key : ∀ u' v' : ι → ℝ,
+        u' ⬝ᵥ (M * S * Mᴴ).mulVec v' = Mᴴ.mulVec u' ⬝ᵥ S.mulVec (Mᴴ.mulVec v') := by
+      intro u' v'
+      rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec, Matrix.dotProduct_mulVec]
+      congr 1
+      ext i
+      change ∑ j, u' j * M j i = ∑ j, M j i * u' j
+      exact Finset.sum_congr rfl fun j _ => mul_comm _ _
+    exact (key u.ofLp v.ofLp).symm
 
 /-- **Whitening pushforward**: for positive definite `J`,
 `N(0,J).map (J⁻¹·) = N(0, J⁻¹)`. Immediate from
@@ -64,7 +104,15 @@ theorem multivariateGaussian_map_matrix_inv
     (multivariateGaussian (0 : EuclideanSpace ℝ ι) J).map
         (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹)
       = multivariateGaussian (0 : EuclideanSpace ℝ ι) J⁻¹ := by
-  sorry
+  classical
+  have hdet : IsUnit J.det := (Matrix.isUnit_iff_isUnit_det _).mp hJ.isUnit
+  have hherm : J⁻¹.IsHermitian := hJ.isHermitian.inv
+  have hcov : J⁻¹ * J * (J⁻¹)ᴴ = J⁻¹ := by
+    rw [hherm.eq, Matrix.nonsing_inv_mul _ hdet, Matrix.one_mul]
+  have h := map_toEuclideanCLM_multivariateGaussian J⁻¹
+    (0 : EuclideanSpace ℝ ι) hJ.posSemidef
+  rw [hcov, map_zero] at h
+  exact h
 
 /-- **Constant-free Lebesgue density of the centered Gaussian.** For positive definite `S`
 there is a positive finite constant `c` (the normalizer `(2π)^{-d/2} det S^{-1/2}`, left
@@ -93,7 +141,18 @@ theorem multivariateGaussian_eq_withDensity_tilt
           (fun y => ENNReal.ofReal
             (Real.exp (⟪(Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) m, y⟫
               - ⟪m, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) m⟫ / 2))) := by
-  sorry
+  classical
+  set h : EuclideanSpace ℝ ι := (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) m with hh
+  have hSh : (Matrix.toEuclideanCLM (𝕜 := ℝ) S) h = m := by
+    rw [hh, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def, ← map_mul,
+      Matrix.mul_nonsing_inv _ ((Matrix.isUnit_iff_isUnit_det _).mp hS.isUnit), map_one]
+    rfl
+  have hquad : h.ofLp ⬝ᵥ S.mulVec h.ofLp = ⟪m, h⟫ := by
+    rw [← Matrix.inner_toEuclideanCLM, hSh, real_inner_comm]
+  have brick := multivariateGaussian_withDensity_exp_shift hS.posSemidef h
+  rw [hSh] at brick
+  rw [← brick]
+  simp_rw [hquad]
 
 /-- **Mean-uniform density upper bound.** The Gaussian density is bounded by a constant
 independent of the mean: there is `D < ∞` with `N(m,S) A ≤ D · volume A` for every mean `m`
