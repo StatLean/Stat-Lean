@@ -877,4 +877,66 @@ theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤
       simpa using mul_le_mul_of_nonneg_right hb
         (by positivity : (0 : ℝ) ≤ δ * π ^ 2 * ξ ^ 2)
 
+/-! ## Esseen's smoothing inequality at the level of distribution functions -/
+
+/-- **Esseen's smoothing inequality, at the level of distribution functions.**
+
+For probability laws `P` and `Q` on the line whose distribution functions are compared, with
+`Q` having an `A`-Lipschitz distribution function, and for every flank width `δ > 0`,
+
+`|F_P(x) − F_Q(x)| ≤ ∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ · min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + A δ`
+
+uniformly in `x`. Substituting `t = −2πξ` turns the integral into
+`(1/π) ∫ ‖φ_P(t) − φ_Q(t)‖ min(1/|t|, 2/(πδt²)) dt`, which is the classical Esseen bound
+`(1/π) ∫ |φ_P − φ_Q|/|t| dt` together with the extra quadratic decay supplied by the flank.
+
+The route is the one assembled in this file and uses **no Stieltjes-level Lévy inversion**:
+ramps de-smooth the half-line indicator (`abs_measure_Iic_sub_le_of_integral_ramp`), the mass
+that a ramp carries to `−∞` cancels in the difference of two probability laws
+(`abs_integral_ramp_sub_le_of_trapezoid`), and the resulting compactly supported trapezoid is a
+Fourier transform of an integrable function with the classical `1/|ξ|` envelope
+(`exists_fourier_trapezoid`), so `norm_integral_fourier_sub_le` applies to it directly. -/
+theorem abs_measure_Iic_sub_le_charFun {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {δ A : ℝ} (hδ : 0 < δ)
+    -- the comparison distribution function is `A`-Lipschitz
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    -- the weighted characteristic-function difference is integrable
+    (hint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+        * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))))
+    (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal|
+      ≤ (∫ ξ : ℝ, ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) + A * δ := by
+  refine abs_measure_Iic_sub_le_of_trapezoid hδ hQ (fun v u hvu => ?_) x
+  obtain ⟨g, hgint, hgfour, hgnorm⟩ := exists_fourier_trapezoid hδ hvu
+  have hcast : ∀ R : Measure ℝ, IsProbabilityMeasure R →
+      (∫ y : ℝ, 𝓕 g y ∂R) = ((∫ y : ℝ, trapezoid v u δ y ∂R : ℝ) : ℂ) := by
+    intro R _
+    simp_rw [hgfour]
+    exact integral_complex_ofReal
+  have hnormeq : ‖(∫ y : ℝ, 𝓕 g y ∂P) - ∫ y : ℝ, 𝓕 g y ∂Q‖
+      = |(∫ y : ℝ, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y ∂Q| := by
+    rw [hcast P inferInstance, hcast Q inferInstance, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs]
+  have hbound : ∀ ξ : ℝ,
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖
+        ≤ ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) :=
+    fun ξ => mul_le_mul_of_nonneg_left (hgnorm ξ) (norm_nonneg _)
+  have hsm : Measurable fun ξ : ℝ => -(2 * π * ξ) := by fun_prop
+  have hmeas : AEStronglyMeasurable
+      (fun ξ : ℝ => ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖) volume :=
+    (((measurable_charFun.comp hsm).sub
+      (measurable_charFun.comp hsm)).norm.aestronglyMeasurable).mul
+        hgint.aestronglyMeasurable.norm
+  have hLint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖) :=
+    hint.mono' hmeas (Filter.Eventually.of_forall fun ξ => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      exact hbound ξ)
+  rw [← hnormeq]
+  exact (norm_integral_fourier_sub_le hgint).trans (integral_mono hLint hint hbound)
+
 end StatLean.HypothesisTesting
