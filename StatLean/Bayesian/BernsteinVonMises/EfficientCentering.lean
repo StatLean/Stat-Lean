@@ -31,7 +31,7 @@ posterior of `Θ̄` and `N(√n(θ̂ₙ−θ₀), J⁻¹)` to `N(θ̂ₙ, (nJ)�
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal ProbabilityTheory RealInnerProductSpace
+open scoped ENNReal ProbabilityTheory RealInnerProductSpace Matrix
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation)
 open AsymptoticStatistics.AsymptoticRepresentation (productMeasure)
@@ -46,6 +46,100 @@ variable {J : Matrix (Fin k) (Fin k) ℝ}
 variable {π : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure π]
 variable {κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧} [IsMarkovKernel κ]
 variable {r₀ : ℝ} {f : EuclideanSpace ℝ (Fin k) → ℝ}
+
+/-- Translation of a multivariate Gaussian (general mean version of
+`multivariateGaussian_map_const_add`). -/
+private lemma multivariateGaussian_map_add_const (S : Matrix (Fin k) (Fin k) ℝ)
+    (a v : EuclideanSpace ℝ (Fin k)) :
+    (multivariateGaussian a S).map (fun x => v + x) = multivariateGaussian (v + a) S := by
+  rw [← AsymptoticStatistics.multivariateGaussian_map_const_add S a,
+    Measure.map_map (by fun_prop) (by fun_prop),
+    ← AsymptoticStatistics.multivariateGaussian_map_const_add S (v + a)]
+  congr 1
+  funext x
+  simp [Function.comp, add_assoc]
+
+/-- **The local rescaling transports the Gaussians of the two statements**: for `n ≥ 1`,
+`θ ↦ √n(θ − θ₀)` sends `N(m, n⁻¹ S)` to `N(√n(m − θ₀), S)`. -/
+private lemma multivariateGaussian_map_bvmLocalScale {n : ℕ} (hn : 1 ≤ n)
+    (θ₀ m : EuclideanSpace ℝ (Fin k)) {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosSemidef) :
+    (multivariateGaussian m ((n : ℝ)⁻¹ • S)).map (bvmLocalScale θ₀ n)
+      = multivariateGaussian (Real.sqrt n • (m - θ₀)) S := by
+  classical
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hc : Real.sqrt n * Real.sqrt n = (n : ℝ) := Real.mul_self_sqrt hnR.le
+  set c : ℝ := Real.sqrt n with hcdef
+  set A : Matrix (Fin k) (Fin k) ℝ := c • (1 : Matrix (Fin k) (Fin k) ℝ) with hAdef
+  have hSn : ((n : ℝ)⁻¹ • S).PosSemidef := hS.smul (by positivity)
+  have hcov : A * ((n : ℝ)⁻¹ • S) * Aᴴ = S := by
+    rw [hAdef, Matrix.conjTranspose_smul, Matrix.conjTranspose_one, star_trivial,
+      Matrix.smul_mul, Matrix.one_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one,
+      smul_smul, smul_smul]
+    rw [hc, mul_inv_cancel₀ hnR.ne', one_smul]
+  have hAx : ∀ x : EuclideanSpace ℝ (Fin k),
+      Matrix.toEuclideanCLM (𝕜 := ℝ) A x = c • x := by
+    intro x
+    rw [hAdef, map_smul, map_one]
+    rfl
+  have hcomp : bvmLocalScale θ₀ n
+      = (fun y : EuclideanSpace ℝ (Fin k) => (-(c • θ₀)) + y) ∘
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) A) := by
+    funext θ
+    simp only [Function.comp_apply, hAx, bvmLocalScale, ← hcdef]
+    rw [smul_sub]
+    abel
+  rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+    ProbabilityTheory.multivariateGaussian_map_toEuclideanCLM A m hSn, hcov, hAx,
+    multivariateGaussian_map_add_const]
+  congr 1
+  rw [smul_sub]
+  abel
+
+/-- **Quantitative mean-shift continuity**: for a fixed positive-definite covariance and a
+tolerance `t`, Gaussians whose means are within `ε` are within `t` in total variation. This
+converts `hest_eff` (an `ε`-`δ` statement about the centerings) into a statement about the
+Gaussians. -/
+private lemma exists_eps_tvDist_multivariateGaussian_lt
+    {S : Matrix (Fin k) (Fin k) ℝ} (hS : S.PosDef) {t : ℝ≥0∞} (ht : 0 < t) (htop : t ≠ ∞) :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ a b : EuclideanSpace ℝ (Fin k), ‖a - b‖ < ε →
+      tvDist (multivariateGaussian a S) (multivariateGaussian b S) < t := by
+  set s : ℝ := t.toReal with hsdef
+  have hs : 0 < s := ENNReal.toReal_pos ht.ne' htop
+  have hst : ENNReal.ofReal s = t := ENNReal.ofReal_toReal htop
+  set T := Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹ with hTdef
+  set L : ℝ := ‖T‖ + 1 with hLdef
+  have hL : 0 < L := by positivity
+  have hsqrtL : 0 < Real.sqrt L := Real.sqrt_pos.2 hL
+  refine ⟨s / Real.sqrt L, by positivity, fun a b hd => ?_⟩
+  have hq : ⟪a - b, T (a - b)⟫ ≤ L * ‖a - b‖ ^ 2 := by
+    calc ⟪a - b, T (a - b)⟫ ≤ ‖a - b‖ * ‖T (a - b)‖ := real_inner_le_norm _ _
+      _ ≤ ‖a - b‖ * (‖T‖ * ‖a - b‖) := by
+          exact mul_le_mul_of_nonneg_left (T.le_opNorm _) (norm_nonneg _)
+      _ ≤ L * ‖a - b‖ ^ 2 := by
+          rw [hLdef]; nlinarith [norm_nonneg (a - b), sq_nonneg ‖a - b‖]
+  have hd2 : ‖a - b‖ ^ 2 ≤ (s / Real.sqrt L) ^ 2 := by
+    have := mul_self_le_mul_self (norm_nonneg (a - b)) hd.le
+    nlinarith
+  have hLe : L * (s / Real.sqrt L) ^ 2 = s ^ 2 := by
+    rw [div_pow, Real.sq_sqrt hL.le]
+    field_simp
+  have hqs : ⟪a - b, T (a - b)⟫ ≤ s ^ 2 := by
+    refine le_trans hq ?_
+    rw [← hLe]
+    exact mul_le_mul_of_nonneg_left hd2 hL.le
+  refine lt_of_le_of_lt (tvDist_multivariateGaussian_le hS a b) ?_
+  have hstep : (ENNReal.ofReal (⟪a - b, T (a - b)⟫ / 4)) ^ (1 / 2 : ℝ)
+      ≤ (ENNReal.ofReal (s ^ 2 / 4)) ^ (1 / 2 : ℝ) := by
+    refine ENNReal.rpow_le_rpow ?_ (by norm_num)
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  refine lt_of_le_of_lt hstep ?_
+  rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num), ← hst]
+  refine (ENNReal.ofReal_lt_ofReal_iff hs).2 ?_
+  have hhalf : (s ^ 2 / 4 : ℝ) ^ (1 / 2 : ℝ) = s / 2 := by
+    rw [← Real.sqrt_eq_rpow, show (s ^ 2 / 4 : ℝ) = (s / 2) ^ 2 by ring,
+      Real.sqrt_sq (by positivity)]
+  rw [hhalf]
+  linarith
 
 /-- **Efficient centering** (vdV p. 144). Under the hypotheses of Theorem 10.1, if the
 estimator sequence `θ̂ₙ` is asymptotically efficient — i.e.
@@ -87,6 +181,107 @@ theorem bernstein_von_mises_efficient_centering
           {ω | δ ≤ tvDist (((iidKernel κ n)†π) ω)
             (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹))})
         atTop (𝓝 0) := by
-  sorry
+  classical
+  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      IsProbabilityMeasure (productMeasure M μ θ n) :=
+    fun θ n =>
+      AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+        M μ hPDF θ n
+  have hJinv : (J⁻¹).PosDef := hJ_pd.inv
+  have hBvM := bernstein_von_mises hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ
+  -- Real-valued convergence in probability upgrades to the `ℝ≥0∞`-valued form.
+  have hreal : ∀ (S : ∀ n : ℕ, Set (Fin n → 𝓧)),
+      Tendsto (fun n => (productMeasure M μ θ₀ n).real (S n)) atTop (𝓝 0) →
+      Tendsto (fun n => productMeasure M μ θ₀ n (S n)) atTop (𝓝 0) := by
+    intro S hS
+    rw [ENNReal.tendsto_nhds_zero]
+    intro t htpos
+    have ht1 : (0 : ℝ≥0∞) < min t 1 := lt_min htpos zero_lt_one
+    have ht1top : min t 1 ≠ ∞ := ne_top_of_le_ne_top (by norm_num) (min_le_right _ _)
+    have hu : 0 < (min t 1).toReal := ENNReal.toReal_pos ht1.ne' ht1top
+    filter_upwards [hS.eventually_lt_const hu] with n hn
+    refine le_trans (le_trans (le_of_eq ?_) (ENNReal.ofReal_le_ofReal hn.le)) ?_
+    · exact (ENNReal.ofReal_toReal (measure_ne_top _ _)).symm
+    · rw [ENNReal.ofReal_toReal ht1top]
+      exact min_le_left _ _
+  intro δ hδ
+  set δ₁ : ℝ≥0∞ := min δ 1 with hδ₁def
+  have hδ₁pos : 0 < δ₁ := lt_min hδ zero_lt_one
+  have hδ₁top : δ₁ ≠ ∞ := ne_top_of_le_ne_top (by norm_num) (min_le_right _ _)
+  have hhalf : (0 : ℝ≥0∞) < δ₁ / 2 := ENNReal.half_pos hδ₁pos.ne'
+  obtain ⟨ε, hεpos, hεlt⟩ := exists_eps_tvDist_multivariateGaussian_lt hJinv hhalf
+    (by simpa using ENNReal.div_ne_top hδ₁top (by norm_num))
+  rw [ENNReal.tendsto_nhds_zero]
+  intro η hη
+  have hη2 : (0 : ℝ≥0∞) < η / 2 := ENNReal.half_pos hη.ne'
+  have hA : ∀ᶠ n : ℕ in atTop, productMeasure M μ θ₀ n
+      {ω | δ₁ / 2 ≤ bvmTV κ π θ₀ J sc n ω} ≤ η / 2 := by
+    have h := hBvM (δ₁ / 2) hhalf
+    rw [ENNReal.tendsto_nhds_zero] at h
+    exact h _ hη2
+  have hB : ∀ᶠ n : ℕ in atTop, productMeasure M μ θ₀ n
+      {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖} ≤ η / 2 := by
+    have h := hreal _ (hest_eff ε hεpos)
+    rw [ENNReal.tendsto_nhds_zero] at h
+    exact h _ hη2
+  filter_upwards [hA, hB, eventually_ge_atTop 1] with n hAn hBn hn
+  -- On the local scale the two total-variation distances coincide.
+  have hemb : MeasurableEmbedding (bvmLocalScale θ₀ n) :=
+    MeasurableEquiv.measurableEmbedding
+      { toFun := bvmLocalScale θ₀ n
+        invFun := bvmLocalUnscale θ₀ n
+        left_inv := bvmLocalUnscale_bvmLocalScale θ₀ hn
+        right_inv := bvmLocalScale_bvmLocalUnscale θ₀ hn
+        measurable_toFun := measurable_bvmLocalScale θ₀ n
+        measurable_invFun := measurable_bvmLocalUnscale θ₀ n }
+  have hrescale : ∀ ω : Fin n → 𝓧,
+      tvDist (((iidKernel κ n)†π) ω) (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹))
+        = tvDist (bvmLocalPosterior κ π θ₀ n ω)
+            (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹) := by
+    intro ω
+    rw [← tvDist_map_measurableEmbedding _ _ hemb,
+      multivariateGaussian_map_bvmLocalScale hn θ₀ (est n ω) hJinv.posSemidef,
+      bvmLocalPosterior, Kernel.map_apply _ (measurable_bvmLocalScale θ₀ n)]
+  -- The deviation event is contained in the union of the two controlled events.
+  have hincl : {ω : Fin n → 𝓧 | δ ≤ tvDist (((iidKernel κ n)†π) ω)
+        (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹))}
+      ⊆ {ω | δ₁ / 2 ≤ bvmTV κ π θ₀ J sc n ω}
+        ∪ {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖} := by
+    intro ω hω
+    by_contra hcon
+    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have hdiff : ‖bvmEffScore J sc n ω - Real.sqrt n • (est n ω - θ₀)‖ < ε := by
+      rw [← norm_neg, neg_sub]
+      exact h2
+    have hG : tvDist (bvmGaussian J sc n ω)
+        (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹) < δ₁ / 2 :=
+      hεlt _ _ hdiff
+    haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+      unfold bvmGaussian; infer_instance
+    have htri : tvDist (bvmLocalPosterior κ π θ₀ n ω)
+        (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹)
+        ≤ bvmTV κ π θ₀ J sc n ω + tvDist (bvmGaussian J sc n ω)
+            (multivariateGaussian (Real.sqrt n • (est n ω - θ₀)) J⁻¹) :=
+      tvDist_triangle _ _ _
+    have hlt : tvDist (((iidKernel κ n)†π) ω)
+        (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹)) < δ₁ := by
+      rw [hrescale ω]
+      refine lt_of_le_of_lt htri ?_
+      calc _ < δ₁ / 2 + δ₁ / 2 := ENNReal.add_lt_add h1 hG
+        _ = δ₁ := ENNReal.add_halves δ₁
+    exact absurd hω (not_le.2 (lt_of_lt_of_le hlt (min_le_left _ _)))
+  calc productMeasure M μ θ₀ n {ω | δ ≤ tvDist (((iidKernel κ n)†π) ω)
+        (multivariateGaussian (est n ω) ((n : ℝ)⁻¹ • J⁻¹))}
+      ≤ productMeasure M μ θ₀ n
+          ({ω | δ₁ / 2 ≤ bvmTV κ π θ₀ J sc n ω}
+            ∪ {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖}) :=
+        measure_mono hincl
+    _ ≤ productMeasure M μ θ₀ n {ω | δ₁ / 2 ≤ bvmTV κ π θ₀ J sc n ω}
+          + productMeasure M μ θ₀ n
+            {ω | ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - bvmEffScore J sc n ω‖} :=
+        measure_union_le _ _
+    _ ≤ η / 2 + η / 2 := by gcongr
+    _ = η := ENNReal.add_halves η
 
 end StatLean.Bayesian
