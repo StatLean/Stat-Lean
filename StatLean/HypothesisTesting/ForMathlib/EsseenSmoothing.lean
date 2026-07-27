@@ -385,6 +385,42 @@ private lemma fourier_gTent {w : ℝ} (hw : 0 < w) (m y : ℝ) :
           rw [Real.fourier_real_eq_integral_exp_smul]
           exact integral_congr_ae (Filter.Eventually.of_forall fun η => rfl)
 
+/-! ## The trapezoid as a difference of two dilated tents -/
+
+/-- Rescaling a clipped ramp: for `δ > 0`, `min 1 (max 0 (X/δ)) = δ⁻¹ · min δ (max 0 X)`. -/
+private lemma min_one_max_zero_div {δ : ℝ} (hδ : 0 < δ) (X : ℝ) :
+    min 1 (max 0 (X / δ)) = (1 / δ) * min δ (max 0 X) := by
+  have hpos : (0 : ℝ) ≤ 1 / δ := by positivity
+  rw [mul_min_of_nonneg _ _ hpos, mul_max_of_nonneg _ _ hpos]
+  simp [div_eq_mul_inv, mul_comm, mul_inv_cancel₀ (ne_of_gt hδ)]
+
+/-- The piecewise-linear core identity behind `trapezoid_eq_tent_combination`, with the
+translation `s = y − m` already carried out and the flank width `δ` scaled away. -/
+private lemma trapezoid_core (w δ s : ℝ) (hw : 0 ≤ w) (hδ : 0 < δ) :
+    min δ (max 0 (w + δ - s)) - min δ (max 0 (-w - s))
+      = max 0 (w + δ - |s|) - max 0 (w - |s|) := by
+  rcases abs_cases s with ⟨hs, _⟩ | ⟨hs, _⟩ <;> rw [hs] <;>
+    simp only [max_def, min_def] <;> split_ifs <;> linarith
+
+/-- A nonnegative multiple of a dilated tent, in clipped form:
+`(w/δ) · Λ(t/w) = δ⁻¹ · max 0 (w − |t|)`, valid also at the degenerate width `w = 0`. -/
+private lemma smul_tent_eq_max {w δ : ℝ} (hw : 0 ≤ w) (hδ : 0 < δ) (t : ℝ) :
+    (w / δ) * tent (t / w) = (1 / δ) * max 0 (w - |t|) := by
+  rcases hw.lt_or_eq with hw' | hw'
+  · have hne : w ≠ 0 := ne_of_gt hw'
+    have habs : |t / w| = |t| / w := by rw [abs_div, abs_of_pos hw']
+    have hstep : tent (t / w) = max 0 ((w - |t|) / w) := by
+      rw [tent, habs]
+      congr 1
+      field_simp
+    rw [hstep, mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ w / δ),
+      mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ 1 / δ)]
+    congr 1
+    · ring
+    · field_simp
+  · subst hw'
+    simp [max_eq_left (by simpa using abs_nonneg t : (0 : ℝ) - |t| ≤ 0)]
+
 /-! ## The smoothing (Parseval) identity against a finite measure -/
 
 /-- **Parseval's identity against a finite measure.** For every integrable `g : ℝ → ℂ`,
@@ -681,5 +717,25 @@ theorem abs_measure_Iic_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMe
     |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ :=
   abs_measure_Iic_sub_le_of_integral_ramp hδ hQ
     (fun u => abs_integral_ramp_sub_le_of_trapezoid hδ fun v hv => hE v u hv) x
+
+/-- **The trapezoid is a difference of two dilated tents.**
+
+With `m = (v + u + δ)/2` the centre, `w₁ = (u − v + δ)/2` the outer half-width and
+`w₂ = (u − v − δ)/2` the inner half-width, the trapezoid `R_{u,δ} − R_{v,δ}` equals
+`(w₁/δ) Λ((· − m)/w₁) − (w₂/δ) Λ((· − m)/w₂)`. Both tents are centred at `m`, so the Fourier
+transforms of the two pieces differ only by a dilation — this is what makes the modulus of the
+transform of the trapezoid computable in closed form. -/
+private lemma trapezoid_eq_tent_combination {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤ u) (y : ℝ) :
+    trapezoid v u δ y
+      = ((u - v + δ) / 2 / δ) * tent ((y - (v + u + δ) / 2) / ((u - v + δ) / 2))
+        - ((u - v - δ) / 2 / δ) * tent ((y - (v + u + δ) / 2) / ((u - v - δ) / 2)) := by
+  have hw2 : (0 : ℝ) ≤ (u - v - δ) / 2 := by linarith
+  have hw1 : (u - v + δ) / 2 = (u - v - δ) / 2 + δ := by ring
+  have hs1 : u + δ - y = (u - v - δ) / 2 + δ - (y - (v + u + δ) / 2) := by ring
+  have hs2 : v + δ - y = -((u - v - δ) / 2) - (y - (v + u + δ) / 2) := by ring
+  rw [trapezoid, ramp, ramp, hs1, hs2, min_one_max_zero_div hδ, min_one_max_zero_div hδ,
+    ← mul_sub, trapezoid_core _ _ _ hw2 hδ, hw1,
+    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0:ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
+  ring
 
 end StatLean.HypothesisTesting
