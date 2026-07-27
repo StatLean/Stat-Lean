@@ -119,6 +119,75 @@ noncomputable def bvmGaussDens (J : Matrix (Fin k) (Fin k) ℝ)
   ENNReal.ofReal (Real.exp (⟪h, scoreSum sc n ω⟫
     - (1 / 2 : ℝ) * ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫))
 
+-- The unnormalized Gaussian density is measurable in the local parameter.
+private lemma measurable_bvmGaussDens (J : Matrix (Fin k) (Fin k) ℝ)
+    (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (n : ℕ) (ω : Fin n → 𝓧) :
+    Measurable fun h : EuclideanSpace ℝ (Fin k) => bvmGaussDens J sc n h ω := by
+  have hcont : Continuous fun h : EuclideanSpace ℝ (Fin k) =>
+      (⟪h, scoreSum sc n ω⟫ - (1 / 2 : ℝ) * ⟪h, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) h⟫) := by
+    fun_prop
+  exact ENNReal.measurable_ofReal.comp (Real.continuous_exp.comp hcont).measurable
+
+-- A positive finite scalar cancels between the two `cond` factors.
+private lemma ennreal_smul_cond_ratio {d X Y : ℝ≥0∞} (hd : d ≠ 0) (hd' : d ≠ ∞) :
+    (d * X)⁻¹ * (d * Y) = Y / X := by
+  rw [ENNReal.mul_inv (Or.inl hd) (Or.inl hd'), div_eq_mul_inv,
+    show d⁻¹ * X⁻¹ * (d * Y) = (d⁻¹ * d) * (Y * X⁻¹) from by ring,
+    ENNReal.inv_mul_cancel hd hd', one_mul]
+
+/-- The random Gaussian `N(Δₙ, J⁻¹)` is a positive finite multiple of the Lebesgue measure
+with density `bvmGaussDens`: the normalizer and the mean-dependent constant of the tilt are
+absorbed into the scalar, which then cancels in every conditional ratio. -/
+private lemma exists_bvmGaussian_eq_smul_withDensity (hJ_pd : J.PosDef) (n : ℕ)
+    (ω : Fin n → 𝓧) :
+    ∃ d : ℝ≥0∞, 0 < d ∧ d ≠ ∞ ∧
+      bvmGaussian J sc n ω
+        = d • volume.withDensity fun h => bvmGaussDens J sc n h ω := by
+  classical
+  have hJunit : IsUnit J.det := (Matrix.isUnit_iff_isUnit_det _).mp hJ_pd.isUnit
+  have hS : (J⁻¹).PosDef := hJ_pd.inv
+  have hSS : (J⁻¹)⁻¹ = J := Matrix.nonsing_inv_nonsing_inv _ hJunit
+  -- `J Δₙ = scoreSum`, since `Δₙ = J⁻¹ scoreSum`
+  have hJm : (Matrix.toEuclideanCLM (𝕜 := ℝ) J) (bvmEffScore J sc n ω) = scoreSum sc n ω := by
+    rw [bvmEffScore, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
+      ← map_mul, Matrix.mul_nonsing_inv _ hJunit, map_one]
+    rfl
+  obtain ⟨c, hcpos, hctop, hc⟩ := AsymptoticStatistics.multivariateGaussian_eq_smul_withDensity hS
+  have htilt := AsymptoticStatistics.multivariateGaussian_eq_withDensity_tilt hS (bvmEffScore J sc n ω)
+  rw [hSS] at hc htilt
+  rw [hJm] at htilt
+  set a : ℝ := ⟪bvmEffScore J sc n ω, scoreSum sc n ω⟫ with ha
+  have hD0meas : Measurable fun x : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) x⟫ / 2)) := by
+    have : Continuous fun x : EuclideanSpace ℝ (Fin k) =>
+        (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) x⟫ / 2) := by fun_prop
+    exact ENNReal.measurable_ofReal.comp (Real.continuous_exp.comp this).measurable
+  have hD1meas : Measurable fun y : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (Real.exp (⟪scoreSum sc n ω, y⟫ - a / 2)) := by
+    have : Continuous fun y : EuclideanSpace ℝ (Fin k) =>
+        (⟪scoreSum sc n ω, y⟫ - a / 2) := by fun_prop
+    exact ENNReal.measurable_ofReal.comp (Real.continuous_exp.comp this).measurable
+  have hGmeas := measurable_bvmGaussDens J sc n ω
+  have hprod : ((fun x : EuclideanSpace ℝ (Fin k) =>
+        ENNReal.ofReal (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) x⟫ / 2)))
+      * fun y : EuclideanSpace ℝ (Fin k) =>
+        ENNReal.ofReal (Real.exp (⟪scoreSum sc n ω, y⟫ - a / 2)))
+      = ENNReal.ofReal (Real.exp (-a / 2)) • fun x => bvmGaussDens J sc n x ω := by
+    funext x
+    have hq : ⟪x, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) x))⟫
+        = ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) J) x⟫ := rfl
+    simp only [Pi.mul_apply, Pi.smul_apply, smul_eq_mul, bvmGaussDens]
+    rw [← ENNReal.ofReal_mul (Real.exp_nonneg _), ← ENNReal.ofReal_mul (Real.exp_nonneg _),
+      ← Real.exp_add, ← Real.exp_add]
+    congr 1
+    rw [hq, real_inner_comm (scoreSum sc n ω) x]
+    ring
+  refine ⟨c * ENNReal.ofReal (Real.exp (-a / 2)), ?_, ?_, ?_⟩
+  · exact ENNReal.mul_pos hcpos.ne' (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
+  · exact ENNReal.mul_ne_top hctop ENNReal.ofReal_ne_top
+  · rw [bvmGaussian, htilt, hc, withDensity_smul_measure,
+      ← withDensity_mul _ hD0meas hD1meas, hprod, withDensity_smul _ hGmeas, smul_smul]
+
 /-- **The conditioned Gaussian as a density ratio**: for positive definite `J`,
 `(N(Δₙ, J⁻¹))[|C] A = (∫_{A∩C} bvmGaussDens dλ) / (∫_C bvmGaussDens dλ)`. -/
 theorem cond_bvmGaussian_apply
@@ -130,7 +199,11 @@ theorem cond_bvmGaussian_apply
     ((bvmGaussian J sc n ω)[|C]) A
       = (∫⁻ h in A ∩ C, bvmGaussDens J sc n h ω ∂volume)
           / ∫⁻ h in C, bvmGaussDens J sc n h ω ∂volume := by
-  sorry
+  obtain ⟨d, hdpos, hdtop, hd⟩ := exists_bvmGaussian_eq_smul_withDensity (sc := sc) hJ_pd n ω
+  have hGmeas := measurable_bvmGaussDens J sc n ω
+  rw [ProbabilityTheory.cond_apply hC, hd, Measure.smul_apply, Measure.smul_apply,
+    smul_eq_mul, smul_eq_mul, withDensity_apply _ hC, withDensity_apply _ (hC.inter hA),
+    Set.inter_comm C A, ennreal_smul_cond_ratio hdpos.ne' hdtop]
 
 /-- **The conditioned local posterior as a `bvmNumer` ratio** (predictive-a.e.): once the
 rescaled ball `C/√n + θ₀` lies inside the prior's absolute-continuity ball
