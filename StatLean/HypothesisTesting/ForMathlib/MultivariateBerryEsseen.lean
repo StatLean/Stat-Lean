@@ -898,6 +898,71 @@ private lemma exists_smoothed_radial_indicator :
       rw [hzero, norm_zero]
       positivity
 
+/-! #### Gaussian stability of the normalized sum
+
+The right-hand endpoint of the Lindeberg telescope is the Gaussian law itself: replacing all
+`n` summands by Gaussians and normalizing by `√n` reproduces `N(0, I_k)` exactly. This is
+proved by characteristic functions — the `n`-fold product measure factorizes the integral
+(`integral_fintype_prod_eq_prod`) and `charFun_stdGaussian` closes the computation. -/
+
+/-- The characteristic function of the law of `c • ∑ᵢ yᵢ` under an `n`-fold product measure is
+the `n`-th power of the characteristic function at `c • t`. -/
+private lemma charFun_map_const_smul_sum {k n : ℕ}
+    (ν : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure ν] (c : ℝ)
+    (t : EuclideanSpace ℝ (Fin k)) :
+    charFun ((Measure.pi fun _ : Fin n => ν).map fun y => c • ∑ i, y i) t
+      = charFun ν (c • t) ^ n := by
+  classical
+  rw [charFun_apply, integral_map (by fun_prop) (by fun_prop)]
+  have hinner : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
+      ⟪c • ∑ i, y i, t⟫_ℝ = ∑ i, ⟪y i, c • t⟫_ℝ := by
+    intro y
+    rw [real_inner_smul_left, sum_inner, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => (real_inner_smul_right _ _ _).symm
+  have hfac : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
+      Complex.exp ((⟪c • ∑ i, y i, t⟫_ℝ : ℂ) * Complex.I)
+        = ∏ i, Complex.exp ((⟪y i, c • t⟫_ℝ : ℂ) * Complex.I) := by
+    intro y
+    rw [hinner y]
+    push_cast
+    rw [Finset.sum_mul, Complex.exp_sum]
+  simp_rw [hfac]
+  refine Eq.trans (integral_fintype_prod_eq_prod (μ := fun _ : Fin n => ν)
+    (fun (_ : Fin n) (x : EuclideanSpace ℝ (Fin k)) =>
+      Complex.exp ((⟪x, c • t⟫_ℝ : ℂ) * Complex.I))) ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, charFun_apply]
+  rfl
+
+/-- **Gaussian stability of the normalized sum.** For `n ≥ 1`, pushing the `n`-fold product of
+`N(0, I_k)` forward under `y ↦ n^{-1/2} ∑ᵢ yᵢ` gives back `N(0, I_k)`. -/
+private lemma map_normalized_sum_stdGaussian {k n : ℕ} (hn : 0 < n) :
+    ((Measure.pi fun _ : Fin n => stdGaussian (EuclideanSpace ℝ (Fin k))).map
+        fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
+  have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hspos : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnpos
+  haveI : IsProbabilityMeasure ((Measure.pi fun _ : Fin n =>
+      stdGaussian (EuclideanSpace ℝ (Fin k))).map
+        fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  refine Measure.ext_of_charFun ?_
+  funext t
+  rw [charFun_map_const_smul_sum, charFun_stdGaussian, charFun_stdGaussian,
+    ← Complex.exp_nat_mul]
+  congr 1
+  have hnorm : ‖(Real.sqrt (n : ℝ))⁻¹ • t‖ = ‖t‖ / Real.sqrt (n : ℝ) := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.mpr hspos)]
+    ring
+  have hsq : ((Real.sqrt (n : ℝ) : ℝ) : ℂ) ^ 2 = (n : ℂ) := by
+    rw [← Complex.ofReal_pow, Real.sq_sqrt hnpos.le]
+    norm_cast
+  have hnC : (n : ℂ) ≠ 0 := by
+    exact_mod_cast (Nat.cast_ne_zero (R := ℂ)).mpr hn.ne'
+  rw [hnorm]
+  push_cast
+  rw [div_pow, hsq]
+  field_simp
+
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
 For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
 identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
