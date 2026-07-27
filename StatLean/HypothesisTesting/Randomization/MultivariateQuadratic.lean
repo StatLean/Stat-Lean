@@ -338,6 +338,53 @@ private lemma weakConverges_randPairLaw_quadFormInv [NeZero p]
   rw [hEq]
   exact hmapped
 
+/-- **The uncentred second-moment matrix is sign-invariant.** Replacing `Xᵢ` by `−Xᵢ`
+leaves `Σ̃ₙ` unchanged, since each summand is a product of two coordinates of the *same*
+observation. -/
+private lemma modifiedCovMatrix_signChange {n : ℕ} (ε : Fin n → ℤˣ)
+    (x : Fin n → EuclideanSpace ℝ (Fin p)) :
+    modifiedCovMatrix (ε • x) = modifiedCovMatrix x := by
+  ext j k
+  simp only [modifiedCovMatrix, Matrix.of_apply]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have h : (ε • x) i = ((ε i : ℤ) : ℝ) • x i := signChange_smul_apply_vec ε x i
+  have hsq : (((ε i : ℤ) : ℝ)) * (((ε i : ℤ) : ℝ)) = 1 := by
+    rcases Int.units_eq_one_or (ε i) with h1 | h1 <;> rw [h1] <;> norm_num
+  rw [h]
+  simp only [WithLp.ofLp_smul, Pi.smul_apply, smul_eq_mul]
+  linear_combination (x i).ofLp j * (x i).ofLp k * hsq
+
+/-- Scaling inside the quadratic form. -/
+private lemma quadFormInv_smul (M : Matrix (Fin p) (Fin p) ℝ) (c : ℝ)
+    (v : EuclideanSpace ℝ (Fin p)) :
+    ((c • v : EuclideanSpace ℝ (Fin p)).ofLp) ⬝ᵥ M⁻¹.mulVec ((c • v : EuclideanSpace ℝ (Fin p)).ofLp)
+      = c ^ 2 * (v.ofLp ⬝ᵥ M⁻¹.mulVec v.ofLp) := by
+  have hof : ((c • v : EuclideanSpace ℝ (Fin p)).ofLp) = c • v.ofLp := rfl
+  rw [hof, Matrix.mulVec_smul]
+  simp only [dotProduct, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => by ring
+
+/-- **The modified statistic recomputed at a sign pattern.** Since `Σ̃ₙ` is sign-invariant,
+only the normalized sum `Vₙ = n^{-1/2} ∑ᵢ εᵢXᵢ` moves along the group, and
+`T̃ₙ(ε · x) = Vₙ(ε · x)ᵀ Σ̃ₙ(x)⁻¹ Vₙ(ε · x)`. This is the algebraic reduction that lets the
+vector building block carry the whole randomization analysis. -/
+private lemma modifiedTSq_signChange {n : ℕ} (hn : 0 < n) (ε : Fin n → ℤˣ)
+    (x : Fin n → EuclideanSpace ℝ (Fin p)) :
+    modifiedTSq (ε • x)
+      = ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ
+          (modifiedCovMatrix x)⁻¹.mulVec
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hne : (n : ℝ) ≠ 0 := hnR.ne'
+  have hsq : (Real.sqrt (n : ℝ))⁻¹ ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [← Real.sqrt_inv, Real.sq_sqrt (by positivity)]
+  have hmean : (sampleMeanVec (ε • x) : EuclideanSpace ℝ (Fin p))
+      = ((n : ℝ))⁻¹ • ∑ i, (ε • x) i := rfl
+  rw [modifiedTSq, modifiedCovMatrix_signChange ε x, hmean,
+    quadFormInv_smul _ ((n : ℝ))⁻¹, quadFormInv_smul _ ((Real.sqrt (n : ℝ))⁻¹), hsq]
+  field_simp
+
 /-! ### Quadratic-form limits -/
 
 /-- **Sign-change randomization for the modified `T²` statistic.** The randomized pair
