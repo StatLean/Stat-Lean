@@ -5,28 +5,46 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
-# Foundations for Esseen's smoothing inequality: the sinc integral
+# Foundations for Esseen's smoothing inequality: the sinc integral and the Fejér pair
 
 Esseen's smoothing inequality — the analytic bridge from a characteristic-function estimate to
 a Kolmogorov-distance estimate — is classically proved by convolving the distribution-function
-difference with the **Fejér kernel**, whose Fourier transform is compactly supported. The very
-first quantitative fact one needs is the normalisation of that kernel, and it reduces to the
-**sinc integral**
+difference with the **Fejér kernel**, whose Fourier transform is compactly supported. Two
+quantitative facts underlie that route: the normalisation `∫ K_T = 1`, which reduces to the
+**sinc integral** `∫_ℝ (sin x / x)² dx = π`, and the **Fejér/triangle Fourier pair**, whose
+compact support is what truncates the inversion integral.
 
-`∫_ℝ (sin x / x)² dx = π`.
+Neither the sinc integral nor the Dirichlet integral `∫ sin x/x = π/2` is in Mathlib v4.29.1,
+and `ForMathlib/BerryEsseen.lean` originally recorded both facts as hard obstructions. They are
+**not** obstructions: this file proves them, by Fourier inversion applied to the triangle
+function rather than by contour integration.
 
-Mathlib v4.29.1 has neither this nor the Dirichlet integral `∫ sin x / x = π/2`. This file
-supplies it, by Fourier inversion rather than by contour integration:
+## Contents
 
-* `tent` — the triangle function `Λ(x) = max 0 (1 − |x|)`;
-* `fourier_tent` — its Fourier transform is `(sin(πξ)/(πξ))²` (for `ξ ≠ 0`), computed by an
-  explicit complex antiderivative on each of the two linear pieces;
-* `integrable_sinc_sq` — `(sin x / x)²` is integrable, by the bound `min(1, x⁻²) ≤ 2/(1 + x²)`;
-* `integral_sinc_sq` — `∫ (sin x / x)² = π`, obtained by evaluating the Fourier inversion
-  formula for `Λ` at the origin: `∫ 𝓕 Λ = 𝓕⁻ (𝓕 Λ) 0 = Λ 0 = 1`.
+* `tent` — the triangle function `Λ(x) = max 0 (1 − |x|)`, and its elementary properties;
+* `fourier_tentC` — `𝓕 Λ (ξ) = (sin(πξ)/(πξ))²` for `ξ ≠ 0`, computed from an explicit complex
+  antiderivative on each of the two linear pieces of `Λ`;
+* `integrable_sin_div_sq` — `(sin x/x)²` is integrable, via `sin²x ≤ min(1, x²)` and hence
+  `(sin x/x)² ≤ 2/(1 + x²)`;
+* `integral_sin_div_sq` — `∫ (sin x/x)² dx = π`, obtained by evaluating Fourier inversion for
+  `Λ` at the origin: `∫ 𝓕 Λ = 𝓕⁻ (𝓕 Λ) 0 = Λ 0 = 1`;
+* `integral_fejerKernel` — `∫ K_T = 1` for `T > 0`, the Fejér normalisation;
+* `fourier_sqSincC` — `𝓕 ((sin(πξ)/(πξ))²) = Λ`, the dual half of the Fejér/triangle pair: the
+  transform is **compactly supported**, in `[-1, 1]`;
+* `integral_fourier_measure` — Parseval against a finite measure,
+  `∫ 𝓕 g dP = ∫ φ_P(−2πξ) g(ξ) dξ`;
+* `norm_integral_fourier_sub_le` — the resulting **smoothing inequality in test-function form**:
+  `‖∫ 𝓕 g dP − ∫ 𝓕 g dQ‖ ≤ ∫ ‖φ_P − φ_Q‖ ‖g‖`, which for `g` supported in `[−T/2π, T/2π]`
+  uses the characteristic functions only on the window `|t| ≤ T`.
 
-Downstream this gives the total mass of the Fejér kernel, `∫ K_T = 1`, which is what Esseen's
-smoothing argument consumes.
+## What is still missing
+
+The **CDF-level** (Stieltjes) Lévy/Esseen inversion — the identity expressing the smoothed
+difference `(F − G) ∗ K_T` as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]` — is not here.
+Mathlib's inversion theorem is for `L¹` functions; the version for a difference of distribution
+functions has to be built by hand, and it is the single remaining gap between the results above
+and a Kolmogorov-distance Berry–Esseen or Edgeworth bound. The test-function form
+`norm_integral_fourier_sub_le` is the part of Esseen's argument that the `L¹` theory does cover.
 -/
 
 open MeasureTheory intervalIntegral
@@ -357,5 +375,30 @@ theorem integral_fourier_measure {P : Measure ℝ} [IsFiniteMeasure P] {g : ℝ 
     fun _ => rfl
   simp only [hchar, hfour, smul_eq_mul, one_mul] at key
   exact key.symm
+
+/-- **Smoothed comparison of two laws through their characteristic functions.**
+
+`‖∫ 𝓕 g dP − ∫ 𝓕 g dQ‖ ≤ ∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ ‖g ξ‖ dξ`.
+
+If `g` vanishes off `[−T/2π, T/2π]` the right-hand side sees the characteristic functions only
+on the window `|t| ≤ T`: this is Esseen's smoothing inequality in its test-function form, the
+step that converts a characteristic-function estimate on a compact window into an estimate for
+a smoothed functional of `P − Q`. -/
+theorem norm_integral_fourier_sub_le {P Q : Measure ℝ}
+    [IsProbabilityMeasure P] [IsProbabilityMeasure Q] {g : ℝ → ℂ} (hg : Integrable g) :
+    ‖(∫ x : ℝ, 𝓕 g x ∂P) - ∫ x : ℝ, 𝓕 g x ∂Q‖
+      ≤ ∫ ξ : ℝ, ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖ := by
+  have hsm : Measurable fun ξ : ℝ => -(2 * π * ξ) := by fun_prop
+  have hP : Integrable (fun ξ : ℝ => charFun P (-(2 * π * ξ)) * g ξ) :=
+    hg.bdd_mul (measurable_charFun.comp hsm).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ξ => norm_charFun_le_one _)
+  have hQ : Integrable (fun ξ : ℝ => charFun Q (-(2 * π * ξ)) * g ξ) :=
+    hg.bdd_mul (measurable_charFun.comp hsm).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ξ => norm_charFun_le_one _)
+  rw [integral_fourier_measure hg, integral_fourier_measure hg, ← integral_sub hP hQ]
+  refine (MeasureTheory.norm_integral_le_integral_norm _).trans_eq
+    (integral_congr_ae (Filter.Eventually.of_forall fun ξ => ?_))
+  dsimp only
+  rw [← sub_mul, norm_mul]
 
 end StatLean.HypothesisTesting
