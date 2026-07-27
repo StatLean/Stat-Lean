@@ -1,3 +1,4 @@
+import StatLean.HypothesisTesting.Randomization.ExactLevel
 import StatLean.HypothesisTesting.Randomization.TwoSamplePermutation
 import StatLean.HypothesisTesting.Randomization.SlutskyRandomization
 import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
@@ -86,6 +87,7 @@ open scoped ENNReal NNReal
 namespace StatLean.HypothesisTesting
 
 open AsymptoticStatistics (WeakConverges)
+open StatLean.MultipleTesting (orderStat)
 
 /-! ### The studentized statistic -/
 
@@ -848,6 +850,344 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
     (measure_ne_top _ _)).trans (measureReal_union_le _ _)
   rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
   linarith
+
+/-! ### From the two limits to the rejection probability
+
+The remaining ingredients are combinatorial and measure-theoretic rather than
+probabilistic. Several of them exist in `Randomization/ExactLevel`,
+`Randomization/Asymptotics` and `Randomization/SignChange` but are `private` there, so they
+are re-derived here; each is marked as such. -/
+
+/-- Order statistics against counts: `T^{(j)} ≤ a ↔ j < #{orbit values ≤ a}` (a local copy of
+the `ExactLevel` helper). -/
+private lemma orderStat_le_iff_card_lt' {d : ℕ} (v : Fin d → ℝ) (j : Fin d) (a : ℝ) :
+    orderStat v j ≤ a ↔ j.val < (Finset.univ.filter (fun i => v i ≤ a)).card := by
+  have h_card : (Finset.univ.filter (fun i : Fin d => orderStat v i ≤ a)).card =
+      (Finset.univ.filter (fun i : Fin d => v i ≤ a)).card :=
+    Finset.card_bij' (fun i _ => Tuple.sort v i) (fun i _ => (Tuple.sort v).symm i)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢; exact hi)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+        simp only [orderStat, Equiv.apply_symm_apply]; exact hi)
+      (fun i _ => by simp [Equiv.symm_apply_apply])
+      (fun i _ => by simp [Equiv.apply_symm_apply])
+  rw [show orderStat v j ≤ a ↔ j.val < (Finset.univ.filter (fun i => orderStat v i ≤ a)).card
+    from (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort v)).symm, h_card]
+
+section Sandwich
+
+variable {G 𝓧 : Type*} [Group G] [Fintype G] [MeasurableSpace 𝓧] [MulAction G 𝓧]
+
+omit [MeasurableSpace 𝓧] in
+/-- Counting over the group equals counting over the orbit tuple (a local copy of the
+`ExactLevel` helper). -/
+private lemma card_filter_orbit' (p : ℝ → Prop) [DecidablePred p] (T : 𝓧 → ℝ) (x : 𝓧) :
+    (Finset.univ.filter fun g : G => p (T (g • x))).card
+      = (Finset.univ.filter fun i : Fin (Fintype.card G) => p (orbitValues G T x i)).card := by
+  refine Finset.card_bij' (fun g _ => Fintype.equivFin G g)
+    (fun i _ => (Fintype.equivFin G).symm i) ?_ ?_ ?_ ?_
+  · intro g hg
+    rw [Finset.mem_filter] at hg ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues, Equiv.symm_apply_apply] using hg.2⟩
+  · intro i hi
+    rw [Finset.mem_filter] at hi ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues] using hi.2⟩
+  · intro g _; simp
+  · intro i _; simp
+
+/-- The randomization distribution is a measurable function of the data (a local copy of the
+`Asymptotics` helper). -/
+private lemma measurable_randDist' (T : 𝓧 → ℝ) (t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x : 𝓧 => randDist G T x t) := by
+  classical
+  simp only [randDist]
+  refine Measurable.const_mul ?_ _
+  refine Finset.measurable_sum _ fun g _ => ?_
+  have hmset : MeasurableSet {x : 𝓧 | T (g • x) ≤ t} :=
+    measurableSet_le (hT.comp (hsmul g)) measurable_const
+  have hind : (fun x : 𝓧 => if T (g • x) ≤ t then (1 : ℝ) else 0)
+      = Set.indicator {x | T (g • x) ≤ t} 1 := by
+    funext x; simp [Set.indicator_apply]
+  rw [hind]
+  exact measurable_const.indicator hmset
+
+/-- `j ↦ orderStat · ⟨j, h⟩` is measurable (a local copy of the `ExactLevel` helper). -/
+private lemma measurable_orderStat_eval' {d : ℕ} (j : ℕ) (h : j < d) :
+    Measurable (fun v : Fin d → ℝ => orderStat v ⟨j, h⟩) := by
+  classical
+  apply measurable_of_Iic
+  intro a
+  have hset : (fun v : Fin d → ℝ => orderStat v ⟨j, h⟩) ⁻¹' Set.Iic a
+      = {v | j < ((Finset.univ : Finset (Fin d)).filter (fun i => v i ≤ a)).card} := by
+    ext v
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    exact orderStat_le_iff_card_lt' v ⟨j, h⟩ a
+  rw [hset]
+  apply measurableSet_lt measurable_const
+  simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+  exact Finset.measurable_sum _ fun i _ =>
+    Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const)
+      measurable_const measurable_const
+
+/-- The randomization test is a measurable function of the data (a local copy of the
+`ExactLevel` chain `measurable_randCritValue` → `measurable_randTest`). -/
+private lemma measurable_randTest' (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (randTest G T α) := by
+  classical
+  have hv : Measurable (fun x : 𝓧 => randCritValue G T α x) := by
+    unfold randCritValue orbitOrderStat
+    by_cases hk : randCritIndex G α - 1 < Fintype.card G
+    · simp only [dif_pos hk]
+      have hov : Measurable
+          (fun x : 𝓧 => (orbitValues G T x : Fin (Fintype.card G) → ℝ)) := by
+        rw [measurable_pi_iff]
+        exact fun i => hT.comp (hsmul ((Fintype.equivFin G).symm i))
+      exact (measurable_orderStat_eval' (randCritIndex G α - 1) hk).comp hov
+    · simp only [dif_neg hk]; exact measurable_const
+  have hplus : Measurable (fun x : 𝓧 => ((randPlusCount G T α x : ℕ) : ℝ)) := by
+    unfold randPlusCount
+    simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+    refine Finset.measurable_sum _ fun g _ => ?_
+    exact Measurable.ite (measurableSet_lt hv (hT.comp (hsmul g)))
+      measurable_const measurable_const
+  have hzero : Measurable (fun x : 𝓧 => ((randZeroCount G T α x : ℕ) : ℝ)) := by
+    unfold randZeroCount
+    simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+    refine Finset.measurable_sum _ fun g _ => ?_
+    exact Measurable.ite (measurableSet_eq_fun (hT.comp (hsmul g)) hv)
+      measurable_const measurable_const
+  have hgamma : Measurable (fun x : 𝓧 => randGamma G T α x) := by
+    unfold randGamma
+    exact Measurable.div (measurable_const.sub hplus) hzero
+  unfold randTest
+  refine Measurable.ite (measurableSet_lt hv hT) measurable_const ?_
+  exact Measurable.ite (measurableSet_eq_fun hT hv) hgamma measurable_const
+
+omit [MeasurableSpace 𝓧] in
+/-- **The critical value against the randomization distribution.** The critical value is the
+`k`-th smallest orbit value with `k = M − ⌊Mα⌋`, so it lies at or below a threshold `z`
+exactly when the randomization distribution has already accumulated the fraction `k/M` by
+`z`. This is the finite-sample identity that lets a *fixed* threshold control the test. -/
+private lemma randCritValue_le_iff_le_randDist (T : 𝓧 → ℝ) {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1) (x : 𝓧) (z : ℝ) :
+    randCritValue G T α x ≤ z ↔
+      (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) ≤ randDist G T x z := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (0 : ℝ) < Fintype.card G := by exact_mod_cast hcard
+  have hfl : ⌊(Fintype.card G : ℝ) * α⌋₊ < Fintype.card G :=
+    (Nat.floor_lt (mul_nonneg hcardR.le hα₀.le)).2 (mul_lt_of_lt_one_right hcardR hα₁)
+  have hk : randCritIndex G α - 1 < Fintype.card G := by unfold randCritIndex; omega
+  have hkpos : 1 ≤ randCritIndex G α := by unfold randCritIndex; omega
+  have hcount : randDist G T x z
+      = (Fintype.card G : ℝ)⁻¹
+        * ((Finset.univ.filter fun g : G => T (g • x) ≤ z).card : ℝ) := by
+    rw [randDist, Finset.sum_boole]
+  have hcf : (Finset.univ.filter fun g : G => T (g • x) ≤ z).card
+      = (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+          orbitValues G T x i ≤ z).card := card_filter_orbit' (fun r => r ≤ z) T x
+  have hiff : ∀ a b : ℝ, (a / (Fintype.card G : ℝ) ≤ (Fintype.card G : ℝ)⁻¹ * b) ↔ a ≤ b := by
+    intro a b
+    rw [div_eq_inv_mul]
+    exact ⟨fun h => le_of_mul_le_mul_left h (by positivity),
+      fun h => mul_le_mul_of_nonneg_left h (by positivity)⟩
+  rw [randCritValue, orbitOrderStat, dif_pos hk, hcount, hiff,
+    orderStat_le_iff_card_lt' (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩ z, ← hcf,
+    Nat.cast_le]
+  have hval : ((⟨randCritIndex G α - 1, hk⟩ : Fin (Fintype.card G)) : ℕ)
+      = randCritIndex G α - 1 := rfl
+  rw [hval]
+  omega
+
+/-- **Two-sided sandwich for the power of a randomization test at a fixed threshold.**
+At any threshold `z`, the test rejects on `{z < T} ∩ {k/M ≤ R̂(z)}` and accepts off
+`{z < T} ∪ {k/M ≤ R̂(z)}`, by `randCritValue_le_iff_le_randDist`. The two events are the
+ones whose limits the asymptotic theory supplies: a tail probability of the statistic and a
+deviation probability of the randomization distribution. -/
+private lemma powerAgainst_randTest_sandwich (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → ℝ)
+    -- USER-INPUT: the statistic is measurable; the action is measurable (data regularity)
+    (hT : Measurable T) (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1) (z : ℝ) :
+    P.real {x | z < T x}
+        - P.real {x | randDist G T x z < (randCritIndex G α : ℝ) / (Fintype.card G : ℝ)}
+        ≤ powerAgainst P (randTest G T α)
+      ∧ powerAgainst P (randTest G T α)
+        ≤ P.real {x | z < T x}
+          + P.real {x | (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) ≤ randDist G T x z} := by
+  classical
+  set q : ℝ := (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) with hqdef
+  set A : Set 𝓧 := {x | z < T x} with hAdef
+  set B : Set 𝓧 := {x | q ≤ randDist G T x z} with hBdef
+  set Bc : Set 𝓧 := {x | randDist G T x z < q} with hBcdef
+  have hrdmeas : Measurable (fun x : 𝓧 => randDist G T x z) := measurable_randDist' T z hT hsmul
+  have hAmeas : MeasurableSet A := measurableSet_lt measurable_const hT
+  have hBmeas : MeasurableSet B := measurableSet_le measurable_const hrdmeas
+  have hBcmeas : MeasurableSet Bc := measurableSet_lt hrdmeas measurable_const
+  have hABmeas : MeasurableSet (A ∪ B) := hAmeas.union hBmeas
+  have hAB'meas : MeasurableSet (A ∩ B) := hAmeas.inter hBmeas
+  -- the test is a bounded measurable critical function
+  have hφmeas : Measurable (randTest G T α) := measurable_randTest' T α hT hsmul
+  have hφIcc : ∀ x : 𝓧, randTest G T α x ∈ Set.Icc (0 : ℝ) 1 := fun x =>
+    randTest_mem_Icc (G := G) T hα₀ hα₁ x
+  have hφint : Integrable (randTest G T α) P :=
+    (integrable_const (1 : ℝ)).mono' hφmeas.aestronglyMeasurable
+      (ae_of_all P fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφIcc x).1]; exact (hφIcc x).2)
+  -- off `A ∪ B` the test accepts; on `A ∩ B` it rejects
+  have hzero : ∀ x : 𝓧, x ∉ A ∪ B → randTest G T α x = 0 := by
+    intro x hx
+    rw [Set.mem_union, hAdef, hBdef, Set.mem_setOf_eq, Set.mem_setOf_eq, not_or, not_lt,
+      not_le] at hx
+    obtain ⟨hTx, hrd⟩ := hx
+    have hcz : ¬ (randCritValue G T α x ≤ z) := by
+      rw [randCritValue_le_iff_le_randDist T hα₀ hα₁ x z, ← hqdef]
+      exact not_le.2 hrd
+    have hlt : T x < randCritValue G T α x := lt_of_le_of_lt hTx (not_le.1 hcz)
+    unfold randTest
+    rw [if_neg (not_lt.2 hlt.le), if_neg (ne_of_lt hlt)]
+  have hone : ∀ x : 𝓧, x ∈ A ∩ B → randTest G T α x = 1 := by
+    intro x hx
+    obtain ⟨hxA, hxB⟩ := hx
+    rw [hAdef, Set.mem_setOf_eq] at hxA
+    rw [hBdef, Set.mem_setOf_eq] at hxB
+    have hcz : randCritValue G T α x ≤ z := by
+      rw [randCritValue_le_iff_le_randDist T hα₀ hα₁ x z, ← hqdef]; exact hxB
+    unfold randTest
+    rw [if_pos (lt_of_le_of_lt hcz hxA)]
+  refine ⟨?_, ?_⟩
+  · -- lower bound
+    have hle : ∀ x : 𝓧, Set.indicator (A ∩ B) (fun _ => (1 : ℝ)) x ≤ randTest G T α x := by
+      intro x
+      by_cases hx : x ∈ A ∩ B
+      · rw [Set.indicator_of_mem hx, hone x hx]
+      · rw [Set.indicator_of_notMem hx]; exact (hφIcc x).1
+    have hintAB : ∫ x, Set.indicator (A ∩ B) (fun _ => (1 : ℝ)) x ∂P = P.real (A ∩ B) := by
+      rw [integral_indicator hAB'meas, setIntegral_const, smul_eq_mul, mul_one]
+    have hstep : P.real (A ∩ B) ≤ powerAgainst P (randTest G T α) := by
+      have h := integral_mono ((integrable_const (1 : ℝ)).indicator hAB'meas) hφint hle
+      rwa [hintAB] at h
+    have hsub : A ⊆ (A ∩ B) ∪ Bc := by
+      intro x hx
+      by_cases hxB : x ∈ B
+      · exact Set.mem_union_left _ ⟨hx, hxB⟩
+      · refine Set.mem_union_right _ ?_
+        rw [hBdef, Set.mem_setOf_eq, not_le] at hxB
+        exact hxB
+    have hsplit : P.real A ≤ P.real (A ∩ B) + P.real Bc :=
+      (measureReal_mono hsub (measure_ne_top _ _)).trans (measureReal_union_le _ _)
+    linarith
+  · -- upper bound
+    have hle : ∀ x : 𝓧, randTest G T α x ≤ Set.indicator (A ∪ B) (fun _ => (1 : ℝ)) x := by
+      intro x
+      by_cases hx : x ∈ A ∪ B
+      · rw [Set.indicator_of_mem hx]; exact (hφIcc x).2
+      · rw [Set.indicator_of_notMem hx, hzero x hx]
+    have hintAB : ∫ x, Set.indicator (A ∪ B) (fun _ => (1 : ℝ)) x ∂P = P.real (A ∪ B) := by
+      rw [integral_indicator hABmeas, setIntegral_const, smul_eq_mul, mul_one]
+    have hstep : powerAgainst P (randTest G T α) ≤ P.real (A ∪ B) := by
+      have h := integral_mono hφint ((integrable_const (1 : ℝ)).indicator hABmeas) hle
+      rwa [hintAB] at h
+    exact hstep.trans (measureReal_union_le _ _)
+
+end Sandwich
+
+/-- The critical fraction `k/M = 1 − ⌊Mα⌋/M` converges to `1 − α` along any array whose
+group cardinalities tend to infinity. -/
+private lemma tendsto_randCritIndex_div {G : ℕ → Type*} [∀ k, Group (G k)] [∀ k, Fintype (G k)]
+    {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1)
+    -- USER-INPUT: the groups grow
+    (hcard : Tendsto (fun k => (Fintype.card (G k) : ℝ)) atTop atTop) :
+    Tendsto (fun k => (randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ)) atTop
+      (𝓝 (1 - α)) := by
+  have hbound : ∀ k, |(randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ) - (1 - α)|
+      ≤ (Fintype.card (G k) : ℝ)⁻¹ := by
+    intro k
+    have hcardR : (0 : ℝ) < Fintype.card (G k) := by
+      exact_mod_cast (Fintype.card_pos : 0 < Fintype.card (G k))
+    have hfl : ⌊(Fintype.card (G k) : ℝ) * α⌋₊ ≤ Fintype.card (G k) :=
+      le_of_lt ((Nat.floor_lt (mul_nonneg hcardR.le hα₀.le)).2
+        (mul_lt_of_lt_one_right hcardR hα₁))
+    have hcast : ((randCritIndex (G k) α : ℕ) : ℝ)
+        = (Fintype.card (G k) : ℝ) - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ) := by
+      unfold randCritIndex; rw [Nat.cast_sub hfl]
+    have h1 : ((⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ)) ≤ (Fintype.card (G k) : ℝ) * α :=
+      Nat.floor_le (mul_nonneg hcardR.le hα₀.le)
+    have h2 : (Fintype.card (G k) : ℝ) * α < (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ) + 1 :=
+      Nat.lt_floor_add_one _
+    rw [hcast]
+    have hkey : ((Fintype.card (G k) : ℝ) - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ))
+          / (Fintype.card (G k) : ℝ) - (1 - α)
+        = ((Fintype.card (G k) : ℝ) * α - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ))
+          / (Fintype.card (G k) : ℝ) := by
+      field_simp
+      ring
+    rw [hkey, abs_div, abs_of_nonneg (by linarith : (0 : ℝ) ≤
+        (Fintype.card (G k) : ℝ) * α - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ)),
+      abs_of_nonneg hcardR.le, div_le_iff₀ hcardR, inv_mul_cancel₀ hcardR.ne']
+    linarith
+  have hlim : Tendsto
+      (fun k => |(randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ) - (1 - α)|) atTop
+      (𝓝 0) := squeeze_zero (fun k => abs_nonneg _) hbound hcard.inv_tendsto_atTop
+  rw [tendsto_iff_dist_tendsto_zero]
+  simpa only [Real.dist_eq] using hlim
+
+/-- **Portmanteau, `Measure.real` form** on `ℝ` (a local copy of the `Asymptotics` helper). -/
+private lemma tendsto_measureReal_of_weakConverges {νs : ℕ → Measure ℝ} {ν : Measure ℝ}
+    [∀ k, IsProbabilityMeasure (νs k)] [IsProbabilityMeasure ν]
+    (h : WeakConverges νs ν) {s : Set ℝ} (hs : ν (frontier s) = 0) :
+    Tendsto (fun k => (νs k).real s) atTop (𝓝 (ν.real s)) := by
+  let pn : ℕ → ProbabilityMeasure ℝ := fun k => ⟨νs k, inferInstance⟩
+  let pμ : ProbabilityMeasure ℝ := ⟨ν, inferInstance⟩
+  have hpm : Tendsto pn atTop (𝓝 pμ) := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f; simpa [pn, pμ] using h f
+  have key := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hpm
+    (E := s) (by simpa [pμ] using hs)
+  have h2 := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
+  simpa [Measure.real, pn, pμ] using h2
+
+/-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (a local copy of
+the `SignChange` helper). -/
+private lemma strictMono_cdf_gaussianReal' {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal 0 v)) := by
+  intro y z hyz
+  rw [cdf_eq_real, cdf_eq_real]
+  have hpos : 0 < gaussianReal 0 v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]; intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' 0 hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal 0 v (Set.Iic z)
+      = gaussianReal 0 v (Set.Iic y) + gaussianReal 0 v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  rw [measureReal_def, measureReal_def, hdisj,
+    ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal 0 v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- Every level in `(0,1)` is attained by the c.d.f. of an atomless law (a local copy of the
+`SignChange` helper). -/
+private lemma exists_cdf_eq' (ν : Measure ℝ) [IsProbabilityMeasure ν] [NoAtoms ν]
+    {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) : ∃ q, cdf ν q = p := by
+  have hcont : Continuous (cdf ν) :=
+    continuous_iff_continuousAt.mpr (fun x => continuousAt_cdf_of_noAtoms' ν x)
+  obtain ⟨a, ha⟩ := ((tendsto_cdf_atBot ν).eventually (eventually_lt_nhds hp0)).exists
+  obtain ⟨b, hb⟩ := ((tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hp1)).exists
+  have hab : min a b ≤ max a b := min_le_max
+  have hca' : cdf ν (min a b) < p := lt_of_le_of_lt (monotone_cdf (μ := ν) (min_le_left a b)) ha
+  have hcb' : p < cdf ν (max a b) := lt_of_lt_of_le hb (monotone_cdf (μ := ν) (le_max_right a b))
+  obtain ⟨q, _, hq⟩ := intermediate_value_Icc hab hcont.continuousOn ⟨hca'.le, hcb'.le⟩
+  exact ⟨q, hq⟩
 
 /-- **The studentized permutation test is pointwise consistent in level.** Its rejection
 probability tends to the nominal level,
