@@ -52,6 +52,51 @@ theorem doob_consistency [MetricSpace Θ] [PolishSpace Θ] [BorelSpace Θ] [None
     (hK_inj : Function.Injective fun θ => K θ)
     (π : Measure Θ) [IsProbabilityMeasure π] :
     ∀ᵐ θ ∂π, StronglyConsistentAt K π θ := by
-  sorry
+  classical
+  obtain ⟨g, hgmeas, hg⟩ := exists_measurable_retraction K hK_inj π
+  obtain ⟨D, hDcount, hDdense⟩ := TopologicalSpace.exists_countable_dense Θ
+  haveI : Countable ↥D := hDcount.to_subtype
+  -- Lévy upward convergence for the countable family of balls with centres in `D` and
+  -- rational radii
+  have hball : ∀ p : ↥D × ℚ, ∀ᵐ ω ∂(doobJoint K π),
+      Tendsto (fun n => (((iidKernel K n)†π) (doobData n ω)
+          (Metric.ball (p.1 : Θ) (p.2 : ℝ))).toReal) atTop
+        (𝓝 ((Metric.ball (p.1 : Θ) (p.2 : ℝ)).indicator (fun _ => (1 : ℝ)) ω.2)) := fun _ =>
+    posterior_ae_tendsto_indicator K π ⟨g, hgmeas, hg⟩ Metric.isOpen_ball.measurableSet
+  have hmain : ∀ᵐ ω ∂(doobJoint K π), ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n => ((iidKernel K n)†π) (doobData n ω) (Metric.ball ω.2 ε)) atTop
+        (𝓝 1) := by
+    filter_upwards [(ae_all_iff (ι := ↥D × ℚ)).2 hball] with ω hω ε hε
+    -- a ball of the countable family squeezed between `ω.2` and `ball ω.2 ε`
+    obtain ⟨d, hdD, hd⟩ := Metric.mem_closure_iff.mp (hDdense ω.2) (ε / 4) (by linarith)
+    obtain ⟨q, hq1, hq2⟩ := exists_rat_btwn (show ε / 4 < ε / 2 by linarith)
+    have hmem : ω.2 ∈ Metric.ball d (q : ℝ) := Metric.mem_ball.mpr (hd.trans hq1)
+    have hsub : Metric.ball d (q : ℝ) ⊆ Metric.ball ω.2 ε := by
+      refine Metric.ball_subset_ball' ?_
+      rw [dist_comm]
+      linarith
+    have hconv : Tendsto (fun n => (((iidKernel K n)†π) (doobData n ω)
+        (Metric.ball d (q : ℝ))).toReal) atTop
+        (𝓝 ((Metric.ball d (q : ℝ)).indicator (fun _ => (1 : ℝ)) ω.2)) := hω (⟨d, hdD⟩, q)
+    rw [Set.indicator_of_mem hmem] at hconv
+    have hle1 : ∀ n : ℕ, (((iidKernel K n)†π) (doobData n ω) (Metric.ball d (q : ℝ))).toReal
+        ≤ (((iidKernel K n)†π) (doobData n ω) (Metric.ball ω.2 ε)).toReal := fun n =>
+      ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+    have hle2 : ∀ n : ℕ, (((iidKernel K n)†π) (doobData n ω) (Metric.ball ω.2 ε)).toReal
+        ≤ 1 := by
+      intro n
+      rw [← ENNReal.toReal_one]
+      exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
+    have hsq : Tendsto (fun n => (((iidKernel K n)†π) (doobData n ω)
+        (Metric.ball ω.2 ε)).toReal) atTop (𝓝 1) :=
+      tendsto_of_tendsto_of_tendsto_of_le_of_le hconv tendsto_const_nhds hle1 hle2
+    rw [← ENNReal.tendsto_toReal_iff (fun _ => measure_ne_top _ _) ENNReal.one_ne_top]
+    simpa using hsq
+  -- disintegrate the joint statement back to `π`-a.e. `θ`
+  simp only [doobJoint] at hmain
+  have hfin := Measure.ae_ae_of_ae_compProd (ae_of_ae_map measurable_swap.aemeasurable hmain)
+  filter_upwards [hfin] with θ hθ
+  simp only [iidSeqKernel_apply] at hθ
+  exact hθ
 
 end StatLean.Bayesian

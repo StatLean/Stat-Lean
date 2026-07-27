@@ -66,7 +66,24 @@ theorem measurable_pi_fintype_const_kernel {ι' : Type*} [Fintype ι']
 over the measurable cylinders. -/
 theorem measurable_infinitePi_const_kernel (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] :
     Measurable fun θ => Measure.infinitePi fun _ : ℕ => κ θ := by
-  sorry
+  refine Measure.measurable_of_measurable_coe _ (fun s hs => ?_)
+  induction s, hs using MeasurableSpace.induction_on_inter with
+  | h_eq => exact generateFrom_measurableCylinders.symm
+  | h_inter => exact isPiSystem_measurableCylinders
+  | empty => simp only [measure_empty]; exact measurable_const
+  | basic t ht =>
+      obtain ⟨u, S, hS, rfl⟩ := (mem_measurableCylinders t).mp ht
+      have hcyl : ∀ θ : Θ, (Measure.infinitePi fun _ : ℕ => κ θ) (cylinder u S)
+          = (Measure.pi fun _ : u => κ θ) S := fun θ =>
+        Measure.infinitePi_cylinder (fun _ : ℕ => κ θ) hS
+      simp_rw [hcyl]
+      exact (Measure.measurable_coe hS).comp (measurable_pi_fintype_const_kernel κ)
+  | compl t htm iht =>
+      simp_rw [measure_compl htm (measure_ne_top _ _), measure_univ]
+      exact iht.const_sub 1
+  | iUnion g hgd hgm ihg =>
+      simp_rw [measure_iUnion hgd hgm]
+      exact Measurable.ennreal_tsum ihg
 
 /-- The **infinite iid product kernel** `θ ↦ (κ θ)^{⊗ ℕ}` on `ℕ → 𝓧`: the law of an infinite
 iid sample from the model `κ θ` (the sampling model of vdV Theorem 10.10). -/
@@ -86,6 +103,10 @@ instance (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] : IsMarkovKernel (iidSeqKerne
 theorem iidSeqKernel_map_restrict (κ : Kernel Θ 𝓧) [IsMarkovKernel κ] (n : ℕ) :
     Kernel.map (iidSeqKernel κ) (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)
       = iidKernel κ n := by
-  sorry
+  have hmeas : Measurable (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) :=
+    measurable_pi_lambda _ (fun i => measurable_pi_apply i.val)
+  ext θ s hs
+  rw [Kernel.map_apply _ hmeas, iidSeqKernel_apply, iidKernel_apply,
+    ← AsymptoticStatistics.pi_const_eq_infinitePi_map (κ θ) n]
 
 end StatLean.Bayesian
