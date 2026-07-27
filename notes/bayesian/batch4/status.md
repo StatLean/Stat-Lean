@@ -15,17 +15,19 @@ same-file `private` helpers only. Statement changes are laptop-only, logged here
 
 Wave 0 (laptop): stubs written for 24 files (2 AS/ForMathlib, 3 Bay/ForMathlib,
 10 BernsteinVonMises, 5 BayesEstimators, 4 DoobConsistency); umbrellas wired
-(`StatLean/Bayesian.lean` +23, `StatLean/AsymptoticStatistics.lean` +2). Stub gate pending.
+(`StatLean/Bayesian.lean` +25, `StatLean/AsymptoticStatistics.lean` +2). Stub gate GREEN
+(round 2, commit 038405e): Build completed successfully (3241 jobs), 79 sorry-uses, 0 errors.
+Statements now FROZEN.
 
 ## Ledger
 
 | item | wave | touch-set | merge-deps | state | named fallback |
 |---|---|---|---|---|---|
-| bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | STUBBED | per-lemma sorries |
-| bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | STUBBED | comp_subseq insulated |
-| bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | STUBBED | pair-ratio Jensen insulated |
-| tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | STUBBED | mean-expansion insulated |
-| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | STUBBED | retraction insulated |
+| bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | IN_FLIGHT | per-lemma sorries |
+| bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | IN_FLIGHT | comp_subseq insulated |
+| bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | IN_FLIGHT | pair-ratio Jensen insulated |
+| tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | IN_FLIGHT | mean-expansion insulated |
+| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | GATED (launch queued: concurrency cap) | retraction insulated |
 | conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | STUBBED | tail-split insulated |
 | local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | STUBBED | local_tv_tendsto = headline debt |
 | bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |
@@ -56,3 +58,9 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
 
 - 2026-07-27: Wave 0 — worktree `bay/batch4` created off main 03c39a9; 24 stub files
   written; umbrellas wired; ledger opened. Stub gate: pending.
+- 2026-07-27: gate round 1 (a306a0d): 2 errors (Defs measurability term proofs; doobJoint
+  IsFiniteMeasure instance). Fixed in 038405e (fun_prop; probability instance).
+- 2026-07-27: gate round 2 (038405e): GREEN — 3241 jobs, 79 sorries, statements FROZEN.
+- 2026-07-27: Wave 1 launched: bay/bvm-bricks (srun 2:30), bay/bvm-tests (srun 2:30) via
+  fan-out. bay/doob-core queued — concurrent ht/batch12 session holds 2 cluster-claude
+  slots (cap 3); half-created doob-core worktree removed; slot watcher armed.
