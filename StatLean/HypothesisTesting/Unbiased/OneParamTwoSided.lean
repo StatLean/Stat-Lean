@@ -82,11 +82,218 @@ of tests subject to the two displayed side conditions.
 -/
 
 open MeasureTheory
+open scoped InnerProductSpace
+
 open StatLean.PointEstimation
 
 namespace StatLean.HypothesisTesting
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
+
+/-! ## Analytic toolkit for the two repaired theorems
+
+Everything in this section is `private`: it is the machinery the two amended statements
+consume — σ-finiteness of the reference measure, the tilted representation of the power
+function, integrability of `T·e^{θT}` at interior natural parameters, and the strict
+convexity of `t ↦ e^{ct}` in the form of a *separating line* through two prescribed
+abscissae. -/
+
+/-- On `ℝ` the real inner product is multiplication. -/
+private lemma inner_real (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  simp [Inner.inner, mul_comm]
+
+/-- A measure carrying an integrable, everywhere strictly positive function is σ-finite:
+the sets `{f > 1/(n+1)}` have finite measure by Markov and exhaust the space. -/
+private lemma sigmaFinite_of_integrable_pos {μ : Measure 𝓧} {f : 𝓧 → ℝ}
+    (hf : Integrable f μ) (hpos : ∀ x, 0 < f x) : SigmaFinite μ := by
+  refine ⟨⟨⟨fun n => {x | (1 : ℝ) / (n + 1) < f x}, fun _ => trivial, fun n => ?_, ?_⟩⟩⟩
+  · exact hf.measure_gt_lt_top (by positivity)
+  · ext x
+    simp only [Set.mem_iUnion, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact exists_nat_one_div_lt (hpos x)
+
+/-- The natural parameter set of a one-parameter family, spelled with multiplication. -/
+private lemma integrable_exp_of_mem_natSet (E : ExpFamily 𝓧 ℝ) {θ : ℝ} (hθ : θ ∈ E.natSet) :
+    Integrable (fun x => Real.exp (θ * E.stat x)) E.base := by
+  simpa only [ExpFamily.natSet, Set.mem_setOf_eq, inner_real] using hθ
+
+/-- **Tilted representation.** Every integral against the canonical member `P_θ` is the
+ratio of the two exponential integrals against the reference measure. No integrability
+hypothesis: both sides are junk-compatible. -/
+private lemma integral_expFamily_eq (E : ExpFamily 𝓧 ℝ) (θ : ℝ) (g : 𝓧 → ℝ) :
+    ∫ x, g x ∂(E.P θ)
+      = (∫ x, g x * Real.exp (θ * E.stat x) ∂E.base)
+        / ∫ x, Real.exp (θ * E.stat x) ∂E.base := by
+  rw [ExpFamily.P, integral_tilted]
+  simp only [inner_real, smul_eq_mul]
+  rw [← integral_div]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  ring
+
+/-- **Integrability of `T·e^{θT}` at an interior natural parameter.** In one dimension the
+`2^s` sign-vector envelope of the general theory is the two-point bound
+`|t| ≤ δ⁻¹(e^{δt} + e^{-δt})`, valid because `u ≤ e^u`. -/
+private lemma integrable_stat_mul_exp (E : ExpFamily 𝓧 ℝ) {θ : ℝ}
+    (hθ : θ ∈ interior E.natSet) :
+    Integrable (fun x => E.stat x * Real.exp (θ * E.stat x)) E.base := by
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp isOpen_interior θ hθ
+  have hmem : ∀ s : ℝ, |s| < ε → θ + s ∈ E.natSet := by
+    intro s hs
+    refine interior_subset (hball ?_)
+    simpa [Real.dist_eq, abs_sub_comm] using hs
+  set δ := ε / 2 with hδdef
+  have hδ : 0 < δ := by positivity
+  have hδε : |δ| < ε := by rw [abs_of_pos hδ]; simp only [hδdef]; linarith
+  have hp : Integrable (fun x => Real.exp ((θ + δ) * E.stat x)) E.base :=
+    integrable_exp_of_mem_natSet E (hmem δ hδε)
+  have hm : Integrable (fun x => Real.exp ((θ - δ) * E.stat x)) E.base := by
+    have h := integrable_exp_of_mem_natSet E (hmem (-δ) (by rwa [abs_neg]))
+    simpa only [← sub_eq_add_neg] using h
+  have hdom : Integrable (fun x => (Real.exp ((θ + δ) * E.stat x)
+      + Real.exp ((θ - δ) * E.stat x)) / δ) E.base := (hp.add hm).div_const δ
+  refine Integrable.mono' hdom ?_ (Filter.Eventually.of_forall fun x => ?_)
+  · exact (E.stat_meas.mul ((measurable_const.mul E.stat_meas).exp)).aestronglyMeasurable
+  · set s := E.stat x with hs
+    rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _), le_div_iff₀ hδ]
+    have h1 : δ * |s| ≤ Real.exp (δ * |s|) := by
+      have := Real.add_one_le_exp (δ * |s|)
+      linarith
+    have h2 : Real.exp (δ * |s|) ≤ Real.exp (δ * s) + Real.exp (-(δ * s)) := by
+      rcases abs_cases s with ⟨h, _⟩ | ⟨h, _⟩
+      · rw [h]; linarith [Real.exp_pos (-(δ * s))]
+      · rw [h, mul_neg]; linarith [Real.exp_pos (δ * s)]
+    have hexp1 : Real.exp ((θ + δ) * s) = Real.exp (θ * s) * Real.exp (δ * s) := by
+      rw [← Real.exp_add]; ring_nf
+    have hexp2 : Real.exp ((θ - δ) * s) = Real.exp (θ * s) * Real.exp (-(δ * s)) := by
+      rw [← Real.exp_add]; ring_nf
+    rw [hexp1, hexp2]
+    have hE := Real.exp_pos (θ * s)
+    nlinarith [mul_le_mul_of_nonneg_left (h1.trans h2) hE.le]
+
+/-- **Tangent-line form of the strict convexity of `t ↦ e^{ct}`** (`c ≠ 0`): the tangent at
+`s` lies strictly below the graph at every other point. Immediate from `u + 1 < e^u`. -/
+private lemma exp_tangent_lt {c : ℝ} (hc : c ≠ 0) {s t : ℝ} (h : t ≠ s) :
+    Real.exp (c * s) * (1 + c * (t - s)) < Real.exp (c * t) := by
+  have hu : c * (t - s) ≠ 0 := mul_ne_zero hc (sub_ne_zero.mpr h)
+  have h1 := Real.add_one_lt_exp hu
+  have hpos := Real.exp_pos (c * s)
+  have hkey : Real.exp (c * s) * (1 + c * (t - s))
+      < Real.exp (c * s) * Real.exp (c * (t - s)) := by nlinarith
+  rwa [← Real.exp_add, show c * s + c * (t - s) = c * t by ring] at hkey
+
+/-- **Strict convexity of `t ↦ e^{ct}`** (`c ≠ 0`), in two-point form. -/
+private lemma exp_strictConvex {c : ℝ} (hc : c ≠ 0) {x y a b : ℝ} (hxy : x ≠ y)
+    (ha : 0 < a) (hb : 0 < b) (hab : a + b = 1) :
+    Real.exp (c * (a * x + b * y)) < a * Real.exp (c * x) + b * Real.exp (c * y) := by
+  have hb' : b = 1 - a := by linarith
+  subst hb'
+  set m := a * x + (1 - a) * y with hm
+  have hmx : x ≠ m := by
+    intro h
+    have h0 : (1 - a) * (x - y) = 0 := by rw [hm] at h; linear_combination h
+    rcases mul_eq_zero.mp h0 with h1 | h1
+    · exact absurd h1 (ne_of_gt hb)
+    · exact hxy (by linarith)
+  have hmy : y ≠ m := by
+    intro h
+    have h0 : a * (y - x) = 0 := by rw [hm] at h; linear_combination h
+    rcases mul_eq_zero.mp h0 with h1 | h1
+    · exact absurd h1 (ne_of_gt ha)
+    · exact hxy (by linarith)
+  have h1 := exp_tangent_lt hc (s := m) (t := x) hmx
+  have h2 := exp_tangent_lt hc (s := m) (t := y) hmy
+  have hEq : a * (Real.exp (c * m) * (1 + c * (x - m)))
+      + (1 - a) * (Real.exp (c * m) * (1 + c * (y - m))) = Real.exp (c * m) := by
+    have hlin : a * (1 + c * (x - m)) + (1 - a) * (1 + c * (y - m)) = 1 := by
+      rw [hm]; ring
+    linear_combination Real.exp (c * m) * hlin
+  have g1 := mul_lt_mul_of_pos_left h1 ha
+  have g2 := mul_lt_mul_of_pos_left h2 hb
+  linarith
+
+/-- **Separating line.** For `c ≠ 0` and `C₁ ≤ C₂` there is an affine function agreeing with
+`t ↦ e^{ct}` at `C₁` and `C₂` (the secant; the tangent when `C₁ = C₂`) which lies strictly
+*below* the exponential outside `[C₁, C₂]` and strictly *above* it inside. This is the
+one-dimensional geometric content of the two-multiplier Neyman–Pearson construction. -/
+private lemma exists_sep_line {c : ℝ} (hc : c ≠ 0) {C₁ C₂ : ℝ} (hC : C₁ ≤ C₂) :
+    ∃ A B : ℝ, A + B * C₁ = Real.exp (c * C₁) ∧ A + B * C₂ = Real.exp (c * C₂) ∧
+      (∀ t, t < C₁ ∨ C₂ < t → A + B * t < Real.exp (c * t)) ∧
+      (∀ t, C₁ < t → t < C₂ → Real.exp (c * t) < A + B * t) := by
+  rcases eq_or_lt_of_le hC with heq | hlt
+  · -- degenerate case `C₁ = C₂`: the tangent line at `C₁`
+    subst heq
+    refine ⟨Real.exp (c * C₁) * (1 - c * C₁), Real.exp (c * C₁) * c, by ring, by ring, ?_, ?_⟩
+    · intro t ht
+      have htne : t ≠ C₁ := by
+        rcases ht with h | h
+        · exact ne_of_lt h
+        · exact ne_of_gt h
+      have hkey := exp_tangent_lt hc (s := C₁) (t := t) htne
+      have hre : Real.exp (c * C₁) * (1 - c * C₁) + Real.exp (c * C₁) * c * t
+          = Real.exp (c * C₁) * (1 + c * (t - C₁)) := by ring
+      rw [hre]; exact hkey
+    · intro t h1 h2; linarith
+  · -- generic case: the secant through `(C₁, e^{cC₁})` and `(C₂, e^{cC₂})`
+    have hne : C₂ - C₁ ≠ 0 := sub_ne_zero.mpr (ne_of_gt hlt)
+    obtain ⟨A, B, hAC₁, hAC₂⟩ : ∃ A B : ℝ, A + B * C₁ = Real.exp (c * C₁) ∧
+        A + B * C₂ = Real.exp (c * C₂) := by
+      refine ⟨Real.exp (c * C₁)
+          - (Real.exp (c * C₂) - Real.exp (c * C₁)) / (C₂ - C₁) * C₁,
+        (Real.exp (c * C₂) - Real.exp (c * C₁)) / (C₂ - C₁), by ring, ?_⟩
+      field_simp
+      ring
+    refine ⟨A, B, hAC₁, hAC₂, ?_, ?_⟩
+    · rintro t (ht | ht)
+      · -- `t < C₁`: write `C₁` as a convex combination of `C₂` and `t`
+        have hden : (0 : ℝ) < C₂ - t := by linarith
+        have ha : 0 < (C₁ - t) / (C₂ - t) := div_pos (by linarith) hden
+        have hb : 0 < (C₂ - C₁) / (C₂ - t) := div_pos (by linarith) hden
+        have hab : (C₁ - t) / (C₂ - t) + (C₂ - C₁) / (C₂ - t) = 1 := by
+          field_simp; ring
+        have hcomb : (C₁ - t) / (C₂ - t) * C₂ + (C₂ - C₁) / (C₂ - t) * t = C₁ := by
+          field_simp; ring
+        have hcv := exp_strictConvex hc (x := C₂) (y := t)
+          (ne_of_gt (lt_trans ht hlt)) ha hb hab
+        rw [hcomb] at hcv
+        have haff : (C₁ - t) / (C₂ - t) * (A + B * C₂)
+            + (C₂ - C₁) / (C₂ - t) * (A + B * t) = A + B * C₁ := by
+          field_simp; ring
+        rw [hAC₁, hAC₂] at haff
+        have hstep : (C₂ - C₁) / (C₂ - t) * (A + B * t)
+            < (C₂ - C₁) / (C₂ - t) * Real.exp (c * t) := by linarith
+        exact lt_of_mul_lt_mul_left hstep hb.le
+      · -- `C₂ < t`: write `C₂` as a convex combination of `t` and `C₁`
+        have hden : (0 : ℝ) < t - C₁ := by linarith
+        have ha : 0 < (C₂ - C₁) / (t - C₁) := div_pos (by linarith) hden
+        have hb : 0 < (t - C₂) / (t - C₁) := div_pos (by linarith) hden
+        have hab : (C₂ - C₁) / (t - C₁) + (t - C₂) / (t - C₁) = 1 := by
+          field_simp; ring
+        have hcomb : (C₂ - C₁) / (t - C₁) * t + (t - C₂) / (t - C₁) * C₁ = C₂ := by
+          field_simp; ring
+        have hcv := exp_strictConvex hc (x := t) (y := C₁)
+          (ne_of_gt (lt_trans hlt ht)) ha hb hab
+        rw [hcomb] at hcv
+        have haff : (C₂ - C₁) / (t - C₁) * (A + B * t)
+            + (t - C₂) / (t - C₁) * (A + B * C₁) = A + B * C₂ := by
+          field_simp; ring
+        rw [hAC₁, hAC₂] at haff
+        have hstep : (C₂ - C₁) / (t - C₁) * (A + B * t)
+            < (C₂ - C₁) / (t - C₁) * Real.exp (c * t) := by linarith
+        exact lt_of_mul_lt_mul_left hstep ha.le
+    · intro t h1 h2
+      have ha : 0 < (C₂ - t) / (C₂ - C₁) := div_pos (by linarith) (by linarith)
+      have hb : 0 < (t - C₁) / (C₂ - C₁) := div_pos (by linarith) (by linarith)
+      have hab : (C₂ - t) / (C₂ - C₁) + (t - C₁) / (C₂ - C₁) = 1 := by
+        field_simp; ring
+      have hcomb : (C₂ - t) / (C₂ - C₁) * C₁ + (t - C₁) / (C₂ - C₁) * C₂ = t := by
+        field_simp; ring
+      have hcv := exp_strictConvex hc (x := C₁) (y := C₂) (ne_of_lt hlt) ha hb hab
+      rw [hcomb] at hcv
+      have haff : (C₂ - t) / (C₂ - C₁) * (A + B * C₁)
+          + (t - C₁) / (C₂ - C₁) * (A + B * C₂) = A + B * t := by
+        field_simp; ring
+      rw [hAC₁, hAC₂] at haff
+      linarith
 
 /-- **UMP unbiased test of a point null in a one-parameter exponential family.**
 
