@@ -116,6 +116,120 @@ lemma multivariateGaussian_eq_map_pi (k : ℕ) :
       = (Measure.pi fun _ : Fin k => gaussianReal 0 1).map (WithLp.toLp 2) := by
   rw [multivariateGaussian_zero_one, ← map_pi_eq_stdGaussian]
 
+/-! ### The coordinate-slice bound
+
+The Gaussian input of the whole file: for convex `V` and a coordinate direction `eᵢ`, the set of
+points of `V` that leave `V` after a shift by `c • eᵢ` has Gaussian mass at most `2|c|/√(2π)`,
+with **no dimension factor**. Its trace on each line parallel to `eᵢ` has diameter `≤ |c|`
+because the trace of `V` on that line is an interval; Fubini for the product form of `N(0, I_k)`
+then costs nothing. -/
+
+/-- If `J ⊆ ℝ` is convex then the set of points of `J` whose `c`-shift leaves `J` has diameter at
+most `|c|`: two such points further apart would have the shift of one of them strictly between
+them, hence inside `J`. -/
+private lemma diam_shift_le_of_convex {J : Set ℝ} (hJ : Convex ℝ J) (c : ℝ) :
+    ∀ s ∈ {t | t ∈ J ∧ t + c ∉ J}, ∀ t ∈ {t | t ∈ J ∧ t + c ∉ J}, |s - t| ≤ |c| := by
+  have hoc : J.OrdConnected := convex_iff_ordConnected.mp hJ
+  have key : ∀ s ∈ {t | t ∈ J ∧ t + c ∉ J}, ∀ t ∈ {t | t ∈ J ∧ t + c ∉ J},
+      s ≤ t → t - s ≤ |c| := by
+    intro s hs t ht hst
+    by_contra hcon
+    rw [not_le] at hcon
+    rcases le_or_gt 0 c with hc | hc
+    · rw [abs_of_nonneg hc] at hcon
+      exact hs.2 (hoc.out hs.1 ht.1 ⟨by linarith, by linarith⟩)
+    · rw [abs_of_neg hc] at hcon
+      exact ht.2 (hoc.out hs.1 ht.1 ⟨by linarith, by linarith⟩)
+  intro s hs t ht
+  rcases le_total s t with h | h
+  · rw [abs_sub_comm, abs_of_nonneg (by linarith : (0:ℝ) ≤ t - s)]
+    exact key s hs t ht h
+  · rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ s - t)]
+    exact key t ht s hs h
+
+/-- Inserting an affine combination in the `i`-th slot is the affine combination of the
+insertions: `t ↦ i.insertNth t y` is an affine map `ℝ → (Fin (m+1) → ℝ)`. -/
+private lemma insertNth_affine {m : ℕ} (i : Fin (m + 1)) (y : Fin m → ℝ) {a b s r : ℝ}
+    (hsr : s + r = 1) :
+    Fin.insertNth (α := fun _ => ℝ) i (s * a + r * b) y
+      = s • Fin.insertNth (α := fun _ => ℝ) i a y
+        + r • Fin.insertNth (α := fun _ => ℝ) i b y := by
+  refine funext ((Fin.forall_iff_succAbove i).2 ⟨by simp, fun j => ?_⟩)
+  simp only [Fin.insertNth_apply_succAbove, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  linear_combination (-(y j)) * hsr
+
+/-- Shifting the inserted coordinate by `c` is adding `c • Pi.single i 1`. -/
+private lemma insertNth_add_single {m : ℕ} (i : Fin (m + 1)) (y : Fin m → ℝ) (t c : ℝ) :
+    Fin.insertNth (α := fun _ => ℝ) i (t + c) y
+      = Fin.insertNth (α := fun _ => ℝ) i t y
+        + c • (Pi.single i (1 : ℝ) : Fin (m + 1) → ℝ) := by
+  refine funext ((Fin.forall_iff_succAbove i).2 ⟨by simp, fun j => ?_⟩)
+  simp [Fin.insertNth_apply_succAbove]
+
+/-- **Coordinate-slice anti-concentration.** For a convex measurable `V` and a coordinate `i`,
+the standard Gaussian mass of `{x ∈ V : x + c • eᵢ ∉ V}` is at most `2|c|/√(2π)`. The constant is
+dimension-free. -/
+lemma gaussian_mem_notMem_shift_le (hk : 0 < k) (i : Fin k) (c : ℝ)
+    {V : Set (EuclideanSpace ℝ (Fin k))} (hVm : MeasurableSet V) (hVc : Convex ℝ V) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+        {x | x ∈ V ∧ x + c • EuclideanSpace.single i (1 : ℝ) ∉ V}
+      ≤ ENNReal.ofReal (2 * |c| / Real.sqrt (2 * π)) := by
+  classical
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, (Nat.succ_pred_eq_of_pos hk).symm⟩
+  set L : (Fin (m + 1) → ℝ) → EuclideanSpace ℝ (Fin (m + 1)) := WithLp.toLp 2 with hLdef
+  have hLmeas : Measurable L := by rw [hLdef]; fun_prop
+  set T : Set (EuclideanSpace ℝ (Fin (m + 1))) :=
+    {x | x ∈ V ∧ x + c • EuclideanSpace.single i (1 : ℝ) ∉ V} with hTdef
+  have hTm : MeasurableSet T := by
+    have hmap : Measurable (fun x : EuclideanSpace ℝ (Fin (m + 1)) =>
+        x + c • EuclideanSpace.single i (1 : ℝ)) := by fun_prop
+    exact hVm.inter (hmap hVm.compl)
+  rw [multivariateGaussian_eq_map_pi, Measure.map_apply hLmeas hTm]
+  -- the peeled product form
+  set μ : Fin (m + 1) → Measure ℝ := fun _ => gaussianReal 0 1 with hμdef
+  set e : ((_ : Fin (m + 1)) → ℝ) ≃ᵐ ℝ × ((_ : Fin m) → ℝ) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (m + 1) => ℝ) i with hedef
+  have hmp : MeasurePreserving e (Measure.pi μ)
+      ((μ i).prod (Measure.pi fun j : Fin m => μ (i.succAbove j))) :=
+    measurePreserving_piFinSuccAbove μ i
+  set S : Set (ℝ × ((_ : Fin m) → ℝ)) := e.symm ⁻¹' (L ⁻¹' T) with hSdef
+  have hSm : MeasurableSet S := e.symm.measurable (hLmeas hTm)
+  have hpre : e ⁻¹' S = L ⁻¹' T := by
+    ext x; simp [hSdef]
+  have hkey : Measure.pi μ (L ⁻¹' T)
+      = ((μ i).prod (Measure.pi fun j : Fin m => μ (i.succAbove j))) S := by
+    rw [← hpre]; exact hmp.measure_preimage hSm.nullMeasurableSet
+  rw [hkey, Measure.prod_apply_symm hSm]
+  -- each line slice has diameter `≤ |c|`
+  have hslice : ∀ y : Fin m → ℝ, (μ i) ((fun t => (t, y)) ⁻¹' S)
+      ≤ ENNReal.ofReal (2 * |c| / Real.sqrt (2 * π)) := by
+    intro y
+    set J : Set ℝ := {t : ℝ | L (Fin.insertNth (α := fun _ => ℝ) i t y) ∈ V} with hJdef
+    have hJconv : Convex ℝ J := by
+      intro a ha b hb s r hs hr hsr
+      have hins := insertNth_affine i y (a := a) (b := b) hsr
+      have : L (Fin.insertNth (α := fun _ => ℝ) i (s * a + r * b) y)
+          = s • L (Fin.insertNth (α := fun _ => ℝ) i a y)
+            + r • L (Fin.insertNth (α := fun _ => ℝ) i b y) := by rw [hins]; rfl
+      simpa [hJdef, this] using hVc ha hb hs hr hsr
+    have hsym : ∀ t : ℝ, e.symm (t, y) = Fin.insertNth (α := fun _ => ℝ) i t y := fun _ => rfl
+    have hset : (fun t => (t, y)) ⁻¹' S = {t | t ∈ J ∧ t + c ∉ J} := by
+      ext t
+      have hshift : L (Fin.insertNth (α := fun _ => ℝ) i (t + c) y)
+          = L (Fin.insertNth (α := fun _ => ℝ) i t y)
+            + c • EuclideanSpace.single i (1 : ℝ) := by
+        rw [insertNth_add_single]; rfl
+      simp only [Set.mem_preimage, hSdef, hsym, hTdef, Set.mem_setOf_eq, hJdef, hshift]
+    rw [hset, hμdef]
+    exact gaussianReal_le_of_diam_le (diam_shift_le_of_convex hJconv c)
+  calc ∫⁻ y, (μ i) ((fun t => (t, y)) ⁻¹' S)
+          ∂(Measure.pi fun j : Fin m => μ (i.succAbove j))
+      ≤ ∫⁻ _, ENNReal.ofReal (2 * |c| / Real.sqrt (2 * π))
+          ∂(Measure.pi fun j : Fin m => μ (i.succAbove j)) := lintegral_mono hslice
+    _ = ENNReal.ofReal (2 * |c| / Real.sqrt (2 * π)) := by
+        rw [lintegral_const, hμdef]
+        simp
+
 end GaussianShell
 
 end StatLean.HypothesisTesting
