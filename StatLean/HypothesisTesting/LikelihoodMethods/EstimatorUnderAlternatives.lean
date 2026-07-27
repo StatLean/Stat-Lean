@@ -293,6 +293,40 @@ lemma exists_radius_eventually_measureReal_norm_le
   filter_upwards [(hVw g).eventually_le_const (u := α) (by linarith)] with n hn
   exact (hstep1 n).trans hn
 
+/-- **Transfer of a weak limit across a vanishing integral discrepancy.**
+
+If the laws of `f n` under two sequences of measures have asymptotically the same integrals
+against every bounded continuous test function, then a weak limit for one is a weak limit for
+the other.
+
+This is the brick that reduces the *varying*-direction local-alternative limit to the
+*fixed*-direction one: with `Q n = P^n_{θ₀ + hₙ/√n}` and `Q' n = P^n_{θ₀ + h/√n}` the
+hypothesis `hclose` is implied by `‖Q n − Q' n‖_TV → 0`, which for a quadratic-mean
+differentiable family follows from `n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0`.
+See the discussion at `weak_limit_estimator_under_local_alternatives`. -/
+private lemma weakConverges_of_integral_close
+    {E : Type*} [MeasurableSpace E] [TopologicalSpace E] [OpensMeasurableSpace E]
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    {Q Q' : ∀ n, Measure (Ω n)} {f : ∀ n, Ω n → E} {ν : Measure E}
+    (hmeas : ∀ n, AEMeasurable (f n) (Q n))
+    (hmeas' : ∀ n, AEMeasurable (f n) (Q' n))
+    (hclose : ∀ g : E →ᵇ ℝ,
+      Tendsto (fun n => ∫ ω, g (f n ω) ∂(Q n) - ∫ ω, g (f n ω) ∂(Q' n)) atTop (𝓝 0))
+    (hw : WeakConverges (fun n => (Q' n).map (f n)) ν) :
+    WeakConverges (fun n => (Q n).map (f n)) ν := by
+  intro g
+  have h1 : ∀ n, ∫ x, g x ∂((Q n).map (f n)) = ∫ ω, g (f n ω) ∂(Q n) := fun n =>
+    integral_map (hmeas n) g.continuous.aestronglyMeasurable
+  have h2 : ∀ n, ∫ x, g x ∂((Q' n).map (f n)) = ∫ ω, g (f n ω) ∂(Q' n) := fun n =>
+    integral_map (hmeas' n) g.continuous.aestronglyMeasurable
+  have hB : Tendsto (fun n => ∫ ω, g (f n ω) ∂(Q' n)) atTop (𝓝 (∫ x, g x ∂ν)) := by
+    refine (hw g).congr ?_
+    intro n
+    rw [h2 n]
+  have hsum := (hclose g).add hB
+  simp only [sub_add_cancel, zero_add] at hsum
+  simpa only [h1] using hsum
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
@@ -332,39 +366,54 @@ theorem weak_limit_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
-  -- TODO (obstruction re-derived).  The mathematical route is standard and the algebra is
-  -- already in place downstream (the two companion theorems below and
-  -- `ScoreUnderAlternatives` are *proved from this one*):
+  -- TODO (obstruction RE-DERIVED this session; the previous note is confirmed on its three
+  -- factual claims and superseded on the shape of the route and on the size of the gap).
+  --
+  -- The mathematical route is standard and the algebra is already in place downstream (the
+  -- two companion theorems below and `ScoreUnderAlternatives` are *proved from this one*):
   --   (i)  `√n(θ̂ₙ−θ₀) = Vₙ + o_P(1)` under `P^n_{θ₀}` (`hlin`, with `Vₙ = J⁻¹Zₙ`);
   --   (ii) contiguity `P^n_{θₙ} ◅ P^n_{θ₀}` transfers that `o_P(1)` to `P^n_{θₙ}`;
   --   (iii) Le Cam's third lemma gives `Vₙ ⇝ N(h, J⁻¹)` under `P^n_{θₙ}`;
   --   (iv) `√n(θ̂ₙ−θₙ) = Vₙ − hₙ + o_P(1) ⇝ N(h,J⁻¹)` shifted by `−h`, i.e. `N(0, J⁻¹)`.
-  -- What blocks it is exactly that steps (ii)–(iii) are only available for a *fixed*
-  -- direction.  `AsymptoticRepresentation.contiguous_local_alternatives`,
-  -- `productMeasure_integral_comparison`, `lanResidual_tendsto_productMeasure` and
-  -- `slutsky_bridge_of_lanResidual` are all stated at a single `h : Θ k` and applied at the
-  -- parameter `θ₀ + h/√n`; here the parameter is `θ₀ + hₙ/√n` with `hₙ` varying, so the
-  -- comparison slack `ρ n` produced by `productMeasure_integral_comparison` — which depends
-  -- on `h` — has to be made uniform over a compact set of directions.  The one varying-`hₙ`
-  -- statement the library does have is `LANExpansion.LAN_expansion_iii` (it takes `h_n` with
-  -- `hconv : h_n → h`), but it lives on the abstract i.i.d. space and has no
-  -- `productMeasure` transfer, and `contiguous_local_alternatives` additionally consumes an
-  -- exact change-of-measure identity `hL_is_log_ratio` that is not among these hypotheses.
-  -- The missing bricks are therefore precisely: a `productMeasure`-level varying-direction
-  -- LAN residual, and a varying-direction version of `productMeasure_integral_comparison`.
   --
-  -- RE-VERIFIED (sweep over the whole library, nothing has changed the verdict):
-  --   * `lanResidual_tendsto_productMeasure` (AsymptoticRepresentation.lean:880) does call
-  --     `LAN_expansion_iii`, but with the CONSTANT sequence `h_n = fun _ => h`
-  --     (`tendsto_const_nhds`); so the varying-`h_n` capability of `LAN_expansion_iii` is never
-  --     transported to `productMeasure`, and the bridge it uses (the restriction map
-  --     `(ℕ → 𝓧) → (Fin n → 𝓧)`) is built only for the constant case.
-  --   * `productMeasure_integral_comparison` (ibid.:1485) produces its slack `ρ n` from the
-  --     `h`-dependent `goodSet M θ₀ h n` / `expLogFactor M θ₀ h n`, so uniformity over a compact
-  --     set of directions is a genuine new argument, not a re-parenthesization.
-  --   * `contiguous_local_alternatives` (ibid.:1032) is unusable here for a second, independent
-  --     reason: it consumes the exact change-of-measure identity `hL_is_log_ratio`, which is not
-  --     among this theorem's hypotheses.
+  -- RE-VERIFIED (the three claims of the previous note all still hold, checked against the
+  -- current `AsymptoticRepresentation.lean`):
+  --   * `lanResidual_tendsto_productMeasure` does call `LAN_expansion_iii`, but with the
+  --     CONSTANT sequence `h_n = h` (`tendsto_const_nhds`); the varying-`h_n` capability of
+  --     `LAN_expansion_iii` is never transported to `productMeasure`, and the bridge it uses
+  --     (the restriction map `(ℕ → 𝓧) → (Fin n → 𝓧)`) is built only for the constant case.
+  --   * `productMeasure_integral_comparison` produces its slack `ρ n` from the `h`-dependent
+  --     `goodSet M θ₀ h n` / `expLogFactor M θ₀ h n`, so uniformity over a compact set of
+  --     directions is a genuine new argument, not a re-parenthesization.
+  --   * `contiguous_local_alternatives` consumes the exact change-of-measure identity
+  --     `hL_is_log_ratio`, which is not among this theorem's hypotheses.
+  --
+  -- NEW, AND WORSE THAN THE PREVIOUS NOTE SAID: the FIXED-direction case is blocked too, and
+  -- the third bullet is not a bookkeeping omission. `hL_is_log_ratio` asks for
+  --   `P^n_{θ₀+h/√n} = (P^n_{θ₀}).withDensity (exp ∘ logLikelihood M θ₀ h n)`,
+  -- and that identity is FALSE at the Lean junk values whenever `p_{θ₀}` vanishes somewhere
+  -- `p_{θ₀+h/√n}` does not: on `{p_{θ₀} = 0}` the left side carries mass while the right side
+  -- carries none (`log (a/0) = 0`, so the density is `1` there rather than `+∞`). It is
+  -- therefore *underivable* from `hPDF`/`hDQM`; it needs a common-support hypothesis. That is
+  -- the same defect, with the same minimal repair, as the one now carried by
+  -- `TrinityChiSquared.logLR_affine_sub_scoreDiff_tendstoInMeasure`
+  -- (`hsupp : ∀ θ x, M.density θ₀ x ≠ 0 → M.density θ x ≠ 0`); the `goodSet` device of
+  -- `productMeasure_integral_comparison` is the alternative, and is exactly why that theorem
+  -- exists.
+  --
+  -- ROUTE, RESTRUCTURED. The varying direction need not be handled by making `ρ` uniform over
+  -- a compact set of directions. `weakConverges_of_integral_close` above reduces the varying
+  -- case to the fixed one: it suffices that the two local-alternative product laws
+  -- `P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
+  -- functions, which for a DQM family is the standard Hellinger estimate
+  -- `n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0` plus `TV ≤ √2·H`. So the
+  -- missing bricks are now: (A) the fixed-direction statement, i.e. the composite of
+  -- `contiguous_local_alternatives` + Le Cam 3 under a common-support amendment (or via
+  -- `productMeasure_integral_comparison`); and (B) the `n`-fold Hellinger bound above.
+  --
+  -- SCOPE. Both (A) and (B) live in
+  -- `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`, which this
+  -- wave is not permitted to touch; nothing in this file can close them.
   -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane
   -- (`weak_limit_estimator_centered_under_local_alternatives`,
   -- `weak_limit_g_estimator_under_local_alternatives`, and
