@@ -1103,73 +1103,66 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
 of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
 `multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
 
-TODO (RE-DERIVED this batch).  This half is about Pearson's statistic, a function of the
-sample alone, so it is untouched by the abstract-`Q` counterexample recorded at
+The statement is TRUE and open.  It is about Pearson's statistic, a function of the sample
+alone, so it is untouched by the abstract-`Q` counterexample recorded at
 `chiSquared_maximin_upper_bound`: the frozen hypotheses determine the law of
-`pearsonQ π (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and open.
+`pearsonQ π (X n)` under every `Q n h`, hence the whole statement.  Note also that the
+mixture apparatus of `AsymptoticMaximin.asymptotic_maximin_upper_bound` does not help — it
+bounds every competitor from ABOVE, whereas this is an attainment statement.
 
-The `limsup ≤` half is routine and needs nothing new: evaluate at a FIXED centred `h` with
-`λ(h) = b²`, which lies in `multinomialShell π b n` for every large `n`, and use
-`ChiSquaredMultinomial.pearsonQ_local_power_nondegenerate`, which is closed axiom-clean and
-gives `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c, ∞)` together with `α < value < 1`.
+TODO (RE-DERIVED, wave 7; supersedes the wave-5 "uniform Berry–Esseen over the shell"
+diagnosis and refines the wave-6 compactness route, whose two cases are confirmed).  The
+smooth-test twin `SmoothTest.smoothTest_shell_minPower_tendsto` is now CLOSED axiom-clean, so
+the shape of the argument is fixed and its reusable half is available *in this file*
+(`SmoothTest` is imported).  What transfers, and what does not:
 
-What is genuinely left is the `liminf ≥` half, and it is *not* supplied by the mixture
-apparatus closed this batch (`asymptotic_maximin_upper_bound` bounds every competitor from
-ABOVE; attainment is a different statement).  The shell is unbounded and moves with `n`, so
-the worst case is a *diagonal* sequence `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly
-`→ ∞`, and bounding `power_n(hₙ)` from below along such a sequence is a uniform
-(Berry–Esseen / tightness-over-the-shell) statement that no per-`h` weak limit supplies.
-Two tools now shorten it but do not close it:
-* the monotone likelihood ratio of `χ²_k(λ)` in `λ` (`exists_monotone_density`, in the MLR
-  section below) pins the worst case at `λ = b²` *once* the family of local powers is known
-  to be monotone in `λ` uniformly in `n`;
-* `noncentralChiSquared_tail_mono` gives the corresponding limit statement.
-The missing brick is a multinomial Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in
-the local parameter; the project has `ForMathlib/MultivariateBerryEsseen` only for slabs and
-balls of a *fixed* law, not for a triangular array of drifting multinomial rows.
+WHAT TRANSFERS.  The outer bookkeeping of the twin carries over verbatim: `limsup ≤` by
+evaluating at a fixed inner-boundary point; `liminf ≥` by choosing near-minimisers
+`hₙ ∈ multinomialShell π b n` with `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`
+(`exists_lt_of_csInf_lt`), extracting with `Filter.extraction_of_frequently_atTop`, and
+extending a subsequence off the range of the extraction so that the *full-sequence* drifting
+limit law can be composed with `StrictMono.tendsto_atTop`.  Also reusable as stated:
+`SmoothTest.normCutoff`, `SmoothTest.tendsto_measure_smul_norm_of_weakConverges`,
+`SmoothTest.integrable_exp_of_withDensity_isProbability`, and the frontier/portmanteau step
+(`{‖z‖² ≤ c}` is convex, so `multivariateGaussian_frontier_eq_zero_of_convex_posDef` applies
+after translating the mean away).
 
-TODO (RE-DERIVED, wave 5).  Unchanged in substance, and the wave-5 closure of the smooth-test
-UPPER bound (`SmoothTest.smoothTest_maximin_upper_bound`) does not touch it: that closure is a
-mixture/Neyman–Pearson bound valid for every competitor, whereas this is an attainment
-statement about one specific test, and it needs a *lower* bound on the local power that is
-uniform over a shell which is unbounded and moves with `n`.  The smooth-test twin
-`smoothTest_shell_minPower_tendsto` is strictly easier (its shell is compact and fixed), so it
-should be closed first; this one additionally needs the diagonal-sequence case `λ(hₙ) → ∞`,
-where the honest route is a tightness/Berry–Esseen estimate for the drifting multinomial rows
-rather than any per-`h` weak limit.
+WHAT DOES NOT TRANSFER.  `SmoothTest.scoreVec_weakConverges_drift` itself does NOT apply.  It
+requires the alternatives to be exponential TILTS of the null, `hlaw : (Q n h).map (X n i) =
+(smoothModel P₀ ψ hψ).P ((√n)⁻¹ • h)`, whereas here `hcell` makes them the LINEAR family
+`πⱼ + hⱼ/√n`; the two agree only to first order, and the canonical experiment `QC` built
+above is the linear one, not a tilt.  So the drifting local limit law has to be re-proved for
+the multinomial.  Two named bricks remain, and both are in scope for this file:
 
-TODO (RE-DERIVED, wave 6; the "uniform Berry–Esseen over the shell" diagnosis above is
-SUPERSEDED, and the statement is confirmed TRUE).  No uniformity and no Berry–Esseen is
-needed.  Since the conclusion is about an *infimum*, the `liminf ≥` half reduces by a
-subsequence argument to a *drifting-parameter* limit law — the same theorem as the
-fixed-parameter one, with no new analysis:
+* BRICK 1 (case A, `(hₙ)` bounded).  The drifting-parameter version of
+  `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral`, whose cell hypothesis carries a
+  FIXED `h`.  It does not need that file's private apparatus: run the public drifting-row
+  limit law `Bootstrap.Multivariate.meanVec_root_tendsto` on
+  `F n := ((Q n hₙ).map (X n i)).map (psiVec sc)` with `sc` the whitened score system of
+  `exists_multinomial_scores`.  Every `meanVecSeqClass` condition is a finite sum over
+  `Fin (k+1)` with weights `wₙ j = πⱼ + hₙ j/√n → πⱼ`, and the limiting covariance is the
+  IDENTITY directly from `hortho'`/`hcentred'` (no `reducedCov` computation).  The drift is
+  *linear*: the mean of `psiVec sc` under `wₙ` is `(√n)⁻¹ · v(hₙ)` with
+  `v(h) := ∑ⱼ hⱼ • psiVec sc j`, so `√n · mean = v(hₙ) → v(h₀)` with no expansion at all, and
+  the shift step is `WeakConverges.slutsky_of_tendstoInMeasure_dist` with a *constant-in-`ω`*
+  distance `‖v(hₙ) − v(h₀)‖` — strictly easier than the twin, which needed tightness.
+  The one genuinely missing ingredient is a PARSEVAL conjunct on `exists_multinomial_scores`:
+      `∑ⱼ πⱼ gⱼ = 0 → ∑ⱼ πⱼ gⱼ² = ∑ᵢ (∑ⱼ πⱼ gⱼ scᵢ j)²`.
+  It is free from that lemma's own construction (`sc` comes from an orthonormal basis of
+  `(ℝ ∙ (√πⱼ)ⱼ)ᗮ`, so it is Parseval in that subspace) but is not currently exposed.  It
+  yields both `pearsonQ π (X n) ω = ‖Zₙ‖²` (take `gⱼ = (Nⱼ − nπⱼ)/(nπⱼ)`) and
+  `multinomialNoncentrality π h = ‖v(h)‖²` for centred `h`, which are exactly the two
+  identities that turn the vector limit into the noncentral chi-squared tail.
+* BRICK 2 (case B, `‖hₙ‖ → ∞`).  Here `power_n(hₙ) → 1` by a ONE-CELL Chebyshev estimate.
+  Since `Fin (k+1)` is finite, pass to a subsequence on which the maximising cell `j` is
+  CONSTANT; from `multinomialNoncentrality π h ≤ (∑ⱼ πⱼ⁻¹) · maxⱼ hⱼ²` the maximal coordinate
+  diverges.  `Nⱼ` is a sum of `n` i.i.d. indicators with success probability
+  `pₙ = πⱼ + hₙ j/√n ∈ [0,1]`, so `(Nⱼ − nπⱼ)/√(nπⱼ)` has mean `hₙ j/√πⱼ → ±∞` and variance
+  `pₙ(1 − pₙ)/πⱼ ≤ (minⱼ πⱼ)⁻¹`; `Qₙ` dominates that single squared term, so
+  `P{Qₙ ≤ c} → 0`.  Elementary: `iIndepFun.variance_sum` plus Chebyshev, no expansion.
 
-* choose `hₙ ∈ multinomialShell π b n` with `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹` (the shell is
-  nonempty for large `n` and the powers lie in `[0,1]`), and argue along an arbitrary
-  subsequence realising the `liminf`;
-* CASE A, `(hₙ)` bounded.  A further subsequence converges, `hₙ → h₀`, and both constraints
-  `∑ⱼ hⱼ = 0`, `λ(h) ≥ b²` are closed, so `∑ⱼ h₀ⱼ = 0` and `λ(h₀) ≥ b²`.  What is needed is
-  `power_n(hₙ) → ncχ²_k(λ(h₀))(c,∞)`, i.e. the DRIFTING version of the closed
-  `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral`, whose cell hypothesis
-  `((μ n) {j}).toReal = πⱼ + hⱼ/√n` carries a *fixed* `h`.  That proof already runs through
-  `Bootstrap.Multivariate.meanVec_root_tendsto`, whose class `meanVecSeqClass` constrains only
-  the sequence of per-observation laws — weak convergence to the null multinomial, mean vectors
-  and covariances converging — and every one of those holds verbatim for `hₙ → h₀`, the drift
-  entering only through the Slutsky shift `√n·(mean) → h₀`.  So the missing brick is a
-  *restatement of an existing closed lemma* with `h : ℕ → Fin (k+1) → ℝ`; it belongs to
-  `ChiSquaredMultinomial.lean`, which is outside this lane's scope, which is why it is not done
-  here.  `noncentralChiSquared_tail_mono` then upgrades `λ(h₀) ≥ b²` to the required bound.
-* CASE B, `‖hₙ‖ → ∞`.  Here `power_n(hₙ) → 1` by a ONE-CELL Chebyshev estimate, not by any
-  multivariate expansion: pick `jₙ` maximising `|h_{n,j}|`; from
-  `λ(h) ≤ (∑ⱼ πⱼ⁻¹)·max_j hⱼ²` the maximal coordinate diverges; `Y_{jₙ}` is a sum of `n`
-  i.i.d. indicators with success probability `π_{jₙ} + h_{n,jₙ}/√n ∈ [0,1]`, so
-  `(Y_{jₙ} − nπ_{jₙ})/√(nπ_{jₙ})` has mean `h_{n,jₙ}/√π_{jₙ} → ±∞` and variance
-  `p(1−p)/π_{jₙ} ≤ (min_j πⱼ)⁻¹`; `Qₙ` dominates that single squared term, so
-  `P{Qₙ ≤ c} → 0`.  This branch is elementary and in scope.
-
-The `limsup ≤` half is unchanged and already available from
-`pearsonQ_local_power_nondegenerate`.  The file-level debt is therefore exactly the drifting
-restatement of the multinomial local CLT (case A); the rest is bookkeeping. -/
+Case B is what the twin never needed and is the reason the twin's proof requires `B < ∞`:
+here the shell is UNBOUNDED and moves with `n`, so near-minimisers need not be bounded. -/
 private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : Fin (k + 1) → ℝ}
     {Q : ℕ → (Fin (k + 1) → ℝ) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)}

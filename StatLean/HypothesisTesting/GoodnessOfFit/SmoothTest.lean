@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import StatLean.AsymptoticStatistics.ForMathlib.PiWithDensity
 import StatLean.AsymptoticStatistics.ParametricFamily.ScoreCLT
+import StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianWeakLimit
 import Mathlib.Probability.HasLawExists
 
 /-!
@@ -64,9 +65,10 @@ smooth test is asymptotically maximin. (`TSH4 §16.4 Thm 16.4.1`.)
   `E.P (n^{-1/2} • h)`; this is the same format as in `ChiSquaredMaximin.lean`.
 * The upper bound is stated for a finite outer radius `B`. The unbounded case `B = ∞`
   follows a fortiori, the infimum over a larger set being smaller. The *attainment* half,
-  in contrast, genuinely needs `B < ∞` in general; it extends to `B = ∞` under the extra
-  condition that `Var_θ[ψⱼ(X₁)]` be bounded uniformly in `θ` — automatic when the `ψⱼ` are
-  bounded functions, as they are for the Legendre system.
+  in contrast, genuinely needs `B < ∞`: its `liminf ≥` direction is a compactness argument
+  on the shell (see `smoothTest_shell_minPower_tendsto`), and an unbounded shell admits
+  near-minimising sequences with `‖hₙ‖ → ∞`, for which a separate divergence estimate would
+  be required.
 
 **Bibliographic comments.** The smooth test, the embedding family, and the asymptotic
 maximin property against the alternatives it generates are due to J. Neyman ("Smooth test
@@ -1211,103 +1213,718 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     fun n => funext (hpower n)
   simp only [hfun]
   exact hmain
-/-- **The smooth test attains the maximin value on the local shell** (LIFTED — the deep half
-of `smoothTest_asymptotically_maximin`). Under the local alternatives `θ = h n^{-1/2}` with
+/-! ### Bricks for the attainment half
+
+The attainment half needs the local limit law of the score vector under a *drifting* local
+parameter `hₙ → h₀`.  That is Le Cam's third lemma applied to the exponential tilt: the
+log-likelihood ratio of the `n`-fold product `p_{hₙ/√n}` against `P₀ⁿ` is the *exact* affine
+function `⟪hₙ, Zₙ⟫ − n·A(hₙ/√n)` of the score vector `Zₙ`, so the joint weak limit of
+`(Zₙ, Lₙ)` under the null follows from `pi_scoreLaw_weakConverges` plus a Slutsky step, and
+the uniform-integrability hypothesis of Le Cam 3 follows from the exact second-moment
+identity `∫ exp(2Lₙ) dP₀ⁿ = exp(n·A(2hₙ/√n) − 2n·A(hₙ/√n))`, bounded because
+`n·A(θₙ) → ‖h₀‖²/2` by `logPartition_quadratic_bound`.  The tilted limit is then the
+Cameron–Martin shift `N(h₀, Iₖ)`. -/
+
+section Attainment
+
+variable {k : ℕ}
+
+/-- **1-D Gaussian Girsanov shift**, measure form. -/
+private lemma gaussianReal_withDensity_shift (a : ℝ) :
+    (gaussianReal 0 1).withDensity
+        (fun x => ENNReal.ofReal (Real.exp (a * x - a ^ 2 / 2)))
+      = gaussianReal a 1 := by
+  rw [gaussianReal_of_var_ne_zero (0 : ℝ) (by norm_num : (1 : NNReal) ≠ 0),
+    gaussianReal_of_var_ne_zero a (by norm_num : (1 : NNReal) ≠ 0),
+    ← MeasureTheory.withDensity_mul volume (measurable_gaussianPDF 0 1) (by fun_prop)]
+  congr 1
+  ext x
+  simp only [Pi.mul_apply, gaussianPDF_def]
+  rw [← ENNReal.ofReal_mul (gaussianPDFReal_nonneg 0 1 x)]
+  congr 1
+  simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero]
+  rw [mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
+
+/-- **Product-form Gaussian Girsanov shift** on `ι → ℝ`. -/
+private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : ι → ℝ) :
+    (Measure.pi (fun _ : ι => gaussianReal 0 1)).withDensity
+        (fun y => ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = Measure.pi (fun i : ι => gaussianReal (a i) 1) := by
+  classical
+  have h1d : ∀ i, (gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+        = gaussianReal (a i) 1 :=
+    fun i => gaussianReal_withDensity_shift (a i)
+  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
+    intro i; rw [h1d i]; infer_instance
+  have hdensity : (fun y : ι → ℝ =>
+        ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by
+    funext y
+    rw [show ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)
+          = ∑ i, (a i * y i - (a i) ^ 2 / 2) from by
+          rw [Finset.sum_sub_distrib, Finset.sum_div],
+      Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun _ _ => Real.exp_nonneg _)]
+  rw [hdensity, pi_withDensity_prod
+    (f := fun i (x : ℝ) => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+    (fun i => by fun_prop)]
+  congr 1
+  funext i
+  exact h1d i
+
+/-- Transport of a `withDensity` through the coordinate map `WithLp.toLp 2`. -/
+private lemma map_toLp_withDensity (μ : Measure (Fin k → ℝ))
+    {w : (Fin k → ℝ) → ℝ≥0∞} (hw : Measurable w) :
+    (μ.withDensity w).map (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
+      = (μ.map (WithLp.toLp 2)).withDensity (fun z => w z.ofLp) := by
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hw' : Measurable (fun z : EuclideanSpace ℝ (Fin k) => w z.ofLp) :=
+    hw.comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))
+  ext A hA
+  rw [Measure.map_apply hT hA, withDensity_apply _ (hT hA), withDensity_apply _ hA,
+    ← lintegral_indicator (hT hA), ← lintegral_indicator hA,
+    lintegral_map (hw'.indicator hA) hT]
+  classical
+  refine lintegral_congr fun x => ?_
+  simp only [Set.indicator_apply, Set.mem_preimage]
+
+/-- **Cameron–Martin identity, measure form.**  Translating the standard Gaussian on
+`EuclideanSpace ℝ (Fin k)` by `v` is the same as tilting it by `exp(⟪v, ·⟫ − ‖v‖²/2)`. -/
+private lemma stdGaussian_map_add_eq_withDensity (v : EuclideanSpace ℝ (Fin k)) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
+          (fun z => ENNReal.ofReal (Real.exp (⟪v, z⟫_ℝ - ‖v‖ ^ 2 / 2))) := by
+  classical
+  set a : Fin k → ℝ := fun i => v i with ha
+  set π₀ : Measure (Fin k → ℝ) := Measure.pi (fun _ : Fin k => gaussianReal 0 1) with hπ₀
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hmapT : π₀.map (WithLp.toLp 2) = stdGaussian (EuclideanSpace ℝ (Fin k)) :=
+    map_pi_eq_stdGaussian
+  have hsum : ∀ u w : EuclideanSpace ℝ (Fin k), ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+    intro u w
+    simp only [PiLp.inner_apply]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
+  have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
+    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+      intro i
+      rw [gaussianReal_map_const_add]
+      infer_instance
+    rw [hπ₀, Measure.pi_map_pi (f := fun i (t : ℝ) => a i + t)
+      (fun i => (measurable_const_add (a i)).aemeasurable)]
+    congr 1
+    funext i
+    rw [gaussianReal_map_const_add]
+    simp
+  have hLHS : (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
+    rw [← hmapT, Measure.map_map (by fun_prop) hT,
+      Measure.map_map hT
+        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+    congr 1
+  rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift a, ← hπ₀,
+    map_toLp_withDensity π₀ (by fun_prop), hmapT]
+  congr 1
+  funext z
+  rw [hsum, hnorm]
+
+/-- With unit covariance, `multivariateGaussian` is a translate of the standard Gaussian. -/
+private lemma mvGaussian_one_eq_map_add (v : EuclideanSpace ℝ (Fin k)) :
+    multivariateGaussian v 1
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-- If tilting `μ` by `exp f` produces a probability measure, then `exp f` is `μ`-integrable
+with integral one.  Used both for the exact normalisation of the product likelihood ratio and
+for its square. -/
+private lemma integrable_exp_of_withDensity_isProbability {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ} (hf : Measurable f)
+    (h : IsProbabilityMeasure
+      (μ.withDensity (fun x => ENNReal.ofReal (Real.exp (f x))))) :
+    Integrable (fun x => Real.exp (f x)) μ ∧ ∫ x, Real.exp (f x) ∂μ = 1 := by
+  have hone : ∫⁻ x, ENNReal.ofReal (Real.exp (f x)) ∂μ = 1 := by
+    have hu := h.measure_univ
+    rwa [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hu
+  have hmeas : AEStronglyMeasurable (fun x => Real.exp (f x)) μ :=
+    (Real.continuous_exp.measurable.comp hf).aestronglyMeasurable
+  have heq : ∫⁻ x, ‖Real.exp (f x)‖ₑ ∂μ = 1 := by
+    rw [← hone]
+    refine lintegral_congr fun x => ?_
+    rw [← ofReal_norm_eq_enorm, Real.norm_eq_abs, abs_of_nonneg (Real.exp_pos _).le]
+  have hint : Integrable (fun x => Real.exp (f x)) μ := by
+    refine ⟨hmeas, ?_⟩
+    change ∫⁻ x, ‖Real.exp (f x)‖ₑ ∂μ < ⊤
+    rw [heq]
+    exact ENNReal.one_lt_top
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae
+    (Filter.Eventually.of_forall fun x => (Real.exp_pos _).le) hmeas, hone]
+  simp
+
+/-- The bounded continuous cut-off `min 1 (max 0 (‖z‖ − r))`: one outside the ball of radius
+`r + 1`, zero inside the ball of radius `r`.  The test function that turns weak convergence
+into the tightness estimate of `tendsto_measure_smul_norm_of_weakConverges`. -/
+private noncomputable def normCutoff {E : Type*} [NormedAddCommGroup E] (r : ℝ) :
+    BoundedContinuousFunction E ℝ where
+  toFun z := min 1 (max 0 (‖z‖ - r))
+  continuous_toFun := by fun_prop
+  map_bounded' := by
+    refine ⟨1, fun x y => ?_⟩
+    have hx : min 1 (max 0 (‖x‖ - r)) ∈ Set.Icc (0 : ℝ) 1 :=
+      ⟨le_min zero_le_one (le_max_left _ _), min_le_left _ _⟩
+    have hy : min 1 (max 0 (‖y‖ - r)) ∈ Set.Icc (0 : ℝ) 1 :=
+      ⟨le_min zero_le_one (le_max_left _ _), min_le_left _ _⟩
+    rw [Real.dist_eq, abs_le]
+    exact ⟨by linarith [hx.1, hx.2, hy.1, hy.2], by linarith [hx.1, hx.2, hy.1, hy.2]⟩
+
+private lemma normCutoff_apply {E : Type*} [NormedAddCommGroup E] (r : ℝ) (z : E) :
+    normCutoff r z = min 1 (max 0 (‖z‖ - r)) := rfl
+
+/-- **Vanishing shrinking-multiple tails.**  If `μ n ⇝ ν` on a normed space and the
+nonnegative scalars `cs n` tend to zero, then for every `ε > 0` the masses
+`μ n {z | ε ≤ cs n · ‖z‖}` tend to zero.  This is the only consequence of tightness that the
+Slutsky step of the drifting local limit needs. -/
+private lemma tendsto_measure_smul_norm_of_weakConverges {E : Type*}
+    [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : ℕ → Measure E} [∀ n, IsProbabilityMeasure (μ n)] {ν : Measure E}
+    [IsProbabilityMeasure ν]
+    (hconv : AsymptoticStatistics.WeakConverges μ ν)
+    {cs : ℕ → ℝ} (hcs0 : ∀ n, 0 ≤ cs n) (hcs : Tendsto cs atTop (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n => (μ n).real {z : E | ε ≤ cs n * ‖z‖}) atTop (𝓝 0) := by
+  classical
+  have hmeasset : ∀ (t : ℝ), MeasurableSet {z : E | t ≤ ‖z‖} :=
+    fun t => measurableSet_le measurable_const measurable_norm
+  -- the ν-tails vanish
+  have hνtail : Tendsto (fun m : ℕ => ν.real {z : E | (m : ℝ) ≤ ‖z‖}) atTop (𝓝 0) := by
+    have hanti : Antitone (fun m : ℕ => {z : E | (m : ℝ) ≤ ‖z‖}) := by
+      intro m m' hmm z hz
+      simp only [Set.mem_setOf_eq] at hz ⊢
+      exact le_trans (by exact_mod_cast hmm) hz
+    have hinter : (⋂ m : ℕ, {z : E | (m : ℝ) ≤ ‖z‖}) = (∅ : Set E) := by
+      ext z
+      simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+      intro hz
+      obtain ⟨m, hm⟩ := exists_nat_gt ‖z‖
+      exact absurd (hz m) (not_le.mpr hm)
+    have h := MeasureTheory.tendsto_measure_iInter_atTop
+      (μ := ν) (s := fun m : ℕ => {z : E | (m : ℝ) ≤ ‖z‖})
+      (fun m => (hmeasset _).nullMeasurableSet) hanti ⟨0, measure_ne_top _ _⟩
+    rw [hinter, measure_empty] at h
+    have := (ENNReal.tendsto_toReal (by simp)).comp h
+    simpa [MeasureTheory.Measure.real] using this
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro δ hδ
+  -- choose the radius from the limit tail
+  obtain ⟨m, hm⟩ : ∃ m : ℕ, ν.real {z : E | (m : ℝ) ≤ ‖z‖} < δ / 2 := by
+    have := (NormedAddGroup.tendsto_nhds_zero.mp hνtail) (δ / 2) (by linarith)
+    obtain ⟨m, hm⟩ := this.exists
+    exact ⟨m, lt_of_abs_lt (by simpa [Real.norm_eq_abs] using hm)⟩
+  set r : ℝ := (m : ℝ) with hr
+  -- the cut-off dominates the indicator of the outer tail and is dominated by the inner one
+  have hlow : ∀ (ρ : Measure E), IsProbabilityMeasure ρ →
+      ρ.real {z : E | r + 1 ≤ ‖z‖} ≤ ∫ z, normCutoff (E := E) r z ∂ρ := by
+    intro ρ hρ
+    haveI := hρ
+    rw [← integral_indicator_one (hmeasset (r + 1))]
+    refine integral_mono ((integrable_const (1 : ℝ)).indicator (hmeasset (r + 1)))
+      ((normCutoff (E := E) r).integrable ρ) (fun z => ?_)
+    by_cases hz : z ∈ {z : E | r + 1 ≤ ‖z‖}
+    · rw [Set.indicator_of_mem hz, normCutoff_apply]
+      have hz' : r + 1 ≤ ‖z‖ := hz
+      have : (1 : ℝ) ≤ max 0 (‖z‖ - r) := le_max_of_le_right (by linarith)
+      simp only [Pi.one_apply]
+      exact le_min le_rfl this
+    · rw [Set.indicator_of_notMem hz, normCutoff_apply]
+      exact le_min zero_le_one (le_max_left _ _)
+  have hhigh : ∫ z, normCutoff (E := E) r z ∂ν ≤ ν.real {z : E | r ≤ ‖z‖} := by
+    rw [← integral_indicator_one (hmeasset r)]
+    refine integral_mono ((normCutoff (E := E) r).integrable ν)
+      ((integrable_const (1 : ℝ)).indicator (hmeasset r)) (fun z => ?_)
+    by_cases hz : z ∈ {z : E | r ≤ ‖z‖}
+    · rw [Set.indicator_of_mem hz]
+      exact min_le_left _ _
+    · rw [Set.indicator_of_notMem hz, normCutoff_apply]
+      have hz' : ‖z‖ - r ≤ 0 := by
+        simp only [Set.mem_setOf_eq, not_le] at hz
+        linarith
+      rw [max_eq_left hz']
+      simp
+  -- eventually the sequence's cut-off integral is small
+  have hev1 : ∀ᶠ n in atTop, ∫ z, normCutoff (E := E) r z ∂(μ n) < δ := by
+    have hlim := hconv (normCutoff (E := E) r)
+    refine (hlim.eventually (gt_mem_nhds (show ∫ z, normCutoff (E := E) r z ∂ν < δ from ?_)))
+    calc ∫ z, normCutoff (E := E) r z ∂ν ≤ ν.real {z : E | r ≤ ‖z‖} := hhigh
+      _ < δ / 2 := hm
+      _ < δ := by linarith
+  have hev2 : ∀ᶠ n in atTop, cs n * (r + 1) < ε := by
+    have hrpos : (0 : ℝ) < r + 1 := by positivity
+    have := hcs.const_mul (r + 1)
+    rw [mul_zero] at this
+    have h2 : Tendsto (fun n => cs n * (r + 1)) atTop (𝓝 0) := by
+      simpa [mul_comm] using this
+    exact h2.eventually (gt_mem_nhds hε)
+  filter_upwards [hev1, hev2] with n hn1 hn2
+  have hsub : {z : E | ε ≤ cs n * ‖z‖} ⊆ {z : E | r + 1 ≤ ‖z‖} := by
+    intro z hz
+    simp only [Set.mem_setOf_eq] at hz ⊢
+    by_contra hcon
+    rw [not_le] at hcon
+    have : cs n * ‖z‖ ≤ cs n * (r + 1) :=
+      mul_le_mul_of_nonneg_left hcon.le (hcs0 n)
+    linarith
+  have hbd := (measureReal_mono (μ := μ n) hsub (measure_ne_top _ _)).trans (hlow (μ n) inferInstance)
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  linarith
+
+end Attainment
+
+/-- **Drifting-parameter local limit law for the score vector.**  If the local parameters
+`u n` converge to `h₀`, then under `Q n (u n)` — i.i.d. sampling from the smooth model at the
+canonical parameter `u n/√n` — the standardised score vector converges in law to `N(h₀, Iₖ)`.
+
+This is Le Cam's third lemma, in the case where the log-likelihood ratio is an *exact* affine
+function of the statistic: with `Zₙ = (√n)⁻¹ ∑ᵢ ψ(Xᵢ)` and
+`A(θ) = log ∫ exp⟪θ, ψ⟫ dP₀`, the density of the product tilt against `P₀ⁿ` is
+`exp(Lₙ)` with `Lₙ = ⟪u n, Zₙ⟫ − n·A(u n/√n)`.  Hence the joint law of `(Zₙ, Lₙ)` under the
+null is a continuous image of the law of `Zₙ` up to a drift that vanishes by Slutsky
+(`tendsto_measure_smul_norm_of_weakConverges`), whose limit is
+`pi_scoreLaw_weakConverges`; and Le Cam's uniform-integrability hypothesis follows from the
+exact second-moment identity `∫ exp(2Lₙ) dP₀ⁿ = exp(n·A(2u n/√n) − 2n·A(u n/√n))`, bounded
+because `n·A(t·u n/√n) → t²‖h₀‖²/2` by `logPartition_quadratic_bound`.  The tilted limit is
+the Cameron–Martin shift `N(h₀, Iₖ)`. -/
+private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
+    [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
+    (hψ : Measurable fun x => (WithLp.toLp 2 fun j => ψ j x : EuclideanSpace ℝ (Fin k)))
+    {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
+    {X : (n : ℕ) → Fin n → Ω → 𝓧}
+    {u : ℕ → EuclideanSpace ℝ (Fin k)} {h₀ : EuclideanSpace ℝ (Fin k)}
+    (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
+    (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0)
+    (hX : ∀ n, ∀ i, Measurable (X n i))
+    (hindep : ∀ n h, iIndepFun (X n) (Q n h))
+    (hlaw : ∀ n h, ∀ i, (Q n h).map (X n i)
+      = (smoothModel P₀ ψ hψ).P ((Real.sqrt (n : ℝ))⁻¹ • h))
+    (hu : Tendsto u atTop (𝓝 h₀)) :
+    WeakConverges (fun n => (Q n (u n)).map (scoreVec ψ (X n)))
+      (multivariateGaussian h₀ 1) := by
+  classical
+  have hψmeas : ∀ j, Measurable (ψ j) := fun j =>
+    ((measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hψ
+  have hgmeas : Measurable (psiVec ψ) :=
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψmeas)
+  -- ### The log-partition function and the exponential-tilt representation
+  set A : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun θ => Real.log (∫ x, Real.exp ⟪θ, psiVec ψ x⟫_ℝ ∂P₀) with hAdef
+  have hEprob : ∀ θ : EuclideanSpace ℝ (Fin k),
+      IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := by
+    intro θ
+    have h1 := hlaw 1 θ (0 : Fin 1)
+    have hs : (Real.sqrt ((1 : ℕ) : ℝ))⁻¹ • θ = θ := by norm_num
+    rw [hs] at h1
+    rw [← h1]
+    exact Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+  haveI hEprobI : ∀ θ, IsProbabilityMeasure ((smoothModel P₀ ψ hψ).P θ) := hEprob
+  have hEint : ∀ θ, Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀ := by
+    intro θ
+    refine integrable_exp_of_isProbabilityMeasure_tilted (P₀ := P₀) ?_
+    rw [← smoothModel_P_eq P₀ ψ hψ θ]
+    exact hEprob θ
+  have hMpos : ∀ θ, 0 < ∫ x, Real.exp ⟪θ, psiVec ψ x⟫_ℝ ∂P₀ :=
+    fun θ => integral_exp_pos (hEint θ)
+  have hEdens : ∀ θ, (smoothModel P₀ ψ hψ).P θ
+      = P₀.withDensity (fun x => ENNReal.ofReal (Real.exp (⟪θ, psiVec ψ x⟫_ℝ - A θ))) := by
+    intro θ
+    rw [smoothModel_P_eq P₀ ψ hψ θ]
+    exact tilted_eq_withDensity_log P₀ _ (hMpos θ)
+  obtain ⟨Cst, hCst0, hCstbd⟩ :=
+    logPartition_quadratic_bound (P₀ := P₀) hψmeas hortho hcentred hEint (r := 1) one_pos
+  -- ### The canonical null and alternative experiments
+  set θs : ℕ → EuclideanSpace ℝ (Fin k) := fun n => (Real.sqrt (n : ℝ))⁻¹ • u n with hθs
+  set PN : (n : ℕ) → Measure (Fin n → 𝓧) := fun n => Measure.pi (fun _ : Fin n => P₀) with hPN
+  haveI hPNprob : ∀ n, IsProbabilityMeasure (PN n) := by
+    intro n; rw [hPN]; infer_instance
+  set QN : (n : ℕ) → Measure (Fin n → 𝓧) :=
+    fun n => Measure.pi (fun _ : Fin n => (smoothModel P₀ ψ hψ).P (θs n)) with hQN
+  haveI hQNprob : ∀ n, IsProbabilityMeasure (QN n) := by
+    intro n; rw [hQN]; infer_instance
+  set T : (n : ℕ) → (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
+    fun n d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) with hT
+  have hTmeas : ∀ n, Measurable (T n) := by
+    intro n
+    simp only [hT]
+    exact measurable_const.smul
+      (Finset.univ.measurable_sum fun i _ => hgmeas.comp (measurable_pi_apply i))
+  have hinnermeas : ∀ v : EuclideanSpace ℝ (Fin k),
+      Measurable fun z : EuclideanSpace ℝ (Fin k) => ⟪v, z⟫_ℝ :=
+    fun v => (continuous_const.inner continuous_id).measurable
+  set aN : ℕ → ℝ := fun n => (n : ℝ) * A (θs n) with haN
+  set L : (n : ℕ) → (Fin n → 𝓧) → ℝ := fun n d => ⟪u n, T n d⟫_ℝ - aN n with hL
+  have hLmeas : ∀ n, Measurable (L n) := by
+    intro n
+    simp only [hL]
+    exact ((hinnermeas (u n)).comp (hTmeas n)).sub measurable_const
+  -- ### The exact likelihood-ratio representation, at every scalar multiple of `θs n`
+  have hpidens : ∀ (t : ℝ) (n : ℕ),
+      Measure.pi (fun _ : Fin n => (smoothModel P₀ ψ hψ).P (t • θs n))
+        = (PN n).withDensity (fun d =>
+            ENNReal.ofReal (Real.exp (t * ⟪u n, T n d⟫_ℝ - (n : ℝ) * A (t • θs n)))) := by
+    intro t n
+    have hum : Measurable (fun x => ⟪t • θs n, psiVec ψ x⟫_ℝ - A (t • θs n)) :=
+      ((hinnermeas (t • θs n)).comp hgmeas).sub measurable_const
+    haveI hpm : IsProbabilityMeasure (P₀.withDensity (fun x =>
+        ENNReal.ofReal (Real.exp (⟪t • θs n, psiVec ψ x⟫_ℝ - A (t • θs n))))) := by
+      rw [← hEdens (t • θs n)]; exact hEprob _
+    have hsumid : ∀ d : Fin n → 𝓧,
+        ∑ i, (⟪t • θs n, psiVec ψ (d i)⟫_ℝ - A (t • θs n))
+          = t * ⟪u n, T n d⟫_ℝ - (n : ℝ) * A (t • θs n) := by
+      intro d
+      have h1 : ∑ i, ⟪t • θs n, psiVec ψ (d i)⟫_ℝ = t * ⟪u n, T n d⟫_ℝ := by
+        have h2 : ∑ i, ⟪t • θs n, psiVec ψ (d i)⟫_ℝ
+            = ⟪t • θs n, ∑ i, psiVec ψ (d i)⟫_ℝ := (inner_sum _ _ _).symm
+        rw [h2, real_inner_smul_left]
+        simp only [hT, hθs, real_inner_smul_right, real_inner_smul_left]
+      rw [Finset.sum_sub_distrib, h1]
+      simp
+    rw [show (fun _ : Fin n => (smoothModel P₀ ψ hψ).P (t • θs n))
+        = (fun _ : Fin n => P₀.withDensity (fun x =>
+            ENNReal.ofReal (Real.exp (⟪t • θs n, psiVec ψ x⟫_ℝ - A (t • θs n)))))
+        from funext fun _ => hEdens _,
+      pi_withDensity_exp (n := n) (P₀ := P₀) hum, hPN]
+    congr 1
+    funext d
+    rw [hsumid d]
+  have hdens : ∀ n, QN n = (PN n).withDensity
+      (fun d => ENNReal.ofReal (Real.exp (L n d))) := by
+    intro n
+    have h := hpidens 1 n
+    rw [one_smul] at h
+    rw [hQN]
+    simp only []
+    rw [h]
+    congr 1
+    funext d
+    simp only [hL, haN, one_mul]
+  -- ### The null limit of the score vector
+  have hμweak : WeakConverges (fun n => (PN n).map (T n))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    simpa only [hPN, hT] using
+      pi_scoreLaw_weakConverges (P₀ := P₀) (ψ := ψ) hψmeas hortho hcentred
+  haveI hmuprob : ∀ n, IsProbabilityMeasure ((PN n).map (T n)) :=
+    fun n => Measure.isProbabilityMeasure_map (hTmeas n).aemeasurable
+  -- ### The log-partition drift `n·A(t θₙ) → t²‖h₀‖²/2`
+  obtain ⟨Mb, hMbmem⟩ := hu.norm.bddAbove_range
+  have hMb : ∀ n, ‖u n‖ ≤ Mb := fun n => hMbmem ⟨n, rfl⟩
+  have hMb0 : 0 ≤ Mb := le_trans (norm_nonneg _) (hMb 0)
+  have hsqrtatTop : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hθnorm : ∀ n : ℕ, 0 < n → ‖θs n‖ = ‖u n‖ / Real.sqrt (n : ℝ) := by
+    intro n hn
+    have hs : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hn)
+    simp only [hθs, norm_smul, Real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr hs.le)]
+    rw [inv_mul_eq_div]
+  have hsmall : ∀ t : ℝ, 0 ≤ t →
+      ∀ᶠ n : ℕ in atTop, ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ≤ 1 := by
+    intro t ht
+    have hlim : Tendsto (fun n : ℕ => t * Mb / Real.sqrt (n : ℝ)) atTop (𝓝 0) :=
+      Filter.Tendsto.div_atTop tendsto_const_nhds hsqrtatTop
+    have hev := hlim.eventually (gt_mem_nhds (show (0 : ℝ) < 1 by norm_num))
+    filter_upwards [hev, eventually_gt_atTop 0] with n hn hn0
+    have hs : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hn0)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht, hθnorm n hn0]
+    calc t * (‖u n‖ / Real.sqrt (n : ℝ)) ≤ t * (Mb / Real.sqrt (n : ℝ)) := by
+          exact mul_le_mul_of_nonneg_left (by gcongr; exact hMb n) ht
+      _ = t * Mb / Real.sqrt (n : ℝ) := by ring
+      _ ≤ 1 := hn.le
+  have hAdrift : ∀ t : ℝ, 0 ≤ t →
+      Tendsto (fun n : ℕ => (n : ℝ) * A (t • θs n)) atTop (𝓝 (t ^ 2 * ‖h₀‖ ^ 2 / 2)) := by
+    intro t ht
+    have hdiff : Tendsto
+        (fun n : ℕ => (n : ℝ) * A (t • θs n) - t ^ 2 * ‖u n‖ ^ 2 / 2) atTop (𝓝 0) := by
+      refine squeeze_zero_norm'
+        (a := fun n : ℕ => Cst * (t * Mb) ^ 3 / Real.sqrt (n : ℝ)) ?_ ?_
+      · filter_upwards [hsmall t ht, eventually_gt_atTop 0] with n hn hn0
+        have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn0
+        have hs : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+        have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+          Real.mul_self_sqrt (Nat.cast_nonneg n)
+        have hnt : ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖
+            = t * ‖u n‖ / Real.sqrt (n : ℝ) := by
+          rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht, hθnorm n hn0]
+          ring
+        have hb := hCstbd (t • θs n) hn
+        have hsq2 : Real.sqrt (n : ℝ) ^ 2 = (n : ℝ) := Real.sq_sqrt (Nat.cast_nonneg n)
+        have hcube3 : Real.sqrt (n : ℝ) ^ 3 = (n : ℝ) * Real.sqrt (n : ℝ) := by
+          rw [pow_succ, hsq2]
+        have hquad : (n : ℝ) * (‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 2 / 2)
+            = t ^ 2 * ‖u n‖ ^ 2 / 2 := by
+          rw [hnt, div_pow, hsq2]
+          field_simp
+        have hcube : (n : ℝ) * (Cst * ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 3)
+            = Cst * (t * ‖u n‖) ^ 3 / Real.sqrt (n : ℝ) := by
+          rw [hnt, div_pow, hcube3]
+          field_simp
+        calc ‖(n : ℝ) * A (t • θs n) - t ^ 2 * ‖u n‖ ^ 2 / 2‖
+            = (n : ℝ) * |A (t • θs n)
+                - ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 2 / 2| := by
+              rw [Real.norm_eq_abs, ← hquad, ← mul_sub, abs_mul, abs_of_nonneg hnR.le]
+          _ ≤ (n : ℝ) * (Cst * ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 3) :=
+              mul_le_mul_of_nonneg_left hb hnR.le
+          _ = Cst * (t * Mb) ^ 3 / Real.sqrt (n : ℝ) - Cst *
+                ((t * Mb) ^ 3 - (t * ‖u n‖) ^ 3) / Real.sqrt (n : ℝ) := by
+              rw [hcube]; ring
+          _ ≤ Cst * (t * Mb) ^ 3 / Real.sqrt (n : ℝ) := by
+              have h1 : (t * ‖u n‖) ^ 3 ≤ (t * Mb) ^ 3 := by
+                have : t * ‖u n‖ ≤ t * Mb := mul_le_mul_of_nonneg_left (hMb n) ht
+                exact pow_le_pow_left₀ (by positivity) this 3
+              have h2 : 0 ≤ Cst * ((t * Mb) ^ 3 - (t * ‖u n‖) ^ 3) / Real.sqrt (n : ℝ) := by
+                apply div_nonneg _ hs.le
+                nlinarith
+              linarith
+      · exact Filter.Tendsto.div_atTop tendsto_const_nhds hsqrtatTop
+    have hmain : Tendsto (fun n => t ^ 2 * ‖u n‖ ^ 2 / 2) atTop (𝓝 (t ^ 2 * ‖h₀‖ ^ 2 / 2)) := by
+      have := hu.norm
+      exact ((this.pow 2).const_mul (t ^ 2)).div_const 2
+    have := hdiff.add hmain
+    simpa using this
+  have haNlim : Tendsto aN atTop (𝓝 (‖h₀‖ ^ 2 / 2)) := by
+    have := hAdrift 1 zero_le_one
+    simp only [one_smul, one_pow, one_mul] at this
+    simpa only [haN] using this
+  -- ### Uniform integrability of the likelihood ratio
+  obtain ⟨hexp1int, hexp1one⟩ : (∀ n, Integrable (fun d => Real.exp (L n d)) (PN n)) ∧
+      ∀ n, ∫ d, Real.exp (L n d) ∂(PN n) = 1 := by
+    constructor
+    · intro n
+      refine (integrable_exp_of_withDensity_isProbability (hLmeas n) ?_).1
+      rw [← hdens n]; exact hQNprob n
+    · intro n
+      refine (integrable_exp_of_withDensity_isProbability (hLmeas n) ?_).2
+      rw [← hdens n]; exact hQNprob n
+  set bN : ℕ → ℝ := fun n => (n : ℝ) * A ((2 : ℝ) • θs n) with hbN
+  have hsqmeas : ∀ n, Measurable
+      (fun d : Fin n → 𝓧 => (2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) := by
+    intro n
+    exact (((hinnermeas (u n)).comp (hTmeas n)).const_mul 2).sub measurable_const
+  have hsqprob : ∀ n, IsProbabilityMeasure ((PN n).withDensity
+      (fun d => ENNReal.ofReal (Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n)))) := by
+    intro n
+    rw [← hpidens 2 n]
+    infer_instance
+  have hexp2 : ∀ n, Integrable
+      (fun d => Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n)) (PN n) ∧
+      ∫ d, Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) ∂(PN n) = 1 := fun n =>
+    integrable_exp_of_withDensity_isProbability (hsqmeas n) (hsqprob n)
+  have hbNlim : Tendsto (fun n => bN n - 2 * aN n) atTop (𝓝 (‖h₀‖ ^ 2)) := by
+    have h2 := hAdrift 2 (by norm_num)
+    have := h2.sub (haNlim.const_mul 2)
+    simp only [hbN]
+    convert this using 2
+    ring
+  have hUI : ∀ ε : ℝ, 0 < ε → ∃ M : ℝ, 0 ≤ M ∧ ∃ N₀ : ℕ, ∀ n, N₀ ≤ n →
+      ∫ d, Real.exp (L n d) - min (Real.exp (L n d)) M ∂(PN n) ≤ ε := by
+    intro ε hε
+    set K : ℝ := Real.exp (‖h₀‖ ^ 2 + 1) with hK
+    have hKpos : 0 < K := Real.exp_pos _
+    have hev : ∀ᶠ n in atTop, bN n - 2 * aN n ≤ ‖h₀‖ ^ 2 + 1 := by
+      have hlt : ‖h₀‖ ^ 2 < ‖h₀‖ ^ 2 + 1 := by linarith
+      exact (hbNlim.eventually (gt_mem_nhds hlt)).mono fun n hn => hn.le
+    obtain ⟨N₀, hN₀⟩ := Filter.eventually_atTop.mp hev
+    refine ⟨K / ε, by positivity, N₀, ?_⟩
+    intro n hn
+    set M : ℝ := K / ε with hM
+    have hMpos' : 0 < M := by positivity
+    have hcomp : ∀ d : Fin n → 𝓧,
+        Real.exp (L n d) - min (Real.exp (L n d)) M
+          ≤ Real.exp (bN n - 2 * aN n)
+            * Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) / M := by
+      intro d
+      have hfact : Real.exp (bN n - 2 * aN n)
+          * Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) = Real.exp (L n d) ^ 2 := by
+        rw [← Real.exp_add, ← Real.exp_nat_mul]
+        congr 1
+        simp only [hL]
+        ring
+      rw [hfact]
+      rcases le_or_gt (Real.exp (L n d)) M with hle | hgt
+      · rw [min_eq_left hle, sub_self]
+        positivity
+      · rw [min_eq_right hgt.le]
+        have h1 : Real.exp (L n d) - M ≤ Real.exp (L n d) := by linarith [hMpos'.le]
+        have h2 : Real.exp (L n d) ≤ Real.exp (L n d) ^ 2 / M := by
+          rw [le_div_iff₀ hMpos', sq]
+          exact mul_le_mul_of_nonneg_left hgt.le (Real.exp_pos _).le
+        linarith
+    have hint1 : Integrable
+        (fun d => Real.exp (L n d) - min (Real.exp (L n d)) M) (PN n) := by
+      refine (hexp1int n).sub ?_
+      refine Integrable.mono' (hexp1int n)
+        (((Real.continuous_exp.measurable.comp (hLmeas n)).min
+          measurable_const).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun d => ?_)
+      rw [Real.norm_eq_abs, abs_of_nonneg (le_min (Real.exp_pos _).le hMpos'.le)]
+      exact min_le_left _ _
+    have hint2 : Integrable (fun d => Real.exp (bN n - 2 * aN n)
+        * Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) / M) (PN n) := by
+      simpa [div_eq_mul_inv, mul_assoc] using
+        (((hexp2 n).1.const_mul (Real.exp (bN n - 2 * aN n))).mul_const M⁻¹)
+    calc ∫ d, Real.exp (L n d) - min (Real.exp (L n d)) M ∂(PN n)
+        ≤ ∫ d, Real.exp (bN n - 2 * aN n)
+            * Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) / M ∂(PN n) :=
+          integral_mono hint1 hint2 hcomp
+      _ = Real.exp (bN n - 2 * aN n) / M := by
+          rw [show (fun d : Fin n → 𝓧 => Real.exp (bN n - 2 * aN n)
+              * Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) / M)
+              = fun d => (Real.exp (bN n - 2 * aN n) / M)
+                • Real.exp ((2 : ℝ) * ⟪u n, T n d⟫_ℝ - bN n) from by
+            funext d; simp only [smul_eq_mul]; ring,
+            integral_smul, (hexp2 n).2, smul_eq_mul, mul_one]
+      _ ≤ K / M := by
+          gcongr
+          exact Real.exp_le_exp.mpr (hN₀ n hn)
+      _ = ε := by
+          rw [hM, div_div_eq_mul_div, mul_comm, mul_div_assoc, div_self hKpos.ne', mul_one]
+  -- ### The joint weak limit under the null
+  set gmap : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) × ℝ :=
+    fun z => (z, ⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2) with hgmap
+  have hgmapcont : Continuous gmap := by
+    simp only [hgmap]
+    exact continuous_id.prodMk ((continuous_const.inner continuous_id).sub continuous_const)
+  set π : Measure (EuclideanSpace ℝ (Fin k) × ℝ) :=
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).map gmap with hπ
+  haveI hπprob : IsProbabilityMeasure π := by
+    rw [hπ]; exact Measure.isProbabilityMeasure_map hgmapcont.measurable.aemeasurable
+  have hjoint : WeakConverges (fun n => (PN n).map (fun d => (T n d, L n d))) π := by
+    refine AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
+      (X := fun n d => gmap (T n d)) (Y := fun n d => (T n d, L n d))
+      (fun n => (hgmapcont.measurable.comp (hTmeas n)).aemeasurable)
+      (fun n => ((hTmeas n).prodMk (hLmeas n)).aemeasurable) ?_ ?_
+    · have hmapeq : ∀ n, ((PN n).map (T n)).map gmap
+          = (PN n).map (fun d => gmap (T n d)) := by
+        intro n
+        rw [Measure.map_map hgmapcont.measurable (hTmeas n)]
+        rfl
+      have hw := hμweak.map (f := gmap) hgmapcont hgmapcont.measurable
+      simp only [hmapeq] at hw
+      rw [hπ]
+      exact hw
+    · intro ε hε
+      have hcs0 : ∀ n, (0 : ℝ) ≤ ‖h₀ - u n‖ := fun n => norm_nonneg _
+      have hcslim : Tendsto (fun n => ‖h₀ - u n‖) atTop (𝓝 0) := by
+        have := (tendsto_const_nhds (x := h₀) (f := atTop (α := ℕ))).sub hu
+        simpa using this.norm
+      have htail := tendsto_measure_smul_norm_of_weakConverges hμweak hcs0 hcslim
+        (show (0 : ℝ) < ε / 2 by linarith)
+      have heslim : Tendsto (fun n => |aN n - ‖h₀‖ ^ 2 / 2|) atTop (𝓝 0) := by
+        have := haNlim.sub (tendsto_const_nhds (x := ‖h₀‖ ^ 2 / 2))
+        simpa using this.abs
+      have hesev : ∀ᶠ n in atTop, |aN n - ‖h₀‖ ^ 2 / 2| < ε / 2 :=
+        heslim.eventually (gt_mem_nhds (by linarith))
+      refine squeeze_zero' (g := fun n => ((PN n).map (T n)).real
+          {z : EuclideanSpace ℝ (Fin k) | ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖})
+        (Filter.Eventually.of_forall fun n => measureReal_nonneg) ?_ ?_
+      · filter_upwards [hesev] with n hn
+        have hsub : {d : Fin n → 𝓧 | ε ≤ dist (gmap (T n d)) (T n d, L n d)}
+            ⊆ (T n) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖} := by
+          intro d hd
+          simp only [Set.mem_setOf_eq, Set.mem_preimage] at hd ⊢
+          have hdd : dist (gmap (T n d)) (T n d, L n d)
+              = |⟪h₀, T n d⟫_ℝ - ‖h₀‖ ^ 2 / 2 - L n d| := by
+            simp only [hgmap, Prod.dist_eq, dist_self, Real.dist_eq]
+            exact max_eq_right (abs_nonneg _)
+          rw [hdd] at hd
+          have hsplit : ⟪h₀, T n d⟫_ℝ - ‖h₀‖ ^ 2 / 2 - L n d
+              = ⟪h₀ - u n, T n d⟫_ℝ + (aN n - ‖h₀‖ ^ 2 / 2) := by
+            simp only [hL, inner_sub_left]
+            ring
+          rw [hsplit] at hd
+          have hb1 : |⟪h₀ - u n, T n d⟫_ℝ| ≤ ‖h₀ - u n‖ * ‖T n d‖ :=
+            abs_real_inner_le_norm _ _
+          have hb2 : |⟪h₀ - u n, T n d⟫_ℝ + (aN n - ‖h₀‖ ^ 2 / 2)|
+              ≤ ‖h₀ - u n‖ * ‖T n d‖ + |aN n - ‖h₀‖ ^ 2 / 2| :=
+            (abs_add_le _ _).trans (add_le_add hb1 le_rfl)
+          have hfin := le_trans hd hb2
+          linarith
+        have hmeasset : MeasurableSet
+            ((T n) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖}) :=
+          (hTmeas n) (measurableSet_le measurable_const (measurable_const.mul measurable_norm))
+        calc (PN n).real {d : Fin n → 𝓧 | ε ≤ dist (gmap (T n d)) (T n d, L n d)}
+            ≤ (PN n).real ((T n) ⁻¹' {z : EuclideanSpace ℝ (Fin k) |
+                ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖}) := measureReal_mono hsub (measure_ne_top _ _)
+          _ = ((PN n).map (T n)).real {z : EuclideanSpace ℝ (Fin k) |
+                ε / 2 ≤ ‖h₀ - u n‖ * ‖z‖} := by
+              simp only [MeasureTheory.Measure.real]
+              rw [Measure.map_apply (hTmeas n)
+                (measurableSet_le measurable_const (measurable_const.mul measurable_norm))]
+      · exact htail
+  -- ### The tilted limit is the Cameron–Martin shift
+  haveI hCMprob : IsProbabilityMeasure ((stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
+      (fun z => ENNReal.ofReal (Real.exp (⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)))) := by
+    rw [← stdGaussian_map_add_eq_withDensity h₀]
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  obtain ⟨hCMint, hCMone⟩ := integrable_exp_of_withDensity_isProbability
+    (μ := stdGaussian (EuclideanSpace ℝ (Fin k)))
+    (f := fun z => ⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)
+    ((hinnermeas h₀).sub measurable_const) hCMprob
+  have hae : AEStronglyMeasurable (fun p : EuclideanSpace ℝ (Fin k) × ℝ => Real.exp p.2)
+      ((stdGaussian (EuclideanSpace ℝ (Fin k))).map gmap) := by fun_prop
+  have hπint : Integrable (fun p : EuclideanSpace ℝ (Fin k) × ℝ => Real.exp p.2) π := by
+    rw [hπ, integrable_map_measure hae hgmapcont.measurable.aemeasurable]
+    simpa only [hgmap, Function.comp_def] using hCMint
+  have hπone : ∫ p, Real.exp p.2 ∂π = 1 := by
+    rw [hπ, integral_map hgmapcont.measurable.aemeasurable hae]
+    simpa only [hgmap] using hCMone
+  have htarget : (π.withDensity (fun p => ENNReal.ofReal (Real.exp p.2))).map Prod.fst
+      = multivariateGaussian h₀ 1 := by
+    have h1 : (Prod.fst ∘ gmap) = id := by funext z; simp only [hgmap, Function.comp_apply, id]
+    have h2 : ((fun p : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp p.2)) ∘ gmap)
+        = fun z => ENNReal.ofReal (Real.exp (⟪h₀, z⟫_ℝ - ‖h₀‖ ^ 2 / 2)) := by
+      funext z; simp only [hgmap, Function.comp_apply]
+    rw [hπ, AsymptoticStatistics.Measure.withDensity_map_eq_map_withDensity
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) gmap hgmapcont.measurable
+      (fun p => ENNReal.ofReal (Real.exp p.2)) (by fun_prop),
+      Measure.map_map measurable_fst hgmapcont.measurable, h1, h2, Measure.map_id,
+      mvGaussian_one_eq_map_add h₀, stdGaussian_map_add_eq_withDensity h₀]
+  -- ### Le Cam's third lemma, and the transfer back to `Ω`
+  have hlecam := AsymptoticStatistics.Contiguity.weak_limit_under_Q_of_lecam_third
+    (Ω := fun n => (Fin n → 𝓧)) PN QN T L hTmeas hLmeas hdens π hjoint hUI hπint hπone
+  rw [htarget] at hlecam
+  have hlawid : ∀ n, (Q n (u n)).map (scoreVec ψ (X n)) = (QN n).map (T n) := by
+    intro n
+    simp only [hQN, hT, hθs]
+    exact law_scoreVec_pi hψmeas (hX n) (hindep n (u n)) (hlaw n (u n))
+  rw [funext hlawid]
+  exact hlecam
+
+/-- **The smooth test attains the maximin value on the local shell** (the deep half of
+`smoothTest_asymptotically_maximin`). Under the local alternatives `θ = h n^{-1/2}` with
 `b ≤ |h| ≤ B`, the minimum power of the smooth test `1{Sₙ > c}` converges to
 `P{χ²_k(b²) > c_{k,1−α}}`.
 
-TODO (genuine deep gap): this is the noncentral analogue of
-`smoothStat_weakConverges_chiSquared`. Its intended proof is: (i) the weak limit of `Sₙ`
-under the *local alternatives* is `χ²_k(‖h‖²)` — a multivariate *triangular-array* CLT
-giving `scoreVec ⇒ N((hⱼ)ⱼ, Iₖ)`, hence `Sₙ ⇒ χ²_k(‖h‖²)` by the same continuous-mapping /
-`multivariateGaussian_map_inner_inv_eq_noncentralChiSquared` bridge used in the null case;
-(ii) the map `h ↦ P{χ²_k(‖h‖²) > c}` is increasing in `‖h‖` (`noncentralChiSquared_tail_mono`),
-so the minimum over the shell is asymptotically attained at the inner boundary `‖h‖ = b`,
-giving `P{χ²_k(b²) > c}`.
+CLOSED (wave 7), along the route re-derived in wave 6: no uniformity over the shell and no
+Berry–Esseen estimate is needed, because the conclusion is about an *infimum*.
 
-TODO (re-derived).  The triangular-array CLT is no longer the obstruction: its multinomial
-twin `ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` is now CLOSED, by running
-the drifting-row multivariate limit law `HypothesisTesting.meanVec_root_tendsto` on the
-sequence of per-observation laws.  The same route applies here, with `F n` the law of
-`psiVec` under the *tilted* member `(smoothModel P₀ ψ hψ).P (n^{-1/2} • h)`: what has to be
-supplied for it is the class condition `meanVecSeqClass`, i.e. that the exponential tilt
-`p_{θ}` converges weakly to `P₀` with mean vector `→ h` and covariance `→ Iₖ` as `θ → 0`
-along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement about
-`smoothModel`, and needs `PointEstimation.ExponentialFamily.Smoothness` (the log-partition
-`A` and its first two derivatives at `0`), which is not imported here.  The two remaining
-obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
-shell infimum to the inner boundary.
-
-TODO (RE-DERIVED again, this batch).  This half is about the *smooth test itself*, a
-function of the sample alone, so it is untouched by the abstract-`Q` counterexample that
-made `smoothTest_maximin_upper_bound` false as frozen: the frozen hypotheses determine the
-law of `smoothStat ψ (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and
-open.  Note that the mixture apparatus closed this batch
-(`AsymptoticMaximin.asymptotic_maximin_upper_bound`) does NOT help here: it bounds every
-competitor from ABOVE, whereas this is an attainment statement.  What it does do is remove
-the second obstruction from the *upper-bound* half, so the two halves no longer share a
-debt.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
-strictly stronger monotone likelihood ratio of the noncentral chi-squared family in the
-noncentrality is now available (`exists_monotone_density`, in the MLR section of
-`ChiSquaredMaximin.lean`), so the worst case over the shell can be pinned at `‖h‖ = b` by
-single crossing rather than by stochastic ordering alone.
-
-TODO (previous batch).  Obstruction (b) has shrunk.  The tail monotonicity
-`noncentralChiSquared_tail_mono` is now CLOSED axiom-clean (as is the
-`stdGaussian_normSq_le_antitone` it rests on, via unequal-weight Prékopa–Leindler), so the
-old "still-open" qualifier is obsolete.  Moreover the shell here is BOUNDED (`b ≤ ‖h‖ ≤ B`)
-and, unlike the multinomial shell of `ChiSquaredMaximin`, does not move with `n`; once the
-per-`h` local limit is available (obstruction (a)), the `limsup ≤` half follows by
-evaluating at a fixed `h` with `‖h‖ = b`, and the `liminf ≥` half needs only a
-uniform-over-a-COMPACT-shell version of that limit — an equicontinuity statement, strictly
-easier than the unbounded/moving-shell version needed in `ChiSquaredMaximin`.  Obstruction
-(a), the exponential-family LAN expansion of `smoothModel` at `θ = 0`
-(`PointEstimation.ExponentialFamily.Smoothness`, not imported here), remains the real
-blocker and is what keeps this a single named debt.
-
-TODO (RE-DERIVED, wave 5; obstruction (a) is now DISCHARGED, (b) is what is left).  The
-exponential-family expansion is no longer a debt of this file and no longer needs the
-`Smoothness` import: `logPartition_quadratic_bound` above proves
-`|A(θ) − ‖θ‖²/2| ≤ C‖θ‖³` on any ball, from scratch and axiom-clean, by an elementary
-third-order Taylor bound on `e^z` plus the moment identities supplied by `hcentred`/`hortho`
-(the sign-vector envelope `integrable_exp_l1` makes every exponential moment finite, and
-`hlaw` at `n = 1` already forces every tilt to be integrable, so `hint` is not even
-required).  Together with `hEdens`-style tilt-to-`withDensity` rewriting and
-`pi_scoreLaw_weakConverges`, that is exactly the local-limit input asked for here: the
-per-`h` local law of `Sₙ` is `χ²_k(‖h‖²)`, since under `Q n h` the sample is i.i.d.
-`p_{h/√n}` and the score vector is asymptotically `N(h, Iₖ)`.
-
-WHAT IS LEFT is obstruction (b) alone, in its `liminf ≥` form: the *uniformity over the
-compact shell* `b ≤ ‖h‖ ≤ B` of that per-`h` limit.  The `limsup ≤` half is immediate
-(evaluate at a fixed `h` with `‖h‖ = b` and use the per-`h` limit plus
-`noncentralChiSquared_tail_mono`); the `liminf ≥` half needs the local power
-`h ↦ P_{n,h}{Sₙ > c}` to converge *uniformly* on the shell, which per-`h` weak convergence
-does not give.  Since the shell is compact and does not move with `n`, an equicontinuity
-argument suffices — the missing brick is an equicontinuity/uniform-Berry–Esseen estimate for
-the drifting-mean score vector, not any further exponential-family analysis.
-
-TODO (RE-DERIVED, wave 6; the "equicontinuity/uniform-Berry–Esseen" diagnosis above is
-SUPERSEDED).  Uniformity over the shell is NOT needed at all.  The shell `{b ≤ ‖h‖ ≤ B}` is
-compact, so the `liminf ≥` half follows by choosing near-minimisers `hₙ` (with
-`power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`) and passing to a convergent subsequence `hₙ → h₀`, `‖h₀‖ ≥ b`;
-all that is then required is the DRIFTING-parameter local limit
-`power_n(hₙ) → ncχ²_k(‖h₀‖²)(c,∞)`, followed by `noncentralChiSquared_tail_mono`.  No estimate
-uniform in `h` ever enters.
-
-The remaining analytic input is therefore a single named brick: membership of
-`fun n => ((smoothModel P₀ ψ hψ).P (n^{-1/2} • hₙ)).map (psiVec ψ)` in
-`Bootstrap.Multivariate.meanVecSeqClass` (weak convergence of the tilts to `P₀`, mean vectors
-`→ 0`, covariances `→ Iₖ`), together with the FIRST-order expansion of the mean map
-    `m(θ) = ∫ psiVec ψ dp_θ = θ + O(‖θ‖²)`,
-which is what makes the Slutsky shift `√n · m(hₙ/√n) → h₀` and hence
-`Zₙ ⇒ N(h₀, Iₖ)`; `Sₙ = ‖Zₙ‖²` then gives `χ²_k(‖h₀‖²)` by the continuous-mapping bridge
-already used in the null case, and the constant-threshold portmanteau converts weak
-convergence into convergence of `P{Sₙ > c}`.  The mean expansion is provable *here*, by the
-elementary route of `logPartition_quadratic_bound` above (third-order bound
-`abs_exp_sub_quadratic_le` on `e^z` plus the sign-vector envelope `integrable_exp_l1`, applied
-to the numerator `∫ψⱼ e^{⟪θ,ψ⟫}` and the denominator separately, using `hcentred`/`hortho` for
-the zeroth and first moments) — no `ExponentialFamily.Smoothness` import and no Fréchet
-derivative.  That brick, plus the subsequence bookkeeping, is the whole remaining debt. -/
+* `scoreVec_weakConverges_drift` supplies the DRIFTING-parameter local limit law: for any
+  `hₙ → h₀`, the score vector under `Q n hₙ` converges in law to `N(h₀, Iₖ)`.  It is proved
+  by Le Cam's third lemma with an *exact* affine log-likelihood ratio; see its docstring.
+  Composing with the continuous map `z ↦ ‖z‖²` and the portmanteau theorem at the region
+  `{c < ‖z‖²}` — whose frontier is Gaussian-null because `{‖z‖² ≤ c}` is convex — turns it
+  into `power_n(hₙ) → ncχ²_k(‖h₀‖²)(c, ∞)`.
+* `limsup ≤` is then immediate: evaluate at a *fixed* `h₁` on the inner boundary `‖h₁‖ = b`,
+  which lies in the shell because `b < B`.
+* `liminf ≥` chooses near-minimisers `hₙ ∈ Shell` with
+  `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`, extracts a subsequence realising the liminf and, the
+  shell being COMPACT (closed and contained in the ball of radius `B`) and fixed in `n`, a
+  further convergent subsequence `hₙ → h₀` with `‖h₀‖ ≥ b`.  The drifting limit law along
+  that subsequence — obtained from the full-sequence statement by extending the extracted
+  parameters by `h₀` off the range of the extraction — plus
+  `noncentralChiSquared_tail_mono` gives the required bound. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
@@ -1326,7 +1943,221 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
           (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h)
         '' {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
-  sorry
+  classical
+  have hψmeas : ∀ j, Measurable (ψ j) := fun j =>
+    ((measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hψ
+  -- ### The statistic is the squared norm of the score vector
+  have hSnorm : ∀ (n : ℕ) (ω : Ω), smoothStat ψ (X n) ω = ‖scoreVec ψ (X n) ω‖ ^ 2 := by
+    intro n ω
+    rw [EuclideanSpace.real_norm_sq_eq]
+    rfl
+  set Reg : Set (EuclideanSpace ℝ (Fin k)) := {z | c < ‖z‖ ^ 2} with hRegdef
+  have hRegmeas : MeasurableSet Reg :=
+    measurableSet_lt measurable_const (measurable_norm.pow_const 2)
+  have hpwmap : ∀ (n : ℕ) (h : EuclideanSpace ℝ (Fin k)),
+      power (Q n) (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h
+        = (((Q n h).map (scoreVec ψ (X n))) Reg).toReal := by
+    intro n h
+    have hZmeas : Measurable (scoreVec ψ (X n)) := measurable_scoreVec hψmeas (hX n)
+    have hpre : {ω | c < smoothStat ψ (X n) ω} = (scoreVec ψ (X n)) ⁻¹' Reg := by
+      ext ω
+      simp only [Set.mem_setOf_eq, Set.mem_preimage, hRegdef, hSnorm n ω]
+    have hind : (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0)
+        = Set.indicator ((scoreVec ψ (X n)) ⁻¹' Reg) 1 := by
+      funext ω
+      by_cases hc : c < smoothStat ψ (X n) ω
+      · have hc' : ω ∈ (scoreVec ψ (X n)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          exact hc
+        rw [Set.indicator_of_mem hc', Pi.one_apply, if_pos hc]
+      · have hc' : ω ∉ (scoreVec ψ (X n)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          exact hc
+        rw [Set.indicator_of_notMem hc', if_neg hc]
+    simp only [power, hind]
+    rw [integral_indicator_one (hZmeas hRegmeas), Measure.map_apply hZmeas hRegmeas]
+    rfl
+  -- ### The Gaussian mass of the rejection region, and its frontier
+  have hRegmass : ∀ v : EuclideanSpace ℝ (Fin k),
+      (multivariateGaussian v 1) Reg
+        = noncentralChiSquared k (‖v‖ ^ 2).toNNReal (Set.Ioi c) := by
+    intro v
+    have hv : ‖v‖ = Real.sqrt (((‖v‖ ^ 2).toNNReal : ℝ)) := by
+      rw [Real.coe_toNNReal _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg v)]
+    rw [← map_normSq_multivariateGaussian_of_norm_eq k (‖v‖ ^ 2).toNNReal hv,
+      Measure.map_apply (measurable_norm.pow_const 2) measurableSet_Ioi]
+    rfl
+  have hCconv : Convex ℝ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} := by
+    rcases le_or_gt 0 c with hc0 | hc0
+    · have hball : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+          = Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) (Real.sqrt c) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        constructor
+        · intro hzz
+          rw [← Real.sqrt_sq (norm_nonneg z)]
+          exact Real.sqrt_le_sqrt hzz
+        · intro hzz
+          have := pow_le_pow_left₀ (norm_nonneg z) hzz 2
+          rwa [Real.sq_sqrt hc0] at this
+      rw [hball]
+      exact convex_closedBall _ _
+    · have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} = (∅ : Set _) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        exact lt_of_lt_of_le hc0 (sq_nonneg _)
+      rw [hempty]
+      exact convex_empty
+  have hfrontier : ∀ v : EuclideanSpace ℝ (Fin k),
+      multivariateGaussian v 1 (frontier Reg) = 0 := by
+    intro v
+    have hcompl : Reg = {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}ᶜ := by
+      ext z
+      simp only [hRegdef, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    have hconv2 : Convex ℝ
+        ((fun x => v + x) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) := by
+      intro x hx y hy a₁ b₁ ha hb hab
+      simp only [Set.mem_preimage] at hx hy ⊢
+      have hv : a₁ • v + b₁ • v = v := by rw [← add_smul, hab, one_smul]
+      have hkey : v + (a₁ • x + b₁ • y) = a₁ • (v + x) + b₁ • (v + y) := by
+        rw [smul_add, smul_add,
+          show a₁ • v + a₁ • x + (b₁ • v + b₁ • y)
+            = (a₁ • v + b₁ • v) + (a₁ • x + b₁ • y) by abel, hv]
+      rw [hkey]
+      exact hCconv hx hy ha hb hab
+    have htrans : (fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+        frontier {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+        = frontier ((fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+            {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) :=
+      (Homeomorph.addLeft v).preimage_frontier _
+    rw [hcompl, frontier_compl, mvGaussian_one_eq_map_add v,
+      Measure.map_apply (by fun_prop) measurableSet_frontier, htrans,
+      ← mvGaussian_zero_one_eq_stdGaussian]
+    exact AsymptoticStatistics.multivariateGaussian_frontier_eq_zero_of_convex_posDef
+      Matrix.PosDef.one hconv2
+  -- ### The drifting local power limit
+  set Shell : Set (EuclideanSpace ℝ (Fin k)) := {h | b ≤ ‖h‖ ∧ ‖h‖ ≤ B} with hShelldef
+  set pwf : ℕ → EuclideanSpace ℝ (Fin k) → ℝ := fun n h =>
+    power (Q n) (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h with hpwf
+  change Tendsto (fun n => sInf (pwf n '' Shell)) atTop (nhds _)
+  have hdrift : ∀ (v : ℕ → EuclideanSpace ℝ (Fin k)) (h₀ : EuclideanSpace ℝ (Fin k)),
+      Tendsto v atTop (nhds h₀) →
+      Tendsto (fun n => pwf n (v n)) atTop
+        (nhds ((noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal)) := by
+    intro v h₀ hv
+    have hweak := scoreVec_weakConverges_drift hψ hortho hcentred hX hindep hlaw hv
+    haveI hprob : ∀ n, IsProbabilityMeasure ((Q n (v n)).map (scoreVec ψ (X n))) := fun n =>
+      Measure.isProbabilityMeasure_map (measurable_scoreVec hψmeas (hX n)).aemeasurable
+    set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+      fun n => ⟨(Q n (v n)).map (scoreVec ψ (X n)), hprob n⟩ with hμs
+    set νl : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+      ⟨multivariateGaussian h₀ 1, inferInstance⟩ with hνl
+    have hconv : Tendsto μs atTop (nhds νl) := by
+      rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+      intro f
+      simpa only [hμs, hνl, ProbabilityMeasure.coe_mk] using hweak f
+    have hfront : (νl : Measure (EuclideanSpace ℝ (Fin k))) (frontier Reg) = 0 := by
+      simp only [hνl, ProbabilityMeasure.coe_mk]
+      exact hfrontier h₀
+    have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+    have htoreal := (ENNReal.tendsto_toReal
+      (measure_ne_top (νl : Measure (EuclideanSpace ℝ (Fin k))) Reg)).comp hport
+    simp only [hμs, hνl, ProbabilityMeasure.coe_mk] at htoreal
+    rw [hRegmass h₀] at htoreal
+    exact htoreal.congr fun n => (hpwmap n (v n)).symm
+  -- ### Elementary facts about the shell and the powers
+  have hpwnn : ∀ n h, 0 ≤ pwf n h := by
+    intro n h
+    rw [hpwf]
+    simp only [hpwmap n h]
+    exact ENNReal.toReal_nonneg
+  have hbdd : ∀ n, BddBelow (pwf n '' Shell) := by
+    intro n
+    exact ⟨0, fun x hx => by obtain ⟨h, _, rfl⟩ := hx; exact hpwnn n h⟩
+  obtain ⟨h₁, hh₁⟩ : ∃ h : EuclideanSpace ℝ (Fin k), ‖h‖ = b := by
+    refine ⟨b • EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ), ?_⟩
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, EuclideanSpace.norm_single, norm_one,
+      mul_one]
+  have hh₁mem : h₁ ∈ Shell := ⟨le_of_eq hh₁.symm, by rw [hh₁]; exact hbB.le⟩
+  have hne : ∀ n, (pwf n '' Shell).Nonempty := fun n => ⟨pwf n h₁, ⟨h₁, hh₁mem, rfl⟩⟩
+  have hShellcompact : IsCompact Shell := by
+    have hclosed : IsClosed Shell := by
+      have h1 : IsClosed {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖} :=
+        isClosed_le continuous_const continuous_norm
+      have h2 : IsClosed {h : EuclideanSpace ℝ (Fin k) | ‖h‖ ≤ B} :=
+        isClosed_le continuous_norm continuous_const
+      exact h1.inter h2
+    refine (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin k)) B).of_isClosed_subset
+      hclosed (fun h hh => ?_)
+    simpa only [Metric.mem_closedBall, dist_zero_right] using hh.2
+  -- ### The two halves of the limit
+  refine tendsto_order.2 ⟨?_, ?_⟩
+  · -- `liminf ≥`: near-minimisers, compactness, and the drifting limit
+    intro a' ha'
+    by_contra hcon
+    rw [Filter.not_eventually] at hcon
+    obtain ⟨φ, hφmono, hφ⟩ := Filter.extraction_of_frequently_atTop hcon
+    have hchoice : ∀ n : ℕ, ∃ h, h ∈ Shell ∧
+        pwf n h < sInf (pwf n '' Shell) + 1 / ((n : ℝ) + 1) := by
+      intro n
+      obtain ⟨x, hx, hlt⟩ := exists_lt_of_csInf_lt (hne n)
+        (show sInf (pwf n '' Shell) < sInf (pwf n '' Shell) + 1 / ((n : ℝ) + 1) by
+          have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+          linarith)
+      obtain ⟨h, hh, rfl⟩ := hx
+      exact ⟨h, hh, hlt⟩
+    choose g hgS hglt using hchoice
+    obtain ⟨h₀, hh₀S, ξ, hξmono, hξlim⟩ :=
+      hShellcompact.tendsto_subseq (fun m : ℕ => hgS (φ m))
+    set σ : ℕ → ℕ := fun m => φ (ξ m) with hσdef
+    have hσmono : StrictMono σ := hφmono.comp hξmono
+    set w : ℕ → EuclideanSpace ℝ (Fin k) :=
+      fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
+    have hwσ : ∀ m, w (σ m) = g (σ m) := by
+      intro m
+      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+    have hwlim : Tendsto w atTop (nhds h₀) := by
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      rw [Metric.tendsto_atTop] at hξlim
+      obtain ⟨M, hM⟩ := hξlim ε hε
+      refine ⟨σ M, fun n hn => ?_⟩
+      by_cases hmem : n ∈ Set.range σ
+      · obtain ⟨m, rfl⟩ := hmem
+        have hmM : M ≤ m := by
+          by_contra hc
+          rw [not_le] at hc
+          exact absurd hn (not_le.mpr (hσmono hc))
+        rw [hwσ m]
+        simpa only [Function.comp_apply, hσdef] using hM m hmM
+      · rw [hwdef]
+        simp only [if_neg hmem, dist_self]
+        exact hε
+    have hlimit := (hdrift w h₀ hwlim).comp hσmono.tendsto_atTop
+    have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by
+      have hσtop : Tendsto (fun m => ((σ m : ℝ) + 1)) atTop atTop :=
+        Filter.tendsto_atTop_add_const_right _ 1
+          (tendsto_natCast_atTop_atTop.comp hσmono.tendsto_atTop)
+      have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds hσtop
+      simpa using tendsto_const_nhds.add this
+    have hle : (noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal ≤ a' := by
+      refine le_of_tendsto_of_tendsto' hlimit hupper (fun m => ?_)
+      have h1 := hglt (σ m)
+      have h2 : sInf (pwf (σ m) '' Shell) ≤ a' := not_lt.mp (hφ (ξ m))
+      simp only [Function.comp_apply, hwσ m]
+      linarith
+    have hmono : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal
+        ≤ (noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal := by
+      exact ENNReal.toReal_mono (measure_ne_top _ _) (noncentralChiSquared_tail_mono k c
+        (Real.toNNReal_mono (pow_le_pow_left₀ hb.le hh₀S.1 2)))
+    linarith
+  · -- `limsup ≤`: evaluate at a fixed inner-boundary point
+    intro a' ha'
+    have hlim := hdrift (fun _ => h₁) h₁ tendsto_const_nhds
+    rw [hh₁] at hlim
+    have hev := hlim.eventually (gt_mem_nhds ha')
+    filter_upwards [hev] with n hn
+    exact lt_of_le_of_lt (csInf_le (hbdd n) ⟨h₁, hh₁mem, rfl⟩) hn
 
 /-- **The smooth test is asymptotically maximin.** For any radii `0 < b < B < ∞`, the
 minimum power of the smooth test `1{Sₙ > c}` over the local alternatives `θ = h n^{-1/2}`
@@ -1381,7 +2212,7 @@ theorem smoothTest_asymptotically_maximin {k : ℕ} {α b B c : ℝ} {P₀ : Mea
             {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   refine ⟨?_, ?_⟩
-  · -- Attainment on the shell: the deep noncentral-limit half (lifted).
+  · -- Attainment on the shell: the drifting-parameter local limit half.
     exact smoothTest_shell_minPower_tendsto hk hb hbB hα hα1 hc hψ hortho hcentred hint
       hX hindep hlaw
   · -- Optimality: for any level-`α` test this is exactly `smoothTest_maximin_upper_bound`.
