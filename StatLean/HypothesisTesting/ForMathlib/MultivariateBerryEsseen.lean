@@ -30,9 +30,9 @@ route for a half-space, and it is the one-dimensional marginal statement: the pr
 
 ## Honest accounting of the elementary route (see the module docstring below for the report)
 
-For the **ball** route the picture is now considerably better than the module originally
-recorded. Three of the four ingredients are proved here unconditionally, each with a
-dimension-free constant:
+For the **ball** route the elementary programme is now **complete**: `berryEsseen_ball_elementary`
+is proved outright and is axiom-clean (it depends on no `sorry`, direct or transitive). Every
+ingredient is proved here unconditionally, each with a dimension-free constant:
 
 * `gaussian_slab_measure_le` — slab anti-concentration (`1/√(2π)`);
 * `gaussian_ball_shell_measure_le` — *shell* anti-concentration (`C_ac = 7`), resting on the
@@ -47,16 +47,21 @@ dimension-free constant:
   Mathlib does not have.
 
 * `map_normalized_sum_stdGaussian` — Gaussian stability of the normalized sum,
-  `(⨂ⁿ N(0,I_k)).map (n^{-1/2} ∑) = N(0,I_k)`, which is the right-hand endpoint of the
-  Lindeberg telescope. Proved by characteristic functions (`Measure.ext_of_charFun` plus the
-  product factorization `charFun_map_const_smul_sum`), not by iterated convolution.
+  `(⨂ⁿ N(0,I_k)).map (n^{-1/2} ∑) = N(0,I_k)`, the right-hand endpoint of the Lindeberg
+  telescope. Proved by characteristic functions (`Measure.ext_of_charFun` plus the product
+  factorization `charFun_map_const_smul_sum`), not by iterated convolution;
+* `abs_integral_smooth_sub_gaussian_le` — the third-order multivariate **Lindeberg swap**: the
+  hybrid telescope `Qⱼ = ⨂ᵢ (if i < j then γ else ν)`, each step isolated by
+  `integral_pi_sum_peel` (`measurePreserving_piFinSuccAbove` + Fubini) and compared by
+  `abs_integral_swap_step_le`. The one-step comparison is a second-order Taylor expansion in
+  which the linear term dies by Riesz representation plus `hmean`
+  (`integral_clm_eq_zero_of_centred`), the quadratic term takes the *same* value on both sides
+  because both laws have identity covariance (`integral_bilin_eq_basis_sum` — note it never
+  needs the value of that basis sum, only that it is the same one), and the remainder is
+  `norm_taylor_remainder_three_le`.
 
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
-public χ² moments) these suffice, and the **ball headline `berryEsseen_ball_elementary` is now
-assembled in full**: it consumes exactly one named `private` debt, the third-order multivariate
-Lindeberg swap `abs_integral_smooth_sub_gaussian_le`, whose own decomposition is now down to two
-of four pieces (the telescope proper and the one-step Taylor/moment-matching comparison); see its
-docstring for the re-derived route, which avoids `Measure.pi` surgery entirely.
+public χ² moments) these suffice and the ball assembly closes.
 
 For the *convex* route two further ingredients are missing: the smoothed convex indicator
 `exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
@@ -642,7 +647,31 @@ mollification works for any measurable `B`, and the analogous radial statement
 `exists_smoothed_radial_indicator` is proved above by the cheaper route of composing a fixed
 1-D cutoff with `‖·‖²`. What convexity is needed for is the *other* convex ingredient, the
 boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in this file and is the real obstacle
-to `berryEsseen_convex_elementary` (see its docstring). -/
+to `berryEsseen_convex_elementary` (see its docstring).
+
+Status after the wave-3 pass (re-verified against Mathlib v4.29.1, and this is the *only*
+remaining `private` debt of this file). The API inventory above is unchanged: `Analysis/
+Convolution.lean` exports `convolution_precompR_apply` and the first-order
+`HasCompactSupport.hasFDerivAt_convolution_right`, and nothing about `iteratedFDeriv` of a
+convolution. Two cheaper constructions were considered and **ruled out**, so that they are not
+re-explored:
+
+* *compose a fixed cutoff with a smooth "defining function" of `B`*, mirroring the radial trick
+  `χ ∘ ‖·‖²`. This needs a `C³` `ψ` with `ψ ≤ 0` on `B`, `ψ ≥ 1` off `Bᵋ` and
+  `‖Dᵐψ‖ ≲ ε^{-m}`; the natural candidate `dist(·, B)/ε` is only convex and `1`-Lipschitz, and
+  `dist(·,B)²` is only `C^{1,1}` for convex `B` — neither is `C³`, and smoothing either of them
+  is the very mollification being avoided.
+* *log-sum-exp ("soft-max") over the support function*,
+  `ψ_λ(x) = λ^{-1} log ∫_{S^{k-1}} exp(λ(⟪u,x⟫ − h_B(u))) dσ(u)`, whose derivatives are the
+  first three moments of a tilted measure on the sphere and do scale as `1, λ, λ²`. This fails
+  for a different reason: the soft-max error is `λ^{-1} log(1/σ{u : near-max})`, and for a
+  needle-shaped convex body that near-max set of directions is arbitrarily small, so the
+  approximation is not uniform over `B` — exactly the uniformity the `∃ C₃` prefix demands.
+
+So mollification really is the only route, and the cost is the `precompR` tower, not the
+analysis. Since closing this lemma alone would still leave `berryEsseen_convex_elementary`
+blocked on Ball's Gaussian-surface-area theorem (a genuine research theorem, see below), it is
+deliberately left as debt rather than paid at ~500 lines for no headline. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
     ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
@@ -982,82 +1011,22 @@ private lemma map_normalized_sum_stdGaussian {k n : ℕ} (hn : 0 < n) :
   rw [div_pow, hsq]
   field_simp
 
-/-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
-For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
-identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
-where `β = ∫‖y‖³ dν` and `β_G = ∫‖z‖³ dN(0,I_k)`. This is `n^{-1/2}` for fixed `f`; the
-degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indicator with
-`M ~ ε^{-3}` and optimising `ε`.
+/-! #### Ingredients of the one-step Lindeberg swap
 
-TODO (planned debt) — re-derived; this is the *only* thing `berryEsseen_ball_elementary` still
-consumes. The statement is true; the proof is the telescoping Lindeberg swap, and it decomposes
-into four pieces, of which **two are now proved in this file** and two remain:
+Second-order Taylor expansion of `u ↦ f (v + c • u)` produces three integrals. The constant
+term is trivial; the linear term vanishes because the law is centred (Riesz representative of
+`Df(v)` plus `hmean`); and the quadratic term takes the **same value for any two laws with
+identity covariance**, so no closed form for it is ever needed — only the fact that the two
+values coincide. That last observation is what `integral_bilin_eq_basis_sum` records: it
+evaluates `∫ D²f(v)(y,y)` as a fixed finite sum over the standard basis, whose value depends on
+the law only through `hcov`. -/
 
-1. **Gaussian sum stability**: `(Measure.pi fun _ : Fin n => γ).map (n^{-1/2} • ∑) = γ`, needed
-   to identify the right-hand endpoint of the telescope. **DONE** —
-   `map_normalized_sum_stdGaussian` above. The earlier note proposed an `n`-fold induction on
-   `multivariateGaussian_conv_multivariateGaussian`; that is unnecessary. The direct route is
-   characteristic functions: `Measure.ext_of_charFun`, `integral_fintype_prod_eq_prod` to
-   factorize the product-measure integral (`charFun_map_const_smul_sum`), and
-   `charFun_stdGaussian`. Note `multivariateGaussian 0 1 = stdGaussian _`
-   (`multivariateGaussian_zero_one`), which is what makes the whole Mathlib `stdGaussian` API
-   (`charFun_stdGaussian`, `integral_id_stdGaussian`, `covarianceBilin_stdGaussian`,
-   `integral_strongDual_stdGaussian`) applicable here.
-2. **Hybrid telescope**: OPEN, and the bulk of the remaining work. The cheapest formulation is
-   *not* the hybrid family `Qⱼ := Measure.pi (fun i => if i < j then γ else ν)` with Fubini on
-   `Measure.pi` (`measurePreserving_piFinSuccAbove`), which forces one to peel a coordinate out
-   of a product of *unequal* factors. Prefer the doubled space
-   `(Measure.pi fun _ => ν).prod (Measure.pi fun _ => γ)` with
-   `Φⱼ(y,z) := n^{-1/2} • ∑ᵢ (if i < j then zᵢ else yᵢ)`: then `Φⱼ = Vⱼ + n^{-1/2} • yⱼ` and
-   `Φⱼ₊₁ = Vⱼ + n^{-1/2} • zⱼ` with the *same* `Vⱼ`, and `Vⱼ` is independent of both `yⱼ` and
-   `zⱼ`, so `indepFun_iff_map_prod_eq_prod_map_map` together with `integral_prod` reduces each
-   telescope step to piece 3 integrated over the law of `Vⱼ` — no `Measure.pi` surgery at all.
-   The two endpoints `Φ₀`, `Φₙ` are plain marginalizations.
-3. **One-step swap / second-order moment matching**: OPEN. For fixed `v`,
-   `|∫ f(v + c•u) dν − ∫ f(v + c•w) dγ| ≤ (M/6) c³ (β + β_G)`: Taylor to second order at `v`
-   (piece 4), the first-order term vanishing by `hmean` applied to the Riesz representative of
-   `Df(v)` and by `integral_strongDual_stdGaussian` on the `γ` side, and the second-order terms
-   agreeing because both laws have identity covariance. The latter is
-   `∫ D²f(v)(y,y) dν = ∑ₐ D²f(v)(eₐ,eₐ) = ∫ D²f(v)(z,z) dγ`: expand
-   `D²f(v)(y,y) = ∑_{a,b} ⟪eₐ,y⟫⟪e_b,y⟫ D²f(v)(eₐ,e_b)` in the standard orthonormal basis and
-   apply `hcov` coordinatewise (the same device as `integral_normSq_eq_dim` in this file, with
-   `covarianceBilin_stdGaussian` on the `γ` side). Integrability of every term is supplied by
-   `hβ` through `integrable_normSq_of_cube`; integrability of `f` itself against `ν` and `γ`
-   also follows from `hβ`, since piece 4 applied at `x = 0` bounds `|f|` by a cubic polynomial.
-   The one point of friction: `iteratedFDeriv ℝ 2 f v` is a `ContinuousMultilinearMap` over
-   `Fin 2`, so it must first be transported to a genuine `E →L[ℝ] E →L[ℝ] ℝ` (via `curryLeft`,
-   or by hand) before `map_sum` becomes usable.
-4. **Third-order remainder**: DONE — `norm_taylor_remainder_three_le` (proved above), applied at
-   `h = n^{-1/2} y` and `h = n^{-1/2} z`, giving `M/6 · n^{-3/2}(‖y‖³ + ‖z‖³)` per summand and
-   `M/6 · (β + β_G)/√n` after summing the `n` terms.
+section SwapStep
 
-Nothing here is blocked on a missing Mathlib API; what is left is pieces 2 and 3, a
-several-hundred-line development that has not been carried out. -/
-private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
-    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
-    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
-    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
-    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
-    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) {M : ℝ} (hM0 : 0 ≤ M)
-    (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) :
-    |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
-            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
-        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
-      ≤ M / 6 * ((∫ y, ‖y‖ ^ 3 ∂ν)
-          + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
-          / Real.sqrt (n : ℝ) := by
-  -- TODO (planned debt): telescoping Lindeberg swap over the n summands; see docstring.
-  sorry
-
-/-! #### Moment facts consumed by the ball assembly
-
-Two elementary consequences of the standing hypotheses (`hcov`, `hβ`, `ν` a probability
-measure) that the `ε`-optimisation needs: the second moment is exactly the dimension, and
-`β = ∫‖y‖³ dν` is bounded below by `k^{3/2}` (Lyapunov) — in particular `β > 0`, so that
-`ε := (β/√n)^{1/4}` is a legitimate positive smoothing width. -/
+variable {k : ℕ}
 
 /-- `L³ ⊆ L²` on a probability space, in the only form needed here: `t² ≤ 1 + t³`. -/
-private lemma integrable_normSq_of_cube {k : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
+private lemma integrable_normSq_of_cube {ν : Measure (EuclideanSpace ℝ (Fin k))}
     [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
     Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν := by
   have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
@@ -1069,6 +1038,485 @@ private lemma integrable_normSq_of_cube {k : ℕ} {ν : Measure (EuclideanSpace 
   rcases le_or_gt ‖y‖ 1 with h | h
   · nlinarith
   · nlinarith
+
+/-- `L¹ ⊆ L³` on a probability space, in the only form needed here: `t ≤ 1 + t³`. -/
+private lemma integrable_norm_of_cube {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν := by
+  have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
+    (integrable_const 1).add hβ
+  refine Integrable.mono' hdom (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg y)]
+  rcases le_or_gt ‖y‖ 1 with h | h
+  · nlinarith [pow_nonneg (norm_nonneg y) 3]
+  · have ht2 : (1 : ℝ) ≤ ‖y‖ ^ 2 := by nlinarith [norm_nonneg y]
+    nlinarith [norm_nonneg y, ht2]
+
+/-- A continuous linear functional is integrable as soon as the norm is: `|L y| ≤ ‖L‖ ‖y‖`. -/
+private lemma integrable_clm_of_norm {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :
+    Integrable (fun y => L y) ν := by
+  refine Integrable.mono' (h1.const_mul ‖L‖) L.continuous.aestronglyMeasurable ?_
+  filter_upwards with y
+  exact L.le_opNorm y
+
+/-- A continuous bilinear form evaluated on the diagonal is integrable as soon as the squared
+norm is: `|B(y,y)| ≤ ‖B‖ ‖y‖²`. -/
+private lemma integrable_bilin_of_normSq {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ) :
+    Integrable (fun y => B (fun _ => y)) ν := by
+  refine Integrable.mono' (h2.const_mul ‖B‖)
+    (B.cont.comp (continuous_pi fun _ => continuous_id)).aestronglyMeasurable ?_
+  filter_upwards with y
+  calc ‖B (fun _ => y)‖ ≤ ‖B‖ * ∏ _i : Fin 2, ‖y‖ := B.le_opNorm _
+    _ = ‖B‖ * ‖y‖ ^ 2 := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- `y ↦ ⟪u, y⟫` is integrable as soon as the norm is. -/
+private lemma integrable_inner_of_norm {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (u : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y => ⟪u, y⟫_ℝ) ν :=
+  integrable_clm_of_norm h1 (innerSL ℝ u)
+
+/-- `y ↦ ⟪u, y⟫ ⟪v, y⟫` is integrable as soon as the squared norm is. -/
+private lemma integrable_inner_mul_inner {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (u v : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y => ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ) ν := by
+  refine Integrable.mono' (h2.const_mul (‖u‖ * ‖v‖)) (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_mul]
+  calc |⟪u, y⟫_ℝ| * |⟪v, y⟫_ℝ| ≤ (‖u‖ * ‖y‖) * (‖v‖ * ‖y‖) :=
+        mul_le_mul (abs_real_inner_le_norm u y) (abs_real_inner_le_norm v y)
+          (abs_nonneg _) (by positivity)
+    _ = ‖u‖ * ‖v‖ * ‖y‖ ^ 2 := by ring
+
+/-- **The linear Taylor term integrates to zero against a centred law.** `Df(v)` is a continuous
+linear functional, hence `⟪r, ·⟫` for its Riesz representative `r`, and `hmean` kills it. -/
+private lemma integral_clm_eq_zero_of_centred {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :
+    (∫ y, L y ∂ν) = 0 := by
+  have hL : ∀ y : EuclideanSpace ℝ (Fin k),
+      L y = ⟪(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin k))).symm L, y⟫_ℝ :=
+    fun y => (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ)).symm
+  simp_rw [hL]
+  exact hmean _
+
+/-- **The quadratic Taylor term depends on the law only through its covariance.** For a
+continuous bilinear form `B` and *any* law with identity covariance, `∫ B(y,y)` equals the
+explicit finite sum `∑_r ⟪e_{r₀}, e_{r₁}⟫ B(e_{r₀}, e_{r₁})` over `r : Fin 2 → Fin k`. Two such
+laws therefore give the *same* value, which is exactly what the Lindeberg swap consumes; no
+evaluation of the sum (`= ∑ₐ B(eₐ,eₐ)`) is needed. -/
+private lemma integral_bilin_eq_basis_sum {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ) :
+    (∫ y, B (fun _ => y) ∂ν)
+      = ∑ r : Fin 2 → Fin k,
+          ⟪EuclideanSpace.basisFun (Fin k) ℝ (r 0),
+            EuclideanSpace.basisFun (Fin k) ℝ (r 1)⟫_ℝ
+            * B fun i => EuclideanSpace.basisFun (Fin k) ℝ (r i) := by
+  classical
+  set e : Fin k → EuclideanSpace ℝ (Fin k) := fun a => EuclideanSpace.basisFun (Fin k) ℝ a
+    with he
+  have hexp : ∀ y : EuclideanSpace ℝ (Fin k), B (fun _ => y)
+      = ∑ r : Fin 2 → Fin k, ⟪e (r 0), y⟫_ℝ * ⟪e (r 1), y⟫_ℝ * B fun i => e (r i) := by
+    intro y
+    have hy : (fun _ : Fin 2 => y) = fun _ : Fin 2 => ∑ a, ⟪e a, y⟫_ℝ • e a := by
+      funext _
+      exact ((EuclideanSpace.basisFun (Fin k) ℝ).sum_repr' y).symm
+    rw [hy, ← ContinuousMultilinearMap.coe_coe,
+      (B.toMultilinearMap).map_sum (g := fun _ (a : Fin k) => ⟪e a, y⟫_ℝ • e a)]
+    refine Finset.sum_congr rfl fun r _ => ?_
+    rw [show (fun i : Fin 2 => ⟪e (r i), y⟫_ℝ • e (r i))
+        = fun i : Fin 2 => (fun j : Fin 2 => ⟪e (r j), y⟫_ℝ) i • (fun j : Fin 2 => e (r j)) i
+      from rfl, (B.toMultilinearMap).map_smul_univ, Fin.prod_univ_two,
+      ContinuousMultilinearMap.coe_coe, smul_eq_mul]
+  simp_rw [hexp]
+  rw [integral_finset_sum _ fun r _ => (integrable_inner_mul_inner h2 _ _).mul_const _]
+  exact Finset.sum_congr rfl fun r _ => by rw [integral_mul_const, hcov]
+
+/-- **One step of the Lindeberg swap.** For a fixed shift `v` and scale `c ≥ 0`, replacing a
+summand of law `ν` by one of law `ρ` — both centred and with identity covariance — costs at most
+`(M/6) c³ (β_ν + β_ρ)`.
+
+Both integrals are compared with the *same* number `f v + (c²/2) S`, where `S` is the
+basis sum of `integral_bilin_eq_basis_sum`: the constant Taylor term is common, the linear term
+vanishes on either side by `integral_clm_eq_zero_of_centred`, and the quadratic term has the
+same value on either side because both laws have identity covariance. The two third-order
+remainders are then bounded separately by `norm_taylor_remainder_three_le`. -/
+private lemma abs_integral_swap_step_le {k : ℕ}
+    {ν ρ : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] [IsProbabilityMeasure ρ]
+    (hmeanν : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcovν : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ν) = ⟪u, w⟫_ℝ)
+    (hβν : Integrable (fun y => ‖y‖ ^ 3) ν)
+    (hmeanρ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ρ) = 0)
+    (hcovρ : ∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂ρ) = ⟪u, w⟫_ℝ)
+    (hβρ : Integrable (fun y => ‖y‖ ^ 3) ρ)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) (hfb : ∀ x, |f x| ≤ 1)
+    {M : ℝ} (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M)
+    (v : EuclideanSpace ℝ (Fin k)) {c : ℝ} (hc : 0 ≤ c) :
+    |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+      ≤ M / 6 * c ^ 3 * ((∫ y, ‖y‖ ^ 3 ∂ν) + (∫ y, ‖y‖ ^ 3 ∂ρ)) := by
+  classical
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ := fderiv ℝ f v with hL
+  set B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ :=
+    iteratedFDeriv ℝ 2 f v with hB
+  set S : ℝ := ∑ r : Fin 2 → Fin k,
+    ⟪EuclideanSpace.basisFun (Fin k) ℝ (r 0), EuclideanSpace.basisFun (Fin k) ℝ (r 1)⟫_ℝ
+      * B fun i => EuclideanSpace.basisFun (Fin k) ℝ (r i) with hS
+  -- The pointwise Taylor estimate against the *common* second-order polynomial.
+  have htay : ∀ y : EuclideanSpace ℝ (Fin k),
+      |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)|
+        ≤ M / 6 * c ^ 3 * ‖y‖ ^ 3 := by
+    intro y
+    have h := norm_taylor_remainder_three_le hf hM v (c • y)
+    have h1 : fderiv ℝ f v (c • y) = c * L y := by rw [hL, map_smul, smul_eq_mul]
+    have h2 : (B fun _ : Fin 2 => c • y) = c ^ 2 * B fun _ => y := by
+      rw [show (fun _ : Fin 2 => c • y)
+          = fun i : Fin 2 => (fun _ : Fin 2 => c) i • (fun _ : Fin 2 => y) i from rfl,
+        ← ContinuousMultilinearMap.coe_coe, (B.toMultilinearMap).map_smul_univ,
+        Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+        ContinuousMultilinearMap.coe_coe, smul_eq_mul]
+    have h3 : ‖c • y‖ ^ 3 = c ^ 3 * ‖y‖ ^ 3 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, mul_pow]
+    rw [← hB, h1, h2, h3] at h
+    calc |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)|
+        = |f (v + c • y) - f v - c * L y - 1 / 2 * (c ^ 2 * B fun _ => y)| := by ring_nf
+      _ ≤ M / 6 * (c ^ 3 * ‖y‖ ^ 3) := h
+      _ = M / 6 * c ^ 3 * ‖y‖ ^ 3 := by ring
+  -- Each law is compared with the same number `f v + (c²/2) S`.
+  have key : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂σ) = 0) →
+      (∀ u w : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪w, y⟫_ℝ ∂σ) = ⟪u, w⟫_ℝ) →
+      Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 3) σ →
+      |(∫ y, f (v + c • y) ∂σ) - (f v + c ^ 2 / 2 * S)|
+        ≤ M / 6 * c ^ 3 * ∫ y, ‖y‖ ^ 3 ∂σ := by
+    intro σ hσ hm hcv hβ
+    haveI := hσ
+    have h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) σ :=
+      integrable_norm_of_cube hβ
+    have h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) σ :=
+      integrable_normSq_of_cube hβ
+    have ha : Integrable (fun y : EuclideanSpace ℝ (Fin k) => f v + c * L y) σ :=
+      (integrable_const (f v)).add ((integrable_clm_of_norm h1 L).const_mul c)
+    have hb : Integrable
+        (fun y : EuclideanSpace ℝ (Fin k) => c ^ 2 / 2 * B fun _ => y) σ :=
+      (integrable_bilin_of_normSq h2 B).const_mul (c ^ 2 / 2)
+    have hPint : Integrable
+        (fun y : EuclideanSpace ℝ (Fin k) => f v + c * L y + c ^ 2 / 2 * B fun _ => y) σ :=
+      ha.add hb
+    have hfint : Integrable (fun y : EuclideanSpace ℝ (Fin k) => f (v + c • y)) σ := by
+      refine Integrable.mono' (integrable_const (1 : ℝ))
+        (hf.continuous.comp (by fun_prop)).aestronglyMeasurable ?_
+      filter_upwards with y
+      rw [Real.norm_eq_abs]
+      exact hfb _
+    have hPval : (∫ y, (f v + c * L y + c ^ 2 / 2 * B fun _ => y) ∂σ)
+        = f v + c ^ 2 / 2 * S := by
+      rw [integral_add ha hb, integral_add (integrable_const (f v))
+          ((integrable_clm_of_norm h1 L).const_mul c), integral_const, integral_const_mul,
+        integral_const_mul, integral_clm_eq_zero_of_centred hm L,
+        integral_bilin_eq_basis_sum hcv h2 B, ← hS]
+      simp
+    calc |(∫ y, f (v + c • y) ∂σ) - (f v + c ^ 2 / 2 * S)|
+        = |∫ y, (f (v + c • y)
+            - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)) ∂σ| := by
+          rw [integral_sub hfint hPint, hPval]
+      _ ≤ ∫ y, |f (v + c • y) - (f v + c * L y + c ^ 2 / 2 * B fun _ => y)| ∂σ :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ y, M / 6 * c ^ 3 * ‖y‖ ^ 3 ∂σ :=
+          integral_mono (hfint.sub hPint).abs (hβ.const_mul _) htay
+      _ = M / 6 * c ^ 3 * ∫ y, ‖y‖ ^ 3 ∂σ := integral_const_mul _ _
+  have hkν := key ν ‹_› hmeanν hcovν hβν
+  have hkρ := key ρ ‹_› hmeanρ hcovρ hβρ
+  have habs := abs_sub_abs_le_abs_sub ((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+    ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))
+  have htri : |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+      ≤ |(∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S)|
+        + |(∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S)| := by
+    have := abs_sub ((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+      ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))
+    calc |(∫ y, f (v + c • y) ∂ν) - (∫ y, f (v + c • y) ∂ρ)|
+        = |((∫ y, f (v + c • y) ∂ν) - (f v + c ^ 2 / 2 * S))
+            - ((∫ y, f (v + c • y) ∂ρ) - (f v + c ^ 2 / 2 * S))| := by ring_nf
+      _ ≤ _ := abs_sub _ _
+  have hc3 : 0 ≤ M / 6 * c ^ 3 := by positivity
+  nlinarith [hkν, hkρ, htri]
+
+/-! #### Peeling one coordinate out of a product measure
+
+The hybrid telescope replaces the summands one at a time, so each step must isolate a single
+coordinate of a `Measure.pi` over a family of *unequal* laws. This is
+`MeasureTheory.measurePreserving_piFinSuccAbove` (the coordinate `i` splits off as a `prod`
+factor) followed by Fubini; the `Fin.insertNth` bookkeeping is `Fin.sum_univ_succAbove`. -/
+
+/-- The (bounded, continuous) integrand of the peeled Fubini step is integrable on the
+product. -/
+private lemma integrable_peel_prod {k m : ℕ}
+    (σ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure σ]
+    (κ' : Fin m → Measure (EuclideanSpace ℝ (Fin k))) [∀ l, IsProbabilityMeasure (κ' l)]
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1) :
+    Integrable (fun p : EuclideanSpace ℝ (Fin k) × (Fin m → EuclideanSpace ℝ (Fin k)) =>
+        g (p.1 + ∑ l, p.2 l)) (σ.prod (Measure.pi κ')) := by
+  have hmeas : Measurable (fun p : EuclideanSpace ℝ (Fin k) × (Fin m → EuclideanSpace ℝ (Fin k)) =>
+      p.1 + ∑ l, p.2 l) :=
+    measurable_fst.add
+      (Finset.univ.measurable_sum fun l _ => (measurable_pi_apply l).comp measurable_snd)
+  refine Integrable.mono' (integrable_const (1 : ℝ))
+    (hg.measurable.comp hmeas).aestronglyMeasurable ?_
+  filter_upwards with p
+  rw [Real.norm_eq_abs]
+  exact hgb _
+
+/-- **Peeling one coordinate.** For a bounded continuous `g` and a finite family of probability
+laws, the integral of `g (∑ₗ xₗ)` over `Measure.pi κ` is the iterated integral obtained by
+singling out the coordinate `i`: the remaining coordinates supply the shift `∑ₗ yₗ` and the
+`i`-th coordinate is integrated against `κ i`. -/
+private lemma integral_pi_sum_peel {k m : ℕ}
+    (κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)))
+    [∀ i, IsProbabilityMeasure (κ i)] (i : Fin (m + 1))
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1) :
+    (∫ x, g (∑ l, x l) ∂(Measure.pi κ))
+      = ∫ y, (∫ u, g (u + ∑ l, y l) ∂(κ i))
+          ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) := by
+  classical
+  set e : ((_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k))
+      ≃ᵐ EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (m + 1) => EuclideanSpace ℝ (Fin k)) i with he
+  have hmp : MeasurePreserving e (Measure.pi κ)
+      ((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+    measurePreserving_piFinSuccAbove κ i
+  have hsym : ∀ p : EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)),
+      (∑ l, (e.symm p) l) = p.1 + ∑ l, p.2 l := by
+    intro p
+    have hins : e.symm p = Fin.insertNth i p.1 p.2 := rfl
+    rw [hins, Fin.sum_univ_succAbove _ i]
+    simp
+  have hF := integrable_peel_prod (κ i) (fun l : Fin m => κ (i.succAbove l)) hg hgb
+  calc (∫ x, g (∑ l, x l) ∂(Measure.pi κ))
+      = ∫ p, g (∑ l, (e.symm p) l)
+          ∂((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+        (MeasurePreserving.integral_comp' (MeasurePreserving.symm e hmp) _).symm
+    _ = ∫ p, g (p.1 + ∑ l, p.2 l)
+          ∂((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) := by
+        simp_rw [hsym]
+    _ = ∫ y, ∫ u, g (u + ∑ l, y l) ∂(κ i)
+          ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) :=
+        integral_prod_symm _ hF
+
+end SwapStep
+
+/-- **Lindeberg smooth-function comparison for the normalized sum.**
+For a *fixed* `C³` test function `f` with `‖f‖_∞ ≤ 1` and `‖D³f‖ ≤ M`, replacing the `n` centred,
+identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
+where `β = ∫‖y‖³ dν` and `β_G = ∫‖z‖³ dN(0,I_k)`. This is `n^{-1/2}` for fixed `f`; the
+degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indicator with
+`M ~ ε^{-3}` and optimising `ε`.
+
+**Amendment (documented).** A boundedness hypothesis `hfb : ∀ x, |f x| ≤ 1` has been added.
+The statement is true without it — `‖D³f‖ ≤ M` bounds `|f|` by a cubic polynomial, which is
+`ν`-integrable by `hβ` and `Measure.pi`-integrable after a power-mean bound
+`‖∑ yᵢ‖³ ≤ n² ∑ ‖yᵢ‖³` — but the resulting integrability bookkeeping is several hundred lines of
+pure overhead. The lemma is `private`, and its only consumer,
+`berryEsseen_ball_elementary`, applies it to smoothed indicators with values in `[0,1]`, which
+supply `hfb` for free. No generality that any caller uses is lost.
+
+The proof is the hybrid telescope over
+`Qⱼ := Measure.pi (fun i => if i < j then γ else ν)`, `j = 0, …, n`, with
+
+* `Q₀ = ⨂ⁿ ν`, whose pushforward under `n^{-1/2} ∑` is the left endpoint;
+* `Qₙ = ⨂ⁿ γ`, whose pushforward is `γ` itself by `map_normalized_sum_stdGaussian`;
+* each step `Qⱼ → Qⱼ₊₁` isolated by `integral_pi_sum_peel` (Fubini after
+  `measurePreserving_piFinSuccAbove`) — the two hybrids differ *only* in the `j`-th factor, so
+  after peeling that coordinate the outer measure over the remaining `n − 1` coordinates is
+  literally the same, and the inner integrals differ by `abs_integral_swap_step_le` uniformly in
+  the outer variable.
+
+An earlier note preferred a doubled space `(⨂ν).prod (⨂γ)` with independence arguments, to
+avoid "peeling a coordinate out of a product of unequal factors". That was the wrong call:
+`measurePreserving_piFinSuccAbove` peels a coordinate out of a `Measure.pi` over an arbitrary
+*dependent* family at no extra cost, and the hybrid family needs no independence API at all.
+
+The `n` steps each cost `M/6 · n^{-3/2} (β + β_G)`, and `n · n^{-3/2} = n^{-1/2}`. -/
+private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f)
+    -- USER-INPUT (amendment): the test function is bounded by `1`; see the docstring.
+    (hfb : ∀ x, |f x| ≤ 1) {M : ℝ} (hM0 : 0 ≤ M)
+    (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) :
+    |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
+            fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
+        - (∫ x, f x ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1))|
+      ≤ M / 6 * ((∫ y, ‖y‖ ^ 3 ∂ν)
+          + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
+          / Real.sqrt (n : ℝ) := by
+  classical
+  haveI := hν
+  -- The Gaussian side, transported to the Mathlib `stdGaussian` API.
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγp : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hγstd : γ = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
+    rw [hγdef]; exact multivariateGaussian_zero_one
+  have hmeanγ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ z, ⟪u, z⟫_ℝ ∂γ) = 0 := by
+    intro u
+    have h := integral_strongDual_stdGaussian (E := EuclideanSpace ℝ (Fin k)) (innerSL ℝ u)
+    rw [hγstd]
+    simpa using h
+  have hcovγ : ∀ u w : EuclideanSpace ℝ (Fin k),
+      (∫ z, ⟪u, z⟫_ℝ * ⟪w, z⟫_ℝ ∂γ) = ⟪u, w⟫_ℝ := by
+    intro u w
+    have hL2 : MemLp id 2 γ := by rw [hγstd]; exact IsGaussian.memLp_id _ 2 (by simp)
+    have hid : γ[id] = (0 : EuclideanSpace ℝ (Fin k)) := by
+      rw [hγstd]; exact integral_id_stdGaussian
+    have h := covarianceBilin_apply (μ := γ) hL2 u w
+    rw [hid] at h
+    simp only [sub_zero] at h
+    rw [← h, hγstd, covarianceBilin_stdGaussian]
+    exact innerSL_apply_apply (𝕜 := ℝ) u w
+  have hβγ : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 3) γ := by
+    have hL3 : MemLp id ((3 : ℕ) : ℝ≥0∞) γ := by
+      rw [hγstd]; exact IsGaussian.memLp_id _ _ (by simp)
+    simpa using hL3.integrable_norm_pow'
+  -- Write `n = m + 1` so that a coordinate can be peeled off.
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, (Nat.succ_pred_eq_of_pos hn).symm⟩
+  have hNr : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  have hsN : 0 < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.mpr hNr
+  set c : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hcdef
+  have hc0 : 0 ≤ c := by positivity
+  set g : EuclideanSpace ℝ (Fin k) → ℝ := fun z => f (c • z) with hgdef
+  have hgcont : Continuous g := hf.continuous.comp (continuous_const_smul c)
+  have hgb : ∀ x, |g x| ≤ 1 := fun x => hfb _
+  -- The hybrid family and the telescoped functional.
+  set κ : ℕ → Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun j i => if (i : ℕ) < j then γ else ν with hκdef
+  haveI hκp : ∀ (j : ℕ) (i : Fin (m + 1)), IsProbabilityMeasure (κ j i) := by
+    intro j i
+    rw [hκdef]
+    dsimp only
+    split_ifs
+    · exact hγp
+    · exact hν
+  set I : ℕ → ℝ := fun j => ∫ x, g (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
+  set X : ℝ := (∫ y, ‖y‖ ^ 3 ∂ν) + (∫ z, ‖z‖ ^ 3 ∂γ) with hXdef
+  -- One telescope step.
+  have hstep : ∀ j : ℕ, j < m + 1 → |I j - I (j + 1)| ≤ M / 6 * c ^ 3 * X := by
+    intro j hj
+    set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
+    have hival : (i : ℕ) = j := by rw [hidef]
+    have hji : κ j i = ν := by
+      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; exact lt_irrefl j)]
+    have hji1 : κ (j + 1) i = γ := by
+      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; exact Nat.lt_succ_self j)]
+    have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
+        = fun l : Fin m => κ j (i.succAbove l) := by
+      funext l
+      have hne : ((i.succAbove l : Fin (m + 1)) : ℕ) ≠ j := by
+        intro h
+        exact Fin.succAbove_ne i l (Fin.ext (by rw [h, hival]))
+      rw [hκdef]
+      dsimp only
+      by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
+      · rw [if_pos hlt, if_pos (by omega)]
+      · rw [if_neg (by omega), if_neg hlt]
+    have hpeel0 := integral_pi_sum_peel (κ j) i hgcont hgb
+    have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i hgcont hgb
+    rw [hji] at hpeel0
+    rw [hji1, hoff] at hpeel1
+    set R : Measure ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+      Measure.pi (fun l : Fin m => κ j (i.succAbove l)) with hRdef
+    haveI hRp : IsProbabilityMeasure R := by rw [hRdef]; infer_instance
+    have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, g (u + ∑ l, y l) ∂ν) R :=
+      (integrable_peel_prod ν (fun l : Fin m => κ j (i.succAbove l))
+        hgcont hgb).integral_prod_right
+    have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, g (u + ∑ l, y l) ∂γ) R :=
+      (integrable_peel_prod γ (fun l : Fin m => κ j (i.succAbove l))
+        hgcont hgb).integral_prod_right
+    have hpt : ∀ y : (_ : Fin m) → EuclideanSpace ℝ (Fin k),
+        |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)|
+          ≤ M / 6 * c ^ 3 * X := by
+      intro y
+      have hrw : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)),
+          (∫ u, g (u + ∑ l, y l) ∂σ) = ∫ u, f ((c • ∑ l, y l) + c • u) ∂σ := by
+        intro σ
+        refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+        rw [hgdef]
+        dsimp only
+        rw [smul_add, add_comm]
+      rw [hrw ν, hrw γ, hXdef]
+      exact abs_integral_swap_step_le hmean hcov hβ hmeanγ hcovγ hβγ hf hfb hM _ hc0
+    have hIj : I j = ∫ y, (∫ u, g (u + ∑ l, y l) ∂ν) ∂R := by
+      rw [hIdef]; exact hpeel0
+    have hIj1 : I (j + 1) = ∫ y, (∫ u, g (u + ∑ l, y l) ∂γ) ∂R := by
+      rw [hIdef]; exact hpeel1
+    rw [hIj, hIj1, ← integral_sub hAint hBint]
+    calc |∫ y, ((∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)) ∂R|
+        ≤ ∫ y, |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)| ∂R :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ _y, M / 6 * c ^ 3 * X ∂R :=
+          integral_mono (hAint.sub hBint).abs (integrable_const _) hpt
+      _ = M / 6 * c ^ 3 * X := by rw [integral_const]; simp
+  -- Telescoping.
+  have htel : ∀ j : ℕ, j ≤ m + 1 → |I 0 - I j| ≤ (j : ℝ) * (M / 6 * c ^ 3 * X) := by
+    intro j
+    induction j with
+    | zero => intro _; simp
+    | succ j ih =>
+      intro hj
+      have h1 := ih (by omega)
+      have h2 := hstep j (by omega)
+      have h3 : |I 0 - I (j + 1)| ≤ |I 0 - I j| + |I j - I (j + 1)| := abs_sub_le _ _ _
+      push_cast
+      linarith
+  -- The two endpoints.
+  have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by
+    funext i; rw [hκdef]; simp
+  have hκN : κ (m + 1) = fun _ : Fin (m + 1) => γ := by
+    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+  have hI0 : I 0 = ∫ x, f x ∂((Measure.pi fun _ : Fin (m + 1) => ν).map
+      fun y => c • ∑ i, y i) := by
+    rw [integral_map (by fun_prop) hf.continuous.aestronglyMeasurable, hIdef]
+    dsimp only
+    rw [hκ0]
+  have hIN : I (m + 1) = ∫ x, f x ∂γ := by
+    have hmap : ((Measure.pi fun _ : Fin (m + 1) => γ).map fun y => c • ∑ i, y i) = γ := by
+      rw [hγstd, hcdef]
+      exact map_normalized_sum_stdGaussian (Nat.succ_pos m)
+    rw [hIdef]
+    dsimp only
+    rw [hκN, ← integral_map (φ := fun y : (_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k) =>
+      c • ∑ i, y i) (by fun_prop) hf.continuous.aestronglyMeasurable, hmap]
+  have hfin := htel (m + 1) le_rfl
+  rw [hI0, hIN] at hfin
+  refine hfin.trans_eq ?_
+  have hc2 : c ^ 2 = (((m + 1 : ℕ) : ℝ))⁻¹ := by
+    rw [hcdef, inv_pow, Real.sq_sqrt hNr.le]
+  have hNc : ((m + 1 : ℕ) : ℝ) * c ^ 3 = c := by
+    have hsplit : c ^ 3 = c ^ 2 * c := by ring
+    rw [hsplit, hc2]
+    field_simp
+  calc (((m + 1 : ℕ) : ℝ)) * (M / 6 * c ^ 3 * X)
+      = (((m + 1 : ℕ) : ℝ) * c ^ 3) * (M / 6 * X) := by ring
+    _ = c * (M / 6 * X) := by rw [hNc]
+    _ = M / 6 * X / Real.sqrt ((m + 1 : ℕ) : ℝ) := by rw [hcdef]; ring
+
+/-! #### Moment facts consumed by the ball assembly
+
+Two elementary consequences of the standing hypotheses (`hcov`, `hβ`, `ν` a probability
+measure) that the `ε`-optimisation needs: the second moment is exactly the dimension, and
+`β = ∫‖y‖³ dν` is bounded below by `k^{3/2}` (Lyapunov) — in particular `β > 0`, so that
+`ε := (β/√n)^{1/4}` is a legitimate positive smoothing width. -/
 
 /-- **The second moment is the dimension.** Under identity covariance,
 `∫ ‖y‖² dν = k`. Expand `‖y‖² = ∑ᵢ ⟪eᵢ, y⟫²` over the standard orthonormal basis and apply
@@ -1428,11 +1876,11 @@ theorem berryEsseen_ball_elementary :
     rw [← hβdef] at h2
     linarith
   -- the Lindeberg swap, with the `ε`-balance already carried out
-  have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f →
+  have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ C₃ / ε ^ 3) →
       |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ C₃ / 2 * ε := by
-    intro f hfcd hfD3
-    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd
+    intro f hfcd hfbd hfD3
+    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd hfbd
       (M := C₃ / ε ^ 3) (by positivity) hfD3
     rw [← hμdef, ← hγdef, ← hβdef] at hswap
     refine hswap.trans ?_
@@ -1549,7 +1997,7 @@ theorem berryEsseen_ball_elementary :
       obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ k s hs0 hεpos
       have hIμ := hfint μ hμprob f hfcd hf0 hf1
       have hIγ := hfint γ hγprob f hfcd hf0 hf1
-      have hswap := herr f hfcd hfD3
+      have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
       rw [abs_sub_le_iff] at hswap
       have hchain : (μ {z | ‖z‖ ≤ s}).toReal
           ≤ (γ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
@@ -1570,7 +2018,7 @@ theorem berryEsseen_ball_elementary :
         have hfzero' : ∀ x, s < ‖x‖ → f x = 0 := fun x hx => hfzero x (by linarith)
         have hIμ := hfint μ hμprob f hfcd hf0 hf1
         have hIγ := hfint γ hγprob f hfcd hf0 hf1
-        have hswap := herr f hfcd hfD3
+        have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
         rw [abs_sub_le_iff] at hswap
         have hchain : (γ {z | ‖z‖ ≤ s}).toReal
             ≤ (μ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
@@ -1625,8 +2073,28 @@ sharp statement is K. Ball, "The reverse isoperimetric problem for Gaussian meas
 the Gaussian surface area of a convex body in `ℝ^k` is at most `4 k^{1/4}` (Nazarov (2003) gives
 the matching lower bound `c k^{1/4}`), and *any* finite bound here is a genuine theorem — the
 `k^{1/4}` in Bentkus's constant is precisely this quantity. Recording it as the named missing
-brick is the honest status; with it, plus `exists_smoothed_convex_indicator` and
-`abs_integral_smooth_sub_gaussian_le`, the proof below is a transcription of the ball assembly. -/
+brick is the honest status; with it, plus `exists_smoothed_convex_indicator`, the proof below is
+a transcription of the ball assembly (`abs_integral_smooth_sub_gaussian_le` is no longer a debt —
+it is proved above, and `berryEsseen_ball_elementary` is now axiom-clean).
+
+Re-derived in the wave-3 pass: the shell bound is genuinely the whole obstruction, and it is
+**not** cheapened by the fact that `C` here is allowed to depend on `k`. Three routes to a
+merely-finite `C_k` were checked and all fail:
+
+* *Gaussian isoperimetry* (Borell–Sudakov–Tsirelson) gives `γ(Bᵋ) ≤ Φ(Φ^{-1}(γ B) + ε)` and hence
+  the dimension-free `γ(Bᵋ \ B) ≤ ε/√(2π)` for **every** measurable `B` — but it is itself a
+  major theorem and is absent from Mathlib, so this is strictly harder than what it would buy.
+* *truncate and use Lebesgue perimeter*: `γ(Bᵋ \ B) ≤ γ(‖x‖ > R) + (2π)^{-k/2} Leb((B ∩ B_R)ᵋ ∖ B)`
+  with `Leb(...) ≤ ε · Per(B_{R+ε})` by monotonicity of perimeter under convex inclusion. This
+  bounds the shell, but the tail term is not `O(ε)` at fixed `R`, and taking `R = R(ε) ≍
+  √(2 log(1/ε))` to kill it leaves a main term `ε (log 1/ε)^{(k−1)/2}`, which is `ω(ε)`. No
+  choice of `R` gives a linear-in-`ε` bound; the argument is intrinsically lossy. (Mathlib also
+  has no perimeter of convex bodies, so even the lossy version is unavailable.)
+* *slab covering of `∂B`* — already excluded above: one slab per facet, unbounded.
+
+So the missing brick is exactly "the Gaussian surface area of a convex body in `ℝ^k` is finite,
+with a bound depending only on `k`", i.e. Ball's theorem or a weakened form of it, and it is a
+self-contained research-level project. -/
 theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),
