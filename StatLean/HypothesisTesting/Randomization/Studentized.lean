@@ -1213,22 +1213,146 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     Tendsto (fun k => powerAgainst (twoSampleLaw (m k) (n k) PY PZ)
         (randTest (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) α))
       atTop (𝓝 α) := by
-  -- TODO (deep, deferred): pointwise consistency in level. Assembles the two limits above —
-  -- the studentized randomization distribution `→P Φ` (`randDist_studentized_tendstoInProb`)
-  -- and the unconditional law `⇝ N(0,1)` (`weakConverges_studentizedTwoSample`) — through the
-  -- randomized critical value `randQuantile → z_{1-α}` (`randQuantile_tendstoInProb`) and a
-  -- portmanteau evaluation of `powerAgainst` at the limiting rejection region, whose frontier
-  -- is `N(0,1)`-null.
-  -- STATUS (re-derived this session, wave 4): ONE prerequisite instead of two. The unconditional
-  -- half `weakConverges_studentizedTwoSample` is now CLOSED (0-sorry, axiom-clean), so the only
-  -- missing input is `randDist_studentized_tendstoInProb` above — which is in turn blocked on
-  -- the single permutation CLT, `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
-  -- Everything downstream of the two limits remains in place: `Randomization/Asymptotics`
-  -- supplies both halves of the equivalence (`randDist_tendstoInProb_cdf`,
-  -- `randQuantile_tendstoInProb`, and the converse
-  -- `weakConverges_randPairLaw_of_randDist_tendstoInProb`), so the only thing left to write once
-  -- the prerequisite lands is the portmanteau evaluation of `powerAgainst` at the limiting
-  -- rejection region.
-  sorry
+  -- Route (re-derived this session, wave 5). The critical value is *not* passed through
+  -- `randQuantile_tendstoInProb`: the test's critical index `k = M − ⌊Mα⌋` gives the
+  -- randomization quantile at the *moving* level `k/M`, and `randQuantile_tendstoInProb` is
+  -- stated at the fixed level `1 − α`. The finite-sample identity
+  -- `randCritValue_le_iff_le_randDist` replaces it, and lets a *fixed* threshold `z` control
+  -- the test: the test rejects on `{z < T̃} ∩ {k/M ≤ R̂(z)}` and accepts off
+  -- `{z < T̃} ∪ {k/M ≤ R̂(z)}` (`powerAgainst_randTest_sandwich`). Since `k/M → 1 − α`, the
+  -- randomization-distribution event has probability tending to `0` for `Φ(z) < 1 − α` and to
+  -- `1` for `Φ(z) > 1 − α` (by `randDist_studentized_tendstoInProb`), while the tail event has
+  -- probability tending to `1 − Φ(z)` (portmanteau on `Ioi z`, whose frontier is a
+  -- `N(0,1)`-null point, applied to `weakConverges_studentizedTwoSample`). Bracketing the
+  -- `(1−α)`-quantile of `Φ` by two continuity/strict-monotonicity thresholds `z₁ < q₀ < z₂`
+  -- squeezes the power between `1 − Φ(z₂)` and `1 − Φ(z₁)`, both within `ε` of `α`.
+  classical
+  have hSmeas : ∀ k, Measurable (studentizedTwoSample (m k) (n k)) := by
+    intro k
+    unfold studentizedTwoSample twoSampleScale twoSampleVarY twoSampleVarZ
+      twoSampleMeanY twoSampleMeanZ twoSampleMeanDiff
+    fun_prop
+  have hsmul : ∀ (k : ℕ) (g : Equiv.Perm (Fin (m k + n k))),
+      Measurable (fun x : Fin (m k + n k) → ℝ => g • x) := fun _ g => measurable_perm_smul' _ g
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  -- (i) the studentized randomization distribution converges in probability to `Φ`
+  have hrd : ∀ z : ℝ, TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
+        (studentizedTwoSample (m k) (n k)) x z) (cdf (gaussianReal 0 1) z) := fun z =>
+    randDist_studentized_tendstoInProb PY PZ m n hm hn hratio hlam hYL2 hZL2 hmeanY hmeanZ
+      hvarY hvarZ hvarYpos hvarZpos z
+  -- (ii) the unconditional law converges weakly to `N(0,1)`
+  have hlaw := weakConverges_studentizedTwoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos
+  haveI hprob : ∀ k, IsProbabilityMeasure ((twoSampleLaw (m k) (n k) PY PZ).map
+      (studentizedTwoSample (m k) (n k))) := fun k =>
+    Measure.isProbabilityMeasure_map (hSmeas k).aemeasurable
+  -- (iii) the critical fraction `k/M` converges to `1 − α` (`M = N!  → ∞`)
+  have hcardNat : Tendsto (fun k => Fintype.card (Equiv.Perm (Fin (m k + n k)))) atTop atTop := by
+    refine tendsto_atTop_mono (fun k => ?_) hm
+    calc m k ≤ m k + n k := Nat.le_add_right _ _
+      _ ≤ Nat.factorial (m k + n k) := Nat.self_le_factorial _
+      _ = Fintype.card (Equiv.Perm (Fin (m k + n k))) := by
+          rw [Fintype.card_perm, Fintype.card_fin]
+  have hq := tendsto_randCritIndex_div (G := fun k => Equiv.Perm (Fin (m k + n k))) hα₀ hα₁
+    (tendsto_natCast_atTop_atTop.comp hcardNat)
+  -- (iv) the tail probabilities of the statistic
+  have htail : ∀ z : ℝ, Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x | z < studentizedTwoSample (m k) (n k) x}) atTop
+      (𝓝 (1 - cdf (gaussianReal 0 1) z)) := by
+    intro z
+    have hfr : (gaussianReal 0 1) (frontier (Set.Ioi z)) = 0 := by
+      rw [frontier_Ioi]; exact measure_singleton z
+    have h1 := tendsto_measureReal_of_weakConverges hlaw hfr
+    have hval : (gaussianReal 0 1).real (Set.Ioi z) = 1 - cdf (gaussianReal 0 1) z := by
+      have hc := measureReal_add_measureReal_compl (μ := gaussianReal 0 1) (s := Set.Iic z)
+        measurableSet_Iic
+      rw [probReal_univ] at hc
+      rw [cdf_eq_real, ← Set.compl_Iic]
+      linarith
+    rw [hval] at h1
+    refine h1.congr fun k => ?_
+    rw [measureReal_def, measureReal_def, Measure.map_apply (hSmeas k) measurableSet_Ioi]
+    rfl
+  -- (v) below the quantile the randomization event is asymptotically impossible
+  have hB : ∀ z : ℝ, cdf (gaussianReal 0 1) z < 1 - α →
+      Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | (randCritIndex (Equiv.Perm (Fin (m k + n k))) α : ℝ)
+              / (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)
+            ≤ randDist (Equiv.Perm (Fin (m k + n k)))
+              (studentizedTwoSample (m k) (n k)) x z}) atTop (𝓝 0) := by
+    intro z hz
+    have hδpos : 0 < (1 - α - cdf (gaussianReal 0 1) z) / 2 := by linarith
+    have hev := hq.eventually (eventually_gt_nhds
+      (show cdf (gaussianReal 0 1) z + (1 - α - cdf (gaussianReal 0 1) z) / 2 < 1 - α by
+        linarith))
+    refine squeeze_zero' (Eventually.of_forall fun k => measureReal_nonneg) ?_
+      (hrd z _ hδpos)
+    filter_upwards [hev] with k hk
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    rw [le_abs]
+    left
+    linarith
+  -- (vi) above the quantile it is asymptotically certain
+  have hBc : ∀ z : ℝ, 1 - α < cdf (gaussianReal 0 1) z →
+      Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | randDist (Equiv.Perm (Fin (m k + n k)))
+              (studentizedTwoSample (m k) (n k)) x z
+            < (randCritIndex (Equiv.Perm (Fin (m k + n k))) α : ℝ)
+              / (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)}) atTop (𝓝 0) := by
+    intro z hz
+    have hδpos : 0 < (cdf (gaussianReal 0 1) z - (1 - α)) / 2 := by linarith
+    have hev := hq.eventually (eventually_lt_nhds
+      (show (1 : ℝ) - α < cdf (gaussianReal 0 1) z - (cdf (gaussianReal 0 1) z - (1 - α)) / 2 by
+        linarith))
+    refine squeeze_zero' (Eventually.of_forall fun k => measureReal_nonneg) ?_
+      (hrd z _ hδpos)
+    filter_upwards [hev] with k hk
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    rw [le_abs]
+    right
+    linarith
+  -- (vii) bracket the `1 − α` quantile of `Φ` and squeeze
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  obtain ⟨q₀, hq₀⟩ := exists_cdf_eq' (gaussianReal 0 1) (show (0 : ℝ) < 1 - α by linarith)
+    (show (1 : ℝ) - α < 1 by linarith)
+  obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp
+    (continuousAt_cdf_of_noAtoms' (gaussianReal 0 1) q₀) (ε / 2) (by positivity)
+  have hSM : StrictMono (cdf (gaussianReal 0 1)) := strictMono_cdf_gaussianReal' one_ne_zero
+  have hd₁ : |cdf (gaussianReal 0 1) (q₀ - ρ / 2) - (1 - α)| < ε / 2 := by
+    have hdist := hρ (show dist (q₀ - ρ / 2) q₀ < ρ by
+      rw [Real.dist_eq]; rw [show q₀ - ρ / 2 - q₀ = -(ρ / 2) by ring, abs_neg,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ρ / 2)]; linarith)
+    rwa [Real.dist_eq, hq₀] at hdist
+  have hd₂ : |cdf (gaussianReal 0 1) (q₀ + ρ / 2) - (1 - α)| < ε / 2 := by
+    have hdist := hρ (show dist (q₀ + ρ / 2) q₀ < ρ by
+      rw [Real.dist_eq]; rw [show q₀ + ρ / 2 - q₀ = ρ / 2 by ring,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ρ / 2)]; linarith)
+    rwa [Real.dist_eq, hq₀] at hdist
+  have hlt₁ : cdf (gaussianReal 0 1) (q₀ - ρ / 2) < 1 - α := by
+    rw [← hq₀]; exact hSM (by linarith)
+  have hlt₂ : (1 : ℝ) - α < cdf (gaussianReal 0 1) (q₀ + ρ / 2) := by
+    rw [← hq₀]; exact hSM (by linarith)
+  -- the two eventual bounds
+  have hupev := ((htail (q₀ - ρ / 2)).add (hB _ hlt₁)).eventually (eventually_lt_nhds
+    (show 1 - cdf (gaussianReal 0 1) (q₀ - ρ / 2) + 0
+        < 1 - cdf (gaussianReal 0 1) (q₀ - ρ / 2) + ε / 2 by linarith))
+  have hloev := ((htail (q₀ + ρ / 2)).sub (hBc _ hlt₂)).eventually (eventually_gt_nhds
+    (show 1 - cdf (gaussianReal 0 1) (q₀ + ρ / 2) - ε / 2
+        < 1 - cdf (gaussianReal 0 1) (q₀ + ρ / 2) - 0 by linarith))
+  refine eventually_atTop.1 ?_
+  filter_upwards [hupev, hloev] with k hkup hklo
+  obtain ⟨hlo, hup⟩ := powerAgainst_randTest_sandwich (twoSampleLaw (m k) (n k) PY PZ)
+    (studentizedTwoSample (m k) (n k)) (hSmeas k) (hsmul k) hα₀ hα₁ (q₀ - ρ / 2)
+  obtain ⟨hlo', _⟩ := powerAgainst_randTest_sandwich (twoSampleLaw (m k) (n k) PY PZ)
+    (studentizedTwoSample (m k) (n k)) (hSmeas k) (hsmul k) hα₀ hα₁ (q₀ + ρ / 2)
+  rw [Real.dist_eq, abs_lt]
+  rw [abs_lt] at hd₁ hd₂
+  constructor
+  · linarith
+  · linarith
 
 end StatLean.HypothesisTesting
