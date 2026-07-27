@@ -1437,6 +1437,230 @@ private lemma setIntegral_Iic_eq_intervalIntegral_quantile (ν : Measure ℝ)
     intervalIntegral.integral_of_le h0, hm, Measure.restrict_restrict measurableSet_Ioc,
     Set.inter_eq_self_of_subset_left hsub]
 
+/-- The mass of an atom is the jump of the distribution function there. -/
+private lemma cdf_singleton_toReal (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    (ν {x}).toReal = cdf ν x - Function.leftLim (⇑(cdf ν)) x := by
+  have h : (ν {x}).toReal = ((cdf ν).measure {x}).toReal := by rw [measure_cdf]
+  rw [h, (cdf ν).measure_singleton x,
+    ENNReal.toReal_ofReal (by simpa using (monotone_cdf (μ := ν)).leftLim_le (le_refl x))]
+
+/-- The inverse-transform identity in the exact form the sweep uses it. -/
+private lemma map_quantile_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    (MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)).map (quantile (⇑(cdf ν))) = ν :=
+  map_quantile_uniform ν _ (fun y => by rw [cdf_eq_real]; rfl)
+
+/-- The quantile function is a.e. measurable on the unit interval, being monotone there. -/
+private lemma aemeasurable_quantile_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    AEMeasurable (quantile (⇑(cdf ν)))
+      (MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)) := by
+  have hmonoOn : MonotoneOn (quantile (⇑(cdf ν))) (Set.Ioo 0 1) := by
+    intro a ha b hb hab
+    exact quantile_mono _ hab (cdf_level_nonempty_bddBelow ν ha.1 ha.2).2
+      (cdf_level_nonempty_bddBelow ν hb.1 hb.2).1
+  have hIccIoo : Set.Icc (0 : ℝ) 1 =ᵐ[MeasureTheory.volume] Set.Ioo 0 1 := Ioo_ae_eq_Icc.symm
+  rw [Measure.restrict_congr_set hIccIoo]
+  exact aemeasurable_restrict_of_monotoneOn measurableSet_Ioo hmonoOn
+
+/-- **Brick (b): the sliding window, weighed by a density, is a level-space integral.**
+
+With the canonical boundary weights of brick (a) — `γ₁·ν{C₁} = F(C₁) − s` and
+`γ₂·ν{C₂} = s + α − F(C₂⁻)`, where `C₁ = Q(s)` and `C₂ = Q(s+α)` — the integral of the
+two-sided test against any measurable weight `r` is the Lebesgue integral of `r ∘ Q` over the
+*level* window `(s, s+α)`:
+`∫ φ_s·r dν = ∫_s^{s+α} r(Q u) du`.
+
+Applied with `r = dν₂/dν₁` this says the size of the window test at `θ₂` is the sliding
+integral `h(s)` of the roadmap; it is the identity that turns the two-dimensional
+root-finding problem of `isUMP_twoSided` into a one-dimensional sweep.
+
+The proof splits the level window at the two atom boundaries `F(C₁) ≤ F(C₂⁻)`. On the two
+outer pieces `Q` is *constant* (`quantile_eq_of_leftLim_lt`), which produces the two boundary
+terms; the inner piece is evaluated by the half-line change of variables
+`setIntegral_Iic_eq_intervalIntegral_quantile` at `C₁` and at `C₂`, minus the atom at `C₂`
+(which the level window `(F(C₂⁻), F(C₂)]` carries and the open interval `(C₁,C₂)` does
+not). -/
+private lemma twoSidedVal_integral_weight_eq (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {r : ℝ → ℝ} (hr : Measurable r) (hrint : Integrable r ν)
+    {α s γ₁ γ₂ : ℝ} (hα0 : 0 < α) (hs0 : 0 < s) (hs1 : s + α < 1)
+    (hlt : quantile (⇑(cdf ν)) s < quantile (⇑(cdf ν)) (s + α))
+    (hkey₁ : γ₁ * (ν {quantile (⇑(cdf ν)) s}).toReal
+      = cdf ν (quantile (⇑(cdf ν)) s) - s)
+    (hkey₂ : γ₂ * (ν {quantile (⇑(cdf ν)) (s + α)}).toReal
+      = s + α - Function.leftLim (⇑(cdf ν)) (quantile (⇑(cdf ν)) (s + α))) :
+    ∫ t, twoSidedVal (quantile (⇑(cdf ν)) s) (quantile (⇑(cdf ν)) (s + α)) γ₁ γ₂ t * r t ∂ν
+      = ∫ u in s..(s + α), r (quantile (⇑(cdf ν)) u) := by
+  classical
+  have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
+  obtain ⟨hA₁, hLL₁⟩ := cdf_quantile_bounds ν hs0 (show s < 1 by linarith)
+  obtain ⟨hA₂, hLL₂⟩ := cdf_quantile_bounds ν (show (0 : ℝ) < s + α by linarith) hs1
+  set C₁ : ℝ := quantile (⇑(cdf ν)) s with hC₁def
+  set C₂ : ℝ := quantile (⇑(cdf ν)) (s + α) with hC₂def
+  -- the level geometry: `0 < s ≤ F C₁ ≤ F(C₂⁻) ≤ s + α ≤ F C₂ ≤ 1`
+  have hFle : cdf ν C₁ ≤ Function.leftLim (⇑(cdf ν)) C₂ := hmono.le_leftLim hlt
+  have hF₂le : cdf ν C₂ ≤ 1 := cdf_le_one ν C₂
+  have hL₂nn : (0 : ℝ) ≤ Function.leftLim (⇑(cdf ν)) C₂ :=
+    le_trans (cdf_nonneg ν (C₂ - 1)) (hmono.le_leftLim (by linarith))
+  have hm₂ : (ν {C₂}).toReal = cdf ν C₂ - Function.leftLim (⇑(cdf ν)) C₂ :=
+    cdf_singleton_toReal ν C₂
+  set L₂ : ℝ := Function.leftLim (⇑(cdf ν)) C₂ with hL₂def
+  set Q : ℝ → ℝ := quantile (⇑(cdf ν)) with hQdef
+  set G : ℝ → ℝ := fun u => r (Q u) with hGdef
+  -- integrability of `r ∘ Q` on the unit interval
+  have hmap := map_quantile_cdf ν
+  have haem := aemeasurable_quantile_cdf ν
+  rw [← hQdef] at hmap haem
+  have hGint : IntegrableOn G (Set.Icc (0 : ℝ) 1) MeasureTheory.volume := by
+    have hasm : AEStronglyMeasurable r
+        ((MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)).map Q) := by
+      rw [hmap]; exact hr.aestronglyMeasurable
+    have h := (MeasureTheory.integrable_map_measure hasm haem).mp (by rwa [hmap])
+    exact h
+  have hII : ∀ a b : ℝ, a ∈ Set.Icc (0 : ℝ) 1 → b ∈ Set.Icc (0 : ℝ) 1 →
+      IntervalIntegrable G MeasureTheory.volume a b := by
+    intro a b ha hb
+    refine intervalIntegrable_iff.2 (hGint.mono_set fun u hu => ?_)
+    rcases Set.mem_uIoc.mp hu with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact ⟨le_trans ha.1 h1.le, le_trans h2 hb.2⟩
+    · exact ⟨le_trans hb.1 h1.le, le_trans h2 ha.2⟩
+  have hmemF₁ : cdf ν C₁ ∈ Set.Icc (0 : ℝ) 1 := ⟨cdf_nonneg ν C₁, cdf_le_one ν C₁⟩
+  have hmemF₂ : cdf ν C₂ ∈ Set.Icc (0 : ℝ) 1 := ⟨cdf_nonneg ν C₂, hF₂le⟩
+  have hmemL₂ : L₂ ∈ Set.Icc (0 : ℝ) 1 := ⟨hL₂nn, le_trans hLL₂ (by linarith)⟩
+  have hmems : s ∈ Set.Icc (0 : ℝ) 1 := ⟨hs0.le, by linarith⟩
+  have hmemsα : s + α ∈ Set.Icc (0 : ℝ) 1 := ⟨by linarith, by linarith⟩
+  have hmem0 : (0 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := ⟨le_refl 0, zero_le_one⟩
+  -- almost every level is not the right endpoint of the unit interval
+  have h1ae : ∀ᵐ u ∂(MeasureTheory.volume : Measure ℝ), u ≠ (1 : ℝ) := by
+    rw [MeasureTheory.ae_iff]
+    simpa using Real.volume_singleton (a := 1)
+  -- the three constant pieces: `Q` collapses each atom level window to its atom
+  have hP1 : ∫ u in s..(cdf ν C₁), G u = (cdf ν C₁ - s) * r C₁ := by
+    have hcongr : ∫ u in s..(cdf ν C₁), G u = ∫ _u in s..(cdf ν C₁), r C₁ := by
+      refine intervalIntegral.integral_congr_ae ?_
+      filter_upwards with u hu
+      rw [Set.uIoc_of_le hA₁] at hu
+      have : Q u = C₁ := quantile_eq_of_leftLim_lt ν (by linarith [hu.1])
+        (by linarith [hu.2, hFle, hLL₂]) (by linarith [hu.1]) hu.2
+      simp only [hGdef]
+      rw [this]
+    rw [hcongr, intervalIntegral.integral_const, smul_eq_mul]
+  have hP2 : ∫ u in L₂..(s + α), G u = (s + α - L₂) * r C₂ := by
+    have hcongr : ∫ u in L₂..(s + α), G u = ∫ _u in L₂..(s + α), r C₂ := by
+      refine intervalIntegral.integral_congr_ae ?_
+      filter_upwards with u hu
+      rw [Set.uIoc_of_le hLL₂] at hu
+      have : Q u = C₂ := quantile_eq_of_leftLim_lt ν (by linarith [hu.1])
+        (by linarith [hu.2]) hu.1 (le_trans hu.2 hA₂)
+      simp only [hGdef]
+      rw [this]
+    rw [hcongr, intervalIntegral.integral_const, smul_eq_mul]
+  have hP4 : ∫ u in L₂..(cdf ν C₂), G u = (cdf ν C₂ - L₂) * r C₂ := by
+    have hle : L₂ ≤ cdf ν C₂ := by linarith [hLL₂, hA₂]
+    have hcongr : ∫ u in L₂..(cdf ν C₂), G u = ∫ _u in L₂..(cdf ν C₂), r C₂ := by
+      refine intervalIntegral.integral_congr_ae ?_
+      filter_upwards [h1ae] with u hu1 hu
+      rw [Set.uIoc_of_le hle] at hu
+      have : Q u = C₂ := quantile_eq_of_leftLim_lt ν (by linarith [hu.1])
+        (lt_of_le_of_ne (le_trans hu.2 hF₂le) hu1) hu.1 hu.2
+      simp only [hGdef]
+      rw [this]
+    rw [hcongr, intervalIntegral.integral_const, smul_eq_mul]
+  -- the inner piece, by the half-line change of variables at `C₁` and at `C₂`
+  have hM₁ : ∫ t in Set.Iic C₁, r t ∂ν = ∫ u in (0 : ℝ)..(cdf ν C₁), G u :=
+    setIntegral_Iic_eq_intervalIntegral_quantile ν hr C₁
+  have hM₂ : ∫ t in Set.Iic C₂, r t ∂ν = ∫ u in (0 : ℝ)..(cdf ν C₂), G u :=
+    setIntegral_Iic_eq_intervalIntegral_quantile ν hr C₂
+  have hsplit0 : (∫ u in (0 : ℝ)..(cdf ν C₁), G u) + ∫ u in (cdf ν C₁)..(cdf ν C₂), G u
+      = ∫ u in (0 : ℝ)..(cdf ν C₂), G u :=
+    intervalIntegral.integral_add_adjacent_intervals (hII _ _ hmem0 hmemF₁)
+      (hII _ _ hmemF₁ hmemF₂)
+  have hsplit1 : (∫ u in s..(cdf ν C₁), G u) + ∫ u in (cdf ν C₁)..(s + α), G u
+      = ∫ u in s..(s + α), G u :=
+    intervalIntegral.integral_add_adjacent_intervals (hII _ _ hmems hmemF₁)
+      (hII _ _ hmemF₁ hmemsα)
+  have hsplit2 : (∫ u in (cdf ν C₁)..L₂, G u) + ∫ u in L₂..(s + α), G u
+      = ∫ u in (cdf ν C₁)..(s + α), G u :=
+    intervalIntegral.integral_add_adjacent_intervals (hII _ _ hmemF₁ hmemL₂)
+      (hII _ _ hmemL₂ hmemsα)
+  have hsplit3 : (∫ u in (cdf ν C₁)..L₂, G u) + ∫ u in L₂..(cdf ν C₂), G u
+      = ∫ u in (cdf ν C₁)..(cdf ν C₂), G u :=
+    intervalIntegral.integral_add_adjacent_intervals (hII _ _ hmemF₁ hmemL₂)
+      (hII _ _ hmemL₂ hmemF₂)
+  -- the left-hand side, as three indicator integrals
+  have hne : C₁ ≠ C₂ := ne_of_lt hlt
+  have hfun : (fun t => twoSidedVal C₁ C₂ γ₁ γ₂ t * r t)
+      = fun t => γ₁ * Set.indicator {C₁} r t + γ₂ * Set.indicator {C₂} r t
+        + Set.indicator (Set.Ioo C₁ C₂) r t := by
+    funext t
+    simp only [twoSidedVal, Set.indicator_apply, Set.mem_singleton_iff, Set.mem_Ioo]
+    by_cases h1 : t = C₁
+    · subst h1; simp [hne]
+    · by_cases h2 : t = C₂
+      · subst h2; simp [h1]
+      · by_cases h3 : C₁ < t
+        · by_cases h4 : t < C₂ <;> simp [h1, h2, h3, h4]
+        · simp [h1, h2, h3]
+  have hi₁ : Integrable (fun t : ℝ => Set.indicator {C₁} r t) ν :=
+    hrint.indicator (measurableSet_singleton C₁)
+  have hi₂ : Integrable (fun t : ℝ => Set.indicator {C₂} r t) ν :=
+    hrint.indicator (measurableSet_singleton C₂)
+  have hi₃ : Integrable (fun t : ℝ => Set.indicator (Set.Ioo C₁ C₂) r t) ν :=
+    hrint.indicator measurableSet_Ioo
+  have hLHS : ∫ t, twoSidedVal C₁ C₂ γ₁ γ₂ t * r t ∂ν
+      = γ₁ * ((ν {C₁}).toReal * r C₁) + γ₂ * ((ν {C₂}).toReal * r C₂)
+        + ∫ t in Set.Ioo C₁ C₂, r t ∂ν := by
+    have hA : Integrable (fun t : ℝ => γ₁ * Set.indicator {C₁} r t
+        + γ₂ * Set.indicator {C₂} r t) ν := (hi₁.const_mul γ₁).add (hi₂.const_mul γ₂)
+    rw [hfun, integral_add hA hi₃,
+      integral_add (hi₁.const_mul γ₁) (hi₂.const_mul γ₂), integral_const_mul, integral_const_mul,
+      integral_indicator (measurableSet_singleton C₁),
+      integral_indicator (measurableSet_singleton C₂), integral_indicator measurableSet_Ioo,
+      integral_singleton, integral_singleton]
+    simp [measureReal_def]
+  -- the `(C₁, C₂)`-mass, as the difference of two half-lines minus the atom at `C₂`
+  have hIoc : Set.Ioc C₁ C₂ = Set.Ioo C₁ C₂ ∪ {C₂} := by
+    ext t
+    simp only [Set.mem_Ioc, Set.mem_Ioo, Set.mem_union, Set.mem_singleton_iff]
+    constructor
+    · rintro ⟨h1, h2⟩
+      rcases eq_or_lt_of_le h2 with h | h
+      · exact Or.inr h
+      · exact Or.inl ⟨h1, h⟩
+    · rintro (⟨h1, h2⟩ | h)
+      · exact ⟨h1, h2.le⟩
+      · exact ⟨h ▸ hlt, h.le⟩
+  have hIic : ∫ t in Set.Iic C₂, r t ∂ν
+      = (∫ t in Set.Iic C₁, r t ∂ν) + ∫ t in Set.Ioo C₁ C₂, r t ∂ν
+        + (ν {C₂}).toReal * r C₂ := by
+    have h1 : Set.Iic C₁ ∪ Set.Ioc C₁ C₂ = Set.Iic C₂ := Set.Iic_union_Ioc_eq_Iic hlt.le
+    have hdisj1 : Disjoint (Set.Iic C₁) (Set.Ioc C₁ C₂) := by
+      rw [Set.disjoint_left]
+      rintro t ht ⟨h1, -⟩
+      exact absurd ht (not_le.2 h1)
+    have hdisj2 : Disjoint (Set.Ioo C₁ C₂) ({C₂} : Set ℝ) := by
+      rw [Set.disjoint_left]
+      rintro t ⟨-, h2⟩ ht'
+      rw [Set.mem_singleton_iff] at ht'
+      exact absurd h2 (by rw [ht']; exact lt_irrefl C₂)
+    rw [← h1, MeasureTheory.setIntegral_union hdisj1 measurableSet_Ioc
+        (hrint.integrableOn) (hrint.integrableOn), hIoc,
+      MeasureTheory.setIntegral_union hdisj2 (measurableSet_singleton C₂)
+        (hrint.integrableOn) (hrint.integrableOn), integral_singleton]
+    simp [measureReal_def]
+    ring
+  rw [hLHS]
+  have hgoal : (cdf ν C₁ - s) * r C₁ + (s + α - L₂) * r C₂
+      + ((∫ t in Set.Iic C₂, r t ∂ν) - (∫ t in Set.Iic C₁, r t ∂ν)
+        - (ν {C₂}).toReal * r C₂) = ∫ u in s..(s + α), G u := by
+    rw [hM₁, hM₂, hm₂]
+    linarith [hP1, hP2, hP4, hsplit0, hsplit1, hsplit2, hsplit3]
+  rw [← hgoal]
+  have e₁ : γ₁ * ((ν {C₁}).toReal * r C₁) = (cdf ν C₁ - s) * r C₁ := by
+    rw [← hkey₁]; ring
+  have e₂ : γ₂ * ((ν {C₂}).toReal * r C₂) = (s + α - L₂) * r C₂ := by
+    rw [← hkey₂]; ring
+  rw [e₁, e₂]
+  linarith [hIic]
+
 /-- **Brick (a): the randomized window attached to a quantile pair.**
 
 For a law `ν` on the line, a level `α` and a starting level `s`, the two-sided test whose
