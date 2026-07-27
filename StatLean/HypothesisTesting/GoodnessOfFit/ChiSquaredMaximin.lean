@@ -50,11 +50,19 @@ of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail funct
   probability vector — the latter being sample-size dependent, hence a family of
   alternative sets `S n` rather than a single one.
 * The upper bound is the multinomial instance of `asymptotic_maximin_upper_bound`, with
-  the multinomial information matrix; the attainment half is an argument by contradiction
-  along subsequences of local parameters, using that a diverging coordinate forces power
-  one (so the infimum is attained in the limit at a bounded shift) and that the noncentral
-  chi-squared family has monotone likelihood ratio in the noncentrality parameter (so the
-  worst case is `λ = b²` exactly).
+  the multinomial information matrix.  The attainment half runs on the whitened score
+  vector `Zₙ = n^{-1/2} ∑ᵢ Ψ(Xᵢ)` built from the orthonormal system
+  `exists_multinomial_scores`: Parseval on the centred subspace of `L²(π)` identifies
+  Pearson's statistic with `‖Zₙ‖²` and the noncentrality `∑ⱼ hⱼ²/πⱼ` with `‖v(h)‖²` for the
+  drift `v(h) = ∑ⱼ hⱼ Ψ(j)`, and the drifting-parameter limit law `Zₙ ⇒ N(v(h₀), Iₖ)`
+  (from the triangular-array `meanVec_root_tendsto` plus a Slutsky recentring) converts the
+  shell infimum into the noncentral chi-squared tail.  The `limsup` half evaluates at a
+  fixed inner-boundary shift; the `liminf` half takes near-minimisers, and these are
+  automatically bounded because a *uniform* Chebyshev bound — the coordinate variances of
+  `Zₙ` are at most `∑ⱼ Ψₐ(j)²` whatever the drift, the cell weights being a probability
+  vector — forces power close to one whenever `‖v(h)‖` is large.  That the worst case is
+  `λ = b²` exactly is then the stochastic monotonicity `noncentralChiSquared_tail_mono`,
+  not the sharper MLR.
 * Pearson's test appears as the nonrandomized critical function `1{Qₙ > c}` rather than
   as a rejection probability, so that it is a competitor in the same class as the tests
   quantified over in the optimality statement.
@@ -134,12 +142,20 @@ private lemma inner_coord_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
   exact Finset.sum_congr rfl fun i _ => mul_comm _ _
 
 /-- **Whitened multinomial scores.**  For an interior null `π` there are `k` functions on the
-`k+1` cells that are centred and orthonormal in `L²(π)`. -/
+`k+1` cells that are centred and orthonormal in `L²(π)`.
+
+The third conjunct is **Parseval on the centred subspace**: the scores are an orthonormal
+basis of `{g | ∑ⱼ πⱼ gⱼ = 0}` in `L²(π)`, so every centred `g` has
+`‖g‖²_{L²(π)} = ∑ᵢ ⟪g, ψᵢ⟫²_{L²(π)}`.  It is free from the construction (`ψ` comes from an
+orthonormal basis of `(ℝ ∙ (√πⱼ)ⱼ)ᗮ`) and is what turns Pearson's statistic into a squared
+Euclidean norm and the multinomial noncentrality into the squared norm of the drift. -/
 private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
     (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
     ∃ ψ : Fin k → Fin (k + 1) → ℝ,
       (∀ i, ∑ j, π j * ψ i j = 0) ∧
-      (∀ i i', ∑ j, π j * (ψ i j * ψ i' j) = if i = i' then 1 else 0) := by
+      (∀ i i', ∑ j, π j * (ψ i j * ψ i' j) = if i = i' then 1 else 0) ∧
+      (∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+        ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * ψ i j)) ^ 2) := by
   classical
   haveI : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 1))) = k + 1) :=
     ⟨finrank_euclideanSpace_fin⟩
@@ -170,7 +186,7 @@ private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
       hsq j, div_self (ne_of_gt (hπpos j)), one_mul]
   set e := OrthonormalBasis.fromOrthogonalSpanSingleton
     (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (k + 1))) k hw0 with hedef
-  refine ⟨fun i j => (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j), ?_, ?_⟩
+  refine ⟨fun i j => (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j), ?_, ?_, ?_⟩
   · intro i
     have h0 : ⟪w, (↑(e i) : EuclideanSpace ℝ (Fin (k + 1)))⟫_ℝ = 0 :=
       Submodule.mem_orthogonal_singleton_iff_inner_right.mp (e i).2
@@ -187,6 +203,54 @@ private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
     rw [inner_coord_sum] at h0
     rw [← h0]
     exact Finset.sum_congr rfl fun j _ => key2 _ _ j
+  · -- Parseval in the orthogonal complement of `w = (√πⱼ)ⱼ`
+    intro g hg
+    set u : EuclideanSpace ℝ (Fin (k + 1)) :=
+      WithLp.toLp 2 (fun j => Real.sqrt (π j) * g j) with hudef
+    have huapp : ∀ j, u j = Real.sqrt (π j) * g j := fun j => rfl
+    have huw : ⟪w, u⟫_ℝ = 0 := by
+      rw [inner_coord_sum, ← hg]
+      exact Finset.sum_congr rfl fun j _ => by
+        rw [hwapp, huapp, ← mul_assoc, hsq j]
+    have humem : u ∈ (Submodule.span ℝ {w})ᗮ :=
+      Submodule.mem_orthogonal_singleton_iff_inner_right.mpr huw
+    set u' : (Submodule.span ℝ {w})ᗮ := ⟨u, humem⟩ with hu'def
+    have hcoord : ∀ (i : Fin k) (j : Fin (k + 1)),
+        π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j)))
+          = Real.sqrt (π j) * g j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j := by
+      intro i j
+      rw [show π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j)))
+          = (π j / Real.sqrt (π j)) * (g j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j)
+          from by ring, Real.div_sqrt]
+      ring
+    have hinner1 : ∀ i : Fin k, (⟪u', e i⟫_ℝ : ℝ)
+        = ∑ j, π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j
+            / Real.sqrt (π j))) := by
+      intro i
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change u j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j = _
+      rw [huapp, hcoord i j]
+    have hinner2 : ∀ i : Fin k, (⟪e i, u'⟫_ℝ : ℝ)
+        = ∑ j, π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j
+            / Real.sqrt (π j))) := by
+      intro i
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j * u j = _
+      rw [huapp, hcoord i j]
+      ring
+    have hparse : ∑ i, ⟪u', e i⟫_ℝ * ⟪e i, u'⟫_ℝ = ⟪u', u'⟫_ℝ := e.sum_inner_mul_inner u' u'
+    have hself : (⟪u', u'⟫_ℝ : ℝ) = ∑ j, π j * (g j * g j) := by
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change u j * u j = _
+      rw [huapp, show Real.sqrt (π j) * g j * (Real.sqrt (π j) * g j)
+        = (Real.sqrt (π j) * Real.sqrt (π j)) * (g j * g j) from by ring, hsq j]
+    rw [← hself, ← hparse]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hinner1 i, hinner2 i]
+    ring
 
 /-- `|log(1+u) − (u − u²/2)| ≤ 2|u|³` for `|u| ≤ 1/2`. -/
 private lemma abs_log_one_add_sub_quad_le {u : ℝ} (hu : |u| ≤ 1 / 2) :
@@ -519,7 +583,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   classical
   haveI : NeZero k := ⟨hk.ne'⟩
   -- ### 0. the whitened score system and the base cell law
-  obtain ⟨sc, hcent, hortho⟩ := exists_multinomial_scores hπpos hπsum
+  obtain ⟨sc, hcent, hortho, -⟩ := exists_multinomial_scores hπpos hπsum
   have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
   haveI hP₀prob : IsProbabilityMeasure P₀ :=
@@ -1097,72 +1161,610 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       exact hρpow0 n η
     exact (csInf_le hbddS ⟨η₀, hn hη₀, rfl⟩).trans (hρpow1 n η₀)
 
-/-! ### (ii) Attainment by Pearson's test -/
+/-! ### (ii) Attainment by Pearson's test
 
-/-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
-of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
+The two algebraic identities below are what the Parseval conjunct of
+`exists_multinomial_scores` buys: Pearson's statistic is the squared Euclidean norm of the
+whitened score vector `Zₙ = n^{-1/2} ∑ᵢ Ψ(Xᵢ)`, and the multinomial noncentrality of a
+centred shift `h` is the squared norm of the drift vector `v(h) = ∑ⱼ hⱼ Ψ(j)`.  Together
+they turn the attainment statement into the statement that the law of `Zₙ` under the
+drifting alternative `π + hₙ/√n` converges to `N(v(h₀), Iₖ)`. -/
+
+/-- The **standardized whitened score vector** of a data tuple, `n^{-1/2} ∑ᵢ Ψ(dᵢ)`.  It is
+the tuple form of the statistic `ZC` used in the upper bound. -/
+private noncomputable def mScoreVec {n k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (d : Fin n → Fin (k + 1)) : EuclideanSpace ℝ (Fin k) :=
+  (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec sc (d i)
+
+/-- The **drift vector** attached to a local shift `h`: `v(h) = ∑ⱼ hⱼ Ψ(j)`. -/
+private noncomputable def mDriftVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (h : Fin (k + 1) → ℝ) : EuclideanSpace ℝ (Fin k) :=
+  ∑ j, h j • psiVec sc j
+
+private lemma mScoreVec_apply {n k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (d : Fin n → Fin (k + 1)) (a : Fin k) :
+    mScoreVec sc d a = (Real.sqrt (n : ℝ))⁻¹ * ∑ i, sc a (d i) := by
+  simp [mScoreVec, psiVec]
+
+private lemma mDriftVec_apply {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (h : Fin (k + 1) → ℝ) (a : Fin k) :
+    mDriftVec sc h a = ∑ j, h j * sc a j := by
+  simp [mDriftVec, psiVec]
+
+omit [MeasurableSpace Ω] in
+/-- Fiberwise resummation: a cell-count-weighted sum is a sum over the observations. -/
+private lemma sum_multinomialCount_mul {n k : ℕ} (X : Fin n → Ω → Fin (k + 1)) (ω : Ω)
+    (F : Fin (k + 1) → ℝ) :
+    ∑ j, (multinomialCount X j ω : ℝ) * F j = ∑ i, F (X i ω) := by
+  classical
+  rw [← Finset.sum_fiberwise_of_maps_to (g := fun i : Fin n => X i ω)
+    (fun i _ => Finset.mem_univ (X i ω)) (fun i => F (X i ω))]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [Finset.sum_congr rfl (fun i hi => by rw [(Finset.mem_filter.mp hi).2] :
+      ∀ i ∈ Finset.univ.filter (fun i : Fin n => X i ω = j), F (X i ω) = F j),
+    Finset.sum_const, nsmul_eq_mul, multinomialCount]
+
+omit [MeasurableSpace Ω] in
+/-- **Pearson's statistic is the squared norm of the whitened score vector.**  Parseval
+applied to the centred vector of relative cell excesses `gⱼ = (Yⱼ − nπⱼ)/(nπⱼ)`. -/
+private lemma pearsonQ_eq_normSq {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1)
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0)
+    (hpars : ∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+      ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * sc i j)) ^ 2)
+    (hn : 0 < n) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    pearsonQ π X ω = ‖mScoreVec sc (fun i => X i ω)‖ ^ 2 := by
+  classical
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+    Real.mul_self_sqrt hnR.le
+  have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+  have hn0 : (n : ℝ) ≠ 0 := hnR.ne'
+  have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+    rw [← mul_inv, hsq]
+  set g : Fin (k + 1) → ℝ :=
+    fun j => ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) / ((n : ℝ) * π j) with hgdef
+  have hπne : ∀ j, π j ≠ 0 := fun j => (hπpos j).ne'
+  have hg0 : ∑ j, π j * g j = 0 := by
+    have hterm : ∀ j : Fin (k + 1),
+        π j * g j = ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) / (n : ℝ) := by
+      intro j
+      have hj : π j ≠ 0 := hπne j
+      rw [hgdef]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.sum_div,
+      Finset.sum_sub_distrib, ← Finset.mul_sum, hπsum, mul_one]
+    have hcount : (∑ j : Fin (k + 1), (multinomialCount X j ω : ℝ)) = (n : ℝ) := by
+      have := sum_multinomialCount_mul X ω (fun _ => (1 : ℝ))
+      simpa using this
+    rw [hcount, sub_self, zero_div]
+  have hquad : ∑ j, π j * (g j * g j) = pearsonQ π X ω / (n : ℝ) := by
+    rw [pearsonQ, Finset.sum_div]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hlin : ∀ a : Fin k,
+      ∑ j, π j * (g j * sc a j) = mScoreVec sc (fun i => X i ω) a / Real.sqrt (n : ℝ) := by
+    intro a
+    have hterm : ∀ j : Fin (k + 1),
+        π j * (g j * sc a j)
+          = ((multinomialCount X j ω : ℝ) * sc a j) / (n : ℝ) - π j * sc a j := by
+      intro j
+      have hj : π j ≠ 0 := hπne j
+      rw [hgdef]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_sub_distrib, hcent a,
+      ← Finset.sum_div, sum_multinomialCount_mul X ω (fun j => sc a j), sub_zero,
+      mScoreVec_apply, div_eq_mul_inv, div_eq_mul_inv,
+      mul_comm ((Real.sqrt (n : ℝ))⁻¹) (∑ i, sc a (X i ω)), mul_assoc, hinv]
+  have hkey := hpars g hg0
+  rw [hquad] at hkey
+  simp only [hlin] at hkey
+  have hnorm : ‖mScoreVec sc (fun i => X i ω)‖ ^ 2
+      = ∑ a, (mScoreVec sc (fun i => X i ω) a) ^ 2 := EuclideanSpace.real_norm_sq_eq _
+  have hsimp : ∑ a, (mScoreVec sc (fun i => X i ω) a / Real.sqrt (n : ℝ)) ^ 2
+      = (∑ a, (mScoreVec sc (fun i => X i ω) a) ^ 2) / (n : ℝ) := by
+    rw [Finset.sum_div]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [div_pow, Real.sq_sqrt hnR.le]
+  rw [hsimp, ← hnorm] at hkey
+  have := congrArg (fun t : ℝ => t * (n : ℝ)) hkey
+  simpa only [div_mul_cancel₀ _ hn0] using this
+
+/-- **The multinomial noncentrality is the squared norm of the drift vector.**  Parseval
+applied to `gⱼ = hⱼ/πⱼ`, which is centred exactly when `∑ⱼ hⱼ = 0`. -/
+private lemma multinomialNoncentrality_eq_normSq {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j)
+    (hpars : ∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+      ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * sc i j)) ^ 2)
+    {h : Fin (k + 1) → ℝ} (hhsum : ∑ j, h j = 0) :
+    multinomialNoncentrality π h = ‖mDriftVec sc h‖ ^ 2 := by
+  set g : Fin (k + 1) → ℝ := fun j => h j / π j with hgdef
+  have hπne : ∀ j, π j ≠ 0 := fun j => (hπpos j).ne'
+  have hg0 : ∑ j, π j * g j = 0 := by
+    rw [← hhsum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hkey := hpars g hg0
+  have hq : ∑ j, π j * (g j * g j) = multinomialNoncentrality π h := by
+    rw [multinomialNoncentrality]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hl : ∀ a : Fin k, ∑ j, π j * (g j * sc a j) = mDriftVec sc h a := by
+    intro a
+    rw [mDriftVec_apply]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  rw [hq] at hkey
+  simp only [hl] at hkey
+  rw [hkey, EuclideanSpace.real_norm_sq_eq]
+
+/-! ### The drifting-parameter local limit law
+
+BRICK 1 of the attainment note.  The twin's `SmoothTest.scoreVec_weakConverges_drift` does
+not apply: it needs the alternatives to be exponential tilts of the null, whereas here they
+are the *linear* family `πⱼ + hⱼ/√n`.  The drifting-row multivariate limit law
+`Bootstrap.Multivariate.meanVec_root_tendsto` is however exactly a triangular-array
+statement, and every `meanVecSeqClass` condition for the sequence of laws
+`F n = (ν n).map Ψ` of the per-observation score vector is the finite computation
+`π + hₙ/√n → π`; the limiting covariance is the identity directly from orthonormality.
+The drift is linear, so the mean of `F n` is exactly `n^{-1/2} v(hₙ)` with no expansion, and
+recentring at `v(h₀)` instead of `v(hₙ)` is a Slutsky step with a *constant-in-`ω`* distance
+`‖v(h₀) − v(hₙ)‖ → 0` — no tightness needed. -/
+
+/-! ### Laws of the per-observation score vector -/
+
+private lemma measurable_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ) :
+    Measurable (psiVec sc) := measurable_of_countable _
+
+private lemma integral_map_psiVec {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (sc : Fin k → Fin (k + 1) → ℝ)
+    (ρ : Measure (Fin (k + 1))) [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) :
+    ∫ y, f y ∂(ρ.map (psiVec sc)) = ∑ x, ρ.real {x} • f (psiVec sc x) := by
+  rw [integral_map (measurable_psiVec sc).aemeasurable hf.aestronglyMeasurable,
+    integral_fintype Integrable.of_finite]
+
+private lemma memLp_map_psiVec {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    (sc : Fin k → Fin (k + 1) → ℝ) (ρ : Measure (Fin (k + 1))) [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) (p : ℝ≥0∞) :
+    MemLp f p (ρ.map (psiVec sc)) := by
+  have hfm : AEStronglyMeasurable f (ρ.map (psiVec sc)) := hf.aestronglyMeasurable
+  rw [memLp_map_measure_iff hfm (measurable_psiVec sc).aemeasurable]
+  obtain ⟨C, hC⟩ := (Set.finite_range fun x => ‖f (psiVec sc x)‖).bddAbove
+  exact (memLp_top_of_bound (hfm.comp_aemeasurable (measurable_psiVec sc).aemeasurable)
+    C (Filter.Eventually.of_forall fun x => hC ⟨x, rfl⟩)).mono_exponent le_top
+
+private lemma covMatrix_map_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (ρ : Measure (Fin (k + 1))) [IsProbabilityMeasure ρ] (i j : Fin k) :
+    covMatrix (ρ.map (psiVec sc)) i j
+      = (∑ x, ρ.real {x} * (sc i x * sc j x))
+        - (∑ x, ρ.real {x} * sc i x) * ∑ x, ρ.real {x} * sc j x := by
+  haveI : IsProbabilityMeasure (ρ.map (psiVec sc)) :=
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  rw [covMatrix, Matrix.of_apply,
+    covariance_eq_sub (memLp_map_psiVec sc ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop) 2)
+      (memLp_map_psiVec sc ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) (by fun_prop) 2)]
+  have h1 : ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) y
+        * (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) y ∂(ρ.map (psiVec sc))
+      = ∑ x, ρ.real {x} * (sc i x * sc j x) := by
+    rw [integral_map_psiVec sc ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i * WithLp.ofLp y j)
+      (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]; rfl
+  have h2 : ∀ l : Fin k, ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) y ∂(ρ.map (psiVec sc))
+      = ∑ x, ρ.real {x} * sc l x := by
+    intro l
+    rw [integral_map_psiVec sc ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]; rfl
+  simp only [Pi.mul_apply]
+  rw [h1, h2 i, h2 j]
+
+/-- Translating the standard Gaussian by `v`. -/
+private lemma mvGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map (fun z => v + z)
+      = multivariateGaussian v 1 := by
+  rw [multivariateGaussian_zero_one, multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-! ### The drifting local limit law -/
+
+private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ} {hs : ℕ → Fin (k + 1) → ℝ} {h₀ : Fin (k + 1) → ℝ}
+    {ν : ℕ → Measure (Fin (k + 1))} [∀ n, IsProbabilityMeasure (ν n)]
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0)
+    (hortho : ∀ i i', ∑ j, π j * (sc i j * sc i' j) = if i = i' then 1 else 0)
+    (hlim : ∀ j, Tendsto (fun n => hs n j) atTop (𝓝 (h₀ j)))
+    (hν : ∀ n j, (ν n).real {j} = π j + hs n j / Real.sqrt (n : ℝ)) :
+    AsymptoticStatistics.WeakConverges
+      (fun n => (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc))
+      (multivariateGaussian (mDriftVec sc h₀) 1) := by
+  classical
+  set w : ℕ → Fin (k + 1) → ℝ := fun n j => π j + hs n j / Real.sqrt (n : ℝ) with hwdef
+  have hνreal : ∀ n j, (ν n).real {j} = w n j := hν
+  have hν0 : ∀ j, (ν 0).real {j} = π j := by
+    intro j
+    rw [hν 0 j]
+    simp
+  have hwlim : ∀ j, Tendsto (fun n : ℕ => w n j) atTop (𝓝 (π j)) := by
+    intro j
+    have hz : Tendsto (fun n : ℕ => hs n j / Real.sqrt (n : ℝ)) atTop (𝓝 0) :=
+      Filter.Tendsto.div_atTop (hlim j)
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    simpa only [hwdef, add_zero] using tendsto_const_nhds.add hz
+  -- the limit law and the drifting sequence of laws
+  set Q : Measure (EuclideanSpace ℝ (Fin k)) := (ν 0).map (psiVec sc) with hQdef
+  haveI hQprob : IsProbabilityMeasure Q :=
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => (ν n).map (psiVec sc) with hFdef
+  haveI hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  have hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q :=
+    memLp_map_psiVec sc (ν 0) continuous_id' 2
+  have hFclass : F ∈ meanVecSeqClass Q := by
+    refine ⟨fun n _ => hFprob n, fun n => memLp_map_psiVec sc (ν n) continuous_id' 2, ?_, ?_, ?_⟩
+    · intro f
+      have hQint : ∫ y, f y ∂Q = ∑ x, π x * f (psiVec sc x) := by
+        rw [hQdef, integral_map_psiVec sc (ν 0) f.continuous]
+        exact Finset.sum_congr rfl fun x _ => by rw [hν0 x, smul_eq_mul]
+      have hFint : ∀ n, ∫ y, f y ∂(F n) = ∑ x, w n x * f (psiVec sc x) := by
+        intro n
+        rw [hFdef, integral_map_psiVec sc (ν n) f.continuous]
+        exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]
+      simp only [hQint, hFint]
+      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+    · intro i
+      have hQint : ∫ y, WithLp.ofLp y i ∂Q = ∑ x, π x * sc i x := by
+        rw [hQdef, integral_map_psiVec sc (ν 0)
+          (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+        exact Finset.sum_congr rfl fun x _ => by rw [hν0 x, smul_eq_mul]; rfl
+      have hFint : ∀ n, ∫ y, WithLp.ofLp y i ∂(F n) = ∑ x, w n x * sc i x := by
+        intro n
+        rw [hFdef, integral_map_psiVec sc (ν n)
+          (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+        exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]; rfl
+      simp only [hQint, hFint]
+      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+    · intro i j
+      have hQcov : covMatrix Q i j
+          = (∑ x, π x * (sc i x * sc j x))
+            - (∑ x, π x * sc i x) * ∑ x, π x * sc j x := by
+        rw [hQdef, covMatrix_map_psiVec sc (ν 0) i j]
+        congr 1
+        · exact Finset.sum_congr rfl fun x _ => by rw [hν0 x]
+        · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hν0 x]
+      have hFcov : ∀ n, covMatrix (F n) i j
+          = (∑ x, w n x * (sc i x * sc j x))
+            - (∑ x, w n x * sc i x) * ∑ x, w n x * sc j x := by
+        intro n
+        rw [hFdef, covMatrix_map_psiVec sc (ν n) i j]
+        congr 1
+        · exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+        · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+      simp only [hQcov, hFcov]
+      exact ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
+        ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
+          (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)))
+  have hcovQ : covMatrix Q = 1 := by
+    ext i j
+    rw [hQdef, covMatrix_map_psiVec sc (ν 0) i j]
+    have hz : ∀ l : Fin k, ∑ x, (ν 0).real {x} * sc l x = 0 := by
+      intro l
+      rw [Finset.sum_congr rfl fun x _ => by rw [hν0 x]]
+      exact hcent l
+    rw [hz i, hz j, mul_zero, sub_zero, Matrix.one_apply]
+    rw [Finset.sum_congr rfl fun x _ => by rw [hν0 x]]
+    exact hortho i j
+  have hweak : AsymptoticStatistics.WeakConverges (fun n => meanVecRootLaw (F n) n)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+    have := meanVec_root_tendsto hQ2 hFclass
+    rwa [hcovQ] at this
+  -- ### the drift vectors
+  set v : ℕ → EuclideanSpace ℝ (Fin k) := fun n => mDriftVec sc (hs n) with hvdef
+  set v₀ : EuclideanSpace ℝ (Fin k) := mDriftVec sc h₀ with hv₀def
+  have hdrift0 : mDriftVec sc π = 0 := by
+    ext a
+    rw [mDriftVec_apply]
+    simpa using hcent a
+  have hdriftadd : ∀ u₁ u₂ : Fin (k + 1) → ℝ,
+      mDriftVec sc (u₁ + u₂) = mDriftVec sc u₁ + mDriftVec sc u₂ := by
+    intro u₁ u₂
+    simp only [mDriftVec, Pi.add_apply, add_smul]
+    exact Finset.sum_add_distrib
+  have hdriftsmul : ∀ (c : ℝ) (u : Fin (k + 1) → ℝ),
+      mDriftVec sc (c • u) = c • mDriftVec sc u := by
+    intro c u
+    simp only [mDriftVec, Pi.smul_apply, smul_eq_mul, mul_smul, Finset.smul_sum]
+  have hwsplit : ∀ n : ℕ, w n = π + (Real.sqrt (n : ℝ))⁻¹ • hs n := by
+    intro n
+    funext x
+    simp only [hwdef, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    rw [div_eq_inv_mul]
+  have hdriftw : ∀ n : ℕ,
+      mDriftVec sc (w n) = (Real.sqrt (n : ℝ))⁻¹ • v n := by
+    intro n
+    rw [hwsplit n, hdriftadd, hdriftsmul, hdrift0, zero_add, hvdef]
+  have hmeanF : ∀ n : ℕ, ∫ z, z ∂(F n) = (Real.sqrt (n : ℝ))⁻¹ • v n := by
+    intro n
+    rw [hFdef, integral_map_psiVec sc (ν n) continuous_id', ← hdriftw n]
+    exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+  have hvlim : Tendsto v atTop (𝓝 v₀) := by
+    rw [hvdef, hv₀def]
+    exact tendsto_finset_sum _ fun j _ => (hlim j).smul_const _
+  -- ### the two pushforward identities
+  set A : (n : ℕ) → Measure (Fin n → EuclideanSpace ℝ (Fin k)) :=
+    fun n => Measure.pi fun _ : Fin n => F n with hAdef
+  haveI hAprob : ∀ n, IsProbabilityMeasure (A n) := fun n => by
+    rw [hAdef]; infer_instance
+  set Ys : (n : ℕ) → (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
+    fun n y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hYsdef
+  set Xs : (n : ℕ) → (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
+    fun n y => v₀ + (Ys n y - v n) with hXsdef
+  have hYscont : ∀ n, Continuous (Ys n) := by
+    intro n
+    rw [hYsdef]
+    exact (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+  have hXscont : ∀ n, Continuous (Xs n) := by
+    intro n
+    rw [hXsdef]
+    exact continuous_const.add ((hYscont n).sub continuous_const)
+  have hstep1 : ∀ n : ℕ, 0 < n →
+      (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => v₀ + z)
+        = (A n).map (Xs n) := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+    have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+      Real.mul_self_sqrt hnR.le
+    have h1 : Real.sqrt (n : ℝ) * (n : ℝ)⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
+      have hne : (n : ℝ) ≠ 0 := hnR.ne'
+      field_simp
+      linarith [hsq]
+    have h2 : Real.sqrt (n : ℝ) * (Real.sqrt (n : ℝ))⁻¹ = 1 := mul_inv_cancel₀ hspos.ne'
+    rw [meanVecRootLaw, Measure.map_map (by fun_prop) (by fun_prop)]
+    refine congrArg (Measure.map · (A n)) ?_
+    funext y
+    simp only [Function.comp_apply, hmeanF n, hXsdef, hYsdef]
+    rw [smul_sub, smul_smul, smul_smul, h1, h2, one_smul]
+  have hstep2 : ∀ n : ℕ,
+      (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc) = (A n).map (Ys n) := by
+    intro n
+    have hgmeas : Measurable
+        (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) :=
+      measurable_pi_lambda _ fun i => (measurable_psiVec sc).comp (measurable_pi_apply i)
+    have hcomp : mScoreVec sc
+        = (Ys n) ∘ (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) := by
+      funext d
+      rfl
+    rw [hcomp, ← Measure.map_map (hYscont n).measurable hgmeas,
+      Measure.pi_map_pi (fun _ => (measurable_psiVec sc).aemeasurable), hAdef]
+  -- ### Slutsky: the drift moves by a deterministic null sequence
+  have hXconv : AsymptoticStatistics.WeakConverges (fun n => (A n).map (Xs n))
+      (multivariateGaussian v₀ 1) := by
+    have hmap := hweak.map (f := fun z : EuclideanSpace ℝ (Fin k) => v₀ + z)
+      (by fun_prop) (by fun_prop)
+    rw [mvGaussian_shift] at hmap
+    intro f
+    refine (hmap f).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hstep1 n hn]
+  have hdistlim : Tendsto (fun n => ‖v₀ - v n‖) atTop (𝓝 0) := by
+    have := (tendsto_const_nhds (x := v₀) (f := atTop (α := ℕ))).sub hvlim
+    simpa using this.norm
+  have hDist : ∀ ε > 0,
+      Tendsto (fun n => (A n).real {y | ε ≤ dist (Xs n y) (Ys n y)}) atTop (𝓝 0) := by
+    intro ε hε
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hdistlim.eventually (gt_mem_nhds hε)] with n hn
+    have hset : {y : Fin n → EuclideanSpace ℝ (Fin k) | ε ≤ dist (Xs n y) (Ys n y)} = ∅ := by
+      ext y
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      have hd : dist (Xs n y) (Ys n y) = ‖v₀ - v n‖ := by
+        rw [dist_eq_norm]
+        simp only [hXsdef]
+        congr 1
+        rw [add_sub_assoc, sub_right_comm, sub_self, zero_sub, ← sub_eq_add_neg]
+      rw [hd]
+      exact hn
+    rw [hset]
+    simp
+  have hconc := AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (P := A) (X := Xs) (Y := Ys)
+    (fun n => (hXscont n).measurable.aemeasurable)
+    (fun n => (hYscont n).measurable.aemeasurable) hXconv hDist
+  intro f
+  refine (hconc f).congr' ?_
+  filter_upwards with n
+  rw [hstep2 n]
+
+/-! ### Uniform anti-concentration far from the drift
+
+BRICK 2 of the attainment note, in a form that also removes the note's case split.  Under
+the local alternative attached to *any* centred shift `h` the standardized score vector
+`Zₙ` has mean exactly `v(h)` and a coordinatewise variance bounded by `∑ⱼ ψₐ(j)²`,
+uniformly in `n` and in `h` — because the cell weights are a probability vector, so
+`∑ⱼ wⱼ ψₐ(j)² ≤ ∑ⱼ ψₐ(j)²` whatever the drift.  Chebyshev then bounds
+`P{‖Zₙ − v(h)‖ ≥ t}` by `C₀/t²` with `C₀` free of `n` and `h`.
+
+Consequence used below: the near-minimisers of the power over the (unbounded, `n`-dependent)
+shell are automatically bounded, since a shift with `‖v(h)‖` large has power close to `1`.
+That is what the note's "case B, `‖hₙ‖ → ∞`" is for; making the estimate uniform lets
+compactness be applied directly, with no subsequence dichotomy. -/
+
+private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ} {h : Fin (k + 1) → ℝ}
+    {ν : Measure (Fin (k + 1))} [IsProbabilityMeasure ν] {n : ℕ}
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0) (hn : 0 < n)
+    (hν : ∀ j, ν.real {j} = π j + h j / Real.sqrt (n : ℝ))
+    {t : ℝ} (ht : 0 < t) :
+    (Measure.pi fun _ : Fin n => ν).real
+        {d | t ≤ ‖mScoreVec sc d - mDriftVec sc h‖}
+      ≤ (∑ a : Fin k, ∑ j, (sc a j) ^ 2) / t ^ 2 := by
+  classical
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+  have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+  set A : Measure (Fin n → Fin (k + 1)) := Measure.pi fun _ : Fin n => ν with hAdef
+  haveI hAprob : IsProbabilityMeasure A := by rw [hAdef]; infer_instance
+  -- integrals of one coordinate
+  have heval : ∀ (i : Fin n) (f : Fin (k + 1) → ℝ), ∫ d, f (d i) ∂A = ∫ x, f x ∂ν := by
+    intro i f
+    have hmp := (measurePreserving_eval (fun _ : Fin n => ν) i).map_eq
+    calc ∫ d, f (d i) ∂A
+        = ∫ x, f x ∂(A.map (fun d : Fin n → Fin (k + 1) => d i)) := by
+          rw [integral_map (measurable_pi_apply i).aemeasurable
+            (measurable_of_countable f).aestronglyMeasurable]
+      _ = ∫ x, f x ∂ν := by rw [hAdef, hmp]
+  have hintν : ∀ f : Fin (k + 1) → ℝ, ∫ x, f x ∂ν = ∑ j, ν.real {j} * f j := by
+    intro f
+    rw [integral_fintype (μ := ν) (f := f) Integrable.of_finite]
+    exact Finset.sum_congr rfl fun j _ => by rw [smul_eq_mul]
+  have hMemLp : ∀ a : Fin k, MemLp (sc a) 2 ν := by
+    intro a
+    exact (memLp_two_iff_integrable_sq
+      (measurable_of_countable (sc a)).aestronglyMeasurable).mpr Integrable.of_finite
+  -- the mean of one score under the drifting cell law
+  have hmean : ∀ a : Fin k,
+      ∫ x, sc a x ∂ν = (Real.sqrt (n : ℝ))⁻¹ * mDriftVec sc h a := by
+    intro a
+    have hterm : ∀ j : Fin (k + 1),
+        ν.real {j} * sc a j
+          = π j * sc a j + (Real.sqrt (n : ℝ))⁻¹ * (h j * sc a j) := by
+      intro j
+      rw [hν j, add_mul]
+      congr 1
+      rw [div_mul_eq_mul_div, div_eq_inv_mul]
+    rw [hintν, Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_add_distrib, hcent a,
+      zero_add, mDriftVec_apply, Finset.mul_sum]
+  -- the mean of the standardized score vector is the drift
+  have hZmean : ∀ a : Fin k,
+      ∫ d, mScoreVec sc d a ∂A = mDriftVec sc h a := by
+    intro a
+    have hsum : ∫ d, (∑ i, sc a (d i)) ∂A = (n : ℝ) * ∫ x, sc a x ∂ν := by
+      rw [integral_finset_sum _ (fun i _ => Integrable.of_finite)]
+      rw [Finset.sum_congr rfl fun i _ => heval i (sc a)]
+      simp [Finset.sum_const, nsmul_eq_mul]
+    have : ∫ d, mScoreVec sc d a ∂A
+        = (Real.sqrt (n : ℝ))⁻¹ * ∫ d, (∑ i, sc a (d i)) ∂A := by
+      rw [← integral_const_mul]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun d => mScoreVec_apply sc d a)
+    have hinv2 : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+      rw [← mul_inv, hsq]
+    rw [this, hsum, hmean a,
+      show (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * ((Real.sqrt (n : ℝ))⁻¹ * mDriftVec sc h a))
+        = ((Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) * mDriftVec sc h a)
+        from by ring,
+      hinv2, ← mul_assoc, inv_mul_cancel₀ hnR.ne', one_mul]
+  -- the variance of one coordinate is bounded by a constant free of `n` and `h`
+  have hvarbound : ∀ a : Fin k,
+      ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A ≤ ∑ j, (sc a j) ^ 2 := by
+    intro a
+    have hZmeas : AEMeasurable (fun d : Fin n → Fin (k + 1) => mScoreVec sc d a) A :=
+      (measurable_of_countable _).aemeasurable
+    have hvar : Var[fun d : Fin n → Fin (k + 1) => mScoreVec sc d a; A]
+        = ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
+      rw [variance_eq_integral hZmeas, hZmean a]
+    have hfun : (fun d : Fin n → Fin (k + 1) => mScoreVec sc d a)
+        = (fun d : Fin n → Fin (k + 1) => (Real.sqrt (n : ℝ))⁻¹
+            * (∑ i : Fin n, fun d' : Fin n → Fin (k + 1) => sc a (d' i)) d) := by
+      funext d
+      rw [mScoreVec_apply]
+      simp
+    have hvsum : Var[∑ i : Fin n, fun d : Fin n → Fin (k + 1) => sc a (d i); A]
+        = (n : ℝ) * Var[sc a; ν] := by
+      rw [hAdef, variance_sum_pi (fun _ => hMemLp a)]
+      simp [Finset.sum_const, nsmul_eq_mul]
+    have hstep : Var[fun d : Fin n → Fin (k + 1) => mScoreVec sc d a; A] = Var[sc a; ν] := by
+      have hinvsq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = (n : ℝ)⁻¹ := by
+        rw [inv_pow, Real.sq_sqrt hnR.le]
+      rw [hfun, variance_const_mul, hvsum, hinvsq, ← mul_assoc, inv_mul_cancel₀ hnR.ne',
+        one_mul]
+    have hle : Var[sc a; ν] ≤ ∑ j, (sc a j) ^ 2 := by
+      refine (variance_le_expectation_sq
+        (measurable_of_countable (sc a)).aestronglyMeasurable).trans ?_
+      have hsq2 : (ν[(sc a) ^ 2] : ℝ) = ∑ j, ν.real {j} * (sc a j) ^ 2 := by
+        rw [show (fun x => ((sc a) ^ 2) x) = fun x => (sc a x) ^ 2 from rfl]
+        exact hintν (fun x => (sc a x) ^ 2)
+      rw [hsq2]
+      refine Finset.sum_le_sum fun j _ => ?_
+      have h1 : ν.real {j} ≤ 1 := by
+        rw [MeasureTheory.Measure.real]
+        exact ENNReal.toReal_le_of_le_ofReal zero_le_one
+          (by simpa using (prob_le_one : ν {j} ≤ 1))
+      nlinarith [sq_nonneg (sc a j), measureReal_nonneg (μ := ν) (s := {j})]
+    rw [← hvar, hstep]
+    exact hle
+  -- Markov
+  set Y : (Fin n → Fin (k + 1)) → ℝ :=
+    fun d => ‖mScoreVec sc d - mDriftVec sc h‖ ^ 2 with hYdef
+  have hYint : ∫ d, Y d ∂A ≤ ∑ a : Fin k, ∑ j, (sc a j) ^ 2 := by
+    have hYeq : ∫ d, Y d ∂A = ∑ a : Fin k, ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
+      rw [← integral_finset_sum _ (fun a _ => Integrable.of_finite)]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun d => ?_)
+      rw [hYdef]
+      simpa using EuclideanSpace.real_norm_sq_eq (mScoreVec sc d - mDriftVec sc h)
+    rw [hYeq]
+    exact Finset.sum_le_sum fun a _ => hvarbound a
+  have hset : {d : Fin n → Fin (k + 1) | t ≤ ‖mScoreVec sc d - mDriftVec sc h‖}
+      = {d | t ^ 2 ≤ Y d} := by
+    ext d
+    simp only [Set.mem_setOf_eq, hYdef]
+    have hnn : (0 : ℝ) ≤ ‖mScoreVec sc d - mDriftVec sc h‖ := norm_nonneg _
+    constructor
+    · intro hr; nlinarith
+    · intro hr; nlinarith
+  have hmarkov := mul_meas_ge_le_integral_of_nonneg
+    (μ := A) (f := Y) (Filter.Eventually.of_forall fun d => by positivity)
+    Integrable.of_finite (t ^ 2)
+  rw [hset]
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < t ^ 2)]
+  calc (A.real {d | t ^ 2 ≤ Y d}) * t ^ 2
+      = t ^ 2 * A.real {d | t ^ 2 ≤ Y d} := by ring
+    _ ≤ ∫ d, Y d ∂A := hmarkov
+    _ ≤ _ := hYint
+
+/-- **The Pearson test attains the maximin value on the local shell** (the deep half of
+`chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
 `multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
 
-The statement is TRUE and open.  It is about Pearson's statistic, a function of the sample
+The statement needs no repair: it is about Pearson's statistic, a function of the sample
 alone, so it is untouched by the abstract-`Q` counterexample recorded at
-`chiSquared_maximin_upper_bound`: the frozen hypotheses determine the law of
+`chiSquared_maximin_upper_bound` — the frozen hypotheses determine the law of
 `pearsonQ π (X n)` under every `Q n h`, hence the whole statement.  Note also that the
 mixture apparatus of `AsymptoticMaximin.asymptotic_maximin_upper_bound` does not help — it
 bounds every competitor from ABOVE, whereas this is an attainment statement.
 
-TODO (RE-DERIVED, wave 7; supersedes the wave-5 "uniform Berry–Esseen over the shell"
-diagnosis and refines the wave-6 compactness route, whose two cases are confirmed).  The
-smooth-test twin `SmoothTest.smoothTest_shell_minPower_tendsto` is now CLOSED axiom-clean, so
-the shape of the argument is fixed and its reusable half is available *in this file*
-(`SmoothTest` is imported).  What transfers, and what does not:
+PROOF (wave 8; the wave-7 route, with one simplification).  The two Parseval identities
+`pearsonQ_eq_normSq` and `multinomialNoncentrality_eq_normSq` turn the statement into one
+about the whitened score vector `Zₙ`, whose drifting local limit law is BRICK 1
+(`mScoreVec_weakConverges_drift`).  The outer bookkeeping is the twin's: `limsup ≤` by
+evaluating at a fixed inner-boundary point `h₁` (which lies in the shell for all large `n`),
+`liminf ≥` by near-minimisers, compactness and the full-sequence drifting limit.  The
+frontier/portmanteau step is the twin's as well: `{‖z‖² ≤ c}` is convex, so
+`multivariateGaussian_frontier_eq_zero_of_convex_posDef` applies after translating the mean
+away.
 
-WHAT TRANSFERS.  The outer bookkeeping of the twin carries over verbatim: `limsup ≤` by
-evaluating at a fixed inner-boundary point; `liminf ≥` by choosing near-minimisers
-`hₙ ∈ multinomialShell π b n` with `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`
-(`exists_lt_of_csInf_lt`), extracting with `Filter.extraction_of_frequently_atTop`, and
-extending a subsequence off the range of the extraction so that the *full-sequence* drifting
-limit law can be composed with `StrictMono.tendsto_atTop`.  Also reusable as stated:
-`SmoothTest.normCutoff`, `SmoothTest.tendsto_measure_smul_norm_of_weakConverges`,
-`SmoothTest.integrable_exp_of_withDensity_isProbability`, and the frontier/portmanteau step
-(`{‖z‖² ≤ c}` is convex, so `multivariateGaussian_frontier_eq_zero_of_convex_posDef` applies
-after translating the mean away).
-
-WHAT DOES NOT TRANSFER.  `SmoothTest.scoreVec_weakConverges_drift` itself does NOT apply.  It
-requires the alternatives to be exponential TILTS of the null, `hlaw : (Q n h).map (X n i) =
-(smoothModel P₀ ψ hψ).P ((√n)⁻¹ • h)`, whereas here `hcell` makes them the LINEAR family
-`πⱼ + hⱼ/√n`; the two agree only to first order, and the canonical experiment `QC` built
-above is the linear one, not a tilt.  So the drifting local limit law has to be re-proved for
-the multinomial.  Two named bricks remain, and both are in scope for this file:
-
-* BRICK 1 (case A, `(hₙ)` bounded).  The drifting-parameter version of
-  `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral`, whose cell hypothesis carries a
-  FIXED `h`.  It does not need that file's private apparatus: run the public drifting-row
-  limit law `Bootstrap.Multivariate.meanVec_root_tendsto` on
-  `F n := ((Q n hₙ).map (X n i)).map (psiVec sc)` with `sc` the whitened score system of
-  `exists_multinomial_scores`.  Every `meanVecSeqClass` condition is a finite sum over
-  `Fin (k+1)` with weights `wₙ j = πⱼ + hₙ j/√n → πⱼ`, and the limiting covariance is the
-  IDENTITY directly from `hortho'`/`hcentred'` (no `reducedCov` computation).  The drift is
-  *linear*: the mean of `psiVec sc` under `wₙ` is `(√n)⁻¹ · v(hₙ)` with
-  `v(h) := ∑ⱼ hⱼ • psiVec sc j`, so `√n · mean = v(hₙ) → v(h₀)` with no expansion at all, and
-  the shift step is `WeakConverges.slutsky_of_tendstoInMeasure_dist` with a *constant-in-`ω`*
-  distance `‖v(hₙ) − v(h₀)‖` — strictly easier than the twin, which needed tightness.
-  The one genuinely missing ingredient is a PARSEVAL conjunct on `exists_multinomial_scores`:
-      `∑ⱼ πⱼ gⱼ = 0 → ∑ⱼ πⱼ gⱼ² = ∑ᵢ (∑ⱼ πⱼ gⱼ scᵢ j)²`.
-  It is free from that lemma's own construction (`sc` comes from an orthonormal basis of
-  `(ℝ ∙ (√πⱼ)ⱼ)ᗮ`, so it is Parseval in that subspace) but is not currently exposed.  It
-  yields both `pearsonQ π (X n) ω = ‖Zₙ‖²` (take `gⱼ = (Nⱼ − nπⱼ)/(nπⱼ)`) and
-  `multinomialNoncentrality π h = ‖v(h)‖²` for centred `h`, which are exactly the two
-  identities that turn the vector limit into the noncentral chi-squared tail.
-* BRICK 2 (case B, `‖hₙ‖ → ∞`).  Here `power_n(hₙ) → 1` by a ONE-CELL Chebyshev estimate.
-  Since `Fin (k+1)` is finite, pass to a subsequence on which the maximising cell `j` is
-  CONSTANT; from `multinomialNoncentrality π h ≤ (∑ⱼ πⱼ⁻¹) · maxⱼ hⱼ²` the maximal coordinate
-  diverges.  `Nⱼ` is a sum of `n` i.i.d. indicators with success probability
-  `pₙ = πⱼ + hₙ j/√n ∈ [0,1]`, so `(Nⱼ − nπⱼ)/√(nπⱼ)` has mean `hₙ j/√πⱼ → ±∞` and variance
-  `pₙ(1 − pₙ)/πⱼ ≤ (minⱼ πⱼ)⁻¹`; `Qₙ` dominates that single squared term, so
-  `P{Qₙ ≤ c} → 0`.  Elementary: `iIndepFun.variance_sum` plus Chebyshev, no expansion.
-
-Case B is what the twin never needed and is the reason the twin's proof requires `B < ∞`:
-here the shell is UNBOUNDED and moves with `n`, so near-minimisers need not be bounded. -/
+The one place where the multinomial genuinely differs from the twin is that the shell is
+UNBOUNDED and moves with `n`, so near-minimisers need not be bounded a priori (the twin's
+`B < ∞` is exactly what rules this out there).  This is settled by BRICK 2
+(`pi_mScoreVec_far_le`), which bounds `P{‖Zₙ − v(h)‖ ≥ t}` by `C₀/t²` UNIFORMLY in `n` and
+`h`; a shift with `‖v(h)‖ ≥ √(c ∨ 0) + t` therefore has power at least `1 − C₀/t²`, so
+near-minimisers of a value `< 1` are automatically bounded and the note's case split
+disappears. -/
 private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : Fin (k + 1) → ℝ}
     {Q : ℕ → (Fin (k + 1) → ℝ) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)}
@@ -1177,7 +1779,415 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
           (fun ω => if c < pearsonQ π (X n) ω then (1 : ℝ) else 0) h)
         '' multinomialShell π b n)) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
-  sorry
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  obtain ⟨sc, hcent, hortho, hpars⟩ := exists_multinomial_scores hπpos hπsum
+  have hπle : ∀ j, π j ≤ 1 := by
+    intro j
+    rw [← hπsum]
+    exact Finset.single_le_sum (f := π) (fun i _ => (hπpos i).le) (Finset.mem_univ j)
+  -- ### 0. the base cell law and the stage-`n` cell law under a local parameter
+  set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
+  haveI hP₀prob : IsProbabilityMeasure P₀ :=
+    Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+  have hP₀real : ∀ j, P₀.real {j} = π j := by
+    intro j
+    have h := hcell 1 (0 : Fin (k + 1) → ℝ) (0 : Fin 1) j
+    simpa [MeasureTheory.Measure.real] using h
+  set cellν : ℕ → (Fin (k + 1) → ℝ) → Measure (Fin (k + 1)) :=
+    fun n h => if hn : 0 < n then Measure.map (X n ⟨0, hn⟩) (Q n h) else P₀ with hcellνdef
+  haveI hcellνprob : ∀ n h, IsProbabilityMeasure (cellν n h) := by
+    intro n h
+    by_cases hn : 0 < n
+    · simp only [hcellνdef, dif_pos hn]
+      exact Measure.isProbabilityMeasure_map (hX n ⟨0, hn⟩).aemeasurable
+    · simp only [hcellνdef, dif_neg hn]
+      infer_instance
+  have hcellνreal : ∀ n h j, (cellν n h).real {j} = π j + h j / Real.sqrt (n : ℝ) := by
+    intro n h j
+    by_cases hn : 0 < n
+    · simp only [hcellνdef, dif_pos hn, MeasureTheory.Measure.real]
+      exact hcell n h ⟨0, hn⟩ j
+    · have hn0 : n = 0 := Nat.eq_zero_of_not_pos hn
+      subst hn0
+      simp [hcellνdef, hP₀real j]
+  have hlawX : ∀ n h, ∀ i : Fin n, Measure.map (X n i) (Q n h) = cellν n h := by
+    intro n h i
+    haveI : IsProbabilityMeasure (Measure.map (X n i) (Q n h)) :=
+      Measure.isProbabilityMeasure_map (hX n i).aemeasurable
+    refine Measure.ext_of_singleton fun j => ?_
+    rw [← ENNReal.ofReal_toReal (measure_ne_top (Measure.map (X n i) (Q n h)) {j}),
+      ← ENNReal.ofReal_toReal (measure_ne_top (cellν n h) {j}), hcell n h i j]
+    exact congrArg ENNReal.ofReal (hcellνreal n h j).symm
+  -- ### 1. the rejection region and its Gaussian mass
+  set Reg : Set (EuclideanSpace ℝ (Fin k)) := {z | c < ‖z‖ ^ 2} with hRegdef
+  have hRegmeas : MeasurableSet Reg :=
+    measurableSet_lt measurable_const (measurable_norm.pow_const 2)
+  have hRegmass : ∀ v : EuclideanSpace ℝ (Fin k),
+      (multivariateGaussian v 1) Reg
+        = noncentralChiSquared k (‖v‖ ^ 2).toNNReal (Set.Ioi c) := by
+    intro v
+    have hv : ‖v‖ = Real.sqrt (((‖v‖ ^ 2).toNNReal : ℝ)) := by
+      rw [Real.coe_toNNReal _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg v)]
+    rw [← map_normSq_multivariateGaussian_of_norm_eq k (‖v‖ ^ 2).toNNReal hv,
+      Measure.map_apply (measurable_norm.pow_const 2) measurableSet_Ioi]
+    rfl
+  have hCconv : Convex ℝ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} := by
+    rcases le_or_gt 0 c with hc0 | hc0
+    · have hball : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+          = Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) (Real.sqrt c) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        constructor
+        · intro hzz
+          rw [← Real.sqrt_sq (norm_nonneg z)]
+          exact Real.sqrt_le_sqrt hzz
+        · intro hzz
+          have := pow_le_pow_left₀ (norm_nonneg z) hzz 2
+          rwa [Real.sq_sqrt hc0] at this
+      rw [hball]
+      exact convex_closedBall _ _
+    · have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} = (∅ : Set _) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        exact lt_of_lt_of_le hc0 (sq_nonneg _)
+      rw [hempty]
+      exact convex_empty
+  have hfrontier : ∀ v : EuclideanSpace ℝ (Fin k),
+      multivariateGaussian v 1 (frontier Reg) = 0 := by
+    intro v
+    have hcompl : Reg = {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}ᶜ := by
+      ext z
+      simp only [hRegdef, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    have hconv2 : Convex ℝ
+        ((fun x => v + x) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) := by
+      intro x hx y hy a₁ b₁ ha hb hab
+      simp only [Set.mem_preimage] at hx hy ⊢
+      have hv : a₁ • v + b₁ • v = v := by rw [← add_smul, hab, one_smul]
+      have hkey : v + (a₁ • x + b₁ • y) = a₁ • (v + x) + b₁ • (v + y) := by
+        rw [smul_add, smul_add,
+          show a₁ • v + a₁ • x + (b₁ • v + b₁ • y)
+            = (a₁ • v + b₁ • v) + (a₁ • x + b₁ • y) by abel, hv]
+      rw [hkey]
+      exact hCconv hx hy ha hb hab
+    have htrans : (fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+        frontier {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+        = frontier ((fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+            {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) :=
+      (Homeomorph.addLeft v).preimage_frontier _
+    rw [hcompl, frontier_compl, ← mvGaussian_shift v,
+      Measure.map_apply (by fun_prop) measurableSet_frontier, htrans]
+    exact AsymptoticStatistics.multivariateGaussian_frontier_eq_zero_of_convex_posDef
+      Matrix.PosDef.one hconv2
+  -- ### 2. the power function as a measure of the rejection region
+  set pwf : ℕ → (Fin (k + 1) → ℝ) → ℝ := fun n h =>
+    power (Q n) (fun ω => if c < pearsonQ π (X n) ω then (1 : ℝ) else 0) h with hpwfdef
+  change Tendsto (fun n => sInf (pwf n '' multinomialShell π b n)) atTop (nhds _)
+  have hsample : ∀ (n : ℕ) (h : Fin (k + 1) → ℝ),
+      (Q n h).map (fun ω (i : Fin n) => X n i ω)
+        = Measure.pi (fun _ : Fin n => cellν n h) := by
+    intro n h
+    rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX n i).aemeasurable)).1 (hindep n h)]
+    congr 1
+    funext i
+    exact hlawX n h i
+  have hpwmap : ∀ (n : ℕ) (h : Fin (k + 1) → ℝ), 0 < n →
+      pwf n h
+        = (((Measure.pi fun _ : Fin n => cellν n h).map (mScoreVec sc)) Reg).toReal := by
+    intro n h hn
+    have hZmeas : Measurable (mScoreVec sc : (Fin n → Fin (k + 1)) → _) :=
+      measurable_of_countable _
+    have hXtup : Measurable (fun ω (i : Fin n) => X n i ω) :=
+      measurable_pi_lambda _ fun i => hX n i
+    have hmeas' : Measurable (fun ω => mScoreVec sc (fun i => X n i ω)) := hZmeas.comp hXtup
+    have hcomp : (Measure.pi fun _ : Fin n => cellν n h).map (mScoreVec sc)
+        = (Q n h).map (fun ω => mScoreVec sc (fun i => X n i ω)) := by
+      rw [← hsample n h, Measure.map_map hZmeas hXtup]
+      rfl
+    have hpre : (fun ω => if c < pearsonQ π (X n) ω then (1 : ℝ) else 0)
+        = Set.indicator ((fun ω => mScoreVec sc (fun i => X n i ω)) ⁻¹' Reg) 1 := by
+      funext ω
+      have hQeq : pearsonQ π (X n) ω = ‖mScoreVec sc (fun i => X n i ω)‖ ^ 2 :=
+        pearsonQ_eq_normSq hπpos hπsum hcent hpars hn (X n) ω
+      by_cases hcc : c < pearsonQ π (X n) ω
+      · have hmem : ω ∈ (fun ω => mScoreVec sc (fun i => X n i ω)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hQeq]
+          exact hcc
+        rw [Set.indicator_of_mem hmem, Pi.one_apply, if_pos hcc]
+      · have hmem : ω ∉ (fun ω => mScoreVec sc (fun i => X n i ω)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hQeq]
+          exact hcc
+        rw [Set.indicator_of_notMem hmem, if_neg hcc]
+    simp only [hpwfdef, power, hpre]
+    rw [integral_indicator_one (hmeas' hRegmeas), hcomp,
+      Measure.map_apply hmeas' hRegmeas]
+    rfl
+  -- ### 3. the drifting local power limit
+  have hdrift : ∀ (u : ℕ → Fin (k + 1) → ℝ) (h₀ : Fin (k + 1) → ℝ),
+      (∀ j, Tendsto (fun n => u n j) atTop (nhds (h₀ j))) →
+      Tendsto (fun n => pwf n (u n)) atTop
+        (nhds ((noncentralChiSquared k (‖mDriftVec sc h₀‖ ^ 2).toNNReal
+          (Set.Ioi c)).toReal)) := by
+    intro u h₀ hu
+    have hweak := mScoreVec_weakConverges_drift (π := π) (sc := sc) (hs := u) (h₀ := h₀)
+      (ν := fun n => cellν n (u n)) hcent hortho hu (fun n j => hcellνreal n (u n) j)
+    haveI hprob : ∀ n : ℕ, IsProbabilityMeasure
+        ((Measure.pi fun _ : Fin n => cellν n (u n)).map (mScoreVec sc)) := fun n =>
+      Measure.isProbabilityMeasure_map (measurable_of_countable _).aemeasurable
+    set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) := fun n =>
+      ⟨(Measure.pi fun _ : Fin n => cellν n (u n)).map (mScoreVec sc), hprob n⟩ with hμsdef
+    set νl : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+      ⟨multivariateGaussian (mDriftVec sc h₀) 1, inferInstance⟩ with hνldef
+    have hconv : Tendsto μs atTop (nhds νl) := by
+      rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+      intro f
+      simpa only [hμsdef, hνldef, ProbabilityMeasure.coe_mk] using hweak f
+    have hfront : (νl : Measure (EuclideanSpace ℝ (Fin k))) (frontier Reg) = 0 := by
+      simp only [hνldef, ProbabilityMeasure.coe_mk]
+      exact hfrontier _
+    have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+    have htoreal := (ENNReal.tendsto_toReal
+      (measure_ne_top (νl : Measure (EuclideanSpace ℝ (Fin k))) Reg)).comp hport
+    simp only [hμsdef, hνldef, ProbabilityMeasure.coe_mk] at htoreal
+    rw [hRegmass (mDriftVec sc h₀)] at htoreal
+    refine htoreal.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    exact (hpwmap n (u n) hn).symm
+  -- ### 4. elementary facts about the powers
+  have hpwnn : ∀ n h, 0 ≤ pwf n h := by
+    intro n h
+    simp only [hpwfdef, power]
+    refine integral_nonneg fun ω => ?_
+    by_cases hcc : c < pearsonQ π (X n) ω <;> simp [hcc]
+  have hbdd : ∀ n, BddBelow (pwf n '' multinomialShell π b n) := fun n =>
+    ⟨0, fun x hx => by obtain ⟨h, _, rfl⟩ := hx; exact hpwnn n h⟩
+  have hT1 : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal ≤ 1 := by
+    rw [← ENNReal.toReal_one]
+    exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
+  -- ### 5. a point on the inner boundary of the shell
+  set a₀ : Fin k := ⟨0, hk⟩ with ha₀def
+  set h₁ : Fin (k + 1) → ℝ := fun j => b * (π j * sc a₀ j) with hh₁def
+  have hh₁sum : ∑ j, h₁ j = 0 := by
+    simp only [hh₁def]
+    rw [← Finset.mul_sum, hcent a₀, mul_zero]
+  have hh₁nc : multinomialNoncentrality π h₁ = b ^ 2 := by
+    rw [multinomialNoncentrality]
+    have hterm : ∀ j : Fin (k + 1),
+        (h₁ j) ^ 2 / π j = b ^ 2 * (π j * (sc a₀ j * sc a₀ j)) := by
+      intro j
+      have hj : π j ≠ 0 := (hπpos j).ne'
+      rw [hh₁def]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.mul_sum, hortho a₀ a₀]
+    simp
+  have hv₁ : ‖mDriftVec sc h₁‖ ^ 2 = b ^ 2 := by
+    rw [← multinomialNoncentrality_eq_normSq hπpos hpars hh₁sum, hh₁nc]
+  have hh₁mem : ∀ᶠ n : ℕ in atTop, h₁ ∈ multinomialShell π b n := by
+    have hpos : ∀ j : Fin (k + 1),
+        ∀ᶠ n : ℕ in atTop, 0 ≤ π j + h₁ j / Real.sqrt (n : ℝ) := by
+      intro j
+      have hlimj : Tendsto (fun n : ℕ => π j + h₁ j / Real.sqrt (n : ℝ)) atTop
+          (nhds (π j)) := by
+        have hz : Tendsto (fun n : ℕ => h₁ j / Real.sqrt (n : ℝ)) atTop (nhds 0) :=
+          Filter.Tendsto.div_atTop tendsto_const_nhds
+            (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+        simpa using tendsto_const_nhds.add hz
+      filter_upwards [hlimj.eventually (lt_mem_nhds (hπpos j))] with n hn using hn.le
+    filter_upwards [Filter.eventually_all.2 hpos] with n hn
+    exact ⟨hh₁sum, hh₁nc.ge, hn⟩
+  -- ### 6. the two halves of the limit
+  refine tendsto_order.2 ⟨?_, ?_⟩
+  · -- `liminf ≥`: near-minimisers are bounded by BRICK 2, then compactness and the drift
+    intro a' ha'
+    by_contra hcon
+    rw [Filter.not_eventually] at hcon
+    set C₀ : ℝ := ∑ a : Fin k, ∑ j, (sc a j) ^ 2 with hC₀def
+    have hC₀nn : (0 : ℝ) ≤ C₀ := by positivity
+    have ha'1 : a' < 1 := lt_of_lt_of_le ha' hT1
+    have h1a : (0 : ℝ) < 1 - a' := by linarith
+    have h1a' : (1 : ℝ) - a' ≠ 0 := h1a.ne'
+    set t : ℝ := Real.sqrt ((C₀ + 1) / (1 - a')) with htdef
+    have hrpos : (0 : ℝ) < (C₀ + 1) / (1 - a') := by positivity
+    have ht0 : 0 < t := Real.sqrt_pos.mpr hrpos
+    have ht2 : t ^ 2 = (C₀ + 1) / (1 - a') := Real.sq_sqrt hrpos.le
+    have hkey : C₀ / t ^ 2 < 1 - a' := by
+      rw [ht2, div_lt_iff₀ hrpos]
+      field_simp
+      linarith
+    set R : ℝ := Real.sqrt (max c 0) + t with hRdef
+    have hR0 : 0 < R := by
+      rw [hRdef]
+      have := Real.sqrt_nonneg (max c 0)
+      linarith
+    -- BRICK 2: far from the null the power is nearly one, uniformly in `n` and `h`
+    have huniform : ∀ (n : ℕ) (hh : Fin (k + 1) → ℝ), 0 < n → R ≤ ‖mDriftVec sc hh‖ →
+        1 - C₀ / t ^ 2 ≤ pwf n hh := by
+      intro n hh hn hR
+      have hfar := pi_mScoreVec_far_le (π := π) (sc := sc) (h := hh)
+        (ν := cellν n hh) (n := n) hcent hn (fun j => hcellνreal n hh j) ht0
+      have hZmeas : Measurable (mScoreVec sc : (Fin n → Fin (k + 1)) → _) :=
+        measurable_of_countable _
+      have hSmeas : MeasurableSet ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg) :=
+        hZmeas hRegmeas
+      have hpw : pwf n hh
+          = (Measure.pi fun _ : Fin n => cellν n hh).real
+              ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg) := by
+        rw [hpwmap n hh hn, Measure.map_apply hZmeas hRegmeas]
+        rfl
+      have hsub : ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg)ᶜ
+          ⊆ {d | t ≤ ‖mScoreVec sc d - mDriftVec sc hh‖} := by
+        intro d hd
+        simp only [Set.mem_compl_iff, Set.mem_preimage, hRegdef, Set.mem_setOf_eq,
+          not_lt] at hd
+        simp only [Set.mem_setOf_eq]
+        by_contra hlt
+        push_neg at hlt
+        have h1 : ‖mDriftVec sc hh‖ - ‖mScoreVec sc d‖
+            ≤ ‖mDriftVec sc hh - mScoreVec sc d‖ := norm_sub_norm_le _ _
+        rw [norm_sub_rev] at h1
+        have hs0 : Real.sqrt (max c 0) ^ 2 = max c 0 := Real.sq_sqrt (le_max_right c 0)
+        have hs0n : (0 : ℝ) ≤ Real.sqrt (max c 0) := Real.sqrt_nonneg _
+        have hzn : (0 : ℝ) ≤ ‖mScoreVec sc d‖ := norm_nonneg _
+        have hgt : Real.sqrt (max c 0) < ‖mScoreVec sc d‖ := by
+          rw [hRdef] at hR
+          linarith
+        nlinarith [le_max_left c 0]
+      have hcompl : (Measure.pi fun _ : Fin n => cellν n hh).real
+          (((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg)ᶜ) ≤ C₀ / t ^ 2 :=
+        le_trans (measureReal_mono hsub) hfar
+      have hcc := measureReal_compl (μ := Measure.pi fun _ : Fin n => cellν n hh) hSmeas
+      rw [probReal_univ] at hcc
+      rw [hpw]
+      linarith
+    -- near-minimisers
+    have hchoice : ∀ n : ℕ, ∃ hh : Fin (k + 1) → ℝ,
+        (pwf n '' multinomialShell π b n).Nonempty →
+          (hh ∈ multinomialShell π b n ∧
+            pwf n hh < sInf (pwf n '' multinomialShell π b n) + 1 / ((n : ℝ) + 1)) := by
+      intro n
+      by_cases hne : (pwf n '' multinomialShell π b n).Nonempty
+      · obtain ⟨x, hx, hlt⟩ := exists_lt_of_csInf_lt hne
+          (show sInf (pwf n '' multinomialShell π b n)
+              < sInf (pwf n '' multinomialShell π b n) + 1 / ((n : ℝ) + 1) by
+            have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+            linarith)
+        obtain ⟨hh, hhS, rfl⟩ := hx
+        exact ⟨hh, fun _ => ⟨hhS, hlt⟩⟩
+      · exact ⟨h₁, fun hcne => absurd hcne hne⟩
+    choose g hg using hchoice
+    have hgood : ∀ᶠ n : ℕ in atTop,
+        (pwf n '' multinomialShell π b n).Nonempty ∧ 0 < n ∧
+          a' + 1 / ((n : ℝ) + 1) < 1 - C₀ / t ^ 2 := by
+      have hlimc : Tendsto (fun n : ℕ => a' + 1 / ((n : ℝ) + 1)) atTop (nhds a') := by
+        have hd : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (nhds 0) := by
+          have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds
+            (Filter.tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+          simpa using this
+        simpa using tendsto_const_nhds.add hd
+      have h3 : ∀ᶠ n : ℕ in atTop, a' + 1 / ((n : ℝ) + 1) < 1 - C₀ / t ^ 2 :=
+        hlimc.eventually (gt_mem_nhds (by linarith : a' < 1 - C₀ / t ^ 2))
+      have h1' : ∀ᶠ n : ℕ in atTop, (pwf n '' multinomialShell π b n).Nonempty := by
+        filter_upwards [hh₁mem] with n hn
+        exact ⟨pwf n h₁, ⟨h₁, hn, rfl⟩⟩
+      filter_upwards [h1', eventually_gt_atTop 0, h3] with n hA hB hC using ⟨hA, hB, hC⟩
+    obtain ⟨φ, hφmono, hφ⟩ :=
+      Filter.extraction_of_frequently_atTop (hcon.and_eventually hgood)
+    have hgS : ∀ m, g (φ m) ∈ multinomialShell π b (φ m) := fun m => ((hg (φ m)) (hφ m).2.1).1
+    have hglt : ∀ m, pwf (φ m) (g (φ m)) < a' + 1 / ((φ m : ℝ) + 1) := by
+      intro m
+      have h1 := ((hg (φ m)) (hφ m).2.1).2
+      have h2 : sInf (pwf (φ m) '' multinomialShell π b (φ m)) ≤ a' := not_lt.mp (hφ m).1
+      linarith
+    have hgbnd : ∀ m, ‖mDriftVec sc (g (φ m))‖ < R := by
+      intro m
+      by_contra hle
+      push_neg at hle
+      have hu := huniform (φ m) (g (φ m)) (hφ m).2.2.1 hle
+      have hc3 := (hφ m).2.2.2
+      linarith [hglt m]
+    have hgball : ∀ m, g (φ m) ∈ Metric.closedBall (0 : Fin (k + 1) → ℝ) R := by
+      intro m
+      have hnc : multinomialNoncentrality π (g (φ m)) = ‖mDriftVec sc (g (φ m))‖ ^ 2 :=
+        multinomialNoncentrality_eq_normSq hπpos hpars (hgS m).1
+      simp only [Metric.mem_closedBall, dist_zero_right]
+      rw [pi_norm_le_iff_of_nonneg hR0.le]
+      intro j
+      have hterm : (g (φ m) j) ^ 2 / π j ≤ multinomialNoncentrality π (g (φ m)) := by
+        rw [multinomialNoncentrality]
+        exact Finset.single_le_sum (f := fun i => (g (φ m) i) ^ 2 / π i)
+          (fun i _ => div_nonneg (sq_nonneg _) (hπpos i).le) (Finset.mem_univ j)
+      have hdiv : (g (φ m) j) ^ 2 ≤ (g (φ m) j) ^ 2 / π j := by
+        rw [le_div_iff₀ (hπpos j)]
+        nlinarith [sq_nonneg (g (φ m) j), hπle j]
+      have hsq : (g (φ m) j) ^ 2 < R ^ 2 := by
+        have hb1 := hgbnd m
+        have hb2 : (0 : ℝ) ≤ ‖mDriftVec sc (g (φ m))‖ := norm_nonneg _
+        nlinarith
+      rw [Real.norm_eq_abs]
+      nlinarith [abs_nonneg (g (φ m) j), sq_abs (g (φ m) j)]
+    obtain ⟨h₀, -, ξ, hξmono, hξlim⟩ :=
+      (isCompact_closedBall (0 : Fin (k + 1) → ℝ) R).tendsto_subseq hgball
+    set σ : ℕ → ℕ := fun m => φ (ξ m) with hσdef
+    have hσmono : StrictMono σ := hφmono.comp hξmono
+    set w : ℕ → Fin (k + 1) → ℝ :=
+      fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
+    have hwσ : ∀ m, w (σ m) = g (σ m) := by
+      intro m
+      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+    have hwlim : Tendsto w atTop (nhds h₀) := by
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      rw [Metric.tendsto_atTop] at hξlim
+      obtain ⟨M, hM⟩ := hξlim ε hε
+      refine ⟨σ M, fun n hn => ?_⟩
+      by_cases hmem : n ∈ Set.range σ
+      · obtain ⟨m, rfl⟩ := hmem
+        have hmM : M ≤ m := by
+          by_contra hcm
+          rw [not_le] at hcm
+          exact absurd hn (not_le.mpr (hσmono hcm))
+        rw [hwσ m]
+        simpa only [Function.comp_apply, hσdef] using hM m hmM
+      · rw [hwdef]
+        simp only [if_neg hmem, dist_self]
+        exact hε
+    have hlimit := (hdrift w h₀ (fun j => tendsto_pi_nhds.mp hwlim j)).comp hσmono.tendsto_atTop
+    have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by
+      have hσtop : Tendsto (fun m => ((σ m : ℝ) + 1)) atTop atTop :=
+        Filter.tendsto_atTop_add_const_right _ 1
+          (tendsto_natCast_atTop_atTop.comp hσmono.tendsto_atTop)
+      have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds hσtop
+      simpa using tendsto_const_nhds.add this
+    have hle : (noncentralChiSquared k (‖mDriftVec sc h₀‖ ^ 2).toNNReal
+        (Set.Ioi c)).toReal ≤ a' := by
+      refine le_of_tendsto_of_tendsto' hlimit hupper (fun m => ?_)
+      simp only [Function.comp_apply, hwσ m]
+      exact (hglt (ξ m)).le
+    have hsum0 : ∑ j, h₀ j = 0 := by
+      have h1 : Tendsto (fun m => ∑ j, g (σ m) j) atTop (nhds (∑ j, h₀ j)) :=
+        tendsto_finset_sum _ fun j _ => tendsto_pi_nhds.mp hξlim j
+      exact tendsto_nhds_unique (h1.congr (fun m => (hgS (ξ m)).1)) tendsto_const_nhds
+    have hncge : b ^ 2 ≤ multinomialNoncentrality π h₀ := by
+      have hcont : Tendsto (fun m => multinomialNoncentrality π (g (σ m))) atTop
+          (nhds (multinomialNoncentrality π h₀)) := by
+        simp only [multinomialNoncentrality]
+        exact tendsto_finset_sum _ fun j _ =>
+          ((tendsto_pi_nhds.mp hξlim j).pow 2).div_const (π j)
+      exact ge_of_tendsto' hcont (fun m => (hgS (ξ m)).2.1)
+    have hmono : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal
+        ≤ (noncentralChiSquared k (‖mDriftVec sc h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal := by
+      refine ENNReal.toReal_mono (measure_ne_top _ _)
+        (noncentralChiSquared_tail_mono k c (Real.toNNReal_mono ?_))
+      rw [← multinomialNoncentrality_eq_normSq hπpos hpars hsum0]
+      exact hncge
+    linarith
+  · -- `limsup ≤`: evaluate at the fixed inner-boundary point
+    intro a' ha'
+    have hlim := hdrift (fun _ => h₁) h₁ (fun j => tendsto_const_nhds)
+    rw [hv₁] at hlim
+    have hev := hlim.eventually (gt_mem_nhds ha')
+    filter_upwards [hev, hh₁mem] with n hn hmem
+    exact lt_of_le_of_lt (csInf_le (hbdd n) ⟨h₁, hmem, rfl⟩) hn
 
 /-- **Pearson's test is asymptotically maximin.** The nonrandomized test `1{Qₙ > c}`
 attains the bound of `chiSquared_maximin_upper_bound`: its minimum power over the local
@@ -1226,7 +2236,7 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   refine ⟨?_, ?_⟩
-  · -- Attainment on the shell: the deep uniform-over-the-shell half (lifted).
+  · -- Attainment on the shell: the deep uniform-over-the-shell half.
     exact chiSquared_shell_minPower_tendsto hk hb hα hα1 hc hπpos hπsum hX hindep hcell
   · -- Optimality: for any level-`α` sample-based test this is exactly the upper bound.
     intro ψ hψ hψX hlvl
