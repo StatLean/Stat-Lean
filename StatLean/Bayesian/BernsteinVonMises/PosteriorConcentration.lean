@@ -153,6 +153,49 @@ theorem mixture_posterior_test_bound
         rw [Measure.lintegral_bind (Kernel.aemeasurable _) hF.aemeasurable]
     _ = _ := by rw [lintegral_posterior_mul_eq π κ hw hA]
 
+/-- Markov's inequality along `atTop`: vanishing integrals force vanishing deviation
+probabilities at a fixed positive finite threshold. -/
+private lemma tendsto_measure_ge_of_tendsto_lintegral {Ω : ℕ → Type*}
+    [∀ n, MeasurableSpace (Ω n)] {P : ∀ n, Measure (Ω n)} {g : ∀ n, Ω n → ℝ≥0∞}
+    (hg : ∀ n, Measurable (g n)) {ε : ℝ≥0∞} (hε : ε ≠ 0) (hε' : ε ≠ ∞)
+    (h : Tendsto (fun n => ∫⁻ ω, g n ω ∂(P n)) atTop (𝓝 0)) :
+    Tendsto (fun n => P n {ω | ε ≤ g n ω}) atTop (𝓝 0) := by
+  have hb : Tendsto (fun n => (∫⁻ ω, g n ω ∂(P n)) / ε) atTop (𝓝 0) := by
+    simp only [div_eq_mul_inv]
+    have h2 := ENNReal.Tendsto.mul_const h (Or.inr (ENNReal.inv_ne_top.2 hε))
+    rwa [zero_mul] at h2
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hb
+    (Eventually.of_forall fun n => zero_le _)
+    (Eventually.of_forall fun n => meas_ge_le_lintegral_div (hg n).aemeasurable hε hε')
+
+/-- For a `[0,1]`-valued measurable statistic on a probability space the `ℝ≥0∞`-integral of
+`ofReal` is `ofReal` of the Bochner integral. -/
+private lemma lintegral_ofReal_eq_ofReal_integral {Ω : Type*} [MeasurableSpace Ω]
+    (P : Measure Ω) [IsProbabilityMeasure P] {g : Ω → ℝ} (hg : Measurable g)
+    (h0 : ∀ ω, 0 ≤ g ω) (h1 : ∀ ω, g ω ≤ 1) :
+    ∫⁻ ω, ENNReal.ofReal (g ω) ∂P = ENNReal.ofReal (∫ ω, g ω ∂P) := by
+  refine (ofReal_integral_eq_lintegral_ofReal ?_ (Eventually.of_forall h0)).symm
+  refine ⟨hg.aestronglyMeasurable, HasFiniteIntegral.of_bounded (C := 1) ?_⟩
+  filter_upwards with ω
+  rw [Real.norm_eq_abs, abs_of_nonneg (h0 ω)]
+  exact h1 ω
+
+/-- The elementary test split `P ≤ φ + P·(1 − φ)` for `P ≤ 1` and `φ + (1 − φ) = 1`. -/
+private lemma ennreal_test_split {P a b : ℝ≥0∞} (hP : P ≤ 1) (hab : a + b = 1) :
+    P ≤ a + P * b := by
+  calc P = P * (a + b) := by rw [hab, mul_one]
+    _ = P * a + P * b := mul_add _ _ _
+    _ ≤ 1 * a + P * b := by gcongr
+    _ = a + P * b := by rw [one_mul]
+
+/-- Two quantities below `d/2` add up to less than `d`. -/
+private lemma ennreal_add_lt_of_lt_half {d a b : ℝ≥0∞} (ha : a < d / 2) (hb : b < d / 2) :
+    a + b < d := by
+  have hbne : b ≠ ∞ := (hb.trans_le le_top).ne
+  calc a + b < d / 2 + b := ENNReal.add_lt_add_right hbne ha
+    _ ≤ d / 2 + d / 2 := by gcongr
+    _ = d := ENNReal.add_halves d
+
 /-- **Step A: posterior concentration** (vdV p. 142). Under the model, Fisher, test and prior
 conditions of Theorem 10.1, for every `Mₙ → ∞` and every `δ > 0`,
 `P^n_{θ₀} { posterior mass of {‖θ − θ₀‖ ≥ Mₙ/√n} ≥ δ } → 0`. The tests are taken in the
@@ -188,6 +231,129 @@ theorem posterior_mass_compl_ball_tendsto
       Tendsto (fun n => productMeasure M μ θ₀ n
           {ω | δ ≤ ((iidKernel κ n)†π) ω {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖}})
         atTop (𝓝 0) := by
-  sorry
+  classical
+  obtain ⟨N₀, hN₀⟩ := hφ.typeII
+  obtain ⟨c₀, hc₀, hball⟩ := prior_ball_inv_sqrt_lower hπ (u := (1 : ℝ)) one_pos
+  have htail := prior_tail_split hπ hc hM
+  have hPeq : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      productMeasure M μ θ n = iidKernel κ n θ :=
+    fun θ n => productMeasure_eq_iidKernel_apply hκ θ n
+  have hTm : ∀ n : ℕ, MeasurableSet
+      {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} :=
+    fun n => measurableSet_le measurable_const (by fun_prop)
+  -- the type-I integral, transported to `ℝ≥0∞`
+  have hI1 : ∀ n : ℕ, ∫⁻ ω, ENNReal.ofReal (φ n ω) ∂(productMeasure M μ θ₀ n)
+      = ENNReal.ofReal (∫ ω, φ n ω ∂(productMeasure M μ θ₀ n)) := by
+    intro n
+    haveI : IsProbabilityMeasure (productMeasure M μ θ₀ n) := by
+      rw [hPeq θ₀ n]; infer_instance
+    exact lintegral_ofReal_eq_ofReal_integral _ (hφ.measurable n)
+      (fun ω => (hφ.mem_Icc n ω).1) (fun ω => (hφ.mem_Icc n ω).2)
+  -- the exponential type-II bound, transported to `ℝ≥0∞`
+  have hI2 : ∀ n : ℕ, N₀ ≤ n → ∀ θ : EuclideanSpace ℝ (Fin k),
+      Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖ →
+      ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(iidKernel κ n θ)
+        ≤ ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) := by
+    intro n hn θ hθ
+    haveI : IsProbabilityMeasure (productMeasure M μ θ n) := by
+      rw [hPeq θ n]; infer_instance
+    rw [← hPeq θ n, lintegral_ofReal_eq_ofReal_integral _
+      ((hφ.measurable n).const_sub 1)
+      (fun ω => by linarith [(hφ.mem_Icc n ω).2]) (fun ω => by linarith [(hφ.mem_Icc n ω).1])]
+    exact ENNReal.ofReal_le_ofReal (hN₀ n hn θ hθ)
+  intro δ hδ
+  -- a positive finite threshold: `ε = (δ ∧ 1)/2`
+  have hd0 : min δ 1 ≠ 0 := (lt_min hδ one_pos).ne'
+  have hdtop : min δ 1 ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hε0 : min δ 1 / 2 ≠ 0 := (ENNReal.half_pos hd0).ne'
+  have hεtop : min δ 1 / 2 ≠ ∞ := ne_top_of_le_ne_top hdtop ENNReal.half_le_self
+  -- the deviation event splits into a test part and a damped part
+  have hsub : ∀ n : ℕ,
+      {ω : Fin n → 𝓧 | δ ≤ ((iidKernel κ n)†π) ω
+          {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖}}
+        ⊆ {ω : Fin n → 𝓧 | min δ 1 / 2 ≤ ENNReal.ofReal (φ n ω)} ∪
+          {ω : Fin n → 𝓧 | min δ 1 / 2 ≤ ((iidKernel κ n)†π) ω
+            {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω)} := by
+    intro n ω hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    have hone : ENNReal.ofReal (φ n ω) + ENNReal.ofReal (1 - φ n ω) = 1 := by
+      rw [← ENNReal.ofReal_add (hφ.mem_Icc n ω).1
+        (by linarith [(hφ.mem_Icc n ω).2])]
+      norm_num
+    have hsplit := ennreal_test_split (P := ((iidKernel κ n)†π) ω
+      {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖}) prob_le_one hone
+    exact absurd (le_trans (min_le_left δ 1) (le_trans hω hsplit))
+      (not_le.2 (ennreal_add_lt_of_lt_half hcon.1 hcon.2))
+  -- the test part vanishes by Markov and the type-I condition
+  have hS1 : Tendsto (fun n => productMeasure M μ θ₀ n
+      {ω | min δ 1 / 2 ≤ ENNReal.ofReal (φ n ω)}) atTop (𝓝 0) := by
+    refine tendsto_measure_ge_of_tendsto_lintegral
+      (P := fun n => productMeasure M μ θ₀ n)
+      (g := fun n ω => ENNReal.ofReal (φ n ω))
+      (fun n => ((hφ.measurable n).ennreal_ofReal)) hε0 hεtop ?_
+    simp only [hI1]
+    have h := (ENNReal.continuous_ofReal.tendsto 0).comp hφ.typeI
+    rw [ENNReal.ofReal_zero] at h
+    exact h
+  -- the damped part vanishes under the mixture, then transfers by contiguity
+  have hS2 : Tendsto (fun n => productMeasure M μ θ₀ n
+      {ω | min δ 1 / 2 ≤ ((iidKernel κ n)†π) ω
+        {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω)})
+      atTop (𝓝 0) := by
+    have hgm : ∀ n : ℕ, Measurable fun ω : Fin n → 𝓧 => ((iidKernel κ n)†π) ω
+        {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω) := by
+      intro n
+      exact (Kernel.measurable_coe _ (hTm n)).mul
+        ((hφ.measurable n).const_sub 1).ennreal_ofReal
+    refine (mutuallyContiguous_mixture_base hPDF hsc hDQM hJ_pd hJ hκ hπ
+      (u := (1 : ℝ)) one_pos).2 _
+      (fun n => measurableSet_le measurable_const (hgm n)) ?_
+    refine tendsto_measure_ge_of_tendsto_lintegral
+      (P := fun n => bvmMixture κ π θ₀ 1 n) hgm hε0 hεtop ?_
+    -- the dominating sequence: `c₀⁻¹ · (√nᵏ · prior tail integral) → 0`
+    have hbnd0 : Tendsto (fun n : ℕ => c₀⁻¹ * (ENNReal.ofReal (Real.sqrt n ^ k) *
+        ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+          ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π)) atTop (𝓝 0) := by
+      have h := ENNReal.Tendsto.const_mul (a := c₀⁻¹) htail
+        (Or.inr (ENNReal.inv_ne_top.2 hc₀.ne'))
+      rwa [mul_zero] at h
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbnd0
+      (Eventually.of_forall fun n => zero_le _) ?_
+    filter_upwards [hball, eventually_ge_atTop (max N₀ 1)] with n hbn hn
+    have hn1 : 1 ≤ n := le_of_max_le_right hn
+    have hnR : (0 : ℝ) < n := by exact_mod_cast hn1
+    have hsq : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR
+    have hpk : (0 : ℝ) < Real.sqrt n ^ k := pow_pos hsq k
+    have hstep1 := mixture_posterior_test_bound (M := M) (μ := μ) (π := π) (θ₀ := θ₀)
+      hκ hM_joint (u := (1 : ℝ)) one_pos n ((hφ.measurable n)) (hφ.mem_Icc n) (hTm n)
+    have hstep2 : ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+          ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(iidKernel κ n θ) ∂π
+        ≤ ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+          ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π :=
+      setLIntegral_mono (by fun_prop) fun θ hθ => hI2 n (le_of_max_le_left hn) θ hθ
+    have hstep3 : (π (Metric.ball θ₀ (1 / Real.sqrt n)))⁻¹
+        ≤ c₀⁻¹ * ENNReal.ofReal (Real.sqrt n ^ k) := by
+      refine (ENNReal.inv_le_inv.2 hbn).trans_eq ?_
+      rw [inv_pow, ENNReal.ofReal_inv_of_pos hpk,
+        ENNReal.mul_inv (Or.inl hc₀.ne')
+          (Or.inr (ENNReal.inv_ne_zero.2 ENNReal.ofReal_ne_top)), inv_inv]
+    calc ∫⁻ ω, ((iidKernel κ n)†π) ω
+            {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖} * ENNReal.ofReal (1 - φ n ω)
+          ∂(bvmMixture κ π θ₀ 1 n)
+        ≤ (π (Metric.ball θ₀ (1 / Real.sqrt n)))⁻¹ *
+            ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+              ∫⁻ ω, ENNReal.ofReal (1 - φ n ω) ∂(iidKernel κ n θ) ∂π := hstep1
+      _ ≤ (c₀⁻¹ * ENNReal.ofReal (Real.sqrt n ^ k)) *
+            ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+              ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π :=
+          mul_le_mul' hstep3 hstep2
+      _ = c₀⁻¹ * (ENNReal.ofReal (Real.sqrt n ^ k) *
+            ∫⁻ θ in {θ : EuclideanSpace ℝ (Fin k) | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
+              ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π) := mul_assoc _ _ _
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using hS1.add hS2) (Eventually.of_forall fun n => zero_le _)
+    (Eventually.of_forall fun n => ?_)
+  exact le_trans (measure_mono (hsub n)) (measure_union_le _ _)
 
 end StatLean.Bayesian
