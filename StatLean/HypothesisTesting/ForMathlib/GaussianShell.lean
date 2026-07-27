@@ -4,7 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Topology.MetricSpace.Thickening
@@ -54,7 +56,7 @@ a hyperplane) of the erosion bound.
 -/
 
 open MeasureTheory ProbabilityTheory Metric Set
-open scoped RealInnerProductSpace ENNReal NNReal Real
+open scoped InnerProductSpace ENNReal NNReal Real
 
 namespace StatLean.HypothesisTesting
 
@@ -229,6 +231,186 @@ lemma gaussian_mem_notMem_shift_le (hk : 0 < k) (i : Fin k) (c : ℝ)
     _ = ENNReal.ofReal (2 * |c| / Real.sqrt (2 * π)) := by
         rw [lintegral_const, hμdef]
         simp
+
+/-! ### Supporting functionals and the escape direction -/
+
+/-- **Supporting hyperplane at a non-interior point.** If `V` is convex and `x ∉ interior V`,
+some `u ≠ 0` supports `V` at `x`, i.e. `⟪u, w - x⟫ ≤ 0` for all `w` in the *closure* of `V`.
+
+If `interior V ≠ ∅` this is `geometric_hahn_banach_open_point` applied to the open convex set
+`interior V`, whose closure is `closure V`. If `interior V = ∅` then `V` spans a proper affine
+subspace (`Convex.interior_nonempty_iff_affineSpan_eq_top`) and any `u ≠ 0` orthogonal to its
+direction makes `⟪u, · - x⟫` constant on `V`; one of `±u` then works. -/
+lemma exists_inner_le_zero_of_notMem_interior (hk : 0 < k)
+    {V : Set (EuclideanSpace ℝ (Fin k))} (hV : Convex ℝ V)
+    {x : EuclideanSpace ℝ (Fin k)} (hx : x ∉ interior V) :
+    ∃ u : EuclideanSpace ℝ (Fin k), u ≠ 0 ∧ ∀ w ∈ closure V, ⟪u, w - x⟫_ℝ ≤ 0 := by
+  suffices h : ∃ u : EuclideanSpace ℝ (Fin k), u ≠ 0 ∧ ∀ w ∈ V, ⟪u, w - x⟫_ℝ ≤ 0 by
+    obtain ⟨u, hu0, hu⟩ := h
+    refine ⟨u, hu0, ?_⟩
+    have hclosed : IsClosed {w : EuclideanSpace ℝ (Fin k) | ⟪u, w - x⟫_ℝ ≤ 0} :=
+      isClosed_le (Continuous.inner continuous_const (continuous_id.sub continuous_const))
+        continuous_const
+    exact fun w hw => hclosed.closure_subset_iff.mpr hu hw
+  rcases (interior V).eq_empty_or_nonempty with hint | hint
+  · -- degenerate case: `V` lies in a proper affine subspace
+    rcases V.eq_empty_or_nonempty with rfl | ⟨w₀, hw₀⟩
+    · obtain ⟨i⟩ : Nonempty (Fin k) := Fin.pos_iff_nonempty.mp hk
+      exact ⟨EuclideanSpace.single i 1, by simp, by simp⟩
+    · have hspan : affineSpan ℝ V ≠ ⊤ := by
+        intro h
+        have hne : (interior V).Nonempty := hV.interior_nonempty_iff_affineSpan_eq_top.2 h
+        rw [hint] at hne
+        exact Set.not_nonempty_empty hne
+      have hvs : vectorSpan ℝ V ≠ ⊤ := fun h =>
+        hspan ((AffineSubspace.affineSpan_eq_top_iff_vectorSpan_eq_top_of_nonempty ℝ
+          (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin k)) ⟨w₀, hw₀⟩).mpr h)
+      have hbot : (vectorSpan ℝ V)ᗮ ≠ ⊥ := fun h => hvs (Submodule.orthogonal_eq_bot_iff.mp h)
+      obtain ⟨u, hu, hune⟩ := Submodule.ne_bot_iff _ |>.mp hbot
+      have hconst : ∀ w ∈ V, ⟪u, w - x⟫_ℝ = ⟪u, w₀ - x⟫_ℝ := by
+        intro w hw
+        have hmem : w - w₀ ∈ vectorSpan ℝ V := by
+          simpa using vsub_mem_vectorSpan ℝ hw hw₀
+        have hzero : ⟪u, w - w₀⟫_ℝ = 0 := by
+          rw [real_inner_comm]
+          exact (Submodule.mem_orthogonal _ u).1 hu _ hmem
+        have hsplit : w - x = (w - w₀) + (w₀ - x) := by abel
+        rw [hsplit, inner_add_right, hzero, zero_add]
+      rcases le_or_gt (⟪u, w₀ - x⟫_ℝ) 0 with h0 | h0
+      · exact ⟨u, hune, fun w hw => (hconst w hw).le.trans h0⟩
+      · refine ⟨-u, neg_ne_zero.mpr hune, fun w hw => ?_⟩
+        rw [inner_neg_left, hconst w hw]
+        linarith
+  · -- main case: separate the open convex set `interior V` from the point `x`
+    obtain ⟨f, hf⟩ := geometric_hahn_banach_open_point hV.interior isOpen_interior hx
+    obtain ⟨a, ha⟩ := hint
+    refine ⟨(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin k))).symm f, ?_, ?_⟩
+    · intro h0
+      have hlt : f a < f x := hf a ha
+      have hfa : f a = 0 := by
+        rw [← InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (y := f) (x := a), h0, inner_zero_left]
+      have hfx : f x = 0 := by
+        rw [← InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (y := f) (x := x), h0, inner_zero_left]
+      rw [hfa, hfx] at hlt
+      exact lt_irrefl _ hlt
+    · intro w hw
+      have hVsub : V ⊆ closure (interior V) := by
+        rw [hV.closure_interior_eq_closure_of_nonempty_interior ⟨a, ha⟩]
+        exact subset_closure
+      have hclosed : IsClosed {y : EuclideanSpace ℝ (Fin k) | f y ≤ f x} :=
+        isClosed_le f.continuous continuous_const
+      have hle : f w ≤ f x :=
+        hclosed.closure_subset_iff.mpr (fun y hy => (hf y hy).le) (hVsub hw)
+      rw [InnerProductSpace.toDual_symm_apply, map_sub]
+      linarith
+
+/-- **Escape direction.** If `u ≠ 0` supports `V` at `x`, then some coordinate satisfies
+`|uᵢ| ≥ ‖u‖/√k`, and moving from `x` by `±c` along that axis (sign chosen to increase `⟪u, ·⟫`)
+lands at distance at least `c/√k` from every point of `V`. -/
+lemma exists_dist_ge_of_inner_le_zero (hk : 0 < k)
+    {V : Set (EuclideanSpace ℝ (Fin k))} {x u : EuclideanSpace ℝ (Fin k)} (hu : u ≠ 0)
+    (hsupp : ∀ w ∈ V, ⟪u, w - x⟫_ℝ ≤ 0) {c : ℝ} (hc : 0 ≤ c) :
+    ∃ (i : Fin k) (d : ℝ), |d| = c ∧
+      ∀ w ∈ V, c / Real.sqrt k ≤ dist (x + d • EuclideanSpace.single i (1 : ℝ)) w := by
+  classical
+  have hne : (Finset.univ : Finset (Fin k)).Nonempty :=
+    Finset.univ_nonempty_iff.2 (Fin.pos_iff_nonempty.mp hk)
+  obtain ⟨i, -, hi⟩ := Finset.exists_max_image Finset.univ (fun j => |u j|) hne
+  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
+  have hunorm : 0 < ‖u‖ := norm_pos_iff.2 hu
+  -- the largest coordinate carries at least `‖u‖/√k`
+  have hcoord : ‖u‖ ≤ Real.sqrt k * |u i| := by
+    have hsum : ∑ j, ‖u j‖ ^ 2 ≤ (k : ℝ) * |u i| ^ 2 := by
+      calc ∑ j : Fin k, ‖u j‖ ^ 2 ≤ ∑ _j : Fin k, |u i| ^ 2 := by
+            refine Finset.sum_le_sum fun j _ => ?_
+            have := hi j (Finset.mem_univ j)
+            rw [Real.norm_eq_abs]
+            exact pow_le_pow_left₀ (abs_nonneg _) this 2
+        _ = (k : ℝ) * |u i| ^ 2 := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    rw [EuclideanSpace.norm_eq]
+    calc Real.sqrt (∑ j, ‖u j‖ ^ 2) ≤ Real.sqrt ((k : ℝ) * |u i| ^ 2) := Real.sqrt_le_sqrt hsum
+      _ = Real.sqrt k * |u i| := by
+          rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (abs_nonneg _)]
+  refine ⟨i, if 0 ≤ u i then c else -c, by split_ifs <;> simp [abs_of_nonneg hc], ?_⟩
+  intro w hw
+  set d : ℝ := if 0 ≤ u i then c else -c with hd
+  have hdu : d * u i = c * |u i| := by
+    rw [hd]; split_ifs with h
+    · rw [abs_of_nonneg h]
+    · rw [abs_of_neg (not_le.mp h)]; ring
+  set y : EuclideanSpace ℝ (Fin k) := x + d • EuclideanSpace.single i (1 : ℝ) with hy
+  have hinner : ⟪u, y - w⟫_ℝ = d * u i - ⟪u, w - x⟫_ℝ := by
+    have hsplit : y - w = d • EuclideanSpace.single i (1 : ℝ) - (w - x) := by rw [hy]; abel
+    have hsingle : ⟪u, EuclideanSpace.single i (1 : ℝ)⟫_ℝ = u i := by
+      simpa using EuclideanSpace.inner_single_right i (1 : ℝ) u
+    rw [hsplit, inner_sub_right, real_inner_smul_right, hsingle]
+  have hlow : c * |u i| ≤ ⟪u, y - w⟫_ℝ := by
+    rw [hinner, hdu]
+    linarith [hsupp w hw]
+  have hcs : ⟪u, y - w⟫_ℝ ≤ ‖u‖ * ‖y - w‖ := real_inner_le_norm u (y - w)
+  have hstep : c * ‖u‖ / Real.sqrt k ≤ ‖u‖ * ‖y - w‖ := by
+    have : c * ‖u‖ / Real.sqrt k ≤ c * |u i| := by
+      rw [div_le_iff₀ hkr]
+      calc c * ‖u‖ ≤ c * (Real.sqrt k * |u i|) := by
+            exact mul_le_mul_of_nonneg_left hcoord hc
+        _ = c * |u i| * Real.sqrt k := by ring
+    linarith
+  rw [dist_eq_norm, div_le_iff₀ hkr]
+  rw [div_le_iff₀ hkr] at hstep
+  have hmul : ‖u‖ * c ≤ ‖u‖ * (‖y - w‖ * Real.sqrt k) := by
+    calc ‖u‖ * c = c * ‖u‖ := mul_comm _ _
+      _ ≤ ‖u‖ * ‖y - w‖ * Real.sqrt k := hstep
+      _ = ‖u‖ * (‖y - w‖ * Real.sqrt k) := by ring
+  exact le_of_mul_le_mul_left hmul hunorm
+
+/-! ### The covering bookkeeping -/
+
+/-- The `2k` coordinate shifts cover: if every point of `S` sits in the convex measurable set `W`
+and leaves `W` after a shift by `±c` along some coordinate axis, then `γ S ≤ 4kc/√(2π)`. -/
+private lemma gaussian_le_of_shift_cover (hk : 0 < k)
+    {W S : Set (EuclideanSpace ℝ (Fin k))} (hWm : MeasurableSet W) (hWc : Convex ℝ W)
+    {c : ℝ} (hc : 0 ≤ c)
+    (hcover : ∀ x ∈ S, ∃ (i : Fin k) (d : ℝ), |d| = c ∧ x ∈ W ∧
+      x + d • EuclideanSpace.single i (1 : ℝ) ∉ W) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 S
+      ≤ ENNReal.ofReal (4 * k * c / Real.sqrt (2 * π)) := by
+  classical
+  set γ := multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 with hγ
+  set A : Fin k → Set (EuclideanSpace ℝ (Fin k)) := fun i =>
+    {x | x ∈ W ∧ x + c • EuclideanSpace.single i (1 : ℝ) ∉ W} ∪
+      {x | x ∈ W ∧ x + (-c) • EuclideanSpace.single i (1 : ℝ) ∉ W} with hA
+  have hsub : S ⊆ ⋃ i, A i := by
+    intro x hx
+    obtain ⟨i, d, hd, hxW, hout⟩ := hcover x hx
+    refine Set.mem_iUnion.2 ⟨i, ?_⟩
+    rcases (abs_eq hc).mp hd with rfl | rfl
+    · exact Or.inl ⟨hxW, hout⟩
+    · exact Or.inr ⟨hxW, hout⟩
+  have hpiece : ∀ i : Fin k, γ (A i) ≤ ENNReal.ofReal (4 * c / Real.sqrt (2 * π)) := by
+    intro i
+    have h1 := gaussian_mem_notMem_shift_le hk i c hWm hWc
+    have h2 := gaussian_mem_notMem_shift_le hk i (-c) hWm hWc
+    rw [abs_of_nonneg hc, ← hγ] at h1
+    rw [abs_neg, abs_of_nonneg hc, ← hγ] at h2
+    calc γ (A i) ≤ γ {x | x ∈ W ∧ x + c • EuclideanSpace.single i (1 : ℝ) ∉ W}
+          + γ {x | x ∈ W ∧ x + (-c) • EuclideanSpace.single i (1 : ℝ) ∉ W} :=
+          measure_union_le _ _
+      _ ≤ ENNReal.ofReal (2 * c / Real.sqrt (2 * π))
+          + ENNReal.ofReal (2 * c / Real.sqrt (2 * π)) := add_le_add h1 h2
+      _ = ENNReal.ofReal (4 * c / Real.sqrt (2 * π)) := by
+          rw [← ENNReal.ofReal_add (by positivity) (by positivity)]
+          congr 1
+          ring
+  calc γ S ≤ γ (⋃ i, A i) := measure_mono hsub
+    _ ≤ ∑ i, γ (A i) := measure_iUnion_fintype_le _ _
+    _ ≤ ∑ _i : Fin k, ENNReal.ofReal (4 * c / Real.sqrt (2 * π)) :=
+        Finset.sum_le_sum fun i _ => hpiece i
+    _ = ENNReal.ofReal (4 * k * c / Real.sqrt (2 * π)) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
+        congr 1
+        ring
 
 end GaussianShell
 
