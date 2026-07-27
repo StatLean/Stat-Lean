@@ -370,6 +370,136 @@ private lemma tendsto_lln_blockZ (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
     rfl
   simp only [Measure.real, Function.comp_apply, hval]
 
+/-! ### Consistency of the studentizing scale -/
+
+/-- The `Y`-block sample variance as (second moment) − (first moment)², the form in which the
+law of large numbers reaches it. -/
+private lemma twoSampleVarY_eq {m n : ℕ} (hm : 0 < m) (x : Fin (m + n) → ℝ) :
+    twoSampleVarY m n x
+      = (m : ℝ)⁻¹ * (∑ i : Fin m, (x (Fin.castAdd n i)) ^ 2)
+        + -(twoSampleMeanY m n x ^ 2) := by
+  have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hsum : ∑ i : Fin m, x (Fin.castAdd n i) = (m : ℝ) * twoSampleMeanY m n x := by
+    rw [twoSampleMeanY, ← mul_assoc, mul_inv_cancel₀ hmR.ne', one_mul]
+  have hexp : ∀ i : Fin m, (x (Fin.castAdd n i) - twoSampleMeanY m n x) ^ 2
+      = (x (Fin.castAdd n i)) ^ 2
+        - 2 * twoSampleMeanY m n x * x (Fin.castAdd n i)
+        + twoSampleMeanY m n x ^ 2 := fun i => by ring
+  rw [twoSampleVarY]
+  simp only [hexp, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsum]
+  field_simp
+  ring
+
+/-- The `Z`-block twin of `twoSampleVarY_eq`. -/
+private lemma twoSampleVarZ_eq {m n : ℕ} (hn : 0 < n) (x : Fin (m + n) → ℝ) :
+    twoSampleVarZ m n x
+      = (n : ℝ)⁻¹ * (∑ j : Fin n, (x (Fin.natAdd m j)) ^ 2)
+        + -(twoSampleMeanZ m n x ^ 2) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsum : ∑ j : Fin n, x (Fin.natAdd m j) = (n : ℝ) * twoSampleMeanZ m n x := by
+    rw [twoSampleMeanZ, ← mul_assoc, mul_inv_cancel₀ hnR.ne', one_mul]
+  have hexp : ∀ j : Fin n, (x (Fin.natAdd m j) - twoSampleMeanZ m n x) ^ 2
+      = (x (Fin.natAdd m j)) ^ 2
+        - 2 * twoSampleMeanZ m n x * x (Fin.natAdd m j)
+        + twoSampleMeanZ m n x ^ 2 := fun j => by ring
+  rw [twoSampleVarZ]
+  simp only [hexp, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsum]
+  field_simp
+  ring
+
+/-- The population variance as (second moment) − (mean)². -/
+private lemma var_eq_second_sub_sq {Q : Measure ℝ} [IsProbabilityMeasure Q] {μ v : ℝ}
+    (hQ2 : MemLp id 2 Q) (hmeanQ : ∫ t, t ∂Q = μ) (hvarQ : ∫ t, (t - μ) ^ 2 ∂Q = v) :
+    (∫ t, t ^ 2 ∂Q) + -(μ ^ 2) = v := by
+  have hid : Integrable (fun t : ℝ => t) Q := by simpa using hQ2.integrable (by norm_num)
+  have hsq : Integrable (fun t : ℝ => t ^ 2) Q := by simpa using hQ2.integrable_sq
+  have hlin : Integrable (fun t : ℝ => 2 * μ * t) Q := hid.const_mul _
+  have h1 : Integrable (fun t : ℝ => t ^ 2 - 2 * μ * t) Q := hsq.sub hlin
+  have hfun : (fun t : ℝ => (t - μ) ^ 2) = fun t => (t ^ 2 - 2 * μ * t) + μ ^ 2 := by
+    funext t; ring
+  rw [← hvarQ, hfun, integral_add h1 (integrable_const _), integral_sub hsq hlin,
+    integral_const_mul, hmeanQ]
+  simp
+  ring
+
+/-- **The studentizing scale is consistent for `s`.** Both sample variances converge in
+probability to the corresponding population variances, and the sample-size ratio converges by
+hypothesis; the scale is a continuous function of the three. -/
+private lemma tendstoInProb_twoSampleScale (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ μ s : ℝ}
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam))
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hs : s ^ 2 = varY + lam * varZ) (hsnn : 0 ≤ s) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleScale (m k) (n k) x - s|}) atTop (𝓝 0) := by
+  classical
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
+  have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
+  -- The four block averages.
+  have hMY : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleMeanY (m k) (n k) x - μ|}) atTop (𝓝 0) := by
+    intro ε hε
+    have h := tendsto_lln_blockY PY PZ m n hm (fun t : ℝ => t) measurable_id hidY hε
+    rw [hmeanY] at h
+    exact h
+  have hMZ : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleMeanZ (m k) (n k) x - μ|}) atTop (𝓝 0) := by
+    intro ε hε
+    have h := tendsto_lln_blockZ PY PZ m n hn (fun t : ℝ => t) measurable_id hidZ hε
+    rw [hmeanZ] at h
+    exact h
+  have hQY := fun ε hε => tendsto_lln_blockY PY PZ m n hm (fun t : ℝ => t ^ 2)
+    (by fun_prop) hsqY (ε := ε) hε
+  have hQZ := fun ε hε => tendsto_lln_blockZ PY PZ m n hn (fun t : ℝ => t ^ 2)
+    (by fun_prop) hsqZ (ε := ε) hε
+  -- The two sample variances.
+  have hnegY := tendstoInProb_comp
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (φ := fun y : ℝ => -(y ^ 2)) (by fun_prop) hMY
+  have hnegZ := tendstoInProb_comp
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (φ := fun y : ℝ => -(y ^ 2)) (by fun_prop) hMZ
+  have haddY := tendstoInProb_add (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hQY hnegY
+  have haddZ := tendstoInProb_add (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hQZ hnegZ
+  have hvarYhat : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleVarY (m k) (n k) x - varY|}) atTop (𝓝 0) := by
+    intro ε hε
+    refine (haddY ε hε).congr' ?_
+    filter_upwards [hm.eventually_gt_atTop 0] with k hk
+    rw [var_eq_second_sub_sq hYL2 hmeanY hvarY]
+    congr 1
+    ext x
+    simp only [Set.mem_setOf_eq, twoSampleVarY_eq hk x]
+  have hvarZhat : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |twoSampleVarZ (m k) (n k) x - varZ|}) atTop (𝓝 0) := by
+    intro ε hε
+    refine (haddZ ε hε).congr' ?_
+    filter_upwards [hn.eventually_gt_atTop 0] with k hk
+    rw [var_eq_second_sub_sq hZL2 hmeanZ hvarZ]
+    congr 1
+    ext x
+    simp only [Set.mem_setOf_eq, twoSampleVarZ_eq hk x]
+  -- Combine into the squared scale, then take the square root.
+  have hratioZ := tendstoInProb_const_mul
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hratio hvarZhat
+  have hsqScale := tendstoInProb_add
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hvarYhat hratioZ
+  have hsqrt := tendstoInProb_comp
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (φ := Real.sqrt) (Real.continuous_sqrt.continuousAt) hsqScale
+  intro ε hε
+  have hlim : Real.sqrt (varY + lam * varZ) = s := by
+    rw [← hs, Real.sqrt_sq hsnn]
+  refine (hsqrt ε hε).congr fun k => ?_
+  simp only [hlim, twoSampleScale]
+
 /-! ### Asymptotic validity under unequal variances -/
 
 /-- **The studentized randomization distribution converges to the standard normal.**
