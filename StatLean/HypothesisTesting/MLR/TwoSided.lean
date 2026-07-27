@@ -1767,6 +1767,148 @@ private lemma twoSidedVal_integral_weight_eq (ν : Measure ℝ) [IsProbabilityMe
   rw [e₁, e₂]
   linarith [hIic]
 
+/-- **A law with no big atom is not a point mass.** If every atom of `ν` carries mass below
+`α < 1`, then the distribution function takes some value strictly inside `(0,1)`. This is the
+nondegeneracy that feeds the separation hypothesis of `integral_lt_of_monotoneOn_of_sep`. -/
+private lemma exists_cdf_mem_Ioo (ν : Measure ℝ) [IsProbabilityMeasure ν] {α : ℝ}
+    (hα0 : 0 < α) (hα1 : α < 1) (hatom : ∀ t : ℝ, (ν {t}).toReal < α) :
+    ∃ c : ℝ, cdf ν c ∈ Set.Ioo (0 : ℝ) 1 := by
+  by_contra hcon
+  push_neg at hcon
+  have hdich : ∀ c : ℝ, cdf ν c = 0 ∨ cdf ν c = 1 := by
+    intro c
+    have h := hcon c
+    simp only [Set.mem_Ioo, not_and, not_lt] at h
+    rcases le_or_gt (cdf ν c) 0 with h0 | h0
+    · exact Or.inl (le_antisymm h0 (cdf_nonneg ν c))
+    · exact Or.inr (le_antisymm (cdf_le_one ν c) (h h0))
+  have hp0 : (0 : ℝ) < (1 - α) / 2 := by linarith
+  have hp1 : (1 - α) / 2 < 1 := by linarith
+  obtain ⟨hA, hL⟩ := cdf_quantile_bounds ν hp0 hp1
+  have hF1 : cdf ν (quantile (⇑(cdf ν)) ((1 - α) / 2)) = 1 := by
+    rcases hdich (quantile (⇑(cdf ν)) ((1 - α) / 2)) with h | h
+    · rw [h] at hA; linarith
+    · exact h
+  have hmass := cdf_singleton_toReal ν (quantile (⇑(cdf ν)) ((1 - α) / 2))
+  have hlt := hatom (quantile (⇑(cdf ν)) ((1 - α) / 2))
+  rw [hmass, hF1] at hlt
+  linarith
+
+/-- **The sweep.** For a strictly increasing weight `r` of total `ν`-mass `1` and a level
+`α ∈ (0,1)` below every atom of `ν`, there is a starting level `s ∈ (0, 1−α)` at which the
+`r`-weighted mass of the level window `(s, s+α)` is exactly `α`.
+
+Combined with brick (a) (the window has `ν`-mass exactly `α` for *every* `s`) and brick (b)
+(its `r`-weighted mass is the level-space integral swept here), this is the two-equation
+existence step of `isUMP_twoSided`: the second size condition is met at the root, the first
+holds identically.
+
+The three ingredients are: the sliding integral is continuous (it is a difference of two
+primitives of an integrable function); its endpoint values straddle `α` *strictly*, by the
+strict rearrangement inequality `integral_lt_of_monotoneOn_of_sep` — strictness is what keeps
+the root away from the junk levels `0` and `1`; and the intermediate value theorem. -/
+private lemma exists_window_root (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {r : ℝ → ℝ} (hr : Measurable r) (hrint : Integrable r ν) (hrsm : StrictMono r)
+    (hrone : ∫ t, r t ∂ν = 1) {α : ℝ} (hα0 : 0 < α) (hα1 : α < 1)
+    (hatom : ∀ t : ℝ, (ν {t}).toReal < α) :
+    ∃ s : ℝ, 0 < s ∧ s + α < 1 ∧
+      (∫ u in s..(s + α), r (quantile (⇑(cdf ν)) u)) = α := by
+  classical
+  have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
+  have hrc : ∀ y : ℝ, ContinuousWithinAt (⇑(cdf ν)) (Set.Ici y) y :=
+    fun y => (cdf ν).right_continuous y
+  set Q : ℝ → ℝ := quantile (⇑(cdf ν)) with hQdef
+  set G : ℝ → ℝ := fun u => r (Q u) with hGdef
+  have hmap := map_quantile_cdf ν
+  have haem := aemeasurable_quantile_cdf ν
+  rw [← hQdef] at hmap haem
+  have hasm : AEStronglyMeasurable r
+      ((MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)).map Q) := by
+    rw [hmap]; exact hr.aestronglyMeasurable
+  have hGint : IntegrableOn G (Set.Icc (0 : ℝ) 1) MeasureTheory.volume :=
+    (MeasureTheory.integrable_map_measure hasm haem).mp (by rwa [hmap])
+  have hQmono : MonotoneOn Q (Set.Ioo (0 : ℝ) 1) := fun x hx y hy hxy =>
+    quantile_mono _ hxy (cdf_level_nonempty_bddBelow ν hx.1 hx.2).2
+      (cdf_level_nonempty_bddBelow ν hy.1 hy.2).1
+  have hGmono : MonotoneOn G (Set.Ioo (0 : ℝ) 1) := fun x hx y hy hxy =>
+    hrsm.monotone (hQmono hx hy hxy)
+  have hGtot : (∫ u in (0 : ℝ)..1, G u) = 1 := by
+    have h1 : ∫ t, r t ∂ν
+        = ∫ u, G u ∂(MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1)) := by
+      conv_lhs => rw [← hmap]
+      exact integral_map haem hasm
+    rw [intervalIntegral.integral_of_le zero_le_one,
+      ← MeasureTheory.integral_Icc_eq_integral_Ioc, ← h1, hrone]
+  -- the separation level of the sweep
+  obtain ⟨c, hc⟩ := exists_cdf_mem_Ioo ν hα0 hα1 hatom
+  have hsep : ∀ u ∈ Set.Ioo (0 : ℝ) 1, ∀ v ∈ Set.Ioo (0 : ℝ) 1,
+      u ≤ cdf ν c → cdf ν c < v → G u < G v := by
+    intro u hu v hv hule hvlt
+    have h1 : Q u ≤ c := (quantile_le_iff hmono hrc
+      (cdf_level_nonempty_bddBelow ν hu.1 hu.2).1
+      (cdf_level_nonempty_bddBelow ν hu.1 hu.2).2).mpr hule
+    have h2 : ¬ (Q v ≤ c) := by
+      intro h
+      exact absurd ((quantile_le_iff hmono hrc (cdf_level_nonempty_bddBelow ν hv.1 hv.2).1
+        (cdf_level_nonempty_bddBelow ν hv.1 hv.2).2).mp h) (not_le.2 hvlt)
+    exact hrsm (lt_of_le_of_lt h1 (not_le.mp h2))
+  -- the two strict endpoint bounds
+  have hlow : (∫ u in (0 : ℝ)..α, G u) < α := by
+    have h := integral_lt_of_monotoneOn_of_sep (α := α) hGmono hGint ⟨hα0, hα1⟩ hc hsep
+    rw [hGtot] at h; linarith
+  have hsplit : (∫ u in (0 : ℝ)..(1 - α), G u) + ∫ u in (1 - α)..(1 : ℝ), G u
+      = ∫ u in (0 : ℝ)..1, G u :=
+    intervalIntegral.integral_add_adjacent_intervals
+      (intervalIntegrable_of_Icc01 hGint ⟨le_rfl, zero_le_one⟩ ⟨by linarith, by linarith⟩)
+      (intervalIntegrable_of_Icc01 hGint ⟨by linarith, by linarith⟩ ⟨zero_le_one, le_rfl⟩)
+  have hhigh : α < ∫ u in (1 - α)..(1 : ℝ), G u := by
+    have h := integral_lt_of_monotoneOn_of_sep (α := 1 - α) hGmono hGint
+      ⟨by linarith, by linarith⟩ hc hsep
+    rw [hGtot] at h
+    linarith [hsplit]
+  -- the sliding integral, extended to the line and continuous there
+  set Ĝ : ℝ → ℝ := Set.indicator (Set.Icc (0 : ℝ) 1) G with hĜdef
+  have hĜint : Integrable Ĝ MeasureTheory.volume :=
+    (MeasureTheory.integrable_indicator_iff measurableSet_Icc).2 hGint
+  set H : ℝ → ℝ := fun s => (∫ u in (0 : ℝ)..(s + α), Ĝ u) - ∫ u in (0 : ℝ)..s, Ĝ u with hHdef
+  have hcont : Continuous H := by
+    have h1 : Continuous fun s : ℝ => ∫ u in (0 : ℝ)..(s + α), Ĝ u :=
+      (hĜint.continuous_primitive 0).comp (continuous_id.add continuous_const)
+    exact h1.sub (hĜint.continuous_primitive 0)
+  have hval : ∀ s : ℝ, 0 ≤ s → s + α ≤ 1 → H s = ∫ u in s..(s + α), G u := by
+    intro s hs0 hs1
+    have hadd : (∫ u in (0 : ℝ)..s, Ĝ u) + ∫ u in s..(s + α), Ĝ u
+        = ∫ u in (0 : ℝ)..(s + α), Ĝ u :=
+      intervalIntegral.integral_add_adjacent_intervals
+        hĜint.intervalIntegrable hĜint.intervalIntegrable
+    have heq : (∫ u in s..(s + α), Ĝ u) = ∫ u in s..(s + α), G u := by
+      refine intervalIntegral.integral_congr fun u hu => ?_
+      rw [Set.uIcc_of_le (by linarith : s ≤ s + α)] at hu
+      simp only [hĜdef]
+      exact Set.indicator_of_mem
+        (show u ∈ Set.Icc (0 : ℝ) 1 from ⟨le_trans hs0 hu.1, le_trans hu.2 hs1⟩) G
+    simp only [hHdef]
+    linarith [hadd, heq]
+  have hH0 : H 0 = ∫ u in (0 : ℝ)..α, G u := by
+    have h := hval 0 le_rfl (by linarith)
+    rwa [zero_add] at h
+  have hH1 : H (1 - α) = ∫ u in (1 - α)..(1 : ℝ), G u := by
+    have h := hval (1 - α) (by linarith) (by linarith)
+    rwa [sub_add_cancel] at h
+  -- the intermediate value theorem, at a value strictly between the two endpoints
+  obtain ⟨s, hs, hsval⟩ :=
+    intermediate_value_Icc (by linarith : (0 : ℝ) ≤ 1 - α) hcont.continuousOn
+      (show α ∈ Set.Icc (H 0) (H (1 - α)) from ⟨by rw [hH0]; linarith, by rw [hH1]; linarith⟩)
+  have hs0 : 0 < s := by
+    rcases eq_or_lt_of_le hs.1 with h | h
+    · exact absurd (h ▸ hsval) (by rw [hH0]; linarith)
+    · exact h
+  have hs1 : s + α < 1 := by
+    rcases eq_or_lt_of_le hs.2 with h | h
+    · exact absurd (h ▸ hsval) (by rw [hH1]; linarith)
+    · linarith
+  exact ⟨s, hs0, hs1, by rw [← hval s hs.1 (by linarith), hsval]⟩
+
 /-- **Brick (a): the randomized window attached to a quantile pair.**
 
 For a law `ν` on the line, a level `α` and a starting level `s`, the two-sided test whose
