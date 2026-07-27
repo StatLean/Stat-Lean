@@ -216,16 +216,174 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
     -- USER-INPUT: `A` is nowhere on the alternatives a better acceptance region than `A₀`
     (hpow : ∀ θ ∈ Θ', statScaleFamily E θ A ≤ statScaleFamily E θ A₀) :
     statScaleBase E (A \ A₀) = 0 := by
-  -- TODO: deep geometric core (Birnbaum–Stein), not yet formalized. Argument: if
-  -- `statScaleBase E (A \ A₀) > 0`, pick a base-positive point `p ∈ A \ A₀`; since `A₀` is
-  -- closed convex and `p ∉ A₀`, `geometric_hahn_banach_closed_point` yields `a, c` with
-  -- `⟪a, p⟫ > c ≥ ⟪a, t⟫` on `A₀`, so the open half-space `{t | c < ⟪a,t⟫}` misses `A₀`.
-  -- `hray` then gives `θ* ∈ Θ'` and `λₙ → ∞` with `θ* + λₙ a ∈ Θ'`; the exponential tilt
-  -- `statScaleFamily E (θ* + λₙ a)` concentrates on `{⟪a,t⟫ large}` (dominated-convergence
-  -- for `e^{λₙ⟪a,t⟫}/∫e^{λₙ⟪a,·⟫}`), forcing `statScaleFamily E θₙ A > statScaleFamily E θₙ A₀`
-  -- for large `n`, contradicting `hpow`. Missing Mathlib pieces: the tilt-asymptotic
-  -- domination lemma on `EuclideanSpace ℝ (Fin s)`. No false hypothesis; statement is TRUE.
-  sorry
+  classical
+  by_contra hne
+  -- **Step 1.** Some open half-space missing `A₀` carries base mass of `A`.
+  obtain ⟨a, c, hemp, hmass⟩ := exists_halfspace_of_measure_ne_zero hA₀closed hA₀convex hne
+  -- **Step 2.** Shrink it to a *strictly* separated half-space, still of positive mass.
+  have hunion : A ∩ {t | c < ⟪a, t⟫_ℝ}
+      = ⋃ k : ℕ, A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ} := by
+    ext t
+    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_iUnion]
+    refine ⟨fun ⟨ht, hlt⟩ => ?_, fun ⟨k, ht, hlt⟩ => ?_⟩
+    · obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hlt)
+      exact ⟨k, ht, by linarith⟩
+    · have hp : (0:ℝ) < 1 / ((k : ℝ) + 1) := by positivity
+      exact ⟨ht, by linarith⟩
+  obtain ⟨k, hk⟩ : ∃ k : ℕ,
+      statScaleBase E (A ∩ {t | c + 1 / ((k : ℝ) + 1) < ⟪a, t⟫_ℝ}) ≠ 0 := by
+    by_contra hall
+    push_neg at hall
+    exact hmass (by rw [hunion]; exact measure_iUnion_null hall)
+  set δ : ℝ := 1 / ((k : ℝ) + 1) with hδdef
+  have hδpos : (0:ℝ) < δ := by rw [hδdef]; positivity
+  -- **Step 3.** The ray along which the natural parameter is pushed to infinity.
+  obtain ⟨θs, hθs, lam, hlamtop, hlamΘ⟩ := hray a c hemp
+  have hTm : Measurable E.stat := E.stat_meas
+  have hinnermeas : ∀ v : EuclideanSpace ℝ (Fin s),
+      Measurable fun t : EuclideanSpace ℝ (Fin s) => ⟪v, t⟫_ℝ := fun v =>
+    (continuous_const.inner continuous_id).measurable
+  have hHmeas : MeasurableSet {t : EuclideanSpace ℝ (Fin s) | c + δ < ⟪a, t⟫_ℝ} :=
+    measurableSet_lt measurable_const (hinnermeas a)
+  set W : Set 𝓧 := E.stat ⁻¹' (A ∩ {t | c + δ < ⟪a, t⟫_ℝ}) with hWdef
+  have hWmeas : MeasurableSet W := (hAmeas.inter hHmeas).preimage hTm
+  have hWpos : E.base W ≠ 0 := by
+    rw [hWdef, ← Measure.map_apply hTm (hAmeas.inter hHmeas)]
+    exact hk
+  have hbase0 : E.base ≠ 0 := fun h => hWpos (by rw [h]; rfl)
+  -- The `θ*`-weight and its total / partial masses.
+  set F : 𝓧 → ℝ≥0∞ := fun x => ENNReal.ofReal (Real.exp ⟪θs, E.stat x⟫_ℝ) with hFdef
+  have hFmeas : Measurable F :=
+    (Real.measurable_exp.comp ((hinnermeas θs).comp hTm)).ennreal_ofReal
+  set M : ℝ≥0∞ := ∫⁻ x, F x ∂E.base with hMdef
+  set m : ℝ≥0∞ := ∫⁻ x in W, F x ∂E.base with hmdef
+  have hMfin : M ≠ ⊤ := by
+    rw [hMdef, hFdef, ← ofReal_integral_eq_lintegral_ofReal (hΘ' hθs)
+      (ae_of_all _ fun x => (Real.exp_pos _).le)]
+    exact ENNReal.ofReal_ne_top
+  have hmM : m ≤ M := setLIntegral_le_lintegral _ _
+  have hmfin : m ≠ ⊤ := ne_top_of_le_ne_top hMfin hmM
+  have hmpos : m ≠ 0 := by
+    intro h0
+    have h1 : ∀ᵐ x ∂(E.base.restrict W), F x = 0 := (lintegral_eq_zero_iff hFmeas).mp h0
+    rw [ae_iff] at h1
+    have h3 : {x : 𝓧 | ¬ F x = 0} = Set.univ := by
+      ext x
+      simp only [hFdef, Set.mem_setOf_eq, Set.mem_univ, iff_true, ENNReal.ofReal_eq_zero, not_le]
+      exact Real.exp_pos _
+    rw [h3, Measure.restrict_apply_univ] at h1
+    exact hWpos h1
+  -- **Step 4.** Pick the index at which the tilt already dominates.
+  set r : ℝ := M.toReal / m.toReal with hrdef
+  have hmtoReal : 0 < m.toReal := ENNReal.toReal_pos hmpos hmfin
+  have hrnn : (0:ℝ) ≤ r := by rw [hrdef]; positivity
+  obtain ⟨n, hn⟩ :=
+    (hlamtop.eventually_ge_atTop (max 0 ((Real.log (r + 1) + 1) / δ))).exists
+  have hlam0 : 0 ≤ lam n := le_trans (le_max_left _ _) hn
+  have hlarge : r + 1 < Real.exp (lam n * δ) := by
+    have h1 : (Real.log (r + 1) + 1) / δ ≤ lam n := le_trans (le_max_right _ _) hn
+    rw [div_le_iff₀ hδpos] at h1
+    calc r + 1 = Real.exp (Real.log (r + 1)) := (Real.exp_log (by linarith)).symm
+      _ < Real.exp (lam n * δ) := Real.exp_lt_exp.mpr (by linarith)
+  -- **Step 5.** The analytic core: the tilted comparison at that index.
+  have hfinal : m * ENNReal.ofReal (Real.exp (lam n * δ)) ≤ M := by
+    set η : EuclideanSpace ℝ (Fin s) := θs + lam n • a with hηdef
+    have hηnat : η ∈ E.natSet := hΘ' (hlamΘ n)
+    have hsplit : ∀ x : 𝓧,
+        ⟪η, E.stat x⟫_ℝ = ⟪θs, E.stat x⟫_ℝ + lam n * ⟪a, E.stat x⟫_ℝ := by
+      intro x; rw [hηdef, inner_add_left, real_inner_smul_left]
+    have hZpos : 0 < ∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base := by
+      rw [integral_pos_iff_support_of_nonneg (fun x => (Real.exp_pos _).le) hηnat]
+      have hsupp : Function.support (fun x => Real.exp ⟪η, E.stat x⟫_ℝ) = Set.univ := by
+        ext x; simp [Function.mem_support, (Real.exp_pos _).ne']
+      rw [hsupp, Measure.measure_univ_pos]
+      exact hbase0
+    -- the normalizer factors out of both sides
+    have hexpand : ∀ B : Set (EuclideanSpace ℝ (Fin s)), MeasurableSet B →
+        statScaleFamily E η B
+          = (∫⁻ x in E.stat ⁻¹' B, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
+            * ENNReal.ofReal (∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)⁻¹ := by
+      intro B hB
+      rw [statScaleFamily, Measure.map_apply hTm hB]
+      simp only [ExpFamily.P]
+      rw [tilted_apply' _ _ (hB.preimage hTm),
+        ← lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
+      exact lintegral_congr fun x => by
+        rw [div_eq_mul_inv, ENNReal.ofReal_mul (Real.exp_pos _).le]
+    have hκ0 : ENNReal.ofReal (∫ x, Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)⁻¹ ≠ 0 := by
+      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+      exact inv_pos.mpr hZpos
+    have hIle :
+        (∫⁻ x in E.stat ⁻¹' A, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
+          ≤ ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
+      have h := hpow η (hlamΘ n)
+      rw [hexpand A hAmeas, hexpand A₀ hA₀meas] at h
+      exact (ENNReal.mul_le_mul_right hκ0 ENNReal.ofReal_ne_top).mp h
+    -- upper bound on the `A₀` side
+    have hupper :
+        (∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base)
+          ≤ M * ENNReal.ofReal (Real.exp (lam n * c)) := by
+      have hpt : ∀ x ∈ E.stat ⁻¹' A₀,
+          ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ)
+            ≤ F x * ENNReal.ofReal (Real.exp (lam n * c)) := by
+        intro x hx
+        have hle : ⟪a, E.stat x⟫_ℝ ≤ c := by
+          by_contra hgt
+          push_neg at hgt
+          have hmem : E.stat x ∈ A₀ ∩ {t | c < ⟪a, t⟫_ℝ} := ⟨hx, hgt⟩
+          rw [hemp] at hmem
+          exact hmem
+        rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
+        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+          (mul_le_mul_of_nonneg_left hle hlam0))) _
+      calc ∫⁻ x in E.stat ⁻¹' A₀, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base
+          ≤ ∫⁻ x in E.stat ⁻¹' A₀, F x * ENNReal.ofReal (Real.exp (lam n * c)) ∂E.base :=
+            lintegral_mono_ae
+              ((ae_restrict_iff' (hA₀meas.preimage hTm)).mpr (ae_of_all _ hpt))
+        _ ≤ ∫⁻ x, F x * ENNReal.ofReal (Real.exp (lam n * c)) ∂E.base :=
+            setLIntegral_le_lintegral _ _
+        _ = M * ENNReal.ofReal (Real.exp (lam n * c)) := by
+            rw [hMdef, lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
+    -- lower bound on the `A` side
+    have hlower : m * ENNReal.ofReal (Real.exp (lam n * (c + δ)))
+        ≤ ∫⁻ x in E.stat ⁻¹' A, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base := by
+      have hpt : ∀ x ∈ W, F x * ENNReal.ofReal (Real.exp (lam n * (c + δ)))
+          ≤ ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) := by
+        intro x hx
+        have hgt : c + δ < ⟪a, E.stat x⟫_ℝ := hx.2
+        rw [hsplit x, Real.exp_add, ENNReal.ofReal_mul (Real.exp_pos _).le, hFdef]
+        exact mul_le_mul_left' (ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr
+          (mul_le_mul_of_nonneg_left hgt.le hlam0))) _
+      calc m * ENNReal.ofReal (Real.exp (lam n * (c + δ)))
+          = ∫⁻ x in W, F x * ENNReal.ofReal (Real.exp (lam n * (c + δ))) ∂E.base := by
+            rw [hmdef, lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
+        _ ≤ ∫⁻ x in W, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base :=
+            lintegral_mono_ae ((ae_restrict_iff' hWmeas).mpr (ae_of_all _ hpt))
+        _ ≤ ∫⁻ x in E.stat ⁻¹' A, ENNReal.ofReal (Real.exp ⟪η, E.stat x⟫_ℝ) ∂E.base :=
+            lintegral_mono' (Measure.restrict_mono (fun x hx => hx.1) le_rfl) le_rfl
+    -- cancel the common factor `e^{λc}`
+    have hchain : (m * ENNReal.ofReal (Real.exp (lam n * δ)))
+        * ENNReal.ofReal (Real.exp (lam n * c)) ≤ M * ENNReal.ofReal (Real.exp (lam n * c)) := by
+      refine le_trans (le_of_eq ?_) (le_trans hlower (le_trans hIle hupper))
+      rw [mul_assoc, ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+      ring_nf
+    refine (ENNReal.mul_le_mul_right ?_ ENNReal.ofReal_ne_top).mp hchain
+    simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    exact Real.exp_pos _
+  -- **Step 6.** But the chosen index makes the left-hand side strictly bigger.
+  have hcontra : M < m * ENNReal.ofReal (Real.exp (lam n * δ)) := by
+    have hMr : M.toReal < m.toReal * (r + 1) := by
+      rw [hrdef, mul_add, mul_one, mul_div_cancel₀ _ hmtoReal.ne']
+      linarith
+    calc M = ENNReal.ofReal M.toReal := (ENNReal.ofReal_toReal hMfin).symm
+      _ < ENNReal.ofReal (m.toReal * (r + 1)) := by
+          exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg |>.mpr hMr
+      _ ≤ ENNReal.ofReal (m.toReal * Real.exp (lam n * δ)) := by
+          exact ENNReal.ofReal_le_ofReal
+            (mul_le_mul_of_nonneg_left hlarge.le hmtoReal.le)
+      _ = m * ENNReal.ofReal (Real.exp (lam n * δ)) := by
+          rw [ENNReal.ofReal_mul hmtoReal.le, ENNReal.ofReal_toReal hmfin]
+  exact absurd hfinal (not_le.mpr hcontra)
 
 /-- **A closed convex acceptance region is d-admissible.** -/
 theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
