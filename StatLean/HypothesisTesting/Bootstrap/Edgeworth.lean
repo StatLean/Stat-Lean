@@ -48,24 +48,26 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   it.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
-* The three expansions are **statements only** at this pin, but every named prerequisite of the
-  centred one is now proved. `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing
-  inequality at the level of distribution functions (`abs_measure_Iic_sub_le_charFun`), with
-  `normalCDF_sub_le` below supplying its Lipschitz input, **and its signed-density form**
-  (`abs_measure_Iic_sub_densityCDF_le_charFun`), which is what an Edgeworth approximant needs;
-  `ForMathlib/BerryEsseen.lean` proves the damped expansion of `(charFun F)ⁿ` to order `n⁻¹`
-  (`norm_charFun_pow_sub_edgeworth_le`) **and the Hermite Fourier identity**
-  (`integral_hermite3_mul_cexp_mul_gaussian`) that transforms the Edgeworth density; the Cramér
-  tail's analytic input is proved here (`exists_bound_lt_one_of_cramer`) and its bookkeeping in
+* **`edgeworth_mean_uniform` is now PROVED, axiom-clean**; only the two *studentized* results
+  are statements at this pin. Its supporting chain: `ForMathlib/EsseenSmoothing.lean` proves
+  Esseen's smoothing inequality at the level of distribution functions
+  (`abs_measure_Iic_sub_le_charFun`), with `normalCDF_sub_le` below supplying its Lipschitz
+  input, **and its signed-density form** (`abs_measure_Iic_sub_densityCDF_le_charFun`), which is
+  what an Edgeworth approximant needs; `ForMathlib/BerryEsseen.lean` proves the damped expansion
+  of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`) **and the Hermite
+  Fourier identity** (`integral_hermite3_mul_cexp_mul_gaussian`) that transforms the Edgeworth
+  density; the Cramér tail's analytic input is proved here (`exists_bound_lt_one_of_cramer`,
+  transferred to the centred law by `cramerCondition_centredLaw`) and its bookkeeping in
   `ForMathlib/EsseenSmoothing.lean` (`setIntegral_mul_esseenWeight_tail_le`,
-  `exists_pow_mul_geometric_le`). What is left for `edgeworth_mean_uniform` is the **assembly
-  alone**, and of its four pieces the first two are now also proved here: the law of the root
-  (`charFun_meanRootLaw`, `charFun_stdRootLaw`, `meanRootCDF_eq_stdRootLaw`, and the moments of
-  `centredLaw`) and the comparison density (`edgeworthDensity`, `edgeworthCDF`,
+  `exists_pow_mul_geometric_le`). The assembly itself is here: the law of the root
+  (`charFun_meanRootLaw`, `charFun_stdRootLaw`, `meanRootCDF_eq_stdRootLaw`, and the moments and
+  integrability of `centredLaw`), the comparison density (`edgeworthDensity`, `edgeworthCDF`,
   `densityCDF_edgeworthDensity`, `abs_edgeworthDensity_le`,
   `setIntegral_abs_edgeworthDensity_le`, `charFunDensity_edgeworthDensity`,
-  `norm_charFunDensity_edgeworthDensity_le`). Only the two *quantitative* pieces are left — the
-  window integral and the outer range. See the re-derived status note (E1)–(E4) on that
+  `norm_charFunDensity_edgeworthDensity_le`, `abs_edgeworthCDF_le`), the window estimate
+  (`window_conditions`, `edgeworth_approx_eq`, `exists_window_core`, `exists_window_bound`), the
+  outer range (`edgeworthCharFun_tail_le`, `edgeworthGap_tail_le`) and the glue
+  (`esseen_split`, `abs_meanRootCDF_sub_edgeworthCDF_le`). See the status note (E1)–(E4) on that
   theorem.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
@@ -1682,6 +1684,7 @@ section Edgeworth
 
 variable {F : Measure ℝ}
 
+set_option maxHeartbeats 1600000 in
 /-- **One-term Edgeworth expansion for the centred sample mean, uniform remainder.**
 
 Under a finite fourth moment and Cramér's condition, the sampling distribution function of the
@@ -1689,10 +1692,12 @@ centred and scaled sample mean equals the normal approximation `Φ(t/σ)` correc
 skewness term `−(1/6) γ φ(t/σ) (t²/σ² − 1) n^{-1/2}`, with a remainder bounded by `C/n`
 uniformly in the argument, for a constant `C` depending only on the sampling law.
 
-DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (it is Hall (1992),
-Thm 2.2 with `j = 1`: under `E X⁴ < ∞` and Cramér's condition the two-term expansion has
-remainder `o(n⁻¹)`, so truncating after the `n^{-1/2}` term leaves `O(n⁻¹)`, and enlarging `C`
-absorbs the finitely many small `n`). It is not proved here.
+**PROVED, axiom-clean.** This is Hall (1992), Thm 2.2 with `j = 1`. The programme (E1)–(E4)
+recorded below is complete: the assembly takes `δ = n⁻¹` and splits the Esseen integral at
+`|ξ| = c√n` with `c = min(1/(π√2), 3σ³/(4π(ρ₃ + 1)))`, bounds the window by
+`exists_window_bound` and the outer range by `edgeworthGap_tail_le`, glues the two with
+`esseen_split`, and absorbs the finitely many `n ≤ 3` into `C` through `abs_edgeworthCDF_le`
+(the approximant is bounded by an `n`-free constant) and `meanRootCDF ∈ [0, 1]`.
 
 **The previously recorded obstruction is overturned.** An earlier note on this theorem named the
 CDF-level (Stieltjes) Lévy/Esseen inversion — "the identity `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T}
@@ -1733,7 +1738,8 @@ on `|t| ≤ c√n` — the three terms of the bound scaling as `t⁶/n`, `t⁴/n
 respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted integral in
 `abs_measure_Iic_sub_le_charFun` therefore now converges to `O(n⁻¹)` rather than to a constant.
 
-**Re-derivation: (E1)–(E3) are now CLOSED; only (E4) remains.**
+**Re-derivation: (E1)–(E4) are ALL CLOSED.** The record below is kept because it names, piece
+by piece, where each ingredient lives.
 
 * (E1) **Signed comparison — CLOSED.** The Edgeworth approximant is not the distribution
   function of a probability measure: it is a signed measure with the explicit `L¹` density
@@ -1789,9 +1795,9 @@ respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted in
   (off the origin the flank term alone dominates the weight, and `∫ ξ⁻²` over the two tails is
   `2/ρ`), and `exists_pow_mul_geometric_le` bounds `nᵏ cⁿ`. With `δ ≍ n⁻¹`, `ρ ≍ √n` and
   `M = cⁿ` the outer contribution is `cⁿ · O(n^{3/2}) = o(n^{-k})` for every `k`.
-* (E4) **The assembly — pieces 1 and 2 are now CLOSED; 3 and 4 remain.** It is long rather
-  than hard, and the re-derivation split it into four named pieces, none of which is an
-  obstruction. Two of them, and all the glue between them, are proved above.
+* (E4) **The assembly — CLOSED.** It is long rather than hard, and the re-derivation split it
+  into four named pieces, none of which was an obstruction. All four, and the glue between
+  them, are proved above.
   1. *The law of the root — **CLOSED**.* `charFun_meanRootLaw`:
      `charFun (meanRootLaw F n) t = (charFun (centredLaw F) (t/√n))ⁿ`.
      *The recorded route is superseded, in the direction of being easier.* The note said this
@@ -1828,25 +1834,36 @@ respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted in
      `s = t/(σ√n)`, `v = σ²`, `m₃ = γσ³`. So the two objects
      `abs_measure_Iic_sub_densityCDF_le_charFun` compares are exactly the two objects the
      damped expansion estimates: the remaining work is quantitative only.
-  3. *The window integral — **OPEN**, and the long one.* Take `δ = 1/n` and split at
+  3. *The window integral — **CLOSED*** (`exists_window_bound`). Take `δ = 1/n` and split at
      `|ξ| = ρ_n ≍ √n`, chosen so that `|ξ| ≤ ρ_n` implies the window conditions `v s² ≤ 2`,
      `ρ₃|s| ≤ 3v/2` of `norm_charFun_pow_sub_edgeworth_le` at `s = −2πξ/(σ√n)`; explicitly
      `v s² = 4π²ξ²/n ≤ 2` iff `ξ² ≤ n/(2π²)`, and `ρ₃|s| ≤ 3v/2` iff
      `|ξ| ≤ 3σ³√n/(4πρ₃)`, so `ρ_n = c√n` with `c = min(1/(π√2), 3σ³/(4πρ₃))`. On that range
      the damped bound is `e^{−(1 − 2/n)π²ξ²} · O((ξ⁴ + ξ⁵ + ξ⁶ + ξ⁸)/n)` against the weight
      `1/(π|ξ|)`, so the estimate reduces to the Gaussian moment integrals
-     `∫ |ξ|^k e^{−aξ²} dξ` — whose *values* are irrelevant, only their finiteness. It also
-     needs the finitely many small `n` (where `1 − 2/n ≤ 0`) absorbed into `C`, which is
-     legitimate because both `meanRootCDF` and the approximant are bounded. Folded into this
-     piece is the integrability hypothesis `hint` of
-     `abs_measure_Iic_sub_densityCDF_le_charFun`, which is the same Gaussian-moment estimate.
-  4. *The outer range — **OPEN**, but short.* `‖φ_P − φ_q‖ ≤ cⁿ + ‖φ_{q_n}‖` there; the first
-     term is handled by (E3) (`exists_bound_lt_one_of_cramer`,
-     `setIntegral_mul_esseenWeight_tail_le`, `exists_pow_mul_geometric_le`), and for the second
-     `norm_charFunDensity_edgeworthDensity_le` above supplies the Gaussian tail
-     `‖φ_{q_n}(θ)‖ ≤ e^{−θ²/2}(1 + |γ||θ|³/6)`, uniformly in `n ≥ 1`. What is left is the
-     bookkeeping that `e^{−2π²ρ_n²} = e^{−2π²c²n}` is geometric in `n` and therefore, by
-     `exists_pow_mul_geometric_le` again, `o(n^{-k})` for every `k`. -/
+     `∫ |ξ|^k e^{−aξ²} dξ` — whose *values* are irrelevant, only their finiteness
+     (`integrable_windowDom`).
+     *Two details of the executed proof.* First, the damping is taken as `e^{−π²ξ²/2}`, which
+     needs `(n − 2)/n ≥ 1/2`, i.e. `n ≥ 4`; the finitely many `n ≤ 3` are absorbed into `C`
+     because `meanRootCDF ∈ [0, 1]` and `|edgeworthCDF| ≤ 1 + 6|γ|` with an `n`-free constant
+     (`abs_edgeworthCDF_le`). Second, the polynomial part is *exactly* the algebraic core
+     `exists_window_core` after `abs_window_arg`/`sq_window_arg` rewrite `|s|` and `v s²`,
+     and after `edgeworth_approx_eq` identifies the approximant of
+     `charFunDensity_edgeworthDensity` with the one `norm_charFun_pow_sub_edgeworth_le`
+     estimates. Folded into this piece is the integrability hypothesis `hint` of
+     `abs_measure_Iic_sub_densityCDF_le_charFun`, discharged by `esseen_split` from the same
+     two bounds.
+  4. *The outer range — **CLOSED*** (`edgeworthGap_tail_le`). `‖φ_P − φ_q‖ ≤ crⁿ + ‖φ_{q_n}‖`
+     there; the first term is handled by (E3) — `exists_bound_lt_one_of_cramer` applied to the
+     *centred* law, which is legitimate because centring only multiplies the characteristic
+     function by a unimodular factor (`cramerCondition_centredLaw`, `norm_charFun_centredLaw`),
+     and the argument `s = −2πξ/(σ√n)` has `|s| ≥ 2πc/σ` on `|ξ| ≥ c√n`. For the second,
+     `norm_charFunDensity_edgeworthDensity_le` supplies the Gaussian tail
+     `‖φ_{q_n}(θ)‖ ≤ e^{−θ²/2}(1 + |γ||θ|³/6)`, uniformly in `n ≥ 1`, and
+     `edgeworthCharFun_tail_le` turns it into `(1 + 512π³|γ|) e^{−π²c²n}` by spending half the
+     Gaussian factor on the cubic polynomial. Both are geometric in `n`, and with
+     `δ = n⁻¹`, `ρ_n = c√n` the weighted tail `2M/(δπ²ρ_n) = 2M√n/(π²c)` is `O(n⁻¹)` by
+     `exists_pow_mul_geometric_le` with `k = 2` (`n^{3/2} ≤ n²`). -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -1860,7 +1877,154 @@ theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
           (1 / 6) * skewness F * stdNormalPDF (t / Real.sqrt Var[fun t : ℝ => t; F]) *
             (t ^ 2 / Var[fun t : ℝ => t; F] - 1) * (Real.sqrt n)⁻¹)|
       ≤ C / n := by
-  sorry
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; F] := Real.sqrt_pos.2 hFvar
+  have hρ0 : (0 : ℝ) ≤ ∫ x, |x| ^ 3 ∂(centredLaw F) := integral_nonneg fun x => by positivity
+  -- the window half-width `c = min(1/(π√2), 3σ³/(4π(ρ₃ + 1)))`
+  obtain ⟨c, hcpos, hc2, hc3⟩ :
+      ∃ c : ℝ, 0 < c ∧ c ≤ 1 / (Real.pi * Real.sqrt 2)
+        ∧ c ≤ 3 * Real.sqrt Var[fun t : ℝ => t; F] ^ 3
+            / (4 * Real.pi * ((∫ x, |x| ^ 3 ∂(centredLaw F)) + 1)) := by
+    refine ⟨_, lt_min (by positivity) (div_pos (mul_pos (by norm_num) (pow_pos hσ 3))
+      (mul_pos (by positivity) (by linarith))), min_le_left _ _, min_le_right _ _⟩
+  -- (E4).3, the window
+  obtain ⟨K, hK0, hK⟩ := exists_window_bound F hF4 hFvar hc2 hc3
+  -- (E4).4, the outer range: the Cramér constant and the Gaussian one
+  have hεpos : (0 : ℝ) < 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; F] :=
+    div_pos (mul_pos (by positivity) hcpos) hσ
+  obtain ⟨cr0, hcr1, hcr0b⟩ :=
+    exists_bound_lt_one_of_cramer (cramerCondition_centredLaw F hCramer) hεpos
+  have hcrnn : (0 : ℝ) ≤ max cr0 0 := le_max_right _ _
+  have hcrlt : max cr0 0 < 1 := max_lt hcr1 one_pos
+  have hcrb : ∀ s : ℝ, 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; F] ≤ |s| →
+      ‖charFun (centredLaw F) s‖ ≤ max cr0 0 := fun s h => (hcr0b s h).trans (le_max_left _ _)
+  have hεle : 2 * Real.pi * c / Real.sqrt Var[fun t : ℝ => t; F]
+      * Real.sqrt Var[fun t : ℝ => t; F] ≤ 2 * Real.pi * c :=
+    le_of_eq (div_mul_cancel₀ _ hσ.ne')
+  have hd0 : (0 : ℝ) ≤ Real.exp (-(Real.pi ^ 2 * c ^ 2)) := (Real.exp_pos _).le
+  have hd1 : Real.exp (-(Real.pi ^ 2 * c ^ 2)) < 1 := by
+    have hneg : -(Real.pi ^ 2 * c ^ 2) < 0 := by
+      have : (0 : ℝ) < Real.pi ^ 2 * c ^ 2 := mul_pos (by positivity) (pow_pos hcpos 2)
+      linarith
+    calc Real.exp (-(Real.pi ^ 2 * c ^ 2)) < Real.exp 0 := Real.exp_lt_exp.2 hneg
+      _ = 1 := Real.exp_zero
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_pow_mul_geometric_le hcrnn hcrlt 2
+  obtain ⟨C₂, hC₂0, hC₂⟩ := exists_pow_mul_geometric_le hd0 hd1 2
+  -- the constants entering `C`
+  have hW0 : (0 : ℝ) ≤ ∫ ξ : ℝ, windowDom ξ := integral_nonneg fun ξ => windowDom_nonneg ξ
+  have hB0 : (0 : ℝ) ≤ 1 + 512 * Real.pi ^ 3 * |skewness F| := by positivity
+  have hP0 : (0 : ℝ) ≤ (Real.pi ^ 2 * c)⁻¹ :=
+    inv_nonneg.2 (mul_nonneg (by positivity) hcpos.le)
+  have hA0 : (0 : ℝ) ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|) :=
+    (edgeworthTV_pos (skewness F)).le
+  have hKW : (0 : ℝ) ≤ K * ∫ ξ : ℝ, windowDom ξ := mul_nonneg hK0.le hW0
+  have hTC : (0 : ℝ) ≤ 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂)
+      * (Real.pi ^ 2 * c)⁻¹ :=
+    mul_nonneg (by nlinarith [hC₁0, hC₂0, hB0]) hP0
+  have hgam : (0 : ℝ) ≤ |skewness F| := abs_nonneg _
+  refine ⟨K * (∫ ξ : ℝ, windowDom ξ)
+      + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|))
+      + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
+      + 3 * (2 + 6 * |skewness F|) + 1, by linarith, ?_⟩
+  intro n hn t
+  have hn1 : 1 ≤ n := hn
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  rw [← edgeworthCDF_eq_approx F hFvar n t]
+  rcases le_or_gt 4 n with h4 | h4
+  · -- the main range: the window estimate and the outer estimate, split at `c√n`
+    have hwin : ∀ ξ : ℝ, |ξ| ≤ c * Real.sqrt (n : ℝ) →
+        ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+            - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖
+          ≤ K / (n : ℝ) * windowEnvelope ξ := by
+      intro ξ hξ
+      refine hK n h4 ξ ?_
+      rw [← div_eq_mul_inv, div_le_iff₀ hsn]
+      exact hξ
+    have hdpow : Real.exp (-(Real.pi ^ 2 * (c * Real.sqrt (n : ℝ)) ^ 2))
+        = Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      rw [mul_pow, Real.sq_sqrt hnR.le]
+      ring
+    have htail : ∀ ξ : ℝ, c * Real.sqrt (n : ℝ) ≤ |ξ| →
+        ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+            - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖
+          ≤ max cr0 0 ^ n
+            + (1 + 512 * Real.pi ^ 3 * |skewness F|)
+              * Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n := by
+      intro ξ hξ
+      have h := edgeworthGap_tail_le F hFvar hcpos.le hcrb hεle hn1 hξ
+      rwa [hdpow] at h
+    have hstep := abs_meanRootCDF_sub_edgeworthCDF_le F hFvar hn1 hcpos
+      (div_nonneg hK0.le hnR.le) hwin htail t
+    -- `δ ρ = π²c/√n`, so the outer contribution is `2 M √n /(π²c)`
+    have hnn : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+    have hDeq : 1 / (n : ℝ) * Real.pi ^ 2 * (c * Real.sqrt (n : ℝ))
+        = Real.pi ^ 2 * c / Real.sqrt (n : ℝ) := by
+      rw [eq_div_iff hsn.ne']
+      have h : 1 / (n : ℝ) * Real.pi ^ 2 * (c * Real.sqrt (n : ℝ)) * Real.sqrt (n : ℝ)
+          = Real.pi ^ 2 * c * (Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) / (n : ℝ)) := by ring
+      rw [h, hnn, div_self hnR.ne', mul_one]
+    rw [hDeq, div_div_eq_mul_div] at hstep
+    set Bc : ℝ := 1 + 512 * Real.pi ^ 3 * |skewness F| with hBcdef
+    set Ac : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|) with hAcdef
+    set Wc : ℝ := ∫ ξ : ℝ, windowDom ξ with hWcdef
+    set Mn : ℝ := max cr0 0 ^ n + Bc * Real.exp (-(Real.pi ^ 2 * c ^ 2)) ^ n with hMndef
+    have hMn0 : (0 : ℝ) ≤ Mn :=
+      add_nonneg (pow_nonneg hcrnn n) (mul_nonneg hB0 (pow_nonneg hd0 n))
+    have hsqle : Real.sqrt (n : ℝ) ≤ (n : ℝ) := by
+      have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn1
+      have h2 : Real.sqrt (n : ℝ) ≤ Real.sqrt ((n : ℝ) ^ 2) := Real.sqrt_le_sqrt (by nlinarith)
+      rwa [Real.sqrt_sq hnR.le] at h2
+    have hMn2 : Mn * Real.sqrt (n : ℝ) * (n : ℝ) ≤ C₁ + Bc * C₂ := by
+      have h1 : Mn * Real.sqrt (n : ℝ) * (n : ℝ) ≤ Mn * (n : ℝ) * (n : ℝ) :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hsqle hMn0) hnR.le
+      have h2 : Mn * (n : ℝ) * (n : ℝ) ≤ C₁ + Bc * C₂ := by
+        rw [hMndef]
+        linarith [hC₁ n, mul_le_mul_of_nonneg_left (hC₂ n) hB0]
+      linarith
+    have hb2 : 2 * Mn * Real.sqrt (n : ℝ) / (Real.pi ^ 2 * c)
+        ≤ 2 * (C₁ + Bc * C₂) * (Real.pi ^ 2 * c)⁻¹ / (n : ℝ) := by
+      rw [le_div_iff₀ hnR, div_eq_mul_inv]
+      linarith [mul_le_mul_of_nonneg_right hMn2 hP0]
+    calc |meanRootCDF F n t
+            - edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])|
+        ≤ K / (n : ℝ) * Wc + 2 * Mn * Real.sqrt (n : ℝ) / (Real.pi ^ 2 * c)
+            + 2 * (Ac * (1 / (n : ℝ))) := hstep
+      _ ≤ K * Wc / (n : ℝ) + 2 * (C₁ + Bc * C₂) * (Real.pi ^ 2 * c)⁻¹ / (n : ℝ)
+            + 2 * Ac / (n : ℝ) := by
+          have e1 : K / (n : ℝ) * Wc = K * Wc / (n : ℝ) := by ring
+          have e3 : 2 * (Ac * (1 / (n : ℝ))) = 2 * Ac / (n : ℝ) := by ring
+          linarith
+      _ ≤ (K * Wc + 2 * Ac + 2 * (C₁ + Bc * C₂) * (Real.pi ^ 2 * c)⁻¹
+            + 3 * (2 + 6 * |skewness F|) + 1) / (n : ℝ) := by
+          rw [← add_div, ← add_div, div_eq_mul_inv, div_eq_mul_inv]
+          exact mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+  · -- the finitely many small `n`, absorbed by boundedness of both sides
+    have hn3 : (n : ℝ) ≤ 3 := by exact_mod_cast (by omega : n ≤ 3)
+    have hm1 : |meanRootCDF F n t| ≤ 1 := by
+      rw [meanRootCDF_eq_stdRootLaw F n hFvar t, abs_of_nonneg ENNReal.toReal_nonneg]
+      simpa using ENNReal.toReal_mono (by simp) (prob_le_one (μ := stdRootLaw F n))
+    have hap := abs_edgeworthCDF_le (skewness F) hn1 (t / Real.sqrt Var[fun t : ℝ => t; F])
+    have htri : |meanRootCDF F n t
+          - edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])|
+        ≤ |meanRootCDF F n t|
+          + |edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])| := by
+      have h := abs_add_le (meanRootCDF F n t)
+        (-(edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])))
+      rw [abs_neg] at h
+      rw [sub_eq_add_neg]
+      exact h
+    rw [le_div_iff₀ hnR]
+    calc |meanRootCDF F n t
+            - edgeworthCDF (skewness F) n (t / Real.sqrt Var[fun t : ℝ => t; F])| * (n : ℝ)
+        ≤ (2 + 6 * |skewness F|) * 3 :=
+          mul_le_mul (by linarith) hn3 hnR.le (by positivity)
+      _ ≤ K * (∫ ξ : ℝ, windowDom ξ)
+            + 2 * ((Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |skewness F|))
+            + 2 * (C₁ + (1 + 512 * Real.pi ^ 3 * |skewness F|) * C₂) * (Real.pi ^ 2 * c)⁻¹
+            + 3 * (2 + 6 * |skewness F|) + 1 := by linarith
 
 /-- **One-term Edgeworth expansion for the studentized sample mean, uniform in the argument.**
 
@@ -1874,9 +2038,10 @@ is unskewed.
 DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (TSH4 Thm 18.4.1; the
 studentized root is a smooth function of the pair of means `(X̄, X̄₂)`, absolute continuity of
 `F` supplies the joint Cramér condition, and `E X⁴ < ∞` gives the `O(n⁻¹)` remainder). It is
-not proved here, and it is strictly harder than `edgeworth_mean_uniform`: it inherits (E1)–(E4)
-recorded there and needs in addition the **bivariate** Edgeworth expansion for `(X̄, X̄₂)`
-together with the delta-method transfer to the smooth function `(u, v) ↦ u/√(v − u²)`.
+not proved here, and it is strictly harder than `edgeworth_mean_uniform`: (E1)–(E4) recorded
+there are now all closed, but this theorem needs in addition the **bivariate** Edgeworth
+expansion for `(X̄, X̄₂)` together with the delta-method transfer to the smooth function
+`(u, v) ↦ u/√(v − u²)`. That single missing estimate is what the re-derivation below isolates.
 
 Several pieces this note used to name as missing are now present, and the corresponding
 verdicts are dead. The CDF-level Esseen inversion is proved
@@ -1940,8 +2105,9 @@ DEFERRAL-ELIGIBLE (planned debt). This is a *corollary* of
 expansion, the quantile version follows by inverting it (the Cornish–Fisher step is the implicit
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
-`0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstructions recorded on
-`edgeworth_studentized_uniform` and, through it, (E1)–(E4) on `edgeworth_mean_uniform`. -/
+`0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
+`edgeworth_studentized_uniform` — which, now that (E1)–(E4) on `edgeworth_mean_uniform` are all
+closed, is the bivariate expansion alone. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
