@@ -274,7 +274,58 @@ theorem weak_limit_estimator_centered_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - θ₀)))
       (multivariateGaussian h J⁻¹) := by
-  sorry
+  -- The recentred limit.
+  have h1 := weak_limit_estimator_under_local_alternatives M μ hPDF θ₀ ℓ hℓ hDQM J hJ hJ_inv
+    est hest hlin h h_n hconv
+  -- `Xₙ = √n(θ̂ₙ − θₙ) + (hₙ − h)` has the same limit `N(0, I⁻¹)` (deterministic shift → 0).
+  have hXmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 =>
+        Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h)) :=
+    fun n => (((hest n).sub measurable_const).const_smul (Real.sqrt n)).add_const _
+  have hcn : Tendsto (fun n : ℕ => h - h_n n) atTop (𝓝 0) := by
+    have := (tendsto_const_nhds (x := h) (f := atTop (α := ℕ))).sub hconv
+    simpa using this
+  have hX : WeakConverges
+      (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h)))
+      (multivariateGaussian 0 J⁻¹) := by
+    refine AsymptoticStatistics.ForMathlib.vec_slutsky_recentering (cn := fun n => h - h_n n)
+      (fun n => (hXmeas n).aemeasurable) ?_ hcn
+    have hfun : (fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h) + (h - h_n n)))
+        = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+          (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) := by
+      funext n
+      congr 1
+      funext ω
+      abel
+    rw [hfun]
+    exact h1
+  -- Translate by `h`.
+  have hmap := hX.map (f := fun y : EuclideanSpace ℝ (Fin k) => y + h)
+    (by fun_prop) (by fun_prop)
+  rw [multivariateGaussian_map_add_right 0 h J⁻¹, zero_add] at hmap
+  have hcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h))).map
+        (fun y : EuclideanSpace ℝ (Fin k) => y + h))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + (h_n n - h) + h) := by
+    funext n
+    rw [Measure.map_map (by fun_prop) (hXmeas n)]
+    rfl
+  rw [hcomp] at hmap
+  -- For `n ≥ 1` the composite is exactly `√n(θ̂ₙ − θ₀)`.
+  refine weakConverges_of_eventually_eq ?_ hmap
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  congr 1
+  funext ω
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+  have hs : Real.sqrt n • ((Real.sqrt n)⁻¹ • h_n n) = h_n n := by
+    rw [smul_smul, mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+  simp only [localAlt]
+  rw [show est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n)
+      = (est n ω - θ₀) - (Real.sqrt n)⁻¹ • h_n n from by abel, smul_sub, hs]
+  abel
 
 /-- **Delta-method form under local alternatives.**
 
