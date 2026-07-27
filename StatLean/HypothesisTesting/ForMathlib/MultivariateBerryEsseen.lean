@@ -19,8 +19,10 @@ multivariate Berry–Esseen bound, as suggested for
 `StatLean.HypothesisTesting.GoodnessOfFit.SmoothTestLargeK`. The two statements quoted
 there, `bentkus_berry_esseen_convex` (constant `400 k^{1/4}`) and
 `bentkus_berry_esseen_ball` (dimension-free `C`), are **Bentkus (2003)**: a sharp,
-research-level dimension factor obtained by Fourier analysis over convex bodies. They are
-*not* reproduced here and are left sorried in that file.
+research-level dimension factor obtained by Fourier analysis over convex bodies. Their sharp
+`β/√n` *rate* is not reproduced here; what is proved here is the honest elementary rate
+`(β/√n)^{1/4}`, over balls (`berryEsseen_ball_elementary`, which discharges
+`bentkus_berry_esseen_ball`) and over convex sets (`berryEsseen_convex_elementary`).
 
 What this file records instead is the strongest bound the elementary route yields *honestly*.
 The single ingredient that is proved unconditionally and is genuinely dimension-free is the
@@ -68,17 +70,23 @@ ingredient is proved here unconditionally, each with a dimension-free constant:
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
 public χ² moments) these suffice and the ball assembly closes.
 
-For the *convex* route the smoothed convex indicator `exists_smoothed_convex_indicator`
-(mollification by a `ContDiffBump`, dimension-dependent constant) is **now proved and
-axiom-clean** — see its docstring for the construction and the section preceding it for the
-`precompR` tower. What remains is the single real obstacle: a Gaussian **boundary-shell** bound
-`γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is Ball's Gaussian-surface-area theorem (`4 k^{1/4}`)
-and does *not* follow from the single-slab bound proved here; see
-`berryEsseen_convex_elementary`. Everything in the convex assembly that does *not* need that
-shell bound is proved outright as `berryEsseen_convex_levy_elementary`, the Lévy/Prokhorov form
-`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` (and its mirror image); the frozen headline is exactly this
-statement with `γ(Bᵋ)` collapsed to `γ(B)`.
-Crucially, even once that is filled, the elementary balance of steps 2–3 does **not** reach
+The *convex* route is **now complete as well**: `berryEsseen_convex_elementary` is proved
+outright and is axiom-clean. Its two ingredients are
+
+* `exists_smoothed_convex_indicator` — the smoothed convex indicator (mollification by a
+  `ContDiffBump`, dimension-dependent constant); see its docstring for the construction and the
+  section preceding it for the `precompR` tower. With the Lindeberg swap it gives
+  `berryEsseen_convex_levy_elementary`, the Lévy/Prokhorov form
+  `μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` (and its mirror image);
+* the Gaussian **boundary-shell** bound `γ(Bᵋ) ≤ γ(B) + C_k ε` for convex `B`, together with its
+  erosion twin `γ(B) ≤ γ(B₋ᵋ) + C_k ε`. These are `gaussian_thickening_le` and
+  `gaussian_le_erosion_add` of `StatLean.HypothesisTesting.ForMathlib.GaussianShell`, proved
+  there elementarily (convex slice + supporting hyperplane + `2k` coordinate shifts) with the
+  explicit constant `C_k = 8 k^{3/2}/√(2π)`. Ball's Gaussian-surface-area theorem gives the
+  sharp `4 k^{1/4}` — exactly the dimension factor of Bentkus's constant — but the assembly
+  needs only finiteness of `C_k` at fixed `k`.
+
+Crucially, the elementary balance of steps 2–3 still does **not** reach
 the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
 of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
 mollifier method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and
@@ -548,9 +556,9 @@ end BallAntiConcentration
 Of the analytic bricks of the Lindeberg-swap route, the third-order Taylor remainder
 (`norm_taylor_remainder_three_le`) and — for the **ball** route — the smoothed radial
 indicator (`exists_smoothed_radial_indicator`) are now proved here, unconditionally and with
-dimension-free constants. What is still recorded as named `private` planned debt is the
-**multivariate Lindeberg swap** `abs_integral_smooth_sub_gaussian_le` (and, for the *convex*
-route only, `exists_smoothed_convex_indicator`). The honest final bounds
+dimension-free constants. The **multivariate Lindeberg swap** `abs_integral_smooth_sub_gaussian_le`
+and — for the *convex* route — `exists_smoothed_convex_indicator` are proved here as well, so no
+brick of the route is left as debt. The honest final bounds
 `berryEsseen_ball_elementary` / `berryEsseen_convex_elementary` record the exact statements the
 route delivers; their exponent `(β/√n)^{1/4}` is the genuine — non-sharp — outcome (see the
 module docstring). -/
@@ -662,7 +670,8 @@ three applications of `norm_iteratedFDeriv_fderiv`, exactly as the wave-4 note p
 
 Note that **convexity of `B` is never used**: the mollification works for any set. Convexity is
 needed only for the *other* convex ingredient, the boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`,
-which is Ball's theorem and is not in this file (see `berryEsseen_convex_elementary`). -/
+which lives in `StatLean.HypothesisTesting.ForMathlib.GaussianShell`
+(`gaussian_thickening_le`; see `berryEsseen_convex_elementary` for the assembly). -/
 
 section ConvexSmoothing
 
@@ -2374,10 +2383,11 @@ smoothed indicator of `exists_smoothed_convex_indicator`, sandwiched between `1_
 `C = C₃/2` where `C₃` is the third-derivative constant of the smoothed indicator (the factor
 `3 ≥ (β + β_G)/β` from `integral_norm_cube_gaussian_le` is what turns `C₃/6` into `C₃/2`).
 
-This is the exact point at which the frozen `berryEsseen_convex_elementary` stalls: taking
-`ε = (β/√n)^{1/4}` here gives `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, and the *only*
-remaining step is to replace `γ(Bᵋ)` by `γ(B) + C_k ε`, which is Ball's Gaussian-surface-area
-theorem. Nothing else in the frozen statement is open. -/
+This is the whole analytic content of `berryEsseen_convex_elementary`: taking `ε = (β/√n)^{1/4}`
+here gives `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, and the only remaining step is to
+replace `γ(Bᵋ)` by `γ(B) + C_k ε` (and, applying the second inequality to the erosion of `B`,
+`γ(B)` by `γ(B₋ᵋ) + C_k ε`), which is `gaussian_thickening_le` / `gaussian_le_erosion_add` of
+`StatLean.HypothesisTesting.ForMathlib.GaussianShell`. -/
 theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ),

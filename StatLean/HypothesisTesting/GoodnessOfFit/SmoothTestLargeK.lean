@@ -102,8 +102,16 @@ to the law of `n^{-1/2} ∑ᵢ Yᵢ` is accurate to `400 k^{1/4} β n^{-1/2}`, u
 measurable convex sets.
 
 DEFERRAL-ELIGIBLE (planned debt; proofless in the reference tradition, cf. Bentkus 2003):
-this statement is quoted, not proved, wherever it is used, and its proof is an independent
-project. -/
+this statement is quoted, not proved, and its proof is an independent project.
+
+**UNUSED (wave 11).** This declaration now has no consumer anywhere in the repository, and no
+downstream theorem rests on it. The convex-set normal approximation is available *proved* — at
+the honest elementary rate `C_k (β/√n)^{1/4}` rather than the sharp `400 k^{1/4} β/√n` — as
+`StatLean.HypothesisTesting.berryEsseen_convex_elementary` in
+`ForMathlib.MultivariateBerryEsseen`, whose last missing ingredient (the Gaussian
+boundary-shell bound `γ(Bᵋ) ≤ γ(B) + C_k ε` for convex `B`) is now proved in
+`ForMathlib.GaussianShell`. The statement below is kept only as the quoted *sharp* reference
+form; a human decides whether to remove it. -/
 theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace ℝ (Fin k))}
     {B : Set (EuclideanSpace ℝ (Fin k))}
     -- USER-INPUT: a nonempty sample
@@ -155,20 +163,31 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- stays as the planned, pre-agreed debt.
   --
   -- RE-CHECKED (wave 5), including the explicit question whether the consumer can be
-  -- rerouted to the ball version or the statement weakened to a provable rate.  Neither is
-  -- possible or needed:
+  -- rerouted to the ball version or the statement weakened to a provable rate.
   -- • REROUTING IS ALREADY DONE.  A repository-wide search finds no consumer of this
   --   declaration at all — `smoothStat_largeK_weakConverges_gaussian` goes through
   --   `bentkus_berry_esseen_ball` (hence `berryEsseen_ball_elementary`, which is discharged),
   --   and the only other mentions of this name are in the docstrings of
   --   `ForMathlib/MultivariateBerryEsseen`.  So there is nothing downstream to amend.
-  -- • WEAKENING THE RATE DOES NOT HELP.  The elementary route bounds the normal approximation
-  --   only over *Euclidean balls* (it smooths the radial indicator `1{‖z‖² ≤ t}`); a general
-  --   measurable convex body is not a ball and is not approximated by balls in any way that
-  --   route supplies.  So even the weakened statement `≤ C k^{1/4} (β/√n)^{1/4}` over convex
-  --   sets is NOT a consequence of `berryEsseen_ball_elementary` — it is the same open
-  --   problem with a different exponent, and writing it down would be a false economy.
-  -- The declaration therefore keeps its sharp Bentkus form and stays the single, pre-agreed,
+  --   This is unchanged in wave 11: still zero consumers.
+  --
+  -- WAVE-11 AMENDMENT (the second wave-5 bullet is now WRONG and is corrected here).  That
+  -- bullet claimed the *weakened* statement `≤ C_k (β/√n)^{1/4}` over convex sets was "the
+  -- same open problem with a different exponent", on the ground that the elementary route
+  -- only smooths radial indicators.  That was a mis-derivation: the mollification of
+  -- `exists_smoothed_convex_indicator` smooths the indicator of an *arbitrary* set, and the
+  -- only genuinely convex-specific input is the Gaussian boundary-shell bound
+  -- `γ(Bᵋ) ≤ γ(B) + C_k ε`, which is now proved elementarily (no Ball, no isoperimetry) in
+  -- `ForMathlib/GaussianShell`.  Consequently the weakened convex statement is PROVED, as
+  -- `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_elementary`, 0-sorry and
+  -- axiom-clean.  Any future consumer that tolerates the `1/4` exponent should be wired to
+  -- that theorem rather than to this one.
+  --
+  -- What is *not* available, and is what this declaration still quotes, is the SHARP rate:
+  -- `β/√n` with dimensional factor exactly `k^{1/4}` and absolute constant `400`.  The
+  -- elementary balance `ε⁻³ β/√n + C_k ε` is minimised at `ε ∼ (β/√n)^{1/4}` and cannot do
+  -- better whatever the shell constant is, so the gap is the rate, not the shell bound.
+  -- The declaration therefore keeps its sharp Bentkus form and stays the pre-agreed,
   -- consumer-free debt of this file.
   sorry
 
