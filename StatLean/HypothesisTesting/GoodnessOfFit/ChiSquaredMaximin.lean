@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMultinomial
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
+import StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianShift
 
@@ -112,8 +113,311 @@ def multinomialShell {k : ℕ} (π : Fin (k + 1) → ℝ) (b : ℝ) (n : ℕ) :
   {h | (∑ j, h j = 0) ∧ b ^ 2 ≤ multinomialNoncentrality π h ∧
     ∀ j, 0 ≤ π j + h j / Real.sqrt (n : ℝ)}
 
+/-! ### Bricks for the maximin upper bound
+
+The upper bound is the multinomial instance of
+`AsymptoticMaximin.asymptotic_maximin_upper_bound`, run on the canonical experiment
+`⨂_{i<n} (π + h n^{-1/2})` on `Fin n → Fin (k+1)`.  The bricks below supply, in order: the
+coordinate form of the inner product; the whitened score system that turns the multinomial
+noncentrality `∑ⱼ hⱼ²/πⱼ` into a Euclidean squared norm; the two scalar `log(1+u)`
+estimates behind the local expansion; the weak law of large numbers for the `k²` empirical
+second moments of the scores (the LAN remainder is random here, unlike in the smooth-test
+twin); the bilinear bookkeeping for the quadratic form; and the singleton masses of the
+one-observation tilt.  The score-vector machinery itself (`psiVec`, `inner_psiVec`,
+`pi_scoreLaw_weakConverges`, `pi_withDensity_exp`) is imported from `SmoothTest.lean`,
+whose scores are literally these ones for `𝓧 = Fin (k+1)`. -/
+
+/-- Coordinate form of the real inner product on `EuclideanSpace`. -/
+private lemma inner_coord_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
+    ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+  simp only [PiLp.inner_apply]
+  exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+
+/-- **Whitened multinomial scores.**  For an interior null `π` there are `k` functions on the
+`k+1` cells that are centred and orthonormal in `L²(π)`. -/
+private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    ∃ ψ : Fin k → Fin (k + 1) → ℝ,
+      (∀ i, ∑ j, π j * ψ i j = 0) ∧
+      (∀ i i', ∑ j, π j * (ψ i j * ψ i' j) = if i = i' then 1 else 0) := by
+  classical
+  haveI : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 1))) = k + 1) :=
+    ⟨finrank_euclideanSpace_fin⟩
+  set w : EuclideanSpace ℝ (Fin (k + 1)) := WithLp.toLp 2 (fun j => Real.sqrt (π j)) with hwdef
+  have hwapp : ∀ j, w j = Real.sqrt (π j) := fun j => rfl
+  have hsq : ∀ j, Real.sqrt (π j) * Real.sqrt (π j) = π j :=
+    fun j => Real.mul_self_sqrt (hπpos j).le
+  have hsne : ∀ j, Real.sqrt (π j) ≠ 0 := fun j => ne_of_gt (Real.sqrt_pos.mpr (hπpos j))
+  have hww : ⟪w, w⟫_ℝ = 1 := by
+    rw [inner_coord_sum]
+    simp only [hwapp]
+    rw [← hπsum]
+    exact Finset.sum_congr rfl fun j _ => hsq j
+  have hw0 : w ≠ 0 := by
+    intro h
+    rw [h] at hww
+    simp at hww
+  have key1 : ∀ (a : ℝ) (j : Fin (k + 1)),
+      π j * (a / Real.sqrt (π j)) = Real.sqrt (π j) * a := by
+    intro a j
+    rw [show π j * (a / Real.sqrt (π j)) = (π j / Real.sqrt (π j)) * a from by ring,
+      Real.div_sqrt]
+  have key2 : ∀ (a c : ℝ) (j : Fin (k + 1)),
+      π j * (a / Real.sqrt (π j) * (c / Real.sqrt (π j))) = a * c := by
+    intro a c j
+    rw [show π j * (a / Real.sqrt (π j) * (c / Real.sqrt (π j)))
+        = (π j / (Real.sqrt (π j) * Real.sqrt (π j))) * (a * c) from by ring,
+      hsq j, div_self (ne_of_gt (hπpos j)), one_mul]
+  set e := OrthonormalBasis.fromOrthogonalSpanSingleton
+    (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (k + 1))) k hw0 with hedef
+  refine ⟨fun i j => (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j), ?_, ?_⟩
+  · intro i
+    have h0 : ⟪w, (↑(e i) : EuclideanSpace ℝ (Fin (k + 1)))⟫_ℝ = 0 :=
+      Submodule.mem_orthogonal_singleton_iff_inner_right.mp (e i).2
+    rw [inner_coord_sum] at h0
+    rw [← h0]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [hwapp]
+    exact key1 _ j
+  · intro i i'
+    have h0 : ⟪(↑(e i) : EuclideanSpace ℝ (Fin (k + 1))),
+        (↑(e i') : EuclideanSpace ℝ (Fin (k + 1)))⟫_ℝ = if i = i' then 1 else 0 := by
+      rw [← Submodule.coe_inner]
+      exact orthonormal_iff_ite.mp e.orthonormal i i'
+    rw [inner_coord_sum] at h0
+    rw [← h0]
+    exact Finset.sum_congr rfl fun j _ => key2 _ _ j
+
+/-- `|log(1+u) − (u − u²/2)| ≤ 2|u|³` for `|u| ≤ 1/2`. -/
+private lemma abs_log_one_add_sub_quad_le {u : ℝ} (hu : |u| ≤ 1 / 2) :
+    |Real.log (1 + u) - (u - u ^ 2 / 2)| ≤ 2 * |u| ^ 3 := by
+  have habs : |(-u)| = |u| := abs_neg u
+  have hx : |(-u)| < 1 := by rw [habs]; linarith
+  have h := Real.abs_log_sub_add_sum_range_le hx 2
+  rw [habs] at h
+  have hsum : (∑ i ∈ Finset.range 2, (-u) ^ (i + 1) / ((i : ℝ) + 1)) = -u + u ^ 2 / 2 := by
+    norm_num [Finset.sum_range_succ]
+  rw [hsum] at h
+  have hlog : (1 : ℝ) - -u = 1 + u := by ring
+  rw [hlog] at h
+  have heq : |Real.log (1 + u) - (u - u ^ 2 / 2)| = |-u + u ^ 2 / 2 + Real.log (1 + u)| := by
+    congr 1
+    ring
+  rw [heq]
+  refine h.trans ?_
+  have hcube : (0 : ℝ) ≤ |u| ^ 3 := pow_nonneg (abs_nonneg u) 3
+  have hden : (1 : ℝ) / 2 ≤ 1 - |u| := by linarith
+  rw [div_le_iff₀ (by linarith : (0 : ℝ) < 1 - |u|)]
+  have hkey : (0 : ℝ) ≤ |u| ^ 3 * (1 - 2 * |u|) :=
+    mul_nonneg hcube (by linarith)
+  have hpow : |u| ^ (2 + 1) = |u| ^ 3 := by norm_num
+  rw [hpow]
+  nlinarith
+
+/-- `|log(1+u)| ≤ 1` for `|u| ≤ 1/2`. -/
+private lemma abs_log_one_add_le_one {u : ℝ} (hu : |u| ≤ 1 / 2) :
+    |Real.log (1 + u)| ≤ 1 := by
+  have habs : |(-u)| = |u| := abs_neg u
+  have hx : |(-u)| < 1 := by rw [habs]; linarith
+  have h := Real.abs_log_sub_add_sum_range_le hx 0
+  rw [habs] at h
+  simp only [Finset.range_zero, Finset.sum_empty, zero_add, pow_one] at h
+  have hlog : (1 : ℝ) - -u = 1 + u := by ring
+  rw [hlog] at h
+  refine h.trans ?_
+  rw [div_le_one (by linarith : (0 : ℝ) < 1 - |u|)]
+  linarith
+
+/-- **WLLN for the `k²` empirical second moments of the scores**, on the canonical product
+experiment.  Bounded (finite sample space) i.i.d. averages, transported from
+`ProbabilityTheory.strong_law_ae` on the canonical i.i.d. model. -/
+private lemma pi_secondMoment_prob_tendsto_zero {k : ℕ} {𝓨 : Type*} [MeasurableSpace 𝓨]
+    [Finite 𝓨] [MeasurableSingletonClass 𝓨] {P₀ : Measure 𝓨} [IsProbabilityMeasure P₀]
+    (ψ : Fin k → 𝓨 → ℝ)
+    (hortho : ∀ i i', (∫ x, ψ i x * ψ i' x ∂P₀) = if i = i' then 1 else 0)
+    {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n : ℕ => ((Measure.pi fun _ : Fin n => P₀)
+        {d : Fin n → 𝓨 | ε ≤ ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, ψ i (d l) * ψ i' (d l))
+          - (if i = i' then 1 else 0)|}).toReal) atTop (nhds 0) := by
+  classical
+  obtain ⟨Ω₀, mΩ₀, μ, Z, hZmeas, hZlaw, hZindep, hμprob⟩ :=
+    ProbabilityTheory.exists_iid ℕ P₀
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure μ := hμprob
+  set T : (n : ℕ) → (Fin n → 𝓨) → ℝ := fun n d =>
+    ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, ψ i (d l) * ψ i' (d l)) - (if i = i' then 1 else 0)|
+    with hTdef
+  have hTmeas : ∀ n, Measurable (T n) := fun n => measurable_of_countable _
+  have hZtuple : ∀ n : ℕ, Measurable (fun ω (i : Fin n) => Z (i : ℕ) ω) :=
+    fun n => measurable_pi_lambda _ fun i => hZmeas (i : ℕ)
+  have hpi : ∀ n : ℕ, μ.map (fun ω (i : Fin n) => Z (i : ℕ) ω)
+      = Measure.pi (fun _ : Fin n => P₀) := by
+    intro n
+    rw [(iIndepFun_iff_map_fun_eq_pi_map
+      (fun i : Fin n => (hZmeas (i : ℕ)).aemeasurable)).1
+        (hZindep.precomp Fin.val_injective)]
+    congr 1
+    funext i
+    exact (hZlaw (i : ℕ)).map_eq
+  -- the per-pair product functions on the canonical model
+  have hprodmeas : ∀ i i' : Fin k, Measurable (fun x : 𝓨 => ψ i x * ψ i' x) :=
+    fun i i' => measurable_of_countable _
+  have hprodint : ∀ i i' : Fin k, Integrable (fun x : 𝓨 => ψ i x * ψ i' x) P₀ :=
+    fun i i' => Integrable.of_finite
+  have hlln : ∀ i i' : Fin k, ∀ᵐ ω ∂μ, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ l ∈ Finset.range n, ψ i (Z l ω) * ψ i' (Z l ω))
+      atTop (nhds (if i = i' then 1 else 0)) := by
+    intro i i'
+    let W : ℕ → Ω₀ → ℝ := fun l ω => ψ i (Z l ω) * ψ i' (Z l ω)
+    have hWint : Integrable (W 0) μ := by
+      have h : Integrable ((fun x : 𝓨 => ψ i x * ψ i' x) ∘ Z 0) μ := by
+        refine (integrable_map_measure ?_ (hZmeas 0).aemeasurable).mp ?_
+        · exact (hprodmeas i i').aestronglyMeasurable
+        · rw [(hZlaw 0).map_eq]; exact hprodint i i'
+      exact h
+    have hWindep : Pairwise (fun l l' => IndepFun (W l) (W l') μ) := fun l l' hll' =>
+      (hZindep.indepFun hll').comp (hprodmeas i i') (hprodmeas i i')
+    have hWident : ∀ l, IdentDistrib (W l) (W 0) μ μ := fun l =>
+      (show IdentDistrib (Z l) (Z 0) μ μ from
+        ⟨(hZmeas l).aemeasurable, (hZmeas 0).aemeasurable,
+          (hZlaw l).map_eq.trans (hZlaw 0).map_eq.symm⟩).comp (hprodmeas i i')
+    have hmean : μ[W 0] = if i = i' then 1 else 0 := by
+      have h1 : ∫ x, ψ i x * ψ i' x ∂P₀ = ∫ ω, W 0 ω ∂μ := by
+        rw [← (hZlaw 0).map_eq, integral_map (hZmeas 0).aemeasurable
+          (hprodmeas i i').aestronglyMeasurable]
+      rw [← h1, hortho i i']
+    have := ProbabilityTheory.strong_law_ae W hWint hWindep hWident
+    rwa [hmean] at this
+  have hall : ∀ᵐ ω ∂μ, ∀ i i' : Fin k, Tendsto
+      (fun n : ℕ => (n : ℝ)⁻¹ • ∑ l ∈ Finset.range n, ψ i (Z l ω) * ψ i' (Z l ω))
+      atTop (nhds (if i = i' then 1 else 0)) := by
+    rw [ae_all_iff]
+    intro i
+    rw [ae_all_iff]
+    intro i'
+    exact hlln i i'
+  have hTae : ∀ᵐ ω ∂μ, Tendsto (fun n : ℕ => T n (fun i => Z (i : ℕ) ω)) atTop (nhds 0) := by
+    filter_upwards [hall] with ω hω
+    have hterm : ∀ i i' : Fin k, Tendsto
+        (fun n : ℕ => |(n : ℝ)⁻¹ * (∑ l : Fin n, ψ i (Z (l : ℕ) ω) * ψ i' (Z (l : ℕ) ω))
+          - (if i = i' then 1 else 0)|) atTop (nhds 0) := by
+      intro i i'
+      have h1 : Tendsto (fun n : ℕ => (n : ℝ)⁻¹ *
+          (∑ l : Fin n, ψ i (Z (l : ℕ) ω) * ψ i' (Z (l : ℕ) ω))) atTop
+          (nhds (if i = i' then 1 else 0)) := by
+        refine (hω i i').congr fun n => ?_
+        rw [smul_eq_mul, Fin.sum_univ_eq_sum_range (fun l => ψ i (Z l ω) * ψ i' (Z l ω)) n]
+      have hc : Tendsto (fun _ : ℕ => (if i = i' then (1 : ℝ) else 0)) atTop
+          (nhds (if i = i' then (1 : ℝ) else 0)) := tendsto_const_nhds
+      have h2 := (h1.sub hc).abs
+      simpa using h2
+    have := tendsto_finset_sum (Finset.univ : Finset (Fin k))
+      (fun i _ => tendsto_finset_sum (Finset.univ : Finset (Fin k))
+        (fun i' _ => hterm i i'))
+    simpa [hTdef] using this
+  have hSmeas : ∀ n : ℕ, Measurable (fun ω => T n (fun i => Z (i : ℕ) ω)) :=
+    fun n => (hTmeas n).comp (hZtuple n)
+  have hinmeas := tendstoInMeasure_of_tendsto_ae (μ := μ)
+    (f := fun n ω => T n (fun i => Z (i : ℕ) ω)) (g := fun _ => (0 : ℝ))
+    (fun n => (hSmeas n).aestronglyMeasurable) hTae
+  have hkey := hinmeas (ENNReal.ofReal ε) (by simpa using hε)
+  -- rewrite the `edist` sets as the sets of the statement
+  have hTnn : ∀ n (d : Fin n → 𝓨), 0 ≤ T n d := fun n d =>
+    Finset.sum_nonneg fun i _ => Finset.sum_nonneg fun i' _ => abs_nonneg _
+  have hsets : ∀ n : ℕ, {ω | ENNReal.ofReal ε ≤
+        edist (T n (fun i => Z (i : ℕ) ω)) (0 : ℝ)}
+      = {ω | ε ≤ T n (fun i => Z (i : ℕ) ω)} := by
+    intro n
+    ext ω
+    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq, sub_zero,
+      abs_of_nonneg (hTnn n _)]
+    exact ENNReal.ofReal_le_ofReal_iff (hTnn n _)
+  simp only [hsets] at hkey
+  have hmeq : ∀ n : ℕ, μ {ω | ε ≤ T n (fun i => Z (i : ℕ) ω)}
+      = (Measure.pi fun _ : Fin n => P₀) {d | ε ≤ T n d} := by
+    intro n
+    rw [← hpi n, Measure.map_apply (hZtuple n)
+      (measurableSet_le measurable_const (hTmeas n))]
+    rfl
+  simp only [hmeq] at hkey
+  have := (ENNReal.tendsto_toReal (by simp : (0 : ℝ≥0∞) ≠ ⊤)).comp hkey
+  simpa [hTdef] using this
+
+
+/-! ### Bilinear bookkeeping -/
+
+private lemma weighted_sum_lin {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : ι → ℝ) (f : ι → κ → ℝ) (wt : κ → ℝ) :
+    ∑ l, wt l * (∑ i, a i * f i l) = ∑ i, a i * (∑ l, wt l * f i l) := by
+  calc ∑ l, wt l * (∑ i, a i * f i l)
+      = ∑ l, ∑ i, a i * (wt l * f i l) := by
+        refine Finset.sum_congr rfl fun l _ => ?_
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i _ => by ring
+    _ = ∑ i, ∑ l, a i * (wt l * f i l) := Finset.sum_comm
+    _ = ∑ i, a i * (∑ l, wt l * f i l) :=
+        Finset.sum_congr rfl fun i _ => (Finset.mul_sum _ _ _).symm
+
+private lemma weighted_sum_quad {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : ι → ℝ) (f : ι → κ → ℝ) (wt : κ → ℝ) :
+    ∑ l, wt l * ((∑ i, a i * f i l) * (∑ i, a i * f i l))
+      = ∑ i, ∑ i', (a i * a i') * (∑ l, wt l * (f i l * f i' l)) := by
+  calc ∑ l, wt l * ((∑ i, a i * f i l) * (∑ i, a i * f i l))
+      = ∑ l, ∑ i, ∑ i', (a i * a i') * (wt l * (f i l * f i' l)) := by
+        refine Finset.sum_congr rfl fun l _ => ?_
+        rw [Finset.sum_mul_sum, Finset.mul_sum]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [Finset.mul_sum]
+        exact Finset.sum_congr rfl fun i' _ => by ring
+    _ = ∑ i, ∑ i', ∑ l, (a i * a i') * (wt l * (f i l * f i' l)) := by
+        rw [Finset.sum_comm]
+        exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
+    _ = ∑ i, ∑ i', (a i * a i') * (∑ l, wt l * (f i l * f i' l)) :=
+        Finset.sum_congr rfl fun i _ =>
+          Finset.sum_congr rfl fun i' _ => (Finset.mul_sum _ _ _).symm
+
+/-! ### The one-observation tilt -/
+
+/-- Singleton masses and total mass of the tilted cell law `pⱼ(1 + vⱼ)`, written in the
+`exp ∘ log` form that `pi_withDensity_exp` consumes. -/
+private lemma withDensity_exp_log_facts {m : ℕ} {P₀ : Measure (Fin m)}
+    [IsProbabilityMeasure P₀] {p v : Fin m → ℝ}
+    (hp : ∀ j, P₀ {j} = ENNReal.ofReal (p j)) (hp0 : ∀ j, 0 ≤ p j)
+    (hv : ∀ j, |v j| ≤ 1 / 2) (hsum : ∑ j, p j * (1 + v j) = 1) :
+    (∀ j, (P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + v x)))) {j}
+        = ENNReal.ofReal (p j * (1 + v j)))
+      ∧ IsProbabilityMeasure
+        (P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + v x)))) := by
+  have hpos : ∀ j, (0 : ℝ) < 1 + v j := by
+    intro j
+    have := (abs_le.mp (hv j)).1
+    linarith
+  have hexp : ∀ j, Real.exp (Real.log (1 + v j)) = 1 + v j := fun j => Real.exp_log (hpos j)
+  have hmeas : Measurable
+      (fun x : Fin m => ENNReal.ofReal (Real.exp (Real.log (1 + v x)))) :=
+    measurable_of_countable _
+  have hsing : ∀ j, (P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + v x)))) {j}
+      = ENNReal.ofReal (p j * (1 + v j)) := by
+    intro j
+    rw [withDensity_apply _ (measurableSet_singleton j), lintegral_singleton, hexp, hp j,
+      ← ENNReal.ofReal_mul (hpos j).le, mul_comm]
+  refine ⟨hsing, ⟨?_⟩⟩
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, lintegral_fintype]
+  have hterm : ∀ j : Fin m, ENNReal.ofReal (Real.exp (Real.log (1 + v j))) * P₀ {j}
+      = ENNReal.ofReal (p j * (1 + v j)) := by
+    intro j
+    rw [hexp, hp j, ← ENNReal.ofReal_mul (hpos j).le, mul_comm]
+  rw [Finset.sum_congr rfl fun j _ => hterm j,
+    ← ENNReal.ofReal_sum_of_nonneg (fun j _ => mul_nonneg (hp0 j) (hpos j).le), hsum,
+    ENNReal.ofReal_one]
+
+/-! ### The multinomial maximin upper bound -/
+
 /-! ### (i) The upper bound -/
 
+-- The proof is a single long assembly over the canonical multinomial experiment; see the
+-- proof note below.  Elaboration exceeds the default budget.
+set_option maxHeartbeats 3200000 in
 /-- **No test beats the chi-squared value.** For any test sequence whose power at the null
 tends to `α`, the limiting minimum power over the local shell is at most
 `P{χ²_k(b²) > c_{k,1−α}}`.
@@ -157,7 +461,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (RE-DERIVED, and the STATEMENT WAS FALSE AS FROZEN — repaired above).
+  -- CLOSED this batch (the STATEMENT WAS FALSE AS FROZEN — repaired by `hφX` above).
   --
   -- COUNTEREXAMPLE to the frozen statement (no `hφX`).  Take `k = 1` (two cells),
   -- `Ω = (ℕ → Fin 2) × ℝ`, `X n i ω = ω.1 i`, and
@@ -170,7 +474,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   -- for *every* `h ∈ multinomialShell π b n`; that shell is nonempty for all large `n`, so the
   -- left-hand side is `1`.  The right-hand side is `< 1`: by the density representation
   -- `noncentralChiSquared k l = (chiSquared k).withDensity (ENNReal.ofReal ∘ g)` of the MLR
-  -- section above, with `g > 0`, and `chiSq_Ioo_pos`/`chiSq_crit_pos`, the complement of
+  -- section below, with `g > 0`, and `chiSq_Ioo_pos`/`chiSq_crit_pos`, the complement of
   -- `(c, ∞)` has positive `χ²_k(b²)`-mass.  So the frozen inequality fails.
   --
   -- The defect is exactly that `Q` is abstract: the hypotheses pin down the law of the
@@ -181,81 +485,617 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   -- structure.  The minimal repair is therefore to restrict the competitors to tests based
   -- on the sample, which is `hφX` and is how the source states the theorem.
   --
-  -- WHAT REMAINS for the repaired statement (RE-DERIVED this batch; the picture has changed
-  -- substantially, because `asymptotic_maximin_upper_bound` is now CLOSED and was restated in
-  -- exactly the shape this consumer needs).  Both obstructions recorded last batch are GONE:
-  -- • The shell mismatch is gone: that lemma is now quantified over an arbitrary family `S n`
-  --   of alternative sets subject only to `{h | ‖h‖ = b} ⊆ S n` *eventually*, which is
-  --   precisely what `multinomialShell π b n` satisfies — the positivity constraint
-  --   `πⱼ + hⱼ/√n ≥ 0` holds on the compact least-favourable sphere for all large `n`.
-  -- • The abstract-`Q` obstruction is gone as data: the sample space of that lemma may now
-  --   vary with `n`, so this consumer transfers along `hφX` to the CANONICAL experiment
-  --   `Q'ₙ,h := ⨂_{i<n} multinomial(π + h/√n)` on `Fin n → Fin (k+1)`, where the log-likelihood
-  --   field is explicit and `power (Q n) (φ n) h = power (Q'ₙ) (ψₙ) h` by `hφX` + `hcell` +
-  --   `hindep` (the law of the sample is pinned down by the frozen hypotheses).
-  -- What is left is therefore exactly the MULTINOMIAL LAN, on the canonical experiment:
-  --   (a) the whitening reparametrisation `η = Σ^{-1/2} z` of the reduced coordinates
-  --       `z = (h₁,…,h_k)`, under which `λ(h) = ∑ⱼ hⱼ²/πⱼ` becomes `‖η‖²`, so that the
-  --       standardized form of the transfer lemma applies and `multinomialShell` becomes an
-  --       `S n` containing the Euclidean sphere `‖η‖ = b`;
-  --   (b) `Zₙ ⇒ N(0, Iₖ)` in the whitened coordinates — available up to the whitening from
-  --       `ChiSquaredMultinomial.reducedCount_weakConverges_gaussian`, which gives
-  --       `Zₙ ⇒ N(0, Σ)`;
-  --   (c) the explicit log-likelihood `L n h ω = ∑_{i<n} log(1 + h_{ω i}/(√n π_{ω i}))`, its
-  --       joint measurability (immediate, the sample space being discrete), and the
-  --       expansion `L n h = ⟪η, Zₙ⟫ − ‖η‖²/2 + rₙ(h)` with `sup_{‖η‖=b} |rₙ| = o_P(1)` — a
-  --       `log(1+u) = u − u²/2 + O(u³)` estimate that is uniform over the compact sphere
-  --       because `π` is interior (`hπpos`) and `h` ranges over a bounded set, so
-  --       `|h_j|/(√n π_j) → 0` uniformly. This last item is the only genuine analysis left,
-  --       and it is a *finite-cell* computation, not a limit-theorem gap.
-  -- The mixture–Neyman–Pearson apparatus itself is no longer a debt of this file.
+  -- PROOF (for the repaired statement).  The instance of the now-closed transfer lemma
+  -- `AsymptoticMaximin.asymptotic_maximin_upper_bound` in which the sample space varies with
+  -- `n` and the alternative family is a parameter.  Step by step:
   --
-  -- ROUTE FULLY MAPPED AND PARTLY PROTOTYPED (wave 5).  The smooth-test twin of this
-  -- statement, `SmoothTest.smoothTest_maximin_upper_bound`, is now CLOSED axiom-clean by
-  -- exactly this transfer, so the plan below is not speculative; what remains here is the
-  -- multinomial-specific algebra.  Concretely:
-  --
-  -- (a) WHITENING, no matrix square roots needed.  Take `ψ₁,…,ψ_k : Fin (k+1) → ℝ` centred
-  --     and orthonormal in `L²(π)` and set `Φ η j := π j ⟪η, Ψ j⟫` with `Ψ = psiVec ψ`.  Then
-  --     `∑ⱼ (Φη)ⱼ = 0` and `λ(Φη) = ∑ⱼ (Φη)ⱼ²/πⱼ = ∑ⱼ πⱼ⟪η,Ψⱼ⟫² = ‖η‖²`, so `Φ` carries the
-  --     Euclidean sphere `‖η‖ = b` into `multinomialShell π b n`, which is what the
-  --     shell-parametrised transfer lemma needs.  Such a system EXISTS and its construction
-  --     compiles: `(√πⱼ)ⱼ` is a unit vector `w` of `EuclideanSpace ℝ (Fin (k+1))`, and
-  --     `OrthonormalBasis.fromOrthogonalSpanSingleton k (w ≠ 0)` gives an orthonormal basis
-  --     `e` of `(ℝ ∙ w)ᗮ` indexed by `Fin k`; put `ψ i j := (e i) j / √πⱼ`.  Centring is
-  --     `⟪w, e i⟫ = 0` and orthonormality is `⟪e i, e i'⟫ = δ`.
-  -- (b) CANONICAL EXPERIMENT.  `P₀ := (Q 1 0).map (X 1 0)` has singleton masses `πⱼ` by
-  --     `hcell`, so `∫ f dP₀ = ∑ⱼ πⱼ f j` by `integral_fintype`; the stage-`n` member is
-  --     `tilt n η := P₀.withDensity (1 + ⟪η,Ψ·⟫/√n)`, identified with `(Q n (Φη)).map (X n i)`
-  --     by `Measure.ext_of_singleton` + `hcell`.  Set `QC n η := ⨂_{i<n} tilt n η` on the
-  --     good set `{η | ∀ j, |⟪η,Ψⱼ⟫| ≤ √n/2}` and `QC n η := QC n 0` off it; `hdens` is then
-  --     `pi_withDensity_exp` with `L n η d = ∑_{l<n} log(1 + ⟪η,Ψ(d l)⟫/√n)`.
-  -- (c) `Zₙ ⇒ N(0, Iₖ)` is `SmoothTest.pi_scoreLaw_weakConverges` applied with `𝓧 = Fin (k+1)`
-  --     and this `P₀` — the ψ-score vector is literally the smooth-test score vector.
-  -- (d) LAN.  With `u_l = ⟪η,Ψ(d l)⟫/√n` and `|u_l| ≤ 1/2` on the good set,
-  --     `L = ∑_l u_l − ½∑_l u_l² + O(∑|u_l|³) = ⟪η, Zₙ⟫ − ½ ηᵀ Ŝₙ η + O(‖Ψ‖³b³/√n)` where
-  --     `Ŝₙ` is the empirical second-moment matrix of the scores.  Unlike the smooth-test
-  --     case the remainder is NOT deterministic: the envelope is
-  --     `D n d = (b²/2)∑_{i,i'} |Ŝₙ,ᵢᵢ' − δᵢᵢ'| + C/√n`, and `hD0` is a WLLN for the `k²`
-  --     empirical second moments under `⨂ P₀`.
-  -- (e) That WLLN is available and PROTOTYPED: transport `⨂_{i<n} P₀` to the canonical i.i.d.
-  --     space via `exists_iid`, apply `ProbabilityTheory.strong_law_ae` to each of the `k²`
-  --     bounded products `ψᵢψᵢ'`, and convert a.e. convergence to convergence in measure with
-  --     `tendstoInMeasure_of_tendsto_ae` (finite measure), then map the sets back.
-  -- (f) FINAL COMPARISON.  `S n := {η | b ≤ ‖η‖ ∧ ∀ j, |⟪η,Ψⱼ⟫| ≤ √n/2}` satisfies
-  --     `Φ '' S n ⊆ multinomialShell π b n` and contains the sphere `‖η‖ = b` for
-  --     `n ≥ ⌈(2b‖Ψ‖)²⌉`, so `sInf` over the shell image is `≤ sInf` over the `S n` image by
-  --     `csInf_le_csInf` (eventually, `S n` being nonempty), and the two `limsup`s compare by
-  --     `Filter.limsup_le_limsup` (both sequences lie in `[0,1]`).
-  --
-  -- Items (a), (d)'s scalar inequalities (`|log(1+u) − (u − u²/2)| ≤ 2|u|³` and
-  -- `|log(1+u)| ≤ 1` for `|u| ≤ 1/2`, both from `Real.abs_log_sub_add_sum_range_le`) and (e)
-  -- were written out and compile; what stopped this batch is the sheer elaboration cost of
-  -- the assembly (a dozen `set` abbreviations over a `Measure.pi` of `withDensity`s makes the
-  -- defeq checks in (b)/(d) time out at 3.2M heartbeats), not a missing mathematical input.
-  -- The next batch should carry (a), (d) and (e) as *separate named private lemmas with
-  -- explicit statements* rather than as `set` locals inside the assembly.
-  sorry
+  -- (a) WHITENING, no matrix square roots.  `exists_multinomial_scores` produces
+  --     `ψ₁,…,ψ_k : Fin (k+1) → ℝ` centred and orthonormal in `L²(π)` (from an orthonormal
+  --     basis of `(ℝ ∙ (√πⱼ)ⱼ)ᗮ`).  With `Ψ = psiVec ψ` and `Φ η j := πⱼ ⟪η, Ψ j⟫` one has
+  --     `∑ⱼ (Φη)ⱼ = 0` and `multinomialNoncentrality π (Φη) = ‖η‖²`, so `Φ` carries
+  --     `{‖η‖ ≥ b}` into the standardized shell.
+  -- (b) CANONICAL EXPERIMENT.  `P₀ := (Q 1 0).map (X 1 0)` has singleton masses `πⱼ`
+  --     (`hcell`), and `QC n η := ⨂_{i<n} P₀.withDensity (exp ∘ log(1 + ⟪η,Ψ·⟫/√n))` on the
+  --     good set `{η | ∀ j, |⟪η,Ψⱼ⟫/√n| ≤ 1/2}` (`⨂ P₀` off it, where also `L := 0`).  The
+  --     one-observation tilt is a probability measure with masses `πⱼ(1 + ⟪η,Ψⱼ⟫/√n)`
+  --     (`withDensity_exp_log_facts`), so `Measure.ext_of_singleton` + `hcell` + `hindep`
+  --     identify it with the law of the sample under `Q n (Φη)`, and `hφX` transfers the
+  --     power function to the `[0,1]`-truncated sample function.
+  -- (c) `Zₙ ⇒ N(0, Iₖ)` is `SmoothTest.pi_scoreLaw_weakConverges` with `𝓧 = Fin (k+1)`.
+  -- (d) LAN.  `L n η d = ∑_{l<n} log(1 + u_l)`, `u_l = ⟪η,Ψ(d l)⟫/√n`, and
+  --     `∑_l u_l = ⟪η, Zₙ⟫`; the two scalar estimates
+  --     `|log(1+u) − (u − u²/2)| ≤ 2|u|³` and `|log(1+u)| ≤ 1` for `|u| ≤ 1/2`
+  --     leave the *random* quadratic term `∑_l u_l²/2 − b²/2`, controlled by
+  --     `b²/2 · ∑_{i,i'} |Ŝₙ,ᵢᵢ' − δᵢᵢ'|`.  The envelope is therefore
+  --     `D n d = 2(bM)³/√n + (b²/2)·Tₙ(d)` once `√n ≥ 2bM` (`M` a bound on `‖Ψⱼ‖`), and a
+  --     crude `n + bM√n + b²/2` for the finitely many earlier stages.
+  -- (e) `hD0` is the WLLN `pi_secondMoment_prob_tendsto_zero` for the `k²` bounded empirical
+  --     second moments, transported to the canonical i.i.d. model by `exists_iid` and
+  --     `strong_law_ae`, then converted with `tendstoInMeasure_of_tendsto_ae`.
+  -- (f) FINAL COMPARISON.  `S n := {η | b ≤ ‖η‖ ∧ good}` contains the sphere `‖η‖ = b` for
+  --     `√n ≥ 2bM`, and `Φ '' S n ⊆ multinomialShell π b n`, so the shell infimum is `≤` the
+  --     `S n` infimum by `csInf_le_csInf` and the two `limsup`s compare by
+  --     `Filter.limsup_le_limsup`, both sequences lying in `[0,1]`.
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  -- ### 0. the whitened score system and the base cell law
+  obtain ⟨sc, hcent, hortho⟩ := exists_multinomial_scores hπpos hπsum
+  have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
+  set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
+  haveI hP₀prob : IsProbabilityMeasure P₀ :=
+    Measure.isProbabilityMeasure_map (hX 1 (0 : Fin 1)).aemeasurable
+  have hP₀sing : ∀ j, P₀ {j} = ENNReal.ofReal (π j) := by
+    intro j
+    have h := hcell 1 (0 : Fin (k + 1) → ℝ) (0 : Fin 1) j
+    simp only [Pi.zero_apply, Nat.cast_one, Real.sqrt_one, zero_div, add_zero] at h
+    rw [← ENNReal.ofReal_toReal (measure_ne_top P₀ {j})]
+    exact congrArg ENNReal.ofReal h
+  have hintP₀ : ∀ f : Fin (k + 1) → ℝ, (∫ x, f x ∂P₀) = ∑ j, π j * f j := by
+    intro f
+    rw [integral_fintype (μ := P₀) (f := f) Integrable.of_finite]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [Measure.real, hP₀sing j, ENNReal.toReal_ofReal (hπpos j).le, smul_eq_mul]
+  have hcentred' : ∀ i, (∫ x, sc i x ∂P₀) = 0 := fun i => by rw [hintP₀]; exact hcent i
+  have hortho' : ∀ i i', (∫ x, sc i x * sc i' x ∂P₀) = if i = i' then 1 else 0 := by
+    intro i i'
+    rw [hintP₀]
+    exact hortho i i'
+  -- ### 1. the score vectors and the whitening map
+  have hinnerΨ : ∀ (η : EuclideanSpace ℝ (Fin k)) (j : Fin (k + 1)),
+      ⟪η, psiVec sc j⟫_ℝ = ∑ i, η i * sc i j := fun η j => inner_psiVec sc η j
+  set M : ℝ := 1 + ∑ j, ‖psiVec sc j‖ with hMdef
+  have hM1 : (1 : ℝ) ≤ M := by
+    have : (0 : ℝ) ≤ ∑ j, ‖psiVec sc j‖ :=
+      Finset.sum_nonneg fun j _ => norm_nonneg _
+    rw [hMdef]; linarith
+  have hM0 : (0 : ℝ) < M := lt_of_lt_of_le one_pos hM1
+  have hΨle : ∀ j, ‖psiVec sc j‖ ≤ M := by
+    intro j
+    have h := Finset.single_le_sum (f := fun j => ‖psiVec sc j‖)
+      (fun j _ => norm_nonneg _) (Finset.mem_univ j)
+    rw [hMdef]; linarith
+  have hinnerle : ∀ (η : EuclideanSpace ℝ (Fin k)) (j : Fin (k + 1)),
+      |⟪η, psiVec sc j⟫_ℝ| ≤ ‖η‖ * M := by
+    intro η j
+    refine (abs_real_inner_le_norm η (psiVec sc j)).trans ?_
+    exact mul_le_mul_of_nonneg_left (hΨle j) (norm_nonneg η)
+  set Φ : EuclideanSpace ℝ (Fin k) → (Fin (k + 1) → ℝ) :=
+    fun η j => π j * ⟪η, psiVec sc j⟫_ℝ with hΦdef
+  have hΦsum : ∀ η, ∑ j, Φ η j = 0 := by
+    intro η
+    have h : ∑ j, Φ η j = ∑ i, η i * (∑ j, π j * sc i j) := by
+      simp only [hΦdef, hinnerΨ]
+      exact weighted_sum_lin (fun i => η i) (fun i j => sc i j) π
+    rw [h]
+    exact Finset.sum_eq_zero fun i _ => by rw [hcent i, mul_zero]
+  have hnormsq : ∀ η : EuclideanSpace ℝ (Fin k), ‖η‖ ^ 2 = ∑ i, η i * η i := by
+    intro η
+    rw [← real_inner_self_eq_norm_sq, inner_coord_sum]
+  have hΦnc : ∀ η, multinomialNoncentrality π (Φ η) = ‖η‖ ^ 2 := by
+    intro η
+    rw [multinomialNoncentrality, hnormsq]
+    have hstep : ∀ j, (Φ η j) ^ 2 / π j
+        = π j * ((∑ i, η i * sc i j) * (∑ i, η i * sc i j)) := by
+      intro j
+      rw [hΦdef]
+      simp only [hinnerΨ]
+      rw [div_eq_iff (ne_of_gt (hπpos j))]
+      ring
+    rw [Finset.sum_congr rfl fun j _ => hstep j,
+      weighted_sum_quad (fun i => η i) (fun i j => sc i j) π]
+    have hfin : ∀ i i' : Fin k, (∑ j, π j * (sc i j * sc i' j)) = if i = i' then 1 else 0 :=
+      hortho
+    rw [Finset.sum_congr rfl fun i _ =>
+      Finset.sum_congr rfl fun i' _ => by rw [hfin i i']]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp
+  -- ### 2. the canonical experiment
+  set uloc : ℕ → EuclideanSpace ℝ (Fin k) → Fin (k + 1) → ℝ :=
+    fun n η j => ⟪η, psiVec sc j⟫_ℝ / Real.sqrt (n : ℝ) with hulocdef
+  set Good : ℕ → EuclideanSpace ℝ (Fin k) → Prop :=
+    fun n η => ∀ j, |uloc n η j| ≤ 1 / 2 with hGooddef
+  set tilt : ℕ → EuclideanSpace ℝ (Fin k) → Measure (Fin (k + 1)) :=
+    fun n η => P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + uloc n η x)))
+    with htiltdef
+  have htiltfacts : ∀ n η, Good n η →
+      (∀ j, (tilt n η) {j} = ENNReal.ofReal (π j * (1 + uloc n η j)))
+        ∧ IsProbabilityMeasure (tilt n η) := by
+    intro n η hG
+    refine withDensity_exp_log_facts (p := π) (v := uloc n η) hP₀sing
+      (fun j => (hπpos j).le) hG ?_
+    have h1 : ∑ j, π j * (1 + uloc n η j) = (∑ j, π j) + ∑ j, π j * uloc n η j := by
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun j _ => by ring
+    have h2 : ∑ j, π j * uloc n η j = 0 := by
+      have hterm : ∀ j, π j * uloc n η j = Φ η j / Real.sqrt (n : ℝ) := by
+        intro j
+        rw [hulocdef, hΦdef]
+        ring
+      rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.sum_div, hΦsum, zero_div]
+    rw [h1, hπsum, h2, add_zero]
+  haveI htiltfin : ∀ n η, IsFiniteMeasure (tilt n η) := by
+    intro n η
+    refine ⟨?_⟩
+    rw [htiltdef]
+    simp only
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ, lintegral_fintype]
+    refine ENNReal.sum_lt_top.mpr fun j _ => ENNReal.mul_lt_top ENNReal.ofReal_lt_top ?_
+    exact measure_lt_top _ _
+  set QC : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Fin n → Fin (k + 1)) :=
+    fun n η => if Good n η then Measure.pi (fun _ : Fin n => tilt n η)
+      else Measure.pi (fun _ : Fin n => P₀) with hQCdef
+  have hQCgood : ∀ n η, Good n η → QC n η = Measure.pi (fun _ : Fin n => tilt n η) := by
+    intro n η hG
+    simp only [hQCdef, if_pos hG]
+  have hQCbad : ∀ n η, ¬ Good n η → QC n η = Measure.pi (fun _ : Fin n => P₀) := by
+    intro n η hG
+    simp only [hQCdef, if_neg hG]
+  have hQCprob : ∀ n η, IsProbabilityMeasure (QC n η) := by
+    intro n η
+    by_cases hG : Good n η
+    · rw [hQCgood n η hG]
+      haveI := (htiltfacts n η hG).2
+      infer_instance
+    · rw [hQCbad n η hG]
+      infer_instance
+  haveI := hQCprob
+  have hGood0 : ∀ n, Good n (0 : EuclideanSpace ℝ (Fin k)) := by
+    intro n j
+    simp [hulocdef]
+  have htilt0 : ∀ n, tilt n (0 : EuclideanSpace ℝ (Fin k)) = P₀ := by
+    intro n
+    rw [htiltdef]
+    simp only
+    have hone : ∀ x : Fin (k + 1),
+        ENNReal.ofReal (Real.exp (Real.log (1 + uloc n (0 : EuclideanSpace ℝ (Fin k)) x)))
+          = 1 := by
+      intro x
+      simp [hulocdef]
+    rw [funext hone]
+    exact withDensity_one
+  have hQC0 : ∀ n : ℕ, QC n 0 = Measure.pi (fun _ : Fin n => P₀) := by
+    intro n
+    rw [hQCgood n 0 (hGood0 n), htilt0 n]
+  set LC : (n : ℕ) → EuclideanSpace ℝ (Fin k) → (Fin n → Fin (k + 1)) → ℝ :=
+    fun n η d => if Good n η then ∑ i, Real.log (1 + uloc n η (d i)) else 0 with hLCdef
+  have hdens : ∀ n η, QC n η
+      = (QC n 0).withDensity (fun d => ENNReal.ofReal (Real.exp (LC n η d))) := by
+    intro n η
+    by_cases hG : Good n η
+    · have hu : Measurable (fun x : Fin (k + 1) => Real.log (1 + uloc n η x)) :=
+        measurable_of_countable _
+      haveI : IsProbabilityMeasure
+          (P₀.withDensity fun x => ENNReal.ofReal (Real.exp (Real.log (1 + uloc n η x)))) :=
+        (htiltfacts n η hG).2
+      rw [hQCgood n η hG, htiltdef]
+      simp only
+      rw [pi_withDensity_exp (n := n) (P₀ := P₀) hu, hQC0 n]
+      congr 1
+      funext d
+      simp only [hLCdef, if_pos hG]
+    · rw [hQCbad n η hG, hQC0 n]
+      have hone : (fun d : Fin n → Fin (k + 1) => ENNReal.ofReal (Real.exp (LC n η d)))
+          = fun _ => 1 := by
+        funext d
+        simp only [hLCdef, if_neg hG]
+        simp
+      rw [hone]
+      exact withDensity_one.symm
+  -- ### 3. transfer of the power function to the canonical experiment
+  choose ρ0 hρ0meas hρ0val using hφX
+  set ρ : (n : ℕ) → (Fin n → Fin (k + 1)) → ℝ :=
+    fun n d => min 1 (max 0 (ρ0 n d)) with hρdef
+  have hρmeas : ∀ n, Measurable (ρ n) := fun n => measurable_of_countable _
+  have hρcrit : ∀ n, IsCriticalFn (ρ n) := by
+    intro n
+    refine ⟨hρmeas n, fun d => ⟨le_min zero_le_one (le_max_left _ _), min_le_left _ _⟩⟩
+  have hρval : ∀ n ω, φ n ω = ρ n (fun i => X n i ω) := by
+    intro n ω
+    obtain ⟨h0, h1⟩ := (hφ n).2 ω
+    rw [hρdef]
+    simp only
+    rw [← hρ0val n ω, max_eq_right h0, min_eq_right h1]
+  have hsample : ∀ n η, Good n η →
+      (Q n (Φ η)).map (fun ω (i : Fin n) => X n i ω) = QC n η := by
+    intro n η hG
+    rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX n i).aemeasurable)).1 (hindep n (Φ η)),
+      hQCgood n η hG]
+    congr 1
+    funext i
+    haveI : IsProbabilityMeasure ((Q n (Φ η)).map (X n i)) :=
+      Measure.isProbabilityMeasure_map (hX n i).aemeasurable
+    refine Measure.ext_of_singleton fun j => ?_
+    rw [(htiltfacts n η hG).1 j,
+      ← ENNReal.ofReal_toReal (measure_ne_top ((Q n (Φ η)).map (X n i)) {j})]
+    congr 1
+    rw [hcell n (Φ η) i j, hulocdef, hΦdef]
+    ring
+  have hpower : ∀ n η, Good n η → power (Q n) (φ n) (Φ η) = power (QC n) (ρ n) η := by
+    intro n η hG
+    simp only [power]
+    rw [show (∫ ω, φ n ω ∂(Q n (Φ η))) = ∫ ω, ρ n (fun i => X n i ω) ∂(Q n (Φ η)) from
+        integral_congr_ae (Filter.Eventually.of_forall fun ω => hρval n ω),
+      ← hsample n η hG,
+      integral_map (measurable_pi_lambda _ (fun i => hX n i)).aemeasurable
+        (hρmeas n).aestronglyMeasurable]
+  have hΦ0 : Φ (0 : EuclideanSpace ℝ (Fin k)) = (0 : Fin (k + 1) → ℝ) := by
+    funext j
+    simp [hΦdef]
+  have hlevel' : Tendsto (fun n => power (QC n) (ρ n) 0) atTop (nhds α) := by
+    refine hlevel.congr fun n => ?_
+    rw [← hpower n 0 (hGood0 n), hΦ0]
+  -- ### 4. the centring statistics
+  set ZC : (n : ℕ) → (Fin n → Fin (k + 1)) → EuclideanSpace ℝ (Fin k) :=
+    fun n d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec sc (d i) with hZCdef
+  have hZCmeas : ∀ n, Measurable (ZC n) := fun n => measurable_of_countable _
+  have hZ : AsymptoticStatistics.WeakConverges (fun n => (QC n 0).map (ZC n))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have hbrick := pi_scoreLaw_weakConverges (P₀ := P₀) hscmeas hortho' hcentred'
+    have heq : ∀ n : ℕ, (QC n 0).map (ZC n)
+        = (Measure.pi fun _ : Fin n => P₀).map
+            (fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec sc (d i)) := by
+      intro n
+      rw [hQC0 n, hZCdef]
+    simp only [heq]
+    exact hbrick
+  -- ### 5. joint measurability of the log-likelihood field
+  have hulocmeas : ∀ (n : ℕ) (j : Fin (k + 1)),
+      Measurable fun η : EuclideanSpace ℝ (Fin k) => uloc n η j := by
+    intro n j
+    rw [hulocdef]
+    exact ((continuous_id.inner continuous_const).div_const _).measurable
+  have hGoodmeas : ∀ n, MeasurableSet {η : EuclideanSpace ℝ (Fin k) | Good n η} := by
+    intro n
+    have hset : {η : EuclideanSpace ℝ (Fin k) | Good n η}
+        = ⋂ j, {η : EuclideanSpace ℝ (Fin k) | |uloc n η j| ≤ 1 / 2} := by
+      ext η
+      simp [hGooddef, Set.mem_iInter]
+    rw [hset]
+    exact MeasurableSet.iInter fun j =>
+      measurableSet_le (hulocmeas n j).abs measurable_const
+  have hLCmeas : ∀ n, Measurable
+      fun p : EuclideanSpace ℝ (Fin k) × (Fin n → Fin (k + 1)) => LC n p.1 p.2 := by
+    intro n
+    refine measurable_from_prod_countable_left fun d => ?_
+    simp only [hLCdef]
+    refine Measurable.ite (hGoodmeas n) ?_ measurable_const
+    refine Finset.univ.measurable_sum fun i _ => ?_
+    exact Real.measurable_log.comp (measurable_const.add (hulocmeas n (d i)))
+  -- ### 6. the LAN envelope
+  set Tstat : (n : ℕ) → (Fin n → Fin (k + 1)) → ℝ := fun n d =>
+    ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, sc i (d l) * sc i' (d l)) - (if i = i' then 1 else 0)|
+    with hTstatdef
+  set DC : (n : ℕ) → (Fin n → Fin (k + 1)) → ℝ := fun n d =>
+    if 2 * b * M ≤ Real.sqrt (n : ℝ) then
+      2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) + b ^ 2 / 2 * Tstat n d
+    else (n : ℝ) + b * M * Real.sqrt (n : ℝ) + b ^ 2 / 2 with hDCdef
+  have hZinner : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)) (d : Fin n → Fin (k + 1)),
+      ⟪η, ZC n d⟫_ℝ = ∑ l, uloc n η (d l) := by
+    intro n η d
+    rw [hZCdef]
+    simp only
+    rw [real_inner_smul_right, inner_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [hulocdef]
+    simp only
+    rw [div_eq_inv_mul]
+  have hZnorm : ∀ (n : ℕ) (d : Fin n → Fin (k + 1)),
+      ‖ZC n d‖ ≤ Real.sqrt (n : ℝ) * M := by
+    intro n d
+    rw [hZCdef]
+    simp only
+    rw [norm_smul, norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
+    have h1 : ‖∑ i, psiVec sc (d i)‖ ≤ ∑ i : Fin n, ‖psiVec sc (d i)‖ :=
+      norm_sum_le _ _
+    have h2 : (∑ i : Fin n, ‖psiVec sc (d i)‖) ≤ (n : ℝ) * M := by
+      calc (∑ i : Fin n, ‖psiVec sc (d i)‖) ≤ ∑ _i : Fin n, M :=
+            Finset.sum_le_sum fun i _ => hΨle (d i)
+        _ = (n : ℝ) * M := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    have h3 : (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * M) = Real.sqrt (n : ℝ) * M := by
+      rw [← mul_assoc, inv_mul_eq_div, Real.div_sqrt]
+    calc (Real.sqrt (n : ℝ))⁻¹ * ‖∑ i, psiVec sc (d i)‖
+        ≤ (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * M) := by
+          refine mul_le_mul_of_nonneg_left (h1.trans h2) ?_
+          positivity
+      _ = Real.sqrt (n : ℝ) * M := h3
+  have hcoordle : ∀ (η : EuclideanSpace ℝ (Fin k)), ‖η‖ = b → ∀ i, |η i| ≤ b := by
+    intro η hη i
+    have h1 : η i * η i ≤ ∑ i', η i' * η i' :=
+      Finset.single_le_sum (f := fun i' => η i' * η i')
+        (fun i' _ => mul_self_nonneg _) (Finset.mem_univ i)
+    rw [← hnormsq, hη] at h1
+    nlinarith [abs_nonneg (η i), sq_abs (η i), hb.le]
+  have hGoodBig : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)), ‖η‖ = b →
+      2 * b * M ≤ Real.sqrt (n : ℝ) → Good n η := by
+    intro n η hη hbr
+    have h2bM : (0 : ℝ) < 2 * b * M := by
+      have hbm := mul_pos hb hM0
+      nlinarith
+    have hspos : 0 < Real.sqrt (n : ℝ) := lt_of_lt_of_le h2bM hbr
+    intro j
+    have h1 : |⟪η, psiVec sc j⟫_ℝ| ≤ b * M := by
+      have h := hinnerle η j
+      rwa [hη] at h
+    rw [hulocdef]
+    simp only
+    rw [abs_div, abs_of_pos hspos, div_le_iff₀ hspos]
+    nlinarith
+  have hLAN : ∀ n η (d : Fin n → Fin (k + 1)), ‖η‖ = b →
+      |LC n η d - (⟪η, ZC n d⟫_ℝ - b ^ 2 / 2)| ≤ DC n d := by
+    intro n η d hη
+    have hub : ∀ j, |uloc n η j| ≤ b * M / Real.sqrt (n : ℝ) := by
+      intro j
+      have h1 : |⟪η, psiVec sc j⟫_ℝ| ≤ b * M := by
+        have := hinnerle η j
+        rwa [hη] at this
+      rcases eq_or_lt_of_le (Real.sqrt_nonneg (n : ℝ)) with hs | hs
+      · rw [hulocdef]
+        simp only
+        rw [← hs]
+        simp
+      · rw [hulocdef]
+        simp only
+        rw [abs_div, abs_of_pos hs]
+        gcongr
+    have hinnerbd : |⟪η, ZC n d⟫_ℝ| ≤ b * M * Real.sqrt (n : ℝ) := by
+      refine (abs_real_inner_le_norm η (ZC n d)).trans ?_
+      rw [hη]
+      calc b * ‖ZC n d‖ ≤ b * (Real.sqrt (n : ℝ) * M) :=
+            mul_le_mul_of_nonneg_left (hZnorm n d) hb.le
+        _ = b * M * Real.sqrt (n : ℝ) := by ring
+    by_cases hbr : 2 * b * M ≤ Real.sqrt (n : ℝ)
+    · have h2bM : (0 : ℝ) < 2 * b * M := by
+        have hbm := mul_pos hb hM0
+        nlinarith
+      have hspos : 0 < Real.sqrt (n : ℝ) := lt_of_lt_of_le h2bM hbr
+      have hG : Good n η := hGoodBig n η hη hbr
+      have hDCval : DC n d = 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) + b ^ 2 / 2 * Tstat n d := by
+        simp only [hDCdef, if_pos hbr]
+      have hLCval : LC n η d = ∑ l, Real.log (1 + uloc n η (d l)) := by
+        simp only [hLCdef, if_pos hG]
+      rw [hDCval, hLCval, hZinner n η d]
+      -- the second-order expansion
+      have hsum1 : (∑ l, (Real.log (1 + uloc n η (d l))
+            - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)))
+          = (∑ l, Real.log (1 + uloc n η (d l)))
+            - ((∑ l, uloc n η (d l)) - (∑ l, (uloc n η (d l)) ^ 2) / 2) := by
+        rw [Finset.sum_sub_distrib]
+        congr 1
+        rw [Finset.sum_sub_distrib]
+        congr 1
+        rw [← Finset.sum_div]
+      have hC : (∑ l, (uloc n η (d l)) ^ 2)
+          = ∑ i, ∑ i', (η i * η i')
+            * ((n : ℝ)⁻¹ * ∑ l, sc i (d l) * sc i' (d l)) := by
+        have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+        have e : ∀ l, (uloc n η (d l)) ^ 2
+            = (n : ℝ)⁻¹ * ((∑ i, η i * sc i (d l)) * (∑ i, η i * sc i (d l))) := by
+          intro l
+          rw [hulocdef]
+          simp only [hinnerΨ]
+          rw [div_pow, Real.sq_sqrt hn0]
+          ring
+        rw [Finset.sum_congr rfl fun l _ => e l,
+          weighted_sum_quad (fun i => η i) (fun i l => sc i (d l)) (fun _ => (n : ℝ)⁻¹)]
+        exact Finset.sum_congr rfl fun i _ =>
+          Finset.sum_congr rfl fun i' _ => by rw [← Finset.mul_sum]
+      have hb2 : b ^ 2 = ∑ i, ∑ i', (η i * η i') * (if i = i' then 1 else 0) := by
+        rw [← hη, hnormsq]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        simp
+      have hdiff : (∑ l, (uloc n η (d l)) ^ 2) - b ^ 2
+          = ∑ i, ∑ i', (η i * η i')
+            * ((n : ℝ)⁻¹ * (∑ l, sc i (d l) * sc i' (d l)) - (if i = i' then 1 else 0)) := by
+        rw [hC, hb2, ← Finset.sum_sub_distrib]
+        refine Finset.sum_congr rfl fun i _ => ?_
+        rw [← Finset.sum_sub_distrib]
+        exact Finset.sum_congr rfl fun i' _ => by ring
+      have habsdiff : |(∑ l, (uloc n η (d l)) ^ 2) - b ^ 2| ≤ b ^ 2 * Tstat n d := by
+        rw [hdiff, hTstatdef]
+        simp only
+        rw [Finset.mul_sum]
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+        rw [Finset.mul_sum]
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i' _ => ?_)
+        rw [abs_mul, abs_mul]
+        refine mul_le_mul_of_nonneg_right ?_ (abs_nonneg _)
+        have h1 := hcoordle η hη i
+        have h2 := hcoordle η hη i'
+        nlinarith [abs_nonneg (η i), abs_nonneg (η i')]
+      have hcubebd : (∑ l, |Real.log (1 + uloc n η (d l))
+            - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)|)
+          ≤ 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) := by
+        have hterm : ∀ l : Fin n, |Real.log (1 + uloc n η (d l))
+            - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)|
+            ≤ 2 * (b * M / Real.sqrt (n : ℝ)) ^ 3 := by
+          intro l
+          refine (abs_log_one_add_sub_quad_le (hG (d l))).trans ?_
+          have h1 : |uloc n η (d l)| ≤ b * M / Real.sqrt (n : ℝ) := hub (d l)
+          have h2 : (0 : ℝ) ≤ |uloc n η (d l)| := abs_nonneg _
+          have h3 := pow_le_pow_left₀ h2 h1 3
+          linarith
+        calc (∑ l, |Real.log (1 + uloc n η (d l))
+              - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)|)
+            ≤ ∑ _l : Fin n, 2 * (b * M / Real.sqrt (n : ℝ)) ^ 3 :=
+              Finset.sum_le_sum fun l _ => hterm l
+          _ = (n : ℝ) * (2 * (b * M / Real.sqrt (n : ℝ)) ^ 3) := by
+              rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+          _ = Real.sqrt (n : ℝ) ^ 2 * (2 * (b * M / Real.sqrt (n : ℝ)) ^ 3) := by
+              rw [Real.sq_sqrt (Nat.cast_nonneg n)]
+          _ = 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) := by
+              field_simp
+      have hrw : (∑ l, Real.log (1 + uloc n η (d l)))
+            - ((∑ l, uloc n η (d l)) - b ^ 2 / 2)
+          = (∑ l, (Real.log (1 + uloc n η (d l))
+              - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)))
+            - (((∑ l, (uloc n η (d l)) ^ 2) - b ^ 2) / 2) := by
+        rw [hsum1]
+        ring
+      rw [hrw]
+      have htri : |(∑ l, (Real.log (1 + uloc n η (d l))
+              - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2)))
+            - (((∑ l, (uloc n η (d l)) ^ 2) - b ^ 2) / 2)|
+          ≤ |∑ l, (Real.log (1 + uloc n η (d l))
+              - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2))|
+            + |((∑ l, (uloc n η (d l)) ^ 2) - b ^ 2) / 2| := by
+        rw [sub_eq_add_neg]
+        exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
+      refine htri.trans ?_
+      have hA : |∑ l, (Real.log (1 + uloc n η (d l))
+            - (uloc n η (d l) - (uloc n η (d l)) ^ 2 / 2))|
+          ≤ 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) :=
+        (Finset.abs_sum_le_sum_abs _ _).trans hcubebd
+      have hB : |((∑ l, (uloc n η (d l)) ^ 2) - b ^ 2) / 2| ≤ b ^ 2 / 2 * Tstat n d := by
+        rw [abs_div, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
+        rw [div_le_iff₀ (by norm_num : (0 : ℝ) < 2)]
+        nlinarith
+      linarith
+    · have hDCval : DC n d = (n : ℝ) + b * M * Real.sqrt (n : ℝ) + b ^ 2 / 2 := by
+        simp only [hDCdef, if_neg hbr]
+      rw [hDCval, hZinner n η d]
+      have hZbd : |(∑ l, uloc n η (d l)) - b ^ 2 / 2|
+          ≤ b * M * Real.sqrt (n : ℝ) + b ^ 2 / 2 := by
+        have h1 : |∑ l, uloc n η (d l)| ≤ b * M * Real.sqrt (n : ℝ) := by
+          rw [← hZinner n η d]
+          exact hinnerbd
+        have h2 : |(∑ l, uloc n η (d l)) - b ^ 2 / 2|
+            ≤ |∑ l, uloc n η (d l)| + |b ^ 2 / 2| := by
+          rw [sub_eq_add_neg]
+          exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
+        rw [abs_of_nonneg (by positivity : (0 : ℝ) ≤ b ^ 2 / 2)] at h2
+        linarith
+      by_cases hG : Good n η
+      · have hLCval : LC n η d = ∑ l, Real.log (1 + uloc n η (d l)) := by
+          simp only [hLCdef, if_pos hG]
+        rw [hLCval]
+        have hLbd : |∑ l, Real.log (1 + uloc n η (d l))| ≤ (n : ℝ) := by
+          refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+          calc (∑ l : Fin n, |Real.log (1 + uloc n η (d l))|) ≤ ∑ _l : Fin n, (1 : ℝ) :=
+                Finset.sum_le_sum fun l _ => abs_log_one_add_le_one (hG (d l))
+            _ = (n : ℝ) := by
+                rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+                  mul_one]
+        have htri : |(∑ l, Real.log (1 + uloc n η (d l)))
+              - ((∑ l, uloc n η (d l)) - b ^ 2 / 2)|
+            ≤ |∑ l, Real.log (1 + uloc n η (d l))|
+              + |(∑ l, uloc n η (d l)) - b ^ 2 / 2| := by
+          rw [sub_eq_add_neg]
+          exact (abs_add_le _ _).trans_eq (by rw [abs_neg])
+        linarith
+      · have hLCval : LC n η d = 0 := by
+          simp only [hLCdef, if_neg hG]
+        rw [hLCval, zero_sub, abs_neg]
+        have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+        linarith
+  -- ### 7. the envelope is `o_P(1)` under the null
+  have hsqrtatTop : Tendsto (fun n : ℕ => Real.sqrt (n : ℝ)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+  have hbigev : ∀ᶠ n : ℕ in atTop, 2 * b * M ≤ Real.sqrt (n : ℝ) :=
+    hsqrtatTop.eventually_ge_atTop _
+  have hD0 : ∀ ε > 0, Tendsto (fun n => ((QC n 0) {d | ε ≤ DC n d}).toReal) atTop (nhds 0) := by
+    intro ε hε
+    have hbrick := pi_secondMoment_prob_tendsto_zero (P₀ := P₀) sc hortho'
+      (ε := ε / b ^ 2) (div_pos hε (pow_pos hb 2))
+    have htend : Tendsto (fun n : ℕ => 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ)) atTop (nhds 0) :=
+      Filter.Tendsto.div_atTop tendsto_const_nhds hsqrtatTop
+    have hsmall : ∀ᶠ n : ℕ in atTop, 2 * (b * M) ^ 3 / Real.sqrt (n : ℝ) < ε / 2 :=
+      htend.eventually (gt_mem_nhds (by linarith))
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbrick
+      (Filter.Eventually.of_forall fun n => ENNReal.toReal_nonneg) ?_
+    filter_upwards [hsmall, hbigev] with n hn1 hn2
+    rw [hQC0 n]
+    refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono ?_)
+    intro d hd
+    simp only [Set.mem_setOf_eq] at hd ⊢
+    simp only [hDCdef, if_pos hn2] at hd
+    have hT : Tstat n d = ∑ i, ∑ i', |(n : ℝ)⁻¹ * (∑ l, sc i (d l) * sc i' (d l))
+        - (if i = i' then 1 else 0)| := by
+      simp only [hTstatdef]
+    rw [← hT]
+    rw [div_le_iff₀ (pow_pos hb 2)]
+    nlinarith
+  -- ### 8. the alternative families
+  set S : ℕ → Set (EuclideanSpace ℝ (Fin k)) :=
+    fun n => {η | b ≤ ‖η‖ ∧ Good n η} with hSdef
+  have hSsphere : ∀ᶠ n : ℕ in atTop, {η : EuclideanSpace ℝ (Fin k) | ‖η‖ = b} ⊆ S n := by
+    filter_upwards [hbigev] with n hn
+    intro η hη
+    exact ⟨le_of_eq (hη : ‖η‖ = b).symm, hGoodBig n η hη hn⟩
+  obtain ⟨η₀, hη₀⟩ : ∃ η : EuclideanSpace ℝ (Fin k), ‖η‖ = b := by
+    refine ⟨b • EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ), ?_⟩
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, EuclideanSpace.norm_single, norm_one,
+      mul_one]
+  -- ### 9. the transfer lemma
+  have hmain := asymptotic_maximin_upper_bound (Ω := fun n => (Fin n → Fin (k + 1)))
+    (Q := QC) (φ := ρ) (Z := ZC) (L := LC) (D := DC) (S := S)
+    hk hb hα hα1 hc hρcrit hlevel' hZCmeas hZ hLCmeas hdens hLAN hD0 hSsphere
+  refine le_trans ?_ hmain
+  -- ### 10. comparison of the two families of infima
+  have hpow0 : ∀ (n : ℕ) (h : Fin (k + 1) → ℝ), 0 ≤ power (Q n) (φ n) h := by
+    intro n h
+    simp only [power]
+    exact integral_nonneg fun ω => ((hφ n).2 ω).1
+  have hmem : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)), b ≤ ‖η‖ → Good n η →
+      Φ η ∈ multinomialShell π b n := by
+    intro n η hbη hG
+    refine ⟨hΦsum η, ?_, ?_⟩
+    · rw [hΦnc η]
+      nlinarith [norm_nonneg η]
+    · intro j
+      have h1 : Φ η j / Real.sqrt (n : ℝ) = π j * uloc n η j := by
+        rw [hΦdef, hulocdef]
+        ring
+      rw [h1]
+      have h2 := (abs_le.mp (hG j)).1
+      nlinarith [hπpos j]
+  have hsubset : ∀ n, (fun η => power (QC n) (ρ n) η) '' S n
+      ⊆ (fun h => power (Q n) (φ n) h) '' multinomialShell π b n := by
+    intro n y hy
+    obtain ⟨η, hη, hval⟩ := hy
+    exact ⟨Φ η, hmem n η hη.1 hη.2, (hpower n η hη.2).trans hval⟩
+  have hbdd : ∀ n, BddBelow ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n) := by
+    intro n
+    refine ⟨0, fun x hx => ?_⟩
+    obtain ⟨h, _, rfl⟩ := hx
+    exact hpow0 n h
+  have hcmp : ∀ᶠ n : ℕ in atTop,
+      sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)
+        ≤ sInf ((fun η => power (QC n) (ρ n) η) '' S n) := by
+    filter_upwards [hSsphere] with n hn
+    exact csInf_le_csInf (hbdd n) ⟨power (QC n) (ρ n) η₀, ⟨η₀, hn hη₀, rfl⟩⟩ (hsubset n)
+  refine Filter.limsup_le_limsup hcmp ?_ ?_
+  · refine Filter.isCoboundedUnder_le_of_eventually_le atTop (x := (0 : ℝ)) ?_
+    filter_upwards [hSsphere] with n hn
+    refine le_csInf ⟨power (Q n) (φ n) (Φ η₀), ⟨Φ η₀, hmem n η₀ (hn hη₀).1 (hn hη₀).2, rfl⟩⟩ ?_
+    rintro x hx
+    obtain ⟨h, _, rfl⟩ := hx
+    exact hpow0 n h
+  · refine ⟨1, Filter.eventually_map.mpr ?_⟩
+    have hρpow1 : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)), power (QC n) (ρ n) η ≤ 1 := by
+      intro n η
+      haveI := hQCprob n η
+      have hbdd1 : ∀ d : Fin n → Fin (k + 1), ‖ρ n d‖ ≤ 1 := by
+        intro d
+        rw [Real.norm_eq_abs, abs_of_nonneg ((hρcrit n).2 d).1]
+        exact ((hρcrit n).2 d).2
+      have hint : Integrable (ρ n) (QC n η) :=
+        Integrable.mono' (integrable_const (1 : ℝ)) (hρmeas n).aestronglyMeasurable
+          (Filter.Eventually.of_forall hbdd1)
+      have hle := integral_mono hint (integrable_const (1 : ℝ))
+        (fun d => ((hρcrit n).2 d).2)
+      simp only [power]
+      simpa using hle
+    have hρpow0 : ∀ (n : ℕ) (η : EuclideanSpace ℝ (Fin k)), 0 ≤ power (QC n) (ρ n) η := by
+      intro n η
+      simp only [power]
+      exact integral_nonneg fun d => ((hρcrit n).2 d).1
+    filter_upwards [hSsphere] with n hn
+    have hbddS : BddBelow ((fun η => power (QC n) (ρ n) η) '' S n) := by
+      refine ⟨0, fun x hx => ?_⟩
+      obtain ⟨η, _, rfl⟩ := hx
+      exact hρpow0 n η
+    exact (csInf_le hbddS ⟨η₀, hn hη₀, rfl⟩).trans (hρpow1 n η₀)
 
 /-! ### (ii) Attainment by Pearson's test -/
 
@@ -296,7 +1136,40 @@ uniform over a shell which is unbounded and moves with `n`.  The smooth-test twi
 `smoothTest_shell_minPower_tendsto` is strictly easier (its shell is compact and fixed), so it
 should be closed first; this one additionally needs the diagonal-sequence case `λ(hₙ) → ∞`,
 where the honest route is a tightness/Berry–Esseen estimate for the drifting multinomial rows
-rather than any per-`h` weak limit. -/
+rather than any per-`h` weak limit.
+
+TODO (RE-DERIVED, wave 6; the "uniform Berry–Esseen over the shell" diagnosis above is
+SUPERSEDED, and the statement is confirmed TRUE).  No uniformity and no Berry–Esseen is
+needed.  Since the conclusion is about an *infimum*, the `liminf ≥` half reduces by a
+subsequence argument to a *drifting-parameter* limit law — the same theorem as the
+fixed-parameter one, with no new analysis:
+
+* choose `hₙ ∈ multinomialShell π b n` with `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹` (the shell is
+  nonempty for large `n` and the powers lie in `[0,1]`), and argue along an arbitrary
+  subsequence realising the `liminf`;
+* CASE A, `(hₙ)` bounded.  A further subsequence converges, `hₙ → h₀`, and both constraints
+  `∑ⱼ hⱼ = 0`, `λ(h) ≥ b²` are closed, so `∑ⱼ h₀ⱼ = 0` and `λ(h₀) ≥ b²`.  What is needed is
+  `power_n(hₙ) → ncχ²_k(λ(h₀))(c,∞)`, i.e. the DRIFTING version of the closed
+  `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral`, whose cell hypothesis
+  `((μ n) {j}).toReal = πⱼ + hⱼ/√n` carries a *fixed* `h`.  That proof already runs through
+  `Bootstrap.Multivariate.meanVec_root_tendsto`, whose class `meanVecSeqClass` constrains only
+  the sequence of per-observation laws — weak convergence to the null multinomial, mean vectors
+  and covariances converging — and every one of those holds verbatim for `hₙ → h₀`, the drift
+  entering only through the Slutsky shift `√n·(mean) → h₀`.  So the missing brick is a
+  *restatement of an existing closed lemma* with `h : ℕ → Fin (k+1) → ℝ`; it belongs to
+  `ChiSquaredMultinomial.lean`, which is outside this lane's scope, which is why it is not done
+  here.  `noncentralChiSquared_tail_mono` then upgrades `λ(h₀) ≥ b²` to the required bound.
+* CASE B, `‖hₙ‖ → ∞`.  Here `power_n(hₙ) → 1` by a ONE-CELL Chebyshev estimate, not by any
+  multivariate expansion: pick `jₙ` maximising `|h_{n,j}|`; from
+  `λ(h) ≤ (∑ⱼ πⱼ⁻¹)·max_j hⱼ²` the maximal coordinate diverges; `Y_{jₙ}` is a sum of `n`
+  i.i.d. indicators with success probability `π_{jₙ} + h_{n,jₙ}/√n ∈ [0,1]`, so
+  `(Y_{jₙ} − nπ_{jₙ})/√(nπ_{jₙ})` has mean `h_{n,jₙ}/√π_{jₙ} → ±∞` and variance
+  `p(1−p)/π_{jₙ} ≤ (min_j πⱼ)⁻¹`; `Qₙ` dominates that single squared term, so
+  `P{Qₙ ≤ c} → 0`.  This branch is elementary and in scope.
+
+The `limsup ≤` half is unchanged and already available from
+`pearsonQ_local_power_nondegenerate`.  The file-level debt is therefore exactly the drifting
+restatement of the multinomial local CLT (case A); the rest is bookkeeping. -/
 private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : Fin (k + 1) → ℝ}
     {Q : ℕ → (Fin (k + 1) → ℝ) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)}

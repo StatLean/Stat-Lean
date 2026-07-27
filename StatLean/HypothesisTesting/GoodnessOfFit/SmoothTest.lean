@@ -128,8 +128,11 @@ are already centred in `L²(P₀)` (`E₀ψⱼ = 0`) with covariance the identit
 so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero and covariance
 `Iₖ`; the standardised sum converges to `N(0, Iₖ)` and the squared norm is `Sₙ`. -/
 
-/-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`. -/
-private noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
+/-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`.
+
+Not private: the multinomial maximin bound of `ChiSquaredMaximin.lean` runs this file's
+canonical-experiment machinery with `𝓧 = Fin (k+1)` and the whitened multinomial scores. -/
+noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
     EuclideanSpace ℝ (Fin k) :=
   WithLp.toLp 2 (fun j => ψ j x)
 
@@ -391,7 +394,7 @@ weak limit of the canonical score law; and the explicit exponential-tilt represe
 members of the smooth model. -/
 
 /-- The inner product against the per-observation score vector, in coordinates. -/
-private lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
+lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
     (x : 𝓧) : ⟪u, psiVec ψ x⟫_ℝ = ∑ j, u j * ψ j x := by
   rw [inner_euclidean_sum]
   exact Finset.sum_congr rfl fun j _ => rfl
@@ -804,7 +807,7 @@ private lemma law_scoreVec_pi {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
   rw [hcomp, ← Measure.map_map hFmeas hXmeas, hpiX]
 
 /-- **The canonical score law converges to the standard Gaussian.** -/
-private lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {ψ : Fin k → 𝓧 → ℝ} (hψmeas : ∀ j, Measurable (ψ j))
     (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
     (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0) :
@@ -867,7 +870,7 @@ private lemma tilted_eq_withDensity_log (μ : Measure 𝓧) (f : 𝓧 → ℝ)
   rw [Real.exp_sub, Real.exp_log hpos]
 
 /-- The `n`-fold product of an exponential tilt is the tilt of the product by the sum. -/
-private lemma pi_withDensity_exp {n : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+lemma pi_withDensity_exp {n : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {u : 𝓧 → ℝ} (hu : Measurable u)
     [hprob : IsProbabilityMeasure
       (P₀.withDensity (fun x => ENNReal.ofReal (Real.exp (u x))))] :
@@ -1281,7 +1284,30 @@ compact shell* `b ≤ ‖h‖ ≤ B` of that per-`h` limit.  The `limsup ≤` ha
 `h ↦ P_{n,h}{Sₙ > c}` to converge *uniformly* on the shell, which per-`h` weak convergence
 does not give.  Since the shell is compact and does not move with `n`, an equicontinuity
 argument suffices — the missing brick is an equicontinuity/uniform-Berry–Esseen estimate for
-the drifting-mean score vector, not any further exponential-family analysis. -/
+the drifting-mean score vector, not any further exponential-family analysis.
+
+TODO (RE-DERIVED, wave 6; the "equicontinuity/uniform-Berry–Esseen" diagnosis above is
+SUPERSEDED).  Uniformity over the shell is NOT needed at all.  The shell `{b ≤ ‖h‖ ≤ B}` is
+compact, so the `liminf ≥` half follows by choosing near-minimisers `hₙ` (with
+`power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`) and passing to a convergent subsequence `hₙ → h₀`, `‖h₀‖ ≥ b`;
+all that is then required is the DRIFTING-parameter local limit
+`power_n(hₙ) → ncχ²_k(‖h₀‖²)(c,∞)`, followed by `noncentralChiSquared_tail_mono`.  No estimate
+uniform in `h` ever enters.
+
+The remaining analytic input is therefore a single named brick: membership of
+`fun n => ((smoothModel P₀ ψ hψ).P (n^{-1/2} • hₙ)).map (psiVec ψ)` in
+`Bootstrap.Multivariate.meanVecSeqClass` (weak convergence of the tilts to `P₀`, mean vectors
+`→ 0`, covariances `→ Iₖ`), together with the FIRST-order expansion of the mean map
+    `m(θ) = ∫ psiVec ψ dp_θ = θ + O(‖θ‖²)`,
+which is what makes the Slutsky shift `√n · m(hₙ/√n) → h₀` and hence
+`Zₙ ⇒ N(h₀, Iₖ)`; `Sₙ = ‖Zₙ‖²` then gives `χ²_k(‖h₀‖²)` by the continuous-mapping bridge
+already used in the null case, and the constant-threshold portmanteau converts weak
+convergence into convergence of `P{Sₙ > c}`.  The mean expansion is provable *here*, by the
+elementary route of `logPartition_quadratic_bound` above (third-order bound
+`abs_exp_sub_quadratic_le` on `e^z` plus the sign-vector envelope `integrable_exp_l1`, applied
+to the numerator `∫ψⱼ e^{⟪θ,ψ⟫}` and the denominator separately, using `hcentred`/`hortho` for
+the zeroth and first moments) — no `ExponentialFamily.Smoothness` import and no Fréchet
+derivative.  That brick, plus the subsequence bookkeeping, is the whole remaining debt. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
