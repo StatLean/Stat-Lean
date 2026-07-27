@@ -1631,6 +1631,71 @@ private theorem tendsto_integral_map_deltaMap {θ : EuclideanSpace ℝ (Fin p)}
     simpa using hA.add hB
   exact ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hweak φ
 
+/-- **The smooth-function root along a sequence of source laws.**
+
+If the images of the source laws `E n` under the vector of coordinate functions form a sequence of
+the mean-vector class with limit `H`, and the corresponding mean vectors `c n` converge to a point
+`θ` at which `f` is continuously differentiable, then the root `√n (f(θ̂ₙ) − f(c n))` converges
+weakly to the image of the Gaussian limit under the differential.
+
+Both halves of the bootstrap delta method are instances: the sampling-law half at the constant
+sequence `E n = P`, and the resampled half at the empirical measures of the observed sample. -/
+private lemma tendsto_smooth_root_of_class {θ : EuclideanSpace ℝ (Fin p)}
+    {H : Measure (EuclideanSpace ℝ (Fin p))} [IsProbabilityMeasure H]
+    (hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 H)
+    (hhmeas : ∀ j, Measurable (h j)) (hfmeas : Measurable f) (hf : HasFDerivAt f Df θ)
+    (hf_nhds : ∀ᶠ y in 𝓝 θ, DifferentiableAt ℝ f y)
+    (hf_cont : ContinuousAt (fderiv ℝ f) θ)
+    {E : ℕ → Measure 𝓢} (hEprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (E n))
+    (hE2 : ∀ (n : ℕ) (j : Fin p), MemLp (h j) 2 (E n))
+    (hEclass : (fun n => (E n).map (hVec h)) ∈ meanVecSeqClass H)
+    {c : ℕ → EuclideanSpace ℝ (Fin p)}
+    (hcE : ∀ n : ℕ, 0 < n → c n = WithLp.toLp 2 fun j => ∫ s, h j s ∂(E n))
+    (hc : Tendsto c atTop (𝓝 θ))
+    (φ : EuclideanSpace ℝ (Fin q) →ᵇ ℝ) :
+    Tendsto (fun n : ℕ => ∫ z, φ z ∂((Measure.pi fun _ : Fin n => E n).map
+        fun w => Real.sqrt n • (f (meanStatistic h w) - f (c n)))) atTop
+      (𝓝 (∫ y, φ y ∂((multivariateGaussian 0 (covMatrix H)).map Df))) := by
+  classical
+  have hνprob : ∀ n : ℕ, IsProbabilityMeasure (meanVecRootLaw ((E n).map (hVec h)) n) := by
+    intro n
+    haveI hpi : IsProbabilityMeasure (Measure.pi fun _ : Fin n => (E n).map (hVec h)) := by
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn; rw [Measure.pi_of_empty]; infer_instance
+      · haveI := hEclass.1 n hn
+        haveI : ∀ _ : Fin n, IsProbabilityMeasure ((E n).map (hVec h)) := fun _ => ‹_›
+        infer_instance
+    exact Measure.isProbabilityMeasure_map (by fun_prop)
+  have hν : ∀ ψ : EuclideanSpace ℝ (Fin p) →ᵇ ℝ,
+      Tendsto (fun n => ∫ z, ψ z ∂(meanVecRootLaw ((E n).map (hVec h)) n)) atTop
+        (𝓝 (∫ z, ψ z ∂(multivariateGaussian 0 (covMatrix H)))) :=
+    fun ψ => meanVec_root_tendsto hH2 hEclass ψ
+  have hmain := tendsto_integral_map_deltaMap (f := f) (Df := Df) (θ := θ)
+    (ν := fun n => meanVecRootLaw ((E n).map (hVec h)) n)
+    (Gp := multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) (covMatrix H)) (c := c)
+    hfmeas hf hf_nhds hf_cont hνprob inferInstance hν hc φ
+  refine hmain.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  haveI := hEprob n hn
+  have hsq : Real.sqrt n ≠ 0 := Real.sqrt_ne_zero'.2 (by exact_mod_cast hn)
+  have hmroot : Measurable fun w : Fin n → 𝓢 => Real.sqrt n • (meanStatistic h w - c n) := by
+    have hms : Measurable (meanStatistic h (n := n)) := measurable_meanStatistic hhmeas
+    fun_prop
+  have hid : (Measure.pi fun _ : Fin n => E n).map
+      (fun w => Real.sqrt n • (meanStatistic h w - c n))
+      = meanVecRootLaw ((E n).map (hVec h)) n := by
+    rw [hcE n hn]
+    exact map_meanStatistic_eq_meanVecRootLaw hhmeas (fun j => hE2 n j) n
+  congr 1
+  rw [← hid, Measure.map_map (measurable_deltaMap hfmeas (c n) n) hmroot]
+  congr 1
+  funext w
+  have hcancel : c n + (Real.sqrt n)⁻¹ • (Real.sqrt n • (meanStatistic h w - c n))
+      = meanStatistic h w := by
+    rw [smul_smul, inv_mul_cancel₀ hsq, one_smul]
+    abel
+  simp only [Function.comp_apply, deltaMap, hcancel]
+
 /-- **Delta-method limit for a smooth function of means.**
 
 Let each coordinate of the parameter be an expectation `∫ h j dP` estimated by the corresponding
@@ -1735,8 +1800,24 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
     (hident : ∀ i, IdentDistrib (X i) (X 0) Pr Pr)
     -- USER-INPUT: the coordinate functions are measurable and square-integrable
     (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P)
+    -- LEAN-ONLY (signature amendment, FORCED): the smooth function is measurable; the two
+    -- `Measure.map`s of the conclusion return the junk value `0` otherwise. See the same clause
+    -- on `smooth_function_of_means_tendsto` for the counterexample.
+    (hfmeas : Measurable f)
     -- USER-INPUT: `f` is differentiable at the parameter with nonzero continuous differential
     (hf : HasFDerivAt f Df (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)) (hDf_ne : Df ≠ 0)
+    -- USER-INPUT (signature amendment): `f` is differentiable *near* the parameter. This is the
+    -- other half of the reference's "nonzero continuous differential" hypothesis, and it is
+    -- already carried by the sibling `smooth_function_of_means_tendsto`; the frozen signature of
+    -- this theorem kept only `hf_cont`, which alone carries no information, because Mathlib's
+    -- `fderiv ℝ f y` is the junk value `0` at every `y` where `f` is not differentiable (so
+    -- `fderiv ℝ f` can be continuous at `θ` while `f` is differentiable at `θ` only). The clause
+    -- is genuinely needed here and not in the sampling-law half: the resampled root is expanded
+    -- at the RANDOM centre `θ̂ₙ`, and differentiability at `θ` alone bounds the Taylor remainder
+    -- only by `η (2√n‖θ̂ₙ − θ‖ + ‖z‖)`, which is useless because `√n‖θ̂ₙ − θ‖` is almost surely
+    -- unbounded by the law of the iterated logarithm.
+    (hf_nhds : ∀ᶠ y in 𝓝 (WithLp.toLp (2 : ℝ≥0∞) fun j => ∫ s, h j s ∂P),
+      DifferentiableAt ℝ f y)
     -- USER-INPUT: the differential is continuous at the parameter
     (hf_cont : ContinuousAt (fderiv ℝ f) (WithLp.toLp 2 fun j => ∫ s, h j s ∂P))
     -- LEAN-ONLY: argument quantified by the conclusion, not a hypothesis
@@ -1748,22 +1829,59 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, resampled-law form — deferred; route re-derived).
-  -- Both integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
-  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. For the resampled
-  -- term the transport layer of this file now applies verbatim at the empirical measure:
-  -- `(empiricalMeasure x).map (hVec h) = empiricalMeasure (fun i => hVec h (x i))` (a one-line
-  -- `Measure.map` of a finite Dirac combination), so the resampled mean statistic is the
-  -- mean-vector root of the empirical measure of the TRANSFORMED sample, and the almost sure
-  -- membership of that sequence in `meanVecSeqClass (P.map (hVec h))` is the PROVEN
-  -- `empirical_mem_meanVecSeqClass` applied to the i.i.d. variables `fun i ω => hVec h (X i ω)`
-  -- (i.i.d. with law `P.map (hVec h)`, square-integrable by `memLp_id_map_hVec`). What is genuinely
-  -- left is the delta-method Taylor step at the RANDOM centre `θ̂ₙ` rather than at `θ`: this is
-  -- where `hf_nhds` and `hf_cont` are consumed (uniform differentiability on a shrinking
-  -- neighbourhood of `θ`), and it is the only part not already reduced to proved lemmas.
-  -- The measurability finding recorded on `smooth_function_of_means_tendsto` applies here too:
-  -- `(hfmeas : Measurable f)` is forced by the two `Measure.map`s of the statement.
-  sorry
+  classical
+  set θ : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 fun j => ∫ s, h j s ∂P with hθdef
+  haveI hHprob : IsProbabilityMeasure (P.map (hVec h)) := isProbabilityMeasure_hVec hhmeas
+  have hH2 : MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) :=
+    memLp_id_map_hVec hhmeas hh2
+  have hhVmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  have hθint : ∫ z, z ∂(P.map (hVec h)) = θ := integral_map_hVec hhmeas hh2
+  -- the transformed observations are i.i.d. with law `P.map (hVec h)`
+  have hYmeas : ∀ i, Measurable fun ω => hVec h (X i ω) := fun i => hhVmeas.comp (hXmeas i)
+  have hYindep : iIndepFun (fun i ω => hVec h (X i ω)) Pr := by
+    simpa [Function.comp_def] using hindep.comp (fun _ => hVec h) (fun _ => hhVmeas)
+  have hVecLaw : HasLaw (hVec h) (P.map (hVec h)) P :=
+    { aemeasurable := hhVmeas.aemeasurable, map_eq := rfl }
+  have hYlaw : HasLaw (fun ω => hVec h (X 0 ω)) (P.map (hVec h)) Pr := hVecLaw.fun_comp hlaw
+  have hYident : ∀ i, IdentDistrib (fun ω => hVec h (X i ω)) (fun ω => hVec h (X 0 ω)) Pr Pr :=
+    fun i => (hident i).comp hhVmeas
+  -- the sampling-law half
+  have hA : Tendsto (fun n : ℕ => ∫ z, φ z ∂((Measure.pi fun _ : Fin n => P).map
+      fun w => Real.sqrt n • (f (meanStatistic h w) - f θ))) atTop
+      (𝓝 (∫ y, φ y ∂((multivariateGaussian 0 (covMatrix (P.map (hVec h)))).map Df))) :=
+    tendsto_smooth_root_of_class hH2 hhmeas hfmeas hf hf_nhds hf_cont
+      (E := fun _ => P) (fun _ _ => inferInstance) (fun _ j => hh2 j)
+      ⟨fun _ _ => inferInstance, fun _ => hH2, fun _ => tendsto_const_nhds,
+        fun _ => tendsto_const_nhds, fun _ _ => tendsto_const_nhds⟩
+      (c := fun _ => θ) (fun _ _ => rfl) tendsto_const_nhds φ
+  filter_upwards [empirical_mem_meanVecSeqClass hYmeas hYindep hYlaw hYident hH2,
+    tendsto_sample_average hYmeas hYindep hYlaw hYident (fun y => y) measurable_id
+      (hH2.integrable one_le_two)] with ω hω hsl
+  -- the resampled half, at the empirical measures of the observed sample
+  have hEclass : (fun n => (empiricalMeasure fun i : Fin n => X i ω).map (hVec h))
+      ∈ meanVecSeqClass (P.map (hVec h)) := by
+    have hmapeq : ∀ n : ℕ, (empiricalMeasure fun i : Fin n => X i ω).map (hVec h)
+        = empiricalMeasure fun i : Fin n => hVec h (X i ω) :=
+      fun n => map_empiricalMeasure hhVmeas _
+    simpa only [hmapeq] using hω
+  have hcω : Tendsto (fun n : ℕ => meanStatistic h fun i : Fin n => X i ω) atTop (𝓝 θ) := by
+    rw [hθint] at hsl
+    refine hsl.congr fun n => ?_
+    rw [meanStatistic_eq_smul_sum, Fin.sum_univ_eq_sum_range (fun i => hVec h (X i ω)) n]
+  have hB : Tendsto (fun n : ℕ =>
+      ∫ z, φ z ∂((Measure.pi fun _ : Fin n => empiricalMeasure fun i : Fin n => X i ω).map
+        fun w => Real.sqrt n • (f (meanStatistic h w) -
+          f (meanStatistic h fun i : Fin n => X i ω)))) atTop
+      (𝓝 (∫ y, φ y ∂((multivariateGaussian 0 (covMatrix (P.map (hVec h)))).map Df))) :=
+    tendsto_smooth_root_of_class hH2 hhmeas hfmeas hf hf_nhds hf_cont
+      (E := fun n => empiricalMeasure fun i : Fin n => X i ω)
+      (fun n hn => isProbabilityMeasure_empiricalMeasure' hn _)
+      (fun n j => memLp_empiricalMeasure' _ (hhmeas j)) hEclass
+      (c := fun n => meanStatistic h fun i : Fin n => X i ω)
+      (fun n _ => (toLp_integral_empiricalMeasure hhmeas _).symm) hcω φ
+  have hgoal := hA.sub hB
+  rw [sub_self] at hgoal
+  exact hgoal
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
 
