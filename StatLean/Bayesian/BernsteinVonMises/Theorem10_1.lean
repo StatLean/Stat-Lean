@@ -349,6 +349,39 @@ theorem bernstein_von_mises
     _ ≤ η / 3 + η / 3 + η / 3 := by gcongr
     _ = η := ennreal_three_thirds η
 
+/-- The random Gaussian approximation `N(Δ_{n,θ₀}, J⁻¹)` packaged as a Markov kernel: the
+deterministic centering paired with a fixed `N(0, J⁻¹)`, pushed forward by addition. This
+is the form consumed by `measurable_tvDist_kernel`. -/
+private noncomputable def bvmGaussianKernel (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) :
+    Kernel (Fin n → 𝓧) (EuclideanSpace ℝ (Fin k)) :=
+  Kernel.map
+    (Kernel.deterministic (bvmEffScore J sc n) (measurable_bvmEffScore J hsc n) ×ₖ
+      Kernel.const _ (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹))
+    (fun p => p.1 + p.2)
+
+private instance (J : Matrix (Fin k) (Fin k) ℝ) {sc : 𝓧 → EuclideanSpace ℝ (Fin k)}
+    (hsc : Measurable sc) (n : ℕ) : IsMarkovKernel (bvmGaussianKernel J hsc n) :=
+  Kernel.IsMarkovKernel.map _ (by fun_prop)
+
+private lemma bvmGaussianKernel_apply (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) (ω : Fin n → 𝓧) :
+    bvmGaussianKernel J hsc n ω = bvmGaussian J sc n ω := by
+  rw [bvmGaussianKernel, Kernel.map_apply _ (by fun_prop), Kernel.prod_apply,
+    Kernel.deterministic_apply, Kernel.const_apply, Measure.dirac_prod,
+    Measure.map_map (by fun_prop) (by fun_prop), bvmGaussian,
+    ← AsymptoticStatistics.multivariateGaussian_map_const_add J⁻¹ (bvmEffScore J sc n ω)]
+  rfl
+
+/-- Measurability of the Bernstein–von Mises deviation as a function of the sample. -/
+private lemma measurable_bvmTV (κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧) [IsMarkovKernel κ]
+    (π : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure π]
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (J : Matrix (Fin k) (Fin k) ℝ)
+    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)} (hsc : Measurable sc) (n : ℕ) :
+    Measurable fun ω => bvmTV κ π θ₀ J sc n ω := by
+  have h := measurable_tvDist_kernel (bvmLocalPosterior κ π θ₀ n) (bvmGaussianKernel J hsc n)
+  simpa only [bvmTV, bvmGaussianKernel_apply] using h
+
 /-- **Theorem 10.1, expectation form**: the mean total-variation deviation vanishes,
 `∫ tvDist(posterior, Gaussian) dP^n_{θ₀} → 0`. Equivalent to `bernstein_von_mises` since
 `tvDist ≤ 1`; this is the form consumed by the Bayes-point-estimator theorem. -/
@@ -374,6 +407,40 @@ theorem bernstein_von_mises_lintegral
     (hπ : HasLocalDensity π θ₀ r₀ f) :
     Tendsto (fun n => ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n))
       atTop (𝓝 0) := by
-  sorry
+  classical
+  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      IsProbabilityMeasure (productMeasure M μ θ n) :=
+    fun θ n =>
+      AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+        M μ hPDF θ n
+  have hBvM := bernstein_von_mises hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ
+  rw [ENNReal.tendsto_nhds_zero]
+  intro η hη
+  have hη2 : (0 : ℝ≥0∞) < η / 2 := ENNReal.half_pos hη.ne'
+  have h := hBvM (η / 2) hη2
+  rw [ENNReal.tendsto_nhds_zero] at h
+  filter_upwards [h _ hη2] with n hn
+  set S : Set (Fin n → 𝓧) := {ω | η / 2 ≤ bvmTV κ π θ₀ J sc n ω} with hSdef
+  have hSm : MeasurableSet S :=
+    measurableSet_le measurable_const (measurable_bvmTV κ π θ₀ J hsc n)
+  have hpt : ∀ ω, bvmTV κ π θ₀ J sc n ω
+      ≤ η / 2 + S.indicator (1 : (Fin n → 𝓧) → ℝ≥0∞) ω := by
+    intro ω
+    by_cases hω : ω ∈ S
+    · rw [Set.indicator_of_mem hω]
+      haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+        unfold bvmGaussian; infer_instance
+      exact le_trans (Minimaxity.tvDist_le_one _ _) le_add_self
+    · rw [Set.indicator_of_notMem hω, add_zero]
+      rw [hSdef, Set.mem_setOf_eq, not_le] at hω
+      exact hω.le
+  calc ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n)
+      ≤ ∫⁻ ω, (η / 2 + S.indicator (1 : (Fin n → 𝓧) → ℝ≥0∞) ω)
+          ∂(productMeasure M μ θ₀ n) := lintegral_mono hpt
+    _ = η / 2 + productMeasure M μ θ₀ n S := by
+        rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one,
+          lintegral_indicator_one hSm]
+    _ ≤ η / 2 + η / 2 := by gcongr
+    _ = η := ENNReal.add_halves η
 
 end StatLean.Bayesian
