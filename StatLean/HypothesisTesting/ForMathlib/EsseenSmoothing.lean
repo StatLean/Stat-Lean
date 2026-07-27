@@ -35,16 +35,43 @@ function rather than by contour integration.
   `∫ 𝓕 g dP = ∫ φ_P(−2πξ) g(ξ) dξ`;
 * `norm_integral_fourier_sub_le` — the resulting **smoothing inequality in test-function form**:
   `‖∫ 𝓕 g dP − ∫ 𝓕 g dQ‖ ≤ ∫ ‖φ_P − φ_Q‖ ‖g‖`, which for `g` supported in `[−T/2π, T/2π]`
-  uses the characteristic functions only on the window `|t| ≤ T`.
+  uses the characteristic functions only on the window `|t| ≤ T`;
+* `ramp`, `abs_measure_Iic_sub_le_of_integral_ramp` — **de-smoothing**: a family of continuous
+  test functions squeezing the half-line indicator, giving
+  `sup|F_P − F_Q| ≤ (ramp discrepancy) + A δ` for an `A`-Lipschitz `F_Q`;
+* `trapezoid`, `abs_integral_ramp_sub_le_of_trapezoid` — the reduction of the ramp discrepancy
+  to **compactly supported** test functions, using that `P − Q` has total mass zero;
+* `exists_fourier_trapezoid` — every trapezoid is `𝓕 g` for an integrable `g` with
+  `‖g ξ‖ ≤ min(1/(π|ξ|), 1/(δπ²ξ²))`, the envelope being *independent of the plateau*;
+* `abs_measure_Iic_sub_le_charFun` — **Esseen's smoothing inequality at the level of
+  distribution functions**.
 
-## What is still missing
+## The Stieltjes inversion is not needed
 
-The **CDF-level** (Stieltjes) Lévy/Esseen inversion — the identity expressing the smoothed
-difference `(F − G) ∗ K_T` as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]` — is not here.
-Mathlib's inversion theorem is for `L¹` functions; the version for a difference of distribution
-functions has to be built by hand, and it is the single remaining gap between the results above
-and a Kolmogorov-distance Berry–Esseen or Edgeworth bound. The test-function form
-`norm_integral_fourier_sub_le` is the part of Esseen's argument that the `L¹` theory does cover.
+Earlier notes in this repository recorded the **CDF-level (Stieltjes) Lévy/Esseen inversion** —
+the identity expressing `(F − G) ∗ K_T` as a Fourier integral of `(F̂ − Ĝ)/t` — as the single
+remaining obstruction to a Kolmogorov-distance bound, on the ground that Mathlib's inversion
+theorem is for `L¹` functions while `F − G` is not `L¹`. **That verdict is overturned here.**
+The `1/t` weight of Lévy's formula is recovered without any Stieltjes-level inversion, by
+running Esseen's argument entirely on test functions:
+
+* the half-line indicator is squeezed between two **ramps**, at a cost `A δ` — this needs only
+  monotonicity of `F_P` and Lipschitz continuity of `F_Q` (`ramp`);
+* a ramp is not `L¹`, but the difference of two ramps is compactly supported, and since `P − Q`
+  has total mass zero the ramp discrepancy is the limit of **trapezoid** discrepancies
+  (`abs_integral_ramp_sub_le_of_trapezoid`) — this is where the `1/t` singularity is absorbed;
+* a trapezoid is a difference of two **co-centred dilated tents**
+  (`trapezoid_eq_tent_combination`), so `fourier_sqSincC` transforms it explicitly, and the
+  cancellation `sin²(πw₁ξ) − sin²(πw₂ξ) = sin(π(w₁+w₂)ξ) sin(πδξ)` produces exactly the
+  `1/(π|ξ|)` weight, uniformly in the plateau length (`exists_fourier_trapezoid`).
+
+What remains between this file and a Kolmogorov-distance Berry–Esseen or Edgeworth bound is no
+longer a Fourier-inversion gap but a **characteristic-function** gap: `BerryEsseen.lean`'s
+`norm_charFun_pow_sub_gaussian_le` bounds `‖(φ_F)ⁿ − e^{−nvw²/2}‖` by `n(ρ|w|³/6 + …)` with **no
+Gaussian damping factor**, and an undamped bound is not integrable against the `1/|ξ|` weight at
+the rate needed. The missing estimate is the damped one,
+`‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}‖ ≤ C|t|³ e^{−t²/4}/√n` on `|t| ≤ c√n`. See the status note on
+`edgeworth_mean_uniform` in `Bootstrap/Edgeworth.lean`.
 -/
 
 open MeasureTheory intervalIntegral
@@ -330,6 +357,115 @@ theorem fourier_sqSincC : 𝓕 sqSincC = tentC := by
   rw [h1, h2, hinv]
   simp [tentC, tent_neg]
 
+/-! ## The dilated, translated tent as a Fourier transform -/
+
+/-- The `L¹` function whose Fourier transform is the dilated and translated tent
+`y ↦ Λ((y − m)/w)`: a modulated dilation of the squared sinc. -/
+private noncomputable def gTent (w m : ℝ) (ξ : ℝ) : ℂ :=
+  (w : ℂ) * (Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * sqSincC (w * ξ))
+
+private lemma integrable_gTent {w : ℝ} (hw : w ≠ 0) (m : ℝ) : Integrable (gTent w m) := by
+  have hbase : Integrable (fun ξ : ℝ => sqSincC (w * ξ)) :=
+    MeasureTheory.Integrable.comp_mul_left' integrable_sqSincC hw
+  have hmod : Integrable
+      (fun ξ : ℝ => Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * sqSincC (w * ξ)) := by
+    refine hbase.bdd_mul' (c := 1) ?_ (Filter.Eventually.of_forall fun ξ => ?_)
+    · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+    · rw [Complex.norm_exp_ofReal_mul_I]
+  exact hmod.const_mul _
+
+/-- **Fourier transform of a modulated dilation of the squared sinc.**
+
+`𝓕 (ξ ↦ w e^{2πi m ξ} (sin(πwξ)/(πwξ))²) (y) = Λ((y − m)/w)` for `w > 0`: dilation and
+translation of the Fejér/triangle pair `fourier_sqSincC`. -/
+private lemma fourier_gTent {w : ℝ} (hw : 0 < w) (m y : ℝ) :
+    𝓕 (gTent w m) y = tentC ((y - m) / w) := by
+  have hw' : (w : ℝ) ≠ 0 := ne_of_gt hw
+  set z : ℝ := (y - m) / w with hz
+  set G : ℝ → ℂ := fun η : ℝ => Complex.exp (((-2 * π * η * z : ℝ) : ℂ) * Complex.I) * sqSincC η
+    with hG
+  have hkey : ∀ ξ : ℝ,
+      Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) • gTent w m ξ = (w : ℂ) * G (w * ξ) := by
+    intro ξ
+    have hzw : w * z = y - m := by rw [hz]; field_simp
+    have hreal : (-2 * π * (w * ξ) * z : ℝ) = (-2 * π * ξ * y : ℝ) + (2 * π * m * ξ : ℝ) := by
+      rw [show (-2 * π * (w * ξ) * z : ℝ) = -2 * π * ξ * (w * z) from by ring, hzw]
+      ring
+    simp only [hG, smul_eq_mul, gTent]
+    rw [hreal]
+    push_cast
+    rw [add_mul, Complex.exp_add]
+    ring
+  rw [Real.fourier_real_eq_integral_exp_smul]
+  calc (∫ ξ : ℝ, Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) • gTent w m ξ)
+      = ∫ ξ : ℝ, (w : ℂ) * G (w * ξ) := integral_congr_ae (Filter.Eventually.of_forall hkey)
+    _ = (w : ℂ) * ∫ ξ : ℝ, G (w * ξ) := MeasureTheory.integral_const_mul _ _
+    _ = (w : ℂ) * (|w⁻¹| • ∫ η : ℝ, G η) := by
+          congr 1
+          exact MeasureTheory.Measure.integral_comp_mul_left G w
+    _ = ∫ η : ℝ, G η := by
+          rw [abs_of_pos (inv_pos.2 hw), Complex.real_smul, ← mul_assoc]
+          push_cast
+          rw [mul_inv_cancel₀ (by exact_mod_cast hw' : (w : ℂ) ≠ 0), one_mul]
+    _ = tentC z := by
+          rw [← fourier_sqSincC]
+          rw [Real.fourier_real_eq_integral_exp_smul]
+          exact integral_congr_ae (Filter.Eventually.of_forall fun η => rfl)
+
+/-! ## The trapezoid as a difference of two dilated tents -/
+
+/-- Rescaling a clipped ramp: for `δ > 0`, `min 1 (max 0 (X/δ)) = δ⁻¹ · min δ (max 0 X)`. -/
+private lemma min_one_max_zero_div {δ : ℝ} (hδ : 0 < δ) (X : ℝ) :
+    min 1 (max 0 (X / δ)) = (1 / δ) * min δ (max 0 X) := by
+  have hpos : (0 : ℝ) ≤ 1 / δ := by positivity
+  rw [mul_min_of_nonneg _ _ hpos, mul_max_of_nonneg _ _ hpos]
+  simp [div_eq_mul_inv, mul_comm, mul_inv_cancel₀ (ne_of_gt hδ)]
+
+/-- The piecewise-linear core identity behind `trapezoid_eq_tent_combination`, with the
+translation `s = y − m` already carried out and the flank width `δ` scaled away. -/
+private lemma trapezoid_core (w δ s : ℝ) (hw : 0 ≤ w) (hδ : 0 < δ) :
+    min δ (max 0 (w + δ - s)) - min δ (max 0 (-w - s))
+      = max 0 (w + δ - |s|) - max 0 (w - |s|) := by
+  rcases abs_cases s with ⟨hs, _⟩ | ⟨hs, _⟩ <;> rw [hs] <;>
+    simp only [max_def, min_def] <;> split_ifs <;> linarith
+
+/-- A nonnegative multiple of a dilated tent, in clipped form:
+`(w/δ) · Λ(t/w) = δ⁻¹ · max 0 (w − |t|)`, valid also at the degenerate width `w = 0`. -/
+private lemma smul_tent_eq_max {w δ : ℝ} (hw : 0 ≤ w) (hδ : 0 < δ) (t : ℝ) :
+    (w / δ) * tent (t / w) = (1 / δ) * max 0 (w - |t|) := by
+  rcases hw.lt_or_eq with hw' | hw'
+  · have hne : w ≠ 0 := ne_of_gt hw'
+    have habs : |t / w| = |t| / w := by rw [abs_div, abs_of_pos hw']
+    have hstep : tent (t / w) = max 0 ((w - |t|) / w) := by
+      rw [tent, habs]
+      congr 1
+      field_simp
+    rw [hstep, mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ w / δ),
+      mul_max_of_nonneg _ _ (by positivity : (0 : ℝ) ≤ 1 / δ)]
+    congr 1
+    · ring
+    · field_simp
+  · subst hw'
+    simp [max_eq_left (by simpa using abs_nonneg t : (0 : ℝ) - |t| ≤ 0)]
+
+private lemma integrable_gTent' {w : ℝ} (hw : 0 ≤ w) (m : ℝ) : Integrable (gTent w m) := by
+  rcases hw.lt_or_eq with h | h
+  · exact integrable_gTent (ne_of_gt h) m
+  · have hz : gTent w m = fun _ : ℝ => (0 : ℂ) := by funext ξ; simp [gTent, ← h]
+    rw [hz]
+    exact integrable_zero _ _ _
+
+/-- The scaled tent transform, including the degenerate width `w = 0` (where both sides
+vanish). -/
+private lemma smul_fourier_gTent {w : ℝ} (hw : 0 ≤ w) (δ m y : ℝ) :
+    ((w / δ : ℝ) : ℂ) * 𝓕 (gTent w m) y = (((w / δ) * tent ((y - m) / w) : ℝ) : ℂ) := by
+  rcases hw.lt_or_eq with h | h
+  · rw [fourier_gTent h m y]
+    simp [tentC]
+  · have hz : gTent w m = fun _ : ℝ => (0 : ℂ) := by funext ξ; simp [gTent, ← h]
+    rw [hz, ← h]
+    simp [Real.fourier_real_eq_integral_exp_smul]
+
 /-! ## The smoothing (Parseval) identity against a finite measure -/
 
 /-- **Parseval's identity against a finite measure.** For every integrable `g : ℝ → ℂ`,
@@ -400,5 +536,434 @@ theorem norm_integral_fourier_sub_le {P Q : Measure ℝ}
     (integral_congr_ae (Filter.Eventually.of_forall fun ξ => ?_))
   dsimp only
   rw [← sub_mul, norm_mul]
+
+/-! ## De-smoothing: from test functions back to distribution functions
+
+The smoothing inequality above compares two laws through a *test function*. To turn such a
+comparison into a bound on the Kolmogorov distance one needs the converse step: a family of
+test functions that squeezes the indicator of a half-line tightly enough that the resulting
+loss is controlled by the modulus of continuity of the comparison law. The **ramp** below is
+that family, and `abs_measure_Iic_sub_le_of_integral_ramp` is the de-smoothing step in its
+sharp form: the Kolmogorov distance is bounded by the ramp-test discrepancy plus `A δ`, where
+`A` is a Lipschitz constant for the comparison distribution function and `δ` is the ramp
+width.
+
+This replaces the classical Fejér-convolution de-smoothing lemma and is strictly more
+elementary: no convolution of distribution functions, and no Fejér tail estimate, is needed.
+-/
+
+/-- The **ramp** (continuous smoothed indicator) `R_{u,δ}`: it equals `1` on `(-∞, u]`, falls
+linearly to `0` across `[u, u + δ]`, and vanishes on `[u + δ, ∞)`. -/
+noncomputable def ramp (u δ y : ℝ) : ℝ := min 1 (max 0 ((u + δ - y) / δ))
+
+lemma ramp_nonneg (u δ y : ℝ) : 0 ≤ ramp u δ y :=
+  le_min zero_le_one (le_max_left _ _)
+
+lemma ramp_le_one (u δ y : ℝ) : ramp u δ y ≤ 1 := min_le_left _ _
+
+lemma continuous_ramp (u δ : ℝ) : Continuous (ramp u δ) := by
+  unfold ramp; fun_prop
+
+/-- The ramp is `1` to the left of its shoulder. -/
+lemma ramp_eq_one_of_le {u δ y : ℝ} (hδ : 0 < δ) (hy : y ≤ u) : ramp u δ y = 1 := by
+  have h : (1 : ℝ) ≤ (u + δ - y) / δ := (one_le_div hδ).2 (by linarith)
+  exact min_eq_left (le_max_of_le_right h)
+
+/-- The ramp vanishes to the right of its foot. -/
+lemma ramp_eq_zero_of_le {u δ y : ℝ} (hδ : 0 < δ) (hy : u + δ ≤ y) : ramp u δ y = 0 := by
+  have h : (u + δ - y) / δ ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hδ.le
+  simp [ramp, max_eq_left h]
+
+/-- The ramp is monotone in its shoulder position. -/
+lemma ramp_mono_shoulder {v u δ : ℝ} (h : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    ramp v δ y ≤ ramp u δ y := by
+  refine min_le_min le_rfl (max_le_max le_rfl ?_)
+  have hinv : (0 : ℝ) ≤ δ⁻¹ := (inv_pos.2 hδ).le
+  have hmul : (v + δ - y) * δ⁻¹ ≤ (u + δ - y) * δ⁻¹ :=
+    mul_le_mul_of_nonneg_right (by linarith) hinv
+  simpa [div_eq_mul_inv] using hmul
+
+lemma integrable_ramp (P : Measure ℝ) [IsFiniteMeasure P] (u δ : ℝ) :
+    Integrable (ramp u δ) P :=
+  (integrable_const (1 : ℝ)).mono' (continuous_ramp u δ).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (ramp_nonneg u δ y)]; exact ramp_le_one u δ y)
+
+/-- The half-line indicator is dominated by the ramp sitting on it. -/
+lemma measure_Iic_le_integral_ramp (P : Measure ℝ) [IsFiniteMeasure P] {δ : ℝ} (hδ : 0 < δ)
+    (u : ℝ) : (P (Set.Iic u)).toReal ≤ ∫ y, ramp u δ y ∂P := by
+  have hbase : (∫ y, (Set.Iic u).indicator (fun _ => (1 : ℝ)) y ∂P) = (P (Set.Iic u)).toReal := by
+    rw [MeasureTheory.integral_indicator_const _ measurableSet_Iic]
+    simp [measureReal_def]
+  rw [← hbase]
+  refine integral_mono ((integrable_const (1 : ℝ)).indicator measurableSet_Iic)
+    (integrable_ramp P u δ) fun y => ?_
+  · by_cases hy : y ∈ Set.Iic u
+    · rw [Set.indicator_of_mem hy, ramp_eq_one_of_le hδ hy]
+    · rw [Set.indicator_of_notMem hy]; exact ramp_nonneg u δ y
+
+/-- The ramp is dominated by the indicator of the half-line ending at its foot. -/
+lemma integral_ramp_le_measure_Iic (P : Measure ℝ) [IsFiniteMeasure P] {δ : ℝ} (hδ : 0 < δ)
+    (u : ℝ) : (∫ y, ramp u δ y ∂P) ≤ (P (Set.Iic (u + δ))).toReal := by
+  have hbase : (∫ y, (Set.Iic (u + δ)).indicator (fun _ => (1 : ℝ)) y ∂P)
+      = (P (Set.Iic (u + δ))).toReal := by
+    rw [MeasureTheory.integral_indicator_const _ measurableSet_Iic]
+    simp [measureReal_def]
+  rw [← hbase]
+  refine integral_mono (integrable_ramp P u δ)
+    ((integrable_const (1 : ℝ)).indicator measurableSet_Iic) fun y => ?_
+  · by_cases hy : y ∈ Set.Iic (u + δ)
+    · rw [Set.indicator_of_mem hy]; exact ramp_le_one u δ y
+    · rw [Set.indicator_of_notMem hy,
+        ramp_eq_zero_of_le hδ (le_of_not_ge (by simpa using hy))]
+
+/-- **De-smoothing: the Kolmogorov distance is controlled by the ramp discrepancy.**
+
+If every ramp of width `δ` separates the two laws by at most `E`, and the distribution function
+of the comparison law `Q` has Lipschitz constant `A`, then the two distribution functions differ
+by at most `E + A δ` at *every* point.
+
+This is the converse half of Esseen's argument — the step that recovers a statement about
+distribution functions from a statement about smooth test functions. Combined with
+`norm_integral_fourier_sub_le` it reduces a Kolmogorov-distance bound to the single remaining
+task of exhibiting each ramp as a Fourier transform of an integrable function. -/
+theorem abs_measure_Iic_sub_le_of_integral_ramp {P Q : Measure ℝ}
+    [IsProbabilityMeasure P] [IsProbabilityMeasure Q] {δ E A : ℝ} (hδ : 0 < δ)
+    -- the comparison distribution function is `A`-Lipschitz
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    -- every ramp of width `δ` separates the two laws by at most `E`
+    (hE : ∀ u : ℝ, |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q| ≤ E) (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ := by
+  refine abs_le.2 ⟨?_, ?_⟩
+  · -- lower bound: use the ramp whose *foot* sits at `x`
+    have h1 : (∫ y, ramp (x - δ) δ y ∂P) ≤ (P (Set.Iic x)).toReal := by
+      have := integral_ramp_le_measure_Iic P hδ (x - δ)
+      simpa using this
+    have h2 : (Q (Set.Iic (x - δ))).toReal ≤ ∫ y, ramp (x - δ) δ y ∂Q :=
+      measure_Iic_le_integral_ramp Q hδ (x - δ)
+    have h3 := hQ (x - δ) x (by linarith)
+    have h4 := abs_le.1 (hE (x - δ))
+    simp only [sub_sub_cancel] at h3
+    linarith [h4.1, h4.2]
+  · -- upper bound: use the ramp whose *shoulder* sits at `x`
+    have h1 : (P (Set.Iic x)).toReal ≤ ∫ y, ramp x δ y ∂P :=
+      measure_Iic_le_integral_ramp P hδ x
+    have h2 : (∫ y, ramp x δ y ∂Q) ≤ (Q (Set.Iic (x + δ))).toReal :=
+      integral_ramp_le_measure_Iic Q hδ x
+    have h3 := hQ x (x + δ) (by linarith)
+    have h4 := abs_le.1 (hE x)
+    simp only [add_sub_cancel_left] at h3
+    linarith [h4.1, h4.2]
+
+/-! ## From ramps to compactly supported test functions
+
+A ramp is not integrable — it tends to `1` at `-∞` — so it is not in the image of the Fourier
+transform of an `L¹` function, and `norm_integral_fourier_sub_le` cannot be applied to it
+directly. This is the analytic shadow of the `1/t` singularity in Lévy's inversion formula.
+The difference of two ramps *is* compactly supported, however, and since `P − Q` has total mass
+zero the ramp discrepancy is the limit of trapezoid discrepancies as the lower shoulder recedes
+to `-∞`. The results below make that reduction precise, so that the Kolmogorov distance is
+bounded by the discrepancy over the compactly supported, continuous, piecewise-linear
+**trapezoids** alone. -/
+
+/-- The distribution function of a probability measure vanishes at `-∞`. -/
+lemma tendsto_measure_Iic_atBot (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Filter.Tendsto (fun x : ℝ => (P (Set.Iic x)).toReal) Filter.atBot (𝓝 0) := by
+  refine (ProbabilityTheory.tendsto_cdf_atBot P).congr fun x => ?_
+  rw [ProbabilityTheory.cdf_eq_real]
+  rfl
+
+/-- The ramp integral vanishes as the ramp recedes to `-∞`. -/
+lemma tendsto_integral_ramp_atBot (P : Measure ℝ) [IsProbabilityMeasure P] {δ : ℝ} (hδ : 0 < δ) :
+    Filter.Tendsto (fun v : ℝ => ∫ y, ramp v δ y ∂P) Filter.atBot (𝓝 0) := by
+  refine squeeze_zero (fun v => integral_nonneg fun y => ramp_nonneg v δ y)
+    (fun v => integral_ramp_le_measure_Iic P hδ v) ?_
+  exact (tendsto_measure_Iic_atBot P).comp
+    (Filter.tendsto_atBot_add_const_right _ δ Filter.tendsto_id)
+
+/-- The **trapezoid** test function `R_{u,δ} − R_{v,δ}`: continuous, supported in
+`[v, u + δ]`, equal to `1` on `[v + δ, u]`, with the two flanks of slope `±1/δ`. -/
+noncomputable def trapezoid (v u δ y : ℝ) : ℝ := ramp u δ y - ramp v δ y
+
+lemma trapezoid_nonneg {v u δ : ℝ} (hvu : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    0 ≤ trapezoid v u δ y :=
+  sub_nonneg.2 (ramp_mono_shoulder hvu hδ y)
+
+lemma trapezoid_le_one {v u δ : ℝ} (hvu : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    trapezoid v u δ y ≤ 1 :=
+  sub_le_self _ (ramp_nonneg v δ y) |>.trans (ramp_le_one u δ y)
+
+lemma continuous_trapezoid (v u δ : ℝ) : Continuous (trapezoid v u δ) :=
+  (continuous_ramp u δ).sub (continuous_ramp v δ)
+
+/-- The trapezoid is supported in `[v, u + δ]`. -/
+lemma trapezoid_eq_zero_of_notMem {v u δ : ℝ} (hδ : 0 < δ) (hvu : v ≤ u) {y : ℝ}
+    (hy : y ∉ Set.Icc v (u + δ)) : trapezoid v u δ y = 0 := by
+  rcases not_and_or.1 (fun h => hy ⟨h.1, h.2⟩) with h | h
+  · have hy' : y < v := not_le.1 h
+    rw [trapezoid, ramp_eq_one_of_le hδ (by linarith), ramp_eq_one_of_le hδ hy'.le, sub_self]
+  · have hy' : u + δ < y := not_le.1 h
+    rw [trapezoid, ramp_eq_zero_of_le hδ hy'.le, ramp_eq_zero_of_le hδ (by linarith), sub_self]
+
+lemma hasCompactSupport_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v ≤ u) :
+    HasCompactSupport (trapezoid v u δ) :=
+  HasCompactSupport.intro (isCompact_Icc (a := v) (b := u + δ))
+    fun _ hy => trapezoid_eq_zero_of_notMem hδ hvu hy
+
+/-- **The ramp discrepancy is the limit of trapezoid discrepancies.**
+
+Because `P` and `Q` are probability measures, the mass that the ramp carries off to `-∞`
+cancels in the difference, so a uniform bound over trapezoids transfers to the ramp. -/
+theorem abs_integral_ramp_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {u δ E : ℝ} (hδ : 0 < δ)
+    (hE : ∀ v : ℝ, v + δ ≤ u →
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) :
+    |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q| ≤ E := by
+  have hsplit : ∀ v : ℝ,
+      (∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q
+        = ((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y, ramp v δ y ∂Q) := by
+    intro v
+    simp only [trapezoid]
+    rw [integral_sub (integrable_ramp P u δ) (integrable_ramp P v δ),
+      integral_sub (integrable_ramp Q u δ) (integrable_ramp Q v δ)]
+    ring
+  have hlim : Filter.Tendsto (fun v : ℝ =>
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q|) Filter.atBot
+      (𝓝 |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q|) := by
+    simp_rw [hsplit]
+    have hmain : Filter.Tendsto (fun v : ℝ =>
+        ((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y, ramp v δ y ∂Q)) Filter.atBot
+        (𝓝 (((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q) - (0 - 0))) :=
+      tendsto_const_nhds.sub
+        ((tendsto_integral_ramp_atBot P hδ).sub (tendsto_integral_ramp_atBot Q hδ))
+    simpa using hmain.abs
+  refine le_of_tendsto hlim ?_
+  filter_upwards [Filter.eventually_le_atBot (u - δ)] with v hv using hE v (by linarith)
+
+/-- **De-smoothing in trapezoid form: the Kolmogorov distance from compactly supported tests.**
+
+If the two laws are separated by at most `E` on every trapezoid of flank width `δ`, and the
+distribution function of `Q` is `A`-Lipschitz, then the two distribution functions differ by at
+most `E + A δ` everywhere.
+
+Every hypothesis here is about *continuous, compactly supported* test functions, so this is the
+form that `norm_integral_fourier_sub_le` can consume: what remains, to obtain a Kolmogorov
+Berry–Esseen or Edgeworth bound, is to exhibit each trapezoid as `𝓕 g` for an integrable `g`
+and to estimate `∫ ‖φ_P − φ_Q‖ ‖g‖`. -/
+theorem abs_measure_Iic_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {δ E A : ℝ} (hδ : 0 < δ)
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    (hE : ∀ v u : ℝ, v + δ ≤ u →
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ :=
+  abs_measure_Iic_sub_le_of_integral_ramp hδ hQ
+    (fun u => abs_integral_ramp_sub_le_of_trapezoid hδ fun v hv => hE v u hv) x
+
+/-- **The trapezoid is a difference of two dilated tents.**
+
+With `m = (v + u + δ)/2` the centre, `w₁ = (u − v + δ)/2` the outer half-width and
+`w₂ = (u − v − δ)/2` the inner half-width, the trapezoid `R_{u,δ} − R_{v,δ}` equals
+`(w₁/δ) Λ((· − m)/w₁) − (w₂/δ) Λ((· − m)/w₂)`. Both tents are centred at `m`, so the Fourier
+transforms of the two pieces differ only by a dilation — this is what makes the modulus of the
+transform of the trapezoid computable in closed form. -/
+private lemma trapezoid_eq_tent_combination {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤ u) (y : ℝ) :
+    trapezoid v u δ y
+      = ((u - v + δ) / 2 / δ) * tent ((y - (v + u + δ) / 2) / ((u - v + δ) / 2))
+        - ((u - v - δ) / 2 / δ) * tent ((y - (v + u + δ) / 2) / ((u - v - δ) / 2)) := by
+  have hw2 : (0 : ℝ) ≤ (u - v - δ) / 2 := by linarith
+  have hw1 : (u - v + δ) / 2 = (u - v - δ) / 2 + δ := by ring
+  have hs1 : u + δ - y = (u - v - δ) / 2 + δ - (y - (v + u + δ) / 2) := by ring
+  have hs2 : v + δ - y = -((u - v - δ) / 2) - (y - (v + u + δ) / 2) := by ring
+  rw [trapezoid, ramp, ramp, hs1, hs2, min_one_max_zero_div hδ, min_one_max_zero_div hδ,
+    ← mul_sub, trapezoid_core _ _ _ hw2 hδ, hw1,
+    smul_tent_eq_max hw2 hδ, smul_tent_eq_max (by linarith : (0:ℝ) ≤ (u - v - δ) / 2 + δ) hδ]
+  ring
+
+/-! ## The trapezoid as a Fourier transform, with the classical `1/|ξ|` envelope -/
+
+/-- **Every trapezoid is the Fourier transform of an integrable function obeying the classical
+`1/(π|ξ|)` envelope.**
+
+This is the Fourier half of Esseen's argument for the test functions produced by
+`abs_measure_Iic_sub_le_of_trapezoid`. Writing the trapezoid as a difference of two co-centred
+dilated tents (`trapezoid_eq_tent_combination`) and transforming each piece
+(`fourier_gTent`) gives
+
+`g ξ = e^{2πi m ξ} (sin²(π w₁ ξ) − sin²(π w₂ ξ)) / (δ π² ξ²)`,
+
+whose modulus is `|sin(π(w₁ + w₂)ξ) sin(πδξ)| / (δ π² ξ²) ≤ 1/(π|ξ|)`. The envelope is
+**independent of `v` and `u`** — the cancellation between the two tents is exactly what removes
+the length of the plateau from the bound. It is the `1/|t|` weight of Lévy's inversion formula,
+obtained here without any Stieltjes-level inversion theorem. -/
+theorem exists_fourier_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v + δ ≤ u) :
+    ∃ g : ℝ → ℂ, Integrable g ∧
+      (∀ y : ℝ, 𝓕 g y = ((trapezoid v u δ y : ℝ) : ℂ)) ∧
+      (∀ ξ : ℝ, ‖g ξ‖ ≤ min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) := by
+  have hπ : (0 : ℝ) < π := Real.pi_pos
+  set w₁ : ℝ := (u - v + δ) / 2 with hw₁
+  set w₂ : ℝ := (u - v - δ) / 2 with hw₂
+  set m : ℝ := (v + u + δ) / 2 with hm
+  have hw₂0 : 0 ≤ w₂ := by rw [hw₂]; linarith
+  have hw₁0 : 0 < w₁ := by rw [hw₁]; linarith
+  have hdiff : w₁ - w₂ = δ := by rw [hw₁, hw₂]; ring
+  refine ⟨fun ξ => ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ,
+    ((integrable_gTent (ne_of_gt hw₁0) m).const_mul _).sub
+      ((integrable_gTent' hw₂0 m).const_mul _), fun y => ?_, fun ξ => ?_⟩
+  · -- the Fourier transform is the trapezoid
+    have hI : ∀ w : ℝ, 0 ≤ w → Integrable (fun ξ : ℝ =>
+        Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w m ξ) := by
+      intro w hw
+      refine (integrable_gTent' hw m).bdd_mul' (c := 1) ?_
+        (Filter.Eventually.of_forall fun ξ => ?_)
+      · exact (Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable
+      · rw [Complex.norm_exp_ofReal_mul_I]
+    have hsplit : 𝓕 (fun ξ : ℝ => ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ
+          - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ) y
+        = ((w₁ / δ : ℝ) : ℂ) * 𝓕 (gTent w₁ m) y - ((w₂ / δ : ℝ) : ℂ) * 𝓕 (gTent w₂ m) y := by
+      have expand : ∀ ξ : ℝ, Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I)
+            * (((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ)
+          = ((w₁ / δ : ℝ) : ℂ)
+              * (Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w₁ m ξ)
+            - ((w₂ / δ : ℝ) : ℂ)
+              * (Complex.exp (((-2 * π * ξ * y : ℝ) : ℂ) * Complex.I) * gTent w₂ m ξ) :=
+        fun ξ => by ring
+      simp only [Real.fourier_real_eq_integral_exp_smul, smul_eq_mul]
+      have hc : ∀ (c : ℂ) (f : ℝ → ℂ), (∫ a : ℝ, c * f a) = c * ∫ a : ℝ, f a := by
+        intro c f
+        simpa using MeasureTheory.integral_smul c f
+      rw [integral_congr_ae (Filter.Eventually.of_forall expand),
+        MeasureTheory.integral_sub ((hI w₁ hw₁0.le).const_mul _) ((hI w₂ hw₂0).const_mul _),
+        hc, hc]
+    rw [hsplit, smul_fourier_gTent hw₁0.le δ m y, smul_fourier_gTent hw₂0 δ m y,
+      trapezoid_eq_tent_combination hδ hvu y, ← hw₁, ← hw₂, ← hm]
+    push_cast
+    ring
+  · -- the envelope
+    dsimp only
+    rcases eq_or_ne ξ 0 with rfl | hξ
+    · simp [gTent, sqSincC]
+    have hξa : (0 : ℝ) < |ξ| := abs_pos.2 hξ
+    have hval : ∀ w : ℝ,
+        (w / δ) * (w * ((Real.sin (π * (w * ξ)) / (π * (w * ξ))) ^ 2))
+          = Real.sin (π * (w * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) := by
+      intro w
+      rcases eq_or_ne w 0 with rfl | hw
+      · simp
+      · field_simp
+        try ring
+    set A : ℝ := Real.sin (π * (w₁ * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) with hAdef
+    set B : ℝ := Real.sin (π * (w₂ * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) with hBdef
+    have hg : ((w₁ / δ : ℝ) : ℂ) * gTent w₁ m ξ - ((w₂ / δ : ℝ) : ℂ) * gTent w₂ m ξ
+        = Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I) * ((A - B : ℝ) : ℂ) := by
+      have e : ∀ w : ℝ, ((w / δ : ℝ) : ℂ) * gTent w m ξ
+          = Complex.exp (((2 * π * m * ξ : ℝ) : ℂ) * Complex.I)
+              * (((Real.sin (π * (w * ξ)) ^ 2 / (δ * π ^ 2 * ξ ^ 2) : ℝ)) : ℂ) := by
+        intro w
+        simp only [gTent, sqSincC]
+        rw [← hval w]
+        push_cast
+        ring
+      rw [e w₁, e w₂, hAdef, hBdef]
+      push_cast
+      ring
+    rw [hg, norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul, Complex.norm_real,
+      Real.norm_eq_abs]
+    -- the sine-difference identity and the two elementary bounds
+    have hAB : A - B
+        = (Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2) / (δ * π ^ 2 * ξ ^ 2) := by
+      rw [hAdef, hBdef]; ring
+    have hsin : Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2
+        = Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ)) * Real.sin (π * δ * ξ) := by
+      have harg : π * (w₁ * ξ) - π * (w₂ * ξ) = π * δ * ξ := by
+        rw [← hdiff]; ring
+      rw [← harg, Real.sin_add, Real.sin_sub]
+      nlinarith [Real.sin_sq_add_cos_sq (π * (w₁ * ξ)), Real.sin_sq_add_cos_sq (π * (w₂ * ξ))]
+    have h1 : |Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ))| ≤ 1 := Real.abs_sin_le_one _
+    have h2 : |Real.sin (π * δ * ξ)| ≤ π * δ * |ξ| := by
+      refine Real.abs_sin_le_abs.trans_eq ?_
+      rw [abs_mul, abs_mul, abs_of_pos hπ, abs_of_pos hδ]
+    have hprod : |Real.sin (π * (w₁ * ξ) + π * (w₂ * ξ))| * |Real.sin (π * δ * ξ)|
+        ≤ π * δ * |ξ| :=
+      (mul_le_mul h1 h2 (abs_nonneg _) zero_le_one).trans_eq (one_mul _)
+    refine le_min ?_ ?_
+    · rw [hAB, hsin, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2), abs_mul,
+        show ξ ^ 2 = |ξ| ^ 2 from (sq_abs ξ).symm,
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      nlinarith [hprod, hξa, hδ, hπ, abs_nonneg (Real.sin (π * δ * ξ))]
+    · have hb : |Real.sin (π * (w₁ * ξ)) ^ 2 - Real.sin (π * (w₂ * ξ)) ^ 2| ≤ 1 := by
+        rw [abs_le]
+        constructor <;>
+          nlinarith [Real.sin_sq_le_one (π * (w₁ * ξ)), Real.sin_sq_le_one (π * (w₂ * ξ)),
+            sq_nonneg (Real.sin (π * (w₁ * ξ))), sq_nonneg (Real.sin (π * (w₂ * ξ)))]
+      rw [hAB, abs_div, abs_of_pos (by positivity : (0 : ℝ) < δ * π ^ 2 * ξ ^ 2),
+        div_le_div_iff₀ (by positivity) (by positivity)]
+      simpa using mul_le_mul_of_nonneg_right hb
+        (by positivity : (0 : ℝ) ≤ δ * π ^ 2 * ξ ^ 2)
+
+/-! ## Esseen's smoothing inequality at the level of distribution functions -/
+
+/-- **Esseen's smoothing inequality, at the level of distribution functions.**
+
+For probability laws `P` and `Q` on the line whose distribution functions are compared, with
+`Q` having an `A`-Lipschitz distribution function, and for every flank width `δ > 0`,
+
+`|F_P(x) − F_Q(x)| ≤ ∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ · min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + A δ`
+
+uniformly in `x`. Substituting `t = −2πξ` turns the integral into
+`(1/π) ∫ ‖φ_P(t) − φ_Q(t)‖ min(1/|t|, 2/(πδt²)) dt`, which is the classical Esseen bound
+`(1/π) ∫ |φ_P − φ_Q|/|t| dt` together with the extra quadratic decay supplied by the flank.
+
+The route is the one assembled in this file and uses **no Stieltjes-level Lévy inversion**:
+ramps de-smooth the half-line indicator (`abs_measure_Iic_sub_le_of_integral_ramp`), the mass
+that a ramp carries to `−∞` cancels in the difference of two probability laws
+(`abs_integral_ramp_sub_le_of_trapezoid`), and the resulting compactly supported trapezoid is a
+Fourier transform of an integrable function with the classical `1/|ξ|` envelope
+(`exists_fourier_trapezoid`), so `norm_integral_fourier_sub_le` applies to it directly. -/
+theorem abs_measure_Iic_sub_le_charFun {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {δ A : ℝ} (hδ : 0 < δ)
+    -- the comparison distribution function is `A`-Lipschitz
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    -- the weighted characteristic-function difference is integrable
+    (hint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+        * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))))
+    (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal|
+      ≤ (∫ ξ : ℝ, ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) + A * δ := by
+  refine abs_measure_Iic_sub_le_of_trapezoid hδ hQ (fun v u hvu => ?_) x
+  obtain ⟨g, hgint, hgfour, hgnorm⟩ := exists_fourier_trapezoid hδ hvu
+  have hcast : ∀ R : Measure ℝ, IsProbabilityMeasure R →
+      (∫ y : ℝ, 𝓕 g y ∂R) = ((∫ y : ℝ, trapezoid v u δ y ∂R : ℝ) : ℂ) := by
+    intro R _
+    simp_rw [hgfour]
+    exact integral_complex_ofReal
+  have hnormeq : ‖(∫ y : ℝ, 𝓕 g y ∂P) - ∫ y : ℝ, 𝓕 g y ∂Q‖
+      = |(∫ y : ℝ, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y ∂Q| := by
+    rw [hcast P inferInstance, hcast Q inferInstance, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs]
+  have hbound : ∀ ξ : ℝ,
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖
+        ≤ ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) :=
+    fun ξ => mul_le_mul_of_nonneg_left (hgnorm ξ) (norm_nonneg _)
+  have hsm : Measurable fun ξ : ℝ => -(2 * π * ξ) := by fun_prop
+  have hmeas : AEStronglyMeasurable
+      (fun ξ : ℝ => ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖) volume :=
+    (((measurable_charFun.comp hsm).sub
+      (measurable_charFun.comp hsm)).norm.aestronglyMeasurable).mul
+        hgint.aestronglyMeasurable.norm
+  have hLint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFun Q (-(2 * π * ξ))‖ * ‖g ξ‖) :=
+    hint.mono' hmeas (Filter.Eventually.of_forall fun ξ => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      exact hbound ξ)
+  rw [← hnormeq]
+  exact (norm_integral_fourier_sub_le hgint).trans (integral_mono hLint hint hbound)
 
 end StatLean.HypothesisTesting

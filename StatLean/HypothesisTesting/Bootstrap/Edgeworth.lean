@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
+import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -41,6 +42,12 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   it.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
+* The three expansions are **statements only** at this pin. The analytic route is now open at
+  the Fourier end — `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing inequality at
+  the level of distribution functions (`abs_measure_Iic_sub_le_charFun`), and
+  `normalCDF_sub_le` below supplies its Lipschitz input — but the *characteristic-function*
+  input is still missing: a damped expansion of `(charFun F)ⁿ` to order `n⁻¹`. See the
+  re-derived status note (G1)–(G3) on `edgeworth_mean_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -78,6 +85,55 @@ non-lattice requirement that makes a one-term Edgeworth expansion valid. -/
 def CramerCondition (F : Measure ℝ) : Prop :=
   ∃ c : ℝ, c < 1 ∧ ∀ᶠ s in Filter.cocompact ℝ, ‖charFun F s‖ ≤ c
 
+/-! ## The Lipschitz modulus of the normal distribution function
+
+`abs_measure_Iic_sub_le_charFun` (Esseen's smoothing inequality, proved in
+`ForMathlib/EsseenSmoothing.lean`) compares a law with an `A`-Lipschitz comparison
+distribution function. For the Gaussian comparison that Edgeworth expansions use, `A` is the
+supremum of the normal density; the two results below supply it. -/
+
+/-- **The normal distribution function is Lipschitz with constant `(2πv)^{-1/2}`**, the
+supremum of the normal density. This is the constant `A` that Esseen's smoothing inequality
+`abs_measure_Iic_sub_le_charFun` consumes when the comparison law is normal. -/
+theorem normalCDF_sub_le {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {a b : ℝ} (hab : a ≤ b) :
+    normalCDF m v b - normalCDF m v a ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ * (b - a) := by
+  have hdisj : gaussianReal m v (Set.Iic b)
+      = gaussianReal m v (Set.Iic a) + gaussianReal m v (Set.Ioc a b) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hab]
+  have hnn : 0 ≤ ∫ x in Set.Ioc a b, gaussianPDFReal m v x :=
+    integral_nonneg fun x => gaussianPDFReal_nonneg m v x
+  have hstep : normalCDF m v b - normalCDF m v a = ∫ x in Set.Ioc a b, gaussianPDFReal m v x := by
+    unfold normalCDF
+    rw [hdisj, ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _),
+      gaussianReal_apply_eq_integral m hv (Set.Ioc a b), ENNReal.toReal_ofReal hnn]
+    ring
+  have hbound : ∀ x : ℝ, gaussianPDFReal m v x ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ := by
+    intro x
+    have hexp : Real.exp (-(x - m) ^ 2 / (2 * v)) ≤ 1 := by
+      refine Real.exp_le_one_iff.2 ?_
+      have h : (0 : ℝ) ≤ (x - m) ^ 2 / (2 * v) := by positivity
+      rw [neg_div]
+      linarith
+    calc gaussianPDFReal m v x
+        = (Real.sqrt (2 * Real.pi * v))⁻¹ * Real.exp (-(x - m) ^ 2 / (2 * v)) := rfl
+      _ ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ * 1 :=
+          mul_le_mul_of_nonneg_left hexp (by positivity)
+      _ = (Real.sqrt (2 * Real.pi * v))⁻¹ := mul_one _
+  rw [hstep]
+  calc (∫ x in Set.Ioc a b, gaussianPDFReal m v x)
+      ≤ ∫ _x in Set.Ioc a b, (Real.sqrt (2 * Real.pi * v))⁻¹ :=
+        setIntegral_mono_on (integrable_gaussianPDFReal m v).integrableOn
+          (continuous_const.integrableOn_Ioc) measurableSet_Ioc fun x _ => hbound x
+    _ = (Real.sqrt (2 * Real.pi * v))⁻¹ * (b - a) := by
+        rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+          ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
+
+/-- The standard normal distribution function is `(2π)^{-1/2}`-Lipschitz. -/
+theorem stdNormalCDF_sub_le {a b : ℝ} (hab : a ≤ b) :
+    stdNormalCDF b - stdNormalCDF a ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (b - a) := by
+  simpa using normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
+
 /-! ## The expansions -/
 
 section Edgeworth
@@ -94,38 +150,54 @@ uniformly in the argument, for a constant `C` depending only on the sampling law
 DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (it is Hall (1992),
 Thm 2.2 with `j = 1`: under `E X⁴ < ∞` and Cramér's condition the two-term expansion has
 remainder `o(n⁻¹)`, so truncating after the `n^{-1/2}` term leaves `O(n⁻¹)`, and enlarging `C`
-absorbs the finitely many small `n`). It is not proved here. See the status note at the head of
-`ForMathlib/EsseenSmoothing.lean`: the analytic route needs (a) an expansion of `(charFun F)ⁿ`
-to order `n⁻¹` valid on a Cramér window plus a tail estimate off it, and (b) a CDF-level
-Lévy/Esseen inversion to turn that into a bound on the distribution function. Ingredient (b) is
-the one gap that survives this session's work — the sinc integral, the Fejér normalisation and
-the compactly supported Fejér/triangle Fourier pair are now proved
-(`integral_sin_div_sq`, `integral_fejerKernel`, `fourier_tentC`, `fourier_sqSincC`), as is the
-smoothing inequality in test-function form (`norm_integral_fourier_sub_le`).
+absorbs the finitely many small `n`). It is not proved here.
 
-**Re-derivation of the obstruction (attempted from the test-function form; which estimate
-fails).** `norm_integral_fourier_sub_le` bounds `‖∫ 𝓕g dP − ∫ 𝓕g dQ‖` by
-`∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ · ‖g ξ‖ dξ` for `g ∈ L¹`. Reaching `|F_P(x) − F_Q(x)|` would need
-`𝓕g` to approximate `1_{(−∞, x]}`, which no `L¹` `g` does, so one must go through the smoothed
-difference `Δ_T(x) := ((F_P − F_Q) ∗ K_T)(x)`. Two steps are then required.
+**The previously recorded obstruction is overturned.** An earlier note on this theorem named the
+CDF-level (Stieltjes) Lévy/Esseen inversion — "the identity `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T}
+((φ_P − φ_Q)/(−it)) e^{−itx}(1 − |t|/T) dt`" — as *the estimate that fails*, on the ground that
+the integrand is integrable at `t = 0` only through cancellation and that `F_P − F_Q` is not
+`L¹`. That is no longer the situation. `ForMathlib/EsseenSmoothing.lean` now proves, axiom-clean
+and **without any Stieltjes-level inversion**,
 
-* (E1) The **Stieltjes/Lévy inversion with the division by `t`**:
-  `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T} ((φ_P t − φ_Q t) / (−i t)) e^{−i t x} (1 − |t|/T) dt`. This is
-  *not* an instance of Mathlib's `Real.fourierIntegralInv` inversion: the integrand is integrable
-  at `t = 0` only because of the cancellation `φ_P 0 = φ_Q 0 = 1`, and `F_P − F_Q` is not itself
-  `L¹` without a prior `O(|x|⁻¹)` tail bound. Mathlib v4.29.1 has no Stieltjes-level inversion,
-  and the tent/Fejér pair proved in `EsseenSmoothing` supplies the kernel but not this identity.
-  **This is the estimate that fails.**
-* (E2) The **de-smoothing** `sup |F_P − F_Q| ≤ 2 sup |Δ_T| + C · (sup density of the comparison
-  law) / T`. This is the step that monotonicity of `F_P` plus the smoothed bound at a mesh of
-  continuity points *does* deliver, and it is **not** the obstruction — but it consumes (E1) as
-  its input, so it cannot be run first.
+* `abs_measure_Iic_sub_le_of_integral_ramp` — the de-smoothing step ("E2"), and
+* `abs_measure_Iic_sub_le_charFun` — Esseen's smoothing inequality at CDF level:
+  `|F_P(x) − F_Q(x)| ≤ ∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + A δ`.
 
-Even with (E1) in hand the two expansions need, in addition, the pointwise estimate
-`(charFun F (t/(σ√n)))ⁿ = e^{−t²/2}(1 + (γ/6)(i t)³ n^{-1/2}) + O(t⁴/n)` on a window
-`|t| ≤ c√n`, together with the Cramér tail `∫_{c√n ≤ |t| ≤ T_n} |·| dt = o(n⁻¹)` at `T_n ≍ n`;
-neither is present at this pin, and `ForMathlib/BerryEsseen`'s
-`norm_charFun_pow_sub_gaussian_le` gives only the leading (`Berry–Esseen`) order. -/
+The `1/t` weight is obtained by running the whole argument on test functions: ramps squeeze the
+half-line indicator, the non-`L¹` tail of a ramp cancels because `P − Q` has total mass zero, and
+the resulting compactly supported trapezoid is a difference of two co-centred dilated tents whose
+transforms cancel to exactly `1/(π|ξ|)`. The Lipschitz constant `A` for the Gaussian comparison
+is `normalCDF_sub_le` above.
+
+**Re-derivation: what actually remains.** Three items, in increasing order of difficulty.
+
+* (G1) **Signed comparison — bookkeeping, not an obstruction.** The Edgeworth approximant is not
+  the distribution function of a probability measure: it is a signed measure with the explicit
+  `L¹` density `y ↦ σ⁻¹φ(y/σ)(1 − (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`.
+  `abs_measure_Iic_sub_le_charFun` is stated for two probability measures, and uses that
+  hypothesis on `Q` only through (a) equality of total masses, which is what makes the ramp mass
+  at `−∞` cancel (`tendsto_integral_ramp_atBot`), and (b) Parseval against a finite measure
+  (`integral_fourier_measure`). Both survive verbatim for `volume.withDensity q` with `q` real
+  `L¹` of integral `1`; restating the chain for a density instead of a measure is the work.
+* (G2) **The damped characteristic-function expansion. This is the estimate that fails.** What is
+  needed is `‖φ_F(t/(σ√n))ⁿ − e^{−t²/2}(1 + (γ/6)(it)³ n^{-1/2})‖ ≤ C (t⁴ + t⁶) e^{−t²/4} / n`
+  on the window `|t| ≤ c√n`. `ForMathlib/BerryEsseen.lean` supplies only the third-order Taylor
+  bound `norm_charFun_sub_quadratic_le` and the **undamped** power bound
+  `norm_charFun_pow_sub_gaussian_le`, whose right-hand side `n(ρ|w|³/6 + (v w²/2)²/2)` carries no
+  `e^{−t²/4}` factor. Undamped, the weighted integral in `abs_measure_Iic_sub_le_charFun` does
+  converge — the second envelope `1/(δπ²ξ²)` sees to that — but it converges to a *constant*, so
+  the rate is lost entirely. Producing the damped bound needs (i) a fourth-order Taylor expansion
+  of `φ_F` with an `E|X|⁴` remainder and (ii) the quadratic majorant `|φ_F(s)| ≤ e^{−σ²s²/4}` for
+  small `|s|`, iterated to the `n`-th power. Neither is present at this pin. Note that this same
+  missing estimate, not any Fourier gap, is now what blocks a *Kolmogorov-distance Berry–Esseen*
+  theorem as well.
+* (G3) **The Cramér tail.** Off the window one needs
+  `∫_{c√n ≤ |t|} ‖φ_F(t/(σ√n))‖ⁿ min(1/|t|, 1/(δπ²t²)) dt = o(n⁻¹)`. `CramerCondition` gives
+  `‖φ_F s‖ ≤ c < 1` only *off a compact set*; the moderate range `ε ≤ |s| ≤ R` additionally needs
+  `sup_{ε ≤ |s| ≤ R} ‖φ_F s‖ < 1`. That is derivable from `CramerCondition` — if `‖φ_F s₀‖ = 1`
+  for some `s₀ ≠ 0` then `F` is carried by a lattice and `‖φ_F‖ = 1` at every multiple of `s₀`,
+  contradicting the cocompact bound — but the lattice characterisation
+  `‖φ_F s₀‖ = 1 ↔ F` lattice is absent from Mathlib v4.29.1 and would have to be proved. -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -153,11 +225,13 @@ is unskewed.
 DEFERRAL-ELIGIBLE (planned debt). The statement is correct as written (TSH4 Thm 18.4.1; the
 studentized root is a smooth function of the pair of means `(X̄, X̄₂)`, absolute continuity of
 `F` supplies the joint Cramér condition, and `E X⁴ < ∞` gives the `O(n⁻¹)` remainder). It is
-not proved here, and it is strictly harder than `edgeworth_mean_uniform`: beyond the
-CDF-level Lévy/Esseen inversion recorded there, it needs the **bivariate** Edgeworth expansion
-for `(X̄, X̄₂)` together with the delta-method transfer to the smooth function
-`(u, v) ↦ u/√(v − u²)`. Neither is available at this pin; see the status note at the head of
-`ForMathlib/EsseenSmoothing.lean` for exactly which Fourier foundations now exist. -/
+not proved here, and it is strictly harder than `edgeworth_mean_uniform`: it inherits (G1)–(G3)
+recorded there — in particular the damped characteristic-function expansion (G2), which is the
+binding estimate — and needs in addition the **bivariate** Edgeworth expansion for `(X̄, X̄₂)`
+together with the delta-method transfer to the smooth function `(u, v) ↦ u/√(v − u²)`. The
+CDF-level Esseen inversion is *not* among the missing pieces any more: see
+`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`, and the status note at
+the head of that file. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -185,8 +259,8 @@ DEFERRAL-ELIGIBLE (planned debt). This is a *corollary* of
 expansion, the quantile version follows by inverting it (the Cornish–Fisher step is the implicit
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
-`0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform`. -/
+`0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstructions recorded on
+`edgeworth_studentized_uniform` and, through it, (G1)–(G3) on `edgeworth_mean_uniform`. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
