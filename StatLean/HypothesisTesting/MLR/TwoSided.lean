@@ -420,28 +420,28 @@ theorem isUMP_twoSided
       power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α ∧
       IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
         (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
-  -- BLOCKED upstream, on two distinct open sorries of `NeymanPearson/Generalized.lean`.
+  -- OBSTRUCTION (re-derived; the previously recorded upstream blockers are largely obsolete).
   -- ROADMAP (TSH4 Thm 3.7.1): apply the `m = 2` generalized fundamental lemma with
   -- `f₁ = p_{θ₁}`, `f₂ = p_{θ₂}`, `f₃ = p_θ` for `θ ∈ (θ₁, θ₂)` and constraint vector
-  -- `c = (α, α)`. Two ingredients are needed and both are `sorry` there:
-  --   • `exists_test_with_prescribed_sizes` — produces a test meeting the two size
-  --     conditions with multipliers; it is `sorry` (Generalized.lean:567);
-  --   • `exists_test_max_integral_of_constraints` — existence of a maximizer over the
-  --     constraint class; `sorry` (Generalized.lean:127), and genuinely a compactness
-  --     statement (weak-* sequential compactness of the unit ball of `L∞(μ)`).
-  -- NOTE: the previously recorded obstruction "momentSet closedness" is now only partly
-  -- relevant — `isClosed_momentSet`/`convex_isClosed_momentSet` are proven and
-  -- `ForMathlib/TestsWeakCompact` is 0-sorry — but `exists_multipliers_of_max`
-  -- (Generalized.lean:540) and the two above are still open, so no honest reduction exists
-  -- yet. `isMax_of_multiplier_form` (proven) only certifies a *given* candidate.
-  -- A THIRD gap is specific to this file and is NOT covered by the generalized lemma: the
-  -- multiplier shape `{p_θ > k₁p_{θ₁} + k₂p_{θ₂}}` must be identified with an *interval*
-  -- `C₁ < T < C₂` of the natural statistic. In canonical form this is the strict convexity
-  -- of `t ↦ exp(η₁ t) ` combinations — `k₁e^{a₁t} + k₂e^{a₂t} < e^{a₃t}` on an interval and
-  -- `>` outside it, for `a₁ < a₃ < a₂` — which has no Mathlib brick and needs its own
-  -- development (a strictly-convex-crossing lemma for exponential sums).
-  -- TODO: close `exists_test_with_prescribed_sizes` upstream, then add the
-  -- exponential-sum two-crossing lemma here.
+  -- `c = (α, α)`. Upstream status is now:
+  --   • `exists_test_max_integral_of_constraints` — PROVEN (existence of a maximizer);
+  --   • `convex_isClosed_momentSet` — PROVEN (both halves);
+  --   • `exists_multipliers_of_max` — PROVEN (supporting hyperplane at the top of the fibre);
+  --   • `exists_test_with_prescribed_sizes` — still `sorry`, on a finite-dimensional duality
+  --     step (see its docstring).
+  -- Two gaps remain for THIS theorem, and neither is upstream:
+  --   (1) INNER-POINT. `exists_multipliers_of_max` needs `(α, α) ∈ interior (momentSet μ
+  --       ![p_{θ₁}, p_{θ₂}])` in `ℝ²`. That holds iff `p_{θ₁}, p_{θ₂}` are a.e. linearly
+  --       independent, which is true here (strictly increasing `η` in a nondegenerate
+  --       exponential family) but is not recorded anywhere and needs its own proof: from
+  --       independence one must still deduce that the moment map is locally open at `α·𝟙`.
+  --   (2) SHAPE-TO-INTERVAL. The multiplier shape `{p_θ > k₁p_{θ₁} + k₂p_{θ₂}}` must be
+  --       identified with an *interval* `C₁ < T < C₂` of the natural statistic. In canonical
+  --       form this is a strictly-convex-crossing statement for exponential sums —
+  --       `k₁e^{a₁t} + k₂e^{a₂t} < e^{a₃t}` on an interval and `>` outside it, for
+  --       `a₁ < a₃ < a₂` — with no Mathlib brick.
+  -- TODO: prove (1) as a moment-set openness lemma and (2) as an exponential two-crossing
+  -- lemma; the assembly is then `exists_multipliers_of_max` + `isMax_of_multiplier_form`.
   sorry
 
 /-- **Minimum rejection probability outside the interval.** Among all tests whose size is
@@ -466,25 +466,53 @@ theorem power_min_twoSided
     ∀ ψ, IsCriticalFn ψ → power P ψ θ₁ = α → power P ψ θ₂ = α →
       ∀ θ : ℝ, θ < θ₁ ∨ θ₂ < θ →
         power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ ≤ power P ψ θ := by
-  -- BLOCKED upstream. ROADMAP (TSH4 Thm 3.7.1, minimizing clause): outside `[θ₁, θ₂]` apply
-  -- the `m = 2` generalized fundamental lemma to the CO-test `1 − φ` — i.e. maximize
+  -- OBSTRUCTION (re-derived). ROADMAP (TSH4 Thm 3.7.1, minimizing clause): outside `[θ₁, θ₂]`
+  -- apply the `m = 2` generalized fundamental lemma to the CO-test `1 − φ` — i.e. maximize
   -- `∫(1 − φ)p_θ` subject to the same two size conditions, which by
-  -- `isMax_le_of_multiplier_form_nonneg` needs multipliers of the right sign. The
-  -- multipliers come from `exists_multipliers_of_max` (`sorry`, Generalized.lean:540), which
-  -- rests on the inner-point condition for `momentSet`, and the maximizer they are attached
-  -- to comes from `exists_test_max_integral_of_constraints` (`sorry`,
-  -- Generalized.lean:127). Unlike the one-sided case there is no single-likelihood-ratio
-  -- shortcut: `power_min_oneSided` could reduce to the plain NP lemma because one constraint
-  -- means one multiplier, whereas here the sign pattern of `(k₁, k₂)` outside `[θ₁, θ₂]` is
-  -- exactly what the undetermined-multiplier existence theorem supplies.
-  -- TODO: close `exists_multipliers_of_max` / `exists_test_max_integral_of_constraints`
-  -- upstream, then this is the `isMax_le_of_multiplier_form_nonneg` assembly.
+  -- `isMax_le_of_multiplier_form_nonneg` needs multipliers of the right sign.
+  -- Upstream is no longer the blocker: `exists_multipliers_of_max` and
+  -- `exists_test_max_integral_of_constraints` are both PROVEN now. What remains is exactly
+  -- what this file must supply on its own:
+  --   (1) the inner-point hypothesis `(α, α) ∈ interior (momentSet μ ![p_{θ₁}, p_{θ₂}])`
+  --       (see the note on `isUMP_twoSided`), and
+  --   (2) the SIGN of the multipliers `(k₁, k₂)` outside `[θ₁, θ₂]`. `exists_multipliers_of_max`
+  --       delivers a `k`, but not `0 ≤ kᵢ`, and `isMax_le_of_multiplier_form_nonneg` needs
+  --       nonnegativity to upgrade the competitor class from equality to inequality
+  --       constraints. Deriving the sign is the exponential-family computation of TSH4
+  --       Thm 3.7.1 and has no brick here yet.
+  -- Unlike the one-sided case there is no single-likelihood-ratio shortcut:
+  -- `power_min_oneSided` could reduce to the plain NP lemma because one constraint means one
+  -- multiplier.
+  -- TODO: moment-set openness lemma + the multiplier-sign computation, then the
+  -- `isMax_le_of_multiplier_form_nonneg` assembly.
   sorry
 
 /-- **Comparison of two two-sided tests with a common size at `θ₁`.** If the rejection
 interval of the second test lies to the right of that of the first — a larger left
 boundary, or the same boundary with a smaller randomization weight there — then the second
-test is strictly more powerful above `θ₁` and strictly less powerful below it. -/
+test is strictly more powerful above `θ₁` and strictly less powerful below it.
+
+**FALSE AS STATED (verified counterexample; left `sorry` per the honest-refusal policy).**
+The conclusion is a *strict* inequality, but nothing forces the statistic to be
+nondegenerate: `hstrict` is vacuous when `T` is constant, since it only constrains pairs
+with `T x < T y`.
+
+*Counterexample.* `𝓧 = ℝ`, `μ = volume`, `p θ x = ϕ(x − θ)` (so `hpos : 0 < p θ x` holds),
+and `T = fun _ => 0`, a measurable constant, so `hstrict` holds vacuously. Take
+`C₁ = -2 < C₂ = -1`, `C₁' = 1 < C₂' = 2` and all four `γ = 0`; `hright` holds as
+`C₁ = -2 < 1 = C₁'`. Both tests are identically `0`: at `t = 0` neither `t = Cᵢ` nor
+`Cᵢ < t < Cᵢ₊₁` holds in either configuration. So `hsize` holds (`0 = 0`) while the
+conclusion demands `0 < 0` at every `θ > θ₁`. The failure is not an artefact of the constant
+statistic: it occurs whenever both rejection intervals miss the essential range of `T`.
+
+*Repair.* Add a nondegeneracy hypothesis putting `T`-mass strictly inside both rejection
+intervals — e.g. `0 < power P (twoSidedTest T C₁ C₂ γ₁ γ₂) θ₁ < 1` — or assume `T`
+surjective. Under such a hypothesis the proof is the Lehmann comparison:
+`twoSidedVal_sub_sep` (already proven in this file) says the positive part of `D = φ' − φ`
+sits strictly above its negative part in `T`, so strict MLR gives a separating ratio
+constant `k` with `∫D p_θ = ∫D(p_θ/p_{θ₁} − k)p_{θ₁} + k∫D p_{θ₁}`, the first term being
+strictly signed for `θ ≠ θ₁` and the second vanishing by `hsize`. Sibling
+`twoSided_ae_unique` is unaffected and is proven below. -/
 theorem power_lt_of_twoSided_right
     -- USER-INPUT: dominating measure, σ-finite
     (μ : Measure 𝓧) [SigmaFinite μ]
@@ -513,26 +541,7 @@ theorem power_lt_of_twoSided_right
         power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ) ∧
       ∀ θ : ℝ, θ < θ₁ → power P (twoSidedTest T C₁' C₂' γ₁' γ₂') θ <
         power P (twoSidedTest T C₁ C₂ γ₁ γ₂) θ := by
-  -- FALSE AS STATED (verified counterexample). The conclusion is a STRICT inequality, but
-  -- nothing forces the statistic to be non-degenerate: `hstrict` is vacuous when `T` is
-  -- constant, since it only constrains pairs with `T x < T y`.
-  --
-  -- COUNTEREXAMPLE. `𝓧 = ℝ`, `μ = volume`, `p θ x = ϕ(x − θ)` (so `hpos : 0 < p θ x` holds),
-  -- and `T = fun _ => 0`, a measurable constant. Then `hstrict` holds vacuously. Take
-  -- `C₁ = -2 < C₂ = -1`, `C₁' = 1 < C₂' = 2`, all four `γ = 0`; `hright` holds as
-  -- `C₁ = -2 < 1 = C₁'`. Both tests are identically `0`: for `t = 0` neither `t = Cᵢ` nor
-  -- `Cᵢ < t < Cᵢ₊₁` holds in either configuration. So `hsize` holds (`0 = 0`), and the
-  -- conclusion demands `0 < 0` at every `θ > θ₁`. False.
-  --
-  -- The counterexample is not an artefact of the constant statistic: the same failure occurs
-  -- whenever both rejection intervals miss the (essential) range of `T`.
-  -- TODO(statement-bug): add a non-degeneracy hypothesis putting `T`-mass strictly inside
-  -- both rejection intervals — e.g. `0 < power P (twoSidedTest T C₁ C₂ γ₁ γ₂) θ₁ < 1` — or
-  -- assume `T` surjective. Under such a hypothesis the proof is the Lehmann comparison:
-  -- `twoSidedVal_sub_sep` (already proven in this file) says the positive part of
-  -- `D = φ' − φ` sits strictly above its negative part in `T`, so strict MLR gives a
-  -- separating ratio constant `k` with `∫D p_θ = ∫D(p_θ/p_{θ₁} − k)p_{θ₁} + k∫D p_{θ₁}`,
-  -- the first term being strictly signed for `θ ≠ θ₁` and the second vanishing by `hsize`.
+  -- FALSE AS STATED: see the docstring for the verified counterexample and the repair.
   sorry
 
 /-- **The size conditions determine the test.** Two two-sided tests with size exactly `α`
