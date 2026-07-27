@@ -104,29 +104,31 @@ theorem integrable_mul_exp_neg_sq_half {g : ℝ → ℝ} (hg : Continuous g) {C 
   rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
   exact mul_le_mul_of_nonneg_right (hC x) (Real.exp_pos _).le
 
-/-- **The Stein solution is differentiable, with the derivative dictated by the Stein
-equation.** Writing `f = e^{w²/2} G` with `G(w) = ∫_{-∞}^w g e^{-x²/2}` and `g = h - 𝔼h(Z)`,
-the fundamental theorem of calculus gives `G' (w) = g(w) e^{-w²/2}`, and the product rule
-cancels the two exponentials. -/
-theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
+/-- The centred test function times the Gaussian kernel is integrable. -/
+theorem integrable_centred_mul_exp_neg_sq_half {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
+    (hC : ∀ x, |h x| ≤ C) :
+    Integrable fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) := by
+  refine integrable_mul_exp_neg_sq_half (hh.sub continuous_const)
+    (C := C + |stdGaussianExpect h|) fun x => ?_
+  have a1 := le_abs_self (h x)
+  have a2 := neg_abs_le (h x)
+  have b1 := le_abs_self (stdGaussianExpect h)
+  have b2 := neg_abs_le (stdGaussianExpect h)
+  have a3 := hC x
+  rw [abs_le]
+  constructor <;> linarith
+
+/-- **The tail integral of the centred test function differentiates by the fundamental theorem
+of calculus**: `G(w) = ∫_{-∞}^w (h − 𝔼h(Z))e^{-x²/2}` has derivative
+`(h(w) − 𝔼h(Z))e^{-w²/2}`. -/
+theorem hasDerivAt_gaussTail {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
     (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
-    HasDerivAt (steinSolution h)
-      (w * steinSolution h w + (h w - stdGaussianExpect h)) w := by
-  have hgc : Continuous fun x : ℝ => h x - stdGaussianExpect h := hh.sub continuous_const
-  have hgb : ∀ x, |h x - stdGaussianExpect h| ≤ C + |stdGaussianExpect h| := by
-    intro x
-    have a1 := le_abs_self (h x)
-    have a2 := neg_abs_le (h x)
-    have b1 := le_abs_self (stdGaussianExpect h)
-    have b2 := neg_abs_le (stdGaussianExpect h)
-    have a3 := hC x
-    rw [abs_le]
-    constructor <;> linarith
+    HasDerivAt
+      (fun u : ℝ => ∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w := by
   have hFc : Continuous fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) :=
-    hgc.mul (by fun_prop)
-  have hFint : Integrable fun x : ℝ => (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2) :=
-    integrable_mul_exp_neg_sq_half hgc hgb
-  -- the tail integral, as a function of its upper endpoint, differentiates by the FTC
+    (hh.sub continuous_const).mul (by fun_prop)
+  have hFint := integrable_centred_mul_exp_neg_sq_half hh hC
   have hIic : ∀ u : ℝ,
       (∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
         = (∫ x in Iic (0 : ℝ), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
@@ -135,17 +137,25 @@ theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
     have hsub := intervalIntegral.integral_Iic_sub_Iic (a := (0 : ℝ)) (b := u)
       hFint.integrableOn hFint.integrableOn
     linarith
-  have hderiv0 : HasDerivAt
-      (fun u : ℝ => ∫ x in Iic u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
-      ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w := by
-    have hkey : HasDerivAt
-        (fun u : ℝ => ∫ x in (0 : ℝ)..u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
-        ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w :=
-      intervalIntegral.integral_hasDerivAt_right hFint.intervalIntegrable
-        (hFc.stronglyMeasurableAtFilter _ _) hFc.continuousAt
-    refine (hkey.const_add
-      (∫ x in Iic (0 : ℝ), (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))).congr_of_eventuallyEq ?_
-    filter_upwards with u using hIic u
+  have hkey : HasDerivAt
+      (fun u : ℝ => ∫ x in (0 : ℝ)..u, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+      ((h w - stdGaussianExpect h) * Real.exp (-w ^ 2 / 2)) w :=
+    intervalIntegral.integral_hasDerivAt_right hFint.intervalIntegrable
+      (hFc.stronglyMeasurableAtFilter _ _) hFc.continuousAt
+  refine (hkey.const_add
+    (∫ x in Iic (0 : ℝ),
+      (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))).congr_of_eventuallyEq ?_
+  filter_upwards with u using hIic u
+
+/-- **The Stein solution is differentiable, with the derivative dictated by the Stein
+equation.** Writing `f = e^{w²/2} G` with `G(w) = ∫_{-∞}^w g e^{-x²/2}` and `g = h - 𝔼h(Z)`,
+the fundamental theorem of calculus gives `G' (w) = g(w) e^{-w²/2}`, and the product rule
+cancels the two exponentials. -/
+theorem hasDerivAt_steinSolution {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
+    (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
+    HasDerivAt (steinSolution h)
+      (w * steinSolution h w + (h w - stdGaussianExpect h)) w := by
+  have hderiv0 := hasDerivAt_gaussTail hh hC w
   have hexp : HasDerivAt (fun u : ℝ => Real.exp (u ^ 2 / 2)) (w * Real.exp (w ^ 2 / 2)) w := by
     have hq : HasDerivAt (fun u : ℝ => u ^ 2 / 2) w w := by
       have h0 := (hasDerivAt_pow 2 w).div_const 2
@@ -171,6 +181,247 @@ theorem steinSolution_sub_mul {h : ℝ → ℝ} (hh : Continuous h) {C : ℝ}
     (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
     deriv (steinSolution h) w - w * steinSolution h w = h w - stdGaussianExpect h := by
   rw [(hasDerivAt_steinSolution hh hC w).deriv]; ring
+
+/-! ### The Gaussian kernel: mass, tail moments and Mills' bound
+
+Everything the three bounds of the next section need about the unnormalised kernel
+`e^{-x²/2}` is collected here: its total mass `√(2π)`, the exact one-sided first moments
+`∫_w^∞ x e^{-x²/2}dx = e^{-w²/2}` and `∫_{-∞}^w x e^{-x²/2}dx = -e^{-w²/2}`, the first
+absolute moment `∫_ℝ |x| e^{-x²/2}dx = 2`, and **Mills' lower bound**
+`∫_w^∞ e^{-x²/2}dx ≥ w(1+w²)^{-1} e^{-w²/2}` for `w > 0`. Each is a single application of
+the fundamental theorem of calculus on a half-line: the first three use the antiderivative
+`-e^{-x²/2}` of `x e^{-x²/2}`, and Mills' bound the antiderivative `-x^{-1}e^{-x²/2}` of
+`(1 + x^{-2})e^{-x²/2}` together with the crude comparison `x^{-2} ≤ w^{-2}` on `(w, ∞)`. -/
+
+/-- The Gaussian kernel differentiates to `-x e^{-x²/2}`. -/
+theorem hasDerivAt_exp_neg_sq_half (x : ℝ) :
+    HasDerivAt (fun u : ℝ => Real.exp (-u ^ 2 / 2)) (-x * Real.exp (-x ^ 2 / 2)) x := by
+  have hq : HasDerivAt (fun u : ℝ => -u ^ 2 / 2) (-x) x := by
+    have h0 := ((hasDerivAt_pow 2 x).neg).div_const 2
+    convert h0 using 1
+    push_cast
+    ring
+  have h1 := hq.exp
+  convert h1 using 1
+  ring
+
+/-- The Gaussian kernel vanishes at `+∞`. -/
+theorem tendsto_exp_neg_sq_half_atTop :
+    Tendsto (fun u : ℝ => Real.exp (-u ^ 2 / 2)) atTop (𝓝 0) := by
+  have h1 : Tendsto (fun u : ℝ => u ^ 2 / 2) atTop atTop :=
+    Filter.Tendsto.atTop_div_const (by norm_num) (tendsto_pow_atTop two_ne_zero)
+  have h2 : Tendsto (fun u : ℝ => (Real.exp (u ^ 2 / 2))⁻¹) atTop (𝓝 0) :=
+    (Real.tendsto_exp_atTop.comp h1).inv_tendsto_atTop
+  refine h2.congr fun u => ?_
+  rw [← Real.exp_neg, neg_div]
+
+/-- The Gaussian kernel vanishes at `-∞`. -/
+theorem tendsto_exp_neg_sq_half_atBot :
+    Tendsto (fun u : ℝ => Real.exp (-u ^ 2 / 2)) atBot (𝓝 0) := by
+  have h1 := tendsto_exp_neg_sq_half_atTop.comp tendsto_neg_atBot_atTop
+  refine h1.congr fun u => ?_
+  simp
+
+/-- `x e^{-x²/2}` is integrable on the line. -/
+theorem integrable_id_mul_exp_neg_sq_half :
+    Integrable (fun x : ℝ => x * Real.exp (-x ^ 2 / 2)) := by
+  have h := integrable_mul_exp_neg_mul_sq (b := (1 : ℝ) / 2) (by norm_num)
+  refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+  have hx : -(1 / 2 : ℝ) * x ^ 2 = -x ^ 2 / 2 := by ring
+  simp only [hx]
+
+/-- The total mass of the unnormalised Gaussian kernel. -/
+theorem integral_exp_neg_sq_half :
+    ∫ x : ℝ, Real.exp (-x ^ 2 / 2) = Real.sqrt (2 * Real.pi) := by
+  have h := integral_gaussian (1 / 2 : ℝ)
+  rw [show Real.pi / (1 / 2 : ℝ) = 2 * Real.pi by ring] at h
+  rw [← h]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  have hx : -x ^ 2 / 2 = -(1 / 2 : ℝ) * x ^ 2 := by ring
+  simp only [hx]
+
+/-- **The one-sided first moment on a right half-line.** -/
+theorem integral_Ioi_id_mul_exp_neg_sq_half (w : ℝ) :
+    ∫ x in Ioi w, x * Real.exp (-x ^ 2 / 2) = Real.exp (-w ^ 2 / 2) := by
+  have hlim : Tendsto (fun u : ℝ => -Real.exp (-u ^ 2 / 2)) atTop (𝓝 0) := by
+    simpa using tendsto_exp_neg_sq_half_atTop.neg
+  have h := integral_Ioi_of_hasDerivAt_of_tendsto'
+    (f := fun u : ℝ => -Real.exp (-u ^ 2 / 2))
+    (f' := fun u : ℝ => u * Real.exp (-u ^ 2 / 2)) (a := w)
+    (fun x _ => by simpa using (hasDerivAt_exp_neg_sq_half x).neg)
+    integrable_id_mul_exp_neg_sq_half.integrableOn hlim
+  simpa using h
+
+/-- **The one-sided first moment on a left half-line.** -/
+theorem integral_Iic_id_mul_exp_neg_sq_half (w : ℝ) :
+    ∫ x in Iic w, x * Real.exp (-x ^ 2 / 2) = -Real.exp (-w ^ 2 / 2) := by
+  have hlim : Tendsto (fun u : ℝ => -Real.exp (-u ^ 2 / 2)) atBot (𝓝 0) := by
+    simpa using tendsto_exp_neg_sq_half_atBot.neg
+  have h := integral_Iic_of_hasDerivAt_of_tendsto'
+    (f := fun u : ℝ => -Real.exp (-u ^ 2 / 2))
+    (f' := fun u : ℝ => u * Real.exp (-u ^ 2 / 2)) (a := w)
+    (fun x _ => by simpa using (hasDerivAt_exp_neg_sq_half x).neg)
+    integrable_id_mul_exp_neg_sq_half.integrableOn hlim
+  simpa using h
+
+/-- The first absolute moment of the Gaussian kernel. -/
+theorem integral_abs_mul_exp_neg_sq_half : ∫ x : ℝ, |x| * Real.exp (-x ^ 2 / 2) = 2 := by
+  have h := integral_comp_abs (f := fun y : ℝ => y * Real.exp (-y ^ 2 / 2))
+  simp only [sq_abs] at h
+  rw [h, integral_Ioi_id_mul_exp_neg_sq_half]
+  norm_num
+
+/-- The Gaussian tail is invariant under reflection. -/
+theorem integral_Iic_exp_neg_sq_half (w : ℝ) :
+    ∫ x in Iic w, Real.exp (-x ^ 2 / 2) = ∫ x in Ioi (-w), Real.exp (-x ^ 2 / 2) := by
+  have h := integral_comp_neg_Iic (c := w) (f := fun y : ℝ => Real.exp (-y ^ 2 / 2))
+  simpa using h
+
+/-- `-x^{-1}e^{-x²/2}` is an antiderivative of `(1 + x^{-2})e^{-x²/2}` away from the origin. -/
+private lemma hasDerivAt_mills {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun u : ℝ => -(Real.exp (-u ^ 2 / 2) / u))
+      (Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)) x := by
+  have hd := ((hasDerivAt_exp_neg_sq_half x).div (hasDerivAt_id' x) hx).neg
+  convert hd using 1
+  field_simp
+  ring
+
+/-- The Mills integrand is integrable away from the origin. -/
+private lemma integrableOn_mills {w : ℝ} (hw : 0 < w) :
+    IntegrableOn (fun x : ℝ => Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)) (Ioi w) := by
+  have hmaj : Integrable (fun x : ℝ => (1 + (w ^ 2)⁻¹) * Real.exp (-x ^ 2 / 2)) :=
+    integrable_exp_neg_sq_half.const_mul _
+  refine Integrable.mono' hmaj.integrableOn
+    ((by fun_prop : Measurable fun x : ℝ =>
+      Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)).aestronglyMeasurable) ?_
+  refine (ae_restrict_iff' measurableSet_Ioi).2 (Filter.Eventually.of_forall fun x hx => ?_)
+  have hxw : w < x := hx
+  have hx0 : 0 < x := hw.trans hxw
+  have hsq : w ^ 2 ≤ x ^ 2 := by nlinarith
+  have hinv : (x ^ 2)⁻¹ ≤ (w ^ 2)⁻¹ := by gcongr
+  have hE := (Real.exp_pos (-x ^ 2 / 2)).le
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  nlinarith [mul_le_mul_of_nonneg_left hinv hE]
+
+/-- **Mills' lower bound** for the unnormalised Gaussian tail: for `w > 0`,
+`∫_w^∞ e^{-x²/2}dx ≥ w(1+w²)^{-1}e^{-w²/2}`. -/
+theorem mul_div_le_integral_Ioi_exp_neg_sq_half {w : ℝ} (hw : 0 < w) :
+    Real.exp (-w ^ 2 / 2) * (w / (1 + w ^ 2)) ≤ ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) := by
+  have hw0 : w ≠ 0 := ne_of_gt hw
+  have hMint : IntegrableOn (fun x : ℝ => Real.exp (-x ^ 2 / 2)) (Ioi w) :=
+    integrable_exp_neg_sq_half.integrableOn
+  have hJint : IntegrableOn (fun x : ℝ => Real.exp (-x ^ 2 / 2) * (x ^ 2)⁻¹) (Ioi w) := by
+    have hsum := integrableOn_mills hw
+    have hfun : (fun x : ℝ => Real.exp (-x ^ 2 / 2) * (x ^ 2)⁻¹)
+        = fun x : ℝ => Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹) - Real.exp (-x ^ 2 / 2) := by
+      funext x; ring
+    rw [hfun]
+    exact hsum.sub hMint
+  have hlim : Tendsto (fun u : ℝ => -(Real.exp (-u ^ 2 / 2) / u)) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun u : ℝ => Real.exp (-u ^ 2 / 2) * u⁻¹) atTop (𝓝 0) := by
+      simpa using tendsto_exp_neg_sq_half_atTop.mul tendsto_inv_atTop_zero
+    have h2 : Tendsto (fun u : ℝ => -(Real.exp (-u ^ 2 / 2) * u⁻¹)) atTop (𝓝 0) := by
+      simpa using h1.neg
+    refine h2.congr fun u => ?_
+    rw [div_eq_mul_inv (Real.exp (-u ^ 2 / 2)) u]
+  have hftc : ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)
+      = Real.exp (-w ^ 2 / 2) / w := by
+    have h := integral_Ioi_of_hasDerivAt_of_tendsto'
+      (f := fun u : ℝ => -(Real.exp (-u ^ 2 / 2) / u))
+      (f' := fun u : ℝ => Real.exp (-u ^ 2 / 2) * (1 + (u ^ 2)⁻¹)) (a := w)
+      (fun x hx => hasDerivAt_mills (ne_of_gt (hw.trans_le hx)))
+      (integrableOn_mills hw) hlim
+    simpa using h
+  have hsplit : ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) * (1 + (x ^ 2)⁻¹)
+      = (∫ x in Ioi w, Real.exp (-x ^ 2 / 2))
+        + ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) * (x ^ 2)⁻¹ := by
+    rw [← integral_add hMint hJint]
+    refine setIntegral_congr_fun measurableSet_Ioi fun x _ => ?_
+    ring
+  have hJle : (∫ x in Ioi w, Real.exp (-x ^ 2 / 2) * (x ^ 2)⁻¹)
+      ≤ (w ^ 2)⁻¹ * ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) := by
+    rw [← integral_const_mul]
+    refine setIntegral_mono_on hJint (hMint.const_mul _) measurableSet_Ioi fun x hx => ?_
+    have hxw : w < x := hx
+    have hx0 : 0 < x := hw.trans hxw
+    have hsq : w ^ 2 ≤ x ^ 2 := by nlinarith
+    have hinv : (x ^ 2)⁻¹ ≤ (w ^ 2)⁻¹ := by gcongr
+    nlinarith [mul_le_mul_of_nonneg_left hinv (Real.exp_pos (-x ^ 2 / 2)).le]
+  set M : ℝ := ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) with hMdef
+  have hkey : Real.exp (-w ^ 2 / 2) / w ≤ M + (w ^ 2)⁻¹ * M := by
+    rw [← hftc, hsplit]; linarith
+  have hpos : (0 : ℝ) < 1 + w ^ 2 := by positivity
+  rw [← mul_div_assoc, div_le_iff₀ hpos]
+  have h2 : Real.exp (-w ^ 2 / 2) ≤ (M + (w ^ 2)⁻¹ * M) * w := (div_le_iff₀ hw).1 hkey
+  have h3 : (M + (w ^ 2)⁻¹ * M) * w * w = M * (1 + w ^ 2) := by field_simp; ring
+  have h4 := mul_le_mul_of_nonneg_right h2 hw.le
+  rw [h3] at h4
+  exact h4
+
+/-- **The normalised one-sided first absolute moment about `w ≥ 0`**, on the right half-line:
+`e^{w²/2}∫_w^∞ (x−w)e^{-x²/2}dx ≤ (1+w²)^{-1}`. This is the only consequence of Mills'
+bound that the derivative estimate uses. -/
+private lemma exp_mul_integral_Ioi_sub_le {w : ℝ} (hw : 0 ≤ w) :
+    Real.exp (w ^ 2 / 2) * (∫ x in Ioi w, (x - w) * Real.exp (-x ^ 2 / 2)) * (1 + w ^ 2)
+      ≤ 1 := by
+  have hI : (∫ x in Ioi w, (x - w) * Real.exp (-x ^ 2 / 2))
+      = Real.exp (-w ^ 2 / 2) - w * ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) := by
+    have h1 : IntegrableOn (fun x : ℝ => x * Real.exp (-x ^ 2 / 2)) (Ioi w) :=
+      integrable_id_mul_exp_neg_sq_half.integrableOn
+    have h2 : IntegrableOn (fun x : ℝ => w * Real.exp (-x ^ 2 / 2)) (Ioi w) :=
+      (integrable_exp_neg_sq_half.const_mul w).integrableOn
+    rw [show (fun x : ℝ => (x - w) * Real.exp (-x ^ 2 / 2))
+        = fun x : ℝ => x * Real.exp (-x ^ 2 / 2) - w * Real.exp (-x ^ 2 / 2) from by
+      funext x; ring, integral_sub h1 h2, integral_Ioi_id_mul_exp_neg_sq_half,
+      integral_const_mul]
+  rw [hI]
+  have hexp : Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) = 1 := by
+    rw [← Real.exp_add, show w ^ 2 / 2 + -w ^ 2 / 2 = 0 by ring, Real.exp_zero]
+  rcases eq_or_lt_of_le hw with hw0 | hw0
+  · rw [← hw0]
+    norm_num
+  · set M : ℝ := ∫ x in Ioi w, Real.exp (-x ^ 2 / 2) with hMdef
+    have hE : (0 : ℝ) < Real.exp (w ^ 2 / 2) := Real.exp_pos _
+    have hpos : (0 : ℝ) < 1 + w ^ 2 := by positivity
+    have hmills := mul_div_le_integral_Ioi_exp_neg_sq_half hw0
+    rw [← hMdef] at hmills
+    have heq : w * Real.exp (w ^ 2 / 2) * (Real.exp (-w ^ 2 / 2) * (w / (1 + w ^ 2)))
+        = w ^ 2 / (1 + w ^ 2) := by
+      rw [show w * Real.exp (w ^ 2 / 2) * (Real.exp (-w ^ 2 / 2) * (w / (1 + w ^ 2)))
+          = Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) * (w * w / (1 + w ^ 2)) by ring,
+        hexp, one_mul]
+      ring
+    have hkey : w ^ 2 / (1 + w ^ 2) ≤ w * Real.exp (w ^ 2 / 2) * M := by
+      rw [← heq]
+      exact mul_le_mul_of_nonneg_left hmills (mul_pos hw0 hE).le
+    have hid : w ^ 2 / (1 + w ^ 2) = 1 - 1 / (1 + w ^ 2) := by field_simp; ring
+    rw [hid] at hkey
+    have hfin : Real.exp (w ^ 2 / 2) * (Real.exp (-w ^ 2 / 2) - w * M)
+        = 1 - w * Real.exp (w ^ 2 / 2) * M := by
+      rw [show Real.exp (w ^ 2 / 2) * (Real.exp (-w ^ 2 / 2) - w * M)
+          = Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) - w * Real.exp (w ^ 2 / 2) * M by ring,
+        hexp]
+    rw [hfin]
+    calc (1 - w * Real.exp (w ^ 2 / 2) * M) * (1 + w ^ 2)
+        ≤ (1 / (1 + w ^ 2)) * (1 + w ^ 2) := by
+          refine mul_le_mul_of_nonneg_right ?_ hpos.le
+          linarith
+      _ = 1 := by field_simp
+
+/-- The left-half-line twin of `exp_mul_integral_Ioi_sub_le`, obtained by reflection. -/
+private lemma exp_mul_integral_Iic_sub_le {w : ℝ} (hw : w ≤ 0) :
+    Real.exp (w ^ 2 / 2) * (∫ x in Iic w, (w - x) * Real.exp (-x ^ 2 / 2)) * (1 + w ^ 2)
+      ≤ 1 := by
+  have hrefl : (∫ x in Iic w, (w - x) * Real.exp (-x ^ 2 / 2))
+      = ∫ x in Ioi (-w), (x - -w) * Real.exp (-x ^ 2 / 2) := by
+    have h := integral_comp_neg_Iic (c := w)
+      (f := fun y : ℝ => (y - -w) * Real.exp (-y ^ 2 / 2))
+    rw [← h]
+    refine setIntegral_congr_fun measurableSet_Iic fun x _ => ?_
+    rw [neg_sq]
+    ring
+  rw [hrefl, show w ^ 2 = (-w) ^ 2 from (neg_sq w).symm]
+  exact exp_mul_integral_Ioi_sub_le (by linarith)
 
 /-! ### Bounds on the Stein solution for a Lipschitz test function
 
