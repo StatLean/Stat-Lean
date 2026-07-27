@@ -37,6 +37,8 @@ the finite-population correction `(N-m)/(N-1) ≤ 1` being discarded.
 * `avg_perm_apply` — the one-coordinate marginal is uniform.
 * `avg_perm_apply_pair` — the two-coordinate marginal is uniform on the off-diagonal.
 * `avg_perm_blockAvg_sq_le` — the `O(1/m)` variance bound for a block average.
+* `perm_avg_indicator_blockAvg_le` — the Chebyshev step: the group average of the
+  deviation indicator, in the shape in which randomization distributions are defined.
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 12 (Extensions of the
@@ -354,5 +356,54 @@ theorem avg_perm_blockAvg_sq_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
   have hnn : 0 ≤ ((m : ℝ) - 1) * S₂ / ((m : ℝ) * (N : ℝ) * ((N : ℝ) - 1)) :=
     div_nonneg (mul_nonneg (by linarith) hS₂nn) (by positivity)
   linarith
+
+/-- **Chebyshev over the group.** The fraction of permutations for which the block average
+of a centred coefficient vector deviates by `ε` is at most `ε⁻² (1/m) (N⁻¹ ∑ d²)`. The
+left-hand side is written as the group average of an indicator — the shape in which
+randomization distributions are defined — so this is directly the Chebyshev step of a
+permutation argument. -/
+theorem perm_avg_indicator_blockAvg_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
+    -- USER-INPUT: the block is a set of `m` distinct positions
+    (a : Fin m → Fin N) (ha : Function.Injective a)
+    -- USER-INPUT: centred coefficients
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) {ε : ℝ}
+    -- USER-INPUT: a positive deviation
+    (hε : 0 < ε) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          (if ε ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))| then (1 : ℝ) else 0)
+      ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2)) := by
+  have hcardR : (0 : ℝ) < Fintype.card (Equiv.Perm (Fin N)) := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card (Equiv.Perm (Fin N)))
+  have hinvsq : ε⁻¹ ^ 2 * ε ^ 2 = 1 := by
+    field_simp
+  -- pointwise: the indicator is dominated by the normalized square
+  have hpt : ∀ σ : Equiv.Perm (Fin N),
+      (if ε ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))| then (1 : ℝ) else 0)
+        ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2 := by
+    intro σ
+    by_cases hσ : ε ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))|
+    · rw [if_pos hσ]
+      have habs : ε ^ 2 ≤ ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2 := by
+        have h1 : ε ^ 2 ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))| ^ 2 := by
+          have := mul_le_mul hσ hσ hε.le (abs_nonneg _)
+          rw [← sq, ← sq] at this
+          exact this
+        rwa [sq_abs] at h1
+      have hmul := mul_le_mul_of_nonneg_left habs (by positivity : (0 : ℝ) ≤ ε⁻¹ ^ 2)
+      linarith
+    · rw [if_neg hσ]
+      positivity
+  calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          (if ε ≤ |(m : ℝ)⁻¹ * ∑ i, d (σ (a i))| then (1 : ℝ) else 0)
+      ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin N),
+          ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2 :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hpt σ) (by positivity)
+    _ = ε⁻¹ ^ 2 * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin N),
+          ((m : ℝ)⁻¹ * ∑ i, d (σ (a i))) ^ 2) := by
+        rw [← Finset.mul_sum]; ring
+    _ ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2)) :=
+        mul_le_mul_of_nonneg_left (avg_perm_blockAvg_sq_le hm hN a ha d hd) (by positivity)
 
 end StatLean.HypothesisTesting
