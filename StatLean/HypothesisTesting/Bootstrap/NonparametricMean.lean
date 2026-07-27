@@ -453,6 +453,100 @@ private lemma tendsto_setIntegral_sq_tail
         integral_const_mul _ _
     _ < η := by nlinarith [hn1]
 
+/-- The truncated square `t ↦ min (t², M)`, as a bounded continuous function. -/
+private lemma truncSq_zero_apply {M : ℝ} (hM : 0 ≤ M) (t : ℝ) :
+    truncSq (Real.sqrt M) 0 t = min (t ^ 2) M := by
+  rw [truncSq_apply, sub_zero, Real.sq_sqrt hM]
+
+/-- The excess `(t² − M)⁺` is integrable against a square-integrable law, and its integral is the
+second moment minus the truncated second moment. -/
+private lemma integral_sq_excess {μ : Measure ℝ} [IsFiniteMeasure μ]
+    (hμ2 : MemLp (fun t : ℝ => t) 2 μ) {M : ℝ} (hM : 0 ≤ M) :
+    ∫ t, max (t ^ 2 - M) 0 ∂μ = ∫ t, t ^ 2 ∂μ - ∫ t, truncSq (Real.sqrt M) 0 t ∂μ := by
+  have hsq : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+  have hbdd : Integrable (fun t : ℝ => truncSq (Real.sqrt M) 0 t) μ :=
+    BoundedContinuousFunction.integrable _ (truncSq (Real.sqrt M) 0)
+  rw [← integral_sub hsq hbdd]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
+  simp only [truncSq_zero_apply hM]
+  rcases le_total (t ^ 2) M with hle | hle
+  · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+  · rw [min_eq_right hle, max_eq_left (by linarith)]
+
+/-- The excess integral is antitone in the truncation level. -/
+private lemma integral_sq_excess_antitone {μ : Measure ℝ} [IsFiniteMeasure μ]
+    (hμ2 : MemLp (fun t : ℝ => t) 2 μ) {M M' : ℝ} (hMM : M ≤ M') :
+    ∫ t, max (t ^ 2 - M') 0 ∂μ ≤ ∫ t, max (t ^ 2 - M) 0 ∂μ := by
+  have hsq : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+  have hint : ∀ r : ℝ, Integrable (fun t : ℝ => max (t ^ 2 - r) 0) μ := by
+    intro r
+    have hg : Integrable (fun t : ℝ => t ^ 2 + |r|) μ := hsq.add (integrable_const |r|)
+    refine Integrable.mono' hg (by fun_prop) (Filter.Eventually.of_forall fun t => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right (t ^ 2 - r) 0)]
+    exact max_le (by linarith [neg_le_abs r]) (by positivity)
+  refine integral_mono (hint M') (hint M) fun t => ?_
+  exact max_le_max (by linarith) le_rfl
+
+/-- **Uniform square-integrability along a weakly convergent sequence with converging second
+moments.**
+
+For every `ε > 0` there is one truncation level `M` at which the excess `(t² − M)⁺` has integral
+at most `ε` against **every** member of the sequence — not merely in the limit. This is the form
+the weak law of large numbers for the *squares* of a triangular array consumes. -/
+private lemma exists_uniform_sq_trunc {F : ℕ → Measure ℝ} {Q : Measure ℝ}
+    [∀ n, IsProbabilityMeasure (F n)] [IsProbabilityMeasure Q]
+    (hF2 : ∀ n, MemLp (fun t : ℝ => t) 2 (F n)) (hQ2 : MemLp (fun t : ℝ => t) 2 Q)
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ t, f t ∂(F n)) atTop (𝓝 (∫ t, f t ∂Q)))
+    (hsq : Tendsto (fun n => ∫ t, t ^ 2 ∂(F n)) atTop (𝓝 (∫ t, t ^ 2 ∂Q)))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ n, ∫ t, max (t ^ 2 - M) 0 ∂(F n) ≤ ε := by
+  classical
+  -- for each fixed level the excess integrals converge
+  have hlevel : ∀ M : ℝ, 0 ≤ M →
+      Tendsto (fun n => ∫ t, max (t ^ 2 - M) 0 ∂(F n)) atTop
+        (𝓝 (∫ t, max (t ^ 2 - M) 0 ∂Q)) := by
+    intro M hM
+    have hconv := hsq.sub (hweak (truncSq (Real.sqrt M) 0))
+    rw [← integral_sq_excess hQ2 hM] at hconv
+    exact hconv.congr fun n => (integral_sq_excess (hF2 n) hM).symm
+  -- the excess integral against any fixed square-integrable law vanishes as the level grows
+  have hvanish : ∀ (μ : Measure ℝ), IsProbabilityMeasure μ → MemLp (fun t : ℝ => t) 2 μ →
+      Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop (𝓝 0) := by
+    intro μ hμ hμ2
+    haveI := hμ
+    have hsqint : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+    have hDCT : Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop
+        (𝓝 (∫ _t : ℝ, (0 : ℝ) ∂μ)) := by
+      refine tendsto_integral_of_dominated_convergence (fun t => t ^ 2)
+        (fun j => by fun_prop) hsqint (fun j => Filter.Eventually.of_forall fun t => ?_)
+        (Filter.Eventually.of_forall fun t => ?_)
+      · rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right (t ^ 2 - (j : ℝ)) 0)]
+        exact max_le (by linarith [Nat.cast_nonneg (α := ℝ) j]) (sq_nonneg t)
+      · refine tendsto_const_nhds.congr' ?_
+        filter_upwards [eventually_ge_atTop ⌈t ^ 2⌉₊] with j hj
+        have hjr : t ^ 2 ≤ (j : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.2 hj)
+        exact (max_eq_right (by linarith)).symm
+    simpa using hDCT
+  -- a level that works for the limit, hence for all large indices
+  obtain ⟨j₀, hj₀⟩ : ∃ j : ℕ, ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂Q < ε / 2 :=
+    ((hvanish Q inferInstance hQ2).eventually_lt_const (by positivity)).exists
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (((hlevel (j₀ : ℝ) (Nat.cast_nonneg j₀)).eventually_lt_const
+      (show ∫ t, max (t ^ 2 - (j₀ : ℝ)) 0 ∂Q < ε by linarith)))
+  -- levels that work for the finitely many small indices
+  have hsmall : ∀ n : ℕ, ∃ j : ℕ, ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂(F n) ≤ ε := by
+    intro n
+    obtain ⟨j, hj⟩ := ((hvanish (F n) inferInstance (hF2 n)).eventually_lt_const
+      (show (0 : ℝ) < ε from hε)).exists
+    exact ⟨j, hj.le⟩
+  choose g hg using hsmall
+  refine ⟨((Finset.range N).sup g ⊔ j₀ : ℕ), Nat.cast_nonneg _, fun n => ?_⟩
+  rcases lt_or_ge n N with hn | hn
+  · refine le_trans (integral_sq_excess_antitone (hF2 n) ?_) (hg n)
+    exact_mod_cast le_sup_of_le_left (Finset.le_sup (Finset.mem_range.2 hn))
+  · refine le_trans (integral_sq_excess_antitone (hF2 n) ?_) (hN n hn).le
+    exact_mod_cast le_sup_right
+
 end Vitali
 
 
