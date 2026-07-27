@@ -533,6 +533,17 @@ private lemma ts_density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ
   filter_upwards with x
   rw [ENNReal.toReal_ofReal (hnn x)]
 
+/-- Converse of `ts_density_mul_integrable`: if `ψ·p` is `μ`-integrable then `ψ` is
+`P`-integrable. -/
+private lemma ts_integrable_of_density {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (hψ : Integrable (fun x => ψ x * p x) μ) : Integrable ψ P := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  rw [hPeq]
+  refine (integrable_withDensity_iff hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mpr (hψ.congr ?_)
+  filter_upwards with x
+  rw [ENNReal.toReal_ofReal (hnn x)]
+
 /-- The density integrates to `1` (local copy). -/
 private lemma ts_density_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
     [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
@@ -1919,6 +1930,10 @@ private lemma exists_twoSided_constants_window (ν : Measure ℝ) [IsProbability
     {α s : ℝ} (hα0 : 0 < α) (hs0 : 0 < s) (hs1 : s + α < 1)
     (hlt : quantile (⇑(cdf ν)) s < quantile (⇑(cdf ν)) (s + α)) :
     ∃ γ₁ γ₂ : ℝ, γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
+      γ₁ * (ν {quantile (⇑(cdf ν)) s}).toReal
+        = cdf ν (quantile (⇑(cdf ν)) s) - s ∧
+      γ₂ * (ν {quantile (⇑(cdf ν)) (s + α)}).toReal
+        = s + α - Function.leftLim (⇑(cdf ν)) (quantile (⇑(cdf ν)) (s + α)) ∧
       ∫ t, twoSidedVal (quantile (⇑(cdf ν)) s) (quantile (⇑(cdf ν)) (s + α)) γ₁ γ₂ t ∂ν = α := by
   classical
   have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
@@ -1979,7 +1994,7 @@ private lemma exists_twoSided_constants_window (ν : Measure ℝ) [IsProbability
       refine ⟨div_nonneg (by linarith) hpos.le, ?_⟩
       rw [div_le_one hpos, hm₂]
       linarith
-  refine ⟨γ₁, γ₂, hγ₁mem, hγ₂mem, ?_⟩
+  refine ⟨γ₁, γ₂, hγ₁mem, hγ₂mem, hkey₁, hkey₂, ?_⟩
   -- the test is a sum of three indicators
   have hne : C₁ ≠ C₂ := ne_of_lt hlt
   have hfun : (fun t => twoSidedVal C₁ C₂ γ₁ γ₂ t)
