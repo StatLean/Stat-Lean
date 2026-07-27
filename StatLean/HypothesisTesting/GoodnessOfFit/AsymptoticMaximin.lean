@@ -98,7 +98,291 @@ namespace StatLean.HypothesisTesting
 open AsymptoticStatistics (WeakConverges)
 open StatLean.MultipleTesting (chiSquared)
 
+/-! ### The least-favourable mixing measure
+
+The mixture route needs one rotation-invariant probability measure carried by the sphere
+of radius `b`.  It is not constructed by hand: it is the law of the *direction* of a
+standard Gaussian vector, rescaled to length `b`.  Rotation invariance is then inherited
+from `stdGaussian_map`, because the radial projection commutes with every linear isometry.
+-/
+
+section MixingMeasure
+
+variable {k : ℕ}
+
+/-- For `k ≥ 1` the standard Gaussian puts no mass at the origin. -/
+private lemma stdGaussian_ae_ne_zero (hk : 0 < k) :
+    ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ≠ 0 := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have hzero : (stdGaussian (EuclideanSpace ℝ (Fin k))) {0} = 0 := by
+    rw [← map_pi_eq_stdGaussian,
+      Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ)) (measurableSet_singleton _)]
+    refine measure_mono_null (t := (fun x : Fin k → ℝ => x (0 : Fin k)) ⁻¹' {0}) ?_ ?_
+    · intro x hx
+      simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx ⊢
+      rw [show x = (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k)).ofLp from rfl, hx]
+      rfl
+    · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
+        Measure.pi_map_eval]
+      haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+      simp
+  have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
+    rw [ae_iff]
+    simpa using hzero
+  filter_upwards [this] with z hz using by simpa using hz
+
+/-- **The least-favourable mixing measure exists.**  For `k ≥ 1` and `b > 0` there is a
+rotation-invariant probability measure carried by the sphere of radius `b`, namely the law
+of `b‖y‖⁻¹ y` for a standard Gaussian `y`. -/
+private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
+    ∃ σ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure σ ∧
+      (∀ᵐ h ∂σ, ‖h‖ = b) ∧
+      (∀ e : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k), σ.map (⇑e) = σ) := by
+  classical
+  set E := EuclideanSpace ℝ (Fin k)
+  set γ : Measure E := stdGaussian E with hγ
+  set p : E → E := fun y => (b * ‖y‖⁻¹) • y with hp
+  have hpmeas : Measurable p := by
+    refine Measurable.smul ?_ measurable_id
+    exact measurable_const.mul measurable_norm.inv
+  refine ⟨γ.map p, Measure.isProbabilityMeasure_map hpmeas.aemeasurable, ?_, ?_⟩
+  · have hset : MeasurableSet {z : E | ¬ ‖z‖ = b} :=
+      (measurableSet_eq_fun measurable_norm measurable_const).compl
+    rw [ae_iff, Measure.map_apply hpmeas hset]
+    refine measure_mono_null (t := {y : E | y = 0}) ?_ ?_
+    · intro y hy
+      by_contra hy0
+      simp only [Set.mem_setOf_eq] at hy0
+      have hn : 0 < ‖y‖ := norm_pos_iff.mpr hy0
+      refine hy ?_
+      simp only [Set.mem_setOf_eq, hp, norm_smul, Real.norm_eq_abs,
+        abs_mul, abs_inv, abs_norm, abs_of_pos hb]
+      field_simp
+      exact (abs_of_nonneg (norm_nonneg y)).symm
+    · have := stdGaussian_ae_ne_zero (k := k) hk
+      rw [ae_iff] at this
+      simpa [hγ, Set.compl_setOf] using this
+  · intro e
+    have hemeas : Measurable (⇑e) := e.continuous.measurable
+    have hcomm : (⇑e) ∘ p = p ∘ (⇑e) := by
+      funext y
+      simp only [Function.comp_apply, hp, map_smul, e.norm_map]
+    calc (γ.map p).map (⇑e) = γ.map ((⇑e) ∘ p) := by
+          rw [Measure.map_map hemeas hpmeas]
+      _ = γ.map (p ∘ (⇑e)) := by rw [hcomm]
+      _ = (γ.map (⇑e)).map p := by rw [Measure.map_map hpmeas hemeas]
+      _ = γ.map p := by rw [hγ, stdGaussian_map e]
+
+end MixingMeasure
+
 /-! ### The sphere-averaged likelihood ratio -/
+
+/-- **The sphere-averaged likelihood ratio, radial form.**  Strengthening of
+`sphereAverage_lr_monotone` for `k ≥ 1`: the radial profile `g` is not merely monotone but
+*continuous* and *strictly* increasing on `[0, ∞)`.  Both strengthenings are needed by the
+mixture–Neyman–Pearson argument: continuity to push `g ‖Z_n‖` through the continuous
+mapping theorem, strict monotonicity to identify the limiting Neyman–Pearson rejection
+region `{g ‖x‖ > g √c}` with the chi-squared region `{‖x‖² > c}` *exactly* (an inclusion in
+one direction only would leave a positive slack in the final bound). -/
+private lemma sphereAverage_radial {k : ℕ} {b : ℝ}
+    {σ : Measure (EuclideanSpace ℝ (Fin k))} (hk : 0 < k) (hb : 0 < b)
+    (hσ : IsProbabilityMeasure σ) (hsphere : ∀ᵐ h ∂σ, ‖h‖ = b)
+    (hrot : ∀ e : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k), σ.map (⇑e) = σ) :
+    ∃ g : ℝ → ℝ, Continuous g ∧ StrictMonoOn g (Set.Ici 0) ∧
+      ∀ x : EuclideanSpace ℝ (Fin k),
+        (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ) = g ‖x‖ := by
+  classical
+  haveI := hσ
+  haveI : NeZero k := ⟨hk.ne'⟩
+  set E := EuclideanSpace ℝ (Fin k)
+  -- Radial invariance: the sphere average depends on `x` only through `‖x‖`.
+  have hradial : ∀ x y : E, ‖x‖ = ‖y‖ →
+      (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (⟪h, y⟫_ℝ - b ^ 2 / 2) ∂σ := by
+    intro x y hxy
+    obtain ⟨e, he⟩ : ∃ e : E ≃ₗᵢ[ℝ] E, e y = x := ⟨_, Submodule.reflection_sub hxy.symm⟩
+    have hmeas : Measurable (⇑e) := e.continuous.measurable
+    have hg : AEStronglyMeasurable
+        (fun h : E => Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) (σ.map e) := by
+      rw [hrot e]
+      exact (by fun_prop : Continuous fun h : E =>
+        Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
+    calc (∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2) ∂(σ.map e) := by rw [hrot e]
+      _ = ∫ h, Real.exp (⟪e h, x⟫_ℝ - b ^ 2 / 2) ∂σ := integral_map hmeas.aemeasurable hg
+      _ = ∫ h, Real.exp (⟪h, y⟫_ℝ - b ^ 2 / 2) ∂σ := by
+          apply integral_congr_ae; filter_upwards with h
+          rw [show (⟪e h, x⟫_ℝ) = ⟪h, y⟫_ℝ from by rw [← he]; exact e.inner_map_map h y]
+  set u : E := EuclideanSpace.single (0 : Fin k) (1 : ℝ) with hu
+  have hunorm : ‖u‖ = 1 := by rw [hu, EuclideanSpace.single, PiLp.norm_single, norm_one]
+  have hbound : ∀ᵐ h ∂σ, |⟪h, u⟫_ℝ| ≤ b := by
+    filter_upwards [hsphere] with h hh
+    have := abs_real_inner_le_norm h u; rw [hh, hunorm, mul_one] at this; exact this
+  -- Integrability of the one-parameter family and of its `cosh` form.
+  have hintu : ∀ s : ℝ, Integrable (fun h : E => Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)) σ := by
+    intro s
+    refine (integrable_const (Real.exp (|s| * b))).mono'
+      ((by fun_prop : Continuous fun h : E =>
+        Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable) ?_
+    filter_upwards [hbound] with h ht
+    rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+    apply Real.exp_le_exp.mpr
+    have hsb : s * ⟪h, u⟫_ℝ ≤ |s| * b := by
+      calc s * ⟪h, u⟫_ℝ ≤ |s * ⟪h, u⟫_ℝ| := le_abs_self _
+        _ = |s| * |⟪h, u⟫_ℝ| := abs_mul s _
+        _ ≤ |s| * b := mul_le_mul_of_nonneg_left ht (abs_nonneg s)
+    nlinarith [sq_nonneg b]
+  have hcosh_int : ∀ r : ℝ,
+      Integrable (fun h : E => Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))) σ := by
+    intro r
+    refine (integrable_const (Real.cosh (|r| * b) * Real.exp (-(b ^ 2 / 2)))).mono'
+      ((by fun_prop : Continuous fun h : E =>
+        Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))).aestronglyMeasurable) ?_
+    filter_upwards [hbound] with h ht
+    rw [Real.norm_of_nonneg (by positivity)]
+    apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
+    rw [Real.cosh_le_cosh, abs_mul, abs_mul, abs_abs, abs_of_pos hb]
+    exact mul_le_mul_of_nonneg_left ht (abs_nonneg r)
+  -- The reflection identity, and the resulting `cosh` form of the average.
+  have hR : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+      = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
+    intro r
+    have hmeas : Measurable (⇑(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) :=
+      (LinearIsometryEquiv.neg ℝ).continuous.measurable
+    have hg : AEStronglyMeasurable
+        (fun h : E => Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2))
+        (σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
+      rw [hrot (LinearIsometryEquiv.neg ℝ)]
+      exact (by fun_prop : Continuous fun h : E =>
+        Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
+    calc (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)
+            ∂(σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
+          rw [hrot (LinearIsometryEquiv.neg ℝ)]
+      _ = ∫ h, Real.exp (r * ⟪(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h, u⟫_ℝ - b ^ 2 / 2) ∂σ :=
+          integral_map hmeas.aemeasurable hg
+      _ = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
+          apply integral_congr_ae; filter_upwards with h
+          have hneg : (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h = -h := by
+            simp [LinearIsometryEquiv.coe_neg]
+          rw [hneg, inner_neg_left]
+          congr 1; ring
+  have hsymm : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+      = ∫ h, Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) ∂σ := by
+    intro r
+    have hint₂ : Integrable (fun h : E => Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2)) σ := by
+      have h1 := hintu (-r)
+      simp only [neg_mul] at h1
+      exact h1
+    have havg : (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+        = (1 / 2) * ((∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
+            + ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ) := by
+      rw [← hR r]; ring
+    rw [havg, ← integral_add (hintu r) hint₂, ← integral_const_mul]
+    apply integral_congr_ae; filter_upwards with h
+    rw [Real.cosh_eq, sub_eq_add_neg (r * ⟪h, u⟫_ℝ), sub_eq_add_neg (-(r * ⟪h, u⟫_ℝ)),
+      Real.exp_add, Real.exp_add]
+    ring
+  -- The direction functional is non-null: otherwise `σ` would sit at the origin.
+  have hpos : σ {h : E | ⟪h, u⟫_ℝ ≠ 0} ≠ 0 := by
+    intro hzero
+    set B : OrthonormalBasis (Fin k) ℝ E := EuclideanSpace.basisFun (Fin k) ℝ with hB
+    have hall : ∀ i : Fin k, ∀ᵐ h ∂σ, ⟪h, B i⟫_ℝ = 0 := by
+      intro i
+      have hni : ‖(B i : E)‖ = ‖u‖ := by rw [hunorm, B.orthonormal.1 i]
+      obtain ⟨e, he⟩ : ∃ e : E ≃ₗᵢ[ℝ] E, e u = B i := ⟨_, Submodule.reflection_sub hni.symm⟩
+      have hu0 : ∀ᵐ h ∂σ, ⟪h, u⟫_ℝ = 0 := by
+        rw [ae_iff]; simpa using hzero
+      have hstep : ∀ᵐ h ∂σ, ⟪(e h : E), B i⟫_ℝ = 0 := by
+        filter_upwards [hu0] with h hh
+        rw [← he, e.inner_map_map]
+        exact hh
+      rw [← hrot e, ae_map_iff e.continuous.measurable.aemeasurable
+        (measurableSet_eq_fun (by fun_prop) measurable_const)]
+      exact hstep
+    have hzeroae : ∀ᵐ h ∂σ, h = 0 := by
+      rw [← ae_all_iff] at hall
+      filter_upwards [hall] with h hh
+      have h0 : B.repr h = 0 := by
+        ext i
+        rw [OrthonormalBasis.repr_apply_apply]
+        simpa [real_inner_comm] using hh i
+      simpa using congrArg B.repr.symm h0
+    have hcontra : ∀ᵐ h ∂σ, False := by
+      filter_upwards [hsphere, hzeroae] with h h1 h2
+      rw [h2, norm_zero] at h1
+      exact hb.ne h1
+    rw [Filter.eventually_false_iff_eq_bot, ae_eq_bot] at hcontra
+    exact (hσ.ne_zero σ) hcontra
+  refine ⟨fun r => ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ, ?_, ?_, ?_⟩
+  · -- Continuity, by dominated convergence with a locally constant bound.
+    rw [continuous_iff_continuousAt]
+    intro r₀
+    refine continuousAt_of_dominated
+      (F := fun (r : ℝ) (h : E) => Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2))
+      (bound := fun _ : E => Real.exp ((|r₀| + 1) * b)) ?_ ?_ (integrable_const _) ?_
+    · exact Filter.Eventually.of_forall fun r =>
+        (by fun_prop : Continuous fun h : E =>
+          Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
+    · filter_upwards [Metric.ball_mem_nhds r₀ one_pos] with r hr
+      have hrle : |r| ≤ |r₀| + 1 := by
+        have hd : |r - r₀| < 1 := by simpa [Real.dist_eq] using hr
+        have hd2 : |r| - |r₀| ≤ |r - r₀| := abs_sub_abs_le_abs_sub r r₀
+        linarith
+      filter_upwards [hbound] with h ht
+      rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+      refine Real.exp_le_exp.mpr ?_
+      have h1 : r * ⟪h, u⟫_ℝ ≤ |r| * b := by
+        calc r * ⟪h, u⟫_ℝ ≤ |r * ⟪h, u⟫_ℝ| := le_abs_self _
+          _ = |r| * |⟪h, u⟫_ℝ| := abs_mul _ _
+          _ ≤ |r| * b := mul_le_mul_of_nonneg_left ht (abs_nonneg r)
+      have h2 : |r| * b ≤ (|r₀| + 1) * b := mul_le_mul_of_nonneg_right hrle hb.le
+      nlinarith [sq_nonneg b]
+    · exact Filter.Eventually.of_forall fun h => by fun_prop
+  · -- Strict monotonicity, via the `cosh` form and the non-null direction functional.
+    intro r₁ hr₁ r₂ hr₂ hr
+    simp only [Set.mem_Ici] at hr₁ hr₂
+    simp only
+    rw [hsymm r₁, hsymm r₂]
+    set F : E → ℝ := fun h => Real.cosh (r₂ * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))
+      - Real.cosh (r₁ * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) with hF
+    have hFint : Integrable F σ := (hcosh_int r₂).sub (hcosh_int r₁)
+    have hFnn : ∀ h : E, 0 ≤ F h := by
+      intro h
+      rw [hF]
+      simp only [sub_nonneg]
+      refine mul_le_mul_of_nonneg_right ?_ (Real.exp_nonneg _)
+      refine Real.cosh_le_cosh.mpr ?_
+      rw [abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
+      exact mul_le_mul_of_nonneg_right hr.le (abs_nonneg _)
+    have hsupp : {h : E | ⟪h, u⟫_ℝ ≠ 0} ⊆ Function.support F := by
+      intro h hh
+      simp only [Set.mem_setOf_eq] at hh
+      have hlt : Real.cosh (r₁ * ⟪h, u⟫_ℝ) < Real.cosh (r₂ * ⟪h, u⟫_ℝ) := by
+        refine Real.cosh_lt_cosh.mpr ?_
+        rw [abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
+        exact mul_lt_mul_of_pos_right hr (abs_pos.mpr hh)
+      have : 0 < F h := by
+        rw [hF]
+        simp only [sub_pos]
+        exact mul_lt_mul_of_pos_right hlt (Real.exp_pos _)
+      exact ne_of_gt this
+    have hposF : 0 < ∫ h, F h ∂σ := by
+      rw [integral_pos_iff_support_of_nonneg (fun h => hFnn h) hFint]
+      exact lt_of_lt_of_le (pos_iff_ne_zero.mpr hpos) (measure_mono hsupp)
+    have hsplit : (∫ h, F h ∂σ)
+        = (∫ h, Real.cosh (r₂ * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) ∂σ)
+          - ∫ h, Real.cosh (r₁ * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) ∂σ :=
+      integral_sub (hcosh_int r₂) (hcosh_int r₁)
+    linarith [hsplit ▸ hposF]
+  · -- The radial value.
+    intro x
+    have hxu : ‖x‖ = ‖(‖x‖ : ℝ) • u‖ := by
+      rw [norm_smul, hunorm, mul_one, Real.norm_of_nonneg (norm_nonneg x)]
+    rw [hradial x ((‖x‖ : ℝ) • u) hxu]
+    simp only
+    apply integral_congr_ae; filter_upwards with h
+    rw [real_inner_smul_right]
 
 /-- **The sphere-averaged likelihood ratio is a monotone function of the norm.**
 
