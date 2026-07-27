@@ -139,15 +139,29 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO: the multinomial instance of `asymptotic_maximin_upper_bound` (itself the
-  -- deferral-eligible transfer lemma, currently a documented sorry).  Instantiating it
-  -- requires assembling the multinomial local-experiment data — the laws `Q n h`, the
-  -- centring statistics `Z n` (the standardized cell counts), the log-likelihood ratios
-  -- `L n h`, and the information matrix `I` whose quadratic form on centred shifts is
-  -- `multinomialNoncentrality π` — and discharging its two asymptotic-normality
-  -- hypotheses (the multivariate CLT for the counts giving `Z n ⇒ N(0, I)`, and the LAN
-  -- quadratic expansion of `L n h`).  That multinomial-LAN reduction is not yet available
-  -- in the project.
+  -- TODO (RE-DERIVED; the previous note was wrong on the first point).
+  --
+  -- • This is **not** an instance of `asymptotic_maximin_upper_bound`, and cannot be made
+  --   one: the shells do not match, and they mismatch in the *unusable* direction.  Under
+  --   the reduction `z = (h₁,…,h_k)` (the last coordinate being determined by `∑ⱼ hⱼ = 0`)
+  --   the transfer lemma's shell is the whole `{z : b² ≤ zᵀ Σ⁻¹ z}`, whereas
+  --   `multinomialShell π b n` carries in addition the *sample-size dependent* positivity
+  --   constraint `πⱼ + hⱼ/√n ≥ 0`; so `multinomialShell` maps onto a **subset**, and `sInf`
+  --   over a subset is `≥` `sInf` over the superset.  The transfer lemma therefore bounds
+  --   the wrong quantity.  (The mixture proof *does* give the multinomial statement, since
+  --   the least-favourable `σ` is carried by the compact sphere `λ(h) = b²`, which lies
+  --   inside the positivity constraint for all large `n`; but that is the proof, not the
+  --   frozen statement.  The same remark applies to `SmoothTest.smoothTest_maximin_upper_bound`
+  --   and is recorded in the note of `asymptotic_maximin_upper_bound`.)
+  -- • Independently, the multinomial local-experiment data required by that lemma is still
+  --   missing: the log-likelihood field `L n h` and its LAN quadratic expansion.  Only the
+  --   centring half is available (`ChiSquaredMultinomial.reducedCount_weakConverges_gaussian`
+  --   gives `Z n ⇒ N(0, Σ)`); the `hdens`/`hLAN` package is not.  Note also that `hdens`
+  --   would need `Q n h ≪ Q n 0`, which fails at the boundary of the positivity constraint.
+  --
+  -- So the honest route is the mixture–Neyman–Pearson argument run directly on the moving
+  -- shell — i.e. the same missing apparatus as `asymptotic_maximin_upper_bound` (the
+  -- pre-agreed batch-ledger debt), not a corollary of it.
   sorry
 
 /-! ### (ii) Attainment by Pearson's test -/
@@ -193,22 +207,33 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
         limsup (fun n => sInf ((fun h => power (Q n) (ψ n) h)
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (re-derived).  Two-part attainment argument.
-  -- • First conjunct (Pearson attains the value).  Its engine
-  --   `ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` is NO LONGER an open
-  --   sorry — the drifting-row multivariate CLT is closed, so
-  --   `pearsonQ_weakConverges_noncentral` is available and gives, for each fixed shift `h`,
-  --   `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` after the (constant-threshold)
-  --   portmanteau step `tendsto_measure_Ioi_of_weakLimit`.  What remains is genuinely the
-  --   *uniformity over the shell*: the shell `multinomialShell π b n` itself moves with `n`
-  --   (through the positivity constraint `πⱼ + hⱼ/√n ≥ 0`) and is unbounded, so pinning
-  --   `sInf` to the inner boundary `λ(h) = b²` needs (i) monotonicity of the tail in `λ`
-  --   (`noncentralChiSquared_tail_mono`, itself resting on the open
-  --   `stdGaussian_normSq_le_antitone`) and (ii) a uniform-in-`h` version of the local
-  --   limit, i.e. an equicontinuity/tightness argument over the shell that the per-`h` weak
-  --   limit does not supply.  Neither is available.
-  -- • Second conjunct is exactly `chiSquared_maximin_upper_bound` above, which is itself
-  --   the (still open) multinomial instance of `asymptotic_maximin_upper_bound`.
+  -- TODO (RE-DERIVED; two of the three obstructions listed previously are now GONE).
+  --
+  -- • Tail monotonicity in the noncentrality is CLOSED: `noncentralChiSquared_tail_mono`
+  --   and the `stdGaussian_normSq_le_antitone` it rests on are both proved axiom-clean in
+  --   `ForMathlib/NoncentralChiSquared.lean` (unequal-weight Prékopa–Leindler).
+  -- • The per-`h` local power is CLOSED: `ChiSquaredMultinomial.pearsonQ_local_power_nondegenerate`
+  --   gives, axiom-clean, `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` for every fixed
+  --   centred `h`, together with the two strict bounds `α < value < 1`.  (Its no-atom and
+  --   strict-comparison bricks live in that file.)
+  -- • Consequently the `limsup ≤` half of the first conjunct is now routine: evaluate at a
+  --   FIXED `h` with `∑ⱼ hⱼ = 0` and `λ(h) = b²`; such an `h` lies in `multinomialShell π b n`
+  --   for every large `n` (the constraint `πⱼ + hⱼ/√n ≥ 0` holds eventually since `πⱼ > 0`),
+  --   so `sInf … ≤ power_n(h) → ncχ²_k(b²)(c,∞)`.
+  --
+  -- WHAT IS ACTUALLY LEFT is a single, genuinely uniform statement: the `liminf ≥` half,
+  -- i.e. `inf_{h ∈ multinomialShell π b n} power_n(h) ≥ ncχ²_k(b²)(c,∞) − ε` eventually.
+  -- The shell is unbounded AND moves with `n`, so the competitor is a *diagonal* sequence
+  -- `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly `→ ∞`; controlling `power_n(hₙ)`
+  -- from below along such a sequence is a uniform (Berry–Esseen / tightness-over-the-shell)
+  -- statement that no per-`h` weak limit supplies.  The natural brick is a multinomial
+  -- Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in the local parameter; the
+  -- project has `ForMathlib/MultivariateBerryEsseen` only for slabs and balls of a *fixed*
+  -- law, not for a triangular array of drifting multinomial rows.
+  --
+  -- Second conjunct is exactly `chiSquared_maximin_upper_bound` above (see its note: it is
+  -- NOT an instance of `asymptotic_maximin_upper_bound`, the shell inclusion going the
+  -- wrong way, and needs the mixture argument on the moving shell).
   sorry
 
 /-! ### The noncentral tail function as the number of cells grows -/
@@ -232,13 +257,29 @@ theorem noncentralTail_antitone {α h : ℝ} {c : ℕ → ℝ}
         noncentralTail k₂ (c k₂) h ≤ noncentralTail k₁ (c k₁) h)
       ∧ (h ≠ 0 → ∀ k₁ k₂ : ℕ, 0 < k₁ → k₁ < k₂ →
           noncentralTail k₂ (c k₂) h < noncentralTail k₁ (c k₁) h) := by
-  -- TODO: cross-degrees-of-freedom monotonicity of the noncentral χ² power at a *fixed*
-  -- noncentrality `h²` and matched upper-α critical values `c k`.  This is the classical
-  -- fact that the power of the χ² test decreases as degrees of freedom are added in
-  -- directions where the alternative does not move (Das Gupta; Cochran 1952).  It is not a
-  -- corollary of any single available brick: it compares the tails of `ncχ²_{k₁}(h²)` and
-  -- `ncχ²_{k₂}(h²)` at the *different* thresholds `c k₁`, `c k₂`, and needs a genuine
-  -- analytic comparison across the family (no such lemma exists in the project yet).
+  -- TODO (RE-DERIVED: the proof is now pinned down to one named missing brick).
+  --
+  -- Reduction to the one-step case `k₂ = k₁ + 1` (then induct; `h = 0` gives equality
+  -- `M(k,0) = α` for every `k ≥ 1`, which is why strictness is excluded there).  Write
+  -- `χ²_{k+1}(λ) = χ²_k(λ) ⋆ χ²_1` (the extra coordinate is centred, the mean vector being
+  -- carried by the first axis), put `G x = P{χ²_1 > c_{k+1} − x}` — nondecreasing, `0 ↑ 1` —
+  -- and `ψ = 1_{(c_k,∞)} − G`.  Then
+  --     `M(k+1,h) = E_λ[G]`,  `M(k,h) = E_λ[1_{(c_k,∞)}]`,
+  -- and the matched levels give `E_0[ψ] = α − α = 0`.  Moreover `ψ ≤ 0` on `(−∞, c_k]` and
+  -- `ψ ≥ 0` on `(c_k, ∞)`: `ψ` is *single crossing*.  Hence `E_λ[ψ] ≥ E_0[ψ] = 0`, i.e.
+  -- `M(k+1,h) ≤ M(k,h)`, **provided the family `χ²_k(λ)` has monotone likelihood ratio in
+  -- `λ`** (Das Gupta; Cochran 1952).
+  --
+  -- Stochastic ordering is NOT enough here, and in particular the available
+  -- `noncentralChiSquared_tail_mono` does not suffice: `ψ` is *decreasing* on each of the
+  -- two pieces, with an upward jump at `c_k`, so it is not monotone and only the MLR
+  -- (single-crossing) lemma applies.
+  --
+  -- MISSING BRICK: `MLR of noncentralChiSquared k · in the noncentrality`.  Both standard
+  -- routes need material absent from the project — the Bessel-series density of `χ²_k(λ)`,
+  -- or the Poisson mixture representation `χ²_k(λ) = ∑ⱼ Pois(λ/2)(j) · χ²_{k+2j}` (whose
+  -- MLR would then come from the Poisson family).  The repository's `noncentralChiSquared`
+  -- is defined as a pushforward of a Gaussian and carries no density at all.
   sorry
 
 /-! ### Private assembly infrastructure for the large-`k` tail limits -/

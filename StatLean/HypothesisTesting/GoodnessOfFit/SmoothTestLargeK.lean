@@ -128,6 +128,26 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
           fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
         - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
       ≤ 400 * (k : ℝ) ^ ((1 : ℝ) / 4) * (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) := by
+  -- TODO (RE-DERIVED; the deferral verdict is CONFIRMED, and this one honestly stays).
+  --
+  -- The statement is the *sharp* Bentkus (2003) bound: rate `β/√n = n^{-1/2}` in the sample
+  -- size, dimensional factor exactly `k^{1/4}`, absolute constant `400`, uniformly over all
+  -- measurable convex sets.  Its proof is Fourier-analytic over convex bodies (surface-area
+  -- / isoperimetric control of the `ε`-neighbourhood of `∂B` for the Gaussian measure) and
+  -- is an independent project; nothing of that machinery exists in Mathlib v4.29.1.
+  --
+  -- It cannot be wired to the sibling `bentkus_berry_esseen_ball` below.  That one is
+  -- discharged by `ForMathlib.MultivariateBerryEsseen.berryEsseen_ball_elementary`, whose
+  -- honest rate is `C (β/√n)^{1/4} = C n^{-1/8}` — obtained by the elementary
+  -- "smooth the indicator + Lindeberg swap" route, whose exponent `1/4` is intrinsic
+  -- (optimising `ε⁻³ β/√n + Cε` balances at `ε ∼ (β/√n)^{1/4}`).  That rate is strictly
+  -- weaker than `n^{-1/2}`, so it does not imply this statement in any regime; conversely
+  -- this statement is not needed by any consumer in the file — the growing-`k` limit
+  -- theorem below consumes only the *ball* version, and does so at the weaker rate, which
+  -- still gives `→ 0` under the source's growth condition `k³/n → 0`.
+  --
+  -- So this declaration is a quoted reference statement with no downstream dependants, and
+  -- stays as the planned, pre-agreed debt.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**

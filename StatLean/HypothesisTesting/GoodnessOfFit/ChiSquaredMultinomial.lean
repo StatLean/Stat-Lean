@@ -1245,6 +1245,444 @@ theorem pearsonQ_consistent {k : ℕ} {α c : ℝ} {π p : Fin (k + 1) → ℝ}
   simp_rw [integral_indicator_one (hfmeas _)] at hdom
   simpa [MeasureTheory.Measure.real] using hdom
 
+/-! ### Strict comparisons for the noncentral chi-squared tail
+
+The nondegenerate-power theorem below needs three facts about `noncentralChiSquared` that are
+finer than the (non-strict) shrink monotonicity `noncentralChiSquared_tail_mono` of the sibling
+brick `ForMathlib/NoncentralChiSquared.lean`: at a positive threshold a positive noncentrality
+**strictly** increases the upper tail, that tail is **strictly** below one, and the law carries
+no atom at the threshold.
+
+All three are proved in the product ("Pi") picture: the standard Gaussian on `Fin k → ℝ` is
+`volume.withDensity ρ` with `ρ x = ∏ᵢ φ(xᵢ)`
+(`AsymptoticStatistics.pi_gaussianReal_eq_withDensity`), and `map_pi_eq_stdGaussian` transports
+that to `EuclideanSpace ℝ (Fin k)`, where `noncentralChiSquared k l` lives as the law of
+`‖μ + ·‖²`.
+
+The strict inequality is **not** an Anderson/Prékopa–Leindler statement — those give only the
+non-strict comparison. It comes from the reflection `σ` of the first coordinate across the
+perpendicular bisector of the two ball centres, `σ u = (−a − u₀, u₁, …, u_{k−1})`. That map is
+Lebesgue-measure preserving, is an involution, and exchanges the two balls
+`A = {∑ᵢ (mᵢ + uᵢ)² ≤ t}` and `B = {∑ᵢ uᵢ² ≤ t}`; hence it exchanges the two crescents `A \ B`
+and `B \ A`. On `A \ B` one has `∑ᵢ (σu)ᵢ² = ∑ᵢ (mᵢ + uᵢ)² ≤ t < ∑ᵢ uᵢ²`, so the Gaussian
+density is *pointwise strictly larger* at `σ u` than at `u`; integrating over the crescent —
+which contains a nonempty open set, hence has positive Lebesgue measure — gives `ν A < ν B`,
+i.e. a strictly larger upper tail. -/
+
+section StrictNoncentralTail
+
+open scoped NNReal
+
+/-- The product standard-Gaussian density on `Fin k → ℝ`. -/
+private noncomputable def piGaussDensity (k : ℕ) : (Fin k → ℝ) → ℝ≥0∞ :=
+  fun x => ∏ i, gaussianPDF 0 1 (x i)
+
+private lemma measurable_piGaussDensity (k : ℕ) : Measurable (piGaussDensity k) :=
+  Finset.measurable_prod _ fun i _ => (measurable_gaussianPDF 0 1).comp (measurable_pi_apply i)
+
+/-- Closed form of the product density: a positive constant times `exp(−‖x‖²/2)`. -/
+private lemma piGaussDensity_eq {k : ℕ} (x : Fin k → ℝ) :
+    piGaussDensity k x
+      = ENNReal.ofReal ((Real.sqrt (2 * Real.pi))⁻¹ ^ k
+          * Real.exp (-(∑ i, x i ^ 2) / 2)) := by
+  simp only [piGaussDensity, gaussianPDF_def]
+  rw [← ENNReal.ofReal_prod_of_nonneg fun i _ => gaussianPDFReal_nonneg _ _ _]
+  congr 1
+  have hexp : ∏ i : Fin k, Real.exp (-x i ^ 2 / 2) = Real.exp (-(∑ i, x i ^ 2) / 2) := by
+    rw [← Real.exp_sum]
+    congr 1
+    rw [← Finset.sum_div]
+    congr 1
+    simp
+  simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero]
+  rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin, hexp]
+
+private lemma piGaussDensity_pos {k : ℕ} (x : Fin k → ℝ) : 0 < piGaussDensity k x := by
+  rw [piGaussDensity_eq]
+  exact ENNReal.ofReal_pos.mpr (by positivity)
+
+/-- The density is strictly larger at the point of smaller squared norm. -/
+private lemma piGaussDensity_lt {k : ℕ} {x y : Fin k → ℝ}
+    (h : ∑ i, y i ^ 2 < ∑ i, x i ^ 2) : piGaussDensity k x < piGaussDensity k y := by
+  rw [piGaussDensity_eq, piGaussDensity_eq]
+  refine (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by positivity)).mpr ?_
+  have hc : (0 : ℝ) < (Real.sqrt (2 * Real.pi))⁻¹ ^ k := by positivity
+  exact mul_lt_mul_of_pos_left (Real.exp_lt_exp.mpr (by linarith)) hc
+
+/-- The closed shifted "ball" `{u : ∑ᵢ (mᵢ + uᵢ)² ≤ t}` in the product picture. -/
+private def piBall (k : ℕ) (m : Fin k → ℝ) (t : ℝ) : Set (Fin k → ℝ) :=
+  {u | ∑ i, (m i + u i) ^ 2 ≤ t}
+
+private lemma measurableSet_piBall {k : ℕ} (m : Fin k → ℝ) (t : ℝ) :
+    MeasurableSet (piBall k m t) :=
+  measurableSet_le (Finset.measurable_sum _ fun i _ => by fun_prop) measurable_const
+
+private lemma piGauss_apply {k : ℕ} {S : Set (Fin k → ℝ)} (hS : MeasurableSet S) :
+    (Measure.pi fun _ : Fin k => gaussianReal 0 1) S
+      = ∫⁻ x in S, piGaussDensity k x ∂(volume : Measure (Fin k → ℝ)) := by
+  rw [AsymptoticStatistics.pi_gaussianReal_eq_withDensity, withDensity_apply _ hS]
+  rfl
+
+/-- A set of positive Lebesgue measure has positive product-Gaussian mass. -/
+private lemma piGauss_pos {k : ℕ} {S : Set (Fin k → ℝ)} (hS : MeasurableSet S)
+    (hvol : (volume : Measure (Fin k → ℝ)) S ≠ 0) :
+    0 < (Measure.pi fun _ : Fin k => gaussianReal 0 1) S := by
+  rw [piGauss_apply hS, pos_iff_ne_zero]
+  intro hzero
+  rw [lintegral_eq_zero_iff (measurable_piGaussDensity k)] at hzero
+  have hfalse : ∀ᵐ x ∂((volume : Measure (Fin k → ℝ)).restrict S), False := by
+    filter_upwards [hzero] with x hx
+    exact (piGaussDensity_pos x).ne' hx
+  have hbot := ae_eq_bot.mp (eventually_false_iff_eq_bot.mp hfalse)
+  rw [Measure.restrict_eq_zero] at hbot
+  exact hvol hbot
+
+/-- **The strict crescent comparison.** For a positive threshold and a positive shift along
+the first axis, the shifted product-Gaussian ball has *strictly* smaller mass. -/
+private lemma piGauss_piBall_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t) {a : ℝ} (ha : 0 < a) :
+    (Measure.pi fun _ : Fin k => gaussianReal 0 1)
+        (piBall k (fun i => if (i : ℕ) = 0 then a else 0) t)
+      < (Measure.pi fun _ : Fin k => gaussianReal 0 1) (piBall k (fun _ => 0) t) := by
+  classical
+  set ν := Measure.pi fun _ : Fin k => gaussianReal 0 1 with hν
+  set i₀ : Fin k := ⟨0, hk⟩ with hi₀
+  set m : Fin k → ℝ := fun i => if (i : ℕ) = 0 then a else 0 with hm
+  have hmi₀ : m i₀ = a := by simp [hm, hi₀]
+  have hmne : ∀ i : Fin k, i ≠ i₀ → m i = 0 := by
+    intro i hi
+    have hi' : (i : ℕ) ≠ 0 := fun h => hi (Fin.ext h)
+    simp [hm, hi']
+  set A : Set (Fin k → ℝ) := piBall k m t with hA
+  set B : Set (Fin k → ℝ) := piBall k (fun _ : Fin k => (0 : ℝ)) t with hB
+  have hAmem : ∀ u : Fin k → ℝ, u ∈ A ↔ ∑ i, (m i + u i) ^ 2 ≤ t := fun u => Iff.rfl
+  have hBmem : ∀ u : Fin k → ℝ, u ∈ B ↔ ∑ i, u i ^ 2 ≤ t := by
+    intro u
+    simp only [hB, piBall, Set.mem_setOf_eq, zero_add]
+  -- the reflection of the first coordinate across the perpendicular bisector
+  set σ : (Fin k → ℝ) → (Fin k → ℝ) :=
+    fun u i => if i = i₀ then -a - u i else u i with hσ
+  have hσapp : ∀ (u : Fin k → ℝ) (i : Fin k), σ u i = if i = i₀ then -a - u i else u i :=
+    fun _ _ => rfl
+  have hq₁ : ∀ u : Fin k → ℝ, ∑ i, σ u i ^ 2 = ∑ i, (m i + u i) ^ 2 := by
+    intro u
+    refine Finset.sum_congr rfl fun i _ => ?_
+    by_cases hi : i = i₀
+    · subst hi; rw [hσapp, if_pos rfl, hmi₀]; ring
+    · rw [hσapp, if_neg hi, hmne i hi, zero_add]
+  have hq₂ : ∀ u : Fin k → ℝ, ∑ i, (m i + σ u i) ^ 2 = ∑ i, u i ^ 2 := by
+    intro u
+    refine Finset.sum_congr rfl fun i _ => ?_
+    by_cases hi : i = i₀
+    · subst hi; rw [hσapp, if_pos rfl, hmi₀]; ring
+    · rw [hσapp, if_neg hi, hmne i hi, zero_add]
+  have hpreB : σ ⁻¹' B = A := by
+    ext u; simp only [Set.mem_preimage, hBmem, hAmem, hq₁]
+  have hpreA : σ ⁻¹' A = B := by
+    ext u; simp only [Set.mem_preimage, hAmem, hBmem, hq₂]
+  -- `σ` preserves Lebesgue measure
+  have hσmp : MeasurePreserving σ (volume : Measure (Fin k → ℝ)) volume := by
+    have h1 : MeasurePreserving (fun x : ℝ => -a - x) (volume : Measure ℝ) volume :=
+      Measure.measurePreserving_sub_left volume (-a)
+    have hf : ∀ i : Fin k, MeasurePreserving
+        (fun x : ℝ => if i = i₀ then -a - x else x) (volume : Measure ℝ) volume := by
+      intro i
+      by_cases hi : i = i₀
+      · simpa [hi] using h1
+      · simpa [hi] using (MeasurePreserving.id (volume : Measure ℝ))
+    have hpi := MeasureTheory.measurePreserving_pi (fun _ : Fin k => (volume : Measure ℝ))
+      (fun _ : Fin k => (volume : Measure ℝ)) hf
+    rw [← volume_pi] at hpi
+    exact hpi
+  have hAmeas : MeasurableSet A := measurableSet_piBall m t
+  have hBmeas : MeasurableSet B := measurableSet_piBall _ t
+  have hSmeas : MeasurableSet (A \ B) := hAmeas.diff hBmeas
+  -- the crescent `A \ B` has positive Lebesgue measure
+  have hvolS : (volume : Measure (Fin k → ℝ)) (A \ B) ≠ 0 := by
+    set r : ℝ := Real.sqrt t with hr
+    have hrpos : 0 < r := Real.sqrt_pos.mpr ht
+    have hr2 : r ^ 2 = t := Real.sq_sqrt ht.le
+    set s : ℝ := r - min a r / 2 with hs
+    have hminpos : 0 < min a r := lt_min ha hrpos
+    have hslt : s < r := by rw [hs]; linarith
+    have hs0 : 0 ≤ s := by
+      have hmr : min a r ≤ r := min_le_right _ _
+      rw [hs]; linarith
+    have hsr : r < a + s := by
+      have hma : min a r ≤ a := min_le_left _ _
+      rw [hs]; linarith
+    set u₀ : Fin k → ℝ := fun i => if i = i₀ then -(a + s) else 0 with hu₀
+    have hsum₁ : ∑ i, (m i + u₀ i) ^ 2 = s ^ 2 := by
+      rw [Finset.sum_eq_single i₀]
+      · simp only [hu₀, if_pos rfl, hmi₀]; ring
+      · intro i _ hi; simp only [hu₀, if_neg hi, hmne i hi, add_zero]; ring
+      · intro h; exact absurd (Finset.mem_univ i₀) h
+    have hsum₂ : ∑ i, u₀ i ^ 2 = (a + s) ^ 2 := by
+      rw [Finset.sum_eq_single i₀]
+      · simp only [hu₀, if_pos rfl]; ring
+      · intro i _ hi; simp only [hu₀, if_neg hi]; ring
+      · intro h; exact absurd (Finset.mem_univ i₀) h
+    have hcont₁ : Continuous fun u : Fin k → ℝ => ∑ i, (m i + u i) ^ 2 := by fun_prop
+    have hcont₂ : Continuous fun u : Fin k → ℝ => ∑ i, u i ^ 2 := by fun_prop
+    set U : Set (Fin k → ℝ) :=
+      {u | ∑ i, (m i + u i) ^ 2 < t} ∩ {u | t < ∑ i, u i ^ 2} with hU
+    have hUopen : IsOpen U :=
+      (isOpen_lt hcont₁ continuous_const).inter (isOpen_lt continuous_const hcont₂)
+    have hu₀U : u₀ ∈ U := by
+      refine ⟨?_, ?_⟩
+      · change ∑ i, (m i + u₀ i) ^ 2 < t
+        rw [hsum₁, ← hr2]
+        nlinarith
+      · change t < ∑ i, u₀ i ^ 2
+        rw [hsum₂, ← hr2]
+        nlinarith
+    have hUsub : U ⊆ A \ B := by
+      rintro u ⟨h1, h2⟩
+      have h1' : ∑ i, (m i + u i) ^ 2 < t := h1
+      have h2' : t < ∑ i, u i ^ 2 := h2
+      exact ⟨(hAmem u).mpr h1'.le, fun hu => absurd ((hBmem u).mp hu) (not_le.mpr h2')⟩
+    have hpos := hUopen.measure_pos (volume : Measure (Fin k → ℝ)) ⟨u₀, hu₀U⟩
+    exact (lt_of_lt_of_le hpos (measure_mono hUsub)).ne'
+  -- the two crescents, transported to one another by `σ`
+  have hcrescA : ν (A \ B) = ∫⁻ x in A \ B, piGaussDensity k x ∂(volume : Measure (Fin k → ℝ)) :=
+    piGauss_apply hSmeas
+  have hcrescB : ν (B \ A)
+      = ∫⁻ x in A \ B, piGaussDensity k (σ x) ∂(volume : Measure (Fin k → ℝ)) := by
+    have hBA : MeasurableSet (B \ A) := hBmeas.diff hAmeas
+    have hind : Measurable ((B \ A).indicator (piGaussDensity k)) :=
+      (measurable_piGaussDensity k).indicator hBA
+    have hcomp := hσmp.lintegral_comp hind
+    have hpre : σ ⁻¹' (B \ A) = A \ B := by
+      rw [Set.preimage_diff, hpreB, hpreA]
+    rw [piGauss_apply hBA, ← lintegral_indicator hBA, ← hcomp, ← lintegral_indicator hSmeas]
+    refine lintegral_congr fun x => ?_
+    by_cases hx : x ∈ A \ B
+    · have hx' : σ x ∈ B \ A := by rwa [← hpre, Set.mem_preimage] at hx
+      rw [Set.indicator_of_mem hx', Set.indicator_of_mem hx]
+    · have hx' : σ x ∉ B \ A := by
+        intro hcon; exact hx (by rwa [← hpre, Set.mem_preimage])
+      rw [Set.indicator_of_notMem hx', Set.indicator_of_notMem hx]
+  have hstrict : (∫⁻ x in A \ B, piGaussDensity k x ∂(volume : Measure (Fin k → ℝ)))
+      < ∫⁻ x in A \ B, piGaussDensity k (σ x) ∂(volume : Measure (Fin k → ℝ)) := by
+    refine setLIntegral_strict_mono hSmeas hvolS
+      ((measurable_piGaussDensity k).comp hσmp.measurable) ?_ ?_
+    · rw [← hcrescA]; exact measure_ne_top _ _
+    · filter_upwards with x hx
+      refine piGaussDensity_lt ?_
+      have h1 : ∑ i, σ x i ^ 2 ≤ t := by rw [hq₁]; exact (hAmem x).mp hx.1
+      have h2 : t < ∑ i, x i ^ 2 := not_le.mp fun hcon => hx.2 ((hBmem x).mpr hcon)
+      linarith
+  -- assemble
+  have hsplitA : ν (A ∩ B) + ν (A \ B) = ν A := measure_inter_add_diff A hBmeas
+  have hsplitB : ν (B ∩ A) + ν (B \ A) = ν B := measure_inter_add_diff B hAmeas
+  rw [Set.inter_comm B A] at hsplitB
+  rw [← hsplitA, ← hsplitB]
+  refine ENNReal.add_lt_add_left (measure_ne_top ν (A ∩ B)) ?_
+  rw [hcrescA, hcrescB]
+  exact hstrict
+
+/-- Every shifted ball of positive radius has positive product-Gaussian mass. -/
+private lemma piGauss_piBall_pos {k : ℕ} (m : Fin k → ℝ) {t : ℝ} (ht : 0 < t) :
+    0 < (Measure.pi fun _ : Fin k => gaussianReal 0 1) (piBall k m t) := by
+  refine piGauss_pos (measurableSet_piBall m t) ?_
+  have hcont : Continuous fun u : Fin k → ℝ => ∑ i, (m i + u i) ^ 2 := by fun_prop
+  have hUopen : IsOpen {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 < t} :=
+    isOpen_lt hcont continuous_const
+  have hmem : (-m) ∈ {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 < t} := by
+    change ∑ i, (m i + (-m) i) ^ 2 < t
+    have hz : ∑ i, (m i + (-m) i) ^ 2 = 0 := by
+      refine Finset.sum_eq_zero fun i _ => ?_
+      simp
+    rw [hz]; exact ht
+  have hsub : {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 < t} ⊆ piBall k m t := by
+    intro u hu
+    have hu' : ∑ i, (m i + u i) ^ 2 < t := hu
+    exact hu'.le
+  have hpos := hUopen.measure_pos (volume : Measure (Fin k → ℝ)) ⟨-m, hmem⟩
+  exact (lt_of_lt_of_le hpos (measure_mono hsub)).ne'
+
+private lemma piGauss_singleton_zero {k : ℕ} (hk : 0 < k) :
+    (Measure.pi fun _ : Fin k => gaussianReal 0 1) {(0 : Fin k → ℝ)} = 0 := by
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  have hset : ({0} : Set (Fin k → ℝ)) = Set.pi Set.univ fun _ : Fin k => ({0} : Set ℝ) := by
+    ext u; simp [funext_iff]
+  rw [hset, Measure.pi_pi]
+  refine Finset.prod_eq_zero (Finset.mem_univ (⟨0, hk⟩ : Fin k)) ?_
+  simp
+
+/-! #### Transport from the product picture to `noncentralChiSquared` -/
+
+private lemma measurable_toLp_pi (k : ℕ) :
+    Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) := by
+  have h : (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
+      = ⇑(WithLp.linearEquiv 2 ℝ (Fin k → ℝ)).symm := rfl
+  rw [h]
+  have hcont : Continuous ⇑(WithLp.linearEquiv 2 ℝ (Fin k → ℝ)).symm :=
+    (WithLp.linearEquiv 2 ℝ (Fin k → ℝ)).symm.toLinearMap.continuous_of_finiteDimensional
+  exact hcont.measurable
+
+private lemma stdGaussian_ball_eq {k : ℕ} (m : Fin k → ℝ) (t : ℝ) :
+    stdGaussian (EuclideanSpace ℝ (Fin k))
+        {x | ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k)) + x‖ ^ 2 ≤ t}
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1) (piBall k m t) := by
+  have hset : MeasurableSet {x : EuclideanSpace ℝ (Fin k) |
+      ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k)) + x‖ ^ 2 ≤ t} :=
+    measurableSet_le (by fun_prop) measurable_const
+  rw [← map_pi_eq_stdGaussian, Measure.map_apply (measurable_toLp_pi k) hset]
+  congr 1
+  ext u
+  simp only [Set.mem_preimage, Set.mem_setOf_eq, piBall,
+    EuclideanSpace.real_norm_sq_eq]
+  rfl
+
+private lemma stdGaussian_sphere_eq {k : ℕ} (m : Fin k → ℝ) (t : ℝ) :
+    stdGaussian (EuclideanSpace ℝ (Fin k))
+        {x | ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k)) + x‖ ^ 2 = t}
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1)
+          {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t} := by
+  have hset : MeasurableSet {x : EuclideanSpace ℝ (Fin k) |
+      ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k)) + x‖ ^ 2 = t} :=
+    measurableSet_eq_fun (by fun_prop) measurable_const
+  rw [← map_pi_eq_stdGaussian, Measure.map_apply (measurable_toLp_pi k) hset]
+  congr 1
+  ext u
+  simp only [Set.mem_preimage, Set.mem_setOf_eq, EuclideanSpace.real_norm_sq_eq]
+  rfl
+
+private lemma multivariateGaussian_one_eq_map_add' {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
+    multivariateGaussian v (1 : Matrix (Fin k) (Fin k) ℝ)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-- The `Iic`-mass of `noncentralChiSquared` in the product picture. -/
+private lemma noncentralChiSquared_Iic_eq {k : ℕ} (l : ℝ≥0) (t : ℝ) :
+    noncentralChiSquared k l (Set.Iic t)
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1)
+          (piBall k (fun i => if (i : ℕ) = 0 then Real.sqrt (l : ℝ) else 0) t) := by
+  rw [noncentralChiSquared, multivariateGaussian_one_eq_map_add',
+    Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_apply (by fun_prop) measurableSet_Iic]
+  exact stdGaussian_ball_eq _ t
+
+/-- **No atom at a positive threshold.** The `{t}`-mass of `noncentralChiSquared` is the
+standard-Gaussian mass of a Euclidean sphere of positive radius, hence zero. -/
+private lemma noncentralChiSquared_singleton {k : ℕ} {t : ℝ} (ht : 0 < t) (l : ℝ≥0) :
+    noncentralChiSquared k l {t} = 0 := by
+  set m : Fin k → ℝ := fun i => if (i : ℕ) = 0 then Real.sqrt (l : ℝ) else 0 with hm
+  have hstep : noncentralChiSquared k l {t}
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1)
+          {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t} := by
+    rw [noncentralChiSquared, multivariateGaussian_one_eq_map_add',
+      Measure.map_map (by fun_prop) (by fun_prop),
+      Measure.map_apply (by fun_prop) (measurableSet_singleton t)]
+    exact stdGaussian_sphere_eq _ t
+  rw [hstep]
+  -- the set is Lebesgue-null: it is the preimage of a Euclidean sphere of radius `√t > 0`
+  have hmeas : MeasurableSet {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t} :=
+    measurableSet_eq_fun (Finset.measurable_sum _ fun i _ => by fun_prop) measurable_const
+  have hvol : (volume : Measure (Fin k → ℝ)) {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t} = 0 := by
+    have hpre : {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t}
+        = (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) ⁻¹'
+            (Metric.sphere (-(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))) (Real.sqrt t)) := by
+      ext u
+      simp only [Set.mem_setOf_eq, Set.mem_preimage, Metric.mem_sphere, dist_eq_norm,
+        sub_neg_eq_add]
+      constructor
+      · intro h
+        have hnorm : ‖(WithLp.toLp 2 u : EuclideanSpace ℝ (Fin k))
+            + WithLp.toLp 2 m‖ ^ 2 = t := by
+          rw [EuclideanSpace.real_norm_sq_eq]
+          rw [← h]
+          exact Finset.sum_congr rfl fun i _ => by simp [add_comm]
+        rw [← hnorm, Real.sqrt_sq (norm_nonneg _)]
+      · intro h
+        have hnorm : ‖(WithLp.toLp 2 u : EuclideanSpace ℝ (Fin k))
+            + WithLp.toLp 2 m‖ ^ 2 = t := by
+          rw [h, Real.sq_sqrt ht.le]
+        rw [EuclideanSpace.real_norm_sq_eq] at hnorm
+        rw [← hnorm]
+        exact Finset.sum_congr rfl fun i _ => by simp [add_comm]
+    rw [hpre, (PiLp.volume_preserving_toLp (Fin k)).measure_preimage
+      (Metric.isClosed_sphere.measurableSet.nullMeasurableSet)]
+    exact Measure.addHaar_sphere_of_ne_zero _ _ (Real.sqrt_ne_zero'.mpr ht)
+  calc (Measure.pi fun _ : Fin k => gaussianReal 0 1)
+        {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t}
+      = ∫⁻ x in {u : Fin k → ℝ | ∑ i, (m i + u i) ^ 2 = t},
+          piGaussDensity k x ∂(volume : Measure (Fin k → ℝ)) := piGauss_apply hmeas
+    _ = 0 := by
+        rw [Measure.restrict_eq_zero.mpr hvol, lintegral_zero_measure]
+
+/-- The upper tail as one minus the lower mass. -/
+private lemma noncentralChiSquared_Ioi_toReal {k : ℕ} (l : ℝ≥0) (t : ℝ) :
+    (noncentralChiSquared k l (Set.Ioi t)).toReal
+      = 1 - (noncentralChiSquared k l (Set.Iic t)).toReal := by
+  have hc : Set.Ioi t = (Set.Iic t)ᶜ := by ext x; simp
+  rw [hc, measure_compl measurableSet_Iic (measure_ne_top _ _), measure_univ,
+    ENNReal.toReal_sub_of_le prob_le_one ENNReal.one_ne_top, ENNReal.toReal_one]
+
+/-- **Strictly increasing tail.** At a positive threshold, a positive noncentrality strictly
+increases the upper tail of the noncentral chi-squared law. -/
+private lemma noncentralChiSquared_tail_lt {k : ℕ} (hk : 0 < k) {t : ℝ} (ht : 0 < t)
+    {l : ℝ≥0} (hl : 0 < l) :
+    (noncentralChiSquared k 0 (Set.Ioi t)).toReal
+      < (noncentralChiSquared k l (Set.Ioi t)).toReal := by
+  rw [noncentralChiSquared_Ioi_toReal, noncentralChiSquared_Ioi_toReal]
+  have hlt : noncentralChiSquared k l (Set.Iic t) < noncentralChiSquared k 0 (Set.Iic t) := by
+    rw [noncentralChiSquared_Iic_eq, noncentralChiSquared_Iic_eq]
+    have hzero : (fun i : Fin k => if (i : ℕ) = 0 then Real.sqrt ((0 : ℝ≥0) : ℝ) else 0)
+        = fun _ : Fin k => (0 : ℝ) := by
+      funext i; simp
+    rw [hzero]
+    exact piGauss_piBall_lt hk ht (Real.sqrt_pos.mpr (by exact_mod_cast hl))
+  have := (ENNReal.toReal_lt_toReal (measure_ne_top _ _) (measure_ne_top _ _)).mpr hlt
+  linarith
+
+/-- **The tail is strictly below one.** A positive threshold leaves positive mass below it. -/
+private lemma noncentralChiSquared_tail_lt_one {k : ℕ} {t : ℝ} (ht : 0 < t) (l : ℝ≥0) :
+    (noncentralChiSquared k l (Set.Ioi t)).toReal < 1 := by
+  rw [noncentralChiSquared_Ioi_toReal]
+  have hpos : 0 < (noncentralChiSquared k l (Set.Iic t)).toReal := by
+    rw [noncentralChiSquared_Iic_eq]
+    exact ENNReal.toReal_pos (piGauss_piBall_pos _ ht).ne' (measure_ne_top _ _)
+  linarith
+
+/-- **A nondegenerate level forces a positive critical value.** If `χ²_k(c, ∞) = α < 1` with
+`k ≥ 1` then `c > 0`: below zero the chi-squared law puts no mass, so the tail would be one. -/
+private lemma pos_of_chiSquared_tail_lt_one {k : ℕ} (hk : 0 < k) {α c : ℝ} (hα1 : α < 1)
+    (hc : chiSquared k (Set.Ioi c) = ENNReal.ofReal α) : 0 < c := by
+  by_contra hcon
+  rw [not_lt] at hcon
+  rw [← noncentralChiSquared_zero hk] at hc
+  have hIic : noncentralChiSquared k 0 (Set.Iic c) = 0 := by
+    rw [noncentralChiSquared_Iic_eq]
+    have hzero : (fun i : Fin k => if (i : ℕ) = 0 then Real.sqrt ((0 : ℝ≥0) : ℝ) else 0)
+        = fun _ : Fin k => (0 : ℝ) := by
+      funext i; simp
+    rw [hzero]
+    refine le_antisymm ?_ (zero_le _)
+    refine le_trans (measure_mono ?_) (le_of_eq (piGauss_singleton_zero hk))
+    intro u hu
+    have hu' : ∑ i, u i ^ 2 ≤ c := by
+      simpa [piBall, zero_add] using hu
+    have hzero' : ∀ i : Fin k, u i = 0 := by
+      intro i
+      have hle : u i ^ 2 ≤ 0 :=
+        le_trans (Finset.single_le_sum (fun j _ => sq_nonneg (u j)) (Finset.mem_univ i))
+          (le_trans hu' hcon)
+      have := le_antisymm hle (sq_nonneg (u i))
+      exact pow_eq_zero_iff (n := 2) two_ne_zero |>.mp this
+    exact funext hzero'
+  have htail : (noncentralChiSquared k 0 (Set.Ioi c)).toReal = 1 := by
+    rw [noncentralChiSquared_Ioi_toReal, hIic, ENNReal.toReal_zero, sub_zero]
+  rw [hc] at htail
+  rcases le_or_gt α 0 with h | h
+  · rw [ENNReal.ofReal_of_nonpos h, ENNReal.toReal_zero] at htail
+    norm_num at htail
+  · rw [ENNReal.toReal_ofReal h.le] at htail
+    linarith
+
+end StrictNoncentralTail
+
 /-- **Nondegenerate local power.** Against the local alternatives of
 `pearsonQ_weakConverges_noncentral` with not all `hⱼ` equal to zero, the power of the
 chi-squared test tends to a limit strictly greater than `α` and strictly less than one,
@@ -1281,26 +1719,45 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
           (Set.Ioi c)).toReal
       ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
           (Set.Ioi c)).toReal < 1 := by
-  -- TODO (re-derived after the closure of `pearsonQ_weakConverges_noncentral`).  Conjunct
-  -- (1) is now reachable: the weak limit is available, `noncentralChiSquared k λ` is the
-  -- pushforward of a Gaussian under `‖·‖²` and so has no atom at `c` (its `{c}`-mass is a
-  -- sphere mass for the standard Gaussian), and the moving-threshold portmanteau tail
-  -- `ChiSquaredMaximin.tendsto_measure_Ioi_of_weakLimit` (constant threshold case) is the
-  -- last step.  The obstruction is conjunct (2), `α < tail`:
-  --   * `α = χ²_k(c,∞) = ncχ²_k(0)(c,∞)` and `λ = multinomialNoncentrality π h > 0` (from
-  --     `hhne` and `hπpos`), so the claim is the STRICT form of Anderson's inequality —
-  --     `μ(C − v) < μ(C)` for the standard Gaussian, the closed ball `C = {‖z‖² ≤ c}` and
-  --     `v ≠ 0`.  The repository has only the non-strict endpoint
-  --     `AsymptoticStatistics.anderson_lemma_set_stdGaussian`, and even the non-strict
-  --     shrink monotonicity `noncentralChiSquared_tail_mono` rests on the open
-  --     `stdGaussian_normSq_le_antitone`.  Strictness is not a corollary of either: the
-  --     pointwise pairing `φ(u−v)+φ(u+v) = 2φ(u)e^{-‖v‖²/2}cosh⟪u,v⟫` is `> 2φ(u)` on part
-  --     of the ball, so the gain is genuinely an averaged (Prékopa–Leindler) phenomenon.
-  --   * conjunct (3), `tail < 1`, needs `ncχ²_k(λ)(-∞,c] > 0`, i.e. that the shifted
-  --     Gaussian charges the open ball `{‖z‖² < c}` — true (Gaussians are open-positive) but
-  --     requiring an `IsOpenPosMeasure`-style fact for `multivariateGaussian` that the
-  --     project does not yet have, together with `0 < c` (which follows from `hc` and
-  --     `α < 1`).
-  sorry
+  classical
+  -- a nondegenerate level forces a positive critical value
+  have hcpos : 0 < c := pos_of_chiSquared_tail_lt_one hk hα1 hc
+  -- the noncentrality is positive
+  have hlampos : 0 < multinomialNoncentrality π h := by
+    obtain ⟨j, hj⟩ := hhne
+    rw [multinomialNoncentrality]
+    refine Finset.sum_pos' (fun i _ => div_nonneg (sq_nonneg _) (hπpos i).le)
+      ⟨j, Finset.mem_univ j, div_pos ?_ (hπpos j)⟩
+    exact lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hj))
+  have hlamnn : 0 < (multinomialNoncentrality π h).toNNReal := Real.toNNReal_pos.mpr hlampos
+  refine ⟨?_, ?_, ?_⟩
+  · -- (1) the limiting power, by the constant-threshold portmanteau step
+    have hweak := pearsonQ_weakConverges_noncentral hk hπpos hπsum hhsum hX hindep hlaw hcell
+    haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Measure.map (pearsonQ π (X n)) (P n)) :=
+      fun n => Measure.isProbabilityMeasure_map (measurable_pearsonQ (hX n)).aemeasurable
+    set μs : ℕ → ProbabilityMeasure ℝ :=
+      fun n => ⟨Measure.map (pearsonQ π (X n)) (P n), hprob n⟩ with hμs
+    set νl : ProbabilityMeasure ℝ :=
+      ⟨noncentralChiSquared k (multinomialNoncentrality π h).toNNReal, inferInstance⟩ with hνl
+    have hconv : Tendsto μs atTop (𝓝 νl) := by
+      rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+      intro f
+      simpa only [hμs, hνl, ProbabilityMeasure.coe_mk] using hweak f
+    have hfront : (νl : Measure ℝ) (frontier (Set.Ioi c)) = 0 := by
+      rw [frontier_Ioi]
+      exact noncentralChiSquared_singleton hcpos _
+    have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+    have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+    refine htoreal.congr fun n => ?_
+    simp only [Function.comp_apply, hμs, ProbabilityMeasure.coe_mk]
+    rw [Measure.map_apply (measurable_pearsonQ (hX n)) measurableSet_Ioi]
+    rfl
+  · -- (2) the limit exceeds the level, by the strict tail comparison
+    have hαeq : α = (noncentralChiSquared k 0 (Set.Ioi c)).toReal := by
+      rw [noncentralChiSquared_zero hk, hc, ENNReal.toReal_ofReal hα.le]
+    rw [hαeq]
+    exact noncentralChiSquared_tail_lt hk hcpos hlamnn
+  · -- (3) the limit is below one, since the ball below the threshold has positive mass
+    exact noncentralChiSquared_tail_lt_one hcpos _
 
 end StatLean.HypothesisTesting

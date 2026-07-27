@@ -425,7 +425,12 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (genuine deep gap; NOT closeable from the imported deferral as stated). Two pieces:
+  -- TODO (RE-DERIVED, verdict unchanged: genuine deep gap; NOT closeable from the imported
+  -- deferral as stated).  The bounded-shell direction objection in item 2 below is
+  -- confirmed, and is now recorded on the `asymptotic_maximin_upper_bound` side too, where
+  -- the recommended repair is a shell-parametrised restatement (quantified over any set
+  -- containing the least-favourable sphere `‖h‖ = b`), which would serve this consumer and
+  -- `ChiSquaredMaximin` at once.  Two pieces:
   --   1. Asymptotic-normality data for `smoothModel` to invoke `asymptotic_maximin_upper_bound`
   --      with `I = Iₖ`: the centring `Zₙ = scoreVec` (with `Zₙ ⇒ N(0, Iₖ)` under `Q n 0 = P₀`
   --      from `scoreVec_weakConverges_gaussian`) is available, but the log-likelihood field
@@ -469,10 +474,20 @@ along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement
 `smoothModel`, and needs `PointEstimation.ExponentialFamily.Smoothness` (the log-partition
 `A` and its first two derivatives at `0`), which is not imported here.  The two remaining
 obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
-shell infimum to the inner boundary, which consumes `noncentralChiSquared_tail_mono` —
-itself resting on the still-open `stdGaussian_normSq_le_antitone` — together with a
-uniform-in-`h` version of the per-`h` limit.  The statement stays lifted here as a single
-named debt. -/
+shell infimum to the inner boundary.
+
+TODO (RE-DERIVED again, this batch).  Obstruction (b) has shrunk.  The tail monotonicity
+`noncentralChiSquared_tail_mono` is now CLOSED axiom-clean (as is the
+`stdGaussian_normSq_le_antitone` it rests on, via unequal-weight Prékopa–Leindler), so the
+old "still-open" qualifier is obsolete.  Moreover the shell here is BOUNDED (`b ≤ ‖h‖ ≤ B`)
+and, unlike the multinomial shell of `ChiSquaredMaximin`, does not move with `n`; once the
+per-`h` local limit is available (obstruction (a)), the `limsup ≤` half follows by
+evaluating at a fixed `h` with `‖h‖ = b`, and the `liminf ≥` half needs only a
+uniform-over-a-COMPACT-shell version of that limit — an equicontinuity statement, strictly
+easier than the unbounded/moving-shell version needed in `ChiSquaredMaximin`.  Obstruction
+(a), the exponential-family LAN expansion of `smoothModel` at `θ = 0`
+(`PointEstimation.ExponentialFamily.Smoothness`, not imported here), remains the real
+blocker and is what keeps this a single named debt. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]

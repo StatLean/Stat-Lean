@@ -305,23 +305,40 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt).  Intended mixture–NP–Le Cam
-  -- proof (module docstring):  the shell infimum is ≤ the average power against the uniform
-  -- mixture `σ` on the sphere `{|I^{1/2}h| = b}`; by Neyman–Pearson this is ≤ the power of
-  -- the likelihood-ratio test of `Q_{n,0}` against `∫ Q_{n,h} dσ(h)`; asymptotic normality
-  -- (the `hZ`/`hdens`/`hLAN` package, Le Cam's third lemma) identifies the limit of that
-  -- power with the Gaussian-shift quantity, where `sphereAverage_lr_monotone` makes the
-  -- limiting NP test the χ² test `{|x|² > c}`, whose power against the least-favourable
-  -- sphere mixture is `ncχ²_k(b²)(c, ∞)`.  Requires a weak-convergence + Neyman–Pearson +
-  -- Le Cam apparatus not yet present in the project.
+  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt).  Note refreshed with the four
+  -- concrete analytic steps the mixture–NP–Le Cam route needs, so that the debt is named
+  -- rather than gestured at.  Write `σ` for the rotation-invariant probability measure on
+  -- the sphere `{h : hᵀ I h = b²}` and `R n ω = ∫ exp(L n h ω) dσ(h)` for the mixture
+  -- likelihood ratio against `Q_{n,0}`.
   --
-  -- NOTE for the `SmoothTest` consumer: the *bounded* shell `{b ≤ |I^{1/2}h| ≤ B}` (for any
-  -- `B ≥ b`) is reachable by the *same* argument, because the least-favourable mixture `σ`
-  -- is supported on the sphere `{|I^{1/2}h| = b}`, which lies inside the bounded shell just
-  -- as it lies inside this unbounded one; the mixture bound `sInf … ≤ average power vs σ`
-  -- therefore holds verbatim for the bounded shell.  (It cannot be *derived* from this
-  -- unbounded statement — `sInf` over a subset is larger — but the proof, once written,
-  -- yields both.)
+  -- (1) MIXTURE IDENTITY.  `sInf_{shell} power ≤ ∫ power(Q_{n,h}) dσ(h) = E_{Q_{n,0}}[φₙ Rₙ]`.
+  --     Needs `hdens` plus Fubini for the `σ ⊗ Q_{n,0}` integral (joint measurability of
+  --     `(h, ω) ↦ exp(L n h ω)` is not among the hypotheses and would have to be added or
+  --     derived).
+  -- (2) NEYMAN–PEARSON AT LEVEL `t`.  `E₀[φ R] ≤ E₀[1{R > t} R] + t (E₀φ − E₀1{R > t})` for
+  --     every `t ≥ 0`; this is elementary and is the only step already within reach.
+  -- (3) IN-LAW LIMIT OF `Rₙ`.  `Rₙ ⇒ R = ∫ exp(⟨h, Z⟩ − hᵀIh/2) dσ(h)`, `Z ∼ N(0, I)`, under
+  --     `Q_{n,0}`.  `hLAN` gives the remainder `o_P(1)` for each FIXED `h`; the mixture needs
+  --     it uniformly over the (compact) support of `σ`, i.e. a uniform-in-`h` LAN remainder.
+  --     That upgrade is not available and is not implied by the pointwise version.
+  -- (4) UNIFORM INTEGRABILITY.  Passing `E₀[1{Rₙ > t} Rₙ] → E[1{R > t} R]` needs uniform
+  --     integrability of `(Rₙ)` under `Q_{n,0}` (equivalently contiguity of the mixture
+  --     experiments), a Le Cam first/third-lemma package the project does not carry.
+  -- Only then does `sphereAverage_lr_monotone` enter, turning the limiting NP test into the
+  -- χ² test `{|x|² > c}` with power `ncχ²_k(b²)(c, ∞)` against `σ`.
+  --
+  -- NOTE for BOTH consumers (`ChiSquaredMaximin`, `SmoothTest`).  Neither consumer's shell
+  -- is this one, and in both cases the inclusion runs the WRONG WAY, so neither can be
+  -- derived from this statement even once it is proved:
+  --   * `SmoothTest` uses the bounded shell `{b ≤ ‖h‖ ≤ B}`;
+  --   * `ChiSquaredMaximin` uses `multinomialShell π b n`, which carries the extra,
+  --     sample-size dependent constraint `πⱼ + hⱼ/√n ≥ 0`.
+  -- Both are SUBSETS of `{h : b² ≤ hᵀ I h}`, and `sInf` over a subset is larger.  What is
+  -- true is that the *proof* above yields all three: the least-favourable `σ` is carried by
+  -- the compact sphere `hᵀ I h = b²`, which sits inside the bounded shell, and inside the
+  -- multinomial positivity constraint for all large `n`.  A shell-parametrised restatement
+  -- of this lemma (quantified over any set containing that sphere) would serve all three
+  -- consumers at once and is the recommended shape when the debt is discharged.
   sorry
 
 end StatLean.HypothesisTesting
