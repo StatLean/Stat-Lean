@@ -1152,8 +1152,54 @@ private lemma integral_comp_sign_of_condZero [BorelSpace Ξ]
     refine integral_nonpos_of_ae ?_
     filter_upwards [hkey] with t ht
     exact ht.2 hle
+
+/-- Bounded measurable functions of `(U, T)` are integrable. -/
+private lemma integrable_comp_UT [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) {a : ℝ × Ξ → ℝ} (ham : Measurable a)
+    (hab : ∀ z, |a z| ≤ 1) (p : ℝ × Ξ) : Integrable (fun x => a (U x, T x)) (P p) :=
+  Integrable.mono' (integrable_const (1 : ℝ))
+    ((ham.comp (hU.prodMk hT)).aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hab _)
+
+/-- Bounded measurable functions are conditionally integrable. -/
+private lemma integrable_cond_slice (μ : Measure 𝓧) [IsFiniteMeasure μ]
+    (hU : Measurable U) (hT : Measurable T) {a : ℝ × Ξ → ℝ} (ham : Measurable a)
+    (hab : ∀ z, |a z| ≤ 1) (t : Ξ) :
+    Integrable (fun u => a (u, t)) (condDistrib U T μ t) := by
+  haveI : IsProbabilityMeasure (condDistrib U T μ t) := inferInstance
+  exact Integrable.mono' (integrable_const (1 : ℝ))
+    ((ham.comp (measurable_id.prodMk measurable_const)).aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hab _)
 end CanonicalGlobal
 
+/-! ### Measurability and range of the conditional tests -/
+
+private lemma measurable_condOneSidedTest {C₀ γ₀ : Ξ → ℝ} (hC₀ : Measurable C₀)
+    (hγ₀ : Measurable γ₀) : Measurable (condOneSidedTest C₀ γ₀) :=
+  Measurable.ite (measurableSet_lt (hC₀.comp measurable_snd) measurable_fst) measurable_const
+    (Measurable.ite (measurableSet_eq_fun measurable_fst (hC₀.comp measurable_snd))
+      (hγ₀.comp measurable_snd) measurable_const)
+
+private lemma condOneSidedTest_mem_Icc {C₀ γ₀ : Ξ → ℝ}
+    (hγ₀_mem : ∀ t, γ₀ t ∈ Set.Icc (0 : ℝ) 1) (z : ℝ × Ξ) :
+    condOneSidedTest C₀ γ₀ z ∈ Set.Icc (0 : ℝ) 1 := by
+  unfold condOneSidedTest
+  split_ifs with h1 h2
+  · exact ⟨zero_le_one, le_rfl⟩
+  · exact hγ₀_mem z.2
+  · exact ⟨le_rfl, zero_le_one⟩
+
+private lemma condOneSidedTest_eq_one {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : C₀ z.2 < z.1) :
+    condOneSidedTest C₀ γ₀ z = 1 := by
+  simp only [condOneSidedTest, if_pos hz]
+
+private lemma condOneSidedTest_eq_zero {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ} (hz : z.1 < C₀ z.2) :
+    condOneSidedTest C₀ γ₀ z = 0 := by
+  simp only [condOneSidedTest, if_neg (not_lt.mpr hz.le), if_neg (ne_of_lt hz)]
+
+private lemma abs_le_one_of_mem_Icc {f : ℝ × Ξ → ℝ} (h : ∀ z, f z ∈ Set.Icc (0 : ℝ) 1)
+    (z : ℝ × Ξ) : |f z| ≤ 1 :=
+  abs_le.mpr ⟨by linarith [(h z).1], (h z).2⟩
 /-! ## The four UMP unbiased tests -/
 
 /-- **One-sided null.** For `H : θ ≤ θ₀` against `K : θ > θ₀`, the conditional one-sided test
