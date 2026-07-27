@@ -95,7 +95,19 @@ lemma measurable_bvmNumer
     -- LEAN-ONLY: measurable localization set (regularity)
     (hC : MeasurableSet C) :
     Measurable fun ω : Fin n → 𝓧 => bvmNumer M f θ₀ n C ω := by
-  sorry
+  have hun : Measurable fun hh : EuclideanSpace ℝ (Fin k) => bvmLocalUnscale θ₀ n hh :=
+    measurable_bvmLocalUnscale θ₀ n
+  have hjoint : Measurable fun p : (Fin n → 𝓧) × EuclideanSpace ℝ (Fin k) =>
+      bvmJointDens M f θ₀ n p.2 p.1 := by
+    unfold bvmJointDens
+    refine Measurable.mul ?_ ?_
+    · refine Finset.univ.measurable_prod fun i _ => ?_
+      exact ENNReal.measurable_ofReal.comp
+        (hM_joint.comp ((hun.comp measurable_snd).prodMk
+          ((measurable_pi_apply i).comp measurable_fst)))
+    · exact ENNReal.measurable_ofReal.comp (hf.comp (hun.comp measurable_snd))
+  unfold bvmNumer
+  exact hjoint.lintegral_prod_right' (ν := volume.restrict C)
 
 /-- The **unnormalized Gaussian density** of `N(Δ_{n,θ₀}, J⁻¹)` in local coordinates:
 `exp(⟪h, Δ̃ₙ(ω)⟫ − ⟪h, Jh⟫/2)` with `Δ̃ₙ = scoreSum` (note `J Δ_{n,θ₀} = Δ̃ₙ`; the
