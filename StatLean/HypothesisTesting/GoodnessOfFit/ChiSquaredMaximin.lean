@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMultinomial
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
+import StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianShift
 
