@@ -27,8 +27,8 @@ constant slack at all**. The triangle inequality
 $$ P\{T_n > s\} \;\le\; P\bigl\{n^{1/2} d_K(\hat F_n, F_n) > s - \delta_n\bigr\},
    \qquad \delta_n := n^{1/2} d_K(F_n, F_0), $$
 and the sibling brick `ForMathlib/DKWUniform` bounds the right-hand side by
-`4 exp(−(s − δₙ)²/8)`. Letting `δₙ → δ` and using the *definition* of `ksThreshold` — the
-value at which `4 exp(−s²/8)` equals `α` — the `δ = 0` limit is exactly `α`, not `α` up to
+`4 exp(−(s − δₙ)²/16)`. Letting `δₙ → δ` and using the *definition* of `ksThreshold` — the
+value at which `4 exp(−s²/16)` equals `α` — the `δ = 0` limit is exactly `α`, not `α` up to
 a constant. In other words, with this calibration the level bound of `ks_dkw_level` and
 the local-power bound of `ks_no_local_power` are the *same* inequality evaluated at two
 ends of a limit, and the classical route (an upper bound `2 exp[−2(s_{1−α} − δ)²]` obtained
@@ -68,7 +68,7 @@ variable {Ω : Type*} [MeasurableSpace Ω]
 
 /-- **Limiting power against `n^{1/2} d_K(Fₙ, F₀) → δ`.** The limiting power of the
 calibrated Kolmogorov–Smirnov test against a sequence of alternatives approaching the null
-at rate `δ / n^{1/2}` is at most `4 exp(−(s − δ)²/8)`, where `s = ksThreshold α`.
+at rate `δ / n^{1/2}` is at most `4 exp(−(s − δ)²/16)`, where `s = ksThreshold α`.
 
 This is the calibrated analogue of the classical bound `2 exp[−2(s_{1−α} − δ)²]`, obtained
 from the triangle inequality plus the uniform deviation brick. The hypothesis
@@ -94,19 +94,19 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
     -- USER-INPUT: the approach rate is below the critical value (classical `δ < s_{1−α}`)
     (hδ : δ < ksThreshold α) :
     limsup (fun n => ((P n) {ω | ksThreshold α < ksStat (X n) F₀ ω}).toReal) atTop
-      ≤ 4 * Real.exp (-((ksThreshold α - δ) ^ 2) / 8) := by
+      ≤ 4 * Real.exp (-((ksThreshold α - δ) ^ 2) / 16) := by
   set s := ksThreshold α with hs
   set dseq := fun n : ℕ => Real.sqrt (n : ℝ) * supCDFDist (F n) F₀ with hdseq
   have hsd : Tendsto (fun n => s - dseq n) atTop (nhds (s - δ)) := tendsto_const_nhds.sub hrate
-  have hb : Tendsto (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) atTop
-      (nhds (4 * Real.exp (-((s - δ) ^ 2) / 8))) := by
-    have harg : Tendsto (fun n => -((s - dseq n) ^ 2) / 8) atTop
-        (nhds (-((s - δ) ^ 2) / 8)) := ((hsd.pow 2).neg).div_const 8
-    have hexp : Tendsto (fun n => Real.exp (-((s - dseq n) ^ 2) / 8)) atTop
-        (nhds (Real.exp (-((s - δ) ^ 2) / 8))) := (Real.continuous_exp.tendsto _).comp harg
+  have hb : Tendsto (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 16)) atTop
+      (nhds (4 * Real.exp (-((s - δ) ^ 2) / 16))) := by
+    have harg : Tendsto (fun n => -((s - dseq n) ^ 2) / 16) atTop
+        (nhds (-((s - δ) ^ 2) / 16)) := ((hsd.pow 2).neg).div_const 16
+    have hexp : Tendsto (fun n => Real.exp (-((s - dseq n) ^ 2) / 16)) atTop
+        (nhds (Real.exp (-((s - δ) ^ 2) / 16))) := (Real.continuous_exp.tendsto _).comp harg
     exact hexp.const_mul 4
   have hev : (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal)
-      ≤ᶠ[atTop] (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) := by
+      ≤ᶠ[atTop] (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 16)) := by
     filter_upwards [hrate.eventually (eventually_lt_nhds hδ), eventually_ge_atTop 1]
       with n hlt hn1
     have hn : 0 < n := hn1
@@ -148,23 +148,23 @@ theorem ks_local_power_le {α δ : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProba
     calc ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal
         ≤ ((P n) {ω | s - dseq n ≤ Real.sqrt (n : ℝ) * ksDist (X n) (μ n) ω}).toReal :=
           ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsubset)
-      _ ≤ (ENNReal.ofReal (4 * Real.exp (-((s - dseq n) ^ 2) / 8))).toReal :=
+      _ ≤ (ENNReal.ofReal (4 * Real.exp (-((s - dseq n) ^ 2) / 16))).toReal :=
           ENNReal.toReal_mono ENNReal.ofReal_ne_top hdkw
-      _ = 4 * Real.exp (-((s - dseq n) ^ 2) / 8) := ENNReal.toReal_ofReal (by positivity)
+      _ = 4 * Real.exp (-((s - dseq n) ^ 2) / 16) := ENNReal.toReal_ofReal (by positivity)
   have hbelow : IsBoundedUnder (· ≥ ·) atTop
       (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal) :=
     ⟨0, Filter.eventually_map.mpr (Eventually.of_forall fun n => ENNReal.toReal_nonneg)⟩
   calc limsup (fun n => ((P n) {ω | s < ksStat (X n) F₀ ω}).toReal) atTop
-      ≤ limsup (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 8)) atTop :=
+      ≤ limsup (fun n => 4 * Real.exp (-((s - dseq n) ^ 2) / 16)) atTop :=
         limsup_le_limsup hev hbelow.isCoboundedUnder_le hb.isBoundedUnder_le
-    _ = 4 * Real.exp (-((s - δ) ^ 2) / 8) := hb.limsup_eq
+    _ = 4 * Real.exp (-((s - δ) ^ 2) / 16) := hb.limsup_eq
 
 /-- **No power against `o(n^{-1/2})` alternatives.** For testing `F = F₀` at level `α`,
 the limiting power of the calibrated Kolmogorov–Smirnov test is no better than `α` against
 any sequence of alternatives `Fₙ` with `n^{1/2} d_K(Fₙ, F₀) → 0`.
 
 The `δ = 0` case of `ks_local_power_le`: by the definition of `ksThreshold α` the bound
-`4 exp(−(ksThreshold α)²/8)` *is* `α`, so the conclusion holds with no constant slack. -/
+`4 exp(−(ksThreshold α)²/16)` *is* `α`, so the conclusion holds with no constant slack. -/
 theorem ks_no_local_power {α : ℝ} {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
     {X : (n : ℕ) → Fin n → Ω → ℝ} {μ : ℕ → Measure ℝ} [∀ n, IsProbabilityMeasure (μ n)]
     {μ₀ : Measure ℝ} [IsProbabilityMeasure μ₀] {F : ℕ → ℝ → ℝ} {F₀ : ℝ → ℝ}
