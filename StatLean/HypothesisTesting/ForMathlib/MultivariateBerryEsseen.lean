@@ -625,42 +625,52 @@ In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `�
 is not vacuous) such that every convex `B` and width `ε > 0` admit a smooth `f : ℝ^k → [0,1]`
 equal to `1` on `B`, supported inside the `ε`-thickening of `B`, with `‖D³f‖ ≤ C₃ / ε³`.
 
-TODO: convolve the indicator of the `(ε/2)`-thickening with `(ContDiffBump …).normed` of
-radius `ε/2`; then `C₃ = ‖D³ φ‖_{L¹(ℝ^k)}` (dimension-dependent — this is one source of the
-`k`-factor in `berryEsseen_convex_elementary`). Uses `ContDiffBump.contDiff_normed` and
-`convolution` derivative bounds.
+Status after the wave-4 pass. The API inventory was re-checked against Mathlib v4.29.1 and is
+unchanged: `Analysis/Convolution.lean` exports `convolution_precompR_apply`, and
+`Analysis/Calculus/ContDiff/Convolution.lean` exports exactly one differentiation formula,
+the *first-order* `HasCompactSupport.hasFDerivAt_convolution_right`
+(`fderiv (f ⋆[L] g) = f ⋆[L.precompR G] fderiv g`) together with the qualitative
+`HasCompactSupport.contDiff_convolution_right`. There is **no** iterated-derivative formula
+for convolutions and no `‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}`. So mollification remains the
+route and the `precompR` tower remains its cost.
 
-Re-derived API status (Mathlib v4.29.1). Smoothness of the mollification is available off the
-shelf (`HasCompactSupport.contDiff_convolution_right`), but the *quantitative* step is not:
-the only differentiation lemma exported is the first-order
-`HasCompactSupport.hasFDerivAt_convolution_right`, `fderiv (f ⋆[L] g) = f ⋆[L.precompR G] fderiv g`.
-There is **no** iterated-derivative formula for convolutions and no
-`‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}` bound. So `‖D³f‖ ≤ C₃/ε³` must be built by iterating
-`precompR` three times and then
-converting the resulting nested `fderiv` tower into `iteratedFDeriv` with the matching operator
-norms — that bookkeeping, not the analysis, is the actual cost of this lemma. (By contrast the
-radial analogue below is cheap precisely because it never mollifies: it composes a *fixed* 1-D
-cutoff with `‖·‖²`, for which `norm_iteratedFDeriv_comp_le` supplies the bound directly.)
+What this pass adds is that the route is now *mapped*, not merely named — the three steps that
+looked open-ended are all supplied:
 
-Note (re-derived): convexity of `B` is *not* used by this construction at all — the same
-mollification works for any measurable `B`, and the analogous radial statement
-`exists_smoothed_radial_indicator` is proved above by the cheaper route of composing a fixed
-1-D cutoff with `‖·‖²`. What convexity is needed for is the *other* convex ingredient, the
-boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in this file and is the real obstacle
-to `berryEsseen_convex_elementary` (see its docstring).
+* the **tower-to-`iteratedFDeriv` bridge** is `norm_iteratedFDeriv_fderiv`
+  (`Analysis/Calculus/ContDiff/FTaylorSeries.lean`),
+  `‖iteratedFDeriv 𝕜 n (fderiv 𝕜 f) x‖ = ‖iteratedFDeriv 𝕜 (n+1) f x‖`. Applying it twice turns
+  the target `‖iteratedFDeriv ℝ 3 f x‖` into `‖fderiv (fderiv (fderiv f)) x‖`, which is exactly
+  what three applications of `hasFDerivAt_convolution_right` produce (with `L`, `L.precompR`,
+  `L.precompR.precompR`). No `continuousMultilinearCurry…` gymnastics is needed.
+* the **`ε`-scaling of the mollifier is definitional**. In v4.29.1 `ContDiffBump.toFun` is
+  `(someContDiffBumpBase E).toFun (rOut / rIn) ∘ (x ↦ rIn⁻¹ • (x - c))`, i.e. the bump depends
+  on the two radii only through the *ratio* `rOut/rIn` and an overall dilation by `rIn`. Fixing
+  the ratio at `2`, the bump of inner radius `δ` is literally the `δ`-dilate of the bump of
+  inner radius `1`; hence `D³` scales by `δ⁻³`, `∫` of the unnormalised bump scales by `δ^k`
+  (`Measure.integral_comp_smul` for the additive Haar measure `volume`), and
+  `∫ ‖D³ (bump δ).normed‖ = δ⁻³ ∫ ‖D³ (bump 1).normed‖ =: C₃/δ³`. This is the source of the
+  `k`-dependence of `C₃` and it is the only place where `k` enters.
+* the **construction** that meets the frozen clauses: take `δ := ε/8`, mollify the indicator of
+  `Metric.thickening (ε/2) B` with `(bump δ).normed`. Then `f = 1` on `B` (the mollifier is
+  supported in the ball of radius `2δ = ε/4`, so the whole mass sits inside the thickening),
+  `f x ≠ 0 ⇒ x ∈ thickening ε B` (`ε/2 + ε/4 < ε`), and `0 ≤ f ≤ 1` since `∫ (bump δ).normed = 1`.
 
-Status after the wave-3 pass (re-verified against Mathlib v4.29.1, and this is the *only*
-remaining `private` debt of this file). The API inventory above is unchanged: `Analysis/
-Convolution.lean` exports `convolution_precompR_apply` and the first-order
-`HasCompactSupport.hasFDerivAt_convolution_right`, and nothing about `iteratedFDeriv` of a
-convolution. Two cheaper constructions were considered and **ruled out**, so that they are not
+Three cheaper constructions were re-examined and all **fail**, so they are not to be
 re-explored:
 
 * *compose a fixed cutoff with a smooth "defining function" of `B`*, mirroring the radial trick
-  `χ ∘ ‖·‖²`. This needs a `C³` `ψ` with `ψ ≤ 0` on `B`, `ψ ≥ 1` off `Bᵋ` and
-  `‖Dᵐψ‖ ≲ ε^{-m}`; the natural candidate `dist(·, B)/ε` is only convex and `1`-Lipschitz, and
-  `dist(·,B)²` is only `C^{1,1}` for convex `B` — neither is `C³`, and smoothing either of them
-  is the very mollification being avoided.
+  `χ ∘ ‖·‖²` used by `exists_smoothed_radial_indicator`. This needs a `C³` `ψ` with `ψ ≤ 0` on
+  `B`, `ψ ≥ 1` off `Bᵋ` and `‖Dᵐψ‖ ≲ ε^{-m}`. For convex `B` the two natural candidates are
+  `dist(·,B)`, which is convex and `1`-Lipschitz but not even `C¹` across `∂B`, and
+  `dist(·,B)²`, which is `C¹` with `∇ = 2(x − P_B x)` but only `C^{1,1}` because the metric
+  projection `P_B` is merely `1`-Lipschitz. Neither is `C³`, and smoothing either of them is
+  the very mollification being avoided.
+* *Gaussian (heat-semigroup) mollification*, which would make the derivative bounds explicit and
+  scaling-free. **Excluded by the statement itself**: the frozen clause
+  `∀ x, f x ≠ 0 → x ∈ thickening ε B` demands compact — in fact `ε`-local — support, and the
+  Gaussian mollification of a nonempty set is strictly positive everywhere. This is why
+  `ContDiffBump` is forced rather than merely convenient.
 * *log-sum-exp ("soft-max") over the support function*,
   `ψ_λ(x) = λ^{-1} log ∫_{S^{k-1}} exp(λ(⟪u,x⟫ − h_B(u))) dσ(u)`, whose derivatives are the
   first three moments of a tilted measure on the sphere and do scale as `1, λ, λ²`. This fails
@@ -668,10 +678,16 @@ re-explored:
   needle-shaped convex body that near-max set of directions is arbitrarily small, so the
   approximation is not uniform over `B` — exactly the uniformity the `∃ C₃` prefix demands.
 
-So mollification really is the only route, and the cost is the `precompR` tower, not the
-analysis. Since closing this lemma alone would still leave `berryEsseen_convex_elementary`
-blocked on Ball's Gaussian-surface-area theorem (a genuine research theorem, see below), it is
-deliberately left as debt rather than paid at ~500 lines for no headline. -/
+Note (unchanged, and worth repeating): convexity of `B` is *not* used by this construction at
+all — the same mollification works for any measurable `B`. What convexity is needed for is the
+*other* convex ingredient, the boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in
+this file and is the real obstacle to `berryEsseen_convex_elementary` (see its docstring).
+
+Since closing this lemma alone would still leave `berryEsseen_convex_elementary` blocked on
+Ball's Gaussian-surface-area theorem (a genuine research theorem, see below), it is
+deliberately left as debt rather than paid at ~500 lines of `precompR`/operator-norm
+bookkeeping for no headline. The three bullets above are the receipt that the remaining cost is
+bookkeeping and not mathematics. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
     ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
@@ -1816,9 +1832,9 @@ The Gaussian side of the third moment is now proved too: `integral_norm_cube_gau
 gives `β_G ≤ 2 k^{3/2} ≤ 2 β` from the two *public* χ² moments (`E X = k`, `E (X−k)² = 2k`)
 — no fourth χ² moment and no Cauchy–Schwarz are needed, see its docstring.
 
-**The assembly below is complete**, and the *only* thing it still consumes on faith is
-`abs_integral_smooth_sub_gaussian_le`, the third-order multivariate Lindeberg swap, which is
-still `sorry` (see its own `TODO`). Concretely, with `ε := (β/√n)^{1/4}`:
+**The assembly below is complete and consumes nothing on faith**: its last ingredient,
+`abs_integral_smooth_sub_gaussian_le` (the third-order multivariate Lindeberg swap), is proved
+above, so `berryEsseen_ball_elementary` is axiom-clean. Concretely, with `ε := (β/√n)^{1/4}`:
 
 * upper: `μₙ{‖z‖ ≤ s} ≤ ∫ f_ε dμₙ ≤ ∫ f_ε dγ + (C₃/ε³)(β+β_G)/(6√n) ≤ γ{‖z‖ ≤ s+ε} + (C₃/2)ε`
   with `f_ε` the smoothed radial indicator at radius `s`, and then
@@ -2058,8 +2074,9 @@ smoothed-indicator third-derivative bound `exists_smoothed_convex_indicator` and
 boundary covering). Both deviations are intrinsic to the mollifier method; the sharp
 `400 k^{1/4} · β/√n` needs Bentkus's Fourier analysis and is not attempted.
 
-TODO (planned debt) — re-derived. The `ε`-optimisation itself is *exactly* the one now written
-out in `berryEsseen_ball_elementary` (same `ε = (β/√n)^{1/4}`, same three-step sandwich), so the
+TODO (planned debt) — re-derived twice, most recently in the wave-4 pass. The `ε`-optimisation
+itself is *exactly* the one written out in `berryEsseen_ball_elementary` (same
+`ε = (β/√n)^{1/4}`, same three-step sandwich), which is now proved and axiom-clean, so the
 assembly is not the difficulty. What the convex case needs and the ball case does not is a
 **boundary-shell (Gaussian surface area) bound**
 
@@ -2068,18 +2085,19 @@ assembly is not the difficulty. What the convex case needs and the ball case doe
 the convex analogue of `gaussian_ball_shell_measure_le`. This does **not** follow from the
 `gaussian_slab_measure_le` bound already proved here: a covering of `∂Bᵋ` by slabs needs one slab
 per facet, so it only bounds the shell for polytopes with a controlled number of facets, and the
-supremum over all convex bodies of the number of facets is unbounded even for fixed `k`. The
-sharp statement is K. Ball, "The reverse isoperimetric problem for Gaussian measure" (1993):
+supremum over all convex bodies of the number of facets is unbounded even for fixed `k`. (A
+`δ`-net of *normal directions* does not repair this either: tilting a supporting hyperplane of a
+needle-shaped body by `δ` moves it by an amount controlled by the body's diameter, not by `δ`.)
+The sharp statement is K. Ball, "The reverse isoperimetric problem for Gaussian measure" (1993):
 the Gaussian surface area of a convex body in `ℝ^k` is at most `4 k^{1/4}` (Nazarov (2003) gives
 the matching lower bound `c k^{1/4}`), and *any* finite bound here is a genuine theorem — the
 `k^{1/4}` in Bentkus's constant is precisely this quantity. Recording it as the named missing
 brick is the honest status; with it, plus `exists_smoothed_convex_indicator`, the proof below is
-a transcription of the ball assembly (`abs_integral_smooth_sub_gaussian_le` is no longer a debt —
-it is proved above, and `berryEsseen_ball_elementary` is now axiom-clean).
+a transcription of the ball assembly.
 
-Re-derived in the wave-3 pass: the shell bound is genuinely the whole obstruction, and it is
-**not** cheapened by the fact that `C` here is allowed to depend on `k`. Three routes to a
-merely-finite `C_k` were checked and all fail:
+The shell bound is genuinely the whole obstruction, and it is **not** cheapened by the fact that
+`C` here is allowed to depend on `k`. Three routes to a merely-finite `C_k` were checked and all
+fail:
 
 * *Gaussian isoperimetry* (Borell–Sudakov–Tsirelson) gives `γ(Bᵋ) ≤ Φ(Φ^{-1}(γ B) + ε)` and hence
   the dimension-free `γ(Bᵋ \ B) ≤ ε/√(2π)` for **every** measurable `B` — but it is itself a
@@ -2091,6 +2109,19 @@ merely-finite `C_k` were checked and all fail:
   choice of `R` gives a linear-in-`ε` bound; the argument is intrinsically lossy. (Mathlib also
   has no perimeter of convex bodies, so even the lossy version is unavailable.)
 * *slab covering of `∂B`* — already excluded above: one slab per facet, unbounded.
+
+**A lossy shell bound is provably useless here** (this is the wave-4 sharpening, and it closes
+off the temptation to settle for the second bullet). Suppose only `γ(Bᵋ \ B) ≤ ψ(ε)` with
+`ψ(ε) = ε (log 1/ε)^{(k−1)/2}`. Writing `A := β/√n`, the sandwich gives a total error
+`g(ε) = ψ(ε) + C₃ A ε^{-3}`, and the frozen conclusion demands `g(ε) ≤ C A^{1/4}` for *some*
+choice of `ε` and a constant `C` uniform in `n`. The second term forces
+`ε ≥ (C₃/C)^{1/3} A^{1/4}` and the first then forces `ε ≤ C A^{1/4}/ψ(ε)·ε`, i.e.
+`(log 1/ε)^{(k−1)/2} ≤ C^{4/3} C₃^{-1/3}`; but the first constraint pins `ε ≍ A^{1/4}`, so
+`(log 1/ε)^{(k−1)/2} ≍ (log 1/A)^{(k−1)/2} → ∞` as `n → ∞`. Hence no constant `C` exists: for
+`k ≥ 2` the exponent `1/4` in the frozen statement is attainable **only** with a shell bound that
+is `O(ε)`, i.e. only with (a form of) Ball's theorem. For `k = 1` the exponent `(k−1)/2` is `0`
+and the truncation route does close — but `k = 1` is the univariate Berry–Esseen case, which is
+not what this statement is for.
 
 So the missing brick is exactly "the Gaussian surface area of a convex body in `ℝ^k` is finite,
 with a bound depending only on `k`", i.e. Ball's theorem or a weakened form of it, and it is a
