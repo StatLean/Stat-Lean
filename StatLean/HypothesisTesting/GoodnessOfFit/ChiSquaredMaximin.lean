@@ -193,16 +193,22 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
         limsup (fun n => sInf ((fun h => power (Q n) (ψ n) h)
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO: two-part attainment argument.
-  -- • First conjunct (Pearson attains the value): the local power of `1{Qₙ > c}` against
-  --   the shift `h` converges to `ncχ²_k(λ(h))(c, ∞)` — this is
-  --   `ChiSquaredMultinomial.pearsonQ_weakConverges_noncentral` composed with a
-  --   portmanteau tail step — but that lemma's engine
-  --   `reducedCount_weakConverges_noncentral` is itself an OPEN sorry in
-  --   `ChiSquaredMultinomial.lean`.  The worst case over the shell is then pinned to the
-  --   boundary `λ(h) = b²` by the monotone likelihood ratio of the noncentral family
-  --   (`noncentralChiSquared_tail_mono`), and diverging shifts force power one.
-  -- • Second conjunct is exactly `chiSquared_maximin_upper_bound` above.
+  -- TODO (re-derived).  Two-part attainment argument.
+  -- • First conjunct (Pearson attains the value).  Its engine
+  --   `ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` is NO LONGER an open
+  --   sorry — the drifting-row multivariate CLT is closed, so
+  --   `pearsonQ_weakConverges_noncentral` is available and gives, for each fixed shift `h`,
+  --   `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` after the (constant-threshold)
+  --   portmanteau step `tendsto_measure_Ioi_of_weakLimit`.  What remains is genuinely the
+  --   *uniformity over the shell*: the shell `multinomialShell π b n` itself moves with `n`
+  --   (through the positivity constraint `πⱼ + hⱼ/√n ≥ 0`) and is unbounded, so pinning
+  --   `sInf` to the inner boundary `λ(h) = b²` needs (i) monotonicity of the tail in `λ`
+  --   (`noncentralChiSquared_tail_mono`, itself resting on the open
+  --   `stdGaussian_normSq_le_antitone`) and (ii) a uniform-in-`h` version of the local
+  --   limit, i.e. an equicontinuity/tightness argument over the shell that the per-`h` weak
+  --   limit does not supply.  Neither is available.
+  -- • Second conjunct is exactly `chiSquared_maximin_upper_bound` above, which is itself
+  --   the (still open) multinomial instance of `asymptotic_maximin_upper_bound`.
   sorry
 
 /-! ### The noncentral tail function as the number of cells grows -/

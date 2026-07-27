@@ -456,10 +456,23 @@ giving `scoreVec ⇒ N((hⱼ)ⱼ, Iₖ)`, hence `Sₙ ⇒ χ²_k(‖h‖²)` by 
 `multivariateGaussian_map_inner_inv_eq_noncentralChiSquared` bridge used in the null case;
 (ii) the map `h ↦ P{χ²_k(‖h‖²) > c}` is increasing in `‖h‖` (`noncentralChiSquared_tail_mono`),
 so the minimum over the shell is asymptotically attained at the inner boundary `‖h‖ = b`,
-giving `P{χ²_k(b²) > c}`. The triangular-array CLT brick is the same one deferred in
-`ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` (the drifting per-observation
-law `μ n` puts it outside the fixed-i.i.d. `clt_finDim` used for the null limit); it is not
-available in this file, so the statement is lifted here as a single named debt. -/
+giving `P{χ²_k(b²) > c}`.
+
+TODO (re-derived).  The triangular-array CLT is no longer the obstruction: its multinomial
+twin `ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` is now CLOSED, by running
+the drifting-row multivariate limit law `HypothesisTesting.meanVec_root_tendsto` on the
+sequence of per-observation laws.  The same route applies here, with `F n` the law of
+`psiVec` under the *tilted* member `(smoothModel P₀ ψ hψ).P (n^{-1/2} • h)`: what has to be
+supplied for it is the class condition `meanVecSeqClass`, i.e. that the exponential tilt
+`p_{θ}` converges weakly to `P₀` with mean vector `→ h` and covariance `→ Iₖ` as `θ → 0`
+along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement about
+`smoothModel`, and needs `PointEstimation.ExponentialFamily.Smoothness` (the log-partition
+`A` and its first two derivatives at `0`), which is not imported here.  The two remaining
+obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
+shell infimum to the inner boundary, which consumes `noncentralChiSquared_tail_mono` —
+itself resting on the still-open `stdGaussian_normSq_le_antitone` — together with a
+uniform-in-`h` version of the per-`h` limit.  The statement stays lifted here as a single
+named debt. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]

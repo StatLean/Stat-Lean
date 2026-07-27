@@ -1281,18 +1281,26 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
           (Set.Ioi c)).toReal
       ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
           (Set.Ioi c)).toReal < 1 := by
-  -- TODO (planned debt): the three conjuncts build on `pearsonQ_weakConverges_noncentral`
-  -- (ii) but need analytic facts about the limit that are not among the supplied bricks:
-  --   (1) a portmanteau step upgrading the weak limit (ii) to convergence of the tail
-  --       probability `((P n).map pearsonQ)(Ioi c) → noncentralChiSquared k λ (Ioi c)`,
-  --       valid because `{c}` is `noncentralChiSquared`-null (absolute continuity); the
-  --       `WeakConverges` API in `ForMathlib.Contiguity` has no such continuity-set lemma;
-  --   (2) `α < tail` is STRICT: `chiSquared_tail_le_noncentralChiSquared` gives only `≤`;
-  --       strictness needs `λ = multinomialNoncentrality π h > 0` (from `hhne` + `hπpos`,
-  --       provable) together with STRICT monotonicity of `l ↦ noncentralChiSquared k l (Ioi c)`
-  --       at `l > 0` — only the non-strict `noncentralChiSquared_tail_mono` is imported;
-  --   (3) `tail < 1`: `noncentralChiSquared` is absolutely continuous with support `(0,∞)`,
-  --       so `Iic c` carries positive mass for the finite `c` fixed by `hc` (`0 < α < 1`).
+  -- TODO (re-derived after the closure of `pearsonQ_weakConverges_noncentral`).  Conjunct
+  -- (1) is now reachable: the weak limit is available, `noncentralChiSquared k λ` is the
+  -- pushforward of a Gaussian under `‖·‖²` and so has no atom at `c` (its `{c}`-mass is a
+  -- sphere mass for the standard Gaussian), and the moving-threshold portmanteau tail
+  -- `ChiSquaredMaximin.tendsto_measure_Ioi_of_weakLimit` (constant threshold case) is the
+  -- last step.  The obstruction is conjunct (2), `α < tail`:
+  --   * `α = χ²_k(c,∞) = ncχ²_k(0)(c,∞)` and `λ = multinomialNoncentrality π h > 0` (from
+  --     `hhne` and `hπpos`), so the claim is the STRICT form of Anderson's inequality —
+  --     `μ(C − v) < μ(C)` for the standard Gaussian, the closed ball `C = {‖z‖² ≤ c}` and
+  --     `v ≠ 0`.  The repository has only the non-strict endpoint
+  --     `AsymptoticStatistics.anderson_lemma_set_stdGaussian`, and even the non-strict
+  --     shrink monotonicity `noncentralChiSquared_tail_mono` rests on the open
+  --     `stdGaussian_normSq_le_antitone`.  Strictness is not a corollary of either: the
+  --     pointwise pairing `φ(u−v)+φ(u+v) = 2φ(u)e^{-‖v‖²/2}cosh⟪u,v⟫` is `> 2φ(u)` on part
+  --     of the ball, so the gain is genuinely an averaged (Prékopa–Leindler) phenomenon.
+  --   * conjunct (3), `tail < 1`, needs `ncχ²_k(λ)(-∞,c] > 0`, i.e. that the shifted
+  --     Gaussian charges the open ball `{‖z‖² < c}` — true (Gaussians are open-positive) but
+  --     requiring an `IsOpenPosMeasure`-style fact for `multivariateGaussian` that the
+  --     project does not yet have, together with `0 < c` (which follows from `hc` and
+  --     `α < 1`).
   sorry
 
 end StatLean.HypothesisTesting
