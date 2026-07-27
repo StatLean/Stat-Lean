@@ -447,25 +447,35 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
   -- restrict the competitors to tests based on the sample, which is `hφX` and is how the
   -- source states the theorem (Neyman 1937; TSH4 §16.4.1).
   --
-  -- WHAT REMAINS for the repaired statement — a genuine deep gap, in two pieces:
-  --   1. Asymptotic-normality data for `smoothModel` in order to invoke
-  --      `asymptotic_maximin_upper_bound` with `I = Iₖ`: the centring `Zₙ = scoreVec` (with
-  --      `Zₙ ⇒ N(0, Iₖ)` under `Q n 0 = P₀`, from `scoreVec_weakConverges_gaussian`) is
-  --      available, but the log-likelihood field `L n h` and its quadratic LAN expansion
-  --      (`hdens`, `hLAN`) still have to be built from the exponential-family log-partition
-  --      `A` (whose Fisher information at `0` is `Iₖ` by orthonormality); this needs
-  --      `PointEstimation.ExponentialFamily.Smoothness`.  Note that with `Q` abstract these
-  --      are data, not consequences, so they would have to be added as hypotheses.
-  --   2. A *bounded*-shell (`b ≤ ‖h‖ ≤ B`) transfer.  The imported
-  --      `asymptotic_maximin_upper_bound` concludes only for the UNBOUNDED shell
-  --      `{b² ≤ h⊤ I h} = {b ≤ ‖h‖}`, which is the a-fortiori WEAKER bound: `sInf` over the
-  --      bounded shell (a subset) is `≥` `sInf` over the unbounded one, so the lemma's bound
-  --      does not transfer in the needed direction.  The bounded bound is provable by the SAME
-  --      mixture–Neyman–Pearson argument (the least-favourable `σ` sits on the inner sphere
-  --      `‖h‖ = b`, inside the bounded shell); the recommended fix, recorded on the
-  --      `AsymptoticMaximin` side, is a shell-parametrised restatement of that lemma,
-  --      quantified over any set containing the sphere, which serves this consumer and
-  --      `ChiSquaredMaximin` at once.
+  -- WHAT REMAINS for the repaired statement (RE-DERIVED this batch).  Of the two pieces
+  -- recorded last batch, the SECOND IS GONE and the first has shrunk to a single named item.
+  -- • Piece 2 (the bounded-shell transfer) is CLOSED.  `asymptotic_maximin_upper_bound` is now
+  --   proved AND restated so that its conclusion is quantified over an arbitrary family `S n`
+  --   of alternative sets subject only to `{h | ‖h‖ = b} ⊆ S n` eventually.  The bounded shell
+  --   `{b ≤ ‖h‖ ≤ B}` contains the sphere `‖h‖ = b` (here `b < B`), so the a-fortiori mismatch
+  --   that made the old, unbounded-shell form useless in this direction no longer exists.  The
+  --   sample space of that lemma may also vary with `n`, so this consumer may transfer along
+  --   `hφX` to the canonical experiment `⨂_{i<n} p_{h n^{-1/2}}` on `Fin n → 𝓧`, where the
+  --   likelihood field is explicit.  Its information matrix is the identity by `hortho`.
+  -- • Piece 1 (asymptotic-normality data for `smoothModel`) is what is left, and it is now the
+  --   ONLY thing left.  Concretely, on the canonical experiment one has to supply:
+  --     – `Zₙ = scoreVec ψ (X n)` with `Zₙ ⇒ N(0, Iₖ)` under the null — AVAILABLE, this is
+  --       `scoreVec_weakConverges_gaussian`, used already by
+  --       `smoothStat_weakConverges_chiSquared` above;
+  --     – the log-likelihood field `L n h ω = ∑_{i<n} (⟪n^{-1/2}h, ψ(ω i)⟫ − A(n^{-1/2}h))`,
+  --       which is immediate from the exponential-family density of `smoothModel` and is
+  --       jointly measurable in `(h, ω)` because `ψ` is measurable (`hψ`) and `A` is
+  --       continuous on the interior of the natural parameter set;
+  --     – the uniform-over-the-sphere expansion `L n h = ⟪h, Zₙ⟫ − ‖h‖²/2 + rₙ(h)` with
+  --       `sup_{‖h‖=b} |rₙ| = o_P(1)`.  Since `n A(n^{-1/2}h) = ½ hᵀ A''(0) h + o(1)` uniformly
+  --       on the compact sphere and `A''(0) = Iₖ` by orthonormality of `ψ` in `L²(P₀)`, the
+  --       remainder is DETERMINISTIC here — the exponential family being linear in the
+  --       sufficient statistic — so no probabilistic uniformity is needed at all, only the
+  --       second-order Taylor expansion of the log-partition `A` at the interior point `0`
+  --       (`hint`).  That expansion is `PointEstimation.ExponentialFamily.Smoothness`, which
+  --       this file does not import.
+  -- So this statement is now one import and one Taylor expansion away, and no longer carries
+  -- any share of the mixture–Neyman–Pearson debt.
   sorry
 
 /-- **The smooth test attains the maximin value on the local shell** (LIFTED — the deep half
@@ -495,11 +505,15 @@ along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement
 obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
 shell infimum to the inner boundary.
 
-TODO (RE-DERIVED again, latest batch).  This half is about the *smooth test itself*, a
+TODO (RE-DERIVED again, this batch).  This half is about the *smooth test itself*, a
 function of the sample alone, so it is untouched by the abstract-`Q` counterexample that
 made `smoothTest_maximin_upper_bound` false as frozen: the frozen hypotheses determine the
 law of `smoothStat ψ (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and
-open.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
+open.  Note that the mixture apparatus closed this batch
+(`AsymptoticMaximin.asymptotic_maximin_upper_bound`) does NOT help here: it bounds every
+competitor from ABOVE, whereas this is an attainment statement.  What it does do is remove
+the second obstruction from the *upper-bound* half, so the two halves no longer share a
+debt.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
 strictly stronger monotone likelihood ratio of the noncentral chi-squared family in the
 noncentrality is now available (`exists_monotone_density`, in the MLR section of
 `ChiSquaredMaximin.lean`), so the worst case over the shell can be pinned at `‖h‖ = b` by

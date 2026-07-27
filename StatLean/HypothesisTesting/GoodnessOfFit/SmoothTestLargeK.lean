@@ -129,9 +129,11 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
         - ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal|
       ≤ 400 * (k : ℝ) ^ ((1 : ℝ) / 4) * (∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ) := by
   -- TODO (RE-DERIVED AGAIN this batch; the deferral verdict is CONFIRMED once more, and
-  -- this one honestly stays.  Nothing acquired in this batch — the noncentral-chi-squared
-  -- MLR/density machinery of `ChiSquaredMaximin.lean` and the Gaussian-direction sphere
-  -- average — touches the convex-body Fourier analysis this bound needs.)
+  -- this one honestly stays.  Nothing acquired in this batch touches it: the new material is
+  -- the mixture–Neyman–Pearson closure of `AsymptoticMaximin.asymptotic_maximin_upper_bound`
+  -- — a least-favourable spherical mixture, Cameron–Martin tilting of the standard Gaussian,
+  -- and a Slutsky/weak-convergence limit passage — none of which produces a *quantitative*
+  -- normal-approximation rate over convex bodies, which is the entire content here.)
   --
   -- The statement is the *sharp* Bentkus (2003) bound: rate `β/√n = n^{-1/2}` in the sample
   -- size, dimensional factor exactly `k^{1/4}`, absolute constant `400`, uniformly over all
