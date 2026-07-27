@@ -372,27 +372,248 @@ theorem chiSquared_tail_le_noncentralChiSquared {k : ℕ}
       _ = μ {x | (0 : E) + x ∈ C} := h0.symm
   exact tsub_le_tsub_left key' _
 
-/-- **Anderson shrink-shift monotonicity for the standard-Gaussian ball measure** (LIFTED).
-For a convex symmetric closed ball `{z | ‖z‖² ≤ t}`, shifting its centre further from the
+/-! ### Anderson's inequality in its *scaled* (shrink-shift) form
+
+`AsymptoticStatistics.anderson_lemma_set_stdGaussian` supplies only the `a = 0` endpoint
+`μ(C − y) ≤ μ(C)` of Anderson's inequality; the shrink monotonicity `μ(C − y) ≤ μ(C − c·y)`
+for `0 ≤ c ≤ 1` is *not* a corollary of it (the intermediate set `C − c·y` is no longer
+symmetric). It is, however, the *same* Prékopa–Leindler argument run with **unequal weights**
+`t = (1+c)/2` and `1 − t` instead of the symmetric `½`-midpoint: for `u + y ∈ C` and
+`v − y ∈ C`,
+`t • u + (1−t) • v + c • y = t • (u + y) + (1−t) • (v − y) ∈ C`,
+so PL gives `ν(C−y)^t · ν(C+y)^{1−t} ≤ ν(C − c·y)`, and `ν(C+y) = ν(C−y)` by the reflection
+symmetry of the Gaussian and of `C`. This section develops that general-weight variant (the
+`t = 1/2` case is `AsymptoticStatistics._pl_anderson_pi_general`, which is `private` there and
+in any case not general enough). -/
+
+section AndersonScaled
+
+open AsymptoticStatistics
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **General-weight log-concavity of the standard 1-D Gaussian density.** For `0 ≤ t ≤ 1`,
+`φ(x)^t · φ(y)^{1−t} ≤ φ(t x + (1−t) y)`. Equivalent to convexity of `x ↦ x²`; the
+`t = 1/2` case is `AsymptoticStatistics.gaussianPDFReal_one_log_concave`. -/
+private lemma gaussianPDFReal_log_concave_gen {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (x y : ℝ) :
+    gaussianPDFReal 0 1 x ^ t * gaussianPDFReal 0 1 y ^ (1 - t)
+      ≤ gaussianPDFReal 0 1 (t * x + (1 - t) * y) := by
+  simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero]
+  set c : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ with hc_def
+  have hc : 0 < c := by rw [hc_def]; positivity
+  have hcc : c ^ t * c ^ (1 - t) = c := by
+    rw [← Real.rpow_add hc]; norm_num
+  have hkey : Real.exp (-x ^ 2 / 2) ^ t * Real.exp (-y ^ 2 / 2) ^ (1 - t)
+      ≤ Real.exp (-(t * x + (1 - t) * y) ^ 2 / 2) := by
+    rw [← Real.exp_mul, ← Real.exp_mul, ← Real.exp_add]
+    refine Real.exp_le_exp.mpr ?_
+    nlinarith [mul_nonneg (mul_nonneg ht0 (sub_nonneg.mpr ht1)) (sq_nonneg (x - y))]
+  calc (c * Real.exp (-x ^ 2 / 2)) ^ t * (c * Real.exp (-y ^ 2 / 2)) ^ (1 - t)
+      = c ^ t * c ^ (1 - t)
+          * (Real.exp (-x ^ 2 / 2) ^ t * Real.exp (-y ^ 2 / 2) ^ (1 - t)) := by
+        rw [Real.mul_rpow hc.le (Real.exp_pos _).le,
+          Real.mul_rpow hc.le (Real.exp_pos _).le]
+        ring
+    _ = c * (Real.exp (-x ^ 2 / 2) ^ t * Real.exp (-y ^ 2 / 2) ^ (1 - t)) := by rw [hcc]
+    _ ≤ c * Real.exp (-(t * x + (1 - t) * y) ^ 2 / 2) := by
+        exact mul_le_mul_of_nonneg_left hkey hc.le
+
+/-- `ENNReal` form of `gaussianPDFReal_log_concave_gen`. -/
+private lemma gaussianPDF_log_concave_gen {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (x y : ℝ) :
+    gaussianPDF 0 1 x ^ t * gaussianPDF 0 1 y ^ (1 - t)
+      ≤ gaussianPDF 0 1 (t * x + (1 - t) * y) := by
+  simp_rw [gaussianPDF_def]
+  rw [ENNReal.ofReal_rpow_of_nonneg (gaussianPDFReal_nonneg _ _ _) ht0,
+    ENNReal.ofReal_rpow_of_nonneg (gaussianPDFReal_nonneg _ _ _) (by linarith),
+    ← ENNReal.ofReal_mul (Real.rpow_nonneg (gaussianPDFReal_nonneg _ _ _) t)]
+  exact ENNReal.ofReal_le_ofReal (gaussianPDFReal_log_concave_gen ht0 ht1 x y)
+
+/-- Product (Pi) form of the general-weight Gaussian log-concavity. -/
+private lemma gaussianPDF_pi_log_concave_gen {t : ℝ} (ht0 : 0 ≤ t) (ht1 : t ≤ 1)
+    (u v : ι → ℝ) :
+    (∏ i, gaussianPDF 0 1 (u i)) ^ t * (∏ i, gaussianPDF 0 1 (v i)) ^ (1 - t)
+      ≤ ∏ i, gaussianPDF 0 1 ((t • u + (1 - t) • v) i) := by
+  have hcoord : ∀ i : ι, (t • u + (1 - t) • v) i = t * u i + (1 - t) * v i := by
+    intro i; simp
+  simp only [hcoord]
+  rw [← ENNReal.prod_rpow_of_nonneg ht0,
+    ← ENNReal.prod_rpow_of_nonneg (by linarith : (0 : ℝ) ≤ 1 - t), ← Finset.prod_mul_distrib]
+  exact Finset.prod_le_prod' fun i _ => gaussianPDF_log_concave_gen ht0 ht1 (u i) (v i)
+
+/-- **Generalised (unequal-weight) PL–Anderson on `Measure.pi (gaussianReal 0 1)`.**
+If the `t`-weighted Minkowski combination of `A` and `B` lands in `K`, and `A`, `B` have the
+same Gaussian mass, then that common mass is at most the mass of `K`. -/
+private lemma pl_anderson_pi_gen {A B K : Set (ι → ℝ)}
+    (hA : MeasurableSet A) (hB : MeasurableSet B) (hK : MeasurableSet K)
+    {t : ℝ} (ht0 : 0 < t) (ht1 : t < 1)
+    (hmean : ∀ u ∈ A, ∀ v ∈ B, t • u + (1 - t) • v ∈ K)
+    (hsymm : (Measure.pi fun _ : ι => gaussianReal 0 1) B
+      = (Measure.pi fun _ : ι => gaussianReal 0 1) A) :
+    (Measure.pi fun _ : ι => gaussianReal 0 1) A
+      ≤ (Measure.pi fun _ : ι => gaussianReal 0 1) K := by
+  set ν := Measure.pi (fun _ : ι => gaussianReal 0 1) with hν_def
+  set ρ : (ι → ℝ) → ℝ≥0∞ := fun x => ∏ i, gaussianPDF 0 1 (x i) with hρ_def
+  have hρ_meas : Measurable ρ :=
+    Finset.measurable_prod _ fun i _ =>
+      (measurable_gaussianPDF 0 1).comp (measurable_pi_apply i)
+  have hν_set : ∀ S : Set (ι → ℝ), MeasurableSet S →
+      ν S = ∫⁻ x, S.indicator ρ x ∂volume := by
+    intro S hS
+    rw [hν_def, pi_gaussianReal_eq_withDensity, withDensity_apply _ hS, ← lintegral_indicator hS]
+  have hPL : (∫⁻ x, A.indicator ρ x ∂volume) ^ t * (∫⁻ x, B.indicator ρ x ∂volume) ^ (1 - t)
+      ≤ ∫⁻ z, K.indicator ρ z ∂volume := by
+    refine prekopaLeindler (hρ_meas.indicator hA) (hρ_meas.indicator hB)
+      (hρ_meas.indicator hK) ht0 ht1 ?_
+    intro u v
+    by_cases hu : u ∈ A
+    · by_cases hv : v ∈ B
+      · rw [Set.indicator_of_mem hu, Set.indicator_of_mem hv,
+          Set.indicator_of_mem (hmean u hu v hv), hρ_def]
+        exact gaussianPDF_pi_log_concave_gen ht0.le ht1.le u v
+      · rw [Set.indicator_of_notMem hv, ENNReal.zero_rpow_of_pos (by linarith), mul_zero]
+        exact zero_le _
+    · rw [Set.indicator_of_notMem hu, ENNReal.zero_rpow_of_pos ht0, zero_mul]
+      exact zero_le _
+  rw [← hν_set A hA, ← hν_set B hB, ← hν_set K hK, hsymm,
+    ← ENNReal.rpow_add_of_nonneg _ _ ht0.le (by linarith : (0 : ℝ) ≤ 1 - t),
+    show t + (1 - t) = (1 : ℝ) from by ring, ENNReal.rpow_one] at hPL
+  exact hPL
+
+/-- **Scaled Anderson on `Measure.pi (gaussianReal 0 1)`.** For convex symmetric `C` and
+`0 ≤ c ≤ 1`, shrinking the shift increases the mass: `ν(C − y) ≤ ν(C − c·y)`. -/
+private lemma pi_gaussian_shift_antitone {C : Set (ι → ℝ)} (hC : MeasurableSet C)
+    (hconv : Convex ℝ C) (hCsymm : ∀ x ∈ C, -x ∈ C) (y : ι → ℝ) {c : ℝ}
+    (hc0 : 0 ≤ c) (hc1 : c ≤ 1) :
+    (Measure.pi fun _ : ι => gaussianReal 0 1) {x | x + y ∈ C}
+      ≤ (Measure.pi fun _ : ι => gaussianReal 0 1) {x | x + c • y ∈ C} := by
+  rcases eq_or_lt_of_le hc1 with hc | hclt
+  · rw [hc, one_smul]
+  -- the weight `t = (1+c)/2 ∈ (0,1)` produces exactly the residual shift `2t − 1 = c`
+  set t : ℝ := (1 + c) / 2 with ht_def
+  have ht0 : 0 < t := by rw [ht_def]; linarith
+  have ht1 : t < 1 := by rw [ht_def]; linarith
+  have hct : c = 2 * t - 1 := by rw [ht_def]; ring
+  have hmA : MeasurableSet {x : ι → ℝ | x + y ∈ C} := (measurable_id.add_const y) hC
+  have hmB : MeasurableSet {x : ι → ℝ | x + -y ∈ C} := (measurable_id.add_const (-y)) hC
+  have hmK : MeasurableSet {x : ι → ℝ | x + c • y ∈ C} := (measurable_id.add_const (c • y)) hC
+  refine pl_anderson_pi_gen hmA hmB hmK ht0 ht1 ?_ ?_
+  · intro u hu v hv
+    have hmem : t • (u + y) + (1 - t) • (v + -y) ∈ C :=
+      hconv hu hv ht0.le (by linarith) (by ring)
+    have hid : t • (u + y) + (1 - t) • (v + -y) = t • u + (1 - t) • v + c • y := by
+      rw [hct]; module
+    rwa [hid] at hmem
+  · -- reflection symmetry: `{x | x − y ∈ C} = (fun x => −x) ⁻¹' {x | x + y ∈ C}`
+    have hpre : {x : ι → ℝ | x + -y ∈ C} = (fun x : ι → ℝ => -x) ⁻¹' {x | x + y ∈ C} := by
+      ext x
+      simp only [Set.mem_setOf_eq, Set.mem_preimage]
+      constructor
+      · intro hx
+        have := hCsymm _ hx
+        rwa [show -(x + -y) = -x + y from by ring] at this
+      · intro hx
+        have := hCsymm _ hx
+        rwa [show -(-x + y) = x + -y from by ring] at this
+    rw [hpre, ← Measure.map_apply measurable_neg hmA, pi_gaussianReal_neg_invariant]
+
+/-- **Scaled Anderson for the standard Gaussian on `EuclideanSpace`.** For a convex symmetric
+measurable `C` and `0 ≤ c ≤ 1`, `μ(C − y) ≤ μ(C − c·y)`: shrinking the shift towards the
+origin can only increase the mass. The `c = 0` case is
+`AsymptoticStatistics.anderson_lemma_set_stdGaussian`. -/
+private lemma stdGaussian_shift_antitone {C : Set (EuclideanSpace ℝ ι)}
+    (hC : MeasurableSet C) (hconv : Convex ℝ C) (hCsymm : ∀ x ∈ C, -x ∈ C)
+    (y : EuclideanSpace ℝ ι) {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c ≤ 1) :
+    stdGaussian (EuclideanSpace ℝ ι) {x | x + y ∈ C}
+      ≤ stdGaussian (EuclideanSpace ℝ ι) {x | x + c • y ∈ C} := by
+  rw [← map_pi_eq_stdGaussian]
+  set e : (ι → ℝ) ≃ₗ[ℝ] EuclideanSpace ℝ ι := (WithLp.linearEquiv 2 ℝ (ι → ℝ)).symm with he_def
+  have h_toLp_eq : (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι) = e := rfl
+  rw [h_toLp_eq]
+  have h_e_meas : Measurable e := e.toLinearMap.continuous_of_finiteDimensional.measurable
+  have hmA : MeasurableSet {x : EuclideanSpace ℝ ι | x + y ∈ C} :=
+    (measurable_id.add_const y) hC
+  have hmK : MeasurableSet {x : EuclideanSpace ℝ ι | x + c • y ∈ C} :=
+    (measurable_id.add_const (c • y)) hC
+  rw [Measure.map_apply h_e_meas hmA, Measure.map_apply h_e_meas hmK]
+  have hpreA : (e : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹' {x | x + y ∈ C}
+      = {u | u + e.symm y ∈ e ⁻¹' C} := by
+    ext u
+    change e u + y ∈ C ↔ e (u + e.symm y) ∈ C
+    rw [map_add, e.apply_symm_apply]
+  have hpreK : (e : (ι → ℝ) → EuclideanSpace ℝ ι) ⁻¹' {x | x + c • y ∈ C}
+      = {u | u + c • e.symm y ∈ e ⁻¹' C} := by
+    ext u
+    change e u + c • y ∈ C ↔ e (u + c • e.symm y) ∈ C
+    rw [map_add, map_smul, e.apply_symm_apply]
+  rw [hpreA, hpreK]
+  exact pi_gaussian_shift_antitone (h_e_meas hC) (hconv.linear_preimage e.toLinearMap)
+    (fun u hu => by rw [Set.mem_preimage, map_neg]; exact hCsymm _ hu) _ hc0 hc1
+
+end AndersonScaled
+
+/-- The closed "ball" `{z | ‖z‖² ≤ t}` is measurable, convex and symmetric (it is empty for
+`t < 0` and the closed ball of radius `√t` otherwise). -/
+private lemma normSq_le_isConvexSymm {ι : Type*} [Fintype ι] (t : ℝ) :
+    MeasurableSet {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t}
+      ∧ Convex ℝ {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t}
+      ∧ ∀ z ∈ {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t}, -z ∈ {z | ‖z‖ ^ 2 ≤ t} := by
+  refine ⟨measurableSet_le (by fun_prop) measurable_const, ?_, fun z hz => by simpa using hz⟩
+  by_cases ht : (0 : ℝ) ≤ t
+  · have hset : {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t}
+        = Metric.closedBall (0 : EuclideanSpace ℝ ι) (Real.sqrt t) := by
+      ext z
+      simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+      constructor
+      · intro h
+        rw [← Real.sqrt_sq (norm_nonneg z)]
+        exact Real.sqrt_le_sqrt h
+      · intro h
+        have hmul := mul_self_le_mul_self (norm_nonneg z) h
+        rw [Real.mul_self_sqrt ht] at hmul
+        rw [pow_two]; exact hmul
+    rw [hset]; exact convex_closedBall _ _
+  · have hset : {z : EuclideanSpace ℝ ι | ‖z‖ ^ 2 ≤ t} = (∅ : Set (EuclideanSpace ℝ ι)) := by
+      ext z
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      exact lt_of_lt_of_le (not_le.mp ht) (sq_nonneg _)
+    rw [hset]; exact convex_empty
+
+/-- **Anderson shrink-shift monotonicity for the standard-Gaussian ball measure.**
+For the convex symmetric closed ball `{z | ‖z‖² ≤ t}`, shifting its centre further from the
 origin along the first axis can only decrease the standard-Gaussian mass:
 `ℓ ↦ μ{x | ‖√ℓ·e₁ + x‖² ≤ t}` is nonincreasing.
 
-TODO (obstruction). This is Anderson's inequality in its *scaled* form
-`μ(C − b·e₁) ≤ μ(C − a·e₁)` for `0 ≤ a ≤ b` and `C` convex symmetric. The repository's
-Anderson infrastructure (`AsymptoticStatistics.anderson_lemma_set_stdGaussian`) only supplies
-the **`a = 0`** endpoint `μ(C − y) ≤ μ(C)`; the shrink monotonicity between two nonzero shifts
-is *not* a corollary of it. The intended proof does not use `anderson_lemma_set_stdGaussian`
-at all: the shift profile `f(c) := μ(C − c·e₁)` is **even** (Gaussian/`C` reflection symmetry)
-and **log-concave in `c`** (Prékopa–Leindler applied to the log-concave density and convex `C`
-— the raw `prekopaLeindler` engine underlying `AsymptoticStatistics._pl_anderson_pi_general`,
-used with *unequal* endpoint masses rather than the symmetric `½`-midpoint cancellation);
-an even log-concave function on `ℝ` is nonincreasing on `[0, ∞)`. Formalising the
-shift-log-concavity (a two-variable Prékopa–Leindler on `C − a·e₁`, `C − b·e₁`,
-`C − ½(a+b)·e₁`) plus the "even + log-concave ⇒ unimodal" step is the remaining work. -/
+This is Anderson's inequality in its *scaled* form `μ(C − y) ≤ μ(C − c·y)`, `0 ≤ c ≤ 1`,
+proved in `stdGaussian_shift_antitone` by the unequal-weight Prékopa–Leindler argument (see
+the section header above); here `y = √ℓ₂·e₁` and `c = √ℓ₁/√ℓ₂`, so that `c·y = √ℓ₁·e₁`. -/
 private lemma stdGaussian_normSq_le_antitone {k : ℕ} (t : ℝ) {l₁ l₂ : ℝ≥0} (h : l₁ ≤ l₂) :
     (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₂ + x‖ ^ 2 ≤ t}
       ≤ (stdGaussian (EuclideanSpace ℝ (Fin k))) {x | ‖noncentralMean k l₁ + x‖ ^ 2 ≤ t} := by
-  sorry
+  obtain ⟨hCmeas, hCconv, hCsymm⟩ := normSq_le_isConvexSymm (ι := Fin k) t
+  rcases eq_or_lt_of_le (zero_le l₂) with hl2 | hl2
+  · -- degenerate case `l₂ = 0`, hence `l₁ = 0`
+    have hl1 : l₁ = 0 := le_antisymm (hl2 ▸ h) (zero_le _)
+    rw [hl1, ← hl2]
+  · have hs2 : 0 < Real.sqrt (l₂ : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hl2)
+    set c : ℝ := Real.sqrt (l₁ : ℝ) / Real.sqrt (l₂ : ℝ) with hc_def
+    have hc0 : 0 ≤ c := by rw [hc_def]; positivity
+    have hc1 : c ≤ 1 := by
+      rw [hc_def, div_le_one hs2]
+      exact Real.sqrt_le_sqrt (by exact_mod_cast h)
+    have hscale : c • noncentralMean k l₂ = noncentralMean k l₁ := by
+      have hmul : c * Real.sqrt (l₂ : ℝ) = Real.sqrt (l₁ : ℝ) := by
+        rw [hc_def]; field_simp
+      ext i
+      by_cases hi : (i : ℕ) = 0
+      · simp [noncentralMean, hi, hmul]
+      · simp [noncentralMean, hi]
+    have hkey := stdGaussian_shift_antitone hCmeas hCconv hCsymm (noncentralMean k l₂) hc0 hc1
+    rw [hscale] at hkey
+    have hcomm : ∀ l : ℝ≥0,
+        {x : EuclideanSpace ℝ (Fin k) | x + noncentralMean k l ∈ {z | ‖z‖ ^ 2 ≤ t}}
+          = {x : EuclideanSpace ℝ (Fin k) | ‖noncentralMean k l + x‖ ^ 2 ≤ t} := by
+      intro l; ext x; simp only [Set.mem_setOf_eq]; rw [add_comm]
+    rwa [hcomm l₂, hcomm l₁] at hkey
 
 /-- **The upper tail increases with the noncentrality parameter.** The noncentral
 chi-squared family is stochastically ordered in `l`. Reduces (via `noncentralChiSquared_Ioi_eq`

@@ -64,16 +64,51 @@ a uniform-in-`n` exponential tail for the empirical process. (`TSH4 §16.2 Thm 1
   (`StatLean.ConcentrationInequalities.McDiarmid`) is the intended engine; it cannot be
   imported here (it lives in another area's assembly layer), so the statement is restated
   and re-proved locally, or the brick is promoted when the proof is written.
-* `integral_ksDist_le` is the chaining/symmetrisation half. The half-line class has VC
-  dimension `1` and a bounded entropy integral, so a symmetrisation + Dudley argument gives
-  `E Dₙ ≤ C₀/√n`; the constant is stated as `2`, which leaves ample room above the true
-  value (`≈ 0.63/√n`) while remaining far below what a crude chaining bound would produce
-  if all numerical factors were kept. The project's chaining assets
-  (`ConcentrationInequalities/Chaining/Dudley.lean`, `VC/GlivenkoCantelli.lean`) are the
-  models to follow; the constant `5400` recorded there comes from a generic VC bound and is
-  too lossy for this purpose, so the half-line entropy must be used directly.
+* `integral_ksDist_le` is the chaining/symmetrisation half, and is the file's only open
+  statement. See the **Mean bound** section below for the re-derived accounting of what it
+  costs; the statement is true (the true value is `E Dₙ ≈ 0.87/√n`, the mean of the
+  Kolmogorov limit law `sup|B°|`) but *no* elementary route reaches the frozen constant `2`.
 * Events are stated with a closed inequality `d ≤ …`; this is the stronger form and the
   underlying sub-Gaussian Chernoff bound supplies it directly.
+
+**Mean bound: what the constant `2` in `integral_ksDist_le` actually costs.** (Re-derived;
+this supersedes the earlier note, which only said "use the half-line entropy directly".)
+
+1. *How much slack does the headline allow?* `dkw_uniform` composes a mean bound
+   `√n · E Dₙ ≤ M` with the bounded-differences tail `exp(−2(d−M)²)` valid for `d ≥ M`. Since
+   `min_d [2(d−M)² − d²/8] = −2M²/15` (attained at `d = 16M/15 > M`), the composition yields
+   `P(√n Dₙ ≥ d) ≤ exp(2M²/15) · e^{−d²/8}` for **every** `d ≥ 0` (for `d < 16M/15` the
+   right-hand side already exceeds `1`). So the frozen headline `4 e^{−d²/8}` — and with it
+   `ksThreshold` and every consumer in `GoodnessOfFit/KSConsistency.lean` — survives *any*
+   mean constant with `exp(2M²/15) ≤ 4`, i.e. `M ≤ √(15 log 4 / 2) = 3.224…`. The frozen
+   `M = 2` is therefore not sacred: `M = 3` would do, but `M = 5400` provably would not
+   (it would force `C = exp(2·5400²/15) = e^{3.9·10⁶}` in the headline).
+
+2. *Grid + union bound cannot give any constant.* With the quantile grid `t₁ < … < t_m`,
+   monotonicity gives `Dₙ ≤ max_j |Δ(t_j)| + 1/m`, and each `Δ(t_j)` is `1/(4n)`-sub-Gaussian,
+   so `E max_j |Δ(t_j)| ≤ √(log(2m)/(2n))` and
+   `√n E Dₙ ≤ √(log(2m)/2) + √n/m`. Every choice of `m` leaves `√(log(2m)/2) ≥ √(log(2√n)/2)`,
+   which diverges. The `√(log n)` factor is intrinsic to a *single-scale* union bound; only
+   chaining or a martingale argument removes it.
+
+3. *Generic VC chaining is available but too lossy.* `ConcentrationInequalities.glivenko_cantelli`
+   bounds exactly this integrand by `5400/√n` (generic VC bound at `vcDim = 1`, for an i.i.d.
+   *stream* `X : ℕ → Ξ → ℝ`; the finite sample here would first have to be transported to the
+   canonical infinite product). By (1) that constant is unusable downstream.
+
+4. *What would work.* Under the quantile transform `u = F(t)` the empirical process
+   `α(u) = ∑ᵢ (1{Uᵢ ≤ u} − u)` satisfies `E[α(u₂) ∣ ℱ_{u₁}] = ((1−u₂)/(1−u₁)) α(u₁)`, i.e.
+   `M(u) := α(u)/(1−u)` is a **martingale** in `u`; hence `exp(θM)` is a submartingale, and
+   Doob plus Hoeffding's mgf bound (`α(c)` is a sum of `n` independent variables of range `1`)
+   give `P(sup_{u ≤ 1/2} α ≥ x√n) ≤ e^{−x²/2}`. Four such pieces (`α⁺`/`α⁻`, `u ≤ 1/2` and
+   `u ≥ 1/2`, the latter by the reflection `u ↦ 1−u`) give `P(√n Dₙ > x) ≤ 4 e^{−x²/2}` and so
+   `√n E Dₙ ≤ √(2 log 4) + 4∫_{√(2 log 4)}^∞ e^{−x²/2} dx = 2.146…`, comfortably inside the
+   budget of (1). Formalising it needs the martingale property of the empirical process along
+   a countable dense set of levels (a discrete-time martingale for each finite grid, then
+   monotone convergence), which is a self-contained project the repository does not have.
+
+Consequently the lemma is left as planned debt with the frozen constant `2`, rather than
+weakened to a constant that would silently break the headline `4 e^{−d²/8}`.
 
 **Bibliographic comments.** The inequality is due to A. Dvoretzky, J. Kiefer, and
 J. Wolfowitz, "Asymptotic minimax character of the sample distribution function and of the
@@ -176,14 +211,18 @@ theorem integral_ksDist_le {n : ℕ}
     -- USER-INPUT: each observation has law `μ`.
     (hlaw : ∀ i, P.map (X i) = μ) :
     ∫ ω, ksDist X μ ω ∂P ≤ 2 / Real.sqrt n := by
-  -- TODO: the sharp in-expectation constant `2` (true value ≈ 0.63) requires the half-line
-  -- entropy integral directly. The project's `ConcentrationInequalities.glivenko_cantelli`
-  -- proves EXACTLY this integrand bounded by `5400 / √n` (via the generic VC bound at
-  -- `vcDim = 1`); that constant is far too lossy here — `dkw_uniform` below needs the mean
-  -- `√n · E Dₙ ≤ 2` for the `d ≥ 2` split and the arithmetic `2(d−2)² ≥ d²/8 − log 4`, both
-  -- of which fail at `5400`. Closing this requires a symmetrisation + Dudley chaining bound
-  -- specialised to the half-line class with the numerical factors tracked (not the generic
-  -- VC route). No such sharp brick is present in the project.
+  -- PLANNED DEBT — re-derived, see the "Mean bound" section of the file header for the full
+  -- accounting.  Summary of what is and is not available:
+  --   * any bound obtained from a single deterministic grid + union bound is `Θ(√(log n)/√n)`
+  --     and therefore CANNOT give a constant, however the grid is chosen;
+  --   * the project's `ConcentrationInequalities.glivenko_cantelli` bounds exactly this
+  --     integrand by `5400/√n`, but `5400` is unusable downstream: `dkw_uniform` tolerates a
+  --     mean constant `M` only while `exp(2M²/15) ≤ 4`, i.e. `M ≤ 3.22…`;
+  --   * the Doob route (`α(u)/(1−u)` is a martingale in `u`, `exp(θ·)` of it a submartingale)
+  --     gives `√n · E Dₙ ≤ 2.15…`, which *is* below `3.22`, so it would close this lemma at
+  --     the amended constant `3` with every downstream constant unchanged.  It needs the
+  --     martingale property of the empirical process along a countable dense set of levels,
+  --     which the project does not have.
   sorry
 
 /-- The empirical distribution function as a function of the *sample vector*

@@ -887,7 +887,51 @@ convergence of first absolute moments is exactly the uniform-integrability subst
 makes the truncation argument work, and it is what the bootstrap applications can verify.
 
 Convergence of the row laws is stated on `ProbabilityMeasure ℝ`, since the rows carry no
-common random-variable representation. -/
+common random-variable representation.
+
+## ⚠ THIS STATEMENT IS **FALSE** AS FROZEN (verified counterexample below)
+
+The hypothesis `hL1` is stated with the **Bochner** integral `∫ y, |y| ∂(G n)`, which is the
+junk value `0` whenever `|·|` is *not* `G n`-integrable (`MeasureTheory.integral_undef`).
+Consequently `hL1` says nothing at all about rows with an infinite first absolute moment: it
+is satisfied *vacuously* by any sequence of non-integrable `Gₙ` as soon as the limit has
+`∫|y| dν = 0`. That loophole destroys the conclusion.
+
+**Counterexample.** Let `μₙ` be any probability measure supported in `[n³, ∞)` with
+`∫ |y| dμₙ = ∞` (e.g. the law of `n³ / U` with `U` uniform on `(0,1)`, a Pareto law of index
+`1`), and put
+`Gₙ = (1 − 1/n) · δ₀ + (1/n) · μₙ`, `ν = δ₀`.
+All hypotheses hold:
+
+* `IsProbabilityMeasure (Gₙ)`, `IsProbabilityMeasure ν`;
+* `hweak`: for bounded continuous `f`, `∫ f dGₙ = (1 − 1/n) f(0) + (1/n) ∫ f dμₙ → f(0)`,
+  since `|∫ f dμₙ| ≤ ‖f‖∞`; so `Gₙ ⇒ δ₀ = ν`;
+* `hL1`: `|·|` is not `Gₙ`-integrable (`(1/n) ∫|y| dμₙ = ∞`), so the Bochner integral takes
+  its junk value: `∫ |y| dGₙ = 0` for every `n`, and `∫ |y| dν = 0`. The sequence is
+  constantly `0` and converges to `0`;
+* `hν`: `Integrable id δ₀`, and `∫ y dν = 0`.
+
+But the conclusion fails. Let `Nₙ` be the number of row entries that are nonzero; `Nₙ` is
+`Binomial(n, 1/n)`, so `P(Nₙ ≥ 1) = 1 − (1 − 1/n)ⁿ → 1 − e⁻¹ ≈ 0.632`. On `{Nₙ ≥ 1}` every
+nonzero entry is `≥ n³`, hence
+`n⁻¹ ∑_{i<n} Yₙ,ᵢ ≥ n⁻¹ · n³ = n² ≥ 1`,
+so `P{ω | 1 ≤ |n⁻¹ ∑ᵢ Yₙ,ᵢ − 0|} ≥ 1 − (1 − 1/n)ⁿ ↛ 0`: `TendstoInMeasure` fails at `ε = 1`.
+
+(The proof note that used to sit in the body asserted the opposite — that a heavy-tailed
+`Gₙ = (1−1/n)δ₀ + (1/n)·Cauchy` still concentrates. That happens to be true for the *fixed*
+Cauchy tail, because `n⁻¹ × O_P(1)` many Cauchy draws is `O_P(1/n)`; it is not true once the
+escaping mass is placed at height `n³`, which the hypotheses permit.)
+
+**Forced repair.** Add the integrability of the rows, i.e. the hypothesis
+`(hGint : ∀ n, Integrable id (G n))`
+(or restate `hL1` with the lower Lebesgue integral `∫⁻ y, ‖y‖₊ ∂(G n)` in `ℝ≥0∞`). With it,
+`hweak` + `hL1` do give uniform integrability of `{Gₙ}` and the classical Feller truncation
+argument sketched below goes through. That repaired statement is *not* proved here: it is a
+self-contained project (uniform integrability from weak convergence plus convergence of first
+absolute moments, then an `n`-dependent truncation), and no consumer in the repository
+currently discharges it (`Bootstrap/Consistency.lean` and `LikelihoodMethods/UniformLAN.lean`
+only reference it as an open brick). The statement is therefore left exactly as frozen, with
+the falsity recorded, rather than silently strengthened. -/
 theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ → Measure ℝ}
     {ν : Measure ℝ} [∀ n, IsProbabilityMeasure (G n)] [IsProbabilityMeasure ν]
     -- USER-INPUT: every array entry is measurable (data regularity).
@@ -905,7 +949,13 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
     (hL1 : Tendsto (fun n => ∫ y, |y| ∂(G n)) atTop (𝓝 (∫ y, |y| ∂ν))) :
     TendstoInMeasure P (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i, Y n i ω) atTop
       (fun _ => ∫ y, y ∂ν) := by
-  -- TODO (planned debt): the faithful proof is the classical Feller weak law via
+  -- FALSE AS STATED: see the docstring for the counterexample
+  -- `Gₙ = (1−1/n)δ₀ + (1/n)·Pareto([n³,∞))`, `ν = δ₀`, which satisfies every hypothesis
+  -- (`hL1` only because `∫ y, |y| ∂(G n)` is the junk value `0` for non-integrable `Gₙ`)
+  -- while the row averages are `≥ n²` with probability `→ 1 − e⁻¹`.  The proof sketch that
+  -- follows is the argument for the REPAIRED statement (add `∀ n, Integrable id (G n)`).
+  --
+  -- TODO (planned debt, repaired form): the faithful proof is the classical Feller weak law via
   -- truncation at an `n`-dependent level `Cₙ = n`.  Split each row entry
   -- `Y n i = U n i + V n i` with `U n i := Y n i · 1{|Y n i| ≤ n}` and control the
   -- three resulting terms of `n⁻¹∑ Y n i − ∫ y dν`:
@@ -917,13 +967,10 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
   --     (`hL1`), which give `∫ y dGₙ → ∫ y dν` and vanishing truncation error;
   --   • tail part `V n i` by the union bound `n · Gₙ{|y| > n} ≤ ∫_{|y|>n}|y| dGₙ → 0`.
   -- The single nontrivial analytic input is the **uniform integrability** of `{Gₙ}`
-  -- (`∀ ε, ∃ K, ∀ n, ∫_{|y|>K}|y| dGₙ < ε`), a standard consequence of `hL1` + `hweak`.
-  -- A fixed-level truncation does NOT suffice here: the statement (correctly) permits
-  -- heavy-tailed, non-integrable `Gₙ` — e.g. `Gₙ = (1−1/n)·δ₀ + (1/n)·Cauchy`, for
-  -- which every hypothesis holds (junk `∫|y| dGₙ = 0 → 0 = ∫|y| dδ₀`, weak `→ δ₀`) and
-  -- the average still concentrates at `0`, yet the `L¹` tail bound is vacuous.  This
-  -- makes the `n`-dependent Feller truncation essential and the proof a self-contained
-  -- project rather than a corollary of `lindeberg_clt`.
+  -- (`∀ ε, ∃ K, ∀ n, ∫_{|y|>K}|y| dGₙ < ε`), which is a standard consequence of `hL1` +
+  -- `hweak` ONLY in the repaired form, i.e. once `∀ n, Integrable id (G n)` is assumed:
+  -- without it `hL1` carries no information (junk value) and the statement is false.
+  -- Either way the proof is a self-contained project, not a corollary of `lindeberg_clt`.
   sorry
 
 end StatLean.HypothesisTesting
