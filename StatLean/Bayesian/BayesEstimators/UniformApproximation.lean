@@ -33,6 +33,7 @@ open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation)
 open AsymptoticStatistics.AsymptoticRepresentation (productMeasure)
+open StatLean.Minimaxity (tvDist tvDist_comm tvDist_le_one)
 
 namespace StatLean.Bayesian
 
@@ -250,6 +251,128 @@ private lemma tight_polyEnvelope
     ∃ C : ℝ≥0∞, C ≠ 0 ∧ C ≠ ∞ ∧ ∀ᶠ n in atTop, productMeasure M μ θ₀ n
       {ω | C < ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))} ≤ ε := by
   sorry
+
+/-! ### The two-sided deviation bound at a fixed truncation radius -/
+
+/-- **The per-`τ` estimate.** Splitting the local posterior at the ball of radius `ρ`, the
+truncated parts are compared by total variation (the truncated loss is bounded by
+`2ᵖ(1+(R+‖Δₙ‖)ᵖ)(1+ρᵖ)`) and the two tails are dominated by the polynomially weighted
+tails of the posterior and of the Gaussian. -/
+private lemma bpe_two_sided
+    {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} (hℓ : Measurable ℓ) {p : ℝ} (hp : 0 ≤ p)
+    (hpoly : PolyGrowthLoss p ℓ) {R ρ : ℝ} (hR : 0 ≤ R) (hρ : 0 ≤ ρ)
+    (n : ℕ) (ω : Fin n → 𝓧) {τ : EuclideanSpace ℝ (Fin k)} (hτ : ‖τ‖ ≤ R) :
+    bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω
+        ≤ bpeGaussCriterion J ℓ τ
+          + ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))
+            * (ENNReal.ofReal (1 + ρ ^ p) * bvmTV κ π θ₀ J sc n ω
+              + (∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
+                    ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmLocalPosterior κ π θ₀ n ω)
+                + ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
+                    ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω)))
+      ∧ bpeGaussCriterion J ℓ τ
+        ≤ bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω
+          + ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))
+            * (ENNReal.ofReal (1 + ρ ^ p) * bvmTV κ π θ₀ J sc n ω
+              + (∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
+                    ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmLocalPosterior κ π θ₀ n ω)
+                + ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ)ᶜ,
+                    ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω))) := by
+  classical
+  haveI hGprob : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+    change IsProbabilityMeasure (multivariateGaussian _ _)
+    infer_instance
+  set Δ := bvmEffScore J sc n ω with hΔ
+  set Pn := bvmLocalPosterior κ π θ₀ n ω with hPn
+  set Gn := bvmGaussian J sc n ω with hGn
+  set s := Metric.ball (0 : EuclideanSpace ℝ (Fin k)) ρ with hs
+  set D := ENNReal.ofReal (2 ^ p * (1 + (R + ‖Δ‖) ^ p)) with hD
+  set B := ENNReal.ofReal (1 + ρ ^ p) with hB
+  set tv := bvmTV κ π θ₀ J sc n ω with htv
+  set Tp := ∫⁻ h in sᶜ, ENNReal.ofReal (1 + ‖h‖ ^ p) ∂Pn with hTp
+  set Tg := ∫⁻ h in sᶜ, ENNReal.ofReal (1 + ‖h‖ ^ p) ∂Gn with hTg
+  have hsmeas : MeasurableSet s := Metric.isOpen_ball.measurableSet
+  have hwmeas : Measurable fun h : EuclideanSpace ℝ (Fin k) => ℓ (τ + Δ - h) :=
+    hℓ.comp (by fun_prop)
+  have hWmeas : Measurable fun h : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (1 + ‖h‖ ^ p) := by
+    have hrpow : Continuous fun t : ℝ => t ^ p :=
+      continuous_iff_continuousAt.2 fun x => Real.continuousAt_rpow_const x p (Or.inr hp)
+    exact (continuous_const.add (hrpow.comp continuous_norm)).measurable.ennreal_ofReal
+  have hA0 : (0 : ℝ) ≤ R + ‖Δ‖ := by positivity
+  -- the pointwise polynomial domination of the shifted loss
+  have hpt : ∀ h, ℓ (τ + Δ - h) ≤ D * ENNReal.ofReal (1 + ‖h‖ ^ p) := by
+    intro h
+    rw [hD]
+    refine poly_loss_le hp hA0 hpoly ?_
+    calc ‖τ + Δ - h‖ ≤ ‖τ + Δ‖ + ‖h‖ := norm_sub_le _ _
+      _ ≤ ‖τ‖ + ‖Δ‖ + ‖h‖ := by gcongr; exact norm_add_le _ _
+      _ ≤ R + ‖Δ‖ + ‖h‖ := by gcongr
+  -- on the truncation ball the integrand is bounded
+  have hballbd : ∀ h, s.indicator (fun h => ℓ (τ + Δ - h)) h ≤ D * B := by
+    intro h
+    by_cases hh : h ∈ s
+    · rw [Set.indicator_of_mem hh]
+      refine (hpt h).trans ?_
+      have hnorm : ‖h‖ ≤ ρ := by
+        rw [hs] at hh
+        exact le_of_lt (mem_ball_zero_iff.mp hh)
+      have hmono := Real.rpow_le_rpow (norm_nonneg h) hnorm hp
+      rw [hB]
+      gcongr
+    · rw [Set.indicator_of_notMem hh]
+      exact zero_le _
+  -- the two truncated comparisons
+  have hTVP : ∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn
+      ≤ ∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn + D * B * tv := by
+    rw [← lintegral_indicator hsmeas, ← lintegral_indicator hsmeas]
+    exact lintegral_le_lintegral_add_tvDist Pn Gn (hwmeas.indicator hsmeas) hballbd
+  have hTVG : ∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn
+      ≤ ∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn + D * B * tv := by
+    rw [← lintegral_indicator hsmeas, ← lintegral_indicator hsmeas]
+    have h := lintegral_le_lintegral_add_tvDist Gn Pn (hwmeas.indicator hsmeas) hballbd
+    have he : tvDist Gn Pn = tv := by rw [htv]; exact (tvDist_comm Pn Gn).symm
+    rwa [he] at h
+  -- the two tails
+  have htailP : ∫⁻ h in sᶜ, ℓ (τ + Δ - h) ∂Pn ≤ D * Tp := by
+    rw [hTp, ← lintegral_const_mul _ hWmeas]
+    exact lintegral_mono hpt
+  have htailG : ∫⁻ h in sᶜ, ℓ (τ + Δ - h) ∂Gn ≤ D * Tg := by
+    rw [hTg, ← lintegral_const_mul _ hWmeas]
+    exact lintegral_mono hpt
+  -- the exact recentring identity
+  have hgauss : ∫⁻ h, ℓ (τ + Δ - h) ∂Gn = bpeGaussCriterion J ℓ τ := by
+    have h := lintegral_loss_bvmGaussian (J := J) (sc := sc) hℓ n ω (τ + Δ)
+    rw [← hΔ, ← hGn, add_sub_cancel_right] at h
+    exact h
+  have hrisk : bpePosteriorRisk κ π θ₀ ℓ n (τ + Δ) ω = ∫⁻ h, ℓ (τ + Δ - h) ∂Pn := rfl
+  have hexpand : D * (B * tv + (Tp + Tg)) = D * B * tv + D * Tp + D * Tg := by ring
+  refine ⟨?_, ?_⟩
+  · calc bpePosteriorRisk κ π θ₀ ℓ n (τ + Δ) ω
+        = ∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn + ∫⁻ h in sᶜ, ℓ (τ + Δ - h) ∂Pn := by
+          rw [hrisk]; exact (lintegral_add_compl _ hsmeas).symm
+      _ ≤ (∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn + D * B * tv) + D * Tp := add_le_add hTVP htailP
+      _ ≤ (∫⁻ h, ℓ (τ + Δ - h) ∂Gn + D * B * tv) + D * Tp := by
+          gcongr
+          exact Measure.restrict_le_self
+      _ = bpeGaussCriterion J ℓ τ + (D * B * tv + D * Tp) := by rw [hgauss]; ring
+      _ ≤ bpeGaussCriterion J ℓ τ + (D * B * tv + D * Tp + D * Tg) :=
+          add_le_add le_rfl le_self_add
+      _ = bpeGaussCriterion J ℓ τ + D * (B * tv + (Tp + Tg)) := by rw [hexpand]
+  · calc bpeGaussCriterion J ℓ τ
+        = ∫⁻ h in s, ℓ (τ + Δ - h) ∂Gn + ∫⁻ h in sᶜ, ℓ (τ + Δ - h) ∂Gn := by
+          rw [← hgauss]; exact (lintegral_add_compl _ hsmeas).symm
+      _ ≤ (∫⁻ h in s, ℓ (τ + Δ - h) ∂Pn + D * B * tv) + D * Tg := add_le_add hTVG htailG
+      _ ≤ (∫⁻ h, ℓ (τ + Δ - h) ∂Pn + D * B * tv) + D * Tg := by
+          gcongr
+          exact Measure.restrict_le_self
+      _ = bpePosteriorRisk κ π θ₀ ℓ n (τ + Δ) ω + (D * B * tv + D * Tg) := by
+          rw [hrisk]; ring
+      _ ≤ bpePosteriorRisk κ π θ₀ ℓ n (τ + Δ) ω + (D * B * tv + D * Tp + D * Tg) := by
+          refine add_le_add le_rfl ?_
+          rw [add_right_comm]
+          exact le_self_add
+      _ = bpePosteriorRisk κ π θ₀ ℓ n (τ + Δ) ω + D * (B * tv + (Tp + Tg)) := by rw [hexpand]
 
 /-- **Majorant-form uniform approximation** (vdV pp. 148–149, recentred): there are
 measurable `Mₙ : (Fin n → 𝓧) → ℝ≥0∞` vanishing in `P^n_{θ₀}`-probability such that on the
