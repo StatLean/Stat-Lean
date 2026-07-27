@@ -1,8 +1,12 @@
 import StatLean.HypothesisTesting.Randomization.Asymptotics
+import StatLean.HypothesisTesting.Randomization.PairCLT
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import StatLean.HypothesisTesting.ForMathlib.HypergeometricMoments
 import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
+import Mathlib.Probability.Independence.CharacteristicFunction
 
 /-!
 # The two-sample permutation central limit theorem
@@ -226,18 +230,23 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
   -- limit. The weight moments — `Var` of the weight average and the cross-permutation
   -- covariance giving asymptotic independence — are `HypergeometricMoments.var_mean_linear_le`
   -- and `HypergeometricMoments.cov_weight`.
-  -- STATUS (re-derived): the cross-reference to `weakConverges_randPairLaw_signChange` is now
-  -- obsolete — that theorem is closed, and `Randomization/PairCLT` provides the general
-  -- `randPairLaw`/`WeakConverges` characteristic-function machinery (Lévy packaging,
-  -- `integral_randPairLaw`, a Slutsky transfer). The permutation case is nevertheless a
-  -- *different* theorem: what makes the sign-change computation exact at every finite `n` is that
+  -- STATUS (re-derived this session; unchanged verdict, sharper account). `Randomization/PairCLT`
+  -- provides the general `randPairLaw`/`WeakConverges` characteristic-function machinery (Lévy
+  -- packaging, `integral_randPairLaw`, both Slutsky transfers, tightness). None of it closes this
+  -- statement: what makes the *sign-change* computation exact at every finite `n` is that
   -- averaging `exp(i(sa+s'b))` over the four sign pairs factorizes across coordinates
   -- (`charFun_randPairLaw_signSum`). `Equiv.Perm` has no such factorization — its randomization
   -- weights are sampling-**without**-replacement indicators, so the coordinates are dependent and
   -- the characteristic function does not become an `n`-th power. The honest remaining route is
   -- Hoeffding's combinatorial CLT for permutation statistics (a Lindeberg/exchangeable-pairs
   -- argument fed by `HypergeometricMoments.var_mean_linear_le` and `cov_weight`), which the
-  -- repository does not yet contain.
+  -- repository does not yet contain. Two things did change this session and are worth recording:
+  -- the *unconditional* companion `weakConverges_twoSampleMeanDiff` below is now CLOSED
+  -- (0-sorry, axiom-clean), and the two bricks written for it —
+  -- `tendsto_one_add_pow_of_tendsto_nat_mul` (varying-exponent `(1+g)^N → exp z`) and
+  -- `tendsto_charFun_pow` (varying exponent *and* varying argument) — are exactly the shape a
+  -- Lindeberg-style proof of the permutation limit would need for its conditional
+  -- characteristic function, so they are reusable here rather than one-off.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** -/
@@ -277,6 +286,242 @@ theorem randDist_twoSample_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityMea
     (fun k g => measurable_perm_smul _ g) hjoint hcont
   rwa [cdf_gaussianReal_scale hτpos t] at hmain
 
+/-! ### Varying-exponent power limits
+
+The unconditional two-sample limit needs `(1 + gₖ)^{Nₖ} → exp z` with the exponent `Nₖ` an
+*arbitrary* sequence tending to infinity (the second sample size `n k`), whereas Mathlib's
+`Complex.tendsto_one_add_pow_exp_of_tendsto` forces the exponent to be the index itself.
+That, together with a varying characteristic-function argument, is supplied here. -/
+
+/-- **Varying-exponent form of `Complex.tendsto_one_add_pow_exp_of_tendsto`.** If the
+exponents `N k` tend to infinity and `N k · g k → z`, then `(1 + g k) ^ (N k) → exp z`. -/
+private lemma tendsto_one_add_pow_of_tendsto_nat_mul {N : ℕ → ℕ} {g : ℕ → ℂ} {z : ℂ}
+    (hN : Tendsto (fun k => (N k : ℝ)) atTop atTop)
+    (hg : Tendsto (fun k => (N k : ℂ) * g k) atTop (𝓝 z)) :
+    Tendsto (fun k => (1 + g k) ^ (N k)) atTop (𝓝 (Complex.exp z)) := by
+  have hNne : ∀ᶠ k in atTop, (N k : ℂ) ≠ 0 := by
+    filter_upwards [hN.eventually_gt_atTop 0] with k hk
+    have hk0 : N k ≠ 0 := by
+      intro h
+      rw [h] at hk
+      simp at hk
+    exact_mod_cast Nat.cast_ne_zero.2 hk0
+  have hinv : Tendsto (fun k => ((N k : ℂ))⁻¹) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun k => ((N k : ℝ))⁻¹) atTop (𝓝 0) := hN.inv_tendsto_atTop
+    have h2 := (Complex.continuous_ofReal.tendsto (0 : ℝ)).comp h1
+    simp only [Function.comp_def, Complex.ofReal_inv, Complex.ofReal_natCast,
+      Complex.ofReal_zero] at h2
+    exact h2
+  have hg0 : Tendsto g atTop (𝓝 0) := by
+    have h := hinv.mul hg
+    rw [zero_mul] at h
+    refine h.congr' ?_
+    filter_upwards [hNne] with k hk
+    exact inv_mul_cancel_left₀ hk (g k)
+  have hgn : Tendsto (fun k => ‖g k‖) atTop (𝓝 0) := by simpa using hg0.norm
+  have hsmall : ∀ᶠ k in atTop, ‖g k‖ < 1 / 2 :=
+    hgn.eventually (eventually_lt_nhds (by norm_num))
+  have hdiff : Tendsto (fun k => (N k : ℂ) * (Complex.log (1 + g k) - g k)) atTop (𝓝 0) := by
+    refine squeeze_zero_norm' (a := fun k => ‖(N k : ℂ) * g k‖ * ‖g k‖) ?_ ?_
+    · filter_upwards [hsmall] with k hk
+      have hk1 : ‖g k‖ < 1 := hk.trans (by norm_num)
+      have hbd := Complex.norm_log_one_add_sub_self_le hk1
+      have hinv2 : (1 - ‖g k‖)⁻¹ ≤ 2 := by
+        rw [inv_le_comm₀ (by linarith) (by norm_num)]
+        linarith
+      have hstep : ‖Complex.log (1 + g k) - g k‖ ≤ ‖g k‖ ^ 2 := by
+        refine hbd.trans ?_
+        nlinarith [sq_nonneg ‖g k‖, norm_nonneg (g k)]
+      calc ‖(N k : ℂ) * (Complex.log (1 + g k) - g k)‖
+          = (N k : ℝ) * ‖Complex.log (1 + g k) - g k‖ := by
+            rw [norm_mul]; simp
+        _ ≤ (N k : ℝ) * ‖g k‖ ^ 2 :=
+            mul_le_mul_of_nonneg_left hstep (Nat.cast_nonneg _)
+        _ = ‖(N k : ℂ) * g k‖ * ‖g k‖ := by rw [norm_mul]; simp; ring
+    · have h := hg.norm.mul hgn
+      simpa using h
+  have hlog : Tendsto (fun k => (N k : ℂ) * Complex.log (1 + g k)) atTop (𝓝 z) := by
+    have h := hg.add hdiff
+    rw [add_zero] at h
+    exact h.congr fun k => by ring
+  have hexp := (Complex.continuous_exp.tendsto z).comp hlog
+  refine hexp.congr' ?_
+  filter_upwards [hsmall] with k hk
+  have h1 : (1 : ℂ) + g k ≠ 0 := by
+    intro h
+    have hgk : g k = -1 := by linear_combination h
+    rw [hgk] at hk
+    norm_num at hk
+  simp only [Function.comp_apply]
+  rw [Complex.exp_nat_mul, Complex.exp_log h1]
+
+/-- **Characteristic-function powers with varying exponent and varying argument.** For a
+centred law `Q` with second moment `v > 0`, exponents `N k → ∞` and arguments with
+`N k · (s k)² → c`, one has `(charFun Q (s k)) ^ (N k) → exp(−v c / 2)`. Both the exponent
+and the argument move with `k`, which is what the two-sample statistic requires. -/
+private lemma tendsto_charFun_pow {Q : Measure ℝ} [IsProbabilityMeasure Q] {v c : ℝ}
+    (hQ0 : ∫ y, y ∂Q = 0) (hQ2 : ∫ y, y ^ 2 ∂Q = v) (hv : 0 < v)
+    {N : ℕ → ℕ} (hN : Tendsto (fun k => (N k : ℝ)) atTop atTop)
+    {s : ℕ → ℝ} (hs : Tendsto (fun k => (N k : ℝ) * s k ^ 2) atTop (𝓝 c)) :
+    Tendsto (fun k => charFun Q (s k) ^ (N k)) atTop
+      (𝓝 (Complex.exp (-((v * c : ℝ) : ℂ) / 2))) := by
+  obtain ⟨σ, hσpos, hσsq⟩ : ∃ σ : ℝ, 0 < σ ∧ σ ^ 2 = v :=
+    ⟨Real.sqrt v, Real.sqrt_pos.2 hv, Real.sq_sqrt hv.le⟩
+  -- Standardise: `X y = y / σ` has mean `0` and variance `1` under `Q`.
+  have hXm : Measurable (fun y : ℝ => y / σ) := by fun_prop
+  have h0 : ∫ y, (fun y : ℝ => y / σ) y ∂Q = 0 := by
+    simp only [integral_div, hQ0, zero_div]
+  have h1 : ∫ y, ((fun y : ℝ => y / σ) ^ 2) y ∂Q = 1 := by
+    simp only [Pi.pow_apply, div_pow, integral_div, hQ2, hσsq]
+    exact div_self hv.ne'
+  have hR : ∀ w : ℝ, charFun Q w = charFun (Q.map (fun y : ℝ => y / σ)) (σ * w) := by
+    intro w
+    have h := charFun_map_mul_comp (μ := Q) (f := fun y : ℝ => y / σ) hXm.aemeasurable σ w
+    have hid : (fun y : ℝ => σ * (y / σ)) = id := by
+      funext y
+      change σ * (y / σ) = y
+      field_simp
+    rw [hid, Measure.map_id] at h
+    exact h
+  -- The arguments tend to `0`.
+  have hs0 : Tendsto s atTop (𝓝 0) := by
+    have hsq : Tendsto (fun k => s k ^ 2) atTop (𝓝 0) := by
+      have h := hs.mul hN.inv_tendsto_atTop
+      rw [mul_zero] at h
+      refine h.congr' ?_
+      filter_upwards [hN.eventually_gt_atTop 0] with k hk
+      simp only [Pi.inv_apply]
+      field_simp
+    have h := (Real.continuous_sqrt.tendsto 0).comp hsq
+    simp only [Function.comp_def, Real.sqrt_sq_eq_abs, Real.sqrt_zero] at h
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    simpa [Real.norm_eq_abs] using h
+  have hw0 : Tendsto (fun k => σ * s k) atTop (𝓝 0) := by
+    simpa using hs0.const_mul σ
+  have hNw : Tendsto (fun k => (N k : ℝ) * (σ * s k) ^ 2) atTop (𝓝 (v * c)) := by
+    have h : Tendsto (fun k => σ ^ 2 * ((N k : ℝ) * s k ^ 2)) atTop (𝓝 (σ ^ 2 * c)) :=
+      hs.const_mul _
+    rw [hσsq] at h
+    refine h.congr fun k => ?_
+    rw [← hσsq]
+    ring
+  -- Second-order Taylor expansion of the characteristic function at the moving argument.
+  have hlittle := (taylor_charFun_two (P := Q) (X := fun y : ℝ => y / σ)
+    hXm.aemeasurable h0 h1).comp_tendsto hw0
+  -- The rescaled remainder is negligible against the exponent.
+  have hB : Tendsto (fun k => (N k : ℂ) * (charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) -
+      (1 - ((σ * s k : ℝ) : ℂ) ^ 2 / 2))) atTop (𝓝 0) := by
+    rw [NormedAddGroup.tendsto_nhds_zero]
+    intro ε hε
+    have hMpos : (0 : ℝ) < |v * c| + 1 := by positivity
+    have hbound := hlittle.def (show (0 : ℝ) < ε / (2 * (|v * c| + 1)) by positivity)
+    have hAle : ∀ᶠ k in atTop, (N k : ℝ) * (σ * s k) ^ 2 ≤ |v * c| + 1 := by
+      have hlt : v * c < |v * c| + 1 := lt_of_le_of_lt (le_abs_self _) (by linarith)
+      filter_upwards [hNw.eventually (eventually_lt_nhds hlt)] with k hk using hk.le
+    filter_upwards [hbound, hAle] with k hk hkA
+    have hnn : (0 : ℝ) ≤ (N k : ℝ) := Nat.cast_nonneg _
+    have hkey : (N k : ℝ) * ‖charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) -
+        (1 - ((σ * s k : ℝ) : ℂ) ^ 2 / 2)‖
+        ≤ ε / (2 * (|v * c| + 1)) * ((N k : ℝ) * (σ * s k) ^ 2) := by
+      have := mul_le_mul_of_nonneg_left hk hnn
+      calc (N k : ℝ) * ‖charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) -
+              (1 - ((σ * s k : ℝ) : ℂ) ^ 2 / 2)‖
+          ≤ (N k : ℝ) * (ε / (2 * (|v * c| + 1)) * ‖(σ * s k) ^ 2‖) := this
+        _ = ε / (2 * (|v * c| + 1)) * ((N k : ℝ) * (σ * s k) ^ 2) := by
+            rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg (σ * s k))]; ring
+    have hfin : ε / (2 * (|v * c| + 1)) * ((N k : ℝ) * (σ * s k) ^ 2) < ε := by
+      have hcpos : (0 : ℝ) < ε / (2 * (|v * c| + 1)) := by positivity
+      have := mul_le_mul_of_nonneg_left hkA hcpos.le
+      have hhalf : ε / (2 * (|v * c| + 1)) * (|v * c| + 1) = ε / 2 := by
+        field_simp
+      rw [hhalf] at this
+      linarith
+    calc ‖(N k : ℂ) * (charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) -
+            (1 - ((σ * s k : ℝ) : ℂ) ^ 2 / 2))‖
+        = (N k : ℝ) * ‖charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) -
+            (1 - ((σ * s k : ℝ) : ℂ) ^ 2 / 2)‖ := by rw [norm_mul]; simp
+      _ ≤ _ := hkey
+      _ < ε := hfin
+  -- The quadratic term supplies the exponent.
+  have hA : Tendsto (fun k => (N k : ℂ) * (-(((σ * s k : ℝ) : ℂ) ^ 2) / 2)) atTop
+      (𝓝 (-((v * c : ℝ) : ℂ) / 2)) := by
+    have hreal : Tendsto (fun k => -((N k : ℝ) * (σ * s k) ^ 2) / 2) atTop (𝓝 (-(v * c) / 2)) :=
+      hNw.neg.div_const 2
+    have h := (Complex.continuous_ofReal.tendsto (-(v * c) / 2)).comp hreal
+    simp only [Function.comp_def] at h
+    push_cast at h ⊢
+    exact h.congr fun k => by ring
+  have hgz : Tendsto (fun k => (N k : ℂ) *
+      (charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) - 1)) atTop
+      (𝓝 (-((v * c : ℝ) : ℂ) / 2)) := by
+    have h := hA.add hB
+    rw [add_zero] at h
+    exact h.congr fun k => by ring
+  have hbrick := tendsto_one_add_pow_of_tendsto_nat_mul (N := N)
+    (g := fun k => charFun (Q.map (fun y : ℝ => y / σ)) (σ * s k) - 1) hN hgz
+  refine hbrick.congr fun k => ?_
+  rw [hR (s k)]
+  congr 1
+  ring
+
+/-! ### Linear form of the statistic and the product characteristic function -/
+
+/-- The linear coefficients of the difference-of-means statistic on the pooled data:
+`√m/m` on the first block and `−√m/n` on the second. -/
+private noncomputable def twoSampleCoef (m n : ℕ) : Fin (m + n) → ℝ :=
+  Fin.addCases (motive := fun _ => ℝ) (fun _ => Real.sqrt m * (m : ℝ)⁻¹)
+    (fun _ => -(Real.sqrt m * (n : ℝ)⁻¹))
+
+/-- The statistic is the linear form with those coefficients. -/
+private lemma twoSampleMeanDiff_eq_sum (m n : ℕ) (x : Fin (m + n) → ℝ) :
+    twoSampleMeanDiff m n x = ∑ l, twoSampleCoef m n l * x l := by
+  rw [Fin.sum_univ_add]
+  simp only [twoSampleCoef, Fin.addCases_left, Fin.addCases_right, twoSampleMeanDiff]
+  rw [← Finset.mul_sum, ← Finset.mul_sum]
+  ring
+
+/-- The characteristic function of a linear form of independent coordinates factorizes. -/
+private lemma charFun_map_sum_pi {N : ℕ} (ν : Fin N → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (ν i)] (c : Fin N → ℝ) (t : ℝ) :
+    charFun ((Measure.pi ν).map (fun x => ∑ i, c i * x i)) t = ∏ i, charFun (ν i) (c i * t) := by
+  have hmeas : ∀ i : Fin N, AEMeasurable (fun x : Fin N → ℝ => c i * x i) (Measure.pi ν) :=
+    fun i => Measurable.aemeasurable (by fun_prop)
+  have hindep : iIndepFun (fun (i : Fin N) (x : Fin N → ℝ) => c i * x i) (Measure.pi ν) :=
+    iIndepFun_pi (X := fun (i : Fin N) (y : ℝ) => c i * y) (fun i => by fun_prop)
+  rw [hindep.charFun_map_fun_sum_eq_prod hmeas, Finset.prod_apply]
+  refine Finset.prod_congr rfl fun i _ => ?_
+  rw [charFun_map_mul_comp (measurable_pi_apply i).aemeasurable,
+    (measurePreserving_eval ν i).map_eq]
+
+/-- Each coordinate of the pooled family is a probability measure. -/
+private lemma isProbabilityMeasure_addCases (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (i : Fin (m + n)) :
+    IsProbabilityMeasure
+      (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i) := by
+  refine Fin.addCases (m := m) (n := n)
+    (motive := fun i => IsProbabilityMeasure
+      (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) i))
+    (fun j => ?_) (fun j => ?_) i
+  · first
+      | infer_instance
+      | · simp only [Fin.addCases_left]; infer_instance
+  · first
+      | infer_instance
+      | · simp only [Fin.addCases_right]; infer_instance
+
+/-- **The exact finite-sample characteristic function of the two-sample statistic.** -/
+private lemma charFun_map_twoSampleMeanDiff (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (t : ℝ) :
+    charFun ((twoSampleLaw m n PY PZ).map (twoSampleMeanDiff m n)) t
+      = charFun PY (Real.sqrt m * (m : ℝ)⁻¹ * t) ^ m
+        * charFun PZ (-(Real.sqrt m * (n : ℝ)⁻¹) * t) ^ n := by
+  haveI hfam := isProbabilityMeasure_addCases m n PY PZ
+  have hsum : twoSampleMeanDiff m n = fun x => ∑ l, twoSampleCoef m n l * x l :=
+    funext fun x => twoSampleMeanDiff_eq_sum m n x
+  rw [twoSampleLaw, hsum, charFun_map_sum_pi, Fin.prod_univ_add]
+  simp only [twoSampleCoef, Fin.addCases_left, Fin.addCases_right, Finset.prod_const,
+    Finset.card_univ, Fintype.card_fin]
+
 /-! ### The unconditional limit, for contrast -/
 
 /-- **Unconditional two-sample central limit theorem.** Under the same assumptions the
@@ -304,33 +549,124 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
     WeakConverges
       (fun k => (twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k)))
       (gaussianReal 0 ⟨s ^ 2, sq_nonneg s⟩) := by
-  -- TODO (self-contained, substantial): the ordinary (unconditional) two-sample CLT.
-  -- Write `Tₘₙ = m^{-1/2} ∑ᵢ (Yᵢ − μ) − √(m/n) · n^{-1/2} ∑ⱼ (Zⱼ − μ)` (equal means). The two
-  -- blocks are independent under `twoSampleLaw`, each block obeys the i.i.d. CLT, and
-  -- `√(m/n) → √λ`, so the sum is asymptotically `N(0, varY + λ·varZ) = N(0, s²)` by Slutsky.
-  -- STATUS (re-derived this session; NOT upstream-blocked, and the missing brick is now named
-  -- precisely). The route, all of whose steps except one are supported:
-  --  1. `Randomization/PairCLT.weakConverges_of_tendsto_charFun` reduces the goal to pointwise
-  --     convergence of characteristic functions (`H = ℝ`).
-  --  2. `twoSampleMeanDiff x = ∑_{i<m} α xᵢ + ∑_{j<n} β x_{m+j}` with `α = m^{-1/2}`,
-  --     `β = −√m/n`, and `mα + nβ = 0`; so the statistic is unchanged by recentring the data at
-  --     the common mean `μ`, and `exp(i t T)` factorizes across coordinates. `Measure.pi` +
-  --     `integral_fintype_prod_eq_prod` then give the exact finite-`k` identity
-  --     `charFun = (charFun QY (α t))^m · (charFun QZ (β t))^n`, `QY = PY.map (· − μ)`,
-  --     `QZ = PZ.map (· − μ)` (both centred, variances `varY`, `varZ`).
-  --  3. The **first** factor is covered as is: after standardising, it is literally
-  --     `(charFun QY' ((√N)⁻¹ * t'))^N` at `N = m k`, so Mathlib's
-  --     `ProbabilityTheory.tendsto_charFun_inv_sqrt_mul_pow` composed with `hm` finishes it.
-  --  4. The **second** factor is the one gap. Its argument is `−√(m k / n k) · t · (√(n k))⁻¹`:
-  --     both the exponent `n k` *and* the numerator `√(m k / n k) → √λ` vary with `k`, whereas
-  --     Mathlib's `Complex.tendsto_pow_exp_of_isLittleO_sub_add_div` (and
-  --     `tendsto_one_add_pow_exp_of_tendsto`) fix the exponent to be the index itself and the
-  --     constant to be `k`-independent. The single missing brick is therefore
-  --       `{N : ℕ → ℕ} (hN : Tendsto (fun k => (N k : ℝ)) atTop atTop) {g : ℕ → ℂ} {z : ℂ}`
-  --       `(hg : Tendsto (fun k => (N k : ℂ) * g k) atTop (𝓝 z)) :`
-  --       `Tendsto (fun k => (1 + g k) ^ (N k)) atTop (𝓝 (Complex.exp z))`,
-  --     provable from `Complex.norm_log_one_add_sub_self_le` exactly as Mathlib proves its
-  --     index-diagonal special case. Nothing else is missing.
-  sorry
+  -- Reduce to characteristic functions, factorize exactly at each finite `k` into the two
+  -- per-block powers, recentre both populations at the common mean `μ` (the phase factors
+  -- cancel because `mα + nβ = 0`), and apply the varying-exponent power limit to each block.
+  classical
+  set QY := PY.map (fun y : ℝ => y + (-μ)) with hQYdef
+  set QZ := PZ.map (fun y : ℝ => y + (-μ)) with hQZdef
+  haveI : IsProbabilityMeasure QY := by
+    rw [hQYdef]; exact Measure.isProbabilityMeasure_map (by fun_prop)
+  haveI : IsProbabilityMeasure QZ := by
+    rw [hQZdef]; exact Measure.isProbabilityMeasure_map (by fun_prop)
+  have hIY : Integrable (fun y : ℝ => y) PY := by simpa using hYL2.integrable (by norm_num)
+  have hIZ : Integrable (fun y : ℝ => y) PZ := by simpa using hZL2.integrable (by norm_num)
+  -- The centred laws have mean `0` and the two population variances.
+  have hQY0 : ∫ y, y ∂QY = 0 := by
+    rw [hQYdef, integral_map (by fun_prop) (by fun_prop),
+      integral_add hIY (integrable_const _), hmeanY]
+    simp
+  have hQZ0 : ∫ y, y ∂QZ = 0 := by
+    rw [hQZdef, integral_map (by fun_prop) (by fun_prop),
+      integral_add hIZ (integrable_const _), hmeanZ]
+    simp
+  have hQY2 : ∫ y, y ^ 2 ∂QY = varY := by
+    rw [hQYdef, integral_map (by fun_prop) (by fun_prop)]
+    simp only [← sub_eq_add_neg]
+    exact hvarY
+  have hQZ2 : ∫ y, y ^ 2 ∂QZ = varZ := by
+    rw [hQZdef, integral_map (by fun_prop) (by fun_prop)]
+    simp only [← sub_eq_add_neg]
+    exact hvarZ
+  -- Recentring only multiplies the characteristic function by a phase.
+  have hPYchar : ∀ w : ℝ,
+      charFun PY w = charFun QY w * Complex.exp ((μ : ℂ) * (w : ℂ) * Complex.I) := by
+    intro w
+    have hinner : (inner ℝ (-μ) w : ℝ) = -(μ * w) := by
+      have h0 : (inner ℝ (-μ) w : ℝ) = w * (-μ) := rfl
+      rw [h0]; ring
+    have h := charFun_map_add_const (μ := PY) (-μ) w
+    rw [hinner, ← hQYdef] at h
+    rw [h, mul_assoc, ← Complex.exp_add]
+    have hz : ((-(μ * w) : ℝ) : ℂ) * Complex.I + (μ : ℂ) * (w : ℂ) * Complex.I = 0 := by
+      push_cast; ring
+    rw [hz, Complex.exp_zero, mul_one]
+  have hPZchar : ∀ w : ℝ,
+      charFun PZ w = charFun QZ w * Complex.exp ((μ : ℂ) * (w : ℂ) * Complex.I) := by
+    intro w
+    have hinner : (inner ℝ (-μ) w : ℝ) = -(μ * w) := by
+      have h0 : (inner ℝ (-μ) w : ℝ) = w * (-μ) := rfl
+      rw [h0]; ring
+    have h := charFun_map_add_const (μ := PZ) (-μ) w
+    rw [hinner, ← hQZdef] at h
+    rw [h, mul_assoc, ← Complex.exp_add]
+    have hz : ((-(μ * w) : ℝ) : ℂ) * Complex.I + (μ : ℂ) * (w : ℂ) * Complex.I = 0 := by
+      push_cast; ring
+    rw [hz, Complex.exp_zero, mul_one]
+  have hmR : Tendsto (fun k => (m k : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp hm
+  have hnR : Tendsto (fun k => (n k : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp hn
+  haveI hprob : ∀ k, IsProbabilityMeasure
+      ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
+    Measure.isProbabilityMeasure_map (measurable_twoSampleMeanDiff _ _).aemeasurable
+  refine weakConverges_of_tendsto_charFun (fun t => ?_)
+  -- The two exponent-times-argument-squared limits: `m α² t² → t²` and `n β² t² → λ t²`.
+  have hsY : Tendsto (fun k => (m k : ℝ) * (Real.sqrt (m k) * (m k : ℝ)⁻¹ * t) ^ 2) atTop
+      (𝓝 (t ^ 2)) := by
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hm.eventually_gt_atTop 0] with k hk
+    have hmk : (0 : ℝ) < (m k : ℝ) := by exact_mod_cast hk
+    have hne : (m k : ℝ) ≠ 0 := hmk.ne'
+    have hsq : Real.sqrt (m k) ^ 2 = (m k : ℝ) := Real.sq_sqrt hmk.le
+    have hexp : (Real.sqrt (m k) * (m k : ℝ)⁻¹ * t) ^ 2
+        = Real.sqrt (m k) ^ 2 * ((m k : ℝ)⁻¹) ^ 2 * t ^ 2 := by ring
+    rw [hexp, hsq]
+    field_simp
+  have hsZ : Tendsto (fun k => (n k : ℝ) * (-(Real.sqrt (m k) * (n k : ℝ)⁻¹) * t) ^ 2) atTop
+      (𝓝 (lam * t ^ 2)) := by
+    refine (hratio.mul_const (t ^ 2)).congr' ?_
+    filter_upwards [hm.eventually_gt_atTop 0, hn.eventually_gt_atTop 0] with k hmk hnk
+    have hmk' : (0 : ℝ) < (m k : ℝ) := by exact_mod_cast hmk
+    have hnk' : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hnk
+    have hne : (n k : ℝ) ≠ 0 := hnk'.ne'
+    have hsq : Real.sqrt (m k) ^ 2 = (m k : ℝ) := Real.sq_sqrt hmk'.le
+    have hexp : (-(Real.sqrt (m k) * (n k : ℝ)⁻¹) * t) ^ 2
+        = Real.sqrt (m k) ^ 2 * ((n k : ℝ)⁻¹) ^ 2 * t ^ 2 := by ring
+    rw [hexp, hsq]
+    field_simp
+  have hY := tendsto_charFun_pow hQY0 hQY2 hvarYpos hmR hsY
+  have hZ := tendsto_charFun_pow hQZ0 hQZ2 hvarZpos hnR hsZ
+  have hprod := hY.mul hZ
+  -- The limit is the characteristic function of `N(0, s²)`.
+  have htarget : charFun (gaussianReal 0 (⟨s ^ 2, sq_nonneg s⟩ : ℝ≥0)) t
+      = Complex.exp (-((varY * t ^ 2 : ℝ) : ℂ) / 2) *
+        Complex.exp (-((varZ * (lam * t ^ 2) : ℝ) : ℂ) / 2) := by
+    have hsC : ((s : ℂ)) ^ 2 = (varY : ℂ) + (lam : ℂ) * (varZ : ℂ) := by
+      exact_mod_cast congrArg (Complex.ofReal) hs
+    rw [charFun_gaussianReal, ← Complex.exp_add]
+    congr 1
+    push_cast
+    rw [hsC]
+    ring
+  rw [htarget]
+  refine hprod.congr' ?_
+  filter_upwards [hm.eventually_gt_atTop 0, hn.eventually_gt_atTop 0] with k hmk hnk
+  have hmC : ((m k : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hmk.ne'
+  have hnC : ((n k : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hnk.ne'
+  -- The two phase factors cancel: `m α + n β = 0`.
+  have hcancel :
+      Complex.exp ((μ : ℂ) * ((Real.sqrt (m k) * (m k : ℝ)⁻¹ * t : ℝ) : ℂ) * Complex.I) ^ (m k)
+        * Complex.exp ((μ : ℂ) *
+            ((-(Real.sqrt (m k) * (n k : ℝ)⁻¹) * t : ℝ) : ℂ) * Complex.I) ^ (n k) = 1 := by
+    rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add]
+    have hz : ((m k : ℕ) : ℂ) *
+          ((μ : ℂ) * ((Real.sqrt (m k) * (m k : ℝ)⁻¹ * t : ℝ) : ℂ) * Complex.I)
+        + ((n k : ℕ) : ℂ) *
+          ((μ : ℂ) * ((-(Real.sqrt (m k) * (n k : ℝ)⁻¹) * t : ℝ) : ℂ) * Complex.I) = 0 := by
+      push_cast
+      field_simp
+      ring
+    rw [hz, Complex.exp_zero]
+  rw [charFun_map_twoSampleMeanDiff, hPYchar, hPZchar, mul_pow, mul_pow, mul_mul_mul_comm,
+    hcancel, mul_one]
 
 end StatLean.HypothesisTesting

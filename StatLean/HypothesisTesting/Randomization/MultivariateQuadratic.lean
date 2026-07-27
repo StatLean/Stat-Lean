@@ -252,6 +252,140 @@ theorem weakConverges_randPairLaw_signChange_sum
     simp [neg_div]
   exact weakConverges_randPairLaw_signSum P hL2 (multivariateGaussian 0 S) hchar
 
+/-! ### From the vector limit to the quadratic-form limit -/
+
+/-- Measurability of the sign-change action on vector-valued data. -/
+private lemma measurable_signChange_smul_vec {n : ℕ} (ε : Fin n → ℤˣ) :
+    Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) := by
+  refine measurable_pi_lambda (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) fun i => ?_
+  have heq : (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (ε • x) i)
+      = fun x => ((ε i : ℤ) : ℝ) • x i :=
+    funext fun x => signChange_smul_apply_vec ε x i
+  rw [heq]
+  have hcoord : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => x i) :=
+    measurable_pi_apply i
+  exact hcoord.const_smul (((ε i : ℤ) : ℝ))
+
+/-- The normalized sum, the vector statistic of the building block, is measurable. -/
+private lemma measurable_signSum {n : ℕ} :
+    Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+      (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i) := by
+  have hsum : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ∑ i, x i) :=
+    Finset.measurable_sum Finset.univ fun i _ =>
+      (measurable_pi_apply i : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => x i))
+  exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
+
+/-- The quadratic form written out in coordinates. -/
+private lemma quadFormInv_eq (S : Matrix (Fin p) (Fin p) ℝ)
+    (v : EuclideanSpace ℝ (Fin p)) :
+    v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp = ∑ j, ∑ k, S⁻¹ j k * (v.ofLp j * v.ofLp k) := by
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+
+/-- Coordinate evaluation on `EuclideanSpace` is continuous. -/
+private lemma continuous_ofLp_coord (j : Fin p) :
+    Continuous (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp j) := by
+  fun_prop
+
+/-- The quadratic form `v ↦ vᵀ S⁻¹ v` is continuous. -/
+private lemma continuous_quadFormInv (S : Matrix (Fin p) (Fin p) ℝ) :
+    Continuous (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp) := by
+  simp only [quadFormInv_eq]
+  exact continuous_finset_sum _ fun j _ => continuous_finset_sum _ fun k _ =>
+    continuous_const.mul ((continuous_ofLp_coord j).mul (continuous_ofLp_coord k))
+
+/-- The quadratic form `v ↦ vᵀ S⁻¹ v` is measurable. -/
+private lemma measurable_quadFormInv (S : Matrix (Fin p) (Fin p) ℝ) :
+    Measurable (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp) :=
+  (continuous_quadFormInv S).measurable
+
+/-- **The reference quadratic-form limit.** Composing the vector building block with the
+*population* quadratic form `v ↦ vᵀS⁻¹v` gives a doubly randomized law converging to a
+product of two independent `χ²_p` laws. This is the limit that the sample-based statistics
+`modifiedTSq` and `hotellingTSq` are compared against. -/
+private lemma weakConverges_randPairLaw_quadFormInv [NeZero p]
+    (P : Measure (EuclideanSpace ℝ (Fin p))) [IsProbabilityMeasure P]
+    {S : Matrix (Fin p) (Fin p) ℝ} (hpd : S.PosDef) (hL2 : MemLp id 2 P)
+    (hmean : ∫ x, x ∂P = 0)
+    (hsecond : ∀ j k, ∫ x, x.ofLp j * x.ofLp k ∂P = S j k) :
+    WeakConverges
+      (fun n => randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+          (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp)
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
+        (Measure.pi fun _ : Fin n => P))
+      ((chiSquared p).prod (chiSquared p)) := by
+  classical
+  set q : EuclideanSpace ℝ (Fin p) → ℝ := fun v => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp with hqdef
+  have hqm : Measurable q := measurable_quadFormInv S
+  have hbase := weakConverges_randPairLaw_signChange_sum P hpd hL2 hmean hsecond
+  have hmapped := hbase.map (f := Prod.map q q)
+    ((continuous_quadFormInv S).prodMap (continuous_quadFormInv S)) (hqm.prodMap hqm)
+  have hlim : ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).prod
+      (multivariateGaussian 0 S)).map (Prod.map q q) = (chiSquared p).prod (chiSquared p) := by
+    rw [← Measure.map_prod_map _ _ hqm hqm,
+      map_quadraticForm_multivariateGaussian_eq_chiSquared hpd]
+  rw [hlim] at hmapped
+  have hEq : (fun n => randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) => q ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
+        (Measure.pi fun _ : Fin n => P))
+      = fun n => (randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
+        (Measure.pi fun _ : Fin n => P)).map (Prod.map q q) := by
+    funext n
+    exact randPairLaw_map (G := Fin n → ℤˣ) _ _ measurable_signSum
+      (fun ε => measurable_signChange_smul_vec ε) hqm
+  rw [hEq]
+  exact hmapped
+
+/-- **The uncentred second-moment matrix is sign-invariant.** Replacing `Xᵢ` by `−Xᵢ`
+leaves `Σ̃ₙ` unchanged, since each summand is a product of two coordinates of the *same*
+observation. -/
+private lemma modifiedCovMatrix_signChange {n : ℕ} (ε : Fin n → ℤˣ)
+    (x : Fin n → EuclideanSpace ℝ (Fin p)) :
+    modifiedCovMatrix (ε • x) = modifiedCovMatrix x := by
+  ext j k
+  simp only [modifiedCovMatrix, Matrix.of_apply]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => ?_
+  have h : (ε • x) i = ((ε i : ℤ) : ℝ) • x i := signChange_smul_apply_vec ε x i
+  have hsq : (((ε i : ℤ) : ℝ)) * (((ε i : ℤ) : ℝ)) = 1 := by
+    rcases Int.units_eq_one_or (ε i) with h1 | h1 <;> rw [h1] <;> norm_num
+  rw [h]
+  simp only [WithLp.ofLp_smul, Pi.smul_apply, smul_eq_mul]
+  linear_combination (x i).ofLp j * (x i).ofLp k * hsq
+
+/-- Scaling inside the quadratic form. -/
+private lemma quadFormInv_smul (M : Matrix (Fin p) (Fin p) ℝ) (c : ℝ)
+    (v : EuclideanSpace ℝ (Fin p)) :
+    ((c • v : EuclideanSpace ℝ (Fin p)).ofLp) ⬝ᵥ
+        M⁻¹.mulVec ((c • v : EuclideanSpace ℝ (Fin p)).ofLp)
+      = c ^ 2 * (v.ofLp ⬝ᵥ M⁻¹.mulVec v.ofLp) := by
+  have hof : ((c • v : EuclideanSpace ℝ (Fin p)).ofLp) = c • v.ofLp := rfl
+  rw [hof, Matrix.mulVec_smul]
+  simp only [dotProduct, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ => by ring
+
+/-- **The modified statistic recomputed at a sign pattern.** Since `Σ̃ₙ` is sign-invariant,
+only the normalized sum `Vₙ = n^{-1/2} ∑ᵢ εᵢXᵢ` moves along the group, and
+`T̃ₙ(ε · x) = Vₙ(ε · x)ᵀ Σ̃ₙ(x)⁻¹ Vₙ(ε · x)`. This is the algebraic reduction that lets the
+vector building block carry the whole randomization analysis. -/
+private lemma modifiedTSq_signChange {n : ℕ} (hn : 0 < n) (ε : Fin n → ℤˣ)
+    (x : Fin n → EuclideanSpace ℝ (Fin p)) :
+    modifiedTSq (ε • x)
+      = ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ
+          (modifiedCovMatrix x)⁻¹.mulVec
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hne : (n : ℝ) ≠ 0 := hnR.ne'
+  have hsq : (Real.sqrt (n : ℝ))⁻¹ ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [← Real.sqrt_inv, Real.sq_sqrt (by positivity)]
+  have hmean : (sampleMeanVec (ε • x) : EuclideanSpace ℝ (Fin p))
+      = ((n : ℝ))⁻¹ • ∑ i, (ε • x) i := rfl
+  rw [modifiedTSq, modifiedCovMatrix_signChange ε x, hmean,
+    quadFormInv_smul _ ((n : ℝ))⁻¹, quadFormInv_smul _ ((Real.sqrt (n : ℝ))⁻¹), hsq]
+  field_simp
+
 /-! ### Quadratic-form limits -/
 
 /-- **Sign-change randomization for the modified `T²` statistic.** The randomized pair
@@ -280,29 +414,37 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   -- the quadratic form converges to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, whose marginals are `χ²_p` by
   -- `map_quadraticForm_multivariateGaussian_eq_chiSquared`, independent because the pair limit
   -- is a product law.
-  -- STATUS (re-derived this session): (b) below is NO LONGER MISSING, and the fixed-map half is
-  -- now fully supported. Concretely, what is available:
-  --  * the vector building block above (proved);
-  --  * `Randomization/Asymptotics.randPairLaw_map`: `randPairLaw` of `q ∘ Vₙ` is the pushforward
-  --    of `randPairLaw` of `Vₙ` along `Prod.map q q`, so `WeakConverges.map` +
-  --    `Measure.map_prod_map` + `map_quadraticForm_multivariateGaussian_eq_chiSquared` deliver
-  --    the reference limit `χ²_p ⊗ χ²_p` for `Lₙ x := q (Vₙ x)`, `q v = vᵀS⁻¹v`;
-  --  * `Randomization/PairCLT.weakConverges_randPairLaw_of_tendstoInProb_avg`: the Slutsky
-  --    transfer in **mixture** form. The mixture form is the one that applies: `Measure.pi P` is
-  --    *not* sign-invariant unless `P` is symmetric, which is deliberately not assumed here, so
-  --    the `hinv` version `weakConverges_randPairLaw_of_tendstoInProb` does NOT apply;
-  --  * tightness of the randomized statistic, from `PairCLT.exists_tight_bound_of_weakConverges`
-  --    applied to the first marginal (`Asymptotics.real_randPairLaw_prod_univ`) of the
-  --    randomized pair of `‖Vₙ‖` (itself a `randPairLaw_map` of the vector block).
-  -- The ONE remaining brick is (a): the law of large numbers `Σ̃ₙ → S` in `Measure.pi P`
-  -- probability. It is sign-invariant, so no randomization enters; the entries `xⱼxₖ` are only
-  -- `L¹` (second moments of `x`, not fourth), so Chebyshev does not apply and the honest route is
-  -- Kolmogorov's strong law transported to `Measure.pi`. That transport already exists in the
-  -- library — `AsymptoticStatistics/Asymptotics/Discharge/OneStep.iid_lln_in_prob_l1`
-  -- (`Measure.infinitePi` + `strong_law_ae_real` + `tendstoInMeasure_of_tendsto_ae`) — but it is
-  -- `private`, so it has to be re-exported or replicated. Beyond it one also needs continuity of
-  -- `Matrix.inv` at a `PosDef` matrix (adjugate is polynomial, `Ring.inverse` is continuous at a
-  -- unit) to pass from `Σ̃ₙ → S` to `Σ̃ₙ⁻¹ → S⁻¹`.
+  -- STATUS (re-derived this session; the reduction is now *written*, not just described).
+  -- What is now in this file, proved and axiom-clean:
+  --  * the vector building block `weakConverges_randPairLaw_signChange_sum` (above);
+  --  * `modifiedCovMatrix_signChange` and `modifiedTSq_signChange`: the exact algebraic identity
+  --    `T̃ₙ(ε · x) = Vₙ(ε · x)ᵀ Σ̃ₙ(x)⁻¹ Vₙ(ε · x)`, `Vₙ = n^{-1/2} ∑ᵢ εᵢXᵢ` — only the vector
+  --    statistic moves along the group;
+  --  * `weakConverges_randPairLaw_quadFormInv`: the **reference limit**. The doubly randomized law
+  --    of `x ↦ q_S(Vₙ x)`, `q_S v = vᵀS⁻¹v`, converges to `χ²_p ⊗ χ²_p` (via `randPairLaw_map` +
+  --    `WeakConverges.map` + `Measure.map_prod_map` +
+  --    `map_quadraticForm_multivariateGaussian_eq_chiSquared`).
+  -- So the statement is exactly `weakConverges_randPairLaw_of_tendstoInProb_avg` applied with
+  -- `T = modifiedTSq`, `L = q_S ∘ Vₙ` and the reference limit above; the whole debt is its `hrem`
+  -- hypothesis, i.e. that the group mixture of `P{δ ≤ |Vᵀ(Σ̃ₙ⁻¹ − S⁻¹)V|}` tends to `0`. The
+  -- mixture form is the one that applies: `Measure.pi P` is *not* sign-invariant unless `P` is
+  -- symmetric, which is deliberately not assumed here, so the `hinv` version
+  -- `weakConverges_randPairLaw_of_tendstoInProb` does NOT apply. `hrem` needs exactly three
+  -- things, and only the first is a genuine hole:
+  -- (a) the **`L¹` law of large numbers on `Measure.pi`**: `Σ̃ₙ → S` in `Measure.pi P`-probability.
+  --     It is sign-invariant, so no randomization enters; the entries `xⱼxₖ` are only `L¹` (second
+  --     moments of `x`, not fourth), so Chebyshev does not apply. The honest route is Kolmogorov's
+  --     strong law on `Measure.infinitePi` pulled back along
+  --     `AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate`
+  --     (`AsymptoticStatistics/ForMathlib/IIdJointLaw`, public), exactly as the *private*
+  --     `Asymptotics/Discharge/OneStep.iid_lln_in_prob_l1` does; it has to be replicated here.
+  -- (b) continuity of `Matrix.inv` at a `PosDef` matrix (`det⁻¹ • adjugate`, both polynomial in the
+  --     entries, `det S ≠ 0`), transported along (a) to `Σ̃ₙ⁻¹ → S⁻¹` in probability.
+  -- (c) tightness of `‖Vₙ‖` in the group mixture, which is available:
+  --     `PairCLT.exists_tight_bound_of_weakConverges` applied to the first marginal
+  --     (`Asymptotics.real_randPairLaw_prod_univ`) of the randomized pair of `‖Vₙ‖` (itself a
+  --     `randPairLaw_map` of the vector block). Then the `δ`-split
+  --     `{|Vᵀ(Σ̃ₙ⁻¹−S⁻¹)V| ≥ δ} ⊆ {‖Σ̃ₙ⁻¹−S⁻¹‖ ≥ η} ∪ {‖Vₙ‖² ≥ δ/η}` finishes.
   sorry
 
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
@@ -332,18 +474,20 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
   -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
   -- mean-zero (`hmean`) is used a second time; then the argument coincides with
   -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
-  -- STATUS (re-derived this session): the outstanding piece is now the *same single* brick as
-  -- for the modified statistic, and no separate "sign-uniform" law of large numbers is in fact
-  -- needed. The algebraic reason: sign changes do not move the uncentred sum, so
+  -- STATUS (re-derived this session): the outstanding piece is the *same single* brick as for the
+  -- modified statistic, and no separate "sign-uniform" law of large numbers is in fact needed. The
+  -- algebraic reason: sign changes do not move the uncentred sum, so
   --   `Σ̂ₙ(ε • x) = (n−1)⁻¹ (∑ᵢ xᵢxᵢᵀ − n X̄ₙ(ε • x)X̄ₙ(ε • x)ᵀ)
   --              = (n/(n−1)) Σ̃ₙ(x) − (n−1)⁻¹ Vₙ(ε • x)Vₙ(ε • x)ᵀ ,`
-  -- with `Vₙ(ε • x) = n^{-1/2}∑ᵢ εᵢxᵢ` the sign-invariant-free vector statistic. The second term
-  -- is `O_P(1)/n`, and its vanishing is exactly the tightness that
-  -- `PairCLT.exists_tight_bound_of_weakConverges` now supplies. So Hotelling's statistic reduces
-  -- to the modified one over the very same law of large numbers `Σ̃ₙ → S`; see the status note
-  -- on `weakConverges_randPairLaw_signChange_modifiedTSq` for that brick. (`hmean` is what makes
-  -- `S` simultaneously the covariance and the second-moment matrix, so that the same `S` appears
-  -- in both statements.)
+  -- with `Vₙ(ε • x) = n^{-1/2}∑ᵢ εᵢxᵢ` the vector statistic — the same `Vₙ` that
+  -- `modifiedTSq_signChange` isolates for the modified statistic. The second term is `O_P(1)/n`,
+  -- and its vanishing is exactly the tightness that `PairCLT.exists_tight_bound_of_weakConverges`
+  -- supplies. So Hotelling's statistic reduces to the modified one over the very same law of large
+  -- numbers `Σ̃ₙ → S` and the same `weakConverges_randPairLaw_of_tendstoInProb_avg` application;
+  -- see the status note on `weakConverges_randPairLaw_signChange_modifiedTSq` for the three pieces
+  -- of that `hrem`, of which only the `L¹` LLN on `Measure.pi` is a genuine hole. (`hmean` is what
+  -- makes `S` simultaneously the covariance and the second-moment matrix, so that the same `S`
+  -- appears in both statements.)
   sorry
 
 end StatLean.HypothesisTesting
