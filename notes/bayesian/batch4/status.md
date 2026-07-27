@@ -28,8 +28,8 @@ Statements now FROZEN.
 | bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | MERGED 0-sorry (after laptop statement fix) | pair-ratio Jensen insulated |
 | tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | **MERGED** (Lemma 10.3 done; 1 debt: truncScore_mean_expansion) | mean-expansion insulated |
 | doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible,Theorem10_10} | — | **MERGED 0-sorry (incl. Thm 10.10)** | retraction insulated |
-| conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | IN_FLIGHT | tail-split insulated |
-| local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | IN_FLIGHT | local_tv_tendsto = headline debt |
+| conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | **MERGED 0-sorry (Step A done)** | tail-split insulated |
+| local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | **MERGED** (MixtureContiguity 0-sorry; 1 debt: local_tv_tendsto) | local_tv_tendsto = headline debt |
 | bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |
 | doob-final | — | (absorbed by doob-core; lane not needed) | — | DONE | — |
 | assembly (Theorem10_1, EfficientCentering) | 3 | Bay/BernsteinVonMises/{Theorem10_1,EfficientCentering} | conc, local, tests | STUBBED | lintegral form insulated |
@@ -104,4 +104,16 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   * bpe-aux: died at startup, zero commits.
 - 2026-07-27: all three unfinished lanes RELAUNCHED (fresh worktrees; resume notes added to
   the local/conc prompts telling them to build-and-fix the red auto-close content first).
+- 2026-07-27: **Step A MERGED** (d38f8fd, gate 3180 jobs): PriorSmallBall + PosteriorConcentration
+  both 0-sorry. The relaunched lane also repaired the red `prior_tail_split` left by the
+  rate-limit auto-close, confirming the gate-before-trust rule.
+- 2026-07-27: **Step B MERGED** (175e84d, gate 3190 jobs): MixtureContiguity 0-sorry (incl. the
+  support-free `mutuallyContiguous_local_alternative`, which the repo's pre-existing
+  `contiguous_local_alternatives` could NOT supply — it needs a per-n common-support
+  hypothesis vdV does not grant); LocalApproximation 3/4 with `local_tv_tendsto` as the single
+  sanctioned debt.
+- 2026-07-27: wave 3 launched: bay/bvm-assembly (Theorem 10.1 + EfficientCentering, 3h).
+  bay/bpe-aux still running (ArgminConsistency 0-sorry on-branch; PosteriorTails in progress).
+  Batch sorry inventory at this point: 17 across 9 files (3 sanctioned/known debts, the rest
+  are not-yet-started wave-3/4 targets).
 
