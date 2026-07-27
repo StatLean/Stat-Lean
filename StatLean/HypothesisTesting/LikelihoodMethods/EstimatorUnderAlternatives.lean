@@ -586,6 +586,83 @@ private lemma joint_weak_estimator_logLikelihood
     (fun n ω => Real.sqrt n • (est n ω - θ₀)) hTmeas h _ (fun n => n)
     (fun n => logLikelihood_measurable M θ₀ h n) hlanres h4
 
+/-- **Asymptotic log-normality of the log-likelihood ratio under `P^n_{θ₀}`.**
+
+`Lₙ ⇝ N(−½⟪h, Jh⟫, ⟪h, Jh⟫)` — the LAN half of the contiguity footing, read off from
+`joint_weak_estimator_logLikelihood` by discarding the first coordinate. The mean/variance
+relation `m = −v/2` is exactly the shape that
+`Contiguity.uniform_integrability_exp_L_of_integral_tendsto_one` consumes, and it is not an
+extra assumption: it is forced by the `−½⟪h, Jh⟫` in the LAN expansion together with
+`⟪h, Δ⟫ ∼ N(0, ⟪h, Jh⟫)` (`multivariateGaussian_map_inner_eq_gaussianReal`). -/
+private lemma logLikelihood_weakConverges_gaussianReal
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) (h : EuclideanSpace ℝ (Fin k)) :
+    WeakConverges (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n))
+      (ProbabilityTheory.gaussianReal
+        (-(((h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal : NNReal) : ℝ) / 2)
+        (h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+  have hqnn : (0 : ℝ) ≤ ⟪h, mulVecE J h⟫ := by
+    rw [← hJ h h]
+    unfold fisherInformation
+    exact integral_nonneg fun x => mul_nonneg (mul_self_nonneg _) (M.density_nonneg θ₀ x)
+  have hD := joint_weak_estimator_logLikelihood M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin h
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hF_meas : Measurable
+      (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
+    ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
+  have hG_meas : Measurable
+      (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) :=
+    (continuous_fst.prodMk
+      ((continuous_const.inner continuous_snd).sub continuous_const)).measurable
+  have hsnd := hD.map continuous_snd measurable_snd
+  -- the left side collapses to the law of `Lₙ`
+  have hlhs : (fun n : ℕ => ((productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), logLikelihood M θ₀ h n ω))).map Prod.snd)
+      = fun n : ℕ => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n) := by
+    funext n
+    exact Measure.map_map measurable_snd
+      ((hTmeas n).prodMk (logLikelihood_measurable M θ₀ h n))
+  rw [hlhs] at hsnd
+  -- the right side is the Gaussian shift of `⟪h, ·⟫` under `N(0, J)`
+  have hrhs : ((((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))).map Prod.snd)
+      = ProbabilityTheory.gaussianReal
+          (-(((h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal : NNReal) : ℝ) / 2)
+          (h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal := by
+    rw [Measure.map_map measurable_snd hG_meas,
+      Measure.map_map (measurable_snd.comp hG_meas) hF_meas]
+    have hcomp : ((Prod.snd ∘ (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) ∘
+          (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)))
+        = (fun x : ℝ => x + -((1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) ∘
+            (fun δ : EuclideanSpace ℝ (Fin k) => ⟪h, δ⟫) := by
+      funext δ
+      simp only [Function.comp_apply]
+      ring
+    rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+      multivariateGaussian_map_inner_eq_gaussianReal h hJ_psd,
+      ProbabilityTheory.gaussianReal_map_add_const]
+    congr 1
+    rw [Real.coe_toNNReal _ (hquad ▸ hqnn), ← hquad]
+    ring
+  rwa [hrhs] at hsnd
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
