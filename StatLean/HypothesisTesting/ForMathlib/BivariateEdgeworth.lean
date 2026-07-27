@@ -116,4 +116,92 @@ theorem charFun_smul_eq_charFun_map_inner (μ : Measure E) (t : E) (s : ℝ) :
 
 end Projection
 
+/-! ## The expansion, transferred
+
+Both estimates of `ForMathlib/BerryEsseen.lean` that the Edgeworth remainder consumes — the
+Gaussian majorant on a window and the damped one-term expansion of the `n`-th power — hold in
+an inner product space along every ray, with the moments replaced by the directional moments
+`∫ ⟪x, t⟫^k ∂μ`. Both are corollaries of the projection identity. -/
+
+section Expansion
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E]
+
+/-- **Gaussian majorant for a characteristic function on a window, in an inner product space.**
+On the window `v s² ≤ 2`, `ρ|s| ≤ 3v/2` built from the directional moments
+`v = ∫⟪x,t⟫²`, `ρ = ∫|⟪x,t⟫|³` of a directionally centred law,
+`‖φ_μ(s • t)‖ ≤ exp(−v s²/4)`.
+
+This is the two-dimensional analogue of `norm_charFun_le_exp_neg_sq` that
+`Bootstrap/Edgeworth.lean` records as missing; it needs no two-dimensional argument. -/
+theorem norm_charFun_smul_le_exp_neg_sq (μ : Measure E) [IsProbabilityMeasure μ]
+    {t : E} {v : ℝ}
+    (hint1 : Integrable (fun x : E => ⟪x, t⟫) μ)
+    (hint2 : Integrable (fun x : E => ⟪x, t⟫ ^ 2) μ)
+    (hint3 : Integrable (fun x : E => |⟪x, t⟫| ^ 3) μ)
+    (hmean : ∫ x, ⟪x, t⟫ ∂μ = 0) (hvar : ∫ x, ⟪x, t⟫ ^ 2 ∂μ = v)
+    {s : ℝ} (hs2 : v * s ^ 2 ≤ 2)
+    (hs3 : (∫ x, |⟪x, t⟫| ^ 3 ∂μ) * |s| ≤ 3 * v / 2) :
+    ‖charFun μ (s • t)‖ ≤ Real.exp (-(v * s ^ 2 / 4)) := by
+  have e1 : ∫ y : ℝ, y ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ∂μ := integral_projLaw μ t (by fun_prop)
+  have e2 : ∫ y : ℝ, y ^ 2 ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ^ 2 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  have e3 : ∫ y : ℝ, |y| ^ 3 ∂(projLaw μ t) = ∫ x, |⟪x, t⟫| ^ 3 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  rw [charFun_smul_eq_charFun_map_inner]
+  exact norm_charFun_le_exp_neg_sq _ ((integrable_projLaw_iff μ t (by fun_prop)).2 hint1)
+    ((integrable_projLaw_iff μ t (by fun_prop)).2 hint2)
+    ((integrable_projLaw_iff μ t (by fun_prop)).2 hint3) (by rw [e1, hmean]) (by rw [e2, hvar])
+    hs2 (by rw [e3]; exact hs3)
+
+/-- **Damped one-term Edgeworth expansion in an inner product space.**
+
+For a law `μ` on `E` which is centred in the direction `t`, with directional second moment `v`,
+directional third moment `m₃` and a finite directional fourth moment, and for `s` in the window
+`v s² ≤ 2`, `ρ|s| ≤ 3v/2`,
+
+`‖φ_μ(s • t)ⁿ − e^{−n v s²/2}(1 − n i m₃ s³/6)‖ ≤ e^{−(n−2) v s²/4}(…)`,
+
+with the same right-hand side as `norm_charFun_pow_sub_edgeworth_le`, written with `n = m + 2`.
+
+**This is step 1 of the studentized route of `Bootstrap/Edgeworth.lean`.** For the pair
+`Z = (X − μ, (X − μ)² − σ²)` it is the bivariate expansion recorded there as missing, and the
+directional moments are the contractions of the cumulant tensors of `Z` with `t`. -/
+theorem norm_charFun_smul_pow_sub_edgeworth_le (μ : Measure E) [IsProbabilityMeasure μ]
+    {t : E} {v m₃ : ℝ}
+    (hint1 : Integrable (fun x : E => ⟪x, t⟫) μ)
+    (hint2 : Integrable (fun x : E => ⟪x, t⟫ ^ 2) μ)
+    (hint3 : Integrable (fun x : E => |⟪x, t⟫| ^ 3) μ)
+    (hint4 : Integrable (fun x : E => ⟪x, t⟫ ^ 4) μ)
+    (hmean : ∫ x, ⟪x, t⟫ ∂μ = 0) (hvar : ∫ x, ⟪x, t⟫ ^ 2 ∂μ = v)
+    (hthird : ∫ x, ⟪x, t⟫ ^ 3 ∂μ = m₃)
+    {s : ℝ} (hs2 : v * s ^ 2 ≤ 2)
+    (hs3 : (∫ x, |⟪x, t⟫| ^ 3 ∂μ) * |s| ≤ 3 * v / 2) (m : ℕ) :
+    ‖charFun μ (s • t) ^ (m + 2)
+        - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+            * (1 - ((m : ℂ) + 2) * Complex.I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6)‖
+      ≤ Real.exp (-(v * s ^ 2 / 4)) ^ m *
+          (((m : ℝ) + 2) * ((m : ℝ) + 1) / 2
+              * ((∫ x, |⟪x, t⟫| ^ 3 ∂μ) * |s| ^ 3 / 6 + (v * s ^ 2 / 2) ^ 2 / 2) ^ 2
+            + ((m : ℝ) + 2) * ((v * s ^ 2 / 2) * (|m₃| * |s| ^ 3 / 6)
+              + ((∫ x, ⟪x, t⟫ ^ 4 ∂μ) * |s| ^ 4 / 24 + (v * s ^ 2 / 2) ^ 2 / 2))) := by
+  have e1 : ∫ y : ℝ, y ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ∂μ := integral_projLaw μ t (by fun_prop)
+  have e2 : ∫ y : ℝ, y ^ 2 ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ^ 2 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  have e3 : ∫ y : ℝ, |y| ^ 3 ∂(projLaw μ t) = ∫ x, |⟪x, t⟫| ^ 3 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  have e3' : ∫ y : ℝ, y ^ 3 ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ^ 3 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  have e4 : ∫ y : ℝ, y ^ 4 ∂(projLaw μ t) = ∫ x, ⟪x, t⟫ ^ 4 ∂μ :=
+    integral_projLaw μ t (by fun_prop)
+  rw [charFun_smul_eq_charFun_map_inner, ← e3, ← e4]
+  exact norm_charFun_pow_sub_edgeworth_le _ ((integrable_projLaw_iff μ t (by fun_prop)).2 hint1)
+    ((integrable_projLaw_iff μ t (by fun_prop)).2 hint2)
+    ((integrable_projLaw_iff μ t (by fun_prop)).2 hint3)
+    ((integrable_projLaw_iff μ t (by fun_prop)).2 hint4) (by rw [e1, hmean]) (by rw [e2, hvar])
+    (by rw [e3', hthird]) hs2 (by rw [e3]; exact hs3) m
+
+end Expansion
+
 end StatLean.HypothesisTesting
