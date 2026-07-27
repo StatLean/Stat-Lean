@@ -501,7 +501,139 @@ private lemma tendstoInProb_twoSampleScale (PY PZ : Measure ℝ) [IsProbabilityM
   refine (hsqrt ε hε).congr fun k => ?_
   simp only [hlim, twoSampleScale]
 
+/-! ### Group-averaged convergence in probability
+
+`TendstoInProbRandomized` — the hypothesis the Slutsky transfer consumes — evaluates the
+scaling at `g · x` with `g` uniform on the group, so it is a convex combination of the
+per-`g` failure probabilities. The two closure properties needed below are therefore proved
+exactly as their fixed-measure counterparts above, one group element at a time. -/
+
+/-- **Continuous mapping for group-averaged convergence in probability.** -/
+private lemma tendstoInProbRandomized_comp {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) [∀ k, IsProbabilityMeasure (P k)]
+    {A : ∀ k, 𝓨 k → ℝ} {a : ℝ} {φ : ℝ → ℝ} (hφ : ContinuousAt φ a)
+    (h : TendstoInProbRandomized G P A a) :
+    TendstoInProbRandomized G P (fun k y => φ (A k y)) (φ a) := by
+  intro ε hε
+  obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp hφ ε hε
+  refine squeeze_zero (fun k => ?_) (fun k => ?_) (h ρ hρpos)
+  · exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => measureReal_nonneg)
+  · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => ?_) (by positivity)
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    by_contra hcon
+    push Not at hcon
+    have hd : dist (A k (g • x)) a < ρ := by rwa [Real.dist_eq]
+    have hlt := hρ hd
+    rw [Real.dist_eq] at hlt
+    linarith
+
+/-- **The zero shift converges in probability at randomized data.** The studentized
+statistic has no recentring, so this is the shift hypothesis of the Slutsky transfer. -/
+private lemma tendstoInProbRandomized_zero {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) :
+    TendstoInProbRandomized G P (fun _ _ => (0 : ℝ)) 0 := by
+  intro ε hε
+  have hfalse : ¬ (ε ≤ |(0 : ℝ) - 0|) := by rw [sub_zero, abs_zero]; exact not_le.2 hε
+  simp only [hfalse, Set.setOf_false, measureReal_empty, Finset.sum_const_zero, mul_zero]
+  exact tendsto_const_nhds
+
+/-! ### The randomized studentizing scale
+
+Under a uniform permutation of the pooled data each block is a sample **without
+replacement** from the pooled `N = m + n` values, so — unlike the unconditional scale of
+`tendstoInProb_twoSampleScale`, which converges to `s² = σ²(P_Y) + λσ²(P_Z)` — *both* block
+variances converge to the same pooled variance
+$$ \bar v = \frac{\lambda \sigma^2(P_Y) + \sigma^2(P_Z)}{1 + \lambda} , $$
+whence `D_{m,n}(π·)² = S²_Y(π·) + (m/n) S²_Z(π·) → (1 + λ)\bar v = τ²`. The two limits differ
+exactly when `λ ≠ 1` and the variances differ — the failure of the *unstudentized* test —
+and dividing by the scale sends both to `N(0,1)`, which is the content of this file. -/
+
+/-- **The studentizing scale, evaluated at randomized data, is consistent for `τ`**, the
+permutation scale `τ² = λσ²(P_Y) + σ²(P_Z)`. -/
+private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ)
+    {lam varY varZ μ τ : ℝ}
+    -- USER-INPUT: both sample sizes grow; the asymptotic regime
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    -- USER-INPUT: `m/n → λ`, with a nondegenerate limit
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    -- USER-INPUT: finite second moments of both populations
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    -- USER-INPUT: equal means; the null hypothesis under test
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    -- USER-INPUT: the population variances, not assumed equal, both nonzero
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hvarYpos : 0 < varY) (hvarZpos : 0 < varZ)
+    -- LEAN-ONLY: positive square root of the permutation variance
+    (hτpos : 0 < τ) (hτ : τ ^ 2 = lam * varY + varZ) :
+    TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k x => twoSampleScale (m k) (n k) x) τ := by
+  -- TODO (deferred, named brick): the hypergeometric half of Theorem 17.3.3.
+  -- STATUS (re-derived this session, wave 5). This is the *only* mathematical debt of the
+  -- studentized chain that is not the permutation CLT, and it is genuinely open work rather
+  -- than a missing upstream theorem — the wave-4 note in
+  -- `randDist_studentized_tendstoInProb` is accurate about that. The route, re-derived and
+  -- checked here:
+  -- (a) `|Perm(Fin N)|⁻¹ ∑_σ P.real {…}` is the mass of the *mixture* measure
+  --     `μ_k = |Perm|⁻¹ ∑_σ P.map (σ • ·)`, so the three closure properties above
+  --     (`tendstoInProb_comp/add/const_mul`, or their group-averaged twins) reduce the
+  --     square root, the sum and the factor `m/n` to the two block variances.
+  -- (b) Block sums at `σ • x` depend on `σ` only through the index set
+  --     `S(σ) = σ⁻¹ '' {Fin.castAdd n i}`: `m⁻¹ ∑_{i<m} f(x(σ⁻¹(castAdd i)))`
+  --     `= m⁻¹ ∑_l f(x l) · weight l (S σ)`. The pushforward of the uniform law on
+  --     `Perm (Fin N)` under `σ ↦ S σ` is uniform on `SubsetsOfCard N m`, because right
+  --     multiplication by `τ` maps the fibre over `s` bijectively onto the fibre over
+  --     `τ⁻¹ '' s` and the action on `m`-subsets is transitive. That bridge is what makes
+  --     `ForMathlib/HypergeometricMoments` applicable, and it is the one piece of new
+  --     combinatorics required.
+  -- (c) Conditionally on the pooled data, `expect_weight` gives the pooled empirical mean
+  --     as the first moment of the block average and `var_mean_linear_le` gives the
+  --     `O(1/m)` variance bound; Chebyshev on the finite uniform average then handles the
+  --     block *means*. The block *second* moments need one further step, because
+  --     `var_mean_linear_le` applied to `c l = (x l)²` costs a fourth pooled moment, which
+  --     `MemLp id 2` does not supply: truncate at level `K` (Chebyshev with the bound `K²`
+  --     for the truncated part, Markov with `∫ t² 1{t² > K}` for the tail, the latter small
+  --     uniformly in `k` by dominated convergence). This is the standard two-moment
+  --     argument for sampling without replacement and it is why the theorem holds with no
+  --     moment assumption beyond `L²`.
+  -- (d) The pooled empirical moments themselves converge by `tendsto_pi_real_lln`, giving
+  --     `v̄ = (λ varY + varZ)/(1 + λ)` for both blocks and `τ² = (1 + λ) v̄` for the scale.
+  -- Nothing above needs the permutation CLT, and nothing above is available off the shelf;
+  -- it is deliberately isolated here so that the two headline theorems below are complete
+  -- modulo exactly two named statements — this one and
+  -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
+  sorry
+
 /-! ### Asymptotic validity under unequal variances -/
+
+/-- The permutation action `σ • x = x ∘ σ⁻¹` is measurable in `x`. (A local copy: the
+`TwoSamplePermutation` version is `private` to that module.) -/
+private lemma measurable_perm_smul' (N : ℕ) (σ : Equiv.Perm (Fin N)) :
+    Measurable (fun x : Fin N → ℝ => σ • x) := by
+  have hfun : (fun x : Fin N → ℝ => σ • x) = fun x i => x (σ⁻¹ i) := by
+    ext x i; exact perm_smul_apply σ x i
+  rw [hfun]
+  exact measurable_pi_lambda _ fun i => measurable_pi_apply _
+
+/-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. (A local copy: the
+`TwoSamplePermutation` and `SignChange` versions are `private` to those modules.) -/
+private lemma continuousAt_cdf_of_noAtoms' (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NoAtoms ν] (t : ℝ) : ContinuousAt (cdf ν) t := by
+  have hmono : Monotone (cdf ν) := monotone_cdf ν
+  rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
+  have hright : Function.rightLim (cdf ν) t = cdf ν t :=
+    (hmono.continuousWithinAt_Ioi_iff_rightLim_eq).1
+      (((cdf ν).right_continuous t).mono Set.Ioi_subset_Ici_self)
+  have hle : Function.leftLim (cdf ν) t ≤ cdf ν t := hmono.leftLim_le le_rfl
+  have hge : cdf ν t ≤ Function.leftLim (cdf ν) t := by
+    have h0 := (cdf ν).measure_singleton t
+    rw [measure_cdf, measure_singleton, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos] at h0
+    exact h0
+  rw [le_antisymm hle hge, hright]
 
 /-- **The studentized randomization distribution converges to the standard normal.**
 Under equal means, finite nonzero (and possibly **different**) population variances, and
@@ -526,45 +658,77 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (studentizedTwoSample (m k) (n k)) x t)
       (cdf (gaussianReal 0 1) t) := by
-  -- TODO (deep, deferred): the studentized randomization limit. Since
-  -- `studentizedTwoSample = (1/twoSampleScale)·twoSampleMeanDiff + 0`, the Slutsky transfer
-  -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
-  -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
-  -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
-  -- STATUS (re-derived this session, wave 4): two of the three pieces are settled, the third is
-  -- re-scoped, and the statement is blocked on exactly one theorem.
-  -- (ii) AVAILABLE, unchanged. `randDist_affine_tendstoInProb` in `SlutskyRandomization` is
-  --      closed, in exactly the mixture form this application needs (`A = 1/twoSampleScale` is
-  --      *not* permutation invariant). Its measurability side conditions are routine here: the
-  --      numerator and the action are handled in `TwoSamplePermutation`, and measurability of
-  --      the scale is the `hSmeas` computation used in the sibling theorem below.
-  -- (iii) RE-SCOPED — and no longer the "shared missing brick" the wave-3 note described. That
-  --      note asked for an `L¹` law of large numbers on `Measure.pi`; the brick now exists
-  --      (`TwoSamplePermutation.tendsto_pi_real_lln`) and the *unconditional* scale consistency
-  --      is proved (`tendstoInProb_twoSampleScale` above). What is still needed is the
-  --      *randomized* scale consistency, a genuinely different statement — and worth recording,
-  --      because it is precisely where studentization earns its keep. Under a uniform
-  --      permutation of the pooled data each block is a sample **without replacement** from the
-  --      pooled `N = m + n` values, so *both* block variances converge to the same pooled
-  --      variance
-  --          v̄ = (λ σ²(P_Y) + σ²(P_Z)) / (1 + λ) ,
-  --      whence
-  --          D_{m,n}(π·)² = S²_Y(π·) + (m/n) S²_Z(π·) → (1 + λ) v̄ = λ σ²(P_Y) + σ²(P_Z) = τ² .
-  --      So the randomized scale converges to `τ`, whereas the unconditional one converges to
-  --      `s² = σ²(P_Y) + λσ²(P_Z)` (that is `tendstoInProb_twoSampleScale`). The two limits
-  --      differ exactly when `λ ≠ 1` and the variances differ — the failure of the unstudentized
-  --      test — and dividing by the scale sends *both* to `N(0,1)`, which is the content of this
-  --      file. The proof is Chebyshev on the group mixture: conditionally on the pooled data the
-  --      first two moments of the subsample average are the hypergeometric ones supplied by
-  --      `ForMathlib/HypergeometricMoments` (`var_mean_linear_le`, `cov_weight`), and the pooled
-  --      empirical moments themselves converge by `tendsto_pi_real_lln`. No missing upstream
-  --      brick: this is bounded, self-contained work.
-  -- (i) THE BLOCKER, verdict unchanged after re-derivation.
-  --      `weakConverges_randPairLaw_twoSample` — Hoeffding's combinatorial CLT, which neither
-  --      this repository nor Mathlib v4.29.1 contains, and which the sign-change engine
-  --      provably does not cover; see the re-derived note there. Since (iii) is of no use until
-  --      (i) lands, it has deliberately been left unwritten.
-  sorry
+  -- `studentizedTwoSample = (1/twoSampleScale) · twoSampleMeanDiff + 0`, so this is the
+  -- Slutsky transfer `randDist_affine_tendstoInProb` with `A = 1/scale → 1/τ`, `B = 0`, joint
+  -- law from `weakConverges_randPairLaw_twoSample`, and limit c.d.f.
+  -- `cdf ((N(0,τ²)).map (τ⁻¹ · )) = cdf (N(0,1))`.
+  -- The two debts are named: the permutation CLT
+  -- (`TwoSamplePermutation.weakConverges_randPairLaw_twoSample`, Hoeffding's combinatorial
+  -- CLT, out of scope) and the randomized scale consistency
+  -- (`tendstoInProbRandomized_twoSampleScale` above).
+  classical
+  have hposτ : (0 : ℝ) < lam * varY + varZ := by positivity
+  set τ : ℝ := Real.sqrt (lam * varY + varZ) with hτdef
+  have hτpos : 0 < τ := Real.sqrt_pos.2 hposτ
+  have hτne : τ ≠ 0 := hτpos.ne'
+  have hτ : τ ^ 2 = lam * varY + varZ := Real.sq_sqrt hposτ.le
+  set R : Measure ℝ := gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩ with hRdef
+  -- The affine image of the permutation limit is the standard normal.
+  have hmapR : R.map (fun u : ℝ => τ⁻¹ * u + 0) = gaussianReal 0 1 := by
+    have hfun : (fun u : ℝ => τ⁻¹ * u + 0) = (τ⁻¹ * ·) := by funext u; rw [add_zero]
+    rw [hRdef, hfun, gaussianReal_map_const_mul]
+    congr 1
+    · rw [mul_zero]
+    · refine NNReal.coe_injective ?_
+      simp only [NNReal.coe_mul, NNReal.coe_one, NNReal.coe_mk]
+      field_simp
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  have hcont : ContinuousAt (cdf (R.map (fun u : ℝ => τ⁻¹ * u + 0))) t := by
+    rw [hmapR]; exact continuousAt_cdf_of_noAtoms' _ t
+  -- The three measurability side conditions, and the two convergence inputs.
+  have hTmeas : ∀ k, Measurable (twoSampleMeanDiff (m k) (n k)) := by
+    intro k; unfold twoSampleMeanDiff; fun_prop
+  have hAmeas : ∀ k, Measurable (fun x : Fin (m k + n k) → ℝ =>
+      (twoSampleScale (m k) (n k) x)⁻¹) := by
+    intro k
+    unfold twoSampleScale twoSampleVarY twoSampleVarZ twoSampleMeanY twoSampleMeanZ
+    fun_prop
+  have hjoint := weakConverges_randPairLaw_twoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
+  rw [← hRdef] at hjoint
+  have hscale := tendstoInProbRandomized_twoSampleScale PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
+  have hA := tendstoInProbRandomized_comp (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (φ := fun y : ℝ => y⁻¹)
+    (continuousAt_inv₀ hτne) hscale
+  have hB := tendstoInProbRandomized_zero (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ)
+  have hmain := randDist_affine_tendstoInProb (G := fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (fun k => twoSampleMeanDiff (m k) (n k))
+    (fun k x => (twoSampleScale (m k) (n k) x)⁻¹) (fun _ _ => (0 : ℝ)) R
+    (a := τ⁻¹) (b := 0) (t := t) hTmeas hAmeas (fun k => measurable_const)
+    (fun k g => measurable_perm_smul' _ g) hjoint hA hB hcont
+  rw [hmapR] at hmain
+  -- The transformed statistic *is* the studentized statistic.
+  have hstat : ∀ (k : ℕ) (x : Fin (m k + n k) → ℝ),
+      randDist (Equiv.Perm (Fin (m k + n k)))
+          (fun y => (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0) x t
+        = randDist (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) x t := by
+    intro k x
+    have hfun : (fun y : Fin (m k + n k) → ℝ =>
+        (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0)
+        = studentizedTwoSample (m k) (n k) := by
+      refine funext fun y => ?_
+      change (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0
+        = twoSampleMeanDiff (m k) (n k) y / twoSampleScale (m k) (n k) y
+      rw [add_zero, div_eq_inv_mul]
+    rw [hfun]
+  intro ε hε
+  refine (hmain ε hε).congr fun k => ?_
+  congr 1
+  ext x
+  simp only [Set.mem_setOf_eq, hstat k x]
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard
 normal.** Together with the previous statement, the randomization distribution and the
