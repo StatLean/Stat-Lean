@@ -55,6 +55,18 @@ estimator under `θ₀ + h/√n`. (`TSH4 §14.4 Thm 14.4.1`.)
 * The proof route is: contiguity of `P^n_{θₙ}` to `P^n_{θ₀}` (from quadratic-mean
   differentiability) plus Le Cam's third lemma, applied to the pair
   `(⟪I⁻¹(θ₀)Z_n, t⟫, log L_{n,h})`, followed by the Cramér–Wold device.
+* **Status.** The route above is realised for a *fixed* direction by
+  `weak_limit_estimator_under_fixed_local_alternative`, which is axiom-clean and holds for
+  the full sequence (no subsequence extraction: asymptotic linearity identifies the joint
+  limit `(J⁻¹Δ, Δ)` outright, so Le Cam 3 in the form
+  `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` *produces* the limit
+  under the alternative rather than identifying a pre-supplied one). The three theorems
+  listed above are then reductions to it, and the whole file rests on exactly one named
+  analytic debt, `integral_close_varying_direction` — the `n`-fold Hellinger/total-variation
+  estimate that lets the *moving* direction `hₙ` be replaced by its limit `h`. Note that this
+  debt does not raise the `declaration uses 'sorry'` linter warning on the theorems that
+  consume it (they mention a constant, not `sorryAx`); it shows up as `sorryAx` under
+  `#print axioms`.
 
 **Bibliographic comments.** Contiguity, local asymptotic normality and the third lemma are
 due to L. Le Cam ("Locally asymptotically normal families of distributions," *Univ.
@@ -327,6 +339,497 @@ private lemma weakConverges_of_integral_close
   simp only [sub_add_cancel, zero_add] at hsum
   simpa only [h1] using hsum
 
+/-! ### The exact change of measure, and the Le Cam-3 tilt of the limit law -/
+
+/-- **Exact change of measure under a common-support hypothesis.**
+
+`P^n_{θ₀+h/√n} = (P^n_{θ₀}).withDensity (exp ∘ Lₙ)` — the identity that
+`contiguous_local_alternatives` consumes as `hL_is_log_ratio`.
+
+**Why the hypothesis is needed.** Without it the identity is FALSE at the Lean junk values,
+in *both* directions of the support comparison, and neither failure is a formalisation
+artefact one can quotient away:
+
+* where `p_{θ₀} x = 0 < p_{θ'} x`, the left side carries the mass `p_{θ'} x` while the right
+  side carries none — `Real.log (a / 0) = 0`, so the ratio density is `1` there rather than
+  `+∞`, and `1` multiplied into a vanishing base density is still `0`;
+* where `p_{θ'} x = 0 < p_{θ₀} x`, the left side carries none while the right side carries
+  `p_{θ₀} x · exp (Real.log 0) = p_{θ₀} x`.
+
+So the minimal repair is the two-sided condition — the `HasCommonSupport` pattern of
+`PointEstimation/InformationInequality/Basic.lean`, spelled out inline here to avoid an
+import — and it is the same defect, with the same repair, as the one already carried by
+`TrinityChiSquared.logLR_affine_sub_scoreDiff_tendstoInMeasure`. It is *not* a positivity
+assumption on the model (`∀ θ x, 0 < p_θ x` would be false for many standard models); it says
+only that no two parameters disagree about which points are impossible, which is what the
+source assumes implicitly whenever it writes a likelihood ratio. -/
+private lemma productMeasure_eq_withDensity_exp_logLikelihood
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hsupp : ∀ (θ θ' : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ x ≠ 0 → M.density θ' x ≠ 0)
+    (h : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
+      = (productMeasure M μ θ₀ n).withDensity
+          (fun ω => ENNReal.ofReal (Real.exp (logLikelihood M θ₀ h n ω))) := by
+  refine logLikelihood_is_log_ratio M μ θ₀ h n (hPDF.density_integrable _)
+    (Filter.Eventually.of_forall fun x => ?_)
+  constructor
+  · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
+      (Ne.symm (hsupp θ₀ _ x (ne_of_gt hx)))
+  · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
+      (Ne.symm (hsupp _ θ₀ x (ne_of_gt hx)))
+
+/-- **The Le Cam third-lemma tilt of the limiting joint law is `N(h, J⁻¹)`.**
+
+The joint limit of `(√n(θ̂ₙ − θ₀), Δₙ)` under `P^n_{θ₀}` is the law of `(J⁻¹Δ, Δ)` with
+`Δ ∼ N(0, J)` — a *degenerate* joint, carried by the graph of `J⁻¹`, because asymptotic
+linearity makes the first coordinate a deterministic function of the second in the limit.
+Le Cam's third lemma then tilts it by `e^{⟪h,Δ⟫ − ½⟪h,Jh⟫}` and reads off the first marginal.
+This lemma computes that marginal in closed form.
+
+The computation is three moves, each an existing `GaussianMGF` identity:
+`Measure.withDensity_map_eq_map_withDensity` pulls the density back through the joint map, so
+the tilt acts on `N(0, J)` itself; `multivariateGaussian_withDensity_exp_shift` turns the
+exponential tilt of `N(0, J)` into the mean shift `N(Jh, J)`; and
+`multivariateGaussian_map_toEuclideanCLM` pushes that forward along `J⁻¹`, giving mean
+`J⁻¹(Jh) = h` and covariance `J⁻¹ J (J⁻¹)ᴴ = J⁻¹` (the transpose is harmless because a
+positive semidefinite `J` is symmetric).
+
+Deriving this as a lemma — rather than assuming the Gaussian-MGF pair as hypotheses — is what
+lets `limit_law_under_h`'s companions `h_exp_int_πtilt` / `h_exp_int_πtilt_eq_one` be
+discharged from `GaussianMGF.integrable_exp_tilt` / `integral_exp_tilt_eq_one`, whose only
+input is that the second marginal of the joint is `N(0, J)`. -/
+private lemma map_fst_withDensity_exp_tilt_graphJoint
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_psd : J.PosSemidef) (hJ_inv : IsUnit J.det)
+    (h : EuclideanSpace ℝ (Fin k)) :
+    (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+          (fun δ : EuclideanSpace ℝ (Fin k) =>
+            (mulVecE J⁻¹ δ, ⟪h, δ⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))).withDensity
+        (fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2))).map Prod.fst
+      = multivariateGaussian h J⁻¹ := by
+  classical
+  have hJsymm : Jᵀ = J := by
+    have := hJ_psd.1
+    simpa [Matrix.conjTranspose, Matrix.transpose] using this
+  have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+  set c : ℝ := (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫ with hc
+  set H : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) × ℝ :=
+    fun δ => (mulVecE J⁻¹ δ, ⟪h, δ⟫ - c) with hH
+  have hH_meas : Measurable H := by
+    refine Measurable.prodMk ?_ ?_
+    · exact (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.measurable
+    · exact ((continuous_const.inner continuous_id).measurable).sub measurable_const
+  have hw_meas : Measurable
+      (fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2)) :=
+    (Real.measurable_exp.comp measurable_snd).ennreal_ofReal
+  -- Pull the density back through `H`, then compose `Prod.fst ∘ H = mulVecE J⁻¹`.
+  rw [Measure.withDensity_map_eq_map_withDensity _ _ hH_meas _ hw_meas,
+    Measure.map_map measurable_fst hH_meas]
+  -- The tilt now acts on `N(0, J)` itself, with the exponent in `GaussianMGF` normal form.
+  have hdens :
+      ((fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2)) ∘ H)
+        = fun y : EuclideanSpace ℝ (Fin k) =>
+          ENNReal.ofReal (Real.exp (⟪h, y⟫ - (h.ofLp ⬝ᵥ J.mulVec h.ofLp) / 2)) := by
+    funext y
+    simp only [hH, Function.comp_apply, hc, hquad]
+    congr 2
+    ring
+  have hfst : (Prod.fst ∘ H) = fun δ : EuclideanSpace ℝ (Fin k) =>
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) δ := by
+    funext δ
+    simp only [hH, Function.comp_apply]
+    rfl
+  rw [hdens, hfst, multivariateGaussian_withDensity_exp_shift hJ_psd h,
+    multivariateGaussian_map_toEuclideanCLM J⁻¹ _ hJ_psd]
+  -- Mean `J⁻¹(Jh) = h` and covariance `J⁻¹ J (J⁻¹)ᴴ = J⁻¹`.
+  have hinvmul : J⁻¹ * J = 1 := Matrix.nonsing_inv_mul J hJ_inv
+  have hmean : (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹)
+      ((Matrix.toEuclideanCLM (𝕜 := ℝ) J) h) = h := by
+    have : (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) * (Matrix.toEuclideanCLM (𝕜 := ℝ) J)
+        = Matrix.toEuclideanCLM (𝕜 := ℝ) (J⁻¹ * J) := (map_mul _ _ _).symm
+    have happ := congrArg (fun A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) =>
+      A h) this
+    simpa [hinvmul] using happ
+  have hcov : J⁻¹ * J * (J⁻¹)ᴴ = J⁻¹ := by
+    have hH' : (J⁻¹)ᴴ = J⁻¹ := by
+      have : (J⁻¹)ᵀ = (Jᵀ)⁻¹ := Matrix.transpose_nonsing_inv J
+      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using
+        congrArg id (this.trans (by rw [hJsymm]))
+    rw [hinvmul, one_mul, hH']
+  rw [hmean, hcov]
+
+/-- **Joint limit of the recentred estimator and the score, under `P^n_{θ₀}`.**
+
+`(√n(θ̂ₙ − θ₀), Δₙ) ⇝ (J⁻¹Δ, Δ)` with `Δ ∼ N(0, J)`. The limit is carried by the *graph* of
+`J⁻¹`: asymptotic linearity makes the first coordinate a deterministic function of the second
+in the limit, so no tightness or subsequence argument is needed to produce the joint law —
+it is the pushforward of the score limit along `δ ↦ (J⁻¹δ, δ)`, and Slutsky replaces
+`J⁻¹Δₙ` by `√n(θ̂ₙ − θ₀)`.
+
+This is what makes the full-sequence route possible: `joint_weak_subsequence` extracts a
+subsequence precisely because it does not know the joint limit, whereas here `hlin`
+*identifies* it. -/
+private lemma joint_weak_estimator_scoreSum
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) :
+    WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω)))
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hΔmeas : ∀ n : ℕ, Measurable (scoreSum ℓ n) := by
+    intro n
+    unfold scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  have hΔ := scoreSum_weakly_converges M μ θ₀ ℓ hℓ (hPDF.density_integral_eq_one θ₀)
+    (hPDF.density_integrable θ₀) (fun _ _ => hPDF.density_integral_eq_one _)
+    (fun _ _ => hPDF.density_integrable _) hDQM J hJ_psd hJ
+  set F : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) :=
+    fun δ => (mulVecE J⁻¹ δ, δ) with hF
+  have hF_cont : Continuous F :=
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id
+  have hF_meas : Measurable F := hF_cont.measurable
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) :=
+    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+  have hX : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)))
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) := by
+    have h2 := hΔ.map hF_cont hF_meas
+    have hfun : (fun n : ℕ => ((productMeasure M μ θ₀ n).map (scoreSum ℓ n)).map F)
+        = fun n : ℕ => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)) := by
+      funext n
+      exact Measure.map_map hF_meas (hΔmeas n)
+    rwa [hfun] at h2
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => F (scoreSum ℓ n ω))
+    (Y := fun n ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω))
+    (fun n => (hF_meas.comp (hΔmeas n)).aemeasurable)
+    (fun n => ((((hest n).sub measurable_const).const_smul (Real.sqrt n)).prodMk
+      (hΔmeas n)).aemeasurable) hX ?_
+  intro ε hε
+  -- the product distance collapses: the second coordinates agree
+  have hd : ∀ a b c : EuclideanSpace ℝ (Fin k),
+      dist ((a, c) : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) (b, c)
+        = ‖b - a‖ := by
+    intro a b c
+    simp only [Prod.dist_eq, dist_self]
+    rw [max_eq_left dist_nonneg, dist_eq_norm, norm_sub_rev]
+  refine Filter.Tendsto.congr (fun n => ?_) (hlin ε hε)
+  congr 1
+  ext ω
+  simp only [Set.mem_setOf_eq, hF, hd]
+
+/-- **Joint limit of the recentred estimator and the log-likelihood ratio, under `P^n_{θ₀}`.**
+
+The LAN expansion `Lₙ = ⟪h, Δₙ⟫ − ½⟪h, Jh⟫ + o_P(1)` (`lanResidual_tendsto_productMeasure`)
+turns `joint_weak_estimator_scoreSum` into the joint law that Le Cam's third lemma consumes.
+The subsequence parameter of `slutsky_bridge_of_lanResidual` is instantiated at the identity:
+the residual statement it needs is available for the *full* sequence, and the joint limit is
+known outright by the previous lemma, so nothing has to be extracted. -/
+private lemma joint_weak_estimator_logLikelihood
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) (h : EuclideanSpace ℝ (Fin k)) :
+    WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), logLikelihood M θ₀ h n ω)))
+      (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+          (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) := by
+  classical
+  have hC := joint_weak_estimator_scoreSum M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin
+  have hΔmeas : ∀ n : ℕ, Measurable (scoreSum ℓ n) := by
+    intro n
+    unfold scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hF_meas : Measurable
+      (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
+    ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
+    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+  set G : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) →
+      EuclideanSpace ℝ (Fin k) × ℝ :=
+    fun p => (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫) with hG
+  have hG_cont : Continuous G :=
+    continuous_fst.prodMk ((continuous_const.inner continuous_snd).sub continuous_const)
+  have hG_meas : Measurable G := hG_cont.measurable
+  -- Push the joint limit forward along `G`, then read it as a single pushforward of `P^n`.
+  have h4 := hC.map hG_cont hG_meas
+  have hfun : (fun n : ℕ => ((productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω))).map G)
+      = fun n : ℕ => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀),
+          ⟪h, scoreSum ℓ n ω⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) := by
+    funext n
+    exact Measure.map_map hG_meas ((hTmeas n).prodMk (hΔmeas n))
+  rw [hfun] at h4
+  -- The LAN residual replaces the linearised exponent by the true log-likelihood ratio.
+  have hlanres := lanResidual_tendsto_productMeasure M μ θ₀ ℓ hℓ
+    (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
+    (fun _ _ => hPDF.density_integral_eq_one _) (fun _ _ => hPDF.density_integrable _)
+    hDQM J hJ h
+  exact slutsky_bridge_of_lanResidual M μ θ₀ ℓ hℓ J
+    (fun n ω => Real.sqrt n • (est n ω - θ₀)) hTmeas h _ (fun n => n)
+    (fun n => logLikelihood_measurable M θ₀ h n) hlanres h4
+
+/-- **Asymptotic log-normality of the log-likelihood ratio under `P^n_{θ₀}`.**
+
+`Lₙ ⇝ N(−½⟪h, Jh⟫, ⟪h, Jh⟫)` — the LAN half of the contiguity footing, read off from
+`joint_weak_estimator_logLikelihood` by discarding the first coordinate. The mean/variance
+relation `m = −v/2` is exactly the shape that
+`Contiguity.uniform_integrability_exp_L_of_integral_tendsto_one` consumes, and it is not an
+extra assumption: it is forced by the `−½⟪h, Jh⟫` in the LAN expansion together with
+`⟪h, Δ⟫ ∼ N(0, ⟪h, Jh⟫)` (`multivariateGaussian_map_inner_eq_gaussianReal`). -/
+private lemma logLikelihood_weakConverges_gaussianReal
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) (h : EuclideanSpace ℝ (Fin k)) :
+    WeakConverges (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n))
+      (ProbabilityTheory.gaussianReal
+        (-(((h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal : NNReal) : ℝ) / 2)
+        (h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+  have hqnn : (0 : ℝ) ≤ ⟪h, mulVecE J h⟫ := by
+    rw [← hJ h h]
+    unfold fisherInformation
+    exact integral_nonneg fun x => mul_nonneg (mul_self_nonneg _) (M.density_nonneg θ₀ x)
+  have hD := joint_weak_estimator_logLikelihood M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin h
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hF_meas : Measurable
+      (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
+    ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
+  have hG_meas : Measurable
+      (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) :=
+    (continuous_fst.prodMk
+      ((continuous_const.inner continuous_snd).sub continuous_const)).measurable
+  have hsnd := hD.map continuous_snd measurable_snd
+  -- the left side collapses to the law of `Lₙ`
+  have hlhs : (fun n : ℕ => ((productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), logLikelihood M θ₀ h n ω))).map Prod.snd)
+      = fun n : ℕ => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n) := by
+    funext n
+    exact Measure.map_map measurable_snd
+      ((hTmeas n).prodMk (logLikelihood_measurable M θ₀ h n))
+  rw [hlhs] at hsnd
+  -- the right side is the Gaussian shift of `⟪h, ·⟫` under `N(0, J)`
+  have hrhs : ((((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))).map Prod.snd)
+      = ProbabilityTheory.gaussianReal
+          (-(((h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal : NNReal) : ℝ) / 2)
+          (h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal := by
+    rw [Measure.map_map measurable_snd hG_meas,
+      Measure.map_map (measurable_snd.comp hG_meas) hF_meas]
+    have hcomp : ((Prod.snd ∘ (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) ∘
+          (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)))
+        = (fun x : ℝ => x + -((1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) ∘
+            (fun δ : EuclideanSpace ℝ (Fin k) => ⟪h, δ⟫) := by
+      funext δ
+      simp only [Function.comp_apply]
+      ring
+    rw [hcomp, ← Measure.map_map (by fun_prop) (by fun_prop),
+      multivariateGaussian_map_inner_eq_gaussianReal h hJ_psd,
+      ProbabilityTheory.gaussianReal_map_add_const]
+    congr 1
+    rw [Real.coe_toNNReal _ (hquad ▸ hqnn), ← hquad]
+    ring
+  rwa [hrhs] at hsnd
+
+/-- **Limit law of an efficient estimator under a FIXED local alternative.**
+
+Under `P^n_{θ₀+h/√n}`, `√n(θ̂ₙ − θ₀) ⇝ N(h, I⁻¹(θ₀))`. This is the fixed-direction core of
+`weak_limit_estimator_under_local_alternatives`, and it is proved for the **full** sequence:
+no subsequence is extracted anywhere.
+
+The assembly is Le Cam's third lemma in its contiguity-footing form
+(`Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison`), which *produces* the
+weak limit under `Q` rather than identifying a pre-supplied one — which is why
+`limit_law_under_h`, whose `h_weak_under_h` is a hypothesis, is not the vehicle here. Its five
+inputs are all now available:
+
+* the integral comparison — `productMeasure_integral_comparison`, the DQM-derived asymptotic
+  substitute for the exact change of measure. Note that this is what lets the theorem avoid a
+  common-support hypothesis altogether: the exact identity
+  `productMeasure_eq_withDensity_exp_logLikelihood` above needs one (see its docstring), the
+  asymptotic comparison does not;
+* the joint limit of `(√n(θ̂ₙ−θ₀), Lₙ)` — `joint_weak_estimator_logLikelihood`, which is known
+  outright, not up to a subsequence, because `hlin` identifies it;
+* uniform integrability of `exp Lₙ` — from
+  `Contiguity.uniform_integrability_exp_L_of_integral_tendsto_one` fed by
+  `logLikelihood_weakConverges_gaussianReal`;
+* the Gaussian-MGF pair — `GaussianMGF.integrable_exp_tilt` / `integral_exp_tilt_eq_one`,
+  whose only input is that the joint limit has second marginal `N(0, J)`; that marginal is
+  `N(0,J)` on the nose because the joint is carried by the graph of `J⁻¹`.
+
+The resulting limit `((π ∘ tilt).withDensity e^{·})∘fst` is then evaluated in closed form by
+`map_fst_withDensity_exp_tilt_graphJoint`, giving `N(h, J⁻¹)`. -/
+theorem weak_limit_estimator_under_fixed_local_alternative
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (hJ_inv : IsUnit J.det)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) (h : EuclideanSpace ℝ (Fin k)) :
+    WeakConverges
+      (fun n => (productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n).map
+        (fun ω => Real.sqrt n • (est n ω - θ₀)))
+      (multivariateGaussian h J⁻¹) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hF_meas : Measurable
+      (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
+    ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
+  have hG_meas : Measurable
+      (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+        (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) :=
+    (continuous_fst.prodMk
+      ((continuous_const.inner continuous_snd).sub continuous_const)).measurable
+  haveI hπ0 : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
+    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+  haveI hπ : IsProbabilityMeasure
+      (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+          (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) :=
+    Measure.isProbabilityMeasure_map hG_meas.aemeasurable
+  -- The joint limit is carried by the graph of `J⁻¹`, so its second marginal is `N(0, J)`.
+  have hmarg : ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map Prod.snd
+      = multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J := by
+    rw [Measure.map_map measurable_snd hF_meas]
+    have hid : (Prod.snd ∘ (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)))
+        = id := rfl
+    rw [hid, Measure.map_id]
+  have hlecam := Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison
+    (Ω := fun n => Fin n → 𝓧) (E := EuclideanSpace ℝ (Fin k))
+    (fun n => productMeasure M μ θ₀ n)
+    (fun n => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n)
+    (fun n ω => Real.sqrt n • (est n ω - θ₀))
+    (fun n => logLikelihood M θ₀ h n)
+    hTmeas (fun n => logLikelihood_measurable M θ₀ h n)
+    (productMeasure_integral_comparison M μ θ₀ ℓ hℓ hDQM hPDF
+      (fun n ω => Real.sqrt n • (est n ω - θ₀)) hTmeas h)
+    _
+    (joint_weak_estimator_logLikelihood M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin h)
+    (Contiguity.uniform_integrability_exp_L_of_integral_tendsto_one
+      (fun n => productMeasure M μ θ₀ n)
+      (fun n => productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n)
+      (fun n => logLikelihood M θ₀ h n) (fun n => logLikelihood_measurable M θ₀ h n)
+      (productMeasure_exp_logLikelihood_integrable M μ θ₀ ℓ hℓ hDQM hPDF h)
+      (productMeasure_integral_exp_logLikelihood_tendsto_one M μ θ₀ ℓ hℓ hDQM hPDF h)
+      _ (logLikelihood_weakConverges_gaussianReal M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin h))
+    (ProbabilityTheory.integrable_exp_tilt _ J hJ_psd hmarg h)
+    (ProbabilityTheory.integral_exp_tilt_eq_one _ J hJ_psd hmarg h)
+  -- Compose the two pushforwards and evaluate the tilt in closed form.
+  have hcompose : (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)))
+      = (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) =>
+          (mulVecE J⁻¹ δ, ⟪h, δ⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) := by
+    rw [Measure.map_map hG_meas hF_meas]
+    rfl
+  rw [hcompose, map_fst_withDensity_exp_tilt_graphJoint J hJ_psd hJ_inv h] at hlecam
+  exact hlecam
+
+/-- **THE ONE REMAINING BRICK — brick (B), the varying-direction transfer.**
+
+`P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
+functions of the sample.
+
+**Why this is the whole remaining gap.** Everything else in this lane is now proved:
+`weak_limit_estimator_under_fixed_local_alternative` closes the *fixed*-direction statement
+for the full sequence, and `weakConverges_of_integral_close` above reduces the varying case
+to the fixed one over exactly this hypothesis. So the lane's debt has gone from "an
+existence-plus-identification Le Cam argument plus a Gaussian-MGF pair plus a common-support
+amendment" (the previous note) to this single analytic estimate.
+
+**What it is mathematically.** `|∫g dQₙ − ∫g dQ'ₙ| ≤ 2‖g‖·‖Qₙ − Q'ₙ‖_TV`, and for a
+quadratic-mean differentiable family the two local alternatives are close in total variation
+because the `n`-fold Hellinger affinity is controlled:
+`n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0` (using `hconv`), and
+`‖·‖_TV ≤ √2·H`. Note this is a statement about the *model*, not about the estimator: it does
+not mention `est` at all beyond the test function.
+
+**Why it cannot be got from what is already here.** Every asymptotic tool in
+`AsymptoticRepresentation.lean` fixes the direction `h` in advance —
+`logLikelihood M θ₀ h n` is defined with a single `h`, `productMeasure_integral_comparison`
+builds its slack `ρ n` from the `h`-dependent `goodSet M θ₀ h n`, and
+`lanResidual_tendsto_productMeasure` calls `LAN_expansion_iii` at the constant sequence.
+Re-running any of them at the *moving* parameter `hₙ` is not a re-parenthesization: it needs
+either uniformity of `ρ` over a compact set of directions, or the `n`-fold Hellinger bound
+above. The second is the smaller statement and is the one this brick asks for. It is a DQM
+property of the model and therefore belongs with `DQM/Properties.lean`, not here. -/
+private lemma integral_close_varying_direction
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (h : EuclideanSpace ℝ (Fin k)) (h_n : ℕ → EuclideanSpace ℝ (Fin k))
+    (hconv : Tendsto h_n atTop (𝓝 h)) :
+    ∀ g : EuclideanSpace ℝ (Fin k) →ᵇ ℝ,
+      Tendsto (fun n : ℕ =>
+          ∫ ω, g (Real.sqrt n • (est n ω - θ₀))
+            ∂(productMeasure M μ (localAlt θ₀ h_n n) n)
+          - ∫ ω, g (Real.sqrt n • (est n ω - θ₀))
+            ∂(productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n))
+        atTop (𝓝 0) := by
+  -- Sanctioned lifted sorry: no false statement, and it is the single named analytic input
+  -- of `weak_limit_estimator_under_local_alternatives` (see the docstring above).
+  sorry
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
@@ -366,75 +869,79 @@ theorem weak_limit_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
-  -- TODO (obstruction RE-DERIVED this session; the previous note is confirmed on its three
-  -- factual claims and superseded on the shape of the route and on the size of the gap).
-  --
-  -- The mathematical route is standard and the algebra is already in place downstream (the
-  -- two companion theorems below and `ScoreUnderAlternatives` are *proved from this one*):
-  --   (i)  `√n(θ̂ₙ−θ₀) = Vₙ + o_P(1)` under `P^n_{θ₀}` (`hlin`, with `Vₙ = J⁻¹Zₙ`);
-  --   (ii) contiguity `P^n_{θₙ} ◅ P^n_{θ₀}` transfers that `o_P(1)` to `P^n_{θₙ}`;
-  --   (iii) Le Cam's third lemma gives `Vₙ ⇝ N(h, J⁻¹)` under `P^n_{θₙ}`;
-  --   (iv) `√n(θ̂ₙ−θₙ) = Vₙ − hₙ + o_P(1) ⇝ N(h,J⁻¹)` shifted by `−h`, i.e. `N(0, J⁻¹)`.
-  --
-  -- RE-VERIFIED (the three claims of the previous note all still hold, checked against the
-  -- current `AsymptoticRepresentation.lean`):
-  --   * `lanResidual_tendsto_productMeasure` does call `LAN_expansion_iii`, but with the
-  --     CONSTANT sequence `h_n = h` (`tendsto_const_nhds`); the varying-`h_n` capability of
-  --     `LAN_expansion_iii` is never transported to `productMeasure`, and the bridge it uses
-  --     (the restriction map `(ℕ → 𝓧) → (Fin n → 𝓧)`) is built only for the constant case.
-  --   * `productMeasure_integral_comparison` produces its slack `ρ n` from the `h`-dependent
-  --     `goodSet M θ₀ h n` / `expLogFactor M θ₀ h n`, so uniformity over a compact set of
-  --     directions is a genuine new argument, not a re-parenthesization.
-  --   * `contiguous_local_alternatives` consumes the exact change-of-measure identity
-  --     `hL_is_log_ratio`, which is not among this theorem's hypotheses.
-  --
-  -- NEW, AND WORSE THAN THE PREVIOUS NOTE SAID: the FIXED-direction case is blocked too, and
-  -- the third bullet is not a bookkeeping omission. `hL_is_log_ratio` asks for
-  --   `P^n_{θ₀+h/√n} = (P^n_{θ₀}).withDensity (exp ∘ logLikelihood M θ₀ h n)`,
-  -- and that identity is FALSE at the Lean junk values whenever `p_{θ₀}` vanishes somewhere
-  -- `p_{θ₀+h/√n}` does not: on `{p_{θ₀} = 0}` the left side carries mass while the right side
-  -- carries none (`log (a/0) = 0`, so the density is `1` there rather than `+∞`). It is
-  -- therefore *underivable* from `hPDF`/`hDQM`; it needs a common-support hypothesis. That is
-  -- the same defect, with the same minimal repair, as the one now carried by
-  -- `TrinityChiSquared.logLR_affine_sub_scoreDiff_tendstoInMeasure`
-  -- (`hsupp : ∀ θ x, M.density θ₀ x ≠ 0 → M.density θ x ≠ 0`); the `goodSet` device of
-  -- `productMeasure_integral_comparison` is the alternative, and is exactly why that theorem
-  -- exists.
-  --
-  -- ROUTE, RESTRUCTURED. The varying direction need not be handled by making `ρ` uniform over
-  -- a compact set of directions. `weakConverges_of_integral_close` above reduces the varying
-  -- case to the fixed one: it suffices that the two local-alternative product laws
-  -- `P^n_{θ₀+hₙ/√n}` and `P^n_{θ₀+h/√n}` become indistinguishable by bounded continuous test
-  -- functions, which for a DQM family is the standard Hellinger estimate
-  -- `n·H²(P_{θ₀+hₙ/√n}, P_{θ₀+h/√n}) → ⅛⟪h−hₙ, J(h−hₙ)⟫ → 0` plus `TV ≤ √2·H`. So the
-  -- missing bricks are now: (A) the fixed-direction statement, i.e. the composite of
-  -- `contiguous_local_alternatives` + Le Cam 3 under a common-support amendment (or via
-  -- `productMeasure_integral_comparison`); and (B) the `n`-fold Hellinger bound above.
-  --
-  -- RE-VERIFIED AGAIN (wave 5), with one new finding that makes (A) *larger*, not smaller:
-  --   * `contiguous_local_alternatives` still carries `hL_is_log_ratio` verbatim (it is passed
-  --     straight to `Contiguity.mutuallyContiguous_of_asymptotically_log_normal`), so the
-  --     common-support defect recorded above is unchanged.
-  --   * The file's Le Cam third-lemma vehicle is `limit_law_under_h`. It does NOT produce a
-  --     weak limit under the local alternative: the convergence
-  --     `(P^n_{θ₀+h/√n}).map (T n) ⇝ L_h` is one of its *hypotheses* (`h_weak_under_h`), and
-  --     its conclusion only *identifies* `L_h` as the tilted law
-  --     `(fst)_*(π·e^{⟪h,δ⟫−½⟪h,Jh⟫})`. Existence of the limit is a separate step — the
-  --     subsequence/tightness argument `joint_weak_subsequence` — and it is not packaged for
-  --     the full sequence. So (A) is not "compose two existing theorems": it is
-  --     existence-plus-identification, and the identification itself additionally consumes a
-  --     Gaussian-MGF pair (`h_exp_int_πtilt`, `h_exp_int_πtilt_eq_one`) about the limiting
-  --     joint law which is not among this theorem's hypotheses either.
-  -- SCOPE. Both (A) and (B) live in
-  -- `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`, which this
-  -- wave is not permitted to touch; nothing in this file can close them. The one brick this
-  -- file can own is the varying-to-fixed reduction, and that is `weakConverges_of_integral_close`
-  -- above — proved, and waiting only for (B).
-  -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane
-  -- (`weak_limit_estimator_centered_under_local_alternatives`,
-  -- `weak_limit_g_estimator_under_local_alternatives`, and
-  -- `ScoreUnderAlternatives.weak_limit_scoreSum_under_local_alternatives`) is proved *from* it.
-  sorry
+  -- ROUTE, NOW REALISED. The fixed-direction statement is
+  -- `weak_limit_estimator_under_fixed_local_alternative` above — CLOSED this session, for the
+  -- full sequence, by Le Cam's third lemma in its contiguity-footing form. The previous
+  -- note's three obstructions are all discharged:
+  --   * the common-support defect of `hL_is_log_ratio` is real (it is recorded, with both
+  --     junk-value failure modes, at `productMeasure_eq_withDensity_exp_logLikelihood`, where
+  --     the authorised repair is applied) — but the fixed-direction route does not need the
+  --     exact change of measure at all: `productMeasure_integral_comparison` is the
+  --     DQM-derived asymptotic substitute, and that is exactly why it exists;
+  --   * "existence-plus-identification" is not needed either. `limit_law_under_h` takes the
+  --     weak limit under the alternative as a *hypothesis*, but
+  --     `Contiguity.weak_limit_under_Q_of_lecam_third_of_integral_comparison` PRODUCES it; and
+  --     the subsequence extraction of `joint_weak_subsequence` is unnecessary because `hlin`
+  --     identifies the joint limit outright — it is the law of `(J⁻¹Δ, Δ)`, carried by the
+  --     graph of `J⁻¹` (`joint_weak_estimator_scoreSum`);
+  --   * the Gaussian-MGF pair is derived, not assumed: the graph joint has second marginal
+  --     `N(0, J)` on the nose, which is the only input of `GaussianMGF.integrable_exp_tilt`
+  --     and `integral_exp_tilt_eq_one`, and the resulting tilt is evaluated in closed form by
+  --     `map_fst_withDensity_exp_tilt_graphJoint`.
+  -- What is left is brick (B) alone — `integral_close_varying_direction`, the `n`-fold
+  -- Hellinger/total-variation estimate that makes the two local alternatives
+  -- `θ₀ + hₙ/√n` and `θ₀ + h/√n` indistinguishable. The reduction of the varying case to the
+  -- fixed one is `weakConverges_of_integral_close`, and it is spelled out below, so this
+  -- theorem now inherits exactly one named sorry.
+  classical
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hXmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  -- (A) the fixed direction, then (B) the transfer to the moving direction
+  have hfix := weak_limit_estimator_under_fixed_local_alternative M μ hPDF θ₀ ℓ hℓ hDQM J hJ
+    hJ_inv est hest hlin h
+  have hA : WeakConverges
+      (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - θ₀)))
+      (multivariateGaussian h J⁻¹) :=
+    weakConverges_of_integral_close (fun n => (hTmeas n).aemeasurable)
+      (fun n => (hTmeas n).aemeasurable)
+      (integral_close_varying_direction M μ hPDF θ₀ ℓ hℓ hDQM est hest h h_n hconv) hfix
+  -- translate by `−h`, turning `N(h, J⁻¹)` into `N(0, J⁻¹)`
+  have hmap := hA.map (f := fun y : EuclideanSpace ℝ (Fin k) => y + (-h))
+    (by fun_prop) (by fun_prop)
+  rw [multivariateGaussian_map_add_right h (-h) J⁻¹] at hmap
+  have hcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - θ₀))).map
+        (fun y : EuclideanSpace ℝ (Fin k) => y + (-h)))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - θ₀) + (-h)) := by
+    funext n
+    rw [Measure.map_map (by fun_prop) (hTmeas n)]
+    rfl
+  rw [hcomp, show h + -h = (0 : EuclideanSpace ℝ (Fin k)) from add_neg_cancel h] at hmap
+  -- `√n(θ̂ₙ − θ₀) − h = √n(θ̂ₙ − θₙ) + (hₙ − h)` for `n ≥ 1`; Slutsky removes the shift
+  have hcn : Tendsto (fun n : ℕ => h_n n - h) atTop (𝓝 0) := by
+    have := hconv.sub (tendsto_const_nhds (x := h) (f := atTop (α := ℕ)))
+    simpa using this
+  refine AsymptoticStatistics.ForMathlib.vec_slutsky_recentering
+    (cn := fun n => h_n n - h) (fun n => (hXmeas n).aemeasurable) ?_ hcn
+  refine weakConverges_of_eventually_eq ?_ hmap
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  congr 1
+  funext ω
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn)
+  have key : Real.sqrt n • (est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n))
+      = Real.sqrt n • (est n ω - θ₀) - h_n n := by
+    rw [show est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n)
+        = (est n ω - θ₀) - (Real.sqrt n)⁻¹ • h_n n from by abel,
+      smul_sub, smul_smul, mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+  simp only [localAlt]
+  rw [key]
+  abel
 
 /-- **Limit law of an efficient estimator under local alternatives, centred at `θ₀`.**
 
