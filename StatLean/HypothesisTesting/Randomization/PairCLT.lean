@@ -626,4 +626,113 @@ theorem weakConverges_randPairLaw_signSum [FiniteDimensional ℝ E]
 
 end SignSum
 
+/-! ### A Slutsky principle for doubly randomized laws -/
+
+section Slutsky
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+
+/-- `‖e^{iα} − e^{iβ}‖ ≤ min 2 (2|α − β|)`: the two crude bounds a randomization Slutsky
+argument needs — uniform boundedness, and Lipschitz control by the phase difference. -/
+private lemma norm_exp_sub_exp_le (α β : ℝ) :
+    ‖Complex.exp ((α : ℂ) * Complex.I) - Complex.exp ((β : ℂ) * Complex.I)‖
+      ≤ min 2 (2 * |α - β|) := by
+  have hnα : ‖Complex.exp ((α : ℂ) * Complex.I)‖ = 1 := Complex.norm_exp_ofReal_mul_I _
+  have hnβ : ‖Complex.exp ((β : ℂ) * Complex.I)‖ = 1 := Complex.norm_exp_ofReal_mul_I _
+  have h2 : ‖Complex.exp ((α : ℂ) * Complex.I) - Complex.exp ((β : ℂ) * Complex.I)‖ ≤ 2 := by
+    refine le_trans (norm_sub_le _ _) ?_
+    rw [hnα, hnβ]
+    norm_num
+  refine le_min h2 ?_
+  have hnormcast : ‖((α - β : ℝ) : ℂ) * Complex.I‖ = |α - β| := by
+    rw [norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+  rcases le_or_gt |α - β| 1 with hle | hgt
+  · have hfac : Complex.exp ((α : ℂ) * Complex.I) - Complex.exp ((β : ℂ) * Complex.I)
+        = Complex.exp ((β : ℂ) * Complex.I)
+          * (Complex.exp (((α - β : ℝ) : ℂ) * Complex.I) - 1) := by
+      rw [mul_sub, mul_one, ← Complex.exp_add,
+        show ((β : ℂ) * Complex.I + ((α - β : ℝ) : ℂ) * Complex.I) = (α : ℂ) * Complex.I from by
+          push_cast; ring]
+    rw [hfac, norm_mul, hnβ, one_mul]
+    have := Complex.norm_exp_sub_one_le (x := ((α - β : ℝ) : ℂ) * Complex.I)
+      (by rw [hnormcast]; exact hle)
+    rwa [hnormcast] at this
+  · refine le_trans h2 ?_
+    nlinarith
+
+/-- If a nonnegative statistic vanishes in probability, so does the expectation of its
+truncated multiple `min 2 (c·D)`. -/
+private lemma tendsto_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
+    [∀ n, MeasurableSpace (𝓨 n)] (P : ∀ n, Measure (𝓨 n)) [∀ n, IsProbabilityMeasure (P n)]
+    (D : ∀ n, 𝓨 n → ℝ) (hD : ∀ n, Measurable (D n)) (hnn : ∀ n x, 0 ≤ D n x)
+    (hrem : ∀ δ > (0 : ℝ), Tendsto (fun n => (P n).real {x | δ ≤ D n x}) atTop (𝓝 0))
+    {c : ℝ} (hc : 0 ≤ c) :
+    Tendsto (fun n => ∫ x, min 2 (c * D n x) ∂(P n)) atTop (𝓝 0) := by
+  have hmeas : ∀ n, Measurable fun x : 𝓨 n => min 2 (c * D n x) := fun n =>
+    measurable_const.min ((hD n).const_mul c)
+  have hbdd : ∀ (n : ℕ) (x : 𝓨 n), ‖min 2 (c * D n x)‖ ≤ 2 := by
+    intro n x
+    have h0 : 0 ≤ min 2 (c * D n x) := le_min (by norm_num) (mul_nonneg hc (hnn n x))
+    rw [Real.norm_eq_abs, abs_of_nonneg h0]
+    exact min_le_left _ _
+  have hint : ∀ n, Integrable (fun x : 𝓨 n => min 2 (c * D n x)) (P n) := fun n =>
+    Integrable.mono' (integrable_const (2 : ℝ)) (hmeas n).aestronglyMeasurable
+      (Filter.Eventually.of_forall (hbdd n))
+  have hnn' : ∀ n, 0 ≤ ∫ x, min 2 (c * D n x) ∂(P n) := fun n =>
+    integral_nonneg fun x => le_min (by norm_num) (mul_nonneg hc (hnn n x))
+  -- The key inequality, for every truncation level `δ`.
+  have hkey : ∀ (δ : ℝ), 0 < δ → ∀ n,
+      ∫ x, min 2 (c * D n x) ∂(P n) ≤ c * δ + 2 * (P n).real {x | δ ≤ D n x} := by
+    intro δ hδ n
+    have hset : MeasurableSet {x : 𝓨 n | δ ≤ D n x} :=
+      measurableSet_le measurable_const (hD n)
+    have hone : Integrable (1 : 𝓨 n → ℝ) (P n) := integrable_const 1
+    have hptwise : ∀ x : 𝓨 n, min 2 (c * D n x)
+        ≤ c * δ + 2 * Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x := by
+      intro x
+      by_cases hx : δ ≤ D n x
+      · have hval : Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x = 1 :=
+          Set.indicator_of_mem (s := {x : 𝓨 n | δ ≤ D n x}) hx (1 : 𝓨 n → ℝ)
+        rw [hval]
+        have h2' : min 2 (c * D n x) ≤ 2 := min_le_left _ _
+        nlinarith [mul_nonneg hc hδ.le]
+      · push_neg at hx
+        have hind : (0 : ℝ) ≤ Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x :=
+          Set.indicator_nonneg (fun _ _ => zero_le_one) x
+        have h2' : min 2 (c * D n x) ≤ c * D n x := min_le_right _ _
+        nlinarith
+    have hind_int : Integrable
+        (fun x : 𝓨 n => c * δ + 2 * Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x)
+        (P n) :=
+      (integrable_const _).add ((hone.indicator hset).const_mul 2)
+    calc ∫ x, min 2 (c * D n x) ∂(P n)
+        ≤ ∫ x, (c * δ + 2 * Set.indicator {x : 𝓨 n | δ ≤ D n x} (1 : 𝓨 n → ℝ) x)
+            ∂(P n) :=
+          integral_mono (hint n) hind_int hptwise
+      _ = c * δ + 2 * (P n).real {x | δ ≤ D n x} := by
+          rw [integral_add (integrable_const _) ((hone.indicator hset).const_mul 2),
+            integral_const, integral_const_mul, integral_indicator_one hset]
+          simp
+  -- Conclude by making `δ` small.
+  rw [NormedAddCommGroup.tendsto_nhds_zero]
+  intro ε hε
+  set δ : ℝ := ε / (2 * (c + 1)) with hδdef
+  have hcpos : (0 : ℝ) < c + 1 := by linarith
+  have hδpos : 0 < δ := by positivity
+  have hcδ : c * δ < ε / 2 := by
+    have hfac : c * δ = (c / (c + 1)) * (ε / 2) := by
+      rw [hδdef]; field_simp
+    have hlt : c / (c + 1) < 1 := by rw [div_lt_one hcpos]; linarith
+    calc c * δ = (c / (c + 1)) * (ε / 2) := hfac
+      _ < 1 * (ε / 2) := mul_lt_mul_of_pos_right hlt (by positivity)
+      _ = ε / 2 := one_mul _
+  have hev := (hrem δ hδpos).eventually (eventually_lt_nhds (show (0 : ℝ) < ε / 4 by positivity))
+  filter_upwards [hev] with n hn
+  have hb := hkey δ hδpos n
+  rw [Real.norm_eq_abs, abs_of_nonneg (hnn' n)]
+  linarith
+
+end Slutsky
+
 end StatLean.HypothesisTesting
