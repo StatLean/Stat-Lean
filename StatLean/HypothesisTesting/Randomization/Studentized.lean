@@ -760,6 +760,169 @@ private lemma perm_avg_block_sub_pooled_le (m n : ℕ) (PY PZ : Measure ℝ)
   gcongr
 
 
+
+/-! ### The pooled empirical average
+
+Both block averages of a permuted pooled vector concentrate around the **pooled** average, so
+the limit of the randomized scale is governed by the pooled empirical moments; those in turn
+obey the law of large numbers, being fixed convex combinations of the two block averages with
+weights `m/N → λ/(1+λ)` and `n/N → 1/(1+λ)`. -/
+
+/-- The `Y`-block weight `m/N` converges to `λ/(1+λ)`. -/
+private lemma tendsto_weightY {lam : ℝ} (m n : ℕ → ℕ) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam) :
+    Tendsto (fun k => (m k : ℝ) / ((m k + n k : ℕ) : ℝ)) atTop (𝓝 (lam / (1 + lam))) := by
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hbase : Tendsto (fun k => (m k : ℝ) / n k / (1 + (m k : ℝ) / n k)) atTop
+      (𝓝 (lam / (1 + lam))) := hratio.div (hratio.const_add 1) hne
+  refine hbase.congr' ?_
+  filter_upwards [hn.eventually_gt_atTop 0] with k hk
+  have hnR : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hk
+  have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
+  rw [hNcast]
+  field_simp
+  ring
+
+/-- The `Z`-block weight `n/N` converges to `1/(1+λ)`. -/
+private lemma tendsto_weightZ {lam : ℝ} (m n : ℕ → ℕ) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam) :
+    Tendsto (fun k => (n k : ℝ) / ((m k + n k : ℕ) : ℝ)) atTop (𝓝 (1 / (1 + lam))) := by
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hbase : Tendsto (fun k => (1 : ℝ) / (1 + (m k : ℝ) / n k)) atTop
+      (𝓝 (1 / (1 + lam))) := tendsto_const_nhds.div (hratio.const_add 1) hne
+  refine hbase.congr' ?_
+  filter_upwards [hn.eventually_gt_atTop 0] with k hk
+  have hnR : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hk
+  have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
+  rw [hNcast]
+  field_simp
+  ring
+
+/-- **The pooled empirical average obeys the law of large numbers.** The pooled average of
+`f` over all `N = m + n` coordinates converges in probability to the mixture
+`λ/(1+λ) · ∫f dP_Y + 1/(1+λ) · ∫f dP_Z`. -/
+private lemma tendstoInProb_pooledAvg (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam : ℝ}
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    (f : ℝ → ℝ) (hfm : Measurable f) (hY : Integrable f PY) (hZ : Integrable f PZ) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, f (x l))
+        - (lam / (1 + lam) * (∫ t, f t ∂PY) + 1 / (1 + lam) * ∫ t, f t ∂PZ)|})
+      atTop (𝓝 0) := by
+  have hblkY := fun ε hε => tendsto_lln_blockY PY PZ m n hm f hfm hY (ε := ε) hε
+  have hblkZ := fun ε hε => tendsto_lln_blockZ PY PZ m n hn f hfm hZ (ε := ε) hε
+  have hwY := tendstoInProb_const_mul (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (tendsto_weightY m n hn hratio hlam) hblkY
+  have hwZ := tendstoInProb_const_mul (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (tendsto_weightZ m n hn hratio hlam) hblkZ
+  have hsum := tendstoInProb_add (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hwY hwZ
+  intro ε hε
+  refine (hsum ε hε).congr' ?_
+  filter_upwards [hm.eventually_gt_atTop 0, hn.eventually_gt_atTop 0] with k hmk hnk
+  have hmR : (0 : ℝ) < (m k : ℝ) := by exact_mod_cast hmk
+  have hnR : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hnk
+  have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
+  congr 1
+  ext x
+  simp only [Set.mem_setOf_eq]
+  have hid : (m k : ℝ) / ((m k + n k : ℕ) : ℝ) *
+        ((m k : ℝ)⁻¹ * ∑ i : Fin (m k), f (x (Fin.castAdd (n k) i)))
+      + (n k : ℝ) / ((m k + n k : ℕ) : ℝ) *
+        ((n k : ℝ)⁻¹ * ∑ j : Fin (n k), f (x (Fin.natAdd (m k) j)))
+      = ((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, f (x l) := by
+    rw [Fin.sum_univ_add (f := fun l => f (x l)), hNcast]
+    field_simp
+  rw [hid]
+
+/-! ### From the pooled average to the randomized block average -/
+
+/-- A union bound for a group average of probabilities, the second set being independent of
+the group element. -/
+private lemma avg_measureReal_le_add {𝓨 : Type*} [MeasurableSpace 𝓨] (P : Measure 𝓨)
+    [IsProbabilityMeasure P] {G : Type*} [Fintype G] [Nonempty G]
+    (S U : G → Set 𝓨) (V : Set 𝓨) (hsub : ∀ g, S g ⊆ U g ∪ V) :
+    (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (S g)
+      ≤ (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (U g) + P.real V := by
+  have hcard : (0 : ℝ) < (Fintype.card G : ℝ) := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card G)
+  have hle : ∀ g : G, P.real (S g) ≤ P.real (U g) + P.real V := fun g =>
+    (measureReal_mono (hsub g) (measure_ne_top _ _)).trans (measureReal_union_le _ _)
+  have hstep : (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (S g)
+      ≤ (Fintype.card G : ℝ)⁻¹ * ∑ g : G, (P.real (U g) + P.real V) :=
+    mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => hle g) (by positivity)
+  refine hstep.trans (le_of_eq ?_)
+  rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_add,
+    ← mul_assoc, inv_mul_cancel₀ hcard.ne', one_mul]
+
+/-- **The randomized block average converges, under a square-integrability hypothesis.**
+For `f` with a finite second moment under both populations, the average of `f` over a block
+of `p k` positions of a uniformly permuted pooled sample converges, in the group-averaged
+in-probability sense, to the pooled mixture limit. -/
+private lemma tendstoInProbRandomized_blockAvg_of_sq (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam : ℝ}
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    (p : ℕ → ℕ) (a : ∀ k, Fin (p k) → Fin (m k + n k)) (ha : ∀ k, Function.Injective (a k))
+    (hp : Tendsto p atTop atTop)
+    (f : ℝ → ℝ) (hfm : Measurable f) (hY : Integrable f PY) (hZ : Integrable f PZ)
+    (hY2 : Integrable (fun t => f t ^ 2) PY) (hZ2 : Integrable (fun t => f t ^ 2) PZ) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k =>
+        (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin (m k + n k)), (twoSampleLaw (m k) (n k) PY PZ).real
+            {x | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i)))
+              - (lam / (1 + lam) * (∫ t, f t ∂PY) + 1 / (1 + lam) * ∫ t, f t ∂PZ)|})
+      atTop (𝓝 0) := by
+  classical
+  set L : ℝ := lam / (1 + lam) * (∫ t, f t ∂PY) + 1 / (1 + lam) * ∫ t, f t ∂PZ with hL
+  intro ε hε
+  have hε2 : (0 : ℝ) < ε / 2 := by positivity
+  have hpool := tendstoInProb_pooledAvg PY PZ m n hm hn hratio hlam f hfm hY hZ (ε / 2) hε2
+  -- the uniform Chebyshev bound, eventually in `k`
+  have hbound : ∀ᶠ k in atTop,
+      (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin (m k + n k)), (twoSampleLaw (m k) (n k) PY PZ).real
+            {x | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L|}
+        ≤ (ε / 2)⁻¹ ^ 2 * ((p k : ℝ)⁻¹ * ((∫ t, f t ^ 2 ∂PY) + ∫ t, f t ^ 2 ∂PZ))
+          + (twoSampleLaw (m k) (n k) PY PZ).real
+            {x : Fin (m k + n k) → ℝ | ε / 2 ≤ |((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, f (x l)) - L|} := by
+    filter_upwards [hp.eventually_gt_atTop 0, hm.eventually_ge_atTop 2] with k hpk hmk
+    have hNk : 2 ≤ m k + n k := le_trans hmk (Nat.le_add_right _ _)
+    refine le_trans (avg_measureReal_le_add (twoSampleLaw (m k) (n k) PY PZ)
+      (fun σ => {x | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L|})
+      (fun σ => {x | ε / 2 ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i)))
+        - ((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|})
+      {x : Fin (m k + n k) → ℝ | ε / 2 ≤ |((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, f (x l)) - L|}
+      (fun σ x hx => ?_)) ?_
+    · simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+      by_contra hcon
+      push Not at hcon
+      obtain ⟨h1, h2⟩ := hcon
+      have htri := abs_add_le ((p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i)))
+          - ((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, f (x l))
+        (((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, f (x l)) - L)
+      have heq : (p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L
+          = ((p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i)))
+              - ((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, f (x l))
+            + (((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, f (x l)) - L) := by ring
+      rw [heq] at hx
+      linarith
+    · exact add_le_add (perm_avg_block_sub_pooled_le (m k) (n k) PY PZ hpk hNk
+        (a k) (ha k) f hfm hY2 hZ2 hε2) le_rfl
+  -- both terms vanish
+  have hinv : Tendsto (fun k => ((p k : ℝ))⁻¹) atTop (𝓝 0) :=
+    (tendsto_natCast_atTop_atTop.comp hp).inv_tendsto_atTop
+  have hfirst : Tendsto (fun k => (ε / 2)⁻¹ ^ 2 *
+      ((p k : ℝ)⁻¹ * ((∫ t, f t ^ 2 ∂PY) + ∫ t, f t ^ 2 ∂PZ))) atTop (𝓝 0) := by
+    have := (hinv.mul_const ((∫ t, f t ^ 2 ∂PY) + ∫ t, f t ^ 2 ∂PZ)).const_mul
+      ((ε / 2)⁻¹ ^ 2)
+    simpa using this
+  refine squeeze_zero' (Eventually.of_forall fun k => ?_) hbound ?_
+  · exact mul_nonneg (by positivity) (Finset.sum_nonneg fun σ _ => measureReal_nonneg)
+  · rw [← hL] at hpool
+    have hadd := hfirst.add hpool
+    rwa [add_zero] at hadd
+
 /-! ### The randomized studentizing scale
 
 Under a uniform permutation of the pooled data each block is a sample **without
