@@ -65,9 +65,10 @@ smooth test is asymptotically maximin. (`TSH4 §16.4 Thm 16.4.1`.)
   `E.P (n^{-1/2} • h)`; this is the same format as in `ChiSquaredMaximin.lean`.
 * The upper bound is stated for a finite outer radius `B`. The unbounded case `B = ∞`
   follows a fortiori, the infimum over a larger set being smaller. The *attainment* half,
-  in contrast, genuinely needs `B < ∞` in general; it extends to `B = ∞` under the extra
-  condition that `Var_θ[ψⱼ(X₁)]` be bounded uniformly in `θ` — automatic when the `ψⱼ` are
-  bounded functions, as they are for the Legendre system.
+  in contrast, genuinely needs `B < ∞`: its `liminf ≥` direction is a compactness argument
+  on the shell (see `smoothTest_shell_minPower_tendsto`), and an unbounded shell admits
+  near-minimising sequences with `‖hₙ‖ → ∞`, for which a separate divergence estimate would
+  be required.
 
 **Bibliographic comments.** The smooth test, the embedding family, and the asymptotic
 maximin property against the alternatives it generates are due to J. Neyman ("Smooth test
@@ -1664,9 +1665,7 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
         have hquad : (n : ℝ) * (‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 2 / 2)
             = t ^ 2 * ‖u n‖ ^ 2 / 2 := by
           rw [hnt, div_pow, hsq2]
-          first
-            | (field_simp; ring)
-            | field_simp
+          field_simp
         have hcube : (n : ℝ) * (Cst * ‖(t • θs n : EuclideanSpace ℝ (Fin k))‖ ^ 3)
             = Cst * (t * ‖u n‖) ^ 3 / Real.sqrt (n : ℝ) := by
           rw [hnt, div_pow, hcube3]
@@ -1903,103 +1902,29 @@ private lemma scoreVec_weakConverges_drift {k : ℕ} {P₀ : Measure 𝓧}
   rw [funext hlawid]
   exact hlecam
 
-/-- **The smooth test attains the maximin value on the local shell** (LIFTED — the deep half
-of `smoothTest_asymptotically_maximin`). Under the local alternatives `θ = h n^{-1/2}` with
+/-- **The smooth test attains the maximin value on the local shell** (the deep half of
+`smoothTest_asymptotically_maximin`). Under the local alternatives `θ = h n^{-1/2}` with
 `b ≤ |h| ≤ B`, the minimum power of the smooth test `1{Sₙ > c}` converges to
 `P{χ²_k(b²) > c_{k,1−α}}`.
 
-TODO (genuine deep gap): this is the noncentral analogue of
-`smoothStat_weakConverges_chiSquared`. Its intended proof is: (i) the weak limit of `Sₙ`
-under the *local alternatives* is `χ²_k(‖h‖²)` — a multivariate *triangular-array* CLT
-giving `scoreVec ⇒ N((hⱼ)ⱼ, Iₖ)`, hence `Sₙ ⇒ χ²_k(‖h‖²)` by the same continuous-mapping /
-`multivariateGaussian_map_inner_inv_eq_noncentralChiSquared` bridge used in the null case;
-(ii) the map `h ↦ P{χ²_k(‖h‖²) > c}` is increasing in `‖h‖` (`noncentralChiSquared_tail_mono`),
-so the minimum over the shell is asymptotically attained at the inner boundary `‖h‖ = b`,
-giving `P{χ²_k(b²) > c}`.
+CLOSED (wave 7), along the route re-derived in wave 6: no uniformity over the shell and no
+Berry–Esseen estimate is needed, because the conclusion is about an *infimum*.
 
-TODO (re-derived).  The triangular-array CLT is no longer the obstruction: its multinomial
-twin `ChiSquaredMultinomial.reducedCount_weakConverges_noncentral` is now CLOSED, by running
-the drifting-row multivariate limit law `HypothesisTesting.meanVec_root_tendsto` on the
-sequence of per-observation laws.  The same route applies here, with `F n` the law of
-`psiVec` under the *tilted* member `(smoothModel P₀ ψ hψ).P (n^{-1/2} • h)`: what has to be
-supplied for it is the class condition `meanVecSeqClass`, i.e. that the exponential tilt
-`p_{θ}` converges weakly to `P₀` with mean vector `→ h` and covariance `→ Iₖ` as `θ → 0`
-along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement about
-`smoothModel`, and needs `PointEstimation.ExponentialFamily.Smoothness` (the log-partition
-`A` and its first two derivatives at `0`), which is not imported here.  The two remaining
-obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
-shell infimum to the inner boundary.
-
-TODO (RE-DERIVED again, this batch).  This half is about the *smooth test itself*, a
-function of the sample alone, so it is untouched by the abstract-`Q` counterexample that
-made `smoothTest_maximin_upper_bound` false as frozen: the frozen hypotheses determine the
-law of `smoothStat ψ (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and
-open.  Note that the mixture apparatus closed this batch
-(`AsymptoticMaximin.asymptotic_maximin_upper_bound`) does NOT help here: it bounds every
-competitor from ABOVE, whereas this is an attainment statement.  What it does do is remove
-the second obstruction from the *upper-bound* half, so the two halves no longer share a
-debt.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
-strictly stronger monotone likelihood ratio of the noncentral chi-squared family in the
-noncentrality is now available (`exists_monotone_density`, in the MLR section of
-`ChiSquaredMaximin.lean`), so the worst case over the shell can be pinned at `‖h‖ = b` by
-single crossing rather than by stochastic ordering alone.
-
-TODO (previous batch).  Obstruction (b) has shrunk.  The tail monotonicity
-`noncentralChiSquared_tail_mono` is now CLOSED axiom-clean (as is the
-`stdGaussian_normSq_le_antitone` it rests on, via unequal-weight Prékopa–Leindler), so the
-old "still-open" qualifier is obsolete.  Moreover the shell here is BOUNDED (`b ≤ ‖h‖ ≤ B`)
-and, unlike the multinomial shell of `ChiSquaredMaximin`, does not move with `n`; once the
-per-`h` local limit is available (obstruction (a)), the `limsup ≤` half follows by
-evaluating at a fixed `h` with `‖h‖ = b`, and the `liminf ≥` half needs only a
-uniform-over-a-COMPACT-shell version of that limit — an equicontinuity statement, strictly
-easier than the unbounded/moving-shell version needed in `ChiSquaredMaximin`.  Obstruction
-(a), the exponential-family LAN expansion of `smoothModel` at `θ = 0`
-(`PointEstimation.ExponentialFamily.Smoothness`, not imported here), remains the real
-blocker and is what keeps this a single named debt.
-
-TODO (RE-DERIVED, wave 5; obstruction (a) is now DISCHARGED, (b) is what is left).  The
-exponential-family expansion is no longer a debt of this file and no longer needs the
-`Smoothness` import: `logPartition_quadratic_bound` above proves
-`|A(θ) − ‖θ‖²/2| ≤ C‖θ‖³` on any ball, from scratch and axiom-clean, by an elementary
-third-order Taylor bound on `e^z` plus the moment identities supplied by `hcentred`/`hortho`
-(the sign-vector envelope `integrable_exp_l1` makes every exponential moment finite, and
-`hlaw` at `n = 1` already forces every tilt to be integrable, so `hint` is not even
-required).  Together with `hEdens`-style tilt-to-`withDensity` rewriting and
-`pi_scoreLaw_weakConverges`, that is exactly the local-limit input asked for here: the
-per-`h` local law of `Sₙ` is `χ²_k(‖h‖²)`, since under `Q n h` the sample is i.i.d.
-`p_{h/√n}` and the score vector is asymptotically `N(h, Iₖ)`.
-
-WHAT IS LEFT is obstruction (b) alone, in its `liminf ≥` form: the *uniformity over the
-compact shell* `b ≤ ‖h‖ ≤ B` of that per-`h` limit.  The `limsup ≤` half is immediate
-(evaluate at a fixed `h` with `‖h‖ = b` and use the per-`h` limit plus
-`noncentralChiSquared_tail_mono`); the `liminf ≥` half needs the local power
-`h ↦ P_{n,h}{Sₙ > c}` to converge *uniformly* on the shell, which per-`h` weak convergence
-does not give.  Since the shell is compact and does not move with `n`, an equicontinuity
-argument suffices — the missing brick is an equicontinuity/uniform-Berry–Esseen estimate for
-the drifting-mean score vector, not any further exponential-family analysis.
-
-TODO (RE-DERIVED, wave 6; the "equicontinuity/uniform-Berry–Esseen" diagnosis above is
-SUPERSEDED).  Uniformity over the shell is NOT needed at all.  The shell `{b ≤ ‖h‖ ≤ B}` is
-compact, so the `liminf ≥` half follows by choosing near-minimisers `hₙ` (with
-`power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`) and passing to a convergent subsequence `hₙ → h₀`, `‖h₀‖ ≥ b`;
-all that is then required is the DRIFTING-parameter local limit
-`power_n(hₙ) → ncχ²_k(‖h₀‖²)(c,∞)`, followed by `noncentralChiSquared_tail_mono`.  No estimate
-uniform in `h` ever enters.
-
-The remaining analytic input is therefore a single named brick: membership of
-`fun n => ((smoothModel P₀ ψ hψ).P (n^{-1/2} • hₙ)).map (psiVec ψ)` in
-`Bootstrap.Multivariate.meanVecSeqClass` (weak convergence of the tilts to `P₀`, mean vectors
-`→ 0`, covariances `→ Iₖ`), together with the FIRST-order expansion of the mean map
-    `m(θ) = ∫ psiVec ψ dp_θ = θ + O(‖θ‖²)`,
-which is what makes the Slutsky shift `√n · m(hₙ/√n) → h₀` and hence
-`Zₙ ⇒ N(h₀, Iₖ)`; `Sₙ = ‖Zₙ‖²` then gives `χ²_k(‖h₀‖²)` by the continuous-mapping bridge
-already used in the null case, and the constant-threshold portmanteau converts weak
-convergence into convergence of `P{Sₙ > c}`.  The mean expansion is provable *here*, by the
-elementary route of `logPartition_quadratic_bound` above (third-order bound
-`abs_exp_sub_quadratic_le` on `e^z` plus the sign-vector envelope `integrable_exp_l1`, applied
-to the numerator `∫ψⱼ e^{⟪θ,ψ⟫}` and the denominator separately, using `hcentred`/`hortho` for
-the zeroth and first moments) — no `ExponentialFamily.Smoothness` import and no Fréchet
-derivative.  That brick, plus the subsequence bookkeeping, is the whole remaining debt. -/
+* `scoreVec_weakConverges_drift` supplies the DRIFTING-parameter local limit law: for any
+  `hₙ → h₀`, the score vector under `Q n hₙ` converges in law to `N(h₀, Iₖ)`.  It is proved
+  by Le Cam's third lemma with an *exact* affine log-likelihood ratio; see its docstring.
+  Composing with the continuous map `z ↦ ‖z‖²` and the portmanteau theorem at the region
+  `{c < ‖z‖²}` — whose frontier is Gaussian-null because `{‖z‖² ≤ c}` is convex — turns it
+  into `power_n(hₙ) → ncχ²_k(‖h₀‖²)(c, ∞)`.
+* `limsup ≤` is then immediate: evaluate at a *fixed* `h₁` on the inner boundary `‖h₁‖ = b`,
+  which lies in the shell because `b < B`.
+* `liminf ≥` chooses near-minimisers `hₙ ∈ Shell` with
+  `power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`, extracts a subsequence realising the liminf and, the
+  shell being COMPACT (closed and contained in the ball of radius `B`) and fixed in `n`, a
+  further convergent subsequence `hₙ → h₀` with `‖h₀‖ ≥ b`.  The drifting limit law along
+  that subsequence — obtained from the full-sequence statement by extending the extracted
+  parameters by `h₀` off the range of the extraction — plus
+  `noncentralChiSquared_tail_mono` gives the required bound. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
@@ -2018,7 +1943,221 @@ private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀
           (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h)
         '' {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal)) := by
-  sorry
+  classical
+  have hψmeas : ∀ j, Measurable (ψ j) := fun j =>
+    ((measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))).comp hψ
+  -- ### The statistic is the squared norm of the score vector
+  have hSnorm : ∀ (n : ℕ) (ω : Ω), smoothStat ψ (X n) ω = ‖scoreVec ψ (X n) ω‖ ^ 2 := by
+    intro n ω
+    rw [EuclideanSpace.real_norm_sq_eq]
+    rfl
+  set Reg : Set (EuclideanSpace ℝ (Fin k)) := {z | c < ‖z‖ ^ 2} with hRegdef
+  have hRegmeas : MeasurableSet Reg :=
+    measurableSet_lt measurable_const (measurable_norm.pow_const 2)
+  have hpwmap : ∀ (n : ℕ) (h : EuclideanSpace ℝ (Fin k)),
+      power (Q n) (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h
+        = (((Q n h).map (scoreVec ψ (X n))) Reg).toReal := by
+    intro n h
+    have hZmeas : Measurable (scoreVec ψ (X n)) := measurable_scoreVec hψmeas (hX n)
+    have hpre : {ω | c < smoothStat ψ (X n) ω} = (scoreVec ψ (X n)) ⁻¹' Reg := by
+      ext ω
+      simp only [Set.mem_setOf_eq, Set.mem_preimage, hRegdef, hSnorm n ω]
+    have hind : (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0)
+        = Set.indicator ((scoreVec ψ (X n)) ⁻¹' Reg) 1 := by
+      funext ω
+      by_cases hc : c < smoothStat ψ (X n) ω
+      · have hc' : ω ∈ (scoreVec ψ (X n)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          exact hc
+        rw [Set.indicator_of_mem hc', Pi.one_apply, if_pos hc]
+      · have hc' : ω ∉ (scoreVec ψ (X n)) ⁻¹' Reg := by
+          simp only [Set.mem_preimage, hRegdef, Set.mem_setOf_eq, ← hSnorm n ω]
+          exact hc
+        rw [Set.indicator_of_notMem hc', if_neg hc]
+    simp only [power, hind]
+    rw [integral_indicator_one (hZmeas hRegmeas), Measure.map_apply hZmeas hRegmeas]
+    rfl
+  -- ### The Gaussian mass of the rejection region, and its frontier
+  have hRegmass : ∀ v : EuclideanSpace ℝ (Fin k),
+      (multivariateGaussian v 1) Reg
+        = noncentralChiSquared k (‖v‖ ^ 2).toNNReal (Set.Ioi c) := by
+    intro v
+    have hv : ‖v‖ = Real.sqrt (((‖v‖ ^ 2).toNNReal : ℝ)) := by
+      rw [Real.coe_toNNReal _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg v)]
+    rw [← map_normSq_multivariateGaussian_of_norm_eq k (‖v‖ ^ 2).toNNReal hv,
+      Measure.map_apply (measurable_norm.pow_const 2) measurableSet_Ioi]
+    rfl
+  have hCconv : Convex ℝ {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} := by
+    rcases le_or_gt 0 c with hc0 | hc0
+    · have hball : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+          = Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) (Real.sqrt c) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Metric.mem_closedBall, dist_zero_right]
+        constructor
+        · intro hzz
+          rw [← Real.sqrt_sq (norm_nonneg z)]
+          exact Real.sqrt_le_sqrt hzz
+        · intro hzz
+          have := pow_le_pow_left₀ (norm_nonneg z) hzz 2
+          rwa [Real.sq_sqrt hc0] at this
+      rw [hball]
+      exact convex_closedBall _ _
+    · have hempty : {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c} = (∅ : Set _) := by
+        ext z
+        simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+        exact lt_of_lt_of_le hc0 (sq_nonneg _)
+      rw [hempty]
+      exact convex_empty
+  have hfrontier : ∀ v : EuclideanSpace ℝ (Fin k),
+      multivariateGaussian v 1 (frontier Reg) = 0 := by
+    intro v
+    have hcompl : Reg = {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}ᶜ := by
+      ext z
+      simp only [hRegdef, Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    have hconv2 : Convex ℝ
+        ((fun x => v + x) ⁻¹' {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) := by
+      intro x hx y hy a₁ b₁ ha hb hab
+      simp only [Set.mem_preimage] at hx hy ⊢
+      have hv : a₁ • v + b₁ • v = v := by rw [← add_smul, hab, one_smul]
+      have hkey : v + (a₁ • x + b₁ • y) = a₁ • (v + x) + b₁ • (v + y) := by
+        rw [smul_add, smul_add,
+          show a₁ • v + a₁ • x + (b₁ • v + b₁ • y)
+            = (a₁ • v + b₁ • v) + (a₁ • x + b₁ • y) by abel, hv]
+      rw [hkey]
+      exact hCconv hx hy ha hb hab
+    have htrans : (fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+        frontier {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}
+        = frontier ((fun x : EuclideanSpace ℝ (Fin k) => v + x) ⁻¹'
+            {z : EuclideanSpace ℝ (Fin k) | ‖z‖ ^ 2 ≤ c}) :=
+      (Homeomorph.addLeft v).preimage_frontier _
+    rw [hcompl, frontier_compl, mvGaussian_one_eq_map_add v,
+      Measure.map_apply (by fun_prop) measurableSet_frontier, htrans,
+      ← mvGaussian_zero_one_eq_stdGaussian]
+    exact AsymptoticStatistics.multivariateGaussian_frontier_eq_zero_of_convex_posDef
+      Matrix.PosDef.one hconv2
+  -- ### The drifting local power limit
+  set Shell : Set (EuclideanSpace ℝ (Fin k)) := {h | b ≤ ‖h‖ ∧ ‖h‖ ≤ B} with hShelldef
+  set pwf : ℕ → EuclideanSpace ℝ (Fin k) → ℝ := fun n h =>
+    power (Q n) (fun ω => if c < smoothStat ψ (X n) ω then (1 : ℝ) else 0) h with hpwf
+  change Tendsto (fun n => sInf (pwf n '' Shell)) atTop (nhds _)
+  have hdrift : ∀ (v : ℕ → EuclideanSpace ℝ (Fin k)) (h₀ : EuclideanSpace ℝ (Fin k)),
+      Tendsto v atTop (nhds h₀) →
+      Tendsto (fun n => pwf n (v n)) atTop
+        (nhds ((noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal)) := by
+    intro v h₀ hv
+    have hweak := scoreVec_weakConverges_drift hψ hortho hcentred hX hindep hlaw hv
+    haveI hprob : ∀ n, IsProbabilityMeasure ((Q n (v n)).map (scoreVec ψ (X n))) := fun n =>
+      Measure.isProbabilityMeasure_map (measurable_scoreVec hψmeas (hX n)).aemeasurable
+    set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+      fun n => ⟨(Q n (v n)).map (scoreVec ψ (X n)), hprob n⟩ with hμs
+    set νl : ProbabilityMeasure (EuclideanSpace ℝ (Fin k)) :=
+      ⟨multivariateGaussian h₀ 1, inferInstance⟩ with hνl
+    have hconv : Tendsto μs atTop (nhds νl) := by
+      rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+      intro f
+      simpa only [hμs, hνl, ProbabilityMeasure.coe_mk] using hweak f
+    have hfront : (νl : Measure (EuclideanSpace ℝ (Fin k))) (frontier Reg) = 0 := by
+      simp only [hνl, ProbabilityMeasure.coe_mk]
+      exact hfrontier h₀
+    have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+    have htoreal := (ENNReal.tendsto_toReal
+      (measure_ne_top (νl : Measure (EuclideanSpace ℝ (Fin k))) Reg)).comp hport
+    simp only [hμs, hνl, ProbabilityMeasure.coe_mk] at htoreal
+    rw [hRegmass h₀] at htoreal
+    exact htoreal.congr fun n => (hpwmap n (v n)).symm
+  -- ### Elementary facts about the shell and the powers
+  have hpwnn : ∀ n h, 0 ≤ pwf n h := by
+    intro n h
+    rw [hpwf]
+    simp only [hpwmap n h]
+    exact ENNReal.toReal_nonneg
+  have hbdd : ∀ n, BddBelow (pwf n '' Shell) := by
+    intro n
+    exact ⟨0, fun x hx => by obtain ⟨h, _, rfl⟩ := hx; exact hpwnn n h⟩
+  obtain ⟨h₁, hh₁⟩ : ∃ h : EuclideanSpace ℝ (Fin k), ‖h‖ = b := by
+    refine ⟨b • EuclideanSpace.single (⟨0, hk⟩ : Fin k) (1 : ℝ), ?_⟩
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos hb, EuclideanSpace.norm_single, norm_one,
+      mul_one]
+  have hh₁mem : h₁ ∈ Shell := ⟨le_of_eq hh₁.symm, by rw [hh₁]; exact hbB.le⟩
+  have hne : ∀ n, (pwf n '' Shell).Nonempty := fun n => ⟨pwf n h₁, ⟨h₁, hh₁mem, rfl⟩⟩
+  have hShellcompact : IsCompact Shell := by
+    have hclosed : IsClosed Shell := by
+      have h1 : IsClosed {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖} :=
+        isClosed_le continuous_const continuous_norm
+      have h2 : IsClosed {h : EuclideanSpace ℝ (Fin k) | ‖h‖ ≤ B} :=
+        isClosed_le continuous_norm continuous_const
+      exact h1.inter h2
+    refine (isCompact_closedBall (0 : EuclideanSpace ℝ (Fin k)) B).of_isClosed_subset
+      hclosed (fun h hh => ?_)
+    simpa only [Metric.mem_closedBall, dist_zero_right] using hh.2
+  -- ### The two halves of the limit
+  refine tendsto_order.2 ⟨?_, ?_⟩
+  · -- `liminf ≥`: near-minimisers, compactness, and the drifting limit
+    intro a' ha'
+    by_contra hcon
+    rw [Filter.not_eventually] at hcon
+    obtain ⟨φ, hφmono, hφ⟩ := Filter.extraction_of_frequently_atTop hcon
+    have hchoice : ∀ n : ℕ, ∃ h, h ∈ Shell ∧
+        pwf n h < sInf (pwf n '' Shell) + 1 / ((n : ℝ) + 1) := by
+      intro n
+      obtain ⟨x, hx, hlt⟩ := exists_lt_of_csInf_lt (hne n)
+        (show sInf (pwf n '' Shell) < sInf (pwf n '' Shell) + 1 / ((n : ℝ) + 1) by
+          have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+          linarith)
+      obtain ⟨h, hh, rfl⟩ := hx
+      exact ⟨h, hh, hlt⟩
+    choose g hgS hglt using hchoice
+    obtain ⟨h₀, hh₀S, ξ, hξmono, hξlim⟩ :=
+      hShellcompact.tendsto_subseq (fun m : ℕ => hgS (φ m))
+    set σ : ℕ → ℕ := fun m => φ (ξ m) with hσdef
+    have hσmono : StrictMono σ := hφmono.comp hξmono
+    set w : ℕ → EuclideanSpace ℝ (Fin k) :=
+      fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
+    have hwσ : ∀ m, w (σ m) = g (σ m) := by
+      intro m
+      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+    have hwlim : Tendsto w atTop (nhds h₀) := by
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      rw [Metric.tendsto_atTop] at hξlim
+      obtain ⟨M, hM⟩ := hξlim ε hε
+      refine ⟨σ M, fun n hn => ?_⟩
+      by_cases hmem : n ∈ Set.range σ
+      · obtain ⟨m, rfl⟩ := hmem
+        have hmM : M ≤ m := by
+          by_contra hc
+          rw [not_le] at hc
+          exact absurd hn (not_le.mpr (hσmono hc))
+        rw [hwσ m]
+        simpa only [Function.comp_apply, hσdef] using hM m hmM
+      · rw [hwdef]
+        simp only [if_neg hmem, dist_self]
+        exact hε
+    have hlimit := (hdrift w h₀ hwlim).comp hσmono.tendsto_atTop
+    have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by
+      have hσtop : Tendsto (fun m => ((σ m : ℝ) + 1)) atTop atTop :=
+        Filter.tendsto_atTop_add_const_right _ 1
+          (tendsto_natCast_atTop_atTop.comp hσmono.tendsto_atTop)
+      have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds hσtop
+      simpa using tendsto_const_nhds.add this
+    have hle : (noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal ≤ a' := by
+      refine le_of_tendsto_of_tendsto' hlimit hupper (fun m => ?_)
+      have h1 := hglt (σ m)
+      have h2 : sInf (pwf (σ m) '' Shell) ≤ a' := not_lt.mp (hφ (ξ m))
+      simp only [Function.comp_apply, hwσ m]
+      linarith
+    have hmono : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal
+        ≤ (noncentralChiSquared k (‖h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal := by
+      exact ENNReal.toReal_mono (measure_ne_top _ _) (noncentralChiSquared_tail_mono k c
+        (Real.toNNReal_mono (pow_le_pow_left₀ hb.le hh₀S.1 2)))
+    linarith
+  · -- `limsup ≤`: evaluate at a fixed inner-boundary point
+    intro a' ha'
+    have hlim := hdrift (fun _ => h₁) h₁ tendsto_const_nhds
+    rw [hh₁] at hlim
+    have hev := hlim.eventually (gt_mem_nhds ha')
+    filter_upwards [hev] with n hn
+    exact lt_of_le_of_lt (csInf_le (hbdd n) ⟨h₁, hh₁mem, rfl⟩) hn
 
 /-- **The smooth test is asymptotically maximin.** For any radii `0 < b < B < ∞`, the
 minimum power of the smooth test `1{Sₙ > c}` over the local alternatives `θ = h n^{-1/2}`
@@ -2073,7 +2212,7 @@ theorem smoothTest_asymptotically_maximin {k : ℕ} {α b B c : ℝ} {P₀ : Mea
             {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   refine ⟨?_, ?_⟩
-  · -- Attainment on the shell: the deep noncentral-limit half (lifted).
+  · -- Attainment on the shell: the drifting-parameter local limit half.
     exact smoothTest_shell_minPower_tendsto hk hb hbB hα hα1 hc hψ hortho hcentred hint
       hX hindep hlaw
   · -- Optimality: for any level-`α` test this is exactly `smoothTest_maximin_upper_bound`.
