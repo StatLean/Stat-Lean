@@ -92,7 +92,88 @@ theorem logLikelihood_weakConverges
     (hv : (v : ℝ) = ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫) :
     WeakConverges (fun n => (productMeasure M μ θ₀ n).map (logLikelihood M θ₀ h n))
       (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v) := by
-  sorry
+  classical
+  haveI hProb : ∀ θ : EuclideanSpace ℝ (Fin k), ∀ n : ℕ,
+      IsProbabilityMeasure (productMeasure M μ θ n) := fun θ n =>
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF θ n
+  have h_one : ∫ x, M.density θ₀ x ∂μ = 1 := hPDF.density_integral_eq_one θ₀
+  have hint : Integrable (M.density θ₀) μ := hPDF.density_integrable θ₀
+  have h_one_perturb : ∀ t : ℝ, ∀ w : EuclideanSpace ℝ (Fin k),
+      ∫ x, M.density (θ₀ + t • w) x ∂μ = 1 := fun _ _ => hPDF.density_integral_eq_one _
+  have hint_perturb : ∀ t : ℝ, ∀ w : EuclideanSpace ℝ (Fin k),
+      Integrable (M.density (θ₀ + t • w)) μ := fun _ _ => hPDF.density_integrable _
+  have hScoreCLT := AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges
+    M μ θ₀ sc hsc h_one hint h_one_perturb hint_perturb hDQM J hJ_pd.posSemidef hJ
+  have hΔ_meas : ∀ n, Measurable (scoreSum sc n) := by
+    intro n
+    unfold AsymptoticStatistics.AsymptoticRepresentation.scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hsc.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  -- The quadratic form as a dot product; `v` is its `toNNReal`.
+  have hv_dot : (v : ℝ) = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    rw [hv]
+    change inner ℝ h ((Matrix.toEuclideanCLM (𝕜 := ℝ) J) h) = _
+    rw [Matrix.inner_toEuclideanCLM]
+  have hv_eq : v = (h.ofLp ⬝ᵥ J.mulVec h.ofLp).toNNReal := by
+    rw [← hv_dot]; exact Real.toNNReal_coe.symm
+  -- Step A: `⟪h, Δₙ⟫ ⇝ N(0, v)`.
+  have h_inner_cont : Continuous (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫) :=
+    continuous_const.inner continuous_id
+  have h_inner_meas : Measurable (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫) :=
+    h_inner_cont.measurable
+  have h_scalarCLT :
+      WeakConverges (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => ⟪h, scoreSum sc n ω⟫)) (ProbabilityTheory.gaussianReal 0 v) := by
+    have h_comp : (fun n => (productMeasure M μ θ₀ n).map
+          (fun ω => ⟪h, scoreSum sc n ω⟫))
+        = fun n => ((productMeasure M μ θ₀ n).map (scoreSum sc n)).map
+            (fun y : EuclideanSpace ℝ (Fin k) => ⟪h, y⟫) :=
+      funext fun n => (Measure.map_map h_inner_meas (hΔ_meas n)).symm
+    rw [h_comp]
+    have h_map := hScoreCLT.map h_inner_cont h_inner_meas
+    rw [ProbabilityTheory.multivariateGaussian_map_inner_eq_gaussianReal h
+      hJ_pd.posSemidef] at h_map
+    rwa [hv_eq]
+  -- Step B: shift by `−v/2`.
+  have h_sub_cont : Continuous (fun y : ℝ => y - (v : ℝ) / 2) := by fun_prop
+  have h_sub_meas : Measurable (fun y : ℝ => y - (v : ℝ) / 2) := h_sub_cont.measurable
+  have h_shiftedCLT :
+      WeakConverges (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => ⟪h, scoreSum sc n ω⟫ - (v : ℝ) / 2))
+        (ProbabilityTheory.gaussianReal (-(v : ℝ) / 2) v) := by
+    have h_comp : (fun n => (productMeasure M μ θ₀ n).map
+          (fun ω => ⟪h, scoreSum sc n ω⟫ - (v : ℝ) / 2))
+        = fun n => ((productMeasure M μ θ₀ n).map
+            (fun ω => ⟪h, scoreSum sc n ω⟫)).map (fun y : ℝ => y - (v : ℝ) / 2) :=
+      funext fun n => (Measure.map_map h_sub_meas (h_inner_meas.comp (hΔ_meas n))).symm
+    rw [h_comp]
+    have h_map := h_scalarCLT.map h_sub_cont h_sub_meas
+    rwa [ProbabilityTheory.gaussianReal_map_sub_const ((v : ℝ) / 2), zero_sub,
+      ← neg_div] at h_map
+  -- Step C: Slutsky absorbs the LAN residual.
+  have h_lanRes := AsymptoticStatistics.AsymptoticRepresentation.lanResidual_tendsto_productMeasure
+    M μ θ₀ sc hsc h_one hint h_one_perturb hint_perturb hDQM J hJ h
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (fun n => ((h_inner_meas.comp (hΔ_meas n)).sub_const _).aemeasurable)
+    (fun n => (AsymptoticStatistics.AsymptoticRepresentation.logLikelihood_measurable
+      M θ₀ h n).aemeasurable) h_shiftedCLT ?_
+  intro ε hε
+  have h_set_eq : ∀ n : ℕ,
+      {ω : Fin n → 𝓧 | ε ≤ dist (⟪h, scoreSum sc n ω⟫ - (v : ℝ) / 2)
+          (logLikelihood M θ₀ h n ω)}
+        = {ω : Fin n → 𝓧 | ε ≤ |logLikelihood M θ₀ h n ω
+            - (⟪h, scoreSum sc n ω⟫ - (1 / 2 : ℝ) *
+              ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫)|} := by
+    intro n
+    ext ω
+    have hhalf : (v : ℝ) / 2
+        = (1 / 2 : ℝ) * ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫ := by
+      rw [← hv]; ring
+    simp only [Set.mem_setOf_eq, Real.dist_eq, hhalf]
+    rw [abs_sub_comm]
+  exact (h_lanRes ε hε).congr fun n =>
+    congrArg (productMeasure M μ θ₀ n).real (h_set_eq n).symm
 
 /-- **Support-free per-`h` mutual contiguity of the local alternatives**
 `P^n_{θ₀} ◁▷ P^n_{θ₀+h/√n}` (vdV Example 6.5 for a DQM family; no common-support
