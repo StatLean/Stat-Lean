@@ -1195,6 +1195,29 @@ theorem integral_sq_mul_cexp_mul_gaussian (θ : ℝ) :
   rw [← integral_pow2_cexpGauss θ]
   exact integral_congr_ae (Filter.Eventually.of_forall fun u => by simp only [cexpGauss_eq])
 
+/-- **A monomial is dominated by a Gaussian of half the rate.** `|u|ᵏ ≤ 4ᵏ k! e^{u²/4}`, with
+an explicit constant. This is the elementary envelope behind every Gaussian moment bound used
+by the Edgeworth assembly: multiplied by `e^{−u²/2}` it gives `|u|ᵏ e^{−u²/2} ≤ 4ᵏ k!`, a
+*uniform* bound on the polynomial-times-Gaussian densities. -/
+theorem abs_pow_le_const_mul_exp_sq_div_four (k : ℕ) (u : ℝ) :
+    |u| ^ k ≤ 4 ^ k * (Nat.factorial k : ℝ) * Real.exp (u ^ 2 / 4) :=
+  abs_pow_le_exp k u
+
+/-- **Polynomial multiples of the Gaussian kernel are integrable.** -/
+theorem integrable_abs_pow_mul_exp_neg_half_sq (k : ℕ) :
+    Integrable (fun u : ℝ => |u| ^ k * Real.exp (-(u ^ 2 / 2))) :=
+  integrable_abs_pow_mul_gauss k
+
+/-- **Cubic multiples of the modulated Gaussian are integrable.** The companion of
+`integral_cexp_mul_gaussian` and `integral_hermite3_mul_cexp_mul_gaussian`: it is what lets an
+Edgeworth density be integrated against `e^{iθu}` term by term. -/
+theorem integrable_cubic_mul_cexp_mul_gaussian (θ : ℝ) (a b c d : ℂ) :
+    Integrable (fun u : ℝ => (a * (u : ℂ) ^ 3 + b * (u : ℂ) ^ 2 + c * (u : ℂ) + d)
+      * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) := by
+  refine (integrable_cubic_cexpGauss θ a b c d).congr
+    (Filter.Eventually.of_forall fun u => ?_)
+  simp only [cexpGauss_eq]
+
 /-- **The Hermite Fourier identity.**
 `∫ e^{iθu} (u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`. -/
 theorem integral_hermite3_mul_cexp_mul_gaussian (θ : ℝ) :
