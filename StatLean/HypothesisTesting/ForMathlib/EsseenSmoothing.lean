@@ -1,3 +1,4 @@
+import StatLean.HypothesisTesting.ForMathlib.BerryEsseen
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -256,5 +257,59 @@ theorem integral_sin_div_sq : ∫ x : ℝ, (Real.sin x / x) ^ 2 = π := by
   have h2 := congrArg (fun z : ℝ => π * z) hchange.symm
   simp only [← mul_assoc, mul_inv_cancel₀ hπ, one_mul, mul_one] at h2
   exact h2
+
+/-! ## The Fejér kernel: total mass and Fourier transform -/
+
+/-- **The Fejér kernel is a probability density**: `∫ K_T = 1` for `T > 0`. This is the
+normalisation that Esseen's smoothing argument consumes, and it is exactly the sinc integral
+after the substitution `u = T x / 2`. -/
+theorem integral_fejerKernel {T : ℝ} (hT : 0 < T) : ∫ x : ℝ, fejerKernel T x = 1 := by
+  have hπ : (π : ℝ) ≠ 0 := Real.pi_ne_zero
+  have h : ∀ x : ℝ,
+      fejerKernel T x = (T / (2 * π)) * (Real.sin (T / 2 * x) / (T / 2 * x)) ^ 2 := by
+    intro x
+    unfold fejerKernel
+    rw [show T * x / 2 = T / 2 * x from by ring]
+  have hg : (∫ x : ℝ, (Real.sin (T / 2 * x) / (T / 2 * x)) ^ 2)
+      = |(T / 2)⁻¹| • ∫ y : ℝ, (Real.sin y / y) ^ 2 :=
+    MeasureTheory.Measure.integral_comp_mul_left (fun u : ℝ => (Real.sin u / u) ^ 2) (T / 2)
+  simp_rw [h]
+  rw [MeasureTheory.integral_const_mul, hg, integral_sin_div_sq, smul_eq_mul,
+    abs_of_pos (inv_pos.2 (by linarith : (0 : ℝ) < T / 2))]
+  field_simp
+
+/-- The tent function is even. -/
+lemma tent_neg (x : ℝ) : tent (-x) = tent x := by simp [tent]
+
+/-- The complexified squared sinc `ξ ↦ (sin(πξ)/(πξ))²`, i.e. `𝓕 Λ` up to the null set `{0}`. -/
+private noncomputable def sqSincC (ξ : ℝ) : ℂ := (((Real.sin (π * ξ) / (π * ξ)) ^ 2 : ℝ) : ℂ)
+
+private lemma fourier_tentC_ae : 𝓕 tentC =ᵐ[volume] sqSincC := by
+  filter_upwards [compl_mem_ae_iff.2 (measure_singleton (0 : ℝ))] with ξ hξ
+  exact fourier_tentC (by simpa using hξ)
+
+private lemma integrable_sqSincC : Integrable sqSincC :=
+  (MeasureTheory.Integrable.comp_mul_left' integrable_sin_div_sq Real.pi_ne_zero).ofReal
+
+/-- **The Fourier transform of the squared sinc is the triangle function.**
+
+This is the second half of the classical Fejér/triangle Fourier pair, and it is the fact that
+makes Esseen's smoothing work: the transform is **compactly supported**, in `[-1, 1]`. It is
+obtained from `fourier_tentC` by Fourier inversion together with the evenness of `Λ`. -/
+theorem fourier_sqSincC : 𝓕 sqSincC = tentC := by
+  have hcs : HasCompactSupport tentC :=
+    HasCompactSupport.intro (isCompact_Icc (a := (-1 : ℝ)) (b := 1)) fun x hx => by
+      simp [tentC, tent_eq_zero_of_notMem hx]
+  have htent : Integrable tentC := continuous_tentC.integrable_of_hasCompactSupport hcs
+  have hFint : Integrable (𝓕 tentC) := integrable_sqSincC.congr fourier_tentC_ae.symm
+  have hinv : 𝓕⁻ (𝓕 tentC) = tentC :=
+    continuous_tentC.fourierInv_fourier_eq htent hFint
+  funext x
+  have h1 : 𝓕 sqSincC x = 𝓕 (𝓕 tentC) x :=
+    (Real.fourier_congr_ae fourier_tentC_ae x).symm
+  have h2 : 𝓕 (𝓕 tentC) x = 𝓕⁻ (𝓕 tentC) (-x) := by
+    rw [Real.fourierInv_eq_fourier_neg, neg_neg]
+  rw [h1, h2, hinv]
+  simp [tentC, tent_neg]
 
 end StatLean.HypothesisTesting
