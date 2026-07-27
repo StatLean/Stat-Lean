@@ -15,9 +15,15 @@ skewness of the sampling law, plus a remainder of order `n^{-1}`. Two expansions
 one for the centred root and one for the studentized root — and their `n^{-1/2}` terms differ,
 which is the analytic reason the studentized (bootstrap-t) construction is preferable.
 
-This file contains **statements only**:
+The three expansions themselves are **statements only**; the supporting analysis around them is
+proved:
 
 * `skewness`, `stdNormalPDF`, `CramerCondition` — the carriers;
+* `norm_charFun_lt_one_of_cramer`, `exists_bound_lt_one_of_cramer` — what Cramér's condition
+  buys off the origin: `‖φ_F s‖ < 1` for every `s ≠ 0`, and a single constant `c < 1`
+  dominating `‖φ_F‖` on a whole region `ε ≤ |s|`. This is the input of the Cramér tail;
+* `normalCDF_sub_le`, `stdNormalCDF_sub_le` — the Lipschitz modulus of the normal distribution
+  function, the constant `A` that Esseen's smoothing inequality consumes;
 * `edgeworth_mean_uniform` — the expansion for the centred root, with a uniform `O(n^{-1})`
   remainder, under a finite fourth moment and Cramér's condition;
 * `edgeworth_studentized_uniform` — the expansion for the studentized root, uniform in the
@@ -48,9 +54,10 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   below supplying its Lipschitz input; and `ForMathlib/BerryEsseen.lean` now proves the damped
   expansion of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`), which is
   what the weighted Esseen integral needs in order to converge to a *rate* rather than to a
-  constant. What is left is the signed-density restatement of the smoothing chain, the Fourier
-  transform of the Edgeworth density, the Cramér tail, and the assembly. See the re-derived
-  status note (E1)–(E4) on `edgeworth_mean_uniform`.
+  constant. The Cramér tail's analytic input is proved here
+  (`exists_bound_lt_one_of_cramer`). What is left is the signed-density restatement of the
+  smoothing chain, the Fourier transform of the Edgeworth density, and the assembly. See the
+  re-derived status note (E1)–(E4) on `edgeworth_mean_uniform`.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -87,6 +94,180 @@ eventually bounded by a constant strictly below `1` at infinity. This is the sta
 non-lattice requirement that makes a one-term Edgeworth expansion valid. -/
 def CramerCondition (F : Measure ℝ) : Prop :=
   ∃ c : ℝ, c < 1 ∧ ∀ᶠ s in Filter.cocompact ℝ, ‖charFun F s‖ ≤ c
+
+/-! ## What Cramér's condition buys off the origin
+
+The Cramér tail of an Edgeworth expansion needs a bound `‖φ_F s‖ ≤ c < 1` valid on a whole
+region `ε ≤ |s|`, whereas `CramerCondition` supplies one only *off a compact set*. The three
+results below close that gap. The classical argument passes through the characterisation
+"`‖φ_F s₀‖ = 1` iff `F` is carried by a lattice", which is absent from Mathlib at this pin; it
+is not needed. All that is used is that the modulus-one set is closed under integer multiples,
+and that is the equality case of `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is elementary:
+`1 − Re(θ̄ e^{i s x})` is nonnegative with vanishing integral, so `e^{i s x}` is a.e. constant. -/
+
+section Cramer
+
+variable {F : Measure ℝ}
+
+/-- **Equality case of `‖∫ f‖ ≤ ∫ ‖f‖` for a characteristic function.** If the characteristic
+function of a probability law has modulus `1` at `s`, then `x ↦ e^{i s x}` is almost surely
+equal to the constant `charFun F s`.
+
+The proof needs no general equality-case theory: `z x = conj(φ(s)) e^{i s x}` has modulus `1`
+everywhere and integral `1`, so `1 − Re(z x)` is a nonnegative function with vanishing integral,
+hence `Re(z x) = 1 = ‖z x‖` a.e., which forces `z x = 1`. -/
+private lemma ae_cexp_eq_of_norm_charFun_eq_one [IsProbabilityMeasure F] {s : ℝ}
+    (h : ‖charFun F s‖ = 1) :
+    ∀ᵐ (x : ℝ) ∂F, Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I) = charFun F s := by
+  have hnorm : ∀ x : ℝ, ‖Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)‖ = 1 := fun x => by
+    rw [Complex.norm_exp,
+      show (((s : ℂ) * (x : ℂ) * Complex.I)).re = 0 by simp, Real.exp_zero]
+  have hInt : Integrable (fun x : ℝ => Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)) F :=
+    (integrable_const (1 : ℝ)).mono'
+      ((Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable)
+      (ae_of_all _ fun x => le_of_eq (hnorm x))
+  have hzn : ∀ x : ℝ,
+      ‖(starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)‖ = 1 :=
+    fun x => by rw [norm_mul, RCLike.norm_conj, h, hnorm, mul_one]
+  have hcm : (starRingEnd ℂ) (charFun F s) * charFun F s = 1 := by
+    rw [RCLike.conj_mul, h]; norm_num
+  have hIprod : ∫ x : ℝ,
+      ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)) ∂F = 1 := by
+    have hpull : ∫ x : ℝ,
+          ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)) ∂F
+        = (starRingEnd ℂ) (charFun F s)
+            * ∫ x : ℝ, Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I) ∂F := by
+      simp_rw [← smul_eq_mul]
+      exact integral_smul _ _
+    rw [hpull, ← charFun_apply_real, hcm]
+  have hIntRe : Integrable (fun x : ℝ =>
+      ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re) F :=
+    (hInt.const_mul _).re
+  have hreInt : ∫ x : ℝ,
+        ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re ∂F
+      = (∫ x : ℝ,
+        ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)) ∂F).re :=
+    integral_re (hInt.const_mul _)
+  rw [hIprod] at hreInt
+  have hgnn : ∀ x : ℝ,
+      0 ≤ 1 - ((starRingEnd ℂ) (charFun F s)
+        * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re := fun x => by
+    have hle := Complex.re_le_norm
+      ((starRingEnd ℂ) (charFun F s) * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I))
+    rw [hzn x] at hle
+    linarith
+  have hgint : Integrable (fun x : ℝ =>
+      1 - ((starRingEnd ℂ) (charFun F s)
+        * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re) F :=
+    (integrable_const (1 : ℝ)).sub hIntRe
+  have hgzero : ∫ x : ℝ, (1 - ((starRingEnd ℂ) (charFun F s)
+      * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re) ∂F = 0 := by
+    rw [integral_sub (integrable_const (1 : ℝ)) hIntRe, hreInt]
+    simp
+  have hae := (integral_eq_zero_iff_of_nonneg hgnn hgint).1 hgzero
+  filter_upwards [hae] with x hx
+  have hre1 : ((starRingEnd ℂ) (charFun F s)
+      * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re = 1 := by
+    have hx' : (1 : ℝ) - ((starRingEnd ℂ) (charFun F s)
+        * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re = 0 := hx
+    linarith
+  have hz1 : (starRingEnd ℂ) (charFun F s)
+      * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I) = 1 := by
+    have hle : ‖(starRingEnd ℂ) (charFun F s)
+          * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)‖
+        ≤ ((starRingEnd ℂ) (charFun F s)
+          * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)).re := by rw [hzn x, hre1]
+    have heq := RCLike.norm_le_re_iff_eq_norm.1 hle
+    rw [heq, hzn x]
+    norm_num
+  calc Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)
+      = ((starRingEnd ℂ) (charFun F s) * charFun F s)
+          * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I) := by rw [hcm, one_mul]
+    _ = charFun F s * ((starRingEnd ℂ) (charFun F s)
+          * Complex.exp ((s : ℂ) * (x : ℂ) * Complex.I)) := by ring
+    _ = charFun F s := by rw [hz1, mul_one]
+
+/-- **The modulus-one set is closed under integer multiples.** If `‖charFun F s‖ = 1` then
+`charFun F (k s) = (charFun F s)ᵏ`, so it too has modulus `1`. This is the only consequence of
+`‖charFun F s‖ = 1` that the Cramér tail needs — in particular the lattice structure of `F`
+never has to be exhibited. -/
+private lemma norm_charFun_natCast_mul_eq_one [IsProbabilityMeasure F] {s : ℝ}
+    (h : ‖charFun F s‖ = 1) (k : ℕ) : ‖charFun F ((k : ℝ) * s)‖ = 1 := by
+  have hae := ae_cexp_eq_of_norm_charFun_eq_one h
+  have hpow : charFun F ((k : ℝ) * s) = charFun F s ^ k := by
+    rw [charFun_apply_real ((k : ℝ) * s)]
+    have hc : ∀ᵐ (x : ℝ) ∂F,
+        Complex.exp ((((k : ℝ) * s : ℝ) : ℂ) * (x : ℂ) * Complex.I) = charFun F s ^ k := by
+      filter_upwards [hae] with x hx
+      rw [← hx, ← Complex.exp_nat_mul]
+      congr 1
+      push_cast
+      ring
+    rw [integral_congr_ae hc]
+    simp
+  rw [hpow, norm_pow, h, one_pow]
+
+/-- **Cramér's condition forces a strict bound away from the origin.** Under `CramerCondition`,
+`‖charFun F s‖ < 1` for every `s ≠ 0`.
+
+If `‖charFun F s‖ = 1` then `‖charFun F (k|s|)‖ = 1` for every `k : ℕ` by
+`norm_charFun_natCast_mul_eq_one` (using `charFun_neg` to move to `|s|`), and `k|s| → ∞`
+eventually leaves the compact set on which the cocompact bound may fail — contradiction. -/
+theorem norm_charFun_lt_one_of_cramer [IsProbabilityMeasure F]
+    (hCramer : CramerCondition F) {s : ℝ} (hs : s ≠ 0) : ‖charFun F s‖ < 1 := by
+  rcases lt_or_eq_of_le (norm_charFun_le_one (μ := F) s) with hlt | heq
+  · exact hlt
+  exfalso
+  obtain ⟨c, hc, hev⟩ := hCramer
+  have hsym : ∀ t : ℝ, ‖charFun F (-t)‖ = ‖charFun F t‖ := fun t => by
+    rw [charFun_neg, RCLike.norm_conj]
+  have habs : ‖charFun F |s|‖ = 1 := by
+    rcases abs_cases s with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]; exact heq
+    · rw [he, hsym]; exact heq
+  have hspos : 0 < |s| := abs_pos.2 hs
+  rw [cocompact_eq_atBot_atTop, Filter.eventually_sup] at hev
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 hev.2
+  obtain ⟨k, hk⟩ := exists_nat_gt (M / |s|)
+  have hkM : M ≤ (k : ℝ) * |s| := by
+    rw [div_lt_iff₀ hspos] at hk
+    linarith
+  have h1 := hM _ hkM
+  rw [norm_charFun_natCast_mul_eq_one habs k] at h1
+  linarith
+
+/-- **The uniform Cramér bound on `ε ≤ |s|`.** This is the form the Edgeworth tail estimate
+consumes: a single constant `c < 1` dominating `‖charFun F s‖` on the *whole* region
+`ε ≤ |s|`, not merely off a compact set.
+
+The compact middle range `ε ≤ |s| ≤ R` is handled by `continuous_charFun` together with
+`norm_charFun_lt_one_of_cramer`; the outer range by the cocompact bound; and negative arguments
+by `charFun_neg`. -/
+theorem exists_bound_lt_one_of_cramer [IsProbabilityMeasure F]
+    (hCramer : CramerCondition F) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c : ℝ, c < 1 ∧ ∀ s : ℝ, ε ≤ |s| → ‖charFun F s‖ ≤ c := by
+  obtain ⟨c₀, hc₀, hev⟩ := id hCramer
+  rw [cocompact_eq_atBot_atTop, Filter.eventually_sup] at hev
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.1 hev.2
+  have hεR : ε ≤ max M ε := le_max_right _ _
+  obtain ⟨s₀, hs₀mem, hs₀max⟩ := (isCompact_Icc (a := ε) (b := max M ε)).exists_isMaxOn
+    ⟨ε, le_rfl, hεR⟩ (Continuous.continuousOn (continuous_charFun (μ := F)).norm)
+  have hs₀ne : s₀ ≠ 0 := fun hzero => by
+    have := hs₀mem.1; rw [hzero] at this; linarith
+  refine ⟨max c₀ ‖charFun F s₀‖, max_lt hc₀ (norm_charFun_lt_one_of_cramer hCramer hs₀ne), ?_⟩
+  have hsym : ∀ t : ℝ, ‖charFun F (-t)‖ = ‖charFun F t‖ := fun t => by
+    rw [charFun_neg, RCLike.norm_conj]
+  have key : ∀ t : ℝ, ε ≤ t → ‖charFun F t‖ ≤ max c₀ ‖charFun F s₀‖ := by
+    intro t ht
+    rcases le_or_gt t (max M ε) with hle | hgt
+    · exact (hs₀max ⟨ht, hle⟩).trans (le_max_right _ _)
+    · exact (hM t ((le_max_left M ε).trans hgt.le)).trans (le_max_left _ _)
+  intro s hs
+  rcases abs_cases s with ⟨he, _⟩ | ⟨he, _⟩
+  · rw [he] at hs; exact key s hs
+  · rw [he] at hs; rw [← hsym s]; exact key (-s) hs
+
+end Cramer
 
 /-! ## The Lipschitz modulus of the normal distribution function
 
@@ -220,20 +401,23 @@ respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted in
   `∫ u² e^{iθu}φ(u) du = (1 − θ²)e^{−θ²/2}` is present at this pin. (This computation is what
   verifies that the Edgeworth approximant of the *statement* below matches the approximant of
   `norm_charFun_pow_sub_edgeworth_le`; the check has been carried out by hand and they agree.)
-* (E3) **The Cramér tail** (was (G3)). Off the window one needs
-  `∫_{c√n ≤ |t|} ‖φ_F(t/(σ√n))‖ⁿ min(1/|t|, 1/(δπ²t²)) dt = o(n⁻¹)`. `CramerCondition` gives
-  `‖φ_F s‖ ≤ c < 1` only *off a compact set*; the moderate range `ε ≤ |s| ≤ R` additionally needs
-  `sup_{ε ≤ |s| ≤ R} ‖φ_F s‖ < 1`, which by compactness and `continuous_charFun` reduces to
-  `‖φ_F s‖ < 1` for every `s ≠ 0`.
-  *The earlier verdict on this item is too pessimistic.* It claimed the reduction goes through
-  the lattice characterisation `‖φ_F s₀‖ = 1 ↔ F` lattice, "absent from Mathlib v4.29.1". The
-  lattice statement is never needed: what is needed is only that the modulus-one set is closed
-  under integer multiples, and that follows from the *equality case in* `‖∫ f‖ ≤ ∫‖f‖`, which
-  on a probability space is elementary — if `‖∫ e^{is₀x} dF‖ = 1 = ∫ 1 dF` then
-  `Re(θ̄ e^{is₀x}) = 1` a.e. by nonnegativity of `1 − Re(θ̄ e^{is₀x})`, hence
+* (E3) **The Cramér tail** (was (G3)) — **its analytic content is now CLOSED.** Off the window
+  one needs `∫_{c√n ≤ |t|} ‖φ_F(t/(σ√n))‖ⁿ min(1/|t|, 1/(δπ²t²)) dt = o(n⁻¹)`.
+  `CramerCondition` gives `‖φ_F s‖ ≤ c < 1` only *off a compact set*; what the tail estimate
+  needs is a single `c < 1` valid on the whole region `ε ≤ |s|`. That is
+  `exists_bound_lt_one_of_cramer` above, proved axiom-clean, together with
+  `norm_charFun_lt_one_of_cramer`.
+  *The earlier verdict on this item was wrong.* It claimed the reduction goes through the
+  lattice characterisation `‖φ_F s₀‖ = 1 ↔ F` lattice, "absent from Mathlib v4.29.1" and
+  therefore blocking. The lattice statement is never needed: all that is used is that the
+  modulus-one set is closed under integer multiples
+  (`norm_charFun_natCast_mul_eq_one`), and that follows from the *equality case in*
+  `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is elementary — if `‖∫ e^{is₀x} dF‖ = 1 = ∫ 1 dF`
+  then `Re(θ̄ e^{is₀x}) = 1` a.e. by nonnegativity of `1 − Re(θ̄ e^{is₀x})`, hence
   `e^{is₀x} = θ` a.e., hence `φ_F(k s₀) = θᵏ` has modulus `1` for every `k`, contradicting the
-  cocompact bound once `k|s₀|` exceeds the compact set. So (E3) is a short elementary argument,
-  not a missing Mathlib theory; it is simply not written yet.
+  cocompact bound once `k|s₀|` exceeds the compact set. What is left of (E3) is only the
+  *bookkeeping*: turning the uniform bound `c < 1` into the integral estimate
+  `∫_{|t| ≥ c√n} cⁿ · weight = o(n⁻¹)`, which is geometric decay against a fixed weight.
 * (E4) **The assembly.** Choose `δ ≍ n⁻¹` in `abs_measure_Iic_sub_le_charFun` (so that the
   Lipschitz term `A δ` from `normalCDF_sub_le` is `O(n⁻¹)`), split the `ξ`-integral at
   `|ξ| ≍ √n`, bound the inner range by (E2) + `norm_charFun_pow_sub_edgeworth_le` against the
