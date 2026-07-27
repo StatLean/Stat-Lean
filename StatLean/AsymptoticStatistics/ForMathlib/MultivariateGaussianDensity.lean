@@ -188,7 +188,41 @@ theorem multivariateGaussian_compl_closedBall_uniform_small
     (hε : 0 < ε) :
     ∃ M₀ : ℝ, ∀ M : ℝ, M₀ ≤ M → ∀ m : EuclideanSpace ℝ ι, ‖m‖ ≤ R →
       multivariateGaussian m S (Metric.closedBall (0 : EuclideanSpace ℝ ι) M)ᶜ ≤ ε := by
-  sorry
+  classical
+  set ν := multivariateGaussian (0 : EuclideanSpace ℝ ι) S with hν
+  have hmeas : ∀ r : ℝ, MeasurableSet (Metric.closedBall (0 : EuclideanSpace ℝ ι) r)ᶜ :=
+    fun r => (Metric.isClosed_closedBall.measurableSet).compl
+  have hanti : Antitone fun n : ℕ => (Metric.closedBall (0 : EuclideanSpace ℝ ι) (n : ℝ))ᶜ := by
+    intro a b hab
+    exact Set.compl_subset_compl.mpr
+      (Metric.closedBall_subset_closedBall (by exact_mod_cast hab))
+  have hinter : (⋂ n : ℕ, (Metric.closedBall (0 : EuclideanSpace ℝ ι) (n : ℝ))ᶜ) = ∅ := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_compl_iff, mem_closedBall_zero_iff,
+      Set.mem_empty_iff_false, iff_false, not_forall, not_not]
+    obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
+    exact ⟨n, hn⟩
+  have htend := MeasureTheory.tendsto_measure_iInter_atTop
+    (μ := ν) (s := fun n : ℕ => (Metric.closedBall (0 : EuclideanSpace ℝ ι) (n : ℝ))ᶜ)
+    (fun n => (hmeas _).nullMeasurableSet) hanti ⟨0, measure_ne_top _ _⟩
+  rw [hinter, measure_empty] at htend
+  have hnb : Set.Iic ε ∈ 𝓝 (0 : ℝ≥0∞) :=
+    Filter.mem_of_superset (Iio_mem_nhds hε) Set.Iio_subset_Iic_self
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (htend.eventually hnb)
+  refine ⟨R + N, fun M hM m hm => ?_⟩
+  have hkey : (fun x : EuclideanSpace ℝ ι => m + x) ⁻¹'
+      (Metric.closedBall (0 : EuclideanSpace ℝ ι) M)ᶜ
+      ⊆ (Metric.closedBall (0 : EuclideanSpace ℝ ι) (N : ℝ))ᶜ := by
+    intro x hx
+    simp only [Set.mem_preimage, Set.mem_compl_iff, mem_closedBall_zero_iff] at hx ⊢
+    intro hxN
+    exact hx ((norm_add_le m x).trans (by linarith [hm, hxN]))
+  calc multivariateGaussian m S (Metric.closedBall (0 : EuclideanSpace ℝ ι) M)ᶜ
+      = ν ((fun x : EuclideanSpace ℝ ι => m + x) ⁻¹'
+          (Metric.closedBall (0 : EuclideanSpace ℝ ι) M)ᶜ) := by
+        rw [← multivariateGaussian_map_const_add S m, Measure.map_apply (by fun_prop) (hmeas M)]
+    _ ≤ ν (Metric.closedBall (0 : EuclideanSpace ℝ ι) (N : ℝ))ᶜ := measure_mono hkey
+    _ ≤ ε := hN N le_rfl
 
 /-- **Finiteness of Gaussian loss averages** for polynomially growing losses:
 `∫⁻ ℓ(u − z) dN(0,S)(z) < ∞`. -/
