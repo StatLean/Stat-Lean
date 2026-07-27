@@ -47,14 +47,31 @@ theorem iSup_comap_data_eq_pi :
     ⨆ n : ℕ, MeasurableSpace.comap
         (fun (ω : ℕ → 𝓧) => (fun i : Fin n => ω i.val)) inferInstance
       = (inferInstance : MeasurableSpace (ℕ → 𝓧)) := by
-  sorry
+  have hmeas : ∀ n : ℕ, Measurable (fun (ω : ℕ → 𝓧) => (fun i : Fin n => ω i.val)) :=
+    fun n => measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+  refine le_antisymm (iSup_le fun n => (hmeas n).comap_le) ?_
+  change (⨆ a : ℕ, MeasurableSpace.comap (fun b : ℕ → 𝓧 => b a) m𝓧) ≤ _
+  refine iSup_le fun a => ?_
+  have hfac : (fun b : ℕ → 𝓧 => b a)
+      = (fun x : Fin (a + 1) → 𝓧 => x ⟨a, Nat.lt_succ_self a⟩)
+        ∘ (fun ω : ℕ → 𝓧 => fun i : Fin (a + 1) => ω i.val) := rfl
+  rw [hfac, ← MeasurableSpace.comap_comp]
+  refine le_iSup_of_le (a + 1) ?_
+  exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
 
 /-- On the joint space, the observation filtration generates exactly the data σ-algebra:
 `⨆ n, doobSigma n = comap Prod.fst`. -/
 theorem iSup_doobSigma_eq_comap_fst :
     ⨆ n : ℕ, doobSigma (Θ := Θ) (𝓧 := 𝓧) n
       = MeasurableSpace.comap (Prod.fst : (ℕ → 𝓧) × Θ → ℕ → 𝓧) inferInstance := by
-  sorry
+  have hfac : ∀ n : ℕ, doobSigma (Θ := Θ) (𝓧 := 𝓧) n
+      = MeasurableSpace.comap (Prod.fst : (ℕ → 𝓧) × Θ → ℕ → 𝓧)
+          (MeasurableSpace.comap (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) inferInstance) := by
+    intro n
+    rw [MeasurableSpace.comap_comp]
+    rfl
+  simp_rw [hfac]
+  rw [← MeasurableSpace.comap_iSup, iSup_comap_data_eq_pi]
 
 /-- **The joint law of `(X₁..Xₙ, Θ̄)`** under `doobJoint` is the swapped finite joint
 `(π ⊗ₘ iidKernel K n).map Prod.swap`. -/
@@ -62,7 +79,16 @@ theorem doobJoint_map_data_param (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : M
     [IsFiniteMeasure π] (n : ℕ) :
     (doobJoint K π).map (fun ω => (doobData n ω, ω.2))
       = (π ⊗ₘ iidKernel K n).map Prod.swap := by
-  sorry
+  have hr : Measurable (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val) :=
+    measurable_pi_lambda _ fun i => measurable_pi_apply i.val
+  have key : π ⊗ₘ iidKernel K n
+      = (π ⊗ₘ iidSeqKernel K).map
+          (Prod.map id (fun ω : ℕ → 𝓧 => fun i : Fin n => ω i.val)) := by
+    rw [← iidSeqKernel_map_restrict K n, Measure.compProd_map hr]
+  rw [key, doobJoint,
+    Measure.map_map ((measurable_doobData n).prodMk measurable_snd) measurable_swap,
+    Measure.map_map measurable_swap (measurable_id.prodMap hr)]
+  rfl
 
 /-- **The conditional distribution of the parameter given the first `n` observations is the
 posterior kernel** — an equality of kernels (both sides are `Measure.condKernel` of the
@@ -71,7 +97,9 @@ theorem condDistrib_doobData_eq_posterior [StandardBorelSpace Θ] [Nonempty Θ]
     (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measure Θ) [IsProbabilityMeasure π] (n : ℕ) :
     condDistrib (Prod.snd : (ℕ → 𝓧) × Θ → Θ) (doobData n) (doobJoint K π)
       = (iidKernel K n)†π := by
-  sorry
+  rw [condDistrib, posterior]
+  congr 1
+  exact doobJoint_map_data_param K π n
 
 /-- **Lévy upward convergence of the posterior masses** (vdV p. 149, the martingale
 display): given a measurable a.e.-retraction of the parameter from the data sequence
