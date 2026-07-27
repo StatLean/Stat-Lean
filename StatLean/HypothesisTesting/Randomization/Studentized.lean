@@ -1178,6 +1178,120 @@ private lemma avg_measureReal_le_add' {𝓨 : Type*} [MeasurableSpace 𝓨] (P :
   refine hstep.trans (le_of_eq ?_)
   rw [Finset.sum_add_distrib, mul_add]
 
+
+/-- **The randomized block average converges, assuming only integrability.** This is the
+generic hypergeometric input of Theorem 17.3.3: for an integrable `f`, the average of `f`
+over a block of `p k` positions of a uniformly permuted pooled sample converges, in the
+group-averaged in-probability sense, to the pooled mixture
+`λ/(1+λ) · ∫f dP_Y + 1/(1+λ) · ∫f dP_Z`. Applied to `f = id` it gives the block means and to
+`f = (·)²` the block second moments, which is all the studentizing scale is made of. -/
+private lemma tendstoInProbRandomized_blockAvg (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam : ℝ}
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    (p : ℕ → ℕ) (a : ∀ k, Fin (p k) → Fin (m k + n k)) (ha : ∀ k, Function.Injective (a k))
+    (hp : Tendsto p atTop atTop)
+    (f : ℝ → ℝ) (hfm : Measurable f) (hY : Integrable f PY) (hZ : Integrable f PZ) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k =>
+        (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin (m k + n k)), (twoSampleLaw (m k) (n k) PY PZ).real
+            {x | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i)))
+              - (lam / (1 + lam) * (∫ t, f t ∂PY) + 1 / (1 + lam) * ∫ t, f t ∂PZ)|})
+      atTop (𝓝 0) := by
+  classical
+  intro ε hε
+  set L : ℝ := lam / (1 + lam) * (∫ t, f t ∂PY) + 1 / (1 + lam) * ∫ t, f t ∂PZ with hLdef
+  have hε3 : (0 : ℝ) < ε / 3 := by positivity
+  -- the truncated limits converge to `L`, and the truncation errors vanish in `L¹`
+  have hLj : Tendsto (fun j : ℕ => lam / (1 + lam) * (∫ t, truncAt j f t ∂PY)
+      + 1 / (1 + lam) * ∫ t, truncAt j f t ∂PZ) atTop (𝓝 L) :=
+    ((tendsto_integral_truncAt f hfm hY).const_mul _).add
+      ((tendsto_integral_truncAt f hfm hZ).const_mul _)
+  have hTail : Tendsto (fun j : ℕ => (ε / 3)⁻¹ *
+      ((∫ t, |f t - truncAt j f t| ∂PY) + ∫ t, |f t - truncAt j f t| ∂PZ)) atTop (𝓝 0) := by
+    have h := ((tendsto_integral_sub_truncAt f hfm hY).add
+      (tendsto_integral_sub_truncAt f hfm hZ)).const_mul ((ε / 3)⁻¹)
+    simpa using h
+  rw [Metric.tendsto_atTop]
+  intro δ hδ
+  -- choose a truncation level
+  obtain ⟨j, hjTail, hjL⟩ : ∃ j : ℕ,
+      ((ε / 3)⁻¹ * ((∫ t, |f t - truncAt j f t| ∂PY)
+        + ∫ t, |f t - truncAt j f t| ∂PZ) < δ / 2)
+      ∧ |(lam / (1 + lam) * (∫ t, truncAt j f t ∂PY)
+            + 1 / (1 + lam) * ∫ t, truncAt j f t ∂PZ) - L| < ε / 3 := by
+    have e1 := hTail.eventually (eventually_lt_nhds (show (0 : ℝ) < δ / 2 by positivity))
+    have e2 := hLj.eventually (Metric.ball_mem_nhds L hε3)
+    obtain ⟨j, hj1, hj2⟩ := (e1.and e2).exists
+    exact ⟨j, hj1, by rwa [Real.dist_eq] at hj2⟩
+  -- the truncated statistic converges, by the square-integrable case
+  have htr := tendstoInProbRandomized_blockAvg_of_sq PY PZ m n hm hn hratio hlam p a ha hp
+    (truncAt j f) (measurable_truncAt j hfm) (integrable_truncAt j hfm)
+    (integrable_truncAt j hfm) (integrable_truncAt_sq j hfm) (integrable_truncAt_sq j hfm)
+    (ε / 3) hε3
+  obtain ⟨K, hK⟩ := Metric.tendsto_atTop.1 htr (δ / 2) (by positivity)
+  refine eventually_atTop.1 ?_
+  filter_upwards [eventually_ge_atTop K, hp.eventually_gt_atTop 0] with k hkK hpk
+  have hpR : (0 : ℝ) < (p k : ℝ) := by exact_mod_cast hpk
+  -- the union bound
+  have hsub : ∀ σ : Equiv.Perm (Fin (m k + n k)),
+      {x : Fin (m k + n k) → ℝ | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L|}
+      ⊆ {x : Fin (m k + n k) → ℝ | ε / 3 ≤ (p k : ℝ)⁻¹ *
+            ∑ i, |f ((σ • x) (a k i)) - truncAt j f ((σ • x) (a k i))|}
+        ∪ {x : Fin (m k + n k) → ℝ | ε / 3 ≤ |(p k : ℝ)⁻¹ *
+            (∑ i, truncAt j f ((σ • x) (a k i)))
+            - (lam / (1 + lam) * (∫ t, truncAt j f t ∂PY)
+              + 1 / (1 + lam) * ∫ t, truncAt j f t ∂PZ)|} := by
+    intro σ x hx
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    set S1 : ℝ := ∑ i, f ((σ • x) (a k i)) with hS1
+    set S2 : ℝ := ∑ i, truncAt j f ((σ • x) (a k i)) with hS2
+    set M : ℝ := lam / (1 + lam) * (∫ t, truncAt j f t ∂PY)
+      + 1 / (1 + lam) * ∫ t, truncAt j f t ∂PZ with hM
+    have hdiffle : |(p k : ℝ)⁻¹ * S1 - (p k : ℝ)⁻¹ * S2|
+        ≤ (p k : ℝ)⁻¹ * ∑ i, |f ((σ • x) (a k i)) - truncAt j f ((σ • x) (a k i))| := by
+      have hd : (p k : ℝ)⁻¹ * S1 - (p k : ℝ)⁻¹ * S2
+          = (p k : ℝ)⁻¹ * ∑ i, (f ((σ • x) (a k i)) - truncAt j f ((σ • x) (a k i))) := by
+        rw [hS1, hS2, Finset.sum_sub_distrib, mul_sub]
+      rw [hd, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (p k : ℝ)⁻¹)]
+      exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (by positivity)
+    have hA := abs_add_le ((p k : ℝ)⁻¹ * S1 - (p k : ℝ)⁻¹ * S2) ((p k : ℝ)⁻¹ * S2 - L)
+    have hB := abs_add_le ((p k : ℝ)⁻¹ * S2 - M) (M - L)
+    have e1 : (p k : ℝ)⁻¹ * S1 - L
+        = ((p k : ℝ)⁻¹ * S1 - (p k : ℝ)⁻¹ * S2) + ((p k : ℝ)⁻¹ * S2 - L) := by ring
+    have e2 : (p k : ℝ)⁻¹ * S2 - L = ((p k : ℝ)⁻¹ * S2 - M) + (M - L) := by ring
+    have hD2 : |(p k : ℝ)⁻¹ * S2 - L| ≤ |(p k : ℝ)⁻¹ * S2 - M| + |M - L| := by
+      rw [e2]; exact hB
+    rw [e1] at hx
+    linarith
+  have hbound := avg_measureReal_le_add' (twoSampleLaw (m k) (n k) PY PZ)
+    (fun σ => {x : Fin (m k + n k) → ℝ |
+      ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L|})
+    (fun σ => {x : Fin (m k + n k) → ℝ | ε / 3 ≤ (p k : ℝ)⁻¹ *
+      ∑ i, |f ((σ • x) (a k i)) - truncAt j f ((σ • x) (a k i))|})
+    (fun σ => {x : Fin (m k + n k) → ℝ | ε / 3 ≤ |(p k : ℝ)⁻¹ *
+      (∑ i, truncAt j f ((σ • x) (a k i)))
+      - (lam / (1 + lam) * (∫ t, truncAt j f t ∂PY)
+        + 1 / (1 + lam) * ∫ t, truncAt j f t ∂PZ)|}) hsub
+  -- the truncation term, by the uniform `L¹` tail bound
+  have htail := perm_avg_blockAvg_tail_le (m k) (n k) PY PZ hpk (a k)
+    (fun t => |f t - truncAt j f t|) ((hfm.sub (measurable_truncAt j hfm)).abs)
+    (fun t => abs_nonneg _) ((hY.sub (integrable_truncAt j hfm)).abs)
+    ((hZ.sub (integrable_truncAt j hfm)).abs) hε3
+  -- the truncated term, by the square-integrable case
+  have hlast := hK k hkK
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (mul_nonneg (by positivity)
+    (Finset.sum_nonneg fun σ _ => measureReal_nonneg))] at hlast
+  have hTnn : (0 : ℝ) ≤ (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin (m k + n k)), (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | ε ≤ |(p k : ℝ)⁻¹ * (∑ i, f ((σ • x) (a k i))) - L|} :=
+    mul_nonneg (by positivity) (Finset.sum_nonneg fun σ _ => measureReal_nonneg)
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg hTnn]
+  linarith
+
 /-! ### The randomized studentizing scale
 
 Under a uniform permutation of the pooled data each block is a sample **without
