@@ -46,9 +46,16 @@ dimension-free constant:
   `‖·‖`), which avoids the quantitative iterated-derivative bounds for the Euclidean norm that
   Mathlib does not have.
 
-What remains as **named `private` planned debt** is the third-order multivariate Lindeberg swap
-`abs_integral_smooth_sub_gaussian_le` (and, for the *convex* route only, the smoothed convex
-indicator `exists_smoothed_convex_indicator`, whose constant is dimension-dependent anyway).
+With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
+public χ² moments) these suffice, and the **ball headline `berryEsseen_ball_elementary` is now
+assembled in full**: it consumes exactly one named `private` debt, the third-order multivariate
+Lindeberg swap `abs_integral_smooth_sub_gaussian_le`.
+
+For the *convex* route two further ingredients are missing: the smoothed convex indicator
+`exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
+obstacle — a Gaussian **boundary-shell** bound `γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is
+Ball's Gaussian-surface-area theorem (`4 k^{1/4}`) and does *not* follow from the single-slab
+bound proved here; see `berryEsseen_convex_elementary`.
 Crucially, even once those are filled, the elementary balance of steps 2–3 does **not** reach
 the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
 of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
@@ -609,7 +616,14 @@ equal to `1` on `B`, supported inside the `ε`-thickening of `B`, with `‖D³f�
 TODO: convolve the indicator of the `(ε/2)`-thickening with `(ContDiffBump …).normed` of
 radius `ε/2`; then `C₃ = ‖D³ φ‖_{L¹(ℝ^k)}` (dimension-dependent — this is one source of the
 `k`-factor in `berryEsseen_convex_elementary`). Uses `ContDiffBump.contDiff_normed` and
-`convolution` derivative bounds. -/
+`convolution` derivative bounds.
+
+Note (re-derived): convexity of `B` is *not* used by this construction at all — the same
+mollification works for any measurable `B`, and the analogous radial statement
+`exists_smoothed_radial_indicator` is proved above by the cheaper route of composing a fixed
+1-D cutoff with `‖·‖²`. What convexity is needed for is the *other* convex ingredient, the
+boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in this file and is the real obstacle
+to `berryEsseen_convex_elementary` (see its docstring). -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
     ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
@@ -891,10 +905,30 @@ where `β = ∫‖y‖³ dν` and `β_G = ∫‖z‖³ dN(0,I_k)`. This is `n^{-
 degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indicator with
 `M ~ ε^{-3}` and optimising `ε`.
 
-TODO: telescoping swap over the `n` independent summands (the vector-valued analogue of
-`StatLean.HypothesisTesting.ForMathlib.LindebergCLT`), with the first- and second-order Taylor
-terms cancelled by `hmean`/`hcov`, and the third-order term controlled by
-`norm_taylor_remainder_three_le`. -/
+TODO (planned debt) — re-derived; this is the *only* thing `berryEsseen_ball_elementary` still
+consumes. The statement is true; the proof is the telescoping Lindeberg swap, and it decomposes
+into four pieces of which three are already available in the repository:
+
+1. **Gaussian sum stability**: `(Measure.pi fun _ : Fin n => γ).map (n^{-1/2} • ∑) = γ`, needed
+   to identify the right-hand endpoint of the telescope. Available modulo an `n`-fold induction
+   from `AsymptoticStatistics.multivariateGaussian_conv_multivariateGaussian`
+   (`N(m₁,S₁) ∗ N(m₂,S₂) = N(m₁+m₂, S₁+S₂)`) together with the scaling
+   `(N(0,I)).map (c • ·) = N(0, c²I)`.
+2. **Hybrid telescope**: with `Qⱼ := Measure.pi (fun i => if i < j then γ else ν)`,
+   `∫f d(Q₀.map T) − ∫f d(Qₙ.map T) = ∑ⱼ (∫f d(Qⱼ.map T) − ∫f d(Qⱼ₊₁.map T))`, each summand
+   isolating coordinate `j` by Fubini on `Measure.pi` (`measurePreserving_piFinSuccAbove`).
+3. **Second-order moment matching**: for fixed `W`, `∫ D²f(W)(y,y) dν = ∫ D²f(W)(z,z) dγ`. Expand
+   the symmetric bilinear form in the standard orthonormal basis, `D²f(W)(y,y) = ∑_{a,b} c_{ab}
+   ⟪e_a,y⟫⟪e_b,y⟫`, and apply `hcov` coordinatewise (the same device as
+   `integral_normSq_eq_dim` in this file); the first-order term vanishes by `hmean` applied to
+   the Riesz representative of `Df(W)`. Integrability of every term is supplied by `hβ` through
+   `integrable_normSq_of_cube`.
+4. **Third-order remainder**: `norm_taylor_remainder_three_le` (proved above) applied at
+   `h = n^{-1/2} y` and `h = n^{-1/2} z`, giving `M/6 · n^{-3/2}(‖y‖³ + ‖z‖³)` per summand and
+   `M/6 · (β + β_G)/√n` after summing the `n` terms.
+
+Nothing here is blocked on a missing Mathlib API; it is simply a multi-hundred-line development
+that has not been carried out. -/
 private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
     {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
     (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
@@ -1472,9 +1506,23 @@ smoothed-indicator third-derivative bound `exists_smoothed_convex_indicator` and
 boundary covering). Both deviations are intrinsic to the mollifier method; the sharp
 `400 k^{1/4} · β/√n` needs Bentkus's Fourier analysis and is not attempted.
 
-TODO: assemble from `exists_smoothed_convex_indicator`, `abs_integral_smooth_sub_gaussian_le`
-and `gaussian_slab_measure_le` (the latter, applied to a covering of `∂B^ε` by slabs, gives the
-dimension factor). -/
+TODO (planned debt) — re-derived. The `ε`-optimisation itself is *exactly* the one now written
+out in `berryEsseen_ball_elementary` (same `ε = (β/√n)^{1/4}`, same three-step sandwich), so the
+assembly is not the difficulty. What the convex case needs and the ball case does not is a
+**boundary-shell (Gaussian surface area) bound**
+
+`γ(Bᵋ \ B) ≤ C_k · ε` for every convex `B`,
+
+the convex analogue of `gaussian_ball_shell_measure_le`. This does **not** follow from the
+`gaussian_slab_measure_le` bound already proved here: a covering of `∂Bᵋ` by slabs needs one slab
+per facet, so it only bounds the shell for polytopes with a controlled number of facets, and the
+supremum over all convex bodies of the number of facets is unbounded even for fixed `k`. The
+sharp statement is K. Ball, "The reverse isoperimetric problem for Gaussian measure" (1993):
+the Gaussian surface area of a convex body in `ℝ^k` is at most `4 k^{1/4}` (Nazarov (2003) gives
+the matching lower bound `c k^{1/4}`), and *any* finite bound here is a genuine theorem — the
+`k^{1/4}` in Bentkus's constant is precisely this quantity. Recording it as the named missing
+brick is the honest status; with it, plus `exists_smoothed_convex_indicator` and
+`abs_integral_smooth_sub_gaussian_le`, the proof below is a transcription of the ball assembly. -/
 theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),
