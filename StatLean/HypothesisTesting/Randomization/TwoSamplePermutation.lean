@@ -1257,31 +1257,33 @@ private lemma lindebergDefect_le {m n : ℕ} {v K : ℝ} (hv : 0 < v) (hK : 1 �
 /-- **The pooled population satisfies the hypotheses of the combinatorial central limit
 theorem in probability.**
 
-STATUS (wave 8): this is the single remaining debt of the two-sample chain, and it is now a
-pure law-of-large-numbers statement about the *pooled empirical moments* — no permutation,
-no central limit theorem, no measurable selection. Route (all inputs exist in the
-repository):
+STATUS (wave 9): **CLOSED**, axiom-clean. It was the last debt of the two-sample permutation
+chain, and it is a pure law-of-large-numbers statement about the *pooled empirical moments* —
+no permutation, no central limit theorem, no measurable selection. The two arithmetic
+ingredients used to sit in `Randomization/Studentized`, which is *above* this file in the
+import graph; they have been moved to the shared section of this file
+(`tendstoInProb_pooledAvg` and friends), which was the only obstruction. The proof:
 
-* `Randomization/Studentized.tendstoInProb_pooledAvg` (proved in wave 8) gives, for every
-  integrable `f`, `N⁻¹ ∑_l f(x_l) → (λ ∫f dP_Y + ∫f dP_Z)/(1+λ)` in probability, through
-  the two block laws of large numbers `tendsto_lln_blockY`/`_blockZ` and the deterministic
-  weights `m/N → λ/(1+λ)`, `n/N → 1/(1+λ)`. Applying it to `f = id` and `f = (·)²` and
-  subtracting gives `N⁻¹ ∑_l (x_l − x̄)² → v̄` in probability, which is the first conjunct
-  after division by `v̄`.
-* For the second conjunct, split `Λ ≤ N⁻¹ ∑ e² 1{|e| ≥ ηR} + η · N⁻¹ ∑ e²` (valid for every
-  `η > 0`, since `min(1,u) ≤ η` off `{u ≥ η}`). The second term is `η · (1 + o_P(1))`, so it
-  suffices to make the first small; and since `x̄ → μ` in probability and `R_k → ∞`, on the
-  event `{|x̄ − μ| ≤ 1}` one has `{|x_l − x̄| ≥ ηR_k} ⊆ {|x_l| ≥ ηR_k − |μ| − 1}` and
-  `(x_l − x̄)² ≤ 2x_l² + 2(|μ|+1)²`, so the first term is bounded by a fixed multiple of
-  `N⁻¹ ∑_l x_l² 1{|x_l| ≥ K}` for any fixed `K`, once `k` is large. That last quantity
-  converges in probability to `(λ ∫_{|t|≥K} t² dP_Y + ∫_{|t|≥K} t² dP_Z)/(1+λ)`, again by
-  `tendstoInProb_pooledAvg`, and tends to `0` as `K → ∞` by dominated convergence — this is
-  where `MemLp id 2` is used and why no moment beyond `L²` is needed.
-
-The two arithmetic ingredients (`tendstoInProb_pooledAvg` and the dominated-convergence tail)
-are both proved in `Randomization/Studentized`; they are *below* this file in the import
-graph, so closing this brick means either lifting them here or moving them to a common
-`ForMathlib` home. That is bookkeeping, not mathematics. -/
+* `tendstoInProb_pooledAvg` gives, for every integrable `f`,
+  `N⁻¹ ∑_l f(x_l) → (λ ∫f dP_Y + ∫f dP_Z)/(1+λ)` in probability, through the two block laws
+  of large numbers `tendsto_lln_blockY`/`_blockZ` and the deterministic weights
+  `m/N → λ/(1+λ)`, `n/N → 1/(1+λ)`. Applied to `f = id` and `f = (·)²` and combined by
+  `tendstoInProb_comp`/`_add`, it gives `pooledVar → v̄` in probability
+  (`pooledVar_eq` turns the centred sum into second moment minus squared mean, and
+  `var_eq_second_sub_sq` identifies the limit as `v̄ = (λ varY + varZ)/(1+λ)`). Dividing by
+  the deterministic `v̄` is the first conjunct (`normDefect_eq`).
+* For the second conjunct the split is deterministic (`lindebergDefect_le`): with
+  `r = √v̄ · √(min(m, N−m))`,
+  `Λ ≤ v̄⁻¹ [ (K + |x̄|)/r · pooledVar + 2(1 + x̄²) · N⁻¹ ∑_l x_l² 1{|x_l| ≥ K} ]`
+  for every `K ≥ 1` — off the tail `min(1, |x_l − x̄|/r) ≤ (K + |x̄|)/r`, and on the tail
+  `(x_l − x̄)² ≤ 2x_l² + 2x̄² ≤ 2(1 + x̄²) x_l²` because `K ≥ 1` forces `x_l² ≥ 1`. The
+  first summand is deterministic and `o(1)` on the event `{|x̄ − μ| < 1} ∩ {|v̂ − v̄| < 1}`
+  because `r → ∞`; the second is controlled by choosing `K` so that the *limiting* tail
+  second moment `(λ ∫_{|t|≥K} t² dP_Y + ∫_{|t|≥K} t² dP_Z)/(1+λ)` is small, which is
+  possible by dominated convergence (`tendsto_integral_tailSq`) — the only place where
+  `MemLp id 2` is used, and why no moment beyond `L²` is needed. A three-set union bound
+  then finishes: `{Λ ≥ η}` is eventually contained in the union of the three failure
+  events, each of which has vanishing probability. -/
 private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
     [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ μ v : ℝ}
     -- USER-INPUT: both sample sizes grow; the asymptotic regime
@@ -1301,7 +1303,209 @@ private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabili
         {x | η ≤ normDefect (m k) (n k) v x}) atTop (𝓝 0))
       ∧ (∀ η > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
         {x | η ≤ lindebergDefect (m k) (n k) v x}) atTop (𝓝 0)) := by
-  sorry
+  classical
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
+  have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
+  have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.mpr hvpos
+  -- (1) the pooled mean converges in probability to the common mean `μ`
+  have hbar : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |pooledMean (m k) (n k) x - μ|}) atTop (𝓝 0) := by
+    intro ε hε
+    have h := tendstoInProb_pooledAvg PY PZ m n hm hn hratio hlam (fun t : ℝ => t)
+      measurable_id hidY hidZ ε hε
+    have hlim : lam / (1 + lam) * μ + 1 / (1 + lam) * μ = μ := by
+      field_simp
+      ring
+    rw [hmeanY, hmeanZ, hlim] at h
+    simpa only [pooledMean] using h
+  -- (2) the pooled second moment
+  have hA : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, x l ^ 2)
+        - (lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)|})
+      atTop (𝓝 0) := fun ε hε =>
+    tendstoInProb_pooledAvg PY PZ m n hm hn hratio hlam (fun t : ℝ => t ^ 2) (by fun_prop)
+      hsqY hsqZ ε hε
+  have hneg := tendstoInProb_comp (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (φ := fun y : ℝ => -(y ^ 2)) (by fun_prop) hbar
+  have hadd := tendstoInProb_add (P := fun k => twoSampleLaw (m k) (n k) PY PZ) hA hneg
+  have hL2 : (lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)
+      + -(μ ^ 2) = v := by
+    have hY' : (∫ t, t ^ 2 ∂PY) = varY + μ ^ 2 := by
+      have h := var_eq_second_sub_sq hYL2 hmeanY hvarY; linarith
+    have hZ' : (∫ t, t ^ 2 ∂PZ) = varZ + μ ^ 2 := by
+      have h := var_eq_second_sub_sq hZL2 hmeanZ hvarZ; linarith
+    rw [hY', hZ', hv]
+    field_simp
+    ring
+  -- (3) the pooled variance converges in probability to `v̄`
+  have hSvar : ∀ ε > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x : Fin (m k + n k) → ℝ | ε ≤ |pooledVar (m k) (n k) x - v|}) atTop (𝓝 0) := by
+    intro ε hε
+    refine (hadd ε hε).congr' ?_
+    filter_upwards [hm.eventually_gt_atTop 0] with k hk
+    have hmn : 0 < m k + n k := lt_of_lt_of_le hk (Nat.le_add_right _ _)
+    rw [hL2]
+    congr 1
+    ext x
+    simp only [Set.mem_setOf_eq, pooledVar_eq hmn x]
+  refine ⟨?_, ?_⟩
+  · -- **The normalization defect.** Divide the pooled variance by the deterministic `v̄`.
+    intro η hη
+    have hc := tendstoInProb_const_mul (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (c := fun _ : ℕ => v⁻¹) (cl := v⁻¹) tendsto_const_nhds hSvar η hη
+    refine hc.congr fun k => ?_
+    congr 1
+    ext x
+    simp only [Set.mem_setOf_eq, normDefect_eq hvpos x, inv_mul_cancel₀ hvpos.ne']
+  · -- **The Lindeberg defect.**
+    intro η hη
+    set C : ℝ := 2 * v⁻¹ * (1 + (|μ| + 1) ^ 2) with hCdef
+    have hCpos : (0 : ℝ) < C := by rw [hCdef]; positivity
+    -- choose the truncation level `K` so that the limiting tail second moment is small
+    have htail : Tendsto (fun j : ℕ =>
+        C * (lam / (1 + lam) * (∫ t, tailSq (j : ℝ) t ∂PY)
+          + 1 / (1 + lam) * ∫ t, tailSq (j : ℝ) t ∂PZ)) atTop (𝓝 0) := by
+      have hY := tendsto_integral_tailSq hsqY
+      have hZ := tendsto_integral_tailSq hsqZ
+      have h := ((hY.const_mul (lam / (1 + lam))).add
+        (hZ.const_mul (1 / (1 + lam)))).const_mul C
+      simpa using h
+    obtain ⟨K, hK1, hKlt⟩ : ∃ K : ℕ, 1 ≤ (K : ℝ) ∧
+        C * (lam / (1 + lam) * (∫ t, tailSq (K : ℝ) t ∂PY)
+          + 1 / (1 + lam) * ∫ t, tailSq (K : ℝ) t ∂PZ) < η / 4 := by
+      have hev := htail.eventually (eventually_lt_nhds (show (0 : ℝ) < η / 4 by positivity))
+      obtain ⟨K, hK⟩ := (hev.and (eventually_ge_atTop 1)).exists
+      exact ⟨K, by exact_mod_cast hK.2, hK.1⟩
+    set cK : ℝ := lam / (1 + lam) * (∫ t, tailSq (K : ℝ) t ∂PY)
+      + 1 / (1 + lam) * ∫ t, tailSq (K : ℝ) t ∂PZ with hcKdef
+    set ρ : ℝ := η / (4 * C) with hρdef
+    have hρpos : (0 : ℝ) < ρ := by rw [hρdef]; positivity
+    have hCρ : C * ρ = η / 4 := by
+      rw [hρdef]; field_simp
+    -- the three vanishing events
+    have hE1 := hbar 1 one_pos
+    have hE2 := hSvar 1 one_pos
+    have hE3 := tendstoInProb_pooledAvg PY PZ m n hm hn hratio hlam (tailSq (K : ℝ))
+      (measurable_tailSq _) (integrable_tailSq _ hsqY) (integrable_tailSq _ hsqZ) ρ hρpos
+    rw [← hcKdef] at hE3
+    -- Hájek's scale tends to infinity
+    have hRtop : Tendsto (fun k => Real.sqrt (min (m k : ℝ)
+        (((m k + n k : ℕ) : ℝ) - (m k : ℝ)))) atTop atTop := by
+      have hmR : Tendsto (fun k => (m k : ℝ)) atTop atTop :=
+        tendsto_natCast_atTop_atTop.comp hm
+      have hnR : Tendsto (fun k => (n k : ℝ)) atTop atTop :=
+        tendsto_natCast_atTop_atTop.comp hn
+      have hmin : Tendsto (fun k => min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ)))
+          atTop atTop := by
+        refine tendsto_atTop.2 fun b => ?_
+        filter_upwards [tendsto_atTop.1 hmR b, tendsto_atTop.1 hnR b] with k h1 h2
+        have hcast : ((m k + n k : ℕ) : ℝ) - (m k : ℝ) = (n k : ℝ) := by push_cast; ring
+        rw [hcast]
+        exact le_min h1 h2
+      refine tendsto_atTop.2 fun b => ?_
+      filter_upwards [tendsto_atTop.1 hmin (max b 0 ^ 2)] with k hk
+      calc b ≤ max b 0 := le_max_left _ _
+        _ = Real.sqrt (max b 0 ^ 2) := (Real.sqrt_sq (le_max_right _ _)).symm
+        _ ≤ _ := Real.sqrt_le_sqrt hk
+    have hRpos := hRtop.eventually_gt_atTop 0
+    have hD : Tendsto (fun k => v⁻¹ * (((K : ℝ) + (|μ| + 1)) /
+        (Real.sqrt v * Real.sqrt (min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ))))
+          * (v + 1))) atTop (𝓝 0) := by
+      have h0 : Tendsto (fun k => (Real.sqrt (min (m k : ℝ)
+          (((m k + n k : ℕ) : ℝ) - (m k : ℝ))))⁻¹) atTop (𝓝 0) := hRtop.inv_tendsto_atTop
+      have h1 := h0.const_mul (v⁻¹ * (((K : ℝ) + (|μ| + 1)) * (Real.sqrt v)⁻¹) * (v + 1))
+      rw [mul_zero] at h1
+      refine h1.congr fun k => ?_
+      rw [div_eq_mul_inv, mul_inv]
+      ring
+    have hDsmall := hD.eventually (eventually_lt_nhds (show (0 : ℝ) < η / 2 by positivity))
+    -- the union bound, eventually in `k`
+    have hbound : ∀ᶠ k in atTop, (twoSampleLaw (m k) (n k) PY PZ).real
+        {x : Fin (m k + n k) → ℝ | η ≤ lindebergDefect (m k) (n k) v x}
+        ≤ ((twoSampleLaw (m k) (n k) PY PZ).real
+              {x : Fin (m k + n k) → ℝ | 1 ≤ |pooledMean (m k) (n k) x - μ|}
+            + (twoSampleLaw (m k) (n k) PY PZ).real
+              {x : Fin (m k + n k) → ℝ | 1 ≤ |pooledVar (m k) (n k) x - v|})
+          + (twoSampleLaw (m k) (n k) PY PZ).real
+              {x : Fin (m k + n k) → ℝ | ρ ≤ |((m k + n k : ℕ) : ℝ)⁻¹ *
+                (∑ l, tailSq (K : ℝ) (x l)) - cK|} := by
+      filter_upwards [hDsmall, hRpos] with k hk hRk
+      have hsub : {x : Fin (m k + n k) → ℝ | η ≤ lindebergDefect (m k) (n k) v x}
+          ⊆ ({x : Fin (m k + n k) → ℝ | 1 ≤ |pooledMean (m k) (n k) x - μ|} ∪
+              {x : Fin (m k + n k) → ℝ | 1 ≤ |pooledVar (m k) (n k) x - v|}) ∪
+            {x : Fin (m k + n k) → ℝ | ρ ≤ |((m k + n k : ℕ) : ℝ)⁻¹ *
+              (∑ l, tailSq (K : ℝ) (x l)) - cK|} := by
+        intro x hx
+        simp only [Set.mem_setOf_eq] at hx
+        by_contra hcon
+        simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+        obtain ⟨⟨h1, h2⟩, h3⟩ := hcon
+        have hbabs : |pooledMean (m k) (n k) x| ≤ |μ| + 1 := by
+          have := abs_sub_abs_le_abs_sub (pooledMean (m k) (n k) x) μ
+          linarith
+        have hb2 : pooledMean (m k) (n k) x ^ 2 ≤ (|μ| + 1) ^ 2 := by
+          nlinarith [abs_nonneg (pooledMean (m k) (n k) x),
+            sq_abs (pooledMean (m k) (n k) x), abs_nonneg μ]
+        have hWnn : 0 ≤ pooledVar (m k) (n k) x := pooledVar_nonneg _ _ x
+        have hWle : pooledVar (m k) (n k) x ≤ v + 1 := by
+          have := abs_lt.1 h2; linarith [this.2]
+        have hTnn : (0 : ℝ) ≤ ((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, tailSq (K : ℝ) (x l) :=
+          mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => tailSq_nonneg _ _)
+        have hTle : ((m k + n k : ℕ) : ℝ)⁻¹ * (∑ l, tailSq (K : ℝ) (x l)) ≤ cK + ρ := by
+          have := abs_lt.1 h3; linarith [this.2]
+        have hmain := lindebergDefect_le (m := m k) (n := n k) hvpos hK1 hRk x
+        have hden : (0 : ℝ) < Real.sqrt v *
+            Real.sqrt (min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ))) := mul_pos hsv hRk
+        have hpart1 : ((K : ℝ) + |pooledMean (m k) (n k) x|) /
+              (Real.sqrt v * Real.sqrt (min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ))))
+                * pooledVar (m k) (n k) x
+            ≤ ((K : ℝ) + (|μ| + 1)) /
+              (Real.sqrt v * Real.sqrt (min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ))))
+                * (v + 1) := by
+          refine mul_le_mul ?_ hWle hWnn ?_
+          · gcongr
+          · have hKb : (0 : ℝ) ≤ (K : ℝ) + (|μ| + 1) := by
+              have := abs_nonneg μ; linarith
+            positivity
+        have hpart2 : 2 * (1 + pooledMean (m k) (n k) x ^ 2) *
+              (((m k + n k : ℕ) : ℝ)⁻¹ * ∑ l, tailSq (K : ℝ) (x l))
+            ≤ 2 * (1 + (|μ| + 1) ^ 2) * (cK + ρ) := by
+          refine mul_le_mul (by linarith) hTle hTnn (by positivity)
+        have hCval : v⁻¹ * (2 * (1 + (|μ| + 1) ^ 2) * (cK + ρ)) = C * (cK + ρ) := by
+          rw [hCdef]; ring
+        have hvinv : (0 : ℝ) ≤ v⁻¹ := by positivity
+        have hfinal : lindebergDefect (m k) (n k) v x
+            ≤ v⁻¹ * (((K : ℝ) + (|μ| + 1)) /
+                (Real.sqrt v *
+                  Real.sqrt (min (m k : ℝ) (((m k + n k : ℕ) : ℝ) - (m k : ℝ)))) * (v + 1))
+              + C * (cK + ρ) := by
+          refine hmain.trans ?_
+          rw [mul_add, ← hCval]
+          exact add_le_add (mul_le_mul_of_nonneg_left hpart1 hvinv)
+            (mul_le_mul_of_nonneg_left hpart2 hvinv)
+        have hsplit : C * (cK + ρ) = C * cK + C * ρ := by ring
+        rw [hCρ] at hsplit
+        linarith
+      calc (twoSampleLaw (m k) (n k) PY PZ).real
+            {x : Fin (m k + n k) → ℝ | η ≤ lindebergDefect (m k) (n k) v x}
+          ≤ (twoSampleLaw (m k) (n k) PY PZ).real
+              (({x : Fin (m k + n k) → ℝ | 1 ≤ |pooledMean (m k) (n k) x - μ|} ∪
+                {x : Fin (m k + n k) → ℝ | 1 ≤ |pooledVar (m k) (n k) x - v|}) ∪
+              {x : Fin (m k + n k) → ℝ | ρ ≤ |((m k + n k : ℕ) : ℝ)⁻¹ *
+                (∑ l, tailSq (K : ℝ) (x l)) - cK|}) :=
+            measureReal_mono hsub (measure_ne_top _ _)
+        _ ≤ (twoSampleLaw (m k) (n k) PY PZ).real
+              ({x : Fin (m k + n k) → ℝ | 1 ≤ |pooledMean (m k) (n k) x - μ|} ∪
+                {x : Fin (m k + n k) → ℝ | 1 ≤ |pooledVar (m k) (n k) x - v|})
+            + (twoSampleLaw (m k) (n k) PY PZ).real
+              {x : Fin (m k + n k) → ℝ | ρ ≤ |((m k + n k : ℕ) : ℝ)⁻¹ *
+                (∑ l, tailSq (K : ℝ) (x l)) - cK|} := measureReal_union_le _ _
+        _ ≤ _ := add_le_add (measureReal_union_le _ _) le_rfl
+    refine squeeze_zero' (Eventually.of_forall fun k => measureReal_nonneg) hbound ?_
+    simpa using (hE1.add hE2).add hE3
 
 /-! ### The permutation limit
 
