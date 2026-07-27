@@ -998,6 +998,172 @@ private lemma sqrt_dim_mul_dim_le_integral_norm_cube {k : ℕ}
   simp only [probReal_univ, smul_eq_mul, one_mul] at hmono
   nlinarith [hmono, htsq, ht0]
 
+/-! #### The Gaussian third moment `β_G = ∫‖z‖³ dN(0,I_k)`
+
+The `ε`-optimisation also needs the *Gaussian* side of the third moment to be comparable to
+`β`. Since `‖z‖² ∼ χ²_k`, the two public χ² moments (`integral_id_chiSquared` `E X = k`,
+`variance_chiSquared` `E (X−k)² = 2k`) suffice, through the pointwise inequality
+
+`r³ ≤ u r² + (r² − u²)²/(2u) + u (r² − u²)/2`, `u = √k`,
+
+which is exactly `r²(u − r)² ≥ 0` after multiplying by `2u`. Integrating gives
+`β_G ≤ k^{3/2} + √k ≤ 2 k^{3/2}`, and `k^{3/2} ≤ β` (Lyapunov) then gives `β_G ≤ 2β`. No
+Cauchy–Schwarz and no fourth χ² moment are needed. -/
+
+/-- Integrability of `x ↦ xⁿ` under `Gamma(a, r)`; the value of the moment is not needed, only
+its finiteness. (`StatLean.MultipleTesting.GammaMoments` proves this but keeps it `private`.) -/
+private lemma integrable_pow_gammaMeasure' {a r : ℝ} (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
+    Integrable (fun x => x ^ n) (gammaMeasure a r) := by
+  have hmeasG : Measurable (gammaPDF a r) := (measurable_gammaPDFReal a r).ennreal_ofReal
+  rw [gammaMeasure, integrable_withDensity_iff hmeasG
+        (ae_of_all _ (fun _ => ENNReal.ofReal_lt_top))]
+  have hcongr : (fun x => x ^ n * (gammaPDF a r x).toReal)
+      = fun x => x ^ n * gammaPDFReal a r x := by
+    funext x
+    rw [show gammaPDF a r x = ENNReal.ofReal (gammaPDFReal a r x) from rfl,
+      ENNReal.toReal_ofReal (gammaPDFReal_nonneg ha hr x)]
+  rw [hcongr]
+  have hmodel : IntegrableOn (fun x => x ^ (a + (n : ℝ) - 1) * Real.exp (-(r * x)))
+      (Set.Ioi (0 : ℝ)) volume := by
+    have h := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a + (n : ℝ) - 1) (b := r)
+      (by have := Nat.cast_nonneg (α := ℝ) n; linarith) le_rfl hr
+    refine h.congr_fun (fun x hx => ?_) measurableSet_Ioi
+    rw [Real.rpow_one, neg_mul]
+  have hIoi : IntegrableOn (fun x => x ^ n * gammaPDFReal a r x) (Set.Ioi (0 : ℝ)) volume := by
+    refine IntegrableOn.congr_fun (hmodel.const_mul (r ^ a / Real.Gamma a))
+      (fun x hx => ?_) measurableSet_Ioi
+    rw [Set.mem_Ioi] at hx
+    rw [gammaPDFReal, if_pos hx.le, ← Real.rpow_natCast x n,
+      show a + (n : ℝ) - 1 = (a - 1) + (n : ℝ) by ring, Real.rpow_add hx (a - 1) (n : ℝ)]
+    ring
+  rw [← integrableOn_univ, ← Set.Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
+  refine ⟨?_, hIoi⟩
+  refine integrableOn_zero.congr ?_
+  rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Iic, MeasureTheory.ae_iff]
+  refine measure_mono_null (t := {(0 : ℝ)}) ?_ Real.volume_singleton
+  intro x hx
+  simp only [Set.mem_setOf_eq, Classical.not_imp, Set.mem_Iic] at hx
+  obtain ⟨hx1, hx2⟩ := hx
+  rcases lt_or_eq_of_le hx1 with h | h
+  · exact absurd (show x ^ n * gammaPDFReal a r x = 0 by
+      rw [gammaPDFReal, if_neg (not_le.mpr h), mul_zero]).symm hx2
+  · exact h
+
+/-- Integrability of `x ↦ xⁿ` under `χ²_k`. -/
+private lemma integrable_pow_chiSquared {k : ℕ} (hk : 0 < k) (n : ℕ) :
+    Integrable (fun x => x ^ n) (StatLean.MultipleTesting.chiSquared k) := by
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  unfold StatLean.MultipleTesting.chiSquared
+  exact integrable_pow_gammaMeasure' (by linarith) (by norm_num) n
+
+/-- The squared norm pushes `N(0, I_k)` forward to `χ²_k` (`0 < k`). -/
+private lemma gaussian_map_normSq {k : ℕ} (hk : 0 < k) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map (fun z => ‖z‖ ^ 2)
+      = StatLean.MultipleTesting.chiSquared k := by
+  rw [map_normSq_multivariateGaussian_of_norm_eq k 0 (by simp), noncentralChiSquared_zero hk]
+
+/-- **The Gaussian third moment is at most `2 k^{3/2}`.** Combined with the Lyapunov bound
+`k^{3/2} ≤ β` this gives `β_G ≤ 2 β`, the comparison the ball assembly consumes. -/
+private lemma integral_norm_cube_gaussian_le {k : ℕ} (hk : 0 < k) :
+    ∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+      ≤ 2 * (Real.sqrt (k : ℝ) * (k : ℝ)) := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  set E := EuclideanSpace ℝ (Fin k)
+  set γ : Measure E := multivariateGaussian (0 : E) 1 with hγ
+  set u : ℝ := Real.sqrt (k : ℝ) with hu_def
+  have hkr : (0 : ℝ) < k := by exact_mod_cast hk
+  have hu : 0 < u := Real.sqrt_pos.mpr hkr
+  have hk2 : (k : ℝ) = u ^ 2 := (Real.sq_sqrt hkr.le).symm
+  have hmap := gaussian_map_normSq hk
+  have hae : AEMeasurable (fun z : E => ‖z‖ ^ 2) γ := (by fun_prop : Measurable _).aemeasurable
+  -- the two χ² moments, transported back to `γ`
+  have h2 : ∫ z, ‖z‖ ^ 2 ∂γ = (k : ℝ) := by
+    have hchi := StatLean.MultipleTesting.integral_id_chiSquared hk
+    rw [← hmap, integral_map hae (by fun_prop)] at hchi
+    exact hchi
+  have h4 : ∫ z, (‖z‖ ^ 2 - (k : ℝ)) ^ 2 ∂γ = 2 * (k : ℝ) := by
+    have hchi := StatLean.MultipleTesting.variance_chiSquared hk
+    rw [← hmap, integral_map hae (by fun_prop)] at hchi
+    exact hchi
+  -- integrability of the two transported moments
+  have hI2 : Integrable (fun z : E => ‖z‖ ^ 2) γ := by
+    have h := integrable_pow_chiSquared hk 1
+    rw [← hmap] at h
+    have := (integrable_map_measure (by fun_prop) hae).mp h
+    simpa [Function.comp_def] using this
+  have hI4 : Integrable (fun z : E => (‖z‖ ^ 2 - (k : ℝ)) ^ 2) γ := by
+    have hpoly : Integrable (fun x : ℝ => (x - (k : ℝ)) ^ 2)
+        (StatLean.MultipleTesting.chiSquared k) := by
+      have ha := integrable_pow_chiSquared hk 2
+      have hb : Integrable (fun x : ℝ => x) (StatLean.MultipleTesting.chiSquared k) := by
+        simpa using integrable_pow_chiSquared hk 1
+      have hc : Integrable (fun _ : ℝ => (k : ℝ) ^ 2)
+          (StatLean.MultipleTesting.chiSquared k) := integrable_const _
+      have h0 := (ha.sub (hb.const_mul (2 * (k : ℝ)))).add hc
+      refine h0.congr (Filter.Eventually.of_forall fun x => ?_)
+      simp only [Pi.add_apply, Pi.sub_apply]
+      ring
+    rw [← hmap] at hpoly
+    have := (integrable_map_measure (by fun_prop) hae).mp hpoly
+    simpa [Function.comp_def] using this
+  -- the three summands of the majorant, each with a clean applied-lambda type
+  have e1 : Integrable (fun z : E => u * ‖z‖ ^ 2) γ := hI2.const_mul u
+  have e2 : Integrable (fun z : E => (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u)) γ :=
+    hI4.div_const (2 * u)
+  have e3 : Integrable (fun z : E => u * (‖z‖ ^ 2 - (k : ℝ)) / 2) γ := by
+    have h0 := ((hI2.const_mul u).sub (integrable_const (u * (k : ℝ)))).div_const 2
+    refine h0.congr (Filter.Eventually.of_forall fun z => ?_)
+    simp only [Pi.sub_apply]
+    ring
+  have e12 : Integrable (fun z : E => u * ‖z‖ ^ 2
+      + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u)) γ := by
+    have h0 := e1.add e2
+    refine h0.congr (Filter.Eventually.of_forall fun z => ?_)
+    simp only [Pi.add_apply]
+  have hFint : Integrable (fun z : E => u * ‖z‖ ^ 2
+      + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u) + u * (‖z‖ ^ 2 - (k : ℝ)) / 2) γ := by
+    have h0 := e12.add e3
+    refine h0.congr (Filter.Eventually.of_forall fun z => ?_)
+    simp only [Pi.add_apply]
+  -- the pointwise inequality `r³ ≤ u r² + (r² − u²)²/(2u) + u (r² − u²)/2`
+  have hpt : ∀ z : E, ‖z‖ ^ 3 ≤ u * ‖z‖ ^ 2
+      + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u) + u * (‖z‖ ^ 2 - (k : ℝ)) / 2 := by
+    intro z
+    rw [← sub_nonneg]
+    have hid : u * ‖z‖ ^ 2 + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u)
+        + u * (‖z‖ ^ 2 - (k : ℝ)) / 2 - ‖z‖ ^ 3
+        = ‖z‖ ^ 2 * (u - ‖z‖) ^ 2 / (2 * u) := by
+      rw [hk2]; field_simp; ring
+    rw [hid]
+    positivity
+  have hcube : Integrable (fun z : E => ‖z‖ ^ 3) γ := by
+    refine Integrable.mono' hFint (by fun_prop) (Filter.Eventually.of_forall fun z => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact hpt z
+  have hFval : ∫ z, (u * ‖z‖ ^ 2 + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u)
+      + u * (‖z‖ ^ 2 - (k : ℝ)) / 2) ∂γ = u * (k : ℝ) + (k : ℝ) / u := by
+    have hsub : Integrable (fun z : E => ‖z‖ ^ 2 - (k : ℝ)) γ := by
+      have h0 := hI2.sub (integrable_const (k : ℝ))
+      refine h0.congr (Filter.Eventually.of_forall fun z => ?_)
+      simp only [Pi.sub_apply]
+    rw [integral_add e12 e3, integral_add e1 e2, integral_const_mul, integral_div,
+      integral_div, integral_const_mul, integral_sub hI2 (integrable_const (k : ℝ)),
+      integral_const]
+    simp only [probReal_univ, smul_eq_mul, one_mul]
+    rw [h2, h4]
+    field_simp
+    ring
+  calc ∫ z, ‖z‖ ^ 3 ∂γ
+      ≤ ∫ z, (u * ‖z‖ ^ 2 + (‖z‖ ^ 2 - (k : ℝ)) ^ 2 / (2 * u)
+          + u * (‖z‖ ^ 2 - (k : ℝ)) / 2) ∂γ := integral_mono hcube hFint hpt
+    _ = u * (k : ℝ) + (k : ℝ) / u := hFval
+    _ ≤ 2 * (u * (k : ℝ)) := by
+        have hku : (k : ℝ) / u = u := by
+          rw [hk2]; field_simp
+        rw [hku]
+        have h1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+        nlinarith [hu, h1]
+
 /-- **`β > 0`.** If `β = ∫‖y‖³ dν` vanished then `ν` would be the Dirac mass at the origin, whose
 second moment is `0` and not `k > 0`. -/
 private lemma integral_norm_cube_pos {k : ℕ} (hk : 0 < k)
