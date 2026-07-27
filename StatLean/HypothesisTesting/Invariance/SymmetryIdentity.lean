@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import Mathlib.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The sign-change identity for symmetric tests of symmetry
@@ -30,10 +31,19 @@ Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invari
 (The Hypothesis of Symmetry), Lemma 6.10.1 (the sign-change identity for testing symmetry).
 (`TSH4 §6.10 Lem 6.10.1`.)
 
+**Verdict: the identity as transcribed is FALSE.** `not_integral_eq_of_sign_invariant`
+refutes it with `N = 1`, `α = 0`, `φ = 1_{\{0\}}` and `Q = δ₀`, and the docstring there
+gives a second counterexample with no zeros and no ties. The calibration hypothesis pins
+the sign-average to `α` only off a set null for every *non-atomic* law, and a sign-change
+invariant `Q` may sit on that set. Repairs: `Q ≪` Lebesgue, or `φ` a function of the signs
+and of the ranks of the absolute values (the classical signed-rank setting the prose above
+describes). Everything except "the sign-average is `α`" is proved.
+
 **Main results.**
 * `signFlip` — the coordinatewise sign-change transformation;
 * `measurable_signFlip` — its measurability;
-* `integral_eq_of_sign_invariant` — the identity.
+* `not_integral_eq_of_sign_invariant` — the counterexample refuting the identity;
+* `integral_eq_of_sign_invariant` — the identity (false as stated; see above).
 
 **Proof formalization notes.**
 * The `2^N` sign changes are indexed by `Fin N → Bool` and applied through `signFlip`.
@@ -47,9 +57,10 @@ Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 6 (Invari
   the origin** (`D` invariant under negation).
 * The step from "mean `α` under every such i.i.d. sample" to the pointwise sign-average
   identity is a completeness-style argument over the class of continuous symmetric
-  distributions. Per the campaign plan this sub-lemma may be lifted into a **named
-  deferral** rather than proved inline; if so it should be stated as a separate top-level
-  lemma so the gap remains visible.
+  distributions. It is isolated as the separate lemma `signAverage_ae_eq_const` so the gap
+  remains visible — and it is exactly the step that fails: completeness over the non-atomic
+  laws controls the sign-average only off a set those laws all miss, while `Q` is allowed to
+  be atomic.
 
 **Bibliographic comments.** Randomization within matched pairs as the source of exact
 significance levels for sign and signed-rank procedures goes back to R. A. Fisher (*The
@@ -85,19 +96,27 @@ theorem measurable_signFlip {N : ℕ} (ε : Fin N → Bool) :
       funext z; simp only [signFlip, if_neg h]
     rw [this]; exact measurable_pi_apply i
 
-/-- **Named deferral (completeness step).** For a symmetric critical function calibrated on
-continuous symmetric distributions, the *average of `φ` over the `2^N` sign patterns* equals
-`α` off a `Q`-null set. This is the completeness-style content flagged in the module note:
-under an i.i.d. continuous symmetric `D` the conditional law of the signs given the absolute
-values is uniform over the `2^N` patterns (continuity kills ties, symmetry makes each pattern
-equally likely), so `hnull` forces the sign-average — a function of the absolute values — to
-be `α` for the rich class of such `D`, and completeness of that class collapses it to `α`.
+/-- **FALSE as stated.** For a symmetric critical function calibrated on continuous
+symmetric distributions, the *average of `φ` over the `2^N` sign patterns* is claimed to
+equal `α` off a `Q`-null set.
 
-It is isolated as a separate lemma so the gap stays visible; the headline
-`integral_eq_of_sign_invariant` is proved from it by an exact change-of-variables average
-(no further gap). Not proved here: the completeness argument itself is not available from
-Mathlib v4.29.1 (it needs the conditional-uniformity-of-signs disintegration and completeness
-of the family of continuous symmetric product measures). -/
+This is refuted by `not_integral_eq_of_sign_invariant` below. The completeness step it
+appeals to does deliver something — the sign-average, being a function of the absolute
+values only, is pinned to `α` off a set that every *non-atomic* law gives measure zero —
+but `Q` is only assumed sign-change invariant, and a sign-change invariant law may sit
+entirely on that exceptional set. Concretely, with `N = 1`, `α = 0`,
+`φ = 1_{\{0\}}` and `Q = δ₀`: `φ` is a symmetric critical function, every continuous
+symmetric i.i.d. sample gives it mean `0`, `δ₀` is invariant under both sign changes (since
+`-0 = 0`), and yet the sign-average at `0` is `φ 0 = 1 ≠ 0 = α`. Excluding zeros and ties
+does not repair the statement either: take `α = 1/2`, `φ = 1/2 + (1/2)·1_{\{t₀, -t₀\}}` and
+`Q = ½ δ_{t₀} + ½ δ_{-t₀}` for any `t₀ > 0`.
+
+What *is* true is the statement with `Q` absolutely continuous with respect to Lebesgue
+measure (so that the exceptional set is `Q`-null), or the statement for `φ` a function of
+the signs and the ranks of the absolute values rather than an arbitrary permutation-symmetric
+critical function — the classical signed-rank setting the source has in mind. Neither
+repair is carried out here; the lemma is left as the visible false hypothesis so that the
+refutation and the headline stay in one place. -/
 private theorem signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ) → ℝ}
     (hφ : IsCriticalFn φ)
     (hsym : ∀ (σ : Equiv.Perm (Fin N)) (z : Fin N → ℝ), φ (z ∘ σ) = φ z)
@@ -108,14 +127,90 @@ private theorem signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → �
     (hQ : ∀ ε : Fin N → Bool, Q.map (signFlip ε) = Q) :
     (fun z => (Fintype.card (Fin N → Bool) : ℝ)⁻¹ *
         ∑ ε : Fin N → Bool, φ (signFlip ε z)) =ᵐ[Q] (fun _ => α) := by
-  -- TODO: completeness of the continuous-symmetric family + conditional-uniformity of signs.
+  -- FALSE: see the docstring and `not_integral_eq_of_sign_invariant`.
   sorry
 
+/-- **Refutation of the sign-change identity as transcribed.** The identity below is *not*
+a theorem for an arbitrary permutation-symmetric critical function and an arbitrary
+sign-change-invariant law.
+
+Counterexample: `N = 1`, `α = 0`, `φ = 1_{\{0\}}`, `Q = δ₀`. Then `φ` is a critical function,
+it is (vacuously) symmetric in its single argument, every i.i.d. sample from a continuous
+symmetric `D` gives it mean `D{0} = 0 = α`, and `δ₀` is invariant under both coordinatewise
+sign changes because `-0 = 0`; but `∫ φ dQ = φ 0 = 1 ≠ 0 = α`.
+
+The failure is not confined to the degenerate point `0`. Taking `α = 1/2`,
+`φ = 1/2 + (1/2)·1_{\{t₀, -t₀\}}` and `Q = ½ δ_{t₀} + ½ δ_{-t₀}` with `t₀ > 0` gives a
+counterexample with no zeros and no ties, so adding "`Q` charges no zeros and no ties" does
+not repair it. What the calibration hypothesis really delivers is that the sign-average
+equals `α` off a set null for every *non-atomic* law; a sign-change-invariant `Q` may live
+on that set. -/
+theorem not_integral_eq_of_sign_invariant :
+    ¬ ∀ (N : ℕ) (α : ℝ) (φ : (Fin N → ℝ) → ℝ), IsCriticalFn φ →
+        (∀ (σ : Equiv.Perm (Fin N)) (z : Fin N → ℝ), φ (z ∘ σ) = φ z) →
+        (∀ D : Measure ℝ, IsProbabilityMeasure D → (∀ t : ℝ, D {t} = 0) →
+          D.map (fun t => -t) = D →
+          ∫ z, φ z ∂(Measure.pi fun _ : Fin N => D) = α) →
+        ∀ Q : Measure (Fin N → ℝ), IsProbabilityMeasure Q →
+          (∀ ε : Fin N → Bool, Q.map (signFlip ε) = Q) →
+          ∫ z, φ z ∂Q = α := by
+  intro h
+  classical
+  have hSmeas : MeasurableSet ({0} : Set (Fin 1 → ℝ)) := measurableSet_singleton _
+  have hmeas : Measurable (Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ)) :=
+    measurable_const.indicator hSmeas
+  have hcrit : IsCriticalFn (Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ)) := by
+    refine ⟨hmeas, fun z => ?_⟩
+    by_cases hz : z ∈ ({0} : Set (Fin 1 → ℝ))
+    · rw [Set.indicator_of_mem hz]; norm_num
+    · rw [Set.indicator_of_notMem hz]; norm_num
+  have hsym : ∀ (σ : Equiv.Perm (Fin 1)) (z : Fin 1 → ℝ),
+      Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ) (z ∘ σ)
+        = Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ) z := by
+    intro σ z
+    have hz : z ∘ σ = z := funext fun i => congrArg z (Subsingleton.elim _ _)
+    rw [hz]
+  have hsingleton : ({0} : Set (Fin 1 → ℝ)) = Set.univ.pi fun _ => ({0} : Set ℝ) := by
+    ext z; simp [funext_iff]
+  have hnull : ∀ D : Measure ℝ, IsProbabilityMeasure D → (∀ t : ℝ, D {t} = 0) →
+      D.map (fun t => -t) = D →
+      ∫ z, Set.indicator ({0} : Set (Fin 1 → ℝ)) (1 : (Fin 1 → ℝ) → ℝ) z
+        ∂(Measure.pi fun _ : Fin 1 => D) = 0 := by
+    intro D hD hatom _
+    haveI := hD
+    have hzero : (Measure.pi fun _ : Fin 1 => D) {(0 : Fin 1 → ℝ)} = 0 := by
+      rw [hsingleton, Measure.pi_pi]
+      simp [hatom]
+    rw [integral_indicator_one hSmeas]
+    simp [measureReal_def, hzero]
+  have hQinv : ∀ ε : Fin 1 → Bool,
+      (Measure.dirac (0 : Fin 1 → ℝ)).map (signFlip ε) = Measure.dirac 0 := by
+    intro ε
+    rw [Measure.map_dirac' (measurable_signFlip ε)]
+    congr 1
+    funext i
+    by_cases hε : ε i <;> simp [signFlip, hε]
+  have hcontra := h 1 0 _ hcrit hsym hnull (Measure.dirac 0) inferInstance hQinv
+  rw [integral_dirac' _ _ hmeas.stronglyMeasurable,
+    Set.indicator_of_mem (Set.mem_singleton _)] at hcontra
+  norm_num at hcontra
+
 /-- **A symmetric test calibrated on continuous symmetric distributions keeps its level
-under any sign-change-invariant law.** If a symmetric critical function has mean `α` under
-every i.i.d. sample from a continuous distribution symmetric about the origin, then it has
-mean `α` under every joint law invariant under the `2^N` coordinatewise sign changes — in
-particular without assuming the coordinates independent or identically distributed. -/
+under any sign-change-invariant law.**
+
+**FALSE as stated** — see `not_integral_eq_of_sign_invariant` just above for an explicit
+counterexample (`N = 1`, `α = 0`, `φ = 1_{\{0\}}`, `Q = δ₀`), and a second one with no zeros
+and no ties. The statement is retained in the shape the source's Lemma 6.10.1 is transcribed
+in, and is derived below from the (consequently also false) sign-average lemma
+`signAverage_ae_eq_const`, so that the exact point of failure stays visible: everything
+except "the sign-average is `α`" is proved here. Repairs: assume `Q` absolutely continuous
+with respect to Lebesgue measure, or restrict `φ` to functions of the signs and of the ranks
+of the absolute values (the classical signed-rank setting).
+
+If a symmetric critical function has mean `α` under every i.i.d. sample from a continuous
+distribution symmetric about the origin, then it has mean `α` under every joint law
+invariant under the `2^N` coordinatewise sign changes — in particular without assuming the
+coordinates independent or identically distributed. -/
 theorem integral_eq_of_sign_invariant {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ) → ℝ}
     -- USER-INPUT: `φ` is a critical function
     (hφ : IsCriticalFn φ)
