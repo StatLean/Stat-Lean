@@ -60,8 +60,17 @@ first-absolute-moment convergence tool). (`TSH4 §18.3 Thm 18.3.3, Thm 18.3.4, L
   weak-convergence clause and `ProbabilityTheory.strong_law_ae` for the convergence of the
   empirical means and of the empirical second moments (hence of the empirical variances).
 * The studentized statement adds one step: the sample variance converges in probability to the
-  limiting variance along the class, which is the triangular-array weak law
-  `tendstoInMeasure_rowMean_triangular` applied to the entries and to their squares.
+  limiting variance along the class. It is obtained on the same single carrier as the root, so
+  that Mathlib's Slutsky lemmas (which are stated for one fixed measure, not for the varying
+  carriers `Fin n → ℝ`) apply: the sample second moment is handled by the self-contained
+  triangular weak law `tendstoInMeasure_rowMean_of_uniform`, whose uniform-integrability input
+  is `exists_uniform_sq_trunc`, and the sample mean by plain Chebyshev on the centred row
+  average. Neither routes through `Bootstrap/Consistency`'s
+  `tendstoInMeasure_rowMean_triangular`, which depends on the open Feller weak law of
+  `ForMathlib/LindebergCLT` and would taint the result. The denominator is kept away from zero
+  by the fixed truncation `v ↦ max v (σ²/2)`, removed afterwards by
+  `tendstoInDistribution_of_tendstoInMeasure_sub`, which also absorbs the junk convention
+  `σ̂ₙ = 0 ↦ 0`.
 * The class is stated with the `n = 0` entry unconstrained (`0 < n` guard on the
   probability-measure clause): the empirical measure of an empty sample is the zero measure,
   and every convergence in the class is a statement along `atTop`, so the degenerate entry is
@@ -1688,48 +1697,339 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
-  -- TODO (studentized CLT = drifting-row array CLT + a weak law for the sample variance +
-  -- Slutsky). NOT blocked by any missing Mathlib or repo brick; deferred purely for size.
-  -- STATE AFTER THIS SESSION — the two inputs of step (1) are now PROVED IN THIS FILE and are
-  -- `sorryAx`-free, which is the point of proving them here rather than reusing the sibling:
-  --
-  --   * `exists_uniform_sq_trunc` turns the class hypotheses (weak convergence, converging means
-  --     and variances) into "for every `ρ > 0` there is ONE level `M` with
-  --     `∫ (t² − M)⁺ d(F n) ≤ ρ` for EVERY `n`" — the uniform-square-integrability input;
-  --   * `tendstoInMeasure_rowMean_of_uniform` is the triangular weak law of large numbers for
-  --     independent nonnegative rows with exactly that uniform bound (truncation + Chebyshev on
-  --     `min (Z, M)` + Markov on `(Z − M)⁺`).
-  --
-  --   WARNING, re-derived and confirmed: `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
-  --   — which the previous note proposed using — DEPENDS ON `sorryAx` (it routes through
-  --   `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, the open Feller debt). Using it would taint
-  --   this theorem and, through it, the already-proved `bootstrap_t_consistent`. The two bricks
-  --   above exist precisely to avoid that.
-  --
-  -- WHAT REMAINS (all of it bookkeeping, no new analytic idea):
-  -- (1) Realise row `n` as i.i.d. `Y (n,i) ~ F' n` on one space, exactly as `tendsto_meanRootLaw`
-  --     does (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`, with `F'` the `n = 0`
-  --     patch of `F` by `Q`); `hpimap` there is the identity turning `studentizedRootCDF (F' n) n`
-  --     into a `Pr`-probability. A single carrier is FORCED: Mathlib's Slutsky lemmas are stated
-  --     for the constant family `fun _ => μ''`, not for the varying carriers `Fin n → ℝ`.
-  -- (2) `n⁻¹ ∑ Yᵢ² → ∫ t² dQ` in probability: `tendstoInMeasure_rowMean_of_uniform` at
-  --     `Z n i := (Y (n,i))²`, whose uniform bound is `exists_uniform_sq_trunc` transported along
-  --     `hYlaw`. `n⁻¹ ∑ Yᵢ → ∫ t dQ` in probability: plain Chebyshev, `Var[n⁻¹∑Yᵢ] = vₙ/n → 0`
-  --     (`IndepFun.variance_sum`) — the squares are the only place uniform integrability is
-  --     needed, because fourth moments are not available.
-  -- (3) `sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`, so (2) gives `sampleVariance → σ²` in probability
-  --     through the (easy, missing-from-Mathlib) two-variable continuous-mapping lemma for
-  --     `TendstoInMeasure` **to a constant**: `{ε ≤ |g(Xₙ,Yₙ) − g(a,b)|} ⊆ {δ ≤ |Xₙ−a|} ∪
-  --     {δ ≤ |Yₙ−b|}` for `δ` from `ContinuousAt g (a,b)`.
-  -- (4) Slutsky. `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const` needs a
-  --     GLOBALLY continuous `g`, so run it with `g (u,v) := u / √(max v (σ²/2))` and remove the
-  --     truncation with `tendstoInDistribution_of_tendstoInMeasure_sub`, the difference being
-  --     supported on `{sampleVariance < σ²/2}`, whose probability tends to `0` by (3). The junk
-  --     convention `σ̂ₙ = 0 ↦ 0` is absorbed the same way.
-  -- (5) Convert the resulting `TendstoInDistribution` to the distribution function at `x` by
-  --     portmanteau at `Set.Iic x` (its frontier `{x}` is null for the standard normal), using
-  --     `(gaussianReal 0 σ²).map (· / σ) = gaussianReal 0 1`.
-  sorry
+  classical
+  -- Replace the unconstrained `n = 0` entry of the sequence by `Q`.
+  set G : ℕ → Measure ℝ := fun n => if n = 0 then Q else F n with hGdef
+  have hGeq : ∀ n : ℕ, 0 < n → G n = F n := by
+    intro n hn; simp only [hGdef, if_neg hn.ne']
+  haveI hGprob : ∀ n, IsProbabilityMeasure (G n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hGdef, if_pos rfl] using ‹IsProbabilityMeasure Q›
+    · rw [hGeq n hn]; exact hF.1 n hn
+  obtain ⟨-, hF2, hFcdf, hFmean, hFvar⟩ := hF
+  have hG2 : ∀ n, MemLp (fun t : ℝ => t) 2 (G n) := by
+    intro n
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simpa only [hGdef, if_pos rfl] using hQ2
+    · rw [hGeq n hn]; exact hF2 n
+  have hGcdf : ∀ y : ℝ, ContinuousAt (fun t => (Q (Set.Iic t)).toReal) y →
+      Tendsto (fun n => ((G n) (Set.Iic y)).toReal) atTop (𝓝 ((Q (Set.Iic y)).toReal)) := by
+    intro y hy
+    refine (hFcdf y hy).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hGeq n hn]
+  have hGmean : Tendsto (fun n => ∫ t, t ∂(G n)) atTop (𝓝 (∫ t, t ∂Q)) := by
+    refine hFmean.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hGeq n hn]
+  have hGvar : Tendsto (fun n => Var[fun t : ℝ => t; G n]) atTop
+      (𝓝 Var[fun t : ℝ => t; Q]) := by
+    refine hFvar.congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hGeq n hn]
+  have hGweak := tendsto_integral_of_tendsto_cdf hGprob hGcdf
+  -- the limiting variance and standard deviation
+  set σ2 : ℝ := Var[fun t : ℝ => t; Q] with hσ2def
+  set σ : ℝ := Real.sqrt σ2 with hσdef
+  have hσpos : 0 < σ := Real.sqrt_pos.2 hQvar
+  have hσsq : σ ^ 2 = σ2 := Real.sq_sqrt hQvar.le
+  have hvne : Real.toNNReal σ2 ≠ 0 := (Real.toNNReal_pos.mpr hQvar).ne'
+  -- the second moments of the sequence converge, by the variance identity
+  have hsqQ : ∫ t, t ^ 2 ∂Q = σ2 + (∫ t, t ∂Q) ^ 2 := by
+    have h := variance_eq_sub (μ := Q) (X := fun t : ℝ => t) hQ2
+    have h2 : Q[(fun t : ℝ => t) ^ 2] = ∫ t, t ^ 2 ∂Q := by norm_num
+    rw [h2] at h
+    have h3 : Q[fun t : ℝ => t] = ∫ t, t ∂Q := rfl
+    rw [h3] at h
+    rw [← hσ2def] at h
+    linarith
+  have hsqG : ∀ n : ℕ, ∫ t, t ^ 2 ∂(G n)
+      = Var[fun t : ℝ => t; G n] + (∫ t, t ∂(G n)) ^ 2 := by
+    intro n
+    have h := variance_eq_sub (μ := G n) (X := fun t : ℝ => t) (hG2 n)
+    have h2 : (G n)[(fun t : ℝ => t) ^ 2] = ∫ t, t ^ 2 ∂(G n) := by norm_num
+    rw [h2] at h
+    have h3 : (G n)[fun t : ℝ => t] = ∫ t, t ∂(G n) := rfl
+    rw [h3] at h
+    linarith
+  have hGsq : Tendsto (fun n => ∫ t, t ^ 2 ∂(G n)) atTop (𝓝 (∫ t, t ^ 2 ∂Q)) := by
+    rw [hsqQ]
+    exact (hGvar.add (hGmean.pow 2)).congr fun n => (hsqG n).symm
+  -- the canonical independent model with the prescribed row laws
+  obtain ⟨Ω₀, mΩ₀, P, Y, hYmeas, hYlaw, hYindep, hPprob⟩ :=
+    ProbabilityTheory.exists_hasLaw_indepFun (ι := ℕ × ℕ) (fun _ : ℕ × ℕ => ℝ)
+      (fun p : ℕ × ℕ => G p.1)
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P := hPprob
+  have hinj : ∀ n : ℕ, Function.Injective (fun i : Fin n => ((n, (i : ℕ)) : ℕ × ℕ)) := by
+    intro n a b hab
+    exact Fin.val_injective (congrArg Prod.snd hab)
+  have hpimap : ∀ n : ℕ, P.map (fun ω (i : Fin n) => Y (n, (i : ℕ)) ω)
+      = Measure.pi (fun _ : Fin n => G n) := by
+    intro n
+    have hsub : iIndepFun (fun i : Fin n => Y (n, (i : ℕ))) P := hYindep.precomp (hinj n)
+    rw [(iIndepFun_iff_map_fun_eq_pi_map
+      (fun i : Fin n => (hYmeas (n, (i : ℕ))).aemeasurable)).1 hsub]
+    congr 1
+    funext i
+    exact (hYlaw (n, (i : ℕ))).map_eq
+  -- moments of the coordinates
+  have hYL2 : ∀ p : ℕ × ℕ, MemLp (Y p) 2 P := by
+    intro p
+    have h : MemLp (fun t : ℝ => t) 2 (P.map (Y p)) := by rw [(hYlaw p).map_eq]; exact hG2 p.1
+    have h2 := (memLp_map_measure_iff (by fun_prop) (hYmeas p).aemeasurable).1 h
+    simpa [Function.comp_def] using h2
+  have hYint : ∀ p : ℕ × ℕ, ∫ ω, Y p ω ∂P = ∫ t, t ∂(G p.1) := fun p =>
+    (hYlaw p).integral_comp (f := fun t : ℝ => t) (by fun_prop)
+  have hYsq : ∀ p : ℕ × ℕ, ∫ ω, (Y p ω) ^ 2 ∂P = ∫ t, t ^ 2 ∂(G p.1) := fun p =>
+    (hYlaw p).integral_comp (f := fun t : ℝ => t ^ 2) (by fun_prop)
+  have hYvar : ∀ p : ℕ × ℕ, Var[Y p; P] = Var[fun t : ℝ => t; G p.1] := by
+    intro p
+    have h : Var[fun t : ℝ => t; P.map (Y p)] = Var[Y p; P] := by
+      rw [variance_map (by fun_prop) (hYmeas p).aemeasurable]
+      rfl
+    rw [← h, (hYlaw p).map_eq]
+  -- the sample mean, the sample second moment and the sample variance on the common space
+  set Am : ℕ → Ω₀ → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, Y (n, (i : ℕ)) ω with hAmdef
+  set Bm : ℕ → Ω₀ → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, (Y (n, (i : ℕ)) ω) ^ 2 with hBmdef
+  set V : ℕ → Ω₀ → ℝ := fun n ω => Bm n ω - (Am n ω) ^ 2 with hVdef
+  set R : ℕ → Ω₀ → ℝ := fun n ω => Real.sqrt n * (Am n ω - ∫ t, t ∂(G n)) with hRdef
+  set W : ℕ → Ω₀ → ℝ := fun n ω => R n ω / Real.sqrt (V n ω) with hWdef
+  have hAmmeas : ∀ n, Measurable (Am n) := by intro n; simp only [hAmdef]; fun_prop
+  have hBmmeas : ∀ n, Measurable (Bm n) := by intro n; simp only [hBmdef]; fun_prop
+  have hVmeas : ∀ n, Measurable (V n) := by
+    intro n; simp only [hVdef]; exact (hBmmeas n).sub ((hAmmeas n).pow_const 2)
+  have hRmeas : ∀ n, Measurable (R n) := by
+    intro n; simp only [hRdef]; exact measurable_const.mul ((hAmmeas n).sub measurable_const)
+  have hWmeas : ∀ n, Measurable (W n) := by
+    intro n; simp only [hWdef]
+    exact (hRmeas n).div (hVmeas n).sqrt
+  -- the sample second moment converges in probability, by the uniformly integrable weak law
+  have hBmprob : TendstoInMeasure P Bm atTop (fun _ => ∫ t, t ^ 2 ∂Q) := by
+    have hZindep : ∀ n : ℕ,
+        iIndepFun (fun i : Fin n => (fun ω => (Y (n, (i : ℕ)) ω) ^ 2)) P := by
+      intro n
+      exact (hYindep.precomp (hinj n)).comp (fun _ => fun t : ℝ => t ^ 2)
+        (fun _ => by fun_prop)
+    have hUI : ∀ ρ : ℝ, 0 < ρ → ∃ M : ℝ, 0 ≤ M ∧
+        ∀ n i : ℕ, i < n → ∫ ω, max ((Y (n, i) ω) ^ 2 - M) 0 ∂P ≤ ρ := by
+      intro ρ hρ
+      obtain ⟨M, hM0, hM⟩ := exists_uniform_sq_trunc (F := G) (Q := Q) hG2 hQ2 hGweak hGsq hρ
+      refine ⟨M, hM0, fun n i _ => ?_⟩
+      have htr : ∫ ω, max ((Y (n, i) ω) ^ 2 - M) 0 ∂P
+          = ∫ t, max (t ^ 2 - M) 0 ∂(G n) :=
+        (hYlaw (n, i)).integral_comp (f := fun t : ℝ => max (t ^ 2 - M) 0) (by fun_prop)
+      rw [htr]
+      exact hM n
+    have hraw := tendstoInMeasure_rowMean_of_uniform (Pr := P)
+      (Z := fun n i ω => (Y (n, i) ω) ^ 2) (s := fun n => ∫ t, t ^ 2 ∂(G n))
+      (c := ∫ t, t ^ 2 ∂Q) (fun n i => by fun_prop) hZindep (fun n i ω => sq_nonneg _)
+      (fun n i => (hYL2 (n, i)).integrable_sq) (fun n i _ => hYsq (n, i)) hGsq hUI
+    intro ε hε
+    refine (hraw ε hε).congr fun n => ?_
+    congr 1
+    ext ω
+    simp only [Set.mem_setOf_eq, hBmdef, Fin.sum_univ_eq_sum_range fun i => (Y (n, i) ω) ^ 2]
+  -- the sample mean converges in probability, by Chebyshev on the centred row average
+  have hZL2 : ∀ (n : ℕ) (i : Fin n),
+      MemLp (fun ω => Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)) 2 P := fun n i =>
+    (hYL2 (n, (i : ℕ))).sub (memLp_const _)
+  have hZint : ∀ (n : ℕ) (i : Fin n),
+      ∫ ω, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)) ∂P = 0 := by
+    intro n i
+    rw [integral_sub ((hYL2 _).integrable one_le_two) (integrable_const _)]
+    simp [hYint (n, (i : ℕ))]
+  have hfun : ∀ n : ℕ, (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)))
+      = ∑ i : Fin n, fun ω => Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n) := by
+    intro n; funext ω; simp
+  have hsumL2 : ∀ n : ℕ,
+      MemLp (fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n))) 2 P := by
+    intro n
+    have h := memLp_finset_sum' (Finset.univ : Finset (Fin n)) (fun i _ => hZL2 n i)
+    rw [← hfun n] at h
+    exact h
+  set D : ℕ → Ω₀ → ℝ :=
+    fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)) with hDdef
+  have hDL2 : ∀ n, MemLp (D n) 2 P := by
+    intro n; simp only [hDdef]; exact (hsumL2 n).const_mul _
+  have hDmean : ∀ n, ∫ ω, D n ω ∂P = 0 := by
+    intro n
+    simp only [hDdef]
+    rw [integral_const_mul,
+      integral_finset_sum _ (fun i _ => (hZL2 n i).integrable one_le_two)]
+    simp [hZint n]
+  have hDvar : ∀ n : ℕ, 0 < n → Var[D n; P] = Var[fun t : ℝ => t; G n] / n := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hpair : Set.Pairwise (↑(Finset.univ : Finset (Fin n)) : Set (Fin n))
+        fun i j => IndepFun (fun ω => Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n))
+          (fun ω => Y (n, (j : ℕ)) ω - ∫ t, t ∂(G n)) P := by
+      intro i _ j _ hij
+      exact ((hYindep.precomp (hinj n)).comp
+        (fun _ => fun t : ℝ => t - ∫ t, t ∂(G n)) (fun _ => by fun_prop)).indepFun hij
+    have hsum : Var[fun ω => ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n)); P]
+        = (n : ℝ) * Var[fun t : ℝ => t; G n] := by
+      rw [hfun n, IndepFun.variance_sum (fun i _ => hZL2 n i) hpair]
+      simp only [variance_sub_const (hYmeas _).aestronglyMeasurable, hYvar]
+      simp
+    simp only [hDdef]
+    rw [variance_const_mul, hsum]
+    field_simp
+  have hDprob : TendstoInMeasure P D atTop (fun _ => (0 : ℝ)) := by
+    rw [tendstoInMeasure_iff_norm]
+    intro r hr
+    have hcheb : ∀ᶠ n : ℕ in atTop, P {ω | r ≤ ‖D n ω - (0 : ℝ)‖}
+        ≤ ENNReal.ofReal (Var[fun t : ℝ => t; G n] / n / r ^ 2) := by
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      have h := meas_ge_le_variance_div_sq (μ := P) (hDL2 n) hr
+      rw [hDmean n, hDvar n hn] at h
+      simpa using h
+    have hto : Tendsto
+        (fun n : ℕ => ENNReal.ofReal (Var[fun t : ℝ => t; G n] / n / r ^ 2)) atTop (𝓝 0) := by
+      have h1 : Tendsto (fun n : ℕ => Var[fun t : ℝ => t; G n] / n / r ^ 2) atTop (𝓝 0) := by
+        have h0 := hGvar.mul tendsto_inverse_atTop_nhds_zero_nat
+        rw [mul_zero] at h0
+        have h2 := h0.div_const (r ^ 2)
+        simpa [div_eq_mul_inv] using h2
+      have := (ENNReal.continuous_ofReal.tendsto 0).comp h1
+      simpa using this
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hto
+      (Eventually.of_forall fun n => zero_le _) hcheb
+  have hAmeq : ∀ n : ℕ, 0 < n → ∀ ω, Am n ω = D n ω + ∫ t, t ∂(G n) := by
+    intro n hn ω
+    have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
+    have hs : ∑ i : Fin n, (Y (n, (i : ℕ)) ω - ∫ t, t ∂(G n))
+        = (∑ i : Fin n, Y (n, (i : ℕ)) ω) - (n : ℝ) * ∫ t, t ∂(G n) := by
+      rw [Finset.sum_sub_distrib]
+      simp [Finset.card_univ, mul_comm]
+    simp only [hAmdef, hDdef, hs]
+    rw [mul_sub, ← mul_assoc, inv_mul_cancel₀ hnR, one_mul]
+    ring
+  have hAmprob : TendstoInMeasure P Am atTop (fun _ => ∫ t, t ∂Q) := by
+    have hshift := tendstoInMeasure_add_tendsto hDprob hGmean
+    intro ε hε
+    refine (hshift ε hε).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    congr 1
+    ext ω
+    simp only [Set.mem_setOf_eq, hAmeq n hn ω]
+  -- the sample variance converges in probability to the limiting variance
+  have hVprob : TendstoInMeasure P V atTop (fun _ => σ2) := by
+    have hg : ContinuousAt (fun p : ℝ × ℝ => p.1 - p.2 ^ 2)
+        ((∫ t, t ^ 2 ∂Q), (∫ t, t ∂Q)) := by fun_prop
+    have h := tendstoInMeasure_comp₂_of_continuousAt hBmprob hAmprob hg
+    have hval : (∫ t, t ^ 2 ∂Q) - (∫ t, t ∂Q) ^ 2 = σ2 := by rw [hsqQ]; ring
+    intro ε hε
+    have h2 := h ε hε
+    simp only [hval] at h2
+    exact h2
+  -- the numerator converges in distribution to the centred normal law
+  have hroot : ∀ n : ℕ, P.map (R n) = meanRootLaw (G n) n := by
+    intro n
+    rw [meanRootLaw, ← hpimap n, Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
+  have hRdist : TendstoInDistribution R atTop (id : ℝ → ℝ) (fun _ => P)
+      (gaussianReal 0 (Real.toNNReal σ2)) := by
+    refine ⟨fun n => (hRmeas n).aemeasurable, measurable_id.aemeasurable, ?_⟩
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f
+    have h := tendsto_meanRootLaw hG2 hQ2 hGweak hGmean hGvar f
+    simp only [ProbabilityMeasure.coe_mk, Measure.map_id]
+    exact h.congr fun n => by rw [hroot n]
+  -- Slutsky, with the denominator kept away from zero by a fixed truncation
+  set gtr : ℝ × ℝ → ℝ := fun p => p.1 / Real.sqrt (max p.2 (σ2 / 2)) with hgtrdef
+  have hden : ∀ p : ℝ × ℝ, Real.sqrt (max p.2 (σ2 / 2)) ≠ 0 := by
+    intro p
+    have h1 : (0 : ℝ) < σ2 / 2 := by positivity
+    exact (Real.sqrt_pos.2 (lt_of_lt_of_le h1 (le_max_right _ _))).ne'
+  have hgtrcont : Continuous gtr := by
+    simp only [hgtrdef]
+    exact continuous_fst.div
+      (Real.continuous_sqrt.comp (continuous_snd.max continuous_const)) hden
+  have hXdist := hRdist.continuous_comp_prodMk_of_tendstoInMeasure_const hgtrcont hVprob
+    (fun n => (hVmeas n).aemeasurable)
+  have hWsub : TendstoInMeasure P (W - fun n ω => gtr (R n ω, V n ω)) atTop 0 := by
+    rw [tendstoInMeasure_iff_norm]
+    intro ε hε
+    have hVn := (tendstoInMeasure_iff_norm.1 hVprob) (σ2 / 2) (by positivity)
+    have hsub : ∀ n : ℕ,
+        {ω | ε ≤ ‖(W - fun n ω => gtr (R n ω, V n ω)) n ω - (0 : Ω₀ → ℝ) ω‖}
+          ⊆ {ω | σ2 / 2 ≤ ‖V n ω - σ2‖} := by
+      intro n ω hω
+      simp only [Pi.sub_apply, Pi.zero_apply, sub_zero, Set.mem_setOf_eq] at hω ⊢
+      by_contra hcon
+      push_neg at hcon
+      have hV2 : σ2 / 2 ≤ V n ω := by
+        rw [Real.norm_eq_abs] at hcon
+        have hab := abs_lt.1 hcon
+        linarith [hab.1]
+      have hEq : gtr (R n ω, V n ω) = W n ω := by
+        simp only [hgtrdef, hWdef, max_eq_left hV2]
+      rw [hEq] at hω
+      simp only [sub_self, norm_zero] at hω
+      linarith
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hVn
+      (fun n => zero_le _) fun n => measure_mono (hsub n)
+  have hWdist := tendstoInDistribution_of_tendstoInMeasure_sub
+    (X := fun n ω => gtr (R n ω, V n ω)) W (fun z : ℝ => gtr (id z, σ2)) hXdist hWsub
+    (fun n => (hWmeas n).aemeasurable)
+  -- identify the limit law as the standard normal
+  have hlimmeas : (gaussianReal 0 (Real.toNNReal σ2)).map (fun z : ℝ => gtr (id z, σ2))
+      = gaussianReal 0 1 := by
+    have hfun : (fun z : ℝ => gtr (id z, σ2)) = fun z : ℝ => z / σ := by
+      funext z
+      simp only [hgtrdef, id_eq, max_eq_left (by linarith : σ2 / 2 ≤ σ2), hσdef]
+    rw [hfun, gaussianReal_map_div_const σ]
+    have h1 : (⟨σ ^ 2, sq_nonneg σ⟩ : ℝ≥0) = Real.toNNReal σ2 := by
+      refine NNReal.eq ?_
+      simp [Real.coe_toNNReal σ2 hQvar.le, hσsq]
+    rw [h1, div_self hvne]
+    congr 1
+    simp
+  -- portmanteau at `Iic x`
+  haveI hWmap : ∀ n, IsProbabilityMeasure (P.map (W n)) := fun n =>
+    Measure.isProbabilityMeasure_map (hWmeas n).aemeasurable
+  set ρs : ℕ → ProbabilityMeasure ℝ := fun n => ⟨P.map (W n), hWmap n⟩ with hρs
+  set ρ : ProbabilityMeasure ℝ := ⟨gaussianReal 0 1, inferInstance⟩ with hρ
+  have hconv : Tendsto ρs atTop (𝓝 ρ) := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f
+    have h := ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.1 hWdist.tendsto f
+    simp only [ProbabilityMeasure.coe_mk, hlimmeas] at h
+    simpa only [hρs, hρ, ProbabilityMeasure.coe_mk] using h
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  have hfront : (ρ : Measure ℝ) (frontier (Set.Iic x)) = 0 := by
+    rw [hρ]; simp [frontier_Iic]
+  have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+  have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+  have hL : ∀ n : ℕ, ((ρs n : Measure ℝ) (Set.Iic x)).toReal = studentizedRootCDF (G n) n x := by
+    intro n
+    have hSmeas : MeasurableSet {y : Fin n → ℝ |
+        Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(G n)) /
+          Real.sqrt (sampleVariance y) ≤ x} := by
+      refine measurableSet_le ?_ measurable_const
+      have h1 : Measurable fun y : Fin n → ℝ => sampleVariance y := by
+        simp only [sampleVariance]; fun_prop
+      exact (measurable_const.mul ((by fun_prop : Measurable fun y : Fin n → ℝ =>
+        (n : ℝ)⁻¹ * (∑ i, y i)).sub measurable_const)).div h1.sqrt
+    have hpre : (fun (ω : Ω₀) (i : Fin n) => Y (n, (i : ℕ)) ω) ⁻¹'
+        {y : Fin n → ℝ | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ t, t ∂(G n)) /
+          Real.sqrt (sampleVariance y) ≤ x} = W n ⁻¹' Set.Iic x := by
+      ext ω
+      simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_Iic, hWdef, hRdef, hVdef, hAmdef,
+        hBmdef, sampleVariance_eq]
+    have h1' : ((ρs n : Measure ℝ) (Set.Iic x)) = P (W n ⁻¹' Set.Iic x) := by
+      simp only [hρs, ProbabilityMeasure.coe_mk]
+      exact Measure.map_apply (hWmeas n) measurableSet_Iic
+    have h2' : studentizedRootCDF (G n) n x = (P (W n ⁻¹' Set.Iic x)).toReal := by
+      rw [studentizedRootCDF, ← hpimap n, Measure.map_apply (by fun_prop) hSmeas, hpre]
+    rw [h1', h2']
+  have hR' : ((ρ : Measure ℝ) (Set.Iic x)).toReal = stdNormalCDF x := rfl
+  simp only [Function.comp_def, hL, hR'] at htoreal
+  refine htoreal.congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  rw [hGeq n hn]
 
 /-- **Consistency of the bootstrap-t.**
 
