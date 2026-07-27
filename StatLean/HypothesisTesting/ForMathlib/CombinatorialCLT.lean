@@ -34,6 +34,8 @@ that is `tendsto_perm_cdf_blockSum` below.
 * `perm_avg_indicator_blockAvg_sub_mean_le` and its inverse-convention twin
   `perm_avg_indicator_blockAvg_inv_sub_mean_le` — the Chebyshev step for a block average of
   **uncentred** coefficients against the population mean.
+* `avg_measureReal_eq_integral_avg_indicator` — Fubini for a finite group: the group average
+  of deviation *probabilities* is the integral of the group average of the *indicators*.
 * `blockSumScale` — the asymptotic standard deviation `√(m(N-m)/N)` used to standardize.
 * `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem** (open; see the
   status note at the statement).
@@ -271,6 +273,39 @@ theorem perm_avg_indicator_blockAvg_inv_sub_mean_le {N m : ℕ} (hm : 0 < m) (hN
     (f := fun σ : Equiv.Perm (Fin N) =>
       if ε ≤ |(m : ℝ)⁻¹ * (∑ i, c (σ (a i))) - (N : ℝ)⁻¹ * ∑ l, c l| then (1 : ℝ) else 0)]
   exact perm_avg_indicator_blockAvg_sub_mean_le hm hN a ha c hε
+
+/-! ### From permutation averages to randomization probabilities
+
+The bounds above are pointwise in the data: they control the group average of an *indicator*
+at a fixed data vector. The hypotheses consumed by the randomization theory
+(`TendstoInProbRandomized`, and the `hrem` hypotheses of the Slutsky transfers) are group
+averages of *probabilities*. The two are exchanged by Fubini for a finite group, which is
+the following identity — the only step needed to turn `perm_avg_indicator_blockAvg_..._le`
+into a statement about the data law. -/
+
+/-- **Fubini for a finite group average of deviation probabilities.** The group average of
+`P{ε ≤ A g}` is the `P`-integral of the group average of the indicators. Only measurability
+of each `A g` is required; the group being finite, the sum is a finite one and no product
+measure is involved. -/
+theorem avg_measureReal_eq_integral_avg_indicator {𝓨 : Type*} [MeasurableSpace 𝓨]
+    (P : Measure 𝓨) [IsProbabilityMeasure P] {G : Type*} [Fintype G]
+    (A : G → 𝓨 → ℝ) (hA : ∀ g, Measurable (A g)) (ε : ℝ) :
+    (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x | ε ≤ A g x}
+      = ∫ x, (Fintype.card G : ℝ)⁻¹ * ∑ g : G, (if ε ≤ A g x then (1 : ℝ) else 0) ∂P := by
+  classical
+  have hset : ∀ g : G, MeasurableSet {x : 𝓨 | ε ≤ A g x} :=
+    fun g => measurableSet_le measurable_const (hA g)
+  have hind : ∀ g : G, (fun x => if ε ≤ A g x then (1 : ℝ) else 0)
+      = Set.indicator {x | ε ≤ A g x} 1 := by
+    intro g; funext x; simp [Set.indicator_apply]
+  have hint : ∀ g : G, Integrable (fun x => if ε ≤ A g x then (1 : ℝ) else 0) P := by
+    intro g
+    rw [hind g]
+    exact (integrable_const (1 : ℝ)).indicator (hset g)
+  rw [integral_const_mul, integral_finset_sum Finset.univ (fun g _ => hint g)]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ => ?_
+  rw [hind g, integral_indicator_one (hset g)]
 
 /-! ### Standardization and the central limit theorem -/
 
