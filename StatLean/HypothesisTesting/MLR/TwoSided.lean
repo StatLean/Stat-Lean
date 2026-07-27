@@ -1322,6 +1322,121 @@ private lemma cdf_quantile_bounds (ν : Measure ℝ) [IsProbabilityMeasure ν] {
   filter_upwards [self_mem_nhdsWithin] with y hy
   exact (hB y hy).le
 
+/-- **The quantile function is constant on the level interval of an atom.** If
+`F(x⁻) < u ≤ F(x)` then `quantile F u = x`. The window `(F(x⁻), F(x)]` is the atom of `ν` at
+`x` read in *level* space; this lemma says the quantile function collapses it back to `x`,
+and it is what makes the two boundary terms of brick (b) below explicit. -/
+private lemma quantile_eq_of_leftLim_lt (ν : Measure ℝ) [IsProbabilityMeasure ν] {x u : ℝ}
+    (hu0 : 0 < u) (hu1 : u < 1)
+    (hlo : Function.leftLim (⇑(cdf ν)) x < u) (hhi : u ≤ cdf ν x) :
+    quantile (⇑(cdf ν)) u = x := by
+  have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
+  have hrc : ∀ y : ℝ, ContinuousWithinAt (⇑(cdf ν)) (Set.Ici y) y :=
+    fun y => (cdf ν).right_continuous y
+  obtain ⟨hne, hbdd⟩ := cdf_level_nonempty_bddBelow ν hu0 hu1
+  refine le_antisymm ((quantile_le_iff hmono hrc hne hbdd).mpr hhi) ?_
+  by_contra hcon
+  have hlt : quantile (⇑(cdf ν)) u < x := not_le.mp hcon
+  have h1 : u ≤ cdf ν (quantile (⇑(cdf ν)) u) := (cdf_quantile_bounds ν hu0 hu1).1
+  have h2 : cdf ν (quantile (⇑(cdf ν)) u) ≤ Function.leftLim (⇑(cdf ν)) x :=
+    hmono.le_leftLim hlt
+  linarith
+
+/-- The levels whose quantile lies below `x`, read inside the unit interval, form the level
+window `(0, F x]` up to a Lebesgue-null set — the Galois property `quantile F u ≤ x ↔ u ≤ F x`
+in measure form, the null set being the single endpoint `1`. -/
+private lemma quantile_preimage_Iic_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    ((quantile (⇑(cdf ν)) ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1 : Set ℝ)
+      =ᵐ[MeasureTheory.volume] (Set.Ioc (0 : ℝ) (cdf ν x) : Set ℝ) := by
+  have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
+  have hrc : ∀ y : ℝ, ContinuousWithinAt (⇑(cdf ν)) (Set.Ici y) y :=
+    fun y => (cdf ν).right_continuous y
+  have ha1 : cdf ν x ≤ 1 := cdf_le_one ν x
+  have hIccIoo : Set.Icc (0 : ℝ) 1 =ᵐ[MeasureTheory.volume] Set.Ioo 0 1 := Ioo_ae_eq_Icc.symm
+  have hstep : (quantile (⇑(cdf ν)) ⁻¹' Set.Iic x) ∩ Set.Ioo (0 : ℝ) 1
+      = Set.Ioo (0 : ℝ) 1 ∩ Set.Iic (cdf ν x) := by
+    ext u
+    simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_Iic, Set.mem_Ioo]
+    constructor
+    · rintro ⟨hqt, hu⟩
+      obtain ⟨hne, hbdd⟩ := cdf_level_nonempty_bddBelow ν hu.1 hu.2
+      exact ⟨hu, (quantile_le_iff hmono hrc hne hbdd).mp hqt⟩
+    · rintro ⟨hu, hle⟩
+      obtain ⟨hne, hbdd⟩ := cdf_level_nonempty_bddBelow ν hu.1 hu.2
+      exact ⟨(quantile_le_iff hmono hrc hne hbdd).mpr hle, hu⟩
+  have hcong : ((quantile (⇑(cdf ν)) ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1 : Set ℝ)
+      =ᵐ[MeasureTheory.volume] (Set.Ioo (0 : ℝ) 1 ∩ Set.Iic (cdf ν x) : Set ℝ) := by
+    refine (Filter.EventuallyEq.inter (ae_eq_refl _) hIccIoo).trans ?_
+    rw [hstep]
+  refine hcong.trans ?_
+  rw [ae_eq_set]
+  constructor
+  · convert measure_empty (μ := MeasureTheory.volume)
+    rw [Set.diff_eq_empty]
+    rintro u ⟨⟨h0, -⟩, hle⟩
+    exact ⟨h0, hle⟩
+  · refine measure_mono_null ?_ (Real.volume_singleton (a := 1))
+    rintro u ⟨⟨h0, hle⟩, hnot⟩
+    rw [Set.mem_singleton_iff]
+    by_contra hu1
+    exact hnot ⟨⟨h0, lt_of_le_of_ne (le_trans hle ha1) hu1⟩, hle⟩
+
+/-- **Change of variables along the quantile function, on a half-line.** For measurable `g`,
+`∫_{(-∞,x]} g dν = ∫_0^{F x} g(Q u) du`.
+
+This is the inverse-transform identity `map_quantile_uniform` localized to `Iic x`, and it is
+the analytic half of brick (b): it converts the two `ν`-masses that the sliding window cuts
+off into ordinary Lebesgue integrals of `g ∘ Q` over level intervals. -/
+private lemma setIntegral_Iic_eq_intervalIntegral_quantile (ν : Measure ℝ)
+    [IsProbabilityMeasure ν] {g : ℝ → ℝ} (hg : Measurable g) (x : ℝ) :
+    ∫ t in Set.Iic x, g t ∂ν
+      = ∫ u in (0 : ℝ)..(cdf ν x), g (quantile (⇑(cdf ν)) u) := by
+  classical
+  have hFdef : ∀ y : ℝ, (⇑(cdf ν)) y = (ν (Set.Iic y)).toReal := fun y => by
+    rw [cdf_eq_real]; rfl
+  set Q : ℝ → ℝ := quantile (⇑(cdf ν)) with hQ
+  set m : Measure ℝ := MeasureTheory.volume.restrict (Set.Icc (0 : ℝ) 1) with hm
+  have hmap : m.map Q = ν := map_quantile_uniform ν _ hFdef
+  have h0 : (0 : ℝ) ≤ cdf ν x := cdf_nonneg ν x
+  have h1 : cdf ν x ≤ 1 := cdf_le_one ν x
+  -- the quantile function is a.e. measurable on the unit interval, being monotone there
+  have haem : AEMeasurable Q m := by
+    have hmonoOn : MonotoneOn Q (Set.Ioo 0 1) := by
+      intro a ha b hb hab
+      exact quantile_mono _ hab (cdf_level_nonempty_bddBelow ν ha.1 ha.2).2
+        (cdf_level_nonempty_bddBelow ν hb.1 hb.2).1
+    have hIccIoo : Set.Icc (0 : ℝ) 1 =ᵐ[MeasureTheory.volume] Set.Ioo 0 1 := Ioo_ae_eq_Icc.symm
+    rw [hm, Measure.restrict_congr_set hIccIoo]
+    exact aemeasurable_restrict_of_monotoneOn measurableSet_Ioo hmonoOn
+  have hasm : AEStronglyMeasurable (Set.indicator (Set.Iic x) g) (m.map Q) := by
+    rw [hmap]
+    exact (hg.indicator measurableSet_Iic).aestronglyMeasurable
+  have hstep1 : ∫ t in Set.Iic x, g t ∂ν = ∫ u, Set.indicator (Set.Iic x) g (Q u) ∂m := by
+    rw [← integral_indicator measurableSet_Iic, ← hmap, integral_map haem hasm]
+  have hset := quantile_preimage_Iic_ae ν x
+  rw [← hQ] at hset
+  have hstep2 : ∫ u, Set.indicator (Set.Iic x) g (Q u) ∂m
+      = ∫ u, Set.indicator (Set.Ioc (0 : ℝ) (cdf ν x)) (fun v => g (Q v)) u ∂m := by
+    refine integral_congr_ae ?_
+    have hmem : ∀ᵐ u ∂m, u ∈ Set.Icc (0 : ℝ) 1 := by
+      rw [hm]; exact ae_restrict_mem measurableSet_Icc
+    have hae : ∀ᵐ u ∂m, (u ∈ (Q ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1)
+        = (u ∈ Set.Ioc (0 : ℝ) (cdf ν x)) := by
+      rw [hm]; exact ae_restrict_of_ae hset
+    filter_upwards [hmem, hae] with u hu hueq
+    by_cases hQx : Q u ∈ Set.Iic x
+    · have huB : u ∈ Set.Ioc (0 : ℝ) (cdf ν x) := hueq ▸ (⟨hQx, hu⟩ :
+        u ∈ (Q ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1)
+      rw [Set.indicator_of_mem hQx, Set.indicator_of_mem huB]
+    · have huA : u ∉ (Q ⁻¹' Set.Iic x) ∩ Set.Icc (0 : ℝ) 1 := fun h => hQx h.1
+      have huB : u ∉ Set.Ioc (0 : ℝ) (cdf ν x) := fun h => huA (hueq ▸ h)
+      rw [Set.indicator_of_notMem hQx, Set.indicator_of_notMem huB]
+  have hsub : Set.Ioc (0 : ℝ) (cdf ν x) ⊆ Set.Icc (0 : ℝ) 1 :=
+    fun u hu => ⟨hu.1.le, hu.2.trans h1⟩
+  rw [hstep1, hstep2, integral_indicator measurableSet_Ioc,
+    intervalIntegral.integral_of_le h0, hm, Measure.restrict_restrict measurableSet_Ioc,
+    Set.inter_eq_self_of_subset_left hsub]
+
 /-- **Brick (a): the randomized window attached to a quantile pair.**
 
 For a law `ν` on the line, a level `α` and a starting level `s`, the two-sided test whose
