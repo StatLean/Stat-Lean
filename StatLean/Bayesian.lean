@@ -84,6 +84,7 @@ import StatLean.Bayesian.ForMathlib.TVDist
 import StatLean.Bayesian.ForMathlib.GaussianTV
 import StatLean.Bayesian.ForMathlib.IIDSeqKernel
 import StatLean.Bayesian.BernsteinVonMises.Defs
+import StatLean.Bayesian.BernsteinVonMises.Basic
 import StatLean.Bayesian.BernsteinVonMises.PriorSmallBall
 import StatLean.Bayesian.BernsteinVonMises.MixtureContiguity
 import StatLean.Bayesian.BernsteinVonMises.ScoreTest
@@ -99,6 +100,7 @@ import StatLean.Bayesian.BayesEstimators.ArgminConsistency
 import StatLean.Bayesian.BayesEstimators.UniformApproximation
 import StatLean.Bayesian.BayesEstimators.Theorem10_8
 import StatLean.Bayesian.DoobConsistency.Defs
+import StatLean.Bayesian.DoobConsistency.Basic
 import StatLean.Bayesian.DoobConsistency.PosteriorMartingale
 import StatLean.Bayesian.DoobConsistency.Accessible
 import StatLean.Bayesian.DoobConsistency.Theorem10_10

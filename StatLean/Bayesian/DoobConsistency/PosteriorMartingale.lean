@@ -1,4 +1,5 @@
 import StatLean.Bayesian.DoobConsistency.Defs
+import StatLean.Bayesian.DoobConsistency.Basic
 import Mathlib.Probability.Martingale.Convergence
 import Mathlib.Probability.Kernel.CondDistrib
 

@@ -23,9 +23,9 @@ Wave 0 (laptop): stubs written for 24 files (2 AS/ForMathlib, 3 Bay/ForMathlib,
 |---|---|---|---|---|---|
 | bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | STUBBED | per-lemma sorries |
 | bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | STUBBED | comp_subseq insulated |
-| bricks-tv (TVDist, GaussianTV) | 1 | Bay/ForMathlib/{TVDist,GaussianTV} | — | STUBBED | pair-ratio Jensen insulated |
+| bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | STUBBED | pair-ratio Jensen insulated |
 | tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | STUBBED | mean-expansion insulated |
-| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{PosteriorMartingale,Accessible,Defs-lemmas} | — | STUBBED | retraction insulated |
+| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | STUBBED | retraction insulated |
 | conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | STUBBED | tail-split insulated |
 | local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | STUBBED | local_tv_tendsto = headline debt |
 | bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |

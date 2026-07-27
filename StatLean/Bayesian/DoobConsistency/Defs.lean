@@ -51,21 +51,13 @@ noncomputable def doobJoint (K : Kernel Θ 𝓧) [IsMarkovKernel K] (π : Measur
 def doobData (n : ℕ) (ω : (ℕ → 𝓧) × Θ) : Fin n → 𝓧 :=
   fun i => ω.1 i.val
 
-lemma measurable_doobData (n : ℕ) : Measurable (doobData (Θ := Θ) (𝓧 := 𝓧) n) := by
-  sorry
 
 /-- The σ-algebra of the first `n` observations — the sequential filtration of the joint
 experiment (as a plain σ-algebra; the `Filtration` packaging is done at the point of use). -/
 def doobSigma (n : ℕ) : MeasurableSpace ((ℕ → 𝓧) × Θ) :=
   MeasurableSpace.comap (doobData n) inferInstance
 
-lemma doobSigma_mono {m n : ℕ} (hmn : m ≤ n) :
-    doobSigma (Θ := Θ) (𝓧 := 𝓧) m ≤ doobSigma n := by
-  sorry
 
-lemma doobSigma_le (n : ℕ) :
-    doobSigma (Θ := Θ) (𝓧 := 𝓧) n ≤ (inferInstance : MeasurableSpace ((ℕ → 𝓧) × Θ)) := by
-  sorry
 
 /-- **Strong posterior consistency at `θ`** (vdV §10.4, p. 149): for `K θ`-iid-almost-every
 data sequence, the posterior mass of every `ε`-ball around `θ` tends to one. -/

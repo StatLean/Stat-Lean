@@ -1,4 +1,5 @@
 import StatLean.Bayesian.DoobConsistency.Defs
+import StatLean.Bayesian.DoobConsistency.Basic
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Function.FactorsThrough

@@ -71,17 +71,7 @@ lemma measurable_bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) 
     Measurable (bvmLocalUnscale θ₀ n) :=
   measurable_const.add (measurable_id.const_smul _)
 
-lemma bvmLocalUnscale_bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin k)) {n : ℕ}
-    -- LEAN-ONLY: `√n ≠ 0` needs `1 ≤ n`; the `n = 0` case is junk
-    (hn : 1 ≤ n) (θ : EuclideanSpace ℝ (Fin k)) :
-    bvmLocalUnscale θ₀ n (bvmLocalScale θ₀ n θ) = θ := by
-  sorry
 
-lemma bvmLocalScale_bvmLocalUnscale (θ₀ : EuclideanSpace ℝ (Fin k)) {n : ℕ}
-    -- LEAN-ONLY: `√n ≠ 0` needs `1 ≤ n`; the `n = 0` case is junk
-    (hn : 1 ≤ n) (h : EuclideanSpace ℝ (Fin k)) :
-    bvmLocalScale θ₀ n (bvmLocalUnscale θ₀ n h) = h := by
-  sorry
 
 /-- **Local-parameter posterior**: the posterior law of `h = √n(θ − θ₀)` given the `n`-sample,
 as a kernel `(Fin n → 𝓧) ⤳ ℝ^k`: the pushforward of the canonical posterior
@@ -106,12 +96,6 @@ noncomputable def bvmEffScore (J : Matrix (Fin k) (Fin k) ℝ)
     EuclideanSpace ℝ (Fin k) :=
   Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ (scoreSum sc n ω)
 
-lemma measurable_bvmEffScore (J : Matrix (Fin k) (Fin k) ℝ)
-    {sc : 𝓧 → EuclideanSpace ℝ (Fin k)}
-    -- LEAN-ONLY: measurable score (regularity)
-    (hsc : Measurable sc) (n : ℕ) :
-    Measurable (bvmEffScore J sc n) := by
-  sorry
 
 /-- The **random Gaussian approximation** `N(Δ_{n,θ₀}, J⁻¹)` of vdV Theorem 10.1. -/
 noncomputable def bvmGaussian (J : Matrix (Fin k) (Fin k) ℝ)

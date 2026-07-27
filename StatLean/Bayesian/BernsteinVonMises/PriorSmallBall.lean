@@ -1,4 +1,5 @@
 import StatLean.Bayesian.BernsteinVonMises.Defs
+import StatLean.Bayesian.BernsteinVonMises.Basic
 
 /-!
 # Prior small-ball bounds and the exponential tail split
