@@ -862,6 +862,128 @@ private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α <
           exact ENNReal.ofReal_lt_ofReal_iff (by norm_num) |>.mpr hα1
   exact lt_irrefl _ this
 
+
+/-- **Strict one-step degrees-of-freedom monotonicity.**  For a *positive* noncentrality the
+inequality of `ncChiSq_tail_succ_le` is strict: on any interval strictly inside `(0, c₁)` the
+`(k+1)`-dimensional test still rejects with positive probability while the `k`-dimensional
+one does not, and there the monotone density is *strictly* below its value at `c₁`. -/
+private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 < l) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁)
+    (hlevel : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁)
+      = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi c₂)) :
+    noncentralChiSquared (k + 1) l (Set.Ioi c₂) < noncentralChiSquared k l (Set.Ioi c₁) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
+  set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
+  set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
+  set A : ℝ≥0∞ := G c₁ with hA
+  set P : ℝ → ℝ≥0∞ := Set.indicator (Set.Ioi c₁) 1 with hP
+  set Q : ℝ → ℝ≥0∞ :=
+    fun x => StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c₂ - x)) with hQ
+  have hGmeas : Measurable G := ENNReal.measurable_ofReal.comp hgmono.measurable
+  have hPmeas : Measurable P :=
+    (measurable_const : Measurable (1 : ℝ → ℝ≥0∞)).indicator measurableSet_Ioi
+  have hQmeas : Measurable Q := by
+    have hs : MeasurableSet ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂)) :=
+      (measurable_fst.add measurable_snd) measurableSet_Ioi
+    have heq : Q = fun x : ℝ => StatLean.MultipleTesting.chiSquared 1
+        (Prod.mk x ⁻¹' ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂))) := by
+      funext x
+      simp only [hQ]
+      congr 1
+      ext u
+      simp only [Set.mem_preimage, Set.mem_Ioi]
+      constructor <;> intro h <;> linarith
+    rw [heq]
+    exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
+  have hQle : ∀ x, Q x ≤ 1 := fun x => prob_le_one
+  have hAval : noncentralChiSquared k l (Set.Ioi c₁) = ∫⁻ x, P x * G x ∂μ := by
+    rw [← hg P hPmeas, hP, lintegral_indicator_one measurableSet_Ioi]
+  have hBval : noncentralChiSquared (k + 1) l (Set.Ioi c₂) = ∫⁻ x, Q x * G x ∂μ := by
+    rw [ncChiSq_succ_Ioi hk l c₂, ← hg Q hQmeas]
+  have hlev1 : ∫⁻ x, P x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    rw [hP, lintegral_indicator_one measurableSet_Ioi]
+  have hlev2 : ∫⁻ x, Q x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    have h0 := ncChiSq_succ_Ioi hk (0 : ℝ≥0) c₂
+    rw [noncentralChiSquared_zero hk, noncentralChiSquared_zero (by omega : 0 < k + 1)] at h0
+    rw [hμ, ← h0, hlevel]
+  -- the strict gap on an interval below the critical value
+  set I : Set ℝ := Set.Ioo (c₁ / 3) (c₁ / 2) with hI
+  have hIpos : 0 < μ I := chiSq_Ioo_pos hk (by linarith) (by linarith)
+  have hghalf : g (c₁ / 2) < g c₁ := hgstrict hl _ _ (by linarith) (by linarith)
+  have hAhalf : G (c₁ / 2) < A := by
+    rw [hG, hA, hG]
+    exact (ENNReal.ofReal_lt_ofReal_iff (lt_of_le_of_lt (hgnn _) hghalf)).mpr hghalf
+  obtain ⟨dg, hdg⟩ := exists_add_of_le hAhalf.le
+  have hdgne : dg ≠ 0 := by
+    intro h
+    rw [h, add_zero] at hdg
+    exact hAhalf.ne hdg.symm
+  set δ : ℝ≥0∞ := Q (c₁ / 3) * dg with hδ
+  have hδne : δ ≠ 0 := by
+    rw [hδ]
+    exact mul_ne_zero (chiSq_one_Ioi_pos _).ne' hdgne
+  have hpt : ∀ x, Q x * G x + P x * A + I.indicator (fun _ => δ) x ≤ P x * G x + Q x * A := by
+    intro x
+    by_cases hxI : x ∈ I
+    · rw [Set.indicator_of_mem hxI]
+      have hx2 : x < c₁ / 2 := hxI.2
+      have hx1 : c₁ / 3 < x := hxI.1
+      have hPx : P x = 0 := by
+        rw [hP, Set.indicator_of_notMem (by simp only [Set.mem_Ioi, not_lt]; linarith)]
+      have hGle : G x ≤ G (c₁ / 2) := ENNReal.ofReal_le_ofReal (hgmono hx2.le)
+      have hQge : Q (c₁ / 3) ≤ Q x :=
+        measure_mono (Set.Ioi_subset_Ioi (by linarith))
+      rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
+      calc Q x * G x + δ
+          ≤ Q x * G (c₁ / 2) + Q x * dg :=
+            add_le_add (mul_le_mul_left' hGle _) (mul_le_mul_right' hQge dg)
+        _ = Q x * (G (c₁ / 2) + dg) := by ring
+        _ = Q x * A := by rw [← hdg]
+    · rw [Set.indicator_of_notMem hxI, add_zero]
+      by_cases hx : x ∈ Set.Ioi c₁
+      · have hAG : A ≤ G x := ENNReal.ofReal_le_ofReal (hgmono (le_of_lt hx))
+        obtain ⟨d, hd⟩ := exists_add_of_le hAG
+        have hPx : P x = 1 := by rw [hP, Set.indicator_of_mem hx]; rfl
+        rw [hPx, hd, one_mul, one_mul]
+        have hQd : Q x * d ≤ d := by
+          calc Q x * d ≤ 1 * d := mul_le_mul_right' (hQle x) d
+            _ = d := one_mul d
+        calc Q x * (A + d) + A = (Q x * A + A) + Q x * d := by ring
+          _ ≤ (Q x * A + A) + d := by gcongr
+          _ = A + d + Q x * A := by ring
+      · have hGA : G x ≤ A := by
+          refine ENNReal.ofReal_le_ofReal (hgmono ?_)
+          simpa using hx
+        have hPx : P x = 0 := by rw [hP, Set.indicator_of_notMem hx]
+        rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
+        exact mul_le_mul_left' hGA _
+  have hmain : ∫⁻ x, (Q x * G x + P x * A + I.indicator (fun _ => δ) x) ∂μ
+      ≤ ∫⁻ x, (P x * G x + Q x * A) ∂μ := lintegral_mono hpt
+  rw [lintegral_add_left ((hQmeas.mul hGmeas).add (hPmeas.mul measurable_const)),
+    lintegral_add_left (hQmeas.mul hGmeas), lintegral_add_left (hPmeas.mul hGmeas),
+    lintegral_indicator_const measurableSet_Ioo,
+    lintegral_mul_const _ hPmeas, lintegral_mul_const _ hQmeas, hlev1, hlev2] at hmain
+  haveI : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
+  have hfin : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A ≠ ⊤ :=
+    ENNReal.mul_ne_top (measure_ne_top _ _) (by rw [hA, hG]; exact ENNReal.ofReal_ne_top)
+  have hrearr : ((∫⁻ x, Q x * G x ∂μ) + δ * μ I)
+      + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A
+      ≤ (∫⁻ x, P x * G x ∂μ) + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A := by
+    calc ((∫⁻ x, Q x * G x ∂μ) + δ * μ I)
+          + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A
+        = (∫⁻ x, Q x * G x ∂μ)
+            + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A + δ * μ I := by ring
+      _ ≤ _ := hmain
+  have hcancel : (∫⁻ x, Q x * G x ∂μ) + δ * μ I ≤ ∫⁻ x, P x * G x ∂μ :=
+    (ENNReal.add_le_add_iff_right hfin).mp hrearr
+  rw [hAval, hBval]
+  refine lt_of_lt_of_le ?_ hcancel
+  refine ENNReal.lt_add_right ?_ (by simp [hδne, hIpos.ne'])
+  rw [← hBval]
+  exact measure_ne_top _ _
+
 end MLR
 
 end StatLean.HypothesisTesting
