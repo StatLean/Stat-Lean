@@ -1411,6 +1411,99 @@ private lemma edgeworth_approx_eq (γ σ θ : ℝ) (hσ : σ ≠ 0) (m : ℕ) (�
 
 end WindowArgument
 
+/-! ## The window estimate itself
+
+Item (E4).3. On `|ξ| ≤ c√n` the damped expansion applies, and everything it produces is
+`K n⁻¹` times the Gaussian envelope `windowEnvelope`: the polynomial part by the algebraic
+core `exists_window_core`, and the damping factor `e^{−(n−2)vs²/4} = e^{−(1 − 2/n)π²ξ²}` by
+`n ≥ 4`, which is where the finitely many small `n` are shed. -/
+
+section WindowEstimate
+
+set_option maxHeartbeats 1600000 in
+/-- **(E4).3 — the window estimate.** For `n ≥ 4` and `|ξ|/√n ≤ c`, the characteristic-function
+difference that Esseen's inequality integrates is at most `K n⁻¹ · windowEnvelope ξ`, with a
+constant `K` depending only on the sampling law. The two hypotheses on `c` are exactly the ones
+`window_conditions` needs in order to certify the window of
+`norm_charFun_pow_sub_edgeworth_le`. -/
+private lemma exists_window_bound (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) (hFvar : 0 < Var[fun t : ℝ => t; F])
+    {c : ℝ} (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * Real.sqrt Var[fun t : ℝ => t; F] ^ 3
+      / (4 * Real.pi * ((∫ x, |x| ^ 3 ∂(centredLaw F)) + 1))) :
+    ∃ K : ℝ, 0 < K ∧ ∀ n : ℕ, 4 ≤ n → ∀ ξ : ℝ, |ξ| * (Real.sqrt n)⁻¹ ≤ c →
+      ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+          - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖
+        ≤ K / n * windowEnvelope ξ := by
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; F] := Real.sqrt_pos.2 hFvar
+  have hρ0 : (0 : ℝ) ≤ ∫ x, |x| ^ 3 ∂(centredLaw F) :=
+    integral_nonneg fun x => by positivity
+  have hβ0 : (0 : ℝ) ≤ ∫ x, x ^ 4 ∂(centredLaw F) :=
+    integral_nonneg fun x => by positivity
+  have hFint : Integrable (fun t : ℝ => t) F := hF4.integrable (by norm_num)
+  have hvar : (∫ x, x ^ 2 ∂(centredLaw F)) = Real.sqrt Var[fun t : ℝ => t; F] ^ 2 := by
+    rw [integral_sq_centredLaw, Real.sq_sqrt hFvar.le]
+  have hthird : (∫ x, x ^ 3 ∂(centredLaw F))
+      = skewness F * Real.sqrt Var[fun t : ℝ => t; F] ^ 3 :=
+    integral_cube_centredLaw F hFvar
+  obtain ⟨K, hK0, hK⟩ := exists_window_core (∫ x, |x| ^ 3 ∂(centredLaw F))
+    (∫ x, x ^ 4 ∂(centredLaw F)) |skewness F * Real.sqrt Var[fun t : ℝ => t; F] ^ 3|
+    (Real.sqrt Var[fun t : ℝ => t; F]) hρ0 hβ0 (abs_nonneg _) hσ
+  refine ⟨K, hK0, ?_⟩
+  intro n hn ξ hξ
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m + 2 := ⟨n - 2, by omega⟩
+  have hm2 : (2 : ℝ) ≤ (m : ℝ) := by exact_mod_cast (by omega : 2 ≤ m)
+  have hNR : ((m + 2 : ℕ) : ℝ) = (m : ℝ) + 2 := by push_cast; ring
+  have hNpos : (0 : ℝ) < ((m + 2 : ℕ) : ℝ) := by rw [hNR]; positivity
+  have hτ0 : (0 : ℝ) < (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ := by positivity
+  have hτ2 : ((Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) ^ 2 = (((m + 2 : ℕ) : ℝ))⁻¹ := by
+    rw [inv_pow, Real.sq_sqrt hNpos.le]
+  have hτeq : ((m : ℝ) + 2) * ((Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) ^ 2 = 1 := by
+    rw [hτ2, ← hNR]
+    field_simp
+  have hτ1 : (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ ≤ 1 := by
+    refine inv_le_one_of_one_le₀ ?_
+    have h1 : (1 : ℝ) ≤ ((m + 2 : ℕ) : ℝ) := by rw [hNR]; linarith
+    simpa using Real.sqrt_le_sqrt h1
+  have hwc := window_conditions hσ hρ0 hτ0.le hc2 hc3 hξ
+  have hbound := norm_charFun_pow_sub_edgeworth_le (centredLaw F)
+    (integrable_id_centredLaw F hF4) (integrable_sq_centredLaw F hF4)
+    (integrable_abs_cube_centredLaw F hF4) (integrable_pow_four_centredLaw F hF4)
+    (integral_id_centredLaw F hFint) hvar hthird hwc.1 hwc.2 m
+  have hBIGnn := nonneg_of_mul_nonneg_right ((norm_nonneg _).trans hbound)
+    (pow_pos (Real.exp_pos _) m)
+  have hsq := sq_window_arg (ξ := ξ) (τ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹) hσ
+  have habs := abs_window_arg (ξ := ξ) hσ hτ0.le
+  rw [charFun_stdRootLaw F (by omega : 0 < m + 2), charFunDensity_edgeworthDensity,
+    edgeworth_approx_eq (skewness F) (Real.sqrt Var[fun t : ℝ => t; F])
+      (-(2 * Real.pi * ξ)) hσ.ne' m (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ hτeq]
+  refine hbound.trans ?_
+  rw [hsq, habs] at hBIGnn ⊢
+  set τ : ℝ := (Real.sqrt ((m + 2 : ℕ) : ℝ))⁻¹ with hτdef
+  set σ : ℝ := Real.sqrt Var[fun t : ℝ => t; F] with hσdef
+  have hcore := hK |ξ| τ ((m : ℝ) + 2) (abs_nonneg ξ) hτ0 hτ1 hτeq (by linarith)
+  have hdamp : Real.exp (-(4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 / 4)) ^ m
+      ≤ Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) := by
+    rw [← Real.exp_nat_mul]
+    refine Real.exp_le_exp.2 ?_
+    rw [sq_abs]
+    have hτ2nn : (0 : ℝ) ≤ τ ^ 2 := sq_nonneg τ
+    have h1 : (1 : ℝ) / 2 ≤ (m : ℝ) * τ ^ 2 := by
+      linarith [hτeq, mul_nonneg (by linarith : (0 : ℝ) ≤ (m : ℝ) - 2) hτ2nn]
+    linarith [mul_nonneg (mul_nonneg (sq_nonneg Real.pi) (sq_nonneg ξ))
+      (by linarith : (0 : ℝ) ≤ (m : ℝ) * τ ^ 2 - 1 / 2)]
+  have hRHS : K / ((m + 2 : ℕ) : ℝ) * windowEnvelope ξ
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (K * τ ^ 2 * (|ξ| ^ 4 + |ξ| ^ 8)) := by
+    unfold windowEnvelope
+    rw [hτ2]
+    ring
+  rw [hRHS]
+  refine mul_le_mul hdamp ?_ hBIGnn (Real.exp_pos _).le
+  refine le_trans (le_of_eq ?_) hcore
+  ring
+
+end WindowEstimate
+
 
 /-! ## The expansions -/
 
