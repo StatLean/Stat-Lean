@@ -681,7 +681,24 @@ For `H : θ₁ ≤ θ ≤ θ₂` against `K : θ < θ₁ or θ > θ₂`, the sam
 test is UMP unbiased at level `α`, now with the constants pinned by the **two size
 equations** `E_{θ₁}[φ] = E_{θ₂}[φ] = α` (the boundary of the testing problem consists of the
 two points `θ₁, θ₂`, and unbiasedness with a continuous power function forces similarity
-there). -/
+there).
+
+**FLAGGED SIGNATURE AMENDMENT — `(hΞopen : IsOpen Ξ)` was added.** Without it the statement
+is FALSE, by the following verified counterexample. Gaussian location family
+`E.P θ = N(θ,1)`, `P θ = E.P θ`, `α = 0.05`. Take the SPARSE parameter set
+`Ξ = [0,1] ∪ {2}`, `θ₁ = 0`, `θ₂ = 1`, so `Θ₀ = [0,1]` and `Θ₁ = {2}` (note
+`θ₁, θ₂ ∉ closure Θ₁ = {2}`). Take `C₁ = -1.681477`, `C₂ = 2.681477`, `γ₁ = γ₂ = 0`,
+`φ = 1{x < C₁ ∨ x > C₂}`; by the reflection `x ↦ 1 − x` the interval is symmetric about
+`1/2`, so `hsize₁ : power φ 0 = 0.05 = α` and `hsize₂ : power φ 1 = 0.05 = α`, and all the
+other hypotheses hold. Yet `ψ = 1{x > 2.644854}` is a critical function, *unbiased* at level
+`α` — `power ψ θ ≤ power ψ 1 = 0.05 ≤ α` for every `θ ∈ Θ₀ = [0,1]` (monotone in `θ`; e.g.
+`0.004086` at `0`, `0.015982` at `1/2`) and `power ψ 2 = 0.259511 ≥ α` — while
+`power φ 2 = 0.247901 < 0.259511 = power ψ 2`, contradicting the optimality clause of
+`IsUMPU`. (`power φ (1/2) = 0.029148 ≤ α`, so `φ`'s own level on `Θ₀` is not the issue.) As
+in `isUMPU_twoSided_expFamily`, the defect is sparseness of `Ξ`: the null endpoints need not
+be limit points of the alternative set, so unbiasedness imposes no similarity constraint
+there. Openness of `Ξ` is the minimal repair, and is exactly what the classical statement
+means by "`θ` ranges over an interval interior to the natural parameter set". -/
 theorem isUMPU_outside_interval_expFamily
     {P : ℝ → Measure 𝓧} {E : ExpFamily 𝓧 ℝ} {T : 𝓧 → ℝ} {Ξ : Set ℝ}
     {θ₁ θ₂ α C₁ C₂ γ₁ γ₂ : ℝ} {φ : 𝓧 → ℝ}
@@ -694,6 +711,9 @@ theorem isUMPU_outside_interval_expFamily
     (hP : ∀ θ ∈ Ξ, P θ = E.P θ)
     -- USER-INPUT: the parameter set lies in the interior of the natural parameter set
     (hΞ : Ξ ⊆ interior E.natSet)
+    -- USER-INPUT (AMENDMENT): the parameter set is open. Without it the statement is FALSE:
+    -- see the counterexample in the docstring above
+    (hΞopen : IsOpen Ξ)
     -- USER-INPUT: the two null endpoints belong to the parameter set and are ordered
     (hθ₁ : θ₁ ∈ Ξ) (hθ₂ : θ₂ ∈ Ξ) (hθ : θ₁ < θ₂)
     -- LEAN-ONLY: the level is strictly interior to `[0,1]`; degenerate levels are excluded
@@ -715,35 +735,32 @@ theorem isUMPU_outside_interval_expFamily
     -- USER-INPUT: size condition at the upper endpoint
     (hsize₂ : power P φ θ₂ = α) :
     IsUMPU P {θ ∈ Ξ | θ₁ ≤ θ ∧ θ ≤ θ₂} {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ} α φ := by
-  -- FALSE AS STATED — verified counterexample (see the file header for the general diagnosis).
-  -- Same Gaussian location family `E.P θ = N(θ,1)`, `P θ = E.P θ`, `α = 0.05`.
-  -- Take the SPARSE parameter set `Ξ = [0,1] ∪ {2}`, `θ₁ = 0`, `θ₂ = 1`, so
-  -- `Θ₀ = [0,1]` and `Θ₁ = {2}` (note `θ₁, θ₂ ∉ closure Θ₁ = {2}`).
-  -- Take `C₁ = -1.681477`, `C₂ = 2.681477`, `γ₁ = γ₂ = 0`, `φ = 1{x < C₁ ∨ x > C₂}`; by the
-  -- reflection `x ↦ 1 − x` the interval is symmetric about `1/2`, so
-  --   `hsize₁ : power φ 0 = 0.05 = α` and `hsize₂ : power φ 1 = 0.05 = α`.
-  -- All hypotheses hold. But `ψ = 1{x > 2.644854}` is a critical function, UNBIASED at level
-  -- `α`: `power ψ θ ≤ power ψ 1 = 0.05 ≤ α` for every `θ ∈ Θ₀ = [0,1]` (monotone in `θ`;
-  -- e.g. `0.004086` at `0`, `0.015982` at `1/2`), and `power ψ 2 = 0.259511 ≥ α`.
-  -- Yet `power φ 2 = 0.247901 < 0.259511 = power ψ 2`, contradicting the optimality clause of
-  -- `IsUMPU`. (`power φ 1/2 = 0.029148 ≤ α`, so `φ`'s own level on `Θ₀` is not the issue.)
-  -- REPAIR: add `(hΞopen : IsOpen Ξ)`, putting `θ₁, θ₂ ∈ closure Θ₁` so that unbiasedness
-  -- forces similarity at both endpoints and the boundary device `isUMPU_of_isUMP_on_boundary`
-  -- applies (`ωB = {θ₁, θ₂}`).
-  -- STILL MISSING after the repair, so the `sorry` would remain:
-  --  (a) `IsLevel P Θ₀ φ α`, i.e. `power φ θ ≤ α` for `θ₁ < θ < θ₂`. This is the
-  --      variation-diminishing property of the exponential kernel: `φ − α` changes sign in the
-  --      pattern `+,−,+` on the `T`-scale, so `θ ↦ ∫ (φ − α) dP_θ` has at most two zeros; they
-  --      are `θ₁, θ₂` by `hsize₁/hsize₂`, and the middle sign is negative. Karlin total
-  --      positivity; absent from the repo (`MLR/TwoSided.lean` has only the finite sign-change
-  --      separation `twoSidedVal_sub_sep`, and its four headline theorems are all `sorry`).
-  --  (b) the two-multiplier construction: `NeymanPearson.Generalized.isMax_of_multiplier_form`
-  --      (m = 2, PROVED) closes optimality once `HasMultiplierShape` is verified for
-  --      `f = (e^{θ₁t}, e^{θ₂t}, e^{θ'T})`, which needs `k₁, k₂` solving the 2×2 system
-  --      `k₁e^{θ₁Cᵢ} + k₂e^{θ₂Cᵢ} = e^{θ'Cᵢ}` (`i = 1,2`; nonsingular iff `C₁ ≠ C₂`, so the
-  --      `hC : C₁ ≤ C₂` tolerance needs the degenerate branch handled separately) plus the
-  --      three-term sign lemma "`k₁e^{θ₁t} + k₂e^{θ₂t} − e^{θ't}` has at most two zeros"
-  --      (Rolle after dividing by `e^{θ₁t}`). Neither exists in the repo.
+  -- REPAIRED (`hΞopen` added), NOT YET CLOSED. This is PROOF-HARD, not repair-unclear: the
+  -- amended statement is the classical `TSH4 §4.2` theorem and the route is fixed. Three
+  -- pieces, in the same style as the now-closed `isUMPU_twoSided_expFamily`:
+  --  (a) LEVEL on the interior of the null interval. For `θ₁ < θ < θ₂` the classical argument
+  --      is the sign pattern of a three-exponential combination: choose `a, b` with
+  --      `q(t) = a e^{θ₁t} + b e^{θ₂t} − e^{θt}` vanishing at `C₁, C₂`; then `(φ − α)·q ≥ 0`
+  --      pointwise (both factors change sign exactly at `C₁, C₂`, in the same pattern), so
+  --      `0 ≤ ∫(φ−α)q dν = a·0 + b·0 − ∫(φ−α)dP_θ·d(θ)`, i.e. `power φ θ ≤ α`.
+  --  (b) OPTIMALITY. `expFamily_np_compare` transposed: constraint densities at `θ₁` and `θ₂`
+  --      instead of `(1, T)` at `θ₀`, objective at `θ' ∉ [θ₁, θ₂]`, multipliers again from the
+  --      three-exponential separation.
+  --  (c) SIMILARITY of competitors at `θ₁, θ₂`, from `continuous_power_expFamily` plus
+  --      `hΞopen` (each endpoint is a limit of alternatives, so `power ψ θⱼ ≥ α`, and `≤ α`
+  --      because `θⱼ ∈ Θ₀`). This piece is a routine variant of the sequence argument inside
+  --      `unbiased_side_conditions`.
+  -- MISSING BRICK for (a) and (b): the three-exponential separating combination. Substituting
+  -- `w = e^{(θ₂−θ₁)t} ∈ (0,∞)` turns `q` into `a + b w − w^λ` with `λ = (θ−θ₁)/(θ₂−θ₁)`; the
+  -- needed sign pattern is exactly "the secant of `w ↦ w^λ` lies below the graph inside and
+  -- above it outside", i.e. `Real.strictConcaveOn_rpow` for `0 < λ < 1` (case (a)) and
+  -- `strictConvexOn_rpow` for `1 < λ` (case (b), after dividing by `e^{θ₁t}` when `θ' > θ₂`
+  -- and by `e^{θ₂t}` when `θ' < θ₁`, which keeps the exponent above `1` in both directions).
+  -- Both Mathlib lemmas exist; what is missing here is the `exists_sep_line` analogue for a
+  -- general strictly convex function on `Ioi 0` (the degenerate `C₁ = C₂` branch needs the
+  -- supporting line, available from `one_add_mul_self_lt_rpow_one_add`), plus the transport
+  -- of the sign pattern back through the substitution. None of it is deep; it is simply not
+  -- written.
   sorry
 
 end StatLean.HypothesisTesting
