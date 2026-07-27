@@ -137,4 +137,184 @@ private lemma avg_cube_increment_le {N m : ℕ} (a : Fin m → Fin N) (ha : Func
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
           inv_mul_cancel₀ hcK.ne', one_mul]
 
+/-! ### The variance-regression term of the swap pair -/
+
+/-- **The variance-regression term of the swap pair.** With the Stein normalisation
+`u² = λ = N/(m(N−m))`, the exact conditional variance `sum_sq_swapIndex_increment` gives
+`(2λ)⁻¹ 𝔼[(W'−W)² ∣ σ] = (2m(N−m))⁻¹ (m ∑d² + (N−2m) A₂(σ) + 2 B(σ)²)`, whose group average is
+`(N−1)⁻¹ ∑ d²` (`avg_perm_sum_sq_swapIndex_increment`). Subtracting the exact mean leaves two
+fluctuations: that of the block sum of squares `A₂`, controlled by Cauchy–Schwarz and the
+finite-population variance `avg_perm_blockSum_sq` applied to the *centred squares*
+`d² − N⁻¹∑d²` — this is the fourth-moment input `∑ d⁴` — and that of `B²`, which is `O(1/N)`
+in mean because `B` is the block sum itself. -/
+private lemma avg_abs_one_sub_condSq_le {N m : ℕ} (hN : 2 ≤ N) (hm : 0 < m) (hmN : m < N)
+    (a : Fin m → Fin N) (ha : Function.Injective a) (d : Fin N → ℝ) (hd : ∑ l, d l = 0)
+    {u : ℝ} (hu2 : u ^ 2 = (N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          |1 - (2 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ *
+            condSqIncrement (stdBlockSum a d u) (stdBlockSumSwap a d u) σ|
+      ≤ |1 - (∑ l, d l ^ 2) / ((N : ℝ) - 1)|
+        + |(N : ℝ) - 2 * (m : ℝ)| / (2 * (m : ℝ) * ((N : ℝ) - m)) *
+            Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, d l ^ 4)
+        + 2 * (∑ l, d l ^ 2) / ((N : ℝ) * ((N : ℝ) - 1)) := by
+  classical
+  have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hN1 : (0 : ℝ) < (N : ℝ) - 1 := by linarith
+  have hmR : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hmNR : (0 : ℝ) < (N : ℝ) - (m : ℝ) := by
+    have : (m : ℝ) < (N : ℝ) := by exact_mod_cast hmN
+    linarith
+  have hcP : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin N)) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  set S₂ : ℝ := ∑ l, d l ^ 2 with hS₂
+  set S₄ : ℝ := ∑ l, d l ^ 4 with hS₄
+  have hS₂0 : (0 : ℝ) ≤ S₂ := Finset.sum_nonneg fun l _ => sq_nonneg _
+  set AA : Equiv.Perm (Fin N) → ℝ := fun σ => ∑ r ∈ blockSet a, d (σ r) ^ 2 with hAA
+  set BB : Equiv.Perm (Fin N) → ℝ := fun σ => ∑ r ∈ blockSet a, d (σ r) with hBB
+  set c : ℝ := (m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * S₂ with hc
+  have hc0 : (0 : ℝ) ≤ c := by
+    rw [hc]
+    exact mul_nonneg (by positivity) hS₂0
+  set coef₁ : ℝ := ((N : ℝ) - 2 * (m : ℝ)) / (2 * (m : ℝ) * ((N : ℝ) - m)) with hcoef₁
+  set coef₂ : ℝ := ((m : ℝ) * ((N : ℝ) - m))⁻¹ with hcoef₂
+  -- the exact pointwise decomposition of the variance-regression ratio
+  have hXeq : ∀ σ : Equiv.Perm (Fin N),
+      (2 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ *
+          condSqIncrement (stdBlockSum a d u) (stdBlockSumSwap a d u) σ
+        = S₂ / ((N : ℝ) - 1) + coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂))
+          + coef₂ * ((BB σ) ^ 2 - c) := by
+    intro σ
+    rw [condSqIncrement, sum_sq_swapIndex_increment a ha d hd u σ, card_swapIndex a ha,
+      Nat.cast_mul, Nat.cast_sub hmN.le, hu2, hcoef₁, hcoef₂, hc, hAA, hBB]
+    field_simp
+    ring
+  -- the pointwise triangle inequality
+  have hpt : ∀ σ : Equiv.Perm (Fin N),
+      |1 - (2 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ *
+          condSqIncrement (stdBlockSum a d u) (stdBlockSumSwap a d u) σ|
+        ≤ |1 - S₂ / ((N : ℝ) - 1)| + |coef₁| * |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|
+          + |coef₂| * |(BB σ) ^ 2 - c| := by
+    intro σ
+    rw [hXeq σ]
+    have h1 : 1 - (S₂ / ((N : ℝ) - 1) + coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂))
+        + coef₂ * ((BB σ) ^ 2 - c))
+        = (1 - S₂ / ((N : ℝ) - 1)) + (-(coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)))
+          + -(coef₂ * ((BB σ) ^ 2 - c))) := by ring
+    rw [h1]
+    calc |(1 - S₂ / ((N : ℝ) - 1)) + (-(coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)))
+            + -(coef₂ * ((BB σ) ^ 2 - c)))|
+        ≤ |1 - S₂ / ((N : ℝ) - 1)| + |-(coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)))
+            + -(coef₂ * ((BB σ) ^ 2 - c))| := abs_add_le _ _
+      _ ≤ |1 - S₂ / ((N : ℝ) - 1)| + (|-(coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)))|
+            + |-(coef₂ * ((BB σ) ^ 2 - c))|) := by
+          have hab := abs_add_le (-(coef₁ * (AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂))))
+            (-(coef₂ * ((BB σ) ^ 2 - c)))
+          linarith
+      _ = |1 - S₂ / ((N : ℝ) - 1)| + |coef₁| * |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|
+            + |coef₂| * |(BB σ) ^ 2 - c| := by
+          rw [abs_neg, abs_neg, abs_mul, abs_mul]; ring
+  -- the fluctuation of the block sum of squares, by Cauchy-Schwarz
+  set e : Fin N → ℝ := fun l => d l ^ 2 - (N : ℝ)⁻¹ * S₂ with he
+  have hecent : ∑ l, e l = 0 := by
+    rw [he, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hN0.ne', one_mul, ← hS₂, sub_self]
+  have hAe : ∀ σ : Equiv.Perm (Fin N),
+      ∑ i, e (σ (a i)) = AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂) := by
+    intro σ
+    have hblock : AA σ = ∑ i, d (σ (a i)) ^ 2 := sum_blockSet a ha fun r => d (σ r) ^ 2
+    rw [hblock, he]
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+  have hesq : ∑ l, e l ^ 2 ≤ S₄ := by
+    have hexp : ∑ l, e l ^ 2 = S₄ - (N : ℝ) * ((N : ℝ)⁻¹ * S₂) ^ 2 := by
+      have hterm : ∀ l : Fin N, e l ^ 2
+          = d l ^ 4 - 2 * ((N : ℝ)⁻¹ * S₂) * d l ^ 2 + ((N : ℝ)⁻¹ * S₂) ^ 2 := by
+        intro l; rw [he]; ring
+      rw [Finset.sum_congr rfl fun l _ => hterm l, Finset.sum_add_distrib,
+        Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, ← Finset.mul_sum, ← hS₂, ← hS₄]
+      field_simp
+      ring
+    rw [hexp]
+    nlinarith [sq_nonneg ((N : ℝ)⁻¹ * S₂), hN0]
+  have hAavg : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin N), |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|
+      ≤ Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * S₄) := by
+    have hcs := avg_abs_le_sqrt_avg_sq (ι := Equiv.Perm (Fin N)) fun σ => ∑ i, e (σ (a i))
+    have hsq := avg_perm_blockSum_sq hN a ha e hecent
+    have hstep : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|
+        ≤ Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, e l ^ 2) := by
+      have hL : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|
+          = (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), |∑ i, e (σ (a i))| :=
+        congrArg _ (Finset.sum_congr rfl fun σ _ => by rw [hAe σ])
+      rw [hL]
+      refine hcs.trans (le_of_eq ?_)
+      rw [hsq]
+    refine hstep.trans ?_
+    refine Real.sqrt_le_sqrt ?_
+    exact mul_le_mul_of_nonneg_left hesq (by positivity)
+  -- the fluctuation of the squared block sum
+  have hBavg : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin N), |(BB σ) ^ 2 - c| ≤ 2 * c := by
+    have hpt2 : ∀ σ : Equiv.Perm (Fin N), |(BB σ) ^ 2 - c| ≤ (BB σ) ^ 2 + c := by
+      intro σ
+      calc |(BB σ) ^ 2 - c| ≤ |(BB σ) ^ 2| + |c| := by
+            have h := abs_add_le ((BB σ) ^ 2) (-c)
+            simpa [sub_eq_add_neg, abs_neg] using h
+        _ = (BB σ) ^ 2 + c := by rw [abs_of_nonneg (sq_nonneg _), abs_of_nonneg hc0]
+    have hsq := avg_perm_blockSet_sq hN a ha d hd
+    calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), |(BB σ) ^ 2 - c|
+        ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), ((BB σ) ^ 2 + c) :=
+          mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hpt2 σ) (inv_nonneg.2 hcP.le)
+      _ = 2 * c := by
+          rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+            mul_add, ← mul_assoc, inv_mul_cancel₀ hcP.ne', one_mul, hBB, hsq, hc, ← hS₂]
+          ring
+  -- assemble
+  have hsplit : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin N), (|1 - S₂ / ((N : ℝ) - 1)|
+        + |coef₁| * |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)| + |coef₂| * |(BB σ) ^ 2 - c|)
+      = |1 - S₂ / ((N : ℝ) - 1)|
+        + |coef₁| * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|)
+        + |coef₂| * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin N), |(BB σ) ^ 2 - c|) := by
+    rw [Finset.sum_add_distrib, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
+      nsmul_eq_mul, ← Finset.mul_sum, ← Finset.mul_sum, mul_add, mul_add, ← mul_assoc,
+      inv_mul_cancel₀ hcP.ne', one_mul]
+    ring
+  have habs₁ : |coef₁| = |(N : ℝ) - 2 * (m : ℝ)| / (2 * (m : ℝ) * ((N : ℝ) - m)) := by
+    rw [hcoef₁, abs_div, abs_of_pos (by positivity : (0 : ℝ) < 2 * (m : ℝ) * ((N : ℝ) - m))]
+  have habs₂ : |coef₂| * (2 * c) = 2 * S₂ / ((N : ℝ) * ((N : ℝ) - 1)) := by
+    rw [hcoef₂, hc, abs_of_pos (by positivity : (0 : ℝ) < ((m : ℝ) * ((N : ℝ) - m))⁻¹)]
+    field_simp
+  calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N),
+            |1 - (2 * ((N : ℝ) / ((m : ℝ) * ((N : ℝ) - m))))⁻¹ *
+              condSqIncrement (stdBlockSum a d u) (stdBlockSumSwap a d u) σ|
+      ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), (|1 - S₂ / ((N : ℝ) - 1)|
+            + |coef₁| * |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)| + |coef₂| * |(BB σ) ^ 2 - c|) :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hpt σ) (inv_nonneg.2 hcP.le)
+    _ = |1 - S₂ / ((N : ℝ) - 1)|
+          + |coef₁| * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+              ∑ σ : Equiv.Perm (Fin N), |AA σ - (m : ℝ) * ((N : ℝ)⁻¹ * S₂)|)
+          + |coef₂| * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+              ∑ σ : Equiv.Perm (Fin N), |(BB σ) ^ 2 - c|) := hsplit
+    _ ≤ |1 - S₂ / ((N : ℝ) - 1)|
+          + |coef₁| * Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * S₄)
+          + |coef₂| * (2 * c) := by
+        gcongr
+    _ = |1 - S₂ / ((N : ℝ) - 1)|
+          + |(N : ℝ) - 2 * (m : ℝ)| / (2 * (m : ℝ) * ((N : ℝ) - m)) *
+              Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * S₄)
+          + 2 * S₂ / ((N : ℝ) * ((N : ℝ) - 1)) := by rw [habs₁, habs₂]
+
 end StatLean.HypothesisTesting
