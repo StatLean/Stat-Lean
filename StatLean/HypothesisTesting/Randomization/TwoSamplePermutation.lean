@@ -509,6 +509,138 @@ private lemma tendstoInProb_of_deterministic {𝓧 : ℕ → Type*} [∀ k, Meas
   rw [Real.dist_eq] at hgood
   linarith
 
+/-! ### The standardized pooled population and its two hypothesis functionals
+
+The combinatorial central limit theorem asks for a centred population normalized in the
+second moment and satisfying Hájek's Lindeberg condition. The pooled data supply the first
+after division by the deterministic constant `√v̄`, `v̄ = (λ varY + varZ)/(1+λ)`; the second
+holds only in probability, and — since the transfer brick above consumes a *single* scalar
+functional rather than a family indexed by `ε` — it is packaged here as the single
+**Lindeberg defect**
+`Λ = N⁻¹ ∑ e² min(1, |e|/R)`, `R = √(min (m, N − m))`,
+which dominates every member of the family: on `{|e| ≥ εR}` one has
+`min(1, |e|/R) ≥ min(1, ε)`. -/
+
+/-- The centred pooled data, normalized by a deterministic scale. -/
+private noncomputable def pooledStd (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) :
+    Fin (m + n) → ℝ := fun l => (Real.sqrt v)⁻¹ * pooledCentred m n x l
+
+/-- The **normalization defect**: how far the normalized second moment is from `1`. -/
+private noncomputable def normDefect (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) : ℝ :=
+  |((m + n : ℕ) : ℝ)⁻¹ * ∑ l, pooledStd m n v x l ^ 2 - 1|
+
+/-- The **Lindeberg defect** at Hájek's scale `√(min (m, N − m))`. -/
+private noncomputable def lindebergDefect (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) : ℝ :=
+  ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, pooledStd m n v x l ^ 2 *
+    min 1 (|pooledStd m n v x l| /
+      Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))))
+
+private lemma lindebergDefect_nonneg (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) :
+    0 ≤ lindebergDefect m n v x := by
+  refine mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => ?_)
+  exact mul_nonneg (sq_nonneg _) (le_min zero_le_one (by positivity))
+
+/-- The centred pooled data sums to zero — with no nonemptiness hypothesis. -/
+private lemma sum_pooledCentred' (m n : ℕ) (x : Fin (m + n) → ℝ) :
+    ∑ l, pooledCentred m n x l = 0 := by
+  rcases Nat.eq_zero_or_pos (m + n) with h0 | hpos
+  · have huniv : (Finset.univ : Finset (Fin (m + n))) = ∅ := by
+      rw [← Finset.card_eq_zero, Finset.card_univ, Fintype.card_fin, h0]
+    simp [pooledCentred, huniv]
+  · exact sum_pooledCentred m n hpos x
+
+/-- **The Lindeberg defect dominates Hájek's Lindeberg condition**, member by member. -/
+private lemma lindeberg_le_lindebergDefect {N : ℕ} (d : Fin N → ℝ) {R : ℝ} (hR : 0 < R)
+    {ε : ℝ} (hε : 0 < ε) :
+    (N : ℝ)⁻¹ * ∑ l, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (min 1 ε)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2 * min 1 (|d l| / R)) := by
+  have hmin : (0 : ℝ) < min 1 ε := lt_min zero_lt_one hε
+  have hpt : ∀ l : Fin N, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) := by
+    intro l
+    by_cases h : ε * R ≤ |d l|
+    · rw [if_pos h]
+      have hge : min 1 ε ≤ min 1 (|d l| / R) := by
+        refine le_min (min_le_left _ _) (le_trans (min_le_right _ _) ?_)
+        rw [le_div_iff₀ hR]
+        exact h
+      have := mul_le_mul_of_nonneg_left hge (sq_nonneg (d l))
+      calc d l ^ 2 = (min 1 ε)⁻¹ * (d l ^ 2 * min 1 ε) := by field_simp
+        _ ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) :=
+            mul_le_mul_of_nonneg_left this (by positivity)
+    · rw [if_neg h]
+      have hnn : (0 : ℝ) ≤ min 1 (|d l| / R) := le_min zero_le_one (by positivity)
+      positivity
+  calc (N : ℝ)⁻¹ * ∑ l, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (N : ℝ)⁻¹ * ∑ l, (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun l _ => hpt l) (by positivity)
+    _ = (min 1 ε)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2 * min 1 (|d l| / R)) := by
+        rw [← Finset.mul_sum]; ring
+
+/-- The `Z`-block weight `n/N` converges to `1/(1+λ)`. -/
+private lemma tendsto_blockZ_weight {lam : ℝ} (m n : ℕ → ℕ) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam) :
+    Tendsto (fun k => (n k : ℝ) / ((m k + n k : ℕ) : ℝ)) atTop (𝓝 (1 / (1 + lam))) := by
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hbase : Tendsto (fun k => (1 : ℝ) / (1 + (m k : ℝ) / n k)) atTop
+      (𝓝 (1 / (1 + lam))) := tendsto_const_nhds.div (hratio.const_add 1) hne
+  refine hbase.congr' ?_
+  filter_upwards [hn.eventually_gt_atTop 0] with k hk
+  have hnR : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hk
+  have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
+  rw [hNcast]
+  field_simp
+  ring
+
+/-- **The pooled population satisfies the hypotheses of the combinatorial central limit
+theorem in probability.**
+
+STATUS (wave 8): this is the single remaining debt of the two-sample chain, and it is now a
+pure law-of-large-numbers statement about the *pooled empirical moments* — no permutation,
+no central limit theorem, no measurable selection. Route (all inputs exist in the
+repository):
+
+* `Randomization/Studentized.tendstoInProb_pooledAvg` (proved in wave 8) gives, for every
+  integrable `f`, `N⁻¹ ∑_l f(x_l) → (λ ∫f dP_Y + ∫f dP_Z)/(1+λ)` in probability, through
+  the two block laws of large numbers `tendsto_lln_blockY`/`_blockZ` and the deterministic
+  weights `m/N → λ/(1+λ)`, `n/N → 1/(1+λ)`. Applying it to `f = id` and `f = (·)²` and
+  subtracting gives `N⁻¹ ∑_l (x_l − x̄)² → v̄` in probability, which is the first conjunct
+  after division by `v̄`.
+* For the second conjunct, split `Λ ≤ N⁻¹ ∑ e² 1{|e| ≥ ηR} + η · N⁻¹ ∑ e²` (valid for every
+  `η > 0`, since `min(1,u) ≤ η` off `{u ≥ η}`). The second term is `η · (1 + o_P(1))`, so it
+  suffices to make the first small; and since `x̄ → μ` in probability and `R_k → ∞`, on the
+  event `{|x̄ − μ| ≤ 1}` one has `{|x_l − x̄| ≥ ηR_k} ⊆ {|x_l| ≥ ηR_k − |μ| − 1}` and
+  `(x_l − x̄)² ≤ 2x_l² + 2(|μ|+1)²`, so the first term is bounded by a fixed multiple of
+  `N⁻¹ ∑_l x_l² 1{|x_l| ≥ K}` for any fixed `K`, once `k` is large. That last quantity
+  converges in probability to `(λ ∫_{|t|≥K} t² dP_Y + ∫_{|t|≥K} t² dP_Z)/(1+λ)`, again by
+  `tendstoInProb_pooledAvg`, and tends to `0` as `K → ∞` by dominated convergence — this is
+  where `MemLp id 2` is used and why no moment beyond `L²` is needed.
+
+The two arithmetic ingredients (`tendstoInProb_pooledAvg` and the dominated-convergence tail)
+are both proved in `Randomization/Studentized`; they are *below* this file in the import
+graph, so closing this brick means either lifting them here or moving them to a common
+`ForMathlib` home. That is bookkeeping, not mathematics. -/
+private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ μ v : ℝ}
+    -- USER-INPUT: both sample sizes grow; the asymptotic regime
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    -- USER-INPUT: `m/n → λ`, with a nondegenerate limit
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    -- USER-INPUT: finite second moments of both populations
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    -- USER-INPUT: equal means
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    -- USER-INPUT: the population variances, both nonzero
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hvarYpos : 0 < varY) (hvarZpos : 0 < varZ)
+    -- LEAN-ONLY: `v` names the pooled limiting variance
+    (hvpos : 0 < v) (hv : v = (lam * varY + varZ) / (1 + lam)) :
+    (∀ η > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | η ≤ normDefect (m k) (n k) v x}) atTop (𝓝 0))
+      ∧ (∀ η > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | η ≤ lindebergDefect (m k) (n k) v x}) atTop (𝓝 0)) := by
+  sorry
+
 /-! ### The permutation limit
 
 The bivariate statement is reduced to a **scalar** one: the `Asymptotics` converse
