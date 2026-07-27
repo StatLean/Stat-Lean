@@ -49,8 +49,19 @@ C₂` in a one-parameter exponential family) and Lemma 3.7.1 (the comparison/uni
   forced sign pattern (`sign_of_strictConvexOn_two_zeros`).
 * Two of the five statements needed a repair; each is documented on the statement itself,
   with a verified counterexample to the printed form: `power_lt_of_twoSided_right` (`hne`,
-  non-degeneracy of the pair of tests) is FALSE as printed, and `isUMP_twoSided` retains a
-  single named gap — the simultaneous solution of the two size equations.
+  non-degeneracy of the pair of tests) and `isUMP_twoSided` (`hatom`, no level of the
+  statistic carries null probability `α` or more) are both FALSE as printed. In the second
+  case the defect is the *existence* of an honest rejection interval `C₁ < C₂`: an atom of
+  the null law heavier than `α` can force the solution of the two size equations to be a
+  one-point randomization. Under the amendment the theorem is fully proved.
+* The simultaneous solution of the two size equations is a one-dimensional sweep over the
+  *level* window `(s, s+α)` of the null law of the statistic, in three bricks:
+  `exists_twoSided_constants_window` (the canonical boundary weights make the size at `θ₁`
+  exactly `α` for every `s`), `twoSidedVal_integral_weight_eq` (the size at `θ₂` is the
+  level-space integral `∫_s^{s+α} r(Q u) du` of the likelihood ratio along the quantile
+  function) and `exists_window_root` (the intermediate value theorem, with the *strict*
+  rearrangement inequality `integral_lt_of_monotoneOn_of_sep` keeping the root away from the
+  junk levels `0` and `1`).
 * The order of branches in `twoSidedTest` puts the two boundary cases first, so the
   definition is unambiguous even for degenerate constants: at `C₁ = C₂` the value is `γ₁`,
   and for `C₂ ≤ C₁` the test rejects nowhere except possibly at the two boundary points.
@@ -2030,11 +2041,51 @@ private lemma exists_twoSided_constants_window (ν : Measure ℝ) [IsProbability
 
 end QuantileWindow
 
+open ProbabilityTheory in
 /-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
 parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
 `γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
 and is uniformly most powerful at level `α` for `H : θ ≤ θ₁ or θ₂ ≤ θ` against
-`K : θ₁ < θ < θ₂`. -/
+`K : θ₁ < θ < θ₂`.
+
+**Repaired statement (`hatom`).** As printed — i.e. without `hatom` — the theorem is FALSE,
+and `hatom` is the minimal *checkable* repair. The conclusion demands an honest rejection
+interval, `C₁ < C₂`; an atom of the null law of `T` heavier than `α` can make every honest
+interval fail one of the two size equations.
+
+*Counterexample to the printed form.* Let `𝓧 = ℝ`, `T = id`, `ηmap = id`, `θ₁ = -1`,
+`θ₂ = 1`, `α = 1/20`, and let the base measure be the symmetric discrete measure
+`μ = 0.94·δ₀ + ∑_{n≥1} 0.03·2⁻ⁿ·(δ_{1/n} + δ_{-1/n})`, whose support accumulates at `0` from
+both sides and which is finite of bounded support, so `M(θ) = ∫e^{θt}dμ < ∞` for every `θ`
+and `hnat` holds. By symmetry `M(-1) = M(1)`, so the likelihood ratio of the two boundary
+members is `r(t) = dν₂/dν₁(t) = e^{2t}`, with `r(0) = 1`, and `ν₁{0} = 0.94/M(-1) > α`. Now
+let `φ` be any test of the displayed form with `C₁ < C₂` and size `α` at `θ₁`. If
+`0 ∈ (C₁,C₂)` then `φ(0) = 1` and the size at `θ₁` is at least `ν₁{0} > α`. If the closed
+interval `[C₁,C₂]` misses `0` then `r - 1` has a constant strict sign on the support of `φ`,
+so the two sizes differ. In the two remaining configurations `C₁ = 0` and `C₂ = 0` one gets
+`size(θ₂) - size(θ₁) = ∫φ·(r-1)dν₁`, an integral of a function of a constant strict sign on
+`(0, C₂)` resp. `(C₁, 0)` — sets of positive `ν₁`-measure, because the support accumulates at
+`0` from both sides — so again the two sizes differ. Hence no honest interval attains
+`α` twice, although the *degenerate* randomized test `α/ν₁{0}·1{T = 0}` does.
+
+*Repair.* Assume every level of the statistic carries null probability strictly below `α`.
+This is exactly what the counterexample violates, it is verifiable from the model alone, and
+it is what makes the sliding quantile window `(Q s, Q (s+α))` nondegenerate for *every*
+starting level `s` — see `exists_twoSided_constants_window` and the sweep
+`exists_window_root`. It cannot simply be dropped: the degenerate corner is not reachable by
+any one-parameter sweep, and the test that solves the two equations there is not of the form
+demanded by the conclusion. (The alternative repair — weakening the conclusion to `C₁ ≤ C₂` —
+is not adopted here, since the whole downstream optimality chain, `power_min_twoSided` and
+`isUMP_twoSided_of_constants`, is stated for honest intervals.)
+
+*Proof.* The two size equations are solved by a one-dimensional sweep over the *level*
+window `(s, s+α)` of the null law `ν₁ = (P θ₁)∘T⁻¹`. Brick (a)
+(`exists_twoSided_constants_window`) shows the size at `θ₁` is `α` for every `s`, with the
+canonical boundary weights; brick (b) (`twoSidedVal_integral_weight_eq`) identifies the size
+at `θ₂` with `∫_s^{s+α} r(Q u) du`, `r` the likelihood ratio; and the sweep
+(`exists_window_root`) solves that for `α` by the intermediate value theorem, the strict
+rearrangement inequality putting the root strictly inside `(0, 1−α)`. Optimality is then
+`isUMP_twoSided_of_constants`. -/
 theorem isUMP_twoSided
     -- USER-INPUT: the exponential family, with σ-finite reference measure
     (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
@@ -2050,77 +2101,122 @@ theorem isUMP_twoSided
     -- USER-INPUT: the two null boundaries, in order
     {θ₁ θ₂ : ℝ} (hθ : θ₁ < θ₂)
     -- USER-INPUT: nondegenerate level
-    {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) :
+    {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1)
+    -- USER-INPUT (AMENDMENT): no level of the statistic carries null probability `α` or
+    -- more. Without it the statement is FALSE — see the counterexample in the docstring:
+    -- an atom heavier than `α` can block every honest rejection interval `C₁ < C₂`
+    (hatom : ∀ t : ℝ, (P θ₁ {x | E.stat x = t}).toReal < α) :
     ∃ C₁ C₂ γ₁ γ₂ : ℝ, C₁ < C₂ ∧ γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
       power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α ∧
       power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α ∧
       IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
         (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
-  -- Everything except the EXISTENCE OF THE FOUR CONSTANTS is proven:
-  -- `isUMP_twoSided_of_constants` turns the two size conditions into the full `IsUMP`
-  -- statement. The obstruction below is therefore confined to the pure existence step, and
-  -- the two gaps recorded here previously are both discharged:
-  --   • SHAPE-TO-INTERVAL is `exists_exp_pair_sign` / `exists_exp_pair_sign_opp` (the
-  --     exponential two-crossing lemmas proved above);
-  --   • the INNER-POINT hypothesis is not needed at all, because the competitor classes of
-  --     `power_min_twoSided` (equalities) and of the UMP clause (inequalities, with the
-  --     multipliers manifestly positive) are handled by `isMax_of_multiplier_form` and
-  --     `isMax_le_of_multiplier_form_nonneg`, neither of which needs multipliers to be
-  --     *produced* by a supporting hyperplane.
   obtain ⟨C₁, C₂, γ₁, γ₂, hC, hγ₁, hγ₂, hs₁, hs₂⟩ :
       ∃ C₁ C₂ γ₁ γ₂ : ℝ, C₁ < C₂ ∧ γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
         power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α ∧
         power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α := by
-    -- OBSTRUCTION (the single remaining gap, RE-DERIVED; the previous note is superseded on
-    -- two counts — brick (a) is now proved, and its claim about `C₁ < C₂` was wrong).
-    -- This is the classical two-dimensional root-finding step of TSH4 Thm 3.7.1: the four
-    -- constants must solve `E_{θ₁}φ = E_{θ₂}φ = α` simultaneously.
-    --
-    -- ROADMAP (quantile sweep). Let `ν₁ = (P θ₁).map T`, `F = cdf ν₁`, `Q = quantile F`
-    -- (`ForMathlib/QuantileFunction`, whose inverse-transform lemma `map_quantile_uniform`
-    -- gives `Q(U) ∼ ν₁` for `U` uniform on `[0,1]`). For `s ∈ (0, 1 − α)` take
-    -- `C₁ = Q(s)`, `C₂ = Q(s+α)` and the *canonical* boundary weights — the fractions of
-    -- the two boundary atoms cut off by the level window `(s, s+α)`,
-    --   `γ₁ = (F(C₁) − s)/ν₁{C₁}`,  `γ₂ = (s + α − F(C₂⁻))/ν₁{C₂}`.
-    -- Its size at `θ₂` is `h(s) = ∫_s^{s+α} r(Q u) du` with
-    -- `r = dν₂/dν₁ = exp((η₂ − η₁)t − (A₂ − A₁))`, because `ν₂ = r·ν₁` in the canonical
-    -- family. Then `h` is continuous (a sliding window of a fixed integrable function),
-    -- `r ∘ Q` is nondecreasing with `∫₀¹ r∘Q = 1`, so `h(0) ≤ α ≤ h(1 − α)`, and the
-    -- intermediate value theorem produces `s` with `h(s) = α`.
-    --
-    -- BRICK (a) — DONE. `exists_twoSided_constants_window` above: with those canonical
-    -- weights the size at `θ₁` is *exactly* `α` for every `s`, no matter how `ν₁` atoms
-    -- sit. (It is the two-boundary analogue of `exists_critical_constants`, which only
-    -- builds the one-sided window `(s, 1)`; the two-sided version needs the quantile
-    -- sandwich `F(Q p⁻) ≤ p ≤ F(Q p)` at both ends, which is `cdf_quantile_bounds`.)
-    -- BRICK (c) — DONE. The monotone-rearrangement (Chebyshev-sum) inequality
-    -- `∫₀^α g ≤ α ∫₀¹ g` and its mirror, absent from Mathlib v4.29.1, are
-    -- `integral_Ioc_le_of_monotoneOn` above.
-    --
-    -- WHAT IS LEFT, in the sharper form the two closed bricks leave:
-    --  (b) the push-forward identity `∫ φ_s dν₂ = ∫_s^{s+α} r(Q u) du`. With the canonical
-    --      weights this is no longer a statement about *matching* randomizations: writing
-    --      `L(x) = F(x⁻)`, both sides equal
-    --      `ν₂((C₁,C₂)) + r(C₁)(F(C₁) − s) + r(C₂)(s + α − L(C₂))`,
-    --      the right-hand one because `∫₀^{F(x)} r∘Q = ν₂(Iic x)` (Galois:
-    --      `Q u ≤ x ↔ u ≤ F x`, so `{u | Q u ≤ x} = (0, F x]`) and because `r ∘ Q` is
-    --      constant on each atom level-interval `(L(C), F(C)]`, where `Q ≡ C`. So (b) is
-    --      exactly the a.e. description of the level sets of `Q` plus `map_quantile_uniform`.
-    --  (d) NEW, and NOT the triviality the previous note claimed. That note asserted
-    --      "`C₁ < C₂` holds because `α < 1` forces the window to straddle two distinct
-    --      quantiles unless `T` is `ν₁`-a.s. constant". That is FALSE: any atom of `ν₁` of
-    --      mass `> α` — with the rest of the mass spread anywhere else, so `T` is very far
-    --      from constant — gives `Q(s) = Q(s+α)` for every `s` in a whole subinterval of
-    --      levels, namely the interior of that atom's level interval shrunk by `α`. If the
-    --      root `s` of `h(s) = α` lands there, the sweep returns a *degenerate* window
-    --      `C₁ = C₂`, which the conclusion's `C₁ < C₂` forbids. The test is then the
-    --      one-atom randomization `γ₁·1{T = C₁}`, and turning it into an honest interval
-    --      needs a second, independent argument (move `C₁` or `C₂` off the atom and
-    --      re-solve *both* size equations, which is again a two-equation problem — the
-    --      degenerate corner is not reachable by the one-parameter sweep alone).
-    -- Both (b) and (d) are constructions rather than inequalities; (d) is the one that was
-    -- previously mis-diagnosed as trivial.
-    sorry
+    classical
+    -- the canonical densities and the likelihood ratio of the two boundary members
+    set p : ℝ → 𝓧 → ℝ :=
+      fun ϑ x => Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ)) with hpdef
+    have hp : ∀ ϑ, HasDensity E.base (p ϑ) (P ϑ) := by
+      intro ϑ
+      refine ⟨((E.stat_meas.const_mul (ηmap ϑ)).sub_const _).exp,
+        fun x => (Real.exp_pos _).le, ?_⟩
+      rw [hrepr ϑ, E.P_eq_withDensity (hnat ϑ)]
+      refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+      simp only [hpdef, ts_real_inner_mul]
+    set ν : Measure ℝ := (P θ₁).map E.stat with hνdef
+    haveI hνprob : IsProbabilityMeasure ν := by
+      rw [hνdef]; exact Measure.isProbabilityMeasure_map E.stat_meas.aemeasurable
+    set r : ℝ → ℝ := fun t => Real.exp ((ηmap θ₂ - ηmap θ₁) * t
+      - (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ₁))) with hrdef
+    have hηlt : ηmap θ₁ < ηmap θ₂ := hη hθ
+    have hrmeas : Measurable r := ((measurable_id.const_mul _).sub_const _).exp
+    have hrsm : StrictMono r := by
+      intro a b hab
+      simp only [hrdef]
+      exact Real.exp_lt_exp.2 (by nlinarith)
+    have hratio : ∀ x : 𝓧, p θ₂ x = r (E.stat x) * p θ₁ x := by
+      intro x
+      simp only [hpdef, hrdef, ← Real.exp_add]
+      congr 1
+      ring
+    -- the two powers, read on the law of the statistic
+    have hpow₁ : ∀ ψ : ℝ → ℝ, Measurable ψ →
+        power P (fun x => ψ (E.stat x)) θ₁ = ∫ t, ψ t ∂ν := by
+      intro ψ hψ
+      unfold power
+      rw [hνdef, integral_map E.stat_meas.aemeasurable hψ.aestronglyMeasurable]
+    have hpow₂ : ∀ ψ : ℝ → ℝ, Measurable ψ →
+        power P (fun x => ψ (E.stat x)) θ₂ = ∫ t, ψ t * r t ∂ν := by
+      intro ψ hψ
+      unfold power
+      rw [ts_integral_density_eq (hp θ₂)]
+      have hcongr : ∫ x, ψ (E.stat x) * p θ₂ x ∂E.base
+          = ∫ x, (fun y => ψ y * r y) (E.stat x) * p θ₁ x ∂E.base :=
+        integral_congr_ae (Filter.Eventually.of_forall fun x => by
+          simp only [hratio x]; ring)
+      rw [hcongr, ← ts_integral_density_eq (hp θ₁), hνdef,
+        integral_map E.stat_meas.aemeasurable (hψ.mul hrmeas).aestronglyMeasurable]
+    -- the ratio is a probability density on the law of the statistic
+    have hrone : ∫ t, r t ∂ν = 1 := by
+      have h := hpow₂ (fun _ => 1) measurable_const
+      unfold power at h
+      simp only [one_mul] at h
+      rw [← h]
+      simp
+    have hrint : Integrable r ν := by
+      have hbase : Integrable (fun x => r (E.stat x) * p θ₁ x) E.base :=
+        (ts_density_integrable (hp θ₂)).congr
+          (Filter.Eventually.of_forall fun x => hratio x)
+      have h₁ : Integrable (fun x => r (E.stat x)) (P θ₁) :=
+        ts_integrable_of_density (hp θ₁) hbase
+      rw [hνdef]
+      exact (MeasureTheory.integrable_map_measure hrmeas.aestronglyMeasurable
+        E.stat_meas.aemeasurable).mpr h₁
+    have hatomν : ∀ t : ℝ, (ν {t}).toReal < α := by
+      intro t
+      rw [hνdef, Measure.map_apply E.stat_meas (measurableSet_singleton t)]
+      exact hatom t
+    -- the sweep: a level window whose ratio-weighted mass is exactly `α`
+    obtain ⟨s, hs0, hs1, hroot⟩ :=
+      exists_window_root ν hrmeas hrint hrsm hrone hα₀ hα₁ hatomν
+    have hmono : Monotone (⇑(cdf ν)) := monotone_cdf (μ := ν)
+    have hrc : ∀ y : ℝ, ContinuousWithinAt (⇑(cdf ν)) (Set.Ici y) y :=
+      fun y => (cdf ν).right_continuous y
+    -- the window is nondegenerate: a degenerate one would be an atom of mass at least `α`
+    have hlt : quantile (⇑(cdf ν)) s < quantile (⇑(cdf ν)) (s + α) := by
+      have hle : quantile (⇑(cdf ν)) s ≤ quantile (⇑(cdf ν)) (s + α) :=
+        quantile_mono _ (by linarith) (cdf_level_nonempty_bddBelow ν hs0 (by linarith)).2
+          (cdf_level_nonempty_bddBelow ν (by linarith) hs1).1
+      rcases lt_or_eq_of_le hle with h | h
+      · exact h
+      · exfalso
+        have h1 : s + α ≤ cdf ν (quantile (⇑(cdf ν)) s) :=
+          (quantile_le_iff hmono hrc (cdf_level_nonempty_bddBelow ν (by linarith) hs1).1
+            (cdf_level_nonempty_bddBelow ν (by linarith) hs1).2).mp (le_of_eq h.symm)
+        have h2 := (cdf_quantile_bounds ν hs0 (show s < 1 by linarith)).2
+        have h3 := hatomν (quantile (⇑(cdf ν)) s)
+        rw [cdf_singleton_toReal ν (quantile (⇑(cdf ν)) s)] at h3
+        linarith
+    -- brick (a): the canonical weights, whose size at `θ₁` is `α`
+    obtain ⟨γ₁, γ₂, hγ₁, hγ₂, hkey₁, hkey₂, hsizeν⟩ :=
+      exists_twoSided_constants_window ν hα₀ hs0 hs1 hlt
+    have hmeasval : ∀ D₁ D₂ g₁ g₂ : ℝ, Measurable (twoSidedVal D₁ D₂ g₁ g₂) := by
+      intro D₁ D₂ g₁ g₂
+      have h := measurable_twoSidedTest (T := (id : ℝ → ℝ)) measurable_id D₁ D₂ g₁ g₂
+      have he : twoSidedTest (id : ℝ → ℝ) D₁ D₂ g₁ g₂ = twoSidedVal D₁ D₂ g₁ g₂ :=
+        funext fun t => twoSidedTest_eq_val (id : ℝ → ℝ) D₁ D₂ g₁ g₂ t
+      rwa [he] at h
+    have htest : twoSidedTest E.stat (quantile (⇑(cdf ν)) s) (quantile (⇑(cdf ν)) (s + α))
+        γ₁ γ₂ = fun x => twoSidedVal (quantile (⇑(cdf ν)) s)
+          (quantile (⇑(cdf ν)) (s + α)) γ₁ γ₂ (E.stat x) :=
+      funext fun x => twoSidedTest_eq_val E.stat _ _ _ _ x
+    refine ⟨quantile (⇑(cdf ν)) s, quantile (⇑(cdf ν)) (s + α), γ₁, γ₂, hlt, hγ₁, hγ₂, ?_, ?_⟩
+    · rw [htest, hpow₁ _ (hmeasval _ _ _ _), hsizeν]
+    · rw [htest, hpow₂ _ (hmeasval _ _ _ _),
+        twoSidedVal_integral_weight_eq ν hrmeas hrint hα₀ hs0 hs1 hlt hkey₁ hkey₂, hroot]
   exact ⟨C₁, C₂, γ₁, γ₂, hC, hγ₁, hγ₂, hs₁, hs₂,
     isUMP_twoSided_of_constants E P hη hrepr hnat hθ hC hγ₁ hγ₂ hs₁ hs₂⟩
 
