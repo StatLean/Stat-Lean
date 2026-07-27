@@ -13,6 +13,12 @@ section MLR
 
 variable {k : ℕ}
 
+/-- The real inner product on `EuclideanSpace ℝ (Fin k)` as a coordinate sum. -/
+private lemma inner_eucl_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
+    ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+  simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+  exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+
 /-- **Cameron–Martin shift for the standard Gaussian on `EuclideanSpace`.**  Shifting the
 argument by `v` is the same as tilting by the exponential density
 `exp(⟪v, z⟫ − ‖v‖²/2)`.  Transported from the `Measure.pi` form
@@ -271,6 +277,7 @@ vector `y`.  The averaged ratio depends on `z` only through `‖z‖` and, after
 `y ↦ −y` turns it into an average of `cosh`, is nondecreasing in `‖z‖`. -/
 private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
     ∃ g : ℝ → ℝ, Monotone g ∧ (∀ x, 0 ≤ g x) ∧
+      (0 < l → ∀ x₁ x₂ : ℝ, 0 ≤ x₁ → x₁ < x₂ → g x₁ < g x₂) ∧
       ∀ f : ℝ → ℝ≥0∞, Measurable f →
         ∫⁻ x, f x ∂(noncentralChiSquared k l)
           = ∫⁻ x, f x * ENNReal.ofReal (g x)
@@ -386,7 +393,94 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
   have hgnn : ∀ x, 0 ≤ g x := by
     intro x
     exact integral_nonneg fun y => (Real.exp_nonneg _)
-  refine ⟨g, hgmono, hgnn, ?_⟩
+  -- the direction functional is a.e. nonzero
+  have htne : ∀ᵐ y ∂γ, t y ≠ 0 := by
+    have hzero : γ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} = 0 := by
+      rw [hγ, ← map_pi_eq_stdGaussian,
+        Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ))
+          (measurableSet_eq_fun (by fun_prop) measurable_const)]
+      refine measure_mono_null (t := (fun x : Fin k → ℝ => x (0 : Fin k)) ⁻¹' {0}) ?_ ?_
+      · intro x hx
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_singleton_iff] at hx ⊢
+        have hxe : ⟪(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k)), e⟫_ℝ = x 0 := by
+          rw [inner_eucl_sum, hedef]
+          simp only [EuclideanSpace.single_apply]
+          rw [Finset.sum_eq_single (0 : Fin k)]
+          · simp
+          · intro b _ hb
+            simp [hb]
+          · intro hb
+            exact absurd (Finset.mem_univ (0 : Fin k)) hb
+        rw [← hxe]
+        exact hx
+      · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
+          Measure.pi_map_eval]
+        haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+        simp
+    have hsub : {y : EuclideanSpace ℝ (Fin k) | t y = 0}
+        ⊆ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} := by
+      intro y hy
+      simp only [Set.mem_setOf_eq, htdef] at hy ⊢
+      rcases eq_or_ne y 0 with rfl | hy0
+      · simp
+      · have h0 : (‖y‖ : ℝ)⁻¹ ≠ 0 := by
+          simp [norm_ne_zero_iff.mpr hy0]
+        exact (mul_eq_zero.mp hy).resolve_left h0
+    rw [ae_iff]
+    refine measure_mono_null ?_ hzero
+    intro y hy
+    exact hsub (by simpa using hy)
+  have hgstrict : 0 < l → ∀ x₁ x₂ : ℝ, 0 ≤ x₁ → x₁ < x₂ → g x₁ < g x₂ := by
+    intro hl x₁ x₂ hx₁ hx
+    have hspos : 0 < s := by
+      rw [hsdef]
+      exact Real.sqrt_pos.mpr (by exact_mod_cast hl)
+    have hlt : s * Real.sqrt x₁ < s * Real.sqrt x₂ :=
+      mul_lt_mul_of_pos_left (Real.sqrt_lt_sqrt hx₁ hx) hspos
+    have hc₁ : 0 ≤ s * Real.sqrt x₁ := by positivity
+    set F : EuclideanSpace ℝ (Fin k) → ℝ := fun y =>
+      Real.cosh (s * Real.sqrt x₂ * t y) * Real.exp (-((l : ℝ) / 2))
+        - Real.cosh (s * Real.sqrt x₁ * t y) * Real.exp (-((l : ℝ) / 2)) with hF
+    have hFint : Integrable F γ := (hcoshint _).sub (hcoshint _)
+    have hFpos : ∀ y, t y ≠ 0 → 0 < F y := by
+      intro y hty
+      have habs : |s * Real.sqrt x₁ * t y| < |s * Real.sqrt x₂ * t y| := by
+        rw [abs_mul (s * Real.sqrt x₁), abs_mul (s * Real.sqrt x₂),
+          abs_of_nonneg hc₁, abs_of_nonneg (by positivity : (0:ℝ) ≤ s * Real.sqrt x₂)]
+        exact mul_lt_mul_of_pos_right hlt (abs_pos.mpr hty)
+      have := Real.cosh_lt_cosh.mpr habs
+      rw [hF]
+      have hexp : 0 < Real.exp (-((l : ℝ) / 2)) := Real.exp_pos _
+      simp only
+      nlinarith
+    have hFnn : 0 ≤ᵐ[γ] F := by
+      filter_upwards [htne] with y hy using (hFpos y hy).le
+    have hFne : ¬ (F =ᵐ[γ] 0) := by
+      intro hcon
+      have hfalse : ∀ᵐ y ∂γ, False := by
+        filter_upwards [hcon, htne] with y hy hty
+        have h1 : 0 < F y := hFpos y hty
+        rw [show F y = (0 : EuclideanSpace ℝ (Fin k) → ℝ) y from hy] at h1
+        exact lt_irrefl 0 h1
+      haveI : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
+      have hz : γ Set.univ = 0 := by
+        have h2 := ae_iff.mp hfalse
+        simpa using h2
+      rw [measure_univ] at hz
+      exact one_ne_zero hz
+    have hposint : 0 < ∫ y, F y ∂γ := by
+      rcases (integral_nonneg_of_ae hFnn).lt_or_eq with hlt' | heq
+      · exact hlt'
+      · exact absurd ((integral_eq_zero_iff_of_nonneg_ae hFnn hFint).mp heq.symm) hFne
+    have hsplit : (∫ y, F y ∂γ)
+        = (∫ y, Real.cosh (s * Real.sqrt x₂ * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ)
+          - ∫ y, Real.cosh (s * Real.sqrt x₁ * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ :=
+      integral_sub (hcoshint _) (hcoshint _)
+    rw [hgdef]
+    simp only
+    rw [hcosh _, hcosh _]
+    linarith [hsplit ▸ hposint]
+  refine ⟨g, hgmono, hgnn, hgstrict, ?_⟩
   intro f hf
   set ν : EuclideanSpace ℝ (Fin k) := noncentralMean k l with hνdef
   have hνnorm : ‖ν‖ = s := ncMean_norm hk l
@@ -615,7 +709,7 @@ private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c�
     noncentralChiSquared (k + 1) l (Set.Ioi c₂) ≤ noncentralChiSquared k l (Set.Ioi c₁) := by
   classical
   haveI : NeZero k := ⟨hk.ne'⟩
-  obtain ⟨g, hgmono, hgnn, hg⟩ := exists_monotone_density hk l
+  obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
   set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
   set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
   set A : ℝ≥0∞ := G c₁ with hA
