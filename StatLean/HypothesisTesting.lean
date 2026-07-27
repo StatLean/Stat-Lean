@@ -22,6 +22,7 @@ import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
 import StatLean.HypothesisTesting.ForMathlib.PermutationMarginals
 import StatLean.HypothesisTesting.ForMathlib.PolyaUniformCDF
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
+import StatLean.HypothesisTesting.ForMathlib.SteinMethod
 import StatLean.HypothesisTesting.ForMathlib.TestsWeakCompact
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMaximin
