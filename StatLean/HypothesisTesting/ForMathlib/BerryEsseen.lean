@@ -347,6 +347,60 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
         _ = ‖f a - g a‖ := mul_one _
     linarith
 
+/-- **Second-order telescoping bound.** The first-order telescoping estimate
+`norm_prod_sub_prod_le` loses the whole `n^{-1/2}` term of an Edgeworth expansion; what is
+needed instead is the *quadratic* remainder after subtracting the linear term:
+`‖aⁿ − bⁿ − n bⁿ⁻¹ (a − b)‖ ≤ n(n−1)/2 · Mⁿ⁻² ‖a − b‖²` whenever `‖a‖, ‖b‖ ≤ M`.
+
+Written with `n = m + 2` so that the two decremented exponents are literal. The induction step
+is the identity `Δₙ₊₁ = a Δₙ + n bⁿ⁻¹ (a − b)²`, which turns the claim into the arithmetic
+identity `n(n−1)/2 + n = n(n+1)/2`. Because `M` is carried along, the bound **retains the
+damping** `Mⁿ⁻²` — this is exactly what the undamped `norm_charFun_pow_sub_gaussian_le` throws
+away, and what makes the Edgeworth remainder integrable against the Esseen weight. -/
+private lemma norm_pow_sub_pow_sub_lin_le {a b : ℂ} {M : ℝ} (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M)
+    (m : ℕ) :
+    ‖a ^ (m + 2) - b ^ (m + 2) - ((m : ℂ) + 2) * b ^ (m + 1) * (a - b)‖
+      ≤ ((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * M ^ m * ‖a - b‖ ^ 2 := by
+  have hM : 0 ≤ M := (norm_nonneg a).trans ha
+  have hbpow : ∀ j : ℕ, ‖b‖ ^ j ≤ M ^ j := fun j => pow_le_pow_left₀ (norm_nonneg b) hb j
+  induction m with
+  | zero =>
+    have heq : a ^ (0 + 2) - b ^ (0 + 2) - (((0 : ℕ) : ℂ) + 2) * b ^ (0 + 1) * (a - b)
+        = (a - b) ^ 2 := by push_cast; ring
+    rw [heq, norm_pow]
+    norm_num
+  | succ k ih =>
+    have hkey : a ^ (k + 1 + 2) - b ^ (k + 1 + 2)
+          - (((k + 1 : ℕ) : ℂ) + 2) * b ^ (k + 1 + 1) * (a - b)
+        = a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))
+          + ((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2 := by push_cast; ring
+    have hnc : ‖((k : ℂ) + 2)‖ = (k : ℝ) + 2 := by
+      have hc : ((k : ℂ) + 2) = (((k : ℝ) + 2 : ℝ) : ℂ) := by push_cast; ring
+      rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    have t1 : ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))‖
+        ≤ M * (((k : ℝ) + 2) * ((k : ℝ) + 1) / 2 * M ^ k * ‖a - b‖ ^ 2) := by
+      rw [norm_mul]
+      exact mul_le_mul ha ih (norm_nonneg _) hM
+    have t2 : ‖((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖
+        ≤ ((k : ℝ) + 2) * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+      rw [norm_mul, norm_mul, hnc, norm_pow, norm_pow]
+      have h1 : ((k : ℝ) + 2) * ‖b‖ ^ (k + 1) ≤ ((k : ℝ) + 2) * M ^ (k + 1) :=
+        mul_le_mul_of_nonneg_left (hbpow (k + 1)) (by positivity)
+      exact mul_le_mul_of_nonneg_right h1 (by positivity)
+    have hMk : M * M ^ k = M ^ (k + 1) := by rw [pow_succ]; ring
+    calc ‖a ^ (k + 1 + 2) - b ^ (k + 1 + 2)
+            - (((k + 1 : ℕ) : ℂ) + 2) * b ^ (k + 1 + 1) * (a - b)‖
+        = ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))
+            + ((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖ := by rw [hkey]
+      _ ≤ ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))‖
+            + ‖((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖ := norm_add_le _ _
+      _ ≤ M * (((k : ℝ) + 2) * ((k : ℝ) + 1) / 2 * M ^ k * ‖a - b‖ ^ 2)
+            + ((k : ℝ) + 2) * M ^ (k + 1) * ‖a - b‖ ^ 2 := add_le_add t1 t2
+      _ = (((k : ℝ) + 1) + 2) * (((k : ℝ) + 1) + 1) / 2 * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+          rw [← hMk]; ring
+      _ = ((↑(k + 1) : ℝ) + 2) * ((↑(k + 1) : ℝ) + 1) / 2 * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+          push_cast; ring
+
 /-! ### Characteristic-function Gaussian approximation
 
 The analytic heart of Berry–Esseen: the characteristic function of a centered
@@ -525,6 +579,44 @@ theorem norm_charFun_sub_cubic_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
         integral_mono ((hExpInt.sub hPolyInt).norm) hbound hpt
     _ = (∫ x, x ^ 4 ∂μ) * |u| ^ 4 / 24 := by
         rw [integral_div, integral_const_mul]; ring
+
+/-- **Gaussian majorant for a characteristic function on a window around the origin.**
+
+On the window `v s² ≤ 2` and `ρ |s| ≤ 3v/2` (`ρ = ∫|x|³`), a centred law satisfies
+`‖charFun μ s‖ ≤ exp(−v s²/4)`.
+
+This is the second ingredient the Edgeworth remainder needs. Raised to the `n`-th power it
+supplies the factor `e^{−t²/4}` that damps the remainder in the Esseen integral; without it the
+`n`-fold power bound of `norm_charFun_pow_sub_gaussian_le` is uniform in `t` and the whole rate
+is lost. The proof is `‖φ(s)‖ ≤ |1 − v s²/2| + ρ|s|³/6 ≤ 1 − v s²/2 + v s²/4 ≤ e^{−v s²/4}`,
+the middle step using `ρ|s|³ = (ρ|s|) s² ≤ (3v/2) s²`. -/
+theorem norm_charFun_le_exp_neg_sq (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => |x| ^ 3) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) {s : ℝ}
+    (hs2 : v * s ^ 2 ≤ 2) (hs3 : (∫ x, |x| ^ 3 ∂μ) * |s| ≤ 3 * v / 2) :
+    ‖charFun μ s‖ ≤ Real.exp (-(v * s ^ 2 / 4)) := by
+  have h := norm_charFun_sub_quadratic_le μ hint1 hint2 hint3 hmean hvar s
+  have hq : ‖(1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ = 1 - v * s ^ 2 / 2 := by
+    have hcast : (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) = ((1 - v * s ^ 2 / 2 : ℝ) : ℂ) := by
+      push_cast; ring
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+  have htail : (∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 ≤ v * s ^ 2 / 4 := by
+    have habs : |s| ^ 3 = s ^ 2 * |s| := by rw [pow_succ, sq_abs]
+    have hmul := mul_le_mul_of_nonneg_right hs3 (sq_nonneg s)
+    rw [habs]
+    linarith [hmul]
+  have hsplit : charFun μ s
+      = (charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)) + (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) := by
+    ring
+  calc ‖charFun μ s‖
+      = ‖(charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)) + (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ := by
+        rw [← hsplit]
+    _ ≤ ‖charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ + ‖(1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ :=
+        norm_add_le _ _
+    _ ≤ (∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 + (1 - v * s ^ 2 / 2) := by rw [hq]; linarith
+    _ ≤ 1 - v * s ^ 2 / 4 := by linarith
+    _ ≤ Real.exp (-(v * s ^ 2 / 4)) := by linarith [Real.add_one_le_exp (-(v * s ^ 2 / 4))]
 
 /-- **Quadratic upper bound for `e^{-z}`.** For `z ≥ 0`, `e^{-z} ≤ 1 - z + z²/2`. Combined
 with `1 - z ≤ e^{-z}` (`Real.add_one_le_exp`) this pins `|e^{-z} - (1 - z)| ≤ z²/2`. -/
