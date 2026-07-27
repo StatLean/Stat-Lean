@@ -67,12 +67,17 @@ ingredient is proved here unconditionally, each with a dimension-free constant:
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
 public χ² moments) these suffice and the ball assembly closes.
 
-For the *convex* route two further ingredients are missing: the smoothed convex indicator
-`exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
-obstacle — a Gaussian **boundary-shell** bound `γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is
-Ball's Gaussian-surface-area theorem (`4 k^{1/4}`) and does *not* follow from the single-slab
-bound proved here; see `berryEsseen_convex_elementary`.
-Crucially, even once those are filled, the elementary balance of steps 2–3 does **not** reach
+For the *convex* route the smoothed convex indicator `exists_smoothed_convex_indicator`
+(mollification by a `ContDiffBump`, dimension-dependent constant) is **now proved and
+axiom-clean** — see its docstring for the construction and the section preceding it for the
+`precompR` tower. What remains is the single real obstacle: a Gaussian **boundary-shell** bound
+`γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is Ball's Gaussian-surface-area theorem (`4 k^{1/4}`)
+and does *not* follow from the single-slab bound proved here; see
+`berryEsseen_convex_elementary`. Everything in the convex assembly that does *not* need that
+shell bound is proved outright as `berryEsseen_convex_levy_elementary`, the Lévy/Prokhorov form
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` (and its mirror image); the frozen headline is exactly this
+statement with `γ(Bᵋ)` collapsed to `γ(B)`.
+Crucially, even once that is filled, the elementary balance of steps 2–3 does **not** reach
 the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
 of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
 mollifier method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and
@@ -2365,7 +2370,15 @@ not what this statement is for.
 
 So the missing brick is exactly "the Gaussian surface area of a convex body in `ℝ^k` is finite,
 with a bound depending only on `k`", i.e. Ball's theorem or a weakened form of it, and it is a
-self-contained research-level project. -/
+self-contained research-level project.
+
+**Status update.** The other ingredient this statement used to wait on,
+`exists_smoothed_convex_indicator`, is now proved and axiom-clean. Consequently the whole
+assembly *except* the shell collapse is available and is recorded below as
+`berryEsseen_convex_levy_elementary`: for every convex measurable `B` and every `ε > 0`,
+`μₙ(B) ≤ γ(Bᵋ) + (C₃/2)(β/√n)/ε³` and `γ(B) ≤ μₙ(Bᵋ) + (C₃/2)(β/√n)/ε³`. Taking
+`ε = (β/√n)^{1/4}` turns those into `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, so the
+single remaining step really is `γ(Bᵋ) ≤ γ(B) + C_k ε`. -/
 theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),
@@ -2379,6 +2392,152 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
         ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
   -- TODO (planned debt): optimise ε; see docstring and the three lemmas above.
   sorry
+
+/-! #### The convex headline in Lévy (thickening) form
+
+The *only* thing `berryEsseen_convex_elementary` is missing is the shell bound
+`γ(Bᵋ \ B) ≤ C_k ε`, which is used exactly once, to collapse `γ(Bᵋ)` back to `γ(B)`. If one
+declines to collapse it — i.e. if one states the conclusion as a Lévy/Prokhorov-type inequality
+between `μₙ(B)` and `γ(Bᵋ)` rather than between `μₙ(B)` and `γ(B)` — then Ball's theorem is not
+needed at all and the statement is provable outright. That is `berryEsseen_convex_levy_elementary`
+below. It is strictly weaker than the frozen headline (from it plus a shell bound `γ(Bᵋ\B) ≤ C_kε`
+the headline follows by the `ε`-balance of `berryEsseen_ball_elementary`, and nothing else is
+needed), and it is where the mollification of `exists_smoothed_convex_indicator` is actually
+consumed. -/
+
+/-- Lower sandwich: a nonnegative test function equal to `1` on a measurable set dominates that
+set's indicator. -/
+private lemma measureReal_le_integral_of_eq_one {k : ℕ}
+    {ρ : Measure (EuclideanSpace ℝ (Fin k))} [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {S : Set (EuclideanSpace ℝ (Fin k))}
+    (hS : MeasurableSet S) (hfint : Integrable f ρ) (hf0 : ∀ x, 0 ≤ f x)
+    (hone : ∀ x ∈ S, f x = 1) : (ρ S).toReal ≤ ∫ x, f x ∂ρ := by
+  have hind : Integrable (S.indicator (fun _ => (1 : ℝ))) ρ := by
+    rw [integrable_indicator_iff hS]
+    exact integrableOn_const (measure_ne_top _ _)
+  calc (ρ S).toReal = ∫ x, S.indicator (fun _ => (1 : ℝ)) x ∂ρ := by
+        rw [integral_indicator hS, setIntegral_const, measureReal_def, smul_eq_mul, mul_one]
+    _ ≤ ∫ x, f x ∂ρ := by
+        refine integral_mono hind hfint fun x => ?_
+        by_cases hx : x ∈ S
+        · rw [Set.indicator_of_mem hx, hone x hx]
+        · rw [Set.indicator_of_notMem hx]; exact hf0 x
+
+/-- Upper sandwich: a test function bounded by `1` and supported in a measurable set is dominated
+by that set's indicator. -/
+private lemma integral_le_measureReal_of_support_subset {k : ℕ}
+    {ρ : Measure (EuclideanSpace ℝ (Fin k))} [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {S : Set (EuclideanSpace ℝ (Fin k))}
+    (hS : MeasurableSet S) (hfint : Integrable f ρ) (hf1 : ∀ x, f x ≤ 1)
+    (hsupp : ∀ x, f x ≠ 0 → x ∈ S) : (∫ x, f x ∂ρ) ≤ (ρ S).toReal := by
+  have hind : Integrable (S.indicator (fun _ => (1 : ℝ))) ρ := by
+    rw [integrable_indicator_iff hS]
+    exact integrableOn_const (measure_ne_top _ _)
+  calc (∫ x, f x ∂ρ) ≤ ∫ x, S.indicator (fun _ => (1 : ℝ)) x ∂ρ := by
+        refine integral_mono hfint hind fun x => ?_
+        by_cases hx : x ∈ S
+        · rw [Set.indicator_of_mem hx]; exact hf1 x
+        · rw [Set.indicator_of_notMem hx]
+          by_contra hcon
+          exact hx (hsupp x (ne_of_gt (not_le.1 hcon)))
+    _ = (ρ S).toReal := by
+        rw [integral_indicator hS, setIntegral_const, measureReal_def, smul_eq_mul, mul_one]
+
+/-- **Elementary convex Berry–Esseen bound, Lévy (thickening) form.** For every dimension `k > 0`
+there is a constant `C` such that for every convex measurable `B`, every width `ε > 0` and every
+`n > 0`,
+
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` and `γ(B) ≤ μₙ(Bᵋ) + C (β/√n)/ε³`,
+
+where `μₙ` is the law of the normalized sum, `γ = N(0, I_k)`, `β = ∫‖y‖³ dν` and `Bᵋ` is the
+`ε`-thickening of `B`.
+
+Both inequalities are the Lindeberg swap `abs_integral_smooth_sub_gaussian_le` applied to the
+smoothed indicator of `exists_smoothed_convex_indicator`, sandwiched between `1_B` and `1_{Bᵋ}`;
+`C = C₃/2` where `C₃` is the third-derivative constant of the smoothed indicator (the factor
+`3 ≥ (β + β_G)/β` from `integral_norm_cube_gaussian_le` is what turns `C₃/6` into `C₃/2`).
+
+This is the exact point at which the frozen `berryEsseen_convex_elementary` stalls: taking
+`ε = (β/√n)^{1/4}` here gives `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, and the *only*
+remaining step is to replace `γ(Bᵋ)` by `γ(B) + C_k ε`, which is Ball's Gaussian-surface-area
+theorem. Nothing else in the frozen statement is open. -/
+theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ),
+      0 < n → 0 < ε → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      ((((Measure.pi fun _ : Fin n => ν).map
+              fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+            ≤ ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+                (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3)
+        ∧ (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal
+            ≤ (((Measure.pi fun _ : Fin n => ν).map
+                fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+                  (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3) := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  refine ⟨C₃ / 2, by positivity, ?_⟩
+  intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  have hβGle : (∫ z, ‖z‖ ^ 3 ∂γ) ≤ 2 * β := by
+    have h1 := integral_norm_cube_gaussian_le (k := k) hk
+    rw [← hγdef] at h1
+    have h2 := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h2
+    linarith
+  -- the smoothed indicator of `B` at width `ε`
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
+  have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
+      Integrable f ρ := by
+    intro ρ hρ
+    haveI := hρ
+    exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
+  -- the Lindeberg swap at `M = C₃/ε³`, with `(β + β_G)/√n ≤ 3q` folded in
+  have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ C₃ / 2 * q / ε ^ 3 := by
+    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd hfbd
+      (M := C₃ / ε ^ 3) (by positivity) hfD
+    rw [← hμdef, ← hγdef, ← hβdef] at hswap
+    refine hswap.trans ?_
+    have hA : 0 ≤ C₃ / ε ^ 3 / 6 := by positivity
+    have h3q : (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ) ≤ 3 * q := by
+      rw [hqdef, div_le_iff₀ hsn]
+      have hcancel : 3 * (β / Real.sqrt (n : ℝ)) * Real.sqrt (n : ℝ) = 3 * β := by field_simp
+      rw [hcancel]
+      linarith
+    calc C₃ / ε ^ 3 / 6 * (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)
+        = C₃ / ε ^ 3 / 6 * ((β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)) := by ring
+      _ ≤ C₃ / ε ^ 3 / 6 * (3 * q) := mul_le_mul_of_nonneg_left h3q hA
+      _ = C₃ / 2 * q / ε ^ 3 := by ring
+  have hthick : MeasurableSet (Metric.thickening ε B) := Metric.isOpen_thickening.measurableSet
+  have hlowμ : (μ B).toReal ≤ ∫ x, f x ∂μ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint μ hμprob) hf0 hfB
+  have hlowγ : (γ B).toReal ≤ ∫ x, f x ∂γ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint γ hγprob) hf0 hfB
+  have huppμ : (∫ x, f x ∂μ) ≤ (μ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint μ hμprob) hf1 hfsupp
+  have huppγ : (∫ x, f x ∂γ) ≤ (γ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint γ hγprob) hf1 hfsupp
+  have hswap' := abs_le.1 herr
+  constructor
+  · linarith [hswap'.2, hlowμ, huppγ]
+  · linarith [hswap'.1, hlowγ, huppμ]
 
 end ElementaryRoute
 
