@@ -1,4 +1,6 @@
 import StatLean.AsymptoticStatistics.LocalAsymptoticNormality.AsymptoticRepresentation
+import StatLean.AsymptoticStatistics.ForMathlib.SlutskyVec
+import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
 import Mathlib.Analysis.Calculus.Gradient.Basic
 
 /-!
@@ -110,6 +112,88 @@ def IsAsymptoticallyLinear (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k
       {ω : Fin n → 𝓧 |
         ε ≤ ‖Real.sqrt n • (est n ω - θ₀) - mulVecE J⁻¹ (scoreSum ℓ n ω)‖})
       atTop (𝓝 0)
+
+
+/-! ## Helpers -/
+
+open scoped MatrixOrder in
+/-- **Translating a multivariate Gaussian shifts its mean.** Immediate from the definition
+`multivariateGaussian m S = (stdGaussian).map (x ↦ m + √S x)`; no positive-semidefiniteness
+is needed (the degenerate `CFC.sqrt S = 0` branch translates a Dirac mass). -/
+private lemma multivariateGaussian_map_add_right
+    (m v : EuclideanSpace ℝ (Fin k)) (S : Matrix (Fin k) (Fin k) ℝ) :
+    (ProbabilityTheory.multivariateGaussian m S).map (fun y => y + v)
+      = ProbabilityTheory.multivariateGaussian (m + v) S := by
+  classical
+  have hmeas : Measurable fun x : EuclideanSpace ℝ (Fin k) =>
+      m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S) x :=
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)).continuous.measurable.const_add m
+  rw [ProbabilityTheory.multivariateGaussian, ProbabilityTheory.multivariateGaussian,
+    Measure.map_map (by fun_prop : Measurable fun y : EuclideanSpace ℝ (Fin k) => y + v)
+      hmeas]
+  congr 1
+  funext x
+  simp only [Function.comp_apply]
+  abel
+
+/-- Weak convergence only depends on the tail of the sequence of measures. -/
+private lemma weakConverges_of_eventually_eq {E : Type*} [MeasurableSpace E]
+    [TopologicalSpace E] {νn νn' : ℕ → Measure E} {ν : Measure E}
+    (heq : ∀ᶠ n in atTop, νn n = νn' n) (hw : WeakConverges νn ν) : WeakConverges νn' ν := by
+  intro f
+  refine (hw f).congr' ?_
+  filter_upwards [heq] with n hn
+  rw [hn]
+
+/-- `mulVecE J` is the action of `Matrix.toEuclideanCLM J`; definitionally equal. -/
+private lemma mulVecE_apply_clm (J : Matrix (Fin k) (Fin k) ℝ)
+    (v : EuclideanSpace ℝ (Fin k)) :
+    mulVecE J v = Matrix.toEuclideanCLM (𝕜 := ℝ) J v := rfl
+
+/-- **The Fisher information matrix is positive semidefinite.** The bilinear form
+`(u, v) ↦ ∫ ⟪u, ℓ⟫⟪v, ℓ⟫ p_{θ₀}` is symmetric with nonnegative diagonal, and `hJ` transports
+those two facts to the matrix. This is used to feed the Gaussian pushforward lemmas, which
+are vacuous for non-positive-semidefinite covariances; it makes the source's bare
+nonsingularity hypothesis `IsUnit J.det` equivalent to positive definiteness, so no extra
+hypothesis is needed. -/
+private lemma posSemidef_of_fisherInformation
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k),
+      fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫) :
+    J.PosSemidef := by
+  classical
+  have hsymm : ∀ u v : EuclideanSpace ℝ (Fin k),
+      ⟪u, mulVecE J v⟫ = ⟪v, mulVecE J u⟫ := by
+    intro u v
+    rw [← hJ u v, ← hJ v u]
+    unfold fisherInformation
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+  have hnn : ∀ u : EuclideanSpace ℝ (Fin k), 0 ≤ ⟪u, mulVecE J u⟫ := by
+    intro u
+    rw [← hJ u u]
+    unfold fisherInformation
+    exact integral_nonneg fun x =>
+      mul_nonneg (mul_self_nonneg _) (M.density_nonneg θ₀ x)
+  -- Transport both facts to plain vectors through `Matrix.inner_toEuclideanCLM`.
+  have hsymm' : ∀ x y : Fin k → ℝ,
+      dotProduct x (J.mulVec y) = dotProduct y (J.mulVec x) := by
+    intro x y
+    have h := hsymm (WithLp.toLp 2 x) (WithLp.toLp 2 y)
+    simp only [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+  have hnn' : ∀ x : Fin k → ℝ, (0 : ℝ) ≤ dotProduct x (J.mulVec x) := by
+    intro x
+    have h := hnn (WithLp.toLp 2 x)
+    simp only [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+  rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+  refine ⟨?_, fun x => ?_⟩
+  · ext i j
+    have h := hsymm' (Pi.single j (1 : ℝ)) (Pi.single i (1 : ℝ))
+    simpa [Matrix.conjTranspose_apply, Matrix.mulVec_single, single_dotProduct] using h
+  · simpa using hnn' x
 
 /-- **Limit law of an efficient estimator under local alternatives.**
 
