@@ -327,6 +327,127 @@ private lemma weakConverges_of_integral_close
   simp only [sub_add_cancel, zero_add] at hsum
   simpa only [h1] using hsum
 
+/-! ### The exact change of measure, and the Le Cam-3 tilt of the limit law -/
+
+/-- **Exact change of measure under a common-support hypothesis.**
+
+`P^n_{θ₀+h/√n} = (P^n_{θ₀}).withDensity (exp ∘ Lₙ)` — the identity that
+`contiguous_local_alternatives` consumes as `hL_is_log_ratio`.
+
+**Why the hypothesis is needed.** Without it the identity is FALSE at the Lean junk values,
+in *both* directions of the support comparison, and neither failure is a formalisation
+artefact one can quotient away:
+
+* where `p_{θ₀} x = 0 < p_{θ'} x`, the left side carries the mass `p_{θ'} x` while the right
+  side carries none — `Real.log (a / 0) = 0`, so the ratio density is `1` there rather than
+  `+∞`, and `1` multiplied into a vanishing base density is still `0`;
+* where `p_{θ'} x = 0 < p_{θ₀} x`, the left side carries none while the right side carries
+  `p_{θ₀} x · exp (Real.log 0) = p_{θ₀} x`.
+
+So the minimal repair is the two-sided condition — the `HasCommonSupport` pattern of
+`PointEstimation/InformationInequality/Basic.lean`, spelled out inline here to avoid an
+import — and it is the same defect, with the same repair, as the one already carried by
+`TrinityChiSquared.logLR_affine_sub_scoreDiff_tendstoInMeasure`. It is *not* a positivity
+assumption on the model (`∀ θ x, 0 < p_θ x` would be false for many standard models); it says
+only that no two parameters disagree about which points are impossible, which is what the
+source assumes implicitly whenever it writes a likelihood ratio. -/
+private lemma productMeasure_eq_withDensity_exp_logLikelihood
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hsupp : ∀ (θ θ' : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ x ≠ 0 → M.density θ' x ≠ 0)
+    (h : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    productMeasure M μ (θ₀ + (Real.sqrt n)⁻¹ • h) n
+      = (productMeasure M μ θ₀ n).withDensity
+          (fun ω => ENNReal.ofReal (Real.exp (logLikelihood M θ₀ h n ω))) := by
+  refine logLikelihood_is_log_ratio M μ θ₀ h n (hPDF.density_integrable _)
+    (Filter.Eventually.of_forall fun x => ?_)
+  constructor
+  · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
+      (Ne.symm (hsupp θ₀ _ x (ne_of_gt hx)))
+  · exact fun hx => lt_of_le_of_ne (M.density_nonneg _ _)
+      (Ne.symm (hsupp _ θ₀ x (ne_of_gt hx)))
+
+/-- **The Le Cam third-lemma tilt of the limiting joint law is `N(h, J⁻¹)`.**
+
+The joint limit of `(√n(θ̂ₙ − θ₀), Δₙ)` under `P^n_{θ₀}` is the law of `(J⁻¹Δ, Δ)` with
+`Δ ∼ N(0, J)` — a *degenerate* joint, carried by the graph of `J⁻¹`, because asymptotic
+linearity makes the first coordinate a deterministic function of the second in the limit.
+Le Cam's third lemma then tilts it by `e^{⟪h,Δ⟫ − ½⟪h,Jh⟫}` and reads off the first marginal.
+This lemma computes that marginal in closed form.
+
+The computation is three moves, each an existing `GaussianMGF` identity:
+`Measure.withDensity_map_eq_map_withDensity` pulls the density back through the joint map, so
+the tilt acts on `N(0, J)` itself; `multivariateGaussian_withDensity_exp_shift` turns the
+exponential tilt of `N(0, J)` into the mean shift `N(Jh, J)`; and
+`multivariateGaussian_map_toEuclideanCLM` pushes that forward along `J⁻¹`, giving mean
+`J⁻¹(Jh) = h` and covariance `J⁻¹ J (J⁻¹)ᴴ = J⁻¹` (the transpose is harmless because a
+positive semidefinite `J` is symmetric).
+
+Deriving this as a lemma — rather than assuming the Gaussian-MGF pair as hypotheses — is what
+lets `limit_law_under_h`'s companions `h_exp_int_πtilt` / `h_exp_int_πtilt_eq_one` be
+discharged from `GaussianMGF.integrable_exp_tilt` / `integral_exp_tilt_eq_one`, whose only
+input is that the second marginal of the joint is `N(0, J)`. -/
+private lemma map_fst_withDensity_exp_tilt_graphJoint
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_psd : J.PosSemidef) (hJ_inv : IsUnit J.det)
+    (h : EuclideanSpace ℝ (Fin k)) :
+    (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+          (fun δ : EuclideanSpace ℝ (Fin k) =>
+            (mulVecE J⁻¹ δ, ⟪h, δ⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))).withDensity
+        (fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2))).map Prod.fst
+      = multivariateGaussian h J⁻¹ := by
+  classical
+  have hJsymm : Jᵀ = J := by
+    have := hJ_psd.1
+    simpa [Matrix.conjTranspose, Matrix.transpose] using this
+  have hquad : ⟪h, mulVecE J h⟫ = h.ofLp ⬝ᵥ J.mulVec h.ofLp := by
+    simp [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+  set c : ℝ := (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫ with hc
+  set H : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) × ℝ :=
+    fun δ => (mulVecE J⁻¹ δ, ⟪h, δ⟫ - c) with hH
+  have hH_meas : Measurable H := by
+    refine Measurable.prodMk ?_ ?_
+    · exact (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.measurable
+    · exact ((continuous_const.inner continuous_id).measurable).sub measurable_const
+  have hw_meas : Measurable
+      (fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2)) :=
+    (Real.measurable_exp.comp measurable_snd).ennreal_ofReal
+  -- Pull the density back through `H`, then compose `Prod.fst ∘ H = mulVecE J⁻¹`.
+  rw [Measure.withDensity_map_eq_map_withDensity _ _ hH_meas _ hw_meas,
+    Measure.map_map measurable_fst hH_meas]
+  -- The tilt now acts on `N(0, J)` itself, with the exponent in `GaussianMGF` normal form.
+  have hdens :
+      ((fun q : EuclideanSpace ℝ (Fin k) × ℝ => ENNReal.ofReal (Real.exp q.2)) ∘ H)
+        = fun y : EuclideanSpace ℝ (Fin k) =>
+          ENNReal.ofReal (Real.exp (⟪h, y⟫ - (h.ofLp ⬝ᵥ J.mulVec h.ofLp) / 2)) := by
+    funext y
+    simp only [hH, Function.comp_apply, hc, hquad]
+    congr 2
+    ring
+  have hfst : (Prod.fst ∘ H) = fun δ : EuclideanSpace ℝ (Fin k) =>
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) δ := by
+    funext δ
+    simp only [hH, Function.comp_apply]
+    rfl
+  rw [hdens, hfst, multivariateGaussian_withDensity_exp_shift hJ_psd h,
+    multivariateGaussian_map_toEuclideanCLM J⁻¹ _ hJ_psd]
+  -- Mean `J⁻¹(Jh) = h` and covariance `J⁻¹ J (J⁻¹)ᴴ = J⁻¹`.
+  have hinvmul : J⁻¹ * J = 1 := Matrix.nonsing_inv_mul J hJ_inv
+  have hmean : (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹)
+      ((Matrix.toEuclideanCLM (𝕜 := ℝ) J) h) = h := by
+    have : (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) * (Matrix.toEuclideanCLM (𝕜 := ℝ) J)
+        = Matrix.toEuclideanCLM (𝕜 := ℝ) (J⁻¹ * J) := (map_mul _ _ _).symm
+    have happ := congrArg (fun A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) =>
+      A h) this
+    simpa [hinvmul] using happ
+  have hcov : J⁻¹ * J * (J⁻¹)ᴴ = J⁻¹ := by
+    have hH' : (J⁻¹)ᴴ = J⁻¹ := by
+      have : (J⁻¹)ᵀ = (Jᵀ)⁻¹ := Matrix.transpose_nonsing_inv J
+      simpa [Matrix.conjTranspose, Matrix.transpose, hJsymm] using
+        congrArg id (this.trans (by rw [hJsymm]))
+    rw [hinvmul, one_mul, hH']
+  rw [hmean, hcov]
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
