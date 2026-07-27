@@ -295,6 +295,27 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
     rfl
   rw [hLHS, hRHS]
 
+/-- **Pushforward reduction of `randPairLaw`.** Postcomposing the statistic with a measurable
+map `ψ` pushes the doubly randomized law forward along `ψ × ψ`. (Contrast `randPairLaw_comp`,
+which *pre*composes with an equivariant map on the data.) -/
+lemma randPairLaw_map {E F : Type*} [MeasurableSpace E] [MeasurableSpace F] (P : Measure 𝓧)
+    (T : 𝓧 → E) (hT : Measurable T) (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x))
+    {ψ : E → F} (hψ : Measurable ψ) :
+    randPairLaw G (fun x => ψ (T x)) P = (randPairLaw G T P).map (Prod.map ψ ψ) := by
+  classical
+  have hψψ : Measurable (Prod.map ψ ψ) := hψ.prodMap hψ
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hpairψ : ∀ g g' : G, Measurable (fun x : 𝓧 => (ψ (T (g • x)), ψ (T (g' • x)))) :=
+    fun g g' => (hψ.comp (hT.comp (hsmul g))).prodMk (hψ.comp (hT.comp (hsmul g')))
+  ext s hs
+  rw [Measure.map_apply hψψ hs]
+  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
+  rw [Measure.map_apply (hpairψ g g') hs, Measure.map_apply (hpair g g') (hψψ hs)]
+  rfl
+
 /-- **First-marginal identity.** The mass `randPairLaw` puts on a cylinder `S ×ˢ univ` is the
 group average of the masses `P{T(g·x) ∈ S}` — i.e. the first marginal of the doubly
 randomized law is the *singly* randomized mixture. This is the form in which tightness of
