@@ -45,6 +45,9 @@ function rather than by contour integration.
   `‖g ξ‖ ≤ min(1/(π|ξ|), 1/(δπ²ξ²))`, the envelope being *independent of the plateau*;
 * `abs_measure_Iic_sub_le_charFun` — **Esseen's smoothing inequality at the level of
   distribution functions**.
+* `densityCDF`, `charFunDensity`, `abs_measure_Iic_sub_densityCDF_le_charFun` — the same
+  inequality with the comparison probability law replaced by a **signed** `L¹` density, which
+  is what an Edgeworth approximant is.
 
 ## The Stieltjes inversion is not needed
 
@@ -965,5 +968,330 @@ theorem abs_measure_Iic_sub_le_charFun {P Q : Measure ℝ} [IsProbabilityMeasure
       exact hbound ξ)
   rw [← hnormeq]
   exact (norm_integral_fourier_sub_le hgint).trans (integral_mono hLint hint hbound)
+
+/-! ## Esseen's smoothing inequality against a signed comparison density
+
+`abs_measure_Iic_sub_le_charFun` compares two *probability measures*. An Edgeworth expansion
+does not: its one-term approximant is the signed measure with `L¹` density
+`y ↦ σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`, which takes both signs. This section reruns
+the whole chain with the comparison law replaced by a real integrable density `q`.
+
+Three of the four steps survive verbatim, because they never used positivity:
+
+* the ramp mass at `−∞` vanishes for any `L¹` density (`tendsto_integral_ramp_mul_atBot`), so
+  the passage from ramps to compactly supported trapezoids goes through unchanged;
+* Parseval against a density is the same multiplication formula as against a finite measure
+  (`integral_fourier_density`), and needs only integrability of both factors;
+* the Fourier side (`exists_fourier_trapezoid`) does not see the comparison object at all.
+
+The one step that *did* use positivity is the comparison of a ramp integral with a distribution
+function, which for a measure is monotonicity. Its correct substitute is the **total-variation
+modulus** `∫_{(a,b]} |q| ≤ A (b − a)` — the same constant `A` that a Lipschitz distribution
+function supplies, since for a density the two agree up to the sign of `q`. The resulting
+de-smoothing loss is `2Aδ` instead of `Aδ`, which is immaterial.
+
+Total mass is **not** assumed. It is not needed for any of the estimates; it enters only
+through finiteness of the right-hand side, whose weight `1/(π|ξ|)` is integrable at the origin
+only when `φ_P(0) = φ_q(0)`, i.e. when `∫ q = 1`. -/
+
+/-- The **distribution function of a (possibly signed) `L¹` density**. -/
+noncomputable def densityCDF (q : ℝ → ℝ) (x : ℝ) : ℝ := ∫ y in Set.Iic x, q y
+
+/-- The **characteristic function of a (possibly signed) `L¹` density**. -/
+noncomputable def charFunDensity (q : ℝ → ℝ) (t : ℝ) : ℂ :=
+  ∫ y : ℝ, Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * (q y : ℂ)
+
+variable {q : ℝ → ℝ}
+
+private lemma integrable_ramp_mul (hq : Integrable q) (u δ : ℝ) :
+    Integrable (fun y : ℝ => ramp u δ y * q y) :=
+  hq.bdd_mul' (c := 1) (continuous_ramp u δ).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (ramp_nonneg u δ y)]; exact ramp_le_one u δ y)
+
+/-- **The ramp integral against a density differs from the distribution function by at most
+`A δ`.** For a probability law this is monotonicity; for a signed density the correct substitute
+is the total-variation modulus `∫_{(a,b]} |q| ≤ A (b − a)`. -/
+theorem abs_integral_ramp_mul_sub_densityCDF_le (hq : Integrable q) {δ A : ℝ} (hδ : 0 < δ)
+    (hA : ∀ a b : ℝ, a ≤ b → (∫ y in Set.Ioc a b, |q y|) ≤ A * (b - a)) (u : ℝ) :
+    |(∫ y : ℝ, ramp u δ y * q y) - densityCDF q u| ≤ A * δ := by
+  have h1 : Integrable (fun y : ℝ => ramp u δ y * q y) := integrable_ramp_mul hq u δ
+  have h2 : Integrable (Set.indicator (Set.Iic u) q) := hq.indicator measurableSet_Iic
+  have hmaj : Integrable (Set.indicator (Set.Ioc u (u + δ)) fun y => |q y|) :=
+    hq.abs.indicator measurableSet_Ioc
+  have hd : densityCDF q u = ∫ y : ℝ, Set.indicator (Set.Iic u) q y :=
+    (MeasureTheory.integral_indicator measurableSet_Iic).symm
+  have hpt : ∀ y : ℝ, ‖ramp u δ y * q y - Set.indicator (Set.Iic u) q y‖
+      ≤ Set.indicator (Set.Ioc u (u + δ)) (fun y => |q y|) y := by
+    intro y
+    rcases le_or_gt y u with hy | hy
+    · rw [Set.indicator_of_mem (Set.mem_Iic.2 hy), ramp_eq_one_of_le hδ hy, one_mul, sub_self,
+        norm_zero]
+      exact Set.indicator_apply_nonneg fun _ => abs_nonneg _
+    · rw [Set.indicator_of_notMem (by simpa using hy)]
+      rcases le_or_gt y (u + δ) with hy2 | hy2
+      · rw [Set.indicator_of_mem (Set.mem_Ioc.2 ⟨hy, hy2⟩), sub_zero, Real.norm_eq_abs, abs_mul,
+          abs_of_nonneg (ramp_nonneg u δ y)]
+        exact mul_le_of_le_one_left (abs_nonneg _) (ramp_le_one u δ y)
+      · rw [Set.indicator_of_notMem (by simp [not_le.2 hy2]),
+          ramp_eq_zero_of_le hδ hy2.le, zero_mul, sub_zero, norm_zero]
+  calc |(∫ y : ℝ, ramp u δ y * q y) - densityCDF q u|
+      = ‖∫ y : ℝ, (ramp u δ y * q y - Set.indicator (Set.Iic u) q y)‖ := by
+        rw [integral_sub h1 h2, hd, Real.norm_eq_abs]
+    _ ≤ ∫ y : ℝ, Set.indicator (Set.Ioc u (u + δ)) (fun y => |q y|) y :=
+        norm_integral_le_of_norm_le hmaj (Filter.Eventually.of_forall hpt)
+    _ = ∫ y in Set.Ioc u (u + δ), |q y| := MeasureTheory.integral_indicator measurableSet_Ioc
+    _ ≤ A * δ := by simpa using hA u (u + δ) (by linarith)
+
+/-- **De-smoothing against a signed comparison density.** -/
+theorem abs_measure_Iic_sub_densityCDF_le_of_integral_ramp {P : Measure ℝ}
+    [IsProbabilityMeasure P] (hq : Integrable q) {δ E A : ℝ} (hδ : 0 < δ)
+    (hA : ∀ a b : ℝ, a ≤ b → (∫ y in Set.Ioc a b, |q y|) ≤ A * (b - a))
+    (hE : ∀ u : ℝ, |(∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y| ≤ E) (x : ℝ) :
+    |(P (Set.Iic x)).toReal - densityCDF q x| ≤ E + 2 * (A * δ) := by
+  have hAnn : 0 ≤ A * δ := le_trans (abs_nonneg _)
+    (abs_integral_ramp_mul_sub_densityCDF_le hq hδ hA 0)
+  have hlip : ∀ a b : ℝ, a ≤ b → |densityCDF q b - densityCDF q a| ≤ A * (b - a) := by
+    intro a b hab
+    have hunion : (∫ y in Set.Iic b, q y)
+        = (∫ y in Set.Iic a, q y) + ∫ y in Set.Ioc a b, q y := by
+      rw [← setIntegral_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
+        hq.integrableOn hq.integrableOn, Set.Iic_union_Ioc_eq_Iic hab]
+    have hsub : densityCDF q b - densityCDF q a = ∫ y in Set.Ioc a b, q y := by
+      unfold densityCDF
+      rw [hunion]
+      ring
+    rw [hsub]
+    calc |∫ y in Set.Ioc a b, q y| ≤ ∫ y in Set.Ioc a b, |q y| := by
+          simpa using MeasureTheory.norm_integral_le_integral_norm
+            (μ := volume.restrict (Set.Ioc a b)) q
+      _ ≤ A * (b - a) := hA a b hab
+  refine abs_le.2 ⟨?_, ?_⟩
+  · have h1 : (∫ y, ramp (x - δ) δ y ∂P) ≤ (P (Set.Iic x)).toReal := by
+      have := integral_ramp_le_measure_Iic P hδ (x - δ)
+      simpa using this
+    have h2 := abs_le.1 (abs_integral_ramp_mul_sub_densityCDF_le hq hδ hA (x - δ))
+    have h3 := abs_le.1 (hlip (x - δ) x (by linarith))
+    have h4 := abs_le.1 (hE (x - δ))
+    simp only [sub_sub_cancel] at h3
+    linarith [h2.1, h3.1, h4.1]
+  · have h1 : (P (Set.Iic x)).toReal ≤ ∫ y, ramp x δ y ∂P :=
+      measure_Iic_le_integral_ramp P hδ x
+    have h2 := abs_le.1 (abs_integral_ramp_mul_sub_densityCDF_le hq hδ hA x)
+    have h4 := abs_le.1 (hE x)
+    linarith [h2.2, h4.2]
+
+/-- The tail mass of an integrable function vanishes at `−∞`. -/
+private lemma tendsto_setIntegral_abs_Iic_atBot (hq : Integrable q) :
+    Filter.Tendsto (fun t : ℝ => ∫ y in Set.Iic t, |q y|) Filter.atBot (𝓝 0) := by
+  have hinter : (⋂ t : ℝ, Set.Iic (-t)) = (∅ : Set ℝ) := by
+    refine Set.eq_empty_iff_forall_notMem.2 fun x hx => ?_
+    have := Set.mem_iInter.1 hx (-x + 1)
+    simp only [Set.mem_Iic] at this
+    linarith
+  have hanti : Filter.Tendsto (fun t : ℝ => ∫ y in Set.Iic (-t), |q y|) Filter.atTop
+      (𝓝 (∫ y in ⋂ t : ℝ, Set.Iic (-t), |q y|)) :=
+    tendsto_setIntegral_of_antitone (fun _ => measurableSet_Iic)
+      (fun s t hst => Set.Iic_subset_Iic.2 (by linarith)) ⟨0, hq.abs.integrableOn⟩
+  rw [hinter, setIntegral_empty] at hanti
+  have := hanti.comp Filter.tendsto_neg_atBot_atTop
+  simpa [Function.comp_def] using this
+
+/-- The ramp integral against a density vanishes as the ramp recedes to `−∞`. -/
+private lemma tendsto_integral_ramp_mul_atBot (hq : Integrable q) {δ : ℝ} (hδ : 0 < δ) :
+    Filter.Tendsto (fun v : ℝ => ∫ y : ℝ, ramp v δ y * q y) Filter.atBot (𝓝 0) := by
+  have hbd : ∀ v : ℝ, ‖∫ y : ℝ, ramp v δ y * q y‖ ≤ ∫ y in Set.Iic (v + δ), |q y| := by
+    intro v
+    have hmaj : Integrable (Set.indicator (Set.Iic (v + δ)) fun y => |q y|) :=
+      hq.abs.indicator measurableSet_Iic
+    have hpt : ∀ y : ℝ, ‖ramp v δ y * q y‖
+        ≤ Set.indicator (Set.Iic (v + δ)) (fun y => |q y|) y := by
+      intro y
+      rcases le_or_gt y (v + δ) with hy | hy
+      · rw [Set.indicator_of_mem (Set.mem_Iic.2 hy), Real.norm_eq_abs, abs_mul,
+          abs_of_nonneg (ramp_nonneg v δ y)]
+        exact mul_le_of_le_one_left (abs_nonneg _) (ramp_le_one v δ y)
+      · rw [Set.indicator_of_notMem (by simpa using hy), ramp_eq_zero_of_le hδ hy.le,
+          zero_mul, norm_zero]
+    exact (norm_integral_le_of_norm_le hmaj (Filter.Eventually.of_forall hpt)).trans_eq
+      (MeasureTheory.integral_indicator measurableSet_Iic)
+  refine squeeze_zero_norm hbd ?_
+  exact (tendsto_setIntegral_abs_Iic_atBot hq).comp
+    (Filter.tendsto_atBot_add_const_right _ δ Filter.tendsto_id)
+
+/-- **The ramp discrepancy against a density is the limit of trapezoid discrepancies.** -/
+theorem abs_integral_ramp_mul_sub_le_of_trapezoid {P : Measure ℝ} [IsProbabilityMeasure P]
+    (hq : Integrable q) {u δ E : ℝ} (hδ : 0 < δ)
+    (hE : ∀ v : ℝ, v + δ ≤ u →
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y * q y| ≤ E) :
+    |(∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y| ≤ E := by
+  have hsplit : ∀ v : ℝ,
+      (∫ y, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y * q y
+        = ((∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y : ℝ, ramp v δ y * q y) := by
+    intro v
+    have hP : (∫ y, trapezoid v u δ y ∂P)
+        = (∫ y, ramp u δ y ∂P) - ∫ y, ramp v δ y ∂P := by
+      simp only [trapezoid]
+      exact integral_sub (integrable_ramp P u δ) (integrable_ramp P v δ)
+    have hQ : (∫ y : ℝ, trapezoid v u δ y * q y)
+        = (∫ y : ℝ, ramp u δ y * q y) - ∫ y : ℝ, ramp v δ y * q y := by
+      rw [← integral_sub (integrable_ramp_mul hq u δ) (integrable_ramp_mul hq v δ)]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun y => by
+        simp only [trapezoid]; ring)
+    rw [hP, hQ]
+    ring
+  have hlim : Filter.Tendsto (fun v : ℝ =>
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y * q y|) Filter.atBot
+      (𝓝 |(∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y|) := by
+    simp_rw [hsplit]
+    have hmain : Filter.Tendsto (fun v : ℝ =>
+        ((∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y : ℝ, ramp v δ y * q y)) Filter.atBot
+        (𝓝 (((∫ y, ramp u δ y ∂P) - ∫ y : ℝ, ramp u δ y * q y) - (0 - 0))) :=
+      tendsto_const_nhds.sub
+        ((tendsto_integral_ramp_atBot P hδ).sub (tendsto_integral_ramp_mul_atBot hq hδ))
+    simpa using hmain.abs
+  refine le_of_tendsto hlim ?_
+  filter_upwards [Filter.eventually_le_atBot (u - δ)] with v hv using hE v (by linarith)
+
+/-- The characteristic function of a density is a Fourier transform, up to the `−2π` rescaling
+of the frequency variable. -/
+private lemma charFunDensity_eq_fourier (q : ℝ → ℝ) (ξ : ℝ) :
+    charFunDensity q (-(2 * π * ξ)) = 𝓕 (fun y : ℝ => (q y : ℂ)) ξ := by
+  rw [Real.fourier_real_eq_integral_exp_smul, charFunDensity]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+  dsimp only
+  rw [smul_eq_mul]
+  congr 2
+  push_cast
+  ring
+
+/-- **Parseval's identity against a signed `L¹` density.** For every integrable `g : ℝ → ℂ`,
+`∫ 𝓕 g · q = ∫ φ_q(−2πξ) g(ξ) dξ`. This is `integral_fourier_measure` with the finite
+comparison measure replaced by a real `L¹` density; the multiplication formula it rests on
+(`VectorFourier.integral_fourierIntegral_smul_eq_flip`) needs only integrability of both
+factors, so nothing about positivity or total mass is used. -/
+theorem integral_fourier_density (hq : Integrable q) {g : ℝ → ℂ} (hg : Integrable g) :
+    (∫ x : ℝ, 𝓕 g x * (q x : ℂ)) = ∫ ξ : ℝ, charFunDensity q (-(2 * π * ξ)) * g ξ := by
+  have hL : Continuous fun p : ℝ × ℝ => (innerₗ ℝ) p.1 p.2 := continuous_inner
+  have hflip : (innerₗ ℝ).flip = innerₗ ℝ := by
+    refine LinearMap.ext fun x => LinearMap.ext fun y => ?_
+    simp only [LinearMap.flip_apply, innerₗ_apply_apply]
+    exact real_inner_comm x y
+  have key := VectorFourier.integral_fourierIntegral_smul_eq_flip
+    (e := Real.fourierChar) (μ := (volume : Measure ℝ)) (ν := (volume : Measure ℝ))
+    (L := innerₗ ℝ) (f := fun y : ℝ => (q y : ℂ)) (g := g)
+    Real.continuous_fourierChar hL hq.ofReal hg
+  rw [hflip] at key
+  have hchar : ∀ ξ : ℝ,
+      VectorFourier.fourierIntegral Real.fourierChar volume (innerₗ ℝ)
+          (fun y : ℝ => (q y : ℂ)) ξ
+        = charFunDensity q (-(2 * π * ξ)) := fun ξ => (charFunDensity_eq_fourier q ξ).symm
+  have hfour : ∀ x : ℝ,
+      VectorFourier.fourierIntegral Real.fourierChar volume (innerₗ ℝ) g x = 𝓕 g x :=
+    fun _ => rfl
+  simp only [hchar, hfour, smul_eq_mul] at key
+  rw [show (∫ x : ℝ, 𝓕 g x * (q x : ℂ)) = ∫ x : ℝ, (q x : ℂ) * 𝓕 g x from
+    integral_congr_ae (Filter.Eventually.of_forall fun x => mul_comm _ _)]
+  exact key.symm
+
+/-- The characteristic function of an `L¹` density is bounded by its `L¹` norm. -/
+private lemma norm_charFunDensity_le (t : ℝ) :
+    ‖charFunDensity q t‖ ≤ ∫ y : ℝ, |q y| := by
+  refine (MeasureTheory.norm_integral_le_integral_norm _).trans_eq (integral_congr_ae
+    (Filter.Eventually.of_forall fun y => ?_))
+  have hone : ‖Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)‖ = 1 := by
+    rw [Complex.norm_exp, show (((t : ℂ) * (y : ℂ) * Complex.I)).re = 0 by simp, Real.exp_zero]
+  simp only [norm_mul, hone, one_mul, Complex.norm_real, Real.norm_eq_abs]
+
+/-- **Smoothed comparison of a law with a signed density through characteristic functions.** -/
+theorem norm_integral_fourier_sub_density_le {P : Measure ℝ} [IsProbabilityMeasure P]
+    (hq : Integrable q) {g : ℝ → ℂ} (hg : Integrable g) :
+    ‖(∫ x : ℝ, 𝓕 g x ∂P) - ∫ x : ℝ, 𝓕 g x * (q x : ℂ)‖
+      ≤ ∫ ξ : ℝ, ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖ * ‖g ξ‖ := by
+  have hsm : Measurable fun ξ : ℝ => -(2 * π * ξ) := by fun_prop
+  have hcontq : Continuous fun ξ : ℝ => charFunDensity q (-(2 * π * ξ)) := by
+    simp only [charFunDensity_eq_fourier]
+    exact VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
+      continuous_inner hq.ofReal
+  have hP : Integrable (fun ξ : ℝ => charFun P (-(2 * π * ξ)) * g ξ) :=
+    hg.bdd_mul (measurable_charFun.comp hsm).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ξ => norm_charFun_le_one _)
+  have hQ : Integrable (fun ξ : ℝ => charFunDensity q (-(2 * π * ξ)) * g ξ) :=
+    hg.bdd_mul hcontq.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun ξ => norm_charFunDensity_le _)
+  rw [integral_fourier_measure hg, integral_fourier_density hq hg, ← integral_sub hP hQ]
+  refine (MeasureTheory.norm_integral_le_integral_norm _).trans_eq
+    (integral_congr_ae (Filter.Eventually.of_forall fun ξ => ?_))
+  dsimp only
+  rw [← sub_mul, norm_mul]
+
+/-- **Esseen's smoothing inequality against a signed comparison density.**
+
+For a probability law `P` on the line and a real `L¹` density `q` whose total-variation
+modulus obeys `∫_{(a,b]} |q| ≤ A (b − a)`, and for every flank width `δ > 0`,
+
+`|F_P(x) − ∫_{(-∞,x]} q| ≤ ∫ ‖φ_P(−2πξ) − φ_q(−2πξ)‖ · min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + 2Aδ`
+
+uniformly in `x`. This is `abs_measure_Iic_sub_le_charFun` with the comparison *probability
+measure* replaced by a **signed** density, which is what an Edgeworth expansion needs: its
+one-term approximant `y ↦ σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})` takes both signs.
+
+Nothing in the route needed positivity: the ramp mass at `−∞` vanishes for any `L¹` density
+(`tendsto_integral_ramp_mul_atBot`), the monotonicity step is replaced by the
+total-variation modulus (`abs_integral_ramp_mul_sub_densityCDF_le`), and Parseval holds for a
+density exactly as for a finite measure (`integral_fourier_density`). Total mass is not
+assumed either; it enters only through the finiteness of the right-hand side, since the
+weight `1/(π|ξ|)` is integrable at the origin only if `φ_P(0) = φ_q(0)`. -/
+theorem abs_measure_Iic_sub_densityCDF_le_charFun {P : Measure ℝ} [IsProbabilityMeasure P]
+    (hq : Integrable q) {δ A : ℝ} (hδ : 0 < δ)
+    (hA : ∀ a b : ℝ, a ≤ b → (∫ y in Set.Ioc a b, |q y|) ≤ A * (b - a))
+    (hint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖
+        * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))))
+    (x : ℝ) :
+    |(P (Set.Iic x)).toReal - densityCDF q x|
+      ≤ (∫ ξ : ℝ, ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) + 2 * (A * δ) := by
+  refine abs_measure_Iic_sub_densityCDF_le_of_integral_ramp hq hδ hA (fun u => ?_) x
+  refine abs_integral_ramp_mul_sub_le_of_trapezoid hq hδ (fun v hvu => ?_)
+  obtain ⟨g, hgint, hgfour, hgnorm⟩ := exists_fourier_trapezoid hδ hvu
+  have hcastP : (∫ y : ℝ, 𝓕 g y ∂P) = ((∫ y : ℝ, trapezoid v u δ y ∂P : ℝ) : ℂ) := by
+    simp_rw [hgfour]
+    exact integral_complex_ofReal
+  have hcastQ : (∫ y : ℝ, 𝓕 g y * (q y : ℂ))
+      = ((∫ y : ℝ, trapezoid v u δ y * q y : ℝ) : ℂ) := by
+    rw [← integral_complex_ofReal]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only [hgfour]
+    push_cast
+    ring
+  have hnormeq : ‖(∫ y : ℝ, 𝓕 g y ∂P) - ∫ y : ℝ, 𝓕 g y * (q y : ℂ)‖
+      = |(∫ y : ℝ, trapezoid v u δ y ∂P) - ∫ y : ℝ, trapezoid v u δ y * q y| := by
+    rw [hcastP, hcastQ, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  have hbound : ∀ ξ : ℝ,
+      ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖ * ‖g ξ‖
+        ≤ ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖
+          * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) :=
+    fun ξ => mul_le_mul_of_nonneg_left (hgnorm ξ) (norm_nonneg _)
+  have hsm : Measurable fun ξ : ℝ => -(2 * π * ξ) := by fun_prop
+  have hcontq : Continuous fun ξ : ℝ => charFunDensity q (-(2 * π * ξ)) := by
+    simp only [charFunDensity_eq_fourier]
+    exact VectorFourier.fourierIntegral_continuous Real.continuous_fourierChar
+      continuous_inner hq.ofReal
+  have hmeas : AEStronglyMeasurable
+      (fun ξ : ℝ => ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖ * ‖g ξ‖)
+      volume :=
+    (((measurable_charFun.comp hsm).aestronglyMeasurable.sub
+      hcontq.aestronglyMeasurable).norm).mul hgint.aestronglyMeasurable.norm
+  have hLint : Integrable (fun ξ : ℝ =>
+      ‖charFun P (-(2 * π * ξ)) - charFunDensity q (-(2 * π * ξ))‖ * ‖g ξ‖) :=
+    hint.mono' hmeas (Filter.Eventually.of_forall fun ξ => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      exact hbound ξ)
+  rw [← hnormeq]
+  exact (norm_integral_fourier_sub_density_le hq hgint).trans
+    (integral_mono hLint hint hbound)
 
 end StatLean.HypothesisTesting
