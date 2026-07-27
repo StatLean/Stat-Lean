@@ -312,4 +312,50 @@ theorem fourier_sqSincC : 𝓕 sqSincC = tentC := by
   rw [h1, h2, hinv]
   simp [tentC, tent_neg]
 
+/-! ## The smoothing (Parseval) identity against a finite measure -/
+
+/-- **Parseval's identity against a finite measure.** For every integrable `g : ℝ → ℂ`,
+
+`∫ 𝓕 g dP = ∫ charFun P (−2πξ) · g(ξ) dξ`.
+
+This is the analytic core of the smoothing step: it converts an integral of a *smooth test
+function* against `P` into an integral of the *characteristic function* of `P` against the
+transform. Applied to `P − Q` with a `g` whose transform is compactly supported — such as the
+triangle function of `fourier_sqSincC`, rescaled — it bounds a smoothed functional of the
+difference using only the characteristic functions on a compact frequency window, which is
+exactly what Esseen's argument needs. -/
+theorem integral_fourier_measure {P : Measure ℝ} [IsFiniteMeasure P] {g : ℝ → ℂ}
+    (hg : Integrable g) :
+    ∫ x : ℝ, 𝓕 g x ∂P = ∫ ξ : ℝ, charFun P (-(2 * π * ξ)) * g ξ := by
+  have hL : Continuous fun p : ℝ × ℝ => (innerₗ ℝ) p.1 p.2 := continuous_inner
+  have hflip : (innerₗ ℝ).flip = innerₗ ℝ := by
+    refine LinearMap.ext fun x => LinearMap.ext fun y => ?_
+    simp only [LinearMap.flip_apply, innerₗ_apply_apply]
+    exact real_inner_comm x y
+  have key := VectorFourier.integral_fourierIntegral_smul_eq_flip
+    (e := Real.fourierChar) (μ := P) (ν := (volume : Measure ℝ)) (L := innerₗ ℝ)
+    (f := fun _ : ℝ => (1 : ℂ)) (g := g)
+    Real.continuous_fourierChar hL (integrable_const 1) hg
+  rw [hflip] at key
+  have hchar : ∀ ξ : ℝ,
+      VectorFourier.fourierIntegral Real.fourierChar P (innerₗ ℝ) (fun _ : ℝ => (1 : ℂ)) ξ
+        = charFun P (-(2 * π * ξ)) := by
+    intro ξ
+    rw [Real.vector_fourierIntegral_eq_integral_exp_smul, charFun_apply_real]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun v => ?_)
+    have hin : ((innerₗ ℝ) v) ξ = v * ξ := by
+      simp only [innerₗ_apply_apply]
+      change ξ * v = v * ξ
+      ring
+    dsimp only
+    rw [hin, smul_eq_mul, mul_one]
+    congr 1
+    push_cast
+    ring
+  have hfour : ∀ x : ℝ,
+      VectorFourier.fourierIntegral Real.fourierChar volume (innerₗ ℝ) g x = 𝓕 g x :=
+    fun _ => rfl
+  simp only [hchar, hfour, smul_eq_mul, one_mul] at key
+  exact key.symm
+
 end StatLean.HypothesisTesting
