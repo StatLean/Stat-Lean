@@ -1,5 +1,6 @@
 import StatLean.Bayesian.BernsteinVonMises.Defs
 import StatLean.Bayesian.BernsteinVonMises.Basic
+import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 
 /-!
 # Prior small-ball bounds and the exponential tail split
@@ -159,6 +160,167 @@ theorem prior_smallBall_lower
         cb * volume s ≤ π s :=
   prior_smallBall_lower_aux hπ
 
+/-- The multivariate Gaussian kernel is integrable on `ℝᵏ` (real part of the complex Gaussian
+integrability lemma). -/
+private lemma integrable_exp_neg_mul_sq_norm {c : ℝ} (hc : 0 < c) :
+    Integrable (fun v : EuclideanSpace ℝ (Fin k) => Real.exp (-c * ‖v‖ ^ 2)) := by
+  have h := (integrable_cexp_neg_mul_sq_norm_add (V := EuclideanSpace ℝ (Fin k))
+      (b := (c : ℂ)) (by simpa using hc) 0 (0 : EuclideanSpace ℝ (Fin k))).norm
+  simpa [Complex.norm_exp, ← Complex.ofReal_pow] using h
+
+/-- The total mass of the Gaussian kernel is finite. -/
+private lemma lintegral_exp_neg_mul_sq_norm_ne_top {c : ℝ} (hc : 0 < c) :
+    ∫⁻ v : EuclideanSpace ℝ (Fin k), ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2)) ≠ ∞ := by
+  have h := (integrable_exp_neg_mul_sq_norm (k := k) hc).hasFiniteIntegral
+  rw [hasFiniteIntegral_iff_enorm,
+    lintegral_enorm_of_nonneg (fun v => (Real.exp_pos _).le)] at h
+  exact h.ne
+
+/-- **The Gaussian tail vanishes**: `∫_{‖h‖ ≥ Mₙ} e^{−c‖h‖²} dh → 0` whenever `Mₙ → ∞`. -/
+private lemma gaussian_tail_tendsto {c : ℝ} (hc : 0 < c) {Mseq : ℕ → ℝ}
+    (hM : Tendsto Mseq atTop atTop) :
+    Tendsto (fun n : ℕ => ∫⁻ v in {v : EuclideanSpace ℝ (Fin k) | Mseq n ≤ ‖v‖},
+        ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2))) atTop (𝓝 0) := by
+  set ν : Measure (EuclideanSpace ℝ (Fin k)) :=
+    volume.withDensity (fun v => ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2))) with hνdef
+  have hνapply : ∀ s : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet s →
+      ν s = ∫⁻ v in s, ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2)) :=
+    fun s hs => withDensity_apply _ hs
+  set T : ℕ → Set (EuclideanSpace ℝ (Fin k)) := fun j => {v | (j : ℝ) ≤ ‖v‖} with hTdef
+  have hTm : ∀ j, MeasurableSet (T j) := fun j =>
+    measurableSet_le measurable_const (by fun_prop)
+  have hTanti : Antitone T := fun i j hij v hv =>
+    le_trans (by exact_mod_cast hij) hv
+  have hTinter : (⋂ j, T j) = (∅ : Set (EuclideanSpace ℝ (Fin k))) := by
+    ext v
+    simp only [Set.mem_iInter, Set.mem_empty_iff_false, iff_false, not_forall]
+    obtain ⟨j, hj⟩ := exists_nat_gt ‖v‖
+    exact ⟨j, by simpa [hTdef] using hj⟩
+  have hfin : ν (T 0) ≠ ∞ := by
+    rw [hνapply _ (hTm 0)]
+    exact ne_top_of_le_ne_top (lintegral_exp_neg_mul_sq_norm_ne_top hc)
+      (setLIntegral_le_lintegral _ _)
+  have hlim : Tendsto (fun j => ν (T j)) atTop (𝓝 0) := by
+    have := tendsto_measure_iInter_atTop (μ := ν) (fun j => (hTm j).nullMeasurableSet)
+      hTanti ⟨0, hfin⟩
+    rwa [hTinter, measure_empty] at this
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hlim ε hε).exists
+  filter_upwards [hM.eventually_ge_atTop (j : ℝ)] with n hn
+  rw [← hνapply _ (measurableSet_le measurable_const (by fun_prop))]
+  exact le_trans (measure_mono fun v hv => le_trans hn hv) hj
+
+/-- `√nᵏ · e^{−c n D²} → 0`. -/
+private lemma poly_mul_exp_neg_tendsto {k : ℕ} {c D : ℝ} (hc : 0 < c) (hD : 0 < D) :
+    Tendsto (fun n : ℕ => Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2)) atTop (𝓝 0) := by
+  set b : ℝ := c * D ^ 2 with hbdef
+  have hb : 0 < b := by positivity
+  have hmaj : Tendsto (fun n : ℕ => b ^ k ⁻¹ * ((b * Real.sqrt n) ^ k *
+      Real.exp (-(b * Real.sqrt n)))) atTop (𝓝 0) := by
+    have h0 : Tendsto (fun n : ℕ => b * Real.sqrt n) atTop atTop :=
+      (tendsto_atTop_atTop_of_monotone' (fun _ _ h => by
+        gcongr
+        exact Nat.cast_le.2 h) (by
+          intro hbdd
+          obtain ⟨C, hC⟩ := hbdd
+          obtain ⟨m, hm⟩ := exists_nat_gt ((C + 1) / b) ^ 2
+          have := hC (Set.mem_range_self m)
+          nlinarith [Real.sq_sqrt (show (0:ℝ) ≤ (m : ℝ) by positivity),
+            Real.sqrt_nonneg (m : ℝ)]))
+    have := (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero k).comp h0
+    simpa using (tendsto_const_nhds (x := (b ^ k)⁻¹)).mul this
+  refine squeeze_zero' (Eventually.of_forall fun n => by positivity) ?_ hmaj
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hnR : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hsq : 1 ≤ Real.sqrt n := by
+    rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+    exact Real.sqrt_le_sqrt hnR
+  have hn2 : Real.sqrt n ≤ (n : ℝ) := by
+    nlinarith [Real.sq_sqrt (show (0:ℝ) ≤ (n : ℝ) by positivity)]
+  have hexp : Real.exp (-c * n * D ^ 2) ≤ Real.exp (-(b * Real.sqrt n)) := by
+    refine Real.exp_le_exp.2 ?_
+    have : b * Real.sqrt n ≤ b * n := by gcongr
+    nlinarith
+  calc Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2)
+      ≤ Real.sqrt n ^ k * Real.exp (-(b * Real.sqrt n)) := by
+        gcongr
+        positivity
+    _ = (b ^ k)⁻¹ * ((b * Real.sqrt n) ^ k * Real.exp (-(b * Real.sqrt n))) := by
+        rw [mul_pow]
+        field_simp
+
+/-- Set-level domination of measures upgrades to a domination of `lintegral`s. -/
+private lemma lintegral_le_of_setMeasure_le {α : Type*} [MeasurableSpace α]
+    {μ' ν' : Measure α} {Cb : ℝ≥0∞} {s : Set α}
+    (h : ∀ t, t ⊆ s → MeasurableSet t → μ' t ≤ Cb * ν' t) (hs : MeasurableSet s)
+    (G : α → ℝ≥0∞) :
+    ∫⁻ a in s, G a ∂μ' ≤ Cb * ∫⁻ a in s, G a ∂ν' := by
+  have hle : μ'.restrict s ≤ Cb • ν'.restrict s := by
+    refine Measure.le_iff.2 fun t htm => ?_
+    rw [Measure.restrict_apply htm, Measure.smul_apply, smul_eq_mul,
+      Measure.restrict_apply htm]
+    exact h _ Set.inter_subset_right (htm.inter hs)
+  calc ∫⁻ a in s, G a ∂μ' ≤ ∫⁻ a, G a ∂(Cb • ν'.restrict s) := lintegral_mono' hle le_rfl
+    _ = Cb * ∫⁻ a in s, G a ∂ν' := lintegral_smul_measure _ _
+
+/-- **Change of variables `h = √n(θ − θ₀)` on the moderate zone**. -/
+private lemma moderate_zone_bound {c : ℝ} {n : ℕ}
+    -- LEAN-ONLY: `√n ≠ 0`
+    (hn : 1 ≤ n) (R : ℝ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    {s : Set (EuclideanSpace ℝ (Fin k))} (hsm : MeasurableSet s)
+    (hsR : ∀ θ ∈ s, R / Real.sqrt n ≤ ‖θ - θ₀‖) :
+    ∫⁻ θ in s, ENNReal.ofReal (Real.exp (-c * n * ‖θ - θ₀‖ ^ 2)) ∂volume
+      ≤ ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹) *
+          ∫⁻ v in {v : EuclideanSpace ℝ (Fin k) | R ≤ ‖v‖},
+            ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2)) := by
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsq : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR
+  have hsqsq : Real.sqrt n ^ 2 = (n : ℝ) := Real.sq_sqrt hnR.le
+  set T : Set (EuclideanSpace ℝ (Fin k)) := {v | R ≤ ‖v‖} with hTdef
+  have hTm : MeasurableSet T := measurableSet_le measurable_const (by fun_prop)
+  set G : EuclideanSpace ℝ (Fin k) → ℝ≥0∞ := fun v =>
+    ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2)) with hGdef
+  have hGm : Measurable G := by unfold_let G; fun_prop
+  have hmapL : Measure.map (fun θ : EuclideanSpace ℝ (Fin k) => Real.sqrt n • (θ - θ₀))
+      (volume : Measure (EuclideanSpace ℝ (Fin k)))
+      = ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹) • volume := by
+    have h1 : Measure.map (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀) volume = volume :=
+      (measurePreserving_sub_right (volume : Measure (EuclideanSpace ℝ (Fin k))) θ₀).map_eq
+    have h2 : (fun θ : EuclideanSpace ℝ (Fin k) => Real.sqrt n • (θ - θ₀))
+        = (fun x : EuclideanSpace ℝ (Fin k) => Real.sqrt n • x)
+          ∘ (fun θ : EuclideanSpace ℝ (Fin k) => θ - θ₀) := rfl
+    rw [h2, ← Measure.map_map (by fun_prop) (by fun_prop), h1,
+      Measure.map_addHaar_smul (volume : Measure (EuclideanSpace ℝ (Fin k))) hsq.ne',
+      finrank_euclideanSpace_fin]
+    congr 1
+    exact abs_of_nonneg (by positivity)
+  have key : ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹) * ∫⁻ v in T, G v
+      = ∫⁻ θ, T.indicator G (Real.sqrt n • (θ - θ₀)) ∂volume := by
+    have := lintegral_map (μ := (volume : Measure (EuclideanSpace ℝ (Fin k))))
+      (f := T.indicator G) (g := fun θ : EuclideanSpace ℝ (Fin k) => Real.sqrt n • (θ - θ₀))
+      (hGm.indicator hTm) (by fun_prop)
+    rw [hmapL, lintegral_smul_measure, lintegral_indicator hTm] at this
+    exact this
+  rw [key]
+  rw [← lintegral_indicator hsm]
+  refine lintegral_mono fun θ => ?_
+  by_cases hθ : θ ∈ s
+  · rw [Set.indicator_of_mem hθ]
+    have hnorm : ‖Real.sqrt n • (θ - θ₀)‖ = Real.sqrt n * ‖θ - θ₀‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+    have hmem : Real.sqrt n • (θ - θ₀) ∈ T := by
+      rw [hTdef, Set.mem_setOf_eq, hnorm]
+      have := hsR θ hθ
+      rw [div_le_iff₀ hsq] at this
+      linarith [this]
+    rw [Set.indicator_of_mem hmem, hGdef]
+    simp only
+    rw [hnorm, mul_pow, hsqsq]
+    ring_nf
+  · rw [Set.indicator_of_notMem hθ]
+    exact zero_le _
+
 /-- **The Step-A tail split** (vdV p. 142, final display of the concentration step): for every
 exponent `c > 0` and every `Mₙ → ∞`,
 `(√n)ᵏ · ∫_{‖θ−θ₀‖ ≥ Mₙ/√n} exp(−c n (‖θ−θ₀‖² ∧ 1)) dπ(θ) → 0`.
@@ -177,6 +339,112 @@ theorem prior_tail_split
           ∫⁻ θ in {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖},
             ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) ∂π)
       atTop (𝓝 0) := by
-  sorry
+  classical
+  -- the density-comparison radius, shrunk to `≤ 1`
+  obtain ⟨D₀, hD₀, _, Cb, hCbtop, hCb⟩ := prior_smallBall_upper hπ
+  set D : ℝ := min D₀ 1 with hDdef
+  have hD : 0 < D := lt_min hD₀ one_pos
+  have hD1 : D ≤ 1 := min_le_right _ _
+  have hCb' : ∀ s : Set (EuclideanSpace ℝ (Fin k)), s ⊆ Metric.ball θ₀ D → MeasurableSet s →
+      π s ≤ Cb * volume s := fun s hs hsm =>
+    hCb s (hs.trans (Metric.ball_subset_ball (min_le_left _ _))) hsm
+  set g : ℕ → EuclideanSpace ℝ (Fin k) → ℝ≥0∞ := fun n θ =>
+    ENNReal.ofReal (Real.exp (-c * n * min (‖θ - θ₀‖ ^ 2) 1)) with hgdef
+  set S : ℕ → Set (EuclideanSpace ℝ (Fin k)) := fun n => {θ | Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖}
+    with hSdef
+  have hSm : ∀ n, MeasurableSet (S n) := fun n =>
+    measurableSet_le measurable_const (by fun_prop)
+  set tail : ℕ → ℝ≥0∞ := fun n => ∫⁻ v in {v : EuclideanSpace ℝ (Fin k) | Mseq n ≤ ‖v‖},
+    ENNReal.ofReal (Real.exp (-c * ‖v‖ ^ 2)) with htaildef
+  -- the dominating sequence
+  set bound : ℕ → ℝ≥0∞ := fun n =>
+    Cb * tail n + ENNReal.ofReal (Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2)) with hbdef
+  have hbound0 : Tendsto bound atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n => Cb * tail n) atTop (𝓝 0) := by
+      have := (ENNReal.Tendsto.const_mul (b := Cb) (gaussian_tail_tendsto (k := k) hc hM)
+        (Or.inl hCbtop))
+      simpa using this
+    have h2 : Tendsto (fun n : ℕ =>
+        ENNReal.ofReal (Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2))) atTop (𝓝 0) := by
+      have := (ENNReal.continuous_ofReal.tendsto 0).comp
+        (poly_mul_exp_neg_tendsto (k := k) hc hD)
+      simpa [Function.comp_def] using this
+    simpa using h1.add h2
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound0
+    (Eventually.of_forall fun n => zero_le _) ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hs : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR
+  have hsk : (0 : ℝ) < Real.sqrt n ^ k := pow_pos hs k
+  set A : Set (EuclideanSpace ℝ (Fin k)) := S n ∩ Metric.ball θ₀ D with hAdef
+  set B : Set (EuclideanSpace ℝ (Fin k)) := S n \ Metric.ball θ₀ D with hBdef
+  have hAm : MeasurableSet A := (hSm n).inter Metric.isOpen_ball.measurableSet
+  have hBm : MeasurableSet B := (hSm n).diff Metric.isOpen_ball.measurableSet
+  -- split the integral
+  have hsplit : ∫⁻ θ in S n, g n θ ∂π ≤ ∫⁻ θ in A, g n θ ∂π + ∫⁻ θ in B, g n θ ∂π := by
+    conv_lhs => rw [hAdef, hBdef, ← Set.inter_union_diff (S n) (Metric.ball θ₀ D)]
+    exact lintegral_union_le _ _ _
+  -- moderate zone
+  have hmod : ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in A, g n θ ∂π ≤ Cb * tail n := by
+    have hstep1 : ∫⁻ θ in A, g n θ ∂π ≤ Cb * ∫⁻ θ in A, g n θ ∂volume :=
+      lintegral_le_of_setMeasure_le (fun t ht htm => hCb' t (ht.trans Set.inter_subset_right) htm)
+        hAm _
+    have hcongr : ∫⁻ θ in A, g n θ ∂volume
+        = ∫⁻ θ in A, ENNReal.ofReal (Real.exp (-c * n * ‖θ - θ₀‖ ^ 2)) ∂volume := by
+      refine setLIntegral_congr_fun hAm fun θ hθ => ?_
+      have h1 : ‖θ - θ₀‖ < D := by
+        have := hθ.2
+        rwa [Metric.mem_ball, dist_eq_norm] at this
+      have h2 : ‖θ - θ₀‖ ^ 2 ≤ 1 := by
+        nlinarith [norm_nonneg (θ - θ₀)]
+      rw [hgdef]
+      simp only [min_eq_left h2]
+    have hstep2 : ∫⁻ θ in A, ENNReal.ofReal (Real.exp (-c * n * ‖θ - θ₀‖ ^ 2)) ∂volume
+        ≤ ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹) * tail n :=
+      moderate_zone_bound hn (Mseq n) θ₀ hAm (fun θ hθ => hθ.1)
+    calc ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in A, g n θ ∂π
+        ≤ ENNReal.ofReal (Real.sqrt n ^ k) *
+            (Cb * (ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹) * tail n)) := by
+          gcongr
+          exact hcongr ▸ hstep2
+      _ = (ENNReal.ofReal (Real.sqrt n ^ k) * ENNReal.ofReal ((Real.sqrt n ^ k)⁻¹)) *
+            (Cb * tail n) := by ring
+      _ = Cb * tail n := by
+          rw [← ENNReal.ofReal_mul hsk.le, mul_inv_cancel₀ hsk.ne', ENNReal.ofReal_one, one_mul]
+  -- far zone
+  have hfar : ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in B, g n θ ∂π
+      ≤ ENNReal.ofReal (Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2)) := by
+    have hpt : ∀ θ ∈ B, g n θ ≤ ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) := by
+      intro θ hθ
+      have h1 : D ≤ ‖θ - θ₀‖ := by
+        have := hθ.2
+        simp only [Metric.mem_ball, dist_eq_norm, not_lt] at this
+        exact this
+      have h2 : D ^ 2 ≤ min (‖θ - θ₀‖ ^ 2) 1 := by
+        refine le_min ?_ (by nlinarith)
+        nlinarith
+      refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
+      have hcn : 0 ≤ c * n := by positivity
+      nlinarith
+    have h3 : ∫⁻ θ in B, g n θ ∂π ≤ ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) := by
+      calc ∫⁻ θ in B, g n θ ∂π
+          ≤ ∫⁻ _ in B, ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) ∂π :=
+            setLIntegral_mono measurable_const hpt
+        _ = ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) * π B := setLIntegral_const _ _
+        _ ≤ ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) * 1 := by
+            gcongr
+            simpa using prob_le_one
+        _ = ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) := mul_one _
+    calc ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in B, g n θ ∂π
+        ≤ ENNReal.ofReal (Real.sqrt n ^ k) * ENNReal.ofReal (Real.exp (-c * n * D ^ 2)) := by
+          gcongr
+      _ = ENNReal.ofReal (Real.sqrt n ^ k * Real.exp (-c * n * D ^ 2)) :=
+          (ENNReal.ofReal_mul hsk.le).symm
+  calc ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in S n, g n θ ∂π
+      ≤ ENNReal.ofReal (Real.sqrt n ^ k) *
+          (∫⁻ θ in A, g n θ ∂π + ∫⁻ θ in B, g n θ ∂π) := by gcongr
+    _ = ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in A, g n θ ∂π
+          + ENNReal.ofReal (Real.sqrt n ^ k) * ∫⁻ θ in B, g n θ ∂π := mul_add _ _ _
+    _ ≤ bound n := add_le_add hmod hfar
 
 end StatLean.Bayesian
