@@ -47,7 +47,10 @@ that is `tendsto_perm_cdf_blockSum` below.
 * `sum_sq_swapIndex_increment` — the **conditional variance** of the pair, exactly:
   `∑ₖ (W' − W)² = u²(m ∑ d² + (N − 2m) A₂(σ) + 2 B(σ)²)`, which reduces the
   variance-regression defect of Stein's method to the concentration of the block sum of
-  squares `A₂`.
+  squares `A₂`; `avg_perm_blockSumSq` and `avg_perm_blockSet_sq` are the two moments that
+  identity needs, and `avg_perm_sum_sq_swapIndex_increment` is its group average,
+  `u² · 2m(N−m)/(N−1) · ∑ d²` — so at the Stein normalisation the variance-regression term
+  is *exactly* centred at `(N−1)⁻¹ ∑ d² → 1`.
 * `tendsto_perm_avg_lipschitz` — the combinatorial CLT tested against bounded Lipschitz
   functions (the core brick; open, see the status note at the statement).
 * `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem**, derived from the
@@ -533,6 +536,78 @@ theorem sum_sq_swapIndex_increment (a : Fin m → Fin N) (ha : Function.Injectiv
     card_blockSet a ha, nsmul_eq_mul, ← Finset.mul_sum, ← Finset.mul_sum,
     Finset.sum_coe_sort (blockSet a) fun r => d (σ r),
     Finset.sum_coe_sort (blockSet a) fun r => d (σ r) ^ 2]
+  ring
+
+/-- The mean of the block sum of squares `A₂(σ) = ∑_{r ∈ blockSet a} d(σ r)²`, from the
+one-coordinate marginal: each sampled position is uniform on the population. -/
+theorem avg_perm_blockSumSq (a : Fin m → Fin N) (ha : Function.Injective a) (d : Fin N → ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2
+      = (m : ℝ) * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2) := by
+  rw [Finset.sum_congr rfl fun σ _ => sum_blockSet a ha fun r => d (σ r) ^ 2]
+  exact avg_perm_blockSum a fun l => d l ^ 2
+
+/-- The second moment of the block sum, written over the sampled *set* rather than the block
+*index* — the shape in which `sum_sq_swapIndex_increment` produces it. -/
+theorem avg_perm_blockSet_sq (hN : 2 ≤ N) (a : Fin m → Fin N) (ha : Function.Injective a)
+    (d : Fin N → ℝ) (hd : ∑ l, d l = 0) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2
+      = (m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) * ∑ l, d l ^ 2 := by
+  rw [Finset.sum_congr rfl fun σ _ => by rw [sum_blockSet a ha fun r => d (σ r)]]
+  exact avg_perm_blockSum_sq hN a ha d hd
+
+/-- **The mean of the conditional variance of the swap pair, exactly.** Averaging
+`sum_sq_swapIndex_increment` over the group and feeding in the two moment computations
+`avg_perm_blockSumSq` and `avg_perm_blockSet_sq` collapses the three terms to a single one:
+$$ \frac1{|\mathbf S_N|}\sum_\sigma \sum_k \bigl(W'(\sigma,k) - W(\sigma)\bigr)^2
+   \;=\; u^2\,\frac{2m(N-m)}{N-1}\sum_l d_l^2 . $$
+Consequently, with the Stein normalisation `λ = N/(m(N−m))` and `u² = N/(m(N−m))` the
+variance-regression *centring* is exact:
+`avg_σ (2λ)⁻¹ ∑ₖ (W' − W)² = (N − 1)⁻¹ ∑_l d_l²`, which tends to `1` precisely under the
+hypothesis `N⁻¹ ∑ d² → 1` of `tendsto_perm_avg_lipschitz`. What is left of the
+variance-regression term is therefore purely a *concentration* statement about `A₂`, i.e. a
+fourth-moment computation, and not a centring one. -/
+theorem avg_perm_sum_sq_swapIndex_increment (hN : 2 ≤ N) (a : Fin m → Fin N)
+    (ha : Function.Injective a) (d : Fin N → ℝ) (hd : ∑ l, d l = 0) (u : ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ) ^ 2
+      = u ^ 2 * (2 * (m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) - 1)) * ∑ l, d l ^ 2 := by
+  classical
+  have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (0 : ℝ) < (N : ℝ) := by linarith
+  have hN1 : (0 : ℝ) < (N : ℝ) - 1 := by linarith
+  have hc : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin N)) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  have hexp : ∑ σ : Equiv.Perm (Fin N),
+      ∑ k : SwapIndex a, (stdBlockSumSwap a d u σ k - stdBlockSum a d u σ) ^ 2
+      = ∑ σ : Equiv.Perm (Fin N), (u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2)
+          + (u ^ 2 * ((N : ℝ) - 2 * (m : ℝ))) * ∑ r ∈ blockSet a, d (σ r) ^ 2
+          + (2 * u ^ 2) * (∑ r ∈ blockSet a, d (σ r)) ^ 2) :=
+    Finset.sum_congr rfl fun σ _ => by
+      rw [sum_sq_swapIndex_increment a ha d hd u σ]; ring
+  have hconst : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ _σ : Equiv.Perm (Fin N), u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2)
+      = u ^ 2 * ((m : ℝ) * ∑ l, d l ^ 2) := by
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+      inv_mul_cancel₀ hc.ne', one_mul]
+  have hA := avg_perm_blockSumSq a ha d
+  have hB := avg_perm_blockSet_sq hN a ha d hd
+  rw [hexp, Finset.sum_add_distrib, Finset.sum_add_distrib, mul_add, mul_add, hconst,
+    ← Finset.mul_sum, ← Finset.mul_sum,
+    show (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ((u ^ 2 * ((N : ℝ) - 2 * (m : ℝ)))
+          * ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2)
+      = (u ^ 2 * ((N : ℝ) - 2 * (m : ℝ)))
+          * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹
+            * ∑ σ : Equiv.Perm (Fin N), ∑ r ∈ blockSet a, d (σ r) ^ 2) from by ring,
+    show (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ((2 * u ^ 2) * ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2)
+      = (2 * u ^ 2) * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹
+            * ∑ σ : Equiv.Perm (Fin N), (∑ r ∈ blockSet a, d (σ r)) ^ 2) from by ring,
+    hA, hB]
+  field_simp
   ring
 
 /-- The linearity condition in the exact shape consumed by
