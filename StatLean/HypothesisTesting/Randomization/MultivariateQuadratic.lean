@@ -616,9 +616,9 @@ private lemma weakConverges_randPairLaw_normSq
 
 /-! ### Quadratic-form limits -/
 
+set_option maxHeartbeats 1000000 in
 -- The assembly elaborates a dozen `randPairLaw`-shaped statements over a varying group and
 -- a varying data space; unification of those is what costs the extra heartbeats.
-set_option maxHeartbeats 1000000 in
 /-- **Sign-change randomization for the modified `T²` statistic.** The randomized pair
 converges in law to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, i.e. to a product of two **independent**
 chi-squared laws with `p` degrees of freedom. The second-moment matrix used here is
@@ -957,8 +957,8 @@ private lemma measurable_hotellingTSq {n : ℕ} :
   exact (measurable_inv_of_entries (fun j' k' => measurable_sampleCovMatrix_entry j' k') j
       k).mul ((measurable_sampleMeanVec_coord j).mul (measurable_sampleMeanVec_coord k))
 
--- Same unification cost as the sibling assembly for the modified statistic.
 set_option maxHeartbeats 1000000 in
+-- Same unification cost as the sibling assembly for the modified statistic.
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
 modified statistic — a product of two independent `χ²_p` laws — obtained by showing that
 the centred sample covariance recomputed at a random sign pattern is still consistent for
