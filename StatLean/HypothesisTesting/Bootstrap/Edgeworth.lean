@@ -886,6 +886,301 @@ lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 
 
 end Approximant
 
+/-! ## The window estimate: elementary envelopes
+
+Item (E4).3 of the assembly programme needs, before anything analytic, two elementary
+ingredients: the Gaussian envelope `e^{−π²ξ²/2}(|ξ|⁴ + |ξ|⁸)` that the damped expansion
+produces on the window, and the algebraic normalisation that turns the bound of
+`norm_charFun_pow_sub_edgeworth_le` into `K n^{-1}` times that envelope. Both are recorded
+here; neither mentions a measure. -/
+
+section WindowEnvelope
+
+/-- Monomials of intermediate degree are dominated by the two extreme ones. -/
+private lemma pow_le_pow_four_add_eight {p : ℝ} (hp : 0 ≤ p) {k : ℕ}
+    (h4 : 4 ≤ k) (h8 : k ≤ 8) : p ^ k ≤ p ^ 4 + p ^ 8 := by
+  rcases le_total p 1 with h | h
+  · have hk : p ^ k ≤ p ^ 4 := pow_le_pow_of_le_one hp h h4
+    have : (0 : ℝ) ≤ p ^ 8 := pow_nonneg hp 8
+    linarith
+  · have hk : p ^ k ≤ p ^ 8 := pow_le_pow_right₀ h h8
+    have : (0 : ℝ) ≤ p ^ 4 := pow_nonneg hp 4
+    linarith
+
+/-- The Gaussian envelope of the window estimate. -/
+private noncomputable def windowEnvelope (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (|ξ| ^ 4 + |ξ| ^ 8)
+
+/-- The envelope after the Esseen weight has been applied. -/
+private noncomputable def windowDom (ξ : ℝ) : ℝ :=
+  Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (|ξ| ^ 3 + |ξ| ^ 7) * (Real.pi)⁻¹
+
+private lemma windowEnvelope_nonneg (ξ : ℝ) : 0 ≤ windowEnvelope ξ := by
+  unfold windowEnvelope; positivity
+
+private lemma windowDom_nonneg (ξ : ℝ) : 0 ≤ windowDom ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  unfold windowDom; positivity
+
+private lemma windowEnvelope_mul_weight (ξ : ℝ) :
+    windowEnvelope ξ * (1 / (Real.pi * |ξ|)) = windowDom ξ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  rcases eq_or_ne ξ 0 with rfl | h
+  · simp [windowEnvelope, windowDom]
+  · have hx : |ξ| ≠ 0 := abs_ne_zero.2 h
+    have hsplit : |ξ| ^ 4 + |ξ| ^ 8 = (|ξ| ^ 3 + |ξ| ^ 7) * |ξ| := by ring
+    unfold windowEnvelope windowDom
+    rw [hsplit]
+    field_simp
+
+private lemma integrable_windowDom : Integrable windowDom := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have h3 := integrable_abs_pow_mul_exp_neg_half_sq 3
+  have h7 := integrable_abs_pow_mul_exp_neg_half_sq 7
+  have hg : Integrable (fun ξ : ℝ =>
+      (|ξ| ^ 3 * Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2)))
+        * (Real.pi)⁻¹) := (h3.add h7).mul_const _
+  refine Integrable.mono' hg (by unfold windowDom; fun_prop)
+    (Filter.Eventually.of_forall fun ξ => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (windowDom_nonneg ξ)]
+  have hexp : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) ≤ Real.exp (-(ξ ^ 2 / 2)) := by
+    refine Real.exp_le_exp.2 ?_
+    have hpi2 : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.two_le_pi, Real.pi_pos]
+    nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ Real.pi ^ 2 - 4) (sq_nonneg ξ),
+      sq_nonneg ξ]
+  have hnn : (0 : ℝ) ≤ |ξ| ^ 3 + |ξ| ^ 7 := by positivity
+  have hmul : Real.exp (-(Real.pi ^ 2 * ξ ^ 2 / 2)) * (|ξ| ^ 3 + |ξ| ^ 7)
+      ≤ |ξ| ^ 3 * Real.exp (-(ξ ^ 2 / 2)) + |ξ| ^ 7 * Real.exp (-(ξ ^ 2 / 2)) := by
+    have := mul_le_mul_of_nonneg_right hexp hnn
+    nlinarith [this]
+  unfold windowDom
+  exact mul_le_mul_of_nonneg_right hmul (by positivity)
+
+private lemma add_sq_le_two_mul (a b : ℝ) : (a + b) ^ 2 ≤ 2 * a ^ 2 + 2 * b ^ 2 := by
+  nlinarith [sq_nonneg (a - b)]
+
+set_option maxHeartbeats 2000000 in
+-- The `field_simp`/`linear_combination` normalisations below run over a degree-8 rational
+-- expression in six variables; the default heartbeat budget is not enough.
+/-- **The algebraic core of the window estimate.** -/
+private lemma exists_window_core (ρ β M σ : ℝ) (hρ : 0 ≤ ρ) (hβ : 0 ≤ β) (hM : 0 ≤ M)
+    (hσ : 0 < σ) :
+    ∃ K : ℝ, 0 < K ∧ ∀ p τ N : ℝ, 0 ≤ p → 0 < τ → τ ≤ 1 → N * τ ^ 2 = 1 → 1 ≤ N →
+      N * (N - 1) / 2 * (ρ * (2 * Real.pi * p * τ / σ) ^ 3 / 6
+            + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2) ^ 2
+          + N * ((4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2)
+              * (M * (2 * Real.pi * p * τ / σ) ^ 3 / 6)
+            + (β * (2 * Real.pi * p * τ / σ) ^ 4 / 24
+              + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2))
+        ≤ K * τ ^ 2 * (p ^ 4 + p ^ 8) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hσ0 : σ ≠ 0 := hσ.ne'
+  set A : ℝ := 4 * Real.pi ^ 3 * ρ / (3 * σ ^ 3) with hAdef
+  set B : ℝ := 2 * Real.pi ^ 4 with hBdef
+  set C : ℝ := 8 * Real.pi ^ 5 * M / (3 * σ ^ 3) with hCdef
+  set D : ℝ := 2 * Real.pi ^ 4 * β / (3 * σ ^ 4) + 2 * Real.pi ^ 4 with hDdef
+  have hA : 0 ≤ A := by rw [hAdef]; positivity
+  have hB : 0 ≤ B := by rw [hBdef]; positivity
+  have hC : 0 ≤ C := by rw [hCdef]; positivity
+  have hD : 0 ≤ D := by rw [hDdef]; positivity
+  refine ⟨A ^ 2 + B ^ 2 + C + D + 1, by positivity, ?_⟩
+  intro p τ N hp hτ hτ1 hN hN1
+  have hτ0 : τ ≠ 0 := hτ.ne'
+  have e1 : ρ * (2 * Real.pi * p * τ / σ) ^ 3 / 6
+        + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2
+      = A * (p ^ 3 * τ ^ 3) + B * (p ^ 4 * τ ^ 4) := by
+    rw [hAdef, hBdef]; field_simp; ring
+  have e2 : (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) * (M * (2 * Real.pi * p * τ / σ) ^ 3 / 6)
+        + (β * (2 * Real.pi * p * τ / σ) ^ 4 / 24
+          + (4 * Real.pi ^ 2 * p ^ 2 * τ ^ 2 / 2) ^ 2 / 2)
+      = C * (p ^ 5 * τ ^ 5) + D * (p ^ 4 * τ ^ 4) := by
+    rw [hCdef, hDdef]; field_simp; ring
+  rw [e1, e2]
+  have hN2 : N ^ 2 * τ ^ 4 = 1 := by
+    calc N ^ 2 * τ ^ 4 = (N * τ ^ 2) ^ 2 := by ring
+      _ = 1 := by rw [hN]; ring
+  have h6 : N ^ 2 * τ ^ 6 = τ ^ 2 := by
+    calc N ^ 2 * τ ^ 6 = (N ^ 2 * τ ^ 4) * τ ^ 2 := by ring
+      _ = τ ^ 2 := by rw [hN2]; ring
+  have h8 : N ^ 2 * τ ^ 8 = τ ^ 4 := by
+    calc N ^ 2 * τ ^ 8 = (N ^ 2 * τ ^ 4) * τ ^ 4 := by ring
+      _ = τ ^ 4 := by rw [hN2]; ring
+  have h5 : N * τ ^ 5 = τ ^ 3 := by
+    calc N * τ ^ 5 = (N * τ ^ 2) * τ ^ 3 := by ring
+      _ = τ ^ 3 := by rw [hN]; ring
+  have h4 : N * τ ^ 4 = τ ^ 2 := by
+    calc N * τ ^ 4 = (N * τ ^ 2) * τ ^ 2 := by ring
+      _ = τ ^ 2 := by rw [hN]; ring
+  -- the squared term
+  have hsq : (A * (p ^ 3 * τ ^ 3) + B * (p ^ 4 * τ ^ 4)) ^ 2
+      ≤ 2 * (A * (p ^ 3 * τ ^ 3)) ^ 2 + 2 * (B * (p ^ 4 * τ ^ 4)) ^ 2 :=
+    add_sq_le_two_mul _ _
+  have hNN : N * (N - 1) / 2 ≤ N ^ 2 / 2 := by nlinarith
+  have hpos : (0 : ℝ) ≤ (A * (p ^ 3 * τ ^ 3) + B * (p ^ 4 * τ ^ 4)) ^ 2 := sq_nonneg _
+  have hterm1 : N * (N - 1) / 2 * (A * (p ^ 3 * τ ^ 3) + B * (p ^ 4 * τ ^ 4)) ^ 2
+      ≤ N ^ 2 / 2 * (2 * (A * (p ^ 3 * τ ^ 3)) ^ 2 + 2 * (B * (p ^ 4 * τ ^ 4)) ^ 2) := by
+    refine mul_le_mul hNN hsq hpos (by positivity)
+  have hterm1' : N ^ 2 / 2 * (2 * (A * (p ^ 3 * τ ^ 3)) ^ 2 + 2 * (B * (p ^ 4 * τ ^ 4)) ^ 2)
+      = A ^ 2 * p ^ 6 * τ ^ 2 + B ^ 2 * p ^ 8 * τ ^ 4 := by
+    linear_combination (A ^ 2 * p ^ 6) * h6 + (B ^ 2 * p ^ 8) * h8
+  have hterm2 : N * (C * (p ^ 5 * τ ^ 5) + D * (p ^ 4 * τ ^ 4))
+      = C * p ^ 5 * τ ^ 3 + D * p ^ 4 * τ ^ 2 := by
+    linear_combination (C * p ^ 5) * h5 + (D * p ^ 4) * h4
+  rw [hterm2]
+  -- monomial bounds
+  have hp4 : (0 : ℝ) ≤ p ^ 4 := pow_nonneg hp 4
+  have hp8 : (0 : ℝ) ≤ p ^ 8 := pow_nonneg hp 8
+  have hPnn : (0 : ℝ) ≤ p ^ 4 + p ^ 8 := by linarith
+  have hτ2 : (0 : ℝ) ≤ τ ^ 2 := sq_nonneg τ
+  have hτ3 : τ ^ 3 ≤ τ ^ 2 := by nlinarith
+  have hτ4 : τ ^ 4 ≤ τ ^ 2 := by nlinarith
+  have key : ∀ a x y : ℝ, 0 ≤ a → 0 ≤ x → x ≤ p ^ 4 + p ^ 8 → 0 ≤ y → y ≤ τ ^ 2 →
+      a * x * y ≤ a * (p ^ 4 + p ^ 8) * τ ^ 2 := by
+    intro a x y ha hx0 hx hy0 hy
+    have h1 : a * x ≤ a * (p ^ 4 + p ^ 8) := mul_le_mul_of_nonneg_left hx ha
+    calc a * x * y ≤ a * x * τ ^ 2 := mul_le_mul_of_nonneg_left hy (by positivity)
+      _ ≤ a * (p ^ 4 + p ^ 8) * τ ^ 2 := mul_le_mul_of_nonneg_right h1 hτ2
+  have k1 := key (A ^ 2) (p ^ 6) (τ ^ 2) (by positivity) (by positivity)
+    (pow_le_pow_four_add_eight hp (by norm_num) (by norm_num)) hτ2 le_rfl
+  have k2 := key (B ^ 2) (p ^ 8) (τ ^ 4) (by positivity) hp8 (by linarith) (by positivity) hτ4
+  have k3 := key C (p ^ 5) (τ ^ 3) hC (by positivity)
+    (pow_le_pow_four_add_eight hp (by norm_num) (by norm_num)) (by positivity) hτ3
+  have k4 := key D (p ^ 4) (τ ^ 2) hD hp4 (by linarith) hτ2 le_rfl
+  have hfinal : A ^ 2 * (p ^ 4 + p ^ 8) * τ ^ 2 + B ^ 2 * (p ^ 4 + p ^ 8) * τ ^ 2
+      + C * (p ^ 4 + p ^ 8) * τ ^ 2 + D * (p ^ 4 + p ^ 8) * τ ^ 2
+      ≤ (A ^ 2 + B ^ 2 + C + D + 1) * τ ^ 2 * (p ^ 4 + p ^ 8) := by nlinarith
+  calc N * (N - 1) / 2 * (A * (p ^ 3 * τ ^ 3) + B * (p ^ 4 * τ ^ 4)) ^ 2
+        + (C * p ^ 5 * τ ^ 3 + D * p ^ 4 * τ ^ 2)
+      ≤ (A ^ 2 * p ^ 6 * τ ^ 2 + B ^ 2 * p ^ 8 * τ ^ 4)
+        + (C * p ^ 5 * τ ^ 3 + D * p ^ 4 * τ ^ 2) := by
+        rw [← hterm1']; linarith
+    _ ≤ (A ^ 2 + B ^ 2 + C + D + 1) * τ ^ 2 * (p ^ 4 + p ^ 8) := by linarith
+
+end WindowEnvelope
+
+/-! ## The window estimate: the geometry of the argument
+
+On the window the damped expansion `norm_charFun_pow_sub_edgeworth_le` is applied at
+`s = τ σ⁻¹ θ` with `θ = −2πξ` and `τ = n^{-1/2}`. The three lemmas below record the modulus
+and the square of that argument, and check the two window conditions `v s² ≤ 2`,
+`ρ₃|s| ≤ 3v/2` from a single bound `|ξ| τ ≤ c`. -/
+
+section WindowArgument
+
+/-- The modulus of the Edgeworth argument `s = −2πξ/(σ√n)`. -/
+private lemma abs_window_arg {σ ξ τ : ℝ} (hσ : 0 < σ) (hτ : 0 ≤ τ) :
+    |τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))| = 2 * Real.pi * |ξ| * τ / σ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  rw [abs_mul, abs_mul, abs_of_nonneg hτ, abs_inv, abs_of_pos hσ, abs_neg, abs_mul,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * Real.pi)]
+  field_simp
+
+/-- The square of the Edgeworth argument, weighted by the variance. -/
+private lemma sq_window_arg {σ ξ τ : ℝ} (hσ : 0 < σ) :
+    σ ^ 2 * (τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))) ^ 2 = 4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 := by
+  have h : |ξ| ^ 2 = ξ ^ 2 := sq_abs ξ
+  rw [h]
+  field_simp
+  ring
+
+/-- **The two window conditions of the damped expansion**, from a single bound on `|ξ| τ`. -/
+private lemma window_conditions {σ ρ c ξ τ : ℝ} (hσ : 0 < σ) (hρ : 0 ≤ ρ) (hτ : 0 ≤ τ)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * σ ^ 3 / (4 * Real.pi * (ρ + 1)))
+    (hξ : |ξ| * τ ≤ c) :
+    σ ^ 2 * (τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))) ^ 2 ≤ 2
+      ∧ ρ * |τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))| ≤ 3 * σ ^ 2 / 2 := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hx0 : (0 : ℝ) ≤ |ξ| * τ := by positivity
+  have hc0 : (0 : ℝ) ≤ c := le_trans hx0 hξ
+  constructor
+  · rw [sq_window_arg hσ]
+    have hroot : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+    have hrootp : (0 : ℝ) < Real.sqrt 2 := Real.sqrt_pos.2 (by norm_num)
+    have hcsq : c ^ 2 ≤ 1 / (2 * Real.pi ^ 2) := by
+      have h2 : c ^ 2 ≤ (1 / (Real.pi * Real.sqrt 2)) ^ 2 := by nlinarith
+      have h3 : (1 / (Real.pi * Real.sqrt 2)) ^ 2 = 1 / (2 * Real.pi ^ 2) := by
+        rw [div_pow, mul_pow, hroot, one_pow]
+        ring
+      linarith
+    have hxsq : (|ξ| * τ) ^ 2 ≤ c ^ 2 := by nlinarith
+    have heq : 4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 = 4 * Real.pi ^ 2 * (|ξ| * τ) ^ 2 := by ring
+    rw [heq]
+    have hstep : 4 * Real.pi ^ 2 * (|ξ| * τ) ^ 2 ≤ 4 * Real.pi ^ 2 * (1 / (2 * Real.pi ^ 2)) :=
+      mul_le_mul_of_nonneg_left (le_trans hxsq hcsq) (by positivity)
+    have hval : 4 * Real.pi ^ 2 * (1 / (2 * Real.pi ^ 2)) = 2 := by field_simp; ring
+    linarith
+  · rw [abs_window_arg hσ hτ]
+    have hkey : ρ * (2 * Real.pi * |ξ| * τ / σ) = 2 * Real.pi * ρ / σ * (|ξ| * τ) := by
+      field_simp
+    rw [hkey]
+    have hcoef : (0 : ℝ) ≤ 2 * Real.pi * ρ / σ := by positivity
+    have step1 : 2 * Real.pi * ρ / σ * (|ξ| * τ) ≤ 2 * Real.pi * ρ / σ * c :=
+      mul_le_mul_of_nonneg_left hξ hcoef
+    have step2 : 2 * Real.pi * ρ / σ * c
+        ≤ 2 * Real.pi * ρ / σ * (3 * σ ^ 3 / (4 * Real.pi * (ρ + 1))) :=
+      mul_le_mul_of_nonneg_left hc3 hcoef
+    have step3 : 2 * Real.pi * ρ / σ * (3 * σ ^ 3 / (4 * Real.pi * (ρ + 1)))
+        = 3 * σ ^ 2 / 2 * (ρ / (ρ + 1)) := by
+      have hρ1 : ρ + 1 ≠ 0 := by positivity
+      field_simp
+      ring
+    have step4 : 3 * σ ^ 2 / 2 * (ρ / (ρ + 1)) ≤ 3 * σ ^ 2 / 2 := by
+      have hr : ρ / (ρ + 1) ≤ 1 := by
+        rw [div_le_one (by linarith)]
+        linarith
+      nlinarith [sq_nonneg σ]
+    linarith
+
+/-- **The Edgeworth approximant in damped form.** The comparison object produced by
+`charFunDensity_edgeworthDensity` is *literally* the approximant estimated by
+`norm_charFun_pow_sub_edgeworth_le` at `s = τ σ⁻¹ θ`, `v = σ²`, `m₃ = γσ³`: the Gaussian
+factors agree because `n v s² = θ²`, and the linear corrections because `n τ³ = τ`. -/
+private lemma edgeworth_approx_eq (γ σ θ : ℝ) (hσ : σ ≠ 0) (m : ℕ) (τ : ℝ)
+    (hτ : ((m : ℝ) + 2) * τ ^ 2 = 1) :
+    Complex.exp (-(θ : ℂ) ^ 2 / 2)
+        * (1 - Complex.I * (γ : ℂ) * (θ : ℂ) ^ 3 * ((τ : ℝ) : ℂ) / 6)
+      = ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+        * (1 - ((m : ℂ) + 2) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+            * ((τ * (σ⁻¹ * θ) : ℝ) : ℂ) ^ 3 / 6) := by
+  have hσ3 : σ ^ 3 ≠ 0 := pow_ne_zero 3 hσ
+  have hvs : σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 = θ ^ 2 * τ ^ 2 := by field_simp
+  have hgauss : ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+      = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+    have hreal : Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) ^ (m + 2)
+        = Real.exp (-(θ ^ 2 / 2)) := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      rw [hvs]
+      push_cast
+      linear_combination (-(θ ^ 2) / 2) * hτ
+    calc ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+        = ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) ^ (m + 2) : ℝ) : ℂ) := by push_cast; ring
+      _ = ((Real.exp (-(θ ^ 2 / 2)) : ℝ) : ℂ) := by rw [hreal]
+      _ = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+          rw [Complex.ofReal_exp]; congr 1; push_cast; ring
+  have hN3 : ((m : ℝ) + 2) * τ ^ 3 = τ := by
+    calc ((m : ℝ) + 2) * τ ^ 3 = (((m : ℝ) + 2) * τ ^ 2) * τ := by ring
+      _ = τ := by rw [hτ]; ring
+  have hlin : γ * θ ^ 3 * τ = ((m : ℝ) + 2) * (γ * σ ^ 3) * (τ * (σ⁻¹ * θ)) ^ 3 := by
+    have hexp : ((m : ℝ) + 2) * (γ * σ ^ 3) * (τ * (σ⁻¹ * θ)) ^ 3
+        = γ * θ ^ 3 * (((m : ℝ) + 2) * τ ^ 3) * (σ ^ 3 * σ⁻¹ ^ 3) := by ring
+    have hinv : σ ^ 3 * σ⁻¹ ^ 3 = 1 := by field_simp
+    rw [hexp, hN3, hinv]
+    ring
+  have hlinC : (γ : ℂ) * (θ : ℂ) ^ 3 * ((τ : ℝ) : ℂ)
+      = (((m : ℝ) + 2 : ℝ) : ℂ) * ((γ * σ ^ 3 : ℝ) : ℂ) * ((τ * (σ⁻¹ * θ) : ℝ) : ℂ) ^ 3 := by
+    have := congrArg (fun x : ℝ => (x : ℂ)) hlin
+    push_cast at this ⊢
+    linear_combination this
+  rw [hgauss]
+  congr 1
+  push_cast at hlinC ⊢
+  linear_combination (-Complex.I / 6) * hlinC
+
+end WindowArgument
+
+
 /-! ## The expansions -/
 
 section Edgeworth
