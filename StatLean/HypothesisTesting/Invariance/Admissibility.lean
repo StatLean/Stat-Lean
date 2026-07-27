@@ -410,28 +410,36 @@ theorem acceptance_subset_of_power_le (E : ExpFamily 𝓧 (EuclideanSpace ℝ (F
   acceptance_subset_of_power_le_const E hΘ' hA₀closed hA₀convex hA₀meas hAmeas hray 1
     ENNReal.one_ne_top (by simpa using hpow)
 
-/-- **A closed convex acceptance region is d-admissible.** -/
-theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
-    {Θ_H Θ' A₀ : Set (EuclideanSpace ℝ (Fin s))}
-    -- USER-INPUT: null and alternative classes sit inside the natural parameter set,
-    -- are nonempty and disjoint
-    (hΘH : Θ_H ⊆ E.natSet) (hΘ' : Θ' ⊆ E.natSet)
-    (hHne : Θ_H.Nonempty) (h'ne : Θ'.Nonempty) (hdisj : Disjoint Θ_H Θ')
-    -- USER-INPUT: the acceptance region is closed and convex
+/-- **The two-sided domination collapses the competitor onto the acceptance region.** If
+`φ` dominates `1_{A₀ᶜ}` on the alternatives (`h1`) and is dominated by it at a *single*
+parameter `θH` of the natural set (`h2`), then the two power functions agree throughout the
+natural set. This is the analytic content shared by the two admissibility statements: in
+`isDAdmissible_of_convex_acceptance` the point `θH` is any point of `Θ_H`, in
+`isAlphaAdmissible_of_size_attained` it is the finite point `θ₀` at which the size is
+attained. -/
+private theorem power_eq_indicator_of_dominating
+    (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    {Θ' A₀ : Set (EuclideanSpace ℝ (Fin s))} {φ : EuclideanSpace ℝ (Fin s) → ℝ}
+    {θH : EuclideanSpace ℝ (Fin s)}
+    (hΘ' : Θ' ⊆ E.natSet)
     (hA₀closed : IsClosed A₀) (hA₀convex : Convex ℝ A₀)
-    -- LEAN-ONLY: measurability of the acceptance region
     (hA₀meas : MeasurableSet A₀)
-    -- USER-INPUT: the ray condition
     (hray : ∀ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
       A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ →
         ∃ θstar ∈ Θ', ∃ lam : ℕ → ℝ,
-          Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ') :
-    IsDAdmissible (statScaleFamily E) Θ_H Θ'
-      (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
+          Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ')
+    (hφ : IsCriticalFn φ)
+    (h1 : ∀ θ ∈ Θ', power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) θ
+      ≤ power (statScaleFamily E) φ θ)
+    (hθHnat : θH ∈ E.natSet)
+    (h2 : power (statScaleFamily E) φ θH
+      ≤ power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) θH) :
+    ∀ η ∈ E.natSet, power (statScaleFamily E) φ η
+      = power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) η := by
   classical
-  intro φ hφ h1 h2 θ hθ
   by_cases hb : E.base = 0
-  · simp [power, statScaleFamily, ExpFamily.P, hb, MeasureTheory.tilted_zero_measure]
+  · intro _ _
+    simp [power, statScaleFamily, ExpFamily.P, hb, MeasureTheory.tilted_zero_measure]
   haveI : NeZero E.base := ⟨hb⟩
   have hφ₀meas : Measurable (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
     measurable_const.indicator hA₀meas.compl
@@ -560,12 +568,10 @@ theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace �
     exact integral_mono_ae (hIntg _ hφ₀meas hφ₀b η hη) (hIntg φ hφ.1 hφ.2 η hη)
       (hge.filter_mono (hac η).ae_le)
   -- **Step C.** On the null class the two-sided domination forces `φ = φ₀` a.e.
-  obtain ⟨θH, hθH⟩ := hHne
-  have hθHnat : θH ∈ E.natSet := hΘH hθH
   haveI := hprob θH hθHnat
   have hint0 : ∫ t, (φ t - (A₀ᶜ.indicator fun _ => (1 : ℝ)) t) ∂(statScaleFamily E θH) = 0 := by
     rw [integral_sub (hIntg φ hφ.1 hφ.2 θH hθHnat) (hIntg _ hφ₀meas hφ₀b θH hθHnat)]
-    have := le_antisymm (h2 θH hθH) (hpowge θH hθHnat)
+    have := le_antisymm h2 (hpowge θH hθHnat)
     simp only [power] at this
     linarith
   have haeH : φ =ᵐ[statScaleFamily E θH] (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
@@ -579,9 +585,32 @@ theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace �
     simpa [sub_eq_zero] using ht
   have haeBase : φ =ᵐ[statScaleBase E] (A₀ᶜ.indicator fun _ => (1 : ℝ)) :=
     haeH.filter_mono (hacRev θH hθHnat).ae_le
-  have hθnat : θ ∈ E.natSet := by rcases hθ with h | h; exacts [hΘH h, hΘ' h]
+  intro η₁ _
   simp only [power]
-  exact integral_congr_ae (haeBase.filter_mono (hac θ).ae_le)
+  exact integral_congr_ae (haeBase.filter_mono (hac η₁).ae_le)
+
+/-- **A closed convex acceptance region is d-admissible.** -/
+theorem isDAdmissible_of_convex_acceptance (E : ExpFamily 𝓧 (EuclideanSpace ℝ (Fin s)))
+    {Θ_H Θ' A₀ : Set (EuclideanSpace ℝ (Fin s))}
+    -- USER-INPUT: null and alternative classes sit inside the natural parameter set,
+    -- are nonempty and disjoint
+    (hΘH : Θ_H ⊆ E.natSet) (hΘ' : Θ' ⊆ E.natSet)
+    (hHne : Θ_H.Nonempty) (h'ne : Θ'.Nonempty) (hdisj : Disjoint Θ_H Θ')
+    -- USER-INPUT: the acceptance region is closed and convex
+    (hA₀closed : IsClosed A₀) (hA₀convex : Convex ℝ A₀)
+    -- LEAN-ONLY: measurability of the acceptance region
+    (hA₀meas : MeasurableSet A₀)
+    -- USER-INPUT: the ray condition
+    (hray : ∀ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
+      A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ →
+        ∃ θstar ∈ Θ', ∃ lam : ℕ → ℝ,
+          Filter.Tendsto lam Filter.atTop Filter.atTop ∧ ∀ n, θstar + lam n • a ∈ Θ') :
+    IsDAdmissible (statScaleFamily E) Θ_H Θ'
+      (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
+  intro φ hφ h1 h2 θ hθ
+  obtain ⟨θH, hθH⟩ := hHne
+  exact power_eq_indicator_of_dominating E hΘ' hA₀closed hA₀convex hA₀meas hray hφ h1
+    (hΘH hθH) (h2 θH hθH) θ (by rcases hθ with h | h; exacts [hΘH h, hΘ' h])
 
 /-- **A closed convex acceptance region whose size is attained is `α`-admissible.** If in
 addition the size of the test is `α` and there is an actual parameter point in the closure
