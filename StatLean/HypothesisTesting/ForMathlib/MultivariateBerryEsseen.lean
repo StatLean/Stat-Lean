@@ -982,6 +982,123 @@ private lemma map_normalized_sum_stdGaussian {k n : ℕ} (hn : 0 < n) :
   rw [div_pow, hsq]
   field_simp
 
+/-! #### Ingredients of the one-step Lindeberg swap
+
+Second-order Taylor expansion of `u ↦ f (v + c • u)` produces three integrals. The constant
+term is trivial; the linear term vanishes because the law is centred (Riesz representative of
+`Df(v)` plus `hmean`); and the quadratic term takes the **same value for any two laws with
+identity covariance**, so no closed form for it is ever needed — only the fact that the two
+values coincide. That last observation is what `integral_bilin_eq_basis_sum` records: it
+evaluates `∫ D²f(v)(y,y)` as a fixed finite sum over the standard basis, whose value depends on
+the law only through `hcov`. -/
+
+section SwapStep
+
+variable {k : ℕ}
+
+/-- `L¹ ⊆ L³` on a probability space, in the only form needed here: `t ≤ 1 + t³`. -/
+private lemma integrable_norm_of_cube {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    [IsProbabilityMeasure ν] (hβ : Integrable (fun y => ‖y‖ ^ 3) ν) :
+    Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν := by
+  have hdom : Integrable (fun y : EuclideanSpace ℝ (Fin k) => 1 + ‖y‖ ^ 3) ν :=
+    (integrable_const 1).add hβ
+  refine Integrable.mono' hdom (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg y)]
+  rcases le_or_gt ‖y‖ 1 with h | h
+  · nlinarith [pow_nonneg (norm_nonneg y) 3]
+  · have ht2 : (1 : ℝ) ≤ ‖y‖ ^ 2 := by nlinarith [norm_nonneg y]
+    nlinarith [norm_nonneg y, ht2]
+
+/-- A continuous linear functional is integrable as soon as the norm is: `|L y| ≤ ‖L‖ ‖y‖`. -/
+private lemma integrable_clm_of_norm {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :
+    Integrable (fun y => L y) ν := by
+  refine Integrable.mono' (h1.const_mul ‖L‖) L.continuous.aestronglyMeasurable ?_
+  filter_upwards with y
+  exact L.le_opNorm y
+
+/-- A continuous bilinear form evaluated on the diagonal is integrable as soon as the squared
+norm is: `|B(y,y)| ≤ ‖B‖ ‖y‖²`. -/
+private lemma integrable_bilin_of_normSq {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ) :
+    Integrable (fun y => B (fun _ => y)) ν := by
+  refine Integrable.mono' (h2.const_mul ‖B‖)
+    (B.cont.comp (continuous_pi fun _ => continuous_id)).aestronglyMeasurable ?_
+  filter_upwards with y
+  calc ‖B (fun _ => y)‖ ≤ ‖B‖ * ∏ _i : Fin 2, ‖y‖ := B.le_opNorm _
+    _ = ‖B‖ * ‖y‖ ^ 2 := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
+/-- `y ↦ ⟪u, y⟫` is integrable as soon as the norm is. -/
+private lemma integrable_inner_of_norm {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h1 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖) ν)
+    (u : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y => ⟪u, y⟫_ℝ) ν :=
+  integrable_clm_of_norm h1 (innerSL ℝ u)
+
+/-- `y ↦ ⟪u, y⟫ ⟪v, y⟫` is integrable as soon as the squared norm is. -/
+private lemma integrable_inner_mul_inner {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (u v : EuclideanSpace ℝ (Fin k)) :
+    Integrable (fun y => ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ) ν := by
+  refine Integrable.mono' (h2.const_mul (‖u‖ * ‖v‖)) (by fun_prop) ?_
+  filter_upwards with y
+  rw [Real.norm_eq_abs, abs_mul]
+  calc |⟪u, y⟫_ℝ| * |⟪v, y⟫_ℝ| ≤ (‖u‖ * ‖y‖) * (‖v‖ * ‖y‖) :=
+        mul_le_mul (abs_real_inner_le_norm u y) (abs_real_inner_le_norm v y)
+          (abs_nonneg _) (by positivity)
+    _ = ‖u‖ * ‖v‖ * ‖y‖ ^ 2 := by ring
+
+/-- **The linear Taylor term integrates to zero against a centred law.** `Df(v)` is a continuous
+linear functional, hence `⟪r, ·⟫` for its Riesz representative `r`, and `hmean` kills it. -/
+private lemma integral_clm_eq_zero_of_centred {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
+    (L : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) :
+    (∫ y, L y ∂ν) = 0 := by
+  have hL : ∀ y : EuclideanSpace ℝ (Fin k),
+      L y = ⟪(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin k))).symm L, y⟫_ℝ :=
+    fun y => (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ)).symm
+  simp_rw [hL]
+  exact hmean _
+
+/-- **The quadratic Taylor term depends on the law only through its covariance.** For a
+continuous bilinear form `B` and *any* law with identity covariance, `∫ B(y,y)` equals the
+explicit finite sum `∑_r ⟪e_{r₀}, e_{r₁}⟫ B(e_{r₀}, e_{r₁})` over `r : Fin 2 → Fin k`. Two such
+laws therefore give the *same* value, which is exactly what the Lindeberg swap consumes; no
+evaluation of the sum (`= ∑ₐ B(eₐ,eₐ)`) is needed. -/
+private lemma integral_bilin_eq_basis_sum {ν : Measure (EuclideanSpace ℝ (Fin k))}
+    (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
+    (h2 : Integrable (fun y : EuclideanSpace ℝ (Fin k) => ‖y‖ ^ 2) ν)
+    (B : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => EuclideanSpace ℝ (Fin k)) ℝ) :
+    (∫ y, B (fun _ => y) ∂ν)
+      = ∑ r : Fin 2 → Fin k,
+          ⟪EuclideanSpace.basisFun (Fin k) ℝ (r 0),
+            EuclideanSpace.basisFun (Fin k) ℝ (r 1)⟫_ℝ
+            * B fun i => EuclideanSpace.basisFun (Fin k) ℝ (r i) := by
+  classical
+  set e : Fin k → EuclideanSpace ℝ (Fin k) := fun a => EuclideanSpace.basisFun (Fin k) ℝ a
+    with he
+  have hexp : ∀ y : EuclideanSpace ℝ (Fin k), B (fun _ => y)
+      = ∑ r : Fin 2 → Fin k, ⟪e (r 0), y⟫_ℝ * ⟪e (r 1), y⟫_ℝ * B fun i => e (r i) := by
+    intro y
+    have hy : (fun _ : Fin 2 => y) = fun _ : Fin 2 => ∑ a, ⟪e a, y⟫_ℝ • e a := by
+      funext _
+      exact ((EuclideanSpace.basisFun (Fin k) ℝ).sum_repr' y).symm
+    rw [hy, ← ContinuousMultilinearMap.coe_coe,
+      (B.toMultilinearMap).map_sum (g := fun _ (a : Fin k) => ⟪e a, y⟫_ℝ • e a)]
+    refine Finset.sum_congr rfl fun r _ => ?_
+    rw [show (fun i : Fin 2 => ⟪e (r i), y⟫_ℝ • e (r i))
+        = fun i : Fin 2 => (fun j : Fin 2 => ⟪e (r j), y⟫_ℝ) i • (fun j : Fin 2 => e (r j)) i
+      from rfl, (B.toMultilinearMap).map_smul_univ, Fin.prod_univ_two,
+      ContinuousMultilinearMap.coe_coe, smul_eq_mul]
+  simp_rw [hexp]
+  rw [integral_finset_sum _ fun r _ => (integrable_inner_mul_inner h2 _ _).mul_const _]
+  exact Finset.sum_congr rfl fun r _ => by rw [integral_mul_const, hcov]
+
+end SwapStep
+
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
 For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
 identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
