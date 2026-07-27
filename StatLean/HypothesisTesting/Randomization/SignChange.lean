@@ -62,10 +62,17 @@ sign-change randomization distribution is asymptotically normal). (`TSH4 §17.2 
 * *Asymptotic linearity* is stated with the triangular-array convergence in probability of
   `Randomization/Asymptotics`, applied to the remainder
   `T n x − n^{-1/2} ∑ᵢ ψ(xᵢ)`; that is exactly the `o_P(1)` of the display.
-* The limit is reached through the bivariate central limit theorem applied to the i.i.d.
-  pairs `(εᵢψ(Xᵢ), ε'ᵢψ(Xᵢ))`, which have zero covariance since
-  `E[εᵢ]E[ε'ᵢ] = 0`; the Lindeberg-type machinery is the sibling brick
-  `StatLean.HypothesisTesting.ForMathlib.LindebergCLT`, imported here.
+* The limit is reached through the bivariate sign-change central limit theorem of the sibling
+  file `Randomization/PairCLT` (`weakConverges_randPairLaw_signSum`). That engine works at the
+  level of characteristic functions: averaging over the four sign pairs `(s,s') ∈ {±1}²`
+  factorizes the joint characteristic function across coordinates *exactly at every finite `n`*,
+  so asymptotic independence of the two randomized copies is not a limiting phenomenon but an
+  identity, and no mean-zero hypothesis is needed. The passage from the statistic to its linear
+  part is `PairCLT.weakConverges_randPairLaw_of_tendstoInProb`, a Slutsky transfer that consumes
+  exactly the `o_P(1)` of `hlin` together with sign-invariance of `⊗ⁿP` (which is `hsymm`).
+* Oddness of `ψ` enters through the equivariance `ψ(εᵢxᵢ) = εᵢψ(xᵢ)`, which lets the
+  coordinatewise map `x ↦ (ψ(xᵢ))ᵢ` intertwine the two sign actions; `randPairLaw_comp` then
+  transports the whole randomized pair to the pushforward law `P.map ψ`.
 
 **Bibliographic comments.** Sign-change (randomization) tests for a symmetric location
 model go back to R. A. Fisher (*The Design of Experiments*, Oliver & Boyd, Edinburgh,
