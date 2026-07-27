@@ -62,10 +62,20 @@ procedures for distributions with monotone likelihood ratio," *Ann. Math. Statis
 -/
 
 open MeasureTheory
+open scoped ENNReal InnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
 open StatLean.PointEstimation
+
+/-- The real inner product on `ℝ` is multiplication (local copy: the `MLR/OneSided`
+version is `private` to that file). -/
+private lemma ts_real_inner_mul (a b : ℝ) : ⟪a, b⟫_ℝ = a * b := by
+  have h1 : ⟪(1 : ℝ), b⟫_ℝ = b := by
+    have h := real_inner_smul_right (1 : ℝ) 1 b
+    simpa [real_inner_self_eq_norm_mul_norm] using h
+  have h2 := real_inner_smul_left (1 : ℝ) b a
+  simpa [h1] using h2
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧]
 
@@ -505,6 +515,205 @@ private lemma ts_density_mul_integrable {μ : Measure 𝓧} {p ψ : 𝓧 → ℝ
     (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)).mp hψ).congr ?_
   filter_upwards with x
   rw [ENNReal.toReal_ofReal (hnn x)]
+
+/-- The density integrates to `1` (local copy). -/
+private lemma ts_density_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
+  have h1 : ∫ x, (1 : ℝ) ∂P = ∫ x, (1 : ℝ) * p x ∂μ := ts_integral_density_eq h (fun _ => 1)
+  simp only [one_mul] at h1
+  rw [← h1]; simp
+
+/-! ### Two exponentials crossing a constant twice
+
+The multiplier shape produced by the generalized fundamental lemma is
+`{p_θ > k₁p_{θ₁} + k₂p_{θ₂}}`; in canonical form this is `{S(T) < 1}` for
+`S(t) = A e^{b₁t} + B e^{b₂t}`. The three lemmas below identify the shape with an interval
+of the statistic when the two exponents have the same sign — the configuration that occurs
+for `θ` *outside* `[θ₁, θ₂]`. No calculus is used: after multiplying by the appropriate
+`e^{-b_j t}` the function `1 - S` becomes a positive combination of two exponentials plus a
+constant, hence strictly convex, and a strictly convex function with two zeros has a forced
+sign pattern. -/
+
+/-- A positive combination of two exponentials of nonconstant affine arguments, plus a
+constant, is strictly convex. -/
+private lemma strictConvexOn_two_exp {c₁ c₂ a₁ a₂ d : ℝ} (hc₁ : 0 < c₁) (hc₂ : 0 < c₂)
+    (ha₁ : a₁ ≠ 0) (ha₂ : a₂ ≠ 0) :
+    StrictConvexOn ℝ Set.univ
+      fun t : ℝ => c₁ * Real.exp (a₁ * t) + c₂ * Real.exp (a₂ * t) + d := by
+  refine ⟨convex_univ, fun x _ y _ hxy q r hq hr hqr => ?_⟩
+  have hne₁ : a₁ * x ≠ a₁ * y := fun h => hxy (mul_left_cancel₀ ha₁ h)
+  have hne₂ : a₂ * x ≠ a₂ * y := fun h => hxy (mul_left_cancel₀ ha₂ h)
+  have h₁ := strictConvexOn_exp.2 (Set.mem_univ (a₁ * x)) (Set.mem_univ (a₁ * y)) hne₁ hq hr hqr
+  have h₂ := strictConvexOn_exp.2 (Set.mem_univ (a₂ * x)) (Set.mem_univ (a₂ * y)) hne₂ hq hr hqr
+  simp only [smul_eq_mul] at h₁ h₂ ⊢
+  have e₁ : a₁ * (q * x + r * y) = q * (a₁ * x) + r * (a₁ * y) := by ring
+  have e₂ : a₂ * (q * x + r * y) = q * (a₂ * x) + r * (a₂ * y) := by ring
+  rw [e₁, e₂]
+  have g₁ := mul_lt_mul_of_pos_left h₁ hc₁
+  have g₂ := mul_lt_mul_of_pos_left h₂ hc₂
+  have hd : q * d + r * d = d := by rw [← add_mul, hqr, one_mul]
+  nlinarith [g₁, g₂, hd]
+
+/-- A strictly convex function vanishing at two points is negative strictly between them
+and positive strictly outside. -/
+private lemma sign_of_strictConvexOn_two_zeros {g : ℝ → ℝ}
+    (hg : StrictConvexOn ℝ Set.univ g) {C₁ C₂ : ℝ} (hC : C₁ < C₂)
+    (h1 : g C₁ = 0) (h2 : g C₂ = 0) :
+    (∀ t : ℝ, C₁ < t → t < C₂ → g t < 0) ∧ (∀ t : ℝ, t < C₁ → 0 < g t) ∧
+      (∀ t : ℝ, C₂ < t → 0 < g t) := by
+  have hkey : ∀ x y z : ℝ, x < y → y < z →
+      g y < ((z - y) / (z - x)) * g x + ((y - x) / (z - x)) * g z := by
+    intro x y z hxy hyz
+    have hxz : x < z := hxy.trans hyz
+    have hden : 0 < z - x := by linarith
+    have ha : 0 < (z - y) / (z - x) := div_pos (by linarith) hden
+    have hb : 0 < (y - x) / (z - x) := div_pos (by linarith) hden
+    have hab : (z - y) / (z - x) + (y - x) / (z - x) = 1 := by field_simp; ring
+    have hcomb : ((z - y) / (z - x)) * x + ((y - x) / (z - x)) * z = y := by
+      field_simp; ring
+    have hcx := hg.2 (Set.mem_univ x) (Set.mem_univ z) (ne_of_lt hxz) ha hb hab
+    simp only [smul_eq_mul] at hcx
+    rwa [hcomb] at hcx
+  refine ⟨fun t ht1 ht2 => ?_, fun t ht => ?_, fun t ht => ?_⟩
+  · have := hkey C₁ t C₂ ht1 ht2
+    rw [h1, h2] at this
+    linarith
+  · have hlt := hkey t C₁ C₂ ht hC
+    rw [h1, h2] at hlt
+    have ha : 0 < (C₂ - C₁) / (C₂ - t) := div_pos (by linarith) (by linarith)
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+  · have hlt := hkey C₁ C₂ t hC ht
+    rw [h1, h2] at hlt
+    have hb : 0 < (C₂ - C₁) / (t - C₁) := div_pos (by linarith) (by linarith)
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+
+/-- **Two exponentials crossing a constant twice.** For exponents `b₁ < b₂` of the same
+nonzero sign and points `C₁ < C₂` there are coefficients `A, B` for which
+`S(t) = A e^{b₁t} + B e^{b₂t}` equals `1` at `C₁` and `C₂`, exceeds `1` strictly between
+them, and falls strictly below `1` outside. The coefficients are the solution of the `2×2`
+interpolation system, and their signs (`A` of the sign of `b₂`, `B` of the opposite sign to
+`b₁`) are exactly what makes the rescaled function `e^{-b_jt}(1 - S(t))` a positive
+combination of exponentials. -/
+private lemma exists_exp_pair_sign {b₁ b₂ C₁ C₂ : ℝ} (hb : b₁ < b₂) (hbb : 0 < b₁ * b₂)
+    (hC : C₁ < C₂) :
+    ∃ A B : ℝ,
+      A * Real.exp (b₁ * C₁) + B * Real.exp (b₂ * C₁) = 1 ∧
+      A * Real.exp (b₁ * C₂) + B * Real.exp (b₂ * C₂) = 1 ∧
+      (∀ t : ℝ, C₁ < t → t < C₂ → 1 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)) ∧
+      (∀ t : ℝ, t < C₁ → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) ∧
+      (∀ t : ℝ, C₂ < t → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) := by
+  have hΔ : 0 < Real.exp (b₁ * C₁) * Real.exp (b₂ * C₂)
+      - Real.exp (b₁ * C₂) * Real.exp (b₂ * C₁) := by
+    rw [← Real.exp_add, ← Real.exp_add, sub_pos, Real.exp_lt_exp]
+    nlinarith [mul_pos (sub_pos.mpr hb) (sub_pos.mpr hC)]
+  set Δ := Real.exp (b₁ * C₁) * Real.exp (b₂ * C₂)
+    - Real.exp (b₁ * C₂) * Real.exp (b₂ * C₁) with hΔdef
+  set A := (Real.exp (b₂ * C₂) - Real.exp (b₂ * C₁)) / Δ with hAdef
+  set B := (Real.exp (b₁ * C₁) - Real.exp (b₁ * C₂)) / Δ with hBdef
+  have hΔne : Δ ≠ 0 := ne_of_gt hΔ
+  have hv₁ : A * Real.exp (b₁ * C₁) + B * Real.exp (b₂ * C₁) = 1 := by
+    rw [hAdef, hBdef, div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div,
+      div_eq_iff hΔne, one_mul, hΔdef]
+    ring
+  have hv₂ : A * Real.exp (b₁ * C₂) + B * Real.exp (b₂ * C₂) = 1 := by
+    rw [hAdef, hBdef, div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div,
+      div_eq_iff hΔne, one_mul, hΔdef]
+    ring
+  -- The sign pattern, from strict convexity of the rescaled `1 - S`.
+  have hmain : (∀ t : ℝ, C₁ < t → t < C₂ →
+        1 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)) ∧
+      (∀ t : ℝ, t < C₁ → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) ∧
+      (∀ t : ℝ, C₂ < t → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) := by
+    -- A rescaling factor `e^{-m t}` and a strictly convex `g = e^{-m t}(1 - S)`.
+    have hgen : ∀ m : ℝ, ∀ g : ℝ → ℝ, StrictConvexOn ℝ Set.univ g →
+        (∀ t : ℝ, g t
+          = Real.exp (-m * t) * (1 - (A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)))) →
+        (∀ t : ℝ, C₁ < t → t < C₂ → 1 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)) ∧
+          (∀ t : ℝ, t < C₁ → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) ∧
+          (∀ t : ℝ, C₂ < t → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) := by
+      intro m g hgc hgrel
+      have hg1 : g C₁ = 0 := by rw [hgrel C₁, hv₁]; ring
+      have hg2 : g C₂ = 0 := by rw [hgrel C₂, hv₂]; ring
+      obtain ⟨hin, hlo, hhi⟩ := sign_of_strictConvexOn_two_zeros hgc hC hg1 hg2
+      refine ⟨fun t h1 h2 => ?_, fun t h => ?_, fun t h => ?_⟩
+      · have hgt := hin t h1 h2
+        rw [hgrel t] at hgt
+        nlinarith [Real.exp_pos (-m * t)]
+      · have hgt := hlo t h
+        rw [hgrel t] at hgt
+        nlinarith [Real.exp_pos (-m * t)]
+      · have hgt := hhi t h
+        rw [hgrel t] at hgt
+        nlinarith [Real.exp_pos (-m * t)]
+    rcases lt_trichotomy b₁ 0 with hb₁ | hb₁ | hb₁
+    · -- Both exponents negative: rescale by `e^{-b₂t}`; then `A < 0` supplies the
+      -- positive coefficient.
+      have hb₂ : b₂ < 0 := by nlinarith
+      have hAneg : A < 0 := by
+        rw [hAdef]
+        apply div_neg_of_neg_of_pos _ hΔ
+        rw [sub_neg]
+        exact Real.exp_lt_exp.mpr (by nlinarith)
+      refine hgen b₂ (fun t => Real.exp (-b₂ * t) + (-A) * Real.exp ((b₁ - b₂) * t) + (-B))
+        ?_ ?_
+      · have h := strictConvexOn_two_exp (c₁ := 1) (c₂ := -A) (a₁ := -b₂) (a₂ := b₁ - b₂)
+          (d := -B) one_pos (by linarith) (by intro h; nlinarith) (by intro h; nlinarith)
+        refine h.congr ?_
+        intro t _
+        simp only [one_mul]
+      · intro t
+        rw [mul_sub, mul_one]
+        have e₁ : Real.exp (-b₂ * t) * (A * Real.exp (b₁ * t))
+            = -((-A) * Real.exp ((b₁ - b₂) * t)) := by
+          rw [show (-A) * Real.exp ((b₁ - b₂) * t) = -(A * Real.exp ((b₁ - b₂) * t)) by ring]
+          rw [neg_neg]
+          rw [show Real.exp (-b₂ * t) * (A * Real.exp (b₁ * t))
+              = A * (Real.exp (-b₂ * t) * Real.exp (b₁ * t)) by ring, ← Real.exp_add]
+          congr 2
+          ring
+        have e₂ : Real.exp (-b₂ * t) * (B * Real.exp (b₂ * t)) = B := by
+          rw [show Real.exp (-b₂ * t) * (B * Real.exp (b₂ * t))
+              = B * (Real.exp (-b₂ * t) * Real.exp (b₂ * t)) by ring, ← Real.exp_add,
+            show -b₂ * t + b₂ * t = 0 by ring, Real.exp_zero, mul_one]
+        rw [mul_add, e₁, e₂]
+        ring
+    · exact absurd hbb (by rw [hb₁]; simp)
+    · -- Both exponents positive: rescale by `e^{-b₁t}`; then `B < 0` supplies the
+      -- positive coefficient.
+      have hb₂ : 0 < b₂ := by linarith
+      have hBneg : B < 0 := by
+        rw [hBdef]
+        apply div_neg_of_neg_of_pos _ hΔ
+        rw [sub_neg]
+        exact Real.exp_lt_exp.mpr (by nlinarith)
+      refine hgen b₁ (fun t => Real.exp (-b₁ * t) + (-B) * Real.exp ((b₂ - b₁) * t) + (-A))
+        ?_ ?_
+      · have h := strictConvexOn_two_exp (c₁ := 1) (c₂ := -B) (a₁ := -b₁) (a₂ := b₂ - b₁)
+          (d := -A) one_pos (by linarith) (by intro h; nlinarith) (by intro h; nlinarith)
+        refine h.congr ?_
+        intro t _
+        simp only [one_mul]
+      · intro t
+        rw [mul_sub, mul_one]
+        have e₁ : Real.exp (-b₁ * t) * (A * Real.exp (b₁ * t)) = A := by
+          rw [show Real.exp (-b₁ * t) * (A * Real.exp (b₁ * t))
+              = A * (Real.exp (-b₁ * t) * Real.exp (b₁ * t)) by ring, ← Real.exp_add,
+            show -b₁ * t + b₁ * t = 0 by ring, Real.exp_zero, mul_one]
+        have e₂ : Real.exp (-b₁ * t) * (B * Real.exp (b₂ * t))
+            = -((-B) * Real.exp ((b₂ - b₁) * t)) := by
+          rw [show (-B) * Real.exp ((b₂ - b₁) * t) = -(B * Real.exp ((b₂ - b₁) * t)) by ring]
+          rw [neg_neg]
+          rw [show Real.exp (-b₁ * t) * (B * Real.exp (b₂ * t))
+              = B * (Real.exp (-b₁ * t) * Real.exp (b₂ * t)) by ring, ← Real.exp_add]
+          congr 2
+          ring
+        rw [mul_add, e₁, e₂]
+        ring
+  exact ⟨A, B, hv₁, hv₂, hmain.1, hmain.2.1, hmain.2.2⟩
 
 /-- The two-sided test is measurable when the statistic is. -/
 private lemma measurable_twoSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C₁ C₂ γ₁ γ₂ : ℝ) :
