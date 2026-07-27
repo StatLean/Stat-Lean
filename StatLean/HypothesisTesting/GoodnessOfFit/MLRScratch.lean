@@ -485,6 +485,116 @@ private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
       (by fun_prop : Measurable fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2)
   rw [hswap, hfinal]
 
+
+/-! ### Additivity in the degrees of freedom -/
+
+/-- The noncentral chi-squared law in the product picture, for an arbitrary mean vector of
+the prescribed length. -/
+private lemma ncChiSq_eq_pi_map {k : ℕ} (l : ℝ≥0) {w : Fin k → ℝ}
+    (hw : ‖(WithLp.toLp 2 w : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ)) :
+    noncentralChiSquared k l
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1).map (fun x => ∑ i, (w i + x i) ^ 2) := by
+  rw [← map_normSq_multivariateGaussian_of_norm_eq k l hw, mvGaussian_one_eq_map,
+    ← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext x
+  simp only [Function.comp_apply]
+  rw [EuclideanSpace.real_norm_sq_eq]
+  rfl
+
+/-- `χ²₁` is the law of the square of a standard normal variable. -/
+private lemma chiSq_one_eq_map :
+    StatLean.MultipleTesting.chiSquared 1 = (gaussianReal 0 1).map (fun u : ℝ => u ^ 2) := by
+  have hw0 : ‖(WithLp.toLp 2 (fun _ : Fin 1 => (0 : ℝ)) : EuclideanSpace ℝ (Fin 1))‖
+      = Real.sqrt (((0 : ℝ≥0) : ℝ)) := by
+    have hz : (WithLp.toLp 2 (fun _ : Fin 1 => (0 : ℝ)) : EuclideanSpace ℝ (Fin 1)) = 0 := by
+      ext i; rfl
+    rw [hz, norm_zero, NNReal.coe_zero, Real.sqrt_zero]
+  have h := ncChiSq_eq_pi_map (k := 1) (l := 0) (w := fun _ => 0) hw0
+  rw [noncentralChiSquared_zero one_pos] at h
+  rw [h, show (fun x : Fin 1 → ℝ => ∑ i, ((0 : ℝ) + x i) ^ 2)
+        = (fun u : ℝ => u ^ 2) ∘ (fun x : Fin 1 → ℝ => x 0) from by funext x; simp,
+    ← Measure.map_map (by fun_prop) (by fun_prop), Measure.pi_map_eval]
+  simp
+
+/-- **Additivity of the noncentral chi-squared law in the degrees of freedom.**  `χ²_{k+1}(l)`
+is the law of the sum of two independent variables, `χ²_k(l)` and `χ²₁`.  Because the
+noncentrality is a complete invariant (`map_normSq_multivariateGaussian_of_norm_eq`) the mean
+vector may be taken orthogonal to the split-off coordinate, which is what makes the split
+carry all of the noncentrality into the `k`-dimensional factor. -/
+private lemma ncChiSq_succ_eq_prod_map {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
+    noncentralChiSquared (k + 1) l
+      = ((noncentralChiSquared k l).prod (StatLean.MultipleTesting.chiSquared 1)).map
+          (fun q : ℝ × ℝ => q.1 + q.2) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  set m : Fin k → ℝ := fun j => (noncentralMean k l) j with hm
+  have hmnorm : ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ) :=
+    ncMean_norm hk l
+  have hvnorm :
+      ‖(WithLp.toLp 2 (Fin.cons (0 : ℝ) m) : EuclideanSpace ℝ (Fin (k + 1)))‖
+        = Real.sqrt (l : ℝ) := by
+    have h1 : ‖(WithLp.toLp 2 (Fin.cons (0 : ℝ) m) : EuclideanSpace ℝ (Fin (k + 1)))‖ ^ 2
+        = ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ ^ 2 := by
+      rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_succ]
+      simp
+    rw [← Real.sqrt_sq (norm_nonneg _), h1, hmnorm, Real.sqrt_sq (Real.sqrt_nonneg _)]
+  set Qk : (Fin k → ℝ) → ℝ := fun y => ∑ j, (m j + y j) ^ 2 with hQk
+  have hQkmeas : Measurable Qk := by
+    refine Finset.univ.measurable_sum fun j _ => ?_
+    exact (((measurable_pi_apply j : Measurable fun y : Fin k → ℝ => y j)).const_add
+      (m j)).pow_const 2
+  have hsqmeas : Measurable (fun u : ℝ => u ^ 2) := by fun_prop
+  -- the split of the product Gaussian at the first coordinate
+  have mp := measurePreserving_piFinSuccAbove
+    (fun _ : Fin (k + 1) => gaussianReal 0 1) (0 : Fin (k + 1))
+  have hsym := mp.symm.map_eq
+  have hQ : ∀ p : ℝ × (Fin k → ℝ),
+      (∑ i, ((Fin.cons (0 : ℝ) m : Fin (k + 1) → ℝ) i + (MeasurableEquiv.piFinSuccAbove
+        (fun _ : Fin (k + 1) => ℝ) 0).symm p i) ^ 2) = Qk p.2 + p.1 ^ 2 := by
+    intro p
+    simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv,
+      Equiv.coe_fn_mk, Fin.insertNth_zero]
+    rw [Fin.sum_univ_succ]
+    simp only [Fin.cons_zero, Fin.cons_succ, zero_add, hQk, Fin.zero_succAbove, cast_eq]
+    ring
+  have hsplit : noncentralChiSquared (k + 1) l
+      = ((gaussianReal 0 1).prod (Measure.pi fun _ : Fin k => gaussianReal 0 1)).map
+          (fun p => Qk p.2 + p.1 ^ 2) := by
+    rw [ncChiSq_eq_pi_map (l := l) (w := Fin.cons (0 : ℝ) m) hvnorm, ← hsym,
+      Measure.map_map (by fun_prop) (MeasurableEquiv.measurable _)]
+    congr 1
+    funext p
+    simpa only [Function.comp_apply] using hQ p
+  -- rearrange the product
+  have hswap : ((gaussianReal 0 1).prod (Measure.pi fun _ : Fin k => gaussianReal 0 1)).map
+        (fun p => Qk p.2 + p.1 ^ 2)
+      = (((Measure.pi fun _ : Fin k => gaussianReal 0 1).map Qk).prod
+          ((gaussianReal 0 1).map (fun u : ℝ => u ^ 2))).map (fun q : ℝ × ℝ => q.1 + q.2) := by
+    rw [Measure.map_prod_map _ _ hQkmeas hsqmeas,
+      Measure.map_map (by fun_prop) (hQkmeas.prodMap hsqmeas),
+      ← Measure.prod_swap (μ := gaussianReal 0 1)
+        (ν := Measure.pi fun _ : Fin k => gaussianReal 0 1),
+      Measure.map_map (by fun_prop) measurable_swap]
+    rfl
+  rw [hsplit, hswap, ← ncChiSq_eq_pi_map (l := l) (w := m) hmnorm, ← chiSq_one_eq_map]
+
+/-- **Tail form of the additivity.**  The `χ²_{k+1}(l)` upper tail is the `χ²_k(l)`-average of
+the `χ²₁` upper tail at the shifted threshold. -/
+private lemma ncChiSq_succ_Ioi {k : ℕ} (hk : 0 < k) (l : ℝ≥0) (c : ℝ) :
+    noncentralChiSquared (k + 1) l (Set.Ioi c)
+      = ∫⁻ x, StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c - x))
+          ∂(noncentralChiSquared k l) := by
+  rw [ncChiSq_succ_eq_prod_map hk l,
+    Measure.map_apply (by fun_prop) measurableSet_Ioi,
+    Measure.prod_apply ((measurable_fst.add measurable_snd) measurableSet_Ioi)]
+  refine lintegral_congr fun x => ?_
+  congr 1
+  ext u
+  simp only [Set.mem_preimage, Set.mem_Ioi]
+  constructor <;> intro h <;> linarith
+
 end MLR
 
 end StatLean.HypothesisTesting
