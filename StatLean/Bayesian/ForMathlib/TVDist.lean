@@ -214,6 +214,27 @@ theorem lintegral_le_lintegral_add_tvDist (μ ν : Measure α)
         simp_rw [mul_comm _ B]
         rw [lintegral_const_mul _ (hpm.sub hqm)]
 
+-- `ℝ≥0∞` bookkeeping for the pair ratio: the `t g` factor of the `Q`-density cancels the
+-- `t g` in the denominator of the ratio, leaving a constant multiple of `s g`.
+private lemma ennreal_pair_ratio (Z a b c e : ℝ≥0∞) (ha0 : a ≠ 0) (haT : a ≠ ∞)
+    (hb0 : b ≠ 0) (hbT : b ≠ ∞) (hZ0 : Z ≠ 0) (hZT : Z ≠ ∞) :
+    (b / Z) * ((c * e) / (a * b)) = (e / (Z * a)) * c := by
+  have hbb : b * b⁻¹ = 1 := ENNReal.mul_inv_cancel hb0 hbT
+  rw [div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,
+    ENNReal.mul_inv (Or.inl ha0) (Or.inl haT),
+    ENNReal.mul_inv (Or.inl hZ0) (Or.inl hZT)]
+  have h : b * Z⁻¹ * (c * e * (a⁻¹ * b⁻¹)) = (b * b⁻¹) * (e * (Z⁻¹ * a⁻¹) * c) := by ring
+  rw [h, hbb, one_mul]
+
+-- `ℝ≥0∞` bookkeeping for the ratio of two normalized densities.
+private lemma ennreal_ratio_of_normalized (e a Z W : ℝ≥0∞) (ha0 : a ≠ 0) (haT : a ≠ ∞)
+    (hZ0 : Z ≠ 0) (hZT : Z ≠ ∞) :
+    (e / (Z * a)) * W = (e / Z) / (a / W) := by
+  rw [div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,
+    ENNReal.mul_inv (Or.inl hZ0) (Or.inl hZT),
+    ENNReal.mul_inv (Or.inl ha0) (Or.inl haT), inv_inv]
+  ring
+
 /-- **The pair-ratio Jensen bound** (vdV p. 143, Step B of the Bernstein–von Mises proof):
 for probability measures `P, Q` obtained by normalizing densities `s, t` against a common
 base, the TV distance is bounded by the double integral of the truncated pair ratio,
@@ -234,7 +255,66 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
       ≤ ∫⁻ h, (∫⁻ g, (1 - (s g * t h) / (s h * t g))
             ∂(base.withDensity fun x => t x / ∫⁻ y, t y ∂base))
           ∂(base.withDensity fun x => s x / ∫⁻ y, s y ∂base) := by
-  sorry
+  classical
+  set Zs := ∫⁻ y, s y ∂base with hZsdef
+  set Zt := ∫⁻ y, t y ∂base with hZtdef
+  have hZs0 : Zs ≠ 0 := hs0.ne'
+  have hZt0 : Zt ≠ 0 := ht0.ne'
+  set p : α → ℝ≥0∞ := fun x => s x / Zs with hpdef
+  set q : α → ℝ≥0∞ := fun x => t x / Zt with hqdef
+  have hpm : Measurable p := by rw [hpdef]; fun_prop
+  have hqm : Measurable q := by rw [hqdef]; fun_prop
+  have hmass : ∀ (f : α → ℝ≥0∞), Measurable f → ∀ Z : ℝ≥0∞, Z ≠ 0 → Z ≠ ∞ →
+      Z = ∫⁻ y, f y ∂base → ∫⁻ x, f x / Z ∂base = 1 := by
+    intro f hf Z hZ0 hZT hZeq
+    simp only [div_eq_mul_inv]
+    rw [lintegral_mul_const' _ _ (ENNReal.inv_ne_top.mpr hZ0), ← hZeq]
+    exact ENNReal.mul_inv_cancel hZ0 hZT
+  haveI hPprob : IsProbabilityMeasure (base.withDensity p) :=
+    ⟨by
+      rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+      simp only [hpdef]
+      exact hmass s hs Zs hZs0 hsT hZsdef⟩
+  haveI hQprob : IsProbabilityMeasure (base.withDensity q) :=
+    ⟨by
+      rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+      simp only [hqdef]
+      exact hmass t ht Zt hZt0 htT hZtdef⟩
+  have hpne : ∀ x, s x ≠ 0 → s x ≠ ∞ → p x ≠ 0 ∧ p x ≠ ∞ := by
+    intro x h0 hT
+    refine ⟨?_, ?_⟩
+    · simp [hpdef, ENNReal.div_eq_zero_iff, h0, hsT]
+    · simp [hpdef, ENNReal.div_eq_top, hZs0, hT]
+  -- Step 1: the TV distance as `∫ (1 − q/p) dP`.
+  have hL : ∫⁻ h, (1 - q h / p h) ∂(base.withDensity p) = ∫⁻ x, (p x - q x) ∂base := by
+    rw [lintegral_withDensity_eq_lintegral_mul _ hpm (by fun_prop)]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hs_pos, hs_fin] with x hx1 hx2
+    obtain ⟨hp0, hpT⟩ := hpne x hx1.ne' hx2
+    show p x * (1 - q x / p x) = p x - q x
+    rw [ENNReal.mul_sub (fun _ _ => hpT), mul_one,
+      ENNReal.mul_div_cancel' (fun h => absurd h hp0) (fun h => absurd h hpT)]
+  -- Step 2: the inner integral of the pair ratio is `q h / p h`.
+  have hI : ∀ h : α, s h ≠ 0 → s h ≠ ∞ →
+      ∫⁻ g, ((s g * t h) / (s h * t g)) ∂(base.withDensity q) = q h / p h := by
+    intro h hh0 hhT
+    rw [lintegral_withDensity_eq_lintegral_mul _ hqm (by fun_prop)]
+    have hpt : ∀ᵐ g ∂base,
+        (q * fun g => (s g * t h) / (s h * t g)) g = (t h / (Zt * s h)) * s g := by
+      filter_upwards [ht_pos, ht_fin] with g hg1 hg2
+      show q g * ((s g * t h) / (s h * t g)) = (t h / (Zt * s h)) * s g
+      simp only [hqdef]
+      exact ennreal_pair_ratio Zt (s h) (t g) (s g) (t h) hh0 hhT hg1.ne' hg2 hZt0 htT
+    rw [lintegral_congr_ae hpt, lintegral_const_mul _ hs, ← hZsdef]
+    simp only [hqdef, hpdef]
+    exact ennreal_ratio_of_normalized (t h) (s h) Zt Zs hh0 hhT hZt0 htT
+  -- Step 3: Jensen, fibrewise in `h`.
+  rw [tvDist_withDensity_eq base hpm hqm, ← hL]
+  refine lintegral_mono_ae ?_
+  have hac : (base.withDensity p) ≪ base := withDensity_absolutelyContinuous _ _
+  filter_upwards [hac.ae_le hs_pos, hac.ae_le hs_fin] with h hh1 hh2
+  rw [← hI h hh1.ne' hh2]
+  exact one_sub_lintegral_le_lintegral_one_sub' _ (by fun_prop)
 
 /-- **Measurability of the pointwise TV distance between two finite kernels** on a countably
 generated target σ-algebra, via joint measurability of `Kernel.rnDeriv`. This is what makes
