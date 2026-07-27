@@ -583,7 +583,33 @@ statistic scale is UMP unbiased at level `α`, provided the constants satisfy **
 * the size condition `E_{θ₀}[φ] = α`, and
 * the derivative condition `E_{θ₀}[T·φ] = α·E_{θ₀}[T]`
 
-(the latter being the analytic form of "the power function has a minimum at `θ₀`"). -/
+(the latter being the analytic form of "the power function has a minimum at `θ₀`").
+
+**FLAGGED SIGNATURE AMENDMENT — `(hΞopen : IsOpen Ξ)` was added.** Without it the statement
+is FALSE, by the following verified counterexample. Gaussian location family
+`E.base = N(0,1)`, `E.stat = id`, so `E.P θ = N(θ,1)` and `E.natSet = interior E.natSet = ℝ`;
+put `P θ = E.P θ`, `α = 0.05`. Take the SPARSE parameter set `Ξ = {0, 2}` and `θ₀ = 0`, so
+`Θ₁ = {2}`. Take `C₁ = -1.959964`, `C₂ = 1.959964`, `γ₁ = γ₂ = 0`,
+`φ = 1{|x| > 1.959964}`. Then `hφ_one/hφ_zero/hφ_γ₁/hφ_γ₂` hold, `hsize` holds
+(`P₀(|X| > 1.959964) = 0.05 = α`) and `hderiv` holds (`∫ x·φ dP₀ = 0` by symmetry, while
+`α·∫ x dP₀ = 0.05·0 = 0`). Yet the one-sided competitor `ψ = 1{x > 1.644854}` is a critical
+function which is *unbiased* at level `α` for `Θ₀ = {0}`, `Θ₁ = {2}` (`power ψ 0 = 0.05 ≤ α`
+and `power ψ 2 = 0.638760 ≥ α`), while `power φ 2 = 0.516005 < 0.638760 = power ψ 2`,
+contradicting the optimality clause of `IsUMPU`. The defect is sparseness of `Ξ`: the null
+value need not be a limit point of the alternative set, so unbiasedness imposes no equality
+constraint at `θ₀` and the two-sided problem degenerates to a one-sided one. Openness of `Ξ`
+is the minimal repair; it is what the classical statement means by "`θ` ranges over an
+interval interior to the natural parameter set", and it is exactly what the proof consumes,
+in two places: `θ₀` is not isolated in `Ξ` (so continuity of the power function upgrades
+`power ψ θ₀ ≤ α` to `= α`) and `θ₀` is an *interior* minimum of the power function of any
+unbiased test (so its derivative vanishes there).
+
+**Proof.** Both side conditions are, for any unbiased competitor, forced
+(`unbiased_side_conditions`); the displayed pair is then exactly the constraint set of the
+two-constraint Neyman–Pearson lemma `isMax_of_multiplier_form`, whose multiplier shape is
+supplied by the secant/tangent line of `exists_sep_line` for the strictly convex function
+`t ↦ e^{(θ' − θ₀)t}` (`expFamily_np_compare`). Unbiasedness of `φ` itself is the comparison
+with the constant test `α`, which satisfies both side conditions. -/
 theorem isUMPU_twoSided_expFamily
     {P : ℝ → Measure 𝓧} {E : ExpFamily 𝓧 ℝ} {T : 𝓧 → ℝ} {Ξ : Set ℝ}
     {θ₀ α C₁ C₂ γ₁ γ₂ : ℝ} {φ : 𝓧 → ℝ}
@@ -597,6 +623,9 @@ theorem isUMPU_twoSided_expFamily
     -- USER-INPUT: the parameter set lies in the interior of the natural parameter set;
     -- the standing regularity of the exponential-family development
     (hΞ : Ξ ⊆ interior E.natSet)
+    -- USER-INPUT (AMENDMENT): the parameter set is open. Without it the statement is FALSE:
+    -- see the counterexample in the docstring above
+    (hΞopen : IsOpen Ξ)
     -- USER-INPUT: the null value belongs to the parameter set
     (hθ₀ : θ₀ ∈ Ξ)
     -- LEAN-ONLY: the level is strictly interior to `[0,1]`; degenerate levels are excluded
@@ -618,32 +647,33 @@ theorem isUMPU_twoSided_expFamily
     -- USER-INPUT: derivative (unbiasedness) condition: `E_{θ₀}[Tφ] = α E_{θ₀}[T]`
     (hderiv : ∫ x, T x * φ x ∂(P θ₀) = α * ∫ x, T x ∂(P θ₀)) :
     IsUMPU P {θ₀} {θ ∈ Ξ | θ ≠ θ₀} α φ := by
-  -- FALSE AS STATED — verified counterexample (see the file header for the general diagnosis).
-  -- Gaussian location family: `E.base = N(0,1)`, `E.stat = id`, so `E.P θ = N(θ,1)` and
-  -- `E.natSet = interior E.natSet = ℝ`; put `P θ = E.P θ`, `α = 0.05`.
-  -- Take the SPARSE parameter set `Ξ = {0, 2}` and `θ₀ = 0`, so `Θ₁ = {2}`.
-  -- Take `C₁ = -1.959964`, `C₂ = 1.959964`, `γ₁ = γ₂ = 0`, `φ = 1{|x| > 1.959964}`.
-  --   `hφ_one/hφ_zero/hφ_γ₁/hφ_γ₂` hold; `hsize`: `P₀(|X| > 1.959964) = 0.05 = α`;
-  --   `hderiv`: `∫ x·φ dP₀ = 0` by symmetry and `α·∫ x dP₀ = 0.05·0 = 0`.
-  -- All hypotheses hold. But the one-sided competitor `ψ = 1{x > 1.644854}` is a critical
-  -- function that is UNBIASED at level `α` for this `Θ₀ = {0}`, `Θ₁ = {2}`:
-  --   `power ψ 0 = 0.05 ≤ α` and `power ψ 2 = 0.638760 ≥ α`,
-  -- while `power φ 2 = 0.516005 < 0.638760 = power ψ 2`, contradicting the optimality clause
-  -- of `IsUMPU`. (With `Ξ` an interval around `0`, `ψ` would fail unbiasedness at negative
-  -- `θ ∈ Θ₁`, where `power ψ θ < α`; sparseness of `Ξ` is exactly what breaks the theorem.)
-  -- REPAIR: add `(hΞopen : IsOpen Ξ)`, which puts `θ₀ ∈ closure Θ₁` and makes the boundary
-  -- device `isUMPU_of_isUMP_on_boundary` bite (its continuity input is now available from the
-  -- closed `continuous_power_expFamily`, via `continuous_power_of_isCanonicalRepr`).
-  -- STILL MISSING after the repair, so the `sorry` would remain:
-  --  (a) the derivative constraint on competitors: unbiasedness makes `θ₀` an interior minimum
-  --      of `power P ψ`, so `hasFDerivAt_integral_exp_inner` + `IsLocalMin.hasDerivAt_eq_zero`
-  --      give `∫ T·ψ dP_{θ₀} = α ∫ T dP_{θ₀}`; not yet packaged for `power`;
-  --  (b) the two-multiplier construction: `NeymanPearson.Generalized.isMax_of_multiplier_form`
-  --      (m = 2, PROVED) supplies optimality once `HasMultiplierShape` is verified, which needs
-  --      `k₁, k₂` solving `k₁e^{θ₀t} + k₂·t·e^{θ₀t} = e^{θ't}` at `t = C₁, C₂` together with the
-  --      sign lemma "`(a + bt)e^{θ₀t} − e^{θ't}` has at most two zeros" (Rolle on the ratio);
-  --      neither the solve nor the sign lemma exists in the repo.
-  sorry
+  subst hT
+  have hconstα : IsCriticalFn (fun _ : 𝓧 => α) :=
+    ⟨measurable_const, fun _ => ⟨hα₀.le, hα₁.le⟩⟩
+  have hconst0 : ∫ _x, (α : ℝ) ∂(P θ₀) = α := by simp
+  have hconst1 : ∫ x, E.stat x * (α : ℝ) ∂(P θ₀) = α * ∫ x, E.stat x ∂(P θ₀) := by
+    rw [integral_mul_const, mul_comm]
+  -- the two-multiplier comparison, once and for all
+  have hcmp : ∀ θ' ∈ Ξ, θ' ≠ θ₀ → ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ →
+      ∫ x, ψ x ∂(P θ₀) = α → ∫ x, E.stat x * ψ x ∂(P θ₀) = α * ∫ x, E.stat x ∂(P θ₀) →
+      ∫ x, ψ x ∂(P θ') ≤ ∫ x, φ x ∂(P θ') := fun θ' hθ' hne ψ hψ h0 h1 =>
+    expFamily_np_compare E hP hΞ hθ₀ hθ' hne hC hφ hψ hφ_one hφ_zero hsize h0 hderiv h1
+  refine ⟨hφ, ⟨?_, ?_⟩, ?_⟩
+  · -- level: the null set is the single point `θ₀`, where the size condition is exact
+    intro θ hθ
+    rw [Set.mem_singleton_iff.mp hθ]
+    exact le_of_eq hsize
+  · -- unbiasedness: the constant test `α` satisfies both side conditions
+    rintro θ' ⟨hθ'Ξ, hθ'ne⟩
+    have h := hcmp θ' hθ'Ξ hθ'ne (fun _ => α) hconstα hconst0 hconst1
+    simp only [power]
+    calc α = ∫ _x, (α : ℝ) ∂(P θ') := by simp
+      _ ≤ ∫ x, φ x ∂(P θ') := h
+  · -- optimality: every unbiased competitor satisfies both side conditions
+    rintro ψ hψ hunb θ' ⟨hθ'Ξ, hθ'ne⟩
+    obtain ⟨h0, h1⟩ := unbiased_side_conditions E hP hΞ hΞopen hθ₀ hψ
+      (hunb.1 θ₀ rfl) (fun θ hθ hne => hunb.2 θ ⟨hθ, hne⟩)
+    exact hcmp θ' hθ'Ξ hθ'ne ψ hψ h0 h1
 
 /-- **UMP unbiased test of an interval null in a one-parameter exponential family.**
 
