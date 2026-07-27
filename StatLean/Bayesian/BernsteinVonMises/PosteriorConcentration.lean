@@ -65,6 +65,43 @@ theorem bvmLocalPosterior_compl_ball [IsFiniteMeasure π] {n : ℕ}
     Set.mem_setOf_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
   rw [div_le_iff₀ hsq, mul_comm]
 
+/-- Fubini through the posterior disintegration `(κₙ ∘ₘ π) ⊗ₘ κₙ†π = (π ⊗ₘ κₙ).map swap`: the
+predictive mean of `Post(A) · w` is the prior integral over `A` of the sampling means of `w`. -/
+private lemma lintegral_posterior_mul_eq {n : ℕ}
+    (π : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure π]
+    (κ : Kernel (EuclideanSpace ℝ (Fin k)) 𝓧) [IsMarkovKernel κ]
+    {w : (Fin n → 𝓧) → ℝ≥0∞} (hw : Measurable w)
+    {A : Set (EuclideanSpace ℝ (Fin k))} (hA : MeasurableSet A) :
+    ∫⁻ ω, ((iidKernel κ n)†π) ω A * w ω ∂(iidKernel κ n ∘ₘ π)
+      = ∫⁻ θ in A, ∫⁻ ω, w ω ∂(iidKernel κ n θ) ∂π := by
+  classical
+  set ind : EuclideanSpace ℝ (Fin k) → ℝ≥0∞ :=
+    A.indicator (1 : EuclideanSpace ℝ (Fin k) → ℝ≥0∞) with hinddef
+  have hind : Measurable ind := by rw [hinddef]; exact measurable_one.indicator hA
+  set H : (Fin n → 𝓧) × EuclideanSpace ℝ (Fin k) → ℝ≥0∞ :=
+    fun p => ind p.2 * w p.1 with hHdef
+  have hH : Measurable H := by
+    rw [hHdef]; exact (hind.comp measurable_snd).mul (hw.comp measurable_fst)
+  have e1 : ∫⁻ p, H p ∂((iidKernel κ n ∘ₘ π) ⊗ₘ ((iidKernel κ n)†π))
+      = ∫⁻ ω, ((iidKernel κ n)†π) ω A * w ω ∂(iidKernel κ n ∘ₘ π) := by
+    rw [Measure.lintegral_compProd hH]
+    refine lintegral_congr fun ω => ?_
+    simp only [hHdef]
+    rw [lintegral_mul_const _ hind, hinddef, lintegral_indicator_one hA]
+  have e2 : ∫⁻ p, H p ∂((π ⊗ₘ iidKernel κ n).map Prod.swap)
+      = ∫⁻ θ in A, ∫⁻ ω, w ω ∂(iidKernel κ n θ) ∂π := by
+    rw [lintegral_map hH measurable_swap,
+      Measure.lintegral_compProd
+        (f := fun q : EuclideanSpace ℝ (Fin k) × (Fin n → 𝓧) => H q.swap)
+        (hH.comp measurable_swap), ← lintegral_indicator hA]
+    refine lintegral_congr fun θ => ?_
+    simp only [hHdef, Prod.swap_prod_mk]
+    rw [lintegral_const_mul _ hw]
+    by_cases hθ : θ ∈ A
+    · rw [Set.indicator_of_mem hθ, hinddef, Set.indicator_of_mem hθ, Pi.one_apply, one_mul]
+    · rw [Set.indicator_of_notMem hθ, hinddef, Set.indicator_of_notMem hθ, zero_mul]
+  rw [← e1, compProd_posterior_eq_map_swap, e2]
+
 /-- **The disintegration bound of Step A** (vdV p. 142, first display): for a `[0,1]`-valued
 test `φ` and a measurable parameter set `A`, the `bvmMixture`-mean of the posterior mass of
 `A` damped by `(1 − φ)` is at most `π(B(θ₀, u/√n))⁻¹ · ∫_A P^n_θ(1 − φ) dπ(θ)`. -/
@@ -87,7 +124,34 @@ theorem mixture_posterior_test_bound
         ∂(bvmMixture κ π θ₀ u n)
       ≤ (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ *
           ∫⁻ θ in A, ∫⁻ ω, ENNReal.ofReal (1 - φ ω) ∂(iidKernel κ n θ) ∂π := by
-  sorry
+  have hBm : MeasurableSet (Metric.ball θ₀ (u / Real.sqrt n)) :=
+    Metric.isOpen_ball.measurableSet
+  have hw : Measurable fun ω : Fin n → 𝓧 => ENNReal.ofReal (1 - φ ω) := by fun_prop
+  have hF : Measurable
+      fun ω => ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω) :=
+    (Kernel.measurable_coe _ hA).mul hw
+  have hcond_le : π[|Metric.ball θ₀ (u / Real.sqrt n)]
+      ≤ (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ • π := by
+    refine Measure.le_iff.2 fun s hsm => ?_
+    rw [ProbabilityTheory.cond_apply hBm, Measure.smul_apply, smul_eq_mul]
+    exact mul_le_mul' le_rfl (measure_mono Set.inter_subset_right)
+  calc ∫⁻ ω, ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω)
+        ∂(bvmMixture κ π θ₀ u n)
+      = ∫⁻ θ, ∫⁻ ω, ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω)
+            ∂(iidKernel κ n θ) ∂(π[|Metric.ball θ₀ (u / Real.sqrt n)]) := by
+        unfold bvmMixture
+        exact Measure.lintegral_bind (Kernel.aemeasurable _) hF.aemeasurable
+    _ ≤ ∫⁻ θ, ∫⁻ ω, ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω)
+            ∂(iidKernel κ n θ) ∂((π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ • π) :=
+        lintegral_mono' hcond_le le_rfl
+    _ = (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ *
+          ∫⁻ θ, ∫⁻ ω, ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω)
+            ∂(iidKernel κ n θ) ∂π := lintegral_smul_measure _ _
+    _ = (π (Metric.ball θ₀ (u / Real.sqrt n)))⁻¹ *
+          ∫⁻ ω, ((iidKernel κ n)†π) ω A * ENNReal.ofReal (1 - φ ω)
+            ∂(iidKernel κ n ∘ₘ π) := by
+        rw [Measure.lintegral_bind (Kernel.aemeasurable _) hF.aemeasurable]
+    _ = _ := by rw [lintegral_posterior_mul_eq π κ hw hA]
 
 /-- **Step A: posterior concentration** (vdV p. 142). Under the model, Fisher, test and prior
 conditions of Theorem 10.1, for every `Mₙ → ∞` and every `δ > 0`,
