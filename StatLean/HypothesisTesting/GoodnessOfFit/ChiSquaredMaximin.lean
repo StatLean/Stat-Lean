@@ -1153,7 +1153,152 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       exact hρpow0 n η
     exact (csInf_le hbddS ⟨η₀, hn hη₀, rfl⟩).trans (hρpow1 n η₀)
 
-/-! ### (ii) Attainment by Pearson's test -/
+/-! ### (ii) Attainment by Pearson's test
+
+The two algebraic identities below are what the Parseval conjunct of
+`exists_multinomial_scores` buys: Pearson's statistic is the squared Euclidean norm of the
+whitened score vector `Zₙ = n^{-1/2} ∑ᵢ Ψ(Xᵢ)`, and the multinomial noncentrality of a
+centred shift `h` is the squared norm of the drift vector `v(h) = ∑ⱼ hⱼ Ψ(j)`.  Together
+they turn the attainment statement into the statement that the law of `Zₙ` under the
+drifting alternative `π + hₙ/√n` converges to `N(v(h₀), Iₖ)`. -/
+
+/-- The **standardized whitened score vector** of a data tuple, `n^{-1/2} ∑ᵢ Ψ(dᵢ)`.  It is
+the tuple form of the statistic `ZC` used in the upper bound. -/
+private noncomputable def mScoreVec {n k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (d : Fin n → Fin (k + 1)) : EuclideanSpace ℝ (Fin k) :=
+  (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec sc (d i)
+
+/-- The **drift vector** attached to a local shift `h`: `v(h) = ∑ⱼ hⱼ Ψ(j)`. -/
+private noncomputable def mDriftVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (h : Fin (k + 1) → ℝ) : EuclideanSpace ℝ (Fin k) :=
+  ∑ j, h j • psiVec sc j
+
+private lemma mScoreVec_apply {n k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (d : Fin n → Fin (k + 1)) (a : Fin k) :
+    mScoreVec sc d a = (Real.sqrt (n : ℝ))⁻¹ * ∑ i, sc a (d i) := by
+  simp [mScoreVec, psiVec]
+
+private lemma mDriftVec_apply {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (h : Fin (k + 1) → ℝ) (a : Fin k) :
+    mDriftVec sc h a = ∑ j, h j * sc a j := by
+  simp [mDriftVec, psiVec]
+
+omit [MeasurableSpace Ω] in
+/-- Fiberwise resummation: a cell-count-weighted sum is a sum over the observations. -/
+private lemma sum_multinomialCount_mul {n k : ℕ} (X : Fin n → Ω → Fin (k + 1)) (ω : Ω)
+    (F : Fin (k + 1) → ℝ) :
+    ∑ j, (multinomialCount X j ω : ℝ) * F j = ∑ i, F (X i ω) := by
+  classical
+  rw [← Finset.sum_fiberwise_of_maps_to (g := fun i : Fin n => X i ω)
+    (fun i _ => Finset.mem_univ (X i ω)) (fun i => F (X i ω))]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [Finset.sum_congr rfl (fun i hi => by rw [(Finset.mem_filter.mp hi).2] :
+      ∀ i ∈ Finset.univ.filter (fun i : Fin n => X i ω = j), F (X i ω) = F j),
+    Finset.sum_const, nsmul_eq_mul, multinomialCount]
+
+omit [MeasurableSpace Ω] in
+/-- **Pearson's statistic is the squared norm of the whitened score vector.**  Parseval
+applied to the centred vector of relative cell excesses `gⱼ = (Yⱼ − nπⱼ)/(nπⱼ)`. -/
+private lemma pearsonQ_eq_normSq {n k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1)
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0)
+    (hpars : ∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+      ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * sc i j)) ^ 2)
+    (hn : 0 < n) (X : Fin n → Ω → Fin (k + 1)) (ω : Ω) :
+    pearsonQ π X ω = ‖mScoreVec sc (fun i => X i ω)‖ ^ 2 := by
+  classical
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+    Real.mul_self_sqrt hnR.le
+  have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+  have hn0 : (n : ℝ) ≠ 0 := hnR.ne'
+  have hinv : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+    rw [← mul_inv, hsq]
+  set g : Fin (k + 1) → ℝ :=
+    fun j => ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) / ((n : ℝ) * π j) with hgdef
+  have hπne : ∀ j, π j ≠ 0 := fun j => (hπpos j).ne'
+  have hg0 : ∑ j, π j * g j = 0 := by
+    have hterm : ∀ j : Fin (k + 1),
+        π j * g j = ((multinomialCount X j ω : ℝ) - (n : ℝ) * π j) / (n : ℝ) := by
+      intro j
+      have hj : π j ≠ 0 := hπne j
+      rw [hgdef]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.sum_div,
+      Finset.sum_sub_distrib, ← Finset.mul_sum, hπsum, mul_one]
+    have hcount : (∑ j : Fin (k + 1), (multinomialCount X j ω : ℝ)) = (n : ℝ) := by
+      have := sum_multinomialCount_mul X ω (fun _ => (1 : ℝ))
+      simpa using this
+    rw [hcount, sub_self, zero_div]
+  have hquad : ∑ j, π j * (g j * g j) = pearsonQ π X ω / (n : ℝ) := by
+    rw [pearsonQ, Finset.sum_div]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hlin : ∀ a : Fin k,
+      ∑ j, π j * (g j * sc a j) = mScoreVec sc (fun i => X i ω) a / Real.sqrt (n : ℝ) := by
+    intro a
+    have hterm : ∀ j : Fin (k + 1),
+        π j * (g j * sc a j)
+          = ((multinomialCount X j ω : ℝ) * sc a j) / (n : ℝ) - π j * sc a j := by
+      intro j
+      have hj : π j ≠ 0 := hπne j
+      rw [hgdef]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_sub_distrib, hcent a,
+      ← Finset.sum_div, sum_multinomialCount_mul X ω (fun j => sc a j), sub_zero,
+      mScoreVec_apply, div_eq_mul_inv, div_eq_mul_inv,
+      mul_comm ((Real.sqrt (n : ℝ))⁻¹) (∑ i, sc a (X i ω)), mul_assoc, hinv]
+  have hkey := hpars g hg0
+  rw [hquad] at hkey
+  simp only [hlin] at hkey
+  have hnorm : ‖mScoreVec sc (fun i => X i ω)‖ ^ 2
+      = ∑ a, (mScoreVec sc (fun i => X i ω) a) ^ 2 := EuclideanSpace.real_norm_sq_eq _
+  have hsimp : ∑ a, (mScoreVec sc (fun i => X i ω) a / Real.sqrt (n : ℝ)) ^ 2
+      = (∑ a, (mScoreVec sc (fun i => X i ω) a) ^ 2) / (n : ℝ) := by
+    rw [Finset.sum_div]
+    refine Finset.sum_congr rfl fun a _ => ?_
+    rw [div_pow, Real.sq_sqrt hnR.le]
+  rw [hsimp, ← hnorm] at hkey
+  have := congrArg (fun t : ℝ => t * (n : ℝ)) hkey
+  simpa only [div_mul_cancel₀ _ hn0] using this
+
+/-- **The multinomial noncentrality is the squared norm of the drift vector.**  Parseval
+applied to `gⱼ = hⱼ/πⱼ`, which is centred exactly when `∑ⱼ hⱼ = 0`. -/
+private lemma multinomialNoncentrality_eq_normSq {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j)
+    (hpars : ∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+      ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * sc i j)) ^ 2)
+    {h : Fin (k + 1) → ℝ} (hhsum : ∑ j, h j = 0) :
+    multinomialNoncentrality π h = ‖mDriftVec sc h‖ ^ 2 := by
+  set g : Fin (k + 1) → ℝ := fun j => h j / π j with hgdef
+  have hπne : ∀ j, π j ≠ 0 := fun j => (hπpos j).ne'
+  have hg0 : ∑ j, π j * g j = 0 := by
+    rw [← hhsum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hkey := hpars g hg0
+  have hq : ∑ j, π j * (g j * g j) = multinomialNoncentrality π h := by
+    rw [multinomialNoncentrality]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  have hl : ∀ a : Fin k, ∑ j, π j * (g j * sc a j) = mDriftVec sc h a := by
+    intro a
+    rw [mDriftVec_apply]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    have hj : π j ≠ 0 := hπne j
+    rw [hgdef]
+    field_simp
+  rw [hq] at hkey
+  simp only [hl] at hkey
+  rw [hkey, EuclideanSpace.real_norm_sq_eq]
 
 /-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
 of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
