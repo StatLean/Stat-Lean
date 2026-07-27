@@ -52,7 +52,11 @@ theorem lintegral_loss_bvmGaussian {ℓ : EuclideanSpace ℝ (Fin k) → ℝ≥0
     (hℓ : Measurable ℓ) (n : ℕ) (ω : Fin n → 𝓧) (t : EuclideanSpace ℝ (Fin k)) :
     ∫⁻ h, ℓ (t - h) ∂(bvmGaussian J sc n ω)
       = bpeGaussCriterion J ℓ (t - bvmEffScore J sc n ω) := by
-  sorry
+  have hw : Measurable fun h : EuclideanSpace ℝ (Fin k) => ℓ (t - h) := hℓ.comp (by fun_prop)
+  rw [bvmGaussian, bpeGaussCriterion,
+    ← AsymptoticStatistics.multivariateGaussian_map_const_add J⁻¹ (bvmEffScore J sc n ω),
+    lintegral_map hw (by fun_prop)]
+  simp_rw [sub_add_eq_sub_sub]
 
 /-- **Majorant-form uniform approximation** (vdV pp. 148–149, recentred): there are
 measurable `Mₙ : (Fin n → 𝓧) → ℝ≥0∞` vanishing in `P^n_{θ₀}`-probability such that on the
