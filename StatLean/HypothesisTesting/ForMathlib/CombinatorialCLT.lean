@@ -31,6 +31,9 @@ that is `tendsto_perm_cdf_blockSum` below.
 * `avg_perm_blockSum` — the exact first moment of a block sum.
 * `avg_perm_blockSum_sq` — the exact second moment of a **centred** block sum, i.e. the
   finite-population variance `m(N-m)/(N(N-1)) · ∑ d²`.
+* `perm_avg_indicator_blockAvg_sub_mean_le` and its inverse-convention twin
+  `perm_avg_indicator_blockAvg_inv_sub_mean_le` — the Chebyshev step for a block average of
+  **uncentred** coefficients against the population mean.
 * `blockSumScale` — the asymptotic standard deviation `√(m(N-m)/N)` used to standardize.
 * `tendsto_perm_cdf_blockSum` — **the combinatorial central limit theorem** (open; see the
   status note at the statement).
@@ -207,6 +210,67 @@ theorem avg_perm_blockSum_sq {N m : ℕ}
   rw [hcount, hA, hB]
   field_simp
   ring
+
+/-! ### Chebyshev for a block average, with uncentred coefficients
+
+`PermutationMarginals.perm_avg_indicator_blockAvg_le` is stated for an already-centred
+coefficient vector, which is the form in which the variance identity is cleanest. Consumers,
+however, arrive with a raw vector `c` — the pooled data, or a function of it — and want to
+compare its block average against its *population* average `c̄ = N⁻¹ ∑ c`. Recentring is a
+one-line shift, recorded here once so that the studentized-scale arguments do not each
+repeat it. -/
+
+/-- **Chebyshev for a block average against the population mean.** Under a uniform random
+permutation, the fraction of permutations whose block average of `c` deviates from
+`c̄ = N⁻¹ ∑ c` by `ε` is at most `ε⁻² (1/m) (N⁻¹ ∑ (c - c̄)²)` — the population dispersion
+divided by the block size, exactly as for sampling with replacement, the finite-population
+correction having been discarded. -/
+theorem perm_avg_indicator_blockAvg_sub_mean_le {N m : ℕ}
+    -- USER-INPUT: a nonempty block (the average divides by `m`)
+    (hm : 0 < m)
+    -- USER-INPUT: at least two items (the factor `N - 1` is a denominator upstream)
+    (hN : 2 ≤ N)
+    -- USER-INPUT: the block is a set of `m` distinct positions
+    (a : Fin m → Fin N) (ha : Function.Injective a) (c : Fin N → ℝ) {ε : ℝ}
+    -- USER-INPUT: a positive deviation
+    (hε : 0 < ε) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          (if ε ≤ |(m : ℝ)⁻¹ * (∑ i, c (σ (a i))) - (N : ℝ)⁻¹ * ∑ l, c l|
+            then (1 : ℝ) else 0)
+      ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ *
+          ((N : ℝ)⁻¹ * ∑ l, (c l - (N : ℝ)⁻¹ * ∑ l', c l') ^ 2)) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hNR : (2 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
+  have hN0 : (N : ℝ) ≠ 0 := by linarith
+  have hd : ∑ l, (c l - (N : ℝ)⁻¹ * ∑ l', c l') = 0 := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hN0, one_mul, sub_self]
+  have hshift : ∀ σ : Equiv.Perm (Fin N),
+      (m : ℝ)⁻¹ * ∑ i, (c (σ (a i)) - (N : ℝ)⁻¹ * ∑ l', c l')
+        = (m : ℝ)⁻¹ * (∑ i, c (σ (a i))) - (N : ℝ)⁻¹ * ∑ l, c l := by
+    intro σ
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, mul_sub, ← mul_assoc, inv_mul_cancel₀ hmR.ne', one_mul]
+  have h := perm_avg_indicator_blockAvg_le hm hN a ha
+    (fun l => c l - (N : ℝ)⁻¹ * ∑ l', c l') hd hε
+  simp only [hshift] at h
+  exact h
+
+/-- The same bound for the *inverse* convention `x ∘ σ⁻¹`, which is how the randomization
+action of `Randomization/TwoSamplePermutation` relabels coordinates. -/
+theorem perm_avg_indicator_blockAvg_inv_sub_mean_le {N m : ℕ} (hm : 0 < m) (hN : 2 ≤ N)
+    (a : Fin m → Fin N) (ha : Function.Injective a) (c : Fin N → ℝ) {ε : ℝ} (hε : 0 < ε) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          (if ε ≤ |(m : ℝ)⁻¹ * (∑ i, c (σ⁻¹ (a i))) - (N : ℝ)⁻¹ * ∑ l, c l|
+            then (1 : ℝ) else 0)
+      ≤ ε⁻¹ ^ 2 * ((m : ℝ)⁻¹ *
+          ((N : ℝ)⁻¹ * ∑ l, (c l - (N : ℝ)⁻¹ * ∑ l', c l') ^ 2)) := by
+  rw [sum_perm_inv (G := Equiv.Perm (Fin N))
+    (f := fun σ : Equiv.Perm (Fin N) =>
+      if ε ≤ |(m : ℝ)⁻¹ * (∑ i, c (σ (a i))) - (N : ℝ)⁻¹ * ∑ l, c l| then (1 : ℝ) else 0)]
+  exact perm_avg_indicator_blockAvg_sub_mean_le hm hN a ha c hε
 
 /-! ### Standardization and the central limit theorem -/
 
