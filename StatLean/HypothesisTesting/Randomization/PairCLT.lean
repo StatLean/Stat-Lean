@@ -108,4 +108,106 @@ lemma weakConverges_prod_of_tendsto_charFun {E : Type*} [NormedAddCommGroup E]
       hid, Measure.map_id]
   simpa only [hcollapse] using hmap
 
+/-! ### Integrating a bounded test function against `randPairLaw` -/
+
+/-- **`randPairLaw` unfolded inside an integral.** For a bounded measurable `F`, the integral
+against the doubly randomized law is the group average of the integrals of `F` composed with
+the two randomized statistics. -/
+lemma integral_randPairLaw {𝓧 Z : Type*} [MeasurableSpace 𝓧] [MeasurableSpace Z]
+    {G : Type*} [Group G] [Fintype G] [MulAction G 𝓧] (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → Z) (hT : ∀ g : G, Measurable fun x : 𝓧 => T (g • x))
+    (F : Z × Z → ℂ) (hF : Measurable F) (hFb : ∀ z, ‖F z‖ ≤ 1) :
+    ∫ z, F z ∂(randPairLaw G T P)
+      = ((Fintype.card G : ℂ) ^ 2)⁻¹ *
+        ∑ g : G, ∑ g' : G, ∫ x, F (T (g • x), T (g' • x)) ∂P := by
+  classical
+  have hint : ∀ (ρ : Measure (Z × Z)), IsFiniteMeasure ρ → Integrable F ρ := by
+    intro ρ _
+    exact Integrable.mono' (integrable_const (1 : ℝ)) hF.aestronglyMeasurable
+      (Filter.Eventually.of_forall hFb)
+  have hpair : ∀ g g' : G, Measurable fun x : 𝓧 => (T (g • x), T (g' • x)) :=
+    fun g g' => (hT g).prodMk (hT g')
+  haveI hprob : ∀ g g' : G,
+      IsProbabilityMeasure (P.map fun x : 𝓧 => (T (g • x), T (g' • x))) :=
+    fun g g' => Measure.isProbabilityMeasure_map (hpair g g').aemeasurable
+  rw [randPairLaw, integral_smul_measure,
+    integral_finset_sum_measure (fun g _ => integrable_finset_sum_measure.2
+      (fun g' _ => hint _ inferInstance))]
+  have hstep : ∀ g : G, ∫ z, F z ∂(∑ g' : G, P.map fun x : 𝓧 => (T (g • x), T (g' • x)))
+      = ∑ g' : G, ∫ x, F (T (g • x), T (g' • x)) ∂P := by
+    intro g
+    rw [integral_finset_sum_measure (fun g' _ => hint _ inferInstance)]
+    refine Finset.sum_congr rfl fun g' _ => ?_
+    rw [integral_map (hpair g g').aemeasurable hF.aestronglyMeasurable]
+  simp_rw [hstep]
+  have hcoef : ((((Fintype.card G : ℝ≥0∞)) ^ 2)⁻¹).toReal = ((Fintype.card G : ℝ) ^ 2)⁻¹ := by
+    rw [ENNReal.toReal_inv, ENNReal.toReal_pow, ENNReal.toReal_natCast]
+  have hc : ((((Fintype.card G : ℝ) ^ 2)⁻¹ : ℝ) : ℂ) = ((Fintype.card G : ℂ) ^ 2)⁻¹ := by
+    push_cast
+    ring
+  rw [hcoef, ← hc]
+  exact RCLike.real_smul_eq_coe_mul _ _
+
+/-! ### The sign-change group acting on vector-valued data -/
+
+/-- The sign-change action on vector data, written out: `(ε • x) i = εᵢ • xᵢ`, with the
+integer unit read as a real scalar. -/
+lemma signChange_smul_apply_vec {V : Type*} [AddCommGroup V] [Module ℝ V] {n : ℕ}
+    (ε : Fin n → ℤˣ) (x : Fin n → V) (i : Fin n) :
+    (ε • x) i = ((ε i : ℤ) : ℝ) • x i := by
+  change ((ε i : ℤ)) • x i = _
+  rw [← Int.cast_smul_eq_zsmul ℝ]
+
+/-- The sign-change group on `n` coordinates has `2ⁿ` elements. -/
+private lemma card_signPattern (n : ℕ) : Fintype.card (Fin n → ℤˣ) = 2 ^ n := by
+  simp [Fintype.card_fun, Fintype.card_units_int]
+
+section SignSum
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The real linear form `y ↦ s⟪y,t₁⟫ + s'⟪y,t₂⟫` obtained by pairing the data with the two
+test directions through a sign pair. Averaging over the four sign pairs is what makes the two
+components of `randPairLaw` decouple. -/
+private noncomputable def signDir (t : WithLp 2 (E × E)) (s s' : ℤˣ) (y : E) : ℝ :=
+  ((s : ℤ) : ℝ) * ⟪y, (WithLp.ofLp t).1⟫ + ((s' : ℤ) : ℝ) * ⟪y, (WithLp.ofLp t).2⟫
+
+private lemma continuous_signDir (t : WithLp 2 (E × E)) (s s' : ℤˣ) :
+    Continuous (signDir t s s') := by
+  have h1 : Continuous fun y : E => ⟪y, (WithLp.ofLp t).1⟫ :=
+    (continuous_id (X := E)).inner continuous_const
+  have h2 : Continuous fun y : E => ⟪y, (WithLp.ofLp t).2⟫ :=
+    (continuous_id (X := E)).inner continuous_const
+  exact (h1.const_mul _).add (h2.const_mul _)
+
+private lemma measurable_signDir (t : WithLp 2 (E × E)) (s s' : ℤˣ) :
+    Measurable (signDir t s s') := (continuous_signDir t s s').measurable
+
+/-- Pairing the sign-flipped normalized sum with a test direction. -/
+private lemma inner_signSum (n : ℕ) (ε : Fin n → ℤˣ) (x : Fin n → E) (t : E) :
+    ⟪(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i, t⟫
+      = ∑ i, (Real.sqrt (n : ℝ))⁻¹ * (((ε i : ℤ) : ℝ) * ⟪x i, t⟫) := by
+  rw [real_inner_smul_left, sum_inner, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [signChange_smul_apply_vec, real_inner_smul_left]
+
+/-- The joint exponential factorizes across coordinates. -/
+private lemma exp_inner_pair_eq_prod (n : ℕ) (t : WithLp 2 (E × E)) (ε ε' : Fin n → ℤˣ)
+    (x : Fin n → E) :
+    Complex.exp (((⟪(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i, (WithLp.ofLp t).1⟫
+        + ⟪(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε' • x) i, (WithLp.ofLp t).2⟫ : ℝ) : ℂ) * Complex.I)
+      = ∏ i, Complex.exp
+          ((((Real.sqrt (n : ℝ))⁻¹ * signDir t (ε i) (ε' i) (x i) : ℝ) : ℂ) * Complex.I) := by
+  have hexp : (⟪(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i, (WithLp.ofLp t).1⟫
+      + ⟪(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε' • x) i, (WithLp.ofLp t).2⟫ : ℝ)
+      = ∑ i, (Real.sqrt (n : ℝ))⁻¹ * signDir t (ε i) (ε' i) (x i) := by
+    rw [inner_signSum, inner_signSum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    unfold signDir
+    ring
+  rw [hexp, Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+
+end SignSum
+
 end StatLean.HypothesisTesting
