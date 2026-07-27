@@ -352,8 +352,23 @@ theorem weak_limit_estimator_under_local_alternatives
   -- exact change-of-measure identity `hL_is_log_ratio` that is not among these hypotheses.
   -- The missing bricks are therefore precisely: a `productMeasure`-level varying-direction
   -- LAN residual, and a varying-direction version of `productMeasure_integral_comparison`.
-  -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane is
-  -- proved *from* it.
+  --
+  -- RE-VERIFIED (sweep over the whole library, nothing has changed the verdict):
+  --   * `lanResidual_tendsto_productMeasure` (AsymptoticRepresentation.lean:880) does call
+  --     `LAN_expansion_iii`, but with the CONSTANT sequence `h_n = fun _ => h`
+  --     (`tendsto_const_nhds`); so the varying-`h_n` capability of `LAN_expansion_iii` is never
+  --     transported to `productMeasure`, and the bridge it uses (the restriction map
+  --     `(ℕ → 𝓧) → (Fin n → 𝓧)`) is built only for the constant case.
+  --   * `productMeasure_integral_comparison` (ibid.:1485) produces its slack `ρ n` from the
+  --     `h`-dependent `goodSet M θ₀ h n` / `expLogFactor M θ₀ h n`, so uniformity over a compact
+  --     set of directions is a genuine new argument, not a re-parenthesization.
+  --   * `contiguous_local_alternatives` (ibid.:1032) is unusable here for a second, independent
+  --     reason: it consumes the exact change-of-measure identity `hL_is_log_ratio`, which is not
+  --     among this theorem's hypotheses.
+  -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane
+  -- (`weak_limit_estimator_centered_under_local_alternatives`,
+  -- `weak_limit_g_estimator_under_local_alternatives`, and
+  -- `ScoreUnderAlternatives.weak_limit_scoreSum_under_local_alternatives`) is proved *from* it.
   sorry
 
 /-- **Limit law of an efficient estimator under local alternatives, centred at `θ₀`.**

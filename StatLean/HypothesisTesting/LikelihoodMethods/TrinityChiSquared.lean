@@ -125,6 +125,67 @@ noncomputable def restrictFamily {m : ℕ} (M : ParametricFamily 𝓧 (Euclidean
   density_meas := fun β => M.density_meas (a + B β)
   density_nonneg := fun β x => M.density_nonneg (a + B β) x
 
+/-- **Differentiability in quadratic mean is inherited by an affine reparametrization.**
+If `M` is DQM at `θ₀ = a + Bβ₀` with score `ℓ`, then the affinely restricted model is DQM at
+`β₀` with score `B*ℓ`.
+
+The residual of the restricted model in the direction `u` is *literally* the residual of `M`
+in the direction `B u` — the parameters agree, `a + B(β₀ + u) = θ₀ + B u`, and
+`⟪u, B*(ℓ x)⟫ = ⟪B u, ℓ x⟫` — so both clauses of `DifferentiableQuadraticMean` transport along
+`B`: the `L²`-membership because `B` is continuous at `0`, and the rate because
+`‖B u‖² ≤ ‖B‖²‖u‖²`. -/
+lemma differentiableQuadraticMean_restrictFamily {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (β₀ : EuclideanSpace ℝ (Fin m)) (hθ₀ : θ₀ = a + B β₀)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hℓB : ℓB = fun x => ContinuousLinearMap.adjoint B (ℓ x))
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ) :
+    DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB := by
+  -- The residual of the restricted model at `u` is the residual of `M` at `B u`.
+  have hres : ∀ (u : EuclideanSpace ℝ (Fin m)) (x : 𝓧),
+      (restrictFamily M a B).sqrtDensity (β₀ + u) x - (restrictFamily M a B).sqrtDensity β₀ x
+          - (1 / 2 : ℝ) * ⟪u, ℓB x⟫ * (restrictFamily M a B).sqrtDensity β₀ x
+        = M.sqrtDensity (θ₀ + B u) x - M.sqrtDensity θ₀ x
+          - (1 / 2 : ℝ) * ⟪B u, ℓ x⟫ * M.sqrtDensity θ₀ x := by
+    intro u x
+    have h1 : a + B (β₀ + u) = θ₀ + B u := by rw [hθ₀, map_add]; abel
+    have h2 : a + B β₀ = θ₀ := hθ₀.symm
+    have h3 : ⟪u, ℓB x⟫ = ⟪B u, ℓ x⟫ := by
+      rw [hℓB, real_inner_comm, ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
+    simp only [restrictFamily, ParametricFamily.sqrtDensity, h1, h2, h3]
+  -- `B` is continuous at the origin, so a neighbourhood condition transports.
+  have htend : Filter.Tendsto (fun u : EuclideanSpace ℝ (Fin m) => B u)
+      (𝓝 0) (𝓝 (0 : EuclideanSpace ℝ (Fin k))) := by
+    have := B.continuous.tendsto (0 : EuclideanSpace ℝ (Fin m))
+    simpa using this
+  refine ⟨?_, ?_⟩
+  · filter_upwards [htend.eventually hDQM.mem] with u hu
+    simpa only [hres u] using hu
+  · have hcomp := hDQM.isLittleO.comp_tendsto htend
+    have hbig : (fun u : EuclideanSpace ℝ (Fin m) => ‖B u‖ ^ 2)
+        =O[𝓝 (0 : EuclideanSpace ℝ (Fin m))] fun u => ‖u‖ ^ 2 := by
+      refine Asymptotics.IsBigO.of_bound (‖B‖ ^ 2) (Filter.Eventually.of_forall fun u => ?_)
+      have hle : ‖B u‖ ≤ ‖B‖ * ‖u‖ := B.le_opNorm u
+      have hsq : ‖B u‖ ^ 2 ≤ (‖B‖ * ‖u‖) ^ 2 := by
+        nlinarith [norm_nonneg (B u), hle]
+      calc ‖‖B u‖ ^ 2‖ = ‖B u‖ ^ 2 := by
+            rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+        _ ≤ (‖B‖ * ‖u‖) ^ 2 := hsq
+        _ = ‖B‖ ^ 2 * ‖‖u‖ ^ 2‖ := by
+            rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]; ring
+    have hfun : (fun u : EuclideanSpace ℝ (Fin m) =>
+        ∫ x, ((restrictFamily M a B).sqrtDensity (β₀ + u) x
+              - (restrictFamily M a B).sqrtDensity β₀ x
+              - (1 / 2 : ℝ) * ⟪u, ℓB x⟫ * (restrictFamily M a B).sqrtDensity β₀ x) ^ 2 ∂μ)
+        = fun u => ∫ x, (M.sqrtDensity (θ₀ + B u) x - M.sqrtDensity θ₀ x
+              - (1 / 2 : ℝ) * ⟪B u, ℓ x⟫ * M.sqrtDensity θ₀ x) ^ 2 ∂μ := by
+      funext u
+      exact integral_congr_ae (Filter.Eventually.of_forall fun x => by simp only [hres u x])
+    rw [hfun]
+    simpa [Function.comp] using hcomp.trans_isBigO hbig
+
 /-! ## Algebraic, measurability and tightness helpers -/
 
 /-- The matrix action `mulVecE J` is the application of the continuous linear map
@@ -1225,16 +1286,22 @@ probability. -/
 --     side is `−log(B/C) ≠ 0`.  Closing this needs a strict-positivity (common-support)
 --     hypothesis such as `∀ θ x, 0 < M.density θ x`, which is a genuine addition to the
 --     printed signature — the source assumes it implicitly whenever it manipulates likelihood
---     ratios.
+--     ratios.  (The repo already names the weaker pattern: `HasCommonSupport` in
+--     `StatLean/PointEstimation/InformationInequality/Basic.lean`; the local `goodSet` device of
+--     `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean` is the other
+--     available way to fence off the vanishing-density set.)
 -- (2) THE RESTRICTED MODEL IS UNCERTIFIED.  `sup_LAN_remainder_tendsto` applied to
 --     `restrictFamily M a B` at `β₀` needs (a) `IsPDFOf (restrictFamily M a B) μ` — immediate
 --     from `hPDF`; (b) a two-point envelope for the restricted family — derivable from `henv`
---     with `Menv·‖B‖²` and `δ/(‖B‖+1)`, using `hℓB : ℓB = B* ∘ ℓ`; but also
---     (c) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`, for which the library
---     has NO composition/reparametrization lemma (nothing in `StatLean/AsymptoticStatistics/DQM`
---     handles an affine change of parameter).  Items (b) and (c) are not currently hypotheses
---     of this lemma and would have to be added or derived.
--- Sanctioned lifted sorry: two concrete, named missing bricks, no false statement.
+--     with `Menv·‖B‖²` and `δ/(‖B‖+1)`, using `hℓB : ℓB = B* ∘ ℓ`; and
+--     (c) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`.
+--     UPDATE: item (c) is now CLOSED — `differentiableQuadraticMean_restrictFamily` above
+--     proves exactly it (the restricted residual at `u` *is* the full residual at `B u`, and
+--     both DQM clauses transport along `B` by continuity at `0` and `‖Bu‖² ≤ ‖B‖²‖u‖²`).
+--     What is left of (2) is only (b), and the fact that neither (b) nor the resulting
+--     restricted-model hypotheses are currently arguments of this lemma: they would have to be
+--     added to the signature or derived from `henv`.
+-- Sanctioned lifted sorry: the remaining bricks are named and concrete; no false statement.
 private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]

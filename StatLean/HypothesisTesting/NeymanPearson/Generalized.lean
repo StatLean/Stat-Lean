@@ -3,6 +3,7 @@ import StatLean.HypothesisTesting.ForMathlib.TestsWeakCompact
 import Mathlib.Analysis.Convex.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The generalized fundamental lemma: maximization under several side conditions
@@ -919,6 +920,91 @@ theorem exists_multipliers_of_max {m : ℕ}
   rw [heq]
   exact hk ψ hψ
 
+/-! ### A test of prescribed size
+
+The final corollary needs three standard facts about densities — the corresponding lemmas in
+`NeymanPearson/Lemma` are `private` to that file, so they are re-derived here — together with
+one linear-algebra step: a linear functional on the bounded measurable functions which
+annihilates the common kernel of the moment functionals of `p₁, …, p_m` is a linear
+combination of them (`mem_span_of_iInf_ker_le_ker`). -/
+
+/-- A density of a probability measure is integrable. -/
+private lemma density_integrable {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : Integrable p μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  refine ⟨hmeas.aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (Filter.Eventually.of_forall hnn)]
+  have h1 : (μ.withDensity fun x => ENNReal.ofReal (p x)) Set.univ = 1 := by
+    rw [← hPeq]; exact measure_univ
+  rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
+  rw [h1]; exact ENNReal.one_lt_top
+
+/-- The power against a density-carrying measure is the integral against the density. -/
+private lemma powerAgainst_density_eq {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    (h : HasDensity μ p P) (φ : 𝓧 → ℝ) :
+    powerAgainst P φ = ∫ x, φ x * p x ∂μ := by
+  obtain ⟨hmeas, hnn, hPeq⟩ := h
+  unfold powerAgainst
+  rw [hPeq, integral_withDensity_eq_integral_toReal_smul hmeas.ennreal_ofReal
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [smul_eq_mul, ENNReal.toReal_ofReal (hnn x)]; ring
+
+/-- The density of a probability measure integrates to `1`. -/
+private lemma density_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
+  have h1 : powerAgainst P (fun _ => (1 : ℝ)) = ∫ x, (1 : ℝ) * p x ∂μ :=
+    powerAgainst_density_eq h _
+  unfold powerAgainst at h1
+  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, mul_one, one_mul] at h1
+  exact h1.symm
+
+/-- The **bounded measurable functions**, as a submodule of all real functions. This is the
+space the multipliers are extracted from: the moment functionals `g ↦ ∫ g fᵢ dμ` are linear
+on it (boundedness gives integrability against an integrable `fᵢ`), and it contains the
+indicators, which is all that is needed to convert an identity of functionals into an
+almost-everywhere identity of densities. -/
+private def bddMeas (X : Type*) [MeasurableSpace X] : Submodule ℝ (X → ℝ) where
+  carrier := {g | Measurable g ∧ ∃ C : ℝ, ∀ x, |g x| ≤ C}
+  add_mem' := by
+    rintro g h ⟨hg, Cg, hCg⟩ ⟨hh, Ch, hCh⟩
+    exact ⟨hg.add hh, Cg + Ch, fun x => (abs_add_le _ _).trans (add_le_add (hCg x) (hCh x))⟩
+  zero_mem' := ⟨measurable_const, 0, by simp⟩
+  smul_mem' := by
+    rintro c g ⟨hg, Cg, hCg⟩
+    refine ⟨hg.const_smul c, |c| * Cg, fun x => ?_⟩
+    rw [Pi.smul_apply, smul_eq_mul, abs_mul]
+    exact mul_le_mul_of_nonneg_left (hCg x) (abs_nonneg c)
+
+private lemma mem_bddMeas_iff {X : Type*} [MeasurableSpace X] {g : X → ℝ} :
+    g ∈ bddMeas X ↔ Measurable g ∧ ∃ C : ℝ, ∀ x, |g x| ≤ C := Iff.rfl
+
+/-- A bounded measurable function times an integrable function is integrable. -/
+private lemma integrable_bddMeas_mul {μ : Measure 𝓧} {p g : 𝓧 → ℝ} (hp : Integrable p μ)
+    (hg : g ∈ bddMeas 𝓧) : Integrable (fun x => g x * p x) μ := by
+  obtain ⟨hgm, _, hC⟩ := mem_bddMeas_iff.1 hg
+  exact hp.bdd_mul hgm.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hC x)
+
+/-- The **moment functional** `g ↦ ∫ g p dμ` on the bounded measurable functions. -/
+private noncomputable def momentFunctional (μ : Measure 𝓧) {p : 𝓧 → ℝ}
+    (hp : Integrable p μ) : bddMeas 𝓧 →ₗ[ℝ] ℝ where
+  toFun g := ∫ x, (g : 𝓧 → ℝ) x * p x ∂μ
+  map_add' g h := by
+    simp only [Submodule.coe_add, Pi.add_apply, add_mul]
+    exact integral_add (integrable_bddMeas_mul hp g.2) (integrable_bddMeas_mul hp h.2)
+  map_smul' c g := by
+    simp only [SetLike.val_smul, Pi.smul_apply, smul_eq_mul, RingHom.id_apply, mul_assoc]
+    exact integral_const_mul _ _
+
+/-- Pairing against the indicator of `s` is the integral over `s`. -/
+private lemma integral_indicator_one_mul {μ : Measure 𝓧} {s : Set 𝓧} (hs : MeasurableSet s)
+    (h : 𝓧 → ℝ) :
+    ∫ x, Set.indicator s (1 : 𝓧 → ℝ) x * h x ∂μ = ∫ x in s, h x ∂μ := by
+  rw [← integral_indicator hs]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  by_cases hx : x ∈ s <;> simp [hx]
+
 /-- **A test with prescribed sizes.** Given `m + 1` probability densities and a level
 `0 < α < 1`, there is a test whose size against each of the first `m` distributions is
 exactly `α` and whose power against the last strictly exceeds `α` — unless the last
@@ -936,34 +1022,106 @@ theorem exists_test_with_prescribed_sizes {m : ℕ}
     (∃ k : Fin m → ℝ, ∀ᵐ x ∂μ, p (Fin.last m) x = ∑ i, k i * p i.castSucc x) ∨
       ∃ φ, IsCriticalFn φ ∧ (∀ i : Fin m, powerAgainst (P i.castSucc) φ = α) ∧
         α < powerAgainst (P (Fin.last m)) φ := by
-  -- OBSTRUCTION (one named gap, re-derived; the previously recorded one is obsolete).
-  -- `exists_multipliers_of_max` is now PROVEN, and so is `exists_test_max_integral_of_constraints`,
-  -- so the compactness half of the old note no longer applies. What is missing is a
-  -- LINEAR-ALGEBRA reduction, and it is genuinely needed:
-  --
-  -- The direct route is elementary and gets most of the way. Assume the right disjunct fails.
-  -- The constant test `φ ≡ α` then maximizes `∫φp_{m+1}` over the class `{φ : ∫φpᵢ = α}`, and
-  -- for every BOUNDED measurable `g` with `∫g pᵢ dμ = 0 (i ≤ m)` the perturbation
-  -- `φ = α + εg` is critical for small `ε > 0` and lies in the class, so `∫ g p_{m+1} dμ ≤ 0`;
-  -- applying this to `−g` gives `∫ g p_{m+1} dμ = 0`. Hence the moment functional of `p_{m+1}`
-  -- annihilates the common kernel of those of `p₁,…,p_m` on the space of bounded measurable
-  -- functions.
-  --
-  -- MISSING BRICK: the finite-dimensional duality step "a linear functional vanishing on
-  -- `⋂ᵢ ker fᵢ` is a linear combination of the `fᵢ`", applied to the moment map into
-  -- `Fin (m+1) → ℝ`. In Lean this needs the space of bounded measurable functions packaged as a
-  -- `Submodule ℝ (𝓧 → ℝ)`, the moment map as a `LinearMap` into `Fin (m+1) → ℝ`, and then
-  -- `Submodule.liftQ`/`LinearMap.quotKerEquivRange`/`LinearMap.exists_extend` on its range; the
-  -- resulting `k` gives `∫ g (p_{m+1} − ∑ kᵢpᵢ) dμ = 0` for every bounded `g`, whence
-  -- `p_{m+1} = ∑ kᵢpᵢ` a.e.
-  --
-  -- Routing through `exists_multipliers_of_max` instead does NOT avoid this: its inner-point
-  -- hypothesis `α·𝟙 ∈ interior (momentSet …)` genuinely FAILS when `p₁,…,p_m` are linearly
-  -- dependent a.e. (e.g. `m = 2`, `p₁ = p₂`: the moment set is the diagonal of `[0,1]²`, whose
-  -- ambient interior is empty), and the classical proof silently reduces to a maximal
-  -- independent subfamily first. For `m = 1` the inner-point hypothesis IS automatic
-  -- (`momentSet μ ![p₁] = [0,1]` and `0 < α < 1`), so that case is already reachable.
-  sorry
+  -- The proof is by contraposition: assume no test of the second kind exists, and produce the
+  -- linear relation. Note that it does NOT go through `exists_multipliers_of_max`, whose
+  -- inner-point hypothesis `α·𝟙 ∈ interior (momentSet …)` genuinely fails exactly in the
+  -- degenerate case the first disjunct describes (e.g. `m = 2`, `p₁ = p₂`: the moment set is
+  -- the diagonal of `[0,1]²`, with empty ambient interior).
+  classical
+  by_cases hR : ∃ φ, IsCriticalFn φ ∧ (∀ i : Fin m, powerAgainst (P i.castSucc) φ = α) ∧
+      α < powerAgainst (P (Fin.last m)) φ
+  · exact Or.inr hR
+  refine Or.inl ?_
+  push_neg at hR
+  have hint : ∀ i, Integrable (p i) μ := fun i => density_integrable (hp i)
+  have hone : ∀ i, ∫ x, p i x ∂μ = 1 := fun i => density_integral_one (hp i)
+  -- Perturbing the constant test `α` in a direction with vanishing first `m` moments cannot
+  -- increase the last moment: `α + εg` is a critical function obeying the side conditions.
+  have hzero : ∀ g : bddMeas 𝓧, (∀ i : Fin m, ∫ x, (g : 𝓧 → ℝ) x * p i.castSucc x ∂μ = 0) →
+      ∫ x, (g : 𝓧 → ℝ) x * p (Fin.last m) x ∂μ ≤ 0 := by
+    intro g hg
+    obtain ⟨hgm, C, hC⟩ := mem_bddMeas_iff.1 g.2
+    have hC'pos : (0 : ℝ) < max C 1 := lt_of_lt_of_le one_pos (le_max_right _ _)
+    have hmpos : 0 < min α (1 - α) := lt_min hα₀ (by linarith)
+    have hεpos : 0 < min α (1 - α) / max C 1 := div_pos hmpos hC'pos
+    set ε : ℝ := min α (1 - α) / max C 1 with hεdef
+    have hεC' : ε * max C 1 = min α (1 - α) := by
+      rw [hεdef]; field_simp
+    have hεbd : ∀ x, |ε * (g : 𝓧 → ℝ) x| ≤ min α (1 - α) := by
+      intro x
+      rw [abs_mul, abs_of_pos hεpos, ← hεC']
+      exact mul_le_mul_of_nonneg_left ((hC x).trans (le_max_left _ _)) hεpos.le
+    set φ : 𝓧 → ℝ := fun x => α + ε * (g : 𝓧 → ℝ) x with hφdef
+    have hφ : IsCriticalFn φ := by
+      refine ⟨measurable_const.add (measurable_const.mul hgm), fun x => ?_⟩
+      have h1 := abs_le.1 (hεbd x)
+      have h2 : min α (1 - α) ≤ α := min_le_left _ _
+      have h3 : min α (1 - α) ≤ 1 - α := min_le_right _ _
+      exact Set.mem_Icc.2 ⟨by simp only [hφdef]; linarith, by simp only [hφdef]; linarith⟩
+    have hmom : ∀ i : Fin (m + 1), ∫ x, φ x * p i x ∂μ
+        = α + ε * ∫ x, (g : 𝓧 → ℝ) x * p i x ∂μ := by
+      intro i
+      have hsplit : ∀ x, φ x * p i x = α * p i x + ε * ((g : 𝓧 → ℝ) x * p i x) := by
+        intro x; simp only [hφdef]; ring
+      rw [integral_congr_ae (Filter.Eventually.of_forall hsplit),
+        integral_add ((hint i).const_mul α) ((integrable_bddMeas_mul (hint i) g.2).const_mul ε),
+        integral_const_mul, integral_const_mul, hone i, mul_one]
+    have hsize : ∀ i : Fin m, powerAgainst (P i.castSucc) φ = α := by
+      intro i
+      rw [powerAgainst_density_eq (hp i.castSucc), hmom i.castSucc, hg i, mul_zero, add_zero]
+    have hlast := hR φ hφ hsize
+    rw [powerAgainst_density_eq (hp (Fin.last m)), hmom (Fin.last m)] at hlast
+    nlinarith [hlast, hεpos]
+  -- Hence the last moment functional annihilates the common kernel of the first `m`.
+  set L : Fin m → bddMeas 𝓧 →ₗ[ℝ] ℝ := fun i => momentFunctional μ (hint i.castSucc) with hLdef
+  set K : bddMeas 𝓧 →ₗ[ℝ] ℝ := momentFunctional μ (hint (Fin.last m)) with hKdef
+  have hker : ⨅ i, LinearMap.ker (L i) ≤ LinearMap.ker K := by
+    intro g hg
+    have hg' : ∀ i : Fin m, ∫ x, (g : 𝓧 → ℝ) x * p i.castSucc x ∂μ = 0 := by
+      intro i
+      have hmem : g ∈ LinearMap.ker (L i) := (Submodule.mem_iInf _).1 hg i
+      simpa [hLdef, momentFunctional, LinearMap.mem_ker] using hmem
+    have hneg : ∀ i : Fin m, ∫ x, ((-g : bddMeas 𝓧) : 𝓧 → ℝ) x * p i.castSucc x ∂μ = 0 := by
+      intro i
+      simp only [Submodule.coe_neg, Pi.neg_apply, neg_mul, integral_neg, hg' i, neg_zero]
+    have h1 := hzero g hg'
+    have h2 := hzero (-g) hneg
+    simp only [Submodule.coe_neg, Pi.neg_apply, neg_mul, integral_neg, neg_nonpos] at h2
+    have : ∫ x, (g : 𝓧 → ℝ) x * p (Fin.last m) x ∂μ = 0 := le_antisymm h1 h2
+    simpa [hKdef, momentFunctional, LinearMap.mem_ker] using this
+  obtain ⟨k, hk⟩ :=
+    (Submodule.mem_span_range_iff_exists_fun ℝ).1 (mem_span_of_iInf_ker_le_ker hker)
+  refine ⟨k, ?_⟩
+  -- The identity of functionals, tested against indicators, is an a.e. identity of densities.
+  have hkfun : ∀ g : bddMeas 𝓧, ∑ i, k i * ∫ x, (g : 𝓧 → ℝ) x * p i.castSucc x ∂μ
+      = ∫ x, (g : 𝓧 → ℝ) x * p (Fin.last m) x ∂μ := by
+    intro g
+    have := LinearMap.congr_fun hk g
+    simpa [hLdef, hKdef, momentFunctional, LinearMap.sum_apply, smul_eq_mul] using this
+  set F : 𝓧 → ℝ := fun x => p (Fin.last m) x - ∑ i, k i * p i.castSucc x with hFdef
+  have hFint : Integrable F μ :=
+    (hint _).sub (integrable_finset_sum _ fun i _ => (hint _).const_mul _)
+  have hFzero : ∀ s : Set 𝓧, MeasurableSet s → μ s < ⊤ → ∫ x in s, F x ∂μ = 0 := by
+    intro s hs _
+    have hind : Set.indicator s (1 : 𝓧 → ℝ) ∈ bddMeas 𝓧 := by
+      refine ⟨measurable_const.indicator hs, 1, fun x => ?_⟩
+      by_cases hx : x ∈ s <;> simp [hx]
+    have hsplit : ∫ x in s, F x ∂μ
+        = (∫ x in s, p (Fin.last m) x ∂μ) - ∑ i, k i * ∫ x in s, p i.castSucc x ∂μ := by
+      rw [hFdef, integral_sub (hint _).integrableOn
+        (integrable_finset_sum _ fun i _ => ((hint _).const_mul _).integrableOn),
+        integral_finset_sum _ fun i _ => ((hint _).const_mul _).integrableOn]
+      exact congrArg _ (Finset.sum_congr rfl fun i _ => integral_const_mul _ _)
+    rw [hsplit, ← integral_indicator_one_mul hs, ← hkfun ⟨_, hind⟩]
+    simp only [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) =>
+      congrArg (fun t => k i * t) (integral_indicator_one_mul hs (p i.castSucc))]
+    ring
+  have hae := ae_eq_zero_of_forall_setIntegral_eq_of_sigmaFinite
+    (fun s hs hμs => hFint.integrableOn) hFzero
+  filter_upwards [hae] with x hx
+  have : F x = 0 := hx
+  rw [hFdef] at this
+  simpa using sub_eq_zero.1 this
 
 /-- **Lagrangian sufficiency.** Abstract form of the multiplier argument, on an arbitrary
 space `U`: a point satisfying the side conditions which maximizes the Lagrangian
