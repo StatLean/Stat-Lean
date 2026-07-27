@@ -224,6 +224,7 @@ private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : 
     simp
   -- `k ≥ 1`: the coordinate threshold is `t = s / √k`
   have hkR : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hkpos
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hkpos
   have hsqk : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 hkR
   have hsqk_sq : Real.sqrt k ^ 2 = (k : ℝ) := Real.sq_sqrt hkR.le
   set t : ℝ := s / Real.sqrt k with htdef
@@ -369,6 +370,106 @@ theorem truncScore_empirical_dev_tail
   exact vector_hoeffding (P := bvmOneObs M μ θ) hn (bvmTruncScore sc L)
     (measurable_bvmTruncScore hsc L) hL hfb hs
 
+/-- The empirical mean `n⁻¹ ∑ᵢ sc^L(ωᵢ)` of the truncated score. -/
+private noncomputable def bvmEmpTrunc (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (L : ℝ) (n : ℕ)
+    (ω : Fin n → 𝓧) : EuclideanSpace ℝ (Fin k) :=
+  (n : ℝ)⁻¹ • ∑ i, bvmTruncScore sc L (ω i)
+
+/-- The `P_θ`-mean `P_θ sc^L` of the truncated score. -/
+private noncomputable def bvmTruncMean (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
+    (μ : Measure 𝓧) (sc : 𝓧 → EuclideanSpace ℝ (Fin k)) (L : ℝ)
+    (θ : EuclideanSpace ℝ (Fin k)) : EuclideanSpace ℝ (Fin k) :=
+  ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)
+
+/-- `truncScore_empirical_dev_tail` restated with the private abbreviations. -/
+private lemma truncScore_tail' (hPDF : IsPDFOf M μ) (hsc : Measurable sc) {L : ℝ}
+    (hL : 0 < L) (θ : EuclideanSpace ℝ (Fin k)) {n : ℕ} (hn : 1 ≤ n) {s : ℝ} (hs : 0 < s) :
+    (productMeasure M μ θ n).real
+        {ω | s ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖}
+      ≤ 2 * k * Real.exp (-(n : ℝ) * s ^ 2 / (2 * k * L ^ 2)) :=
+  truncScore_empirical_dev_tail hPDF hsc hL θ hn hs
+
+/-- Measurability of the empirical truncated-score mean. -/
+private lemma measurable_bvmEmpTrunc (hsc : Measurable sc) (L : ℝ) (n : ℕ) :
+    Measurable (bvmEmpTrunc sc L n) := by
+  have hb : Measurable (bvmTruncScore sc L) := measurable_bvmTruncScore hsc L
+  have hsum : Measurable fun ω : Fin n → 𝓧 => ∑ i, bvmTruncScore sc L (ω i) := by
+    simpa using
+      (Finset.measurable_sum (Finset.univ : Finset (Fin n))
+        (fun i _ => hb.comp (measurable_pi_apply (X := fun _ : Fin n => 𝓧) i)))
+  unfold bvmEmpTrunc
+  exact ((continuous_const_smul ((n : ℝ)⁻¹)).measurable).comp hsum
+
+/-! ### Elementary real-arithmetic bricks for the moderate-range assembly -/
+
+/-- If `Mₙ ≥ 4/c²` then the threshold `√(Mₙ/n)` is at most half of `c·(Mₙ/√n) ≤ c·d`. -/
+private lemma moderate_arith {c d Mn nR : ℝ} (hc : 0 < c) (hnR : 0 < nR)
+    (hMn : 0 < Mn) (h4 : 4 / c ^ 2 ≤ Mn) (hd : Mn / Real.sqrt nR ≤ d) :
+    Real.sqrt (Mn / nR) ≤ c * d / 2 := by
+  have hsqn : 0 < Real.sqrt nR := Real.sqrt_pos.2 hnR
+  have hu : Real.sqrt Mn ^ 2 = Mn := Real.sq_sqrt hMn.le
+  have hupos : 0 < Real.sqrt Mn := Real.sqrt_pos.2 hMn
+  have h4' : 4 ≤ Mn * c ^ 2 := by
+    rw [div_le_iff₀ (pow_pos hc 2)] at h4; linarith only [h4]
+  have huc : 2 ≤ Real.sqrt Mn * c := by
+    nlinarith only [hu, hupos, hc, h4', mul_pos hupos hc]
+  have hA : Real.sqrt (Mn / nR) ≤ c * (Mn / Real.sqrt nR) / 2 := by
+    rw [Real.sqrt_div hMn.le, div_le_iff₀ hsqn]
+    have heq : c * (Mn / Real.sqrt nR) / 2 * Real.sqrt nR = c * Mn / 2 := by
+      field_simp
+    rw [heq]
+    nlinarith only [hu, hupos, huc, hc]
+  have hB : c * (Mn / Real.sqrt nR) / 2 ≤ c * d / 2 := by
+    nlinarith only [hd, hc, mul_nonneg hc.le (sub_nonneg.2 hd)]
+  linarith only [hA, hB]
+
+/-- `d ≥ Mₙ/√n` upgrades to `n d² ≥ Mₙ²`. -/
+private lemma moderate_arith2 {Mn nR d : ℝ} (hnR : 0 < nR) (hMn : 0 < Mn)
+    (hd : Mn / Real.sqrt nR ≤ d) : Mn ^ 2 ≤ nR * d ^ 2 := by
+  have hsqn : 0 < Real.sqrt nR := Real.sqrt_pos.2 hnR
+  have hv : Real.sqrt nR ^ 2 = nR := Real.sq_sqrt hnR.le
+  have h1 : Mn ≤ Real.sqrt nR * d := by
+    rw [div_le_iff₀ hsqn] at hd; linarith only [hd]
+  nlinarith only [h1, hMn, hsqn, hv]
+
+/-- `√y ≤ M` upgrades to `y ≤ M²` for `y ≥ 0`. -/
+private lemma moderate_thresh {y Mv : ℝ} (hy : 0 ≤ y) (hMB : Real.sqrt y ≤ Mv) :
+    y ≤ Mv ^ 2 := by
+  nlinarith only [Real.sq_sqrt hy, Real.sqrt_nonneg y, hMB]
+
+/-- A constant factor `K` is absorbed into `exp(−a x)` once `x ≥ 2 log K / a`. -/
+private lemma moderate_absorb {K a x : ℝ} (hK : 0 < K) (ha : 0 < a)
+    (hx : 2 * Real.log K / a ≤ x) :
+    K * Real.exp (-a * x) ≤ Real.exp (-(a / 2) * x) := by
+  have hlog : Real.log K ≤ a * x / 2 := by
+    rw [div_le_iff₀ ha] at hx; linarith only [hx]
+  have hKle : K ≤ Real.exp (a * x / 2) := by
+    calc K = Real.exp (Real.log K) := (Real.exp_log hK).symm
+      _ ≤ _ := Real.exp_le_exp.2 hlog
+  calc K * Real.exp (-a * x) ≤ Real.exp (a * x / 2) * Real.exp (-a * x) :=
+        mul_le_mul_of_nonneg_right hKle (Real.exp_nonneg _)
+    _ = Real.exp (-(a / 2) * x) := by rw [← Real.exp_add]; congr 1; ring
+
+/-- Bookkeeping of the type-II exponent. -/
+private lemma moderate_exp_eq {nv c d kv Lv a : ℝ} (hk : 0 < kv) (hL : 0 < Lv)
+    (ha : a = c ^ 2 / (8 * kv * Lv ^ 2)) :
+    -nv * (c * d / 2) ^ 2 / (2 * kv * Lv ^ 2) = -a * (nv * d ^ 2) := by
+  subst ha
+  have h1 : Lv ^ 2 ≠ 0 := by positivity
+  have h2 : kv ≠ 0 := ne_of_gt hk
+  field_simp
+  ring
+
+/-- Bookkeeping of the type-I exponent. -/
+private lemma moderate_expI {Mn nR kv Lv : ℝ} (hn : 0 < nR) (hk : 0 < kv) (hL : 0 < Lv)
+    (hMn : 0 ≤ Mn / nR) :
+    -nR * Real.sqrt (Mn / nR) ^ 2 / (2 * kv * Lv ^ 2) = -Mn / (2 * kv * Lv ^ 2) := by
+  rw [Real.sq_sqrt hMn]
+  have h1 : Lv ^ 2 ≠ 0 := by positivity
+  have h2 : kv ≠ 0 := ne_of_gt hk
+  have h3 : nR ≠ 0 := ne_of_gt hn
+  field_simp
+
 /-- **The moderate-range tests** (vdV Lemma 10.3, first test sequence): measurable
 `[0,1]`-valued tests `φₙ` with `P^n_{θ₀} φₙ → 0` and, for all large `n`,
 `P^n_θ(1 − φₙ) ≤ exp(−c n ‖θ−θ₀‖²)` whenever `Mₙ/√n ≤ ‖θ − θ₀‖ ≤ ε`. -/
@@ -393,6 +494,161 @@ theorem exists_moderate_tests
       ∃ N₀ : ℕ, ∀ n, N₀ ≤ n → ∀ θ, Mseq n / Real.sqrt n ≤ ‖θ - θ₀‖ → ‖θ - θ₀‖ ≤ ε →
         ∫ ω, (1 - φ n ω) ∂(productMeasure M μ θ n)
           ≤ Real.exp (-c * n * ‖θ - θ₀‖ ^ 2) := by
-  sorry
+  classical
+  rcases Nat.eq_zero_or_pos k with hk0 | hkpos
+  · -- degenerate parameter space: `θ = θ₀` always, so the alternative range is empty
+    subst hk0
+    obtain ⟨N₁, hN₁⟩ := Filter.eventually_atTop.1 (hM.eventually_gt_atTop 0)
+    refine ⟨fun _ _ => 0, 1, 1, one_pos, one_pos, fun _ => measurable_const,
+      fun _ _ => by norm_num, ?_, max N₁ 1, ?_⟩
+    · have hz : (fun n : ℕ => ∫ _ω : Fin n → 𝓧, (0 : ℝ) ∂(productMeasure M μ θ₀ n))
+          = fun _ => 0 := by funext n; simp
+      rw [hz]; exact tendsto_const_nhds
+    · intro n hn θ hθ1 _
+      exfalso
+      have hd : ‖θ - θ₀‖ = 0 := by rw [EuclideanSpace.norm_eq]; simp
+      have hMn : 0 < Mseq n := hN₁ n (le_trans (le_max_left _ _) hn)
+      have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+      have hsq : 0 < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn1)
+      rw [hd] at hθ1
+      exact absurd hθ1 (not_le.2 (div_pos hMn hsq))
+  -- the nondegenerate case
+  obtain ⟨L, ε, c, hL, hε, hc, hsep⟩ := truncScore_separation hPDF hsc hDQM hJ_pd hJ
+  have hkR : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hkpos
+  have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hkpos
+  have hLsq : (0 : ℝ) < L ^ 2 := pow_pos hL 2
+  have h8k : (0 : ℝ) < 8 * (k : ℝ) * L ^ 2 := by nlinarith
+  have h2k : (0 : ℝ) < 2 * (k : ℝ) * L ^ 2 := by nlinarith
+  obtain ⟨a, hadef, hapos⟩ : ∃ a : ℝ, a = c ^ 2 / (8 * (k : ℝ) * L ^ 2) ∧ 0 < a :=
+    ⟨_, rfl, div_pos (pow_pos hc 2) h8k⟩
+  -- measurability of the rejection region
+  have hregmeas : ∀ n : ℕ, MeasurableSet {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+      ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖} := fun n =>
+    measurableSet_le measurable_const
+      (((measurable_bvmEmpTrunc hsc L n).sub measurable_const).norm)
+  -- integrals of the indicator test
+  have hindint : ∀ (n : ℕ) (θ : EuclideanSpace ℝ (Fin k)),
+      ∫ ω, Set.indicator {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖} (fun _ => (1 : ℝ)) ω
+        ∂(productMeasure M μ θ n)
+      = (productMeasure M μ θ n).real {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖} := by
+    intro n θ
+    rw [integral_indicator_const (1 : ℝ) (hregmeas n), smul_eq_mul, mul_one]
+  have hcomplint : ∀ (n : ℕ) (θ : EuclideanSpace ℝ (Fin k)),
+      ∫ ω, (1 - Set.indicator {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖} (fun _ => (1 : ℝ)) ω)
+        ∂(productMeasure M μ θ n)
+      = (productMeasure M μ θ n).real {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}ᶜ := by
+    intro n θ
+    have hpt : ∀ ω : Fin n → 𝓧, (1 : ℝ) - Set.indicator {ω : Fin n → 𝓧 |
+          Real.sqrt (Mseq n / n) ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}
+            (fun _ => (1 : ℝ)) ω
+        = Set.indicator {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+            ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}ᶜ (fun _ => (1 : ℝ)) ω := by
+      intro ω
+      by_cases h : ω ∈ {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}
+      · rw [Set.indicator_of_mem h,
+          Set.indicator_of_notMem ((Set.mem_compl_iff _ ω).not.2 (not_not_intro h))]
+        norm_num
+      · rw [Set.indicator_of_notMem h, Set.indicator_of_mem ((Set.mem_compl_iff _ ω).2 h)]
+        norm_num
+    simp only [hpt]
+    rw [integral_indicator_const (1 : ℝ) (hregmeas n).compl, smul_eq_mul, mul_one]
+  -- the threshold for `Mseq` beyond which everything is in force
+  have hlog : (0 : ℝ) < 2 * (k : ℝ) := by linarith
+  obtain ⟨B, hBdef⟩ : ∃ B : ℝ, B = max (4 / c ^ 2) (Real.sqrt (2 * Real.log (2 * (k : ℝ)) / a)) :=
+    ⟨_, rfl⟩
+  obtain ⟨N₁, hN₁⟩ := Filter.eventually_atTop.1 (hM.eventually_ge_atTop B)
+  refine ⟨fun n => Set.indicator {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+      ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖} (fun _ => (1 : ℝ)),
+    ε / 2, a / 2, by linarith, by linarith,
+    fun n => measurable_const.indicator (hregmeas n), fun n ω => ?_, ?_, max N₁ 1, ?_⟩
+  · simp only [Set.indicator_apply, Set.mem_Icc]
+    split_ifs <;> norm_num
+  · -- Type I error at `θ₀`
+    refine squeeze_zero'
+      (g := fun n => 2 * (k : ℝ) * Real.exp (-Mseq n / (2 * (k : ℝ) * L ^ 2)))
+      (Filter.Eventually.of_forall fun n => ?_) ?_ ?_
+    · rw [hindint n θ₀]; exact measureReal_nonneg
+    · filter_upwards [hM.eventually_gt_atTop 0, Filter.eventually_ge_atTop 1] with n hMn hn1
+      have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+      have hrpos : 0 < Real.sqrt (Mseq n / n) := Real.sqrt_pos.2 (div_pos hMn hnR)
+      have htail := truncScore_tail' hPDF hsc hL θ₀ hn1 hrpos
+      rw [hindint n θ₀]
+      refine htail.trans_eq ?_
+      rw [moderate_expI hnR hkR hL (div_pos hMn hnR).le]
+    · -- `2k exp(−Mₙ/(2kL²)) → 0`
+      have hdiv : Tendsto (fun n => -Mseq n / (2 * (k : ℝ) * L ^ 2)) atTop atBot := by
+        have h1 : Tendsto (fun n => Mseq n / (2 * (k : ℝ) * L ^ 2)) atTop atTop :=
+          Filter.Tendsto.atTop_div_const h2k hM
+        have h2 : (fun n => -Mseq n / (2 * (k : ℝ) * L ^ 2))
+            = fun n => -(Mseq n / (2 * (k : ℝ) * L ^ 2)) := funext fun n => neg_div _ _
+        rw [h2]
+        exact tendsto_neg_atTop_atBot.comp h1
+      have hex0 : Tendsto (fun n => Real.exp (-Mseq n / (2 * (k : ℝ) * L ^ 2))) atTop (𝓝 0) :=
+        Real.tendsto_exp_atBot.comp hdiv
+      simpa using Filter.Tendsto.const_mul (2 * (k : ℝ)) hex0
+  · -- Type II error on the moderate range
+    intro n hn θ hθlow hθhigh
+    haveI : IsProbabilityMeasure (productMeasure M μ θ n) :=
+      AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+        M μ hPDF θ n
+    have hn1 : 1 ≤ n := le_trans (le_max_right _ _) hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+    have hsqn : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 hnR
+    have hBM : B ≤ Mseq n := hN₁ n (le_trans (le_max_left _ _) hn)
+    have hB1 : 4 / c ^ 2 ≤ Mseq n := le_trans (by rw [hBdef]; exact le_max_left _ _) hBM
+    have hB2 : Real.sqrt (2 * Real.log (2 * (k : ℝ)) / a) ≤ Mseq n :=
+      le_trans (by rw [hBdef]; exact le_max_right _ _) hBM
+    have hMpos : 0 < Mseq n :=
+      lt_of_lt_of_le (div_pos (by norm_num) (pow_pos hc 2)) hB1
+    have hd : 0 < ‖θ - θ₀‖ := lt_of_lt_of_le (div_pos hMpos hsqn) hθlow
+    have hsep' : c * ‖θ - θ₀‖ ≤ ‖bvmTruncMean M μ sc L θ - bvmTruncMean M μ sc L θ₀‖ :=
+      hsep θ (by linarith only [hθhigh, hε])
+    have hthr : Real.sqrt (Mseq n / n) ≤ c * ‖θ - θ₀‖ / 2 :=
+      moderate_arith hc hnR hMpos hB1 hθlow
+    -- on the acceptance region the empirical mean is far from `P_θ sc^L`
+    have hincl : {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}ᶜ
+        ⊆ {ω | c * ‖θ - θ₀‖ / 2 ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖} := by
+      intro ω hω
+      simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hω
+      simp only [Set.mem_setOf_eq]
+      have htri : ‖bvmTruncMean M μ sc L θ - bvmTruncMean M μ sc L θ₀‖
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖
+            + ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖ := by
+        have htmp := norm_sub_le_norm_sub_add_norm_sub
+          (bvmTruncMean M μ sc L θ) (bvmEmpTrunc sc L n ω) (bvmTruncMean M μ sc L θ₀)
+        rwa [norm_sub_rev (bvmTruncMean M μ sc L θ) (bvmEmpTrunc sc L n ω)] at htmp
+      linarith only [htri, hω, hsep', hthr]
+    have hspos : 0 < c * ‖θ - θ₀‖ / 2 := by
+      have := mul_pos hc hd; linarith only [this]
+    have htail := truncScore_tail' hPDF hsc hL θ hn1 hspos
+    rw [hcomplint n θ]
+    have hmono : (productMeasure M μ θ n).real
+        {ω : Fin n → 𝓧 | Real.sqrt (Mseq n / n)
+          ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ₀‖}ᶜ
+        ≤ (productMeasure M μ θ n).real
+          {ω | c * ‖θ - θ₀‖ / 2 ≤ ‖bvmEmpTrunc sc L n ω - bvmTruncMean M μ sc L θ‖} :=
+      measureReal_mono hincl (measure_ne_top _ _)
+    refine (hmono.trans htail).trans ?_
+    rw [moderate_exp_eq (d := ‖θ - θ₀‖) hkR hL hadef]
+    -- `n‖θ−θ₀‖² ≥ Mₙ²` and `Mₙ² ≥ 2 log(2k)/a`
+    have hnd : Mseq n ^ 2 ≤ (n : ℝ) * ‖θ - θ₀‖ ^ 2 := moderate_arith2 hnR hMpos hθlow
+    have hnn : (0 : ℝ) ≤ 2 * Real.log (2 * (k : ℝ)) / a := by
+      have hl : (0 : ℝ) ≤ Real.log (2 * (k : ℝ)) :=
+        Real.log_nonneg (by linarith only [hk1] : (1 : ℝ) ≤ 2 * (k : ℝ))
+      positivity
+    have hMB2 : 2 * Real.log (2 * (k : ℝ)) / a ≤ Mseq n ^ 2 := moderate_thresh hnn hB2
+    have hfin : 2 * Real.log (2 * (k : ℝ)) / a ≤ (n : ℝ) * ‖θ - θ₀‖ ^ 2 :=
+      le_trans hMB2 hnd
+    have := moderate_absorb (K := 2 * (k : ℝ)) (a := a) (x := (n : ℝ) * ‖θ - θ₀‖ ^ 2)
+      hlog hapos hfin
+    refine this.trans_eq ?_
+    congr 1
+    ring
 
 end StatLean.Bayesian

@@ -156,5 +156,3 @@ theorem exponential_tests
         mul_nonneg (sub_nonneg.2 hcfar') hnnn]
 
 end StatLean.Bayesian
-
-#print axioms StatLean.Bayesian.exponential_tests
