@@ -128,24 +128,24 @@ so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero 
 `Iₖ`; the standardised sum converges to `N(0, Iₖ)` and the squared norm is `Sₙ`. -/
 
 /-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`. -/
-private noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
+noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
     EuclideanSpace ℝ (Fin k) :=
   WithLp.toLp 2 (fun j => ψ j x)
 
 /-- The standardised score vector `Zₙ = (√n)⁻¹ ∑ᵢ ψ(Xᵢ)`, whose `j`-th coordinate is
 `smoothScore ψ X j` and whose squared norm is `smoothStat`. -/
-private noncomputable def scoreVec {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧) (ω : Ω) :
+noncomputable def scoreVec {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (X : Fin n → Ω → 𝓧) (ω : Ω) :
     EuclideanSpace ℝ (Fin k) :=
   WithLp.toLp 2 (fun j => smoothScore ψ X j ω)
 
 /-- The real inner product on `EuclideanSpace ℝ (Fin k)` as a coordinate sum. -/
-private lemma inner_euclidean_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
+lemma inner_euclidean_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
     ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
   simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
   exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
 
 /-- The standardised score vector is measurable. -/
-private lemma measurable_scoreVec {n k : ℕ} {ψ : Fin k → 𝓧 → ℝ}
+lemma measurable_scoreVec {n k : ℕ} {ψ : Fin k → 𝓧 → ℝ}
     {X : Fin n → Ω → 𝓧} (hψmeas : ∀ j, Measurable (ψ j)) (hX : ∀ i, Measurable (X i)) :
     Measurable (scoreVec ψ X) := by
   have hg : Measurable (fun ω (j : Fin k) => smoothScore ψ X j ω) := by
@@ -155,7 +155,7 @@ private lemma measurable_scoreVec {n k : ℕ} {ψ : Fin k → 𝓧 → ℝ}
   exact (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp hg
 
 /-- `scoreVec` is the standardised sum of the per-observation score vectors. -/
-private lemma scoreVec_eq_smul_sum {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ)
+lemma scoreVec_eq_smul_sum {n k : ℕ} (ψ : Fin k → 𝓧 → ℝ)
     (X : Fin n → Ω → 𝓧) (ω : Ω) :
     scoreVec ψ X ω = (Real.sqrt n)⁻¹ • ∑ i : Fin n, psiVec ψ (X i ω) := by
   rw [scoreVec]
@@ -177,7 +177,7 @@ sequences to `(Measure.pi …).map` via `iIndepFun_iff_map_fun_eq_pi_map`), and 
 reusable fixed-i.i.d. CLT `AsymptoticStatistics.ParametricFamily.ScoreCLT.clt_finDim`. The
 zero-mean side-condition is `hcentred`, and the covariance side-condition
 `∫ ⟪u, g⟫⟪v, g⟫ = u ⬝ᵥ Iₖ v` is `hortho`. -/
-private lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
+lemma scoreVec_weakConverges_gaussian {k : ℕ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ} {P : ℕ → Measure Ω}
     [∀ n, IsProbabilityMeasure (P n)] {X : (n : ℕ) → Fin n → Ω → 𝓧}
     (hψmeas : ∀ j, Measurable (ψ j))

@@ -13,19 +13,10 @@ open StatLean.MultipleTesting (chiSquared)
 
 variable {Ω 𝓧 : Type*} [MeasurableSpace Ω] [MeasurableSpace 𝓧]
 
-/-- local copy of the private `psiVec` of `SmoothTest.lean`. -/
-private noncomputable def psiVec' {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
-    EuclideanSpace ℝ (Fin k) :=
-  WithLp.toLp 2 (fun j => ψ j x)
-
-private lemma inner_eucl_sum' {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
-    ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
-  simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
-  exact Finset.sum_congr rfl (fun i _ => mul_comm _ _)
-
-private lemma inner_psiVec' {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
-    (x : 𝓧) : ⟪u, psiVec' ψ x⟫_ℝ = ∑ j, u j * ψ j x := by
-  rw [inner_eucl_sum']
+/-- The inner product against the per-observation score vector, in coordinates. -/
+private lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
+    (x : 𝓧) : ⟪u, psiVec ψ x⟫_ℝ = ∑ j, u j * ψ j x := by
+  rw [inner_euclidean_sum]
   exact Finset.sum_congr rfl fun j _ => rfl
 
 /-! ### Elementary real inequalities -/
@@ -121,7 +112,7 @@ sum of the `2^k` sign tilts. -/
 private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {ψ : Fin k → 𝓧 → ℝ} (hψmeas : ∀ j, Measurable (ψ j))
     (hint : ∀ θ : EuclideanSpace ℝ (Fin k),
-      Integrable (fun x => Real.exp ⟪θ, psiVec' ψ x⟫_ℝ) P₀)
+      Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀)
     {t : ℝ} (ht : 0 ≤ t) :
     Integrable (fun x => Real.exp (t * ∑ j, |ψ j x|)) P₀ := by
   classical
@@ -131,7 +122,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
     Real.continuous_exp.measurable.comp
       ((Finset.univ.measurable_sum fun j _ => (hψmeas j).abs).const_mul t)
   have hbound : ∀ x, Real.exp (t * ∑ j, |ψ j x|)
-      ≤ ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset, Real.exp ⟪Θ s, psiVec' ψ x⟫_ℝ := by
+      ≤ ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset, Real.exp ⟪Θ s, psiVec ψ x⟫_ℝ := by
     intro x
     have hprod : Real.exp (t * ∑ j, |ψ j x|) = ∏ j, Real.exp (t * |ψ j x|) := by
       rw [← Real.exp_sum, Finset.mul_sum]
@@ -147,7 +138,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
         ≤ ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x))) :=
       Finset.prod_le_prod (fun j _ => (Real.exp_pos _).le) (fun j _ => hpt j)
     have hexpand : ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x)))
-        = ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset, Real.exp ⟪Θ s, psiVec' ψ x⟫_ℝ := by
+        = ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset, Real.exp ⟪Θ s, psiVec ψ x⟫_ℝ := by
       rw [Finset.prod_add]
       refine Finset.sum_congr rfl fun s hs => ?_
       have hsub : s ⊆ (Finset.univ : Finset (Fin k)) := Finset.subset_univ s
@@ -158,7 +149,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
         rw [Real.exp_add, Real.exp_sum, Real.exp_sum]
       rw [hL]
       congr 1
-      rw [inner_psiVec']
+      rw [inner_psiVec]
       rw [← Finset.sum_sdiff hsub]
       have h1 : ∑ j ∈ (Finset.univ : Finset (Fin k)) \ s, (Θ s) j * ψ j x
           = ∑ j ∈ (Finset.univ : Finset (Fin k)) \ s, -(t * ψ j x) := by
@@ -175,7 +166,7 @@ private lemma integrable_exp_l1 {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
       _ ≤ ∏ j, (Real.exp (t * ψ j x) + Real.exp (-(t * ψ j x))) := hle
       _ = _ := hexpand
   have hsumint : Integrable (fun x => ∑ s ∈ (Finset.univ : Finset (Fin k)).powerset,
-      Real.exp ⟪Θ s, psiVec' ψ x⟫_ℝ) P₀ :=
+      Real.exp ⟪Θ s, psiVec ψ x⟫_ℝ) P₀ :=
     integrable_finset_sum (Finset.univ : Finset (Fin k)).powerset (fun s _ => hint (Θ s))
   refine Integrable.mono' hsumint hmeas.aestronglyMeasurable ?_
   filter_upwards with x
@@ -218,10 +209,10 @@ private lemma logPartition_quadratic_bound {k : ℕ} {P₀ : Measure 𝓧} [IsPr
     (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
     (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0)
     (hint : ∀ θ : EuclideanSpace ℝ (Fin k),
-      Integrable (fun x => Real.exp ⟪θ, psiVec' ψ x⟫_ℝ) P₀)
+      Integrable (fun x => Real.exp ⟪θ, psiVec ψ x⟫_ℝ) P₀)
     {r : ℝ} (hr : 0 < r) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ‖ ≤ r →
-      |Real.log (∫ x, Real.exp ⟪θ, psiVec' ψ x⟫_ℝ ∂P₀) - ‖θ‖ ^ 2 / 2| ≤ C * ‖θ‖ ^ 3 := by
+      |Real.log (∫ x, Real.exp ⟪θ, psiVec ψ x⟫_ℝ ∂P₀) - ‖θ‖ ^ 2 / 2| ≤ C * ‖θ‖ ^ 3 := by
   classical
   obtain ⟨hψint, hψψint⟩ := score_L2_facts hψmeas hortho
   set W : 𝓧 → ℝ := fun x => ∑ j, |ψ j x| with hW
@@ -251,8 +242,8 @@ private lemma logPartition_quadratic_bound {k : ℕ} {P₀ : Measure 𝓧} [IsPr
   refine ⟨4 * K + r * (1 / 2 + 4 * K * r) ^ 2, by positivity, ?_⟩
   intro θ hθ
   have hθ0 : 0 ≤ ‖θ‖ := norm_nonneg θ
-  set z : 𝓧 → ℝ := fun x => ⟪θ, psiVec' ψ x⟫_ℝ with hz
-  have hzval : ∀ x, z x = ∑ j, θ j * ψ j x := fun x => inner_psiVec' ψ θ x
+  set z : 𝓧 → ℝ := fun x => ⟪θ, psiVec ψ x⟫_ℝ with hz
+  have hzval : ∀ x, z x = ∑ j, θ j * ψ j x := fun x => inner_psiVec ψ θ x
   have hzmeas : Measurable z := by
     have : z = fun x => ∑ j, θ j * ψ j x := funext hzval
     rw [this]
@@ -397,5 +388,123 @@ private lemma logPartition_quadratic_bound {k : ℕ} {P₀ : Measure 𝓧} [IsPr
   calc |Real.log M - ‖θ‖ ^ 2 / 2| ≤ w ^ 2 + 4 * K * ‖θ‖ ^ 3 := hlog
     _ ≤ r * (1 / 2 + 4 * K * r) ^ 2 * ‖θ‖ ^ 3 + 4 * K * ‖θ‖ ^ 3 := by linarith
     _ = (4 * K + r * (1 / 2 + 4 * K * r) ^ 2) * ‖θ‖ ^ 3 := by ring
+
+
+/-! ### The canonical experiment -/
+
+/-- `N(0, Iₖ)` is the standard Gaussian of `EuclideanSpace`. -/
+private lemma mvGaussian_zero_one_eq_stdGaussian {k : ℕ} :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (1 : Matrix (Fin k) (Fin k) ℝ)
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply, zero_add]
+  exact Measure.map_id
+
+/-- The stage-`n` law of the score vector is the standardised product law. -/
+private lemma law_scoreVec_pi {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+    {ψ : Fin k → 𝓧 → ℝ} {P : Measure Ω} [IsProbabilityMeasure P] {X : Fin n → Ω → 𝓧}
+    (hψmeas : ∀ j, Measurable (ψ j)) (hX : ∀ i, Measurable (X i))
+    (hindep : iIndepFun X P) (hlaw : ∀ i, P.map (X i) = P₀) :
+    P.map (scoreVec ψ X)
+      = (Measure.pi fun _ : Fin n => P₀).map
+          (fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i)) := by
+  classical
+  have hgmeas : Measurable (psiVec ψ) :=
+    (WithLp.measurable_toLp 2 (Fin k → ℝ)).comp (measurable_pi_lambda _ hψmeas)
+  set F : (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k) :=
+    fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i) with hF
+  have hFmeas : Measurable F :=
+    measurable_const.smul
+      (Finset.univ.measurable_sum fun i _ => hgmeas.comp (measurable_pi_apply i))
+  have hXmeas : Measurable (fun ω (i : Fin n) => X i ω) := measurable_pi_lambda _ hX
+  have hpiX : P.map (fun ω (i : Fin n) => X i ω) = Measure.pi (fun _ : Fin n => P₀) := by
+    rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX i).aemeasurable)).1 hindep]
+    congr 1; funext i; exact hlaw i
+  have hcomp : scoreVec ψ X = F ∘ (fun ω (i : Fin n) => X i ω) := by
+    funext ω
+    rw [scoreVec_eq_smul_sum ψ X ω]
+    rfl
+  rw [hcomp, ← Measure.map_map hFmeas hXmeas, hpiX]
+
+/-- **The canonical score law converges to the standard Gaussian.** -/
+private lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+    {ψ : Fin k → 𝓧 → ℝ} (hψmeas : ∀ j, Measurable (ψ j))
+    (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
+    (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0) :
+    WeakConverges (fun n => (Measure.pi fun _ : Fin n => P₀).map
+        (fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i)))
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  classical
+  obtain ⟨Ω₀, mΩ₀, P₀c, Z, hZmeas, hZlaw, hZindep, hP₀cprob⟩ :=
+    ProbabilityTheory.exists_iid ℕ P₀
+  letI : MeasurableSpace Ω₀ := mΩ₀
+  haveI : IsProbabilityMeasure P₀c := hP₀cprob
+  have hbrick := scoreVec_weakConverges_gaussian (P₀ := P₀) (ψ := ψ)
+    (P := fun _ : ℕ => P₀c) (X := fun n (i : Fin n) ω => Z (i : ℕ) ω)
+    hψmeas hortho hcentred
+    (fun n i => hZmeas i) (fun n => hZindep.precomp Fin.val_injective)
+    (fun n i => (hZlaw (i : ℕ)).map_eq)
+  have heq : ∀ n : ℕ, P₀c.map (scoreVec ψ (fun (i : Fin n) ω => Z (i : ℕ) ω))
+      = (Measure.pi fun _ : Fin n => P₀).map
+          (fun d => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, psiVec ψ (d i)) :=
+    fun n => law_scoreVec_pi hψmeas (fun i => hZmeas i)
+      (hZindep.precomp Fin.val_injective) (fun i => (hZlaw (i : ℕ)).map_eq)
+  simp only [heq] at hbrick
+  rwa [mvGaussian_zero_one_eq_stdGaussian] at hbrick
+
+
+/-! ### The smooth model as an explicit exponential tilt -/
+
+private lemma smoothModel_base {k : ℕ} (P₀ : Measure 𝓧) (ψ : Fin k → 𝓧 → ℝ)
+    (hψ : Measurable fun x => (WithLp.toLp 2 fun j => ψ j x : EuclideanSpace ℝ (Fin k))) :
+    (smoothModel P₀ ψ hψ).base = P₀ := by
+  show P₀.withDensity (fun _ => 1) = P₀
+  simp
+
+private lemma smoothModel_P_eq {k : ℕ} (P₀ : Measure 𝓧) (ψ : Fin k → 𝓧 → ℝ)
+    (hψ : Measurable fun x => (WithLp.toLp 2 fun j => ψ j x : EuclideanSpace ℝ (Fin k)))
+    (θ : EuclideanSpace ℝ (Fin k)) :
+    (smoothModel P₀ ψ hψ).P θ = P₀.tilted (fun x => ⟪θ, psiVec ψ x⟫_ℝ) := by
+  have h : (smoothModel P₀ ψ hψ).P θ
+      = ((smoothModel P₀ ψ hψ).base).tilted (fun x => ⟪θ, psiVec ψ x⟫_ℝ) := rfl
+  rw [h, smoothModel_base]
+
+/-- A tilt that is a probability measure has an integrable exponential. -/
+private lemma integrable_exp_of_isProbabilityMeasure_tilted {P₀ : Measure 𝓧} {f : 𝓧 → ℝ}
+    (h : IsProbabilityMeasure (P₀.tilted f)) :
+    Integrable (fun x => Real.exp (f x)) P₀ := by
+  by_contra hcon
+  rw [tilted_of_not_integrable hcon] at h
+  have h1 : (0 : Measure 𝓧) Set.univ = 1 := h.measure_univ
+  simp only [Measure.coe_zero, Pi.zero_apply] at h1
+  exact zero_ne_one h1
+
+/-- The tilt written with the log-partition normalisation. -/
+private lemma tilted_eq_withDensity_log (μ : Measure 𝓧) (f : 𝓧 → ℝ)
+    (hpos : 0 < ∫ x, Real.exp (f x) ∂μ) :
+    μ.tilted f = μ.withDensity (fun x =>
+      ENNReal.ofReal (Real.exp (f x - Real.log (∫ y, Real.exp (f y) ∂μ)))) := by
+  rw [Measure.tilted]
+  congr 1
+  funext x
+  rw [Real.exp_sub, Real.exp_log hpos]
+
+/-- The `n`-fold product of an exponential tilt is the tilt of the product by the sum. -/
+private lemma pi_withDensity_exp {n : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+    {u : 𝓧 → ℝ} (hu : Measurable u)
+    [hprob : IsProbabilityMeasure
+      (P₀.withDensity (fun x => ENNReal.ofReal (Real.exp (u x))))] :
+    Measure.pi (fun _ : Fin n => P₀.withDensity (fun x => ENNReal.ofReal (Real.exp (u x))))
+      = (Measure.pi fun _ : Fin n => P₀).withDensity
+          (fun d => ENNReal.ofReal (Real.exp (∑ i, u (d i)))) := by
+  classical
+  have hmeas : Measurable (fun x => ENNReal.ofReal (Real.exp (u x))) :=
+    ENNReal.measurable_ofReal.comp (Real.continuous_exp.measurable.comp hu)
+  have hprod : (fun d : Fin n → 𝓧 => ENNReal.ofReal (Real.exp (∑ i, u (d i))))
+      = fun d => ∏ i, ENNReal.ofReal (Real.exp (u (d i))) := by
+    funext d
+    rw [Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun _ _ => Real.exp_nonneg _)]
+  rw [hprod, pi_withDensity_prod (μ := fun _ : Fin n => P₀)
+    (f := fun _ : Fin n => fun x => ENNReal.ofReal (Real.exp (u x))) (fun _ => hmeas)]
 
 end StatLean.HypothesisTesting
