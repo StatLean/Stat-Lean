@@ -26,7 +26,7 @@ Statements now FROZEN.
 | bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | MERGED (1 debt: convolution continuity) | per-lemma sorries |
 | bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | MERGED 0-sorry | comp_subseq insulated |
 | bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | MERGED 0-sorry (after laptop statement fix) | pair-ratio Jensen insulated |
-| tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | IN_FLIGHT | mean-expansion insulated |
+| tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | **MERGED** (Lemma 10.3 done; 1 debt: truncScore_mean_expansion) | mean-expansion insulated |
 | doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible,Theorem10_10} | — | **MERGED 0-sorry (incl. Thm 10.10)** | retraction insulated |
 | conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | IN_FLIGHT | tail-split insulated |
 | local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | IN_FLIGHT | local_tv_tendsto = headline debt |
@@ -91,4 +91,17 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   Mathlib upstream candidate (`Kernel.infinitePi`).
 - 2026-07-27: wave 2 launched: bay/bvm-local (Step B, 3h srun), bay/bvm-conc (Step A, 2.5h).
   Still to launch: bpe-aux, then wave 3 (assembly, bpe-approx) and wave 4 (bpe-final).
+- 2026-07-27: **RATE-LIMIT OUTAGE.** All four running lanes died within minutes of each other
+  (`"error":"rate_limit"`; the 401/529 counts in the logs were transient retries). Cause:
+  5 concurrent cluster-claude sessions across two user sessions — over the safe cap of 3.
+  State salvaged from the auto-close commits:
+  * bvm-tests: finished its scope BEFORE the outage → gate green (3180 jobs), ExponentialTests
+    and TestBoost 0-sorry, ScoreTest 1 sanctioned debt. **MERGED (8691dac). Lemma 10.3 done.**
+  * bvm-local: MixtureContiguity 0-sorry (committed, verified by the earlier partial gate);
+    LocalApproximation 4 sorries left. Auto-close commit content unverified.
+  * bvm-conc: PriorSmallBall 0-sorry BUT the auto-close commit is **RED** — gate failed with
+    `invalid ▸ notation` at PriorSmallBall.lean:409 (the classic unverified-auto-close trap).
+  * bpe-aux: died at startup, zero commits.
+- 2026-07-27: all three unfinished lanes RELAUNCHED (fresh worktrees; resume notes added to
+  the local/conc prompts telling them to build-and-fix the red auto-close content first).
 
