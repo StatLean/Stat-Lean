@@ -280,18 +280,29 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   -- the quadratic form converges to `(Z₁ᵀS⁻¹Z₁, Z₂ᵀS⁻¹Z₂)`, whose marginals are `χ²_p` by
   -- `map_quadraticForm_multivariateGaussian_eq_chiSquared`, independent because the pair limit
   -- is a product law.
-  -- STATUS (re-derived): the CLT half is no longer blocked — the vector building block above is
-  -- now proved, and `Randomization/PairCLT` supplies both the Lévy packaging
-  -- (`weakConverges_of_tendsto_charFun`) and a randomization Slutsky transfer
-  -- (`weakConverges_randPairLaw_of_tendstoInProb`). What remains is genuinely two missing bricks:
-  --  (a) the law of large numbers `Σ̃ₙ → S` in probability under `Measure.pi P` (uncentred second
-  --      moments; sign-invariant, so no randomization enters), and
-  --  (b) a *product* Slutsky: the remainder is `Vₙᵀ(Σ̃ₙ⁻¹ − S⁻¹)Vₙ`, which vanishes in
-  --      probability only because `Vₙ = O_P(1)`; tightness of the randomized vector statistic is
-  --      not delivered by the remainder-→-0 transfer of `PairCLT` and has no brick here.
-  -- Once (a) and (b) exist, the fixed-map half is routine: `randPairLaw` of `q ∘ Vₙ` is the
-  -- pushforward of `randPairLaw` of `Vₙ` along `Prod.map q q`, so `WeakConverges.map` plus
-  -- `map_quadraticForm_multivariateGaussian_eq_chiSquared` gives `χ²_p ⊗ χ²_p`.
+  -- STATUS (re-derived this session): (b) below is NO LONGER MISSING, and the fixed-map half is
+  -- now fully supported. Concretely, what is available:
+  --  * the vector building block above (proved);
+  --  * `Randomization/Asymptotics.randPairLaw_map`: `randPairLaw` of `q ∘ Vₙ` is the pushforward
+  --    of `randPairLaw` of `Vₙ` along `Prod.map q q`, so `WeakConverges.map` +
+  --    `Measure.map_prod_map` + `map_quadraticForm_multivariateGaussian_eq_chiSquared` deliver
+  --    the reference limit `χ²_p ⊗ χ²_p` for `Lₙ x := q (Vₙ x)`, `q v = vᵀS⁻¹v`;
+  --  * `Randomization/PairCLT.weakConverges_randPairLaw_of_tendstoInProb_avg`: the Slutsky
+  --    transfer in **mixture** form. The mixture form is the one that applies: `Measure.pi P` is
+  --    *not* sign-invariant unless `P` is symmetric, which is deliberately not assumed here, so
+  --    the `hinv` version `weakConverges_randPairLaw_of_tendstoInProb` does NOT apply;
+  --  * tightness of the randomized statistic, from `PairCLT.exists_tight_bound_of_weakConverges`
+  --    applied to the first marginal (`Asymptotics.real_randPairLaw_prod_univ`) of the
+  --    randomized pair of `‖Vₙ‖` (itself a `randPairLaw_map` of the vector block).
+  -- The ONE remaining brick is (a): the law of large numbers `Σ̃ₙ → S` in `Measure.pi P`
+  -- probability. It is sign-invariant, so no randomization enters; the entries `xⱼxₖ` are only
+  -- `L¹` (second moments of `x`, not fourth), so Chebyshev does not apply and the honest route is
+  -- Kolmogorov's strong law transported to `Measure.pi`. That transport already exists in the
+  -- library — `AsymptoticStatistics/Asymptotics/Discharge/OneStep.iid_lln_in_prob_l1`
+  -- (`Measure.infinitePi` + `strong_law_ae_real` + `tendstoInMeasure_of_tendsto_ae`) — but it is
+  -- `private`, so it has to be re-exported or replicated. Beyond it one also needs continuity of
+  -- `Matrix.inv` at a `PosDef` matrix (adjugate is polynomial, `Ring.inverse` is continuous at a
+  -- unit) to pass from `Σ̃ₙ → S` to `Σ̃ₙ⁻¹ → S⁻¹`.
   sorry
 
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
@@ -321,11 +332,18 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
   -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
   -- mean-zero (`hmean`) is used a second time; then the argument coincides with
   -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
-  -- STATUS (re-derived): as for the modified statistic, the vector building block is now closed
-  -- and `Randomization/PairCLT` supplies the Lévy packaging and the remainder-→-0 Slutsky
-  -- transfer. The outstanding pieces are the same two — the sample-covariance law of large
-  -- numbers (here in its sign-uniform form, since `Σ̂ₙ` is *not* sign-invariant, which is where
-  -- `hmean` is used a second time) and the tightness-based product Slutsky.
+  -- STATUS (re-derived this session): the outstanding piece is now the *same single* brick as
+  -- for the modified statistic, and no separate "sign-uniform" law of large numbers is in fact
+  -- needed. The algebraic reason: sign changes do not move the uncentred sum, so
+  --   `Σ̂ₙ(ε • x) = (n−1)⁻¹ (∑ᵢ xᵢxᵢᵀ − n X̄ₙ(ε • x)X̄ₙ(ε • x)ᵀ)
+  --              = (n/(n−1)) Σ̃ₙ(x) − (n−1)⁻¹ Vₙ(ε • x)Vₙ(ε • x)ᵀ ,`
+  -- with `Vₙ(ε • x) = n^{-1/2}∑ᵢ εᵢxᵢ` the sign-invariant-free vector statistic. The second term
+  -- is `O_P(1)/n`, and its vanishing is exactly the tightness that
+  -- `PairCLT.exists_tight_bound_of_weakConverges` now supplies. So Hotelling's statistic reduces
+  -- to the modified one over the very same law of large numbers `Σ̃ₙ → S`; see the status note
+  -- on `weakConverges_randPairLaw_signChange_modifiedTSq` for that brick. (`hmean` is what makes
+  -- `S` simultaneously the covariance and the second-moment matrix, so that the same `S` appears
+  -- in both statements.)
   sorry
 
 end StatLean.HypothesisTesting
