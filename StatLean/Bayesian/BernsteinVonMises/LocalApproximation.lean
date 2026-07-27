@@ -264,7 +264,81 @@ theorem bvmLogRatio_tendsto
     ∀ ε : ℝ, 0 < ε →
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}) atTop (𝓝 0) := by
-  sorry
+  classical
+  haveI hProb : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF θ₀ n
+  -- The LAN residual at an arbitrary fixed local parameter.
+  set res : EuclideanSpace ℝ (Fin k) → ∀ n : ℕ, (Fin n → 𝓧) → ℝ := fun x n ω =>
+    logLikelihood M θ₀ x n ω - (⟪x, scoreSum sc n ω⟫ - (1 / 2 : ℝ) *
+      ⟪x, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) x))⟫) with hres_def
+  have hres : ∀ x : EuclideanSpace ℝ (Fin k), ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |res x n ω|}) atTop (𝓝 0) := fun x =>
+    AsymptoticStatistics.AsymptoticRepresentation.lanResidual_tendsto_productMeasure
+      M μ θ₀ sc hsc (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
+      (fun _ _ => hPDF.density_integral_eq_one _) (fun _ _ => hPDF.density_integrable _)
+      hDQM J hJ x
+  -- The prior log-ratio is deterministic and vanishes, by continuity and positivity at `θ₀`.
+  have hunsc : ∀ x : EuclideanSpace ℝ (Fin k),
+      Tendsto (fun n : ℕ => bvmLocalUnscale θ₀ n x) atTop (𝓝 θ₀) := by
+    intro x
+    have hsq : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    have hsm : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ • x) atTop (𝓝 ((0 : ℝ) • x)) :=
+      hsq.smul_const x
+    have := tendsto_const_nhds (x := θ₀) (f := (atTop : Filter ℕ)) |>.add hsm
+    simpa [bvmLocalUnscale] using this
+  have hlog : ∀ x : EuclideanSpace ℝ (Fin k),
+      Tendsto (fun n : ℕ => Real.log (f (bvmLocalUnscale θ₀ n x))) atTop
+        (𝓝 (Real.log (f θ₀))) := by
+    intro x
+    exact ((Real.continuousAt_log hπ.pos.ne').comp hπ.continuousAt).tendsto.comp (hunsc x)
+  have hpterm : Tendsto (fun n : ℕ =>
+      Real.log (f (bvmLocalUnscale θ₀ n g)) - Real.log (f (bvmLocalUnscale θ₀ n h)))
+      atTop (𝓝 0) := by simpa using (hlog g).sub (hlog h)
+  -- The algebraic decomposition: the two score/quadratic terms recombine exactly.
+  have hdecomp : ∀ (n : ℕ) (ω : Fin n → 𝓧),
+      bvmLogRatio M f θ₀ J sc n g h ω = res g n ω - res h n ω
+        + (Real.log (f (bvmLocalUnscale θ₀ n g))
+            - Real.log (f (bvmLocalUnscale θ₀ n h))) := by
+    intro n ω
+    have hsub : ⟪g - h, scoreSum sc n ω⟫
+        = ⟪g, scoreSum sc n ω⟫ - ⟪h, scoreSum sc n ω⟫ := inner_sub_left (𝕜 := ℝ) _ _ _
+    simp only [bvmLogRatio, hres_def, hsub]
+    ring
+  intro ε hε
+  have hε3 : 0 < ε / 3 := by positivity
+  refine squeeze_zero' (Eventually.of_forall fun n => measureReal_nonneg) ?_
+    (by simpa using (hres g (ε / 3) hε3).add (hres h (ε / 3) hε3))
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hpterm (ε / 3) hε3
+  filter_upwards [eventually_ge_atTop N] with n hn
+  have hincl : {ω : Fin n → 𝓧 | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}
+      ⊆ {ω : Fin n → 𝓧 | ε / 3 ≤ |res g n ω|} ∪ {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|} := by
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have hp : |Real.log (f (bvmLocalUnscale θ₀ n g))
+        - Real.log (f (bvmLocalUnscale θ₀ n h))| < ε / 3 := by
+      have := hN n hn
+      rwa [Real.dist_eq, sub_zero] at this
+    have hb1 : |bvmLogRatio M f θ₀ J sc n g h ω|
+        ≤ |res g n ω - res h n ω| + |Real.log (f (bvmLocalUnscale θ₀ n g))
+            - Real.log (f (bvmLocalUnscale θ₀ n h))| := by
+      rw [hdecomp n ω]; exact abs_add_le _ _
+    have hb2 : |res g n ω - res h n ω| ≤ |res g n ω| + |res h n ω| := by
+      have := abs_add_le (res g n ω) (-(res h n ω))
+      simpa [sub_eq_add_neg] using this
+    linarith
+  calc (productMeasure M μ θ₀ n).real {ω | ε ≤ |bvmLogRatio M f θ₀ J sc n g h ω|}
+      ≤ (productMeasure M μ θ₀ n).real
+          ({ω : Fin n → 𝓧 | ε / 3 ≤ |res g n ω|}
+            ∪ {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|}) := measureReal_mono hincl
+    _ ≤ (productMeasure M μ θ₀ n).real {ω : Fin n → 𝓧 | ε / 3 ≤ |res g n ω|}
+          + (productMeasure M μ θ₀ n).real {ω : Fin n → 𝓧 | ε / 3 ≤ |res h n ω|} :=
+        measureReal_union_le _ _
 
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
