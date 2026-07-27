@@ -204,4 +204,70 @@ theorem norm_charFun_smul_pow_sub_edgeworth_le (μ : Measure E) [IsProbabilityMe
 
 end Expansion
 
+/-! ## The law of a vector root
+
+The expansion above estimates an `n`-th power of a characteristic function; what a statistic
+supplies is the law of a normalised sum. `vecRootLaw` is that law, and `charFun_vecRootLaw` is
+the factorisation, proved directly on `Measure.pi` exactly as `charFun_meanRootLaw` is. -/
+
+section VecRoot
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- The root map `y ↦ n^{-1/2} ∑ᵢ Z(yᵢ)` is measurable. -/
+private lemma measurable_vecRoot {Z : ℝ → E} (hZ : Measurable Z) (n : ℕ) :
+    Measurable fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i) :=
+  (continuous_const_smul ((Real.sqrt n)⁻¹ : ℝ)).measurable.comp
+    (Finset.measurable_sum _ fun i _ => hZ.comp (measurable_pi_apply i))
+
+/-- The **law of the vector root** `n^{-1/2} ∑_{i<n} Z(yᵢ)` under `n` independent draws from
+`F`. For `E = ℝ` and `Z = (· − E_F X)` this is `Bootstrap/Edgeworth.lean`'s `meanRootLaw`. -/
+noncomputable def vecRootLaw (F : Measure ℝ) (Z : ℝ → E) (n : ℕ) : Measure E :=
+  (Measure.pi fun _ : Fin n => F).map fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i)
+
+instance isProbabilityMeasure_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (n : ℕ) : IsProbabilityMeasure (vecRootLaw F Z n) := by
+  rw [vecRootLaw]
+  exact Measure.isProbabilityMeasure_map (measurable_vecRoot hZ n).aemeasurable
+
+/-- **The characteristic function of a vector root, as an `n`-th power.**
+`φ_{vecRootLaw F Z n}(t) = φ_{F ∘ Z⁻¹}(n^{-1/2} • t)ⁿ`.
+
+Together with `norm_charFun_smul_pow_sub_edgeworth_le` — whose left-hand side is an `n`-th
+power of `φ` *along a ray* — this is the whole characteristic-function half of a multivariate
+one-term Edgeworth expansion. -/
+theorem charFun_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) (n : ℕ) (t : E) :
+    charFun (vecRootLaw F Z n) t = charFun (F.map Z) ((Real.sqrt n)⁻¹ • t) ^ n := by
+  set c : E := (Real.sqrt n)⁻¹ • t with hc
+  have hmeasg : Measurable fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ i, Z (y i) :=
+    measurable_vecRoot hZ n
+  have hstep1 : charFun (vecRootLaw F Z n) t
+      = ∫ y : Fin n → ℝ, ∏ i : Fin n, Complex.exp ((⟪Z (y i), c⟫ : ℝ) * Complex.I)
+        ∂(Measure.pi fun _ : Fin n => F) := by
+    rw [charFun_apply, vecRootLaw, integral_map hmeasg.aemeasurable (by fun_prop)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    have harg : (⟪(Real.sqrt n)⁻¹ • ∑ i, Z (y i), t⟫ : ℝ) = ∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ) :=
+      calc (⟪(Real.sqrt n)⁻¹ • ∑ i, Z (y i), t⟫ : ℝ)
+          = (Real.sqrt n)⁻¹ * ⟪∑ i, Z (y i), t⟫ := real_inner_smul_left _ _ _
+        _ = (Real.sqrt n)⁻¹ * ∑ i : Fin n, (⟪Z (y i), t⟫ : ℝ) := by rw [sum_inner]
+        _ = ∑ i : Fin n, (Real.sqrt n)⁻¹ * (⟪Z (y i), t⟫ : ℝ) := Finset.mul_sum _ _ _
+        _ = ∑ i : Fin n, (⟪Z (y i), c⟫ : ℝ) := by
+            simp only [hc, real_inner_smul_right]
+    simp only [harg]
+    rw [Complex.ofReal_sum, Finset.sum_mul, Complex.exp_sum]
+  have hstep2 : (∫ y : Fin n → ℝ, ∏ i : Fin n, Complex.exp ((⟪Z (y i), c⟫ : ℝ) * Complex.I)
+        ∂(Measure.pi fun _ : Fin n => F))
+      = (∫ x : ℝ, Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I) ∂F) ^ n := by
+    have h := MeasureTheory.integral_fintype_prod_eq_pow (ι := Fin n) (μ := F)
+      (fun x : ℝ => Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I))
+    simpa using h
+  have hstep3 : (∫ x : ℝ, Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I) ∂F)
+      = charFun (F.map Z) c := by
+    rw [charFun_apply, integral_map hZ.aemeasurable (by fun_prop)]
+  rw [hstep1, hstep2, hstep3]
+
+end VecRoot
+
 end StatLean.HypothesisTesting
