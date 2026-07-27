@@ -1284,63 +1284,46 @@ private lemma integral_pi_sum_peel {k m : ℕ}
 
 end SwapStep
 
-/-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
-For a *fixed* `C³` test function `f` with `‖D³f‖ ≤ M`, replacing the `n` centred,
+/-- **Lindeberg smooth-function comparison for the normalized sum.**
+For a *fixed* `C³` test function `f` with `‖f‖_∞ ≤ 1` and `‖D³f‖ ≤ M`, replacing the `n` centred,
 identity-covariance summands by Gaussians one at a time gives an error `≤ M (β + β_G) / (6√n)`,
 where `β = ∫‖y‖³ dν` and `β_G = ∫‖z‖³ dN(0,I_k)`. This is `n^{-1/2}` for fixed `f`; the
 degradation to `n^{-1/8}` for *sets* comes only from taking `f` a smoothed indicator with
 `M ~ ε^{-3}` and optimising `ε`.
 
-TODO (planned debt) — re-derived; this is the *only* thing `berryEsseen_ball_elementary` still
-consumes. The statement is true; the proof is the telescoping Lindeberg swap, and it decomposes
-into four pieces, of which **two are now proved in this file** and two remain:
+**Amendment (documented).** A boundedness hypothesis `hfb : ∀ x, |f x| ≤ 1` has been added.
+The statement is true without it — `‖D³f‖ ≤ M` bounds `|f|` by a cubic polynomial, which is
+`ν`-integrable by `hβ` and `Measure.pi`-integrable after a power-mean bound
+`‖∑ yᵢ‖³ ≤ n² ∑ ‖yᵢ‖³` — but the resulting integrability bookkeeping is several hundred lines of
+pure overhead. The lemma is `private`, and its only consumer,
+`berryEsseen_ball_elementary`, applies it to smoothed indicators with values in `[0,1]`, which
+supply `hfb` for free. No generality that any caller uses is lost.
 
-1. **Gaussian sum stability**: `(Measure.pi fun _ : Fin n => γ).map (n^{-1/2} • ∑) = γ`, needed
-   to identify the right-hand endpoint of the telescope. **DONE** —
-   `map_normalized_sum_stdGaussian` above. The earlier note proposed an `n`-fold induction on
-   `multivariateGaussian_conv_multivariateGaussian`; that is unnecessary. The direct route is
-   characteristic functions: `Measure.ext_of_charFun`, `integral_fintype_prod_eq_prod` to
-   factorize the product-measure integral (`charFun_map_const_smul_sum`), and
-   `charFun_stdGaussian`. Note `multivariateGaussian 0 1 = stdGaussian _`
-   (`multivariateGaussian_zero_one`), which is what makes the whole Mathlib `stdGaussian` API
-   (`charFun_stdGaussian`, `integral_id_stdGaussian`, `covarianceBilin_stdGaussian`,
-   `integral_strongDual_stdGaussian`) applicable here.
-2. **Hybrid telescope**: OPEN, and the bulk of the remaining work. The cheapest formulation is
-   *not* the hybrid family `Qⱼ := Measure.pi (fun i => if i < j then γ else ν)` with Fubini on
-   `Measure.pi` (`measurePreserving_piFinSuccAbove`), which forces one to peel a coordinate out
-   of a product of *unequal* factors. Prefer the doubled space
-   `(Measure.pi fun _ => ν).prod (Measure.pi fun _ => γ)` with
-   `Φⱼ(y,z) := n^{-1/2} • ∑ᵢ (if i < j then zᵢ else yᵢ)`: then `Φⱼ = Vⱼ + n^{-1/2} • yⱼ` and
-   `Φⱼ₊₁ = Vⱼ + n^{-1/2} • zⱼ` with the *same* `Vⱼ`, and `Vⱼ` is independent of both `yⱼ` and
-   `zⱼ`, so `indepFun_iff_map_prod_eq_prod_map_map` together with `integral_prod` reduces each
-   telescope step to piece 3 integrated over the law of `Vⱼ` — no `Measure.pi` surgery at all.
-   The two endpoints `Φ₀`, `Φₙ` are plain marginalizations.
-3. **One-step swap / second-order moment matching**: OPEN. For fixed `v`,
-   `|∫ f(v + c•u) dν − ∫ f(v + c•w) dγ| ≤ (M/6) c³ (β + β_G)`: Taylor to second order at `v`
-   (piece 4), the first-order term vanishing by `hmean` applied to the Riesz representative of
-   `Df(v)` and by `integral_strongDual_stdGaussian` on the `γ` side, and the second-order terms
-   agreeing because both laws have identity covariance. The latter is
-   `∫ D²f(v)(y,y) dν = ∑ₐ D²f(v)(eₐ,eₐ) = ∫ D²f(v)(z,z) dγ`: expand
-   `D²f(v)(y,y) = ∑_{a,b} ⟪eₐ,y⟫⟪e_b,y⟫ D²f(v)(eₐ,e_b)` in the standard orthonormal basis and
-   apply `hcov` coordinatewise (the same device as `integral_normSq_eq_dim` in this file, with
-   `covarianceBilin_stdGaussian` on the `γ` side). Integrability of every term is supplied by
-   `hβ` through `integrable_normSq_of_cube`; integrability of `f` itself against `ν` and `γ`
-   also follows from `hβ`, since piece 4 applied at `x = 0` bounds `|f|` by a cubic polynomial.
-   The one point of friction: `iteratedFDeriv ℝ 2 f v` is a `ContinuousMultilinearMap` over
-   `Fin 2`, so it must first be transported to a genuine `E →L[ℝ] E →L[ℝ] ℝ` (via `curryLeft`,
-   or by hand) before `map_sum` becomes usable.
-4. **Third-order remainder**: DONE — `norm_taylor_remainder_three_le` (proved above), applied at
-   `h = n^{-1/2} y` and `h = n^{-1/2} z`, giving `M/6 · n^{-3/2}(‖y‖³ + ‖z‖³)` per summand and
-   `M/6 · (β + β_G)/√n` after summing the `n` terms.
+The proof is the hybrid telescope over
+`Qⱼ := Measure.pi (fun i => if i < j then γ else ν)`, `j = 0, …, n`, with
 
-Nothing here is blocked on a missing Mathlib API; what is left is pieces 2 and 3, a
-several-hundred-line development that has not been carried out. -/
+* `Q₀ = ⨂ⁿ ν`, whose pushforward under `n^{-1/2} ∑` is the left endpoint;
+* `Qₙ = ⨂ⁿ γ`, whose pushforward is `γ` itself by `map_normalized_sum_stdGaussian`;
+* each step `Qⱼ → Qⱼ₊₁` isolated by `integral_pi_sum_peel` (Fubini after
+  `measurePreserving_piFinSuccAbove`) — the two hybrids differ *only* in the `j`-th factor, so
+  after peeling that coordinate the outer measure over the remaining `n − 1` coordinates is
+  literally the same, and the inner integrals differ by `abs_integral_swap_step_le` uniformly in
+  the outer variable.
+
+An earlier note preferred a doubled space `(⨂ν).prod (⨂γ)` with independence arguments, to
+avoid "peeling a coordinate out of a product of unequal factors". That was the wrong call:
+`measurePreserving_piFinSuccAbove` peels a coordinate out of a `Measure.pi` over an arbitrary
+*dependent* family at no extra cost, and the hybrid family needs no independence API at all.
+
+The `n` steps each cost `M/6 · n^{-3/2} (β + β_G)`, and `n · n^{-3/2} = n^{-1/2}`. -/
 private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
     {ν : Measure (EuclideanSpace ℝ (Fin k))} (hn : 0 < n) (hν : IsProbabilityMeasure ν)
     (hmean : ∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0)
     (hcov : ∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ)
     (hβ : Integrable (fun y => ‖y‖ ^ 3) ν)
-    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f) {M : ℝ} (hM0 : 0 ≤ M)
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} (hf : ContDiff ℝ 3 f)
+    -- USER-INPUT (amendment): the test function is bounded by `1`; see the docstring.
+    (hfb : ∀ x, |f x| ≤ 1) {M : ℝ} (hM0 : 0 ≤ M)
     (hM : ∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ M) :
     |(∫ x, f x ∂((Measure.pi fun _ : Fin n => ν).map
             fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i))
@@ -1348,8 +1331,156 @@ private lemma abs_integral_smooth_sub_gaussian_le {k n : ℕ}
       ≤ M / 6 * ((∫ y, ‖y‖ ^ 3 ∂ν)
           + (∫ z, ‖z‖ ^ 3 ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)))
           / Real.sqrt (n : ℝ) := by
-  -- TODO (planned debt): telescoping Lindeberg swap over the n summands; see docstring.
-  sorry
+  classical
+  haveI := hν
+  -- The Gaussian side, transported to the Mathlib `stdGaussian` API.
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  haveI hγp : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  have hγstd : γ = stdGaussian (EuclideanSpace ℝ (Fin k)) := by
+    rw [hγdef]; exact multivariateGaussian_zero_one
+  have hmeanγ : ∀ u : EuclideanSpace ℝ (Fin k), (∫ z, ⟪u, z⟫_ℝ ∂γ) = 0 := by
+    intro u
+    have h := integral_strongDual_stdGaussian (E := EuclideanSpace ℝ (Fin k)) (innerSL ℝ u)
+    rw [hγstd]
+    simpa using h
+  have hcovγ : ∀ u w : EuclideanSpace ℝ (Fin k),
+      (∫ z, ⟪u, z⟫_ℝ * ⟪w, z⟫_ℝ ∂γ) = ⟪u, w⟫_ℝ := by
+    intro u w
+    have hL2 : MemLp id 2 γ := by rw [hγstd]; exact IsGaussian.memLp_id _ 2 (by simp)
+    have hid : γ[id] = (0 : EuclideanSpace ℝ (Fin k)) := by
+      rw [hγstd]; exact integral_id_stdGaussian
+    have h := covarianceBilin_apply (μ := γ) hL2 u w
+    rw [hid] at h
+    simp only [sub_zero] at h
+    rw [← h, hγstd, covarianceBilin_stdGaussian]
+    exact innerSL_apply_apply (𝕜 := ℝ) u w
+  have hβγ : Integrable (fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 3) γ := by
+    have hL3 : MemLp id ((3 : ℕ) : ℝ≥0∞) γ := by
+      rw [hγstd]; exact IsGaussian.memLp_id _ _ (by simp)
+    simpa using hL3.integrable_norm_pow'
+  -- Write `n = m + 1` so that a coordinate can be peeled off.
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, (Nat.succ_pred_eq_of_pos hn).symm⟩
+  have hNr : (0 : ℝ) < ((m + 1 : ℕ) : ℝ) := by positivity
+  have hsN : 0 < Real.sqrt ((m + 1 : ℕ) : ℝ) := Real.sqrt_pos.mpr hNr
+  set c : ℝ := (Real.sqrt ((m + 1 : ℕ) : ℝ))⁻¹ with hcdef
+  have hc0 : 0 ≤ c := by positivity
+  set g : EuclideanSpace ℝ (Fin k) → ℝ := fun z => f (c • z) with hgdef
+  have hgcont : Continuous g := hf.continuous.comp (continuous_const_smul c)
+  have hgb : ∀ x, |g x| ≤ 1 := fun x => hfb _
+  -- The hybrid family and the telescoped functional.
+  set κ : ℕ → Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun j i => if (i : ℕ) < j then γ else ν with hκdef
+  haveI hκp : ∀ (j : ℕ) (i : Fin (m + 1)), IsProbabilityMeasure (κ j i) := by
+    intro j i
+    rw [hκdef]
+    dsimp only
+    split_ifs
+    · exact hγp
+    · exact hν
+  set I : ℕ → ℝ := fun j => ∫ x, g (∑ l, x l) ∂(Measure.pi (κ j)) with hIdef
+  set X : ℝ := (∫ y, ‖y‖ ^ 3 ∂ν) + (∫ z, ‖z‖ ^ 3 ∂γ) with hXdef
+  -- One telescope step.
+  have hstep : ∀ j : ℕ, j < m + 1 → |I j - I (j + 1)| ≤ M / 6 * c ^ 3 * X := by
+    intro j hj
+    set i : Fin (m + 1) := ⟨j, hj⟩ with hidef
+    have hival : (i : ℕ) = j := by rw [hidef]
+    have hji : κ j i = ν := by
+      rw [hκdef]; dsimp only; rw [if_neg (by rw [hival]; exact lt_irrefl j)]
+    have hji1 : κ (j + 1) i = γ := by
+      rw [hκdef]; dsimp only; rw [if_pos (by rw [hival]; exact Nat.lt_succ_self j)]
+    have hoff : (fun l : Fin m => κ (j + 1) (i.succAbove l))
+        = fun l : Fin m => κ j (i.succAbove l) := by
+      funext l
+      have hne : ((i.succAbove l : Fin (m + 1)) : ℕ) ≠ j := by
+        intro h
+        exact Fin.succAbove_ne i l (Fin.ext (by rw [h, hival]))
+      rw [hκdef]
+      dsimp only
+      by_cases hlt : ((i.succAbove l : Fin (m + 1)) : ℕ) < j
+      · rw [if_pos hlt, if_pos (by omega)]
+      · rw [if_neg (by omega), if_neg hlt]
+    have hpeel0 := integral_pi_sum_peel (κ j) i hgcont hgb
+    have hpeel1 := integral_pi_sum_peel (κ (j + 1)) i hgcont hgb
+    rw [hji] at hpeel0
+    rw [hji1, hoff] at hpeel1
+    set R : Measure ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+      Measure.pi (fun l : Fin m => κ j (i.succAbove l)) with hRdef
+    haveI hRp : IsProbabilityMeasure R := by rw [hRdef]; infer_instance
+    have hAint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, g (u + ∑ l, y l) ∂ν) R :=
+      (integrable_peel_prod ν (fun l : Fin m => κ j (i.succAbove l))
+        hgcont hgb).integral_prod_right
+    have hBint : Integrable (fun y : (_ : Fin m) → EuclideanSpace ℝ (Fin k) =>
+        ∫ u, g (u + ∑ l, y l) ∂γ) R :=
+      (integrable_peel_prod γ (fun l : Fin m => κ j (i.succAbove l))
+        hgcont hgb).integral_prod_right
+    have hpt : ∀ y : (_ : Fin m) → EuclideanSpace ℝ (Fin k),
+        |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)|
+          ≤ M / 6 * c ^ 3 * X := by
+      intro y
+      have hrw : ∀ σ : Measure (EuclideanSpace ℝ (Fin k)),
+          (∫ u, g (u + ∑ l, y l) ∂σ) = ∫ u, f ((c • ∑ l, y l) + c • u) ∂σ := by
+        intro σ
+        refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+        rw [hgdef]
+        dsimp only
+        rw [smul_add, add_comm]
+      rw [hrw ν, hrw γ, hXdef]
+      exact abs_integral_swap_step_le hmean hcov hβ hmeanγ hcovγ hβγ hf hfb hM _ hc0
+    have hIj : I j = ∫ y, (∫ u, g (u + ∑ l, y l) ∂ν) ∂R := by
+      rw [hIdef]; exact hpeel0
+    have hIj1 : I (j + 1) = ∫ y, (∫ u, g (u + ∑ l, y l) ∂γ) ∂R := by
+      rw [hIdef]; exact hpeel1
+    rw [hIj, hIj1, ← integral_sub hAint hBint]
+    calc |∫ y, ((∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)) ∂R|
+        ≤ ∫ y, |(∫ u, g (u + ∑ l, y l) ∂ν) - (∫ u, g (u + ∑ l, y l) ∂γ)| ∂R :=
+          abs_integral_le_integral_abs
+      _ ≤ ∫ _y, M / 6 * c ^ 3 * X ∂R :=
+          integral_mono (hAint.sub hBint).abs (integrable_const _) hpt
+      _ = M / 6 * c ^ 3 * X := by rw [integral_const]; simp
+  -- Telescoping.
+  have htel : ∀ j : ℕ, j ≤ m + 1 → |I 0 - I j| ≤ (j : ℝ) * (M / 6 * c ^ 3 * X) := by
+    intro j
+    induction j with
+    | zero => intro _; simp
+    | succ j ih =>
+      intro hj
+      have h1 := ih (by omega)
+      have h2 := hstep j (by omega)
+      have h3 : |I 0 - I (j + 1)| ≤ |I 0 - I j| + |I j - I (j + 1)| := abs_sub_le _ _ _
+      push_cast
+      linarith
+  -- The two endpoints.
+  have hκ0 : κ 0 = fun _ : Fin (m + 1) => ν := by
+    funext i; rw [hκdef]; simp
+  have hκN : κ (m + 1) = fun _ : Fin (m + 1) => γ := by
+    funext i; rw [hκdef]; dsimp only; rw [if_pos i.isLt]
+  have hI0 : I 0 = ∫ x, f x ∂((Measure.pi fun _ : Fin (m + 1) => ν).map
+      fun y => c • ∑ i, y i) := by
+    rw [integral_map (by fun_prop) hf.continuous.aestronglyMeasurable, hIdef]
+    dsimp only
+    rw [hκ0]
+  have hIN : I (m + 1) = ∫ x, f x ∂γ := by
+    have hmap : ((Measure.pi fun _ : Fin (m + 1) => γ).map fun y => c • ∑ i, y i) = γ := by
+      rw [hγstd, hcdef]
+      exact map_normalized_sum_stdGaussian (Nat.succ_pos m)
+    rw [hIdef]
+    dsimp only
+    rw [hκN, ← integral_map (φ := fun y : (_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k) =>
+      c • ∑ i, y i) (by fun_prop) hf.continuous.aestronglyMeasurable, hmap]
+  have hfin := htel (m + 1) le_rfl
+  rw [hI0, hIN] at hfin
+  refine hfin.trans_eq ?_
+  have hc2 : c ^ 2 = (((m + 1 : ℕ) : ℝ))⁻¹ := by
+    rw [hcdef, inv_pow, Real.sq_sqrt hNr.le]
+  have hNc : ((m + 1 : ℕ) : ℝ) * c ^ 3 = c := by
+    have hsplit : c ^ 3 = c ^ 2 * c := by ring
+    rw [hsplit, hc2]
+    field_simp
+  calc (((m + 1 : ℕ) : ℝ)) * (M / 6 * c ^ 3 * X)
+      = (((m + 1 : ℕ) : ℝ) * c ^ 3) * (M / 6 * X) := by ring
+    _ = c * (M / 6 * X) := by rw [hNc]
+    _ = M / 6 * X / Real.sqrt ((m + 1 : ℕ) : ℝ) := by rw [hcdef]; ring
 
 /-! #### Moment facts consumed by the ball assembly
 
@@ -1716,11 +1847,11 @@ theorem berryEsseen_ball_elementary :
     rw [← hβdef] at h2
     linarith
   -- the Lindeberg swap, with the `ε`-balance already carried out
-  have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f →
+  have herr : ∀ f : EuclideanSpace ℝ (Fin k) → ℝ, ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ z, ‖iteratedFDeriv ℝ 3 f z‖ ≤ C₃ / ε ^ 3) →
       |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ C₃ / 2 * ε := by
-    intro f hfcd hfD3
-    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd
+    intro f hfcd hfbd hfD3
+    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd hfbd
       (M := C₃ / ε ^ 3) (by positivity) hfD3
     rw [← hμdef, ← hγdef, ← hβdef] at hswap
     refine hswap.trans ?_
@@ -1837,7 +1968,7 @@ theorem berryEsseen_ball_elementary :
       obtain ⟨f, hfcd, hf0, hf1, hfone, hfzero, hfD3⟩ := hC₃ k s hs0 hεpos
       have hIμ := hfint μ hμprob f hfcd hf0 hf1
       have hIγ := hfint γ hγprob f hfcd hf0 hf1
-      have hswap := herr f hfcd hfD3
+      have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
       rw [abs_sub_le_iff] at hswap
       have hchain : (μ {z | ‖z‖ ≤ s}).toReal
           ≤ (γ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
@@ -1858,7 +1989,7 @@ theorem berryEsseen_ball_elementary :
         have hfzero' : ∀ x, s < ‖x‖ → f x = 0 := fun x hx => hfzero x (by linarith)
         have hIμ := hfint μ hμprob f hfcd hf0 hf1
         have hIγ := hfint γ hγprob f hfcd hf0 hf1
-        have hswap := herr f hfcd hfD3
+        have hswap := herr f hfcd (fun x => abs_le.mpr ⟨by linarith [hf0 x], hf1 x⟩) hfD3
         rw [abs_sub_le_iff] at hswap
         have hchain : (γ {z | ‖z‖ ≤ s}).toReal
             ≤ (μ {z | ‖z‖ ≤ s}).toReal + (Cac + C₃ / 2) * ε := by
