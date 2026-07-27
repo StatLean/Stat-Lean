@@ -543,6 +543,223 @@ private lemma tendstoInProbRandomized_zero {𝓨 : ℕ → Type*} [∀ k, Measur
   simp only [hfalse, Set.setOf_false, measureReal_empty, Finset.sum_const_zero, mul_zero]
   exact tendsto_const_nhds
 
+/-! ### Elementary bricks for the hypergeometric step -/
+
+/-- Markov's inequality in `Measure.real` form. -/
+private lemma measureReal_ge_le_integral {𝓨 : Type*} [MeasurableSpace 𝓨] (P : Measure 𝓨)
+    [IsProbabilityMeasure P] {A : 𝓨 → ℝ} (hA : Measurable A) (hAnn : ∀ x, 0 ≤ A x)
+    (hAint : Integrable A P) {ε : ℝ} (hε : 0 < ε) :
+    P.real {x | ε ≤ A x} ≤ ε⁻¹ * ∫ x, A x ∂P := by
+  have hset : MeasurableSet {x : 𝓨 | ε ≤ A x} := measurableSet_le measurable_const hA
+  have hind : ∫ x, Set.indicator {x : 𝓨 | ε ≤ A x} (fun _ => ε) x ∂P
+      = ε * P.real {x | ε ≤ A x} := by
+    rw [integral_indicator_const _ hset, smul_eq_mul, mul_comm]
+  have hle : ∫ x, Set.indicator {x : 𝓨 | ε ≤ A x} (fun _ => ε) x ∂P ≤ ∫ x, A x ∂P := by
+    refine integral_mono ((integrable_const ε).indicator hset) hAint (fun x => ?_)
+    by_cases hx : x ∈ {x : 𝓨 | ε ≤ A x}
+    · rw [Set.indicator_of_mem hx]; exact hx
+    · rw [Set.indicator_of_notMem hx]; exact hAnn x
+  rw [hind] at hle
+  rw [inv_mul_eq_div, le_div_iff₀ hε, mul_comm]
+  linarith
+
+/-- The empirical variance is at most the empirical second moment. -/
+private lemma sum_sub_avg_sq_le {N : ℕ} (c : Fin N → ℝ) :
+    ∑ l, (c l - (N : ℝ)⁻¹ * ∑ l', c l') ^ 2 ≤ ∑ l, c l ^ 2 := by
+  rcases Nat.eq_zero_or_pos N with hN | hN
+  · subst hN; simp
+  have hNR : (0 : ℝ) < N := by exact_mod_cast hN
+  set a : ℝ := (N : ℝ)⁻¹ * ∑ l', c l' with ha
+  have hexp : ∀ l : Fin N, (c l - a) ^ 2 = c l ^ 2 - 2 * a * c l + a ^ 2 := fun l => by ring
+  rw [Finset.sum_congr rfl fun l _ => hexp l]
+  rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hsum : ∑ l', c l' = (N : ℝ) * a := by
+    rw [ha, ← mul_assoc, mul_inv_cancel₀ hNR.ne', one_mul]
+  rw [hsum]
+  nlinarith [sq_nonneg a, hNR]
+
+/-! ### Coordinate marginals of the pooled law -/
+
+private lemma isProbabilityMeasure_addCases' (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (l : Fin (m + n)) :
+    IsProbabilityMeasure
+      (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) l) := by
+  refine Fin.addCases (m := m) (n := n)
+    (motive := fun l => IsProbabilityMeasure
+      (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ) l))
+    (fun i => ?_) (fun j => ?_) l
+  · simpa only [Fin.addCases_left] using (inferInstance : IsProbabilityMeasure PY)
+  · simpa only [Fin.addCases_right] using (inferInstance : IsProbabilityMeasure PZ)
+
+/-- The `i`-th `Y`-block coordinate of the pooled law is distributed as `P_Y`. -/
+private lemma measurePreserving_evalY (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (i : Fin m) :
+    MeasurePreserving (fun x : Fin (m + n) → ℝ => x (Fin.castAdd n i))
+      (twoSampleLaw m n PY PZ) PY := by
+  haveI := isProbabilityMeasure_addCases' m n PY PZ
+  have h := MeasureTheory.measurePreserving_eval
+    (μ := Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
+    (Fin.castAdd n i)
+  rw [show (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
+      (Fin.castAdd n i) = PY from by simp] at h
+  exact h
+
+/-- The `j`-th `Z`-block coordinate of the pooled law is distributed as `P_Z`. -/
+private lemma measurePreserving_evalZ (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (j : Fin n) :
+    MeasurePreserving (fun x : Fin (m + n) → ℝ => x (Fin.natAdd m j))
+      (twoSampleLaw m n PY PZ) PZ := by
+  haveI := isProbabilityMeasure_addCases' m n PY PZ
+  have h := MeasureTheory.measurePreserving_eval
+    (μ := Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
+    (Fin.natAdd m j)
+  rw [show (Fin.addCases (motive := fun _ => Measure ℝ) (fun _ => PY) (fun _ => PZ))
+      (Fin.natAdd m j) = PZ from by simp] at h
+  exact h
+
+/-- Integrability of a coordinatewise sum over the pooled law. -/
+private lemma integrable_sum_coords (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (g : ℝ → ℝ) (hgm : Measurable g)
+    (hY : Integrable g PY) (hZ : Integrable g PZ) :
+    Integrable (fun x : Fin (m + n) → ℝ => ∑ l, g (x l)) (twoSampleLaw m n PY PZ) := by
+  have hsplit : (fun x : Fin (m + n) → ℝ => ∑ l, g (x l))
+      = fun x : Fin (m + n) → ℝ => (∑ i : Fin m, g (x (Fin.castAdd n i)))
+          + ∑ j : Fin n, g (x (Fin.natAdd m j)) := by
+    funext x; exact Fin.sum_univ_add (f := fun l => g (x l))
+  rw [hsplit]
+  refine Integrable.add ?_ ?_
+  · refine integrable_finset_sum _ fun i _ => ?_
+    exact ((measurePreserving_evalY m n PY PZ i).integrable_comp
+      hgm.aestronglyMeasurable).mpr hY
+  · refine integrable_finset_sum _ fun j _ => ?_
+    exact ((measurePreserving_evalZ m n PY PZ j).integrable_comp
+      hgm.aestronglyMeasurable).mpr hZ
+
+/-- The pooled expectation of a coordinatewise sum. -/
+private lemma integral_sum_coords (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (g : ℝ → ℝ) (hgm : Measurable g)
+    (hY : Integrable g PY) (hZ : Integrable g PZ) :
+    ∫ x, (∑ l, g (x l)) ∂(twoSampleLaw m n PY PZ)
+      = (m : ℝ) * (∫ t, g t ∂PY) + (n : ℝ) * ∫ t, g t ∂PZ := by
+  have hsplit : (fun x : Fin (m + n) → ℝ => ∑ l, g (x l))
+      = fun x : Fin (m + n) → ℝ => (∑ i : Fin m, g (x (Fin.castAdd n i)))
+          + ∑ j : Fin n, g (x (Fin.natAdd m j)) := by
+    funext x; exact Fin.sum_univ_add (f := fun l => g (x l))
+  have hintY : ∀ i : Fin m, Integrable
+      (fun x : Fin (m + n) → ℝ => g (x (Fin.castAdd n i))) (twoSampleLaw m n PY PZ) :=
+    fun i => ((measurePreserving_evalY m n PY PZ i).integrable_comp
+      hgm.aestronglyMeasurable).mpr hY
+  have hintZ : ∀ j : Fin n, Integrable
+      (fun x : Fin (m + n) → ℝ => g (x (Fin.natAdd m j))) (twoSampleLaw m n PY PZ) :=
+    fun j => ((measurePreserving_evalZ m n PY PZ j).integrable_comp
+      hgm.aestronglyMeasurable).mpr hZ
+  have hvalY : ∀ i : Fin m,
+      ∫ x, g (x (Fin.castAdd n i)) ∂(twoSampleLaw m n PY PZ) = ∫ t, g t ∂PY := by
+    intro i
+    have hmap := (measurePreserving_evalY m n PY PZ i).map_eq
+    conv_rhs => rw [← hmap]
+    rw [integral_map (measurable_pi_apply _).aemeasurable
+      (by rw [hmap]; exact hgm.aestronglyMeasurable)]
+  have hvalZ : ∀ j : Fin n,
+      ∫ x, g (x (Fin.natAdd m j)) ∂(twoSampleLaw m n PY PZ) = ∫ t, g t ∂PZ := by
+    intro j
+    have hmap := (measurePreserving_evalZ m n PY PZ j).map_eq
+    conv_rhs => rw [← hmap]
+    rw [integral_map (measurable_pi_apply _).aemeasurable
+      (by rw [hmap]; exact hgm.aestronglyMeasurable)]
+  rw [hsplit, integral_add (integrable_finset_sum _ fun i _ => hintY i)
+    (integrable_finset_sum _ fun j _ => hintZ j),
+    integral_finset_sum _ (fun i _ => hintY i), integral_finset_sum _ (fun j _ => hintZ j),
+    Finset.sum_congr rfl (fun i _ => hvalY i), Finset.sum_congr rfl (fun j _ => hvalZ j),
+    Finset.sum_const, Finset.sum_const, Finset.card_univ, Finset.card_univ,
+    Fintype.card_fin, Fintype.card_fin, nsmul_eq_mul, nsmul_eq_mul]
+
+
+/-- **The randomized block average is close to the pooled average**, uniformly in the data:
+Chebyshev over the group, then Fubini, then the crude second-moment bound. -/
+private lemma perm_avg_block_sub_pooled_le (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ]
+    {p : ℕ} (hp : 0 < p) (hN : 2 ≤ m + n)
+    (a : Fin p → Fin (m + n)) (ha : Function.Injective a)
+    (f : ℝ → ℝ) (hfm : Measurable f)
+    (hY : Integrable (fun t => f t ^ 2) PY) (hZ : Integrable (fun t => f t ^ 2) PZ)
+    {ε : ℝ} (hε : 0 < ε) :
+    (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)), (twoSampleLaw m n PY PZ).real
+          {x | ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i)))
+                    - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|}
+      ≤ ε⁻¹ ^ 2 * ((p : ℝ)⁻¹ * ((∫ t, f t ^ 2 ∂PY) + ∫ t, f t ^ 2 ∂PZ)) := by
+  classical
+  have hfsqm : Measurable (fun t : ℝ => f t ^ 2) := hfm.pow_const 2
+  have hmeasA : ∀ σ : Equiv.Perm (Fin (m + n)), Measurable (fun x : Fin (m + n) → ℝ =>
+      |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i))) - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|) := by
+    intro σ
+    have h1 : Measurable (fun x : Fin (m + n) → ℝ => ∑ i, f ((σ • x) (a i))) := by
+      simp only [perm_smul_apply]
+      exact Finset.measurable_sum _ fun i _ => hfm.comp (measurable_pi_apply _)
+    have h2 : Measurable (fun x : Fin (m + n) → ℝ => ∑ l, f (x l)) :=
+      Finset.measurable_sum _ fun l _ => hfm.comp (measurable_pi_apply _)
+    exact ((h1.const_mul _).sub (h2.const_mul _)).abs
+  rw [avg_measureReal_eq_integral_avg_indicator (twoSampleLaw m n PY PZ) _ hmeasA ε]
+  -- the pointwise Chebyshev bound, with the empirical variance crudely majorized
+  have hpt : ∀ x : Fin (m + n) → ℝ,
+      (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (m + n)),
+        (if ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i)))
+            - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)| then (1 : ℝ) else 0)
+      ≤ ε⁻¹ ^ 2 * ((p : ℝ)⁻¹ * (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l) ^ 2)) := by
+    intro x
+    have h := perm_avg_indicator_blockAvg_inv_sub_mean_le hp hN a ha (fun l => f (x l)) hε
+    simp only [perm_smul_apply]
+    refine h.trans ?_
+    have hvar := sum_sub_avg_sq_le (fun l => f (x l))
+    gcongr
+  -- integrate the bound
+  have hset : ∀ σ : Equiv.Perm (Fin (m + n)), MeasurableSet {x : Fin (m + n) → ℝ |
+      ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i))) - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|} :=
+    fun σ => measurableSet_le measurable_const (hmeasA σ)
+  have hintind : ∀ σ : Equiv.Perm (Fin (m + n)), Integrable (fun x : Fin (m + n) → ℝ =>
+      if ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i))) - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|
+        then (1 : ℝ) else 0) (twoSampleLaw m n PY PZ) := by
+    intro σ
+    have hrw : (fun x : Fin (m + n) → ℝ =>
+        if ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i))) - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|
+          then (1 : ℝ) else 0)
+        = Set.indicator {x : Fin (m + n) → ℝ |
+            ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i)))
+              - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)|} 1 := by
+      funext x; simp [Set.indicator_apply]
+    rw [hrw]
+    exact (integrable_const (1 : ℝ)).indicator (hset σ)
+  have hintL : Integrable (fun x : Fin (m + n) → ℝ =>
+      (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (m + n)),
+        (if ε ≤ |(p : ℝ)⁻¹ * (∑ i, f ((σ • x) (a i)))
+            - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l)| then (1 : ℝ) else 0))
+      (twoSampleLaw m n PY PZ) :=
+    (integrable_finset_sum _ fun σ _ => hintind σ).const_mul _
+  have hS := integrable_sum_coords m n PY PZ (fun t => f t ^ 2) hfsqm hY hZ
+  have hintR : Integrable (fun x : Fin (m + n) → ℝ =>
+      ε⁻¹ ^ 2 * ((p : ℝ)⁻¹ * (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, f (x l) ^ 2)))
+      (twoSampleLaw m n PY PZ) := ((hS.const_mul _).const_mul _).const_mul _
+  refine (integral_mono hintL hintR hpt).trans ?_
+  rw [integral_const_mul, integral_const_mul, integral_const_mul,
+    integral_sum_coords m n PY PZ (fun t => f t ^ 2) hfsqm hY hZ]
+  have hQY : (0 : ℝ) ≤ ∫ t, f t ^ 2 ∂PY := integral_nonneg fun t => sq_nonneg _
+  have hQZ : (0 : ℝ) ≤ ∫ t, f t ^ 2 ∂PZ := integral_nonneg fun t => sq_nonneg _
+  have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+  have hNpos : (0 : ℝ) < ((m + n : ℕ) : ℝ) := by
+    rw [hNcast]
+    have : (2 : ℝ) ≤ (m : ℝ) + n := by rw [← hNcast]; exact_mod_cast hN
+    linarith
+  have hkey : ((m + n : ℕ) : ℝ)⁻¹ * ((m : ℝ) * (∫ t, f t ^ 2 ∂PY)
+      + (n : ℝ) * ∫ t, f t ^ 2 ∂PZ) ≤ (∫ t, f t ^ 2 ∂PY) + ∫ t, f t ^ 2 ∂PZ := by
+    rw [inv_mul_le_iff₀ hNpos, hNcast]
+    have hm0 : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg _
+    have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg _
+    nlinarith
+  gcongr
+
+
 /-! ### The randomized studentizing scale
 
 Under a uniform permutation of the pooled data each block is a sample **without
