@@ -252,6 +252,92 @@ theorem weakConverges_randPairLaw_signChange_sum
     simp [neg_div]
   exact weakConverges_randPairLaw_signSum P hL2 (multivariateGaussian 0 S) hchar
 
+/-! ### From the vector limit to the quadratic-form limit -/
+
+/-- Measurability of the sign-change action on vector-valued data. -/
+private lemma measurable_signChange_smul_vec {n : ℕ} (ε : Fin n → ℤˣ) :
+    Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) := by
+  refine measurable_pi_lambda (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ε • x) fun i => ?_
+  have heq : (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (ε • x) i)
+      = fun x => ((ε i : ℤ) : ℝ) • x i :=
+    funext fun x => signChange_smul_apply_vec ε x i
+  rw [heq]
+  have hcoord : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => x i) :=
+    measurable_pi_apply i
+  exact hcoord.const_smul (((ε i : ℤ) : ℝ))
+
+/-- The normalized sum, the vector statistic of the building block, is measurable. -/
+private lemma measurable_signSum {n : ℕ} :
+    Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+      (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i) := by
+  have hsum : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => ∑ i, x i) :=
+    Finset.measurable_sum Finset.univ fun i _ =>
+      (measurable_pi_apply i : Measurable (fun x : Fin n → EuclideanSpace ℝ (Fin p) => x i))
+  exact hsum.const_smul ((Real.sqrt (n : ℝ))⁻¹)
+
+/-- The quadratic form written out in coordinates. -/
+private lemma quadFormInv_eq (S : Matrix (Fin p) (Fin p) ℝ)
+    (v : EuclideanSpace ℝ (Fin p)) :
+    v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp = ∑ j, ∑ k, S⁻¹ j k * (v.ofLp j * v.ofLp k) := by
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+
+/-- Coordinate evaluation on `EuclideanSpace` is continuous. -/
+private lemma continuous_ofLp_coord (j : Fin p) :
+    Continuous (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp j) := by
+  fun_prop
+
+/-- The quadratic form `v ↦ vᵀ S⁻¹ v` is continuous. -/
+private lemma continuous_quadFormInv (S : Matrix (Fin p) (Fin p) ℝ) :
+    Continuous (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp) := by
+  simp only [quadFormInv_eq]
+  exact continuous_finset_sum _ fun j _ => continuous_finset_sum _ fun k _ =>
+    continuous_const.mul ((continuous_ofLp_coord j).mul (continuous_ofLp_coord k))
+
+/-- The quadratic form `v ↦ vᵀ S⁻¹ v` is measurable. -/
+private lemma measurable_quadFormInv (S : Matrix (Fin p) (Fin p) ℝ) :
+    Measurable (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp) :=
+  (continuous_quadFormInv S).measurable
+
+/-- **The reference quadratic-form limit.** Composing the vector building block with the
+*population* quadratic form `v ↦ vᵀS⁻¹v` gives a doubly randomized law converging to a
+product of two independent `χ²_p` laws. This is the limit that the sample-based statistics
+`modifiedTSq` and `hotellingTSq` are compared against. -/
+private lemma weakConverges_randPairLaw_quadFormInv [NeZero p]
+    (P : Measure (EuclideanSpace ℝ (Fin p))) [IsProbabilityMeasure P]
+    {S : Matrix (Fin p) (Fin p) ℝ} (hpd : S.PosDef) (hL2 : MemLp id 2 P)
+    (hmean : ∫ x, x ∂P = 0)
+    (hsecond : ∀ j k, ∫ x, x.ofLp j * x.ofLp k ∂P = S j k) :
+    WeakConverges
+      (fun n => randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+          (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp)
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
+        (Measure.pi fun _ : Fin n => P))
+      ((chiSquared p).prod (chiSquared p)) := by
+  classical
+  set q : EuclideanSpace ℝ (Fin p) → ℝ := fun v => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp with hqdef
+  have hqm : Measurable q := measurable_quadFormInv S
+  have hbase := weakConverges_randPairLaw_signChange_sum P hpd hL2 hmean hsecond
+  have hmapped := hbase.map (f := Prod.map q q)
+    ((continuous_quadFormInv S).prodMap (continuous_quadFormInv S)) (hqm.prodMap hqm)
+  have hlim : ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).prod
+      (multivariateGaussian 0 S)).map (Prod.map q q) = (chiSquared p).prod (chiSquared p) := by
+    rw [← Measure.map_prod_map _ _ hqm hqm,
+      map_quadraticForm_multivariateGaussian_eq_chiSquared hpd]
+  rw [hlim] at hmapped
+  have hEq : (fun n => randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) => q ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
+        (Measure.pi fun _ : Fin n => P))
+      = fun n => (randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i)
+        (Measure.pi fun _ : Fin n => P)).map (Prod.map q q) := by
+    funext n
+    exact randPairLaw_map (G := Fin n → ℤˣ) _ _ measurable_signSum
+      (fun ε => measurable_signChange_smul_vec ε) hqm
+  rw [hEq]
+  exact hmapped
+
 /-! ### Quadratic-form limits -/
 
 /-- **Sign-change randomization for the modified `T²` statistic.** The randomized pair
