@@ -308,13 +308,29 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   -- Write `Tₘₙ = m^{-1/2} ∑ᵢ (Yᵢ − μ) − √(m/n) · n^{-1/2} ∑ⱼ (Zⱼ − μ)` (equal means). The two
   -- blocks are independent under `twoSampleLaw`, each block obeys the i.i.d. CLT, and
   -- `√(m/n) → √λ`, so the sum is asymptotically `N(0, varY + λ·varZ) = N(0, s²)` by Slutsky.
-  -- NOT upstream-blocked. With `Randomization/PairCLT.weakConverges_of_tendsto_charFun` the
-  -- `TendstoInDistribution → WeakConverges` bridge is no longer the obstacle: the law is a
-  -- product measure, so its characteristic function is literally
-  -- `(charFun P_Y (t/√m))^m · (charFun P_Z (−t√m/n))^n`. The one piece still to be written is a
-  -- variant of `Complex.tendsto_pow_exp_of_isLittleO_sub_add_div` along the *two* index sequences
-  -- `m k, n k` with a **varying** constant in the second factor (the argument `−t√(m k/n k)/√(n k)`
-  -- has a `k`-dependent numerator), which the fixed-`t` Mathlib lemma does not cover.
+  -- STATUS (re-derived this session; NOT upstream-blocked, and the missing brick is now named
+  -- precisely). The route, all of whose steps except one are supported:
+  --  1. `Randomization/PairCLT.weakConverges_of_tendsto_charFun` reduces the goal to pointwise
+  --     convergence of characteristic functions (`H = ℝ`).
+  --  2. `twoSampleMeanDiff x = ∑_{i<m} α xᵢ + ∑_{j<n} β x_{m+j}` with `α = m^{-1/2}`,
+  --     `β = −√m/n`, and `mα + nβ = 0`; so the statistic is unchanged by recentring the data at
+  --     the common mean `μ`, and `exp(i t T)` factorizes across coordinates. `Measure.pi` +
+  --     `integral_fintype_prod_eq_prod` then give the exact finite-`k` identity
+  --     `charFun = (charFun QY (α t))^m · (charFun QZ (β t))^n`, `QY = PY.map (· − μ)`,
+  --     `QZ = PZ.map (· − μ)` (both centred, variances `varY`, `varZ`).
+  --  3. The **first** factor is covered as is: after standardising, it is literally
+  --     `(charFun QY' ((√N)⁻¹ * t'))^N` at `N = m k`, so Mathlib's
+  --     `ProbabilityTheory.tendsto_charFun_inv_sqrt_mul_pow` composed with `hm` finishes it.
+  --  4. The **second** factor is the one gap. Its argument is `−√(m k / n k) · t · (√(n k))⁻¹`:
+  --     both the exponent `n k` *and* the numerator `√(m k / n k) → √λ` vary with `k`, whereas
+  --     Mathlib's `Complex.tendsto_pow_exp_of_isLittleO_sub_add_div` (and
+  --     `tendsto_one_add_pow_exp_of_tendsto`) fix the exponent to be the index itself and the
+  --     constant to be `k`-independent. The single missing brick is therefore
+  --       `{N : ℕ → ℕ} (hN : Tendsto (fun k => (N k : ℝ)) atTop atTop) {g : ℕ → ℂ} {z : ℂ}`
+  --       `(hg : Tendsto (fun k => (N k : ℂ) * g k) atTop (𝓝 z)) :`
+  --       `Tendsto (fun k => (1 + g k) ^ (N k)) atTop (𝓝 (Complex.exp z))`,
+  --     provable from `Complex.norm_log_one_add_sub_self_le` exactly as Mathlib proves its
+  --     index-diagonal special case. Nothing else is missing.
   sorry
 
 end StatLean.HypothesisTesting

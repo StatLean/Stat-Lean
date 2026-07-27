@@ -752,6 +752,103 @@ private lemma tendsto_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
   rw [Real.norm_eq_abs, abs_of_nonneg (hnn' n)]
   linarith
 
+/-- The one-step truncation estimate behind the previous lemma, isolated so that the
+group-averaged variant can reuse it: `∫ min 2 (c·D) ≤ cδ + 2·P{D ≥ δ}`. -/
+private lemma integral_min_le {𝓨 : Type*} [MeasurableSpace 𝓨] (P : Measure 𝓨)
+    [IsProbabilityMeasure P] (D : 𝓨 → ℝ) (hD : Measurable D) (hnn : ∀ x, 0 ≤ D x)
+    {c δ : ℝ} (hc : 0 ≤ c) (hδ : 0 < δ) :
+    ∫ x, min 2 (c * D x) ∂P ≤ c * δ + 2 * P.real {x | δ ≤ D x} := by
+  have hmeas : Measurable fun x : 𝓨 => min 2 (c * D x) := measurable_const.min (hD.const_mul c)
+  have hbdd : ∀ x : 𝓨, ‖min 2 (c * D x)‖ ≤ 2 := by
+    intro x
+    have h0 : 0 ≤ min 2 (c * D x) := le_min (by norm_num) (mul_nonneg hc (hnn x))
+    rw [Real.norm_eq_abs, abs_of_nonneg h0]
+    exact min_le_left _ _
+  have hint : Integrable (fun x : 𝓨 => min 2 (c * D x)) P :=
+    Integrable.mono' (integrable_const (2 : ℝ)) hmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall hbdd)
+  have hset : MeasurableSet {x : 𝓨 | δ ≤ D x} := measurableSet_le measurable_const hD
+  have hone : Integrable (1 : 𝓨 → ℝ) P := integrable_const 1
+  have hptwise : ∀ x : 𝓨, min 2 (c * D x)
+      ≤ c * δ + 2 * Set.indicator {x : 𝓨 | δ ≤ D x} (1 : 𝓨 → ℝ) x := by
+    intro x
+    by_cases hx : δ ≤ D x
+    · have hval : Set.indicator {x : 𝓨 | δ ≤ D x} (1 : 𝓨 → ℝ) x = 1 :=
+        Set.indicator_of_mem (s := {x : 𝓨 | δ ≤ D x}) hx (1 : 𝓨 → ℝ)
+      rw [hval]
+      have h2' : min 2 (c * D x) ≤ 2 := min_le_left _ _
+      nlinarith [mul_nonneg hc hδ.le]
+    · have hx' : D x < δ := not_le.mp hx
+      have hind : (0 : ℝ) ≤ Set.indicator {x : 𝓨 | δ ≤ D x} (1 : 𝓨 → ℝ) x :=
+        Set.indicator_nonneg (fun _ _ => zero_le_one) x
+      have h2' : min 2 (c * D x) ≤ c * D x := min_le_right _ _
+      nlinarith [mul_nonneg hc (sub_nonneg.mpr hx'.le)]
+  have hind_int : Integrable
+      (fun x : 𝓨 => c * δ + 2 * Set.indicator {x : 𝓨 | δ ≤ D x} (1 : 𝓨 → ℝ) x) P :=
+    (integrable_const _).add ((hone.indicator hset).const_mul 2)
+  calc ∫ x, min 2 (c * D x) ∂P
+      ≤ ∫ x, (c * δ + 2 * Set.indicator {x : 𝓨 | δ ≤ D x} (1 : 𝓨 → ℝ) x) ∂P :=
+        integral_mono hint hind_int hptwise
+    _ = c * δ + 2 * P.real {x | δ ≤ D x} := by
+        rw [integral_add (integrable_const _) ((hone.indicator hset).const_mul 2),
+          integral_const, integral_const_mul, integral_indicator_one hset]
+        simp
+
+/-- **Group-averaged form of `tendsto_integral_min_of_tendstoInProb`.** If the *mixture over
+the group* of the remainder probabilities vanishes, so does the mixture of the truncated
+expectations. This is what replaces the invariance step when the data law is not assumed
+group invariant. -/
+private lemma tendsto_avg_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
+    [∀ n, MeasurableSpace (𝓨 n)] {G : ℕ → Type*} [∀ n, Group (G n)] [∀ n, Fintype (G n)]
+    (P : ∀ n, Measure (𝓨 n)) [∀ n, IsProbabilityMeasure (P n)]
+    (D : ∀ n, G n → 𝓨 n → ℝ) (hD : ∀ (n : ℕ) (g : G n), Measurable (D n g))
+    (hnn : ∀ (n : ℕ) (g : G n) (x : 𝓨 n), 0 ≤ D n g x)
+    (hrem : ∀ δ > (0 : ℝ), Tendsto (fun n => (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, (P n).real {x | δ ≤ D n g x}) atTop (𝓝 0))
+    {c : ℝ} (hc : 0 ≤ c) :
+    Tendsto (fun n => (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, ∫ x, min 2 (c * D n g x) ∂(P n)) atTop (𝓝 0) := by
+  have hcardpos : ∀ n : ℕ, (0 : ℝ) < (Fintype.card (G n) : ℝ) := fun n => by
+    exact_mod_cast Fintype.card_pos
+  have hnn' : ∀ n : ℕ, 0 ≤ (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, ∫ x, min 2 (c * D n g x) ∂(P n) := by
+    intro n
+    refine mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => ?_)
+    exact integral_nonneg fun x => le_min (by norm_num) (mul_nonneg hc (hnn n g x))
+  have hkey : ∀ (δ : ℝ), 0 < δ → ∀ n : ℕ,
+      (Fintype.card (G n) : ℝ)⁻¹ * ∑ g : G n, ∫ x, min 2 (c * D n g x) ∂(P n)
+        ≤ c * δ + 2 * ((Fintype.card (G n) : ℝ)⁻¹ *
+            ∑ g : G n, (P n).real {x | δ ≤ D n g x}) := by
+    intro δ hδ n
+    have hsum : ∑ g : G n, ∫ x, min 2 (c * D n g x) ∂(P n)
+        ≤ ∑ g : G n, (c * δ + 2 * (P n).real {x | δ ≤ D n g x}) :=
+      Finset.sum_le_sum fun g _ => integral_min_le (P n) (D n g) (hD n g) (hnn n g) hc hδ
+    have hsplit : ∑ g : G n, (c * δ + 2 * (P n).real {x | δ ≤ D n g x})
+        = (Fintype.card (G n) : ℝ) * (c * δ)
+          + 2 * ∑ g : G n, (P n).real {x | δ ≤ D n g x} := by
+      rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+        Finset.mul_sum]
+    have hmul := mul_le_mul_of_nonneg_left (hsum.trans hsplit.le)
+      (le_of_lt (inv_pos.mpr (hcardpos n)))
+    refine hmul.trans (le_of_eq ?_)
+    field_simp
+  rw [NormedAddCommGroup.tendsto_nhds_zero]
+  intro ε hε
+  set δ : ℝ := ε / (2 * (c + 1)) with hδdef
+  have hcpos : (0 : ℝ) < c + 1 := by linarith
+  have hδpos : 0 < δ := by positivity
+  have hcδ : c * δ < ε / 2 := by
+    have hfac : c * δ = (c / (c + 1)) * (ε / 2) := by rw [hδdef]; field_simp
+    have hlt : c / (c + 1) < 1 := by rw [div_lt_one hcpos]; linarith
+    calc c * δ = (c / (c + 1)) * (ε / 2) := hfac
+      _ < 1 * (ε / 2) := mul_lt_mul_of_pos_right hlt (by positivity)
+      _ = ε / 2 := one_mul _
+  have hev := (hrem δ hδpos).eventually (eventually_lt_nhds (show (0 : ℝ) < ε / 4 by positivity))
+  filter_upwards [hev] with n hn
+  have hb := hkey δ hδpos n
+  rw [Real.norm_eq_abs, abs_of_nonneg (hnn' n)]
+  linarith
+
 /-- Subadditivity of the truncation `min 2 ·` on nonnegative arguments. -/
 private lemma min_two_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     min 2 (a + b) ≤ min 2 a + min 2 b := by
@@ -768,15 +865,20 @@ private lemma min_two_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     have h0 : 0 ≤ min 2 b := le_min (by norm_num) hb
     linarith
 
-/-- **Slutsky for doubly randomized laws.** If the statistic `Tₙ` differs from a reference
-statistic `Lₙ` by a remainder that vanishes in probability, and the data law is invariant
-under the group — so the remainder vanishes at randomized data too — then the two doubly
-randomized laws have the same weak limits.
+/-- **Slutsky for doubly randomized laws, mixture form.** If the statistic `Tₙ` differs from
+a reference statistic `Lₙ` by a remainder that vanishes in probability *at randomized data*
+— i.e. the group mixture `|Gₙ|⁻¹ ∑_g Pₙ{‖Tₙ(g·x) − Lₙ(g·x)‖ ≥ δ}` tends to `0` — then the
+two doubly randomized laws have the same weak limits.
 
 This is the transfer that turns an *asymptotically linear* statistic into its linear part
 inside a randomization limit; it is proved at the level of characteristic functions
-(`‖e^{iα} − e^{iβ}‖ ≤ min 2 (2|α−β|)`), which is what makes the group average collapse. -/
-theorem weakConverges_randPairLaw_of_tendstoInProb
+(`‖e^{iα} − e^{iβ}‖ ≤ min 2 (2|α−β|)`), which is what makes the group average collapse.
+
+No group invariance of the data law is assumed. That matters: the applications in
+`Randomization/SlutskyRandomization` and `Randomization/Studentized` studentize by a scale
+which is *not* group invariant, and their hypotheses are stated as exactly this mixture.
+The invariant special case is `weakConverges_randPairLaw_of_tendstoInProb` below. -/
+theorem weakConverges_randPairLaw_of_tendstoInProb_avg
     {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (𝓧 n)]
     {G : ℕ → Type*} [∀ n, Group (G n)] [∀ n, Fintype (G n)] [∀ n, MulAction (G n) (𝓧 n)]
     (P : ∀ n, Measure (𝓧 n)) [∀ n, IsProbabilityMeasure (P n)]
@@ -785,11 +887,9 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
     (hT : ∀ n, Measurable (T n)) (hL : ∀ n, Measurable (L n))
     -- USER-INPUT: the group acts measurably
     (hsmul : ∀ (n : ℕ) (g : G n), Measurable fun x : 𝓧 n => g • x)
-    -- USER-INPUT: the data law is invariant under the group (the randomization hypothesis)
-    (hinv : ∀ (n : ℕ) (g : G n), (P n).map (fun x : 𝓧 n => g • x) = P n)
-    -- USER-INPUT: the remainder vanishes in probability
-    (hrem : ∀ δ > (0 : ℝ),
-      Tendsto (fun n => (P n).real {x | δ ≤ ‖T n x - L n x‖}) atTop (𝓝 0))
+    -- USER-INPUT: the remainder vanishes in probability at randomized data
+    (hrem : ∀ δ > (0 : ℝ), Tendsto (fun n => (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, (P n).real {x | δ ≤ ‖T n (g • x) - L n (g • x)‖}) atTop (𝓝 0))
     -- USER-INPUT: the reference statistic already has the randomized limit `ν`
     (hconv : WeakConverges (fun n => randPairLaw (G n) (L n) (P n)) ν) :
     WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) ν := by
@@ -836,16 +936,21 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
   set c₂ : ℝ := 2 * ‖(WithLp.ofLp t).2‖ with hc₂
   have hc₁0 : 0 ≤ c₁ := by positivity
   have hc₂0 : 0 ≤ c₂ := by positivity
-  set B : ℕ → ℝ := fun n => (∫ x, min 2 (c₁ * ‖T n x - L n x‖) ∂(P n))
-    + ∫ x, min 2 (c₂ * ‖T n x - L n x‖) ∂(P n) with hBdef
+  set B : ℕ → ℝ := fun n => (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, ∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+    + (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, ∫ x, min 2 (c₂ * ‖T n (g • x) - L n (g • x)‖) ∂(P n) with hBdef
   have hDmeas : ∀ n, Measurable fun x : 𝓧 n => ‖T n x - L n x‖ :=
     fun n => ((hT n).sub (hL n)).norm
+  have hDsmul : ∀ (n : ℕ) (g : G n),
+      Measurable fun x : 𝓧 n => ‖T n (g • x) - L n (g • x)‖ :=
+    fun n g => (hDmeas n).comp (hsmul n g)
   have hBlim : Tendsto B atTop (𝓝 0) := by
-    have h1 := tendsto_integral_min_of_tendstoInProb P (fun n x => ‖T n x - L n x‖) hDmeas
-      (fun n x => norm_nonneg _) hrem hc₁0
-    have h2 := tendsto_integral_min_of_tendstoInProb P (fun n x => ‖T n x - L n x‖) hDmeas
-      (fun n x => norm_nonneg _) hrem hc₂0
-    simpa using h1.add h2
+    have h1 := tendsto_avg_integral_min_of_tendstoInProb P
+      (fun n g x => ‖T n (g • x) - L n (g • x)‖) hDsmul (fun n g x => norm_nonneg _) hrem hc₁0
+    have h2 := tendsto_avg_integral_min_of_tendstoInProb P
+      (fun n g x => ‖T n (g • x) - L n (g • x)‖) hDsmul (fun n g x => norm_nonneg _) hrem hc₂0
+    simpa only [hBdef, add_zero] using h1.add h2
   -- Integrability bookkeeping for the pointwise bound.
   have hFint : ∀ (S : ∀ n, 𝓧 n → E), (∀ n, Measurable (S n)) → ∀ (n : ℕ) (g g' : G n),
       Integrable (fun x : 𝓧 n => F (S n (g • x), S n (g' • x))) (P n) := by
@@ -866,25 +971,17 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
       le_min (by norm_num) (mul_nonneg hc (norm_nonneg _))
     rw [Real.norm_eq_abs, abs_of_nonneg h0]
     exact min_le_left _ _
-  -- Group invariance collapses the average of the truncated remainders.
-  have hshift : ∀ (n : ℕ) (c : ℝ) (g : G n), 0 ≤ c →
-      ∫ x, min 2 (c * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
-        = ∫ x, min 2 (c * ‖T n x - L n x‖) ∂(P n) := by
-    intro n c g hc
-    have hmeas : Measurable fun y : 𝓧 n => min 2 (c * ‖T n y - L n y‖) :=
-      measurable_const.min ((hDmeas n).const_mul c)
-    calc ∫ x, min 2 (c * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
-        = ∫ y, min 2 (c * ‖T n y - L n y‖) ∂((P n).map fun x : 𝓧 n => g • x) :=
-          (integral_map (hsmul n g).aemeasurable hmeas.aestronglyMeasurable).symm
-      _ = ∫ x, min 2 (c * ‖T n x - L n x‖) ∂(P n) := by rw [hinv n g]
   -- The per-`n` estimate.
   have hstep : ∀ n : ℕ,
       ‖charFun ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp 2)) t
         - charFun ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp 2)) t‖ ≤ B n := by
     intro n
     have hcard : (0 : ℝ) < (Fintype.card (G n) : ℝ) := by exact_mod_cast Fintype.card_pos
+    have hcardne : (Fintype.card (G n) : ℝ) ≠ 0 := ne_of_gt hcard
     have hterm : ∀ g g' : G n,
-        ‖∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖ ≤ B n := by
+        ‖∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+          ≤ (∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n))
+            + ∫ x, min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖) ∂(P n) := by
       intro g g'
       have hptw : ∀ x : 𝓧 n,
           ‖F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))‖
@@ -919,9 +1016,7 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
               + min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖)) ∂(P n) :=
             integral_mono hdiffint.norm
               ((hminint n c₁ g hc₁0).add (hminint n c₂ g' hc₂0)) hptw
-        _ = B n := by
-            rw [integral_add (hminint n c₁ g hc₁0) (hminint n c₂ g' hc₂0),
-              hshift n c₁ g hc₁0, hshift n c₂ g' hc₂0]
+        _ = _ := integral_add (hminint n c₁ g hc₁0) (hminint n c₂ g' hc₂0)
     have hsum : (∑ g : G n, ∑ g' : G n, ∫ x, F (T n (g • x), T n (g' • x)) ∂(P n))
         - ∑ g : G n, ∑ g' : G n, ∫ x, F (L n (g • x), L n (g' • x)) ∂(P n)
         = ∑ g : G n, ∑ g' : G n,
@@ -935,25 +1030,40 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
     have hc : ‖((Fintype.card (G n) : ℂ) ^ 2)⁻¹‖ = ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ := by
       rw [norm_inv, norm_pow, Complex.norm_natCast]
     rw [hc]
+    have hBmul : (Fintype.card (G n) : ℝ) ^ 2 * B n
+        = (Fintype.card (G n) : ℝ) *
+            ∑ g : G n, ∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+          + (Fintype.card (G n) : ℝ) *
+            ∑ g : G n, ∫ x, min 2 (c₂ * ‖T n (g • x) - L n (g • x)‖) ∂(P n) := by
+      simp only [hBdef]
+      field_simp
     have hnorm : ‖∑ g : G n, ∑ g' : G n,
         ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
         ≤ (Fintype.card (G n) : ℝ) ^ 2 * B n := by
       refine le_trans (norm_sum_le _ _) ?_
       have hinner : ∀ g : G n, ‖∑ g' : G n,
           ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
-          ≤ (Fintype.card (G n) : ℝ) * B n := by
+          ≤ (Fintype.card (G n) : ℝ) *
+              ∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+            + ∑ g' : G n, ∫ x, min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖) ∂(P n) := by
         intro g
         refine le_trans (norm_sum_le _ _) ?_
         calc ∑ g' : G n, ‖∫ x, (F (T n (g • x), T n (g' • x))
               - F (L n (g • x), L n (g' • x))) ∂(P n)‖
-            ≤ ∑ _g' : G n, B n := Finset.sum_le_sum fun g' _ => hterm g g'
-          _ = (Fintype.card (G n) : ℝ) * B n := by
-              rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+            ≤ ∑ g' : G n, ((∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n))
+                + ∫ x, min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖) ∂(P n)) :=
+              Finset.sum_le_sum fun g' _ => hterm g g'
+          _ = _ := by
+              rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
       calc ∑ g : G n, ‖∑ g' : G n,
             ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
-          ≤ ∑ _g : G n, (Fintype.card (G n) : ℝ) * B n := Finset.sum_le_sum fun g _ => hinner g
+          ≤ ∑ g : G n, ((Fintype.card (G n) : ℝ) *
+                ∫ x, min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+              + ∑ g' : G n, ∫ x, min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖) ∂(P n)) :=
+            Finset.sum_le_sum fun g _ => hinner g
         _ = (Fintype.card (G n) : ℝ) ^ 2 * B n := by
-            rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc, sq]
+            rw [Finset.sum_add_distrib, ← Finset.mul_sum, Finset.sum_const, Finset.card_univ,
+              nsmul_eq_mul, hBmul]
     calc ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ * ‖∑ g : G n, ∑ g' : G n,
           ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
         ≤ ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ * ((Fintype.card (G n) : ℝ) ^ 2 * B n) :=
@@ -967,6 +1077,129 @@ theorem weakConverges_randPairLaw_of_tendstoInProb
   have := hdiff.add hlim
   simpa using this
 
+/-- **Slutsky for doubly randomized laws, invariant case.** The special case of
+`weakConverges_randPairLaw_of_tendstoInProb_avg` in which the data law *is* group invariant:
+then the remainder probabilities at randomized data all coincide with the remainder
+probability at the data itself, so the plain convergence-in-probability hypothesis
+suffices. -/
+theorem weakConverges_randPairLaw_of_tendstoInProb
+    {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (𝓧 n)]
+    {G : ℕ → Type*} [∀ n, Group (G n)] [∀ n, Fintype (G n)] [∀ n, MulAction (G n) (𝓧 n)]
+    (P : ∀ n, Measure (𝓧 n)) [∀ n, IsProbabilityMeasure (P n)]
+    (T L : ∀ n, 𝓧 n → E) {ν : Measure (E × E)} [IsProbabilityMeasure ν]
+    -- USER-INPUT: both statistics are measurable (data regularity)
+    (hT : ∀ n, Measurable (T n)) (hL : ∀ n, Measurable (L n))
+    -- USER-INPUT: the group acts measurably
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable fun x : 𝓧 n => g • x)
+    -- USER-INPUT: the data law is invariant under the group (the randomization hypothesis)
+    (hinv : ∀ (n : ℕ) (g : G n), (P n).map (fun x : 𝓧 n => g • x) = P n)
+    -- USER-INPUT: the remainder vanishes in probability
+    (hrem : ∀ δ > (0 : ℝ),
+      Tendsto (fun n => (P n).real {x | δ ≤ ‖T n x - L n x‖}) atTop (𝓝 0))
+    -- USER-INPUT: the reference statistic already has the randomized limit `ν`
+    (hconv : WeakConverges (fun n => randPairLaw (G n) (L n) (P n)) ν) :
+    WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) ν := by
+  refine weakConverges_randPairLaw_of_tendstoInProb_avg P T L hT hL hsmul ?_ hconv
+  intro δ hδ
+  have hEq : ∀ n : ℕ, (Fintype.card (G n) : ℝ)⁻¹ *
+      ∑ g : G n, (P n).real {x | δ ≤ ‖T n (g • x) - L n (g • x)‖}
+        = (P n).real {x | δ ≤ ‖T n x - L n x‖} := by
+    intro n
+    have hcard : (0 : ℝ) < (Fintype.card (G n) : ℝ) := by exact_mod_cast Fintype.card_pos
+    have hset : MeasurableSet {x : 𝓧 n | δ ≤ ‖T n x - L n x‖} :=
+      measurableSet_le measurable_const (((hT n).sub (hL n)).norm)
+    have hg : ∀ g : G n, (P n).real {x | δ ≤ ‖T n (g • x) - L n (g • x)‖}
+        = (P n).real {x | δ ≤ ‖T n x - L n x‖} := by
+      intro g
+      have hpre : {x : 𝓧 n | δ ≤ ‖T n (g • x) - L n (g • x)‖}
+          = (fun x : 𝓧 n => g • x) ⁻¹' {x : 𝓧 n | δ ≤ ‖T n x - L n x‖} := rfl
+      rw [hpre, Measure.real, Measure.real, ← Measure.map_apply (hsmul n g) hset, hinv n g]
+    simp_rw [hg]
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc,
+      inv_mul_cancel₀ (ne_of_gt hcard), one_mul]
+  exact (hrem δ hδ).congr fun n => (hEq n).symm
+
 end Slutsky
+
+/-! ### Tightness from a weak limit on `ℝ` -/
+
+/-- **A weakly convergent sequence of laws on `ℝ` is uniformly tight.** For every `ε > 0`
+there is a threshold `M` beyond which all but finitely many of the laws put mass at most
+`ε`.
+
+This is the ingredient that upgrades "the random scaling converges in probability" to "the
+*rescaled statistic* converges in probability": the statistic itself is `O_P(1)`, and that
+is read off its weak limit rather than assumed. -/
+lemma exists_tight_bound_of_weakConverges {μ : ℕ → Measure ℝ}
+    [∀ n, IsProbabilityMeasure (μ n)] {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (h : WeakConverges μ ν) {ε : ℝ} (hε : 0 < ε) :
+    ∃ M : ℝ, 0 < M ∧ ∀ᶠ n in atTop, (μ n).real {y : ℝ | M ≤ |y|} ≤ ε := by
+  classical
+  have hmeasA : ∀ c : ℝ, MeasurableSet {y : ℝ | c ≤ |y|} := fun c =>
+    measurableSet_le measurable_const continuous_abs.measurable
+  -- The tails shrink to the empty set, so some integer threshold already works for `ν`.
+  have hanti : Antitone fun k : ℕ => {y : ℝ | (k : ℝ) ≤ |y|} := by
+    intro i j hij y hy
+    simp only [Set.mem_setOf_eq] at hy ⊢
+    exact le_trans (by exact_mod_cast hij) hy
+  have hinter : (⋂ k : ℕ, {y : ℝ | (k : ℝ) ≤ |y|}) = ∅ := by
+    ext y
+    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+      not_le]
+    obtain ⟨k, hk⟩ := exists_nat_gt |y|
+    exact ⟨k, hk⟩
+  have htend := tendsto_measure_iInter_atTop (μ := ν)
+    (fun k : ℕ => (hmeasA (k : ℝ)).nullMeasurableSet) hanti ⟨0, measure_ne_top ν _⟩
+  rw [hinter, measure_empty] at htend
+  have htendR : Tendsto (fun k : ℕ => ν.real {y : ℝ | (k : ℝ) ≤ |y|}) atTop (𝓝 0) := by
+    have := (ENNReal.tendsto_toReal (by simp)).comp htend
+    simpa [Measure.real, Function.comp] using this
+  obtain ⟨k, hk⟩ :=
+    (htendR.eventually (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))).exists
+  -- A bounded continuous ramp squeezed between the two tail indicators.
+  set φ : ℝ → ℝ := fun y => max 0 (min 1 (|y| - (k : ℝ))) with hφdef
+  have hφcont : Continuous φ :=
+    continuous_const.max (continuous_const.min (continuous_abs.sub continuous_const))
+  have hφ0 : ∀ y, 0 ≤ φ y := fun y => le_max_left _ _
+  have hφ1 : ∀ y, φ y ≤ 1 := fun y => max_le zero_le_one (min_le_left _ _)
+  set f : BoundedContinuousFunction ℝ ℝ :=
+    BoundedContinuousFunction.mkOfBound ⟨φ, hφcont⟩ 1 (by
+    intro x y
+    rw [Real.dist_eq, abs_le]
+    exact ⟨by simpa using by linarith [hφ0 x, hφ1 y], by simpa using by linarith [hφ1 x, hφ0 y]⟩)
+    with hfdef
+  have hfval : ∀ y, f y = φ y := fun _ => rfl
+  have hfint : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ], Integrable (fun y => f y) ρ :=
+    fun ρ _ => f.integrable ρ
+  -- Lower bound: the ramp dominates the indicator of the `k+1` tail.
+  have hlow : ∀ (ρ : Measure ℝ) [IsProbabilityMeasure ρ],
+      ρ.real {y : ℝ | (k : ℝ) + 1 ≤ |y|} ≤ ∫ y, f y ∂ρ := by
+    intro ρ _
+    rw [← integral_indicator_one (hmeasA ((k : ℝ) + 1))]
+    refine integral_mono ((integrable_const (1 : ℝ)).indicator (hmeasA ((k : ℝ) + 1)))
+      (hfint ρ) fun y => ?_
+    by_cases hy : (k : ℝ) + 1 ≤ |y|
+    · rw [Set.indicator_of_mem (s := {y : ℝ | (k : ℝ) + 1 ≤ |y|}) hy, Pi.one_apply, hfval]
+      have h1 : (1 : ℝ) ≤ |y| - (k : ℝ) := by linarith
+      change (1 : ℝ) ≤ max 0 (min 1 (|y| - (k : ℝ)))
+      rw [min_eq_left h1, max_eq_right zero_le_one]
+    · rw [Set.indicator_of_notMem (s := {y : ℝ | (k : ℝ) + 1 ≤ |y|}) hy]
+      exact hφ0 y
+  -- Upper bound: the ramp is dominated by the indicator of the `k` tail.
+  have hhigh : ∫ y, f y ∂ν ≤ ν.real {y : ℝ | (k : ℝ) ≤ |y|} := by
+    rw [← integral_indicator_one (hmeasA (k : ℝ))]
+    refine integral_mono (hfint ν)
+      ((integrable_const (1 : ℝ)).indicator (hmeasA (k : ℝ))) fun y => ?_
+    by_cases hy : (k : ℝ) ≤ |y|
+    · rw [Set.indicator_of_mem (s := {y : ℝ | (k : ℝ) ≤ |y|}) hy, Pi.one_apply]
+      exact hφ1 y
+    · rw [Set.indicator_of_notMem (s := {y : ℝ | (k : ℝ) ≤ |y|}) hy, hfval]
+      have hneg : |y| - (k : ℝ) ≤ 0 := by linarith [not_le.mp hy]
+      change max 0 (min 1 (|y| - (k : ℝ))) ≤ (0 : ℝ)
+      exact max_le le_rfl ((min_le_right _ _).trans hneg)
+  refine ⟨(k : ℝ) + 1, by positivity, ?_⟩
+  have hlt : ∫ y, f y ∂ν < ε := by linarith
+  filter_upwards [(h f).eventually (eventually_lt_nhds hlt)] with n hn
+  exact le_of_lt (lt_of_le_of_lt (hlow (μ n)) hn)
 
 end StatLean.HypothesisTesting

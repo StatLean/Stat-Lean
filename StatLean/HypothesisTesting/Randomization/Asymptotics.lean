@@ -73,7 +73,7 @@ invariance assumption," *J. Amer. Statist. Assoc.* **85** (1990), 686–692).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -295,6 +295,152 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
     rfl
   rw [hLHS, hRHS]
 
+/-- **Cross-moment identity.** The mean of the product of the randomization distribution at
+two thresholds is the mass that `randPairLaw` puts on the rectangle `Iic s ×ˢ Iic t`:
+`∫ R̂(·,s)·R̂(·,t) dP = randPairLaw(Iic s ×ˢ Iic t)`. The diagonal case `s = t` is
+`integral_randDist_sq_eq_real_randPairLaw`; the off-diagonal case is what drives the
+*converse* direction of the asymptotic theorem, where the joint c.d.f. of `randPairLaw` has
+to be reconstructed from the randomization distribution alone. -/
+lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → ℝ) (s t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    ∫ x, randDist G T x s * randDist G T x t ∂P
+      = (randPairLaw G T P).real (Set.Iic s ×ˢ Set.Iic t) := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardℝ : (Fintype.card G : ℝ≥0∞) ≠ 0 := by exact_mod_cast hcard.ne'
+  have hset : ∀ g g' : G, MeasurableSet {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := fun g g' =>
+    (measurableSet_le (hT.comp (hsmul g)) measurable_const).inter
+      (measurableSet_le (hT.comp (hsmul g')) measurable_const)
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hind : ∀ g g' : G,
+      (fun x => (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0))
+        = Set.indicator {x | T (g • x) ≤ s ∧ T (g' • x) ≤ t} 1 := by
+    intro g g'; funext x
+    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+    split_ifs <;> simp_all
+  have hintg' : ∀ g g' : G, Integrable (fun x =>
+      (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0)) P := by
+    intro g g'; rw [hind g g']; exact (integrable_const (1 : ℝ)).indicator (hset g g')
+  have hintprod : ∀ g g' : G,
+      ∫ x, (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0) ∂P
+        = P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    intro g g'
+    rw [show (∫ x, (if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * (if T (g' • x) ≤ t then (1 : ℝ) else 0) ∂P)
+        = ∫ x, Set.indicator {x | T (g • x) ≤ s ∧ T (g' • x) ≤ t} 1 x ∂P from by rw [hind g g'],
+      integral_indicator_one (hset g g')]
+  have hpt : ∀ x, randDist G T x s * randDist G T x t
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 * ∑ g : G, ∑ g' : G,
+          (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0) := by
+    intro x
+    simp only [randDist]
+    rw [show ((Fintype.card G : ℝ)⁻¹ * ∑ g : G, if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * ((Fintype.card G : ℝ)⁻¹ * ∑ g : G, if T (g • x) ≤ t then (1 : ℝ) else 0)
+        = (Fintype.card G : ℝ)⁻¹ ^ 2 * ((∑ g : G, if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * ∑ g : G, if T (g • x) ≤ t then (1 : ℝ) else 0) from by ring,
+      Finset.sum_mul_sum]
+  have hLHS : ∫ x, randDist G T x s * randDist G T x t ∂P
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 * ∑ g : G, ∑ g' : G,
+          P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    simp_rw [hpt]
+    rw [integral_const_mul]
+    congr 1
+    rw [integral_finset_sum _ (fun g _ => integrable_finset_sum _ fun g' _ => hintg' g g')]
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [integral_finset_sum _ (fun g' _ => hintg' g g')]
+    exact Finset.sum_congr rfl fun g' _ => hintprod g g'
+  have hmeasS : MeasurableSet (Set.Iic s ×ˢ Set.Iic t) :=
+    measurableSet_Iic.prod measurableSet_Iic
+  have hpre : ∀ g g' : G,
+      (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (Set.Iic s ×ˢ Set.Iic t)
+        = {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := fun g g' => by
+    ext x; simp [Set.mem_prod, Set.mem_Iic]
+  have hval : (randPairLaw G T P) (Set.Iic s ×ˢ Set.Iic t)
+      = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
+          ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    congr 1
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [Measure.finset_sum_apply]
+    exact Finset.sum_congr rfl fun g' _ => by rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']
+  have hRHS : (randPairLaw G T P).real (Set.Iic s ×ˢ Set.Iic t)
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 *
+          ∑ g : G, ∑ g' : G, P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    have hsc : (((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹).toReal = (Fintype.card G : ℝ)⁻¹ ^ 2 := by
+      rw [ENNReal.toReal_inv, ENNReal.toReal_pow, ENNReal.toReal_natCast, inv_pow]
+    rw [Measure.real, hval, ENNReal.toReal_mul, hsc]
+    congr 1
+    rw [ENNReal.toReal_sum fun g _ =>
+      (ENNReal.sum_lt_top.2 fun g' _ => measure_lt_top P _).ne]
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [ENNReal.toReal_sum fun g' _ => measure_ne_top P _]
+    rfl
+  rw [hLHS, hRHS]
+
+/-- **Pushforward reduction of `randPairLaw`.** Postcomposing the statistic with a measurable
+map `ψ` pushes the doubly randomized law forward along `ψ × ψ`. (Contrast `randPairLaw_comp`,
+which *pre*composes with an equivariant map on the data.) -/
+lemma randPairLaw_map {E F : Type*} [MeasurableSpace E] [MeasurableSpace F] (P : Measure 𝓧)
+    (T : 𝓧 → E) (hT : Measurable T) (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x))
+    {ψ : E → F} (hψ : Measurable ψ) :
+    randPairLaw G (fun x => ψ (T x)) P = (randPairLaw G T P).map (Prod.map ψ ψ) := by
+  classical
+  have hψψ : Measurable (Prod.map ψ ψ) := hψ.prodMap hψ
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hpairψ : ∀ g g' : G, Measurable (fun x : 𝓧 => (ψ (T (g • x)), ψ (T (g' • x)))) :=
+    fun g g' => (hψ.comp (hT.comp (hsmul g))).prodMk (hψ.comp (hT.comp (hsmul g')))
+  ext s hs
+  rw [Measure.map_apply hψψ hs]
+  simp only [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+  congr 1
+  refine Finset.sum_congr rfl fun g _ => Finset.sum_congr rfl fun g' _ => ?_
+  rw [Measure.map_apply (hpairψ g g') hs, Measure.map_apply (hpair g g') (hψψ hs)]
+  rfl
+
+/-- **First-marginal identity.** The mass `randPairLaw` puts on a cylinder `S ×ˢ univ` is the
+group average of the masses `P{T(g·x) ∈ S}` — i.e. the first marginal of the doubly
+randomized law is the *singly* randomized mixture. This is the form in which tightness of
+the randomized statistic is read off a joint weak limit. -/
+lemma real_randPairLaw_prod_univ {E : Type*} [MeasurableSpace E] (P : Measure 𝓧)
+    [IsProbabilityMeasure P] (T : 𝓧 → E) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {S : Set E} (hS : MeasurableSet S) :
+    (randPairLaw G T P).real (S ×ˢ (Set.univ : Set E))
+      = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real {x : 𝓧 | T (g • x) ∈ S} := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardℝ : (Fintype.card G : ℝ≥0∞) ≠ 0 := by exact_mod_cast hcard.ne'
+  have hcardtop : (Fintype.card G : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top _
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hmeasS : MeasurableSet (S ×ˢ (Set.univ : Set E)) := hS.prod MeasurableSet.univ
+  have hpre : ∀ g g' : G,
+      (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (S ×ˢ (Set.univ : Set E))
+        = {x : 𝓧 | T (g • x) ∈ S} := by
+    intro g g'; ext x; simp [Set.mem_prod]
+  have hstep : ∀ g : G,
+      (∑ g' : G, P.map fun x => (T (g • x), T (g' • x))) (S ×ˢ (Set.univ : Set E))
+        = (Fintype.card G : ℝ≥0∞) * P {x : 𝓧 | T (g • x) ∈ S} := by
+    intro g
+    rw [Measure.finset_sum_apply,
+      Finset.sum_congr rfl (fun g' _ => by
+        rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']),
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  have hcc : ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ * (Fintype.card G : ℝ≥0∞)
+      = (Fintype.card G : ℝ≥0∞)⁻¹ := by
+    rw [sq, ENNReal.mul_inv (Or.inl hcardℝ) (Or.inl hcardtop), mul_assoc,
+      ENNReal.inv_mul_cancel hcardℝ hcardtop, mul_one]
+  have hval : (randPairLaw G T P) (S ×ˢ (Set.univ : Set E))
+      = (Fintype.card G : ℝ≥0∞)⁻¹ * ∑ g : G, P {x : 𝓧 | T (g • x) ∈ S} := by
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    simp_rw [hstep]
+    rw [← Finset.mul_sum, ← mul_assoc, hcc]
+  rw [Measure.real, hval, ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast,
+    ENNReal.toReal_sum fun g _ => measure_ne_top P _]
+  rfl
+
 /-- `randPairLaw` is a probability measure: it is `card⁻²` times a sum of `card²` pushforwards
 of the probability measure `P`, each of total mass `1` (the maps are measurable). -/
 lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Measure 𝓧)
@@ -318,6 +464,39 @@ lemma isProbabilityMeasure_randPairLaw {E : Type*} [MeasurableSpace E] (P : Meas
       Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
   rw [Finset.sum_congr rfl (fun g _ => hstep g), Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
     ← pow_two, ENNReal.inv_mul_cancel (pow_ne_zero 2 hcardℝ) (ENNReal.pow_ne_top hcardtop)]
+
+/-- The randomization distribution is nonnegative. -/
+lemma randDist_nonneg (T : 𝓧 → ℝ) (x : 𝓧) (t : ℝ) : 0 ≤ randDist G T x t := by
+  refine mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => ?_)
+  split_ifs <;> norm_num
+
+/-- The randomization distribution is at most `1`: it is an average of indicators. -/
+lemma randDist_le_one (T : 𝓧 → ℝ) (x : 𝓧) (t : ℝ) : randDist G T x t ≤ 1 := by
+  have hcard : (0 : ℝ) < (Fintype.card G : ℝ) := by exact_mod_cast Fintype.card_pos
+  have hle : ∑ g : G, (if T (g • x) ≤ t then (1 : ℝ) else 0) ≤ (Fintype.card G : ℝ) := by
+    calc ∑ g : G, (if T (g • x) ≤ t then (1 : ℝ) else 0)
+        ≤ ∑ _g : G, (1 : ℝ) := Finset.sum_le_sum fun g _ => by split_ifs <;> norm_num
+      _ = (Fintype.card G : ℝ) := by
+          rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
+  calc randDist G T x t ≤ (Fintype.card G : ℝ)⁻¹ * (Fintype.card G : ℝ) :=
+        mul_le_mul_of_nonneg_left hle (by positivity)
+    _ = 1 := inv_mul_cancel₀ (ne_of_gt hcard)
+
+/-- The randomization distribution is a measurable function of the data. -/
+private lemma measurable_randDist (T : 𝓧 → ℝ) (t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x : 𝓧 => randDist G T x t) := by
+  classical
+  simp only [randDist]
+  refine Measurable.const_mul ?_ _
+  refine Finset.measurable_sum _ fun g _ => ?_
+  have hmset : MeasurableSet {x : 𝓧 | T (g • x) ≤ t} :=
+    measurableSet_le (hT.comp (hsmul g)) measurable_const
+  have hind : (fun x : 𝓧 => if T (g • x) ≤ t then (1 : ℝ) else 0)
+      = Set.indicator {x | T (g • x) ≤ t} 1 := by
+    funext x; simp [Set.indicator_apply]
+  rw [hind]
+  exact measurable_const.indicator hmset
 
 /-- The randomization distribution is nondecreasing in the threshold `t`. -/
 lemma randDist_mono (T : 𝓧 → ℝ) (x : 𝓧) : Monotone (fun t => randDist G T x t) := by
@@ -648,29 +827,299 @@ theorem randQuantile_tendstoInProb (P : ∀ n, Measure (𝓧 n))
   -- The bracketing/quantile-transfer argument uses only `hα₁` and `hstrict`, not `hcont`.
   randQuantile_tendstoInProb_aux P T R hT hsmul hjoint hα₁ hstrict
 
+/-- Continuity points of a c.d.f. are dense: every nonempty open interval contains one
+(the discontinuity set of a monotone function is countable, hence Lebesgue-null). -/
+private lemma exists_continuousAt_cdf_Ioo (R : Measure ℝ) [IsProbabilityMeasure R]
+    {a b : ℝ} (hab : a < b) : ∃ x ∈ Set.Ioo a b, ContinuousAt (cdf R) x := by
+  have hcountable : Set.Countable {x | ¬ ContinuousAt (cdf R) x} :=
+    (monotone_cdf (μ := R)).countable_not_continuousAt
+  by_contra hcon
+  push_neg at hcon
+  have hsub : Set.Ioo a b ⊆ {x | ¬ ContinuousAt (cdf R) x} := fun x hx => hcon x hx
+  have hz : volume (Set.Ioo a b) = 0 := measure_mono_null hsub (hcountable.measure_zero volume)
+  rw [Real.volume_Ioo] at hz
+  exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hz
+
+/-- Inclusion–exclusion for a half-open box on `ℝ × ℝ`, in terms of the four lower-left
+quadrants — the identity that turns joint-c.d.f. convergence into box convergence. -/
+private lemma measureReal_Ioc_prod_Ioc (μ : Measure (ℝ × ℝ)) [IsFiniteMeasure μ]
+    {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤ d) :
+    μ.real (Set.Ioc a b ×ˢ Set.Ioc c d)
+      = μ.real (Set.Iic b ×ˢ Set.Iic d) - μ.real (Set.Iic a ×ˢ Set.Iic d)
+        - μ.real (Set.Iic b ×ˢ Set.Iic c) + μ.real (Set.Iic a ×ˢ Set.Iic c) := by
+  have mAD : MeasurableSet ((Set.Iic a ×ˢ Set.Iic d : Set (ℝ × ℝ))) :=
+    measurableSet_Iic.prod measurableSet_Iic
+  have mBC : MeasurableSet ((Set.Iic b ×ˢ Set.Iic c : Set (ℝ × ℝ))) :=
+    measurableSet_Iic.prod measurableSet_Iic
+  have hsub : (Set.Iic a ×ˢ Set.Iic d : Set (ℝ × ℝ)) ∪ (Set.Iic b ×ˢ Set.Iic c)
+      ⊆ Set.Iic b ×ˢ Set.Iic d := by
+    rintro z (hz | hz)
+    · exact ⟨le_trans hz.1 hab, hz.2⟩
+    · exact ⟨hz.1, le_trans hz.2 hcd⟩
+  have hbox : (Set.Ioc a b ×ˢ Set.Ioc c d : Set (ℝ × ℝ))
+      = (Set.Iic b ×ˢ Set.Iic d) \ ((Set.Iic a ×ˢ Set.Iic d) ∪ (Set.Iic b ×ˢ Set.Iic c)) := by
+    ext z
+    simp only [Set.mem_prod, Set.mem_Ioc, Set.mem_Iic, Set.mem_diff, Set.mem_union, not_or,
+      not_and, not_le]
+    constructor
+    · rintro ⟨⟨ha1, hb1⟩, hc1, hd1⟩
+      exact ⟨⟨hb1, hd1⟩, fun hz => absurd hz (not_le.mpr ha1), fun _ => hc1⟩
+    · rintro ⟨⟨hb1, hd1⟩, h1, h2⟩
+      refine ⟨⟨?_, hb1⟩, h2 hb1, hd1⟩
+      by_contra hcon
+      exact absurd (h1 (not_lt.mp hcon)) (not_lt.mpr hd1)
+  have hinter : ((Set.Iic a ×ˢ Set.Iic d : Set (ℝ × ℝ)) ∩ (Set.Iic b ×ˢ Set.Iic c))
+      = Set.Iic a ×ˢ Set.Iic c := by
+    rw [Set.prod_inter_prod, Set.Iic_inter_Iic, Set.Iic_inter_Iic, inf_eq_left.mpr hab,
+      inf_eq_right.mpr hcd]
+  have hu := measureReal_union_add_inter (μ := μ) (s := (Set.Iic a ×ˢ Set.Iic d : Set (ℝ × ℝ)))
+    (t := (Set.Iic b ×ˢ Set.Iic c : Set (ℝ × ℝ))) mBC
+  rw [hinter] at hu
+  rw [hbox, measureReal_diff hsub (mAD.union mBC)]
+  linarith
+
 /-- **Converse.** If the randomization distribution converges in probability to some
 limiting c.d.f. at every continuity point, then the joint asymptotic-independence
 condition holds — so the two formulations are equivalent. -/
 theorem weakConverges_randPairLaw_of_randDist_tendstoInProb (P : ∀ n, Measure (𝓧 n))
     [∀ n, IsProbabilityMeasure (P n)] (T : ∀ n, 𝓧 n → ℝ) (R : Measure ℝ)
     [IsProbabilityMeasure R]
+    -- LEAN-ONLY (regularity amendment): the statistic and the action are measurable. The
+    -- frozen signature omitted these, but the proof passes through the moment identities
+    -- `integral_randDist_..._randPairLaw`, which need them: `Measure.map` of a non-measurable
+    -- map is the zero measure, so without them `randPairLaw` degenerates and cannot converge
+    -- to a probability law at all, while the hypothesis `h` — a statement about the
+    -- (always well-defined) group average `randDist` — can still hold. The forward engines
+    -- `randDist_tendstoInProb_cdf` / `randQuantile_tendstoInProb` carry the same two.
+    (hT : ∀ n, Measurable (T n))
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable (fun x : 𝓧 n => g • x))
     -- USER-INPUT: pointwise convergence in probability of the randomization distribution
     -- to a limiting c.d.f., at every continuity point
     (h : ∀ t, ContinuousAt (cdf R) t →
       TendstoInProbTriangular P (fun n x => randDist (G n) (T n) x t) (cdf R t)) :
     WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) (R.prod R) := by
-  -- TODO (genuine gap, deferred). The intended route: convergence in probability of the random
-  -- CDF at continuity points `s, t`, together with boundedness in `[0,1]`, gives (bounded
-  -- convergence) `∫ R̂ₙ(s)·R̂ₙ(t) dP → R(s)R(t)`; the left side equals
-  -- `randPairLaw(Iic s ×ˢ Iic t)` by a cross-moment identity generalising
-  -- `integral_randDist_sq_eq_real_randPairLaw`. This yields convergence of the joint c.d.f. at
-  -- every continuity-point rectangle. Upgrading that to weak convergence needs a
-  -- convergence-determining-class argument (the rectangles form a π-system, but Mathlib's
-  -- `IsPiSystem.tendsto_probabilityMeasure_of_tendsto_of_mem` demands convergence on the *whole*
-  -- π-system, whereas we only control continuity-point rectangles — the standard right-continuity
-  -- patch is not yet formalised). The proof also needs the same measurability of `T n`/action as
-  -- the forward direction, which the frozen signature omits. See the accompanying report.
-  sorry
+  classical
+  haveI hprob : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+    isProbabilityMeasure_randPairLaw (G n) (P n) (T n) (hT n) (hsmul n)
+  -- Step 1: convergence in probability of the random c.d.f. upgrades to `L¹` convergence,
+  -- because the random c.d.f. is bounded by `1`.
+  have hL1 : ∀ u : ℝ, ContinuousAt (cdf R) u →
+      Tendsto (fun n => ∫ x, |randDist (G n) (T n) x u - cdf R u| ∂(P n)) atTop (𝓝 0) := by
+    intro u hu
+    have hmeas : ∀ n, Measurable fun x : 𝓧 n => |randDist (G n) (T n) x u - cdf R u| :=
+      fun n => ((measurable_randDist (G n) (T n) u (hT n) (hsmul n)).sub measurable_const).abs
+    have hbdd : ∀ (n : ℕ) (x : 𝓧 n), |randDist (G n) (T n) x u - cdf R u| ≤ 1 := by
+      intro n x
+      rw [abs_le]
+      constructor
+      · linarith [randDist_nonneg (G n) (T n) x u, cdf_le_one R u]
+      · linarith [randDist_le_one (G n) (T n) x u, cdf_nonneg R u]
+    have hint : ∀ n, Integrable (fun x : 𝓧 n => |randDist (G n) (T n) x u - cdf R u|) (P n) :=
+      fun n => Integrable.mono' (integrable_const (1 : ℝ)) (hmeas n).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => by
+          rw [Real.norm_eq_abs, abs_of_nonneg (abs_nonneg _)]; exact hbdd n x)
+    have hnn : ∀ n, 0 ≤ ∫ x, |randDist (G n) (T n) x u - cdf R u| ∂(P n) :=
+      fun n => integral_nonneg fun x => abs_nonneg _
+    rw [NormedAddGroup.tendsto_nhds_zero]
+    intro ε hε
+    have hev := (h u hu (ε / 2) (by positivity)).eventually
+      (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))
+    filter_upwards [hev] with n hn
+    have hset : MeasurableSet {x : 𝓧 n | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|} :=
+      measurableSet_le measurable_const (hmeas n)
+    have hone : Integrable (1 : 𝓧 n → ℝ) (P n) := integrable_const 1
+    have hptwise : ∀ x : 𝓧 n, |randDist (G n) (T n) x u - cdf R u|
+        ≤ ε / 2 + Set.indicator {x : 𝓧 n | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|}
+            (1 : 𝓧 n → ℝ) x := by
+      intro x
+      by_cases hx : ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|
+      · rw [Set.indicator_of_mem
+          (s := {x : 𝓧 n | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|}) hx, Pi.one_apply]
+        linarith [hbdd n x]
+      · have hind : (0 : ℝ) ≤ Set.indicator
+            {x : 𝓧 n | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|} (1 : 𝓧 n → ℝ) x :=
+          Set.indicator_nonneg (fun _ _ => zero_le_one) x
+        linarith [not_le.mp hx]
+    have hle : ∫ x, |randDist (G n) (T n) x u - cdf R u| ∂(P n)
+        ≤ ε / 2 + (P n).real {x | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|} := by
+      calc ∫ x, |randDist (G n) (T n) x u - cdf R u| ∂(P n)
+          ≤ ∫ x, (ε / 2 + Set.indicator
+              {x : 𝓧 n | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|} (1 : 𝓧 n → ℝ) x)
+              ∂(P n) :=
+            integral_mono (hint n) ((integrable_const _).add (hone.indicator hset)) hptwise
+        _ = ε / 2 + (P n).real {x | ε / 2 ≤ |randDist (G n) (T n) x u - cdf R u|} := by
+            rw [integral_add (integrable_const _) (hone.indicator hset), integral_const,
+              integral_indicator_one hset]
+            simp
+    rw [Real.norm_eq_abs, abs_of_nonneg (hnn n)]
+    linarith
+  -- Step 2: the joint c.d.f. of `randPairLaw` converges at every continuity-point rectangle.
+  have hrect : ∀ s t : ℝ, ContinuousAt (cdf R) s → ContinuousAt (cdf R) t →
+      Tendsto (fun n => (randPairLaw (G n) (T n) (P n)).real (Set.Iic s ×ˢ Set.Iic t)) atTop
+        (𝓝 ((R.prod R).real (Set.Iic s ×ˢ Set.Iic t))) := by
+    intro s t hs ht
+    have hlimval : (R.prod R).real (Set.Iic s ×ˢ Set.Iic t) = cdf R s * cdf R t := by
+      rw [Measure.real, Measure.prod_prod, ENNReal.toReal_mul, cdf_eq_real, cdf_eq_real]
+      rfl
+    have hmeasrd : ∀ (n : ℕ) (u : ℝ),
+        Measurable fun x : 𝓧 n => randDist (G n) (T n) x u := fun n u =>
+      measurable_randDist (G n) (T n) u (hT n) (hsmul n)
+    have hintrd : ∀ (n : ℕ) (u : ℝ),
+        Integrable (fun x : 𝓧 n => randDist (G n) (T n) x u) (P n) := by
+      intro n u
+      refine Integrable.mono' (integrable_const (1 : ℝ)) (hmeasrd n u).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => ?_)
+      rw [Real.norm_eq_abs, abs_of_nonneg (randDist_nonneg (G n) (T n) x u)]
+      exact randDist_le_one (G n) (T n) x u
+    have hintprod : ∀ n, Integrable
+        (fun x : 𝓧 n => randDist (G n) (T n) x s * randDist (G n) (T n) x t) (P n) := by
+      intro n
+      refine Integrable.mono' (integrable_const (1 : ℝ))
+        (((hmeasrd n s).mul (hmeasrd n t)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun x => ?_)
+      have h1 := randDist_nonneg (G n) (T n) x s
+      have h2 := randDist_le_one (G n) (T n) x s
+      have h3 := randDist_nonneg (G n) (T n) x t
+      have h4 := randDist_le_one (G n) (T n) x t
+      rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg h1 h3)]
+      nlinarith
+    -- `|R̂ₙ(s)R̂ₙ(t) − F(s)F(t)| ≤ |R̂ₙ(t) − F(t)| + |R̂ₙ(s) − F(s)|` pointwise.
+    have hcomp : ∀ n, |(∫ x, randDist (G n) (T n) x s * randDist (G n) (T n) x t ∂(P n))
+          - cdf R s * cdf R t|
+        ≤ (∫ x, |randDist (G n) (T n) x t - cdf R t| ∂(P n))
+          + ∫ x, |randDist (G n) (T n) x s - cdf R s| ∂(P n) := by
+      intro n
+      have hmeast : Measurable fun x : 𝓧 n => |randDist (G n) (T n) x t - cdf R t| :=
+        ((hmeasrd n t).sub measurable_const).abs
+      have hmeass : Measurable fun x : 𝓧 n => |randDist (G n) (T n) x s - cdf R s| :=
+        ((hmeasrd n s).sub measurable_const).abs
+      have hintt : Integrable (fun x : 𝓧 n => |randDist (G n) (T n) x t - cdf R t|) (P n) :=
+        ((hintrd n t).sub (integrable_const _)).abs
+      have hints : Integrable (fun x : 𝓧 n => |randDist (G n) (T n) x s - cdf R s|) (P n) :=
+        ((hintrd n s).sub (integrable_const _)).abs
+      have hptw : ∀ x : 𝓧 n,
+          |randDist (G n) (T n) x s * randDist (G n) (T n) x t - cdf R s * cdf R t|
+            ≤ |randDist (G n) (T n) x t - cdf R t| + |randDist (G n) (T n) x s - cdf R s| := by
+        intro x
+        have hdecomp : randDist (G n) (T n) x s * randDist (G n) (T n) x t - cdf R s * cdf R t
+            = randDist (G n) (T n) x s * (randDist (G n) (T n) x t - cdf R t)
+              + cdf R t * (randDist (G n) (T n) x s - cdf R s) := by ring
+        rw [hdecomp]
+        refine le_trans (abs_add_le _ _) ?_
+        rw [abs_mul, abs_mul, abs_of_nonneg (randDist_nonneg (G n) (T n) x s),
+          abs_of_nonneg (cdf_nonneg R t)]
+        have h1 := randDist_le_one (G n) (T n) x s
+        have h2 := cdf_le_one R t
+        have h3 : (0 : ℝ) ≤ |randDist (G n) (T n) x t - cdf R t| := abs_nonneg _
+        have h4 : (0 : ℝ) ≤ |randDist (G n) (T n) x s - cdf R s| := abs_nonneg _
+        nlinarith
+      calc |(∫ x, randDist (G n) (T n) x s * randDist (G n) (T n) x t ∂(P n))
+              - cdf R s * cdf R t|
+          = |∫ x, (randDist (G n) (T n) x s * randDist (G n) (T n) x t
+              - cdf R s * cdf R t) ∂(P n)| := by
+            rw [integral_sub (hintprod n) (integrable_const _), integral_const]
+            simp
+        _ ≤ ∫ x, |randDist (G n) (T n) x s * randDist (G n) (T n) x t
+              - cdf R s * cdf R t| ∂(P n) := by
+            simpa using norm_integral_le_integral_norm
+              (μ := P n) (f := fun x : 𝓧 n =>
+                randDist (G n) (T n) x s * randDist (G n) (T n) x t - cdf R s * cdf R t)
+        _ ≤ ∫ x, (|randDist (G n) (T n) x t - cdf R t|
+              + |randDist (G n) (T n) x s - cdf R s|) ∂(P n) :=
+            integral_mono ((hintprod n).sub (integrable_const _)).abs (hintt.add hints) hptw
+        _ = _ := integral_add hintt hints
+    have hzero : Tendsto (fun n => (∫ x, |randDist (G n) (T n) x t - cdf R t| ∂(P n))
+        + ∫ x, |randDist (G n) (T n) x s - cdf R s| ∂(P n)) atTop (𝓝 0) := by
+      simpa using (hL1 t ht).add (hL1 s hs)
+    have hsq : Tendsto (fun n => |(∫ x, randDist (G n) (T n) x s * randDist (G n) (T n) x t
+        ∂(P n)) - cdf R s * cdf R t|) atTop (𝓝 0) :=
+      squeeze_zero (fun n => abs_nonneg _) hcomp hzero
+    have hmain : Tendsto (fun n => ∫ x, randDist (G n) (T n) x s * randDist (G n) (T n) x t
+        ∂(P n)) atTop (𝓝 (cdf R s * cdf R t)) := by
+      rw [← tendsto_sub_nhds_zero_iff]
+      exact (tendsto_zero_iff_abs_tendsto_zero _).mpr hsq
+    rw [hlimval]
+    refine hmain.congr fun n => ?_
+    exact integral_randDist_mul_eq_real_randPairLaw (G n) (P n) (T n) s t (hT n) (hsmul n)
+  -- Step 3: convergence on the π-system of half-open boxes with continuity-point corners.
+  set S : Set (Set (ℝ × ℝ)) := {E | ∃ a b c d : ℝ, ContinuousAt (cdf R) a ∧
+    ContinuousAt (cdf R) b ∧ ContinuousAt (cdf R) c ∧ ContinuousAt (cdf R) d ∧
+    E = Set.Ioc a b ×ˢ Set.Ioc c d} with hSdef
+  have hCPmax : ∀ {a a' : ℝ}, ContinuousAt (cdf R) a → ContinuousAt (cdf R) a' →
+      ContinuousAt (cdf R) (max a a') := by
+    intro a a' ha ha'
+    rcases max_cases a a' with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] <;> assumption
+  have hCPmin : ∀ {a a' : ℝ}, ContinuousAt (cdf R) a → ContinuousAt (cdf R) a' →
+      ContinuousAt (cdf R) (min a a') := by
+    intro a a' ha ha'
+    rcases min_cases a a' with ⟨he, _⟩ | ⟨he, _⟩ <;> rw [he] <;> assumption
+  have hSpi : IsPiSystem S := by
+    rintro E ⟨a, b, c, d, ha, hb, hc, hd, rfl⟩ E' ⟨a', b', c', d', ha', hb', hc', hd', rfl⟩ -
+    refine ⟨max a a', min b b', max c c', min d d', hCPmax ha ha', hCPmin hb hb',
+      hCPmax hc hc', hCPmin hd hd', ?_⟩
+    rw [Set.prod_inter_prod, Set.Ioc_inter_Ioc, Set.Ioc_inter_Ioc]
+  have hSmeas : ∀ E ∈ S, MeasurableSet E := by
+    rintro E ⟨a, b, c, d, -, -, -, -, rfl⟩
+    exact measurableSet_Ioc.prod measurableSet_Ioc
+  have hSnhds : ∀ (u : Set (ℝ × ℝ)), IsOpen u → ∀ z ∈ u, ∃ E ∈ S, E ∈ 𝓝 z ∧ E ⊆ u := by
+    intro u hu z hz
+    obtain ⟨ε, hεpos, hball⟩ := Metric.isOpen_iff.1 hu z hz
+    obtain ⟨a, ⟨ha1, ha2⟩, hacont⟩ :=
+      exists_continuousAt_cdf_Ioo R (show z.1 - ε < z.1 by linarith)
+    obtain ⟨b, ⟨hb1, hb2⟩, hbcont⟩ :=
+      exists_continuousAt_cdf_Ioo R (show z.1 < z.1 + ε by linarith)
+    obtain ⟨c, ⟨hc1, hc2⟩, hccont⟩ :=
+      exists_continuousAt_cdf_Ioo R (show z.2 - ε < z.2 by linarith)
+    obtain ⟨d, ⟨hd1, hd2⟩, hdcont⟩ :=
+      exists_continuousAt_cdf_Ioo R (show z.2 < z.2 + ε by linarith)
+    refine ⟨Set.Ioc a b ×ˢ Set.Ioc c d, ⟨a, b, c, d, hacont, hbcont, hccont, hdcont, rfl⟩, ?_, ?_⟩
+    · refine mem_nhds_iff.mpr ⟨Set.Ioo a b ×ˢ Set.Ioo c d, ?_, isOpen_Ioo.prod isOpen_Ioo,
+        ⟨⟨ha2, hb1⟩, hc2, hd1⟩⟩
+      exact Set.prod_mono Set.Ioo_subset_Ioc_self Set.Ioo_subset_Ioc_self
+    · refine subset_trans ?_ hball
+      rw [← ball_prod_same, Real.ball_eq_Ioo, Real.ball_eq_Ioo]
+      rintro w ⟨hw1, hw2⟩
+      exact ⟨⟨by simp only [Set.mem_Ioc] at hw1; linarith [hw1.1],
+          by simp only [Set.mem_Ioc] at hw1; linarith [hw1.2]⟩,
+        by simp only [Set.mem_Ioc] at hw2; linarith [hw2.1],
+        by simp only [Set.mem_Ioc] at hw2; linarith [hw2.2]⟩
+  -- Step 4: package as a convergence of `ProbabilityMeasure`s and unpack to `WeakConverges`.
+  set pn : ℕ → ProbabilityMeasure (ℝ × ℝ) :=
+    fun n => ⟨randPairLaw (G n) (T n) (P n), inferInstance⟩ with hpn
+  set pν : ProbabilityMeasure (ℝ × ℝ) := ⟨R.prod R, inferInstance⟩ with hpν
+  have hcoe : ∀ (q : ProbabilityMeasure (ℝ × ℝ)) (A : Set (ℝ × ℝ)),
+      ((q A : ℝ≥0) : ℝ) = (q : Measure (ℝ × ℝ)).real A := by
+    intro q A
+    rw [Measure.real, ← ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure, ENNReal.coe_toReal]
+  have hconv : Tendsto pn atTop (𝓝 pν) := by
+    refine hSpi.tendsto_probabilityMeasure_of_tendsto_of_mem hSmeas hSnhds ?_
+    rintro E ⟨a, b, c, d, ha, hb, hc, hd, rfl⟩
+    rw [← NNReal.tendsto_coe]
+    simp only [hcoe]
+    rcases le_or_gt a b with hab | hab
+    · rcases le_or_gt c d with hcd | hcd
+      · have hAn : ∀ n, (pn n : Measure (ℝ × ℝ)).real (Set.Ioc a b ×ˢ Set.Ioc c d)
+            = (randPairLaw (G n) (T n) (P n)).real (Set.Iic b ×ˢ Set.Iic d)
+              - (randPairLaw (G n) (T n) (P n)).real (Set.Iic a ×ˢ Set.Iic d)
+              - (randPairLaw (G n) (T n) (P n)).real (Set.Iic b ×ˢ Set.Iic c)
+              + (randPairLaw (G n) (T n) (P n)).real (Set.Iic a ×ˢ Set.Iic c) := fun n =>
+          measureReal_Ioc_prod_Ioc _ hab hcd
+        have hAlim : (pν : Measure (ℝ × ℝ)).real (Set.Ioc a b ×ˢ Set.Ioc c d)
+            = (R.prod R).real (Set.Iic b ×ˢ Set.Iic d)
+              - (R.prod R).real (Set.Iic a ×ˢ Set.Iic d)
+              - (R.prod R).real (Set.Iic b ×ˢ Set.Iic c)
+              + (R.prod R).real (Set.Iic a ×ˢ Set.Iic c) :=
+          measureReal_Ioc_prod_Ioc _ hab hcd
+        rw [hAlim]
+        refine Tendsto.congr (fun n => (hAn n).symm) ?_
+        exact ((((hrect b d hb hd).sub (hrect a d ha hd)).sub (hrect b c hb hc)).add
+          (hrect a c ha hc))
+      · have hempty : (Set.Ioc c d : Set ℝ) = ∅ := Set.Ioc_eq_empty (not_lt.mpr hcd.le)
+        simp [hempty]
+    · have hempty : (Set.Ioc a b : Set ℝ) = ∅ := Set.Ioc_eq_empty (not_lt.mpr hab.le)
+      simp [hempty]
+  intro f
+  simpa [pn, pν] using (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hconv) f
 
 end Asymptotics
 

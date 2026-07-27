@@ -173,14 +173,22 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
   -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
   -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
   -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
-  -- STATUS (re-derived): still blocked, on three pieces, none of which is affected by the new
-  -- sign-change engine of `Randomization/PairCLT` (that engine is specific to `{±1}ⁿ`):
-  -- (i) `weakConverges_randPairLaw_twoSample` — the permutation (combinatorial) CLT, still open;
-  -- (ii) `randDist_affine_tendstoInProb` in `SlutskyRandomization`, still open (its remaining
-  --      brick is tightness of the randomized statistic, see the note there);
+  -- STATUS (re-derived this session): TWO of the three pieces are now available.
+  -- (ii) `randDist_affine_tendstoInProb` in `SlutskyRandomization` is CLOSED (0-sorry): the
+  --      Slutsky transfer is available, in exactly the mixture form this application needs
+  --      (`A = 1/twoSampleScale` is *not* permutation invariant). Its tightness brick is
+  --      `Randomization/PairCLT.exists_tight_bound_of_weakConverges`. Note it now carries
+  --      measurability of `T`, `A`, `B` and of the action — all four are routine here
+  --      (`measurable_twoSampleMeanDiff`, `measurable_perm_smul`, and `twoSampleScale` is a
+  --      composition of `Real.sqrt` with a polynomial in the coordinates).
+  -- Still open, and these are the only two:
+  -- (i) `weakConverges_randPairLaw_twoSample` — the permutation (combinatorial) CLT, open;
+  --     see the status note there for why the sign-change engine does not cover it.
   -- (iii) the scale consistency `twoSampleScale (π X) → τ` in `TendstoInProbRandomized`, a
   --      first-two-moments statement about sampling without replacement from the pooled data,
-  --      for which no brick exists.
+  --      for which no brick exists. `ForMathlib/HypergeometricMoments` supplies the moments of
+  --      the sampling indicators, so this is a Chebyshev argument on the mixture, not a gap in
+  --      principle — but it is unwritten.
   sorry
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard
@@ -243,8 +251,12 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
   -- randomized critical value `randQuantile → z_{1-α}` (`randQuantile_tendstoInProb`) and a
   -- portmanteau evaluation of `powerAgainst` at the limiting rejection region, whose frontier
   -- is `N(0,1)`-null.
-  -- BLOCKED on both prerequisite theorems above (both `sorry`), and there is no packaged
-  -- "matching limits ⇒ asymptotic level α" engine in `Randomization/Asymptotics` to invoke.
+  -- BLOCKED on both prerequisite theorems above (both `sorry`). The assembly engine is still
+  -- unpackaged, but `Randomization/Asymptotics` now supplies both halves of the equivalence
+  -- (`randDist_tendstoInProb_cdf`, `randQuantile_tendstoInProb`, and — new this session —
+  -- the converse `weakConverges_randPairLaw_of_randDist_tendstoInProb`), so the only thing
+  -- left to write is the portmanteau evaluation of `powerAgainst` at the limiting rejection
+  -- region, whose frontier is `N(0,1)`-null.
   sorry
 
 end StatLean.HypothesisTesting
