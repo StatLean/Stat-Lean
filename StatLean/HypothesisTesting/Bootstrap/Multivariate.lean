@@ -1261,6 +1261,73 @@ private lemma map_meanStatistic_eq_meanVecRootLaw [IsProbabilityMeasure P]
   funext w
   rw [hstat w]
 
+/-! ### The same transport at an empirical measure
+
+The bootstrap runs the transport above at the empirical measure of the observed sample. Three
+facts are needed: the image of an empirical measure under the vector of coordinate functions is
+the empirical measure of the transformed sample; the mean of the coordinate functions under it is
+the sample mean vector; and every measurable function is square-integrable against it. -/
+
+private lemma isProbabilityMeasure_empiricalMeasure' {n : ℕ} (hn : 0 < n) (x : Fin n → 𝓢) :
+    IsProbabilityMeasure (empiricalMeasure x) := by
+  refine ⟨?_⟩
+  unfold empiricalMeasure
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, measure_univ,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, smul_eq_mul]
+  rw [ENNReal.inv_mul_cancel (by exact_mod_cast hn.ne') (by simp)]
+
+private lemma map_empiricalMeasure {n : ℕ} {𝓨 : Type*} [MeasurableSpace 𝓨] {g : 𝓢 → 𝓨}
+    (hg : Measurable g) (x : Fin n → 𝓢) :
+    (empiricalMeasure x).map g = empiricalMeasure fun i => g (x i) := by
+  have hsum : ∀ s : Finset (Fin n),
+      (∑ i ∈ s, Measure.dirac (x i)).map g = ∑ i ∈ s, Measure.dirac (g (x i)) := by
+    intro s
+    induction s using Finset.induction_on with
+    | empty => simp
+    | insert a s ha ih =>
+        rw [Finset.sum_insert ha, Finset.sum_insert ha, Measure.map_add _ _ hg, ih,
+          Measure.map_dirac' hg]
+  unfold empiricalMeasure
+  rw [Measure.map_smul, hsum]
+
+private lemma integrable_empiricalMeasure' {n : ℕ} {E : Type*} [NormedAddCommGroup E]
+    (x : Fin n → 𝓢) {g : 𝓢 → E} (hg : StronglyMeasurable g) :
+    Integrable g (empiricalMeasure x) := by
+  rcases Nat.eq_zero_or_pos n with hn | hn
+  · subst hn; simp [empiricalMeasure]
+  · unfold empiricalMeasure
+    refine Integrable.smul_measure ?_ (ENNReal.inv_ne_top.mpr (by exact_mod_cast hn.ne'))
+    exact integrable_finset_sum_measure.2 fun i _ => integrable_dirac' hg (by simp)
+
+private lemma integral_empiricalMeasure' {n : ℕ} (x : Fin n → 𝓢) {g : 𝓢 → ℝ}
+    (hg : Measurable g) :
+    ∫ s, g s ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, g (x i) := by
+  unfold empiricalMeasure
+  rw [integral_smul_measure, integral_finset_sum_measure
+    (fun i _ => integrable_dirac' hg.stronglyMeasurable (by simp))]
+  simp only [integral_dirac' _ _ hg.stronglyMeasurable]
+  rw [ENNReal.toReal_inv, ENNReal.toReal_natCast, smul_eq_mul]
+
+private lemma memLp_empiricalMeasure' {n : ℕ} (x : Fin n → 𝓢) {g : 𝓢 → ℝ} (hg : Measurable g) :
+    MemLp g 2 (empiricalMeasure x) := by
+  rw [memLp_two_iff_integrable_sq_norm hg.aestronglyMeasurable]
+  exact integrable_empiricalMeasure' x (by fun_prop)
+
+/-- The sample mean vector is the mean of the coordinate functions under the empirical measure. -/
+private lemma toLp_integral_empiricalMeasure {n : ℕ} (hhmeas : ∀ j, Measurable (h j))
+    (x : Fin n → 𝓢) :
+    (WithLp.toLp 2 fun j => ∫ s, h j s ∂(empiricalMeasure x)) = meanStatistic h x := by
+  refine euclidean_ext fun j => ?_
+  simp only [WithLp.ofLp_toLp, meanStatistic, integral_empiricalMeasure' x (hhmeas j)]
+
+/-- The sample mean vector as a scaled sum of the transformed observations. -/
+private lemma meanStatistic_eq_smul_sum {n : ℕ} (x : Fin n → 𝓢) :
+    meanStatistic h x = (n : ℝ)⁻¹ • ∑ i, hVec h (x i) := by
+  refine euclidean_ext fun j => ?_
+  have hsum : WithLp.ofLp (∑ i, hVec h (x i)) j = ∑ i, WithLp.ofLp (hVec h (x i)) j :=
+    map_sum (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin p) j) _ _
+  simp only [meanStatistic, WithLp.ofLp_toLp, PiLp.smul_apply, smul_eq_mul, hsum, ofLp_hVec]
+
 /-- The real inner product of a Euclidean space, as a sum of products of coordinates. -/
 private lemma real_inner_euclidean {m : ℕ} (u v : EuclideanSpace ℝ (Fin m)) :
     (inner ℝ u v : ℝ) = ∑ i, WithLp.ofLp u i * WithLp.ofLp v i := by
