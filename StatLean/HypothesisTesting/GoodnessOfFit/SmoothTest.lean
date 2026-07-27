@@ -1284,7 +1284,30 @@ compact shell* `b ≤ ‖h‖ ≤ B` of that per-`h` limit.  The `limsup ≤` ha
 `h ↦ P_{n,h}{Sₙ > c}` to converge *uniformly* on the shell, which per-`h` weak convergence
 does not give.  Since the shell is compact and does not move with `n`, an equicontinuity
 argument suffices — the missing brick is an equicontinuity/uniform-Berry–Esseen estimate for
-the drifting-mean score vector, not any further exponential-family analysis. -/
+the drifting-mean score vector, not any further exponential-family analysis.
+
+TODO (RE-DERIVED, wave 6; the "equicontinuity/uniform-Berry–Esseen" diagnosis above is
+SUPERSEDED).  Uniformity over the shell is NOT needed at all.  The shell `{b ≤ ‖h‖ ≤ B}` is
+compact, so the `liminf ≥` half follows by choosing near-minimisers `hₙ` (with
+`power_n(hₙ) ≤ sInf_n + (n+1)⁻¹`) and passing to a convergent subsequence `hₙ → h₀`, `‖h₀‖ ≥ b`;
+all that is then required is the DRIFTING-parameter local limit
+`power_n(hₙ) → ncχ²_k(‖h₀‖²)(c,∞)`, followed by `noncentralChiSquared_tail_mono`.  No estimate
+uniform in `h` ever enters.
+
+The remaining analytic input is therefore a single named brick: membership of
+`fun n => ((smoothModel P₀ ψ hψ).P (n^{-1/2} • hₙ)).map (psiVec ψ)` in
+`Bootstrap.Multivariate.meanVecSeqClass` (weak convergence of the tilts to `P₀`, mean vectors
+`→ 0`, covariances `→ Iₖ`), together with the FIRST-order expansion of the mean map
+    `m(θ) = ∫ psiVec ψ dp_θ = θ + O(‖θ‖²)`,
+which is what makes the Slutsky shift `√n · m(hₙ/√n) → h₀` and hence
+`Zₙ ⇒ N(h₀, Iₖ)`; `Sₙ = ‖Zₙ‖²` then gives `χ²_k(‖h₀‖²)` by the continuous-mapping bridge
+already used in the null case, and the constant-threshold portmanteau converts weak
+convergence into convergence of `P{Sₙ > c}`.  The mean expansion is provable *here*, by the
+elementary route of `logPartition_quadratic_bound` above (third-order bound
+`abs_exp_sub_quadratic_le` on `e^z` plus the sign-vector envelope `integrable_exp_l1`, applied
+to the numerator `∫ψⱼ e^{⟪θ,ψ⟫}` and the denominator separately, using `hcentred`/`hortho` for
+the zeroth and first moments) — no `ExponentialFamily.Smoothness` import and no Fréchet
+derivative.  That brick, plus the subsequence bookkeeping, is the whole remaining debt. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
