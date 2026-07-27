@@ -143,7 +143,7 @@ theorem exists_measurable_retraction [StandardBorelSpace Θ] [Nonempty Θ]
     intro θ θ' h
     refine hK_inj (hAdet (K θ) (K θ') inferInstance inferInstance fun m => ?_)
     have hm : (K θ (A m)).toReal = (K θ' (A m)).toReal := congrFun h m
-    exact (ENNReal.toReal_eq_toReal (measure_ne_top _ _) (measure_ne_top _ _)).mp hm
+    exact (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).mp hm
   have hFemb : MeasurableEmbedding F := hFmeas.measurableEmbedding hFinj
   obtain ⟨Finv, hFinvmeas, hFinv⟩ :=
     hFemb.exists_measurable_extend (g := (id : Θ → Θ)) measurable_id fun _ => inferInstance
@@ -172,7 +172,7 @@ theorem exists_measurable_retraction [StandardBorelSpace Θ] [Nonempty Θ]
     rw [doobJoint, ae_map_iff measurable_swap.aemeasurable hS]
     exact Measure.ae_compProd_of_ae_ae (measurable_swap hS) (ae_of_all _ hae)
   filter_upwards [h1] with ω hω
-  show Finv (E ω.1) = ω.2
+  change Finv (E ω.1) = ω.2
   rw [hω]
   exact congrFun hFinv ω.2
 
