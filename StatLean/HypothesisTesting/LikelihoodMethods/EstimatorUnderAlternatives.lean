@@ -448,6 +448,144 @@ private lemma map_fst_withDensity_exp_tilt_graphJoint
     rw [hinvmul, one_mul, hH']
   rw [hmean, hcov]
 
+/-- **Joint limit of the recentred estimator and the score, under `P^n_{θ₀}`.**
+
+`(√n(θ̂ₙ − θ₀), Δₙ) ⇝ (J⁻¹Δ, Δ)` with `Δ ∼ N(0, J)`. The limit is carried by the *graph* of
+`J⁻¹`: asymptotic linearity makes the first coordinate a deterministic function of the second
+in the limit, so no tightness or subsequence argument is needed to produce the joint law —
+it is the pushforward of the score limit along `δ ↦ (J⁻¹δ, δ)`, and Slutsky replaces
+`J⁻¹Δₙ` by `√n(θ̂ₙ − θ₀)`.
+
+This is what makes the full-sequence route possible: `joint_weak_subsequence` extracts a
+subsequence precisely because it does not know the joint limit, whereas here `hlin`
+*identifies* it. -/
+private lemma joint_weak_estimator_scoreSum
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) :
+    WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω)))
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hΔmeas : ∀ n : ℕ, Measurable (scoreSum ℓ n) := by
+    intro n
+    unfold scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  have hΔ := scoreSum_weakly_converges M μ θ₀ ℓ hℓ (hPDF.density_integral_eq_one θ₀)
+    (hPDF.density_integrable θ₀) (fun _ _ => hPDF.density_integral_eq_one _)
+    (fun _ _ => hPDF.density_integrable _) hDQM J hJ_psd hJ
+  set F : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) :=
+    fun δ => (mulVecE J⁻¹ δ, δ) with hF
+  have hF_cont : Continuous F :=
+    (Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id
+  have hF_meas : Measurable F := hF_cont.measurable
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) :=
+    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+  have hX : WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)))
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map F) := by
+    have h2 := hΔ.map hF_cont hF_meas
+    have hfun : (fun n : ℕ => ((productMeasure M μ θ₀ n).map (scoreSum ℓ n)).map F)
+        = fun n : ℕ => (productMeasure M μ θ₀ n).map (fun ω => F (scoreSum ℓ n ω)) := by
+      funext n
+      exact Measure.map_map hF_meas (hΔmeas n)
+    rwa [hfun] at h2
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => F (scoreSum ℓ n ω))
+    (Y := fun n ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω))
+    (fun n => (hF_meas.comp (hΔmeas n)).aemeasurable)
+    (fun n => ((((hest n).sub measurable_const).const_smul (Real.sqrt n)).prodMk
+      (hΔmeas n)).aemeasurable) hX ?_
+  intro ε hε
+  -- the product distance collapses: the second coordinates agree
+  have hd : ∀ a b c : EuclideanSpace ℝ (Fin k),
+      dist ((a, c) : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k)) (b, c)
+        = ‖b - a‖ := by
+    intro a b c
+    simp only [Prod.dist_eq, dist_self]
+    rw [max_eq_left dist_nonneg, dist_eq_norm, norm_sub_rev]
+  refine Filter.Tendsto.congr (fun n => ?_) (hlin ε hε)
+  congr 1
+  ext ω
+  simp only [Set.mem_setOf_eq, hF, hd]
+
+/-- **Joint limit of the recentred estimator and the log-likelihood ratio, under `P^n_{θ₀}`.**
+
+The LAN expansion `Lₙ = ⟪h, Δₙ⟫ − ½⟪h, Jh⟫ + o_P(1)` (`lanResidual_tendsto_productMeasure`)
+turns `joint_weak_estimator_scoreSum` into the joint law that Le Cam's third lemma consumes.
+The subsequence parameter of `slutsky_bridge_of_lanResidual` is instantiated at the identity:
+the residual statement it needs is available for the *full* sequence, and the joint limit is
+known outright by the previous lemma, so nothing has to be extracted. -/
+private lemma joint_weak_estimator_logLikelihood
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
+    (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est) (h : EuclideanSpace ℝ (Fin k)) :
+    WeakConverges
+      (fun n => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), logLikelihood M θ₀ h n ω)))
+      (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+          (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))).map
+        (fun p : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) =>
+          (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫))) := by
+  classical
+  have hC := joint_weak_estimator_scoreSum M μ hPDF θ₀ ℓ hℓ hDQM J hJ est hest hlin
+  have hΔmeas : ∀ n : ℕ, Measurable (scoreSum ℓ n) := by
+    intro n
+    unfold scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hℓ.comp (measurable_pi_apply i))).const_smul ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  have hTmeas : ∀ n : ℕ, Measurable
+      (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - θ₀)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  have hF_meas : Measurable
+      (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ)) :=
+    ((Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹).continuous.prodMk continuous_id).measurable
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J).map
+        (fun δ : EuclideanSpace ℝ (Fin k) => (mulVecE J⁻¹ δ, δ))) :=
+    Measure.isProbabilityMeasure_map hF_meas.aemeasurable
+  set G : EuclideanSpace ℝ (Fin k) × EuclideanSpace ℝ (Fin k) →
+      EuclideanSpace ℝ (Fin k) × ℝ :=
+    fun p => (p.1, ⟪h, p.2⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫) with hG
+  have hG_cont : Continuous G :=
+    continuous_fst.prodMk ((continuous_const.inner continuous_snd).sub continuous_const)
+  have hG_meas : Measurable G := hG_cont.measurable
+  -- Push the joint limit forward along `G`, then read it as a single pushforward of `P^n`.
+  have h4 := hC.map hG_cont hG_meas
+  have hfun : (fun n : ℕ => ((productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀), scoreSum ℓ n ω))).map G)
+      = fun n : ℕ => (productMeasure M μ θ₀ n).map
+        (fun ω => (Real.sqrt n • (est n ω - θ₀),
+          ⟪h, scoreSum ℓ n ω⟫ - (1 / 2 : ℝ) * ⟪h, mulVecE J h⟫)) := by
+    funext n
+    exact Measure.map_map hG_meas ((hTmeas n).prodMk (hΔmeas n))
+  rw [hfun] at h4
+  -- The LAN residual replaces the linearised exponent by the true log-likelihood ratio.
+  have hlanres := lanResidual_tendsto_productMeasure M μ θ₀ ℓ hℓ
+    (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
+    (fun _ _ => hPDF.density_integral_eq_one _) (fun _ _ => hPDF.density_integrable _)
+    hDQM J hJ h
+  exact slutsky_bridge_of_lanResidual M μ θ₀ ℓ hℓ J
+    (fun n ω => Real.sqrt n • (est n ω - θ₀)) hTmeas h _ (fun n => n)
+    (fun n => logLikelihood_measurable M θ₀ h n) hlanres h4
+
 /-- **Limit law of an efficient estimator under local alternatives.**
 
 Under `P^n_{θₙ}` with `θₙ = θ₀ + hₙ/√n` and `hₙ → h`, the recentred estimator
