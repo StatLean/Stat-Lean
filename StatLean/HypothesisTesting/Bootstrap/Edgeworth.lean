@@ -1502,6 +1502,36 @@ private lemma exists_window_bound (F : Measure ℝ) [IsProbabilityMeasure F]
   refine le_trans (le_of_eq ?_) hcore
   ring
 
+/-- **(E4).4 — the outer range.** Off the window the two characteristic functions are estimated
+separately: the law of the root by Cramér's condition (`hcr`, supplied by
+`exists_bound_lt_one_of_cramer` on the centred law), the approximant by its own Gaussian tail
+(`edgeworthCharFun_tail_le`). Both bounds are geometric in `n`. -/
+private lemma edgeworthGap_tail_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hFvar : 0 < Var[fun t : ℝ => t; F]) {c cr ε : ℝ} (hc : 0 ≤ c)
+    (hcr : ∀ s : ℝ, ε ≤ |s| → ‖charFun (centredLaw F) s‖ ≤ cr)
+    (hε : ε * Real.sqrt Var[fun t : ℝ => t; F] ≤ 2 * Real.pi * c)
+    {n : ℕ} (hn : 1 ≤ n) {ξ : ℝ} (hξ : c * Real.sqrt n ≤ |ξ|) :
+    ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))
+        - charFunDensity (edgeworthDensity (skewness F) n) (-(2 * Real.pi * ξ))‖
+      ≤ cr ^ n + (1 + 512 * Real.pi ^ 3 * |skewness F|)
+          * Real.exp (-(Real.pi ^ 2 * (c * Real.sqrt n) ^ 2)) := by
+  have hσ : 0 < Real.sqrt Var[fun t : ℝ => t; F] := Real.sqrt_pos.2 hFvar
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnR
+  have hcnn : (0 : ℝ) ≤ c * Real.sqrt n := mul_nonneg hc (Real.sqrt_nonneg _)
+  have hc' : c ≤ |ξ| * (Real.sqrt n)⁻¹ := by
+    rw [← div_eq_mul_inv, le_div_iff₀ hsn]
+    exact hξ
+  have h1 : ‖charFun (stdRootLaw F n) (-(2 * Real.pi * ξ))‖ ≤ cr ^ n := by
+    rw [charFun_stdRootLaw F (by omega : 0 < n), norm_pow]
+    refine pow_le_pow_left₀ (norm_nonneg _) (hcr _ ?_) n
+    rw [abs_window_arg hσ (by positivity), le_div_iff₀ hσ]
+    linarith [hε, mul_le_mul_of_nonneg_left hc' (by positivity : (0 : ℝ) ≤ 2 * Real.pi)]
+  have h2 := norm_charFunDensity_edgeworthDensity_le (skewness F) hn (-(2 * Real.pi * ξ))
+  rw [neg_sq, abs_neg] at h2
+  exact (norm_sub_le _ _).trans
+    (add_le_add h1 (h2.trans (edgeworthCharFun_tail_le (skewness F) hcnn hξ)))
+
 end WindowEstimate
 
 
