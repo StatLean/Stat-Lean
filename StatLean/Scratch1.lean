@@ -1,5 +1,6 @@
 import StatLean.ConcentrationInequalities.Symmetrization.Empirical
 import Mathlib.MeasureTheory.Integral.Layercake
+import Mathlib.Data.Fin.Tuple.Sort
 
 open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal NNReal
@@ -406,6 +407,66 @@ private lemma integral_dkwMax_le (hn : 0 < n) :
         linarith
 
 end Moments
+
+/-! ### The sorted-prefix representation -/
+
+section Sorting
+
+/-- For a monotone tuple, the sublevel set at `c` is the initial segment of length
+`#{l | y l ≤ c}`. -/
+private lemma monotone_le_iff_lt_card {y : Fin n → ℝ} (hy : Monotone y) (c : ℝ) (l : Fin n) :
+    y l ≤ c ↔ (l : ℕ) < (Finset.univ.filter (fun l : Fin n => y l ≤ c)).card := by
+  classical
+  set T : Finset (Fin n) := Finset.univ.filter (fun l : Fin n => y l ≤ c) with hT
+  have hmemT : ∀ l' : Fin n, l' ∈ T ↔ y l' ≤ c := by intro l'; simp [hT]
+  constructor
+  · intro hl
+    have hsub : Finset.Iic l ⊆ T := fun l' hl' =>
+      (hmemT l').mpr (le_trans (hy (Finset.mem_Iic.mp hl')) hl)
+    have hcard := Finset.card_le_card hsub
+    rw [Fin.card_Iic] at hcard
+    omega
+  · intro hl
+    by_contra hnot
+    have hsub : T ⊆ Finset.Iio l := by
+      intro l' hl'
+      rw [Finset.mem_Iio]
+      by_contra hge
+      exact hnot (le_trans (hy (not_lt.mp hge)) ((hmemT l').mp hl'))
+    have hcard := Finset.card_le_card hsub
+    rw [Fin.card_Iio] at hcard
+    omega
+
+/-- For every threshold `c`, the set of sample indices below `c` is a prefix of the
+sorted order, so the signed count is a value of the `±1` walk. -/
+private lemma exists_dkwWalk_eq (x : Fin n → ℝ) (s : Fin n → ℝ) (c : ℝ) :
+    ∃ j ≤ n, ∑ i, s i * (if x i ≤ c then (1 : ℝ) else 0)
+      = dkwWalk (Tuple.sort x) s j := by
+  classical
+  set σ : Equiv.Perm (Fin n) := Tuple.sort x with hσ
+  have hy : Monotone (x ∘ σ) := Tuple.monotone_sort x
+  set T : Finset (Fin n) := Finset.univ.filter (fun l : Fin n => (x ∘ σ) l ≤ c) with hT
+  refine ⟨T.card, le_trans (Finset.card_le_univ T) (by simp), ?_⟩
+  have hsum : ∑ i, s i * (if x i ≤ c then (1 : ℝ) else 0)
+      = ∑ i ∈ Finset.univ.filter (fun i : Fin n => x i ≤ c), s i := by
+    rw [Finset.sum_filter]
+    exact Finset.sum_congr rfl fun i _ => by split_ifs <;> simp
+  have hset : Finset.univ.filter (fun i : Fin n => x i ≤ c) = dkwPre σ T.card := by
+    ext i
+    simp only [dkwPre, Finset.mem_filter, Finset.mem_univ, true_and]
+    have hpt := monotone_le_iff_lt_card hy c (σ.symm i)
+    rw [← hT] at hpt
+    simpa [Function.comp_def] using hpt
+  rw [hsum, hset]
+  rfl
+
+private lemma abs_signed_count_le_dkwMax (x : Fin n → ℝ) (s : Fin n → ℝ) (c : ℝ) :
+    |∑ i, s i * (if x i ≤ c then (1 : ℝ) else 0)| ≤ dkwMax (Tuple.sort x) s := by
+  obtain ⟨j, hj, hval⟩ := exists_dkwWalk_eq x s c
+  rw [hval]
+  exact dkwWalk_le_dkwMax _ s hj
+
+end Sorting
 
 
 end StatLean.HypothesisTesting
