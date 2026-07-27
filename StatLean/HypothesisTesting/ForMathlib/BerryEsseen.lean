@@ -16,35 +16,51 @@ Probability Theory and Its Applications*, Vol. II, 2nd ed., Wiley, 1971, §XVI.3
 
 ## Main results
 
-* `norm_cexp_sub_taylor_le`, `norm_prod_sub_prod_le` — elementary complex-analytic
-  estimates (restated here from `LindebergCLT.lean`, where they are `private`).
+* `norm_cexp_sub_taylor_le`, `norm_cexp_sub_taylor3_le`, `norm_prod_sub_prod_le`,
+  `norm_pow_sub_pow_sub_lin_le` — elementary complex-analytic estimates (the first and third
+  restated here from `LindebergCLT.lean`, where they are `private`).
 * `norm_charFun_sub_quadratic_le` — the characteristic function of a centered law is within
   `ρ|u|³/6` of its quadratic Taylor polynomial `1 − v u²/2`.
+* `norm_charFun_sub_cubic_le` — the next order: within `(∫x⁴)|u|⁴/24` of
+  `1 − v u²/2 − i m₃ u³/6`, retaining the third cumulant.
+* `norm_charFun_le_exp_neg_sq` — the quadratic Gaussian majorant `‖charFun μ s‖ ≤ e^{−v s²/4}`
+  on the window `v s² ≤ 2`, `ρ|s| ≤ 3v/2`.
 * `norm_charFun_pow_sub_gaussian_le` — `‖(charFun μ w)ⁿ − exp(−n v w²/2)‖ ≤ n(ρ|w|³/6 +
   (v w²/2)²/2)`, the full characteristic-function content of Berry–Esseen (steps (i)–(iii)).
-* `norm_charFun_iidSum_sub_gaussian_le` — the same bound applied to the standardized i.i.d.
-  sum `(√n)⁻¹ ∑ₖ Xₖ` via Mathlib's `charFun_inv_sqrt_mul_sum`.
+* `norm_charFun_pow_sub_edgeworth_le` — the **damped one-term Edgeworth expansion** of
+  `(charFun μ)ⁿ`, the sharpening of the previous item that both retains the `n^{−1/2}` term and
+  keeps a Gaussian envelope in the argument.
+* `norm_charFun_iidSum_sub_gaussian_le` — the Berry–Esseen bound applied to the standardized
+  i.i.d. sum `(√n)⁻¹ ∑ₖ Xₖ` via Mathlib's `charFun_inv_sqrt_mul_sum`.
 * `fejerKernel`, `fejerKernel_nonneg`, `fejerKernel_even` — a partial foundation for Esseen's
   smoothing inequality.
 
 ## Status
 
 The **characteristic-function half of Berry–Esseen is complete and axiom-clean**
-(`norm_charFun_iidSum_sub_gaussian_le` and its inputs). **Target 1, Esseen's smoothing
-inequality — and hence the CDF-level Berry–Esseen bound — is still open**, but the obstruction
-is now narrower than this file originally recorded. Two of the three ingredients listed below
-have since been **built** in `StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing`:
+(`norm_charFun_iidSum_sub_gaussian_le` and its inputs).
+
+**Target 1, Esseen's smoothing inequality, is no longer open, and the verdict this file used
+to record is dead.** All three ingredients listed below are now built in
+`StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing`:
 
 * the sinc integral `∫(sin x/x)² dx = π` (`integral_sin_div_sq`) and hence the Fejér
   normalisation `∫ K_T = 1` (`integral_fejerKernel`);
 * the Fejér/triangle Fourier pair, in the form `𝓕 Λ = (sin πξ/πξ)²` (`fourier_tentC`) and its
-  dual `𝓕 ((sin πξ/πξ)²) = Λ` (`fourier_sqSincC`), the compactly supported transform that
-  truncates the inversion integral.
+  dual `𝓕 ((sin πξ/πξ)²) = Λ` (`fourier_sqSincC`);
+* the CDF-level smoothing inequality itself, `abs_measure_Iic_sub_le_charFun`. Crucially this
+  is obtained **without** the Lévy/Esseen inversion formula for distribution functions that
+  this file previously named as the binding obstruction: the argument runs on test functions
+  (ramps and trapezoids) rather than on `F − G` directly, so the non-`L¹`-ness of `F − G` never
+  arises.
 
-What remains is the third ingredient only: a **Lévy/Esseen inversion formula at the level of
-distribution functions**, i.e. the identity expressing the *smoothed* difference `(F − G) ∗ K_T`
-as a Fourier integral of `(F̂ − Ĝ)/t` over `[−T, T]`. Mathlib's Fourier inversion is for `L¹`
-functions, and the Stieltjes/CDF version has to be built by hand.
+What is genuinely missing for a *Kolmogorov-distance* Berry–Esseen theorem is therefore only
+the assembly — choosing the flank width `δ` and integrating
+`norm_charFun_pow_sub_gaussian_le` against the Esseen weight
+`min(1/(π|ξ|), 1/(δπ²ξ²))`. Note that the undamped right-hand side of that bound is *not*
+enough for the assembly to produce a rate; the damped
+`norm_charFun_pow_sub_edgeworth_le` below is what the weighted integral needs, and its Gaussian
+factor `e^{−v s²/4}` is supplied by `norm_charFun_le_exp_neg_sq`.
 
 ## Formalization notes
 
@@ -204,6 +220,118 @@ private lemma norm_cexp_sub_taylor_le (y : ℝ) :
     exact key (-y) hz
 
 
+open Complex in
+/-- **Uniform fourth-order remainder bound for `e^{iy}`.** The next order of
+`norm_cexp_sub_taylor_le`:
+`‖exp (I y) − (1 + I y − y²/2 − I y³/6)‖ ≤ min (|y|⁴/24) (|y|³/3)`.
+The quartic half is obtained by integrating the cubic bound of `norm_cexp_sub_taylor_le` once
+more; the cubic half is the triangle inequality against the extra monomial `I y³/6`. This is
+the pointwise input of the *one-term Edgeworth* expansion, where the third cumulant has to be
+retained rather than absorbed into the remainder. -/
+private lemma norm_cexp_sub_taylor3_le (y : ℝ) :
+    ‖Complex.exp (I * y) - (1 + I * y - (y : ℂ) ^ 2 / 2 - I * (y : ℂ) ^ 3 / 6)‖
+      ≤ min (|y| ^ 4 / 24) (|y| ^ 3 / 3) := by
+  -- The third-order remainder, in the "`A₂`" shape that integrates to the fourth-order one.
+  have hA2 : ∀ u : ℝ, ‖Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2‖ ≤ |u| ^ 3 / 6 := by
+    intro u
+    have heq : Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2
+        = Complex.exp (I * ↑u) - (1 + I * ↑u - (↑u : ℂ) ^ 2 / 2) := by ring
+    rw [heq]
+    exact (norm_cexp_sub_taylor_le u).trans (min_le_left _ _)
+  -- Derivative of `u ↦ exp (I u)` (as a function of a real variable).
+  have he : ∀ u : ℝ, HasDerivAt (fun w : ℝ => Complex.exp (I * ↑w))
+      (Complex.exp (I * ↑u) * I) u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℂ => I * w) I (↑u : ℂ) := by
+      simpa using (hasDerivAt_id (↑u : ℂ)).const_mul I
+    simpa using (h1.cexp).comp_ofReal
+  have hIu : ∀ u : ℝ, HasDerivAt (fun w : ℝ => I * ↑w) I u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℂ => I * w) I (↑u : ℂ) := by
+      simpa using (hasDerivAt_id (↑u : ℂ)).const_mul I
+    simpa using h1.comp_ofReal
+  have hof : ∀ u : ℝ, HasDerivAt (fun w : ℝ => (↑w : ℂ)) 1 u := by
+    intro u
+    simpa using (hasDerivAt_id (↑u : ℂ)).comp_ofReal
+  -- `A₃ w = exp (I w) − 1 − I w + w²/2 + I w³/6` has derivative `A₂ w · I`.
+  have hd3 : ∀ u : ℝ, HasDerivAt
+      (fun w : ℝ => Complex.exp (I * ↑w) - 1 - I * ↑w + (↑w : ℂ) ^ 2 / 2 + I * (↑w : ℂ) ^ 3 / 6)
+      ((Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I) u := by
+    intro u
+    have h1 : HasDerivAt (fun w : ℝ => (↑w : ℂ) ^ 2 / 2) (↑u : ℂ) u := by
+      have h := ((hof u).pow 2).div_const 2
+      simpa using h
+    have h2 : HasDerivAt (fun w : ℝ => I * (↑w : ℂ) ^ 3 / 6) (I * (↑u : ℂ) ^ 2 / 2) u := by
+      have h := (((hof u).pow 3).const_mul I).div_const 6
+      convert h using 1
+      push_cast
+      ring
+    have hbase := ((he u).sub (hasDerivAt_const u (1 : ℂ))).sub (hIu u)
+    have h := (hbase.add h1).add h2
+    convert h using 1
+    have hI2 : (I : ℂ) * I = -1 := Complex.I_mul_I
+    linear_combination (-(↑u : ℂ)) * hI2
+  have hcont3 : Continuous
+      (fun u : ℝ => (Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I) := by fun_prop
+  have hA3z : ∀ z : ℝ,
+      (∫ u in (0 : ℝ)..z, (Complex.exp (I * ↑u) - 1 - I * ↑u + (↑u : ℂ) ^ 2 / 2) * I)
+      = Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6 := by
+    intro z
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ => hd3 u)
+      (hcont3.intervalIntegrable 0 z)]
+    simp
+  -- The `z ≥ 0` case of the quartic bound.
+  have key : ∀ z : ℝ, 0 ≤ z →
+      ‖Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6‖
+        ≤ z ^ 4 / 24 := by
+    intro z hz
+    have hb : ‖Complex.exp (I * ↑z) - 1 - I * ↑z + (↑z : ℂ) ^ 2 / 2 + I * (↑z : ℂ) ^ 3 / 6‖
+        ≤ ∫ u in (0 : ℝ)..z, u ^ 3 / 6 := by
+      rw [← hA3z z]
+      refine intervalIntegral.norm_integral_le_of_norm_le hz (ae_of_all _ fun u hu => ?_)
+        ((by fun_prop : Continuous (fun u : ℝ => u ^ 3 / 6)).intervalIntegrable 0 z)
+      rw [norm_mul, Complex.norm_I, mul_one]
+      exact (hA2 u).trans_eq (by rw [abs_of_nonneg hu.1.le])
+    have hintval : (∫ u in (0 : ℝ)..z, u ^ 3 / 6) = z ^ 4 / 24 := by
+      rw [intervalIntegral.integral_div, integral_pow]; push_cast; ring
+    exact hb.trans_eq hintval
+  have hEq : Complex.exp (I * ↑y) - (1 + I * ↑y - (↑y : ℂ) ^ 2 / 2 - I * (↑y : ℂ) ^ 3 / 6)
+      = Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6 := by ring
+  rw [hEq]
+  refine le_min ?_ ?_
+  · -- Quartic half: reflect to `−y ≥ 0` when `y < 0`.
+    rcases le_or_gt 0 y with hy | hy
+    · rw [abs_of_nonneg hy]; exact key y hy
+    · have hz : (0 : ℝ) ≤ -y := by linarith
+      have hexp : (starRingEnd ℂ) (Complex.exp (I * ↑y)) = Complex.exp (I * ↑(-y)) := by
+        rw [← Complex.exp_conj]; congr 1
+        simp only [map_mul, Complex.conj_I, Complex.conj_ofReal, Complex.ofReal_neg]; ring
+      have hconj : (starRingEnd ℂ)
+            (Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6)
+          = Complex.exp (I * ↑(-y)) - 1 - I * ↑(-y) + (↑(-y) : ℂ) ^ 2 / 2
+              + I * (↑(-y) : ℂ) ^ 3 / 6 := by
+        simp only [map_add, map_sub, map_mul, map_div₀, map_one, map_pow, map_ofNat,
+          Complex.conj_I, Complex.conj_ofReal, hexp, Complex.ofReal_neg]
+        ring
+      have hnn : ‖Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6‖
+          = ‖Complex.exp (I * ↑(-y)) - 1 - I * ↑(-y) + (↑(-y) : ℂ) ^ 2 / 2
+              + I * (↑(-y) : ℂ) ^ 3 / 6‖ := by
+        rw [← hconj, Complex.norm_conj]
+      rw [hnn, abs_of_neg hy]
+      exact key (-y) hz
+  · -- Cubic half: triangle inequality against the extra monomial.
+    have hmon : ‖I * (↑y : ℂ) ^ 3 / 6‖ = |y| ^ 3 / 6 := by
+      rw [norm_div, norm_mul, Complex.norm_I, one_mul, norm_pow, Complex.norm_real,
+        Real.norm_eq_abs]
+      norm_num
+    have hsplit : Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2 + I * (↑y : ℂ) ^ 3 / 6
+        = (Complex.exp (I * ↑y) - 1 - I * ↑y + (↑y : ℂ) ^ 2 / 2) + I * (↑y : ℂ) ^ 3 / 6 := by
+      ring
+    rw [hsplit]
+    refine (norm_add_le _ _).trans ?_
+    rw [hmon]
+    linarith [hA2 y]
+
 /-- **Telescoping product bound** (restated from `LindebergCLT`). -/
 private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s : Finset ι)
     (f g : ι → 𝕜) (hf : ∀ i ∈ s, ‖f i‖ ≤ 1) (hg : ∀ i ∈ s, ‖g i‖ ≤ 1) :
@@ -234,6 +362,60 @@ private lemma norm_prod_sub_prod_le {ι : Type*} {𝕜 : Type*} [RCLike 𝕜] (s
             ≤ ‖f a - g a‖ * 1 := mul_le_mul_of_nonneg_left hpg (norm_nonneg _)
         _ = ‖f a - g a‖ := mul_one _
     linarith
+
+/-- **Second-order telescoping bound.** The first-order telescoping estimate
+`norm_prod_sub_prod_le` loses the whole `n^{-1/2}` term of an Edgeworth expansion; what is
+needed instead is the *quadratic* remainder after subtracting the linear term:
+`‖aⁿ − bⁿ − n bⁿ⁻¹ (a − b)‖ ≤ n(n−1)/2 · Mⁿ⁻² ‖a − b‖²` whenever `‖a‖, ‖b‖ ≤ M`.
+
+Written with `n = m + 2` so that the two decremented exponents are literal. The induction step
+is the identity `Δₙ₊₁ = a Δₙ + n bⁿ⁻¹ (a − b)²`, which turns the claim into the arithmetic
+identity `n(n−1)/2 + n = n(n+1)/2`. Because `M` is carried along, the bound **retains the
+damping** `Mⁿ⁻²` — this is exactly what the undamped `norm_charFun_pow_sub_gaussian_le` throws
+away, and what makes the Edgeworth remainder integrable against the Esseen weight. -/
+private lemma norm_pow_sub_pow_sub_lin_le {a b : ℂ} {M : ℝ} (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M)
+    (m : ℕ) :
+    ‖a ^ (m + 2) - b ^ (m + 2) - ((m : ℂ) + 2) * b ^ (m + 1) * (a - b)‖
+      ≤ ((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * M ^ m * ‖a - b‖ ^ 2 := by
+  have hM : 0 ≤ M := (norm_nonneg a).trans ha
+  have hbpow : ∀ j : ℕ, ‖b‖ ^ j ≤ M ^ j := fun j => pow_le_pow_left₀ (norm_nonneg b) hb j
+  induction m with
+  | zero =>
+    have heq : a ^ (0 + 2) - b ^ (0 + 2) - (((0 : ℕ) : ℂ) + 2) * b ^ (0 + 1) * (a - b)
+        = (a - b) ^ 2 := by push_cast; ring
+    rw [heq, norm_pow]
+    norm_num
+  | succ k ih =>
+    have hkey : a ^ (k + 1 + 2) - b ^ (k + 1 + 2)
+          - (((k + 1 : ℕ) : ℂ) + 2) * b ^ (k + 1 + 1) * (a - b)
+        = a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))
+          + ((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2 := by push_cast; ring
+    have hnc : ‖((k : ℂ) + 2)‖ = (k : ℝ) + 2 := by
+      have hc : ((k : ℂ) + 2) = (((k : ℝ) + 2 : ℝ) : ℂ) := by push_cast; ring
+      rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    have t1 : ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))‖
+        ≤ M * (((k : ℝ) + 2) * ((k : ℝ) + 1) / 2 * M ^ k * ‖a - b‖ ^ 2) := by
+      rw [norm_mul]
+      exact mul_le_mul ha ih (norm_nonneg _) hM
+    have t2 : ‖((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖
+        ≤ ((k : ℝ) + 2) * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+      rw [norm_mul, norm_mul, hnc, norm_pow, norm_pow]
+      have h1 : ((k : ℝ) + 2) * ‖b‖ ^ (k + 1) ≤ ((k : ℝ) + 2) * M ^ (k + 1) :=
+        mul_le_mul_of_nonneg_left (hbpow (k + 1)) (by positivity)
+      exact mul_le_mul_of_nonneg_right h1 (by positivity)
+    have hMk : M * M ^ k = M ^ (k + 1) := by rw [pow_succ]; ring
+    calc ‖a ^ (k + 1 + 2) - b ^ (k + 1 + 2)
+            - (((k + 1 : ℕ) : ℂ) + 2) * b ^ (k + 1 + 1) * (a - b)‖
+        = ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))
+            + ((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖ := by rw [hkey]
+      _ ≤ ‖a * (a ^ (k + 2) - b ^ (k + 2) - ((k : ℂ) + 2) * b ^ (k + 1) * (a - b))‖
+            + ‖((k : ℂ) + 2) * b ^ (k + 1) * (a - b) ^ 2‖ := norm_add_le _ _
+      _ ≤ M * (((k : ℝ) + 2) * ((k : ℝ) + 1) / 2 * M ^ k * ‖a - b‖ ^ 2)
+            + ((k : ℝ) + 2) * M ^ (k + 1) * ‖a - b‖ ^ 2 := add_le_add t1 t2
+      _ = (((k : ℝ) + 1) + 2) * (((k : ℝ) + 1) + 1) / 2 * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+          rw [← hMk]; ring
+      _ = ((↑(k + 1) : ℝ) + 2) * ((↑(k + 1) : ℝ) + 1) / 2 * M ^ (k + 1) * ‖a - b‖ ^ 2 := by
+          push_cast; ring
 
 /-! ### Characteristic-function Gaussian approximation
 
@@ -314,6 +496,143 @@ theorem norm_charFun_sub_quadratic_le (μ : Measure ℝ) [IsProbabilityMeasure �
         integral_mono ((hExpInt.sub hPolyInt).norm) hbound hpt
     _ = (∫ x, |x| ^ 3 ∂μ) * |u| ^ 3 / 6 := by
         rw [integral_div, integral_const_mul]; ring
+
+/-- **Third-order approximation of a characteristic function.** For a probability measure `μ`
+on `ℝ` with mean `0`, second moment `v`, third moment `m₃` and finite fourth moment,
+`‖charFun μ u − (1 − v u²/2 − i m₃ u³/6)‖ ≤ (∫ x⁴) |u|⁴ / 24` for all `u`.
+
+This is the expansion the *one-term Edgeworth* correction is read off from: unlike
+`norm_charFun_sub_quadratic_le`, the cubic term (the third cumulant, since the mean vanishes)
+is **retained** rather than absorbed into the remainder, and the remainder drops to order
+`u⁴`. -/
+theorem norm_charFun_sub_cubic_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v m₃ : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => x ^ 3) μ)
+    (hint4 : Integrable (fun x => x ^ 4) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) (hthird : ∫ x, x ^ 3 ∂μ = m₃) (u : ℝ) :
+    ‖charFun μ u - (1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6)‖
+      ≤ (∫ x, x ^ 4 ∂μ) * |u| ^ 4 / 24 := by
+  -- The complex exponential integrand of `charFun`.
+  have hExpInt : Integrable (fun x : ℝ => Complex.exp (↑u * ↑x * I)) μ := by
+    refine (integrable_const (1 : ℝ)).mono'
+      ((Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable) (ae_of_all _ fun x => ?_)
+    have hre : ((u : ℂ) * (x : ℂ) * I).re = 0 := by simp
+    rw [Complex.norm_exp, hre, Real.exp_zero]
+  -- The cubic Taylor integrand.
+  set p : ℝ → ℂ := fun x => 1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 - I * (↑u * ↑x) ^ 3 / 6 with hp
+  have hxC : Integrable (fun x : ℝ => (x : ℂ)) μ := hint1.ofReal
+  have hx2C : Integrable (fun x : ℝ => ((x ^ 2 : ℝ) : ℂ)) μ := hint2.ofReal
+  have hx3C : Integrable (fun x : ℝ => ((x ^ 3 : ℝ) : ℂ)) μ := hint3.ofReal
+  have t2 : Integrable (fun x : ℝ => (↑u * ↑x * I : ℂ)) μ := by
+    have := (hxC.const_mul (↑u * I : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); ring
+  have t3 : Integrable (fun x : ℝ => ((↑u * ↑x) ^ 2 / 2 : ℂ)) μ := by
+    have := (hx2C.const_mul (↑u ^ 2 / 2 : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); push_cast; ring
+  have t4 : Integrable (fun x : ℝ => (I * (↑u * ↑x) ^ 3 / 6 : ℂ)) μ := by
+    have := (hx3C.const_mul (I * ↑u ^ 3 / 6 : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); push_cast; ring
+  have hPolyInt : Integrable p μ := by
+    simp only [hp]; exact (((integrable_const (1 : ℂ)).add t2).sub t3).sub t4
+  -- Compute `∫ p = 1 − v u²/2 − i m₃ u³/6`.
+  have e1 : ∫ _x : ℝ, (1 : ℂ) ∂μ = 1 := by simp
+  have e2 : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = 0 := by
+    have hc : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = ∫ x : ℝ, ((↑u * I) • (↑x : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hmean]; simp
+  have e3 : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ = (v : ℂ) * (u : ℂ) ^ 2 / 2 := by
+    have hc : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ
+        = ∫ x : ℝ, (((↑u : ℂ) ^ 2 / 2) • ((x ^ 2 : ℝ) : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; push_cast; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hvar, smul_eq_mul]; ring
+  have e4 : ∫ x : ℝ, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ = I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+    have hc : ∫ x : ℝ, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ
+        = ∫ x : ℝ, ((I * (↑u : ℂ) ^ 3 / 6) • ((x ^ 3 : ℝ) : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; push_cast; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hthird, smul_eq_mul]; ring
+  have hsum : Integrable (fun x : ℝ => (1 + ↑u * ↑x * I : ℂ)) μ :=
+    ((integrable_const (1 : ℂ)).add t2).congr (ae_of_all _ fun x => rfl)
+  have hsum2 : Integrable (fun x : ℝ => (1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ)) μ :=
+    hsum.sub t3
+  have hIntP : ∫ x, p x ∂μ
+      = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+    calc ∫ x, p x ∂μ
+        = ∫ x, ((1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ) - I * (↑u * ↑x) ^ 3 / 6) ∂μ := by
+          simp only [hp]
+      _ = (∫ x, (1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ)
+            - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := integral_sub hsum2 t4
+      _ = ((∫ x, (1 + ↑u * ↑x * I : ℂ) ∂μ) - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ)
+            - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := by rw [integral_sub hsum t3]
+      _ = (((∫ _x : ℝ, (1 : ℂ) ∂μ) + ∫ x, (↑u * ↑x * I : ℂ) ∂μ)
+            - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ) - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := by
+          rw [integral_add (integrable_const 1) t2]
+      _ = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+          rw [e1, e2, e3, e4]; ring
+  -- Pointwise Taylor bound.
+  have hpt : ∀ x : ℝ, ‖Complex.exp (↑u * ↑x * I) - p x‖ ≤ |u| ^ 4 * x ^ 4 / 24 := by
+    intro x
+    have h := norm_cexp_sub_taylor3_le (u * x)
+    have harg : (↑u * ↑x * I : ℂ) = I * ↑(u * x) := by push_cast; ring
+    have hsq : ((↑u * ↑x : ℂ)) ^ 2 = (↑(u * x) : ℂ) ^ 2 := by push_cast; ring
+    have hcb : ((↑u * ↑x : ℂ)) ^ 3 = (↑(u * x) : ℂ) ^ 3 := by push_cast; ring
+    rw [hp]; simp only []
+    rw [harg, hsq, hcb]
+    calc ‖Complex.exp (I * ↑(u * x))
+            - (1 + I * ↑(u * x) - (↑(u * x) : ℂ) ^ 2 / 2 - I * (↑(u * x) : ℂ) ^ 3 / 6)‖
+        ≤ min (|u * x| ^ 4 / 24) (|u * x| ^ 3 / 3) := h
+      _ ≤ |u * x| ^ 4 / 24 := min_le_left _ _
+      _ = |u| ^ 4 * x ^ 4 / 24 := by
+          have hx : |x| ^ 4 = x ^ 4 := by
+            rw [pow_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ x ^ 4)]
+          rw [abs_mul, mul_pow, hx]
+  -- Assemble.
+  rw [charFun_apply_real, ← hIntP, ← integral_sub hExpInt hPolyInt]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  have hbound : Integrable (fun x : ℝ => |u| ^ 4 * x ^ 4 / 24) μ :=
+    (hint4.const_mul (|u| ^ 4)).div_const 24
+  calc ∫ x, ‖Complex.exp (↑u * ↑x * I) - p x‖ ∂μ
+      ≤ ∫ x, |u| ^ 4 * x ^ 4 / 24 ∂μ :=
+        integral_mono ((hExpInt.sub hPolyInt).norm) hbound hpt
+    _ = (∫ x, x ^ 4 ∂μ) * |u| ^ 4 / 24 := by
+        rw [integral_div, integral_const_mul]; ring
+
+/-- **Gaussian majorant for a characteristic function on a window around the origin.**
+
+On the window `v s² ≤ 2` and `ρ |s| ≤ 3v/2` (`ρ = ∫|x|³`), a centred law satisfies
+`‖charFun μ s‖ ≤ exp(−v s²/4)`.
+
+This is the second ingredient the Edgeworth remainder needs. Raised to the `n`-th power it
+supplies the factor `e^{−t²/4}` that damps the remainder in the Esseen integral; without it the
+`n`-fold power bound of `norm_charFun_pow_sub_gaussian_le` is uniform in `t` and the whole rate
+is lost. The proof is `‖φ(s)‖ ≤ |1 − v s²/2| + ρ|s|³/6 ≤ 1 − v s²/2 + v s²/4 ≤ e^{−v s²/4}`,
+the middle step using `ρ|s|³ = (ρ|s|) s² ≤ (3v/2) s²`. -/
+theorem norm_charFun_le_exp_neg_sq (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => |x| ^ 3) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) {s : ℝ}
+    (hs2 : v * s ^ 2 ≤ 2) (hs3 : (∫ x, |x| ^ 3 ∂μ) * |s| ≤ 3 * v / 2) :
+    ‖charFun μ s‖ ≤ Real.exp (-(v * s ^ 2 / 4)) := by
+  have h := norm_charFun_sub_quadratic_le μ hint1 hint2 hint3 hmean hvar s
+  have hq : ‖(1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ = 1 - v * s ^ 2 / 2 := by
+    have hcast : (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) = ((1 - v * s ^ 2 / 2 : ℝ) : ℂ) := by
+      push_cast; ring
+    rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+  have htail : (∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 ≤ v * s ^ 2 / 4 := by
+    have habs : |s| ^ 3 = s ^ 2 * |s| := by rw [pow_succ, sq_abs]
+    have hmul := mul_le_mul_of_nonneg_right hs3 (sq_nonneg s)
+    rw [habs]
+    linarith [hmul]
+  have hsplit : charFun μ s
+      = (charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)) + (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) := by
+    ring
+  calc ‖charFun μ s‖
+      = ‖(charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)) + (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ := by
+        rw [← hsplit]
+    _ ≤ ‖charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ + ‖(1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)‖ :=
+        norm_add_le _ _
+    _ ≤ (∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 + (1 - v * s ^ 2 / 2) := by rw [hq]; linarith
+    _ ≤ 1 - v * s ^ 2 / 4 := by linarith
+    _ ≤ Real.exp (-(v * s ^ 2 / 4)) := by linarith [Real.add_one_le_exp (-(v * s ^ 2 / 4))]
 
 /-- **Quadratic upper bound for `e^{-z}`.** For `z ≥ 0`, `e^{-z} ≤ 1 - z + z²/2`. Combined
 with `1 - z ≤ e^{-z}` (`Real.add_one_le_exp`) this pins `|e^{-z} - (1 - z)| ≤ z²/2`. -/
@@ -402,6 +721,176 @@ theorem norm_charFun_pow_sub_gaussian_le (μ : Measure ℝ) [IsProbabilityMeasur
     _ ≤ (n : ℝ) * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + z ^ 2 / 2) :=
         mul_le_mul_of_nonneg_left hfac (by positivity)
     _ = n * ((∫ x, |x| ^ 3 ∂μ) * |w| ^ 3 / 6 + (v * w ^ 2 / 2) ^ 2 / 2) := by rw [hz_def]
+
+/-! ### The damped Edgeworth expansion of `(charFun μ)ⁿ`
+
+`norm_charFun_pow_sub_gaussian_le` compares `φⁿ` with the Gaussian characteristic function and
+loses everything at order `n^{-1/2}`; its right-hand side also carries **no decay in the
+argument**, so integrating it against the Esseen weight produces a constant rather than a rate.
+Both defects are repaired here:
+
+* the cubic term of `charFun` (`norm_charFun_sub_cubic_le`) is retained, giving the Edgeworth
+  correction `1 + n c` with `c = −i m₃ s³/6`;
+* the comparison is run at the second order of telescoping
+  (`norm_pow_sub_pow_sub_lin_le`), whose bound keeps the damping factor `Mⁿ⁻²`, and `M` is
+  taken to be the Gaussian majorant `e^{−v s²/4}` of `norm_charFun_le_exp_neg_sq`.
+
+The result is `norm_charFun_pow_sub_edgeworth_le`, whose right-hand side is `e^{−(n−2)v s²/4}`
+times a polynomial in `s`; in the standardized scaling `s = t/(σ√n)` this is
+`e^{−t²/4}·O((t⁴ + t⁵ + t⁶)/n)`, which *is* integrable against the Esseen weight and gives the
+`n⁻¹` rate. -/
+
+/-- **The algebraic core of the damped expansion.** Purely a statement about complex numbers:
+if `‖a‖ ≤ E`, `gc` is a nonnegative real in `[0, E]`, and `E ≤ 1`, then
+
+`‖aⁿ − gcⁿ (1 + n c)‖ ≤ Eⁿ⁻² (n(n−1)/2 · D² + n (w + e₀))`
+
+whenever `D` bounds `‖a − gc‖`, `e₀` bounds `‖a − gc − c‖` and `w` bounds `‖(1 − gc) c‖`.
+The decomposition is `aⁿ − gcⁿ(1 + n c) = Δₙ + n gcⁿ⁻¹ ((1 − gc) c + (a − gc − c))` with
+`Δₙ = aⁿ − gcⁿ − n gcⁿ⁻¹ (a − gc)`. -/
+private lemma norm_pow_sub_edgeworth_le {a gc c : ℂ} {E D e₀ w gr : ℝ} (m : ℕ)
+    (hgc : gc = (gr : ℂ)) (hgr0 : 0 ≤ gr) (hgrE : gr ≤ E) (haE : ‖a‖ ≤ E)
+    (hE0 : 0 ≤ E) (hE1 : E ≤ 1)
+    (hd : ‖a - gc‖ ≤ D) (he : ‖a - gc - c‖ ≤ e₀) (hcg : ‖(1 - gc) * c‖ ≤ w) :
+    ‖a ^ (m + 2) - gc ^ (m + 2) * (1 + ((m : ℂ) + 2) * c)‖
+      ≤ E ^ m * (((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * D ^ 2 + ((m : ℝ) + 2) * (w + e₀)) := by
+  have hgcE : ‖gc‖ ≤ E := by
+    rw [hgc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hgr0]; exact hgrE
+  have hnc : ‖((m : ℂ) + 2)‖ = (m : ℝ) + 2 := by
+    have hc : ((m : ℂ) + 2) = (((m : ℝ) + 2 : ℝ) : ℂ) := by push_cast; ring
+    rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  have hkey : a ^ (m + 2) - gc ^ (m + 2) * (1 + ((m : ℂ) + 2) * c)
+      = (a ^ (m + 2) - gc ^ (m + 2) - ((m : ℂ) + 2) * gc ^ (m + 1) * (a - gc))
+        + ((m : ℂ) + 2) * gc ^ (m + 1) * ((1 - gc) * c + (a - gc - c)) := by ring
+  -- The quadratic telescoping remainder.
+  have h1 : ‖a ^ (m + 2) - gc ^ (m + 2) - ((m : ℂ) + 2) * gc ^ (m + 1) * (a - gc)‖
+      ≤ ((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * E ^ m * D ^ 2 := by
+    refine (norm_pow_sub_pow_sub_lin_le haE hgcE m).trans ?_
+    have hsq : ‖a - gc‖ ^ 2 ≤ D ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hd 2
+    exact mul_le_mul_of_nonneg_left hsq (by positivity)
+  -- The damped prefactor.
+  have h2 : ‖((m : ℂ) + 2) * gc ^ (m + 1)‖ ≤ ((m : ℝ) + 2) * E ^ m := by
+    rw [norm_mul, hnc, norm_pow]
+    have hgm : ‖gc‖ ^ (m + 1) ≤ E ^ m :=
+      (pow_le_pow_left₀ (norm_nonneg _) hgcE _).trans
+        (pow_le_pow_of_le_one hE0 hE1 (Nat.le_succ m))
+    exact mul_le_mul_of_nonneg_left hgm (by positivity)
+  have h3 : ‖(1 - gc) * c + (a - gc - c)‖ ≤ w + e₀ :=
+    (norm_add_le _ _).trans (add_le_add hcg he)
+  calc ‖a ^ (m + 2) - gc ^ (m + 2) * (1 + ((m : ℂ) + 2) * c)‖
+      = ‖(a ^ (m + 2) - gc ^ (m + 2) - ((m : ℂ) + 2) * gc ^ (m + 1) * (a - gc))
+          + ((m : ℂ) + 2) * gc ^ (m + 1) * ((1 - gc) * c + (a - gc - c))‖ := by rw [hkey]
+    _ ≤ ‖a ^ (m + 2) - gc ^ (m + 2) - ((m : ℂ) + 2) * gc ^ (m + 1) * (a - gc)‖
+          + ‖((m : ℂ) + 2) * gc ^ (m + 1) * ((1 - gc) * c + (a - gc - c))‖ := norm_add_le _ _
+    _ ≤ ((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * E ^ m * D ^ 2
+          + ((m : ℝ) + 2) * E ^ m * (w + e₀) := by
+        refine add_le_add h1 ?_
+        rw [norm_mul]
+        exact mul_le_mul h2 h3 (norm_nonneg _) (by positivity)
+    _ = E ^ m * (((m : ℝ) + 2) * ((m : ℝ) + 1) / 2 * D ^ 2 + ((m : ℝ) + 2) * (w + e₀)) := by
+        ring
+
+/-- **Damped one-term Edgeworth expansion of `(charFun μ)ⁿ`.**
+
+For a centred law with second moment `v`, third moment `m₃` and finite fourth moment, and for
+`s` in the window `v s² ≤ 2`, `ρ|s| ≤ 3v/2` (`ρ = ∫|x|³`),
+
+`‖φ(s)ⁿ − e^{−n v s²/2} (1 − n i m₃ s³/6)‖`
+`  ≤ e^{−(n−2) v s²/4} · ( n(n−1)/2 · (ρ|s|³/6 + (v s²/2)²/2)²`
+`      + n · ( (v s²/2)(|m₃||s|³/6) + (β|s|⁴/24 + (v s²/2)²/2) ) )`,
+
+with `β = ∫ x⁴`, written with `n = m + 2`.
+
+The Gaussian factor `e^{−n v s²/2}` times the *linear* correction `1 − n i m₃ s³/6` is exactly
+the Edgeworth approximant: in the standardized scaling `s = t/(σ√n)`, `v = σ²`, the Gaussian
+factor is `e^{−t²/2}` and the correction is `1 + (γ/6)(it)³ n^{−1/2}` with `γ = m₃/σ³` the
+skewness.
+
+**This is the estimate recorded as missing in `Bootstrap/Edgeworth.lean` (G2).** The two new
+ingredients over `norm_charFun_pow_sub_gaussian_le` are `norm_charFun_sub_cubic_le`
+(fourth-order Taylor expansion of `φ`, retaining the third cumulant) and
+`norm_charFun_le_exp_neg_sq` (the quadratic majorant `|φ(s)| ≤ e^{−v s²/4}`), combined through
+the damping-preserving telescoping bound `norm_pow_sub_pow_sub_lin_le`. -/
+theorem norm_charFun_pow_sub_edgeworth_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v m₃ : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => |x| ^ 3) μ)
+    (hint4 : Integrable (fun x => x ^ 4) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) (hthird : ∫ x, x ^ 3 ∂μ = m₃)
+    {s : ℝ} (hs2 : v * s ^ 2 ≤ 2) (hs3 : (∫ x, |x| ^ 3 ∂μ) * |s| ≤ 3 * v / 2) (m : ℕ) :
+    ‖charFun μ s ^ (m + 2)
+        - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+            * (1 - ((m : ℂ) + 2) * I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6)‖
+      ≤ Real.exp (-(v * s ^ 2 / 4)) ^ m *
+          (((m : ℝ) + 2) * ((m : ℝ) + 1) / 2
+              * ((∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 + (v * s ^ 2 / 2) ^ 2 / 2) ^ 2
+            + ((m : ℝ) + 2) * ((v * s ^ 2 / 2) * (|m₃| * |s| ^ 3 / 6)
+              + ((∫ x, x ^ 4 ∂μ) * |s| ^ 4 / 24 + (v * s ^ 2 / 2) ^ 2 / 2))) := by
+  have hvnn : 0 ≤ v := by rw [← hvar]; exact integral_nonneg fun x => sq_nonneg x
+  have hznn : (0 : ℝ) ≤ v * s ^ 2 / 2 := by positivity
+  have hint3' : Integrable (fun x : ℝ => x ^ 3) μ :=
+    hint3.mono' (by fun_prop) (ae_of_all _ fun x => by
+      rw [Real.norm_eq_abs, abs_pow])
+  -- The gap between the quadratic polynomial and the Gaussian.
+  have hgap : ‖(1 - (v : ℂ) * (s : ℂ) ^ 2 / 2)
+      - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)‖ ≤ (v * s ^ 2 / 2) ^ 2 / 2 := by
+    have hc : (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)
+        = ((1 - v * s ^ 2 / 2 - Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) := by push_cast; ring
+    rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_le]
+    refine ⟨by linarith [exp_neg_le_quadratic hznn], ?_⟩
+    linarith [Real.add_one_le_exp (-(v * s ^ 2 / 2)), sq_nonneg (v * s ^ 2 / 2)]
+  -- (e) the single-factor Gaussian gap.
+  have hd : ‖charFun μ s - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)‖
+      ≤ (∫ x, |x| ^ 3 ∂μ) * |s| ^ 3 / 6 + (v * s ^ 2 / 2) ^ 2 / 2 := by
+    have hsp : charFun μ s - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)
+        = (charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2))
+          + ((1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)) := by
+      ring
+    rw [hsp]
+    exact (norm_add_le _ _).trans
+      (add_le_add (norm_charFun_sub_quadratic_le μ hint1 hint2 hint3 hmean hvar s) hgap)
+  -- (f) the cubic gap: what is left after subtracting the Edgeworth correction.
+  have he : ‖charFun μ s - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)
+      - (-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))‖
+      ≤ (∫ x, x ^ 4 ∂μ) * |s| ^ 4 / 24 + (v * s ^ 2 / 2) ^ 2 / 2 := by
+    have hsp : charFun μ s - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)
+          - (-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))
+        = (charFun μ s - (1 - (v : ℂ) * (s : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))
+          + ((1 - (v : ℂ) * (s : ℂ) ^ 2 / 2) - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)) := by
+      ring
+    rw [hsp]
+    exact (norm_add_le _ _).trans
+      (add_le_add
+        (norm_charFun_sub_cubic_le μ hint1 hint2 hint3' hint4 hmean hvar hthird s) hgap)
+  -- (g) the `(1 − g) c` term.
+  have hexp1 : Real.exp (-(v * s ^ 2 / 2)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
+  have hcg : ‖(1 - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ)) * (-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))‖
+      ≤ (v * s ^ 2 / 2) * (|m₃| * |s| ^ 3 / 6) := by
+    have hA : ‖(1 - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ))‖ ≤ v * s ^ 2 / 2 := by
+      have hc : (1 - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ))
+          = ((1 - Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) := by push_cast; ring
+      rw [hc, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by linarith)]
+      linarith [Real.add_one_le_exp (-(v * s ^ 2 / 2))]
+    have hB : ‖(-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))‖ = |m₃| * |s| ^ 3 / 6 := by
+      have hc : (-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6)) = ((m₃ * s ^ 3 / 6 : ℝ) : ℂ) * (-I) := by
+        push_cast; ring
+      rw [hc, norm_mul, norm_neg, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs,
+        abs_div, abs_mul, abs_pow]
+      norm_num
+    rw [norm_mul, hB]
+    exact mul_le_mul_of_nonneg_right hA (by positivity)
+  -- Assemble via the algebraic core.
+  have hgoal : charFun μ s ^ (m + 2)
+        - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+            * (1 - ((m : ℂ) + 2) * I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6)
+      = charFun μ s ^ (m + 2)
+        - ((Real.exp (-(v * s ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+            * (1 + ((m : ℂ) + 2) * (-(I * (m₃ : ℂ) * (s : ℂ) ^ 3 / 6))) := by ring
+  rw [hgoal]
+  exact norm_pow_sub_edgeworth_le m rfl (Real.exp_pos _).le
+    (Real.exp_le_exp.2 (by linarith [sq_nonneg s, mul_nonneg hvnn (sq_nonneg s)]))
+    (norm_charFun_le_exp_neg_sq μ hint1 hint2 hint3 hmean hvar hs2 hs3)
+    (Real.exp_pos _).le (Real.exp_le_one_iff.2 (by linarith [mul_nonneg hvnn (sq_nonneg s)]))
+    hd he hcg
 
 /-- **Berry–Esseen rate for the characteristic function of a standardized i.i.d. sum.**
 Combining `norm_charFun_pow_sub_gaussian_le` with Mathlib's factorization
