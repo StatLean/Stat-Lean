@@ -26,16 +26,21 @@ A first-order Taylor expansion of `f(W') - f(W)` then produces the classical thr
 
 * `steinSolution` — the explicit solution of the Stein equation for the standard normal law,
   and `hasDerivAt_steinSolution` / `steinSolution_sub_mul` — the fact that it *is* a solution.
-* `abs_steinSolution_le`, `abs_deriv_steinSolution_le`, `lipschitzWith_deriv_steinSolution` —
-  the classical bounds on the solution and its derivative for a Lipschitz test function `h`.
-* `sum_eq_of_exchangeable` — the antisymmetry identity for an exchangeable pair.
+* `abs_steinSolution_le`, `abs_deriv_steinSolution_le`, `lipschitz_deriv_steinSolution` —
+  the classical bounds on the solution and its derivative for a Lipschitz test function `h`
+  (the three declarations still open in this file).
+* `sum_eq_zero_of_exchangeable` — the antisymmetry identity for an exchangeable pair.
 * `sum_stein_pair` — the exact integration-by-parts identity
   `2λ|K| ∑_ω W(ω) f(W(ω)) = ∑_ω ∑_k (W'(ω,k) − W(ω))(f(W'(ω,k)) − f(W(ω)))`.
-* `abs_avg_sub_gaussianExpect_le` — **the abstract exchangeable-pair theorem**: the three-term
-  bound on `|𝔼 h(W) − 𝔼 h(Z)|` in terms of the conditional-variance defect and the third
-  absolute moment of the increment.
-* `tendsto_of_ramp_squeeze` — the de-smoothing step: a quantity squeezed between the values of
-  a *continuous* limit c.d.f. at `t ± ε`, up to `o(1)`, converges to that c.d.f. at `t`.
+* `abs_sub_sub_mul_deriv_le` — Taylor's theorem with a Lipschitz derivative, sharp constant.
+* `abs_avg_sub_le` — **the abstract exchangeable-pair theorem**: the three-term bound on
+  `|𝔼 h(W) − 𝔼 h(Z)|` in terms of the conditional-variance defect and the third absolute
+  moment of the increment.
+* `lipschitzWith_cdf_gaussianReal` — the standard normal c.d.f. is 1-Lipschitz (Mathlib has
+  no continuity lemma for `cdf`), and `abs_ramp_sub_ramp_le` — the ramp of
+  `ForMathlib/EsseenSmoothing` is `δ⁻¹`-Lipschitz.
+* `tendsto_of_squeeze_continuousAt` — the de-smoothing step: a quantity squeezed between the
+  values of a *continuous* limit c.d.f. at `t ± ε`, up to `o(1)`, converges to it at `t`.
 
 ## Design notes
 
@@ -191,7 +196,11 @@ theorem abs_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
 function, `|f_h'(w)| ≤ 2L`. (The sharp constant is `√(2/π) < 1`; `2` is what the elementary
 route below yields and it suffices downstream.)
 
-STATUS: OPEN. -/
+STATUS: OPEN. From the Stein equation `f' = w f + (h - 𝔼h(Z))` the bound is *not* immediate
+(`w f` is unbounded a priori); the classical route bounds `w f_h(w)` by the Mills-ratio
+estimate `e^{w²/2}∫_w^∞ e^{-x²/2}dx ≤ min(√(π/2), 1/w)` applied to the tail representation
+`f_h(w) = -e^{w²/2}∫_w^∞ (h - 𝔼h(Z))e^{-x²/2}`, which is legitimate because
+`∫_ℝ (h - 𝔼h(Z))e^{-x²/2} = 0`. -/
 theorem abs_deriv_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
     |deriv (steinSolution h) w| ≤ 2 * L := by
@@ -200,7 +209,10 @@ theorem abs_deriv_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
 /-- **Lipschitz bound on the derivative of the Stein solution**, i.e. the `‖f_h''‖ ≤ 2L` of
 the classical statement in the form actually used by the Taylor step.
 
-STATUS: OPEN. -/
+STATUS: OPEN. Differentiating the Stein equation gives `f'' = f + w f' + h'`, so this is the
+`‖f‖ ≤ L`, `‖f'‖ ≤ 2L` pair together with a second Mills-ratio estimate for `w f'`; it is
+the last and heaviest of the three. Only `abs_sub_sub_mul_deriv_le` consumes it, and only
+through the constant `B₂`, so any finite constant `c·L` suffices downstream. -/
 theorem lipschitz_deriv_steinSolution {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (x y : ℝ) :
     |deriv (steinSolution h) x - deriv (steinSolution h) y| ≤ 2 * L * |x - y| := by
