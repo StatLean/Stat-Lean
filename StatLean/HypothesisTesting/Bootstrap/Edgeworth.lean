@@ -688,6 +688,79 @@ theorem setIntegral_abs_edgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) 
         rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
           ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
 
+/-- **(E4).2 — the Fourier transform of the Edgeworth density.**
+`∫ e^{ity} q_n(y) dy = e^{−t²/2}(1 − i γ t³ n^{-1/2}/6)`.
+
+This is where (E2) is *used*: `integral_hermite3_mul_cexp_mul_gaussian` turns the Hermite factor
+`u³ − 3u` into `(it)³`. The right-hand side is exactly the approximant estimated by
+`norm_charFun_pow_sub_edgeworth_le` after the standardized substitution `s = t/(σ√n)`,
+`v = σ²`, `m₃ = γσ³`: there `e^{−n v s²/2} = e^{−t²/2}` and `n i m₃ s³/6 = i γ t³/(6√n)`. -/
+theorem charFunDensity_edgeworthDensity (γ : ℝ) (n : ℕ) (t : ℝ) :
+    charFunDensity (edgeworthDensity γ n) t
+      = Complex.exp (-(t : ℂ) ^ 2 / 2)
+        * (1 - Complex.I * (γ : ℂ) * (t : ℂ) ^ 3
+            * (((Real.sqrt n)⁻¹ : ℝ) : ℂ) / 6) := by
+  have hint1 : Integrable (fun u : ℝ =>
+      Complex.exp ((t : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2)) := by
+    refine (integrable_cubic_mul_cexp_mul_gaussian t 0 0 0 1).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hint2 : Integrable (fun u : ℝ => ((u : ℂ) ^ 3 - 3 * (u : ℂ)) *
+      (Complex.exp ((t : ℂ) * (u : ℂ) * Complex.I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) := by
+    refine (integrable_cubic_mul_cexp_mul_gaussian t 1 0 (-3) 0).congr
+      (Filter.Eventually.of_forall fun u => by ring)
+  have hcong : ∀ y : ℝ,
+      Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * ((edgeworthDensity γ n y : ℝ) : ℂ)
+      = (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+          ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+              (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+            + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+                * Complex.exp (-(y : ℂ) ^ 2 / 2)) := by
+    intro y
+    simp only [edgeworthDensity, stdNormalPDF]
+    push_cast
+    ring
+  have hpull1 : (∫ y : ℝ, (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+        ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+            (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+              * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+      = (((Real.sqrt (2 * Real.pi))⁻¹ : ℝ) : ℂ) *
+        ∫ y : ℝ, ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+            (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+              * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  have hadd : (∫ y : ℝ, ((((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+            (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+              * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+          + Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)))
+      = (∫ y : ℝ, (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+            (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+              * Complex.exp (-(y : ℂ) ^ 2 / 2))))
+        + ∫ y : ℝ, Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I)
+            * Complex.exp (-(y : ℂ) ^ 2 / 2) :=
+    integral_add (hint2.const_mul _) hint1
+  have hpull2 : (∫ y : ℝ, (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) * (((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+        (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2))))
+      = (((γ / 6 * (Real.sqrt n)⁻¹ : ℝ)) : ℂ) *
+        ∫ y : ℝ, ((y : ℂ) ^ 3 - 3 * (y : ℂ)) *
+          (Complex.exp ((t : ℂ) * (y : ℂ) * Complex.I) * Complex.exp (-(y : ℂ) ^ 2 / 2)) :=
+    MeasureTheory.integral_const_mul _ _
+  rw [charFunDensity, integral_congr_ae (Filter.Eventually.of_forall hcong), hpull1, hadd,
+    hpull2, integral_hermite3_mul_cexp_mul_gaussian, integral_cexp_mul_gaussian]
+  have hS : ((Real.sqrt (2 * Real.pi) : ℝ) : ℂ) ≠ 0 := by
+    have hpos : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
+    exact_mod_cast hpos.ne'
+  have hcube : ((t : ℂ) * Complex.I) ^ 3 = -(Complex.I * (t : ℂ) ^ 3) := by
+    have hI3 : (Complex.I) ^ 3 = -Complex.I := by
+      rw [pow_succ, Complex.I_sq]; ring
+    rw [mul_pow, hI3]; ring
+  rw [hcube]
+  push_cast
+  field_simp
+  ring
+
 /-- The Edgeworth total-variation constant is positive. -/
 lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) := by
   have h : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)

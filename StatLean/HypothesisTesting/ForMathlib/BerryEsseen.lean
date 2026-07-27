@@ -1208,6 +1208,16 @@ theorem integrable_abs_pow_mul_exp_neg_half_sq (k : ℕ) :
     Integrable (fun u : ℝ => |u| ^ k * Real.exp (-(u ^ 2 / 2))) :=
   integrable_abs_pow_mul_gauss k
 
+/-- **Cubic multiples of the modulated Gaussian are integrable.** The companion of
+`integral_cexp_mul_gaussian` and `integral_hermite3_mul_cexp_mul_gaussian`: it is what lets an
+Edgeworth density be integrated against `e^{iθu}` term by term. -/
+theorem integrable_cubic_mul_cexp_mul_gaussian (θ : ℝ) (a b c d : ℂ) :
+    Integrable (fun u : ℝ => (a * (u : ℂ) ^ 3 + b * (u : ℂ) ^ 2 + c * (u : ℂ) + d)
+      * (Complex.exp ((θ : ℂ) * (u : ℂ) * I) * Complex.exp (-(u : ℂ) ^ 2 / 2))) := by
+  refine (integrable_cubic_cexpGauss θ a b c d).congr
+    (Filter.Eventually.of_forall fun u => ?_)
+  simp only [cexpGauss_eq]
+
 /-- **The Hermite Fourier identity.**
 `∫ e^{iθu} (u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`. -/
 theorem integral_hermite3_mul_cexp_mul_gaussian (θ : ℝ) :
