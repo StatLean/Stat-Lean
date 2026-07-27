@@ -541,6 +541,130 @@ theorem not_isUMPU_conditional_point_counterexample :
 
 end ConditionalUMPUCounterexample
 
+/-! ## Fibrewise toolkit: exponential tilts on the conditional line
+
+Conditionally on `T = t` all members of a canonical `(U, T)` family are exponential tilts of
+one another: by `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT` the conditional
+law at `(θ, ϑ)` is `(νt t).withDensity (u ↦ Ct t θ · e^{θu})`, so the law at `θ` is the law at
+`θ₀` tilted by `k·e^{(θ−θ₀)u}` with `k = Ct t θ / Ct t θ₀`. Everything the four theorems need
+about the fibres is the elementary "variation-diminishing" inequality below, applied to
+`g = φ − ψ` (optimality) or to `g = φ − α` (level and unbiasedness). -/
+
+section FibreTilt
+
+/-- The exponential tilt of a measure on the line by the density `k·e^{cu}`. -/
+private noncomputable def expTilt (Q : Measure ℝ) (k c : ℝ) : Measure ℝ :=
+  Q.withDensity fun u => ENNReal.ofReal (k * Real.exp (c * u))
+
+private lemma measurable_expTiltDensity (k c : ℝ) :
+    Measurable fun u : ℝ => ENNReal.ofReal (k * Real.exp (c * u)) :=
+  (((measurable_const.mul measurable_id).exp).const_mul k).ennreal_ofReal
+
+/-- Integrals against a tilt are integrals of the tilted integrand. No hypothesis on `g`:
+both sides are junk-compatible. -/
+private lemma integral_expTilt (Q : Measure ℝ) {k : ℝ} (hk : 0 ≤ k) (c : ℝ) (g : ℝ → ℝ) :
+    ∫ u, g u ∂(expTilt Q k c) = ∫ u, g u * (k * Real.exp (c * u)) ∂Q := by
+  rw [expTilt, integral_withDensity_eq_integral_toReal_smul (measurable_expTiltDensity k c)
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
+  simp only [smul_eq_mul]
+  rw [ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ k * Real.exp (c * u)), mul_comm]
+
+/-- **A tilt which is again a probability measure has an integrable density of total mass
+one.** This is the only place the normalization of the conditional families is used. -/
+private lemma integrable_expTiltDensity {Q : Measure ℝ} {k c : ℝ} (hk : 0 ≤ k)
+    (hprob : IsProbabilityMeasure (expTilt Q k c)) :
+    Integrable (fun u => k * Real.exp (c * u)) Q ∧
+      ∫ u, k * Real.exp (c * u) ∂Q = 1 := by
+  have hnn : (0 : ℝ → ℝ) ≤ᵐ[Q] fun u => k * Real.exp (c * u) :=
+    Filter.Eventually.of_forall fun u => by
+      have h : (0 : ℝ) ≤ k * Real.exp (c * u) := by positivity
+      simpa using h
+  have hm : Measurable fun u : ℝ => k * Real.exp (c * u) :=
+    (measurable_const.mul measurable_id).exp.const_mul k
+  have hlin : ∫⁻ u, ENNReal.ofReal (k * Real.exp (c * u)) ∂Q = 1 := by
+    have := hprob.measure_univ
+    rwa [expTilt, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ] at this
+  have hint : Integrable (fun u => k * Real.exp (c * u)) Q :=
+    (lintegral_ofReal_ne_top_iff_integrable hm.aestronglyMeasurable hnn).mp
+      (by rw [hlin]; exact ENNReal.one_ne_top)
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hnn hm.aestronglyMeasurable, hlin,
+    ENNReal.toReal_one]
+
+/-- **The fibrewise variation-diminishing inequality.** Let `g` be bounded by `1`, nonnegative
+strictly above the threshold `C` and nonpositive strictly below it. Tilting by `k·e^{cu}` then
+moves `∫g` in the direction of the sign of `c`, relative to the reference value
+`k·e^{cC}·∫g`; the proof is the pointwise inequality
+`g(u)·(k e^{cu} − k e^{cC}) ≥ 0`, whose two factors change sign at the same point `C`. -/
+private lemma integral_expTilt_signed {Q : Measure ℝ} [IsProbabilityMeasure Q] {k c C : ℝ}
+    (hk : 0 ≤ k) (hprob : IsProbabilityMeasure (expTilt Q k c))
+    {g : ℝ → ℝ} (hgm : Measurable g) (hgb : ∀ u, |g u| ≤ 1)
+    (hgpos : ∀ u, C < u → 0 ≤ g u) (hgneg : ∀ u, u < C → g u ≤ 0) :
+    (0 ≤ c → k * Real.exp (c * C) * (∫ u, g u ∂Q) ≤ ∫ u, g u ∂(expTilt Q k c)) ∧
+      (c ≤ 0 → ∫ u, g u ∂(expTilt Q k c) ≤ k * Real.exp (c * C) * (∫ u, g u ∂Q)) := by
+  obtain ⟨hdint, -⟩ := integrable_expTiltDensity hk hprob
+  have hgint : Integrable g Q :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hgb u)
+  have hprod : Integrable (fun u => g u * (k * Real.exp (c * u))) Q :=
+    hdint.bdd_mul (c := 1) hgm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hgb u)
+  have hsplit : ∫ u, g u * (k * Real.exp (c * u) - k * Real.exp (c * C)) ∂Q
+      = (∫ u, g u ∂(expTilt Q k c)) - k * Real.exp (c * C) * ∫ u, g u ∂Q := by
+    have h1 : (fun u => g u * (k * Real.exp (c * u) - k * Real.exp (c * C)))
+        = fun u => g u * (k * Real.exp (c * u)) - k * Real.exp (c * C) * g u := by
+      funext u; ring
+    rw [h1, integral_sub hprod (hgint.const_mul _), integral_const_mul,
+      integral_expTilt Q hk c g]
+  constructor
+  · intro hc
+    have hpt : ∀ u, 0 ≤ g u * (k * Real.exp (c * u) - k * Real.exp (c * C)) := by
+      intro u
+      rcases lt_trichotomy u C with h | h | h
+      · have hle : k * Real.exp (c * u) ≤ k * Real.exp (c * C) :=
+          mul_le_mul_of_nonneg_left
+            (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h.le hc)) hk
+        have hprodnn := mul_nonneg (neg_nonneg.mpr (hgneg u h))
+          (neg_nonneg.mpr (by linarith :
+            k * Real.exp (c * u) - k * Real.exp (c * C) ≤ 0))
+        rwa [neg_mul_neg] at hprodnn
+      · rw [h]; ring_nf; exact le_rfl
+      · have hle : k * Real.exp (c * C) ≤ k * Real.exp (c * u) :=
+          mul_le_mul_of_nonneg_left
+            (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left h.le hc)) hk
+        exact mul_nonneg (hgpos u h) (by linarith)
+    have hI : (0 : ℝ) ≤ ∫ u, g u * (k * Real.exp (c * u) - k * Real.exp (c * C)) ∂Q :=
+      integral_nonneg hpt
+    rw [hsplit] at hI
+    linarith
+  · intro hc
+    have hpt : ∀ u, g u * (k * Real.exp (c * u) - k * Real.exp (c * C)) ≤ 0 := by
+      intro u
+      rcases lt_trichotomy u C with h | h | h
+      · have hle : k * Real.exp (c * C) ≤ k * Real.exp (c * u) :=
+          mul_le_mul_of_nonneg_left
+            (Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left h.le hc)) hk
+        have hprodnn := mul_nonneg (neg_nonneg.mpr (hgneg u h))
+          (by linarith : (0 : ℝ) ≤ k * Real.exp (c * u) - k * Real.exp (c * C))
+        rw [neg_mul] at hprodnn
+        linarith
+      · rw [h]; ring_nf; exact le_rfl
+      · have hle : k * Real.exp (c * u) ≤ k * Real.exp (c * C) :=
+          mul_le_mul_of_nonneg_left
+            (Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left h.le hc)) hk
+        have hprodnn := mul_nonneg (hgpos u h)
+          (neg_nonneg.mpr (by linarith :
+            k * Real.exp (c * u) - k * Real.exp (c * C) ≤ 0))
+        rw [mul_neg] at hprodnn
+        linarith
+    have hI : ∫ u, g u * (k * Real.exp (c * u) - k * Real.exp (c * C)) ∂Q ≤ 0 :=
+      integral_nonpos hpt
+    rw [hsplit] at hI
+    linarith
+
+end FibreTilt
+
 /-! ## The four UMP unbiased tests -/
 
 /-- **One-sided null.** For `H : θ ≤ θ₀` against `K : θ > θ₀`, the conditional one-sided test
