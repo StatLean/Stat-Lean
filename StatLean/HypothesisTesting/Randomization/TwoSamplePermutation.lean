@@ -290,6 +290,72 @@ private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
   rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
+
+/-! ### The combinatorial central limit theorem at a moving threshold
+
+The two-sample statistic reaches the combinatorial central limit theorem through a threshold
+that depends on the stage — the sample sizes and the pooled dispersion both move with `k` —
+so the fixed-threshold form of `ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum` is
+squeezed here between its values at `t ∓ ε`. The indicator is monotone in the threshold and
+`blockSumScale` is nonnegative, so the sandwich is immediate, and the limit `Φ` is Lipschitz,
+hence continuous, so the two brackets close. -/
+
+/-- **The combinatorial central limit theorem with a convergent threshold.** -/
+private lemma tendsto_perm_cdf_blockSum_varying {N m : ℕ → ℕ}
+    -- USER-INPUT: at each stage the block is a set of `m k` distinct positions
+    (a : ∀ k, Fin (m k) → Fin (N k)) (ha : ∀ k, Function.Injective (a k))
+    -- USER-INPUT: the finite populations, centred
+    (d : ∀ k, Fin (N k) → ℝ) (hcent : ∀ k, ∑ l, d k l = 0)
+    -- USER-INPUT: both the block and its complement grow
+    (hm : Tendsto (fun k => (m k : ℝ)) atTop atTop)
+    (hNm : Tendsto (fun k => (N k : ℝ) - m k) atTop atTop)
+    -- USER-INPUT: the populations are normalized in the second moment
+    (hvar : Tendsto (fun k => (N k : ℝ)⁻¹ * ∑ l, d k l ^ 2) atTop (𝓝 1))
+    -- USER-INPUT: Hájek's Lindeberg condition at scale `√(min (m k) (N k - m k))`
+    (hlind : ∀ ε > (0 : ℝ), Tendsto (fun k => (N k : ℝ)⁻¹ *
+        ∑ l, (if ε * Real.sqrt (min (m k : ℝ) ((N k : ℝ) - m k)) ≤ |d k l|
+              then d k l ^ 2 else 0)) atTop (𝓝 0))
+    -- USER-INPUT: a convergent sequence of thresholds
+    {θ : ℕ → ℝ} {t : ℝ} (hθ : Tendsto θ atTop (𝓝 t)) :
+    Tendsto (fun k => (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ θ k * blockSumScale (N k) (m k) then (1 : ℝ) else 0))
+      atTop (𝓝 (cdf (gaussianReal 0 1) t)) := by
+  classical
+  have hcont : ContinuousAt (fun s : ℝ => cdf (gaussianReal 0 1) s) t :=
+    lipschitzWith_cdf_gaussianReal.continuous.continuousAt
+  -- the indicator is monotone in the threshold, `blockSumScale` being nonnegative
+  have hmono : ∀ (u v : ℝ), u ≤ v → ∀ (k : ℕ) (σ : Equiv.Perm (Fin (N k))),
+      (if ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k) then (1 : ℝ) else 0)
+        ≤ (if ∑ i, d k (σ (a k i)) ≤ v * blockSumScale (N k) (m k) then (1 : ℝ) else 0) := by
+    intro u v huv k σ
+    have hs : (0 : ℝ) ≤ blockSumScale (N k) (m k) := Real.sqrt_nonneg _
+    by_cases h : ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k)
+    · rw [if_pos h, if_pos (le_trans h (mul_le_mul_of_nonneg_right huv hs))]
+    · rw [if_neg h]
+      split_ifs <;> norm_num
+  have havg : ∀ (u v : ℝ), u ≤ v → ∀ k : ℕ,
+      (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k) then (1 : ℝ) else 0)
+        ≤ (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ v * blockSumScale (N k) (m k) then (1 : ℝ) else 0) :=
+    fun u v huv k =>
+      mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hmono u v huv k σ)
+        (by positivity)
+  refine tendsto_of_squeeze_continuousAt hcont ?_
+  intro ε hε
+  have hlo := tendsto_perm_cdf_blockSum a ha d hcent hm hNm hvar hlind (t - ε)
+  have hhi := tendsto_perm_cdf_blockSum a ha d hcent hm hNm hvar hlind (t + ε)
+  have hlo' := hlo.eventually (eventually_gt_nhds
+    (show cdf (gaussianReal 0 1) (t - ε) - ε < cdf (gaussianReal 0 1) (t - ε) by linarith))
+  have hhi' := hhi.eventually (eventually_lt_nhds
+    (show cdf (gaussianReal 0 1) (t + ε) < cdf (gaussianReal 0 1) (t + ε) + ε by linarith))
+  have hθ1 := hθ.eventually (eventually_gt_nhds (show t - ε < t by linarith))
+  have hθ2 := hθ.eventually (eventually_lt_nhds (show t < t + ε by linarith))
+  filter_upwards [hlo', hhi', hθ1, hθ2] with k h1 h2 h3 h4
+  exact ⟨le_trans h1.le (havg (t - ε) (θ k) h3.le k),
+    le_trans (havg (θ k) (t + ε) h4.le k) h2.le⟩
+
 /-! ### The permutation limit
 
 The bivariate statement is reduced to a **scalar** one: the `Asymptotics` converse
