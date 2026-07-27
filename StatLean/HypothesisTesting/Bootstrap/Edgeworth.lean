@@ -488,15 +488,41 @@ not proved here, and it is strictly harder than `edgeworth_mean_uniform`: it inh
 recorded there and needs in addition the **bivariate** Edgeworth expansion for `(X̄, X̄₂)`
 together with the delta-method transfer to the smooth function `(u, v) ↦ u/√(v − u²)`.
 
-Two of the pieces this note used to name as missing are now present, and the corresponding
+Several pieces this note used to name as missing are now present, and the corresponding
 verdicts are dead. The CDF-level Esseen inversion is proved
-(`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`), and the damped
-characteristic-function expansion — recorded as *the* binding estimate — is proved
-(`norm_charFun_pow_sub_edgeworth_le` in `ForMathlib/BerryEsseen.lean`). What remains genuinely
-specific to this theorem is the bivariate expansion: the univariate damped bound above does not
-transfer to `(X̄, X̄₂)` without a two-dimensional analogue of
-`norm_charFun_le_exp_neg_sq`, whose window is governed by the smallest eigenvalue of the
-covariance of `(X, X²)` and therefore needs the nondegeneracy that `hFac` supplies. -/
+(`abs_measure_Iic_sub_le_charFun` in `ForMathlib/EsseenSmoothing.lean`), so is its
+signed-density form (`abs_measure_Iic_sub_densityCDF_le_charFun`), so is the Cramér-tail
+bookkeeping (`setIntegral_mul_esseenWeight_tail_le`, `exists_pow_mul_geometric_le`), and so is
+the damped characteristic-function expansion — recorded as *the* binding estimate —
+(`norm_charFun_pow_sub_edgeworth_le` in `ForMathlib/BerryEsseen.lean`) together with the
+Hermite Fourier identity (`integral_hermite3_mul_cexp_mul_gaussian`).
+
+**Re-derivation of the bivariate verdict: it stands, and it is now isolated.** Three points.
+
+* *The rate is not weaker here.* Both this theorem and `edgeworth_mean_uniform` are stated with
+  the same remainder `C/n`; there is no `O(n^{-1/2+ε})` slack in the statement to exploit.
+* *No Slutsky-type reduction to the centred root can work, at any rate finer than `n^{-1/2}`.*
+  Evaluating the centred approximant at the argument `σt` gives
+  `Φ(t) − (1/6)γφ(t)(t² − 1)n^{-1/2}` (the `σ`'s cancel: `φ(σt/σ) = φ(t)` and
+  `(σt)²/σ² − 1 = t² − 1`), while the studentized approximant is
+  `Φ(t) + (1/6)γφ(t)(2t² + 1)n^{-1/2}`. Their difference is exactly
+  `(1/2) γ t² φ(t) n^{-1/2}`, which is nonzero for every `t ≠ 0` as soon as `γ ≠ 0`. So the two
+  sampling distribution functions differ at order `n^{-1/2}`, and a reduction of one to the
+  other that is accurate to `O(n⁻¹)` — indeed any argument controlling only `o(1)`, which is
+  all Slutsky and the continuous-mapping theorem give — cannot produce the studentized
+  `n^{-1/2}` coefficient. The advantage of studentizing *is* this discrepancy; an argument that
+  loses it proves nothing.
+* *What is genuinely missing is one estimate, not the whole route.* The CDF-level half of the
+  argument is dimension-free in the sense that matters: after the delta-method transfer one is
+  still comparing two laws **on the line** — the law of the studentized root and its signed
+  approximant — so `abs_measure_Iic_sub_densityCDF_le_charFun`, `normalCDF_sub_le` and the
+  tail lemmas apply verbatim. What does *not* transfer is the characteristic-function estimate:
+  `√n(X̄ − μ)/σ̂` is **not** a sum of i.i.d. summands, so its characteristic function is not a
+  power of `charFun F` and `norm_charFun_pow_sub_edgeworth_le` cannot be applied to it. The
+  standard remedy is to pass to `(X̄, X̄₂)`, which *is* an i.i.d. sum in `ℝ²`, expand there, and
+  transfer through the smooth function `(u, v) ↦ u/√(v − u²)`. That needs a two-dimensional
+  analogue of `norm_charFun_le_exp_neg_sq`, whose window is governed by the smallest eigenvalue
+  of the covariance of `(X, X²)` and therefore needs the nondegeneracy that `hFac` supplies. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
