@@ -552,6 +552,17 @@ about the fibres is the elementary "variation-diminishing" inequality below, app
 
 section FibreTilt
 
+/-- Integration against a `withDensity` whose density is the `ENNReal.ofReal` of a
+nonnegative real function. No hypothesis on `g`: both sides are junk-compatible. -/
+private lemma integral_withDensity_ofReal_mul {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f : α → ℝ} (hf : Measurable f) (hfnn : ∀ a, 0 ≤ f a) (g : α → ℝ) :
+    ∫ a, g a ∂(μ.withDensity fun a => ENNReal.ofReal (f a)) = ∫ a, g a * f a ∂μ := by
+  rw [integral_withDensity_eq_integral_toReal_smul hf.ennreal_ofReal
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun a => ?_)
+  simp only [smul_eq_mul]
+  rw [ENNReal.toReal_ofReal (hfnn a), mul_comm]
+
 /-- The exponential tilt of a measure on the line by the density `k·e^{cu}`. -/
 private noncomputable def expTilt (Q : Measure ℝ) (k c : ℝ) : Measure ℝ :=
   Q.withDensity fun u => ENNReal.ofReal (k * Real.exp (c * u))
@@ -563,12 +574,9 @@ private lemma measurable_expTiltDensity (k c : ℝ) :
 /-- Integrals against a tilt are integrals of the tilted integrand. No hypothesis on `g`:
 both sides are junk-compatible. -/
 private lemma integral_expTilt (Q : Measure ℝ) {k : ℝ} (hk : 0 ≤ k) (c : ℝ) (g : ℝ → ℝ) :
-    ∫ u, g u ∂(expTilt Q k c) = ∫ u, g u * (k * Real.exp (c * u)) ∂Q := by
-  rw [expTilt, integral_withDensity_eq_integral_toReal_smul (measurable_expTiltDensity k c)
-    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun u => ?_)
-  simp only [smul_eq_mul]
-  rw [ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ k * Real.exp (c * u)), mul_comm]
+    ∫ u, g u ∂(expTilt Q k c) = ∫ u, g u * (k * Real.exp (c * u)) ∂Q :=
+  integral_withDensity_ofReal_mul Q ((measurable_const.mul measurable_id).exp.const_mul k)
+    (fun _ => by positivity) g
 
 /-- **A tilt which is again a probability measure has an integrable density of total mass
 one.** This is the only place the normalization of the conditional families is used. -/
@@ -664,6 +672,169 @@ private lemma integral_expTilt_signed {Q : Measure ℝ} [IsProbabilityMeasure Q]
     linarith
 
 end FibreTilt
+
+/-! ## Global toolkit: the canonical `(U, T)` family on its own scale
+
+The canonical hypothesis `IsCanonicalUT` identifies the law of `(U, T)` with a `ν`-density.
+Everything below is read off from that identification: the normalizing constant is strictly
+positive, the laws of `(U, T)` — hence of `T` — are mutually equivalent across `Ω`, and the
+power of a test of `(U, T)` is a ratio of two `ν`-integrals which is continuous along segments
+of `Ω`, by the two-point envelope `e^{(1−s)a+sb} ≤ e^a + e^b`. -/
+
+section CanonicalGlobal
+
+/-- The canonical exponent `⟪(θ, ϑ), (u, t)⟫ = θu + ⟪ϑ, t⟫`. -/
+private noncomputable def canExp (r z : ℝ × Ξ) : ℝ := r.1 * z.1 + ⟪r.2, z.2⟫_ℝ
+
+private lemma canExp_apply (r z : ℝ × Ξ) : canExp r z = r.1 * z.1 + ⟪r.2, z.2⟫_ℝ := rfl
+
+private lemma measurable_canExp [OpensMeasurableSpace Ξ] (r : ℝ × Ξ) :
+    Measurable fun z : ℝ × Ξ => canExp r z := by
+  have h : Measurable fun z : ℝ × Ξ => ⟪r.2, z.2⟫_ℝ :=
+    ((innerSL ℝ r.2).continuous.measurable).comp measurable_snd
+  exact (measurable_const.mul measurable_fst).add h
+
+/-- The canonical exponent is affine in the parameter. -/
+private lemma canExp_segment (p q : ℝ × Ξ) (s : ℝ) (z : ℝ × Ξ) :
+    canExp ((1 - s) • p + s • q) z = (1 - s) * canExp p z + s * canExp q z := by
+  simp only [canExp, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+    inner_add_left, real_inner_smul_left]
+  ring
+
+/-- **Two-point envelope.** A convex combination of exponentials is below the sum of the two
+endpoint exponentials — the dominating function for every segment of `Ω`. -/
+private lemma exp_segment_le {a b s : ℝ} (h0 : 0 ≤ s) (h1 : s ≤ 1) :
+    Real.exp ((1 - s) * a + s * b) ≤ Real.exp a + Real.exp b := by
+  have hle : (1 - s) * a + s * b ≤ max a b := by
+    have ha : a ≤ max a b := le_max_left _ _
+    have hb : b ≤ max a b := le_max_right _ _
+    nlinarith
+  calc Real.exp ((1 - s) * a + s * b) ≤ Real.exp (max a b) := Real.exp_le_exp.mpr hle
+    _ ≤ Real.exp a + Real.exp b := by
+        rcases max_cases a b with ⟨h, _⟩ | ⟨h, _⟩
+        · rw [h]; linarith [Real.exp_pos b]
+        · rw [h]; linarith [Real.exp_pos a]
+
+variable {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → ℝ} {T : 𝓧 → Ξ}
+  {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+
+/-- The law of `(U, T)` is a probability measure. -/
+private lemma isProbabilityMeasure_mapUT [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (p : ℝ × Ξ) :
+    IsProbabilityMeasure ((P p).map fun x => (U x, T x)) :=
+  Measure.isProbabilityMeasure_map (hU.prodMk hT).aemeasurable
+
+/-- **The normalizing constant is strictly positive on `Ω`.** If `C p ≤ 0` the canonical
+density vanishes identically and the law of `(U, T)` is the zero measure, which it is not. -/
+private lemma canonicalUT_const_pos [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) : 0 < C p := by
+  by_contra hcon
+  push Not at hcon
+  have hdens : (fun z : ℝ × Ξ => ENNReal.ofReal (C p * Real.exp (canExp p z))) = 0 := by
+    funext z
+    simp only [Pi.zero_apply, ENNReal.ofReal_eq_zero]
+    have h := mul_nonneg (neg_nonneg.mpr hcon) (Real.exp_pos (canExp p z)).le
+    rw [neg_mul] at h
+    linarith
+  haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
+  have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
+  rw [hUT p hp] at h1
+  simp only [canExp_apply] at hdens
+  rw [hdens, withDensity_zero] at h1
+  simp at h1
+
+/-- **Integrability and normalization of the canonical density.** -/
+private lemma integrable_canExp [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) :
+    Integrable (fun z => Real.exp (canExp p z)) ν ∧
+      C p * ∫ z, Real.exp (canExp p z) ∂ν = 1 := by
+  have hCp := canonicalUT_const_pos hU hT hUT hp
+  have hm : Measurable fun z : ℝ × Ξ => C p * Real.exp (canExp p z) :=
+    (measurable_canExp p).exp.const_mul _
+  have hnn : (0 : (ℝ × Ξ) → ℝ) ≤ᵐ[ν] fun z => C p * Real.exp (canExp p z) :=
+    Filter.Eventually.of_forall fun z => by
+      have h : (0 : ℝ) ≤ C p * Real.exp (canExp p z) := by positivity
+      simpa using h
+  haveI := isProbabilityMeasure_mapUT (P := P) hU hT p
+  have hlin : ∫⁻ z, ENNReal.ofReal (C p * Real.exp (canExp p z)) ∂ν = 1 := by
+    have h1 : ((P p).map fun x => (U x, T x)) Set.univ = 1 := measure_univ
+    rw [hUT p hp, withDensity_apply _ MeasurableSet.univ, setLIntegral_univ] at h1
+    exact h1
+  have hint : Integrable (fun z => C p * Real.exp (canExp p z)) ν :=
+    (lintegral_ofReal_ne_top_iff_integrable hm.aestronglyMeasurable hnn).mp
+      (by rw [hlin]; exact ENNReal.one_ne_top)
+  have hval : ∫ z, C p * Real.exp (canExp p z) ∂ν = 1 := by
+    rw [integral_eq_lintegral_of_nonneg_ae hnn hm.aestronglyMeasurable, hlin,
+      ENNReal.toReal_one]
+  refine ⟨?_, ?_⟩
+  · have := hint.const_mul (C p)⁻¹
+    refine this.congr (Filter.Eventually.of_forall fun z => ?_)
+    field_simp
+  · rw [integral_const_mul] at hval; exact hval
+
+/-- **Every test of `(U, T)` has power a ratio of two `ν`-integrals.** -/
+private lemma integral_comp_UT_eq [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) {g : ℝ × Ξ → ℝ} (hg : Measurable g) :
+    ∫ x, g (U x, T x) ∂(P p) = C p * ∫ z, g z * Real.exp (canExp p z) ∂ν := by
+  have hmap : ∫ x, g (U x, T x) ∂(P p)
+      = ∫ z, g z ∂((P p).map fun x => (U x, T x)) :=
+    (integral_map (hU.prodMk hT).aemeasurable hg.aestronglyMeasurable).symm
+  rw [hmap, hUT p hp]
+  have hnn : ∀ z : ℝ × Ξ, 0 ≤ C p * Real.exp (canExp p z) := fun z => by
+    have := canonicalUT_const_pos hU hT hUT hp
+    positivity
+  simp only [← canExp_apply]
+  rw [integral_withDensity_ofReal_mul ν ((measurable_canExp p).exp.const_mul _) hnn g,
+    ← integral_const_mul]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+
+/-- **The laws of `(U, T)` are mutually equivalent across `Ω`**: the canonical density is
+finite and everywhere strictly positive, so each of them is equivalent to `ν`. -/
+private lemma mapUT_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p q : ℝ × Ξ} (hp : p ∈ Ω) (hq : q ∈ Ω) :
+    (P p).map (fun x => (U x, T x)) ≪ (P q).map fun x => (U x, T x) := by
+  have hCq := canonicalUT_const_pos hU hT hUT hq
+  rw [hUT p hp, hUT q hq]
+  simp only [← canExp_apply]
+  refine (withDensity_absolutelyContinuous ν _).trans
+    (withDensity_absolutelyContinuous' ?_ ?_)
+  · exact ((measurable_canExp q).exp.const_mul (C q)).ennreal_ofReal.aemeasurable
+  · refine Filter.Eventually.of_forall fun z => ?_
+    simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    have : (0 : ℝ) < C q * Real.exp (canExp q z) := by positivity
+    exact this
+
+/-- **The laws of `T` are mutually equivalent across `Ω`.** -/
+private lemma statLaw_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p q : ℝ × Ξ} (hp : p ∈ Ω) (hq : q ∈ Ω) : (P p).map T ≪ (P q).map T := by
+  have hsnd : ∀ r : ℝ × Ξ, ((P r).map fun x => (U x, T x)).map Prod.snd = (P r).map T := by
+    intro r
+    rw [Measure.map_map measurable_snd (hU.prodMk hT)]
+    rfl
+  have := (mapUT_ac hU hT hUT hp hq).map (f := Prod.snd) measurable_snd
+  rwa [hsnd p, hsnd q] at this
+
+/-- A convex parameter set reaching strictly below and strictly above `θ₀` meets the boundary
+surface `θ = θ₀`. -/
+private lemma exists_mem_fst_eq (hΩ : Convex ℝ Ω) {θ₀ : ℝ}
+    (hlt : ∃ p ∈ Ω, p.1 < θ₀) (hgt : ∃ p ∈ Ω, θ₀ < p.1) : ∃ p ∈ Ω, p.1 = θ₀ := by
+  obtain ⟨a, ha, halt⟩ := hlt
+  obtain ⟨b, hb, hbgt⟩ := hgt
+  set s : ℝ := (θ₀ - a.1) / (b.1 - a.1) with hs
+  have hden : (0 : ℝ) < b.1 - a.1 := by linarith
+  have hs0 : 0 ≤ s := div_nonneg (by linarith) hden.le
+  have hs1 : s ≤ 1 := by rw [hs, div_le_one hden]; linarith
+  refine ⟨(1 - s) • a + s • b, hΩ ha hb (by linarith) hs0 (by ring), ?_⟩
+  simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul, hs]
+  field_simp
+  ring
+
+end CanonicalGlobal
 
 /-! ## The four UMP unbiased tests -/
 
