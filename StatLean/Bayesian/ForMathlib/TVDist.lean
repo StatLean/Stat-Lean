@@ -146,6 +146,16 @@ theorem tvDist_withDensity_eq (base : Measure α) {p q : α → ℝ≥0∞}
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [h]; exact measure_ne_top _ _)
 
+-- Measurable form of the scalar Jensen step. The public statement below omits any
+-- measurability hypothesis on `Y`, which makes it false (see the module docstring note):
+-- `lintegral` is the *lower* integral, hence only superadditive without measurability.
+private lemma one_sub_lintegral_le_lintegral_one_sub' (ν : Measure α) [IsProbabilityMeasure ν]
+    {Y : α → ℝ≥0∞} (hY : Measurable Y) :
+    1 - ∫⁻ x, Y x ∂ν ≤ ∫⁻ x, 1 - Y x ∂ν := by
+  rw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
+  calc (1 : ℝ≥0∞) = ∫⁻ _, (1 : ℝ≥0∞) ∂ν := by simp
+    _ ≤ ∫⁻ x, ((1 - Y x) + Y x) ∂ν := lintegral_mono fun _ => le_tsub_add
+
 /-- **Scalar Jensen step in truncated `ℝ≥0∞` arithmetic**: `1 − ∫ Y ≤ ∫ (1 − Y)` for a
 probability measure. (vdV p. 143: `(1 − E Y)⁺ ≤ E (1 − Y)⁺`; in `ℝ≥0∞` the truncated
 subtraction is the positive part.) -/
