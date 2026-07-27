@@ -1437,6 +1437,112 @@ private lemma setIntegral_Iic_eq_intervalIntegral_quantile (ν : Measure ℝ)
     intervalIntegral.integral_of_le h0, hm, Measure.restrict_restrict measurableSet_Ioc,
     Set.inter_eq_self_of_subset_left hsub]
 
+/-- Interval integrability inside the unit interval, from integrability on it. -/
+private lemma intervalIntegrable_of_Icc01 {g : ℝ → ℝ}
+    (hint : IntegrableOn g (Set.Icc (0 : ℝ) 1) MeasureTheory.volume) {x y : ℝ}
+    (hx : x ∈ Set.Icc (0 : ℝ) 1) (hy : y ∈ Set.Icc (0 : ℝ) 1) :
+    IntervalIntegrable g MeasureTheory.volume x y := by
+  refine intervalIntegrable_iff.2 (hint.mono_set fun u hu => ?_)
+  rcases Set.mem_uIoc.mp hu with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · exact ⟨le_trans hx.1 h1.le, le_trans h2 hy.2⟩
+  · exact ⟨le_trans hy.1 h1.le, le_trans h2 hx.2⟩
+
+/-- **Strict monotone-rearrangement inequality.** For a nondecreasing integrable `g` on
+`[0,1]` which is *not* essentially constant — it separates strictly across some level
+`a ∈ (0,1)` — the initial-segment integral is *strictly* below its proportional share:
+`∫₀^α g < α ∫₀¹ g` for every `α ∈ (0,1)`.
+
+This is the strict form of brick (c) of the quantile-sweep roadmap at `isUMP_twoSided`, and
+it is what places the root of the sweep in the *open* interval `(0, 1−α)`, where the
+quantile pair `(Q s, Q (s+α))` is honest (the junk values `Q 0`, `Q 1` are excluded). The
+separation hypothesis is supplied there by a level `a = F c` of the null law: below it the
+quantile function stays at or under `c`, above it strictly beyond, so the likelihood
+ratio — strictly increasing — separates. -/
+private lemma integral_lt_of_monotoneOn_of_sep {g : ℝ → ℝ} {α a : ℝ}
+    (hg : MonotoneOn g (Set.Ioo (0 : ℝ) 1))
+    (hint : IntegrableOn g (Set.Icc (0 : ℝ) 1) MeasureTheory.volume)
+    (hα : α ∈ Set.Ioo (0 : ℝ) 1) (ha : a ∈ Set.Ioo (0 : ℝ) 1)
+    (hsep : ∀ u ∈ Set.Ioo (0 : ℝ) 1, ∀ v ∈ Set.Ioo (0 : ℝ) 1, u ≤ a → a < v → g u < g v) :
+    (∫ u in (0 : ℝ)..α, g u) < α * ∫ u in (0 : ℝ)..1, g u := by
+  obtain ⟨hα0, hα1⟩ := hα
+  obtain ⟨ha0, ha1⟩ := ha
+  have hmem0 : (0 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
+  have hmem1 : (1 : ℝ) ∈ Set.Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
+  have hmemα : α ∈ Set.Icc (0 : ℝ) 1 := ⟨hα0.le, hα1.le⟩
+  have hmema : a ∈ Set.Icc (0 : ℝ) 1 := ⟨ha0.le, ha1.le⟩
+  -- upper and lower bounds for the integral of `g` over a subinterval
+  have hub : ∀ x y c : ℝ, x ∈ Set.Icc (0 : ℝ) 1 → y ∈ Set.Icc (0 : ℝ) 1 → x ≤ y →
+      (∀ u ∈ Set.Ioo x y, g u ≤ c) → (∫ u in x..y, g u) ≤ (y - x) * c := by
+    intro x y c hx hy hxy hle
+    have h := intervalIntegral.integral_mono_on_of_le_Ioo hxy
+      (intervalIntegrable_of_Icc01 hint hx hy) intervalIntegrable_const hle
+    simpa using h
+  have hlb : ∀ x y c : ℝ, x ∈ Set.Icc (0 : ℝ) 1 → y ∈ Set.Icc (0 : ℝ) 1 → x ≤ y →
+      (∀ u ∈ Set.Ioo x y, c ≤ g u) → (y - x) * c ≤ ∫ u in x..y, g u := by
+    intro x y c hx hy hxy hle
+    have h := intervalIntegral.integral_mono_on_of_le_Ioo hxy intervalIntegrable_const
+      (intervalIntegrable_of_Icc01 hint hx hy) hle
+    simpa using h
+  have hsplitα : (∫ u in (0 : ℝ)..α, g u) + ∫ u in α..(1 : ℝ), g u = ∫ u in (0 : ℝ)..1, g u :=
+    intervalIntegral.integral_add_adjacent_intervals
+      (intervalIntegrable_of_Icc01 hint hmem0 hmemα)
+      (intervalIntegrable_of_Icc01 hint hmemα hmem1)
+  -- it suffices to prove the cleared form `(1 − α)·∫₀^α g < α·∫_α^1 g`
+  suffices hkey : (1 - α) * (∫ u in (0 : ℝ)..α, g u) < α * ∫ u in α..(1 : ℝ), g u by
+    nlinarith [hkey, hsplitα]
+  rcases le_or_gt α a with hcase | hcase
+  · -- the level `α` sits at or below the separation level: the *right* piece is too big
+    set a' : ℝ := (a + 1) / 2 with ha'def
+    have ha'0 : 0 < a' := by rw [ha'def]; linarith
+    have ha'1 : a' < 1 := by rw [ha'def]; linarith
+    have haa' : a < a' := by rw [ha'def]; linarith
+    have hmema' : a' ∈ Set.Icc (0 : ℝ) 1 := ⟨ha'0.le, ha'1.le⟩
+    have hgap : g α < g a' := hsep α ⟨hα0, hα1⟩ a' ⟨ha'0, ha'1⟩ hcase haa'
+    have h1 : (∫ u in (0 : ℝ)..α, g u) ≤ α * g α := by
+      have h := hub 0 α (g α) hmem0 hmemα hα0.le
+        (fun u hu => hg ⟨hu.1, hu.2.trans hα1⟩ ⟨hα0, hα1⟩ hu.2.le)
+      simpa using h
+    have h3 : (a' - α) * g α ≤ ∫ u in α..a', g u :=
+      hlb α a' (g α) hmemα hmema' (by linarith)
+        (fun u hu => hg ⟨hα0, hα1⟩ ⟨hα0.trans hu.1, hu.2.trans ha'1⟩ hu.1.le)
+    have h4 : (1 - a') * g a' ≤ ∫ u in a'..(1 : ℝ), g u :=
+      hlb a' 1 (g a') hmema' hmem1 ha'1.le
+        (fun u hu => hg ⟨ha'0, ha'1⟩ ⟨ha'0.trans hu.1, hu.2⟩ hu.1.le)
+    have h5 : (∫ u in α..a', g u) + ∫ u in a'..(1 : ℝ), g u = ∫ u in α..(1 : ℝ), g u :=
+      intervalIntegral.integral_add_adjacent_intervals
+        (intervalIntegrable_of_Icc01 hint hmemα hmema')
+        (intervalIntegrable_of_Icc01 hint hmema' hmem1)
+    have hpos : 0 < (1 - a') * (g a' - g α) := mul_pos (by linarith) (by linarith)
+    have hR : (1 - α) * g α < ∫ u in α..(1 : ℝ), g u := by linarith [h3, h4, h5, hpos]
+    have hfin : (1 - α) * (∫ u in (0 : ℝ)..α, g u) ≤ (1 - α) * (α * g α) :=
+      mul_le_mul_of_nonneg_left h1 (by linarith)
+    have hmul : α * ((1 - α) * g α) < α * ∫ u in α..(1 : ℝ), g u :=
+      mul_lt_mul_of_pos_left hR hα0
+    linarith [hfin, hmul]
+  · -- the level `α` sits strictly above it: the *left* piece is too small
+    have hgap : g a < g α := hsep a ⟨ha0, ha1⟩ α ⟨hα0, hα1⟩ le_rfl hcase
+    have h1 : (∫ u in (0 : ℝ)..a, g u) ≤ a * g a := by
+      have h := hub 0 a (g a) hmem0 hmema ha0.le
+        (fun u hu => hg ⟨hu.1, hu.2.trans ha1⟩ ⟨ha0, ha1⟩ hu.2.le)
+      simpa using h
+    have h2 : (∫ u in a..α, g u) ≤ (α - a) * g α :=
+      hub a α (g α) hmema hmemα hcase.le
+        (fun u hu => hg ⟨ha0.trans hu.1, hu.2.trans hα1⟩ ⟨hα0, hα1⟩ hu.2.le)
+    have h3 : (∫ u in (0 : ℝ)..a, g u) + ∫ u in a..α, g u = ∫ u in (0 : ℝ)..α, g u :=
+      intervalIntegral.integral_add_adjacent_intervals
+        (intervalIntegrable_of_Icc01 hint hmem0 hmema)
+        (intervalIntegrable_of_Icc01 hint hmema hmemα)
+    have h4 : (1 - α) * g α ≤ ∫ u in α..(1 : ℝ), g u :=
+      hlb α 1 (g α) hmemα hmem1 hα1.le
+        (fun u hu => hg ⟨hα0, hα1⟩ ⟨hα0.trans hu.1, hu.2⟩ hu.1.le)
+    have hpos : 0 < a * (g α - g a) := mul_pos ha0 (by linarith)
+    have hAlt : (∫ u in (0 : ℝ)..α, g u) < α * g α := by linarith [h1, h2, h3, hpos]
+    have hmul : (1 - α) * (∫ u in (0 : ℝ)..α, g u) < (1 - α) * (α * g α) :=
+      mul_lt_mul_of_pos_left hAlt (by linarith : (0 : ℝ) < 1 - α)
+    have hmul2 : α * ((1 - α) * g α) ≤ α * ∫ u in α..(1 : ℝ), g u :=
+      mul_le_mul_of_nonneg_left h4 hα0.le
+    linarith [hmul, hmul2]
+
 /-- The mass of an atom is the jump of the distribution function there. -/
 private lemma cdf_singleton_toReal (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
     (ν {x}).toReal = cdf ν x - Function.leftLim (⇑(cdf ν)) x := by
