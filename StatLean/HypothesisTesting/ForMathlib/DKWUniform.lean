@@ -1130,12 +1130,13 @@ theorem ksDist_concentration {n : ℕ}
 
 /-- **Uniform exponential tail for the empirical process.**
 For an i.i.d. sample of size `n ≥ 1` from any law `μ` and any `d ≥ 0`,
-$$\mathbb P\bigl(\sqrt n \sup_t |\hat F_n(t) - F(t)| \ge d\bigr) \;\le\; 4\,e^{-d^2/8} .$$
+$$\mathbb P\bigl(\sqrt n \sup_t |\hat F_n(t) - F(t)| \ge d\bigr) \;\le\; 4\,e^{-d^2/16} .$$
 The constants are absolute: they depend neither on `n` nor on `μ`, which is what makes a
 fixed rejection threshold distribution-free and valid at every sample size.
 
-Obtained by composing `integral_ksDist_le` with `ksDist_concentration`; see the file header
-for the arithmetic and for the (documented) gap to the sharp constants. -/
+Obtained by composing `integral_ksDist_le` (`√n · E Dₙ ≤ 4`) with `ksDist_concentration`;
+see the file header for the arithmetic and for the (documented) gap to the sharp constants
+`C = 2`, `c = 2`. -/
 theorem dkw_uniform {n : ℕ}
     -- USER-INPUT: a nonempty sample.
     (hn : 0 < n) (μ : Measure ℝ) [IsProbabilityMeasure μ] (X : Fin n → Ω → ℝ)
@@ -1148,51 +1149,59 @@ theorem dkw_uniform {n : ℕ}
     -- USER-INPUT: a nonnegative threshold.
     {d : ℝ} (hd : 0 ≤ d) :
     P {ω | d ≤ Real.sqrt n * ksDist X μ ω}
-      ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
-  by_cases hbig : 1 ≤ 4 * Real.exp (-(d ^ 2) / 8)
+      ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 16)) := by
+  -- `log 4 = 2 log 2 > 1.386`, comfortably above the `32/31 = 1.032…` the tail needs.
+  have hlog4 : (32 / 31 : ℝ) ≤ Real.log 4 := by
+    have h4 : Real.log 4 = 2 * Real.log 2 := by
+      rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, Real.log_pow]
+      push_cast; ring
+    have h2 : (0.6931471803 : ℝ) < Real.log 2 := Real.log_two_gt_d9
+    rw [h4]; nlinarith
+  by_cases hbig : 1 ≤ 4 * Real.exp (-(d ^ 2) / 16)
   · -- the envelope is `≥ 1`; the bound is vacuous
     calc P {ω | d ≤ Real.sqrt n * ksDist X μ ω}
         ≤ 1 := (measure_mono (Set.subset_univ _)).trans_eq measure_univ
-      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
+      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 16)) := by
           rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hbig
   · push_neg at hbig
-    -- `4 e^{-d²/8} < 1` forces `d > 2`
-    have hlog4 : (1 : ℝ) ≤ Real.log 4 := by
-      rw [Real.le_log_iff_exp_le (by norm_num)]
-      exact le_of_lt (lt_trans Real.exp_one_lt_three (by norm_num))
-    have hexp14 : Real.exp (-(d ^ 2) / 8) < 1 / 4 := by nlinarith [Real.exp_pos (-(d ^ 2) / 8)]
-    have hdsq : 8 * Real.log 4 < d ^ 2 := by
-      have h2 : -(d ^ 2) / 8 < Real.log (1 / 4) := by
-        calc -(d ^ 2) / 8 = Real.log (Real.exp (-(d ^ 2) / 8)) := (Real.log_exp _).symm
+    -- `4 e^{-d²/16} < 1` forces `d > 4`
+    have hexp14 : Real.exp (-(d ^ 2) / 16) < 1 / 4 := by
+      nlinarith [Real.exp_pos (-(d ^ 2) / 16)]
+    have hdsq : 16 * Real.log 4 < d ^ 2 := by
+      have h2 : -(d ^ 2) / 16 < Real.log (1 / 4) := by
+        calc -(d ^ 2) / 16 = Real.log (Real.exp (-(d ^ 2) / 16)) := (Real.log_exp _).symm
           _ < Real.log (1 / 4) := Real.log_lt_log (Real.exp_pos _) hexp14
       rw [show (1 : ℝ) / 4 = 4⁻¹ by norm_num, Real.log_inv] at h2
       linarith
-    have hd2 : 0 ≤ d - 2 := by nlinarith [hlog4, hdsq]
-    -- mean bound: `√n · E[Dₙ] ≤ 2`
+    have hd4 : 0 ≤ d - 4 := by nlinarith
+    -- mean bound: `√n · E[Dₙ] ≤ 4`
     have hsqrt_pos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr (by exact_mod_cast hn)
-    have hEle : Real.sqrt (n : ℝ) * ∫ ω, ksDist X μ ω ∂P ≤ 2 := by
+    have hEle : Real.sqrt (n : ℝ) * ∫ ω, ksDist X μ ω ∂P ≤ 4 := by
       calc Real.sqrt (n : ℝ) * ∫ ω, ksDist X μ ω ∂P
-          ≤ Real.sqrt (n : ℝ) * (2 / Real.sqrt (n : ℝ)) :=
+          ≤ Real.sqrt (n : ℝ) * (4 / Real.sqrt (n : ℝ)) :=
             mul_le_mul_of_nonneg_left (integral_ksDist_le hn μ X hmeas hindep hlaw)
               (le_of_lt hsqrt_pos)
-        _ = 2 := by field_simp
+        _ = 4 := by field_simp
     -- deviation event forces a bounded-differences deviation
     have hsub : {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
-        ⊆ {ω | d - 2 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} := by
+        ⊆ {ω | d - 4 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} := by
       intro ω hω
       simp only [Set.mem_setOf_eq] at hω ⊢
       rw [mul_sub]
       linarith
-    have hconc := ksDist_concentration hn μ X hmeas hindep hd2
+    have hconc := ksDist_concentration hn μ X hmeas hindep hd4
     calc P {ω | d ≤ Real.sqrt (n : ℝ) * ksDist X μ ω}
-        ≤ P {ω | d - 2 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} :=
+        ≤ P {ω | d - 4 ≤ Real.sqrt (n : ℝ) * (ksDist X μ ω - ∫ ω', ksDist X μ ω' ∂P)} :=
           measure_mono hsub
-      _ ≤ ENNReal.ofReal (Real.exp (-2 * (d - 2) ^ 2)) := hconc
-      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 8)) := by
-          apply ENNReal.ofReal_le_ofReal
-          rw [show (4 : ℝ) = Real.exp (Real.log 4) from (Real.exp_log (by norm_num)).symm,
-            ← Real.exp_add]
-          apply Real.exp_le_exp.mpr
-          nlinarith [hlog4, sq_nonneg (15 * d - 32)]
+      _ ≤ ENNReal.ofReal (Real.exp (-2 * (d - 4) ^ 2)) := hconc
+      _ ≤ ENNReal.ofReal (4 * Real.exp (-(d ^ 2) / 16)) := by
+          refine ENNReal.ofReal_le_ofReal ?_
+          have hkey : d ^ 2 / 16 - 2 * (d - 4) ^ 2 ≤ 32 / 31 := by
+            nlinarith [sq_nonneg (31 * d - 128)]
+          calc Real.exp (-2 * (d - 4) ^ 2)
+              ≤ Real.exp (Real.log 4 + -(d ^ 2) / 16) := by
+                exact Real.exp_le_exp.mpr (by linarith)
+            _ = 4 * Real.exp (-(d ^ 2) / 16) := by
+                rw [Real.exp_add, Real.exp_log (by norm_num)]
 
 end StatLean.HypothesisTesting
