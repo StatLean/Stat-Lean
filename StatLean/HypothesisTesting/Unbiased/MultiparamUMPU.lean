@@ -1106,6 +1106,52 @@ private lemma ae_condPower_eq_of_similar [BorelSpace Ξ] [FiniteDimensional ℝ 
   filter_upwards [hae] with t ht
   have hz : (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t)) - α = 0 := ht
   linarith
+
+/-- **The fibrewise engine.** Let `g` be a bounded measurable function of `(u, t)` which is
+nonnegative above the threshold `C₀ t`, nonpositive below it, and has vanishing conditional
+integral for almost every `t` at the reference parameter `p₀`. Then its unconditional
+integral has the sign of `p.1 − p₀.1`. Applied to `g = φ − α` this gives the level and the
+unbiasedness of the conditional one-sided test; applied to `g = φ − ψ` it gives its
+optimality against any competitor with the same Neyman structure. -/
+private lemma integral_comp_sign_of_condZero [BorelSpace Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p₀ p : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp : p ∈ Ω) {C₀ : Ξ → ℝ}
+    {g : ℝ × Ξ → ℝ} (hgm : Measurable g) (hgb : ∀ z, |g z| ≤ 1)
+    (hgpos : ∀ z : ℝ × Ξ, C₀ z.2 < z.1 → 0 ≤ g z)
+    (hgneg : ∀ z : ℝ × Ξ, z.1 < C₀ z.2 → g z ≤ 0)
+    (hgzero : ∀ᵐ t ∂((P p₀).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0) :
+    (p₀.1 ≤ p.1 → 0 ≤ ∫ x, g (U x, T x) ∂(P p)) ∧
+      (p.1 ≤ p₀.1 → ∫ x, g (U x, T x) ∂(P p) ≤ 0) := by
+  haveI := isProbabilityMeasure_statLaw (P := P) hT p
+  have hgzero' : ∀ᵐ t ∂((P p).map T), ∫ u, g (u, t) ∂(condDistrib U T (P p₀) t) = 0 :=
+    Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₀).ae_le hgzero
+  have hkey : ∀ᵐ t ∂((P p).map T),
+      (p₀.1 ≤ p.1 → 0 ≤ ∫ u, g (u, t) ∂(condDistrib U T (P p) t)) ∧
+        (p.1 ≤ p₀.1 → (∫ u, g (u, t) ∂(condDistrib U T (P p) t)) ≤ 0) := by
+    filter_upwards [hgzero', ae_condDistrib_expTilt hU hT hUT hp₀ hp] with t ht0 htilt
+    obtain ⟨k, hk, htilt⟩ := htilt
+    haveI : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+    haveI hpr : IsProbabilityMeasure (expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1)) := by
+      rw [← htilt]; infer_instance
+    have hgmt : Measurable fun u : ℝ => g (u, t) :=
+      hgm.comp (measurable_id.prodMk measurable_const)
+    have hsig := integral_expTilt_signed (Q := condDistrib U T (P p₀) t) (k := k)
+      (c := p.1 - p₀.1) (C := C₀ t) hk hpr hgmt (fun u => hgb _)
+      (fun u hu => hgpos (u, t) hu) (fun u hu => hgneg (u, t) hu)
+    rw [ht0, mul_zero] at hsig
+    rw [htilt]
+    exact ⟨fun hle => hsig.1 (by linarith), fun hle => hsig.2 (by linarith)⟩
+  rw [integral_comp_eq_integral_condPower hU hT hgm hgb p]
+  constructor
+  · intro hle
+    refine integral_nonneg_of_ae ?_
+    filter_upwards [hkey] with t ht
+    exact ht.1 hle
+  · intro hle
+    refine integral_nonpos_of_ae ?_
+    filter_upwards [hkey] with t ht
+    exact ht.2 hle
 end CanonicalGlobal
 
 /-! ## The four UMP unbiased tests -/
