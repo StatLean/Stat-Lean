@@ -1221,6 +1221,67 @@ private lemma abs_integral_swap_step_le {k : ℕ}
   have hc3 : 0 ≤ M / 6 * c ^ 3 := by positivity
   nlinarith [hkν, hkρ, htri]
 
+/-! #### Peeling one coordinate out of a product measure
+
+The hybrid telescope replaces the summands one at a time, so each step must isolate a single
+coordinate of a `Measure.pi` over a family of *unequal* laws. This is
+`MeasureTheory.measurePreserving_piFinSuccAbove` (the coordinate `i` splits off as a `prod`
+factor) followed by Fubini; the `Fin.insertNth` bookkeeping is `Fin.sum_univ_succAbove`. -/
+
+/-- The (bounded, continuous) integrand of the peeled Fubini step is integrable on the
+product. -/
+private lemma integrable_peel_prod {k m : ℕ}
+    (σ : Measure (EuclideanSpace ℝ (Fin k))) [IsProbabilityMeasure σ]
+    (κ' : Fin m → Measure (EuclideanSpace ℝ (Fin k))) [∀ l, IsProbabilityMeasure (κ' l)]
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1) :
+    Integrable (fun p : EuclideanSpace ℝ (Fin k) × (Fin m → EuclideanSpace ℝ (Fin k)) =>
+        g (p.1 + ∑ l, p.2 l)) (σ.prod (Measure.pi κ')) := by
+  have hmeas : Measurable (fun p : EuclideanSpace ℝ (Fin k) × (Fin m → EuclideanSpace ℝ (Fin k)) =>
+      p.1 + ∑ l, p.2 l) :=
+    measurable_fst.add
+      (Finset.univ.measurable_sum fun l _ => (measurable_pi_apply l).comp measurable_snd)
+  refine Integrable.mono' (integrable_const (1 : ℝ))
+    (hg.measurable.comp hmeas).aestronglyMeasurable ?_
+  filter_upwards with p
+  rw [Real.norm_eq_abs]
+  exact hgb _
+
+/-- **Peeling one coordinate.** For a bounded continuous `g` and a finite family of probability
+laws, the integral of `g (∑ₗ xₗ)` over `Measure.pi κ` is the iterated integral obtained by
+singling out the coordinate `i`: the remaining coordinates supply the shift `∑ₗ yₗ` and the
+`i`-th coordinate is integrated against `κ i`. -/
+private lemma integral_pi_sum_peel {k m : ℕ}
+    (κ : Fin (m + 1) → Measure (EuclideanSpace ℝ (Fin k)))
+    [∀ i, IsProbabilityMeasure (κ i)] (i : Fin (m + 1))
+    {g : EuclideanSpace ℝ (Fin k) → ℝ} (hg : Continuous g) (hgb : ∀ x, |g x| ≤ 1) :
+    (∫ x, g (∑ l, x l) ∂(Measure.pi κ))
+      = ∫ y, (∫ u, g (u + ∑ l, y l) ∂(κ i))
+          ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) := by
+  classical
+  set e : ((_ : Fin (m + 1)) → EuclideanSpace ℝ (Fin k))
+      ≃ᵐ EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)) :=
+    MeasurableEquiv.piFinSuccAbove (fun _ : Fin (m + 1) => EuclideanSpace ℝ (Fin k)) i with he
+  have hmp : MeasurePreserving e (Measure.pi κ)
+      ((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+    measurePreserving_piFinSuccAbove κ i
+  have hsym : ∀ p : EuclideanSpace ℝ (Fin k) × ((_ : Fin m) → EuclideanSpace ℝ (Fin k)),
+      (∑ l, (e.symm p) l) = p.1 + ∑ l, p.2 l := by
+    intro p
+    have hins : e.symm p = Fin.insertNth i p.1 p.2 := rfl
+    rw [hins, Fin.sum_univ_succAbove _ i]
+    simp
+  have hF := integrable_peel_prod (κ i) (fun l : Fin m => κ (i.succAbove l)) hg hgb
+  calc (∫ x, g (∑ l, x l) ∂(Measure.pi κ))
+      = ∫ p, g (∑ l, (e.symm p) l)
+          ∂((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) :=
+        (MeasurePreserving.integral_comp' (MeasurePreserving.symm e hmp) _).symm
+    _ = ∫ p, g (p.1 + ∑ l, p.2 l)
+          ∂((κ i).prod (Measure.pi fun l : Fin m => κ (i.succAbove l))) := by
+        simp_rw [hsym]
+    _ = ∫ y, ∫ u, g (u + ∑ l, y l) ∂(κ i)
+          ∂(Measure.pi fun l : Fin m => κ (i.succAbove l)) :=
+        integral_prod_symm _ hF
+
 end SwapStep
 
 /-- **[Planned debt]** Lindeberg smooth-function comparison for the normalized sum.
