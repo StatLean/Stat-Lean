@@ -614,6 +614,10 @@ theorem measure_tendsto_zero_of_predictive_null
     -- LEAN-ONLY: the events are predictive-null (they carry the a.e. identities)
     (hN : ∀ n, (iidKernel κ n ∘ₘ π) (N n) = 0) :
     Tendsto (fun n => productMeasure M μ θ₀ n (N n)) atTop (𝓝 0) := by
-  sorry
+  have hmix : ∀ n : ℕ, bvmMixture κ π θ₀ 1 n (N n) = 0 := fun n =>
+    bvmMixture_absolutelyContinuous (θ₀ := θ₀) (π := π) (κ := κ) 1 n (hN n)
+  refine (mutuallyContiguous_mixture_base hPDF hsc hDQM hJ_pd hJ hκ hπ
+    (u := 1) one_pos).2 N hN_meas ?_
+  simpa [hmix] using tendsto_const_nhds (x := (0 : ℝ≥0∞)) (f := atTop (α := ℕ))
 
 end StatLean.Bayesian
