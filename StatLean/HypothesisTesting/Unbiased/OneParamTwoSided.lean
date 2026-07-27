@@ -469,6 +469,112 @@ private lemma unbiased_side_conditions (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
     exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
   rw [hL, hR, hkey, mul_div_assoc]
 
+/-- **The two-multiplier comparison for the point-null problem.**
+
+Against the reference measure `ν` the three Neyman–Pearson data are the `θ₀`-density, the
+`θ₀`-density weighted by `T`, and the `θ'`-density. The separating line of `exists_sep_line`
+for `c = θ' − θ₀` supplies the multipliers: the rejection region `{T < C₁} ∪ {T > C₂}` is
+exactly where the `θ'`-density exceeds the affine combination. -/
+private lemma expFamily_np_compare (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {Ξ : Set ℝ} {θ₀ θ' α C₁ C₂ : ℝ} {φ ψ : 𝓧 → ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) (hΞ : Ξ ⊆ interior E.natSet)
+    (hθ₀ : θ₀ ∈ Ξ) (hθ' : θ' ∈ Ξ) (hne : θ' ≠ θ₀) (hC : C₁ ≤ C₂)
+    (hφ : IsCriticalFn φ) (hψ : IsCriticalFn ψ)
+    (hφ_one : ∀ x, E.stat x < C₁ ∨ C₂ < E.stat x → φ x = 1)
+    (hφ_zero : ∀ x, C₁ < E.stat x → E.stat x < C₂ → φ x = 0)
+    (hφ0 : ∫ x, φ x ∂(P θ₀) = α) (hψ0 : ∫ x, ψ x ∂(P θ₀) = α)
+    (hφ1 : ∫ x, E.stat x * φ x ∂(P θ₀) = α * ∫ x, E.stat x ∂(P θ₀))
+    (hψ1 : ∫ x, E.stat x * ψ x ∂(P θ₀) = α * ∫ x, E.stat x ∂(P θ₀)) :
+    ∫ x, ψ x ∂(P θ') ≤ ∫ x, φ x ∂(P θ') := by
+  set d₀ : ℝ := ∫ x, Real.exp (θ₀ * E.stat x) ∂E.base with hd₀def
+  set d' : ℝ := ∫ x, Real.exp (θ' * E.stat x) ∂E.base with hd'def
+  have hd₀ : 0 < d₀ := partition_pos E hP hθ₀
+  have hd' : 0 < d' := partition_pos E hP hθ'
+  have hie₀ : Integrable (fun x => Real.exp (θ₀ * E.stat x)) E.base :=
+    integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₀))
+  have hie' : Integrable (fun x => Real.exp (θ' * E.stat x)) E.base :=
+    integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ'))
+  haveI : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₀ fun x => Real.exp_pos _
+  -- the three densities
+  set g₀ : 𝓧 → ℝ := fun x => Real.exp (θ₀ * E.stat x) / d₀ with hg₀
+  set g₁ : 𝓧 → ℝ := fun x => E.stat x * Real.exp (θ₀ * E.stat x) / d₀ with hg₁
+  set g₂ : 𝓧 → ℝ := fun x => Real.exp (θ' * E.stat x) / d' with hg₂
+  have hm₀ : Measurable g₀ :=
+    ((measurable_const.mul E.stat_meas).exp).div_const _
+  have hm₁ : Measurable g₁ :=
+    (E.stat_meas.mul ((measurable_const.mul E.stat_meas).exp)).div_const _
+  have hm₂ : Measurable g₂ :=
+    ((measurable_const.mul E.stat_meas).exp).div_const _
+  have hi₀ : Integrable g₀ E.base := hie₀.div_const _
+  have hi₁ : Integrable g₁ E.base := (integrable_stat_mul_exp E (hΞ hθ₀)).div_const _
+  have hi₂ : Integrable g₂ E.base := hie'.div_const _
+  -- the three constraint/objective functionals, in terms of the model measures
+  have hpull₀ : ∀ g : 𝓧 → ℝ, ∫ x, g x * g₀ x ∂E.base = ∫ x, g x ∂(P θ₀) := by
+    intro g
+    rw [hP θ₀ hθ₀, integral_expFamily_eq E θ₀ g, ← integral_div]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by rw [hg₀]; ring)
+  have hpull₂ : ∀ g : 𝓧 → ℝ, ∫ x, g x * g₂ x ∂E.base = ∫ x, g x ∂(P θ') := by
+    intro g
+    rw [hP θ' hθ', integral_expFamily_eq E θ' g, ← integral_div]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by rw [hg₂]; ring)
+  have hpull₁ : ∀ g : 𝓧 → ℝ,
+      ∫ x, g x * g₁ x ∂E.base = ∫ x, E.stat x * g x ∂(P θ₀) := by
+    intro g
+    rw [hP θ₀ hθ₀, integral_expFamily_eq E θ₀ (fun x => E.stat x * g x), ← integral_div]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by rw [hg₁]; ring)
+  -- the separating line and the induced multipliers
+  obtain ⟨A, B, hA1, hA2, hout, hin⟩ :=
+    exists_sep_line (c := θ' - θ₀) (sub_ne_zero.mpr hne) hC
+  have hL : ∀ x, (A * d₀ / d') * g₀ x + (B * d₀ / d') * g₁ x
+      = (A + B * E.stat x) * Real.exp (θ₀ * E.stat x) / d' := by
+    intro x
+    rw [hg₀, hg₁]
+    field_simp
+  have hR : ∀ x, g₂ x
+      = Real.exp ((θ' - θ₀) * E.stat x) * Real.exp (θ₀ * E.stat x) / d' := by
+    intro x
+    have h : Real.exp ((θ' - θ₀) * E.stat x) * Real.exp (θ₀ * E.stat x)
+        = Real.exp (θ' * E.stat x) := by
+      rw [← Real.exp_add]; congr 1; ring
+    rw [hg₂, h]
+  have hiff : ∀ x, ((A * d₀ / d') * g₀ x + (B * d₀ / d') * g₁ x < g₂ x
+      ↔ A + B * E.stat x < Real.exp ((θ' - θ₀) * E.stat x)) := by
+    intro x
+    rw [hL, hR, div_lt_div_iff_of_pos_right hd', mul_lt_mul_iff_of_pos_right (Real.exp_pos _)]
+  have hiff' : ∀ x, (g₂ x < (A * d₀ / d') * g₀ x + (B * d₀ / d') * g₁ x
+      ↔ Real.exp ((θ' - θ₀) * E.stat x) < A + B * E.stat x) := by
+    intro x
+    rw [hL, hR, div_lt_div_iff_of_pos_right hd', mul_lt_mul_iff_of_pos_right (Real.exp_pos _)]
+  -- the multiplier shape is the shape hypothesis on `φ`
+  have hs₁ : ∀ x, (A * d₀ / d') * g₀ x + (B * d₀ / d') * g₁ x < g₂ x → φ x = 1 := by
+    intro x hx
+    have h := (hiff x).mp hx
+    refine hφ_one x ?_
+    rcases lt_trichotomy (E.stat x) C₁ with h1 | h1 | h1
+    · exact Or.inl h1
+    · exfalso; rw [h1] at h; linarith [hA1]
+    · rcases lt_trichotomy (E.stat x) C₂ with h2 | h2 | h2
+      · exact absurd (hin _ h1 h2) (not_lt.mpr h.le)
+      · exfalso; rw [h2] at h; linarith [hA2]
+      · exact Or.inr h2
+  have hs₀ : ∀ x, g₂ x < (A * d₀ / d') * g₀ x + (B * d₀ / d') * g₁ x → φ x = 0 := by
+    intro x hx
+    have h := (hiff' x).mp hx
+    refine hφ_zero x ?_ ?_
+    · rcases lt_trichotomy (E.stat x) C₁ with h1 | h1 | h1
+      · exact absurd (hout _ (Or.inl h1)) (not_lt.mpr h.le)
+      · exfalso; rw [h1] at h; linarith [hA1]
+      · exact h1
+    · rcases lt_trichotomy (E.stat x) C₂ with h2 | h2 | h2
+      · exact h2
+      · exfalso; rw [h2] at h; linarith [hA2]
+      · exact absurd (hout _ (Or.inr h2)) (not_lt.mpr h.le)
+  have key := np_two_compare E.base hm₀ hm₁ hm₂ hi₀ hi₁ hi₂ (c₀ := α)
+    (c₁ := α * ∫ x, E.stat x ∂(P θ₀)) hφ hψ
+    (by rw [hpull₀]; exact hφ0) (by rw [hpull₁]; exact hφ1)
+    (by rw [hpull₀]; exact hψ0) (by rw [hpull₁]; exact hψ1) hs₁ hs₀
+  rwa [hpull₂, hpull₂] at key
+
 /-- **UMP unbiased test of a point null in a one-parameter exponential family.**
 
 For `H : θ = θ₀` against `K : θ ≠ θ₀`, the test rejecting outside `[C₁, C₂]` on the natural
