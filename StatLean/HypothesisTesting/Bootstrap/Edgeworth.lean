@@ -48,16 +48,18 @@ Subsampling Methods), §18.4 (Higher Order Asymptotic Comparisons), Theorems 18.
   it.
 * `n^{-1/2}` is written `(Real.sqrt n)⁻¹` rather than as a real power, to keep the statements
   inside the square-root API.
-* The three expansions are **statements only** at this pin, but both analytic halves of the
-  route now exist. `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing inequality at the
-  level of distribution functions (`abs_measure_Iic_sub_le_charFun`), with `normalCDF_sub_le`
-  below supplying its Lipschitz input; and `ForMathlib/BerryEsseen.lean` now proves the damped
-  expansion of `(charFun F)ⁿ` to order `n⁻¹` (`norm_charFun_pow_sub_edgeworth_le`), which is
-  what the weighted Esseen integral needs in order to converge to a *rate* rather than to a
-  constant. The Cramér tail's analytic input is proved here
-  (`exists_bound_lt_one_of_cramer`). What is left is the signed-density restatement of the
-  smoothing chain, the Fourier transform of the Edgeworth density, and the assembly. See the
-  re-derived status note (E1)–(E4) on `edgeworth_mean_uniform`.
+* The three expansions are **statements only** at this pin, but every named prerequisite of the
+  centred one is now proved. `ForMathlib/EsseenSmoothing.lean` proves Esseen's smoothing
+  inequality at the level of distribution functions (`abs_measure_Iic_sub_le_charFun`), with
+  `normalCDF_sub_le` below supplying its Lipschitz input, **and its signed-density form**
+  (`abs_measure_Iic_sub_densityCDF_le_charFun`), which is what an Edgeworth approximant needs;
+  `ForMathlib/BerryEsseen.lean` proves the damped expansion of `(charFun F)ⁿ` to order `n⁻¹`
+  (`norm_charFun_pow_sub_edgeworth_le`) **and the Hermite Fourier identity**
+  (`integral_hermite3_mul_cexp_mul_gaussian`) that transforms the Edgeworth density; the Cramér
+  tail's analytic input is proved here (`exists_bound_lt_one_of_cramer`) and its bookkeeping in
+  `ForMathlib/EsseenSmoothing.lean` (`setIntegral_mul_esseenWeight_tail_le`,
+  `exists_pow_mul_geometric_le`). What is left for `edgeworth_mean_uniform` is the **assembly
+  alone**. See the re-derived status note (E1)–(E4) on that theorem.
 * The quantile expansion is the Cornish–Fisher inversion of the studentized expansion; it is
   stated as its own result because the coverage-error computations use the quantile form
   directly.
@@ -375,54 +377,86 @@ on `|t| ≤ c√n` — the three terms of the bound scaling as `t⁶/n`, `t⁴/n
 respectively, all against the envelope `e^{−(n−2)t²/(4n)}`. The weighted integral in
 `abs_measure_Iic_sub_le_charFun` therefore now converges to `O(n⁻¹)` rather than to a constant.
 
-**Re-derivation: what actually remains.** Four items.
+**Re-derivation: (E1)–(E3) are now CLOSED; only (E4) remains.**
 
-* (E1) **Signed comparison — bookkeeping, not an obstruction** (was (G1); unchanged). The
-  Edgeworth approximant is not the distribution function of a probability measure: it is a signed
-  measure with the explicit `L¹` density
-  `y ↦ σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`.
+* (E1) **Signed comparison — CLOSED.** The Edgeworth approximant is not the distribution
+  function of a probability measure: it is a signed measure with the explicit `L¹` density
+  `q_n(y) = σ⁻¹φ(y/σ)(1 + (γ/6)(y³/σ³ − 3y/σ) n^{-1/2})`.
   (*Sign correction.* An earlier version of this note wrote that density with a minus sign in
   front of `(γ/6)`. That is wrong: differentiating the approximant
   `Φ(y/σ) − (γ/6)φ(y/σ)(y²/σ² − 1)n^{-1/2}` in the statement below and using
   `d/dx[φ(x)(x² − 1)] = −φ(x)(x³ − 3x)` gives a plus sign. The *statement* of the theorem is
-  correct; only the note was.) `abs_measure_Iic_sub_le_charFun` is stated for two probability
-  measures, and uses that hypothesis on `Q` only through (a) equality of total masses, which is
-  what makes the ramp mass at `−∞` cancel (`tendsto_integral_ramp_atBot`), and (b) Parseval
-  against a finite measure (`integral_fourier_measure`). Both survive verbatim for
-  `volume.withDensity q` with `q` real `L¹` of integral `1`; restating the chain for a density
-  instead of a measure is the work.
-* (E2) **The Fourier transform of the Edgeworth density.** To feed (E1) into
-  `norm_charFun_pow_sub_edgeworth_le` one needs
-  `∫ e^{i t y} q_n(y) dy = e^{−σ²t²/2}(1 − i m₃ t³/(6√n))`, i.e. after the substitution
-  `y = σu`, `θ = σt`, the Hermite identity
-  `∫ e^{iθu}(u³ − 3u)φ(u) du = (iθ)³ e^{−θ²/2}`.
-  Two integrations by parts against `u φ(u) = −φ'(u)` reduce this to Mathlib's Gaussian
-  characteristic function; neither the identity nor the intermediate
-  `∫ u² e^{iθu}φ(u) du = (1 − θ²)e^{−θ²/2}` is present at this pin. (This computation is what
-  verifies that the Edgeworth approximant of the *statement* below matches the approximant of
-  `norm_charFun_pow_sub_edgeworth_le`; the check has been carried out by hand and they agree.)
-* (E3) **The Cramér tail** (was (G3)) — **its analytic content is now CLOSED.** Off the window
-  one needs `∫_{c√n ≤ |t|} ‖φ_F(t/(σ√n))‖ⁿ min(1/|t|, 1/(δπ²t²)) dt = o(n⁻¹)`.
-  `CramerCondition` gives `‖φ_F s‖ ≤ c < 1` only *off a compact set*; what the tail estimate
-  needs is a single `c < 1` valid on the whole region `ε ≤ |s|`. That is
-  `exists_bound_lt_one_of_cramer` above, proved axiom-clean, together with
-  `norm_charFun_lt_one_of_cramer`.
-  *The earlier verdict on this item was wrong.* It claimed the reduction goes through the
+  correct; only the note was.) The whole smoothing chain is now available for such a
+  comparison: `ForMathlib/EsseenSmoothing.lean` proves
+  `abs_measure_Iic_sub_densityCDF_le_charFun`,
+  `|F_P(x) − ∫_{(-∞,x]} q| ≤ ∫ ‖φ_P(−2πξ) − φ_q(−2πξ)‖ min(1/(π|ξ|), 1/(δπ²ξ²)) dξ + 2Aδ`,
+  together with the intermediate `abs_integral_ramp_mul_sub_densityCDF_le`,
+  `abs_measure_Iic_sub_densityCDF_le_of_integral_ramp`,
+  `abs_integral_ramp_mul_sub_le_of_trapezoid`, `integral_fourier_density` and
+  `norm_integral_fourier_sub_density_le`.
+  *Two details of the earlier diagnosis are corrected by the re-derivation.* First, positivity
+  was used in exactly **one** place, not two: the comparison of a ramp integral with a
+  distribution function (for a measure this is monotonicity). Its correct substitute is the
+  **total-variation modulus** `∫_{(a,b]} |q| ≤ A (b − a)`, which for a density is the same
+  constant a Lipschitz distribution function supplies; the de-smoothing loss becomes `2Aδ`
+  instead of `Aδ`. Second, **equality of total masses is not needed as a hypothesis at all**:
+  the ramp mass at `−∞` vanishes for any `L¹` density on its own, because the ramp of shoulder
+  `v` is supported in `(-∞, v + δ]` and `∫_{(-∞,t]} |q| → 0` as `t → −∞`. Total mass enters
+  only through finiteness of the right-hand side, whose weight `1/(π|ξ|)` is integrable at the
+  origin exactly when `φ_P(0) = φ_q(0)`.
+* (E2) **The Fourier transform of the Edgeworth density — CLOSED.**
+  `ForMathlib/BerryEsseen.lean` proves `integral_hermite3_mul_cexp_mul_gaussian`,
+  `∫ e^{iθu}(u³ − 3u) e^{−u²/2} du = (iθ)³ √(2π) e^{−θ²/2}`, together with
+  `integral_sq_mul_cexp_mul_gaussian` and the base `integral_cexp_mul_gaussian`. Substituting
+  `y = σu`, `θ = σt` gives `∫ e^{ity} q_n(y) dy = e^{−σ²t²/2}(1 − i γσ³ t³/(6√n))`, and with
+  `s = t/√n`, `v = σ²`, `m₃ = γσ³` that is *literally* the approximant
+  `e^{−n v s²/2}(1 − n i m₃ s³/6)` of `norm_charFun_pow_sub_edgeworth_le`: the two agree, so
+  the statement below is the one the damped expansion estimates.
+  *A detail of the earlier route is corrected.* Two integrations by parts are not needed, and
+  neither is any boundary evaluation: for a quadratic `P`,
+  `d/du[P(u) e^{iθu − u²/2}] = (P'(u) + (iθ − u)P(u)) e^{iθu − u²/2}`, so choosing
+  `P(u) = −u² − iθu + (θ² + 1)` makes the bracket `u³ − 3u − (iθ)³`, and the identity is one
+  application of "the integral of a derivative of an integrable function with integrable
+  derivative vanishes". (`P(u) = −u − iθ` does the same for the `u²` intermediate.)
+* (E3) **The Cramér tail — CLOSED.** Its analytic input is `exists_bound_lt_one_of_cramer`
+  above: a single `c < 1` dominating `‖charFun F‖` on the whole region `ε ≤ |s|`, not merely
+  off a compact set.
+  *The verdict recorded before that was wrong.* It claimed the reduction goes through the
   lattice characterisation `‖φ_F s₀‖ = 1 ↔ F` lattice, "absent from Mathlib v4.29.1" and
   therefore blocking. The lattice statement is never needed: all that is used is that the
-  modulus-one set is closed under integer multiples
-  (`norm_charFun_natCast_mul_eq_one`), and that follows from the *equality case in*
-  `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is elementary — if `‖∫ e^{is₀x} dF‖ = 1 = ∫ 1 dF`
-  then `Re(θ̄ e^{is₀x}) = 1` a.e. by nonnegativity of `1 − Re(θ̄ e^{is₀x})`, hence
-  `e^{is₀x} = θ` a.e., hence `φ_F(k s₀) = θᵏ` has modulus `1` for every `k`, contradicting the
-  cocompact bound once `k|s₀|` exceeds the compact set. What is left of (E3) is only the
-  *bookkeeping*: turning the uniform bound `c < 1` into the integral estimate
-  `∫_{|t| ≥ c√n} cⁿ · weight = o(n⁻¹)`, which is geometric decay against a fixed weight.
-* (E4) **The assembly.** Choose `δ ≍ n⁻¹` in `abs_measure_Iic_sub_le_charFun` (so that the
-  Lipschitz term `A δ` from `normalCDF_sub_le` is `O(n⁻¹)`), split the `ξ`-integral at
-  `|ξ| ≍ √n`, bound the inner range by (E2) + `norm_charFun_pow_sub_edgeworth_le` against the
-  weight `1/(π|ξ|)`, and the outer range by (E3). This is the only step that is genuinely long
-  rather than genuinely hard. -/
+  modulus-one set is closed under integer multiples (`norm_charFun_natCast_mul_eq_one`), and
+  that follows from the *equality case in* `‖∫ f‖ ≤ ∫‖f‖`, which on a probability space is
+  elementary.
+  The remaining bookkeeping is now also done, in `ForMathlib/EsseenSmoothing.lean`:
+  `setIntegral_mul_esseenWeight_tail_le` gives
+  `∫_{ρ ≤ |ξ|} f(ξ) min(1/(π|ξ|), 1/(δπ²ξ²)) dξ ≤ 2M/(δπ²ρ)` whenever `0 ≤ f ≤ M` there
+  (off the origin the flank term alone dominates the weight, and `∫ ξ⁻²` over the two tails is
+  `2/ρ`), and `exists_pow_mul_geometric_le` bounds `nᵏ cⁿ`. With `δ ≍ n⁻¹`, `ρ ≍ √n` and
+  `M = cⁿ` the outer contribution is `cⁿ · O(n^{3/2}) = o(n^{-k})` for every `k`.
+* (E4) **The assembly — the one item left.** It is long rather than hard, and the
+  re-derivation splits it into four named pieces, none of which is an obstruction:
+  1. *The law of the root.* `meanRootCDF F n x = (meanRootLaw F n) (Iic x)` (`meanRootCDF_eq`
+     in `Bootstrap/NonparametricMean.lean`), and one needs
+     `charFun (meanRootLaw F n) t = (charFun F₀ (t/√n))ⁿ` for the centred law `F₀`. Mathlib's
+     `charFun_inv_sqrt_mul_sum` is stated for `iIndepFun` on a probability space rather than
+     for `Measure.pi`, so this is a *transfer* through the canonical i.i.d. construction
+     (`exists_iid` / `iIndepFun_iff_map_fun_eq_pi_map`), of the kind already carried out in
+     `ChiSquaredMultinomial.lean` — not a new analytic fact.
+  2. *The approximant is the `densityCDF` of `q_n`.* One must check
+     `∫_{(-∞,x]} q_n = Φ(x/σ) − (γ/6)φ(x/σ)(x²/σ² − 1)n^{-1/2}`, i.e. an FTC computation
+     against `d/dx[φ(x)(x² − 1)] = −φ(x)(x³ − 3x)` with the limit `0` at `−∞`; and the
+     total-variation modulus `∫_{(a,b]} |q_n| ≤ A (b − a)` with `A = sup|q_n|` uniform in
+     `n ≥ 1`, which is elementary since `φ(u)(1 + (γ/6)(u³ − 3u))` is bounded.
+  3. *The window integral.* Take `δ = 1/n` and split at `|ξ| = ρ_n ≍ √n`, chosen so that
+     `|ξ| ≤ ρ_n` implies the window conditions `v s² ≤ 2`, `ρ₃|s| ≤ 3v/2` of
+     `norm_charFun_pow_sub_edgeworth_le` at `s = −2πξ/√n`. On that range the damped bound is
+     `e^{−(1 − 2/n) v π² ξ²} · O((ξ⁴ + ξ⁵ + ξ⁶)/n)` against the weight `1/(π|ξ|)`, so the
+     estimate reduces to the Gaussian moment integrals `∫ |ξ|^k e^{−aξ²} dξ`. This is the
+     genuinely long computation; it also needs the finitely many small `n` (where
+     `1 − 2/n ≤ 0`) absorbed into `C`, which is legitimate because both `meanRootCDF` and the
+     approximant are bounded.
+  4. *The outer range.* `‖φ_P − φ_q‖ ≤ cⁿ + ‖φ_{q_n}‖` there, the first term handled by (E3)
+     and the second by the Gaussian tail of `φ_{q_n}(−2πξ) = e^{−σ²(2πξ)²/2}(1 + …)`. -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
