@@ -1680,25 +1680,38 @@ unbounded `U`, so `IsBoundedlyCompleteFamily` is too weak for it. The upstream
 measurable `f`; the only place the old proof used a bound `|f| ≤ Cb` was to dominate the
 tilted integrand `f · e^{⟪ϑ − ϑ₁, ·⟫}` against `μ₁`, and that integrability is *transported*
 from the law at `(θ₀, ϑ)` by `integrable_statLaw_tilt` instead. `boundedlyComplete_boundary`
-below is the bounded corollary, and is what the three other optimality theorems consume. -/
+below is the bounded corollary, and is what the three other optimality theorems consume.
+
+**The hypotheses are only asked at parameters interior to `Ω`.** `hfint`/`hfzero` quantify
+over `(θ₀, ϑ) ∈ interior Ω`, not over the whole boundary slice, and the reference parameter
+`ϑ₁` is taken from `exists_interior_boundary_point` rather than from
+`interior_slice_nonempty`. Nothing is lost — the slice `S'` of admissible tilt directions is
+then literally *open*, so `interior S' = S' ∋ 0` and the Laplace-uniqueness input applies
+verbatim, while the conclusion is still `f =ᵐ 0` for **every** `p ∈ Ω` because the laws of
+`T` are mutually equivalent (`statLaw_ac`). This weakening is what makes the lemma usable at
+`isUMPU_conditional_point`: the derivative side condition is only available where a *pure-`θ`
+window* `(θ₀ ± η, ϑ)` fits inside `Ω`, which for a general convex `Ω` holds at interior
+points of the surface but can fail at boundary points of it (e.g. at the apex of a triangle
+whose base straddles `θ₀`). -/
 private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
     (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
     {f : Ξ → ℝ} (hf : Measurable f)
-    (hfint : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+    (hfint : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
       Integrable f ((P ((θ₀, ϑ) : ℝ × Ξ)).map T))
-    (hfzero : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+    (hfzero : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
       ∫ t, f t ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) = 0)
     {p : ℝ × Ξ} (hp : p ∈ Ω) :
     f =ᵐ[(P p).map T] 0 := by
   classical
-  -- an interior point of the boundary slice, used as the reference parameter
-  obtain ⟨ϑ₁, hϑ₁int⟩ := interior_slice_nonempty (Ω := Ω) hΩ_convex hΩ_aff (θ₀ := θ₀)
-    hΩ_lt hΩ_gt
-  have hϑ₁slice : ϑ₁ ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hϑ₁int
-  have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := hϑ₁slice
+  -- a boundary point interior to `Ω` *itself*, used as the reference parameter
+  obtain ⟨w, hwint, hwθ⟩ := exists_interior_boundary_point hΩ_convex hΩ_aff hΩ_lt hΩ_gt
+  set ϑ₁ : Ξ := w.2 with hϑ₁def
+  have hw1 : ((θ₀, ϑ₁) : ℝ × Ξ) = w := by rw [hϑ₁def, ← hwθ]
+  have hϑ₁int : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ interior Ω := by rw [hw1]; exact hwint
+  have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := interior_subset hϑ₁int
   have hinnerm : ∀ η : Ξ, Measurable fun t : Ξ => ⟪η, t⟫_ℝ := fun η =>
     (innerSL ℝ η).continuous.measurable
   have hinnerm' : ∀ y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)),
@@ -1709,9 +1722,10 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
   set μ₁ : Measure Ξ := (P ((θ₀, ϑ₁) : ℝ × Ξ)).map T with hμ₁
   -- (1) Every boundary law of `T` is the `(ϑ − ϑ₁)`-exponential tilt of `μ₁`, so the vanishing
   -- hypothesis becomes the vanishing of a Laplace transform on the slice.
-  have hkey : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+  have hkey : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
       ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁ = 0 := by
-    intro ϑ hϑ
+    intro ϑ hϑint
+    have hϑ : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω := interior_subset hϑint
     have hCϑ : 0 < C ((θ₀, ϑ) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ
     have hgm : Measurable fun z : ℝ × Ξ => f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
       (hf.comp measurable_snd).mul (((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp)
@@ -1733,7 +1747,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     have h3 : C ((θ₀, ϑ) : ℝ × Ξ) * ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rw [← integral_comp_UT_eq hU hT hUT hϑ (g := fun z : ℝ × Ξ => f z.2)
         (hf.comp measurable_snd)]
-      have hz := hfzero ϑ hϑ
+      have hz := hfzero ϑ hϑint
       rwa [integral_map hT.aemeasurable hf.aestronglyMeasurable] at hz
     have h4 : ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rcases mul_eq_zero.1 h3 with h | h
@@ -1752,7 +1766,7 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
   set f' : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) → ℝ := fun y => f (e.symm y) with hf'def
   have hf'm : Measurable f' := hf.comp hesymm
   set S' : Set (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) :=
-    {y | ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω} with hS'def
+    {y | ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω} with hS'def
   have hbridge : ∀ (y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) (t : Ξ),
       f' (e t) * Real.exp ⟪y, e t⟫_ℝ = f t * Real.exp ⟪e.symm y, t⟫_ℝ := by
     intro y t
@@ -1761,29 +1775,24 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
       exact e.inner_map_map _ _
     rw [hf'def, hin]
     simp only [LinearIsometryEquiv.symm_apply_apply]
-  have hS'int : (interior S').Nonempty := by
+  -- `S'` is now literally an open set, so its interior is itself and contains `0`
+  have hS'open : IsOpen S' := by
     have hcont : Continuous fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
-        e.symm y + ϑ₁ := e.symm.continuous.add continuous_const
-    have hopen : IsOpen ((fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
-        e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}) := isOpen_interior.preimage hcont
-    have hsub : (fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => e.symm y + ϑ₁) ⁻¹'
-        interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} ⊆ S' := by
-      intro y hy
-      have hy' : (e.symm y + ϑ₁) ∈ interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := hy
-      have h1 : (e.symm y + ϑ₁) ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hy'
-      exact h1
-    have hmem0 : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) ∈
-        (fun y => e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
-      simp only [Set.mem_preimage, map_zero, zero_add]
-      exact hϑ₁int
-    exact ⟨0, mem_interior.2 ⟨_, hsub, hopen, hmem0⟩⟩
+        ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) :=
+      continuous_const.prodMk (e.symm.continuous.add continuous_const)
+    exact isOpen_interior.preimage hcont
+  have hS'int : (interior S').Nonempty := by
+    refine ⟨0, ?_⟩
+    rw [hS'open.interior_eq, hS'def]
+    simpa using hϑ₁int
   have hint' : ∀ y ∈ S', Integrable (fun z => f' z * Real.exp ⟪y, z⟫_ℝ) ν' := by
     intro y hy
-    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
+    have hϑmemI : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω := hy
+    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := interior_subset hϑmemI
     -- the tilted integrability is TRANSPORTED from the law at `(θ₀, e.symm y + ϑ₁)`,
     -- not dominated by a bound on `f`; this is the only step that used `|f| ≤ Cb`
     have hIt : Integrable (fun t : Ξ => f t * Real.exp ⟪e.symm y, t⟫_ℝ) μ₁ := by
-      have htr := integrable_statLaw_tilt hU hT hUT hϑmem hϑ₁ hf (hfint _ hϑmem)
+      have htr := integrable_statLaw_tilt hU hT hUT hϑmem hϑ₁ hf (hfint _ hϑmemI)
       rw [add_sub_cancel_right] at htr
       rw [hμ₁]
       exact htr
@@ -1794,8 +1803,8 @@ private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     exact hIt.congr (Filter.Eventually.of_forall fun t => (hbridge y t).symm)
   have hzero' : ∀ y ∈ S', ∫ z, f' z * Real.exp ⟪y, z⟫_ℝ ∂ν' = 0 := by
     intro y hy
-    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
-    have hk := hkey (e.symm y + ϑ₁) hϑmem
+    have hϑmemI : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω := hy
+    have hk := hkey (e.symm y + ϑ₁) hϑmemI
     rw [add_sub_cancel_right] at hk
     have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
         f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
@@ -1829,7 +1838,7 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   intro f hf hbdd hzero p
   obtain ⟨Cb, hCb⟩ := hbdd
   refine complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hf
-    (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), hϑ, rfl⟩) p.2.1
+    (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), interior_subset hϑ, rfl⟩) p.2.1
   haveI : IsProbabilityMeasure ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
     Measure.isProbabilityMeasure_map hT.aemeasurable
   refine Integrable.mono' (integrable_const Cb) hf.aestronglyMeasurable
@@ -3288,11 +3297,12 @@ theorem isUMPU_conditional_point
   --      the power without ever touching `C` directly. That is exactly why the lemma is
   --      stated at the level of `ν` rather than of the power.
   --
-  --      What is left of (b) is therefore genuinely only assembly: `HasDerivAt.div` on that
-  --      ratio; the observation that unbiasedness makes `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` have a local
-  --      minimum at `θ₀` (it equals `α` there by (α)-similarity and is `≥ α` off the null),
-  --      so `IsLocalMin.hasDerivAt_eq_zero` kills the derivative; and reading the resulting
-  --      identity, via `integral_comp_UT_eq`, as `E_{(θ₀,ϑ₀)}[Uψ] = α·E_{(θ₀,ϑ₀)}[U]`.
+  --      That assembly is DONE too: `integral_U_mul_eq_of_boundary_min` above packages
+  --      `HasDerivAt.div` on the ratio, the observation that unbiasedness makes
+  --      `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` have a local minimum at `θ₀` (it equals `α` there by
+  --      similarity and is `≥ α` off the null) so `IsLocalMin.hasDerivAt_eq_zero` kills the
+  --      derivative, and the reading of the resulting identity through
+  --      `integral_comp_UT_eq` as `E_{(θ₀,ϑ₀)}[Uψ] = α·E_{(θ₀,ϑ₀)}[U]`. So (b) is CLOSED.
   --  (c) DONE (this session). The conditional-integrability half was closed in wave 6
   --      (`exists_boundary_ae_integrable_id`, threading item (a) through
   --      `exists_twoSided_boundary_pair`), and the completeness half — `IsCompleteFamily`
@@ -3302,12 +3312,27 @@ theorem isUMPU_conditional_point
   --      `integrable_statLaw_tilt`, which TRANSPORTS the tilted integrability from the law at
   --      `(θ₀,ϑ)` instead of dominating it; `boundedlyComplete_boundary` is now the bounded
   --      corollary, so the three other optimality theorems are unaffected and still
-  --      axiom-clean.
+  --      axiom-clean. `complete_boundary` deliberately asks its two hypotheses only at
+  --      parameters interior to `Ω`, which is exactly where (b) can supply them: a *pure-`θ`
+  --      window* `(θ₀ ± η, ϑ)` fits inside a convex `Ω` at interior points of the surface but
+  --      can fail at boundary points of it (apex of a triangle whose base straddles `θ₀`).
+  --      Nothing is lost by the restriction — the admissible tilt directions then form an
+  --      *open* set, which is all Laplace uniqueness needs.
   --
-  -- So the remaining debt is: (b)'s assembly, plus the outer UMPU assembly, which mirrors
-  -- `isUMPU_conditional_outside` above line for line — the alternative `θ ≠ θ₀` is two-sided,
-  -- and `exists_sep_line` already covers both signs of `c = θ − θ₀` because it is proved from
-  -- convexity of `exp`, not from a sign condition.
+  -- REMAINING DEBT, in two named pieces.
+  --  (d) The conditional transfer. Apply `complete_boundary` to
+  --      `f t = ∫u·ψ(u,t) dκ_t − α·∫u dκ_t` at each interior boundary parameter, whose
+  --      `hfzero` is `integral_U_mul_eq_of_boundary_min` composed with the disintegration
+  --      `∫ E[g ∣ T] d((P p).map T) = E[g]`. That disintegration needs `Integrable (U·ψ)` and
+  --      `Integrable U` for `P (θ₀,ϑ)` at FULL-measure level — the twin of the conditional
+  --      `exists_boundary_ae_integrable_id`, and obtainable the same way now that
+  --      `integrable_comp_UT_iff` exists: `g z := e^{±δ z₁}` turns
+  --      `e^{±δ z₁}·e^{canExp (θ₀,ϑ)}` into `e^{canExp (θ₀±δ,ϑ)}`, `ν`-integrable by
+  --      `integrable_canExp`, so `e^{±δU}` and hence `|U|` are `P (θ₀,ϑ)`-integrable.
+  --  (e) The outer UMPU assembly, which mirrors `isUMPU_conditional_outside` above line for
+  --      line — the alternative `θ ≠ θ₀` is two-sided, and `exists_sep_line` already covers
+  --      both signs of `c = θ − θ₀` because it is proved from convexity of `exp`, not from a
+  --      sign condition.
   -- Sanctioned lifted sorry: no false statement (the two repairs are already applied), and the
   -- remaining bricks are named and concrete.
   sorry
