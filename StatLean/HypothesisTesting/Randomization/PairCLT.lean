@@ -733,6 +733,221 @@ private lemma tendsto_integral_min_of_tendstoInProb {𝓨 : ℕ → Type*}
   rw [Real.norm_eq_abs, abs_of_nonneg (hnn' n)]
   linarith
 
+/-- Subadditivity of the truncation `min 2 ·` on nonnegative arguments. -/
+private lemma min_two_add_le {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    min 2 (a + b) ≤ min 2 a + min 2 b := by
+  rcases le_or_gt a 2 with h1 | h1
+  · rcases le_or_gt b 2 with h2 | h2
+    · rw [min_eq_right h1, min_eq_right h2]
+      exact min_le_right _ _
+    · rw [min_eq_left h2.le]
+      have := min_le_left (2 : ℝ) (a + b)
+      have h0 : 0 ≤ min 2 a := le_min (by norm_num) ha
+      linarith
+  · rw [min_eq_left h1.le]
+    have := min_le_left (2 : ℝ) (a + b)
+    have h0 : 0 ≤ min 2 b := le_min (by norm_num) hb
+    linarith
+
+/-- **Slutsky for doubly randomized laws.** If the statistic `Tₙ` differs from a reference
+statistic `Lₙ` by a remainder that vanishes in probability, and the data law is invariant
+under the group — so the remainder vanishes at randomized data too — then the two doubly
+randomized laws have the same weak limits.
+
+This is the transfer that turns an *asymptotically linear* statistic into its linear part
+inside a randomization limit; it is proved at the level of characteristic functions
+(`‖e^{iα} − e^{iβ}‖ ≤ min 2 (2|α−β|)`), which is what makes the group average collapse. -/
+theorem weakConverges_randPairLaw_of_tendstoInProb
+    {𝓧 : ℕ → Type*} [∀ n, MeasurableSpace (𝓧 n)]
+    {G : ℕ → Type*} [∀ n, Group (G n)] [∀ n, Fintype (G n)] [∀ n, MulAction (G n) (𝓧 n)]
+    (P : ∀ n, Measure (𝓧 n)) [∀ n, IsProbabilityMeasure (P n)]
+    (T L : ∀ n, 𝓧 n → E) {ν : Measure (E × E)} [IsProbabilityMeasure ν]
+    -- USER-INPUT: both statistics are measurable (data regularity)
+    (hT : ∀ n, Measurable (T n)) (hL : ∀ n, Measurable (L n))
+    -- USER-INPUT: the group acts measurably
+    (hsmul : ∀ (n : ℕ) (g : G n), Measurable fun x : 𝓧 n => g • x)
+    -- USER-INPUT: the data law is invariant under the group (the randomization hypothesis)
+    (hinv : ∀ (n : ℕ) (g : G n), (P n).map (fun x : 𝓧 n => g • x) = P n)
+    -- USER-INPUT: the remainder vanishes in probability
+    (hrem : ∀ δ > (0 : ℝ),
+      Tendsto (fun n => (P n).real {x | δ ≤ ‖T n x - L n x‖}) atTop (𝓝 0))
+    -- USER-INPUT: the reference statistic already has the randomized limit `ν`
+    (hconv : WeakConverges (fun n => randPairLaw (G n) (L n) (P n)) ν) :
+    WeakConverges (fun n => randPairLaw (G n) (T n) (P n)) ν := by
+  classical
+  haveI hpT : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (T n) (P n)) := fun n =>
+    isProbabilityMeasure_randPairLaw _ _ _ (hT n) (hsmul n)
+  haveI hpL : ∀ n, IsProbabilityMeasure (randPairLaw (G n) (L n) (P n)) := fun n =>
+    isProbabilityMeasure_randPairLaw _ _ _ (hL n) (hsmul n)
+  rw [weakConverges_map_toLp_iff] at hconv ⊢
+  haveI hmT : ∀ n, IsProbabilityMeasure
+      ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
+    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+  haveI hmL : ∀ n, IsProbabilityMeasure
+      ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp (V := E × E) 2)) := fun n =>
+    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+  haveI hmν : IsProbabilityMeasure (ν.map (WithLp.toLp (V := E × E) 2)) :=
+    Measure.isProbabilityMeasure_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+  refine weakConverges_of_tendsto_charFun (fun t => ?_)
+  have hlim := tendsto_charFun_of_weakConverges hconv t
+  -- The bounded test function on the product.
+  set F : E × E → ℂ := fun z =>
+    Complex.exp (((⟪z.1, (WithLp.ofLp t).1⟫ + ⟪z.2, (WithLp.ofLp t).2⟫ : ℝ) : ℂ) * Complex.I)
+    with hFdef
+  have hFcont : Continuous F := by
+    refine Complex.continuous_exp.comp (Continuous.mul ?_ continuous_const)
+    exact Complex.continuous_ofReal.comp
+      ((continuous_fst.inner continuous_const).add (continuous_snd.inner continuous_const))
+  have hFb : ∀ z, ‖F z‖ ≤ 1 := fun z => le_of_eq (Complex.norm_exp_ofReal_mul_I _)
+  have hcontExp : Continuous fun y : WithLp 2 (E × E) =>
+      Complex.exp (((⟪y, t⟫ : ℝ) : ℂ) * Complex.I) :=
+    Complex.continuous_exp.comp ((Complex.continuous_ofReal.comp
+      ((continuous_id (X := WithLp 2 (E × E))).inner continuous_const)).mul continuous_const)
+  have hchar : ∀ (S : ∀ n, 𝓧 n → E), (∀ n, Measurable (S n)) → ∀ n : ℕ,
+      charFun ((randPairLaw (G n) (S n) (P n)).map (WithLp.toLp 2)) t
+        = ((Fintype.card (G n) : ℂ) ^ 2)⁻¹ *
+          ∑ g : G n, ∑ g' : G n, ∫ x, F (S n (g • x), S n (g' • x)) ∂(P n) := by
+    intro S hS n
+    rw [charFun_apply, integral_map (WithLp.measurable_toLp 2 (E × E)).aemeasurable
+      hcontExp.aestronglyMeasurable]
+    exact integral_randPairLaw (P n) (S n) (fun g => (hS n).comp (hsmul n g)) F
+      hFcont.measurable hFb
+  -- The comparison function.
+  set c₁ : ℝ := 2 * ‖(WithLp.ofLp t).1‖ with hc₁
+  set c₂ : ℝ := 2 * ‖(WithLp.ofLp t).2‖ with hc₂
+  have hc₁0 : 0 ≤ c₁ := by positivity
+  have hc₂0 : 0 ≤ c₂ := by positivity
+  set B : ℕ → ℝ := fun n => (∫ x, min 2 (c₁ * ‖T n x - L n x‖) ∂(P n))
+    + ∫ x, min 2 (c₂ * ‖T n x - L n x‖) ∂(P n) with hBdef
+  have hDmeas : ∀ n, Measurable fun x : 𝓧 n => ‖T n x - L n x‖ :=
+    fun n => ((hT n).sub (hL n)).norm
+  have hBlim : Tendsto B atTop (𝓝 0) := by
+    have h1 := tendsto_integral_min_of_tendstoInProb P (fun n x => ‖T n x - L n x‖) hDmeas
+      (fun n x => norm_nonneg _) hrem hc₁0
+    have h2 := tendsto_integral_min_of_tendstoInProb P (fun n x => ‖T n x - L n x‖) hDmeas
+      (fun n x => norm_nonneg _) hrem hc₂0
+    simpa using h1.add h2
+  -- Integrability bookkeeping for the pointwise bound.
+  have hFint : ∀ (S : ∀ n, 𝓧 n → E), (∀ n, Measurable (S n)) → ∀ (n : ℕ) (g g' : G n),
+      Integrable (fun x : 𝓧 n => F (S n (g • x), S n (g' • x))) (P n) := by
+    intro S hS n g g'
+    refine Integrable.mono' (integrable_const (1 : ℝ)) ?_ (Filter.Eventually.of_forall
+      fun x => hFb _)
+    exact (hFcont.measurable.comp (((hS n).comp (hsmul n g)).prodMk
+      ((hS n).comp (hsmul n g')))).aestronglyMeasurable
+  have hminmeas : ∀ (n : ℕ) (c : ℝ) (g : G n),
+      Measurable fun x : 𝓧 n => min 2 (c * ‖T n (g • x) - L n (g • x)‖) :=
+    fun n c g => measurable_const.min (((hDmeas n).comp (hsmul n g)).const_mul c)
+  have hminint : ∀ (n : ℕ) (c : ℝ) (g : G n), 0 ≤ c →
+      Integrable (fun x : 𝓧 n => min 2 (c * ‖T n (g • x) - L n (g • x)‖)) (P n) := by
+    intro n c g hc
+    refine Integrable.mono' (integrable_const (2 : ℝ)) (hminmeas n c g).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    have h0 : 0 ≤ min 2 (c * ‖T n (g • x) - L n (g • x)‖) :=
+      le_min (by norm_num) (mul_nonneg hc (norm_nonneg _))
+    rw [Real.norm_eq_abs, abs_of_nonneg h0]
+    exact min_le_left _ _
+  -- Group invariance collapses the average of the truncated remainders.
+  have hshift : ∀ (n : ℕ) (c : ℝ) (g : G n), 0 ≤ c →
+      ∫ x, min 2 (c * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+        = ∫ x, min 2 (c * ‖T n x - L n x‖) ∂(P n) := by
+    intro n c g hc
+    have hmeas : Measurable fun y : 𝓧 n => min 2 (c * ‖T n y - L n y‖) :=
+      measurable_const.min ((hDmeas n).const_mul c)
+    calc ∫ x, min 2 (c * ‖T n (g • x) - L n (g • x)‖) ∂(P n)
+        = ∫ y, min 2 (c * ‖T n y - L n y‖) ∂((P n).map fun x : 𝓧 n => g • x) :=
+          (integral_map (hsmul n g).aemeasurable hmeas.aestronglyMeasurable).symm
+      _ = ∫ x, min 2 (c * ‖T n x - L n x‖) ∂(P n) := by rw [hinv n g]
+  -- The per-`n` estimate.
+  have hstep : ∀ n : ℕ,
+      ‖charFun ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp 2)) t
+        - charFun ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp 2)) t‖ ≤ B n := by
+    intro n
+    have hcard : (0 : ℝ) < (Fintype.card (G n) : ℝ) := by exact_mod_cast Fintype.card_pos
+    have hterm : ∀ g g' : G n,
+        ‖∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖ ≤ B n := by
+      intro g g'
+      have hptw : ∀ x : 𝓧 n,
+          ‖F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))‖
+            ≤ min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖)
+              + min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖) := by
+        intro x
+        refine le_trans (norm_exp_sub_exp_le _ _) ?_
+        refine le_trans (min_le_min_left _ ?_)
+          (min_two_add_le (by positivity) (by positivity))
+        have hexp : (⟪T n (g • x), (WithLp.ofLp t).1⟫ + ⟪T n (g' • x), (WithLp.ofLp t).2⟫)
+            - (⟪L n (g • x), (WithLp.ofLp t).1⟫ + ⟪L n (g' • x), (WithLp.ofLp t).2⟫)
+            = ⟪T n (g • x) - L n (g • x), (WithLp.ofLp t).1⟫
+              + ⟪T n (g' • x) - L n (g' • x), (WithLp.ofLp t).2⟫ := by
+          rw [inner_sub_left, inner_sub_left]; ring
+        rw [hexp]
+        have hb1 : |⟪T n (g • x) - L n (g • x), (WithLp.ofLp t).1⟫|
+            ≤ ‖T n (g • x) - L n (g • x)‖ * ‖(WithLp.ofLp t).1‖ := abs_real_inner_le_norm _ _
+        have hb2 : |⟪T n (g' • x) - L n (g' • x), (WithLp.ofLp t).2⟫|
+            ≤ ‖T n (g' • x) - L n (g' • x)‖ * ‖(WithLp.ofLp t).2‖ := abs_real_inner_le_norm _ _
+        have habs := abs_add_le (⟪T n (g • x) - L n (g • x), (WithLp.ofLp t).1⟫)
+          (⟪T n (g' • x) - L n (g' • x), (WithLp.ofLp t).2⟫)
+        rw [hc₁, hc₂]
+        nlinarith [abs_nonneg (⟪T n (g • x) - L n (g • x), (WithLp.ofLp t).1⟫),
+          abs_nonneg (⟪T n (g' • x) - L n (g' • x), (WithLp.ofLp t).2⟫)]
+      have hdiffint : Integrable
+          (fun x : 𝓧 n => F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x)))
+          (P n) := (hFint T hT n g g').sub (hFint L hL n g g')
+      calc ‖∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+          ≤ ∫ x, ‖F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))‖ ∂(P n) :=
+            norm_integral_le_integral_norm _
+        _ ≤ ∫ x, (min 2 (c₁ * ‖T n (g • x) - L n (g • x)‖)
+              + min 2 (c₂ * ‖T n (g' • x) - L n (g' • x)‖)) ∂(P n) :=
+            integral_mono hdiffint.norm
+              ((hminint n c₁ g hc₁0).add (hminint n c₂ g' hc₂0)) hptw
+        _ = B n := by
+            rw [integral_add (hminint n c₁ g hc₁0) (hminint n c₂ g' hc₂0),
+              hshift n c₁ g hc₁0, hshift n c₂ g' hc₂0]
+    have hsum : (∑ g : G n, ∑ g' : G n, ∫ x, F (T n (g • x), T n (g' • x)) ∂(P n))
+        - ∑ g : G n, ∑ g' : G n, ∫ x, F (L n (g • x), L n (g' • x)) ∂(P n)
+        = ∑ g : G n, ∑ g' : G n,
+            ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n) := by
+      rw [← Finset.sum_sub_distrib]
+      refine Finset.sum_congr rfl fun g _ => ?_
+      rw [← Finset.sum_sub_distrib]
+      exact Finset.sum_congr rfl fun g' _ =>
+        (integral_sub (hFint T hT n g g') (hFint L hL n g g')).symm
+    rw [hchar T hT n, hchar L hL n, ← mul_sub, hsum, norm_mul]
+    have hc : ‖((Fintype.card (G n) : ℂ) ^ 2)⁻¹‖ = ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ := by
+      rw [norm_inv, norm_pow, Complex.norm_natCast]
+    rw [hc]
+    have hnorm : ‖∑ g : G n, ∑ g' : G n,
+        ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+        ≤ (Fintype.card (G n) : ℝ) ^ 2 * B n := by
+      refine le_trans (norm_sum_le _ _) ?_
+      have hinner : ∀ g : G n, ‖∑ g' : G n,
+          ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+          ≤ (Fintype.card (G n) : ℝ) * B n := by
+        intro g
+        refine le_trans (norm_sum_le _ _) ?_
+        calc ∑ g' : G n, ‖∫ x, (F (T n (g • x), T n (g' • x))
+              - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+            ≤ ∑ _g' : G n, B n := Finset.sum_le_sum fun g' _ => hterm g g'
+          _ = (Fintype.card (G n) : ℝ) * B n := by
+              rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+      calc ∑ g : G n, ‖∑ g' : G n,
+            ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+          ≤ ∑ _g : G n, (Fintype.card (G n) : ℝ) * B n := Finset.sum_le_sum fun g _ => hinner g
+        _ = (Fintype.card (G n) : ℝ) ^ 2 * B n := by
+            rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← mul_assoc, sq]
+    calc ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ * ‖∑ g : G n, ∑ g' : G n,
+          ∫ x, (F (T n (g • x), T n (g' • x)) - F (L n (g • x), L n (g' • x))) ∂(P n)‖
+        ≤ ((Fintype.card (G n) : ℝ) ^ 2)⁻¹ * ((Fintype.card (G n) : ℝ) ^ 2 * B n) :=
+          mul_le_mul_of_nonneg_left hnorm (by positivity)
+      _ = B n := by
+          rw [← mul_assoc, inv_mul_cancel₀ (by positivity), one_mul]
+  have hdiff : Tendsto (fun n =>
+      charFun ((randPairLaw (G n) (T n) (P n)).map (WithLp.toLp 2)) t
+        - charFun ((randPairLaw (G n) (L n) (P n)).map (WithLp.toLp 2)) t) atTop (𝓝 0) :=
+    squeeze_zero_norm hstep hBlim
+  have := hdiff.add hlim
+  simpa using this
+
 end Slutsky
 
 end StatLean.HypothesisTesting
