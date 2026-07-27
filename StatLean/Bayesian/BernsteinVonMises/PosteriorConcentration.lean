@@ -54,7 +54,16 @@ theorem bvmLocalPosterior_compl_ball [IsFiniteMeasure π] {n : ℕ}
     (hn : 1 ≤ n) (ω : Fin n → 𝓧) (R : ℝ) :
     bvmLocalPosterior κ π θ₀ n ω (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) R)ᶜ
       = ((iidKernel κ n)†π) ω {θ | R / Real.sqrt n ≤ ‖θ - θ₀‖} := by
-  sorry
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsq : 0 < Real.sqrt n := Real.sqrt_pos.2 hnR
+  rw [bvmLocalPosterior,
+    Kernel.map_apply' _ (measurable_bvmLocalScale θ₀ n) _
+      Metric.isOpen_ball.measurableSet.compl]
+  congr 1
+  ext θ
+  simp only [Set.mem_preimage, Set.mem_compl_iff, Metric.mem_ball, dist_zero_right, not_lt,
+    Set.mem_setOf_eq, bvmLocalScale, norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+  rw [div_le_iff₀ hsq, mul_comm]
 
 /-- **The disintegration bound of Step A** (vdV p. 142, first display): for a `[0,1]`-valued
 test `φ` and a measurable parameter set `A`, the `bvmMixture`-mean of the posterior mass of
