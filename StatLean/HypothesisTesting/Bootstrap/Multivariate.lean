@@ -1883,6 +1883,69 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
   rw [sub_self] at hgoal
   exact hgoal
 
+/-- **Portmanteau at the sublevel sets of a norm.**
+
+If probability measures converge weakly to a nondegenerate centred Gaussian, the measures of the
+sublevel sets of a norm converge, because the spheres of the norm are null for the limit. This is
+the second half of `norm_root_cdf_tendsto`, isolated so that it applies to the image laws of the
+smooth-function root as well as to the mean-vector root. -/
+private lemma tendsto_measure_norm_le_of_weak {S : Matrix (Fin q) (Fin q) ℝ}
+    (hpsdS : S.PosSemidef) (hSne : S ≠ 0)
+    (hnrm_add : ∀ y z, nrm (y + z) ≤ nrm y + nrm z)
+    (hnrm_smul : ∀ (c : ℝ) (y), nrm (c • y) = |c| * nrm y)
+    (hnrm_def : ∀ y, nrm y = 0 → y = 0)
+    {μ : ℕ → Measure (EuclideanSpace ℝ (Fin q))} (hμprob : ∀ n, IsProbabilityMeasure (μ n))
+    (hweak : ∀ ψ : EuclideanSpace ℝ (Fin q) →ᵇ ℝ,
+      Tendsto (fun n => ∫ z, ψ z ∂(μ n)) atTop (𝓝 (∫ z, ψ z ∂(multivariateGaussian 0 S))))
+    (x : ℝ) :
+    Tendsto (fun n => ((μ n) {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ x}).toReal) atTop
+      (𝓝 (normLimitCDF S nrm x)) := by
+  classical
+  have hnrm_cont : Continuous nrm := continuous_of_seminorm hnrm_add hnrm_smul
+  set ν : ProbabilityMeasure (EuclideanSpace ℝ (Fin q)) :=
+    ⟨multivariateGaussian 0 S, inferInstance⟩ with hνdef
+  set μs : ℕ → ProbabilityMeasure (EuclideanSpace ℝ (Fin q)) :=
+    fun n => ⟨μ n, hμprob n⟩ with hμsdef
+  have hconv : Tendsto μs atTop (𝓝 ν) :=
+    ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.2 hweak
+  have hfrontier : (ν : Measure (EuclideanSpace ℝ (Fin q)))
+      (frontier {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ x}) = 0 := by
+    refine measure_mono_null ?_
+      (measure_multivariateGaussian_norm_level hpsdS hSne hnrm_add hnrm_smul hnrm_def x)
+    intro z hz
+    have hclosed : IsClosed {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ x} :=
+      isClosed_le hnrm_cont continuous_const
+    have hz1 : nrm z ≤ x := by
+      have hh := hz.1
+      rwa [hclosed.closure_eq] at hh
+    exact le_antisymm hz1 (not_lt.1 fun hlt => hz.2
+      (mem_interior_iff_mem_nhds.2
+        (Filter.mem_of_superset ((isOpen_lt hnrm_cont continuous_const).mem_nhds hlt)
+          (fun w hw => (le_of_lt hw : nrm w ≤ x)))))
+  have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfrontier
+  exact (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+
+/-- The distribution function of a norm under a probability law is a distribution function. -/
+private lemma isCDF_measure_norm_le {μ : Measure (EuclideanSpace ℝ (Fin q))}
+    (hμ : IsProbabilityMeasure μ) (hnrm_cont : Continuous nrm) :
+    IsCDF fun t => (μ {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ t}).toReal := by
+  haveI := hμ
+  haveI : IsProbabilityMeasure (μ.map nrm) :=
+    Measure.isProbabilityMeasure_map hnrm_cont.measurable.aemeasurable
+  have heq : (fun t => (μ {z : EuclideanSpace ℝ (Fin q) | nrm z ≤ t}).toReal)
+      = fun t => ((μ.map nrm) (Set.Iic t)).toReal := by
+    funext t
+    rw [Measure.map_apply hnrm_cont.measurable measurableSet_Iic]
+    rfl
+  rw [heq]
+  exact isCDF_toReal_measure_Iic _
+
+/-- Rescaling the argument by a nonzero factor does not change the Kolmogorov distance. -/
+private lemma supCDFDist_comp_mul_left {a : ℝ} (ha : a ≠ 0) (F G : ℝ → ℝ) :
+    supCDFDist (fun s => F (a * s)) (fun s => G (a * s)) = supCDFDist F G := by
+  unfold supCDFDist
+  exact Equiv.iSup_comp (g := fun t : ℝ => |F t - G t|) (Equiv.mulLeft₀ a ha)
+
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
 
 Almost surely, the sampling distribution function of the norm of the estimation error is
