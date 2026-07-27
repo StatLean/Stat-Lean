@@ -205,5 +205,3 @@ theorem weighted_prior_tail_tendsto
   ring
 
 end ScratchB
-
-#print axioms ScratchB.weighted_prior_tail_tendsto
