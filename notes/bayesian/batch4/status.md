@@ -64,3 +64,16 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
 - 2026-07-27: Wave 1 launched: bay/bvm-bricks (srun 2:30), bay/bvm-tests (srun 2:30) via
   fan-out. bay/doob-core queued — concurrent ht/batch12 session holds 2 cluster-claude
   slots (cap 3); half-created doob-core worktree removed; slot watcher armed.
+- 2026-07-27: **STATEMENT DEFECT (lane bvm-bricks)** — `one_sub_lintegral_le_lintegral_one_sub`
+  (Bayesian/ForMathlib/TVDist.lean) is FALSE as frozen: without measurability `lintegral` is
+  only *super*additive (sup over simple minorants), so only `∫(1−Y) + ∫Y ≥ ∫1` is free.
+  Counterexample: `Y := indicator B` for a Bernstein set `B` (both `B`, `Bᶜ` inner measure 0)
+  gives LHS `= 1`, RHS `= 0`. Lane correctly STOPPED and left a `private` measurable version.
+  LAPTOP FIX at merge: add `(hY : Measurable Y)` tagged
+  `-- LEAN-ONLY: measurable integrand (lintegral is only superadditive without it)` and close
+  from the lane's private lemma. All consumers (Jensen step in
+  `tvDist_normalize_le_double_lintegral`, Step B in `LocalApproximation`) have measurable
+  integrands ⇒ no scope change.
+- 2026-07-27: wave-2/3/4 prompts written (local, conc, bpe-aux, assembly, bpe-approx,
+  bpe-final, doob-final) — 11 prompt files total.
+
