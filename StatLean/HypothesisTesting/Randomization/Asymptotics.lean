@@ -295,6 +295,90 @@ lemma integral_randDist_sq_eq_real_randPairLaw (P : Measure 𝓧) [IsProbability
     rfl
   rw [hLHS, hRHS]
 
+/-- **Cross-moment identity.** The mean of the product of the randomization distribution at
+two thresholds is the mass that `randPairLaw` puts on the rectangle `Iic s ×ˢ Iic t`:
+`∫ R̂(·,s)·R̂(·,t) dP = randPairLaw(Iic s ×ˢ Iic t)`. The diagonal case `s = t` is
+`integral_randDist_sq_eq_real_randPairLaw`; the off-diagonal case is what drives the
+*converse* direction of the asymptotic theorem, where the joint c.d.f. of `randPairLaw` has
+to be reconstructed from the randomization distribution alone. -/
+lemma integral_randDist_mul_eq_real_randPairLaw (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → ℝ) (s t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    ∫ x, randDist G T x s * randDist G T x t ∂P
+      = (randPairLaw G T P).real (Set.Iic s ×ˢ Set.Iic t) := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardℝ : (Fintype.card G : ℝ≥0∞) ≠ 0 := by exact_mod_cast hcard.ne'
+  have hset : ∀ g g' : G, MeasurableSet {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := fun g g' =>
+    (measurableSet_le (hT.comp (hsmul g)) measurable_const).inter
+      (measurableSet_le (hT.comp (hsmul g')) measurable_const)
+  have hpair : ∀ g g' : G, Measurable (fun x : 𝓧 => (T (g • x), T (g' • x))) := fun g g' =>
+    (hT.comp (hsmul g)).prodMk (hT.comp (hsmul g'))
+  have hind : ∀ g g' : G,
+      (fun x => (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0))
+        = Set.indicator {x | T (g • x) ≤ s ∧ T (g' • x) ≤ t} 1 := by
+    intro g g'; funext x
+    simp only [Set.indicator_apply, Set.mem_setOf_eq, Pi.one_apply]
+    split_ifs <;> simp_all
+  have hintg' : ∀ g g' : G, Integrable (fun x =>
+      (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0)) P := by
+    intro g g'; rw [hind g g']; exact (integrable_const (1 : ℝ)).indicator (hset g g')
+  have hintprod : ∀ g g' : G,
+      ∫ x, (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0) ∂P
+        = P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    intro g g'
+    rw [show (∫ x, (if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * (if T (g' • x) ≤ t then (1 : ℝ) else 0) ∂P)
+        = ∫ x, Set.indicator {x | T (g • x) ≤ s ∧ T (g' • x) ≤ t} 1 x ∂P from by rw [hind g g'],
+      integral_indicator_one (hset g g')]
+  have hpt : ∀ x, randDist G T x s * randDist G T x t
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 * ∑ g : G, ∑ g' : G,
+          (if T (g • x) ≤ s then (1 : ℝ) else 0) * (if T (g' • x) ≤ t then (1 : ℝ) else 0) := by
+    intro x
+    simp only [randDist]
+    rw [show ((Fintype.card G : ℝ)⁻¹ * ∑ g : G, if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * ((Fintype.card G : ℝ)⁻¹ * ∑ g : G, if T (g • x) ≤ t then (1 : ℝ) else 0)
+        = (Fintype.card G : ℝ)⁻¹ ^ 2 * ((∑ g : G, if T (g • x) ≤ s then (1 : ℝ) else 0)
+          * ∑ g : G, if T (g • x) ≤ t then (1 : ℝ) else 0) from by ring,
+      Finset.sum_mul_sum]
+  have hLHS : ∫ x, randDist G T x s * randDist G T x t ∂P
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 * ∑ g : G, ∑ g' : G,
+          P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    simp_rw [hpt]
+    rw [integral_const_mul]
+    congr 1
+    rw [integral_finset_sum _ (fun g _ => integrable_finset_sum _ fun g' _ => hintg' g g')]
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [integral_finset_sum _ (fun g' _ => hintg' g g')]
+    exact Finset.sum_congr rfl fun g' _ => hintprod g g'
+  have hmeasS : MeasurableSet (Set.Iic s ×ˢ Set.Iic t) :=
+    measurableSet_Iic.prod measurableSet_Iic
+  have hpre : ∀ g g' : G,
+      (fun x : 𝓧 => (T (g • x), T (g' • x))) ⁻¹' (Set.Iic s ×ˢ Set.Iic t)
+        = {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := fun g g' => by
+    ext x; simp [Set.mem_prod, Set.mem_Iic]
+  have hval : (randPairLaw G T P) (Set.Iic s ×ˢ Set.Iic t)
+      = ((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹ *
+          ∑ g : G, ∑ g' : G, P {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    rw [randPairLaw, Measure.smul_apply, smul_eq_mul, Measure.finset_sum_apply]
+    congr 1
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [Measure.finset_sum_apply]
+    exact Finset.sum_congr rfl fun g' _ => by rw [Measure.map_apply (hpair g g') hmeasS, hpre g g']
+  have hRHS : (randPairLaw G T P).real (Set.Iic s ×ˢ Set.Iic t)
+      = (Fintype.card G : ℝ)⁻¹ ^ 2 *
+          ∑ g : G, ∑ g' : G, P.real {x : 𝓧 | T (g • x) ≤ s ∧ T (g' • x) ≤ t} := by
+    have hsc : (((Fintype.card G : ℝ≥0∞) ^ 2)⁻¹).toReal = (Fintype.card G : ℝ)⁻¹ ^ 2 := by
+      rw [ENNReal.toReal_inv, ENNReal.toReal_pow, ENNReal.toReal_natCast, inv_pow]
+    rw [Measure.real, hval, ENNReal.toReal_mul, hsc]
+    congr 1
+    rw [ENNReal.toReal_sum fun g _ =>
+      (ENNReal.sum_lt_top.2 fun g' _ => measure_lt_top P _).ne]
+    refine Finset.sum_congr rfl fun g _ => ?_
+    rw [ENNReal.toReal_sum fun g' _ => measure_ne_top P _]
+    rfl
+  rw [hLHS, hRHS]
+
 /-- **Pushforward reduction of `randPairLaw`.** Postcomposing the statistic with a measurable
 map `ψ` pushes the doubly randomized law forward along `ψ × ψ`. (Contrast `randPairLaw_comp`,
 which *pre*composes with an equivariant map on the data.) -/
