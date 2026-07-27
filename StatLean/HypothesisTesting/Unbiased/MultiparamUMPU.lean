@@ -2697,6 +2697,36 @@ private lemma abs_le_exp_add_exp_neg {δ : ℝ} (hδ : 0 < δ) (u : ℝ) :
     _ ≤ Real.exp |δ * u| := habs
     _ ≤ Real.exp (δ * u) + Real.exp (-(δ * u)) := hcase
 
+/-- **Two-point envelope for the derivative along a canonical segment.** For the affine
+exponent `L(s) = (1−s)a + sb` and a half-width `η > 0`,
+`|b − a|·e^{L(s)} ≤ η⁻¹(e^{L(s−η)} + e^{L(s+η)})`.
+
+The left-hand side is `|d/ds e^{L(s)}|`, and the two exponentials on the right are the
+values of the *same* exponent at the two shifted segment parameters — that is, densities of
+two members of the canonical family. So this is the dominating function that differentiation
+under the integral sign needs at item (b) of `isUMPU_conditional_point`: on
+`[s₀ − η, s₀ + η]` the `s`-derivative of the integrand is dominated by a fixed integrable
+function, uniformly in `s`. It is the exact analogue, one derivative up, of
+`exp_segment_le`, and it rests on the same two-point majorant `abs_le_exp_add_exp_neg` that
+supplies the conditional integrability of `U` in item (c). -/
+private lemma abs_sub_mul_exp_segment_le (a b s : ℝ) {η : ℝ} (hη : 0 < η) :
+    |b - a| * Real.exp ((1 - s) * a + s * b)
+      ≤ η⁻¹ * (Real.exp ((1 - (s - η)) * a + (s - η) * b)
+        + Real.exp ((1 - (s + η)) * a + (s + η) * b)) := by
+  have e1 : (1 - (s - η)) * a + (s - η) * b = ((1 - s) * a + s * b) + -(η * (b - a)) := by
+    ring
+  have e2 : (1 - (s + η)) * a + (s + η) * b = ((1 - s) * a + s * b) + η * (b - a) := by ring
+  rw [e1, e2]
+  have hLpos : 0 < Real.exp ((1 - s) * a + s * b) := Real.exp_pos _
+  have h1 : |b - a| ≤ (Real.exp (η * (b - a)) + Real.exp (-(η * (b - a)))) / η :=
+    abs_le_exp_add_exp_neg hη (b - a)
+  have h2 := mul_le_mul_of_nonneg_right h1 hLpos.le
+  refine h2.trans (le_of_eq ?_)
+  rw [Real.exp_add ((1 - s) * a + s * b) (-(η * (b - a))),
+    Real.exp_add ((1 - s) * a + s * b) (η * (b - a))]
+  field_simp
+  ring
+
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
 *outside* an interval in `u` is UMP unbiased at level `α`, provided its constants satisfy
 **both** conditional conditions on the boundary surface `θ = θ₀`:
@@ -2781,12 +2811,24 @@ theorem isUMPU_conditional_point
   --      `exists_interior_boundary_point` above (Mathlib's
   --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push, both under the
   --      amendments `hΩ_aff` and `[FiniteDimensional ℝ Ξ]` already in this signature).
-  --  (b) OPEN. Differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
-  --      dominating function is available from the same two-point envelope used by
-  --      `tendsto_integral_canonical_segment`, in the form
-  --      `|b−a|·e^{(1−s)a+sb} ≤ 2η⁻¹(e^a + e^b)` on `[s₀−η, s₀+η]`, so this is routine but
-  --      not short. Note the normalizer `C` also has to be differentiated: the power is the
-  --      ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained.
+  --  (b) OPEN, with its analytic input now PROVED (this session). Differentiation of
+  --      `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀` needs a dominating function for
+  --      the `s`-derivative of the integrand along the segment; that is
+  --      `abs_sub_mul_exp_segment_le` above,
+  --      `|b−a|·e^{(1−s)a+sb} ≤ η⁻¹(e^{(1−(s−η))a+(s−η)b} + e^{(1−(s+η))a+(s+η)b})`,
+  --      whose right-hand side is a sum of *members of the family* at the shifted segment
+  --      parameters — integrable exactly because item (a) puts `s₀` in the interior, so
+  --      `s₀ ± η` still lies on a segment inside `Ω`. (The earlier note's shape
+  --      `2η⁻¹(e^a + e^b)` is the cruder `exp_segment_le` bound and is what one gets after a
+  --      further application of that lemma; the two-point form above is the sharp one and is
+  --      the one Mathlib's `hasDerivAt_integral_of_dominated_loc_of_deriv_le` consumes
+  --      directly.) What is left of (b) is therefore the assembly — instantiating that
+  --      Mathlib lemma at the conditional law — *plus* the differentiation of the normalizer:
+  --      the power is the ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained,
+  --      so `θ ↦ C(θ,ϑ₀)` has to be differentiated as well. That second half is an
+  --      exponential-family smoothness statement, not a bookkeeping step, and it is the real
+  --      remaining content of (b): it is the analogue, in the *conditional* setting of this
+  --      file, of `PointEstimation.ExponentialFamily.Smoothness`.
   --  (c) OPEN, but only for the *transfer*: a completeness step for the **unbounded**
   --      function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`, i.e. `IsCompleteFamily` rather than
   --      `IsBoundedlyCompleteFamily` on the boundary slice. The proof of
