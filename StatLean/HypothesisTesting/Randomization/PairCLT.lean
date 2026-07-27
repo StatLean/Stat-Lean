@@ -390,7 +390,7 @@ private lemma isLittleO_charFun_taylor {Ω : Type*} [MeasurableSpace Ω] {P : Me
   rw [taylorWithinEval_charFun_two_zero hW hint v]
 
 /-- Pairing with a fixed direction is square-integrable when the data is. -/
-private lemma memLp_inner_right (Q : Measure E) (hQ2 : MemLp id 2 Q) (v : E) :
+lemma memLp_inner_right (Q : Measure E) (hQ2 : MemLp id 2 Q) (v : E) :
     MemLp (fun y : E => ⟪y, v⟫) 2 Q := by
   have hmeas : AEStronglyMeasurable (fun y : E => ⟪y, v⟫) Q :=
     ((continuous_id (X := E)).inner continuous_const).aestronglyMeasurable

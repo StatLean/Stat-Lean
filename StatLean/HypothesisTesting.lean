@@ -53,6 +53,7 @@ import StatLean.HypothesisTesting.Randomization.Asymptotics
 import StatLean.HypothesisTesting.Randomization.ExactLevel
 import StatLean.HypothesisTesting.Randomization.MultivariateQuadratic
 import StatLean.HypothesisTesting.Randomization.OrbitConditional
+import StatLean.HypothesisTesting.Randomization.PairCLT
 import StatLean.HypothesisTesting.Randomization.SignChange
 import StatLean.HypothesisTesting.Randomization.SlutskyRandomization
 import StatLean.HypothesisTesting.Randomization.Studentized
