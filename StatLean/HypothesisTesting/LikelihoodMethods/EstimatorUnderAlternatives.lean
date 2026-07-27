@@ -470,6 +470,49 @@ theorem weak_limit_g_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))))
       (gaussianReal 0 σ) := by
+  classical
+  have hJ_psd : J.PosSemidef := posSemidef_of_fisherInformation M μ θ₀ ℓ J hJ
+  have hJ_pd : J.PosDef :=
+    hJ_psd.posDef_iff_isUnit.mpr ((Matrix.isUnit_iff_isUnit_det J).mpr hJ_inv)
+  have hJinv_psd : J⁻¹.PosSemidef := hJ_pd.inv.posSemidef
+  have hgc : Continuous g :=
+    continuous_iff_continuousAt.2 fun θ => (hg θ).hasFDerivAt.differentiableAt.continuousAt
+  -- The recentred estimator limit.
+  have h1 := weak_limit_estimator_under_local_alternatives M μ hPDF θ₀ ℓ hℓ hDQM J hJ hJ_inv
+    est hest hlin h h_n hconv
+  have hWmeas : ∀ n : ℕ,
+      Measurable (fun ω : Fin n → 𝓧 => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)) :=
+    fun n => ((hest n).sub measurable_const).const_smul (Real.sqrt n)
+  -- Step 1: the linear functional of the recentred estimator is asymptotically `N(0, σ²)`.
+  have hLmeas : Measurable fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫ :=
+    (continuous_const.inner continuous_id).measurable
+  have hlinmap := h1.map (f := fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫)
+    (continuous_const.inner continuous_id) hLmeas
+  rw [ProbabilityTheory.multivariateGaussian_map_inner_eq_gaussianReal
+    (gr θ₀) hJinv_psd] at hlinmap
+  have hσeq : (dotProduct (gr θ₀).ofLp (J⁻¹.mulVec (gr θ₀).ofLp)).toNNReal = σ := by
+    have hd : dotProduct (gr θ₀).ofLp (J⁻¹.mulVec (gr θ₀).ofLp)
+        = ⟪gr θ₀, mulVecE J⁻¹ (gr θ₀)⟫ := by
+      rw [mulVecE_apply_clm, Matrix.inner_toEuclideanCLM]
+    rw [hd, ← hσ, Real.toNNReal_coe]
+  rw [hσeq] at hlinmap
+  have hXcomp : (fun n : ℕ => ((productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n))).map
+        (fun z : EuclideanSpace ℝ (Fin k) => ⟪gr θ₀, z⟫))
+      = fun n : ℕ => (productMeasure M μ (localAlt θ₀ h_n n) n).map
+        (fun ω => ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫) := by
+    funext n
+    rw [Measure.map_map hLmeas (hWmeas n)]
+    rfl
+  rw [hXcomp] at hlinmap
+  -- Step 2: Slutsky — the delta-method remainder is `o_P(1)`.
+  refine WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (X := fun n ω => ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+    (Y := fun n ω => Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n)))
+    (fun n => (hLmeas.comp (hWmeas n)).aemeasurable)
+    (fun n => ((((hgc.measurable).comp (hest n)).sub measurable_const).const_mul
+      (Real.sqrt n)).aemeasurable)
+    hlinmap ?_
   sorry
 
 end StatLean.HypothesisTesting
