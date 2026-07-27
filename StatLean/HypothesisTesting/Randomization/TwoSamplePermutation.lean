@@ -653,45 +653,29 @@ automatic and needs no separate argument. So the whole content is the scalar cor
 of the unstudentized statistic converges in probability to the c.d.f. of `N(0, τ²)`, with the
 permutation scale `τ² = λ σ²(P_Y) + σ²(P_Z)`.
 
-STATUS (wave 6, this session): OPEN, and now the *only* debt of the two-sample chain, in
-scalar form. What changed: the bivariate/asymptotic-independence half is gone (the converse
-engine supplies it, see `weakConverges_randPairLaw_twoSample` immediately below), and the
-statistic has been identified, exactly and at every finite `k`, with a permuted block sum of
-the centred pooled data — `randDist_twoSampleMeanDiff_eq` above rewrites the left-hand side
-here as
-`|S_N|⁻¹ ∑_σ 1{∑_{i<m} d_x(σ(i)) ≤ t·mn/(√m·N)}`, `d_x l = x l − x̄`,
-which is *literally* the group average appearing in the new `ForMathlib/CombinatorialCLT`
-brick `tendsto_perm_cdf_blockSum`. What remains is therefore exactly two things.
+STATUS (wave 8): PROVED here, over the single named brick
+`tendstoInProb_pooled_hypotheses` above (a pure law-of-large-numbers statement about the
+pooled empirical moments, with a fully re-derived route note). The three steps that used to
+be the mathematical content are now all discharged:
 
-(1) *The combinatorial central limit theorem itself*, `tendsto_perm_cdf_blockSum` — a
-    deterministic statement about triangular arrays of coefficient vectors, open in that file
-    with its own status note (Hájek's conditioned-Bernoulli coupling plus a local limit
-    theorem, or Stein's method for exchangeable pairs; neither apparatus exists in Mathlib
-    v4.29.1). This is the genuine mathematical content.
+(1) *The combinatorial central limit theorem*, `ForMathlib/CombinatorialCLT`, is consumed
+    through its **moving-threshold** form `tendsto_perm_cdf_blockSum_varying` (proved above),
+    because the two-sample threshold `t·mn/(√m·N)` carries the moving sample sizes.
+(2) *The identification of the statistic.* `randDist_twoSampleMeanDiff_eq_std` (proved above)
+    writes the randomization distribution, exactly and at every finite `k`, as the group
+    average of the indicator of a **standardized** permuted block sum of the centred pooled
+    data, with threshold `θ_k = t√(n/N)/√v̄` in units of `blockSumScale`; and `θ_k → t/τ`
+    because `n/N → 1/(1+λ)` and `v̄ = τ²/(1+λ)`.
+(3) *The deterministic-array-to-random-array transfer.* `tendstoInProb_of_deterministic`
+    (proved above) is the abstract form of the argument the wave-6 note sketched: it takes
+    two nonnegative hypothesis functionals vanishing in probability together with the
+    deterministic statement along arbitrary subsequences, and returns convergence in
+    probability. No measurable selection is involved, only existence. The `ε`-indexed Hájek
+    Lindeberg family is compressed into the single functional `lindebergDefect` by
+    `lindeberg_le_lindebergDefect`, which is what makes the transfer applicable.
 
-(2) *The deterministic-array-to-random-array transfer.* The population `d_x` depends on the
-    data `x`, whereas (1) is stated for a fixed sequence of populations. The hypotheses of
-    (1) hold for `d_x` only **in probability**:
-    * `∑ d_x = 0` holds identically (`sum_pooledCentred`);
-    * `N⁻¹ ∑ (d_x)² → v̄ = (λ varY + varZ)/(1 + λ)` in probability, by the pooled weak law
-      (`Studentized.tendsto_pi_real_lln` through the two block laws), whence the population
-      normalized by `√v̄` has second moment tending to `1`, and the threshold
-      `t·mn/(√m·N)` becomes `t'·blockSumScale N m` with
-      `t' → t·√((1+λ)/ (λ varY + varZ)) = t/τ`;
-    * Hájek's Lindeberg condition holds in probability, by the same weak law applied to the
-      truncated second moments `∫ y² 1{|y| > K}` under `P_Y` and `P_Z`, which tend to `0` as
-      `K → ∞` by dominated convergence — this is where `MemLp id 2` is used and why no
-      moment beyond `L²` is needed.
-    The bridge from "hypotheses in probability" to "conclusion in probability" does **not**
-    need the quantitative/uniform form of (1): choose `δ_k → 0` with
-    `P_k(G_k) → 1` for the good sets `G_k = {x : the three quantities are within δ_k}` (a
-    diagonal extraction from the three convergences above), and then pick `x_k ∈ G_k` almost
-    maximizing the deviation of the block-sum c.d.f. from `Φ`. The deterministic sequence
-    `d_{x_k}` satisfies the hypotheses of (1), so its deviation tends to `0`, hence so does
-    the supremum over `G_k`. No measurable selection is involved — only existence.
-
-Neither (1) nor (2) rests on a false statement or on a missing upstream API that cannot be
-built; both are simply long. -/
+What is left is therefore only the *in-probability* control of the pooled empirical moments,
+isolated in `tendstoInProb_pooled_hypotheses`; see its own note. -/
 private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
     [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ τ μ : ℝ}
     -- USER-INPUT: both sample sizes grow; the asymptotic regime
@@ -711,7 +695,91 @@ private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (twoSampleMeanDiff (m k) (n k)) x t)
       (cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t) := by
-  sorry
+  classical
+  have h1lam : (0 : ℝ) < 1 + lam := by linarith
+  have hnum : (0 : ℝ) < lam * varY + varZ := by positivity
+  set v : ℝ := (lam * varY + varZ) / (1 + lam) with hvdef
+  have hvpos : (0 : ℝ) < v := by rw [hvdef]; positivity
+  have hsvpos : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.2 hvpos
+  have hs1lam : (0 : ℝ) < Real.sqrt (1 + lam) := Real.sqrt_pos.2 h1lam
+  have hsv : Real.sqrt v * Real.sqrt (1 + lam) = τ := by
+    rw [← Real.sqrt_mul hvpos.le, hvdef, div_mul_cancel₀ _ h1lam.ne', ← hτ,
+      Real.sqrt_sq hτpos.le]
+  -- the two hypothesis functionals vanish in probability
+  obtain ⟨hnorm, hlindP⟩ := tendstoInProb_pooled_hypotheses PY PZ m n hm hn hratio hlam
+    hYL2 hZL2 hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hvpos hvdef
+  -- the moving threshold converges to `t/τ`
+  have hθlim : Tendsto (fun k => t * Real.sqrt ((n k : ℝ) / ((m k + n k : ℕ) : ℝ))
+      / Real.sqrt v) atTop (𝓝 (t / τ)) := by
+    have hw := tendsto_blockZ_weight m n hn hratio hlam
+    have hsq : Tendsto (fun k => Real.sqrt ((n k : ℝ) / ((m k + n k : ℕ) : ℝ))) atTop
+        (𝓝 (Real.sqrt (1 / (1 + lam)))) :=
+      (Real.continuous_sqrt.continuousAt (x := 1 / (1 + lam))).tendsto.comp hw
+    have hlim := (hsq.const_mul t).div_const (Real.sqrt v)
+    have hval : t * Real.sqrt (1 / (1 + lam)) / Real.sqrt v = t / τ := by
+      rw [one_div, Real.sqrt_inv, ← hsv]
+      field_simp
+    rwa [hval] at hlim
+  -- the limit c.d.f. is the standard normal one, rescaled
+  rw [cdf_gaussianReal_scale hτpos t]
+  -- the transfer
+  refine tendstoInProb_of_deterministic (fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (fun k => normDefect (m k) (n k) v) (fun k => lindebergDefect (m k) (n k) v)
+    (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
+      (twoSampleMeanDiff (m k) (n k)) x t)
+    (cdf (gaussianReal 0 1) (t / τ))
+    (fun k x => abs_nonneg _) (fun k x => lindebergDefect_nonneg _ _ _ _)
+    hnorm hlindP ?_
+  intro φ hφ y hAlim hBlim
+  have hφtop : Tendsto φ atTop atTop := hφ.tendsto_atTop
+  have hmφ : Tendsto (fun j => (m (φ j) : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp (hm.comp hφtop)
+  have hnφ : Tendsto (fun j => (n (φ j) : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp (hn.comp hφtop)
+  have hNmφ : Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ))
+      atTop atTop := by
+    refine hnφ.congr fun j => ?_
+    push_cast
+    ring
+  -- the standardized populations are centred
+  have hcent : ∀ j, ∑ l, pooledStd (m (φ j)) (n (φ j)) v (y j) l = 0 := by
+    intro j
+    simp only [pooledStd, ← Finset.mul_sum, sum_pooledCentred', mul_zero]
+  -- their second moment tends to one
+  have hvarj : Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ)⁻¹ *
+      ∑ l, pooledStd (m (φ j)) (n (φ j)) v (y j) l ^ 2) atTop (𝓝 1) := by
+    rw [tendsto_iff_dist_tendsto_zero]
+    simpa only [Real.dist_eq, normDefect] using hAlim
+  -- and they satisfy Hájek's Lindeberg condition, member by member
+  have hlindj : ∀ ε > (0 : ℝ), Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ)⁻¹ *
+      ∑ l, (if ε * Real.sqrt (min (m (φ j) : ℝ)
+                (((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ)))
+              ≤ |pooledStd (m (φ j)) (n (φ j)) v (y j) l|
+            then pooledStd (m (φ j)) (n (φ j)) v (y j) l ^ 2 else 0)) atTop (𝓝 0) := by
+    intro ε hε
+    have hgo : Tendsto (fun j => (min 1 ε)⁻¹ *
+        lindebergDefect (m (φ j)) (n (φ j)) v (y j)) atTop (𝓝 0) := by
+      have h := hBlim.const_mul ((min 1 ε)⁻¹)
+      rwa [mul_zero] at h
+    refine squeeze_zero' (Eventually.of_forall fun j => ?_) ?_ hgo
+    · refine mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => ?_)
+      split_ifs
+      · exact sq_nonneg _
+      · exact le_rfl
+    · filter_upwards [hmφ.eventually_gt_atTop 0, hNmφ.eventually_gt_atTop 0] with j h1 h2
+      have hR : (0 : ℝ) < Real.sqrt (min (m (φ j) : ℝ)
+          (((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ))) := Real.sqrt_pos.2 (lt_min h1 h2)
+      exact lindeberg_le_lindebergDefect _ hR hε
+  -- the combinatorial central limit theorem at the moving threshold
+  have hmain := tendsto_perm_cdf_blockSum_varying
+    (N := fun j => m (φ j) + n (φ j)) (m := fun j => m (φ j))
+    (fun j => Fin.castAdd (n (φ j))) (fun j => Fin.castAdd_injective _ _)
+    (fun j => pooledStd (m (φ j)) (n (φ j)) v (y j)) hcent hmφ hNmφ hvarj hlindj
+    (hθlim.comp hφtop)
+  refine hmain.congr' ?_
+  filter_upwards [(hm.comp hφtop).eventually_gt_atTop 0,
+    (hn.comp hφtop).eventually_gt_atTop 0] with j hmj hnj
+  exact (randDist_twoSampleMeanDiff_eq_std (m (φ j)) (n (φ j)) hmj hnj hvpos (y j) t).symm
 
 /-- **Two-sample permutation central limit theorem.** With `m/n → λ ∈ (0, ∞)`, finite
 nonzero variances and equal means, the statistic evaluated at two independent uniform
