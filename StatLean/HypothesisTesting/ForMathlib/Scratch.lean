@@ -473,4 +473,158 @@ private lemma abs_avg_h_blockSum_sub_le {N m : ℕ} (hN : 2 ≤ N) (a : Fin m �
     _ = L * u * Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) *
           ∑ l, (d l - d' l) ^ 2) := by rw [hsq]
 
+/-! ### Truncating and recentring a finite population -/
+
+/-- The part of the population *discarded* by truncation at level `τ`. -/
+private noncomputable def truncDisc {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : Fin N → ℝ :=
+  fun l => if τ ≤ |d l| then d l else 0
+
+/-- The part of the population *kept* by truncation at level `τ`. -/
+private noncomputable def truncKeep {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : Fin N → ℝ :=
+  fun l => if τ ≤ |d l| then 0 else d l
+
+/-- The second moment carried by the discarded part — the quantity that Hájek's Lindeberg
+condition sends to `0`. -/
+private noncomputable def truncLoss {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : ℝ :=
+  ∑ l, truncDisc τ d l ^ 2
+
+/-- The truncated population, recentred so as to be centred again. -/
+private noncomputable def truncCentred {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : Fin N → ℝ :=
+  fun l => truncKeep τ d l - (N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'
+
+private lemma truncKeep_add_truncDisc {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) (l : Fin N) :
+    truncKeep τ d l + truncDisc τ d l = d l := by
+  simp only [truncKeep, truncDisc]
+  by_cases hl : τ ≤ |d l| <;> simp [hl]
+
+private lemma abs_truncKeep_le {N : ℕ} {τ : ℝ} (hτ : 0 ≤ τ) (d : Fin N → ℝ) (l : Fin N) :
+    |truncKeep τ d l| ≤ τ := by
+  simp only [truncKeep]
+  by_cases hl : τ ≤ |d l|
+  · simp [hl, hτ]
+  · rw [if_neg hl]; exact le_of_not_ge hl
+
+private lemma truncLoss_nonneg {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) : 0 ≤ truncLoss τ d :=
+  Finset.sum_nonneg fun _ _ => sq_nonneg _
+
+/-- The Lindeberg tail in the shape in which the hypothesis of the central limit theorem
+supplies it. -/
+private lemma truncLoss_eq {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) :
+    truncLoss τ d = ∑ l, (if τ ≤ |d l| then d l ^ 2 else 0) := by
+  refine Finset.sum_congr rfl fun l _ => ?_
+  simp only [truncDisc]
+  by_cases hl : τ ≤ |d l| <;> simp [hl]
+
+private lemma sum_sq_truncKeep {N : ℕ} (τ : ℝ) (d : Fin N → ℝ) :
+    ∑ l, truncKeep τ d l ^ 2 = (∑ l, d l ^ 2) - truncLoss τ d := by
+  rw [truncLoss, eq_sub_iff_add_eq, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  simp only [truncKeep, truncDisc]
+  by_cases hl : τ ≤ |d l| <;> simp [hl]
+
+private lemma abs_sum_truncDisc_le {N : ℕ} {τ : ℝ} (hτ : 0 < τ) (d : Fin N → ℝ) :
+    |∑ l, truncDisc τ d l| ≤ truncLoss τ d / τ := by
+  have hpt : ∀ l : Fin N, |truncDisc τ d l| ≤ truncDisc τ d l ^ 2 / τ := by
+    intro l
+    simp only [truncDisc]
+    by_cases hl : τ ≤ |d l|
+    · rw [if_pos hl, le_div_iff₀ hτ, ← sq_abs (d l)]
+      nlinarith [hl, abs_nonneg (d l)]
+    · rw [if_neg hl]
+      simp
+  calc |∑ l, truncDisc τ d l| ≤ ∑ l, |truncDisc τ d l| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ l, truncDisc τ d l ^ 2 / τ := Finset.sum_le_sum fun l _ => hpt l
+    _ = truncLoss τ d / τ := by rw [truncLoss, Finset.sum_div]
+
+private lemma sum_truncCentred_eq_zero {N : ℕ} (hN : 0 < N) (τ : ℝ) (d : Fin N → ℝ) :
+    ∑ l, truncCentred τ d l = 0 := by
+  have hN0 : (N : ℝ) ≠ 0 := by
+    have : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+    exact this.ne'
+  simp only [truncCentred]
+  rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hN0, one_mul, sub_self]
+
+private lemma abs_truncCentred_le {N : ℕ} {τ : ℝ} (hτ : 0 ≤ τ) (d : Fin N → ℝ) (l : Fin N) :
+    |truncCentred τ d l| ≤ τ + |(N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'| := by
+  simp only [truncCentred]
+  calc |truncKeep τ d l - (N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'|
+      ≤ |truncKeep τ d l| + |(N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'| := by
+        have h := abs_add_le (truncKeep τ d l) (-((N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'))
+        simpa [sub_eq_add_neg, abs_neg] using h
+    _ ≤ τ + |(N : ℝ)⁻¹ * ∑ l', truncKeep τ d l'| := by
+        have h := abs_truncKeep_le hτ d l
+        linarith
+
+private lemma sum_sq_truncCentred {N : ℕ} (hN : 0 < N) (τ : ℝ) (d : Fin N → ℝ) :
+    ∑ l, truncCentred τ d l ^ 2
+      = (∑ l, d l ^ 2) - truncLoss τ d
+        - (N : ℝ) * ((N : ℝ)⁻¹ * ∑ l', truncKeep τ d l') ^ 2 := by
+  have hN0 : (N : ℝ) ≠ 0 := by
+    have : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+    exact this.ne'
+  set μ : ℝ := (N : ℝ)⁻¹ * ∑ l', truncKeep τ d l' with hμ
+  have hterm : ∀ l : Fin N, truncCentred τ d l ^ 2
+      = truncKeep τ d l ^ 2 - 2 * μ * truncKeep τ d l + μ ^ 2 := by
+    intro l; simp only [truncCentred]; rw [← hμ]; ring
+  rw [Finset.sum_congr rfl fun l _ => hterm l, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum,
+    sum_sq_truncKeep]
+  have hkey : ∑ l', truncKeep τ d l' = (N : ℝ) * μ := by
+    rw [hμ, ← mul_assoc, mul_inv_cancel₀ hN0, one_mul]
+  rw [hkey]
+  ring
+
+private lemma sum_sq_sub_truncCentred_le {N : ℕ} (hN : 0 < N) (τ : ℝ) (d : Fin N → ℝ)
+    (hd : ∑ l, d l = 0) :
+    ∑ l, (d l - truncCentred τ d l) ^ 2 ≤ truncLoss τ d := by
+  have hN0 : (N : ℝ) ≠ 0 := by
+    have : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+    exact this.ne'
+  have hNpos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  set μ : ℝ := (N : ℝ)⁻¹ * ∑ l', truncKeep τ d l' with hμ
+  have hkeep : ∑ l', truncKeep τ d l' = (N : ℝ) * μ := by
+    rw [hμ, ← mul_assoc, mul_inv_cancel₀ hN0, one_mul]
+  have hdisc : ∑ l, truncDisc τ d l = -((N : ℝ) * μ) := by
+    have hsplit : (∑ l, truncKeep τ d l) + ∑ l, truncDisc τ d l = 0 := by
+      rw [← Finset.sum_add_distrib,
+        Finset.sum_congr rfl fun l _ => truncKeep_add_truncDisc τ d l, hd]
+    rw [hkeep] at hsplit
+    linarith
+  have hterm : ∀ l : Fin N, d l - truncCentred τ d l = truncDisc τ d l + μ := by
+    intro l
+    simp only [truncCentred]
+    rw [← hμ, ← truncKeep_add_truncDisc τ d l]
+    ring
+  have hexp : ∑ l, (d l - truncCentred τ d l) ^ 2
+      = truncLoss τ d + 2 * μ * (∑ l, truncDisc τ d l) + (N : ℝ) * μ ^ 2 := by
+    have hsq : ∀ l : Fin N, (d l - truncCentred τ d l) ^ 2
+        = truncDisc τ d l ^ 2 + 2 * μ * truncDisc τ d l + μ ^ 2 := by
+      intro l; rw [hterm l]; ring
+    rw [Finset.sum_congr rfl fun l _ => hsq l, Finset.sum_add_distrib, Finset.sum_add_distrib,
+      Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← Finset.mul_sum,
+      truncLoss]
+  rw [hexp, hdisc]
+  nlinarith [sq_nonneg μ, hNpos]
+
+/-- Third absolute moment from a sup bound. -/
+private lemma sum_abs_cube_le {N : ℕ} {B : ℝ} (f : Fin N → ℝ) (hB : ∀ l, |f l| ≤ B) :
+    ∑ l, |f l| ^ 3 ≤ B * ∑ l, f l ^ 2 := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_le_sum fun l _ => ?_
+  calc |f l| ^ 3 = |f l| * f l ^ 2 := by rw [show |f l| ^ 3 = |f l| * |f l| ^ 2 by ring, sq_abs]
+    _ ≤ B * f l ^ 2 := mul_le_mul_of_nonneg_right (hB l) (sq_nonneg _)
+
+/-- Fourth moment from a sup bound. -/
+private lemma sum_pow_four_le {N : ℕ} {B : ℝ} (f : Fin N → ℝ) (hB : ∀ l, |f l| ≤ B) :
+    ∑ l, f l ^ 4 ≤ B ^ 2 * ∑ l, f l ^ 2 := by
+  rw [Finset.mul_sum]
+  refine Finset.sum_le_sum fun l _ => ?_
+  have hsq : f l ^ 2 ≤ B ^ 2 := by
+    have h := hB l
+    have h0 : (0 : ℝ) ≤ |f l| := abs_nonneg _
+    nlinarith [sq_abs (f l)]
+  calc f l ^ 4 = f l ^ 2 * f l ^ 2 := by ring
+    _ ≤ B ^ 2 * f l ^ 2 := mul_le_mul_of_nonneg_right hsq (sq_nonneg _)
+
 end StatLean.HypothesisTesting
