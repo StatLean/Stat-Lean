@@ -27,7 +27,7 @@ argument already packaged in `Contiguity.uniform_integrability_exp_L_of_integral
 continuity points (portmanteau for the weak limit of `Pₙ.map Lₙ`).
 -/
 
-open MeasureTheory Filter Topology
+open MeasureTheory Filter Topology BoundedContinuousFunction
 open scoped ENNReal NNReal
 
 namespace AsymptoticStatistics
@@ -133,8 +133,10 @@ private lemma exists_tail_prob_bound {α : ℕ → Type*} [∀ n, MeasurableSpac
     {ε : ℝ} (hε : 0 < ε) :
     ∃ M : ℝ, 0 ≤ M ∧ ∃ N : ℕ, ∀ n, N ≤ n →
       ((P n) {ω | L n ω < -M}).toReal ≤ ε := by
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, ∫ x, rampBCF (-(k : ℝ)) x ∂ν < ε :=
-    ((tendsto_integral_rampBCF_atBot ν) (Iio_mem_nhds hε)).exists
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, ∫ x, rampBCF (-(k : ℝ)) x ∂ν < ε := by
+    have hev : ∀ᶠ k : ℕ in atTop, ∫ x, rampBCF (-(k : ℝ)) x ∂ν < ε :=
+      (tendsto_integral_rampBCF_atBot ν) (Iio_mem_nhds hε)
+    exact hev.exists
   refine ⟨(k : ℝ) + 1, by positivity, ?_⟩
   obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
     ((h_weak (rampBCF (-(k : ℝ)))) (Iio_mem_nhds hk))
@@ -208,7 +210,7 @@ theorem Contiguous.comp_subseq {P Q : ∀ n, Measure (Ω n)}
       simp
   have hQB := hPQ B hB_meas hP_tendsto
   have hcomp := hQB.comp hφ.tendsto_atTop
-  simpa [Function.comp, hB_at] using hcomp
+  simpa [Function.comp_def, hB_at] using hcomp
 
 /-- **Le Cam's first lemma, support-free integral-comparison form.** Suppose
 
@@ -263,11 +265,14 @@ theorem mutuallyContiguous_of_log_normal_of_integral_comparison
       simp [measureReal_def]
     have hP : ∫ ω, (A n).indicator (fun _ => (1 : ℝ)) ω * Real.exp (L n ω) ∂(P n)
         = ∫ ω in A n, Real.exp (L n ω) ∂(P n) := by
-      rw [← MeasureTheory.integral_indicator (hA n)]
-      refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
-      by_cases hω : ω ∈ A n
-      · rw [Set.indicator_of_mem hω, Set.indicator_of_mem hω, one_mul]
-      · rw [Set.indicator_of_notMem hω, Set.indicator_of_notMem hω, zero_mul]
+      have hpt : ∀ ω : Ω n, (A n).indicator (fun _ => (1 : ℝ)) ω * Real.exp (L n ω)
+          = (A n).indicator (fun ω => Real.exp (L n ω)) ω := by
+        intro ω
+        by_cases hω : ω ∈ A n
+        · rw [Set.indicator_of_mem hω, Set.indicator_of_mem hω, one_mul]
+        · rw [Set.indicator_of_notMem hω, Set.indicator_of_notMem hω, zero_mul]
+      simp_rw [hpt]
+      rw [MeasureTheory.integral_indicator (hA n)]
     simpa only [hQ, hP, one_mul] using h
   have h_bound : ∀ (A : ∀ n, Set (Ω n)), (∀ n, MeasurableSet (A n)) → ∀ n,
       ((Q n) (A n)).toReal ≤ ∫ ω in A n, Real.exp (L n ω) ∂(P n) + ρ n := by

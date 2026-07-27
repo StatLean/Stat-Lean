@@ -272,6 +272,25 @@ theorem multivariateGaussian_eq_withDensity_tilt
   rw [← brick]
   simp_rw [hquad]
 
+-- The Mahalanobis form of a positive definite `S` is nonnegative.
+private lemma inner_mahalanobis_nonneg {S : Matrix ι ι ℝ} (hS : S.PosDef)
+    (x : EuclideanSpace ℝ ι) :
+    0 ≤ ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ := by
+  rw [Matrix.inner_toEuclideanCLM]
+  have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp hS.inv.posSemidef).2 x.ofLp
+  simpa using h
+
+-- Cauchy–Schwarz bound on the Mahalanobis form by the operator norm.
+private lemma inner_mahalanobis_le (S : Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
+    ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫
+      ≤ ‖Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹‖ * ‖x‖ ^ 2 := by
+  calc ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫
+      ≤ ‖x‖ * ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x‖ := real_inner_le_norm _ _
+    _ ≤ ‖x‖ * (‖Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹‖ * ‖x‖) := by
+        exact mul_le_mul_of_nonneg_left
+          ((Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹).le_opNorm x) (norm_nonneg _)
+    _ = ‖Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹‖ * ‖x‖ ^ 2 := by ring
+
 /-- **Mean-uniform density upper bound.** The Gaussian density is bounded by a constant
 independent of the mean: there is `D < ∞` with `N(m,S) A ≤ D · volume A` for every mean `m`
 and every set `A` (outer-measure monotonicity handles non-measurable `A`). -/
@@ -282,7 +301,36 @@ theorem exists_forall_multivariateGaussian_le_smul_volume
     ∃ D : ℝ≥0∞, D ≠ ∞ ∧
       ∀ (m : EuclideanSpace ℝ ι) (A : Set (EuclideanSpace ℝ ι)),
         multivariateGaussian m S A ≤ D * volume A := by
-  sorry
+  classical
+  obtain ⟨c, hcpos, hctop, hc⟩ := multivariateGaussian_eq_smul_withDensity hS
+  have hle1 : ∀ x : EuclideanSpace ℝ ι,
+      ENNReal.ofReal (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) ≤ 1 := by
+    intro x
+    rw [← ENNReal.ofReal_one]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [show (1 : ℝ) = Real.exp 0 from Real.exp_zero.symm]
+    exact Real.exp_le_exp.mpr (by linarith [inner_mahalanobis_nonneg hS x])
+  have hdensle : ∀ B : Set (EuclideanSpace ℝ ι), MeasurableSet B →
+      multivariateGaussian (0 : EuclideanSpace ℝ ι) S B ≤ c * volume B := by
+    intro B hB
+    rw [hc]
+    simp only [Measure.smul_apply, smul_eq_mul]
+    refine mul_le_mul_left' ?_ c
+    rw [withDensity_apply _ hB]
+    calc ∫⁻ x in B, ENNReal.ofReal
+            (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) ∂volume
+        ≤ ∫⁻ _ in B, (1 : ℝ≥0∞) ∂volume := lintegral_mono fun x => hle1 x
+      _ = volume B := by simp
+  refine ⟨c, hctop, fun m A => ?_⟩
+  obtain ⟨T, hAT, hTmeas, hTvol⟩ :=
+    exists_measurable_superset (volume : Measure (EuclideanSpace ℝ ι)) A
+  have hshift : Measurable fun x : EuclideanSpace ℝ ι => m + x := by fun_prop
+  calc multivariateGaussian m S A ≤ multivariateGaussian m S T := measure_mono hAT
+    _ = multivariateGaussian (0 : EuclideanSpace ℝ ι) S ((fun x => m + x) ⁻¹' T) := by
+        rw [← multivariateGaussian_map_const_add S m, Measure.map_apply hshift hTmeas]
+    _ ≤ c * volume ((fun x => m + x) ⁻¹' T) := hdensle _ (hshift hTmeas)
+    _ = c * volume T := by rw [measure_preimage_add]
+    _ = c * volume A := by rw [hTvol]
 
 /-- **Density lower bound on bounded sets, uniform over bounded means.** For every
 radius pair `R, r` there is `c > 0` with `c · volume A ≤ N(m,S) A` for all `‖m‖ ≤ R` and all
@@ -295,7 +343,52 @@ theorem exists_pos_smul_volume_le_multivariateGaussian
       ∀ m : EuclideanSpace ℝ ι, ‖m‖ ≤ R →
         ∀ A : Set (EuclideanSpace ℝ ι), A ⊆ Metric.closedBall 0 r → MeasurableSet A →
           c * volume A ≤ multivariateGaussian m S A := by
-  sorry
+  classical
+  obtain ⟨c₀, hc₀pos, hc₀top, hc⟩ := multivariateGaussian_eq_smul_withDensity hS
+  set K : ℝ := ‖Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹‖ with hK
+  set M : ℝ := |R| + |r| with hM
+  set ε : ℝ≥0∞ := ENNReal.ofReal (Real.exp (-(K * M ^ 2) / 2)) with hε
+  have hεpos : 0 < ε := by rw [hε]; exact ENNReal.ofReal_pos.mpr (Real.exp_pos _)
+  refine ⟨c₀ * ε, ENNReal.mul_pos hc₀pos.ne' hεpos.ne', fun m hm A hA hAmeas => ?_⟩
+  have hshift : Measurable fun x : EuclideanSpace ℝ ι => m + x := by fun_prop
+  set P : Set (EuclideanSpace ℝ ι) := (fun x => m + x) ⁻¹' A with hP
+  have hPmeas : MeasurableSet P := hshift hAmeas
+  have hPnorm : ∀ x ∈ P, ‖x‖ ≤ M := by
+    intro x hx
+    have h1 : ‖m + x‖ ≤ |r| := by
+      have := hA hx
+      rw [mem_closedBall_zero_iff] at this
+      exact this.trans (le_abs_self r)
+    have h2 : ‖m‖ ≤ |R| := hm.trans (le_abs_self R)
+    have : ‖x‖ = ‖(m + x) - m‖ := by rw [add_sub_cancel_left]
+    rw [this, hM]
+    calc ‖(m + x) - m‖ ≤ ‖m + x‖ + ‖m‖ := norm_sub_le _ _
+      _ ≤ |r| + |R| := add_le_add h1 h2
+      _ = |R| + |r| := add_comm _ _
+  have hεle : ∀ x ∈ P, ε ≤ ENNReal.ofReal
+      (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) := by
+    intro x hx
+    refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.mpr ?_)
+    have hqle : ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ ≤ K * M ^ 2 := by
+      refine (inner_mahalanobis_le S x).trans ?_
+      have hKnn : 0 ≤ K := by rw [hK]; exact norm_nonneg _
+      have := hPnorm x hx
+      have hsq : ‖x‖ ^ 2 ≤ M ^ 2 := by
+        apply pow_le_pow_left₀ (norm_nonneg _) this
+      exact mul_le_mul_of_nonneg_left hsq hKnn
+    linarith
+  have hmapped : multivariateGaussian m S A
+      = multivariateGaussian (0 : EuclideanSpace ℝ ι) S P := by
+    rw [← multivariateGaussian_map_const_add S m, Measure.map_apply hshift hAmeas]
+  rw [hmapped, hc]
+  simp only [Measure.smul_apply, smul_eq_mul]
+  have hvolP : volume P = volume A := measure_preimage_add _ _ _
+  rw [withDensity_apply _ hPmeas, mul_assoc, ← hvolP]
+  refine mul_le_mul_left' ?_ c₀
+  calc ε * volume P = ∫⁻ _ in P, ε ∂volume := (setLIntegral_const P ε).symm
+    _ ≤ ∫⁻ x in P, ENNReal.ofReal
+          (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2)) ∂volume :=
+        lintegral_mono_ae (ae_restrict_of_forall_mem hPmeas hεle)
 
 /-- **Mean-uniform tail smallness.** For means in a fixed ball, the Gaussian mass outside
 `closedBall 0 M` is eventually (in `M`) below any `ε > 0`, uniformly over the mean. No
