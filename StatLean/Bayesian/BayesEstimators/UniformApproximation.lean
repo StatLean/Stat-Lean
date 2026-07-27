@@ -32,7 +32,7 @@ open MeasureTheory ProbabilityTheory Filter Topology
 open scoped ENNReal ProbabilityTheory RealInnerProductSpace
 open AsymptoticStatistics (ParametricFamily IsPDFOf DifferentiableQuadraticMean
   fisherInformation)
-open AsymptoticStatistics.AsymptoticRepresentation (productMeasure)
+open AsymptoticStatistics.AsymptoticRepresentation (productMeasure scoreSum)
 open StatLean.Minimaxity (tvDist tvDist_comm tvDist_le_one)
 
 namespace StatLean.Bayesian
@@ -222,7 +222,107 @@ private lemma exists_slow_rate {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω 
       ∀ δ : ℝ≥0∞, 0 < δ →
         Tendsto (fun n => P n {ω | δ ≤ ENNReal.ofReal (1 + Mseq n ^ p) * T n ω})
           atTop (𝓝 0) := by
-  sorry
+  classical
+  have h2p2 : (0 : ℝ) < 2 * p + 2 := by linarith
+  obtain ⟨q, hqdef⟩ : ∃ q : ℝ, q = 1 / (2 * p + 2) := ⟨_, rfl⟩
+  have hq0 : 0 < q := by rw [hqdef]; positivity
+  have hqp : 0 < 1 - q * p := by
+    rw [hqdef, div_mul_eq_mul_div, one_mul, sub_pos, div_lt_one h2p2]
+    linarith
+  obtain ⟨b, hbdef⟩ : ∃ b : ℕ → ℝ,
+      ∀ n, b n = max (∫⁻ ω, T n ω ∂(P n)).toReal (1 / ((n : ℝ) + 1)) := ⟨_, fun _ => rfl⟩
+  have hbpos : ∀ n, 0 < b n := by
+    intro n
+    rw [hbdef n]
+    refine lt_of_lt_of_le ?_ (le_max_right _ _)
+    positivity
+  have hbnn : ∀ n, 0 ≤ b n := fun n => (hbpos n).le
+  have hb0 : Tendsto b atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n => (∫⁻ ω, T n ω ∂(P n)).toReal) atTop (𝓝 0) := by
+      have h := (ENNReal.tendsto_toReal (a := 0) (by simp)).comp hint
+      simpa using h
+    have h2 : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝 0) :=
+      tendsto_one_div_add_atTop_nhds_zero_nat
+    have h3 := h1.max h2
+    simp only [max_self] at h3
+    exact h3.congr fun n => (hbdef n).symm
+  refine ⟨fun n => b n ^ (-q), ?_, fun n => Real.rpow_nonneg (hbnn n) _, ?_⟩
+  · -- the radii diverge
+    have hbw : Tendsto b atTop (𝓝[>] (0 : ℝ)) :=
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hb0
+        (Eventually.of_forall fun n => hbpos n)
+    have hinv : Tendsto (fun n => (b n)⁻¹) atTop atTop := hbw.inv_tendsto_nhdsGT_zero
+    refine ((tendsto_rpow_atTop hq0).comp hinv).congr fun n => ?_
+    simp only [Function.comp_apply]
+    rw [Real.inv_rpow (hbnn n), ← Real.rpow_neg (hbnn n)]
+  · -- Markov's inequality against the explicit rate
+    intro δ hδ
+    have hδ'pos : (0 : ℝ≥0∞) < min δ 1 := lt_min hδ one_pos
+    have hδ'0 : min δ 1 ≠ 0 := hδ'pos.ne'
+    have hδ'top : min δ 1 ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+    have hcnn : ∀ n, (0 : ℝ) ≤ 1 + (b n ^ (-q)) ^ p := by
+      intro n
+      have h := Real.rpow_nonneg (Real.rpow_nonneg (hbnn n) (-q)) p
+      linarith
+    have hIle : ∀ n, ∫⁻ ω, T n ω ∂(P n) ≤ ENNReal.ofReal (b n) := by
+      intro n
+      rw [← ENNReal.ofReal_toReal (hfin n), hbdef n]
+      exact ENNReal.ofReal_le_ofReal (le_max_left _ _)
+    have hbnd : ∀ n, P n {ω | δ ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
+        ≤ (min δ 1)⁻¹ * ENNReal.ofReal ((1 + (b n ^ (-q)) ^ p) * b n) := by
+      intro n
+      have hmk : min δ 1 * P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
+          ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * ∫⁻ ω, T n ω ∂(P n) := by
+        have h := mul_meas_ge_le_lintegral₀ (μ := P n)
+          (((hTmeas n).const_mul (ENNReal.ofReal (1 + (b n ^ (-q)) ^ p))).aemeasurable)
+          (min δ 1)
+        rwa [lintegral_const_mul _ (hTmeas n)] at h
+      have hsub : P n {ω | δ ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
+          ≤ P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω} :=
+        measure_mono fun ω hω => by
+          simp only [Set.mem_setOf_eq] at hω ⊢
+          exact (min_le_left δ 1).trans hω
+      refine hsub.trans ?_
+      calc P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}
+          = (min δ 1)⁻¹ * (min δ 1
+              * P n {ω | min δ 1 ≤ ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * T n ω}) := by
+            rw [← mul_assoc, ENNReal.inv_mul_cancel hδ'0 hδ'top, one_mul]
+        _ ≤ (min δ 1)⁻¹
+              * (ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * ∫⁻ ω, T n ω ∂(P n)) := by
+            gcongr
+        _ ≤ (min δ 1)⁻¹
+              * (ENNReal.ofReal (1 + (b n ^ (-q)) ^ p) * ENNReal.ofReal (b n)) := by
+            gcongr
+            exact hIle n
+        _ = (min δ 1)⁻¹ * ENNReal.ofReal ((1 + (b n ^ (-q)) ^ p) * b n) := by
+            rw [← ENNReal.ofReal_mul (hcnn n)]
+    have hreal : Tendsto (fun n => (1 + (b n ^ (-q)) ^ p) * b n) atTop (𝓝 0) := by
+      have heq : ∀ n, (1 + (b n ^ (-q)) ^ p) * b n = b n + b n ^ (1 - q * p) := by
+        intro n
+        have h1 : (b n ^ (-q)) ^ p = b n ^ (-(q * p)) := by
+          rw [← Real.rpow_mul (hbnn n)]
+          congr 1
+          ring
+        have h2 : b n ^ (-(q * p)) * b n = b n ^ (1 - q * p) := by
+          rw [show (1 : ℝ) - q * p = -(q * p) + 1 by ring, Real.rpow_add (hbpos n),
+            Real.rpow_one]
+        calc (1 + (b n ^ (-q)) ^ p) * b n = b n + (b n ^ (-q)) ^ p * b n := by ring
+          _ = b n + b n ^ (1 - q * p) := by rw [h1, h2]
+      have hlim : Tendsto (fun n => b n ^ (1 - q * p)) atTop (𝓝 0) := by
+        have hcont : ContinuousAt (fun x : ℝ => x ^ (1 - q * p)) 0 :=
+          Real.continuousAt_rpow_const 0 (1 - q * p) (Or.inr hqp.le)
+        have h := hcont.tendsto.comp hb0
+        simpa [Real.zero_rpow (ne_of_gt hqp)] using h
+      have h := hb0.add hlim
+      simp only [zero_add] at h
+      exact h.congr fun n => (heq n).symm
+    have hfinal : Tendsto
+        (fun n => (min δ 1)⁻¹ * ENNReal.ofReal ((1 + (b n ^ (-q)) ^ p) * b n)) atTop (𝓝 0) := by
+      have h := ENNReal.Tendsto.const_mul (ENNReal.tendsto_ofReal hreal)
+        (Or.inr (ENNReal.inv_ne_top.mpr hδ'0))
+      simpa using h
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le (g := fun _ : ℕ => (0 : ℝ≥0∞))
+      tendsto_const_nhds hfinal (fun n => zero_le _) hbnd
 
 /-! ### The Gaussian tails -/
 
@@ -250,7 +350,31 @@ private lemma tight_polyEnvelope
     {p R : ℝ} (hp : 0 ≤ p) (hR : 0 ≤ R) (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ C : ℝ≥0∞, C ≠ 0 ∧ C ≠ ∞ ∧ ∀ᶠ n in atTop, productMeasure M μ θ₀ n
       {ω | C < ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))} ≤ ε := by
-  sorry
+  obtain ⟨K, hK0, hKev⟩ := scoreSum_uniformly_tight hPDF hsc hDQM hJ_pd hJ hε
+  obtain ⟨c, hcnn, hc⟩ : ∃ c : ℝ, 0 ≤ c ∧ ∀ x : EuclideanSpace ℝ (Fin k),
+      ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) x‖ ≤ c * ‖x‖ :=
+    ⟨‖(Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ : EuclideanSpace ℝ (Fin k) →L[ℝ]
+      EuclideanSpace ℝ (Fin k))‖, norm_nonneg _, fun x => ContinuousLinearMap.le_opNorm _ _⟩
+  have h2p : (0 : ℝ) < 2 ^ p := Real.rpow_pos_of_pos (by norm_num) p
+  have hRcK : (0 : ℝ) ≤ R + c * K := by positivity
+  have hpow : (0 : ℝ) ≤ (R + c * K) ^ p := Real.rpow_nonneg hRcK p
+  refine ⟨ENNReal.ofReal (2 ^ p * (1 + (R + c * K) ^ p)), ?_, ENNReal.ofReal_ne_top, ?_⟩
+  · simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
+    nlinarith
+  · filter_upwards [hKev] with n hn
+    refine le_trans (measure_mono ?_) hn
+    intro ω hω
+    simp only [Set.mem_setOf_eq] at hω ⊢
+    by_contra hcon
+    rw [not_lt] at hcon
+    have hΔ : ‖bvmEffScore J sc n ω‖ ≤ c * K :=
+      (hc _).trans (mul_le_mul_of_nonneg_left hcon hcnn)
+    have hmono : (R + ‖bvmEffScore J sc n ω‖) ^ p ≤ (R + c * K) ^ p :=
+      Real.rpow_le_rpow (by positivity) (by linarith) hp
+    have hfin : ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))
+        ≤ ENNReal.ofReal (2 ^ p * (1 + (R + c * K) ^ p)) :=
+      ENNReal.ofReal_le_ofReal (by nlinarith)
+    exact absurd hω (not_lt.2 hfin)
 
 /-! ### The two-sided deviation bound at a fixed truncation radius -/
 
