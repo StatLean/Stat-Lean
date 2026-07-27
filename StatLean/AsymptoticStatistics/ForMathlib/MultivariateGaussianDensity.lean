@@ -39,7 +39,7 @@ abstract constant) and the self-adjointness moves for `CFC.sqrt` already used in
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology Matrix
-open scoped RealInnerProductSpace ENNReal
+open scoped RealInnerProductSpace ENNReal MatrixOrder
 
 namespace AsymptoticStatistics
 
@@ -114,6 +114,67 @@ theorem multivariateGaussian_map_matrix_inv
   rw [hcov, map_zero] at h
   exact h
 
+-- The standard Gaussian on `EuclideanSpace ℝ ι` is a positive finite multiple of
+-- `volume.withDensity (exp (−‖x‖²/2))`; the constant `(2π)^{-d/2}` is left abstract.
+private lemma stdGaussian_eq_smul_withDensity_euclidean :
+    ∃ c : ℝ≥0∞, 0 < c ∧ c ≠ ∞ ∧
+      stdGaussian (EuclideanSpace ℝ ι)
+        = c • (volume : Measure (EuclideanSpace ℝ ι)).withDensity
+            (fun x => ENNReal.ofReal (Real.exp (-‖x‖ ^ 2 / 2))) := by
+  classical
+  have hsq : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.mpr (by positivity)
+  set C : ℝ := (Real.sqrt (2 * Real.pi))⁻¹ ^ (Fintype.card ι) with hC
+  have hCpos : 0 < C := by rw [hC]; positivity
+  refine ⟨ENNReal.ofReal C, by simpa using hCpos, ENNReal.ofReal_ne_top, ?_⟩
+  have hpres : MeasurePreserving (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι)
+      (volume : Measure (ι → ℝ)) (volume : Measure (EuclideanSpace ℝ ι)) :=
+    PiLp.volume_preserving_toLp ι
+  set hd : EuclideanSpace ℝ ι → ℝ≥0∞ :=
+    fun y => ENNReal.ofReal (C * Real.exp (-‖y‖ ^ 2 / 2)) with hhd
+  have hhdmeas : Measurable hd := by rw [hhd]; fun_prop
+  have hcomp : (hd ∘ (WithLp.toLp 2 : (ι → ℝ) → EuclideanSpace ℝ ι))
+      = fun x : ι → ℝ => ∏ i, gaussianPDF 0 1 (x i) := by
+    funext x
+    have hnorm : ‖(WithLp.toLp 2 x : EuclideanSpace ℝ ι)‖ ^ 2 = ∑ i, x i ^ 2 :=
+      EuclideanSpace.real_norm_sq_eq _
+    have hprod : ∏ i, gaussianPDFReal 0 1 (x i) = C * Real.exp (-(∑ i, x i ^ 2) / 2) := by
+      have hterm : ∀ i : ι, gaussianPDFReal 0 1 (x i)
+          = (Real.sqrt (2 * Real.pi))⁻¹ * Real.exp (-(x i ^ 2) / 2) := by
+        intro i; simp [gaussianPDFReal]
+      rw [Finset.prod_congr rfl (fun i _ => hterm i), Finset.prod_mul_distrib,
+        Finset.prod_const, ← Real.exp_sum, Finset.card_univ, hC]
+      congr 1
+      rw [← Finset.sum_div, ← Finset.sum_neg_distrib]
+    simp only [Function.comp_apply, hhd, hnorm, gaussianPDF]
+    rw [← hprod, ← ENNReal.ofReal_prod_of_nonneg]
+    exact fun i _ => gaussianPDFReal_nonneg 0 1 (x i)
+  rw [← map_pi_eq_stdGaussian, pi_gaussianReal_eq_withDensity, ← hcomp,
+    ← Measure.withDensity_map_eq_map_withDensity _ _ hpres.measurable _ hhdmeas, hpres.map_eq]
+  have hsplit : hd = (ENNReal.ofReal C) •
+      (fun y : EuclideanSpace ℝ ι => ENNReal.ofReal (Real.exp (-‖y‖ ^ 2 / 2))) := by
+    funext y
+    simp only [Pi.smul_apply, smul_eq_mul, hhd]
+    rw [ENNReal.ofReal_mul hCpos.le]
+  rw [hsplit, withDensity_smul _ (by fun_prop)]
+
+-- Pushforward of Lebesgue measure under an invertible matrix CLM is a positive finite
+-- multiple of Lebesgue measure (Haar uniqueness; the `|det|` factor is left abstract).
+private lemma exists_smul_volume_map_toEuclideanCLM {Q : Matrix ι ι ℝ} (hQ : Q.PosDef) :
+    ∃ r : ℝ≥0∞, 0 < r ∧ r ≠ ∞ ∧
+      (volume : Measure (EuclideanSpace ℝ ι)).map (Matrix.toEuclideanCLM (𝕜 := ℝ) Q)
+        = r • (volume : Measure (EuclideanSpace ℝ ι)) := by
+  have hUnit : IsUnit (Matrix.toEuclideanCLM (𝕜 := ℝ) Q) :=
+    (MulEquiv.isUnit_map (Matrix.toEuclideanCLM (𝕜 := ℝ) (n := ι))).mpr hQ.isUnit
+  let T : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι := ContinuousLinearEquiv.ofUnit hUnit.unit
+  have hTeq : ⇑T = ⇑(Matrix.toEuclideanCLM (𝕜 := ℝ) Q) := rfl
+  haveI hHaar : ((volume : Measure (EuclideanSpace ℝ ι)).map T).IsAddHaarMeasure :=
+    ContinuousLinearEquiv.isAddHaarMeasure_map T (volume : Measure (EuclideanSpace ℝ ι))
+  refine ⟨(Measure.addHaarScalarFactor ((volume : Measure (EuclideanSpace ℝ ι)).map T)
+      (volume : Measure (EuclideanSpace ℝ ι)) : ℝ≥0∞), ?_, ENNReal.coe_ne_top, ?_⟩
+  · exact_mod_cast Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _
+  · rw [← hTeq]
+    exact Measure.isAddLeftInvariant_eq_smul _ _
+
 /-- **Constant-free Lebesgue density of the centered Gaussian.** For positive definite `S`
 there is a positive finite constant `c` (the normalizer `(2π)^{-d/2} det S^{-1/2}`, left
 abstract) with
@@ -127,7 +188,64 @@ theorem multivariateGaussian_eq_smul_withDensity
         = c • volume.withDensity
             (fun x => ENNReal.ofReal
               (Real.exp (-⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫ / 2))) := by
-  sorry
+  classical
+  obtain ⟨c₀, hc₀pos, hc₀top, hstd⟩ := stdGaussian_eq_smul_withDensity_euclidean (ι := ι)
+  have hQPD : (CFC.sqrt S).PosDef := hS.posDef_sqrt
+  obtain ⟨r, hrpos, hrtop, hr⟩ := exists_smul_volume_map_toEuclideanCLM hQPD
+  have hQdet : IsUnit (CFC.sqrt S).det := (Matrix.isUnit_iff_isUnit_det _).mp hQPD.isUnit
+  have hQQ : CFC.sqrt S * CFC.sqrt S = S := CFC.sqrt_mul_sqrt_self _ hS.posSemidef.nonneg
+  have hBB : (CFC.sqrt S)⁻¹ * (CFC.sqrt S)⁻¹ = S⁻¹ := by
+    rw [← Matrix.mul_inv_rev, hQQ]
+  have hBQ : (CFC.sqrt S)⁻¹ * CFC.sqrt S = 1 := Matrix.nonsing_inv_mul _ hQdet
+  have hBsa : IsSelfAdjoint ((CFC.sqrt S)⁻¹) := hQPD.isHermitian.inv
+  set_option backward.isDefEq.respectTransparency false in
+  have hA'sa : IsSelfAdjoint (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) :=
+    hBsa.map (Matrix.toEuclideanCLM (𝕜 := ℝ))
+  have hswap : ∀ u v : EuclideanSpace ℝ ι,
+      ⟪u, (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) v⟫
+        = ⟪(Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) u, v⟫ := by
+    intro u v
+    have h := ContinuousLinearMap.adjoint_inner_left
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) v u
+    rw [hA'sa.adjoint_eq] at h
+    exact h.symm
+  -- the two mutually inverse CLMs
+  have hA'A : ∀ x : EuclideanSpace ℝ ι,
+      (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹)
+        ((Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) x) = x := by
+    intro x
+    have hid : (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) *
+        (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) = 1 := by
+      rw [← map_mul, hBQ, map_one]
+    exact congrArg (fun T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι => T x) hid
+  -- the Mahalanobis form is the squared norm after whitening
+  have hdens : ∀ x : EuclideanSpace ℝ ι,
+      ⟪x, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x⟫
+        = ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) x‖ ^ 2 := by
+    intro x
+    have hSinv : (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) x
+        = (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹)
+            ((Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)⁻¹) x) := by
+      rw [← hBB, map_mul]; rfl
+    rw [hSinv, hswap, real_inner_self_eq_norm_sq]
+  refine ⟨c₀ * r, ENNReal.mul_pos hc₀pos.ne' hrpos.ne', ENNReal.mul_ne_top hc₀top hrtop, ?_⟩
+  have hmvg : multivariateGaussian (0 : EuclideanSpace ℝ ι) S
+      = (stdGaussian (EuclideanSpace ℝ ι)).map
+          (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) := by
+    rw [multivariateGaussian]
+    congr 1
+    funext x
+    rw [zero_add]
+  have hcompose : ((fun y : EuclideanSpace ℝ ι =>
+        ENNReal.ofReal (Real.exp (-⟪y, (Matrix.toEuclideanCLM (𝕜 := ℝ) S⁻¹) y⟫ / 2)))
+      ∘ (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)))
+      = fun y : EuclideanSpace ℝ ι => ENNReal.ofReal (Real.exp (-‖y‖ ^ 2 / 2)) := by
+    funext y
+    simp only [Function.comp_apply]
+    rw [hdens, hA'A y]
+  rw [hmvg, hstd, Measure.map_smul, ← hcompose,
+    ← Measure.withDensity_map_eq_map_withDensity _ _ (by fun_prop) _ (by fun_prop), hr,
+    withDensity_smul_measure, smul_smul]
 
 /-- **Mean-shift exponential tilt** (Cameron–Martin, invertible-covariance form):
 `N(m,S) = N(0,S).withDensity (fun y => exp (⟪S⁻¹m, y⟫ − ⟪m, S⁻¹m⟫/2))`.
