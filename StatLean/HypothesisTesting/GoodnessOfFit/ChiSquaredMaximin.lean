@@ -1581,6 +1581,152 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
   filter_upwards with n
   rw [hstep2 n]
 
+/-! ### Uniform anti-concentration far from the drift
+
+BRICK 2 of the attainment note, in a form that also removes the note's case split.  Under
+the local alternative attached to *any* centred shift `h` the standardized score vector
+`Zₙ` has mean exactly `v(h)` and a coordinatewise variance bounded by `∑ⱼ ψₐ(j)²`,
+uniformly in `n` and in `h` — because the cell weights are a probability vector, so
+`∑ⱼ wⱼ ψₐ(j)² ≤ ∑ⱼ ψₐ(j)²` whatever the drift.  Chebyshev then bounds
+`P{‖Zₙ − v(h)‖ ≥ t}` by `C₀/t²` with `C₀` free of `n` and `h`.
+
+Consequence used below: the near-minimisers of the power over the (unbounded, `n`-dependent)
+shell are automatically bounded, since a shift with `‖v(h)‖` large has power close to `1`.
+That is what the note's "case B, `‖hₙ‖ → ∞`" is for; making the estimate uniform lets
+compactness be applied directly, with no subsequence dichotomy. -/
+
+private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ} {h : Fin (k + 1) → ℝ}
+    {ν : Measure (Fin (k + 1))} [IsProbabilityMeasure ν] {n : ℕ}
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0) (hn : 0 < n)
+    (hν : ∀ j, ν.real {j} = π j + h j / Real.sqrt (n : ℝ))
+    {t : ℝ} (ht : 0 < t) :
+    (Measure.pi fun _ : Fin n => ν).real
+        {d | t ≤ ‖mScoreVec sc d - mDriftVec sc h‖}
+      ≤ (∑ a : Fin k, ∑ j, (sc a j) ^ 2) / t ^ 2 := by
+  classical
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+  have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) := Real.mul_self_sqrt hnR.le
+  set A : Measure (Fin n → Fin (k + 1)) := Measure.pi fun _ : Fin n => ν with hAdef
+  haveI hAprob : IsProbabilityMeasure A := by rw [hAdef]; infer_instance
+  -- integrals of one coordinate
+  have heval : ∀ (i : Fin n) (f : Fin (k + 1) → ℝ), ∫ d, f (d i) ∂A = ∫ x, f x ∂ν := by
+    intro i f
+    have hmp := (measurePreserving_eval (fun _ : Fin n => ν) i).map_eq
+    calc ∫ d, f (d i) ∂A
+        = ∫ x, f x ∂(A.map (fun d : Fin n → Fin (k + 1) => d i)) := by
+          rw [integral_map (measurable_pi_apply i).aemeasurable
+            (measurable_of_countable f).aestronglyMeasurable]
+      _ = ∫ x, f x ∂ν := by rw [hAdef, hmp]
+  have hintν : ∀ f : Fin (k + 1) → ℝ, ∫ x, f x ∂ν = ∑ j, ν.real {j} * f j := by
+    intro f
+    rw [integral_fintype (μ := ν) (f := f) Integrable.of_finite]
+    exact Finset.sum_congr rfl fun j _ => by rw [smul_eq_mul]
+  have hMemLp : ∀ a : Fin k, MemLp (sc a) 2 ν := by
+    intro a
+    exact (memLp_two_iff_integrable_sq
+      (measurable_of_countable (sc a)).aestronglyMeasurable).mpr Integrable.of_finite
+  -- the mean of one score under the drifting cell law
+  have hmean : ∀ a : Fin k,
+      ∫ x, sc a x ∂ν = (Real.sqrt (n : ℝ))⁻¹ * mDriftVec sc h a := by
+    intro a
+    have hterm : ∀ j : Fin (k + 1),
+        ν.real {j} * sc a j
+          = π j * sc a j + (Real.sqrt (n : ℝ))⁻¹ * (h j * sc a j) := by
+      intro j
+      rw [hν j, add_mul]
+      congr 1
+      rw [div_mul_eq_mul_div, div_eq_inv_mul]
+    rw [hintν, Finset.sum_congr rfl fun j _ => hterm j, Finset.sum_add_distrib, hcent a,
+      zero_add, mDriftVec_apply, Finset.mul_sum]
+  -- the mean of the standardized score vector is the drift
+  have hZmean : ∀ a : Fin k,
+      ∫ d, mScoreVec sc d a ∂A = mDriftVec sc h a := by
+    intro a
+    have hsum : ∫ d, (∑ i, sc a (d i)) ∂A = (n : ℝ) * ∫ x, sc a x ∂ν := by
+      rw [integral_finset_sum _ (fun i _ => Integrable.of_finite)]
+      rw [Finset.sum_congr rfl fun i _ => heval i (sc a)]
+      simp [Finset.sum_const, nsmul_eq_mul]
+    have : ∫ d, mScoreVec sc d a ∂A
+        = (Real.sqrt (n : ℝ))⁻¹ * ∫ d, (∑ i, sc a (d i)) ∂A := by
+      rw [← integral_const_mul]
+      exact integral_congr_ae (Filter.Eventually.of_forall fun d => mScoreVec_apply sc d a)
+    have hinv2 : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = (n : ℝ)⁻¹ := by
+      rw [← mul_inv, hsq]
+    rw [this, hsum, hmean a,
+      show (Real.sqrt (n : ℝ))⁻¹ * ((n : ℝ) * ((Real.sqrt (n : ℝ))⁻¹ * mDriftVec sc h a))
+        = ((Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹) * ((n : ℝ) * mDriftVec sc h a)
+        from by ring,
+      hinv2, ← mul_assoc, inv_mul_cancel₀ hnR.ne', one_mul]
+  -- the variance of one coordinate is bounded by a constant free of `n` and `h`
+  have hvarbound : ∀ a : Fin k,
+      ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A ≤ ∑ j, (sc a j) ^ 2 := by
+    intro a
+    have hZmeas : AEMeasurable (fun d : Fin n → Fin (k + 1) => mScoreVec sc d a) A :=
+      (measurable_of_countable _).aemeasurable
+    have hvar : Var[fun d : Fin n → Fin (k + 1) => mScoreVec sc d a; A]
+        = ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
+      rw [variance_eq_integral hZmeas, hZmean a]
+    have hfun : (fun d : Fin n → Fin (k + 1) => mScoreVec sc d a)
+        = (fun d : Fin n → Fin (k + 1) =>
+            (Real.sqrt (n : ℝ))⁻¹ * (∑ i : Fin n, fun d : Fin n → Fin (k + 1) => sc a (d i)) d) := by
+      funext d
+      rw [mScoreVec_apply]
+      simp
+    have hvsum : Var[∑ i : Fin n, fun d : Fin n → Fin (k + 1) => sc a (d i); A]
+        = (n : ℝ) * Var[sc a; ν] := by
+      rw [hAdef, variance_sum_pi (fun _ => hMemLp a)]
+      simp [Finset.sum_const, nsmul_eq_mul]
+    have hstep : Var[fun d : Fin n → Fin (k + 1) => mScoreVec sc d a; A] = Var[sc a; ν] := by
+      have hinvsq : ((Real.sqrt (n : ℝ))⁻¹) ^ 2 = (n : ℝ)⁻¹ := by
+        rw [inv_pow, Real.sq_sqrt hnR.le]
+      rw [hfun, variance_const_mul, hvsum, hinvsq, ← mul_assoc, inv_mul_cancel₀ hnR.ne',
+        one_mul]
+    have hle : Var[sc a; ν] ≤ ∑ j, (sc a j) ^ 2 := by
+      refine (variance_le_expectation_sq
+        (measurable_of_countable (sc a)).aestronglyMeasurable).trans ?_
+      have hsq2 : (ν[(sc a) ^ 2] : ℝ) = ∑ j, ν.real {j} * (sc a j) ^ 2 := by
+        rw [show (fun x => ((sc a) ^ 2) x) = fun x => (sc a x) ^ 2 from rfl]
+        exact hintν (fun x => (sc a x) ^ 2)
+      rw [hsq2]
+      refine Finset.sum_le_sum fun j _ => ?_
+      have h1 : ν.real {j} ≤ 1 := by
+        rw [MeasureTheory.Measure.real]
+        exact ENNReal.toReal_le_of_le_ofReal zero_le_one
+          (by simpa using (prob_le_one : ν {j} ≤ 1))
+      nlinarith [sq_nonneg (sc a j), measureReal_nonneg (μ := ν) (s := {j})]
+    rw [← hvar, hstep]
+    exact hle
+  -- Markov
+  set Y : (Fin n → Fin (k + 1)) → ℝ :=
+    fun d => ‖mScoreVec sc d - mDriftVec sc h‖ ^ 2 with hYdef
+  have hYint : ∫ d, Y d ∂A ≤ ∑ a : Fin k, ∑ j, (sc a j) ^ 2 := by
+    have hYeq : ∫ d, Y d ∂A = ∑ a : Fin k, ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
+      rw [← integral_finset_sum _ (fun a _ => Integrable.of_finite)]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun d => ?_)
+      rw [hYdef]
+      simpa using EuclideanSpace.real_norm_sq_eq (mScoreVec sc d - mDriftVec sc h)
+    rw [hYeq]
+    exact Finset.sum_le_sum fun a _ => hvarbound a
+  have hset : {d : Fin n → Fin (k + 1) | t ≤ ‖mScoreVec sc d - mDriftVec sc h‖}
+      = {d | t ^ 2 ≤ Y d} := by
+    ext d
+    simp only [Set.mem_setOf_eq, hYdef]
+    have hnn : (0 : ℝ) ≤ ‖mScoreVec sc d - mDriftVec sc h‖ := norm_nonneg _
+    constructor
+    · intro hr; nlinarith
+    · intro hr; nlinarith
+  have hmarkov := mul_meas_ge_le_integral_of_nonneg
+    (μ := A) (f := Y) (Filter.Eventually.of_forall fun d => by positivity)
+    Integrable.of_finite (t ^ 2)
+  rw [hset]
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < t ^ 2)]
+  calc (A.real {d | t ^ 2 ≤ Y d}) * t ^ 2
+      = t ^ 2 * A.real {d | t ^ 2 ≤ Y d} := by ring
+    _ ≤ ∫ d, Y d ∂A := hmarkov
+    _ ≤ _ := hYint
+
 /-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
 of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
 `multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
