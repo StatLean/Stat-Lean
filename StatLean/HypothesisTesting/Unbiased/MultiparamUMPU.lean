@@ -4,6 +4,9 @@ import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.PointEstimation.Completeness.Defs
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 import Mathlib.Analysis.Convex.SpecificFunctions.Pow
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.Analysis.Convex.Topology
+import StatLean.PointEstimation.ForMathlib.MGFUniquenessPi
 
 /-!
 # UMP unbiased tests for multiparameter exponential families
@@ -1475,6 +1478,68 @@ private lemma integral_comp_eq_of_le_of_segment [BorelSpace Ξ]
   have hge' : α ≤ ∫ x, ψ (U x, T x) ∂(P p₀) :=
     ge_of_tendsto' hlim fun n => hge _ (hpos n) (h01 n).2
   linarith
+
+/-- **An interior point of the boundary slice.** For a convex parameter set whose affine span
+is everything, in finite dimension, and which reaches strictly below and strictly above `θ₀`,
+the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` has nonempty interior in `Ξ`.
+
+The two hypotheses are exactly the two amendments discussed at `boundedlyComplete_boundary`:
+`affineSpan ℝ Ω = ⊤` (not the weaker `Submodule.span ℝ Ω = ⊤`) and finite dimension. -/
+private lemma interior_slice_nonempty [FiniteDimensional ℝ Ξ]
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    (interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}).Nonempty := by
+  obtain ⟨z, hz⟩ := (Convex.interior_nonempty_iff_affineSpan_eq_top hΩ_convex).2 hΩ_aff
+  -- push an interior point of `Ω` onto the surface `θ = θ₀` along a segment
+  obtain ⟨w, hw, hwθ⟩ : ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+    have hstep : ∀ q : ℝ × Ξ, q ∈ Ω → z.1 < θ₀ → θ₀ < q.1 →
+        ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+      intro q hq hz1 hq1
+      set s : ℝ := (θ₀ - z.1) / (q.1 - z.1) with hsdef
+      have hden : 0 < q.1 - z.1 := by linarith
+      have hs0 : 0 < s := div_pos (by linarith) hden
+      have hs1 : s < 1 := by
+        rw [hsdef, div_lt_one hden]; linarith
+      refine ⟨(1 - s) • z + s • q,
+        Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) hs0.le (by ring),
+        ?_⟩
+      have hfst : ((1 - s) • z + s • q).1 = (1 - s) * z.1 + s * q.1 := by
+        simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+      have hkey : s * (q.1 - z.1) = θ₀ - z.1 := by
+        rw [hsdef]; field_simp
+      rw [hfst]
+      linear_combination hkey
+    rcases lt_trichotomy z.1 θ₀ with h | h | h
+    · obtain ⟨q, hq, hqθ⟩ := hΩ_gt
+      exact hstep q hq h hqθ
+    · exact ⟨z, hz, h⟩
+    · -- symmetric: reflect the first coordinate
+      obtain ⟨q, hq, hqθ⟩ := hΩ_lt
+      set t : ℝ := (z.1 - θ₀) / (z.1 - q.1) with htdef
+      have hden : 0 < z.1 - q.1 := by linarith
+      have ht0 : 0 < t := div_pos (by linarith) hden
+      have ht1 : t < 1 := by rw [htdef, div_lt_one hden]; linarith
+      refine ⟨(1 - t) • z + t • q,
+        Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) ht0.le (by ring),
+        ?_⟩
+      have hfst : ((1 - t) • z + t • q).1 = (1 - t) * z.1 + t * q.1 := by
+        simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+      have hkey : t * (z.1 - q.1) = z.1 - θ₀ := by
+        rw [htdef]; field_simp
+      rw [hfst]
+      linear_combination -hkey
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior w hw
+  have hsub : Metric.ball w.2 r ⊆ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
+    intro ϑ hϑ
+    have hmem : ((θ₀, ϑ) : ℝ × Ξ) ∈ Metric.ball w r := by
+      rw [Metric.mem_ball, Prod.dist_eq]
+      refine max_lt ?_ (Metric.mem_ball.1 hϑ)
+      rw [hwθ]
+      simpa using hr
+    have hΩmem : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω := interior_subset (hball hmem)
+    exact hΩmem
+  exact ⟨w.2, mem_interior.2 ⟨Metric.ball w.2 r, hsub, Metric.isOpen_ball,
+    Metric.mem_ball_self hr⟩⟩
 
 /-- **⚠ LIFTED — the single remaining gap of this file.**
 
