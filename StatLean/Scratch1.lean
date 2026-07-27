@@ -215,4 +215,197 @@ private lemma dkw_levy {a : ℝ} (ha : 0 < a) :
 
 end Levy
 
+
+section Moments
+
+variable (σ : Equiv.Perm (Fin n))
+
+private lemma signVec_ae_abs_le : ∀ᵐ s ∂signVec n, ∀ i, |s i| ≤ 1 := by
+  filter_upwards [signVec_ae_pm n] with s hs i
+  rcases hs i with h | h <;> simp [h]
+
+private lemma dkwWalk_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) (j : ℕ) :
+    |dkwWalk σ s j| ≤ n := by
+  calc |dkwWalk σ s j| ≤ ∑ i ∈ dkwPre σ j, |s i| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _i ∈ dkwPre σ j, (1 : ℝ) := Finset.sum_le_sum fun i _ => hs i
+    _ = ((dkwPre σ j).card : ℝ) := by simp
+    _ ≤ (n : ℝ) := by
+        have := Finset.card_le_univ (dkwPre σ j)
+        simp only [Finset.card_univ, Fintype.card_fin] at this
+        exact_mod_cast this
+
+private lemma dkwMax_abs_le {s : Fin n → ℝ} (hs : ∀ i, |s i| ≤ 1) :
+    dkwMax σ s ≤ n := by
+  obtain ⟨j, hj⟩ := exists_dkwMax_eq σ s
+  rw [hj]; exact dkwWalk_abs_le σ hs _
+
+private lemma integrable_dkwMax : Integrable (dkwMax σ) (signVec n) := by
+  refine Integrable.mono' (integrable_const (n : ℝ))
+    (measurable_dkwMax σ).aestronglyMeasurable ?_
+  filter_upwards [signVec_ae_abs_le (n := n)] with s hs
+  rw [Real.norm_eq_abs, abs_of_nonneg (dkwMax_nonneg σ s)]
+  exact dkwMax_abs_le σ hs
+
+private lemma integrable_dkwWalk (j : ℕ) :
+    Integrable (fun s => dkwWalk σ s j) (signVec n) := by
+  refine Integrable.mono' (integrable_const (n : ℝ))
+    (measurable_dkwWalk σ j).aestronglyMeasurable ?_
+  filter_upwards [signVec_ae_abs_le (n := n)] with s hs
+  rw [Real.norm_eq_abs]
+  exact dkwWalk_abs_le σ hs j
+
+private lemma integrable_dkwWalk_sq (j : ℕ) :
+    Integrable (fun s => dkwWalk σ s j ^ 2) (signVec n) := by
+  refine Integrable.mono' (integrable_const ((n : ℝ) ^ 2))
+    ((measurable_dkwWalk σ j).pow_const 2).aestronglyMeasurable ?_
+  filter_upwards [signVec_ae_abs_le (n := n)] with s hs
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+  have h1 : |dkwWalk σ s j| ≤ (n : ℝ) := dkwWalk_abs_le σ hs j
+  have h0 : (0 : ℝ) ≤ |dkwWalk σ s j| := abs_nonneg _
+  have h2 : dkwWalk σ s j ^ 2 = |dkwWalk σ s j| ^ 2 := (sq_abs _).symm
+  rw [h2]
+  nlinarith
+
+/-! Coordinate moments of the sign vector. -/
+
+private lemma integral_coord (i : Fin n) {f : ℝ → ℝ} (hf : Measurable f) :
+    ∫ s, f (s i) ∂signVec n = ∫ x, f x ∂radLaw := by
+  have hmp := measurePreserving_eval_signVec n i
+  conv_rhs => rw [← hmp.map_eq]
+  rw [integral_map (measurable_pi_apply i).aemeasurable hf.aestronglyMeasurable]
+
+private lemma integrable_coord (i : Fin n) :
+    Integrable (fun s : Fin n → ℝ => s i) (signVec n) := by
+  refine Integrable.mono' (integrable_const (1 : ℝ))
+    (measurable_pi_apply i).aestronglyMeasurable ?_
+  filter_upwards [signVec_ae_abs_le (n := n)] with s hs
+  rw [Real.norm_eq_abs]; exact hs i
+
+private lemma integrable_coord_mul (i j : Fin n) :
+    Integrable (fun s : Fin n → ℝ => s i * s j) (signVec n) := by
+  refine Integrable.mono' (integrable_const (1 : ℝ))
+    (((measurable_pi_apply i).mul (measurable_pi_apply j))).aestronglyMeasurable ?_
+  filter_upwards [signVec_ae_abs_le (n := n)] with s hs
+  rw [Real.norm_eq_abs, abs_mul]
+  have h1 := hs i
+  have h2 := hs j
+  nlinarith [abs_nonneg (s i), abs_nonneg (s j)]
+
+private lemma integral_coord_id (i : Fin n) : ∫ s : Fin n → ℝ, s i ∂signVec n = 0 := by
+  have h := integral_coord (n := n) i (f := fun x => x) measurable_id
+  rw [h]; exact radLaw_integral_id
+
+private lemma integral_coord_sq (i : Fin n) :
+    ∫ s : Fin n → ℝ, s i * s i ∂signVec n = 1 := by
+  have h := integral_coord (n := n) i (f := fun x => x * x)
+    (measurable_id.mul measurable_id)
+  rw [h, radLaw_integral]; norm_num
+
+private lemma integral_coord_cross {i j : Fin n} (hij : i ≠ j) :
+    ∫ s : Fin n → ℝ, s i * s j ∂signVec n = 0 := by
+  have hind : IndepFun (fun s : Fin n → ℝ => s i) (fun s : Fin n → ℝ => s j) (signVec n) :=
+    (iIndepFun_eval_signVec n).indepFun hij
+  rw [hind.integral_fun_mul_eq_mul_integral (measurable_pi_apply i).aestronglyMeasurable
+    (measurable_pi_apply j).aestronglyMeasurable]
+  change (∫ s : Fin n → ℝ, s i ∂signVec n) * (∫ s : Fin n → ℝ, s j ∂signVec n) = 0
+  rw [integral_coord_id, zero_mul]
+
+private lemma integral_dkwWalk_sq_full :
+    ∫ s, dkwWalk σ s n ^ 2 ∂signVec n = n := by
+  classical
+  have hW : (fun s : Fin n → ℝ => dkwWalk σ s n ^ 2)
+      = fun s : Fin n → ℝ => ∑ i, ∑ j, s i * s j := by
+    funext s
+    simp only [dkwWalk, dkwPre_full]
+    rw [sq, Finset.sum_mul_sum]
+  rw [hW]
+  rw [integral_finset_sum _ (fun i _ =>
+    integrable_finset_sum _ (fun j _ => integrable_coord_mul i j))]
+  have hrow : ∀ i : Fin n, ∫ s : Fin n → ℝ, ∑ j, s i * s j ∂signVec n = 1 := by
+    intro i
+    rw [integral_finset_sum _ (fun j _ => integrable_coord_mul i j)]
+    rw [Finset.sum_eq_single i (fun j _ hji => integral_coord_cross (Ne.symm hji))
+      (fun h => absurd (Finset.mem_univ i) h)]
+    exact integral_coord_sq i
+  rw [Finset.sum_congr rfl (fun i _ => hrow i)]
+  simp
+
+private lemma integral_abs_dkwWalk_le (hn : 0 < n) :
+    ∫ s, |dkwWalk σ s n| ∂signVec n ≤ Real.sqrt n := by
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsq : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR
+  have hss : Real.sqrt n * Real.sqrt n = (n : ℝ) := Real.mul_self_sqrt hnR.le
+  have hpt : ∀ s : Fin n → ℝ,
+      |dkwWalk σ s n| ≤ (dkwWalk σ s n ^ 2 + (n : ℝ)) / (2 * Real.sqrt n) := by
+    intro s
+    rw [le_div_iff₀ (by positivity)]
+    nlinarith [sq_nonneg (|dkwWalk σ s n| - Real.sqrt n), sq_abs (dkwWalk σ s n)]
+  have hint2 : Integrable (fun s : Fin n → ℝ =>
+      (dkwWalk σ s n ^ 2 + (n : ℝ)) / (2 * Real.sqrt n)) (signVec n) :=
+    ((integrable_dkwWalk_sq σ n).add (integrable_const _)).div_const _
+  calc ∫ s, |dkwWalk σ s n| ∂signVec n
+      ≤ ∫ s, (dkwWalk σ s n ^ 2 + (n : ℝ)) / (2 * Real.sqrt n) ∂signVec n :=
+        integral_mono ((integrable_dkwWalk σ n).abs) hint2 hpt
+    _ = ((∫ s, dkwWalk σ s n ^ 2 ∂signVec n) + (n : ℝ)) / (2 * Real.sqrt n) := by
+        rw [integral_div, integral_add (integrable_dkwWalk_sq σ n) (integrable_const _)]
+        simp
+    _ = Real.sqrt n := by
+        rw [integral_dkwWalk_sq_full σ]
+        field_simp
+        nlinarith [hss]
+
+/-- **The `L¹` maximal bound**: `E max_j |S_j| ≤ 2 √n`. -/
+private lemma integral_dkwMax_le (hn : 0 < n) :
+    ∫ s, dkwMax σ s ∂signVec n ≤ 2 * Real.sqrt n := by
+  have hAbsInt : Integrable (fun s => |dkwWalk σ s n|) (signVec n) :=
+    (integrable_dkwWalk σ n).abs
+  -- layer cake in `ℝ≥0∞`
+  have hlc1 : ∫⁻ s, ENNReal.ofReal (dkwMax σ s) ∂signVec n
+      = ∫⁻ t in Set.Ioi (0 : ℝ), signVec n {s | t ≤ dkwMax σ s} :=
+    lintegral_eq_lintegral_meas_le _
+      (Filter.Eventually.of_forall (dkwMax_nonneg σ)) (measurable_dkwMax σ).aemeasurable
+  have hlc2 : ∫⁻ s, ENNReal.ofReal |dkwWalk σ s n| ∂signVec n
+      = ∫⁻ t in Set.Ioi (0 : ℝ), signVec n {s | t ≤ |dkwWalk σ s n|} :=
+    lintegral_eq_lintegral_meas_le _
+      (Filter.Eventually.of_forall fun s => abs_nonneg _)
+      (measurable_dkwWalk σ n).abs.aemeasurable
+  have hmono : ∫⁻ t in Set.Ioi (0 : ℝ), signVec n {s | t ≤ dkwMax σ s}
+      ≤ ∫⁻ t in Set.Ioi (0 : ℝ), 2 * signVec n {s | t ≤ |dkwWalk σ s n|} := by
+    refine lintegral_mono_ae ?_
+    filter_upwards [self_mem_ae_restrict (measurableSet_Ioi (a := (0 : ℝ)))] with t ht
+    exact Levy.dkw_levy σ ht
+  have hconst : ∫⁻ t in Set.Ioi (0 : ℝ), 2 * signVec n {s | t ≤ |dkwWalk σ s n|}
+      = 2 * ∫⁻ t in Set.Ioi (0 : ℝ), signVec n {s | t ≤ |dkwWalk σ s n|} :=
+    lintegral_const_mul' _ _ (by simp)
+  have hkey : ∫⁻ s, ENNReal.ofReal (dkwMax σ s) ∂signVec n
+      ≤ 2 * ∫⁻ s, ENNReal.ofReal |dkwWalk σ s n| ∂signVec n := by
+    rw [hlc1, hlc2]; exact hmono.trans_eq hconst
+  -- transfer to the Bochner integral
+  have hfin : ∫⁻ s, ENNReal.ofReal |dkwWalk σ s n| ∂signVec n ≠ ⊤ := by
+    have h := hAbsInt.hasFiniteIntegral
+    have heq : ∀ s : Fin n → ℝ, ENNReal.ofReal |dkwWalk σ s n| = ‖|dkwWalk σ s n|‖ₑ :=
+      fun s => (Real.enorm_eq_ofReal (abs_nonneg _)).symm
+    simp_rw [heq]
+    exact h.ne
+  have he1 : ∫ s, dkwMax σ s ∂signVec n
+      = (∫⁻ s, ENNReal.ofReal (dkwMax σ s) ∂signVec n).toReal :=
+    integral_eq_lintegral_of_nonneg_ae (Filter.Eventually.of_forall (dkwMax_nonneg σ))
+      (measurable_dkwMax σ).aestronglyMeasurable
+  have he2 : ∫ s, |dkwWalk σ s n| ∂signVec n
+      = (∫⁻ s, ENNReal.ofReal |dkwWalk σ s n| ∂signVec n).toReal :=
+    integral_eq_lintegral_of_nonneg_ae (Filter.Eventually.of_forall fun s => abs_nonneg _)
+      (measurable_dkwWalk σ n).abs.aestronglyMeasurable
+  calc ∫ s, dkwMax σ s ∂signVec n
+      = (∫⁻ s, ENNReal.ofReal (dkwMax σ s) ∂signVec n).toReal := he1
+    _ ≤ (2 * ∫⁻ s, ENNReal.ofReal |dkwWalk σ s n| ∂signVec n).toReal := by
+        exact ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hfin) hkey
+    _ = 2 * ∫ s, |dkwWalk σ s n| ∂signVec n := by
+        rw [he2, ENNReal.toReal_mul]; norm_num
+    _ ≤ 2 * Real.sqrt n := by
+        have := integral_abs_dkwWalk_le σ hn
+        linarith
+
+end Moments
+
+
 end StatLean.HypothesisTesting
