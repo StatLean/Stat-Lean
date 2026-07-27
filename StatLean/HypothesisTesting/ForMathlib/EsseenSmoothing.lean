@@ -520,4 +520,111 @@ theorem abs_measure_Iic_sub_le_of_integral_ramp {P Q : Measure ℝ}
     simp only [add_sub_cancel_left] at h3
     linarith [h4.1, h4.2]
 
+/-! ## From ramps to compactly supported test functions
+
+A ramp is not integrable — it tends to `1` at `-∞` — so it is not in the image of the Fourier
+transform of an `L¹` function, and `norm_integral_fourier_sub_le` cannot be applied to it
+directly. This is the analytic shadow of the `1/t` singularity in Lévy's inversion formula.
+The difference of two ramps *is* compactly supported, however, and since `P − Q` has total mass
+zero the ramp discrepancy is the limit of trapezoid discrepancies as the lower shoulder recedes
+to `-∞`. The results below make that reduction precise, so that the Kolmogorov distance is
+bounded by the discrepancy over the compactly supported, continuous, piecewise-linear
+**trapezoids** alone. -/
+
+/-- The distribution function of a probability measure vanishes at `-∞`. -/
+lemma tendsto_measure_Iic_atBot (P : Measure ℝ) [IsProbabilityMeasure P] :
+    Filter.Tendsto (fun x : ℝ => (P (Set.Iic x)).toReal) Filter.atBot (𝓝 0) := by
+  refine (ProbabilityTheory.tendsto_cdf_atBot P).congr fun x => ?_
+  rw [ProbabilityTheory.cdf_eq_real]
+  rfl
+
+/-- The ramp integral vanishes as the ramp recedes to `-∞`. -/
+lemma tendsto_integral_ramp_atBot (P : Measure ℝ) [IsProbabilityMeasure P] {δ : ℝ} (hδ : 0 < δ) :
+    Filter.Tendsto (fun v : ℝ => ∫ y, ramp v δ y ∂P) Filter.atBot (𝓝 0) := by
+  refine squeeze_zero (fun v => integral_nonneg fun y => ramp_nonneg v δ y)
+    (fun v => integral_ramp_le_measure_Iic P hδ v) ?_
+  exact (tendsto_measure_Iic_atBot P).comp
+    (Filter.tendsto_atBot_add_const_right _ δ Filter.tendsto_id)
+
+/-- The **trapezoid** test function `R_{u,δ} − R_{v,δ}`: continuous, supported in
+`[v, u + δ]`, equal to `1` on `[v + δ, u]`, with the two flanks of slope `±1/δ`. -/
+noncomputable def trapezoid (v u δ y : ℝ) : ℝ := ramp u δ y - ramp v δ y
+
+lemma trapezoid_nonneg {v u δ : ℝ} (hvu : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    0 ≤ trapezoid v u δ y :=
+  sub_nonneg.2 (ramp_mono_shoulder hvu hδ y)
+
+lemma trapezoid_le_one {v u δ : ℝ} (hvu : v ≤ u) (hδ : 0 < δ) (y : ℝ) :
+    trapezoid v u δ y ≤ 1 :=
+  sub_le_self _ (ramp_nonneg v δ y) |>.trans (ramp_le_one u δ y)
+
+lemma continuous_trapezoid (v u δ : ℝ) : Continuous (trapezoid v u δ) :=
+  (continuous_ramp u δ).sub (continuous_ramp v δ)
+
+/-- The trapezoid is supported in `[v, u + δ]`. -/
+lemma trapezoid_eq_zero_of_notMem {v u δ : ℝ} (hδ : 0 < δ) (hvu : v ≤ u) {y : ℝ}
+    (hy : y ∉ Set.Icc v (u + δ)) : trapezoid v u δ y = 0 := by
+  rcases not_and_or.1 (fun h => hy ⟨h.1, h.2⟩) with h | h
+  · have hy' : y < v := not_le.1 h
+    rw [trapezoid, ramp_eq_one_of_le hδ (by linarith), ramp_eq_one_of_le hδ hy'.le, sub_self]
+  · have hy' : u + δ < y := not_le.1 h
+    rw [trapezoid, ramp_eq_zero_of_le hδ hy'.le, ramp_eq_zero_of_le hδ (by linarith), sub_self]
+
+lemma hasCompactSupport_trapezoid {v u δ : ℝ} (hδ : 0 < δ) (hvu : v ≤ u) :
+    HasCompactSupport (trapezoid v u δ) :=
+  HasCompactSupport.intro (isCompact_Icc (a := v) (b := u + δ))
+    fun _ hy => trapezoid_eq_zero_of_notMem hδ hvu hy
+
+/-- **The ramp discrepancy is the limit of trapezoid discrepancies.**
+
+Because `P` and `Q` are probability measures, the mass that the ramp carries off to `-∞`
+cancels in the difference, so a uniform bound over trapezoids transfers to the ramp. -/
+theorem abs_integral_ramp_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {u δ E : ℝ} (hδ : 0 < δ)
+    (hE : ∀ v : ℝ, v ≤ u →
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) :
+    |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q| ≤ E := by
+  have hsplit : ∀ v : ℝ,
+      (∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q
+        = ((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y, ramp v δ y ∂Q) := by
+    intro v
+    simp only [trapezoid]
+    rw [integral_sub (integrable_ramp P u δ) (integrable_ramp P v δ),
+      integral_sub (integrable_ramp Q u δ) (integrable_ramp Q v δ)]
+    ring
+  have hlim : Filter.Tendsto (fun v : ℝ =>
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q|) Filter.atBot
+      (𝓝 |(∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q|) := by
+    simp_rw [hsplit]
+    have hmain : Filter.Tendsto (fun v : ℝ =>
+        ((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q)
+          - ((∫ y, ramp v δ y ∂P) - ∫ y, ramp v δ y ∂Q)) Filter.atBot
+        (𝓝 (((∫ y, ramp u δ y ∂P) - ∫ y, ramp u δ y ∂Q) - (0 - 0))) :=
+      tendsto_const_nhds.sub
+        ((tendsto_integral_ramp_atBot P hδ).sub (tendsto_integral_ramp_atBot Q hδ))
+    simpa using hmain.abs
+  refine le_of_tendsto hlim ?_
+  filter_upwards [Filter.eventually_le_atBot u] with v hv using hE v hv
+
+/-- **De-smoothing in trapezoid form: the Kolmogorov distance from compactly supported tests.**
+
+If the two laws are separated by at most `E` on every trapezoid of flank width `δ`, and the
+distribution function of `Q` is `A`-Lipschitz, then the two distribution functions differ by at
+most `E + A δ` everywhere.
+
+Every hypothesis here is about *continuous, compactly supported* test functions, so this is the
+form that `norm_integral_fourier_sub_le` can consume: what remains, to obtain a Kolmogorov
+Berry–Esseen or Edgeworth bound, is to exhibit each trapezoid as `𝓕 g` for an integrable `g`
+and to estimate `∫ ‖φ_P − φ_Q‖ ‖g‖`. -/
+theorem abs_measure_Iic_sub_le_of_trapezoid {P Q : Measure ℝ} [IsProbabilityMeasure P]
+    [IsProbabilityMeasure Q] {δ E A : ℝ} (hδ : 0 < δ)
+    (hQ : ∀ a b : ℝ, a ≤ b →
+      (Q (Set.Iic b)).toReal - (Q (Set.Iic a)).toReal ≤ A * (b - a))
+    (hE : ∀ v u : ℝ, v ≤ u →
+      |(∫ y, trapezoid v u δ y ∂P) - ∫ y, trapezoid v u δ y ∂Q| ≤ E) (x : ℝ) :
+    |(P (Set.Iic x)).toReal - (Q (Set.Iic x)).toReal| ≤ E + A * δ :=
+  abs_measure_Iic_sub_le_of_integral_ramp hδ hQ
+    (fun u => abs_integral_ramp_sub_le_of_trapezoid hδ fun v hv => hE v u hv) x
+
 end StatLean.HypothesisTesting
