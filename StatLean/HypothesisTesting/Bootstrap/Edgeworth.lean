@@ -497,6 +497,115 @@ lemma integral_cube_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
   rw [integral_centredLaw F (g := fun x : ℝ => x ^ 3) (by fun_prop), skewness,
     div_mul_cancel₀ _ (pow_ne_zero 3 hσ)]
 
+/-! ### Integrability of the moments, and the Cramér condition, under centring
+
+`norm_charFun_pow_sub_edgeworth_le` consumes four integrability hypotheses and the outer range
+consumes Cramér's condition; all five are stated for the *centred* law, and all five transfer
+from `F` for free. Integrability transfers because a fourth moment does
+(`memLp_four_centredLaw`) and every lower monomial is dominated by `1 + |x|⁴`; Cramér's
+condition transfers because centring multiplies the characteristic function by a unimodular
+factor (`norm_charFun_centredLaw`). -/
+
+/-- A finite fourth moment survives centring. -/
+lemma memLp_four_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    MemLp (fun x : ℝ => x) 4 (centredLaw F) := by
+  rw [centredLaw, memLp_map_measure_iff (by fun_prop) (by fun_prop)]
+  exact hF4.sub (memLp_const _)
+
+/-- Every monomial of degree at most four is dominated by `1 + |x|⁴`. -/
+private lemma abs_pow_le_one_add_abs_pow_four {x : ℝ} {k : ℕ} (hk : k ≤ 4) :
+    |x| ^ k ≤ 1 + |x| ^ 4 := by
+  rcases le_total |x| 1 with h | h
+  · have h1 : |x| ^ k ≤ 1 := pow_le_one₀ (abs_nonneg x) h
+    have h4 : (0 : ℝ) ≤ |x| ^ 4 := by positivity
+    linarith
+  · have h1 : |x| ^ k ≤ |x| ^ 4 := pow_le_pow_right₀ h hk
+    linarith
+
+/-- The fourth absolute moment of the centred law is finite. -/
+lemma integrable_abs_pow_four_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun x : ℝ => |x| ^ 4) (centredLaw F) := by
+  have h4 : MemLp (fun x : ℝ => x) ((4 : ℕ) : ℝ≥0∞) (centredLaw F) := by
+    simpa using memLp_four_centredLaw F hF4
+  simpa [Real.norm_eq_abs] using h4.integrable_norm_pow'
+
+/-- Every monomial of degree at most four is integrable under the centred law. -/
+private lemma integrable_of_le_abs_pow_four (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) {g : ℝ → ℝ}
+    (hg : AEStronglyMeasurable g (centredLaw F)) {k : ℕ} (hk : k ≤ 4)
+    (hle : ∀ x : ℝ, |g x| ≤ |x| ^ k) :
+    Integrable g (centredLaw F) := by
+  refine Integrable.mono' ((integrable_const (1 : ℝ)).add
+    (integrable_abs_pow_four_centredLaw F hF4)) hg
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [Real.norm_eq_abs]
+  exact (hle x).trans (abs_pow_le_one_add_abs_pow_four hk)
+
+/-- The first moment of the centred law is finite. -/
+lemma integrable_id_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun x : ℝ => x) (centredLaw F) :=
+  integrable_of_le_abs_pow_four F hF4 (by fun_prop) (k := 1) (by norm_num)
+    fun x => by rw [pow_one]
+
+/-- The second moment of the centred law is finite. -/
+lemma integrable_sq_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun x : ℝ => x ^ 2) (centredLaw F) :=
+  integrable_of_le_abs_pow_four F hF4 (by fun_prop) (k := 2) (by norm_num)
+    fun x => by rw [abs_pow]
+
+/-- The third absolute moment of the centred law is finite. -/
+lemma integrable_abs_cube_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun x : ℝ => |x| ^ 3) (centredLaw F) :=
+  integrable_of_le_abs_pow_four F hF4 (by fun_prop) (k := 3) (by norm_num)
+    fun x => le_of_eq (abs_of_nonneg (by positivity))
+
+/-- The fourth moment of the centred law is finite. -/
+lemma integrable_pow_four_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun t : ℝ => t) 4 F) :
+    Integrable (fun x : ℝ => x ^ 4) (centredLaw F) :=
+  integrable_of_le_abs_pow_four F hF4 (by fun_prop) (k := 4) le_rfl
+    fun x => le_of_eq (abs_pow x 4)
+
+/-- **Centring multiplies the characteristic function by a unimodular factor.** -/
+lemma charFun_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] (t : ℝ) :
+    charFun (centredLaw F) t
+      = Complex.exp (-((t * ∫ s, s ∂F : ℝ) : ℂ) * Complex.I) * charFun F t := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  have hf : AEStronglyMeasurable (fun x : ℝ => Complex.exp ((t : ℂ) * (x : ℂ) * Complex.I))
+      (F.map fun x : ℝ => x - m) := by fun_prop
+  have hpull : (∫ x : ℝ, Complex.exp (-((t * m : ℝ) : ℂ) * Complex.I)
+        * Complex.exp ((t : ℂ) * (x : ℂ) * Complex.I) ∂F)
+      = Complex.exp (-((t * m : ℝ) : ℂ) * Complex.I)
+        * ∫ x : ℝ, Complex.exp ((t : ℂ) * (x : ℂ) * Complex.I) ∂F :=
+    MeasureTheory.integral_const_mul _ _
+  rw [charFun_apply_real, centredLaw, ← hm,
+    integral_map (by fun_prop : AEMeasurable (fun x : ℝ => x - m) F) hf,
+    charFun_apply_real, ← hpull]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  change Complex.exp ((t : ℂ) * ((x - m : ℝ) : ℂ) * Complex.I)
+    = Complex.exp (-((t * m : ℝ) : ℂ) * Complex.I) * Complex.exp ((t : ℂ) * (x : ℂ) * Complex.I)
+  rw [← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- **Centring does not change the modulus of the characteristic function.** -/
+lemma norm_charFun_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] (t : ℝ) :
+    ‖charFun (centredLaw F) t‖ = ‖charFun F t‖ := by
+  have hre : (-((t * ∫ s, s ∂F : ℝ) : ℂ) * Complex.I).re = 0 := by simp
+  rw [charFun_centredLaw, norm_mul, Complex.norm_exp, hre, Real.exp_zero, one_mul]
+
+/-- **Cramér's condition survives centring.** -/
+lemma cramerCondition_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hCramer : CramerCondition F) : CramerCondition (centredLaw F) := by
+  obtain ⟨c, hc, hev⟩ := hCramer
+  exact ⟨c, hc, hev.mono fun s hs => by rw [norm_charFun_centredLaw]; exact hs⟩
+
 end RootLaw
 
 /-! ## The Edgeworth approximant on the standardized scale
