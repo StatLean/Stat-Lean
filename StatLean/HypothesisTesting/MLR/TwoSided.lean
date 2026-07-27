@@ -796,26 +796,191 @@ theorem power_min_twoSided
     ∀ ψ, IsCriticalFn ψ → power P ψ θ₁ = α → power P ψ θ₂ = α →
       ∀ θ : ℝ, θ < θ₁ ∨ θ₂ < θ →
         power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ ≤ power P ψ θ := by
-  -- OBSTRUCTION (re-derived). ROADMAP (TSH4 Thm 3.7.1, minimizing clause): outside `[θ₁, θ₂]`
-  -- apply the `m = 2` generalized fundamental lemma to the CO-test `1 − φ` — i.e. maximize
-  -- `∫(1 − φ)p_θ` subject to the same two size conditions, which by
-  -- `isMax_le_of_multiplier_form_nonneg` needs multipliers of the right sign.
-  -- Upstream is no longer the blocker: `exists_multipliers_of_max` and
-  -- `exists_test_max_integral_of_constraints` are both PROVEN now. What remains is exactly
-  -- what this file must supply on its own:
-  --   (1) the inner-point hypothesis `(α, α) ∈ interior (momentSet μ ![p_{θ₁}, p_{θ₂}])`
-  --       (see the note on `isUMP_twoSided`), and
-  --   (2) the SIGN of the multipliers `(k₁, k₂)` outside `[θ₁, θ₂]`. `exists_multipliers_of_max`
-  --       delivers a `k`, but not `0 ≤ kᵢ`, and `isMax_le_of_multiplier_form_nonneg` needs
-  --       nonnegativity to upgrade the competitor class from equality to inequality
-  --       constraints. Deriving the sign is the exponential-family computation of TSH4
-  --       Thm 3.7.1 and has no brick here yet.
-  -- Unlike the one-sided case there is no single-likelihood-ratio shortcut:
-  -- `power_min_oneSided` could reduce to the plain NP lemma because one constraint means one
-  -- multiplier.
-  -- TODO: moment-set openness lemma + the multiplier-sign computation, then the
-  -- `isMax_le_of_multiplier_form_nonneg` assembly.
-  sorry
+  -- The competitor class is defined by two *equality* constraints, so the sufficiency half
+  -- of the generalized fundamental lemma applies with multipliers of arbitrary sign
+  -- (`isMax_of_multiplier_form`); no inner-point or nonnegativity hypothesis is needed.
+  -- Minimizing `∫φ p_θ` is maximizing `∫(1 − φ)p_θ`, and the co-test `1 − φ` has the
+  -- multiplier shape for the coefficients produced by `exists_exp_pair_sign`: outside
+  -- `[θ₁, θ₂]` the two canonical exponents `bᵢ = η(θᵢ) − η(θ)` have the same sign, so the
+  -- level `{k₁p_{θ₁} + k₂p_{θ₂} = p_θ}` is crossed exactly at `C₁` and `C₂`.
+  intro ψ hψ hψ₁ hψ₂ θ hθout
+  classical
+  set p : ℝ → 𝓧 → ℝ :=
+    fun ϑ x => Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ)) with hpdef
+  have hp : ∀ ϑ, HasDensity E.base (p ϑ) (P ϑ) := by
+    intro ϑ
+    refine ⟨((E.stat_meas.const_mul (ηmap ϑ)).sub_const _).exp,
+      fun x => (Real.exp_pos _).le, ?_⟩
+    rw [hrepr ϑ, E.P_eq_withDensity (hnat ϑ)]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hpdef, ts_real_inner_mul]
+  have hppos : ∀ ϑ x, 0 < p ϑ x := fun ϑ x => Real.exp_pos _
+  set φ := twoSidedTest E.stat C₁ C₂ γ₁ γ₂ with hφdef
+  have hφc : IsCriticalFn φ := by
+    refine ⟨measurable_twoSidedTest E.stat_meas C₁ C₂ γ₁ γ₂, fun x => ?_⟩
+    rw [hφdef, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁ hγ₂ (E.stat x)
+  have hcrit_int : ∀ χ : 𝓧 → ℝ, IsCriticalFn χ → ∀ ϑ : ℝ, Integrable χ (P ϑ) := by
+    intro χ hχ ϑ
+    refine (integrable_const (1 : ℝ)).mono' hχ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (hχ.2 x).1]
+    exact (hχ.2 x).2
+  -- The co-test integral in terms of the power function.
+  have hcopow : ∀ χ : 𝓧 → ℝ, IsCriticalFn χ → ∀ ϑ : ℝ,
+      ∫ x, (1 - χ x) * p ϑ x ∂E.base = 1 - power P χ ϑ := by
+    intro χ hχ ϑ
+    have hint1 : Integrable (p ϑ) E.base := ts_density_integrable (hp ϑ)
+    have hint2 : Integrable (fun x => χ x * p ϑ x) E.base :=
+      ts_density_mul_integrable (hp ϑ) (hcrit_int χ hχ ϑ)
+    have hsplit : ∫ x, (1 - χ x) * p ϑ x ∂E.base = ∫ x, (p ϑ x - χ x * p ϑ x) ∂E.base :=
+      integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+    rw [hsplit, integral_sub hint1 hint2, ts_density_integral_one (hp ϑ)]
+    congr 1
+    exact (ts_integral_density_eq (hp ϑ) χ).symm
+  -- The canonical exponents at `θ`, of the same sign because `θ` lies outside `[θ₁, θ₂]`.
+  set b₁ := ηmap θ₁ - ηmap θ with hb₁def
+  set b₂ := ηmap θ₂ - ηmap θ with hb₂def
+  have hb : b₁ < b₂ := by
+    rw [hb₁def, hb₂def]; linarith [hη hθ]
+  have hbb : 0 < b₁ * b₂ := by
+    rcases hθout with hlow | hhigh
+    · have h1 : 0 < b₁ := by rw [hb₁def]; linarith [hη hlow]
+      have h2 : 0 < b₂ := by rw [hb₂def]; linarith [hη (hlow.trans hθ)]
+      exact mul_pos h1 h2
+    · have h2 : b₂ < 0 := by rw [hb₂def]; linarith [hη hhigh]
+      have h1 : b₁ < 0 := by linarith
+      exact mul_pos_of_neg_of_neg h1 h2
+  obtain ⟨A, B, hvA, hvB, hin, hlo, hhi⟩ := exists_exp_pair_sign hb hbb hC
+  -- The multipliers, and the identity `k₁p_{θ₁} + k₂p_{θ₂} = p_θ · S(T)`.
+  set k₁ := A * Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap θ)) with hk₁def
+  set k₂ := B * Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ)) with hk₂def
+  have hkey : ∀ x : 𝓧, k₁ * p θ₁ x + k₂ * p θ₂ x
+      = p θ x * (A * Real.exp (b₁ * E.stat x) + B * Real.exp (b₂ * E.stat x)) := by
+    intro x
+    have e₁ : Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap θ))
+        * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁))
+        = Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))
+          * Real.exp (b₁ * E.stat x) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      congr 1
+      rw [hb₁def]; ring
+    have e₂ : Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ))
+        * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))
+        = Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))
+          * Real.exp (b₂ * E.stat x) := by
+      rw [← Real.exp_add, ← Real.exp_add]
+      congr 1
+      rw [hb₂def]; ring
+    simp only [hk₁def, hk₂def, hpdef]
+    calc A * Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap θ))
+          * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁))
+        + B * Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ))
+          * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))
+        = A * (Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap θ))
+            * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁)))
+          + B * (Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap θ))
+            * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))) := by ring
+      _ = A * (Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))
+            * Real.exp (b₁ * E.stat x))
+          + B * (Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))
+            * Real.exp (b₂ * E.stat x)) := by rw [e₁, e₂]
+      _ = Real.exp (ηmap θ * E.stat x - E.logPartition (ηmap θ))
+            * (A * Real.exp (b₁ * E.stat x) + B * Real.exp (b₂ * E.stat x)) := by ring
+  -- The values of the two-sided test off and on the rejection interval.
+  have hφ0 : ∀ x : 𝓧, E.stat x < C₁ ∨ C₂ < E.stat x → φ x = 0 := by
+    intro x hx
+    rw [hφdef]
+    unfold twoSidedTest
+    rcases hx with h | h
+    · rw [if_neg (ne_of_lt h), if_neg (ne_of_lt (by linarith)),
+        if_neg (by rintro ⟨h1, -⟩; linarith)]
+    · rw [if_neg (ne_of_gt (by linarith)), if_neg (ne_of_gt h),
+        if_neg (by rintro ⟨-, h2⟩; linarith)]
+  have hφ1 : ∀ x : 𝓧, C₁ < E.stat x → E.stat x < C₂ → φ x = 1 := by
+    intro x h1 h2
+    rw [hφdef]
+    unfold twoSidedTest
+    rw [if_neg (ne_of_gt h1), if_neg (ne_of_lt h2), if_pos ⟨h1, h2⟩]
+  -- The data of the two-constraint problem.
+  set f : Fin 3 → 𝓧 → ℝ := ![p θ₁, p θ₂, p θ] with hfdef
+  have hf0 : f (Fin.castSucc (0 : Fin 2)) = p θ₁ := rfl
+  have hf1 : f (Fin.castSucc (1 : Fin 2)) = p θ₂ := rfl
+  have hflast : f (Fin.last 2) = p θ := rfl
+  have hfmeas : ∀ i, Measurable (f i) := by
+    intro i
+    have hm : ∀ ϑ : ℝ, Measurable (p ϑ) := fun ϑ =>
+      ((E.stat_meas.const_mul (ηmap ϑ)).sub_const _).exp
+    fin_cases i
+    · exact hm θ₁
+    · exact hm θ₂
+    · exact hm θ
+  have hfint : ∀ i, Integrable (f i) E.base := by
+    intro i
+    fin_cases i
+    · exact ts_density_integrable (hp θ₁)
+    · exact ts_density_integrable (hp θ₂)
+    · exact ts_density_integrable (hp θ)
+  have hcocrit : ∀ χ : 𝓧 → ℝ, IsCriticalFn χ → IsCriticalFn fun x => 1 - χ x := by
+    intro χ hχ
+    refine ⟨measurable_const.sub hχ.1, fun x => ?_⟩
+    obtain ⟨h0, h1⟩ := hχ.2 x
+    exact ⟨by linarith, by linarith⟩
+  have hcon : ∀ i : Fin 2, ∫ x, (1 - φ x) * f i.castSucc x ∂E.base = ![1 - α, 1 - α] i := by
+    intro i
+    fin_cases i
+    · change ∫ x, (1 - φ x) * p θ₁ x ∂E.base = 1 - α
+      rw [hcopow φ hφc θ₁, hsize₁]
+    · change ∫ x, (1 - φ x) * p θ₂ x ∂E.base = 1 - α
+      rw [hcopow φ hφc θ₂, hsize₂]
+  have hψcon : ∀ i : Fin 2, ∫ x, (1 - ψ x) * f i.castSucc x ∂E.base = ![1 - α, 1 - α] i := by
+    intro i
+    fin_cases i
+    · change ∫ x, (1 - ψ x) * p θ₁ x ∂E.base = 1 - α
+      rw [hcopow ψ hψ θ₁, hψ₁]
+    · change ∫ x, (1 - ψ x) * p θ₂ x ∂E.base = 1 - α
+      rw [hcopow ψ hψ θ₂, hψ₂]
+  have hsum : ∀ x : 𝓧, ∑ i : Fin 2, ![k₁, k₂] i * f i.castSucc x
+      = k₁ * p θ₁ x + k₂ * p θ₂ x := by
+    intro x
+    rw [Fin.sum_univ_two]
+    rfl
+  have hshape : HasMultiplierShape E.base f ![k₁, k₂] fun x => 1 - φ x := by
+    constructor
+    · refine Filter.Eventually.of_forall fun x hx => ?_
+      rw [hsum x, hkey x, hflast] at hx
+      have hS : A * Real.exp (b₁ * E.stat x) + B * Real.exp (b₂ * E.stat x) < 1 := by
+        nlinarith [hppos θ x]
+      have hout : E.stat x < C₁ ∨ C₂ < E.stat x := by
+        rcases lt_trichotomy (E.stat x) C₁ with h | h | h
+        · exact Or.inl h
+        · rw [h] at hS; linarith [hvA]
+        · rcases lt_trichotomy (E.stat x) C₂ with h' | h' | h'
+          · exact absurd (hin (E.stat x) h h') (by linarith)
+          · rw [h'] at hS; linarith [hvB]
+          · exact Or.inr h'
+      change (1 : ℝ) - φ x = 1
+      rw [hφ0 x hout]; ring
+    · refine Filter.Eventually.of_forall fun x hx => ?_
+      rw [hsum x, hkey x, hflast] at hx
+      have hS : 1 < A * Real.exp (b₁ * E.stat x) + B * Real.exp (b₂ * E.stat x) := by
+        nlinarith [hppos θ x]
+      have h1 : C₁ < E.stat x := by
+        rcases lt_trichotomy (E.stat x) C₁ with h | h | h
+        · exact absurd (hlo (E.stat x) h) (by linarith)
+        · rw [h] at hS; linarith [hvA]
+        · exact h
+      have h2 : E.stat x < C₂ := by
+        rcases lt_trichotomy (E.stat x) C₂ with h | h | h
+        · exact h
+        · rw [h] at hS; linarith [hvB]
+        · exact absurd (hhi (E.stat x) h) (by linarith)
+      change (1 : ℝ) - φ x = 0
+      rw [hφ1 x h1 h2]; ring
+  have hmax := isMax_of_multiplier_form (m := 2) E.base (f := f) hfmeas hfint
+    (hcocrit φ hφc) hcon hshape (fun x => 1 - ψ x) (hcocrit ψ hψ) hψcon
+  rw [hflast, hcopow ψ hψ θ, hcopow φ hφc θ] at hmax
+  linarith
 
 /-- **Comparison of two two-sided tests with a common size at `θ₁`.** If the rejection
 interval of the second test lies to the right of that of the first — a larger left
