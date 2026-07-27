@@ -1058,6 +1058,128 @@ private lemma exists_window_core (ρ β M σ : ℝ) (hρ : 0 ≤ ρ) (hβ : 0 �
 
 end WindowEnvelope
 
+/-! ## The window estimate: the geometry of the argument
+
+On the window the damped expansion `norm_charFun_pow_sub_edgeworth_le` is applied at
+`s = τ σ⁻¹ θ` with `θ = −2πξ` and `τ = n^{-1/2}`. The three lemmas below record the modulus
+and the square of that argument, and check the two window conditions `v s² ≤ 2`,
+`ρ₃|s| ≤ 3v/2` from a single bound `|ξ| τ ≤ c`. -/
+
+section WindowArgument
+
+/-- The modulus of the Edgeworth argument `s = −2πξ/(σ√n)`. -/
+private lemma abs_window_arg {σ ξ τ : ℝ} (hσ : 0 < σ) (hτ : 0 ≤ τ) :
+    |τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))| = 2 * Real.pi * |ξ| * τ / σ := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  rw [abs_mul, abs_mul, abs_of_nonneg hτ, abs_inv, abs_of_pos hσ, abs_neg, abs_mul,
+    abs_of_nonneg (by positivity : (0 : ℝ) ≤ 2 * Real.pi)]
+  field_simp
+
+/-- The square of the Edgeworth argument, weighted by the variance. -/
+private lemma sq_window_arg {σ ξ τ : ℝ} (hσ : 0 < σ) :
+    σ ^ 2 * (τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))) ^ 2 = 4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 := by
+  have h : |ξ| ^ 2 = ξ ^ 2 := sq_abs ξ
+  rw [h]
+  field_simp
+  ring
+
+/-- **The two window conditions of the damped expansion**, from a single bound on `|ξ| τ`. -/
+private lemma window_conditions {σ ρ c ξ τ : ℝ} (hσ : 0 < σ) (hρ : 0 ≤ ρ) (hτ : 0 ≤ τ)
+    (hc2 : c ≤ 1 / (Real.pi * Real.sqrt 2))
+    (hc3 : c ≤ 3 * σ ^ 3 / (4 * Real.pi * (ρ + 1)))
+    (hξ : |ξ| * τ ≤ c) :
+    σ ^ 2 * (τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))) ^ 2 ≤ 2
+      ∧ ρ * |τ * (σ⁻¹ * (-(2 * Real.pi * ξ)))| ≤ 3 * σ ^ 2 / 2 := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hx0 : (0 : ℝ) ≤ |ξ| * τ := by positivity
+  have hc0 : (0 : ℝ) ≤ c := le_trans hx0 hξ
+  constructor
+  · rw [sq_window_arg hσ]
+    have hroot : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+    have hrootp : (0 : ℝ) < Real.sqrt 2 := Real.sqrt_pos.2 (by norm_num)
+    have hcsq : c ^ 2 ≤ 1 / (2 * Real.pi ^ 2) := by
+      have h2 : c ^ 2 ≤ (1 / (Real.pi * Real.sqrt 2)) ^ 2 := by nlinarith
+      have h3 : (1 / (Real.pi * Real.sqrt 2)) ^ 2 = 1 / (2 * Real.pi ^ 2) := by
+        rw [div_pow, mul_pow, hroot, one_pow]
+        ring
+      linarith
+    have hxsq : (|ξ| * τ) ^ 2 ≤ c ^ 2 := by nlinarith
+    have heq : 4 * Real.pi ^ 2 * |ξ| ^ 2 * τ ^ 2 = 4 * Real.pi ^ 2 * (|ξ| * τ) ^ 2 := by ring
+    rw [heq]
+    have hstep : 4 * Real.pi ^ 2 * (|ξ| * τ) ^ 2 ≤ 4 * Real.pi ^ 2 * (1 / (2 * Real.pi ^ 2)) :=
+      mul_le_mul_of_nonneg_left (le_trans hxsq hcsq) (by positivity)
+    have hval : 4 * Real.pi ^ 2 * (1 / (2 * Real.pi ^ 2)) = 2 := by field_simp; ring
+    linarith
+  · rw [abs_window_arg hσ hτ]
+    have hkey : ρ * (2 * Real.pi * |ξ| * τ / σ) = 2 * Real.pi * ρ / σ * (|ξ| * τ) := by
+      field_simp
+    rw [hkey]
+    have hcoef : (0 : ℝ) ≤ 2 * Real.pi * ρ / σ := by positivity
+    have step1 : 2 * Real.pi * ρ / σ * (|ξ| * τ) ≤ 2 * Real.pi * ρ / σ * c :=
+      mul_le_mul_of_nonneg_left hξ hcoef
+    have step2 : 2 * Real.pi * ρ / σ * c
+        ≤ 2 * Real.pi * ρ / σ * (3 * σ ^ 3 / (4 * Real.pi * (ρ + 1))) :=
+      mul_le_mul_of_nonneg_left hc3 hcoef
+    have step3 : 2 * Real.pi * ρ / σ * (3 * σ ^ 3 / (4 * Real.pi * (ρ + 1)))
+        = 3 * σ ^ 2 / 2 * (ρ / (ρ + 1)) := by
+      have hρ1 : ρ + 1 ≠ 0 := by positivity
+      field_simp
+      ring
+    have step4 : 3 * σ ^ 2 / 2 * (ρ / (ρ + 1)) ≤ 3 * σ ^ 2 / 2 := by
+      have hr : ρ / (ρ + 1) ≤ 1 := by
+        rw [div_le_one (by linarith)]
+        linarith
+      nlinarith [sq_nonneg σ]
+    linarith
+
+/-- **The Edgeworth approximant in damped form.** The comparison object produced by
+`charFunDensity_edgeworthDensity` is *literally* the approximant estimated by
+`norm_charFun_pow_sub_edgeworth_le` at `s = τ σ⁻¹ θ`, `v = σ²`, `m₃ = γσ³`: the Gaussian
+factors agree because `n v s² = θ²`, and the linear corrections because `n τ³ = τ`. -/
+private lemma edgeworth_approx_eq (γ σ θ : ℝ) (hσ : σ ≠ 0) (m : ℕ) (τ : ℝ)
+    (hτ : ((m : ℝ) + 2) * τ ^ 2 = 1) :
+    Complex.exp (-(θ : ℂ) ^ 2 / 2)
+        * (1 - Complex.I * (γ : ℂ) * (θ : ℂ) ^ 3 * ((τ : ℝ) : ℂ) / 6)
+      = ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+        * (1 - ((m : ℂ) + 2) * Complex.I * ((γ * σ ^ 3 : ℝ) : ℂ)
+            * ((τ * (σ⁻¹ * θ) : ℝ) : ℂ) ^ 3 / 6) := by
+  have hσ3 : σ ^ 3 ≠ 0 := pow_ne_zero 3 hσ
+  have hvs : σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 = θ ^ 2 * τ ^ 2 := by field_simp
+  have hgauss : ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+      = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+    have hreal : Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) ^ (m + 2)
+        = Real.exp (-(θ ^ 2 / 2)) := by
+      rw [← Real.exp_nat_mul]
+      congr 1
+      rw [hvs]
+      push_cast
+      linear_combination (-(θ ^ 2) / 2) * hτ
+    calc ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) : ℝ) : ℂ) ^ (m + 2)
+        = ((Real.exp (-(σ ^ 2 * (τ * (σ⁻¹ * θ)) ^ 2 / 2)) ^ (m + 2) : ℝ) : ℂ) := by push_cast; ring
+      _ = ((Real.exp (-(θ ^ 2 / 2)) : ℝ) : ℂ) := by rw [hreal]
+      _ = Complex.exp (-(θ : ℂ) ^ 2 / 2) := by
+          rw [Complex.ofReal_exp]; congr 1; push_cast; ring
+  have hN3 : ((m : ℝ) + 2) * τ ^ 3 = τ := by
+    calc ((m : ℝ) + 2) * τ ^ 3 = (((m : ℝ) + 2) * τ ^ 2) * τ := by ring
+      _ = τ := by rw [hτ]; ring
+  have hlin : γ * θ ^ 3 * τ = ((m : ℝ) + 2) * (γ * σ ^ 3) * (τ * (σ⁻¹ * θ)) ^ 3 := by
+    have hexp : ((m : ℝ) + 2) * (γ * σ ^ 3) * (τ * (σ⁻¹ * θ)) ^ 3
+        = γ * θ ^ 3 * (((m : ℝ) + 2) * τ ^ 3) * (σ ^ 3 * σ⁻¹ ^ 3) := by ring
+    have hinv : σ ^ 3 * σ⁻¹ ^ 3 = 1 := by field_simp
+    rw [hexp, hN3, hinv]
+    ring
+  have hlinC : (γ : ℂ) * (θ : ℂ) ^ 3 * ((τ : ℝ) : ℂ)
+      = (((m : ℝ) + 2 : ℝ) : ℂ) * ((γ * σ ^ 3 : ℝ) : ℂ) * ((τ * (σ⁻¹ * θ) : ℝ) : ℂ) ^ 3 := by
+    have := congrArg (fun x : ℝ => (x : ℂ)) hlin
+    push_cast at this ⊢
+    linear_combination this
+  rw [hgauss]
+  congr 1
+  push_cast at hlinC ⊢
+  linear_combination (-Complex.I / 6) * hlinC
+
+end WindowArgument
+
 
 /-! ## The expansions -/
 
