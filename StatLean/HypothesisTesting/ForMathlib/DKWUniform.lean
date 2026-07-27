@@ -28,7 +28,7 @@ threshold `d_α` with `C e^{-c d_α²} ≤ α` gives a test of level `α` at *ev
   Kolmogorov distance to a population law.
 * `integral_ksDist_le` — the in-expectation bound `E Dₙ ≤ 2/√n`.
 * `ksDist_concentration` — bounded-differences concentration of `Dₙ` around its mean.
-* `dkw_uniform` — the tail bound, `P(√n Dₙ ≥ d) ≤ 4 e^{-d²/8}`.
+* `dkw_uniform` — the tail bound, `P(√n Dₙ ≥ d) ≤ 4 e^{-d²/16}`.
 
 **Constants (documented deviation).** The sharp form of this inequality has the constants
 `C = 2`, `c = 2`, and those are *not* what the route formalised here delivers. We state the
