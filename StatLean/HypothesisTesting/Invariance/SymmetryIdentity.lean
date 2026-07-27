@@ -269,13 +269,13 @@ private lemma isProbabilityMeasure_unifOn {s : Set ℝ} (h0 : volume s ≠ 0)
   rw [unifOn_apply s MeasurableSet.univ, Set.univ_inter]
   exact ENNReal.inv_mul_cancel h0 h1
 
-private lemma unifOn_singleton (s : Set ℝ) (h0 : volume s ≠ 0) (t : ℝ) : unifOn s {t} = 0 := by
+private lemma unifOn_singleton (s : Set ℝ) (t : ℝ) : unifOn s {t} = 0 := by
   rw [unifOn_apply s (measurableSet_singleton t)]
   have : volume ({t} ∩ s) = 0 :=
     measure_mono_null Set.inter_subset_left (measure_singleton t)
   rw [this, mul_zero]
 
-private lemma pi_unifOn {N : ℕ} (s : Fin N → Set ℝ) (hs : ∀ i, MeasurableSet (s i))
+private lemma pi_unifOn {N : ℕ} (s : Fin N → Set ℝ)
     (h0 : ∀ i, volume (s i) ≠ 0) (h1 : ∀ i, volume (s i) ≠ ⊤) :
     Measure.pi (fun i => unifOn (s i))
       = (∏ i, (volume (s i))⁻¹) • volume.restrict (Set.univ.pi s) := by
@@ -296,15 +296,15 @@ private lemma setIntegral_signAverage {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
     (hnull : ∀ D : Fin N → Measure ℝ, (∀ i, IsProbabilityMeasure (D i)) →
       (∀ i, ∀ t : ℝ, D i {t} = 0) → (∀ i, (D i).map (fun t : ℝ => -t) = D i) →
       ∫ z, φ z ∂(Measure.pi D) = α)
-    (s : Fin N → Set ℝ) (hs : ∀ i, MeasurableSet (s i))
+    (s : Fin N → Set ℝ)
     (h0 : ∀ i, volume (s i) ≠ 0) (h1 : ∀ i, volume (s i) ≠ ⊤) :
     ∫ z in Set.univ.pi s, signAverage φ z = α * (∏ i, volume (s i)).toReal := by
   haveI hprob : ∀ i, IsProbabilityMeasure (unifOn (s i)) := fun i =>
     isProbabilityMeasure_unifOn (h0 i) (h1 i)
   have hcal := hnull (fun i => symmetrize (unifOn (s i))) (fun i => inferInstance)
-    (fun i t => symmetrize_singleton _ (unifOn_singleton (s i) (h0 i)) t)
+    (fun i t => symmetrize_singleton _ (unifOn_singleton (s i)) t)
     (fun i => symmetrize_map_neg _)
-  rw [integral_pi_symmetrize hφ (fun i => unifOn (s i)), pi_unifOn s hs h0 h1,
+  rw [integral_pi_symmetrize hφ (fun i => unifOn (s i)), pi_unifOn s h0 h1,
     integral_smul_measure] at hcal
   have hprodne : (∏ i, volume (s i)) ≠ ⊤ :=
     (ENNReal.prod_lt_top fun i _ => lt_of_le_of_ne le_top (h1 i)).ne
@@ -343,7 +343,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
       isProbabilityMeasure_unifOn hIcc0 hIcctop
     have h := hnull (fun _ => symmetrize (unifOn (Set.Icc (-(1 : ℝ)) 1)))
       (fun _ => inferInstance)
-      (fun _ t => symmetrize_singleton _ (unifOn_singleton _ hIcc0) t)
+      (fun _ t => symmetrize_singleton _ (unifOn_singleton _) t)
       (fun _ => symmetrize_map_neg _)
     rw [← h]
     exact integral_nonneg fun z => (hφ.2 z).1
@@ -356,7 +356,6 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
   · subst hN
     have hz : ∀ z w : Fin 0 → ℝ, z = w := fun z w => funext fun i => i.elim0
     have h := hbox (fun _ => Set.Icc (-(1 : ℝ)) 1) (fun i => i.elim0) (fun i => i.elim0)
-      (fun i => i.elim0)
     have hpiuniv : (Set.univ.pi fun _ : Fin 0 => Set.Icc (-(1 : ℝ)) 1) = Set.univ := by
       ext w; simp
     rw [hpiuniv, Measure.restrict_univ] at h
@@ -401,7 +400,7 @@ private lemma signAverage_ae_eq_const {N : ℕ} {α : ℝ} {φ : (Fin N → ℝ)
         integrable_of_isCriticalFn hgcrit _
       rw [← ofReal_integral_eq_lintegral_ofReal hint
         (Filter.Eventually.of_forall fun z => (hgcrit.2 z).1),
-        hbox s hs h0 h1, ENNReal.ofReal_mul hα0, ENNReal.ofReal_toReal hprodne]
+        hbox s h0 h1, ENNReal.ofReal_mul hα0, ENNReal.ofReal_toReal hprodne]
   -- On each cube the two measures agree, because both are the same product measure.
   set cube : ℕ → Set (Fin N → ℝ) :=
     fun R => Set.univ.pi (fun _ : Fin N => Set.Icc (-(R : ℝ)) R) with hcube
