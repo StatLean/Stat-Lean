@@ -961,6 +961,140 @@ private lemma exists_sep_exp3_out {θ₁ θ₂ ϑ : ℝ} (h12 : θ₁ < θ₂) (
         linarith
   · exact exists_sep_exp3_gt h12 h hC
 
+
+/-- **The two-threshold fibrewise inequality.** `Q` is the conditional law at the lower
+endpoint `θ₁`, `expTilt Q k₂ s` the one at `θ₂ = θ₁ + s`, and `expTilt Q k' r` the one at
+`θ' = θ₁ + r`. For `g` nonnegative outside `[C₁, C₂]`, nonpositive inside, and with vanishing
+integral against *both* endpoint laws, the integral against the third law is nonnegative when
+`θ'` lies outside `[θ₁, θ₂]` and nonpositive when it lies strictly inside. The two signs are
+the two three-exponential separations `exists_sep_exp3_out` and `exists_sep_exp3_mid`. -/
+private lemma integral_expTilt_signed_interval {Q : Measure ℝ} [IsProbabilityMeasure Q]
+    {k₂ s k' r C₁ C₂ : ℝ} (hs : 0 < s) (hC : C₁ ≤ C₂)
+    (hQ₂ : IsProbabilityMeasure (expTilt Q k₂ s))
+    (hQ' : IsProbabilityMeasure (expTilt Q k' r))
+    {g : ℝ → ℝ} (hgm : Measurable g) (hgb : ∀ u, |g u| ≤ 1)
+    (hgpos : ∀ u, u < C₁ ∨ C₂ < u → 0 ≤ g u)
+    (hgneg : ∀ u, C₁ < u → u < C₂ → g u ≤ 0)
+    (h1 : ∫ u, g u ∂Q = 0) (h2 : ∫ u, g u ∂(expTilt Q k₂ s) = 0) :
+    ((r < 0 ∨ s < r) → 0 ≤ ∫ u, g u ∂(expTilt Q k' r)) ∧
+      (0 < r → r < s → ∫ u, g u ∂(expTilt Q k' r) ≤ 0) := by
+  have hk₂ : 0 < k₂ := expTilt_factor_pos hQ₂
+  have hk' : 0 < k' := expTilt_factor_pos hQ'
+  obtain ⟨hd₂, -⟩ := integrable_expTiltDensity hk₂.le hQ₂
+  obtain ⟨hd', -⟩ := integrable_expTiltDensity hk'.le hQ'
+  have hbare : ∀ (k c : ℝ), 0 < k → Integrable (fun u => k * Real.exp (c * u)) Q →
+      Integrable (fun u => Real.exp (c * u)) Q := by
+    intro k c hk hint
+    refine (hint.const_mul k⁻¹).congr (Filter.Eventually.of_forall fun u => ?_)
+    field_simp
+  have he₂ : Integrable (fun u => Real.exp (s * u)) Q := hbare k₂ s hk₂ hd₂
+  have he' : Integrable (fun u => Real.exp (r * u)) Q := hbare k' r hk' hd'
+  have hg : Integrable g Q :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hgb u)
+  have hgbdd : ∀ᵐ u ∂Q, ‖g u‖ ≤ 1 :=
+    Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hgb u
+  have hge₂ : Integrable (fun u => g u * Real.exp (s * u)) Q :=
+    he₂.bdd_mul (c := 1) hgm.aestronglyMeasurable hgbdd
+  have hge' : Integrable (fun u => g u * Real.exp (r * u)) Q :=
+    he'.bdd_mul (c := 1) hgm.aestronglyMeasurable hgbdd
+  have hpull : ∀ (k c : ℝ), 0 ≤ k → ∫ u, g u ∂(expTilt Q k c)
+      = k * ∫ u, g u * Real.exp (c * u) ∂Q := by
+    intro k c hk
+    rw [integral_expTilt Q hk c g, ← integral_const_mul]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun u => by ring)
+  have hc2 : ∫ u, g u * Real.exp (s * u) ∂Q = 0 := by
+    have h := hpull k₂ s hk₂.le
+    rw [h2] at h
+    rcases mul_eq_zero.mp h.symm with hz | hz
+    · exact absurd hz (ne_of_gt hk₂)
+    · exact hz
+  constructor
+  · intro hoside
+    obtain ⟨a, b, hin, hout⟩ :=
+      exists_sep_exp3_out (θ₁ := 0) (θ₂ := s) (ϑ := r) hs hoside hC
+    simp only [zero_mul, Real.exp_zero, mul_one] at hin hout
+    have hpt : ∀ u, 0 ≤ g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))) := by
+      intro u
+      rcases lt_trichotomy u C₁ with h | h | h
+      · exact mul_nonneg (hgpos u (Or.inl h)) (by linarith [hout u (Or.inl h.le)])
+      · have hD1 := hout u (Or.inl (le_of_eq h))
+        have hD2 := hin u (by linarith) (by linarith)
+        have hz : Real.exp (r * u) - (a + b * Real.exp (s * u)) = 0 := by linarith
+        rw [hz, mul_zero]
+      · rcases lt_trichotomy u C₂ with h2 | h2 | h2
+        · have hD := hin u h.le h2.le
+          have hprodnn := mul_nonneg (neg_nonneg.mpr (hgneg u h h2))
+            (neg_nonneg.mpr (by linarith :
+              Real.exp (r * u) - (a + b * Real.exp (s * u)) ≤ 0))
+          rwa [neg_mul_neg] at hprodnn
+        · have hD1 := hin u h.le (le_of_eq h2)
+          have hD2 := hout u (Or.inr (by linarith))
+          have hz : Real.exp (r * u) - (a + b * Real.exp (s * u)) = 0 := by linarith
+          rw [hz, mul_zero]
+        · exact mul_nonneg (hgpos u (Or.inr h2)) (by linarith [hout u (Or.inr h2.le)])
+    have hI : (0 : ℝ) ≤ ∫ u, g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))) ∂Q :=
+      integral_nonneg hpt
+    have heq : (fun u => g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))))
+        = fun u => g u * Real.exp (r * u) - (a * g u + b * (g u * Real.exp (s * u))) := by
+      funext u; ring
+    have hA : Integrable (fun u => a * g u) Q := hg.const_mul a
+    have hB : Integrable (fun u => b * (g u * Real.exp (s * u))) Q := hge₂.const_mul b
+    have hsum : Integrable (fun u => a * g u + b * (g u * Real.exp (s * u))) Q := hA.add hB
+    have hzs : ∫ u, (a * g u + b * (g u * Real.exp (s * u))) ∂Q = 0 := by
+      rw [integral_add hA hB, integral_const_mul, integral_const_mul, h1, hc2]
+      ring
+    rw [heq, integral_sub hge' hsum, hzs, sub_zero] at hI
+    rw [hpull k' r hk'.le]
+    exact mul_nonneg hk'.le hI
+  · intro hr0 hrs
+    obtain ⟨a, b, hin, hout⟩ :=
+      exists_sep_exp3_mid (θ₁ := 0) (θ₂ := s) (ϑ := r) hr0 hrs hC
+    simp only [zero_mul, Real.exp_zero, mul_one] at hin hout
+    have hpt : ∀ u, g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))) ≤ 0 := by
+      intro u
+      rcases lt_trichotomy u C₁ with h | h | h
+      · have hD := hout u (Or.inl h.le)
+        have hprodnn := mul_nonneg (hgpos u (Or.inl h))
+          (neg_nonneg.mpr (by linarith :
+            Real.exp (r * u) - (a + b * Real.exp (s * u)) ≤ 0))
+        rw [mul_neg] at hprodnn
+        linarith
+      · have hD1 := hout u (Or.inl (le_of_eq h))
+        have hD2 := hin u (by linarith) (by linarith)
+        have hz : Real.exp (r * u) - (a + b * Real.exp (s * u)) = 0 := by linarith
+        rw [hz, mul_zero]
+      · rcases lt_trichotomy u C₂ with h2 | h2 | h2
+        · have hD := hin u h.le h2.le
+          have hprodnn := mul_nonneg (neg_nonneg.mpr (hgneg u h h2))
+            (by linarith : (0 : ℝ) ≤ Real.exp (r * u) - (a + b * Real.exp (s * u)))
+          rw [neg_mul] at hprodnn
+          linarith
+        · have hD1 := hin u h.le (le_of_eq h2)
+          have hD2 := hout u (Or.inr (by linarith))
+          have hz : Real.exp (r * u) - (a + b * Real.exp (s * u)) = 0 := by linarith
+          rw [hz, mul_zero]
+        · have hD := hout u (Or.inr h2.le)
+          have hprodnn := mul_nonneg (hgpos u (Or.inr h2))
+            (neg_nonneg.mpr (by linarith :
+              Real.exp (r * u) - (a + b * Real.exp (s * u)) ≤ 0))
+          rw [mul_neg] at hprodnn
+          linarith
+    have hI : ∫ u, g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))) ∂Q ≤ 0 :=
+      integral_nonpos hpt
+    have heq : (fun u => g u * (Real.exp (r * u) - (a + b * Real.exp (s * u))))
+        = fun u => g u * Real.exp (r * u) - (a * g u + b * (g u * Real.exp (s * u))) := by
+      funext u; ring
+    have hA : Integrable (fun u => a * g u) Q := hg.const_mul a
+    have hB : Integrable (fun u => b * (g u * Real.exp (s * u))) Q := hge₂.const_mul b
+    have hsum : Integrable (fun u => a * g u + b * (g u * Real.exp (s * u))) Q := hA.add hB
+    have hzs : ∫ u, (a * g u + b * (g u * Real.exp (s * u))) ∂Q = 0 := by
+      rw [integral_add hA hB, integral_const_mul, integral_const_mul, h1, hc2]
+      ring
+    rw [heq, integral_sub hge' hsum, hzs, sub_zero] at hI
+    rw [hpull k' r hk'.le]
+    exact mul_nonpos_of_nonneg_of_nonpos hk'.le hI
+
 end FibreTilt
 
 /-! ## Global toolkit: the canonical `(U, T)` family on its own scale
