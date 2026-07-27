@@ -362,6 +362,112 @@ private lemma charFun_randPairLaw_signSum (Q : Measure E) [IsProbabilityMeasure 
     norm_num
   rw [hcard, ← mul_pow]
 
+/-! ### The limit -/
+
+/-- **Second-order Taylor expansion of a one-dimensional characteristic function**, without
+the mean-zero / unit-variance normalization of Mathlib's `taylor_charFun_two`. The
+sign-averaged expansion below needs the unnormalized form, because the four sign directions
+have different (nonzero) means and second moments. -/
+private lemma isLittleO_charFun_taylor {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] {W : Ω → ℝ} (hW : AEMeasurable W P)
+    (hint : MemLp id 2 (P.map W)) :
+    (fun v : ℝ => charFun (P.map W) v
+        - (1 + (P[W] : ℝ) * v * Complex.I - (P[W ^ 2] : ℝ) * v ^ 2 / 2))
+      =o[𝓝 0] fun v : ℝ => v ^ 2 := by
+  have h := taylor_isLittleO_univ (x₀ := (0 : ℝ)) (contDiff_charFun hint)
+  simp only [sub_zero] at h
+  refine h.congr' (Filter.Eventually.of_forall fun v => ?_) Filter.EventuallyEq.rfl
+  simp only []
+  rw [taylorWithinEval_charFun_two_zero hW hint v]
+
+/-- Pairing with a fixed direction is square-integrable when the data is. -/
+private lemma memLp_inner_right (Q : Measure E) (hQ2 : MemLp id 2 Q) (v : E) :
+    MemLp (fun y : E => ⟪y, v⟫) 2 Q := by
+  have hmeas : AEStronglyMeasurable (fun y : E => ⟪y, v⟫) Q :=
+    ((continuous_id (X := E)).inner continuous_const).aestronglyMeasurable
+  have hdom : MemLp (fun y : E => ‖v‖ * ‖y‖) 2 Q := by
+    simpa using hQ2.norm.const_mul ‖v‖
+  refine hdom.mono hmeas (Filter.Eventually.of_forall fun y => ?_)
+  have hineq : |⟪y, v⟫| ≤ ‖y‖ * ‖v‖ := abs_real_inner_le_norm y v
+  rw [Real.norm_eq_abs, Real.norm_eq_abs,
+    abs_of_nonneg (mul_nonneg (norm_nonneg _) (norm_nonneg _))]
+  rw [mul_comm ‖v‖ ‖y‖]
+  exact hineq
+
+private lemma memLp_signDir (Q : Measure E) (hQ2 : MemLp id 2 Q) (t : WithLp 2 (E × E))
+    (s s' : ℤˣ) : MemLp (signDir t s s') 2 Q := by
+  unfold signDir
+  exact ((memLp_inner_right Q hQ2 _).const_mul _).add ((memLp_inner_right Q hQ2 _).const_mul _)
+
+private lemma memLp_id_map_signDir (Q : Measure E) [IsProbabilityMeasure Q]
+    (hQ2 : MemLp id 2 Q) (t : WithLp 2 (E × E)) (s s' : ℤˣ) :
+    MemLp id 2 (Q.map (signDir t s s')) := by
+  rw [memLp_map_measure_iff aestronglyMeasurable_id (measurable_signDir t s s').aemeasurable]
+  exact memLp_signDir Q hQ2 t s s'
+
+/-- The four sign directions have vanishing total first moment. -/
+private lemma sum_integral_signDir (Q : Measure E) [IsProbabilityMeasure Q]
+    (hQ2 : MemLp id 2 Q) (t : WithLp 2 (E × E)) :
+    ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, signDir t s s' y ∂Q = 0 := by
+  classical
+  have hint : ∀ s s' : ℤˣ, Integrable (signDir t s s') Q := fun s s' =>
+    (memLp_signDir Q hQ2 t s s').integrable (by norm_num)
+  have h1 : ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, signDir t s s' y ∂Q
+      = ∫ y, (∑ s : ℤˣ, ∑ s' : ℤˣ, signDir t s s' y) ∂Q := by
+    rw [integral_finset_sum (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, signDir t s s' y)
+      Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hint s s')]
+    exact (Finset.sum_congr rfl fun s _ =>
+      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => signDir t s s' y)
+        Finset.univ (fun s' _ => hint s s')).symm
+  rw [h1]
+  have hzero : ∀ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, signDir t s s' y) = 0 := by
+    intro y
+    rw [show (Finset.univ : Finset ℤˣ) = {1, -1} from UnitsInt.univ]
+    rw [Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1)]
+    rw [Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1),
+      Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1)]
+    unfold signDir
+    push_cast
+    ring
+  have hz : ∫ y, (∑ s : ℤˣ, ∑ s' : ℤˣ, signDir t s s' y) ∂Q = ∫ _y : E, (0 : ℝ) ∂Q :=
+    integral_congr_ae (Filter.Eventually.of_forall hzero)
+  rw [hz, integral_zero]
+
+/-- The four sign directions have total second moment `4(A+B)`. -/
+private lemma sum_integral_signDir_sq (Q : Measure E) [IsProbabilityMeasure Q]
+    (hQ2 : MemLp id 2 Q) (t : WithLp 2 (E × E)) :
+    ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, (signDir t s s' y) ^ 2 ∂Q
+      = 4 * ((∫ y, ⟪y, (WithLp.ofLp t).1⟫ ^ 2 ∂Q) + ∫ y, ⟪y, (WithLp.ofLp t).2⟫ ^ 2 ∂Q) := by
+  classical
+  have hint : ∀ s s' : ℤˣ, Integrable (fun y => (signDir t s s' y) ^ 2) Q := fun s s' => by
+    have := (memLp_signDir Q hQ2 t s s').integrable_sq
+    simpa using this
+  have hint1 : Integrable (fun y : E => ⟪y, (WithLp.ofLp t).1⟫ ^ 2) Q := by
+    simpa using (memLp_inner_right Q hQ2 (WithLp.ofLp t).1).integrable_sq
+  have hint2 : Integrable (fun y : E => ⟪y, (WithLp.ofLp t).2⟫ ^ 2) Q := by
+    simpa using (memLp_inner_right Q hQ2 (WithLp.ofLp t).2).integrable_sq
+  have h1 : ∑ s : ℤˣ, ∑ s' : ℤˣ, ∫ y, (signDir t s s' y) ^ 2 ∂Q
+      = ∫ y, (∑ s : ℤˣ, ∑ s' : ℤˣ, (signDir t s s' y) ^ 2) ∂Q := by
+    rw [integral_finset_sum
+      (f := fun s : ℤˣ => fun y : E => ∑ s' : ℤˣ, (signDir t s s' y) ^ 2)
+      Finset.univ (fun s _ => integrable_finset_sum Finset.univ fun s' _ => hint s s')]
+    exact (Finset.sum_congr rfl fun s _ =>
+      integral_finset_sum (f := fun s' : ℤˣ => fun y : E => (signDir t s s' y) ^ 2)
+        Finset.univ (fun s' _ => hint s s')).symm
+  rw [h1]
+  have hpt : ∀ y : E, (∑ s : ℤˣ, ∑ s' : ℤˣ, (signDir t s s' y) ^ 2)
+      = 4 * (⟪y, (WithLp.ofLp t).1⟫ ^ 2 + ⟪y, (WithLp.ofLp t).2⟫ ^ 2) := by
+    intro y
+    rw [show (Finset.univ : Finset ℤˣ) = {1, -1} from UnitsInt.univ]
+    rw [Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1)]
+    rw [Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1),
+      Finset.sum_pair (by decide : (1 : ℤˣ) ≠ -1)]
+    unfold signDir
+    push_cast
+    ring
+  simp_rw [hpt]
+  rw [integral_const_mul, integral_add hint1 hint2]
+
 end SignSum
 
 end StatLean.HypothesisTesting
