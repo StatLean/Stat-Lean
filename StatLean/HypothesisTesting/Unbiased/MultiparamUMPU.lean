@@ -1670,22 +1670,35 @@ the boundary laws (`statLaw_ac`) then carries `f =ᵐ[μ₁] 0` to every boundar
   `T` is a *one-element* family and is not complete. `affineSpan ℝ Ω = ⊤` is the faithful
   reading of the source's "not contained in a linear space of dimension less than `k+1`"
   ("linear space" = affine flat), and in finite dimension it is exactly what makes the
-  boundary slice `k`-dimensional. -/
-private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+  boundary slice `k`-dimensional.
+
+**Unbounded, not just boundedly, complete.** `f` is only required to be measurable and
+*integrable* for each boundary law — not bounded. This matters: the derivative side condition
+of the point null, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]`, tests a function of `t` built from the
+unbounded `U`, so `IsBoundedlyCompleteFamily` is too weak for it. The upstream
+`PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero` was always stated for arbitrary
+measurable `f`; the only place the old proof used a bound `|f| ≤ Cb` was to dominate the
+tilted integrand `f · e^{⟪ϑ − ϑ₁, ·⟫}` against `μ₁`, and that integrability is *transported*
+from the law at `(θ₀, ϑ)` by `integrable_statLaw_tilt` instead. `boundedlyComplete_boundary`
+below is the bounded corollary, and is what the three other optimality theorems consume. -/
+private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
     (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
-    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
-    PointEstimation.IsBoundedlyCompleteFamily
-      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T := by
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
+    {f : Ξ → ℝ} (hf : Measurable f)
+    (hfint : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+      Integrable f ((P ((θ₀, ϑ) : ℝ × Ξ)).map T))
+    (hfzero : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+      ∫ t, f t ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) = 0)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) :
+    f =ᵐ[(P p).map T] 0 := by
   classical
   -- an interior point of the boundary slice, used as the reference parameter
   obtain ⟨ϑ₁, hϑ₁int⟩ := interior_slice_nonempty (Ω := Ω) hΩ_convex hΩ_aff (θ₀ := θ₀)
     hΩ_lt hΩ_gt
   have hϑ₁slice : ϑ₁ ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hϑ₁int
   have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := hϑ₁slice
-  intro f hf hbdd hzero p
-  obtain ⟨Cb, hCb⟩ := hbdd
   have hinnerm : ∀ η : Ξ, Measurable fun t : Ξ => ⟪η, t⟫_ℝ := fun η =>
     (innerSL ℝ η).continuous.measurable
   have hinnerm' : ∀ y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)),
@@ -1720,44 +1733,14 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     have h3 : C ((θ₀, ϑ) : ℝ × Ξ) * ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rw [← integral_comp_UT_eq hU hT hUT hϑ (g := fun z : ℝ × Ξ => f z.2)
         (hf.comp measurable_snd)]
-      have hz := hzero ⟨(θ₀, ϑ), hϑ, rfl⟩
+      have hz := hfzero ϑ hϑ
       rwa [integral_map hT.aemeasurable hf.aestronglyMeasurable] at hz
     have h4 : ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rcases mul_eq_zero.1 h3 with h | h
       · exact absurd h hCϑ.ne'
       · exact h
     rw [h1, h2, h4, mul_zero]
-  -- (2) The tilting exponentials are `μ₁`-integrable, because the tilted law is again a member.
-  have hintg : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
-      Integrable (fun t : Ξ => Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ) μ₁ := by
-    intro ϑ hϑ
-    have hHm : Measurable fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
-      ((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp
-    have hdm : Measurable fun z : ℝ × Ξ =>
-        ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)) :=
-      (((measurable_canExp ((θ₀, ϑ₁) : ℝ × Ξ)).exp.const_mul
-        (C ((θ₀, ϑ₁) : ℝ × Ξ))).ennreal_ofReal :
-        Measurable fun z : ℝ × Ξ =>
-          ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)))
-    have hC1 : 0 < C ((θ₀, ϑ₁) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ₁
-    have hν1 : Integrable (fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ)
-        ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map fun x => (U x, T x)) := by
-      rw [hUT _ hϑ₁]
-      rw [integrable_withDensity_iff_integrable_smul' hdm
-        (Filter.Eventually.of_forall fun z => ENNReal.ofReal_lt_top)]
-      refine Integrable.congr (((integrable_canExp hU hT hUT hϑ).1).const_mul
-        (C ((θ₀, ϑ₁) : ℝ × Ξ))) (Filter.Eventually.of_forall fun z => ?_)
-      dsimp only
-      rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul, mul_assoc, ← Real.exp_add]
-      congr 2
-      simp only [canExp_apply, inner_sub_left]
-      ring
-    have hX := (integrable_map_measure hHm.aestronglyMeasurable
-      (hU.prodMk hT).aemeasurable).1 hν1
-    rw [hμ₁]
-    exact (integrable_map_measure ((hinnerm (ϑ - ϑ₁)).exp.aestronglyMeasurable)
-      hT.aemeasurable).2 hX
-  -- (3) Transport to `EuclideanSpace` and apply Laplace-transform uniqueness.
+  -- (2) Transport to `EuclideanSpace` and apply Laplace-transform uniqueness.
   set e : Ξ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) :=
     (stdOrthonormalBasis ℝ Ξ).repr with hedef
   have hemeas : Measurable e := e.continuous.measurable
@@ -1797,14 +1780,13 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   have hint' : ∀ y ∈ S', Integrable (fun z => f' z * Real.exp ⟪y, z⟫_ℝ) ν' := by
     intro y hy
     have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
-    have hexp := hintg (e.symm y + ϑ₁) hϑmem
-    rw [add_sub_cancel_right] at hexp
+    -- the tilted integrability is TRANSPORTED from the law at `(θ₀, e.symm y + ϑ₁)`,
+    -- not dominated by a bound on `f`; this is the only step that used `|f| ≤ Cb`
     have hIt : Integrable (fun t : Ξ => f t * Real.exp ⟪e.symm y, t⟫_ℝ) μ₁ := by
-      refine Integrable.mono' (hexp.const_mul Cb)
-        ((hf.mul ((hinnerm (e.symm y)).exp)).aestronglyMeasurable)
-        (Filter.Eventually.of_forall fun t => ?_)
-      rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
-      exact mul_le_mul_of_nonneg_right (hCb t) (Real.exp_pos _).le
+      have htr := integrable_statLaw_tilt hU hT hUT hϑmem hϑ₁ hf (hfint _ hϑmem)
+      rw [add_sub_cancel_right] at htr
+      rw [hμ₁]
+      exact htr
     have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
         f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
     rw [hν']
@@ -1829,9 +1811,31 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     have h := (ae_map_iff hemeas.aemeasurable hset).1 hae0'
     filter_upwards [h] with t ht
     simpa only [hf'def, LinearIsometryEquiv.symm_apply_apply] using ht
-  have hac : (P (p : ℝ × Ξ)).map T ≪ μ₁ := by
-    rw [hμ₁]; exact statLaw_ac hU hT hUT p.2.1 hϑ₁
+  have hac : (P p).map T ≪ μ₁ := by
+    rw [hμ₁]; exact statLaw_ac hU hT hUT hp hϑ₁
   exact haeμ.filter_mono hac.ae_le
+
+/-- **Bounded completeness of the boundary family.** The special case of `complete_boundary`
+in which `f` is uniformly bounded: on the boundary laws — probability measures — a bounded
+measurable function is automatically integrable, so the integrability hypothesis is free.
+This is the form the three closed optimality theorems of this file consume. -/
+private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    PointEstimation.IsBoundedlyCompleteFamily
+      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T := by
+  intro f hf hbdd hzero p
+  obtain ⟨Cb, hCb⟩ := hbdd
+  refine complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hf
+    (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), hϑ, rfl⟩) p.2.1
+  haveI : IsProbabilityMeasure ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+    Measure.isProbabilityMeasure_map hT.aemeasurable
+  refine Integrable.mono' (integrable_const Cb) hf.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun t => ?_)
+  rw [Real.norm_eq_abs]
+  exact hCb t
 
 /-- **Similar ⇒ Neyman structure.** A critical function of `(U, T)` which is similar of size
 `α` on the whole boundary surface `θ = θ₀` has conditional size `α` for almost every `t`. -/
