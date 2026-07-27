@@ -25,14 +25,44 @@ problem **conditionally on `T = t`** and reinterpreting the result as a test of 
 The names `_inside` / `_outside` refer to the shape of the rejection region in `u`, not to
 the shape of the null set.
 
-**⚠ The four optimality theorems were FALSE in the frozen form transcribed here** — not
-because the classical result fails, but because the transcription dropped the source's
-standing convention that the observation *is* the sufficient statistic. Explicit
-counterexamples are formalized in the section `ConditionalUMPUCounterexample` below, one per
-theorem. All four statements have been **REPAIRED** by the single added hypothesis
-`hsuff` (see `sufficiencyReducible` below and the amendment note at each theorem); the
-counterexamples are retained because they are what certifies that the added hypothesis is
-not decoration.
+**⚠ The four optimality theorems were FALSE in the frozen form transcribed here**, for two
+independent reasons, and all four have been **REPAIRED**.
+
+1. *The transcription dropped the source's standing convention that the observation is the
+   sufficient statistic.* `IsCanonicalUT` constrains only the law of the pair `(U, T)`, while
+   `IsUMPU` quantifies over all critical functions of the sample space; taking `U` and `T`
+   constant makes the hypotheses vacuous and the conclusion false. Explicit counterexamples
+   are formalized in the section `ConditionalUMPUCounterexample` below, one per theorem. The
+   repair is the added hypothesis `hsuff : SufficiencyReducible P Ω U T`; the counterexamples
+   are retained because they are what certifies that it is not decoration.
+2. *The non-degeneracy hypothesis was mis-transcribed.* The source's "`Ω` is not contained in
+   a linear space of dimension less than `k+1`" means an *affine* flat; the frozen
+   `Submodule.span ℝ Ω = ⊤` is strictly weaker and does not suffice. For `Ξ = ℝ` the convex
+   set `Ω = {(θ, 1 − θ) : θ ∈ [-1,1]}` has full linear span and reaches strictly below and
+   above `θ₀ = 0`, yet its boundary surface `{p ∈ Ω | p.1 = 0}` is a *single point*, so the
+   boundary family of laws of `T` is a one-element family and carries no completeness — the
+   step from similarity to Neyman structure collapses. The repair is the added hypothesis
+   `hΩ_aff : affineSpan ℝ Ω = ⊤` (see `boundedlyComplete_boundary`).
+
+The two remaining amendments are the instances `[BorelSpace Ξ] [FiniteDimensional ℝ Ξ]`: the
+first is what makes the canonical exponent measurable, the second is what turns
+`hΩ_aff` into nonempty interior and hence makes the boundary slice `k`-dimensional.
+
+**Status.** `isUMPU_conditional_oneSided`, `_inside` and `_outside` are **PROVED** modulo the
+single lifted brick `boundedlyComplete_boundary` (bounded completeness of the laws of `T` over
+a boundary surface — the Lehmann–Scheffé input, whose remaining gap is the identification of
+the boundary family as an exponential family on an abstract `Ξ` rather than on
+`EuclideanSpace ℝ (Fin s)`). `isUMPU_conditional_point` additionally needs the *derivative*
+side condition for a competitor, and is documented at the theorem.
+
+The machinery is elementary and self-contained: conditionally on `T = t` all members of the
+family are exponential tilts of one another (`ae_condDistrib_expTilt`), and every optimality
+statement is the variation-diminishing inequality `∫ g·(k e^{cu} − k e^{cC}) ≥ 0` for a `g`
+changing sign at the critical value (`integral_expTilt_signed`, and its two-threshold
+companion `integral_expTilt_signed_interval` built from the three-exponential separation).
+Continuity of the power function along segments of `Ω` — proved here from convexity alone,
+by the two-point envelope `e^{(1−s)a+sb} ≤ e^a + e^b` — is what upgrades the level inequality
+at a boundary parameter to similarity.
 
 The constants are functions of `t`, determined by conditional size equations; the point-null
 case carries in addition the conditional derivative condition
@@ -384,7 +414,9 @@ lemma cxInside_val : condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0
 lemma cxOutside_val : condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0 : ℝ)) = 1 / 2 := by
   norm_num [condOutsideTest, cxC₀, cxγ₀]
 
-/-- **`isUMPU_conditional_oneSided` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+/-- **`isUMPU_conditional_oneSided` WITHOUT the amendment `hsuff` is false**
+(`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function
+of `(U, T)` has constant power, while `cxψ` does not.)
 
 Old wording: `isUMPU_conditional_oneSided` is false as stated.** Every hypothesis of that theorem is
 satisfied by the counterexample family (with `θ₀ = 0`, `α = 1/2`, `Ω = univ`), yet the
@@ -416,7 +448,9 @@ theorem not_isUMPU_conditional_oneSided_counterexample :
   · simpa [cxU, cxT] using cxOneSided_val
   · simpa using not_lt.mpr hq.2
 
-/-- **`isUMPU_conditional_inside` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+/-- **`isUMPU_conditional_inside` WITHOUT the amendment `hsuff` is false**
+(`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function
+of `(U, T)` has constant power, while `cxψ` does not.)
 
 Old wording: `isUMPU_conditional_inside` is false as stated**, by the same counterexample family
 (here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{0 < θ < 1}`). -/
@@ -454,7 +488,9 @@ theorem not_isUMPU_conditional_inside_counterexample :
     · exact fun hmem => absurd hmem.1 (not_lt.mpr h)
     · exact fun hmem => absurd hmem.2 (not_lt.mpr h)
 
-/-- **`isUMPU_conditional_outside` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+/-- **`isUMPU_conditional_outside` WITHOUT the amendment `hsuff` is false**
+(`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function
+of `(U, T)` has constant power, while `cxψ` does not.)
 
 Old wording: `isUMPU_conditional_outside` is false as stated**, by the same counterexample family
 (here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{θ < 0 ∨ 1 < θ}`). -/
@@ -492,7 +528,9 @@ theorem not_isUMPU_conditional_outside_counterexample :
     · exact absurd hq.2.1 (not_le.mpr h)
     · exact absurd hq.2.2 (not_le.mpr h)
 
-/-- **`isUMPU_conditional_point` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+/-- **`isUMPU_conditional_point` WITHOUT the amendment `hsuff` is false**
+(`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function
+of `(U, T)` has constant power, while `cxψ` does not.)
 
 Old wording: `isUMPU_conditional_point` is false as stated**, by the same counterexample family
 (here `θ₀ = 0`, `α = 1/2`); note that the conditional derivative condition `hderiv` also
@@ -2321,6 +2359,9 @@ theorem isUMPU_conditional_point
     {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ} {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {θ₀ α : ℝ}
     -- LEAN-ONLY: the family members are probability measures; the model's standing setting
     [∀ p, IsProbabilityMeasure (P p)]
+    -- LEAN-ONLY (AMENDMENT): the σ-algebra of `Ξ` is the Borel one and `Ξ` is finite
+    -- dimensional; see `boundedlyComplete_boundary`
+    [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     -- USER-INPUT: the two components of the sufficient statistic are measurable
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
@@ -2360,29 +2401,39 @@ theorem isUMPU_conditional_point
         = α * ∫ u, u ∂(condDistrib U T (P p) t)) :
     IsUMPU P {p ∈ Ω | p.1 = θ₀} {p ∈ Ω | p.1 ≠ θ₀} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample`; the amendment
-  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
-  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
-  -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
-  -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
-  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
-  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
-  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
-  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
-  --      — CLOSED, available;
-  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
-  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
-  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
-  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
-  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
-  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
-  --      the frozen `Ξ`;
-  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
-  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
-  --      selection to glue the fibrewise optima — the gluing is not formalized.
-  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
-  -- signature, which is out of scope for this pass.
+  -- REPAIRED, NOT CLOSED. Both repairs of the other three theorems are applied here as well
+  -- (`hsuff`, `hΩ_aff`, `[BorelSpace Ξ] [FiniteDimensional ℝ Ξ]`): the frozen form was FALSE,
+  -- refuted by `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample`,
+  -- and the degenerate-`Ω` defect of the file docstring applies verbatim.
+  --
+  -- What is proved elsewhere in this file and is directly reusable here:
+  --  * the conditional laws are exponential tilts of one another (`ae_condDistrib_expTilt`);
+  --  * similarity of an unbiased competitor on the boundary surface, from continuity of the
+  --    power along segments of `Ω` (`integral_comp_eq_of_le_of_segment`);
+  --  * similar ⟹ Neyman structure for the *size* condition (`ae_condPower_eq_of_similar`,
+  --    over the lifted brick `boundedlyComplete_boundary`);
+  --  * `exists_sep_line` is NOT yet ported, but is the only separation needed: for `c ≠ 0`
+  --    the secant/tangent of `t ↦ e^{ct}` at `C₁, C₂` gives, exactly as in the interval case,
+  --    `g(u)·(e^{cu} − A − Bu) ≥ 0` for `g = φ − ψ`, and the two side conditions kill the two
+  --    affine terms.
+  --
+  -- What is genuinely missing, and is specific to the point null, is the *derivative* side
+  -- condition for the competitor, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]` a.e. `t`. Deriving it
+  -- from unbiasedness needs three further steps, none of which is in the file:
+  --  (a) an interior point of `Ω` on the boundary surface (Mathlib's
+  --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push), so that the
+  --      *pure-`θ`* segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`; along a general segment the
+  --      derivative picks up the nuisance directions and is not `E[Uψ]`;
+  --  (b) differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
+  --      dominating function is available from the same two-point envelope used by
+  --      `tendsto_integral_canonical_segment`, in the form
+  --      `|b−a|·e^{(1−s)a+sb} ≤ 2η⁻¹(e^a + e^b)` on `[s₀−η, s₀+η]`, so this is routine but
+  --      not short;
+  --  (c) a completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
+  --      i.e. `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary
+  --      slice — a second brick beyond `boundedlyComplete_boundary` — together with the
+  --      conditional integrability of `U`, which does follow from `hΩ_lt`/`hΩ_gt` by the
+  --      two-point bound `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` applied to the two conditional tilts.
   sorry
 
 /-! ## Measurable selection of the conditional constants -/
