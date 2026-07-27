@@ -4,6 +4,7 @@ import StatLean.MultipleTesting.ForMathlib.ChiSquared
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import StatLean.AsymptoticStatistics.ParametricFamily.ScoreCLT
+import StatLean.HypothesisTesting.Bootstrap.Multivariate
 import Mathlib.Probability.HasLawExists
 import Mathlib.Probability.StrongLaw
 
@@ -627,18 +628,150 @@ theorem pearsonQ_weakConverges_chiSquared {k : ℕ} {π : Fin (k + 1) → ℝ}
 
 /-! ### (ii) Local alternatives and the noncentral limit -/
 
-/-- **Multivariate CLT for the reduced cell frequencies under local alternatives** (LIFTED —
-the deep analytic brick of the noncentral-limit proof). Under `p⁽ⁿ⁾ = π + h/√n` the
-standardised reduced count vector converges in law to `N(ν, Σ)` with drift
-`ν = (hⱼ)_{j<k}` and covariance `Σ = reducedCov π`.
+/-! #### The drifting-row transfer
 
-TODO: unlike the null case this is a *triangular array* — the per-observation law `μ n`
-drifts with `n` — so the fixed-i.i.d. brick `tendstoInDistribution_multivariate_clt` does
-not apply directly. The intended route is a multivariate Lindeberg / Cramér–Wold CLT (the
-repo has the scalar `HypothesisTesting.ForMathlib.LindebergCLT.lindeberg_clt`), or Le Cam's
-third lemma (`AsymptoticStatistics.ForMathlib.Contiguity`), plus the same canonical transfer
-as `reducedCount_weakConverges_gaussian`. The drift `ν = hⱼ` is the limit of
-`E[reducedCount]ⱼ = (n p⁽ⁿ⁾ⱼ − nπⱼ)/√n = hⱼ`, and `Σ → diag π − π πᵀ` since `p⁽ⁿ⁾ → π`. -/
+Unlike the null case this is a *triangular array*: the per-observation law `μ n` drifts with
+`n`, so the fixed-i.i.d. brick `clt_finDim` no longer applies. The multivariate bootstrap
+limit law `meanVec_root_tendsto` is exactly a drifting-row statement — it is proved by the
+Cramér–Wold reduction to the univariate triangular-array central limit theorem — and the
+local-alternative array satisfies its class condition `meanVecSeqClass`: the cell weights
+`p⁽ⁿ⁾ = π + h/√n` converge to `π`, hence so do the laws, the mean vectors and the covariance
+matrices of the centred indicator vectors. The only bookkeeping is the centring:
+`reducedCount` centres at `π`, while `meanVecRootLaw` centres at the stage-`n` mean, and the
+difference is the fixed vector `(hⱼ)_{j<k}` — which is precisely why the limit is the
+Gaussian shifted by the drift. -/
+
+/-- The centred per-observation indicator vector `g x = indicatorVec x − piVec π`. -/
+private noncomputable def centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ)
+    (x : Fin (k + 1)) : EuclideanSpace ℝ (Fin k) :=
+  indicatorVec x - piVec π
+
+private lemma ofLp_centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ) (x : Fin (k + 1))
+    (i : Fin k) :
+    WithLp.ofLp (centredIndicator π x) i
+      = (if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc := rfl
+
+private lemma measurable_centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Measurable (centredIndicator π) := measurable_of_finite _
+
+/-- The multinomial cell law attached to a probability vector `π` on `Fin (k+1)`. -/
+private noncomputable def cellMeasure {k : ℕ} (π : Fin (k + 1) → ℝ) :
+    Measure (Fin (k + 1)) :=
+  Measure.sum fun x => ENNReal.ofReal (π x) • Measure.dirac x
+
+private lemma cellMeasure_apply {k : ℕ} (π : Fin (k + 1) → ℝ) (s : Set (Fin (k + 1))) :
+    cellMeasure π s = ∑ x, ENNReal.ofReal (π x) * s.indicator 1 x := by
+  rw [cellMeasure, Measure.sum_apply _ s.toFinite.measurableSet, tsum_fintype]
+  exact Finset.sum_congr rfl fun x _ => by
+    rw [Measure.smul_apply, Measure.dirac_apply, smul_eq_mul]
+
+private lemma isProbabilityMeasure_cellMeasure {k : ℕ} {π : Fin (k + 1) → ℝ}
+    (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
+    IsProbabilityMeasure (cellMeasure π) := by
+  constructor
+  rw [cellMeasure_apply]
+  simp only [Set.indicator_univ, Pi.one_apply, mul_one]
+  rw [← ENNReal.ofReal_sum_of_nonneg (fun x _ => (hπpos x).le), hπsum, ENNReal.ofReal_one]
+
+private lemma cellMeasure_real {k : ℕ} {π : Fin (k + 1) → ℝ} (hπpos : ∀ j, 0 < π j)
+    (j : Fin (k + 1)) : (cellMeasure π).real {j} = π j := by
+  rw [MeasureTheory.Measure.real, cellMeasure_apply]
+  rw [Finset.sum_eq_single j
+    (fun b _ hb => by simp [Set.mem_singleton_iff, hb])
+    (fun hb => absurd (Finset.mem_univ j) hb)]
+  simp [ENNReal.toReal_ofReal (hπpos j).le]
+
+/-- Integrals against the law of the centred indicator are finite `π`-weighted sums. -/
+private lemma integral_map_centredIndicator {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (π : Fin (k + 1) → ℝ) (ρ : Measure (Fin (k + 1)))
+    [IsFiniteMeasure ρ] {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) :
+    ∫ y, f y ∂(ρ.map (centredIndicator π)) = ∑ x, ρ.real {x} • f (centredIndicator π x) := by
+  rw [integral_map (measurable_centredIndicator π).aemeasurable hf.aestronglyMeasurable,
+    integral_fintype Integrable.of_finite]
+
+/-- Every continuous function is `p`-integrable for the law of the centred indicator: that
+law is carried by finitely many points. -/
+private lemma memLp_map_centredIndicator {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    (π : Fin (k + 1) → ℝ) (ρ : Measure (Fin (k + 1))) [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) (p : ℝ≥0∞) :
+    MemLp f p (ρ.map (centredIndicator π)) := by
+  have hfm : AEStronglyMeasurable f (ρ.map (centredIndicator π)) := hf.aestronglyMeasurable
+  rw [memLp_map_measure_iff hfm (measurable_centredIndicator π).aemeasurable]
+  obtain ⟨C, hC⟩ := (Set.finite_range fun x => ‖f (centredIndicator π x)‖).bddAbove
+  exact (memLp_top_of_bound (hfm.comp_aemeasurable (measurable_centredIndicator π).aemeasurable)
+    C (Filter.Eventually.of_forall fun x => hC ⟨x, rfl⟩)).mono_exponent le_top
+
+/-- The mean vector of a weighted family of centred indicators, in coordinates. -/
+private lemma sum_smul_centredIndicator {k : ℕ} (π w : Fin (k + 1) → ℝ)
+    (hw : ∑ x, w x = 1) :
+    ∑ x, w x • centredIndicator π x
+      = WithLp.toLp 2 (fun i : Fin k => w i.castSucc - π i.castSucc) := by
+  simp only [centredIndicator, indicatorVec, piVec]
+  simp_rw [← WithLp.toLp_sub, ← WithLp.toLp_smul]
+  rw [← WithLp.toLp_sum]
+  refine congrArg (WithLp.toLp 2) ?_
+  funext i
+  simp only [Finset.sum_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
+  have hterm : ∀ x : Fin (k + 1),
+      w x * ((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc)
+        = w x * (if x = i.castSucc then 1 else 0) - π i.castSucc * w x := by
+    intro x; ring
+  simp_rw [hterm]
+  rw [Finset.sum_sub_distrib, ← Finset.mul_sum, hw, mul_one, sum_pi_ite_castSucc w i]
+
+/-- The covariance matrix of the law of the centred indicator, in weights. -/
+private lemma covMatrix_map_centredIndicator {k : ℕ} (π : Fin (k + 1) → ℝ)
+    (ρ : Measure (Fin (k + 1))) [IsProbabilityMeasure ρ] (i j : Fin k) :
+    covMatrix (ρ.map (centredIndicator π)) i j
+      = (∑ x, ρ.real {x} * (WithLp.ofLp (centredIndicator π x) i
+            * WithLp.ofLp (centredIndicator π x) j))
+        - (∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) i)
+          * ∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) j := by
+  haveI : IsProbabilityMeasure (ρ.map (centredIndicator π)) :=
+    Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+  rw [covMatrix, Matrix.of_apply,
+    covariance_eq_sub (memLp_map_centredIndicator π ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop) 2)
+      (memLp_map_centredIndicator π ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) (by fun_prop) 2)]
+  have h1 : ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) y
+        * (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) y ∂(ρ.map (centredIndicator π))
+      = ∑ x, ρ.real {x} * (WithLp.ofLp (centredIndicator π x) i
+          * WithLp.ofLp (centredIndicator π x) j) := by
+    rw [integral_map_centredIndicator π ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i * WithLp.ofLp y j) (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]
+  have h2 : ∀ l : Fin k, ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) y ∂(ρ.map (centredIndicator π))
+      = ∑ x, ρ.real {x} * WithLp.ofLp (centredIndicator π x) l := by
+    intro l
+    rw [integral_map_centredIndicator π ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]
+  simp only [Pi.mul_apply]
+  rw [h1, h2 i, h2 j]
+
+/-- Translating the centred multivariate Gaussian by `m` gives mean `m`. -/
+private lemma multivariateGaussian_map_add {k : ℕ} (m : EuclideanSpace ℝ (Fin k))
+    (S : Matrix (Fin k) (Fin k) ℝ) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) S).map (fun z => m + z)
+      = multivariateGaussian m S := by
+  rw [multivariateGaussian, multivariateGaussian, Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext x
+  simp [Function.comp]
+
+/-- **Multivariate CLT for the reduced cell frequencies under local alternatives.** Under
+`p⁽ⁿ⁾ = π + h/√n` the standardised reduced count vector converges in law to `N(ν, Σ)` with
+drift `ν = (hⱼ)_{j<k}` and covariance `Σ = reducedCov π`.
+
+This is a *triangular array*: the per-observation law drifts with `n`. The proof runs the
+drifting-row multivariate limit law `meanVec_root_tendsto` on the sequence of laws
+`F n = (μ n).map (centredIndicator π)` of the centred per-observation indicator vector, whose
+membership in `meanVecSeqClass Q` (with `Q` the law under the null cell weights `π`) is the
+finite computation `p⁽ⁿ⁾ → π`; the identification of the pushforwards is
+`hlawid`, the translation of the mean-vector root by the drift. -/
 private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1) → ℝ}
     {P : ℕ → Measure Ω} [∀ n, IsProbabilityMeasure (P n)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)} {μ : ℕ → Measure (Fin (k + 1))}
@@ -649,7 +782,200 @@ private lemma reducedCount_weakConverges_noncentral {k : ℕ} {π h : Fin (k + 1
     (hcell : ∀ n j, ((μ n) {j}).toReal = π j + h j / Real.sqrt (n : ℝ)) :
     WeakConverges (fun n => (P n).map (reducedCount π (X n)))
       (multivariateGaussian (WithLp.toLp 2 (fun i => h i.castSucc)) (reducedCov π)) := by
-  sorry
+  classical
+  haveI hcellprob : IsProbabilityMeasure (cellMeasure π) :=
+    isProbabilityMeasure_cellMeasure hπpos hπsum
+  set Q : Measure (EuclideanSpace ℝ (Fin k)) := (cellMeasure π).map (centredIndicator π) with hQ
+  haveI hQprob : IsProbabilityMeasure Q :=
+    Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+  set hred : EuclideanSpace ℝ (Fin k) := WithLp.toLp 2 (fun i : Fin k => h i.castSucc) with hhred
+  -- the stage-`n` cell weights and their limit
+  set w : ℕ → Fin (k + 1) → ℝ := fun n x => π x + h x / Real.sqrt (n : ℝ) with hw
+  have hwsum : ∀ n, ∑ x, w n x = 1 := by
+    intro n
+    simp only [hw]
+    rw [Finset.sum_add_distrib, hπsum, ← Finset.sum_div, hhsum, zero_div, add_zero]
+  have hwlim : ∀ x, Tendsto (fun n : ℕ => w n x) atTop (𝓝 (π x)) := by
+    intro x
+    have hz : Tendsto (fun n : ℕ => h x / Real.sqrt (n : ℝ)) atTop (𝓝 0) :=
+      Filter.Tendsto.div_atTop tendsto_const_nhds
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    simpa only [hw, add_zero] using tendsto_const_nhds.add hz
+  have hμprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (μ n) := by
+    intro n hn
+    rw [← hlaw n ⟨0, hn⟩]
+    exact Measure.isProbabilityMeasure_map (hX n ⟨0, hn⟩).aemeasurable
+  have hμreal : ∀ n x, (μ n).real {x} = w n x := by
+    intro n x
+    rw [MeasureTheory.Measure.real, hcell n x]
+  -- the sequence of laws of the centred indicator
+  set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => if n = 0 then Q else (μ n).map (centredIndicator π) with hF
+  have hFeq : ∀ n : ℕ, 0 < n → F n = (μ n).map (centredIndicator π) := by
+    intro n hn; simp only [hF, if_neg hn.ne']
+  have hF0 : F 0 = Q := by simp only [hF, if_pos rfl]
+  have hFprob : ∀ n : ℕ, 0 < n → IsProbabilityMeasure (F n) := by
+    intro n hn
+    haveI := hμprob n hn
+    rw [hFeq n hn]
+    exact Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+  -- the class conditions
+  have hFclass : F ∈ meanVecSeqClass Q := by
+    refine ⟨hFprob, ?_, ?_, ?_, ?_⟩
+    · intro n
+      rcases Nat.eq_zero_or_pos n with hn | hn
+      · subst hn
+        rw [hF0, hQ]
+        exact memLp_map_centredIndicator π (cellMeasure π) continuous_id' 2
+      · haveI := hμprob n hn
+        rw [hFeq n hn]
+        exact memLp_map_centredIndicator π (μ n) continuous_id' 2
+    · intro f
+      have hQint : ∫ y, f y ∂Q = ∑ x, π x * f (centredIndicator π x) := by
+        rw [hQ, integral_map_centredIndicator π (cellMeasure π) f.continuous]
+        exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x, smul_eq_mul]
+      rw [hQint]
+      refine Tendsto.congr' ?_ (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := hμprob n hn
+      rw [hFeq n hn, integral_map_centredIndicator π (μ n) f.continuous]
+      exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x, smul_eq_mul]
+    · intro i
+      have hQint : ∫ y, WithLp.ofLp y i ∂Q
+          = ∑ x, π x * WithLp.ofLp (centredIndicator π x) i := by
+        rw [hQ, integral_map_centredIndicator π (cellMeasure π)
+          (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+        exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x, smul_eq_mul]
+      rw [hQint]
+      refine Tendsto.congr' ?_ (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := hμprob n hn
+      rw [hFeq n hn, integral_map_centredIndicator π (μ n)
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+      exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x, smul_eq_mul]
+    · intro i j
+      have hQcov : covMatrix Q i j
+          = (∑ x, π x * (WithLp.ofLp (centredIndicator π x) i
+                * WithLp.ofLp (centredIndicator π x) j))
+            - (∑ x, π x * WithLp.ofLp (centredIndicator π x) i)
+              * ∑ x, π x * WithLp.ofLp (centredIndicator π x) j := by
+        rw [hQ, covMatrix_map_centredIndicator π (cellMeasure π) i j]
+        congr 1
+        · exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x]
+        · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [cellMeasure_real hπpos x]
+      rw [hQcov]
+      refine Tendsto.congr' ?_
+        (((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
+          ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
+            (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds))))
+      filter_upwards [eventually_gt_atTop 0] with n hn
+      haveI := hμprob n hn
+      haveI := hFprob n hn
+      rw [hFeq n hn, covMatrix_map_centredIndicator π (μ n) i j]
+      congr 1
+      · exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x]
+      · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hμreal n x]
+  -- the limiting covariance is the reduced multinomial covariance
+  have hcovQ : covMatrix Q = reducedCov π := by
+    ext i j
+    rw [hQ, covMatrix_map_centredIndicator π (cellMeasure π) i j]
+    have hz : ∀ l : Fin k,
+        ∑ x, (cellMeasure π).real {x} * WithLp.ofLp (centredIndicator π x) l = 0 := by
+      intro l
+      have hterm : ∀ x : Fin (k + 1),
+          (cellMeasure π).real {x} * WithLp.ofLp (centredIndicator π x) l
+            = π x * (if x = l.castSucc then (1 : ℝ) else 0) - π l.castSucc * π x := by
+        intro x
+        rw [cellMeasure_real hπpos x, ofLp_centredIndicator]; ring
+      simp_rw [hterm]
+      rw [Finset.sum_sub_distrib, sum_pi_ite_castSucc, ← Finset.mul_sum, hπsum, mul_one, sub_self]
+    rw [hz i, hz j, mul_zero, sub_zero]
+    have hterm : ∀ x : Fin (k + 1),
+        (cellMeasure π).real {x} * (WithLp.ofLp (centredIndicator π x) i
+            * WithLp.ofLp (centredIndicator π x) j)
+          = π x * (((if x = i.castSucc then (1 : ℝ) else 0) - π i.castSucc)
+              * ((if x = j.castSucc then 1 else 0) - π j.castSucc)) := by
+      intro x
+      rw [cellMeasure_real hπpos x, ofLp_centredIndicator, ofLp_centredIndicator]
+    simp_rw [hterm]
+    exact sum_pi_center_prod π hπsum i j
+  have hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q := by
+    rw [hQ]; exact memLp_map_centredIndicator π (cellMeasure π) continuous_id' 2
+  -- the drifting-row multivariate central limit theorem
+  have hweak : WeakConverges (fun n => meanVecRootLaw (F n) n)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) (covMatrix Q)) :=
+    meanVec_root_tendsto hQ2 hFclass
+  have hshift := hweak.map (f := fun z : EuclideanSpace ℝ (Fin k) => hred + z)
+    (by fun_prop) (by fun_prop)
+  rw [multivariateGaussian_map_add, hcovQ] at hshift
+  -- the law identity: `reducedCount` is the mean-vector root translated by the drift
+  have hlawid : ∀ n : ℕ, 0 < n →
+      (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => hred + z)
+        = (P n).map (reducedCount π (X n)) := by
+    intro n hn
+    haveI := hμprob n hn
+    haveI hFnprob : IsProbabilityMeasure ((μ n).map (centredIndicator π)) :=
+      Measure.isProbabilityMeasure_map (measurable_centredIndicator π).aemeasurable
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+    have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+      Real.mul_self_sqrt (Nat.cast_nonneg n)
+    have h1 : Real.sqrt (n : ℝ) * (n : ℝ)⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
+      have hne : (n : ℝ) ≠ 0 := hnR.ne'
+      field_simp
+      linarith [hsq]
+    have h2 : Real.sqrt (n : ℝ) * (Real.sqrt (n : ℝ))⁻¹ = 1 := mul_inv_cancel₀ hspos.ne'
+    have hmeanF : ∫ z, z ∂(F n) = (Real.sqrt (n : ℝ))⁻¹ • hred := by
+      rw [hFeq n hn, integral_map_centredIndicator π (μ n) continuous_id']
+      have hre : ∀ x : Fin (k + 1), (μ n).real {x} • centredIndicator π x
+          = w n x • centredIndicator π x := fun x => by rw [hμreal n x]
+      simp_rw [hre]
+      rw [sum_smul_centredIndicator π (w n) (hwsum n), hhred, ← WithLp.toLp_smul]
+      refine congrArg (WithLp.toLp 2) ?_
+      funext i
+      simp only [Pi.smul_apply, smul_eq_mul, hw]
+      rw [div_eq_inv_mul]
+      ring
+    set Ψ : (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
+      fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hΨ
+    have hΨcont : Continuous Ψ :=
+      (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+    have hstep1 : (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => hred + z)
+        = (Measure.pi fun _ : Fin n => F n).map Ψ := by
+      rw [meanVecRootLaw, Measure.map_map (by fun_prop) (by fun_prop)]
+      congr 1
+      funext y
+      simp only [Function.comp_apply, hmeanF, hΨ]
+      rw [smul_sub, smul_smul, smul_smul, h1, h2, one_smul]
+      abel
+    have hpiX : (P n).map (fun ω (i : Fin n) => X n i ω) = Measure.pi (fun _ : Fin n => μ n) := by
+      rw [(iIndepFun_iff_map_fun_eq_pi_map (fun i => (hX n i).aemeasurable)).1 (hindep n)]
+      congr 1; funext i; exact hlaw n i
+    have hXmeas : Measurable (fun ω (i : Fin n) => X n i ω) :=
+      measurable_pi_lambda _ (fun i => hX n i)
+    have hgmeas : Measurable
+        (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => centredIndicator π (d i)) :=
+      measurable_pi_lambda _ (fun i =>
+        (measurable_centredIndicator π).comp (measurable_pi_apply i))
+    have hstep2 : (P n).map (reducedCount π (X n)) = (Measure.pi fun _ : Fin n => F n).map Ψ := by
+      have hcomp : reducedCount π (X n)
+          = Ψ ∘ ((fun (d : Fin n → Fin (k + 1)) (i : Fin n) => centredIndicator π (d i))
+              ∘ (fun ω (i : Fin n) => X n i ω)) := by
+        funext ω
+        rw [reducedCount_eq_smul_sum π (X n) ω]
+        rfl
+      rw [hcomp, ← Measure.map_map hΨcont.measurable (hgmeas.comp hXmeas),
+        ← Measure.map_map hgmeas hXmeas, hpiX,
+        Measure.pi_map_pi (fun _ => (measurable_centredIndicator π).aemeasurable)]
+      have hfun : (fun _ : Fin n => (μ n).map (centredIndicator π)) = fun _ : Fin n => F n := by
+        funext i; rw [hFeq n hn]
+      exact congrArg (Measure.map Ψ) (congrArg Measure.pi hfun)
+    rw [hstep1, hstep2]
+  intro f
+  refine (hshift f).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with n hn
+  rw [hlawid n hn]
+
 
 /-- **Limiting distribution under local alternatives.** Under the alternative sequence
 `p⁽ⁿ⁾ⱼ = πⱼ + hⱼ n^{-1/2}` with `∑_{j=1}^{k+1} hⱼ = 0`, Pearson's statistic converges in
