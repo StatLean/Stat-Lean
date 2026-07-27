@@ -1,7 +1,6 @@
 # HypothesisTesting Batch 12 — orchestration status
 
-Last update: 2026-07-26 (HT 77 literal / 76 build-reported, area gate GREEN 3304 jobs.
-The opus-4.8 "genuinely blocked" verdicts were RE-TESTED on opus-5 and OVERTURNED wholesale).
+Last update: 2026-07-27 (HT 28 after wave-2: all 7 lanes merged — Bootstrap/Multivariate, ChiSquaredMultinomial, Randomization/Asymptotics+Slutsky, SymmetryIdentity 0-sorry; ConfidenceBounds+SymmetryIdentity+MultiparamUMPU inside/outside REPAIRED+PROVED; triangular_wlln repaired. Wave-3 launched on the last 28).
 Integration branch: `ht/batch12` (to be cut off `pe/batch11` once PE stubs land). Proof branches `ht/<topic>` base off it. Merges: `ht/batch12` → local `main` after full close (never GitHub origin without user request).
 
 ## Current state — 2026-07-25
