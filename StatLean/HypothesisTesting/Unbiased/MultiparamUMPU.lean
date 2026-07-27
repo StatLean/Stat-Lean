@@ -2727,6 +2727,103 @@ private lemma abs_sub_mul_exp_segment_le (a b s : ℝ) {η : ℝ} (hη : 0 < η)
   field_simp
   ring
 
+/-- **A two-sided pair of boundary parameters on a common nuisance coordinate.** Under the
+amendments `hΩ_aff` and `[FiniteDimensional ℝ Ξ]` the surface `θ = θ₀` meets the *interior*
+of `Ω` (`exists_interior_boundary_point`), so a whole ball around such a point lies in `Ω`.
+In particular there is a `δ > 0` for which all three of `(θ₀, ϑ₀)`, `(θ₀ − δ, ϑ₀)` and
+`(θ₀ + δ, ϑ₀)` are in `Ω`, with the **same** nuisance coordinate `ϑ₀`.
+
+This is exactly what `hΩ_lt`/`hΩ_gt` alone fail to give: those hypotheses produce two
+parameters straddling `θ₀`, but on unrelated nuisance coordinates, whereas
+`ae_condDistrib_expTilt` compares two conditional laws by a tilt in the *`θ`*-direction only
+when the nuisance coordinate is held fixed. Moving the two straddling parameters onto a
+common `ϑ₀` is the step that threads item (a) into item (c) at `isUMPU_conditional_point`. -/
+private lemma exists_twoSided_boundary_pair {Ω : Set (ℝ × Ξ)} [FiniteDimensional ℝ Ξ]
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    ∃ (ϑ₀ : Ξ) (δ : ℝ), 0 < δ ∧ ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω ∧
+      ((θ₀ - δ, ϑ₀) : ℝ × Ξ) ∈ Ω ∧ ((θ₀ + δ, ϑ₀) : ℝ × Ξ) ∈ Ω := by
+  obtain ⟨w, hw, hwθ⟩ := exists_interior_boundary_point hΩ_convex hΩ_aff hΩ_lt hΩ_gt
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior w hw
+  have hwe : ((θ₀, w.2) : ℝ × Ξ) = w := by rw [← hwθ]
+  -- every first-coordinate shift by less than `r` stays in the ball, hence in `Ω`
+  have hshift : ∀ c : ℝ, |c - θ₀| < r → ((c, w.2) : ℝ × Ξ) ∈ Ω := by
+    intro c hc
+    refine interior_subset (hball ?_)
+    rw [Metric.mem_ball, Prod.dist_eq]
+    refine max_lt ?_ (by simpa using hr)
+    rw [Real.dist_eq, hwθ]
+    exact hc
+  refine ⟨w.2, r / 2, by positivity, ?_, ?_, ?_⟩
+  · rw [hwe]; exact interior_subset hw
+  · exact hshift _ (by rw [show θ₀ - r / 2 - θ₀ = -(r / 2) by ring, abs_neg,
+      abs_of_pos (by positivity)]; linarith)
+  · exact hshift _ (by rw [show θ₀ + r / 2 - θ₀ = r / 2 by ring,
+      abs_of_pos (by positivity)]; linarith)
+
+/-- **Conditional integrability of `U` on the boundary surface.** At the boundary parameter
+`w = (θ₀, ϑ₀)` produced by `exists_twoSided_boundary_pair`, the identity `u ↦ u` is
+`condDistrib U T (P w) t`-integrable for `(P w).map T`-almost every `t`.
+
+Mechanism. The two neighbours `(θ₀ ± δ, ϑ₀)` share the nuisance coordinate of `w`, so
+`ae_condDistrib_expTilt` presents their conditional laws as the `(±δ)`-tilts of
+`κ_t = condDistrib U T (P w) t` — a tilt in the `θ`-direction, which is what makes the
+exponents `±δ·u` rather than an inner product against a nuisance increment. Both tilts are
+probability measures, so `integrable_expTiltDensity` makes `u ↦ e^{δu}` and `u ↦ e^{−δu}`
+both `κ_t`-integrable, and `abs_le_exp_add_exp_neg` majorises `|u|` by `δ⁻¹` times their sum.
+The a.e.-`t` bookkeeping is the transport of the two tilt statements — each stated a.e. for
+the law of `T` at its *own* parameter — back to `(P w).map T`, which is `statLaw_ac`.
+
+This is the conditional-integrability input of item (c) at `isUMPU_conditional_point`. -/
+private lemma exists_boundary_ae_integrable_id
+    {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)} {U : 𝓧 → ℝ} {T : 𝓧 → Ξ}
+    {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [BorelSpace Ξ] [FiniteDimensional ℝ Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    ∃ ϑ₀ : Ξ, ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω ∧
+      ∀ᵐ t ∂((P (θ₀, ϑ₀)).map T),
+        Integrable (fun u : ℝ => u) (condDistrib U T (P (θ₀, ϑ₀)) t) := by
+  obtain ⟨ϑ₀, δ, hδ, hw, hlo, hhi⟩ :=
+    exists_twoSided_boundary_pair hΩ_convex hΩ_aff hΩ_lt hΩ_gt
+  refine ⟨ϑ₀, hw, ?_⟩
+  -- transport both tilt statements from their own `T`-laws back to the one at `w`
+  have hhi' := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hw hhi).ae_le
+    (ae_condDistrib_expTilt hU hT hUT hw hhi)
+  have hlo' := Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hw hlo).ae_le
+    (ae_condDistrib_expTilt hU hT hUT hw hlo)
+  filter_upwards [hhi', hlo'] with t ht1 ht2
+  obtain ⟨k₁, hk₁, he₁⟩ := ht1
+  obtain ⟨k₂, hk₂, he₂⟩ := ht2
+  have hc₁ : ((θ₀ + δ, ϑ₀) : ℝ × Ξ).1 - ((θ₀, ϑ₀) : ℝ × Ξ).1 = δ := by
+    simp only []; ring
+  have hc₂ : ((θ₀ - δ, ϑ₀) : ℝ × Ξ).1 - ((θ₀, ϑ₀) : ℝ × Ξ).1 = -δ := by
+    simp only []; ring
+  rw [hc₁] at he₁
+  rw [hc₂] at he₂
+  haveI hpr₁ : IsProbabilityMeasure
+      (expTilt (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) k₁ δ) := by
+    rw [← he₁]; infer_instance
+  haveI hpr₂ : IsProbabilityMeasure
+      (expTilt (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) k₂ (-δ)) := by
+    rw [← he₂]; infer_instance
+  have hk₁pos : 0 < k₁ := expTilt_factor_pos hpr₁
+  have hk₂pos : 0 < k₂ := expTilt_factor_pos hpr₂
+  have hE₁ : Integrable (fun u : ℝ => Real.exp (δ * u))
+      (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) := by
+    have h := ((integrable_expTiltDensity hk₁ hpr₁).1).const_mul k₁⁻¹
+    simpa [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hk₁pos)] using h
+  have hE₂ : Integrable (fun u : ℝ => Real.exp (-δ * u))
+      (condDistrib U T (P ((θ₀, ϑ₀) : ℝ × Ξ)) t) := by
+    have h := ((integrable_expTiltDensity hk₂ hpr₂).1).const_mul k₂⁻¹
+    simpa [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hk₂pos)] using h
+  refine Integrable.mono' ((hE₁.add hE₂).const_mul δ⁻¹)
+    measurable_id.aestronglyMeasurable (Filter.Eventually.of_forall fun u => ?_)
+  have hmaj := abs_le_exp_add_exp_neg hδ u
+  rw [div_eq_inv_mul, ← neg_mul] at hmaj
+  simpa [Real.norm_eq_abs] using hmaj
+
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
 *outside* an interval in `u` is UMP unbiased at level `α`, provided its constants satisfy
 **both** conditional conditions on the boundary surface `θ = θ₀`:
@@ -2829,23 +2926,26 @@ theorem isUMPU_conditional_point
   --      exponential-family smoothness statement, not a bookkeeping step, and it is the real
   --      remaining content of (b): it is the analogue, in the *conditional* setting of this
   --      file, of `PointEstimation.ExponentialFamily.Smoothness`.
-  --  (c) OPEN, but only for the *transfer*: a completeness step for the **unbounded**
-  --      function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`, i.e. `IsCompleteFamily` rather than
-  --      `IsBoundedlyCompleteFamily` on the boundary slice. The proof of
-  --      `boundedlyComplete_boundary` never uses boundedness of `f` except to produce the
-  --      integrability hypothesis of
+  --  (c) The conditional-integrability half is now DONE (this session); what is left is a
+  --      completeness step for the **unbounded** function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`, i.e.
+  --      `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary slice.
+  --      The proof of `boundedlyComplete_boundary` never uses boundedness of `f` except to
+  --      produce the integrability hypothesis of
   --      `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`, which is already stated
   --      for arbitrary measurable `f`; so (c) reduces to the *integrability* of
   --      `t ↦ (E[Uψ ∣ t] − α·E[U ∣ t])·e^{⟪ϑ−ϑ₁,t⟫}` against `μ₁`, together with the
-  --      conditional integrability of `U`. The pointwise half of the latter is now proved:
-  --      `abs_le_exp_add_exp_neg` gives `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` for every `δ > 0`, and
-  --      `hΩ_lt`/`hΩ_gt` supply two boundary parameters whose conditional tilts by `±δ` are
-  --      probability measures, so both exponentials are `κ_t`-integrable. What is left of (c)
-  --      is therefore the a.e.-`t` bookkeeping — from `ae_condDistrib_expTilt`, whose tilt is
-  --      in the *nuisance* direction, one needs the tilt in the `θ`-direction, which requires
-  --      the two parameters produced by `hΩ_lt`/`hΩ_gt` to be moved onto the *same* nuisance
-  --      coordinate `ϑ₀`; that is exactly what `exists_interior_boundary_point` (item (a))
-  --      provides, so the three items are not independent and (a) has to be threaded into (c).
+  --      conditional integrability of `U`. The latter — the a.e.-`t` bookkeeping flagged by
+  --      the previous note — is `exists_boundary_ae_integrable_id` above: item (a) is threaded
+  --      in through `exists_twoSided_boundary_pair`, which moves the two straddling parameters
+  --      supplied by `hΩ_lt`/`hΩ_gt` onto a **common** nuisance coordinate `ϑ₀` (they are
+  --      unrelated as `hΩ_lt`/`hΩ_gt` deliver them, and `ae_condDistrib_expTilt` tilts in the
+  --      `θ`-direction only when the nuisance coordinate is held fixed). With `(θ₀ ± δ, ϑ₀)`
+  --      both in `Ω`, the two tilts of `κ_t` by `±δ` are probability measures, so
+  --      `integrable_expTiltDensity` makes `e^{±δu}` both `κ_t`-integrable, and
+  --      `abs_le_exp_add_exp_neg` majorises `|u|`; `statLaw_ac` transports the two a.e.
+  --      statements — each stated for the law of `T` at its own parameter — back to
+  --      `(P (θ₀,ϑ₀)).map T`. So (c) is now purely the unbounded-completeness transfer, with
+  --      no integrability side condition left to supply.
   -- Sanctioned lifted sorry: no false statement (the two repairs are already applied), and the
   -- remaining bricks are named and concrete.
   sorry
