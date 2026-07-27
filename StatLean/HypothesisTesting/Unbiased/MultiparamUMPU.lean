@@ -1431,23 +1431,36 @@ private lemma integral_comp_eq_of_le_of_segment [BorelSpace Ξ]
 
 The laws of `T` over a boundary surface `ω = {p ∈ Ω | p.1 = θ₀}` are boundedly complete.
 
-This is the Lehmann–Scheffé input of `TSH4 §4.4 Thm 4.4.1`, and it is what the source derives
-from convexity of `Ω` together with the non-degeneracy `Submodule.span ℝ Ω = ⊤`: those two,
-with parameters of `Ω` strictly on both sides of `θ₀`, force the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` to
-have nonempty interior in `Ξ` (a convex set spanning a finite-dimensional space has nonempty
-interior, and an interior point of `Ω` can be pushed onto the surface along a segment); on
-that slice the laws of `T` form a canonical exponential family in `ϑ` with a `ϑ`-free base
-measure, so Laplace-transform uniqueness
+This is the Lehmann–Scheffé input of `TSH4 §4.4 Thm 4.4.1`. The source derives it from
+convexity of `Ω` together with the non-degeneracy "`Ω` is not contained in a linear space of
+dimension less than `k+1`": with parameters of `Ω` strictly on both sides of `θ₀`, those force
+the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` to have nonempty interior in `Ξ` (a convex set whose affine hull
+is everything has nonempty interior in finite dimension, and an interior point of `Ω` can be
+pushed onto the surface along a segment); on that slice the laws of `T` form a canonical
+exponential family in `ϑ` with a `ϑ`-free base measure, so Laplace-transform uniqueness
 (`PointEstimation.isCompleteStat_of_interior_nonempty`) gives completeness.
 
 What is missing is only that last identification, which in the repository is available for
 `EuclideanSpace ℝ (Fin s)` and not for an abstract finite-dimensional inner-product space
-`Ξ`. `[FiniteDimensional ℝ Ξ]` is a **flagged amendment**: without it the statement is false
-(an infinite-dimensional convex set can span without having any interior point). -/
+`Ξ`.
+
+**Two flagged amendments, both indispensable.**
+* `[FiniteDimensional ℝ Ξ]`: an infinite-dimensional convex set can have full span, or full
+  affine span, without having any interior point, and then the slice family need not be
+  complete.
+* `hΩ_aff : affineSpan ℝ Ω = ⊤` — and **not** the frozen `Submodule.span ℝ Ω = ⊤`, which is
+  strictly weaker and does **not** suffice. Degenerate example: `Ξ = ℝ`,
+  `Ω = {(θ, 1 − θ) : θ ∈ [-1, 1]}` is convex, has `Submodule.span ℝ Ω = ⊤` (it contains
+  `(0,1)` and `(1,0)`) and reaches strictly below and above `θ₀ = 0`, yet its boundary
+  surface `{p ∈ Ω | p.1 = 0}` is the single point `(0,1)`, so the boundary family of laws of
+  `T` is a *one-element* family and is not complete. `affineSpan ℝ Ω = ⊤` is the faithful
+  reading of the source's "not contained in a linear space of dimension less than `k+1`"
+  ("linear space" = affine flat), and in finite dimension it is exactly what makes the
+  boundary slice `k`-dimensional. -/
 private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
-    (hΩ_convex : Convex ℝ Ω) (hΩ_span : Submodule.span ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
     PointEstimation.IsBoundedlyCompleteFamily
       fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T :=
@@ -1458,7 +1471,7 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
 private lemma ae_condPower_eq_of_similar [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
-    (hΩ_convex : Convex ℝ Ω) (hΩ_span : Submodule.span ℝ Ω = ⊤) {θ₀ α : ℝ}
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ α : ℝ}
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
     {p₀ : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp₀θ : p₀.1 = θ₀)
     {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1)
@@ -1490,7 +1503,7 @@ private lemma ae_condPower_eq_of_similar [BorelSpace Ξ] [FiniteDimensional ℝ 
     rw [hf, integral_sub hint (integrable_const α), integral_congr_ae hcd,
       ← integral_comp_eq_integral_condPower hU hT hψm hψb p, hsim p hpΩ hpθ]
     simp
-  have hae := boundedlyComplete_boundary hU hT hUT hΩ_convex hΩ_span (θ₀ := θ₀) hΩ_lt hΩ_gt
+  have hae := boundedlyComplete_boundary hU hT hUT hΩ_convex hΩ_aff (θ₀ := θ₀) hΩ_lt hΩ_gt
     f hfm hfb hzero ⟨p₀, hp₀, hp₀θ⟩
   filter_upwards [hae] with t ht
   have hz : (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t)) - α = 0 := ht
@@ -1743,6 +1756,12 @@ theorem isUMPU_conditional_oneSided
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
     (hΩ_span : Submodule.span ℝ Ω = ⊤)
+    -- USER-INPUT (AMENDMENT): the parameter set is not contained in a proper *affine*
+    -- subspace either. This is the faithful reading of the source's "not contained in a
+    -- linear space of dimension less than `k+1`", and it is strictly stronger than the
+    -- frozen `hΩ_span`, which does not suffice: see `boundedlyComplete_boundary` for a
+    -- convex `Ω` with full linear span whose boundary surface is a single point
+    (hΩ_aff : affineSpan ℝ Ω = ⊤)
     -- USER-INPUT: the parameter set reaches below and above the null value
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
     -- LEAN-ONLY: the level is strictly interior to `[0,1]`; degenerate levels are excluded
@@ -1869,7 +1888,7 @@ theorem isUMPU_conditional_oneSided
         rw [hψ'pow _ hr]
         have := hunb.2 _ ⟨hr, hrθ⟩
         simpa only [power] using this
-    have hns := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt hΩ_gt hp₀ hp₀θ
+    have hns := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hp₀ hp₀θ
       hψ'crit.1 hψ'b hsim
     have hfin := (hcmp ψ' hψ'crit.1 hψ'crit.2 hns p' hp'Ω).1 hp'θ.le
     simp only [power]
@@ -1899,6 +1918,12 @@ theorem isUMPU_conditional_inside
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
     (hΩ_span : Submodule.span ℝ Ω = ⊤)
+    -- USER-INPUT (AMENDMENT): the parameter set is not contained in a proper *affine*
+    -- subspace either. This is the faithful reading of the source's "not contained in a
+    -- linear space of dimension less than `k+1`", and it is strictly stronger than the
+    -- frozen `hΩ_span`, which does not suffice: see `boundedlyComplete_boundary` for a
+    -- convex `Ω` with full linear span whose boundary surface is a single point
+    (hΩ_aff : affineSpan ℝ Ω = ⊤)
     -- USER-INPUT: the two endpoints are ordered
     (hθ : θ₁ < θ₂)
     -- USER-INPUT: the parameter set reaches below and above each endpoint
@@ -2070,9 +2095,9 @@ theorem isUMPU_conditional_inside
             constructor <;> nlinarith [mul_pos hs0 (sub_pos.mpr hθ)]
         rw [hψ'pow _ hr]
         simpa only [power] using hunb.2 _ ⟨hr, hralt.1, hralt.2⟩
-    have hns₁ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₁ hΩ_gt₁ hp₁
+    have hns₁ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_aff hΩ_lt₁ hΩ_gt₁ hp₁
       hp₁θ hψ'crit.1 hψ'b (hsim θ₁ (Or.inl rfl))
-    have hns₂ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₂ hΩ_gt₂ hp₂
+    have hns₂ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_aff hΩ_lt₂ hΩ_gt₂ hp₂
       hp₂θ hψ'crit.1 hψ'b (hsim θ₂ (Or.inr rfl))
     have hfin := (hcmp ψ' hψ'crit.1 hψ'crit.2 hns₁ hns₂ p' hp'Ω).2 hp'l hp'r
     simp only [power]
@@ -2102,6 +2127,12 @@ theorem isUMPU_conditional_outside
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
     (hΩ_span : Submodule.span ℝ Ω = ⊤)
+    -- USER-INPUT (AMENDMENT): the parameter set is not contained in a proper *affine*
+    -- subspace either. This is the faithful reading of the source's "not contained in a
+    -- linear space of dimension less than `k+1`", and it is strictly stronger than the
+    -- frozen `hΩ_span`, which does not suffice: see `boundedlyComplete_boundary` for a
+    -- convex `Ω` with full linear span whose boundary surface is a single point
+    (hΩ_aff : affineSpan ℝ Ω = ⊤)
     -- USER-INPUT: the two endpoints are ordered
     (hθ : θ₁ < θ₂)
     -- USER-INPUT: the parameter set reaches below and above each endpoint
@@ -2267,9 +2298,9 @@ theorem isUMPU_conditional_outside
             nlinarith [mul_pos hs0 (sub_pos.mpr hqθ)]
         rw [hψ'pow _ hr]
         simpa only [power] using hunb.2 _ ⟨hr, hralt⟩
-    have hns₁ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₁ hΩ_gt₁ hp₁
+    have hns₁ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_aff hΩ_lt₁ hΩ_gt₁ hp₁
       hp₁θ hψ'crit.1 hψ'b (hsim θ₁ qlo hqlo (Or.inl ⟨rfl, hqloθ⟩))
-    have hns₂ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_span hΩ_lt₂ hΩ_gt₂ hp₂
+    have hns₂ := ae_condPower_eq_of_similar hU hT hUT hΩ_convex hΩ_aff hΩ_lt₂ hΩ_gt₂ hp₂
       hp₂θ hψ'crit.1 hψ'b (hsim θ₂ qhi hqhi (Or.inr ⟨rfl, hqhiθ⟩))
     have hfin := (hcmp ψ' hψ'crit.1 hψ'crit.2 hns₁ hns₂ p' hp'Ω).1 hp'side
     simp only [power]
@@ -2302,6 +2333,12 @@ theorem isUMPU_conditional_point
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
     (hΩ_span : Submodule.span ℝ Ω = ⊤)
+    -- USER-INPUT (AMENDMENT): the parameter set is not contained in a proper *affine*
+    -- subspace either. This is the faithful reading of the source's "not contained in a
+    -- linear space of dimension less than `k+1`", and it is strictly stronger than the
+    -- frozen `hΩ_span`, which does not suffice: see `boundedlyComplete_boundary` for a
+    -- convex `Ω` with full linear span whose boundary surface is a single point
+    (hΩ_aff : affineSpan ℝ Ω = ⊤)
     -- USER-INPUT: the parameter set reaches below and above the null value
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
     -- LEAN-ONLY: the level is strictly interior to `[0,1]`; degenerate levels are excluded
