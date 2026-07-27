@@ -800,6 +800,177 @@ private lemma expFamily_np_compare (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure
     (by rw [hpull₀]; exact hψ0) (by rw [hpull₁]; exact hψ1) hs₁ hs₀
   rwa [hpull₂, hpull₂] at key
 
+/-- **Three-exponential separation, alternative outside the interval** (either side). The
+left-hand case is the right-hand one read through `t ↦ −t`. -/
+private lemma exists_sep_exp3_out {θ₁ θ₂ ϑ : ℝ} (h12 : θ₁ < θ₂) (hϑ : ϑ < θ₁ ∨ θ₂ < ϑ)
+    {C₁ C₂ : ℝ} (hC : C₁ ≤ C₂) :
+    ∃ a b : ℝ,
+      (∀ t, C₁ ≤ t → t ≤ C₂ →
+        Real.exp (ϑ * t) ≤ a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t)) ∧
+      (∀ t, t ≤ C₁ ∨ C₂ ≤ t →
+        a * Real.exp (θ₁ * t) + b * Real.exp (θ₂ * t) ≤ Real.exp (ϑ * t)) := by
+  rcases hϑ with h | h
+  · obtain ⟨a, b, hin, hout⟩ := exists_sep_exp3_gt (θ₁ := -θ₂) (θ₂ := -θ₁) (ϑ := -ϑ)
+      (by linarith) (by linarith) (C₁ := -C₂) (C₂ := -C₁) (by linarith)
+    refine ⟨b, a, fun t ht1 ht2 => ?_, fun t ht => ?_⟩
+    · have h' := hin (-t) (by linarith) (by linarith)
+      simp only [neg_mul_neg] at h'
+      linarith
+    · have h' : (-θ₂) * (-t) ≤ (-θ₂) * (-t) := le_rfl
+      rcases ht with hc | hc
+      · have h'' := hout (-t) (Or.inr (by linarith))
+        simp only [neg_mul_neg] at h''
+        linarith
+      · have h'' := hout (-t) (Or.inl (by linarith))
+        simp only [neg_mul_neg] at h''
+        linarith
+  · exact exists_sep_exp3_gt h12 h hC
+
+/-- **Approximating sequence inside an open parameter set, on a prescribed side.** -/
+private lemma exists_approx_seq {Ξ : Set ℝ} (hΞopen : IsOpen Ξ) {θ : ℝ} (hθ : θ ∈ Ξ)
+    {s : ℝ} (hs : s ≠ 0) :
+    ∃ f : ℕ → ℝ, Filter.Tendsto f Filter.atTop (nhds θ) ∧
+      ∀ n, f n ∈ Ξ ∧ 0 < s * (f n - θ) := by
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΞopen θ hθ
+  have hsabs : 0 < |s| := abs_pos.mpr hs
+  set c : ℝ := ε / (2 * |s|) with hc
+  have hcpos : 0 < c := by positivity
+  have hsc : |s| * c = ε / 2 := by rw [hc]; field_simp
+  refine ⟨fun n => θ + s * (c * (1 / ((n : ℝ) + 1))), ?_, fun n => ?_⟩
+  · have h1 := tendsto_one_div_add_atTop_nhds_zero_nat.const_mul c
+    have h2 := h1.const_mul s
+    have h3 := Filter.Tendsto.const_add θ h2
+    simpa using h3
+  · have hpos : 0 < c * (1 / ((n : ℝ) + 1)) := by positivity
+    have hb : (1 : ℝ) / ((n : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (by positivity)]
+      have : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+      linarith
+    refine ⟨hball ?_, ?_⟩
+    · rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left, abs_mul, abs_of_pos hpos]
+      have hrw : |s| * (c * (1 / ((n : ℝ) + 1))) = ε / 2 * (1 / ((n : ℝ) + 1)) := by
+        rw [← hsc]; ring
+      rw [hrw]
+      nlinarith [(by positivity : (0 : ℝ) < (1 : ℝ) / ((n : ℝ) + 1))]
+    · have hrw : s * (θ + s * (c * (1 / ((n : ℝ) + 1))) - θ)
+          = s ^ 2 * (c * (1 / ((n : ℝ) + 1))) := by ring
+      rw [hrw]
+      exact mul_pos (by positivity) hpos
+
+/-- **Similarity from level plus an approximating sequence of alternatives.** -/
+private lemma power_eq_of_le_of_seq (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    {Ξ : Set ℝ} {θ₀ α : ℝ} {ψ : 𝓧 → ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) (hΞ : Ξ ⊆ interior E.natSet)
+    (hθ₀ : θ₀ ∈ Ξ) (hψ : IsCriticalFn ψ)
+    (hle : ∫ x, ψ x ∂(P θ₀) ≤ α)
+    (f : ℕ → ℝ) (hf : Filter.Tendsto f Filter.atTop (nhds θ₀))
+    (hfΞ : ∀ n, f n ∈ Ξ) (hfge : ∀ n, α ≤ ∫ x, ψ x ∂(P (f n))) :
+    ∫ x, ψ x ∂(P θ₀) = α := by
+  have hcont : ContinuousAt (fun η => powerAgainst (E.P η) ψ) θ₀ :=
+    (continuous_power_expFamily E hψ).continuousAt (isOpen_interior.mem_nhds (hΞ hθ₀))
+  have hlim := hcont.tendsto.comp hf
+  have hge : α ≤ powerAgainst (E.P θ₀) ψ := by
+    refine ge_of_tendsto' hlim fun n => ?_
+    rw [Function.comp_apply, powerAgainst, ← hP _ (hfΞ n)]
+    exact hfge n
+  rw [hP θ₀ hθ₀] at hle ⊢
+  exact le_antisymm hle hge
+
+/-- Bounded measurable functions are integrable against a probability member. -/
+private lemma integrable_of_isCriticalFn {μ : Measure 𝓧} [IsProbabilityMeasure μ] {ψ : 𝓧 → ℝ}
+    (hψ : IsCriticalFn ψ) : Integrable ψ μ := by
+  refine Integrable.mono' (integrable_const (1 : ℝ)) hψ.1.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (hψ.2 x).1]
+  exact (hψ.2 x).2
+
+/-- **Level of the reject-outside test on the interior of the interval null.** The
+three-exponential combination `q` of `exists_sep_exp3_mid` changes sign exactly where
+`φ − α` does, so `(φ − α)·q ≥ 0`; integrating and using the two size equations leaves
+`−d(θ)·(power φ θ − α) ≥ 0`. -/
+private lemma expFamily_level_interval (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {Ξ : Set ℝ} {θ₁ θ₂ θ α C₁ C₂ : ℝ} {φ : 𝓧 → ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) (hΞ : Ξ ⊆ interior E.natSet)
+    (hθ₁ : θ₁ ∈ Ξ) (hθ₂ : θ₂ ∈ Ξ) (hθ : θ ∈ Ξ) (h1 : θ₁ < θ) (h2 : θ < θ₂) (hC : C₁ ≤ C₂)
+    (hα₀ : 0 ≤ α) (hα₁ : α ≤ 1) (hφ : IsCriticalFn φ)
+    (hφ_one : ∀ x, E.stat x < C₁ ∨ C₂ < E.stat x → φ x = 1)
+    (hφ_zero : ∀ x, C₁ < E.stat x → E.stat x < C₂ → φ x = 0)
+    (hφ1 : ∫ x, φ x ∂(P θ₁) = α) (hφ2 : ∫ x, φ x ∂(P θ₂) = α) :
+    ∫ x, φ x ∂(P θ) ≤ α := by
+  obtain ⟨a, b, hin, hout⟩ := exists_sep_exp3_mid h1 h2 hC
+  -- the three weighted integrals
+  have hIF : ∀ ϑ ∈ Ξ,
+      Integrable (fun x => (φ x - α) * Real.exp (ϑ * E.stat x)) E.base := by
+    intro ϑ hϑ
+    refine Integrable.bdd_mul (c := 1)
+      (integrable_exp_of_mem_natSet E (interior_subset (hΞ hϑ)))
+      (hφ.1.sub measurable_const).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_le]
+    exact ⟨by linarith [(hφ.2 x).1, (hφ.2 x).2], by linarith [(hφ.2 x).1, (hφ.2 x).2]⟩
+  have hval : ∀ ϑ ∈ Ξ, ∫ x, (φ x - α) * Real.exp (ϑ * E.stat x) ∂E.base
+      = (∫ x, φ x ∂(P ϑ) - α) * ∫ x, Real.exp (ϑ * E.stat x) ∂E.base := by
+    intro ϑ hϑ
+    have hdpos := partition_pos E hP hϑ
+    have hsub : ∫ x, (φ x - α) ∂(P ϑ) = ∫ x, φ x ∂(P ϑ) - α := by
+      rw [integral_sub (integrable_of_isCriticalFn hφ) (integrable_const α)]
+      simp
+    have hrepr := integral_expFamily_eq E ϑ (fun x => φ x - α)
+    rw [← hP ϑ hϑ, hsub] at hrepr
+    field_simp at hrepr
+    linarith [hrepr]
+  -- pointwise nonnegativity of `(φ − α)·q`
+  have hpt : ∀ x, 0 ≤ (φ x - α) * (a * Real.exp (θ₁ * E.stat x)
+      + b * Real.exp (θ₂ * E.stat x) - Real.exp (θ * E.stat x)) := by
+    intro x
+    rcases lt_trichotomy (E.stat x) C₁ with hx | hx | hx
+    · have hq := hout _ (Or.inl hx.le)
+      have hv := hφ_one x (Or.inl hx)
+      rw [hv]
+      exact mul_nonneg (by linarith) (by linarith)
+    · have hq1 := hout _ (Or.inl hx.le)
+      have hq2 := hin _ hx.ge (by linarith [hC])
+      have : a * Real.exp (θ₁ * E.stat x) + b * Real.exp (θ₂ * E.stat x)
+          - Real.exp (θ * E.stat x) = 0 := by linarith
+      rw [this, mul_zero]
+    · rcases lt_trichotomy (E.stat x) C₂ with hy | hy | hy
+      · have hq := hin _ hx.le hy.le
+        have hv := hφ_zero x hx hy
+        rw [hv]
+        nlinarith [hq, hα₀]
+      · have hq1 := hin _ hx.le hy.le
+        have hq2 := hout _ (Or.inr hy.ge)
+        have : a * Real.exp (θ₁ * E.stat x) + b * Real.exp (θ₂ * E.stat x)
+            - Real.exp (θ * E.stat x) = 0 := by linarith
+        rw [this, mul_zero]
+      · have hq := hout _ (Or.inr hy.le)
+        have hv := hφ_one x (Or.inr hy)
+        rw [hv]
+        exact mul_nonneg (by linarith) (by linarith)
+  -- integrate
+  have hexp : ∀ x, (φ x - α) * (a * Real.exp (θ₁ * E.stat x)
+      + b * Real.exp (θ₂ * E.stat x) - Real.exp (θ * E.stat x))
+      = a * ((φ x - α) * Real.exp (θ₁ * E.stat x))
+        + b * ((φ x - α) * Real.exp (θ₂ * E.stat x))
+        - (φ x - α) * Real.exp (θ * E.stat x) := by
+    intro x; ring
+  have hI : (0 : ℝ) ≤ ∫ x, (φ x - α) * (a * Real.exp (θ₁ * E.stat x)
+      + b * Real.exp (θ₂ * E.stat x) - Real.exp (θ * E.stat x)) ∂E.base :=
+    integral_nonneg hpt
+  have hi1 : Integrable (fun x => a * ((φ x - α) * Real.exp (θ₁ * E.stat x))) E.base :=
+    (hIF θ₁ hθ₁).const_mul a
+  have hi2 : Integrable (fun x => b * ((φ x - α) * Real.exp (θ₂ * E.stat x))) E.base :=
+    (hIF θ₂ hθ₂).const_mul b
+  have hi12 : Integrable (fun x => a * ((φ x - α) * Real.exp (θ₁ * E.stat x))
+      + b * ((φ x - α) * Real.exp (θ₂ * E.stat x))) E.base := hi1.add hi2
+  rw [integral_congr_ae (Filter.Eventually.of_forall hexp),
+    integral_sub hi12 (hIF θ hθ), integral_add hi1 hi2,
+    integral_const_mul, integral_const_mul, hval θ₁ hθ₁, hval θ₂ hθ₂, hval θ hθ,
+    hφ1, hφ2] at hI
+  simp only [sub_self, zero_mul, mul_zero, add_zero, zero_add] at hI
+  have hdpos := partition_pos E hP hθ
+  nlinarith [hI, hdpos]
+
 /-- **UMP unbiased test of a point null in a one-parameter exponential family.**
 
 For `H : θ = θ₀` against `K : θ ≠ θ₀`, the test rejecting outside `[C₁, C₂]` on the natural
