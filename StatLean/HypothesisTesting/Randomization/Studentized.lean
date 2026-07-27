@@ -1,3 +1,5 @@
+import StatLean.HypothesisTesting.Randomization.ExactLevel
+import StatLean.HypothesisTesting.ForMathlib.PermutationMarginals
 import StatLean.HypothesisTesting.Randomization.TwoSamplePermutation
 import StatLean.HypothesisTesting.Randomization.SlutskyRandomization
 import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
@@ -86,6 +88,7 @@ open scoped ENNReal NNReal
 namespace StatLean.HypothesisTesting
 
 open AsymptoticStatistics (WeakConverges)
+open StatLean.MultipleTesting (orderStat)
 
 /-! ### The studentized statistic -/
 
@@ -501,7 +504,144 @@ private lemma tendstoInProb_twoSampleScale (PY PZ : Measure ℝ) [IsProbabilityM
   refine (hsqrt ε hε).congr fun k => ?_
   simp only [hlim, twoSampleScale]
 
+/-! ### Group-averaged convergence in probability
+
+`TendstoInProbRandomized` — the hypothesis the Slutsky transfer consumes — evaluates the
+scaling at `g · x` with `g` uniform on the group, so it is a convex combination of the
+per-`g` failure probabilities. The two closure properties needed below are therefore proved
+exactly as their fixed-measure counterparts above, one group element at a time. -/
+
+/-- **Continuous mapping for group-averaged convergence in probability.** -/
+private lemma tendstoInProbRandomized_comp {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) [∀ k, IsProbabilityMeasure (P k)]
+    {A : ∀ k, 𝓨 k → ℝ} {a : ℝ} {φ : ℝ → ℝ} (hφ : ContinuousAt φ a)
+    (h : TendstoInProbRandomized G P A a) :
+    TendstoInProbRandomized G P (fun k y => φ (A k y)) (φ a) := by
+  intro ε hε
+  obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp hφ ε hε
+  refine squeeze_zero (fun k => ?_) (fun k => ?_) (h ρ hρpos)
+  · exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => measureReal_nonneg)
+  · refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => ?_) (by positivity)
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    by_contra hcon
+    push Not at hcon
+    have hd : dist (A k (g • x)) a < ρ := by rwa [Real.dist_eq]
+    have hlt := hρ hd
+    rw [Real.dist_eq] at hlt
+    linarith
+
+/-- **The zero shift converges in probability at randomized data.** The studentized
+statistic has no recentring, so this is the shift hypothesis of the Slutsky transfer. -/
+private lemma tendstoInProbRandomized_zero {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) :
+    TendstoInProbRandomized G P (fun _ _ => (0 : ℝ)) 0 := by
+  intro ε hε
+  have hfalse : ¬ (ε ≤ |(0 : ℝ) - 0|) := by rw [sub_zero, abs_zero]; exact not_le.2 hε
+  simp only [hfalse, Set.setOf_false, measureReal_empty, Finset.sum_const_zero, mul_zero]
+  exact tendsto_const_nhds
+
+/-! ### The randomized studentizing scale
+
+Under a uniform permutation of the pooled data each block is a sample **without
+replacement** from the pooled `N = m + n` values, so — unlike the unconditional scale of
+`tendstoInProb_twoSampleScale`, which converges to `s² = σ²(P_Y) + λσ²(P_Z)` — *both* block
+variances converge to the same pooled variance
+$$ \bar v = \frac{\lambda \sigma^2(P_Y) + \sigma^2(P_Z)}{1 + \lambda} , $$
+whence `D_{m,n}(π·)² = S²_Y(π·) + (m/n) S²_Z(π·) → (1 + λ)\bar v = τ²`. The two limits differ
+exactly when `λ ≠ 1` and the variances differ — the failure of the *unstudentized* test —
+and dividing by the scale sends both to `N(0,1)`, which is the content of this file. -/
+
+/-- **The studentizing scale, evaluated at randomized data, is consistent for `τ`**, the
+permutation scale `τ² = λσ²(P_Y) + σ²(P_Z)`. -/
+private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ)
+    {lam varY varZ μ τ : ℝ}
+    -- USER-INPUT: both sample sizes grow; the asymptotic regime
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    -- USER-INPUT: `m/n → λ`, with a nondegenerate limit
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    -- USER-INPUT: finite second moments of both populations
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    -- USER-INPUT: equal means; the null hypothesis under test
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    -- USER-INPUT: the population variances, not assumed equal, both nonzero
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hvarYpos : 0 < varY) (hvarZpos : 0 < varZ)
+    -- LEAN-ONLY: positive square root of the permutation variance
+    (hτpos : 0 < τ) (hτ : τ ^ 2 = lam * varY + varZ) :
+    TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k x => twoSampleScale (m k) (n k) x) τ := by
+  -- TODO (deferred, named brick): the hypergeometric half of Theorem 17.3.3.
+  -- STATUS (re-derived this session, wave 5). This is the only mathematical debt of the
+  -- studentized chain other than the permutation CLT, and it is genuinely open work rather
+  -- than a missing upstream theorem. The route, re-derived here, with the state of each step:
+  -- (a) DONE, by the two closure properties above. The group average
+  --     `|Perm|⁻¹ ∑_σ P.real {…}` is a convex combination of per-`σ` probabilities, so
+  --     `tendstoInProbRandomized_comp` (and the additive/`const_mul` twins of
+  --     `tendstoInProb_add`, `tendstoInProb_const_mul`, which are proved the same way)
+  --     reduce the square root, the sum and the factor `m/n` to the two block variances.
+  -- (b) DONE — this was the piece flagged as "the one new combinatorial input", and it is
+  --     now a `ForMathlib` brick, `ForMathlib/PermutationMarginals` (0-sorry, axiom-clean).
+  --     Under a uniform `σ`, one coordinate is uniform on the `N` pooled items
+  --     (`avg_perm_apply`) and two distinct coordinates are uniform on the `N(N-1)` ordered
+  --     distinct pairs (`avg_perm_apply_pair`); together they give the exact variance of a
+  --     permuted block average of centred coefficients,
+  --     `(1/m)((N-m)/(N-1))(N⁻¹ ∑ d²) ≤ (1/m)(N⁻¹ ∑ d²)`
+  --     (`avg_perm_blockAvg_sq_le`), and the Chebyshev step in exactly the group-average
+  --     shape `randDist` uses (`perm_avg_indicator_blockAvg_le`). Note this is the
+  --     *permutation* model; `ForMathlib/HypergeometricMoments` is the equivalent *subset*
+  --     model, and transporting between them (the uniformity of `σ ↦ σ⁻¹ '' block` on
+  --     `m`-subsets) is no longer needed on this route.
+  -- (c) LEFT, for the block **means**: integrate (b) over the pooled data. With
+  --     `d l = x l - x̄` the coefficients are centred by construction and the bound is
+  --     `ε⁻²(1/m)(N⁻¹ ∑ (x l - x̄)²)`, whose `P`-expectation is bounded by the two
+  --     population second moments; `1/m → 0` then gives the block mean of `σ • x`
+  --     converging to the pooled mean in probability, hence to `μ`.
+  -- (d) LEFT, for the block **second** moments, and this is the only step needing an idea
+  --     beyond (b)+(c): applying (b) to `c l = (x l)²` costs a fourth pooled moment, which
+  --     `MemLp id 2` does not supply. Truncate at level `K`: (b) with the truncated
+  --     coefficients has the bound `ε⁻²(1/m)K²`, and the discarded part is controlled in
+  --     `L¹` by `∫ t² 1{t² > K}` under each population, small uniformly in `k` by dominated
+  --     convergence. This is the standard two-moment argument for sampling without
+  --     replacement, and it is why the theorem needs no moment assumption beyond `L²`.
+  -- (e) LEFT, bookkeeping: the pooled empirical moments converge by `tendsto_pi_real_lln`
+  --     (through `tendsto_lln_blockY`/`_blockZ`), giving `v̄ = (λ varY + varZ)/(1 + λ)` for
+  --     both blocks and `τ² = (1 + λ) v̄` for the scale.
+  -- Nothing above needs the permutation CLT, so the two headline theorems below are complete
+  -- modulo exactly two named statements: this one and
+  -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
+  sorry
+
 /-! ### Asymptotic validity under unequal variances -/
+
+/-- The permutation action `σ • x = x ∘ σ⁻¹` is measurable in `x`. (A local copy: the
+`TwoSamplePermutation` version is `private` to that module.) -/
+private lemma measurable_perm_smul' (N : ℕ) (σ : Equiv.Perm (Fin N)) :
+    Measurable (fun x : Fin N → ℝ => σ • x) := by
+  have hfun : (fun x : Fin N → ℝ => σ • x) = fun x i => x (σ⁻¹ i) := by
+    ext x i; exact perm_smul_apply σ x i
+  rw [hfun]
+  exact measurable_pi_lambda _ fun i => measurable_pi_apply _
+
+/-- The c.d.f. of an atomless probability measure on `ℝ` is continuous. (A local copy: the
+`TwoSamplePermutation` and `SignChange` versions are `private` to those modules.) -/
+private lemma continuousAt_cdf_of_noAtoms' (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    [NoAtoms ν] (t : ℝ) : ContinuousAt (cdf ν) t := by
+  have hmono : Monotone (cdf ν) := monotone_cdf ν
+  rw [hmono.continuousAt_iff_leftLim_eq_rightLim]
+  have hright : Function.rightLim (cdf ν) t = cdf ν t :=
+    (hmono.continuousWithinAt_Ioi_iff_rightLim_eq).1
+      (((cdf ν).right_continuous t).mono Set.Ioi_subset_Ici_self)
+  have hle : Function.leftLim (cdf ν) t ≤ cdf ν t := hmono.leftLim_le le_rfl
+  have hge : cdf ν t ≤ Function.leftLim (cdf ν) t := by
+    have h0 := (cdf ν).measure_singleton t
+    rw [measure_cdf, measure_singleton, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos] at h0
+    exact h0
+  rw [le_antisymm hle hge, hright]
 
 /-- **The studentized randomization distribution converges to the standard normal.**
 Under equal means, finite nonzero (and possibly **different**) population variances, and
@@ -526,45 +666,77 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (studentizedTwoSample (m k) (n k)) x t)
       (cdf (gaussianReal 0 1) t) := by
-  -- TODO (deep, deferred): the studentized randomization limit. Since
-  -- `studentizedTwoSample = (1/twoSampleScale)·twoSampleMeanDiff + 0`, the Slutsky transfer
-  -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
-  -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
-  -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
-  -- STATUS (re-derived this session, wave 4): two of the three pieces are settled, the third is
-  -- re-scoped, and the statement is blocked on exactly one theorem.
-  -- (ii) AVAILABLE, unchanged. `randDist_affine_tendstoInProb` in `SlutskyRandomization` is
-  --      closed, in exactly the mixture form this application needs (`A = 1/twoSampleScale` is
-  --      *not* permutation invariant). Its measurability side conditions are routine here: the
-  --      numerator and the action are handled in `TwoSamplePermutation`, and measurability of
-  --      the scale is the `hSmeas` computation used in the sibling theorem below.
-  -- (iii) RE-SCOPED — and no longer the "shared missing brick" the wave-3 note described. That
-  --      note asked for an `L¹` law of large numbers on `Measure.pi`; the brick now exists
-  --      (`TwoSamplePermutation.tendsto_pi_real_lln`) and the *unconditional* scale consistency
-  --      is proved (`tendstoInProb_twoSampleScale` above). What is still needed is the
-  --      *randomized* scale consistency, a genuinely different statement — and worth recording,
-  --      because it is precisely where studentization earns its keep. Under a uniform
-  --      permutation of the pooled data each block is a sample **without replacement** from the
-  --      pooled `N = m + n` values, so *both* block variances converge to the same pooled
-  --      variance
-  --          v̄ = (λ σ²(P_Y) + σ²(P_Z)) / (1 + λ) ,
-  --      whence
-  --          D_{m,n}(π·)² = S²_Y(π·) + (m/n) S²_Z(π·) → (1 + λ) v̄ = λ σ²(P_Y) + σ²(P_Z) = τ² .
-  --      So the randomized scale converges to `τ`, whereas the unconditional one converges to
-  --      `s² = σ²(P_Y) + λσ²(P_Z)` (that is `tendstoInProb_twoSampleScale`). The two limits
-  --      differ exactly when `λ ≠ 1` and the variances differ — the failure of the unstudentized
-  --      test — and dividing by the scale sends *both* to `N(0,1)`, which is the content of this
-  --      file. The proof is Chebyshev on the group mixture: conditionally on the pooled data the
-  --      first two moments of the subsample average are the hypergeometric ones supplied by
-  --      `ForMathlib/HypergeometricMoments` (`var_mean_linear_le`, `cov_weight`), and the pooled
-  --      empirical moments themselves converge by `tendsto_pi_real_lln`. No missing upstream
-  --      brick: this is bounded, self-contained work.
-  -- (i) THE BLOCKER, verdict unchanged after re-derivation.
-  --      `weakConverges_randPairLaw_twoSample` — Hoeffding's combinatorial CLT, which neither
-  --      this repository nor Mathlib v4.29.1 contains, and which the sign-change engine
-  --      provably does not cover; see the re-derived note there. Since (iii) is of no use until
-  --      (i) lands, it has deliberately been left unwritten.
-  sorry
+  -- `studentizedTwoSample = (1/twoSampleScale) · twoSampleMeanDiff + 0`, so this is the
+  -- Slutsky transfer `randDist_affine_tendstoInProb` with `A = 1/scale → 1/τ`, `B = 0`, joint
+  -- law from `weakConverges_randPairLaw_twoSample`, and limit c.d.f.
+  -- `cdf ((N(0,τ²)).map (τ⁻¹ · )) = cdf (N(0,1))`.
+  -- The two debts are named: the permutation CLT
+  -- (`TwoSamplePermutation.weakConverges_randPairLaw_twoSample`, Hoeffding's combinatorial
+  -- CLT, out of scope) and the randomized scale consistency
+  -- (`tendstoInProbRandomized_twoSampleScale` above).
+  classical
+  have hposτ : (0 : ℝ) < lam * varY + varZ := by positivity
+  set τ : ℝ := Real.sqrt (lam * varY + varZ) with hτdef
+  have hτpos : 0 < τ := Real.sqrt_pos.2 hposτ
+  have hτne : τ ≠ 0 := hτpos.ne'
+  have hτ : τ ^ 2 = lam * varY + varZ := Real.sq_sqrt hposτ.le
+  set R : Measure ℝ := gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩ with hRdef
+  -- The affine image of the permutation limit is the standard normal.
+  have hmapR : R.map (fun u : ℝ => τ⁻¹ * u + 0) = gaussianReal 0 1 := by
+    have hfun : (fun u : ℝ => τ⁻¹ * u + 0) = (τ⁻¹ * ·) := by funext u; rw [add_zero]
+    rw [hRdef, hfun, gaussianReal_map_const_mul]
+    congr 1
+    · rw [mul_zero]
+    · refine NNReal.coe_injective ?_
+      simp only [NNReal.coe_mul, NNReal.coe_one, NNReal.coe_mk]
+      field_simp
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  have hcont : ContinuousAt (cdf (R.map (fun u : ℝ => τ⁻¹ * u + 0))) t := by
+    rw [hmapR]; exact continuousAt_cdf_of_noAtoms' _ t
+  -- The three measurability side conditions, and the two convergence inputs.
+  have hTmeas : ∀ k, Measurable (twoSampleMeanDiff (m k) (n k)) := by
+    intro k; unfold twoSampleMeanDiff; fun_prop
+  have hAmeas : ∀ k, Measurable (fun x : Fin (m k + n k) → ℝ =>
+      (twoSampleScale (m k) (n k) x)⁻¹) := by
+    intro k
+    unfold twoSampleScale twoSampleVarY twoSampleVarZ twoSampleMeanY twoSampleMeanZ
+    fun_prop
+  have hjoint := weakConverges_randPairLaw_twoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
+  rw [← hRdef] at hjoint
+  have hscale := tendstoInProbRandomized_twoSampleScale PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ
+  have hA := tendstoInProbRandomized_comp (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (φ := fun y : ℝ => y⁻¹)
+    (continuousAt_inv₀ hτne) hscale
+  have hB := tendstoInProbRandomized_zero (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ)
+  have hmain := randDist_affine_tendstoInProb (G := fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (fun k => twoSampleMeanDiff (m k) (n k))
+    (fun k x => (twoSampleScale (m k) (n k) x)⁻¹) (fun _ _ => (0 : ℝ)) R
+    (a := τ⁻¹) (b := 0) (t := t) hTmeas hAmeas (fun k => measurable_const)
+    (fun k g => measurable_perm_smul' _ g) hjoint hA hB hcont
+  rw [hmapR] at hmain
+  -- The transformed statistic *is* the studentized statistic.
+  have hstat : ∀ (k : ℕ) (x : Fin (m k + n k) → ℝ),
+      randDist (Equiv.Perm (Fin (m k + n k)))
+          (fun y => (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0) x t
+        = randDist (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) x t := by
+    intro k x
+    have hfun : (fun y : Fin (m k + n k) → ℝ =>
+        (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0)
+        = studentizedTwoSample (m k) (n k) := by
+      refine funext fun y => ?_
+      change (twoSampleScale (m k) (n k) y)⁻¹ * twoSampleMeanDiff (m k) (n k) y + 0
+        = twoSampleMeanDiff (m k) (n k) y / twoSampleScale (m k) (n k) y
+      rw [add_zero, div_eq_inv_mul]
+    rw [hfun]
+  intro ε hε
+  refine (hmain ε hε).congr fun k => ?_
+  congr 1
+  ext x
+  simp only [Set.mem_setOf_eq, hstat k x]
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard
 normal.** Together with the previous statement, the randomization distribution and the
@@ -685,6 +857,344 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
   rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
   linarith
 
+/-! ### From the two limits to the rejection probability
+
+The remaining ingredients are combinatorial and measure-theoretic rather than
+probabilistic. Several of them exist in `Randomization/ExactLevel`,
+`Randomization/Asymptotics` and `Randomization/SignChange` but are `private` there, so they
+are re-derived here; each is marked as such. -/
+
+/-- Order statistics against counts: `T^{(j)} ≤ a ↔ j < #{orbit values ≤ a}` (a local copy of
+the `ExactLevel` helper). -/
+private lemma orderStat_le_iff_card_lt' {d : ℕ} (v : Fin d → ℝ) (j : Fin d) (a : ℝ) :
+    orderStat v j ≤ a ↔ j.val < (Finset.univ.filter (fun i => v i ≤ a)).card := by
+  have h_card : (Finset.univ.filter (fun i : Fin d => orderStat v i ≤ a)).card =
+      (Finset.univ.filter (fun i : Fin d => v i ≤ a)).card :=
+    Finset.card_bij' (fun i _ => Tuple.sort v i) (fun i _ => (Tuple.sort v).symm i)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢; exact hi)
+      (fun i hi => by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi ⊢
+        simp only [orderStat, Equiv.apply_symm_apply]; exact hi)
+      (fun i _ => by simp [Equiv.symm_apply_apply])
+      (fun i _ => by simp [Equiv.apply_symm_apply])
+  rw [show orderStat v j ≤ a ↔ j.val < (Finset.univ.filter (fun i => orderStat v i ≤ a)).card
+    from (Tuple.lt_card_le_iff_apply_le_of_monotone (Tuple.monotone_sort v)).symm, h_card]
+
+section Sandwich
+
+variable {G 𝓧 : Type*} [Group G] [Fintype G] [MeasurableSpace 𝓧] [MulAction G 𝓧]
+
+omit [MeasurableSpace 𝓧] in
+/-- Counting over the group equals counting over the orbit tuple (a local copy of the
+`ExactLevel` helper). -/
+private lemma card_filter_orbit' (p : ℝ → Prop) [DecidablePred p] (T : 𝓧 → ℝ) (x : 𝓧) :
+    (Finset.univ.filter fun g : G => p (T (g • x))).card
+      = (Finset.univ.filter fun i : Fin (Fintype.card G) => p (orbitValues G T x i)).card := by
+  refine Finset.card_bij' (fun g _ => Fintype.equivFin G g)
+    (fun i _ => (Fintype.equivFin G).symm i) ?_ ?_ ?_ ?_
+  · intro g hg
+    rw [Finset.mem_filter] at hg ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues, Equiv.symm_apply_apply] using hg.2⟩
+  · intro i hi
+    rw [Finset.mem_filter] at hi ⊢
+    exact ⟨Finset.mem_univ _, by simpa only [orbitValues] using hi.2⟩
+  · intro g _; simp
+  · intro i _; simp
+
+/-- The randomization distribution is a measurable function of the data (a local copy of the
+`Asymptotics` helper). -/
+private lemma measurable_randDist' (T : 𝓧 → ℝ) (t : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (fun x : 𝓧 => randDist G T x t) := by
+  classical
+  simp only [randDist]
+  refine Measurable.const_mul ?_ _
+  refine Finset.measurable_sum _ fun g _ => ?_
+  have hmset : MeasurableSet {x : 𝓧 | T (g • x) ≤ t} :=
+    measurableSet_le (hT.comp (hsmul g)) measurable_const
+  have hind : (fun x : 𝓧 => if T (g • x) ≤ t then (1 : ℝ) else 0)
+      = Set.indicator {x | T (g • x) ≤ t} 1 := by
+    funext x; simp [Set.indicator_apply]
+  rw [hind]
+  exact measurable_const.indicator hmset
+
+/-- `j ↦ orderStat · ⟨j, h⟩` is measurable (a local copy of the `ExactLevel` helper). -/
+private lemma measurable_orderStat_eval' {d : ℕ} (j : ℕ) (h : j < d) :
+    Measurable (fun v : Fin d → ℝ => orderStat v ⟨j, h⟩) := by
+  classical
+  apply measurable_of_Iic
+  intro a
+  have hset : (fun v : Fin d → ℝ => orderStat v ⟨j, h⟩) ⁻¹' Set.Iic a
+      = {v | j < ((Finset.univ : Finset (Fin d)).filter (fun i => v i ≤ a)).card} := by
+    ext v
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    exact orderStat_le_iff_card_lt' v ⟨j, h⟩ a
+  rw [hset]
+  apply measurableSet_lt measurable_const
+  simp_rw [Finset.card_eq_sum_ones, Finset.sum_filter]
+  exact Finset.measurable_sum _ fun i _ =>
+    Measurable.ite (measurableSet_le (measurable_pi_apply i) measurable_const)
+      measurable_const measurable_const
+
+/-- The randomization test is a measurable function of the data (a local copy of the
+`ExactLevel` chain `measurable_randCritValue` → `measurable_randTest`). -/
+private lemma measurable_randTest' (T : 𝓧 → ℝ) (α : ℝ) (hT : Measurable T)
+    (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) :
+    Measurable (randTest G T α) := by
+  classical
+  have hv : Measurable (fun x : 𝓧 => randCritValue G T α x) := by
+    unfold randCritValue orbitOrderStat
+    by_cases hk : randCritIndex G α - 1 < Fintype.card G
+    · simp only [dif_pos hk]
+      have hov : Measurable
+          (fun x : 𝓧 => (orbitValues G T x : Fin (Fintype.card G) → ℝ)) := by
+        rw [measurable_pi_iff]
+        exact fun i => hT.comp (hsmul ((Fintype.equivFin G).symm i))
+      exact (measurable_orderStat_eval' (randCritIndex G α - 1) hk).comp hov
+    · simp only [dif_neg hk]; exact measurable_const
+  have hplus : Measurable (fun x : 𝓧 => ((randPlusCount G T α x : ℕ) : ℝ)) := by
+    unfold randPlusCount
+    simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+    refine Finset.measurable_sum _ fun g _ => ?_
+    exact Measurable.ite (measurableSet_lt hv (hT.comp (hsmul g)))
+      measurable_const measurable_const
+  have hzero : Measurable (fun x : 𝓧 => ((randZeroCount G T α x : ℕ) : ℝ)) := by
+    unfold randZeroCount
+    simp_rw [Finset.card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero]
+    refine Finset.measurable_sum _ fun g _ => ?_
+    exact Measurable.ite (measurableSet_eq_fun (hT.comp (hsmul g)) hv)
+      measurable_const measurable_const
+  have hgamma : Measurable (fun x : 𝓧 => randGamma G T α x) := by
+    unfold randGamma
+    exact Measurable.div (measurable_const.sub hplus) hzero
+  unfold randTest
+  refine Measurable.ite (measurableSet_lt hv hT) measurable_const ?_
+  exact Measurable.ite (measurableSet_eq_fun hT hv) hgamma measurable_const
+
+omit [MeasurableSpace 𝓧] in
+/-- **The critical value against the randomization distribution.** The critical value is the
+`k`-th smallest orbit value with `k = M − ⌊Mα⌋`, so it lies at or below a threshold `z`
+exactly when the randomization distribution has already accumulated the fraction `k/M` by
+`z`. This is the finite-sample identity that lets a *fixed* threshold control the test. -/
+private lemma randCritValue_le_iff_le_randDist (T : 𝓧 → ℝ) {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1) (x : 𝓧) (z : ℝ) :
+    randCritValue G T α x ≤ z ↔
+      (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) ≤ randDist G T x z := by
+  classical
+  have hcard : 0 < Fintype.card G := Fintype.card_pos
+  have hcardR : (0 : ℝ) < Fintype.card G := by exact_mod_cast hcard
+  have hfl : ⌊(Fintype.card G : ℝ) * α⌋₊ < Fintype.card G :=
+    (Nat.floor_lt (mul_nonneg hcardR.le hα₀.le)).2 (mul_lt_of_lt_one_right hcardR hα₁)
+  have hk : randCritIndex G α - 1 < Fintype.card G := by unfold randCritIndex; omega
+  have hkpos : 1 ≤ randCritIndex G α := by unfold randCritIndex; omega
+  have hcount : randDist G T x z
+      = (Fintype.card G : ℝ)⁻¹
+        * ((Finset.univ.filter fun g : G => T (g • x) ≤ z).card : ℝ) := by
+    rw [randDist, Finset.sum_boole]
+  have hcf : (Finset.univ.filter fun g : G => T (g • x) ≤ z).card
+      = (Finset.univ.filter fun i : Fin (Fintype.card G) =>
+          orbitValues G T x i ≤ z).card := card_filter_orbit' (fun r => r ≤ z) T x
+  have hiff : ∀ a b : ℝ, (a / (Fintype.card G : ℝ) ≤ (Fintype.card G : ℝ)⁻¹ * b) ↔ a ≤ b := by
+    intro a b
+    rw [div_eq_inv_mul]
+    exact ⟨fun h => le_of_mul_le_mul_left h (by positivity),
+      fun h => mul_le_mul_of_nonneg_left h (by positivity)⟩
+  rw [randCritValue, orbitOrderStat, dif_pos hk, hcount, hiff,
+    orderStat_le_iff_card_lt' (orbitValues G T x) ⟨randCritIndex G α - 1, hk⟩ z, ← hcf,
+    Nat.cast_le]
+  have hval : ((⟨randCritIndex G α - 1, hk⟩ : Fin (Fintype.card G)) : ℕ)
+      = randCritIndex G α - 1 := rfl
+  rw [hval]
+  omega
+
+/-- **Two-sided sandwich for the power of a randomization test at a fixed threshold.**
+At any threshold `z`, the test rejects on `{z < T} ∩ {k/M ≤ R̂(z)}` and accepts off
+`{z < T} ∪ {k/M ≤ R̂(z)}`, by `randCritValue_le_iff_le_randDist`. The two events are the
+ones whose limits the asymptotic theory supplies: a tail probability of the statistic and a
+deviation probability of the randomization distribution. -/
+private lemma powerAgainst_randTest_sandwich (P : Measure 𝓧) [IsProbabilityMeasure P]
+    (T : 𝓧 → ℝ)
+    -- USER-INPUT: the statistic is measurable; the action is measurable (data regularity)
+    (hT : Measurable T) (hsmul : ∀ g : G, Measurable (fun x : 𝓧 => g • x)) {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1) (z : ℝ) :
+    P.real {x | z < T x}
+        - P.real {x | randDist G T x z < (randCritIndex G α : ℝ) / (Fintype.card G : ℝ)}
+        ≤ powerAgainst P (randTest G T α)
+      ∧ powerAgainst P (randTest G T α)
+        ≤ P.real {x | z < T x}
+          + P.real {x | (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) ≤ randDist G T x z} := by
+  classical
+  set q : ℝ := (randCritIndex G α : ℝ) / (Fintype.card G : ℝ) with hqdef
+  set A : Set 𝓧 := {x | z < T x} with hAdef
+  set B : Set 𝓧 := {x | q ≤ randDist G T x z} with hBdef
+  set Bc : Set 𝓧 := {x | randDist G T x z < q} with hBcdef
+  have hrdmeas : Measurable (fun x : 𝓧 => randDist G T x z) := measurable_randDist' T z hT hsmul
+  have hAmeas : MeasurableSet A := measurableSet_lt measurable_const hT
+  have hBmeas : MeasurableSet B := measurableSet_le measurable_const hrdmeas
+  have hBcmeas : MeasurableSet Bc := measurableSet_lt hrdmeas measurable_const
+  have hABmeas : MeasurableSet (A ∪ B) := hAmeas.union hBmeas
+  have hAB'meas : MeasurableSet (A ∩ B) := hAmeas.inter hBmeas
+  -- the test is a bounded measurable critical function
+  have hφmeas : Measurable (randTest G T α) := measurable_randTest' T α hT hsmul
+  have hφIcc : ∀ x : 𝓧, randTest G T α x ∈ Set.Icc (0 : ℝ) 1 := fun x =>
+    randTest_mem_Icc (G := G) T hα₀ hα₁ x
+  have hφint : Integrable (randTest G T α) P :=
+    (integrable_const (1 : ℝ)).mono' hφmeas.aestronglyMeasurable
+      (ae_of_all P fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hφIcc x).1]; exact (hφIcc x).2)
+  -- off `A ∪ B` the test accepts; on `A ∩ B` it rejects
+  have hzero : ∀ x : 𝓧, x ∉ A ∪ B → randTest G T α x = 0 := by
+    intro x hx
+    rw [Set.mem_union, hAdef, hBdef, Set.mem_setOf_eq, Set.mem_setOf_eq, not_or, not_lt,
+      not_le] at hx
+    obtain ⟨hTx, hrd⟩ := hx
+    have hcz : ¬ (randCritValue G T α x ≤ z) := by
+      rw [randCritValue_le_iff_le_randDist T hα₀ hα₁ x z, ← hqdef]
+      exact not_le.2 hrd
+    have hlt : T x < randCritValue G T α x := lt_of_le_of_lt hTx (not_le.1 hcz)
+    unfold randTest
+    rw [if_neg (not_lt.2 hlt.le), if_neg (ne_of_lt hlt)]
+  have hone : ∀ x : 𝓧, x ∈ A ∩ B → randTest G T α x = 1 := by
+    intro x hx
+    obtain ⟨hxA, hxB⟩ := hx
+    rw [hAdef, Set.mem_setOf_eq] at hxA
+    rw [hBdef, Set.mem_setOf_eq] at hxB
+    have hcz : randCritValue G T α x ≤ z := by
+      rw [randCritValue_le_iff_le_randDist T hα₀ hα₁ x z, ← hqdef]; exact hxB
+    unfold randTest
+    rw [if_pos (lt_of_le_of_lt hcz hxA)]
+  refine ⟨?_, ?_⟩
+  · -- lower bound
+    have hle : ∀ x : 𝓧, Set.indicator (A ∩ B) (fun _ => (1 : ℝ)) x ≤ randTest G T α x := by
+      intro x
+      by_cases hx : x ∈ A ∩ B
+      · rw [Set.indicator_of_mem hx, hone x hx]
+      · rw [Set.indicator_of_notMem hx]; exact (hφIcc x).1
+    have hintAB : ∫ x, Set.indicator (A ∩ B) (fun _ => (1 : ℝ)) x ∂P = P.real (A ∩ B) := by
+      rw [integral_indicator hAB'meas, setIntegral_const, smul_eq_mul, mul_one]
+    have hstep : P.real (A ∩ B) ≤ powerAgainst P (randTest G T α) := by
+      have h := integral_mono ((integrable_const (1 : ℝ)).indicator hAB'meas) hφint hle
+      rwa [hintAB] at h
+    have hsub : A ⊆ (A ∩ B) ∪ Bc := by
+      intro x hx
+      by_cases hxB : x ∈ B
+      · exact Set.mem_union_left _ ⟨hx, hxB⟩
+      · refine Set.mem_union_right _ ?_
+        rw [hBdef, Set.mem_setOf_eq, not_le] at hxB
+        exact hxB
+    have hsplit : P.real A ≤ P.real (A ∩ B) + P.real Bc :=
+      (measureReal_mono hsub (measure_ne_top _ _)).trans (measureReal_union_le _ _)
+    linarith
+  · -- upper bound
+    have hle : ∀ x : 𝓧, randTest G T α x ≤ Set.indicator (A ∪ B) (fun _ => (1 : ℝ)) x := by
+      intro x
+      by_cases hx : x ∈ A ∪ B
+      · rw [Set.indicator_of_mem hx]; exact (hφIcc x).2
+      · rw [Set.indicator_of_notMem hx, hzero x hx]
+    have hintAB : ∫ x, Set.indicator (A ∪ B) (fun _ => (1 : ℝ)) x ∂P = P.real (A ∪ B) := by
+      rw [integral_indicator hABmeas, setIntegral_const, smul_eq_mul, mul_one]
+    have hstep : powerAgainst P (randTest G T α) ≤ P.real (A ∪ B) := by
+      have h := integral_mono hφint ((integrable_const (1 : ℝ)).indicator hABmeas) hle
+      rwa [hintAB] at h
+    exact hstep.trans (measureReal_union_le _ _)
+
+end Sandwich
+
+/-- The critical fraction `k/M = 1 − ⌊Mα⌋/M` converges to `1 − α` along any array whose
+group cardinalities tend to infinity. -/
+private lemma tendsto_randCritIndex_div {G : ℕ → Type*} [∀ k, Group (G k)] [∀ k, Fintype (G k)]
+    {α : ℝ}
+    -- USER-INPUT: nominal level strictly between `0` and `1`; the calibration range
+    (hα₀ : 0 < α) (hα₁ : α < 1)
+    -- USER-INPUT: the groups grow
+    (hcard : Tendsto (fun k => (Fintype.card (G k) : ℝ)) atTop atTop) :
+    Tendsto (fun k => (randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ)) atTop
+      (𝓝 (1 - α)) := by
+  have hbound : ∀ k, |(randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ) - (1 - α)|
+      ≤ (Fintype.card (G k) : ℝ)⁻¹ := by
+    intro k
+    have hcardR : (0 : ℝ) < Fintype.card (G k) := by
+      exact_mod_cast (Fintype.card_pos : 0 < Fintype.card (G k))
+    have hfl : ⌊(Fintype.card (G k) : ℝ) * α⌋₊ ≤ Fintype.card (G k) :=
+      le_of_lt ((Nat.floor_lt (mul_nonneg hcardR.le hα₀.le)).2
+        (mul_lt_of_lt_one_right hcardR hα₁))
+    have hcast : ((randCritIndex (G k) α : ℕ) : ℝ)
+        = (Fintype.card (G k) : ℝ) - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ) := by
+      unfold randCritIndex; rw [Nat.cast_sub hfl]
+    have h1 : ((⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ)) ≤ (Fintype.card (G k) : ℝ) * α :=
+      Nat.floor_le (mul_nonneg hcardR.le hα₀.le)
+    have h2 : (Fintype.card (G k) : ℝ) * α < (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ) + 1 :=
+      Nat.lt_floor_add_one _
+    rw [hcast]
+    have hkey : ((Fintype.card (G k) : ℝ) - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ))
+          / (Fintype.card (G k) : ℝ) - (1 - α)
+        = ((Fintype.card (G k) : ℝ) * α - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ))
+          / (Fintype.card (G k) : ℝ) := by
+      field_simp
+      ring
+    rw [hkey, abs_div, abs_of_nonneg (by linarith : (0 : ℝ) ≤
+        (Fintype.card (G k) : ℝ) * α - (⌊(Fintype.card (G k) : ℝ) * α⌋₊ : ℝ)),
+      abs_of_nonneg hcardR.le, div_le_iff₀ hcardR, inv_mul_cancel₀ hcardR.ne']
+    linarith
+  have hlim : Tendsto
+      (fun k => |(randCritIndex (G k) α : ℝ) / (Fintype.card (G k) : ℝ) - (1 - α)|) atTop
+      (𝓝 0) := squeeze_zero (fun k => abs_nonneg _) hbound hcard.inv_tendsto_atTop
+  rw [tendsto_iff_dist_tendsto_zero]
+  simpa only [Real.dist_eq] using hlim
+
+/-- **Portmanteau, `Measure.real` form** on `ℝ` (a local copy of the `Asymptotics` helper). -/
+private lemma tendsto_measureReal_of_weakConverges {νs : ℕ → Measure ℝ} {ν : Measure ℝ}
+    [∀ k, IsProbabilityMeasure (νs k)] [IsProbabilityMeasure ν]
+    (h : WeakConverges νs ν) {s : Set ℝ} (hs : ν (frontier s) = 0) :
+    Tendsto (fun k => (νs k).real s) atTop (𝓝 (ν.real s)) := by
+  let pn : ℕ → ProbabilityMeasure ℝ := fun k => ⟨νs k, inferInstance⟩
+  let pμ : ProbabilityMeasure ℝ := ⟨ν, inferInstance⟩
+  have hpm : Tendsto pn atTop (𝓝 pμ) := by
+    rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+    intro f; simpa [pn, pμ] using h f
+  have key := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hpm
+    (E := s) (by simpa [pμ] using hs)
+  have h2 := (ENNReal.tendsto_toReal (measure_ne_top ν s)).comp key
+  simpa [Measure.real, pn, pμ] using h2
+
+/-- The c.d.f. of a nondegenerate centred Gaussian is strictly increasing (a local copy of
+the `SignChange` helper). -/
+private lemma strictMono_cdf_gaussianReal' {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal 0 v)) := by
+  intro y z hyz
+  rw [cdf_eq_real, cdf_eq_real]
+  have hpos : 0 < gaussianReal 0 v (Set.Ioc y z) := by
+    rw [pos_iff_ne_zero]; intro h0
+    have hvol := (gaussianReal_absolutelyContinuous' 0 hv) h0
+    rw [Real.volume_Ioc] at hvol
+    exact (ENNReal.ofReal_pos.mpr (by linarith)).ne' hvol
+  have hdisj : gaussianReal 0 v (Set.Iic z)
+      = gaussianReal 0 v (Set.Iic y) + gaussianReal 0 v (Set.Ioc y z) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hyz.le]
+  rw [measureReal_def, measureReal_def, hdisj,
+    ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
+  have hp2 : 0 < (gaussianReal 0 v (Set.Ioc y z)).toReal :=
+    ENNReal.toReal_pos hpos.ne' (measure_ne_top _ _)
+  linarith
+
+/-- Every level in `(0,1)` is attained by the c.d.f. of an atomless law (a local copy of the
+`SignChange` helper). -/
+private lemma exists_cdf_eq' (ν : Measure ℝ) [IsProbabilityMeasure ν] [NoAtoms ν]
+    {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) : ∃ q, cdf ν q = p := by
+  have hcont : Continuous (cdf ν) :=
+    continuous_iff_continuousAt.mpr (fun x => continuousAt_cdf_of_noAtoms' ν x)
+  obtain ⟨a, ha⟩ := ((tendsto_cdf_atBot ν).eventually (eventually_lt_nhds hp0)).exists
+  obtain ⟨b, hb⟩ := ((tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hp1)).exists
+  have hab : min a b ≤ max a b := min_le_max
+  have hca' : cdf ν (min a b) < p := lt_of_le_of_lt (monotone_cdf (μ := ν) (min_le_left a b)) ha
+  have hcb' : p < cdf ν (max a b) := lt_of_lt_of_le hb (monotone_cdf (μ := ν) (le_max_right a b))
+  obtain ⟨q, _, hq⟩ := intermediate_value_Icc hab hcont.continuousOn ⟨hca'.le, hcb'.le⟩
+  exact ⟨q, hq⟩
+
 /-- **The studentized permutation test is pointwise consistent in level.** Its rejection
 probability tends to the nominal level,
 $$ E_{P_Y^m \times P_Z^n}\bigl[\phi_{m,n}\bigr] \;\longrightarrow\; \alpha , $$
@@ -709,22 +1219,146 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
     Tendsto (fun k => powerAgainst (twoSampleLaw (m k) (n k) PY PZ)
         (randTest (Equiv.Perm (Fin (m k + n k))) (studentizedTwoSample (m k) (n k)) α))
       atTop (𝓝 α) := by
-  -- TODO (deep, deferred): pointwise consistency in level. Assembles the two limits above —
-  -- the studentized randomization distribution `→P Φ` (`randDist_studentized_tendstoInProb`)
-  -- and the unconditional law `⇝ N(0,1)` (`weakConverges_studentizedTwoSample`) — through the
-  -- randomized critical value `randQuantile → z_{1-α}` (`randQuantile_tendstoInProb`) and a
-  -- portmanteau evaluation of `powerAgainst` at the limiting rejection region, whose frontier
-  -- is `N(0,1)`-null.
-  -- STATUS (re-derived this session, wave 4): ONE prerequisite instead of two. The unconditional
-  -- half `weakConverges_studentizedTwoSample` is now CLOSED (0-sorry, axiom-clean), so the only
-  -- missing input is `randDist_studentized_tendstoInProb` above — which is in turn blocked on
-  -- the single permutation CLT, `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
-  -- Everything downstream of the two limits remains in place: `Randomization/Asymptotics`
-  -- supplies both halves of the equivalence (`randDist_tendstoInProb_cdf`,
-  -- `randQuantile_tendstoInProb`, and the converse
-  -- `weakConverges_randPairLaw_of_randDist_tendstoInProb`), so the only thing left to write once
-  -- the prerequisite lands is the portmanteau evaluation of `powerAgainst` at the limiting
-  -- rejection region.
-  sorry
+  -- Route (re-derived this session, wave 5). The critical value is *not* passed through
+  -- `randQuantile_tendstoInProb`: the test's critical index `k = M − ⌊Mα⌋` gives the
+  -- randomization quantile at the *moving* level `k/M`, and `randQuantile_tendstoInProb` is
+  -- stated at the fixed level `1 − α`. The finite-sample identity
+  -- `randCritValue_le_iff_le_randDist` replaces it, and lets a *fixed* threshold `z` control
+  -- the test: the test rejects on `{z < T̃} ∩ {k/M ≤ R̂(z)}` and accepts off
+  -- `{z < T̃} ∪ {k/M ≤ R̂(z)}` (`powerAgainst_randTest_sandwich`). Since `k/M → 1 − α`, the
+  -- randomization-distribution event has probability tending to `0` for `Φ(z) < 1 − α` and to
+  -- `1` for `Φ(z) > 1 − α` (by `randDist_studentized_tendstoInProb`), while the tail event has
+  -- probability tending to `1 − Φ(z)` (portmanteau on `Ioi z`, whose frontier is a
+  -- `N(0,1)`-null point, applied to `weakConverges_studentizedTwoSample`). Bracketing the
+  -- `(1−α)`-quantile of `Φ` by two continuity/strict-monotonicity thresholds `z₁ < q₀ < z₂`
+  -- squeezes the power between `1 − Φ(z₂)` and `1 − Φ(z₁)`, both within `ε` of `α`.
+  classical
+  have hSmeas : ∀ k, Measurable (studentizedTwoSample (m k) (n k)) := by
+    intro k
+    unfold studentizedTwoSample twoSampleScale twoSampleVarY twoSampleVarZ
+      twoSampleMeanY twoSampleMeanZ twoSampleMeanDiff
+    fun_prop
+  have hsmul : ∀ (k : ℕ) (g : Equiv.Perm (Fin (m k + n k))),
+      Measurable (fun x : Fin (m k + n k) → ℝ => g • x) := fun _ g => measurable_perm_smul' _ g
+  haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+  -- (i) the studentized randomization distribution converges in probability to `Φ`
+  have hrd : ∀ z : ℝ, TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
+        (studentizedTwoSample (m k) (n k)) x z) (cdf (gaussianReal 0 1) z) := fun z =>
+    randDist_studentized_tendstoInProb PY PZ m n hm hn hratio hlam hYL2 hZL2 hmeanY hmeanZ
+      hvarY hvarZ hvarYpos hvarZpos z
+  -- (ii) the unconditional law converges weakly to `N(0,1)`
+  have hlaw := weakConverges_studentizedTwoSample PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos
+  haveI hprob : ∀ k, IsProbabilityMeasure ((twoSampleLaw (m k) (n k) PY PZ).map
+      (studentizedTwoSample (m k) (n k))) := fun k =>
+    Measure.isProbabilityMeasure_map (hSmeas k).aemeasurable
+  -- (iii) the critical fraction `k/M` converges to `1 − α` (`M = N!  → ∞`)
+  have hcardNat : Tendsto (fun k => Fintype.card (Equiv.Perm (Fin (m k + n k)))) atTop atTop := by
+    refine tendsto_atTop_mono (fun k => ?_) hm
+    calc m k ≤ m k + n k := Nat.le_add_right _ _
+      _ ≤ Nat.factorial (m k + n k) := Nat.self_le_factorial _
+      _ = Fintype.card (Equiv.Perm (Fin (m k + n k))) := by
+          rw [Fintype.card_perm, Fintype.card_fin]
+  have hq := tendsto_randCritIndex_div (G := fun k => Equiv.Perm (Fin (m k + n k))) hα₀ hα₁
+    (tendsto_natCast_atTop_atTop.comp hcardNat)
+  -- (iv) the tail probabilities of the statistic
+  have htail : ∀ z : ℝ, Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+      {x | z < studentizedTwoSample (m k) (n k) x}) atTop
+      (𝓝 (1 - cdf (gaussianReal 0 1) z)) := by
+    intro z
+    have hfr : (gaussianReal 0 1) (frontier (Set.Ioi z)) = 0 := by
+      rw [frontier_Ioi]; exact measure_singleton z
+    have h1 := tendsto_measureReal_of_weakConverges hlaw hfr
+    have hval : (gaussianReal 0 1).real (Set.Ioi z) = 1 - cdf (gaussianReal 0 1) z := by
+      have hc := measureReal_add_measureReal_compl (μ := gaussianReal 0 1) (s := Set.Iic z)
+        measurableSet_Iic
+      rw [probReal_univ] at hc
+      rw [cdf_eq_real, ← Set.compl_Iic]
+      linarith
+    rw [hval] at h1
+    refine h1.congr fun k => ?_
+    rw [measureReal_def, measureReal_def, Measure.map_apply (hSmeas k) measurableSet_Ioi]
+    rfl
+  -- (v) below the quantile the randomization event is asymptotically impossible
+  have hB : ∀ z : ℝ, cdf (gaussianReal 0 1) z < 1 - α →
+      Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | (randCritIndex (Equiv.Perm (Fin (m k + n k))) α : ℝ)
+              / (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)
+            ≤ randDist (Equiv.Perm (Fin (m k + n k)))
+              (studentizedTwoSample (m k) (n k)) x z}) atTop (𝓝 0) := by
+    intro z hz
+    have hδpos : 0 < (1 - α - cdf (gaussianReal 0 1) z) / 2 := by linarith
+    have hev := hq.eventually (eventually_gt_nhds
+      (show cdf (gaussianReal 0 1) z + (1 - α - cdf (gaussianReal 0 1) z) / 2 < 1 - α by
+        linarith))
+    refine squeeze_zero' (Eventually.of_forall fun k => measureReal_nonneg) ?_
+      (hrd z _ hδpos)
+    filter_upwards [hev] with k hk
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    rw [le_abs]
+    left
+    linarith
+  -- (vi) above the quantile it is asymptotically certain
+  have hBc : ∀ z : ℝ, 1 - α < cdf (gaussianReal 0 1) z →
+      Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | randDist (Equiv.Perm (Fin (m k + n k)))
+              (studentizedTwoSample (m k) (n k)) x z
+            < (randCritIndex (Equiv.Perm (Fin (m k + n k))) α : ℝ)
+              / (Fintype.card (Equiv.Perm (Fin (m k + n k))) : ℝ)}) atTop (𝓝 0) := by
+    intro z hz
+    have hδpos : 0 < (cdf (gaussianReal 0 1) z - (1 - α)) / 2 := by linarith
+    have hev := hq.eventually (eventually_lt_nhds
+      (show (1 : ℝ) - α < cdf (gaussianReal 0 1) z - (cdf (gaussianReal 0 1) z - (1 - α)) / 2 by
+        linarith))
+    refine squeeze_zero' (Eventually.of_forall fun k => measureReal_nonneg) ?_
+      (hrd z _ hδpos)
+    filter_upwards [hev] with k hk
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    rw [le_abs]
+    right
+    linarith
+  -- (vii) bracket the `1 − α` quantile of `Φ` and squeeze
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  obtain ⟨q₀, hq₀⟩ := exists_cdf_eq' (gaussianReal 0 1) (show (0 : ℝ) < 1 - α by linarith)
+    (show (1 : ℝ) - α < 1 by linarith)
+  obtain ⟨ρ, hρpos, hρ⟩ := Metric.continuousAt_iff.mp
+    (continuousAt_cdf_of_noAtoms' (gaussianReal 0 1) q₀) (ε / 2) (by positivity)
+  have hSM : StrictMono (cdf (gaussianReal 0 1)) := strictMono_cdf_gaussianReal' one_ne_zero
+  have hd₁ : |cdf (gaussianReal 0 1) (q₀ - ρ / 2) - (1 - α)| < ε / 2 := by
+    have hdist := hρ (show dist (q₀ - ρ / 2) q₀ < ρ by
+      rw [Real.dist_eq]; rw [show q₀ - ρ / 2 - q₀ = -(ρ / 2) by ring, abs_neg,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ρ / 2)]; linarith)
+    rwa [Real.dist_eq, hq₀] at hdist
+  have hd₂ : |cdf (gaussianReal 0 1) (q₀ + ρ / 2) - (1 - α)| < ε / 2 := by
+    have hdist := hρ (show dist (q₀ + ρ / 2) q₀ < ρ by
+      rw [Real.dist_eq]; rw [show q₀ + ρ / 2 - q₀ = ρ / 2 by ring,
+        abs_of_nonneg (by positivity : (0 : ℝ) ≤ ρ / 2)]; linarith)
+    rwa [Real.dist_eq, hq₀] at hdist
+  have hlt₁ : cdf (gaussianReal 0 1) (q₀ - ρ / 2) < 1 - α := by
+    rw [← hq₀]; exact hSM (by linarith)
+  have hlt₂ : (1 : ℝ) - α < cdf (gaussianReal 0 1) (q₀ + ρ / 2) := by
+    rw [← hq₀]; exact hSM (by linarith)
+  -- the two eventual bounds
+  have hupev := ((htail (q₀ - ρ / 2)).add (hB _ hlt₁)).eventually (eventually_lt_nhds
+    (show 1 - cdf (gaussianReal 0 1) (q₀ - ρ / 2) + 0
+        < 1 - cdf (gaussianReal 0 1) (q₀ - ρ / 2) + ε / 2 by linarith))
+  have hloev := ((htail (q₀ + ρ / 2)).sub (hBc _ hlt₂)).eventually (eventually_gt_nhds
+    (show 1 - cdf (gaussianReal 0 1) (q₀ + ρ / 2) - ε / 2
+        < 1 - cdf (gaussianReal 0 1) (q₀ + ρ / 2) - 0 by linarith))
+  refine eventually_atTop.1 ?_
+  filter_upwards [hupev, hloev] with k hkup hklo
+  obtain ⟨hlo, hup⟩ := powerAgainst_randTest_sandwich (twoSampleLaw (m k) (n k) PY PZ)
+    (studentizedTwoSample (m k) (n k)) (hSmeas k) (hsmul k) hα₀ hα₁ (q₀ - ρ / 2)
+  obtain ⟨hlo', _⟩ := powerAgainst_randTest_sandwich (twoSampleLaw (m k) (n k) PY PZ)
+    (studentizedTwoSample (m k) (n k)) (hSmeas k) (hsmul k) hα₀ hα₁ (q₀ + ρ / 2)
+  rw [Real.dist_eq, abs_lt]
+  rw [abs_lt] at hd₁ hd₂
+  constructor
+  · linarith
+  · linarith
 
 end StatLean.HypothesisTesting

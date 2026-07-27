@@ -18,6 +18,7 @@ import StatLean.HypothesisTesting.ForMathlib.HypergeometricMoments
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import StatLean.HypothesisTesting.ForMathlib.MultivariateBerryEsseen
 import StatLean.HypothesisTesting.ForMathlib.NoncentralChiSquared
+import StatLean.HypothesisTesting.ForMathlib.PermutationMarginals
 import StatLean.HypothesisTesting.ForMathlib.PolyaUniformCDF
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.HypothesisTesting.ForMathlib.TestsWeakCompact
