@@ -5,6 +5,10 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # A multivariate Berry–Esseen bound via Lindeberg swapping (honest, non-sharp)
@@ -63,12 +67,17 @@ ingredient is proved here unconditionally, each with a dimension-free constant:
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
 public χ² moments) these suffice and the ball assembly closes.
 
-For the *convex* route two further ingredients are missing: the smoothed convex indicator
-`exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
-obstacle — a Gaussian **boundary-shell** bound `γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is
-Ball's Gaussian-surface-area theorem (`4 k^{1/4}`) and does *not* follow from the single-slab
-bound proved here; see `berryEsseen_convex_elementary`.
-Crucially, even once those are filled, the elementary balance of steps 2–3 does **not** reach
+For the *convex* route the smoothed convex indicator `exists_smoothed_convex_indicator`
+(mollification by a `ContDiffBump`, dimension-dependent constant) is **now proved and
+axiom-clean** — see its docstring for the construction and the section preceding it for the
+`precompR` tower. What remains is the single real obstacle: a Gaussian **boundary-shell** bound
+`γ(Bᵋ \ B) ≤ C_k ε` for convex `B`, which is Ball's Gaussian-surface-area theorem (`4 k^{1/4}`)
+and does *not* follow from the single-slab bound proved here; see
+`berryEsseen_convex_elementary`. Everything in the convex assembly that does *not* need that
+shell bound is proved outright as `berryEsseen_convex_levy_elementary`, the Lévy/Prokhorov form
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` (and its mirror image); the frozen headline is exactly this
+statement with `γ(Bᵋ)` collapsed to `γ(B)`.
+Crucially, even once that is filled, the elementary balance of steps 2–3 does **not** reach
 the `β/√n` *rate* of the frozen statements: optimising `ε` in `ε^{-3} β/√n + C ε` gives an error
 of order `(β/√n)^{1/4}`, i.e. `n^{-1/8}`, not `n^{-1/2}`. That is a genuine feature of the
 mollifier method (the sharp rate needs characteristic functions / Esseen's smoothing lemma), and
@@ -620,82 +629,318 @@ private lemma norm_taylor_remainder_three_le {E : Type*} [NormedAddCommGroup E]
   calc |iteratedDeriv 3 g x'| / 6 ≤ M * ‖h‖ ^ 3 / 6 := by gcongr
     _ = M / 6 * ‖h‖ ^ 3 := by ring
 
-/-- **[Planned debt]** Smoothed convex indicator with controlled third derivative.
+/-! #### The smoothed indicator of an arbitrary set (mollification)
+
+This block pays what the wave-4 note called the "`precompR` bookkeeping" debt: it constructs,
+for an arbitrary set `B ⊆ ℝ^k` and an arbitrary width `ε > 0`, a `C³` function `f : ℝ^k → [0,1]`
+that is `1` on `B`, vanishes outside the `ε`-thickening of `B`, and satisfies
+`‖D³f‖ ≤ C₃(k)/ε³` with `C₃(k)` fixed *before* `B` and `ε`.
+
+The construction is the mollification predicted by the note, with one simplification that
+removes its most delicate step. Rather than rescaling the `ContDiffBump` kernel with `ε` (which
+would require the `δ`-dilation identity for `ContDiffBump` together with the Haar change of
+variables `∫ g(δ·) = δ^{-k} ∫ g`), we build the width-`1` object once and obtain the width-`ε`
+object by **dilating the set**: applying the width-`1` construction to `ε⁻¹ • B` and
+precomposing with the continuous linear map `x ↦ ε⁻¹ • x`. All the `ε`-dependence then comes
+from `ContinuousLinearMap.iteratedFDeriv_comp_right` together with
+`ContinuousMultilinearMap.norm_compContinuousLinearMap_le`, i.e. from `‖L‖³ ≤ ε⁻³`; no measure
+rescaling is needed anywhere.
+
+At width `1` the construction is: mollify the indicator of `Metric.thickening (1/2) B` with the
+normed bump of radii `1/8 < 1/4`. The support clause holds because `1/2 + 1/4 < 1`, the value
+clause because the whole mass of the kernel sits inside the thickening when `x ∈ B`, and
+`0 ≤ f ≤ 1` because the kernel is a probability density.
+
+For the third derivative we use the only differentiation formula Mathlib v4.29.1 has for
+convolutions, the first-order `HasCompactSupport.hasFDerivAt_convolution_right`, three times;
+the resulting tower `L`, `L.precompR`, `L.precompR.precompR` is glued to `iteratedFDeriv` by
+three applications of `norm_iteratedFDeriv_fderiv`, exactly as the wave-4 note predicted. The
+`precompR` tower costs nothing quantitatively because `‖L.precompR E‖ ≤ ‖L‖`
+(`ContinuousLinearMap.norm_precompR_le`) and `‖lsmul ℝ ℝ‖ ≤ 1`, so the bound is simply
+`‖D³f‖ ≤ ∫ ‖D³φ‖` for the fixed kernel `φ`.
+
+Note that **convexity of `B` is never used**: the mollification works for any set. Convexity is
+needed only for the *other* convex ingredient, the boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`,
+which is Ball's theorem and is not in this file (see `berryEsseen_convex_elementary`). -/
+
+section ConvexSmoothing
+
+open Metric
+
+open scoped Convolution Pointwise
+
+/-- The fixed mollification kernel: the `ContDiffBump` at the origin with radii `1/8 < 1/4`. -/
+private noncomputable def mbeBump (k : ℕ) : ContDiffBump (0 : EuclideanSpace ℝ (Fin k)) :=
+  ⟨1 / 8, 1 / 4, by norm_num, by norm_num⟩
+
+/-- The normed mollification kernel: smooth, nonnegative, supported in the ball of radius `1/4`
+and of total mass `1`. -/
+private noncomputable def mbeMollifier (k : ℕ) : EuclideanSpace ℝ (Fin k) → ℝ :=
+  (mbeBump k).normed volume
+
+private lemma mbeMollifier_nonneg (k : ℕ) (x : EuclideanSpace ℝ (Fin k)) :
+    0 ≤ mbeMollifier k x :=
+  ContDiffBump.nonneg_normed (mbeBump k) x
+
+private lemma mbeMollifier_contDiff (k : ℕ) :
+    ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) (mbeMollifier k) :=
+  ContDiffBump.contDiff_normed (mbeBump k)
+
+private lemma mbeMollifier_hasCompactSupport (k : ℕ) : HasCompactSupport (mbeMollifier k) :=
+  ContDiffBump.hasCompactSupport_normed (mbeBump k)
+
+private lemma mbeMollifier_integral (k : ℕ) : ∫ x, mbeMollifier k x = 1 :=
+  ContDiffBump.integral_normed (mbeBump k)
+
+private lemma mbeMollifier_integrable (k : ℕ) : Integrable (mbeMollifier k) :=
+  ContDiffBump.integrable_normed (mbeBump k)
+
+private lemma mbeMollifier_support (k : ℕ) :
+    Function.support (mbeMollifier k) = ball 0 (1 / 4) := by
+  rw [mbeMollifier, ContDiffBump.support_normed_eq]; rfl
+
+section GenericConvolutionBound
+
+variable {G E' F : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {μ : Measure G} [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+
+/-- If the pairing has operator norm `≤ 1` and `ind` is bounded by `1` in absolute value, then
+the convolution `ind ⋆[L] g` is bounded by the `L¹`-norm of `g`. This is the quantitative half
+of the mollification bound, stated abstractly so that the elaborator never has to see the
+concrete `precompR` tower. -/
+private lemma norm_convolution_le_of_bounded (L : ℝ →L[ℝ] E' →L[ℝ] F) (hL : ‖L‖ ≤ 1)
+    {ind : G → ℝ} (hbd : ∀ t, |ind t| ≤ 1) {g : G → E'} (hg : Integrable g μ) (x : G) :
+    ‖(ind ⋆[L, μ] g) x‖ ≤ ∫ t, ‖g t‖ ∂μ := by
+  have hint : Integrable (fun t => ‖g t‖) μ := hg.norm
+  calc ‖(ind ⋆[L, μ] g) x‖ = ‖∫ t, L (ind t) (g (x - t)) ∂μ‖ := by rw [convolution_def]
+    _ ≤ ∫ t, ‖L (ind t) (g (x - t))‖ ∂μ := norm_integral_le_integral_norm _
+    _ ≤ ∫ t, ‖g (x - t)‖ ∂μ := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun t => norm_nonneg _)
+          (hint.comp_sub_left x) (Filter.Eventually.of_forall fun t => ?_)
+        refine (L.le_opNorm₂ (ind t) (g (x - t))).trans ?_
+        have h1 : ‖ind t‖ ≤ 1 := by rw [Real.norm_eq_abs]; exact hbd t
+        have h2 : ‖L‖ * ‖ind t‖ ≤ 1 := mul_le_one₀ hL (norm_nonneg _) h1
+        calc ‖L‖ * ‖ind t‖ * ‖g (x - t)‖ ≤ 1 * ‖g (x - t)‖ := by gcongr
+          _ = ‖g (x - t)‖ := one_mul _
+    _ = ∫ t, ‖g t‖ ∂μ := integral_sub_left_eq_self (fun t => ‖g t‖) μ x
+
+end GenericConvolutionBound
+
+set_option maxHeartbeats 1000000 in
+-- The `precompR` tower forces defeq checks on the continuous-linear-map type
+-- `ℝ →L (E →L E →L E →L ℝ) →L (E →L E →L E →L ℝ)`; those are what exhaust the default budget.
+/-- The third derivative of a mollification is bounded by the `L¹`-norm of the third derivative
+of the kernel, uniformly over all `ind` bounded by `1`.
+
+This is the `precompR` tower: three applications of
+`HasCompactSupport.hasFDerivAt_convolution_right`
+identify `fderiv³ (ind ⋆ φ)` with `ind ⋆[L₃] fderiv³ φ`, and three applications of
+`norm_iteratedFDeriv_fderiv` turn `‖iteratedFDeriv ℝ 3 ·‖` into `‖fderiv³ ·‖`.
+
+The raised heartbeat budget pays for the defeq checks on the continuous-linear-map tower
+`ℝ →L (E →L E →L E →L ℝ) →L (E →L E →L E →L ℝ)`; the proof itself is three rewrites and a
+bound. -/
+private lemma norm_iteratedFDeriv_three_convolution_le {k : ℕ}
+    {ind : EuclideanSpace ℝ (Fin k) → ℝ} (hind : LocallyIntegrable ind volume)
+    (hbd : ∀ t, |ind t| ≤ 1) (x : EuclideanSpace ℝ (Fin k)) :
+    ‖iteratedFDeriv ℝ 3 (ind ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] mbeMollifier k) x‖
+      ≤ ∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ (mbeMollifier k))) t‖ := by
+  set φ := mbeMollifier k with hφdef
+  have hφ : ContDiff ℝ (((4 : ℕ∞) : WithTop ℕ∞)) φ := mbeMollifier_contDiff k
+  have hcs : HasCompactSupport φ := mbeMollifier_hasCompactSupport k
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  set L₁ := L₀.precompR (EuclideanSpace ℝ (Fin k)) with hL₁
+  set L₂ := L₁.precompR (EuclideanSpace ℝ (Fin k)) with hL₂
+  set L₃ := L₂.precompR (EuclideanSpace ℝ (Fin k)) with hL₃
+  set φ₁ := fderiv ℝ φ with hφ₁
+  set φ₂ := fderiv ℝ φ₁ with hφ₂
+  set φ₃ := fderiv ℝ φ₂ with hφ₃
+  have hφ1 : ContDiff ℝ (((3 : ℕ∞) : WithTop ℕ∞)) φ₁ := hφ.fderiv_right (by norm_num)
+  have hφ2 : ContDiff ℝ (((2 : ℕ∞) : WithTop ℕ∞)) φ₂ := hφ1.fderiv_right (by norm_num)
+  have hφ3 : ContDiff ℝ (((1 : ℕ∞) : WithTop ℕ∞)) φ₃ := hφ2.fderiv_right (by norm_num)
+  have hcs1 : HasCompactSupport φ₁ := hcs.fderiv ℝ
+  have hcs2 : HasCompactSupport φ₂ := hcs1.fderiv ℝ
+  have hcs3 : HasCompactSupport φ₃ := hcs2.fderiv ℝ
+  have hd1 : fderiv ℝ (ind ⋆[L₀, volume] φ) = (ind ⋆[L₁, volume] φ₁) := by
+    funext y
+    exact (hcs.hasFDerivAt_convolution_right L₀ hind (hφ.of_le (by norm_num)) y).fderiv
+  have hd2 : fderiv ℝ (ind ⋆[L₁, volume] φ₁) = (ind ⋆[L₂, volume] φ₂) := by
+    funext y
+    exact (hcs1.hasFDerivAt_convolution_right L₁ hind (hφ1.of_le (by norm_num)) y).fderiv
+  have hd3 : fderiv ℝ (ind ⋆[L₂, volume] φ₂) = (ind ⋆[L₃, volume] φ₃) := by
+    funext y
+    exact (hcs2.hasFDerivAt_convolution_right L₂ hind (hφ2.of_le (by norm_num)) y).fderiv
+  have hkey : ‖iteratedFDeriv ℝ 3 (ind ⋆[L₀, volume] φ) x‖ = ‖(ind ⋆[L₃, volume] φ₃) x‖ := by
+    rw [show (3 : ℕ) = 2 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd1,
+      show (2 : ℕ) = 1 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd2,
+      show (1 : ℕ) = 0 + 1 from rfl, ← norm_iteratedFDeriv_fderiv, hd3]
+    simp [norm_iteratedFDeriv_zero]
+  rw [hkey]
+  have hnormL : ‖L₃‖ ≤ 1 := by
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₂) ?_
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₁) ?_
+    refine le_trans (ContinuousLinearMap.norm_precompR_le _ L₀) ?_
+    exact ContinuousLinearMap.opNorm_lsmul_le
+  exact norm_convolution_le_of_bounded L₃ hnormL hbd
+    (hφ3.continuous.integrable_of_hasCompactSupport hcs3) x
+
+/-- **Smoothed indicator at unit width, for an arbitrary set.** There is a constant `C₃`
+(depending only on the dimension `k`, and fixed *before* the set) such that every
+`B ⊆ ℝ^k` admits a `C³` function `f : ℝ^k → [0,1]` equal to `1` on `B`, supported inside the
+unit thickening of `B`, with `‖D³f‖ ≤ C₃`.
+
+Take `f` to be the mollification of the indicator of `Metric.thickening (1/2) B` by
+`mbeMollifier k`. Note the empty set needs no special treatment: then `f = 0` and both the
+value and the support clause are vacuous. -/
+private lemma exists_smoothed_indicator_unit (k : ℕ) :
+    ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)),
+      ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
+        ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
+        (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ thickening 1 B) ∧
+        (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃) := by
+  set φ := mbeMollifier k with hφdef
+  refine ⟨max 1 (∫ t, ‖fderiv ℝ (fderiv ℝ (fderiv ℝ φ)) t‖),
+    lt_of_lt_of_le one_pos (le_max_left _ _), fun B => ?_⟩
+  set A : Set (EuclideanSpace ℝ (Fin k)) := thickening (1 / 2) B with hAdef
+  set ind : EuclideanSpace ℝ (Fin k) → ℝ := A.indicator (fun _ => (1 : ℝ)) with hinddef
+  have hindmeas : Measurable ind := measurable_const.indicator isOpen_thickening.measurableSet
+  have hindbd : ∀ t, |ind t| ≤ 1 := by
+    intro t
+    have := norm_indicator_le_norm_self (fun _ : EuclideanSpace ℝ (Fin k) => (1 : ℝ)) (s := A) t
+    simpa [hinddef] using this
+  have hindnn : ∀ t, 0 ≤ ind t := fun t => Set.indicator_nonneg (fun _ _ => zero_le_one) t
+  have hindle : ∀ t, ind t ≤ 1 := fun t => (abs_le.1 (hindbd t)).2
+  have hind : LocallyIntegrable ind volume :=
+    (locallyIntegrable_const (1 : ℝ)).mono hindmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun t => norm_indicator_le_norm_self _ t)
+  set L₀ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ := ContinuousLinearMap.lsmul ℝ ℝ with hL₀
+  -- the value of the mollification, with the kernel carrying the free variable
+  have hval : ∀ x, (ind ⋆[L₀, volume] φ) x = ∫ t, ind (x - t) * φ t := by
+    intro x
+    rw [convolution_eq_swap]
+    simp [hL₀, ContinuousLinearMap.lsmul_apply, smul_eq_mul]
+  have hsupp : ∀ t : EuclideanSpace ℝ (Fin k), φ t ≠ 0 → ‖t‖ < 1 / 4 := by
+    intro t ht
+    have hmem : t ∈ Function.support φ := ht
+    rw [hφdef, mbeMollifier_support] at hmem
+    simpa [dist_zero_right] using hmem
+  refine ⟨ind ⋆[L₀, volume] φ, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact (mbeMollifier_hasCompactSupport k).contDiff_convolution_right L₀ hind
+      ((mbeMollifier_contDiff k).of_le (by norm_num))
+  · intro x
+    rw [hval]
+    exact integral_nonneg fun t => mul_nonneg (hindnn _) (mbeMollifier_nonneg k t)
+  · intro x
+    rw [hval]
+    refine le_trans (integral_mono_of_nonneg
+      (Filter.Eventually.of_forall fun t => mul_nonneg (hindnn _) (mbeMollifier_nonneg k t))
+      (mbeMollifier_integrable k) (Filter.Eventually.of_forall fun t => ?_)) ?_
+    · nlinarith [hindle (x - t), hindnn (x - t), mbeMollifier_nonneg k t]
+    · exact le_of_eq (mbeMollifier_integral k)
+  · -- on `B` the whole mass of the kernel sits inside the `1/2`-thickening
+    intro x hx
+    rw [hval]
+    have hpt : ∀ t, ind (x - t) * φ t = φ t := by
+      intro t
+      rcases eq_or_ne (φ t) 0 with h | h
+      · simp [h]
+      · have hmem : x - t ∈ A := by
+          rw [hAdef, Metric.mem_thickening_iff]
+          refine ⟨x, hx, ?_⟩
+          have hd : dist (x - t) x = ‖t‖ := by rw [dist_eq_norm]; simp [norm_neg]
+          rw [hd]
+          exact lt_trans (hsupp t h) (by norm_num)
+        rw [hinddef, Set.indicator_of_mem hmem]
+        ring
+    simp only [hpt]
+    exact mbeMollifier_integral k
+  · -- off the unit thickening the integrand vanishes identically, since `1/2 + 1/4 < 1`
+    intro x hfx
+    by_contra hx
+    apply hfx
+    rw [hval]
+    have hpt : ∀ t, ind (x - t) * φ t = 0 := by
+      intro t
+      rcases eq_or_ne (φ t) 0 with h | h
+      · simp [h]
+      · have hnot : x - t ∉ A := by
+          intro hmem
+          rw [hAdef, Metric.mem_thickening_iff] at hmem
+          obtain ⟨z, hz, hdz⟩ := hmem
+          apply hx
+          rw [Metric.mem_thickening_iff]
+          refine ⟨z, hz, ?_⟩
+          have h1 : dist x (x - t) = ‖t‖ := by rw [dist_eq_norm]; simp
+          have h3 := dist_triangle x (x - t) z
+          have h2 := hsupp t h
+          linarith
+        rw [hinddef, Set.indicator_of_notMem hnot]
+        ring
+    simp only [hpt]
+    exact integral_zero _ _
+  · intro x
+    exact le_trans (norm_iteratedFDeriv_three_convolution_le hind hindbd x) (le_max_right 1 _)
+
+/-- **Smoothed convex indicator with controlled third derivative.**
 In each dimension `k` there is a constant `C₃` (quantified *before* `B` and `ε`, so the bound
 is not vacuous) such that every convex `B` and width `ε > 0` admit a smooth `f : ℝ^k → [0,1]`
 equal to `1` on `B`, supported inside the `ε`-thickening of `B`, with `‖D³f‖ ≤ C₃ / ε³`.
 
-Status after the wave-4 pass. The API inventory was re-checked against Mathlib v4.29.1 and is
-unchanged: `Analysis/Convolution.lean` exports `convolution_precompR_apply`, and
-`Analysis/Calculus/ContDiff/Convolution.lean` exports exactly one differentiation formula,
-the *first-order* `HasCompactSupport.hasFDerivAt_convolution_right`
-(`fderiv (f ⋆[L] g) = f ⋆[L.precompR G] fderiv g`) together with the qualitative
-`HasCompactSupport.contDiff_convolution_right`. There is **no** iterated-derivative formula
-for convolutions and no `‖D^m(f ⋆ g)‖ ≤ ‖f‖_∞ ‖D^m g‖_{L¹}`. So mollification remains the
-route and the `precompR` tower remains its cost.
+**Proof.** Apply `exists_smoothed_indicator_unit` to the dilate `ε⁻¹ • B` and precompose with
+the continuous linear map `L : x ↦ ε⁻¹ • x`. Membership and support transport along `L` because
+`dist (ε⁻¹ • x) (ε⁻¹ • w) = ε⁻¹ * dist x w`, and the derivative bound transports by
+`ContinuousLinearMap.iteratedFDeriv_comp_right` together with
+`ContinuousMultilinearMap.norm_compContinuousLinearMap_le`, which contribute the factor
+`‖L‖³ ≤ ε⁻³`. Note `‖L‖ ≤ ε⁻¹` is used as an inequality rather than an equality, so the
+degenerate dimension `k = 0` (where `‖id‖ = 0`) is covered too.
 
-What this pass adds is that the route is now *mapped*, not merely named — the three steps that
-looked open-ended are all supplied:
-
-* the **tower-to-`iteratedFDeriv` bridge** is `norm_iteratedFDeriv_fderiv`
-  (`Analysis/Calculus/ContDiff/FTaylorSeries.lean`),
-  `‖iteratedFDeriv 𝕜 n (fderiv 𝕜 f) x‖ = ‖iteratedFDeriv 𝕜 (n+1) f x‖`. Applying it twice turns
-  the target `‖iteratedFDeriv ℝ 3 f x‖` into `‖fderiv (fderiv (fderiv f)) x‖`, which is exactly
-  what three applications of `hasFDerivAt_convolution_right` produce (with `L`, `L.precompR`,
-  `L.precompR.precompR`). No `continuousMultilinearCurry…` gymnastics is needed.
-* the **`ε`-scaling of the mollifier is definitional**. In v4.29.1 `ContDiffBump.toFun` is
-  `(someContDiffBumpBase E).toFun (rOut / rIn) ∘ (x ↦ rIn⁻¹ • (x - c))`, i.e. the bump depends
-  on the two radii only through the *ratio* `rOut/rIn` and an overall dilation by `rIn`. Fixing
-  the ratio at `2`, the bump of inner radius `δ` is literally the `δ`-dilate of the bump of
-  inner radius `1`; hence `D³` scales by `δ⁻³`, `∫` of the unnormalised bump scales by `δ^k`
-  (`Measure.integral_comp_smul` for the additive Haar measure `volume`), and
-  `∫ ‖D³ (bump δ).normed‖ = δ⁻³ ∫ ‖D³ (bump 1).normed‖ =: C₃/δ³`. This is the source of the
-  `k`-dependence of `C₃` and it is the only place where `k` enters.
-* the **construction** that meets the frozen clauses: take `δ := ε/8`, mollify the indicator of
-  `Metric.thickening (ε/2) B` with `(bump δ).normed`. Then `f = 1` on `B` (the mollifier is
-  supported in the ball of radius `2δ = ε/4`, so the whole mass sits inside the thickening),
-  `f x ≠ 0 ⇒ x ∈ thickening ε B` (`ε/2 + ε/4 < ε`), and `0 ≤ f ≤ 1` since `∫ (bump δ).normed = 1`.
-
-Three cheaper constructions were re-examined and all **fail**, so they are not to be
-re-explored:
-
-* *compose a fixed cutoff with a smooth "defining function" of `B`*, mirroring the radial trick
-  `χ ∘ ‖·‖²` used by `exists_smoothed_radial_indicator`. This needs a `C³` `ψ` with `ψ ≤ 0` on
-  `B`, `ψ ≥ 1` off `Bᵋ` and `‖Dᵐψ‖ ≲ ε^{-m}`. For convex `B` the two natural candidates are
-  `dist(·,B)`, which is convex and `1`-Lipschitz but not even `C¹` across `∂B`, and
-  `dist(·,B)²`, which is `C¹` with `∇ = 2(x − P_B x)` but only `C^{1,1}` because the metric
-  projection `P_B` is merely `1`-Lipschitz. Neither is `C³`, and smoothing either of them is
-  the very mollification being avoided.
-* *Gaussian (heat-semigroup) mollification*, which would make the derivative bounds explicit and
-  scaling-free. **Excluded by the statement itself**: the frozen clause
-  `∀ x, f x ≠ 0 → x ∈ thickening ε B` demands compact — in fact `ε`-local — support, and the
-  Gaussian mollification of a nonempty set is strictly positive everywhere. This is why
-  `ContDiffBump` is forced rather than merely convenient.
-* *log-sum-exp ("soft-max") over the support function*,
-  `ψ_λ(x) = λ^{-1} log ∫_{S^{k-1}} exp(λ(⟪u,x⟫ − h_B(u))) dσ(u)`, whose derivatives are the
-  first three moments of a tilted measure on the sphere and do scale as `1, λ, λ²`. This fails
-  for a different reason: the soft-max error is `λ^{-1} log(1/σ{u : near-max})`, and for a
-  needle-shaped convex body that near-max set of directions is arbitrarily small, so the
-  approximation is not uniform over `B` — exactly the uniformity the `∃ C₃` prefix demands.
-
-Note (unchanged, and worth repeating): convexity of `B` is *not* used by this construction at
-all — the same mollification works for any measurable `B`. What convexity is needed for is the
-*other* convex ingredient, the boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in
-this file and is the real obstacle to `berryEsseen_convex_elementary` (see its docstring).
-
-Since closing this lemma alone would still leave `berryEsseen_convex_elementary` blocked on
-Ball's Gaussian-surface-area theorem (a genuine research theorem, see below), it is
-deliberately left as debt rather than paid at ~500 lines of `precompR`/operator-norm
-bookkeeping for no headline. The three bullets above are the receipt that the remaining cost is
-bookkeeping and not mathematics. -/
+Convexity of `B` is not used; it is kept only because the statement is frozen. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
     ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
         ContDiff ℝ 3 f ∧ (∀ x, 0 ≤ f x) ∧ (∀ x, f x ≤ 1) ∧
         (∀ x ∈ B, f x = 1) ∧ (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) ∧
         (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) := by
-  -- TODO (planned debt): ContDiffBump convolution; see docstring.
-  sorry
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_indicator_unit k
+  refine ⟨C₃, hC₃pos, fun B _ ε hε => ?_⟩
+  obtain ⟨g, hgcd, hg0, hg1, hgB, hgsupp, hgD⟩ := hC₃ (ε⁻¹ • B)
+  set L : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    ε⁻¹ • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k)) with hLdef
+  have hLapp : ∀ x, L x = ε⁻¹ • x := by intro x; simp [hLdef]
+  have hLnorm : ‖L‖ ≤ ε⁻¹ := by
+    rw [hLdef, norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
+    have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin k))‖ ≤ 1 :=
+      ContinuousLinearMap.norm_id_le
+    have hεinv : (0 : ℝ) ≤ ε⁻¹ := by positivity
+    nlinarith [hid, hεinv]
+  refine ⟨fun x => g (L x), hgcd.comp L.contDiff, fun x => hg0 _, fun x => hg1 _, ?_, ?_, ?_⟩
+  · intro x hx
+    exact hgB _ (by rw [hLapp]; exact Set.smul_mem_smul_set hx)
+  · intro x hx
+    have hmem := hgsupp _ hx
+    rw [Metric.mem_thickening_iff] at hmem ⊢
+    obtain ⟨z, hz, hdz⟩ := hmem
+    obtain ⟨w, hw, rfl⟩ := hz
+    refine ⟨w, hw, ?_⟩
+    rw [hLapp, dist_eq_norm, ← smul_sub, norm_smul, Real.norm_eq_abs,
+      abs_of_pos (by positivity : (0 : ℝ) < ε⁻¹)] at hdz
+    rw [dist_eq_norm]
+    rw [inv_mul_lt_iff₀ hε] at hdz
+    linarith
+  · intro x
+    have hcomp : (fun x => g (L x)) = g ∘ L := rfl
+    rw [hcomp, L.iteratedFDeriv_comp_right hgcd x (le_refl _)]
+    refine le_trans (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _) ?_
+    have hprod : (∏ _i : Fin 3, ‖L‖) = ‖L‖ ^ 3 := by
+      rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    rw [hprod]
+    calc ‖iteratedFDeriv ℝ 3 g (L x)‖ * ‖L‖ ^ 3 ≤ C₃ * ε⁻¹ ^ 3 := by
+          gcongr
+          exact hgD _
+      _ = C₃ / ε ^ 3 := by rw [inv_pow]; ring
+
+end ConvexSmoothing
 
 /-! #### The smoothed radial indicator
 
@@ -2125,7 +2370,15 @@ not what this statement is for.
 
 So the missing brick is exactly "the Gaussian surface area of a convex body in `ℝ^k` is finite,
 with a bound depending only on `k`", i.e. Ball's theorem or a weakened form of it, and it is a
-self-contained research-level project. -/
+self-contained research-level project.
+
+**Status update.** The other ingredient this statement used to wait on,
+`exists_smoothed_convex_indicator`, is now proved and axiom-clean. Consequently the whole
+assembly *except* the shell collapse is available and is recorded below as
+`berryEsseen_convex_levy_elementary`: for every convex measurable `B` and every `ε > 0`,
+`μₙ(B) ≤ γ(Bᵋ) + (C₃/2)(β/√n)/ε³` and `γ(B) ≤ μₙ(Bᵋ) + (C₃/2)(β/√n)/ε³`. Taking
+`ε = (β/√n)^{1/4}` turns those into `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, so the
+single remaining step really is `γ(Bᵋ) ≤ γ(B) + C_k ε`. -/
 theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),
@@ -2139,6 +2392,152 @@ theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
         ≤ C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) ^ ((1 : ℝ) / 4) := by
   -- TODO (planned debt): optimise ε; see docstring and the three lemmas above.
   sorry
+
+/-! #### The convex headline in Lévy (thickening) form
+
+The *only* thing `berryEsseen_convex_elementary` is missing is the shell bound
+`γ(Bᵋ \ B) ≤ C_k ε`, which is used exactly once, to collapse `γ(Bᵋ)` back to `γ(B)`. If one
+declines to collapse it — i.e. if one states the conclusion as a Lévy/Prokhorov-type inequality
+between `μₙ(B)` and `γ(Bᵋ)` rather than between `μₙ(B)` and `γ(B)` — then Ball's theorem is not
+needed at all and the statement is provable outright. That is `berryEsseen_convex_levy_elementary`
+below. It is strictly weaker than the frozen headline (from it plus a shell bound `γ(Bᵋ\B) ≤ C_kε`
+the headline follows by the `ε`-balance of `berryEsseen_ball_elementary`, and nothing else is
+needed), and it is where the mollification of `exists_smoothed_convex_indicator` is actually
+consumed. -/
+
+/-- Lower sandwich: a nonnegative test function equal to `1` on a measurable set dominates that
+set's indicator. -/
+private lemma measureReal_le_integral_of_eq_one {k : ℕ}
+    {ρ : Measure (EuclideanSpace ℝ (Fin k))} [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {S : Set (EuclideanSpace ℝ (Fin k))}
+    (hS : MeasurableSet S) (hfint : Integrable f ρ) (hf0 : ∀ x, 0 ≤ f x)
+    (hone : ∀ x ∈ S, f x = 1) : (ρ S).toReal ≤ ∫ x, f x ∂ρ := by
+  have hind : Integrable (S.indicator (fun _ => (1 : ℝ))) ρ := by
+    rw [integrable_indicator_iff hS]
+    exact integrableOn_const (measure_ne_top _ _)
+  calc (ρ S).toReal = ∫ x, S.indicator (fun _ => (1 : ℝ)) x ∂ρ := by
+        rw [integral_indicator hS, setIntegral_const, measureReal_def, smul_eq_mul, mul_one]
+    _ ≤ ∫ x, f x ∂ρ := by
+        refine integral_mono hind hfint fun x => ?_
+        by_cases hx : x ∈ S
+        · rw [Set.indicator_of_mem hx, hone x hx]
+        · rw [Set.indicator_of_notMem hx]; exact hf0 x
+
+/-- Upper sandwich: a test function bounded by `1` and supported in a measurable set is dominated
+by that set's indicator. -/
+private lemma integral_le_measureReal_of_support_subset {k : ℕ}
+    {ρ : Measure (EuclideanSpace ℝ (Fin k))} [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → ℝ} {S : Set (EuclideanSpace ℝ (Fin k))}
+    (hS : MeasurableSet S) (hfint : Integrable f ρ) (hf1 : ∀ x, f x ≤ 1)
+    (hsupp : ∀ x, f x ≠ 0 → x ∈ S) : (∫ x, f x ∂ρ) ≤ (ρ S).toReal := by
+  have hind : Integrable (S.indicator (fun _ => (1 : ℝ))) ρ := by
+    rw [integrable_indicator_iff hS]
+    exact integrableOn_const (measure_ne_top _ _)
+  calc (∫ x, f x ∂ρ) ≤ ∫ x, S.indicator (fun _ => (1 : ℝ)) x ∂ρ := by
+        refine integral_mono hfint hind fun x => ?_
+        by_cases hx : x ∈ S
+        · rw [Set.indicator_of_mem hx]; exact hf1 x
+        · rw [Set.indicator_of_notMem hx]
+          by_contra hcon
+          exact hx (hsupp x (ne_of_gt (not_le.1 hcon)))
+    _ = (ρ S).toReal := by
+        rw [integral_indicator hS, setIntegral_const, measureReal_def, smul_eq_mul, mul_one]
+
+/-- **Elementary convex Berry–Esseen bound, Lévy (thickening) form.** For every dimension `k > 0`
+there is a constant `C` such that for every convex measurable `B`, every width `ε > 0` and every
+`n > 0`,
+
+`μₙ(B) ≤ γ(Bᵋ) + C (β/√n)/ε³` and `γ(B) ≤ μₙ(Bᵋ) + C (β/√n)/ε³`,
+
+where `μₙ` is the law of the normalized sum, `γ = N(0, I_k)`, `β = ∫‖y‖³ dν` and `Bᵋ` is the
+`ε`-thickening of `B`.
+
+Both inequalities are the Lindeberg swap `abs_integral_smooth_sub_gaussian_le` applied to the
+smoothed indicator of `exists_smoothed_convex_indicator`, sandwiched between `1_B` and `1_{Bᵋ}`;
+`C = C₃/2` where `C₃` is the third-derivative constant of the smoothed indicator (the factor
+`3 ≥ (β + β_G)/β` from `integral_norm_cube_gaussian_le` is what turns `C₃/6` into `C₃/2`).
+
+This is the exact point at which the frozen `berryEsseen_convex_elementary` stalls: taking
+`ε = (β/√n)^{1/4}` here gives `μₙ(B) ≤ γ(Bᵋ) + C ε` and `γ(B) ≤ μₙ(Bᵋ) + C ε`, and the *only*
+remaining step is to replace `γ(Bᵋ)` by `γ(B) + C_k ε`, which is Ball's Gaussian-surface-area
+theorem. Nothing else in the frozen statement is open. -/
+theorem berryEsseen_convex_levy_elementary {k : ℕ} (hk : 0 < k) :
+    ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
+      (B : Set (EuclideanSpace ℝ (Fin k))) (ε : ℝ),
+      0 < n → 0 < ε → IsProbabilityMeasure ν →
+      (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
+      (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
+      Integrable (fun y => ‖y‖ ^ 3) ν → MeasurableSet B → Convex ℝ B →
+      ((((Measure.pi fun _ : Fin n => ν).map
+              fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) B).toReal
+            ≤ ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+                (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3)
+        ∧ (((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) B).toReal
+            ≤ (((Measure.pi fun _ : Fin n => ν).map
+                fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i)
+                  (Metric.thickening ε B)).toReal
+              + C * ((∫ y, ‖y‖ ^ 3 ∂ν) / Real.sqrt (n : ℝ)) / ε ^ 3) := by
+  obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
+  refine ⟨C₃ / 2, by positivity, ?_⟩
+  intro n ν B ε hn hε hνp hmean hcov hβint hBmeas hBconv
+  haveI := hνp
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := multivariateGaussian 0 1 with hγdef
+  set μ : Measure (EuclideanSpace ℝ (Fin k)) :=
+    (Measure.pi fun _ : Fin n => ν).map (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) with hμdef
+  haveI hγprob : IsProbabilityMeasure γ := by rw [hγdef]; infer_instance
+  haveI hμprob : IsProbabilityMeasure μ := by
+    rw [hμdef]; exact Measure.isProbabilityMeasure_map (Measurable.aemeasurable (by fun_prop))
+  set β : ℝ := ∫ y, ‖y‖ ^ 3 ∂ν with hβdef
+  have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
+  have hnr : (0 : ℝ) < n := by exact_mod_cast hn
+  have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
+  set q : ℝ := β / Real.sqrt (n : ℝ) with hqdef
+  have hqpos : 0 < q := div_pos hβpos hsn
+  have hβGle : (∫ z, ‖z‖ ^ 3 ∂γ) ≤ 2 * β := by
+    have h1 := integral_norm_cube_gaussian_le (k := k) hk
+    rw [← hγdef] at h1
+    have h2 := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at h2
+    linarith
+  -- the smoothed indicator of `B` at width `ε`
+  obtain ⟨f, hfcd, hf0, hf1, hfB, hfsupp, hfD⟩ := hC₃ B hBconv hε
+  have hfbd : ∀ x, |f x| ≤ 1 := fun x => abs_le.2 ⟨by linarith [hf0 x], hf1 x⟩
+  have hfint : ∀ ρ : Measure (EuclideanSpace ℝ (Fin k)), IsProbabilityMeasure ρ →
+      Integrable f ρ := by
+    intro ρ hρ
+    haveI := hρ
+    exact (integrable_const (1 : ℝ)).mono' hfcd.continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hfbd x)
+  -- the Lindeberg swap at `M = C₃/ε³`, with `(β + β_G)/√n ≤ 3q` folded in
+  have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ C₃ / 2 * q / ε ^ 3 := by
+    have hswap := abs_integral_smooth_sub_gaussian_le (ν := ν) hn hνp hmean hcov hβint hfcd hfbd
+      (M := C₃ / ε ^ 3) (by positivity) hfD
+    rw [← hμdef, ← hγdef, ← hβdef] at hswap
+    refine hswap.trans ?_
+    have hA : 0 ≤ C₃ / ε ^ 3 / 6 := by positivity
+    have h3q : (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ) ≤ 3 * q := by
+      rw [hqdef, div_le_iff₀ hsn]
+      have hcancel : 3 * (β / Real.sqrt (n : ℝ)) * Real.sqrt (n : ℝ) = 3 * β := by field_simp
+      rw [hcancel]
+      linarith
+    calc C₃ / ε ^ 3 / 6 * (β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)
+        = C₃ / ε ^ 3 / 6 * ((β + (∫ z, ‖z‖ ^ 3 ∂γ)) / Real.sqrt (n : ℝ)) := by ring
+      _ ≤ C₃ / ε ^ 3 / 6 * (3 * q) := mul_le_mul_of_nonneg_left h3q hA
+      _ = C₃ / 2 * q / ε ^ 3 := by ring
+  have hthick : MeasurableSet (Metric.thickening ε B) := Metric.isOpen_thickening.measurableSet
+  have hlowμ : (μ B).toReal ≤ ∫ x, f x ∂μ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint μ hμprob) hf0 hfB
+  have hlowγ : (γ B).toReal ≤ ∫ x, f x ∂γ :=
+    measureReal_le_integral_of_eq_one hBmeas (hfint γ hγprob) hf0 hfB
+  have huppμ : (∫ x, f x ∂μ) ≤ (μ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint μ hμprob) hf1 hfsupp
+  have huppγ : (∫ x, f x ∂γ) ≤ (γ (Metric.thickening ε B)).toReal :=
+    integral_le_measureReal_of_support_subset hthick (hfint γ hγprob) hf1 hfsupp
+  have hswap' := abs_le.1 herr
+  constructor
+  · linarith [hswap'.2, hlowμ, huppγ]
+  · linarith [hswap'.1, hlowγ, huppμ]
 
 end ElementaryRoute
 
