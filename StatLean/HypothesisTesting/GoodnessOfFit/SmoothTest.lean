@@ -128,8 +128,11 @@ are already centred in `L²(P₀)` (`E₀ψⱼ = 0`) with covariance the identit
 so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero and covariance
 `Iₖ`; the standardised sum converges to `N(0, Iₖ)` and the squared norm is `Sₙ`. -/
 
-/-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`. -/
-private noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
+/-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`.
+
+Not private: the multinomial maximin bound of `ChiSquaredMaximin.lean` runs this file's
+canonical-experiment machinery with `𝓧 = Fin (k+1)` and the whitened multinomial scores. -/
+noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
     EuclideanSpace ℝ (Fin k) :=
   WithLp.toLp 2 (fun j => ψ j x)
 
@@ -391,7 +394,7 @@ weak limit of the canonical score law; and the explicit exponential-tilt represe
 members of the smooth model. -/
 
 /-- The inner product against the per-observation score vector, in coordinates. -/
-private lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
+lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
     (x : 𝓧) : ⟪u, psiVec ψ x⟫_ℝ = ∑ j, u j * ψ j x := by
   rw [inner_euclidean_sum]
   exact Finset.sum_congr rfl fun j _ => rfl
@@ -804,7 +807,7 @@ private lemma law_scoreVec_pi {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
   rw [hcomp, ← Measure.map_map hFmeas hXmeas, hpiX]
 
 /-- **The canonical score law converges to the standard Gaussian.** -/
-private lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {ψ : Fin k → 𝓧 → ℝ} (hψmeas : ∀ j, Measurable (ψ j))
     (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
     (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0) :
@@ -867,7 +870,7 @@ private lemma tilted_eq_withDensity_log (μ : Measure 𝓧) (f : 𝓧 → ℝ)
   rw [Real.exp_sub, Real.exp_log hpos]
 
 /-- The `n`-fold product of an exponential tilt is the tilt of the product by the sum. -/
-private lemma pi_withDensity_exp {n : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+lemma pi_withDensity_exp {n : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {u : 𝓧 → ℝ} (hu : Measurable u)
     [hprob : IsProbabilityMeasure
       (P₀.withDensity (fun x => ENNReal.ofReal (Real.exp (u x))))] :
