@@ -513,6 +513,138 @@ theorem weak_limit_g_estimator_under_local_alternatives
     (fun n => ((((hgc.measurable).comp (hest n)).sub measurable_const).const_mul
       (Real.sqrt n)).aemeasurable)
     hlinmap ?_
-  sorry
+  -- The delta-method remainder.
+  intro ε hε
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro α hα
+  -- Tightness of `√n(θ̂ₙ − θₙ)`.
+  obtain ⟨K, hK0, hKev⟩ :=
+    exists_radius_eventually_measureReal_norm_le hWmeas h1 (α := α / 2) (by positivity)
+  set H : ℝ := ‖h‖ + 1 with hHdef
+  have hH0 : 0 < H := by positivity
+  have hHev : ∀ᶠ n : ℕ in atTop, ‖h_n n‖ ≤ H := by
+    have hnorm : Tendsto (fun n : ℕ => ‖h_n n‖) atTop (𝓝 ‖h‖) := hconv.norm
+    have hmem := hnorm (Iio_mem_nhds (show ‖h‖ < H by rw [hHdef]; linarith))
+    filter_upwards [hmem] with n hn using le_of_lt hn
+  -- The little-o constant of the first-order expansion at `θ₀`.
+  set c : ℝ := ε / (4 * (K + H + 1)) with hcdef
+  have hc0 : 0 < c := by rw [hcdef]; positivity
+  have hcKH : c * (K + H) < ε / 4 := by
+    rw [hcdef, div_mul_eq_mul_div, div_lt_div_iff₀ (by positivity) (by norm_num : (0:ℝ) < 4)]
+    nlinarith
+  -- First-order expansion of `g` at `θ₀`, with remainder `Rf`.
+  set Rf : EuclideanSpace ℝ (Fin k) → ℝ :=
+    fun θ => g θ - g θ₀ - ⟪gr θ₀, θ - θ₀⟫ with hRfdef
+  have hlo := (hg θ₀).hasFDerivAt.isLittleO
+  have hdef := hlo.def hc0
+  rw [Metric.eventually_nhds_iff] at hdef
+  obtain ⟨ρ0, hρ00, hρ⟩ := hdef
+  set ρ : ℝ := ρ0 / 2 with hρdef
+  have hρ0 : 0 < ρ := by rw [hρdef]; positivity
+  have hRf : ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ ρ → |Rf θ| ≤ c * ‖θ - θ₀‖ := by
+    intro θ hθ
+    have hd : dist θ θ₀ < ρ0 := by
+      rw [dist_eq_norm]
+      rw [hρdef] at hθ
+      linarith
+    have := hρ hd
+    simpa [hRfdef, Real.norm_eq_abs, InnerProductSpace.toDual_apply] using this
+  -- Eventually the whole picture sits inside the ball of radius `ρ`.
+  have hsqrt : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹ * (K + H)) atTop (𝓝 0) := by
+    have h1' : Tendsto (fun n : ℕ => Real.sqrt n) atTop atTop :=
+      Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop
+    have h2' : Tendsto (fun n : ℕ => (Real.sqrt n)⁻¹) atTop (𝓝 0) :=
+      tendsto_inv_atTop_zero.comp h1'
+    simpa using h2'.mul_const (K + H)
+  have hρev : ∀ᶠ n : ℕ in atTop, (Real.sqrt n)⁻¹ * (K + H) ≤ ρ := by
+    filter_upwards [hsqrt (Iio_mem_nhds hρ0)] with n hn using le_of_lt hn
+  filter_upwards [hKev, hHev, hρev, eventually_ge_atTop 1] with n hnK hnH hnρ hn1
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  have hsq : (0 : ℝ) < Real.sqrt n := Real.sqrt_pos.2 (by exact_mod_cast hn1)
+  have hsqinv : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := le_of_lt (inv_pos.2 hsq)
+  have hincl : {ω : Fin n → 𝓧 |
+        ε ≤ dist (⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+          (Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n)))}
+      ⊆ {ω : Fin n → 𝓧 | K ≤ ‖Real.sqrt n • (est n ω - localAlt θ₀ h_n n)‖} := by
+    intro ω hω
+    by_contra hcon
+    simp only [Set.mem_setOf_eq, not_le] at hcon
+    -- Both `θ̂ₙ` and `θₙ` are within `ρ` of `θ₀`.
+    have hU : ‖Real.sqrt n • (est n ω - θ₀)‖ ≤ K + H := by
+      have hsplit : Real.sqrt n • (est n ω - θ₀)
+          = Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + h_n n := by
+        have hs : Real.sqrt n • ((Real.sqrt n)⁻¹ • h_n n) = h_n n := by
+          rw [smul_smul, mul_inv_cancel₀ (ne_of_gt hsq), one_smul]
+        have haux : Real.sqrt n • (est n ω - localAlt θ₀ h_n n) + h_n n
+            = Real.sqrt n • (est n ω - θ₀) := by
+          simp only [localAlt]
+          rw [show est n ω - (θ₀ + (Real.sqrt n)⁻¹ • h_n n)
+              = (est n ω - θ₀) - (Real.sqrt n)⁻¹ • h_n n from by abel, smul_sub, hs]
+          abel
+        exact haux.symm
+      rw [hsplit]
+      exact le_trans (norm_add_le _ _) (by linarith)
+    have hnormsmul : ∀ u : EuclideanSpace ℝ (Fin k),
+        ‖Real.sqrt n • u‖ = Real.sqrt n * ‖u‖ := by
+      intro u
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hsq.le]
+    have hestρ : ‖est n ω - θ₀‖ ≤ ρ := by
+      have h' : Real.sqrt n * ‖est n ω - θ₀‖ ≤ K + H := by
+        rw [← hnormsmul]; exact hU
+      have := mul_le_mul_of_nonneg_left h' hsqinv
+      rw [← mul_assoc, inv_mul_cancel₀ (ne_of_gt hsq), one_mul] at this
+      exact le_trans this hnρ
+    have hθnρ : ‖localAlt θ₀ h_n n - θ₀‖ ≤ ρ := by
+      simp only [localAlt, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+        abs_of_nonneg hsqinv]
+      have : (Real.sqrt n)⁻¹ * ‖h_n n‖ ≤ (Real.sqrt n)⁻¹ * (K + H) :=
+        mul_le_mul_of_nonneg_left (by linarith) hsqinv
+      linarith [hnρ]
+    -- The remainder identity.
+    have hXY : ⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫
+        - Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))
+        = Real.sqrt n * Rf (localAlt θ₀ h_n n) - Real.sqrt n * Rf (est n ω) := by
+      have hsplit : ⟪gr θ₀, est n ω - localAlt θ₀ h_n n⟫
+          = ⟪gr θ₀, est n ω - θ₀⟫ - ⟪gr θ₀, localAlt θ₀ h_n n - θ₀⟫ := by
+        rw [← inner_sub_right]
+        congr 1
+        abel
+      rw [real_inner_smul_right, hsplit, hRfdef]
+      ring
+    -- Both remainder terms are smaller than `ε/4`.
+    have hb1 : Real.sqrt n * |Rf (est n ω)| < ε / 4 := by
+      have := hRf _ hestρ
+      have h2 : Real.sqrt n * |Rf (est n ω)| ≤ Real.sqrt n * (c * ‖est n ω - θ₀‖) :=
+        mul_le_mul_of_nonneg_left this hsq.le
+      have h3 : Real.sqrt n * (c * ‖est n ω - θ₀‖) = c * (Real.sqrt n * ‖est n ω - θ₀‖) := by
+        ring
+      have h4 : c * (Real.sqrt n * ‖est n ω - θ₀‖) ≤ c * (K + H) := by
+        refine mul_le_mul_of_nonneg_left ?_ hc0.le
+        rw [← hnormsmul]; exact hU
+      linarith
+    have hb2 : Real.sqrt n * |Rf (localAlt θ₀ h_n n)| < ε / 4 := by
+      have hbase := hRf _ hθnρ
+      have hn' : ‖localAlt θ₀ h_n n - θ₀‖ = (Real.sqrt n)⁻¹ * ‖h_n n‖ := by
+        simp only [localAlt, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+          abs_of_nonneg hsqinv]
+      have h2 : Real.sqrt n * |Rf (localAlt θ₀ h_n n)|
+          ≤ Real.sqrt n * (c * ((Real.sqrt n)⁻¹ * ‖h_n n‖)) := by
+        refine mul_le_mul_of_nonneg_left ?_ hsq.le
+        rw [← hn']; exact hbase
+      have h3 : Real.sqrt n * (c * ((Real.sqrt n)⁻¹ * ‖h_n n‖)) = c * ‖h_n n‖ := by
+        field_simp
+      have h4 : c * ‖h_n n‖ ≤ c * (K + H) :=
+        mul_le_mul_of_nonneg_left (by linarith) hc0.le
+      linarith
+    have hfinal : dist (⟪gr θ₀, Real.sqrt n • (est n ω - localAlt θ₀ h_n n)⟫)
+        (Real.sqrt n * (g (est n ω) - g (localAlt θ₀ h_n n))) < ε := by
+      rw [Real.dist_eq, hXY]
+      have := abs_sub (Real.sqrt n * Rf (localAlt θ₀ h_n n)) (Real.sqrt n * Rf (est n ω))
+      rw [abs_mul, abs_mul, abs_of_nonneg hsq.le] at this
+      linarith
+    exact absurd hω (not_le.2 hfinal)
+  have hmono := measureReal_mono (μ := productMeasure M μ (localAlt θ₀ h_n n) n) hincl
+    (measure_ne_top _ _)
+  linarith
 
 end StatLean.HypothesisTesting
