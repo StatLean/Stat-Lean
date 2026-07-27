@@ -412,6 +412,103 @@ private lemma tendsto_perm_cdf_blockSum_varying {N m : ℕ → ℕ}
   exact ⟨le_trans h1.le (havg (t - ε) (θ k) h3.le k),
     le_trans (havg (θ k) (t + ε) h4.le k) h2.le⟩
 
+/-! ### From deterministic arrays to random arrays
+
+The combinatorial central limit theorem is a statement about a *fixed* sequence of finite
+populations, whereas the population a two-sample permutation test acts on is the observed
+pooled sample, so its hypotheses hold only **in probability**. The following brick performs
+that transfer once and for all, and it is exactly the step the wave-6 status note described:
+no measurable selection is involved, only existence.
+
+Given two nonnegative "hypothesis functionals" `A k`, `B k` that tend to `0` in probability,
+and a bounded functional `F k` with the property that `F` converges to `L` along *every*
+subsequence of deterministic points on which `A` and `B` vanish, one concludes that `F`
+converges to `L` in probability. The proof is a contradiction: if `F` failed, a frequency
+`δ > 0` of failures would persist, while the good sets `{A < 1/(j+1)} ∩ {B < 1/(j+1)}`
+eventually have probability greater than `1 - 2δ/3`; the failure set therefore meets the good
+set, which produces a deterministic sequence of points contradicting the hypothesis. -/
+
+/-- **Deterministic-array to random-array transfer.** -/
+private lemma tendstoInProb_of_deterministic {𝓧 : ℕ → Type*} [∀ k, MeasurableSpace (𝓧 k)]
+    (P : ∀ k, Measure (𝓧 k)) [∀ k, IsProbabilityMeasure (P k)]
+    (A B F : ∀ k, 𝓧 k → ℝ) (L : ℝ)
+    -- USER-INPUT: the two hypothesis functionals are nonnegative
+    (hAnn : ∀ k x, 0 ≤ A k x) (hBnn : ∀ k x, 0 ≤ B k x)
+    -- USER-INPUT: they vanish in probability
+    (hA : ∀ η > (0 : ℝ), Tendsto (fun k => (P k).real {x | η ≤ A k x}) atTop (𝓝 0))
+    (hB : ∀ η > (0 : ℝ), Tendsto (fun k => (P k).real {x | η ≤ B k x}) atTop (𝓝 0))
+    -- USER-INPUT: the deterministic statement, along an arbitrary subsequence
+    (hdet : ∀ φ : ℕ → ℕ, StrictMono φ → ∀ y : ∀ j, 𝓧 (φ j),
+      Tendsto (fun j => A (φ j) (y j)) atTop (𝓝 0) →
+      Tendsto (fun j => B (φ j) (y j)) atTop (𝓝 0) →
+      Tendsto (fun j => F (φ j) (y j)) atTop (𝓝 L)) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k => (P k).real {x | ε ≤ |F k x - L|}) atTop (𝓝 0) := by
+  intro ε hε
+  by_contra hcon
+  rw [Metric.tendsto_atTop] at hcon
+  push Not at hcon
+  obtain ⟨δ, hδ, hfreq⟩ := hcon
+  -- the good sets eventually have probability at least `1 - 2δ/3`
+  have hKex : ∀ j : ℕ, ∃ K : ℕ, ∀ k ≥ K,
+      (P k).real {x | 1 / ((j : ℝ) + 1) ≤ A k x} < δ / 3
+      ∧ (P k).real {x | 1 / ((j : ℝ) + 1) ≤ B k x} < δ / 3 := by
+    intro j
+    have hpos : (0 : ℝ) < 1 / ((j : ℝ) + 1) := by positivity
+    obtain ⟨K₁, hK₁⟩ := Metric.tendsto_atTop.1 (hA _ hpos) (δ / 3) (by positivity)
+    obtain ⟨K₂, hK₂⟩ := Metric.tendsto_atTop.1 (hB _ hpos) (δ / 3) (by positivity)
+    refine ⟨max K₁ K₂, fun k hk => ⟨?_, ?_⟩⟩
+    · have h := hK₁ k (le_trans (le_max_left _ _) hk)
+      rwa [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at h
+    · have h := hK₂ k (le_trans (le_max_right _ _) hk)
+      rwa [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at h
+  choose K hK using hKex
+  -- at every level `j` and beyond every stage `M` there is a bad-but-good point
+  have hpick : ∀ j M : ℕ, ∃ k : ℕ, M ≤ k ∧ ∃ x : 𝓧 k,
+      ε ≤ |F k x - L| ∧ A k x < 1 / ((j : ℝ) + 1) ∧ B k x < 1 / ((j : ℝ) + 1) := by
+    intro j M
+    obtain ⟨k, hk1, hk2⟩ := hfreq (max M (K j))
+    have hkM : M ≤ k := le_trans (le_max_left _ _) hk1
+    have hkK : K j ≤ k := le_trans (le_max_right _ _) hk1
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at hk2
+    obtain ⟨hA', hB'⟩ := hK j k hkK
+    refine ⟨k, hkM, ?_⟩
+    by_contra hempty
+    push Not at hempty
+    -- the failure set is then covered by the two bad sets
+    have hsub : {x : 𝓧 k | ε ≤ |F k x - L|}
+        ⊆ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ A k x} ∪ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ B k x} := by
+      intro x hx
+      simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+      by_contra hno
+      push Not at hno
+      exact absurd (hempty x hx hno.1) (not_le.2 hno.2)
+    have hle := (measureReal_mono hsub (measure_ne_top (P k) _)).trans
+      (measureReal_union_le (μ := P k) _ _)
+    linarith
+  choose pick hpickM y hy1 hy2 hy3 using hpick
+  -- the stages, chosen strictly increasing
+  obtain ⟨M, hM0, hMs⟩ : ∃ M : ℕ → ℕ, M 0 = 0 ∧ ∀ j, M (j + 1) = pick j (M j) + 1 :=
+    ⟨fun j => Nat.rec 0 (fun i prev => pick i prev + 1) j, rfl, fun j => rfl⟩
+  have hmono : StrictMono (fun j => pick j (M j)) := by
+    refine strictMono_nat_of_lt_succ fun j => ?_
+    have h := hpickM (j + 1) (M (j + 1))
+    have h2 : pick j (M j) + 1 ≤ pick (j + 1) (M (j + 1)) := by rw [← hMs j]; exact h
+    exact h2
+  -- the two hypothesis functionals vanish along the chosen points
+  have hinv : Tendsto (fun j : ℕ => 1 / ((j : ℝ) + 1)) atTop (𝓝 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hAlim : Tendsto (fun j => A (pick j (M j)) (y j (M j))) atTop (𝓝 0) :=
+    squeeze_zero (fun j => hAnn _ _) (fun j => (hy2 j (M j)).le) hinv
+  have hBlim : Tendsto (fun j => B (pick j (M j)) (y j (M j))) atTop (𝓝 0) :=
+    squeeze_zero (fun j => hBnn _ _) (fun j => (hy3 j (M j)).le) hinv
+  -- but then the deterministic statement applies, contradicting the persistent failure
+  have hF := hdet (fun j => pick j (M j)) hmono (fun j => y j (M j)) hAlim hBlim
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hF ε hε
+  have hbad := hy1 J (M J)
+  have hgood := hJ J le_rfl
+  rw [Real.dist_eq] at hgood
+  linarith
+
 /-! ### The permutation limit
 
 The bivariate statement is reduced to a **scalar** one: the `Asymptotics` converse
