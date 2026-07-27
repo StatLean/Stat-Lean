@@ -1532,6 +1532,94 @@ private lemma edgeworthGap_tail_le (F : Measure ℝ) [IsProbabilityMeasure F]
   exact (norm_sub_le _ _).trans
     (add_le_add h1 (h2.trans (edgeworthCharFun_tail_le (skewness F) hcnn hξ)))
 
+/-- **The Esseen integral, split at the window.** A nonnegative integrand dominated by
+`Kw · windowEnvelope` on `|ξ| ≤ ρ` and by the constant `M` on `ρ ≤ |ξ|` is integrable against
+the Esseen weight, with weighted integral at most `Kw ∫ windowDom + 2M/(δπ²ρ)`. This packages
+the two halves of (E4).3–(E4).4 into the single hypothesis `hint` and the single conclusion
+that `abs_measure_Iic_sub_densityCDF_le_charFun` consumes. -/
+private lemma esseen_split (g : ℝ → ℝ) {δ ρ Kw M : ℝ}
+    (hδ : 0 < δ) (hρ : 0 < ρ) (hKw : 0 ≤ Kw)
+    (hg0 : ∀ ξ, 0 ≤ g ξ) (hgm : AEStronglyMeasurable g volume)
+    (hwin : ∀ ξ, |ξ| ≤ ρ → g ξ ≤ Kw * windowEnvelope ξ)
+    (htail : ∀ ξ, ρ ≤ |ξ| → g ξ ≤ M) :
+    Integrable (fun ξ : ℝ =>
+        g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      ∧ (∫ ξ : ℝ, g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+        ≤ Kw * (∫ ξ : ℝ, windowDom ξ) + 2 * M / (δ * Real.pi ^ 2 * ρ) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hwnn : ∀ ξ : ℝ, 0 ≤ min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) := fun ξ =>
+    le_min (div_nonneg zero_le_one (by positivity))
+      (div_nonneg zero_le_one (mul_nonneg (mul_nonneg hδ.le (by positivity)) (sq_nonneg ξ)))
+  have hprodmeas : AEStronglyMeasurable
+      (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      volume := hgm.mul (by fun_prop)
+  have hAmeas : MeasurableSet {ξ : ℝ | |ξ| ≤ ρ} :=
+    measurableSet_le (by fun_prop) measurable_const
+  have hTmeas : MeasurableSet {ξ : ℝ | ρ ≤ |ξ|} :=
+    measurableSet_le measurable_const (by fun_prop)
+  have hdom : Integrable (fun ξ : ℝ => Kw * windowDom ξ) := integrable_windowDom.const_mul Kw
+  have hptwin : ∀ ξ : ℝ, |ξ| ≤ ρ →
+      g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2))
+        ≤ Kw * windowDom ξ := by
+    intro ξ hξ
+    calc g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2))
+        ≤ Kw * windowEnvelope ξ
+            * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) :=
+          mul_le_mul_of_nonneg_right (hwin ξ hξ) (hwnn ξ)
+      _ ≤ Kw * windowEnvelope ξ * (1 / (Real.pi * |ξ|)) :=
+          mul_le_mul_of_nonneg_left (min_le_left _ _)
+            (mul_nonneg hKw (windowEnvelope_nonneg ξ))
+      _ = Kw * windowDom ξ := by rw [mul_assoc, windowEnvelope_mul_weight]
+  have hAint : IntegrableOn
+      (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      {ξ : ℝ | |ξ| ≤ ρ} := by
+    refine Integrable.mono' hdom.integrableOn hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem hAmeas] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hg0 ξ) (hwnn ξ))]
+    exact hptwin ξ hξ
+  have hTint : IntegrableOn
+      (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      {ξ : ℝ | ρ ≤ |ξ|} := by
+    refine Integrable.mono' ((integrableOn_esseenWeight_tail hδ hρ).const_mul M)
+      hprodmeas.restrict ?_
+    filter_upwards [ae_restrict_mem hTmeas] with ξ hξ
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hg0 ξ) (hwnn ξ))]
+    exact mul_le_mul_of_nonneg_right (htail ξ hξ) (hwnn ξ)
+  have hcover : {ξ : ℝ | |ξ| ≤ ρ} ∪ {ξ : ℝ | ρ ≤ |ξ|} = Set.univ := by
+    ext ξ
+    simp only [Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+    exact le_total |ξ| ρ
+  have hInt : Integrable
+      (fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2))) := by
+    rw [← integrableOn_univ, ← hcover]
+    exact hAint.union hTint
+  refine ⟨hInt, ?_⟩
+  have hnnT : 0 ≤ᵐ[volume.restrict {ξ : ℝ | ρ ≤ |ξ|}]
+      fun ξ : ℝ => g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)) :=
+    Filter.Eventually.of_forall fun ξ => mul_nonneg (hg0 ξ) (hwnn ξ)
+  have hcompl : {ξ : ℝ | |ξ| ≤ ρ}ᶜ ⊆ {ξ : ℝ | ρ ≤ |ξ|} := by
+    intro ξ hξ
+    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hξ
+    exact hξ.le
+  have hb2 := setIntegral_mono_set hTint hnnT hcompl.eventuallyLE
+  have hb3 := setIntegral_mul_esseenWeight_tail_le hδ hρ hgm hg0 htail
+  have hb1 : (∫ ξ in {ξ : ℝ | |ξ| ≤ ρ},
+        g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+      ≤ Kw * ∫ ξ : ℝ, windowDom ξ := by
+    calc (∫ ξ in {ξ : ℝ | |ξ| ≤ ρ},
+          g ξ * min (1 / (Real.pi * |ξ|)) (1 / (δ * Real.pi ^ 2 * ξ ^ 2)))
+        ≤ ∫ ξ in {ξ : ℝ | |ξ| ≤ ρ}, Kw * windowDom ξ :=
+          setIntegral_mono_on hAint hdom.integrableOn hAmeas hptwin
+      _ ≤ ∫ ξ : ℝ, Kw * windowDom ξ := by
+          have h := setIntegral_mono_set (μ := volume) (f := fun ξ : ℝ => Kw * windowDom ξ)
+            hdom.integrableOn
+            (Filter.Eventually.of_forall fun ξ => mul_nonneg hKw (windowDom_nonneg ξ))
+            (Set.subset_univ {ξ : ℝ | |ξ| ≤ ρ}).eventuallyLE
+          rwa [setIntegral_univ] at h
+      _ = Kw * ∫ ξ : ℝ, windowDom ξ := MeasureTheory.integral_const_mul _ _
+  have hsplit := integral_add_compl hAmeas hInt
+  linarith
+
 end WindowEstimate
 
 
