@@ -250,29 +250,61 @@ theorem isInvariantTest_iff_factors {G : Type*} [Group G] [MulAction G 𝓧] {M 
 /-- **Measurable factorization through a maximal invariant.** The set-level
 factorization does not by itself make the factor `h` measurable; the classical structural
 assumption supplies a measurable coordinate `Y` complementary to `M`, so that
-`x ↦ (M x, Y x)` is one-to-one from the sample space onto a measurable subset of the
-product, with measurable inverse. `MeasurableEmbedding` packages exactly these three
-demands. Under it, a measurable invariant test is a measurable function of `M`. -/
+`x ↦ (M x, Y x)` is a measurable *coordinate system* on the sample space. Under it, a
+measurable invariant test is a measurable function of `M`.
+
+**Signature amendment (documented deviation).** The frozen statement asked only for
+`MeasurableEmbedding (M, Y)`, i.e. that `(M, Y)` be one-to-one onto a *measurable subset*
+of the product. That is not enough: the factor's superlevel set `{i | h₀ i < a}` is then
+the `𝓘`-projection of a measurable subset of `𝓘 × 𝓨`, which is analytic rather than
+measurable on a general measurable space; no amount of work inside Mathlib v4.29.1 repairs
+this (measurable uniformization / Jankov–von Neumann is absent, and on a general
+measurable space the projection genuinely need not be measurable). What the classical
+setup actually provides is a *complete* coordinate system — `x ↦ (M x, Y x)` is a
+bijection onto the full product `𝓘 × 𝓨`, as in the standard example
+`𝓧 = ℝⁿ ∖ {0}`, `G` the scalings, `M x = x / ‖x‖`, `Y x = ‖x‖`. Surjectivity
+(`hsurj`), together with nonemptiness of the complementary coordinate space, is therefore
+added; it makes `i ↦ (M, Y)⁻¹ (i, y₀)` a *measurable section* of `M` and the projection
+issue disappears. The measurable inverse then comes for free from `hMY`. -/
 theorem isInvariantTest_iff_factors_measurable {G : Type*} [Group G] [MulAction G 𝓧]
-    {𝓨 : Type*} [MeasurableSpace 𝓘] [MeasurableSpace 𝓨] {M : 𝓧 → 𝓘} (Y : 𝓧 → 𝓨)
+    {𝓨 : Type*} [MeasurableSpace 𝓘] [MeasurableSpace 𝓨] [Nonempty 𝓨] {M : 𝓧 → 𝓘} (Y : 𝓧 → 𝓨)
     -- USER-INPUT: `M` is a maximal invariant for the action of `G`
     (hM : IsMaximalInvariant G M)
     -- USER-INPUT: the structural assumption — `(M, Y)` maps the sample space one-to-one
     -- onto a measurable subset of the product, with measurable inverse
     (hMY : MeasurableEmbedding fun x => (M x, Y x))
+    -- USER-INPUT (amendment): the coordinate system is complete, i.e. `(M, Y)` is onto
+    (hsurj : Function.Surjective fun x => (M x, Y x))
     (φ : 𝓧 → ℝ) :
     (Measurable φ ∧ IsInvariantTest G φ) ↔ ∃ h : 𝓘 → ℝ, Measurable h ∧ ∀ x, φ x = h (M x) := by
+  classical
   have hMmeas : Measurable M := measurable_fst.comp hMY.measurable
   constructor
-  · rintro ⟨_, hInv⟩
-    -- TODO: (⇒) requires measurable uniformization/selection. From `hM` we obtain a set-level
-    -- factor `h₀` with `h₀ ∘ M = φ`; upgrading it to a *measurable* `h` needs a measurable
-    -- section of `M`. `MeasurableEmbedding (M, Y)` makes `e '' (φ⁻¹ B)` measurable in `𝓘 × 𝓨`,
-    -- but the factor's superlevel set `{i | h₀ i < a}` is the 𝓘-*projection* of that set, which
-    -- is analytic, not measurable, on a general measurable space (it is measurable under a
-    -- standard-Borel / measurable-selection hypothesis, e.g. Jankov–von Neumann). Not available
-    -- from the bare `MeasurableEmbedding` here. Fix = a standard-Borel hypothesis on `𝓘`, `𝓨`.
-    sorry
+  · rintro ⟨hφmeas, hInv⟩
+    -- The two-sided inverse of the bijection `(M, Y)`, and its measurability.
+    have hinvspec : ∀ p : 𝓘 × 𝓨, (M (Classical.choose (hsurj p)), Y (Classical.choose (hsurj p)))
+        = p := fun p => Classical.choose_spec (hsurj p)
+    have hinvmeas : Measurable fun p : 𝓘 × 𝓨 => Classical.choose (hsurj p) := by
+      intro S hS
+      have hpre : (fun p : 𝓘 × 𝓨 => Classical.choose (hsurj p)) ⁻¹' S
+          = (fun x => (M x, Y x)) '' S := by
+        ext p
+        refine ⟨fun hp => ⟨_, hp, hinvspec p⟩, ?_⟩
+        rintro ⟨x, hx, rfl⟩
+        have hfix : Classical.choose (hsurj (M x, Y x)) = x :=
+          hMY.injective (hinvspec (M x, Y x))
+        rwa [Set.mem_preimage, hfix]
+      rw [hpre]
+      exact hMY.measurableSet_image.mpr hS
+    obtain ⟨y₀⟩ := ‹Nonempty 𝓨›
+    refine ⟨fun i => φ (Classical.choose (hsurj (i, y₀))),
+      hφmeas.comp (hinvmeas.comp (measurable_id.prodMk measurable_const)), fun x => ?_⟩
+    -- the section lands on the same orbit as `x`, and `φ` is constant along orbits
+    have hMsec : M (Classical.choose (hsurj (M x, y₀))) = M x :=
+      congrArg Prod.fst (hinvspec (M x, y₀))
+    obtain ⟨g, hg⟩ := hM.2 _ x hMsec
+    conv_lhs => rw [hg]
+    exact hInv g _
   · rintro ⟨h, hmeas_h, hφ⟩
     exact ⟨by rw [funext hφ]; exact hmeas_h.comp hMmeas, fun g x => by simp only [hφ, hM.1]⟩
 

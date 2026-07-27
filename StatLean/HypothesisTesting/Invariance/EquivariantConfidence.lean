@@ -37,11 +37,11 @@ invariant acceptance regions). (`TSH4 §6.11 Lem 6.11.1`.)
 * `isUMAEquivariant_of_isUMPInvariant` — UMP invariant acceptance regions give uniformly
   most accurate equivariant confidence sets.
 
-**Dependency note (stub gate).** `confidenceSet` and `IsConfidenceFamily` are the names
-fixed by the sibling `Tests/Confidence.lean` (work item `ht/test-foundations`), which
-carries the test–confidence-set duality. This file is written against those names and
-**must be re-checked against that file's final signatures at the stub gate**; only the
-arity/argument order can differ, not the content used here.
+**Dependency note.** `confidenceSet`, `IsConfidenceFamily`, `acceptanceTest` and the two
+bridge lemmas `isCriticalFn_acceptanceTest` / `power_acceptanceTest` come from the sibling
+`Tests/Confidence.lean` (work item `ht/test-foundations`), which carries the
+test–confidence-set duality and is itself `sorry`-free; the optimality transfer below is
+proved through those bridges.
 
 **Proof formalization notes.**
 * The induced action on parameter sets is the image `(g • ·) '' S`, so equivariance reads
@@ -58,6 +58,13 @@ arity/argument order can differ, not the content used here.
   rejecting off `A θ`, i.e. the indicator of `(A θ)ᶜ`.
 * Uniform accuracy is stated as the source defines it: minimizing the probability of
   covering each *false* value `θ' ≠ θ`.
+* **Definition amendment (documented deviation).** `IsUMAEquivariant` quantifies its
+  competitors over families with **measurable slices**, matching `IsUMAConfidence` in
+  `Tests/Confidence.lean`. Without it the optimality transfer is not even expressible: the
+  argument inverts the competitor `S'` into the test `1_{Bᶜ}` with `B = {x | θ' ∈ S' x}`,
+  which must be a critical function, and `P θ B` on the right-hand side of the conclusion
+  is not a probability unless `B` is measurable. This is the standing convention of the
+  sibling file, not a weakening special to this one.
 
 **Bibliographic comments.** The duality between families of tests and confidence sets is
 due to J. Neyman ("Outline of a theory of statistical estimation based on the classical
@@ -87,11 +94,18 @@ def IsEquivariantConfidence (G : Type*) [Group G] [MulAction G 𝓧] [MulAction 
 
 /-- **Uniformly most accurate equivariant** at confidence level `lvl`: an equivariant
 confidence family at that level which, among all such families, minimizes the probability
-of covering every false parameter value. -/
+of covering every false parameter value.
+
+Competitors are quantified with **measurable slices** `{x | θ ∈ S' x}`, exactly as in
+`IsUMAConfidence` in `Tests/Confidence.lean`. This is a Lean-side necessity, not a
+weakening of the classical statement: the argument inverts the competitor into a genuine
+test, and a critical function must be measurable — and the coverage of a family with
+non-measurable slices is not a probability statement in the first place. -/
 def IsUMAEquivariant (G : Type*) [Group G] [MulAction G 𝓧] [MulAction G Θ]
     (P : Θ → Measure 𝓧) (lvl : ℝ) (S : 𝓧 → Set Θ) : Prop :=
   IsEquivariantConfidence G S ∧ IsConfidenceFamily P S lvl ∧
-    ∀ S' : 𝓧 → Set Θ, IsEquivariantConfidence G S' → IsConfidenceFamily P S' lvl →
+    ∀ S' : 𝓧 → Set Θ, IsEquivariantConfidence G S' → (∀ θ, MeasurableSet {x | θ ∈ S' x}) →
+      IsConfidenceFamily P S' lvl →
       ∀ (θ θ' : Θ), θ' ≠ θ → P θ {x | θ' ∈ S x} ≤ P θ {x | θ' ∈ S' x}
 
 /-- **The dictionary between equivariant confidence sets and equivariant acceptance
@@ -178,22 +192,59 @@ theorem isUMAEquivariant_of_isUMPInvariant {P : Θ → Measure 𝓧}
       ((A θ)ᶜ.indicator fun _ => (1 : ℝ))) :
     IsUMAEquivariant G P (1 - α) (confidenceSet A) := by
   refine ⟨hS, hlvl, ?_⟩
-  -- TODO: the optimality transfer (Lehmann Lemma 6.11.1(ii)). The argument: for a competitor
-  -- equivariant confidence family `S'` at level `1 - α` and `θ ≠ θ'`, the acceptance region
-  -- `{x | θ' ∈ S' x}` is invariant under `stabilizer G θ'`
-  -- (`acceptance_invariant_of_equivariantConfidence`), its complement-indicator is a
-  -- stabilizer-invariant level-`α` test of `θ' = θ'` (from `S'`'s coverage `≥ 1 - α`), and
-  -- `hUMP θ'` makes the corresponding power at `θ` no larger than that of `(A θ')ᶜ.indicator 1`;
-  -- reading power back as false-coverage probability gives
-  -- `P θ {x | θ' ∈ confidenceSet A x} ≤ P θ {x | θ' ∈ S' x}`. Two obstructions keep this open
-  -- here: (1) the competitor `S'` is quantified with NO measurability of its slices
-  -- `{x | θ' ∈ S' x}`, so its complement-indicator need not be an `IsCriticalFn` and the
-  -- `P θ (·)` on the RHS is an *outer* measure — closing this needs a measurable-cover
-  -- argument (cf. the "measurable slices" caveat on `IsUMAConfidence`). (2) the power↔coverage
-  -- bridge relies on `power_acceptanceTest` / `isCriticalFn_acceptanceTest`, which are still
-  -- `sorry` in `Tests/Confidence.lean` (`ht/test-foundations`); using them would import that
-  -- debt. Fix = restrict competitors to measurable slices (as `IsUMAConfidence` does) and
-  -- discharge the `Tests/Confidence` bridge lemmas.
-  sorry
+  intro S' hS' hS'meas hS'lvl θ θ' hne
+  -- The competitor's acceptance region for the hypothesis `· = θ'`.
+  set B : Set 𝓧 := {x | θ' ∈ S' x} with hBdef
+  have hB : MeasurableSet B := hS'meas θ'
+  -- (a) it is invariant under the stabilizer of `θ'`
+  have hBinv : IsInvariantTest ↥(MulAction.stabilizer G θ') (acceptanceTest B) := by
+    intro g x
+    have himg := acceptance_invariant_of_equivariantConfidence hS' θ'
+      (MulAction.mem_stabilizer_iff.mp g.2)
+    have hiff : ∀ y : 𝓧, (g : G) • y ∈ B ↔ y ∈ B := by
+      intro y
+      refine ⟨fun hy => ?_, fun hy => ?_⟩
+      · rw [hBdef, ← himg] at hy
+        obtain ⟨z, hz, hzy⟩ := hy
+        have hzy2 : z = y := by
+          have := congrArg (fun t => (g : G)⁻¹ • t) hzy
+          simpa only [inv_smul_smul] using this
+        rwa [hzy2] at hz
+      · rw [hBdef, ← himg]; exact ⟨y, hy, rfl⟩
+    have hmem : ((g : G) • x ∈ Bᶜ) ↔ (x ∈ Bᶜ) := by
+      simp only [Set.mem_compl_iff, hiff]
+    have hsm : (g • x : 𝓧) = (g : G) • x := rfl
+    simp only [acceptanceTest, hsm]
+    by_cases hx : x ∈ Bᶜ
+    · rw [Set.indicator_of_mem (hmem.mpr hx), Set.indicator_of_mem hx]
+      rfl
+    · rw [Set.indicator_of_notMem (fun h => hx (hmem.mp h)), Set.indicator_of_notMem hx]
+  -- (b) it has level `α`, because `S'` covers `θ'` with probability at least `1 - α`
+  have hBlevel : IsLevel P {θ'} (acceptanceTest B) α := by
+    intro t ht
+    rw [Set.mem_singleton_iff] at ht
+    subst ht
+    rw [power_acceptanceTest P hB]
+    have hcovR : 1 - α ≤ (P t B).toReal :=
+      (ENNReal.ofReal_le_iff_le_toReal (measure_ne_top _ _)).mp (hS'lvl t)
+    have hcompl : (P t Bᶜ).toReal = 1 - (P t B).toReal := by
+      have h := measureReal_compl (μ := P t) hB
+      simpa [measureReal_def, measure_univ] using h
+    rw [hcompl]; linarith
+  -- (c) so the UMP invariant acceptance region of `θ'` is at least as powerful at `θ`
+  have hdomin := (hUMP θ').2.2.2 (acceptanceTest B) (isCriticalFn_acceptanceTest hB) hBinv
+    hBlevel θ (by exact hne.symm)
+  have hAtest : ((A θ')ᶜ.indicator fun _ => (1 : ℝ)) = acceptanceTest (A θ') := rfl
+  rw [hAtest, power_acceptanceTest P hB, power_acceptanceTest P (hAmeas θ')] at hdomin
+  -- (d) read the two powers back as false-coverage probabilities
+  have hcomplθ : ∀ C : Set 𝓧, MeasurableSet C → (P θ Cᶜ).toReal = 1 - (P θ C).toReal := by
+    intro C hC
+    have h := measureReal_compl (μ := P θ) hC
+    simpa [measureReal_def, measure_univ] using h
+  rw [hcomplθ B hB, hcomplθ (A θ') (hAmeas θ')] at hdomin
+  have hle : (P θ (A θ')).toReal ≤ (P θ B).toReal := by linarith
+  have hset : {x | θ' ∈ confidenceSet A x} = A θ' := rfl
+  rw [hset, hBdef]
+  exact (ENNReal.toReal_le_toReal (measure_ne_top _ _) (measure_ne_top _ _)).mp hle
 
 end StatLean.HypothesisTesting

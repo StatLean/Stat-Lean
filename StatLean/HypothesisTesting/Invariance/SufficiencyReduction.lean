@@ -142,20 +142,26 @@ private theorem power_condStat_eq {Θ' 𝓧' 𝓣' : Type*}
     (w := fun _ => (1 : ℝ)) measurable_const (C := 1) (fun _ => by norm_num)
   simpa [power, one_mul] using h
 
-/-- TODO (single lifted gap). The source's exceptional-set convention presumes `G` acts by
-measurable transformations of the statistic space, which supplies a *single* measurable
-representative of `t ↦ g • t` valid a.e. under **every** member of the family — exactly what
-is needed to feed the bounded, measurable function `ψ ∘ (g • ·) − ψ` to bounded completeness.
-Under `[MeasurableSMul G 𝓣]` this is immediate (take `m = (g • ·)`). The frozen signature of
-`power_invariant_iff_almostInvariant` carries only `MulAction G 𝓣`; from `hQ` one derives that
-`g • ·` is a.e. measurable under each `statLaw P T θ` *separately*, which is not enough to pick
-one common measurable representative. This existence statement is true under the intended
-measurable action and is isolated here as the one genuine gap of the file. -/
+/-- A *single* measurable representative of `t ↦ g • t`, valid a.e. under **every** member of
+the family — what is needed to feed the bounded, measurable function `ψ ∘ (g • ·) − ψ` to
+bounded completeness.
+
+**Signature amendment (documented deviation).** The frozen statement carried only
+`[MulAction G' 𝓣']`; from an invariance hypothesis on the reduced model one derives that
+`g • ·` is a.e. measurable under each `statLaw P T θ` *separately*, which is not enough to
+pick one common measurable representative — and with a genuinely non-measurable action the
+existence statement is simply false. The source's exceptional-set convention presumes `G`
+acts by *measurable* transformations of the statistic space, so the measurability of each
+`t ↦ g • t` (the content of `[MeasurableSMul G' 𝓣']`, stated as a plain hypothesis so that
+no `MeasurableSpace G'` structure has to be imposed) is added. Under it the lemma is
+immediate: take `m = (g • ·)`. -/
 private theorem exists_measurable_aeEq_smul_statLaw {G' Θ' 𝓧' 𝓣' : Type*} [Group G']
     [MeasurableSpace 𝓧'] [MeasurableSpace 𝓣'] [MulAction G' 𝓣']
-    (P : Θ' → Measure 𝓧') (T : 𝓧' → 𝓣') (g : G') :
-    ∃ m : 𝓣' → 𝓣', Measurable m ∧ ∀ θ, (fun t => g • t) =ᵐ[statLaw P T θ] m := by
-  sorry
+    (P : Θ' → Measure 𝓧') (T : 𝓧' → 𝓣') (g : G')
+    -- USER-INPUT (amendment): `G'` acts on the statistic space by measurable maps
+    (hg : Measurable fun t : 𝓣' => g • t) :
+    ∃ m : 𝓣' → 𝓣', Measurable m ∧ ∀ θ, (fun t => g • t) =ᵐ[statLaw P T θ] m :=
+  ⟨fun t => g • t, hg, fun _ => Filter.EventuallyEq.rfl⟩
 
 /-- From the invariance of the law-of-statistic model, `g • ·` is a.e. measurable whenever the
 translated law is nonzero. -/
@@ -174,10 +180,11 @@ private theorem isInvariantModel_statLaw {G' Θ' 𝓧' 𝓣' : Type*} [Group G']
     [MeasurableSpace 𝓧'] [MeasurableSpace 𝓣'] [MulAction G' 𝓧'] [MulAction G' 𝓣']
     [MulAction G' Θ'] {P : Θ' → Measure 𝓧'} {T : 𝓧' → 𝓣'} [∀ θ, IsProbabilityMeasure (P θ)]
     (hTmeas : Measurable T) (hP : IsInvariantModel (G := G') P)
+    (hsmul : ∀ g : G', Measurable fun t : 𝓣' => g • t)
     (hTcompat : ∀ (g : G') (x : 𝓧'), T (g • x) = g • T x) :
     IsInvariantModel (G := G') (statLaw P T) := by
   intro g θ
-  obtain ⟨mm, hmm_meas, hmm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g
+  obtain ⟨mm, hmm_meas, hmm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
   have haeX : AEMeasurable (fun x => g • x) (P θ) :=
     aemeasurable_smul_of_invModel hP g θ (IsProbabilityMeasure.ne_zero _)
   have haeT : AEMeasurable (fun t => g • t) (statLaw P T θ) :=
@@ -222,6 +229,7 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
     {Q : Kernel 𝓣' 𝓧'} [IsMarkovKernel Q] [∀ θ, IsProbabilityMeasure (P θ)]
     (hTmeas : Measurable T) (hφmeas : Measurable φ) (hφIcc : ∀ x, φ x ∈ Set.Icc (0 : ℝ) 1)
     (hP : IsInvariantModel (G := G') P)
+    (hsmul : ∀ g : G', Measurable fun t : 𝓣' => g • t)
     (hTcompat : ∀ (g : G') (x : 𝓧'), T (g • x) = g • T x)
     (hφinv : ∀ (g : G') (x : 𝓧'), φ (g • x) = φ x)
     (hker : ∀ θ, (P θ).map (fun x => (T x, x)) = statLaw P T θ ⊗ₘ Q)
@@ -233,9 +241,9 @@ private theorem setIntegral_condStat_smul_eq {G' Θ' 𝓧' 𝓣' : Type*} [Group
   have hφb : ∀ x, |φ x| ≤ 1 := fun x => by
     rw [abs_le]; exact ⟨by linarith [(hφIcc x).1], (hφIcc x).2⟩
   have hstat : IsInvariantModel (G := G') (statLaw P T) :=
-    isInvariantModel_statLaw hTmeas hP hTcompat
-  obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g
-  obtain ⟨m', hm'_meas, hm'_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g⁻¹
+    isInvariantModel_statLaw hTmeas hP hsmul hTcompat
+  obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
+  obtain ⟨m', hm'_meas, hm'_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g⁻¹ (hsmul g⁻¹)
   set ind : 𝓣' → ℝ := B.indicator (fun _ => 1) with hinddef
   have hind_meas : Measurable ind := measurable_const.indicator hB
   set ψ : 𝓣' → ℝ := fun t => ∫ x, φ x ∂(Q t) with hψdef
@@ -307,13 +315,16 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
     (hbc : IsBoundedlyCompleteStat P T)
     -- USER-INPUT: the reduced problem is invariant under the action on the statistic space
     (hQ : IsInvariantModel (G := G) (statLaw P T))
+    -- USER-INPUT (amendment, see `exists_measurable_aeEq_smul_statLaw`): `G` acts on the
+    -- statistic space by measurable maps
+    (hsmul : ∀ g : G, Measurable fun t : 𝓣 => g • t)
     -- USER-INPUT: `ψ` is a critical function on the statistic space
     (hψ : IsCriticalFn ψ) :
     (∀ (g : G) (θ : Θ), power (statLaw P T) ψ (g • θ) = power (statLaw P T) ψ θ) ↔
       ∀ θ, IsAlmostInvariant G (statLaw P T θ) ψ := by
   refine ⟨fun hpow θ g => ?_, fun hai g θ => ?_⟩
   · -- Forward: power invariance ⟹ almost invariance (bounded completeness).
-    obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g
+    obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
     have hfmeas : Measurable (fun t => ψ (m t) - ψ t) := (hψ.1.comp hm_meas).sub hψ.1
     have hbound : ∀ s, |ψ (m s) - ψ s| ≤ 2 := by
       intro s; have h1 := hψ.2 (m s); have h2 := hψ.2 s
@@ -345,7 +356,7 @@ theorem power_invariant_iff_almostInvariant [MulAction G 𝓣] [MulAction G Θ]
     simp only [Pi.zero_apply] at ht
     rw [hmt]; linarith [ht]
   · -- Reverse: almost invariance ⟹ power invariance (change of variables).
-    obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g
+    obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
     have haem : AEMeasurable (fun t => g • t) (statLaw P T θ) :=
       hm_meas.aemeasurable.congr (hm_ae θ).symm
     simp only [power]
@@ -365,6 +376,9 @@ theorem isUMP_of_isUMPAlmostInvariant_sufficient [MulAction G 𝓣] [MulAction G
     (hbc : IsBoundedlyCompleteStat P T)
     -- USER-INPUT: the reduced problem is invariant under the action on the statistic space
     (hQ : IsInvariantModel (G := G) (statLaw P T))
+    -- USER-INPUT (amendment, see `exists_measurable_aeEq_smul_statLaw`): `G` acts on the
+    -- statistic space by measurable maps
+    (hsmul : ∀ g : G, Measurable fun t : 𝓣 => g • t)
     -- USER-INPUT: `v` is invariant under the induced parameter action
     (hv_inv : ∀ (g : G) (θ : Θ), v (g • θ) = v θ)
     -- USER-INPUT: `v` separates the induced orbits (maximal invariance of `v`)
@@ -391,7 +405,7 @@ theorem isUMP_of_isUMPAlmostInvariant_sufficient [MulAction G 𝓣] [MulAction G
     intro g θ'
     rw [hmatch (g • θ'), hmatch θ', hφv (g • θ') θ' (hv_inv g θ')]
   have hai : ∀ θ', IsAlmostInvariant G (statLaw P T θ') (fun t => ∫ x, φ x ∂(Q t)) :=
-    (power_invariant_iff_almostInvariant hbc hQ hψφcrit).mp hpowinv
+    (power_invariant_iff_almostInvariant hbc hQ hsmul hψφcrit).mp hpowinv
   have hlevel : IsLevel (statLaw P T) Θ₀ (fun t => ∫ x, φ x ∂(Q t)) α := by
     intro θ' hθ'; rw [hmatch θ']; exact hφlevel θ' hθ'
   have hdom := hψ₀.2.2.2 (fun t => ∫ x, φ x ∂(Q t)) hψφcrit hai hlevel θ hθ
@@ -417,6 +431,9 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
     (hTmeas : Measurable T)
     -- USER-INPUT: the model is invariant under the sample-space action
     (hP : IsInvariantModel (G := G) P)
+    -- USER-INPUT (amendment, see `exists_measurable_aeEq_smul_statLaw`): `G` acts on the
+    -- statistic space by measurable maps
+    (hsmul : ∀ g : G, Measurable fun t : 𝓣 => g • t)
     -- USER-INPUT: the statistic intertwines the two actions, `T (g·x) = g·(T x)`;
     -- this is the source's compatibility condition together with the definition of the
     -- induced group on the statistic space
@@ -437,7 +454,7 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
       Measure.isProbabilityMeasure_map hTmeas.aemeasurable
     have hψ_meas := measurable_condStat Q hφ.1
     have haeT : AEMeasurable (fun t => g • t) (statLaw P T θ) := by
-      obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g
+      obtain ⟨m, hm_meas, hm_ae⟩ := exists_measurable_aeEq_smul_statLaw P T g (hsmul g)
       exact hm_meas.aemeasurable.congr (hm_ae θ).symm
     have hInt1 : Integrable (fun t => (∫ x, φ x ∂(Q (g • t)))) (statLaw P T θ) :=
       (integrable_const (1 : ℝ)).mono' (hψ_meas.comp_aemeasurable haeT).aestronglyMeasurable
@@ -451,7 +468,7 @@ theorem exists_almostInvariant_on_stat_of_invariant [∀ θ, IsProbabilityMeasur
           rw [Real.norm_eq_abs, abs_le]; exact ⟨by linarith [this.1], this.2⟩))
     refine ae_eq_of_forall_setIntegral_eq_of_sigmaFinite
       (fun s _ _ => hInt1.integrableOn) (fun s _ _ => hInt2.integrableOn) (fun B hB _ => ?_)
-    rw [setIntegral_condStat_smul_eq hTmeas hφ.1 hφ.2 hP hTcompat hφinv hker g θ hB,
+    rw [setIntegral_condStat_smul_eq hTmeas hφ.1 hφ.2 hP hsmul hTcompat hφinv hker g θ hB,
       setIntegral_condStat_eq hTmeas hφ.1 hφabs (hker θ) hB]
   · -- Power matching.
     intro θ
@@ -483,7 +500,8 @@ theorem exists_invariant_on_stat_of_invariant [MeasurableSpace G] [MeasurableMul
     ∃ ψ : 𝓣 → ℝ, IsCriticalFn ψ ∧ IsInvariantTest G ψ ∧
       ∀ θ, power (statLaw P T) ψ θ = power P φ θ := by
   obtain ⟨ψ, hψcrit, hψai, hψpow⟩ :=
-    exists_almostInvariant_on_stat_of_invariant hsuf hTmeas hP hTcompat hφ hφinv
+    exists_almostInvariant_on_stat_of_invariant hsuf hTmeas hP
+      (fun g => measurable_const.smul measurable_id) hTcompat hφ hφinv
   -- Almost invariance w.r.t. the dominating measure `μT`.
   have hμTai : IsAlmostInvariant G μT ψ := by
     intro g

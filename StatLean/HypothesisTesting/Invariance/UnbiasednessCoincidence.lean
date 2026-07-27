@@ -39,6 +39,17 @@ almost-invariant test coincide). (`TSH4 §6.6 Thm 6.6.1`.)
   test `x ↦ α`, which must itself be a critical function.
 * Stability of the null and alternative classes under the induced action is what makes the
   unbiased class translation-stable; it is stated separately from model invariance.
+* **Signature amendment (documented deviation).** The argument forms the translate
+  `x ↦ φ*(g·x)` and needs it to be a critical function, i.e. `Measurable (g • ·)`. A bare
+  `[MulAction G 𝓧]` does not supply this, and with a non-measurable action the translate is
+  not a test at all, so the hypothesis `hsmul : ∀ g, Measurable (g • ·)` — the content of
+  `[MeasurableSMul G 𝓧]`, stated as a plain hypothesis so no `MeasurableSpace G` structure
+  has to be imposed — is added. This is the same amendment as in
+  `Invariance/SufficiencyReduction.lean`.
+* The proof turns out not to use `hequiv` (the "family-null ⟹ `μ`-null" half of the
+  equivalence of `μ` with the family): only `hdom` is needed, to push the `μ`-a.e. almost
+  invariance of `φ*` down to each member. `hequiv` is retained in the signature because it
+  is part of the source's standing assumption that `μ` is equivalent to the family.
 
 **Bibliographic comments.** Unbiasedness for tests was introduced by J. Neyman and
 E. S. Pearson ("Contributions to the theory of testing statistical hypotheses," *Stat.
@@ -70,6 +81,9 @@ theorem umpu_eq_umpAlmostInvariant_ae {P : Θ → Measure 𝓧} [∀ θ, IsProba
     {μ : Measure 𝓧} [SigmaFinite μ] {Θ₀ Θ₁ : Set Θ} {α : ℝ} {φstar φ : 𝓧 → ℝ}
     -- USER-INPUT: the model intertwines the sample- and parameter-space actions
     (hP : IsInvariantModel (G := G) P)
+    -- USER-INPUT (amendment, see the module note): `G` acts on the sample space by
+    -- measurable maps
+    (hsmul : ∀ g : G, Measurable fun x : 𝓧 => g • x)
     -- USER-INPUT: the null and alternative classes are preserved by the induced action
     (hΘ₀ : ∀ (g : G) (θ : Θ), θ ∈ Θ₀ → g • θ ∈ Θ₀)
     (hΘ₁ : ∀ (g : G) (θ : Θ), θ ∈ Θ₁ → g • θ ∈ Θ₁)
@@ -87,20 +101,57 @@ theorem umpu_eq_umpAlmostInvariant_ae {P : Θ → Measure 𝓧} [∀ θ, IsProba
     -- USER-INPUT: `φ` is UMP among almost invariant level-`α` tests
     (hφ : IsUMPAlmostInvariant G P Θ₀ Θ₁ α φ) :
     φ =ᵐ[μ] φstar ∧ ∀ ψ : 𝓧 → ℝ, IsUMPAlmostInvariant G P Θ₀ Θ₁ α ψ → ψ =ᵐ[μ] φ := by
-  -- TODO (single lifted gap: missing `[MeasurableSMul G 𝓧]`). The proof runs: (1) each
-  -- translate `ψ_g := φstar ∘ (g • ·)` is UMPU — its power at `θ` equals `power P φstar (g•θ)`
-  -- by `hP`/`IsInvariantModel`, and `hΘ₀`/`hΘ₁` permute the null/alternative classes — so by
-  -- `huniq` `ψ_g =ᵐ[μ] φstar`, making `φstar` almost invariant w.r.t. `μ`, hence (via `hdom`)
-  -- w.r.t. every `P θ`; (2) `φstar` is then a critical almost-invariant level-`α` competitor,
-  -- so `hφ`'s UMP-almost-invariant clause gives `power P φstar θ ≤ power P φ θ` on `Θ₁`;
-  -- (3) comparing `φ` against the constant test `x ↦ α` (critical by `hα0`/`hα1`, almost
-  -- invariant, level `α`) shows `φ` unbiased, so `hstar`'s UMPU clause gives the reverse
-  -- `power P φ θ ≤ power P φstar θ`; (4) equality makes `φ` itself UMPU, so `huniq φ` closes
-  -- the first conjunct, and the same run on any UMP-almost-invariant `ψ` closes the second.
-  -- OBSTRUCTION: step (1) needs `ψ_g` to be an `IsCriticalFn`, i.e. `Measurable (g • ·)`,
-  -- which the frozen signature does not provide (`[MulAction G 𝓧]` only). Under the intended
-  -- measurable action `[MeasurableSMul G 𝓧]` this is `measurable_const_smul g`. Same lifted
-  -- gap as `exists_measurable_aeEq_smul_statLaw` in `SufficiencyReduction`. Statement is TRUE.
-  sorry
+  -- Translating a test along `g` shifts its power function along the induced action.
+  have hshiftpow : ∀ (χ : 𝓧 → ℝ), Measurable χ → ∀ (g : G) (θ : Θ),
+      power P (fun x => χ (g • x)) θ = power P χ (g • θ) := by
+    intro χ hχ g θ
+    simp only [power]
+    rw [← hP g θ, integral_map (hsmul g).aemeasurable hχ.aestronglyMeasurable]
+  -- Translating a critical function keeps it critical.
+  have hshiftcrit : ∀ (χ : 𝓧 → ℝ), IsCriticalFn χ → ∀ g : G,
+      IsCriticalFn (fun x => χ (g • x)) := fun χ hχ g =>
+    ⟨hχ.1.comp (hsmul g), fun x => hχ.2 _⟩
+  -- Translating an unbiased test keeps it unbiased: the induced action permutes the classes.
+  have hshiftunb : ∀ (χ : 𝓧 → ℝ), Measurable χ → IsUnbiasedTest P Θ₀ Θ₁ α χ → ∀ g : G,
+      IsUnbiasedTest P Θ₀ Θ₁ α (fun x => χ (g • x)) := by
+    intro χ hχ hunb g
+    refine ⟨fun θ hθ => ?_, fun θ hθ => ?_⟩
+    · rw [hshiftpow χ hχ g θ]; exact hunb.1 _ (hΘ₀ g θ hθ)
+    · rw [hshiftpow χ hχ g θ]; exact hunb.2 _ (hΘ₁ g θ hθ)
+  -- (1) Every translate of `φstar` is again UMP unbiased.
+  have hstarshift : ∀ g : G, IsUMPU P Θ₀ Θ₁ α (fun x => φstar (g • x)) := by
+    intro g
+    refine ⟨hshiftcrit φstar hstar.1 g, hshiftunb φstar hstar.1.1 hstar.2.1 g, ?_⟩
+    intro χ hχcrit hχunb θ hθ
+    -- compare `χ` with its translate by `g⁻¹`, which is again unbiased
+    have hkey := hstar.2.2 (fun x => χ (g⁻¹ • x)) (hshiftcrit χ hχcrit g⁻¹)
+      (hshiftunb χ hχcrit.1 hχunb g⁻¹) (g • θ) (hΘ₁ g θ hθ)
+    rw [hshiftpow χ hχcrit.1 g⁻¹ (g • θ), inv_smul_smul] at hkey
+    rw [hshiftpow φstar hstar.1.1 g θ]
+    exact hkey
+  -- ... hence, by uniqueness, `φstar` is almost invariant with respect to `μ`.
+  have hstarai : IsAlmostInvariant G μ φstar := fun g => huniq _ (hstarshift g)
+  have hstaraiP : ∀ θ : Θ, IsAlmostInvariant G (P θ) φstar := fun θ g =>
+    (hstarai g).filter_mono (hdom θ).ae_le
+  -- The main run: any UMP almost invariant test agrees a.e. with `φstar`.
+  have hmain : ∀ χ : 𝓧 → ℝ, IsUMPAlmostInvariant G P Θ₀ Θ₁ α χ → χ =ᵐ[μ] φstar := by
+    intro χ hχ
+    -- (2) `φstar` is an almost-invariant level-`α` competitor, so `χ` beats it on `Θ₁`.
+    have hge : ∀ θ ∈ Θ₁, power P φstar θ ≤ power P χ θ :=
+      hχ.2.2.2 φstar hstar.1 hstaraiP hstar.2.1.1
+    -- (3) comparing `χ` with the constant test `x ↦ α` shows `χ` is unbiased.
+    have hconstpow : ∀ θ : Θ, power P (fun _ : 𝓧 => α) θ = α := by
+      intro θ; simp [power]
+    have hχunb : IsUnbiasedTest P Θ₀ Θ₁ α χ := by
+      refine ⟨hχ.2.2.1, fun θ hθ => ?_⟩
+      have h := hχ.2.2.2 (fun _ => α) ⟨measurable_const, fun _ => ⟨hα0, hα1⟩⟩
+        (fun θ' _ => ae_of_all _ fun _ => rfl)
+        (fun θ' _ => by rw [hconstpow θ']) θ hθ
+      rwa [hconstpow θ] at h
+    -- (4) so `hstar` dominates `χ`; the two powers agree on `Θ₁` and `χ` is itself UMPU.
+    have hle : ∀ θ ∈ Θ₁, power P χ θ ≤ power P φstar θ := hstar.2.2 χ hχ.1 hχunb
+    exact huniq χ ⟨hχ.1, hχunb, fun ξ hξcrit hξunb θ hθ =>
+      (hstar.2.2 ξ hξcrit hξunb θ hθ).trans (hge θ hθ)⟩
+  exact ⟨hmain φ hφ, fun ψ hψ => (hmain ψ hψ).trans (hmain φ hφ).symm⟩
 
 end StatLean.HypothesisTesting

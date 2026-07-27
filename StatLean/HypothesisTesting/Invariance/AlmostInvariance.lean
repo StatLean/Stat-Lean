@@ -1,4 +1,8 @@
 import StatLean.HypothesisTesting.Invariance.Defs
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import Mathlib.MeasureTheory.Function.SpecialFunctions.Arctan
+import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
 # Almost invariance and its equivalence with invariance
@@ -53,6 +57,19 @@ equivalent to an invariant one) and Corollary 6.5.1. (`TSH4 §6.5 Thm 6.5.1, Cor
 * Non-degeneracy `ν ≠ 0` is stated explicitly. The averaging step normalizes `ν` to a
   probability measure, which is impossible for the zero measure; the source leaves this
   implicit in "there exists a σ-finite measure `ν` over `G`".
+* The normalization is carried out inside the proof: a σ-finite `ν` carries an
+  everywhere-positive integrable density (`exists_pos_lintegral_lt_of_sigmaFinite`), so it is
+  equivalent to a *finite* measure `ν'`. Only null sets of `ν` enter the hypotheses `hν0`,
+  `hν`, so nothing is lost by working with `ν'`.
+* `φ` is an arbitrary measurable real function, not necessarily `ν'`-integrable, so the
+  averaging is performed in the bounded chart `arctan` and read back through `tan`. The
+  invariant representative is the *essential value* of `g ↦ arctan (φ (g • x))`: writing
+  `A x` for its `ν'`-average and `D x` for its `L¹` deviation from that average,
+  `ψ x = if D x = 0 then tan (A x) else 0`. This is genuinely invariant — not merely
+  invariant a.e. — because the hypothesis `hν` says exactly that right translation preserves
+  `ν'`-null sets, hence preserves the property "the orbit function is essentially constant"
+  together with the value of that constant. Quasi-invariance is therefore enough; no
+  invariant mean or amenability device is needed.
 * Almost invariance in `IsUMPAlmostInvariant` is taken with respect to **every** member of
   the family (the classical "a.e. `P`" reading), rather than with respect to a single
   dominating measure.
@@ -71,7 +88,7 @@ and R. H. Berk ("A remark on almost invariance," *Ann. Math. Statist.* **41** (1
 -/
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -96,18 +113,122 @@ theorem exists_invariant_ae_eq_of_almostInvariant [MeasurableSpace G] [Measurabl
     -- USER-INPUT: `φ` is almost invariant with respect to `μ`
     (hφ : IsAlmostInvariant G μ φ) :
     ∃ ψ : 𝓧 → ℝ, Measurable ψ ∧ IsInvariantTest G ψ ∧ φ =ᵐ[μ] ψ := by
-  -- TODO (Hunt–Stein averaging, not yet formalized). Argument (TSH4 §6.5 Thm 6.5.1): joint
-  -- measurability `[MeasurableSMul₂ G 𝓧]` + Fubini on `𝓧 × G` turn the per-`g` a.e. identity
-  -- `φ (g • ·) =ᵐ[μ] φ` (`hφ`) into: for `μ`-a.e. `x`, `φ (g • x) = φ x` for `ν`-a.e. `g`.
-  -- The invariant representative is the group average `ψ x := ∫ g, φ (g • x) ∂ν̄` for the
-  -- normalized `ν̄`; `hν` (right-translation-stable null sets) makes `ψ (g • x) = ψ x` and
-  -- `ψ =ᵐ[μ] φ`. Missing Mathlib pieces: (a) the normalization step needs `ν` FINITE (only
-  -- `SigmaFinite ν` + `hν0` are given — a σ-finite `ν` is not directly normalizable to a
-  -- probability measure, so the averaging integral requires either finiteness or an
-  -- invariant-mean / amenability device absent from Mathlib v4.29.1); (b) the quasi-invariance
-  -- Fubini transfer of the a.e. identity along right translation. Statement is TRUE for the
-  -- intended (Haar-carrying, amenable) groups. No false hypothesis.
-  sorry
+  classical
+  -- `Real.tan` is measurable and inverts `Real.arctan`; `arctan` is the bounded chart used
+  -- to average an arbitrary (not necessarily integrable) real function.
+  have htan : Measurable Real.tan := by
+    have h : Real.tan = fun x => Real.sin x / Real.cos x := funext Real.tan_eq_sin_div_cos
+    rw [h]; exact Real.measurable_sin.div Real.measurable_cos
+  have harctan_b : ∀ y : ℝ, |Real.arctan y| ≤ Real.pi / 2 := fun y =>
+    abs_le.mpr ⟨(Real.neg_pi_div_two_lt_arctan y).le, (Real.arctan_lt_pi_div_two y).le⟩
+  -- **Step 1: normalize.** A σ-finite `ν` carries an everywhere-positive density making it
+  -- equivalent to a *finite* measure `ν'`; equivalence is all the hypotheses `hν0`/`hν` see,
+  -- since both are statements about null sets.
+  obtain ⟨w, hwpos, hwmeas, hwint⟩ :=
+    exists_pos_lintegral_lt_of_sigmaFinite ν (ε := 1) one_ne_zero
+  have hwm : Measurable fun y : G => ((w y : ℝ≥0) : ℝ≥0∞) := hwmeas.coe_nnreal_ennreal
+  set ν' : Measure G := ν.withDensity (fun y => (w y : ℝ≥0∞)) with hν'def
+  have hsupp : {y : G | ((w y : ℝ≥0) : ℝ≥0∞) ≠ 0} = Set.univ := by
+    ext y; simp [(hwpos y).ne']
+  have hnull : ∀ B : Set G, ν' B = 0 ↔ ν B = 0 := fun B => by
+    rw [hν'def, withDensity_apply_eq_zero hwm, hsupp, Set.univ_inter]
+  have hν'univ : ν' Set.univ < 1 := by
+    rw [hν'def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]; exact hwint
+  haveI : IsFiniteMeasure ν' := ⟨hν'univ.trans ENNReal.one_lt_top⟩
+  have hν'ne : ν' Set.univ ≠ 0 := fun h =>
+    hν0 (Measure.measure_univ_eq_zero.mp ((hnull _).mp h))
+  set c : ℝ := (ν' Set.univ).toReal with hcdef
+  have hc0 : 0 < c := ENNReal.toReal_pos hν'ne (measure_ne_top _ _)
+  -- **Step 2: the averaged chart.** `F` is jointly measurable and bounded.
+  set F : 𝓧 × G → ℝ := fun p => Real.arctan (φ (p.2 • p.1)) with hFdef
+  have hFmeas : Measurable F :=
+    (hφmeas.comp (measurable_snd.smul measurable_fst)).arctan
+  have hFb : ∀ p : 𝓧 × G, |F p| ≤ Real.pi / 2 := fun p => harctan_b _
+  have hFx : ∀ x : 𝓧, Measurable fun g => F (x, g) := fun x =>
+    hFmeas.comp measurable_prodMk_left
+  have hFint : ∀ x : 𝓧, Integrable (fun g => F (x, g)) ν' := fun x =>
+    (integrable_const (Real.pi / 2)).mono' (hFx x).aestronglyMeasurable
+      (ae_of_all _ fun g => by rw [Real.norm_eq_abs]; exact hFb _)
+  set A : 𝓧 → ℝ := fun x => (∫ g, F (x, g) ∂ν') / c with hAdef
+  have hAmeas : Measurable A :=
+    (hFmeas.stronglyMeasurable.integral_prod_right').measurable.div_const c
+  set D : 𝓧 → ℝ := fun x => ∫ g, ‖F (x, g) - A x‖ ∂ν' with hDdef
+  have hDmeas : Measurable D := by
+    have h : Measurable fun p : 𝓧 × G => ‖F p - A p.1‖ :=
+      (hFmeas.sub (hAmeas.comp measurable_fst)).norm
+    exact (h.stronglyMeasurable.integral_prod_right').measurable
+  have hDint : ∀ x : 𝓧, Integrable (fun g => ‖F (x, g) - A x‖) ν' := fun x =>
+    (integrable_const (Real.pi / 2 + |A x|)).mono'
+      (((hFx x).sub measurable_const).norm).aestronglyMeasurable
+      (ae_of_all _ fun g => by
+        rw [norm_norm, Real.norm_eq_abs]
+        exact (abs_sub _ _).trans (by linarith [hFb (x, g)]))
+  -- `L1`: an essentially constant orbit function pins down `A` and kills `D`.
+  have hL1 : ∀ (x : 𝓧) (r : ℝ), (∀ᵐ g ∂ν', F (x, g) = r) → A x = r ∧ D x = 0 := by
+    intro x r hr
+    have hA : A x = r := by
+      have h1 : ∫ g, F (x, g) ∂ν' = ∫ _g : G, r ∂ν' := integral_congr_ae hr
+      have h2 : ∫ _g : G, r ∂ν' = c * r := by
+        rw [integral_const, smul_eq_mul, measureReal_def, ← hcdef]
+      simp only [hAdef, h1, h2]
+      field_simp
+    refine ⟨hA, ?_⟩
+    have hz : (fun g => ‖F (x, g) - A x‖) =ᵐ[ν'] fun _ => 0 := by
+      filter_upwards [hr] with g hg
+      rw [hg, hA, sub_self, norm_zero]
+    simp only [hDdef]
+    rw [integral_congr_ae hz, integral_zero]
+  -- `L2`: conversely, `D x = 0` says the orbit function is essentially the constant `A x`.
+  have hL2 : ∀ x : 𝓧, D x = 0 → ∀ᵐ g ∂ν', F (x, g) = A x := by
+    intro x hx
+    have h := (integral_eq_zero_iff_of_nonneg (fun g => norm_nonneg _) (hDint x)).mp hx
+    filter_upwards [h] with g hg
+    have := norm_eq_zero.mp hg
+    linarith [sub_eq_zero.mp this]
+  -- **Step 3: quasi-invariance.** Right translation preserves `ν'`-null sets, so it preserves
+  -- "the orbit function is essentially the constant `r`".
+  have hshift : ∀ (x : 𝓧) (h : G) (r : ℝ), (∀ᵐ g ∂ν', F (x, g) = r) →
+      ∀ᵐ g ∂ν', F (h • x, g) = r := by
+    intro x h r hr
+    have hFeq : ∀ g : G, F (h • x, g) = F (x, g * h) := by
+      intro g; simp only [hFdef, smul_smul]
+    have hNmeas : MeasurableSet {g : G | F (x, g) ≠ r} :=
+      ((hFx x) (measurableSet_singleton r)).compl
+    have hkey := hν h⁻¹ _ hNmeas ((hnull _).mp (ae_iff.mp hr))
+    rw [inv_inv] at hkey
+    have hset : (fun y : G => y * h) ⁻¹' {g : G | F (x, g) ≠ r}
+        = {g : G | F (h • x, g) ≠ r} := by
+      ext g; simp only [Set.mem_preimage, Set.mem_setOf_eq, hFeq g]
+    rw [hset] at hkey
+    exact ae_iff.mpr ((hnull _).mpr hkey)
+  have hstep : ∀ (h : G) (x : 𝓧), D x = 0 → A (h • x) = A x ∧ D (h • x) = 0 := fun h x hx =>
+    hL1 (h • x) (A x) (hshift x h (A x) (hL2 x hx))
+  -- The invariant representative: the essential value of `g ↦ arctan (φ (g • x))`, read back
+  -- through `tan`, whenever that function is `ν'`-essentially constant.
+  refine ⟨fun x => if D x = 0 then Real.tan (A x) else 0, ?_, ?_, ?_⟩
+  · exact Measurable.ite (hDmeas (measurableSet_singleton 0)) (htan.comp hAmeas)
+      measurable_const
+  · -- Genuine invariance of the representative.
+    intro h x
+    by_cases hx : D x = 0
+    · obtain ⟨hA', hD'⟩ := hstep h x hx
+      simp only [if_pos hx, if_pos hD', hA']
+    · have hD' : D (h • x) ≠ 0 := fun hcon => by
+        obtain ⟨-, hD2⟩ := hstep h⁻¹ (h • x) hcon
+        rw [inv_smul_smul] at hD2; exact hx hD2
+      simp only [if_neg hx, if_neg hD']
+  · -- **Step 4: Fubini.** The per-`g` a.e. identity becomes a per-`x` a.e.-in-`g` identity.
+    have hPmeas : MeasurableSet {q : G × 𝓧 | φ (q.1 • q.2) = φ q.2} :=
+      measurableSet_eq_fun (hφmeas.comp (measurable_fst.smul measurable_snd))
+        (hφmeas.comp measurable_snd)
+    have hcomm : ∀ᵐ x ∂μ, ∀ᵐ g ∂ν', φ (g • x) = φ x :=
+      (Measure.ae_ae_comm (μ := ν') (ν := μ) hPmeas).mp (ae_of_all _ fun g => hφ g)
+    filter_upwards [hcomm] with x hx
+    have hr : ∀ᵐ g ∂ν', F (x, g) = Real.arctan (φ x) := by
+      filter_upwards [hx] with g hg
+      simp only [hFdef, hg]
+    obtain ⟨hA', hD'⟩ := hL1 x _ hr
+    simp only [if_pos hD', hA', Real.tan_arctan]
 
 /-! ## UMP almost invariant tests -/
 
@@ -140,14 +261,40 @@ theorem isUMPAlmostInvariant_of_isUMPInvariant [MeasurableSpace G] [MeasurableMu
     -- USER-INPUT: `φ₀` is UMP among invariant level-`α` tests
     (hφ₀ : IsUMPInvariant G P Θ₀ Θ₁ α φ₀) :
     IsUMPAlmostInvariant G P Θ₀ Θ₁ α φ₀ := by
-  -- TODO (depends on `exists_invariant_ae_eq_of_almostInvariant` above, Hunt–Stein). Argument:
-  -- a critical almost-invariant level-`α` competitor `ψ` is, by the averaging theorem above,
-  -- `=ᵐ[μ]` a genuinely invariant `ψ'`; `hdom`/`hequiv` make the family-a.e. and `μ`-a.e.
-  -- readings agree, so `ψ` and `ψ'` share every power `power P · θ`. `ψ'` is then an invariant
-  -- level-`α` competitor, so `hφ₀`'s UMP-invariant clause gives `power P ψ θ ≤ power P φ₀ θ` on
-  -- `Θ₁`, which is exactly the UMP-almost-invariant domination for `φ₀`. Blocked because the
-  -- averaging step `exists_invariant_ae_eq_of_almostInvariant` is itself the lifted Hunt–Stein
-  -- gap (see its TODO). Statement is TRUE for the intended amenable groups. No false hypothesis.
-  sorry
+  refine ⟨hφ₀.1, fun θ g => ae_of_all _ (fun x => hφ₀.2.1 g x), hφ₀.2.2.1, ?_⟩
+  intro ψ hψcrit hψai hψlevel θ hθ
+  -- Family-wise almost invariance transfers to the equivalent dominating measure `μ`.
+  have hμai : IsAlmostInvariant G μ ψ := by
+    intro g
+    have hgs : Measurable fun x : 𝓧 => g • x := measurable_const.smul measurable_id
+    have hNmeas : MeasurableSet {x : 𝓧 | ψ (g • x) = ψ x}ᶜ := by
+      have hset : {x : 𝓧 | ψ (g • x) = ψ x} = (fun x => ψ (g • x) - ψ x) ⁻¹' {0} := by
+        ext x; simp [sub_eq_zero]
+      rw [hset]
+      exact (((hψcrit.1.comp hgs).sub hψcrit.1) (measurableSet_singleton 0)).compl
+    rw [ae_iff]
+    refine hequiv _ hNmeas (fun θ' => ?_)
+    have h := hψai θ' g
+    rwa [ae_iff] at h
+  -- Averaging produces a genuinely invariant version; clamping keeps it a critical function.
+  obtain ⟨ψ', hψ'meas, hψ'inv, hψ'ae⟩ :=
+    exists_invariant_ae_eq_of_almostInvariant hν0 hν hψcrit.1 hμai
+  have hclampcrit : IsCriticalFn (fun x => max 0 (min 1 (ψ' x))) :=
+    ⟨measurable_const.max (measurable_const.min hψ'meas),
+      fun x => ⟨le_max_left _ _, max_le (by norm_num) (min_le_left _ _)⟩⟩
+  have hclampinv : IsInvariantTest G (fun x => max 0 (min 1 (ψ' x))) := fun g x => by
+    simp only [hψ'inv g x]
+  have hψeq : ψ =ᵐ[μ] fun x => max 0 (min 1 (ψ' x)) := by
+    filter_upwards [hψ'ae] with x hx
+    have hb := hψcrit.2 x
+    rw [← hx, min_eq_right hb.2, max_eq_right hb.1]
+  have hpow : ∀ θ', power P (fun x => max 0 (min 1 (ψ' x))) θ' = power P ψ θ' := by
+    intro θ'
+    simp only [power]
+    exact integral_congr_ae (hψeq.filter_mono (hdom θ').ae_le).symm
+  have hclamplevel : IsLevel P Θ₀ (fun x => max 0 (min 1 (ψ' x))) α := by
+    intro θ' hθ'; rw [hpow θ']; exact hψlevel θ' hθ'
+  have hdomin := hφ₀.2.2.2 _ hclampcrit hclampinv hclamplevel θ hθ
+  rwa [hpow θ] at hdomin
 
 end StatLean.HypothesisTesting
