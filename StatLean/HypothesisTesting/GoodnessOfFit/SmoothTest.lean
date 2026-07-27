@@ -129,7 +129,7 @@ so the per-observation vector `psiVec x = (ψ₁ x, …, ψ_k x)` has mean zero 
 `Iₖ`; the standardised sum converges to `N(0, Iₖ)` and the squared norm is `Sₙ`. -/
 
 /-- The per-observation score vector `x ↦ (ψ₁ x, …, ψ_k x)` in `EuclideanSpace ℝ (Fin k)`. -/
-noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
+private noncomputable def psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (x : 𝓧) :
     EuclideanSpace ℝ (Fin k) :=
   WithLp.toLp 2 (fun j => ψ j x)
 
@@ -391,7 +391,7 @@ weak limit of the canonical score law; and the explicit exponential-tilt represe
 members of the smooth model. -/
 
 /-- The inner product against the per-observation score vector, in coordinates. -/
-lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
+private lemma inner_psiVec {k : ℕ} (ψ : Fin k → 𝓧 → ℝ) (u : EuclideanSpace ℝ (Fin k))
     (x : 𝓧) : ⟪u, psiVec ψ x⟫_ℝ = ∑ j, u j * ψ j x := by
   rw [inner_euclidean_sum]
   exact Finset.sum_congr rfl fun j _ => rfl
@@ -804,7 +804,7 @@ private lemma law_scoreVec_pi {n k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMe
   rw [hcomp, ← Measure.map_map hFmeas hXmeas, hpiX]
 
 /-- **The canonical score law converges to the standard Gaussian.** -/
-lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
+private lemma pi_scoreLaw_weakConverges {k : ℕ} {P₀ : Measure 𝓧} [IsProbabilityMeasure P₀]
     {ψ : Fin k → 𝓧 → ℝ} (hψmeas : ∀ j, Measurable (ψ j))
     (hortho : ∀ i j, (∫ x, ψ i x * ψ j x ∂P₀) = if i = j then 1 else 0)
     (hcentred : ∀ j, (∫ x, ψ j x ∂P₀) = 0) :
@@ -1260,7 +1260,28 @@ uniform-over-a-COMPACT-shell version of that limit — an equicontinuity stateme
 easier than the unbounded/moving-shell version needed in `ChiSquaredMaximin`.  Obstruction
 (a), the exponential-family LAN expansion of `smoothModel` at `θ = 0`
 (`PointEstimation.ExponentialFamily.Smoothness`, not imported here), remains the real
-blocker and is what keeps this a single named debt. -/
+blocker and is what keeps this a single named debt.
+
+TODO (RE-DERIVED, wave 5; obstruction (a) is now DISCHARGED, (b) is what is left).  The
+exponential-family expansion is no longer a debt of this file and no longer needs the
+`Smoothness` import: `logPartition_quadratic_bound` above proves
+`|A(θ) − ‖θ‖²/2| ≤ C‖θ‖³` on any ball, from scratch and axiom-clean, by an elementary
+third-order Taylor bound on `e^z` plus the moment identities supplied by `hcentred`/`hortho`
+(the sign-vector envelope `integrable_exp_l1` makes every exponential moment finite, and
+`hlaw` at `n = 1` already forces every tilt to be integrable, so `hint` is not even
+required).  Together with `hEdens`-style tilt-to-`withDensity` rewriting and
+`pi_scoreLaw_weakConverges`, that is exactly the local-limit input asked for here: the
+per-`h` local law of `Sₙ` is `χ²_k(‖h‖²)`, since under `Q n h` the sample is i.i.d.
+`p_{h/√n}` and the score vector is asymptotically `N(h, Iₖ)`.
+
+WHAT IS LEFT is obstruction (b) alone, in its `liminf ≥` form: the *uniformity over the
+compact shell* `b ≤ ‖h‖ ≤ B` of that per-`h` limit.  The `limsup ≤` half is immediate
+(evaluate at a fixed `h` with `‖h‖ = b` and use the per-`h` limit plus
+`noncentralChiSquared_tail_mono`); the `liminf ≥` half needs the local power
+`h ↦ P_{n,h}{Sₙ > c}` to converge *uniformly* on the shell, which per-`h` weak convergence
+does not give.  Since the shell is compact and does not move with `n`, an equicontinuity
+argument suffices — the missing brick is an equicontinuity/uniform-Berry–Esseen estimate for
+the drifting-mean score vector, not any further exponential-family analysis. -/
 private lemma smoothTest_shell_minPower_tendsto {k : ℕ} {α b B c : ℝ} {P₀ : Measure 𝓧}
     [IsProbabilityMeasure P₀] {ψ : Fin k → 𝓧 → ℝ}
     {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]

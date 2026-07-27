@@ -1,2 +1,0 @@
-import StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest
-#print axioms StatLean.HypothesisTesting.smoothTest_maximin_upper_bound

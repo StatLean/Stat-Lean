@@ -153,6 +153,23 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --
   -- So this declaration is a quoted reference statement with no downstream dependants, and
   -- stays as the planned, pre-agreed debt.
+  --
+  -- RE-CHECKED (wave 5), including the explicit question whether the consumer can be
+  -- rerouted to the ball version or the statement weakened to a provable rate.  Neither is
+  -- possible or needed:
+  -- • REROUTING IS ALREADY DONE.  A repository-wide search finds no consumer of this
+  --   declaration at all — `smoothStat_largeK_weakConverges_gaussian` goes through
+  --   `bentkus_berry_esseen_ball` (hence `berryEsseen_ball_elementary`, which is discharged),
+  --   and the only other mentions of this name are in the docstrings of
+  --   `ForMathlib/MultivariateBerryEsseen`.  So there is nothing downstream to amend.
+  -- • WEAKENING THE RATE DOES NOT HELP.  The elementary route bounds the normal approximation
+  --   only over *Euclidean balls* (it smooths the radial indicator `1{‖z‖² ≤ t}`); a general
+  --   measurable convex body is not a ball and is not approximated by balls in any way that
+  --   route supplies.  So even the weakened statement `≤ C k^{1/4} (β/√n)^{1/4}` over convex
+  --   sets is NOT a consequence of `berryEsseen_ball_elementary` — it is the same open
+  --   problem with a different exponent, and writing it down would be a false economy.
+  -- The declaration therefore keeps its sharp Bentkus form and stays the single, pre-agreed,
+  -- consumer-free debt of this file.
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**

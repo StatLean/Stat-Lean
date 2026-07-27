@@ -1,6 +1,5 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMultinomial
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
-import StatLean.HypothesisTesting.GoodnessOfFit.SmoothTest
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianShift
 
@@ -210,6 +209,52 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   --       `|h_j|/(√n π_j) → 0` uniformly. This last item is the only genuine analysis left,
   --       and it is a *finite-cell* computation, not a limit-theorem gap.
   -- The mixture–Neyman–Pearson apparatus itself is no longer a debt of this file.
+  --
+  -- ROUTE FULLY MAPPED AND PARTLY PROTOTYPED (wave 5).  The smooth-test twin of this
+  -- statement, `SmoothTest.smoothTest_maximin_upper_bound`, is now CLOSED axiom-clean by
+  -- exactly this transfer, so the plan below is not speculative; what remains here is the
+  -- multinomial-specific algebra.  Concretely:
+  --
+  -- (a) WHITENING, no matrix square roots needed.  Take `ψ₁,…,ψ_k : Fin (k+1) → ℝ` centred
+  --     and orthonormal in `L²(π)` and set `Φ η j := π j ⟪η, Ψ j⟫` with `Ψ = psiVec ψ`.  Then
+  --     `∑ⱼ (Φη)ⱼ = 0` and `λ(Φη) = ∑ⱼ (Φη)ⱼ²/πⱼ = ∑ⱼ πⱼ⟪η,Ψⱼ⟫² = ‖η‖²`, so `Φ` carries the
+  --     Euclidean sphere `‖η‖ = b` into `multinomialShell π b n`, which is what the
+  --     shell-parametrised transfer lemma needs.  Such a system EXISTS and its construction
+  --     compiles: `(√πⱼ)ⱼ` is a unit vector `w` of `EuclideanSpace ℝ (Fin (k+1))`, and
+  --     `OrthonormalBasis.fromOrthogonalSpanSingleton k (w ≠ 0)` gives an orthonormal basis
+  --     `e` of `(ℝ ∙ w)ᗮ` indexed by `Fin k`; put `ψ i j := (e i) j / √πⱼ`.  Centring is
+  --     `⟪w, e i⟫ = 0` and orthonormality is `⟪e i, e i'⟫ = δ`.
+  -- (b) CANONICAL EXPERIMENT.  `P₀ := (Q 1 0).map (X 1 0)` has singleton masses `πⱼ` by
+  --     `hcell`, so `∫ f dP₀ = ∑ⱼ πⱼ f j` by `integral_fintype`; the stage-`n` member is
+  --     `tilt n η := P₀.withDensity (1 + ⟪η,Ψ·⟫/√n)`, identified with `(Q n (Φη)).map (X n i)`
+  --     by `Measure.ext_of_singleton` + `hcell`.  Set `QC n η := ⨂_{i<n} tilt n η` on the
+  --     good set `{η | ∀ j, |⟪η,Ψⱼ⟫| ≤ √n/2}` and `QC n η := QC n 0` off it; `hdens` is then
+  --     `pi_withDensity_exp` with `L n η d = ∑_{l<n} log(1 + ⟪η,Ψ(d l)⟫/√n)`.
+  -- (c) `Zₙ ⇒ N(0, Iₖ)` is `SmoothTest.pi_scoreLaw_weakConverges` applied with `𝓧 = Fin (k+1)`
+  --     and this `P₀` — the ψ-score vector is literally the smooth-test score vector.
+  -- (d) LAN.  With `u_l = ⟪η,Ψ(d l)⟫/√n` and `|u_l| ≤ 1/2` on the good set,
+  --     `L = ∑_l u_l − ½∑_l u_l² + O(∑|u_l|³) = ⟪η, Zₙ⟫ − ½ ηᵀ Ŝₙ η + O(‖Ψ‖³b³/√n)` where
+  --     `Ŝₙ` is the empirical second-moment matrix of the scores.  Unlike the smooth-test
+  --     case the remainder is NOT deterministic: the envelope is
+  --     `D n d = (b²/2)∑_{i,i'} |Ŝₙ,ᵢᵢ' − δᵢᵢ'| + C/√n`, and `hD0` is a WLLN for the `k²`
+  --     empirical second moments under `⨂ P₀`.
+  -- (e) That WLLN is available and PROTOTYPED: transport `⨂_{i<n} P₀` to the canonical i.i.d.
+  --     space via `exists_iid`, apply `ProbabilityTheory.strong_law_ae` to each of the `k²`
+  --     bounded products `ψᵢψᵢ'`, and convert a.e. convergence to convergence in measure with
+  --     `tendstoInMeasure_of_tendsto_ae` (finite measure), then map the sets back.
+  -- (f) FINAL COMPARISON.  `S n := {η | b ≤ ‖η‖ ∧ ∀ j, |⟪η,Ψⱼ⟫| ≤ √n/2}` satisfies
+  --     `Φ '' S n ⊆ multinomialShell π b n` and contains the sphere `‖η‖ = b` for
+  --     `n ≥ ⌈(2b‖Ψ‖)²⌉`, so `sInf` over the shell image is `≤ sInf` over the `S n` image by
+  --     `csInf_le_csInf` (eventually, `S n` being nonempty), and the two `limsup`s compare by
+  --     `Filter.limsup_le_limsup` (both sequences lie in `[0,1]`).
+  --
+  -- Items (a), (d)'s scalar inequalities (`|log(1+u) − (u − u²/2)| ≤ 2|u|³` and
+  -- `|log(1+u)| ≤ 1` for `|u| ≤ 1/2`, both from `Real.abs_log_sub_add_sum_range_le`) and (e)
+  -- were written out and compile; what stopped this batch is the sheer elaboration cost of
+  -- the assembly (a dozen `set` abbreviations over a `Measure.pi` of `withDensity`s makes the
+  -- defeq checks in (b)/(d) time out at 3.2M heartbeats), not a missing mathematical input.
+  -- The next batch should carry (a), (d) and (e) as *separate named private lemmas with
+  -- explicit statements* rather than as `set` locals inside the assembly.
   sorry
 
 /-! ### (ii) Attainment by Pearson's test -/
@@ -241,7 +286,17 @@ Two tools now shorten it but do not close it:
 * `noncentralChiSquared_tail_mono` gives the corresponding limit statement.
 The missing brick is a multinomial Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in
 the local parameter; the project has `ForMathlib/MultivariateBerryEsseen` only for slabs and
-balls of a *fixed* law, not for a triangular array of drifting multinomial rows. -/
+balls of a *fixed* law, not for a triangular array of drifting multinomial rows.
+
+TODO (RE-DERIVED, wave 5).  Unchanged in substance, and the wave-5 closure of the smooth-test
+UPPER bound (`SmoothTest.smoothTest_maximin_upper_bound`) does not touch it: that closure is a
+mixture/Neyman–Pearson bound valid for every competitor, whereas this is an attainment
+statement about one specific test, and it needs a *lower* bound on the local power that is
+uniform over a shell which is unbounded and moves with `n`.  The smooth-test twin
+`smoothTest_shell_minPower_tendsto` is strictly easier (its shell is compact and fixed), so it
+should be closed first; this one additionally needs the diagonal-sequence case `λ(hₙ) → ∞`,
+where the honest route is a tightness/Berry–Esseen estimate for the drifting multinomial rows
+rather than any per-`h` weak limit. -/
 private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : Fin (k + 1) → ℝ}
     {Q : ℕ → (Fin (k + 1) → ℝ) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
     {X : (n : ℕ) → Fin n → Ω → Fin (k + 1)}
