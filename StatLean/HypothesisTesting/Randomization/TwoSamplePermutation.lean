@@ -290,7 +290,77 @@ private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
   rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
-/-! ### The permutation limit -/
+/-! ### The permutation limit
+
+The bivariate statement is reduced to a **scalar** one: the `Asymptotics` converse
+`weakConverges_randPairLaw_of_randDist_tendstoInProb` says that convergence in probability of
+the (one-permutation) randomization distribution to a limiting c.d.f. already forces the
+two-permutation joint law to converge to the *product* — the asymptotic independence is
+automatic and needs no separate argument. So the whole content is the scalar core below. -/
+
+/-- **The scalar core of the two-sample permutation limit.** The randomization distribution
+of the unstudentized statistic converges in probability to the c.d.f. of `N(0, τ²)`, with the
+permutation scale `τ² = λ σ²(P_Y) + σ²(P_Z)`.
+
+STATUS (wave 6, this session): OPEN, and now the *only* debt of the two-sample chain, in
+scalar form. What changed: the bivariate/asymptotic-independence half is gone (the converse
+engine supplies it, see `weakConverges_randPairLaw_twoSample` immediately below), and the
+statistic has been identified, exactly and at every finite `k`, with a permuted block sum of
+the centred pooled data — `randDist_twoSampleMeanDiff_eq` above rewrites the left-hand side
+here as
+`|S_N|⁻¹ ∑_σ 1{∑_{i<m} d_x(σ(i)) ≤ t·mn/(√m·N)}`, `d_x l = x l − x̄`,
+which is *literally* the group average appearing in the new `ForMathlib/CombinatorialCLT`
+brick `tendsto_perm_cdf_blockSum`. What remains is therefore exactly two things.
+
+(1) *The combinatorial central limit theorem itself*, `tendsto_perm_cdf_blockSum` — a
+    deterministic statement about triangular arrays of coefficient vectors, open in that file
+    with its own status note (Hájek's conditioned-Bernoulli coupling plus a local limit
+    theorem, or Stein's method for exchangeable pairs; neither apparatus exists in Mathlib
+    v4.29.1). This is the genuine mathematical content.
+
+(2) *The deterministic-array-to-random-array transfer.* The population `d_x` depends on the
+    data `x`, whereas (1) is stated for a fixed sequence of populations. The hypotheses of
+    (1) hold for `d_x` only **in probability**:
+    * `∑ d_x = 0` holds identically (`sum_pooledCentred`);
+    * `N⁻¹ ∑ (d_x)² → v̄ = (λ varY + varZ)/(1 + λ)` in probability, by the pooled weak law
+      (`Studentized.tendsto_pi_real_lln` through the two block laws), whence the population
+      normalized by `√v̄` has second moment tending to `1`, and the threshold
+      `t·mn/(√m·N)` becomes `t'·blockSumScale N m` with
+      `t' → t·√((1+λ)/ (λ varY + varZ)) = t/τ`;
+    * Hájek's Lindeberg condition holds in probability, by the same weak law applied to the
+      truncated second moments `∫ y² 1{|y| > K}` under `P_Y` and `P_Z`, which tend to `0` as
+      `K → ∞` by dominated convergence — this is where `MemLp id 2` is used and why no
+      moment beyond `L²` is needed.
+    The bridge from "hypotheses in probability" to "conclusion in probability" does **not**
+    need the quantitative/uniform form of (1): choose `δ_k → 0` with
+    `P_k(G_k) → 1` for the good sets `G_k = {x : the three quantities are within δ_k}` (a
+    diagonal extraction from the three convergences above), and then pick `x_k ∈ G_k` almost
+    maximizing the deviation of the block-sum c.d.f. from `Φ`. The deterministic sequence
+    `d_{x_k}` satisfies the hypotheses of (1), so its deviation tends to `0`, hence so does
+    the supremum over `G_k`. No measurable selection is involved — only existence.
+
+Neither (1) nor (2) rests on a false statement or on a missing upstream API that cannot be
+built; both are simply long. -/
+private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ τ μ : ℝ}
+    -- USER-INPUT: both sample sizes grow; the asymptotic regime
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    -- USER-INPUT: the sample sizes are balanced in the limit, `m/n → λ`
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    -- USER-INPUT: finite second moments of both populations
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    -- USER-INPUT: the two populations have the same mean
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    -- USER-INPUT: the population variances, both nonzero
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hvarYpos : 0 < varY) (hvarZpos : 0 < varZ)
+    -- LEAN-ONLY: `τ` names the positive square root of the permutation variance
+    (hτpos : 0 < τ) (hτ : τ ^ 2 = lam * varY + varZ) (t : ℝ) :
+    TendstoInProbTriangular (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
+        (twoSampleMeanDiff (m k) (n k)) x t)
+      (cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t) := by
+  sorry
 
 /-- **Two-sample permutation central limit theorem.** With `m/n → λ ∈ (0, ∞)`, finite
 nonzero variances and equal means, the statistic evaluated at two independent uniform
@@ -323,34 +393,19 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
         (twoSampleMeanDiff (m k) (n k)) (twoSampleLaw (m k) (n k) PY PZ))
       ((gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩).prod
         (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩)) := by
-  -- TODO (deep, deferred): the two-sample permutation bivariate CLT (Thm 17.3.1).
-  -- Route: conditionally on the two independent uniform permutations, `Tₘₙ(π X)` is a weighted
-  -- sum of the independent pooled observations, the weights being sampling-without-replacement
-  -- indicators; the Cramér–Wold device reduces the bivariate `randPairLaw` claim to a scalar
-  -- linear combination, and the weighted i.i.d. CLT `weighted_iid_clt` supplies the scalar
-  -- limit. The weight moments — `Var` of the weight average and the cross-permutation
-  -- covariance giving asymptotic independence — are `HypergeometricMoments.var_mean_linear_le`
-  -- and `HypergeometricMoments.cov_weight`.
-  -- STATUS (re-derived this session, wave 4; verdict unchanged, but now *isolated*).
-  -- Re-checked against the repository and Mathlib v4.29.1: there is no combinatorial central
-  -- limit theorem, no Stein/exchangeable-pairs machinery, and `ForMathlib/HypergeometricMoments`
-  -- stops at the first two moments (`expect_weight`, `expect_weight_pair`, `cov_weight`,
-  -- `var_linear`, `var_mean_linear_le`) — exactly the inputs Hoeffding's condition consumes, but
-  -- not the theorem itself. The sign-change engine provably does not cover this case: what makes
-  -- `charFun_randPairLaw_signSum` exact at every finite `n` is that averaging `exp(i(sa+s'b))`
-  -- over the four sign pairs factorizes across coordinates; the permutation weights are
-  -- sampling-**without**-replacement indicators, so the coordinates are dependent and the
-  -- characteristic function does not become an `n`-th power.
-  -- What changed this session: this is now the *only* open statement in the two-sample
-  -- studentized chain. `Studentized.weakConverges_studentizedTwoSample` is closed axiom-clean
-  -- (over `weakConverges_twoSampleMeanDiff` below, the new `tendsto_pi_real_lln`, and the
-  -- varying-base Slutsky transfer), and `Studentized.randDist_studentized_tendstoInProb` and
-  -- `Studentized.studentizedPermTest_asymptotic_level` reduce to this one theorem plus bounded,
-  -- self-contained hypergeometric work spelled out in the note there. The two varying-exponent
-  -- bricks written for the unconditional companion (`tendsto_one_add_pow_of_tendsto_nat_mul`,
-  -- `tendsto_charFun_pow`) remain exactly the shape a Lindeberg-style proof of the conditional
-  -- characteristic function would need, so they are reusable here rather than one-off.
-  sorry
+  -- The asymptotic independence of the two permutations is not proved here: the converse
+  -- engine `weakConverges_randPairLaw_of_randDist_tendstoInProb` derives the product limit
+  -- from the scalar convergence in probability of `randDist` alone. So the whole statement
+  -- reduces to `randDist_twoSample_tendstoInProb_core` above.
+  exact weakConverges_randPairLaw_of_randDist_tendstoInProb
+    (G := fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (fun k => twoSampleMeanDiff (m k) (n k))
+    (gaussianReal 0 (⟨τ ^ 2, sq_nonneg τ⟩ : ℝ≥0))
+    (fun k => measurable_twoSampleMeanDiff (m k) (n k))
+    (fun k g => measurable_perm_smul _ g)
+    (fun u _ => randDist_twoSample_tendstoInProb_core PY PZ m n hm hn hratio hlam hYL2 hZL2
+      hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hτpos hτ u)
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** -/
 theorem randDist_twoSample_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
