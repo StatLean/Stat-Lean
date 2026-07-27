@@ -155,12 +155,67 @@ theorem lipschitz_deriv_steinSolution {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
 
 /-! ### A second-order Taylor bound from a Lipschitz derivative -/
 
+/-- One half of Taylor's theorem with a Lipschitz derivative: the auxiliary function
+`u ↦ f u - f x - (u - x) f' x - M (u - x)²/2` has a derivative of the sign that makes it
+decrease away from `x` in both directions, hence stays below its value `0` at `x`. -/
+private lemma sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt f (f' u) u) {M : ℝ}
+    (hlip : ∀ u v, |f' u - f' v| ≤ M * |u - v|) (x y : ℝ) :
+    f y - f x - (y - x) * f' x ≤ M * (y - x) ^ 2 / 2 := by
+  set F : ℝ → ℝ := fun u => f u - f x - (u - x) * f' x - M * (u - x) ^ 2 / 2 with hFdef
+  have hFd : ∀ u, HasDerivAt F (f' u - f' x - M * (u - x)) u := by
+    intro u
+    have h1 : HasDerivAt (fun v : ℝ => f v - f x) (f' u) u := (hf u).sub_const _
+    have h2 : HasDerivAt (fun v : ℝ => (v - x) * f' x) (f' x) u := by
+      simpa using ((hasDerivAt_id u).sub_const x).mul_const (f' x)
+    have h3 : HasDerivAt (fun v : ℝ => M * (v - x) ^ 2 / 2) (M * (u - x)) u := by
+      have hp : HasDerivAt (fun v : ℝ => (v - x) ^ 2) (2 * (u - x)) u := by
+        simpa using ((hasDerivAt_id u).sub_const x).pow 2
+      have := (hp.const_mul M).div_const 2
+      convert this using 1
+      ring
+    simpa using (h1.sub h2).sub h3
+  have hFdiff : Differentiable ℝ F := fun u => (hFd u).differentiableAt
+  have hderiv : ∀ u, deriv F u = f' u - f' x - M * (u - x) := fun u => (hFd u).deriv
+  have hFx : F x = 0 := by simp [hFdef]
+  have hFy : F y ≤ 0 := by
+    rcases le_total x y with hxy | hxy
+    · have hanti : AntitoneOn F (Ici x) := by
+        refine antitoneOn_of_deriv_nonpos (convex_Ici x) hFdiff.continuous.continuousOn
+          hFdiff.differentiableOn fun u hu => ?_
+        rw [interior_Ici] at hu
+        have hux : (0 : ℝ) ≤ u - x := by simp only [mem_Ioi] at hu; linarith
+        have hb := hlip u x
+        rw [abs_of_nonneg hux] at hb
+        have := (le_abs_self (f' u - f' x)).trans hb
+        rw [hderiv u]; linarith
+      have := hanti left_mem_Ici (mem_Ici.2 hxy) hxy
+      linarith [hFx]
+    · have hmono : MonotoneOn F (Iic x) := by
+        refine monotoneOn_of_deriv_nonneg (convex_Iic x) hFdiff.continuous.continuousOn
+          hFdiff.differentiableOn fun u hu => ?_
+        rw [interior_Iic] at hu
+        have hux : (0 : ℝ) ≤ x - u := by simp only [mem_Iio] at hu; linarith
+        have hb := hlip x u
+        rw [abs_of_nonneg hux] at hb
+        have := (le_abs_self (f' x - f' u)).trans hb
+        rw [hderiv u]; linarith
+      have := hmono (mem_Iic.2 hxy) right_mem_Iic hxy
+      linarith [hFx]
+  simp only [hFdef] at hFy
+  linarith
+
 /-- **Taylor's theorem with a Lipschitz derivative.** If `f` is differentiable with derivative
 `f'` and `f'` is `M`-Lipschitz, then `|f y - f x - (y - x) f' x| ≤ M (y - x)² / 2`. -/
 theorem abs_sub_sub_mul_deriv_le {f f' : ℝ → ℝ} (hf : ∀ u, HasDerivAt f (f' u) u) {M : ℝ}
     (hM : 0 ≤ M) (hlip : ∀ u v, |f' u - f' v| ≤ M * |u - v|) (x y : ℝ) :
     |f y - f x - (y - x) * f' x| ≤ M * (y - x) ^ 2 / 2 := by
-  sorry
+  have hup := sub_sub_mul_deriv_le hf hlip x y
+  have hdn := sub_sub_mul_deriv_le (f := fun u => -f u) (f' := fun u => -f' u)
+    (fun u => (hf u).neg)
+    (fun u v => by rw [show -f' u - -f' v = -(f' u - f' v) by ring, abs_neg]; exact hlip u v) x y
+  simp only at hup hdn
+  rw [abs_le]
+  exact ⟨by linarith, by linarith⟩
 
 /-! ### Exchangeable pairs on a finite space
 
@@ -206,7 +261,27 @@ theorem sum_stein_pair {W : Ω → ℝ} {W' : Ω → K → ℝ} {lam : ℝ}
     (hlin : ∀ ω, ∑ k, (W' ω k - W ω) = -lam * (Fintype.card K : ℝ) * W ω) (f : ℝ → ℝ) :
     2 * lam * (Fintype.card K : ℝ) * ∑ ω, W ω * f (W ω)
       = ∑ ω, ∑ k, (W' ω k - W ω) * (f (W' ω k) - f (W ω)) := by
-  sorry
+  -- the antisymmetric choice `F x y = (y - x)(f y + f x)` has vanishing total sum
+  have hanti : ∑ ω, ∑ k, (W' ω k - W ω) * (f (W' ω k) + f (W ω)) = 0 :=
+    sum_eq_zero_of_exchangeable hexch (fun x y => (y - x) * (f y + f x)) fun x y => by ring
+  -- split `f(W') + f(W) = (f(W') - f(W)) + 2 f(W)` and use the linearity condition
+  have hsplit : ∀ ω, ∑ k, (W' ω k - W ω) * (f (W' ω k) + f (W ω))
+      = (∑ k, (W' ω k - W ω) * (f (W' ω k) - f (W ω)))
+        + 2 * f (W ω) * ∑ k, (W' ω k - W ω) := by
+    intro ω
+    rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun k _ => by ring
+  have key : ∑ ω, ((∑ k, (W' ω k - W ω) * (f (W' ω k) - f (W ω)))
+      + 2 * f (W ω) * (-lam * (Fintype.card K : ℝ) * W ω)) = 0 := by
+    rw [← hanti]
+    exact Finset.sum_congr rfl fun ω _ => by rw [hsplit ω, hlin ω]
+  rw [Finset.sum_add_distrib] at key
+  have h2 : ∑ ω, 2 * f (W ω) * (-lam * (Fintype.card K : ℝ) * W ω)
+      = -(2 * lam * (Fintype.card K : ℝ) * ∑ ω, W ω * f (W ω)) := by
+    rw [Finset.mul_sum, ← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun ω _ => by ring
+  rw [h2] at key
+  linarith
 
 /-- **The abstract exchangeable-pair bound.** Let `(W, W')` be an exchangeable pair on the
 finite space `Ω × K` with `𝔼[W' − W ∣ Ω] = -λ W`, and let `f` solve the Stein equation for the
@@ -231,7 +306,102 @@ theorem abs_avg_sub_le [Nonempty Ω] [Nonempty K] {W : Ω → ℝ} {W' : Ω → 
             ∑ ω, |1 - (2 * lam)⁻¹ * condSqIncrement W W' ω|)
         + (4 * lam)⁻¹ * B₂ * ((Fintype.card Ω : ℝ)⁻¹ * (Fintype.card K : ℝ)⁻¹ *
             ∑ ω, ∑ k, |W' ω k - W ω| ^ 3) := by
-  sorry
+  classical
+  have hn0 : (0 : ℝ) < (Fintype.card Ω : ℝ) := by exact_mod_cast Fintype.card_pos
+  have hk0 : (0 : ℝ) < (Fintype.card K : ℝ) := by exact_mod_cast Fintype.card_pos
+  -- the Taylor remainder of `f` along the increment
+  set R : Ω → K → ℝ :=
+    fun ω k => f (W' ω k) - f (W ω) - (W' ω k - W ω) * f' (W ω) with hRdef
+  have hRb : ∀ ω k, |R ω k| ≤ B₂ * (W' ω k - W ω) ^ 2 / 2 := fun ω k =>
+    abs_sub_sub_mul_deriv_le hf hB₂ hflip (W ω) (W' ω k)
+  -- expand the exchangeable-pair identity to first order
+  have hper : ∀ ω, ∑ k, (W' ω k - W ω) * (f (W' ω k) - f (W ω))
+      = f' (W ω) * (∑ k, (W' ω k - W ω) ^ 2) + ∑ k, (W' ω k - W ω) * R ω k := by
+    intro ω
+    rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    simp only [hRdef]
+    ring
+  have hsum : ∑ ω, ∑ k, (W' ω k - W ω) * (f (W' ω k) - f (W ω))
+      = (∑ ω, f' (W ω) * (∑ k, (W' ω k - W ω) ^ 2))
+        + ∑ ω, ∑ k, (W' ω k - W ω) * R ω k := by
+    rw [← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun ω _ => hper ω
+  have hpair := (sum_stein_pair hexch hlin f).trans hsum
+  set n : ℝ := (Fintype.card Ω : ℝ) with hndef
+  set κ : ℝ := (Fintype.card K : ℝ) with hκdef
+  have hpos : (0 : ℝ) < 2 * lam * κ := mul_pos (mul_pos (by norm_num) hlam) hk0
+  -- solve for the Stein expectation
+  have e2 : ∑ ω, W ω * f (W ω)
+      = (2 * lam * κ)⁻¹ * ((∑ ω, f' (W ω) * (∑ k, (W' ω k - W ω) ^ 2))
+          + ∑ ω, ∑ k, (W' ω k - W ω) * R ω k) := by
+    have hc : (2 * lam * κ)⁻¹ * (2 * lam * κ * ∑ ω, W ω * f (W ω))
+        = (2 * lam * κ)⁻¹ * ((∑ ω, f' (W ω) * (∑ k, (W' ω k - W ω) ^ 2))
+            + ∑ ω, ∑ k, (W' ω k - W ω) * R ω k) := by rw [hpair]
+    rwa [← mul_assoc, inv_mul_cancel₀ hpos.ne', one_mul] at hc
+  have e3 : ∑ ω, f' (W ω) * (1 - (2 * lam)⁻¹ * condSqIncrement W W' ω)
+      = (∑ ω, f' (W ω))
+        - (2 * lam * κ)⁻¹ * ∑ ω, f' (W ω) * (∑ k, (W' ω k - W ω) ^ 2) := by
+    rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun ω _ => ?_
+    rw [condSqIncrement]
+    field_simp
+    ring
+  have e1 : ∑ ω, (h (W ω) - c) = (∑ ω, f' (W ω)) - ∑ ω, W ω * f (W ω) := by
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun ω _ => (hstein (W ω)).symm
+  have hmain : ∑ ω, (h (W ω) - c)
+      = (∑ ω, f' (W ω) * (1 - (2 * lam)⁻¹ * condSqIncrement W W' ω))
+        - (2 * lam * κ)⁻¹ * ∑ ω, ∑ k, (W' ω k - W ω) * R ω k := by
+    rw [e1, e2, e3]; ring
+  -- the two error terms
+  have hA : |∑ ω, f' (W ω) * (1 - (2 * lam)⁻¹ * condSqIncrement W W' ω)|
+      ≤ B₁ * ∑ ω, |1 - (2 * lam)⁻¹ * condSqIncrement W W' ω| := by
+    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_le_sum fun ω _ => ?_
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_right (hfb (W ω)) (abs_nonneg _)
+  have hT : |∑ ω, ∑ k, (W' ω k - W ω) * R ω k|
+      ≤ B₂ / 2 * ∑ ω, ∑ k, |W' ω k - W ω| ^ 3 := by
+    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_le_sum fun ω _ => ?_
+    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
+    rw [Finset.mul_sum]
+    refine Finset.sum_le_sum fun k _ => ?_
+    rw [abs_mul]
+    have hsq : (W' ω k - W ω) ^ 2 = |W' ω k - W ω| ^ 2 := (sq_abs _).symm
+    have hb := hRb ω k
+    rw [hsq] at hb
+    calc |W' ω k - W ω| * |R ω k|
+        ≤ |W' ω k - W ω| * (B₂ * |W' ω k - W ω| ^ 2 / 2) :=
+          mul_le_mul_of_nonneg_left hb (abs_nonneg _)
+      _ = B₂ / 2 * |W' ω k - W ω| ^ 3 := by ring
+  -- assemble
+  have hEq : n⁻¹ * (∑ ω, h (W ω)) - c = n⁻¹ * ∑ ω, (h (W ω) - c) := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← hndef]
+    field_simp
+  rw [hEq, hmain, abs_mul, abs_of_nonneg (inv_nonneg.2 hn0.le)]
+  set A : ℝ := ∑ ω, f' (W ω) * (1 - (2 * lam)⁻¹ * condSqIncrement W W' ω) with hAdef
+  set T : ℝ := ∑ ω, ∑ k, (W' ω k - W ω) * R ω k with hTdef
+  set P : ℝ := ∑ ω, |1 - (2 * lam)⁻¹ * condSqIncrement W W' ω| with hPdef
+  set Q : ℝ := ∑ ω, ∑ k, |W' ω k - W ω| ^ 3 with hQdef
+  have htri : |A - (2 * lam * κ)⁻¹ * T| ≤ |A| + (2 * lam * κ)⁻¹ * |T| := by
+    have h1 := abs_sub_le A 0 ((2 * lam * κ)⁻¹ * T)
+    rwa [sub_zero, zero_sub, abs_neg, abs_mul,
+      abs_of_nonneg (inv_nonneg.2 hpos.le)] at h1
+  have hTb : (2 * lam * κ)⁻¹ * |T| ≤ (2 * lam * κ)⁻¹ * (B₂ / 2 * Q) :=
+    mul_le_mul_of_nonneg_left hT (inv_nonneg.2 hpos.le)
+  have hfin : n⁻¹ * (B₁ * P + (2 * lam * κ)⁻¹ * (B₂ / 2 * Q))
+      = B₁ * (n⁻¹ * P) + (4 * lam)⁻¹ * B₂ * (n⁻¹ * κ⁻¹ * Q) := by
+    field_simp
+    ring
+  calc n⁻¹ * |A - (2 * lam * κ)⁻¹ * T|
+      ≤ n⁻¹ * (B₁ * P + (2 * lam * κ)⁻¹ * (B₂ / 2 * Q)) := by
+        refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hn0.le)
+        linarith
+    _ = _ := hfin
 
 end ExchangeablePair
 
@@ -245,7 +415,20 @@ scale `ε` and letting `ε → 0` suffices — no rate is lost that matters. -/
 /-- The ramp of width `δ` is `δ⁻¹`-Lipschitz. -/
 theorem abs_ramp_sub_ramp_le {u δ : ℝ} (hδ : 0 < δ) (x y : ℝ) :
     |ramp u δ x - ramp u δ y| ≤ δ⁻¹ * |x - y| := by
-  sorry
+  have key : ∀ a b : ℝ, |min 1 (max 0 a) - min 1 (max 0 b)| ≤ |a - b| := by
+    intro a b
+    refine (abs_min_sub_min_le_max 1 (max 0 a) 1 (max 0 b)).trans ?_
+    rw [sub_self, abs_zero]
+    refine max_le (abs_nonneg _) ?_
+    have h := abs_max_sub_max_le_abs a b 0
+    rwa [max_comm a 0, max_comm b 0] at h
+  have h := key ((u + δ - x) / δ) ((u + δ - y) / δ)
+  have heq : (u + δ - x) / δ - (u + δ - y) / δ = (y - x) / δ := by
+    field_simp
+    ring
+  rw [heq, abs_div, abs_of_pos hδ, abs_sub_comm y x] at h
+  rw [show δ⁻¹ * |x - y| = |x - y| / δ from (div_eq_inv_mul _ _).symm]
+  simpa only [ramp] using h
 
 /-- **The squeeze against a continuous limit c.d.f.** If, for every `ε > 0`, the quantity
 `G i` eventually lies between `Φ(t - ε) - ε` and `Φ(t + ε) + ε`, and `Φ` is continuous at `t`,
@@ -255,6 +438,24 @@ theorem tendsto_of_squeeze_continuousAt {ι : Type*} {l : Filter ι} {G : ι →
     {t : ℝ} (hΦ : ContinuousAt Φ t)
     (hb : ∀ ε > (0 : ℝ), ∀ᶠ i in l, Φ (t - ε) - ε ≤ G i ∧ G i ≤ Φ (t + ε) + ε) :
     Tendsto G l (𝓝 (Φ t)) := by
-  sorry
+  rw [Metric.tendsto_nhds]
+  intro η hη
+  obtain ⟨δ, hδ, hδΦ⟩ := Metric.tendsto_nhds_nhds.1 hΦ (η / 2) (by linarith)
+  set ε : ℝ := min (δ / 2) (η / 4) with hεdef
+  have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
+  have hεδ : ε ≤ δ / 2 := min_le_left _ _
+  have hεη : ε ≤ η / 4 := min_le_right _ _
+  have hd1 : dist (Φ (t - ε)) (Φ t) < η / 2 := by
+    refine hδΦ ?_
+    rw [Real.dist_eq, show t - ε - t = -ε by ring, abs_neg, abs_of_pos hε0]
+    linarith
+  have hd2 : dist (Φ (t + ε)) (Φ t) < η / 2 := by
+    refine hδΦ ?_
+    rw [Real.dist_eq, show t + ε - t = ε by ring, abs_of_pos hε0]
+    linarith
+  rw [Real.dist_eq, abs_lt] at hd1 hd2
+  filter_upwards [hb ε hε0] with i hi
+  rw [Real.dist_eq, abs_lt]
+  exact ⟨by linarith [hi.1, hd1.1], by linarith [hi.2, hd2.2]⟩
 
 end StatLean.HypothesisTesting
