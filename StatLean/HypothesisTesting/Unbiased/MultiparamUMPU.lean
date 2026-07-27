@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.Unbiased.ConditionalExpFamily
 import StatLean.HypothesisTesting.Unbiased.PowerContinuity
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
+import StatLean.PointEstimation.Completeness.Defs
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 
 /-!
@@ -578,15 +579,16 @@ private lemma integral_expTilt (Q : Measure ℝ) {k : ℝ} (hk : 0 ≤ k) (c : �
   integral_withDensity_ofReal_mul Q ((measurable_const.mul measurable_id).exp.const_mul k)
     (fun _ => by positivity) g
 
-/-- A tilt with a negative factor is the zero measure, hence never a probability measure. -/
-private lemma expTilt_factor_nonneg {Q : Measure ℝ} {k c : ℝ}
-    (hprob : IsProbabilityMeasure (expTilt Q k c)) : 0 ≤ k := by
+/-- A tilt with a nonpositive factor is the zero measure, hence never a probability
+measure. -/
+private lemma expTilt_factor_pos {Q : Measure ℝ} {k c : ℝ}
+    (hprob : IsProbabilityMeasure (expTilt Q k c)) : 0 < k := by
   by_contra hcon
   push Not at hcon
   have hdens : (fun u : ℝ => ENNReal.ofReal (k * Real.exp (c * u))) = 0 := by
     funext u
     simp only [Pi.zero_apply, ENNReal.ofReal_eq_zero]
-    have h := mul_nonneg (neg_nonneg.mpr hcon.le) (Real.exp_pos (c * u)).le
+    have h := mul_nonneg (neg_nonneg.mpr hcon) (Real.exp_pos (c * u)).le
     rw [neg_mul] at h
     linarith
   have h1 : (expTilt Q k c) Set.univ = 1 := hprob.measure_univ
@@ -947,6 +949,163 @@ private lemma exists_mem_fst_eq (hΩ : Convex ℝ Ω) {θ₀ : ℝ}
   field_simp
   ring
 
+
+/-! ### Conditional bridge -/
+
+/-- The law of `T` is a probability measure. -/
+private lemma isProbabilityMeasure_statLaw [∀ p, IsProbabilityMeasure (P p)]
+    (hT : Measurable T) (p : ℝ × Ξ) : IsProbabilityMeasure ((P p).map T) :=
+  Measure.isProbabilityMeasure_map hT.aemeasurable
+
+/-- The conditional power is a measurable function of the conditioning variable. -/
+private lemma measurable_condPower (hU : Measurable U) (hT : Measurable T)
+    {φ : ℝ × Ξ → ℝ} (hφ : Measurable φ) (μ : Measure 𝓧) [IsFiniteMeasure μ] :
+    Measurable fun t => ∫ u, φ (u, t) ∂(condDistrib U T μ t) := by
+  have h : StronglyMeasurable fun q : Ξ × ℝ => φ (q.2, q.1) :=
+    (hφ.comp (measurable_snd.prodMk measurable_fst)).stronglyMeasurable
+  exact (h.integral_kernel_prod_right' (κ := condDistrib U T μ)).measurable
+
+/-- The conditional power of a `[-1,1]`-valued test lies in `[-1,1]`. -/
+private lemma abs_condPower_le (μ : Measure 𝓧) [IsFiniteMeasure μ] {φ : ℝ × Ξ → ℝ}
+    (hU : Measurable U) (hT : Measurable T) (hφb : ∀ z, |φ z| ≤ 1) (t : Ξ) :
+    |∫ u, φ (u, t) ∂(condDistrib U T μ t)| ≤ 1 := by
+  haveI : IsProbabilityMeasure (condDistrib U T μ t) := inferInstance
+  have h := norm_integral_le_of_norm_le_const (C := (1 : ℝ))
+    (μ := condDistrib U T μ t) (f := fun u => φ (u, t))
+    (Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hφb _)
+  rw [Real.norm_eq_abs, measureReal_def, measure_univ, ENNReal.toReal_one, mul_one] at h
+  exact h
+
+/-- **The power is the average of the conditional powers.** -/
+private lemma integral_comp_eq_integral_condPower [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) {φ : ℝ × Ξ → ℝ} (hφ : Measurable φ)
+    (hφb : ∀ z, |φ z| ≤ 1) (p : ℝ × Ξ) :
+    ∫ x, φ (U x, T x) ∂(P p)
+      = ∫ t, (∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ∂((P p).map T) :=
+  integral_eq_integral_condDistrib hU hT hφ
+    (Integrable.mono' (integrable_const (1 : ℝ))
+      ((hφ.comp (hU.prodMk hT)).aestronglyMeasurable)
+      (Filter.Eventually.of_forall fun x => by rw [Real.norm_eq_abs]; exact hφb _))
+
+/-- **The conditional laws are exponential tilts of one another.** For `(P p).map T`-almost
+every `t`, the conditional law of `U` given `T = t` at `p` is the `(p.1 − p₀.1)`-tilt of the
+conditional law at the reference parameter `p₀`. -/
+private lemma ae_condDistrib_expTilt [BorelSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p₀ p : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp : p ∈ Ω) :
+    ∀ᵐ t ∂((P p).map T), ∃ k : ℝ, 0 ≤ k ∧
+      condDistrib U T (P p) t = expTilt (condDistrib U T (P p₀) t) k (p.1 - p₀.1) := by
+  obtain ⟨νt, Ct, hct⟩ := condDistrib_expFamily_of_isCanonicalUT hU hT hUT
+  have h2 : ∀ᵐ t ∂((P p).map T), condDistrib U T (P p₀) t
+      = (νt t).withDensity fun u => ENNReal.ofReal (Ct t p₀.1 * Real.exp (p₀.1 * u)) :=
+    Filter.Eventually.filter_mono (statLaw_ac hU hT hUT hp hp₀).ae_le (hct p₀ hp₀)
+  filter_upwards [hct p hp, h2] with t ht1 ht2
+  haveI hpr0 : IsProbabilityMeasure (condDistrib U T (P p₀) t) := inferInstance
+  haveI hpr : IsProbabilityMeasure (condDistrib U T (P p) t) := inferInstance
+  have hapos : 0 < Ct t p₀.1 := by
+    refine expTilt_factor_pos (Q := νt t) (k := Ct t p₀.1) (c := p₀.1) ?_
+    rw [expTilt, ← ht2]; exact hpr0
+  have hbpos : 0 < Ct t p.1 := by
+    refine expTilt_factor_pos (Q := νt t) (k := Ct t p.1) (c := p.1) ?_
+    rw [expTilt, ← ht1]; exact hpr
+  refine ⟨Ct t p.1 / Ct t p₀.1, (div_pos hbpos hapos).le, ?_⟩
+  rw [ht1, ht2]
+  exact withDensity_line_tilt (νt t) hapos
+
+/-- **Similarity at a boundary parameter.** A critical function of `(U, T)` whose power is at
+most `α` at `p₀` and at least `α` at every interior point of a segment leaving `p₀` inside
+`Ω` has power exactly `α` at `p₀`. -/
+private lemma integral_comp_eq_of_le_of_segment [BorelSpace Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ : Convex ℝ Ω) {p₀ q : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hq : q ∈ Ω)
+    {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1) {α : ℝ}
+    (hle : ∫ x, ψ (U x, T x) ∂(P p₀) ≤ α)
+    (hge : ∀ s : ℝ, 0 < s → s ≤ 1 →
+      α ≤ ∫ x, ψ (U x, T x) ∂(P ((1 - s) • p₀ + s • q))) :
+    ∫ x, ψ (U x, T x) ∂(P p₀) = α := by
+  have hpos : ∀ n : ℕ, (0 : ℝ) < 1 / ((n : ℝ) + 1) := fun n => by positivity
+  have h01 : ∀ n : ℕ, (1 : ℝ) / ((n : ℝ) + 1) ∈ Set.Icc (0 : ℝ) 1 := by
+    intro n
+    refine ⟨(hpos n).le, ?_⟩
+    rw [div_le_one (by positivity)]
+    have hn : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+    linarith
+  have hto0 : Filter.Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) Filter.atTop (nhds 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hlim := tendsto_integral_canonical_segment hU hT hUT hΩ hp₀ hq hψm hψb h01 hto0
+  have hge' : α ≤ ∫ x, ψ (U x, T x) ∂(P p₀) :=
+    ge_of_tendsto' hlim fun n => hge _ (hpos n) (h01 n).2
+  linarith
+
+/-- **⚠ LIFTED — the single remaining gap of this file.**
+
+The laws of `T` over a boundary surface `ω = {p ∈ Ω | p.1 = θ₀}` are boundedly complete.
+
+This is the Lehmann–Scheffé input of `TSH4 §4.4 Thm 4.4.1`, and it is what the source derives
+from convexity of `Ω` together with the non-degeneracy `Submodule.span ℝ Ω = ⊤`: those two,
+with parameters of `Ω` strictly on both sides of `θ₀`, force the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` to
+have nonempty interior in `Ξ` (a convex set spanning a finite-dimensional space has nonempty
+interior, and an interior point of `Ω` can be pushed onto the surface along a segment); on
+that slice the laws of `T` form a canonical exponential family in `ϑ` with a `ϑ`-free base
+measure, so Laplace-transform uniqueness
+(`PointEstimation.isCompleteStat_of_interior_nonempty`) gives completeness.
+
+What is missing is only that last identification, which in the repository is available for
+`EuclideanSpace ℝ (Fin s)` and not for an abstract finite-dimensional inner-product space
+`Ξ`. `[FiniteDimensional ℝ Ξ]` is a **flagged amendment**: without it the statement is false
+(an infinite-dimensional convex set can span without having any interior point). -/
+private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_span : Submodule.span ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    PointEstimation.IsBoundedlyCompleteFamily
+      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T :=
+  sorry
+
+/-- **Similar ⇒ Neyman structure.** A critical function of `(U, T)` which is similar of size
+`α` on the whole boundary surface `θ = θ₀` has conditional size `α` for almost every `t`. -/
+private lemma ae_condPower_eq_of_similar [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_span : Submodule.span ℝ Ω = ⊤) {θ₀ α : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
+    {p₀ : ℝ × Ξ} (hp₀ : p₀ ∈ Ω) (hp₀θ : p₀.1 = θ₀)
+    {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1)
+    (hsim : ∀ p ∈ Ω, p.1 = θ₀ → ∫ x, ψ (U x, T x) ∂(P p) = α) :
+    ∀ᵐ t ∂((P p₀).map T), ∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t) = α := by
+  set f : Ξ → ℝ := fun t => (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t)) - α with hf
+  have hfm : Measurable f := (measurable_condPower hU hT hψm (P p₀)).sub measurable_const
+  have hfb : ∃ c, ∀ t, |f t| ≤ c := by
+    refine ⟨1 + |α|, fun t => ?_⟩
+    have h1 := abs_condPower_le (P p₀) hU hT hψb t
+    have h2 : |f t| ≤ |∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t)| + |α| := abs_sub _ _
+    linarith
+  have hzero : ∀ p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀},
+      ∫ t, f t ∂((P (p : ℝ × Ξ)).map T) = 0 := by
+    rintro ⟨p, hpΩ, hpθ⟩
+    haveI := isProbabilityMeasure_statLaw (P := P) hT p
+    have hcd : ∀ᵐ t ∂((P p).map T),
+        (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t))
+          = ∫ u, ψ (u, t) ∂(condDistrib U T (P p) t) := by
+      filter_upwards [condDistrib_eq_of_fst_eq hU hT hUT hpΩ hp₀ (by rw [hpθ, hp₀θ])]
+        with t ht
+      rw [ht]
+    have hint : Integrable (fun t => ∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t))
+        ((P p).map T) :=
+      Integrable.mono' (integrable_const (1 : ℝ))
+        (measurable_condPower hU hT hψm (P p₀)).aestronglyMeasurable
+        (Filter.Eventually.of_forall fun t => by
+          rw [Real.norm_eq_abs]; exact abs_condPower_le (P p₀) hU hT hψb t)
+    rw [hf, integral_sub hint (integrable_const α), integral_congr_ae hcd,
+      ← integral_comp_eq_integral_condPower hU hT hψm hψb p, hsim p hpΩ hpθ]
+    simp
+  have hae := boundedlyComplete_boundary hU hT hUT hΩ_convex hΩ_span (θ₀ := θ₀) hΩ_lt hΩ_gt
+    f hfm hfb hzero ⟨p₀, hp₀, hp₀θ⟩
+  filter_upwards [hae] with t ht
+  have hz : (∫ u, ψ (u, t) ∂(condDistrib U T (P p₀) t)) - α = 0 := ht
+  linarith
 end CanonicalGlobal
 
 /-! ## The four UMP unbiased tests -/
