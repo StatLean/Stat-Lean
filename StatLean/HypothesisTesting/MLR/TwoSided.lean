@@ -15,9 +15,9 @@ with the four constants pinned down by the two size conditions
 
 Contents:
 * `twoSidedTest T C₁ C₂ γ₁ γ₂` — the test displayed above;
-* `isUMP_twoSided` — existence of the four constants and uniform optimality;
-* `power_min_twoSided` — outside `[θ₁, θ₂]` the same test *minimizes* the rejection
+* `power_min_twoSided` — outside `[θ₁, θ₂]` the test *minimizes* the rejection
   probability among all tests meeting the two size conditions;
+* `isUMP_twoSided` — existence of the four constants and uniform optimality;
 * `power_lt_of_twoSided_right` — comparison of two such tests with a common size at `θ₁`:
   shifting the rejection interval to the right raises the power above `θ₁` and lowers it
   below;
@@ -33,7 +33,24 @@ C₂` in a one-parameter exponential family) and Lemma 3.7.1 (the comparison/uni
 * The rejection region is an interval of the natural statistic, so the test cannot be
   obtained from a single likelihood-ratio comparison; the two size conditions are handled
   by the two-constraint form of the generalized fundamental lemma, whose multipliers
-  produce the two boundaries.
+  produce the two boundaries. Only the *sufficiency* halves of that lemma are used
+  (`isMax_of_multiplier_form` for the equality-constrained competitor class of
+  `power_min_twoSided`, `isMax_le_of_multiplier_form_nonneg` for the inequality-constrained
+  class of the UMP clause): the multipliers are written down explicitly by
+  `exists_exp_pair_sign` / `exists_exp_pair_sign_opp` rather than produced by a supporting
+  hyperplane, so no inner-point hypothesis on the attainable-moment set is needed.
+* The identification of the multiplier shape with an interval of the statistic is the
+  two-crossing property of `A e^{b₁t} + B e^{b₂t}` against the constant `1`, and it is
+  proved without calculus: at a parameter *inside* `(θ₁, θ₂)` the two exponents have
+  opposite signs and both interpolation coefficients are positive, so the function is
+  strictly convex outright; *outside* `[θ₁, θ₂]` the exponents have the same sign and one
+  rescaling by `e^{-b_jt}` turns `1 - S` into a positive combination of two exponentials
+  plus a constant, again strictly convex. A strictly convex function with two zeros has a
+  forced sign pattern (`sign_of_strictConvexOn_two_zeros`).
+* Two of the five statements needed a repair; each is documented on the statement itself,
+  with a verified counterexample to the printed form: `power_lt_of_twoSided_right` (`hne`,
+  non-degeneracy of the pair of tests) is FALSE as printed, and `isUMP_twoSided` retains a
+  single named gap — the simultaneous solution of the two size equations.
 * The order of branches in `twoSidedTest` puts the two boundary cases first, so the
   definition is unambiguous even for degenerate constants: at `C₁ = C₂` the value is `γ₁`,
   and for `C₂ ≤ C₁` the test rejects nowhere except possibly at the two boundary points.
@@ -715,6 +732,65 @@ private lemma exists_exp_pair_sign {b₁ b₂ C₁ C₂ : ℝ} (hb : b₁ < b₂
         ring
   exact ⟨A, B, hv₁, hv₂, hmain.1, hmain.2.1, hmain.2.2⟩
 
+/-- **Two exponentials of opposite sign crossing a constant twice.** For `b₁ < 0 < b₂` the
+same interpolation coefficients are both *positive*, so `S(t) = A e^{b₁t} + B e^{b₂t}` is
+itself strictly convex: it equals `1` at `C₁` and `C₂`, is strictly below `1` between them
+and strictly above outside. This is the configuration at a parameter value *inside*
+`(θ₁, θ₂)`, and the positivity of `A, B` is what supplies the nonnegative multipliers. -/
+private lemma exists_exp_pair_sign_opp {b₁ b₂ C₁ C₂ : ℝ} (hb₁ : b₁ < 0) (hb₂ : 0 < b₂)
+    (hC : C₁ < C₂) :
+    ∃ A B : ℝ, 0 < A ∧ 0 < B ∧
+      A * Real.exp (b₁ * C₁) + B * Real.exp (b₂ * C₁) = 1 ∧
+      A * Real.exp (b₁ * C₂) + B * Real.exp (b₂ * C₂) = 1 ∧
+      (∀ t : ℝ, C₁ < t → t < C₂ → A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) < 1) ∧
+      (∀ t : ℝ, t < C₁ → 1 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)) ∧
+      (∀ t : ℝ, C₂ < t → 1 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t)) := by
+  have hb : b₁ < b₂ := hb₁.trans hb₂
+  have hΔ : 0 < Real.exp (b₁ * C₁) * Real.exp (b₂ * C₂)
+      - Real.exp (b₁ * C₂) * Real.exp (b₂ * C₁) := by
+    rw [← Real.exp_add, ← Real.exp_add, sub_pos, Real.exp_lt_exp]
+    nlinarith [mul_pos (sub_pos.mpr hb) (sub_pos.mpr hC)]
+  set Δ := Real.exp (b₁ * C₁) * Real.exp (b₂ * C₂)
+    - Real.exp (b₁ * C₂) * Real.exp (b₂ * C₁) with hΔdef
+  set A := (Real.exp (b₂ * C₂) - Real.exp (b₂ * C₁)) / Δ with hAdef
+  set B := (Real.exp (b₁ * C₁) - Real.exp (b₁ * C₂)) / Δ with hBdef
+  have hΔne : Δ ≠ 0 := ne_of_gt hΔ
+  have hApos : 0 < A := by
+    rw [hAdef]
+    refine div_pos ?_ hΔ
+    rw [sub_pos]
+    exact Real.exp_lt_exp.mpr (by nlinarith)
+  have hBpos : 0 < B := by
+    rw [hBdef]
+    refine div_pos ?_ hΔ
+    rw [sub_pos]
+    exact Real.exp_lt_exp.mpr (by nlinarith)
+  have hv₁ : A * Real.exp (b₁ * C₁) + B * Real.exp (b₂ * C₁) = 1 := by
+    rw [hAdef, hBdef, div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div,
+      div_eq_iff hΔne, one_mul, hΔdef]
+    ring
+  have hv₂ : A * Real.exp (b₁ * C₂) + B * Real.exp (b₂ * C₂) = 1 := by
+    rw [hAdef, hBdef, div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div,
+      div_eq_iff hΔne, one_mul, hΔdef]
+    ring
+  have hgc : StrictConvexOn ℝ Set.univ
+      fun t : ℝ => A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1) :=
+    strictConvexOn_two_exp hApos hBpos (ne_of_lt hb₁) (ne_of_gt hb₂)
+  have hg1 : (fun t : ℝ => A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1)) C₁ = 0 := by
+    change A * Real.exp (b₁ * C₁) + B * Real.exp (b₂ * C₁) + (-1) = 0
+    rw [hv₁]; ring
+  have hg2 : (fun t : ℝ => A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1)) C₂ = 0 := by
+    change A * Real.exp (b₁ * C₂) + B * Real.exp (b₂ * C₂) + (-1) = 0
+    rw [hv₂]; ring
+  obtain ⟨hin, hlo, hhi⟩ := sign_of_strictConvexOn_two_zeros hgc hC hg1 hg2
+  refine ⟨A, B, hApos, hBpos, hv₁, hv₂, fun t h1 h2 => ?_, fun t h => ?_, fun t h => ?_⟩
+  · have h' : A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1) < 0 := hin t h1 h2
+    linarith
+  · have h' : 0 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1) := hlo t h
+    linarith
+  · have h' : 0 < A * Real.exp (b₁ * t) + B * Real.exp (b₂ * t) + (-1) := hhi t h
+    linarith
+
 /-- The two-sided test is measurable when the statistic is. -/
 private lemma measurable_twoSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C₁ C₂ γ₁ γ₂ : ℝ) :
     Measurable (twoSidedTest T C₁ C₂ γ₁ γ₂) := by
@@ -723,56 +799,6 @@ private lemma measurable_twoSidedTest {T : 𝓧 → ℝ} (hT : Measurable T) (C�
     (Measurable.ite (measurableSet_eq_fun hT measurable_const) measurable_const
       (Measurable.ite ?_ measurable_const measurable_const))
   exact (measurableSet_lt measurable_const hT).inter (measurableSet_lt hT measurable_const)
-
-/-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
-parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
-`γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
-and is uniformly most powerful at level `α` for `H : θ ≤ θ₁ or θ₂ ≤ θ` against
-`K : θ₁ < θ < θ₂`. -/
-theorem isUMP_twoSided
-    -- USER-INPUT: the exponential family, with σ-finite reference measure
-    (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
-    -- USER-INPUT: the model, a family of probability measures on a real parameter
-    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
-    -- USER-INPUT: the parametrization, strictly increasing (the printed hypothesis on `Q`)
-    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap)
-    -- USER-INPUT: the model is the canonical family read through `ηmap`
-    (hrepr : IsCanonicalRepr P E ηmap)
-    -- USER-INPUT: every parameter value lies in the natural parameter set, so no member
-    -- degenerates to the junk zero measure
-    (hnat : ∀ θ, ηmap θ ∈ E.natSet)
-    -- USER-INPUT: the two null boundaries, in order
-    {θ₁ θ₂ : ℝ} (hθ : θ₁ < θ₂)
-    -- USER-INPUT: nondegenerate level
-    {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) :
-    ∃ C₁ C₂ γ₁ γ₂ : ℝ, C₁ < C₂ ∧ γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
-      power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α ∧
-      power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α ∧
-      IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
-        (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
-  -- OBSTRUCTION (re-derived; the previously recorded upstream blockers are largely obsolete).
-  -- ROADMAP (TSH4 Thm 3.7.1): apply the `m = 2` generalized fundamental lemma with
-  -- `f₁ = p_{θ₁}`, `f₂ = p_{θ₂}`, `f₃ = p_θ` for `θ ∈ (θ₁, θ₂)` and constraint vector
-  -- `c = (α, α)`. Upstream status is now:
-  --   • `exists_test_max_integral_of_constraints` — PROVEN (existence of a maximizer);
-  --   • `convex_isClosed_momentSet` — PROVEN (both halves);
-  --   • `exists_multipliers_of_max` — PROVEN (supporting hyperplane at the top of the fibre);
-  --   • `exists_test_with_prescribed_sizes` — still `sorry`, on a finite-dimensional duality
-  --     step (see its docstring).
-  -- Two gaps remain for THIS theorem, and neither is upstream:
-  --   (1) INNER-POINT. `exists_multipliers_of_max` needs `(α, α) ∈ interior (momentSet μ
-  --       ![p_{θ₁}, p_{θ₂}])` in `ℝ²`. That holds iff `p_{θ₁}, p_{θ₂}` are a.e. linearly
-  --       independent, which is true here (strictly increasing `η` in a nondegenerate
-  --       exponential family) but is not recorded anywhere and needs its own proof: from
-  --       independence one must still deduce that the moment map is locally open at `α·𝟙`.
-  --   (2) SHAPE-TO-INTERVAL. The multiplier shape `{p_θ > k₁p_{θ₁} + k₂p_{θ₂}}` must be
-  --       identified with an *interval* `C₁ < T < C₂` of the natural statistic. In canonical
-  --       form this is a strictly-convex-crossing statement for exponential sums —
-  --       `k₁e^{a₁t} + k₂e^{a₂t} < e^{a₃t}` on an interval and `>` outside it, for
-  --       `a₁ < a₃ < a₂` — with no Mathlib brick.
-  -- TODO: prove (1) as a moment-set openness lemma and (2) as an exponential two-crossing
-  -- lemma; the assembly is then `exists_multipliers_of_max` + `isMax_of_multiplier_form`.
-  sorry
 
 /-- **Minimum rejection probability outside the interval.** Among all tests whose size is
 exactly `α` at both `θ₁` and `θ₂`, the two-sided test minimizes the rejection probability
@@ -981,6 +1007,290 @@ theorem power_min_twoSided
     (hcocrit φ hφc) hcon hshape (fun x => 1 - ψ x) (hcocrit ψ hψ) hψcon
   rw [hflast, hcopow ψ hψ θ, hcopow φ hφc θ] at hmax
   linarith
+
+/-- **The two-sided test is uniformly most powerful once its two sizes are exactly `α`.**
+This is the whole of `isUMP_twoSided` except for the existence of the four constants: the
+level condition on `H : θ ≤ θ₁ or θ₂ ≤ θ` is `power_min_twoSided` compared against the
+constant test `α`, and optimality on `K = (θ₁, θ₂)` is the *nonnegative*-multiplier form of
+the generalized fundamental lemma, whose multipliers are the positive coefficients supplied
+by `exists_exp_pair_sign_opp` (inside `(θ₁, θ₂)` the two canonical exponents
+`bᵢ = η(θᵢ) − η(θ)` have opposite signs, which is exactly what makes both coefficients
+positive and the rejection region an interval). -/
+private lemma isUMP_twoSided_of_constants
+    (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap) (hrepr : IsCanonicalRepr P E ηmap)
+    (hnat : ∀ θ, ηmap θ ∈ E.natSet)
+    {θ₁ θ₂ α : ℝ} (hθ : θ₁ < θ₂)
+    {C₁ C₂ γ₁ γ₂ : ℝ} (hC : C₁ < C₂)
+    (hγ₁ : γ₁ ∈ Set.Icc (0 : ℝ) 1) (hγ₂ : γ₂ ∈ Set.Icc (0 : ℝ) 1)
+    (hsize₁ : power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α)
+    (hsize₂ : power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α) :
+    IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
+      (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
+  classical
+  set p : ℝ → 𝓧 → ℝ :=
+    fun ϑ x => Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ)) with hpdef
+  have hp : ∀ ϑ, HasDensity E.base (p ϑ) (P ϑ) := by
+    intro ϑ
+    refine ⟨((E.stat_meas.const_mul (ηmap ϑ)).sub_const _).exp,
+      fun x => (Real.exp_pos _).le, ?_⟩
+    rw [hrepr ϑ, E.P_eq_withDensity (hnat ϑ)]
+    refine withDensity_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [hpdef, ts_real_inner_mul]
+  have hppos : ∀ ϑ x, 0 < p ϑ x := fun ϑ x => Real.exp_pos _
+  set φ := twoSidedTest E.stat C₁ C₂ γ₁ γ₂ with hφdef
+  have hφc : IsCriticalFn φ := by
+    refine ⟨measurable_twoSidedTest E.stat_meas C₁ C₂ γ₁ γ₂, fun x => ?_⟩
+    rw [hφdef, twoSidedTest_eq_val]
+    exact twoSidedVal_mem_Icc hγ₁ hγ₂ (E.stat x)
+  have hcrit_int : ∀ χ : 𝓧 → ℝ, IsCriticalFn χ → ∀ ϑ : ℝ, Integrable χ (P ϑ) := by
+    intro χ hχ ϑ
+    refine (integrable_const (1 : ℝ)).mono' hχ.1.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (hχ.2 x).1]
+    exact (hχ.2 x).2
+  have hpow : ∀ (χ : 𝓧 → ℝ) (ϑ : ℝ), power P χ ϑ = ∫ x, χ x * p ϑ x ∂E.base := by
+    intro χ ϑ
+    unfold power
+    exact ts_integral_density_eq (hp ϑ) χ
+  -- The level lies in `[0,1]`, being the size of a critical function.
+  have hα0 : 0 ≤ α := by
+    rw [← hsize₁]
+    unfold power
+    exact integral_nonneg fun x => (hφc.2 x).1
+  have hα1 : α ≤ 1 := by
+    rw [← hsize₁]
+    unfold power
+    have h := integral_mono (hcrit_int φ hφc θ₁) (integrable_const (1 : ℝ))
+      (fun x => (hφc.2 x).2)
+    simpa using h
+  have hconstcrit : IsCriticalFn fun _ : 𝓧 => α := ⟨measurable_const, fun _ => ⟨hα0, hα1⟩⟩
+  have hconstpow : ∀ ϑ : ℝ, power P (fun _ : 𝓧 => α) ϑ = α := by
+    intro ϑ
+    unfold power
+    rw [integral_const]
+    simp
+  refine ⟨hφc, ?_, ?_⟩
+  · -- Level: outside `[θ₁, θ₂]` the constant test `α` is a legitimate competitor.
+    intro ϑ hϑ
+    have hmin := power_min_twoSided E P hη hrepr hnat hθ hC hγ₁ hγ₂ hsize₁ hsize₂
+      (fun _ : 𝓧 => α) hconstcrit (hconstpow θ₁) (hconstpow θ₂)
+    rcases hϑ with h | h
+    · rcases eq_or_lt_of_le h with heq | hlt
+      · rw [heq, hsize₁]
+      · have := hmin ϑ (Or.inl hlt)
+        rw [hconstpow ϑ] at this
+        exact this
+    · rcases eq_or_lt_of_le h with heq | hlt
+      · rw [← heq, hsize₂]
+      · have := hmin ϑ (Or.inr hlt)
+        rw [hconstpow ϑ] at this
+        exact this
+  · -- Optimality on `(θ₁, θ₂)`.
+    intro χ hχ hχlevel ϑ hϑ
+    obtain ⟨hϑ1, hϑ2⟩ := Set.mem_Ioo.mp hϑ
+    have hb₁ : ηmap θ₁ - ηmap ϑ < 0 := by linarith [hη hϑ1]
+    have hb₂ : 0 < ηmap θ₂ - ηmap ϑ := by linarith [hη hϑ2]
+    obtain ⟨A, B, hApos, hBpos, hvA, hvB, hin, hlo, hhi⟩ :=
+      exists_exp_pair_sign_opp hb₁ hb₂ hC
+    set k₁ := A * Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap ϑ)) with hk₁def
+    set k₂ := B * Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap ϑ)) with hk₂def
+    have hkey : ∀ x : 𝓧, k₁ * p θ₁ x + k₂ * p θ₂ x
+        = p ϑ x * (A * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x)
+          + B * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x)) := by
+      intro x
+      have e₁ : Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap ϑ))
+          * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁))
+          = Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ))
+            * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x) := by
+        rw [← Real.exp_add, ← Real.exp_add]
+        congr 1
+        ring
+      have e₂ : Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap ϑ))
+          * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))
+          = Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ))
+            * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x) := by
+        rw [← Real.exp_add, ← Real.exp_add]
+        congr 1
+        ring
+      simp only [hk₁def, hk₂def, hpdef]
+      calc A * Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap ϑ))
+            * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁))
+          + B * Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap ϑ))
+            * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))
+          = A * (Real.exp (E.logPartition (ηmap θ₁) - E.logPartition (ηmap ϑ))
+              * Real.exp (ηmap θ₁ * E.stat x - E.logPartition (ηmap θ₁)))
+            + B * (Real.exp (E.logPartition (ηmap θ₂) - E.logPartition (ηmap ϑ))
+              * Real.exp (ηmap θ₂ * E.stat x - E.logPartition (ηmap θ₂))) := by ring
+        _ = A * (Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ))
+              * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x))
+            + B * (Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ))
+              * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x)) := by rw [e₁, e₂]
+        _ = Real.exp (ηmap ϑ * E.stat x - E.logPartition (ηmap ϑ))
+              * (A * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x)
+                + B * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x)) := by ring
+    have hφ0 : ∀ x : 𝓧, E.stat x < C₁ ∨ C₂ < E.stat x → φ x = 0 := by
+      intro x hx
+      rw [hφdef]
+      unfold twoSidedTest
+      rcases hx with h | h
+      · rw [if_neg (ne_of_lt h), if_neg (ne_of_lt (by linarith)),
+          if_neg (by rintro ⟨h1, -⟩; linarith)]
+      · rw [if_neg (ne_of_gt (by linarith)), if_neg (ne_of_gt h),
+          if_neg (by rintro ⟨-, h2⟩; linarith)]
+    have hφ1 : ∀ x : 𝓧, C₁ < E.stat x → E.stat x < C₂ → φ x = 1 := by
+      intro x h1 h2
+      rw [hφdef]
+      unfold twoSidedTest
+      rw [if_neg (ne_of_gt h1), if_neg (ne_of_lt h2), if_pos ⟨h1, h2⟩]
+    set f : Fin 3 → 𝓧 → ℝ := ![p θ₁, p θ₂, p ϑ] with hfdef
+    have hflast : f (Fin.last 2) = p ϑ := rfl
+    have hfmeas : ∀ i, Measurable (f i) := by
+      intro i
+      have hm : ∀ ζ : ℝ, Measurable (p ζ) := fun ζ =>
+        ((E.stat_meas.const_mul (ηmap ζ)).sub_const _).exp
+      fin_cases i
+      · exact hm θ₁
+      · exact hm θ₂
+      · exact hm ϑ
+    have hfint : ∀ i, Integrable (f i) E.base := by
+      intro i
+      fin_cases i
+      · exact ts_density_integrable (hp θ₁)
+      · exact ts_density_integrable (hp θ₂)
+      · exact ts_density_integrable (hp ϑ)
+    have hcon : ∀ i : Fin 2, ∫ x, φ x * f i.castSucc x ∂E.base = ![α, α] i := by
+      intro i
+      fin_cases i
+      · change ∫ x, φ x * p θ₁ x ∂E.base = α
+        rw [← hpow φ θ₁, hsize₁]
+      · change ∫ x, φ x * p θ₂ x ∂E.base = α
+        rw [← hpow φ θ₂, hsize₂]
+    have hχcon : ∀ i : Fin 2, ∫ x, χ x * f i.castSucc x ∂E.base ≤ ![α, α] i := by
+      intro i
+      fin_cases i
+      · change ∫ x, χ x * p θ₁ x ∂E.base ≤ α
+        rw [← hpow χ θ₁]
+        exact hχlevel θ₁ (Or.inl le_rfl)
+      · change ∫ x, χ x * p θ₂ x ∂E.base ≤ α
+        rw [← hpow χ θ₂]
+        exact hχlevel θ₂ (Or.inr le_rfl)
+    have hknn : ∀ i : Fin 2, 0 ≤ ![k₁, k₂] i := by
+      intro i
+      fin_cases i
+      · exact le_of_lt (mul_pos hApos (Real.exp_pos _))
+      · exact le_of_lt (mul_pos hBpos (Real.exp_pos _))
+    have hsum : ∀ x : 𝓧, ∑ i : Fin 2, ![k₁, k₂] i * f i.castSucc x
+        = k₁ * p θ₁ x + k₂ * p θ₂ x := by
+      intro x
+      rw [Fin.sum_univ_two]
+      rfl
+    have hshape : HasMultiplierShape E.base f ![k₁, k₂] φ := by
+      constructor
+      · refine Filter.Eventually.of_forall fun x hx => ?_
+        rw [hsum x, hkey x, hflast] at hx
+        have hS : A * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x)
+            + B * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x) < 1 := by
+          nlinarith [hppos ϑ x]
+        have h1 : C₁ < E.stat x := by
+          rcases lt_trichotomy (E.stat x) C₁ with h | h | h
+          · exact absurd (hlo (E.stat x) h) (by linarith)
+          · rw [h] at hS; linarith [hvA]
+          · exact h
+        have h2 : E.stat x < C₂ := by
+          rcases lt_trichotomy (E.stat x) C₂ with h | h | h
+          · exact h
+          · rw [h] at hS; linarith [hvB]
+          · exact absurd (hhi (E.stat x) h) (by linarith)
+        exact hφ1 x h1 h2
+      · refine Filter.Eventually.of_forall fun x hx => ?_
+        rw [hsum x, hkey x, hflast] at hx
+        have hS : 1 < A * Real.exp ((ηmap θ₁ - ηmap ϑ) * E.stat x)
+            + B * Real.exp ((ηmap θ₂ - ηmap ϑ) * E.stat x) := by
+          nlinarith [hppos ϑ x]
+        have hout : E.stat x < C₁ ∨ C₂ < E.stat x := by
+          rcases lt_trichotomy (E.stat x) C₁ with h | h | h
+          · exact Or.inl h
+          · rw [h] at hS; linarith [hvA]
+          · rcases lt_trichotomy (E.stat x) C₂ with h' | h' | h'
+            · exact absurd (hin (E.stat x) h h') (by linarith)
+            · rw [h'] at hS; linarith [hvB]
+            · exact Or.inr h'
+        exact hφ0 x hout
+    have hmax := isMax_le_of_multiplier_form_nonneg (m := 2) E.base (f := f) hfmeas hfint
+      hφc hcon hknn hshape χ hχ hχcon
+    rw [hflast, ← hpow χ ϑ, ← hpow φ ϑ] at hmax
+    exact hmax
+
+/-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
+parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
+`γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
+and is uniformly most powerful at level `α` for `H : θ ≤ θ₁ or θ₂ ≤ θ` against
+`K : θ₁ < θ < θ₂`. -/
+theorem isUMP_twoSided
+    -- USER-INPUT: the exponential family, with σ-finite reference measure
+    (E : ExpFamily 𝓧 ℝ) [SigmaFinite E.base]
+    -- USER-INPUT: the model, a family of probability measures on a real parameter
+    (P : ℝ → Measure 𝓧) [∀ θ, IsProbabilityMeasure (P θ)]
+    -- USER-INPUT: the parametrization, strictly increasing (the printed hypothesis on `Q`)
+    {ηmap : ℝ → ℝ} (hη : StrictMono ηmap)
+    -- USER-INPUT: the model is the canonical family read through `ηmap`
+    (hrepr : IsCanonicalRepr P E ηmap)
+    -- USER-INPUT: every parameter value lies in the natural parameter set, so no member
+    -- degenerates to the junk zero measure
+    (hnat : ∀ θ, ηmap θ ∈ E.natSet)
+    -- USER-INPUT: the two null boundaries, in order
+    {θ₁ θ₂ : ℝ} (hθ : θ₁ < θ₂)
+    -- USER-INPUT: nondegenerate level
+    {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) :
+    ∃ C₁ C₂ γ₁ γ₂ : ℝ, C₁ < C₂ ∧ γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
+      power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α ∧
+      power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α ∧
+      IsUMP P {θ : ℝ | θ ≤ θ₁ ∨ θ₂ ≤ θ} (Set.Ioo θ₁ θ₂) α
+        (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) := by
+  -- Everything except the EXISTENCE OF THE FOUR CONSTANTS is proven:
+  -- `isUMP_twoSided_of_constants` turns the two size conditions into the full `IsUMP`
+  -- statement. The obstruction below is therefore confined to the pure existence step, and
+  -- the two gaps recorded here previously are both discharged:
+  --   • SHAPE-TO-INTERVAL is `exists_exp_pair_sign` / `exists_exp_pair_sign_opp` (the
+  --     exponential two-crossing lemmas proved above);
+  --   • the INNER-POINT hypothesis is not needed at all, because the competitor classes of
+  --     `power_min_twoSided` (equalities) and of the UMP clause (inequalities, with the
+  --     multipliers manifestly positive) are handled by `isMax_of_multiplier_form` and
+  --     `isMax_le_of_multiplier_form_nonneg`, neither of which needs multipliers to be
+  --     *produced* by a supporting hyperplane.
+  obtain ⟨C₁, C₂, γ₁, γ₂, hC, hγ₁, hγ₂, hs₁, hs₂⟩ :
+      ∃ C₁ C₂ γ₁ γ₂ : ℝ, C₁ < C₂ ∧ γ₁ ∈ Set.Icc (0 : ℝ) 1 ∧ γ₂ ∈ Set.Icc (0 : ℝ) 1 ∧
+        power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₁ = α ∧
+        power P (twoSidedTest E.stat C₁ C₂ γ₁ γ₂) θ₂ = α := by
+    -- OBSTRUCTION (the single remaining gap, re-derived). This is the classical
+    -- two-dimensional root-finding step of TSH4 Thm 3.7.1: the four constants must solve
+    -- `E_{θ₁}φ = E_{θ₂}φ = α` simultaneously.
+    -- ROADMAP (quantile sweep). Let `ν₁ = (P θ₁).map T` and let `Q` be its quantile
+    -- function (`ForMathlib/QuantileFunction`, whose inverse-transform lemma gives
+    -- `Q(U) ∼ ν₁` for `U` uniform). For `s ∈ [0, 1 − α]` build the interval test `φ_s`
+    -- whose rejection region is the `T`-preimage of the quantile window `(s, s + α)`,
+    -- randomizing at the two boundary atoms; by inverse transform its size at `θ₁` is
+    -- exactly `α` for every `s`. Its size at `θ₂` is
+    -- `h(s) = ∫_s^{s+α} r(Q(u)) du` with `r = dν₂/dν₁ = exp((η₂ − η₁)t − (A₂ − A₁))`,
+    -- because `ν₂ = r·ν₁` in the canonical family. Then:
+    --   • `h` is continuous (a sliding window of a fixed integrable function);
+    --   • `r ∘ Q` is nondecreasing with `∫₀¹ r∘Q = 1`, so `h(0) ≤ α ≤ h(1 − α)` by the
+    --     monotone-rearrangement (Chebyshev sum) inequality;
+    -- and the intermediate value theorem produces `s` with `h(s) = α`, i.e. both size
+    -- conditions. `C₁ < C₂` holds because `α < 1` forces the window to straddle two
+    -- distinct quantiles unless `T` is `ν₁`-a.s. constant, and in that degenerate case
+    -- every `P θ` coincides and `C₁ = t₀`, `C₂ = t₀ + 1`, `γ₁ = α` works.
+    -- MISSING BRICKS: (a) the interval-window randomized test attached to a quantile
+    -- window — the two-boundary analogue of `exists_critical_constants`, which only builds
+    -- the one-sided window `(s, 1)`; (b) the push-forward identity
+    -- `∫ φ_s dν₂ = ∫_s^{s+α} r(Q u) du`; (c) the monotone-rearrangement inequality
+    -- `∫₀^α g ≤ α ∫₀¹ g` for nondecreasing `g`. None is in Mathlib v4.29.1 or in the repo.
+    sorry
+  exact ⟨C₁, C₂, γ₁, γ₂, hC, hγ₁, hγ₂, hs₁, hs₂,
+    isUMP_twoSided_of_constants E P hη hrepr hnat hθ hC hγ₁ hγ₂ hs₁ hs₂⟩
+
 
 /-- **Comparison of two two-sided tests with a common size at `θ₁`.** If the rejection
 interval of the second test lies to the right of that of the first — a larger left
