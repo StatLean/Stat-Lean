@@ -1659,7 +1659,7 @@ private lemma twoSidedVal_integral_weight_eq (ν : Measure ℝ) [IsProbabilityMe
   -- almost every level is not the right endpoint of the unit interval
   have h1ae : ∀ᵐ u ∂(MeasureTheory.volume : Measure ℝ), u ≠ (1 : ℝ) := by
     rw [MeasureTheory.ae_iff]
-    simpa using Real.volume_singleton (a := 1)
+    simp
   -- the three constant pieces: `Q` collapses each atom level window to its atom
   have hP1 : ∫ u in s..(cdf ν C₁), G u = (cdf ν C₁ - s) * r C₁ := by
     have hcongr : ∫ u in s..(cdf ν C₁), G u = ∫ _u in s..(cdf ν C₁), r C₁ := by
