@@ -509,6 +509,161 @@ private lemma tendstoInProb_of_deterministic {𝓧 : ℕ → Type*} [∀ k, Meas
   rw [Real.dist_eq] at hgood
   linarith
 
+/-! ### A reusable `L¹` law of large numbers on `Measure.pi`
+
+The randomization limits in this directory are all statements about product measures
+`Measure.pi (fun _ : Fin n => P)` whose summands are only `L¹` — sample second moments of an
+`L²` observation, for instance — so Chebyshev's inequality is unavailable and the honest
+route is Kolmogorov's strong law. The following brick packages that route once: it lifts the
+`Fin n` product to the Kolmogorov extension `Measure.infinitePi` on `ℕ → Ω`, applies
+`ProbabilityTheory.strong_law_ae_real`, converts a.e. convergence to convergence in measure,
+and pulls the resulting sets back along
+`AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate`.
+
+It is stated in the `Measure.real` form the randomization `hrem` hypotheses consume, and is
+used by `Randomization/MultivariateQuadratic` (consistency of the uncentred second-moment
+matrix) and by `Randomization/Studentized` (consistency of the studentizing scale). -/
+
+/-- **`L¹` weak law of large numbers on a finite product measure.** For an integrable `f`,
+the empirical mean of `f` along the coordinates converges to `∫ f ∂P` in
+`Measure.pi (fun _ : Fin n => P)`-probability as `n → ∞`.
+
+Note the two-parameter structure: the *measure* and the *statistic* both depend on `n`, so
+this is a triangular-array statement rather than a limit along a single probability space;
+that is exactly why it goes through the Kolmogorov extension rather than through
+`ProbabilityTheory.strong_law_ae_real` directly. -/
+lemma tendsto_pi_real_lln {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P]
+    -- USER-INPUT: the summand has a finite first moment; the classical hypothesis
+    (f : Ω → ℝ) (hf : Integrable f P) {ε : ℝ} (hε : 0 < ε) :
+    Tendsto (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).real
+        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|})
+      atTop (𝓝 0) := by
+  classical
+  set μ_inf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hμ_inf
+  have hf_aesm : AEStronglyMeasurable f P := hf.aestronglyMeasurable
+  set f' : Ω → ℝ := hf_aesm.mk f with hf'_def
+  have hf'_meas : Measurable f' := hf_aesm.measurable_mk
+  have hff' : f =ᵐ[P] f' := hf_aesm.ae_eq_mk
+  have hf'_int : Integrable f' P := hf.congr hff'
+  have hf_integral : ∫ ω, f' ω ∂P = ∫ ω, f ω ∂P := integral_congr_ae hff'.symm
+  set Y : ℕ → (ℕ → Ω) → ℝ := fun i ω => f' (ω i) with hY_def
+  have hY_meas : ∀ i, Measurable (Y i) := fun i => hf'_meas.comp (measurable_pi_apply i)
+  have hMP : ∀ i : ℕ, MeasurePreserving (Function.eval i : (ℕ → Ω) → Ω) μ_inf P :=
+    fun i => measurePreserving_eval_infinitePi (μ := fun _ : ℕ => P) i
+  have hY0_int : Integrable (Y 0) μ_inf := by
+    have := (hMP 0).integrable_comp hf'_meas.aestronglyMeasurable
+    simpa [Y, Function.eval] using this.mpr hf'_int
+  have h_iIndep : ProbabilityTheory.iIndepFun Y μ_inf := by
+    simpa [Y, Function.eval] using
+      (ProbabilityTheory.iIndepFun_infinitePi (Ω := fun _ : ℕ => Ω)
+        (P := fun _ : ℕ => P) (X := fun _ : ℕ => f') (fun _ => hf'_meas))
+  have h_pair :
+      Pairwise (Function.onFun
+        (fun X₁ X₂ : (ℕ → Ω) → ℝ => ProbabilityTheory.IndepFun X₁ X₂ μ_inf) Y) :=
+    fun i j hij => h_iIndep.indepFun hij
+  have hY_map : ∀ i, Measure.map (Y i) μ_inf = Measure.map f' P := by
+    intro i
+    have h_comp : Y i = f' ∘ (Function.eval i : (ℕ → Ω) → Ω) := by funext ω; rfl
+    rw [h_comp, ← Measure.map_map hf'_meas (measurable_pi_apply i), (hMP i).map_eq]
+  have h_ident : ∀ i, ProbabilityTheory.IdentDistrib (Y i) (Y 0) μ_inf μ_inf := fun i =>
+    { aemeasurable_fst := (hY_meas i).aemeasurable
+      aemeasurable_snd := (hY_meas 0).aemeasurable
+      map_eq := by rw [hY_map i, hY_map 0] }
+  have h_mean : ∫ ω, Y 0 ω ∂μ_inf = ∫ ω, f ω ∂P := by
+    have h_int : ∫ ω, f' ω ∂P = ∫ ω, Y 0 ω ∂μ_inf := by
+      have hP_eq : P = Measure.map (Function.eval 0 : (ℕ → Ω) → Ω) μ_inf := (hMP 0).map_eq.symm
+      calc ∫ ω, f' ω ∂P
+          = ∫ ω, f' ω ∂Measure.map (Function.eval 0 : (ℕ → Ω) → Ω) μ_inf := by rw [← hP_eq]
+        _ = ∫ ω, f' ((Function.eval 0 : (ℕ → Ω) → Ω) ω) ∂μ_inf := by
+            refine MeasureTheory.integral_map (measurable_pi_apply 0).aemeasurable ?_
+            exact hf'_meas.aestronglyMeasurable
+        _ = ∫ ω, Y 0 ω ∂μ_inf := by rfl
+    rw [← h_int, hf_integral]
+  have h_sllN : ∀ᵐ ω ∂μ_inf,
+      Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, Y i ω) / n) atTop (𝓝 (∫ ω, Y 0 ω ∂μ_inf)) :=
+    ProbabilityTheory.strong_law_ae_real Y hY0_int h_pair h_ident
+  have h_ae_eq : ∀ᵐ ω ∂μ_inf, ∀ i : ℕ, f (ω i) = f' (ω i) := by
+    rw [ae_all_iff]
+    intro i
+    exact ((hMP i).quasiMeasurePreserving).ae_eq hff'
+  have h_target_ae : ∀ᵐ ω ∂μ_inf,
+      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) atTop (𝓝 (∫ ω, f ω ∂P)) := by
+    filter_upwards [h_sllN, h_ae_eq] with ω h_lim h_eq_all
+    have h_seq_eq : ∀ n : ℕ,
+        (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) = (∑ i ∈ Finset.range n, Y i ω) / n := by
+      intro n
+      have h_sum : (∑ i : Fin n, f (ω i)) = ∑ i ∈ Finset.range n, Y i ω := by
+        rw [← Fin.sum_univ_eq_sum_range fun i => Y i ω]
+        exact Finset.sum_congr rfl fun i _ => h_eq_all i.val
+      rw [h_sum]; ring
+    rw [funext h_seq_eq, ← h_mean]
+    exact h_lim
+  have hF_meas : ∀ n : ℕ,
+      AEStronglyMeasurable (fun ω : ℕ → Ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) μ_inf := by
+    intro n
+    refine AEStronglyMeasurable.const_mul ?_ _
+    refine Finset.aestronglyMeasurable_fun_sum (s := (Finset.univ : Finset (Fin n)))
+      (f := fun i ω => f (ω i.val)) (μ := μ_inf) (fun i _ => ?_)
+    exact hf_aesm.comp_measurePreserving (hMP i.val)
+  have h_in_meas : MeasureTheory.TendstoInMeasure μ_inf
+      (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) atTop (fun _ => ∫ ω, f ω ∂P) :=
+    MeasureTheory.tendstoInMeasure_of_tendsto_ae hF_meas h_target_ae
+  have h_norm := (MeasureTheory.tendstoInMeasure_iff_norm (μ := μ_inf) (l := atTop)
+      (f := fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)))
+      (g := fun _ => ∫ ω, f ω ∂P)).mp h_in_meas
+  have h_inf := h_norm ε hε
+  have h_set_eq : ∀ n : ℕ,
+      (Measure.pi (fun _ : Fin n => P))
+        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
+      = μ_inf {ω : ℕ → Ω |
+          ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖} := by
+    intro n
+    have h_pi_ae : (fun (x : Fin n → Ω) i => f (x i)) =ᵐ[Measure.pi (fun _ : Fin n => P)]
+        fun (x : Fin n → Ω) i => f' (x i) :=
+      MeasureTheory.Measure.ae_eq_pi (μ := fun _ : Fin n => P)
+        (f := fun _ => f) (f' := fun _ => f') (fun _ => hff')
+    have h_pi_set_eq :
+        (Measure.pi (fun _ : Fin n => P))
+          {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
+        = (Measure.pi (fun _ : Fin n => P))
+          {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|} := by
+      apply MeasureTheory.measure_congr
+      filter_upwards [h_pi_ae] with x hx
+      have h_sum_eq : (∑ i : Fin n, f (x i)) = (∑ i : Fin n, f' (x i)) :=
+        Finset.sum_congr rfl fun i _ => congrFun hx i
+      change (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|) =
+             (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|)
+      rw [h_sum_eq]
+    have hms_f' : MeasurableSet
+        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|} := by
+      refine measurableSet_le measurable_const ?_
+      refine (Measurable.sub ?_ measurable_const).abs
+      exact (Finset.measurable_sum _ fun i _ => hf'_meas.comp (measurable_pi_apply i)).const_mul _
+    have hbridge_f' :=
+      AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate (ν := P) n hms_f'
+    have h_inf_set_eq :
+        μ_inf {ω : ℕ → Ω | (fun i : Fin n => ω i.val) ∈
+              {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|}}
+          = μ_inf {ω : ℕ → Ω |
+            ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖} := by
+      apply MeasureTheory.measure_congr
+      filter_upwards [h_ae_eq] with ω hω
+      have h_sum_eq : (∑ i : Fin n, f' (ω i.val)) = (∑ i : Fin n, f (ω i)) :=
+        Finset.sum_congr rfl fun i _ => (hω i.val).symm
+      change (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (ω i.val)) - ∫ ω, f ω ∂P|) =
+             (ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖)
+      rw [Real.norm_eq_abs, h_sum_eq]
+    rw [h_pi_set_eq, hbridge_f', h_inf_set_eq]
+  have hreal : ∀ n : ℕ, (Measure.pi (fun _ : Fin n => P)).real
+        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
+      = (μ_inf {ω : ℕ → Ω |
+          ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖}).toReal := by
+    intro n; rw [Measure.real, h_set_eq n]
+  simp_rw [hreal]
+  have := (ENNReal.tendsto_toReal (by simp)).comp h_inf
+  simpa using this
+
 /-! ### The standardized pooled population and its two hypothesis functionals
 
 The combinatorial central limit theorem asks for a centred population normalized in the
@@ -1246,159 +1401,5 @@ theorem weakConverges_twoSampleMeanDiff (PY PZ : Measure ℝ) [IsProbabilityMeas
   rw [charFun_map_twoSampleMeanDiff, hPYchar, hPZchar, mul_pow, mul_pow, mul_mul_mul_comm,
     hcancel, mul_one]
 
-/-! ### A reusable `L¹` law of large numbers on `Measure.pi`
-
-The randomization limits in this directory are all statements about product measures
-`Measure.pi (fun _ : Fin n => P)` whose summands are only `L¹` — sample second moments of an
-`L²` observation, for instance — so Chebyshev's inequality is unavailable and the honest
-route is Kolmogorov's strong law. The following brick packages that route once: it lifts the
-`Fin n` product to the Kolmogorov extension `Measure.infinitePi` on `ℕ → Ω`, applies
-`ProbabilityTheory.strong_law_ae_real`, converts a.e. convergence to convergence in measure,
-and pulls the resulting sets back along
-`AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate`.
-
-It is stated in the `Measure.real` form the randomization `hrem` hypotheses consume, and is
-used by `Randomization/MultivariateQuadratic` (consistency of the uncentred second-moment
-matrix) and by `Randomization/Studentized` (consistency of the studentizing scale). -/
-
-/-- **`L¹` weak law of large numbers on a finite product measure.** For an integrable `f`,
-the empirical mean of `f` along the coordinates converges to `∫ f ∂P` in
-`Measure.pi (fun _ : Fin n => P)`-probability as `n → ∞`.
-
-Note the two-parameter structure: the *measure* and the *statistic* both depend on `n`, so
-this is a triangular-array statement rather than a limit along a single probability space;
-that is exactly why it goes through the Kolmogorov extension rather than through
-`ProbabilityTheory.strong_law_ae_real` directly. -/
-lemma tendsto_pi_real_lln {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsProbabilityMeasure P]
-    -- USER-INPUT: the summand has a finite first moment; the classical hypothesis
-    (f : Ω → ℝ) (hf : Integrable f P) {ε : ℝ} (hε : 0 < ε) :
-    Tendsto (fun n : ℕ => (Measure.pi (fun _ : Fin n => P)).real
-        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|})
-      atTop (𝓝 0) := by
-  classical
-  set μ_inf : Measure (ℕ → Ω) := Measure.infinitePi (fun _ : ℕ => P) with hμ_inf
-  have hf_aesm : AEStronglyMeasurable f P := hf.aestronglyMeasurable
-  set f' : Ω → ℝ := hf_aesm.mk f with hf'_def
-  have hf'_meas : Measurable f' := hf_aesm.measurable_mk
-  have hff' : f =ᵐ[P] f' := hf_aesm.ae_eq_mk
-  have hf'_int : Integrable f' P := hf.congr hff'
-  have hf_integral : ∫ ω, f' ω ∂P = ∫ ω, f ω ∂P := integral_congr_ae hff'.symm
-  set Y : ℕ → (ℕ → Ω) → ℝ := fun i ω => f' (ω i) with hY_def
-  have hY_meas : ∀ i, Measurable (Y i) := fun i => hf'_meas.comp (measurable_pi_apply i)
-  have hMP : ∀ i : ℕ, MeasurePreserving (Function.eval i : (ℕ → Ω) → Ω) μ_inf P :=
-    fun i => measurePreserving_eval_infinitePi (μ := fun _ : ℕ => P) i
-  have hY0_int : Integrable (Y 0) μ_inf := by
-    have := (hMP 0).integrable_comp hf'_meas.aestronglyMeasurable
-    simpa [Y, Function.eval] using this.mpr hf'_int
-  have h_iIndep : ProbabilityTheory.iIndepFun Y μ_inf := by
-    simpa [Y, Function.eval] using
-      (ProbabilityTheory.iIndepFun_infinitePi (Ω := fun _ : ℕ => Ω)
-        (P := fun _ : ℕ => P) (X := fun _ : ℕ => f') (fun _ => hf'_meas))
-  have h_pair :
-      Pairwise (Function.onFun
-        (fun X₁ X₂ : (ℕ → Ω) → ℝ => ProbabilityTheory.IndepFun X₁ X₂ μ_inf) Y) :=
-    fun i j hij => h_iIndep.indepFun hij
-  have hY_map : ∀ i, Measure.map (Y i) μ_inf = Measure.map f' P := by
-    intro i
-    have h_comp : Y i = f' ∘ (Function.eval i : (ℕ → Ω) → Ω) := by funext ω; rfl
-    rw [h_comp, ← Measure.map_map hf'_meas (measurable_pi_apply i), (hMP i).map_eq]
-  have h_ident : ∀ i, ProbabilityTheory.IdentDistrib (Y i) (Y 0) μ_inf μ_inf := fun i =>
-    { aemeasurable_fst := (hY_meas i).aemeasurable
-      aemeasurable_snd := (hY_meas 0).aemeasurable
-      map_eq := by rw [hY_map i, hY_map 0] }
-  have h_mean : ∫ ω, Y 0 ω ∂μ_inf = ∫ ω, f ω ∂P := by
-    have h_int : ∫ ω, f' ω ∂P = ∫ ω, Y 0 ω ∂μ_inf := by
-      have hP_eq : P = Measure.map (Function.eval 0 : (ℕ → Ω) → Ω) μ_inf := (hMP 0).map_eq.symm
-      calc ∫ ω, f' ω ∂P
-          = ∫ ω, f' ω ∂Measure.map (Function.eval 0 : (ℕ → Ω) → Ω) μ_inf := by rw [← hP_eq]
-        _ = ∫ ω, f' ((Function.eval 0 : (ℕ → Ω) → Ω) ω) ∂μ_inf := by
-            refine MeasureTheory.integral_map (measurable_pi_apply 0).aemeasurable ?_
-            exact hf'_meas.aestronglyMeasurable
-        _ = ∫ ω, Y 0 ω ∂μ_inf := by rfl
-    rw [← h_int, hf_integral]
-  have h_sllN : ∀ᵐ ω ∂μ_inf,
-      Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, Y i ω) / n) atTop (𝓝 (∫ ω, Y 0 ω ∂μ_inf)) :=
-    ProbabilityTheory.strong_law_ae_real Y hY0_int h_pair h_ident
-  have h_ae_eq : ∀ᵐ ω ∂μ_inf, ∀ i : ℕ, f (ω i) = f' (ω i) := by
-    rw [ae_all_iff]
-    intro i
-    exact ((hMP i).quasiMeasurePreserving).ae_eq hff'
-  have h_target_ae : ∀ᵐ ω ∂μ_inf,
-      Tendsto (fun n : ℕ => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) atTop (𝓝 (∫ ω, f ω ∂P)) := by
-    filter_upwards [h_sllN, h_ae_eq] with ω h_lim h_eq_all
-    have h_seq_eq : ∀ n : ℕ,
-        (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) = (∑ i ∈ Finset.range n, Y i ω) / n := by
-      intro n
-      have h_sum : (∑ i : Fin n, f (ω i)) = ∑ i ∈ Finset.range n, Y i ω := by
-        rw [← Fin.sum_univ_eq_sum_range fun i => Y i ω]
-        exact Finset.sum_congr rfl fun i _ => h_eq_all i.val
-      rw [h_sum]; ring
-    rw [funext h_seq_eq, ← h_mean]
-    exact h_lim
-  have hF_meas : ∀ n : ℕ,
-      AEStronglyMeasurable (fun ω : ℕ → Ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) μ_inf := by
-    intro n
-    refine AEStronglyMeasurable.const_mul ?_ _
-    refine Finset.aestronglyMeasurable_fun_sum (s := (Finset.univ : Finset (Fin n)))
-      (f := fun i ω => f (ω i.val)) (μ := μ_inf) (fun i _ => ?_)
-    exact hf_aesm.comp_measurePreserving (hMP i.val)
-  have h_in_meas : MeasureTheory.TendstoInMeasure μ_inf
-      (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i))) atTop (fun _ => ∫ ω, f ω ∂P) :=
-    MeasureTheory.tendstoInMeasure_of_tendsto_ae hF_meas h_target_ae
-  have h_norm := (MeasureTheory.tendstoInMeasure_iff_norm (μ := μ_inf) (l := atTop)
-      (f := fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)))
-      (g := fun _ => ∫ ω, f ω ∂P)).mp h_in_meas
-  have h_inf := h_norm ε hε
-  have h_set_eq : ∀ n : ℕ,
-      (Measure.pi (fun _ : Fin n => P))
-        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
-      = μ_inf {ω : ℕ → Ω |
-          ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖} := by
-    intro n
-    have h_pi_ae : (fun (x : Fin n → Ω) i => f (x i)) =ᵐ[Measure.pi (fun _ : Fin n => P)]
-        fun (x : Fin n → Ω) i => f' (x i) :=
-      MeasureTheory.Measure.ae_eq_pi (μ := fun _ : Fin n => P)
-        (f := fun _ => f) (f' := fun _ => f') (fun _ => hff')
-    have h_pi_set_eq :
-        (Measure.pi (fun _ : Fin n => P))
-          {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
-        = (Measure.pi (fun _ : Fin n => P))
-          {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|} := by
-      apply MeasureTheory.measure_congr
-      filter_upwards [h_pi_ae] with x hx
-      have h_sum_eq : (∑ i : Fin n, f (x i)) = (∑ i : Fin n, f' (x i)) :=
-        Finset.sum_congr rfl fun i _ => congrFun hx i
-      change (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|) =
-             (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|)
-      rw [h_sum_eq]
-    have hms_f' : MeasurableSet
-        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|} := by
-      refine measurableSet_le measurable_const ?_
-      refine (Measurable.sub ?_ measurable_const).abs
-      exact (Finset.measurable_sum _ fun i _ => hf'_meas.comp (measurable_pi_apply i)).const_mul _
-    have hbridge_f' :=
-      AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate (ν := P) n hms_f'
-    have h_inf_set_eq :
-        μ_inf {ω : ℕ → Ω | (fun i : Fin n => ω i.val) ∈
-              {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (x i)) - ∫ ω, f ω ∂P|}}
-          = μ_inf {ω : ℕ → Ω |
-            ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖} := by
-      apply MeasureTheory.measure_congr
-      filter_upwards [h_ae_eq] with ω hω
-      have h_sum_eq : (∑ i : Fin n, f' (ω i.val)) = (∑ i : Fin n, f (ω i)) :=
-        Finset.sum_congr rfl fun i _ => (hω i.val).symm
-      change (ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f' (ω i.val)) - ∫ ω, f ω ∂P|) =
-             (ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖)
-      rw [Real.norm_eq_abs, h_sum_eq]
-    rw [h_pi_set_eq, hbridge_f', h_inf_set_eq]
-  have hreal : ∀ n : ℕ, (Measure.pi (fun _ : Fin n => P)).real
-        {x : Fin n → Ω | ε ≤ |(n : ℝ)⁻¹ * (∑ i : Fin n, f (x i)) - ∫ ω, f ω ∂P|}
-      = (μ_inf {ω : ℕ → Ω |
-          ε ≤ ‖(n : ℝ)⁻¹ * (∑ i : Fin n, f (ω i)) - ∫ ω, f ω ∂P‖}).toReal := by
-    intro n; rw [Measure.real, h_set_eq n]
-  simp_rw [hreal]
-  have := (ENNReal.tendsto_toReal (by simp)).comp h_inf
-  simpa using this
 
 end StatLean.HypothesisTesting
