@@ -339,7 +339,113 @@ private lemma gaussTail_tendsto_prob
     Tendsto (fun n => productMeasure M μ θ₀ n
         {ω | δ ≤ ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
           ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω)}) atTop (𝓝 0) := by
-  sorry
+  classical
+  have hrpow : Continuous fun t : ℝ => t ^ p :=
+    continuous_iff_continuousAt.2 fun x => Real.continuousAt_rpow_const x p (Or.inr hp)
+  have hWmeas : Measurable fun h : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (1 + ‖h‖ ^ p) :=
+    (continuous_const.add (hrpow.comp continuous_norm)).measurable.ennreal_ofReal
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  -- the centering is tight
+  obtain ⟨K, hK0, hKev⟩ := scoreSum_uniformly_tight hPDF hsc hDQM hJ_pd hJ hε
+  obtain ⟨c, hcnn, hc⟩ : ∃ c : ℝ, 0 ≤ c ∧ ∀ x : EuclideanSpace ℝ (Fin k),
+      ‖(Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹) x‖ ≤ c * ‖x‖ :=
+    ⟨‖(Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ : EuclideanSpace ℝ (Fin k) →L[ℝ]
+      EuclideanSpace ℝ (Fin k))‖, norm_nonneg _, fun x => ContinuousLinearMap.le_opNorm _ _⟩
+  obtain ⟨K', hK'nn, hK'⟩ : ∃ K' : ℝ, 0 ≤ K' ∧ K' = c * K := ⟨c * K, by positivity, rfl⟩
+  -- the deterministic envelope, integrable against the centered Gaussian
+  obtain ⟨G, hGdef⟩ : ∃ G : EuclideanSpace ℝ (Fin k) → ℝ≥0∞,
+      ∀ z, G z = ENNReal.ofReal (1 + (K' + ‖z‖) ^ p) := ⟨_, fun _ => rfl⟩
+  have hGmeas : Measurable G := by
+    rw [funext hGdef]
+    exact (continuous_const.add
+      (hrpow.comp (continuous_const.add continuous_norm))).measurable.ennreal_ofReal
+  have hGfin : ∫⁻ z, G z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) ≠ ∞ := by
+    have hbase : ∫⁻ z, ENNReal.ofReal (1 + ‖z‖ ^ p)
+        ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) < ∞ := by
+      have h := AsymptoticStatistics.gaussian_loss_convolution_lt_top J⁻¹
+        (ℓ := fun x : EuclideanSpace ℝ (Fin k) => ENNReal.ofReal (1 + ‖x‖ ^ p))
+        (fun _ => le_rfl) hp 0
+      simpa using h
+    have hptw : ∀ z, G z
+        ≤ ENNReal.ofReal (2 ^ p * (1 + K' ^ p)) * ENNReal.ofReal (1 + ‖z‖ ^ p) := by
+      intro z
+      have h2p : (0 : ℝ) ≤ 2 ^ p := Real.rpow_nonneg (by norm_num) p
+      have hKp : (0 : ℝ) ≤ K' ^ p := Real.rpow_nonneg hK'nn p
+      rw [hGdef z, ← ENNReal.ofReal_mul (by positivity)]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have h := one_add_rpow_add_le hK'nn (norm_nonneg z) hp
+      linarith
+    refine ne_top_of_le_ne_top ?_ (lintegral_mono hptw)
+    rw [lintegral_const_mul _ hWmeas]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hbase.ne
+  -- the deterministic tails vanish
+  obtain ⟨Ese, hEdef⟩ : ∃ Ese : ℕ → ℝ≥0∞, ∀ n, Ese n =
+      ∫⁻ z, ((Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ).indicator G z
+        ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹) := ⟨_, fun _ => rfl⟩
+  have hE0 : Tendsto Ese atTop (𝓝 0) := by
+    have hmeas : ∀ n, Measurable
+        (((Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ).indicator G) :=
+      fun n => hGmeas.indicator Metric.isOpen_ball.measurableSet.compl
+    have hbound : ∀ n, ((Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ).indicator G
+        ≤ᵐ[multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹] G :=
+      fun n => Eventually.of_forall fun z => Set.indicator_le_self _ _ z
+    have hlim : ∀ᵐ z ∂(multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹),
+        Tendsto (fun n =>
+          ((Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ).indicator G z)
+          atTop (𝓝 0) := by
+      refine Eventually.of_forall fun z => ?_
+      have hev : ∀ᶠ n in atTop,
+          ((Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ).indicator G z = 0 := by
+        filter_upwards [hMdiv.eventually_gt_atTop (‖z‖ + K')] with n hn
+        refine Set.indicator_of_notMem ?_ _
+        simp only [Set.mem_compl_iff, not_not, mem_ball_zero_iff]
+        linarith
+      exact Tendsto.congr' (hev.mono fun n hn => hn.symm) tendsto_const_nhds
+    have h := tendsto_lintegral_of_dominated_convergence G hmeas hbound hGfin hlim
+    simp only [lintegral_zero] at h
+    exact h.congr fun n => (hEdef n).symm
+  -- on the tightness event the random tail is dominated by the deterministic one
+  have hkey : ∀ (n : ℕ) (ω : Fin n → 𝓧), ‖scoreSum sc n ω‖ ≤ K →
+      ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+          ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω) ≤ Ese n := by
+    intro n ω hω
+    have hΔ : ‖bvmEffScore J sc n ω‖ ≤ K' := by
+      rw [hK']
+      exact (hc _).trans (mul_le_mul_of_nonneg_left hω hcnn)
+    have hmap : bvmGaussian J sc n ω
+        = (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J⁻¹).map
+            (fun x => bvmEffScore J sc n ω + x) := by
+      rw [bvmGaussian, ← AsymptoticStatistics.multivariateGaussian_map_const_add J⁻¹
+        (bvmEffScore J sc n ω)]
+    rw [← lintegral_indicator Metric.isOpen_ball.measurableSet.compl, hmap,
+      lintegral_map (hWmeas.indicator Metric.isOpen_ball.measurableSet.compl) (by fun_prop),
+      hEdef n]
+    refine lintegral_mono fun z => ?_
+    by_cases hz : bvmEffScore J sc n ω + z
+        ∈ (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ
+    · rw [Set.indicator_of_mem hz]
+      have h1 : Mseq n ≤ ‖bvmEffScore J sc n ω + z‖ := by
+        simpa only [Set.mem_compl_iff, mem_ball_zero_iff, not_lt] using hz
+      have h2 : ‖bvmEffScore J sc n ω + z‖ ≤ K' + ‖z‖ :=
+        (norm_add_le _ _).trans (by linarith)
+      have hzmem : z ∈ (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n - K'))ᶜ := by
+        simp only [Set.mem_compl_iff, mem_ball_zero_iff, not_lt]
+        linarith
+      rw [Set.indicator_of_mem hzmem, hGdef z]
+      refine ENNReal.ofReal_le_ofReal ?_
+      have h3 := Real.rpow_le_rpow (norm_nonneg (bvmEffScore J sc n ω + z)) h2 hp
+      linarith
+    · rw [Set.indicator_of_notMem hz]
+      exact zero_le _
+  filter_upwards [hKev, hE0.eventually (Iio_mem_nhds hδ)] with n h1 h2
+  refine le_trans (measure_mono ?_) h1
+  intro ω hω
+  simp only [Set.mem_setOf_eq] at hω ⊢
+  by_contra hcon
+  rw [not_lt] at hcon
+  exact absurd hω (not_le.2 (lt_of_le_of_lt (hkey n ω hcon) h2))
 
 /-- Tightness of the polynomial envelope factor `2ᵖ(1 + (R + ‖Δₙ‖)ᵖ)`. -/
 private lemma tight_polyEnvelope
