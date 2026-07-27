@@ -121,6 +121,26 @@ private lemma integrable_crit_mul {μ : Measure 𝓧} {p φ : 𝓧 → ℝ} (hp 
   hp.bdd_mul hφ.1.aestronglyMeasurable (Filter.Eventually.of_forall fun x => by
     rw [Real.norm_eq_abs, abs_of_nonneg (hφ.2 x).1]; exact (hφ.2 x).2)
 
+/-- The density of a probability measure integrates to `1`. -/
+private lemma hasDensity_integral_one {μ : Measure 𝓧} {p : 𝓧 → ℝ} {P : Measure 𝓧}
+    [IsProbabilityMeasure P] (h : HasDensity μ p P) : ∫ x, p x ∂μ = 1 := by
+  have h1 : powerAgainst P (fun _ => (1 : ℝ)) = ∫ x, (1 : ℝ) * p x ∂μ := powerAgainst_eq h _
+  unfold powerAgainst at h1
+  simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, mul_one, one_mul] at h1
+  exact h1.symm
+
+/-- Real form of the two strict threshold comparisons, at a finite threshold: the `ℝ≥0∞`
+conditions defining `npTest` and `HasNPShape` are the honest real inequalities. -/
+private lemma npCompare_iff {C : ℝ≥0∞} (hC : C ≠ ⊤) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (C * ENNReal.ofReal a < ENNReal.ofReal b ↔ C.toReal * a < b) ∧
+      (ENNReal.ofReal b < C * ENNReal.ofReal a ↔ b < C.toReal * a) := by
+  set c := C.toReal with hcdef
+  have hc0 : 0 ≤ c := ENNReal.toReal_nonneg
+  have hCeq : C = ENNReal.ofReal c := (ENNReal.ofReal_toReal hC).symm
+  rw [hCeq, ← ENNReal.ofReal_mul hc0]
+  exact ⟨ENNReal.ofReal_lt_ofReal_iff_of_nonneg (mul_nonneg hc0 ha),
+    ENNReal.ofReal_lt_ofReal_iff_of_nonneg hb⟩
+
 /-- **Fundamental inequality, finite threshold.** For a finite threshold `C`, any test of
 Neyman–Pearson shape whose `P₀`-size dominates that of a competitor `ψ` dominates it in
 `P₁`-power as well. This is the pointwise `(φ − ψ)(p₁ − C·p₀) ≥ 0` argument. -/
@@ -266,29 +286,10 @@ private lemma npShape_of_maxPower_finite (μ : Measure 𝓧) [SigmaFinite μ]
   have hCeq : C = ENNReal.ofReal c := (ENNReal.ofReal_toReal hC).symm
   obtain ⟨hsp1, hsp0⟩ := hshape
   -- The two strict-inequality conditions, in real form.
-  have hreal1 : ∀ x, C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) ↔ c * p₀ x < p₁ x := by
-    intro x
-    rw [hCeq, ← ENNReal.ofReal_mul hc0]
-    constructor
-    · intro hx
-      have hpos : 0 < p₁ x := by
-        by_contra hle
-        exact absurd hx (by simp [ENNReal.ofReal_of_nonpos (not_lt.mp hle)])
-      exact (ENNReal.ofReal_lt_ofReal_iff hpos).mp hx
-    · intro hx
-      exact (ENNReal.ofReal_lt_ofReal_iff
-        (lt_of_le_of_lt (mul_nonneg hc0 (hp0nn x)) hx)).mpr hx
-  have hreal0 : ∀ x, ENNReal.ofReal (p₁ x) < C * ENNReal.ofReal (p₀ x) ↔ p₁ x < c * p₀ x := by
-    intro x
-    rw [hCeq, ← ENNReal.ofReal_mul hc0]
-    constructor
-    · intro hx
-      have hpos : 0 < c * p₀ x := by
-        by_contra hle
-        exact absurd hx (by simp [ENNReal.ofReal_of_nonpos (not_lt.mp hle)])
-      exact (ENNReal.ofReal_lt_ofReal_iff hpos).mp hx
-    · intro hx
-      exact (ENNReal.ofReal_lt_ofReal_iff (lt_of_le_of_lt (hp1nn x) hx)).mpr hx
+  have hreal1 : ∀ x, C * ENNReal.ofReal (p₀ x) < ENNReal.ofReal (p₁ x) ↔ c * p₀ x < p₁ x :=
+    fun x => (npCompare_iff hC (hp0nn x) (hp1nn x)).1
+  have hreal0 : ∀ x, ENNReal.ofReal (p₁ x) < C * ENNReal.ofReal (p₀ x) ↔ p₁ x < c * p₀ x :=
+    fun x => (npCompare_iff hC (hp0nn x) (hp1nn x)).2
   -- Pointwise `(φ − ψ)(p₁ − c·p₀) ≥ 0`.
   have hpt : 0 ≤ᵐ[μ] fun x => (φ x - ψ x) * (p₁ x - c * p₀ x) := by
     filter_upwards [hsp1, hsp0] with x hx1 hx0
@@ -707,12 +708,7 @@ theorem npTest_necessity
         powerAgainst P₀ φ = α) := by
   obtain ⟨hφc, hφlevel, hφmax⟩ := hφ
   have hp1i : Integrable p₁ μ := hasDensity_integrable h₁
-  have hp1one : ∫ x, p₁ x ∂μ = 1 := by
-    have h1 : powerAgainst P₁ (fun _ => (1 : ℝ)) = ∫ x, (1 : ℝ) * p₁ x ∂μ :=
-      powerAgainst_eq h₁ _
-    unfold powerAgainst at h1
-    simp only [integral_const, measureReal_univ_eq_one, smul_eq_mul, mul_one, one_mul] at h1
-    exact h1.symm
+  have hp1one : ∫ x, p₁ x ∂μ = 1 := hasDensity_integral_one h₁
   -- The size of a critical function lies in `[0,1]`, so `α ≥ 0` and `α' := min α 1 ∈ [0,1]`.
   have hsize0 : 0 ≤ powerAgainst P₀ φ :=
     integral_nonneg fun x => (hφc.2 x).1
@@ -831,10 +827,69 @@ theorem power_gt_alpha_of_ne
     -- USER-INPUT: the two hypotheses are distinct — the stated exception of the result
     (hne : P₀ ≠ P₁) :
     α < powerAgainst P₁ φ := by
-  -- TODO: strict unbiasedness. The `≤` half is immediate from the constant test `ψ ≡ α`;
-  -- the strict inequality needs the necessity structure (an MP test attaining power exactly
-  -- `α` forces `p₀ = p₁` a.e., contradicting `P₀ ≠ P₁`), i.e. `npTest_necessity`.
-  sorry
+  obtain ⟨hφc, hφlevel, hφmax⟩ := hφ
+  have hαIcc : α ∈ Set.Icc (0 : ℝ) 1 := ⟨hα₀.le, hα₁.le⟩
+  -- The constant test `ψ ≡ α` has size and power both equal to `α`.
+  have hψαc : IsCriticalFn (fun _ : 𝓧 => α) := ⟨measurable_const, fun _ => hαIcc⟩
+  have hψα0 : powerAgainst P₀ (fun _ : 𝓧 => α) = α := by unfold powerAgainst; simp
+  have hψα1 : powerAgainst P₁ (fun _ : 𝓧 => α) = α := by unfold powerAgainst; simp
+  by_contra hcon
+  push_neg at hcon
+  have hge : α ≤ powerAgainst P₁ φ := by
+    have h := hφmax _ hψαc (le_of_eq hψα0)
+    rwa [hψα1] at h
+  have hpowφ : powerAgainst P₁ φ = α := le_antisymm hcon hge
+  -- The likelihood-ratio test of size exactly `α` therefore also has power exactly `α`.
+  obtain ⟨C, γ, hγ, hlrsize, hlrMP⟩ := exists_mostPowerful μ P₀ P₁ h₀ h₁ hαIcc
+  set χ := npTest p₀ p₁ C γ with hχdef
+  have hχc : IsCriticalFn χ := isCriticalFn_npTest h₀.1 h₁.1 hγ
+  have hχshape : HasNPShape μ p₀ p₁ C χ := hasNPShape_npTest μ p₀ p₁ C γ
+  have hχpow : powerAgainst P₁ χ = α := by
+    refine le_antisymm ?_ ?_
+    · have h := hφmax χ hχc (le_of_eq hlrsize); rwa [hpowφ] at h
+    · have h := hlrMP.2.2 _ hψαc (le_of_eq hψα0); rwa [hψα1] at h
+  have hCfin : C ≠ ⊤ := by
+    intro hCtop
+    rw [hCtop] at hχshape
+    have h := powerAgainst_eq_zero_of_shape_top h₀ hχshape
+    rw [hlrsize] at h
+    exact absurd h (ne_of_gt hα₀)
+  -- Both tests being extremal, the fundamental integrand vanishes a.e.
+  obtain ⟨hprod, -⟩ := npShape_of_maxPower_finite μ P₀ P₁ h₀ h₁ hCfin hχc hψαc hχshape
+    (by rw [hlrsize, hψα0]) (by rw [hχpow, hψα1])
+  have hprod' : ∀ᵐ x ∂μ, (χ x - α) * (p₁ x - C.toReal * p₀ x) = 0 := hprod
+  -- Away from the boundary the two tests differ, so the likelihood ratio is constant a.e.
+  have hae : ∀ᵐ x ∂μ, p₁ x = C.toReal * p₀ x := by
+    filter_upwards [hprod'] with x hx
+    rcases lt_trichotomy (C.toReal * p₀ x) (p₁ x) with hlt | heq | hgt
+    · have h1 : χ x = 1 := by
+        rw [hχdef]
+        unfold npTest
+        rw [if_pos ((npCompare_iff hCfin (h₀.2.1 x) (h₁.2.1 x)).1.mpr hlt)]
+      rw [h1] at hx
+      have := (mul_eq_zero.mp hx).resolve_left (by linarith)
+      linarith
+    · exact heq.symm
+    · have hstrict : ENNReal.ofReal (p₁ x) < C * ENNReal.ofReal (p₀ x) :=
+        (npCompare_iff hCfin (h₀.2.1 x) (h₁.2.1 x)).2.mpr hgt
+      have h0 : χ x = 0 := by
+        rw [hχdef]
+        unfold npTest
+        rw [if_neg (not_lt.mpr hstrict.le), if_neg (ne_of_lt hstrict)]
+      rw [h0] at hx
+      have := (mul_eq_zero.mp hx).resolve_left (by linarith)
+      linarith
+  -- Integrating identifies the constant as `1`, so the two densities agree a.e.
+  have hcone : C.toReal = 1 := by
+    have h := integral_congr_ae hae
+    rw [hasDensity_integral_one h₁, integral_const_mul, hasDensity_integral_one h₀,
+      mul_one] at h
+    exact h.symm
+  refine hne ?_
+  rw [h₀.2.2, h₁.2.2]
+  refine withDensity_congr_ae ?_
+  filter_upwards [hae] with x hx
+  rw [hx, hcone, one_mul]
 
 /-- **The degenerate case, stated honestly.** When the null and the alternative coincide,
 every most powerful level-`α` test has power exactly `α`: no test can do better than the
