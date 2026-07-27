@@ -702,19 +702,200 @@ theorem abs_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
         rw [show Real.exp (w ^ 2 / 2) * (L * Real.exp (-w ^ 2 / 2))
           = L * (Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2)) by ring, hee, mul_one]
 
+/-- `|a − b| ≤ |a| + |b|`. -/
+private lemma abs_sub_le_add (a b : ℝ) : |a - b| ≤ |a| + |b| := by
+  have hab := abs_add_le a (-b)
+  rwa [← sub_eq_add_neg, abs_neg] at hab
+
+/-- **The core of the derivative bound**, stated for an already-centred `g` (which is all the
+Stein solution ever sees). The point is the *pointwise-in-`w`* estimate
+
+`|f'(w)| (1 + w²) ≤ L (2|w| + 1)`,
+
+which is strictly stronger than `|f'(w)| ≤ 2L` and is what the Lipschitz bound on `f'`
+consumes. The proof rewrites `f'(w) = w f(w) + g(w)` as a *single* integral over the half-line
+on the far side of `w`, using `∫ g e^{-x²/2} = 0` to move the tail and
+`∫_w^∞ x e^{-x²/2}dx = e^{-w²/2}` to absorb `g(w)`:
+
+`f'(w) = e^{w²/2} ∫_w^∞ (g(w) x − w g(x)) e^{-x²/2} dx` for `w ≥ 0`,
+
+and the integrand is bounded by `(|g(w)| + |w| L)|x − w|` because
+`g(w)x − w g(x) = g(w)(x − w) − w(g(x) − g(w))`. The resulting one-sided first absolute
+moment is exactly `exp_mul_integral_Ioi_sub_le`. -/
+private lemma abs_deriv_steinSolution_mul_le {g : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |g x - g y| ≤ L * |x - y|)
+    (hgint : Integrable fun x : ℝ => g x * Real.exp (-x ^ 2 / 2))
+    (hgzero : ∫ x : ℝ, g x * Real.exp (-x ^ 2 / 2) = 0)
+    (hgw : ∀ v, |g v| ≤ L * (|v| + 1)) (w : ℝ) :
+    |w * (Real.exp (w ^ 2 / 2) * ∫ x in Iic w, g x * Real.exp (-x ^ 2 / 2)) + g w|
+      * (1 + w ^ 2) ≤ L * (2 * |w| + 1) := by
+  have hee : Real.exp (w ^ 2 / 2) * Real.exp (-w ^ 2 / 2) = 1 := by
+    rw [← Real.exp_add, show w ^ 2 / 2 + -w ^ 2 / 2 = 0 by ring, Real.exp_zero]
+  have hS : (0 : ℝ) < 1 + w ^ 2 := by positivity
+  have hKn : (0 : ℝ) ≤ |g w| + |w| * L :=
+    add_nonneg (abs_nonneg _) (mul_nonneg (abs_nonneg _) hL)
+  have hK : |g w| + |w| * L ≤ L * (2 * |w| + 1) := by
+    have := hgw w
+    nlinarith [abs_nonneg w]
+  have hA : ∀ S : Set ℝ, IntegrableOn (fun x : ℝ => g w * (x * Real.exp (-x ^ 2 / 2))) S :=
+    fun S => (integrable_id_mul_exp_neg_sq_half.const_mul _).integrableOn
+  have hB : ∀ S : Set ℝ, IntegrableOn (fun x : ℝ => w * (g x * Real.exp (-x ^ 2 / 2))) S :=
+    fun S => (hgint.const_mul _).integrableOn
+  have hPint : ∀ S : Set ℝ,
+      IntegrableOn (fun x : ℝ => (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)) S := by
+    intro S
+    refine ((hA S).sub (hB S)).congr (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.sub_apply]
+    ring
+  have hQint : ∀ (v : ℝ) (S : Set ℝ),
+      IntegrableOn (fun x : ℝ => (x - v) * Real.exp (-x ^ 2 / 2)) S := by
+    intro v S
+    have h1 : Integrable fun x : ℝ => x * Real.exp (-x ^ 2 / 2) :=
+      integrable_id_mul_exp_neg_sq_half
+    have h2 : Integrable fun x : ℝ => v * Real.exp (-x ^ 2 / 2) :=
+      integrable_exp_neg_sq_half.const_mul _
+    refine (h1.sub h2).integrableOn.congr (Filter.Eventually.of_forall fun x => ?_)
+    simp only [Pi.sub_apply]
+    ring
+  rcases le_or_gt 0 w with hw | hw
+  · -- the right half-line
+    have htail : (∫ x in Iic w, g x * Real.exp (-x ^ 2 / 2))
+        = -∫ x in Ioi w, g x * Real.exp (-x ^ 2 / 2) := by
+      have hsum := intervalIntegral.integral_Iic_add_Ioi (b := w)
+        (f := fun x : ℝ => g x * Real.exp (-x ^ 2 / 2))
+        hgint.integrableOn hgint.integrableOn
+      rw [hgzero] at hsum
+      linarith
+    have hlin : (∫ x in Ioi w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2))
+        = g w * (∫ x in Ioi w, x * Real.exp (-x ^ 2 / 2))
+          - w * ∫ x in Ioi w, g x * Real.exp (-x ^ 2 / 2) := by
+      rw [show (fun x : ℝ => (g w * x - w * g x) * Real.exp (-x ^ 2 / 2))
+          = fun x : ℝ => g w * (x * Real.exp (-x ^ 2 / 2))
+            - w * (g x * Real.exp (-x ^ 2 / 2)) from by funext x; ring,
+        integral_sub (hA (Ioi w)) (hB (Ioi w)), integral_const_mul, integral_const_mul]
+    have hrep : w * (Real.exp (w ^ 2 / 2) * ∫ x in Iic w, g x * Real.exp (-x ^ 2 / 2)) + g w
+        = Real.exp (w ^ 2 / 2)
+          * ∫ x in Ioi w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2) := by
+      rw [hlin, integral_Ioi_id_mul_exp_neg_sq_half, htail]
+      linear_combination (-(g w)) * hee
+    have hbnd : |∫ x in Ioi w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)|
+        ≤ (|g w| + |w| * L) * ∫ x in Ioi w, (x - w) * Real.exp (-x ^ 2 / 2) := by
+      rw [← integral_const_mul]
+      refine abs_integral_le_integral_abs.trans ?_
+      refine setIntegral_mono_on (hPint (Ioi w)).abs
+        ((hQint w (Ioi w)).const_mul _) measurableSet_Ioi fun x hx => ?_
+      have hxw : w < x := hx
+      have hE : (0 : ℝ) < Real.exp (-x ^ 2 / 2) := Real.exp_pos _
+      have h1 : |g x - g w| ≤ L * (x - w) := by
+        have hl := hlip x w
+        rwa [abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - w)] at hl
+      have h2 : |g w * x - w * g x| ≤ (|g w| + |w| * L) * (x - w) := by
+        rw [show g w * x - w * g x = g w * (x - w) - w * (g x - g w) by ring]
+        refine (abs_sub_le_add _ _).trans ?_
+        rw [abs_mul, abs_mul, abs_of_nonneg (by linarith : (0 : ℝ) ≤ x - w)]
+        nlinarith [abs_nonneg w, h1]
+      simp only [abs_mul, abs_of_pos hE]
+      nlinarith [mul_le_mul_of_nonneg_right h2 hE.le]
+    have hrho := exp_mul_integral_Ioi_sub_le hw
+    rw [hrep, abs_mul, abs_of_pos (Real.exp_pos (w ^ 2 / 2))]
+    calc Real.exp (w ^ 2 / 2)
+          * |∫ x in Ioi w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)| * (1 + w ^ 2)
+        ≤ Real.exp (w ^ 2 / 2)
+            * ((|g w| + |w| * L) * ∫ x in Ioi w, (x - w) * Real.exp (-x ^ 2 / 2))
+            * (1 + w ^ 2) := by
+          have hm := mul_le_mul_of_nonneg_left hbnd (Real.exp_pos (w ^ 2 / 2)).le
+          nlinarith [hS.le]
+      _ = (|g w| + |w| * L)
+            * (Real.exp (w ^ 2 / 2) * (∫ x in Ioi w, (x - w) * Real.exp (-x ^ 2 / 2))
+              * (1 + w ^ 2)) := by ring
+      _ ≤ (|g w| + |w| * L) * 1 := mul_le_mul_of_nonneg_left hrho hKn
+      _ = |g w| + |w| * L := mul_one _
+      _ ≤ L * (2 * |w| + 1) := hK
+  · -- the left half-line
+    have hlin : (∫ x in Iic w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2))
+        = g w * (∫ x in Iic w, x * Real.exp (-x ^ 2 / 2))
+          - w * ∫ x in Iic w, g x * Real.exp (-x ^ 2 / 2) := by
+      rw [show (fun x : ℝ => (g w * x - w * g x) * Real.exp (-x ^ 2 / 2))
+          = fun x : ℝ => g w * (x * Real.exp (-x ^ 2 / 2))
+            - w * (g x * Real.exp (-x ^ 2 / 2)) from by funext x; ring,
+        integral_sub (hA (Iic w)) (hB (Iic w)), integral_const_mul, integral_const_mul]
+    have hrep : w * (Real.exp (w ^ 2 / 2) * ∫ x in Iic w, g x * Real.exp (-x ^ 2 / 2)) + g w
+        = -(Real.exp (w ^ 2 / 2)
+          * ∫ x in Iic w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)) := by
+      rw [hlin, integral_Iic_id_mul_exp_neg_sq_half]
+      linear_combination (-(g w)) * hee
+    have hQ' : IntegrableOn (fun x : ℝ => (w - x) * Real.exp (-x ^ 2 / 2)) (Iic w) := by
+      refine ((hQint w (Iic w)).neg).congr (Filter.Eventually.of_forall fun x => ?_)
+      simp only [Pi.neg_apply]
+      ring
+    have hbnd : |∫ x in Iic w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)|
+        ≤ (|g w| + |w| * L) * ∫ x in Iic w, (w - x) * Real.exp (-x ^ 2 / 2) := by
+      rw [← integral_const_mul]
+      refine abs_integral_le_integral_abs.trans ?_
+      refine setIntegral_mono_on (hPint (Iic w)).abs
+        (hQ'.const_mul _) measurableSet_Iic fun x hx => ?_
+      have hxw : x ≤ w := hx
+      have hE : (0 : ℝ) < Real.exp (-x ^ 2 / 2) := Real.exp_pos _
+      have h1 : |g x - g w| ≤ L * (w - x) := by
+        have hl := hlip x w
+        rwa [abs_of_nonpos (by linarith : x - w ≤ 0), neg_sub] at hl
+      have h2 : |g w * x - w * g x| ≤ (|g w| + |w| * L) * (w - x) := by
+        rw [show g w * x - w * g x = g w * (x - w) - w * (g x - g w) by ring]
+        refine (abs_sub_le_add _ _).trans ?_
+        rw [abs_mul, abs_mul, abs_of_nonpos (by linarith : x - w ≤ 0), neg_sub]
+        nlinarith [abs_nonneg w, h1]
+      simp only [abs_mul, abs_of_pos hE]
+      nlinarith [mul_le_mul_of_nonneg_right h2 hE.le]
+    have hrho := exp_mul_integral_Iic_sub_le hw.le
+    rw [hrep, abs_neg, abs_mul, abs_of_pos (Real.exp_pos (w ^ 2 / 2))]
+    calc Real.exp (w ^ 2 / 2)
+          * |∫ x in Iic w, (g w * x - w * g x) * Real.exp (-x ^ 2 / 2)| * (1 + w ^ 2)
+        ≤ Real.exp (w ^ 2 / 2)
+            * ((|g w| + |w| * L) * ∫ x in Iic w, (w - x) * Real.exp (-x ^ 2 / 2))
+            * (1 + w ^ 2) := by
+          have hm := mul_le_mul_of_nonneg_left hbnd (Real.exp_pos (w ^ 2 / 2)).le
+          nlinarith [hS.le]
+      _ = (|g w| + |w| * L)
+            * (Real.exp (w ^ 2 / 2) * (∫ x in Iic w, (w - x) * Real.exp (-x ^ 2 / 2))
+              * (1 + w ^ 2)) := by ring
+      _ ≤ (|g w| + |w| * L) * 1 := mul_le_mul_of_nonneg_left hrho hKn
+      _ = |g w| + |w| * L := mul_one _
+      _ ≤ L * (2 * |w| + 1) := hK
+
+/-- **The sharp form of the derivative bound**: `|f_h'(w)| (1 + w²) ≤ L(2|w| + 1)`. It contains
+both `abs_deriv_steinSolution_le` (`(2|w|+1) ≤ 2(1+w²)`) and the estimate
+`|w||f_h'(w)| ≤ 3L` that the Lipschitz bound needs. -/
+theorem abs_deriv_steinSolution_mul_one_add_sq_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
+    |deriv (steinSolution h) w| * (1 + w ^ 2) ≤ L * (2 * |w| + 1) := by
+  have hh : Continuous h := continuous_of_lipschitz_bound hL hlip
+  have hderiv : deriv (steinSolution h) w
+      = w * (Real.exp (w ^ 2 / 2)
+          * ∫ x in Iic w, (h x - stdGaussianExpect h) * Real.exp (-x ^ 2 / 2))
+        + (h w - stdGaussianExpect h) := (hasDerivAt_steinSolution hh hC w).deriv
+  rw [hderiv]
+  exact abs_deriv_steinSolution_mul_le (g := fun x => h x - stdGaussianExpect h) hL
+    (fun x y => by simpa using hlip x y)
+    (integrable_centred_mul_exp_neg_sq_half hh hC)
+    (integral_centred_mul_exp_neg_sq_half hh hC)
+    (fun v => abs_sub_stdGaussianExpect_le hL hlip hC v) w
+
 /-- **Sup-norm bound on the derivative of the Stein solution.** For an `L`-Lipschitz test
 function, `|f_h'(w)| ≤ 2L`. (The sharp constant is `√(2/π) < 1`; `2` is what the elementary
-route below yields and it suffices downstream.)
-
-STATUS: OPEN. From the Stein equation `f' = w f + (h - 𝔼h(Z))` the bound is *not* immediate
-(`w f` is unbounded a priori); the classical route bounds `w f_h(w)` by the Mills-ratio
-estimate `e^{w²/2}∫_w^∞ e^{-x²/2}dx ≤ min(√(π/2), 1/w)` applied to the tail representation
-`f_h(w) = -e^{w²/2}∫_w^∞ (h - 𝔼h(Z))e^{-x²/2}`, which is legitimate because
-`∫_ℝ (h - 𝔼h(Z))e^{-x²/2} = 0`. -/
+route yields — see `abs_deriv_steinSolution_mul_one_add_sq_le` — and it suffices
+downstream.) -/
 theorem abs_deriv_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (w : ℝ) :
     |deriv (steinSolution h) w| ≤ 2 * L := by
-  sorry
+  have hsharp := abs_deriv_steinSolution_mul_one_add_sq_le hL hlip hC w
+  have hS : (0 : ℝ) < 1 + w ^ 2 := by positivity
+  have hsq : |w| ^ 2 = w ^ 2 := sq_abs w
+  rw [← sub_nonneg]
+  have hkey : (2 * L - |deriv (steinSolution h) w|) * (1 + w ^ 2)
+      ≥ L * (2 * |w| ^ 2 - 2 * |w| + 1) := by nlinarith [abs_nonneg w]
+  nlinarith [abs_nonneg w, abs_nonneg (deriv (steinSolution h) w),
+    mul_nonneg hL (by nlinarith [sq_nonneg (2 * |w| - 1)] :
+      (0 : ℝ) ≤ 2 * |w| ^ 2 - 2 * |w| + 1)]
 
 /-- **Lipschitz bound on the derivative of the Stein solution**, i.e. the `‖f_h''‖ ≤ 2L` of
 the classical statement in the form actually used by the Taylor step.
