@@ -23,11 +23,11 @@ Statements now FROZEN.
 
 | item | wave | touch-set | merge-deps | state | named fallback |
 |---|---|---|---|---|---|
-| bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | IN_FLIGHT | per-lemma sorries |
-| bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | IN_FLIGHT | comp_subseq insulated |
-| bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | IN_FLIGHT | pair-ratio Jensen insulated |
+| bricks-gauss (MultivariateGaussianDensity) | 1 | AS/ForMathlib/MultivariateGaussianDensity | — | MERGED (1 debt: convolution continuity) | per-lemma sorries |
+| bricks-contig (ContiguityIntegralComparison) | 1 | AS/ForMathlib/ContiguityIntegralComparison | — | MERGED 0-sorry | comp_subseq insulated |
+| bricks-tv (TVDist, GaussianTV, BvM Basic) | 1 | Bay/ForMathlib/{TVDist,GaussianTV}, Bay/BernsteinVonMises/Basic | — | MERGED 0-sorry (after laptop statement fix) | pair-ratio Jensen insulated |
 | tests (ScoreTest, TestBoost, ExponentialTests) | 1 | Bay/BernsteinVonMises/{ScoreTest,TestBoost,ExponentialTests} | — | IN_FLIGHT | mean-expansion insulated |
-| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | GATED (launch queued: concurrency cap) | retraction insulated |
+| doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible} | — | IN_FLIGHT | retraction insulated |
 | conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | STUBBED | tail-split insulated |
 | local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | STUBBED | local_tv_tendsto = headline debt |
 | bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |
@@ -76,4 +76,11 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   integrands ⇒ no scope change.
 - 2026-07-27: wave-2/3/4 prompts written (local, conc, bpe-aux, assembly, bpe-approx,
   bpe-final, doob-final) — 11 prompt files total.
+- 2026-07-27: **bvm-bricks GATE GREEN** (54e6d12): 3206 jobs, 2 sorries = the sanctioned
+  `gaussian_loss_convolution_continuous` + the defective Jensen statement. Diff audit clean
+  (touch-set exact, 0 axioms, no other frozen signature touched). MERGED --no-ff (00adc20).
+- 2026-07-27: **statement fix applied** (laptop): `one_sub_lintegral_le_lintegral_one_sub`
+  now takes `(hY : Measurable Y)` (LEAN-ONLY tag + counterexample recorded in its docstring);
+  proved from the lane's argument; internal call site retargeted. TVDist.lean is 0-sorry.
+  Remaining batch debt from wave 1: `gaussian_loss_convolution_continuous` only.
 

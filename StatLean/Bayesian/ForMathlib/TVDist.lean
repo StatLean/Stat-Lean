@@ -146,23 +146,23 @@ theorem tvDist_withDensity_eq (base : Measure α) {p q : α → ℝ≥0∞}
       rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
     rw [h]; exact measure_ne_top _ _)
 
--- Measurable form of the scalar Jensen step. The public statement below omits any
--- measurability hypothesis on `Y`, which makes it false (see the module docstring note):
--- `lintegral` is the *lower* integral, hence only superadditive without measurability.
-private lemma one_sub_lintegral_le_lintegral_one_sub' (ν : Measure α) [IsProbabilityMeasure ν]
+/-- **Scalar Jensen step in truncated `ℝ≥0∞` arithmetic**: `1 − ∫ Y ≤ ∫ (1 − Y)` for a
+probability measure. (vdV p. 143: `(1 − E Y)⁺ ≤ E (1 − Y)⁺`; in `ℝ≥0∞` the truncated
+subtraction is the positive part.)
+
+The measurability hypothesis is essential and is **not** a book condition: `lintegral` is
+the *lower* integral (a supremum over simple minorants), hence only superadditive in
+general. Without it the statement is false — take `Y := 1_B` for a Bernstein set `B`
+(both `B` and `Bᶜ` of inner measure zero): the left side is `1`, the right side is `0`.
+Every use in Chapter 10 supplies a measurable integrand. -/
+theorem one_sub_lintegral_le_lintegral_one_sub (ν : Measure α) [IsProbabilityMeasure ν]
+    -- LEAN-ONLY: measurable integrand; `lintegral` is only superadditive without it, and
+    -- the statement is genuinely false for non-measurable `Y` (Bernstein-set counterexample)
     {Y : α → ℝ≥0∞} (hY : Measurable Y) :
     1 - ∫⁻ x, Y x ∂ν ≤ ∫⁻ x, 1 - Y x ∂ν := by
   rw [tsub_le_iff_right, ← lintegral_add_left (measurable_const.sub hY)]
   calc (1 : ℝ≥0∞) = ∫⁻ _, (1 : ℝ≥0∞) ∂ν := by simp
     _ ≤ ∫⁻ x, ((1 - Y x) + Y x) ∂ν := lintegral_mono fun _ => le_tsub_add
-
-/-- **Scalar Jensen step in truncated `ℝ≥0∞` arithmetic**: `1 − ∫ Y ≤ ∫ (1 − Y)` for a
-probability measure. (vdV p. 143: `(1 − E Y)⁺ ≤ E (1 − Y)⁺`; in `ℝ≥0∞` the truncated
-subtraction is the positive part.) -/
-theorem one_sub_lintegral_le_lintegral_one_sub (ν : Measure α) [IsProbabilityMeasure ν]
-    (Y : α → ℝ≥0∞) :
-    1 - ∫⁻ x, Y x ∂ν ≤ ∫⁻ x, 1 - Y x ∂ν := by
-  sorry
 
 /-- **Bounded integrands move by at most `B · tvDist`**: for probability measures and a
 measurable `w ≤ B`, `∫ w dμ ≤ ∫ w dν + B · tvDist μ ν` (layer-cake over the sup-form
@@ -314,7 +314,7 @@ theorem tvDist_normalize_le_double_lintegral (base : Measure α) {s t : α → �
   have hac : (base.withDensity p) ≪ base := withDensity_absolutelyContinuous _ _
   filter_upwards [hac.ae_le hs_pos, hac.ae_le hs_fin] with h hh1 hh2
   rw [← hI h hh1.ne' hh2]
-  exact one_sub_lintegral_le_lintegral_one_sub' _ (by fun_prop)
+  exact one_sub_lintegral_le_lintegral_one_sub _ (by fun_prop)
 
 /-- **Measurability of the pointwise TV distance between two finite kernels** on a countably
 generated target σ-algebra, via joint measurability of `Kernel.rnDeriv`. This is what makes
