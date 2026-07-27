@@ -1209,13 +1209,32 @@ private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
 /-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine likelihood-ratio
 statistic differs from the score-difference surrogate by a quantity tending to zero in
 probability. -/
--- TODO: Apply the uniform LAN expansion in the full model at `ĥₙ = √n(θ̂ₙ−θ₀)` and in the
--- restricted model at `√n(β̂ₙ−β₀)`, then subtract; the efficient-estimator substitutions
--- (`hlin`, `hlin₀`) collapse each expansion to its score quadratic, leaving
--- `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Blocked exactly as `logLR_sub_score_tendstoInMeasure`:
--- `sup_LAN_remainder_tendsto` is false at its printed hypotheses (counterexample recorded in
--- `UniformLAN.lean`), so the uniform expansion must first be re-established under an added
--- a.e.-continuity hypothesis.  Sanctioned lifted sorry.
+-- TODO (obstruction re-derived after `sup_LAN_remainder_tendsto` and
+-- `logLR_sub_score_tendstoInMeasure` were closed; the previous note is superseded).
+-- The intended route is: apply the (now available) uniform LAN expansion in the full model at
+-- `ĥₙ = √n(θ̂ₙ−θ₀)` and in the restricted model at `√n(β̂ₙ−β₀)`, then subtract; the
+-- efficient-estimator substitutions (`hlin`, `hlin₀`) collapse each expansion to its score
+-- quadratic, leaving `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Two *separate* gaps remain, neither of
+-- which is the one recorded before.
+--
+-- (1) LOG-SPLITTING / COMMON SUPPORT.  Unlike the simple-null case, the affine statistic is
+--     `2 ∑ᵢ log(p_{θ̂}(ωᵢ)/p_{a+Bβ̂}(ωᵢ))`, a ratio between *two moving* parameters, whereas
+--     `logLikelihood` — and the envelope hypothesis `henv` — only ever control ratios against
+--     the fixed `p_{θ₀}`.  The reduction `log(A/B) = log(A/C) − log(B/C)` is FALSE at the Lean
+--     junk values: for `A = 0`, `B, C > 0` the left side is `Real.log 0 = 0` while the right
+--     side is `−log(B/C) ≠ 0`.  Closing this needs a strict-positivity (common-support)
+--     hypothesis such as `∀ θ x, 0 < M.density θ x`, which is a genuine addition to the
+--     printed signature — the source assumes it implicitly whenever it manipulates likelihood
+--     ratios.
+-- (2) THE RESTRICTED MODEL IS UNCERTIFIED.  `sup_LAN_remainder_tendsto` applied to
+--     `restrictFamily M a B` at `β₀` needs (a) `IsPDFOf (restrictFamily M a B) μ` — immediate
+--     from `hPDF`; (b) a two-point envelope for the restricted family — derivable from `henv`
+--     with `Menv·‖B‖²` and `δ/(‖B‖+1)`, using `hℓB : ℓB = B* ∘ ℓ`; but also
+--     (c) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`, for which the library
+--     has NO composition/reparametrization lemma (nothing in `StatLean/AsymptoticStatistics/DQM`
+--     handles an affine change of parameter).  Items (b) and (c) are not currently hypotheses
+--     of this lemma and would have to be added or derived.
+-- Sanctioned lifted sorry: two concrete, named missing bricks, no false statement.
 private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]

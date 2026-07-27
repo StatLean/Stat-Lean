@@ -33,6 +33,13 @@ Differentiable Families), §14.4 (Likelihood Methods in Parametric Models), Coro
 * The tilted limit produced by the third lemma is the Gaussian law with density
   proportional to `exp(⟪h, ·⟫)` against `N(0, I(θ₀))`, i.e. `N(I(θ₀)h, I(θ₀))`; the mean
   shift is the matrix action `mulVecE J h`.
+* The theorem is proved by *specialising the estimator theorem*
+  (`weak_limit_estimator_centered_under_local_alternatives`) to the canonical asymptotically
+  linear estimator `θ̂ₙ = θ₀ + J⁻¹Zₙ/√n`, whose linearization remainder vanishes identically,
+  and then pushing the limit `N(h, I⁻¹(θ₀))` forward by `J`: this gives
+  `N(J h, J J⁻¹ Jᵀ) = N(J h, J)`.  The source's bare nonsingularity hypothesis is enough —
+  positive definiteness of `J` is *derived* (`posSemidef_of_fisherInformation`), since the
+  Fisher information bilinear form is automatically symmetric and nonnegative.
 * Statements use the same score `ℓ` that certifies quadratic-mean differentiability, which
   is the area's convention for `\tildeη_{θ₀} = 2η(·,θ₀)/√p_{θ₀}`; no separate definition of
   the score vector is introduced here.

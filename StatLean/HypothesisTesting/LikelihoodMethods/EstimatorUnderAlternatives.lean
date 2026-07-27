@@ -332,6 +332,28 @@ theorem weak_limit_estimator_under_local_alternatives
       (fun n => (productMeasure M μ (localAlt θ₀ h_n n) n).map
         (fun ω => Real.sqrt n • (est n ω - localAlt θ₀ h_n n)))
       (multivariateGaussian 0 J⁻¹) := by
+  -- TODO (obstruction re-derived).  The mathematical route is standard and the algebra is
+  -- already in place downstream (the two companion theorems below and
+  -- `ScoreUnderAlternatives` are *proved from this one*):
+  --   (i)  `√n(θ̂ₙ−θ₀) = Vₙ + o_P(1)` under `P^n_{θ₀}` (`hlin`, with `Vₙ = J⁻¹Zₙ`);
+  --   (ii) contiguity `P^n_{θₙ} ◅ P^n_{θ₀}` transfers that `o_P(1)` to `P^n_{θₙ}`;
+  --   (iii) Le Cam's third lemma gives `Vₙ ⇝ N(h, J⁻¹)` under `P^n_{θₙ}`;
+  --   (iv) `√n(θ̂ₙ−θₙ) = Vₙ − hₙ + o_P(1) ⇝ N(h,J⁻¹)` shifted by `−h`, i.e. `N(0, J⁻¹)`.
+  -- What blocks it is exactly that steps (ii)–(iii) are only available for a *fixed*
+  -- direction.  `AsymptoticRepresentation.contiguous_local_alternatives`,
+  -- `productMeasure_integral_comparison`, `lanResidual_tendsto_productMeasure` and
+  -- `slutsky_bridge_of_lanResidual` are all stated at a single `h : Θ k` and applied at the
+  -- parameter `θ₀ + h/√n`; here the parameter is `θ₀ + hₙ/√n` with `hₙ` varying, so the
+  -- comparison slack `ρ n` produced by `productMeasure_integral_comparison` — which depends
+  -- on `h` — has to be made uniform over a compact set of directions.  The one varying-`hₙ`
+  -- statement the library does have is `LANExpansion.LAN_expansion_iii` (it takes `h_n` with
+  -- `hconv : h_n → h`), but it lives on the abstract i.i.d. space and has no
+  -- `productMeasure` transfer, and `contiguous_local_alternatives` additionally consumes an
+  -- exact change-of-measure identity `hL_is_log_ratio` that is not among these hypotheses.
+  -- The missing bricks are therefore precisely: a `productMeasure`-level varying-direction
+  -- LAN residual, and a varying-direction version of `productMeasure_integral_comparison`.
+  -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane is
+  -- proved *from* it.
   sorry
 
 /-- **Limit law of an efficient estimator under local alternatives, centred at `θ₀`.**
