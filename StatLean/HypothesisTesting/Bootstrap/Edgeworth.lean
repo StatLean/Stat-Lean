@@ -987,6 +987,128 @@ theorem norm_charFunDensity_edgeworthDensity_le (γ : ℝ) {n : ℕ} (hn : 1 ≤
     _ = 1 + |γ| * |θ| ^ 3 * (Real.sqrt n)⁻¹ / 6 := by rw [norm_one, hterm]
     _ ≤ 1 + |γ| * |θ| ^ 3 / 6 := by nlinarith
 
+/-- **(E4).4 — the Gaussian tail of the Edgeworth characteristic function, off a window.**
+On `ρ ≤ |ξ|` the bound of `norm_charFunDensity_edgeworthDensity_le` at `θ = −2πξ` is at most
+`(1 + 512π³|γ|) e^{−π²ρ²}`: half of the Gaussian factor absorbs the cubic polynomial (through
+`exp_neg_half_sq_mul_abs_pow_le`), and the other half is monotone in `|ξ|`. With `ρ = c√n`
+the right-hand side is geometric in `n`, which is what the outer range needs. -/
+private lemma edgeworthCharFun_tail_le (γ : ℝ) {ρ ξ : ℝ} (hρ : 0 ≤ ρ) (hξ : ρ ≤ |ξ|) :
+    Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2) * (1 + |γ| * |2 * Real.pi * ξ| ^ 3 / 6)
+      ≤ (1 + 512 * Real.pi ^ 3 * |γ|) * Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) := by
+  have hπ : (0 : ℝ) < Real.pi := Real.pi_pos
+  have hpi2 : (4 : ℝ) ≤ Real.pi ^ 2 := by nlinarith [Real.two_le_pi]
+  have habs : |2 * Real.pi * ξ| ^ 3 = 8 * Real.pi ^ 3 * |ξ| ^ 3 := by
+    rw [abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2), abs_of_pos hπ]
+    ring
+  have hsplit : Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2)
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) := by
+    rw [← Real.exp_add]
+    congr 1
+    ring
+  have hsq : ρ ^ 2 ≤ ξ ^ 2 := by
+    have h := sq_abs ξ
+    nlinarith [abs_nonneg ξ]
+  have h1 : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) :=
+    Real.exp_le_exp.2 (by nlinarith)
+  have hcube : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3 ≤ 384 := by
+    have hmono : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ Real.exp (-ξ ^ 2 / 2) := by
+      refine Real.exp_le_exp.2 ?_
+      nlinarith [sq_nonneg ξ]
+    have hstep := mul_le_mul_of_nonneg_right hmono (by positivity : (0 : ℝ) ≤ |ξ| ^ 3)
+    have hgauss := exp_neg_half_sq_mul_abs_pow_le 3 ξ
+    have hval : (4 : ℝ) ^ 3 * (Nat.factorial 3 : ℝ) = 384 := by norm_num [Nat.factorial]
+    rw [hval] at hgauss
+    linarith
+  have hone : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by nlinarith [sq_nonneg ξ])
+  have h2 : Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * (1 + |γ| * |2 * Real.pi * ξ| ^ 3 / 6)
+      ≤ 1 + 512 * Real.pi ^ 3 * |γ| := by
+    rw [habs]
+    have hexpand : Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          * (1 + |γ| * (8 * Real.pi ^ 3 * |ξ| ^ 3) / 6)
+        = Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          + (4 * Real.pi ^ 3 * |γ| / 3) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3) := by
+      ring
+    rw [hexpand]
+    have hc : (4 * Real.pi ^ 3 * |γ| / 3) * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * |ξ| ^ 3)
+        ≤ (4 * Real.pi ^ 3 * |γ| / 3) * 384 :=
+      mul_le_mul_of_nonneg_left hcube (by positivity)
+    nlinarith
+  calc Real.exp (-(2 * Real.pi * ξ) ^ 2 / 2) * (1 + |γ| * |2 * Real.pi * ξ| ^ 3 / 6)
+      = Real.exp (-(Real.pi ^ 2 * ξ ^ 2))
+          * (Real.exp (-(Real.pi ^ 2 * ξ ^ 2)) * (1 + |γ| * |2 * Real.pi * ξ| ^ 3 / 6)) := by
+        rw [hsplit]; ring
+    _ ≤ Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) * (1 + 512 * Real.pi ^ 3 * |γ|) :=
+        mul_le_mul h1 h2 (by positivity) (Real.exp_pos _).le
+    _ = (1 + 512 * Real.pi ^ 3 * |γ|) * Real.exp (-(Real.pi ^ 2 * ρ ^ 2)) := by ring
+
+/-- The standard normal distribution function takes values in `[0, 1]`. -/
+private lemma abs_stdNormalCDF_le_one (u : ℝ) : |stdNormalCDF u| ≤ 1 := by
+  have hnn : (0 : ℝ) ≤ stdNormalCDF u := ENNReal.toReal_nonneg
+  have hle : (gaussianReal 0 1 (Set.Iic u)).toReal ≤ 1 := by
+    simpa using ENNReal.toReal_mono (by simp) (prob_le_one (μ := gaussianReal 0 1))
+  rw [abs_of_nonneg hnn]
+  exact hle
+
+/-- **A uniform bound on the Edgeworth approximant**, `|Φ(u) − (γ/6)φ(u)(u² − 1)n^{-1/2}|
+≤ 1 + 6|γ|`, with an `n`-free constant. Its only role in the assembly is to absorb the finitely
+many small `n` at which the damping factor of the window estimate is not yet available. -/
+theorem abs_edgeworthCDF_le (γ : ℝ) {n : ℕ} (hn : 1 ≤ n) (u : ℝ) :
+    |edgeworthCDF γ n u| ≤ 1 + 6 * |γ| := by
+  have hpdfnn : 0 ≤ stdNormalPDF u := by rw [stdNormalPDF]; positivity
+  have hsqrt0 : (0 : ℝ) ≤ (Real.sqrt n)⁻¹ := by positivity
+  have hsqrt : (Real.sqrt n)⁻¹ ≤ 1 := by
+    have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+    exact inv_le_one_of_one_le₀ (by simpa using Real.sqrt_le_sqrt h1)
+  have hb0 := stdNormalPDF_mul_abs_pow_le 0 (C := 1) (by norm_num) u
+  have hb2 := stdNormalPDF_mul_abs_pow_le 2 (C := 32) (by norm_num [Nat.factorial]) u
+  rw [pow_zero, mul_one, mul_one] at hb0
+  rw [sq_abs] at hb2
+  have hinv : (Real.sqrt (2 * Real.pi))⁻¹ ≤ 1 / 2 := by
+    have h2 : (2 : ℝ) ≤ Real.sqrt (2 * Real.pi) := by
+      have : Real.sqrt 4 ≤ Real.sqrt (2 * Real.pi) :=
+        Real.sqrt_le_sqrt (by nlinarith [Real.two_le_pi])
+      rwa [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)] at this
+    rw [inv_le_comm₀ (by positivity) (by norm_num)]
+    linarith
+  have hinvnn : (0 : ℝ) ≤ (Real.sqrt (2 * Real.pi))⁻¹ := by positivity
+  have hprod : |stdNormalPDF u * (u ^ 2 - 1)| ≤ 33 * (Real.sqrt (2 * Real.pi))⁻¹ := by
+    have hexp : stdNormalPDF u * (u ^ 2 - 1)
+        = stdNormalPDF u * u ^ 2 - stdNormalPDF u := by ring
+    have hu2 : (0 : ℝ) ≤ stdNormalPDF u * u ^ 2 := by positivity
+    rw [hexp, abs_le]
+    exact ⟨by linarith, by linarith⟩
+  have hterm : |1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹| ≤ 6 * |γ| := by
+    have hrw : |1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹|
+        = |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| * (Real.sqrt n)⁻¹ := by
+      rw [show 1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹
+            = (γ / 6) * (stdNormalPDF u * (u ^ 2 - 1)) * (Real.sqrt n)⁻¹ from by ring,
+        abs_mul, abs_mul, abs_div, abs_of_nonneg hsqrt0]
+      norm_num
+    rw [hrw]
+    have hnn : (0 : ℝ) ≤ |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| := by positivity
+    have hstep : |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| * (Real.sqrt n)⁻¹
+        ≤ |γ| / 6 * (33 * (Real.sqrt (2 * Real.pi))⁻¹) := by
+      calc |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| * (Real.sqrt n)⁻¹
+          ≤ |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| * 1 :=
+            mul_le_mul_of_nonneg_left hsqrt hnn
+        _ = |γ| / 6 * |stdNormalPDF u * (u ^ 2 - 1)| := mul_one _
+        _ ≤ |γ| / 6 * (33 * (Real.sqrt (2 * Real.pi))⁻¹) :=
+            mul_le_mul_of_nonneg_left hprod (by positivity)
+    have hgnn : (0 : ℝ) ≤ |γ| := abs_nonneg γ
+    have hkey := mul_le_mul_of_nonneg_left hinv (by positivity : (0 : ℝ) ≤ 33 * (|γ| / 6))
+    linarith
+  rw [edgeworthCDF]
+  have htri : |stdNormalCDF u - 1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹|
+      ≤ |stdNormalCDF u|
+        + |1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹| := by
+    have h := abs_add_le (stdNormalCDF u)
+      (-(1 / 6 * γ * stdNormalPDF u * (u ^ 2 - 1) * (Real.sqrt n)⁻¹))
+    rw [abs_neg] at h
+    rw [sub_eq_add_neg]
+    exact h
+  linarith [abs_stdNormalCDF_le_one u, htri, hterm]
+
 /-- The Edgeworth total-variation constant is positive. -/
 lemma edgeworthTV_pos (γ : ℝ) : 0 < (Real.sqrt (2 * Real.pi))⁻¹ * (1 + 66 * |γ|) := by
   have h : (0 : ℝ) < Real.sqrt (2 * Real.pi) := Real.sqrt_pos.2 (by positivity)
