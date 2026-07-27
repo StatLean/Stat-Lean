@@ -178,6 +178,211 @@ theorem truncScore_mean_expansion
       =o[𝓝 θ₀] fun θ => ‖θ - θ₀‖ := by
   sorry
 
+/-! ### Bridges to the dominating measure, and the truncation defect -/
+
+/-- Integration against `P_θ = p_θ · μ` is integration of `p_θ • g` against `μ`. -/
+private lemma integral_bvmOneObs {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (θ : EuclideanSpace ℝ (Fin k)) (g : 𝓧 → E) :
+    ∫ x, g x ∂(bvmOneObs M μ θ) = ∫ x, M.density θ x • g x ∂μ := by
+  rw [bvmOneObs, integral_withDensity_eq_integral_toReal_smul
+    (M.density_meas θ).ennreal_ofReal
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  simp only [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+
+/-- Integrability against `P_θ` is integrability of `g · p_θ` against `μ`. -/
+private lemma integrable_bvmOneObs_iff (θ : EuclideanSpace ℝ (Fin k)) (g : 𝓧 → ℝ) :
+    Integrable g (bvmOneObs M μ θ) ↔ Integrable (fun x => g x * M.density θ x) μ := by
+  rw [bvmOneObs, integrable_withDensity_iff (M.density_meas θ).ennreal_ofReal
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  refine integrable_congr (Filter.Eventually.of_forall fun x => ?_)
+  simp only [ENNReal.toReal_ofReal (M.density_nonneg θ x)]
+
+/-- A single coordinate of a Euclidean vector is dominated by its norm. -/
+private lemma abs_coord_le_norm {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (j : Fin n) :
+    |v j| ≤ ‖v‖ := by
+  have h1 : ‖v j‖ ^ 2 ≤ ∑ i, ‖v i‖ ^ 2 :=
+    Finset.single_le_sum (f := fun i : Fin n => ‖v i‖ ^ 2)
+      (fun i _ => sq_nonneg _) (Finset.mem_univ j)
+  have h2 : ‖v j‖ = Real.sqrt (‖v j‖ ^ 2) := (Real.sqrt_sq (norm_nonneg _)).symm
+  rw [← Real.norm_eq_abs, EuclideanSpace.norm_eq, h2]
+  exact Real.sqrt_le_sqrt h1
+
+/-- Coordinatewise domination of absolute values implies domination of Euclidean norms. -/
+private lemma euclidean_norm_le_of_abs_le {n : ℕ} (v w : EuclideanSpace ℝ (Fin n))
+    (h : ∀ j, |w j| ≤ |v j|) : ‖w‖ ≤ ‖v‖ := by
+  rw [EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
+  refine Real.sqrt_le_sqrt (Finset.sum_le_sum fun j _ => ?_)
+  rw [Real.norm_eq_abs, Real.norm_eq_abs]
+  exact pow_le_pow_left₀ (abs_nonneg _) (h j) 2
+
+/-- Elementary clamp bound: the truncation defect never exceeds the value itself. -/
+private lemma abs_sub_clamp_le {L s : ℝ} (hL : 0 ≤ L) :
+    |s - max (-L) (min L s)| ≤ |s| := by
+  rcases le_or_gt s L with h1 | h1
+  · rw [min_eq_right h1]
+    rcases le_or_gt (-L) s with h2 | h2
+    · rw [max_eq_right h2]; simp
+    · rw [max_eq_left h2.le, abs_of_nonpos (by linarith only [h2, hL]),
+        abs_of_nonpos (by linarith only [h2, hL])]
+      linarith only [hL]
+  · rw [min_eq_left h1.le, max_eq_right (by linarith only [hL] : -L ≤ L),
+      abs_of_nonneg (by linarith only [h1]), abs_of_nonneg (by linarith only [h1, hL])]
+    linarith only [hL]
+
+/-- Below the truncation level the truncated score agrees with the score. -/
+private lemma bvmTruncScore_eq_of_norm_le {L : ℝ} {x : 𝓧} (h : ‖sc x‖ ≤ L) :
+    bvmTruncScore sc L x = sc x := by
+  ext j
+  have hc : |sc x j| ≤ L := le_trans (abs_coord_le_norm (sc x) j) h
+  rw [abs_le] at hc
+  have hval : bvmTruncScore sc L x j = max (-L) (min L (sc x j)) := rfl
+  rw [hval, min_eq_right hc.2, max_eq_right hc.1]
+
+/-- The truncation defect is dominated by the score itself. -/
+private lemma norm_sub_bvmTruncScore_le {L : ℝ} (hL : 0 ≤ L) (x : 𝓧) :
+    ‖sc x - bvmTruncScore sc L x‖ ≤ ‖sc x‖ := by
+  refine euclidean_norm_le_of_abs_le (sc x) (sc x - bvmTruncScore sc L x) fun j => ?_
+  have hcoord : (sc x - bvmTruncScore sc L x) j = sc x j - max (-L) (min L (sc x j)) := rfl
+  rw [hcoord]
+  exact abs_sub_clamp_le hL
+
+/-- The **tail energy** of the score above level `m`, under `P_{θ₀}`. -/
+private noncomputable def scTail (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
+    (μ : Measure 𝓧) (θ₀ : EuclideanSpace ℝ (Fin k)) (sc : 𝓧 → EuclideanSpace ℝ (Fin k))
+    (m : ℝ) : ℝ :=
+  ∫ x, Set.indicator {x | m < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x ∂(bvmOneObs M μ θ₀)
+
+/-- The score is square-integrable under `P_{θ₀}` (from DQM). -/
+private lemma sq_score_integrable (hPDF : IsPDFOf M μ)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) :
+    Integrable (fun x => ‖sc x‖ ^ 2) (bvmOneObs M μ θ₀) := by
+  rw [integrable_bvmOneObs_iff]
+  exact AsymptoticStatistics.dqm_norm_sq_score_integrable M μ θ₀ sc
+    (hPDF.density_integrable θ₀) hDQM (fun _ _ => hPDF.density_integrable _)
+
+/-- The tail energy vanishes as the truncation level grows (dominated convergence). -/
+private lemma scTail_tendsto (hPDF : IsPDFOf M μ) (hsc : Measurable sc)
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ sc) :
+    Tendsto (fun n : ℕ => scTail M μ θ₀ sc n) atTop (𝓝 0) := by
+  haveI := bvmOneObs_isProbabilityMeasure hPDF θ₀
+  have hsq : Integrable (fun x => ‖sc x‖ ^ 2) (bvmOneObs M μ θ₀) :=
+    sq_score_integrable hPDF hDQM
+  have hmeasS : ∀ m : ℕ, MeasurableSet {x : 𝓧 | (m : ℝ) < ‖sc x‖} :=
+    fun _ => measurableSet_lt measurable_const hsc.norm
+  have hF : ∀ m : ℕ, AEStronglyMeasurable
+      (fun x => Set.indicator {x : 𝓧 | (m : ℝ) < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x)
+      (bvmOneObs M μ θ₀) := fun m =>
+    ((hsc.norm.pow_const 2).indicator (hmeasS m)).aestronglyMeasurable
+  have hbound : ∀ m : ℕ, ∀ᵐ x ∂(bvmOneObs M μ θ₀),
+      ‖Set.indicator {x : 𝓧 | (m : ℝ) < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x‖ ≤ ‖sc x‖ ^ 2 := by
+    intro m
+    refine Filter.Eventually.of_forall fun x => ?_
+    by_cases hx : x ∈ {x : 𝓧 | (m : ℝ) < ‖sc x‖}
+    · rw [Set.indicator_of_mem hx, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    · rw [Set.indicator_of_notMem hx, norm_zero]
+      exact sq_nonneg _
+  have hlim : ∀ᵐ x ∂(bvmOneObs M μ θ₀), Tendsto
+      (fun m : ℕ => Set.indicator {x : 𝓧 | (m : ℝ) < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x)
+      atTop (𝓝 ((fun _ : 𝓧 => (0 : ℝ)) x)) := by
+    refine Filter.Eventually.of_forall fun x => ?_
+    obtain ⟨N, hN⟩ := exists_nat_ge ‖sc x‖
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop N] with m hm
+    have hcast : (N : ℝ) ≤ (m : ℝ) := Nat.cast_le.2 hm
+    have hnot : x ∉ {x : 𝓧 | (m : ℝ) < ‖sc x‖} := by
+      simp only [Set.mem_setOf_eq, not_lt]
+      linarith only [hN, hcast]
+    exact (Set.indicator_of_notMem hnot _).symm
+  have hmain := MeasureTheory.tendsto_integral_of_dominated_convergence
+    (bound := fun x => ‖sc x‖ ^ 2) hF hsq hbound hlim
+  simpa [scTail] using hmain
+
+/-- Product-monotonicity brick for the domination bounds. -/
+private lemma dom_mul_le {a b c d : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) (hc : 0 ≤ c) (hcd : c ≤ d) :
+    a * c ≤ d * b := by
+  have hb : 0 ≤ b := le_trans ha hab
+  calc a * c ≤ b * c := mul_le_mul_of_nonneg_right hab hc
+    _ ≤ b * d := mul_le_mul_of_nonneg_left hcd hb
+    _ = d * b := mul_comm _ _
+
+/-- Bilinear defect brick: `a b ≤ p²q²` from `|a| ≤ pq`, `|b| ≤ pr`, `r ≤ q`. -/
+private lemma defect_arith {a b p q r : ℝ} (hp : 0 ≤ p) (hq : 0 ≤ q)
+    (ha : |a| ≤ p * q) (hb : |b| ≤ p * r) (hrq : r ≤ q) : a * b ≤ p ^ 2 * q ^ 2 := by
+  have h1 : a * b ≤ |a| * |b| := le_trans (le_abs_self _) (le_of_eq (abs_mul a b))
+  have h2 : |a| * |b| ≤ p * q * (p * r) :=
+    mul_le_mul ha hb (abs_nonneg _) (mul_nonneg hp hq)
+  have h3 : p * q * (p * r) ≤ p ^ 2 * q ^ 2 := by
+    nlinarith only [mul_nonneg (mul_nonneg hp hp) hq, sub_nonneg.2 hrq]
+  linarith only [h1, h2, h3]
+
+/-- Cancellation brick: divide a quadratic lower bound by the norm. -/
+private lemma sep_div {A B nv : ℝ} (hn : 0 ≤ nv) (hB : 0 ≤ B) (h : A * nv ^ 2 ≤ nv * B) :
+    A * nv ≤ B := by
+  rcases eq_or_lt_of_le hn with h0 | h0
+  · rw [← h0, mul_zero]; exact hB
+  · refine le_of_mul_le_mul_right ?_ h0
+    calc A * nv * nv = A * nv ^ 2 := by ring
+      _ ≤ nv * B := h
+      _ = B * nv := mul_comm _ _
+
+/-- Reverse triangle bookkeeping for the little-o transfer. -/
+private lemma norm_le_norm_sub_add {E : Type*} [NormedAddCommGroup E] (A B : E) :
+    ‖A‖ ≤ ‖B - A‖ + ‖B‖ := by
+  have hrev : ‖A - B‖ + ‖B‖ = ‖B - A‖ + ‖B‖ := by rw [norm_sub_rev]
+  rw [← hrev]
+  simpa using norm_add_le (A - B) B
+
+/-- **Positive-definite quadratic forms are uniformly coercive** (extreme value theorem on
+the unit sphere). -/
+private lemma exists_quadratic_lower_bound {n : ℕ} (hn : 0 < n)
+    {A : Matrix (Fin n) (Fin n) ℝ} (hA : A.PosDef) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ u : EuclideanSpace ℝ (Fin n),
+      lam * ‖u‖ ^ 2 ≤ ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ := by
+  classical
+  have hQpos : ∀ u : EuclideanSpace ℝ (Fin n), u ≠ 0 →
+      0 < ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ := by
+    intro u hu
+    have hu' : (WithLp.ofLp u : Fin n → ℝ) ≠ 0 := by
+      intro h
+      exact hu (by ext i; simpa using congrFun h i)
+    have hpd := (Matrix.posDef_iff_dotProduct_mulVec.1 hA).2 hu'
+    rw [Matrix.inner_toEuclideanCLM]
+    simpa using hpd
+  have hcont : Continuous fun u : EuclideanSpace ℝ (Fin n) =>
+      ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ :=
+    continuous_id.inner (Matrix.toEuclideanCLM (𝕜 := ℝ) A).continuous
+  have hne : (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1).Nonempty := by
+    refine ⟨EuclideanSpace.single (⟨0, hn⟩ : Fin n) (1 : ℝ), ?_⟩
+    rw [mem_sphere_zero_iff_norm]
+    simp
+  obtain ⟨u₀, hu₀, hmin⟩ :=
+    (isCompact_sphere (0 : EuclideanSpace ℝ (Fin n)) 1).exists_isMinOn hne hcont.continuousOn
+  rw [mem_sphere_zero_iff_norm] at hu₀
+  have hu₀0 : u₀ ≠ 0 := by
+    intro h
+    rw [h, norm_zero] at hu₀
+    exact zero_ne_one hu₀
+  refine ⟨⟪u₀, Matrix.toEuclideanCLM (𝕜 := ℝ) A u₀⟫, hQpos u₀ hu₀0, ?_⟩
+  intro u
+  rcases eq_or_ne u 0 with rfl | hu
+  · simp
+  · have hup : 0 < ‖u‖ := norm_pos_iff.2 hu
+    have hne0 : ‖u‖ ≠ 0 := ne_of_gt hup
+    have hmem : ‖u‖⁻¹ • u ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 := by
+      rw [mem_sphere_zero_iff_norm, norm_smul, Real.norm_eq_abs,
+        abs_of_nonneg (inv_nonneg.2 hup.le), inv_mul_cancel₀ hne0]
+    have hhom : ⟪‖u‖⁻¹ • u, Matrix.toEuclideanCLM (𝕜 := ℝ) A (‖u‖⁻¹ • u)⟫
+        = ‖u‖⁻¹ ^ 2 * ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ := by
+      rw [map_smul, real_inner_smul_left, real_inner_smul_right]; ring
+    have hle := isMinOn_iff.1 hmin _ hmem
+    rw [hhom] at hle
+    have hsq : (0 : ℝ) < ‖u‖ ^ 2 := pow_pos hup 2
+    calc ⟪u₀, Matrix.toEuclideanCLM (𝕜 := ℝ) A u₀⟫ * ‖u‖ ^ 2
+        ≤ ‖u‖⁻¹ ^ 2 * ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ * ‖u‖ ^ 2 :=
+          mul_le_mul_of_nonneg_right hle hsq.le
+      _ = ⟪u, Matrix.toEuclideanCLM (𝕜 := ℝ) A u⟫ := by field_simp
+
 /-- **Mean-displacement separation** (vdV p. 144, top): for a suitable truncation level `L`
 the displacement of the truncated-score mean is bounded below by `c‖θ − θ₀‖` on a
 neighborhood of `θ₀` (choose `L` with `P_{θ₀} sc^L (sc^L)ᵀ` close enough to the nonsingular
@@ -198,7 +403,145 @@ theorem truncScore_separation
       ∀ θ, ‖θ - θ₀‖ < ε →
         c * ‖θ - θ₀‖ ≤ ‖∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)
           - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)‖ := by
-  sorry
+  classical
+  rcases Nat.eq_zero_or_pos k with hk0 | hkpos
+  · -- degenerate parameter space: every norm vanishes
+    subst hk0
+    refine ⟨1, 1, 1, one_pos, one_pos, one_pos, fun θ _ => ?_⟩
+    have h0 : ‖θ - θ₀‖ = 0 := by rw [EuclideanSpace.norm_eq]; simp
+    rw [h0, mul_zero]
+    exact norm_nonneg _
+  haveI : IsProbabilityMeasure (bvmOneObs M μ θ₀) := bvmOneObs_isProbabilityMeasure hPDF θ₀
+  have hsq : Integrable (fun x => ‖sc x‖ ^ 2) (bvmOneObs M μ θ₀) :=
+    sq_score_integrable hPDF hDQM
+  -- the smallest "eigenvalue" of the Fisher form
+  obtain ⟨lam, hlam, hlamle⟩ := exists_quadratic_lower_bound hkpos hJ_pd
+  -- a truncation level whose tail energy is below `lam / 2`
+  obtain ⟨L, hL, hmR⟩ : ∃ L : ℝ, 0 < L ∧ scTail M μ θ₀ sc L < lam / 2 := by
+    have h1 : ∀ᶠ n : ℕ in atTop, scTail M μ θ₀ sc n < lam / 2 :=
+      (tendsto_order.1 (scTail_tendsto hPDF hsc hDQM)).2 (lam / 2) (by linarith only [hlam])
+    obtain ⟨n, hn⟩ := (h1.and (Filter.eventually_ge_atTop 1)).exists
+    have hnpos : 0 < n := hn.2
+    exact ⟨(n : ℝ), by exact_mod_cast hnpos, hn.1⟩
+  have hTnn : 0 ≤ scTail M μ θ₀ sc L :=
+    integral_nonneg fun x => Set.indicator_nonneg (fun _ _ => sq_nonneg _) x
+  have hSm : MeasurableSet {x : 𝓧 | L < ‖sc x‖} := measurableSet_lt measurable_const hsc.norm
+  -- the truncated bilinear integrand is integrable
+  have hintv : ∀ u : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => ⟪u, sc x⟫ • bvmTruncScore sc L x) (bvmOneObs M μ θ₀) := by
+    intro u
+    have hmeas : Measurable fun x => ⟪u, sc x⟫ • bvmTruncScore sc L x :=
+      (Measurable.const_inner (c := u) hsc).smul (measurable_bvmTruncScore hsc L)
+    have hb : Integrable (fun x => Real.sqrt k * L * (‖u‖ * (1 + ‖sc x‖ ^ 2)))
+        (bvmOneObs M μ θ₀) :=
+      (((integrable_const (1 : ℝ)).add hsq).const_mul ‖u‖).const_mul (Real.sqrt k * L)
+    refine hb.mono' hmeas.aestronglyMeasurable (Filter.Eventually.of_forall fun x => ?_)
+    rw [norm_smul, Real.norm_eq_abs]
+    refine dom_mul_le (abs_nonneg _) ?_ (norm_nonneg _) (norm_bvmTruncScore_le sc hL.le x)
+    have h1 : |⟪u, sc x⟫| ≤ ‖u‖ * ‖sc x‖ := abs_real_inner_le_norm u (sc x)
+    have h2 : ‖sc x‖ ≤ 1 + ‖sc x‖ ^ 2 := by nlinarith only [sq_nonneg (‖sc x‖ - 1)]
+    have h3 : ‖u‖ * ‖sc x‖ ≤ ‖u‖ * (1 + ‖sc x‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left h2 (norm_nonneg u)
+    linarith only [h1, h3]
+  -- the inner product with the vector integral is the scalar integral
+  have hinner : ∀ u : EuclideanSpace ℝ (Fin k),
+      ⟪u, ∫ x, ⟪u, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)⟫
+        = ∫ x, ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫ ∂(bvmOneObs M μ θ₀) := by
+    intro u
+    have h := ((innerSL ℝ u).integral_comp_comm (hintv u)).symm
+    simpa [real_inner_smul_right] using h
+  have hintp : ∀ u : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫) (bvmOneObs M μ θ₀) := by
+    intro u
+    have h := (innerSL ℝ u).integrable_comp (hintv u)
+    simpa [real_inner_smul_right] using h
+  have hintsq : ∀ u : EuclideanSpace ℝ (Fin k),
+      Integrable (fun x => (⟪u, sc x⟫ : ℝ) ^ 2) (bvmOneObs M μ θ₀) := by
+    intro u
+    have hmeas : Measurable fun x => (⟪u, sc x⟫ : ℝ) ^ 2 :=
+      (Measurable.const_inner (c := u) hsc).pow_const 2
+    refine (hsq.const_mul (‖u‖ ^ 2)).mono' hmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => ?_)
+    have h1 : |⟪u, sc x⟫| ≤ ‖u‖ * ‖sc x‖ := abs_real_inner_le_norm u (sc x)
+    rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+    calc (⟪u, sc x⟫ : ℝ) ^ 2 ≤ (‖u‖ * ‖sc x‖) ^ 2 := by
+          rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) h1 2
+      _ = ‖u‖ ^ 2 * ‖sc x‖ ^ 2 := mul_pow _ _ _
+  -- the Fisher form is the second moment of the (untruncated) directional score
+  have hfish : ∀ u : EuclideanSpace ℝ (Fin k),
+      ∫ x, (⟪u, sc x⟫ : ℝ) ^ 2 ∂(bvmOneObs M μ θ₀) = fisherInformation M μ θ₀ sc u u := by
+    intro u
+    rw [integral_bvmOneObs]
+    simp only [fisherInformation]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [smul_eq_mul]
+    ring
+  -- the truncation defect is controlled by the tail energy
+  have hdefect : ∀ u : EuclideanSpace ℝ (Fin k),
+      ∫ x, (⟪u, sc x⟫ : ℝ) ^ 2 ∂(bvmOneObs M μ θ₀)
+          - ∫ x, ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫ ∂(bvmOneObs M μ θ₀)
+        ≤ ‖u‖ ^ 2 * scTail M μ θ₀ sc L := by
+    intro u
+    have hg : Integrable (fun x => ‖u‖ ^ 2 *
+        Set.indicator {x : 𝓧 | L < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x) (bvmOneObs M μ θ₀) :=
+      (hsq.indicator hSm).const_mul _
+    have hpt : ∀ x : 𝓧, (⟪u, sc x⟫ : ℝ) ^ 2 - ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫
+        ≤ ‖u‖ ^ 2 * Set.indicator {x : 𝓧 | L < ‖sc x‖} (fun x => ‖sc x‖ ^ 2) x := by
+      intro x
+      by_cases hx : x ∈ {x : 𝓧 | L < ‖sc x‖}
+      · rw [Set.indicator_of_mem hx]
+        have he : (⟪u, sc x⟫ : ℝ) ^ 2 - ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫
+            = ⟪u, sc x⟫ * ⟪u, sc x - bvmTruncScore sc L x⟫ := by
+          rw [inner_sub_right]; ring
+        rw [he]
+        exact defect_arith (norm_nonneg u) (norm_nonneg (sc x))
+          (abs_real_inner_le_norm _ _) (abs_real_inner_le_norm _ _)
+          (norm_sub_bvmTruncScore_le hL.le x)
+      · rw [Set.indicator_of_notMem hx, mul_zero,
+          bvmTruncScore_eq_of_norm_le (not_lt.1 hx), pow_two]
+        exact le_of_eq (sub_self _)
+    have hsub : Integrable (fun x => (⟪u, sc x⟫ : ℝ) ^ 2
+        - ⟪u, sc x⟫ * ⟪u, bvmTruncScore sc L x⟫) (bvmOneObs M μ θ₀) :=
+      (hintsq u).sub (hintp u)
+    have hmono := integral_mono hsub hg hpt
+    rw [integral_sub (hintsq u) (hintp u), integral_const_mul] at hmono
+    exact hmono
+  -- the separation of the truncated mean displacement, direction by direction
+  have hlower : ∀ u : EuclideanSpace ℝ (Fin k),
+      lam / 2 * ‖u‖ ≤ ‖∫ x, ⟪u, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)‖ := by
+    intro u
+    have hQ : lam * ‖u‖ ^ 2 ≤ ∫ x, (⟪u, sc x⟫ : ℝ) ^ 2 ∂(bvmOneObs M μ θ₀) := by
+      rw [hfish u, hJ u u]
+      exact hlamle u
+    have hd := hdefect u
+    have hcs : ⟪u, ∫ x, ⟪u, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)⟫
+        ≤ ‖u‖ * ‖∫ x, ⟪u, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)‖ :=
+      real_inner_le_norm _ _
+    rw [hinner u] at hcs
+    refine sep_div (norm_nonneg u) (norm_nonneg _) ?_
+    nlinarith only [hQ, hd, hcs, mul_nonneg (sq_nonneg ‖u‖) (sub_nonneg.2 hmR.le)]
+  -- transfer along the little-o of the DQM expansion
+  obtain ⟨ε, hε, hball⟩ : ∃ ε : ℝ, 0 < ε ∧ ∀ θ : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ < ε →
+      ‖∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)
+          - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)
+          - ∫ x, ⟪θ - θ₀, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)‖
+        ≤ lam / 4 * ‖θ - θ₀‖ := by
+    have hexp := truncScore_mean_expansion hPDF hsc hDQM hL
+    have hb := hexp.bound (c := lam / 4) (by linarith only [hlam])
+    rw [Metric.eventually_nhds_iff] at hb
+    obtain ⟨ε, hε, hb⟩ := hb
+    refine ⟨ε, hε, fun θ hθ => ?_⟩
+    have hdist : dist θ θ₀ < ε := by rwa [dist_eq_norm]
+    have hfin := hb hdist
+    rwa [norm_norm] at hfin
+  refine ⟨L, ε, lam / 4, hL, hε, by linarith only [hlam], fun θ hθ => ?_⟩
+  have hD := hlower (θ - θ₀)
+  have hb := hball θ hθ
+  have htri := norm_le_norm_sub_add
+    (∫ x, ⟪θ - θ₀, sc x⟫ • bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀))
+    (∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)
+      - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀))
+  linarith only [hD, hb, htri]
 
 /-- **Vector Hoeffding**: coordinatewise Hoeffding plus a union bound over the `2k` one-sided
 coordinate events. -/
