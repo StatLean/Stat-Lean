@@ -59,22 +59,34 @@ tests of a one-parameter exponential family. (`TSH4 §4.2`.)
 * `C₁ ≤ C₂` is the degenerate-tolerant form of the source's `C₁ < C₂`; if `C₁ = C₂` the two
   boundary equations are compatible only when `γ₁ = γ₂`, which is the caller's obligation.
 
-**⚠ BOTH THEOREMS BELOW ARE FALSE AS STATED — a missing hypothesis on `Ξ`.**
-Nothing constrains `Ξ` beyond `Ξ ⊆ interior E.natSet`, so `Ξ` may be *sparse*: the null
-value(s) need not be limit points of the alternative set `Θ₁`. When they are not,
-unbiasedness imposes **no** equality constraint at the boundary (the boundary set
-`closure Θ₀ ∩ closure Θ₁` of `PowerContinuity.isUMPU_of_isUMP_on_boundary` is empty), the
+**⚠ BOTH THEOREMS BELOW WERE FALSE AS TRANSCRIBED — a missing hypothesis on `Ξ`; both are
+now REPAIRED and CLOSED.** Nothing constrained `Ξ` beyond `Ξ ⊆ interior E.natSet`, so `Ξ`
+could be *sparse*: the null value(s) need not be limit points of the alternative set `Θ₁`.
+When they are not, unbiasedness imposes **no** equality constraint at the boundary, the
 optimality problem degenerates to an ordinary one-sided Neyman–Pearson problem, and the
 two-sided test loses to the one-sided one. Explicit counterexamples are recorded at each
 theorem; both use the Gaussian location family `E.base = N(0,1)`, `E.stat = id`,
 `E.P θ = N(θ,1)`, `natSet = ℝ`, `P θ = E.P θ` everywhere, `α = 0.05`.
-The minimal repair is to require `Ξ` to be *open* (`IsOpen Ξ`), or more weakly to require
-the null value(s) to lie in `closure Θ₁`; with `Ξ` open, `θ₀ ∈ closure (Ξ \ {θ₀})` and
-`θ₁, θ₂ ∈ closure {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ}`, which is exactly what the boundary device
-consumes. The amendment is *not* applied here (public signatures are frozen for this pass);
-it is reported so that a signature revision can be made deliberately. Note that the
-amendment restores truth but does not by itself make the theorems provable from the current
-stock — see the per-theorem `TODO`s for the remaining analytic bricks.
+
+**The applied amendment is `(hΞopen : IsOpen Ξ)`** in each of the two theorems, and nothing
+else. It is the minimal hypothesis excluding the counterexamples, it is what the classical
+statement means by "`θ` ranges over an interval interior to the natural parameter set", and
+it is exactly what the proofs consume: with `Ξ` open, `θ₀ ∈ closure (Ξ \ {θ₀})` and
+`θ₁, θ₂ ∈ closure {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ}` (so the level inequality at a null value
+upgrades to similarity, by continuity of the power function), and `θ₀` is an *interior*
+minimum of the power function of any unbiased test (so its derivative vanishes there).
+
+Both proofs run through the two-constraint Neyman–Pearson lemma
+`isMax_of_multiplier_form` (`m = 2`, already proved), whose multiplier shape is certified by
+a *separating line*: for the point null, the secant/tangent of the strictly convex
+`t ↦ e^{(θ' − θ₀)t}` (`exists_sep_line`); for the interval null, the three-exponential
+separation `a e^{θ₁t} + b e^{θ₂t}` versus `e^{ϑt}`, which after the substitution
+`w = e^{(θ₂−θ₁)t}` is the secant of `w ↦ w^λ` with `λ = (ϑ−θ₁)/(θ₂−θ₁)`
+(`exists_sep_exp3_out` for `ϑ ∉ [θ₁,θ₂]`, `exists_sep_exp3_mid` for `ϑ ∈ (θ₁,θ₂)`). The same
+three-exponential separation, with the middle exponent, is what gives the level of the
+reject-outside test on the *interior* of the interval null (`expFamily_level_interval`):
+`(φ − α)` and the combination change sign at exactly the same two points, so their product is
+pointwise nonnegative and the two size equations kill both boundary terms.
 
 **Bibliographic comments.** UMP unbiased two-sided tests for exponential families are due to
 J. Neyman and E. S. Pearson ("Contributions to the theory of testing statistical
@@ -1213,32 +1225,47 @@ theorem isUMPU_outside_interval_expFamily
     -- USER-INPUT: size condition at the upper endpoint
     (hsize₂ : power P φ θ₂ = α) :
     IsUMPU P {θ ∈ Ξ | θ₁ ≤ θ ∧ θ ≤ θ₂} {θ ∈ Ξ | θ < θ₁ ∨ θ₂ < θ} α φ := by
-  -- REPAIRED (`hΞopen` added), NOT YET CLOSED. This is PROOF-HARD, not repair-unclear: the
-  -- amended statement is the classical `TSH4 §4.2` theorem and the route is fixed. Three
-  -- pieces, in the same style as the now-closed `isUMPU_twoSided_expFamily`:
-  --  (a) LEVEL on the interior of the null interval. For `θ₁ < θ < θ₂` the classical argument
-  --      is the sign pattern of a three-exponential combination: choose `a, b` with
-  --      `q(t) = a e^{θ₁t} + b e^{θ₂t} − e^{θt}` vanishing at `C₁, C₂`; then `(φ − α)·q ≥ 0`
-  --      pointwise (both factors change sign exactly at `C₁, C₂`, in the same pattern), so
-  --      `0 ≤ ∫(φ−α)q dν = a·0 + b·0 − ∫(φ−α)dP_θ·d(θ)`, i.e. `power φ θ ≤ α`.
-  --  (b) OPTIMALITY. `expFamily_np_compare` transposed: constraint densities at `θ₁` and `θ₂`
-  --      instead of `(1, T)` at `θ₀`, objective at `θ' ∉ [θ₁, θ₂]`, multipliers again from the
-  --      three-exponential separation.
-  --  (c) SIMILARITY of competitors at `θ₁, θ₂`, from `continuous_power_expFamily` plus
-  --      `hΞopen` (each endpoint is a limit of alternatives, so `power ψ θⱼ ≥ α`, and `≤ α`
-  --      because `θⱼ ∈ Θ₀`). This piece is a routine variant of the sequence argument inside
-  --      `unbiased_side_conditions`.
-  -- MISSING BRICK for (a) and (b): the three-exponential separating combination. Substituting
-  -- `w = e^{(θ₂−θ₁)t} ∈ (0,∞)` turns `q` into `a + b w − w^λ` with `λ = (θ−θ₁)/(θ₂−θ₁)`; the
-  -- needed sign pattern is exactly "the secant of `w ↦ w^λ` lies below the graph inside and
-  -- above it outside", i.e. `Real.strictConcaveOn_rpow` for `0 < λ < 1` (case (a)) and
-  -- `strictConvexOn_rpow` for `1 < λ` (case (b), after dividing by `e^{θ₁t}` when `θ' > θ₂`
-  -- and by `e^{θ₂t}` when `θ' < θ₁`, which keeps the exponent above `1` in both directions).
-  -- Both Mathlib lemmas exist; what is missing here is the `exists_sep_line` analogue for a
-  -- general strictly convex function on `Ioi 0` (the degenerate `C₁ = C₂` branch needs the
-  -- supporting line, available from `one_add_mul_self_lt_rpow_one_add`), plus the transport
-  -- of the sign pattern back through the substitution. None of it is deep; it is simply not
-  -- written.
-  sorry
+  subst hT
+  have hconstα : IsCriticalFn (fun _ : 𝓧 => α) :=
+    ⟨measurable_const, fun _ => ⟨hα₀.le, hα₁.le⟩⟩
+  -- LEVEL on the whole null interval: the endpoints by the size equations, the interior by
+  -- the variation-diminishing property of the exponential kernel
+  have hΘ₀ : ∀ θ ∈ Ξ, θ₁ ≤ θ → θ ≤ θ₂ → ∫ x, φ x ∂(P θ) ≤ α := by
+    intro θ hθΞ hl hr
+    rcases eq_or_lt_of_le hl with rfl | hl'
+    · exact le_of_eq hsize₁
+    rcases eq_or_lt_of_le hr with rfl | hr'
+    · exact le_of_eq hsize₂
+    exact expFamily_level_interval E hP hΞ hθ₁ hθ₂ hθΞ hl' hr' hC hα₀.le hα₁.le hφ
+      hφ_one hφ_zero hsize₁ hsize₂
+  -- the two-multiplier comparison against any test similar at both endpoints
+  have hcmp : ∀ θ' ∈ Ξ, (θ' < θ₁ ∨ θ₂ < θ') → ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ →
+      ∫ x, ψ x ∂(P θ₁) = α → ∫ x, ψ x ∂(P θ₂) = α →
+      ∫ x, ψ x ∂(P θ') ≤ ∫ x, φ x ∂(P θ') := fun θ' hθ'Ξ hθ'S ψ hψ e1 e2 =>
+    expFamily_np_compare_interval E hP hΞ hθ₁ hθ₂ hθ'Ξ hθ hθ'S hC hφ hψ hφ_one hφ_zero
+      hsize₁ hsize₂ e1 e2
+  refine ⟨hφ, ⟨?_, ?_⟩, ?_⟩
+  · rintro θ ⟨hθΞ, hl, hr⟩
+    exact hΘ₀ θ hθΞ hl hr
+  · -- unbiasedness: the constant test `α` is similar at both endpoints
+    rintro θ' ⟨hθ'Ξ, hθ'S⟩
+    have h := hcmp θ' hθ'Ξ hθ'S (fun _ => α) hconstα (by simp) (by simp)
+    simp only [power]
+    calc α = ∫ _x, (α : ℝ) ∂(P θ') := by simp
+      _ ≤ ∫ x, φ x ∂(P θ') := h
+  · -- optimality: an unbiased competitor is similar at both endpoints, by continuity of its
+    -- power function and the fact that each endpoint is a limit of alternatives
+    rintro ψ hψ hunb θ' ⟨hθ'Ξ, hθ'S⟩
+    obtain ⟨f₁, hf₁t, hf₁⟩ := exists_approx_seq hΞopen hθ₁ (s := (-1 : ℝ)) (by norm_num)
+    obtain ⟨f₂, hf₂t, hf₂⟩ := exists_approx_seq hΞopen hθ₂ (s := (1 : ℝ)) (by norm_num)
+    have e1 : ∫ x, ψ x ∂(P θ₁) = α :=
+      power_eq_of_le_of_seq E hP hΞ hθ₁ hψ (hunb.1 θ₁ ⟨hθ₁, le_rfl, hθ.le⟩) f₁ hf₁t
+        (fun n => (hf₁ n).1)
+        (fun n => hunb.2 (f₁ n) ⟨(hf₁ n).1, Or.inl (by linarith [(hf₁ n).2])⟩)
+    have e2 : ∫ x, ψ x ∂(P θ₂) = α :=
+      power_eq_of_le_of_seq E hP hΞ hθ₂ hψ (hunb.1 θ₂ ⟨hθ₂, hθ.le, le_rfl⟩) f₂ hf₂t
+        (fun n => (hf₂ n).1)
+        (fun n => hunb.2 (f₂ n) ⟨(hf₂ n).1, Or.inr (by linarith [(hf₂ n).2])⟩)
+    exact hcmp θ' hθ'Ξ hθ'S ψ hψ e1 e2
 
 end StatLean.HypothesisTesting
