@@ -130,7 +130,63 @@ theorem tendsto_bootstrapTest_level [IsProbabilityMeasure Pr]
     (hqmeas : ∀ n, Measurable fun ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α)) :
     Tendsto (fun n => (Pr {ω | cdfPseudoInverse (G n (Qhat n ω)) (1 - α) < T n ω}).toReal)
       atTop (𝓝 α) := by
-  sorry
+  set q := cdfPseudoInverse Glim (1 - α) with hqdef
+  have hq : Glim q = 1 - α :=
+    cdf_quantile_eq hGlim_cdf hGlim_cont (by linarith [hα.2]) (by linarith [hα.1])
+  set qn : ℕ → Ω → ℝ := fun n ω => cdfPseudoInverse (G n (Qhat n ω)) (1 - α) with hqn
+  -- The acceptance probability tends to `1 − α`. Convergence in probability of the estimated
+  -- critical value is only available along subsequences, so the limit is identified by the
+  -- subsequence criterion: every subsequence has a further subsequence along which the
+  -- acceptance probabilities converge to `1 − α`.
+  have haccept : Tendsto (fun n => (Pr {ω | T n ω ≤ qn n ω}).toReal) atTop (𝓝 (1 - α)) := by
+    refine tendsto_of_subseq_tendsto (fun ns hns => ?_)
+    obtain ⟨φ, hφ, hnsφ⟩ := Filter.strictMono_subseq_of_tendsto_atTop hns
+    obtain ⟨ψ, hψ, hae⟩ := hQhat (ns ∘ φ) hnsφ
+    refine ⟨φ ∘ ψ, ?_⟩
+    set k : ℕ → ℕ := fun m => ns (φ (ψ m)) with hk
+    have hkmono : StrictMono k := hnsφ.comp hψ
+    -- Along `k` the bootstrap critical values converge almost surely to the limit quantile.
+    have hquant : ∀ᵐ ω ∂Pr, Tendsto (fun m => qn (k m) ω) atTop (𝓝 q) := by
+      filter_upwards [hae] with ω hω
+      obtain ⟨Qs, hQs, hagree⟩ := hω
+      have hagree' : ∀ m, Qs (k m) = Qhat (k m) ω := fun m => hagree m
+      have hconv : ∀ x : ℝ, Tendsto (fun m => G (k m) (Qhat (k m) ω) x) atTop (𝓝 (Glim x)) := by
+        intro x
+        have h : Tendsto (fun m => G (k m) (Qs (k m)) x) atTop (𝓝 (Glim x)) :=
+          (hGconv Qs hQs x).comp hkmono.tendsto_atTop
+        refine h.congr (fun m => ?_)
+        rw [hagree' m]
+      exact tendsto_cdfPseudoInverse_of_tendsto (fun m => (hGcdf (k m) (Qhat (k m) ω)).mono)
+        hstrict hq hconv
+    have hInMeas : TendstoInMeasure Pr (fun m => qn (k m)) atTop (fun _ => q) :=
+      tendstoInMeasure_of_tendsto_ae (fun m => (hqmeas (k m)).aestronglyMeasurable) hquant
+    -- Along `k` the distribution functions of the statistic converge to the limit law.
+    have hcdf : ∀ x : ℝ,
+        Tendsto (fun m => (Pr {ω | T (k m) ω ≤ x}).toReal) atTop (𝓝 (Glim x)) := by
+      intro x
+      have h : Tendsto (fun m => G (k m) P x) atTop (𝓝 (Glim x)) :=
+        (hGconv (fun _ => P) hP_mem x).comp hkmono.tendsto_atTop
+      simpa only [hGP] using h
+    have hmain := tendsto_measure_le_of_tendsto_cdf (μ := fun _ : ℕ => Pr)
+      (S := fun m => T (k m)) (c := fun m => qn (k m)) hGlim_cont.continuousAt hcdf
+      (fun ε hε => tendsto_measure_abs_sub_of_tendstoInMeasure hInMeas hε)
+    rwa [hq] at hmain
+  -- The rejection event is the complement of the acceptance event.
+  have hmeasS : ∀ n, MeasurableSet {ω | T n ω ≤ qn n ω} :=
+    fun n => measurableSet_le (hTmeas n) (hqmeas n)
+  have hcompl : ∀ n, (Pr {ω | qn n ω < T n ω}).toReal
+      = 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal := by
+    intro n
+    have hset : {ω | qn n ω < T n ω} = {ω | T n ω ≤ qn n ω}ᶜ := by
+      ext ω; simp only [Set.mem_setOf_eq, Set.mem_compl_iff, not_le]
+    rw [hset, measure_compl (hmeasS n) (measure_ne_top _ _),
+      ENNReal.toReal_sub_of_le (measure_mono (Set.subset_univ _)) (measure_ne_top _ _),
+      measure_univ, ENNReal.toReal_one]
+  have hlim : Tendsto (fun n => 1 - (Pr {ω | T n ω ≤ qn n ω}).toReal) atTop
+      (𝓝 (1 - (1 - α))) := Tendsto.const_sub 1 haccept
+  have harith : (1 : ℝ) - (1 - α) = α := by ring
+  rw [harith] at hlim
+  exact Tendsto.congr (fun n => (hcompl n).symm) hlim
 
 /-- **Consistency of the bootstrap test against a fixed alternative.**
 

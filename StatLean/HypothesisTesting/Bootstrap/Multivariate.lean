@@ -1153,6 +1153,168 @@ variable {P : Measure 𝓢} {Pr : Measure Ω} {X : ℕ → Ω → 𝓢} {h : Fin
   {Df : EuclideanSpace ℝ (Fin p) →L[ℝ] EuclideanSpace ℝ (Fin q)} {D : Matrix (Fin q) (Fin p) ℝ}
   {covH : Matrix (Fin p) (Fin p) ℝ} {nrm : EuclideanSpace ℝ (Fin q) → ℝ}
 
+/-! ### The vector of coordinate functions as a mean-vector problem
+
+The delta method is the mean-vector theory of this file, transported along `s ↦ (h₁ s, …, h_p s)`
+and then pushed through a differentiable map. The lemmas of this block do the transport: they
+identify the law of the vector of sample means with a `meanVecRootLaw`, its covariance matrix with
+`covH`, and the image of the Gaussian limit under the differential with the Gaussian limit of the
+image. -/
+
+/-- Coordinate extensionality on a Euclidean space. -/
+private lemma euclidean_ext {x y : EuclideanSpace ℝ (Fin p)}
+    (hxy : ∀ j, WithLp.ofLp x j = WithLp.ofLp y j) : x = y := by
+  have h : WithLp.ofLp x = WithLp.ofLp y := funext hxy
+  simpa using congrArg (WithLp.toLp 2) h
+
+/-- The **vector of coordinate functions** `s ↦ (h₁ s, …, h_p s)`, as a point of `ℝᵖ`. -/
+private noncomputable def hVec (h : Fin p → 𝓢 → ℝ) (s : 𝓢) : EuclideanSpace ℝ (Fin p) :=
+  WithLp.toLp 2 fun j => h j s
+
+private lemma ofLp_hVec (s : 𝓢) (j : Fin p) : WithLp.ofLp (hVec h s) j = h j s := rfl
+
+private lemma measurable_hVec (hhmeas : ∀ j, Measurable (h j)) : Measurable (hVec h) := by
+  unfold hVec
+  fun_prop
+
+private lemma measurable_ofLp_apply (a : Fin p) :
+    Measurable fun y : EuclideanSpace ℝ (Fin p) => WithLp.ofLp y a := by fun_prop
+
+/-- The vector of coordinate functions is square-integrable as soon as each coordinate is. -/
+private lemma memLp_hVec (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) :
+    MemLp (hVec h) 2 P := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  rw [memLp_two_iff_integrable_sq_norm hmeas.aestronglyMeasurable]
+  have hnorm : ∀ s : 𝓢, ‖hVec h s‖ ^ 2 = ∑ j, (h j s) ^ 2 := by
+    intro s
+    rw [EuclideanSpace.norm_eq, Real.sq_sqrt (Finset.sum_nonneg (fun j _ => by positivity))]
+    refine Finset.sum_congr rfl (fun j _ => ?_)
+    rw [ofLp_hVec, Real.norm_eq_abs, sq_abs]
+  simp only [hnorm]
+  exact integrable_finset_sum _ (fun j _ => (hh2 j).integrable_sq)
+
+/-- The law of the vector of coordinate functions is a probability measure. -/
+private lemma isProbabilityMeasure_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j)) :
+    IsProbabilityMeasure (P.map (hVec h)) :=
+  Measure.isProbabilityMeasure_map (measurable_hVec hhmeas).aemeasurable
+
+/-- The law of the vector of coordinate functions is square-integrable. -/
+private lemma memLp_id_map_hVec (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) :
+    MemLp (fun y : EuclideanSpace ℝ (Fin p) => y) 2 (P.map (hVec h)) := by
+  rw [memLp_map_measure_iff (by fun_prop) (measurable_hVec hhmeas).aemeasurable]
+  simpa [Function.comp_def] using memLp_hVec hhmeas hh2
+
+/-- The covariance matrix of the law of the vector of coordinate functions is the covariance
+matrix of the coordinate functions. -/
+private lemma covMatrix_map_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j))
+    (i j : Fin p) :
+    covMatrix (P.map (hVec h)) i j = cov[h i, h j; P] := by
+  rw [covMatrix, Matrix.of_apply, covariance_map (measurable_ofLp_apply i).aestronglyMeasurable
+    (measurable_ofLp_apply j).aestronglyMeasurable (measurable_hVec hhmeas).aemeasurable]
+  rfl
+
+/-- The mean vector of the law of the vector of coordinate functions is the parameter. -/
+private lemma integral_map_hVec [IsProbabilityMeasure P] (hhmeas : ∀ j, Measurable (h j))
+    (hh2 : ∀ j, MemLp (h j) 2 P) :
+    ∫ z, z ∂(P.map (hVec h)) = WithLp.toLp 2 fun j => ∫ s, h j s ∂P := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  have hint : Integrable (hVec h) P := (memLp_hVec hhmeas hh2).integrable (by norm_num)
+  rw [integral_map hmeas.aemeasurable (by fun_prop)]
+  refine euclidean_ext (fun j => ?_)
+  have hproj : ∫ s, WithLp.ofLp (hVec h s) j ∂P = WithLp.ofLp (∫ s, hVec h s ∂P) j :=
+    (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin p) j).integral_comp_comm hint
+  rw [← hproj]
+  simp only [ofLp_hVec]
+
+/-- **The vector of sample means is a mean-vector root.**
+
+The law of `n^{1/2}(θ̂ₙ − θ)`, where `θ̂ₙ` is the vector of sample means of the coordinate
+functions under `n` independent draws from `P`, is the mean-vector root law of the image of `P`
+under `s ↦ (h₁ s, …, h_p s)`. This is the identification that makes the whole multivariate
+chain of this file available for smooth functions of means. -/
+private lemma map_meanStatistic_eq_meanVecRootLaw [IsProbabilityMeasure P]
+    (hhmeas : ∀ j, Measurable (h j)) (hh2 : ∀ j, MemLp (h j) 2 P) (n : ℕ) :
+    (Measure.pi fun _ : Fin n => P).map
+        (fun w => Real.sqrt n • (meanStatistic h w - WithLp.toLp 2 fun j => ∫ s, h j s ∂P))
+      = meanVecRootLaw (P.map (hVec h)) n := by
+  have hmeas : Measurable (hVec h) := measurable_hVec hhmeas
+  have hpi : (Measure.pi fun _ : Fin n => P).map (fun w (i : Fin n) => hVec h (w i))
+      = Measure.pi fun _ : Fin n => P.map (hVec h) :=
+    Measure.pi_map_pi (fun _ => hmeas.aemeasurable)
+  have hstat : ∀ w : Fin n → 𝓢,
+      meanStatistic h w = (n : ℝ)⁻¹ • ∑ i, hVec h (w i) := by
+    intro w
+    refine euclidean_ext (fun j => ?_)
+    have hsum : WithLp.ofLp (∑ i, hVec h (w i)) j = ∑ i, WithLp.ofLp (hVec h (w i)) j :=
+      map_sum (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin p) j) _ _
+    simp only [meanStatistic, WithLp.ofLp_toLp, PiLp.smul_apply, smul_eq_mul, hsum, ofLp_hVec]
+  have hcomp : ((Measure.pi fun _ : Fin n => P).map (fun w (i : Fin n) => hVec h (w i))).map
+        (fun y : Fin n → EuclideanSpace ℝ (Fin p) =>
+          Real.sqrt n • ((n : ℝ)⁻¹ • (∑ i, y i) - ∫ z, z ∂(P.map (hVec h))))
+      = (Measure.pi fun _ : Fin n => P).map
+        (fun w => Real.sqrt n • ((n : ℝ)⁻¹ • (∑ i, hVec h (w i))
+          - ∫ z, z ∂(P.map (hVec h)))) := by
+    rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    simp only [Function.comp_def]
+  rw [meanVecRootLaw, ← hpi, hcomp, integral_map_hVec hhmeas hh2]
+  congr 1
+  funext w
+  rw [hstat w]
+
+/-- The real inner product of a Euclidean space, as a sum of products of coordinates. -/
+private lemma real_inner_euclidean {m : ℕ} (u v : EuclideanSpace ℝ (Fin m)) :
+    (inner ℝ u v : ℝ) = ∑ i, WithLp.ofLp u i * WithLp.ofLp v i := by
+  have hdef : (inner ℝ u v : ℝ) = ∑ i, WithLp.ofLp v i * star (WithLp.ofLp u i) := rfl
+  rw [hdef]
+  exact Finset.sum_congr rfl (fun i _ => by simp [mul_comm])
+
+/-- **The Gaussian limit transforms by the differential.**
+
+The image of the centred Gaussian law with covariance `covH` under the differential is the centred
+Gaussian law with covariance `D covH Dᵀ`: both characteristic functions are Gaussian, and the
+quadratic forms agree because `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`. -/
+private lemma map_multivariateGaussian_deriv (hpsd : covH.PosSemidef)
+    (hD : ∀ v, Df v = WithLp.toLp 2 (D.mulVec (WithLp.ofLp v))) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH).map Df
+      = multivariateGaussian (0 : EuclideanSpace ℝ (Fin q)) (D * covH * D.transpose) := by
+  classical
+  have hpsd' : (D * covH * D.transpose).PosSemidef := by
+    have hc := hpsd.conjTranspose_mul_mul_same (B := D.transpose)
+    simpa [Matrix.conjTranspose_transpose] using hc
+  haveI : IsProbabilityMeasure ((multivariateGaussian
+      (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) :=
+    Measure.isProbabilityMeasure_map (by fun_prop)
+  refine Measure.ext_of_charFun (funext fun t => ?_)
+  -- pairing with `Df y` is pairing with the transposed direction
+  set tD : EuclideanSpace ℝ (Fin p) := WithLp.toLp 2 (D.transpose.mulVec (WithLp.ofLp t)) with htD
+  have hinner : ∀ y : EuclideanSpace ℝ (Fin p),
+      (inner ℝ (Df y) t : ℝ) = inner ℝ y tD := by
+    intro y
+    rw [real_inner_euclidean, real_inner_euclidean, hD y]
+    simp only [htD, WithLp.ofLp_toLp, Matrix.mulVec, Matrix.transpose_apply, dotProduct,
+      Finset.sum_mul, Finset.mul_sum]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl (fun b _ => Finset.sum_congr rfl (fun a _ => by ring))
+  -- both characteristic functions are the Gaussian one
+  have hcf : charFun ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH).map Df) t
+      = charFun (multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) covH) tD := by
+    rw [charFun_apply, charFun_apply,
+      integral_map (by fun_prop) (by fun_prop : AEStronglyMeasurable
+        (fun z : EuclideanSpace ℝ (Fin q) => Complex.exp ((inner ℝ z t : ℝ) * Complex.I)) _)]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only [hinner y]
+  rw [hcf, charFun_multivariateGaussian hpsd, charFun_multivariateGaussian hpsd']
+  have hquad : WithLp.ofLp tD ⬝ᵥ covH.mulVec (WithLp.ofLp tD)
+      = WithLp.ofLp t ⬝ᵥ (D * covH * D.transpose).mulVec (WithLp.ofLp t) := by
+    have hu : WithLp.ofLp tD = D.transpose.mulVec (WithLp.ofLp t) := by
+      simp only [htD, WithLp.ofLp_toLp]
+    rw [hu, Matrix.dotProduct_mulVec, ← Matrix.vecMul_transpose, Matrix.transpose_transpose,
+      Matrix.dotProduct_mulVec, ← Matrix.vecMul_vecMul, ← Matrix.vecMul_vecMul,
+      Matrix.vecMul_transpose, dotProduct_comm,
+      dotProduct_comm (D.mulVec _) (WithLp.ofLp t), Matrix.dotProduct_mulVec]
+  rw [hquad]
+  simp
+
 /-- **Delta-method limit for a smooth function of means.**
 
 Let each coordinate of the parameter be an expectation `∫ h j dP` estimated by the corresponding
@@ -1183,30 +1345,46 @@ theorem smooth_function_of_means_tendsto [IsProbabilityMeasure P]
         fun w => Real.sqrt n • (f (meanStatistic h w) -
           f (WithLp.toLp 2 fun j => ∫ s, h j s ∂P)))) atTop
       (𝓝 (∫ z, φ z ∂(multivariateGaussian 0 (D * covH * D.transpose)))) := by
-  -- TODO (delta method — NOT blocked; deferred for size). Every ingredient is available; what
-  -- is missing is only the (long) assembly. Re-derived route, in four steps.
-  -- (1) The vector of sample means IS a mean-vector root: with `H := P.map (fun s => toLp 2
-  --     (h · s))` on `ℝᵖ`, `Measure.pi_map_pi` turns `(Measure.pi fun _ : Fin n => P).map
-  --     (fun w => √n • (meanStatistic h w − θ))` into `meanVecRootLaw H n`, and
-  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. So the now-PROVEN
-  --     `meanVec_root_tendsto`, applied to the constant sequence at `H`, gives
-  --     `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`.
-  -- (2) Realise the whole array on one space: `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
-  --     `S i` with law `P`, and `Zₙ ω := √n (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
-  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`). A single carrier space
-  --     is what `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (Mathlib's
-  --     Slutsky, present in v4.29.1 — the previous session's claim that it is absent is wrong)
-  --     requires.
-  -- (3) The Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
-  --     probability: `{Zₙ}` is tight (`isTightMeasureSet_of_tendsto_charFun` applied to the
-  --     charFun convergence of step (1)), so for `‖Zₙ‖ ≤ M` one has `‖Zₙ/√n‖ ≤ M/√n → 0` and
-  --     `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` for any `η > 0` eventually. (`hf_nhds`/`hf_cont` are
-  --     not needed for this step; they are the reference's extra regularity.)
-  -- (4) `Df` is continuous linear, so `TendstoInDistribution.continuous_comp` pushes the limit
-  --     to `(multivariateGaussian 0 covH).map Df`, and `Measure.ext_of_charFun` together with
-  --     `charFun_multivariateGaussian` and `hD` identifies that image with
-  --     `multivariateGaussian 0 (D * covH * Dᵀ)` (the quadratic form transforms as
-  --     `t ⬝ᵥ (D S Dᵀ) *ᵥ t = (Dᵀ t) ⬝ᵥ S *ᵥ (Dᵀ t)`).
+  -- TODO (delta method — steps (1) and (4) are now PROVED in this file; (2)-(3) remain).
+  -- Route, in four steps, with the state of each recorded.
+  -- (1) DONE: `map_meanStatistic_eq_meanVecRootLaw` identifies
+  --     `(Measure.pi fun _ : Fin n => P).map (fun w => √n • (meanStatistic h w − θ))` with
+  --     `meanVecRootLaw H n` for `H := P.map (hVec h)`, and `covMatrix_map_hVec` gives
+  --     `covMatrix H i j = cov[h i, h j; P] = covH i j`. Hence the PROVEN
+  --     `meanVec_root_tendsto`, at the constant sequence `fun _ => H` (a member of
+  --     `meanVecSeqClass H` by `⟨fun _ _ => inferInstance, fun _ => memLp_id_map_hVec …,
+  --     fun _ => tendsto_const_nhds, …⟩`), gives `√n (θ̂ₙ − θ) ⇒ multivariateGaussian 0 covH`
+  --     in the bounded-continuous-integral form.
+  -- (2) OPEN: realise the array on one space — `ProbabilityTheory.exists_iid ℕ P` gives i.i.d.
+  --     `S i` with law `P` and `Zₙ ω := √n • (meanStatistic h (fun i : Fin n => S i ω) − θ)` has
+  --     exactly the law of step (1) (`iIndepFun_iff_map_fun_eq_pi_map`), which is what
+  --     `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub` (present in v4.29.1)
+  --     requires. ALTERNATIVE, avoiding `exists_iid` entirely: `TendstoInDistribution` allows a
+  --     different carrier space per index, so one can stay on `Fin n → 𝓢` with
+  --     `Measure.pi fun _ : Fin n => P` and replace the Slutsky brick by the bounded-Lipschitz
+  --     estimate `|∫ F(Vₙ) − ∫ F(Df Zₙ)| ≤ L ε + 2‖F‖∞ μₙ{‖Rₙ‖ > ε}`, reducing to Lipschitz test
+  --     functions with `MeasureTheory.tendsto_iff_forall_lipschitz_integral_tendsto`.
+  -- (3) OPEN: the Taylor remainder `Rₙ := √n (f(θ + Zₙ/√n) − f(θ)) − Df Zₙ` tends to `0` in
+  --     probability. Tightness of `{law of Zₙ}` is needed only *eventually* in `n`, so it follows
+  --     from step (1) alone with the test functions `φ_M z := max 0 (min 1 (‖z‖ − M))`
+  --     (`BoundedContinuousFunction.ofNormedAddCommGroup`, as in `NonparametricMean.truncSq`):
+  --     `μₙ{‖Zₙ‖ > M + 1} ≤ ∫ φ_M → ∫ φ_M dG ≤ G{‖z‖ > M}`. On `{‖Zₙ‖ ≤ M}` one has
+  --     `‖Zₙ/√n‖ ≤ M/√n → 0`, so `hf` gives `‖Rₙ‖ ≤ η ‖Zₙ‖ ≤ η M` eventually, for every `η > 0`.
+  --     (`hf_nhds`/`hf_cont` are not needed here; they are the reference's extra regularity.)
+  -- (4) DONE: `map_multivariateGaussian_deriv` identifies `(multivariateGaussian 0 covH).map Df`
+  --     with `multivariateGaussian 0 (D * covH * Dᵀ)`.
+  --
+  -- SIGNATURE FINDING (a `LEAN-ONLY` measurability hypothesis on `f` is FORCED, and is not added
+  -- here because the statement is not yet proved). The conclusion is about
+  -- `Measure.map (fun w => √n • (f (meanStatistic h w) − f θ))`, and in Mathlib `Measure.map`
+  -- returns the junk value `0` when its argument is not `AEMeasurable`. The hypotheses constrain
+  -- `f` only on a neighbourhood of `θ` (`hf`, `hf_nhds`, `hf_cont`), so `f` may be an arbitrary —
+  -- in particular non-measurable — function away from `θ`, where the law of `θ̂ₙ` still puts mass:
+  -- take `p = q = 1`, `f y = y` for `y < 1/2` and `f y = 1_V(y)` for `y ≥ 1/2` with `V ⊆ [1/2, ∞)`
+  -- non-Lebesgue-measurable. Then every hypothesis holds, the left-hand side is `∫ φ d0 = 0`, and
+  -- the right-hand side is `∫ φ d(multivariateGaussian 0 (D covH Dᵀ)) ≠ 0` for suitable `φ`. The
+  -- fix is `(hfmeas : Measurable f)`, to be added together with the proof; the same remark applies
+  -- verbatim to the two siblings below.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, resampled-law form.**
@@ -1236,19 +1414,21 @@ theorem bootstrap_smooth_function_law_consistent [IsProbabilityMeasure P] [IsPro
         ∫ z, φ z ∂((bootstrapLaw fun i : Fin n => X i ω).map
           fun w => Real.sqrt n • (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)))) atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, resampled-law form — deferred, one open input). Both
-  -- integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
-  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. The resampled
-  -- term is the same delta method run at the empirical measure: the resampled mean statistic is
-  -- the mean-vector root of `(empiricalMeasure (X · ω)).map (fun s => toLp 2 (h · s))`, and the
-  -- almost sure membership of THAT sequence in `meanVecSeqClass` is the exact analogue of the
-  -- now-PROVEN `empirical_mem_meanVecSeqClass` (push the strong laws used there forward through
-  -- `s ↦ toLp 2 (h · s)`; the four laws needed are for the coordinates `h j`, the products
-  -- `h i * h j`, `exp (i⟪(h · s), t⟫)` along a countable dense set of directions, and
-  -- `‖(h · s)‖`, all integrable by `hh2`). So this target is deferred only on
-  -- `smooth_function_of_means_tendsto` plus that transported membership lemma; no Mathlib brick
-  -- is missing. The empirical-measure weak-convergence "gap" recorded by the previous session
-  -- does not exist — see `empirical_mem_meanVecSeqClass`.
+  -- TODO (bootstrap delta method, resampled-law form — deferred; route re-derived).
+  -- Both integrals converge to `∫ φ d(multivariateGaussian 0 (D covH Dᵀ))` and the difference then
+  -- tends to `0`. The sampling-law term is `smooth_function_of_means_tendsto`. For the resampled
+  -- term the transport layer of this file now applies verbatim at the empirical measure:
+  -- `(empiricalMeasure x).map (hVec h) = empiricalMeasure (fun i => hVec h (x i))` (a one-line
+  -- `Measure.map` of a finite Dirac combination), so the resampled mean statistic is the
+  -- mean-vector root of the empirical measure of the TRANSFORMED sample, and the almost sure
+  -- membership of that sequence in `meanVecSeqClass (P.map (hVec h))` is the PROVEN
+  -- `empirical_mem_meanVecSeqClass` applied to the i.i.d. variables `fun i ω => hVec h (X i ω)`
+  -- (i.i.d. with law `P.map (hVec h)`, square-integrable by `memLp_id_map_hVec`). What is genuinely
+  -- left is the delta-method Taylor step at the RANDOM centre `θ̂ₙ` rather than at `θ`: this is
+  -- where `hf_nhds` and `hf_cont` are consumed (uniform differentiability on a shrinking
+  -- neighbourhood of `θ`), and it is the only part not already reduced to proved lemmas.
+  -- The measurability finding recorded on `smooth_function_of_means_tendsto` applies here too:
+  -- `(hfmeas : Measurable f)` is forced by the two `Measure.map`s of the statement.
   sorry
 
 /-- **Bootstrap consistency for a smooth function of means, uniform distribution-function form.**
@@ -1284,17 +1464,19 @@ theorem bootstrap_smooth_function_consistent [IsProbabilityMeasure P] [IsProbabi
           {w | nrm (f (meanStatistic h w) -
             f (meanStatistic h fun i : Fin n => X i ω)) ≤ s}).toReal))
       atTop (𝓝 0) := by
-  -- TODO (bootstrap delta method, uniform Pólya form — deferred). The sup-CDF upgrade of
-  -- `bootstrap_smooth_function_law_consistent`: run the smooth-function root through the same
-  -- triangle squeeze as the now-PROVEN `bootstrap_meanVec_consistent`. The continuity of the
-  -- limiting norm distribution function — which the previous session recorded as blocked on
-  -- `stdGaussian ≪ volume` and on positive semidefiniteness — is now available in the exact
-  -- form needed: `continuous_normLimitCDF_of_posSemidef` applies verbatim to the covariance
-  -- `D * covH * Dᵀ` (positive semidefinite as `Dᵀ`-congruence of the positive semidefinite
-  -- `covH`, by `Matrix.PosSemidef.conjTranspose_mul_mul_same`, and nonzero because `Df ≠ 0`).
-  -- What remains is `smooth_function_of_means_tendsto` and its resampled analogue, together
-  -- with the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to the image
-  -- space. No Mathlib brick is missing.
+  -- TODO (bootstrap delta method, uniform Pólya form — deferred; route re-derived).
+  -- The sup-CDF upgrade of `bootstrap_smooth_function_law_consistent`: run the smooth-function
+  -- root through the same triangle squeeze as the PROVEN `bootstrap_meanVec_consistent`. Every
+  -- analytic ingredient of the squeeze is available in the exact form needed:
+  -- `continuous_normLimitCDF_of_posSemidef` applies to the limiting covariance `D * covH * Dᵀ`,
+  -- which is positive semidefinite by `Matrix.PosSemidef.conjTranspose_mul_mul_same` (see the
+  -- proved `map_multivariateGaussian_deriv`, which establishes exactly this) and nonzero because
+  -- `Df ≠ 0`; `isCDF_toReal_measure_Iic` supplies the two `IsCDF` sides and
+  -- `tendsto_supCDFDist_zero` the Pólya step. What remains is the pointwise convergence of the two
+  -- distribution functions of the norm, i.e. `smooth_function_of_means_tendsto` and its resampled
+  -- analogue above, plus the (routine) portmanteau step of `norm_root_cdf_tendsto` transported to
+  -- the image space. No Mathlib brick is missing. Measurability of `f` is forced here as well: the
+  -- statement measures the sets `{ω' | nrm (f (meanStatistic h …) − f θ) ≤ s}`.
   sorry
 
 end SmoothFunctions
