@@ -1292,6 +1292,95 @@ private lemma tendstoInProbRandomized_blockAvg (PY PZ : Measure ℝ)
   rw [Real.dist_eq, sub_zero, abs_of_nonneg hTnn]
   linarith
 
+
+/-! ### Two more closure properties of group-averaged convergence -/
+
+/-- Replacing the statistic by an eventually-equal one. -/
+private lemma tendstoInProbRandomized_congr {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) {A B : ∀ k, 𝓨 k → ℝ} {a : ℝ}
+    (h : TendstoInProbRandomized G P A a) (hAB : ∀ᶠ k in atTop, ∀ y, A k y = B k y) :
+    TendstoInProbRandomized G P B a := by
+  intro ε hε
+  refine (h ε hε).congr' ?_
+  filter_upwards [hAB] with k hk
+  have hset : ∀ g : G k, {x | ε ≤ |A k (g • x) - a|} = {x | ε ≤ |B k (g • x) - a|} := by
+    intro g; ext x; simp only [Set.mem_setOf_eq, hk]
+  simp only [hset]
+
+/-- **Sums pass to the limit at randomized data.** -/
+private lemma tendstoInProbRandomized_add {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) [∀ k, IsProbabilityMeasure (P k)]
+    {A B : ∀ k, 𝓨 k → ℝ} {a b : ℝ}
+    (hA : TendstoInProbRandomized G P A a) (hB : TendstoInProbRandomized G P B b) :
+    TendstoInProbRandomized G P (fun k y => A k y + B k y) (a + b) := by
+  intro ε hε
+  have hsub : ∀ (k : ℕ) (g : G k),
+      {x : 𝓨 k | ε ≤ |(A k (g • x) + B k (g • x)) - (a + b)|}
+        ⊆ {x : 𝓨 k | ε / 2 ≤ |A k (g • x) - a|} ∪ {x : 𝓨 k | ε / 2 ≤ |B k (g • x) - b|} := by
+    intro k g x hx
+    simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+    by_contra hcon
+    push Not at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have htri := abs_add_le (A k (g • x) - a) (B k (g • x) - b)
+    have heq : (A k (g • x) + B k (g • x)) - (a + b)
+        = (A k (g • x) - a) + (B k (g • x) - b) := by ring
+    rw [heq] at hx
+    linarith
+  have hlim : Tendsto (fun k => (Fintype.card (G k) : ℝ)⁻¹ *
+        ∑ g : G k, (P k).real {x | ε / 2 ≤ |A k (g • x) - a|}
+      + (Fintype.card (G k) : ℝ)⁻¹ *
+        ∑ g : G k, (P k).real {x | ε / 2 ≤ |B k (g • x) - b|}) atTop (𝓝 0) := by
+    have h2 := (hA (ε / 2) (by positivity)).add (hB (ε / 2) (by positivity))
+    rwa [add_zero] at h2
+  refine squeeze_zero (fun k => ?_) (fun k => avg_measureReal_le_add' (P k) _ _ _ (hsub k))
+    hlim
+  exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => measureReal_nonneg)
+
+/-- **Multiplication by a deterministic convergent factor, at randomized data.** -/
+private lemma tendstoInProbRandomized_const_mul {𝓨 : ℕ → Type*} [∀ k, MeasurableSpace (𝓨 k)]
+    (G : ℕ → Type*) [∀ k, Group (G k)] [∀ k, Fintype (G k)] [∀ k, MulAction (G k) (𝓨 k)]
+    (P : ∀ k, Measure (𝓨 k)) [∀ k, IsProbabilityMeasure (P k)]
+    {A : ∀ k, 𝓨 k → ℝ} {c : ℕ → ℝ} {a cl : ℝ}
+    (hc : Tendsto c atTop (𝓝 cl)) (hA : TendstoInProbRandomized G P A a) :
+    TendstoInProbRandomized G P (fun k y => c k * A k y) (cl * a) := by
+  intro ε hε
+  have hpos : (0 : ℝ) < |cl| + 1 := by positivity
+  set ρ : ℝ := ε / (2 * (|cl| + 1)) with hρdef
+  have hρpos : 0 < ρ := by positivity
+  have hev1 : ∀ᶠ k in atTop, |c k| ≤ |cl| + 1 := by
+    have := hc.abs.eventually (eventually_lt_nhds (show |cl| < |cl| + 1 by linarith))
+    exact this.mono fun k hk => hk.le
+  have hev2 : ∀ᶠ k in atTop, |c k - cl| * |a| < ε / 2 := by
+    have hlim : Tendsto (fun k => |c k - cl| * |a|) atTop (𝓝 0) := by
+      have h0 : Tendsto (fun k => c k - cl) atTop (𝓝 0) := by simpa using hc.sub_const cl
+      simpa using (h0.abs).mul_const |a|
+    exact hlim.eventually (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))
+  have hbound : ∀ᶠ k in atTop, (Fintype.card (G k) : ℝ)⁻¹ *
+      ∑ g : G k, (P k).real {x | ε ≤ |c k * A k (g • x) - cl * a|}
+      ≤ (Fintype.card (G k) : ℝ)⁻¹ *
+        ∑ g : G k, (P k).real {x | ρ ≤ |A k (g • x) - a|} := by
+    filter_upwards [hev1, hev2] with k hk1 hk2
+    refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => ?_) (by positivity)
+    refine measureReal_mono (fun x hx => ?_) (measure_ne_top _ _)
+    simp only [Set.mem_setOf_eq] at hx ⊢
+    by_contra hcon
+    push Not at hcon
+    have hsplit : c k * A k (g • x) - cl * a
+        = c k * (A k (g • x) - a) + (c k - cl) * a := by ring
+    have h1 : |c k * (A k (g • x) - a)| ≤ (|cl| + 1) * ρ := by
+      rw [abs_mul]
+      exact mul_le_mul hk1 hcon.le (abs_nonneg _) (by positivity)
+    have h2 : (|cl| + 1) * ρ = ε / 2 := by rw [hρdef]; field_simp
+    have h3 : |(c k - cl) * a| < ε / 2 := by rw [abs_mul]; exact hk2
+    have htri := abs_add_le (c k * (A k (g • x) - a)) ((c k - cl) * a)
+    rw [hsplit] at hx
+    linarith
+  refine squeeze_zero' (Eventually.of_forall fun k => ?_) hbound (hA ρ hρpos)
+  exact mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => measureReal_nonneg)
+
 /-! ### The randomized studentizing scale
 
 Under a uniform permutation of the pooled data each block is a sample **without
