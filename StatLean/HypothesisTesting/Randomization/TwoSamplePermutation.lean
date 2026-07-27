@@ -2,6 +2,7 @@ import StatLean.HypothesisTesting.Randomization.Asymptotics
 import StatLean.HypothesisTesting.Randomization.PairCLT
 import StatLean.HypothesisTesting.ForMathlib.LindebergCLT
 import StatLean.HypothesisTesting.ForMathlib.HypergeometricMoments
+import StatLean.HypothesisTesting.ForMathlib.CombinatorialCLT
 import StatLean.AsymptoticStatistics.ForMathlib.IIdJointLaw
 import Mathlib.Probability.StrongLaw
 import Mathlib.Probability.Independence.InfinitePi
@@ -159,6 +160,103 @@ instance isProbabilityMeasure_twoSampleLaw (m n : ℕ) (PY PZ : Measure ℝ)
         | infer_instance
         | · simp only [Fin.addCases_right]; infer_instance
   infer_instance
+
+/-! ### The permuted statistic as a block sum
+
+Under a uniform permutation the two-sample statistic is *exactly* a fixed positive multiple
+of the sum of the **centred** pooled data over a block of `m` positions — that is, of a
+simple random sample of size `m` drawn without replacement from the pooled population. This
+is what puts the whole two-sample chain in the scope of the combinatorial central limit
+theorem `ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum`: the sample means of the two
+blocks are not independent, but their difference is an affine function of one block sum, and
+the pooled total drops out because it is permutation invariant. -/
+
+/-- The **centred pooled data** `d(x)_l = x_l − x̄`, where `x̄` is the mean of all `N = m + n`
+pooled observations. This is the finite population from which a permutation samples. -/
+private noncomputable def pooledCentred (m n : ℕ) (x : Fin (m + n) → ℝ) : Fin (m + n) → ℝ :=
+  fun l => x l - ((m + n : ℕ) : ℝ)⁻¹ * ∑ l', x l'
+
+/-- The centred pooled data sums to zero — the hypothesis `hcent` of the combinatorial
+central limit theorem. -/
+private lemma sum_pooledCentred (m n : ℕ) (hmn : 0 < m + n) (x : Fin (m + n) → ℝ) :
+    ∑ l, pooledCentred m n x l = 0 := by
+  have hN : ((m + n : ℕ) : ℝ) ≠ 0 := by
+    exact_mod_cast hmn.ne'
+  simp only [pooledCentred]
+  rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    nsmul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hN, one_mul, sub_self]
+
+/-- **The permuted two-sample statistic is a multiple of a permuted block sum.** With
+`N = m + n` and `d = pooledCentred m n x`,
+$$ T_{m,n}(\sigma \cdot x) \;=\; \frac{\sqrt m\, N}{m n} \sum_{i<m} d\bigl(\sigma^{-1}(i)\bigr) .$$
+The pooled total cancels: the coefficient of `x̄` in the first block is `√m N/(mn) \cdot m`
+and in the second `√m/n \cdot N`, and these agree. -/
+private lemma twoSampleMeanDiff_smul_eq_blockSum (m n : ℕ) (hm : 0 < m) (hn : 0 < n)
+    (x : Fin (m + n) → ℝ) (σ : Equiv.Perm (Fin (m + n))) :
+    twoSampleMeanDiff m n (σ • x)
+      = Real.sqrt m * ((m + n : ℕ) : ℝ) / ((m : ℝ) * n)
+        * ∑ i : Fin m, pooledCentred m n x (σ⁻¹ (Fin.castAdd n i)) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+  -- The permutation preserves the pooled total, so the second block sum is the complement.
+  have htot : (∑ i : Fin m, x (σ⁻¹ (Fin.castAdd n i)))
+      + (∑ j : Fin n, x (σ⁻¹ (Fin.natAdd m j))) = ∑ l, x l := by
+    rw [← Fin.sum_univ_add (f := fun l => x (σ⁻¹ l))]
+    exact Equiv.sum_comp (σ⁻¹ : Equiv.Perm (Fin (m + n))) x
+  have hblock : ∑ i : Fin m, pooledCentred m n x (σ⁻¹ (Fin.castAdd n i))
+      = (∑ i : Fin m, x (σ⁻¹ (Fin.castAdd n i)))
+        - (m : ℝ) * (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, x l) := by
+    simp only [pooledCentred]
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+  have hBeq : ∑ j : Fin n, x (σ⁻¹ (Fin.natAdd m j))
+      = (∑ l, x l) - ∑ i : Fin m, x (σ⁻¹ (Fin.castAdd n i)) := by linarith
+  rw [hblock]
+  unfold twoSampleMeanDiff
+  simp only [perm_smul_apply]
+  rw [hBeq, hNcast]
+  field_simp
+  ring
+
+/-- **The two-sample randomization distribution is the c.d.f. of a permuted block sum.**
+Dividing the identity of `twoSampleMeanDiff_smul_eq_blockSum` by the positive constant
+`√m N/(mn)` turns `randDist` into exactly the group average appearing in
+`ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum`; the inversion `σ ↦ σ⁻¹` — the gap
+between the action convention `(σ • x) i = x (σ⁻¹ i)` and the marginal bricks, which are
+written with `σ` — is absorbed by `sum_perm_inv`. -/
+private lemma randDist_twoSampleMeanDiff_eq (m n : ℕ) (hm : 0 < m) (hn : 0 < n)
+    (x : Fin (m + n) → ℝ) (t : ℝ) :
+    randDist (Equiv.Perm (Fin (m + n))) (twoSampleMeanDiff m n) x t
+      = (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)),
+          (if ∑ i : Fin m, pooledCentred m n x (σ (Fin.castAdd n i))
+              ≤ t * ((m : ℝ) * n / (Real.sqrt m * ((m + n : ℕ) : ℝ))) then (1 : ℝ) else 0) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+  set c : ℝ := Real.sqrt m * ((m + n : ℕ) : ℝ) / ((m : ℝ) * n) with hcdef
+  have hcpos : 0 < c := by
+    rw [hcdef, hNcast]
+    have : (0 : ℝ) < Real.sqrt m := Real.sqrt_pos.2 hmR
+    positivity
+  have hthr : t * ((m : ℝ) * n / (Real.sqrt m * ((m + n : ℕ) : ℝ))) = t / c := by
+    rw [hcdef, hNcast]
+    have hs : (0 : ℝ) < Real.sqrt m := Real.sqrt_pos.2 hmR
+    field_simp
+  have hkey : ∀ B : ℝ, (c * B ≤ t)
+      ↔ (B ≤ t * ((m : ℝ) * n / (Real.sqrt m * ((m + n : ℕ) : ℝ)))) := by
+    intro B
+    rw [hthr, le_div_iff₀ hcpos, mul_comm B c]
+  unfold randDist
+  congr 1
+  rw [← sum_perm_inv (G := Equiv.Perm (Fin (m + n)))
+    (f := fun σ : Equiv.Perm (Fin (m + n)) =>
+      if ∑ i : Fin m, pooledCentred m n x (σ (Fin.castAdd n i))
+        ≤ t * ((m : ℝ) * n / (Real.sqrt m * ((m + n : ℕ) : ℝ))) then (1 : ℝ) else 0)]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  rw [twoSampleMeanDiff_smul_eq_blockSum m n hm hn x σ, ← hcdef]
+  exact if_congr (hkey _) rfl rfl
 
 /-! ### Gaussian c.d.f. helpers -/
 
