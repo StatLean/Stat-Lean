@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.HypothesisTesting.Unbiased.PowerContinuity
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
@@ -67,10 +68,24 @@ region is d-admissible) and Corollary 6.7.1 (α-admissibility). (`TSH4 §6.7 Thm
   "finite point", i.e. an actual parameter rather than a limit at infinity. Continuity of
   the power function in the natural parameter, used to pass from `θ₀` back into the null
   class, is a property of exponential families and is therefore *not* a hypothesis: it is
-  a derivation obligation inside the proof.
+  a derivation obligation inside the proof, discharged by `continuous_power_expFamily`.
+  **Signature amendment (documented deviation):** that continuity result is a
+  `ContinuousOn` over `interior E.natSet` and is sharp — on the boundary of the natural
+  parameter set the power function of an exponential family need not be continuous (see the
+  counterexample in its docstring) — so "actual parameter" is read as `θ₀ ∈ interior
+  E.natSet`, and `Θ_H ⊆ interior E.natSet` is added so that the level bound can be
+  transported along `𝓝[Θ_H] θ₀`.
 * The separation step is the geometric Hahn–Banach theorem for a closed convex set and an
   exterior point (`geometric_hahn_banach_closed_point` in Mathlib's
-  `Analysis.LocallyConvex.Separation`).
+  `Analysis.LocallyConvex.Separation`). It is used through
+  `exists_halfspace_of_measure_ne_zero`, which turns the pointwise separation into a
+  *single* half-space carrying positive mass by second countability (Lindelöf) — an
+  uncountable union of half-spaces would give no subadditivity.
+* The tilt-asymptotic core is `acceptance_subset_of_power_le_const`, stated with a free
+  finite constant `K`: pushing the natural parameter to infinity along the separating
+  direction beats any constant, and it is the `K = ε⁻¹` instance that reduces a *randomized*
+  competitor to its `ε`-superlevel sets, which is how `isDAdmissible_of_convex_acceptance`
+  is obtained without a Neyman–Pearson reduction.
 
 **Bibliographic comments.** Admissibility of tests with convex acceptance regions in
 exponential families, and the ray condition delimiting the alternative classes against
@@ -635,18 +650,36 @@ theorem isAlphaAdmissible_of_size_attained (E : ExpFamily 𝓧 (EuclideanSpace �
     (hlevel : IsLevel (statScaleFamily E) Θ_H (A₀ᶜ.indicator fun _ => (1 : ℝ)) α)
     -- USER-INPUT: the size is attained at a point of the closure of the null class which
     -- is an actual parameter (the source's "finite point")
-    (hθ₀closure : θ₀ ∈ closure Θ_H) (hθ₀nat : θ₀ ∈ E.natSet)
+    -- AMENDMENT: "actual parameter" is read as membership of the *interior* of the natural
+    -- parameter set, and the null class is likewise required to sit in that interior. This
+    -- is forced: the step that turns the level hypothesis on `Θ_H` into a bound at `θ₀`
+    -- is continuity of `η ↦ power (statScaleFamily E) φ η`, and `continuous_power_expFamily`
+    -- (which is sharp — see the counterexample in its docstring) is a `ContinuousOn` over
+    -- `interior E.natSet`. On the boundary of the natural parameter set the power function
+    -- of an exponential family genuinely need not be continuous.
+    (hΘHint : Θ_H ⊆ interior E.natSet)
+    (hθ₀closure : θ₀ ∈ closure Θ_H) (hθ₀nat : θ₀ ∈ interior E.natSet)
     (hθ₀size : power (statScaleFamily E) (A₀ᶜ.indicator fun _ => (1 : ℝ)) θ₀ = α) :
     IsAlphaAdmissible (statScaleFamily E) Θ_H Θ' α
       (A₀ᶜ.indicator fun _ => (1 : ℝ)) := by
-  -- TODO: `α`-admissibility, not yet formalized. Reuses `isDAdmissible_of_convex_acceptance`
-  -- but additionally needs continuity of the power function
-  -- `θ ↦ power (statScaleFamily E) φ₀ θ` at the finite point `θ₀ ∈ closure Θ_H ∩ natSet`
-  -- (an exponential-family regularity property, a *derivation* obligation) to turn the
-  -- level-`α` hypothesis and size-attainment at `θ₀` into the two-sided power domination on
-  -- `Θ_H` required by the d-admissibility theorem. Depends on the two results above plus
-  -- exp-family power-continuity. No false hypothesis; statement is TRUE.
-  sorry
+  intro φ hφ hlevelφ h1 θ hθ
+  -- the power function on the statistic scale is the raw power of `φ ∘ T`
+  have htrans : ∀ η : EuclideanSpace ℝ (Fin s),
+      power (statScaleFamily E) φ η = powerAgainst (E.P η) (fun x => φ (E.stat x)) := by
+    intro η
+    simp only [power, powerAgainst, statScaleFamily]
+    exact integral_map E.stat_meas.aemeasurable hφ.1.aestronglyMeasurable
+  have hcont : ContinuousOn (fun η => power (statScaleFamily E) φ η) (interior E.natSet) := by
+    simpa only [htrans] using
+      continuous_power_expFamily E (φ := fun x => φ (E.stat x))
+        ⟨hφ.1.comp E.stat_meas, fun x => hφ.2 _⟩
+  -- the level bound passes from `Θ_H` to the finite point `θ₀` by continuity
+  have hθ₀le : power (statScaleFamily E) φ θ₀ ≤ α := by
+    haveI : (nhdsWithin θ₀ Θ_H).NeBot := mem_closure_iff_nhdsWithin_neBot.mp hθ₀closure
+    exact le_of_tendsto ((hcont θ₀ hθ₀nat).mono hΘHint)
+      (Filter.eventually_of_mem self_mem_nhdsWithin hlevelφ)
+  exact power_eq_indicator_of_dominating E hΘ' hA₀closed hA₀convex hA₀meas hray hφ h1
+    (interior_subset hθ₀nat) (by rw [hθ₀size]; exact hθ₀le) θ (hΘ' hθ)
 
 end Convex
 
