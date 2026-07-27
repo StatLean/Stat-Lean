@@ -30,9 +30,9 @@ route for a half-space, and it is the one-dimensional marginal statement: the pr
 
 ## Honest accounting of the elementary route (see the module docstring below for the report)
 
-For the **ball** route the picture is now considerably better than the module originally
-recorded. Three of the four ingredients are proved here unconditionally, each with a
-dimension-free constant:
+For the **ball** route the elementary programme is now **complete**: `berryEsseen_ball_elementary`
+is proved outright and is axiom-clean (it depends on no `sorry`, direct or transitive). Every
+ingredient is proved here unconditionally, each with a dimension-free constant:
 
 * `gaussian_slab_measure_le` — slab anti-concentration (`1/√(2π)`);
 * `gaussian_ball_shell_measure_le` — *shell* anti-concentration (`C_ac = 7`), resting on the
@@ -47,16 +47,21 @@ dimension-free constant:
   Mathlib does not have.
 
 * `map_normalized_sum_stdGaussian` — Gaussian stability of the normalized sum,
-  `(⨂ⁿ N(0,I_k)).map (n^{-1/2} ∑) = N(0,I_k)`, which is the right-hand endpoint of the
-  Lindeberg telescope. Proved by characteristic functions (`Measure.ext_of_charFun` plus the
-  product factorization `charFun_map_const_smul_sum`), not by iterated convolution.
+  `(⨂ⁿ N(0,I_k)).map (n^{-1/2} ∑) = N(0,I_k)`, the right-hand endpoint of the Lindeberg
+  telescope. Proved by characteristic functions (`Measure.ext_of_charFun` plus the product
+  factorization `charFun_map_const_smul_sum`), not by iterated convolution;
+* `abs_integral_smooth_sub_gaussian_le` — the third-order multivariate **Lindeberg swap**: the
+  hybrid telescope `Qⱼ = ⨂ᵢ (if i < j then γ else ν)`, each step isolated by
+  `integral_pi_sum_peel` (`measurePreserving_piFinSuccAbove` + Fubini) and compared by
+  `abs_integral_swap_step_le`. The one-step comparison is a second-order Taylor expansion in
+  which the linear term dies by Riesz representation plus `hmean`
+  (`integral_clm_eq_zero_of_centred`), the quadratic term takes the *same* value on both sides
+  because both laws have identity covariance (`integral_bilin_eq_basis_sum` — note it never
+  needs the value of that basis sum, only that it is the same one), and the remainder is
+  `norm_taylor_remainder_three_le`.
 
 With the Gaussian third moment `β_G ≤ 2 k^{3/2}` (`integral_norm_cube_gaussian_le`, from the two
-public χ² moments) these suffice, and the **ball headline `berryEsseen_ball_elementary` is now
-assembled in full**: it consumes exactly one named `private` debt, the third-order multivariate
-Lindeberg swap `abs_integral_smooth_sub_gaussian_le`, whose own decomposition is now down to two
-of four pieces (the telescope proper and the one-step Taylor/moment-matching comparison); see its
-docstring for the re-derived route, which avoids `Measure.pi` surgery entirely.
+public χ² moments) these suffice and the ball assembly closes.
 
 For the *convex* route two further ingredients are missing: the smoothed convex indicator
 `exists_smoothed_convex_indicator` (mollification, dimension-dependent constant) and — the real
@@ -642,7 +647,31 @@ mollification works for any measurable `B`, and the analogous radial statement
 `exists_smoothed_radial_indicator` is proved above by the cheaper route of composing a fixed
 1-D cutoff with `‖·‖²`. What convexity is needed for is the *other* convex ingredient, the
 boundary-shell bound `γ(Bᵋ \ B) ≤ C_k ε`, which is **not** in this file and is the real obstacle
-to `berryEsseen_convex_elementary` (see its docstring). -/
+to `berryEsseen_convex_elementary` (see its docstring).
+
+Status after the wave-3 pass (re-verified against Mathlib v4.29.1, and this is the *only*
+remaining `private` debt of this file). The API inventory above is unchanged: `Analysis/
+Convolution.lean` exports `convolution_precompR_apply` and the first-order
+`HasCompactSupport.hasFDerivAt_convolution_right`, and nothing about `iteratedFDeriv` of a
+convolution. Two cheaper constructions were considered and **ruled out**, so that they are not
+re-explored:
+
+* *compose a fixed cutoff with a smooth "defining function" of `B`*, mirroring the radial trick
+  `χ ∘ ‖·‖²`. This needs a `C³` `ψ` with `ψ ≤ 0` on `B`, `ψ ≥ 1` off `Bᵋ` and
+  `‖Dᵐψ‖ ≲ ε^{-m}`; the natural candidate `dist(·, B)/ε` is only convex and `1`-Lipschitz, and
+  `dist(·,B)²` is only `C^{1,1}` for convex `B` — neither is `C³`, and smoothing either of them
+  is the very mollification being avoided.
+* *log-sum-exp ("soft-max") over the support function*,
+  `ψ_λ(x) = λ^{-1} log ∫_{S^{k-1}} exp(λ(⟪u,x⟫ − h_B(u))) dσ(u)`, whose derivatives are the
+  first three moments of a tilted measure on the sphere and do scale as `1, λ, λ²`. This fails
+  for a different reason: the soft-max error is `λ^{-1} log(1/σ{u : near-max})`, and for a
+  needle-shaped convex body that near-max set of directions is arbitrarily small, so the
+  approximation is not uniform over `B` — exactly the uniformity the `∃ C₃` prefix demands.
+
+So mollification really is the only route, and the cost is the `precompR` tower, not the
+analysis. Since closing this lemma alone would still leave `berryEsseen_convex_elementary`
+blocked on Ball's Gaussian-surface-area theorem (a genuine research theorem, see below), it is
+deliberately left as debt rather than paid at ~500 lines for no headline. -/
 private lemma exists_smoothed_convex_indicator (k : ℕ) :
     ∃ C₃ : ℝ, 0 < C₃ ∧ ∀ B : Set (EuclideanSpace ℝ (Fin k)), Convex ℝ B → ∀ {ε : ℝ}, 0 < ε →
       ∃ f : EuclideanSpace ℝ (Fin k) → ℝ,
@@ -2044,8 +2073,28 @@ sharp statement is K. Ball, "The reverse isoperimetric problem for Gaussian meas
 the Gaussian surface area of a convex body in `ℝ^k` is at most `4 k^{1/4}` (Nazarov (2003) gives
 the matching lower bound `c k^{1/4}`), and *any* finite bound here is a genuine theorem — the
 `k^{1/4}` in Bentkus's constant is precisely this quantity. Recording it as the named missing
-brick is the honest status; with it, plus `exists_smoothed_convex_indicator` and
-`abs_integral_smooth_sub_gaussian_le`, the proof below is a transcription of the ball assembly. -/
+brick is the honest status; with it, plus `exists_smoothed_convex_indicator`, the proof below is
+a transcription of the ball assembly (`abs_integral_smooth_sub_gaussian_le` is no longer a debt —
+it is proved above, and `berryEsseen_ball_elementary` is now axiom-clean).
+
+Re-derived in the wave-3 pass: the shell bound is genuinely the whole obstruction, and it is
+**not** cheapened by the fact that `C` here is allowed to depend on `k`. Three routes to a
+merely-finite `C_k` were checked and all fail:
+
+* *Gaussian isoperimetry* (Borell–Sudakov–Tsirelson) gives `γ(Bᵋ) ≤ Φ(Φ^{-1}(γ B) + ε)` and hence
+  the dimension-free `γ(Bᵋ \ B) ≤ ε/√(2π)` for **every** measurable `B` — but it is itself a
+  major theorem and is absent from Mathlib, so this is strictly harder than what it would buy.
+* *truncate and use Lebesgue perimeter*: `γ(Bᵋ \ B) ≤ γ(‖x‖ > R) + (2π)^{-k/2} Leb((B ∩ B_R)ᵋ ∖ B)`
+  with `Leb(...) ≤ ε · Per(B_{R+ε})` by monotonicity of perimeter under convex inclusion. This
+  bounds the shell, but the tail term is not `O(ε)` at fixed `R`, and taking `R = R(ε) ≍
+  √(2 log(1/ε))` to kill it leaves a main term `ε (log 1/ε)^{(k−1)/2}`, which is `ω(ε)`. No
+  choice of `R` gives a linear-in-`ε` bound; the argument is intrinsically lossy. (Mathlib also
+  has no perimeter of convex bodies, so even the lossy version is unavailable.)
+* *slab covering of `∂B`* — already excluded above: one slab per facet, unbounded.
+
+So the missing brick is exactly "the Gaussian surface area of a convex body in `ℝ^k` is finite,
+with a bound depending only on `k`", i.e. Ball's theorem or a weakened form of it, and it is a
+self-contained research-level project. -/
 theorem berryEsseen_convex_elementary {k : ℕ} (hk : 0 < k) :
     ∃ C : ℝ, 0 < C ∧ ∀ (n : ℕ) (ν : Measure (EuclideanSpace ℝ (Fin k)))
       (B : Set (EuclideanSpace ℝ (Fin k))),
