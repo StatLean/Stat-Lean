@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.PointEstimation.ExponentialFamily.Defs
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.Analysis.Convex.Basic
 
@@ -145,6 +146,50 @@ end StatScale
 section Convex
 
 variable {𝓧 : Type*} [MeasurableSpace 𝓧] {s : ℕ}
+
+/-- **Separation, in countable form.** If a set has positive measure outside a closed convex
+`A₀`, then *some single* open half-space missing `A₀` already carries positive mass of it.
+
+The complement of `A₀` is covered by the open half-spaces produced by
+`geometric_hahn_banach_closed_point` at each of its points; a Euclidean space is
+second countable, hence Lindelöf, so countably many of them suffice
+(`TopologicalSpace.isOpen_iUnion_countable`) and countable subadditivity finishes. -/
+private theorem exists_halfspace_of_measure_ne_zero {ρ : Measure (EuclideanSpace ℝ (Fin s))}
+    {A₀ A : Set (EuclideanSpace ℝ (Fin s))}
+    (hA₀closed : IsClosed A₀) (hA₀convex : Convex ℝ A₀) (hpos : ρ (A \ A₀) ≠ 0) :
+    ∃ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
+      A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ ∧ ρ (A ∩ {t | c < ⟪a, t⟫_ℝ}) ≠ 0 := by
+  classical
+  by_contra hcon
+  push_neg at hcon
+  refine hpos ?_
+  -- a separating open half-space at every point off `A₀`
+  have hsep : ∀ p : {q : EuclideanSpace ℝ (Fin s) // q ∉ A₀},
+      ∃ (a : EuclideanSpace ℝ (Fin s)) (c : ℝ),
+        A₀ ∩ {t | c < ⟪a, t⟫_ℝ} = ∅ ∧ (p : EuclideanSpace ℝ (Fin s)) ∈ {t | c < ⟪a, t⟫_ℝ} := by
+    rintro ⟨p, hp⟩
+    obtain ⟨f, u, hf, hup⟩ := geometric_hahn_banach_closed_point hA₀convex hA₀closed hp
+    refine ⟨(InnerProductSpace.toDual ℝ (EuclideanSpace ℝ (Fin s))).symm f, u, ?_, ?_⟩
+    · ext y
+      simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false,
+        not_and, not_lt, InnerProductSpace.toDual_symm_apply]
+      exact fun hy => (hf y hy).le
+    · simpa only [Set.mem_setOf_eq, InnerProductSpace.toDual_symm_apply] using hup
+  choose a c hemp hmem using hsep
+  have hopen : ∀ p, IsOpen {t : EuclideanSpace ℝ (Fin s) | c p < ⟪a p, t⟫_ℝ} := fun p =>
+    isOpen_lt continuous_const (continuous_const.inner continuous_id)
+  obtain ⟨Tc, hTc, hTU⟩ :=
+    TopologicalSpace.isOpen_iUnion_countable
+      (fun p => {t : EuclideanSpace ℝ (Fin s) | c p < ⟪a p, t⟫_ℝ}) hopen
+  have hsub : A \ A₀ ⊆ ⋃ p ∈ Tc, (A ∩ {t | c p < ⟪a p, t⟫_ℝ}) := by
+    intro x hx
+    have hxU : x ∈ ⋃ p, {t : EuclideanSpace ℝ (Fin s) | c p < ⟪a p, t⟫_ℝ} :=
+      Set.mem_iUnion.mpr ⟨⟨x, hx.2⟩, hmem ⟨x, hx.2⟩⟩
+    rw [← hTU] at hxU
+    obtain ⟨p, hp, hxp⟩ := Set.mem_iUnion₂.mp hxU
+    exact Set.mem_iUnion₂.mpr ⟨p, hp, ⟨hx.1, hxp⟩⟩
+  exact measure_mono_null hsub
+    ((measure_biUnion_null_iff hTc).mpr fun p _ => hcon (a p) (c p) (hemp p))
 
 /-- **A competitor no worse than a closed convex acceptance region is contained in it.**
 If `A₀` is closed and convex and every open half-space missing `A₀` points along a
