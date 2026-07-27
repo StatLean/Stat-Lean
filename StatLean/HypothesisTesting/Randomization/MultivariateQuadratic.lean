@@ -806,6 +806,157 @@ theorem weakConverges_randPairLaw_signChange_modifiedTSq [NeZero p]
   rw [mul_add, ← mul_assoc, inv_mul_cancel₀ (ne_of_gt hcard), one_mul] at hfinal
   linarith
 
+/-! ### Hotelling's statistic: the same reduction with a moving matrix
+
+Hotelling's `Σ̂ₙ` is *not* sign-invariant, so both the vector statistic and the matrix move
+along the group. The three lemmas below show that the motion of the matrix is `O(1/n)`
+uniformly on the tightness event, so the reduction of the previous section survives verbatim
+with one extra estimate. -/
+
+/-- A coordinate of the sample mean, written out. -/
+private lemma sampleMeanVec_ofLp {n : ℕ} (y : Fin n → EuclideanSpace ℝ (Fin p)) (j : Fin p) :
+    (sampleMeanVec y).ofLp j = (n : ℝ)⁻¹ * ∑ i, (y i).ofLp j := by
+  simp [sampleMeanVec, Finset.sum_apply]
+
+/-- A coordinate of the normalized sum, written out. -/
+private lemma signSum_ofLp {n : ℕ} (y : Fin n → EuclideanSpace ℝ (Fin p)) (j : Fin p) :
+    ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i : EuclideanSpace ℝ (Fin p)).ofLp j
+      = (Real.sqrt (n : ℝ))⁻¹ * ∑ i, (y i).ofLp j := by
+  simp [Finset.sum_apply]
+
+/-- **Recentring identity.** The centred cross-moment equals the uncentred one minus `n`
+times the product of the two means. -/
+private lemma sum_centred_mul_eq {n : ℕ} (hn : 0 < n) (y : Fin n → EuclideanSpace ℝ (Fin p))
+    (j k : Fin p) :
+    ∑ i, ((y i).ofLp j - (sampleMeanVec y).ofLp j) * ((y i).ofLp k - (sampleMeanVec y).ofLp k)
+      = (∑ i, (y i).ofLp j * (y i).ofLp k)
+        - (n : ℝ) * ((sampleMeanVec y).ofLp j * (sampleMeanVec y).ofLp k) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsumj : ∑ i, (y i).ofLp j = (n : ℝ) * (sampleMeanVec y).ofLp j := by
+    rw [sampleMeanVec_ofLp, ← mul_assoc, mul_inv_cancel₀ hnR.ne', one_mul]
+  have hsumk : ∑ i, (y i).ofLp k = (n : ℝ) * (sampleMeanVec y).ofLp k := by
+    rw [sampleMeanVec_ofLp, ← mul_assoc, mul_inv_cancel₀ hnR.ne', one_mul]
+  have hexp : ∀ i, ((y i).ofLp j - (sampleMeanVec y).ofLp j) *
+      ((y i).ofLp k - (sampleMeanVec y).ofLp k)
+      = (y i).ofLp j * (y i).ofLp k
+        - (sampleMeanVec y).ofLp k * (y i).ofLp j
+        - (sampleMeanVec y).ofLp j * (y i).ofLp k
+        + (sampleMeanVec y).ofLp j * (sampleMeanVec y).ofLp k := fun i => by ring
+  simp only [hexp, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsumj, hsumk]
+  ring
+
+/-- **The sample covariance recomputed at a sign pattern, entrywise.** Sign changes leave the
+uncentred sum alone, so only the rank-one mean correction moves:
+`Σ̂ₙ(ε·x) = (n−1)⁻¹(n Σ̃ₙ(x) − Vₙ(ε·x)Vₙ(ε·x)ᵀ)`. -/
+private lemma sampleCovMatrix_signChange_entry {n : ℕ} (hn : 0 < n) (ε : Fin n → ℤˣ)
+    (x : Fin n → EuclideanSpace ℝ (Fin p)) (j k : Fin p) :
+    sampleCovMatrix (ε • x) j k
+      = ((n : ℝ) - 1)⁻¹ * ((n : ℝ) * modifiedCovMatrix x j k
+          - ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp j
+            * ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp k) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (n : ℝ) ≠ 0 := hnR.ne'
+  have hsq : (Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹ = ((n : ℝ))⁻¹ := by
+    rw [← mul_inv, Real.mul_self_sqrt hnR.le]
+  -- the uncentred cross-moment is sign-invariant
+  have hunc : ∑ i, ((ε • x) i).ofLp j * ((ε • x) i).ofLp k
+      = (n : ℝ) * modifiedCovMatrix x j k := by
+    have hEq : ∀ i, ((ε • x) i).ofLp j * ((ε • x) i).ofLp k
+        = (x i).ofLp j * (x i).ofLp k := by
+      intro i
+      have h : (ε • x) i = ((ε i : ℤ) : ℝ) • x i := signChange_smul_apply_vec ε x i
+      have hs : (((ε i : ℤ) : ℝ)) * (((ε i : ℤ) : ℝ)) = 1 := by
+        rcases Int.units_eq_one_or (ε i) with h1 | h1 <;> rw [h1] <;> norm_num
+      rw [h]
+      simp only [WithLp.ofLp_smul, Pi.smul_apply, smul_eq_mul]
+      linear_combination (x i).ofLp j * (x i).ofLp k * hs
+    simp only [hEq, modifiedCovMatrix, Matrix.of_apply, ← mul_assoc,
+      mul_inv_cancel₀ hnR.ne', one_mul]
+  -- the mean correction is the rank-one term in `Vₙ`
+  have hmean : (n : ℝ) * ((sampleMeanVec (ε • x)).ofLp j * (sampleMeanVec (ε • x)).ofLp k)
+      = ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp j
+        * ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p)).ofLp k := by
+    rw [sampleMeanVec_ofLp, sampleMeanVec_ofLp, signSum_ofLp, signSum_ofLp]
+    have hrhs : ((Real.sqrt (n : ℝ))⁻¹ * ∑ i, ((ε • x) i).ofLp j)
+        * ((Real.sqrt (n : ℝ))⁻¹ * ∑ i, ((ε • x) i).ofLp k)
+        = ((Real.sqrt (n : ℝ))⁻¹ * (Real.sqrt (n : ℝ))⁻¹)
+          * ((∑ i, ((ε • x) i).ofLp j) * (∑ i, ((ε • x) i).ofLp k)) := by ring
+    rw [hrhs, hsq]
+    field_simp
+  rw [sampleCovMatrix, Matrix.of_apply, sum_centred_mul_eq hn, hunc, hmean]
+
+/-- **Hotelling's statistic in terms of the normalized sum.** Dividing the sample mean by its
+own normalization, `Tₙ(y) = Vₙ(y)ᵀ Σ̂ₙ(y)⁻¹ Vₙ(y)`; no invariance is used. -/
+private lemma hotellingTSq_eq {n : ℕ} (hn : 0 < n) (y : Fin n → EuclideanSpace ℝ (Fin p)) :
+    hotellingTSq y
+      = ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i : EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ
+          (sampleCovMatrix y)⁻¹.mulVec
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i : EuclideanSpace ℝ (Fin p)).ofLp := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsq : (Real.sqrt (n : ℝ))⁻¹ ^ 2 = ((n : ℝ))⁻¹ := by
+    rw [← Real.sqrt_inv, Real.sq_sqrt (by positivity)]
+  have hmean : (sampleMeanVec y : EuclideanSpace ℝ (Fin p)) = ((n : ℝ))⁻¹ • ∑ i, y i := rfl
+  rw [hotellingTSq, hmean, quadFormInv_smul _ ((n : ℝ))⁻¹,
+    quadFormInv_smul _ ((Real.sqrt (n : ℝ))⁻¹), hsq]
+  field_simp
+
+/-- **The matrix motion is `O(1/n)`.** Hotelling's matrix differs from the sign-invariant
+uncentred one by the rank-one mean correction, controlled by the size of the vector
+statistic. -/
+private lemma abs_sampleCov_sub_le {n : ℕ} (hn : 0 < n) {S : Matrix (Fin p) (Fin p) ℝ}
+    (ε : Fin n → ℤˣ) (x : Fin n → EuclideanSpace ℝ (Fin p)) (j k : Fin p)
+    (hn1 : (0 : ℝ) ≤ ((n : ℝ) - 1)⁻¹) (hne : (n : ℝ) - 1 ≠ 0) :
+    |sampleCovMatrix (ε • x) j k - S j k|
+      ≤ |modifiedCovMatrix x j k - S j k|
+        + ((n : ℝ) - 1)⁻¹ * (|modifiedCovMatrix x j k|
+            + ‖((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i : EuclideanSpace ℝ (Fin p))‖ ^ 2) := by
+  set v : EuclideanSpace ℝ (Fin p) :=
+    (Real.sqrt (n : ℝ))⁻¹ • ∑ i, (ε • x) i with hvdef
+  have hstep : sampleCovMatrix (ε • x) j k - modifiedCovMatrix x j k
+      = ((n : ℝ) - 1)⁻¹ * (modifiedCovMatrix x j k - v.ofLp j * v.ofLp k) := by
+    rw [sampleCovMatrix_signChange_entry hn ε x j k, ← hvdef]
+    field_simp
+    ring
+  have hprod : |v.ofLp j * v.ofLp k| ≤ ‖v‖ ^ 2 := by
+    rw [abs_mul, sq]
+    exact mul_le_mul (abs_ofLp_le_norm v j) (abs_ofLp_le_norm v k) (abs_nonneg _) (norm_nonneg v)
+  have hfirst : |sampleCovMatrix (ε • x) j k - modifiedCovMatrix x j k|
+      ≤ ((n : ℝ) - 1)⁻¹ * (|modifiedCovMatrix x j k| + ‖v‖ ^ 2) := by
+    rw [hstep, abs_mul, abs_of_nonneg hn1]
+    refine mul_le_mul_of_nonneg_left ((abs_sub _ _).trans ?_) hn1
+    exact add_le_add_right hprod _
+  calc |sampleCovMatrix (ε • x) j k - S j k|
+      ≤ |sampleCovMatrix (ε • x) j k - modifiedCovMatrix x j k|
+          + |modifiedCovMatrix x j k - S j k| := by
+        have := abs_add_le (sampleCovMatrix (ε • x) j k - modifiedCovMatrix x j k)
+          (modifiedCovMatrix x j k - S j k)
+        simpa using this
+    _ ≤ |modifiedCovMatrix x j k - S j k|
+          + ((n : ℝ) - 1)⁻¹ * (|modifiedCovMatrix x j k| + ‖v‖ ^ 2) := by linarith
+
+/-- The entries of the sample covariance matrix are measurable. -/
+private lemma measurable_sampleCovMatrix_entry {n : ℕ} (j k : Fin p) :
+    Measurable fun x : Fin n → EuclideanSpace ℝ (Fin p) => sampleCovMatrix x j k := by
+  simp only [sampleCovMatrix, Matrix.of_apply]
+  refine Measurable.const_mul (Finset.measurable_sum _ fun i _ => ?_) _
+  exact ((measurable_coord i j).sub (measurable_sampleMeanVec_coord j)).mul
+    ((measurable_coord i k).sub (measurable_sampleMeanVec_coord k))
+
+/-- Hotelling's `T²` statistic is measurable. -/
+private lemma measurable_hotellingTSq {n : ℕ} :
+    Measurable (hotellingTSq (p := p) (n := n)) := by
+  have hfun : (hotellingTSq (p := p) (n := n))
+      = fun x => (n : ℝ) * ∑ j, ∑ k, (sampleCovMatrix x)⁻¹ j k *
+          ((sampleMeanVec x).ofLp j * (sampleMeanVec x).ofLp k) := by
+    funext x
+    rw [hotellingTSq, quadForm_eq]
+  rw [hfun]
+  refine Measurable.const_mul (Finset.measurable_sum _ fun j _ =>
+    Finset.measurable_sum _ fun k _ => ?_) _
+  exact (measurable_inv_of_entries (fun j' k' => measurable_sampleCovMatrix_entry j' k') j
+      k).mul ((measurable_sampleMeanVec_coord j).mul (measurable_sampleMeanVec_coord k))
+
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
 modified statistic — a product of two independent `χ²_p` laws — obtained by showing that
 the centred sample covariance recomputed at a random sign pattern is still consistent for
