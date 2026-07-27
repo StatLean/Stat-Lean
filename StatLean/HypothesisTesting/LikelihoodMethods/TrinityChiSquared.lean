@@ -29,8 +29,9 @@ $$ \bigl|\log p_\theta(x) - \log p_{\theta_0}(x)
 for `θ` in a neighbourhood of `θ₀` — the source uses it to make the local expansion uniform
 over bounded directions, and hence usable at the random direction `√n(θ̂ₙ − θ₀)`. (It is not
 by itself sufficient for that uniformity: see the counterexample recorded at
-`sup_LAN_remainder_tendsto` in `UniformLAN.lean`, which is why the two likelihood-ratio
-statements below are still open.)
+`sup_LAN_remainder_tendsto` in `UniformLAN.lean`. Both likelihood-ratio statements below
+therefore carry the *two-point* form of the condition, which is what the uniform expansion
+actually consumes and which returns the printed one at `θ' = θ₀`.)
 
 **Reference.** E.L. Lehmann and J.P. Romano, *Testing Statistical Hypotheses*, 4th ed.,
 Springer Nature Switzerland AG, 2022 (ISBN 978-3-030-70577-0), Chapter 14 (Quadratic Mean
@@ -1183,6 +1184,37 @@ private lemma multivariateGaussian_map_scoreDiff_eq_chiSquared {m p : ℕ}
   rw [hcomp]
   exact stdGaussian_map_normSq_starProjection hp Wᗮ hfinWc
 
+/-- **The restricted information matrix is the pullback of the full one along `B`.**
+The two Fisher information integrands agree pointwise: the restricted density at `β₀` is the
+full density at `θ₀ = a + Bβ₀`, and `⟪u, B*(ℓ x)⟫ = ⟪B u, ℓ x⟫`. -/
+private lemma inner_mulVecE_pullback {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ = a + B β₀)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hℓB : ℓB = fun x => ContinuousLinearMap.adjoint B (ℓ x))
+    (J : Matrix (Fin k) (Fin k) ℝ)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (JB : Matrix (Fin m) (Fin m) ℝ)
+    (hJB : ∀ u v : EuclideanSpace ℝ (Fin m),
+      fisherInformation (restrictFamily M a B) μ β₀ ℓB u v = ⟪u, mulVecE JB v⟫) :
+    ∀ u v : EuclideanSpace ℝ (Fin m), ⟪u, mulVecE JB v⟫ = ⟪B u, mulVecE J (B v)⟫ := by
+  intro u v
+  rw [← hJB u v, ← hJ (B u) (B v)]
+  unfold fisherInformation
+  have hdens : ∀ x : 𝓧, (restrictFamily M a B).density β₀ x = M.density θ₀ x := by
+    intro x
+    rw [hθ₀]; rfl
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  dsimp only
+  rw [hdens x, hℓB]
+  have h1 : ⟪u, ContinuousLinearMap.adjoint B (ℓ x)⟫ = ⟪B u, ℓ x⟫ := by
+    rw [real_inner_comm, ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
+  have h2 : ⟪v, ContinuousLinearMap.adjoint B (ℓ x)⟫ = ⟪B v, ℓ x⟫ := by
+    rw [real_inner_comm, ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
+  rw [h1, h2]
+
 /-- **Score-difference surrogate converges to `χ²ₚ`** (affine composite null). The difference of
 the full-model and restricted-model Rao score statistics converges in law to `χ²ₚ`, `p = k − m`
 the codimension.
@@ -1224,22 +1256,7 @@ private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
       (fun t u => hPDF.density_integral_eq_one _) (fun t u => hPDF.density_integrable _)
       hDQM J hJ_pd.posSemidef hJ
   -- The restricted Fisher information is the pullback of the full one along `B`.
-  have hJBrel : ∀ u v : EuclideanSpace ℝ (Fin m),
-      ⟪u, mulVecE JB v⟫ = ⟪B u, mulVecE J (B v)⟫ := by
-    intro u v
-    rw [← hJB u v, ← hJ (B u) (B v)]
-    unfold fisherInformation
-    have hdens : ∀ x : 𝓧, (restrictFamily M a B).density β₀ x = M.density θ₀ x := by
-      intro x
-      rw [hθ₀]; rfl
-    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-    dsimp only
-    rw [hdens x, hℓB]
-    have h1 : ⟪u, ContinuousLinearMap.adjoint B (ℓ x)⟫ = ⟪B u, ℓ x⟫ := by
-      rw [real_inner_comm, ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
-    have h2 : ⟪v, ContinuousLinearMap.adjoint B (ℓ x)⟫ = ⟪B v, ℓ x⟫ := by
-      rw [real_inner_comm, ContinuousLinearMap.adjoint_inner_left, real_inner_comm]
-    rw [h1, h2]
+  have hJBrel := inner_mulVecE_pullback M μ a B β₀ θ₀ hθ₀ ℓ ℓB hℓB J hJ JB hJB
   -- The statistic is one fixed continuous function of the full-model score sum.
   have hscoreB : ∀ (n : ℕ) (ω : Fin n → 𝓧),
       scoreSum ℓB n ω = ContinuousLinearMap.adjoint B (scoreSum ℓ n ω) := by
@@ -1267,73 +1284,364 @@ private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
   rw [hseq, ← multivariateGaussian_map_scoreDiff_eq_chiSquared hdim hp B hB J hJ_pd JB hJBrel]
   exact hScore.map hFcont hFcont.measurable
 
-/-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine likelihood-ratio
-statistic differs from the score-difference surrogate by a quantity tending to zero in
-probability. -/
--- TODO (obstruction RE-DERIVED again; the previous note is superseded on two counts — the
--- shape of the reduction and the shape of the repair).
---
--- THE ROUTE IS SHORTER THAN THE PREVIOUS NOTE SAID, because the restricted piece is *literally*
--- an instance of the already-closed simple-null lemma. Writing `θ₀ = a + B β₀` one has, for
--- every `x`, `(restrictFamily M a B).density β₀ x = M.density θ₀ x` definitionally, hence
---   `2 ∑ᵢ log (p_{a+Bβ̂}(ωᵢ) / p_{θ₀}(ωᵢ))
---       = logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω`,
--- so `logLR_sub_score_tendstoInMeasure` applies TWICE — once to `M` at `θ₀` with `(ℓ, J, est)`,
--- once to `restrictFamily M a B` at `β₀` with `(ℓB, JB, est₀)` — and the two conclusions
--- subtract. What has to be supplied is only bookkeeping:
---   (i)   `IsPDFOf (restrictFamily M a B) μ`: both clauses are `hPDF` at `a + Bβ`, immediate.
---   (ii)  `productMeasure (restrictFamily M a B) μ β₀ n = productMeasure M μ θ₀ n`: unfold
---         `productMeasure` and use the density identity above — the restricted conclusion is
---         then a statement about the SAME measure as the full one.
---   (iii) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`: CLOSED, it is
---         `differentiableQuadraticMean_restrictFamily` above.
---   (iv)  `JB.PosDef`. Not currently derived anywhere in the file, but the ingredients are:
---         `multivariateGaussian_map_scoreDiff_eq_chiSquared` already builds `T = √J ∘ B`, shows
---         `⟪u, mulVecE JB v⟫ = ⟪T u, T v⟫` (`hJB_gram`) and `IsUnit JB.det` from `hB`. Positivity
---         is then `0 < ‖T u‖²` for `u ≠ 0`; `Matrix.IsHermitian JB` needs the entry extraction
---         `JB i j = ⟪EuclideanSpace.single i 1, mulVecE JB (EuclideanSpace.single j 1)⟫`, and
---         `Matrix.posDef_iff_dotProduct_mulVec` converts the quadratic form. ~50 lines; the
---         `hJB_gram`/`hJBdet` block should be factored out of that lemma rather than repeated.
---   (v)   The restricted two-point envelope, from `henv` with `MenvB = Menv·‖B‖²` and
---         `δB = δ/(‖B‖+1)`: `‖(a+Bβ) − θ₀‖ = ‖B(β−β₀)‖ ≤ ‖B‖‖β−β₀‖` and
---         `⟪β−β', ℓB x⟫ = ⟪B(β−β'), ℓ x⟫` by `hℓB` and `adjoint_inner_left`. Integrability of
---         `MenvB` is `hMenv_int` scaled, against the same measure by (ii).
---
--- SIGNATURE. The private lemma as frozen does not even mention `hθ₀ : θ₀ = a + B β₀`,
--- `hℓB : ℓB = B* ∘ ℓ`, `hJB`, `hDQM` or `hJ_pd`, so it is unprovable as stated: nothing ties
--- `(a, B, β₀, ℓB, JB)` to `(θ₀, ℓ, J)` and the score difference is then unrelated to the LR.
--- All five ARE available at the unique call site, `logLR_tendsto_chiSquared_affine`, so adding
--- them here is a pure re-parenthesization with no change to any public statement.
---
--- THE ONE GENUINE GAP: LOG-SPLITTING. The affine statistic is a ratio between two *moving*
--- parameters, and the reduction
---   `log(p_{θ̂}/p_{a+Bβ̂}) = log(p_{θ̂}/p_{θ₀}) − log(p_{a+Bβ̂}/p_{θ₀})`
--- is FALSE at the Lean junk values: for `p_{θ̂}(x) = 0` and `p_{a+Bβ̂}(x), p_{θ₀}(x) > 0` the
--- left side is `Real.log 0 = 0` while the right side is `−log(p_{a+Bβ̂}(x)/p_{θ₀}(x)) ≠ 0`.
--- CORRECTED REPAIR (the previous note asked for global strict positivity `∀ θ x, 0 < p_θ x`,
--- which is more than is needed and false for many standard models): the minimal hypothesis is
--- COMMON SUPPORT RELATIVE TO `θ₀`,
---   `hsupp : ∀ θ x, M.density θ₀ x ≠ 0 → M.density θ x ≠ 0`,
--- the pattern already named `HasCommonSupport` in
--- `StatLean/PointEstimation/InformationInequality/Basic.lean`. It suffices because the sample is
--- drawn from `μ.withDensity (ENNReal.ofReal ∘ M.density θ₀)`, under which `p_{θ₀}(ωᵢ) ≠ 0`
--- holds a.e. (the set `{p_{θ₀} = 0}` is null for that measure), so a.e. `ω` all three densities
--- at `ωᵢ` are strictly positive and the splitting is the ordinary `Real.log_div`. This is a
--- genuine addition to the printed signature and would have to be carried by
--- `logLR_tendsto_chiSquared_affine` as well; the source assumes it implicitly whenever it
--- manipulates likelihood ratios. (The `goodSet` device of
--- `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean` is the other
--- available way to fence off the vanishing-density set, at a much higher cost.)
--- Sanctioned lifted sorry: no false statement, and the remaining bricks are named and concrete.
+/-! ### Bricks for the affine reduction
+
+The affine statistic is the *difference* of two simple-null statistics, one in the full model
+at `θ₀` and one in the restricted model at `β₀`; the bricks below are the bookkeeping that
+makes that reduction literal. -/
+
+/-- The `n`-fold product law of the restricted model at the chart point is the product law of
+the full model at `θ₀`: the two densities are the same function. -/
+private lemma productMeasure_restrictFamily {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hθ₀ : θ₀ = a + B β₀) (n : ℕ) :
+    productMeasure (restrictFamily M a B) μ β₀ n = productMeasure M μ θ₀ n := by
+  rw [hθ₀]; rfl
+
+/-- The restricted model inherits the two `IsPDFOf` clauses: both are the full model's clauses
+at the parameter `a + Bβ`. -/
+private lemma isPDFOf_restrictFamily {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧)
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (hPDF : IsPDFOf M μ) :
+    IsPDFOf (restrictFamily M a B) μ :=
+  ⟨fun _ => hPDF.density_integral_eq_one _, fun _ => hPDF.density_integrable _⟩
+
+/-- **The pulled-back information matrix is positive definite.** `JB` is the Gram matrix of
+`B` in the `J`-inner product (`inner_mulVecE_pullback`); injectivity of `B` turns the
+positive definiteness of `J` into that of `JB`. This is the ingredient (iv) that the
+simple-null lemma needs in the restricted chart. -/
+private lemma posDef_pullback {m : ℕ}
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (hB : Function.Injective B)
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef)
+    (JB : Matrix (Fin m) (Fin m) ℝ)
+    (hJBrel : ∀ u v : EuclideanSpace ℝ (Fin m),
+      ⟪u, mulVecE JB v⟫ = ⟪B u, mulVecE J (B v)⟫) :
+    JB.PosDef := by
+  classical
+  have hsymm : ∀ u v : EuclideanSpace ℝ (Fin m),
+      ⟪u, mulVecE JB v⟫ = ⟪v, mulVecE JB u⟫ := by
+    intro u v
+    rw [hJBrel u v, hJBrel v u, ← inner_mulVecE_comm hJ_pd.isHermitian (B u) (B v),
+      real_inner_comm]
+  have hpos : ∀ u : EuclideanSpace ℝ (Fin m), u ≠ 0 → 0 < ⟪u, mulVecE JB u⟫ := by
+    intro u hu
+    rw [hJBrel u u, mulVecE_eq_toEuclideanCLM, Matrix.inner_toEuclideanCLM]
+    have hBu : B u ≠ 0 := fun h => hu (hB (by rw [h, map_zero]))
+    have hne : (B u).ofLp ≠ 0 := by
+      intro h
+      exact hBu (by ext i; simpa using congrFun h i)
+    simpa using hJ_pd.dotProduct_mulVec_pos hne
+  have hsymm' : ∀ x y : Fin m → ℝ,
+      dotProduct x (JB.mulVec y) = dotProduct y (JB.mulVec x) := by
+    intro x y
+    have h := hsymm (WithLp.toLp 2 x) (WithLp.toLp 2 y)
+    simp only [mulVecE_eq_toEuclideanCLM, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+  rw [Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨?_, fun x hx => ?_⟩
+  · ext i j
+    have h := hsymm' (Pi.single j (1 : ℝ)) (Pi.single i (1 : ℝ))
+    simpa [Matrix.conjTranspose_apply, Matrix.mulVec_single, single_dotProduct] using h
+  · have hx' : (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin m)) ≠ 0 := by
+      intro h
+      exact hx (by ext i; simpa using congrFun (congrArg WithLp.ofLp h) i)
+    have h := hpos (WithLp.toLp 2 x) hx'
+    simp only [mulVecE_eq_toEuclideanCLM, Matrix.inner_toEuclideanCLM] at h
+    simpa using h
+
+/-- **The base density does not vanish anywhere along the sample.** The sample is drawn from
+`μ.withDensity p_{θ₀}`, for which `{p_{θ₀} = 0}` is a null set; the product of `n` copies then
+gives all `n` coordinates at once. This is what makes the log-splitting below legitimate. -/
+private lemma ae_forall_density_ne_zero
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (n : ℕ) :
+    ∀ᵐ ω ∂(productMeasure M μ θ₀ n), ∀ i, M.density θ₀ (ω i) ≠ 0 := by
+  classical
+  set ν : Measure 𝓧 := μ.withDensity fun x => ENNReal.ofReal (M.density θ₀ x) with hν
+  set S : Set 𝓧 := {x | M.density θ₀ x = 0} with hS
+  have hSmeas : MeasurableSet S := (M.density_meas θ₀) (measurableSet_singleton 0)
+  have hS0 : ν S = 0 := by
+    rw [hν, MeasureTheory.withDensity_apply _ hSmeas]
+    refine le_antisymm ?_ (zero_le _)
+    refine le_of_eq ?_
+    rw [MeasureTheory.setLIntegral_congr_fun hSmeas (g := fun _ => (0 : ℝ≥0∞))
+      (fun x hx => by simp [Set.mem_setOf_eq.mp hx])]
+    simp
+  rw [MeasureTheory.ae_all_iff]
+  intro i
+  rw [MeasureTheory.ae_iff]
+  have hset : {ω : Fin n → 𝓧 | ¬ M.density θ₀ (ω i) ≠ 0}
+      = Set.univ.pi (fun j => if j = i then S else Set.univ) := by
+    ext ω
+    simp only [Set.mem_setOf_eq, not_not, Set.mem_univ_pi]
+    constructor
+    · intro h j
+      by_cases hj : j = i
+      · subst hj; simpa [hS] using h
+      · simp [hj]
+    · intro h
+      simpa [hS] using h i
+  rw [hset, productMeasure, MeasureTheory.Measure.pi_pi]
+  refine Finset.prod_eq_zero (Finset.mem_univ i) ?_
+  simpa using hS0
+
+/-- **Splitting the affine log-likelihood ratio at `θ₀`.** Wherever the three densities are
+nonzero, `log(p_{θ̂}/p_{a+Bβ̂}) = log(p_{θ̂}/p_{θ₀}) − log(p_{a+Bβ̂}/p_{θ₀})`, so the affine
+statistic is the difference of the two simple-null statistics.
+
+The hypothesis `hsupp` is what makes the identity true: at the Lean junk values it is FALSE
+(with `p_{θ̂}(x) = 0 < p_{a+Bβ̂}(x), p_{θ₀}(x)` the left side is `Real.log 0 = 0` while the
+right side is `−log(p_{a+Bβ̂}(x)/p_{θ₀}(x)) ≠ 0`). -/
+private lemma logLRStatistic_affine_split {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hθ₀ : θ₀ = a + B β₀)
+    (hsupp : ∀ (θ : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ₀ x ≠ 0 → M.density θ x ≠ 0)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
+    (est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin m))
+    (n : ℕ) (ω : Fin n → 𝓧) (hω : ∀ i, M.density θ₀ (ω i) ≠ 0) :
+    logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+      = logLRStatistic M est (fun _ _ => θ₀) n ω
+        - logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω := by
+  have hden : ∀ (β : EuclideanSpace ℝ (Fin m)) (x : 𝓧),
+      (restrictFamily M a B).density β x = M.density (a + B β) x := fun _ _ => rfl
+  have key : ∀ i : Fin n,
+      Real.log (M.density (est n ω) (ω i) / M.density (a + B (est₀ n ω)) (ω i))
+        = Real.log (M.density (est n ω) (ω i) / M.density θ₀ (ω i))
+          - Real.log (M.density (a + B (est₀ n ω)) (ω i) / M.density θ₀ (ω i)) := by
+    intro i
+    have hD := hω i
+    have hA := hsupp (est n ω) (ω i) hD
+    have hC := hsupp (a + B (est₀ n ω)) (ω i) hD
+    rw [Real.log_div hA hC, Real.log_div hA hD, Real.log_div hC hD]
+    ring
+  simp only [logLRStatistic, hden, ← hθ₀]
+  rw [← mul_sub, ← Finset.sum_sub_distrib]
+  exact congrArg _ (Finset.sum_congr rfl fun i _ => key i)
+
+/-- **The two-point envelope condition transports to the restricted chart**, with envelope
+`|M|·‖B‖²` and radius `δ/(‖B‖+1)`: the chart is affine with linear part `B`, so
+`‖(a+Bβ) − θ₀‖ ≤ ‖B‖‖β − β₀‖` and `⟪β − β', ℓB x⟫ = ⟪(a+Bβ) − (a+Bβ'), ℓ x⟫`. The absolute
+value is taken because the envelope is only constrained through an upper bound. -/
+private lemma envelope_restrictFamily {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k)))
+    (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k))
+    (hθ₀ : θ₀ = a + B β₀)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hℓB : ℓB = fun x => ContinuousLinearMap.adjoint B (ℓ x))
+    (Menv : 𝓧 → ℝ) (δ : ℝ) (hδ : 0 < δ)
+    (henv : ∀ θ θ' : EuclideanSpace ℝ (Fin k), ‖θ - θ₀‖ ≤ δ → ‖θ' - θ₀‖ ≤ δ → ∀ x : 𝓧,
+      |Real.log (M.density θ x / M.density θ₀ x)
+          - Real.log (M.density θ' x / M.density θ₀ x) - ⟪θ - θ', ℓ x⟫|
+        ≤ Menv x * (‖θ - θ₀‖ + ‖θ' - θ₀‖) * ‖θ - θ'‖) :
+    ∀ β β' : EuclideanSpace ℝ (Fin m), ‖β - β₀‖ ≤ δ / (‖B‖ + 1) →
+      ‖β' - β₀‖ ≤ δ / (‖B‖ + 1) → ∀ x : 𝓧,
+      |Real.log ((restrictFamily M a B).density β x / (restrictFamily M a B).density β₀ x)
+          - Real.log ((restrictFamily M a B).density β' x
+              / (restrictFamily M a B).density β₀ x)
+          - ⟪β - β', ℓB x⟫|
+        ≤ |Menv x| * ‖B‖ ^ 2 * (‖β - β₀‖ + ‖β' - β₀‖) * ‖β - β'‖ := by
+  intro β β' hβ hβ' x
+  have hden : ∀ (γ : EuclideanSpace ℝ (Fin m)) (y : 𝓧),
+      (restrictFamily M a B).density γ y = M.density (a + B γ) y := fun _ _ => rfl
+  have hb0 : (0 : ℝ) ≤ ‖B‖ := norm_nonneg _
+  have hsub : ∀ γ γ' : EuclideanSpace ℝ (Fin m),
+      (a + B γ) - (a + B γ') = B (γ - γ') := by
+    intro γ γ'
+    rw [map_sub]
+    abel
+  have hbound : ∀ γ : EuclideanSpace ℝ (Fin m), ‖γ - β₀‖ ≤ δ / (‖B‖ + 1) →
+      ‖(a + B γ) - θ₀‖ ≤ δ := by
+    intro γ hγ
+    have h1 : (a + B γ) - θ₀ = B (γ - β₀) := by rw [hθ₀]; exact hsub γ β₀
+    have h2 : ‖B (γ - β₀)‖ ≤ ‖B‖ * ‖γ - β₀‖ := B.le_opNorm _
+    have h3 : ‖B‖ * ‖γ - β₀‖ ≤ ‖B‖ * (δ / (‖B‖ + 1)) :=
+      mul_le_mul_of_nonneg_left hγ hb0
+    have h4 : ‖B‖ * (δ / (‖B‖ + 1)) ≤ δ := by
+      rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+      nlinarith
+    rw [h1]; linarith
+  have h1 := hbound β hβ
+  have h2 := hbound β' hβ'
+  have hinner : ⟪β - β', ℓB x⟫ = ⟪(a + B β) - (a + B β'), ℓ x⟫ := by
+    rw [hsub β β', hℓB, real_inner_comm, ContinuousLinearMap.adjoint_inner_left,
+      real_inner_comm]
+  have hkey := henv (a + B β) (a + B β') h1 h2 x
+  simp only [hden, ← hθ₀, hinner]
+  refine hkey.trans ?_
+  have hnb : ‖(a + B β) - θ₀‖ ≤ ‖B‖ * ‖β - β₀‖ := by
+    have h : (a + B β) - θ₀ = B (β - β₀) := by rw [hθ₀]; exact hsub β β₀
+    rw [h]; exact B.le_opNorm _
+  have hnb' : ‖(a + B β') - θ₀‖ ≤ ‖B‖ * ‖β' - β₀‖ := by
+    have h : (a + B β') - θ₀ = B (β' - β₀) := by rw [hθ₀]; exact hsub β' β₀
+    rw [h]; exact B.le_opNorm _
+  have hnd : ‖(a + B β) - (a + B β')‖ ≤ ‖B‖ * ‖β - β'‖ := by
+    rw [hsub β β']; exact B.le_opNorm _
+  have hMle : Menv x ≤ |Menv x| := le_abs_self _
+  have hM0 : (0 : ℝ) ≤ |Menv x| := abs_nonneg _
+  have hp : (0 : ℝ) ≤ ‖β - β₀‖ := norm_nonneg _
+  have hq : (0 : ℝ) ≤ ‖β' - β₀‖ := norm_nonneg _
+  have hr : (0 : ℝ) ≤ ‖β - β'‖ := norm_nonneg _
+  have hX : (0 : ℝ) ≤ ‖(a + B β) - θ₀‖ + ‖(a + B β') - θ₀‖ := by positivity
+  have hY : (0 : ℝ) ≤ ‖(a + B β) - (a + B β')‖ := norm_nonneg _
+  calc Menv x * (‖(a + B β) - θ₀‖ + ‖(a + B β') - θ₀‖) * ‖(a + B β) - (a + B β')‖
+      ≤ |Menv x| * (‖B‖ * ‖β - β₀‖ + ‖B‖ * ‖β' - β₀‖) * (‖B‖ * ‖β - β'‖) := by
+        have hstep1 : Menv x * (‖(a + B β) - θ₀‖ + ‖(a + B β') - θ₀‖)
+            ≤ |Menv x| * (‖B‖ * ‖β - β₀‖ + ‖B‖ * ‖β' - β₀‖) := by
+          nlinarith
+        have hstep2 : (0 : ℝ) ≤ |Menv x| * (‖B‖ * ‖β - β₀‖ + ‖B‖ * ‖β' - β₀‖) := by
+          positivity
+        nlinarith
+    _ = |Menv x| * ‖B‖ ^ 2 * (‖β - β₀‖ + ‖β' - β₀‖) * ‖β - β'‖ := by ring
+
+/-- **Assembly.** Once the affine statistic is the difference of the two simple-null
+statistics, the event that it differs from the score difference by `ε` is covered by the two
+events that each simple-null statistic differs from its own score statistic by `ε/2`, together
+with the null set on which the splitting fails. -/
+private lemma tendstoInMeasure_of_split {m : ℕ}
+    (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
+    [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
+    (θ₀ : EuclideanSpace ℝ (Fin k)) (a : EuclideanSpace ℝ (Fin k))
+    (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
+    (β₀ : EuclideanSpace ℝ (Fin m)) (hθ₀ : θ₀ = a + B β₀)
+    (hsupp : ∀ (θ : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ₀ x ≠ 0 → M.density θ x ≠ 0)
+    (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (J : Matrix (Fin k) (Fin k) ℝ)
+    (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m)) (JB : Matrix (Fin m) (Fin m) ℝ)
+    (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k))
+    (est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin m))
+    (h1 : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|})
+        atTop (𝓝 0))
+    (h2 : ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure (restrictFamily M a B) μ β₀ n).real
+        {ω : Fin n → 𝓧 |
+          ε ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+            - scoreStatistic JB ℓB n ω|})
+        atTop (𝓝 0)) :
+    ∀ ε : ℝ, 0 < ε →
+      Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+        {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+          - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|})
+        atTop (𝓝 0) := by
+  intro ε hε
+  have hprod := fun n : ℕ => productMeasure_restrictFamily M μ a B β₀ θ₀ hθ₀ n
+  have h2' : Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
+      {ω : Fin n → 𝓧 |
+        ε / 2 ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+          - scoreStatistic JB ℓB n ω|}) atTop (𝓝 0) := by
+    have := h2 (ε / 2) (by positivity)
+    simpa only [hprod] using this
+  refine squeeze_zero (fun n => measureReal_nonneg) (fun n => ?_)
+    (by simpa using (h1 (ε / 2) (by positivity)).add h2')
+  set A1 : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 |
+    ε / 2 ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|} with hA1
+  set A2 : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 |
+    ε / 2 ≤ |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+      - scoreStatistic JB ℓB n ω|} with hA2
+  set G : Set (Fin n → 𝓧) := {ω : Fin n → 𝓧 | ∀ i, M.density θ₀ (ω i) ≠ 0} with hG
+  have hGnull : (productMeasure M μ θ₀ n).real Gᶜ = 0 := by
+    have hae := ae_forall_density_ne_zero M μ θ₀ n
+    rw [MeasureTheory.ae_iff] at hae
+    simp only [measureReal_def]
+    rw [show Gᶜ = {ω : Fin n → 𝓧 | ¬ ∀ i, M.density θ₀ (ω i) ≠ 0} from rfl, hae]
+    simp
+  have hincl : {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
+      - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|} ⊆ A1 ∪ A2 ∪ Gᶜ := by
+    intro ω hω
+    by_cases hg : ω ∈ G
+    · have hsplit := logLRStatistic_affine_split M a B β₀ θ₀ hθ₀ hsupp est est₀ n ω hg
+      simp only [Set.mem_setOf_eq, hsplit] at hω
+      by_contra hcon
+      simp only [Set.mem_union, Set.mem_compl_iff, hA1, hA2, Set.mem_setOf_eq, not_or,
+        not_le] at hcon
+      obtain ⟨⟨hc1, hc2⟩, -⟩ := hcon
+      have : |logLRStatistic M est (fun _ _ => θ₀) n ω
+            - logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+            - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|
+          ≤ |logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω|
+            + |logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+              - scoreStatistic JB ℓB n ω| := by
+        have heq : logLRStatistic M est (fun _ _ => θ₀) n ω
+              - logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+              - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)
+            = (logLRStatistic M est (fun _ _ => θ₀) n ω - scoreStatistic J ℓ n ω)
+              - (logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω
+                - scoreStatistic JB ℓB n ω) := by ring
+        rw [heq]
+        exact abs_sub _ _
+      linarith
+    · exact Or.inr hg
+  have hmono := measureReal_mono (μ := productMeasure M μ θ₀ n) hincl (measure_ne_top _ _)
+  have hu1 := measureReal_union_le (μ := productMeasure M μ θ₀ n) (A1 ∪ A2) Gᶜ
+  have hu2 := measureReal_union_le (μ := productMeasure M μ θ₀ n) A1 A2
+  linarith
+
+/-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine
+likelihood-ratio statistic differs from the score-difference surrogate by a quantity tending
+to zero in probability.
+
+The proof is two applications of the simple-null lemma `logLR_sub_score_tendstoInMeasure`.
+Writing `θ₀ = a + Bβ₀`, the restricted density at `β₀` is *literally* the full density at
+`θ₀`, so
+`2 ∑ᵢ log(p_{a+Bβ̂}(ωᵢ)/p_{θ₀}(ωᵢ)) = logLRStatistic (restrictFamily M a B) est₀ (·↦β₀)`
+and the two conclusions subtract (`tendstoInMeasure_of_split`); the bookkeeping is
+`isPDFOf_restrictFamily`, `productMeasure_restrictFamily`,
+`differentiableQuadraticMean_restrictFamily`, `posDef_pullback` and
+`envelope_restrictFamily`.
+
+**SIGNATURE (re-parenthesization).** The lemma as frozen mentioned neither
+`hθ₀ : θ₀ = a + Bβ₀`, nor `hℓB`, `hJB`, `hDQM`, `hJ_pd`, `hB`, so nothing tied `(a, B, β₀,
+ℓB, JB)` to `(θ₀, ℓ, J)` and the score difference was unrelated to the likelihood ratio: it
+was unprovable as stated. All of these are available at the unique call site,
+`logLR_tendsto_chiSquared_affine`, and none of them changes a public statement.
+
+**AMENDED HYPOTHESIS `hsupp` (common support relative to `θ₀`).** The reduction rests on
+`log(p_{θ̂}/p_{a+Bβ̂}) = log(p_{θ̂}/p_{θ₀}) − log(p_{a+Bβ̂}/p_{θ₀})`, which is FALSE at the Lean
+junk values: with `p_{θ̂}(x) = 0` and `p_{a+Bβ̂}(x), p_{θ₀}(x) > 0` the left side is
+`Real.log 0 = 0` while the right side is `−log(p_{a+Bβ̂}(x)/p_{θ₀}(x)) ≠ 0`. The minimal
+repair is that the densities do not vanish where `p_{θ₀}` does not — the pattern named
+`HasCommonSupport` in `PointEstimation/InformationInequality/Basic.lean`, here in its
+relative form. It is not a positivity assumption on the model (`∀ θ x, 0 < p_θ x` would be
+false for many standard models); it only says that no parameter kills a point that `θ₀`
+keeps, which is exactly what the source assumes implicitly whenever it manipulates
+likelihood ratios. Under it, the sample being drawn from `μ.withDensity p_{θ₀}` makes all
+three densities nonzero a.e. along the sample (`ae_forall_density_ne_zero`) and the splitting
+is the ordinary `Real.log_div`. -/
 private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]
     (hPDF : IsPDFOf M μ) (θ₀ : EuclideanSpace ℝ (Fin k))
     (a : EuclideanSpace ℝ (Fin k)) (B : EuclideanSpace ℝ (Fin m) →L[ℝ] EuclideanSpace ℝ (Fin k))
-    (β₀ : EuclideanSpace ℝ (Fin m))
+    (hB : Function.Injective B)
+    (β₀ : EuclideanSpace ℝ (Fin m)) (hθ₀ : θ₀ = a + B β₀)
+    -- AMENDMENT: common support relative to `θ₀`; see the docstring
+    (hsupp : ∀ (θ : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ₀ x ≠ 0 → M.density θ x ≠ 0)
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k)) (hℓ : Measurable ℓ)
-    (J : Matrix (Fin k) (Fin k) ℝ) (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hDQM : DifferentiableQuadraticMean M μ θ₀ ℓ)
+    (J : Matrix (Fin k) (Fin k) ℝ) (hJ_pd : J.PosDef)
+    (hJ : ∀ u v : EuclideanSpace ℝ (Fin k), fisherInformation M μ θ₀ ℓ u v = ⟪u, mulVecE J v⟫)
+    (ℓB : 𝓧 → EuclideanSpace ℝ (Fin m))
+    (hℓB : ℓB = fun x => ContinuousLinearMap.adjoint B (ℓ x))
     (JB : Matrix (Fin m) (Fin m) ℝ)
+    (hJB : ∀ u v : EuclideanSpace ℝ (Fin m),
+      fisherInformation (restrictFamily M a B) μ β₀ ℓB u v = ⟪u, mulVecE JB v⟫)
+    [∀ β : EuclideanSpace ℝ (Fin m), ∀ n,
+      IsProbabilityMeasure (productMeasure (restrictFamily M a B) μ β n)]
     (est : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin k)) (hest : ∀ n, Measurable (est n))
     (hlin : IsAsymptoticallyLinear M μ θ₀ ℓ J est)
     (est₀ : ∀ n, (Fin n → 𝓧) → EuclideanSpace ℝ (Fin m)) (hest₀ : ∀ n, Measurable (est₀ n))
@@ -1350,7 +1658,31 @@ private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
         {ω : Fin n → 𝓧 | ε ≤ |logLRStatistic M est (fun n ω => a + B (est₀ n ω)) n ω
           - (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)|})
         atTop (𝓝 0) := by
-  sorry
+  classical
+  have hℓB' : Measurable ℓB := by
+    rw [hℓB]; exact (ContinuousLinearMap.adjoint B).continuous.measurable.comp hℓ
+  have hJBrel := inner_mulVecE_pullback M μ a B β₀ θ₀ hθ₀ ℓ ℓB hℓB J hJ JB hJB
+  have hJB_pd : JB.PosDef := posDef_pullback B hB J hJ_pd JB hJBrel
+  have hDQM_B := differentiableQuadraticMean_restrictFamily M μ a B θ₀ β₀ hθ₀ ℓ ℓB hℓB hDQM
+  have hPDF_B := isPDFOf_restrictFamily M μ a B hPDF
+  have hMB_meas : Measurable (fun x => |Menv x| * ‖B‖ ^ 2) := hMenv_meas.abs.mul_const _
+  have hdenB : (fun x => ENNReal.ofReal ((restrictFamily M a B).density β₀ x))
+      = fun x => ENNReal.ofReal (M.density θ₀ x) := by
+    funext x; rw [hθ₀]; rfl
+  have hMB_int : Integrable (fun x => |Menv x| * ‖B‖ ^ 2)
+      (μ.withDensity fun x => ENNReal.ofReal ((restrictFamily M a B).density β₀ x)) := by
+    rw [hdenB]
+    exact hMenv_int.abs.mul_const _
+  have hδB : (0 : ℝ) < δ / (‖B‖ + 1) := by positivity
+  -- the full model at `θ₀`
+  have h1 := logLR_sub_score_tendstoInMeasure M μ hPDF θ₀ ℓ hℓ hDQM J hJ_pd hJ est hest hlin
+    Menv hMenv_meas hMenv_int δ hδ henv
+  -- the restricted model at `β₀`
+  have h2 := logLR_sub_score_tendstoInMeasure (restrictFamily M a B) μ hPDF_B β₀ ℓB hℓB'
+    hDQM_B JB hJB_pd hJB est₀ hest₀ hlin₀ (fun x => |Menv x| * ‖B‖ ^ 2) hMB_meas hMB_int
+    (δ / (‖B‖ + 1)) hδB
+    (envelope_restrictFamily M a B β₀ θ₀ hθ₀ ℓ ℓB hℓB Menv δ hδ henv)
+  exact tendstoInMeasure_of_split M μ θ₀ a B β₀ hθ₀ hsupp ℓ J ℓB JB est est₀ h1 h2
 
 /-- **The likelihood ratio statistic is asymptotically chi-squared (affine composite null).**
 
@@ -1378,6 +1710,15 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
     (hB : Function.Injective B)
     -- USER-INPUT: the null parameter, given in the chart
     (β₀ : EuclideanSpace ℝ (Fin m)) (θ₀ : EuclideanSpace ℝ (Fin k)) (hθ₀ : θ₀ = a + B β₀)
+    -- USER-INPUT (AMENDMENT): common support relative to `θ₀` — no parameter kills a point
+    -- that `θ₀` keeps. Without it the likelihood-ratio splitting
+    -- `log(p_{θ̂}/p_{a+Bβ̂}) = log(p_{θ̂}/p_{θ₀}) − log(p_{a+Bβ̂}/p_{θ₀})` that identifies the
+    -- affine statistic as the difference of two simple-null statistics is FALSE at the Lean
+    -- junk values; see `logLR_affine_sub_scoreDiff_tendstoInMeasure`. This is the source's
+    -- implicit standing assumption whenever it manipulates likelihood ratios, and is strictly
+    -- weaker than strict positivity of the densities
+    (hsupp : ∀ (θ : EuclideanSpace ℝ (Fin k)) (x : 𝓧),
+      M.density θ₀ x ≠ 0 → M.density θ x ≠ 0)
     -- USER-INPUT: the score function of the model at `θ₀`
     (ℓ : 𝓧 → EuclideanSpace ℝ (Fin k))
     -- LEAN-ONLY: measurability of the score; standard regularity
@@ -1441,7 +1782,8 @@ theorem logLR_tendsto_chiSquared_affine {m p : ℕ}
         (fun n => (B.continuous.measurable.comp (hest₀ n)).const_add a) n).aemeasurable)
     hscorediff ?_
   intro ε hε
-  have h := logLR_affine_sub_scoreDiff_tendstoInMeasure M μ hPDF θ₀ a B β₀ ℓ hℓ J ℓB JB
+  have h := logLR_affine_sub_scoreDiff_tendstoInMeasure M μ hPDF θ₀ a B hB β₀ hθ₀ hsupp
+    ℓ hℓ hDQM J hJ_pd hJ ℓB hℓB JB hJB
     est hest hlin est₀ hest₀ hlin₀ Menv hMenv_meas hMenv_int δ hδ henv ε hε
   have hset : (fun n => (productMeasure M μ θ₀ n).real
       {ω : Fin n → 𝓧 | ε ≤ dist (scoreStatistic J ℓ n ω - scoreStatistic JB ℓB n ω)
