@@ -1616,31 +1616,47 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
-  -- TODO (studentized CLT = the closed array CLT + Slutsky — NOT blocked; deferred for size).
-  -- The two bricks the previous session recorded as missing are supplied: the triangular-array
-  -- Lindeberg CLT with a drifting row law is `tendsto_meanRootLaw` and the portmanteau step is
-  -- `tendsto_integral_of_tendsto_cdf` (now in `Bootstrap/Consistency`). What remains:
-  -- (1) `sampleVariance → Var[id; Q]` in probability along the class. Realise row `n` as i.i.d.
-  --     `Y n i ~ F n` on one space exactly as `tendsto_meanRootLaw` does
-  --     (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`), then apply the now-CLOSED
-  --     `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular` TWICE: to the entries and to
-  --     their squares (`sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`). Its hypotheses are met by the
-  --     class: distribution-function convergence at continuity points is the class clause (for the
-  --     squares, transport it through `t ↦ t²`), and convergence of the first absolute moments is
-  --     the Vitali brick `tendsto_setIntegral_sq_tail` of this file (uniform square-integrability
-  --     upgrades weak convergence to convergence of `∫|t|`; for the squares it is the convergence
-  --     of mean and variance). NOTE: that brick currently carries the Feller debt of
-  --     `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, so this route inherits `sorryAx` until
-  --     that one is closed; a self-contained alternative is the fixed-level truncation, which
-  --     suffices here because the row laws are uniformly square-integrable (unlike in the general
-  --     statement of the brick).
-  -- (2) Slutsky for the quotient. Mathlib v4.29.1 HAS
-  --     `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const`; the only care
-  --     needed is that `(u, v) ↦ u / √v` is not continuous at `v = 0`, so one runs it with the
-  --     globally continuous `(u, v) ↦ u / √(max v (σ²/2))` and removes the truncation on the
-  --     event `{sampleVariance > σ²/2}`, whose probability tends to `1` by (1). The junk
-  --     convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible for the same reason.
-  -- No Mathlib brick is missing; this is a sizeable but routine assembly.
+  -- TODO (studentized CLT = drifting-row array CLT + a weak law for the sample variance +
+  -- Slutsky). NOT blocked by any missing Mathlib or repo brick; deferred purely for size.
+  -- STATE AFTER THIS SESSION — the two inputs of step (1) are now PROVED IN THIS FILE and are
+  -- `sorryAx`-free, which is the point of proving them here rather than reusing the sibling:
+  --
+  --   * `exists_uniform_sq_trunc` turns the class hypotheses (weak convergence, converging means
+  --     and variances) into "for every `ρ > 0` there is ONE level `M` with
+  --     `∫ (t² − M)⁺ d(F n) ≤ ρ` for EVERY `n`" — the uniform-square-integrability input;
+  --   * `tendstoInMeasure_rowMean_of_uniform` is the triangular weak law of large numbers for
+  --     independent nonnegative rows with exactly that uniform bound (truncation + Chebyshev on
+  --     `min (Z, M)` + Markov on `(Z − M)⁺`).
+  --
+  --   WARNING, re-derived and confirmed: `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
+  --   — which the previous note proposed using — DEPENDS ON `sorryAx` (it routes through
+  --   `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, the open Feller debt). Using it would taint
+  --   this theorem and, through it, the already-proved `bootstrap_t_consistent`. The two bricks
+  --   above exist precisely to avoid that.
+  --
+  -- WHAT REMAINS (all of it bookkeeping, no new analytic idea):
+  -- (1) Realise row `n` as i.i.d. `Y (n,i) ~ F' n` on one space, exactly as `tendsto_meanRootLaw`
+  --     does (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`, with `F'` the `n = 0`
+  --     patch of `F` by `Q`); `hpimap` there is the identity turning `studentizedRootCDF (F' n) n`
+  --     into a `Pr`-probability. A single carrier is FORCED: Mathlib's Slutsky lemmas are stated
+  --     for the constant family `fun _ => μ''`, not for the varying carriers `Fin n → ℝ`.
+  -- (2) `n⁻¹ ∑ Yᵢ² → ∫ t² dQ` in probability: `tendstoInMeasure_rowMean_of_uniform` at
+  --     `Z n i := (Y (n,i))²`, whose uniform bound is `exists_uniform_sq_trunc` transported along
+  --     `hYlaw`. `n⁻¹ ∑ Yᵢ → ∫ t dQ` in probability: plain Chebyshev, `Var[n⁻¹∑Yᵢ] = vₙ/n → 0`
+  --     (`IndepFun.variance_sum`) — the squares are the only place uniform integrability is
+  --     needed, because fourth moments are not available.
+  -- (3) `sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`, so (2) gives `sampleVariance → σ²` in probability
+  --     through the (easy, missing-from-Mathlib) two-variable continuous-mapping lemma for
+  --     `TendstoInMeasure` **to a constant**: `{ε ≤ |g(Xₙ,Yₙ) − g(a,b)|} ⊆ {δ ≤ |Xₙ−a|} ∪
+  --     {δ ≤ |Yₙ−b|}` for `δ` from `ContinuousAt g (a,b)`.
+  -- (4) Slutsky. `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const` needs a
+  --     GLOBALLY continuous `g`, so run it with `g (u,v) := u / √(max v (σ²/2))` and remove the
+  --     truncation with `tendstoInDistribution_of_tendstoInMeasure_sub`, the difference being
+  --     supported on `{sampleVariance < σ²/2}`, whose probability tends to `0` by (3). The junk
+  --     convention `σ̂ₙ = 0 ↦ 0` is absorbed the same way.
+  -- (5) Convert the resulting `TendstoInDistribution` to the distribution function at `x` by
+  --     portmanteau at `Set.Iic x` (its frontier `{x}` is null for the standard normal), using
+  --     `(gaussianReal 0 σ²).map (· / σ) = gaussianReal 0 1`.
   sorry
 
 /-- **Consistency of the bootstrap-t.**

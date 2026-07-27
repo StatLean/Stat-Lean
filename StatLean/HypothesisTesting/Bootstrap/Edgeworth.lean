@@ -101,7 +101,31 @@ Lévy/Esseen inversion to turn that into a bound on the distribution function. I
 the one gap that survives this session's work — the sinc integral, the Fejér normalisation and
 the compactly supported Fejér/triangle Fourier pair are now proved
 (`integral_sin_div_sq`, `integral_fejerKernel`, `fourier_tentC`, `fourier_sqSincC`), as is the
-smoothing inequality in test-function form (`norm_integral_fourier_sub_le`). -/
+smoothing inequality in test-function form (`norm_integral_fourier_sub_le`).
+
+**Re-derivation of the obstruction (attempted from the test-function form; which estimate
+fails).** `norm_integral_fourier_sub_le` bounds `‖∫ 𝓕g dP − ∫ 𝓕g dQ‖` by
+`∫ ‖φ_P(−2πξ) − φ_Q(−2πξ)‖ · ‖g ξ‖ dξ` for `g ∈ L¹`. Reaching `|F_P(x) − F_Q(x)|` would need
+`𝓕g` to approximate `1_{(−∞, x]}`, which no `L¹` `g` does, so one must go through the smoothed
+difference `Δ_T(x) := ((F_P − F_Q) ∗ K_T)(x)`. Two steps are then required.
+
+* (E1) The **Stieltjes/Lévy inversion with the division by `t`**:
+  `Δ_T(x) = (2π)⁻¹ ∫_{|t| ≤ T} ((φ_P t − φ_Q t) / (−i t)) e^{−i t x} (1 − |t|/T) dt`. This is
+  *not* an instance of Mathlib's `Real.fourierIntegralInv` inversion: the integrand is integrable
+  at `t = 0` only because of the cancellation `φ_P 0 = φ_Q 0 = 1`, and `F_P − F_Q` is not itself
+  `L¹` without a prior `O(|x|⁻¹)` tail bound. Mathlib v4.29.1 has no Stieltjes-level inversion,
+  and the tent/Fejér pair proved in `EsseenSmoothing` supplies the kernel but not this identity.
+  **This is the estimate that fails.**
+* (E2) The **de-smoothing** `sup |F_P − F_Q| ≤ 2 sup |Δ_T| + C · (sup density of the comparison
+  law) / T`. This is the step that monotonicity of `F_P` plus the smoothed bound at a mesh of
+  continuity points *does* deliver, and it is **not** the obstruction — but it consumes (E1) as
+  its input, so it cannot be run first.
+
+Even with (E1) in hand the two expansions need, in addition, the pointwise estimate
+`(charFun F (t/(σ√n)))ⁿ = e^{−t²/2}(1 + (γ/6)(i t)³ n^{-1/2}) + O(t⁴/n)` on a window
+`|t| ≤ c√n`, together with the Cramér tail `∫_{c√n ≤ |t| ≤ T_n} |·| dt = o(n⁻¹)` at `T_n ≍ n`;
+neither is present at this pin, and `ForMathlib/BerryEsseen`'s
+`norm_charFun_pow_sub_gaussian_le` gives only the leading (`Berry–Esseen`) order. -/
 theorem edgeworth_mean_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
