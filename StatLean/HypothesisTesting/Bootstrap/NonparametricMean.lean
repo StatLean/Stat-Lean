@@ -1043,20 +1043,120 @@ private lemma meanRootCDF_eq_law_of_root [IsProbabilityMeasure Pr] [IsProbabilit
   rw [← hmap, Measure.map_apply hφmeas (measurableSet_le hSmeas measurable_const)]
   rfl
 
-/-- **Debt: measurability of the bootstrap critical value.** The estimated `1 − α` quantile is
-measurable in the sample. `cdfPseudoInverse F p = sInf {t | p ≤ F t}` with
-`F = meanRootCDF (empiricalMeasure fun i => X i ω) n` is the generalised inverse of a
-distribution function that depends measurably on `ω` (its sublevel sets are measure images of
-`ω`-measurable sets); the `sInf` of that family is therefore measurable. This requires a
-measurable-generalised-inverse brick (joint measurability of `(ω, t) ↦ meanRootCDF (P̂ₙ ω) n t`
-and measurability of `sInf` of a measurable family of closed half-lines) that is not yet
-developed in this cluster. -/
-private lemma measurable_bootstrapCriticalValue (hmeas : ∀ i, Measurable (X i)) (n : ℕ) :
+/-- The `n`-fold product of an empirical measure is the uniform law on resamples. -/
+private lemma pi_empiricalMeasure {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) :
+    (Measure.pi fun _ : Fin n => empiricalMeasure x)
+      = ((n : ℝ≥0∞) ^ n)⁻¹ • ∑ j : Fin n → Fin n, Measure.dirac (fun i => x (j i)) := by
+  classical
+  haveI := isProbabilityMeasure_empiricalMeasure hn x
+  refine Measure.pi_eq (fun s hs => ?_)
+  have hbox : MeasurableSet (Set.pi Set.univ s) := MeasurableSet.univ_pi hs
+  set T : Fin n → Finset (Fin n) := fun i => Finset.univ.filter (fun a => x a ∈ s i) with hT
+  -- the candidate on a box
+  have hL : (((n : ℝ≥0∞) ^ n)⁻¹ • ∑ j : Fin n → Fin n,
+        Measure.dirac (fun i => x (j i))) (Set.pi Set.univ s)
+      = ((n : ℝ≥0∞) ^ n)⁻¹ * ((Fintype.piFinset T).card : ℝ≥0∞) := by
+    simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+    congr 1
+    have hstep : ∀ j : Fin n → Fin n,
+        (Measure.dirac (fun i => x (j i))) (Set.pi Set.univ s)
+          = if (∀ i, x (j i) ∈ s i) then (1 : ℝ≥0∞) else 0 := by
+      intro j
+      rw [Measure.dirac_apply' _ hbox, Set.indicator_apply]
+      simp only [Set.mem_univ_pi, Pi.one_apply]
+    simp only [hstep, Finset.sum_boole]
+    congr 2
+    ext j
+    simp [hT, Fintype.mem_piFinset]
+  -- the product of the marginals
+  have hR : ∀ i : Fin n, (empiricalMeasure x) (s i)
+      = (n : ℝ≥0∞)⁻¹ * (((T i).card : ℕ) : ℝ≥0∞) := by
+    intro i
+    unfold empiricalMeasure
+    simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+    congr 1
+    have hstep : ∀ a : Fin n, (Measure.dirac (x a)) (s i)
+        = if x a ∈ s i then (1 : ℝ≥0∞) else 0 := by
+      intro a
+      rw [Measure.dirac_apply' _ (hs i), Set.indicator_apply]
+      simp only [Pi.one_apply]
+    simp only [hstep, Finset.sum_boole]
+    rfl
+  rw [hL]
+  simp only [hR, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    Fintype.card_piFinset, Nat.cast_prod, ← ENNReal.inv_pow]
+
+/-- The bootstrap sampling distribution function of the mean as a resampling average. -/
+private lemma meanRootCDF_empiricalMeasure_eq {n : ℕ} (hn : 0 < n) (x : Fin n → ℝ) (t : ℝ) :
+    meanRootCDF (empiricalMeasure x) n t
+      = (((n : ℝ≥0∞) ^ n)⁻¹ * ∑ j : Fin n → Fin n,
+          (if Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, x (j i)) - (n : ℝ)⁻¹ * (∑ i, x i)) ≤ t
+            then (1 : ℝ≥0∞) else 0)).toReal := by
+  classical
+  have hmean : ∫ u, u ∂(empiricalMeasure x) = (n : ℝ)⁻¹ * ∑ i, x i :=
+    integral_empiricalMeasure x (fun u => u)
+  have hA : MeasurableSet {y : Fin n → ℝ |
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - ∫ u, u ∂(empiricalMeasure x)) ≤ t} := by
+    refine measurableSet_le ?_ measurable_const
+    fun_prop
+  unfold meanRootCDF
+  rw [pi_empiricalMeasure hn x]
+  simp only [Measure.smul_apply, Measure.coe_finset_sum, Finset.sum_apply, smul_eq_mul]
+  congr 2
+  refine Finset.sum_congr rfl (fun j _ => ?_)
+  rw [Measure.dirac_apply' _ hA, Set.indicator_apply]
+  simp only [Set.mem_setOf_eq, hmean, Pi.one_apply]
+
+/-- Measurability of the bootstrap sampling distribution function in the sample. -/
+private lemma measurable_meanRootCDF_empirical (hmeas : ∀ i, Measurable (X i))
+    (n : ℕ) (t : ℝ) :
+    Measurable fun ω => meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n t := by
+  classical
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hemp : ∀ ω : Ω, (fun i : Fin 0 => X i ω) = fun i : Fin 0 => (0 : ℝ) :=
+      fun ω => funext (fun i => i.elim0)
+    simp only [hemp]
+    exact measurable_const
+  · have hfun : (fun ω => meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n t)
+        = fun ω => (((n : ℝ≥0∞) ^ n)⁻¹ * ∑ j : Fin n → Fin n,
+            (if Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X (j i) ω)
+                - (n : ℝ)⁻¹ * (∑ i : Fin n, X (i : ℕ) ω)) ≤ t
+              then (1 : ℝ≥0∞) else 0)).toReal :=
+      funext fun ω => meanRootCDF_empiricalMeasure_eq hn (fun i => X i ω) t
+    rw [hfun]
+    refine ENNReal.measurable_toReal.comp (Measurable.const_mul (Finset.measurable_sum _ ?_) _)
+    intro j _
+    refine Measurable.ite (measurableSet_le ?_ measurable_const) measurable_const measurable_const
+    have h1 : Measurable fun ω : Ω => ∑ i : Fin n, X (j i) ω :=
+      Finset.measurable_sum (Finset.univ : Finset (Fin n)) (fun i _ => hmeas (j i))
+    have h2 : Measurable fun ω : Ω => ∑ i : Fin n, X (i : ℕ) ω :=
+      Finset.measurable_sum (Finset.univ : Finset (Fin n)) (fun i _ => hmeas (i : ℕ))
+    exact ((h1.const_mul _).sub (h2.const_mul _)).const_mul _
+
+/-- **Measurability of the bootstrap critical value.**
+
+The estimated `1 − α` quantile is measurable in the sample. Two steps: the bootstrap sampling
+distribution function is, level by level, an explicit average over the `nⁿ` resampling maps
+(`measurable_meanRootCDF_empirical`), and the generalized inverse of a measurably parametrised
+family of distribution functions is measurable (`measurable_cdfPseudoInverse`).
+
+**Private-lemma amendment (level range).** `hα` is added: for `p ∉ (0,1)` the sublevel set
+`{t | p ≤ F t}` is empty or all of `ℝ` and the `sInf` returns its junk value, so the
+sublevel-set-is-a-ray identity behind the quantile's measurability fails. The only call site
+(`bootstrap_mean_coverage`) carries it. -/
+private lemma measurable_bootstrapCriticalValue (hmeas : ∀ i, Measurable (X i))
+    (hα : α ∈ Set.Ioo (0 : ℝ) 1) (n : ℕ) :
     Measurable fun ω => cdfPseudoInverse
       (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α) := by
-  -- TODO: joint measurability of the empirical sampling CDF in `(ω, t)` plus measurability of
-  -- the generalised inverse `sInf {t | p ≤ ·}`; no such brick exists in this file yet.
-  sorry
+  refine measurable_cdfPseudoInverse (fun ω => isCDF_Jmean n _) (by linarith [hα.2])
+    (by linarith [hα.1]) (fun t => ?_)
+  have hJ : ∀ ω : Ω, Jmean n (empiricalMeasure fun i : Fin n => X i ω) t
+      = meanRootCDF (empiricalMeasure fun i : Fin n => X i ω) n t := by
+    intro ω
+    haveI := isProbabilityMeasure_pi_empirical n X ω
+    rw [Jmean_eq_meanRootCDF]
+  simp only [hJ]
+  exact measurable_meanRootCDF_empirical hmeas n t
 
 /-- **Asymptotic coverage of the bootstrap confidence bound for a mean.**
 
@@ -1114,7 +1214,7 @@ theorem bootstrap_mean_coverage [IsProbabilityMeasure Pr] [IsProbabilityMeasure 
     (const_mem_meanSeqClass Q hQ2) hJconv (continuous_normalCDF 0 hvne) (isCDF_normalCDF 0 _)
     isCDF_Jmean (empirical_mem_meanSeqClass hmeas hindep hlaw hident hQ2) hα
     (strictIncAt_normalCDF 0 hvne _) hJP hRmeas
-    (fun n => measurable_bootstrapCriticalValue hmeas n)
+    (fun n => measurable_bootstrapCriticalValue hmeas hα n)
   refine hconv.congr fun n => ?_
   have hset : {ω | Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i : Fin n, X i ω) - ∫ t, t ∂Q)
         ≤ cdfPseudoInverse (Jmean n (empiricalMeasure fun i : Fin n => X i ω)) (1 - α)}

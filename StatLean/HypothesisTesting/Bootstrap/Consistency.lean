@@ -363,6 +363,70 @@ theorem tendsto_cdfPseudoInverse_of_tendsto {Fn : ℕ → ℝ → ℝ} {F : ℝ 
   have hb : |cdfPseudoInverse (Fn n) p - q| ≤ e := abs_le.mpr ⟨by linarith, by linarith⟩
   linarith
 
+/-- **The sublevel set of a distribution function is a closed ray.**
+
+For a level `p ∈ (0,1)`, `{t | p ≤ F t} = [F⁻¹(p), ∞)`: the level is cleared strictly to the right
+of the generalized inverse by the greatest-lower-bound property, and at the generalized inverse
+itself by right continuity. This is what makes the generalized inverse *measurable* in a
+parameter, since `{F⁻¹(p) ≤ c}` becomes the far simpler `{p ≤ F c}`. -/
+theorem setOf_le_cdf_eq_Ici {F : ℝ → ℝ} (hF : IsCDF F) {p : ℝ} (hp0 : 0 < p) (hp1 : p < 1) :
+    {t : ℝ | p ≤ F t} = Set.Ici (cdfPseudoInverse F p) := by
+  set q := cdfPseudoInverse F p with hq
+  have hne : {t : ℝ | p ≤ F t}.Nonempty := sublevel_nonempty hF hp1
+  have hbdd : BddBelow {t : ℝ | p ≤ F t} := sublevel_bddBelow hF hp0
+  have hglb : IsGLB {t : ℝ | p ≤ F t} q := Real.isGLB_sInf hne hbdd
+  have habove : ∀ t, q < t → p ≤ F t := by
+    intro t ht
+    by_contra hcon
+    push_neg at hcon
+    have hlb : t ∈ lowerBounds {u : ℝ | p ≤ F u} := by
+      intro u hu
+      by_contra h
+      push_neg at h
+      exact absurd (le_trans hu (hF.mono h.le)) (not_le.mpr hcon)
+    exact absurd (hglb.2 hlb) (not_le.mpr ht)
+  have hatq : p ≤ F q := by
+    have htend : Tendsto F (𝓝[>] q) (𝓝 (F q)) :=
+      (hF.right_continuous q).mono_left (nhdsWithin_mono q Set.Ioi_subset_Ici_self)
+    exact ge_of_tendsto htend (Filter.eventually_of_mem self_mem_nhdsWithin habove)
+  ext t
+  simp only [Set.mem_setOf_eq, Set.mem_Ici]
+  constructor
+  · intro ht; exact csInf_le hbdd ht
+  · intro ht
+    rcases eq_or_lt_of_le ht with rfl | hlt
+    · exact hatq
+    · exact habove t hlt
+
+/-- **Measurability of a generalized inverse.**
+
+The `p`-quantile of a family of distribution functions depending measurably on a parameter is a
+measurable function of that parameter, for every level `p ∈ (0,1)`. Only pointwise measurability
+in the parameter is needed — no joint measurability in `(ω, t)` — because the sublevel sets of the
+quantile are the sets `{p ≤ f ω c}` (`setOf_le_cdf_eq_Ici`). -/
+theorem measurable_cdfPseudoInverse {f : Ω → ℝ → ℝ} {p : ℝ}
+    -- USER-INPUT: each member of the family is a distribution function
+    (hcdf : ∀ ω, IsCDF (f ω)) (hp0 : 0 < p) (hp1 : p < 1)
+    -- USER-INPUT: the family depends measurably on the parameter, level by level
+    (hf : ∀ t : ℝ, Measurable fun ω => f ω t) :
+    Measurable fun ω => cdfPseudoInverse (f ω) p := by
+  refine measurable_of_Iic (fun c => ?_)
+  have hset : (fun ω => cdfPseudoInverse (f ω) p) ⁻¹' Set.Iic c = {ω | p ≤ f ω c} := by
+    ext ω
+    have hEq := setOf_le_cdf_eq_Ici (hcdf ω) hp0 hp1
+    simp only [Set.mem_preimage, Set.mem_Iic, Set.mem_setOf_eq]
+    constructor
+    · intro h
+      have hc : c ∈ Set.Ici (cdfPseudoInverse (f ω) p) := h
+      rw [← hEq] at hc
+      exact hc
+    · intro h
+      have hc : c ∈ {t : ℝ | p ≤ f ω t} := h
+      rw [hEq] at hc
+      exact hc
+  rw [hset]
+  exact measurableSet_le measurable_const (hf c)
+
 end QuantileCDF
 
 /-! ## From distribution functions to weak convergence -/
