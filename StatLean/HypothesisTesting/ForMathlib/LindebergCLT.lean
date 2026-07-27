@@ -35,7 +35,10 @@ row of independent summands whose law changes with `n`.
   negligibility condition `maxᵢ wₙ,ᵢ² / ∑ⱼ wₙ,ⱼ² → 0`.
 * `triangular_wlln_of_L1` — the companion weak law: row-i.i.d. arrays whose row laws
   converge weakly *and* whose first absolute moments converge have row averages converging
-  in probability to the limiting mean.
+  in probability to the limiting mean. **The frozen form of this statement was false** (the
+  `L¹` hypothesis was vacuous for non-integrable rows, because the Bochner integral takes its
+  junk value there); it carries one added hypothesis, `∀ n, Integrable id (G n)`, and is
+  proved. See its docstring for the counterexample and the repair.
 
 Convergence in distribution is stated with Mathlib's `MeasureTheory.TendstoInDistribution`
 (random-variable form, constant family of underlying spaces `fun _ => P`), which is the
@@ -874,6 +877,276 @@ theorem weighted_iid_clt {m : ℕ → ℕ} {Y : ℕ → Ω → ℝ} {w : (n : �
   rw [hgoaleq]
   exact lindeberg_clt hmeas' hindep' hL2' hmean' hvar' hlin hZ
 
+/-! ### Truncation bricks for the triangular weak law
+
+The weak law below is proved by a *fixed-level* truncation (not the textbook `n`-dependent
+one): the excess `(|y| − K)⁺` has an integral that converges along the rows because both
+`∫|y| dGₙ → ∫|y| dν` (the `L¹` hypothesis) and `∫ (|y| ∧ K) dGₙ → ∫ (|y| ∧ K) dν` (weak
+convergence against a *bounded continuous* test function) hold. That is exactly the amount of
+uniform integrability the argument needs, and it is obtained without any separate uniform
+integrability development. -/
+
+/-- Package a bounded continuous real function on the line as an element of `ℝ →ᵇ ℝ`. -/
+private noncomputable def wllnBcf (f : ℝ → ℝ) (hf : Continuous f) {C : ℝ}
+    (hC : ∀ y, |f y| ≤ C) : ℝ →ᵇ ℝ :=
+  BoundedContinuousFunction.mkOfBound ⟨f, hf⟩ (2 * C) fun x y => by
+    simp only [ContinuousMap.coe_mk, Real.dist_eq]
+    have h1 := hC x
+    have h2 := hC y
+    have h3 : |f x - f y| ≤ |f x| + |f y| := by
+      have hx := le_abs_self (f x)
+      have hx' := neg_abs_le (f x)
+      have hy := le_abs_self (f y)
+      have hy' := neg_abs_le (f y)
+      rw [abs_le]
+      constructor <;> linarith
+    linarith
+
+@[simp]
+private lemma wllnBcf_apply (f : ℝ → ℝ) (hf : Continuous f) {C : ℝ} (hC : ∀ y, |f y| ≤ C)
+    (y : ℝ) : wllnBcf f hf hC y = f y := rfl
+
+/-- The two-sided truncation of the identity at level `K`. -/
+private noncomputable def wllnTrunc (K : ℝ) (y : ℝ) : ℝ := max (-K) (min K y)
+
+private lemma continuous_wllnTrunc (K : ℝ) : Continuous (wllnTrunc K) := by
+  unfold wllnTrunc; fun_prop
+
+private lemma abs_wllnTrunc_le {K : ℝ} (hK : 0 ≤ K) (y : ℝ) : |wllnTrunc K y| ≤ K :=
+  abs_le.mpr ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+
+/-- The truncation error is the excess `(|y| − K)⁺`. -/
+private lemma wllnTrunc_sub {K : ℝ} (hK : 0 ≤ K) (y : ℝ) :
+    |y - wllnTrunc K y| = max (|y| - K) 0 := by
+  unfold wllnTrunc
+  rcases le_total y (-K) with h1 | h1
+  · have hyK : y ≤ K := h1.trans (by linarith)
+    rw [min_eq_right hyK, max_eq_left h1, abs_of_nonpos (by linarith : y - -K ≤ 0),
+      abs_of_nonpos (by linarith : y ≤ 0), max_eq_left (by linarith)]
+    ring
+  · rcases le_total y K with h2 | h2
+    · have habs : |y| ≤ K := abs_le.mpr ⟨by linarith, h2⟩
+      rw [min_eq_right h2, max_eq_right h1, sub_self, abs_zero,
+        max_eq_right (by linarith)]
+    · rw [min_eq_left h2, max_eq_right (by linarith : -K ≤ K),
+        abs_of_nonneg (by linarith : (0 : ℝ) ≤ y - K),
+        abs_of_nonneg (by linarith : (0 : ℝ) ≤ y), max_eq_left (by linarith)]
+
+/-- The excess is the difference between `|y|` and its own truncation `|y| ∧ K`. -/
+private lemma wlln_excess_eq {K : ℝ} (hK : 0 ≤ K) (y : ℝ) :
+    max (|y| - K) 0 = |y| - min |y| K := by
+  rcases le_total |y| K with h | h
+  · rw [min_eq_left h, max_eq_right (by linarith)]; ring
+  · rw [min_eq_right h, max_eq_left (by linarith)]
+
+/-- `y ↦ |y| ∧ K` is a bounded continuous test function. -/
+private noncomputable def wllnAbsMin (K : ℝ) (hK : 0 ≤ K) : ℝ →ᵇ ℝ :=
+  wllnBcf (fun y => min |y| K) (by fun_prop) (C := K) fun y =>
+    abs_le.mpr ⟨by
+        have : (0 : ℝ) ≤ min |y| K := le_min (abs_nonneg y) hK
+        linarith, min_le_right _ _⟩
+
+/-- The excess integral is finite and computed by subtraction, on any probability measure with
+an integrable identity. -/
+private lemma wlln_integral_excess {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    (hμ : Integrable id μ) {K : ℝ} (hK : 0 ≤ K) :
+    ∫ y, max (|y| - K) 0 ∂μ = (∫ y, |y| ∂μ) - ∫ y, min |y| K ∂μ := by
+  have habs : Integrable (fun y : ℝ => |y|) μ := hμ.abs
+  have hmin : Integrable (fun y : ℝ => min |y| K) μ := by
+    refine Integrable.mono' (integrable_const K) (by fun_prop) ?_
+    filter_upwards with y
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_min (abs_nonneg y) hK)]
+    exact min_le_right _ _
+  rw [← integral_sub habs hmin]
+  exact integral_congr_ae (.of_forall fun y => wlln_excess_eq hK y)
+
+/-- **Excess integrals converge along the rows.** This is the uniform-integrability input of
+the weak law, obtained from weak convergence plus convergence of first absolute moments. -/
+private lemma wlln_tendsto_excess {G : ℕ → Measure ℝ} {ν : Measure ℝ}
+    [∀ n, IsProbabilityMeasure (G n)] [IsProbabilityMeasure ν]
+    (hGint : ∀ n, Integrable id (G n)) (hν : Integrable id ν)
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ y, f y ∂(G n)) atTop (𝓝 (∫ y, f y ∂ν)))
+    (hL1 : Tendsto (fun n => ∫ y, |y| ∂(G n)) atTop (𝓝 (∫ y, |y| ∂ν)))
+    {K : ℝ} (hK : 0 ≤ K) :
+    Tendsto (fun n => ∫ y, max (|y| - K) 0 ∂(G n)) atTop
+      (𝓝 (∫ y, max (|y| - K) 0 ∂ν)) := by
+  have hmin := hweak (wllnAbsMin K hK)
+  simp only [wllnAbsMin, wllnBcf_apply] at hmin
+  have hlim := hL1.sub hmin
+  rw [← wlln_integral_excess hν hK] at hlim
+  refine hlim.congr fun n => ?_
+  rw [← wlln_integral_excess (hGint n) hK]
+
+/-- The excess integral of the limit law tends to `0` as the truncation level grows. -/
+private lemma wlln_excess_tendsto_zero {ν : Measure ℝ} [IsProbabilityMeasure ν]
+    (hν : Integrable id ν) :
+    Tendsto (fun K : ℕ => ∫ y, max (|y| - (K : ℝ)) 0 ∂ν) atTop (𝓝 0) := by
+  have h := tendsto_integral_of_dominated_convergence (μ := ν)
+    (F := fun (K : ℕ) (y : ℝ) => max (|y| - (K : ℝ)) 0) (f := fun _ : ℝ => (0 : ℝ))
+    (bound := fun y : ℝ => |y|) (fun K => by fun_prop) hν.abs
+    (fun K => .of_forall fun y => by
+      have hK : (0 : ℝ) ≤ (K : ℕ) := Nat.cast_nonneg K
+      rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
+      exact max_le (by linarith) (abs_nonneg y))
+    (.of_forall fun y => by
+      refine tendsto_const_nhds.congr' ?_
+      obtain ⟨N, hN⟩ := exists_nat_ge |y|
+      filter_upwards [eventually_ge_atTop N] with K hK
+      have : |y| - (K : ℝ) ≤ 0 := by
+        have : ((N : ℕ) : ℝ) ≤ (K : ℝ) := Nat.cast_le.mpr hK
+        linarith
+      rw [max_eq_right this])
+  simpa using h
+
+/-- **The per-row estimate of the weak law.** With a truncation at a fixed level `K` whose
+centring error is already smaller than `ε/3`, the deviation probability splits into a
+Chebyshev term for the truncated average and a Markov term for the excess. -/
+private lemma wlln_row_bound {n : ℕ} (hn : 0 < n) {Yn : Fin n → Ω → ℝ} {Gn : Measure ℝ}
+    [IsProbabilityMeasure Gn] (hmeas : ∀ i, Measurable (Yn i)) (hindep : iIndepFun Yn P)
+    (hlaw : ∀ i, P.map (Yn i) = Gn) (hGint : Integrable id Gn) {K : ℝ} (hK : 0 ≤ K)
+    {ε : ℝ} (hε : 0 < ε) {m : ℝ} (ham : |(∫ y, wllnTrunc K y ∂Gn) - m| < ε / 3) :
+    P {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Yn i ω - m|}
+      ≤ ENNReal.ofReal (9 * K ^ 2 / (n * ε ^ 2))
+        + ENNReal.ofReal (3 * (∫ y, max (|y| - K) 0 ∂Gn) / ε) := by
+  have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  set Z : Fin n → Ω → ℝ := fun i ω => wllnTrunc K (Yn i ω) with hZdef
+  set a : ℝ := ∫ y, wllnTrunc K y ∂Gn with hadef
+  have hZmeas : ∀ i, Measurable (Z i) := fun i =>
+    (continuous_wllnTrunc K).measurable.comp (hmeas i)
+  have hZbdd : ∀ i ω, |Z i ω| ≤ K := fun i ω => abs_wllnTrunc_le hK _
+  have hZmem : ∀ i, MemLp (Z i) 2 P := fun i =>
+    MemLp.of_bound (hZmeas i).aestronglyMeasurable K
+      (.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hZbdd i ω)
+  have hZmean : ∀ i, ∫ ω, Z i ω ∂P = a := by
+    intro i
+    rw [hadef, ← hlaw i,
+      integral_map (hmeas i).aemeasurable (continuous_wllnTrunc K).aestronglyMeasurable]
+  -- the truncated average
+  set S : Ω → ℝ := fun ω => (n : ℝ)⁻¹ * ∑ i, Z i ω with hSdef
+  have hSmem : MemLp S 2 P :=
+    (memLp_finset_sum (μ := P) (p := 2) Finset.univ fun i _ => hZmem i).const_mul _
+  have hSmean : ∫ ω, S ω ∂P = a := by
+    have hint : ∀ i : Fin n, Integrable (Z i) P := fun i => (hZmem i).integrable one_le_two
+    rw [hSdef]
+    rw [integral_const_mul, integral_finset_sum _ fun i _ => hint i]
+    simp only [hZmean]
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      inv_mul_cancel_left₀ hnR.ne']
+  -- variance of the truncated average
+  have hvarZ : ∀ i, variance (Z i) P ≤ K ^ 2 := by
+    intro i
+    refine (variance_le_expectation_sq (hZmeas i).aestronglyMeasurable).trans ?_
+    have hsq : Integrable (fun ω => Z i ω ^ 2) P := (hZmem i).integrable_sq
+    have : ∫ ω, Z i ω ^ 2 ∂P ≤ ∫ _ω, K ^ 2 ∂P :=
+      integral_mono hsq (integrable_const _) fun ω => by
+        have := hZbdd i ω
+        nlinarith [abs_nonneg (Z i ω), sq_abs (Z i ω)]
+    simpa using this
+  have hSvar : variance S P ≤ K ^ 2 / n := by
+    have hindepZ : iIndepFun Z P := by
+      have := hindep.comp (fun _ : Fin n => wllnTrunc K)
+        (fun _ => (continuous_wllnTrunc K).measurable)
+      exact this
+    have hfun : (fun ω => ∑ i, Z i ω) = ∑ i : Fin n, Z i := by
+      funext ω; simp
+    have h2 : variance (fun ω => ∑ i, Z i ω) P = ∑ i, variance (Z i) P := by
+      rw [hfun]
+      exact IndepFun.variance_sum (fun i _ => hZmem i)
+        fun i _ j _ hij => hindepZ.indepFun hij
+    have h3 : ∑ i, variance (Z i) P ≤ (n : ℝ) * K ^ 2 := by
+      calc ∑ i, variance (Z i) P ≤ ∑ _i : Fin n, K ^ 2 := Finset.sum_le_sum fun i _ => hvarZ i
+        _ = (n : ℝ) * K ^ 2 := by
+            rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    rw [hSdef, variance_const_mul, h2]
+    calc ((n : ℝ)⁻¹) ^ 2 * ∑ i, variance (Z i) P
+        ≤ ((n : ℝ)⁻¹) ^ 2 * ((n : ℝ) * K ^ 2) := by
+          exact mul_le_mul_of_nonneg_left h3 (by positivity)
+      _ = K ^ 2 / n := by field_simp
+  -- the excess average
+  set W : Ω → ℝ := fun ω => (n : ℝ)⁻¹ * ∑ i, |Yn i ω - Z i ω| with hWdef
+  have hYint : ∀ i, Integrable (Yn i) P := by
+    intro i
+    have h := hGint
+    rw [← hlaw i] at h
+    exact (integrable_map_measure aestronglyMeasurable_id (hmeas i).aemeasurable).mp h
+  have hWterm : ∀ i : Fin n, Integrable (fun ω => |Yn i ω - Z i ω|) P :=
+    fun i => ((hYint i).sub ((hZmem i).integrable one_le_two)).abs
+  have hWint : Integrable W P := by
+    refine Integrable.const_mul ?_ _
+    exact integrable_finset_sum _ fun i _ => hWterm i
+  have hWnn : ∀ ω, 0 ≤ W ω := by
+    intro ω
+    have : (0 : ℝ) ≤ ∑ i, |Yn i ω - Z i ω| :=
+      Finset.sum_nonneg fun i _ => abs_nonneg _
+    positivity
+  have hWmean : ∫ ω, W ω ∂P = ∫ y, max (|y| - K) 0 ∂Gn := by
+    have hterm : ∀ i : Fin n,
+        ∫ ω, |Yn i ω - Z i ω| ∂P = ∫ y, max (|y| - K) 0 ∂Gn := by
+      intro i
+      have h1 : (fun ω => |Yn i ω - Z i ω|) = fun ω => max (|Yn i ω| - K) 0 := by
+        funext ω; exact wllnTrunc_sub hK _
+      rw [h1, ← hlaw i,
+        integral_map (hmeas i).aemeasurable (by fun_prop)]
+    rw [hWdef, integral_const_mul, integral_finset_sum _ fun i _ => hWterm i]
+    simp only [hterm]
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      inv_mul_cancel_left₀ hnR.ne']
+  -- the deviation event is covered by the two elementary events
+  have hsub : {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Yn i ω - m|}
+      ⊆ {ω | ε / 3 ≤ |S ω - a|} ∪ {ω | ε / 3 ≤ W ω} := by
+    intro ω hω
+    by_cases h1 : ε / 3 ≤ |S ω - a|
+    · exact Or.inl h1
+    by_cases h2 : ε / 3 ≤ W ω
+    · exact Or.inr h2
+    exfalso
+    push_neg at h1 h2
+    have hgap : |(n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω| ≤ W ω := by
+      have hrw : (n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω
+          = (n : ℝ)⁻¹ * ∑ i, (Yn i ω - Z i ω) := by
+        rw [hSdef]; simp [Finset.sum_sub_distrib, mul_sub]
+      rw [hrw, hWdef, abs_mul, abs_of_nonneg (le_of_lt (inv_pos.mpr hnR))]
+      exact mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _)
+        (le_of_lt (inv_pos.mpr hnR))
+    have hchain : |(n : ℝ)⁻¹ * ∑ i, Yn i ω - m|
+        ≤ |(n : ℝ)⁻¹ * ∑ i, Yn i ω - S ω| + |S ω - a| + |a - m| := by
+      have h3 := abs_sub_le ((n : ℝ)⁻¹ * ∑ i, Yn i ω) (S ω) m
+      have h4 := abs_sub_le (S ω) a m
+      linarith
+    have hmem : ε ≤ |(n : ℝ)⁻¹ * ∑ i, Yn i ω - m| := hω
+    have ham' : |a - m| < ε / 3 := ham
+    linarith
+  -- Chebyshev and Markov
+  have hcheb : P {ω | ε / 3 ≤ |S ω - a|} ≤ ENNReal.ofReal (9 * K ^ 2 / (n * ε ^ 2)) := by
+    have h := meas_ge_le_variance_div_sq (μ := P) hSmem (by linarith : (0 : ℝ) < ε / 3)
+    rw [hSmean] at h
+    refine h.trans (ENNReal.ofReal_le_ofReal ?_)
+    have hpos : (0 : ℝ) < (ε / 3) ^ 2 := by positivity
+    rw [div_le_div_iff₀ hpos (by positivity)]
+    have hv := hSvar
+    have hK2 : (0 : ℝ) ≤ K ^ 2 := sq_nonneg K
+    have : variance S P * (n * ε ^ 2) ≤ K ^ 2 / n * (n * ε ^ 2) := by
+      exact mul_le_mul_of_nonneg_right hv (by positivity)
+    calc variance S P * (n * ε ^ 2) ≤ K ^ 2 / n * (n * ε ^ 2) := this
+      _ = 9 * K ^ 2 * (ε / 3) ^ 2 := by field_simp; ring
+  have hmark : P {ω | ε / 3 ≤ W ω}
+      ≤ ENNReal.ofReal (3 * (∫ y, max (|y| - K) 0 ∂Gn) / ε) := by
+    have h := mul_meas_ge_le_integral_of_nonneg (μ := P) (f := W)
+      (.of_forall hWnn) hWint (ε / 3)
+    rw [hWmean] at h
+    have hb : P.real {ω | ε / 3 ≤ W ω} ≤ 3 * (∫ y, max (|y| - K) 0 ∂Gn) / ε := by
+      rw [le_div_iff₀ hε]
+      linarith [h]
+    have hnn : (0 : ℝ) ≤ 3 * (∫ y, max (|y| - K) 0 ∂Gn) / ε := by
+      have hint0 : (0 : ℝ) ≤ ∫ y, max (|y| - K) 0 ∂Gn :=
+        integral_nonneg fun y => le_max_right _ _
+      positivity
+    exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top P _) hnn).mpr hb
+  calc P {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Yn i ω - m|}
+      ≤ P ({ω | ε / 3 ≤ |S ω - a|} ∪ {ω | ε / 3 ≤ W ω}) := measure_mono hsub
+    _ ≤ P {ω | ε / 3 ≤ |S ω - a|} + P {ω | ε / 3 ≤ W ω} := measure_union_le _ _
+    _ ≤ _ := add_le_add hcheb hmark
+
 /-- **Weak law of large numbers for a triangular array** (first-absolute-moment form).
 
 Let the `n`-th row `Yₙ,₀, …, Yₙ,ₙ₋₁` consist of independent variables with common law `Gₙ`.
@@ -889,9 +1162,10 @@ makes the truncation argument work, and it is what the bootstrap applications ca
 Convergence of the row laws is stated on `ProbabilityMeasure ℝ`, since the rows carry no
 common random-variable representation.
 
-## ⚠ THIS STATEMENT IS **FALSE** AS FROZEN (verified counterexample below)
+## ⚠ THE FROZEN STATEMENT WAS **FALSE** — repaired below, counterexample retained
 
-The hypothesis `hL1` is stated with the **Bochner** integral `∫ y, |y| ∂(G n)`, which is the
+The frozen hypothesis `hL1` is stated with the **Bochner** integral `∫ y, |y| ∂(G n)`, which is
+the
 junk value `0` whenever `|·|` is *not* `G n`-integrable (`MeasureTheory.integral_undef`).
 Consequently `hL1` says nothing at all about rows with an infinite first absolute moment: it
 is satisfied *vacuously* by any sequence of non-integrable `Gₙ` as soon as the limit has
@@ -922,16 +1196,33 @@ so `P{ω | 1 ≤ |n⁻¹ ∑ᵢ Yₙ,ᵢ − 0|} ≥ 1 − (1 − 1/n)ⁿ ↛ 0`
 Cauchy tail, because `n⁻¹ × O_P(1)` many Cauchy draws is `O_P(1/n)`; it is not true once the
 escaping mass is placed at height `n³`, which the hypotheses permit.)
 
-**Forced repair.** Add the integrability of the rows, i.e. the hypothesis
-`(hGint : ∀ n, Integrable id (G n))`
-(or restate `hL1` with the lower Lebesgue integral `∫⁻ y, ‖y‖₊ ∂(G n)` in `ℝ≥0∞`). With it,
-`hweak` + `hL1` do give uniform integrability of `{Gₙ}` and the classical Feller truncation
-argument sketched below goes through. That repaired statement is *not* proved here: it is a
-self-contained project (uniform integrability from weak convergence plus convergence of first
-absolute moments, then an `n`-dependent truncation), and no consumer in the repository
-currently discharges it (`Bootstrap/Consistency.lean` and `LikelihoodMethods/UniformLAN.lean`
-only reference it as an open brick). The statement is therefore left exactly as frozen, with
-the falsity recorded, rather than silently strengthened. -/
+**Repair (minimal, documented).** Exactly one hypothesis is added,
+
+`(hGint : ∀ n, Integrable id (G n))`,
+
+which closes the junk-value loophole and nothing else: it is precisely what makes `hL1` say
+what it reads as saying. (The equivalent alternative is to restate `hL1` with the lower
+Lebesgue integral `∫⁻ y, ‖y‖₊ ∂(G n)` in `ℝ≥0∞`; the added hypothesis is the less invasive of
+the two, since every downstream row law is an image measure of an integrable variable.) No
+other hypothesis is touched, and the conclusion is unchanged. The counterexample above is
+killed immediately: its `Gₙ` has `∫⁻|y| dGₙ = ∞`, so `id` is not `Gₙ`-integrable.
+
+**Proof (as formalised).** Not the textbook `n`-dependent truncation, but a cheaper
+*fixed-level* one, which avoids developing uniform integrability as a separate notion. Fix
+`K ≥ 0` and split `Y = τ_K(Y) + (Y − τ_K(Y))` with `τ_K y = max (−K) (min K y)`:
+
+* the truncated average is an average of `n` independent variables bounded by `K`, so
+  `Var[n⁻¹∑ τ_K(Yₙ,ᵢ)] ≤ K²/n` and Chebyshev gives `9K²/(nε²)`;
+* the excess average is controlled by Markov, `E|n⁻¹∑ (Yₙ,ᵢ − τ_K(Yₙ,ᵢ))| ≤ ∫ (|y|−K)⁺ dGₙ`;
+* the centring `∫ τ_K dGₙ` converges to `∫ τ_K dν` because `τ_K` is *bounded continuous*
+  (`hweak`), and `|∫ τ_K dν − ∫ y dν| ≤ ∫ (|y|−K)⁺ dν`.
+
+The single quantitative input is that the excess integrals converge,
+`∫ (|y|−K)⁺ dGₙ → ∫ (|y|−K)⁺ dν` (`wlln_tendsto_excess`), which follows from `hL1` **plus**
+weak convergence against the bounded continuous `y ↦ |y| ∧ K`, using `hGint` to split
+`(|y|−K)⁺ = |y| − (|y| ∧ K)` under the Bochner integral. Letting `K → ∞` afterwards
+(`wlln_excess_tendsto_zero`, dominated convergence under `hν`) makes both `ν`-side errors as
+small as desired. -/
 theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ → Measure ℝ}
     {ν : Measure ℝ} [∀ n, IsProbabilityMeasure (G n)] [IsProbabilityMeasure ν]
     -- USER-INPUT: every array entry is measurable (data regularity).
@@ -940,6 +1231,10 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
     (hindep : ∀ n, iIndepFun (Y n) P)
     -- USER-INPUT: the `n`-th row is identically distributed with law `G n`.
     (hlaw : ∀ n (i : Fin n), P.map (Y n i) = G n)
+    -- USER-INPUT (REPAIR): every row law has a finite first absolute moment.  Without this the
+    -- statement is FALSE: see the counterexample in the docstring, where `hL1` holds only
+    -- because the Bochner integral `∫ y, |y| ∂(G n)` takes its junk value `0`.
+    (hGint : ∀ n, Integrable id (G n))
     -- USER-INPUT: the row laws converge weakly to `ν` (portmanteau form: integration against
     -- bounded continuous test functions; matches the convention used elsewhere in the library).
     (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ y, f y ∂(G n)) atTop (𝓝 (∫ y, f y ∂ν)))
@@ -949,28 +1244,100 @@ theorem triangular_wlln_of_L1 {Y : (n : ℕ) → Fin n → Ω → ℝ} {G : ℕ 
     (hL1 : Tendsto (fun n => ∫ y, |y| ∂(G n)) atTop (𝓝 (∫ y, |y| ∂ν))) :
     TendstoInMeasure P (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i, Y n i ω) atTop
       (fun _ => ∫ y, y ∂ν) := by
-  -- FALSE AS STATED: see the docstring for the counterexample
-  -- `Gₙ = (1−1/n)δ₀ + (1/n)·Pareto([n³,∞))`, `ν = δ₀`, which satisfies every hypothesis
-  -- (`hL1` only because `∫ y, |y| ∂(G n)` is the junk value `0` for non-integrable `Gₙ`)
-  -- while the row averages are `≥ n²` with probability `→ 1 − e⁻¹`.  The proof sketch that
-  -- follows is the argument for the REPAIRED statement (add `∀ n, Integrable id (G n)`).
-  --
-  -- TODO (planned debt, repaired form): the faithful proof is the classical Feller weak law via
-  -- truncation at an `n`-dependent level `Cₙ = n`.  Split each row entry
-  -- `Y n i = U n i + V n i` with `U n i := Y n i · 1{|Y n i| ≤ n}` and control the
-  -- three resulting terms of `n⁻¹∑ Y n i − ∫ y dν`:
-  --   • centered truncated part `n⁻¹∑ (U n i − 𝔼[U n i])` by Chebyshev, using
-  --     `Var[n⁻¹∑ U] ≤ 𝔼[U₀²]/n` and `n⁻¹∫_{|y|≤n} y² dGₙ → 0`
-  --     (from `n⁻¹∫_{|y|≤K} y² → 0` plus the uniform tail `∫_{|y|>K}|y| dGₙ`);
-  --   • centering shift `𝔼[U n i] − ∫ y dν = ∫_{|y|≤n} y dGₙ − ∫ y dν → 0`, from
-  --     weak convergence (`hweak`) together with `L¹` convergence of first moments
-  --     (`hL1`), which give `∫ y dGₙ → ∫ y dν` and vanishing truncation error;
-  --   • tail part `V n i` by the union bound `n · Gₙ{|y| > n} ≤ ∫_{|y|>n}|y| dGₙ → 0`.
-  -- The single nontrivial analytic input is the **uniform integrability** of `{Gₙ}`
-  -- (`∀ ε, ∃ K, ∀ n, ∫_{|y|>K}|y| dGₙ < ε`), which is a standard consequence of `hL1` +
-  -- `hweak` ONLY in the repaired form, i.e. once `∀ n, Integrable id (G n)` is assumed:
-  -- without it `hL1` carries no information (junk value) and the statement is false.
-  -- Either way the proof is a self-contained project, not a corollary of `lindeberg_clt`.
-  sorry
+  -- Fixed-level truncation.  See the docstring for the counterexample that forces `hGint`.
+  refine tendstoInMeasure_of_ne_top ?_
+  intro e he hetop
+  -- work with the real deviation level `ε = e.toReal`
+  set ε : ℝ := e.toReal with hεdef
+  have hε : (0 : ℝ) < ε := ENNReal.toReal_pos he.ne' hetop
+  have hset : ∀ n : ℕ,
+      {ω | e ≤ edist ((n : ℝ)⁻¹ * ∑ i, Y n i ω) (∫ y, y ∂ν)}
+        = {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Y n i ω - ∫ y, y ∂ν|} := by
+    intro n
+    ext ω
+    simp only [Set.mem_setOf_eq, edist_dist, Real.dist_eq]
+    exact ENNReal.le_ofReal_iff_toReal_le hetop (abs_nonneg _)
+  simp only [hset]
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ρ hρ
+  -- replace the `ℝ≥0∞` tolerance by a real one
+  obtain ⟨δ, hδ0, hδρ⟩ : ∃ δ : ℝ, 0 < δ ∧ ENNReal.ofReal δ ≤ ρ := by
+    rcases eq_top_or_lt_top ρ with h | h
+    · exact ⟨1, one_pos, by simp [h]⟩
+    · exact ⟨ρ.toReal, ENNReal.toReal_pos hρ.ne' h.ne, by rw [ENNReal.ofReal_toReal h.ne]⟩
+  set m : ℝ := ∫ y, y ∂ν with hmdef
+  -- choose the truncation level: the limiting excess integral must beat both budgets
+  obtain ⟨Kn, hKn⟩ : ∃ Kn : ℕ,
+      ∫ y, max (|y| - (Kn : ℝ)) 0 ∂ν < min (ε / 6) (δ * ε / 12) :=
+    ((wlln_excess_tendsto_zero hν).eventually
+      (gt_mem_nhds (lt_min (by linarith) (by positivity)))).exists
+  set K : ℝ := (Kn : ℝ) with hKdef
+  have hK : (0 : ℝ) ≤ K := Nat.cast_nonneg _
+  have hνy : Integrable (fun y : ℝ => y) ν := hν
+  have hti : Integrable (fun y : ℝ => wllnTrunc K y) ν :=
+    Integrable.mono' (integrable_const K) (continuous_wllnTrunc K).aestronglyMeasurable
+      (.of_forall fun y => by rw [Real.norm_eq_abs]; exact abs_wllnTrunc_le hK y)
+  -- the two convergent sequences of the argument
+  have hexc := wlln_tendsto_excess hGint hν hweak hL1 hK
+  have htr : Tendsto (fun n => ∫ y, wllnTrunc K y ∂(G n)) atTop
+      (𝓝 (∫ y, wllnTrunc K y ∂ν)) := by
+    have h := hweak (wllnBcf (wllnTrunc K) (continuous_wllnTrunc K) (abs_wllnTrunc_le hK))
+    simpa using h
+  -- the centring error of the truncation on the limit law is the limiting excess
+  have hcent : |(∫ y, wllnTrunc K y ∂ν) - m| ≤ ∫ y, max (|y| - K) 0 ∂ν := by
+    rw [hmdef]
+    calc |(∫ y, wllnTrunc K y ∂ν) - ∫ y, y ∂ν|
+        = |∫ y, (wllnTrunc K y - y) ∂ν| := by rw [integral_sub hti hνy]
+      _ ≤ ∫ y, |wllnTrunc K y - y| ∂ν := by
+          simpa only [Real.norm_eq_abs] using
+            norm_integral_le_integral_norm (μ := ν) fun y => wllnTrunc K y - y
+      _ = ∫ y, max (|y| - K) 0 ∂ν := by
+          refine integral_congr_ae (.of_forall fun y => ?_)
+          have hy := wllnTrunc_sub hK y
+          rw [abs_sub_comm] at hy
+          exact hy
+  -- eventually the centring is accurate to `ε/3`
+  have hev1 : ∀ᶠ n in atTop, |(∫ y, wllnTrunc K y ∂(G n)) - m| < ε / 3 := by
+    have hc : |(∫ y, wllnTrunc K y ∂ν) - m| < ε / 6 :=
+      lt_of_le_of_lt hcent (lt_of_lt_of_le hKn (min_le_left _ _))
+    filter_upwards [htr.eventually
+      (eventually_abs_sub_lt (∫ y, wllnTrunc K y ∂ν) (by linarith : (0 : ℝ) < ε / 6))] with n hn
+    have h2 := abs_sub_le (∫ y, wllnTrunc K y ∂(G n)) (∫ y, wllnTrunc K y ∂ν) m
+    linarith
+  -- eventually the Markov term is at most `δ/2`
+  have hev2 : ∀ᶠ n in atTop, 3 * (∫ y, max (|y| - K) 0 ∂(G n)) / ε ≤ δ / 2 := by
+    have hr2 : ∫ y, max (|y| - K) 0 ∂ν < δ * ε / 12 :=
+      lt_of_lt_of_le hKn (min_le_right _ _)
+    filter_upwards [hexc.eventually (eventually_abs_sub_lt (∫ y, max (|y| - K) 0 ∂ν)
+      (by positivity : (0 : ℝ) < δ * ε / 12))] with n hn
+    have hb : ∫ y, max (|y| - K) 0 ∂(G n) < δ * ε / 6 := by
+      have h3 := abs_lt.mp hn
+      linarith [h3.2]
+    rw [div_le_iff₀ hε]
+    linarith
+  -- eventually the Chebyshev term is at most `δ/2`
+  have hev3 : ∀ᶠ n : ℕ in atTop, 9 * K ^ 2 / ((n : ℝ) * ε ^ 2) ≤ δ / 2 := by
+    obtain ⟨N, hN⟩ := exists_nat_ge (18 * K ^ 2 / (δ * ε ^ 2))
+    filter_upwards [eventually_ge_atTop (max N 1)] with n hn
+    have hn1 : 1 ≤ n := le_trans (le_max_right N 1) hn
+    have hnN : (N : ℝ) ≤ (n : ℝ) := by exact_mod_cast le_trans (le_max_left N 1) hn
+    have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn1
+    have h1 : 18 * K ^ 2 / (δ * ε ^ 2) ≤ (n : ℝ) := hN.trans hnN
+    rw [div_le_iff₀ (by positivity : (0 : ℝ) < δ * ε ^ 2)] at h1
+    rw [div_le_iff₀ (by positivity : (0 : ℝ) < (n : ℝ) * ε ^ 2)]
+    nlinarith [h1]
+  -- assemble
+  filter_upwards [hev1, hev2, hev3, eventually_gt_atTop 0] with n h1 h2 h3 hn
+  calc P {ω | ε ≤ |(n : ℝ)⁻¹ * ∑ i, Y n i ω - m|}
+      ≤ ENNReal.ofReal (9 * K ^ 2 / ((n : ℝ) * ε ^ 2))
+          + ENNReal.ofReal (3 * (∫ y, max (|y| - K) 0 ∂(G n)) / ε) :=
+        wlln_row_bound hn (fun i => hmeas n i) (hindep n) (fun i => hlaw n i) (hGint n) hK hε h1
+    _ ≤ ENNReal.ofReal (δ / 2) + ENNReal.ofReal (δ / 2) :=
+        add_le_add (ENNReal.ofReal_le_ofReal h3) (ENNReal.ofReal_le_ofReal h2)
+    _ = ENNReal.ofReal δ := by
+        rw [← ENNReal.ofReal_add (by linarith) (by linarith)]
+        congr 1
+        ring
+    _ ≤ ρ := hδρ
 
 end StatLean.HypothesisTesting

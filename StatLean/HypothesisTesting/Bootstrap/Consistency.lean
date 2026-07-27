@@ -793,6 +793,11 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     (hGconv : ∀ x : ℝ, ContinuousAt Glim x → Tendsto (fun n => G n x) atTop (𝓝 (Glim x)))
     -- USER-INPUT: the limit law has a finite first absolute moment
     (hint : Integrable (fun t : ℝ => t) ν)
+    -- USER-INPUT: every row has a finite first absolute moment.  This is the hypothesis added by
+    -- the documented repair of `triangular_wlln_of_L1`: without it the Bochner integral in
+    -- `habs` below is the junk value `0` for heavy-tailed rows and the weak law is FALSE (see
+    -- the counterexample in the docstring of `triangular_wlln_of_L1`).
+    (hYint : ∀ n : ℕ, Integrable (Y n 0) Pr)
     -- USER-INPUT: convergence of the first absolute moments to that of the limit law; this is
     -- the uniform-integrability substitute that upgrades weak convergence to a weak law
     (habs : Tendsto (fun n => ∫ ω, |Y n 0 ω| ∂Pr) atTop (𝓝 (∫ t, |t| ∂ν))) :
@@ -837,8 +842,15 @@ theorem tendstoInMeasure_rowMean_triangular {Pr : Measure Ω} [IsProbabilityMeas
     rw [hGm]
     simp only []
     rw [integral_map (hYmeas n 0).aemeasurable (by fun_prop)]
+  -- the repaired weak law needs the row laws to have a finite first absolute moment
+  have hGmint : ∀ n, Integrable id (Gm n) := by
+    intro n
+    rw [hGm]
+    simp only []
+    exact (integrable_map_measure aestronglyMeasurable_id (hYmeas n 0).aemeasurable).mpr
+      (by simpa using hYint n)
   have hmain := triangular_wlln_of_L1 (P := Pr) (Y := fun n (i : Fin n) => Y n (i : ℕ))
-    (G := Gm) (ν := ν) (fun n i => hYmeas n (i : ℕ)) hindep hlaw hweak
+    (G := Gm) (ν := ν) (fun n i => hYmeas n (i : ℕ)) hindep hlaw hGmint hweak
     (by simpa using hint) hL1
   have hfun : (fun (n : ℕ) ω => (n : ℝ)⁻¹ * (∑ i ∈ Finset.range n, Y n i ω))
       = fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i : Fin n, Y n (i : ℕ) ω := by
