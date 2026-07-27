@@ -1,6 +1,8 @@
+import StatLean.HypothesisTesting.NeymanPearson.Generalized
 import StatLean.HypothesisTesting.Tests.Defs
 import StatLean.HypothesisTesting.Unbiased.PowerContinuity
 import StatLean.PointEstimation.ExponentialFamily.Defs
+import StatLean.PointEstimation.ExponentialFamily.Smoothness
 
 /-!
 # UMP unbiased two-sided tests in a one-parameter exponential family
@@ -129,6 +131,23 @@ private lemma integral_expFamily_eq (E : ExpFamily 𝓧 ℝ) (θ : ℝ) (g : �
   rw [← integral_div]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   ring
+
+/-- **Positivity of the partition integral.** If the member `P θ` is a probability measure
+then `∫ e^{θT} dν > 0`: otherwise the tilted representation would read `1 = 0/0`. -/
+private lemma partition_pos (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {Ξ : Set ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) {θ : ℝ} (hθ : θ ∈ Ξ) :
+    0 < ∫ x, Real.exp (θ * E.stat x) ∂E.base := by
+  have hnn : (0 : ℝ) ≤ ∫ x, Real.exp (θ * E.stat x) ∂E.base :=
+    integral_nonneg fun x => (Real.exp_pos _).le
+  rcases eq_or_lt_of_le hnn with h | h
+  · exfalso
+    have h1 : ∫ _x, (1 : ℝ) ∂(E.P θ) = 1 := by
+      rw [← hP θ hθ]; simp
+    have h2 := integral_expFamily_eq E θ (fun _ => (1 : ℝ))
+    rw [h1, ← h] at h2
+    simp at h2
+  · exact h
 
 /-- **Integrability of `T·e^{θT}` at an interior natural parameter.** In one dimension the
 `2^s` sign-vector envelope of the general theory is the two-point bound
@@ -294,6 +313,161 @@ private lemma exists_sep_line {c : ℝ} (hc : c ≠ 0) {C₁ C₂ : ℝ} (hC : C
         field_simp; ring
       rw [hAC₁, hAC₂] at haff
       linarith
+
+/-- **Two-constraint Neyman–Pearson comparison, unpacked.** The `Fin`-indexed
+`isMax_of_multiplier_form` at `m = 2`, restated with the three functions spelled out. -/
+private lemma np_two_compare (μ : Measure 𝓧) [SigmaFinite μ] {g₀ g₁ g₂ : 𝓧 → ℝ}
+    (hm₀ : Measurable g₀) (hm₁ : Measurable g₁) (hm₂ : Measurable g₂)
+    (hi₀ : Integrable g₀ μ) (hi₁ : Integrable g₁ μ) (hi₂ : Integrable g₂ μ)
+    {c₀ c₁ k₀ k₁ : ℝ} {φ ψ : 𝓧 → ℝ} (hφ : IsCriticalFn φ) (hψ : IsCriticalFn ψ)
+    (hφ₀ : ∫ x, φ x * g₀ x ∂μ = c₀) (hφ₁ : ∫ x, φ x * g₁ x ∂μ = c₁)
+    (hψ₀ : ∫ x, ψ x * g₀ x ∂μ = c₀) (hψ₁ : ∫ x, ψ x * g₁ x ∂μ = c₁)
+    (hs₁ : ∀ x, k₀ * g₀ x + k₁ * g₁ x < g₂ x → φ x = 1)
+    (hs₀ : ∀ x, g₂ x < k₀ * g₀ x + k₁ * g₁ x → φ x = 0) :
+    ∫ x, ψ x * g₂ x ∂μ ≤ ∫ x, φ x * g₂ x ∂μ := by
+  have hmeas : ∀ i : Fin 3, Measurable ((![g₀, g₁, g₂] : Fin 3 → 𝓧 → ℝ) i) := by
+    intro i; fin_cases i <;> simpa
+  have hint : ∀ i : Fin 3, Integrable ((![g₀, g₁, g₂] : Fin 3 → 𝓧 → ℝ) i) μ := by
+    intro i; fin_cases i <;> simpa
+  have hconφ : ∀ i : Fin 2,
+      ∫ x, φ x * (![g₀, g₁, g₂] : Fin 3 → 𝓧 → ℝ) i.castSucc x ∂μ
+        = (![c₀, c₁] : Fin 2 → ℝ) i := by
+    intro i; fin_cases i <;> simpa
+  have hconψ : ∀ i : Fin 2,
+      ∫ x, ψ x * (![g₀, g₁, g₂] : Fin 3 → 𝓧 → ℝ) i.castSucc x ∂μ
+        = (![c₀, c₁] : Fin 2 → ℝ) i := by
+    intro i; fin_cases i <;> simpa
+  have hshape : HasMultiplierShape μ (![g₀, g₁, g₂] : Fin 3 → 𝓧 → ℝ) ![k₀, k₁] φ := by
+    constructor
+    · refine Filter.Eventually.of_forall fun x hx => hs₁ x ?_
+      simpa [Fin.sum_univ_two] using hx
+    · refine Filter.Eventually.of_forall fun x hx => hs₀ x ?_
+      simpa [Fin.sum_univ_two] using hx
+  have key := isMax_of_multiplier_form (m := 2) μ hmeas hint hφ hconφ hshape ψ hψ hconψ
+  simpa using key
+
+/-- **Unbiasedness forces the two side conditions at an interior null value.**
+
+If `ψ` has power at most `α` at `θ₀` and at least `α` at every other parameter of the *open*
+set `Ξ`, then its power function — an analytic ratio of exponential integrals — attains a
+local minimum at `θ₀`; continuity upgrades the level inequality to equality, and vanishing of
+the derivative is exactly `E_{θ₀}[Tψ] = α·E_{θ₀}[T]`. -/
+private lemma unbiased_side_conditions (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {Ξ : Set ℝ} {θ₀ α : ℝ} {ψ : 𝓧 → ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) (hΞ : Ξ ⊆ interior E.natSet) (hΞopen : IsOpen Ξ)
+    (hθ₀ : θ₀ ∈ Ξ) (hψ : IsCriticalFn ψ)
+    (hle : ∫ x, ψ x ∂(P θ₀) ≤ α)
+    (hge : ∀ θ ∈ Ξ, θ ≠ θ₀ → α ≤ ∫ x, ψ x ∂(P θ)) :
+    ∫ x, ψ x ∂(P θ₀) = α ∧
+      ∫ x, E.stat x * ψ x ∂(P θ₀) = α * ∫ x, E.stat x ∂(P θ₀) := by
+  -- the two exponential integrals and their ratio
+  set nu : ℝ → ℝ := fun θ => ∫ x, ψ x * Real.exp (θ * E.stat x) ∂E.base with hnu
+  set de : ℝ → ℝ := fun θ => ∫ x, Real.exp (θ * E.stat x) ∂E.base with hde
+  have hBeq : ∀ θ ∈ Ξ, nu θ / de θ = ∫ x, ψ x ∂(P θ) := by
+    intro θ hθ
+    rw [hP θ hθ, integral_expFamily_eq E θ ψ]
+  have hd₀ : 0 < de θ₀ := partition_pos E hP hθ₀
+  -- the inner product on `ℝ` is multiplication; the differential is a `smulRight`
+  have hclm : ∀ v : ℝ, (innerSL ℝ v : ℝ →L[ℝ] ℝ)
+      = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) v := by
+    intro v
+    ext w
+    simp only [innerSL_apply, ContinuousLinearMap.smulRight_apply,
+      ContinuousLinearMap.one_apply, smul_eq_mul, inner_real]
+    ring
+  -- `|ψ| ≤ 1` puts the natural set inside the `ψ`-weighted one
+  have hwsub : E.natSet ⊆ E.weightedNatSet ψ := by
+    intro η hη
+    refine (hη : Integrable _ _).mono' ?_ (Filter.Eventually.of_forall fun x => ?_)
+    · exact (hψ.1.abs.aestronglyMeasurable).mul
+        ((((innerSL ℝ η).continuous.measurable.comp E.stat_meas)).exp.aestronglyMeasurable)
+    · rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      calc |ψ x| * Real.exp ⟪η, E.stat x⟫_ℝ ≤ 1 * Real.exp ⟪η, E.stat x⟫_ℝ := by
+            gcongr
+            rw [abs_of_nonneg (hψ.2 x).1]; exact (hψ.2 x).2
+        _ = Real.exp ⟪η, E.stat x⟫_ℝ := one_mul _
+  have hwone : E.weightedNatSet (fun _ : 𝓧 => (1 : ℝ)) = E.natSet := by
+    ext η; simp [ExpFamily.weightedNatSet, ExpFamily.natSet]
+  -- differentiability of numerator and denominator at `θ₀`
+  have hnu' : HasDerivAt nu (∫ x, ψ x * Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) θ₀ := by
+    have hfd := E.hasFDerivAt_integral_exp_inner hψ.1 (interior_mono hwsub (hΞ hθ₀))
+    rw [hclm] at hfd
+    have h := hasDerivAt_iff_hasFDerivAt.mpr hfd
+    simpa only [inner_real, smul_eq_mul] using h
+  have hde' : HasDerivAt de (∫ x, Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) θ₀ := by
+    have hmem : θ₀ ∈ interior (E.weightedNatSet fun _ : 𝓧 => (1 : ℝ)) := by
+      rw [hwone]; exact hΞ hθ₀
+    have hfd := E.hasFDerivAt_integral_exp_inner (f := fun _ : 𝓧 => (1 : ℝ))
+      measurable_const hmem
+    rw [hclm] at hfd
+    have h := hasDerivAt_iff_hasFDerivAt.mpr hfd
+    simpa only [inner_real, smul_eq_mul, one_mul] using h
+  have hB' : HasDerivAt (fun θ => nu θ / de θ)
+      (((∫ x, ψ x * Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) * de θ₀
+        - nu θ₀ * ∫ x, Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) / de θ₀ ^ 2) θ₀ :=
+    hnu'.div hde' (ne_of_gt hd₀)
+  -- the power function has a local minimum at `θ₀`
+  have hmin : IsLocalMin (fun θ => nu θ / de θ) θ₀ := by
+    filter_upwards [hΞopen.mem_nhds hθ₀] with θ hθ
+    rcases eq_or_ne θ θ₀ with rfl | hne
+    · exact le_rfl
+    · rw [hBeq θ hθ, hBeq θ₀ hθ₀]
+      exact le_trans hle (hge θ hθ hne)
+  have hzero := hmin.hasDerivAt_eq_zero hB'
+  -- continuity plus non-isolation of `θ₀` upgrades the level inequality to equality
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΞopen θ₀ hθ₀
+  have hsmall : ∀ n : ℕ, (0 : ℝ) < ε / 2 * (1 / ((n : ℝ) + 1)) := fun n => by positivity
+  have hseqmem : ∀ n : ℕ, θ₀ + ε / 2 * (1 / ((n : ℝ) + 1)) ∈ Ξ := by
+    intro n
+    refine hball ?_
+    rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left, abs_of_pos (hsmall n)]
+    have hb : (1 : ℝ) / ((n : ℝ) + 1) ≤ 1 := by
+      rw [div_le_one (by positivity)]
+      have : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
+      linarith
+    nlinarith [hsmall n]
+  have htend : Filter.Tendsto (fun n : ℕ => θ₀ + ε / 2 * (1 / ((n : ℝ) + 1)))
+      Filter.atTop (nhds θ₀) := by
+    have h0 := tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (ε / 2)
+    simpa using Filter.Tendsto.const_add θ₀ h0
+  have hlim := (hB'.continuousAt.tendsto).comp htend
+  have hval : α ≤ nu θ₀ / de θ₀ := by
+    refine ge_of_tendsto' hlim fun n => ?_
+    rw [Function.comp_apply, hBeq _ (hseqmem n)]
+    refine hge _ (hseqmem n) fun h => ?_
+    have := hsmall n
+    linarith [h]
+  have hsize : nu θ₀ / de θ₀ = α := by
+    rw [hBeq θ₀ hθ₀] at hval ⊢
+    exact le_antisymm hle hval
+  refine ⟨by rw [← hBeq θ₀ hθ₀]; exact hsize, ?_⟩
+  -- unwind the vanishing derivative
+  have hnum : nu θ₀ = α * de θ₀ := by
+    rwa [div_eq_iff (ne_of_gt hd₀)] at hsize
+  have hkey : (∫ x, ψ x * Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base)
+      = α * ∫ x, Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base := by
+    have hd2 : de θ₀ ^ 2 ≠ 0 := pow_ne_zero _ (ne_of_gt hd₀)
+    rcases div_eq_zero_iff.mp hzero with h | h
+    · rw [hnum] at h
+      have h2 : de θ₀ * ((∫ x, ψ x * Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base)
+          - α * ∫ x, Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) = 0 := by
+        linear_combination h
+      rcases mul_eq_zero.mp h2 with h3 | h3
+      · exact absurd h3 (ne_of_gt hd₀)
+      · linarith
+    · exact absurd h hd2
+  -- rewrite both sides as integrals against `P θ₀`
+  have hL : ∫ x, E.stat x * ψ x ∂(P θ₀)
+      = (∫ x, ψ x * Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) / de θ₀ := by
+    rw [hP θ₀ hθ₀, integral_expFamily_eq E θ₀ (fun x => E.stat x * ψ x)]
+    congr 1
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+  have hR : ∫ x, E.stat x ∂(P θ₀)
+      = (∫ x, Real.exp (θ₀ * E.stat x) * E.stat x ∂E.base) / de θ₀ := by
+    rw [hP θ₀ hθ₀, integral_expFamily_eq E θ₀ (fun x => E.stat x)]
+    congr 1
+    exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+  rw [hL, hR, hkey, mul_div_assoc]
 
 /-- **UMP unbiased test of a point null in a one-parameter exponential family.**
 
