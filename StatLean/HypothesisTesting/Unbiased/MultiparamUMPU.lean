@@ -3232,6 +3232,132 @@ private lemma exists_boundary_ae_integrable_id
   rw [div_eq_inv_mul, ← neg_mul] at hmaj
   simpa [Real.norm_eq_abs] using hmaj
 
+/-- **Secant separation, degenerate interval allowed.** The `C₁ ≤ C₂` form of
+`exists_sep_line`. When `C₁ < C₂` it *is* `exists_sep_line`; when `C₁ = C₂` the secant
+degenerates to the **tangent** of `u ↦ e^{cu}` at that point, which meets the exponential
+there (so the endpoint equalities still hold) and lies below it everywhere else, the
+"inside" clause becoming vacuous.
+
+The point-null engine below needs exactly this: the hypothesis `C₁ t ≤ C₂ t` of
+`isUMPU_conditional_point` permits a degenerate conditional interval, and no nondegeneracy
+is available fibre by fibre. -/
+private lemma exists_sep_line_le (c : ℝ) {C₁ C₂ : ℝ} (hC : C₁ ≤ C₂) :
+    ∃ A B : ℝ,
+      Real.exp (c * C₁) - A - B * C₁ = 0 ∧ Real.exp (c * C₂) - A - B * C₂ = 0 ∧
+      (∀ u : ℝ, C₁ < u → u < C₂ → Real.exp (c * u) - A - B * u ≤ 0) ∧
+      (∀ u : ℝ, u < C₁ ∨ C₂ < u → 0 ≤ Real.exp (c * u) - A - B * u) := by
+  rcases eq_or_lt_of_le hC with heq | hlt
+  · subst heq
+    refine ⟨Real.exp (c * C₁) - c * Real.exp (c * C₁) * C₁, c * Real.exp (c * C₁),
+      by ring, by ring, fun u h1 h2 => absurd h1 (not_lt.mpr h2.le), fun u _ => ?_⟩
+    have hE : (0 : ℝ) < Real.exp (c * C₁) := Real.exp_pos _
+    have h := Real.add_one_le_exp (c * u - c * C₁)
+    have h2 := mul_le_mul_of_nonneg_left h hE.le
+    have hsplit : Real.exp (c * u) = Real.exp (c * C₁) * Real.exp (c * u - c * C₁) := by
+      rw [← Real.exp_add]; ring_nf
+    rw [hsplit]
+    nlinarith [h2]
+  · exact exists_sep_line c hlt
+
+/-- **The fibrewise point-null inequality.** Let `g` be bounded by `1`, nonnegative outside
+`[C₁, C₂]` and nonpositive inside, with **both** side conditions at the reference measure `Q`:
+`∫ g dQ = 0` and `∫ u·g(u) dQ = 0` (the latter requires `u` to be `Q`-integrable). Then every
+exponential tilt of `Q` gives `g` a nonnegative integral.
+
+This is the point-null analogue of `integral_expTilt_signed` / `integral_expTilt_signed_interval`
+and the reason the alternative may be *two-sided*: the separating object is the affine
+function `A + Bu` of `exists_sep_line_le`, which lies below `e^{cu}` outside `[C₁, C₂]` and
+above it inside for **either** sign of `c`, convexity of `exp` being sign-blind. The two side
+conditions annihilate the two affine terms, leaving `∫ g(u) e^{cu} dQ ≥ 0`. -/
+private lemma integral_expTilt_signed_point {Q : Measure ℝ} [IsProbabilityMeasure Q]
+    {k c C₁ C₂ : ℝ} (hCle : C₁ ≤ C₂) (hk : 0 ≤ k)
+    (hprob : IsProbabilityMeasure (expTilt Q k c))
+    {g : ℝ → ℝ} (hgm : Measurable g) (hgb : ∀ u, |g u| ≤ 1)
+    (hgpos : ∀ u : ℝ, u < C₁ ∨ C₂ < u → 0 ≤ g u)
+    (hgneg : ∀ u : ℝ, C₁ < u → u < C₂ → g u ≤ 0)
+    (hid : Integrable (fun u : ℝ => u) Q)
+    (hz : ∫ u, g u ∂Q = 0) (hz' : ∫ u, u * g u ∂Q = 0) :
+    0 ≤ ∫ u, g u ∂(expTilt Q k c) := by
+  obtain ⟨A, B, h1, h2, hin, hout⟩ := exists_sep_line_le c hCle
+  obtain ⟨hdint, -⟩ := integrable_expTiltDensity hk hprob
+  have hkpos : 0 < k := expTilt_factor_pos hprob
+  have hkne : k ≠ 0 := ne_of_gt hkpos
+  have hgnorm : ∀ᵐ u ∂Q, ‖g u‖ ≤ 1 :=
+    Filter.Eventually.of_forall fun u => by rw [Real.norm_eq_abs]; exact hgb u
+  have hgint : Integrable g Q :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hgm.aestronglyMeasurable hgnorm
+  have hugint : Integrable (fun u : ℝ => u * g u) Q :=
+    hid.mul_bdd hgm.aestronglyMeasurable hgnorm
+  have hprodint : Integrable (fun u => g u * (k * Real.exp (c * u))) Q :=
+    hdint.bdd_mul hgm.aestronglyMeasurable hgnorm
+  have hgexp : Integrable (fun u => g u * Real.exp (c * u)) Q := by
+    refine (hprodint.const_mul k⁻¹).congr (Filter.Eventually.of_forall fun u => ?_)
+    dsimp only
+    rw [show k⁻¹ * (g u * (k * Real.exp (c * u)))
+        = k⁻¹ * k * (g u * Real.exp (c * u)) by ring, inv_mul_cancel₀ hkne, one_mul]
+  -- the separating affine function has the sign of `g` at every point
+  have hpt : ∀ u : ℝ, 0 ≤ g u * (Real.exp (c * u) - A - B * u) := by
+    intro u
+    rcases lt_trichotomy u C₁ with h | h | h
+    · exact mul_nonneg (hgpos u (Or.inl h)) (hout u (Or.inl h))
+    · have hzero : Real.exp (c * u) - A - B * u = 0 := by rw [h]; exact h1
+      simp [hzero]
+    · rcases lt_trichotomy u C₂ with h' | h' | h'
+      · have hprodnn := mul_nonneg (neg_nonneg.mpr (hgneg u h h'))
+          (neg_nonneg.mpr (hin u h h'))
+        rwa [neg_mul_neg] at hprodnn
+      · have hzero : Real.exp (c * u) - A - B * u = 0 := by rw [h']; exact h2
+        simp [hzero]
+      · exact mul_nonneg (hgpos u (Or.inr h')) (hout u (Or.inr h'))
+  have hsplit : ∫ u, g u * (Real.exp (c * u) - A - B * u) ∂Q
+      = (∫ u, g u * Real.exp (c * u) ∂Q) - A * (∫ u, g u ∂Q) - B * ∫ u, u * g u ∂Q := by
+    have hfun : (fun u => g u * (Real.exp (c * u) - A - B * u))
+        = fun u => (g u * Real.exp (c * u) - A * g u) - B * (u * g u) := by
+      funext u; ring
+    rw [hfun, integral_sub (hgexp.sub' (hgint.const_mul A)) (hugint.const_mul B),
+      integral_sub hgexp (hgint.const_mul A), integral_const_mul, integral_const_mul]
+  have hI : (0 : ℝ) ≤ ∫ u, g u * (Real.exp (c * u) - A - B * u) ∂Q := integral_nonneg hpt
+  rw [hsplit, hz, hz'] at hI
+  have hI' : (0 : ℝ) ≤ ∫ u, g u * Real.exp (c * u) ∂Q := by linarith
+  rw [integral_expTilt Q hk c g,
+    show (fun u => g u * (k * Real.exp (c * u)))
+      = fun u => k * (g u * Real.exp (c * u)) by funext u; ring, integral_const_mul]
+  exact mul_nonneg hk hI'
+
+/-- **A pure-`θ` window at an interior parameter.** Around a point of `interior Ω` the whole
+`θ`-segment through it, of some positive half-width, lies in `Ω`. This is the form in which
+item (b) of `isUMPU_conditional_point` consumes interiority: it supplies simultaneously the
+two endpoints `(θ₀ ± δ, ϑ)` that `integrable_U_of_twoSided` and `hasDerivAt_integral_canExp`
+need, and the whole window on which unbiasedness is read as a local minimum. -/
+private lemma exists_pure_theta_window {Ω : Set (ℝ × Ξ)} {θ₀ : ℝ} {ϑ : Ξ}
+    (h : ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω) :
+    ∃ δ : ℝ, 0 < δ ∧ ∀ θ : ℝ, |θ - θ₀| ≤ δ → ((θ, ϑ) : ℝ × Ξ) ∈ Ω := by
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior _ h
+  refine ⟨r / 2, by positivity, fun θ hθ => ?_⟩
+  refine interior_subset (hball ?_)
+  rw [Metric.mem_ball, Prod.dist_eq]
+  refine max_lt ?_ (by simpa using hr)
+  rw [Real.dist_eq]
+  change |θ - θ₀| < r
+  linarith
+
+/-- **Disintegration of integrability.** If `φ(U, T)` is integrable then its conditional
+integral is an integrable function of `T`. The `Integrable` companion of
+`integral_eq_integral_condDistrib`, and what item (d) of `isUMPU_conditional_point` needs to
+split `∫ (E[Uψ ∣ t] − α·E[U ∣ t]) dP^T` into two convergent halves; for the *bounded*
+integrands of the interval theorems this was free from `integrable_const`. -/
+private lemma integrable_condPower_of_integrable {P : ℝ × Ξ → Measure 𝓧} {U : 𝓧 → ℝ}
+    {T : 𝓧 → Ξ} [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) {φ : ℝ × Ξ → ℝ} (hφ : Measurable φ)
+    {p : ℝ × Ξ} (hint : Integrable (fun x => φ (U x, T x)) (P p)) :
+    Integrable (fun t => ∫ u, φ (u, t) ∂(condDistrib U T (P p) t)) ((P p).map T) := by
+  have hgm : Measurable fun z : Ξ × ℝ => φ (z.2, z.1) :=
+    hφ.comp (measurable_snd.prodMk measurable_fst)
+  have h : Integrable (fun z : Ξ × ℝ => φ (z.2, z.1)) ((P p).map fun x => (T x, U x)) := by
+    rw [integrable_map_measure hgm.aestronglyMeasurable (hT.prodMk hU).aemeasurable]
+    exact hint
+  exact h.integral_condDistrib_map hU.aemeasurable
+
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
 *outside* an interval in `u` is UMP unbiased at level `α`, provided its constants satisfy
 **both** conditional conditions on the boundary surface `θ = θ₀`:
