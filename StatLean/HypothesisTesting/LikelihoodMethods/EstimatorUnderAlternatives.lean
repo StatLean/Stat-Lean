@@ -68,7 +68,7 @@ estimator sequence, are due to J. Hájek ("Asymptotically most powerful rank-ord
 
 open MeasureTheory ProbabilityTheory Filter Topology
 open AsymptoticStatistics AsymptoticStatistics.AsymptoticRepresentation
-open scoped RealInnerProductSpace ENNReal
+open scoped RealInnerProductSpace ENNReal Matrix BoundedContinuousFunction MatrixOrder
 
 namespace StatLean.HypothesisTesting
 
@@ -194,6 +194,104 @@ lemma posSemidef_of_fisherInformation
     have h := hsymm' (Pi.single j (1 : ℝ)) (Pi.single i (1 : ℝ))
     simpa [Matrix.conjTranspose_apply, Matrix.mulVec_single, single_dotProduct] using h
   · simpa using hnn' x
+
+/-- **Tightness from weak convergence.** If the laws of `V n` under probability measures
+`P n` converge weakly to a probability measure `ν`, then for every `α > 0` there is a radius
+`K` beyond which the `V n` sit with probability at most `α`, for all large `n`.
+
+The proof avoids the portmanteau theorem: the explicit bounded continuous cut-off
+`x ↦ max 0 (min 1 (‖x‖ − j))` is squeezed between the indicators of `{‖x‖ ≥ j+1}` and
+`{‖x‖ ≥ j}`, and `j` is chosen so that `ν{‖x‖ ≥ j}` is small — possible because the sets
+`{‖x‖ ≥ j}` decrease to `∅` and `ν` is finite. -/
+lemma exists_radius_eventually_measureReal_norm_le
+    {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
+    {P : ∀ n, Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
+    {V : ∀ n, Ω n → E} (hV : ∀ n, Measurable (V n))
+    {ν : Measure E} [IsProbabilityMeasure ν]
+    (hVw : WeakConverges (fun n => (P n).map (V n)) ν)
+    {α : ℝ} (hα : 0 < α) :
+    ∃ K : ℝ, 0 < K ∧ ∀ᶠ n in atTop, (P n).real {ω | K ≤ ‖V n ω‖} ≤ α := by
+  classical
+  -- The complements of the balls decrease to the empty set, so `ν` of them tends to `0`.
+  have hmeasset : ∀ j : ℕ, MeasurableSet {x : E | (j : ℝ) ≤ ‖x‖} := fun j =>
+    measurableSet_le measurable_const measurable_norm
+  have hanti : Antitone (fun j : ℕ => {x : E | (j : ℝ) ≤ ‖x‖}) := by
+    intro i j hij x hx
+    have : ((i : ℕ) : ℝ) ≤ ((j : ℕ) : ℝ) := Nat.cast_le.2 hij
+    exact this.trans hx
+  have hinter : (⋂ j : ℕ, {x : E | (j : ℝ) ≤ ‖x‖}) = ∅ := by
+    ext x
+    simp only [Set.mem_iInter, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_forall,
+      not_le]
+    exact exists_nat_gt ‖x‖
+  have htend : Tendsto (fun j : ℕ => ν {x : E | (j : ℝ) ≤ ‖x‖}) atTop (𝓝 0) := by
+    have h := MeasureTheory.tendsto_measure_iInter_atTop (μ := ν)
+      (fun j : ℕ => (hmeasset j).nullMeasurableSet) hanti ⟨0, measure_ne_top ν _⟩
+    rwa [hinter, measure_empty] at h
+  obtain ⟨j, hj⟩ :=
+    (htend.eventually_lt_const (u := ENNReal.ofReal (α / 2)) (by simpa using hα)).exists
+  have hjreal : ν.real {x : E | (j : ℝ) ≤ ‖x‖} ≤ α / 2 := by
+    refine ENNReal.toReal_le_of_le_ofReal (by positivity) hj.le
+  -- The cut-off test function.
+  set c : ℝ := (j : ℝ) with hc
+  have hcont : Continuous fun x : E => max 0 (min 1 (‖x‖ - c)) :=
+    continuous_const.max (continuous_const.min (continuous_norm.sub continuous_const))
+  set g : E →ᵇ ℝ := BoundedContinuousFunction.ofNormedAddCommGroup
+      (fun x => max 0 (min 1 (‖x‖ - c))) hcont 1 (by
+        intro x
+        have h0 : (0 : ℝ) ≤ max 0 (min 1 (‖x‖ - c)) := le_max_left _ _
+        rw [Real.norm_eq_abs, abs_of_nonneg h0]
+        exact max_le zero_le_one (min_le_left _ _)) with hg
+  have hgval : ∀ x : E, g x = max 0 (min 1 (‖x‖ - c)) := fun _ => rfl
+  refine ⟨c + 1, by positivity, ?_⟩
+  -- Step 1: the event is dominated by the test function.
+  have hstep1 : ∀ n : ℕ, (P n).real {ω | c + 1 ≤ ‖V n ω‖} ≤ ∫ x, g x ∂((P n).map (V n)) := by
+    intro n
+    have hset : MeasurableSet {ω : Ω n | c + 1 ≤ ‖V n ω‖} :=
+      measurableSet_le measurable_const (hV n).norm
+    have hgint : Integrable (fun ω => g (V n ω)) (P n) :=
+      (integrable_const ‖g‖).mono'
+        ((g.continuous.measurable.comp (hV n)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun ω => g.norm_coe_le_norm _)
+    have hle : ∀ ω : Ω n,
+        Set.indicator {ω : Ω n | c + 1 ≤ ‖V n ω‖} (1 : Ω n → ℝ) ω ≤ g (V n ω) := by
+      intro ω
+      by_cases hω : ω ∈ {ω : Ω n | c + 1 ≤ ‖V n ω‖}
+      · have h1 : (1 : ℝ) ≤ ‖V n ω‖ - c := by
+          have := hω; simp only [Set.mem_setOf_eq] at this; linarith
+        rw [Set.indicator_of_mem hω, hgval, min_eq_left h1]
+        simp
+      · rw [Set.indicator_of_notMem hω, hgval]
+        exact le_max_left _ _
+    calc (P n).real {ω | c + 1 ≤ ‖V n ω‖}
+        = ∫ ω, Set.indicator {ω : Ω n | c + 1 ≤ ‖V n ω‖} (1 : Ω n → ℝ) ω ∂(P n) := by
+          rw [integral_indicator_one hset]
+      _ ≤ ∫ ω, g (V n ω) ∂(P n) :=
+          integral_mono ((integrable_const (1 : ℝ)).indicator hset) hgint hle
+      _ = ∫ x, g x ∂((P n).map (V n)) := by
+          rw [integral_map (hV n).aemeasurable g.continuous.aestronglyMeasurable]
+  -- Step 2: the limit of the test-function integrals is small.
+  have hlim : ∫ x, g x ∂ν ≤ α / 2 := by
+    have hle : ∀ x : E, g x ≤ Set.indicator {x : E | (j : ℝ) ≤ ‖x‖} (1 : E → ℝ) x := by
+      intro x
+      by_cases hx : x ∈ {x : E | (j : ℝ) ≤ ‖x‖}
+      · rw [Set.indicator_of_mem hx, hgval]
+        exact max_le zero_le_one (min_le_left _ _)
+      · have hx' : ‖x‖ - c < 0 := by
+          simp only [Set.mem_setOf_eq, not_le] at hx; rw [hc]; linarith
+        rw [Set.indicator_of_notMem hx, hgval]
+        exact max_le le_rfl ((min_le_right _ _).trans hx'.le)
+    have hgint : Integrable (fun x => g x) ν :=
+      (integrable_const ‖g‖).mono' g.continuous.aestronglyMeasurable
+        (Filter.Eventually.of_forall fun x => g.norm_coe_le_norm _)
+    calc ∫ x, g x ∂ν
+        ≤ ∫ x, Set.indicator {x : E | (j : ℝ) ≤ ‖x‖} (1 : E → ℝ) x ∂ν :=
+          integral_mono hgint ((integrable_const (1 : ℝ)).indicator (hmeasset j)) hle
+      _ = ν.real {x : E | (j : ℝ) ≤ ‖x‖} := integral_indicator_one (hmeasset j)
+      _ ≤ α / 2 := hjreal
+  filter_upwards [(hVw g).eventually_le_const (u := α) (by linarith)] with n hn
+  exact (hstep1 n).trans hn
 
 /-- **Limit law of an efficient estimator under local alternatives.**
 
