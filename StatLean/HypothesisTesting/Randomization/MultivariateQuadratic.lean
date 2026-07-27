@@ -957,6 +957,8 @@ private lemma measurable_hotellingTSq {n : ℕ} :
   exact (measurable_inv_of_entries (fun j' k' => measurable_sampleCovMatrix_entry j' k') j
       k).mul ((measurable_sampleMeanVec_coord j).mul (measurable_sampleMeanVec_coord k))
 
+-- Same unification cost as the sibling assembly for the modified statistic.
+set_option maxHeartbeats 1000000 in
 /-- **Sign-change randomization for Hotelling's `T²` statistic.** Same limit as for the
 modified statistic — a product of two independent `χ²_p` laws — obtained by showing that
 the centred sample covariance recomputed at a random sign pattern is still consistent for
@@ -979,25 +981,208 @@ theorem weakConverges_randPairLaw_signChange_hotellingTSq [NeZero p]
       (fun n => randPairLaw (Fin n → ℤˣ) (hotellingTSq (p := p) (n := n))
         (Measure.pi fun _ : Fin n => P))
       ((chiSquared p).prod (chiSquared p)) := by
-  -- TODO (deep, deferred): same limit and route as the modified statistic, but Hotelling's
-  -- `sampleCovMatrix Σ̂ₙ` is NOT sign-invariant, so its treatment goes through the consistency
-  -- `Σ̂ₙ(ε₁X₁, …, εₙXₙ) → S` in probability (uniformly over sign patterns), which is where
-  -- mean-zero (`hmean`) is used a second time; then the argument coincides with
-  -- `weakConverges_randPairLaw_signChange_modifiedTSq`.
-  -- STATUS (re-derived this session): the outstanding piece is the *same single* brick as for the
-  -- modified statistic, and no separate "sign-uniform" law of large numbers is in fact needed. The
-  -- algebraic reason: sign changes do not move the uncentred sum, so
-  --   `Σ̂ₙ(ε • x) = (n−1)⁻¹ (∑ᵢ xᵢxᵢᵀ − n X̄ₙ(ε • x)X̄ₙ(ε • x)ᵀ)
-  --              = (n/(n−1)) Σ̃ₙ(x) − (n−1)⁻¹ Vₙ(ε • x)Vₙ(ε • x)ᵀ ,`
-  -- with `Vₙ(ε • x) = n^{-1/2}∑ᵢ εᵢxᵢ` the vector statistic — the same `Vₙ` that
-  -- `modifiedTSq_signChange` isolates for the modified statistic. The second term is `O_P(1)/n`,
-  -- and its vanishing is exactly the tightness that `PairCLT.exists_tight_bound_of_weakConverges`
-  -- supplies. So Hotelling's statistic reduces to the modified one over the very same law of large
-  -- numbers `Σ̃ₙ → S` and the same `weakConverges_randPairLaw_of_tendstoInProb_avg` application;
-  -- see the status note on `weakConverges_randPairLaw_signChange_modifiedTSq` for the three pieces
-  -- of that `hrem`, of which only the `L¹` LLN on `Measure.pi` is a genuine hole. (`hmean` is what
-  -- makes `S` simultaneously the covariance and the second-moment matrix, so that the same `S`
-  -- appears in both statements.)
-  sorry
+  classical
+  -- Same reference statistic, same reference limit, same three ingredients as for the
+  -- modified statistic; the only new step is that the matrix now moves along the group, by
+  -- an amount that is `O(1/n)` on the tightness event.
+  have hconv := weakConverges_randPairLaw_quadFormInv P hpd hL2 hmean hsecond
+  have hwm : Measurable fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2 :=
+    (by fun_prop : Continuous fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2).measurable
+  haveI hprobW : ∀ n : ℕ, IsProbabilityMeasure
+      (randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+          ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
+        (Measure.pi fun _ : Fin n => P)) := fun n =>
+    isProbabilityMeasure_randPairLaw (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
+      (fun ε => measurable_signChange_smul_vec ε)
+  haveI : ∀ n : ℕ, IsProbabilityMeasure
+      ((randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+          ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
+        (Measure.pi fun _ : Fin n => P)).map Prod.fst) := fun n =>
+    Measure.isProbabilityMeasure_map measurable_fst.aemeasurable
+  haveI : IsProbabilityMeasure
+      ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin p)) S).map
+        (fun v : EuclideanSpace ℝ (Fin p) => ‖v‖ ^ 2)) :=
+    Measure.isProbabilityMeasure_map hwm.aemeasurable
+  have hmarg := weakConverges_randPairLaw_normSq P hpd hL2 hmean hsecond
+  have hlln : ∀ (j k : Fin p) (ρ : ℝ), 0 < ρ → Tendsto (fun n : ℕ =>
+      (Measure.pi fun _ : Fin n => P).real
+        {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
+      atTop (𝓝 0) := by
+    intro j k ρ hρ
+    have h := tendsto_pi_real_lln (P := P)
+      (fun y : EuclideanSpace ℝ (Fin p) => y.ofLp j * y.ofLp k)
+      (integrable_ofLp_mul P hL2 j k) hρ
+    refine h.congr fun n => ?_
+    congr 1
+    ext x
+    simp only [Set.mem_setOf_eq, modifiedCovMatrix, Matrix.of_apply, hsecond j k]
+  have hllnsum : ∀ ρ : ℝ, 0 < ρ → Tendsto (fun n : ℕ => ∑ j : Fin p, ∑ k : Fin p,
+      (Measure.pi fun _ : Fin n => P).real
+        {x : Fin n → EuclideanSpace ℝ (Fin p) | ρ ≤ |modifiedCovMatrix x j k - S j k|})
+      atTop (𝓝 0) := by
+    intro ρ hρ
+    have h := tendsto_finset_sum (Finset.univ : Finset (Fin p))
+      (fun j (_ : j ∈ Finset.univ) => tendsto_finset_sum (Finset.univ : Finset (Fin p))
+        fun k (_ : k ∈ Finset.univ) => hlln j k ρ hρ)
+    simpa using h
+  refine weakConverges_randPairLaw_of_tendstoInProb_avg
+    (fun n : ℕ => Measure.pi fun _ : Fin n => P)
+    (fun n : ℕ => hotellingTSq (p := p) (n := n))
+    (fun (n : ℕ) (x : Fin n → EuclideanSpace ℝ (Fin p)) =>
+      (fun v : EuclideanSpace ℝ (Fin p) => v.ofLp ⬝ᵥ S⁻¹.mulVec v.ofLp)
+        ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i))
+    (fun _ => measurable_hotellingTSq)
+    (fun _ => (measurable_quadFormInv S).comp measurable_signSum)
+    (fun _ ε => measurable_signChange_smul_vec ε) ?_ hconv
+  intro δ hδ
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨M, hMpos, hMev⟩ :=
+    exists_tight_bound_of_weakConverges hmarg (show (0 : ℝ) < ε / 2 by positivity)
+  have hden : (0 : ℝ) < (p : ℝ) ^ 2 * M + 1 := by positivity
+  set η : ℝ := δ / ((p : ℝ) ^ 2 * M + 1) with hηdef
+  have hηpos : 0 < η := div_pos hδ hden
+  obtain ⟨ρ, hρpos, hρ⟩ := exists_entrywise_tol_matrix_inv hpd hηpos
+  have hkey : (p : ℝ) ^ 2 * η * M < δ := by
+    have hrw : (p : ℝ) ^ 2 * η * M = δ * ((p : ℝ) ^ 2 * M) / ((p : ℝ) ^ 2 * M + 1) := by
+      rw [hηdef]; field_simp
+    rw [hrw, div_lt_iff₀ hden]
+    nlinarith
+  -- A uniform bound on the entries of the sample matrix on the "matrix is close" event.
+  set C : ℝ := (∑ j : Fin p, ∑ k : Fin p, |S j k|) + ρ with hCdef
+  have hSle : ∀ j k : Fin p, |S j k| ≤ ∑ j : Fin p, ∑ k : Fin p, |S j k| := by
+    intro j k
+    refine le_trans (Finset.single_le_sum (f := fun k' => |S j k'|)
+      (fun k' _ => abs_nonneg _) (Finset.mem_univ k)) ?_
+    exact Finset.single_le_sum (f := fun j' => ∑ k' : Fin p, |S j' k'|)
+      (fun j' _ => Finset.sum_nonneg fun k' _ => abs_nonneg _) (Finset.mem_univ j)
+  have hCpos : (0 : ℝ) < C + M := by
+    have : (0 : ℝ) ≤ ∑ j : Fin p, ∑ k : Fin p, |S j k| :=
+      Finset.sum_nonneg fun j _ => Finset.sum_nonneg fun k _ => abs_nonneg _
+    rw [hCdef]; linarith
+  -- The matrix motion is `O(1/n)`, hence eventually negligible.
+  have htend : Tendsto (fun n : ℕ => ((n : ℝ) - 1)⁻¹ * (C + M)) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n : ℕ => (n : ℝ) - 1) atTop atTop := by
+      simpa [sub_eq_add_neg] using
+        tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_natCast_atTop_atTop
+    simpa using (tendsto_inv_atTop_zero.comp h1).mul_const (C + M)
+  have hsmallev :=
+    htend.eventually (eventually_lt_nhds (show (0 : ℝ) < ρ / 2 by positivity))
+  have hllnev :=
+    (hllnsum (ρ / 2) (by positivity)).eventually
+      (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))
+  filter_upwards [hMev, hllnev, hsmallev, eventually_gt_atTop 1] with n hn0 hn1 hn2 hnpos
+  have hnpos0 : 0 < n := lt_trans Nat.zero_lt_one hnpos
+  have hnR1 : (1 : ℝ) < (n : ℝ) := by exact_mod_cast hnpos
+  have hne : (n : ℝ) - 1 ≠ 0 := by linarith
+  have hn1nonneg : (0 : ℝ) ≤ ((n : ℝ) - 1)⁻¹ := inv_nonneg.2 (by linarith)
+  have hmeasM : MeasurableSet {y : ℝ | M ≤ |y|} :=
+    measurableSet_le measurable_const continuous_abs.measurable
+  have hincl : ∀ g : Fin n → ℤˣ,
+      {x : Fin n → EuclideanSpace ℝ (Fin p) | δ ≤ ‖hotellingTSq (g • x) -
+          ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i :
+              EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ S⁻¹.mulVec
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p)).ofLp‖}
+        ⊆ (⋃ jk : Fin p × Fin p,
+              {x : Fin n → EuclideanSpace ℝ (Fin p) |
+                ρ / 2 ≤ |modifiedCovMatrix x jk.1 jk.2 - S jk.1 jk.2|})
+          ∪ {x : Fin n → EuclideanSpace ℝ (Fin p) |
+              M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|} := by
+    intro g x hx
+    simp only [Set.mem_setOf_eq, hotellingTSq_eq hnpos0 (g • x), Real.norm_eq_abs] at hx
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_iUnion, Set.mem_setOf_eq, not_or, not_exists,
+      not_le, Prod.forall] at hcon
+    obtain ⟨hc1, hc2⟩ := hcon
+    have hnv : ‖((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p))‖ ^ 2 < M := by
+      rwa [abs_of_nonneg (by positivity)] at hc2
+    -- Hotelling's matrix is close to `S` too: it differs from the sign-invariant one by a
+    -- rank-one term of size `O(1/n)`.
+    have hclose : ∀ j k, |sampleCovMatrix (g • x) j k - S j k| < ρ := by
+      intro j k
+      have hbase := abs_sampleCov_sub_le (S := S) hnpos0 g x j k hn1nonneg hne
+      have hsmall : |modifiedCovMatrix x j k| ≤ C := by
+        have h1 : |modifiedCovMatrix x j k| ≤ |modifiedCovMatrix x j k - S j k| + |S j k| := by
+          have := abs_add_le (modifiedCovMatrix x j k - S j k) (S j k)
+          simpa using this
+        have := hSle j k
+        rw [hCdef]
+        linarith [hc1 j k]
+      have hmono : ((n : ℝ) - 1)⁻¹ * (|modifiedCovMatrix x j k|
+            + ‖((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p))‖ ^ 2)
+          ≤ ((n : ℝ) - 1)⁻¹ * (C + M) :=
+        mul_le_mul_of_nonneg_left (by linarith) hn1nonneg
+      linarith [hc1 j k]
+    have hentry : ∀ j k, |(sampleCovMatrix (g • x))⁻¹ j k - S⁻¹ j k| ≤ η := fun j k =>
+      (hρ (sampleCovMatrix (g • x)) (fun j' k' => hclose j' k') j k).le
+    have hbound := abs_quadForm_sub_le
+      (M := (sampleCovMatrix (g • x))⁻¹) (N := S⁻¹)
+      ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p)) hentry
+    have hmul : (p : ℝ) ^ 2 * η *
+        ‖((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p))‖ ^ 2
+          ≤ (p : ℝ) ^ 2 * η * M :=
+      mul_le_mul_of_nonneg_left hnv.le (by positivity)
+    linarith
+  have hstep : ∀ g : Fin n → ℤˣ,
+      (Measure.pi fun _ : Fin n => P).real
+          {x : Fin n → EuclideanSpace ℝ (Fin p) | δ ≤ ‖hotellingTSq (g • x) -
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i :
+                EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ S⁻¹.mulVec
+              ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p)).ofLp‖}
+        ≤ (∑ j : Fin p, ∑ k : Fin p, (Measure.pi fun _ : Fin n => P).real
+              {x : Fin n → EuclideanSpace ℝ (Fin p) |
+                ρ / 2 ≤ |modifiedCovMatrix x j k - S j k|})
+          + (Measure.pi fun _ : Fin n => P).real
+              {x : Fin n → EuclideanSpace ℝ (Fin p) |
+                M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|} := by
+    intro g
+    have hmono := measureReal_mono (μ := Measure.pi fun _ : Fin n => P) (hincl g)
+      (measure_ne_top _ _)
+    have hunion := measureReal_union_le (μ := Measure.pi fun _ : Fin n => P)
+      (⋃ jk : Fin p × Fin p,
+        {x : Fin n → EuclideanSpace ℝ (Fin p) |
+          ρ / 2 ≤ |modifiedCovMatrix x jk.1 jk.2 - S jk.1 jk.2|})
+      {x : Fin n → EuclideanSpace ℝ (Fin p) |
+        M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|}
+    have hiUnion : (Measure.pi fun _ : Fin n => P).real
+        (⋃ jk : Fin p × Fin p,
+          {x : Fin n → EuclideanSpace ℝ (Fin p) |
+            ρ / 2 ≤ |modifiedCovMatrix x jk.1 jk.2 - S jk.1 jk.2|})
+        ≤ ∑ j : Fin p, ∑ k : Fin p, (Measure.pi fun _ : Fin n => P).real
+            {x : Fin n → EuclideanSpace ℝ (Fin p) |
+              ρ / 2 ≤ |modifiedCovMatrix x j k - S j k|} :=
+      (measureReal_iUnion_fintype_le _).trans_eq (by rw [Fintype.sum_prod_type])
+    linarith
+  have hmargval : ((randPairLaw (Fin n → ℤˣ)
+        (fun x : Fin n → EuclideanSpace ℝ (Fin p) =>
+          ‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, x i‖ ^ 2)
+        (Measure.pi fun _ : Fin n => P)).map Prod.fst).real {y : ℝ | M ≤ |y|}
+      = (Fintype.card (Fin n → ℤˣ) : ℝ)⁻¹ * ∑ g : Fin n → ℤˣ,
+          (Measure.pi fun _ : Fin n => P).real
+            {x : Fin n → EuclideanSpace ℝ (Fin p) |
+              M ≤ |‖(Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i‖ ^ 2|} := by
+    have hset : (Prod.fst ⁻¹' {y : ℝ | M ≤ |y|} : Set (ℝ × ℝ))
+        = {y : ℝ | M ≤ |y|} ×ˢ (Set.univ : Set ℝ) := by ext z; simp [Set.mem_prod]
+    rw [Measure.real, Measure.map_apply measurable_fst hmeasM, hset]
+    exact real_randPairLaw_prod_univ (G := Fin n → ℤˣ) _ _ (hwm.comp measurable_signSum)
+      (fun ε => measurable_signChange_smul_vec ε) hmeasM
+  rw [hmargval] at hn0
+  have hcard : (0 : ℝ) < (Fintype.card (Fin n → ℤˣ) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  have hsum := Finset.sum_le_sum fun g (_ : g ∈ (Finset.univ : Finset (Fin n → ℤˣ))) => hstep g
+  rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
+  have hnonneg : (0 : ℝ) ≤ (Fintype.card (Fin n → ℤˣ) : ℝ)⁻¹ *
+      ∑ g : Fin n → ℤˣ, (Measure.pi fun _ : Fin n => P).real
+        {x : Fin n → EuclideanSpace ℝ (Fin p) | δ ≤ ‖hotellingTSq (g • x) -
+          ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i :
+              EuclideanSpace ℝ (Fin p)).ofLp ⬝ᵥ S⁻¹.mulVec
+            ((Real.sqrt (n : ℝ))⁻¹ • ∑ i, (g • x) i : EuclideanSpace ℝ (Fin p)).ofLp‖} :=
+    mul_nonneg (by positivity) (Finset.sum_nonneg fun g _ => measureReal_nonneg)
+  rw [Real.norm_eq_abs, abs_of_nonneg hnonneg]
+  have hfinal := mul_le_mul_of_nonneg_left hsum (le_of_lt (inv_pos.2 hcard))
+  rw [mul_add, ← mul_assoc, inv_mul_cancel₀ (ne_of_gt hcard), one_mul] at hfinal
+  linarith
 
 end StatLean.HypothesisTesting
