@@ -1423,6 +1423,8 @@ core `exists_window_core`, and the damping factor `e^{−(n−2)vs²/4} = e^{−
 section WindowEstimate
 
 set_option maxHeartbeats 1600000 in
+-- The `ring`/`rw` normalisations below run over the degree-8 rational bound produced by
+-- `norm_charFun_pow_sub_edgeworth_le`; the default heartbeat budget is not enough.
 /-- **(E4).3 — the window estimate.** For `n ≥ 4` and `|ξ|/√n ≤ c`, the characteristic-function
 difference that Esseen's inequality integrates is at most `K n⁻¹ · windowEnvelope ξ`, with a
 constant `K` depending only on the sampling law. The two hypotheses on `c` are exactly the ones
@@ -1685,6 +1687,8 @@ section Edgeworth
 variable {F : Measure ℝ}
 
 set_option maxHeartbeats 1600000 in
+-- The assembly below elaborates a long `calc` over a constant built from eight ingredients;
+-- the default heartbeat budget is not enough.
 /-- **One-term Edgeworth expansion for the centred sample mean, uniform remainder.**
 
 Under a finite fourth moment and Cramér's condition, the sampling distribution function of the
