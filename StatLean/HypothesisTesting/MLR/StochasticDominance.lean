@@ -39,6 +39,13 @@ likelihood ratio makes `E_θ ψ` monotone for monotone `ψ`). (`TSH4 §3.4 Lem 3
   probability space. The endpoints carry no Lebesgue mass, so this is the uniform law on
   `(0,1)` of the classical statement; the closed interval is chosen to match the
   inverse-transform brick below.
+* Consequently the monotonicity in `exists_monotone_coupling_of_cdf_le` is `MonotoneOn …
+  (Set.Ioo 0 1)`, and the domination `f₀ ≤ f₁` is asserted on `Set.Ioo 0 1` only: with the
+  uniform law fixed to `[0,1]`, both global readings are false (explicit counterexamples in
+  that theorem's docstring), and the restriction to `(0,1)` costs nothing since it carries
+  full mass. `cdf_le_iff_exists_monotone_coupling`, which is free to choose the law of the
+  coupling variable, does get the global `Monotone` form, by reading the quantiles through
+  the increasing reparametrization `unitParam : ℝ → (0,1)`.
 * The intended construction takes `f_i := quantile F_i` for the shared left-continuous
   `quantile F p = sInf {x | p ≤ F x}`. Its Galois-connection lemma `quantile_le_iff`
   (`quantile F p ≤ x ↔ p ≤ F x`) turns the pointwise inequality of the distribution
@@ -199,25 +206,57 @@ theorem cdf_le_of_monotone_coupling
 
 /-- **The stochastic ordering produces a monotone coupling.** If `F₁ ≤ F₀` pointwise then
 both laws are realized as nondecreasing functions of a single variable uniform on `(0,1)`,
-one everywhere below the other. Constructively: the two maps are the quantile functions of
-`μ₀` and `μ₁`. -/
+one below the other. Constructively: the two maps are the quantile functions of `μ₀` and
+`μ₁`.
+
+**Documented deviation from the printed form (forced).** The printed statement is
+transcribed with `MonotoneOn … (Set.Ioo 0 1)` and the domination `f₀ v ≤ f₁ v` restricted to
+`v ∈ Set.Ioo 0 1`, rather than with global `Monotone f₀ : ℝ → ℝ` and `∀ v`. The global
+reading is **FALSE**, in both of its clauses, and both failures are artefacts of the
+transcription rather than of the mathematics — the classical coupling is a statement about
+the uniform law on the *open* interval `(0,1)`, which is where the quantile functions live.
+
+*Counterexample to global `Monotone`.* Take `μ₀ = μ₁ = 𝒩(0,1)`, for which `hcdf` holds with
+equality. If `f₀ : ℝ → ℝ` were globally monotone with `(volume.restrict (Icc 0 1)).map f₀
+= μ₀`, then for every real `M` the set `{v ∈ (0,1) | f₀ v < -M}` has positive Lebesgue
+measure (it has measure `Φ(-M) > 0`), hence is nonempty; so `inf_{v ∈ (0,1)} f₀ v = -∞`,
+while `Monotone f₀` forces `f₀ 0 ≤ f₀ v` for every `v > 0`, i.e. that infimum is `≥ f₀ 0`,
+a real number. Contradiction: no global monotone realization exists.
+
+*Counterexample to `∀ v, f₀ v ≤ f₁ v` for the quantile maps.* At the junk level `p = 1` the
+two quantiles need not be ordered: with `μ₀ = δ₅` and `μ₁ = 5 + Exp(1)` one has `F₁ ≤ F₀`,
+`quantile F₀ 1 = 5`, but `{x | 1 ≤ F₁ x} = ∅` so `quantile F₁ 1 = sInf ∅ = 0 < 5`. Only the
+levels in `(0,1)` — a set of full measure for the uniform law, so the coupling is unaffected
+— are ordered. -/
 theorem exists_monotone_coupling_of_cdf_le
     -- USER-INPUT: the two laws on the real line
     (μ₀ μ₁ : Measure ℝ) [IsProbabilityMeasure μ₀] [IsProbabilityMeasure μ₁]
     -- USER-INPUT: the stochastic ordering `F₁ ≤ F₀`, the hypothesis of the result
     (hcdf : ∀ x : ℝ, (μ₁ (Set.Iic x)).toReal ≤ (μ₀ (Set.Iic x)).toReal) :
-    ∃ f₀ f₁ : ℝ → ℝ, Monotone f₀ ∧ Monotone f₁ ∧ (∀ v, f₀ v ≤ f₁ v) ∧
+    ∃ f₀ f₁ : ℝ → ℝ, MonotoneOn f₀ (Set.Ioo 0 1) ∧ MonotoneOn f₁ (Set.Ioo 0 1) ∧
+      (∀ v ∈ Set.Ioo (0 : ℝ) 1, f₀ v ≤ f₁ v) ∧
       (volume.restrict (Set.Icc (0 : ℝ) 1)).map f₀ = μ₀ ∧
       (volume.restrict (Set.Icc (0 : ℝ) 1)).map f₁ = μ₁ := by
-  -- FALSE AS STATED. The conclusion demands a *globally* `Monotone f₀ : ℝ → ℝ` whose
-  -- pushforward of the uniform law is `μ₀`. For a full-support law (e.g. `μ₀ = μ₁ = N(0,1)`,
-  -- for which `hcdf` holds with equality) any such `f₀` must satisfy `f₀ p → -∞` as `p → 0⁺`
-  -- (its `(0,1)`-restriction is monotone with essential range = ℝ), so
-  -- `inf_{p∈(0,1)} f₀ p = -∞`, and no real value `f₀ 0 ≤ f₀ p (∀ p > 0)` exists — `Monotone`
-  -- is unsatisfiable. The classical coupling only makes `f₀` monotone *on* `(0,1)`; the total
-  -- `Monotone ℝ → ℝ` transcription is strictly stronger and false. Left sorried per the
-  -- honest-refusal policy; fixing requires weakening to `MonotoneOn … (Ioo 0 1)`.
-  sorry
+  have hcdfc : ∀ x : ℝ, cdf μ₁ x ≤ cdf μ₀ x := by
+    intro x
+    simp only [cdf_eq_real, measureReal_def]
+    exact hcdf x
+  have hmonoOn : ∀ (μ : Measure ℝ) (_ : IsProbabilityMeasure μ),
+      MonotoneOn (quantile ⇑(cdf μ)) (Set.Ioo 0 1) := by
+    intro μ _ a ha b hb hab
+    exact quantile_mono _ hab (bddBelow_setOf_le_cdf μ ha.1) (nonempty_setOf_le_cdf μ hb.2)
+  refine ⟨quantile ⇑(cdf μ₀), quantile ⇑(cdf μ₁), hmonoOn μ₀ ‹_›, hmonoOn μ₁ ‹_›,
+    fun p hp => ?_, ?_, ?_⟩
+  · -- `F₁ ≤ F₀` transfers to the quantiles through the Galois property.
+    obtain ⟨hp0, hp1⟩ := hp
+    have hq1 : p ≤ cdf μ₁ (quantile (⇑(cdf μ₁)) p) :=
+      (quantile_le_iff (monotone_cdf (μ := μ₁)) (fun y => (cdf μ₁).right_continuous y)
+        (nonempty_setOf_le_cdf μ₁ hp1) (bddBelow_setOf_le_cdf μ₁ hp0)).mp le_rfl
+    exact (quantile_le_iff (monotone_cdf (μ := μ₀)) (fun y => (cdf μ₀).right_continuous y)
+      (nonempty_setOf_le_cdf μ₀ hp1) (bddBelow_setOf_le_cdf μ₀ hp0)).mpr
+      (le_trans hq1 (hcdfc _))
+  · exact map_quantile_uniform μ₀ (⇑(cdf μ₀)) fun x => by rw [cdf_eq_real, measureReal_def]
+  · exact map_quantile_uniform μ₁ (⇑(cdf μ₁)) fun x => by rw [cdf_eq_real, measureReal_def]
 
 /-- **The characterization.** Stochastic ordering of two laws on the real line is
 equivalent to the existence of a monotone coupling of them. -/
@@ -230,14 +269,17 @@ theorem cdf_le_iff_exists_monotone_coupling
           ν.map f₀ = μ₀ ∧ ν.map f₁ = μ₁ := by
   constructor
   · -- The existential over `ν` here (absent from `exists_monotone_coupling_of_cdf_le`, which
-    -- pins `ν` to the uniform law and is FALSE for that reason) is exactly the freedom
-    -- needed: take `ν` supported on the whole line and the coupling maps to be the quantile
-    -- functions read through the increasing reparametrization `unitParam : ℝ → (0,1)`.
+    -- pins `ν` to the uniform law and therefore only gets `MonotoneOn … (Ioo 0 1)`) is
+    -- exactly the freedom needed: take `ν` supported on the whole line and the coupling maps
+    -- to be the quantile functions read through the increasing reparametrization
+    -- `unitParam : ℝ → (0,1)`.
     intro hcdf
     have hcdfc : ∀ x : ℝ, cdf μ₁ x ≤ cdf μ₀ x := by
       intro x
       simp only [cdf_eq_real, measureReal_def]
       exact hcdf x
+    -- (The reparametrization is what buys the *global* `Monotone`; see the docstring of
+    -- `exists_monotone_coupling_of_cdf_le`.)
     haveI := isProbabilityMeasure_unitUniform
     refine ⟨(volume.restrict (Set.Icc (0 : ℝ) 1)).map unitParamInv,
       Measure.isProbabilityMeasure_map measurable_unitParamInv.aemeasurable,
