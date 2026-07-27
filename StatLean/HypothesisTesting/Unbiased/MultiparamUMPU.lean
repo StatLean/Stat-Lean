@@ -1650,6 +1650,74 @@ private lemma condOneSidedTest_eq_zero {C₀ γ₀ : Ξ → ℝ} {z : ℝ × Ξ}
 private lemma abs_le_one_of_mem_Icc {f : ℝ × Ξ → ℝ} (h : ∀ z, f z ∈ Set.Icc (0 : ℝ) 1)
     (z : ℝ × Ξ) : |f z| ≤ 1 :=
   abs_le.mpr ⟨by linarith [(h z).1], (h z).2⟩
+
+private lemma measurable_condOutsideTest {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC₁ : Measurable C₁)
+    (hC₂ : Measurable C₂) (hγ₁ : Measurable γ₁) (hγ₂ : Measurable γ₂) :
+    Measurable (condOutsideTest C₁ C₂ γ₁ γ₂) :=
+  Measurable.ite
+    ((measurableSet_lt measurable_fst (hC₁.comp measurable_snd)).union
+      (measurableSet_lt (hC₂.comp measurable_snd) measurable_fst)) measurable_const
+    (Measurable.ite (measurableSet_eq_fun measurable_fst (hC₁.comp measurable_snd))
+      (hγ₁.comp measurable_snd)
+      (Measurable.ite (measurableSet_eq_fun measurable_fst (hC₂.comp measurable_snd))
+        (hγ₂.comp measurable_snd) measurable_const))
+
+private lemma measurable_condInsideTest {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC₁ : Measurable C₁)
+    (hC₂ : Measurable C₂) (hγ₁ : Measurable γ₁) (hγ₂ : Measurable γ₂) :
+    Measurable (condInsideTest C₁ C₂ γ₁ γ₂) :=
+  Measurable.ite
+    ((measurableSet_lt (hC₁.comp measurable_snd) measurable_fst).inter
+      (measurableSet_lt measurable_fst (hC₂.comp measurable_snd))) measurable_const
+    (Measurable.ite (measurableSet_eq_fun measurable_fst (hC₁.comp measurable_snd))
+      (hγ₁.comp measurable_snd)
+      (Measurable.ite (measurableSet_eq_fun measurable_fst (hC₂.comp measurable_snd))
+        (hγ₂.comp measurable_snd) measurable_const))
+
+private lemma condOutsideTest_mem_Icc {C₁ C₂ γ₁ γ₂ : Ξ → ℝ}
+    (hγ₁_mem : ∀ t, γ₁ t ∈ Set.Icc (0 : ℝ) 1) (hγ₂_mem : ∀ t, γ₂ t ∈ Set.Icc (0 : ℝ) 1)
+    (z : ℝ × Ξ) : condOutsideTest C₁ C₂ γ₁ γ₂ z ∈ Set.Icc (0 : ℝ) 1 := by
+  unfold condOutsideTest
+  split_ifs
+  · exact ⟨zero_le_one, le_rfl⟩
+  · exact hγ₁_mem z.2
+  · exact hγ₂_mem z.2
+  · exact ⟨le_rfl, zero_le_one⟩
+
+private lemma condInsideTest_mem_Icc {C₁ C₂ γ₁ γ₂ : Ξ → ℝ}
+    (hγ₁_mem : ∀ t, γ₁ t ∈ Set.Icc (0 : ℝ) 1) (hγ₂_mem : ∀ t, γ₂ t ∈ Set.Icc (0 : ℝ) 1)
+    (z : ℝ × Ξ) : condInsideTest C₁ C₂ γ₁ γ₂ z ∈ Set.Icc (0 : ℝ) 1 := by
+  unfold condInsideTest
+  split_ifs
+  · exact ⟨zero_le_one, le_rfl⟩
+  · exact hγ₁_mem z.2
+  · exact hγ₂_mem z.2
+  · exact ⟨le_rfl, zero_le_one⟩
+
+private lemma condOutsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
+    (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
+  simp only [condOutsideTest, if_pos hz]
+
+private lemma condOutsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
+    (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condOutsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
+  have hn : ¬ (z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) := by
+    rintro (h | h) <;> linarith
+  simp only [condOutsideTest, if_neg hn, if_neg (ne_of_gt h1), if_neg (ne_of_lt h2)]
+
+private lemma condInsideTest_eq_one {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} {z : ℝ × Ξ}
+    (h1 : C₁ z.2 < z.1) (h2 : z.1 < C₂ z.2) : condInsideTest C₁ C₂ γ₁ γ₂ z = 1 := by
+  simp only [condInsideTest, if_pos (And.intro h1 h2)]
+
+private lemma condInsideTest_eq_zero {C₁ C₂ γ₁ γ₂ : Ξ → ℝ} (hC : ∀ t, C₁ t ≤ C₂ t)
+    {z : ℝ × Ξ} (hz : z.1 < C₁ z.2 ∨ C₂ z.2 < z.1) : condInsideTest C₁ C₂ γ₁ γ₂ z = 0 := by
+  have hCz := hC z.2
+  have hn : ¬ (C₁ z.2 < z.1 ∧ z.1 < C₂ z.2) := by
+    rintro ⟨ha, hb⟩; rcases hz with h | h <;> linarith
+  have h1 : z.1 ≠ C₁ z.2 := by rcases hz with h | h; · exact ne_of_lt h
+                               · exact ne_of_gt (by linarith)
+  have h2 : z.1 ≠ C₂ z.2 := by rcases hz with h | h; · exact ne_of_lt (by linarith)
+                               · exact ne_of_gt h
+  simp only [condInsideTest, if_neg hn, if_neg h1, if_neg h2]
+
 /-! ## The four UMP unbiased tests -/
 
 /-- **One-sided null.** For `H : θ ≤ θ₀` against `K : θ > θ₀`, the conditional one-sided test
