@@ -230,18 +230,23 @@ theorem weakConverges_randPairLaw_twoSample (PY PZ : Measure ℝ) [IsProbability
   -- limit. The weight moments — `Var` of the weight average and the cross-permutation
   -- covariance giving asymptotic independence — are `HypergeometricMoments.var_mean_linear_le`
   -- and `HypergeometricMoments.cov_weight`.
-  -- STATUS (re-derived): the cross-reference to `weakConverges_randPairLaw_signChange` is now
-  -- obsolete — that theorem is closed, and `Randomization/PairCLT` provides the general
-  -- `randPairLaw`/`WeakConverges` characteristic-function machinery (Lévy packaging,
-  -- `integral_randPairLaw`, a Slutsky transfer). The permutation case is nevertheless a
-  -- *different* theorem: what makes the sign-change computation exact at every finite `n` is that
+  -- STATUS (re-derived this session; unchanged verdict, sharper account). `Randomization/PairCLT`
+  -- provides the general `randPairLaw`/`WeakConverges` characteristic-function machinery (Lévy
+  -- packaging, `integral_randPairLaw`, both Slutsky transfers, tightness). None of it closes this
+  -- statement: what makes the *sign-change* computation exact at every finite `n` is that
   -- averaging `exp(i(sa+s'b))` over the four sign pairs factorizes across coordinates
   -- (`charFun_randPairLaw_signSum`). `Equiv.Perm` has no such factorization — its randomization
   -- weights are sampling-**without**-replacement indicators, so the coordinates are dependent and
   -- the characteristic function does not become an `n`-th power. The honest remaining route is
   -- Hoeffding's combinatorial CLT for permutation statistics (a Lindeberg/exchangeable-pairs
   -- argument fed by `HypergeometricMoments.var_mean_linear_le` and `cov_weight`), which the
-  -- repository does not yet contain.
+  -- repository does not yet contain. Two things did change this session and are worth recording:
+  -- the *unconditional* companion `weakConverges_twoSampleMeanDiff` below is now CLOSED
+  -- (0-sorry, axiom-clean), and the two bricks written for it —
+  -- `tendsto_one_add_pow_of_tendsto_nat_mul` (varying-exponent `(1+g)^N → exp z`) and
+  -- `tendsto_charFun_pow` (varying exponent *and* varying argument) — are exactly the shape a
+  -- Lindeberg-style proof of the permutation limit would need for its conditional
+  -- characteristic function, so they are reusable here rather than one-off.
   sorry
 
 /-- **Consequence: the randomization distribution converges to `Φ(·/τ)`.** -/
