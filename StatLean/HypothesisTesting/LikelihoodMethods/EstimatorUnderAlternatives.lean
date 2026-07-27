@@ -411,9 +411,25 @@ theorem weak_limit_estimator_under_local_alternatives
   -- `contiguous_local_alternatives` + Le Cam 3 under a common-support amendment (or via
   -- `productMeasure_integral_comparison`); and (B) the `n`-fold Hellinger bound above.
   --
+  -- RE-VERIFIED AGAIN (wave 5), with one new finding that makes (A) *larger*, not smaller:
+  --   * `contiguous_local_alternatives` still carries `hL_is_log_ratio` verbatim (it is passed
+  --     straight to `Contiguity.mutuallyContiguous_of_asymptotically_log_normal`), so the
+  --     common-support defect recorded above is unchanged.
+  --   * The file's Le Cam third-lemma vehicle is `limit_law_under_h`. It does NOT produce a
+  --     weak limit under the local alternative: the convergence
+  --     `(P^n_{θ₀+h/√n}).map (T n) ⇝ L_h` is one of its *hypotheses* (`h_weak_under_h`), and
+  --     its conclusion only *identifies* `L_h` as the tilted law
+  --     `(fst)_*(π·e^{⟪h,δ⟫−½⟪h,Jh⟫})`. Existence of the limit is a separate step — the
+  --     subsequence/tightness argument `joint_weak_subsequence` — and it is not packaged for
+  --     the full sequence. So (A) is not "compose two existing theorems": it is
+  --     existence-plus-identification, and the identification itself additionally consumes a
+  --     Gaussian-MGF pair (`h_exp_int_πtilt`, `h_exp_int_πtilt_eq_one`) about the limiting
+  --     joint law which is not among this theorem's hypotheses either.
   -- SCOPE. Both (A) and (B) live in
   -- `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean`, which this
-  -- wave is not permitted to touch; nothing in this file can close them.
+  -- wave is not permitted to touch; nothing in this file can close them. The one brick this
+  -- file can own is the varying-to-fixed reduction, and that is `weakConverges_of_integral_close`
+  -- above — proved, and waiting only for (B).
   -- Sanctioned lifted sorry: no false statement, and every other theorem in this lane
   -- (`weak_limit_estimator_centered_under_local_alternatives`,
   -- `weak_limit_g_estimator_under_local_alternatives`, and
