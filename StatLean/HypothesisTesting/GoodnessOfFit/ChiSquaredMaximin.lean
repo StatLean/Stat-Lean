@@ -65,6 +65,16 @@ of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail funct
   for `(c_k − k)/√(2k) → z`, and `weakConverges_noncentralChiSquared_standardized` for
   `(χ²_k(l_k) − k)/√(2k) ⇒ N(γ, 1)` — so they are assembly, not new analysis. Clause (i)
   is independent of both and rests on the monotone likelihood ratio of the family.
+* Clause (i) of the tail lemma (`noncentralTail_antitone`) rests on the *monotone likelihood
+  ratio* of `χ²_k(λ)` in `λ`, which stochastic ordering does not give.  That MLR is proved in
+  the private `MLR` section of this file, directly from the Gaussian definition and without
+  any density formula: the Cameron–Martin ratio `exp(⟪ν, z⟫ − ‖ν‖²/2)` of the shifted Gaussian
+  is replaced, by rotation invariance of both the standard Gaussian and the test function
+  `f(‖z‖²)`, by its average over the sphere `‖u‖ = ‖ν‖` — realised as the average over the
+  direction `‖y‖⁻¹ • y` of an independent Gaussian vector — and the averaged ratio is a
+  `cosh`-average, hence a nondecreasing function of `‖z‖`.  The single-crossing step also uses
+  the additivity `χ²_{k+1}(λ) = χ²_k(λ) ⋆ χ²₁`, obtained by splitting off one coordinate of
+  the product Gaussian with the mean vector placed orthogonally to it.
 * Noncentrality parameters are passed to `noncentralChiSquared` through `Real.toNNReal`,
   that function taking its parameter in `ℝ≥0`; the values used (`b²`, `h²`) are squares,
   so the coercion is the identity on them.

@@ -495,7 +495,17 @@ along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement
 obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
 shell infimum to the inner boundary.
 
-TODO (RE-DERIVED again, this batch).  Obstruction (b) has shrunk.  The tail monotonicity
+TODO (RE-DERIVED again, latest batch).  This half is about the *smooth test itself*, a
+function of the sample alone, so it is untouched by the abstract-`Q` counterexample that
+made `smoothTest_maximin_upper_bound` false as frozen: the frozen hypotheses determine the
+law of `smoothStat ψ (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and
+open.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
+strictly stronger monotone likelihood ratio of the noncentral chi-squared family in the
+noncentrality is now available (`exists_monotone_density`, in the MLR section of
+`ChiSquaredMaximin.lean`), so the worst case over the shell can be pinned at `‖h‖ = b` by
+single crossing rather than by stochastic ordering alone.
+
+TODO (previous batch).  Obstruction (b) has shrunk.  The tail monotonicity
 `noncentralChiSquared_tail_mono` is now CLOSED axiom-clean (as is the
 `stdGaussian_normSq_le_antitone` it rests on, via unequal-weight Prékopa–Leindler), so the
 old "still-open" qualifier is obsolete.  Moreover the shell here is BOUNDED (`b ≤ ‖h‖ ≤ B`)
