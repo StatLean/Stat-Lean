@@ -28,7 +28,8 @@ value `P{χ²_k(b²) > c_{k,1−α}}` in minimum power over that shell:
 * `asymptotic_maximin_upper_bound` — the upper bound (the transfer lemma);
 * `sphereAverage_lr_monotone` — the sphere-averaged likelihood-ratio helper.
 
-**Why these two, and how they fit together.** The bound is proved by the mixture route (this is what is formalized):
+**Why these two, and how they fit together.** The bound is proved by the mixture route,
+which is what is formalized:
 the minimum power over the shell is at most the *average* power against any probability
 distribution `σ` supported on the shell, i.e. the power against the mixture
 `∫ Q_{n,h} dσ(h)`; by the Neyman–Pearson lemma the latter is at most the power of the
@@ -171,8 +172,7 @@ private lemma exists_sphere_mixing_measure (hk : 0 < k) {b : ℝ} (hb : 0 < b) :
       simp only [Set.mem_setOf_eq] at hy0
       have hn : 0 < ‖y‖ := norm_pos_iff.mpr hy0
       refine hy ?_
-      simp only [Set.mem_setOf_eq, hp, norm_smul, Real.norm_eq_abs,
-        abs_mul, abs_inv, abs_norm, abs_of_pos hb]
+      simp only [hp, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hb]
       field_simp
       exact (abs_of_nonneg (norm_nonneg y)).symm
     · have := stdGaussian_ae_ne_zero (k := k) hk
@@ -453,7 +453,7 @@ theorem sphereAverage_lr_monotone {k : ℕ} {b : ℝ}
     intro x
     have hx : x = 0 := Subsingleton.elim x 0
     subst hx
-    simp only [inner_zero_right, zero_sub, norm_zero, integral_const, probReal_univ, one_smul]
+    simp only [inner_zero_right, zero_sub, integral_const, probReal_univ, one_smul]
   · -- `k ≥ 1`: the strengthened radial form of this same average, proved above.
     obtain ⟨g, -, hmono, hval⟩ := sphereAverage_radial hk hb hσ hsphere hrot
     exact ⟨g, hmono.monotoneOn, hval⟩
@@ -547,7 +547,7 @@ private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k
     map_pi_eq_stdGaussian
   have hsum : ∀ u w : EuclideanSpace ℝ (Fin k), ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
     intro u w
-    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+    simp only [PiLp.inner_apply]
     exact Finset.sum_congr rfl fun i _ => mul_comm _ _
   have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
   have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
@@ -687,7 +687,9 @@ end CameronMartin
 
 /-! ### The transfer lemma -/
 
-set_option maxHeartbeats 1600000 in
+-- The proof is a single long assembly (mixture identity, Neyman–Pearson, Slutsky, limit
+-- passage) carrying a dozen `set` abbreviations, so elaboration exceeds the default budget.
+set_option maxHeartbeats 1600000 in -- long single-declaration assembly, see comment above
 /-- **Asymptotic maximin upper bound for multisided local alternatives.**
 
 Let `{Q_{n,h}}` be an asymptotically normal array of local experiments, standardized so
@@ -727,8 +729,8 @@ for `n` large, the positivity constraint `πⱼ + hⱼ/√n ≥ 0` being what fa
 Two further hypotheses are honest regularity requirements of the mixture argument rather
 than restrictions: joint measurability of the log-likelihood field `L` in `(h, ω)` (without
 it the mixture likelihood ratio `∫ exp(L n h ·) dσ(h)` is not even a random variable), and
-a *uniform-over-the-sphere* LAN remainder, supplied as a measurable envelope `D n` that
-tends to `0` in `Q_{n,0}`-probability. The frozen pointwise-in-`h` remainder does not imply
+a *uniform-over-the-sphere* LAN remainder, supplied as an envelope `D n` whose tail
+probabilities tend to `0` under `Q_{n,0}` (measurability of `D n` itself is never used). The frozen pointwise-in-`h` remainder does not imply
 the uniform one, and the mixture step genuinely needs the uniform one; both applications
 have it, the sphere being compact. -/
 theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Type*}
@@ -763,8 +765,6 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Ty
     -- log-likelihood ratio `L n h`; Le Cam 1960
     (hdens : ∀ n h, Q n h
       = (Q n 0).withDensity fun ω => ENNReal.ofReal (Real.exp (L n h ω)))
-    -- USER-INPUT: the LAN remainder envelope is measurable
-    (hDmeas : ∀ n, Measurable (D n))
     -- USER-INPUT: asymptotic normality, second half: the quadratic expansion of the
     -- log-likelihood ratio holds uniformly over the sphere `‖h‖ = b`, with remainder
     -- dominated by the envelope `D n`; Le Cam 1960
