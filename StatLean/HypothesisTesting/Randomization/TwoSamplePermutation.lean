@@ -1059,6 +1059,201 @@ private lemma lindeberg_le_lindebergDefect {N : ℕ} (d : Fin N → ℝ) {R : �
     _ = (min 1 ε)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2 * min 1 (|d l| / R)) := by
         rw [← Finset.mul_sum]; ring
 
+/-! ### The pooled empirical moments and the tail second moment
+
+The two hypothesis functionals are, after dividing out the deterministic scale `v̄`, built
+from three pooled empirical averages: the pooled mean `x̄`, the pooled variance
+`N⁻¹ ∑ (x_l − x̄)²`, and — for the Lindeberg defect — the **tail second moment**
+`N⁻¹ ∑ x_l² 1{|x_l| ≥ K}`. All three are instances of `tendstoInProb_pooledAvg`, and the
+tail one converges, as `K → ∞`, to a limit that vanishes by dominated convergence. That is
+the only place where `MemLp id 2` is used, and it is why no moment beyond `L²` is needed. -/
+
+/-- The **pooled sample mean** `x̄ = N⁻¹ ∑_l x_l`. -/
+private noncomputable def pooledMean (m n : ℕ) (x : Fin (m + n) → ℝ) : ℝ :=
+  ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, x l
+
+/-- The **pooled sample variance** `N⁻¹ ∑_l (x_l − x̄)²`. -/
+private noncomputable def pooledVar (m n : ℕ) (x : Fin (m + n) → ℝ) : ℝ :=
+  ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, (x l - pooledMean m n x) ^ 2
+
+private lemma pooledVar_nonneg (m n : ℕ) (x : Fin (m + n) → ℝ) : 0 ≤ pooledVar m n x :=
+  mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => sq_nonneg _)
+
+/-- The pooled variance as (second moment) − (mean)², the form the law of large numbers
+reaches it in. -/
+private lemma pooledVar_eq {m n : ℕ} (hmn : 0 < m + n) (x : Fin (m + n) → ℝ) :
+    pooledVar m n x
+      = ((m + n : ℕ) : ℝ)⁻¹ * (∑ l, x l ^ 2) + -(pooledMean m n x ^ 2) := by
+  have hN : (0 : ℝ) < ((m + n : ℕ) : ℝ) := by exact_mod_cast hmn
+  have hsum : ∑ l, x l = ((m + n : ℕ) : ℝ) * pooledMean m n x := by
+    rw [pooledMean, ← mul_assoc, mul_inv_cancel₀ hN.ne', one_mul]
+  have hexp : ∀ l : Fin (m + n), (x l - pooledMean m n x) ^ 2
+      = x l ^ 2 - 2 * pooledMean m n x * x l + pooledMean m n x ^ 2 := fun l => by ring
+  rw [pooledVar]
+  simp only [hexp, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
+    Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, hsum]
+  field_simp
+  ring
+
+/-- The **tail square** `t² 1{K ≤ |t|}`: the integrand of the tail second moment. -/
+private noncomputable def tailSq (K : ℝ) : ℝ → ℝ := fun t => if K ≤ |t| then t ^ 2 else 0
+
+private lemma tailSq_nonneg (K t : ℝ) : 0 ≤ tailSq K t := by
+  unfold tailSq; split
+  · positivity
+  · exact le_rfl
+
+private lemma tailSq_le_sq (K t : ℝ) : tailSq K t ≤ t ^ 2 := by
+  unfold tailSq; split
+  · exact le_rfl
+  · positivity
+
+private lemma measurable_tailSq (K : ℝ) : Measurable (tailSq K) := by
+  unfold tailSq
+  exact Measurable.ite (measurableSet_le measurable_const measurable_id.abs)
+    (measurable_id.pow_const 2) measurable_const
+
+private lemma integrable_tailSq {Q : Measure ℝ} (K : ℝ)
+    (hQ : Integrable (fun t : ℝ => t ^ 2) Q) : Integrable (tailSq K) Q := by
+  refine hQ.mono' (measurable_tailSq K).aestronglyMeasurable (ae_of_all _ fun t => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (tailSq_nonneg K t)]
+  exact tailSq_le_sq K t
+
+/-- **The tail second moment vanishes.** Plain dominated convergence, dominated by `t²`
+itself; this is the only use of the second-moment hypothesis. -/
+private lemma tendsto_integral_tailSq {Q : Measure ℝ}
+    (hQ : Integrable (fun t : ℝ => t ^ 2) Q) :
+    Tendsto (fun j : ℕ => ∫ t, tailSq (j : ℝ) t ∂Q) atTop (𝓝 0) := by
+  have hzero : ∫ (_ : ℝ), (0 : ℝ) ∂Q = 0 := integral_zero _ _
+  have h := MeasureTheory.tendsto_integral_of_dominated_convergence
+    (F := fun (j : ℕ) (t : ℝ) => tailSq (j : ℝ) t) (f := fun _ : ℝ => (0 : ℝ))
+    (bound := fun t : ℝ => t ^ 2)
+    (fun j => (measurable_tailSq _).aestronglyMeasurable) hQ
+    (fun j => ae_of_all _ fun t => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (tailSq_nonneg _ t)]
+      exact tailSq_le_sq _ t)
+    (ae_of_all _ fun t => ?_)
+  · rwa [hzero] at h
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_gt_atTop ⌈|t|⌉₊] with j hj
+    have hlt : |t| < (j : ℝ) := lt_of_le_of_lt (Nat.le_ceil _) (by exact_mod_cast hj)
+    unfold tailSq
+    rw [if_neg (not_le.mpr hlt)]
+
+/-! ### The two hypothesis functionals, rewritten -/
+
+/-- The normalization defect is the pooled variance, rescaled. -/
+private lemma normDefect_eq {m n : ℕ} {v : ℝ} (hv : 0 < v) (x : Fin (m + n) → ℝ) :
+    normDefect m n v x = |v⁻¹ * pooledVar m n x - 1| := by
+  have hsq : (Real.sqrt v)⁻¹ ^ 2 = v⁻¹ := by rw [inv_pow, Real.sq_sqrt hv.le]
+  have hterm : ∀ l : Fin (m + n),
+      pooledStd m n v x l ^ 2 = v⁻¹ * (x l - pooledMean m n x) ^ 2 := by
+    intro l
+    have hpc : pooledStd m n v x l = (Real.sqrt v)⁻¹ * (x l - pooledMean m n x) := rfl
+    rw [hpc, mul_pow, hsq]
+  rw [normDefect, Finset.sum_congr rfl (fun l (_ : l ∈ Finset.univ) => hterm l),
+    ← Finset.mul_sum, pooledVar]
+  congr 1
+  ring
+
+/-- The Lindeberg defect, with the deterministic scale `√v̄` moved into the threshold. -/
+private lemma lindebergDefect_eq {m n : ℕ} {v : ℝ} (hv : 0 < v) (x : Fin (m + n) → ℝ) :
+    lindebergDefect m n v x
+      = v⁻¹ * (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, (x l - pooledMean m n x) ^ 2 *
+          min 1 (|x l - pooledMean m n x| /
+            (Real.sqrt v * Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ)))))) := by
+  have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.mpr hv
+  have hsq : (Real.sqrt v)⁻¹ ^ 2 = v⁻¹ := by rw [inv_pow, Real.sq_sqrt hv.le]
+  have hterm : ∀ l : Fin (m + n),
+      pooledStd m n v x l ^ 2 *
+          min 1 (|pooledStd m n v x l| /
+            Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))))
+        = v⁻¹ * ((x l - pooledMean m n x) ^ 2 *
+            min 1 (|x l - pooledMean m n x| /
+              (Real.sqrt v * Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ)))))) := by
+    intro l
+    have hpc : pooledStd m n v x l = (Real.sqrt v)⁻¹ * (x l - pooledMean m n x) := rfl
+    have habs : |pooledStd m n v x l| = (Real.sqrt v)⁻¹ * |x l - pooledMean m n x| := by
+      rw [hpc, abs_mul, abs_of_nonneg (le_of_lt (inv_pos.mpr hsv))]
+    have hdiv : (Real.sqrt v)⁻¹ * |x l - pooledMean m n x| /
+          Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ)))
+        = |x l - pooledMean m n x| /
+          (Real.sqrt v * Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ)))) := by
+      rw [div_eq_mul_inv, div_eq_mul_inv, mul_inv]
+      ring
+    rw [habs, hdiv, hpc, mul_pow, hsq, mul_assoc]
+  rw [lindebergDefect, Finset.sum_congr rfl (fun l (_ : l ∈ Finset.univ) => hterm l),
+    ← Finset.mul_sum]
+  ring
+
+/-! ### The deterministic Lindeberg split
+
+Off the tail `{|t| ≥ K}` the truncation factor `min(1, |x_l − x̄|/r)` is at most
+`(K + |x̄|)/r`, which is deterministic and `o(1)` because `r = √v̄ · √(min(m,n)) → ∞`; on the
+tail it is at most `1`, and `(x_l − x̄)² ≤ 2x_l² + 2x̄² ≤ 2(1 + x̄²) x_l²` there, because
+`K ≥ 1` forces `x_l² ≥ 1`. No probability is involved. -/
+
+private lemma tailSq_lindeberg_bound {b r K : ℝ} (hr : 0 < r) (hK : 1 ≤ K) (u : ℝ) :
+    (u - b) ^ 2 * min 1 (|u - b| / r)
+      ≤ (K + |b|) / r * (u - b) ^ 2 + 2 * (1 + b ^ 2) * tailSq K u := by
+  have hbnn : (0 : ℝ) ≤ |b| := abs_nonneg b
+  by_cases hge : K ≤ |u|
+  · have h1 : tailSq K u = u ^ 2 := by unfold tailSq; rw [if_pos hge]
+    have hu2 : (1 : ℝ) ≤ u ^ 2 := by
+      have h1u : (1 : ℝ) ≤ |u| := le_trans hK hge
+      nlinarith [sq_abs u, abs_nonneg u]
+    have hstep : (u - b) ^ 2 * min 1 (|u - b| / r) ≤ (u - b) ^ 2 := by
+      nlinarith [min_le_left (1 : ℝ) (|u - b| / r), sq_nonneg (u - b)]
+    have hexp : (u - b) ^ 2 ≤ 2 * u ^ 2 + 2 * b ^ 2 := by nlinarith [sq_nonneg (u + b)]
+    have hfirst : 0 ≤ (K + |b|) / r * (u - b) ^ 2 := by
+      have hKb : (0 : ℝ) ≤ K + |b| := by linarith
+      positivity
+    rw [h1]
+    nlinarith [mul_nonneg (sq_nonneg b) (by linarith : (0 : ℝ) ≤ u ^ 2 - 1)]
+  · have h0 : tailSq K u = 0 := by unfold tailSq; rw [if_neg hge]
+    have hlt : |u| < K := not_le.mp hge
+    have hnum : |u - b| ≤ K + |b| := by
+      have := abs_sub b u
+      calc |u - b| ≤ |u| + |b| := abs_sub _ _
+        _ ≤ K + |b| := by linarith
+    have hmin : min 1 (|u - b| / r) ≤ (K + |b|) / r := by
+      refine le_trans (min_le_right _ _) ?_
+      gcongr
+    rw [h0, mul_zero, add_zero]
+    have := mul_le_mul_of_nonneg_left hmin (sq_nonneg (u - b))
+    linarith [this]
+
+private lemma lindeberg_sum_le {N : ℕ} (x : Fin N → ℝ) {b r K : ℝ} (hr : 0 < r)
+    (hK : 1 ≤ K) :
+    (N : ℝ)⁻¹ * ∑ l, (x l - b) ^ 2 * min 1 (|x l - b| / r)
+      ≤ (K + |b|) / r * ((N : ℝ)⁻¹ * ∑ l, (x l - b) ^ 2)
+        + 2 * (1 + b ^ 2) * ((N : ℝ)⁻¹ * ∑ l, tailSq K (x l)) := by
+  have hstep : ∑ l, (x l - b) ^ 2 * min 1 (|x l - b| / r)
+      ≤ ∑ l, ((K + |b|) / r * (x l - b) ^ 2 + 2 * (1 + b ^ 2) * tailSq K (x l)) :=
+    Finset.sum_le_sum fun l _ => tailSq_lindeberg_bound hr hK (x l)
+  have hmul := mul_le_mul_of_nonneg_left hstep (by positivity : (0 : ℝ) ≤ ((N : ℝ))⁻¹)
+  refine hmul.trans (le_of_eq ?_)
+  rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
+  ring
+
+/-- **The Lindeberg defect is dominated by three pooled empirical averages.** -/
+private lemma lindebergDefect_le {m n : ℕ} {v K : ℝ} (hv : 0 < v) (hK : 1 ≤ K)
+    (hr : 0 < Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))))
+    (x : Fin (m + n) → ℝ) :
+    lindebergDefect m n v x
+      ≤ v⁻¹ * ((K + |pooledMean m n x|) /
+            (Real.sqrt v * Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))))
+              * pooledVar m n x
+          + 2 * (1 + pooledMean m n x ^ 2) *
+              (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, tailSq K (x l))) := by
+  have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.mpr hv
+  have hrv : (0 : ℝ) < Real.sqrt v *
+      Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))) := mul_pos hsv hr
+  rw [lindebergDefect_eq hv x]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  simpa only [pooledVar] using
+    lindeberg_sum_le x (b := pooledMean m n x) (K := K) hrv hK
+
 /-- **The pooled population satisfies the hypotheses of the combinatorial central limit
 theorem in probability.**
 
