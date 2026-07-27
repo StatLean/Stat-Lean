@@ -976,6 +976,21 @@ lemma tendstoInProb_pooledAvg (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
     field_simp
   rw [hid]
 
+/-- The population variance as (second moment) − (mean)². -/
+lemma var_eq_second_sub_sq {Q : Measure ℝ} [IsProbabilityMeasure Q] {μ v : ℝ}
+    (hQ2 : MemLp id 2 Q) (hmeanQ : ∫ t, t ∂Q = μ) (hvarQ : ∫ t, (t - μ) ^ 2 ∂Q = v) :
+    (∫ t, t ^ 2 ∂Q) + -(μ ^ 2) = v := by
+  have hid : Integrable (fun t : ℝ => t) Q := by simpa using hQ2.integrable (by norm_num)
+  have hsq : Integrable (fun t : ℝ => t ^ 2) Q := by simpa using hQ2.integrable_sq
+  have hlin : Integrable (fun t : ℝ => 2 * μ * t) Q := hid.const_mul _
+  have h1 : Integrable (fun t : ℝ => t ^ 2 - 2 * μ * t) Q := hsq.sub hlin
+  have hfun : (fun t : ℝ => (t - μ) ^ 2) = fun t => (t ^ 2 - 2 * μ * t) + μ ^ 2 := by
+    funext t; ring
+  rw [← hvarQ, hfun, integral_add h1 (integrable_const _), integral_sub hsq hlin,
+    integral_const_mul, hmeanQ]
+  simp
+  ring
+
 /-! ### The standardized pooled population and its two hypothesis functionals
 
 The combinatorial central limit theorem asks for a centred population normalized in the

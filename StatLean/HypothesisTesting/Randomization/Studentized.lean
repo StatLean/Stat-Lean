@@ -195,21 +195,6 @@ private lemma twoSampleVarZ_eq {m n : ℕ} (hn : 0 < n) (x : Fin (m + n) → ℝ
   field_simp
   ring
 
-/-- The population variance as (second moment) − (mean)². -/
-private lemma var_eq_second_sub_sq {Q : Measure ℝ} [IsProbabilityMeasure Q] {μ v : ℝ}
-    (hQ2 : MemLp id 2 Q) (hmeanQ : ∫ t, t ∂Q = μ) (hvarQ : ∫ t, (t - μ) ^ 2 ∂Q = v) :
-    (∫ t, t ^ 2 ∂Q) + -(μ ^ 2) = v := by
-  have hid : Integrable (fun t : ℝ => t) Q := by simpa using hQ2.integrable (by norm_num)
-  have hsq : Integrable (fun t : ℝ => t ^ 2) Q := by simpa using hQ2.integrable_sq
-  have hlin : Integrable (fun t : ℝ => 2 * μ * t) Q := hid.const_mul _
-  have h1 : Integrable (fun t : ℝ => t ^ 2 - 2 * μ * t) Q := hsq.sub hlin
-  have hfun : (fun t : ℝ => (t - μ) ^ 2) = fun t => (t ^ 2 - 2 * μ * t) + μ ^ 2 := by
-    funext t; ring
-  rw [← hvarQ, hfun, integral_add h1 (integrable_const _), integral_sub hsq hlin,
-    integral_const_mul, hmeanQ]
-  simp
-  ring
-
 /-- **The studentizing scale is consistent for `s`.** Both sample variances converge in
 probability to the corresponding population variances, and the sample-size ratio converges by
 hypothesis; the scale is a continuous function of the three. -/
