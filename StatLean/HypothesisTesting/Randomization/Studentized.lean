@@ -596,11 +596,17 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
   --     *permutation* model; `ForMathlib/HypergeometricMoments` is the equivalent *subset*
   --     model, and transporting between them (the uniformity of `σ ↦ σ⁻¹ '' block` on
   --     `m`-subsets) is no longer needed on this route.
-  -- (c) LEFT, for the block **means**: integrate (b) over the pooled data. With
-  --     `d l = x l - x̄` the coefficients are centred by construction and the bound is
-  --     `ε⁻²(1/m)(N⁻¹ ∑ (x l - x̄)²)`, whose `P`-expectation is bounded by the two
-  --     population second moments; `1/m → 0` then gives the block mean of `σ • x`
-  --     converging to the pooled mean in probability, hence to `μ`.
+  -- (c) LEFT, for the block **means**, but the two missing pieces of wiring are now bricks
+  --     (wave 6, `ForMathlib/CombinatorialCLT`). The recentring — (b) is stated for an
+  --     already-centred coefficient vector, whereas the pooled data arrives raw — is
+  --     `perm_avg_indicator_blockAvg_sub_mean_le`, and its inverse-convention twin
+  --     `perm_avg_indicator_blockAvg_inv_sub_mean_le` is the one matching the action
+  --     `(σ • x) i = x (σ⁻¹ i)` used here; together they give, at every fixed `x`,
+  --     `|Perm|⁻¹ ∑_σ 1{ε ≤ |block avg of σ • x − x̄|} ≤ ε⁻²(1/m)(N⁻¹ ∑ (x l − x̄)²)`.
+  --     Exchanging the group average with the data law is
+  --     `avg_measureReal_eq_integral_avg_indicator` (Fubini for a finite group). What is
+  --     genuinely left is the integration: `∫ N⁻¹ ∑ (x l − x̄)² dP ≤ (m varY + n varZ)/N`,
+  --     bounded uniformly in `k`, so the bound is `O(1/m) → 0`.
   -- (d) LEFT, for the block **second** moments, and this is the only step needing an idea
   --     beyond (b)+(c): applying (b) to `c l = (x l)²` costs a fourth pooled moment, which
   --     `MemLp id 2` does not supply. Truncate at level `K`: (b) with the truncated
@@ -612,8 +618,9 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
   --     (through `tendsto_lln_blockY`/`_blockZ`), giving `v̄ = (λ varY + varZ)/(1 + λ)` for
   --     both blocks and `τ² = (1 + λ) v̄` for the scale.
   -- Nothing above needs the permutation CLT, so the two headline theorems below are complete
-  -- modulo exactly two named statements: this one and
-  -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
+  -- modulo exactly two named statements: this one and (since wave 6, in its sharpened scalar
+  -- form) `TwoSamplePermutation.randDist_twoSample_tendstoInProb_core`, over which
+  -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample` is now *proved*.
   sorry
 
 /-! ### Asymptotic validity under unequal variances -/

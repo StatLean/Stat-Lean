@@ -9,6 +9,7 @@ import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
 import StatLean.HypothesisTesting.Bootstrap.ParametricLocal
 import StatLean.HypothesisTesting.Bootstrap.Testing
 import StatLean.HypothesisTesting.ForMathlib.BerryEsseen
+import StatLean.HypothesisTesting.ForMathlib.CombinatorialCLT
 import StatLean.HypothesisTesting.ForMathlib.CondDistribTilt
 import StatLean.HypothesisTesting.ForMathlib.CriticalFunction
 import StatLean.HypothesisTesting.ForMathlib.DKWUniform
