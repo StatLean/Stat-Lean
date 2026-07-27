@@ -531,31 +531,39 @@ theorem randDist_studentized_tendstoInProb (PY PZ : Measure ℝ) [IsProbabilityM
   -- `randDist_affine_tendstoInProb` applies with `A = 1/scale → 1/τ`, `B = 0`, and joint law
   -- from `weakConverges_randPairLaw_twoSample`; the limit c.d.f. is
   -- `cdf ((N(0,τ²)).map (·/τ)) = cdf (N(0,1))`.
-  -- STATUS (re-derived this session): TWO of the three pieces are available; the assembly is
-  -- blocked on the remaining two, in this order of difficulty.
-  -- (ii) AVAILABLE. `randDist_affine_tendstoInProb` in `SlutskyRandomization` is CLOSED (0-sorry),
-  --      in exactly the mixture form this application needs (`A = 1/twoSampleScale` is *not*
-  --      permutation invariant). Its tightness brick is
-  --      `Randomization/PairCLT.exists_tight_bound_of_weakConverges`. It carries measurability of
-  --      `T`, `A`, `B` and of the action — all four are routine here
-  --      (`measurable_twoSampleMeanDiff`, `measurable_perm_smul`, and `twoSampleScale` is a
-  --      composition of `Real.sqrt` with a polynomial in the coordinates).
-  -- Still open, and these are the only two:
-  -- (i) `weakConverges_randPairLaw_twoSample` — the permutation (combinatorial) CLT, still open;
-  --     see the status note there. This is the hard blocker: it is Hoeffding's combinatorial CLT,
-  --     which the repository does not contain, and which the sign-change engine provably does not
-  --     cover (the permutation weights do not factorize across coordinates).
-  -- (iii) the scale consistency `twoSampleScale (π X) → τ` in `TendstoInProbRandomized`, a
-  --      first-two-moments statement about sampling without replacement from the pooled data.
-  --      `ForMathlib/HypergeometricMoments` supplies the moments of the sampling indicators
-  --      (`var_mean_linear_le`, `cov_weight`), so this is a Chebyshev argument on the mixture, but
-  --      it also needs the *unconditional* sample-variance consistency of (ii) in the sibling
-  --      theorem below, i.e. an `L¹` weak law of large numbers on `Measure.pi`: the summands
-  --      `(Yᵢ − μ)²` are only `L¹` under `MemLp id 2`, so Chebyshev is unavailable and the honest
-  --      route is Kolmogorov's strong law on `Measure.infinitePi` pulled back along
-  --      `AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate`
-  --      (`AsymptoticStatistics/ForMathlib/IIdJointLaw`, public). That brick is shared with
-  --      `Randomization/MultivariateQuadratic` — see the status note there.
+  -- STATUS (re-derived this session, wave 4): two of the three pieces are settled, the third is
+  -- re-scoped, and the statement is blocked on exactly one theorem.
+  -- (ii) AVAILABLE, unchanged. `randDist_affine_tendstoInProb` in `SlutskyRandomization` is
+  --      closed, in exactly the mixture form this application needs (`A = 1/twoSampleScale` is
+  --      *not* permutation invariant). Its measurability side conditions are routine here: the
+  --      numerator and the action are handled in `TwoSamplePermutation`, and measurability of
+  --      the scale is the `hSmeas` computation used in the sibling theorem below.
+  -- (iii) RE-SCOPED — and no longer the "shared missing brick" the wave-3 note described. That
+  --      note asked for an `L¹` law of large numbers on `Measure.pi`; the brick now exists
+  --      (`TwoSamplePermutation.tendsto_pi_real_lln`) and the *unconditional* scale consistency
+  --      is proved (`tendstoInProb_twoSampleScale` above). What is still needed is the
+  --      *randomized* scale consistency, a genuinely different statement — and worth recording,
+  --      because it is precisely where studentization earns its keep. Under a uniform
+  --      permutation of the pooled data each block is a sample **without replacement** from the
+  --      pooled `N = m + n` values, so *both* block variances converge to the same pooled
+  --      variance
+  --          v̄ = (λ σ²(P_Y) + σ²(P_Z)) / (1 + λ) ,
+  --      whence
+  --          D_{m,n}(π·)² = S²_Y(π·) + (m/n) S²_Z(π·) → (1 + λ) v̄ = λ σ²(P_Y) + σ²(P_Z) = τ² .
+  --      So the randomized scale converges to `τ`, whereas the unconditional one converges to
+  --      `s² = σ²(P_Y) + λσ²(P_Z)` (that is `tendstoInProb_twoSampleScale`). The two limits
+  --      differ exactly when `λ ≠ 1` and the variances differ — the failure of the unstudentized
+  --      test — and dividing by the scale sends *both* to `N(0,1)`, which is the content of this
+  --      file. The proof is Chebyshev on the group mixture: conditionally on the pooled data the
+  --      first two moments of the subsample average are the hypergeometric ones supplied by
+  --      `ForMathlib/HypergeometricMoments` (`var_mean_linear_le`, `cov_weight`), and the pooled
+  --      empirical moments themselves converge by `tendsto_pi_real_lln`. No missing upstream
+  --      brick: this is bounded, self-contained work.
+  -- (i) THE BLOCKER, verdict unchanged after re-derivation.
+  --      `weakConverges_randPairLaw_twoSample` — Hoeffding's combinatorial CLT, which neither
+  --      this repository nor Mathlib v4.29.1 contains, and which the sign-change engine
+  --      provably does not cover; see the re-derived note there. Since (iii) is of no use until
+  --      (i) lands, it has deliberately been left unwritten.
   sorry
 
 /-- **The unconditional law of the studentized statistic is asymptotically standard
@@ -707,13 +715,16 @@ theorem studentizedPermTest_asymptotic_level (PY PZ : Measure ℝ) [IsProbabilit
   -- randomized critical value `randQuantile → z_{1-α}` (`randQuantile_tendstoInProb`) and a
   -- portmanteau evaluation of `powerAgainst` at the limiting rejection region, whose frontier
   -- is `N(0,1)`-null.
-  -- STATUS (re-derived this session): still blocked on both prerequisite theorems above (both
-  -- `sorry`), and nothing here is closer than they are. On the positive side, everything *after*
-  -- them is in place: `Randomization/Asymptotics` supplies both halves of the equivalence
-  -- (`randDist_tendstoInProb_cdf`, `randQuantile_tendstoInProb`, and the converse
+  -- STATUS (re-derived this session, wave 4): ONE prerequisite instead of two. The unconditional
+  -- half `weakConverges_studentizedTwoSample` is now CLOSED (0-sorry, axiom-clean), so the only
+  -- missing input is `randDist_studentized_tendstoInProb` above — which is in turn blocked on
+  -- the single permutation CLT, `TwoSamplePermutation.weakConverges_randPairLaw_twoSample`.
+  -- Everything downstream of the two limits remains in place: `Randomization/Asymptotics`
+  -- supplies both halves of the equivalence (`randDist_tendstoInProb_cdf`,
+  -- `randQuantile_tendstoInProb`, and the converse
   -- `weakConverges_randPairLaw_of_randDist_tendstoInProb`), so the only thing left to write once
-  -- the two prerequisites land is the portmanteau evaluation of `powerAgainst` at the limiting
-  -- rejection region, whose frontier is `N(0,1)`-null.
+  -- the prerequisite lands is the portmanteau evaluation of `powerAgainst` at the limiting
+  -- rejection region.
   sorry
 
 end StatLean.HypothesisTesting
