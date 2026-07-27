@@ -28,7 +28,16 @@ A first-order Taylor expansion of `f(W') - f(W)` then produces the classical thr
   and `hasDerivAt_steinSolution` / `steinSolution_sub_mul` — the fact that it *is* a solution.
 * `abs_steinSolution_le`, `abs_deriv_steinSolution_le`, `lipschitz_deriv_steinSolution` —
   the classical bounds on the solution and its derivative for a Lipschitz test function `h`
-  (the three declarations still open in this file).
+  (`‖f_h‖ ≤ L`, `‖f_h'‖ ≤ 2L` and `f_h'` `5L`-Lipschitz), together with the sharper
+  `abs_deriv_steinSolution_mul_one_add_sq_le`, `|f_h'(w)|(1 + w²) ≤ L(2|w| + 1)`, which is
+  the form the third bound consumes.
+* `mul_div_le_integral_Ioi_exp_neg_sq_half` — **Mills' lower bound** for the unnormalised
+  Gaussian tail, and the exact one-sided moments `integral_Ioi_id_mul_exp_neg_sq_half`,
+  `integral_Iic_id_mul_exp_neg_sq_half`, `integral_abs_mul_exp_neg_sq_half`,
+  `integral_exp_neg_sq_half`; these are the only analytic inputs to the three bounds.
+* `integral_centred_mul_exp_neg_sq_half` — the centring identity
+  `∫ (h − 𝔼h(Z))e^{-x²/2} = 0`, which is what makes the *tail* representation of `f_h`
+  available, and `abs_sub_stdGaussianExpect_le` — `|h(w) − 𝔼h(Z)| ≤ L(|w| + 1)`.
 * `sum_eq_zero_of_exchangeable` — the antisymmetry identity for an exchangeable pair.
 * `sum_stein_pair` — the exact integration-by-parts identity
   `2λ|K| ∑_ω W(ω) f(W(ω)) = ∑_ω ∑_k (W'(ω,k) − W(ω))(f(W'(ω,k)) − f(W(ω)))`.
@@ -58,6 +67,10 @@ A first-order Taylor expansion of `f(W') - f(W)` then produces the classical thr
   (`‖f_h‖ ≤ ‖h'‖`, `‖f_h'‖ ≤ √(2/π)‖h'‖`, `f_h'` is `2‖h'‖`-Lipschitz) apply verbatim.
 * *Provable constants.* Where a constant below differs from the textbook one the deviation is
   documented at the statement. The limit theorems downstream are insensitive to constants.
+  Two deviations occur: `‖f_h'‖ ≤ 2L` instead of the sharp `√(2/π)L`, and `f_h'` is proved
+  `5L`-Lipschitz instead of `2L`-Lipschitz. Both are consequences of working with a merely
+  Lipschitz `h` (so `f_h''` need not exist) and of the crude — but elementary — Mills bound
+  `∫_w^∞ e^{-x²/2}dx ≥ w(1 + w²)^{-1}e^{-w²/2}`.
 
 **Reference.** C. Stein, *Approximate Computation of Expectations*, IMS Lecture Notes 7, 1986,
 Chapter III; L.H.Y. Chen, L. Goldstein and Q.-M. Shao, *Normal Approximation by Stein's
@@ -545,7 +558,7 @@ theorem abs_sub_stdGaussianExpect_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
 For an `L`-Lipschitz `h` the classical bounds are `‖f_h‖ ≤ L`, `‖f_h'‖ ≤ √(2/π)·L ≤ L` and
 `f_h'` is `2L`-Lipschitz (Chen–Goldstein–Shao, Lemma 2.4; the first is sharp, as `h = id`
 gives `f_h ≡ -1`). They are recorded here in the weakest form the exchangeable-pair theorem
-needs, namely with the *provable* constants stated. -/
+needs, namely with the *provable* constants `L`, `2L`, `5L` stated. -/
 
 /-- **The unimodality engine.** A differentiable `ψ` whose derivative is `-e^{-v²/2}` times a
 *monotone* function increases and then decreases; if in addition `ψ` vanishes in the limit
@@ -897,17 +910,98 @@ theorem abs_deriv_steinSolution_le {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     mul_nonneg hL (by nlinarith [sq_nonneg (2 * |w| - 1)] :
       (0 : ℝ) ≤ 2 * |w| ^ 2 - 2 * |w| + 1)]
 
-/-- **Lipschitz bound on the derivative of the Stein solution**, i.e. the `‖f_h''‖ ≤ 2L` of
-the classical statement in the form actually used by the Taylor step.
+/-- A function with a bounded derivative is Lipschitz, in the elementary form used below:
+`M·u ∓ F(u)` are both monotone. -/
+private lemma abs_sub_le_of_abs_deriv_le {F F' : ℝ → ℝ} (hF : ∀ u, HasDerivAt F (F' u) u)
+    {M : ℝ} (hM : ∀ u, |F' u| ≤ M) (x y : ℝ) : |F x - F y| ≤ M * |x - y| := by
+  have hg1 : ∀ u : ℝ, HasDerivAt (fun v : ℝ => M * v - F v) (M - F' u) u := by
+    intro u
+    have hu := ((hasDerivAt_id' u).const_mul M).sub (hF u)
+    convert hu using 1
+    ring
+  have hg2 : ∀ u : ℝ, HasDerivAt (fun v : ℝ => M * v + F v) (M + F' u) u := by
+    intro u
+    have hu := ((hasDerivAt_id' u).const_mul M).add (hF u)
+    convert hu using 1
+    ring
+  have hmono1 : Monotone fun v : ℝ => M * v - F v :=
+    monotone_of_deriv_nonneg (fun u => (hg1 u).differentiableAt) fun u => by
+      rw [(hg1 u).deriv]; linarith [(le_abs_self (F' u)).trans (hM u)]
+  have hmono2 : Monotone fun v : ℝ => M * v + F v :=
+    monotone_of_deriv_nonneg (fun u => (hg2 u).differentiableAt) fun u => by
+      rw [(hg2 u).deriv]; linarith [neg_abs_le (F' u), hM u]
+  rcases le_total x y with hxy | hxy
+  · have h1 : M * x - F x ≤ M * y - F y := hmono1 hxy
+    have h2 : M * x + F x ≤ M * y + F y := hmono2 hxy
+    have hd : |x - y| = y - x := by rw [abs_sub_comm, abs_of_nonneg (by linarith)]
+    rw [hd, abs_le]
+    constructor <;> nlinarith
+  · have h1 : M * y - F y ≤ M * x - F x := hmono1 hxy
+    have h2 : M * y + F y ≤ M * x + F x := hmono2 hxy
+    have hd : |x - y| = x - y := abs_of_nonneg (by linarith)
+    rw [hd, abs_le]
+    constructor <;> nlinarith
 
-STATUS: OPEN. Differentiating the Stein equation gives `f'' = f + w f' + h'`, so this is the
-`‖f‖ ≤ L`, `‖f'‖ ≤ 2L` pair together with a second Mills-ratio estimate for `w f'`; it is
-the last and heaviest of the three. Only `abs_sub_sub_mul_deriv_le` consumes it, and only
-through the constant `B₂`, so any finite constant `c·L` suffices downstream. -/
+/-- **Lipschitz bound on the derivative of the Stein solution**, i.e. the `‖f_h''‖ ≤ 2L` of
+the classical statement, in the form actually used by the Taylor step.
+
+CONSTANT. The statement is proved with `5L` in place of the textbook `2L`; the deviation is
+deliberate. Since `h` is only *Lipschitz*, `f_h''` need not exist, so the bound is proved for
+the increment directly, via `f_h'(u) = u f_h(u) + g(u)`: the map `u ↦ u f_h(u)` is
+differentiable with derivative `f_h(u) + u f_h'(u)`, bounded by `L + 3L = 4L` by
+`abs_steinSolution_le` and `abs_deriv_steinSolution_mul_one_add_sq_le` (which gives
+`|u||f_h'(u)| ≤ 3L`, since `|u|(2|u| + 1) ≤ 3(1 + u²)`), and `g` is `L`-Lipschitz; total
+`5L`. Tracking the sharp `sup_u |u|(2|u| + 1)/(1 + u²) ≈ 2.118` would give `≈ 4.12L`, and the
+textbook `2L` needs the sharp `‖f_h'‖ ≤ √(2/π)` together with a genuine second derivative.
+Only `abs_sub_sub_mul_deriv_le` consumes this bound, and only through the constant `B₂`, so
+any finite constant `c·L` suffices downstream. -/
 theorem lipschitz_deriv_steinSolution {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
     (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) {C : ℝ} (hC : ∀ x, |h x| ≤ C) (x y : ℝ) :
-    |deriv (steinSolution h) x - deriv (steinSolution h) y| ≤ 2 * L * |x - y| := by
-  sorry
+    |deriv (steinSolution h) x - deriv (steinSolution h) y| ≤ 5 * L * |x - y| := by
+  have hh : Continuous h := continuous_of_lipschitz_bound hL hlip
+  have hPhi : ∀ u : ℝ, HasDerivAt (fun v : ℝ => v * steinSolution h v)
+      (steinSolution h u + u * deriv (steinSolution h) u) u := by
+    intro u
+    have hd := hasDerivAt_steinSolution hh hC u
+    have hmul := (hasDerivAt_id' u).mul hd
+    rw [hd.deriv]
+    convert hmul using 1
+    ring
+  have hbound : ∀ u : ℝ, |steinSolution h u + u * deriv (steinSolution h) u| ≤ 4 * L := by
+    intro u
+    have h1 := abs_steinSolution_le hL hlip hC u
+    have h2 := abs_deriv_steinSolution_mul_one_add_sq_le hL hlip hC u
+    have hS : (0 : ℝ) < 1 + u ^ 2 := by positivity
+    have hu := abs_nonneg u
+    have hsq : |u| ^ 2 = u ^ 2 := sq_abs u
+    have h3 : |u| * |deriv (steinSolution h) u| ≤ 3 * L := by
+      have hm := mul_le_mul_of_nonneg_left h2 hu
+      have hpos : (0 : ℝ) ≤ 3 + u ^ 2 - |u| := by nlinarith [sq_nonneg (|u| - 1)]
+      have hstep : |u| * |deriv (steinSolution h) u| * (1 + u ^ 2) ≤ 3 * L * (1 + u ^ 2) := by
+        nlinarith [mul_nonneg hL hpos]
+      exact le_of_mul_le_mul_right hstep hS
+    calc |steinSolution h u + u * deriv (steinSolution h) u|
+        ≤ |steinSolution h u| + |u * deriv (steinSolution h) u| := abs_add_le _ _
+      _ = |steinSolution h u| + |u| * |deriv (steinSolution h) u| := by rw [abs_mul]
+      _ ≤ L + 3 * L := add_le_add h1 h3
+      _ = 4 * L := by ring
+  have hPhiLip := abs_sub_le_of_abs_deriv_le hPhi hbound x y
+  have hdx : deriv (steinSolution h) x
+      = x * steinSolution h x + (h x - stdGaussianExpect h) :=
+    (hasDerivAt_steinSolution hh hC x).deriv
+  have hdy : deriv (steinSolution h) y
+      = y * steinSolution h y + (h y - stdGaussianExpect h) :=
+    (hasDerivAt_steinSolution hh hC y).deriv
+  rw [hdx, hdy]
+  calc |x * steinSolution h x + (h x - stdGaussianExpect h)
+        - (y * steinSolution h y + (h y - stdGaussianExpect h))|
+      ≤ |x * steinSolution h x - y * steinSolution h y| + |h x - h y| := by
+        rw [show x * steinSolution h x + (h x - stdGaussianExpect h)
+            - (y * steinSolution h y + (h y - stdGaussianExpect h))
+            = x * steinSolution h x - y * steinSolution h y + (h x - h y) by ring]
+        exact abs_add_le _ _
+    _ ≤ 4 * L * |x - y| + L * |x - y| := add_le_add hPhiLip (hlip x y)
+    _ = 5 * L * |x - y| := by ring
 
 /-! ### A second-order Taylor bound from a Lipschitz derivative -/
 
