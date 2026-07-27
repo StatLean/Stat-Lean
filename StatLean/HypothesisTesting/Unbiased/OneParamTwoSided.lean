@@ -971,6 +971,88 @@ private lemma expFamily_level_interval (E : ExpFamily 𝓧 ℝ) {P : ℝ → Mea
   have hdpos := partition_pos E hP hθ
   nlinarith [hI, hdpos]
 
+/-- The `ν`-density of the member `P ϑ`, integrated against a weight, is the `P ϑ`-integral. -/
+private lemma integral_density_eq (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧} {Ξ : Set ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) {ϑ : ℝ} (hϑ : ϑ ∈ Ξ) (g : 𝓧 → ℝ) :
+    ∫ x, g x * (Real.exp (ϑ * E.stat x)
+      / ∫ y, Real.exp (ϑ * E.stat y) ∂E.base) ∂E.base = ∫ x, g x ∂(P ϑ) := by
+  rw [hP ϑ hϑ, integral_expFamily_eq E ϑ g, ← integral_div]
+  exact integral_congr_ae (Filter.Eventually.of_forall fun x => by ring)
+
+/-- **The two-multiplier comparison for the interval-null problem.** The two constraint
+densities are those of the endpoints `θ₁, θ₂`; the multipliers come from the
+three-exponential separation `exists_sep_exp3_out`. -/
+private lemma expFamily_np_compare_interval (E : ExpFamily 𝓧 ℝ) {P : ℝ → Measure 𝓧}
+    [∀ θ, IsProbabilityMeasure (P θ)] {Ξ : Set ℝ} {θ₁ θ₂ θ' α C₁ C₂ : ℝ} {φ ψ : 𝓧 → ℝ}
+    (hP : ∀ θ ∈ Ξ, P θ = E.P θ) (hΞ : Ξ ⊆ interior E.natSet)
+    (hθ₁ : θ₁ ∈ Ξ) (hθ₂ : θ₂ ∈ Ξ) (hθ' : θ' ∈ Ξ) (h12 : θ₁ < θ₂)
+    (hsplit : θ' < θ₁ ∨ θ₂ < θ') (hC : C₁ ≤ C₂)
+    (hφ : IsCriticalFn φ) (hψ : IsCriticalFn ψ)
+    (hφ_one : ∀ x, E.stat x < C₁ ∨ C₂ < E.stat x → φ x = 1)
+    (hφ_zero : ∀ x, C₁ < E.stat x → E.stat x < C₂ → φ x = 0)
+    (hφ1 : ∫ x, φ x ∂(P θ₁) = α) (hφ2 : ∫ x, φ x ∂(P θ₂) = α)
+    (hψ1 : ∫ x, ψ x ∂(P θ₁) = α) (hψ2 : ∫ x, ψ x ∂(P θ₂) = α) :
+    ∫ x, ψ x ∂(P θ') ≤ ∫ x, φ x ∂(P θ') := by
+  set d₁ : ℝ := ∫ x, Real.exp (θ₁ * E.stat x) ∂E.base with hd₁def
+  set d₂ : ℝ := ∫ x, Real.exp (θ₂ * E.stat x) ∂E.base with hd₂def
+  set d' : ℝ := ∫ x, Real.exp (θ' * E.stat x) ∂E.base with hd'def
+  have hd₁ : 0 < d₁ := partition_pos E hP hθ₁
+  have hd₂ : 0 < d₂ := partition_pos E hP hθ₂
+  have hd' : 0 < d' := partition_pos E hP hθ'
+  have hie₁ := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₁))
+  have hie₂ := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ₂))
+  have hie' := integrable_exp_of_mem_natSet E (interior_subset (hΞ hθ'))
+  haveI : SigmaFinite E.base := sigmaFinite_of_integrable_pos hie₁ fun x => Real.exp_pos _
+  set g₀ : 𝓧 → ℝ := fun x => Real.exp (θ₁ * E.stat x) / d₁ with hg₀
+  set g₁ : 𝓧 → ℝ := fun x => Real.exp (θ₂ * E.stat x) / d₂ with hg₁
+  set g₂ : 𝓧 → ℝ := fun x => Real.exp (θ' * E.stat x) / d' with hg₂
+  have hm₀ : Measurable g₀ := ((measurable_const.mul E.stat_meas).exp).div_const _
+  have hm₁ : Measurable g₁ := ((measurable_const.mul E.stat_meas).exp).div_const _
+  have hm₂ : Measurable g₂ := ((measurable_const.mul E.stat_meas).exp).div_const _
+  have hi₀ : Integrable g₀ E.base := hie₁.div_const _
+  have hi₁ : Integrable g₁ E.base := hie₂.div_const _
+  have hi₂ : Integrable g₂ E.base := hie'.div_const _
+  obtain ⟨a, b, hin, hout⟩ := exists_sep_exp3_out h12 hsplit hC
+  have hL : ∀ x, (a * d₁ / d') * g₀ x + (b * d₂ / d') * g₁ x
+      = (a * Real.exp (θ₁ * E.stat x) + b * Real.exp (θ₂ * E.stat x)) / d' := by
+    intro x
+    rw [hg₀, hg₁]
+    field_simp
+  have hiff : ∀ x, ((a * d₁ / d') * g₀ x + (b * d₂ / d') * g₁ x < g₂ x
+      ↔ a * Real.exp (θ₁ * E.stat x) + b * Real.exp (θ₂ * E.stat x)
+          < Real.exp (θ' * E.stat x)) := by
+    intro x
+    rw [hL, hg₂, div_lt_div_iff_of_pos_right hd']
+  have hiff' : ∀ x, (g₂ x < (a * d₁ / d') * g₀ x + (b * d₂ / d') * g₁ x
+      ↔ Real.exp (θ' * E.stat x)
+          < a * Real.exp (θ₁ * E.stat x) + b * Real.exp (θ₂ * E.stat x)) := by
+    intro x
+    rw [hL, hg₂, div_lt_div_iff_of_pos_right hd']
+  have hs₁ : ∀ x, (a * d₁ / d') * g₀ x + (b * d₂ / d') * g₁ x < g₂ x → φ x = 1 := by
+    intro x hx
+    have h := (hiff x).mp hx
+    refine hφ_one x ?_
+    by_contra hcon
+    push Not at hcon
+    exact absurd (hin _ hcon.1 hcon.2) (not_le.mpr h)
+  have hs₀ : ∀ x, g₂ x < (a * d₁ / d') * g₀ x + (b * d₂ / d') * g₁ x → φ x = 0 := by
+    intro x hx
+    have h := (hiff' x).mp hx
+    refine hφ_zero x ?_ ?_
+    · by_contra hcon
+      push Not at hcon
+      exact absurd (hout _ (Or.inl hcon)) (not_le.mpr h)
+    · by_contra hcon
+      push Not at hcon
+      exact absurd (hout _ (Or.inr hcon)) (not_le.mpr h)
+  have key := np_two_compare E.base hm₀ hm₁ hm₂ hi₀ hi₁ hi₂ (c₀ := α) (c₁ := α) hφ hψ
+    (by rw [hg₀]; rw [integral_density_eq E hP hθ₁]; exact hφ1)
+    (by rw [hg₁]; rw [integral_density_eq E hP hθ₂]; exact hφ2)
+    (by rw [hg₀]; rw [integral_density_eq E hP hθ₁]; exact hψ1)
+    (by rw [hg₁]; rw [integral_density_eq E hP hθ₂]; exact hψ2) hs₁ hs₀
+  rw [hg₂, integral_density_eq E hP hθ', integral_density_eq E hP hθ'] at key
+  exact key
+
 /-- **UMP unbiased test of a point null in a one-parameter exponential family.**
 
 For `H : θ = θ₀` against `K : θ ≠ θ₀`, the test rejecting outside `[C₁, C₂]` on the natural
