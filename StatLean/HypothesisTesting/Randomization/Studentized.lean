@@ -1413,53 +1413,111 @@ private lemma tendstoInProbRandomized_twoSampleScale (PY PZ : Measure ℝ)
     TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
       (fun k => twoSampleLaw (m k) (n k) PY PZ)
       (fun k x => twoSampleScale (m k) (n k) x) τ := by
-  -- TODO (deferred, named brick): the hypergeometric half of Theorem 17.3.3.
-  -- STATUS (re-derived this session, wave 5). This is the only mathematical debt of the
-  -- studentized chain other than the permutation CLT, and it is genuinely open work rather
-  -- than a missing upstream theorem. The route, re-derived here, with the state of each step:
-  -- (a) DONE, by the two closure properties above. The group average
-  --     `|Perm|⁻¹ ∑_σ P.real {…}` is a convex combination of per-`σ` probabilities, so
-  --     `tendstoInProbRandomized_comp` (and the additive/`const_mul` twins of
-  --     `tendstoInProb_add`, `tendstoInProb_const_mul`, which are proved the same way)
-  --     reduce the square root, the sum and the factor `m/n` to the two block variances.
-  -- (b) DONE — this was the piece flagged as "the one new combinatorial input", and it is
-  --     now a `ForMathlib` brick, `ForMathlib/PermutationMarginals` (0-sorry, axiom-clean).
-  --     Under a uniform `σ`, one coordinate is uniform on the `N` pooled items
-  --     (`avg_perm_apply`) and two distinct coordinates are uniform on the `N(N-1)` ordered
-  --     distinct pairs (`avg_perm_apply_pair`); together they give the exact variance of a
-  --     permuted block average of centred coefficients,
-  --     `(1/m)((N-m)/(N-1))(N⁻¹ ∑ d²) ≤ (1/m)(N⁻¹ ∑ d²)`
-  --     (`avg_perm_blockAvg_sq_le`), and the Chebyshev step in exactly the group-average
-  --     shape `randDist` uses (`perm_avg_indicator_blockAvg_le`). Note this is the
-  --     *permutation* model; `ForMathlib/HypergeometricMoments` is the equivalent *subset*
-  --     model, and transporting between them (the uniformity of `σ ↦ σ⁻¹ '' block` on
-  --     `m`-subsets) is no longer needed on this route.
-  -- (c) LEFT, for the block **means**, but the two missing pieces of wiring are now bricks
-  --     (wave 6, `ForMathlib/CombinatorialCLT`). The recentring — (b) is stated for an
-  --     already-centred coefficient vector, whereas the pooled data arrives raw — is
-  --     `perm_avg_indicator_blockAvg_sub_mean_le`, and its inverse-convention twin
-  --     `perm_avg_indicator_blockAvg_inv_sub_mean_le` is the one matching the action
-  --     `(σ • x) i = x (σ⁻¹ i)` used here; together they give, at every fixed `x`,
-  --     `|Perm|⁻¹ ∑_σ 1{ε ≤ |block avg of σ • x − x̄|} ≤ ε⁻²(1/m)(N⁻¹ ∑ (x l − x̄)²)`.
-  --     Exchanging the group average with the data law is
-  --     `avg_measureReal_eq_integral_avg_indicator` (Fubini for a finite group). What is
-  --     genuinely left is the integration: `∫ N⁻¹ ∑ (x l − x̄)² dP ≤ (m varY + n varZ)/N`,
-  --     bounded uniformly in `k`, so the bound is `O(1/m) → 0`.
-  -- (d) LEFT, for the block **second** moments, and this is the only step needing an idea
-  --     beyond (b)+(c): applying (b) to `c l = (x l)²` costs a fourth pooled moment, which
-  --     `MemLp id 2` does not supply. Truncate at level `K`: (b) with the truncated
-  --     coefficients has the bound `ε⁻²(1/m)K²`, and the discarded part is controlled in
-  --     `L¹` by `∫ t² 1{t² > K}` under each population, small uniformly in `k` by dominated
-  --     convergence. This is the standard two-moment argument for sampling without
-  --     replacement, and it is why the theorem needs no moment assumption beyond `L²`.
-  -- (e) LEFT, bookkeeping: the pooled empirical moments converge by `tendsto_pi_real_lln`
-  --     (through `tendsto_lln_blockY`/`_blockZ`), giving `v̄ = (λ varY + varZ)/(1 + λ)` for
-  --     both blocks and `τ² = (1 + λ) v̄` for the scale.
-  -- Nothing above needs the permutation CLT, so the two headline theorems below are complete
-  -- modulo exactly two named statements: this one and (since wave 6, in its sharpened scalar
-  -- form) `TwoSamplePermutation.randDist_twoSample_tendstoInProb_core`, over which
-  -- `TwoSamplePermutation.weakConverges_randPairLaw_twoSample` is now *proved*.
-  sorry
+  -- **The hypergeometric half of Theorem 17.3.3** (wave 8, closed here).
+  -- Route, exactly as the wave-5 note laid it out:
+  -- (a) the group-average calculus (`tendstoInProbRandomized_add`, `_const_mul`, `_comp`,
+  --     `_congr`) reduces the square root, the sum and the factor `m/n` to the two block
+  --     variances;
+  -- (b) `ForMathlib/PermutationMarginals` supplies the exact `O(1/p)` variance of a
+  --     permuted block average and the Chebyshev step over the group;
+  -- (c) recentring against the pooled mean is `perm_avg_indicator_blockAvg_inv_sub_mean_le`
+  --     and the exchange of the group average with the data law is
+  --     `avg_measureReal_eq_integral_avg_indicator`; the resulting integral is bounded
+  --     uniformly by `perm_avg_block_sub_pooled_le`, whence
+  --     `tendstoInProbRandomized_blockAvg_of_sq`;
+  -- (d) the fourth-moment obstruction for the block SECOND moments is removed by
+  --     truncation: `tendstoInProbRandomized_blockAvg` pays for the discarded part with the
+  --     `L¹` tail bound `perm_avg_blockAvg_tail_le`, which is uniform in `k` because the
+  --     group average of a permuted block average is *exactly* the pooled average
+  --     (`avg_perm_blockAvg_eq`);
+  -- (e) the pooled empirical moments converge by `tendstoInProb_pooledAvg`, giving the same
+  --     limit `v̄ = (λ varY + varZ)/(1 + λ)` for BOTH blocks and `τ² = (1 + λ) v̄`.
+  classical
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hidY : Integrable (fun t : ℝ => t) PY := by simpa using hYL2.integrable (by norm_num)
+  have hidZ : Integrable (fun t : ℝ => t) PZ := by simpa using hZL2.integrable (by norm_num)
+  have hsqY : Integrable (fun t : ℝ => t ^ 2) PY := by simpa using hYL2.integrable_sq
+  have hsqZ : Integrable (fun t : ℝ => t ^ 2) PZ := by simpa using hZL2.integrable_sq
+  -- (i) the four randomized block averages
+  have hYmean : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => (m k : ℝ)⁻¹ * ∑ i : Fin (m k), y (Fin.castAdd (n k) i))
+      (lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) :=
+    tendstoInProbRandomized_blockAvg PY PZ m n hm hn hratio hlam m
+      (fun k => Fin.castAdd (n k)) (fun k => Fin.castAdd_injective _ _) hm
+      (fun t : ℝ => t) measurable_id hidY hidZ
+  have hZmean : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => (n k : ℝ)⁻¹ * ∑ j : Fin (n k), y (Fin.natAdd (m k) j))
+      (lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) :=
+    tendstoInProbRandomized_blockAvg PY PZ m n hm hn hratio hlam n
+      (fun k => Fin.natAdd (m k)) (fun k => Fin.natAdd_injective _ _) hn
+      (fun t : ℝ => t) measurable_id hidY hidZ
+  have hYsq : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => (m k : ℝ)⁻¹ * ∑ i : Fin (m k), y (Fin.castAdd (n k) i) ^ 2)
+      (lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ) :=
+    tendstoInProbRandomized_blockAvg PY PZ m n hm hn hratio hlam m
+      (fun k => Fin.castAdd (n k)) (fun k => Fin.castAdd_injective _ _) hm
+      (fun t : ℝ => t ^ 2) (by fun_prop) hsqY hsqZ
+  have hZsq : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => (n k : ℝ)⁻¹ * ∑ j : Fin (n k), y (Fin.natAdd (m k) j) ^ 2)
+      (lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ) :=
+    tendstoInProbRandomized_blockAvg PY PZ m n hm hn hratio hlam n
+      (fun k => Fin.natAdd (m k)) (fun k => Fin.natAdd_injective _ _) hn
+      (fun t : ℝ => t ^ 2) (by fun_prop) hsqY hsqZ
+  -- (ii) the two block variances, as (second moment) − (mean)²
+  have hYneg := tendstoInProbRandomized_comp (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (φ := fun u : ℝ => -(u ^ 2))
+    (by fun_prop) hYmean
+  have hZneg := tendstoInProbRandomized_comp (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (φ := fun u : ℝ => -(u ^ 2))
+    (by fun_prop) hZmean
+  have hYvar0 := tendstoInProbRandomized_add (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) hYsq hYneg
+  have hZvar0 := tendstoInProbRandomized_add (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) hZsq hZneg
+  have hYvar : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => twoSampleVarY (m k) (n k) y)
+      ((lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)
+        + -((lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) ^ 2)) := by
+    refine tendstoInProbRandomized_congr _ _ hYvar0 ?_
+    filter_upwards [hm.eventually_gt_atTop 0] with k hmk y
+    exact (twoSampleVarY_eq hmk y).symm
+  have hZvar : TendstoInProbRandomized (fun k => Equiv.Perm (Fin (m k + n k)))
+      (fun k => twoSampleLaw (m k) (n k) PY PZ)
+      (fun k y => twoSampleVarZ (m k) (n k) y)
+      ((lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)
+        + -((lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) ^ 2)) := by
+    refine tendstoInProbRandomized_congr _ _ hZvar0 ?_
+    filter_upwards [hn.eventually_gt_atTop 0] with k hnk y
+    exact (twoSampleVarZ_eq hnk y).symm
+  -- (iii) assemble the squared scale
+  have hZscaled := tendstoInProbRandomized_const_mul
+    (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) hratio hZvar
+  have hsq := tendstoInProbRandomized_add (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) hYvar hZscaled
+  have hlimeq : ((lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)
+        + -((lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) ^ 2))
+      + lam * ((lam / (1 + lam) * (∫ t, t ^ 2 ∂PY) + 1 / (1 + lam) * ∫ t, t ^ 2 ∂PZ)
+        + -((lam / (1 + lam) * (∫ t, t ∂PY) + 1 / (1 + lam) * ∫ t, t ∂PZ) ^ 2)) = τ ^ 2 := by
+    have hQYv : (∫ t, t ^ 2 ∂PY) = varY + μ ^ 2 := by
+      have h := var_eq_second_sub_sq hYL2 hmeanY hvarY; linarith
+    have hQZv : (∫ t, t ^ 2 ∂PZ) = varZ + μ ^ 2 := by
+      have h := var_eq_second_sub_sq hZL2 hmeanZ hvarZ; linarith
+    rw [hQYv, hQZv, hmeanY, hmeanZ, hτ]
+    field_simp
+    ring
+  rw [hlimeq] at hsq
+  -- (iv) take the square root
+  have hscale := tendstoInProbRandomized_comp (fun k => Equiv.Perm (Fin (m k + n k)))
+    (fun k => twoSampleLaw (m k) (n k) PY PZ) (φ := Real.sqrt)
+    Real.continuous_sqrt.continuousAt hsq
+  rw [Real.sqrt_sq hτpos.le] at hscale
+  exact hscale
 
 /-! ### Asymptotic validity under unequal variances -/
 
