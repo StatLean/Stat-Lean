@@ -1,6 +1,7 @@
 import StatLean.HypothesisTesting.GoodnessOfFit.ChiSquaredMultinomial
 import StatLean.HypothesisTesting.GoodnessOfFit.AsymptoticMaximin
 import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
+import StatLean.AsymptoticStatistics.ForMathlib.GaussianShift
 
 /-!
 # Asymptotic maximin optimality of Pearson's chi-squared test
@@ -64,6 +65,16 @@ of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail funct
   for `(c_k − k)/√(2k) → z`, and `weakConverges_noncentralChiSquared_standardized` for
   `(χ²_k(l_k) − k)/√(2k) ⇒ N(γ, 1)` — so they are assembly, not new analysis. Clause (i)
   is independent of both and rests on the monotone likelihood ratio of the family.
+* Clause (i) of the tail lemma (`noncentralTail_antitone`) rests on the *monotone likelihood
+  ratio* of `χ²_k(λ)` in `λ`, which stochastic ordering does not give.  That MLR is proved in
+  the private `MLR` section of this file, directly from the Gaussian definition and without
+  any density formula: the Cameron–Martin ratio `exp(⟪ν, z⟫ − ‖ν‖²/2)` of the shifted Gaussian
+  is replaced, by rotation invariance of both the standard Gaussian and the test function
+  `f(‖z‖²)`, by its average over the sphere `‖u‖ = ‖ν‖` — realised as the average over the
+  direction `‖y‖⁻¹ • y` of an independent Gaussian vector — and the averaged ratio is a
+  `cosh`-average, hence a nondecreasing function of `‖z‖`.  The single-crossing step also uses
+  the additivity `χ²_{k+1}(λ) = χ²_k(λ) ⋆ χ²₁`, obtained by splitting off one coordinate of
+  the product Gaussian with the mean vector placed orthogonally to it.
 * Noncentrality parameters are passed to `noncentralChiSquared` through `Real.toNNReal`,
   that function taking its parameter in `ℝ≥0`; the values used (`b²`, `h²`) are squares,
   so the coercion is the identity on them.
@@ -82,7 +93,7 @@ W. G. Cochran ("The χ² test of goodness of fit," *Ann. Math. Statist.* **23** 
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal BigOperators NNReal
+open scoped ENNReal BigOperators NNReal InnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -135,33 +146,61 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
       ((Measure.map (X n i) (Q n h)) {j}).toReal = π j + h j / Real.sqrt (n : ℝ))
     -- USER-INPUT: the competitors are randomized tests
     (hφ : ∀ n, IsCriticalFn (φ n))
+    -- REPAIRED HYPOTHESIS (the frozen statement without it is FALSE — counterexample in
+    -- the proof note below): the competitors are tests *based on the sample*, i.e. each
+    -- `φ n` is a measurable function of `(X n 1, …, X n n)`.  `Q` is abstract data, and
+    -- nothing in the remaining hypotheses prevents `Q n h` from encoding `h` in a
+    -- coordinate of `Ω` that the observations do not see
+    (hφX : ∀ n, ∃ ψ : (Fin n → Fin (k + 1)) → ℝ,
+      Measurable ψ ∧ ∀ ω, φ n ω = ψ (fun i => X n i ω))
     -- USER-INPUT: the competitors are asymptotically of level `α` at the null
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' multinomialShell π b n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (RE-DERIVED; the previous note was wrong on the first point).
+  -- TODO (RE-DERIVED, and the STATEMENT WAS FALSE AS FROZEN — repaired above).
   --
-  -- • This is **not** an instance of `asymptotic_maximin_upper_bound`, and cannot be made
-  --   one: the shells do not match, and they mismatch in the *unusable* direction.  Under
-  --   the reduction `z = (h₁,…,h_k)` (the last coordinate being determined by `∑ⱼ hⱼ = 0`)
-  --   the transfer lemma's shell is the whole `{z : b² ≤ zᵀ Σ⁻¹ z}`, whereas
-  --   `multinomialShell π b n` carries in addition the *sample-size dependent* positivity
-  --   constraint `πⱼ + hⱼ/√n ≥ 0`; so `multinomialShell` maps onto a **subset**, and `sInf`
-  --   over a subset is `≥` `sInf` over the superset.  The transfer lemma therefore bounds
-  --   the wrong quantity.  (The mixture proof *does* give the multinomial statement, since
-  --   the least-favourable `σ` is carried by the compact sphere `λ(h) = b²`, which lies
-  --   inside the positivity constraint for all large `n`; but that is the proof, not the
-  --   frozen statement.  The same remark applies to `SmoothTest.smoothTest_maximin_upper_bound`
-  --   and is recorded in the note of `asymptotic_maximin_upper_bound`.)
-  -- • Independently, the multinomial local-experiment data required by that lemma is still
-  --   missing: the log-likelihood field `L n h` and its LAN quadratic expansion.  Only the
-  --   centring half is available (`ChiSquaredMultinomial.reducedCount_weakConverges_gaussian`
-  --   gives `Z n ⇒ N(0, Σ)`); the `hdens`/`hLAN` package is not.  Note also that `hdens`
-  --   would need `Q n h ≪ Q n 0`, which fails at the boundary of the positivity constraint.
+  -- COUNTEREXAMPLE to the frozen statement (no `hφX`).  Take `k = 1` (two cells),
+  -- `Ω = (ℕ → Fin 2) × ℝ`, `X n i ω = ω.1 i`, and
+  --     `Q n h = (i.i.d. multinomial with cell probabilities π + h/√n) ⊗ δ_{h 0}`.
+  -- All the frozen hypotheses hold: the `X n i` are measurable, i.i.d. under every `Q n h`
+  -- with the prescribed cell probabilities, and each `Q n h` is a probability measure.
+  -- Take `φ n ω = if ω.2 = 0 then α else 1`, a critical function with
+  -- `power (Q n) (φ n) 0 = α` for every `n`, so `hlevel` holds.  For `k = 1` the constraints
+  -- `∑ⱼ hⱼ = 0` and `b² ≤ λ(h)` force `h ≠ 0`, hence `h 0 ≠ 0`, hence `power (Q n) (φ n) h = 1`
+  -- for *every* `h ∈ multinomialShell π b n`; that shell is nonempty for all large `n`, so the
+  -- left-hand side is `1`.  The right-hand side is `< 1`: by the density representation
+  -- `noncentralChiSquared k l = (chiSquared k).withDensity (ENNReal.ofReal ∘ g)` of the MLR
+  -- section above, with `g > 0`, and `chiSq_Ioo_pos`/`chiSq_crit_pos`, the complement of
+  -- `(c, ∞)` has positive `χ²_k(b²)`-mass.  So the frozen inequality fails.
   --
+  -- The defect is exactly that `Q` is abstract: the hypotheses pin down the law of the
+  -- *sample* under `Q n h` but say nothing about the rest of `Ω`, so a competitor is free to
+  -- read `h` off directly.  Note that `Q n h ≪ Q n 0` does NOT repair it either (replace
+  -- `δ_{h 0}` by `Unif[0, δₙ]` for `h ≠ 0` versus `Unif[0,1]` for `h = 0`, with `δₙ → 0`);
+  -- what fails is not domination but the absence of any local-asymptotic-normality
+  -- structure.  The minimal repair is therefore to restrict the competitors to tests based
+  -- on the sample, which is `hφX` and is how the source states the theorem.
+  --
+  -- WHAT REMAINS for the repaired statement.  It is the genuine multinomial instance of the
+  -- maximin bound and is *not* an instance of `asymptotic_maximin_upper_bound`, for two
+  -- independent reasons:
+  -- • The shells do not match, and mismatch in the unusable direction.  Under the reduction
+  --   `z = (h₁,…,h_k)` the transfer lemma's shell is all of `{z : b² ≤ zᵀ Σ⁻¹ z}`, whereas
+  --   `multinomialShell π b n` carries in addition the sample-size dependent positivity
+  --   constraint `πⱼ + hⱼ/√n ≥ 0`; so `multinomialShell` maps onto a SUBSET, and `sInf` over
+  --   a subset is `≥` `sInf` over the superset.  (The mixture proof does give the multinomial
+  --   statement, the least-favourable `σ` being carried by the compact sphere `λ(h) = b²`,
+  --   which lies inside the positivity constraint for all large `n`.  The recommended fix on
+  --   the `AsymptoticMaximin` side is a shell-parametrised restatement, quantified over any
+  --   set containing that sphere; it would serve this consumer and `SmoothTest` at once.)
+  -- • The local-experiment data required by that lemma is not derivable from the frozen
+  --   hypotheses, `Q` being abstract: the log-likelihood field `L n h` and its LAN quadratic
+  --   expansion (`hdens`, `hLAN`) would have to be added as hypotheses.  Only the centring
+  --   half is available (`ChiSquaredMultinomial.reducedCount_weakConverges_gaussian` gives
+  --   `Z n ⇒ N(0, Σ)`).
   -- So the honest route is the mixture–Neyman–Pearson argument run directly on the moving
-  -- shell — i.e. the same missing apparatus as `asymptotic_maximin_upper_bound` (the
-  -- pre-agreed batch-ledger debt), not a corollary of it.
+  -- shell — the same missing apparatus as `asymptotic_maximin_upper_bound` (the pre-agreed
+  -- batch-ledger debt), not a corollary of it.
   sorry
 
 /-! ### (ii) Attainment by Pearson's test -/
@@ -203,38 +242,1076 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
         '' multinomialShell π b n)) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal))
       ∧ ∀ ψ : ℕ → Ω → ℝ, (∀ n, IsCriticalFn (ψ n)) →
+        -- REPAIRED: the competitors range over tests based on the sample; without this the
+        -- second conjunct is FALSE, by the counterexample recorded at
+        -- `chiSquared_maximin_upper_bound`
+        (∀ n, ∃ ρ : (Fin n → Fin (k + 1)) → ℝ,
+          Measurable ρ ∧ ∀ ω, ψ n ω = ρ (fun i => X n i ω)) →
         Tendsto (fun n => power (Q n) (ψ n) 0) atTop (nhds α) →
         limsup (fun n => sInf ((fun h => power (Q n) (ψ n) h)
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (RE-DERIVED; two of the three obstructions listed previously are now GONE).
+  -- TODO (RE-DERIVED this batch; the first conjunct is TRUE and the second is the repaired
+  -- `chiSquared_maximin_upper_bound`).
   --
-  -- • Tail monotonicity in the noncentrality is CLOSED: `noncentralChiSquared_tail_mono`
-  --   and the `stdGaussian_normSq_le_antitone` it rests on are both proved axiom-clean in
-  --   `ForMathlib/NoncentralChiSquared.lean` (unequal-weight Prékopa–Leindler).
+  -- FIRST CONJUNCT (attainment).  Note that the Pearson test `1{Qₙ > c}` is a function of the
+  -- sample alone, so — unlike the second conjunct — this half is unaffected by the abstractness
+  -- of `Q`: the frozen hypotheses determine the law of `pearsonQ π (X n)` under every `Q n h`.
+  -- Two of the three obstructions previously listed are GONE:
+  -- • Tail monotonicity in the noncentrality is CLOSED (`noncentralChiSquared_tail_mono`), and
+  --   so, now, is the strictly stronger monotone likelihood ratio of the family
+  --   (`exists_monotone_density` in the MLR section of this file).
   -- • The per-`h` local power is CLOSED: `ChiSquaredMultinomial.pearsonQ_local_power_nondegenerate`
-  --   gives, axiom-clean, `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` for every fixed
-  --   centred `h`, together with the two strict bounds `α < value < 1`.  (Its no-atom and
-  --   strict-comparison bricks live in that file.)
-  -- • Consequently the `limsup ≤` half of the first conjunct is now routine: evaluate at a
-  --   FIXED `h` with `∑ⱼ hⱼ = 0` and `λ(h) = b²`; such an `h` lies in `multinomialShell π b n`
-  --   for every large `n` (the constraint `πⱼ + hⱼ/√n ≥ 0` holds eventually since `πⱼ > 0`),
-  --   so `sInf … ≤ power_n(h) → ncχ²_k(b²)(c,∞)`.
+  --   gives, axiom-clean, `power (Q n) 1{Qₙ > c} h → ncχ²_k(λ(h))(c,∞)` for every fixed centred
+  --   `h`, together with the two strict bounds `α < value < 1`.
+  -- Consequently the `limsup ≤` half is routine: evaluate at a FIXED `h` with `∑ⱼ hⱼ = 0` and
+  -- `λ(h) = b²`; such an `h` lies in `multinomialShell π b n` for every large `n`.
   --
-  -- WHAT IS ACTUALLY LEFT is a single, genuinely uniform statement: the `liminf ≥` half,
-  -- i.e. `inf_{h ∈ multinomialShell π b n} power_n(h) ≥ ncχ²_k(b²)(c,∞) − ε` eventually.
-  -- The shell is unbounded AND moves with `n`, so the competitor is a *diagonal* sequence
-  -- `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly `→ ∞`; controlling `power_n(hₙ)`
-  -- from below along such a sequence is a uniform (Berry–Esseen / tightness-over-the-shell)
+  -- WHAT IS ACTUALLY LEFT is the `liminf ≥` half, a genuinely uniform statement:
+  -- `inf_{h ∈ multinomialShell π b n} power_n(h) ≥ ncχ²_k(b²)(c,∞) − ε` eventually.  The shell
+  -- is unbounded AND moves with `n`, so the competitor is a *diagonal* sequence
+  -- `hₙ ∈ multinomialShell π b n` with `λ(hₙ)` possibly `→ ∞`; controlling `power_n(hₙ)` from
+  -- below along such a sequence is a uniform (Berry–Esseen / tightness-over-the-shell)
   -- statement that no per-`h` weak limit supplies.  The natural brick is a multinomial
-  -- Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in the local parameter; the
-  -- project has `ForMathlib/MultivariateBerryEsseen` only for slabs and balls of a *fixed*
-  -- law, not for a triangular array of drifting multinomial rows.
+  -- Berry–Esseen over the ellipsoids `{Qₙ > c}`, uniform in the local parameter; the project
+  -- has `ForMathlib/MultivariateBerryEsseen` only for slabs and balls of a *fixed* law, not
+  -- for a triangular array of drifting multinomial rows.
   --
-  -- Second conjunct is exactly `chiSquared_maximin_upper_bound` above (see its note: it is
-  -- NOT an instance of `asymptotic_maximin_upper_bound`, the shell inclusion going the
-  -- wrong way, and needs the mixture argument on the moving shell).
+  -- SECOND CONJUNCT is exactly `chiSquared_maximin_upper_bound` above, in its repaired form
+  -- (sample-based competitors); see its note for the counterexample that forced the repair
+  -- and for why it is NOT an instance of `asymptotic_maximin_upper_bound`.
   sorry
+
+/-! ### Monotone likelihood ratio of the noncentral chi-squared family
+
+The degrees-of-freedom monotonicity `noncentralTail_antitone` is a single-crossing
+argument, and single crossing needs the *monotone likelihood ratio* of `χ²_k(λ)` in `λ`
+— strictly more than the stochastic ordering supplied by `noncentralChiSquared_tail_mono`.
+The classical routes to that MLR go through the Bessel density or the Poisson mixture
+representation, neither of which the repository carries.  The development below obtains it
+directly from the Gaussian definition instead: Cameron–Martin gives the likelihood ratio
+`exp(⟪ν, z⟫ − ‖ν‖²/2)` of the shifted Gaussian, and — the test function `f(‖z‖²)` and the
+standard Gaussian both being rotation invariant — that ratio may be replaced by its average
+over the sphere `‖u‖ = ‖ν‖`, realised as the average over the *direction* of an independent
+Gaussian vector.  The averaged ratio is a function of `‖z‖` alone and, after the reflection
+`y ↦ −y` turns it into an average of `cosh`, is nondecreasing in `‖z‖`. -/
+
+section MLR
+
+
+/-- The real inner product on `EuclideanSpace ℝ (Fin k)` as a coordinate sum. -/
+private lemma inner_eucl_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
+    ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+  simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+  exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+
+/-- **Cameron–Martin shift for the standard Gaussian on `EuclideanSpace`.**  Shifting the
+argument by `v` is the same as tilting by the exponential density
+`exp(⟪v, z⟫ − ‖v‖²/2)`.  Transported from the `Measure.pi` form
+`gaussianShift_change_of_measure` through `map_pi_eq_stdGaussian`. -/
+private lemma integral_stdGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin k))
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Measurable F) :
+    ∫ z, F (v + z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = ∫ z, F z * Real.exp (⟪v, z⟫_ℝ - ‖v‖ ^ 2 / 2)
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+  classical
+  set a : Fin k → ℝ := fun i => v i with ha
+  set π₀ : Measure (Fin k → ℝ) := Measure.pi (fun _ : Fin k => gaussianReal 0 1) with hπ₀
+  have hmapT : π₀.map (WithLp.toLp 2) = stdGaussian (EuclideanSpace ℝ (Fin k)) :=
+    map_pi_eq_stdGaussian
+  have hTmeas : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  -- transport both sides to the `Measure.pi` picture
+  have hsum : ∀ u w : EuclideanSpace ℝ (Fin k), ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+    intro u w
+    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  have hinner : ∀ x : Fin k → ℝ,
+      ⟪v, (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k))⟫_ℝ = ∑ i, a i * x i := by
+    intro x
+    rw [hsum]
+  have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq]
+  have hL : ∫ z, F (v + z) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = ∫ x, F (v + WithLp.toLp 2 x) ∂π₀ := by
+    rw [← hmapT, integral_map hTmeas.aemeasurable]
+    exact (hF.comp (measurable_const_add v)).aestronglyMeasurable
+  have hR : ∫ z, F z * Real.exp (⟪v, z⟫_ℝ - ‖v‖ ^ 2 / 2)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = ∫ x, Real.exp ((∑ i, a i * x i) - (∑ i, (a i) ^ 2) / 2)
+          * F (WithLp.toLp 2 x) ∂π₀ := by
+    rw [← hmapT, integral_map hTmeas.aemeasurable]
+    · refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+      simp only []
+      rw [hinner x, hnorm]
+      ring
+    · exact (hF.mul (by fun_prop)).aestronglyMeasurable
+  -- the shifted product Gaussian
+  have hshift : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
+    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+      intro i
+      rw [gaussianReal_map_const_add]
+      infer_instance
+    rw [hπ₀, Measure.pi_map_pi (f := fun i (t : ℝ) => a i + t)
+      (fun i => (measurable_const_add (a i)).aemeasurable)]
+    congr 1
+    funext i
+    rw [gaussianReal_map_const_add]
+    simp
+  have hmeasG : Measurable (fun x : Fin k → ℝ => F (WithLp.toLp 2 x)) := hF.comp hTmeas
+  have hkey := gaussianShift_change_of_measure a (fun x : Fin k → ℝ => F (WithLp.toLp 2 x))
+  rw [← hπ₀] at hkey
+  have hstep : ∫ x, F (v + WithLp.toLp 2 x) ∂π₀
+      = ∫ X, F (WithLp.toLp 2 X) ∂(Measure.pi fun i => gaussianReal (a i) 1) := by
+    rw [← hshift, integral_map
+      (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i))).aemeasurable
+      hmeasG.aestronglyMeasurable]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only []
+    congr 1
+  rw [hL, hR, hstep, hkey]
+
+/-- **1-D Gaussian Girsanov shift.**  (Same statement as the private
+`ProbabilityTheory.gaussianReal_withDensity_exp_shift_1d`; repeated here because the
+`Measure`-level form — not only its Bochner-integral consequence — is what the radial
+argument below needs.) -/
+private lemma gaussianReal_withDensity_shift (a : ℝ) :
+    (gaussianReal 0 1).withDensity
+        (fun x => ENNReal.ofReal (Real.exp (a * x - a ^ 2 / 2)))
+      = gaussianReal a 1 := by
+  rw [gaussianReal_of_var_ne_zero (0 : ℝ) (by norm_num : (1 : NNReal) ≠ 0),
+    gaussianReal_of_var_ne_zero a (by norm_num : (1 : NNReal) ≠ 0),
+    ← MeasureTheory.withDensity_mul volume (measurable_gaussianPDF 0 1) (by fun_prop)]
+  congr 1
+  ext x
+  simp only [Pi.mul_apply, gaussianPDF_def]
+  rw [← ENNReal.ofReal_mul (gaussianPDFReal_nonneg 0 1 x)]
+  congr 1
+  simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero]
+  rw [mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
+
+/-- **Product-form Gaussian Girsanov shift** on `ι → ℝ`. -/
+private lemma pi_gaussianReal_withDensity_shift {ι : Type*} [Fintype ι] (a : ι → ℝ) :
+    (Measure.pi (fun _ : ι => gaussianReal 0 1)).withDensity
+        (fun y => ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = Measure.pi (fun i : ι => gaussianReal (a i) 1) := by
+  classical
+  have h1d : ∀ i, (gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+        = gaussianReal (a i) 1 :=
+    fun i => gaussianReal_withDensity_shift (a i)
+  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
+    intro i; rw [h1d i]; infer_instance
+  have hdensity : (fun y : ι → ℝ =>
+        ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by
+    funext y
+    rw [show ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)
+          = ∑ i, (a i * y i - (a i) ^ 2 / 2) from by
+          rw [Finset.sum_sub_distrib, Finset.sum_div],
+      Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun _ _ => Real.exp_nonneg _)]
+  rw [hdensity, pi_withDensity_prod
+    (f := fun i (x : ℝ) => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+    (fun i => by fun_prop)]
+  congr 1
+  funext i
+  exact h1d i
+
+/-- Transport of a `withDensity` through the (measurable-equivalence) coordinate map
+`WithLp.toLp 2`. -/
+private lemma map_toLp_withDensity {k : ℕ} (μ : Measure (Fin k → ℝ))
+    {w : (Fin k → ℝ) → ℝ≥0∞} (hw : Measurable w) :
+    (μ.withDensity w).map (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
+      = (μ.map (WithLp.toLp 2)).withDensity (fun z => w z.ofLp) := by
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hw' : Measurable (fun z : EuclideanSpace ℝ (Fin k) => w z.ofLp) :=
+    hw.comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))
+  ext A hA
+  rw [Measure.map_apply hT hA, withDensity_apply _ (hT hA), withDensity_apply _ hA,
+    ← lintegral_indicator (hT hA), ← lintegral_indicator hA,
+    lintegral_map (hw'.indicator hA) hT]
+  classical
+  refine lintegral_congr fun x => ?_
+  simp only [Set.indicator_apply, Set.mem_preimage]
+
+/-- **Cameron–Martin identity, measure form.**  Translating the standard Gaussian on
+`EuclideanSpace ℝ (Fin k)` by `v` is the same as tilting it by `exp(⟪v, ·⟫ − ‖v‖²/2)`. -/
+private lemma stdGaussian_map_add_eq_withDensity {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
+          (fun z => ENNReal.ofReal (Real.exp (⟪v, z⟫_ℝ - ‖v‖ ^ 2 / 2))) := by
+  classical
+  set a : Fin k → ℝ := fun i => v i with ha
+  set π₀ : Measure (Fin k → ℝ) := Measure.pi (fun _ : Fin k => gaussianReal 0 1) with hπ₀
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hmapT : π₀.map (WithLp.toLp 2) = stdGaussian (EuclideanSpace ℝ (Fin k)) :=
+    map_pi_eq_stdGaussian
+  have hsum : ∀ u w : EuclideanSpace ℝ (Fin k), ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+    intro u w
+    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
+  have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
+    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+      intro i
+      rw [gaussianReal_map_const_add]
+      infer_instance
+    rw [hπ₀, Measure.pi_map_pi (f := fun i (t : ℝ) => a i + t)
+      (fun i => (measurable_const_add (a i)).aemeasurable)]
+    congr 1
+    funext i
+    rw [gaussianReal_map_const_add]
+    simp
+  -- left-hand side, transported to the product picture
+  have hLHS : (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
+    rw [← hmapT, Measure.map_map (by fun_prop) hT,
+      Measure.map_map hT
+        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+    congr 1
+  rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift a, ← hπ₀,
+    map_toLp_withDensity π₀ (by fun_prop), hmapT]
+  congr 1
+  funext z
+  rw [hsum, hnorm]
+
+
+/-! ### Basic representations of the (non)central chi-squared laws -/
+
+/-- The mean vector has length `√l`. -/
+private lemma ncMean_norm {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
+    ‖noncentralMean k l‖ = Real.sqrt (l : ℝ) := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have h2 : ‖noncentralMean k l‖ ^ 2 = (l : ℝ) := by
+    rw [EuclideanSpace.real_norm_sq_eq]
+    have hval : ∀ i : Fin k,
+        (noncentralMean k l i) ^ 2 = if i = 0 then (l : ℝ) else 0 := by
+      intro i
+      by_cases hi : i = 0
+      · simp only [noncentralMean, hi, Fin.val_zero, if_pos, if_true]
+        rw [Real.sq_sqrt l.coe_nonneg]
+      · have hi' : (i : ℕ) ≠ 0 := by simpa [Fin.val_eq_zero_iff] using hi
+        simp [noncentralMean, hi, hi']
+    simp_rw [hval]
+    simp [Finset.sum_ite_eq']
+  rw [← h2, Real.sqrt_sq (norm_nonneg _)]
+
+/-- `multivariateGaussian v 1` is the translate of the standard Gaussian by `v`. -/
+private lemma mvGaussian_one_eq_map {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
+    multivariateGaussian v 1
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-- The noncentral chi-squared law as the squared-norm image of a shifted standard Gaussian. -/
+private lemma ncChiSq_eq_map {k : ℕ} (l : ℝ≥0) :
+    noncentralChiSquared k l
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map
+          (fun z => ‖noncentralMean k l + z‖ ^ 2) := by
+  rw [noncentralChiSquared, mvGaussian_one_eq_map, Measure.map_map (by fun_prop) (by fun_prop)]
+  rfl
+
+/-- The central chi-squared law as the squared-norm image of the standard Gaussian. -/
+private lemma chiSq_eq_map {k : ℕ} (hk : 0 < k) :
+    StatLean.MultipleTesting.chiSquared k
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => ‖z‖ ^ 2) := by
+  rw [← noncentralChiSquared_zero hk, ncChiSq_eq_map]
+  congr 1
+  funext z
+  have hz : noncentralMean k (0 : ℝ≥0) = 0 := by ext i; simp [noncentralMean]
+  rw [hz, zero_add]
+
+/-- For `k ≥ 1` the standard Gaussian puts no mass at the origin. -/
+private lemma stdGaussian_ne_zero_ae {k : ℕ} (hk : 0 < k) :
+    ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ≠ 0 := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  have hzero : (stdGaussian (EuclideanSpace ℝ (Fin k))) {0} = 0 := by
+    rw [← map_pi_eq_stdGaussian,
+      Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ)) (measurableSet_singleton _)]
+    refine measure_mono_null (t := (fun x : Fin k → ℝ => x (0 : Fin k)) ⁻¹' {0}) ?_ ?_
+    · intro x hx
+      simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx ⊢
+      rw [show x = (WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k)).ofLp from rfl, hx]
+      rfl
+    · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
+        Measure.pi_map_eval]
+      haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+      simp
+  have : ∀ᵐ z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))), z ∉ ({0} : Set _) := by
+    rw [ae_iff]
+    simpa using hzero
+  filter_upwards [this] with z hz using by simpa using hz
+
+
+/-! ### The monotone likelihood ratio of the noncentral chi-squared family -/
+
+/-- **Monotone likelihood ratio in the noncentrality parameter.**  For `k ≥ 1` the noncentral
+law `χ²_k(l)` has a density with respect to the central law `χ²_k` which is a *nondecreasing*
+function of its argument.
+
+The density is produced without any recourse to the Bessel series or to the Poisson mixture
+representation: by Cameron–Martin the likelihood ratio of the shifted Gaussian is
+`exp(⟪ν, z⟫ − ‖ν‖²/2)`, and, the integrand `f(‖z‖²)` and the standard Gaussian both being
+rotation invariant, that ratio may be replaced by its average over the sphere `‖u‖ = ‖ν‖`
+— realised here as the average over the *direction* `‖y‖⁻¹ • y` of an independent Gaussian
+vector `y`.  The averaged ratio depends on `z` only through `‖z‖` and, after the reflection
+`y ↦ −y` turns it into an average of `cosh`, is nondecreasing in `‖z‖`. -/
+private lemma exists_monotone_density {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
+    ∃ g : ℝ → ℝ, Monotone g ∧ (∀ x, 0 ≤ g x) ∧
+      (0 < l → ∀ x₁ x₂ : ℝ, 0 ≤ x₁ → x₁ < x₂ → g x₁ < g x₂) ∧
+      ∀ f : ℝ → ℝ≥0∞, Measurable f →
+        ∫⁻ x, f x ∂(noncentralChiSquared k l)
+          = ∫⁻ x, f x * ENNReal.ofReal (g x)
+              ∂(StatLean.MultipleTesting.chiSquared k) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  set s : ℝ := Real.sqrt (l : ℝ) with hsdef
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  set e : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single (0 : Fin k) (1 : ℝ) with hedef
+  have hene : ‖e‖ = 1 := by rw [hedef, EuclideanSpace.single, PiLp.norm_single, norm_one]
+  set t : EuclideanSpace ℝ (Fin k) → ℝ := fun y => ‖y‖⁻¹ * ⟪y, e⟫_ℝ with htdef
+  have htmeas : Measurable t := by
+    refine Measurable.mul ?_ ?_
+    · exact (measurable_norm).inv
+    · exact (continuous_id.inner continuous_const).measurable
+  have htbd : ∀ y, |t y| ≤ 1 := by
+    intro y
+    rcases eq_or_ne y 0 with rfl | hy
+    · simp [htdef]
+    · have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hy
+      rw [htdef]
+      simp only [abs_mul, abs_inv, abs_norm]
+      rw [inv_mul_le_one₀ hy0]
+      calc |⟪y, e⟫_ℝ| ≤ ‖y‖ * ‖e‖ := abs_real_inner_le_norm y e
+        _ = ‖y‖ := by rw [hene, mul_one]
+  -- the (bounded) one-parameter family of integrands
+  have hexpmeas : ∀ c : ℝ,
+      Measurable (fun y : EuclideanSpace ℝ (Fin k) => Real.exp (c * t y - (l : ℝ) / 2)) :=
+    fun c => (Real.continuous_exp.measurable).comp
+      ((measurable_const.mul htmeas).sub measurable_const)
+  have hint : ∀ c : ℝ, Integrable (fun y => Real.exp (c * t y - (l : ℝ) / 2)) γ := by
+    intro c
+    refine (integrable_const (Real.exp (|c| - (l : ℝ) / 2))).mono'
+      (hexpmeas c).aestronglyMeasurable ?_
+    filter_upwards with y
+    rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
+    refine Real.exp_le_exp.mpr ?_
+    have hbd : c * t y ≤ |c| := by
+      calc c * t y ≤ |c * t y| := le_abs_self _
+        _ = |c| * |t y| := abs_mul _ _
+        _ ≤ |c| * 1 := mul_le_mul_of_nonneg_left (htbd y) (abs_nonneg c)
+        _ = |c| := mul_one _
+    linarith
+  have hcoshint : ∀ c : ℝ,
+      Integrable (fun y => Real.cosh (c * t y) * Real.exp (-((l : ℝ) / 2))) γ := by
+    intro c
+    refine (integrable_const (Real.cosh |c| * Real.exp (-((l : ℝ) / 2)))).mono'
+      (((Real.continuous_cosh.comp (by fun_prop : Continuous fun r : ℝ => c * r)).measurable.comp
+        htmeas).mul measurable_const).aestronglyMeasurable ?_
+    filter_upwards with y
+    rw [Real.norm_of_nonneg (by positivity)]
+    refine mul_le_mul_of_nonneg_right ?_ (Real.exp_nonneg _)
+    rw [Real.cosh_le_cosh, abs_mul, abs_abs]
+    calc |c| * |t y| ≤ |c| * 1 := mul_le_mul_of_nonneg_left (htbd y) (abs_nonneg c)
+      _ = |c| := mul_one _
+  -- the reflection `y ↦ -y` turns the exponential average into a `cosh` average
+  have hneg : γ.map (fun y : EuclideanSpace ℝ (Fin k) => -y) = γ := by
+    have h0 := stdGaussian_map
+      (LinearIsometryEquiv.neg ℝ :
+        EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k))
+    rw [hγ]
+    convert h0 using 2
+  have hcosh : ∀ c : ℝ,
+      (∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
+        = ∫ y, Real.cosh (c * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ := by
+    intro c
+    have hty : ∀ y : EuclideanSpace ℝ (Fin k), t (-y) = -(t y) := by
+      intro y
+      simp only [htdef, norm_neg, inner_neg_left]
+      ring
+    have hmirror : (∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
+        = ∫ y, Real.exp (-(c * t y) - (l : ℝ) / 2) ∂γ := by
+      calc (∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
+          = ∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂(γ.map (fun y => -y)) := by rw [hneg]
+        _ = ∫ y, Real.exp (c * t (-y) - (l : ℝ) / 2) ∂γ :=
+            integral_map measurable_neg.aemeasurable
+              (by rw [hneg]; exact (hexpmeas c).aestronglyMeasurable)
+        _ = ∫ y, Real.exp (-(c * t y) - (l : ℝ) / 2) ∂γ := by
+            refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+            simp only []
+            rw [hty y]
+            ring_nf
+    have hint₂ : Integrable (fun y => Real.exp (-(c * t y) - (l : ℝ) / 2)) γ := by
+      have h := hint (-c)
+      simpa only [neg_mul] using h
+    have havg : (∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
+        = (1 / 2) * ((∫ y, Real.exp (c * t y - (l : ℝ) / 2) ∂γ)
+            + ∫ y, Real.exp (-(c * t y) - (l : ℝ) / 2) ∂γ) := by
+      rw [← hmirror]; ring
+    rw [havg, ← integral_add (hint c) hint₂, ← integral_const_mul]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    simp only []
+    rw [Real.cosh_eq, sub_eq_add_neg (c * t y), sub_eq_add_neg (-(c * t y)),
+      Real.exp_add, Real.exp_add]
+    ring
+  -- the density
+  set g : ℝ → ℝ := fun x => ∫ y, Real.exp (s * Real.sqrt x * t y - (l : ℝ) / 2) ∂γ with hgdef
+  have hgmono : Monotone g := by
+    intro x₁ x₂ hx
+    have hc₁ : 0 ≤ s * Real.sqrt x₁ := by positivity
+    have hc₂ : 0 ≤ s * Real.sqrt x₂ := by positivity
+    rw [hgdef]
+    simp only
+    rw [hcosh _, hcosh _]
+    refine integral_mono (hcoshint _) (hcoshint _) fun y => ?_
+    refine mul_le_mul_of_nonneg_right ?_ (Real.exp_nonneg _)
+    refine Real.cosh_le_cosh.mpr ?_
+    rw [abs_mul (s * Real.sqrt x₁), abs_mul (s * Real.sqrt x₂)]
+    refine mul_le_mul_of_nonneg_right ?_ (abs_nonneg _)
+    rw [abs_of_nonneg hc₁, abs_of_nonneg hc₂]
+    exact mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt hx) hs0
+  have hgnn : ∀ x, 0 ≤ g x := by
+    intro x
+    exact integral_nonneg fun y => (Real.exp_nonneg _)
+  -- the direction functional is a.e. nonzero
+  have htne : ∀ᵐ y ∂γ, t y ≠ 0 := by
+    have hzero : γ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} = 0 := by
+      rw [hγ, ← map_pi_eq_stdGaussian,
+        Measure.map_apply (WithLp.measurable_toLp 2 (Fin k → ℝ))
+          (measurableSet_eq_fun (by fun_prop) measurable_const)]
+      refine measure_mono_null (t := (fun x : Fin k → ℝ => x (0 : Fin k)) ⁻¹' {0}) ?_ ?_
+      · intro x hx
+        simp only [Set.mem_preimage, Set.mem_setOf_eq, Set.mem_singleton_iff] at hx ⊢
+        have hxe : ⟪(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin k)), e⟫_ℝ = x 0 := by
+          rw [inner_eucl_sum, hedef]
+          simp only [EuclideanSpace.single_apply]
+          rw [Finset.sum_eq_single (0 : Fin k)]
+          · simp
+          · intro b _ hb
+            simp [hb]
+          · intro hb
+            exact absurd (Finset.mem_univ (0 : Fin k)) hb
+        rw [← hxe]
+        exact hx
+      · rw [← Measure.map_apply (measurable_pi_apply _) (measurableSet_singleton _),
+          Measure.pi_map_eval]
+        haveI : NoAtoms (gaussianReal 0 1) := noAtoms_gaussianReal one_ne_zero
+        simp
+    have hsub : {y : EuclideanSpace ℝ (Fin k) | t y = 0}
+        ⊆ {y : EuclideanSpace ℝ (Fin k) | ⟪y, e⟫_ℝ = 0} := by
+      intro y hy
+      simp only [Set.mem_setOf_eq, htdef] at hy ⊢
+      rcases eq_or_ne y 0 with rfl | hy0
+      · simp
+      · have h0 : (‖y‖ : ℝ)⁻¹ ≠ 0 := by
+          simp [norm_ne_zero_iff.mpr hy0]
+        exact (mul_eq_zero.mp hy).resolve_left h0
+    rw [ae_iff]
+    refine measure_mono_null ?_ hzero
+    intro y hy
+    exact hsub (by simpa using hy)
+  have hgstrict : 0 < l → ∀ x₁ x₂ : ℝ, 0 ≤ x₁ → x₁ < x₂ → g x₁ < g x₂ := by
+    intro hl x₁ x₂ hx₁ hx
+    have hspos : 0 < s := by
+      rw [hsdef]
+      exact Real.sqrt_pos.mpr (by exact_mod_cast hl)
+    have hlt : s * Real.sqrt x₁ < s * Real.sqrt x₂ :=
+      mul_lt_mul_of_pos_left (Real.sqrt_lt_sqrt hx₁ hx) hspos
+    have hc₁ : 0 ≤ s * Real.sqrt x₁ := by positivity
+    set F : EuclideanSpace ℝ (Fin k) → ℝ := fun y =>
+      Real.cosh (s * Real.sqrt x₂ * t y) * Real.exp (-((l : ℝ) / 2))
+        - Real.cosh (s * Real.sqrt x₁ * t y) * Real.exp (-((l : ℝ) / 2)) with hF
+    have hFint : Integrable F γ := (hcoshint _).sub (hcoshint _)
+    have hFpos : ∀ y, t y ≠ 0 → 0 < F y := by
+      intro y hty
+      have habs : |s * Real.sqrt x₁ * t y| < |s * Real.sqrt x₂ * t y| := by
+        rw [abs_mul (s * Real.sqrt x₁), abs_mul (s * Real.sqrt x₂),
+          abs_of_nonneg hc₁, abs_of_nonneg (by positivity : (0:ℝ) ≤ s * Real.sqrt x₂)]
+        exact mul_lt_mul_of_pos_right hlt (abs_pos.mpr hty)
+      have := Real.cosh_lt_cosh.mpr habs
+      rw [hF]
+      have hexp : 0 < Real.exp (-((l : ℝ) / 2)) := Real.exp_pos _
+      simp only
+      nlinarith
+    have hFnn : 0 ≤ᵐ[γ] F := by
+      filter_upwards [htne] with y hy using (hFpos y hy).le
+    have hFne : ¬ (F =ᵐ[γ] 0) := by
+      intro hcon
+      have hfalse : ∀ᵐ y ∂γ, False := by
+        filter_upwards [hcon, htne] with y hy hty
+        have h1 : 0 < F y := hFpos y hty
+        rw [show F y = (0 : EuclideanSpace ℝ (Fin k) → ℝ) y from hy] at h1
+        exact lt_irrefl 0 h1
+      haveI : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
+      have hz : γ Set.univ = 0 := by
+        have h2 := ae_iff.mp hfalse
+        simpa using h2
+      rw [measure_univ] at hz
+      exact one_ne_zero hz
+    have hposint : 0 < ∫ y, F y ∂γ := by
+      rcases (integral_nonneg_of_ae hFnn).lt_or_eq with hlt' | heq
+      · exact hlt'
+      · exact absurd ((integral_eq_zero_iff_of_nonneg_ae hFnn hFint).mp heq.symm) hFne
+    have hsplit : (∫ y, F y ∂γ)
+        = (∫ y, Real.cosh (s * Real.sqrt x₂ * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ)
+          - ∫ y, Real.cosh (s * Real.sqrt x₁ * t y) * Real.exp (-((l : ℝ) / 2)) ∂γ :=
+      integral_sub (hcoshint _) (hcoshint _)
+    rw [hgdef]
+    simp only
+    rw [hcosh _, hcosh _]
+    linarith [hsplit ▸ hposint]
+  refine ⟨g, hgmono, hgnn, hgstrict, ?_⟩
+  intro f hf
+  set ν : EuclideanSpace ℝ (Fin k) := noncentralMean k l with hνdef
+  have hνnorm : ‖ν‖ = s := ncMean_norm hk l
+  have hνsq : ‖ν‖ ^ 2 = (l : ℝ) := by
+    rw [hνnorm, hsdef, Real.sq_sqrt l.coe_nonneg]
+  set H : EuclideanSpace ℝ (Fin k) → ℝ≥0∞ := fun z => f (‖z‖ ^ 2) with hHdef
+  have hHmeas : Measurable H := hf.comp (by fun_prop)
+  -- the tilted integral as a function of the shift
+  set J : EuclideanSpace ℝ (Fin k) → ℝ≥0∞ :=
+    fun u => ∫⁻ z, H z * ENNReal.ofReal (Real.exp (⟪u, z⟫_ℝ - (l : ℝ) / 2)) ∂γ with hJdef
+  have hJmeas : ∀ u : EuclideanSpace ℝ (Fin k),
+      Measurable (fun z => H z * ENNReal.ofReal (Real.exp (⟪u, z⟫_ℝ - (l : ℝ) / 2))) := by
+    intro u
+    exact hHmeas.mul (by fun_prop)
+  -- (a)+(b): Cameron–Martin
+  have hab : ∫⁻ x, f x ∂(noncentralChiSquared k l) = J ν := by
+    rw [ncChiSq_eq_map, lintegral_map hf (by fun_prop)]
+    have h1 : ∫⁻ z, f (‖ν + z‖ ^ 2) ∂γ = ∫⁻ z, H z ∂(γ.map (fun z => ν + z)) := by
+      rw [lintegral_map hHmeas (by fun_prop)]
+    rw [h1, hγ, stdGaussian_map_add_eq_withDensity ν,
+      lintegral_withDensity_eq_lintegral_mul _ (by fun_prop) hHmeas]
+    rw [hJdef]
+    refine lintegral_congr fun z => ?_
+    simp only [Pi.mul_apply, hνsq]
+    ring
+  -- rotation invariance of `J` on spheres
+  have hrot : ∀ u : EuclideanSpace ℝ (Fin k), ‖u‖ = ‖ν‖ → J u = J ν := by
+    intro u hu
+    obtain ⟨φ, hφ⟩ : ∃ φ : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k),
+        φ ν = u := ⟨_, Submodule.reflection_sub hu.symm⟩
+    have hmapφ : γ.map (⇑φ) = γ := by rw [hγ]; exact stdGaussian_map φ
+    rw [hJdef]
+    simp only
+    conv_lhs => rw [← hmapφ]
+    rw [lintegral_map (hJmeas u) φ.continuous.measurable]
+    refine lintegral_congr fun z => ?_
+    have h1 : H (φ z) = H z := by rw [hHdef]; simp only [LinearIsometryEquiv.norm_map]
+    have h2 : ⟪u, φ z⟫_ℝ = ⟪ν, z⟫_ℝ := by rw [← hφ]; exact φ.inner_map_map ν z
+    rw [h1, h2]
+  -- averaging over the direction of an independent Gaussian vector
+  have hdir : ∀ᵐ y ∂γ, J (s • (‖y‖⁻¹ • y)) = J ν := by
+    filter_upwards [hγ ▸ stdGaussian_ne_zero_ae hk] with y hy
+    refine hrot _ ?_
+    have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hy
+    have hyy : ‖(‖y‖⁻¹ • y : EuclideanSpace ℝ (Fin k))‖ = 1 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ hy0.ne']
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hs0, hyy, mul_one, hνnorm]
+  have haverage : J ν = ∫⁻ y, J (s • (‖y‖⁻¹ • y)) ∂γ := by
+    rw [lintegral_congr_ae hdir, lintegral_const]
+    haveI : IsProbabilityMeasure γ := by rw [hγ]; infer_instance
+    rw [measure_univ, mul_one]
+  -- the inner average is a function of `‖z‖` alone
+  have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
+      (∫⁻ y, ENNReal.ofReal
+          (Real.exp (⟪s • (‖y‖⁻¹ • y), z⟫_ℝ - (l : ℝ) / 2)) ∂γ)
+        = ENNReal.ofReal (g (‖z‖ ^ 2)) := by
+    intro z
+    have hzz : ‖(‖z‖ • e : EuclideanSpace ℝ (Fin k))‖ = ‖z‖ := by
+      rw [norm_smul, hene, mul_one, Real.norm_eq_abs, abs_of_nonneg (norm_nonneg z)]
+    obtain ⟨φ, hφ⟩ : ∃ φ : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k),
+        φ (‖z‖ • e) = z := ⟨_, Submodule.reflection_sub hzz⟩
+    have hmapφ : γ.map (⇑φ) = γ := by rw [hγ]; exact stdGaussian_map φ
+    have hmeas0 : Measurable (fun y : EuclideanSpace ℝ (Fin k) => ENNReal.ofReal
+        (Real.exp (⟪s • (‖y‖⁻¹ • y), z⟫_ℝ - (l : ℝ) / 2))) := by
+      fun_prop
+    conv_lhs => rw [← hmapφ]
+    rw [lintegral_map hmeas0 φ.continuous.measurable]
+    have hpt : ∀ y : EuclideanSpace ℝ (Fin k),
+        ⟪s • (‖φ y‖⁻¹ • φ y), z⟫_ℝ = s * Real.sqrt (‖z‖ ^ 2) * t y := by
+      intro y
+      rw [Real.sqrt_sq (norm_nonneg z)]
+      rw [real_inner_smul_left, real_inner_smul_left, LinearIsometryEquiv.norm_map]
+      have hin : ⟪φ y, z⟫_ℝ = ‖z‖ * ⟪y, e⟫_ℝ := by
+        conv_lhs => rw [← hφ]
+        rw [φ.inner_map_map, real_inner_smul_right]
+      rw [hin, htdef]
+      ring
+    simp_rw [hpt]
+    rw [← ofReal_integral_eq_lintegral_ofReal (hint _)
+      (Filter.Eventually.of_forall fun y => Real.exp_nonneg _)]
+  -- assemble
+  rw [hab, haverage]
+  have hswap : (∫⁻ y, J (s • (‖y‖⁻¹ • y)) ∂γ)
+      = ∫⁻ z, H z * ENNReal.ofReal (g (‖z‖ ^ 2)) ∂γ := by
+    rw [hJdef]
+    simp only
+    rw [lintegral_lintegral_swap]
+    · refine lintegral_congr fun z => ?_
+      rw [lintegral_const_mul _ (by fun_prop), hinner z]
+    · refine (Measurable.aemeasurable ?_)
+      exact (hHmeas.comp measurable_snd).mul (by fun_prop)
+  have hfinal : ∫⁻ x, f x * ENNReal.ofReal (g x) ∂(StatLean.MultipleTesting.chiSquared k)
+      = ∫⁻ z, H z * ENNReal.ofReal (g (‖z‖ ^ 2)) ∂γ := by
+    rw [chiSq_eq_map hk, ← hγ]
+    exact lintegral_map (hf.mul (ENNReal.measurable_ofReal.comp hgmono.measurable))
+      (by fun_prop : Measurable fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ 2)
+  rw [hswap, hfinal]
+
+
+/-! ### Additivity in the degrees of freedom -/
+
+/-- The noncentral chi-squared law in the product picture, for an arbitrary mean vector of
+the prescribed length. -/
+private lemma ncChiSq_eq_pi_map {k : ℕ} (l : ℝ≥0) {w : Fin k → ℝ}
+    (hw : ‖(WithLp.toLp 2 w : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ)) :
+    noncentralChiSquared k l
+      = (Measure.pi fun _ : Fin k => gaussianReal 0 1).map (fun x => ∑ i, (w i + x i) ^ 2) := by
+  rw [← map_normSq_multivariateGaussian_of_norm_eq k l hw, mvGaussian_one_eq_map,
+    ← map_pi_eq_stdGaussian, Measure.map_map (by fun_prop) (by fun_prop),
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  congr 1
+  funext x
+  simp only [Function.comp_apply]
+  rw [EuclideanSpace.real_norm_sq_eq]
+  rfl
+
+/-- `χ²₁` is the law of the square of a standard normal variable. -/
+private lemma chiSq_one_eq_map :
+    StatLean.MultipleTesting.chiSquared 1 = (gaussianReal 0 1).map (fun u : ℝ => u ^ 2) := by
+  have hw0 : ‖(WithLp.toLp 2 (fun _ : Fin 1 => (0 : ℝ)) : EuclideanSpace ℝ (Fin 1))‖
+      = Real.sqrt (((0 : ℝ≥0) : ℝ)) := by
+    have hz : (WithLp.toLp 2 (fun _ : Fin 1 => (0 : ℝ)) : EuclideanSpace ℝ (Fin 1)) = 0 := by
+      ext i; rfl
+    rw [hz, norm_zero, NNReal.coe_zero, Real.sqrt_zero]
+  have h := ncChiSq_eq_pi_map (k := 1) (l := 0) (w := fun _ => 0) hw0
+  rw [noncentralChiSquared_zero one_pos] at h
+  rw [h, show (fun x : Fin 1 → ℝ => ∑ i, ((0 : ℝ) + x i) ^ 2)
+        = (fun u : ℝ => u ^ 2) ∘ (fun x : Fin 1 → ℝ => x 0) from by funext x; simp,
+    ← Measure.map_map (by fun_prop) (by fun_prop), Measure.pi_map_eval]
+  simp
+
+/-- **Additivity of the noncentral chi-squared law in the degrees of freedom.**  `χ²_{k+1}(l)`
+is the law of the sum of two independent variables, `χ²_k(l)` and `χ²₁`.  Because the
+noncentrality is a complete invariant (`map_normSq_multivariateGaussian_of_norm_eq`) the mean
+vector may be taken orthogonal to the split-off coordinate, which is what makes the split
+carry all of the noncentrality into the `k`-dimensional factor. -/
+private lemma ncChiSq_succ_eq_prod_map {k : ℕ} (hk : 0 < k) (l : ℝ≥0) :
+    noncentralChiSquared (k + 1) l
+      = ((noncentralChiSquared k l).prod (StatLean.MultipleTesting.chiSquared 1)).map
+          (fun q : ℝ × ℝ => q.1 + q.2) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  set m : Fin k → ℝ := fun j => (noncentralMean k l) j with hm
+  have hmnorm : ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ = Real.sqrt (l : ℝ) :=
+    ncMean_norm hk l
+  have hvnorm :
+      ‖(WithLp.toLp 2 (Fin.cons (0 : ℝ) m) : EuclideanSpace ℝ (Fin (k + 1)))‖
+        = Real.sqrt (l : ℝ) := by
+    have h1 : ‖(WithLp.toLp 2 (Fin.cons (0 : ℝ) m) : EuclideanSpace ℝ (Fin (k + 1)))‖ ^ 2
+        = ‖(WithLp.toLp 2 m : EuclideanSpace ℝ (Fin k))‖ ^ 2 := by
+      rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_succ]
+      simp
+    rw [← Real.sqrt_sq (norm_nonneg _), h1, hmnorm, Real.sqrt_sq (Real.sqrt_nonneg _)]
+  set Qk : (Fin k → ℝ) → ℝ := fun y => ∑ j, (m j + y j) ^ 2 with hQk
+  have hQkmeas : Measurable Qk := by
+    refine Finset.univ.measurable_sum fun j _ => ?_
+    exact (((measurable_pi_apply j : Measurable fun y : Fin k → ℝ => y j)).const_add
+      (m j)).pow_const 2
+  have hsqmeas : Measurable (fun u : ℝ => u ^ 2) := by fun_prop
+  -- the split of the product Gaussian at the first coordinate
+  have mp := measurePreserving_piFinSuccAbove
+    (fun _ : Fin (k + 1) => gaussianReal 0 1) (0 : Fin (k + 1))
+  have hsym := mp.symm.map_eq
+  have hQ : ∀ p : ℝ × (Fin k → ℝ),
+      (∑ i, ((Fin.cons (0 : ℝ) m : Fin (k + 1) → ℝ) i + (MeasurableEquiv.piFinSuccAbove
+        (fun _ : Fin (k + 1) => ℝ) 0).symm p i) ^ 2) = Qk p.2 + p.1 ^ 2 := by
+    intro p
+    simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv,
+      Equiv.coe_fn_mk, Fin.insertNth_zero]
+    rw [Fin.sum_univ_succ]
+    simp only [Fin.cons_zero, Fin.cons_succ, zero_add, hQk, Fin.zero_succAbove, cast_eq]
+    ring
+  have hsplit : noncentralChiSquared (k + 1) l
+      = ((gaussianReal 0 1).prod (Measure.pi fun _ : Fin k => gaussianReal 0 1)).map
+          (fun p => Qk p.2 + p.1 ^ 2) := by
+    rw [ncChiSq_eq_pi_map (l := l) (w := Fin.cons (0 : ℝ) m) hvnorm, ← hsym,
+      Measure.map_map (by fun_prop) (MeasurableEquiv.measurable _)]
+    congr 1
+    funext p
+    simpa only [Function.comp_apply] using hQ p
+  -- rearrange the product
+  have hswap : ((gaussianReal 0 1).prod (Measure.pi fun _ : Fin k => gaussianReal 0 1)).map
+        (fun p => Qk p.2 + p.1 ^ 2)
+      = (((Measure.pi fun _ : Fin k => gaussianReal 0 1).map Qk).prod
+          ((gaussianReal 0 1).map (fun u : ℝ => u ^ 2))).map (fun q : ℝ × ℝ => q.1 + q.2) := by
+    rw [Measure.map_prod_map _ _ hQkmeas hsqmeas,
+      Measure.map_map (by fun_prop) (hQkmeas.prodMap hsqmeas),
+      ← Measure.prod_swap (μ := gaussianReal 0 1)
+        (ν := Measure.pi fun _ : Fin k => gaussianReal 0 1),
+      Measure.map_map (by fun_prop) measurable_swap]
+    rfl
+  rw [hsplit, hswap, ← ncChiSq_eq_pi_map (l := l) (w := m) hmnorm, ← chiSq_one_eq_map]
+
+/-- **Tail form of the additivity.**  The `χ²_{k+1}(l)` upper tail is the `χ²_k(l)`-average of
+the `χ²₁` upper tail at the shifted threshold. -/
+private lemma ncChiSq_succ_Ioi {k : ℕ} (hk : 0 < k) (l : ℝ≥0) (c : ℝ) :
+    noncentralChiSquared (k + 1) l (Set.Ioi c)
+      = ∫⁻ x, StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c - x))
+          ∂(noncentralChiSquared k l) := by
+  rw [ncChiSq_succ_eq_prod_map hk l,
+    Measure.map_apply (by fun_prop) measurableSet_Ioi,
+    Measure.prod_apply ((measurable_fst.add measurable_snd) measurableSet_Ioi)]
+  refine lintegral_congr fun x => ?_
+  congr 1
+  ext u
+  simp only [Set.mem_preimage, Set.mem_Ioi]
+  constructor <;> intro h <;> linarith
+
+
+/-! ### One extra degree of freedom costs power -/
+
+/-- **One-step degrees-of-freedom monotonicity.**  If the critical values `c₁` (for `k`) and
+`c₂` (for `k+1`) are matched at the null, then the noncentral tail at `k+1` degrees of
+freedom never exceeds the one at `k`.
+
+The proof is the single-crossing argument: writing `q(x) = χ²₁(c₂ − x, ∞)` for the
+conditional rejection probability of the `(k+1)`-dimensional test given the first `k`
+coordinates, the difference `1_{(c₁,∞)} − q` is `≤ 0` below `c₁` and `≥ 0` above it, while
+`χ²_k(l)` has a *nondecreasing* density `g` with respect to `χ²_k`
+(`exists_monotone_density`); the pointwise inequality
+`q·g + 1_{(c₁,∞)}·g(c₁) ≤ 1_{(c₁,∞)}·g + q·g(c₁)` then integrates to the claim, the two
+`g(c₁)`-terms cancelling because the levels are matched. -/
+private lemma ncChiSq_tail_succ_le {k : ℕ} (hk : 0 < k) (l : ℝ≥0) {c₁ c₂ : ℝ}
+    (hlevel : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁)
+      = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi c₂)) :
+    noncentralChiSquared (k + 1) l (Set.Ioi c₂) ≤ noncentralChiSquared k l (Set.Ioi c₁) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
+  set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
+  set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
+  set A : ℝ≥0∞ := G c₁ with hA
+  set P : ℝ → ℝ≥0∞ := Set.indicator (Set.Ioi c₁) 1 with hP
+  set Q : ℝ → ℝ≥0∞ :=
+    fun x => StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c₂ - x)) with hQ
+  have hGmeas : Measurable G := ENNReal.measurable_ofReal.comp hgmono.measurable
+  have hPmeas : Measurable P := (measurable_const : Measurable (1 : ℝ → ℝ≥0∞)).indicator
+    measurableSet_Ioi
+  have hQmeas : Measurable Q := by
+    have hs : MeasurableSet ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂)) :=
+      (measurable_fst.add measurable_snd) measurableSet_Ioi
+    have heq : Q = fun x : ℝ => StatLean.MultipleTesting.chiSquared 1
+        (Prod.mk x ⁻¹' ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂))) := by
+      funext x
+      simp only [hQ]
+      congr 1
+      ext u
+      simp only [Set.mem_preimage, Set.mem_Ioi]
+      constructor <;> intro h <;> linarith
+    rw [heq]
+    exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
+  have hQle : ∀ x, Q x ≤ 1 := fun x => prob_le_one
+  -- the two tails as `χ²_k`-integrals of the density
+  have hAval : noncentralChiSquared k l (Set.Ioi c₁) = ∫⁻ x, P x * G x ∂μ := by
+    rw [← hg P hPmeas, hP, lintegral_indicator_one measurableSet_Ioi]
+  have hBval : noncentralChiSquared (k + 1) l (Set.Ioi c₂) = ∫⁻ x, Q x * G x ∂μ := by
+    rw [ncChiSq_succ_Ioi hk l c₂, ← hg Q hQmeas]
+  -- the matched levels
+  have hlev1 : ∫⁻ x, P x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    rw [hP, lintegral_indicator_one measurableSet_Ioi]
+  have hlev2 : ∫⁻ x, Q x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    have h0 := ncChiSq_succ_Ioi hk (0 : ℝ≥0) c₂
+    rw [noncentralChiSquared_zero hk, noncentralChiSquared_zero (by omega : 0 < k + 1)] at h0
+    rw [hμ, ← h0, hlevel]
+  -- the single-crossing pointwise inequality
+  have hpt : ∀ x, Q x * G x + P x * A ≤ P x * G x + Q x * A := by
+    intro x
+    by_cases hx : x ∈ Set.Ioi c₁
+    · have hAG : A ≤ G x := by
+        refine ENNReal.ofReal_le_ofReal (hgmono ?_)
+        exact le_of_lt hx
+      obtain ⟨d, hd⟩ := exists_add_of_le hAG
+      have hPx : P x = 1 := by rw [hP, Set.indicator_of_mem hx]; rfl
+      rw [hPx, hd, one_mul, one_mul]
+      have hQd : Q x * d ≤ d := by
+        calc Q x * d ≤ 1 * d := mul_le_mul_right' (hQle x) d
+          _ = d := one_mul d
+      calc Q x * (A + d) + A = (Q x * A + A) + Q x * d := by ring
+        _ ≤ (Q x * A + A) + d := by gcongr
+        _ = A + d + Q x * A := by ring
+    · have hGA : G x ≤ A := by
+        refine ENNReal.ofReal_le_ofReal (hgmono ?_)
+        simpa using hx
+      have hPx : P x = 0 := by rw [hP, Set.indicator_of_notMem hx]
+      rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
+      exact mul_le_mul_left' hGA _
+  -- integrate and cancel the common finite term
+  have hmain : (∫⁻ x, Q x * G x ∂μ) + (∫⁻ x, P x ∂μ) * A
+      ≤ (∫⁻ x, P x * G x ∂μ) + (∫⁻ x, Q x ∂μ) * A := by
+    rw [← lintegral_mul_const _ hPmeas, ← lintegral_mul_const _ hQmeas,
+      ← lintegral_add_left (hQmeas.mul hGmeas), ← lintegral_add_left (hPmeas.mul hGmeas)]
+    exact lintegral_mono hpt
+  rw [hlev1, hlev2] at hmain
+  haveI : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
+  have hfin : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A ≠ ⊤ := by
+    refine ENNReal.mul_ne_top (measure_ne_top _ _) ?_
+    rw [hA, hG]
+    exact ENNReal.ofReal_ne_top
+  rw [hAval, hBval]
+  exact (ENNReal.add_le_add_iff_right hfin).mp hmain
+
+
+/-! ### Support facts for the central chi-squared law -/
+
+/-- `χ²_k` charges every interval of positive length inside the positive half-line. -/
+private lemma chiSq_Ioo_pos {k : ℕ} (hk : 0 < k) {a b : ℝ} (ha : 0 < a) (hab : a < b) :
+    0 < StatLean.MultipleTesting.chiSquared k (Set.Ioo a b) := by
+  have hkpos : (0 : ℝ) < (k : ℝ) / 2 := by positivity
+  have hpdfpos : ∀ x ∈ Set.Ioo a b, 0 < gammaPDF ((k : ℝ) / 2) (1 / 2) x := by
+    intro x hx
+    rw [gammaPDF]
+    exact ENNReal.ofReal_pos.mpr (gammaPDFReal_pos hkpos (by norm_num) (by linarith [hx.1]))
+  rw [StatLean.MultipleTesting.chiSquared, gammaMeasure, withDensity_apply _ measurableSet_Ioo,
+    pos_iff_ne_zero]
+  intro hz
+  have hmpdf : Measurable (gammaPDF ((k : ℝ) / 2) (1 / 2)) := fun t ht =>
+    (ENNReal.measurable_ofReal.comp (measurable_gammaPDFReal ((k : ℝ) / 2) (1 / 2))) ht
+  rw [lintegral_eq_zero_iff hmpdf] at hz
+  have hae : ∀ᵐ x ∂(volume : Measure ℝ), x ∈ Set.Ioo a b →
+      gammaPDF ((k : ℝ) / 2) (1 / 2) x = 0 := (ae_restrict_iff' measurableSet_Ioo).mp hz
+  have h2 : ∀ᵐ x ∂(volume : Measure ℝ), x ∉ Set.Ioo a b := by
+    filter_upwards [hae] with x hx hmem
+    exact (hpdfpos x hmem).ne' (hx hmem)
+  have h3 := ae_iff.mp h2
+  simp only [not_not, Set.setOf_mem_eq, Real.volume_Ioo, ENNReal.ofReal_eq_zero] at h3
+  linarith
+
+/-- The `χ²₁` upper tail is positive at every threshold. -/
+private lemma chiSq_one_Ioi_pos (u : ℝ) :
+    0 < StatLean.MultipleTesting.chiSquared 1 (Set.Ioi u) := by
+  refine lt_of_lt_of_le (chiSq_Ioo_pos (k := 1) one_pos
+    (a := max u 0 + 1) (b := max u 0 + 2) (by positivity) (by linarith)) (measure_mono ?_)
+  intro x hx
+  have := hx.1
+  have hmax : u ≤ max u 0 := le_max_left _ _
+  simp only [Set.mem_Ioi]
+  linarith
+
+/-- `χ²_k` puts no mass on the nonpositive half-line, so the `1 − α` critical value is
+positive whenever `α < 1`. -/
+private lemma chiSq_crit_pos {k : ℕ} (hk : 0 < k) {α c₀ : ℝ} (hα1 : α < 1)
+    (hc : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀) = ENNReal.ofReal α) :
+    0 < c₀ := by
+  haveI : NeZero k := ⟨hk.ne'⟩
+  by_contra hcon
+  push_neg at hcon
+  have hac : StatLean.MultipleTesting.chiSquared k (Set.Iic 0) = 0 := by
+    have hIio : StatLean.MultipleTesting.chiSquared k (Set.Iio 0) = 0 := by
+      rw [StatLean.MultipleTesting.chiSquared, gammaMeasure,
+        withDensity_apply _ measurableSet_Iio]
+      exact lintegral_gammaPDF_of_nonpos le_rfl
+    have hsing : StatLean.MultipleTesting.chiSquared k ({0} : Set ℝ) = 0 := by
+      rw [StatLean.MultipleTesting.chiSquared, gammaMeasure]
+      exact withDensity_absolutelyContinuous volume _ (by simp)
+    have hsub : (Set.Iic (0 : ℝ)) ⊆ Set.Iio 0 ∪ {0} := by
+      intro x hx
+      rcases lt_or_eq_of_le (Set.mem_Iic.mp hx) with h | h
+      · exact Or.inl h
+      · exact Or.inr h
+    refine le_antisymm ?_ (zero_le _)
+    calc StatLean.MultipleTesting.chiSquared k (Set.Iic 0)
+        ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0 ∪ {0}) := measure_mono hsub
+      _ ≤ StatLean.MultipleTesting.chiSquared k (Set.Iio 0)
+          + StatLean.MultipleTesting.chiSquared k ({0} : Set ℝ) := measure_union_le _ _
+      _ = 0 := by rw [hIio, hsing, add_zero]
+  have hfull : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀) = 1 := by
+    have hcompl : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₀)
+        = 1 - StatLean.MultipleTesting.chiSquared k (Set.Iic c₀) := by
+      rw [← measure_univ (μ := StatLean.MultipleTesting.chiSquared k),
+        ← Set.compl_Iic, measure_compl measurableSet_Iic (measure_ne_top _ _)]
+    have hle : StatLean.MultipleTesting.chiSquared k (Set.Iic c₀) = 0 :=
+      le_antisymm (hac ▸ measure_mono (Set.Iic_subset_Iic.mpr hcon)) (zero_le _)
+    rw [hcompl, hle, tsub_zero]
+  rw [hfull] at hc
+  have : (1 : ℝ≥0∞) < 1 := by
+    calc (1 : ℝ≥0∞) = ENNReal.ofReal α := hc
+      _ < 1 := by
+          rw [← ENNReal.ofReal_one]
+          exact ENNReal.ofReal_lt_ofReal_iff (by norm_num) |>.mpr hα1
+  exact lt_irrefl _ this
+
+
+/-- **Strict one-step degrees-of-freedom monotonicity.**  For a *positive* noncentrality the
+inequality of `ncChiSq_tail_succ_le` is strict: on any interval strictly inside `(0, c₁)` the
+`(k+1)`-dimensional test still rejects with positive probability while the `k`-dimensional
+one does not, and there the monotone density is *strictly* below its value at `c₁`. -/
+private lemma ncChiSq_tail_succ_lt {k : ℕ} (hk : 0 < k) {l : ℝ≥0} (hl : 0 < l) {c₁ c₂ : ℝ}
+    (hc₁ : 0 < c₁)
+    (hlevel : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁)
+      = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi c₂)) :
+    noncentralChiSquared (k + 1) l (Set.Ioi c₂) < noncentralChiSquared k l (Set.Ioi c₁) := by
+  classical
+  haveI : NeZero k := ⟨hk.ne'⟩
+  obtain ⟨g, hgmono, hgnn, hgstrict, hg⟩ := exists_monotone_density hk l
+  set μ : Measure ℝ := StatLean.MultipleTesting.chiSquared k with hμ
+  set G : ℝ → ℝ≥0∞ := fun x => ENNReal.ofReal (g x) with hG
+  set A : ℝ≥0∞ := G c₁ with hA
+  set P : ℝ → ℝ≥0∞ := Set.indicator (Set.Ioi c₁) 1 with hP
+  set Q : ℝ → ℝ≥0∞ :=
+    fun x => StatLean.MultipleTesting.chiSquared 1 (Set.Ioi (c₂ - x)) with hQ
+  have hGmeas : Measurable G := ENNReal.measurable_ofReal.comp hgmono.measurable
+  have hPmeas : Measurable P :=
+    (measurable_const : Measurable (1 : ℝ → ℝ≥0∞)).indicator measurableSet_Ioi
+  have hQmeas : Measurable Q := by
+    have hs : MeasurableSet ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂)) :=
+      (measurable_fst.add measurable_snd) measurableSet_Ioi
+    have heq : Q = fun x : ℝ => StatLean.MultipleTesting.chiSquared 1
+        (Prod.mk x ⁻¹' ((fun q : ℝ × ℝ => q.1 + q.2) ⁻¹' (Set.Ioi c₂))) := by
+      funext x
+      simp only [hQ]
+      congr 1
+      ext u
+      simp only [Set.mem_preimage, Set.mem_Ioi]
+      constructor <;> intro h <;> linarith
+    rw [heq]
+    exact measurable_measure_prodMk_left (ν := StatLean.MultipleTesting.chiSquared 1) hs
+  have hQle : ∀ x, Q x ≤ 1 := fun x => prob_le_one
+  have hAval : noncentralChiSquared k l (Set.Ioi c₁) = ∫⁻ x, P x * G x ∂μ := by
+    rw [← hg P hPmeas, hP, lintegral_indicator_one measurableSet_Ioi]
+  have hBval : noncentralChiSquared (k + 1) l (Set.Ioi c₂) = ∫⁻ x, Q x * G x ∂μ := by
+    rw [ncChiSq_succ_Ioi hk l c₂, ← hg Q hQmeas]
+  have hlev1 : ∫⁻ x, P x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    rw [hP, lintegral_indicator_one measurableSet_Ioi]
+  have hlev2 : ∫⁻ x, Q x ∂μ = StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) := by
+    have h0 := ncChiSq_succ_Ioi hk (0 : ℝ≥0) c₂
+    rw [noncentralChiSquared_zero hk, noncentralChiSquared_zero (by omega : 0 < k + 1)] at h0
+    rw [hμ, ← h0, hlevel]
+  -- the strict gap on an interval below the critical value
+  set I : Set ℝ := Set.Ioo (c₁ / 3) (c₁ / 2) with hI
+  have hIpos : 0 < μ I := chiSq_Ioo_pos hk (by linarith) (by linarith)
+  have hghalf : g (c₁ / 2) < g c₁ := hgstrict hl _ _ (by linarith) (by linarith)
+  have hAhalf : G (c₁ / 2) < A := by
+    rw [hG, hA, hG]
+    exact (ENNReal.ofReal_lt_ofReal_iff (lt_of_le_of_lt (hgnn _) hghalf)).mpr hghalf
+  obtain ⟨dg, hdg⟩ := exists_add_of_le hAhalf.le
+  have hdgne : dg ≠ 0 := by
+    intro h
+    rw [h, add_zero] at hdg
+    exact hAhalf.ne hdg.symm
+  set δ : ℝ≥0∞ := Q (c₁ / 3) * dg with hδ
+  have hδne : δ ≠ 0 := by
+    rw [hδ]
+    exact mul_ne_zero (chiSq_one_Ioi_pos _).ne' hdgne
+  have hpt : ∀ x, Q x * G x + P x * A + I.indicator (fun _ => δ) x ≤ P x * G x + Q x * A := by
+    intro x
+    by_cases hxI : x ∈ I
+    · rw [Set.indicator_of_mem hxI]
+      have hx2 : x < c₁ / 2 := hxI.2
+      have hx1 : c₁ / 3 < x := hxI.1
+      have hPx : P x = 0 := by
+        rw [hP, Set.indicator_of_notMem (by simp only [Set.mem_Ioi, not_lt]; linarith)]
+      have hGle : G x ≤ G (c₁ / 2) := ENNReal.ofReal_le_ofReal (hgmono hx2.le)
+      have hQge : Q (c₁ / 3) ≤ Q x :=
+        measure_mono (Set.Ioi_subset_Ioi (by linarith))
+      rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
+      calc Q x * G x + δ
+          ≤ Q x * G (c₁ / 2) + Q x * dg :=
+            add_le_add (mul_le_mul_left' hGle _) (mul_le_mul_right' hQge dg)
+        _ = Q x * (G (c₁ / 2) + dg) := by ring
+        _ = Q x * A := by rw [← hdg]
+    · rw [Set.indicator_of_notMem hxI, add_zero]
+      by_cases hx : x ∈ Set.Ioi c₁
+      · have hAG : A ≤ G x := ENNReal.ofReal_le_ofReal (hgmono (le_of_lt hx))
+        obtain ⟨d, hd⟩ := exists_add_of_le hAG
+        have hPx : P x = 1 := by rw [hP, Set.indicator_of_mem hx]; rfl
+        rw [hPx, hd, one_mul, one_mul]
+        have hQd : Q x * d ≤ d := by
+          calc Q x * d ≤ 1 * d := mul_le_mul_right' (hQle x) d
+            _ = d := one_mul d
+        calc Q x * (A + d) + A = (Q x * A + A) + Q x * d := by ring
+          _ ≤ (Q x * A + A) + d := by gcongr
+          _ = A + d + Q x * A := by ring
+      · have hGA : G x ≤ A := by
+          refine ENNReal.ofReal_le_ofReal (hgmono ?_)
+          simpa using hx
+        have hPx : P x = 0 := by rw [hP, Set.indicator_of_notMem hx]
+        rw [hPx, zero_mul, zero_mul, add_zero, zero_add]
+        exact mul_le_mul_left' hGA _
+  have hmain : ∫⁻ x, (Q x * G x + P x * A + I.indicator (fun _ => δ) x) ∂μ
+      ≤ ∫⁻ x, (P x * G x + Q x * A) ∂μ := lintegral_mono hpt
+  rw [lintegral_add_left ((hQmeas.mul hGmeas).add (hPmeas.mul measurable_const)),
+    lintegral_add_left (hQmeas.mul hGmeas), lintegral_add_left (hPmeas.mul hGmeas),
+    lintegral_indicator_const measurableSet_Ioo,
+    lintegral_mul_const _ hPmeas, lintegral_mul_const _ hQmeas, hlev1, hlev2] at hmain
+  haveI : IsProbabilityMeasure μ := by rw [hμ]; infer_instance
+  have hfin : StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A ≠ ⊤ :=
+    ENNReal.mul_ne_top (measure_ne_top _ _) (by rw [hA, hG]; exact ENNReal.ofReal_ne_top)
+  have hrearr : ((∫⁻ x, Q x * G x ∂μ) + δ * μ I)
+      + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A
+      ≤ (∫⁻ x, P x * G x ∂μ) + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A := by
+    calc ((∫⁻ x, Q x * G x ∂μ) + δ * μ I)
+          + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A
+        = (∫⁻ x, Q x * G x ∂μ)
+            + StatLean.MultipleTesting.chiSquared k (Set.Ioi c₁) * A + δ * μ I := by ring
+      _ ≤ _ := hmain
+  have hcancel : (∫⁻ x, Q x * G x ∂μ) + δ * μ I ≤ ∫⁻ x, P x * G x ∂μ :=
+    (ENNReal.add_le_add_iff_right hfin).mp hrearr
+  rw [hAval, hBval]
+  refine lt_of_lt_of_le ?_ hcancel
+  refine ENNReal.lt_add_right ?_ (by simp [hδne, hIpos.ne'])
+  rw [← hBval]
+  exact measure_ne_top _ _
+
+
+/-- **Degrees-of-freedom monotonicity of the noncentral tail, chained.**  With critical
+values matched at the common level `α < 1`, the noncentral chi-squared tail is nonincreasing
+in the number of degrees of freedom, strictly so as soon as the noncentrality is positive. -/
+private lemma ncChiSq_tail_antitone_df {α : ℝ} {c : ℕ → ℝ} (hα1 : α < 1)
+    (hc : ∀ k, 0 < k → StatLean.MultipleTesting.chiSquared k (Set.Ioi (c k))
+      = ENNReal.ofReal α) (l : ℝ≥0) :
+    (∀ k₁ k₂ : ℕ, 0 < k₁ → k₁ ≤ k₂ →
+        noncentralChiSquared k₂ l (Set.Ioi (c k₂))
+          ≤ noncentralChiSquared k₁ l (Set.Ioi (c k₁)))
+      ∧ (0 < l → ∀ k₁ k₂ : ℕ, 0 < k₁ → k₁ < k₂ →
+          noncentralChiSquared k₂ l (Set.Ioi (c k₂))
+            < noncentralChiSquared k₁ l (Set.Ioi (c k₁))) := by
+  have hlevel : ∀ k, 0 < k →
+      StatLean.MultipleTesting.chiSquared k (Set.Ioi (c k))
+        = StatLean.MultipleTesting.chiSquared (k + 1) (Set.Ioi (c (k + 1))) := by
+    intro k hk
+    rw [hc k hk, hc (k + 1) (by omega)]
+  have hmono : ∀ k₁ d : ℕ, 0 < k₁ →
+      noncentralChiSquared (k₁ + d) l (Set.Ioi (c (k₁ + d)))
+        ≤ noncentralChiSquared k₁ l (Set.Ioi (c k₁)) := by
+    intro k₁ d hk₁
+    induction d with
+    | zero => simp
+    | succ d ih =>
+        refine le_trans ?_ ih
+        have hkd : 0 < k₁ + d := by omega
+        have hstep := ncChiSq_tail_succ_le hkd l (hlevel (k₁ + d) hkd)
+        rw [show k₁ + (d + 1) = (k₁ + d) + 1 from by omega]
+        exact hstep
+  refine ⟨?_, ?_⟩
+  · intro k₁ k₂ hk₁ hle
+    obtain ⟨d, rfl⟩ : ∃ d, k₂ = k₁ + d := ⟨k₂ - k₁, by omega⟩
+    exact hmono k₁ d hk₁
+  · intro hl k₁ k₂ hk₁ hlt
+    have hstep : noncentralChiSquared (k₁ + 1) l (Set.Ioi (c (k₁ + 1)))
+        < noncentralChiSquared k₁ l (Set.Ioi (c k₁)) :=
+      ncChiSq_tail_succ_lt hk₁ hl (chiSq_crit_pos hk₁ hα1 (hc k₁ hk₁)) (hlevel k₁ hk₁)
+    obtain ⟨d, rfl⟩ : ∃ d, k₂ = (k₁ + 1) + d := ⟨k₂ - (k₁ + 1), by omega⟩
+    exact lt_of_le_of_lt (hmono (k₁ + 1) d (by omega)) hstep
+
+end MLR
 
 /-! ### The noncentral tail function as the number of cells grows -/
 
@@ -257,30 +1334,21 @@ theorem noncentralTail_antitone {α h : ℝ} {c : ℕ → ℝ}
         noncentralTail k₂ (c k₂) h ≤ noncentralTail k₁ (c k₁) h)
       ∧ (h ≠ 0 → ∀ k₁ k₂ : ℕ, 0 < k₁ → k₁ < k₂ →
           noncentralTail k₂ (c k₂) h < noncentralTail k₁ (c k₁) h) := by
-  -- TODO (RE-DERIVED: the proof is now pinned down to one named missing brick).
-  --
-  -- Reduction to the one-step case `k₂ = k₁ + 1` (then induct; `h = 0` gives equality
-  -- `M(k,0) = α` for every `k ≥ 1`, which is why strictness is excluded there).  Write
-  -- `χ²_{k+1}(λ) = χ²_k(λ) ⋆ χ²_1` (the extra coordinate is centred, the mean vector being
-  -- carried by the first axis), put `G x = P{χ²_1 > c_{k+1} − x}` — nondecreasing, `0 ↑ 1` —
-  -- and `ψ = 1_{(c_k,∞)} − G`.  Then
-  --     `M(k+1,h) = E_λ[G]`,  `M(k,h) = E_λ[1_{(c_k,∞)}]`,
-  -- and the matched levels give `E_0[ψ] = α − α = 0`.  Moreover `ψ ≤ 0` on `(−∞, c_k]` and
-  -- `ψ ≥ 0` on `(c_k, ∞)`: `ψ` is *single crossing*.  Hence `E_λ[ψ] ≥ E_0[ψ] = 0`, i.e.
-  -- `M(k+1,h) ≤ M(k,h)`, **provided the family `χ²_k(λ)` has monotone likelihood ratio in
-  -- `λ`** (Das Gupta; Cochran 1952).
-  --
-  -- Stochastic ordering is NOT enough here, and in particular the available
-  -- `noncentralChiSquared_tail_mono` does not suffice: `ψ` is *decreasing* on each of the
-  -- two pieces, with an upward jump at `c_k`, so it is not monotone and only the MLR
-  -- (single-crossing) lemma applies.
-  --
-  -- MISSING BRICK: `MLR of noncentralChiSquared k · in the noncentrality`.  Both standard
-  -- routes need material absent from the project — the Bessel-series density of `χ²_k(λ)`,
-  -- or the Poisson mixture representation `χ²_k(λ) = ∑ⱼ Pois(λ/2)(j) · χ²_{k+2j}` (whose
-  -- MLR would then come from the Poisson family).  The repository's `noncentralChiSquared`
-  -- is defined as a pushforward of a Gaussian and carries no density at all.
-  sorry
+  -- Proof (single crossing + monotone likelihood ratio).  Reduce to one extra degree of
+  -- freedom: with `χ²_{k+1}(λ) = χ²_k(λ) ⋆ χ²₁` (`ncChiSq_succ_eq_prod_map`, the mean vector
+  -- being taken orthogonal to the split-off coordinate) the two powers are the `χ²_k(λ)`-
+  -- integrals of `1_{(c_k,∞)}` and of `x ↦ χ²₁(c_{k+1} − x, ∞)`, whose difference is single
+  -- crossing at `c_k` with matched null means.  The MLR of the family in the noncentrality
+  -- (`exists_monotone_density`) then gives the one-step inequality `ncChiSq_tail_succ_le`,
+  -- strict for `λ > 0` (`ncChiSq_tail_succ_lt`); `ncChiSq_tail_antitone_df` chains it.
+  simp only [noncentralTail]
+  obtain ⟨hmono, hstrict⟩ := ncChiSq_tail_antitone_df hα1 hc (h ^ 2).toNNReal
+  refine ⟨fun k₁ k₂ hk₁ hle => ?_, fun hh k₁ k₂ hk₁ hlt => ?_⟩
+  · exact ENNReal.toReal_mono (measure_ne_top _ _) (hmono k₁ k₂ hk₁ hle)
+  · have hlpos : 0 < (h ^ 2).toNNReal :=
+      Real.toNNReal_pos.mpr (by positivity)
+    exact (ENNReal.toReal_lt_toReal (measure_ne_top _ _) (measure_ne_top _ _)).mpr
+      (hstrict hlpos k₁ k₂ hk₁ hlt)
 
 /-! ### Private assembly infrastructure for the large-`k` tail limits -/
 

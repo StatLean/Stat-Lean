@@ -420,33 +420,52 @@ theorem smoothTest_maximin_upper_bound {k : ℕ} {α b B c : ℝ} {P₀ : Measur
       = (smoothModel P₀ ψ hψ).P ((Real.sqrt (n : ℝ))⁻¹ • h))
     -- USER-INPUT: the competitors are randomized tests
     (hφ : ∀ n, IsCriticalFn (φ n))
+    -- REPAIRED HYPOTHESIS (the frozen statement without it is FALSE — counterexample in the
+    -- proof note below): the competitors are tests *based on the sample*, i.e. each `φ n` is
+    -- a measurable function of `(X n 1, …, X n n)`.  `Q` is abstract data, and nothing in the
+    -- remaining hypotheses prevents `Q n h` from encoding `h` in a part of `Ω` that the
+    -- observations do not see
+    (hφX : ∀ n, ∃ ρ : (Fin n → 𝓧) → ℝ,
+      Measurable ρ ∧ ∀ ω, φ n ω = ρ (fun i => X n i ω))
     -- USER-INPUT: the competitors are asymptotically of level `α` at the null
     (hlevel : Tendsto (fun n => power (Q n) (φ n) 0) atTop (nhds α)) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (RE-DERIVED, verdict unchanged: genuine deep gap; NOT closeable from the imported
-  -- deferral as stated).  The bounded-shell direction objection in item 2 below is
-  -- confirmed, and is now recorded on the `asymptotic_maximin_upper_bound` side too, where
-  -- the recommended repair is a shell-parametrised restatement (quantified over any set
-  -- containing the least-favourable sphere `‖h‖ = b`), which would serve this consumer and
-  -- `ChiSquaredMaximin` at once.  Two pieces:
-  --   1. Asymptotic-normality data for `smoothModel` to invoke `asymptotic_maximin_upper_bound`
-  --      with `I = Iₖ`: the centring `Zₙ = scoreVec` (with `Zₙ ⇒ N(0, Iₖ)` under `Q n 0 = P₀`
-  --      from `scoreVec_weakConverges_gaussian`) is available, but the log-likelihood field
-  --      `L n h` and its quadratic LAN expansion (`hdens`, `hLAN`) still have to be built from
-  --      the exponential-family log-partition `A` (its Fisher information at `0` is `Iₖ` by
-  --      orthonormality); this needs `PointEstimation.ExponentialFamily.Smoothness`.
-  --   2. A *bounded*-shell (`b ≤ ‖h‖ ≤ B`) transfer. The imported
+  -- TODO (RE-DERIVED this batch; the STATEMENT WAS FALSE AS FROZEN — repaired above).
+  --
+  -- COUNTEREXAMPLE to the frozen statement (no `hφX`).  Take `Ω = (ℕ → 𝓧) × ℝ`,
+  -- `X n i ω = ω.1 i`, and `Q n h = (i.i.d. sample from `p_{h n^{-1/2}}`) ⊗ δ_{‖h‖}`.  All the
+  -- frozen hypotheses hold (measurability, independence and the prescribed marginal laws
+  -- concern only `ω.1`).  Take `φ n ω = if ω.2 = 0 then α else 1`; it is a critical function
+  -- with `power (Q n) (φ n) 0 = α` for every `n`, so `hlevel` holds.  Every `h` in the shell
+  -- `{b ≤ ‖h‖ ≤ B}` has `‖h‖ ≥ b > 0`, hence `power (Q n) (φ n) h = 1` there, so the left-hand
+  -- side is `1`, while the right-hand side `ncχ²_k(b²)(c,∞)` is `< 1`.  Domination
+  -- `Q n h ≪ Q n 0` does not repair it either (replace `δ_{‖h‖}` by `Unif[0, δₙ]` versus
+  -- `Unif[0,1]`, `δₙ → 0`); what is missing is not absolute continuity but any
+  -- local-asymptotic-normality link between `Q n h` and the sample.  The minimal repair is to
+  -- restrict the competitors to tests based on the sample, which is `hφX` and is how the
+  -- source states the theorem (Neyman 1937; TSH4 §16.4.1).
+  --
+  -- WHAT REMAINS for the repaired statement — a genuine deep gap, in two pieces:
+  --   1. Asymptotic-normality data for `smoothModel` in order to invoke
+  --      `asymptotic_maximin_upper_bound` with `I = Iₖ`: the centring `Zₙ = scoreVec` (with
+  --      `Zₙ ⇒ N(0, Iₖ)` under `Q n 0 = P₀`, from `scoreVec_weakConverges_gaussian`) is
+  --      available, but the log-likelihood field `L n h` and its quadratic LAN expansion
+  --      (`hdens`, `hLAN`) still have to be built from the exponential-family log-partition
+  --      `A` (whose Fisher information at `0` is `Iₖ` by orthonormality); this needs
+  --      `PointEstimation.ExponentialFamily.Smoothness`.  Note that with `Q` abstract these
+  --      are data, not consequences, so they would have to be added as hypotheses.
+  --   2. A *bounded*-shell (`b ≤ ‖h‖ ≤ B`) transfer.  The imported
   --      `asymptotic_maximin_upper_bound` concludes only for the UNBOUNDED shell
-  --      `{b² ≤ h⊤ I h} = {b ≤ ‖h‖}` (with `I = Iₖ`), which is the a-fortiori WEAKER bound:
-  --      `sInf` over the bounded shell (a subset) is ≥ `sInf` over the unbounded one, so the
-  --      lemma's bound does not transfer in the needed direction (see the module docstring's
-  --      "a fortiori" remark — bounded ⟹ unbounded, not the reverse). The bounded bound is
-  --      provable by the SAME mixture–Neyman–Pearson argument (the least-favourable `σ` sits
-  --      on the inner sphere `‖h‖ = b ⊆` the bounded shell), but that machinery lives inside
-  --      the deferred `asymptotic_maximin_upper_bound`; a bounded-shell restatement of it is
-  --      needed and is absent from `AsymptoticMaximin.lean` (which must not be edited here).
+  --      `{b² ≤ h⊤ I h} = {b ≤ ‖h‖}`, which is the a-fortiori WEAKER bound: `sInf` over the
+  --      bounded shell (a subset) is `≥` `sInf` over the unbounded one, so the lemma's bound
+  --      does not transfer in the needed direction.  The bounded bound is provable by the SAME
+  --      mixture–Neyman–Pearson argument (the least-favourable `σ` sits on the inner sphere
+  --      `‖h‖ = b`, inside the bounded shell); the recommended fix, recorded on the
+  --      `AsymptoticMaximin` side, is a shell-parametrised restatement of that lemma,
+  --      quantified over any set containing the sphere, which serves this consumer and
+  --      `ChiSquaredMaximin` at once.
   sorry
 
 /-- **The smooth test attains the maximin value on the local shell** (LIFTED — the deep half
@@ -476,7 +495,17 @@ along `θ = n^{-1/2}h`.  That is a differentiability-in-quadratic-mean statement
 obstructions are therefore (a) that exponential-family expansion, and (b) the pinning of the
 shell infimum to the inner boundary.
 
-TODO (RE-DERIVED again, this batch).  Obstruction (b) has shrunk.  The tail monotonicity
+TODO (RE-DERIVED again, latest batch).  This half is about the *smooth test itself*, a
+function of the sample alone, so it is untouched by the abstract-`Q` counterexample that
+made `smoothTest_maximin_upper_bound` false as frozen: the frozen hypotheses determine the
+law of `smoothStat ψ (X n)` under every `Q n h`, hence the whole statement.  It is TRUE and
+open.  Obstruction (b) has shrunk further: besides `noncentralChiSquared_tail_mono`, the
+strictly stronger monotone likelihood ratio of the noncentral chi-squared family in the
+noncentrality is now available (`exists_monotone_density`, in the MLR section of
+`ChiSquaredMaximin.lean`), so the worst case over the shell can be pinned at `‖h‖ = b` by
+single crossing rather than by stochastic ordering alone.
+
+TODO (previous batch).  Obstruction (b) has shrunk.  The tail monotonicity
 `noncentralChiSquared_tail_mono` is now CLOSED axiom-clean (as is the
 `stdGaussian_normSq_le_antitone` it rests on, via unequal-weight Prékopa–Leindler), so the
 old "still-open" qualifier is obsolete.  Moreover the shell here is BOUNDED (`b ≤ ‖h‖ ≤ B`)
@@ -551,6 +580,11 @@ theorem smoothTest_asymptotically_maximin {k : ℕ} {α b B c : ℝ} {P₀ : Mea
         '' {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
         (nhds (((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal))
       ∧ ∀ ψtest : ℕ → Ω → ℝ, (∀ n, IsCriticalFn (ψtest n)) →
+        -- REPAIRED: the competitors range over tests based on the sample; without this the
+        -- second conjunct is FALSE, by the counterexample recorded at
+        -- `smoothTest_maximin_upper_bound`
+        (∀ n, ∃ ρ : (Fin n → 𝓧) → ℝ,
+          Measurable ρ ∧ ∀ ω, ψtest n ω = ρ (fun i => X n i ω)) →
         Tendsto (fun n => power (Q n) (ψtest n) 0) atTop (nhds α) →
         limsup (fun n => sInf ((fun h => power (Q n) (ψtest n) h) ''
             {h : EuclideanSpace ℝ (Fin k) | b ≤ ‖h‖ ∧ ‖h‖ ≤ B})) atTop
@@ -560,8 +594,8 @@ theorem smoothTest_asymptotically_maximin {k : ℕ} {α b B c : ℝ} {P₀ : Mea
     exact smoothTest_shell_minPower_tendsto hk hb hbB hα hα1 hc hψ hortho hcentred hint
       hX hindep hlaw
   · -- Optimality: for any level-`α` test this is exactly `smoothTest_maximin_upper_bound`.
-    intro ψtest hψt hlvl
+    intro ψtest hψt hψX hlvl
     exact smoothTest_maximin_upper_bound hk hb hbB hα hα1 hc hψ hortho hcentred hint
-      hX hindep hlaw hψt hlvl
+      hX hindep hlaw hψt hψX hlvl
 
 end StatLean.HypothesisTesting

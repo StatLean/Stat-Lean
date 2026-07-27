@@ -305,11 +305,17 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) ''
         {h : EuclideanSpace ℝ (Fin k) | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp})) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
-  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt).  Note refreshed with the four
-  -- concrete analytic steps the mixture–NP–Le Cam route needs, so that the debt is named
-  -- rather than gestured at.  Write `σ` for the rotation-invariant probability measure on
-  -- the sphere `{h : hᵀ I h = b²}` and `R n ω = ∫ exp(L n h ω) dσ(h)` for the mixture
-  -- likelihood ratio against `Q_{n,0}`.
+  -- TODO (DEFERRAL-ELIGIBLE — pre-agreed batch-ledger debt; note RE-DERIVED this batch).
+  --
+  -- The statement itself is NOT vulnerable to the abstract-`Q` counterexample that made the
+  -- two consumers false as frozen (see `ChiSquaredMaximin.chiSquared_maximin_upper_bound`):
+  -- `hdens` forces `Q n h ≪ Q n 0` with an explicit log-density and `hLAN` ties that density
+  -- to `Zₙ`, which is exactly what rules out a competitor reading the local parameter off a
+  -- coordinate of `Ω` that the experiment does not constrain.  So no repair is needed here.
+  --
+  -- The four concrete analytic steps of the mixture–NP–Le Cam route.  Write `σ` for the
+  -- rotation-invariant probability measure on the sphere `{h : hᵀ I h = b²}` and
+  -- `R n ω = ∫ exp(L n h ω) dσ(h)` for the mixture likelihood ratio against `Q_{n,0}`.
   --
   -- (1) MIXTURE IDENTITY.  `sInf_{shell} power ≤ ∫ power(Q_{n,h}) dσ(h) = E_{Q_{n,0}}[φₙ Rₙ]`.
   --     Needs `hdens` plus Fubini for the `σ ⊗ Q_{n,0}` integral (joint measurability of
@@ -325,20 +331,25 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
   --     integrability of `(Rₙ)` under `Q_{n,0}` (equivalently contiguity of the mixture
   --     experiments), a Le Cam first/third-lemma package the project does not carry.
   -- Only then does `sphereAverage_lr_monotone` enter, turning the limiting NP test into the
-  -- χ² test `{|x|² > c}` with power `ncχ²_k(b²)(c, ∞)` against `σ`.
+  -- χ² test `{|x|² > c}` with power `ncχ²_k(b²)(c, ∞)` against `σ`.  The mixing measure `σ`
+  -- itself is now cheap to build: it is the law of `b • ‖y‖⁻¹ • y` under `N(0, I)`, whose
+  -- rotation invariance is `stdGaussian_map` — the same device that supplies the sphere
+  -- average in the MLR section of `ChiSquaredMaximin.lean`.
   --
-  -- NOTE for BOTH consumers (`ChiSquaredMaximin`, `SmoothTest`).  Neither consumer's shell
-  -- is this one, and in both cases the inclusion runs the WRONG WAY, so neither can be
-  -- derived from this statement even once it is proved:
+  -- SHELL MISMATCH, and the recommended restatement.  Neither consumer's shell is this one,
+  -- and in both cases the inclusion runs the WRONG WAY, so neither can be derived from this
+  -- statement even once it is proved:
   --   * `SmoothTest` uses the bounded shell `{b ≤ ‖h‖ ≤ B}`;
   --   * `ChiSquaredMaximin` uses `multinomialShell π b n`, which carries the extra,
   --     sample-size dependent constraint `πⱼ + hⱼ/√n ≥ 0`.
   -- Both are SUBSETS of `{h : b² ≤ hᵀ I h}`, and `sInf` over a subset is larger.  What is
   -- true is that the *proof* above yields all three: the least-favourable `σ` is carried by
   -- the compact sphere `hᵀ I h = b²`, which sits inside the bounded shell, and inside the
-  -- multinomial positivity constraint for all large `n`.  A shell-parametrised restatement
-  -- of this lemma (quantified over any set containing that sphere) would serve all three
-  -- consumers at once and is the recommended shape when the debt is discharged.
+  -- multinomial positivity constraint for all large `n`.  The recommended shape when the debt
+  -- is discharged is therefore to quantify over the shell: replace the conclusion's
+  -- `{h | b ^ 2 ≤ h.ofLp ⬝ᵥ I.mulVec h.ofLp}` by an arbitrary family `S n` of sets subject to
+  -- `{h | h.ofLp ⬝ᵥ I.mulVec h.ofLp = b ^ 2} ⊆ S n` for all large `n`.  That single
+  -- restatement serves this lemma and both consumers at once.
   sorry
 
 end StatLean.HypothesisTesting
