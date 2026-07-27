@@ -419,6 +419,77 @@ theorem posteriorRisk_shifted_majorant
             ≤ bpeGaussCriterion J ℓ τ + Mn n ω ∧
           bpeGaussCriterion J ℓ τ
             ≤ bpePosteriorRisk κ π θ₀ ℓ n (τ + bvmEffScore J sc n ω) ω + Mn n ω := by
-  sorry
+  classical
+  haveI hPn : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+      M μ hPDF θ₀ n
+  have hrpow : Continuous fun t : ℝ => t ^ p :=
+    continuous_iff_continuousAt.2 fun x => Real.continuousAt_rpow_const x p (Or.inr hp)
+  have hWmeas : Measurable fun h : EuclideanSpace ℝ (Fin k) =>
+      ENNReal.ofReal (1 + ‖h‖ ^ p) :=
+    (continuous_const.add (hrpow.comp continuous_norm)).measurable.ennreal_ofReal
+  -- the Bernstein–von Mises deviation is measurable, bounded by `1`, and vanishes in mean
+  have htvmeas : ∀ n : ℕ, Measurable fun ω : Fin n → 𝓧 => bvmTV κ π θ₀ J sc n ω :=
+    fun n => measurable_bvmTV hsc n
+  have htvle : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmTV κ π θ₀ J sc n ω ≤ 1 := by
+    intro n ω
+    haveI : IsProbabilityMeasure (bvmGaussian J sc n ω) := by
+      change IsProbabilityMeasure (multivariateGaussian _ _)
+      infer_instance
+    exact tvDist_le_one _ _
+  have htvfin : ∀ n : ℕ,
+      ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n) ≠ ∞ := by
+    intro n
+    refine ne_top_of_le_ne_top ENNReal.one_ne_top ?_
+    calc ∫⁻ ω, bvmTV κ π θ₀ J sc n ω ∂(productMeasure M μ θ₀ n)
+        ≤ ∫⁻ _, (1 : ℝ≥0∞) ∂(productMeasure M μ θ₀ n) := lintegral_mono (htvle n)
+      _ = 1 := by simp
+  -- Step 1: a diverging truncation radius, slow enough for the (rate-free) BvM convergence
+  obtain ⟨Mseq, hMdiv, hMnn, hrate⟩ :=
+    exists_slow_rate (fun n => productMeasure M μ θ₀ n)
+      (fun n ω => bvmTV κ π θ₀ J sc n ω) htvmeas htvfin
+      (bernstein_von_mises_lintegral hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ) hp
+  -- Step 2: exponentially powerful tests for this radius sequence, hence display (10.9)
+  obtain ⟨φ, c, hc, hφ⟩ := exponential_tests hPDF hsc hDQM hJ_pd hJ hTests hMdiv
+  have hTp := posterior_tail_lintegral_tendsto hPDF hsc hDQM hJ_pd hJ hκ hM_joint hπ hp hmom
+    hMdiv hc hφ
+  -- Step 3: the Gaussian tails
+  have hTg : ∀ δ : ℝ≥0∞, 0 < δ → Tendsto (fun n => productMeasure M μ θ₀ n
+      {ω | δ ≤ ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+        ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω)}) atTop (𝓝 0) :=
+    fun δ hδ => gaussTail_tendsto_prob hPDF hsc hDQM hJ_pd hJ hp hMdiv δ hδ
+  refine ⟨fun n ω => ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p))
+      * (ENNReal.ofReal (1 + Mseq n ^ p) * bvmTV κ π θ₀ J sc n ω
+        + (∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+              ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmLocalPosterior κ π θ₀ n ω)
+          + ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+              ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω))), ?_, ?_, ?_⟩
+  · -- measurability
+    intro n
+    have h1 : Measurable fun ω : Fin n → 𝓧 =>
+        ENNReal.ofReal (2 ^ p * (1 + (R + ‖bvmEffScore J sc n ω‖) ^ p)) := by
+      have hcont : Continuous fun x : ℝ => 2 ^ p * (1 + (R + x) ^ p) :=
+        continuous_const.mul (continuous_const.add
+          (hrpow.comp (continuous_const.add continuous_id)))
+      exact (hcont.measurable.comp (measurable_bvmEffScore J hsc n).norm).ennreal_ofReal
+    have h3 : Measurable fun ω : Fin n → 𝓧 =>
+        ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+          ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmLocalPosterior κ π θ₀ n ω) :=
+      Measurable.setLIntegral_kernel hWmeas Metric.isOpen_ball.measurableSet.compl
+    have h4 : Measurable fun ω : Fin n → 𝓧 =>
+        ∫⁻ h in (Metric.ball (0 : EuclideanSpace ℝ (Fin k)) (Mseq n))ᶜ,
+          ENNReal.ofReal (1 + ‖h‖ ^ p) ∂(bvmGaussian J sc n ω) := by
+      haveI := isMarkovKernel_bvmGaussKernel J hsc n (𝓧 := 𝓧)
+      exact Measurable.setLIntegral_kernel (κ := bvmGaussKernel J hsc n) hWmeas
+        Metric.isOpen_ball.measurableSet.compl
+    exact h1.mul (((htvmeas n).const_mul _).add (h3.add h4))
+  · -- vanishing in probability
+    intro δ hδ
+    refine tendsto_prob_zero_mul_of_tight (fun n => productMeasure M μ θ₀ n)
+      (fun ε hε => tight_polyEnvelope hPDF hsc hDQM hJ_pd hJ hp hR.le ε hε)
+      (fun δ' hδ' => tendsto_prob_zero_add _ hrate
+        (fun δ'' hδ'' => tendsto_prob_zero_add _ hTp hTg δ'' hδ'') δ' hδ') δ hδ
+  · -- the two-sided deviation bound
+    exact fun n ω τ hτ => bpe_two_sided hℓ hp hpoly hR.le (hMnn n) n ω hτ
 
 end StatLean.Bayesian
