@@ -290,6 +290,357 @@ private lemma cdf_gaussianReal_scale {τ : ℝ} (hτ : 0 < τ) (t : ℝ) :
   rw [cdf_eq_real, cdf_eq_real, hmap, measureReal_def, measureReal_def,
     Measure.map_apply (by fun_prop) measurableSet_Iic, hset]
 
+
+/-- **The two-sample randomization distribution as a *standardized* permuted block sum.**
+Dividing the centred pooled population by a deterministic `√v > 0` and dividing the threshold
+of `randDist_twoSampleMeanDiff_eq` by the same constant puts the left-hand side in exactly the
+shape of `ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum`, whose hypotheses ask for a
+population normalized in the second moment and a threshold measured in units of
+`blockSumScale`. The resulting threshold is
+`θ = t √(n/N) / √v`, and `θ → t/τ` precisely when `v → v̄ = τ²/(1+λ)` and `n/N → 1/(1+λ)`. -/
+private lemma randDist_twoSampleMeanDiff_eq_std (m n : ℕ) (hm : 0 < m) (hn : 0 < n)
+    {v : ℝ} (hv : 0 < v) (x : Fin (m + n) → ℝ) (t : ℝ) :
+    randDist (Equiv.Perm (Fin (m + n))) (twoSampleMeanDiff m n) x t
+      = (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)),
+          (if ∑ i : Fin m, (Real.sqrt v)⁻¹ * pooledCentred m n x (σ (Fin.castAdd n i))
+              ≤ t * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) / Real.sqrt v
+                * blockSumScale (m + n) m then (1 : ℝ) else 0) := by
+  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+  have hNpos : (0 : ℝ) < ((m + n : ℕ) : ℝ) := by rw [hNcast]; linarith
+  have hsm : (0 : ℝ) < Real.sqrt (m : ℝ) := Real.sqrt_pos.2 hmR
+  have hsv : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.2 hv
+  -- the standardizing scale, factored
+  have hbss : blockSumScale (m + n) m
+      = Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) * Real.sqrt (m : ℝ) := by
+    rw [blockSumScale, ← Real.sqrt_mul (by positivity)]
+    congr 1
+    rw [hNcast]
+    field_simp
+    ring
+  -- the threshold identity
+  have hkey : t * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) / Real.sqrt v
+        * blockSumScale (m + n) m
+      = (Real.sqrt v)⁻¹ * (t * ((m : ℝ) * n / (Real.sqrt (m : ℝ) * ((m + n : ℕ) : ℝ)))) := by
+    rw [hbss]
+    have hA : Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ))
+        * Real.sqrt ((n : ℝ) / ((m + n : ℕ) : ℝ)) = (n : ℝ) / ((m + n : ℕ) : ℝ) :=
+      Real.mul_self_sqrt (by positivity)
+    have hS : Real.sqrt (m : ℝ) * Real.sqrt (m : ℝ) = (m : ℝ) :=
+      Real.mul_self_sqrt hmR.le
+    set N' : ℝ := ((m + n : ℕ) : ℝ) with hN'
+    set A : ℝ := Real.sqrt ((n : ℝ) / N') with hAdef
+    set S : ℝ := Real.sqrt (m : ℝ) with hSdef
+    have hn' : (n : ℝ) = A * A * N' := by rw [hA]; field_simp
+    rw [← hS, hn']
+    field_simp
+  rw [randDist_twoSampleMeanDiff_eq m n hm hn x t]
+  congr 1
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  refine if_congr ?_ rfl rfl
+  rw [← Finset.mul_sum, hkey]
+  constructor
+  · intro h
+    exact mul_le_mul_of_nonneg_left h (by positivity)
+  · intro h
+    exact le_of_mul_le_mul_left h (by positivity)
+
+/-! ### The combinatorial central limit theorem at a moving threshold
+
+The two-sample statistic reaches the combinatorial central limit theorem through a threshold
+that depends on the stage — the sample sizes and the pooled dispersion both move with `k` —
+so the fixed-threshold form of `ForMathlib/CombinatorialCLT.tendsto_perm_cdf_blockSum` is
+squeezed here between its values at `t ∓ ε`. The indicator is monotone in the threshold and
+`blockSumScale` is nonnegative, so the sandwich is immediate, and the limit `Φ` is Lipschitz,
+hence continuous, so the two brackets close. -/
+
+/-- **The combinatorial central limit theorem with a convergent threshold.** -/
+private lemma tendsto_perm_cdf_blockSum_varying {N m : ℕ → ℕ}
+    -- USER-INPUT: at each stage the block is a set of `m k` distinct positions
+    (a : ∀ k, Fin (m k) → Fin (N k)) (ha : ∀ k, Function.Injective (a k))
+    -- USER-INPUT: the finite populations, centred
+    (d : ∀ k, Fin (N k) → ℝ) (hcent : ∀ k, ∑ l, d k l = 0)
+    -- USER-INPUT: both the block and its complement grow
+    (hm : Tendsto (fun k => (m k : ℝ)) atTop atTop)
+    (hNm : Tendsto (fun k => (N k : ℝ) - m k) atTop atTop)
+    -- USER-INPUT: the populations are normalized in the second moment
+    (hvar : Tendsto (fun k => (N k : ℝ)⁻¹ * ∑ l, d k l ^ 2) atTop (𝓝 1))
+    -- USER-INPUT: Hájek's Lindeberg condition at scale `√(min (m k) (N k - m k))`
+    (hlind : ∀ ε > (0 : ℝ), Tendsto (fun k => (N k : ℝ)⁻¹ *
+        ∑ l, (if ε * Real.sqrt (min (m k : ℝ) ((N k : ℝ) - m k)) ≤ |d k l|
+              then d k l ^ 2 else 0)) atTop (𝓝 0))
+    -- USER-INPUT: a convergent sequence of thresholds
+    {θ : ℕ → ℝ} {t : ℝ} (hθ : Tendsto θ atTop (𝓝 t)) :
+    Tendsto (fun k => (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ θ k * blockSumScale (N k) (m k) then (1 : ℝ) else 0))
+      atTop (𝓝 (cdf (gaussianReal 0 1) t)) := by
+  classical
+  have hcont : ContinuousAt (fun s : ℝ => cdf (gaussianReal 0 1) s) t :=
+    lipschitzWith_cdf_gaussianReal.continuous.continuousAt
+  -- the indicator is monotone in the threshold, `blockSumScale` being nonnegative
+  have hmono : ∀ (u v : ℝ), u ≤ v → ∀ (k : ℕ) (σ : Equiv.Perm (Fin (N k))),
+      (if ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k) then (1 : ℝ) else 0)
+        ≤ (if ∑ i, d k (σ (a k i)) ≤ v * blockSumScale (N k) (m k) then (1 : ℝ) else 0) := by
+    intro u v huv k σ
+    have hs : (0 : ℝ) ≤ blockSumScale (N k) (m k) := Real.sqrt_nonneg _
+    by_cases h : ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k)
+    · rw [if_pos h, if_pos (le_trans h (mul_le_mul_of_nonneg_right huv hs))]
+    · rw [if_neg h]
+      split_ifs <;> norm_num
+  have havg : ∀ (u v : ℝ), u ≤ v → ∀ k : ℕ,
+      (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ u * blockSumScale (N k) (m k) then (1 : ℝ) else 0)
+        ≤ (Fintype.card (Equiv.Perm (Fin (N k))) : ℝ)⁻¹ * ∑ σ : Equiv.Perm (Fin (N k)),
+          (if ∑ i, d k (σ (a k i)) ≤ v * blockSumScale (N k) (m k) then (1 : ℝ) else 0) :=
+    fun u v huv k =>
+      mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hmono u v huv k σ)
+        (by positivity)
+  refine tendsto_of_squeeze_continuousAt hcont ?_
+  intro ε hε
+  have hlo := tendsto_perm_cdf_blockSum a ha d hcent hm hNm hvar hlind (t - ε)
+  have hhi := tendsto_perm_cdf_blockSum a ha d hcent hm hNm hvar hlind (t + ε)
+  have hlo' := hlo.eventually (eventually_gt_nhds
+    (show cdf (gaussianReal 0 1) (t - ε) - ε < cdf (gaussianReal 0 1) (t - ε) by linarith))
+  have hhi' := hhi.eventually (eventually_lt_nhds
+    (show cdf (gaussianReal 0 1) (t + ε) < cdf (gaussianReal 0 1) (t + ε) + ε by linarith))
+  have hθ1 := hθ.eventually (eventually_gt_nhds (show t - ε < t by linarith))
+  have hθ2 := hθ.eventually (eventually_lt_nhds (show t < t + ε by linarith))
+  filter_upwards [hlo', hhi', hθ1, hθ2] with k h1 h2 h3 h4
+  exact ⟨le_trans h1.le (havg (t - ε) (θ k) h3.le k),
+    le_trans (havg (θ k) (t + ε) h4.le k) h2.le⟩
+
+/-! ### From deterministic arrays to random arrays
+
+The combinatorial central limit theorem is a statement about a *fixed* sequence of finite
+populations, whereas the population a two-sample permutation test acts on is the observed
+pooled sample, so its hypotheses hold only **in probability**. The following brick performs
+that transfer once and for all, and it is exactly the step the wave-6 status note described:
+no measurable selection is involved, only existence.
+
+Given two nonnegative "hypothesis functionals" `A k`, `B k` that tend to `0` in probability,
+and a bounded functional `F k` with the property that `F` converges to `L` along *every*
+subsequence of deterministic points on which `A` and `B` vanish, one concludes that `F`
+converges to `L` in probability. The proof is a contradiction: if `F` failed, a frequency
+`δ > 0` of failures would persist, while the good sets `{A < 1/(j+1)} ∩ {B < 1/(j+1)}`
+eventually have probability greater than `1 - 2δ/3`; the failure set therefore meets the good
+set, which produces a deterministic sequence of points contradicting the hypothesis. -/
+
+/-- **Deterministic-array to random-array transfer.** -/
+private lemma tendstoInProb_of_deterministic {𝓧 : ℕ → Type*} [∀ k, MeasurableSpace (𝓧 k)]
+    (P : ∀ k, Measure (𝓧 k)) [∀ k, IsProbabilityMeasure (P k)]
+    (A B F : ∀ k, 𝓧 k → ℝ) (L : ℝ)
+    -- USER-INPUT: the two hypothesis functionals are nonnegative
+    (hAnn : ∀ k x, 0 ≤ A k x) (hBnn : ∀ k x, 0 ≤ B k x)
+    -- USER-INPUT: they vanish in probability
+    (hA : ∀ η > (0 : ℝ), Tendsto (fun k => (P k).real {x | η ≤ A k x}) atTop (𝓝 0))
+    (hB : ∀ η > (0 : ℝ), Tendsto (fun k => (P k).real {x | η ≤ B k x}) atTop (𝓝 0))
+    -- USER-INPUT: the deterministic statement, along an arbitrary subsequence
+    (hdet : ∀ φ : ℕ → ℕ, StrictMono φ → ∀ y : ∀ j, 𝓧 (φ j),
+      Tendsto (fun j => A (φ j) (y j)) atTop (𝓝 0) →
+      Tendsto (fun j => B (φ j) (y j)) atTop (𝓝 0) →
+      Tendsto (fun j => F (φ j) (y j)) atTop (𝓝 L)) :
+    ∀ ε > (0 : ℝ), Tendsto (fun k => (P k).real {x | ε ≤ |F k x - L|}) atTop (𝓝 0) := by
+  intro ε hε
+  by_contra hcon
+  rw [Metric.tendsto_atTop] at hcon
+  push Not at hcon
+  obtain ⟨δ, hδ, hfreq⟩ := hcon
+  -- the good sets eventually have probability at least `1 - 2δ/3`
+  have hKex : ∀ j : ℕ, ∃ K : ℕ, ∀ k ≥ K,
+      (P k).real {x | 1 / ((j : ℝ) + 1) ≤ A k x} < δ / 3
+      ∧ (P k).real {x | 1 / ((j : ℝ) + 1) ≤ B k x} < δ / 3 := by
+    intro j
+    have hpos : (0 : ℝ) < 1 / ((j : ℝ) + 1) := by positivity
+    obtain ⟨K₁, hK₁⟩ := Metric.tendsto_atTop.1 (hA _ hpos) (δ / 3) (by positivity)
+    obtain ⟨K₂, hK₂⟩ := Metric.tendsto_atTop.1 (hB _ hpos) (δ / 3) (by positivity)
+    refine ⟨max K₁ K₂, fun k hk => ⟨?_, ?_⟩⟩
+    · have h := hK₁ k (le_trans (le_max_left _ _) hk)
+      rwa [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at h
+    · have h := hK₂ k (le_trans (le_max_right _ _) hk)
+      rwa [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at h
+  choose K hK using hKex
+  -- at every level `j` and beyond every stage `M` there is a bad-but-good point
+  have hpick : ∀ j M : ℕ, ∃ k : ℕ, M ≤ k ∧ ∃ x : 𝓧 k,
+      ε ≤ |F k x - L| ∧ A k x < 1 / ((j : ℝ) + 1) ∧ B k x < 1 / ((j : ℝ) + 1) := by
+    intro j M
+    obtain ⟨k, hk1, hk2⟩ := hfreq (max M (K j))
+    have hkM : M ≤ k := le_trans (le_max_left _ _) hk1
+    have hkK : K j ≤ k := le_trans (le_max_right _ _) hk1
+    rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg] at hk2
+    obtain ⟨hA', hB'⟩ := hK j k hkK
+    refine ⟨k, hkM, ?_⟩
+    by_contra hempty
+    push Not at hempty
+    -- the failure set is then covered by the two bad sets
+    have hsub : {x : 𝓧 k | ε ≤ |F k x - L|}
+        ⊆ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ A k x} ∪ {x : 𝓧 k | 1 / ((j : ℝ) + 1) ≤ B k x} := by
+      intro x hx
+      simp only [Set.mem_setOf_eq, Set.mem_union] at hx ⊢
+      by_contra hno
+      push Not at hno
+      exact absurd (hempty x hx hno.1) (not_le.2 hno.2)
+    have hle := (measureReal_mono hsub (measure_ne_top (P k) _)).trans
+      (measureReal_union_le (μ := P k) _ _)
+    linarith
+  choose pick hpickM y hy1 hy2 hy3 using hpick
+  -- the stages, chosen strictly increasing
+  obtain ⟨M, hM0, hMs⟩ : ∃ M : ℕ → ℕ, M 0 = 0 ∧ ∀ j, M (j + 1) = pick j (M j) + 1 :=
+    ⟨fun j => Nat.rec 0 (fun i prev => pick i prev + 1) j, rfl, fun j => rfl⟩
+  have hmono : StrictMono (fun j => pick j (M j)) := by
+    refine strictMono_nat_of_lt_succ fun j => ?_
+    have h := hpickM (j + 1) (M (j + 1))
+    have h2 : pick j (M j) + 1 ≤ pick (j + 1) (M (j + 1)) := by rw [← hMs j]; exact h
+    exact h2
+  -- the two hypothesis functionals vanish along the chosen points
+  have hinv : Tendsto (fun j : ℕ => 1 / ((j : ℝ) + 1)) atTop (𝓝 0) :=
+    tendsto_one_div_add_atTop_nhds_zero_nat
+  have hAlim : Tendsto (fun j => A (pick j (M j)) (y j (M j))) atTop (𝓝 0) :=
+    squeeze_zero (fun j => hAnn _ _) (fun j => (hy2 j (M j)).le) hinv
+  have hBlim : Tendsto (fun j => B (pick j (M j)) (y j (M j))) atTop (𝓝 0) :=
+    squeeze_zero (fun j => hBnn _ _) (fun j => (hy3 j (M j)).le) hinv
+  -- but then the deterministic statement applies, contradicting the persistent failure
+  have hF := hdet (fun j => pick j (M j)) hmono (fun j => y j (M j)) hAlim hBlim
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 hF ε hε
+  have hbad := hy1 J (M J)
+  have hgood := hJ J le_rfl
+  rw [Real.dist_eq] at hgood
+  linarith
+
+/-! ### The standardized pooled population and its two hypothesis functionals
+
+The combinatorial central limit theorem asks for a centred population normalized in the
+second moment and satisfying Hájek's Lindeberg condition. The pooled data supply the first
+after division by the deterministic constant `√v̄`, `v̄ = (λ varY + varZ)/(1+λ)`; the second
+holds only in probability, and — since the transfer brick above consumes a *single* scalar
+functional rather than a family indexed by `ε` — it is packaged here as the single
+**Lindeberg defect**
+`Λ = N⁻¹ ∑ e² min(1, |e|/R)`, `R = √(min (m, N − m))`,
+which dominates every member of the family: on `{|e| ≥ εR}` one has
+`min(1, |e|/R) ≥ min(1, ε)`. -/
+
+/-- The centred pooled data, normalized by a deterministic scale. -/
+private noncomputable def pooledStd (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) :
+    Fin (m + n) → ℝ := fun l => (Real.sqrt v)⁻¹ * pooledCentred m n x l
+
+/-- The **normalization defect**: how far the normalized second moment is from `1`. -/
+private noncomputable def normDefect (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) : ℝ :=
+  |((m + n : ℕ) : ℝ)⁻¹ * ∑ l, pooledStd m n v x l ^ 2 - 1|
+
+/-- The **Lindeberg defect** at Hájek's scale `√(min (m, N − m))`. -/
+private noncomputable def lindebergDefect (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) : ℝ :=
+  ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, pooledStd m n v x l ^ 2 *
+    min 1 (|pooledStd m n v x l| /
+      Real.sqrt (min (m : ℝ) (((m + n : ℕ) : ℝ) - (m : ℝ))))
+
+private lemma lindebergDefect_nonneg (m n : ℕ) (v : ℝ) (x : Fin (m + n) → ℝ) :
+    0 ≤ lindebergDefect m n v x := by
+  refine mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => ?_)
+  exact mul_nonneg (sq_nonneg _) (le_min zero_le_one (by positivity))
+
+/-- The centred pooled data sums to zero — with no nonemptiness hypothesis. -/
+private lemma sum_pooledCentred' (m n : ℕ) (x : Fin (m + n) → ℝ) :
+    ∑ l, pooledCentred m n x l = 0 := by
+  rcases Nat.eq_zero_or_pos (m + n) with h0 | hpos
+  · have huniv : (Finset.univ : Finset (Fin (m + n))) = ∅ := by
+      rw [← Finset.card_eq_zero, Finset.card_univ, Fintype.card_fin, h0]
+    simp [pooledCentred, huniv]
+  · exact sum_pooledCentred m n hpos x
+
+/-- **The Lindeberg defect dominates Hájek's Lindeberg condition**, member by member. -/
+private lemma lindeberg_le_lindebergDefect {N : ℕ} (d : Fin N → ℝ) {R : ℝ} (hR : 0 < R)
+    {ε : ℝ} (hε : 0 < ε) :
+    (N : ℝ)⁻¹ * ∑ l, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (min 1 ε)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2 * min 1 (|d l| / R)) := by
+  have hmin : (0 : ℝ) < min 1 ε := lt_min zero_lt_one hε
+  have hpt : ∀ l : Fin N, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) := by
+    intro l
+    by_cases h : ε * R ≤ |d l|
+    · rw [if_pos h]
+      have hge : min 1 ε ≤ min 1 (|d l| / R) := by
+        refine le_min (min_le_left _ _) (le_trans (min_le_right _ _) ?_)
+        rw [le_div_iff₀ hR]
+        exact h
+      have := mul_le_mul_of_nonneg_left hge (sq_nonneg (d l))
+      calc d l ^ 2 = (min 1 ε)⁻¹ * (d l ^ 2 * min 1 ε) := by field_simp
+        _ ≤ (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) :=
+            mul_le_mul_of_nonneg_left this (by positivity)
+    · rw [if_neg h]
+      have hnn : (0 : ℝ) ≤ min 1 (|d l| / R) := le_min zero_le_one (by positivity)
+      positivity
+  calc (N : ℝ)⁻¹ * ∑ l, (if ε * R ≤ |d l| then d l ^ 2 else 0)
+      ≤ (N : ℝ)⁻¹ * ∑ l, (min 1 ε)⁻¹ * (d l ^ 2 * min 1 (|d l| / R)) :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun l _ => hpt l) (by positivity)
+    _ = (min 1 ε)⁻¹ * ((N : ℝ)⁻¹ * ∑ l, d l ^ 2 * min 1 (|d l| / R)) := by
+        rw [← Finset.mul_sum]; ring
+
+/-- The `Z`-block weight `n/N` converges to `1/(1+λ)`. -/
+private lemma tendsto_blockZ_weight {lam : ℝ} (m n : ℕ → ℕ) (hn : Tendsto n atTop atTop)
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam) :
+    Tendsto (fun k => (n k : ℝ) / ((m k + n k : ℕ) : ℝ)) atTop (𝓝 (1 / (1 + lam))) := by
+  have hne : (1 : ℝ) + lam ≠ 0 := by positivity
+  have hbase : Tendsto (fun k => (1 : ℝ) / (1 + (m k : ℝ) / n k)) atTop
+      (𝓝 (1 / (1 + lam))) := tendsto_const_nhds.div (hratio.const_add 1) hne
+  refine hbase.congr' ?_
+  filter_upwards [hn.eventually_gt_atTop 0] with k hk
+  have hnR : (0 : ℝ) < (n k : ℝ) := by exact_mod_cast hk
+  have hNcast : ((m k + n k : ℕ) : ℝ) = (m k : ℝ) + n k := by push_cast; ring
+  rw [hNcast]
+  field_simp
+  ring
+
+/-- **The pooled population satisfies the hypotheses of the combinatorial central limit
+theorem in probability.**
+
+STATUS (wave 8): this is the single remaining debt of the two-sample chain, and it is now a
+pure law-of-large-numbers statement about the *pooled empirical moments* — no permutation,
+no central limit theorem, no measurable selection. Route (all inputs exist in the
+repository):
+
+* `Randomization/Studentized.tendstoInProb_pooledAvg` (proved in wave 8) gives, for every
+  integrable `f`, `N⁻¹ ∑_l f(x_l) → (λ ∫f dP_Y + ∫f dP_Z)/(1+λ)` in probability, through
+  the two block laws of large numbers `tendsto_lln_blockY`/`_blockZ` and the deterministic
+  weights `m/N → λ/(1+λ)`, `n/N → 1/(1+λ)`. Applying it to `f = id` and `f = (·)²` and
+  subtracting gives `N⁻¹ ∑_l (x_l − x̄)² → v̄` in probability, which is the first conjunct
+  after division by `v̄`.
+* For the second conjunct, split `Λ ≤ N⁻¹ ∑ e² 1{|e| ≥ ηR} + η · N⁻¹ ∑ e²` (valid for every
+  `η > 0`, since `min(1,u) ≤ η` off `{u ≥ η}`). The second term is `η · (1 + o_P(1))`, so it
+  suffices to make the first small; and since `x̄ → μ` in probability and `R_k → ∞`, on the
+  event `{|x̄ − μ| ≤ 1}` one has `{|x_l − x̄| ≥ ηR_k} ⊆ {|x_l| ≥ ηR_k − |μ| − 1}` and
+  `(x_l − x̄)² ≤ 2x_l² + 2(|μ|+1)²`, so the first term is bounded by a fixed multiple of
+  `N⁻¹ ∑_l x_l² 1{|x_l| ≥ K}` for any fixed `K`, once `k` is large. That last quantity
+  converges in probability to `(λ ∫_{|t|≥K} t² dP_Y + ∫_{|t|≥K} t² dP_Z)/(1+λ)`, again by
+  `tendstoInProb_pooledAvg`, and tends to `0` as `K → ∞` by dominated convergence — this is
+  where `MemLp id 2` is used and why no moment beyond `L²` is needed.
+
+The two arithmetic ingredients (`tendstoInProb_pooledAvg` and the dominated-convergence tail)
+are both proved in `Randomization/Studentized`; they are *below* this file in the import
+graph, so closing this brick means either lifting them here or moving them to a common
+`ForMathlib` home. That is bookkeeping, not mathematics. -/
+private lemma tendstoInProb_pooled_hypotheses (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ μ v : ℝ}
+    -- USER-INPUT: both sample sizes grow; the asymptotic regime
+    (hm : Tendsto m atTop atTop) (hn : Tendsto n atTop atTop)
+    -- USER-INPUT: `m/n → λ`, with a nondegenerate limit
+    (hratio : Tendsto (fun k => (m k : ℝ) / n k) atTop (𝓝 lam)) (hlam : 0 < lam)
+    -- USER-INPUT: finite second moments of both populations
+    (hYL2 : MemLp id 2 PY) (hZL2 : MemLp id 2 PZ)
+    -- USER-INPUT: equal means
+    (hmeanY : ∫ t, t ∂PY = μ) (hmeanZ : ∫ t, t ∂PZ = μ)
+    -- USER-INPUT: the population variances, both nonzero
+    (hvarY : ∫ t, (t - μ) ^ 2 ∂PY = varY) (hvarZ : ∫ t, (t - μ) ^ 2 ∂PZ = varZ)
+    (hvarYpos : 0 < varY) (hvarZpos : 0 < varZ)
+    -- LEAN-ONLY: `v` names the pooled limiting variance
+    (hvpos : 0 < v) (hv : v = (lam * varY + varZ) / (1 + lam)) :
+    (∀ η > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | η ≤ normDefect (m k) (n k) v x}) atTop (𝓝 0))
+      ∧ (∀ η > (0 : ℝ), Tendsto (fun k => (twoSampleLaw (m k) (n k) PY PZ).real
+        {x | η ≤ lindebergDefect (m k) (n k) v x}) atTop (𝓝 0)) := by
+  sorry
+
 /-! ### The permutation limit
 
 The bivariate statement is reduced to a **scalar** one: the `Asymptotics` converse
@@ -302,45 +653,29 @@ automatic and needs no separate argument. So the whole content is the scalar cor
 of the unstudentized statistic converges in probability to the c.d.f. of `N(0, τ²)`, with the
 permutation scale `τ² = λ σ²(P_Y) + σ²(P_Z)`.
 
-STATUS (wave 6, this session): OPEN, and now the *only* debt of the two-sample chain, in
-scalar form. What changed: the bivariate/asymptotic-independence half is gone (the converse
-engine supplies it, see `weakConverges_randPairLaw_twoSample` immediately below), and the
-statistic has been identified, exactly and at every finite `k`, with a permuted block sum of
-the centred pooled data — `randDist_twoSampleMeanDiff_eq` above rewrites the left-hand side
-here as
-`|S_N|⁻¹ ∑_σ 1{∑_{i<m} d_x(σ(i)) ≤ t·mn/(√m·N)}`, `d_x l = x l − x̄`,
-which is *literally* the group average appearing in the new `ForMathlib/CombinatorialCLT`
-brick `tendsto_perm_cdf_blockSum`. What remains is therefore exactly two things.
+STATUS (wave 8): PROVED here, over the single named brick
+`tendstoInProb_pooled_hypotheses` above (a pure law-of-large-numbers statement about the
+pooled empirical moments, with a fully re-derived route note). The three steps that used to
+be the mathematical content are now all discharged:
 
-(1) *The combinatorial central limit theorem itself*, `tendsto_perm_cdf_blockSum` — a
-    deterministic statement about triangular arrays of coefficient vectors, open in that file
-    with its own status note (Hájek's conditioned-Bernoulli coupling plus a local limit
-    theorem, or Stein's method for exchangeable pairs; neither apparatus exists in Mathlib
-    v4.29.1). This is the genuine mathematical content.
+(1) *The combinatorial central limit theorem*, `ForMathlib/CombinatorialCLT`, is consumed
+    through its **moving-threshold** form `tendsto_perm_cdf_blockSum_varying` (proved above),
+    because the two-sample threshold `t·mn/(√m·N)` carries the moving sample sizes.
+(2) *The identification of the statistic.* `randDist_twoSampleMeanDiff_eq_std` (proved above)
+    writes the randomization distribution, exactly and at every finite `k`, as the group
+    average of the indicator of a **standardized** permuted block sum of the centred pooled
+    data, with threshold `θ_k = t√(n/N)/√v̄` in units of `blockSumScale`; and `θ_k → t/τ`
+    because `n/N → 1/(1+λ)` and `v̄ = τ²/(1+λ)`.
+(3) *The deterministic-array-to-random-array transfer.* `tendstoInProb_of_deterministic`
+    (proved above) is the abstract form of the argument the wave-6 note sketched: it takes
+    two nonnegative hypothesis functionals vanishing in probability together with the
+    deterministic statement along arbitrary subsequences, and returns convergence in
+    probability. No measurable selection is involved, only existence. The `ε`-indexed Hájek
+    Lindeberg family is compressed into the single functional `lindebergDefect` by
+    `lindeberg_le_lindebergDefect`, which is what makes the transfer applicable.
 
-(2) *The deterministic-array-to-random-array transfer.* The population `d_x` depends on the
-    data `x`, whereas (1) is stated for a fixed sequence of populations. The hypotheses of
-    (1) hold for `d_x` only **in probability**:
-    * `∑ d_x = 0` holds identically (`sum_pooledCentred`);
-    * `N⁻¹ ∑ (d_x)² → v̄ = (λ varY + varZ)/(1 + λ)` in probability, by the pooled weak law
-      (`Studentized.tendsto_pi_real_lln` through the two block laws), whence the population
-      normalized by `√v̄` has second moment tending to `1`, and the threshold
-      `t·mn/(√m·N)` becomes `t'·blockSumScale N m` with
-      `t' → t·√((1+λ)/ (λ varY + varZ)) = t/τ`;
-    * Hájek's Lindeberg condition holds in probability, by the same weak law applied to the
-      truncated second moments `∫ y² 1{|y| > K}` under `P_Y` and `P_Z`, which tend to `0` as
-      `K → ∞` by dominated convergence — this is where `MemLp id 2` is used and why no
-      moment beyond `L²` is needed.
-    The bridge from "hypotheses in probability" to "conclusion in probability" does **not**
-    need the quantitative/uniform form of (1): choose `δ_k → 0` with
-    `P_k(G_k) → 1` for the good sets `G_k = {x : the three quantities are within δ_k}` (a
-    diagonal extraction from the three convergences above), and then pick `x_k ∈ G_k` almost
-    maximizing the deviation of the block-sum c.d.f. from `Φ`. The deterministic sequence
-    `d_{x_k}` satisfies the hypotheses of (1), so its deviation tends to `0`, hence so does
-    the supremum over `G_k`. No measurable selection is involved — only existence.
-
-Neither (1) nor (2) rests on a false statement or on a missing upstream API that cannot be
-built; both are simply long. -/
+What is left is therefore only the *in-probability* control of the pooled empirical moments,
+isolated in `tendstoInProb_pooled_hypotheses`; see its own note. -/
 private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
     [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] (m n : ℕ → ℕ) {lam varY varZ τ μ : ℝ}
     -- USER-INPUT: both sample sizes grow; the asymptotic regime
@@ -360,7 +695,91 @@ private lemma randDist_twoSample_tendstoInProb_core (PY PZ : Measure ℝ)
       (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
         (twoSampleMeanDiff (m k) (n k)) x t)
       (cdf (gaussianReal 0 ⟨τ ^ 2, sq_nonneg τ⟩) t) := by
-  sorry
+  classical
+  have h1lam : (0 : ℝ) < 1 + lam := by linarith
+  have hnum : (0 : ℝ) < lam * varY + varZ := by positivity
+  set v : ℝ := (lam * varY + varZ) / (1 + lam) with hvdef
+  have hvpos : (0 : ℝ) < v := by rw [hvdef]; positivity
+  have hsvpos : (0 : ℝ) < Real.sqrt v := Real.sqrt_pos.2 hvpos
+  have hs1lam : (0 : ℝ) < Real.sqrt (1 + lam) := Real.sqrt_pos.2 h1lam
+  have hsv : Real.sqrt v * Real.sqrt (1 + lam) = τ := by
+    rw [← Real.sqrt_mul hvpos.le, hvdef, div_mul_cancel₀ _ h1lam.ne', ← hτ,
+      Real.sqrt_sq hτpos.le]
+  -- the two hypothesis functionals vanish in probability
+  obtain ⟨hnorm, hlindP⟩ := tendstoInProb_pooled_hypotheses PY PZ m n hm hn hratio hlam
+    hYL2 hZL2 hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hvpos hvdef
+  -- the moving threshold converges to `t/τ`
+  have hθlim : Tendsto (fun k => t * Real.sqrt ((n k : ℝ) / ((m k + n k : ℕ) : ℝ))
+      / Real.sqrt v) atTop (𝓝 (t / τ)) := by
+    have hw := tendsto_blockZ_weight m n hn hratio hlam
+    have hsq : Tendsto (fun k => Real.sqrt ((n k : ℝ) / ((m k + n k : ℕ) : ℝ))) atTop
+        (𝓝 (Real.sqrt (1 / (1 + lam)))) :=
+      (Real.continuous_sqrt.continuousAt (x := 1 / (1 + lam))).tendsto.comp hw
+    have hlim := (hsq.const_mul t).div_const (Real.sqrt v)
+    have hval : t * Real.sqrt (1 / (1 + lam)) / Real.sqrt v = t / τ := by
+      rw [one_div, Real.sqrt_inv, ← hsv]
+      field_simp
+    rwa [hval] at hlim
+  -- the limit c.d.f. is the standard normal one, rescaled
+  rw [cdf_gaussianReal_scale hτpos t]
+  -- the transfer
+  refine tendstoInProb_of_deterministic (fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (fun k => normDefect (m k) (n k) v) (fun k => lindebergDefect (m k) (n k) v)
+    (fun k x => randDist (Equiv.Perm (Fin (m k + n k)))
+      (twoSampleMeanDiff (m k) (n k)) x t)
+    (cdf (gaussianReal 0 1) (t / τ))
+    (fun k x => abs_nonneg _) (fun k x => lindebergDefect_nonneg _ _ _ _)
+    hnorm hlindP ?_
+  intro φ hφ y hAlim hBlim
+  have hφtop : Tendsto φ atTop atTop := hφ.tendsto_atTop
+  have hmφ : Tendsto (fun j => (m (φ j) : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp (hm.comp hφtop)
+  have hnφ : Tendsto (fun j => (n (φ j) : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp (hn.comp hφtop)
+  have hNmφ : Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ))
+      atTop atTop := by
+    refine hnφ.congr fun j => ?_
+    push_cast
+    ring
+  -- the standardized populations are centred
+  have hcent : ∀ j, ∑ l, pooledStd (m (φ j)) (n (φ j)) v (y j) l = 0 := by
+    intro j
+    simp only [pooledStd, ← Finset.mul_sum, sum_pooledCentred', mul_zero]
+  -- their second moment tends to one
+  have hvarj : Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ)⁻¹ *
+      ∑ l, pooledStd (m (φ j)) (n (φ j)) v (y j) l ^ 2) atTop (𝓝 1) := by
+    rw [tendsto_iff_dist_tendsto_zero]
+    simpa only [Real.dist_eq, normDefect] using hAlim
+  -- and they satisfy Hájek's Lindeberg condition, member by member
+  have hlindj : ∀ ε > (0 : ℝ), Tendsto (fun j => ((m (φ j) + n (φ j) : ℕ) : ℝ)⁻¹ *
+      ∑ l, (if ε * Real.sqrt (min (m (φ j) : ℝ)
+                (((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ)))
+              ≤ |pooledStd (m (φ j)) (n (φ j)) v (y j) l|
+            then pooledStd (m (φ j)) (n (φ j)) v (y j) l ^ 2 else 0)) atTop (𝓝 0) := by
+    intro ε hε
+    have hgo : Tendsto (fun j => (min 1 ε)⁻¹ *
+        lindebergDefect (m (φ j)) (n (φ j)) v (y j)) atTop (𝓝 0) := by
+      have h := hBlim.const_mul ((min 1 ε)⁻¹)
+      rwa [mul_zero] at h
+    refine squeeze_zero' (Eventually.of_forall fun j => ?_) ?_ hgo
+    · refine mul_nonneg (by positivity) (Finset.sum_nonneg fun l _ => ?_)
+      split_ifs
+      · exact sq_nonneg _
+      · exact le_rfl
+    · filter_upwards [hmφ.eventually_gt_atTop 0, hNmφ.eventually_gt_atTop 0] with j h1 h2
+      have hR : (0 : ℝ) < Real.sqrt (min (m (φ j) : ℝ)
+          (((m (φ j) + n (φ j) : ℕ) : ℝ) - (m (φ j) : ℝ))) := Real.sqrt_pos.2 (lt_min h1 h2)
+      exact lindeberg_le_lindebergDefect _ hR hε
+  -- the combinatorial central limit theorem at the moving threshold
+  have hmain := tendsto_perm_cdf_blockSum_varying
+    (N := fun j => m (φ j) + n (φ j)) (m := fun j => m (φ j))
+    (fun j => Fin.castAdd (n (φ j))) (fun j => Fin.castAdd_injective _ _)
+    (fun j => pooledStd (m (φ j)) (n (φ j)) v (y j)) hcent hmφ hNmφ hvarj hlindj
+    (hθlim.comp hφtop)
+  refine hmain.congr' ?_
+  filter_upwards [(hm.comp hφtop).eventually_gt_atTop 0,
+    (hn.comp hφtop).eventually_gt_atTop 0] with j hmj hnj
+  exact (randDist_twoSampleMeanDiff_eq_std (m (φ j)) (n (φ j)) hmj hnj hvpos (y j) t).symm
 
 /-- **Two-sample permutation central limit theorem.** With `m/n → λ ∈ (0, ∞)`, finite
 nonzero variances and equal means, the statistic evaluated at two independent uniform
