@@ -50,11 +50,19 @@ of the chi-squared test) and Lemma 16.3.1 (the noncentral chi-squared tail funct
   probability vector — the latter being sample-size dependent, hence a family of
   alternative sets `S n` rather than a single one.
 * The upper bound is the multinomial instance of `asymptotic_maximin_upper_bound`, with
-  the multinomial information matrix; the attainment half is an argument by contradiction
-  along subsequences of local parameters, using that a diverging coordinate forces power
-  one (so the infimum is attained in the limit at a bounded shift) and that the noncentral
-  chi-squared family has monotone likelihood ratio in the noncentrality parameter (so the
-  worst case is `λ = b²` exactly).
+  the multinomial information matrix.  The attainment half runs on the whitened score
+  vector `Zₙ = n^{-1/2} ∑ᵢ Ψ(Xᵢ)` built from the orthonormal system
+  `exists_multinomial_scores`: Parseval on the centred subspace of `L²(π)` identifies
+  Pearson's statistic with `‖Zₙ‖²` and the noncentrality `∑ⱼ hⱼ²/πⱼ` with `‖v(h)‖²` for the
+  drift `v(h) = ∑ⱼ hⱼ Ψ(j)`, and the drifting-parameter limit law `Zₙ ⇒ N(v(h₀), Iₖ)`
+  (from the triangular-array `meanVec_root_tendsto` plus a Slutsky recentring) converts the
+  shell infimum into the noncentral chi-squared tail.  The `limsup` half evaluates at a
+  fixed inner-boundary shift; the `liminf` half takes near-minimisers, and these are
+  automatically bounded because a *uniform* Chebyshev bound — the coordinate variances of
+  `Zₙ` are at most `∑ⱼ Ψₐ(j)²` whatever the drift, the cell weights being a probability
+  vector — forces power close to one whenever `‖v(h)‖` is large.  That the worst case is
+  `λ = b²` exactly is then the stochastic monotonicity `noncentralChiSquared_tail_mono`,
+  not the sharper MLR.
 * Pearson's test appears as the nonrandomized critical function `1{Qₙ > c}` rather than
   as a rejection probability, so that it is a competitor in the same class as the tests
   quantified over in the optimality statement.
@@ -1382,7 +1390,8 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     (hortho : ∀ i i', ∑ j, π j * (sc i j * sc i' j) = if i = i' then 1 else 0)
     (hlim : ∀ j, Tendsto (fun n => hs n j) atTop (𝓝 (h₀ j)))
     (hν : ∀ n j, (ν n).real {j} = π j + hs n j / Real.sqrt (n : ℝ)) :
-    AsymptoticStatistics.WeakConverges (fun n => (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc))
+    AsymptoticStatistics.WeakConverges
+      (fun n => (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc))
       (multivariateGaussian (mDriftVec sc h₀) 1) := by
   classical
   set w : ℕ → Fin (k + 1) → ℝ := fun n j => π j + hs n j / Real.sqrt (n : ℝ) with hwdef
@@ -1544,7 +1553,8 @@ private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
     rw [hcomp, ← Measure.map_map (hYscont n).measurable hgmeas,
       Measure.pi_map_pi (fun _ => (measurable_psiVec sc).aemeasurable), hAdef]
   -- ### Slutsky: the drift moves by a deterministic null sequence
-  have hXconv : AsymptoticStatistics.WeakConverges (fun n => (A n).map (Xs n)) (multivariateGaussian v₀ 1) := by
+  have hXconv : AsymptoticStatistics.WeakConverges (fun n => (A n).map (Xs n))
+      (multivariateGaussian v₀ 1) := by
     have hmap := hweak.map (f := fun z : EuclideanSpace ℝ (Fin k) => v₀ + z)
       (by fun_prop) (by fun_prop)
     rw [mvGaussian_shift] at hmap
@@ -1669,8 +1679,8 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
         = ∫ d, (mScoreVec sc d a - mDriftVec sc h a) ^ 2 ∂A := by
       rw [variance_eq_integral hZmeas, hZmean a]
     have hfun : (fun d : Fin n → Fin (k + 1) => mScoreVec sc d a)
-        = (fun d : Fin n → Fin (k + 1) =>
-            (Real.sqrt (n : ℝ))⁻¹ * (∑ i : Fin n, fun d : Fin n → Fin (k + 1) => sc a (d i)) d) := by
+        = (fun d : Fin n → Fin (k + 1) => (Real.sqrt (n : ℝ))⁻¹
+            * (∑ i : Fin n, fun d' : Fin n → Fin (k + 1) => sc a (d' i)) d) := by
       funext d
       rw [mScoreVec_apply]
       simp
@@ -1727,13 +1737,13 @@ private lemma pi_mScoreVec_far_le {k : ℕ} {π : Fin (k + 1) → ℝ}
     _ ≤ ∫ d, Y d ∂A := hmarkov
     _ ≤ _ := hYint
 
-/-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
-of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
+/-- **The Pearson test attains the maximin value on the local shell** (the deep half of
+`chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
 `multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
 
-The statement is TRUE and open.  It is about Pearson's statistic, a function of the sample
+The statement needs no repair: it is about Pearson's statistic, a function of the sample
 alone, so it is untouched by the abstract-`Q` counterexample recorded at
-`chiSquared_maximin_upper_bound`: the frozen hypotheses determine the law of
+`chiSquared_maximin_upper_bound` — the frozen hypotheses determine the law of
 `pearsonQ π (X n)` under every `Q n h`, hence the whole statement.  Note also that the
 mixture apparatus of `AsymptoticMaximin.asymptotic_maximin_upper_bound` does not help — it
 bounds every competitor from ABOVE, whereas this is an attainment statement.
@@ -2226,7 +2236,7 @@ theorem chiSquared_asymptotically_maximin {k : ℕ} {α b c : ℝ} {π : Fin (k 
             '' multinomialShell π b n)) atTop
           ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   refine ⟨?_, ?_⟩
-  · -- Attainment on the shell: the deep uniform-over-the-shell half (lifted).
+  · -- Attainment on the shell: the deep uniform-over-the-shell half.
     exact chiSquared_shell_minPower_tendsto hk hb hα hα1 hc hπpos hπsum hX hindep hcell
   · -- Optimality: for any level-`α` sample-based test this is exactly the upper bound.
     intro ψ hψ hψX hlvl
