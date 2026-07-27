@@ -153,7 +153,8 @@ private lemma exists_bvmGaussian_eq_smul_withDensity (hJ_pd : J.PosDef) (n : ℕ
       ← map_mul, Matrix.mul_nonsing_inv _ hJunit, map_one]
     rfl
   obtain ⟨c, hcpos, hctop, hc⟩ := AsymptoticStatistics.multivariateGaussian_eq_smul_withDensity hS
-  have htilt := AsymptoticStatistics.multivariateGaussian_eq_withDensity_tilt hS (bvmEffScore J sc n ω)
+  have htilt := AsymptoticStatistics.multivariateGaussian_eq_withDensity_tilt hS
+    (bvmEffScore J sc n ω)
   rw [hSS] at hc htilt
   rw [hJm] at htilt
   set a : ℝ := ⟪bvmEffScore J sc n ω, scoreSum sc n ω⟫ with ha
@@ -181,7 +182,7 @@ private lemma exists_bvmGaussian_eq_smul_withDensity (hJ_pd : J.PosDef) (n : ℕ
       ← Real.exp_add, ← Real.exp_add]
     congr 1
     rw [hq, real_inner_comm (scoreSum sc n ω) x]
-    ring
+    ring_nf
   refine ⟨c * ENNReal.ofReal (Real.exp (-a / 2)), ?_, ?_, ?_⟩
   · exact ENNReal.mul_pos hcpos.ne' (ENNReal.ofReal_pos.mpr (Real.exp_pos _)).ne'
   · exact ENNReal.mul_ne_top hctop ENNReal.ofReal_ne_top
@@ -204,6 +205,21 @@ theorem cond_bvmGaussian_apply
   rw [ProbabilityTheory.cond_apply hC, hd, Measure.smul_apply, Measure.smul_apply,
     smul_eq_mul, smul_eq_mul, withDensity_apply _ hC, withDensity_apply _ (hC.inter hA),
     Set.inter_comm C A, ennreal_smul_cond_ratio hdpos.ne' hdtop]
+
+/-- **First display of vdV p. 143, Gaussian side**: the `C`-conditioned Gaussian is exactly
+the normalized `bvmGaussDens` density against Lebesgue measure on `C` — the shape consumed by
+`tvDist_normalize_le_double_lintegral`. -/
+private lemma cond_bvmGaussian_eq_withDensity (hJ_pd : J.PosDef) (n : ℕ) (ω : Fin n → 𝓧)
+    {C : Set (EuclideanSpace ℝ (Fin k))} (hC : MeasurableSet C) :
+    ((bvmGaussian J sc n ω)[|C])
+      = (volume.restrict C).withDensity fun h =>
+          bvmGaussDens J sc n h ω / ∫⁻ y in C, bvmGaussDens J sc n y ω ∂volume := by
+  have hGmeas := measurable_bvmGaussDens J sc n ω
+  ext A hA
+  rw [cond_bvmGaussian_apply hJ_pd n ω hC hA, withDensity_apply _ hA,
+    Measure.restrict_restrict hA]
+  simp_rw [div_eq_mul_inv]
+  rw [lintegral_mul_const'' _ hGmeas.aemeasurable]
 
 -- LEAN-ONLY affine change of variables `θ = θ₀ + h/√n` on a rescaled set: the Jacobian is the
 -- constant `(√n)^{-k}` (`k = dim`).
