@@ -1,4 +1,5 @@
 import StatLean.HypothesisTesting.Bootstrap.NonparametricMean
+import StatLean.HypothesisTesting.ForMathlib.EsseenSmoothing
 import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
@@ -77,6 +78,55 @@ eventually bounded by a constant strictly below `1` at infinity. This is the sta
 non-lattice requirement that makes a one-term Edgeworth expansion valid. -/
 def CramerCondition (F : Measure ℝ) : Prop :=
   ∃ c : ℝ, c < 1 ∧ ∀ᶠ s in Filter.cocompact ℝ, ‖charFun F s‖ ≤ c
+
+/-! ## The Lipschitz modulus of the normal distribution function
+
+`abs_measure_Iic_sub_le_charFun` (Esseen's smoothing inequality, proved in
+`ForMathlib/EsseenSmoothing.lean`) compares a law with an `A`-Lipschitz comparison
+distribution function. For the Gaussian comparison that Edgeworth expansions use, `A` is the
+supremum of the normal density; the two results below supply it. -/
+
+/-- **The normal distribution function is Lipschitz with constant `(2πv)^{-1/2}`**, the
+supremum of the normal density. This is the constant `A` that Esseen's smoothing inequality
+`abs_measure_Iic_sub_le_charFun` consumes when the comparison law is normal. -/
+theorem normalCDF_sub_le {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {a b : ℝ} (hab : a ≤ b) :
+    normalCDF m v b - normalCDF m v a ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ * (b - a) := by
+  have hdisj : gaussianReal m v (Set.Iic b)
+      = gaussianReal m v (Set.Iic a) + gaussianReal m v (Set.Ioc a b) := by
+    rw [← measure_union (Set.Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
+      Set.Iic_union_Ioc_eq_Iic hab]
+  have hnn : 0 ≤ ∫ x in Set.Ioc a b, gaussianPDFReal m v x :=
+    integral_nonneg fun x => gaussianPDFReal_nonneg m v x
+  have hstep : normalCDF m v b - normalCDF m v a = ∫ x in Set.Ioc a b, gaussianPDFReal m v x := by
+    unfold normalCDF
+    rw [hdisj, ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _),
+      gaussianReal_apply_eq_integral m hv (Set.Ioc a b), ENNReal.toReal_ofReal hnn]
+    ring
+  have hbound : ∀ x : ℝ, gaussianPDFReal m v x ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ := by
+    intro x
+    have hexp : Real.exp (-(x - m) ^ 2 / (2 * v)) ≤ 1 := by
+      refine Real.exp_le_one_iff.2 ?_
+      have h : (0 : ℝ) ≤ (x - m) ^ 2 / (2 * v) := by positivity
+      rw [neg_div]
+      linarith
+    calc gaussianPDFReal m v x
+        = (Real.sqrt (2 * Real.pi * v))⁻¹ * Real.exp (-(x - m) ^ 2 / (2 * v)) := rfl
+      _ ≤ (Real.sqrt (2 * Real.pi * v))⁻¹ * 1 :=
+          mul_le_mul_of_nonneg_left hexp (by positivity)
+      _ = (Real.sqrt (2 * Real.pi * v))⁻¹ := mul_one _
+  rw [hstep]
+  calc (∫ x in Set.Ioc a b, gaussianPDFReal m v x)
+      ≤ ∫ _x in Set.Ioc a b, (Real.sqrt (2 * Real.pi * v))⁻¹ :=
+        setIntegral_mono_on (integrable_gaussianPDFReal m v).integrableOn
+          (continuous_const.integrableOn_Ioc) measurableSet_Ioc fun x _ => hbound x
+    _ = (Real.sqrt (2 * Real.pi * v))⁻¹ * (b - a) := by
+        rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+          ENNReal.toReal_ofReal (by linarith), smul_eq_mul, mul_comm]
+
+/-- The standard normal distribution function is `(2π)^{-1/2}`-Lipschitz. -/
+theorem stdNormalCDF_sub_le {a b : ℝ} (hab : a ≤ b) :
+    stdNormalCDF b - stdNormalCDF a ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (b - a) := by
+  simpa using normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
 
 /-! ## The expansions -/
 
