@@ -390,3 +390,29 @@ provides only a non-uniform `o(t²)` version.
 `lake build StatLean.HypothesisTesting` on the cluster: **0 errors, `Build completed successfully`,
 164 sorried declarations** (down from 243 at the stub gate — **33% closed**). The build warning
 count is authoritative; `grep -c sorry` reports 165 (docstring/TODO mentions).
+
+### Wave tallies (2026-07-27, Opus 5 era)
+
+Progression of the authoritative build-warning sorry count on `ht/batch12`:
+**122 → 88** (re-tests) → **77** (re-test wave 2) → **43** (final-closure 9-lane) → **28** (wave-2,
+7-lane) → **23** (wave-3, 5-lane) → **16** (wave-4, 5-lane; gate green, tip `de3656b`).
+
+Wave-4 headliners (all axiom-clean):
+- `asymptotic_maximin_upper_bound` CLOSED — Cameron–Martin sphere-averaged likelihood-ratio
+  transfer lemma, generalised to varying sample spaces and an eventual shell (`AsymptoticMaximin`
+  now 0-sorry).
+- `dkw_uniform` CLOSED at the provable constants `4 e^{-d²/16}` (documented deviation from the
+  sharp `2 e^{-2d²}`; `ksThreshold` recalibrated to `√(16 log(4/α))`, KS consumers hold verbatim).
+  `DKWUniform.lean` 0-sorry.
+- `logLR_tendsto_chiSquared_affine` CLOSED (`TrinityChiSquared.lean` 0-sorry) — affine composite
+  via two applications of the simple-null lemma; common-support-relative-to-θ₀ repair.
+- MVQ sign-change headliners CLOSED (`MultivariateQuadratic.lean` 0-sorry): Hotelling `T²` and
+  modified `T²` randomization laws.
+- `weakConverges_studentizedTwoSample` CLOSED; damped one-term Edgeworth charFun expansion (G2)
+  + Cramér tail input (E3) CLOSED (`ForMathlib/BerryEsseen.lean` 0-sorry).
+
+Remaining 16: Edgeworth trio (proofless in source; deferral), `berryEsseen_convex_elementary`
+(Ball's theorem; deferral), `weakConverges_randPairLaw_twoSample` (Hoeffding combinatorial CLT;
+deferral candidate), and 11 reachable targets under wave-5 (lanes: Studentized assembly,
+GoF shell/minPower chain + large-k consumer, MBE smoothed convex indicator, singles
+TwoSided/MultiparamUMPU/EstimatorUnderAlternatives).
