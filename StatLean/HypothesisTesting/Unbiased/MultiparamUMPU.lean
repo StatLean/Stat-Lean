@@ -4,6 +4,9 @@ import StatLean.HypothesisTesting.ForMathlib.QuantileFunction
 import StatLean.PointEstimation.Completeness.Defs
 import Mathlib.Probability.Kernel.MeasurableLIntegral
 import Mathlib.Analysis.Convex.SpecificFunctions.Pow
+import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.Analysis.Convex.Topology
+import StatLean.PointEstimation.ForMathlib.MGFUniquenessPi
 
 /-!
 # UMP unbiased tests for multiparameter exponential families
@@ -48,12 +51,13 @@ The two remaining amendments are the instances `[BorelSpace Ξ] [FiniteDimension
 first is what makes the canonical exponent measurable, the second is what turns
 `hΩ_aff` into nonempty interior and hence makes the boundary slice `k`-dimensional.
 
-**Status.** `isUMPU_conditional_oneSided`, `_inside` and `_outside` are **PROVED** modulo the
-single lifted brick `boundedlyComplete_boundary` (bounded completeness of the laws of `T` over
-a boundary surface — the Lehmann–Scheffé input, whose remaining gap is the identification of
-the boundary family as an exponential family on an abstract `Ξ` rather than on
-`EuclideanSpace ℝ (Fin s)`). `isUMPU_conditional_point` additionally needs the *derivative*
-side condition for a competitor, and is documented at the theorem.
+**Status.** `isUMPU_conditional_oneSided`, `_inside` and `_outside` are **PROVED**, with no
+lifted brick left: `boundedlyComplete_boundary` (bounded completeness of the laws of `T` over
+a boundary surface — the Lehmann–Scheffé input) is now proved here, by writing every boundary
+law of `T` as an exponential tilt of the law at one interior boundary parameter and applying
+Laplace-transform uniqueness through the isometry
+`Ξ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ Ξ))`. `isUMPU_conditional_point` additionally needs
+the *derivative* side condition for a competitor, and is documented at the theorem.
 
 The machinery is elementary and self-contained: conditionally on `T = t` all members of the
 family are exponential tilts of one another (`ae_condDistrib_expTilt`), and every optimality
@@ -82,7 +86,8 @@ Contents:
   `integral_comp_sign_of_condZero_interval` — the conditional-to-unconditional engines;
 * `tendsto_integral_canonical_segment`, `integral_comp_eq_of_le_of_segment` — continuity of
   the power along segments of `Ω`, and the similarity it yields at a boundary parameter;
-* `boundedlyComplete_boundary` — the one lifted brick;
+* `interior_slice_nonempty`, `boundedlyComplete_boundary` — the geometry of the boundary slice
+  and the Lehmann–Scheffé bounded-completeness input;
 * `ConditionalUMPUCounterexample.not_isUMPU_conditional_*_counterexample` — the four
   refutations of the frozen optimality statements;
 * `reparamUT`, `statTransformUT`, `inner_exponent_reparam`, `isCanonicalUT_reparam` — the
@@ -231,9 +236,9 @@ After both repairs, `_oneSided`, `_inside` and `_outside` are proved. Contrary t
 earlier draft of this file recorded, the boundary device needs neither
 `PowerContinuity.continuous_power_expFamily` nor `Ω ⊆ interior natSet`: continuity of the
 power along a segment of `Ω` follows from convexity of `Ω` alone, by the two-point envelope
-(`tendsto_integral_canonical_segment`). What genuinely remains is completeness of the laws of
-`T` on a boundary slice, lifted to `boundedlyComplete_boundary`, plus — for the point null
-only — the derivative side condition, documented at `isUMPU_conditional_point`.
+(`tendsto_integral_canonical_segment`). Completeness of the laws of `T` on a boundary slice is
+`boundedlyComplete_boundary`, proved here. What remains is — for the point null only — the
+derivative side condition, documented at `isUMPU_conditional_point`.
 -/
 
 namespace ConditionalUMPUCounterexample
@@ -1476,22 +1481,105 @@ private lemma integral_comp_eq_of_le_of_segment [BorelSpace Ξ]
     ge_of_tendsto' hlim fun n => hge _ (hpos n) (h01 n).2
   linarith
 
-/-- **⚠ LIFTED — the single remaining gap of this file.**
+/-- **An interior point of `Ω` on the boundary surface.** For a convex parameter set whose
+affine span is everything, in finite dimension, and which reaches strictly below and strictly
+above `θ₀`, the surface `θ = θ₀` meets the *interior* of `Ω`.
+
+The two hypotheses are exactly the two amendments discussed at `boundedlyComplete_boundary`:
+`affineSpan ℝ Ω = ⊤` (not the weaker `Submodule.span ℝ Ω = ⊤`) and finite dimension.
+
+Besides feeding `interior_slice_nonempty`, this is the brick that lets the *pure-`θ`* segment
+`(θ₀ ± ε, ϑ₀)` be taken inside `Ω`, which is what the derivative side condition of the point
+null needs (see `isUMPU_conditional_point`); along a general segment of `Ω` the derivative of
+the power picks up the nuisance directions. -/
+private lemma exists_interior_boundary_point [FiniteDimensional ℝ Ξ]
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+  obtain ⟨z, hz⟩ := (Convex.interior_nonempty_iff_affineSpan_eq_top hΩ_convex).2 hΩ_aff
+  -- push an interior point of `Ω` onto the surface `θ = θ₀` along a segment
+  have hstep : ∀ q : ℝ × Ξ, q ∈ Ω → z.1 < θ₀ → θ₀ < q.1 →
+        ∃ w : ℝ × Ξ, w ∈ interior Ω ∧ w.1 = θ₀ := by
+    intro q hq hz1 hq1
+    set s : ℝ := (θ₀ - z.1) / (q.1 - z.1) with hsdef
+    have hden : 0 < q.1 - z.1 := by linarith
+    have hs0 : 0 < s := div_pos (by linarith) hden
+    have hs1 : s < 1 := by
+      rw [hsdef, div_lt_one hden]; linarith
+    refine ⟨(1 - s) • z + s • q,
+      Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) hs0.le (by ring),
+      ?_⟩
+    have hfst : ((1 - s) • z + s • q).1 = (1 - s) * z.1 + s * q.1 := by
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+    have hkey : s * (q.1 - z.1) = θ₀ - z.1 := by
+      rw [hsdef]; field_simp
+    rw [hfst]
+    linear_combination hkey
+  rcases lt_trichotomy z.1 θ₀ with h | h | h
+  · obtain ⟨q, hq, hqθ⟩ := hΩ_gt
+    exact hstep q hq h hqθ
+  · exact ⟨z, hz, h⟩
+  · -- symmetric: reflect the first coordinate
+    obtain ⟨q, hq, hqθ⟩ := hΩ_lt
+    set t : ℝ := (z.1 - θ₀) / (z.1 - q.1) with htdef
+    have hden : 0 < z.1 - q.1 := by linarith
+    have ht0 : 0 < t := div_pos (by linarith) hden
+    have ht1 : t < 1 := by rw [htdef, div_lt_one hden]; linarith
+    refine ⟨(1 - t) • z + t • q,
+      Convex.combo_interior_self_mem_interior hΩ_convex hz hq (by linarith) ht0.le (by ring),
+      ?_⟩
+    have hfst : ((1 - t) • z + t • q).1 = (1 - t) * z.1 + t * q.1 := by
+      simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+    have hkey : t * (z.1 - q.1) = z.1 - θ₀ := by
+      rw [htdef]; field_simp
+    rw [hfst]
+    linear_combination -hkey
+
+/-- **An interior point of the boundary slice.** The slice `{ϑ | (θ₀, ϑ) ∈ Ω}` has nonempty
+interior in `Ξ`; this is what makes the boundary family of laws of `T` a `k`-dimensional
+exponential family, hence complete. -/
+private lemma interior_slice_nonempty [FiniteDimensional ℝ Ξ]
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    (interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}).Nonempty := by
+  obtain ⟨w, hw, hwθ⟩ := exists_interior_boundary_point hΩ_convex hΩ_aff hΩ_lt hΩ_gt
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 isOpen_interior w hw
+  have hsub : Metric.ball w.2 r ⊆ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
+    intro ϑ hϑ
+    have hmem : ((θ₀, ϑ) : ℝ × Ξ) ∈ Metric.ball w r := by
+      rw [Metric.mem_ball, Prod.dist_eq]
+      refine max_lt ?_ (Metric.mem_ball.1 hϑ)
+      rw [hwθ]
+      simpa using hr
+    have hΩmem : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω := interior_subset (hball hmem)
+    exact hΩmem
+  exact ⟨w.2, mem_interior.2 ⟨Metric.ball w.2 r, hsub, Metric.isOpen_ball,
+    Metric.mem_ball_self hr⟩⟩
+
+/-- **Bounded completeness of the boundary family.**
 
 The laws of `T` over a boundary surface `ω = {p ∈ Ω | p.1 = θ₀}` are boundedly complete.
 
 This is the Lehmann–Scheffé input of `TSH4 §4.4 Thm 4.4.1`. The source derives it from
 convexity of `Ω` together with the non-degeneracy "`Ω` is not contained in a linear space of
 dimension less than `k+1`": with parameters of `Ω` strictly on both sides of `θ₀`, those force
-the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` to have nonempty interior in `Ξ` (a convex set whose affine hull
-is everything has nonempty interior in finite dimension, and an interior point of `Ω` can be
-pushed onto the surface along a segment); on that slice the laws of `T` form a canonical
-exponential family in `ϑ` with a `ϑ`-free base measure, so Laplace-transform uniqueness
-(`PointEstimation.isCompleteStat_of_interior_nonempty`) gives completeness.
+the slice `{ϑ | (θ₀, ϑ) ∈ Ω}` to have nonempty interior in `Ξ` (`interior_slice_nonempty`); on
+that slice the laws of `T` form a canonical exponential family in `ϑ`, so Laplace-transform
+uniqueness gives completeness.
 
-What is missing is only that last identification, which in the repository is available for
-`EuclideanSpace ℝ (Fin s)` and not for an abstract finite-dimensional inner-product space
-`Ξ`.
+**Proof.** The base measure `ν` of `IsCanonicalUT` is not assumed σ-finite, and its `Ξ`-margin
+need not be either, so the exponential family is *not* set up against a `ϑ`-free base measure
+here. Instead, one interior boundary parameter `ϑ₁` is fixed and every other boundary law of
+`T` is written as the `(ϑ − ϑ₁)`-exponential tilt of the probability measure
+`μ₁ = (P (θ₀, ϑ₁)).map T` — an identity read off `integral_comp_UT_eq` on both sides, the
+`u`-integration cancelling because the tilting factor depends on `z` only through `z.2`. That
+makes the reference measure a probability measure, hence σ-finite, and the vanishing
+hypothesis becomes the vanishing of the Laplace transform of `f` against `μ₁` on the
+translated slice `S − ϑ₁`, which has `0` in its interior. Transporting along the isometry
+`(stdOrthonormalBasis ℝ Ξ).repr : Ξ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ Ξ))` — inner
+products, and therefore the whole Laplace transform, are preserved — puts the statement in
+the form of `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`. Mutual equivalence of
+the boundary laws (`statLaw_ac`) then carries `f =ᵐ[μ₁] 0` to every boundary parameter.
 
 **Two flagged amendments, both indispensable.**
 * `[FiniteDimensional ℝ Ξ]`: an infinite-dimensional convex set can have full span, or full
@@ -1512,8 +1600,161 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
     (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
     PointEstimation.IsBoundedlyCompleteFamily
-      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T :=
-  sorry
+      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T := by
+  classical
+  -- an interior point of the boundary slice, used as the reference parameter
+  obtain ⟨ϑ₁, hϑ₁int⟩ := interior_slice_nonempty (Ω := Ω) hΩ_convex hΩ_aff (θ₀ := θ₀)
+    hΩ_lt hΩ_gt
+  have hϑ₁slice : ϑ₁ ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hϑ₁int
+  have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := hϑ₁slice
+  intro f hf hbdd hzero p
+  obtain ⟨Cb, hCb⟩ := hbdd
+  have hinnerm : ∀ η : Ξ, Measurable fun t : Ξ => ⟪η, t⟫_ℝ := fun η =>
+    (innerSL ℝ η).continuous.measurable
+  have hinnerm' : ∀ y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)),
+      Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => ⟪y, z⟫_ℝ := fun y =>
+    (innerSL ℝ y).continuous.measurable
+  haveI hμ₁prob : IsProbabilityMeasure ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map T) :=
+    Measure.isProbabilityMeasure_map hT.aemeasurable
+  set μ₁ : Measure Ξ := (P ((θ₀, ϑ₁) : ℝ × Ξ)).map T with hμ₁
+  -- (1) Every boundary law of `T` is the `(ϑ − ϑ₁)`-exponential tilt of `μ₁`, so the vanishing
+  -- hypothesis becomes the vanishing of a Laplace transform on the slice.
+  have hkey : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+      ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁ = 0 := by
+    intro ϑ hϑ
+    have hCϑ : 0 < C ((θ₀, ϑ) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ
+    have hgm : Measurable fun z : ℝ × Ξ => f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
+      (hf.comp measurable_snd).mul (((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp)
+    have h1 : ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁
+        = C ((θ₀, ϑ₁) : ℝ × Ξ) * ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
+            Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z) ∂ν := by
+      rw [hμ₁, integral_map hT.aemeasurable
+        ((hf.mul ((hinnerm (ϑ - ϑ₁)).exp)).aestronglyMeasurable)]
+      exact integral_comp_UT_eq hU hT hUT hϑ₁ hgm
+    have h2 : ∫ z, (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) *
+          Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z) ∂ν
+        = ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν := by
+      refine integral_congr_ae (Filter.Eventually.of_forall fun z => ?_)
+      dsimp only
+      rw [mul_assoc, ← Real.exp_add]
+      congr 2
+      simp only [canExp_apply, inner_sub_left]
+      ring
+    have h3 : C ((θ₀, ϑ) : ℝ × Ξ) * ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
+      rw [← integral_comp_UT_eq hU hT hUT hϑ (g := fun z : ℝ × Ξ => f z.2)
+        (hf.comp measurable_snd)]
+      have hz := hzero ⟨(θ₀, ϑ), hϑ, rfl⟩
+      rwa [integral_map hT.aemeasurable hf.aestronglyMeasurable] at hz
+    have h4 : ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
+      rcases mul_eq_zero.1 h3 with h | h
+      · exact absurd h hCϑ.ne'
+      · exact h
+    rw [h1, h2, h4, mul_zero]
+  -- (2) The tilting exponentials are `μ₁`-integrable, because the tilted law is again a member.
+  have hintg : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+      Integrable (fun t : Ξ => Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ) μ₁ := by
+    intro ϑ hϑ
+    have hHm : Measurable fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
+      ((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp
+    have hdm : Measurable fun z : ℝ × Ξ =>
+        ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)) :=
+      (((measurable_canExp ((θ₀, ϑ₁) : ℝ × Ξ)).exp.const_mul
+        (C ((θ₀, ϑ₁) : ℝ × Ξ))).ennreal_ofReal :
+        Measurable fun z : ℝ × Ξ =>
+          ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)))
+    have hC1 : 0 < C ((θ₀, ϑ₁) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ₁
+    have hν1 : Integrable (fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ)
+        ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map fun x => (U x, T x)) := by
+      rw [hUT _ hϑ₁]
+      rw [integrable_withDensity_iff_integrable_smul' hdm
+        (Filter.Eventually.of_forall fun z => ENNReal.ofReal_lt_top)]
+      refine Integrable.congr (((integrable_canExp hU hT hUT hϑ).1).const_mul
+        (C ((θ₀, ϑ₁) : ℝ × Ξ))) (Filter.Eventually.of_forall fun z => ?_)
+      dsimp only
+      rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul, mul_assoc, ← Real.exp_add]
+      congr 2
+      simp only [canExp_apply, inner_sub_left]
+      ring
+    have hX := (integrable_map_measure hHm.aestronglyMeasurable
+      (hU.prodMk hT).aemeasurable).1 hν1
+    rw [hμ₁]
+    exact (integrable_map_measure ((hinnerm (ϑ - ϑ₁)).exp.aestronglyMeasurable)
+      hT.aemeasurable).2 hX
+  -- (3) Transport to `EuclideanSpace` and apply Laplace-transform uniqueness.
+  set e : Ξ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) :=
+    (stdOrthonormalBasis ℝ Ξ).repr with hedef
+  have hemeas : Measurable e := e.continuous.measurable
+  have hesymm : Measurable e.symm := e.symm.continuous.measurable
+  haveI : IsProbabilityMeasure μ₁ := hμ₁prob
+  set ν' : Measure (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) := μ₁.map e with hν'
+  haveI hν'prob : IsProbabilityMeasure ν' := by
+    rw [hν']; exact Measure.isProbabilityMeasure_map hemeas.aemeasurable
+  set f' : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) → ℝ := fun y => f (e.symm y) with hf'def
+  have hf'm : Measurable f' := hf.comp hesymm
+  set S' : Set (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) :=
+    {y | ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω} with hS'def
+  have hbridge : ∀ (y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) (t : Ξ),
+      f' (e t) * Real.exp ⟪y, e t⟫_ℝ = f t * Real.exp ⟪e.symm y, t⟫_ℝ := by
+    intro y t
+    have hin : ⟪y, e t⟫_ℝ = ⟪e.symm y, t⟫_ℝ := by
+      conv_lhs => rw [← e.apply_symm_apply y]
+      exact e.inner_map_map _ _
+    rw [hf'def, hin]
+    simp only [LinearIsometryEquiv.symm_apply_apply]
+  have hS'int : (interior S').Nonempty := by
+    have hcont : Continuous fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
+        e.symm y + ϑ₁ := e.symm.continuous.add continuous_const
+    have hopen : IsOpen ((fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
+        e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}) := isOpen_interior.preimage hcont
+    have hsub : (fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => e.symm y + ϑ₁) ⁻¹'
+        interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} ⊆ S' := by
+      intro y hy
+      have hy' : (e.symm y + ϑ₁) ∈ interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := hy
+      have h1 : (e.symm y + ϑ₁) ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hy'
+      exact h1
+    have hmem0 : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) ∈
+        (fun y => e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
+      simp only [Set.mem_preimage, map_zero, zero_add]
+      exact hϑ₁int
+    exact ⟨0, mem_interior.2 ⟨_, hsub, hopen, hmem0⟩⟩
+  have hint' : ∀ y ∈ S', Integrable (fun z => f' z * Real.exp ⟪y, z⟫_ℝ) ν' := by
+    intro y hy
+    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
+    have hexp := hintg (e.symm y + ϑ₁) hϑmem
+    rw [add_sub_cancel_right] at hexp
+    have hIt : Integrable (fun t : Ξ => f t * Real.exp ⟪e.symm y, t⟫_ℝ) μ₁ := by
+      refine Integrable.mono' (hexp.const_mul Cb)
+        ((hf.mul ((hinnerm (e.symm y)).exp)).aestronglyMeasurable)
+        (Filter.Eventually.of_forall fun t => ?_)
+      rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+      exact mul_le_mul_of_nonneg_right (hCb t) (Real.exp_pos _).le
+    have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
+        f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
+    rw [hν']
+    refine (integrable_map_measure hmy.aestronglyMeasurable hemeas.aemeasurable).2 ?_
+    exact hIt.congr (Filter.Eventually.of_forall fun t => (hbridge y t).symm)
+  have hzero' : ∀ y ∈ S', ∫ z, f' z * Real.exp ⟪y, z⟫_ℝ ∂ν' = 0 := by
+    intro y hy
+    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
+    have hk := hkey (e.symm y + ϑ₁) hϑmem
+    rw [add_sub_cancel_right] at hk
+    have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
+        f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
+    rw [hν', integral_map hemeas.aemeasurable hmy.aestronglyMeasurable]
+    refine Eq.trans ?_ hk
+    exact integral_congr_ae (Filter.Eventually.of_forall fun t => hbridge y t)
+  have hae0 : f' =ᵐ[ν'] 0 :=
+    PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero hf'm hS'int hint' hzero'
+  have haeμ : ∀ᵐ t ∂μ₁, f t = 0 := by
+    have hset : MeasurableSet {y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) | f' y = 0} :=
+      hf'm (measurableSet_singleton (0 : ℝ))
+    have hae0' : ∀ᵐ y ∂(μ₁.map e), f' y = 0 := by rw [← hν']; exact hae0
+    have h := (ae_map_iff hemeas.aemeasurable hset).1 hae0'
+    filter_upwards [h] with t ht
+    simpa only [hf'def, LinearIsometryEquiv.symm_apply_apply] using ht
+  have hac : (P (p : ℝ × Ξ)).map T ≪ μ₁ := by
+    rw [hμ₁]; exact statLaw_ac hU hT hUT p.2.1 hϑ₁
+  exact haeμ.filter_mono hac.ae_le
 
 /-- **Similar ⇒ Neyman structure.** A critical function of `(U, T)` which is similar of size
 `α` on the whole boundary surface `θ = θ₀` has conditional size `α` for almost every `t`. -/
@@ -2421,8 +2662,10 @@ theorem isUMPU_conditional_point
   --  * the conditional laws are exponential tilts of one another (`ae_condDistrib_expTilt`);
   --  * similarity of an unbiased competitor on the boundary surface, from continuity of the
   --    power along segments of `Ω` (`integral_comp_eq_of_le_of_segment`);
-  --  * similar ⟹ Neyman structure for the *size* condition (`ae_condPower_eq_of_similar`,
-  --    over the lifted brick `boundedlyComplete_boundary`);
+  --  * similar ⟹ Neyman structure for the *size* condition (`ae_condPower_eq_of_similar`),
+  --    which is now unconditional: `boundedlyComplete_boundary` is PROVED (this session), so
+  --    the three other optimality theorems of this file are axiom-clean and only the point
+  --    null is open;
   --  * `exists_sep_line` is NOT yet ported, but is the only separation needed: for `c ≠ 0`
   --    the secant/tangent of `t ↦ e^{ct}` at `C₁, C₂` gives, exactly as in the interval case,
   --    `g(u)·(e^{cu} − A − Bu) ≥ 0` for `g = φ − ψ`, and the two side conditions kill the two
@@ -2430,19 +2673,28 @@ theorem isUMPU_conditional_point
   --
   -- What is genuinely missing, and is specific to the point null, is the *derivative* side
   -- condition for the competitor, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]` a.e. `t`. Deriving it
-  -- from unbiasedness needs three further steps, none of which is in the file:
-  --  (a) an interior point of `Ω` on the boundary surface (Mathlib's
-  --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push), so that the
-  --      *pure-`θ`* segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`; along a general segment the
-  --      derivative picks up the nuisance directions and is not `E[Uψ]`;
-  --  (b) differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
+  -- from unbiasedness needs three further steps; the first is now available, the other two
+  -- are not in the file.
+  --  (a) DONE. An interior point of `Ω` on the boundary surface — so that the *pure-`θ`*
+  --      segment `(θ₀ ± ε, ϑ₀)` lies in `Ω`, a general segment being useless because its
+  --      derivative picks up the nuisance directions and is not `E[Uψ]` — is
+  --      `exists_interior_boundary_point` above (Mathlib's
+  --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push, both under the
+  --      amendments `hΩ_aff` and `[FiniteDimensional ℝ Ξ]` already in this signature).
+  --  (b) OPEN. Differentiation of `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀`. The
   --      dominating function is available from the same two-point envelope used by
   --      `tendsto_integral_canonical_segment`, in the form
   --      `|b−a|·e^{(1−s)a+sb} ≤ 2η⁻¹(e^a + e^b)` on `[s₀−η, s₀+η]`, so this is routine but
-  --      not short;
-  --  (c) a completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
+  --      not short. Note the normalizer `C` also has to be differentiated: the power is the
+  --      ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained.
+  --  (c) OPEN. A completeness step for the *unbounded* function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`,
   --      i.e. `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary
-  --      slice — a second brick beyond `boundedlyComplete_boundary` — together with the
+  --      slice. This is now a *strictly smaller* gap than before: the proof of
+  --      `boundedlyComplete_boundary` never uses boundedness of `f` except to produce the
+  --      integrability hypothesis of
+  --      `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`, which is already stated
+  --      for arbitrary measurable `f`. So (c) reduces to the *integrability* of
+  --      `t ↦ (E[Uψ ∣ t] − α·E[U ∣ t])·e^{⟪ϑ−ϑ₁,t⟫}` against `μ₁`, together with the
   --      conditional integrability of `U`, which does follow from `hΩ_lt`/`hΩ_gt` by the
   --      two-point bound `|u| ≤ δ⁻¹(e^{δu} + e^{−δu})` applied to the two conditional tilts.
   sorry

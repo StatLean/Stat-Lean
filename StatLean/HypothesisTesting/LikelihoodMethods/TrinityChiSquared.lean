@@ -1270,38 +1270,61 @@ private lemma affineScoreDiff_tendsto_chiSquared {m p : ℕ}
 /-- **logLR − score-difference is `o_P(1)`** (affine composite null). The affine likelihood-ratio
 statistic differs from the score-difference surrogate by a quantity tending to zero in
 probability. -/
--- TODO (obstruction re-derived after `sup_LAN_remainder_tendsto` and
--- `logLR_sub_score_tendstoInMeasure` were closed; the previous note is superseded).
--- The intended route is: apply the (now available) uniform LAN expansion in the full model at
--- `ĥₙ = √n(θ̂ₙ−θ₀)` and in the restricted model at `√n(β̂ₙ−β₀)`, then subtract; the
--- efficient-estimator substitutions (`hlin`, `hlin₀`) collapse each expansion to its score
--- quadratic, leaving `ZₙᵀJ⁻¹Zₙ − (B*Zₙ)ᵀJB⁻¹(B*Zₙ)`.  Two *separate* gaps remain, neither of
--- which is the one recorded before.
+-- TODO (obstruction RE-DERIVED again; the previous note is superseded on two counts — the
+-- shape of the reduction and the shape of the repair).
 --
--- (1) LOG-SPLITTING / COMMON SUPPORT.  Unlike the simple-null case, the affine statistic is
---     `2 ∑ᵢ log(p_{θ̂}(ωᵢ)/p_{a+Bβ̂}(ωᵢ))`, a ratio between *two moving* parameters, whereas
---     `logLikelihood` — and the envelope hypothesis `henv` — only ever control ratios against
---     the fixed `p_{θ₀}`.  The reduction `log(A/B) = log(A/C) − log(B/C)` is FALSE at the Lean
---     junk values: for `A = 0`, `B, C > 0` the left side is `Real.log 0 = 0` while the right
---     side is `−log(B/C) ≠ 0`.  Closing this needs a strict-positivity (common-support)
---     hypothesis such as `∀ θ x, 0 < M.density θ x`, which is a genuine addition to the
---     printed signature — the source assumes it implicitly whenever it manipulates likelihood
---     ratios.  (The repo already names the weaker pattern: `HasCommonSupport` in
---     `StatLean/PointEstimation/InformationInequality/Basic.lean`; the local `goodSet` device of
---     `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean` is the other
---     available way to fence off the vanishing-density set.)
--- (2) THE RESTRICTED MODEL IS UNCERTIFIED.  `sup_LAN_remainder_tendsto` applied to
---     `restrictFamily M a B` at `β₀` needs (a) `IsPDFOf (restrictFamily M a B) μ` — immediate
---     from `hPDF`; (b) a two-point envelope for the restricted family — derivable from `henv`
---     with `Menv·‖B‖²` and `δ/(‖B‖+1)`, using `hℓB : ℓB = B* ∘ ℓ`; and
---     (c) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`.
---     UPDATE: item (c) is now CLOSED — `differentiableQuadraticMean_restrictFamily` above
---     proves exactly it (the restricted residual at `u` *is* the full residual at `B u`, and
---     both DQM clauses transport along `B` by continuity at `0` and `‖Bu‖² ≤ ‖B‖²‖u‖²`).
---     What is left of (2) is only (b), and the fact that neither (b) nor the resulting
---     restricted-model hypotheses are currently arguments of this lemma: they would have to be
---     added to the signature or derived from `henv`.
--- Sanctioned lifted sorry: the remaining bricks are named and concrete; no false statement.
+-- THE ROUTE IS SHORTER THAN THE PREVIOUS NOTE SAID, because the restricted piece is *literally*
+-- an instance of the already-closed simple-null lemma. Writing `θ₀ = a + B β₀` one has, for
+-- every `x`, `(restrictFamily M a B).density β₀ x = M.density θ₀ x` definitionally, hence
+--   `2 ∑ᵢ log (p_{a+Bβ̂}(ωᵢ) / p_{θ₀}(ωᵢ))
+--       = logLRStatistic (restrictFamily M a B) est₀ (fun _ _ => β₀) n ω`,
+-- so `logLR_sub_score_tendstoInMeasure` applies TWICE — once to `M` at `θ₀` with `(ℓ, J, est)`,
+-- once to `restrictFamily M a B` at `β₀` with `(ℓB, JB, est₀)` — and the two conclusions
+-- subtract. What has to be supplied is only bookkeeping:
+--   (i)   `IsPDFOf (restrictFamily M a B) μ`: both clauses are `hPDF` at `a + Bβ`, immediate.
+--   (ii)  `productMeasure (restrictFamily M a B) μ β₀ n = productMeasure M μ θ₀ n`: unfold
+--         `productMeasure` and use the density identity above — the restricted conclusion is
+--         then a statement about the SAME measure as the full one.
+--   (iii) `DifferentiableQuadraticMean (restrictFamily M a B) μ β₀ ℓB`: CLOSED, it is
+--         `differentiableQuadraticMean_restrictFamily` above.
+--   (iv)  `JB.PosDef`. Not currently derived anywhere in the file, but the ingredients are:
+--         `multivariateGaussian_map_scoreDiff_eq_chiSquared` already builds `T = √J ∘ B`, shows
+--         `⟪u, mulVecE JB v⟫ = ⟪T u, T v⟫` (`hJB_gram`) and `IsUnit JB.det` from `hB`. Positivity
+--         is then `0 < ‖T u‖²` for `u ≠ 0`; `Matrix.IsHermitian JB` needs the entry extraction
+--         `JB i j = ⟪EuclideanSpace.single i 1, mulVecE JB (EuclideanSpace.single j 1)⟫`, and
+--         `Matrix.posDef_iff_dotProduct_mulVec` converts the quadratic form. ~50 lines; the
+--         `hJB_gram`/`hJBdet` block should be factored out of that lemma rather than repeated.
+--   (v)   The restricted two-point envelope, from `henv` with `MenvB = Menv·‖B‖²` and
+--         `δB = δ/(‖B‖+1)`: `‖(a+Bβ) − θ₀‖ = ‖B(β−β₀)‖ ≤ ‖B‖‖β−β₀‖` and
+--         `⟪β−β', ℓB x⟫ = ⟪B(β−β'), ℓ x⟫` by `hℓB` and `adjoint_inner_left`. Integrability of
+--         `MenvB` is `hMenv_int` scaled, against the same measure by (ii).
+--
+-- SIGNATURE. The private lemma as frozen does not even mention `hθ₀ : θ₀ = a + B β₀`,
+-- `hℓB : ℓB = B* ∘ ℓ`, `hJB`, `hDQM` or `hJ_pd`, so it is unprovable as stated: nothing ties
+-- `(a, B, β₀, ℓB, JB)` to `(θ₀, ℓ, J)` and the score difference is then unrelated to the LR.
+-- All five ARE available at the unique call site, `logLR_tendsto_chiSquared_affine`, so adding
+-- them here is a pure re-parenthesization with no change to any public statement.
+--
+-- THE ONE GENUINE GAP: LOG-SPLITTING. The affine statistic is a ratio between two *moving*
+-- parameters, and the reduction
+--   `log(p_{θ̂}/p_{a+Bβ̂}) = log(p_{θ̂}/p_{θ₀}) − log(p_{a+Bβ̂}/p_{θ₀})`
+-- is FALSE at the Lean junk values: for `p_{θ̂}(x) = 0` and `p_{a+Bβ̂}(x), p_{θ₀}(x) > 0` the
+-- left side is `Real.log 0 = 0` while the right side is `−log(p_{a+Bβ̂}(x)/p_{θ₀}(x)) ≠ 0`.
+-- CORRECTED REPAIR (the previous note asked for global strict positivity `∀ θ x, 0 < p_θ x`,
+-- which is more than is needed and false for many standard models): the minimal hypothesis is
+-- COMMON SUPPORT RELATIVE TO `θ₀`,
+--   `hsupp : ∀ θ x, M.density θ₀ x ≠ 0 → M.density θ x ≠ 0`,
+-- the pattern already named `HasCommonSupport` in
+-- `StatLean/PointEstimation/InformationInequality/Basic.lean`. It suffices because the sample is
+-- drawn from `μ.withDensity (ENNReal.ofReal ∘ M.density θ₀)`, under which `p_{θ₀}(ωᵢ) ≠ 0`
+-- holds a.e. (the set `{p_{θ₀} = 0}` is null for that measure), so a.e. `ω` all three densities
+-- at `ωᵢ` are strictly positive and the splitting is the ordinary `Real.log_div`. This is a
+-- genuine addition to the printed signature and would have to be carried by
+-- `logLR_tendsto_chiSquared_affine` as well; the source assumes it implicitly whenever it
+-- manipulates likelihood ratios. (The `goodSet` device of
+-- `AsymptoticStatistics/LocalAsymptoticNormality/AsymptoticRepresentation.lean` is the other
+-- available way to fence off the vanishing-density set, at a much higher cost.)
+-- Sanctioned lifted sorry: no false statement, and the remaining bricks are named and concrete.
 private lemma logLR_affine_sub_scoreDiff_tendstoInMeasure {m : ℕ}
     (M : ParametricFamily 𝓧 (EuclideanSpace ℝ (Fin k))) (μ : Measure 𝓧) [SigmaFinite μ]
     [∀ θ : EuclideanSpace ℝ (Fin k), ∀ n, IsProbabilityMeasure (productMeasure M μ θ n)]

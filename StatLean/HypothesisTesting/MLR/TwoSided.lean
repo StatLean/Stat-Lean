@@ -1223,6 +1223,64 @@ private lemma isUMP_twoSided_of_constants
     rw [hflast, ← hpow χ ϑ, ← hpow φ ϑ] at hmax
     exact hmax
 
+/-- **Monotone-rearrangement (Chebyshev-sum) inequality on `[0,1]`.** For a nondecreasing
+integrable `g`, the integral over the initial segment `[0, α]` is at most `α` times the
+integral over the whole interval, and the integral over the final segment `[α, 1]` is at
+least `(1 − α)` times it.
+
+This is brick (c) of the quantile-sweep roadmap recorded at `isUMP_twoSided`: with
+`g = r ∘ Q` — the likelihood ratio `dν₂/dν₁` read along the quantile function of `ν₁`, which
+is nondecreasing because `η₂ > η₁` — and `∫₀¹ g = 1`, it gives `h(0) ≤ α ≤ h(1 − α)` for the
+sliding-window size `h(s) = ∫_s^{s+α} g`, which is what the intermediate value theorem then
+consumes.
+
+The proof is the two-sided comparison against the value at the split point: `g ≤ g α` on
+`[0, α]` and `g α ≤ g` on `[α, 1]`, so `(1 − α)·∫₀^α g ≤ (1 − α)·α·g α ≤ α·∫_α^1 g`, and
+adding `α·∫₀^α g` to both sides gives the first claim. -/
+private lemma integral_Ioc_le_of_monotoneOn {g : ℝ → ℝ} {α : ℝ}
+    (hg : MonotoneOn g (Set.Icc (0 : ℝ) 1)) (hint : IntegrableOn g (Set.Icc (0 : ℝ) 1))
+    (hα : α ∈ Set.Icc (0 : ℝ) 1) :
+    (∫ u in (0 : ℝ)..α, g u) ≤ α * ∫ u in (0 : ℝ)..1, g u ∧
+      (1 - α) * (∫ u in (0 : ℝ)..1, g u) ≤ ∫ u in α..(1 : ℝ), g u := by
+  obtain ⟨hα0, hα1⟩ := hα
+  have hsubL : Set.uIoc (0 : ℝ) α ⊆ Set.Icc (0 : ℝ) 1 := by
+    rw [Set.uIoc_of_le hα0]
+    exact fun u hu => ⟨hu.1.le, hu.2.trans hα1⟩
+  have hsubR : Set.uIoc α (1 : ℝ) ⊆ Set.Icc (0 : ℝ) 1 := by
+    rw [Set.uIoc_of_le hα1]
+    exact fun u hu => ⟨hα0.trans hu.1.le, hu.2⟩
+  have hsubF : Set.uIoc (0 : ℝ) (1 : ℝ) ⊆ Set.Icc (0 : ℝ) 1 := by
+    rw [Set.uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
+    exact fun u hu => ⟨hu.1.le, hu.2⟩
+  have hIL : IntervalIntegrable g MeasureTheory.volume 0 α :=
+    intervalIntegrable_iff.2 (hint.mono_set hsubL)
+  have hIR : IntervalIntegrable g MeasureTheory.volume α 1 :=
+    intervalIntegrable_iff.2 (hint.mono_set hsubR)
+  have hsplit : (∫ u in (0 : ℝ)..α, g u) + ∫ u in α..(1 : ℝ), g u = ∫ u in (0 : ℝ)..1, g u :=
+    intervalIntegral.integral_add_adjacent_intervals hIL hIR
+  have hαmem : α ∈ Set.Icc (0 : ℝ) 1 := ⟨hα0, hα1⟩
+  -- the initial segment is below `α · g α`
+  have hleft : (∫ u in (0 : ℝ)..α, g u) ≤ α * g α := by
+    have h := intervalIntegral.integral_mono_on hα0 hIL
+      (intervalIntegrable_const (c := g α)) (fun u hu =>
+        hg ⟨hu.1, hu.2.trans hα1⟩ hαmem hu.2)
+    simpa using h
+  -- the final segment is above `(1 − α) · g α`
+  have hright : (1 - α) * g α ≤ ∫ u in α..(1 : ℝ), g u := by
+    have h := intervalIntegral.integral_mono_on hα1
+      (intervalIntegrable_const (c := g α)) hIR (fun u hu =>
+        hg hαmem ⟨hα0.trans hu.1, hu.2⟩ hu.1)
+    simpa using h
+  have hcross : (1 - α) * (∫ u in (0 : ℝ)..α, g u) ≤ α * ∫ u in α..(1 : ℝ), g u := by
+    have h1 : (1 - α) * (∫ u in (0 : ℝ)..α, g u) ≤ (1 - α) * (α * g α) :=
+      mul_le_mul_of_nonneg_left hleft (by linarith)
+    have h2 : α * ((1 - α) * g α) ≤ α * ∫ u in α..(1 : ℝ), g u :=
+      mul_le_mul_of_nonneg_left hright hα0
+    nlinarith [h1, h2]
+  constructor
+  · rw [← hsplit]; nlinarith [hcross]
+  · rw [← hsplit]; nlinarith [hcross]
+
 /-- **UMP test of a two-sided hypothesis.** In a one-parameter exponential family, with the
 parametrization strictly increasing, there are constants `C₁ < C₂` and boundary weights
 `γ₁, γ₂ ∈ [0,1]` for which the two-sided test has size exactly `α` at both `θ₁` and `θ₂`
@@ -1285,8 +1343,10 @@ theorem isUMP_twoSided
     -- MISSING BRICKS: (a) the interval-window randomized test attached to a quantile
     -- window — the two-boundary analogue of `exists_critical_constants`, which only builds
     -- the one-sided window `(s, 1)`; (b) the push-forward identity
-    -- `∫ φ_s dν₂ = ∫_s^{s+α} r(Q u) du`; (c) the monotone-rearrangement inequality
-    -- `∫₀^α g ≤ α ∫₀¹ g` for nondecreasing `g`. None is in Mathlib v4.29.1 or in the repo.
+    -- `∫ φ_s dν₂ = ∫_s^{s+α} r(Q u) du`. Brick (c), the monotone-rearrangement inequality
+    -- `∫₀^α g ≤ α ∫₀¹ g` (and its mirror) for nondecreasing `g`, is absent from Mathlib
+    -- v4.29.1 but is now PROVED above as `integral_Ioc_le_of_monotoneOn`; only (a) and (b)
+    -- remain, and both are constructions rather than inequalities.
     sorry
   exact ⟨C₁, C₂, γ₁, γ₂, hC, hγ₁, hγ₂, hs₁, hs₂,
     isUMP_twoSided_of_constants E P hη hrepr hnat hθ hC hγ₁ hγ₂ hs₁ hs₂⟩
