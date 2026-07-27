@@ -438,103 +438,205 @@ theorem sphereAverage_lr_monotone {k : ℕ} {b : ℝ}
     have hx : x = 0 := Subsingleton.elim x 0
     subst hx
     simp only [inner_zero_right, zero_sub, norm_zero, integral_const, probReal_univ, one_smul]
-  · -- `k ≥ 1`: fix a unit vector `u` and set `g r = ∫ exp(r ⟪h,u⟫ − b²/2)`; then
-    -- `g ‖x‖` is the radial value, and the reflection `h ↦ -h` turns `g` into a `cosh`
-    -- average, which is monotone in `r ≥ 0`.
-    haveI : NeZero k := ⟨hk.ne'⟩
-    set u : E := EuclideanSpace.single (0 : Fin k) (1 : ℝ) with hu
-    have hunorm : ‖u‖ = 1 := by rw [hu, EuclideanSpace.single, PiLp.norm_single, norm_one]
-    -- Integrability of the (one-parameter) integrand, uniformly bounded on the sphere.
-    have hintu : ∀ s : ℝ,
-        Integrable (fun h : E => Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)) σ := by
-      intro s
-      refine (integrable_const (Real.exp (|s| * b))).mono'
-        ((by fun_prop : Continuous fun h : E =>
-          Real.exp (s * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable) ?_
-      filter_upwards [hsphere] with h hh
-      rw [Real.norm_of_nonneg (Real.exp_nonneg _)]
-      apply Real.exp_le_exp.mpr
-      have ht : |⟪h, u⟫_ℝ| ≤ b := by
-        have := abs_real_inner_le_norm h u; rw [hh, hunorm, mul_one] at this; exact this
-      have hsb : s * ⟪h, u⟫_ℝ ≤ |s| * b := by
-        calc s * ⟪h, u⟫_ℝ ≤ |s * ⟪h, u⟫_ℝ| := le_abs_self _
-          _ = |s| * |⟪h, u⟫_ℝ| := abs_mul s _
-          _ ≤ |s| * b := mul_le_mul_of_nonneg_left ht (abs_nonneg s)
-      nlinarith [sq_nonneg b]
-    -- Integrability of the `cosh` form.
-    have hcosh_int : ∀ r : ℝ,
-        Integrable (fun h : E => Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))) σ := by
-      intro r
-      refine (integrable_const (Real.cosh (|r| * b) * Real.exp (-(b ^ 2 / 2)))).mono'
-        ((by fun_prop : Continuous fun h : E =>
-          Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2))).aestronglyMeasurable) ?_
-      filter_upwards [hsphere] with h hh
-      rw [Real.norm_of_nonneg (by positivity)]
-      apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
-      rw [Real.cosh_le_cosh, abs_mul, abs_mul, abs_abs, abs_of_pos hb]
-      have ht : |⟪h, u⟫_ℝ| ≤ b := by
-        have := abs_real_inner_le_norm h u; rw [hh, hunorm, mul_one] at this; exact this
-      exact mul_le_mul_of_nonneg_left ht (abs_nonneg r)
-    -- The reflection identity `I(r) = I(−r)`.
-    have hR : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
-        = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
-      intro r
-      have hmeas : Measurable (⇑(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) :=
-        (LinearIsometryEquiv.neg ℝ).continuous.measurable
-      have hg : AEStronglyMeasurable
-          (fun h : E => Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2))
-          (σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
-        rw [hrot (LinearIsometryEquiv.neg ℝ)]
-        exact (by fun_prop : Continuous fun h : E =>
-          Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)).aestronglyMeasurable
-      calc (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
-          = ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2)
-              ∂(σ.map (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E)) := by
-            rw [hrot (LinearIsometryEquiv.neg ℝ)]
-        _ = ∫ h, Real.exp (r * ⟪(LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h, u⟫_ℝ - b ^ 2 / 2) ∂σ :=
-            integral_map hmeas.aemeasurable hg
-        _ = ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ := by
-            apply integral_congr_ae; filter_upwards with h
-            have hneg : (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E) h = -h := by
-              simp [LinearIsometryEquiv.coe_neg]
-            rw [hneg, inner_neg_left]
-            congr 1; ring
-    -- Symmetrization: the one-exponential average equals the `cosh` average.
-    have hsymm : ∀ r : ℝ, (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
-        = ∫ h, Real.cosh (r * ⟪h, u⟫_ℝ) * Real.exp (-(b ^ 2 / 2)) ∂σ := by
-      intro r
-      have hint₂ : Integrable (fun h : E => Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2)) σ := by
-        have h1 := hintu (-r)
-        simp only [neg_mul] at h1
-        exact h1
-      have havg : (∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
-          = (1 / 2) * ((∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ)
-              + ∫ h, Real.exp (-(r * ⟪h, u⟫_ℝ) - b ^ 2 / 2) ∂σ) := by
-        rw [← hR r]; ring
-      rw [havg, ← integral_add (hintu r) hint₂, ← integral_const_mul]
-      apply integral_congr_ae; filter_upwards with h
-      rw [Real.cosh_eq, sub_eq_add_neg (r * ⟪h, u⟫_ℝ), sub_eq_add_neg (-(r * ⟪h, u⟫_ℝ)),
-        Real.exp_add, Real.exp_add]
-      ring
-    refine ⟨fun r => ∫ h, Real.exp (r * ⟪h, u⟫_ℝ - b ^ 2 / 2) ∂σ, ?_, ?_⟩
-    · -- Monotonicity via the `cosh` average.
-      intro r₁ hr₁ r₂ hr₂ hr
-      simp only [Set.mem_Ici] at hr₁ hr₂
-      simp only
-      rw [hsymm r₁, hsymm r₂]
-      apply integral_mono_ae (hcosh_int r₁) (hcosh_int r₂)
-      filter_upwards with h
-      apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
-      rw [Real.cosh_le_cosh, abs_mul, abs_mul, abs_of_nonneg hr₁, abs_of_nonneg hr₂]
-      exact mul_le_mul_of_nonneg_right hr (abs_nonneg _)
-    · -- The radial value is `g ‖x‖`.
-      intro x
-      have hxu : ‖x‖ = ‖(‖x‖ : ℝ) • u‖ := by
-        rw [norm_smul, hunorm, mul_one, Real.norm_of_nonneg (norm_nonneg x)]
-      rw [hradial x ((‖x‖ : ℝ) • u) hxu]
-      simp only
-      apply integral_congr_ae; filter_upwards with h
-      rw [real_inner_smul_right]
+  · -- `k ≥ 1`: the strengthened radial form of this same average, proved above.
+    obtain ⟨g, -, hmono, hval⟩ := sphereAverage_radial hk hb hσ hsphere hrot
+    exact ⟨g, hmono.monotoneOn, hval⟩
+
+/-! ### Cameron–Martin, and the value of the sphere average on the chi-squared region
+
+The mixture route ends by evaluating the sphere-averaged likelihood ratio over the
+limiting Neyman–Pearson rejection region.  Everything here stays at the level of measures
+(`withDensity`, `lintegral`), so no integrability side conditions on Gaussian exponential
+moments are ever needed. -/
+
+section CameronMartin
+
+variable {k : ℕ}
+
+/-- **1-D Gaussian Girsanov shift**, measure form. -/
+private lemma gaussianReal_withDensity_shift' (a : ℝ) :
+    (gaussianReal 0 1).withDensity
+        (fun x => ENNReal.ofReal (Real.exp (a * x - a ^ 2 / 2)))
+      = gaussianReal a 1 := by
+  rw [gaussianReal_of_var_ne_zero (0 : ℝ) (by norm_num : (1 : NNReal) ≠ 0),
+    gaussianReal_of_var_ne_zero a (by norm_num : (1 : NNReal) ≠ 0),
+    ← MeasureTheory.withDensity_mul volume (measurable_gaussianPDF 0 1) (by fun_prop)]
+  congr 1
+  ext x
+  simp only [Pi.mul_apply, gaussianPDF_def]
+  rw [← ENNReal.ofReal_mul (gaussianPDFReal_nonneg 0 1 x)]
+  congr 1
+  simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero]
+  rw [mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
+
+/-- **Product-form Gaussian Girsanov shift** on `ι → ℝ`. -/
+private lemma pi_gaussianReal_withDensity_shift' {ι : Type*} [Fintype ι] (a : ι → ℝ) :
+    (Measure.pi (fun _ : ι => gaussianReal 0 1)).withDensity
+        (fun y => ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = Measure.pi (fun i : ι => gaussianReal (a i) 1) := by
+  classical
+  have h1d : ∀ i, (gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+        = gaussianReal (a i) 1 :=
+    fun i => gaussianReal_withDensity_shift' (a i)
+  haveI : ∀ i : ι, IsProbabilityMeasure ((gaussianReal 0 1).withDensity
+      (fun x => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))) := by
+    intro i; rw [h1d i]; infer_instance
+  have hdensity : (fun y : ι → ℝ =>
+        ENNReal.ofReal (Real.exp ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)))
+      = fun y => ∏ i, ENNReal.ofReal (Real.exp (a i * y i - (a i) ^ 2 / 2)) := by
+    funext y
+    rw [show ((∑ i, a i * y i) - (∑ i, (a i) ^ 2) / 2)
+          = ∑ i, (a i * y i - (a i) ^ 2 / 2) from by
+          rw [Finset.sum_sub_distrib, Finset.sum_div],
+      Real.exp_sum, ENNReal.ofReal_prod_of_nonneg (fun _ _ => Real.exp_nonneg _)]
+  rw [hdensity, pi_withDensity_prod
+    (f := fun i (x : ℝ) => ENNReal.ofReal (Real.exp (a i * x - (a i) ^ 2 / 2)))
+    (fun i => by fun_prop)]
+  congr 1
+  funext i
+  exact h1d i
+
+/-- Transport of a `withDensity` through the coordinate map `WithLp.toLp 2`. -/
+private lemma map_toLp_withDensity' (μ : Measure (Fin k → ℝ))
+    {w : (Fin k → ℝ) → ℝ≥0∞} (hw : Measurable w) :
+    (μ.withDensity w).map (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k))
+      = (μ.map (WithLp.toLp 2)).withDensity (fun z => w z.ofLp) := by
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hw' : Measurable (fun z : EuclideanSpace ℝ (Fin k) => w z.ofLp) :=
+    hw.comp (WithLp.measurable_ofLp 2 (Fin k → ℝ))
+  ext A hA
+  rw [Measure.map_apply hT hA, withDensity_apply _ (hT hA), withDensity_apply _ hA,
+    ← lintegral_indicator (hT hA), ← lintegral_indicator hA,
+    lintegral_map (hw'.indicator hA) hT]
+  classical
+  refine lintegral_congr fun x => ?_
+  simp only [Set.indicator_apply, Set.mem_preimage]
+
+/-- **Cameron–Martin identity, measure form.**  Translating the standard Gaussian on
+`EuclideanSpace ℝ (Fin k)` by `v` is the same as tilting it by `exp(⟪v, ·⟫ − ‖v‖²/2)`. -/
+private lemma stdGaussian_map_add_eq_withDensity' (v : EuclideanSpace ℝ (Fin k)) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).withDensity
+          (fun z => ENNReal.ofReal (Real.exp (⟪v, z⟫_ℝ - ‖v‖ ^ 2 / 2))) := by
+  classical
+  set a : Fin k → ℝ := fun i => v i with ha
+  set π₀ : Measure (Fin k → ℝ) := Measure.pi (fun _ : Fin k => gaussianReal 0 1) with hπ₀
+  have hT : Measurable (WithLp.toLp 2 : (Fin k → ℝ) → EuclideanSpace ℝ (Fin k)) :=
+    WithLp.measurable_toLp 2 (Fin k → ℝ)
+  have hmapT : π₀.map (WithLp.toLp 2) = stdGaussian (EuclideanSpace ℝ (Fin k)) :=
+    map_pi_eq_stdGaussian
+  have hsum : ∀ u w : EuclideanSpace ℝ (Fin k), ⟪u, w⟫_ℝ = ∑ i, u i * w i := by
+    intro u w
+    simp only [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
+    exact Finset.sum_congr rfl fun i _ => mul_comm _ _
+  have hnorm : ‖v‖ ^ 2 = ∑ i, (a i) ^ 2 := by rw [EuclideanSpace.real_norm_sq_eq]
+  have hshiftpi : π₀.map (fun x i => a i + x i) = Measure.pi (fun i => gaussianReal (a i) 1) := by
+    haveI : ∀ i : Fin k, SigmaFinite ((gaussianReal 0 1).map (fun t : ℝ => a i + t)) := by
+      intro i
+      rw [gaussianReal_map_const_add]
+      infer_instance
+    rw [hπ₀, Measure.pi_map_pi (f := fun i (t : ℝ) => a i + t)
+      (fun i => (measurable_const_add (a i)).aemeasurable)]
+    congr 1
+    funext i
+    rw [gaussianReal_map_const_add]
+    simp
+  have hLHS : (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z)
+      = (π₀.map (fun x i => a i + x i)).map (WithLp.toLp 2) := by
+    rw [← hmapT, Measure.map_map (by fun_prop) hT,
+      Measure.map_map hT
+        (measurable_pi_lambda _ (fun i => (measurable_pi_apply i).const_add (a i)))]
+    congr 1
+  rw [hLHS, hshiftpi, ← pi_gaussianReal_withDensity_shift' a, ← hπ₀,
+    map_toLp_withDensity' π₀ (by fun_prop), hmapT]
+  congr 1
+  funext z
+  rw [hsum, hnorm]
+
+/-- With unit covariance, `multivariateGaussian` is a translate of the standard Gaussian. -/
+private lemma mvGaussian_one_eq_map_add' (v : EuclideanSpace ℝ (Fin k)) :
+    multivariateGaussian v 1
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => v + x) := by
+  rw [multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-- The chi-squared rejection region is measurable. -/
+private lemma measurableSet_normSq_gt (c : ℝ) :
+    MeasurableSet {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2} :=
+  measurableSet_lt measurable_const (by fun_prop)
+
+/-- **Shifted Gaussian mass of the chi-squared region.**  For a shift of length `b` the
+standard Gaussian mass of `{‖x‖² > c}` after translation is the noncentral chi-squared
+upper tail with noncentrality `b²`. -/
+private lemma stdGaussian_shift_normSq_tail {b c : ℝ} (hb : 0 ≤ b)
+    {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ = b) :
+    ((stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun z => v + z))
+        {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}
+      = noncentralChiSquared k (b ^ 2).toNNReal (Set.Ioi c) := by
+  have hnorm : ‖v‖ = Real.sqrt (((b ^ 2).toNNReal : ℝ)) := by
+    rw [hv, Real.coe_toNNReal _ (sq_nonneg b), Real.sqrt_sq hb]
+  have h1 : noncentralChiSquared k (b ^ 2).toNNReal
+      = (stdGaussian (EuclideanSpace ℝ (Fin k))).map (fun x => ‖v + x‖ ^ 2) := by
+    rw [← map_normSq_multivariateGaussian_of_norm_eq k _ hnorm, mvGaussian_one_eq_map_add',
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
+  rw [h1, Measure.map_apply (by fun_prop) measurableSet_Ioi,
+    Measure.map_apply (by fun_prop) (measurableSet_normSq_gt c)]
+  rfl
+
+/-- **The central chi-squared as a standard-Gaussian region.** -/
+private lemma stdGaussian_normSq_tail (hk : 0 < k) (c : ℝ) :
+    (stdGaussian (EuclideanSpace ℝ (Fin k))) {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2}
+      = chiSquared k (Set.Ioi c) := by
+  have h0 : ‖(0 : EuclideanSpace ℝ (Fin k))‖ = 0 := norm_zero
+  have := stdGaussian_shift_normSq_tail (k := k) (b := 0) (c := c) le_rfl h0
+  rw [show ((0 : ℝ) ^ 2).toNNReal = 0 from by norm_num, noncentralChiSquared_zero hk] at this
+  rw [← this]
+  congr 1
+  rw [show (fun z : EuclideanSpace ℝ (Fin k) => (0 : EuclideanSpace ℝ (Fin k)) + z) = id from by
+    funext z; simp]
+  exact (Measure.map_id).symm
+
+/-- **Value of the sphere-averaged likelihood ratio over the chi-squared region.**
+Integrating the mixture likelihood ratio over `{‖x‖² > c}` against the standard Gaussian
+returns exactly the noncentral chi-squared upper tail — the maximin value.  This is
+Fubini–Tonelli followed by Cameron–Martin, the shifted mass being constant on the sphere by
+direction invariance. -/
+private lemma setLIntegral_sphereAverage {b c : ℝ} {σ : Measure (EuclideanSpace ℝ (Fin k))}
+    (hb : 0 < b) (hσ : IsProbabilityMeasure σ) (hsphere : ∀ᵐ h ∂σ, ‖h‖ = b) :
+    ∫⁻ x in {x : EuclideanSpace ℝ (Fin k) | c < ‖x‖ ^ 2},
+        (∫⁻ h, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂σ)
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+      = noncentralChiSquared k (b ^ 2).toNNReal (Set.Ioi c) := by
+  haveI := hσ
+  set γ : Measure (EuclideanSpace ℝ (Fin k)) := stdGaussian (EuclideanSpace ℝ (Fin k)) with hγ
+  set A : Set (EuclideanSpace ℝ (Fin k)) := {x | c < ‖x‖ ^ 2} with hA
+  have hAmeas : MeasurableSet A := measurableSet_normSq_gt c
+  have hjoint : AEMeasurable
+      (Function.uncurry fun (x : EuclideanSpace ℝ (Fin k)) (h : EuclideanSpace ℝ (Fin k)) =>
+        ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2))) ((γ.restrict A).prod σ) := by
+    refine Measurable.aemeasurable ?_
+    exact (ENNReal.measurable_ofReal.comp
+      (Real.continuous_exp.measurable.comp (by fun_prop)))
+  rw [lintegral_lintegral_swap hjoint]
+  have hinner : ∀ᵐ h ∂σ,
+      (∫⁻ x in A, ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2)) ∂γ)
+        = noncentralChiSquared k (b ^ 2).toNNReal (Set.Ioi c) := by
+    filter_upwards [hsphere] with h hh
+    have hrew : ∀ x : EuclideanSpace ℝ (Fin k),
+        ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - b ^ 2 / 2))
+          = ENNReal.ofReal (Real.exp (⟪h, x⟫_ℝ - ‖h‖ ^ 2 / 2)) := by
+      intro x; rw [hh]
+    simp_rw [hrew]
+    rw [← withDensity_apply _ hAmeas, ← stdGaussian_map_add_eq_withDensity' h]
+    exact stdGaussian_shift_normSq_tail hb.le hh
+  rw [lintegral_congr_ae hinner, lintegral_const, measure_univ, mul_one]
+
+end CameronMartin
 
 /-! ### The transfer lemma -/
 
