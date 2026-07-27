@@ -1943,7 +1943,241 @@ private lemma chiSquared_shell_minPower_tendsto {k : ℕ} {α b c : ℝ} {π : F
     refine htoreal.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with n hn
     exact (hpwmap n (u n) hn).symm
-  sorry
+  -- ### 4. elementary facts about the powers
+  have hpwnn : ∀ n h, 0 ≤ pwf n h := by
+    intro n h
+    simp only [hpwfdef, power]
+    refine integral_nonneg fun ω => ?_
+    by_cases hcc : c < pearsonQ π (X n) ω <;> simp [hcc]
+  have hbdd : ∀ n, BddBelow (pwf n '' multinomialShell π b n) := fun n =>
+    ⟨0, fun x hx => by obtain ⟨h, _, rfl⟩ := hx; exact hpwnn n h⟩
+  have hT1 : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal ≤ 1 := by
+    rw [← ENNReal.toReal_one]
+    exact ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
+  -- ### 5. a point on the inner boundary of the shell
+  set a₀ : Fin k := ⟨0, hk⟩ with ha₀def
+  set h₁ : Fin (k + 1) → ℝ := fun j => b * (π j * sc a₀ j) with hh₁def
+  have hh₁sum : ∑ j, h₁ j = 0 := by
+    simp only [hh₁def]
+    rw [← Finset.mul_sum, hcent a₀, mul_zero]
+  have hh₁nc : multinomialNoncentrality π h₁ = b ^ 2 := by
+    rw [multinomialNoncentrality]
+    have hterm : ∀ j : Fin (k + 1),
+        (h₁ j) ^ 2 / π j = b ^ 2 * (π j * (sc a₀ j * sc a₀ j)) := by
+      intro j
+      have hj : π j ≠ 0 := (hπpos j).ne'
+      rw [hh₁def]
+      field_simp
+    rw [Finset.sum_congr rfl fun j _ => hterm j, ← Finset.mul_sum, hortho a₀ a₀]
+    simp
+  have hv₁ : ‖mDriftVec sc h₁‖ ^ 2 = b ^ 2 := by
+    rw [← multinomialNoncentrality_eq_normSq hπpos hpars hh₁sum, hh₁nc]
+  have hh₁mem : ∀ᶠ n : ℕ in atTop, h₁ ∈ multinomialShell π b n := by
+    have hpos : ∀ j : Fin (k + 1),
+        ∀ᶠ n : ℕ in atTop, 0 ≤ π j + h₁ j / Real.sqrt (n : ℝ) := by
+      intro j
+      have hlimj : Tendsto (fun n : ℕ => π j + h₁ j / Real.sqrt (n : ℝ)) atTop
+          (nhds (π j)) := by
+        have hz : Tendsto (fun n : ℕ => h₁ j / Real.sqrt (n : ℝ)) atTop (nhds 0) :=
+          Filter.Tendsto.div_atTop tendsto_const_nhds
+            (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+        simpa using tendsto_const_nhds.add hz
+      filter_upwards [hlimj.eventually (lt_mem_nhds (hπpos j))] with n hn using hn.le
+    filter_upwards [Filter.eventually_all.2 hpos] with n hn
+    exact ⟨hh₁sum, hh₁nc.ge, hn⟩
+  -- ### 6. the two halves of the limit
+  refine tendsto_order.2 ⟨?_, ?_⟩
+  · -- `liminf ≥`: near-minimisers are bounded by BRICK 2, then compactness and the drift
+    intro a' ha'
+    by_contra hcon
+    rw [Filter.not_eventually] at hcon
+    set C₀ : ℝ := ∑ a : Fin k, ∑ j, (sc a j) ^ 2 with hC₀def
+    have hC₀nn : (0 : ℝ) ≤ C₀ := by positivity
+    have ha'1 : a' < 1 := lt_of_lt_of_le ha' hT1
+    have h1a : (0 : ℝ) < 1 - a' := by linarith
+    have h1a' : (1 : ℝ) - a' ≠ 0 := h1a.ne'
+    set t : ℝ := Real.sqrt ((C₀ + 1) / (1 - a')) with htdef
+    have hrpos : (0 : ℝ) < (C₀ + 1) / (1 - a') := by positivity
+    have ht0 : 0 < t := Real.sqrt_pos.mpr hrpos
+    have ht2 : t ^ 2 = (C₀ + 1) / (1 - a') := Real.sq_sqrt hrpos.le
+    have hkey : C₀ / t ^ 2 < 1 - a' := by
+      rw [ht2, div_lt_iff₀ hrpos]
+      field_simp
+      linarith
+    set R : ℝ := Real.sqrt (max c 0) + t with hRdef
+    have hR0 : 0 < R := by
+      rw [hRdef]
+      have := Real.sqrt_nonneg (max c 0)
+      linarith
+    -- BRICK 2: far from the null the power is nearly one, uniformly in `n` and `h`
+    have huniform : ∀ (n : ℕ) (hh : Fin (k + 1) → ℝ), 0 < n → R ≤ ‖mDriftVec sc hh‖ →
+        1 - C₀ / t ^ 2 ≤ pwf n hh := by
+      intro n hh hn hR
+      have hfar := pi_mScoreVec_far_le (π := π) (sc := sc) (h := hh)
+        (ν := cellν n hh) (n := n) hcent hn (fun j => hcellνreal n hh j) ht0
+      have hZmeas : Measurable (mScoreVec sc : (Fin n → Fin (k + 1)) → _) :=
+        measurable_of_countable _
+      have hSmeas : MeasurableSet ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg) :=
+        hZmeas hRegmeas
+      have hpw : pwf n hh
+          = (Measure.pi fun _ : Fin n => cellν n hh).real
+              ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg) := by
+        rw [hpwmap n hh hn, Measure.map_apply hZmeas hRegmeas]
+        rfl
+      have hsub : ((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg)ᶜ
+          ⊆ {d | t ≤ ‖mScoreVec sc d - mDriftVec sc hh‖} := by
+        intro d hd
+        simp only [Set.mem_compl_iff, Set.mem_preimage, hRegdef, Set.mem_setOf_eq,
+          not_lt] at hd
+        simp only [Set.mem_setOf_eq]
+        by_contra hlt
+        push_neg at hlt
+        have h1 : ‖mDriftVec sc hh‖ - ‖mScoreVec sc d‖
+            ≤ ‖mDriftVec sc hh - mScoreVec sc d‖ := norm_sub_norm_le _ _
+        rw [norm_sub_rev] at h1
+        have hs0 : Real.sqrt (max c 0) ^ 2 = max c 0 := Real.sq_sqrt (le_max_right c 0)
+        have hs0n : (0 : ℝ) ≤ Real.sqrt (max c 0) := Real.sqrt_nonneg _
+        have hzn : (0 : ℝ) ≤ ‖mScoreVec sc d‖ := norm_nonneg _
+        have hgt : Real.sqrt (max c 0) < ‖mScoreVec sc d‖ := by
+          rw [hRdef] at hR
+          linarith
+        nlinarith [le_max_left c 0]
+      have hcompl : (Measure.pi fun _ : Fin n => cellν n hh).real
+          (((mScoreVec sc : (Fin n → Fin (k + 1)) → _) ⁻¹' Reg)ᶜ) ≤ C₀ / t ^ 2 :=
+        le_trans (measureReal_mono hsub) hfar
+      have hcc := measureReal_compl (μ := Measure.pi fun _ : Fin n => cellν n hh) hSmeas
+      rw [probReal_univ] at hcc
+      rw [hpw]
+      linarith
+    -- near-minimisers
+    have hchoice : ∀ n : ℕ, ∃ hh : Fin (k + 1) → ℝ,
+        (pwf n '' multinomialShell π b n).Nonempty →
+          (hh ∈ multinomialShell π b n ∧
+            pwf n hh < sInf (pwf n '' multinomialShell π b n) + 1 / ((n : ℝ) + 1)) := by
+      intro n
+      by_cases hne : (pwf n '' multinomialShell π b n).Nonempty
+      · obtain ⟨x, hx, hlt⟩ := exists_lt_of_csInf_lt hne
+          (show sInf (pwf n '' multinomialShell π b n)
+              < sInf (pwf n '' multinomialShell π b n) + 1 / ((n : ℝ) + 1) by
+            have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
+            linarith)
+        obtain ⟨hh, hhS, rfl⟩ := hx
+        exact ⟨hh, fun _ => ⟨hhS, hlt⟩⟩
+      · exact ⟨h₁, fun hcne => absurd hcne hne⟩
+    choose g hg using hchoice
+    have hgood : ∀ᶠ n : ℕ in atTop,
+        (pwf n '' multinomialShell π b n).Nonempty ∧ 0 < n ∧
+          a' + 1 / ((n : ℝ) + 1) < 1 - C₀ / t ^ 2 := by
+      have hlimc : Tendsto (fun n : ℕ => a' + 1 / ((n : ℝ) + 1)) atTop (nhds a') := by
+        have hd : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (nhds 0) := by
+          have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds
+            (Filter.tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+          simpa using this
+        simpa using tendsto_const_nhds.add hd
+      have h3 : ∀ᶠ n : ℕ in atTop, a' + 1 / ((n : ℝ) + 1) < 1 - C₀ / t ^ 2 :=
+        hlimc.eventually (gt_mem_nhds (by linarith : a' < 1 - C₀ / t ^ 2))
+      have h1' : ∀ᶠ n : ℕ in atTop, (pwf n '' multinomialShell π b n).Nonempty := by
+        filter_upwards [hh₁mem] with n hn
+        exact ⟨pwf n h₁, ⟨h₁, hn, rfl⟩⟩
+      filter_upwards [h1', eventually_gt_atTop 0, h3] with n hA hB hC using ⟨hA, hB, hC⟩
+    obtain ⟨φ, hφmono, hφ⟩ :=
+      Filter.extraction_of_frequently_atTop (hcon.and_eventually hgood)
+    have hgS : ∀ m, g (φ m) ∈ multinomialShell π b (φ m) := fun m => ((hg (φ m)) (hφ m).2.1).1
+    have hglt : ∀ m, pwf (φ m) (g (φ m)) < a' + 1 / ((φ m : ℝ) + 1) := by
+      intro m
+      have h1 := ((hg (φ m)) (hφ m).2.1).2
+      have h2 : sInf (pwf (φ m) '' multinomialShell π b (φ m)) ≤ a' := not_lt.mp (hφ m).1
+      linarith
+    have hgbnd : ∀ m, ‖mDriftVec sc (g (φ m))‖ < R := by
+      intro m
+      by_contra hle
+      push_neg at hle
+      have hu := huniform (φ m) (g (φ m)) (hφ m).2.2.1 hle
+      have hc3 := (hφ m).2.2.2
+      linarith [hglt m]
+    have hgball : ∀ m, g (φ m) ∈ Metric.closedBall (0 : Fin (k + 1) → ℝ) R := by
+      intro m
+      have hnc : multinomialNoncentrality π (g (φ m)) = ‖mDriftVec sc (g (φ m))‖ ^ 2 :=
+        multinomialNoncentrality_eq_normSq hπpos hpars (hgS m).1
+      simp only [Metric.mem_closedBall, dist_zero_right]
+      rw [pi_norm_le_iff_of_nonneg hR0.le]
+      intro j
+      have hterm : (g (φ m) j) ^ 2 / π j ≤ multinomialNoncentrality π (g (φ m)) := by
+        rw [multinomialNoncentrality]
+        exact Finset.single_le_sum (f := fun i => (g (φ m) i) ^ 2 / π i)
+          (fun i _ => div_nonneg (sq_nonneg _) (hπpos i).le) (Finset.mem_univ j)
+      have hdiv : (g (φ m) j) ^ 2 ≤ (g (φ m) j) ^ 2 / π j := by
+        rw [le_div_iff₀ (hπpos j)]
+        nlinarith [sq_nonneg (g (φ m) j), hπle j]
+      have hsq : (g (φ m) j) ^ 2 < R ^ 2 := by
+        have hb1 := hgbnd m
+        have hb2 : (0 : ℝ) ≤ ‖mDriftVec sc (g (φ m))‖ := norm_nonneg _
+        nlinarith
+      rw [Real.norm_eq_abs]
+      nlinarith [abs_nonneg (g (φ m) j), sq_abs (g (φ m) j)]
+    obtain ⟨h₀, -, ξ, hξmono, hξlim⟩ :=
+      (isCompact_closedBall (0 : Fin (k + 1) → ℝ) R).tendsto_subseq hgball
+    set σ : ℕ → ℕ := fun m => φ (ξ m) with hσdef
+    have hσmono : StrictMono σ := hφmono.comp hξmono
+    set w : ℕ → Fin (k + 1) → ℝ :=
+      fun n => if n ∈ Set.range σ then g n else h₀ with hwdef
+    have hwσ : ∀ m, w (σ m) = g (σ m) := by
+      intro m
+      simp only [hwdef, if_pos (Set.mem_range.mpr ⟨m, rfl⟩)]
+    have hwlim : Tendsto w atTop (nhds h₀) := by
+      rw [Metric.tendsto_atTop]
+      intro ε hε
+      rw [Metric.tendsto_atTop] at hξlim
+      obtain ⟨M, hM⟩ := hξlim ε hε
+      refine ⟨σ M, fun n hn => ?_⟩
+      by_cases hmem : n ∈ Set.range σ
+      · obtain ⟨m, rfl⟩ := hmem
+        have hmM : M ≤ m := by
+          by_contra hcm
+          rw [not_le] at hcm
+          exact absurd hn (not_le.mpr (hσmono hcm))
+        rw [hwσ m]
+        simpa only [Function.comp_apply, hσdef] using hM m hmM
+      · rw [hwdef]
+        simp only [if_neg hmem, dist_self]
+        exact hε
+    have hlimit := (hdrift w h₀ (fun j => tendsto_pi_nhds.mp hwlim j)).comp hσmono.tendsto_atTop
+    have hupper : Tendsto (fun m => a' + 1 / ((σ m : ℝ) + 1)) atTop (nhds a') := by
+      have hσtop : Tendsto (fun m => ((σ m : ℝ) + 1)) atTop atTop :=
+        Filter.tendsto_atTop_add_const_right _ 1
+          (tendsto_natCast_atTop_atTop.comp hσmono.tendsto_atTop)
+      have := Filter.Tendsto.div_atTop (f := fun _ : ℕ => (1 : ℝ)) tendsto_const_nhds hσtop
+      simpa using tendsto_const_nhds.add this
+    have hle : (noncentralChiSquared k (‖mDriftVec sc h₀‖ ^ 2).toNNReal
+        (Set.Ioi c)).toReal ≤ a' := by
+      refine le_of_tendsto_of_tendsto' hlimit hupper (fun m => ?_)
+      simp only [Function.comp_apply, hwσ m]
+      exact (hglt (ξ m)).le
+    have hsum0 : ∑ j, h₀ j = 0 := by
+      have h1 : Tendsto (fun m => ∑ j, g (σ m) j) atTop (nhds (∑ j, h₀ j)) :=
+        tendsto_finset_sum _ fun j _ => tendsto_pi_nhds.mp hξlim j
+      exact tendsto_nhds_unique (h1.congr (fun m => (hgS (ξ m)).1)) tendsto_const_nhds
+    have hncge : b ^ 2 ≤ multinomialNoncentrality π h₀ := by
+      have hcont : Tendsto (fun m => multinomialNoncentrality π (g (σ m))) atTop
+          (nhds (multinomialNoncentrality π h₀)) := by
+        simp only [multinomialNoncentrality]
+        exact tendsto_finset_sum _ fun j _ =>
+          ((tendsto_pi_nhds.mp hξlim j).pow 2).div_const (π j)
+      exact ge_of_tendsto' hcont (fun m => (hgS (ξ m)).2.1)
+    have hmono : ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal
+        ≤ (noncentralChiSquared k (‖mDriftVec sc h₀‖ ^ 2).toNNReal (Set.Ioi c)).toReal := by
+      refine ENNReal.toReal_mono (measure_ne_top _ _)
+        (noncentralChiSquared_tail_mono k c (Real.toNNReal_mono ?_))
+      rw [← multinomialNoncentrality_eq_normSq hπpos hpars hsum0]
+      exact hncge
+    linarith
+  · -- `limsup ≤`: evaluate at the fixed inner-boundary point
+    intro a' ha'
+    have hlim := hdrift (fun _ => h₁) h₁ (fun j => tendsto_const_nhds)
+    rw [hv₁] at hlim
+    have hev := hlim.eventually (gt_mem_nhds ha')
+    filter_upwards [hev, hh₁mem] with n hn hmem
+    exact lt_of_le_of_lt (csInf_le (hbdd n) ⟨h₁, hmem, rfl⟩) hn
 
 /-- **Pearson's test is asymptotically maximin.** The nonrandomized test `1{Qₙ > c}`
 attains the bound of `chiSquared_maximin_upper_bound`: its minimum power over the local
