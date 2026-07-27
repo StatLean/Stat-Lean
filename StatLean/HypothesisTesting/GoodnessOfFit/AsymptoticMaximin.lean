@@ -718,6 +718,12 @@ consumers** (see the module docstring and the proof note below).
   `{‖η‖ ≥ b}`. Since the shell is now a parameter, the consumer performs that change of
   variables on its own shell, which is where it belongs.
 
+Two further generalisations, both needed by the consumers and both free: the sample space
+`Ω n` may vary with `n` (a consumer whose competitors are functions of the sample transfers
+to the canonical experiment on `Fin n → 𝓧`, which does vary), and the shell condition is
+only required *eventually* (the multinomial shell contains the least-favourable sphere only
+for `n` large, the positivity constraint `πⱼ + hⱼ/√n ≥ 0` being what fails for small `n`).
+
 Two further hypotheses are honest regularity requirements of the mixture argument rather
 than restrictions: joint measurability of the log-likelihood field `L` in `(h, ω)` (without
 it the mixture likelihood ratio `∫ exp(L n h ·) dσ(h)` is not even a random variable), and
@@ -725,10 +731,12 @@ a *uniform-over-the-sphere* LAN remainder, supplied as a measurable envelope `D 
 tends to `0` in `Q_{n,0}`-probability. The frozen pointwise-in-`h` remainder does not imply
 the uniform one, and the mixture step genuinely needs the uniform one; both applications
 have it, the sphere being compact. -/
-theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [MeasurableSpace Ω]
-    {Q : ℕ → EuclideanSpace ℝ (Fin k) → Measure Ω} [∀ n h, IsProbabilityMeasure (Q n h)]
-    {φ : ℕ → Ω → ℝ} {Z : ℕ → Ω → EuclideanSpace ℝ (Fin k)}
-    {L : ℕ → EuclideanSpace ℝ (Fin k) → Ω → ℝ} {D : ℕ → Ω → ℝ}
+theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : ℕ → Type*}
+    [∀ n, MeasurableSpace (Ω n)]
+    {Q : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Measure (Ω n)}
+    [∀ n h, IsProbabilityMeasure (Q n h)]
+    {φ : (n : ℕ) → Ω n → ℝ} {Z : (n : ℕ) → Ω n → EuclideanSpace ℝ (Fin k)}
+    {L : (n : ℕ) → EuclideanSpace ℝ (Fin k) → Ω n → ℝ} {D : (n : ℕ) → Ω n → ℝ}
     {S : ℕ → Set (EuclideanSpace ℝ (Fin k))}
     -- USER-INPUT: at least one degree of freedom
     (hk : 0 < k)
@@ -750,7 +758,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
       (stdGaussian (EuclideanSpace ℝ (Fin k))))
     -- USER-INPUT: the log-likelihood field is jointly measurable in the local parameter
     -- and the sample point
-    (hLmeas : ∀ n, Measurable fun p : EuclideanSpace ℝ (Fin k) × Ω => L n p.1 p.2)
+    (hLmeas : ∀ n, Measurable fun p : EuclideanSpace ℝ (Fin k) × Ω n => L n p.1 p.2)
     -- USER-INPUT: the local experiments are dominated by the null one, with
     -- log-likelihood ratio `L n h`; Le Cam 1960
     (hdens : ∀ n h, Q n h
@@ -764,8 +772,8 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
       |L n h ω - (⟪h, Z n ω⟫_ℝ - b ^ 2 / 2)| ≤ D n ω)
     -- USER-INPUT: the envelope is `o_P(1)` under the null
     (hD0 : ∀ ε > 0, Tendsto (fun n => ((Q n 0) {ω | ε ≤ D n ω}).toReal) atTop (nhds 0))
-    -- USER-INPUT: the alternative families contain the least-favourable sphere
-    (hS : ∀ n, {h : EuclideanSpace ℝ (Fin k) | ‖h‖ = b} ⊆ S n) :
+    -- USER-INPUT: the alternative families eventually contain the least-favourable sphere
+    (hS : ∀ᶠ n in atTop, {h : EuclideanSpace ℝ (Fin k) | ‖h‖ = b} ⊆ S n) :
     limsup (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) atTop
       ≤ ((noncentralChiSquared k (b ^ 2).toNNReal) (Set.Ioi c)).toReal := by
   classical
@@ -867,16 +875,16 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
       (Filter.Eventually.of_forall fun x => lt_top_iff_ne_top.mpr (hGlfin x))]
     exact integral_congr_ae (Filter.Eventually.of_forall hGGl)
   -- ### Step 3. The mixture likelihood ratio.
-  set Rl : ℕ → Ω → ℝ≥0∞ :=
+  set Rl : (n : ℕ) → Ω n → ℝ≥0∞ :=
     fun n ω => ∫⁻ h, ENNReal.ofReal (Real.exp (L n h ω)) ∂σ with hRldef
   have hRlmeas : ∀ n, Measurable (Rl n) := by
     intro n
-    have h1 : Measurable fun p : Ω × EuclideanSpace ℝ (Fin k) =>
+    have h1 : Measurable fun p : Ω n × EuclideanSpace ℝ (Fin k) =>
         ENNReal.ofReal (Real.exp (L n p.2 p.1)) :=
       ENNReal.measurable_ofReal.comp (Real.continuous_exp.measurable.comp
         ((hLmeas n).comp (measurable_snd.prodMk measurable_fst)))
     exact h1.lintegral_prod_right'
-  set R : ℕ → Ω → ℝ := fun n ω => (Rl n ω).toReal with hRdef
+  set R : (n : ℕ) → Ω n → ℝ := fun n ω => (Rl n ω).toReal with hRdef
   have hRmeas : ∀ n, Measurable (R n) := fun n => (hRlmeas n).ennreal_toReal
   have hRnn : ∀ n ω, 0 ≤ R n ω := fun n ω => ENNReal.toReal_nonneg
   have hDnn : ∀ n ω, 0 ≤ D n ω := by
@@ -934,7 +942,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     have h1 : (Q n h) Set.univ = 1 := measure_univ
     rwa [hdens n h, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at h1
   have hswapmeas : ∀ n, AEMeasurable
-      (Function.uncurry fun (h : EuclideanSpace ℝ (Fin k)) (ω : Ω) =>
+      (Function.uncurry fun (h : EuclideanSpace ℝ (Fin k)) (ω : Ω n) =>
         ENNReal.ofReal (Real.exp (L n h ω))) (σ.prod (Q n 0)) := by
     intro n
     exact (ENNReal.measurable_ofReal.comp
@@ -977,17 +985,17 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
     exact integral_nonneg fun ω => ((hφ n).2 ω).1
   have hspherept : ‖(b • EuclideanSpace.single (0 : Fin k) (1 : ℝ) :
       EuclideanSpace ℝ (Fin k))‖ = b := by simp [norm_smul, abs_of_pos hb]
-  have hne : ∀ n, ((fun h => power (Q n) (φ n) h) '' S n).Nonempty := fun n =>
-    ⟨_, ⟨_, hS n hspherept, rfl⟩⟩
   have hbdd : ∀ n, BddBelow ((fun h => power (Q n) (φ n) h) '' S n) := by
     intro n
     exact ⟨0, by rintro y ⟨h, -, rfl⟩; exact hpowernn n h⟩
   have hsInfnn : ∀ n, 0 ≤ sInf ((fun h => power (Q n) (φ n) h) '' S n) := by
     intro n
-    exact le_csInf (hne n) (by rintro y ⟨h, -, rfl⟩; exact hpowernn n h)
-  have hmix : ∀ n, sInf ((fun h => power (Q n) (φ n) h) '' S n)
+    rcases Set.eq_empty_or_nonempty ((fun h => power (Q n) (φ n) h) '' S n) with he | hne'
+    · rw [he, Real.sInf_empty]
+    · exact le_csInf hne' (by rintro y ⟨h, -, rfl⟩; exact hpowernn n h)
+  have hmix : ∀ᶠ n in atTop, sInf ((fun h => power (Q n) (φ n) h) '' S n)
       ≤ ∫ ω, φ n ω * R n ω ∂(Q n 0) := by
-    intro n
+    filter_upwards [hS] with n hSn
     have hφRint : Integrable (fun ω => φ n ω * R n ω) (Q n 0) := by
       refine (hRint n).mono' ((hφ n).1.aestronglyMeasurable.mul
         (hRmeas n).aestronglyMeasurable) (Filter.Eventually.of_forall fun ω => ?_)
@@ -1007,7 +1015,7 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
           ≤ ∫⁻ ω, ENNReal.ofReal (φ n ω) *
               ENNReal.ofReal (Real.exp (L n h ω)) ∂(Q n 0) := by
         filter_upwards [hsphere] with h hh
-        have hmem : h ∈ S n := hS n hh
+        have hmem : h ∈ S n := hSn hh
         have hcs : sInf ((fun h => power (Q n) (φ n) h) '' S n) ≤ power (Q n) (φ n) h :=
           csInf_le (hbdd n) ⟨h, hmem, rfl⟩
         rw [hpower n h] at hcs
@@ -1230,8 +1238,10 @@ theorem asymptotic_maximin_upper_bound {k : ℕ} {b c α : ℝ} {Ω : Type*} [Me
       (fun n => sInf ((fun h => power (Q n) (φ n) h) '' S n)) := by
     refine Filter.IsBoundedUnder.isCoboundedUnder_le ?_
     exact ⟨0, Filter.eventually_map.mpr (Filter.Eventually.of_forall hsInfnn)⟩
-  refine le_trans (Filter.limsup_le_limsup
-    (Filter.Eventually.of_forall fun n => le_trans (hmix n) (hAn n)) hcob
-    hmajor.isBoundedUnder_le) (le_of_eq hmajor.limsup_eq)
+  have hle : ∀ᶠ n in atTop, sInf ((fun h => power (Q n) (φ n) h) '' S n)
+      ≤ (1 - ∫ ω, ξ (R n ω) ∂(Q n 0)) + t * power (Q n) (φ n) 0 := by
+    filter_upwards [hmix] with n hn using le_trans hn (hAn n)
+  exact le_trans (Filter.limsup_le_limsup hle hcob hmajor.isBoundedUnder_le)
+    (le_of_eq hmajor.limsup_eq)
 
 end StatLean.HypothesisTesting
