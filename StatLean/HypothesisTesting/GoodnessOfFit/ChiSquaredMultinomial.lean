@@ -1719,26 +1719,45 @@ theorem pearsonQ_local_power_nondegenerate {k : ℕ} {α c : ℝ} {π h : Fin (k
           (Set.Ioi c)).toReal
       ∧ ((noncentralChiSquared k (multinomialNoncentrality π h).toNNReal)
           (Set.Ioi c)).toReal < 1 := by
-  -- TODO (re-derived after the closure of `pearsonQ_weakConverges_noncentral`).  Conjunct
-  -- (1) is now reachable: the weak limit is available, `noncentralChiSquared k λ` is the
-  -- pushforward of a Gaussian under `‖·‖²` and so has no atom at `c` (its `{c}`-mass is a
-  -- sphere mass for the standard Gaussian), and the moving-threshold portmanteau tail
-  -- `ChiSquaredMaximin.tendsto_measure_Ioi_of_weakLimit` (constant threshold case) is the
-  -- last step.  The obstruction is conjunct (2), `α < tail`:
-  --   * `α = χ²_k(c,∞) = ncχ²_k(0)(c,∞)` and `λ = multinomialNoncentrality π h > 0` (from
-  --     `hhne` and `hπpos`), so the claim is the STRICT form of Anderson's inequality —
-  --     `μ(C − v) < μ(C)` for the standard Gaussian, the closed ball `C = {‖z‖² ≤ c}` and
-  --     `v ≠ 0`.  The repository has only the non-strict endpoint
-  --     `AsymptoticStatistics.anderson_lemma_set_stdGaussian`, and even the non-strict
-  --     shrink monotonicity `noncentralChiSquared_tail_mono` rests on the open
-  --     `stdGaussian_normSq_le_antitone`.  Strictness is not a corollary of either: the
-  --     pointwise pairing `φ(u−v)+φ(u+v) = 2φ(u)e^{-‖v‖²/2}cosh⟪u,v⟫` is `> 2φ(u)` on part
-  --     of the ball, so the gain is genuinely an averaged (Prékopa–Leindler) phenomenon.
-  --   * conjunct (3), `tail < 1`, needs `ncχ²_k(λ)(-∞,c] > 0`, i.e. that the shifted
-  --     Gaussian charges the open ball `{‖z‖² < c}` — true (Gaussians are open-positive) but
-  --     requiring an `IsOpenPosMeasure`-style fact for `multivariateGaussian` that the
-  --     project does not yet have, together with `0 < c` (which follows from `hc` and
-  --     `α < 1`).
-  sorry
+  classical
+  -- a nondegenerate level forces a positive critical value
+  have hcpos : 0 < c := pos_of_chiSquared_tail_lt_one hk hα1 hc
+  -- the noncentrality is positive
+  have hlampos : 0 < multinomialNoncentrality π h := by
+    obtain ⟨j, hj⟩ := hhne
+    rw [multinomialNoncentrality]
+    refine Finset.sum_pos' (fun i _ => div_nonneg (sq_nonneg _) (hπpos i).le)
+      ⟨j, Finset.mem_univ j, div_pos ?_ (hπpos j)⟩
+    exact lt_of_le_of_ne (sq_nonneg _) (Ne.symm (pow_ne_zero 2 hj))
+  have hlamnn : 0 < (multinomialNoncentrality π h).toNNReal := Real.toNNReal_pos.mpr hlampos
+  refine ⟨?_, ?_, ?_⟩
+  · -- (1) the limiting power, by the constant-threshold portmanteau step
+    have hweak := pearsonQ_weakConverges_noncentral hk hπpos hπsum hhsum hX hindep hlaw hcell
+    haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (Measure.map (pearsonQ π (X n)) (P n)) :=
+      fun n => Measure.isProbabilityMeasure_map (measurable_pearsonQ (hX n)).aemeasurable
+    set μs : ℕ → ProbabilityMeasure ℝ :=
+      fun n => ⟨Measure.map (pearsonQ π (X n)) (P n), hprob n⟩ with hμs
+    set νl : ProbabilityMeasure ℝ :=
+      ⟨noncentralChiSquared k (multinomialNoncentrality π h).toNNReal, inferInstance⟩ with hνl
+    have hconv : Tendsto μs atTop (𝓝 νl) := by
+      rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
+      intro f
+      simpa only [hμs, hνl, ProbabilityMeasure.coe_mk] using hweak f
+    have hfront : (νl : Measure ℝ) (frontier (Set.Ioi c)) = 0 := by
+      rw [frontier_Ioi]
+      exact noncentralChiSquared_singleton hcpos _
+    have hport := ProbabilityMeasure.tendsto_measure_of_null_frontier_of_tendsto' hconv hfront
+    have htoreal := (ENNReal.tendsto_toReal (measure_ne_top _ _)).comp hport
+    refine htoreal.congr fun n => ?_
+    simp only [Function.comp_apply, hμs, ProbabilityMeasure.coe_mk]
+    rw [Measure.map_apply (measurable_pearsonQ (hX n)) measurableSet_Ioi]
+    rfl
+  · -- (2) the limit exceeds the level, by the strict tail comparison
+    have hαeq : α = (noncentralChiSquared k 0 (Set.Ioi c)).toReal := by
+      rw [noncentralChiSquared_zero hk, hc, ENNReal.toReal_ofReal hα.le]
+    rw [hαeq]
+    exact noncentralChiSquared_tail_lt hk hcpos hlamnn
+  · -- (3) the limit is below one, since the ball below the threshold has positive mass
+    exact noncentralChiSquared_tail_lt_one hcpos _
 
 end StatLean.HypothesisTesting
