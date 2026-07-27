@@ -7,6 +7,7 @@ import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.Analysis.Convex.Measure
 import Mathlib.Topology.MetricSpace.Thickening
@@ -411,6 +412,201 @@ private lemma gaussian_le_of_shift_cover (hk : 0 < k)
           ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (by positivity)]
         congr 1
         ring
+
+/-! ### The shell bounds -/
+
+/-- The constant of the Gaussian shell bound, `C_k = 8 k^{3/2}/√(2π)`. (Ball's sharp constant is
+`4 k^{1/4}`; only finiteness at fixed `k` is needed here.) -/
+noncomputable def gaussianShellConst (k : ℕ) : ℝ := 8 * k * Real.sqrt k / Real.sqrt (2 * π)
+
+lemma gaussianShellConst_pos (hk : 0 < k) : 0 < gaussianShellConst k := by
+  have hk' : (0 : ℝ) < k := by exact_mod_cast hk
+  have : 0 < Real.sqrt k := Real.sqrt_pos.2 hk'
+  unfold gaussianShellConst
+  positivity
+
+/-- The covering constant at width `c = 2ε√k` is exactly `C_k ε`. -/
+private lemma shift_cover_const (_hk : 0 < k) (ε : ℝ) :
+    4 * (k : ℝ) * (2 * ε * Real.sqrt k) / Real.sqrt (2 * π) = gaussianShellConst k * ε := by
+  unfold gaussianShellConst
+  ring
+
+/-- **A convex set differs from its interior by a Gaussian-null set.** Every non-interior point of
+a convex `V` carries a supporting functional, so it leaves `V` after an arbitrarily small
+coordinate shift; the slice bound then gives mass `≤ 4kc/√(2π)` for every `c > 0`. -/
+theorem gaussian_diff_interior_eq_zero (hk : 0 < k)
+    {V : Set (EuclideanSpace ℝ (Fin k))} (hVm : MeasurableSet V) (hVc : Convex ℝ V) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (V \ interior V) = 0 := by
+  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
+  have hsq : (0 : ℝ) < Real.sqrt (2 * π) := Real.sqrt_pos.2 (by positivity)
+  have hk' : (0 : ℝ) < 4 * k := by
+    have : (0 : ℝ) < k := by exact_mod_cast hk
+    linarith
+  have hle : ∀ c : ℝ, 0 < c →
+      multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (V \ interior V)
+        ≤ ENNReal.ofReal (4 * k * c / Real.sqrt (2 * π)) := by
+    intro c hc
+    refine gaussian_le_of_shift_cover hk hVm hVc hc.le fun x hx => ?_
+    obtain ⟨u, hu0, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hVc hx.2
+    obtain ⟨i, d, hd, hdist⟩ := exists_dist_ge_of_inner_le_zero hk hu0
+      (fun w hw => hu w (subset_closure hw)) hc.le
+    refine ⟨i, d, hd, hx.1, fun hmem => ?_⟩
+    have hzero := hdist _ hmem
+    rw [dist_self] at hzero
+    exact absurd hzero (not_le.2 (div_pos hc hkr))
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_) (zero_le _)
+  have hεr : (0 : ℝ) < (ε : ℝ) := by exact_mod_cast hε
+  have hcpos : 0 < (ε : ℝ) * Real.sqrt (2 * π) / (4 * k) := by positivity
+  have hval : 4 * (k : ℝ) * ((ε : ℝ) * Real.sqrt (2 * π) / (4 * k)) / Real.sqrt (2 * π)
+      = (ε : ℝ) := by
+    field_simp
+  have := hle _ hcpos
+  rw [hval, ENNReal.ofReal_coe_nnreal] at this
+  simpa using this
+
+/-- **Outer shell bound.** For convex `B`, the `ε`-thickening adds at most `C_k ε` Gaussian mass.
+
+A point of `Bᵋ \ B` is not in `interior B`, so a supporting functional escapes it by `2ε` along a
+coordinate axis (`c = 2ε√k`), which leaves `Bᵋ` altogether; `Bᵋ` is convex and open, so the slice
+bound applies to it. -/
+theorem gaussian_thickening_le (hk : 0 < k) {B : Set (EuclideanSpace ℝ (Fin k))}
+    (hBc : Convex ℝ B) {ε : ℝ} (hε : 0 < ε) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (Metric.thickening ε B)
+      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
+        + ENNReal.ofReal (gaussianShellConst k * ε) := by
+  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
+  set W := Metric.thickening ε B with hW
+  have hWopen : IsOpen W := Metric.isOpen_thickening
+  have hWconv : Convex ℝ W := hBc.thickening ε
+  set c : ℝ := 2 * ε * Real.sqrt k with hc
+  have hcpos : 0 < c := by rw [hc]; positivity
+  have hshell : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ B)
+      ≤ ENNReal.ofReal (gaussianShellConst k * ε) := by
+    rw [← shift_cover_const hk ε, ← hc]
+    refine gaussian_le_of_shift_cover hk hWopen.measurableSet hWconv hcpos.le fun x hx => ?_
+    have hxint : x ∉ interior B := fun h => hx.2 (interior_subset h)
+    obtain ⟨u, hu0, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hxint
+    obtain ⟨i, d, hd, hdist⟩ := exists_dist_ge_of_inner_le_zero hk hu0 hu hcpos.le
+    refine ⟨i, d, hd, hx.1, fun hmem => ?_⟩
+    obtain ⟨z, hzB, hzlt⟩ := Metric.mem_thickening_iff.1 hmem
+    have hge := hdist z (subset_closure hzB)
+    have hck : c / Real.sqrt k = 2 * ε := by
+      rw [hc, mul_div_assoc, div_self hkr.ne', mul_one]
+    linarith
+  calc multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 W
+      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B ∪ (W \ B)) := by
+        refine measure_mono fun x hx => ?_
+        by_cases hxB : x ∈ B
+        · exact Or.inl hxB
+        · exact Or.inr ⟨hx, hxB⟩
+    _ ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
+        + multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (W \ B) := measure_union_le _ _
+    _ ≤ _ := add_le_add le_rfl hshell
+
+/-! ### The erosion (inner parallel body) -/
+
+/-- The open `ε`-erosion of `B`: the points whose closed `ε`-ball lies in the interior of `B`.
+It is open and convex, and its `ε`-thickening is contained in `B`. -/
+def erosion (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))) : Set (EuclideanSpace ℝ (Fin k)) :=
+  {x | Metric.closedBall x ε ⊆ interior B}
+
+lemma isOpen_erosion (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))) : IsOpen (erosion ε B) := by
+  rw [Metric.isOpen_iff]
+  intro x hx
+  obtain ⟨δ, hδ, hsub⟩ :=
+    (isCompact_closedBall x ε).exists_thickening_subset_open isOpen_interior hx
+  refine ⟨δ, hδ, ?_⟩
+  intro x' hx'
+  simp only [erosion, Set.mem_setOf_eq]
+  intro y hy
+  refine hsub (Metric.mem_thickening_iff.2 ⟨y + (x - x'), ?_, ?_⟩)
+  · simp only [Metric.mem_closedBall, dist_eq_norm] at hy ⊢
+    have hrw : y + (x - x') - x = y - x' := by abel
+    rw [hrw]
+    exact hy
+  · simp only [dist_eq_norm]
+    have hrw : y - (y + (x - x')) = x' - x := by abel
+    rw [hrw]
+    have := Metric.mem_ball.1 hx'
+    rw [dist_eq_norm] at this
+    exact this
+
+lemma convex_erosion {ε : ℝ} {B : Set (EuclideanSpace ℝ (Fin k))} (hB : Convex ℝ B) :
+    Convex ℝ (erosion ε B) := by
+  intro x hx y hy s r hs hr hsr
+  simp only [erosion, Set.mem_setOf_eq] at hx hy ⊢
+  intro z hz
+  set v := z - (s • x + r • y) with hv
+  have hvnorm : ‖v‖ ≤ ε := by
+    rw [hv]
+    simpa [Metric.mem_closedBall, dist_eq_norm] using hz
+  have hzx : x + v ∈ interior B := by
+    refine hx ?_
+    simp only [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left]
+    exact hvnorm
+  have hzy : y + v ∈ interior B := by
+    refine hy ?_
+    simp only [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left]
+    exact hvnorm
+  have hzeq : s • (x + v) + r • (y + v) = z := by
+    have hv' : s • v + r • v = v := by rw [← add_smul, hsr, one_smul]
+    rw [smul_add, smul_add]
+    have hrw : s • x + s • v + (r • y + r • v) = s • x + r • y + (s • v + r • v) := by abel
+    rw [hrw, hv', hv]
+    abel
+  rw [← hzeq]
+  exact hB.interior hzx hzy hs hr hsr
+
+lemma thickening_erosion_subset (ε : ℝ) (B : Set (EuclideanSpace ℝ (Fin k))) :
+    Metric.thickening ε (erosion ε B) ⊆ B := by
+  intro y hy
+  obtain ⟨a, ha, hlt⟩ := Metric.mem_thickening_iff.1 hy
+  exact interior_subset (ha (Metric.mem_closedBall.2 hlt.le))
+
+/-- **Inner shell bound.** For convex measurable `B`, eroding by `ε` costs at most `C_k ε` of
+Gaussian mass. A point of `B` that is not in the erosion has a point `z` within `ε` that is not
+interior to `B`; the functional supporting `B` at `z` escapes `2ε` along a coordinate axis, hence
+still escapes `ε` from `x`. -/
+theorem gaussian_le_erosion_add (hk : 0 < k) {B : Set (EuclideanSpace ℝ (Fin k))}
+    (hBm : MeasurableSet B) (hBc : Convex ℝ B) {ε : ℝ} (hε : 0 < ε) :
+    multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
+      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (erosion ε B)
+        + ENNReal.ofReal (gaussianShellConst k * ε) := by
+  have hkr : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 (by exact_mod_cast hk)
+  set c : ℝ := 2 * ε * Real.sqrt k with hc
+  have hcpos : 0 < c := by rw [hc]; positivity
+  have hshell : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B \ erosion ε B)
+      ≤ ENNReal.ofReal (gaussianShellConst k * ε) := by
+    rw [← shift_cover_const hk ε, ← hc]
+    refine gaussian_le_of_shift_cover hk hBm hBc hcpos.le fun x hx => ?_
+    obtain ⟨z, hzball, hzint⟩ :=
+      Set.not_subset.1 (hx.2 : ¬ (Metric.closedBall x ε ⊆ interior B))
+    obtain ⟨u, hu0, hu⟩ := exists_inner_le_zero_of_notMem_interior hk hBc hzint
+    obtain ⟨i, d, hd, hdist⟩ := exists_dist_ge_of_inner_le_zero hk hu0 hu hcpos.le
+    refine ⟨i, d, hd, hx.1, fun hmem => ?_⟩
+    have hge := hdist _ (subset_closure hmem)
+    -- the shifted point `x + d•eᵢ` is within `ε` of `z + d•eᵢ`
+    have htri : dist (z + d • EuclideanSpace.single i (1 : ℝ))
+        (x + d • EuclideanSpace.single i (1 : ℝ)) ≤ ε := by
+      simp only [dist_eq_norm]
+      have : z + d • EuclideanSpace.single i (1 : ℝ) - (x + d • EuclideanSpace.single i (1 : ℝ))
+          = z - x := by abel
+      rw [this]
+      simpa [dist_eq_norm] using Metric.mem_closedBall.1 hzball
+    have hck : c / Real.sqrt k = 2 * ε := by
+      rw [hc, mul_div_assoc, div_self hkr.ne', mul_one]
+    linarith
+  calc multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 B
+      ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+          (erosion ε B ∪ (B \ erosion ε B)) := by
+        refine measure_mono fun x hx => ?_
+        by_cases hxA : x ∈ erosion ε B
+        · exact Or.inl hxA
+        · exact Or.inr ⟨hx, hxA⟩
+    _ ≤ multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (erosion ε B)
+        + multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1 (B \ erosion ε B) :=
+        measure_union_le _ _
+    _ ≤ _ := add_le_add le_rfl hshell
 
 end GaussianShell
 
