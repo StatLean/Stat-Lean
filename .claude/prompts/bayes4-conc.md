@@ -89,3 +89,22 @@ Provided 0-sorry upstream (verified on the pin):
 Gate green. Report per-target closed/left. Sanctioned NAMED DEBT (max 1):
 `posterior_mass_compl_ball_tendsto` (only if the final assembly resists — everything
 feeding it must close).
+
+---
+
+## RESUME NOTE (second session on this branch)
+
+A previous session on this branch was cut off mid-work by a **rate limit** (not by a proof
+problem). It already closed and COMMITTED `PriorSmallBall.lean` — **0 sorries**
+(`prior_ball_inv_sqrt_lower`, `prior_smallBall_upper`, `prior_smallBall_lower`,
+`prior_tail_split`).
+
+**Your job**: `PosteriorConcentration.lean` (3 sorries: `bvmLocalPosterior_compl_ball`,
+`mixture_posterior_test_bound`, `posterior_mass_compl_ball_tendsto`). The last commit on the
+branch is an auto-close commit whose contents were never compiled — so START by running
+`lake build StatLean.Bayesian.BernsteinVonMises.PriorSmallBall` (foreground) and fix anything
+red before moving on. Do not redo `PriorSmallBall.lean`.
+
+Also newly available (merged into your base): `MixtureContiguity.lean` is 0-sorry, so
+`bvmMixture_absolutelyContinuous`, `mutuallyContiguous_mixture_base` and
+`measure_tendsto_zero_of_predictive_null` are real theorems now, not stubs.

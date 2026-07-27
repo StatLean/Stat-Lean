@@ -149,3 +149,21 @@ Provided 0-sorry upstream (verified on the pin):
 
 Gate green. Report per-target closed/left + the exact statement of any obstruction.
 Sanctioned NAMED DEBT (max 1): `local_tv_tendsto`.
+
+---
+
+## RESUME NOTE (second session on this branch)
+
+A previous session on this branch was cut off mid-work by a **rate limit** (not by a proof
+problem). It already closed, and COMMITTED:
+
+* `MixtureContiguity.lean` — **0 sorries** (`bvmMixture_absolutelyContinuous`,
+  `logLikelihood_weakConverges`, `mutuallyContiguous_local_alternative`,
+  `mutuallyContiguous_mixture_base`, `measure_tendsto_zero_of_predictive_null`), plus
+  same-file private change-of-variables/mixture-apply helpers you should REUSE;
+* one target in `LocalApproximation.lean`.
+
+**Your job**: finish `LocalApproximation.lean` (4 sorries left). The last commit on the
+branch is an auto-close commit whose contents were never compiled — so START by running
+`lake build StatLean.Bayesian.BernsteinVonMises.LocalApproximation` (foreground) and fix
+anything red before adding new proofs. Do not redo `MixtureContiguity.lean`.
