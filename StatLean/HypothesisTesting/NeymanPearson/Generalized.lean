@@ -461,6 +461,82 @@ theorem isMax_le_of_multiplier_form_nonneg {m : ℕ}
     refine Finset.sum_nonneg fun i _ => mul_nonneg (hk i) (hdiffnn i)
   linarith
 
+/-! ### The Lagrangian characterization of the multiplier shape -/
+
+/-- Expanding the Lagrangian integral of a critical function into its moments. -/
+private lemma integral_lagrangian {m : ℕ} {μ : Measure 𝓧} {f : Fin (m + 1) → 𝓧 → ℝ}
+    (hint : ∀ i, Integrable (f i) μ) (k : Fin m → ℝ) {ψ : 𝓧 → ℝ} (hψ : IsCriticalFn ψ) :
+    ∫ x, ψ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ
+      = ∫ x, ψ x * f (Fin.last m) x ∂μ - ∑ i, k i * ∫ x, ψ x * f i.castSucc x ∂μ := by
+  have hlast := integrable_crit_mul (hint (Fin.last m)) hψ
+  have hi : ∀ i : Fin m, Integrable (fun x => k i * (ψ x * f i.castSucc x)) μ :=
+    fun i => (integrable_crit_mul (hint i.castSucc) hψ).const_mul (k i)
+  have hsum : Integrable (fun x => ∑ i, k i * (ψ x * f i.castSucc x)) μ :=
+    integrable_finset_sum _ fun i _ => hi i
+  rw [show (fun x => ψ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x))
+      = fun x => ψ x * f (Fin.last m) x - ∑ i, k i * (ψ x * f i.castSucc x) from by
+    funext x
+    rw [mul_sub, Finset.mul_sum]
+    exact congrArg _ (Finset.sum_congr rfl fun i _ => by ring)]
+  rw [integral_sub hlast hsum, integral_finset_sum _ fun i _ => hi i]
+  exact congrArg _ (Finset.sum_congr rfl fun i _ => integral_const_mul _ _)
+
+/-- **The multiplier shape is exactly Lagrangian optimality.** A critical function that
+maximizes the Lagrangian `∫ φ (f_{m+1} − ∑ kᵢfᵢ) dμ` over *all* critical functions has the
+multiplier shape for `k`.
+
+The supremum is `∫ G⁺ dμ` with `G = f_{m+1} − ∑ kᵢfᵢ`, attained by the indicator of
+`{G > 0}`; the difference `G⁺ − φG` is pointwise nonnegative for `φ ∈ [0,1]`, so a maximizer
+makes it vanish a.e., which is `φ = 1` on `{G > 0}` and `φ = 0` on `{G < 0}`. -/
+private lemma hasMultiplierShape_of_lagrangian_max {m : ℕ} {μ : Measure 𝓧}
+    {f : Fin (m + 1) → 𝓧 → ℝ} (hmeas : ∀ i, Measurable (f i)) (hint : ∀ i, Integrable (f i) μ)
+    (k : Fin m → ℝ) {φ : 𝓧 → ℝ} (hφ : IsCriticalFn φ)
+    (hmax : ∀ ψ, IsCriticalFn ψ →
+      ∫ x, ψ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ
+        ≤ ∫ x, φ x * (f (Fin.last m) x - ∑ i, k i * f i.castSucc x) ∂μ) :
+    HasMultiplierShape μ f k φ := by
+  classical
+  set G : 𝓧 → ℝ := fun x => f (Fin.last m) x - ∑ i, k i * f i.castSucc x with hGdef
+  have hGmeas : Measurable G :=
+    (hmeas _).sub (Finset.measurable_sum Finset.univ fun i _ => (hmeas i.castSucc).const_mul (k i))
+  have hGint : Integrable G μ :=
+    (hint _).sub (integrable_finset_sum Finset.univ fun i _ => (hint i.castSucc).const_mul (k i))
+  -- The indicator of `{G > 0}` is a critical function attaining the supremum.
+  set ind : 𝓧 → ℝ := fun x => if 0 < G x then 1 else 0 with hinddef
+  have hindc : IsCriticalFn ind := by
+    refine ⟨Measurable.ite (measurableSet_lt measurable_const hGmeas)
+      measurable_const measurable_const, fun x => ?_⟩
+    simp only [hinddef]
+    split_ifs
+    · exact ⟨zero_le_one, le_rfl⟩
+    · exact ⟨le_rfl, zero_le_one⟩
+  have hpt : ∀ x, φ x * G x ≤ ind x * G x := by
+    intro x
+    simp only [hinddef]
+    split_ifs with hx
+    · rw [one_mul]; nlinarith [(hφ.2 x).2]
+    · rw [zero_mul]; push_neg at hx; nlinarith [(hφ.2 x).1]
+  have hnn : 0 ≤ᵐ[μ] fun x => ind x * G x - φ x * G x :=
+    Filter.Eventually.of_forall fun x => sub_nonneg.mpr (hpt x)
+  have hi1 : Integrable (fun x => ind x * G x) μ := integrable_crit_mul hGint hindc
+  have hi2 : Integrable (fun x => φ x * G x) μ := integrable_crit_mul hGint hφ
+  have hz : ∫ x, (ind x * G x - φ x * G x) ∂μ = 0 :=
+    le_antisymm (by rw [integral_sub hi1 hi2]; linarith [hmax ind hindc])
+      (integral_nonneg_of_ae hnn)
+  have hae := (integral_eq_zero_iff_of_nonneg_ae hnn (hi1.sub hi2)).mp hz
+  constructor
+  · filter_upwards [hae] with x hx hgt
+    have hG : 0 < G x := by simp only [hGdef]; linarith
+    simp only [Pi.zero_apply, hinddef, if_pos hG, one_mul] at hx
+    have hfac : G x * (1 - φ x) = 0 := by linear_combination hx
+    have := (mul_eq_zero.mp hfac).resolve_left (ne_of_gt hG)
+    linarith
+  · filter_upwards [hae] with x hx hlt
+    have hG : G x < 0 := by simp only [hGdef]; linarith
+    simp only [Pi.zero_apply, hinddef, if_neg (not_lt.mpr hG.le), zero_mul, zero_sub,
+      neg_eq_zero] at hx
+    exact (mul_eq_zero.mp hx).resolve_right (ne_of_lt hG)
+
 /-- **Closedness of the attainable-moment set** — the hard half of `convex_isClosed_momentSet`.
 
 Closedness is the weak-* compactness of the class of critical functions, transported through the
