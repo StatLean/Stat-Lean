@@ -444,7 +444,33 @@ theorem gaussian_loss_convolution_lt_top
     -- LEAN-ONLY: nonnegative exponent (vdV §10.3: `p ≥ 0`)
     (hp : 0 ≤ p) (u : EuclideanSpace ℝ ι) :
     ∫⁻ z, ℓ (u - z) ∂(multivariateGaussian (0 : EuclideanSpace ℝ ι) S) < ∞ := by
-  sorry
+  classical
+  set ν := multivariateGaussian (0 : EuclideanSpace ℝ ι) S with hν
+  have hmono : ∫⁻ z, ℓ (u - z) ∂ν ≤ ∫⁻ z, (1 + ‖u - z‖ₑ ^ p) ∂ν := by
+    refine lintegral_mono fun z => (hpoly _).trans ?_
+    rw [ENNReal.ofReal_add zero_le_one (Real.rpow_nonneg (norm_nonneg _) p),
+      ENNReal.ofReal_one, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp,
+      ofReal_norm_eq_enorm]
+  refine lt_of_le_of_lt hmono ?_
+  have hfin : ∫⁻ z, ‖u - z‖ₑ ^ p ∂ν ≠ ∞ := by
+    rcases eq_or_lt_of_le hp with hp0 | hppos
+    · simp [← hp0, ENNReal.rpow_zero]
+    · have hq0 : ENNReal.ofReal p ≠ 0 := by
+        simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]; exact hppos
+      have hmem : MemLp (fun z : EuclideanSpace ℝ ι => u - z) (ENNReal.ofReal p) ν := by
+        have h1 : MemLp (fun _ : EuclideanSpace ℝ ι => u) (ENNReal.ofReal p) ν :=
+          memLp_const u
+        have h2 : MemLp (fun z : EuclideanSpace ℝ ι => z) (ENNReal.ofReal p) ν :=
+          IsGaussian.memLp_id ν (ENNReal.ofReal p) ENNReal.ofReal_ne_top
+        exact h1.sub h2
+      have hlt := hmem.eLpNorm_lt_top
+      rw [eLpNorm_eq_lintegral_rpow_enorm hq0 ENNReal.ofReal_ne_top,
+        ENNReal.toReal_ofReal hp] at hlt
+      intro hcon
+      rw [hcon, ENNReal.top_rpow_of_pos (by positivity)] at hlt
+      exact lt_irrefl _ hlt
+  rw [lintegral_add_left measurable_const, lintegral_const, measure_univ, mul_one]
+  exact ENNReal.add_lt_top.mpr ⟨ENNReal.one_lt_top, lt_top_iff_ne_top.mpr hfin⟩
 
 /-- **Continuity of the Gaussian loss average** `u ↦ ∫⁻ ℓ(u − z) dN(0,S)(z)` for a measurable,
 polynomially growing loss and positive definite `S`. This derives the continuity of the limit
