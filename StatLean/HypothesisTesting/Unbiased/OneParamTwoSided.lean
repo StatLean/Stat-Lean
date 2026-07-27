@@ -314,6 +314,100 @@ private lemma exists_sep_line {c : ℝ} (hc : c ≠ 0) {C₁ C₂ : ℝ} (hC : C
       rw [hAC₁, hAC₂] at haff
       linarith
 
+/-- **Chord separation for a convex function on `[0,∞)`.** Given `0 < w₁ ≤ w₂` and a
+supporting line at `w₁` (used only in the degenerate case `w₁ = w₂`), the secant through
+`(w₁, G w₁)` and `(w₂, G w₂)` dominates `G` on `[w₁, w₂]` and is dominated by `G` outside. -/
+private lemma exists_chord_of_convexOn {G : ℝ → ℝ} (hG : ConvexOn ℝ (Set.Ici (0 : ℝ)) G)
+    {w₁ w₂ : ℝ} (h1 : 0 < w₁) (h12 : w₁ ≤ w₂)
+    (hsupp : ∃ b : ℝ, ∀ w, 0 ≤ w → G w₁ + b * (w - w₁) ≤ G w) :
+    ∃ a b : ℝ, (∀ w, w₁ ≤ w → w ≤ w₂ → G w ≤ a + b * w) ∧
+      (∀ w, 0 ≤ w → (w ≤ w₁ ∨ w₂ ≤ w) → a + b * w ≤ G w) := by
+  rcases eq_or_lt_of_le h12 with rfl | hlt
+  · obtain ⟨b, hb⟩ := hsupp
+    refine ⟨G w₁ - b * w₁, b, ?_, ?_⟩
+    · intro w hw1 hw2
+      have hww : w = w₁ := le_antisymm hw2 hw1
+      subst hww
+      linarith
+    · intro w hw _
+      have := hb w hw
+      linarith
+  · have hne : w₂ - w₁ ≠ 0 := sub_ne_zero.mpr (ne_of_gt hlt)
+    obtain ⟨a, b, hA1, hA2⟩ : ∃ a b : ℝ, a + b * w₁ = G w₁ ∧ a + b * w₂ = G w₂ := by
+      refine ⟨G w₁ - ((G w₂ - G w₁) / (w₂ - w₁)) * w₁, (G w₂ - G w₁) / (w₂ - w₁), by ring, ?_⟩
+      field_simp
+      ring
+    have hcvx : ∀ x y u v : ℝ, 0 ≤ x → 0 ≤ y → 0 ≤ u → 0 ≤ v → u + v = 1 →
+        G (u * x + v * y) ≤ u * G x + v * G y := by
+      intro x y u v hx hy hu hv huv
+      simpa using hG.2 (Set.mem_Ici.mpr hx) (Set.mem_Ici.mpr hy) hu hv huv
+    refine ⟨a, b, ?_, ?_⟩
+    · intro w hw1 hw2
+      have hu : 0 ≤ (w₂ - w) / (w₂ - w₁) := div_nonneg (by linarith) (by linarith)
+      have hv : 0 ≤ (w - w₁) / (w₂ - w₁) := div_nonneg (by linarith) (by linarith)
+      have huv : (w₂ - w) / (w₂ - w₁) + (w - w₁) / (w₂ - w₁) = 1 := by field_simp; ring
+      have hcomb : (w₂ - w) / (w₂ - w₁) * w₁ + (w - w₁) / (w₂ - w₁) * w₂ = w := by
+        field_simp; ring
+      have h := hcvx w₁ w₂ _ _ h1.le (by linarith) hu hv huv
+      rw [hcomb] at h
+      have haff : (w₂ - w) / (w₂ - w₁) * (a + b * w₁) + (w - w₁) / (w₂ - w₁) * (a + b * w₂)
+          = a + b * w := by field_simp; ring
+      rw [hA1, hA2] at haff
+      linarith
+    · rintro w hw (hc | hc)
+      · -- `w ≤ w₁`: write `w₁` as a convex combination of `w₂` and `w`
+        have hden : (0 : ℝ) < w₂ - w := by linarith
+        have hu : 0 ≤ (w₁ - w) / (w₂ - w) := div_nonneg (by linarith) (by linarith)
+        have hv : 0 < (w₂ - w₁) / (w₂ - w) := div_pos (by linarith) hden
+        have huv : (w₁ - w) / (w₂ - w) + (w₂ - w₁) / (w₂ - w) = 1 := by field_simp; ring
+        have hcomb : (w₁ - w) / (w₂ - w) * w₂ + (w₂ - w₁) / (w₂ - w) * w = w₁ := by
+          field_simp; ring
+        have h := hcvx w₂ w ((w₁ - w) / (w₂ - w)) ((w₂ - w₁) / (w₂ - w)) (by linarith) hw hu
+          hv.le huv
+        rw [hcomb] at h
+        have haff : (w₁ - w) / (w₂ - w) * (a + b * w₂) + (w₂ - w₁) / (w₂ - w) * (a + b * w)
+            = a + b * w₁ := by field_simp; ring
+        rw [hA1, hA2] at haff
+        have hstep : (w₂ - w₁) / (w₂ - w) * (a + b * w) ≤ (w₂ - w₁) / (w₂ - w) * G w := by
+          linarith
+        exact le_of_mul_le_mul_left hstep hv
+      · -- `w₂ ≤ w`: write `w₂` as a convex combination of `w` and `w₁`
+        have hden : (0 : ℝ) < w - w₁ := by linarith
+        have hu : 0 < (w₂ - w₁) / (w - w₁) := div_pos (by linarith) hden
+        have hv : 0 ≤ (w - w₂) / (w - w₁) := div_nonneg (by linarith) (by linarith)
+        have huv : (w₂ - w₁) / (w - w₁) + (w - w₂) / (w - w₁) = 1 := by field_simp; ring
+        have hcomb : (w₂ - w₁) / (w - w₁) * w + (w - w₂) / (w - w₁) * w₁ = w₂ := by
+          field_simp; ring
+        have h := hcvx w w₁ ((w₂ - w₁) / (w - w₁)) ((w - w₂) / (w - w₁)) hw h1.le hu.le hv huv
+        rw [hcomb] at h
+        have haff : (w₂ - w₁) / (w - w₁) * (a + b * w) + (w - w₂) / (w - w₁) * (a + b * w₁)
+            = a + b * w₂ := by field_simp; ring
+        rw [hA1, hA2] at haff
+        have hstep : (w₂ - w₁) / (w - w₁) * (a + b * w) ≤ (w₂ - w₁) / (w - w₁) * G w := by
+          linarith
+        exact le_of_mul_le_mul_left hstep hu
+
+/-- The concave companion of `exists_chord_of_convexOn`, by negation. -/
+private lemma exists_chord_of_concaveOn {G : ℝ → ℝ} (hG : ConcaveOn ℝ (Set.Ici (0 : ℝ)) G)
+    {w₁ w₂ : ℝ} (h1 : 0 < w₁) (h12 : w₁ ≤ w₂)
+    (hsupp : ∃ b : ℝ, ∀ w, 0 ≤ w → G w ≤ G w₁ + b * (w - w₁)) :
+    ∃ a b : ℝ, (∀ w, w₁ ≤ w → w ≤ w₂ → a + b * w ≤ G w) ∧
+      (∀ w, 0 ≤ w → (w ≤ w₁ ∨ w₂ ≤ w) → G w ≤ a + b * w) := by
+  have hsupp' : ∃ b : ℝ, ∀ w, 0 ≤ w → (-G) w₁ + b * (w - w₁) ≤ (-G) w := by
+    obtain ⟨b, hb⟩ := hsupp
+    refine ⟨-b, fun w hw => ?_⟩
+    have := hb w hw
+    simp only [Pi.neg_apply]
+    linarith
+  obtain ⟨a, b, hin, hout⟩ := exists_chord_of_convexOn hG.neg h1 h12 hsupp'
+  refine ⟨-a, -b, fun w hw1 hw2 => ?_, fun w hw hc => ?_⟩
+  · have := hin w hw1 hw2
+    simp only [Pi.neg_apply] at this
+    linarith
+  · have := hout w hw hc
+    simp only [Pi.neg_apply] at this
+    linarith
+
 /-- **Two-constraint Neyman–Pearson comparison, unpacked.** The `Fin`-indexed
 `isMax_of_multiplier_form` at `m = 2`, restated with the three functions spelled out. -/
 private lemma np_two_compare (μ : Measure 𝓧) [SigmaFinite μ] {g₀ g₁ g₂ : 𝓧 → ℝ}
