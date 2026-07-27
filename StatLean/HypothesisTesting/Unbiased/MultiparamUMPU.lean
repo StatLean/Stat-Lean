@@ -23,12 +23,14 @@ problem **conditionally on `T = t`** and reinterpreting the result as a test of 
 The names `_inside` / `_outside` refer to the shape of the rejection region in `u`, not to
 the shape of the null set.
 
-**⚠ The four optimality theorems are FALSE in the frozen form transcribed here** — not
-because the classical result fails, but because the transcription drops the source's
+**⚠ The four optimality theorems were FALSE in the frozen form transcribed here** — not
+because the classical result fails, but because the transcription dropped the source's
 standing convention that the observation *is* the sufficient statistic. Explicit
-counterexamples are formalized in the section
-`ConditionalUMPUCounterexample` below, one per theorem; the diagnosis and the minimal repair
-are stated there.
+counterexamples are formalized in the section `ConditionalUMPUCounterexample` below, one per
+theorem. All four statements have been **REPAIRED** by the single added hypothesis
+`hsuff` (see `sufficiencyReducible` below and the amendment note at each theorem); the
+counterexamples are retained because they are what certifies that the added hypothesis is
+not decoration.
 
 The constants are functions of `t`, determined by conditional size equations; the point-null
 case carries in addition the conditional derivative condition
@@ -123,6 +125,31 @@ noncomputable def condOutsideTest (C₁ C₂ γ₁ γ₂ : Ξ → ℝ) : ℝ × 
     else if z.1 = C₁ z.2 then γ₁ z.2
     else if z.1 = C₂ z.2 then γ₂ z.2 else 0
 
+/-! ## The sufficiency-reduction hypothesis (the repair) -/
+
+/-- **Sufficiency of `(U, T)`, in the form the optimality theorems consume.** Every critical
+function on the sample space is matched, *in power at every parameter of `Ω`*, by a critical
+function of the pair `(U, T)` alone.
+
+This is the operative content of "`(U, T)` is a sufficient statistic for `P` on `Ω`": the
+Rao–Blackwellization `ψ' = E[ψ ∣ U, T]` is parameter-free by sufficiency, is again a critical
+function, and has the same power as `ψ` at every parameter. It holds trivially — with
+`ψ' = ψ` — in the source's setting, where the sample space *is* the range of `(U, T)`
+(`sufficiencyReducible_prod`), and it fails in the counterexample family below, where
+`(U, T)` is constant. -/
+def SufficiencyReducible (P : ℝ × Ξ → Measure 𝓧) (Ω : Set (ℝ × Ξ)) (U : 𝓧 → ℝ) (T : 𝓧 → Ξ) :
+    Prop :=
+  ∀ ψ : 𝓧 → ℝ, IsCriticalFn ψ → ∃ ψ' : ℝ × Ξ → ℝ, IsCriticalFn ψ' ∧
+    ∀ p ∈ Ω, ∫ x, ψ' (U x, T x) ∂(P p) = ∫ x, ψ x ∂(P p)
+
+/-- **In the source's setting the reduction hypothesis is vacuous.** When the sample space is
+the range `ℝ × Ξ` of the sufficient statistic and `(U, T) = (Prod.fst, Prod.snd)`, every
+critical function already *is* a function of `(U, T)`. So the amended theorems specialize to
+exactly the statement of `TSH4 §4.4 Thm 4.4.1`. -/
+theorem sufficiencyReducible_prod (P : ℝ × Ξ → Measure (ℝ × Ξ)) (Ω : Set (ℝ × Ξ)) :
+    SufficiencyReducible P Ω Prod.fst Prod.snd :=
+  fun ψ hψ => ⟨ψ, hψ, fun _ _ => rfl⟩
+
 /-! ## ⚠ The four optimality statements are FALSE as stated: an explicit counterexample
 
 `IsCanonicalUT P Ω U T ν C` constrains **only the law of the pair `(U, T)`**; it says nothing
@@ -144,15 +171,22 @@ The construction is uniform in the alternative set, so the *same* family refutes
 theorems (`_oneSided`, `_inside`, `_outside`, `_point`); the four refutations are
 `not_isUMPU_conditional_oneSided_counterexample` and its siblings below.
 
-**REPAIR.** The source (TSH4 §4.4 Thm 4.4.1) states the theorem for the model *of the
-sufficient statistic*: there `𝓧` **is** the range of `(U, T)`. The minimal repair is either
-to specialize `𝓧 = ℝ × Ξ` with `U = Prod.fst`, `T = Prod.snd`, or to add the hypothesis that
-`(U, T)` is sufficient for `P` on `Ω` (and then transport optimality along the sufficiency
-reduction). The repair is *not* applied here: public signatures are frozen for this pass.
+**REPAIR (APPLIED).** The source (TSH4 §4.4 Thm 4.4.1) states the theorem for the model *of
+the sufficient statistic*: there `𝓧` **is** the range of `(U, T)`. Rather than specialize the
+type — which would prevent the theorems from being applied to a model carried on its own
+sample space — the four statements now carry the single extra hypothesis
+`SufficiencyReducible P Ω U T`: every critical function on `𝓧` is matched, *in power at every
+parameter of `Ω`*, by a critical function of `(U, T)` alone. This is exactly the operative
+content of "`(U, T)` is sufficient for `P` on `Ω`" (Rao–Blackwellize: `E[ψ ∣ U, T]` does not
+depend on the parameter and has the same power at every parameter), and it holds trivially,
+with `ψ' = ψ`, in the source's setting `𝓧 = ℝ × Ξ`, `U = Prod.fst`, `T = Prod.snd`
+(`sufficiencyReducible_prod`). It fails in the counterexample family, where `(U, T)` is
+constant and the auxiliary bit of `𝓧` is invisible to it — which is what makes the
+counterexample a counterexample.
 
-Two further gaps would remain even after that repair, and are recorded at the theorems: the
-boundary device needs the power functions to be continuous, which for exponential families
-requires finite-dimensionality of `Ξ` (see the counterexample in
+Two further gaps remain after the repair, and are recorded at the theorems: the boundary
+device needs the power functions to be continuous, which for exponential families requires
+finite-dimensionality of `Ξ` (see the counterexample in
 `PowerContinuity.continuous_power_expFamily`) and `Ω` inside the interior of the natural
 parameter set; and the step from similarity to Neyman structure needs completeness of the
 laws of `T` on each boundary slice, available in the repository only for
@@ -348,7 +382,9 @@ lemma cxInside_val : condInsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0
 lemma cxOutside_val : condOutsideTest cxC₀ cxC₀ cxγ₀ cxγ₀ ((0 : ℝ), (0 : ℝ)) = 1 / 2 := by
   norm_num [condOutsideTest, cxC₀, cxγ₀]
 
-/-- **`isUMPU_conditional_oneSided` is false as stated.** Every hypothesis of that theorem is
+/-- **`isUMPU_conditional_oneSided` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+
+Old wording: `isUMPU_conditional_oneSided` is false as stated.** Every hypothesis of that theorem is
 satisfied by the counterexample family (with `θ₀ = 0`, `α = 1/2`, `Ω = univ`), yet the
 conclusion fails. -/
 theorem not_isUMPU_conditional_oneSided_counterexample :
@@ -378,7 +414,9 @@ theorem not_isUMPU_conditional_oneSided_counterexample :
   · simpa [cxU, cxT] using cxOneSided_val
   · simpa using not_lt.mpr hq.2
 
-/-- **`isUMPU_conditional_inside` is false as stated**, by the same counterexample family
+/-- **`isUMPU_conditional_inside` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+
+Old wording: `isUMPU_conditional_inside` is false as stated**, by the same counterexample family
 (here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{0 < θ < 1}`). -/
 theorem not_isUMPU_conditional_inside_counterexample :
     Measurable cxU ∧ Measurable cxT ∧
@@ -414,7 +452,9 @@ theorem not_isUMPU_conditional_inside_counterexample :
     · exact fun hmem => absurd hmem.1 (not_lt.mpr h)
     · exact fun hmem => absurd hmem.2 (not_lt.mpr h)
 
-/-- **`isUMPU_conditional_outside` is false as stated**, by the same counterexample family
+/-- **`isUMPU_conditional_outside` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+
+Old wording: `isUMPU_conditional_outside` is false as stated**, by the same counterexample family
 (here with `θ₁ = 0 < θ₂ = 1`, `α = 1/2`; the alternative set is `{θ < 0 ∨ 1 < θ}`). -/
 theorem not_isUMPU_conditional_outside_counterexample :
     Measurable cxU ∧ Measurable cxT ∧
@@ -450,7 +490,9 @@ theorem not_isUMPU_conditional_outside_counterexample :
     · exact absurd hq.2.1 (not_le.mpr h)
     · exact absurd hq.2.2 (not_le.mpr h)
 
-/-- **`isUMPU_conditional_point` is false as stated**, by the same counterexample family
+/-- **`isUMPU_conditional_point` WITHOUT the amendment `hsuff` is false** (`SufficiencyReducible` fails here: `(U, T)` is constant, so every critical function of `(U, T)` has constant power, while `cxψ` does not)
+
+Old wording: `isUMPU_conditional_point` is false as stated**, by the same counterexample family
 (here `θ₀ = 0`, `α = 1/2`); note that the conditional derivative condition `hderiv` also
 holds, both sides being `0` because the interest statistic is constant `0`. -/
 theorem not_isUMPU_conditional_point_counterexample :
@@ -512,6 +554,10 @@ theorem isUMPU_conditional_oneSided
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
     (hUT : IsCanonicalUT P Ω U T ν C)
+    -- USER-INPUT (AMENDMENT): `(U, T)` is sufficient, in the operative sense that every
+    -- critical function is matched in power by a critical function of `(U, T)`. Without it
+    -- the statement is FALSE — see the counterexample section and the note in the docstring
+    (hsuff : SufficiencyReducible P Ω U T)
     -- USER-INPUT: the parameter set is convex
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
@@ -529,23 +575,29 @@ theorem isUMPU_conditional_oneSided
       ∫ u, condOneSidedTest C₀ γ₀ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₀} {p ∈ Ω | θ₀ < p.1} α
       (fun x => condOneSidedTest C₀ γ₀ (U x, T x)) := by
-  -- FALSE AS STATED — refuted by the formalized counterexample
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_oneSided_counterexample`, which
-  -- exhibits data satisfying *every* hypothesis above (with `θ₀ = 0`, `α = 1/2`, `Ω = univ`)
-  -- and disproves the conclusion. Diagnosis: `IsCanonicalUT` constrains only the law of
-  -- `(U, T)`, while `IsUMPU` demands optimality against every critical function on `𝓧`; with
-  -- `U`, `T` constant the hypothesis holds vacuously and the auxiliary randomness of `𝓧` beats
-  -- the conditional test. See the file's counterexample section for the diagnosis and the
-  -- minimal repair (state the theorem for the model of the sufficient statistic, or assume
-  -- `(U, T)` sufficient). Two further gaps survive the repair and are NOT addressed here:
-  -- `PowerContinuity.isUMPU_of_isUMP_on_boundary` needs power continuity, which for
-  -- exponential families is false without `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`
-  -- (see the counterexample in `continuous_power_expFamily`), and the similar ⟹ Neyman
-  -- structure step needs completeness of the `T`-laws on the boundary slice, available in the
-  -- repository (`PointEstimation.Completeness.ExpFamily.isCompleteStat_of_interior_nonempty`)
-  -- only for `EuclideanSpace ℝ (Fin s)`. Both earlier cited blockers are now CLOSED:
-  -- `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT` and
-  -- `PowerContinuity.continuous_power_expFamily`.
+  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_oneSided_counterexample`; the amendment
+  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
+  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
+  -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
+  -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
+  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
+  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
+  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
+  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
+  --      — CLOSED, available;
+  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
+  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
+  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
+  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
+  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
+  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
+  --      the frozen `Ξ`;
+  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
+  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
+  --      selection to glue the fibrewise optima — the gluing is not formalized.
+  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
+  -- signature, which is out of scope for this pass.
   sorry
 
 /-- **Null outside an interval.** For `H : θ ≤ θ₁ or θ ≥ θ₂` against `K : θ₁ < θ < θ₂`, the
@@ -560,6 +612,10 @@ theorem isUMPU_conditional_inside
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
     (hUT : IsCanonicalUT P Ω U T ν C)
+    -- USER-INPUT (AMENDMENT): `(U, T)` is sufficient, in the operative sense that every
+    -- critical function is matched in power by a critical function of `(U, T)`. Without it
+    -- the statement is FALSE — see the counterexample section and the note in the docstring
+    (hsuff : SufficiencyReducible P Ω U T)
     -- USER-INPUT: the parameter set is convex
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
@@ -584,10 +640,29 @@ theorem isUMPU_conditional_inside
       ∫ u, condInsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | p.1 ≤ θ₁ ∨ θ₂ ≤ p.1} {p ∈ Ω | θ₁ < p.1 ∧ p.1 < θ₂} α
       (fun x => condInsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- FALSE AS STATED — refuted by
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_inside_counterexample`
-  -- (`θ₁ = 0 < θ₂ = 1`, `α = 1/2`, `Ω = univ`), same diagnosis and same repair as
-  -- `isUMPU_conditional_oneSided`.
+  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_inside_counterexample`; the amendment
+  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
+  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
+  -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
+  -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
+  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
+  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
+  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
+  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
+  --      — CLOSED, available;
+  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
+  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
+  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
+  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
+  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
+  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
+  --      the frozen `Ξ`;
+  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
+  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
+  --      selection to glue the fibrewise optima — the gluing is not formalized.
+  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
+  -- signature, which is out of scope for this pass.
   sorry
 
 /-- **Interval null.** For `H : θ₁ ≤ θ ≤ θ₂` against `K : θ < θ₁ or θ > θ₂`, the conditional
@@ -602,6 +677,10 @@ theorem isUMPU_conditional_outside
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
     (hUT : IsCanonicalUT P Ω U T ν C)
+    -- USER-INPUT (AMENDMENT): `(U, T)` is sufficient, in the operative sense that every
+    -- critical function is matched in power by a critical function of `(U, T)`. Without it
+    -- the statement is FALSE — see the counterexample section and the note in the docstring
+    (hsuff : SufficiencyReducible P Ω U T)
     -- USER-INPUT: the parameter set is convex
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
@@ -626,10 +705,29 @@ theorem isUMPU_conditional_outside
       ∫ u, condOutsideTest C₁ C₂ γ₁ γ₂ (u, t) ∂(condDistrib U T (P p) t) = α) :
     IsUMPU P {p ∈ Ω | θ₁ ≤ p.1 ∧ p.1 ≤ θ₂} {p ∈ Ω | p.1 < θ₁ ∨ θ₂ < p.1} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- FALSE AS STATED — refuted by
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_outside_counterexample`
-  -- (`θ₁ = 0 < θ₂ = 1`, `α = 1/2`, `Ω = univ`), same diagnosis and same repair as
-  -- `isUMPU_conditional_oneSided`.
+  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_outside_counterexample`; the amendment
+  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
+  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
+  -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
+  -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
+  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
+  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
+  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
+  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
+  --      — CLOSED, available;
+  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
+  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
+  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
+  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
+  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
+  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
+  --      the frozen `Ξ`;
+  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
+  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
+  --      selection to glue the fibrewise optima — the gluing is not formalized.
+  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
+  -- signature, which is out of scope for this pass.
   sorry
 
 /-- **Point null.** For `H : θ = θ₀` against `K : θ ≠ θ₀`, the conditional test rejecting
@@ -650,6 +748,10 @@ theorem isUMPU_conditional_point
     (hU : Measurable U) (hT : Measurable T)
     -- USER-INPUT: the joint law of `(U, T)` is in canonical exponential form on `Ω`
     (hUT : IsCanonicalUT P Ω U T ν C)
+    -- USER-INPUT (AMENDMENT): `(U, T)` is sufficient, in the operative sense that every
+    -- critical function is matched in power by a critical function of `(U, T)`. Without it
+    -- the statement is FALSE — see the counterexample section and the note in the docstring
+    (hsuff : SufficiencyReducible P Ω U T)
     -- USER-INPUT: the parameter set is convex
     (hΩ_convex : Convex ℝ Ω)
     -- USER-INPUT: the parameter set is not contained in a proper linear subspace
@@ -675,11 +777,29 @@ theorem isUMPU_conditional_point
         = α * ∫ u, u ∂(condDistrib U T (P p) t)) :
     IsUMPU P {p ∈ Ω | p.1 = θ₀} {p ∈ Ω | p.1 ≠ θ₀} α
       (fun x => condOutsideTest C₁ C₂ γ₁ γ₂ (U x, T x)) := by
-  -- FALSE AS STATED — refuted by
-  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample` (`θ₀ = 0`,
-  -- `α = 1/2`, `Ω = univ`); there the conditional derivative condition `hderiv` also holds,
-  -- both sides being `0` because the interest statistic is constant. Same diagnosis and same
-  -- repair as `isUMPU_conditional_oneSided`.
+  -- REPAIRED, NOT CLOSED. The frozen form was FALSE, refuted by
+  -- `ConditionalUMPUCounterexample.not_isUMPU_conditional_point_counterexample`; the amendment
+  -- `hsuff : SufficiencyReducible P Ω U T` excludes that counterexample (there `(U, T)` is
+  -- constant, so no critical function of `(U, T)` matches the auxiliary-bit test `cxψ`) and
+  -- restores the classical statement of `TSH4 §4.4 Thm 4.4.1`; in the source's own setting
+  -- `𝓧 = ℝ × Ξ`, `(U, T) = (fst, snd)`, `hsuff` is vacuous (`sufficiencyReducible_prod`).
+  -- The remaining `sorry` is PROOF-HARD, not repair-unclear. The route, and what is missing:
+  --  (1) reduce to tests of `(U, T)` by `hsuff` — available;
+  --  (2) conditional laws of `U` given `T = t` form a one-parameter exponential family in the
+  --      parameter of interest, `ConditionalExpFamily.condDistrib_expFamily_of_isCanonicalUT`
+  --      — CLOSED, available;
+  --  (3) continuity of the power functions, `PowerContinuity.continuous_power_expFamily` —
+  --      CLOSED, but only under `[FiniteDimensional ℝ Ξ]` and `Ω ⊆ interior natSet`, neither
+  --      of which is in the frozen signature (a *second* amendment would be needed to use it);
+  --  (4) similar ⟹ Neyman structure: needs completeness of the laws of `T` on the boundary
+  --      slice `{p ∈ Ω | p.1 = θⱼ}`, available in the repository only for
+  --      `EuclideanSpace ℝ (Fin s)` (`PointEstimation.Completeness.ExpFamily`), again not
+  --      the frozen `Ξ`;
+  --  (5) the conditional Neyman–Pearson step, i.e. the one-parameter theorems of
+  --      `Unbiased/OneParamTwoSided.lean` (now CLOSED) applied fibrewise, plus a measurable
+  --      selection to glue the fibrewise optima — the gluing is not formalized.
+  -- Steps (3)–(5) are each substantial; (3) and (4) additionally require enlarging the
+  -- signature, which is out of scope for this pass.
   sorry
 
 /-! ## Measurable selection of the conditional constants -/
