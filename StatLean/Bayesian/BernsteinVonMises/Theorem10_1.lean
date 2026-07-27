@@ -83,7 +83,47 @@ theorem scoreSum_uniformly_tight
     (hε : 0 < ε) :
     ∃ K : ℝ, 0 < K ∧ ∀ᶠ n : ℕ in atTop,
       productMeasure M μ θ₀ n {ω | K < ‖scoreSum sc n ω‖} ≤ ε := by
-  sorry
+  classical
+  haveI hProb : ∀ (θ : EuclideanSpace ℝ (Fin k)) (n : ℕ),
+      IsProbabilityMeasure (productMeasure M μ θ n) :=
+    fun θ n =>
+      AsymptoticStatistics.AsymptoticRepresentation.productMeasure_isProbabilityMeasure
+        M μ hPDF θ n
+  have hscm : ∀ n : ℕ, Measurable (scoreSum sc n) := by
+    intro n
+    unfold scoreSum
+    exact (Finset.univ.measurable_sum
+      (fun i _ => hsc.comp (measurable_pi_apply i))).const_smul
+      ((Real.sqrt (n : ℝ))⁻¹ : ℝ)
+  set ν : ℕ → Measure (EuclideanSpace ℝ (Fin k)) :=
+    fun n => (productMeasure M μ θ₀ n).map (scoreSum sc n) with hνdef
+  haveI hνprob : ∀ n, IsProbabilityMeasure (ν n) := fun n => by
+    rw [hνdef]; exact Measure.isProbabilityMeasure_map (hscm n).aemeasurable
+  haveI : IsProbabilityMeasure
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) := inferInstance
+  have hweak : AsymptoticStatistics.WeakConverges ν
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) J) :=
+    AsymptoticStatistics.AsymptoticRepresentation.scoreSum_weakly_converges M μ θ₀ sc hsc
+      (hPDF.density_integral_eq_one θ₀) (hPDF.density_integrable θ₀)
+      (fun _ _ => hPDF.density_integral_eq_one _) (fun _ _ => hPDF.density_integrable _)
+      hDQM J hJ_pd.posSemidef hJ
+  have htight := AsymptoticStatistics.Prohorov.weakConverges_range_tight ν _ hweak
+  rw [AsymptoticStatistics.Prohorov.isTightMeasureSet_range_iff_singleton_tight] at htight
+  obtain ⟨C, hCcpt, hC⟩ := htight ε hε
+  obtain ⟨K, hKC⟩ := hCcpt.isBounded.subset_closedBall (0 : EuclideanSpace ℝ (Fin k))
+  refine ⟨max K 1, lt_of_lt_of_le one_pos (le_max_right _ _),
+    Filter.Eventually.of_forall fun n => ?_⟩
+  have hsub : {x : EuclideanSpace ℝ (Fin k) | max K 1 < ‖x‖} ⊆ Cᶜ := by
+    intro x hx
+    intro hxC
+    exact absurd (mem_closedBall_zero_iff.1 (hKC hxC))
+      (not_le.2 (lt_of_le_of_lt (le_max_left K 1) hx))
+  have hmeas : MeasurableSet {x : EuclideanSpace ℝ (Fin k) | max K 1 < ‖x‖} :=
+    measurableSet_lt measurable_const (by fun_prop)
+  have hpre : {ω : Fin n → 𝓧 | max K 1 < ‖scoreSum sc n ω‖}
+      = (scoreSum sc n) ⁻¹' {x : EuclideanSpace ℝ (Fin k) | max K 1 < ‖x‖} := rfl
+  rw [hpre, ← Measure.map_apply (hscm n) hmeas]
+  exact le_trans (measure_mono hsub) (hC n)
 
 /-- **Theorem 10.1 (Bernstein–von Mises).** Let the experiment be an iid sample from the
 dominated family `κ θ = p_θ · μ`, differentiable in quadratic mean at `θ₀` with nonsingular
