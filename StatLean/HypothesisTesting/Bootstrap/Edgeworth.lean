@@ -320,6 +320,100 @@ theorem stdNormalCDF_sub_le {a b : ℝ} (hab : a ≤ b) :
     stdNormalCDF b - stdNormalCDF a ≤ (Real.sqrt (2 * Real.pi))⁻¹ * (b - a) := by
   simpa using normalCDF_sub_le (m := 0) (v := 1) one_ne_zero hab
 
+/-! ## The law of the root
+
+Item (E4).1 of the assembly programme below: the characteristic function of the law of the
+centred and scaled sample mean is the `n`-th power of the characteristic function of the
+*centred* sampling law, evaluated at `t/√n`. Mathlib's `charFun_inv_sqrt_mul_sum` is stated for
+an `iIndepFun` family on an abstract probability space; `meanRootLaw` is defined on
+`Measure.pi`, and there the factorisation is *direct* — no transfer through the canonical
+i.i.d. construction is needed, because `MeasureTheory.integral_fintype_prod_eq_pow` is exactly
+Fubini for a product of one-variable factors. -/
+
+section RootLaw
+
+/-- The **centred sampling law**: the pushforward of `F` under `x ↦ x − E_F X`. This is the law
+the damped Edgeworth expansion `norm_charFun_pow_sub_edgeworth_le` is applied to, since that
+result assumes a vanishing mean. -/
+noncomputable def centredLaw (F : Measure ℝ) : Measure ℝ :=
+  F.map fun x : ℝ => x - ∫ s, s ∂F
+
+instance isProbabilityMeasure_centredLaw (F : Measure ℝ) [IsProbabilityMeasure F] :
+    IsProbabilityMeasure (centredLaw F) := by
+  rw [centredLaw]
+  exact Measure.isProbabilityMeasure_map (by fun_prop)
+
+/-- The root map `y ↦ √n (X̄ₙ − E_F X)` is `(√n)⁻¹` times the sum of the centred coordinates. -/
+private lemma sqrt_mul_sub_mean_eq {n : ℕ} (hn : 0 < n) (m : ℝ) (y : Fin n → ℝ) :
+    Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m)
+      = (Real.sqrt n)⁻¹ * ∑ i, (y i - m) := by
+  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
+  set r : ℝ := Real.sqrt n with hr
+  have hs : 0 < r := Real.sqrt_pos.2 hn0
+  have hsq : r * r = (n : ℝ) := Real.mul_self_sqrt hn0.le
+  rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    nsmul_eq_mul, ← hsq]
+  have e1 : r * (r * r)⁻¹ = r⁻¹ := by
+    rw [mul_inv, ← mul_assoc, mul_inv_cancel₀ hs.ne', one_mul]
+  have e2 : r⁻¹ * (r * r) = r := by
+    rw [← mul_assoc, inv_mul_cancel₀ hs.ne', one_mul]
+  calc r * ((r * r)⁻¹ * (∑ i, y i) - m)
+      = r * (r * r)⁻¹ * (∑ i, y i) - r * m := by ring
+    _ = r⁻¹ * (∑ i, y i) - r * m := by rw [e1]
+    _ = r⁻¹ * (∑ i, y i) - r⁻¹ * (r * r) * m := by rw [e2]
+    _ = r⁻¹ * ((∑ i, y i) - r * r * m) := by ring
+
+/-- **The characteristic function of the law of the centred root.**
+`φ_{meanRootLaw F n}(t) = (φ_{F₀}(t/√n))ⁿ` for the centred law `F₀ = centredLaw F`.
+
+This is item (E4).1 of the assembly of `edgeworth_mean_uniform`: it is what lets the damped
+expansion `norm_charFun_pow_sub_edgeworth_le`, which estimates an `n`-th power of a
+characteristic function, be applied to the sampling distribution of the root. -/
+theorem charFun_meanRootLaw (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ} (hn : 0 < n)
+    (t : ℝ) :
+    charFun (meanRootLaw F n) t
+      = charFun (centredLaw F) ((Real.sqrt n)⁻¹ * t) ^ n := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set c : ℝ := (Real.sqrt n)⁻¹ * t with hc
+  have hmeasg : Measurable fun y : Fin n → ℝ =>
+      Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) := by fun_prop
+  have hstep1 : charFun (meanRootLaw F n) t
+      = ∫ y : Fin n → ℝ, ∏ i : Fin n,
+          Complex.exp ((c : ℂ) * ((y i - m : ℝ) : ℂ) * Complex.I)
+        ∂(Measure.pi fun _ : Fin n => F) := by
+    have hf : AEStronglyMeasurable
+        (fun x : ℝ => Complex.exp ((t : ℂ) * (x : ℂ) * Complex.I))
+        ((Measure.pi fun _ : Fin n => F).map
+          fun y : Fin n → ℝ => Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m)) := by fun_prop
+    rw [charFun_apply_real, meanRootLaw, ← hm, integral_map hmeasg.aemeasurable hf]
+    refine integral_congr_ae (Filter.Eventually.of_forall fun y => ?_)
+    change Complex.exp ((t : ℂ)
+      * ((Real.sqrt n * ((n : ℝ)⁻¹ * (∑ i, y i) - m) : ℝ) : ℂ) * Complex.I) = _
+    rw [sqrt_mul_sub_mean_eq hn m y]
+    have hsum : (t : ℂ) * ((((Real.sqrt n)⁻¹ * ∑ i, (y i - m) : ℝ)) : ℂ) * Complex.I
+        = ∑ i : Fin n, ((c : ℂ) * ((y i - m : ℝ) : ℂ) * Complex.I) := by
+      simp only [hc, Complex.ofReal_mul, Complex.ofReal_sum, Complex.ofReal_sub,
+        Complex.ofReal_inv, Finset.mul_sum, Finset.sum_mul]
+      exact Finset.sum_congr rfl fun i _ => by ring
+    rw [hsum, Complex.exp_sum]
+  have hstep2 : (∫ y : Fin n → ℝ, ∏ i : Fin n,
+        Complex.exp ((c : ℂ) * ((y i - m : ℝ) : ℂ) * Complex.I)
+      ∂(Measure.pi fun _ : Fin n => F))
+      = (∫ x : ℝ, Complex.exp ((c : ℂ) * ((x - m : ℝ) : ℂ) * Complex.I) ∂F) ^ n := by
+    have h := MeasureTheory.integral_fintype_prod_eq_pow (ι := Fin n) (μ := F)
+      (fun x : ℝ => Complex.exp ((c : ℂ) * ((x - m : ℝ) : ℂ) * Complex.I))
+    simpa using h
+  have hstep3 : (∫ x : ℝ, Complex.exp ((c : ℂ) * ((x - m : ℝ) : ℂ) * Complex.I) ∂F)
+      = charFun (centredLaw F) c := by
+    have hf3 : AEStronglyMeasurable
+        (fun x : ℝ => Complex.exp ((c : ℂ) * (x : ℂ) * Complex.I))
+        (F.map fun x : ℝ => x - m) := by fun_prop
+    rw [charFun_apply_real, centredLaw, ← hm,
+      integral_map (by fun_prop : AEMeasurable (fun x : ℝ => x - m) F) hf3]
+  rw [hstep1, hstep2, hstep3]
+
+end RootLaw
+
 /-! ## The expansions -/
 
 section Edgeworth
