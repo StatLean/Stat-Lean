@@ -134,12 +134,20 @@ private lemma inner_coord_sum {k : ℕ} (u w : EuclideanSpace ℝ (Fin k)) :
   exact Finset.sum_congr rfl fun i _ => mul_comm _ _
 
 /-- **Whitened multinomial scores.**  For an interior null `π` there are `k` functions on the
-`k+1` cells that are centred and orthonormal in `L²(π)`. -/
+`k+1` cells that are centred and orthonormal in `L²(π)`.
+
+The third conjunct is **Parseval on the centred subspace**: the scores are an orthonormal
+basis of `{g | ∑ⱼ πⱼ gⱼ = 0}` in `L²(π)`, so every centred `g` has
+`‖g‖²_{L²(π)} = ∑ᵢ ⟪g, ψᵢ⟫²_{L²(π)}`.  It is free from the construction (`ψ` comes from an
+orthonormal basis of `(ℝ ∙ (√πⱼ)ⱼ)ᗮ`) and is what turns Pearson's statistic into a squared
+Euclidean norm and the multinomial noncentrality into the squared norm of the drift. -/
 private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
     (hπpos : ∀ j, 0 < π j) (hπsum : ∑ j, π j = 1) :
     ∃ ψ : Fin k → Fin (k + 1) → ℝ,
       (∀ i, ∑ j, π j * ψ i j = 0) ∧
-      (∀ i i', ∑ j, π j * (ψ i j * ψ i' j) = if i = i' then 1 else 0) := by
+      (∀ i i', ∑ j, π j * (ψ i j * ψ i' j) = if i = i' then 1 else 0) ∧
+      (∀ g : Fin (k + 1) → ℝ, ∑ j, π j * g j = 0 →
+        ∑ j, π j * (g j * g j) = ∑ i, (∑ j, π j * (g j * ψ i j)) ^ 2) := by
   classical
   haveI : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin (k + 1))) = k + 1) :=
     ⟨finrank_euclideanSpace_fin⟩
@@ -170,7 +178,7 @@ private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
       hsq j, div_self (ne_of_gt (hπpos j)), one_mul]
   set e := OrthonormalBasis.fromOrthogonalSpanSingleton
     (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (k + 1))) k hw0 with hedef
-  refine ⟨fun i j => (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j), ?_, ?_⟩
+  refine ⟨fun i j => (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j), ?_, ?_, ?_⟩
   · intro i
     have h0 : ⟪w, (↑(e i) : EuclideanSpace ℝ (Fin (k + 1)))⟫_ℝ = 0 :=
       Submodule.mem_orthogonal_singleton_iff_inner_right.mp (e i).2
@@ -187,6 +195,54 @@ private lemma exists_multinomial_scores {k : ℕ} {π : Fin (k + 1) → ℝ}
     rw [inner_coord_sum] at h0
     rw [← h0]
     exact Finset.sum_congr rfl fun j _ => key2 _ _ j
+  · -- Parseval in the orthogonal complement of `w = (√πⱼ)ⱼ`
+    intro g hg
+    set u : EuclideanSpace ℝ (Fin (k + 1)) :=
+      WithLp.toLp 2 (fun j => Real.sqrt (π j) * g j) with hudef
+    have huapp : ∀ j, u j = Real.sqrt (π j) * g j := fun j => rfl
+    have huw : ⟪w, u⟫_ℝ = 0 := by
+      rw [inner_coord_sum, ← hg]
+      exact Finset.sum_congr rfl fun j _ => by
+        rw [hwapp, huapp, ← mul_assoc, hsq j]
+    have humem : u ∈ (Submodule.span ℝ {w})ᗮ :=
+      Submodule.mem_orthogonal_singleton_iff_inner_right.mpr huw
+    set u' : (Submodule.span ℝ {w})ᗮ := ⟨u, humem⟩ with hu'def
+    have hcoord : ∀ (i : Fin k) (j : Fin (k + 1)),
+        π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j)))
+          = Real.sqrt (π j) * g j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j := by
+      intro i j
+      rw [show π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j / Real.sqrt (π j)))
+          = (π j / Real.sqrt (π j)) * (g j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j)
+          from by ring, Real.div_sqrt]
+      ring
+    have hinner1 : ∀ i : Fin k, (⟪u', e i⟫_ℝ : ℝ)
+        = ∑ j, π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j
+            / Real.sqrt (π j))) := by
+      intro i
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change u j * (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j = _
+      rw [huapp, hcoord i j]
+    have hinner2 : ∀ i : Fin k, (⟪e i, u'⟫_ℝ : ℝ)
+        = ∑ j, π j * (g j * ((↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j
+            / Real.sqrt (π j))) := by
+      intro i
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change (↑(e i) : EuclideanSpace ℝ (Fin (k + 1))) j * u j = _
+      rw [huapp, hcoord i j]
+      ring
+    have hparse : ∑ i, ⟪u', e i⟫_ℝ * ⟪e i, u'⟫_ℝ = ⟪u', u'⟫_ℝ := e.sum_inner_mul_inner u' u'
+    have hself : (⟪u', u'⟫_ℝ : ℝ) = ∑ j, π j * (g j * g j) := by
+      rw [Submodule.coe_inner, inner_coord_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      change u j * u j = _
+      rw [huapp, show Real.sqrt (π j) * g j * (Real.sqrt (π j) * g j)
+        = (Real.sqrt (π j) * Real.sqrt (π j)) * (g j * g j) from by ring, hsq j]
+    rw [← hself, ← hparse]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [hinner1 i, hinner2 i]
+    ring
 
 /-- `|log(1+u) − (u − u²/2)| ≤ 2|u|³` for `|u| ≤ 1/2`. -/
 private lemma abs_log_one_add_sub_quad_le {u : ℝ} (hu : |u| ≤ 1 / 2) :
@@ -519,7 +575,7 @@ theorem chiSquared_maximin_upper_bound {k : ℕ} {α b c : ℝ} {π : Fin (k + 1
   classical
   haveI : NeZero k := ⟨hk.ne'⟩
   -- ### 0. the whitened score system and the base cell law
-  obtain ⟨sc, hcent, hortho⟩ := exists_multinomial_scores hπpos hπsum
+  obtain ⟨sc, hcent, hortho, -⟩ := exists_multinomial_scores hπpos hπsum
   have hscmeas : ∀ i, Measurable (sc i) := fun i => measurable_of_countable _
   set P₀ : Measure (Fin (k + 1)) := Measure.map (X 1 (0 : Fin 1)) (Q 1 0) with hP₀def
   haveI hP₀prob : IsProbabilityMeasure P₀ :=
