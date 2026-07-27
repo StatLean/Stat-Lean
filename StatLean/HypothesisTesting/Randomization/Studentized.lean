@@ -1,5 +1,6 @@
 import StatLean.HypothesisTesting.Randomization.TwoSamplePermutation
 import StatLean.HypothesisTesting.Randomization.SlutskyRandomization
+import StatLean.AsymptoticStatistics.ForMathlib.Slutsky
 
 /-!
 # The studentized two-sample permutation test
@@ -80,7 +81,7 @@ Statist.* **28** (1957), 181–187).
 -/
 
 open MeasureTheory ProbabilityTheory Filter Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace StatLean.HypothesisTesting
 
@@ -577,31 +578,104 @@ theorem weakConverges_studentizedTwoSample (PY PZ : Measure ℝ) [IsProbabilityM
     WeakConverges
       (fun k => (twoSampleLaw (m k) (n k) PY PZ).map (studentizedTwoSample (m k) (n k)))
       (gaussianReal 0 1) := by
-  -- TODO (deep, deferred): unconditional law of the studentized statistic. Numerator
-  -- `twoSampleMeanDiff ⇝ N(0, s²)` and denominator `twoSampleScale → s` in probability (the
-  -- unconditional variance is exactly `s²` here), so the ratio `⇝ N(0,1)` by Slutsky at the level
-  -- of laws.
-  -- STATUS (re-derived this session): the numerator is NO LONGER a blocker —
-  -- `TwoSamplePermutation.weakConverges_twoSampleMeanDiff` is now CLOSED (0-sorry, axiom-clean).
-  -- Exactly two things remain:
-  --  (a) the unconditional scale consistency `twoSampleScale → s` in probability. Expanding
-  --      `S²_Y = m⁻¹∑(Yᵢ − Ȳ)² = m⁻¹∑Yᵢ² − Ȳ²`, this is a weak law of large numbers for `Yᵢ²`
-  --      under `twoSampleLaw`, i.e. under a `Measure.pi`. The summands are only `L¹` (the
-  --      hypothesis is `MemLp id 2`, so `Y²` has one moment, not two), hence Chebyshev does not
-  --      apply; the honest route is Kolmogorov's strong law on `Measure.infinitePi` pulled back
-  --      along `AsymptoticStatistics.pi_meas_eq_infinitePi_meas_of_truncate`
-  --      (`AsymptoticStatistics/ForMathlib/IIdJointLaw`, public), replicating the *private*
-  --      `Asymptotics/Discharge/OneStep.iid_lln_in_prob_l1`. This is the same missing brick as in
-  --      `Randomization/MultivariateQuadratic`, and it is the single highest-value thing to write
-  --      next in this area.
-  --  (b) a measure-level Slutsky-ratio lemma: if `Pₖ.map Tₖ ⇝ ν` and `Dₖ → s > 0` in
-  --      `Pₖ`-probability, then `Pₖ.map (Tₖ/Dₖ) ⇝ ν.map (·/s)`. The `WeakConverges` API offers
-  --      `.map` for a *fixed* continuous map only, and the underlying spaces `𝓧ₖ` vary with `k`,
-  --      so Mathlib's fixed-space Slutsky lemmas do not apply either. The proof is the
-  --      characteristic-function argument already used in `PairCLT` for the randomized version
-  --      (`weakConverges_randPairLaw_of_tendstoInProb_avg`), specialised to a single (rather than
-  --      group-averaged) law — i.e. the same `‖e^{iα} − e^{iβ}‖ ≤ min 2 (2|α−β|)` estimate.
-  sorry
+  classical
+  -- The unconditional variance, and the numerator's limit.
+  have hposs : 0 < varY + lam * varZ := by positivity
+  set s : ℝ := Real.sqrt (varY + lam * varZ) with hsdef
+  have hspos : 0 < s := Real.sqrt_pos.2 hposs
+  have hs : s ^ 2 = varY + lam * varZ := Real.sq_sqrt hposs.le
+  have hTlaw := weakConverges_twoSampleMeanDiff PY PZ m n hm hn hratio hlam hYL2 hZL2
+    hmeanY hmeanZ hvarY hvarZ hvarYpos hvarZpos hspos hs
+  have hTmeas : ∀ k, Measurable (twoSampleMeanDiff (m k) (n k)) := by
+    intro k; unfold twoSampleMeanDiff; fun_prop
+  have hSmeas : ∀ k, Measurable (studentizedTwoSample (m k) (n k)) := by
+    intro k
+    unfold studentizedTwoSample twoSampleScale twoSampleVarY twoSampleVarZ
+      twoSampleMeanY twoSampleMeanZ twoSampleMeanDiff
+    fun_prop
+  haveI hprobT : ∀ k, IsProbabilityMeasure
+      ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))) := fun k =>
+    Measure.isProbabilityMeasure_map (hTmeas k).aemeasurable
+  -- Dividing the numerator's Gaussian limit by `s` gives the standard normal.
+  have hgauss : (gaussianReal 0 ⟨s ^ 2, sq_nonneg s⟩).map (fun y : ℝ => y / s)
+      = gaussianReal 0 1 := by
+    have hfun : (fun y : ℝ => y / s) = fun y : ℝ => y * s⁻¹ := by
+      funext y; rw [div_eq_mul_inv]
+    rw [hfun, gaussianReal_map_mul_const]
+    congr 1
+    · ring
+    · refine NNReal.coe_injective ?_
+      simp only [NNReal.coe_mul, NNReal.coe_one, NNReal.coe_mk]
+      field_simp
+  have hXlaw : WeakConverges
+      (fun k => (twoSampleLaw (m k) (n k) PY PZ).map
+        (fun x => twoSampleMeanDiff (m k) (n k) x / s)) (gaussianReal 0 1) := by
+    have hmapped := hTlaw.map (f := fun y : ℝ => y / s) (by fun_prop) (by fun_prop)
+    rw [hgauss] at hmapped
+    have heq : ∀ k, ((twoSampleLaw (m k) (n k) PY PZ).map
+          (twoSampleMeanDiff (m k) (n k))).map (fun y : ℝ => y / s)
+        = (twoSampleLaw (m k) (n k) PY PZ).map
+          (fun x => twoSampleMeanDiff (m k) (n k) x / s) := fun k =>
+      Measure.map_map (by fun_prop) (hTmeas k)
+    simpa only [heq] using hmapped
+  -- The scale is consistent, hence so is its reciprocal.
+  have hscale := tendstoInProb_twoSampleScale PY PZ m n hm hn hratio hYL2 hZL2 hmeanY hmeanZ
+    hvarY hvarZ hs hspos.le
+  have hinv := tendstoInProb_comp (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (φ := fun y : ℝ => y⁻¹) (continuousAt_inv₀ hspos.ne') hscale
+  -- Slutsky: the studentized statistic differs from `T/s` by a vanishing remainder.
+  refine AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (P := fun k => twoSampleLaw (m k) (n k) PY PZ)
+    (X := fun k x => twoSampleMeanDiff (m k) (n k) x / s)
+    (Y := fun k => studentizedTwoSample (m k) (n k))
+    (fun k => ((hTmeas k).div_const s).aemeasurable)
+    (fun k => (hSmeas k).aemeasurable) hXlaw ?_
+  intro δ hδ
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨M, hMpos, hMev⟩ :=
+    exists_tight_bound_of_weakConverges hTlaw (show (0 : ℝ) < ε / 2 by positivity)
+  have hinvev := (hinv (δ / M) (by positivity)).eventually
+    (eventually_lt_nhds (show (0 : ℝ) < ε / 2 by positivity))
+  filter_upwards [hMev, hinvev] with k hk0 hk1
+  have hmeasM : MeasurableSet {y : ℝ | M ≤ |y|} :=
+    measurableSet_le measurable_const continuous_abs.measurable
+  have hTval : ((twoSampleLaw (m k) (n k) PY PZ).map (twoSampleMeanDiff (m k) (n k))).real
+        {y : ℝ | M ≤ |y|}
+      = (twoSampleLaw (m k) (n k) PY PZ).real
+        {x : Fin (m k + n k) → ℝ | M ≤ |twoSampleMeanDiff (m k) (n k) x|} := by
+    rw [Measure.real, Measure.map_apply (hTmeas k) hmeasM]
+    rfl
+  rw [hTval] at hk0
+  have hincl : {x : Fin (m k + n k) → ℝ |
+        δ ≤ dist (twoSampleMeanDiff (m k) (n k) x / s) (studentizedTwoSample (m k) (n k) x)}
+      ⊆ {x : Fin (m k + n k) → ℝ | M ≤ |twoSampleMeanDiff (m k) (n k) x|}
+        ∪ {x : Fin (m k + n k) → ℝ |
+            δ / M ≤ |(twoSampleScale (m k) (n k) x)⁻¹ - s⁻¹|} := by
+    intro x hx
+    simp only [Set.mem_setOf_eq, Real.dist_eq] at hx
+    by_contra hcon
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have heq : twoSampleMeanDiff (m k) (n k) x / s - studentizedTwoSample (m k) (n k) x
+        = twoSampleMeanDiff (m k) (n k) x * ((twoSampleScale (m k) (n k) x)⁻¹ - s⁻¹) * (-1) := by
+      unfold studentizedTwoSample
+      rw [div_eq_mul_inv, div_eq_mul_inv]
+      ring
+    rw [heq, abs_mul, abs_mul] at hx
+    have hlt : |twoSampleMeanDiff (m k) (n k) x|
+        * |(twoSampleScale (m k) (n k) x)⁻¹ - s⁻¹| < δ := by
+      calc |twoSampleMeanDiff (m k) (n k) x| * |(twoSampleScale (m k) (n k) x)⁻¹ - s⁻¹|
+          ≤ M * |(twoSampleScale (m k) (n k) x)⁻¹ - s⁻¹| :=
+            mul_le_mul_of_nonneg_right h1.le (abs_nonneg _)
+        _ < M * (δ / M) := mul_lt_mul_of_pos_left h2 hMpos
+        _ = δ := by field_simp
+    simp only [abs_neg, abs_one, mul_one] at hx
+    linarith
+  have hbound := (measureReal_mono (μ := twoSampleLaw (m k) (n k) PY PZ) hincl
+    (measure_ne_top _ _)).trans (measureReal_union_le _ _)
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  linarith
 
 /-- **The studentized permutation test is pointwise consistent in level.** Its rejection
 probability tends to the nominal level,
