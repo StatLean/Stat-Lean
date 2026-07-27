@@ -3,6 +3,8 @@ import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Foundations for Esseen's smoothing inequality: the sinc integral and the Fejér pair
@@ -48,6 +50,9 @@ function rather than by contour integration.
 * `densityCDF`, `charFunDensity`, `abs_measure_Iic_sub_densityCDF_le_charFun` — the same
   inequality with the comparison probability law replaced by a **signed** `L¹` density, which
   is what an Edgeworth approximant is.
+* `setIntegral_esseenWeight_tail_le`, `setIntegral_mul_esseenWeight_tail_le`,
+  `exists_pow_mul_geometric_le` — the tail of the Esseen weight off a neighbourhood of the
+  origin, and the geometric-beats-polynomial bookkeeping that the Cramér tail consumes.
 
 ## The Stieltjes inversion is not needed
 
@@ -1293,5 +1298,197 @@ theorem abs_measure_Iic_sub_densityCDF_le_charFun {P : Measure ℝ} [IsProbabili
   rw [← hnormeq]
   exact (norm_integral_fourier_sub_density_le hq hgint).trans
     (integral_mono hLint hint hbound)
+
+/-! ## The tail of the Esseen weight, and the Cramér bookkeeping
+
+The last quantitative ingredient of an Edgeworth assembly is the estimate off the window: on
+`ρ ≤ |ξ|` the characteristic-function difference is bounded by a constant `c < 1` raised to the
+`n`-th power (`exists_bound_lt_one_of_cramer` in `Bootstrap/Edgeworth.lean`), and what has to be
+checked is that the *weight* contributes only a power of `n`. It does: off the origin the flank
+term `1/(δπ²ξ²)` alone dominates the weight, and `∫_{ρ ≤ |ξ|} ξ⁻² dξ = 2/ρ`, so the whole tail
+contributes `2M/(δπ²ρ)`. With the assembly's choices `δ ≍ n⁻¹` and `ρ ≍ √n` that is
+`cⁿ · O(n^{3/2})`, and `exists_pow_mul_geometric_le` turns geometric decay against a polynomial
+into a bound of any order — in particular `o(n⁻¹)`.
+
+This is item (E3) of the programme recorded on `edgeworth_mean_uniform`, whose analytic content
+(`exists_bound_lt_one_of_cramer`) is already proved; what is added here is only the
+bookkeeping. -/
+
+private lemma hasDerivAt_neg_inv {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun t : ℝ => -t⁻¹) ((x ^ 2)⁻¹) x := by
+  simpa using (hasDerivAt_inv hx).neg
+
+private lemma tendsto_neg_inv_atTop : Filter.Tendsto (fun t : ℝ => -t⁻¹) Filter.atTop (𝓝 0) := by
+  have h : Filter.Tendsto (fun t : ℝ => t⁻¹) Filter.atTop (𝓝 0) := tendsto_inv_atTop_zero
+  simpa using h.neg
+
+private lemma integrableOn_inv_sq_Ioi {ρ : ℝ} (hρ : 0 < ρ) :
+    IntegrableOn (fun x : ℝ => (x ^ 2)⁻¹) (Set.Ioi ρ) :=
+  integrableOn_Ioi_deriv_of_nonneg'
+    (fun x hx => hasDerivAt_neg_inv (by have := hx.out; linarith))
+    (fun x _ => by positivity) tendsto_neg_inv_atTop
+
+private lemma integral_inv_sq_Ioi {ρ : ℝ} (hρ : 0 < ρ) :
+    (∫ x in Set.Ioi ρ, (x ^ 2)⁻¹) = ρ⁻¹ := by
+  have h := integral_Ioi_of_hasDerivAt_of_nonneg'
+    (g := fun t : ℝ => -t⁻¹) (g' := fun x : ℝ => (x ^ 2)⁻¹) (a := ρ) (l := 0)
+    (fun x hx => hasDerivAt_neg_inv (by have := hx.out; linarith))
+    (fun x _ => by positivity) tendsto_neg_inv_atTop
+  rw [h]
+  ring
+
+private lemma neg_Ioi_eq_Iio (ρ : ℝ) : -Set.Ioi ρ = Set.Iio (-ρ) := by
+  ext x
+  simp only [Set.mem_neg, Set.mem_Ioi, Set.mem_Iio]
+  constructor <;> intro h <;> linarith
+
+private lemma integrableOn_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
+    IntegrableOn (fun x : ℝ => (x ^ 2)⁻¹) (Set.Iic (-ρ)) := by
+  have h := (integrableOn_inv_sq_Ioi hρ).comp_neg
+  rw [neg_Ioi_eq_Iio] at h
+  have h2 : IntegrableOn (fun x : ℝ => (x ^ 2)⁻¹) (Set.Iio (-ρ)) :=
+    h.congr_fun (fun x _ => by rw [neg_sq]) measurableSet_Iio
+  exact h2.congr_set_ae (Iio_ae_eq_Iic (a := (-ρ : ℝ))).symm
+
+private lemma integral_inv_sq_Iic {ρ : ℝ} (hρ : 0 < ρ) :
+    (∫ x in Set.Iic (-ρ), (x ^ 2)⁻¹) = ρ⁻¹ := by
+  have h : (∫ x in Set.Iic (-ρ), (((-x) ^ 2)⁻¹)) = ∫ x in Set.Ioi (-(-ρ)), (x ^ 2)⁻¹ :=
+    integral_comp_neg_Iic (-ρ) (fun x : ℝ => (x ^ 2)⁻¹)
+  rw [neg_neg] at h
+  rw [← integral_inv_sq_Ioi hρ, ← h]
+  exact setIntegral_congr_fun measurableSet_Iic fun x _ => by rw [neg_sq]
+
+private lemma tail_eq_union (ρ : ℝ) :
+    {ξ : ℝ | ρ ≤ |ξ|} = Set.Iic (-ρ) ∪ Set.Ici ρ := by
+  ext ξ
+  simp only [Set.mem_setOf_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici, le_abs']
+
+private lemma measurableSet_tail (ρ : ℝ) : MeasurableSet {ξ : ℝ | ρ ≤ |ξ|} := by
+  rw [tail_eq_union]
+  exact measurableSet_Iic.union measurableSet_Ici
+
+private lemma integrableOn_inv_sq_tail {ρ : ℝ} (hρ : 0 < ρ) :
+    IntegrableOn (fun x : ℝ => (x ^ 2)⁻¹) {ξ : ℝ | ρ ≤ |ξ|} := by
+  rw [tail_eq_union, integrableOn_union]
+  exact ⟨integrableOn_inv_sq_Iic hρ,
+    (integrableOn_inv_sq_Ioi hρ).congr_set_ae (Ioi_ae_eq_Ici (a := ρ)).symm⟩
+
+private lemma integral_inv_sq_tail {ρ : ℝ} (hρ : 0 < ρ) :
+    (∫ x in {ξ : ℝ | ρ ≤ |ξ|}, (x ^ 2)⁻¹) = 2 * ρ⁻¹ := by
+  have hdisj : Disjoint (Set.Iic (-ρ)) (Set.Ici ρ) := by
+    rw [Set.disjoint_left]
+    intro x hx hx'
+    have h1 : x ≤ -ρ := hx
+    have h2 : ρ ≤ x := hx'
+    linarith
+  rw [tail_eq_union, setIntegral_union hdisj measurableSet_Ici (integrableOn_inv_sq_Iic hρ)
+    ((integrableOn_inv_sq_Ioi hρ).congr_set_ae (Ioi_ae_eq_Ici (a := ρ)).symm),
+    integral_inv_sq_Iic hρ,
+    setIntegral_congr_set (Ioi_ae_eq_Ici (a := ρ)).symm, integral_inv_sq_Ioi hρ]
+  ring
+
+/-- The Esseen weight is dominated on the tail by `(δπ²)⁻¹ ξ⁻²`. -/
+private lemma esseenWeight_le (δ ξ : ℝ) :
+    min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) ≤ (δ * π ^ 2)⁻¹ * (ξ ^ 2)⁻¹ := by
+  refine (min_le_right _ _).trans_eq ?_
+  rw [one_div, mul_inv]
+
+private lemma esseenWeight_nonneg {δ : ℝ} (hδ : 0 < δ) {ξ : ℝ} (hξ : ξ ≠ 0) :
+    0 ≤ min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) := by
+  have hπ : (0 : ℝ) < π := Real.pi_pos
+  have hξ' : 0 < |ξ| := abs_pos.2 hξ
+  have hξ2 : 0 < ξ ^ 2 := by positivity
+  exact le_min (by positivity) (by positivity)
+
+/-- **The Esseen weight is integrable off a neighbourhood of the origin.** -/
+theorem integrableOn_esseenWeight_tail {δ ρ : ℝ} (hδ : 0 < δ) (hρ : 0 < ρ) :
+    IntegrableOn (fun ξ : ℝ => min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
+      {ξ : ℝ | ρ ≤ |ξ|} := by
+  refine Integrable.mono' ((integrableOn_inv_sq_tail hρ).const_mul (δ * π ^ 2)⁻¹)
+    (by fun_prop) ?_
+  filter_upwards [ae_restrict_mem (measurableSet_tail ρ)] with ξ hξ
+  have hξ0 : ξ ≠ 0 := by
+    intro h
+    rw [h] at hξ
+    simp only [abs_zero] at hξ
+    linarith
+  rw [Real.norm_eq_abs, abs_of_nonneg (esseenWeight_nonneg hδ hξ0)]
+  exact esseenWeight_le δ ξ
+
+/-- **The tail integral of the Esseen weight.** `∫_{ρ ≤ |ξ|} min(1/(π|ξ|), 1/(δπ²ξ²)) dξ
+≤ 2/(δπ²ρ)`: off the origin the flank term alone controls the weight, and `∫ ξ⁻²` over the
+two tails is `2/ρ`. -/
+theorem setIntegral_esseenWeight_tail_le {δ ρ : ℝ} (hδ : 0 < δ) (hρ : 0 < ρ) :
+    (∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
+      ≤ 2 / (δ * π ^ 2 * ρ) := by
+  have hπ : (0 : ℝ) < π := Real.pi_pos
+  calc (∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
+      ≤ ∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, (δ * π ^ 2)⁻¹ * (ξ ^ 2)⁻¹ :=
+        integral_mono (integrableOn_esseenWeight_tail hδ hρ)
+          ((integrableOn_inv_sq_tail hρ).const_mul _) fun ξ => esseenWeight_le δ ξ
+    _ = (δ * π ^ 2)⁻¹ * ∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, (ξ ^ 2)⁻¹ :=
+        MeasureTheory.integral_const_mul _ _
+    _ = 2 / (δ * π ^ 2 * ρ) := by
+        rw [integral_inv_sq_tail hρ]
+        field_simp
+
+/-- **The Cramér tail estimate.** If a nonnegative factor is bounded by `M` on the region
+`ρ ≤ |ξ|`, its weighted tail integral is at most `2M/(δπ²ρ)`. Applied with
+`M = ‖φ_F‖ⁿ ≤ cⁿ` (`exists_bound_lt_one_of_cramer`), `δ ≍ n⁻¹` and `ρ ≍ √n`, the right-hand
+side is `cⁿ · O(n^{3/2})`, which by `exists_pow_mul_geometric_le` is `O(n^{-k})` for every
+`k` — in particular `o(n⁻¹)`. -/
+theorem setIntegral_mul_esseenWeight_tail_le {δ ρ M : ℝ} (hδ : 0 < δ) (hρ : 0 < ρ)
+    {f : ℝ → ℝ} (hfm : AEStronglyMeasurable f volume) (hf0 : ∀ ξ, 0 ≤ f ξ)
+    (hfb : ∀ ξ, ρ ≤ |ξ| → f ξ ≤ M) :
+    (∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, f ξ * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
+      ≤ 2 * M / (δ * π ^ 2 * ρ) := by
+  have hw := integrableOn_esseenWeight_tail hδ hρ
+  have hMw : IntegrableOn
+      (fun ξ : ℝ => M * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) {ξ : ℝ | ρ ≤ |ξ|} :=
+    hw.const_mul M
+  have hle : ∀ᵐ ξ ∂(volume.restrict {ξ : ℝ | ρ ≤ |ξ|}),
+      f ξ * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))
+        ≤ M * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) := by
+    filter_upwards [ae_restrict_mem (measurableSet_tail ρ)] with ξ hξ
+    have hξ0 : ξ ≠ 0 := by
+      intro h
+      rw [h] at hξ
+      simp only [abs_zero] at hξ
+      linarith
+    exact mul_le_mul_of_nonneg_right (hfb ξ hξ) (esseenWeight_nonneg hδ hξ0)
+  have hfw : IntegrableOn
+      (fun ξ : ℝ => f ξ * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2))) {ξ : ℝ | ρ ≤ |ξ|} := by
+    refine Integrable.mono' hMw (hfm.restrict.mul hw.aestronglyMeasurable) ?_
+    filter_upwards [hle, ae_restrict_mem (measurableSet_tail ρ)] with ξ hξle hξ
+    have hξ0 : ξ ≠ 0 := by
+      intro h
+      rw [h] at hξ
+      simp only [abs_zero] at hξ
+      linarith
+    rw [Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg (hf0 ξ) (esseenWeight_nonneg hδ hξ0))]
+    exact hξle
+  calc (∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, f ξ * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)))
+      ≤ ∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, M * min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) :=
+        integral_mono_ae hfw hMw hle
+    _ = M * ∫ ξ in {ξ : ℝ | ρ ≤ |ξ|}, min (1 / (π * |ξ|)) (1 / (δ * π ^ 2 * ξ ^ 2)) :=
+        MeasureTheory.integral_const_mul _ _
+    _ ≤ M * (2 / (δ * π ^ 2 * ρ)) := by
+        refine mul_le_mul_of_nonneg_left (setIntegral_esseenWeight_tail_le hδ hρ) ?_
+        have h0 : (0 : ℝ) ≤ f ρ := hf0 ρ
+        have := hfb ρ (by rw [abs_of_pos hρ])
+        linarith
+    _ = 2 * M / (δ * π ^ 2 * ρ) := by ring
+
+/-- **Geometric decay beats any polynomial.** For `0 ≤ c < 1` and every `k`, the sequence
+`n ↦ nᵏ cⁿ` is bounded; this is the bookkeeping that turns the uniform Cramér bound `c < 1` of
+`exists_bound_lt_one_of_cramer` into an `o(n⁻¹)` tail. -/
+theorem exists_pow_mul_geometric_le {c : ℝ} (hc0 : 0 ≤ c) (hc1 : c < 1) (k : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, (n : ℝ) ^ k * c ^ n ≤ C := by
+  have habs : |c| < 1 := abs_lt.2 ⟨by linarith, hc1⟩
+  have htend := tendsto_pow_const_mul_const_pow_of_abs_lt_one k habs
+  obtain ⟨B, hB⟩ := htend.bddAbove_range
+  refine ⟨max B 1, lt_of_lt_of_le zero_lt_one (le_max_right _ _), fun n => ?_⟩
+  exact (hB ⟨n, rfl⟩).trans (le_max_left _ _)
 
 end StatLean.HypothesisTesting
