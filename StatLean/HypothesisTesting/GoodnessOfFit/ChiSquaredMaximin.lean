@@ -1300,6 +1300,287 @@ private lemma multinomialNoncentrality_eq_normSq {k : ℕ} {π : Fin (k + 1) →
   simp only [hl] at hkey
   rw [hkey, EuclideanSpace.real_norm_sq_eq]
 
+/-! ### The drifting-parameter local limit law
+
+BRICK 1 of the attainment note.  The twin's `SmoothTest.scoreVec_weakConverges_drift` does
+not apply: it needs the alternatives to be exponential tilts of the null, whereas here they
+are the *linear* family `πⱼ + hⱼ/√n`.  The drifting-row multivariate limit law
+`Bootstrap.Multivariate.meanVec_root_tendsto` is however exactly a triangular-array
+statement, and every `meanVecSeqClass` condition for the sequence of laws
+`F n = (ν n).map Ψ` of the per-observation score vector is the finite computation
+`π + hₙ/√n → π`; the limiting covariance is the identity directly from orthonormality.
+The drift is linear, so the mean of `F n` is exactly `n^{-1/2} v(hₙ)` with no expansion, and
+recentring at `v(h₀)` instead of `v(hₙ)` is a Slutsky step with a *constant-in-`ω`* distance
+`‖v(h₀) − v(hₙ)‖ → 0` — no tightness needed. -/
+
+/-! ### Laws of the per-observation score vector -/
+
+private lemma measurable_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ) :
+    Measurable (psiVec sc) := measurable_of_countable _
+
+private lemma integral_map_psiVec {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (sc : Fin k → Fin (k + 1) → ℝ)
+    (ρ : Measure (Fin (k + 1))) [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) :
+    ∫ y, f y ∂(ρ.map (psiVec sc)) = ∑ x, ρ.real {x} • f (psiVec sc x) := by
+  rw [integral_map (measurable_psiVec sc).aemeasurable hf.aestronglyMeasurable,
+    integral_fintype Integrable.of_finite]
+
+private lemma memLp_map_psiVec {k : ℕ} {E : Type*} [NormedAddCommGroup E]
+    (sc : Fin k → Fin (k + 1) → ℝ) (ρ : Measure (Fin (k + 1))) [IsFiniteMeasure ρ]
+    {f : EuclideanSpace ℝ (Fin k) → E} (hf : Continuous f) (p : ℝ≥0∞) :
+    MemLp f p (ρ.map (psiVec sc)) := by
+  have hfm : AEStronglyMeasurable f (ρ.map (psiVec sc)) := hf.aestronglyMeasurable
+  rw [memLp_map_measure_iff hfm (measurable_psiVec sc).aemeasurable]
+  obtain ⟨C, hC⟩ := (Set.finite_range fun x => ‖f (psiVec sc x)‖).bddAbove
+  exact (memLp_top_of_bound (hfm.comp_aemeasurable (measurable_psiVec sc).aemeasurable)
+    C (Filter.Eventually.of_forall fun x => hC ⟨x, rfl⟩)).mono_exponent le_top
+
+private lemma covMatrix_map_psiVec {k : ℕ} (sc : Fin k → Fin (k + 1) → ℝ)
+    (ρ : Measure (Fin (k + 1))) [IsProbabilityMeasure ρ] (i j : Fin k) :
+    covMatrix (ρ.map (psiVec sc)) i j
+      = (∑ x, ρ.real {x} * (sc i x * sc j x))
+        - (∑ x, ρ.real {x} * sc i x) * ∑ x, ρ.real {x} * sc j x := by
+  haveI : IsProbabilityMeasure (ρ.map (psiVec sc)) :=
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  rw [covMatrix, Matrix.of_apply,
+    covariance_eq_sub (memLp_map_psiVec sc ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop) 2)
+      (memLp_map_psiVec sc ρ
+        (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) (by fun_prop) 2)]
+  have h1 : ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) y
+        * (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y j) y ∂(ρ.map (psiVec sc))
+      = ∑ x, ρ.real {x} * (sc i x * sc j x) := by
+    rw [integral_map_psiVec sc ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i * WithLp.ofLp y j)
+      (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]; rfl
+  have h2 : ∀ l : Fin k, ∫ y : EuclideanSpace ℝ (Fin k),
+        (fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) y ∂(ρ.map (psiVec sc))
+      = ∑ x, ρ.real {x} * sc l x := by
+    intro l
+    rw [integral_map_psiVec sc ρ
+      (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y l) (by fun_prop)]
+    exact Finset.sum_congr rfl fun x _ => by rw [smul_eq_mul]; rfl
+  simp only [Pi.mul_apply]
+  rw [h1, h2 i, h2 j]
+
+/-- Translating the standard Gaussian by `v`. -/
+private lemma mvGaussian_shift {k : ℕ} (v : EuclideanSpace ℝ (Fin k)) :
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1).map (fun z => v + z)
+      = multivariateGaussian v 1 := by
+  rw [multivariateGaussian_zero_one, multivariateGaussian]
+  simp only [CFC.sqrt_one, map_one, ContinuousLinearMap.one_apply]
+
+/-! ### The drifting local limit law -/
+
+private lemma mScoreVec_weakConverges_drift {k : ℕ} {π : Fin (k + 1) → ℝ}
+    {sc : Fin k → Fin (k + 1) → ℝ} {hs : ℕ → Fin (k + 1) → ℝ} {h₀ : Fin (k + 1) → ℝ}
+    {ν : ℕ → Measure (Fin (k + 1))} [∀ n, IsProbabilityMeasure (ν n)]
+    (hcent : ∀ i, ∑ j, π j * sc i j = 0)
+    (hortho : ∀ i i', ∑ j, π j * (sc i j * sc i' j) = if i = i' then 1 else 0)
+    (hlim : ∀ j, Tendsto (fun n => hs n j) atTop (𝓝 (h₀ j)))
+    (hν : ∀ n j, (ν n).real {j} = π j + hs n j / Real.sqrt (n : ℝ)) :
+    AsymptoticStatistics.WeakConverges (fun n => (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc))
+      (multivariateGaussian (mDriftVec sc h₀) 1) := by
+  classical
+  set w : ℕ → Fin (k + 1) → ℝ := fun n j => π j + hs n j / Real.sqrt (n : ℝ) with hwdef
+  have hνreal : ∀ n j, (ν n).real {j} = w n j := hν
+  have hν0 : ∀ j, (ν 0).real {j} = π j := by
+    intro j
+    rw [hν 0 j]
+    simp
+  have hwlim : ∀ j, Tendsto (fun n : ℕ => w n j) atTop (𝓝 (π j)) := by
+    intro j
+    have hz : Tendsto (fun n : ℕ => hs n j / Real.sqrt (n : ℝ)) atTop (𝓝 0) :=
+      Filter.Tendsto.div_atTop (hlim j)
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    simpa only [hwdef, add_zero] using tendsto_const_nhds.add hz
+  -- the limit law and the drifting sequence of laws
+  set Q : Measure (EuclideanSpace ℝ (Fin k)) := (ν 0).map (psiVec sc) with hQdef
+  haveI hQprob : IsProbabilityMeasure Q :=
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  set F : ℕ → Measure (EuclideanSpace ℝ (Fin k)) := fun n => (ν n).map (psiVec sc) with hFdef
+  haveI hFprob : ∀ n, IsProbabilityMeasure (F n) := fun n =>
+    Measure.isProbabilityMeasure_map (measurable_psiVec sc).aemeasurable
+  have hQ2 : MemLp (fun y : EuclideanSpace ℝ (Fin k) => y) 2 Q :=
+    memLp_map_psiVec sc (ν 0) continuous_id' 2
+  have hFclass : F ∈ meanVecSeqClass Q := by
+    refine ⟨fun n _ => hFprob n, fun n => memLp_map_psiVec sc (ν n) continuous_id' 2, ?_, ?_, ?_⟩
+    · intro f
+      have hQint : ∫ y, f y ∂Q = ∑ x, π x * f (psiVec sc x) := by
+        rw [hQdef, integral_map_psiVec sc (ν 0) f.continuous]
+        exact Finset.sum_congr rfl fun x _ => by rw [hν0 x, smul_eq_mul]
+      have hFint : ∀ n, ∫ y, f y ∂(F n) = ∑ x, w n x * f (psiVec sc x) := by
+        intro n
+        rw [hFdef, integral_map_psiVec sc (ν n) f.continuous]
+        exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]
+      simp only [hQint, hFint]
+      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+    · intro i
+      have hQint : ∫ y, WithLp.ofLp y i ∂Q = ∑ x, π x * sc i x := by
+        rw [hQdef, integral_map_psiVec sc (ν 0)
+          (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+        exact Finset.sum_congr rfl fun x _ => by rw [hν0 x, smul_eq_mul]; rfl
+      have hFint : ∀ n, ∫ y, WithLp.ofLp y i ∂(F n) = ∑ x, w n x * sc i x := by
+        intro n
+        rw [hFdef, integral_map_psiVec sc (ν n)
+          (f := fun y : EuclideanSpace ℝ (Fin k) => WithLp.ofLp y i) (by fun_prop)]
+        exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x, smul_eq_mul]; rfl
+      simp only [hQint, hFint]
+      exact tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds
+    · intro i j
+      have hQcov : covMatrix Q i j
+          = (∑ x, π x * (sc i x * sc j x))
+            - (∑ x, π x * sc i x) * ∑ x, π x * sc j x := by
+        rw [hQdef, covMatrix_map_psiVec sc (ν 0) i j]
+        congr 1
+        · exact Finset.sum_congr rfl fun x _ => by rw [hν0 x]
+        · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hν0 x]
+      have hFcov : ∀ n, covMatrix (F n) i j
+          = (∑ x, w n x * (sc i x * sc j x))
+            - (∑ x, w n x * sc i x) * ∑ x, w n x * sc j x := by
+        intro n
+        rw [hFdef, covMatrix_map_psiVec sc (ν n) i j]
+        congr 1
+        · exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+        · congr 1 <;> exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+      simp only [hQcov, hFcov]
+      exact ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).sub
+        ((tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds).mul
+          (tendsto_finset_sum _ fun x _ => (hwlim x).mul tendsto_const_nhds)))
+  have hcovQ : covMatrix Q = 1 := by
+    ext i j
+    rw [hQdef, covMatrix_map_psiVec sc (ν 0) i j]
+    have hz : ∀ l : Fin k, ∑ x, (ν 0).real {x} * sc l x = 0 := by
+      intro l
+      rw [Finset.sum_congr rfl fun x _ => by rw [hν0 x]]
+      exact hcent l
+    rw [hz i, hz j, mul_zero, sub_zero, Matrix.one_apply]
+    rw [Finset.sum_congr rfl fun x _ => by rw [hν0 x]]
+    exact hortho i j
+  have hweak : AsymptoticStatistics.WeakConverges (fun n => meanVecRootLaw (F n) n)
+      (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := by
+    have := meanVec_root_tendsto hQ2 hFclass
+    rwa [hcovQ] at this
+  -- ### the drift vectors
+  set v : ℕ → EuclideanSpace ℝ (Fin k) := fun n => mDriftVec sc (hs n) with hvdef
+  set v₀ : EuclideanSpace ℝ (Fin k) := mDriftVec sc h₀ with hv₀def
+  have hdrift0 : mDriftVec sc π = 0 := by
+    ext a
+    rw [mDriftVec_apply]
+    simpa using hcent a
+  have hdriftadd : ∀ u₁ u₂ : Fin (k + 1) → ℝ,
+      mDriftVec sc (u₁ + u₂) = mDriftVec sc u₁ + mDriftVec sc u₂ := by
+    intro u₁ u₂
+    simp only [mDriftVec, Pi.add_apply, add_smul]
+    exact Finset.sum_add_distrib
+  have hdriftsmul : ∀ (c : ℝ) (u : Fin (k + 1) → ℝ),
+      mDriftVec sc (c • u) = c • mDriftVec sc u := by
+    intro c u
+    simp only [mDriftVec, Pi.smul_apply, smul_eq_mul, mul_smul, Finset.smul_sum]
+  have hwsplit : ∀ n : ℕ, w n = π + (Real.sqrt (n : ℝ))⁻¹ • hs n := by
+    intro n
+    funext x
+    simp only [hwdef, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    rw [div_eq_inv_mul]
+  have hdriftw : ∀ n : ℕ,
+      mDriftVec sc (w n) = (Real.sqrt (n : ℝ))⁻¹ • v n := by
+    intro n
+    rw [hwsplit n, hdriftadd, hdriftsmul, hdrift0, zero_add, hvdef]
+  have hmeanF : ∀ n : ℕ, ∫ z, z ∂(F n) = (Real.sqrt (n : ℝ))⁻¹ • v n := by
+    intro n
+    rw [hFdef, integral_map_psiVec sc (ν n) continuous_id', ← hdriftw n]
+    exact Finset.sum_congr rfl fun x _ => by rw [hνreal n x]
+  have hvlim : Tendsto v atTop (𝓝 v₀) := by
+    rw [hvdef, hv₀def]
+    exact tendsto_finset_sum _ fun j _ => (hlim j).smul_const _
+  -- ### the two pushforward identities
+  set A : (n : ℕ) → Measure (Fin n → EuclideanSpace ℝ (Fin k)) :=
+    fun n => Measure.pi fun _ : Fin n => F n with hAdef
+  haveI hAprob : ∀ n, IsProbabilityMeasure (A n) := fun n => by
+    rw [hAdef]; infer_instance
+  set Ys : (n : ℕ) → (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
+    fun n y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i with hYsdef
+  set Xs : (n : ℕ) → (Fin n → EuclideanSpace ℝ (Fin k)) → EuclideanSpace ℝ (Fin k) :=
+    fun n y => v₀ + (Ys n y - v n) with hXsdef
+  have hYscont : ∀ n, Continuous (Ys n) := by
+    intro n
+    rw [hYsdef]
+    exact (continuous_finset_sum _ fun i _ => continuous_apply i).const_smul _
+  have hXscont : ∀ n, Continuous (Xs n) := by
+    intro n
+    rw [hXsdef]
+    exact continuous_const.add ((hYscont n).sub continuous_const)
+  have hstep1 : ∀ n : ℕ, 0 < n →
+      (meanVecRootLaw (F n) n).map (fun z : EuclideanSpace ℝ (Fin k) => v₀ + z)
+        = (A n).map (Xs n) := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hspos : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnR
+    have hsq : Real.sqrt (n : ℝ) * Real.sqrt (n : ℝ) = (n : ℝ) :=
+      Real.mul_self_sqrt hnR.le
+    have h1 : Real.sqrt (n : ℝ) * (n : ℝ)⁻¹ = (Real.sqrt (n : ℝ))⁻¹ := by
+      have hne : (n : ℝ) ≠ 0 := hnR.ne'
+      field_simp
+      linarith [hsq]
+    have h2 : Real.sqrt (n : ℝ) * (Real.sqrt (n : ℝ))⁻¹ = 1 := mul_inv_cancel₀ hspos.ne'
+    rw [meanVecRootLaw, Measure.map_map (by fun_prop) (by fun_prop)]
+    refine congrArg (Measure.map · (A n)) ?_
+    funext y
+    simp only [Function.comp_apply, hmeanF n, hXsdef, hYsdef]
+    rw [smul_sub, smul_smul, smul_smul, h1, h2, one_smul]
+  have hstep2 : ∀ n : ℕ,
+      (Measure.pi fun _ : Fin n => ν n).map (mScoreVec sc) = (A n).map (Ys n) := by
+    intro n
+    have hgmeas : Measurable
+        (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) :=
+      measurable_pi_lambda _ fun i => (measurable_psiVec sc).comp (measurable_pi_apply i)
+    have hcomp : mScoreVec sc
+        = (Ys n) ∘ (fun (d : Fin n → Fin (k + 1)) (i : Fin n) => psiVec sc (d i)) := by
+      funext d
+      rfl
+    rw [hcomp, ← Measure.map_map (hYscont n).measurable hgmeas,
+      Measure.pi_map_pi (fun _ => (measurable_psiVec sc).aemeasurable), hAdef]
+  -- ### Slutsky: the drift moves by a deterministic null sequence
+  have hXconv : AsymptoticStatistics.WeakConverges (fun n => (A n).map (Xs n)) (multivariateGaussian v₀ 1) := by
+    have hmap := hweak.map (f := fun z : EuclideanSpace ℝ (Fin k) => v₀ + z)
+      (by fun_prop) (by fun_prop)
+    rw [mvGaussian_shift] at hmap
+    intro f
+    refine (hmap f).congr' ?_
+    filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [hstep1 n hn]
+  have hdistlim : Tendsto (fun n => ‖v₀ - v n‖) atTop (𝓝 0) := by
+    have := (tendsto_const_nhds (x := v₀) (f := atTop (α := ℕ))).sub hvlim
+    simpa using this.norm
+  have hDist : ∀ ε > 0,
+      Tendsto (fun n => (A n).real {y | ε ≤ dist (Xs n y) (Ys n y)}) atTop (𝓝 0) := by
+    intro ε hε
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hdistlim.eventually (gt_mem_nhds hε)] with n hn
+    have hset : {y : Fin n → EuclideanSpace ℝ (Fin k) | ε ≤ dist (Xs n y) (Ys n y)} = ∅ := by
+      ext y
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      have hd : dist (Xs n y) (Ys n y) = ‖v₀ - v n‖ := by
+        rw [dist_eq_norm]
+        simp only [hXsdef]
+        congr 1
+        rw [add_sub_assoc, sub_right_comm, sub_self, zero_sub, ← sub_eq_add_neg]
+      rw [hd]
+      exact hn
+    rw [hset]
+    simp
+  have hconc := AsymptoticStatistics.WeakConverges.slutsky_of_tendstoInMeasure_dist
+    (P := A) (X := Xs) (Y := Ys)
+    (fun n => (hXscont n).measurable.aemeasurable)
+    (fun n => (hYscont n).measurable.aemeasurable) hXconv hDist
+  intro f
+  refine (hconc f).congr' ?_
+  filter_upwards with n
+  rw [hstep2 n]
+
 /-- **The Pearson test attains the maximin value on the local shell** (LIFTED — the deep half
 of `chiSquared_asymptotically_maximin`).  The minimum power of `1{Qₙ > c}` over
 `multinomialShell π b n` converges to `P{χ²_k(b²) > c_{k,1−α}}`.
