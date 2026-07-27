@@ -453,6 +453,382 @@ private lemma tendsto_setIntegral_sq_tail
         integral_const_mul _ _
     _ < η := by nlinarith [hn1]
 
+/-- The truncated square `t ↦ min (t², M)`, as a bounded continuous function. -/
+private lemma truncSq_zero_apply {M : ℝ} (hM : 0 ≤ M) (t : ℝ) :
+    truncSq (Real.sqrt M) 0 t = min (t ^ 2) M := by
+  rw [truncSq_apply, sub_zero, Real.sq_sqrt hM]
+
+/-- The excess `(t² − M)⁺` is integrable against a square-integrable law, and its integral is the
+second moment minus the truncated second moment. -/
+private lemma integral_sq_excess {μ : Measure ℝ} [IsFiniteMeasure μ]
+    (hμ2 : MemLp (fun t : ℝ => t) 2 μ) {M : ℝ} (hM : 0 ≤ M) :
+    ∫ t, max (t ^ 2 - M) 0 ∂μ = ∫ t, t ^ 2 ∂μ - ∫ t, truncSq (Real.sqrt M) 0 t ∂μ := by
+  have hsq : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+  have hbdd : Integrable (fun t : ℝ => truncSq (Real.sqrt M) 0 t) μ :=
+    BoundedContinuousFunction.integrable _ (truncSq (Real.sqrt M) 0)
+  rw [← integral_sub hsq hbdd]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
+  simp only [truncSq_zero_apply hM]
+  rcases le_total (t ^ 2) M with hle | hle
+  · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+  · rw [min_eq_right hle, max_eq_left (by linarith)]
+
+/-- The excess integral is antitone in the truncation level. -/
+private lemma integral_sq_excess_antitone {μ : Measure ℝ} [IsFiniteMeasure μ]
+    (hμ2 : MemLp (fun t : ℝ => t) 2 μ) {M M' : ℝ} (hMM : M ≤ M') :
+    ∫ t, max (t ^ 2 - M') 0 ∂μ ≤ ∫ t, max (t ^ 2 - M) 0 ∂μ := by
+  have hsq : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+  have hint : ∀ r : ℝ, Integrable (fun t : ℝ => max (t ^ 2 - r) 0) μ := by
+    intro r
+    have hg : Integrable (fun t : ℝ => t ^ 2 + |r|) μ := hsq.add (integrable_const |r|)
+    refine Integrable.mono' hg (by fun_prop) (Filter.Eventually.of_forall fun t => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right (t ^ 2 - r) 0)]
+    exact max_le (by linarith [neg_le_abs r]) (by positivity)
+  refine integral_mono (hint M') (hint M) fun t => ?_
+  exact max_le_max (by linarith) le_rfl
+
+/-- **Uniform square-integrability along a weakly convergent sequence with converging second
+moments.**
+
+For every `ε > 0` there is one truncation level `M` at which the excess `(t² − M)⁺` has integral
+at most `ε` against **every** member of the sequence — not merely in the limit. This is the form
+the weak law of large numbers for the *squares* of a triangular array consumes. -/
+private lemma exists_uniform_sq_trunc {F : ℕ → Measure ℝ} {Q : Measure ℝ}
+    [∀ n, IsProbabilityMeasure (F n)] [IsProbabilityMeasure Q]
+    (hF2 : ∀ n, MemLp (fun t : ℝ => t) 2 (F n)) (hQ2 : MemLp (fun t : ℝ => t) 2 Q)
+    (hweak : ∀ f : ℝ →ᵇ ℝ, Tendsto (fun n => ∫ t, f t ∂(F n)) atTop (𝓝 (∫ t, f t ∂Q)))
+    (hsq : Tendsto (fun n => ∫ t, t ^ 2 ∂(F n)) atTop (𝓝 (∫ t, t ^ 2 ∂Q)))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ n, ∫ t, max (t ^ 2 - M) 0 ∂(F n) ≤ ε := by
+  classical
+  -- for each fixed level the excess integrals converge
+  have hlevel : ∀ M : ℝ, 0 ≤ M →
+      Tendsto (fun n => ∫ t, max (t ^ 2 - M) 0 ∂(F n)) atTop
+        (𝓝 (∫ t, max (t ^ 2 - M) 0 ∂Q)) := by
+    intro M hM
+    have hconv := hsq.sub (hweak (truncSq (Real.sqrt M) 0))
+    rw [← integral_sq_excess hQ2 hM] at hconv
+    exact hconv.congr fun n => (integral_sq_excess (hF2 n) hM).symm
+  -- the excess integral against any fixed square-integrable law vanishes as the level grows
+  have hvanish : ∀ (μ : Measure ℝ), IsProbabilityMeasure μ → MemLp (fun t : ℝ => t) 2 μ →
+      Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop (𝓝 0) := by
+    intro μ hμ hμ2
+    haveI := hμ
+    have hsqint : Integrable (fun t : ℝ => t ^ 2) μ := hμ2.integrable_sq
+    have hDCT : Tendsto (fun j : ℕ => ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂μ) atTop
+        (𝓝 (∫ _t : ℝ, (0 : ℝ) ∂μ)) := by
+      refine tendsto_integral_of_dominated_convergence (fun t => t ^ 2)
+        (fun j => by fun_prop) hsqint (fun j => Filter.Eventually.of_forall fun t => ?_)
+        (Filter.Eventually.of_forall fun t => ?_)
+      · rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right (t ^ 2 - (j : ℝ)) 0)]
+        exact max_le (by linarith [Nat.cast_nonneg (α := ℝ) j]) (sq_nonneg t)
+      · refine tendsto_const_nhds.congr' ?_
+        filter_upwards [eventually_ge_atTop ⌈t ^ 2⌉₊] with j hj
+        have hjr : t ^ 2 ≤ (j : ℝ) := (Nat.le_ceil _).trans (Nat.cast_le.2 hj)
+        exact (max_eq_right (by linarith)).symm
+    simpa using hDCT
+  -- a level that works for the limit, hence for all large indices
+  obtain ⟨j₀, hj₀⟩ : ∃ j : ℕ, ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂Q < ε / 2 :=
+    ((hvanish Q inferInstance hQ2).eventually_lt_const (by positivity)).exists
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
+    (((hlevel (j₀ : ℝ) (Nat.cast_nonneg j₀)).eventually_lt_const
+      (show ∫ t, max (t ^ 2 - (j₀ : ℝ)) 0 ∂Q < ε by linarith)))
+  -- levels that work for the finitely many small indices
+  have hsmall : ∀ n : ℕ, ∃ j : ℕ, ∫ t, max (t ^ 2 - (j : ℝ)) 0 ∂(F n) ≤ ε := by
+    intro n
+    obtain ⟨j, hj⟩ := ((hvanish (F n) inferInstance (hF2 n)).eventually_lt_const
+      (show (0 : ℝ) < ε from hε)).exists
+    exact ⟨j, hj.le⟩
+  choose g hg using hsmall
+  refine ⟨((Finset.range N).sup g ⊔ j₀ : ℕ), Nat.cast_nonneg _, fun n => ?_⟩
+  rcases lt_or_ge n N with hn | hn
+  · refine le_trans (integral_sq_excess_antitone (hF2 n) ?_) (hg n)
+    exact_mod_cast le_sup_of_le_left (Finset.le_sup (Finset.mem_range.2 hn))
+  · refine le_trans (integral_sq_excess_antitone (hF2 n) ?_) (hN n hn).le
+    exact_mod_cast le_sup_right
+
+/-- **Weak law of large numbers for a triangular array with uniformly integrable nonnegative
+rows.**
+
+The entries of row `n` are independent and nonnegative with a common mean `s n → c`, and the
+excess above a common truncation level has arbitrarily small integral **uniformly in the row**.
+Then the row averages converge to `c` in probability.
+
+This is the self-contained replacement for `Bootstrap/Consistency`'s
+`tendstoInMeasure_rowMean_triangular`, which derives uniform integrability from a Feller-type
+weak law and therefore carries that file's `sorryAx`. Here uniform integrability is supplied
+directly — by `exists_uniform_sq_trunc` at the application site — and the proof is the classical
+truncation argument: split each entry as `min (Z, M) + (Z − M)⁺`, control the bounded part by
+Chebyshev (its variance is at most `M²/n`) and the excess by Markov. -/
+private lemma tendstoInMeasure_rowMean_of_uniform {Pr : Measure Ω} [IsProbabilityMeasure Pr]
+    {Z : ℕ → ℕ → Ω → ℝ} {s : ℕ → ℝ} {c : ℝ}
+    (hmeas : ∀ n i, Measurable (Z n i))
+    (hindep : ∀ n : ℕ, iIndepFun (fun i : Fin n => Z n (i : ℕ)) Pr)
+    (hnn : ∀ n i ω, 0 ≤ Z n i ω)
+    (hint : ∀ n i, Integrable (Z n i) Pr)
+    (hmean : ∀ n i : ℕ, i < n → ∫ ω, Z n i ω ∂Pr = s n)
+    (hs : Tendsto s atTop (𝓝 c))
+    (hUI : ∀ ρ : ℝ, 0 < ρ → ∃ M : ℝ, 0 ≤ M ∧
+      ∀ n i : ℕ, i < n → ∫ ω, max (Z n i ω - M) 0 ∂Pr ≤ ρ) :
+    TendstoInMeasure Pr (fun (n : ℕ) ω => (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i ω) atTop
+      (fun _ => c) := by
+  classical
+  refine tendstoInMeasure_iff_measureReal_norm.2 fun ε hε => ?_
+  rw [NormedAddGroup.tendsto_nhds_zero]
+  intro η hη
+  -- the common truncation level
+  set ρ : ℝ := min (ε / 4) (η * ε / 8) with hρdef
+  have hρ : 0 < ρ := lt_min (by positivity) (by positivity)
+  obtain ⟨M, hM0, hMbound⟩ := hUI ρ hρ
+  -- the truncated entries and the excess
+  set A : ℕ → Ω → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M with hAdef
+  set B : ℕ → Ω → ℝ := fun n ω => (n : ℝ)⁻¹ * ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0 with hBdef
+  have hsplit : ∀ (n : ℕ) (ω : Ω),
+      (n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i ω = A n ω + B n ω := by
+    intro n ω
+    rw [hAdef, hBdef, ← Fin.sum_univ_eq_sum_range (fun i => Z n i ω) n, ← mul_add,
+      ← Finset.sum_add_distrib]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rcases le_total (Z n (i : ℕ) ω) M with hle | hle
+    · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+    · rw [min_eq_right hle, max_eq_left (by linarith)]; ring
+  have hAmeas : ∀ n, Measurable (A n) := by
+    intro n; rw [hAdef]; fun_prop
+  have hBmeas : ∀ n, Measurable (B n) := by
+    intro n; rw [hBdef]; fun_prop
+  have hBnn : ∀ n ω, 0 ≤ B n ω := by
+    intro n ω
+    rw [hBdef]
+    have : (0 : ℝ) ≤ ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0 :=
+      Finset.sum_nonneg fun i _ => le_max_right _ _
+    positivity
+  have hAbdd : ∀ n ω, |A n ω| ≤ M := by
+    intro n ω
+    rcases Nat.eq_zero_or_pos n with hn | hn
+    · subst hn; simp [hAdef, hM0]
+    · have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+      have hlow : (0 : ℝ) ≤ ∑ i : Fin n, min (Z n (i : ℕ) ω) M :=
+        Finset.sum_nonneg fun i _ => le_min (hnn _ _ _) hM0
+      have hhigh : ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ (n : ℝ) * M := by
+        calc ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ ∑ _i : Fin n, M :=
+              Finset.sum_le_sum fun i _ => min_le_right _ _
+          _ = (n : ℝ) * M := by simp [mul_comm]
+      rw [hAdef, abs_le]
+      constructor
+      · have : (0 : ℝ) ≤ (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M := by positivity
+        linarith
+      · calc (n : ℝ)⁻¹ * ∑ i : Fin n, min (Z n (i : ℕ) ω) M ≤ (n : ℝ)⁻¹ * ((n : ℝ) * M) := by
+              exact mul_le_mul_of_nonneg_left hhigh (by positivity)
+          _ = M := by field_simp
+  have hAL2 : ∀ n, MemLp (A n) 2 Pr := fun n =>
+    MemLp.of_bound (hAmeas n).aestronglyMeasurable M
+      (Filter.Eventually.of_forall fun ω => by
+        rw [Real.norm_eq_abs]; exact hAbdd n ω)
+  have hminiG : ∀ n i : ℕ, Integrable (fun ω => min (Z n i ω) M) Pr := by
+    intro n i
+    refine Integrable.mono' (integrable_const (|M| + 1)) (by fun_prop)
+      (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, abs_le]
+    refine ⟨?_, ?_⟩
+    · have h1 : (0 : ℝ) ≤ min (Z n i ω) M := le_min (hnn _ _ _) hM0
+      have := abs_nonneg M; linarith
+    · have := min_le_right (Z n i ω) M
+      have := le_abs_self M; linarith
+  have hexiG : ∀ n i : ℕ, Integrable (fun ω => max (Z n i ω - M) 0) Pr := by
+    intro n i
+    have hbound : Integrable (fun ω => Z n i ω + |M|) Pr :=
+      (hint n i).add (integrable_const |M|)
+    refine Integrable.mono' hbound (by fun_prop) (Filter.Eventually.of_forall fun ω => ?_)
+    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
+    refine max_le ?_ ?_
+    · have h1 := le_abs_self M
+      have h2 := hnn n i ω
+      have h3 := neg_abs_le M
+      linarith
+    · have h2 := hnn n i ω
+      have h3 := abs_nonneg M
+      linarith
+  -- the mean of the truncated average is within `ρ` of the row mean
+  have hAmean : ∀ n : ℕ, 0 < n → |(∫ ω, A n ω ∂Pr) - s n| ≤ ρ := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hmini : ∀ i : Fin n, Integrable (fun ω => min (Z n (i : ℕ) ω) M) Pr :=
+      fun i => hminiG n (i : ℕ)
+    have hexi : ∀ i : Fin n, Integrable (fun ω => max (Z n (i : ℕ) ω - M) 0) Pr :=
+      fun i => hexiG n (i : ℕ)
+    have hAint : ∫ ω, A n ω ∂Pr
+        = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr := by
+      rw [hAdef]
+      simp only []
+      rw [integral_const_mul, integral_finset_sum _ fun i _ => hmini i]
+    have hper : ∀ i : Fin n, ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr
+        = s n - ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+      intro i
+      have hid : ∫ ω, Z n (i : ℕ) ω ∂Pr
+          = ∫ ω, min (Z n (i : ℕ) ω) M ∂Pr + ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        rw [← integral_add (hmini i) (hexi i)]
+        refine integral_congr_ae (Filter.Eventually.of_forall fun ω => ?_)
+        simp only []
+        rcases le_total (Z n (i : ℕ) ω) M with hle | hle
+        · rw [min_eq_left hle, max_eq_right (by linarith)]; ring
+        · rw [min_eq_right hle, max_eq_left (by linarith)]; ring
+      rw [hmean n (i : ℕ) i.isLt] at hid
+      linarith
+    have hnn' : ∀ i : Fin n, 0 ≤ ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := fun i =>
+      integral_nonneg fun ω => le_max_right _ _
+    rw [hAint]
+    simp only [hper, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
+      Fintype.card_fin, nsmul_eq_mul]
+    have hsum_le : ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ (n : ℝ) * ρ := by
+      calc ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ∑ _i : Fin n, ρ :=
+            Finset.sum_le_sum fun i _ => hMbound n (i : ℕ) i.isLt
+        _ = (n : ℝ) * ρ := by simp
+    have hsum_nn : (0 : ℝ) ≤ ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr :=
+      Finset.sum_nonneg fun i _ => hnn' i
+    rw [mul_sub, abs_le]
+    constructor
+    · have h1 : (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ρ := by
+        calc (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr
+            ≤ (n : ℝ)⁻¹ * ((n : ℝ) * ρ) := by
+              exact mul_le_mul_of_nonneg_left hsum_le (by positivity)
+          _ = ρ := by field_simp
+      have h2 : (n : ℝ)⁻¹ * ((n : ℝ) * s n) = s n := by field_simp
+      rw [h2]; linarith
+    · have h1 : (0 : ℝ) ≤ (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        positivity
+      have h2 : (n : ℝ)⁻¹ * ((n : ℝ) * s n) = s n := by field_simp
+      rw [h2]; linarith
+  -- Chebyshev for the truncated average
+  have hAvar : ∀ n : ℕ, 0 < n → Var[A n; Pr] ≤ M ^ 2 / n := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    set W : Fin n → Ω → ℝ := fun i ω => min (Z n (i : ℕ) ω) M with hWdef
+    have hWmeas : ∀ i, Measurable (W i) := by intro i; rw [hWdef]; fun_prop
+    have hWbdd : ∀ i ω, |W i ω| ≤ M := by
+      intro i ω
+      rw [hWdef, abs_le]
+      exact ⟨by have := le_min (hnn n (i : ℕ) ω) hM0; linarith,
+        min_le_right _ _⟩
+    have hWL2 : ∀ i, MemLp (W i) 2 Pr := fun i =>
+      MemLp.of_bound (hWmeas i).aestronglyMeasurable M
+        (Filter.Eventually.of_forall fun ω => by rw [Real.norm_eq_abs]; exact hWbdd i ω)
+    have hWindep : iIndepFun W Pr := by
+      have := (hindep n).comp (fun _ : Fin n => fun z : ℝ => min z M) (fun _ => by fun_prop)
+      simpa [Function.comp_def, hWdef] using this
+    have hvarsum : Var[∑ i : Fin n, W i; Pr] = ∑ i : Fin n, Var[W i; Pr] :=
+      IndepFun.variance_sum (fun i _ => hWL2 i)
+        (fun i _ j _ hij => hWindep.indepFun hij)
+    have hWvar : ∀ i, Var[W i; Pr] ≤ M ^ 2 := by
+      intro i
+      refine (variance_le_expectation_sq (hWmeas i).aestronglyMeasurable).trans ?_
+      have hb : ∫ ω, (W i ω) ^ 2 ∂Pr ≤ ∫ _ω : Ω, M ^ 2 ∂Pr := by
+        refine integral_mono ((hWL2 i).integrable_sq) (integrable_const _) fun ω => ?_
+        have := hWbdd i ω
+        nlinarith [abs_nonneg (W i ω), sq_abs (W i ω)]
+      simpa using hb
+    have hAeq : A n = fun ω => (n : ℝ)⁻¹ * (∑ i : Fin n, W i) ω := by
+      funext ω
+      rw [hAdef, hWdef]
+      simp [Finset.sum_apply]
+    rw [hAeq, variance_const_mul, hvarsum]
+    have hsumle : ∑ i : Fin n, Var[W i; Pr] ≤ (n : ℝ) * M ^ 2 := by
+      calc ∑ i : Fin n, Var[W i; Pr] ≤ ∑ _i : Fin n, M ^ 2 :=
+            Finset.sum_le_sum fun i _ => hWvar i
+        _ = (n : ℝ) * M ^ 2 := by simp
+    calc ((n : ℝ)⁻¹) ^ 2 * ∑ i : Fin n, Var[W i; Pr]
+        ≤ ((n : ℝ)⁻¹) ^ 2 * ((n : ℝ) * M ^ 2) := by
+          exact mul_le_mul_of_nonneg_left hsumle (by positivity)
+      _ = M ^ 2 / n := by field_simp
+  -- Markov for the excess average
+  have hMarkov : ∀ n : ℕ, 0 < n → Pr.real {ω | ε / 4 ≤ B n ω} ≤ η / 2 := by
+    intro n hn
+    have hnR : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+    have hexi : ∀ i : Fin n, Integrable (fun ω => max (Z n (i : ℕ) ω - M) 0) Pr :=
+      fun i => hexiG n (i : ℕ)
+    have hBint : Integrable (B n) Pr := by
+      have hb : Integrable (fun ω => (n : ℝ)⁻¹ * ∑ i : Fin n, max (Z n (i : ℕ) ω - M) 0) Pr :=
+        (integrable_finset_sum _ fun i _ => hexi i).const_mul _
+      exact hb
+    have hBle : ∫ ω, B n ω ∂Pr ≤ ρ := by
+      have hBeq : ∫ ω, B n ω ∂Pr
+          = (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr := by
+        rw [hBdef]
+        simp only []
+        rw [integral_const_mul, integral_finset_sum _ fun i _ => hexi i]
+      have hsum_le : ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ (n : ℝ) * ρ := by
+        calc ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr ≤ ∑ _i : Fin n, ρ :=
+              Finset.sum_le_sum fun i _ => hMbound n (i : ℕ) i.isLt
+          _ = (n : ℝ) * ρ := by simp
+      rw [hBeq]
+      calc (n : ℝ)⁻¹ * ∑ i : Fin n, ∫ ω, max (Z n (i : ℕ) ω - M) 0 ∂Pr
+          ≤ (n : ℝ)⁻¹ * ((n : ℝ) * ρ) := mul_le_mul_of_nonneg_left hsum_le (by positivity)
+        _ = ρ := by field_simp
+    have hmk := mul_meas_ge_le_integral_of_nonneg
+      (Filter.Eventually.of_forall fun ω => hBnn n ω) hBint (ε / 4)
+    have hρη : ρ ≤ η * ε / 8 := min_le_right _ _
+    have h4 : (ε / 4) * Pr.real {ω | ε / 4 ≤ B n ω} ≤ ρ := hmk.trans hBle
+    nlinarith [measureReal_nonneg (μ := Pr) (s := {ω | ε / 4 ≤ B n ω})]
+  -- Chebyshev for the truncated average
+  have hcheb : ∀ n : ℕ, 0 < n →
+      Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ≤ M ^ 2 / n / (ε / 4) ^ 2 := by
+    intro n hn
+    have h := meas_ge_le_variance_div_sq (hAL2 n) (show (0 : ℝ) < ε / 4 by positivity)
+    have h2 : Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|}
+        ≤ (ENNReal.ofReal (Var[A n; Pr] / (ε / 4) ^ 2)).toReal := by
+      rw [measureReal_def]
+      exact ENNReal.toReal_mono (by finiteness) h
+    refine h2.trans ?_
+    rw [ENNReal.toReal_ofReal (div_nonneg (variance_nonneg _ _) (by positivity))]
+    have := hAvar n hn
+    gcongr
+  -- the Chebyshev bound and the row means settle down
+  have hchebzero : Tendsto (fun n : ℕ => M ^ 2 / n / (ε / 4) ^ 2) atTop (𝓝 0) := by
+    have h1 : Tendsto (fun n : ℕ => (n : ℝ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
+    have h2 : Tendsto (fun n : ℕ => (M ^ 2 / (ε / 4) ^ 2) * (n : ℝ)⁻¹) atTop (𝓝 0) := by
+      simpa using h1.const_mul (M ^ 2 / (ε / 4) ^ 2)
+    exact h2.congr fun n => by ring
+  have hsev : ∀ᶠ n : ℕ in atTop, |s n - c| ≤ ε / 4 := by
+    obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 hs (ε / 4) (by positivity)
+    filter_upwards [eventually_ge_atTop N] with n hn
+    have h := hN n hn
+    rw [Real.dist_eq] at h
+    exact h.le
+  filter_upwards [eventually_gt_atTop 0, hsev,
+    hchebzero.eventually_lt_const (show (0 : ℝ) < η / 2 by positivity)] with n hn hsn hchn
+  -- the deviation event is covered by the two small events
+  have hsub : {x | ε ≤ ‖(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c‖}
+      ⊆ {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω} := by
+    intro x hx
+    by_contra hcon
+    simp only [Set.mem_union, not_or, Set.mem_setOf_eq, not_le] at hcon
+    obtain ⟨h1, h2⟩ := hcon
+    have hxx : ε ≤ |(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c| := by
+      simpa [Real.norm_eq_abs] using hx
+    rw [hsplit n x] at hxx
+    have hEA := hAmean n hn
+    have hρle : ρ ≤ ε / 4 := min_le_left _ _
+    have hBx : |B n x| = B n x := abs_of_nonneg (hBnn n x)
+    have he : A n x + B n x - c
+        = ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n) + (s n - c)) + B n x := by
+      ring
+    rw [he] at hxx
+    have ht1 := abs_add_le ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n) + (s n - c))
+      (B n x)
+    have ht2 := abs_add_le ((A n x - (∫ ω, A n ω ∂Pr)) + ((∫ ω, A n ω ∂Pr) - s n)) (s n - c)
+    have ht3 := abs_add_le (A n x - (∫ ω, A n ω ∂Pr)) ((∫ ω, A n ω ∂Pr) - s n)
+    linarith
+  have hunion : Pr.real ({ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω})
+      ≤ Pr.real {ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} + Pr.real {ω | ε / 4 ≤ B n ω} :=
+    measureReal_union_le _ _
+  have hmono : Pr.real {x | ε ≤ ‖(n : ℝ)⁻¹ * ∑ i ∈ Finset.range n, Z n i x - c‖}
+      ≤ Pr.real ({ω | ε / 4 ≤ |A n ω - (∫ ω, A n ω ∂Pr)|} ∪ {ω | ε / 4 ≤ B n ω}) :=
+    measureReal_mono hsub (by finiteness)
+  rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
+  have hc1 := hcheb n hn
+  have hc2 := hMarkov n hn
+  linarith
+
 end Vitali
 
 
@@ -1240,31 +1616,47 @@ theorem studentized_root_cdf_tendsto [IsProbabilityMeasure Q]
     -- USER-INPUT: the sequence of laws belongs to the mean class
     (hF : F ∈ meanSeqClass Q) (x : ℝ) :
     Tendsto (fun n => studentizedRootCDF (F n) n x) atTop (𝓝 (stdNormalCDF x)) := by
-  -- TODO (studentized CLT = the closed array CLT + Slutsky — NOT blocked; deferred for size).
-  -- The two bricks the previous session recorded as missing are supplied: the triangular-array
-  -- Lindeberg CLT with a drifting row law is `tendsto_meanRootLaw` and the portmanteau step is
-  -- `tendsto_integral_of_tendsto_cdf` (now in `Bootstrap/Consistency`). What remains:
-  -- (1) `sampleVariance → Var[id; Q]` in probability along the class. Realise row `n` as i.i.d.
-  --     `Y n i ~ F n` on one space exactly as `tendsto_meanRootLaw` does
-  --     (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`), then apply the now-CLOSED
-  --     `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular` TWICE: to the entries and to
-  --     their squares (`sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`). Its hypotheses are met by the
-  --     class: distribution-function convergence at continuity points is the class clause (for the
-  --     squares, transport it through `t ↦ t²`), and convergence of the first absolute moments is
-  --     the Vitali brick `tendsto_setIntegral_sq_tail` of this file (uniform square-integrability
-  --     upgrades weak convergence to convergence of `∫|t|`; for the squares it is the convergence
-  --     of mean and variance). NOTE: that brick currently carries the Feller debt of
-  --     `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, so this route inherits `sorryAx` until
-  --     that one is closed; a self-contained alternative is the fixed-level truncation, which
-  --     suffices here because the row laws are uniformly square-integrable (unlike in the general
-  --     statement of the brick).
-  -- (2) Slutsky for the quotient. Mathlib v4.29.1 HAS
-  --     `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const`; the only care
-  --     needed is that `(u, v) ↦ u / √v` is not continuous at `v = 0`, so one runs it with the
-  --     globally continuous `(u, v) ↦ u / √(max v (σ²/2))` and removes the truncation on the
-  --     event `{sampleVariance > σ²/2}`, whose probability tends to `1` by (1). The junk
-  --     convention `σ̂ₙ = 0 ↦ 0` is asymptotically negligible for the same reason.
-  -- No Mathlib brick is missing; this is a sizeable but routine assembly.
+  -- TODO (studentized CLT = drifting-row array CLT + a weak law for the sample variance +
+  -- Slutsky). NOT blocked by any missing Mathlib or repo brick; deferred purely for size.
+  -- STATE AFTER THIS SESSION — the two inputs of step (1) are now PROVED IN THIS FILE and are
+  -- `sorryAx`-free, which is the point of proving them here rather than reusing the sibling:
+  --
+  --   * `exists_uniform_sq_trunc` turns the class hypotheses (weak convergence, converging means
+  --     and variances) into "for every `ρ > 0` there is ONE level `M` with
+  --     `∫ (t² − M)⁺ d(F n) ≤ ρ` for EVERY `n`" — the uniform-square-integrability input;
+  --   * `tendstoInMeasure_rowMean_of_uniform` is the triangular weak law of large numbers for
+  --     independent nonnegative rows with exactly that uniform bound (truncation + Chebyshev on
+  --     `min (Z, M)` + Markov on `(Z − M)⁺`).
+  --
+  --   WARNING, re-derived and confirmed: `Bootstrap/Consistency.tendstoInMeasure_rowMean_triangular`
+  --   — which the previous note proposed using — DEPENDS ON `sorryAx` (it routes through
+  --   `ForMathlib/LindebergCLT.triangular_wlln_of_L1`, the open Feller debt). Using it would taint
+  --   this theorem and, through it, the already-proved `bootstrap_t_consistent`. The two bricks
+  --   above exist precisely to avoid that.
+  --
+  -- WHAT REMAINS (all of it bookkeeping, no new analytic idea):
+  -- (1) Realise row `n` as i.i.d. `Y (n,i) ~ F' n` on one space, exactly as `tendsto_meanRootLaw`
+  --     does (`ProbabilityTheory.exists_hasLaw_indepFun` over `ℕ × ℕ`, with `F'` the `n = 0`
+  --     patch of `F` by `Q`); `hpimap` there is the identity turning `studentizedRootCDF (F' n) n`
+  --     into a `Pr`-probability. A single carrier is FORCED: Mathlib's Slutsky lemmas are stated
+  --     for the constant family `fun _ => μ''`, not for the varying carriers `Fin n → ℝ`.
+  -- (2) `n⁻¹ ∑ Yᵢ² → ∫ t² dQ` in probability: `tendstoInMeasure_rowMean_of_uniform` at
+  --     `Z n i := (Y (n,i))²`, whose uniform bound is `exists_uniform_sq_trunc` transported along
+  --     `hYlaw`. `n⁻¹ ∑ Yᵢ → ∫ t dQ` in probability: plain Chebyshev, `Var[n⁻¹∑Yᵢ] = vₙ/n → 0`
+  --     (`IndepFun.variance_sum`) — the squares are the only place uniform integrability is
+  --     needed, because fourth moments are not available.
+  -- (3) `sampleVariance = n⁻¹∑Yᵢ² − (n⁻¹∑Yᵢ)²`, so (2) gives `sampleVariance → σ²` in probability
+  --     through the (easy, missing-from-Mathlib) two-variable continuous-mapping lemma for
+  --     `TendstoInMeasure` **to a constant**: `{ε ≤ |g(Xₙ,Yₙ) − g(a,b)|} ⊆ {δ ≤ |Xₙ−a|} ∪
+  --     {δ ≤ |Yₙ−b|}` for `δ` from `ContinuousAt g (a,b)`.
+  -- (4) Slutsky. `TendstoInDistribution.continuous_comp_prodMk_of_tendstoInMeasure_const` needs a
+  --     GLOBALLY continuous `g`, so run it with `g (u,v) := u / √(max v (σ²/2))` and remove the
+  --     truncation with `tendstoInDistribution_of_tendstoInMeasure_sub`, the difference being
+  --     supported on `{sampleVariance < σ²/2}`, whose probability tends to `0` by (3). The junk
+  --     convention `σ̂ₙ = 0 ↦ 0` is absorbed the same way.
+  -- (5) Convert the resulting `TendstoInDistribution` to the distribution function at `x` by
+  --     portmanteau at `Set.Iic x` (its frontier `{x}` is null for the standard normal), using
+  --     `(gaussianReal 0 σ²).map (· / σ) = gaussianReal 0 1`.
   sorry
 
 /-- **Consistency of the bootstrap-t.**
