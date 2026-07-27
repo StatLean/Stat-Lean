@@ -200,6 +200,146 @@ theorem truncScore_separation
           - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ₀)‖ := by
   sorry
 
+/-- **Vector Hoeffding**: coordinatewise Hoeffding plus a union bound over the `2k` one-sided
+coordinate events. -/
+private lemma vector_hoeffding {P : Measure 𝓧} [IsProbabilityMeasure P] {n : ℕ} (hn : 1 ≤ n)
+    (f : 𝓧 → EuclideanSpace ℝ (Fin k)) (hfm : Measurable f) {L : ℝ} (hL : 0 < L)
+    (hfb : ∀ x (j : Fin k), f x j ∈ Set.Icc (-L) L) {s : ℝ} (hs : 0 < s) :
+    (Measure.pi fun _ : Fin n => P).real
+        {ω | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - ∫ x, f x ∂P‖}
+      ≤ 2 * k * Real.exp (-(n : ℝ) * s ^ 2 / (2 * k * L ^ 2)) := by
+  classical
+  set Pn : Measure (Fin n → 𝓧) := Measure.pi fun _ : Fin n => P with hPn
+  haveI : IsProbabilityMeasure Pn := by rw [hPn]; infer_instance
+  have hnpos : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  rcases Nat.eq_zero_or_pos k with hk0 | hkpos
+  · subst hk0
+    have hempty : {ω : Fin n → 𝓧 | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - ∫ x, f x ∂P‖} = ∅ := by
+      ext ω
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      have : ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - ∫ x, f x ∂P‖ = 0 := by
+        rw [EuclideanSpace.norm_eq]; simp
+      rw [this]; exact hs
+    rw [hempty]
+    simp
+  -- `k ≥ 1`: the coordinate threshold is `t = s / √k`
+  have hkR : (0 : ℝ) < (k : ℝ) := by exact_mod_cast hkpos
+  have hsqk : (0 : ℝ) < Real.sqrt k := Real.sqrt_pos.2 hkR
+  have hsqk_sq : Real.sqrt k ^ 2 = (k : ℝ) := Real.sq_sqrt hkR.le
+  set t : ℝ := s / Real.sqrt k with htdef
+  have htpos : (0 : ℝ) < t := div_pos hs hsqk
+  have ht_sq : t ^ 2 = s ^ 2 / (k : ℝ) := by
+    rw [htdef, div_pow, hsqk_sq]
+  -- the vector mean and its coordinates
+  set mvec : EuclideanSpace ℝ (Fin k) := ∫ x, f x ∂P with hmvec
+  have hfint : Integrable f P :=
+    (integrable_const (Real.sqrt k * L)).mono' hfm.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x => by
+        rw [EuclideanSpace.norm_eq]
+        have hsum : ∑ j, ‖f x j‖ ^ 2 ≤ (k : ℝ) * L ^ 2 := by
+          calc ∑ j : Fin k, ‖f x j‖ ^ 2
+              ≤ ∑ _j : Fin k, L ^ 2 := Finset.sum_le_sum fun j _ => by
+                have := hfb x j
+                rw [Set.mem_Icc] at this
+                rw [Real.norm_eq_abs]
+                have : |f x j| ≤ L := abs_le.2 ⟨this.1, this.2⟩
+                exact pow_le_pow_left₀ (abs_nonneg _) this 2
+            _ = (k : ℝ) * L ^ 2 := by simp [Finset.sum_const, nsmul_eq_mul]
+        calc Real.sqrt (∑ j, ‖f x j‖ ^ 2) ≤ Real.sqrt ((k : ℝ) * L ^ 2) :=
+              Real.sqrt_le_sqrt hsum
+          _ = Real.sqrt k * L := by rw [Real.sqrt_mul hkR.le, Real.sqrt_sq hL.le])
+  have hprojm : ∀ j : Fin k, mvec j = ∫ x, f x j ∂P := fun j =>
+    ((EuclideanSpace.proj (𝕜 := ℝ) j).integral_comp_comm hfint).symm
+  -- coordinates of the centered empirical mean
+  have hVj : ∀ (ω : Fin n → 𝓧) (j : Fin k),
+      ((n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec) j = (n : ℝ)⁻¹ * (∑ i, f (ω i) j) - mvec j := by
+    intro ω j
+    have hlin : (EuclideanSpace.proj (𝕜 := ℝ) j) ((n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec)
+        = (n : ℝ)⁻¹ * (∑ i, f (ω i) j) - mvec j := by
+      rw [map_sub, map_smul, map_sum]
+      rfl
+    exact hlin
+  -- coordinate events
+  set E : Set (Fin n → 𝓧) := {ω | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec‖} with hE
+  set A : Fin k → Set (Fin n → 𝓧) := fun j =>
+    {ω | (n : ℝ) * t ≤ ∑ i, (f (ω i) j - ∫ x, f x j ∂P)} with hA
+  set B : Fin k → Set (Fin n → 𝓧) := fun j =>
+    {ω | (n : ℝ) * t ≤ ∑ i, (-f (ω i) j - ∫ x, -f x j ∂P)} with hB
+  have hincl : E ⊆ ⋃ j : Fin k, (A j ∪ B j) := by
+    intro ω hω
+    -- some coordinate exceeds `t` in absolute value
+    have hex : ∃ j : Fin k, t ≤ |((n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec) j| := by
+      by_contra hcon
+      push_neg at hcon
+      have hne : (Finset.univ : Finset (Fin k)).Nonempty :=
+        ⟨⟨0, hkpos⟩, Finset.mem_univ _⟩
+      have hlt : ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec‖ ^ 2 < s ^ 2 := by
+        rw [EuclideanSpace.norm_sq_eq]
+        calc ∑ j, ‖((n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec) j‖ ^ 2
+            < ∑ _j : Fin k, t ^ 2 := by
+              refine Finset.sum_lt_sum_of_nonempty hne fun j _ => ?_
+              rw [Real.norm_eq_abs]
+              exact pow_lt_pow_left₀ (hcon j) (abs_nonneg _) two_ne_zero
+          _ = (k : ℝ) * t ^ 2 := by simp [Finset.sum_const, nsmul_eq_mul]
+          _ = s ^ 2 := by rw [ht_sq]; field_simp
+      have hn0 : (0 : ℝ) ≤ ‖(n : ℝ)⁻¹ • ∑ i, f (ω i) - mvec‖ := norm_nonneg _
+      have := hω
+      rw [hE] at this
+      simp only [Set.mem_setOf_eq] at this
+      nlinarith
+    obtain ⟨j, hj⟩ := hex
+    refine Set.mem_iUnion.2 ⟨j, ?_⟩
+    rw [hVj ω j] at hj
+    have hsumA : ∑ i, (f (ω i) j - ∫ x, f x j ∂P)
+        = (n : ℝ) * ((n : ℝ)⁻¹ * (∑ i, f (ω i) j) - mvec j) := by
+      rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+        nsmul_eq_mul, ← hprojm j]
+      field_simp
+    rcases le_abs.1 hj with h | h
+    · exact Or.inl (by rw [hA]; simp only [Set.mem_setOf_eq, hsumA]; nlinarith)
+    · refine Or.inr ?_
+      rw [hB]
+      simp only [Set.mem_setOf_eq]
+      have hsumB : ∑ i, (-f (ω i) j - ∫ x, -f x j ∂P)
+          = -((n : ℝ) * ((n : ℝ)⁻¹ * (∑ i, f (ω i) j) - mvec j)) := by
+        rw [integral_neg, ← hsumA, ← Finset.sum_neg_distrib]
+        exact Finset.sum_congr rfl fun i _ => by ring
+      rw [hsumB]; nlinarith
+  -- the per-coordinate bound
+  have hexp : (-(n : ℝ) * t ^ 2 / (2 * L ^ 2))
+      = -(n : ℝ) * s ^ 2 / (2 * (k : ℝ) * L ^ 2) := by
+    rw [ht_sq]; field_simp
+  have hAb : ∀ j : Fin k, Pn.real (A j)
+      ≤ Real.exp (-(n : ℝ) * s ^ 2 / (2 * (k : ℝ) * L ^ 2)) := by
+    intro j
+    have := coord_hoeffding (P := P) hn (fun x => f x j)
+      ((EuclideanSpace.proj (𝕜 := ℝ) j).continuous.measurable.comp hfm) hL
+      (fun x => hfb x j) htpos.le
+    rw [hexp] at this
+    exact this
+  have hBb : ∀ j : Fin k, Pn.real (B j)
+      ≤ Real.exp (-(n : ℝ) * s ^ 2 / (2 * (k : ℝ) * L ^ 2)) := by
+    intro j
+    have hnegb : ∀ x, -f x j ∈ Set.Icc (-L) L := by
+      intro x
+      have := hfb x j
+      rw [Set.mem_Icc] at this ⊢
+      constructor <;> linarith [this.1, this.2]
+    have := coord_hoeffding (P := P) hn (fun x => -f x j)
+      (((EuclideanSpace.proj (𝕜 := ℝ) j).continuous.measurable.comp hfm).neg) hL
+      hnegb htpos.le
+    rw [hexp] at this
+    exact this
+  calc Pn.real E
+      ≤ Pn.real (⋃ j : Fin k, (A j ∪ B j)) := measureReal_mono hincl (measure_ne_top _ _)
+    _ ≤ ∑ j : Fin k, Pn.real (A j ∪ B j) := measureReal_iUnion_fintype_le _
+    _ ≤ ∑ j : Fin k, (Pn.real (A j) + Pn.real (B j)) :=
+        Finset.sum_le_sum fun j _ => measureReal_union_le _ _
+    _ ≤ ∑ _j : Fin k, (2 * Real.exp (-(n : ℝ) * s ^ 2 / (2 * (k : ℝ) * L ^ 2))) :=
+        Finset.sum_le_sum fun j _ => by linarith [hAb j, hBb j]
+    _ = 2 * (k : ℝ) * Real.exp (-(n : ℝ) * s ^ 2 / (2 * (k : ℝ) * L ^ 2)) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
+
 /-- **Hoeffding tail for the empirical truncated-score mean** under any `P^n_θ`: for bounded
 coordinates (`|sc^L_j| ≤ L`), the deviation of the empirical mean from its `P_θ`-mean
 exceeds `s` with probability at most `2k · exp(−n s² / (2 k L²))` (coordinatewise Hoeffding
@@ -219,7 +359,15 @@ theorem truncScore_empirical_dev_tail
         {ω | s ≤ ‖(n : ℝ)⁻¹ • ∑ i, bvmTruncScore sc L (ω i)
           - ∫ x, bvmTruncScore sc L x ∂(bvmOneObs M μ θ)‖}
       ≤ 2 * k * Real.exp (-(n : ℝ) * s ^ 2 / (2 * k * L ^ 2)) := by
-  sorry
+  haveI : IsProbabilityMeasure (bvmOneObs M μ θ) := bvmOneObs_isProbabilityMeasure hPDF θ
+  have hfb : ∀ (x : 𝓧) (j : Fin k), bvmTruncScore sc L x j ∈ Set.Icc (-L) L := by
+    intro x j
+    have hval : bvmTruncScore sc L x j
+        = max (-L) (min L ((WithLp.equiv 2 (Fin k → ℝ)) (sc x) j)) := rfl
+    rw [hval, Set.mem_Icc]
+    exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+  exact vector_hoeffding (P := bvmOneObs M μ θ) hn (bvmTruncScore sc L)
+    (measurable_bvmTruncScore hsc L) hL hfb hs
 
 /-- **The moderate-range tests** (vdV Lemma 10.3, first test sequence): measurable
 `[0,1]`-valued tests `φₙ` with `P^n_{θ₀} φₙ → 0` and, for all large `n`,
