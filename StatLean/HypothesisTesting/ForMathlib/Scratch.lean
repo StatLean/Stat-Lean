@@ -404,4 +404,73 @@ theorem abs_avg_blockSum_sub_stdGaussianExpect_le {N m : ℕ} (hN : 2 ≤ N) (hm
           (mul_le_mul_of_nonneg_left hcube hcoef)
     _ = _ := by rw [hlast]
 
+/-! ### Changing the population inside a group average -/
+
+/-- **Replacing the population costs a second moment.** Two *centred* populations `d` and `d'`
+give group averages of an `L`-Lipschitz test function that differ by at most
+`L u √(m(N−m)/(N(N−1)) ∑ (d − d')²)`; the finite-population factor is the exact second moment
+`avg_perm_blockSum_sq` of the difference, and it is what makes the estimate symmetric under
+`m ↦ N − m`. This is the step that discards the tail of a truncated population. -/
+private lemma abs_avg_h_blockSum_sub_le {N m : ℕ} (hN : 2 ≤ N) (a : Fin m → Fin N)
+    (ha : Function.Injective a) (d d' : Fin N → ℝ) (hd : ∑ l, d l = 0) (hd' : ∑ l, d' l = 0)
+    {u : ℝ} (hu : 0 ≤ u) {h : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
+    (hlip : ∀ x y, |h x - h y| ≤ L * |x - y|) :
+    |(Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d (σ (a i)))
+        - (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d' (σ (a i)))|
+      ≤ L * u * Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) *
+          ∑ l, (d l - d' l) ^ 2) := by
+  classical
+  have hcP : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin N)) : ℝ) := by
+    exact_mod_cast Fintype.card_pos
+  have hecent : ∑ l, (d l - d' l) = 0 := by
+    rw [Finset.sum_sub_distrib, hd, hd', sub_zero]
+  have hsumdiff : ∀ σ : Equiv.Perm (Fin N),
+      ∑ i, (d (σ (a i)) - d' (σ (a i)))
+        = (∑ i, d (σ (a i))) - ∑ i, d' (σ (a i)) := fun σ => by
+        rw [Finset.sum_sub_distrib]
+  have hdiff : ∀ σ : Equiv.Perm (Fin N),
+      |h (u * ∑ i, d (σ (a i))) - h (u * ∑ i, d' (σ (a i)))|
+        ≤ L * u * |∑ i, (d (σ (a i)) - d' (σ (a i)))| := by
+    intro σ
+    have h1 := hlip (u * ∑ i, d (σ (a i))) (u * ∑ i, d' (σ (a i)))
+    have h2 : |u * (∑ i, d (σ (a i))) - u * ∑ i, d' (σ (a i))|
+        = u * |∑ i, (d (σ (a i)) - d' (σ (a i)))| := by
+      rw [← mul_sub, abs_mul, abs_of_nonneg hu, hsumdiff σ]
+    rw [h2] at h1
+    calc |h (u * ∑ i, d (σ (a i))) - h (u * ∑ i, d' (σ (a i)))|
+        ≤ L * (u * |∑ i, (d (σ (a i)) - d' (σ (a i)))|) := h1
+      _ = L * u * |∑ i, (d (σ (a i)) - d' (σ (a i)))| := by ring
+  have hsq := avg_perm_blockSum_sq hN a ha (fun l => d l - d' l) hecent
+  have hstep1 : (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d (σ (a i)))
+      - (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), h (u * ∑ i, d' (σ (a i)))
+      = (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N),
+          (h (u * ∑ i, d (σ (a i))) - h (u * ∑ i, d' (σ (a i)))) := by
+    rw [← mul_sub, Finset.sum_sub_distrib]
+  rw [hstep1, abs_mul, abs_of_nonneg (inv_nonneg.2 hcP.le)]
+  calc (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          |∑ σ : Equiv.Perm (Fin N),
+            (h (u * ∑ i, d (σ (a i))) - h (u * ∑ i, d' (σ (a i))))|
+      ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N),
+            |h (u * ∑ i, d (σ (a i))) - h (u * ∑ i, d' (σ (a i)))| :=
+        mul_le_mul_of_nonneg_left (Finset.abs_sum_le_sum_abs _ _) (inv_nonneg.2 hcP.le)
+    _ ≤ (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), L * u * |∑ i, (d (σ (a i)) - d' (σ (a i)))| :=
+        mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hdiff σ) (inv_nonneg.2 hcP.le)
+    _ = L * u * ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), |∑ i, (d (σ (a i)) - d' (σ (a i)))|) := by
+        rw [← Finset.mul_sum]; ring
+    _ ≤ L * u * Real.sqrt ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin N), (∑ i, (d (σ (a i)) - d' (σ (a i)))) ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (avg_abs_le_sqrt_avg_sq fun σ : Equiv.Perm (Fin N) =>
+            ∑ i, (d (σ (a i)) - d' (σ (a i)))) (by positivity)
+    _ = L * u * Real.sqrt ((m : ℝ) * ((N : ℝ) - m) / ((N : ℝ) * ((N : ℝ) - 1)) *
+          ∑ l, (d l - d' l) ^ 2) := by rw [hsq]
+
 end StatLean.HypothesisTesting
