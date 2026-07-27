@@ -578,6 +578,39 @@ private lemma integral_expTilt (Q : Measure ℝ) {k : ℝ} (hk : 0 ≤ k) (c : �
   integral_withDensity_ofReal_mul Q ((measurable_const.mul measurable_id).exp.const_mul k)
     (fun _ => by positivity) g
 
+/-- A tilt with a negative factor is the zero measure, hence never a probability measure. -/
+private lemma expTilt_factor_nonneg {Q : Measure ℝ} {k c : ℝ}
+    (hprob : IsProbabilityMeasure (expTilt Q k c)) : 0 ≤ k := by
+  by_contra hcon
+  push Not at hcon
+  have hdens : (fun u : ℝ => ENNReal.ofReal (k * Real.exp (c * u))) = 0 := by
+    funext u
+    simp only [Pi.zero_apply, ENNReal.ofReal_eq_zero]
+    have h := mul_nonneg (neg_nonneg.mpr hcon.le) (Real.exp_pos (c * u)).le
+    rw [neg_mul] at h
+    linarith
+  have h1 : (expTilt Q k c) Set.univ = 1 := hprob.measure_univ
+  rw [expTilt, hdens, withDensity_zero] at h1
+  simp at h1
+
+/-- **Two members of a canonical one-parameter family on the line are exponential tilts of
+one another.** This is the fibrewise content of `IsCanonicalUT`. -/
+private lemma withDensity_line_tilt (μ : Measure ℝ) {a b θ θ₀ : ℝ} (ha : 0 < a) :
+    (μ.withDensity fun u => ENNReal.ofReal (b * Real.exp (θ * u)))
+      = expTilt (μ.withDensity fun u => ENNReal.ofReal (a * Real.exp (θ₀ * u)))
+        (b / a) (θ - θ₀) := by
+  rw [expTilt, ← withDensity_mul _ (measurable_expTiltDensity a θ₀)
+    (measurable_expTiltDensity (b / a) (θ - θ₀))]
+  congr 1
+  funext u
+  simp only [Pi.mul_apply]
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  have hexp : Real.exp (θ * u) = Real.exp ((θ - θ₀) * u) * Real.exp (θ₀ * u) := by
+    rw [← Real.exp_add]; ring_nf
+  rw [hexp]
+  field_simp
+
 /-- **A tilt which is again a probability measure has an integrable density of total mass
 one.** This is the only place the normalization of the conditional families is used. -/
 private lemma integrable_expTiltDensity {Q : Measure ℝ} {k c : ℝ} (hk : 0 ≤ k)
