@@ -923,6 +923,261 @@ private lemma tendstoInProbRandomized_blockAvg_of_sq (PY PZ : Measure ℝ)
     have hadd := hfirst.add hpool
     rwa [add_zero] at hadd
 
+
+/-! ### Truncation: dropping the second-moment hypothesis
+
+Applying the Chebyshev bound above to `f = (·)²` would cost a fourth pooled moment, which
+`MemLp id 2` does not supply. The standard remedy for sampling without replacement is to
+truncate: the truncated function is bounded, hence square integrable, and the discarded part
+is controlled in `L¹` *uniformly in `k`*, because the group average of a permuted block
+average of a nonnegative function is exactly the pooled average of that function
+(`avg_perm_blockAvg_eq`), whose expectation is the convex combination of the two population
+integrals. -/
+
+/-- The truncation of `f` to the band `[-j, j]`. -/
+private noncomputable def truncAt (j : ℕ) (f : ℝ → ℝ) : ℝ → ℝ :=
+  fun t => max (-(j : ℝ)) (min (f t) (j : ℝ))
+
+private lemma measurable_truncAt (j : ℕ) {f : ℝ → ℝ} (hfm : Measurable f) :
+    Measurable (truncAt j f) :=
+  measurable_const.max (hfm.min measurable_const)
+
+private lemma abs_truncAt_le (j : ℕ) (f : ℝ → ℝ) (t : ℝ) : |truncAt j f t| ≤ (j : ℝ) := by
+  have hj : (0 : ℝ) ≤ (j : ℝ) := Nat.cast_nonneg j
+  rw [abs_le]
+  constructor
+  · exact le_max_left _ _
+  · exact max_le (by linarith) (min_le_right _ _)
+
+private lemma truncAt_eq_self {j : ℕ} {f : ℝ → ℝ} {t : ℝ} (h : |f t| ≤ (j : ℝ)) :
+    truncAt j f t = f t := by
+  rw [abs_le] at h
+  rw [truncAt, min_eq_left h.2, max_eq_right h.1]
+
+private lemma abs_sub_truncAt_le (j : ℕ) (f : ℝ → ℝ) (t : ℝ) :
+    |f t - truncAt j f t| ≤ |f t| := by
+  have hj : (0 : ℝ) ≤ (j : ℝ) := Nat.cast_nonneg j
+  rw [truncAt]
+  rcases le_total (f t) (-(j : ℝ)) with h1 | h1
+  · rw [min_eq_left (by linarith), max_eq_left h1,
+      abs_of_nonpos (by linarith : f t ≤ 0),
+      abs_of_nonpos (by linarith : f t - -(j : ℝ) ≤ 0)]
+    linarith
+  · rcases le_total (f t) (j : ℝ) with h2 | h2
+    · rw [min_eq_left h2, max_eq_right h1, sub_self, abs_zero]
+      exact abs_nonneg _
+    · rw [min_eq_right h2, max_eq_right (by linarith),
+        abs_of_nonneg (by linarith : (0 : ℝ) ≤ f t - (j : ℝ)),
+        abs_of_nonneg (by linarith : (0 : ℝ) ≤ f t)]
+      linarith
+
+private lemma integrable_truncAt {Q : Measure ℝ} [IsProbabilityMeasure Q] (j : ℕ)
+    {f : ℝ → ℝ} (hfm : Measurable f) : Integrable (truncAt j f) Q :=
+  (integrable_const (j : ℝ)).mono' (measurable_truncAt j hfm).aestronglyMeasurable
+    (ae_of_all _ fun t => by rw [Real.norm_eq_abs]; exact abs_truncAt_le j f t)
+
+private lemma integrable_truncAt_sq {Q : Measure ℝ} [IsProbabilityMeasure Q] (j : ℕ)
+    {f : ℝ → ℝ} (hfm : Measurable f) : Integrable (fun t => truncAt j f t ^ 2) Q := by
+  refine (integrable_const ((j : ℝ) ^ 2)).mono'
+    ((measurable_truncAt j hfm).pow_const 2).aestronglyMeasurable (ae_of_all _ fun t => ?_)
+  rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), ← sq_abs (truncAt j f t)]
+  exact pow_le_pow_left₀ (abs_nonneg _) (abs_truncAt_le j f t) 2
+
+/-- **The truncation error vanishes in `L¹`.** -/
+private lemma tendsto_integral_sub_truncAt {Q : Measure ℝ} [IsProbabilityMeasure Q]
+    (f : ℝ → ℝ) (hfm : Measurable f) (hQ : Integrable f Q) :
+    Tendsto (fun j : ℕ => ∫ t, |f t - truncAt j f t| ∂Q) atTop (𝓝 0) := by
+  have hzero : ∫ (_ : ℝ), (0 : ℝ) ∂Q = 0 := integral_zero _ _
+  have h := MeasureTheory.tendsto_integral_of_dominated_convergence
+    (F := fun (j : ℕ) (t : ℝ) => |f t - truncAt j f t|) (f := fun _ : ℝ => (0 : ℝ))
+    (bound := fun t => |f t|)
+    (fun j => ((hfm.sub (measurable_truncAt j hfm)).abs).aestronglyMeasurable)
+    hQ.abs
+    (fun j => ae_of_all _ fun t => by
+      rw [Real.norm_eq_abs, abs_abs]; exact abs_sub_truncAt_le j f t)
+    (ae_of_all _ fun t => ?_)
+  · rwa [hzero] at h
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ge_atTop ⌈|f t|⌉₊] with j hj
+    have hjle : |f t| ≤ (j : ℝ) := le_trans (Nat.le_ceil _) (by exact_mod_cast hj)
+    rw [truncAt_eq_self hjle, sub_self, abs_zero]
+
+/-- **The truncated integral converges to the integral.** -/
+private lemma tendsto_integral_truncAt {Q : Measure ℝ} [IsProbabilityMeasure Q]
+    (f : ℝ → ℝ) (hfm : Measurable f) (hQ : Integrable f Q) :
+    Tendsto (fun j : ℕ => ∫ t, truncAt j f t ∂Q) atTop (𝓝 (∫ t, f t ∂Q)) := by
+  rw [← sub_zero (∫ t, f t ∂Q), Metric.tendsto_atTop]
+  intro δ hδ
+  obtain ⟨J, hJ⟩ := Metric.tendsto_atTop.1 (tendsto_integral_sub_truncAt f hfm hQ) δ hδ
+  refine ⟨J, fun j hj => ?_⟩
+  have hbound := hJ j hj
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg (integral_nonneg fun t => abs_nonneg _)] at hbound
+  have hsub : (∫ t, f t ∂Q) - ∫ t, truncAt j f t ∂Q = ∫ t, (f t - truncAt j f t) ∂Q :=
+    (integral_sub hQ (integrable_truncAt j hfm)).symm
+  have habs : |(∫ t, truncAt j f t ∂Q) - ((∫ t, f t ∂Q) - 0)|
+      = |∫ t, (f t - truncAt j f t) ∂Q| := by
+    rw [sub_zero, abs_sub_comm, hsub]
+  rw [Real.dist_eq, habs]
+  refine lt_of_le_of_lt ?_ hbound
+  simpa using
+    (MeasureTheory.abs_integral_le_integral_abs (μ := Q) (f := fun t => f t - truncAt j f t))
+
+/-! ### The exact group average of a permuted block average -/
+
+/-- **The group average of a permuted block average is the pooled average.** -/
+private lemma avg_perm_blockAvg_eq {N p : ℕ} (hp : 0 < p) (a : Fin p → Fin N)
+    (c : Fin N → ℝ) :
+    (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin N), (p : ℝ)⁻¹ * ∑ i, c (σ⁻¹ (a i))
+      = (N : ℝ)⁻¹ * ∑ l, c l := by
+  classical
+  have hpR : (0 : ℝ) < p := by exact_mod_cast hp
+  have hstep : ∀ i : Fin p, (Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin N), c (σ⁻¹ (a i)) = (N : ℝ)⁻¹ * ∑ l, c l := by
+    intro i
+    have hinv : ∑ σ : Equiv.Perm (Fin N), c (σ⁻¹ (a i))
+        = ∑ σ : Equiv.Perm (Fin N), c (σ (a i)) :=
+      sum_perm_inv (G := Equiv.Perm (Fin N)) (f := fun σ : Equiv.Perm (Fin N) => c (σ (a i)))
+    rw [hinv]
+    have h := avg_perm_apply (a i) c
+    rw [Fintype.card_fin] at h
+    exact h
+  have hswap : ∑ σ : Equiv.Perm (Fin N), (p : ℝ)⁻¹ * ∑ i, c (σ⁻¹ (a i))
+      = (p : ℝ)⁻¹ * ∑ i : Fin p, ∑ σ : Equiv.Perm (Fin N), c (σ⁻¹ (a i)) := by
+    rw [← Finset.mul_sum]
+    congr 1
+    exact Finset.sum_comm
+  rw [hswap, ← mul_assoc, mul_comm ((Fintype.card (Equiv.Perm (Fin N)) : ℝ)⁻¹) ((p : ℝ)⁻¹),
+    mul_assoc, Finset.mul_sum, Finset.sum_congr rfl (fun i _ => hstep i), Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← mul_assoc, inv_mul_cancel₀ hpR.ne',
+    one_mul]
+
+/-- Integrability of a single coordinate under the pooled law. -/
+private lemma integrable_coord (m n : ℕ) (PY PZ : Measure ℝ) [IsProbabilityMeasure PY]
+    [IsProbabilityMeasure PZ] (g : ℝ → ℝ) (hgm : Measurable g)
+    (hY : Integrable g PY) (hZ : Integrable g PZ) (l : Fin (m + n)) :
+    Integrable (fun x : Fin (m + n) → ℝ => g (x l)) (twoSampleLaw m n PY PZ) := by
+  refine Fin.addCases (m := m) (n := n)
+    (motive := fun l => Integrable (fun x : Fin (m + n) → ℝ => g (x l))
+      (twoSampleLaw m n PY PZ)) (fun i => ?_) (fun j => ?_) l
+  · exact ((measurePreserving_evalY m n PY PZ i).integrable_comp
+      hgm.aestronglyMeasurable).mpr hY
+  · exact ((measurePreserving_evalZ m n PY PZ j).integrable_comp
+      hgm.aestronglyMeasurable).mpr hZ
+
+/-- **The `L¹` tail bound, uniform in the sample sizes.** For a nonnegative integrable `h`,
+the group average of the probability that a permuted block average of `h` exceeds `ε` is at
+most `ε⁻¹ (∫h dP_Y + ∫h dP_Z)` — no second moment and no dependence on `m`, `n`. -/
+private lemma perm_avg_blockAvg_tail_le (m n : ℕ) (PY PZ : Measure ℝ)
+    [IsProbabilityMeasure PY] [IsProbabilityMeasure PZ] {p : ℕ} (hp : 0 < p)
+    (a : Fin p → Fin (m + n)) (h : ℝ → ℝ) (hhm : Measurable h) (hnn : ∀ t, 0 ≤ h t)
+    (hY : Integrable h PY) (hZ : Integrable h PZ) {ε : ℝ} (hε : 0 < ε) :
+    (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)), (twoSampleLaw m n PY PZ).real
+          {x | ε ≤ (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))}
+      ≤ ε⁻¹ * ((∫ t, h t ∂PY) + ∫ t, h t ∂PZ) := by
+  classical
+  have hcard : (0 : ℝ) < (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ) := by
+    exact_mod_cast (Fintype.card_pos : 0 < Fintype.card (Equiv.Perm (Fin (m + n))))
+  have hpR : (0 : ℝ) ≤ ((p : ℝ))⁻¹ := by positivity
+  -- the per-permutation integrand
+  have hAmeas : ∀ σ : Equiv.Perm (Fin (m + n)),
+      Measurable (fun x : Fin (m + n) → ℝ => (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) := by
+    intro σ
+    simp only [perm_smul_apply]
+    exact (Finset.measurable_sum _ fun i _ => hhm.comp (measurable_pi_apply _)).const_mul _
+  have hAint : ∀ σ : Equiv.Perm (Fin (m + n)),
+      Integrable (fun x : Fin (m + n) → ℝ => (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i)))
+        (twoSampleLaw m n PY PZ) := by
+    intro σ
+    simp only [perm_smul_apply]
+    exact (integrable_finset_sum _ fun i _ =>
+      integrable_coord m n PY PZ h hhm hY hZ (σ⁻¹ (a i))).const_mul _
+  have hAnn : ∀ (σ : Equiv.Perm (Fin (m + n))) (x : Fin (m + n) → ℝ),
+      0 ≤ (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i)) :=
+    fun σ x => mul_nonneg hpR (Finset.sum_nonneg fun i _ => hnn _)
+  -- Markov, one permutation at a time
+  have hmark : ∀ σ : Equiv.Perm (Fin (m + n)), (twoSampleLaw m n PY PZ).real
+      {x | ε ≤ (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))}
+      ≤ ε⁻¹ * ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ) :=
+    fun σ => measureReal_ge_le_integral _ (hAmeas σ) (hAnn σ) (hAint σ) hε
+  have hstep1 : (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+      ∑ σ : Equiv.Perm (Fin (m + n)), (twoSampleLaw m n PY PZ).real
+        {x | ε ≤ (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))}
+      ≤ (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)),
+          ε⁻¹ * ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ) :=
+    mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun σ _ => hmark σ) (by positivity)
+  refine hstep1.trans ?_
+  have heq : (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+        ∑ σ : Equiv.Perm (Fin (m + n)),
+          ε⁻¹ * ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)
+      = ε⁻¹ * ∫ x, (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, h (x l)) ∂(twoSampleLaw m n PY PZ) := by
+    have hexch : ∑ σ : Equiv.Perm (Fin (m + n)),
+        ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)
+        = ∫ x, (∑ σ : Equiv.Perm (Fin (m + n)),
+            (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ) :=
+      (integral_finset_sum _ fun σ _ => hAint σ).symm
+    have hpt : ∀ x : Fin (m + n) → ℝ,
+        (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin (m + n)), (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))
+        = ((m + n : ℕ) : ℝ)⁻¹ * ∑ l, h (x l) := by
+      intro x
+      simpa only [perm_smul_apply, Fintype.card_fin] using
+        avg_perm_blockAvg_eq (N := m + n) hp a (fun l => h (x l))
+    calc (Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+          ∑ σ : Equiv.Perm (Fin (m + n)),
+            ε⁻¹ * ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)
+        = ε⁻¹ * ((Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin (m + n)),
+              ∫ x, ((p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)) := by
+          rw [← Finset.mul_sum]; ring
+      _ = ε⁻¹ * ((Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+            ∫ x, (∑ σ : Equiv.Perm (Fin (m + n)),
+              (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ)) := by
+          rw [hexch]
+      _ = ε⁻¹ * ∫ x, ((Fintype.card (Equiv.Perm (Fin (m + n))) : ℝ)⁻¹ *
+            ∑ σ : Equiv.Perm (Fin (m + n)),
+              (p : ℝ)⁻¹ * ∑ i, h ((σ • x) (a i))) ∂(twoSampleLaw m n PY PZ) := by
+          rw [integral_const_mul]
+      _ = ε⁻¹ * ∫ x, (((m + n : ℕ) : ℝ)⁻¹ * ∑ l, h (x l)) ∂(twoSampleLaw m n PY PZ) := by
+          congr 1
+          exact integral_congr_ae (ae_of_all _ hpt)
+  rw [heq]
+  · -- and compute the pooled expectation
+    have hint := integral_sum_coords m n PY PZ h hhm hY hZ
+    have hNcast : ((m + n : ℕ) : ℝ) = (m : ℝ) + n := by push_cast; ring
+    have hYnn : (0 : ℝ) ≤ ∫ t, h t ∂PY := integral_nonneg fun t => hnn t
+    have hZnn : (0 : ℝ) ≤ ∫ t, h t ∂PZ := integral_nonneg fun t => hnn t
+    rw [integral_const_mul, hint]
+    rcases Nat.eq_zero_or_pos (m + n) with hN0 | hN0
+    · rw [hN0]
+      simp only [Nat.cast_zero, inv_zero, zero_mul, mul_zero]
+      positivity
+    · have hNpos : (0 : ℝ) < ((m + n : ℕ) : ℝ) := by exact_mod_cast hN0
+      have hkey : ((m + n : ℕ) : ℝ)⁻¹ * ((m : ℝ) * (∫ t, h t ∂PY)
+          + (n : ℝ) * ∫ t, h t ∂PZ) ≤ (∫ t, h t ∂PY) + ∫ t, h t ∂PZ := by
+        rw [inv_mul_le_iff₀ hNpos, hNcast]
+        have hm0 : (0 : ℝ) ≤ (m : ℝ) := Nat.cast_nonneg _
+        have hn0 : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg _
+        nlinarith
+      exact mul_le_mul_of_nonneg_left hkey (by positivity)
+
+/-- A union bound for a group average of probabilities. -/
+private lemma avg_measureReal_le_add' {𝓨 : Type*} [MeasurableSpace 𝓨] (P : Measure 𝓨)
+    [IsProbabilityMeasure P] {G : Type*} [Fintype G] [Nonempty G]
+    (S U V : G → Set 𝓨) (hsub : ∀ g, S g ⊆ U g ∪ V g) :
+    (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (S g)
+      ≤ (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (U g)
+        + (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (V g) := by
+  have hle : ∀ g : G, P.real (S g) ≤ P.real (U g) + P.real (V g) := fun g =>
+    (measureReal_mono (hsub g) (measure_ne_top _ _)).trans (measureReal_union_le _ _)
+  have hstep : (Fintype.card G : ℝ)⁻¹ * ∑ g : G, P.real (S g)
+      ≤ (Fintype.card G : ℝ)⁻¹ * ∑ g : G, (P.real (U g) + P.real (V g)) :=
+    mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun g _ => hle g) (by positivity)
+  refine hstep.trans (le_of_eq ?_)
+  rw [Finset.sum_add_distrib, mul_add]
+
 /-! ### The randomized studentizing scale
 
 Under a uniform permutation of the pooled data each block is a sample **without
