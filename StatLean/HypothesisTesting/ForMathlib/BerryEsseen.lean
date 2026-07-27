@@ -427,6 +427,105 @@ theorem norm_charFun_sub_quadratic_le (μ : Measure ℝ) [IsProbabilityMeasure �
     _ = (∫ x, |x| ^ 3 ∂μ) * |u| ^ 3 / 6 := by
         rw [integral_div, integral_const_mul]; ring
 
+/-- **Third-order approximation of a characteristic function.** For a probability measure `μ`
+on `ℝ` with mean `0`, second moment `v`, third moment `m₃` and finite fourth moment,
+`‖charFun μ u − (1 − v u²/2 − i m₃ u³/6)‖ ≤ (∫ x⁴) |u|⁴ / 24` for all `u`.
+
+This is the expansion the *one-term Edgeworth* correction is read off from: unlike
+`norm_charFun_sub_quadratic_le`, the cubic term (the third cumulant, since the mean vanishes)
+is **retained** rather than absorbed into the remainder, and the remainder drops to order
+`u⁴`. -/
+theorem norm_charFun_sub_cubic_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {v m₃ : ℝ} (hint1 : Integrable (fun x => x) μ)
+    (hint2 : Integrable (fun x => x ^ 2) μ) (hint3 : Integrable (fun x => x ^ 3) μ)
+    (hint4 : Integrable (fun x => x ^ 4) μ)
+    (hmean : ∫ x, x ∂μ = 0) (hvar : ∫ x, x ^ 2 ∂μ = v) (hthird : ∫ x, x ^ 3 ∂μ = m₃) (u : ℝ) :
+    ‖charFun μ u - (1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6)‖
+      ≤ (∫ x, x ^ 4 ∂μ) * |u| ^ 4 / 24 := by
+  -- The complex exponential integrand of `charFun`.
+  have hExpInt : Integrable (fun x : ℝ => Complex.exp (↑u * ↑x * I)) μ := by
+    refine (integrable_const (1 : ℝ)).mono'
+      ((Complex.continuous_exp.comp (by fun_prop)).aestronglyMeasurable) (ae_of_all _ fun x => ?_)
+    have hre : ((u : ℂ) * (x : ℂ) * I).re = 0 := by simp
+    rw [Complex.norm_exp, hre, Real.exp_zero]
+  -- The cubic Taylor integrand.
+  set p : ℝ → ℂ := fun x => 1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 - I * (↑u * ↑x) ^ 3 / 6 with hp
+  have hxC : Integrable (fun x : ℝ => (x : ℂ)) μ := hint1.ofReal
+  have hx2C : Integrable (fun x : ℝ => ((x ^ 2 : ℝ) : ℂ)) μ := hint2.ofReal
+  have hx3C : Integrable (fun x : ℝ => ((x ^ 3 : ℝ) : ℂ)) μ := hint3.ofReal
+  have t2 : Integrable (fun x : ℝ => (↑u * ↑x * I : ℂ)) μ := by
+    have := (hxC.const_mul (↑u * I : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); ring
+  have t3 : Integrable (fun x : ℝ => ((↑u * ↑x) ^ 2 / 2 : ℂ)) μ := by
+    have := (hx2C.const_mul (↑u ^ 2 / 2 : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); push_cast; ring
+  have t4 : Integrable (fun x : ℝ => (I * (↑u * ↑x) ^ 3 / 6 : ℂ)) μ := by
+    have := (hx3C.const_mul (I * ↑u ^ 3 / 6 : ℂ))
+    refine this.congr (ae_of_all _ fun x => ?_); push_cast; ring
+  have hPolyInt : Integrable p μ := by
+    simp only [hp]; exact (((integrable_const (1 : ℂ)).add t2).sub t3).sub t4
+  -- Compute `∫ p = 1 − v u²/2 − i m₃ u³/6`.
+  have e1 : ∫ _x : ℝ, (1 : ℂ) ∂μ = 1 := by simp
+  have e2 : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = 0 := by
+    have hc : ∫ x : ℝ, (↑u * ↑x * I : ℂ) ∂μ = ∫ x : ℝ, ((↑u * I) • (↑x : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hmean]; simp
+  have e3 : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ = (v : ℂ) * (u : ℂ) ^ 2 / 2 := by
+    have hc : ∫ x : ℝ, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ
+        = ∫ x : ℝ, (((↑u : ℂ) ^ 2 / 2) • ((x ^ 2 : ℝ) : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; push_cast; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hvar, smul_eq_mul]; ring
+  have e4 : ∫ x : ℝ, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ = I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+    have hc : ∫ x : ℝ, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ
+        = ∫ x : ℝ, ((I * (↑u : ℂ) ^ 3 / 6) • ((x ^ 3 : ℝ) : ℂ)) ∂μ := by
+      apply integral_congr_ae; filter_upwards with x; rw [smul_eq_mul]; push_cast; ring
+    rw [hc, integral_smul, integral_complex_ofReal, hthird, smul_eq_mul]; ring
+  have hsum : Integrable (fun x : ℝ => (1 + ↑u * ↑x * I : ℂ)) μ :=
+    ((integrable_const (1 : ℂ)).add t2).congr (ae_of_all _ fun x => rfl)
+  have hsum2 : Integrable (fun x : ℝ => (1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ)) μ :=
+    hsum.sub t3
+  have hIntP : ∫ x, p x ∂μ
+      = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+    calc ∫ x, p x ∂μ
+        = ∫ x, ((1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ) - I * (↑u * ↑x) ^ 3 / 6) ∂μ := by
+          simp only [hp]
+      _ = (∫ x, (1 + ↑u * ↑x * I - (↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ)
+            - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := integral_sub hsum2 t4
+      _ = ((∫ x, (1 + ↑u * ↑x * I : ℂ) ∂μ) - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ)
+            - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := by rw [integral_sub hsum t3]
+      _ = (((∫ _x : ℝ, (1 : ℂ) ∂μ) + ∫ x, (↑u * ↑x * I : ℂ) ∂μ)
+            - ∫ x, ((↑u * ↑x) ^ 2 / 2 : ℂ) ∂μ) - ∫ x, (I * (↑u * ↑x) ^ 3 / 6 : ℂ) ∂μ := by
+          rw [integral_add (integrable_const 1) t2]
+      _ = 1 - (v : ℂ) * (u : ℂ) ^ 2 / 2 - I * (m₃ : ℂ) * (u : ℂ) ^ 3 / 6 := by
+          rw [e1, e2, e3, e4]; ring
+  -- Pointwise Taylor bound.
+  have hpt : ∀ x : ℝ, ‖Complex.exp (↑u * ↑x * I) - p x‖ ≤ |u| ^ 4 * x ^ 4 / 24 := by
+    intro x
+    have h := norm_cexp_sub_taylor3_le (u * x)
+    have harg : (↑u * ↑x * I : ℂ) = I * ↑(u * x) := by push_cast; ring
+    have hsq : ((↑u * ↑x : ℂ)) ^ 2 = (↑(u * x) : ℂ) ^ 2 := by push_cast; ring
+    have hcb : ((↑u * ↑x : ℂ)) ^ 3 = (↑(u * x) : ℂ) ^ 3 := by push_cast; ring
+    rw [hp]; simp only []
+    rw [harg, hsq, hcb]
+    calc ‖Complex.exp (I * ↑(u * x))
+            - (1 + I * ↑(u * x) - (↑(u * x) : ℂ) ^ 2 / 2 - I * (↑(u * x) : ℂ) ^ 3 / 6)‖
+        ≤ min (|u * x| ^ 4 / 24) (|u * x| ^ 3 / 3) := h
+      _ ≤ |u * x| ^ 4 / 24 := min_le_left _ _
+      _ = |u| ^ 4 * x ^ 4 / 24 := by
+          have hx : |x| ^ 4 = x ^ 4 := by
+            rw [pow_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ x ^ 4)]
+          rw [abs_mul, mul_pow, hx]
+  -- Assemble.
+  rw [charFun_apply_real, ← hIntP, ← integral_sub hExpInt hPolyInt]
+  refine (norm_integral_le_integral_norm _).trans ?_
+  have hbound : Integrable (fun x : ℝ => |u| ^ 4 * x ^ 4 / 24) μ :=
+    (hint4.const_mul (|u| ^ 4)).div_const 24
+  calc ∫ x, ‖Complex.exp (↑u * ↑x * I) - p x‖ ∂μ
+      ≤ ∫ x, |u| ^ 4 * x ^ 4 / 24 ∂μ :=
+        integral_mono ((hExpInt.sub hPolyInt).norm) hbound hpt
+    _ = (∫ x, x ^ 4 ∂μ) * |u| ^ 4 / 24 := by
+        rw [integral_div, integral_const_mul]; ring
+
 /-- **Quadratic upper bound for `e^{-z}`.** For `z ≥ 0`, `e^{-z} ≤ 1 - z + z²/2`. Combined
 with `1 - z ≤ e^{-z}` (`Real.add_one_le_exp`) this pins `|e^{-z} - (1 - z)| ≤ z²/2`. -/
 private lemma exp_neg_le_quadratic {z : ℝ} (hz : 0 ≤ z) :
