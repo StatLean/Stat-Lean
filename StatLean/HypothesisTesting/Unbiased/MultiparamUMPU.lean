@@ -1269,6 +1269,83 @@ private lemma integral_comp_UT_eq [OpensMeasurableSpace Ξ] [∀ p, IsProbabilit
     ← integral_const_mul]
   exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
 
+/-- **Integrability of a function of `(U, T)` is integrability of its canonical density.**
+The `Integrable` twin of `integral_comp_UT_eq`, and — unlike that lemma, which is about
+bounded `g` in every application — the form that an *unbounded* integrand needs. Both
+directions are used: the "`→`" one reads an integrability statement at one parameter down to
+`ν`, the "`←`" one reads it back up at another parameter, and composing them is exactly the
+tilt transfer `integrable_statLaw_tilt` below. -/
+private lemma integrable_comp_UT_iff [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) {g : ℝ × Ξ → ℝ} (hg : Measurable g) :
+    Integrable (fun x => g (U x, T x)) (P p)
+      ↔ Integrable (fun z => g z * Real.exp (canExp p z)) ν := by
+  have hCp := canonicalUT_const_pos hU hT hUT hp
+  have hdm : Measurable fun z : ℝ × Ξ => ENNReal.ofReal (C p * Real.exp (canExp p z)) :=
+    ((measurable_canExp p).exp.const_mul (C p)).ennreal_ofReal
+  have hstep : Integrable (fun x => g (U x, T x)) (P p)
+      ↔ Integrable g ((P p).map fun x => (U x, T x)) :=
+    (integrable_map_measure hg.aestronglyMeasurable (hU.prodMk hT).aemeasurable).symm
+  rw [hstep, hUT p hp]
+  simp only [← canExp_apply]
+  rw [integrable_withDensity_iff_integrable_smul' hdm
+    (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  have hne : C p ≠ 0 := ne_of_gt hCp
+  constructor
+  · intro hI
+    refine (hI.const_mul (C p)⁻¹).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+    field_simp
+  · intro hI
+    refine (hI.const_mul (C p)).congr (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+    ring
+
+/-- **Tilt transfer of integrability between two boundary laws of `T`.** If `f` is integrable
+for the law of `T` at `(θ₀, ϑ)`, then `f · e^{⟪ϑ − ϑ₁, ·⟫}` is integrable for the law of `T`
+at `(θ₀, ϑ₁)` — the two boundary laws differ exactly by that exponential tilt.
+
+This is the step that removes the boundedness hypothesis from `boundedlyComplete_boundary`:
+that proof used `|f| ≤ Cb` for one purpose only, namely to dominate the tilted integrand, and
+the domination is unnecessary once the integrability is *transported* rather than re-proved.
+The route is `integrable_comp_UT_iff` downwards at `(θ₀, ϑ)`, the pointwise identity
+`e^{canExp (θ₀,ϑ) z} = e^{⟪ϑ − ϑ₁, z.2⟫}·e^{canExp (θ₀,ϑ₁) z}` (the `u`-part of the canonical
+exponent is the same at both parameters because they share the first coordinate), and
+`integrable_comp_UT_iff` upwards at `(θ₀, ϑ₁)`. -/
+private lemma integrable_statLaw_tilt [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {θ₀ : ℝ} {ϑ ϑ₁ : Ξ} (hϑ : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω) (hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω)
+    {f : Ξ → ℝ} (hf : Measurable f)
+    (hfi : Integrable f ((P ((θ₀, ϑ) : ℝ × Ξ)).map T)) :
+    Integrable (fun t : Ξ => f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ)
+      ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map T) := by
+  have hinnerm : Measurable fun t : Ξ => ⟪ϑ - ϑ₁, t⟫_ℝ :=
+    (innerSL ℝ (ϑ - ϑ₁)).continuous.measurable
+  have h1 : Integrable (fun x => f (T x)) (P ((θ₀, ϑ) : ℝ × Ξ)) :=
+    (integrable_map_measure hf.aestronglyMeasurable hT.aemeasurable).1 hfi
+  have h2 : Integrable (fun z : ℝ × Ξ => f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z)) ν :=
+    (integrable_comp_UT_iff hU hT hUT hϑ (hf.comp measurable_snd)).1 h1
+  have heq : ∀ z : ℝ × Ξ,
+      (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) * Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z)
+        = f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) := by
+    intro z
+    rw [mul_assoc, ← Real.exp_add]
+    congr 2
+    simp only [canExp_apply, inner_sub_left]
+    ring
+  have h3 : Integrable (fun z : ℝ × Ξ =>
+      (f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) * Real.exp (canExp ((θ₀, ϑ₁) : ℝ × Ξ) z)) ν :=
+    h2.congr (Filter.Eventually.of_forall fun z => (heq z).symm)
+  have h4 : Integrable
+      (fun x => (fun z : ℝ × Ξ => f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ) (U x, T x))
+      (P ((θ₀, ϑ₁) : ℝ × Ξ)) :=
+    (integrable_comp_UT_iff hU hT hUT hϑ₁
+      ((hf.comp measurable_snd).mul ((hinnerm.comp measurable_snd).exp))).2 h3
+  exact (integrable_map_measure (hf.mul hinnerm.exp).aestronglyMeasurable
+    hT.aemeasurable).2 h4
+
 /-- **The laws of `(U, T)` are mutually equivalent across `Ω`**: the canonical density is
 finite and everywhere strictly positive, so each of them is equivalent to `ν`. -/
 private lemma mapUT_ac [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
@@ -1593,22 +1670,48 @@ the boundary laws (`statLaw_ac`) then carries `f =ᵐ[μ₁] 0` to every boundar
   `T` is a *one-element* family and is not complete. `affineSpan ℝ Ω = ⊤` is the faithful
   reading of the source's "not contained in a linear space of dimension less than `k+1`"
   ("linear space" = affine flat), and in finite dimension it is exactly what makes the
-  boundary slice `k`-dimensional. -/
-private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+  boundary slice `k`-dimensional.
+
+**Unbounded, not just boundedly, complete.** `f` is only required to be measurable and
+*integrable* for each boundary law — not bounded. This matters: the derivative side condition
+of the point null, `E_{θ₀}[Uψ ∣ t] = α·E_{θ₀}[U ∣ t]`, tests a function of `t` built from the
+unbounded `U`, so `IsBoundedlyCompleteFamily` is too weak for it. The upstream
+`PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero` was always stated for arbitrary
+measurable `f`; the only place the old proof used a bound `|f| ≤ Cb` was to dominate the
+tilted integrand `f · e^{⟪ϑ − ϑ₁, ·⟫}` against `μ₁`, and that integrability is *transported*
+from the law at `(θ₀, ϑ)` by `integrable_statLaw_tilt` instead. `boundedlyComplete_boundary`
+below is the bounded corollary, and is what the three other optimality theorems consume.
+
+**The hypotheses are only asked at parameters interior to `Ω`.** `hfint`/`hfzero` quantify
+over `(θ₀, ϑ) ∈ interior Ω`, not over the whole boundary slice, and the reference parameter
+`ϑ₁` is taken from `exists_interior_boundary_point` rather than from
+`interior_slice_nonempty`. Nothing is lost — the slice `S'` of admissible tilt directions is
+then literally *open*, so `interior S' = S' ∋ 0` and the Laplace-uniqueness input applies
+verbatim, while the conclusion is still `f =ᵐ 0` for **every** `p ∈ Ω` because the laws of
+`T` are mutually equivalent (`statLaw_ac`). This weakening is what makes the lemma usable at
+`isUMPU_conditional_point`: the derivative side condition is only available where a *pure-`θ`
+window* `(θ₀ ± η, ϑ)` fits inside `Ω`, which for a general convex `Ω` holds at interior
+points of the surface but can fail at boundary points of it (e.g. at the apex of a triangle
+whose base straddles `θ₀`). -/
+private lemma complete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
     [∀ p, IsProbabilityMeasure (P p)]
     (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
     (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
-    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
-    PointEstimation.IsBoundedlyCompleteFamily
-      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T := by
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1)
+    {f : Ξ → ℝ} (hf : Measurable f)
+    (hfint : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
+      Integrable f ((P ((θ₀, ϑ) : ℝ × Ξ)).map T))
+    (hfzero : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
+      ∫ t, f t ∂((P ((θ₀, ϑ) : ℝ × Ξ)).map T) = 0)
+    {p : ℝ × Ξ} (hp : p ∈ Ω) :
+    f =ᵐ[(P p).map T] 0 := by
   classical
-  -- an interior point of the boundary slice, used as the reference parameter
-  obtain ⟨ϑ₁, hϑ₁int⟩ := interior_slice_nonempty (Ω := Ω) hΩ_convex hΩ_aff (θ₀ := θ₀)
-    hΩ_lt hΩ_gt
-  have hϑ₁slice : ϑ₁ ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hϑ₁int
-  have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := hϑ₁slice
-  intro f hf hbdd hzero p
-  obtain ⟨Cb, hCb⟩ := hbdd
+  -- a boundary point interior to `Ω` *itself*, used as the reference parameter
+  obtain ⟨w, hwint, hwθ⟩ := exists_interior_boundary_point hΩ_convex hΩ_aff hΩ_lt hΩ_gt
+  set ϑ₁ : Ξ := w.2 with hϑ₁def
+  have hw1 : ((θ₀, ϑ₁) : ℝ × Ξ) = w := by rw [hϑ₁def, ← hwθ]
+  have hϑ₁int : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ interior Ω := by rw [hw1]; exact hwint
+  have hϑ₁ : ((θ₀, ϑ₁) : ℝ × Ξ) ∈ Ω := interior_subset hϑ₁int
   have hinnerm : ∀ η : Ξ, Measurable fun t : Ξ => ⟪η, t⟫_ℝ := fun η =>
     (innerSL ℝ η).continuous.measurable
   have hinnerm' : ∀ y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)),
@@ -1619,9 +1722,10 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   set μ₁ : Measure Ξ := (P ((θ₀, ϑ₁) : ℝ × Ξ)).map T with hμ₁
   -- (1) Every boundary law of `T` is the `(ϑ − ϑ₁)`-exponential tilt of `μ₁`, so the vanishing
   -- hypothesis becomes the vanishing of a Laplace transform on the slice.
-  have hkey : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
+  have hkey : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ interior Ω →
       ∫ t, f t * Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ ∂μ₁ = 0 := by
-    intro ϑ hϑ
+    intro ϑ hϑint
+    have hϑ : ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω := interior_subset hϑint
     have hCϑ : 0 < C ((θ₀, ϑ) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ
     have hgm : Measurable fun z : ℝ × Ξ => f z.2 * Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
       (hf.comp measurable_snd).mul (((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp)
@@ -1643,44 +1747,14 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     have h3 : C ((θ₀, ϑ) : ℝ × Ξ) * ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rw [← integral_comp_UT_eq hU hT hUT hϑ (g := fun z : ℝ × Ξ => f z.2)
         (hf.comp measurable_snd)]
-      have hz := hzero ⟨(θ₀, ϑ), hϑ, rfl⟩
+      have hz := hfzero ϑ hϑint
       rwa [integral_map hT.aemeasurable hf.aestronglyMeasurable] at hz
     have h4 : ∫ z, f z.2 * Real.exp (canExp ((θ₀, ϑ) : ℝ × Ξ) z) ∂ν = 0 := by
       rcases mul_eq_zero.1 h3 with h | h
       · exact absurd h hCϑ.ne'
       · exact h
     rw [h1, h2, h4, mul_zero]
-  -- (2) The tilting exponentials are `μ₁`-integrable, because the tilted law is again a member.
-  have hintg : ∀ ϑ : Ξ, ((θ₀, ϑ) : ℝ × Ξ) ∈ Ω →
-      Integrable (fun t : Ξ => Real.exp ⟪ϑ - ϑ₁, t⟫_ℝ) μ₁ := by
-    intro ϑ hϑ
-    have hHm : Measurable fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ :=
-      ((hinnerm (ϑ - ϑ₁)).comp measurable_snd).exp
-    have hdm : Measurable fun z : ℝ × Ξ =>
-        ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)) :=
-      (((measurable_canExp ((θ₀, ϑ₁) : ℝ × Ξ)).exp.const_mul
-        (C ((θ₀, ϑ₁) : ℝ × Ξ))).ennreal_ofReal :
-        Measurable fun z : ℝ × Ξ =>
-          ENNReal.ofReal (C ((θ₀, ϑ₁) : ℝ × Ξ) * Real.exp (θ₀ * z.1 + ⟪ϑ₁, z.2⟫_ℝ)))
-    have hC1 : 0 < C ((θ₀, ϑ₁) : ℝ × Ξ) := canonicalUT_const_pos hU hT hUT hϑ₁
-    have hν1 : Integrable (fun z : ℝ × Ξ => Real.exp ⟪ϑ - ϑ₁, z.2⟫_ℝ)
-        ((P ((θ₀, ϑ₁) : ℝ × Ξ)).map fun x => (U x, T x)) := by
-      rw [hUT _ hϑ₁]
-      rw [integrable_withDensity_iff_integrable_smul' hdm
-        (Filter.Eventually.of_forall fun z => ENNReal.ofReal_lt_top)]
-      refine Integrable.congr (((integrable_canExp hU hT hUT hϑ).1).const_mul
-        (C ((θ₀, ϑ₁) : ℝ × Ξ))) (Filter.Eventually.of_forall fun z => ?_)
-      dsimp only
-      rw [ENNReal.toReal_ofReal (by positivity), smul_eq_mul, mul_assoc, ← Real.exp_add]
-      congr 2
-      simp only [canExp_apply, inner_sub_left]
-      ring
-    have hX := (integrable_map_measure hHm.aestronglyMeasurable
-      (hU.prodMk hT).aemeasurable).1 hν1
-    rw [hμ₁]
-    exact (integrable_map_measure ((hinnerm (ϑ - ϑ₁)).exp.aestronglyMeasurable)
-      hT.aemeasurable).2 hX
-  -- (3) Transport to `EuclideanSpace` and apply Laplace-transform uniqueness.
+  -- (2) Transport to `EuclideanSpace` and apply Laplace-transform uniqueness.
   set e : Ξ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) :=
     (stdOrthonormalBasis ℝ Ξ).repr with hedef
   have hemeas : Measurable e := e.continuous.measurable
@@ -1692,7 +1766,7 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
   set f' : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) → ℝ := fun y => f (e.symm y) with hf'def
   have hf'm : Measurable f' := hf.comp hesymm
   set S' : Set (EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) :=
-    {y | ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω} with hS'def
+    {y | ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω} with hS'def
   have hbridge : ∀ (y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) (t : Ξ),
       f' (e t) * Real.exp ⟪y, e t⟫_ℝ = f t * Real.exp ⟪e.symm y, t⟫_ℝ := by
     intro y t
@@ -1701,33 +1775,27 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
       exact e.inner_map_map _ _
     rw [hf'def, hin]
     simp only [LinearIsometryEquiv.symm_apply_apply]
-  have hS'int : (interior S').Nonempty := by
+  -- `S'` is now literally an open set, so its interior is itself and contains `0`
+  have hS'open : IsOpen S' := by
     have hcont : Continuous fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
-        e.symm y + ϑ₁ := e.symm.continuous.add continuous_const
-    have hopen : IsOpen ((fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
-        e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω}) := isOpen_interior.preimage hcont
-    have hsub : (fun y : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) => e.symm y + ϑ₁) ⁻¹'
-        interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} ⊆ S' := by
-      intro y hy
-      have hy' : (e.symm y + ϑ₁) ∈ interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := hy
-      have h1 : (e.symm y + ϑ₁) ∈ {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := interior_subset hy'
-      exact h1
-    have hmem0 : (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ))) ∈
-        (fun y => e.symm y + ϑ₁) ⁻¹' interior {ϑ : Ξ | (θ₀, ϑ) ∈ Ω} := by
-      simp only [Set.mem_preimage, map_zero, zero_add]
-      exact hϑ₁int
-    exact ⟨0, mem_interior.2 ⟨_, hsub, hopen, hmem0⟩⟩
+        ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) :=
+      continuous_const.prodMk (e.symm.continuous.add continuous_const)
+    exact isOpen_interior.preimage hcont
+  have hS'int : (interior S').Nonempty := by
+    refine ⟨0, ?_⟩
+    rw [hS'open.interior_eq, hS'def]
+    simpa using hϑ₁int
   have hint' : ∀ y ∈ S', Integrable (fun z => f' z * Real.exp ⟪y, z⟫_ℝ) ν' := by
     intro y hy
-    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
-    have hexp := hintg (e.symm y + ϑ₁) hϑmem
-    rw [add_sub_cancel_right] at hexp
+    have hϑmemI : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω := hy
+    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := interior_subset hϑmemI
+    -- the tilted integrability is TRANSPORTED from the law at `(θ₀, e.symm y + ϑ₁)`,
+    -- not dominated by a bound on `f`; this is the only step that used `|f| ≤ Cb`
     have hIt : Integrable (fun t : Ξ => f t * Real.exp ⟪e.symm y, t⟫_ℝ) μ₁ := by
-      refine Integrable.mono' (hexp.const_mul Cb)
-        ((hf.mul ((hinnerm (e.symm y)).exp)).aestronglyMeasurable)
-        (Filter.Eventually.of_forall fun t => ?_)
-      rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
-      exact mul_le_mul_of_nonneg_right (hCb t) (Real.exp_pos _).le
+      have htr := integrable_statLaw_tilt hU hT hUT hϑmem hϑ₁ hf (hfint _ hϑmemI)
+      rw [add_sub_cancel_right] at htr
+      rw [hμ₁]
+      exact htr
     have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
         f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
     rw [hν']
@@ -1735,8 +1803,8 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     exact hIt.congr (Filter.Eventually.of_forall fun t => (hbridge y t).symm)
   have hzero' : ∀ y ∈ S', ∫ z, f' z * Real.exp ⟪y, z⟫_ℝ ∂ν' = 0 := by
     intro y hy
-    have hϑmem : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ Ω := hy
-    have hk := hkey (e.symm y + ϑ₁) hϑmem
+    have hϑmemI : ((θ₀, e.symm y + ϑ₁) : ℝ × Ξ) ∈ interior Ω := hy
+    have hk := hkey (e.symm y + ϑ₁) hϑmemI
     rw [add_sub_cancel_right] at hk
     have hmy : Measurable fun z : EuclideanSpace ℝ (Fin (Module.finrank ℝ Ξ)) =>
         f' z * Real.exp ⟪y, z⟫_ℝ := hf'm.mul (hinnerm' y).exp
@@ -1752,9 +1820,31 @@ private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ 
     have h := (ae_map_iff hemeas.aemeasurable hset).1 hae0'
     filter_upwards [h] with t ht
     simpa only [hf'def, LinearIsometryEquiv.symm_apply_apply] using ht
-  have hac : (P (p : ℝ × Ξ)).map T ≪ μ₁ := by
-    rw [hμ₁]; exact statLaw_ac hU hT hUT p.2.1 hϑ₁
+  have hac : (P p).map T ≪ μ₁ := by
+    rw [hμ₁]; exact statLaw_ac hU hT hUT hp hϑ₁
   exact haeμ.filter_mono hac.ae_le
+
+/-- **Bounded completeness of the boundary family.** The special case of `complete_boundary`
+in which `f` is uniformly bounded: on the boundary laws — probability measures — a bounded
+measurable function is automatically integrable, so the integrability hypothesis is free.
+This is the form the three closed optimality theorems of this file consume. -/
+private lemma boundedlyComplete_boundary [BorelSpace Ξ] [FiniteDimensional ℝ Ξ]
+    [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω) (hΩ_aff : affineSpan ℝ Ω = ⊤) {θ₀ : ℝ}
+    (hΩ_lt : ∃ p ∈ Ω, p.1 < θ₀) (hΩ_gt : ∃ p ∈ Ω, θ₀ < p.1) :
+    PointEstimation.IsBoundedlyCompleteFamily
+      fun p : {p : ℝ × Ξ // p ∈ Ω ∧ p.1 = θ₀} => (P (p : ℝ × Ξ)).map T := by
+  intro f hf hbdd hzero p
+  obtain ⟨Cb, hCb⟩ := hbdd
+  refine complete_boundary hU hT hUT hΩ_convex hΩ_aff hΩ_lt hΩ_gt hf
+    (fun ϑ _ => ?_) (fun ϑ hϑ => hzero ⟨(θ₀, ϑ), interior_subset hϑ, rfl⟩) p.2.1
+  haveI : IsProbabilityMeasure ((P ((θ₀, ϑ) : ℝ × Ξ)).map T) :=
+    Measure.isProbabilityMeasure_map hT.aemeasurable
+  refine Integrable.mono' (integrable_const Cb) hf.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun t => ?_)
+  rw [Real.norm_eq_abs]
+  exact hCb t
 
 /-- **Similar ⇒ Neyman structure.** A critical function of `(U, T)` which is similar of size
 `α` on the whole boundary surface `θ = θ₀` has conditional size `α` for almost every `t`. -/
@@ -2697,6 +2787,324 @@ private lemma abs_le_exp_add_exp_neg {δ : ℝ} (hδ : 0 < δ) (u : ℝ) :
     _ ≤ Real.exp |δ * u| := habs
     _ ≤ Real.exp (δ * u) + Real.exp (-(δ * u)) := hcase
 
+/-- **Differentiation of the canonical `ν`-integral in the natural parameter `θ`.** For a
+bounded measurable `g` and a nuisance coordinate `ϑ₀` at which the pure-`θ` segment
+`(θ₀ ± η, ϑ₀)` lies in `Ω`,
+
+`d/dθ ∫ g(z) e^{θ z₁ + ⟪ϑ₀, z₂⟫} dν(z) ∣_{θ₀} = ∫ g(z) z₁ e^{θ₀ z₁ + ⟪ϑ₀, z₂⟫} dν(z)`,
+
+and the right-hand integrand is `ν`-integrable.
+
+This is the analytic half of item (b) at `isUMPU_conditional_point`. It is stated at the
+level of the base measure `ν` rather than of the power, because that is what makes it usable
+*twice* — at the competitor `ψ` and at `g ≡ 1` — which is what eliminates the normalizer: the
+power is `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the *product* is pinned down by `IsCanonicalUT`, but
+`C(θ,ϑ₀)·∫1·e^{canExp} = 1` (`integrable_canExp`), so the power is the ratio
+`(∫ψ e^{canExp})/(∫ e^{canExp})` of two functions this lemma differentiates, and the quotient
+rule finishes without ever differentiating `C` directly.
+
+**The dominating function.** For `|θ − θ₀| ≤ η/2` the derivative integrand is majorised,
+independently of `θ`, by a fixed combination of three *members of the family*:
+
+`|g z · z₁ · e^{θ z₁ + c}| ≤ (2/η)·(e^{(θ₀+η)z₁+c} + 2e^{θ₀z₁+c} + e^{(θ₀−η)z₁+c})`.
+
+Two factors of the two-point majorant `abs_le_exp_add_exp_neg` at half-width `η/2` produce
+it: one absorbs `|z₁|`, the other absorbs the drift `e^{(θ−θ₀)z₁}`, and their product
+telescopes because `e^{(η/2)z₁}·e^{−(η/2)z₁} = 1`. Each of the three terms is `ν`-integrable
+by `integrable_canExp`, precisely because `(θ₀ ± η, ϑ₀)` and `(θ₀, ϑ₀)` are all in `Ω` — which
+is what `exists_twoSided_boundary_pair` (via `exists_interior_boundary_point`) supplies. -/
+private lemma hasDerivAt_integral_canExp {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {θ₀ : ℝ} {ϑ₀ : Ξ} {η : ℝ} (hη : 0 < η)
+    (h0 : ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    (hlo : ((θ₀ - η, ϑ₀) : ℝ × Ξ) ∈ Ω) (hhi : ((θ₀ + η, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    {g : ℝ × Ξ → ℝ} (hg : Measurable g) (hgb : ∀ z, |g z| ≤ 1) :
+    Integrable (fun z : ℝ × Ξ => g z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)) ν ∧
+      HasDerivAt (fun θ : ℝ => ∫ z, g z * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) ∂ν)
+        (∫ z, g z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν) θ₀ := by
+  classical
+  have hhalf : (0 : ℝ) < η / 2 := by linarith
+  -- measurability of the two integrand families
+  have hmexp : ∀ θ : ℝ, Measurable fun z : ℝ × Ξ =>
+      Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) := fun θ => (measurable_canExp _).exp
+  have hFm : ∀ θ : ℝ, Measurable fun z : ℝ × Ξ =>
+      g z * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) := fun θ => hg.mul (hmexp θ)
+  have hF'm : Measurable fun z : ℝ × Ξ =>
+      g z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) :=
+    (hg.mul measurable_fst).mul (hmexp θ₀)
+  -- the three family members that make up the dominating function
+  have hI0 := (integrable_canExp hU hT hUT h0).1
+  have hIlo := (integrable_canExp hU hT hUT hlo).1
+  have hIhi := (integrable_canExp hU hT hUT hhi).1
+  set bound : ℝ × Ξ → ℝ := fun z => (2 / η) *
+    (Real.exp (canExp ((θ₀ + η, ϑ₀) : ℝ × Ξ) z)
+      + 2 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)
+      + Real.exp (canExp ((θ₀ - η, ϑ₀) : ℝ × Ξ) z)) with hbound_def
+  have hbound_int : Integrable bound ν := by
+    rw [hbound_def]
+    exact ((hIhi.add (hI0.const_mul 2)).add hIlo).const_mul _
+  -- the uniform majorant
+  have hmaj : ∀ z : ℝ × Ξ, ∀ θ ∈ Metric.ball θ₀ (η / 2),
+      ‖g z * z.1 * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z)‖ ≤ bound z := by
+    intro z θ hθ
+    have hθ' : |θ - θ₀| < η / 2 := by
+      rwa [Metric.mem_ball, Real.dist_eq] at hθ
+    set u : ℝ := z.1 with hu
+    set c : ℝ := ⟪ϑ₀, z.2⟫_ℝ with hc
+    have hcan : ∀ t : ℝ, canExp ((t, ϑ₀) : ℝ × Ξ) z = t * u + c := fun t => rfl
+    set A : ℝ := Real.exp (η / 2 * u) with hA
+    set B : ℝ := Real.exp (-(η / 2 * u)) with hB
+    have hApos : 0 < A := Real.exp_pos _
+    have hBpos : 0 < B := Real.exp_pos _
+    have hAB : A * B = 1 := by
+      rw [hA, hB, ← Real.exp_add, add_neg_cancel, Real.exp_zero]
+    -- `|u| ≤ (2/η)(A + B)`
+    have habs : |u| ≤ 2 / η * (A + B) := by
+      have hthis := abs_le_exp_add_exp_neg hhalf u
+      rw [le_div_iff₀ hhalf, ← hA, ← hB] at hthis
+      rw [div_mul_eq_mul_div, le_div_iff₀ hη]
+      linarith
+    -- the drift factor `e^{(θ−θ₀)u} ≤ A + B`
+    have hdrift : Real.exp ((θ - θ₀) * u) ≤ A + B := by
+      have hle : (θ - θ₀) * u ≤ max (η / 2 * u) (-(η / 2 * u)) := by
+        rcases le_total 0 u with hu0 | hu0
+        · refine le_trans ?_ (le_max_left _ _)
+          have : θ - θ₀ ≤ η / 2 := le_of_lt (lt_of_abs_lt hθ')
+          nlinarith
+        · refine le_trans ?_ (le_max_right _ _)
+          have : -(η / 2) ≤ θ - θ₀ := by
+            have := neg_lt_of_abs_lt hθ'
+            linarith
+          nlinarith
+      calc Real.exp ((θ - θ₀) * u) ≤ Real.exp (max (η / 2 * u) (-(η / 2 * u))) :=
+            Real.exp_le_exp.2 hle
+        _ ≤ A + B := by
+            rcases max_cases (η / 2 * u) (-(η / 2 * u)) with ⟨hm, -⟩ | ⟨hm, -⟩
+            · rw [hm, ← hA]; linarith
+            · rw [hm, ← hB]; linarith
+    -- split off the base exponential and assemble
+    have hsplit : Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z)
+        = Real.exp ((θ - θ₀) * u) * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) := by
+      rw [hcan, hcan, ← Real.exp_add]
+      congr 1
+      ring
+    have hE0 : 0 < Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) := Real.exp_pos _
+    have hstep : ‖g z * u * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z)‖
+        ≤ (2 / η * (A + B)) * ((A + B) * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)) := by
+      rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_of_pos (Real.exp_pos _), hsplit]
+      have h1 : |g z| * |u| ≤ 1 * (2 / η * (A + B)) :=
+        mul_le_mul (hgb z) habs (abs_nonneg _) zero_le_one
+      have h2 : Real.exp ((θ - θ₀) * u) * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)
+          ≤ (A + B) * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) :=
+        mul_le_mul_of_nonneg_right hdrift hE0.le
+      have h3 : (0 : ℝ) ≤ Real.exp ((θ - θ₀) * u)
+          * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) := by positivity
+      calc |g z| * |u| * (Real.exp ((θ - θ₀) * u)
+            * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z))
+          ≤ (2 / η * (A + B)) * (Real.exp ((θ - θ₀) * u)
+              * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)) := by
+            refine mul_le_mul_of_nonneg_right ?_ h3
+            simpa using h1
+        _ ≤ (2 / η * (A + B)) * ((A + B)
+              * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)) := by
+            refine mul_le_mul_of_nonneg_left h2 ?_
+            positivity
+    refine hstep.trans (le_of_eq ?_)
+    -- `(A+B)² = e^{ηu} + 2 + e^{−ηu}` because `A·B = 1`
+    have hA2 : A * A = Real.exp (canExp ((θ₀ + η, ϑ₀) : ℝ × Ξ) z)
+        / Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) := by
+      rw [hA, ← Real.exp_add, hcan, hcan, ← Real.exp_sub]
+      congr 1
+      ring
+    have hB2 : B * B = Real.exp (canExp ((θ₀ - η, ϑ₀) : ℝ × Ξ) z)
+        / Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) := by
+      rw [hB, ← Real.exp_add, hcan, hcan, ← Real.exp_sub]
+      congr 1
+      ring
+    rw [hbound_def]
+    field_simp [hA2, hB2] at *
+    nlinarith [hAB, hE0, hA2, hB2]
+  -- pointwise differentiability in `θ`
+  have hdiff : ∀ z : ℝ × Ξ, ∀ θ ∈ Metric.ball θ₀ (η / 2),
+      HasDerivAt (fun t : ℝ => g z * Real.exp (canExp ((t, ϑ₀) : ℝ × Ξ) z))
+        (g z * z.1 * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z)) θ := by
+    intro z θ _
+    have hlin : HasDerivAt (fun t : ℝ => canExp ((t, ϑ₀) : ℝ × Ξ) z) z.1 θ := by
+      simp only [canExp_apply]
+      simpa using ((hasDerivAt_id θ).mul_const z.1).add_const (⟪ϑ₀, z.2⟫_ℝ)
+    have h2 := hlin.exp.const_mul (g z)
+    have heq : g z * z.1 * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z)
+        = g z * (Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) * z.1) := by ring
+    rw [heq]
+    exact h2
+  -- the base integral exists
+  have hF_int : Integrable (fun z : ℝ × Ξ =>
+      g z * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)) ν := by
+    refine Integrable.mono' hI0 (hFm θ₀).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun z => ?_)
+    rw [Real.norm_eq_abs, abs_mul, abs_of_pos (Real.exp_pos _)]
+    have := hgb z
+    nlinarith [Real.exp_pos (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z)]
+  exact hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (Metric.ball_mem_nhds θ₀ hhalf)
+    (Filter.Eventually.of_forall fun θ => (hFm θ).aestronglyMeasurable) hF_int
+    hF'm.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun z => hmaj z) hbound_int
+    (Filter.Eventually.of_forall fun z => hdiff z)
+
+/-- **`U` is integrable at a parameter with a pure-`θ` window.** If `(θ₀ ± δ, ϑ₀) ∈ Ω` then
+`U` is `P (θ₀, ϑ₀)`-integrable.
+
+The full-measure twin of `exists_boundary_ae_integrable_id`, and by the same two-point
+majorant `abs_le_exp_add_exp_neg` — but here the two tilted exponentials are integrable for a
+reason available only since `integrable_comp_UT_iff`: taking `g z := e^{±δ z₁}` in that
+equivalence turns `e^{±δ z₁}·e^{canExp (θ₀,ϑ₀) z}` into `e^{canExp (θ₀ ± δ, ϑ₀) z}`, which is
+`ν`-integrable by `integrable_canExp` precisely because the shifted parameters are in `Ω`.
+
+This is what the disintegration `∫ E[g ∣ T] d((P p).map T) = E[g]` needs at item (d) of
+`isUMPU_conditional_point`; the integrability of `U·ψ` for a critical `ψ` follows from it by
+`|U·ψ| ≤ |U|`. -/
+private lemma integrable_U_of_twoSided {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    {θ₀ : ℝ} {ϑ₀ : Ξ} {δ : ℝ} (hδ : 0 < δ)
+    (hlo : ((θ₀ - δ, ϑ₀) : ℝ × Ξ) ∈ Ω) (hhi : ((θ₀ + δ, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    (h0 : ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω) :
+    Integrable U (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+  have htilt : ∀ (c : ℝ), ((θ₀ + c, ϑ₀) : ℝ × Ξ) ∈ Ω →
+      Integrable (fun x => Real.exp (c * U x)) (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+    intro c hc
+    refine (integrable_comp_UT_iff hU hT hUT h0 (g := fun z : ℝ × Ξ => Real.exp (c * z.1))
+      (measurable_const.mul measurable_fst).exp).2 ?_
+    refine ((integrable_canExp hU hT hUT hc).1).congr
+      (Filter.Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [← Real.exp_add]
+    congr 1
+    simp only [canExp_apply]
+    ring
+  have hplus := htilt δ hhi
+  have hminus : Integrable (fun x => Real.exp (-δ * U x)) (P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+    have h := htilt (-δ) (by simpa [sub_eq_add_neg] using hlo)
+    simpa using h
+  refine Integrable.mono' ((hplus.add hminus).const_mul δ⁻¹) hU.aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x => ?_)
+  have hmaj := abs_le_exp_add_exp_neg hδ (U x)
+  rw [div_eq_inv_mul, ← neg_mul] at hmaj
+  simpa [Real.norm_eq_abs] using hmaj
+
+/-- **The derivative side condition, at the level of the full measure.** If a bounded
+measurable test `ψ` of `(U, T)` has power exactly `α` at the boundary parameter `(θ₀, ϑ₀)` and
+power at least `α` all along the pure-`θ` segment `(θ₀ ± η, ϑ₀) ⊆ Ω`, then
+
+`E_{(θ₀,ϑ₀)}[U·ψ] = α · E_{(θ₀,ϑ₀)}[U]`.
+
+This is item (b) of `isUMPU_conditional_point` in full: it is the analytic content of
+unbiasedness, namely that the power function of the conditional problem has a *minimum* at
+`θ₀` and therefore a vanishing derivative there.
+
+**Why no normalizer has to be differentiated.** `integrable_canExp` gives
+`C(θ,ϑ₀)·∫e^{canExp (θ,ϑ₀)} dν = 1`, so along the segment the power is the ratio
+`N(θ)/D(θ)` with `N(θ) = ∫ψ e^{canExp (θ,ϑ₀)} dν` and `D(θ) = ∫e^{canExp (θ,ϑ₀)} dν` — both
+differentiated by `hasDerivAt_integral_canExp` (at `g := ψ` and at `g := 1`), and `C` never
+appears. `HasDerivAt.div` plus `IsLocalMin.hasDerivAt_eq_zero` give `N'(θ₀)D(θ₀) =
+N(θ₀)D'(θ₀)`, and `integral_comp_UT_eq` reads `C·N'(θ₀) = E[Uψ]`, `C·D'(θ₀) = E[U]`,
+`N(θ₀)/D(θ₀) = α` off it. -/
+private lemma integral_U_mul_eq_of_boundary_min {P : ℝ × Ξ → Measure 𝓧} {Ω : Set (ℝ × Ξ)}
+    {U : 𝓧 → ℝ} {T : 𝓧 → Ξ} {ν : Measure (ℝ × Ξ)} {C : ℝ × Ξ → ℝ}
+    [OpensMeasurableSpace Ξ] [∀ p, IsProbabilityMeasure (P p)]
+    (hU : Measurable U) (hT : Measurable T) (hUT : IsCanonicalUT P Ω U T ν C)
+    (hΩ_convex : Convex ℝ Ω)
+    {θ₀ α : ℝ} {ϑ₀ : Ξ} {η : ℝ} (hη : 0 < η)
+    (h0 : ((θ₀, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    (hlo : ((θ₀ - η, ϑ₀) : ℝ × Ξ) ∈ Ω) (hhi : ((θ₀ + η, ϑ₀) : ℝ × Ξ) ∈ Ω)
+    {ψ : ℝ × Ξ → ℝ} (hψm : Measurable ψ) (hψb : ∀ z, |ψ z| ≤ 1)
+    (hval : ∫ x, ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ)) = α)
+    (hmin : ∀ θ : ℝ, |θ - θ₀| ≤ η → α ≤ ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ))) :
+    ∫ x, U x * ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = α * ∫ x, U x ∂(P ((θ₀, ϑ₀) : ℝ × Ξ)) := by
+  classical
+  have hηne : η ≠ 0 := ne_of_gt hη
+  -- the whole pure-`θ` window lies in `Ω`, by convexity between the two endpoints
+  have hseg : ∀ θ : ℝ, |θ - θ₀| ≤ η → ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω := by
+    intro θ hθ
+    obtain ⟨hθ1, hθ2⟩ := abs_le.1 hθ
+    have h2η : (0 : ℝ) < 2 * η := by linarith
+    have hb0 : (0 : ℝ) ≤ (θ - (θ₀ - η)) / (2 * η) := div_nonneg (by linarith) h2η.le
+    have ha0 : (0 : ℝ) ≤ 1 - (θ - (θ₀ - η)) / (2 * η) := by
+      rw [sub_nonneg, div_le_one h2η]; linarith
+    have hmem := hΩ_convex hlo hhi ha0 hb0 (by ring)
+    have hpt : (1 - (θ - (θ₀ - η)) / (2 * η)) • ((θ₀ - η, ϑ₀) : ℝ × Ξ)
+        + ((θ - (θ₀ - η)) / (2 * η)) • ((θ₀ + η, ϑ₀) : ℝ × Ξ) = ((θ, ϑ₀) : ℝ × Ξ) := by
+      have hsum : (1 - (θ - (θ₀ - η)) / (2 * η)) + (θ - (θ₀ - η)) / (2 * η) = 1 := by ring
+      refine Prod.ext ?_ ?_
+      · simp only [Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+        field_simp
+        ring
+      · simp only [Prod.snd_add, Prod.smul_snd, ← add_smul, hsum, one_smul]
+    rwa [hpt] at hmem
+  -- numerator and denominator of the power along the segment
+  set N : ℝ → ℝ := fun θ => ∫ z, ψ z * Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) ∂ν with hN
+  set D : ℝ → ℝ := fun θ => ∫ z, Real.exp (canExp ((θ, ϑ₀) : ℝ × Ξ) z) ∂ν with hD
+  have hCD : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω → C ((θ, ϑ₀) : ℝ × Ξ) * D θ = 1 := fun θ hθ =>
+    (integrable_canExp hU hT hUT hθ).2
+  have hDpos : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω → 0 < D θ := by
+    intro θ hθ
+    have hC := canonicalUT_const_pos hU hT hUT hθ
+    have h1 := hCD θ hθ
+    by_contra hcon
+    push_neg at hcon
+    nlinarith
+  have hpow : ∀ θ : ℝ, ((θ, ϑ₀) : ℝ × Ξ) ∈ Ω →
+      ∫ x, ψ (U x, T x) ∂(P ((θ, ϑ₀) : ℝ × Ξ)) = N θ / D θ := by
+    intro θ hθ
+    rw [integral_comp_UT_eq hU hT hUT hθ hψm, eq_div_iff (hDpos θ hθ).ne']
+    linear_combination N θ * hCD θ hθ
+  -- differentiate numerator and denominator
+  have hdN : HasDerivAt N
+      (∫ z, ψ z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν) θ₀ := by
+    have h := (hasDerivAt_integral_canExp hU hT hUT hη h0 hlo hhi hψm hψb).2
+    rw [hN]
+    exact h
+  have hdD : HasDerivAt D (∫ z, z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν) θ₀ := by
+    have h := (hasDerivAt_integral_canExp hU hT hUT hη h0 hlo hhi
+      (g := fun _ : ℝ × Ξ => (1 : ℝ)) measurable_const (fun _ => by norm_num)).2
+    simp only [one_mul] at h
+    rw [hD]
+    exact h
+  have hDne : D θ₀ ≠ 0 := (hDpos θ₀ h0).ne'
+  have hdiv := hdN.div hdD hDne
+  -- unbiasedness ⟹ the ratio has a local minimum at `θ₀`
+  have hlocmin : IsLocalMin (fun θ => N θ / D θ) θ₀ := by
+    filter_upwards [Metric.ball_mem_nhds θ₀ hη] with θ hθ
+    have hθ' : |θ - θ₀| ≤ η := by
+      rw [Metric.mem_ball, Real.dist_eq] at hθ
+      exact hθ.le
+    have hmem := hseg θ hθ'
+    show N θ₀ / D θ₀ ≤ N θ / D θ
+    rw [← hpow θ hmem, ← hpow θ₀ h0, hval]
+    exact hmin θ hθ'
+  have hzero := hlocmin.hasDerivAt_eq_zero hdiv
+  have hnum := (div_eq_zero_iff.1 hzero).resolve_right (pow_ne_zero 2 hDne)
+  -- read the two `ν`-integrals back as expectations
+  have hUψ : ∫ x, U x * ψ (U x, T x) ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = C ((θ₀, ϑ₀) : ℝ × Ξ)
+        * ∫ z, ψ z * z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν := by
+    rw [integral_comp_UT_eq hU hT hUT h0 (g := fun z : ℝ × Ξ => z.1 * ψ z)
+      (measurable_fst.mul hψm)]
+    congr 1
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  have hUonly : ∫ x, U x ∂(P ((θ₀, ϑ₀) : ℝ × Ξ))
+      = C ((θ₀, ϑ₀) : ℝ × Ξ)
+        * ∫ z, z.1 * Real.exp (canExp ((θ₀, ϑ₀) : ℝ × Ξ) z) ∂ν :=
+    integral_comp_UT_eq hU hT hUT h0 (g := fun z : ℝ × Ξ => z.1) measurable_fst
+  have hαval : α = N θ₀ / D θ₀ := by rw [← hpow θ₀ h0, hval]
+  rw [hUψ, hUonly, hαval, div_mul_eq_mul_div, eq_div_iff hDne]
+  linear_combination C ((θ₀, ϑ₀) : ℝ × Ξ) * hnum
+
 /-- **Two-point envelope for the derivative along a canonical segment.** For the affine
 exponent `L(s) = (1−s)a + sb` and a half-width `η > 0`,
 `|b − a|·e^{L(s)} ≤ η⁻¹(e^{L(s−η)} + e^{L(s+η)})`.
@@ -2908,44 +3316,66 @@ theorem isUMPU_conditional_point
   --      `exists_interior_boundary_point` above (Mathlib's
   --      `Convex.interior_nonempty_iff_affineSpan_eq_top` plus a segment push, both under the
   --      amendments `hΩ_aff` and `[FiniteDimensional ℝ Ξ]` already in this signature).
-  --  (b) OPEN, with its analytic input now PROVED (this session). Differentiation of
-  --      `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` under the integral sign at `θ₀` needs a dominating function for
-  --      the `s`-derivative of the integrand along the segment; that is
-  --      `abs_sub_mul_exp_segment_le` above,
-  --      `|b−a|·e^{(1−s)a+sb} ≤ η⁻¹(e^{(1−(s−η))a+(s−η)b} + e^{(1−(s+η))a+(s+η)b})`,
-  --      whose right-hand side is a sum of *members of the family* at the shifted segment
-  --      parameters — integrable exactly because item (a) puts `s₀` in the interior, so
-  --      `s₀ ± η` still lies on a segment inside `Ω`. (The earlier note's shape
-  --      `2η⁻¹(e^a + e^b)` is the cruder `exp_segment_le` bound and is what one gets after a
-  --      further application of that lemma; the two-point form above is the sharp one and is
-  --      the one Mathlib's `hasDerivAt_integral_of_dominated_loc_of_deriv_le` consumes
-  --      directly.) What is left of (b) is therefore the assembly — instantiating that
-  --      Mathlib lemma at the conditional law — *plus* the differentiation of the normalizer:
-  --      the power is the ratio `C(θ,ϑ₀)·∫ψ e^{canExp}` and only the product is constrained,
-  --      so `θ ↦ C(θ,ϑ₀)` has to be differentiated as well. That second half is an
-  --      exponential-family smoothness statement, not a bookkeeping step, and it is the real
-  --      remaining content of (b): it is the analogue, in the *conditional* setting of this
-  --      file, of `PointEstimation.ExponentialFamily.Smoothness`.
-  --  (c) The conditional-integrability half is now DONE (this session); what is left is a
-  --      completeness step for the **unbounded** function `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`, i.e.
-  --      `IsCompleteFamily` rather than `IsBoundedlyCompleteFamily` on the boundary slice.
-  --      The proof of `boundedlyComplete_boundary` never uses boundedness of `f` except to
-  --      produce the integrability hypothesis of
-  --      `PointEstimation.ae_eq_zero_of_integral_exp_inner_eq_zero`, which is already stated
-  --      for arbitrary measurable `f`; so (c) reduces to the *integrability* of
-  --      `t ↦ (E[Uψ ∣ t] − α·E[U ∣ t])·e^{⟪ϑ−ϑ₁,t⟫}` against `μ₁`, together with the
-  --      conditional integrability of `U`. The latter — the a.e.-`t` bookkeeping flagged by
-  --      the previous note — is `exists_boundary_ae_integrable_id` above: item (a) is threaded
-  --      in through `exists_twoSided_boundary_pair`, which moves the two straddling parameters
-  --      supplied by `hΩ_lt`/`hΩ_gt` onto a **common** nuisance coordinate `ϑ₀` (they are
-  --      unrelated as `hΩ_lt`/`hΩ_gt` deliver them, and `ae_condDistrib_expTilt` tilts in the
-  --      `θ`-direction only when the nuisance coordinate is held fixed). With `(θ₀ ± δ, ϑ₀)`
-  --      both in `Ω`, the two tilts of `κ_t` by `±δ` are probability measures, so
-  --      `integrable_expTiltDensity` makes `e^{±δu}` both `κ_t`-integrable, and
-  --      `abs_le_exp_add_exp_neg` majorises `|u|`; `statLaw_ac` transports the two a.e.
-  --      statements — each stated for the law of `T` at its own parameter — back to
-  --      `(P (θ₀,ϑ₀)).map T`. So (c) is now purely the unbounded-completeness transfer, with
-  --      no integrability side condition left to supply.
+  --  (b) The differentiation itself is now DONE (this session): `hasDerivAt_integral_canExp`
+  --      above gives, for bounded measurable `g` and a pure-`θ` segment `(θ₀ ± η, ϑ₀) ∈ Ω`,
+  --        `d/dθ ∫ g e^{canExp (θ,ϑ₀)} dν ∣_{θ₀} = ∫ g·z₁·e^{canExp (θ₀,ϑ₀)} dν`
+  --      together with integrability of the derivative integrand, by
+  --      `hasDerivAt_integral_of_dominated_loc_of_deriv_le` over the uniform majorant
+  --        `|g z · z₁ · e^{θz₁+c}| ≤ (2/η)(e^{(θ₀+η)z₁+c} + 2e^{θ₀z₁+c} + e^{(θ₀−η)z₁+c})`
+  --      for `|θ − θ₀| ≤ η/2` — two applications of `abs_le_exp_add_exp_neg` at half-width
+  --      `η/2`, one absorbing `|z₁|` and one the drift `e^{(θ−θ₀)z₁}`, their product
+  --      telescoping because `e^{(η/2)z₁}·e^{−(η/2)z₁} = 1`. Each of the three terms is
+  --      `ν`-integrable by `integrable_canExp`, precisely because item (a) puts all three
+  --      parameters in `Ω`.
+  --
+  --      *The previous note's "differentiation of the normalizer" worry is RESOLVED, not
+  --      outstanding.* It claimed `θ ↦ C(θ,ϑ₀)` needs a separate exponential-family
+  --      smoothness theorem. It does not: `integrable_canExp` gives
+  --      `C(θ,ϑ₀)·∫ e^{canExp (θ,ϑ₀)} dν = 1` for every `θ` with `(θ,ϑ₀) ∈ Ω`, so
+  --      `C(θ,ϑ₀) = (∫ e^{canExp (θ,ϑ₀)} dν)⁻¹` and the power
+  --      `θ ↦ ∫ψ dP_{(θ,ϑ₀)} = C(θ,ϑ₀)·∫ψ e^{canExp}` is the *ratio*
+  --      `(∫ψ e^{canExp})/(∫ e^{canExp})` of two functions `hasDerivAt_integral_canExp`
+  --      differentiates (at `g := ψ` and at `g := 1`). The quotient rule then differentiates
+  --      the power without ever touching `C` directly. That is exactly why the lemma is
+  --      stated at the level of `ν` rather than of the power.
+  --
+  --      That assembly is DONE too: `integral_U_mul_eq_of_boundary_min` above packages
+  --      `HasDerivAt.div` on the ratio, the observation that unbiasedness makes
+  --      `θ ↦ ∫ψ dP_{(θ,ϑ₀)}` have a local minimum at `θ₀` (it equals `α` there by
+  --      similarity and is `≥ α` off the null) so `IsLocalMin.hasDerivAt_eq_zero` kills the
+  --      derivative, and the reading of the resulting identity through
+  --      `integral_comp_UT_eq` as `E_{(θ₀,ϑ₀)}[Uψ] = α·E_{(θ₀,ϑ₀)}[U]`. So (b) is CLOSED.
+  --  (c) DONE (this session). The conditional-integrability half was closed in wave 6
+  --      (`exists_boundary_ae_integrable_id`, threading item (a) through
+  --      `exists_twoSided_boundary_pair`), and the completeness half — `IsCompleteFamily`
+  --      rather than `IsBoundedlyCompleteFamily`, needed because `t ↦ E[Uψ ∣ t] − α·E[U ∣ t]`
+  --      is built from the UNBOUNDED `U` — is now `complete_boundary` above. Its proof is the
+  --      old `boundedlyComplete_boundary` argument with the one use of `|f| ≤ Cb` replaced by
+  --      `integrable_statLaw_tilt`, which TRANSPORTS the tilted integrability from the law at
+  --      `(θ₀,ϑ)` instead of dominating it; `boundedlyComplete_boundary` is now the bounded
+  --      corollary, so the three other optimality theorems are unaffected and still
+  --      axiom-clean. `complete_boundary` deliberately asks its two hypotheses only at
+  --      parameters interior to `Ω`, which is exactly where (b) can supply them: a *pure-`θ`
+  --      window* `(θ₀ ± η, ϑ)` fits inside a convex `Ω` at interior points of the surface but
+  --      can fail at boundary points of it (apex of a triangle whose base straddles `θ₀`).
+  --      Nothing is lost by the restriction — the admissible tilt directions then form an
+  --      *open* set, which is all Laplace uniqueness needs.
+  --
+  -- REMAINING DEBT, in two named pieces.
+  --  (d) The conditional transfer. Apply `complete_boundary` to
+  --      `f t = ∫u·ψ(u,t) dκ_t − α·∫u dκ_t` at each interior boundary parameter, whose
+  --      `hfzero` is `integral_U_mul_eq_of_boundary_min` composed with the disintegration
+  --      `∫ E[g ∣ T] d((P p).map T) = E[g]`. That disintegration needs `Integrable (U·ψ)` and
+  --      `Integrable U` for `P (θ₀,ϑ)` at FULL-measure level — the twin of the conditional
+  --      `exists_boundary_ae_integrable_id`. That is `integrable_U_of_twoSided` above, PROVED
+  --      (this session) exactly that way: `g z := e^{±δ z₁}` in `integrable_comp_UT_iff` turns
+  --      `e^{±δ z₁}·e^{canExp (θ₀,ϑ)}` into `e^{canExp (θ₀±δ,ϑ)}`, `ν`-integrable by
+  --      `integrable_canExp`, so `e^{±δU}` and hence `|U|` are `P (θ₀,ϑ)`-integrable; and
+  --      `|U·ψ| ≤ |U|` gives the `ψ`-version. So (d) is now pure disintegration bookkeeping.
+  --  (e) The outer UMPU assembly, which mirrors `isUMPU_conditional_outside` above line for
+  --      line — the alternative `θ ≠ θ₀` is two-sided, and `exists_sep_line` already covers
+  --      both signs of `c = θ − θ₀` because it is proved from convexity of `exp`, not from a
+  --      sign condition.
   -- Sanctioned lifted sorry: no false statement (the two repairs are already applied), and the
   -- remaining bricks are named and concrete.
   sorry
