@@ -205,6 +205,95 @@ theorem cond_bvmGaussian_apply
     smul_eq_mul, smul_eq_mul, withDensity_apply _ hC, withDensity_apply _ (hC.inter hA),
     Set.inter_comm C A, ennreal_smul_cond_ratio hdpos.ne' hdtop]
 
+-- LEAN-ONLY affine change of variables `θ = θ₀ + h/√n` on a rescaled set: the Jacobian is the
+-- constant `(√n)^{-k}` (`k = dim`).
+private lemma lintegral_preimage_bvmLocalScale (θ₀ : EuclideanSpace ℝ (Fin k)) {n : ℕ}
+    (hn1 : 1 ≤ n) {D : Set (EuclideanSpace ℝ (Fin k))} (hD : MeasurableSet D)
+    {G : EuclideanSpace ℝ (Fin k) → ℝ≥0∞} (hG : Measurable G) :
+    ∫⁻ θ in bvmLocalScale θ₀ n ⁻¹' D, G θ
+      = ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
+          * ∫⁻ hh in D, G (bvmLocalUnscale θ₀ n hh) := by
+  classical
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast hn1
+  set a : ℝ := (Real.sqrt n)⁻¹ with hadef
+  have hapos : 0 < a := by rw [hadef]; exact inv_pos.mpr (Real.sqrt_pos.mpr hnpos)
+  set T : EuclideanSpace ℝ (Fin k) → EuclideanSpace ℝ (Fin k) := bvmLocalUnscale θ₀ n with hT
+  have hTmeas : Measurable T := measurable_bvmLocalUnscale θ₀ n
+  have hfr : Module.finrank ℝ (EuclideanSpace ℝ (Fin k)) = k := finrank_euclideanSpace_fin
+  have hmap : Measure.map T (volume : Measure (EuclideanSpace ℝ (Fin k)))
+      = ENNReal.ofReal ((a ^ k)⁻¹) • (volume : Measure (EuclideanSpace ℝ (Fin k))) := by
+    have h1 : Measure.map (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) volume
+        = ENNReal.ofReal |(a ^ (Module.finrank ℝ (EuclideanSpace ℝ (Fin k))))⁻¹|
+            • (volume : Measure (EuclideanSpace ℝ (Fin k))) :=
+      Measure.map_addHaar_smul volume hapos.ne'
+    have h2 : T = (fun y : EuclideanSpace ℝ (Fin k) => θ₀ + y)
+        ∘ (fun hh : EuclideanSpace ℝ (Fin k) => a • hh) := by
+      funext hh; simp [hT, bvmLocalUnscale, hadef]
+    rw [h2, ← Measure.map_map (measurable_const_add θ₀) (measurable_const_smul a), h1,
+      Measure.map_smul, Measure.IsAddLeftInvariant.map_add_left_eq_self
+        (μ := (volume : Measure (EuclideanSpace ℝ (Fin k)))) θ₀]
+    rw [hfr, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (a ^ k)⁻¹)]
+  have hpre : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' D) := (measurable_bvmLocalScale θ₀ n) hD
+  have hmem : ∀ hh, (T hh ∈ bvmLocalScale θ₀ n ⁻¹' D) ↔ hh ∈ D := by
+    intro hh
+    simp only [Set.mem_preimage, hT, bvmLocalScale_bvmLocalUnscale θ₀ hn1 hh]
+  have hind : ∀ hh, (bvmLocalScale θ₀ n ⁻¹' D).indicator G (T hh)
+      = D.indicator (fun y => G (T y)) hh := by
+    intro hh
+    by_cases hmem' : hh ∈ D
+    · rw [Set.indicator_of_mem ((hmem hh).mpr hmem'), Set.indicator_of_mem hmem']
+    · rw [Set.indicator_of_notMem (fun hc => hmem' ((hmem hh).mp hc)),
+        Set.indicator_of_notMem hmem']
+  have hkey := (lintegral_map (μ := (volume : Measure (EuclideanSpace ℝ (Fin k))))
+      (f := (bvmLocalScale θ₀ n ⁻¹' D).indicator G) (g := T)
+      (hG.indicator hpre) hTmeas).symm
+  rw [hmap, lintegral_smul_measure, lintegral_indicator hpre] at hkey
+  simp_rw [hind] at hkey
+  rw [lintegral_indicator hD] at hkey
+  rw [hkey, smul_eq_mul, ← mul_assoc, ← ENNReal.ofReal_mul (le_of_lt (pow_pos hapos k)),
+    mul_inv_cancel₀ (pow_pos hapos k).ne', ENNReal.ofReal_one, one_mul]
+
+-- The `π`-integral of the product likelihood over the rescaled set is the Jacobian times
+-- `bvmNumer`: on the rescaled set the prior is `f · volume`, and the affine substitution
+-- `θ = θ₀ + h/√n` turns the integrand into `bvmJointDens`.
+private lemma lintegral_preimage_eq_jac_mul_bvmNumer
+    (hπ : HasLocalDensity π θ₀ r₀ f)
+    (hM_joint : Measurable (Function.uncurry M.density)) {n : ℕ} (hn1 : 1 ≤ n)
+    {D : Set (EuclideanSpace ℝ (Fin k))} (hD : MeasurableSet D)
+    (hDsub : bvmLocalScale θ₀ n ⁻¹' D ⊆ Metric.ball θ₀ r₀) (ω : Fin n → 𝓧) :
+    ∫⁻ θ in bvmLocalScale θ₀ n ⁻¹' D, (∏ i, ENNReal.ofReal (M.density θ (ω i))) ∂π
+      = ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) * bvmNumer M f θ₀ n D ω := by
+  classical
+  have hsm : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' D) := (measurable_bvmLocalScale θ₀ n) hD
+  have hGmeas : Measurable fun θ : EuclideanSpace ℝ (Fin k) =>
+      ∏ i, ENNReal.ofReal (M.density θ (ω i)) := by
+    refine Finset.univ.measurable_prod fun i _ => ?_
+    exact ENNReal.measurable_ofReal.comp (hM_joint.comp (measurable_id.prodMk measurable_const))
+  have hFmeas : Measurable fun θ : EuclideanSpace ℝ (Fin k) => ENNReal.ofReal (f θ) :=
+    ENNReal.measurable_ofReal.comp hπ.measurable
+  have hres : π.restrict (bvmLocalScale θ₀ n ⁻¹' D)
+      = (volume.restrict (bvmLocalScale θ₀ n ⁻¹' D)).withDensity
+          fun θ => ENNReal.ofReal (f θ) := by
+    rw [← Measure.restrict_restrict_of_subset hDsub, hπ.restrict_eq,
+      restrict_withDensity hsm, Measure.restrict_restrict_of_subset hDsub]
+  rw [hres, lintegral_withDensity_eq_lintegral_mul _ hFmeas hGmeas]
+  simp only [Pi.mul_apply]
+  rw [lintegral_preimage_bvmLocalScale θ₀ hn1 hD (hFmeas.mul hGmeas)]
+  congr 1
+  refine lintegral_congr fun hh => ?_
+  simp only [bvmJointDens]
+  ring
+
+-- The scalar `q` (Jacobian) and the predictive normalizer `Z` cancel in the conditional ratio.
+private lemma ennreal_posterior_ratio {q Z X Y : ℝ≥0∞} (hq : q ≠ 0) (hq' : q ≠ ∞)
+    (hZ : Z ≠ 0) (hZ' : Z ≠ ∞) :
+    ((q * X) / Z)⁻¹ * ((q * Y) / Z) = Y / X := by
+  rw [div_eq_mul_inv, div_eq_mul_inv, div_eq_mul_inv,
+    ENNReal.mul_inv (Or.inr (ENNReal.inv_ne_top.mpr hZ)) (Or.inr (ENNReal.inv_ne_zero.mpr hZ')),
+    ENNReal.mul_inv (Or.inl hq) (Or.inl hq'), inv_inv,
+    show q⁻¹ * X⁻¹ * Z * (q * Y * Z⁻¹) = q⁻¹ * q * (Z * Z⁻¹) * (Y * X⁻¹) from by ring,
+    ENNReal.inv_mul_cancel hq hq', ENNReal.mul_inv_cancel hZ hZ', one_mul, one_mul]
+
 /-- **The conditioned local posterior as a `bvmNumer` ratio** (predictive-a.e.): once the
 rescaled ball `C/√n + θ₀` lies inside the prior's absolute-continuity ball
 (`R < r₀ √n`), for predictive-a.e. `ω` with nonvanishing local mass,
@@ -227,7 +316,71 @@ theorem cond_bvmLocalPosterior_apply_ae
     ∀ᵐ ω ∂(iidKernel κ n ∘ₘ π), bvmNumer M f θ₀ n C ω ≠ 0 →
       ((bvmLocalPosterior κ π θ₀ n ω)[|C]) A
         = bvmNumer M f θ₀ n (A ∩ C) ω / bvmNumer M f θ₀ n C ω := by
-  sorry
+  classical
+  have hr₀ : 0 < r₀ := hπ.rad_pos
+  have hsqrt : 0 < Real.sqrt n := by
+    rcases le_or_gt (Real.sqrt n) 0 with hle | hlt
+    · exact absurd hn (by nlinarith)
+    · exact hlt
+  have hn1 : 1 ≤ n := by
+    rcases Nat.eq_zero_or_pos n with h0 | h1
+    · subst h0; simp at hsqrt
+    · exact h1
+  -- The rescaled sets sit inside the prior's absolute-continuity ball.
+  have hsub : ∀ D : Set (EuclideanSpace ℝ (Fin k)), D ⊆ Metric.closedBall 0 R →
+      bvmLocalScale θ₀ n ⁻¹' D ⊆ Metric.ball θ₀ r₀ := by
+    intro D hD θ hθ
+    have h1 : bvmLocalScale θ₀ n θ ∈ Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R :=
+      hD hθ
+    rw [Metric.mem_closedBall, dist_zero_right, bvmLocalScale, norm_smul, Real.norm_eq_abs,
+      abs_of_pos hsqrt] at h1
+    rw [Metric.mem_ball, dist_eq_norm]
+    have h2 : Real.sqrt n * ‖θ - θ₀‖ < Real.sqrt n * r₀ :=
+      lt_of_le_of_lt h1 (by rw [mul_comm]; exact hn)
+    exact lt_of_mul_lt_mul_left h2 hsqrt.le
+  -- The dominated iid experiment, in `withDensity` form.
+  have hdens_meas : Measurable
+      (Function.uncurry fun θ (x : 𝓧) => ENNReal.ofReal (M.density θ x)) :=
+    ENNReal.measurable_ofReal.comp hM_joint
+  have hP : Measurable (Function.uncurry
+      fun (θ : EuclideanSpace ℝ (Fin k)) (x : Fin n → 𝓧) =>
+        ∏ i, ENNReal.ofReal (M.density θ (x i))) :=
+    measurable_uncurry_prod_likelihood hdens_meas
+  have hκ' : ∀ θ, iidKernel κ n θ
+      = (Measure.pi fun _ : Fin n => μ).withDensity
+          fun x => ∏ i, ENNReal.ofReal (M.density θ (x i)) :=
+    fun θ => iidKernel_withDensity hdens_meas hκ n θ
+  have hpreC : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' C) := (measurable_bvmLocalScale θ₀ n) hC
+  have hpreCA : MeasurableSet (bvmLocalScale θ₀ n ⁻¹' (C ∩ A)) :=
+    (measurable_bvmLocalScale θ₀ n) (hC.inter hA)
+  filter_upwards [posterior_apply_eq_div (π := π) hP hκ' hpreC,
+    posterior_apply_eq_div (π := π) hP hκ' hpreCA,
+    posterior_apply_eq_div (π := π) hP hκ' (MeasurableSet.univ
+      (α := EuclideanSpace ℝ (Fin k)))] with ω hωC hωCA hωU _
+  -- The predictive normalizer is positive and finite, since the posterior is Markov.
+  have hZ1 : (∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π)
+      / ∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π = 1 := by
+    have h := hωU
+    simp only [Measure.restrict_univ, measure_univ] at h
+    exact h.symm
+  have hZne : (∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π) ≠ 0 := by
+    intro h0; rw [h0] at hZ1; simp at hZ1
+  have hZtop : (∫⁻ θ', (∏ i, ENNReal.ofReal (M.density θ' (ω i))) ∂π) ≠ ∞ := by
+    intro h0; rw [h0] at hZ1; simp at hZ1
+  -- The Jacobian scalar.
+  have hqpos : (0 : ℝ) < ((Real.sqrt n)⁻¹) ^ k := by positivity
+  have hq : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≠ 0 := (ENNReal.ofReal_pos.mpr hqpos).ne'
+  -- Push the conditioning through the rescaling map.
+  have hmap : ∀ S : Set (EuclideanSpace ℝ (Fin k)), MeasurableSet S →
+      bvmLocalPosterior κ π θ₀ n ω S
+        = ((iidKernel κ n)†π) ω (bvmLocalScale θ₀ n ⁻¹' S) := by
+    intro S hS
+    rw [bvmLocalPosterior, Kernel.map_apply' _ (measurable_bvmLocalScale θ₀ n) _ hS]
+  rw [ProbabilityTheory.cond_apply hC, hmap C hC, hmap (C ∩ A) (hC.inter hA), hωC, hωCA,
+    lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 hC (hsub C hCsub) ω,
+    lintegral_preimage_eq_jac_mul_bvmNumer hπ hM_joint hn1 (hC.inter hA)
+      (hsub (C ∩ A) (Set.inter_subset_left.trans hCsub)) ω,
+    Set.inter_comm C A, ennreal_posterior_ratio hq ENNReal.ofReal_ne_top hZne hZtop]
 
 /-- **The log pair ratio** of vdV p. 143: the logarithm of
 `[p_{n,g} πₙ(g) / p_{n,h} πₙ(h)] · [dN(Δₙ,J⁻¹)(h) / dN(Δₙ,J⁻¹)(g)]`, i.e.
