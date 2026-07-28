@@ -1107,6 +1107,75 @@ private lemma lintegral_bvmMixture_eq
   rw [lintegral_const_mul' _ _ (ENNReal.ofReal_ne_top (r := ((Real.sqrt (n : ℝ))⁻¹) ^ k)),
     ← mul_assoc]
 
+-- LEAN-ONLY: on the common-support rectangle the `ℝ≥0∞` pair ratio is the exponential of
+-- `bvmLogRatio`. (Off that rectangle they differ: `logLikelihood` is a sum of logarithms of
+-- density *ratios*, which is junk where a density vanishes.)
+private lemma bvmPairRatio_eq_exp_bvmLogRatio {g h : EuclideanSpace ℝ (Fin k)} {n : ℕ}
+    {ω : Fin n → 𝓧}
+    (hfg : 0 < f (bvmLocalUnscale θ₀ n g)) (hfh : 0 < f (bvmLocalUnscale θ₀ n h))
+    (h0 : ∀ i, 0 < M.density θ₀ (ω i))
+    (hgpos : ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n g) (ω i))
+    (hhpos : ∀ i, 0 < M.density (bvmLocalUnscale θ₀ n h) (ω i)) :
+    bvmJointDens M f θ₀ n g ω * bvmGaussDens J sc n h ω
+        / (bvmJointDens M f θ₀ n h ω * bvmGaussDens J sc n g ω)
+      = ENNReal.ofReal (Real.exp (bvmLogRatio M f θ₀ J sc n g h ω)) := by
+  classical
+  set qg : ℝ := ⟪g, scoreSum sc n ω⟫
+      - (1 / 2 : ℝ) * ⟪g, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) g))⟫ with hqg
+  set qh : ℝ := ⟪h, scoreSum sc n ω⟫
+      - (1 / 2 : ℝ) * ⟪h, (WithLp.equiv 2 _).symm (J.mulVec ((WithLp.equiv 2 _) h))⟫ with hqh
+  set Pg : ℝ := ∏ i, M.density (bvmLocalUnscale θ₀ n g) (ω i) with hPgd
+  set Ph : ℝ := ∏ i, M.density (bvmLocalUnscale θ₀ n h) (ω i) with hPhd
+  set P0 : ℝ := ∏ i, M.density θ₀ (ω i) with hP0d
+  have hPg : 0 < Pg := Finset.prod_pos fun i _ => hgpos i
+  have hPh : 0 < Ph := Finset.prod_pos fun i _ => hhpos i
+  have hP0 : 0 < P0 := Finset.prod_pos fun i _ => h0 i
+  have hJg : bvmJointDens M f θ₀ n g ω
+      = ENNReal.ofReal (Pg * f (bvmLocalUnscale θ₀ n g)) := by
+    rw [ENNReal.ofReal_mul hPg.le, hPgd,
+      ENNReal.ofReal_prod_of_nonneg (fun i _ => M.density_nonneg _ _)]
+    rfl
+  have hJh : bvmJointDens M f θ₀ n h ω
+      = ENNReal.ofReal (Ph * f (bvmLocalUnscale θ₀ n h)) := by
+    rw [ENNReal.ofReal_mul hPh.le, hPhd,
+      ENNReal.ofReal_prod_of_nonneg (fun i _ => M.density_nonneg _ _)]
+    rfl
+  have hGg : bvmGaussDens J sc n g ω = ENNReal.ofReal (Real.exp qg) := by rw [hqg]; rfl
+  have hGh : bvmGaussDens J sc n h ω = ENNReal.ofReal (Real.exp qh) := by rw [hqh]; rfl
+  have hnum : 0 < Pg * f (bvmLocalUnscale θ₀ n g) * Real.exp qh :=
+    mul_pos (mul_pos hPg hfg) (Real.exp_pos _)
+  have hden : 0 < Ph * f (bvmLocalUnscale θ₀ n h) * Real.exp qg :=
+    mul_pos (mul_pos hPh hfh) (Real.exp_pos _)
+  -- the log-likelihood in terms of the product densities
+  have hL : ∀ x : EuclideanSpace ℝ (Fin k),
+      (∀ i, 0 < M.density (bvmLocalUnscale θ₀ n x) (ω i)) →
+      logLikelihood M θ₀ x n ω
+        = Real.log (∏ i, M.density (bvmLocalUnscale θ₀ n x) (ω i)) - Real.log P0 := by
+    intro x hx
+    have hsplit : ∀ i : Fin n,
+        Real.log (M.density (bvmLocalUnscale θ₀ n x) (ω i) / M.density θ₀ (ω i))
+          = Real.log (M.density (bvmLocalUnscale θ₀ n x) (ω i)) - Real.log (M.density θ₀ (ω i)) :=
+      fun i => Real.log_div (hx i).ne' (h0 i).ne'
+    rw [Real.log_prod (fun i _ => (hx i).ne'), hP0d,
+      Real.log_prod (fun i _ => (h0 i).ne')]
+    show ∑ i, Real.log (M.density (θ₀ + (Real.sqrt n)⁻¹ • x) (ω i) / M.density θ₀ (ω i)) = _
+    rw [← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun i _ => hsplit i
+  have hinnersub : ⟪g - h, scoreSum sc n ω⟫
+      = ⟪g, scoreSum sc n ω⟫ - ⟪h, scoreSum sc n ω⟫ := inner_sub_left (𝕜 := ℝ) _ _ _
+  have hratio : (Pg * f (bvmLocalUnscale θ₀ n g) * Real.exp qh)
+      / (Ph * f (bvmLocalUnscale θ₀ n h) * Real.exp qg)
+      = Real.exp (bvmLogRatio M f θ₀ J sc n g h ω) := by
+    rw [← Real.exp_log hnum, ← Real.exp_log hden, ← Real.exp_sub]
+    congr 1
+    rw [Real.log_mul (mul_pos hPg hfg).ne' (Real.exp_ne_zero _), Real.log_mul hPg.ne' hfg.ne',
+      Real.log_mul (mul_pos hPh hfh).ne' (Real.exp_ne_zero _), Real.log_mul hPh.ne' hfh.ne',
+      Real.log_exp, Real.log_exp, bvmLogRatio, hL g hgpos, hL h hhpos, hinnersub, ← hPgd, ← hPhd]
+    simp only [hqg, hqh]
+    ring
+  rw [hJg, hJh, hGg, hGh, ← ENNReal.ofReal_mul (mul_pos hPg hfg).le,
+    ← ENNReal.ofReal_mul (mul_pos hPh hfh).le, ← ENNReal.ofReal_div_of_pos hden, hratio]
+
 /-- **Step B: the conditioned Bernstein–von Mises convergence** (vdV pp. 142–143). For every
 fixed radius `R > 0` and every `δ > 0`, the `P^n_{θ₀}`-probability that the conditioned
 local posterior and the conditioned Gaussian differ by at least `δ` in total variation tends
