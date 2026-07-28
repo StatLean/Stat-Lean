@@ -123,6 +123,35 @@ theorem bpe_tight
   -- display (10.9).
   sorry
 
+/-- **Pointwise argmin consistency** (the single-`ω` form of `argmin_tendsto_of_uniform_approx`,
+whose sequential shape does not fit the `ω`-wise application needed below): if `τ` is an
+`e`-approximate minimizer of `z` over the ball `B̄(0,R)`, `z` approximates `g` within `δ` on
+that ball, and the total slack `e + 2δ` undercuts the separation gap `η`, then `τ` is within
+`ρ` of the unique minimizer `u₀`. -/
+private theorem argmin_close_of_gap {g z : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
+    {u₀ τ : EuclideanSpace ℝ (Fin k)} {R ρ : ℝ} {η δ e : ℝ≥0∞}
+    (hunique : ∀ u, u ≠ u₀ → g u₀ < g u)
+    (hgap : ∀ u, ‖u‖ ≤ R → ρ ≤ ‖u - u₀‖ → g u₀ + η ≤ g u)
+    (hρ : 0 < ρ) (hu₀R : ‖u₀‖ ≤ R) (hτR : ‖τ‖ ≤ R)
+    (happrox : ∀ u, ‖u‖ ≤ R → z u ≤ g u + δ ∧ g u ≤ z u + δ)
+    (hmin : ∀ u, ‖u‖ ≤ R → z τ ≤ z u + e)
+    (hslack : e + (δ + δ) < η) :
+    ‖τ - u₀‖ < ρ := by
+  by_contra hcon'
+  have hcon : ρ ≤ ‖τ - u₀‖ := not_lt.1 hcon'
+  have hne : τ ≠ u₀ := by
+    intro h
+    rw [h, sub_self, norm_zero] at hcon
+    exact absurd hcon (not_le.2 hρ)
+  have hfin : g u₀ ≠ ∞ := ne_top_of_lt (hunique _ hne)
+  have hlow : g u₀ + η ≤ g τ := hgap _ hτR hcon
+  have hup : g τ ≤ g u₀ + (e + (δ + δ)) :=
+    calc g τ ≤ z τ + δ := (happrox τ hτR).2
+      _ ≤ z u₀ + e + δ := by gcongr; exact hmin u₀ hu₀R
+      _ ≤ g u₀ + δ + e + δ := by gcongr; exact (happrox u₀ hu₀R).1
+      _ = g u₀ + (e + (δ + δ)) := by ring
+  exact absurd ((ENNReal.add_le_add_iff_left hfin).1 (hlow.trans hup)) (not_le.2 hslack)
+
 /-- **Theorem 10.8 (Bayes point estimators), recentred form.** Under the Bernstein–von Mises
 conditions, the loss conditions, the prior moment, and the uniqueness of the minimizer `u₀`
 of the limit criterion `g`, the approximate posterior-risk minimizers satisfy
