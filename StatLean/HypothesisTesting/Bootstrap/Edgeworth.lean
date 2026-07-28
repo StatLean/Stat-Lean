@@ -2349,6 +2349,128 @@ theorem measure_pi_truncated_sum_le_exp {n : ℕ} (μ : Measure ℝ) [IsProbabil
       = -lam ^ 2 / (8 * ((n : ℝ) * τ ^ 2)) := by ring
   rw [harg]
 
+/-! ### The change of law: what truncating the summands costs
+
+The truncated-law replacement has two halves and they are different objects. The **moment**
+half is `ae_norm_vecRootLaw_le` of `ForMathlib/BivariateEdgeworth.lean`: once `‖Z‖ ≤ K`
+pointwise, the root's law is carried by a ball of radius `√n·K`, so every polynomial in its
+coordinates is integrable and no moment hypothesis on `F` is needed at all. The **price** half
+is here: replacing every summand by its truncation changes the law of the sample, and what it
+costs is the probability that *any one* coordinate is truncated.
+
+**That price is a union bound, not a concentration inequality**, and this is worth recording
+because wave 23 recorded it as "the change of law paid for separately by exactly the tail
+estimate `measure_pi_truncated_sum_le_exp` supplies". It is not the same object:
+`measure_pi_truncated_sum_le_exp` bounds `P(λ < |∑ Ỹ(ωᵢ)|)`, the tail of a truncated *sum*,
+which is what (X3)(b)'s one-large-summand remainder needs. The change of law needs
+`P(∃ i, Xᵢ is truncated)`, and the coupling that makes the two samples equal off that event is
+*exact*: `subset_union_large_summand` already contains the deterministic half of it.
+
+The arithmetic is tight and leaves no room. At the classical truncation level `τ = √n` a finite
+fourth moment gives `n·F{|ξ| > √n} ≤ n·E ξ⁴/n² = E ξ⁴/n`, which is exactly the target `O(n⁻¹)`;
+a truncation at `n^{1/2−δ}` would be cheaper for the moments and *more* expensive here, at
+`n^{4δ−1}`, and at `δ ≥ 1/4` it fails outright. That the classical level is forced from both
+sides is the reason it is the classical level. -/
+
+/-- **The union bound over the coordinates of a product measure.** The probability that some
+coordinate lands in `G` is at most `n · F G`. -/
+theorem measure_pi_exists_coord_mem_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMeasure F]
+    {G : Set ℝ} (hG : MeasurableSet G) :
+    (Measure.pi fun _ : Fin n => F) {y : Fin n → ℝ | ∃ i, y i ∈ G} ≤ (n : ℝ≥0∞) * F G := by
+  classical
+  have hcover : {y : Fin n → ℝ | ∃ i, y i ∈ G}
+      = ⋃ i : Fin n, (fun y : Fin n → ℝ => y i) ⁻¹' G := by
+    ext y; simp [Set.mem_iUnion]
+  have hcoord : ∀ i : Fin n,
+      (Measure.pi fun _ : Fin n => F) ((fun y : Fin n → ℝ => y i) ⁻¹' G) = F G := fun i =>
+    (MeasureTheory.measurePreserving_eval (fun _ : Fin n => F) i).measure_preimage
+      hG.nullMeasurableSet
+  rw [hcover]
+  refine (measure_iUnion_fintype_le _ _).trans ?_
+  rw [Finset.sum_congr rfl fun i (_ : i ∈ Finset.univ) => hcoord i, Finset.sum_const,
+    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+
+/-- **Truncating the summands costs at most the probability that some coordinate is
+truncated.** For any measurable `T : ℝ → ℝ` and any measurable event `s` of the sample,
+
+`|P(y ∈ s) − P((T(yᵢ))ᵢ ∈ s)| ≤ n · F{x : T x ≠ x}`.
+
+The coupling is exact: off the event that some coordinate is moved, the truncated sample *is*
+the sample, so the two events differ only inside that event. Nothing about `T` beyond
+measurability is used — in particular the statement covers every truncation scheme, not just
+the classical `|x − m| ≤ τ` one. -/
+theorem abs_measure_pi_sub_comp_le {n : ℕ} (F : Measure ℝ) [IsProbabilityMeasure F]
+    {T : ℝ → ℝ} (hT : Measurable T) (hbad : MeasurableSet {x : ℝ | T x ≠ x})
+    {s : Set (Fin n → ℝ)} (hs : MeasurableSet s) :
+    |((Measure.pi fun _ : Fin n => F) s).toReal
+        - ((Measure.pi fun _ : Fin n => F)
+            ((fun y : Fin n → ℝ => fun i => T (y i)) ⁻¹' s)).toReal|
+      ≤ (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+  classical
+  set P : Measure (Fin n → ℝ) := Measure.pi fun _ : Fin n => F with hP
+  set τmap : (Fin n → ℝ) → (Fin n → ℝ) := fun y i => T (y i) with hτmap
+  set Bad : Set (Fin n → ℝ) := {y : Fin n → ℝ | ∃ i, y i ∈ {x : ℝ | T x ≠ x}} with hBad
+  have hτmeas : Measurable τmap :=
+    measurable_pi_lambda _ fun i => hT.comp (measurable_pi_apply i)
+  have hfix : ∀ y : Fin n → ℝ, y ∉ Bad → τmap y = y := by
+    intro y hy
+    funext i
+    by_contra hne
+    exact hy ⟨i, hne⟩
+  have hsub1 : s ⊆ τmap ⁻¹' s ∪ Bad := by
+    intro y hy
+    by_cases hb : y ∈ Bad
+    · exact Or.inr hb
+    · exact Or.inl (by simp only [Set.mem_preimage, hfix y hb]; exact hy)
+  have hsub2 : τmap ⁻¹' s ⊆ s ∪ Bad := by
+    intro y hy
+    by_cases hb : y ∈ Bad
+    · exact Or.inr hb
+    · refine Or.inl ?_
+      have : τmap y ∈ s := hy
+      rwa [hfix y hb] at this
+  have hBadle : P Bad ≤ (n : ℝ≥0∞) * F {x : ℝ | T x ≠ x} :=
+    measure_pi_exists_coord_mem_le F hbad
+  have hfin : ∀ A : Set (Fin n → ℝ), P A ≠ ⊤ := fun A => measure_ne_top _ _
+  have hstep : ∀ A B : Set (Fin n → ℝ), A ⊆ B ∪ Bad →
+      (P A).toReal ≤ (P B).toReal + (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+    intro A B hAB
+    have h1 : P A ≤ P B + P Bad := (measure_mono hAB).trans (measure_union_le _ _)
+    have h2 : (P A).toReal ≤ (P B + P Bad).toReal :=
+      ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin _, hfin _⟩) h1
+    rw [ENNReal.toReal_add (hfin _) (hfin _)] at h2
+    have h3 : (P Bad).toReal ≤ ((n : ℝ≥0∞) * F {x : ℝ | T x ≠ x}).toReal :=
+      ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) (measure_ne_top _ _)) hBadle
+    rw [ENNReal.toReal_mul, ENNReal.toReal_natCast] at h3
+    linarith
+  rw [abs_sub_le_iff]
+  exact ⟨by linarith [hstep s (τmap ⁻¹' s) hsub1], by linarith [hstep (τmap ⁻¹' s) s hsub2]⟩
+
+/-- **Markov at the fourth moment, in the shape the truncation level consumes.**
+`F{τ < |g|} ≤ E[g⁴]/τ⁴`. At `τ = √n` this is `E[g⁴]/n²`, so the union bound
+`n · F{τ < |g|}` of `abs_measure_pi_sub_comp_le` is `E[g⁴]/n` — the target `O(n⁻¹)` exactly. -/
+theorem measure_abs_gt_le_fourth_moment (F : Measure ℝ) [IsProbabilityMeasure F]
+    {g : ℝ → ℝ} (hg : Measurable g) (hg4 : Integrable (fun x => g x ^ 4) F)
+    {τ : ℝ} (hτ : 0 < τ) :
+    (F {x : ℝ | τ < |g x|}).toReal ≤ (∫ x, g x ^ 4 ∂F) / τ ^ 4 := by
+  have hmk := MeasureTheory.mul_meas_ge_le_integral_of_nonneg
+    (μ := F) (f := fun x => g x ^ 4) (Filter.Eventually.of_forall fun x => by positivity)
+    hg4 (τ ^ 4)
+  have hsub : {x : ℝ | τ < |g x|} ⊆ {x : ℝ | τ ^ 4 ≤ g x ^ 4} := by
+    intro x hx
+    have hx' : τ < |g x| := hx
+    have hpow : τ ^ 4 ≤ |g x| ^ 4 := pow_le_pow_left₀ hτ.le hx'.le 4
+    have habs : |g x| ^ 4 = g x ^ 4 := by
+      rw [← abs_pow, abs_of_nonneg (by positivity : (0 : ℝ) ≤ g x ^ 4)]
+    rw [habs] at hpow
+    exact hpow
+  have hmono : (F {x : ℝ | τ < |g x|}).toReal ≤ (F {x : ℝ | τ ^ 4 ≤ g x ^ 4}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < τ ^ 4)]
+  have hmk' : τ ^ 4 * (F {x : ℝ | τ ^ 4 ≤ g x ^ 4}).toReal ≤ ∫ x, g x ^ 4 ∂F := by
+    simpa [measureReal_def] using hmk
+  nlinarith [hmono, hmk', (by positivity : (0 : ℝ) < τ ^ 4)]
+
 /-! ### (X3)(a): the frozen-coordinate window bound, uniform in the frozen value
 
 Wave 18 recorded the second half of (X3) as: "*Transferring the (M1)(b) expansion to the
