@@ -2409,10 +2409,23 @@ distribution-function approximation — the size-`(n+1)` root with one coordinat
 arbitrary `y` satisfies the same bound with the constant degraded only by `√2`, and with **no
 dependence on `y`**.
 
-Together with `measure_pi_truncated_sum_le_exp` this discharges both halves of (X3): the
-`hslice` hypothesis of `measure_pi_inter_coord_le` / `measure_pi_inter_le_of_large_summand` is
-exactly this statement (via `measure_abs_sub_le_ofReal`), and the remainder those lemmas leave
-is exactly the truncated-sum tail. -/
+Together with `measure_pi_truncated_sum_le_exp` this discharges both halves of (X3) **for a
+root-type window**: see `measure_pi_stratum_root_le`.
+
+**Caveat, and it is the wave-21 finding that matters most.** This is (X3)(a) exactly as wave 18
+and the brief for this wave stated it — "the remaining coordinates form a root law of the same
+kind" — and as such it is closed, and free. But it is **not** the statement the peeled assembly
+consumes. In `abs_measure_le_sub_le_of_peel_strata` the window is on `T`, and in the studentized
+route `T` is the delta-method surrogate `Hₙ = u − uvr/2 + u³r²/2 + 3uv²r²/8`, a degree-four
+polynomial in the bivariate mean — not a root. Freezing a coordinate makes `(u, v)` an affine
+function of the retained pair (`root_insertNth_eq` applies to each coordinate separately), but
+`Hₙ` is then a *polynomial*, not an affine function, of that pair, and
+`measure_abs_sub_le_of_affine` does not apply to it.
+
+Nor can the surrogate be traded for a root: taking `T = u`, whose expansion is already proved
+(`edgeworth_mean_uniform`), makes `|S − T| = O(r)` rather than `O(r³)`, and the peeled sum
+`∑_k τ_k A 2^{k+1}δ` is then `≍ √n · n⁻¹ = n^{-1/2}` — a factor `n^{1/2}` short. That is
+precisely why the surrogate exists. -/
 theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
     {Z : ℝ → ℝ} {A η : ℝ} (hA : 0 ≤ A) (hn : 0 < n) (i : Fin (n + 1))
     (hwin : ∀ u w : ℝ, 0 ≤ w →
@@ -2453,31 +2466,63 @@ theorem measure_pi_abs_root_insertNth_le {n : ℕ} (μ : Measure ℝ) [IsProbabi
     nlinarith [hA, hsn.le, hkey]
   nlinarith [hratio, hw, hA]
 
-/-- **(X3), CLOSED: the joint stratum bound.** The two inputs wave 18 left compose with the four
-conditioning bricks it built, and the result is a single estimate of the joint mass of
+/-- **(X3), assembled: the joint stratum bound over an arbitrary statistic.** The two inputs
+wave 18 left compose with the four conditioning bricks it built, and the result is a single
+estimate of the joint mass of
 
 * a **tail event carried by a coordinate sum**, `{λ < |∑ᵢ Y(ωᵢ)|}`, and
-* a **window event for the root**, `{|Rₙ₊₁ − x| ≤ w}`,
+* a **window event for an arbitrary measurable statistic** `T`, `{|T − x| ≤ w}`,
 
-namely `(n+1)·μ{|Y| > τ}·(2√2 A w + 2η) + 2exp(−λ²/(8(n+1)τ²))`.
+namely `(n+1)·μ{|Y| > τ}·c + 2exp(−λ²/(8(n+1)τ²))`, where `c` bounds the window mass of `T` on
+every frozen-coordinate slice.
 
-Every ingredient is now proved: `subset_union_large_summand` decomposes the tail into the `n+1`
-one-coordinate events plus a truncated-sum remainder; `measure_pi_inter_coord_le` conditions each
-one-coordinate event on its dominant coordinate; `measure_pi_abs_root_insertNth_le` supplies the
-slice bound, **uniformly in the frozen value**, from the *marginal* window bound at size `n`; and
+Every probabilistic ingredient is proved: `subset_union_large_summand` decomposes the tail into
+the `n+1` one-coordinate events plus a truncated-sum remainder; `measure_pi_inter_coord_le`
+conditions each one-coordinate event on its dominant coordinate; and
 `measure_pi_truncated_sum_le_exp` — Hoeffding on the product measure — estimates the remainder,
 where wave 18 correctly recorded that Chebyshev cannot.
 
-The three properties wave 17 proved this shape must have are all visible here: the product
+The three properties wave 17 established this shape must have are all visible here: the product
 structure survives on the one-coordinate part (where it is true), the remainder is separated
 rather than absorbed, and no lower bound on the tail probability is needed. What the peeled
 assembly consumes is exactly this, as its per-stratum hypothesis `hstrat`; the arithmetic that
 turns a geometric family of these into `O(n⁻¹)` is `sum_dyadic_strata_le`.
 
-What is **not** supplied here, and is the route-specific work that remains, is the deterministic
-containment turning `{2ᵏδ < |T̃ₙ − Hₙ|}` into a tail event of the shape `{λₖ < |∑ᵢ Y(ωᵢ)|}` —
-that needs the delta-method surrogate `Hₙ` itself, via `abs_studentFactor_sub_taylor3_le'`. -/
+The one remaining hypothesis is `hslice`, the frozen-coordinate window bound for `T` uniform in
+the frozen value. `measure_pi_abs_root_insertNth_le` discharges it *for free* when `T` is a
+**root**; see the caveat there for why the studentized route's `T` is not one. -/
 theorem measure_pi_stratum_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {Y : ℝ → ℝ} (hY : Measurable Y) {T : (Fin (n + 1) → ℝ) → ℝ} (hT : Measurable T)
+    {c τ lam x w : ℝ} (hc : 0 ≤ c) (hτ : 0 ≤ τ) (hlam : 0 ≤ lam)
+    (hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
+      ((Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | |T (i.insertNth y z) - x| ≤ w}).toReal ≤ c)
+    (hmean : ((n + 1 : ℕ) : ℝ) * |∫ y, (if |Y y| ≤ τ then Y y else 0) ∂μ| ≤ lam / 2) :
+    ((Measure.pi fun _ : Fin (n + 1) => μ)
+        ({ω : Fin (n + 1) → ℝ | lam < |∑ i, Y (ω i)|} ∩
+          {ω : Fin (n + 1) → ℝ | |T ω - x| ≤ w})).toReal
+      ≤ ((n : ℝ) + 1) * ((μ {y : ℝ | τ < |Y y|}).toReal * c)
+        + 2 * Real.exp (-lam ^ 2 / (8 * (((n + 1 : ℕ) : ℝ) * τ ^ 2))) := by
+  classical
+  set B : Set (Fin (n + 1) → ℝ) := {ω : Fin (n + 1) → ℝ | |T ω - x| ≤ w} with hBdef
+  have hB : MeasurableSet B := ((hT.sub_const x).abs) measurableSet_Iic
+  have hslice' : ∀ (i : Fin (n + 1)) (y : ℝ),
+      (Measure.pi fun _ : Fin n => μ)
+          {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B} ≤ ENNReal.ofReal c := by
+    intro i y
+    have hset : {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B}
+        = {z : Fin n → ℝ | |T (i.insertNth y z) - x| ≤ w} := rfl
+    rw [hset, ← ENNReal.ofReal_toReal (measure_ne_top _ _)]
+    exact ENNReal.ofReal_le_ofReal (hslice i y)
+  have hmain := measure_pi_inter_le_of_large_summand_toReal (n := n) μ hY lam τ hB hc hslice'
+  refine hmain.trans ?_
+  have hrem := measure_pi_truncated_sum_le_exp (n := n + 1) μ hY hτ hlam hmean
+  linarith
+
+/-- **(X3) for a root-type window: fully closed, with no hypothesis left but the marginal
+window bound at size `n`.** The instance of `measure_pi_stratum_le` in which the statistic is a
+root, so that `measure_pi_abs_root_insertNth_le` discharges `hslice` for free. -/
+theorem measure_pi_stratum_root_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure μ]
     {Y Z : ℝ → ℝ} (hY : Measurable Y) (hZ : Measurable Z)
     {A η τ lam x w : ℝ} (hA : 0 ≤ A) (hη : 0 ≤ η) (hτ : 0 ≤ τ) (hw : 0 ≤ w)
     (hn : 0 < n) (hlam : 0 ≤ lam)
@@ -2494,28 +2539,12 @@ theorem measure_pi_stratum_le {n : ℕ} (μ : Measure ℝ) [IsProbabilityMeasure
           * ((μ {y : ℝ | τ < |Y y|}).toReal * (2 * (Real.sqrt 2 * A) * w + 2 * η))
         + 2 * Real.exp (-lam ^ 2 / (8 * (((n + 1 : ℕ) : ℝ) * τ ^ 2))) := by
   classical
-  set B : Set (Fin (n + 1) → ℝ) :=
-    {ω : Fin (n + 1) → ℝ | |(Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j) - x| ≤ w} with hBdef
   have hsumZ : Measurable fun ω : Fin (n + 1) → ℝ => ∑ j, Z (ω j) :=
     Finset.measurable_sum _ fun j _ => hZ.comp (measurable_pi_apply j)
-  have hB : MeasurableSet B :=
-    (((measurable_const.mul hsumZ).sub_const x).abs) measurableSet_Iic
-  set c : ℝ := 2 * (Real.sqrt 2 * A) * w + 2 * η with hcdef
-  have hc : 0 ≤ c := by positivity
-  have hslice : ∀ (i : Fin (n + 1)) (y : ℝ),
-      (Measure.pi fun _ : Fin n => μ)
-          {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B} ≤ ENNReal.ofReal c := by
-    intro i y
-    have hset : {z : Fin n → ℝ | (i.insertNth y z : Fin (n + 1) → ℝ) ∈ B}
-        = {z : Fin n → ℝ |
-            |(Real.sqrt ((n : ℝ) + 1))⁻¹
-              * ∑ j : Fin (n + 1), Z ((i.insertNth y z : Fin (n + 1) → ℝ) j) - x| ≤ w} := rfl
-    rw [hset, ← ENNReal.ofReal_toReal (measure_ne_top _ _)]
-    exact ENNReal.ofReal_le_ofReal (measure_pi_abs_root_insertNth_le μ hA hn i hwin y x hw)
-  have hmain := measure_pi_inter_le_of_large_summand_toReal (n := n) μ hY lam τ hB hc hslice
-  refine hmain.trans ?_
-  have hrem := measure_pi_truncated_sum_le_exp (n := n + 1) μ hY hτ hlam hmean
-  linarith
+  refine measure_pi_stratum_le (T := fun ω => (Real.sqrt ((n : ℝ) + 1))⁻¹ * ∑ j, Z (ω j))
+    μ hY (measurable_const.mul hsumZ) (by positivity) hτ hlam ?_ hmean
+  intro i y
+  exact measure_pi_abs_root_insertNth_le μ hA hn i hwin y x hw
 
 end StudentizedReduction
 
