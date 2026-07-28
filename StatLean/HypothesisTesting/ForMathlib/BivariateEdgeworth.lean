@@ -1850,4 +1850,317 @@ theorem ae_norm_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure F] {Z : �
 
 end BoundedRoot
 
+/-! ## The `k ≥ 3` estimate at `O(1)`: the image count, not the partition lattice
+
+The `k = 2` estimate `norm_multiCharFun_vecRootLaw_two_sub_le` identifies the *limit* of
+`multi_{ρ_N}(b,a)` to accuracy `O(N^{-1/2})`, and for that the exact split of the assignment sum
+into its diagonal and off-diagonal blocks is unavoidable: the two blocks are of the same order
+and of opposite sign. The wave-25 note of `Bootstrap/Edgeworth.lean` records the `k = 3, 4`
+residue as "the same thing with the partition lattice of `Fin k` in place of a single diagonal,
+and the counting is the only new work".
+
+**That is more than is needed, and the re-derivation below replaces it.** At `k = 3, 4` the
+consumer (`norm_integral_cexp_deltaSurrogate_sub_graded_le`, whose coefficients `c₃`, `c₄`, `c₅`
+are `O(n⁻¹)`) asks only for an `O(1)` *bound*, not for a limit. A bound needs no cancellation
+*between* partitions — only the cancellation *inside* a singleton slot, which is the centring. So
+the assignment sum can be estimated term by term, and the partition lattice never appears:
+
+* each fibre `T = σ⁻¹(i)` contributes a factor `slot_T(c)` carrying `r^{|T|}` of the prefactor
+  `r^k = ∏_i r^{|σ⁻¹(i)|}`, and **each such factor is at most `Q/N`, whatever `|T|` is**:
+  `|T| = 0` gives `‖φ(c)‖ ≤ 1`; `|T| = 1` gives `r·(rQ) = Q/N` *by the centring*; `|T| = j ≥ 2`
+  gives `r^j·Q(√N)^{j-2} = Q/N`, since a slot of `j` weights is allowed to grow like
+  `N^{(j-2)/2}` — exactly what the truncated law delivers (`E[ξ̃²η̃²] ≍ N` at `τ = √n`, and
+  `r⁴·N·N = 1`);
+* hence the `σ`-summand is at most `(Q/N)^{m(σ)}` with `m(σ) = |image σ|`, and the whole estimate
+  reduces to the elementary count `∑_{σ : Fin k → Fin N} (Q/N)^{|image σ|} ≤ (k+1)k^kQ^k`
+  (`sum_div_pow_card_image_le`), whose proof is one containment: a `σ` with `|image σ| = m` is
+  determined by a subset of size `m` (at most `N^m` of them, `Nat.choose_le_pow`) and a map into
+  it (at most `m^k`).
+
+The graded hypothesis `hQ2` is the whole content: a single uniform bound `Q` on every slot moment
+would give `Q^k` with `Q ≍ N` and is useless, whereas the *graded* allowance
+`Q·(√N)^{|T|-2}` is exactly what makes every fibre factor `Q/N`. This is the same phenomenon as
+the grading of the envelope in `r` (wave 25, `surrogateRemGraded`), one level up.
+
+The estimate applies verbatim at `k = 2` (with a worse constant than
+`norm_multiCharFun_vecRootLaw_two_sub_le`, and without the limit), at `k = 1` and at `k = 0`. -/
+
+section MultiBound
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- **The assignment count.** `∑_{σ : Fin k → Fin N} y^{|image σ|} ≤ (k+1)k^kQ^k` for `y = Q/N`
+and `1 ≤ Q`, uniformly in `N`.
+
+This is the entire combinatorial content of the `O(1)` multilinear estimate. Grouping the `N^k`
+assignments by the cardinality `m` of their image, a `σ` with `|image σ| = m` lies in the set of
+maps into some fixed `m`-element subset of `Fin N`; there are at most `N^m` such subsets
+(`Nat.choose_le_pow`) and `m^k` such maps, and the weight `(Q/N)^m` cancels the `N^m` exactly. -/
+lemma sum_div_pow_card_image_le {k N : ℕ} (hN : 1 ≤ N) {Q : ℝ} (hQ : 1 ≤ Q) :
+    ∑ σ : Fin k → Fin N, (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card
+      ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := by
+  classical
+  have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  have hQ0 : (0 : ℝ) < Q := lt_of_lt_of_le zero_lt_one hQ
+  have hmaps : ∀ σ ∈ (Finset.univ : Finset (Fin k → Fin N)),
+      (Finset.image σ Finset.univ).card ∈ Finset.range (k + 1) := by
+    intro σ _
+    rw [Finset.mem_range, Nat.lt_succ_iff]
+    calc (Finset.image σ Finset.univ).card ≤ (Finset.univ : Finset (Fin k)).card :=
+          Finset.card_image_le
+      _ = k := by simp
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps]
+  have hterm : ∀ m ∈ Finset.range (k + 1),
+      (∑ σ ∈ Finset.univ.filter
+          (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m),
+        (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card)
+        ≤ (k : ℝ) ^ k * Q ^ k := by
+    intro m hm
+    have hmk : m ≤ k := by
+      rw [Finset.mem_range, Nat.lt_succ_iff] at hm; exact hm
+    -- the summand is constant on the fibre
+    have hconst : (∑ σ ∈ Finset.univ.filter
+        (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m),
+        (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card)
+        = ((Finset.univ.filter
+            (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m)).card : ℝ)
+          * (Q / (N : ℝ)) ^ m := by
+      rw [Finset.sum_congr rfl (fun σ hσ => by
+        rw [(Finset.mem_filter.1 hσ).2]), Finset.sum_const, nsmul_eq_mul]
+    -- the fibre is contained in a union of `N.choose m` boxes, each of size `m ^ k`
+    have hcard : (Finset.univ.filter
+        (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m)).card
+        ≤ N ^ m * m ^ k := by
+      have hsub : (Finset.univ.filter
+          (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m))
+          ⊆ ((Finset.univ : Finset (Fin N)).powersetCard m).biUnion
+              (fun S : Finset (Fin N) => Fintype.piFinset (fun _ : Fin k => S)) := by
+        intro σ hσ
+        rw [Finset.mem_filter] at hσ
+        refine Finset.mem_biUnion.2 ⟨Finset.image σ Finset.univ, ?_, ?_⟩
+        · exact Finset.mem_powersetCard.2 ⟨Finset.subset_univ _, hσ.2⟩
+        · exact Fintype.mem_piFinset.2 fun l => Finset.mem_image_of_mem σ (Finset.mem_univ l)
+      have hbox : ∀ S ∈ (Finset.univ : Finset (Fin N)).powersetCard m,
+          (Fintype.piFinset (fun _ : Fin k => S)).card = m ^ k := by
+        intro S hS
+        rw [Fintype.card_piFinset_const, (Finset.mem_powersetCard.1 hS).2]
+      calc (Finset.univ.filter
+              (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m)).card
+          ≤ (((Finset.univ : Finset (Fin N)).powersetCard m).biUnion
+              (fun S : Finset (Fin N) => Fintype.piFinset (fun _ : Fin k => S))).card :=
+            Finset.card_le_card hsub
+        _ ≤ ∑ S ∈ (Finset.univ : Finset (Fin N)).powersetCard m,
+              (Fintype.piFinset (fun _ : Fin k => S)).card := Finset.card_biUnion_le
+        _ = ∑ _S ∈ (Finset.univ : Finset (Fin N)).powersetCard m, m ^ k :=
+            Finset.sum_congr rfl hbox
+        _ = ((Finset.univ : Finset (Fin N)).powersetCard m).card * m ^ k := by
+            rw [Finset.sum_const, smul_eq_mul]
+        _ ≤ N ^ m * m ^ k := by
+            have : ((Finset.univ : Finset (Fin N)).powersetCard m).card = N.choose m := by
+              rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+            rw [this]
+            exact Nat.mul_le_mul_right _ (Nat.choose_le_pow N m)
+    have hcardR : ((Finset.univ.filter
+        (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m)).card : ℝ)
+        ≤ (N : ℝ) ^ m * (m : ℝ) ^ k := by
+      exact_mod_cast hcard
+    have hpow : ((N : ℝ) ^ m * (m : ℝ) ^ k) * (Q / (N : ℝ)) ^ m = (m : ℝ) ^ k * Q ^ m := by
+      rw [div_pow]
+      field_simp
+    calc (∑ σ ∈ Finset.univ.filter
+            (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m),
+            (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card)
+        = ((Finset.univ.filter
+            (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m)).card : ℝ)
+          * (Q / (N : ℝ)) ^ m := hconst
+      _ ≤ ((N : ℝ) ^ m * (m : ℝ) ^ k) * (Q / (N : ℝ)) ^ m := by
+          gcongr
+      _ = (m : ℝ) ^ k * Q ^ m := hpow
+      _ ≤ (k : ℝ) ^ k * Q ^ k := by
+          gcongr
+          exact hQ
+  calc (∑ m ∈ Finset.range (k + 1), ∑ σ ∈ Finset.univ.filter
+          (fun σ : Fin k → Fin N => (Finset.image σ Finset.univ).card = m),
+          (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card)
+      ≤ ∑ _m ∈ Finset.range (k + 1), (k : ℝ) ^ k * Q ^ k := Finset.sum_le_sum hterm
+    _ = ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := by
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+        push_cast
+        ring
+
+set_option maxHeartbeats 800000 in
+-- The assembly carries a per-fibre trichotomy through a product over `Fin N` and a sum over the
+-- `N^k` assignments; the default heartbeat budget is not enough.
+/-- **The `O(1)` estimate for the multilinearly weighted characteristic function of a vector
+root, at every `k`.**
+
+`‖multi_{ρ_N}(b, a)‖ ≤ (k+1)k^k Q^k` for a law centred in every slot direction, under the
+**graded** moment allowance
+
+* `∫|⟪x,b_l⟫||⟪x,a⟫| ≤ Q` for each single slot (used together with the centring), and
+* `∫∏_{l∈T}|⟪x,b_l⟫| ≤ Q·(√N)^{|T|-2}` for every `T` with `|T| ≥ 2`.
+
+This is residue (i) of the wave-25 note of `Bootstrap/Edgeworth.lean` at `k = 3, 4` — and it is
+uniform in `N`, in `a` and in `k`. The `k = 2` case is subsumed, though
+`norm_multiCharFun_vecRootLaw_two_sub_le` is sharper there (it identifies the limit to
+`O(N^{-1/2})`, which the surrogate's coefficient `c₂` needs; `c₃`, `c₄`, `c₅` are `O(n⁻¹)` and
+need only this).
+
+The grading of `hQ2` in `|T|` is the whole content, and it is forced: for the studentized pair
+truncated at `τ = √n` the top slot moment `E[ξ̃²η̃²]` is of order `N`, so a *uniform* allowance `Q`
+would have to be taken of order `N` and `Q^k` would be useless, whereas the graded allowance
+makes every fibre factor `r^{|T|}·‖slot_T‖` equal to `Q/N` regardless of `|T|`. -/
+theorem norm_multiCharFun_vecRootLaw_le (F : Measure ℝ) [IsProbabilityMeasure F] {Z : ℝ → E}
+    (hZ : Measurable Z) {k N : ℕ} (hN : 1 ≤ N) (b : Fin k → E) (a : E) {Q : ℝ} (hQ : 1 ≤ Q)
+    (hint : ∀ T : Finset (Fin k),
+      Integrable (fun x : ℝ => ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)|) F)
+    (hbl : ∀ l : Fin k, Integrable (fun x : E => (⟪x, b l⟫ : ℝ)) (F.map Z))
+    (hcent : ∀ l : Fin k, (∫ x, (⟪x, b l⟫ : ℝ) ∂(F.map Z)) = 0)
+    (hbla : ∀ l : Fin k,
+      Integrable (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) (F.map Z))
+    (hQ1 : ∀ l : Fin k, (∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z)) ≤ Q)
+    (hQ2 : ∀ T : Finset (Fin k), 2 ≤ T.card →
+      (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+        ≤ Q * Real.sqrt (N : ℝ) ^ (T.card - 2)) :
+    ‖multiCharFun (vecRootLaw F Z N) b a‖ ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := by
+  classical
+  haveI : IsProbabilityMeasure (F.map Z) := Measure.isProbabilityMeasure_map hZ.aemeasurable
+  have hN0 : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
+  have hsq : (0 : ℝ) < Real.sqrt (N : ℝ) := Real.sqrt_pos.2 hN0
+  have hsq1 : (1 : ℝ) ≤ Real.sqrt (N : ℝ) := by
+    rw [show (1 : ℝ) = Real.sqrt 1 from Real.sqrt_one.symm]
+    exact Real.sqrt_le_sqrt (by exact_mod_cast hN)
+  rw [multiCharFun_vecRootLaw F hZ b hint a]
+  set r : ℝ := (Real.sqrt (N : ℝ))⁻¹ with hrdef
+  set c : E := r • a with hcdef
+  have hrpos : 0 < r := by rw [hrdef]; exact inv_pos.2 hsq
+  have hrsq : r * Real.sqrt (N : ℝ) = 1 := by
+    rw [hrdef]; field_simp
+  have hr2 : r ^ 2 = ((N : ℝ))⁻¹ := by rw [hrdef, inv_pow, Real.sq_sqrt hN0.le]
+  have hca : ∀ w : E, (⟪w, c⟫ : ℝ) = r * (⟪w, a⟫ : ℝ) := fun w => by
+    rw [hcdef, real_inner_smul_right]
+  -- the per-fibre bound: **every** fibre factor is at most `Q/N`
+  have hslot : ∀ T : Finset (Fin k),
+      r ^ T.card * ‖slotCharFun F Z b T c‖ ≤ (if T = ∅ then 1 else Q / (N : ℝ)) := by
+    intro T
+    rcases eq_or_ne T ∅ with rfl | hTne
+    · rw [if_pos rfl, Finset.card_empty, pow_zero, one_mul, slotCharFun_empty F hZ b c]
+      exact norm_charFun_le_one c
+    rw [if_neg hTne]
+    have hpos : 1 ≤ T.card := Finset.card_pos.2 (Finset.nonempty_of_ne_empty hTne)
+    rcases eq_or_lt_of_le hpos with h1 | h2
+    · -- a single slot: the centring gives `‖slot‖ ≤ rQ`, and `r·rQ = Q/N`
+      obtain ⟨l, rfl⟩ := Finset.card_eq_one.1 h1.symm
+      have hgm : Measurable fun w : E => (⟪w, b l⟫ : ℝ) := measurable_inner_right (b l)
+      have habs : ∀ x : E, |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|
+          = r * (|(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := fun x => by
+        rw [hca x, abs_mul r ((⟪x, a⟫ : ℝ)), abs_of_pos hrpos]; ring
+      have hgt : Integrable (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|) (F.map Z) := by
+        have hEq : (fun x : E => |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)|)
+            = fun x : E => r * (|(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)|) := funext habs
+        rw [hEq]; exact (hbla l).const_mul r
+      have hmom : (∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, c⟫ : ℝ)| ∂(F.map Z))
+          = r * ∫ x, |(⟪x, b l⟫ : ℝ)| * |(⟪x, a⟫ : ℝ)| ∂(F.map Z) := by
+        simp_rw [habs]
+        exact integral_const_mul _ _
+      have hbound := norm_integral_ofReal_mul_cexp_sub_le (F.map Z) hgm (hbl l) hgt
+      rw [hcent l] at hbound
+      simp only [Complex.ofReal_zero, sub_zero] at hbound
+      rw [hmom] at hbound
+      have hslot1 : ‖slotCharFun F Z b {l} c‖ ≤ r * Q := by
+        rw [slotCharFun_singleton F hZ b l c, mixCharFun]
+        exact hbound.trans (mul_le_mul_of_nonneg_left (hQ1 l) hrpos.le)
+      rw [Finset.card_singleton, pow_one]
+      calc r * ‖slotCharFun F Z b {l} c‖ ≤ r * (r * Q) :=
+            mul_le_mul_of_nonneg_left hslot1 hrpos.le
+        _ = Q / (N : ℝ) := by
+            rw [show r * (r * Q) = r ^ 2 * Q by ring, hr2]
+            field_simp
+    · -- a fibre of size `j ≥ 2`: the graded allowance gives `r^j·Q(√N)^{j-2} = Q/N`
+      have hnorm : ‖slotCharFun F Z b T c‖
+          ≤ ∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z) := by
+        have hmap : (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+            = ∫ x, ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)| ∂F := by
+          rw [integral_map hZ.aemeasurable]
+          exact (Finset.measurable_prod _ fun l _ =>
+            (measurable_inner_right (b l)).abs).aestronglyMeasurable
+        rw [hmap, slotCharFun]
+        refine norm_integral_le_of_norm_le (hint T) (Filter.Eventually.of_forall fun x => ?_)
+        have hx : ‖(∏ l ∈ T, ((⟪Z x, b l⟫ : ℝ) : ℂ))
+            * Complex.exp ((⟪Z x, c⟫ : ℝ) * Complex.I)‖
+            = ∏ l ∈ T, |(⟪Z x, b l⟫ : ℝ)| := by
+          rw [norm_mul, norm_prod]
+          simp [Complex.norm_exp]
+        exact hx.le
+      obtain ⟨d, hd⟩ : ∃ d, T.card = d + 2 := ⟨T.card - 2, by omega⟩
+      have harith : r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d) = Q / (N : ℝ) := by
+        have hstep : r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d = ((N : ℝ))⁻¹ := by
+          calc r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d
+              = (r * Real.sqrt (N : ℝ)) ^ d * r ^ 2 := by rw [mul_pow]; ring
+            _ = r ^ 2 := by rw [hrsq, one_pow, one_mul]
+            _ = ((N : ℝ))⁻¹ := hr2
+        calc r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d)
+            = (r ^ (d + 2) * Real.sqrt (N : ℝ) ^ d) * Q := by ring
+          _ = ((N : ℝ))⁻¹ * Q := by rw [hstep]
+          _ = Q / (N : ℝ) := by field_simp
+      have hQ2' : (∫ x, ∏ l ∈ T, |(⟪x, b l⟫ : ℝ)| ∂(F.map Z))
+          ≤ Q * Real.sqrt (N : ℝ) ^ d := by
+        have := hQ2 T h2
+        rwa [hd, Nat.add_sub_cancel] at this
+      rw [hd]
+      calc r ^ (d + 2) * ‖slotCharFun F Z b T c‖
+          ≤ r ^ (d + 2) * (Q * Real.sqrt (N : ℝ) ^ d) := by
+            refine mul_le_mul_of_nonneg_left (hnorm.trans hQ2') (pow_nonneg hrpos.le _)
+        _ = Q / (N : ℝ) := harith
+  -- the per-assignment bound: the product over the fibres is `(Q/N)^{|image σ|}`
+  have hperm : ∀ σ : Fin k → Fin N,
+      r ^ k * ∏ i : Fin N, ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖
+        ≤ (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card := by
+    intro σ
+    have hsum : ∑ i : Fin N, (Finset.univ.filter fun l : Fin k => σ l = i).card = k := by
+      have hfw := Finset.card_eq_sum_card_fiberwise
+        (f := σ) (s := (Finset.univ : Finset (Fin k))) (t := (Finset.univ : Finset (Fin N)))
+        (fun x _ => Finset.mem_univ _)
+      simpa using hfw.symm
+    have hrk : r ^ k
+        = ∏ i : Fin N, r ^ (Finset.univ.filter fun l : Fin k => σ l = i).card := by
+      rw [Finset.prod_pow_eq_pow_sum, hsum]
+    rw [hrk, ← Finset.prod_mul_distrib]
+    refine (Finset.prod_le_prod (fun i _ => mul_nonneg (pow_nonneg hrpos.le _) (norm_nonneg _))
+      (fun i _ => hslot _)).trans (le_of_eq ?_)
+    have hif : ∀ i : Fin N,
+        (if (Finset.univ.filter fun l : Fin k => σ l = i) = ∅ then (1 : ℝ) else Q / (N : ℝ))
+          = (if i ∈ Finset.image σ Finset.univ then Q / (N : ℝ) else 1) := by
+      intro i
+      by_cases hi : i ∈ Finset.image σ Finset.univ
+      · rw [if_pos hi, if_neg]
+        rw [Finset.mem_image] at hi
+        obtain ⟨l, _, hl⟩ := hi
+        exact Finset.nonempty_iff_ne_empty.1
+          ⟨l, Finset.mem_filter.2 ⟨Finset.mem_univ _, hl⟩⟩
+      · rw [if_neg hi, if_pos]
+        rw [Finset.filter_eq_empty_iff]
+        intro l _
+        exact fun hl => hi (Finset.mem_image.2 ⟨l, Finset.mem_univ _, hl⟩)
+    simp_rw [hif]
+    rw [Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const]
+  calc ‖((r : ℝ) : ℂ) ^ k * ∑ σ : Fin k → Fin N, ∏ i : Fin N,
+        slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖
+      = r ^ k * ‖∑ σ : Fin k → Fin N, ∏ i : Fin N,
+          slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ := by
+        rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hrpos]
+    _ ≤ r ^ k * ∑ σ : Fin k → Fin N, ∏ i : Fin N,
+          ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ := by
+        refine mul_le_mul_of_nonneg_left ?_ (pow_nonneg hrpos.le k)
+        exact (norm_sum_le _ _).trans (Finset.sum_le_sum fun σ _ => le_of_eq (norm_prod _ _))
+    _ = ∑ σ : Fin k → Fin N, r ^ k * ∏ i : Fin N,
+          ‖slotCharFun F Z b (Finset.univ.filter fun l => σ l = i) c‖ :=
+        Finset.mul_sum _ _ _
+    _ ≤ ∑ σ : Fin k → Fin N, (Q / (N : ℝ)) ^ (Finset.image σ Finset.univ).card :=
+        Finset.sum_le_sum fun σ _ => hperm σ
+    _ ≤ ((k : ℝ) + 1) * (k : ℝ) ^ k * Q ^ k := sum_div_pow_card_image_le hN hQ
+
+end MultiBound
+
 end StatLean.HypothesisTesting
