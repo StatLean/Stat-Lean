@@ -95,7 +95,7 @@ expansions to improve accuracy, is due to R. Beran ("Bootstrap methods in statis
 -/
 
 open Filter MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology RealInnerProductSpace
 
 namespace StatLean.HypothesisTesting
 
@@ -748,6 +748,42 @@ theorem studentizedRootCDF_eq_vecRootLaw (F : Measure ℝ) [IsProbabilityMeasure
     simp only [Set.mem_preimage, hR, Set.mem_setOf_eq, h0, h1, hrad]
   rw [studentizedRootCDF, ← hm, hset, vecRootLaw,
     Measure.map_apply (measurable_vecRoot (measurable_studentPair F) n) hRm]
+
+/-- The inner product with the studentizing pair, in coordinates. -/
+lemma inner_studentPair (F : Measure ℝ) (t : EuclideanSpace ℝ (Fin 2)) (x : ℝ) :
+    (⟪studentPair F x, t⟫ : ℝ)
+      = t 0 * (x - ∫ s, s ∂F)
+        + t 1 * ((x - ∫ s, s ∂F) ^ 2 - Var[fun s : ℝ => s; F]) := by
+  -- over `ℝ` the scalar inner product `⟪a, b⟫` is *definitionally* `b * a`
+  rw [studentPair, PiLp.inner_apply, Fin.sum_univ_two]
+  rfl
+
+/-- **The studentizing pair is centred in every direction.** This is the `hmean` hypothesis of
+`norm_charFun_smul_pow_sub_edgeworth_le` for the bivariate law of `studentPair F`. -/
+lemma integral_inner_studentPair (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : MemLp (fun s : ℝ => s) 4 F) (t : EuclideanSpace ℝ (Fin 2)) :
+    ∫ w, (⟪w, t⟫ : ℝ) ∂(F.map (studentPair F)) = 0 := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun s : ℝ => s; F] with hv
+  have hi1 : Integrable (fun y : ℝ => y) (centredLaw F) := integrable_id_centredLaw F hF4
+  have hi2 : Integrable (fun y : ℝ => y ^ 2) (centredLaw F) := integrable_sq_centredLaw F hF4
+  have hg : ∫ y, (t 0 * y + t 1 * (y ^ 2 - v)) ∂(centredLaw F)
+      = ∫ x, (t 0 * (x - m) + t 1 * ((x - m) ^ 2 - v)) ∂F :=
+    integral_centredLaw F (g := fun y : ℝ => t 0 * y + t 1 * (y ^ 2 - v)) (by fun_prop)
+  have h1 : Integrable (fun y : ℝ => t 0 * y) (centredLaw F) := hi1.const_mul _
+  have hsub : Integrable (fun y : ℝ => y ^ 2 - v) (centredLaw F) := hi2.sub (integrable_const v)
+  have h2 : Integrable (fun y : ℝ => t 1 * (y ^ 2 - v)) (centredLaw F) := hsub.const_mul _
+  have hs1 : ∫ y : ℝ, y ∂(centredLaw F) = 0 :=
+    integral_id_centredLaw F (hF4.integrable (by norm_num))
+  have hs2 : ∫ y : ℝ, (y ^ 2 - v) ∂(centredLaw F) = 0 := by
+    rw [integral_sub hi2 (integrable_const v), integral_sq_centredLaw, integral_const]
+    simp [hv]
+  have hval : ∫ y, (t 0 * y + t 1 * (y ^ 2 - v)) ∂(centredLaw F) = 0 := by
+    rw [integral_add h1 h2, integral_const_mul, integral_const_mul, hs1, hs2]
+    ring
+  rw [integral_map (measurable_studentPair F).aemeasurable (by fun_prop)]
+  simp_rw [inner_studentPair F t, ← hm, ← hv]
+  rw [← hg, hval]
 
 end StudentizedReduction
 
@@ -2215,7 +2251,10 @@ single missing estimate" is superseded.
   `Z(x) = (x − μ, (x − μ)² − σ²)`. There is no approximation in this step: it is the algebraic
   identity `n⁻¹∑(yᵢ − ȳ)² = n⁻¹∑(yᵢ − m)² − (ȳ − m)²` (`sampleVariance_eq_sub`) together with
   `sqrt_mul_sub_mean_eq`. So the delta-method function `(u, v) ↦ u/√(v − u²)` is not an
-  approximation either; it is the exact statistic.
+  approximation either; it is the exact statistic. `inner_studentPair` and
+  `integral_inner_studentPair` supply the first of the hypotheses (S1) consumes for this pair:
+  the directional expansion `⟪Z(x), t⟫ = t₀(x − μ) + t₁((x − μ)² − σ²)` and the fact that it is
+  centred, `∫⟪w, t⟫ dρ = 0`, in **every** direction `t`.
 
 **Re-derivation: what is left is three estimates, all of them about turning (S1) into a
 statement about the curved region of (S2).** The following also re-confirms two facts that do
