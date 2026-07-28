@@ -1550,6 +1550,109 @@ theorem abs_measure_le_sub_le_of_peel {Ω : Type*} [MeasurableSpace Ω] (P : Mea
   rw [abs_sub_le_iff]
   constructor <;> linarith
 
+/-! ### The product form of the peeled bound, and why nothing weaker will do
+
+`abs_measure_le_sub_le_of_peel` produces **joint** strata
+`{2ᵏδ < |S − T|} ∩ {|T − x| ≤ 2^{k+1}δ}`, and the whole question is what one is allowed to put
+in their place. Three candidates, with `δ = n⁻¹`, `2^K ≍ n`, window bound `A w + η` with
+`η ≍ n⁻¹` (free by `measure_Ioc_le_of_abs_cdf_sub_le`) and tail bound
+`P(2ᵏδ < |S − T|) ≲ 2^{-2k/3}n^{-1/3}` (Chebyshev on the two moments of `v`):
+
+* **the smaller of the two factors**, `P(A ∩ B) ≤ min(P A, P B)`. The two are equal at
+  `2ᵏ ≍ n^{2/5}`, and summing gives `≍ n^{-3/5}`, a factor `n^{2/5}` short;
+* **Cauchy–Schwarz**, `P(A ∩ B) ≤ √(P A · P B)`. The `k`-th term is `2^{k/6}n^{-2/3}` and the
+  sum is `≍ n^{-1/2}`, a factor `n^{1/2}` short — *worse* than the previous one;
+* **the product**, `P(A ∩ B) ≤ P(A) · (A·2^{k+1}δ + η)`. The `k`-th term is
+  `n^{-4/3}(2A·2^{k/3} + η n·2^{-2k/3})` and the geometric sum `∑_{k<K}2^{k/3} ≍ n^{1/3}`
+  brings it to `O(n⁻¹)`, which is what is wanted.
+
+So the product is not one convenience among several: it is the only one of the three that
+closes, and it is exactly the assertion that the window estimate survives **conditionally on
+the tail event**. That is the residue, and the two lemmas below isolate it as a single named
+hypothesis (`hcond`) and then verify that, granted it, the arithmetic really does close.
+
+A remark on routes that avoid the conditioning, since they are the natural things to try and
+none of them works under a *fourth* moment. Markov at exponent `p` inside the window,
+`P(A ∩ B) ≤ (2ᵏδ)^{-p}E[1_B|S − T|^p]`, forces `p = 2/3` (this is the largest `p` for which
+`|v|^{3p}` is covered by the two moments of `v`), and leaves `E[1_B|u|^{2/3}v²]`. Separating
+`1_B` from `v²` there needs either `E v⁴` — eight moments of `X` — through Cauchy–Schwarz, or a
+uniform-integrability truncation of `v²`, which produces an additive `ε(λ)` that does not
+decrease with `n` and therefore cannot be absorbed into a `C/n` conclusion. The `|u|` factor
+cannot be discarded either: `E[|u|^{2/3}v²] ≤ (E|u|²)^{1/3}(E[|v|³1_B])^{2/3}` needs a *third*
+moment of `v`, i.e. six moments of `X`. -/
+
+/-- **The peeled assembly in product form.** Granted the conditional window estimate `hcond` on
+each stratum — the honest residue of (M2) — the peeled bound becomes an explicit expression in
+the window constants `(A, η)` and the dyadic tail sequence `τ`.
+
+`hwin` is the *marginal* window bound, which costs nothing
+(`measure_Ioc_le_of_abs_cdf_sub_le` with `η = 2ε`), and `htail` is Chebyshev on the second
+coordinate of the bivariate root. Only `hcond` is missing, and it is missing for a reason: see
+the section note for the three candidate substitutes and why each fails. -/
+theorem abs_measure_le_sub_le_of_peel_window {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ A η : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ)
+    (τ : ℕ → ℝ)
+    -- the *marginal* window bound: free from an approximation of `T`'s distribution function
+    (hwin : ∀ w : ℝ, 0 ≤ w → (P {ω | |T ω - x| ≤ w}).toReal ≤ A * w + η)
+    -- the tail of the discrepancy at the dyadic scales
+    (htail : ∀ k : ℕ, (P {ω | 2 ^ k * δ < |S ω - T ω|}).toReal ≤ τ k)
+    -- **the residue**: the window estimate, conditionally on the tail event
+    (hcond : ∀ k : ℕ,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+        ≤ (P {ω | 2 ^ k * δ < |S ω - T ω|}).toReal * (A * (2 ^ (k + 1) * δ) + η))
+    (hτ : ∀ k, 0 ≤ τ k) (hA : 0 ≤ A) (hη : 0 ≤ η) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (A * δ + η)
+        + (∑ k ∈ Finset.range K, τ k * (A * (2 ^ (k + 1) * δ) + η))
+        + τ K := by
+  have hpeel := abs_measure_le_sub_le_of_peel P (S := S) (T := T) hδ K x
+  have hbase : (P {ω | |T ω - x| ≤ δ}).toReal ≤ A * δ + η := hwin δ hδ.le
+  have hstrat : ∀ k ∈ Finset.range K,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+        ≤ τ k * (A * (2 ^ (k + 1) * δ) + η) := by
+    intro k _
+    refine (hcond k).trans (mul_le_mul_of_nonneg_right (htail k) ?_)
+    have h2 : (0 : ℝ) ≤ 2 ^ (k + 1) * δ := by positivity
+    positivity
+  have hsum : (∑ k ∈ Finset.range K,
+      (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal)
+      ≤ ∑ k ∈ Finset.range K, τ k * (A * (2 ^ (k + 1) * δ) + η) :=
+    Finset.sum_le_sum hstrat
+  have hlast : (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal ≤ τ K := htail K
+  linarith
+
+/-- **The dyadic strata sum geometrically.** With a tail sequence decaying like `q^k`, the
+product-form strata of `abs_measure_le_sub_le_of_peel_window` sum to
+`2ABδ ∑_{k<K}(2q)^k + ηB ∑_{k<K} q^k`.
+
+At the exponents the studentized route produces — `q = 2^{-2/3}` (Chebyshev on the two moments
+of `v`), `B = B₀n^{-1/3}`, `δ = n⁻¹`, `η = Cn⁻¹`, `2^K ≍ n` — the first sum is
+`∑_{k<K}2^{k/3} = (n^{1/3} − 1)/(2^{1/3} − 1)`, so the first term is
+`2AB₀ n^{-1/3}·n^{-1}·O(n^{1/3}) = O(n⁻¹)` and the second is `O(n^{-4/3})`; together with the
+base term `Aδ + η = O(n⁻¹)` and the final tail `τ_K = B₀n^{-1/3}·2^{-2K/3} = O(n⁻¹)`, the
+whole peeled bound is `O(n⁻¹)`. **This confirms the wave-15 arithmetic**: the single-scale split
+cannot reach `O(n⁻¹)` (its tail term is `n^{-1/3}`), and the peeled one can — granted, and only
+granted, the conditional window estimate. -/
+lemma sum_dyadic_strata_le {A η δ B q : ℝ} (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hη : 0 ≤ η)
+    (hB : 0 ≤ B) (hq : 0 ≤ q) (K : ℕ) {τ : ℕ → ℝ} (hτ : ∀ k, τ k ≤ B * q ^ k) :
+    (∑ k ∈ Finset.range K, τ k * (A * (2 ^ (k + 1) * δ) + η))
+      ≤ 2 * A * B * δ * (∑ k ∈ Finset.range K, (2 * q) ^ k)
+        + η * B * ∑ k ∈ Finset.range K, q ^ k := by
+  have hterm : ∀ k ∈ Finset.range K, τ k * (A * (2 ^ (k + 1) * δ) + η)
+      ≤ 2 * A * B * δ * (2 * q) ^ k + η * B * q ^ k := by
+    intro k _
+    have hpos : (0 : ℝ) ≤ A * (2 ^ (k + 1) * δ) + η := by positivity
+    have h1 : τ k * (A * (2 ^ (k + 1) * δ) + η)
+        ≤ B * q ^ k * (A * (2 ^ (k + 1) * δ) + η) :=
+      mul_le_mul_of_nonneg_right (hτ k) hpos
+    have hexp : ((2 : ℝ) * q) ^ k = 2 ^ k * q ^ k := mul_pow 2 q k
+    have h2 : B * q ^ k * (A * (2 ^ (k + 1) * δ) + η)
+        = 2 * A * B * δ * (2 ^ k * q ^ k) + η * B * q ^ k := by ring
+    rw [hexp]
+    linarith
+  refine (Finset.sum_le_sum hterm).trans_eq ?_
+  rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum]
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
@@ -3413,7 +3516,88 @@ bookkeeping, the deterministic core of (M2) in its corrected third-order form, b
 single-scale and the dyadically peeled assemblies, the marginal anti-concentration of both the
 centred root and any variable with an approximated distribution function, the direction-uniformity
 and root transfer of (M3), and uniform Riemann–Lebesgue on totally bounded and on compactly
-parametrised `L¹` families. -/
+parametrised `L¹` families.
+
+**Status after the wave-17 re-derivation.** Of the three residues wave 15 left, **two are now
+closed and axiom-clean**. Nothing recorded by wave 15 has been found false — for the first time
+in four waves — and the arithmetic of its (W2) repair has been checked rather than taken on
+trust. The third residue survives, with a sharper account of why it cannot be dodged.
+
+* (X1) **The `|t₁| → ∞` regime — CLOSED, without van der Corput.**
+  `ForMathlib/UniformRiemannLebesgue.lean` now proves `exists_bound_norm_quadPhaseInt_large`:
+  for every `f ∈ L¹` and every `ε > 0` there is an `M` with `|∫ f(y)e^{i(t₀y + t₁y²)}dy| ≤ ε`
+  for **all** `t₀` whenever `|t₁| ≥ M`. The route is the autocorrelation identity
+  `sq_ofReal_norm_quadPhaseInt`:
+  `|I|² = ∫ e^{i(t₀h + t₁h²)} ℱg_h(2t₁h) dh` with `g_h(z) = f(z + h)\overline{f(z)}`.
+  Three points worth recording, since wave 15 called this "the single genuinely analytic item
+  left in the whole route":
+  – *No two-dimensional change of variables is needed.* The substitution `y = z + h` is applied
+  to the **inner** integral only, where it is translation invariance of Lebesgue measure; a
+  single Fubini swap then produces the identity. Fubini is licensed by
+  `∫∫|f(z + h)f(z)| dz dh = ‖f‖₁²`, which is also the dominating function of the
+  dominated-convergence step.
+  – *No regularity of `f` is used.* Van der Corput's second-derivative test would need bounded
+  variation or `C¹`, plus an `L¹` approximation on top; the autocorrelation route needs `f ∈ L¹`
+  and nothing else, because it converts the quadratic oscillation into a *linear* one at the
+  frequency `2t₁h` and lets the ordinary Riemann–Lebesgue lemma act there.
+  – *The uniformity in `t₀` is automatic, not proved.* On the right-hand side `t₀` occurs only
+  inside the unimodular factor `e^{i(t₀h + t₁h²)}`, so it disappears the moment one takes
+  moduli. That is the structural reason the identity is the right tool: it is precisely the
+  step that decouples the two coefficients.
+  `exists_bound_norm_quadPhaseInt_of_integrable` combines the two regimes, so the cocompact
+  bound `vecCramerCondition_of_uniform_sphere` consumes is now free of hypotheses beyond
+  `f ∈ L¹`. **(M3)(i) is complete.**
+* (X2) **The multilinear extension (W4) — CLOSED.** `ForMathlib/BivariateEdgeworth.lean` now
+  defines `multiCharFun μ b t = ∫ (∏_{l<k}⟪w, b l⟫)e^{i⟪w,t⟫} ∂μ` and proves the exact
+  factorisation `multiCharFun_vecRootLaw`:
+  `multi_{ρ_n}(b,a) = n^{-k/2} ∑_{σ : Fin k → Fin n} ∏_{i<n} slot_{σ⁻¹(i)}(n^{-1/2}•a)`.
+  Wave 15's diagnosis was right in every particular: the identity rests only on the weight
+  `⟪root, b_l⟫` being a *sum over the coordinates*; a product of `k` such sums expands
+  (`Finset.prod_univ_sum`) into a sum over the `nᵏ` assignments of slots to coordinates, and
+  `Finset.prod_fiberwise` regroups each assignment into a coordinatewise product that
+  `integral_fintype_prod_eq_prod` evaluates. The diagonal/off-diagonal bookkeeping is now
+  explicit in the identity rather than hidden in its proof: injective `σ` contribute `k`
+  distinct one-slot factors, colliding `σ` concentrate slots on fewer coordinates and lose the
+  corresponding powers of `n^{-1/2}`. `mixCharFun_vecRootLaw` is the case `k = 1`, where the `n`
+  assignments coincide and `n · n^{-1/2} = √n`; the surrogate `Hₙ` needs `k ≤ 4`.
+* (X3) **The conditional anti-concentration — OPEN, and confirmed irreducible.** Two lemmas are
+  added here. `abs_measure_le_sub_le_of_peel_window` isolates the residue as a **single named
+  hypothesis**: granted
+  `P(2ᵏδ < |S − T|, |T − x| ≤ 2^{k+1}δ) ≤ P(2ᵏδ < |S − T|)·(A·2^{k+1}δ + η)`, the peeled bound
+  becomes the explicit `(Aδ + η) + ∑_{k<K}τ_k(A·2^{k+1}δ + η) + τ_K`. `sum_dyadic_strata_le`
+  verifies that this is `O(δ)`: with a geometric tail `τ_k ≤ Bq^k` the sum is
+  `2ABδ∑(2q)^k + ηB∑q^k`, and at the exponents the studentized route produces
+  (`q = 2^{-2/3}`, `B = B₀n^{-1/3}`, `δ = η/C = n⁻¹`, `2^K ≍ n`) the geometric sum
+  `∑_{k<K}2^{k/3} ≍ n^{1/3}` brings the first term to `O(n⁻¹)` and the second to `O(n^{-4/3})`;
+  the base term `Aδ + η` and the final tail `τ_K = B₀n^{-1/3}2^{-2K/3}` are `O(n⁻¹)` as well.
+  **The wave-15 claim that the peeled arithmetic closes at `O(n⁻¹)` is correct.**
+  What is new is that the conditioning cannot be traded away. The three candidate substitutes
+  for the product are all short, and by growing margins: `min(P A, P B)` sums to `n^{-3/5}`
+  (the factors cross at `2ᵏ ≍ n^{2/5}`), Cauchy–Schwarz `√(P A · P B)` sums to `n^{-1/2}` —
+  *worse* than the crude minimum — and only the product reaches `n⁻¹`. Nor do the
+  Markov-inside-the-window dodges work under a **fourth** moment:
+  `P(A ∩ B) ≤ (2ᵏδ)^{-p}E[1_B|S − T|^p]` forces `p = 2/3` (the largest exponent for which
+  `|v|^{3p}` is covered by the two moments of `v`) and leaves `E[1_B|u|^{2/3}v²]`, where
+  separating `1_B` from `v²` costs either `E v⁴` — *eight* moments of `X` — via Cauchy–Schwarz,
+  or a uniform-integrability truncation whose additive error does not decrease with `n` and so
+  cannot be absorbed into a `C/n` conclusion; and the `|u|` factor cannot be dropped either,
+  since `E[|u|^{2/3}v²] ≤ (E|u|²)^{1/3}(E[|v|³1_B])^{2/3}` needs a third moment of `v`, i.e. six
+  moments of `X`.
+  The honest route to (X3) is the classical one and it is genuinely probabilistic: on
+  `{|v| ≳ λ}` with `λ ≫ 1` a *single* summand dominates — this is exactly what the heavy-tailed
+  witness of (W2) exhibits — and conditionally on that summand the remaining `n − 1`
+  coordinates form a root law of the same kind, to which the *marginal* estimate of (W1)
+  applies. Formalising it needs the one-large-summand decomposition, a union bound over the `n`
+  choices of dominant index, and the independence of the retained block; none of the three is
+  present in the repository.
+
+Net after wave 17 the analytic residue is **one** item, (X3). What separates
+`edgeworth_studentized_uniform` from its proof, besides (X3), is the *wiring* of (X1) and (X2)
+into the studentized chain — `exists_bound_norm_quadPhaseInt_of_integrable` has to be fed to
+`vecCramerCondition_of_uniform_sphere` for the law of `studentPair F`, and the surrogate's
+characteristic function has to be assembled from the `k ≤ 4` instances of
+`multiCharFun_vecRootLaw` — but neither of those is an obstruction: each is a composition of
+statements that are proved. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -3442,30 +3626,37 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-15 re-derivation, is **three** items,
-each of them a single named statement:
+`edgeworth_studentized_uniform` — which, after the wave-17 re-derivation, is **one** analytic
+item:
 
 * the **conditional** anti-concentration of the delta-method surrogate given a large second
   coordinate, which is what the joint strata of `abs_measure_le_sub_le_of_peel` consume. The
-  *marginal* anti-concentration is free (`measure_Ioc_le_of_abs_cdf_sub_le`), and the
-  single-scale route wave 14 recorded is provably dead: `P(|T̃ₙ − Hₙ| > n⁻¹)` is of order
-  `n^{-1/3}` under a finite fourth moment, with an explicit witness;
-* the `|t₁| → ∞` regime of `∫ f(y)e^{i(t₀y + t₁y²)}dy`, uniformly in `t₀`. The `|t₁|` bounded
-  regime, and the whole `L¹`-compactness apparatus behind "uniform Riemann–Lebesgue over the
-  sphere", are proved in `ForMathlib/UniformRiemannLebesgue.lean`;
-* a multilinear extension of `mixCharFun`: the surrogate is a degree-four polynomial in the two
-  coordinates, so its characteristic function needs `∫ w₀w₁e^{i⟪w,t⟫}` and its cubic and quartic
-  analogues, while `mixCharFun` carries a linear weight only.
+  *marginal* anti-concentration is free (`measure_Ioc_le_of_abs_cdf_sub_le`); the single-scale
+  route wave 14 recorded is provably dead (`P(|T̃ₙ − Hₙ| > n⁻¹) ≍ n^{-1/3}` under a finite
+  fourth moment, with an explicit witness); and the conditioning is not tradeable — see (X3) on
+  `edgeworth_studentized_uniform` for why `min(P A, P B)` (`n^{-3/5}`), Cauchy–Schwarz
+  (`n^{-1/2}`, *worse*) and every Markov-inside-the-window dodge (which needs six or eight
+  moments of `X`, not four) all fall short. `abs_measure_le_sub_le_of_peel_window` isolates the
+  estimate as a single named hypothesis and `sum_dyadic_strata_le` verifies that granting it
+  does close the peeled arithmetic at `O(n⁻¹)`.
+
+The other two items wave 15 recorded are now closed and axiom-clean: the `|t₁| → ∞` regime of
+`∫ f(y)e^{i(t₀y + t₁y²)}dy` uniformly in `t₀`, by the autocorrelation identity
+(`exists_bound_norm_quadPhaseInt_large`; with the bounded regime,
+`exists_bound_norm_quadPhaseInt_of_integrable` gives the cocompact Cramér bound for every
+`f ∈ L¹`), and the multilinear extension of `mixCharFun` (`multiCharFun`,
+`multiCharFun_vecRootLaw`), which supplies the bilinear, trilinear and quartic weights that the
+degree-four surrogate's characteristic function consumes.
 
 Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
 the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
 for linear weights *together with* the one-factor `φ^{n−1}` bookkeeping
 (`norm_mixCharFun_vecRootLaw_sub_charFun_le`), the deterministic core of (M2) in its corrected
 third-order form together with both the single-scale and the dyadically peeled assemblies, the
-marginal anti-concentration statements, the direction-uniformity of (M3), the transfer of the
-Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes the need for
-Hall's conditioning device altogether), and uniform Riemann–Lebesgue on totally bounded and on
-compactly parametrised `L¹` families. -/
+marginal anti-concentration statements, the whole of (M3) — the direction-uniformity, the
+transfer of the Cramér tail to the vector root (`norm_charFun_vecRootLaw_le_pow`, which removes
+the need for Hall's conditioning device altogether) and both quadratic-phase regimes — and
+uniform Riemann–Lebesgue on totally bounded and on compactly parametrised `L¹` families. -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
