@@ -206,17 +206,48 @@ file. Three shapes, all proved:
 * `Δ ≤ A δ ε⁻¹ √(C ε + 2Δ) + C ε` — the shape the `L²` weighting of (1) actually delivers —
   ⟹ `Δ³ ≤ 216 (C A δ)²`, i.e. `O(n^{-1/3})`.
 
-**What is still missing**, and why the headline is not amended: the *production* of the
-hypothesis `hrec`. It requires rerunning `abs_integral_smooth_sub_gaussian_improved` with each
-step estimated by the localised weighted bound instead of the uniform one, and controlling the
-shell probability *of the hybrid law* by the inductive hypothesis. Two structural obstacles are
-recorded in the `SelfImproving` docstring: the `ε`-shell of a convex set is a *difference* of
-two convex sets, so the induction has to run on that class (this is the source of the `2Δ`); and
-the induction is over the whole hybrid family, not over `μₙ` alone. Neither is arithmetic, and
-neither was attempted. The honest summary is therefore unchanged at the level of headlines —
-`berryEsseen_convex_improved` at `(β/√n)^{1/2}` remains the best *proved* convex bound — but the
-gap to Bentkus is now localised in a single, precisely stated probabilistic step rather than in
-"an independent project".
+## Wave-20 amendment: the recursion is produced; the residue is two named bricks
+
+Wave 19 left the *production* of `hrec` open, with two structural obstacles. Both are now
+resolved, and the recursion is assembled: `berryEsseen_convex_sharp` states the sharp rate
+
+`|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
+
+**linear in `δ = β/√n`**, proved from `exists_convexDiscrepancy_recursion` fed to
+`le_of_selfImproving_induction`. It is not axiom-clean: it inherits exactly two named,
+precisely stated bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound`. Everything
+between the bricks and the headline is proved.
+
+*Obstacle 1 (the class) is overturned rather than solved.* The `ε`-shell of a convex set is
+`Bᵋ \ interior B`, a difference of two convex sets — but the induction does **not** have to be
+enlarged to that class. `measureReal_diff_le_of_convexDiscrepancy` observes that
+`μ(B₁ \ B₂) = μ(B₁) − μ(B₂)` for `B₂ ⊆ B₁`, so two applications of the *convex* bound suffice;
+the difference structure survives only as the factor `2` in `C ε + 2Δ`. The class the induction
+runs on is `convexDiscrepancy`, the supremum over measurable convex sets, and it is closed under
+everything the argument does to it — including affine maps
+(`measureReal_shell_preimage_aff_le`).
+
+*Obstacle 2 (the family) is solved by the range `n/2 ≤ m ≤ n`.* `hybridLaw n j ν` makes the
+telescope's hybrid `n^{-1/2} ∑_{i ≥ j} Yᵢ + (j/n)^{1/2} Z` an explicit measure. For `2j ≥ n` its
+own Gaussian component has width `≥ 1/√2` and bounds the shell mass outright, with no induction
+(`gaussian_measureReal_shell_preimage_aff_le`, proved). For `2j ≤ n` the non-Gaussian part is a
+normalised sum of `m = n − j ≥ n/2` summands, so only the discrepancies at sizes
+`n/2 ≤ m ≤ n` are needed — including `m = n` itself, since the `j = 0` hybrid *is* `μₙ`. That is
+exactly the neighbour range of `le_of_selfImproving_induction`, which closes at `K = 18 A C`
+with no base case.
+
+**The two remaining bricks.** `hybridLaw_shell_le` — the shell mass of every hybrid is
+`≤ 2 C_k ε + 2Y`; its geometry is proved (affine transport of `Metric.thickening` and
+`interior`), its debt is the Fubini factorisation of `hybridLaw` as `ρ ∗ γ_σ` plus the Gaussian
+scaling identity. `exists_localised_swap_bound` — `abs_integral_smooth_sub_gaussian_improved`
+rerun with the wave-19 weighted Cameron–Martin remainder in place of the uniform one, so that
+each step is weighted by the hybrid's shell mass. The best *proved* convex bound remains
+`berryEsseen_convex_improved` at `(β/√n)^{1/2}`.
+
+**Constant deviation** (provable-constants rule): this route gives `C ∼ k^{3/2}`, through
+`gaussianShellConst k = 8 k^{3/2}/√(2π)`, not Bentkus's `400 k^{1/4}`. The `k`-power is an
+artefact of the crude coordinate-slice proof of `gaussian_thickening_le`; nothing in the
+recursion depends on it.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
@@ -5586,6 +5617,36 @@ theorem measureReal_shell_preimage_aff_le (hk : 0 < k)
     rw [Set.preimage_diff, preimage_aff_thickening hr a B hε, preimage_aff_interior hr a B]
   rw [hset]
   exact measureReal_shell_le_of_convexDiscrepancy hk μ hB'm hB'c (by positivity)
+
+/-- A measure has no discrepancy with itself. -/
+lemma convexDiscrepancy_self (μ : Measure (EuclideanSpace ℝ (Fin k)))
+    [IsProbabilityMeasure μ] : convexDiscrepancy μ μ = 0 := by
+  refine le_antisymm (csSup_le (convexDiscrepancySet_nonempty μ μ) ?_) convexDiscrepancy_nonneg
+  rintro d ⟨B, -, -, rfl⟩
+  simp
+
+/-- **The Gaussian regime of brick H, proved.** For the *Gaussian* law itself the affine shell
+bound carries no `Δ` term at all:
+
+`γ((r · + a)⁻¹(Bᵋ \ interior B)) ≤ C_k ε/r`.
+
+This is exactly the estimate that controls the hybrid laws with `2j ≥ n`, where the hybrid's own
+`N(0, (j/n) I_k)` component has width `σ = √j/√n ≥ 1/√2` and hence supplies the whole
+anti-concentration bound `√2 C_k ε` **without any induction**. Only the sum-dominant regime
+`2j ≤ n` consumes the inductive hypothesis. -/
+theorem gaussian_measureReal_shell_preimage_aff_le (hk : 0 < k)
+    {r : ℝ} (hr : 0 < r) (a : EuclideanSpace ℝ (Fin k))
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) :
+    ((multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ((fun x => r • x + a) ⁻¹' (Metric.thickening ε B \ interior B))).toReal
+      ≤ gaussianShellConst k * (ε / r) := by
+  haveI : IsProbabilityMeasure (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) :=
+    inferInstance
+  have h := measureReal_shell_preimage_aff_le hk
+    (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) hr a hBm hBc hε
+  rw [convexDiscrepancy_self] at h
+  linarith
 
 /-! ### Wave-20: the hybrid family, and the recursion it produces -/
 

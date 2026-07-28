@@ -242,14 +242,34 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   --   sharp `β/√n` rate; and the Cauchy–Schwarz variant that the `L²` weighting actually
   --   supplies, `Δ ≤ A δ ε⁻¹ √(C_k ε + 2Δ) + C_k ε`, closes at `Δ ≲ (C_k β/√n)^{2/3}`,
   --   i.e. `O(n^{-1/3})`.
-  -- What is still missing is only the PRODUCTION of that recursion: a rerun of the hybrid
-  -- telescope with each step estimated by the localised weighted bound, and the shell
-  -- probability of the HYBRID law controlled by the inductive hypothesis.  Two structural
-  -- obstacles are recorded in the `SelfImproving` docstring (the `ε`-shell of a convex set is
-  -- a difference of two convex sets, so the induction runs on that class — this is where the
-  -- `2Δ` comes from; and the induction is over the whole hybrid family, not over `μₙ`).
-  -- Neither is arithmetic.  The declaration therefore keeps its sharp Bentkus form and stays
-  -- the pre-agreed, consumer-free debt of this file.
+  -- WAVE-20: THE RECURSION IS NOW PRODUCED, and both structural obstacles are resolved.  The
+  -- sharp headline `ForMathlib.MultivariateBerryEsseen.berryEsseen_convex_sharp` states
+  --   `|μₙ(B) − γ(B)| ≤ 72 A C_k · β/√n` for measurable convex `B`,
+  -- LINEAR in `β/√n`, proved from `exists_convexDiscrepancy_recursion` fed to
+  -- `le_of_selfImproving_induction`.  It is NOT axiom-clean: it inherits exactly two named
+  -- bricks, `hybridLaw_shell_le` and `exists_localised_swap_bound` (both `sorry`).
+  -- • Obstacle 1 (the class) is OVERTURNED, not solved.  The `ε`-shell is a difference of two
+  --   convex sets, but the induction need not be enlarged to that class:
+  --   `μ(B₁ \ B₂) = μ(B₁) − μ(B₂)` for `B₂ ⊆ B₁`, so two applications of the convex bound
+  --   suffice (`measureReal_diff_le_of_convexDiscrepancy`); the difference structure survives
+  --   only as the factor `2` in `C ε + 2Δ`.  The class is `convexDiscrepancy`, and it is
+  --   affine-invariant (`measureReal_shell_preimage_aff_le`, proved).
+  -- • Obstacle 2 (the family) is solved by the neighbour range `n/2 ≤ m ≤ n`.  `hybridLaw`
+  --   makes the hybrid an explicit measure; for `2j ≥ n` its own Gaussian component (width
+  --   `≥ 1/√2`) bounds the shell mass with NO induction
+  --   (`gaussian_measureReal_shell_preimage_aff_le`, proved), and for `2j ≤ n` the sum part
+  --   has `m = n − j ≥ n/2` summands.  `m = n` must be included (the `j = 0` hybrid IS `μₙ`),
+  --   which `le_of_selfImproving_induction` handles with `Y = max (2Kδ) (D n)`, closing at
+  --   `K = 18 A C` with no base case.
+  -- What is left is the two bricks: the Fubini factorisation of `hybridLaw` as `ρ ∗ γ_σ` plus
+  -- Gaussian scaling (for H), and the rerun of `abs_integral_smooth_sub_gaussian_improved`
+  -- with the wave-19 weighted Cameron–Martin remainder (for L).
+  -- CONSTANT: that route gives `C ∼ k^{3/2}` (through `gaussianShellConst k = 8k^{3/2}/√(2π)`),
+  -- not `400 k^{1/4}`; the `k`-power is an artefact of the crude coordinate-slice proof of
+  -- `gaussian_thickening_le`, not of the recursion.  This declaration keeps its sharp Bentkus
+  -- form with `400 k^{1/4}` and stays the pre-agreed, consumer-free debt of this file: wiring
+  -- it to `berryEsseen_convex_sharp` would neither discharge it (the constant differs) nor
+  -- reduce the project's `sorry` count (that theorem is itself brick-backed).
   sorry
 
 /-- **Berry–Esseen bound over Euclidean balls, with a dimension-free constant (honest rate).**
