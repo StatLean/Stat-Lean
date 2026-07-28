@@ -8390,6 +8390,34 @@ the non-stationary-phase estimate, five integrations by parts against
 the fourth moment of the truncated root. Every other ingredient of this theorem is proved: the
 file's only other `sorry`s are this statement and its corollary.
 
+**Status after wave 33. Input (C) is proved; the certificate's residue is two deterministic
+estimates; this theorem and its corollary are untouched and still `sorry`.**
+
+* **(C) IS CLOSED, AXIOM-CLEAN.** The missing tool was the fourth moment of an iid sum on
+  `Measure.pi`, and it is now built: `integral_pi_succ_of_bounded` (head/tail split via
+  `measurePreserving_piFinSuccAbove` and Fubini), `integral_pi_sum_moments` (the induction:
+  `E S = 0`, `E S² = nEV²`, `E S⁴ ≤ nEV⁴ + 3n²(EV²)²`) and `integral_pi_sum_pow_four_le` (the
+  same without centring). No crude bound reaches `O(n)` here — `E‖w‖⁴ ≤ (sup‖w‖²)E‖w‖²` returns
+  `n³` and Cauchy–Schwarz `n⁵` — because the truth is carried by a single large summand, an
+  event of probability `≍ n^{-1}` on which `w₁ ≍ √n`.
+
+* **ONE CORRECTION TO THE WAVE-31 NOTE, and it is the only thing the ledger did not price.**
+  The section note above says of (C) that "independence and centring kill every block with a
+  singleton". **The truncated summand is not centred**, and the singleton blocks do not vanish:
+  `integral_pi_sum_pow_four_le` carries a mean term `8n⁴(E U)⁴`, and with the crude
+  `|E U| = O(1)` that term is `O(n⁴)` — four powers too many, and fatal. What closes it is that
+  both biases are *fourth-moment tails*: `|E T| ≤ E|X−m|1_{|X−m|>τ} ≤ μ₄/τ³` and
+  `|E T² − σ²| ≤ μ₄/τ²` (`abs_sub_truncAt_le`, `abs_sq_sub_sq_truncAt_le`), each `≤ μ₄/n` at
+  `τ = √n`. The `n`-exponent of (C) is unchanged and nothing downstream moves — the wave-30/31
+  numerology stands — but the argument the note gives for it is incomplete as written.
+
+* **(A) AND (B) WERE NOT ATTEMPTED IN THIS WAVE, and that is a budget statement, not a verdict.**
+  Both are estimates on `𝓕 g` for `g = χ(w/M)e^{iθ(Hₙ − w₀/σ)}`, and both need what this
+  development does not have: explicit control of the iterated derivatives of `g` on `‖w‖ ≤ 2M`,
+  polynomial in `M = n^{5/8}` and `|θ|`. (A) additionally needs `Integrable (𝓕 g)`, i.e. `g`
+  exhibited as a Schwartz function; (B) needs the five-fold integration by parts against the
+  proved slope bound `deltaSurrogate_slope_ge`. No obstruction to either is known.
+
 **What is honestly *not* done, and it is bookkeeping rather than analysis.** This theorem itself
 is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_sub_truncAt_le`
 (change of law at `τ = √n`), `studentizedRootCDF_eq_vecRootLaw` with
@@ -8398,8 +8426,8 @@ is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_
 range), `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certificate (the outer
 range), the Esseen chain `esseen_split` / `abs_measure_Iic_sub_densityCDF_le_charFun` at
 `δ = n⁻¹`, `ρ = c√n`, and the peeled window `abs_measure_le_sub_le_of_peel_strata` with
-`sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was not attempted in this
-wave and is not claimed. -/
+`sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was **not attempted in
+wave 31 and not attempted in wave 33**, and is not claimed. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -8583,6 +8611,15 @@ The wave-30 exponent budget is verified rather than asserted (`leakage_ledger_ex
 `leakage_ledger_five_le`, `tail_ledger_exponent`), with `leakage_ledger_four_gt` showing `N = 5`
 is the minimum and not a margin; the only correction is a misplaced `σ` in the note's per-part
 cost. See the wave-31 note on `edgeworth_studentized_uniform`.
+
+**After wave 33 input (C) over there is proved, and this corollary still adds nothing.** The
+fourth moment of the truncated root — the only probabilistic one of the certificate's three
+inputs — is closed axiom-clean, on a fourth-moment expansion of an iid sum built for it
+(`integral_pi_succ_of_bounded`, `integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`); what
+wave 31's note did not price is that truncation destroys the centring, so the expansion carries
+a mean term `8n⁴(E U)⁴` which only the fourth-moment tail bounds `|E T| ≤ μ₄/τ³`,
+`|E T² − σ²| ≤ μ₄/τ²` bring back to `O(1)`. The residue over there is (A) and (B), two
+deterministic estimates on `𝓕 g`. See the wave-33 note on `edgeworth_studentized_uniform`.
 
 **The inversion step this corollary needs is unchanged and unattempted.** Granted
 `edgeworth_studentized_uniform`, it is the implicit-function inversion of
