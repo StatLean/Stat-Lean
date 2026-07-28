@@ -113,6 +113,35 @@ theorem bpe_tight
           {ω | K ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ≤ ε := by
   sorry
 
+/-- **Pointwise argmin consistency** (the single-`ω` form of `argmin_tendsto_of_uniform_approx`,
+whose sequential shape does not fit the `ω`-wise application needed below): if `τ` is an
+`e`-approximate minimizer of `z` over the ball `B̄(0,R)`, `z` approximates `g` within `δ` on
+that ball, and the total slack `e + 2δ` undercuts the separation gap `η`, then `τ` is within
+`ρ` of the unique minimizer `u₀`. -/
+private theorem argmin_close_of_gap {g z : EuclideanSpace ℝ (Fin k) → ℝ≥0∞}
+    {u₀ τ : EuclideanSpace ℝ (Fin k)} {R ρ : ℝ} {η δ e : ℝ≥0∞}
+    (hunique : ∀ u, u ≠ u₀ → g u₀ < g u)
+    (hgap : ∀ u, ‖u‖ ≤ R → ρ ≤ ‖u - u₀‖ → g u₀ + η ≤ g u)
+    (hρ : 0 < ρ) (hu₀R : ‖u₀‖ ≤ R) (hτR : ‖τ‖ ≤ R)
+    (happrox : ∀ u, ‖u‖ ≤ R → z u ≤ g u + δ ∧ g u ≤ z u + δ)
+    (hmin : ∀ u, ‖u‖ ≤ R → z τ ≤ z u + e)
+    (hslack : e + (δ + δ) < η) :
+    ‖τ - u₀‖ < ρ := by
+  by_contra hcon'
+  have hcon : ρ ≤ ‖τ - u₀‖ := not_lt.1 hcon'
+  have hne : τ ≠ u₀ := by
+    intro h
+    rw [h, sub_self, norm_zero] at hcon
+    exact absurd hcon (not_le.2 hρ)
+  have hfin : g u₀ ≠ ∞ := ne_top_of_lt (hunique _ hne)
+  have hlow : g u₀ + η ≤ g τ := hgap _ hτR hcon
+  have hup : g τ ≤ g u₀ + (e + (δ + δ)) :=
+    calc g τ ≤ z τ + δ := (happrox τ hτR).2
+      _ ≤ z u₀ + e + δ := by gcongr; exact hmin u₀ hu₀R
+      _ ≤ g u₀ + δ + e + δ := by gcongr; exact (happrox u₀ hu₀R).1
+      _ = g u₀ + (e + (δ + δ)) := by ring
+  exact absurd ((ENNReal.add_le_add_iff_left hfin).1 (hlow.trans hup)) (not_le.2 hslack)
+
 /-- **Theorem 10.8 (Bayes point estimators), recentred form.** Under the Bernstein–von Mises
 conditions, the loss conditions, the prior moment, and the uniqueness of the minimizer `u₀`
 of the limit criterion `g`, the approximate posterior-risk minimizers satisfy
@@ -163,7 +192,105 @@ theorem bayes_estimator_asymptotics
       Tendsto (fun n : ℕ => (productMeasure M μ θ₀ n).real
           {ω | ε ≤ ‖Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀‖})
         atTop (𝓝 0) := by
-  sorry
+  classical
+  intro ε hε
+  haveI hprob : ∀ n : ℕ, IsProbabilityMeasure (productMeasure M μ θ₀ n) := fun n =>
+    productMeasure_isProbabilityMeasure M μ hPDF θ₀ n
+  set A : EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+    Matrix.toEuclideanCLM (𝕜 := ℝ) J⁻¹ with hAdef
+  have hAeq : ∀ (n : ℕ) (ω : Fin n → 𝓧), bvmEffScore J sc n ω = A (scoreSum sc n ω) :=
+    fun _ _ => by rw [hAdef]; rfl
+  refine Metric.tendsto_atTop.2 fun ε' hε' => ?_
+  set t : ℝ≥0∞ := ENNReal.ofReal (ε' / 4) with htdef
+  have ht0 : 0 < t := by rw [htdef]; exact ENNReal.ofReal_pos.2 (by linarith)
+  have httop : t ≠ ∞ := ENNReal.ofReal_ne_top
+  -- Part 2: uniform tightness of the estimators; and tightness of the score sums.
+  obtain ⟨K₁, hK₁pos, hK₁⟩ := bpe_tight hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ hℓ
+    hsep hp hpoly hmom hT_meas hεseq hT t ht0
+  obtain ⟨K₂, hK₂pos, hK₂⟩ := scoreSum_uniformly_tight hPDF hsc hDQM hJ_pd hJ ht0
+  -- a ball containing both the minimizer and (with high probability) the estimators
+  set R : ℝ := ‖u₀‖ + 1 + K₁ + ‖A‖ * K₂ with hRdef
+  have hAnn : 0 ≤ ‖A‖ * K₂ := mul_nonneg (norm_nonneg _) hK₂pos.le
+  have hu₀R : ‖u₀‖ < R := by rw [hRdef]; linarith
+  have hR : 0 < R := lt_of_le_of_lt (norm_nonneg u₀) hu₀R
+  -- the limit criterion is continuous, hence well-separated at its unique minimizer
+  have hg : Continuous (bpeGaussCriterion J ℓ) :=
+    AsymptoticStatistics.gaussian_loss_convolution_continuous hJ_pd.inv hℓ hpoly hp
+  obtain ⟨η, hη, hgap⟩ := exists_gap_of_unique_argmin hg hunique hu₀R hε
+  -- a deterministic majorant tolerance `γ` whose triple undercuts the gap
+  set η' : ℝ≥0∞ := min η 1 with hη'def
+  have hη'pos : 0 < η' := lt_min hη zero_lt_one
+  have hη'top : η' ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  set γ : ℝ≥0∞ := η' / 2 / 2 with hγdef
+  have hγpos : 0 < γ := ENNReal.half_pos (ENNReal.half_pos hη'pos.ne').ne'
+  have hγsum : γ + γ < η := by
+    rw [hγdef, ENNReal.add_halves]
+    exact lt_of_lt_of_le (ENNReal.half_lt_self hη'pos.ne' hη'top) (min_le_left _ _)
+  -- Part 3: the uniform majorant approximation of the recentred posterior risk
+  obtain ⟨Mn, -, hMn_tendsto, hMn_approx⟩ :=
+    posteriorRisk_shifted_majorant hPDF hsc hDQM hJ_pd hJ hκ hM_joint hTests hπ hℓ hp hpoly
+      hmom hR
+  have hslack : ∀ᶠ n : ℕ in atTop, εseq n + (γ + γ) < η := by
+    have hlim : Tendsto (fun n => εseq n + (γ + γ)) atTop (𝓝 (0 + (γ + γ))) :=
+      hεseq.add tendsto_const_nhds
+    rw [zero_add] at hlim
+    exact (tendsto_order.1 hlim).2 η hγsum
+  have hbad3 : ∀ᶠ n : ℕ in atTop,
+      productMeasure M μ θ₀ n {ω | γ ≤ Mn n ω} < t :=
+    (tendsto_order.1 (hMn_tendsto γ hγpos)).2 t ht0
+  refine Filter.eventually_atTop.1 ?_
+  filter_upwards [hK₁, hK₂, hbad3, hslack] with n h1 h2 h3 h4
+  -- the bad event is covered by the three tight events
+  have hsub : {ω : Fin n → 𝓧 |
+        ε ≤ ‖Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀‖} ⊆
+      {ω | K₁ ≤ ‖Real.sqrt n • (T n ω - θ₀)‖} ∪
+        ({ω | K₂ < ‖scoreSum sc n ω‖} ∪ {ω | γ ≤ Mn n ω}) := by
+    intro ω hω
+    by_contra hnot
+    simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_le, not_lt] at hnot
+    obtain ⟨hb1, hb2, hb3⟩ := hnot
+    simp only [Set.mem_setOf_eq] at hω
+    set Rn : EuclideanSpace ℝ (Fin k) :=
+      Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω with hRn
+    have hΔnorm : ‖bvmEffScore J sc n ω‖ ≤ ‖A‖ * K₂ := by
+      rw [hAeq n ω]
+      exact (A.le_opNorm _).trans (mul_le_mul_of_nonneg_left hb2 (norm_nonneg A))
+    have hRnR : ‖Rn‖ ≤ R := by
+      have hle := norm_sub_le (Real.sqrt n • (T n ω - θ₀)) (bvmEffScore J sc n ω)
+      rw [← hRn] at hle
+      rw [hRdef]
+      linarith [norm_nonneg u₀]
+    have hminz : ∀ u : EuclideanSpace ℝ (Fin k), ‖u‖ ≤ R →
+        bpePosteriorRisk κ π θ₀ ℓ n (Rn + bvmEffScore J sc n ω) ω
+          ≤ bpePosteriorRisk κ π θ₀ ℓ n (u + bvmEffScore J sc n ω) ω + εseq n := by
+      intro u _
+      have hid : Rn + bvmEffScore J sc n ω = Real.sqrt n • (T n ω - θ₀) := by
+        rw [hRn]; abel
+      rw [hid]
+      exact hT n ω (u + bvmEffScore J sc n ω)
+    have hsl : εseq n + (Mn n ω + Mn n ω) < η :=
+      lt_of_le_of_lt (by gcongr) h4
+    have hclose : ‖Rn - u₀‖ < ε :=
+      argmin_close_of_gap hunique hgap hε hu₀R.le hRnR
+        (fun u hu => hMn_approx n ω u hu) hminz hsl
+    exact absurd hω (not_le.2 hclose)
+  -- assemble the three probability bounds
+  have hle : productMeasure M μ θ₀ n
+      {ω | ε ≤ ‖Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀‖} ≤ t + (t + t) := by
+    refine (measure_mono hsub).trans ((measure_union_le _ _).trans ?_)
+    exact add_le_add h1 ((measure_union_le _ _).trans (add_le_add h2 h3.le))
+  have hsumtop : t + (t + t) ≠ ∞ :=
+    ENNReal.add_ne_top.2 ⟨httop, ENNReal.add_ne_top.2 ⟨httop, httop⟩⟩
+  rw [Real.dist_eq, sub_zero, abs_of_nonneg measureReal_nonneg]
+  have hcalc : (t + (t + t)).toReal = 3 * (ε' / 4) := by
+    rw [ENNReal.toReal_add httop (ENNReal.add_ne_top.2 ⟨httop, httop⟩),
+      ENNReal.toReal_add httop httop, htdef, ENNReal.toReal_ofReal (by linarith)]
+    ring
+  calc (productMeasure M μ θ₀ n).real
+        {ω | ε ≤ ‖Real.sqrt n • (T n ω - θ₀) - bvmEffScore J sc n ω - u₀‖}
+      ≤ (t + (t + t)).toReal := ENNReal.toReal_mono hsumtop hle
+    _ = 3 * (ε' / 4) := hcalc
+    _ < ε' := by linarith
 
 /-- **Theorem 10.8, weak-convergence form**: `√n(Tₙ − θ₀) ⇝ N(u₀, J⁻¹)` under `P^n_{θ₀}`
 (the law of `X + u₀` for `X ∼ N(0, J⁻¹)`, i.e. of the minimizer of the limit process). -/
