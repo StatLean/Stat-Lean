@@ -9,6 +9,7 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # One-term Edgeworth expansions for the mean, and their uniform form
@@ -4867,7 +4868,10 @@ content. Two are deterministic statements about `𝓕 g` for one explicit polyno
 Lebesgue measure on `ℝ²`; the third is a fourth moment of the truncated root.
 
 **(A) The mass, polynomial** — `exists_integral_norm_fourier_bulkMultiplier_le`. `g` is `C^∞` with
-support in `‖w‖ ≤ 2M`, so `𝓕 g` is Schwartz and integrable, and integrating by parts three times
+support in `‖w‖ ≤ 2M` (`contDiff_bulkMultiplier`, `hasCompactSupport_bulkMultiplier`), so `𝓕 g` is
+Schwartz and integrable — **wave 33 proves that half** (`schwartzOfCompactSupport`,
+`integrable_fourier_bulkMultiplier`) and it is no longer part of the statement — and integrating
+by parts three times
 in each variable gives `∫‖𝓕 g‖ ≲ M²·sup_{|α| ≤ 3}‖∂^α g‖_∞`; every derivative of the phase is a
 polynomial in `M` and `|θ|` (degree `≤ 3` in `w₀`, `≤ 2` in `w₁`, coefficients carrying
 `r = n^{-1/2}`) and every derivative of the cut-off costs `M^{-1}`. Hence a bound
@@ -4886,17 +4890,98 @@ of `θ`). Five applications of `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` to the cu
 support is compact.
 
 **(C) The fourth moment of the truncated root** —
-`exists_integral_norm_pow_four_vecRootLaw_truncAt_le`. `ρ_n` is the law of `n^{-1/2}∑Z(Xᵢ)` for
-`Z = studentPair F ∘ truncAt m √n`, bounded by `norm_studentPair_truncAt_le`; expanding `E‖w‖⁴`
-over the four indices leaves a diagonal `n^{-1}E‖Z‖⁴ = O(n)` and a pair block `3(E‖Z‖²)² = O(1)`.
-Everything around that one moment bound is proved here:
-`measure_norm_gt_le_fourth_moment` is Markov on the plane,
+`exists_integral_norm_pow_four_vecRootLaw_truncAt_le`, and **wave 33 proves it**. `ρ_n` is the
+law of `n^{-1/2}∑Z(Xᵢ)` for `Z = studentPair F ∘ truncAt m √n`, bounded by
+`norm_studentPair_truncAt_le`; the fourth-moment expansion of an iid sum is built here
+(`integral_pi_succ_of_bounded`, `integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`) and
+leaves a diagonal `n^{-1}E‖Z‖⁴ = O(n)` and a pair block `3(E‖Z‖²)² = O(1)`. The rest is proved
+too: `measure_norm_gt_le_fourth_moment` is Markov on the plane,
 `integrable_norm_pow_four_vecRootLaw_truncAt` is free (the truncated root has bounded support),
 and `tail_ledger_exponent` turns `O(n/M⁴)` into `O(n^{-3/2})` at `M = n^{5/8}` exactly. This is
 the only probabilistic input of the three, and it is the line that *forces* the bulk radius.
 
-Three `sorry`s, all of them estimates and none of them structure. The assembly below, and the
-whole of (C) except the moment itself, are proved. -/
+**Two `sorry`s after wave 33** — (A) and (B), both of them deterministic estimates on `𝓕 g` for
+one explicit polynomial phase against Lebesgue measure on `ℝ²`, and neither of them structure.
+(C), the assembly below, and the exponent ledger are proved. -/
+
+/-! ### Input (A), first half: the transform of the bulk multiplier is integrable
+
+(A) asks for two things about `g = bulkMultiplier`: that `𝓕 g` be integrable, and that its `L¹`
+mass be polynomial in `n` and `|θ|`. The first is free once `g` is exhibited as a Schwartz
+function, and `g` is one for a soft reason — it is `C^∞` with compact support. That implication is
+not in Mathlib (there is no `𝓓 → 𝓢` bridge in this pin), so it is proved here:
+`schwartzOfCompactSupport`, whose decay bound is `HasCompactSupport.exists_bound_of_continuous`
+applied to `‖x‖^k‖D^n f(x)‖` — continuous, and compactly supported because
+`HasCompactSupport.iteratedFDeriv` is. `SchwartzMap.fourierTransformCLM` then keeps it Schwartz
+and `SchwartzMap.integrable` finishes.
+
+**This does not touch the mass bound**, which is the actual content of (A) and needs explicit
+iterated-derivative bounds for `g` on `‖w‖ ≤ 2M`, polynomial in `M = n^{5/8}` and `|θ|`. What it
+does is take the integrability conjunct out of the residue, and give the smoothness of the
+multiplier (`contDiff_bulkMultiplier`, through `contDiff_deltaSurrogate` and `contDiff_coord`)
+which any such bound has to start from anyway. -/
+
+/-- A smooth compactly supported function on the plane is a Schwartz function. -/
+noncomputable def schwartzOfCompactSupport (f : E₂ → ℂ)
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hcs : HasCompactSupport f) : SchwartzMap E₂ ℂ where
+  toFun := f
+  smooth' := hf
+  decay' := by
+    intro k n
+    have hle : ((n : ℕ∞) : WithTop ℕ∞) ≤ ((⊤ : ℕ∞) : WithTop ℕ∞) :=
+      WithTop.coe_le_coe.2 le_top
+    have hcont : Continuous fun x : E₂ => ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ :=
+      (continuous_norm.pow k).mul (hf.continuous_iteratedFDeriv hle).norm
+    have hsupp : HasCompactSupport fun x : E₂ => ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ :=
+      HasCompactSupport.mul_left ((hcs.iteratedFDeriv n).norm)
+    obtain ⟨C, hC⟩ := hsupp.exists_bound_of_continuous hcont
+    refine ⟨C, fun x => ?_⟩
+    have h := hC x
+    rwa [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at h
+
+/-- **The Fourier transform of a smooth compactly supported function is integrable.** -/
+lemma integrable_fourier_of_compactSupport {f : E₂ → ℂ}
+    (hf : ContDiff ℝ (⊤ : ℕ∞) f) (hcs : HasCompactSupport f) :
+    Integrable (𝓕 f) :=
+  (SchwartzMap.fourierTransformCLM ℂ (schwartzOfCompactSupport f hf hcs)).integrable
+
+/-- Coordinate evaluation on the plane is smooth. -/
+lemma contDiff_coord (i : Fin 2) : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w i := by
+  have h : (fun w : E₂ => w i) = fun w : E₂ => (innerSL ℝ (coordDir i)) w := by
+    funext w
+    rw [← inner_coordDir i w]
+    exact real_inner_comm _ _
+  rw [h]
+  exact (innerSL ℝ (coordDir i)).contDiff
+
+lemma contDiff_deltaSurrogate (σ r : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (deltaSurrogate σ r) := by
+  have h0 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 0 := contDiff_coord 0
+  have h1 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 1 := contDiff_coord 1
+  unfold deltaSurrogate
+  fun_prop
+
+lemma contDiff_bulkMultiplier (σ r θ M : ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞) (bulkMultiplier σ r θ M) := by
+  have hcut : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => (bulkCutoff (M⁻¹ • w) : ℝ) :=
+    bulkCutoff.contDiff.comp (contDiff_id.const_smul M⁻¹)
+  have h0 : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => w 0 := contDiff_coord 0
+  have hp : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => (θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) :=
+    contDiff_const.mul ((contDiff_deltaSurrogate σ r).sub (h0.div_const σ))
+  have hpc : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ =>
+      (((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)) :=
+    Complex.ofRealCLM.contDiff.comp hp
+  have hexp : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ =>
+      Complex.exp (Complex.I * ((θ * (deltaSurrogate σ r w - w 0 / σ) : ℝ) : ℂ)) :=
+    (Complex.contDiff_exp (𝕜 := ℝ)).comp (contDiff_const.mul hpc)
+  have hcutc : ContDiff ℝ (⊤ : ℕ∞) fun w : E₂ => ((bulkCutoff (M⁻¹ • w) : ℝ) : ℂ) :=
+    Complex.ofRealCLM.contDiff.comp hcut
+  exact hcutc.mul hexp
+
+/-- **The transform of the bulk multiplier is integrable** — the first half of input (A). -/
+lemma integrable_fourier_bulkMultiplier {M : ℝ} (hM : 0 < M) (σ r θ : ℝ) :
+    Integrable (𝓕 (bulkMultiplier σ r θ M)) :=
+  integrable_fourier_of_compactSupport (contDiff_bulkMultiplier σ r θ M)
+    (hasCompactSupport_bulkMultiplier hM σ r θ)
 
 /-- **(A) The mass of the bulk multiplier's transform is polynomial in `n` and `|θ|`** — the first
 of the three inputs of `exists_fourierCertificate_deltaSurrogate`; see the section note.
@@ -4906,9 +4991,8 @@ and repeated integration by parts bounds `∫‖𝓕 g‖` by `M²` times a supr
 each of which is polynomial in `M = n^{5/8}` and `|θ|`. -/
 theorem exists_integral_norm_fourier_bulkMultiplier_le {σ : ℝ} (hσ : 0 < σ) :
     ∃ (C : ℝ) (K : ℕ), 0 < C ∧ ∀ n : ℕ, 0 < n → ∀ θ : ℝ,
-      Integrable (𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n))) ∧
-        (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
-          ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
+      (∫ v : E₂, ‖𝓕 (bulkMultiplier σ ((Real.sqrt (n : ℝ))⁻¹) θ (bulkRadius n)) v‖)
+        ≤ C * (n : ℝ) ^ K * (1 + |θ|) ^ K := by
   sorry
 
 /-- **(B) The non-stationary-phase estimate: the weight carries `O(n^{-3/2})` on the
@@ -4965,15 +5049,384 @@ theorem integrable_norm_pow_four_vecRootLaw_truncAt (F : Measure ℝ) [IsProbabi
   rw [abs_of_nonneg (by positivity)]
   exact pow_le_pow_left₀ (norm_nonneg _) hw 4
 
-/-- **(C) The fourth moment of the truncated root is `O(n)`** — the third input, the only
-probabilistic one, and (after `measure_norm_gt_le_fourth_moment` and
-`integrable_norm_pow_four_vecRootLaw_truncAt`) all that is left of it.
+/-! ### The moments of an iid sum on `Measure.pi`, and input (C)
 
-`w = n^{-1/2}∑Z(Xᵢ)` with `Z` centred and bounded by `K ≍ n` at truncation level `τ = √n`.
-Expanding `E‖w‖⁴` over the four indices, independence and centring kill every block with a
-singleton, leaving the diagonal `n^{-1}E‖Z‖⁴` and the pair block `3(E‖Z‖²)²`. The second is
-`O(1)` under `hF4`; the first is `O(n)` and no better — `E‖Z‖⁴ ≤ (τ² + σ²)²E‖Z‖² ≍ n²Eξ⁴` is
-sharp, which is exactly why the bulk radius is `n^{5/8}` and not `n^{3/8}`. -/
+Input (C) is a fourth moment of `n^{-1/2}∑Z(Xᵢ)` on the *truncated* law, and no crude bound
+reaches it: the summand's second coordinate is only bounded by `τ² ≍ n`, so
+`E‖w‖⁴ ≤ (sup‖w‖²)·E‖w‖²` returns `n³` and Cauchy–Schwarz returns `n⁵`, against a required `n`.
+The true `O(n)` comes from a *single large summand* — an event of probability `≍ n^{-1}` carrying
+`w₁ ≍ √n` — which only the exact fourth-moment expansion sees. So the expansion is built here.
+
+`integral_pi_succ_of_bounded` splits `Measure.pi` over `Fin (n+1)` into the first coordinate and
+the rest (`measurePreserving_piFinSuccAbove` at `i = 0`, then Fubini); `integral_pi_sum_moments`
+is the induction it feeds: for a **bounded centred** summand `V`,
+`E S_n = 0`, `E S_n² = n E V²` and `E S_n⁴ ≤ n E V⁴ + 3n² (E V²)²`, the last of which is the
+classical identity `n E V⁴ + 3n(n−1)(E V²)²` relaxed to an inequality. Only the first and second
+moments are needed exactly; `E S_n³` enters the step multiplied by `E V = 0`, so its value is
+never computed. `integral_pi_sum_pow_four_le` removes the centring hypothesis at the cost of the
+mean term `8n⁴(E U)⁴` — which is what forces the two truncation-tail bounds below. -/
+
+/-- The integral of a degree-four polynomial in a bounded measurable function. -/
+lemma integral_poly_four_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {W : α → ℝ} (hW : Measurable W) {D : ℝ} (_hD : 0 ≤ D)
+    (hWb : ∀ z, |W z| ≤ D) (c₀ c₁ c₂ c₃ c₄ : ℝ) :
+    ∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3 + c₄ * W z ^ 4) ∂ν
+      = c₀ + c₁ * (∫ z, W z ∂ν) + c₂ * (∫ z, W z ^ 2 ∂ν) + c₃ * (∫ z, W z ^ 3 ∂ν)
+        + c₄ * (∫ z, W z ^ 4 ∂ν) := by
+  have hint : ∀ k : ℕ, Integrable (fun z => W z ^ k) ν := by
+    intro k
+    refine integrable_of_ae_abs_le (by fun_prop) (C := D ^ k) ?_
+    filter_upwards with z
+    rw [abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hWb z) k
+  have h1 : Integrable (fun z => W z) ν := by simpa using hint 1
+  have i0 : Integrable (fun _ : α => c₀) ν := integrable_const c₀
+  have i1 : Integrable (fun z => c₁ * W z) ν := h1.const_mul c₁
+  have i2 : Integrable (fun z => c₂ * W z ^ 2) ν := (hint 2).const_mul c₂
+  have i3 : Integrable (fun z => c₃ * W z ^ 3) ν := (hint 3).const_mul c₃
+  have i4 : Integrable (fun z => c₄ * W z ^ 4) ν := (hint 4).const_mul c₄
+  have j1 : Integrable (fun z => c₀ + c₁ * W z) ν := i0.add i1
+  have j2 : Integrable (fun z => c₀ + c₁ * W z + c₂ * W z ^ 2) ν := j1.add i2
+  have j3 : Integrable (fun z => c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3) ν := j2.add i3
+  have e4 : ∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3 + c₄ * W z ^ 4) ∂ν
+      = (∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3) ∂ν)
+        + ∫ z, c₄ * W z ^ 4 ∂ν := integral_add j3 i4
+  have e3 : ∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2 + c₃ * W z ^ 3) ∂ν
+      = (∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2) ∂ν) + ∫ z, c₃ * W z ^ 3 ∂ν := integral_add j2 i3
+  have e2 : ∫ z, (c₀ + c₁ * W z + c₂ * W z ^ 2) ∂ν
+      = (∫ z, (c₀ + c₁ * W z) ∂ν) + ∫ z, c₂ * W z ^ 2 ∂ν := integral_add j1 i2
+  have e1 : ∫ z, (c₀ + c₁ * W z) ∂ν
+      = (∫ _z : α, c₀ ∂ν) + ∫ z, c₁ * W z ∂ν := integral_add i0 i1
+  have ec : (∫ _z : α, c₀ ∂ν) = c₀ := by simp
+  rw [e4, e3, e2, e1, ec, integral_const_mul, integral_const_mul, integral_const_mul,
+    integral_const_mul]
+
+/-- Splitting the product measure over `Fin (n+1)` into the first coordinate and the rest. -/
+lemma integral_pi_succ_of_bounded (F : Measure ℝ) [IsProbabilityMeasure F] {n : ℕ}
+    {f : (Fin (n + 1) → ℝ) → ℝ} (hfm : Measurable f) {C : ℝ} (hfb : ∀ y, |f y| ≤ C) :
+    ∫ y, f y ∂(Measure.pi fun _ : Fin (n + 1) => F)
+      = ∫ x, (∫ z : Fin n → ℝ, f (Fin.cons x z) ∂(Measure.pi fun _ : Fin n => F)) ∂F := by
+  have hmp := (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => F) 0).symm
+  rw [← hmp.integral_comp' f]
+  have hsym : ∀ p : ℝ × (Fin n → ℝ),
+      (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm p
+        = Fin.cons p.1 p.2 := by
+    intro p
+    simp [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero, Fin.consEquiv]
+  simp only [hsym]
+  have hmeas : Measurable fun p : ℝ × (Fin n → ℝ) => f (Fin.cons p.1 p.2) := by
+    have : Measurable fun p : ℝ × (Fin n → ℝ) =>
+        (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => ℝ) 0).symm p :=
+      MeasurableEquiv.measurable _
+    simpa only [hsym] using hfm.comp this
+  have hI : Integrable (fun p : ℝ × (Fin n → ℝ) => f (Fin.cons p.1 p.2))
+      (F.prod (Measure.pi fun _ : Fin n => F)) :=
+    integrable_of_ae_abs_le hmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun p => hfb _)
+  rw [integral_prod _ hI]
+
+/-- The fourth power of a shifted bounded variable, integrated. -/
+lemma integral_add_pow_four_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hD : 0 ≤ D)
+    (hSb : ∀ z, |S z| ≤ D) (a : ℝ) :
+    ∫ z, (a + S z) ^ 4 ∂ν
+      = a ^ 4 + 4 * a ^ 3 * (∫ z, S z ∂ν) + 6 * a ^ 2 * (∫ z, S z ^ 2 ∂ν)
+        + 4 * a * (∫ z, S z ^ 3 ∂ν) + 1 * (∫ z, S z ^ 4 ∂ν) := by
+  have h : ∀ z, (a + S z) ^ 4
+      = a ^ 4 + 4 * a ^ 3 * S z + 6 * a ^ 2 * S z ^ 2 + 4 * a * S z ^ 3 + 1 * S z ^ 4 :=
+    fun z => by ring
+  simp only [h]
+  exact integral_poly_four_of_bounded ν hS hD hSb _ _ _ _ _
+
+/-- The square of a shifted bounded variable, integrated. -/
+lemma integral_add_pow_two_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (hD : 0 ≤ D)
+    (hSb : ∀ z, |S z| ≤ D) (a : ℝ) :
+    ∫ z, (a + S z) ^ 2 ∂ν
+      = a ^ 2 + 2 * a * (∫ z, S z ∂ν) + 1 * (∫ z, S z ^ 2 ∂ν) := by
+  have h : ∀ z, (a + S z) ^ 2
+      = a ^ 2 + 2 * a * S z + 1 * S z ^ 2 + 0 * S z ^ 3 + 0 * S z ^ 4 :=
+    fun z => by ring
+  simp only [h]
+  rw [integral_poly_four_of_bounded ν hS hD hSb (a ^ 2) (2 * a) 1 0 0]
+  ring
+
+/-- A shifted bounded variable, integrated. -/
+lemma integral_add_of_bounded {α : Type*} [MeasurableSpace α] (ν : Measure α)
+    [IsProbabilityMeasure ν] {S : α → ℝ} (hS : Measurable S) {D : ℝ} (_hD : 0 ≤ D)
+    (hSb : ∀ z, |S z| ≤ D) (a : ℝ) :
+    ∫ z, (a + S z) ∂ν = a + (∫ z, S z ∂ν) := by
+  have hI : Integrable S ν :=
+    integrable_of_ae_abs_le hS.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun z => hSb z)
+  rw [integral_add (integrable_const a) hI]
+  simp
+
+/-- **The first, second and fourth moments of an iid sum of a bounded centred summand.** -/
+lemma integral_pi_sum_moments (F : Measure ℝ) [IsProbabilityMeasure F] {V : ℝ → ℝ}
+    (hV : Measurable V) {B : ℝ} (hB : ∀ x, |V x| ≤ B) (hV0 : ∫ x, V x ∂F = 0) (n : ℕ) :
+    (∫ y : Fin n → ℝ, (∑ i, V (y i)) ∂(Measure.pi fun _ : Fin n => F)) = 0 ∧
+      (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 2 ∂(Measure.pi fun _ : Fin n => F))
+        = n * ∫ x, V x ^ 2 ∂F ∧
+      (∫ y : Fin n → ℝ, (∑ i, V (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+        ≤ n * (∫ x, V x ^ 4 ∂F) + 3 * n ^ 2 * (∫ x, V x ^ 2 ∂F) ^ 2 := by
+  have hB0 : (0 : ℝ) ≤ B := le_trans (abs_nonneg _) (hB 0)
+  have hsumb : ∀ (m : ℕ) (z : Fin m → ℝ), |∑ i, V (z i)| ≤ (m : ℝ) * B := by
+    intro m z
+    calc |∑ i, V (z i)| ≤ ∑ _i : Fin m, B :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hB (z i))
+      _ = (m : ℝ) * B := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hsumm : ∀ m : ℕ, Measurable fun z : Fin m → ℝ => ∑ i, V (z i) := fun m =>
+    Finset.measurable_sum _ fun i _ => hV.comp (measurable_pi_apply i)
+  have hm2 : (0 : ℝ) ≤ ∫ x, V x ^ 2 ∂F :=
+    integral_nonneg fun x => sq_nonneg _
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    obtain ⟨ih1, ih2, ih4⟩ := ih
+    have hDn : (0 : ℝ) ≤ (n : ℝ) * B := by positivity
+    have hcons : ∀ (x : ℝ) (z : Fin n → ℝ),
+        ∑ i : Fin (n + 1), V ((Fin.cons x z : Fin (n + 1) → ℝ) i) = V x + ∑ i, V (z i) := by
+      intro x z
+      rw [Fin.sum_univ_succ]
+      simp
+    have hb1 : ∀ y : Fin (n + 1) → ℝ, |∑ i, V (y i)| ≤ ((n : ℝ) + 1) * B := by
+      intro y
+      simpa using hsumb (n + 1) y
+    have hbk : ∀ (k : ℕ) (y : Fin (n + 1) → ℝ), |(∑ i, V (y i)) ^ k|
+        ≤ (((n : ℝ) + 1) * B) ^ k := by
+      intro k y
+      rw [abs_pow]
+      exact pow_le_pow_left₀ (abs_nonneg _) (hb1 y) k
+    have hsplit : ∀ k : ℕ,
+        ∫ y : Fin (n + 1) → ℝ, (∑ i, V (y i)) ^ k ∂(Measure.pi fun _ : Fin (n + 1) => F)
+          = ∫ x, (∫ z : Fin n → ℝ, (V x + ∑ i, V (z i)) ^ k
+              ∂(Measure.pi fun _ : Fin n => F)) ∂F := by
+      intro k
+      rw [integral_pi_succ_of_bounded F (f := fun y : Fin (n + 1) → ℝ => (∑ i, V (y i)) ^ k)
+        ((hsumm (n + 1)).pow_const k) (hbk k)]
+      simp only [hcons]
+    refine ⟨?_, ?_, ?_⟩
+    · -- first moment
+      rw [integral_pi_succ_of_bounded F (f := fun y : Fin (n + 1) → ℝ => ∑ i, V (y i))
+        (hsumm (n + 1)) hb1]
+      have inner : ∀ x : ℝ, (∫ z : Fin n → ℝ, (V x + ∑ i, V (z i))
+          ∂(Measure.pi fun _ : Fin n => F)) = V x + 0 := by
+        intro x
+        rw [integral_add_of_bounded _ (hsumm n) hDn (hsumb n) (V x), ih1]
+      simp only [hcons, inner, add_zero]
+      exact hV0
+    · -- second moment
+      rw [hsplit 2]
+      have inner : ∀ x : ℝ, (∫ z : Fin n → ℝ, (V x + ∑ i, V (z i)) ^ 2
+          ∂(Measure.pi fun _ : Fin n => F))
+          = (n : ℝ) * (∫ x, V x ^ 2 ∂F) + 0 * V x + 1 * V x ^ 2 + 0 * V x ^ 3 + 0 * V x ^ 4 := by
+        intro x
+        rw [integral_add_pow_two_of_bounded _ (hsumm n) hDn (hsumb n) (V x), ih1, ih2]
+        ring
+      simp only [inner]
+      rw [integral_poly_four_of_bounded F hV hB0 hB ((n : ℝ) * (∫ x, V x ^ 2 ∂F)) 0 1 0 0]
+      push_cast
+      ring
+    · -- fourth moment
+      rw [hsplit 4]
+      have inner : ∀ x : ℝ, (∫ z : Fin n → ℝ, (V x + ∑ i, V (z i)) ^ 4
+          ∂(Measure.pi fun _ : Fin n => F))
+          = (∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+            + (4 * (∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ 3
+                ∂(Measure.pi fun _ : Fin n => F))) * V x
+            + (6 * ((n : ℝ) * (∫ x, V x ^ 2 ∂F))) * V x ^ 2 + 0 * V x ^ 3 + 1 * V x ^ 4 := by
+        intro x
+        rw [integral_add_pow_four_of_bounded _ (hsumm n) hDn (hsumb n) (V x), ih1, ih2]
+        ring
+      simp only [inner]
+      rw [integral_poly_four_of_bounded F hV hB0 hB
+        (∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+        (4 * (∫ z : Fin n → ℝ, (∑ i, V (z i)) ^ 3 ∂(Measure.pi fun _ : Fin n => F)))
+        (6 * ((n : ℝ) * (∫ x, V x ^ 2 ∂F))) 0 1, hV0]
+      push_cast
+      nlinarith [ih4, sq_nonneg (∫ x, V x ^ 2 ∂F)]
+
+
+/-- **The fourth moment of an iid sum of a bounded summand**, without centring. -/
+lemma integral_pi_sum_pow_four_le (F : Measure ℝ) [IsProbabilityMeasure F] {U : ℝ → ℝ}
+    (hU : Measurable U) {B : ℝ} (hB : ∀ x, |U x| ≤ B) (n : ℕ) {p q : ℝ}
+    (hp : ∫ x, (U x - ∫ s, U s ∂F) ^ 4 ∂F ≤ p)
+    (hq : ∫ x, (U x - ∫ s, U s ∂F) ^ 2 ∂F ≤ q) (hq0 : 0 ≤ q) :
+    ∫ y : Fin n → ℝ, (∑ i, U (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ 8 * ((n : ℝ) * p + 3 * (n : ℝ) ^ 2 * q ^ 2)
+        + 8 * (n : ℝ) ^ 4 * (∫ s, U s ∂F) ^ 4 := by
+  have hB0 : (0 : ℝ) ≤ B := le_trans (abs_nonneg _) (hB 0)
+  have hUI : Integrable U F :=
+    integrable_of_ae_abs_le hU.aestronglyMeasurable (Filter.Eventually.of_forall hB)
+  have hcb : |∫ s, U s ∂F| ≤ B := by
+    refine le_trans abs_integral_le_integral_abs ?_
+    have h2 : ∫ s, |U s| ∂F ≤ ∫ _s : ℝ, B ∂F :=
+      integral_mono hUI.abs (integrable_const B) fun s => hB s
+    simpa using h2
+  set c : ℝ := ∫ s, U s ∂F with hc
+  have hVm : Measurable fun x => U x - c := hU.sub measurable_const
+  have hVb : ∀ x, |U x - c| ≤ 2 * B := by
+    intro x
+    calc |U x - c| ≤ |U x| + |c| := abs_sub _ _
+      _ ≤ B + B := add_le_add (hB x) hcb
+      _ = 2 * B := by ring
+  have hV0 : ∫ x, (U x - c) ∂F = 0 := by
+    rw [integral_sub hUI (integrable_const c)]
+    simp [hc]
+  obtain ⟨-, -, h4⟩ := integral_pi_sum_moments F hVm hVb hV0 n
+  have hVmeas : Measurable fun y : Fin n → ℝ => ∑ i, (U (y i) - c) :=
+    Finset.measurable_sum _ fun i _ => hVm.comp (measurable_pi_apply i)
+  have hUmeas : Measurable fun y : Fin n → ℝ => ∑ i, U (y i) :=
+    Finset.measurable_sum _ fun i _ => hU.comp (measurable_pi_apply i)
+  have hUmeas4 : AEStronglyMeasurable (fun y : Fin n → ℝ => (∑ i, U (y i)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := (hUmeas.pow_const 4).aestronglyMeasurable
+  have hVmeas4 : AEStronglyMeasurable (fun y : Fin n → ℝ => (∑ i, (U (y i) - c)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := (hVmeas.pow_const 4).aestronglyMeasurable
+  have hsplit : ∀ y : Fin n → ℝ, ∑ i, U (y i) = (∑ i, (U (y i) - c)) + (n : ℝ) * c := by
+    intro y
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+    ring
+  have hbV : ∀ y : Fin n → ℝ, |∑ i, (U (y i) - c)| ≤ (n : ℝ) * (2 * B) := by
+    intro y
+    calc |∑ i, (U (y i) - c)| ≤ ∑ _i : Fin n, 2 * B :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hVb (y i))
+      _ = (n : ℝ) * (2 * B) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hintU : Integrable (fun y : Fin n → ℝ => (∑ i, U (y i)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := by
+    refine integrable_of_ae_abs_le hUmeas4 (C := ((n : ℝ) * (2 * B) + (n : ℝ) * |c|) ^ 4) ?_
+    filter_upwards with y
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ 4
+    rw [hsplit y]
+    calc |(∑ i, (U (y i) - c)) + (n : ℝ) * c|
+        ≤ |∑ i, (U (y i) - c)| + |(n : ℝ) * c| := abs_add_le _ _
+      _ ≤ (n : ℝ) * (2 * B) + (n : ℝ) * |c| := by
+          have : |(n : ℝ) * c| = (n : ℝ) * |c| := by
+            rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ))]
+          rw [this]
+          exact add_le_add (hbV y) le_rfl
+  have hintV : Integrable (fun y : Fin n → ℝ => (∑ i, (U (y i) - c)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := by
+    refine integrable_of_ae_abs_le hVmeas4 (C := ((n : ℝ) * (2 * B)) ^ 4) ?_
+    filter_upwards with y
+    rw [abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hbV y) 4
+  have hmono : ∫ y : Fin n → ℝ, (∑ i, U (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F)
+      ≤ ∫ y : Fin n → ℝ, (8 * ((∑ i, (U (y i) - c)) ^ 4 + ((n : ℝ) * c) ^ 4))
+          ∂(Measure.pi fun _ : Fin n => F) := by
+    refine integral_mono hintU ((hintV.add (integrable_const _)).const_mul 8) fun y => ?_
+    rw [hsplit y]
+    nlinarith [sq_nonneg ((∑ i, (U (y i) - c)) - (n : ℝ) * c),
+      sq_nonneg ((∑ i, (U (y i) - c)) + (n : ℝ) * c),
+      sq_nonneg ((∑ i, (U (y i) - c)) ^ 2 - ((n : ℝ) * c) ^ 2)]
+  have heval : ∫ y : Fin n → ℝ, (8 * ((∑ i, (U (y i) - c)) ^ 4 + ((n : ℝ) * c) ^ 4))
+      ∂(Measure.pi fun _ : Fin n => F)
+      = 8 * ((∫ y : Fin n → ℝ, (∑ i, (U (y i) - c)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+          + ((n : ℝ) * c) ^ 4) := by
+    rw [integral_const_mul, integral_add hintV (integrable_const _), integral_const]
+    simp
+  rw [heval] at hmono
+  have hq2 : (∫ x, (U x - c) ^ 2 ∂F) ^ 2 ≤ q ^ 2 := by
+    have h0 : (0 : ℝ) ≤ ∫ x, (U x - c) ^ 2 ∂F := integral_nonneg fun x => sq_nonneg _
+    nlinarith [hq, hq0, h0]
+  have hn0 : (0 : ℝ) ≤ (n : ℝ) := by positivity
+  nlinarith [hmono, h4, hp, hq2, hn0, sq_nonneg ((n : ℝ) * c)]
+
+/-- `‖v‖⁴ ≤ 2(v₀⁴ + v₁⁴)` on the plane. -/
+lemma norm_pow_four_le_two_mul (v : E₂) :
+    ‖v‖ ^ 4 ≤ 2 * ((v 0) ^ 4 + (v 1) ^ 4) := by
+  have h : ‖v‖ ^ 2 = (v 0) ^ 2 + (v 1) ^ 2 := by
+    rw [EuclideanSpace.norm_eq, Fin.sum_univ_two, Real.norm_eq_abs, Real.norm_eq_abs,
+      Real.sq_sqrt (by positivity), sq_abs, sq_abs]
+  have h4 : ‖v‖ ^ 4 = (‖v‖ ^ 2) ^ 2 := by ring
+  rw [h4, h]
+  nlinarith [sq_nonneg ((v 0) ^ 2 - (v 1) ^ 2)]
+
+/-- The truncation error at the first power. -/
+lemma abs_sub_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
+    |x - truncAt m τ x| ≤ (x - m) ^ 4 / τ ^ 3 := by
+  have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
+    rw [← abs_pow, abs_of_nonneg (by positivity)]
+  rcases le_or_gt |x - m| τ with h | h
+  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+    positivity
+  · simp only [truncAt, if_neg (not_le.2 h)]
+    rw [le_div_iff₀ (by positivity), ha]
+    nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 3, hτ]
+
+/-- The truncation error at the second power. -/
+lemma abs_sq_sub_sq_truncAt_le {m τ : ℝ} (hτ : 0 < τ) (x : ℝ) :
+    |(x - m) ^ 2 - (truncAt m τ x - m) ^ 2| ≤ (x - m) ^ 4 / τ ^ 2 := by
+  have ha : (x - m) ^ 4 = |x - m| ^ 4 := by
+    rw [← abs_pow, abs_of_nonneg (by positivity)]
+  rcases le_or_gt |x - m| τ with h | h
+  · simp only [truncAt, if_pos h, sub_self, abs_zero]
+    positivity
+  · simp only [truncAt, if_neg (not_le.2 h), sub_self]
+    rw [show ((0 : ℝ) ^ 2) = 0 by ring, sub_zero, abs_of_nonneg (by positivity),
+      le_div_iff₀ (by positivity)]
+    nlinarith [abs_nonneg (x - m), pow_le_pow_left₀ hτ.le h.le 2, hτ, sq_abs (x - m)]
+
+/-- Truncation never increases the deviation. -/
+lemma abs_truncAt_sub_le_abs (m τ : ℝ) (x : ℝ) : |truncAt m τ x - m| ≤ |x - m| := by
+  simp only [truncAt]
+  split_ifs with h
+  · exact le_rfl
+  · simp only [sub_self, abs_zero]
+    exact abs_nonneg _
+
+
+private lemma abs_le_one_add_pow_four (t : ℝ) : |t| ≤ 1 + t ^ 4 := by
+  have h4 : t ^ 4 = |t| ^ 4 := by rw [← abs_pow, abs_of_nonneg (by positivity)]
+  rcases le_or_gt |t| 1 with h | h
+  · nlinarith [pow_nonneg (abs_nonneg t) 4]
+  · have h3 : (1 : ℝ) ≤ |t| ^ 3 := one_le_pow₀ h.le
+    nlinarith [abs_nonneg t, h3]
+
+private lemma sq_le_one_add_pow_four (t : ℝ) : t ^ 2 ≤ 1 + t ^ 4 := by
+  nlinarith [sq_nonneg (t ^ 2 - 1), sq_nonneg t]
+
+private lemma sub_pow_four_le_eight (a b : ℝ) : (a - b) ^ 4 ≤ 8 * (a ^ 4 + b ^ 4) := by
+  have h : (0 : ℝ) ≤ 7 * a ^ 2 - 10 * a * b + 7 * b ^ 2 := by
+    nlinarith [sq_nonneg (a - b), sq_nonneg a, sq_nonneg b]
+  nlinarith [mul_nonneg (sq_nonneg (a + b)) h]
+
+private lemma sub_sq_le_two (a b : ℝ) : (a - b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
+  nlinarith [sq_nonneg (a + b)]
+
+private lemma pow_four_le_pow_four_of_abs_le {a b : ℝ} (h : |a| ≤ |b|) : a ^ 4 ≤ b ^ 4 := by
+  have ha : a ^ 4 = |a| ^ 4 := by rw [← abs_pow, abs_of_nonneg (by positivity)]
+  have hb : b ^ 4 = |b| ^ 4 := by rw [← abs_pow, abs_of_nonneg (by positivity)]
+  rw [ha, hb]
+  exact pow_le_pow_left₀ (abs_nonneg _) h 4
+
+private lemma sq_le_sq_of_abs_le {a b : ℝ} (h : |a| ≤ |b|) : a ^ 2 ≤ b ^ 2 := by
+  rw [← sq_abs a, ← sq_abs b]
+  exact pow_le_pow_left₀ (abs_nonneg _) h 2
+
+-- The assembly is one long chain of `set`-bound moment bookkeeping over two coordinates; the
+-- default heartbeat budget does not elaborate it.
+set_option maxHeartbeats 4000000 in
+/-- **(C) The fourth moment of the truncated root is `O(n)`** — the third input, the only
+probabilistic one, and now **proved**.
+
+`w = n^{-1/2}∑Z(Xᵢ)` with `Z = studentPair F ∘ truncAt m √n`, bounded by `K ≍ n`. On the plane
+`‖w‖⁴ ≤ 2(w₀⁴ + w₁⁴)` (`norm_pow_four_le_two_mul`), and each coordinate is an iid sum, so
+`integral_pi_sum_pow_four_le` applies: `E(∑U)⁴ ≤ 8(nE V⁴ + 3n²(E V²)²) + 8n⁴(E U)⁴` with
+`V = U − E U`. On the first coordinate `E V⁴, E V² = O(1)`; on the second
+`E V⁴ ≤ 8(E T⁸ + (E T²)⁴) = O(n²)` — the diagonal, and it is `O(n²)` and no better, which is
+exactly why the bulk radius is `n^{5/8}` and not `n^{3/8}`.
+
+**The mean terms are what the truncation tails pay for.** `Z` is *not* centred after truncation,
+and the crude `|E U| = O(1)` would return `8n⁴(E U)⁴ = O(n⁴)`, four powers too many. What saves
+it is that the bias is a fourth-moment tail: `|E T| ≤ E|X−m|1_{|X−m|>τ} ≤ μ₄/τ³` and
+`|E T² − σ²| ≤ μ₄/τ²` (`abs_sub_truncAt_le`, `abs_sq_sub_sq_truncAt_le`), both `≤ μ₄/n` at
+`τ = √n`, so `n⁴(E U)⁴ ≤ μ₄⁴`. Every remaining term is `O(n³)` before the `n^{-2}` of the root's
+normalisation, and the bound is `A n`. -/
 theorem exists_integral_norm_pow_four_vecRootLaw_truncAt_le
     (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
@@ -4982,7 +5435,371 @@ theorem exists_integral_norm_pow_four_vecRootLaw_truncAt_le
           ∂(vecRootLaw F
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n))
         ≤ A * (n : ℝ) := by
-  sorry
+  set m : ℝ := ∫ s, s ∂F with hm
+  set v : ℝ := Var[fun t : ℝ => t; F] with hv
+  set P : ℝ := ∫ x, (x - m) ^ 4 ∂F with hP
+  have hP0 : (0 : ℝ) ≤ P := by rw [hP]; exact integral_nonneg fun x => by positivity
+  have hI1 : Integrable (fun x : ℝ => x - m) F := by
+    refine Integrable.mono' ((integrable_const (1 : ℝ)).add hF4) (by fun_prop) ?_
+    filter_upwards with x
+    simpa using abs_le_one_add_pow_four (x - m)
+  have hI2 : Integrable (fun x : ℝ => (x - m) ^ 2) F := by
+    refine Integrable.mono' ((integrable_const (1 : ℝ)).add hF4) (by fun_prop) ?_
+    filter_upwards with x
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact sq_le_one_add_pow_four (x - m)
+  have hIid : Integrable (fun x : ℝ => x) F := by
+    have h : Integrable (fun x : ℝ => (x - m) + m) F := hI1.add (integrable_const m)
+    have e : (fun x : ℝ => (x - m) + m) = fun x : ℝ => x := by funext x; ring
+    rwa [e] at h
+  have hmean : ∫ x, (x - m) ∂F = 0 := by
+    rw [integral_sub hIid (integrable_const m), integral_const]
+    simp [hm]
+  have hvar : v = ∫ x, (x - m) ^ 2 ∂F := by
+    rw [hv, variance_eq_integral (by fun_prop)]
+  have hv0 : (0 : ℝ) ≤ v := by
+    rw [hvar]; exact integral_nonneg fun x => by positivity
+  set C₀ : ℝ := 8 * (8 * (P + P ^ 4)) + 24 * (2 * v + 2 * P ^ 2) ^ 2 + 8 * P ^ 4 with hC₀
+  set C₁ : ℝ := 64 * P + 64 * v ^ 4 + 24 * (2 * P + 2 * v ^ 2) ^ 2 + 8 * P ^ 4 with hC₁
+  refine ⟨|2 * (C₀ + C₁)| + 1, by positivity, ?_⟩
+  intro n hn
+  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
+  have hn0 : (0 : ℝ) < (n : ℝ) := lt_of_lt_of_le one_pos hn1
+  have hZm : Measurable
+      (fun y : ℝ => studentPair F (truncAt m (Real.sqrt (n : ℝ)) y)) :=
+    (measurable_studentPair F).comp (measurable_truncAt _ _)
+  rw [vecRootLaw, integral_map (measurable_vecRoot hZm n).aemeasurable (by fun_prop)]
+  set τ : ℝ := Real.sqrt (n : ℝ) with hτdef
+  have hτ2 : τ ^ 2 = (n : ℝ) := Real.sq_sqrt hn0.le
+  have hτ0 : (0 : ℝ) < τ := Real.sqrt_pos.2 hn0
+  have hτ1 : (1 : ℝ) ≤ τ := by nlinarith [hτ2, hτ0, hn1]
+  set T : ℝ → ℝ := fun x => truncAt m τ x - m with hTdef
+  have hTm : Measurable T := (measurable_truncAt m τ).sub measurable_const
+  have hTb : ∀ x, |T x| ≤ τ := fun x => abs_truncAt_sub_le hτ0.le x
+  have hTa : ∀ x, |T x| ≤ |x - m| := fun x => abs_truncAt_sub_le_abs m τ x
+  have hTI : ∀ k : ℕ, Integrable (fun x => T x ^ k) F := by
+    intro k
+    refine integrable_of_ae_abs_le (hTm.pow_const k).aestronglyMeasurable (C := τ ^ k) ?_
+    filter_upwards with x
+    rw [abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hTb x) k
+  have hTint : Integrable T F :=
+    integrable_of_ae_abs_le hTm.aestronglyMeasurable (Filter.Eventually.of_forall hTb)
+  -- the truncated moments
+  have hT4 : ∫ x, T x ^ 4 ∂F ≤ P := by
+    rw [hP]
+    exact integral_mono (hTI 4) hF4 fun x => pow_four_le_pow_four_of_abs_le (hTa x)
+  have hT2 : ∫ x, T x ^ 2 ∂F ≤ v := by
+    rw [hvar]
+    exact integral_mono (hTI 2) hI2 fun x => sq_le_sq_of_abs_le (hTa x)
+  have hT2nn : (0 : ℝ) ≤ ∫ x, T x ^ 2 ∂F := integral_nonneg fun x => by positivity
+  have hτ4 : τ ^ 4 = (n : ℝ) ^ 2 := by
+    calc τ ^ 4 = (τ ^ 2) ^ 2 := by ring
+      _ = (n : ℝ) ^ 2 := by rw [hτ2]
+  have hT8 : ∫ x, T x ^ 8 ∂F ≤ (n : ℝ) ^ 2 * P := by
+    have hpt : ∀ x, T x ^ 8 ≤ (n : ℝ) ^ 2 * (x - m) ^ 4 := by
+      intro x
+      have h1 : T x ^ 4 ≤ (x - m) ^ 4 := pow_four_le_pow_four_of_abs_le (hTa x)
+      have h2 : T x ^ 4 ≤ τ ^ 4 := by
+        refine pow_four_le_pow_four_of_abs_le ?_
+        rw [abs_of_nonneg hτ0.le]
+        exact hTb x
+      calc T x ^ 8 = T x ^ 4 * T x ^ 4 := by ring
+        _ ≤ τ ^ 4 * (x - m) ^ 4 := by
+            refine mul_le_mul h2 h1 (by positivity) (by positivity)
+        _ = (n : ℝ) ^ 2 * (x - m) ^ 4 := by rw [hτ4]
+    have := integral_mono (hTI 8) (hF4.const_mul ((n : ℝ) ^ 2)) hpt
+    rwa [integral_const_mul, ← hP] at this
+  -- the truncation biases
+  have hcons : ∀ x : ℝ, x - truncAt m τ x = (x - m) - T x := by
+    intro x
+    simp only [hTdef]
+    ring
+  have hgI : Integrable (fun x : ℝ => x - truncAt m τ x) F := by
+    have : Integrable (fun x : ℝ => (x - m) - T x) F := hI1.sub hTint
+    simpa only [hcons] using this
+  have hc0 : |∫ x, T x ∂F| ≤ P / (n : ℝ) := by
+    have hTeq : ∫ x, T x ∂F = -∫ x, (x - truncAt m τ x) ∂F := by
+      have h1 : ∫ x, ((x - m) - (x - truncAt m τ x)) ∂F
+          = (∫ x, (x - m) ∂F) - ∫ x, (x - truncAt m τ x) ∂F := integral_sub hI1 hgI
+      have h2 : (fun x : ℝ => (x - m) - (x - truncAt m τ x)) = T := by
+        funext x
+        simp only [hTdef]
+        ring
+      rw [h2, hmean, zero_sub] at h1
+      exact h1
+    rw [hTeq, abs_neg]
+    refine le_trans abs_integral_le_integral_abs ?_
+    have hstep : ∫ x, |x - truncAt m τ x| ∂F ≤ ∫ x, (x - m) ^ 4 / τ ^ 3 ∂F := by
+      refine integral_mono hgI.abs (hF4.div_const _) fun x => abs_sub_truncAt_le hτ0 x
+    rw [integral_div, ← hP] at hstep
+    refine le_trans hstep ?_
+    have hτ3 : (n : ℝ) ≤ τ ^ 3 := by nlinarith [hτ2, hτ1, hτ0]
+    gcongr
+  have hc1 : |(∫ x, T x ^ 2 ∂F) - v| ≤ P / (n : ℝ) := by
+    have hgI2 : Integrable (fun x : ℝ => (x - m) ^ 2 - T x ^ 2) F := hI2.sub (hTI 2)
+    have hTeq : (∫ x, T x ^ 2 ∂F) - v = -∫ x, ((x - m) ^ 2 - T x ^ 2) ∂F := by
+      rw [integral_sub hI2 (hTI 2), hvar]
+      ring
+    rw [hTeq, abs_neg]
+    refine le_trans abs_integral_le_integral_abs ?_
+    have hstep : ∫ x, |(x - m) ^ 2 - T x ^ 2| ∂F ≤ ∫ x, (x - m) ^ 4 / τ ^ 2 ∂F :=
+      integral_mono hgI2.abs (hF4.div_const _) fun x => abs_sq_sub_sq_truncAt_le hτ0 x
+    rw [integral_div, ← hP, hτ2] at hstep
+    exact hstep
+  -- the two coordinate summands and their centred moments
+  set c₀ : ℝ := ∫ x, T x ∂F with hc₀def
+  set d : ℝ := ∫ x, T x ^ 2 ∂F with hddef
+  have hPn : P / (n : ℝ) ≤ P := div_le_self hP0 hn1
+  have hc0P : |c₀| ≤ P := le_trans hc0 hPn
+  have hc4 : c₀ ^ 4 ≤ P ^ 4 :=
+    pow_four_le_pow_four_of_abs_le (by rw [abs_of_nonneg hP0]; exact hc0P)
+  have hc2 : c₀ ^ 2 ≤ P ^ 2 := sq_le_sq_of_abs_le (by rw [abs_of_nonneg hP0]; exact hc0P)
+  have hd4 : d ^ 4 ≤ v ^ 4 := pow_le_pow_left₀ hT2nn hT2 4
+  have hd2 : d ^ 2 ≤ v ^ 2 := pow_le_pow_left₀ hT2nn hT2 2
+  have hcst : ∀ a : ℝ, ∫ _x : ℝ, a ∂F = a := fun a => by simp
+  have hI04 : Integrable (fun x => (T x - c₀) ^ 4) F := by
+    refine integrable_of_ae_abs_le ((hTm.sub_const c₀).pow_const 4).aestronglyMeasurable
+      (C := (τ + |c₀|) ^ 4) ?_
+    filter_upwards with x
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ 4
+    calc |T x - c₀| ≤ |T x| + |c₀| := abs_sub _ _
+      _ ≤ τ + |c₀| := by linarith [hTb x]
+  have hI02 : Integrable (fun x => (T x - c₀) ^ 2) F := by
+    refine integrable_of_ae_abs_le ((hTm.sub_const c₀).pow_const 2).aestronglyMeasurable
+      (C := (τ + |c₀|) ^ 2) ?_
+    filter_upwards with x
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ 2
+    calc |T x - c₀| ≤ |T x| + |c₀| := abs_sub _ _
+      _ ≤ τ + |c₀| := by linarith [hTb x]
+  have hI14 : Integrable (fun x => (T x ^ 2 - d) ^ 4) F := by
+    have hmm := (((hTm.pow_const 2).sub_const d).pow_const 4).aestronglyMeasurable
+      (μ := F)
+    refine integrable_of_ae_abs_le hmm (C := (τ ^ 2 + |d|) ^ 4) ?_
+    filter_upwards with x
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ 4
+    calc |T x ^ 2 - d| ≤ |T x ^ 2| + |d| := abs_sub _ _
+      _ ≤ τ ^ 2 + |d| := by
+          have hab : |T x| ≤ |τ| := by rw [abs_of_nonneg hτ0.le]; exact hTb x
+          have h := sq_le_sq_of_abs_le hab
+          have h2 : |T x ^ 2| = T x ^ 2 := abs_of_nonneg (by positivity)
+          linarith
+  have hI12 : Integrable (fun x => (T x ^ 2 - d) ^ 2) F := by
+    have hmm := (((hTm.pow_const 2).sub_const d).pow_const 2).aestronglyMeasurable
+      (μ := F)
+    refine integrable_of_ae_abs_le hmm (C := (τ ^ 2 + |d|) ^ 2) ?_
+    filter_upwards with x
+    rw [abs_pow]
+    refine pow_le_pow_left₀ (abs_nonneg _) ?_ 2
+    calc |T x ^ 2 - d| ≤ |T x ^ 2| + |d| := abs_sub _ _
+      _ ≤ τ ^ 2 + |d| := by
+          have hab : |T x| ≤ |τ| := by rw [abs_of_nonneg hτ0.le]; exact hTb x
+          have h := sq_le_sq_of_abs_le hab
+          have h2 : |T x ^ 2| = T x ^ 2 := abs_of_nonneg (by positivity)
+          linarith
+  have hp0 : ∫ x, (T x - ∫ s, T s ∂F) ^ 4 ∂F ≤ 8 * (P + P ^ 4) := by
+    rw [← hc₀def]
+    have h1 : ∫ x, (T x - c₀) ^ 4 ∂F ≤ ∫ x, (8 * (T x ^ 4 + c₀ ^ 4)) ∂F :=
+      integral_mono hI04 (((hTI 4).add (integrable_const _)).const_mul 8)
+        fun x => sub_pow_four_le_eight (T x) c₀
+    have h2 : ∫ x, (8 * (T x ^ 4 + c₀ ^ 4)) ∂F = 8 * ((∫ x, T x ^ 4 ∂F) + c₀ ^ 4) := by
+      rw [integral_const_mul, integral_add (hTI 4) (integrable_const _), hcst]
+    rw [h2] at h1
+    linarith [h1, hT4, hc4]
+  have hq0 : ∫ x, (T x - ∫ s, T s ∂F) ^ 2 ∂F ≤ 2 * v + 2 * P ^ 2 := by
+    rw [← hc₀def]
+    have h1 : ∫ x, (T x - c₀) ^ 2 ∂F ≤ ∫ x, (2 * (T x ^ 2 + c₀ ^ 2)) ∂F :=
+      integral_mono hI02 (((hTI 2).add (integrable_const _)).const_mul 2)
+        fun x => sub_sq_le_two (T x) c₀
+    have h2 : ∫ x, (2 * (T x ^ 2 + c₀ ^ 2)) ∂F = 2 * ((∫ x, T x ^ 2 ∂F) + c₀ ^ 2) := by
+      rw [integral_const_mul, integral_add (hTI 2) (integrable_const _), hcst]
+    rw [h2, ← hddef] at h1
+    linarith [h1, hT2, hc2]
+  have hU1m : Measurable fun x : ℝ => T x ^ 2 - v := (hTm.pow_const 2).sub_const v
+  have hU1b : ∀ x, |T x ^ 2 - v| ≤ τ ^ 2 + |v| := by
+    intro x
+    calc |T x ^ 2 - v| ≤ |T x ^ 2| + |v| := abs_sub _ _
+      _ ≤ τ ^ 2 + |v| := by
+          have hab : |T x| ≤ |τ| := by rw [abs_of_nonneg hτ0.le]; exact hTb x
+          have h := sq_le_sq_of_abs_le hab
+          have h2 : |T x ^ 2| = T x ^ 2 := abs_of_nonneg (by positivity)
+          linarith
+  have hcU1 : ∫ s, (T s ^ 2 - v) ∂F = d - v := by
+    rw [integral_sub (hTI 2) (integrable_const v), hcst, ← hddef]
+  have hshift : ∀ x : ℝ, (T x ^ 2 - v) - (∫ s, (T s ^ 2 - v) ∂F) = T x ^ 2 - d := by
+    intro x
+    rw [hcU1]
+    ring
+  have hp1 : ∫ x, ((T x ^ 2 - v) - ∫ s, (T s ^ 2 - v) ∂F) ^ 4 ∂F
+      ≤ 8 * ((n : ℝ) ^ 2 * P + v ^ 4) := by
+    simp only [hshift]
+    have hpt : ∀ x : ℝ, (T x ^ 2 - d) ^ 4 ≤ 8 * (T x ^ 8 + d ^ 4) := by
+      intro x
+      have h := sub_pow_four_le_eight (T x ^ 2) d
+      have e : (T x ^ 2) ^ 4 = T x ^ 8 := by ring
+      rwa [e] at h
+    have h1 : ∫ x, (T x ^ 2 - d) ^ 4 ∂F ≤ ∫ x, (8 * (T x ^ 8 + d ^ 4)) ∂F :=
+      integral_mono hI14 (((hTI 8).add (integrable_const _)).const_mul 8) hpt
+    have h2 : ∫ x, (8 * (T x ^ 8 + d ^ 4)) ∂F = 8 * ((∫ x, T x ^ 8 ∂F) + d ^ 4) := by
+      rw [integral_const_mul, integral_add (hTI 8) (integrable_const _), hcst]
+    rw [h2] at h1
+    linarith [h1, hT8, hd4]
+  have hq1 : ∫ x, ((T x ^ 2 - v) - ∫ s, (T s ^ 2 - v) ∂F) ^ 2 ∂F ≤ 2 * P + 2 * v ^ 2 := by
+    simp only [hshift]
+    have hpt : ∀ x : ℝ, (T x ^ 2 - d) ^ 2 ≤ 2 * (T x ^ 4 + d ^ 2) := by
+      intro x
+      have h := sub_sq_le_two (T x ^ 2) d
+      have e : (T x ^ 2) ^ 2 = T x ^ 4 := by ring
+      rwa [e] at h
+    have h1 : ∫ x, (T x ^ 2 - d) ^ 2 ∂F ≤ ∫ x, (2 * (T x ^ 4 + d ^ 2)) ∂F :=
+      integral_mono hI12 (((hTI 4).add (integrable_const _)).const_mul 2) hpt
+    have h2 : ∫ x, (2 * (T x ^ 4 + d ^ 2)) ∂F = 2 * ((∫ x, T x ^ 4 ∂F) + d ^ 2) := by
+      rw [integral_const_mul, integral_add (hTI 4) (integrable_const _), hcst]
+    rw [h2] at h1
+    linarith [h1, hT4, hd2]
+  -- the coordinates of the sum, and the plane bound
+  have hcoord : ∀ (y : Fin n → ℝ) (j : Fin 2),
+      (∑ i, studentPair F (truncAt m τ (y i))) j
+        = ∑ i, (studentPair F (truncAt m τ (y i))) j := by
+    intro y j
+    have h : (⟪∑ i, studentPair F (truncAt m τ (y i)), coordDir j⟫ : ℝ)
+        = ∑ i, (⟪studentPair F (truncAt m τ (y i)), coordDir j⟫ : ℝ) := by
+      rw [sum_inner]
+    simpa only [inner_coordDir] using h
+  have hu0 : ∀ y : Fin n → ℝ,
+      (∑ i, studentPair F (truncAt m τ (y i))) 0 = ∑ i, T (y i) := by
+    intro y
+    rw [hcoord y 0]
+    exact Finset.sum_congr rfl fun i _ => rfl
+  have hu1 : ∀ y : Fin n → ℝ,
+      (∑ i, studentPair F (truncAt m τ (y i))) 1 = ∑ i, (T (y i) ^ 2 - v) := by
+    intro y
+    rw [hcoord y 1]
+    exact Finset.sum_congr rfl fun i _ => rfl
+  have hbd : ∀ y : Fin n → ℝ, ‖∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4
+      ≤ 2 * ((∑ i, T (y i)) ^ 4 + (∑ i, (T (y i) ^ 2 - v)) ^ 4) := by
+    intro y
+    have h := norm_pow_four_le_two_mul (∑ i, studentPair F (truncAt m τ (y i)))
+    rwa [hu0 y, hu1 y] at h
+  have hsumZm : Measurable fun y : Fin n → ℝ => ∑ i, studentPair F (truncAt m τ (y i)) :=
+    Finset.measurable_sum _ fun i _ => hZm.comp (measurable_pi_apply i)
+  have hsum0m : Measurable fun y : Fin n → ℝ => ∑ i, T (y i) :=
+    Finset.measurable_sum _ fun i _ => hTm.comp (measurable_pi_apply i)
+  have hsum1m : Measurable fun y : Fin n → ℝ => ∑ i, (T (y i) ^ 2 - v) :=
+    Finset.measurable_sum _ fun i _ => hU1m.comp (measurable_pi_apply i)
+  have hZb : ∀ y : Fin n → ℝ, ‖∑ i, studentPair F (truncAt m τ (y i))‖
+      ≤ (n : ℝ) * (τ + (τ ^ 2 + |v|)) := by
+    intro y
+    calc ‖∑ i, studentPair F (truncAt m τ (y i))‖ ≤ ∑ _i : Fin n, (τ + (τ ^ 2 + |v|)) :=
+          (norm_sum_le _ _).trans
+            (Finset.sum_le_sum fun i _ => norm_studentPair_truncAt_le F hτ0.le (y i))
+      _ = (n : ℝ) * (τ + (τ ^ 2 + |v|)) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hb0 : ∀ y : Fin n → ℝ, |∑ i, T (y i)| ≤ (n : ℝ) * τ := by
+    intro y
+    calc |∑ i, T (y i)| ≤ ∑ _i : Fin n, τ :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hTb (y i))
+      _ = (n : ℝ) * τ := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hb1 : ∀ y : Fin n → ℝ, |∑ i, (T (y i) ^ 2 - v)| ≤ (n : ℝ) * (τ ^ 2 + |v|) := by
+    intro y
+    calc |∑ i, (T (y i) ^ 2 - v)| ≤ ∑ _i : Fin n, (τ ^ 2 + |v|) :=
+          (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => hU1b (y i))
+      _ = (n : ℝ) * (τ ^ 2 + |v|) := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  have hintZ : Integrable (fun y : Fin n → ℝ =>
+      ‖∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4) (Measure.pi fun _ : Fin n => F) := by
+    have hmm := (hsumZm.norm.pow_const 4).aestronglyMeasurable
+      (μ := Measure.pi fun _ : Fin n => F)
+    refine integrable_of_ae_abs_le hmm (C := ((n : ℝ) * (τ + (τ ^ 2 + |v|))) ^ 4) ?_
+    filter_upwards with y
+    rw [abs_pow, abs_norm]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hZb y) 4
+  have hint0 : Integrable (fun y : Fin n → ℝ => (∑ i, T (y i)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := by
+    have hmm := (hsum0m.pow_const 4).aestronglyMeasurable
+      (μ := Measure.pi fun _ : Fin n => F)
+    refine integrable_of_ae_abs_le hmm (C := ((n : ℝ) * τ) ^ 4) ?_
+    filter_upwards with y
+    rw [abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hb0 y) 4
+  have hint1 : Integrable (fun y : Fin n → ℝ => (∑ i, (T (y i) ^ 2 - v)) ^ 4)
+      (Measure.pi fun _ : Fin n => F) := by
+    have hmm := (hsum1m.pow_const 4).aestronglyMeasurable
+      (μ := Measure.pi fun _ : Fin n => F)
+    refine integrable_of_ae_abs_le hmm (C := ((n : ℝ) * (τ ^ 2 + |v|)) ^ 4) ?_
+    filter_upwards with y
+    rw [abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hb1 y) 4
+  -- the two moment bounds
+  have hq0nn : (0 : ℝ) ≤ 2 * v + 2 * P ^ 2 := by nlinarith [hv0, sq_nonneg P]
+  have hq1nn : (0 : ℝ) ≤ 2 * P + 2 * v ^ 2 := by nlinarith [hP0, sq_nonneg v]
+  have hS0 := integral_pi_sum_pow_four_le F hTm hTb n hp0 hq0 hq0nn
+  have hS1 := integral_pi_sum_pow_four_le F hU1m hU1b n hp1 hq1 hq1nn
+  rw [← hc₀def] at hS0
+  rw [hcU1] at hS1
+  have e1 : (n : ℝ) ≤ (n : ℝ) ^ 3 := by nlinarith [hn1]
+  have e2 : (n : ℝ) ^ 2 ≤ (n : ℝ) ^ 3 := by nlinarith [hn1]
+  have e3 : (1 : ℝ) ≤ (n : ℝ) ^ 3 := by nlinarith [hn1]
+  have hP40 : (0 : ℝ) ≤ P ^ 4 := by positivity
+  have hv40 : (0 : ℝ) ≤ v ^ 4 := by positivity
+  have hp00 : (0 : ℝ) ≤ 8 * (P + P ^ 4) := by linarith [hP0, hP40]
+  have hq00 : (0 : ℝ) ≤ (2 * v + 2 * P ^ 2) ^ 2 := sq_nonneg _
+  have hq10 : (0 : ℝ) ≤ (2 * P + 2 * v ^ 2) ^ 2 := sq_nonneg _
+  have hPn0 : (0 : ℝ) ≤ P / (n : ℝ) := div_nonneg hP0 hn0.le
+  have hn4 : (0 : ℝ) ≤ (n : ℝ) ^ 4 := by positivity
+  have hnc0 : (n : ℝ) ^ 4 * c₀ ^ 4 ≤ P ^ 4 := by
+    have h1 : c₀ ^ 4 ≤ (P / (n : ℝ)) ^ 4 :=
+      pow_four_le_pow_four_of_abs_le (by rw [abs_of_nonneg hPn0]; exact hc0)
+    have h2 := mul_le_mul_of_nonneg_left h1 hn4
+    have h3 : (n : ℝ) ^ 4 * (P / (n : ℝ)) ^ 4 = P ^ 4 := by
+      field_simp
+    rwa [h3] at h2
+  have hnc1 : (n : ℝ) ^ 4 * (d - v) ^ 4 ≤ P ^ 4 := by
+    have h1 : (d - v) ^ 4 ≤ (P / (n : ℝ)) ^ 4 :=
+      pow_four_le_pow_four_of_abs_le (by rw [abs_of_nonneg hPn0]; exact hc1)
+    have h2 := mul_le_mul_of_nonneg_left h1 hn4
+    have h3 : (n : ℝ) ^ 4 * (P / (n : ℝ)) ^ 4 = P ^ 4 := by
+      field_simp
+    rwa [h3] at h2
+  have hS0' : (∫ y : Fin n → ℝ, (∑ i, T (y i)) ^ 4 ∂(Measure.pi fun _ : Fin n => F))
+      ≤ C₀ * (n : ℝ) ^ 3 := by
+    rw [hC₀]
+    nlinarith [hS0, hnc0, mul_nonneg (sub_nonneg.2 e1) hp00,
+      mul_nonneg (sub_nonneg.2 e2) hq00, mul_nonneg (sub_nonneg.2 e3) hP40]
+  have hS1' : (∫ y : Fin n → ℝ, (∑ i, (T (y i) ^ 2 - v)) ^ 4
+      ∂(Measure.pi fun _ : Fin n => F)) ≤ C₁ * (n : ℝ) ^ 3 := by
+    rw [hC₁]
+    nlinarith [hS1, hnc1, mul_nonneg (sub_nonneg.2 e1) hv40,
+      mul_nonneg (sub_nonneg.2 e2) hq10, mul_nonneg (sub_nonneg.2 e3) hP40]
+  have hmain : (∫ y : Fin n → ℝ, ‖∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4
+      ∂(Measure.pi fun _ : Fin n => F)) ≤ 2 * (C₀ * (n : ℝ) ^ 3 + C₁ * (n : ℝ) ^ 3) := by
+    have hsum01 : Integrable (fun y : Fin n → ℝ =>
+        (∑ i, T (y i)) ^ 4 + (∑ i, (T (y i) ^ 2 - v)) ^ 4)
+        (Measure.pi fun _ : Fin n => F) := hint0.add hint1
+    have h1 := integral_mono hintZ (hsum01.const_mul 2) hbd
+    rw [integral_const_mul, integral_add hint0 hint1] at h1
+    linarith [h1, hS0', hS1']
+  -- the scaling
+  have hscale : ∀ y : Fin n → ℝ, ‖τ⁻¹ • ∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4
+      = ((n : ℝ) ^ 2)⁻¹ * ‖∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4 := by
+    intro y
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (inv_nonneg.2 hτ0.le), mul_pow, inv_pow,
+      hτ4]
+  simp only [hscale]
+  rw [integral_const_mul]
+  have hne : (n : ℝ) ≠ 0 := ne_of_gt hn0
+  have hinv : (0 : ℝ) ≤ ((n : ℝ) ^ 2)⁻¹ := by positivity
+  calc ((n : ℝ) ^ 2)⁻¹ * (∫ y : Fin n → ℝ, ‖∑ i, studentPair F (truncAt m τ (y i))‖ ^ 4
+        ∂(Measure.pi fun _ : Fin n => F))
+      ≤ ((n : ℝ) ^ 2)⁻¹ * (2 * (C₀ * (n : ℝ) ^ 3 + C₁ * (n : ℝ) ^ 3)) :=
+        mul_le_mul_of_nonneg_left hmain hinv
+    _ = 2 * (C₀ + C₁) * (n : ℝ) := by field_simp; try ring
+    _ ≤ (|2 * (C₀ + C₁)| + 1) * (n : ℝ) := by
+        nlinarith [le_abs_self (2 * (C₀ + C₁)), hn0.le]
 
 /-- **The truncated root leaves the bulk with probability `O(n^{-3/2})`.** Markov at the fourth
 moment against `M⁴ = n^{5/2}`, with `tail_ledger_exponent` doing the arithmetic: this is input (C)
@@ -5116,7 +5933,8 @@ theorem exists_fourierCertificate_deltaSurrogate
       fun y => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y) with hZdef
     have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
     haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
-    obtain ⟨hAint, hAmass⟩ := hA n hn θ
+    have hAmass := hA n hn θ
+    have hAint := integrable_fourier_bulkMultiplier hM σ ((Real.sqrt (n : ℝ))⁻¹) θ
     have hS : MeasurableSet {w : E₂ | ‖w‖ ≤ bulkRadius n} :=
       measurableSet_le continuous_norm.measurable measurable_const
     have hcompl : ({w : E₂ | ‖w‖ ≤ bulkRadius n})ᶜ = {w : E₂ | bulkRadius n < ‖w‖} := by
@@ -7655,6 +8473,40 @@ the non-stationary-phase estimate, five integrations by parts against
 the fourth moment of the truncated root. Every other ingredient of this theorem is proved: the
 file's only other `sorry`s are this statement and its corollary.
 
+**Status after wave 33. Input (C) is proved; the certificate's residue is two deterministic
+estimates; this theorem and its corollary are untouched and still `sorry`.**
+
+* **(C) IS CLOSED, AXIOM-CLEAN.** The missing tool was the fourth moment of an iid sum on
+  `Measure.pi`, and it is now built: `integral_pi_succ_of_bounded` (head/tail split via
+  `measurePreserving_piFinSuccAbove` and Fubini), `integral_pi_sum_moments` (the induction:
+  `E S = 0`, `E S² = nEV²`, `E S⁴ ≤ nEV⁴ + 3n²(EV²)²`) and `integral_pi_sum_pow_four_le` (the
+  same without centring). No crude bound reaches `O(n)` here — `E‖w‖⁴ ≤ (sup‖w‖²)E‖w‖²` returns
+  `n³` and Cauchy–Schwarz `n⁵` — because the truth is carried by a single large summand, an
+  event of probability `≍ n^{-1}` on which `w₁ ≍ √n`.
+
+* **ONE CORRECTION TO THE WAVE-31 NOTE, and it is the only thing the ledger did not price.**
+  The section note above says of (C) that "independence and centring kill every block with a
+  singleton". **The truncated summand is not centred**, and the singleton blocks do not vanish:
+  `integral_pi_sum_pow_four_le` carries a mean term `8n⁴(E U)⁴`, and with the crude
+  `|E U| = O(1)` that term is `O(n⁴)` — four powers too many, and fatal. What closes it is that
+  both biases are *fourth-moment tails*: `|E T| ≤ E|X−m|1_{|X−m|>τ} ≤ μ₄/τ³` and
+  `|E T² − σ²| ≤ μ₄/τ²` (`abs_sub_truncAt_le`, `abs_sq_sub_sq_truncAt_le`), each `≤ μ₄/n` at
+  `τ = √n`. The `n`-exponent of (C) is unchanged and nothing downstream moves — the wave-30/31
+  numerology stands — but the argument the note gives for it is incomplete as written.
+
+* **(A) LOSES ITS INTEGRABILITY CONJUNCT.** `g` is `C^∞` (`contDiff_bulkMultiplier`, through
+  `contDiff_deltaSurrogate` and `contDiff_coord`) with compact support, hence Schwartz, hence
+  `𝓕 g` is Schwartz and integrable. The implication "smooth and compactly supported ⇒ Schwartz"
+  is absent from this Mathlib pin — there is no `𝓓 → 𝓢` bridge — so it is proved here as
+  `schwartzOfCompactSupport`. `exists_integral_norm_fourier_bulkMultiplier_le` is restated
+  without the conjunct.
+
+* **THE MASS BOUND OF (A), AND ALL OF (B), WERE NOT ATTEMPTED, and that is a budget statement,
+  not a verdict.** Both need what this development does not have: explicit control of the
+  iterated derivatives of `g` on `‖w‖ ≤ 2M`, polynomial in `M = n^{5/8}` and `|θ|`. (B) needs in
+  addition the five-fold integration by parts against the proved slope bound
+  `deltaSurrogate_slope_ge`. No obstruction to either is known.
+
 **What is honestly *not* done, and it is bookkeeping rather than analysis.** This theorem itself
 is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_sub_truncAt_le`
 (change of law at `τ = √n`), `studentizedRootCDF_eq_vecRootLaw` with
@@ -7663,8 +8515,8 @@ is still `sorry`. Granting (A), (B), (C), the chain is: `abs_studentizedRootCDF_
 range), `norm_charFun_map_deltaSurrogate_vecRootLaw_le_of_band` fed by the certificate (the outer
 range), the Esseen chain `esseen_split` / `abs_measure_Iic_sub_densityCDF_le_charFun` at
 `δ = n⁻¹`, `ρ = c√n`, and the peeled window `abs_measure_le_sub_le_of_peel_strata` with
-`sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was not attempted in this
-wave and is not claimed. -/
+`sum_dyadic_strata_le`. No missing analytic tool is known; the assembly was **not attempted in
+wave 31 and not attempted in wave 33**, and is not claimed. -/
 
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
@@ -7848,6 +8700,15 @@ The wave-30 exponent budget is verified rather than asserted (`leakage_ledger_ex
 `leakage_ledger_five_le`, `tail_ledger_exponent`), with `leakage_ledger_four_gt` showing `N = 5`
 is the minimum and not a margin; the only correction is a misplaced `σ` in the note's per-part
 cost. See the wave-31 note on `edgeworth_studentized_uniform`.
+
+**After wave 33 input (C) over there is proved, and this corollary still adds nothing.** The
+fourth moment of the truncated root — the only probabilistic one of the certificate's three
+inputs — is closed axiom-clean, on a fourth-moment expansion of an iid sum built for it
+(`integral_pi_succ_of_bounded`, `integral_pi_sum_moments`, `integral_pi_sum_pow_four_le`); what
+wave 31's note did not price is that truncation destroys the centring, so the expansion carries
+a mean term `8n⁴(E U)⁴` which only the fourth-moment tail bounds `|E T| ≤ μ₄/τ³`,
+`|E T² − σ²| ≤ μ₄/τ²` bring back to `O(1)`. The residue over there is (A) and (B), two
+deterministic estimates on `𝓕 g`. See the wave-33 note on `edgeworth_studentized_uniform`.
 
 **The inversion step this corollary needs is unchanged and unattempted.** Granted
 `edgeworth_studentized_uniform`, it is the implicit-function inversion of
