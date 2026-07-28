@@ -2897,7 +2897,77 @@ In short: what wave 12 called "the smallest genuinely missing piece" (M1)(b), th
 half of (M3), and the whole deterministic half of (M2) are proved and axiom-clean. The residue
 is three items that are all genuinely probabilistic — a one-factor Berry–Esseen bookkeeping for
 `φ^{n−1}`, a truncation-based tail bound with its anti-concentration companion, and the
-multivariate Cramér condition for a parabola-carried law together with Hall's conditioning. -/
+multivariate Cramér condition for a parabola-carried law together with Hall's conditioning.
+
+**Status after the wave-14 re-derivation.** Of the three probabilistic residues wave 13 left,
+the first is now CLOSED, the third has one of its two halves CLOSED and the other reduced to a
+single named analytic fact, and the second has been found to be **stated falsely** and has been
+replaced by a correct version whose deterministic half and whose assembly are both closed.
+
+* (R1) **The one-factor bookkeeping for `φ^{n−1}` — CLOSED.** The `OneFactor` section of
+  `ForMathlib/BivariateEdgeworth.lean` proves it axiom-clean and it is entirely elementary.
+  `norm_charFun_sub_one_le` gives `‖φ_μ(t) − 1‖ ≤ (3/2)∫⟪x,t⟫²` for a law centred in the
+  direction `t` — the centring is what makes this quadratic rather than linear, and hence what
+  makes the whole correction `O(n⁻¹)` rather than `O(n^{-1/2})`, which at `O(n^{-1/2})` would
+  have swamped the very coefficient the studentized expansion exists to produce. With
+  `‖z^{n−1} − z^n‖ = ‖z‖^{n−1}‖1 − z‖ ≤ ‖1 − z‖` (`norm_pow_sub_pow_succ_le`) and the rescaled
+  argument `c = n^{-1/2}a`, `norm_charFun_pow_sub_charFun_vecRootLaw_le` reads
+  `‖φ(n^{-1/2}a)^{n−1} − φ_{ρ_n}(a)‖ ≤ (3/2)v/n`, and
+  `norm_mixCharFun_vecRootLaw_sub_charFun_le` restates (M1)(b) against `φ_{ρ_n}(a)` itself:
+  `‖mix_{ρ_n}(b,a) − iκ φ_{ρ_n}(a)‖ ≤ 3M/(2√n) + (3/2)|κ|v/n`. The surviving factor is now
+  exactly the quantity `norm_charFun_vecRootLaw_sub_edgeworth_le` estimates, so the damped
+  expansion applies to it verbatim and the two expansions add.
+* (R2) **The truncation tail bound — the statement wave 13 recorded is FALSE, and the correct
+  one needs a third-order surrogate, whose deterministic half and assembly are CLOSED.**
+  Wave 13 asked for `P(|u|³r²/2 + |u|x² > εn⁻¹) = O(n⁻¹)`. With `r = n^{-1/2}` the first term
+  is `|u|³/(2n)`, so that event is `{|u|³ > 2ε}`, whose probability converges to
+  `P(|N(0,σ²)|³ > 2ε) > 0`. The failure is at the level of the limit law, so **no truncation of
+  the summands can repair it**; the claim is false as stated for every fixed `ε > 0`.
+  The arithmetic of the split explains what is really required. If `|T̃ₙ − Hₙ| ≤ Q n^{-α}` with
+  `Q` having `p` moments, the two terms of `abs_measure_le_sub_le_of_dist_le` at scale
+  `δ = λn⁻¹` are `≈ λ^{-p} n^{p(1−α)}` and `≈ λn⁻¹`, and their sum is `O(n⁻¹)` only when
+  `α > 1`. The second-order surrogate has `α = 1` *exactly*, and no choice of `λ` works. The
+  third-order surrogate has `α = 3/2`, and then `λ = √n` with `p = 2` gives `O(n⁻¹)` on both
+  sides. This is exactly why Hall retains the quadratic term of the delta-method Taylor
+  polynomial even for a *one-term* expansion; wave 13's second-order surrogate was one order
+  too coarse for the accuracy claimed.
+  Closed here, axiom-clean: `abs_inv_sqrt_one_add_sub_taylor3_le`
+  (`|(1+x)^{-1/2} − (1 − x/2 + 3x²/8)| ≤ |x|³` on `|x| ≤ 1/2`, by the same purely algebraic
+  substitution `a = √(1+x)`, the remainder coming out as `−(a−1)³(3a²+9a+8)/(8a)`),
+  `abs_studentFactor_sub_taylor3_le` and `abs_studentFactor_sub_taylor3_le'` (the same in the
+  shape the probability consumes, `|T̃ₙ − Hₙ| ≤ r³(4|u||v|³ + 4|u|⁷ + (3/4)|u|³|v| +
+  (3/8)|u|⁵)`), and `abs_measure_le_sub_le_of_dist_le` (the assembly, for arbitrary random
+  variables). **What is left of (M2)** is precisely the two hypotheses of the last of these: a
+  second moment for that bracket — this is where truncation of the summands at level `√n`
+  genuinely enters, the bracket carrying powers of the coordinates beyond the fourth — and the
+  anti-concentration `sup_x P(Hₙ ∈ (x, x + n⁻¹]) = O(n⁻¹)`, for which the circularity is broken
+  by first proving a cruder `O(n^{-1/2})` expansion.
+* (R3) **The Cramér residue — Hall's conditioning is NOT needed, and the remaining half is a
+  single uniformity statement.** `norm_charFun_vecRootLaw_le_pow` shows that a uniform bound
+  `‖φ_{F∘Z⁻¹}(t)‖ ≤ c` on `ε ≤ ‖t‖` transfers to `‖φ_{ρ_n}(t)‖ ≤ cⁿ` on `ε√n ≤ ‖t‖`, by
+  `charFun_vecRootLaw` and nothing else: `ρ_n` *is* a normalised sum, so its characteristic
+  function *is* an `n`-th power. **This overturns (M3)(ii).** Conditioning on `n − k`
+  coordinates would be needed only for the law of a *nonlinear* functional of the root, and the
+  (M1)(b) route never forms one — it works throughout with `charFun ρ_n` and `mixCharFun ρ_n`,
+  both of which factorise exactly.
+  For (M3)(i), `vecCramerCondition_of_uniform_sphere` writes the projection identity in polar
+  form: `VecCramerCondition μ` follows from `‖φ_{projLaw μ θ}(R)‖ ≤ c < 1` for all unit `θ` and
+  all large `R`. Since each projected law `ν_θ` is a nonconstant polynomial image of an
+  absolutely continuous law and hence absolutely continuous, Riemann–Lebesgue gives the decay
+  for every **fixed** direction. **What is left of (M3) is exactly that the decay be uniform
+  over the compact sphere of directions** — a statement about a two-parameter oscillatory
+  integral, provable either by the two-regime van der Corput argument or by total-variation
+  continuity of `θ ↦ ν_θ` plus the uniformity of Riemann–Lebesgue on totally bounded subsets of
+  `L¹`. Both routes give `limsup = 0`, strictly stronger than the `< 1` needed. Neither is
+  available in Mathlib at present; this is the only genuinely analytic item left in the whole
+  route.
+
+Net after wave 14, the residue is two items rather than three, and neither is a bookkeeping
+step: (i) a second moment for an explicit polynomial in the bivariate root together with the
+anti-concentration of its surrogate, and (ii) uniform Riemann–Lebesgue over the sphere for the
+parabola-carried law. Everything else in the chain — (S1), (S2), (M1)(a-not-needed), (M1)(b)
+including the one-factor bookkeeping, the deterministic core and the assembly of (M2), and both
+the direction-uniformity and the root transfer of (M3) — is proved and axiom-clean. -/
 theorem edgeworth_studentized_uniform [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
@@ -2926,13 +2996,22 @@ expansion, the quantile version follows by inverting it (the Cornish–Fisher st
 function theorem applied to `x ↦ Φ(x) + (γ/6)φ(x)(2x² + 1) n^{-1/2}`, using that `φ` is bounded
 below on the compact `z`-range corresponding to `α ∈ [ε, 1 − ε]`, which is where the hypothesis
 `0 < ε < 1/2` is used). It therefore inherits, and adds nothing to, the obstruction recorded on
-`edgeworth_studentized_uniform` — which, after the wave-13 re-derivation, is three purely
-probabilistic residues there: a one-factor Berry–Esseen bookkeeping for `φ^{n−1}`, a
-truncation-based tail bound with its anti-concentration companion, and the multivariate Cramér
-condition for the parabola-carried bivariate law together with Hall's conditioning. (S1) the
-bivariate expansion, (S2) the exact reduction of the studentized root to a bivariate mean,
-(M1)(b) the mixed-characteristic-function expansion, the deterministic half of (M2) and the
-direction-uniform half of (M3) are all closed. -/
+`edgeworth_studentized_uniform` — which, after the wave-14 re-derivation, is **two** items, not
+three:
+
+* a second moment for the explicit polynomial bracket of `abs_studentFactor_sub_taylor3_le'`
+  (this is where truncation of the summands at level `√n` enters) together with the
+  anti-concentration of the quadratic delta-method surrogate at scale `n⁻¹`;
+* uniform Riemann–Lebesgue over the compact sphere of directions for the parabola-carried
+  bivariate law, i.e. the hypothesis of `vecCramerCondition_of_uniform_sphere`.
+
+Closed and axiom-clean over there: (S1) the bivariate expansion, (S2) the exact reduction of
+the studentized root to a bivariate mean, (M1)(b) the mixed-characteristic-function expansion
+*together with* the one-factor `φ^{n−1}` bookkeeping (`norm_mixCharFun_vecRootLaw_sub_charFun_le`),
+the deterministic core and the assembly of (M2) in their corrected third-order form, the
+direction-uniformity of (M3), and the transfer of the Cramér tail to the vector root
+(`norm_charFun_vecRootLaw_le_pow`, which removes the need for Hall's conditioning device
+altogether). -/
 theorem cornishFisher_studentized_quantile [IsProbabilityMeasure F]
     -- USER-INPUT: finite fourth moment of the sampling law
     (hF4 : MemLp (fun t : ℝ => t) 4 F)
