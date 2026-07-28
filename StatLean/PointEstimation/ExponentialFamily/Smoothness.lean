@@ -28,8 +28,7 @@ covariance identities for the natural statistic are what one gets by differentia
 * `ExpFamily.iteratedDeriv_integral_exp_inner` — derivatives of every order along a fixed
   direction;
 * `ExpFamily.analyticAt_integral_exp_mul` — real-analyticity in the one-dimensional case;
-* `ExpFamily.analyticOnNhd_integral_exp_inner` — the full multivariate joint analyticity
-  (DEFERRAL-ELIGIBLE, see below).
+* `ExpFamily.analyticOnNhd_integral_exp_inner` — the full multivariate joint analyticity.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 1 (Preparations), §1.5
@@ -53,13 +52,18 @@ of the natural parameter space; differentiation under the integral sign). (`TPE2
   function of `T` under the finite measure `ν.withDensity (ENNReal.ofReal ∘ f±)`, whose
   `integrableExpSet` contains the interior of the weighted parameter set. Analyticity is then
   `analyticAt_mgf` applied twice and subtracted.
-* `analyticOnNhd_integral_exp_inner` is **DEFERRAL-ELIGIBLE**. Continuity, the first Fréchet
-  derivative and all directional derivatives of every order — the three results above it —
-  cover every downstream consumer in this development (the moment identities, the information
-  matrix, and the completeness argument, which only needs an open set of parameters). Joint
-  real-analyticity in several variables requires a multivariate power-series argument with no
-  Mathlib counterpart at the current pin, so this statement may be kept as a named,
-  documented debt rather than closed.
+* `analyticOnNhd_integral_exp_inner` is proved by exhibiting the Taylor series by hand rather
+  than by invoking a Mathlib "smooth + local bounds ⇒ analytic" criterion, which the current
+  pin does not provide in several variables. The `n`-th coefficient is the continuous
+  multilinear map `m ↦ (n!)⁻¹ ∫ f e^{⟪η, T⟫} ∏ᵢ ⟪mᵢ, T⟫ dν`, obtained from the multilinear
+  form `m ↦ ∏ᵢ ⟪mᵢ, T x⟫` (`MultilinearMap.mkPiAlgebra` composed with the Riesz maps) by
+  integration and `MultilinearMap.mkContinuous`. The elementary inequality
+  `‖v‖ⁿ ≤ (n!/cⁿ) e^{c‖v‖}` turns the sign-vector envelope
+  `M = ∫ |f| e^{⟪η, T⟫ + c‖T‖} dν < ∞` of `integrable_abs_exp_inner_add_norm` into the
+  geometric coefficient bound `M·c⁻ⁿ`, hence a radius of convergence at least `c`; on that
+  ball the exponential series may be integrated termwise (`hasSum_integral_of_summable_
+  integral_norm`, dominated by the same envelope) and sums to the function. Finite
+  dimensionality enters only through the envelope, exactly as in the derivative theorem.
 
 **Bibliographic comments.** Differentiation under the integral sign for exponential families,
 and the resulting analyticity of the log-partition function on the interior of the natural
@@ -563,16 +567,258 @@ theorem analyticAt_integral_exp_mul (E : ExpFamily 𝓧 ℝ) {f : 𝓧 → ℝ}
 
 /-- **Joint real-analyticity in several natural parameters.**
 
-DEFERRAL-ELIGIBLE: no downstream result in this development consumes joint analyticity —
-continuity, the Fréchet derivative and all directional derivatives of every order suffice —
-and closing it needs multivariate power-series machinery that the current Mathlib pin does not
-provide. It may be kept as a named documented debt. -/
-theorem analyticOnNhd_integral_exp_inner (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
+The Taylor series at an interior point `η` is obtained by expanding `e^{⟪v, T x⟫}` under the
+integral sign: its `n`-th coefficient is the continuous multilinear map
+`m ↦ (n!)⁻¹ ∫ f(x) e^{⟪η, T x⟫} ∏ᵢ ⟪mᵢ, T x⟫ dν`. The sign-vector envelope of
+`integrable_abs_exp_inner_add_norm` supplies a radius `c > 0` with
+`∫ |f| e^{⟪η, T⟫ + c‖T‖} dν = M < ∞`, and `‖T‖ⁿ ≤ (n!/cⁿ) e^{c‖T‖}` then bounds the `n`-th
+coefficient by `M·c⁻ⁿ`. That geometric bound gives radius of convergence at least `c`, and the
+termwise integration of the exponential series (dominated by the same envelope) identifies the
+sum with the function on the ball of radius `c`. -/
+theorem analyticOnNhd_integral_exp_inner
+    -- LEAN-ONLY: `V` is finite-dimensional, exactly as in `hasFDerivAt_integral_exp_inner`:
+    -- it is what makes the `2^s` sign-vector envelope — and hence the geometric bound on the
+    -- Taylor coefficients — available. Every downstream consumer instantiates
+    -- `V = EuclideanSpace ℝ (Fin k)`, the classical setting.
+    [FiniteDimensional ℝ V] (E : ExpFamily 𝓧 V) {f : 𝓧 → ℝ}
     -- USER-INPUT: measurable weight; see `continuousOn_integral_exp_inner`
     (hf : Measurable f) :
     AnalyticOnNhd ℝ (fun η => ∫ x, f x * Real.exp ⟪η, E.stat x⟫_ℝ ∂E.base)
       (interior (E.weightedNatSet f)) := by
-  sorry
+  classical
+  intro η hη
+  have hinner : ∀ ζ : V, Measurable fun x => ⟪ζ, E.stat x⟫_ℝ :=
+    fun ζ => (innerSL ℝ ζ).continuous.measurable.comp E.stat_meas
+  -- the exponential series, and the resulting single-term bound `yⁿ/n! ≤ e^y` for `y ≥ 0`
+  have hexpsum : ∀ y : ℝ, HasSum (fun n : ℕ => y ^ n / (n.factorial : ℝ)) (Real.exp y) := by
+    intro y
+    rw [Real.exp_eq_exp_ℝ]
+    exact NormedSpace.expSeries_div_hasSum_exp y
+  have hpow : ∀ (n : ℕ) (y : ℝ), 0 ≤ y → y ^ n / (n.factorial : ℝ) ≤ Real.exp y := by
+    intro n y hy
+    exact le_hasSum (hexpsum y) n fun b _ => by positivity
+  -- a radius `c > 0` for which the sign-vector envelope is integrable
+  obtain ⟨ρ, hρ_pos, hρ⟩ := Metric.isOpen_iff.mp isOpen_interior η hη
+  have h4 : (0 : ℝ) < 4 * (Module.finrank ℝ V : ℝ) + 4 := by positivity
+  set c : ℝ := ρ / (4 * (Module.finrank ℝ V : ℝ) + 4) with hcdef
+  have hc : 0 < c := div_pos hρ_pos h4
+  have hcmul : c * (4 * (Module.finrank ℝ V : ℝ) + 4) = ρ := by
+    rw [hcdef]; field_simp
+  have hcpow : ∀ n : ℕ, (0 : ℝ) < c ^ n := fun n => pow_pos hc n
+  have hfac : ∀ n : ℕ, (0 : ℝ) < (n.factorial : ℝ) := fun n => by
+    exact_mod_cast n.factorial_pos
+  have henv : Integrable
+      (fun x => |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) E.base := by
+    refine integrable_abs_exp_inner_add_norm E hf hc.le fun ww hww => ?_
+    have hNn : (0 : ℝ) ≤ (Module.finrank ℝ V : ℝ) := Nat.cast_nonneg _
+    have hlt : ‖ww‖ < ρ := lt_of_le_of_lt hww (by nlinarith [hc, hcmul, hNn])
+    have hmem : η + ww ∈ Metric.ball η ρ := by
+      rw [Metric.mem_ball, dist_eq_norm]; simpa [add_sub_cancel_left] using hlt
+    exact interior_subset (hρ hmem)
+  set M : ℝ := ∫ x, |f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖) ∂E.base with hMdef
+  have hM0 : 0 ≤ M := by
+    rw [hMdef]; exact integral_nonneg fun x => by positivity
+  -- `‖v‖ⁿ ≤ (n!/cⁿ) e^{c‖v‖}`
+  have hTn : ∀ (n : ℕ) (v : V),
+      ‖v‖ ^ n ≤ (n.factorial : ℝ) / c ^ n * Real.exp (c * ‖v‖) := by
+    intro n v
+    have h := hpow n (c * ‖v‖) (by positivity)
+    rw [div_le_iff₀ (hfac n), mul_pow] at h
+    rw [div_mul_eq_mul_div, le_div_iff₀ (hcpow n)]
+    nlinarith [h]
+  -- the tilted weight and the coefficient integrands
+  set w : 𝓧 → ℝ := fun x => f x * Real.exp ⟪η, E.stat x⟫_ℝ with hwdef
+  have hwmeas : Measurable w := hf.mul (hinner η).exp
+  have hbound : ∀ (n : ℕ) (m : Fin n → V) (x : 𝓧),
+      ‖w x * ∏ i, ⟪m i, E.stat x⟫_ℝ‖
+        ≤ ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n))
+          * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) := by
+    intro n m x
+    have hprodle : |∏ i, ⟪m i, E.stat x⟫_ℝ| ≤ (∏ i, ‖m i‖) * ‖E.stat x‖ ^ n := by
+      rw [Finset.abs_prod]
+      calc ∏ i, |⟪m i, E.stat x⟫_ℝ|
+          ≤ ∏ i : Fin n, ‖m i‖ * ‖E.stat x‖ :=
+            Finset.prod_le_prod (fun i _ => abs_nonneg _)
+              (fun i _ => abs_real_inner_le_norm _ _)
+        _ = (∏ i, ‖m i‖) * ‖E.stat x‖ ^ n := by
+            rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
+              Fintype.card_fin]
+    have hnormeq : ‖w x * ∏ i, ⟪m i, E.stat x⟫_ℝ‖
+        = |f x| * Real.exp ⟪η, E.stat x⟫_ℝ * |∏ i, ⟪m i, E.stat x⟫_ℝ| := by
+      simp only [hwdef, Real.norm_eq_abs, abs_mul, Real.abs_exp]
+    rw [hnormeq, Real.exp_add]
+    calc |f x| * Real.exp ⟪η, E.stat x⟫_ℝ * |∏ i, ⟪m i, E.stat x⟫_ℝ|
+        ≤ |f x| * Real.exp ⟪η, E.stat x⟫_ℝ * ((∏ i, ‖m i‖) * ‖E.stat x‖ ^ n) := by
+          gcongr
+      _ ≤ |f x| * Real.exp ⟪η, E.stat x⟫_ℝ
+            * ((∏ i, ‖m i‖)
+              * ((n.factorial : ℝ) / c ^ n * Real.exp (c * ‖E.stat x‖))) := by
+          gcongr
+          exact hTn n (E.stat x)
+      _ = ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n))
+            * (|f x| * (Real.exp ⟪η, E.stat x⟫_ℝ * Real.exp (c * ‖E.stat x‖))) := by ring
+  have hint : ∀ (n : ℕ) (m : Fin n → V),
+      Integrable (fun x => w x * ∏ i, ⟪m i, E.stat x⟫_ℝ) E.base := by
+    intro n m
+    refine (henv.const_mul ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n))).mono' ?_
+      (Filter.Eventually.of_forall (hbound n m))
+    exact (hwmeas.mul
+      (Finset.measurable_prod _ fun i _ => hinner (m i))).aestronglyMeasurable
+  -- the pointwise multilinear form `m ↦ ∏ᵢ ⟪mᵢ, T x⟫`
+  set Q : ∀ n : ℕ, 𝓧 → MultilinearMap ℝ (fun _ : Fin n => V) ℝ := fun n x =>
+    (MultilinearMap.mkPiAlgebra ℝ (Fin n) ℝ).compLinearMap
+      fun _ => (innerSL ℝ (E.stat x)).toLinearMap with hQdef
+  have hQ : ∀ (n : ℕ) (x : 𝓧) (m : Fin n → V),
+      Q n x m = ∏ i, ⟪m i, E.stat x⟫_ℝ := by
+    intro n x m
+    rw [hQdef]
+    simp only [MultilinearMap.compLinearMap_apply, MultilinearMap.mkPiAlgebra_apply,
+      ContinuousLinearMap.coe_coe, innerSL_apply_apply]
+    exact Finset.prod_congr rfl fun i _ => real_inner_comm _ _
+  -- the Taylor coefficients as multilinear maps
+  set L : ∀ n : ℕ, MultilinearMap ℝ (fun _ : Fin n => V) ℝ := fun n =>
+    { toFun := fun m => ((n.factorial : ℝ))⁻¹ * ∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base
+      map_update_add' := by
+        intro _ m i z₁ z₂
+        have key : ∀ x : 𝓧,
+            w x * ∏ j, ⟪Function.update m i (z₁ + z₂) j, E.stat x⟫_ℝ
+              = w x * ∏ j, ⟪Function.update m i z₁ j, E.stat x⟫_ℝ
+                + w x * ∏ j, ⟪Function.update m i z₂ j, E.stat x⟫_ℝ := by
+          intro x
+          have h := (Q n x).map_update_add m i z₁ z₂
+          simp only [hQ] at h
+          rw [h, mul_add]
+        rw [integral_congr_ae (Filter.Eventually.of_forall key),
+          integral_add (hint n (Function.update m i z₁)) (hint n (Function.update m i z₂)),
+          mul_add]
+      map_update_smul' := by
+        intro _ m i a z
+        have key : ∀ x : 𝓧,
+            w x * ∏ j, ⟪Function.update m i (a • z) j, E.stat x⟫_ℝ
+              = a * (w x * ∏ j, ⟪Function.update m i z j, E.stat x⟫_ℝ) := by
+          intro x
+          have h := (Q n x).map_update_smul m i a z
+          simp only [hQ] at h
+          rw [h, smul_eq_mul]; ring
+        rw [integral_congr_ae (Filter.Eventually.of_forall key), integral_const_mul,
+          smul_eq_mul]
+        ring } with hLdef
+  have hLapply : ∀ (n : ℕ) (m : Fin n → V),
+      L n m = ((n.factorial : ℝ))⁻¹ * ∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base :=
+    fun _ _ => rfl
+  have hLbound : ∀ (n : ℕ) (m : Fin n → V),
+      ‖L n m‖ ≤ M * (c⁻¹) ^ n * ∏ i, ‖m i‖ := by
+    intro n m
+    have h1 : ‖∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base‖
+        ≤ ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n)) * M := by
+      calc ‖∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base‖
+          ≤ ∫ x, ‖w x * ∏ i, ⟪m i, E.stat x⟫_ℝ‖ ∂E.base :=
+            norm_integral_le_integral_norm _
+        _ ≤ ∫ x, ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n))
+              * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) ∂E.base :=
+            integral_mono (hint n m).norm (henv.const_mul _) (hbound n m)
+        _ = ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n)) * M := by
+            rw [hMdef, integral_const_mul]
+    rw [hLapply, Real.norm_eq_abs, abs_mul,
+      abs_of_nonneg (le_of_lt (inv_pos.mpr (hfac n)))]
+    have h2 : |∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base|
+        ≤ ((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n)) * M := by
+      rwa [← Real.norm_eq_abs]
+    calc ((n.factorial : ℝ))⁻¹ * |∫ x, w x * ∏ i, ⟪m i, E.stat x⟫_ℝ ∂E.base|
+        ≤ ((n.factorial : ℝ))⁻¹ * (((∏ i, ‖m i‖) * ((n.factorial : ℝ) / c ^ n)) * M) := by
+          gcongr
+      _ = M * (c⁻¹) ^ n * ∏ i, ‖m i‖ := by
+          rw [inv_pow]
+          field_simp
+          try ring
+  -- the formal power series
+  set p : FormalMultilinearSeries ℝ V ℝ := fun n =>
+    (L n).mkContinuous (M * (c⁻¹) ^ n) (hLbound n) with hpdef
+  have hpapply : ∀ (n : ℕ) (m : Fin n → V), p n m = L n m := fun _ _ => rfl
+  have hrad : ENNReal.ofReal c ≤ p.radius := by
+    have hbd : ∀ n : ℕ, ‖p n‖ * (Real.toNNReal c : ℝ) ^ n ≤ M := by
+      intro n
+      have hn : ‖p n‖ ≤ M * (c⁻¹) ^ n :=
+        (L n).mkContinuous_norm_le (mul_nonneg hM0 (by positivity)) (hLbound n)
+      rw [Real.coe_toNNReal c hc.le]
+      calc ‖p n‖ * c ^ n ≤ (M * (c⁻¹) ^ n) * c ^ n :=
+            mul_le_mul_of_nonneg_right hn (le_of_lt (hcpow n))
+        _ = M := by
+            rw [mul_assoc, ← mul_pow, inv_mul_cancel₀ hc.ne', one_pow, mul_one]
+    exact p.le_radius_of_bound M hbd
+  refine ⟨p, ENNReal.ofReal c, hrad, ENNReal.ofReal_pos.mpr hc, ?_⟩
+  intro y hy
+  have hyc : ‖y‖ < c := by
+    have h := Metric.mem_eball.mp hy
+    rw [edist_zero_right, ← ofReal_norm_eq_enorm] at h
+    exact (ENNReal.ofReal_lt_ofReal_iff hc).mp h
+  -- the termwise integrands
+  set F : ℕ → 𝓧 → ℝ :=
+    fun n x => w x * ⟪y, E.stat x⟫_ℝ ^ n / (n.factorial : ℝ) with hFdef
+  have hconst : ∀ n : ℕ, (fun x => w x * ∏ _i : Fin n, ⟪y, E.stat x⟫_ℝ)
+      = fun x => w x * ⟪y, E.stat x⟫_ℝ ^ n := by
+    intro n
+    funext x
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  have hFint : ∀ n : ℕ, Integrable (F n) E.base := by
+    intro n
+    have h := hint n (fun _ => y)
+    rw [hconst n] at h
+    exact h.div_const _
+  have hFbound : ∀ (n : ℕ) (x : 𝓧),
+      ‖F n x‖ ≤ (‖y‖ / c) ^ n
+        * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) := by
+    intro n x
+    have h := hbound n (fun _ => y) x
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] at h
+    have hfacpos := hfac n
+    have hFx : ‖F n x‖ = ‖w x * ⟪y, E.stat x⟫_ℝ ^ n‖ / (n.factorial : ℝ) := by
+      simp only [hFdef, norm_div, Real.norm_eq_abs, Nat.abs_cast]
+    have hkey : (‖y‖ / c) ^ n
+        * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) * (n.factorial : ℝ)
+        = (‖y‖ ^ n * ((n.factorial : ℝ) / c ^ n))
+          * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) := by
+      rw [div_pow]
+      field_simp
+      try ring
+    rw [hFx, div_le_iff₀ hfacpos, hkey]
+    exact h
+  have hFsum : Summable fun n : ℕ => ∫ x, ‖F n x‖ ∂E.base := by
+    refine Summable.of_nonneg_of_le
+      (fun n => integral_nonneg fun x => norm_nonneg _) (fun n => ?_)
+      (((summable_geometric_of_lt_one (by positivity)
+        ((div_lt_one hc).mpr hyc)).mul_left M))
+    calc ∫ x, ‖F n x‖ ∂E.base
+        ≤ ∫ x, (‖y‖ / c) ^ n
+            * (|f x| * Real.exp (⟪η, E.stat x⟫_ℝ + c * ‖E.stat x‖)) ∂E.base :=
+          integral_mono (hFint n).norm (henv.const_mul _) (hFbound n)
+      _ = M * (‖y‖ / c) ^ n := by rw [hMdef, integral_const_mul]; ring
+  have hHS := hasSum_integral_of_summable_integral_norm hFint hFsum
+  -- identify the terms with the coefficients of `p` and the sum with the function
+  have hterm : ∀ n : ℕ, (p n fun _ : Fin n => y) = ∫ x, F n x ∂E.base := by
+    intro n
+    rw [hpapply, hLapply]
+    simp only [hFdef]
+    rw [integral_div, hconst n, inv_mul_eq_div]
+  have htsum : ∀ x : 𝓧, ∑' n : ℕ, F n x = w x * Real.exp ⟪y, E.stat x⟫_ℝ := by
+    intro x
+    have h := (hexpsum ⟪y, E.stat x⟫_ℝ).mul_left (w x)
+    have heq : (fun n : ℕ => w x * (⟪y, E.stat x⟫_ℝ ^ n / (n.factorial : ℝ)))
+        = fun n : ℕ => F n x := by
+      funext n; rw [hFdef]; ring
+    rw [heq] at h
+    exact h.tsum_eq
+  have hsumfun : (∫ x, ∑' n : ℕ, F n x ∂E.base)
+      = ∫ x, f x * Real.exp ⟪η + y, E.stat x⟫_ℝ ∂E.base := by
+    refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+    simp only [htsum x, hwdef, inner_add_left, Real.exp_add]
+    try ring
+  have hfun : (fun n : ℕ => p n fun _ : Fin n => y) = fun n : ℕ => ∫ x, F n x ∂E.base :=
+    funext hterm
+  change HasSum (fun n : ℕ => p n fun _ : Fin n => y)
+    (∫ x, f x * Real.exp ⟪η + y, E.stat x⟫_ℝ ∂E.base)
+  rw [hfun, ← hsumfun]
+  exact hHS
 
 end Differentiation
 

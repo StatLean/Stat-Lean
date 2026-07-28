@@ -53,6 +53,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.Brunn1D
 import StatLean.AsymptoticStatistics.ForMathlib.CharFnConvolution
 import StatLean.AsymptoticStatistics.ForMathlib.CondExpL2
 import StatLean.AsymptoticStatistics.ForMathlib.Contiguity
+import StatLean.AsymptoticStatistics.ForMathlib.ContiguityIntegralComparison
 import StatLean.AsymptoticStatistics.ForMathlib.CramerWoldWeakConverges
 import StatLean.AsymptoticStatistics.ForMathlib.DiagonalSubseqLimSupFinset
 import StatLean.AsymptoticStatistics.ForMathlib.GaussianMGF
@@ -78,6 +79,7 @@ import StatLean.AsymptoticStatistics.ForMathlib.MultivariateCLT
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGF
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateComplexMGFCoeff
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianConv
+import StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianDensity
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianSmul
 import StatLean.AsymptoticStatistics.ForMathlib.MultivariateGaussianWeakLimit
 import StatLean.AsymptoticStatistics.ForMathlib.PiGaussian

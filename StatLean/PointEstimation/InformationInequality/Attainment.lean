@@ -15,8 +15,23 @@ natural statistic: the density takes the form `exp(η(θ) δ(x) − B(θ)) h(x)`
 Contents:
 * `cramer_rao_attained_of_affine` — the easy direction: an affine function of the score
   attains the bound, with no regularity conditions on the family;
-* `expFamily_of_cramer_rao_attained` — the converse: attainment at every parameter value
-  forces the exponential form.
+* `score_ae_eq_of_cramer_rao_attained` — the equality case of Cauchy–Schwarz: attainment at
+  `θ`, with the differentiation-under-the-integral swap and `g'(θ) ≠ 0`, makes the score an
+  affine function of `δ` almost surely.
+
+**Not present: the converse.** The source's converse — attainment at every parameter value
+forces the exponential form — was formalized, found to be **false as written**, and has been
+removed rather than carried as a debt. The attainment identity `var_θ(δ) = g'(θ)²/I(θ)` is
+vacuous wherever `g'(θ) = 0` and `var_θ(δ) = 0`: Cauchy–Schwarz equality then holds trivially
+with `δ` a.e. constant and constrains the score not at all. The Gaussian location family
+`p_θ(x) = φ(x − θ)` with `δ ≡ 0` satisfies every hypothesis, yet is not exponential in `δ`
+(comparing `θ = 1` with `θ = 0` would force `φ(x−1)/φ(x) = e^{x−1/2}` to be a.e. constant).
+The source carries `g'(θ) ≠ 0` implicitly, through the companion identity `I(θ) = η'(θ)g'(θ)`.
+Restoring the converse is a **signature change** — add `∀ θ, g' θ ≠ 0` — and a decision for
+the library, not a proof obligation; the full analysis, with the counterexample and the
+repair, is in `notes/point_estimation/defective-statements.tex`. Note that
+`score_ae_eq_of_cramer_rao_attained` above already supplies the Cauchy–Schwarz equality step
+that a repaired converse would consume.
 
 **Reference.** E.L. Lehmann and G. Casella, *Theory of Point Estimation*, 2nd ed.,
 Springer-Verlag New York, 1998 (ISBN 0-387-98502-6), Chapter 2 (Unbiasedness), §2.5 (The
@@ -30,16 +45,6 @@ the estimator is affine in the natural statistic). (`TPE2 §2.5 Thm 5.12`.)
   do depend on `θ`, the affine function of the score is not an estimator, and no estimator
   attains the bound — which is why the converse quantifies over all parameter values with
   one fixed `δ`.
-* **Documented deviation.** The converse is proved under *more* regularity than the
-  classical statement, which assumes only the common-support condition and a finite variance
-  of `δ`: we additionally require joint measurability of `(θ, x) ↦ p_θ(x)`, continuous
-  differentiability of `θ ↦ p_θ(x)` for almost every `x`, and continuity of `θ ↦ I(θ)` and
-  of the derivative of `θ ↦ E_θ δ`. These are what make the pointwise equality case of
-  Cauchy–Schwarz integrate to an ordinary differential equation for `log p_θ(x)` in `θ` that
-  may be solved by the fundamental theorem of calculus, uniformly in `x`. The classical
-  proof obtains the same conclusion by a measure-theoretic argument that avoids the
-  continuity assumptions; we have not formalized that route, and the extra hypotheses are
-  therefore a genuine strengthening of the assumptions, not a restatement.
 * The conclusion carries measurability and non-negativity of the carrier `h`, so that the
   produced representation can be fed to the exponential-family constructor that absorbs a
   carrier into the reference measure.
@@ -123,81 +128,103 @@ theorem cramer_rao_attained_of_affine (M : ParametricFamily 𝓧 ℝ) (μ : Meas
   rw [eq_div_iff hIne]
   ring
 
-/-- **Analytic core of the attainment characterization (sanctioned debt).**
+/-- **The equality case of Cauchy–Schwarz in the information inequality.**
 
-This is the one lifted analytic brick of the file (see the file header "documented
-deviation"); the public `expFamily_of_cramer_rao_attained` is a direct reduction to it.
+Suppose that at `θ` the number `g'` is genuinely the covariance of `δ` with the score
+(hypothesis `hcov`: this is exactly what differentiation under the integral sign delivers, and
+it is *not* a consequence of `HasDerivAt (fun t => ∫ δ p_t) g' θ` alone), that `g' ≠ 0`, and
+that the information bound `g'²/I(θ)` is attained. Then the score is `P_θ`-almost surely an
+affine function of `δ`:
+`ℓ̇_θ = (I(θ)/g') · (δ − E_θ δ)`.
 
-TODO: three genuinely missing bricks stand between the hypotheses and the exponential form.
-1. *Differentiation under the integral is not available.* The attainment hypothesis gives
-   `var_θ(δ)·I(θ) = g'(θ)²`, whereas the Cauchy–Schwarz *equality* case needs
-   `cov_θ(δ, ℓ̇_θ)² = var_θ(δ)·I(θ)`. These agree only once `cov_θ(δ, ℓ̇_θ) = g'(θ)`, i.e.
-   `deriv (fun t => ∫ δ p_t) θ = ∫ δ (∂_θ p_θ)`. That swap is *not* a hypothesis here; it has
-   to be extracted from `hjoint` / `hC1` together with a domination/integrability input the
-   present statement does not carry. Without it one only gets `cov² ≤ g'²`, not equality.
-2. *Cauchy–Schwarz equality ⇒ a.e. proportionality.* Given the swap, `var_θ(δ − c·ℓ̇_θ) = 0`
-   with `c = g'(θ)/I(θ)`, so `ae_eq_integral_of_variance_eq_zero` yields
-   `ℓ̇_θ =ᵐ[P_θ] (I(θ)/g'(θ))·(δ − E_θ δ)` (with a separate `g'(θ) = 0` branch, where δ is
-   a.e. constant under `P_θ`).
-3. *Parametric FTC, uniform in `x`.* Fubini turns the per-`θ` a.e.-`x` relation into an
-   a.e.-`(θ, x)` one; for a.e. `x` the C¹ map `θ ↦ log p_θ(x)` then has derivative
-   `η'(θ)·δ(x) − B'(θ)` for a.e. `θ`, hence (by continuity) for all `θ`, and the FTC
-   integrates this to `log p_θ(x) = η(θ)·δ(x) − B(θ) + log h(x)`. No Mathlib lemma packages
-   this uniform-in-`x` integration at the current pin. -/
-private theorem expFamily_of_cramer_rao_attained_core (M : ParametricFamily 𝓧 ℝ)
-    (μ : Measure 𝓧) (hpdf : IsPDFOf M μ) (hsupp : HasCommonSupport M) (δ : 𝓧 → ℝ) (g' : ℝ → ℝ)
-    (hδ2 : ∀ θ, MemLp δ 2 (M.toMeasure μ θ)) (hmeas : ∀ θ, AEStronglyMeasurable (score M θ) μ)
-    (hI : ∀ θ, 0 < fisherInfo M μ θ) (hmean0 : ∀ θ, ∫ x, score M θ x * M.density θ x ∂μ = 0)
-    (hg : ∀ θ, HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ) (g' θ) θ)
-    (hjoint : Measurable (fun p : ℝ × 𝓧 => M.density p.1 p.2))
-    (hC1 : ∀ᵐ x ∂μ, ContDiff ℝ 1 (fun t => M.density t x))
-    (hIcont : Continuous (fun θ => fisherInfo M μ θ)) (hg'cont : Continuous g')
-    (hattain : ∀ θ, variance δ (M.toMeasure μ θ) = g' θ ^ 2 / fisherInfo M μ θ) :
-    ∃ (η B : ℝ → ℝ) (h : 𝓧 → ℝ), ContDiff ℝ 1 η ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
-      ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x :=
-  sorry
+Proof: the residual `δ − (g'/I)·ℓ̇_θ` has variance
+`var δ − 2(g'/I)·cov + (g'/I)²·I = g'²/I − 2g'²/I + g'²/I = 0`, so it is a.s. constant, and
+the constant is its mean `E_θ δ` because the score is centered.
 
-/-- **Attainment forces an exponential family.** If one statistic `δ` attains the
-information bound at *every* parameter value, then the densities admit the exponential
-representation `p_θ(x) = exp(η(θ) δ(x) − B(θ)) h(x)` with `η` continuously differentiable:
-the family is a one-parameter exponential family with `δ` as its natural statistic.
-
-This statement carries more regularity than the classical one — joint measurability of the
-densities, continuous differentiability in the parameter almost everywhere, and continuity
-of the information and of the derivative of the expectation of `δ`. See the deviation note
-in the file header. -/
-theorem expFamily_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
+This is the analytic content of the equality case, i.e. step 2 of the classical proof that
+attainment at every parameter value forces an exponential family. That converse is *not*
+formalized here: it is false as printed (see the file header), and restoring it needs the
+nondegeneracy `g'(θ) ≠ 0` plus a `θ`-integration of this identity that is uniform in `x`. -/
+theorem score_ae_eq_of_cramer_rao_attained (M : ParametricFamily 𝓧 ℝ) (μ : Measure 𝓧)
     -- USER-INPUT: `M` is a family of `μ`-probability densities
     (hpdf : IsPDFOf M μ)
-    -- USER-INPUT: the members share a common support; classical regularity condition
-    (hsupp : HasCommonSupport M)
-    (δ : 𝓧 → ℝ) (g' : ℝ → ℝ)
-    -- USER-INPUT: the statistic has a finite second moment at every parameter value
-    (hδ2 : ∀ θ, MemLp δ 2 (M.toMeasure μ θ))
-    -- LEAN-ONLY: measurability of the score at every parameter value
-    (hmeas : ∀ θ, AEStronglyMeasurable (score M θ) μ)
-    -- USER-INPUT: the information is positive at every parameter value
-    (hI : ∀ θ, 0 < fisherInfo M μ θ)
-    -- USER-INPUT: the score has mean zero at every parameter value
-    (hmean0 : ∀ θ, ∫ x, score M θ x * M.density θ x ∂μ = 0)
-    -- USER-INPUT: the expectation of the statistic is differentiable, with derivative `g'`
-    (hg : ∀ θ, HasDerivAt (fun t => ∫ x, δ x * M.density t x ∂μ) (g' θ) θ)
-    -- USER-INPUT (extra regularity, documented deviation): the densities are jointly
-    -- measurable in the parameter and the observation
-    (hjoint : Measurable (fun p : ℝ × 𝓧 => M.density p.1 p.2))
-    -- USER-INPUT (extra regularity, documented deviation): almost every parameter section
-    -- of the density is continuously differentiable
-    (hC1 : ∀ᵐ x ∂μ, ContDiff ℝ 1 (fun t => M.density t x))
-    -- USER-INPUT (extra regularity, documented deviation): the information is continuous
-    (hIcont : Continuous (fun θ => fisherInfo M μ θ))
-    -- USER-INPUT (extra regularity, documented deviation): the derivative of the
-    -- expectation of the statistic is continuous
-    (hg'cont : Continuous g')
-    -- USER-INPUT: the information bound is attained at every parameter value
-    (hattain : ∀ θ, variance δ (M.toMeasure μ θ) = g' θ ^ 2 / fisherInfo M μ θ) :
-    ∃ (η B : ℝ → ℝ) (h : 𝓧 → ℝ), ContDiff ℝ 1 η ∧ Measurable h ∧ (∀ x, 0 ≤ h x) ∧
-      ∀ θ, ∀ᵐ x ∂μ, M.density θ x = Real.exp (η θ * δ x - B θ) * h x :=
-  expFamily_of_cramer_rao_attained_core M μ hpdf hsupp δ g' hδ2 hmeas hI hmean0 hg hjoint hC1
-    hIcont hg'cont hattain
+    (θ : ℝ) (δ : 𝓧 → ℝ) (g' : ℝ)
+    -- LEAN-ONLY: measurability of the score, which is built from a `deriv` in the parameter
+    (hmeas : AEStronglyMeasurable (score M θ) μ)
+    -- USER-INPUT: the statistic has a finite second moment at `θ`
+    (hδ2 : MemLp δ 2 (M.toMeasure μ θ))
+    -- LEAN-ONLY: finiteness of the information as a Bochner integral
+    (hscore_int : Integrable (fun x => score M θ x ^ 2 * M.density θ x) μ)
+    -- USER-INPUT: the information is positive
+    (hI : 0 < fisherInfo M μ θ)
+    -- USER-INPUT: the score has mean zero; classical regularity condition
+    (hmean0 : ∫ x, score M θ x * M.density θ x ∂μ = 0)
+    -- USER-INPUT: `g'` is the covariance of `δ` with the score — the conclusion of
+    -- differentiation under the integral sign, supplied here as data
+    (hcov : ∫ x, δ x * score M θ x * M.density θ x ∂μ = g')
+    -- USER-INPUT: the estimand really moves with the parameter
+    (hg' : g' ≠ 0)
+    -- USER-INPUT: the information bound is attained at `θ`
+    (hattain : variance δ (M.toMeasure μ θ) = g' ^ 2 / fisherInfo M μ θ) :
+    ∀ᵐ x ∂(M.toMeasure μ θ), score M θ x
+      = fisherInfo M μ θ / g' * (δ x - ∫ y, δ y ∂(M.toMeasure μ θ)) := by
+  haveI hP := isProbabilityMeasure_toMeasure M μ hpdf θ
+  have hIne : fisherInfo M μ θ ≠ 0 := hI.ne'
+  have hscoreL2 : MemLp (score M θ) 2 (M.toMeasure μ θ) := memLp_score M μ θ hmeas hscore_int
+  have hscore_intP : Integrable (score M θ) (M.toMeasure μ θ) := hscoreL2.integrable one_le_two
+  have hδ_intP : Integrable δ (M.toMeasure μ θ) := hδ2.integrable one_le_two
+  have hmean0P : ∫ x, score M θ x ∂(M.toMeasure μ θ) = 0 := by
+    rw [integral_toMeasure_eq M μ θ (score M θ)]; exact hmean0
+  have hI_eq : fisherInfo M μ θ = ∫ x, score M θ x ^ 2 ∂(M.toMeasure μ θ) := by
+    rw [fisherInfo]
+    exact (integral_toMeasure_eq M μ θ fun x => score M θ x ^ 2).symm
+  have hcovP : ∫ x, δ x * score M θ x ∂(M.toMeasure μ θ) = g' := by
+    rw [integral_toMeasure_eq M μ θ fun x => δ x * score M θ x]; exact hcov
+  set m := ∫ x, δ x ∂(M.toMeasure μ θ) with hm
+  set c : ℝ := g' / fisherInfo M μ θ with hcdef
+  have hδmL2 : MemLp (fun x => δ x - m) 2 (M.toMeasure μ θ) := hδ2.sub (memLp_const m)
+  have hYL2 : MemLp (fun x => δ x - c * score M θ x) 2 (M.toMeasure μ θ) :=
+    hδ2.sub (hscoreL2.const_mul c)
+  have i1 : Integrable (fun x => (δ x - m) ^ 2) (M.toMeasure μ θ) := hδmL2.integrable_sq
+  have i2 : Integrable (fun x => (δ x - m) * score M θ x) (M.toMeasure μ θ) :=
+    memLp_one_iff_integrable.mp (hscoreL2.mul' hδmL2)
+  have i3 : Integrable (fun x => score M θ x ^ 2) (M.toMeasure μ θ) := hscoreL2.integrable_sq
+  have hEY : ∫ x, (δ x - c * score M θ x) ∂(M.toMeasure μ θ) = m := by
+    rw [integral_sub hδ_intP (hscore_intP.const_mul c), integral_const_mul, hmean0P,
+      mul_zero, sub_zero]
+  have hvar : variance δ (M.toMeasure μ θ) = ∫ x, (δ x - m) ^ 2 ∂(M.toMeasure μ θ) := by
+    rw [variance_eq_integral hδ2.aemeasurable, ← hm]
+  have hvarδ : ∫ x, (δ x - m) ^ 2 ∂(M.toMeasure μ θ) = g' ^ 2 / fisherInfo M μ θ := by
+    rw [← hvar, hattain]
+  have hcross : ∫ x, (δ x - m) * score M θ x ∂(M.toMeasure μ θ) = g' := by
+    have hsplit : (fun x => (δ x - m) * score M θ x)
+        = fun x => δ x * score M θ x - m * score M θ x := by funext x; ring
+    rw [hsplit, integral_sub (memLp_one_iff_integrable.mp (hscoreL2.mul' hδ2))
+      (hscore_intP.const_mul m), integral_const_mul, hmean0P, mul_zero, sub_zero, hcovP]
+  -- the residual `δ − c·ℓ̇` has zero variance
+  have hvarY : variance (fun x => δ x - c * score M θ x) (M.toMeasure μ θ) = 0 := by
+    rw [variance_eq_integral hYL2.aemeasurable, hEY]
+    have hfun : (fun x => (δ x - c * score M θ x - m) ^ 2)
+        = fun x => (δ x - m) ^ 2 - 2 * c * ((δ x - m) * score M θ x)
+            + c ^ 2 * score M θ x ^ 2 := by funext x; ring
+    have iC : Integrable (fun x => 2 * c * ((δ x - m) * score M θ x)) (M.toMeasure μ θ) :=
+      i2.const_mul (2 * c)
+    have iA : Integrable
+        (fun x => (δ x - m) ^ 2 - 2 * c * ((δ x - m) * score M θ x)) (M.toMeasure μ θ) :=
+      i1.sub iC
+    have iB : Integrable (fun x => c ^ 2 * score M θ x ^ 2) (M.toMeasure μ θ) :=
+      i3.const_mul (c ^ 2)
+    rw [hfun, integral_add iA iB, integral_sub i1 iC, integral_const_mul, integral_const_mul,
+      hvarδ, hcross, ← hI_eq, hcdef]
+    field_simp
+    try ring
+  have hae := ae_eq_integral_of_variance_eq_zero hYL2 hvarY
+  filter_upwards [hae] with x hx
+  rw [hEY] at hx
+  have h1 : c * score M θ x = δ x - m := by linarith
+  have h2 : fisherInfo M μ θ / g' * (δ x - m)
+      = fisherInfo M μ θ / g' * (c * score M θ x) := by rw [h1]
+  rw [h2, hcdef]
+  field_simp
 
 end StatLean.PointEstimation

@@ -80,6 +80,30 @@ import StatLean.Bayesian.DirichletLaplace.ShellDecomposition
 import StatLean.Bayesian.DirichletLaplace.PriorMassRatio
 import StatLean.Bayesian.DirichletLaplace.PosteriorCompressibility
 import StatLean.Bayesian.DirichletLaplace.PosteriorContraction
+import StatLean.Bayesian.ForMathlib.TVDist
+import StatLean.Bayesian.ForMathlib.GaussianTV
+import StatLean.Bayesian.ForMathlib.IIDSeqKernel
+import StatLean.Bayesian.BernsteinVonMises.Defs
+import StatLean.Bayesian.BernsteinVonMises.Basic
+import StatLean.Bayesian.BernsteinVonMises.PriorSmallBall
+import StatLean.Bayesian.BernsteinVonMises.MixtureContiguity
+import StatLean.Bayesian.BernsteinVonMises.ScoreTest
+import StatLean.Bayesian.BernsteinVonMises.TestBoost
+import StatLean.Bayesian.BernsteinVonMises.ExponentialTests
+import StatLean.Bayesian.BernsteinVonMises.PosteriorConcentration
+import StatLean.Bayesian.BernsteinVonMises.LocalApproximation
+import StatLean.Bayesian.BernsteinVonMises.PosteriorNormality
+import StatLean.Bayesian.BernsteinVonMises.EfficientCentering
+import StatLean.Bayesian.BayesEstimators.Defs
+import StatLean.Bayesian.BayesEstimators.PosteriorTails
+import StatLean.Bayesian.BayesEstimators.ArgminConsistency
+import StatLean.Bayesian.BayesEstimators.UniformApproximation
+import StatLean.Bayesian.BayesEstimators.PointEstimatorLimits
+import StatLean.Bayesian.DoobConsistency.Defs
+import StatLean.Bayesian.DoobConsistency.Basic
+import StatLean.Bayesian.DoobConsistency.PosteriorMartingale
+import StatLean.Bayesian.DoobConsistency.Accessible
+import StatLean.Bayesian.DoobConsistency.PosteriorConsistency
 
 /-!
 # Bayesian — area umbrella
