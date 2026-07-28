@@ -5920,8 +5920,8 @@ The `1 + ε⁻¹` inside the logarithm (rather than a bare `ε⁻¹`) is deliber
 term nonnegative for *every* `ε > 0`, so the amended recursion is unambiguously weaker than the
 frozen one and no `ε ≤ 1` side condition has to be threaded through the call sites. -/
 theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
-    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b)
-    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → ∀ Y : ℝ,
+    (hA : 0 < A) (hC : 0 < C) (hb : 0 < b) (hb1 : 1 ≤ 8 * A * b)
+    (hrec : ∀ n : ℕ, 0 < n → ∀ ε : ℝ, 0 < ε → 1 ≤ ε * Real.sqrt (n : ℝ) → ∀ Y : ℝ,
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n → D m ≤ Y) →
       D n ≤ A * (b / Real.sqrt n) * ε⁻¹ * (C * ε + 2 * Y)
         + A * (b / Real.sqrt n) * C * (1 + Real.log (1 + ε⁻¹))
@@ -5998,7 +5998,15 @@ theorem le_of_selfImproving_induction_log {A C b : ℝ} {D : ℕ → ℝ}
             mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hδmle hKpos.le) hM0
         _ = 2 * K * δ * M := by ring
     have hεpos : 0 < 8 * A * δ := by positivity
-    have h := hrec n hn (8 * A * δ) hεpos Y hY
+    -- the induction only ever runs the recursion at the width `ε = 8 A δ`, and there
+    -- `ε √n = 8 A b` does not depend on `n`; so the localisation window is a hypothesis
+    -- on the *constants* alone (wave 36).
+    have hwin : 1 ≤ 8 * A * δ * Real.sqrt (n : ℝ) := by
+      have hne : Real.sqrt (n : ℝ) ≠ 0 := hsn.ne'
+      have h : 8 * A * δ * Real.sqrt (n : ℝ) = 8 * A * b := by
+        rw [hδdef]; field_simp
+      rw [h]; exact hb1
+    have h := hrec n hn (8 * A * δ) hεpos hwin Y hY
     rw [← hδdef] at h
     have hinv : A * δ * (8 * A * δ)⁻¹ = 1 / 8 := by
       rw [mul_inv, ← mul_assoc]; field_simp
@@ -7307,19 +7315,38 @@ stays bounded as `ε ↓ 0` when `W = 0`, while `(3/2) C₃ δ ε⁻¹` blows up
 recorded in the hypothesis of `localised_swap_bound_of_weighted_telescope` and is now the
 *second* analytic item, alongside the Cameron–Martin one below.
 
-**Correction 2 (the window `1 ≤ ε √n` is not optional).** The ledger is silent about `ε √n < 1`,
-and there it fails: the cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)`
-with `t = ε √n`, and this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut
-repairs it, because the elementary step bound beats the Cameron–Martin one only for `j ≲ ε² n`,
-i.e. for no step at all. Nor is the trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` available here (unlike
-in `exists_smooth_swap_bound_of_one_le_weight`, where `W ≥ 1` makes the right-hand side `≥ A`):
-for `ε √n < 1` the right-hand side is `≥ A C_k β/√n`, which is `o(1)`. The statement is still
-*true* in that window — it is implied by Bentkus's theorem, as the whole amended statement is —
-but this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
-exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself. A future wave must either thread
-`1 ≤ ε √n` through `exists_localised_swap_bound` and `exists_convexDiscrepancy_recursion` (it is
-free at the call site iff the recursion is only ever run at `ε ≥ n^{-1/2}`, which has not been
-checked), or find a separate argument for the small window.
+**Correction 2 (the window `1 ≤ ε √n`) — RESOLVED in wave 36: it is now a hypothesis, and it
+is discharged at the call site.** The ledger is silent about `ε √n < 1`, and there it fails: the
+cut degenerates to `J = 2`, the head becomes `≍ C₃ β (W/t³ + C_k ε/t⁴)` with `t = ε √n`, and
+this exceeds the right-hand side `≍ β (W/t + C_k/√n)` by `t^{-2}`. No cut repairs it, because
+the elementary step bound beats the Cameron–Martin one only for `j ≲ ε² n`, i.e. for no step at
+all. Nor is the trivial bound `|∫ f dμ − ∫ f dγ| ≤ 2` available here (unlike in
+`exists_smooth_swap_bound_of_one_le_weight`, where `W ≥ 1` makes the right-hand side `≥ A`): for
+`ε √n < 1` the right-hand side is `≥ A C_k β/√n`, which is `o(1)`. The statement is still *true*
+in that window — it is implied by Bentkus's theorem, as the whole amended statement is — but
+this route cannot prove it there, since sandwiching `f` between `1_B` and `1_{B^ε}` leaves
+exactly `|μₙ(B) − γ(B)| ≤ A C_k β/√n`, the sharp bound itself.
+
+Wave 35 left open whether threading the window costs anything downstream. **It costs nothing**,
+and the reason is that the fixed point never visits the small window:
+
+* `le_of_selfImproving_induction_log` instantiates its `hrec` at exactly **one** width,
+  `ε = 8 A δ` with `δ = b/√n`. There `ε √n = 8 A b`, which **does not depend on `n`** — so the
+  window is a condition on the *constants* alone. Accordingly that lemma's `hrec` now demands
+  the recursion only for `1 ≤ ε √n`, and the lemma carries the hypothesis `1 ≤ 8 A b`; the side
+  condition is discharged internally by `√n · √n = n`.
+* At the unique call site, `berryEsseen_convex_sharp`, the induction is run with `A := A + 1`
+  (`A > 0` from `exists_convexDiscrepancy_recursion`) and `b := β = ∫‖y‖³ dν`. Since
+  `sqrt_dim_mul_dim_le_integral_norm_cube` gives `k^{3/2} ≤ β` and `k ≥ 1`, one has `β ≥ 1`, so
+  `ε √n = 8 (A + 1) β ≥ 8 ≥ 1` always. (This is the same `hβ1` already used inside
+  `localised_swap_bound_of_weighted_telescope`.)
+
+So `1 ≤ ε √n` now appears as a hypothesis of this theorem, of `exists_localised_swap_bound`
+(where the large-weight branch ignores it and the small-weight branch consumes it) and of
+`exists_convexDiscrepancy_recursion`, and the headline `berryEsseen_convex_sharp` is proved with
+its constant unchanged. **The small window is no longer an open gap of this route**, and the cut
+`J = max 2 ⌈ε² n⌉` is non-degenerate wherever the theorem is now stated, so the head/tail
+crossover below is genuine.
 
 **The residue, after wave 35.** Two per-step estimates on the hybrid telescope, both localised
 by the two-sided-shell hypothesis, and nothing else:
@@ -7344,6 +7371,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
+      -- LEAN-ONLY: the localisation window; discharged at the unique call site from
+      -- `k^{3/2} ≤ β`, see the note (wave 36, "Correction 2, RESOLVED").
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
@@ -7359,8 +7389,9 @@ theorem localised_swap_bound_small_weight (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (h
               + gaussianShellConst k * (1 + Real.log (1 + ε⁻¹))) := by
   -- Wave 35: the reduction to the weighted telescope is proved and axiom-clean, see
   -- `localised_swap_bound_of_weighted_telescope`; what is missing is its hypothesis `htel`,
-  -- i.e. the two localised per-step swap estimates listed at the end of the note above (and,
-  -- separately, the window `ε √n < 1`, which this route does not reach — correction 2).
+  -- i.e. the two localised per-step swap estimates listed at the end of the note above.
+  -- Wave 36: the window `1 ≤ ε √n` (correction 2) is now the hypothesis `hwin` above and is
+  -- discharged at the call site, so the residue is exactly those two estimates.
   sorry
 
 /-- **Brick L (wave 24: AMENDED, and proved over `localised_swap_bound_small_weight`).** *The
@@ -7417,6 +7448,9 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν →
       MeasurableSet B → Convex ℝ B → 0 < ε →
+      -- LEAN-ONLY: the localisation window; ignored by the large-weight branch, passed to
+      -- `localised_swap_bound_small_weight` by the small-weight one (wave 36).
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       ContDiff ℝ 3 f → (∀ x, |f x| ≤ 1) →
       (∀ x, ‖iteratedFDeriv ℝ 3 f x‖ ≤ C₃ / ε ^ 3) →
       (∀ x, f x ≠ 0 → x ∈ Metric.thickening ε B) → (∀ x ∈ B, f x = 1) →
@@ -7432,7 +7466,7 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
   obtain ⟨A₁, hA₁, h₁⟩ := exists_smooth_swap_bound_of_one_le_weight k hk hC₃
   obtain ⟨A₂, hA₂, h₂⟩ := localised_swap_bound_small_weight k hk hC₃
   refine ⟨A₁ + A₂, by linarith, ?_⟩
-  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
+  intro n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone hW0 hW
   haveI := hνp
   have hnr : (0 : ℝ) < n := by exact_mod_cast hn
   have hsn : 0 < Real.sqrt (n : ℝ) := Real.sqrt_pos.mpr hnr
@@ -7472,8 +7506,8 @@ theorem exists_localised_swap_bound (k : ℕ) (hk : 0 < k) {C₃ : ℝ} (hC₃ :
     refine hsmall.trans ?_
     rw [hexp A₁, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
-  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hf hfb hD hsupp hone hW0 hW
-      hlt.le
+  · have h := h₂ n ν B ε f W hn hνp hmean hcov hβint hBm hBc hε hwin hf hfb hD hsupp hone
+      hW0 hW hlt.le
     refine h.trans ?_
     rw [hexp A₂, hexp (A₁ + A₂)]
     exact mul_le_mul_of_nonneg_right (by linarith) hbase
@@ -7507,6 +7541,8 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
       (∀ u : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ ∂ν) = 0) →
       (∀ u v : EuclideanSpace ℝ (Fin k), (∫ y, ⟪u, y⟫_ℝ * ⟪v, y⟫_ℝ ∂ν) = ⟪u, v⟫_ℝ) →
       Integrable (fun y => ‖y‖ ^ 3) ν → 0 < ε →
+      -- LEAN-ONLY: the localisation window brick L needs; free here, see the note (wave 36).
+      1 ≤ ε * Real.sqrt (n : ℝ) →
       (∀ m : ℕ, n ≤ 2 * m → m ≤ n →
         convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
           ≤ Y) →
@@ -7520,7 +7556,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
   obtain ⟨C₃, hC₃pos, hC₃⟩ := exists_smoothed_convex_indicator k
   obtain ⟨A, hApos, hA⟩ := exists_localised_swap_bound k hk hC₃pos
   refine ⟨2 * A, by linarith, ?_⟩
-  intro n ν ε Y hn hνp hmean hcov hβint hε hY
+  intro n ν ε Y hn hνp hmean hcov hβint hε hwin hY
   haveI := hνp
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
   have hY0 : 0 ≤ Y := by
@@ -7568,7 +7604,7 @@ theorem exists_convexDiscrepancy_recursion (k : ℕ) (hk : 0 < k) :
     -- brick L
     have herr : |(∫ x, f x ∂μ) - (∫ x, f x ∂γ)| ≤ E := by
       have h := hA n ν S ε f (4 * gaussianShellConst k * ε + 2 * Y) hn hνp hmean hcov hβint
-        hSm hSc hε hfcd hfbd hfD hfsupp hfS hW0 hW
+        hSm hSc hε hwin hfcd hfbd hfD hfsupp hfS hW0 hW
       rw [← hμdef, ← hβdef, ← hδdef] at h
       refine h.trans ?_
       rw [hEdef]
@@ -7694,14 +7730,25 @@ theorem berryEsseen_convex_sharp {k : ℕ} (hk : 0 < k) :
   have hβpos : 0 < β := integral_norm_cube_pos hk hcov hβint
   set δ : ℝ := β / Real.sqrt (n : ℝ) with hδdef
   have hδpos : 0 < δ := by rw [hδdef]; positivity
+  -- `β ≥ k^{3/2} ≥ 1`, which is what discharges brick L's localisation window: the induction
+  -- runs the recursion only at `ε √m = 8 (A + 1) β ≥ 8` (wave 36).
+  have hβ1 : 1 ≤ β := by
+    have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+    have hs : 1 ≤ Real.sqrt (k : ℝ) := by
+      rw [show (1 : ℝ) = Real.sqrt 1 by simp]
+      exact Real.sqrt_le_sqrt hk1
+    have hlyap := sqrt_dim_mul_dim_le_integral_norm_cube hcov hβint
+    rw [← hβdef] at hlyap
+    nlinarith
   -- the recursion, with `A` enlarged to `A + 1` so that `1 ≤ 8 (A + 1)` for `log_shift_le`
   have hind := le_of_selfImproving_induction_log (A := A + 1)
     (C := 4 * gaussianShellConst k) (b := β)
     (D := fun m => convexDiscrepancy (sumLaw m ν) γ) (by linarith) (by linarith) hβpos
-    (fun m hm ε hε Y hY => by
+    (by nlinarith)
+    (fun m hm ε hε hwin Y hY => by
       have hY0 : 0 ≤ Y :=
         le_trans convexDiscrepancy_nonneg (hY m (by omega) le_rfl)
-      have h := hA m ν ε Y hm hνp hmean hcov hβint hε (by
+      have h := hA m ν ε Y hm hνp hmean hcov hβint hε hwin (by
         intro m' h1 h2; exact hY m' h1 h2)
       rw [← hβdef] at h
       refine h.trans ?_
