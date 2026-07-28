@@ -4880,15 +4880,18 @@ of `θ`). Five applications of `L^t f = ∂_{w₀}(f/(i∂_{w₀}Φ))` to the cu
 `leakage_ledger_four_gt` shows four applications would not. Fubini over `w₁` is harmless — the
 support is compact.
 
-**(C) The tail of the truncated root** — `exists_measure_norm_gt_bulkRadius_le`. `ρ_n` is the law
-of `n^{-1/2}∑Z(Xᵢ)` for `Z = studentPair F ∘ truncAt m √n`, bounded by
-`norm_studentPair_truncAt_le`; expanding `E‖w‖⁴` over the four indices leaves a diagonal
-`n^{-1}E‖Z‖⁴ = O(n)` and a pair block `3(E‖Z‖²)² = O(1)`, so Markov at the fourth moment gives
-`ρ_n{‖w‖ > M} ≤ E‖w‖⁴/M⁴ = O(n/M⁴)`, which `tail_ledger_exponent` identifies with `O(n^{-3/2})`
-at `M = n^{5/8}` exactly. This is the only probabilistic input of the three, and it is the line
-that *forces* the bulk radius.
+**(C) The fourth moment of the truncated root** —
+`exists_integral_norm_pow_four_vecRootLaw_truncAt_le`. `ρ_n` is the law of `n^{-1/2}∑Z(Xᵢ)` for
+`Z = studentPair F ∘ truncAt m √n`, bounded by `norm_studentPair_truncAt_le`; expanding `E‖w‖⁴`
+over the four indices leaves a diagonal `n^{-1}E‖Z‖⁴ = O(n)` and a pair block `3(E‖Z‖²)² = O(1)`.
+Everything around that one moment bound is proved here:
+`measure_norm_gt_le_fourth_moment` is Markov on the plane,
+`integrable_norm_pow_four_vecRootLaw_truncAt` is free (the truncated root has bounded support),
+and `tail_ledger_exponent` turns `O(n/M⁴)` into `O(n^{-3/2})` at `M = n^{5/8}` exactly. This is
+the only probabilistic input of the three, and it is the line that *forces* the bulk radius.
 
-All three are `sorry`. The assembly below is not. -/
+Three `sorry`s, all of them estimates and none of them structure. The assembly below, and the
+whole of (C) except the moment itself, are proved. -/
 
 /-- **(A) The mass of the bulk multiplier's transform is polynomial in `n` and `|θ|`** — the first
 of the three inputs of `exists_fourierCertificate_deltaSurrogate`; see the section note.
@@ -4918,13 +4921,67 @@ theorem exists_integral_norm_fourierWeight_bulkMultiplier_band_le
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
   sorry
 
-/-- **(C) The truncated root leaves the bulk with probability `O(n^{-3/2})`** — the third input,
-and the only probabilistic one.
+/-- **Markov at the fourth moment, on the plane.** The vector analogue of
+`measure_abs_gt_le_fourth_moment`, and the whole of input (C) except the moment itself. -/
+theorem measure_norm_gt_le_fourth_moment (μ : Measure E₂) [IsFiniteMeasure μ]
+    (h4 : Integrable (fun w : E₂ => ‖w‖ ^ 4) μ) {M : ℝ} (hM : 0 < M) :
+    (μ {w : E₂ | M < ‖w‖}).toReal ≤ (∫ w, ‖w‖ ^ 4 ∂μ) / M ^ 4 := by
+  have hmk := MeasureTheory.mul_meas_ge_le_integral_of_nonneg
+    (μ := μ) (f := fun w : E₂ => ‖w‖ ^ 4)
+    (Filter.Eventually.of_forall fun w => by positivity) h4 (M ^ 4)
+  have hsub : {w : E₂ | M < ‖w‖} ⊆ {w : E₂ | M ^ 4 ≤ ‖w‖ ^ 4} := fun w hw =>
+    pow_le_pow_left₀ hM.le (le_of_lt hw) 4
+  have hmono : (μ {w : E₂ | M < ‖w‖}).toReal ≤ (μ {w : E₂ | M ^ 4 ≤ ‖w‖ ^ 4}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < M ^ 4)]
+  have hmk' : M ^ 4 * (μ {w : E₂ | M ^ 4 ≤ ‖w‖ ^ 4}).toReal ≤ ∫ w, ‖w‖ ^ 4 ∂μ := by
+    simpa [measureReal_def] using hmk
+  nlinarith [hmono, hmk', (by positivity : (0 : ℝ) < M ^ 4)]
 
-The truncated summand is bounded (`norm_studentPair_truncAt_le`, `≍ n` at level `τ = √n`), so
-`E‖w‖⁴ = n^{-1}E‖Z‖⁴ + 3(E‖Z‖²)² = O(n)` and Markov gives `O(n/M⁴)`, which
-`tail_ledger_exponent` reads as `O(n^{-3/2})` at `M = n^{5/8}`. The factor `2` is the `B = 2` of
-`hasFourierCertificateOnBand_of_eqOn`. -/
+/-- **The fourth moment of the truncated root exists, for free.** Truncation at `τ = √n` bounds
+the summand pointwise (`norm_studentPair_truncAt_le`), so the root is carried by the ball of
+radius `√n·K` (`ae_norm_vecRootLaw_le`) and every moment is finite. No hypothesis on `F` is used:
+integrability is *not* part of the residue, only the size of the moment is. -/
+theorem integrable_norm_pow_four_vecRootLaw_truncAt (F : Measure ℝ) [IsProbabilityMeasure F]
+    {n : ℕ} (_hn : 0 < n) :
+    Integrable (fun w : E₂ => ‖w‖ ^ 4)
+      (vecRootLaw F
+        (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) := by
+  set τ : ℝ := Real.sqrt (n : ℝ) with hτdef
+  have hτ0 : (0 : ℝ) ≤ τ := Real.sqrt_nonneg _
+  set Z : ℝ → E₂ := fun y => studentPair F (truncAt (∫ s, s ∂F) τ y) with hZdef
+  have hZm : Measurable Z := (measurable_studentPair F).comp (measurable_truncAt _ _)
+  set K : ℝ := τ + (τ ^ 2 + |Var[fun t : ℝ => t; F]|) with hKdef
+  have hK : ∀ x, ‖Z x‖ ≤ K := fun x => norm_studentPair_truncAt_le F hτ0 x
+  haveI : IsProbabilityMeasure (vecRootLaw F Z n) := isProbabilityMeasure_vecRootLaw F hZm n
+  have hae := ae_norm_vecRootLaw_le F hZm hK n
+  refine integrable_of_ae_abs_le (by fun_prop) (C := (Real.sqrt (n : ℝ) * K) ^ 4) ?_
+  filter_upwards [hae] with w hw
+  rw [abs_of_nonneg (by positivity)]
+  exact pow_le_pow_left₀ (norm_nonneg _) hw 4
+
+/-- **(C) The fourth moment of the truncated root is `O(n)`** — the third input, the only
+probabilistic one, and (after `measure_norm_gt_le_fourth_moment` and
+`integrable_norm_pow_four_vecRootLaw_truncAt`) all that is left of it.
+
+`w = n^{-1/2}∑Z(Xᵢ)` with `Z` centred and bounded by `K ≍ n` at truncation level `τ = √n`.
+Expanding `E‖w‖⁴` over the four indices, independence and centring kill every block with a
+singleton, leaving the diagonal `n^{-1}E‖Z‖⁴` and the pair block `3(E‖Z‖²)²`. The second is
+`O(1)` under `hF4`; the first is `O(n)` and no better — `E‖Z‖⁴ ≤ (τ² + σ²)²E‖Z‖² ≍ n²Eξ⁴` is
+sharp, which is exactly why the bulk radius is `n^{5/8}` and not `n^{3/8}`. -/
+theorem exists_integral_norm_pow_four_vecRootLaw_truncAt_le
+    (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
+    ∃ A : ℝ, 0 < A ∧ ∀ n : ℕ, 0 < n →
+      (∫ w : E₂, ‖w‖ ^ 4
+          ∂(vecRootLaw F
+            (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n))
+        ≤ A * (n : ℝ) := by
+  sorry
+
+/-- **The truncated root leaves the bulk with probability `O(n^{-3/2})`.** Markov at the fourth
+moment against `M⁴ = n^{5/2}`, with `tail_ledger_exponent` doing the arithmetic: this is input (C)
+of the certificate, now reduced to the moment bound alone. -/
 theorem exists_measure_norm_gt_bulkRadius_le (F : Measure ℝ) [IsProbabilityMeasure F]
     (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F) :
     ∃ C : ℝ, 0 < C ∧ ∀ n : ℕ, 0 < n →
@@ -4932,7 +4989,31 @@ theorem exists_measure_norm_gt_bulkRadius_le (F : Measure ℝ) [IsProbabilityMea
             (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
           {w : E₂ | bulkRadius n < ‖w‖}).toReal
         ≤ C / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
-  sorry
+  obtain ⟨A, hA0, hA⟩ := exists_integral_norm_pow_four_vecRootLaw_truncAt_le F hF4
+  refine ⟨2 * A, by positivity, ?_⟩
+  intro n hn
+  have hM : 0 < bulkRadius n := bulkRadius_pos hn
+  haveI : IsProbabilityMeasure (vecRootLaw F
+      (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n) :=
+    isProbabilityMeasure_vecRootLaw F
+      ((measurable_studentPair F).comp (measurable_truncAt _ _)) n
+  have h1 := measure_norm_gt_le_fourth_moment _
+    (integrable_norm_pow_four_vecRootLaw_truncAt F hn) hM
+  have h2 : (∫ w : E₂, ‖w‖ ^ 4
+        ∂(vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n))
+        / bulkRadius n ^ 4
+      ≤ A * (n : ℝ) / bulkRadius n ^ 4 := by
+    gcongr
+    exact hA n hn
+  have h3 : A * (n : ℝ) / bulkRadius n ^ 4 = A / ((n : ℝ) * Real.sqrt (n : ℝ)) := by
+    rw [mul_div_assoc, tail_ledger_exponent hn, div_eq_mul_inv]
+  have h4 := h1.trans (h2.trans (le_of_eq h3))
+  calc 2 * ((vecRootLaw F
+          (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) (Real.sqrt (n : ℝ)) y)) n)
+        {w : E₂ | bulkRadius n < ‖w‖}).toReal
+      ≤ 2 * (A / ((n : ℝ) * Real.sqrt (n : ℝ))) := by linarith
+    _ = 2 * A / ((n : ℝ) * Real.sqrt (n : ℝ)) := by ring
 
 /-- **(W27, AMENDED IN W30, ASSEMBLED IN W31) The remaining analytic item of the studentized
 expansion, as a named brick.**
