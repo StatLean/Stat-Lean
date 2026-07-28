@@ -1399,6 +1399,152 @@ theorem abs_measure_le_sub_le_of_cdf_approx {Ω : Type*} [MeasurableSpace Ω] (P
   have hnn : (0 : ℝ) ≤ (P {ω | δ < |S ω - T ω|}).toReal := ENNReal.toReal_nonneg
   linarith
 
+/-! ### The peeled assembly: what the corrected (M2) really needs
+
+`abs_measure_le_sub_le_of_dist_le` splits at a **single** scale `δ`, and (see the note on
+`edgeworth_studentized_uniform`) that split cannot reach `O(n⁻¹)` for the studentized root under
+a finite fourth moment alone: `δ` is forced down to `n⁻¹` by the anti-concentration term, and at
+that scale `P(|T̃ₙ − Hₙ| > n⁻¹)` is genuinely of order `n^{-1/3}`, not `n⁻¹`, because the second
+coordinate `v` of the bivariate root has only two moments and its `v³` contribution to the
+Taylor remainder is heavy-tailed.
+
+The classical repair is not a better surrogate but a better *split*: peel dyadically, and use
+that the two events are nearly independent. The symmetric difference `{S ≤ x} Δ {T ≤ x}` is
+contained in `{|T − x| ≤ δ}` together with the strata `{2ᵏδ < |S − T|} ∩ {|T − x| ≤ 2^{k+1}δ}`
+and a final tail — because on the symmetric difference `T` is always within `|S − T|` of `x`, so
+a large discrepancy *forces* `T` to be correspondingly far from `x`. Each stratum is a **joint**
+event: the window mass at scale `2^{k+1}δ` times the tail of `|S − T|` at scale `2ᵏδ`. With
+`δ = n⁻¹`, window mass `≈ 2ᵏδ + n⁻¹` and tail `≈ (2ᵏδ n^{3/2})^{-2/3}`, the strata sum to
+`O(n⁻¹)`, which the single-scale split cannot achieve.
+
+The lemma below is that containment, as a statement about two arbitrary real random variables;
+it is a strict strengthening of `abs_measure_le_sub_le_of_dist_le` (which is the case `K = 0`
+after bounding each stratum by its tail factor alone). -/
+
+/-- The dyadic index: if `δ < d ≤ 2^K δ` then `d` sits in some dyadic window
+`(2ᵏδ, 2^{k+1}δ]` with `k < K`. -/
+private lemma exists_dyadic_index {d δ : ℝ} (hδ : 0 < δ) {K : ℕ}
+    (hlo : δ < d) (hhi : d ≤ 2 ^ K * δ) :
+    ∃ k, k < K ∧ 2 ^ k * δ < d ∧ d ≤ 2 ^ (k + 1) * δ := by
+  classical
+  have hK : 0 < K := by
+    rcases Nat.eq_zero_or_pos K with h | h
+    · rw [h] at hhi
+      norm_num at hhi
+      linarith
+    · exact h
+  set s : Finset ℕ := (Finset.range K).filter (fun k => 2 ^ k * δ < d) with hs
+  have h0 : (0 : ℕ) ∈ s := by
+    refine Finset.mem_filter.2 ⟨Finset.mem_range.2 hK, ?_⟩
+    simpa using hlo
+  have hne : s.Nonempty := ⟨0, h0⟩
+  set k := s.max' hne with hk
+  have hkmem : k ∈ s := s.max'_mem hne
+  obtain ⟨hkr, hklt⟩ := Finset.mem_filter.1 hkmem
+  refine ⟨k, Finset.mem_range.1 hkr, hklt, ?_⟩
+  by_cases hnext : k + 1 < K
+  · by_contra hcon
+    have hmem : k + 1 ∈ s :=
+      Finset.mem_filter.2 ⟨Finset.mem_range.2 hnext, not_le.1 hcon⟩
+    have hle := s.le_max' _ hmem
+    omega
+  · have hkK : k + 1 = K := by
+      have := Finset.mem_range.1 hkr
+      omega
+    rw [hkK]
+    exact hhi
+
+/-- **The dyadically peeled perturbation bound.** For any two real random variables, any
+`δ > 0` and any `K`,
+
+`|P(S ≤ x) − P(T ≤ x)| ≤ P(|T − x| ≤ δ) + ∑_{k<K} P(2ᵏδ < |S − T|, |T − x| ≤ 2^{k+1}δ)
+                        + P(2^K δ < |S − T|)`.
+
+Each middle term is a **joint** event, which is what makes the estimate strictly stronger than
+the single-scale split of `abs_measure_le_sub_le_of_dist_le`: a large discrepancy `|S − T|` only
+matters where it can move `T` across `x`, and there `T` is far from `x` by the same amount. -/
+theorem abs_measure_le_sub_le_of_peel {Ω : Type*} [MeasurableSpace Ω] (P : Measure Ω)
+    [IsProbabilityMeasure P] {S T : Ω → ℝ} {δ : ℝ} (hδ : 0 < δ) (K : ℕ) (x : ℝ) :
+    |(P {ω | S ω ≤ x}).toReal - (P {ω | T ω ≤ x}).toReal|
+      ≤ (P {ω | |T ω - x| ≤ δ}).toReal
+        + ∑ k ∈ Finset.range K,
+            (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+        + (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal := by
+  classical
+  have hfin : ∀ s : Set Ω, P s ≠ ⊤ := fun s => (measure_lt_top P s).ne
+  set W : Set Ω := ({ω | |T ω - x| ≤ δ} : Set Ω)
+      ∪ (⋃ k ∈ Finset.range K,
+          {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+      ∪ {ω | 2 ^ K * δ < |S ω - T ω|} with hW
+  have hkey : ∀ ω : Ω, |T ω - x| ≤ |S ω - T ω| → ω ∈ W := by
+    intro ω hω
+    rw [hW]
+    rcases le_or_gt |S ω - T ω| δ with hd | hd
+    · exact Set.mem_union_left _ (Set.mem_union_left _ (le_trans hω hd))
+    · rcases lt_or_ge (2 ^ K * δ) |S ω - T ω| with hKlt | hKge
+      · exact Set.mem_union_right _ hKlt
+      · obtain ⟨k, hkK, hk1, hk2⟩ := exists_dyadic_index hδ hd hKge
+        exact Set.mem_union_left _ (Set.mem_union_right _
+          (Set.mem_iUnion₂.2 ⟨k, Finset.mem_range.2 hkK, ⟨hk1, le_trans hω hk2⟩⟩))
+  have hA : {ω | S ω ≤ x} ⊆ {ω | T ω ≤ x} ∪ W := by
+    intro ω hω
+    by_cases hb : T ω ≤ x
+    · exact Set.mem_union_left _ hb
+    · refine Set.mem_union_right _ (hkey ω ?_)
+      have hb' : x < T ω := not_le.1 hb
+      have hSx : S ω ≤ x := hω
+      rw [abs_of_pos (by linarith : (0 : ℝ) < T ω - x), abs_sub_comm,
+        abs_of_pos (by linarith : (0 : ℝ) < T ω - S ω)]
+      linarith
+  have hB : {ω | T ω ≤ x} ⊆ {ω | S ω ≤ x} ∪ W := by
+    intro ω hω
+    by_cases hb : S ω ≤ x
+    · exact Set.mem_union_left _ hb
+    · refine Set.mem_union_right _ (hkey ω ?_)
+      have hb' : x < S ω := not_le.1 hb
+      have hTx : T ω ≤ x := hω
+      rcases eq_or_lt_of_le hTx with heq | hlt
+      · rw [heq]
+        simp only [sub_self, abs_zero]
+        exact abs_nonneg _
+      · rw [abs_of_neg (by linarith : T ω - x < 0),
+          abs_of_pos (by linarith : (0 : ℝ) < S ω - T ω)]
+        linarith
+  have hsumne : (∑ k ∈ Finset.range K,
+      P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}) ≠ ⊤ :=
+    ENNReal.sum_ne_top.2 fun k _ => hfin _
+  have hWle : P W ≤ P {ω | |T ω - x| ≤ δ}
+      + (∑ k ∈ Finset.range K,
+          P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+      + P {ω | 2 ^ K * δ < |S ω - T ω|} := by
+    rw [hW]
+    refine (measure_union_le _ _).trans (add_le_add ?_ le_rfl)
+    exact (measure_union_le _ _).trans
+      (add_le_add le_rfl (measure_biUnion_finset_le _ _))
+  have hWtoReal : (P W).toReal ≤ (P {ω | |T ω - x| ≤ δ}).toReal
+      + ∑ k ∈ Finset.range K,
+          (P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ}).toReal
+      + (P {ω | 2 ^ K * δ < |S ω - T ω|}).toReal := by
+    have hne : (P {ω | |T ω - x| ≤ δ}
+        + (∑ k ∈ Finset.range K,
+            P {ω | 2 ^ k * δ < |S ω - T ω| ∧ |T ω - x| ≤ 2 ^ (k + 1) * δ})
+        + P {ω | 2 ^ K * δ < |S ω - T ω|}) ≠ ⊤ :=
+      ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin _, hsumne⟩, hfin _⟩
+    have h := ENNReal.toReal_mono hne hWle
+    rwa [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin _, hsumne⟩) (hfin _),
+      ENNReal.toReal_add (hfin _) hsumne,
+      ENNReal.toReal_sum (fun k _ => hfin _)] at h
+  have hbound : ∀ U V : Set Ω, U ⊆ V ∪ W →
+      (P U).toReal ≤ (P V).toReal + (P W).toReal := by
+    intro U V hUsub
+    have h1 : P U ≤ P V + P W := (measure_mono hUsub).trans (measure_union_le _ _)
+    have h2 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hfin V, hfin W⟩) h1
+    rwa [ENNReal.toReal_add (hfin V) (hfin W)] at h2
+  have h1 := hbound _ _ hA
+  have h2 := hbound _ _ hB
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
