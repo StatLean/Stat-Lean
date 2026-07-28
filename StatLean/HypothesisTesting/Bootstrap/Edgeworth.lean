@@ -3628,6 +3628,157 @@ theorem integrable_surrogate_inputs_of_bounded (F : Measure ℝ) [IsProbabilityM
     · rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < σ ^ 2)]
       gcongr
 
+/-! ### The change of law, inserted once at the outermost level
+
+`abs_measure_pi_sub_comp_le` prices an arbitrary coordinatewise truncation against an arbitrary
+measurable event of the sample. The studentized route needs it at exactly one place — the
+outermost one, before any expansion — and the results below carry it there.
+
+The point worth recording is that **the statistic does not change**. `studentizedRootCDF F n z`
+is, by `studentizedRootCDF_eq_vecRootLaw`, the mass the bivariate root law gives to a fixed
+curved region `R` whose defining constants (`Var_F X`) come from the *sampling* law `F` and are
+frozen once and for all. Truncating replaces the law of the summand by the law of the truncated
+summand, i.e. replaces `vecRootLaw F (studentPair F) n` by `vecRootLaw F (studentPair F ∘ T) n`,
+and leaves `R` alone. So the comparison is between two laws evaluated on *the same* set, and
+`abs_measure_pi_sub_comp_le` applies verbatim; no re-derivation of the reduction is needed.
+
+Recording the composed form `studentPair F ∘ T` rather than the pushforward `F.map T` is not
+cosmetic: `ae_norm_vecRootLaw_le`, and through it
+`integrable_surrogate_inputs_of_bounded`, asks for `‖Z x‖ ≤ K` at **every** `x`, which the
+composition satisfies (`norm_studentPair_truncAt_le`) while `studentPair F` itself of course does
+not. The two laws are equal — `(F.map T).map (studentPair F) = F.map (studentPair F ∘ T)` — but
+only the composed spelling discharges the hypothesis.
+
+At the classical level `τ = √n` the price is `n · Eξ⁴/n² = Eξ⁴/n`, which is the target `O(n⁻¹)`
+exactly; see the note above `measure_pi_exists_coord_mem_le` for why the level is forced from
+both sides. -/
+
+/-- The **classical truncation** of the observations at level `τ` around the centring `m`: an
+observation further than `τ` from `m` is replaced by `m` itself. -/
+noncomputable def truncAt (m τ : ℝ) : ℝ → ℝ := fun x => if |x - m| ≤ τ then x else m
+
+lemma measurable_truncAt (m τ : ℝ) : Measurable (truncAt m τ) := by
+  refine Measurable.ite ?_ measurable_id measurable_const
+  exact measurableSet_le (by fun_prop) measurable_const
+
+/-- The truncated observation is within `τ` of the centring, **for every** `x`. -/
+lemma abs_truncAt_sub_le {m τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) : |truncAt m τ x - m| ≤ τ := by
+  rw [truncAt]
+  by_cases h : |x - m| ≤ τ
+  · rwa [if_pos h]
+  · rw [if_neg h, sub_self, abs_zero]; exact hτ
+
+/-- The set on which the truncation moves the observation is exactly the tail `{τ < |x − m|}`. -/
+lemma truncAt_ne_setOf {m τ : ℝ} (hτ : 0 ≤ τ) :
+    {x : ℝ | truncAt m τ x ≠ x} = {x : ℝ | τ < |x - m|} := by
+  ext x
+  simp only [Set.mem_setOf_eq, truncAt]
+  constructor
+  · intro hx
+    by_contra hle
+    rw [not_lt] at hle
+    exact hx (if_pos hle)
+  · intro hx hEq
+    rw [if_neg (not_le.2 hx)] at hEq
+    rw [← hEq, sub_self, abs_zero] at hx
+    linarith
+
+/-- **The change of law at the outermost level.** For an arbitrary measurable truncation `T`,
+the studentized distribution function of the sample and that of the truncated sample differ by
+at most `n · F{T x ≠ x}` — the region of `studentizedRootCDF_eq_vecRootLaw` being the *same* set
+for both. -/
+theorem abs_studentizedRootCDF_sub_comp_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    {n : ℕ} (hn : 0 < n) {T : ℝ → ℝ} (hT : Measurable T)
+    (hbad : MeasurableSet {x : ℝ | T x ≠ x}) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * (F {x : ℝ | T x ≠ x}).toReal := by
+  classical
+  have hRm : MeasurableSet {w : EuclideanSpace ℝ (Fin 2) |
+      w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+        - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z} := by
+    have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+    have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+    refine measurableSet_le (h0.div ?_) measurable_const
+    exact (((h1.mul_const ((Real.sqrt n)⁻¹)).const_add Var[fun t : ℝ => t; F]).sub
+      ((h0.pow_const 2).mul_const ((n : ℝ)⁻¹))).sqrt
+  have hZm : Measurable (studentPair F) := measurable_studentPair F
+  have hZTm : Measurable (fun y : ℝ => studentPair F (T y)) := hZm.comp hT
+  have hsm : MeasurableSet
+      ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+            - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}) :=
+    hRm.preimage (measurable_vecRoot hZm n)
+  have h1 : studentizedRootCDF F n z
+      = ((Measure.pi fun _ : Fin n => F)
+          ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z})).toReal := by
+    rw [studentizedRootCDF_eq_vecRootLaw F hn z, vecRootLaw,
+      Measure.map_apply (measurable_vecRoot hZm n) hRm]
+  have h2 : (vecRootLaw F (fun y : ℝ => studentPair F (T y)) n
+        {w : EuclideanSpace ℝ (Fin 2) |
+          w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+            - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal
+      = ((Measure.pi fun _ : Fin n => F)
+          ((fun y : Fin n → ℝ => fun i => T (y i)) ⁻¹'
+            ((fun y : Fin n → ℝ => (Real.sqrt n)⁻¹ • ∑ j, studentPair F (y j)) ⁻¹'
+              {w : EuclideanSpace ℝ (Fin 2) |
+                w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                  - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}))).toReal := by
+    rw [vecRootLaw, Measure.map_apply (measurable_vecRoot hZTm n) hRm]
+    rfl
+  rw [h1, h2]
+  exact abs_measure_pi_sub_comp_le F hT hbad hsm
+
+/-- **The change of law at the classical truncation, priced by the fourth moment.**
+`|studentizedRootCDF F n z − (its truncated-sample analogue)| ≤ n · E[(X − μ)⁴]/τ⁴`; at
+`τ = √n` the right-hand side is `E[(X − μ)⁴]/n`. -/
+theorem abs_studentizedRootCDF_sub_truncAt_le (F : Measure ℝ) [IsProbabilityMeasure F]
+    (hF4 : Integrable (fun x : ℝ => (x - ∫ s, s ∂F) ^ 4) F)
+    {n : ℕ} (hn : 0 < n) {τ : ℝ} (hτ : 0 < τ) (z : ℝ) :
+    |studentizedRootCDF F n z
+        - (vecRootLaw F (fun y : ℝ => studentPair F (truncAt (∫ s, s ∂F) τ y)) n
+            {w : EuclideanSpace ℝ (Fin 2) |
+              w 0 / Real.sqrt (Var[fun t : ℝ => t; F] + w 1 * (Real.sqrt n)⁻¹
+                - w 0 ^ 2 * (n : ℝ)⁻¹) ≤ z}).toReal|
+      ≤ (n : ℝ) * ((∫ x, (x - ∫ s, s ∂F) ^ 4 ∂F) / τ ^ 4) := by
+  have hset := truncAt_ne_setOf (m := ∫ s, s ∂F) hτ.le
+  have hbad : MeasurableSet {x : ℝ | truncAt (∫ s, s ∂F) τ x ≠ x} := by
+    rw [hset]
+    exact measurableSet_lt measurable_const (by fun_prop)
+  refine (abs_studentizedRootCDF_sub_comp_le F hn (measurable_truncAt _ _) hbad z).trans ?_
+  rw [hset]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  exact measure_abs_gt_le_fourth_moment F (by fun_prop) hF4 hτ
+
+/-- **The truncated studentizing pair is bounded, at every point.** This is what makes
+`integrable_surrogate_inputs_of_bounded` — and with it every hypothesis of the surrogate's
+transform — available on the truncated law. -/
+lemma norm_studentPair_truncAt_le (F : Measure ℝ) {τ : ℝ} (hτ : 0 ≤ τ) (x : ℝ) :
+    ‖studentPair F (truncAt (∫ s, s ∂F) τ x)‖
+      ≤ τ + (τ ^ 2 + |Var[fun t : ℝ => t; F]|) := by
+  set m : ℝ := ∫ s, s ∂F with hm
+  set y : ℝ := truncAt m τ x with hy
+  have hb : |y - m| ≤ τ := abs_truncAt_sub_le hτ x
+  have h0 : (studentPair F y) 0 = y - m := rfl
+  have h1 : (studentPair F y) 1 = (y - m) ^ 2 - Var[fun t : ℝ => t; F] := rfl
+  refine (norm_le_abs_add_abs (studentPair F y)).trans ?_
+  rw [h0, h1]
+  have hsq : |(y - m) ^ 2 - Var[fun t : ℝ => t; F]|
+      ≤ τ ^ 2 + |Var[fun t : ℝ => t; F]| := by
+    refine (abs_sub_le_add_abs _ _).trans ?_
+    have : |(y - m) ^ 2| ≤ τ ^ 2 := by
+      rw [abs_pow]
+      exact pow_le_pow_left₀ (abs_nonneg _) hb 2
+    linarith
+  linarith
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
