@@ -3717,6 +3717,14 @@ lemma integral_fourierSynth (μ : Measure E₂) [IsFiniteMeasure μ] {a : E₂ �
   rw [hswap]
   exact integral_congr_ae (Filter.Eventually.of_forall hinner)
 
+/-- The synthesis is bounded by the mass of its weight. -/
+lemma norm_fourierSynth_le {a : E₂ → ℂ} (t₀ : E₂) (w : E₂) :
+    ‖fourierSynth a t₀ w‖ ≤ ∫ s : E₂, ‖a s‖ := by
+  rw [fourierSynth]
+  refine (norm_integral_le_integral_norm _).trans (le_of_eq ?_)
+  refine integral_congr_ae (Filter.Eventually.of_forall fun s => ?_)
+  simp only [norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
+
 /-- **The transfer inequality.** If the characteristic function of `μ` is at most `κ` on the
 whole band `‖t‖ ≥ ‖t₀‖ − R`, then the synthesis of a weight of mass `Γ` whose leakage past
 radius `R` is `ε` integrates to at most `Γκ + ε`.
@@ -3783,6 +3791,61 @@ def HasFourierCertificate (μ : Measure E₂) (σ r θ : ℝ) (t₀ : E₂) (R �
     (∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖) ≤ ε ∧
     (∫ w, ‖Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ))
       - fourierSynth a t₀ w‖ ∂μ) ≤ η
+
+/-- **A certificate from an exact synthesis on the bulk.** If the synthesis reproduces the
+multiplier *exactly* on a set `S` — which is what Fourier inversion gives for a cut-off
+multiplier, on the set where the cut-off is `1` — then the `L¹(μ)` error costs only the mass
+`μ(Sᶜ)` that the law puts outside the bulk, at the crude rate `1 + Γ`.
+
+This is the reduction that makes `HasFourierCertificate` a purely deterministic requirement plus
+one tail bound: with `S` the ball of radius `M` and `M = n^{3/8}`, a fourth moment of the root
+gives `μ(Sᶜ) = O(n^{-3/2})`, which is the accuracy the Esseen split needs. -/
+theorem hasFourierCertificate_of_eqOn (μ : Measure E₂) [IsProbabilityMeasure μ]
+    (σ r θ : ℝ) {a : E₂ → ℂ} (ha : Integrable a) (t₀ : E₂) {R Γ ε η : ℝ}
+    (hΓ : ∫ s : E₂, ‖a s‖ ≤ Γ) (htail : ∫ s in {s : E₂ | R < ‖s‖}, ‖a s‖ ≤ ε)
+    {S : Set E₂} (hS : MeasurableSet S)
+    (heq : ∀ w ∈ S, fourierSynth a t₀ w
+      = Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)))
+    (hη : (1 + Γ) * (μ Sᶜ).toReal ≤ η) :
+    HasFourierCertificate μ σ r θ t₀ R Γ ε η := by
+  refine ⟨a, ha, hΓ, htail, ?_⟩
+  set f : E₂ → ℂ :=
+    fun w => Complex.exp (Complex.I * ((θ * deltaSurrogate σ r w : ℝ) : ℂ)) with hfdef
+  have hfmeas : Measurable f := by
+    have h1 : Measurable fun w : E₂ => (θ * deltaSurrogate σ r w : ℝ) :=
+      (measurable_deltaSurrogate σ r).const_mul θ
+    exact Complex.measurable_exp.comp ((Complex.measurable_ofReal.comp h1).const_mul Complex.I)
+  have hfnorm : ∀ w : E₂, ‖f w‖ = 1 := by
+    intro w
+    rw [hfdef]
+    simp [Complex.norm_exp]
+  have hfint : Integrable f μ :=
+    Integrable.mono' (integrable_const (1 : ℝ)) hfmeas.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun w => le_of_eq (hfnorm w))
+  have hsint : Integrable (fourierSynth a t₀) μ := integrable_fourierSynth μ ha t₀
+  have hdint : Integrable (fun w => ‖f w - fourierSynth a t₀ w‖) μ := (hfint.sub hsint).norm
+  have hbdd : ∀ w : E₂, ‖f w - fourierSynth a t₀ w‖ ≤ 1 + Γ := fun w =>
+    (norm_sub_le _ _).trans
+      (add_le_add (le_of_eq (hfnorm w)) ((norm_fourierSynth_le t₀ w).trans hΓ))
+  have hsplit : (∫ w, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+      = (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ)
+        + ∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ :=
+    (integral_add_compl hS hdint).symm
+  have hSzero : (∫ w in S, ‖f w - fourierSynth a t₀ w‖ ∂μ) = 0 := by
+    refine integral_eq_zero_of_ae ?_
+    filter_upwards [ae_restrict_mem hS] with w hw
+    rw [heq w hw, sub_self, norm_zero]
+    rfl
+  have hSc : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ (1 + Γ) * (μ Sᶜ).toReal := by
+    have hmono : (∫ w in Sᶜ, ‖f w - fourierSynth a t₀ w‖ ∂μ) ≤ ∫ _w in Sᶜ, (1 + Γ) ∂μ :=
+      setIntegral_mono_on hdint.integrableOn (integrable_const _) hS.compl
+        (fun w _ => hbdd w)
+    have hconst : (∫ _w in Sᶜ, (1 + Γ) ∂μ) = (μ Sᶜ).toReal * (1 + Γ) := by
+      rw [setIntegral_const, smul_eq_mul, measureReal_def]
+    rw [hconst] at hmono
+    linarith [hmono]
+  rw [hsplit, hSzero, zero_add]
+  exact hSc.trans hη
 
 /-- **The outer-range bound for the surrogate, from a certificate and a Cramér band.**
 `‖φ_{μ∘Hₙ⁻¹}(θ)‖ ≤ Γκ + ε + η` whenever `‖φ_μ‖ ≤ κ` on the band `‖t‖ ≥ ‖t₀‖ − R`. -/
