@@ -198,9 +198,11 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- The analytic core of that improvement is PROVED (0-sorry) in
   -- `ForMathlib/MultivariateBerryEsseen`: `exists_tiltRemainder_bound`,
   -- `integral_abs_vecTiltRemainder_le`, `integral_gaussian_shift_eq_tilt`, `tiltPoly_fubini`
-  -- and `abs_integral_gaussian_smoothed_swap_le`; see the "wave-13 amendment" block of that
-  -- file's module docstring for the full derivation and for the three assembly bricks that
-  -- are still open.
+  -- and `abs_integral_gaussian_smoothed_swap_le`, together with two of the three assembly
+  -- bricks (`map_stdGaussian_pair_smul_add` / `integral_gaussian_pair_smul_add`, the Gaussian
+  -- convolution; and `sum_le_of_bounded_and_decay`, the sum estimate).  Only the hybrid
+  -- telescope itself is still open; see the "wave-13 amendment" block of that file's module
+  -- docstring for the full derivation and for the precise shape of the missing brick.
   --
   -- Even that improved elementary ceiling is `(β/√n)^{1/2}`, not `β/√n`: closing the last
   -- factor needs the anti-concentration bound applied to the *hybrid* laws, i.e. Bentkus's

@@ -127,15 +127,31 @@ the sharp rate). That induction is Bentkus's actual argument and is not attempte
 honest ceiling of the *non-inductive* elementary route is `(β/√n)^{1/2}`, and the residual gap
 to Bentkus is a further factor `(β/√n)^{1/2}`.
 
-**Status of the improvement.** The analytic core is proved below and is `0`-sorry:
-`exists_tiltRemainder_bound`, `integral_abs_vecTiltRemainder_le`,
-`integral_gaussian_shift_eq_tilt`, `tiltPoly_fubini`,
-`abs_integral_gaussian_smoothed_swap_le`. What is **not** yet assembled is the telescope with
-the accumulated Gaussian; that needs (i) the hybrid rewritten with a `Measure.dirac 0`
-place-holder for the already-swapped coordinates together with an explicit `N(0,(j/n)I_k)`
-factor, (ii) the Gaussian convolution identity `γ_σ ∗ γ_c = γ_{√(σ²+c²)}`, and (iii) the
-elementary sum estimate displayed above. Until those land, `berryEsseen_convex_elementary` and
-`berryEsseen_ball_elementary` keep their proved `(β/√n)^{1/4}` form.
+**Status of the improvement.** Everything below is proved outright (`0`-sorry).
+
+* *Analytic core.* `exists_tiltRemainder_bound` (scalar, absolute constant),
+  `integral_abs_vecTiltRemainder_le` (multivariate, **dimension-free**, by reduction to the
+  one-dimensional marginal), `integral_gaussian_shift_eq_tilt` (Cameron–Martin),
+  `tiltPoly_fubini` (the moment cancellation) and, assembling these,
+  `abs_integral_gaussian_smoothed_swap_le` — the swap step at cost `C (c/σ)³ (β_ν + β_ρ)`.
+* *Assembly brick (ii).* `map_stdGaussian_pair_smul_add` / `integral_gaussian_pair_smul_add`:
+  the Gaussian convolution `γ_σ ∗ γ_c = γ_{√(σ²+c²)}`, in measure and in integral form.
+* *Assembly brick (iii).* `sum_le_of_bounded_and_decay`: if `0 ≤ T j ≤ θ` and
+  `T j ≤ j^{-3/2}` for `j ≥ 1` then `Σ_{j<n} T j ≤ J θ + 3/√J` for every cut `J ≥ 2` — the
+  displayed sum estimate, proved by the backward telescoping bound
+  `inv_mul_sqrt_le_telescope` (`j^{-3/2} ≤ 2((j−1)^{-1/2} − j^{-1/2})`), with no integral
+  comparison. Choosing `J ≈ θ^{-2/3}` gives `O(θ^{1/3})`.
+
+**The one remaining brick is (i)**: the telescope itself. Concretely, `Iⱼ` should be
+`∫ x, (∫ z, f (n^{-1/2} • (∑ₗ xₗ) + (j/n)^{1/2} • z) dγ(z)) d(Measure.pi κ'ⱼ)` with
+`κ'ⱼ i = if i < j then Measure.dirac 0 else ν`; `integral_pi_sum_peel` peels coordinate `j`
+verbatim (the integrand is a bounded continuous function of `∑ₗ xₗ`), brick (ii) identifies the
+`(j+1)`-st smoothing with the `j`-th plus one fresh `n^{-1/2}`-scaled Gaussian, the step is
+`abs_integral_gaussian_smoothed_swap_le` for `j ≥ 1` and `abs_integral_swap_step_le` for
+`j = 0`, and brick (iii) sums the steps. The two endpoints need
+`Measure.pi (fun _ => Measure.dirac 0) = Measure.dirac 0` (for `I n`) and `√0 = 0` (for `I 0`).
+Until that lands, `berryEsseen_convex_elementary` and `berryEsseen_ball_elementary` keep their
+proved `(β/√n)^{1/4}` form.
 
 **Reference.** V. Bentkus, "On the dependence of the Berry–Esseen bound on dimension,"
 *J. Statist. Plann. Inference* **113** (2003), 385–402. E. L. Lehmann and J. P. Romano,
