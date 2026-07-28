@@ -30,11 +30,14 @@ Statements now FROZEN.
 | doob-core (IIDSeqKernel, PosteriorMartingale, Accessible) | 1 | Bay/ForMathlib/IIDSeqKernel, Bay/DoobConsistency/{Basic,PosteriorMartingale,Accessible,Theorem10_10} | — | **MERGED 0-sorry (incl. Thm 10.10)** | retraction insulated |
 | conc (PriorSmallBall, PosteriorConcentration) | 2 | Bay/BernsteinVonMises/{PriorSmallBall,PosteriorConcentration} | bricks-tv | **MERGED 0-sorry (Step A done)** | tail-split insulated |
 | local (MixtureContiguity, LocalApproximation) | 2 | Bay/BernsteinVonMises/{MixtureContiguity,LocalApproximation} | bricks-* | **MERGED** (MixtureContiguity 0-sorry; 1 debt: local_tv_tendsto) | local_tv_tendsto = headline debt |
-| bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | STUBBED | — |
+| bpe-aux (PosteriorTails, ArgminConsistency) | 2 | Bay/BayesEstimators/{PosteriorTails,ArgminConsistency} | tests-statement | **MERGED 0-sorry** | — |
 | doob-final | — | (absorbed by doob-core; lane not needed) | — | DONE | — |
-| assembly (Theorem10_1, EfficientCentering) | 3 | Bay/BernsteinVonMises/{Theorem10_1,EfficientCentering} | conc, local, tests | STUBBED | lintegral form insulated |
-| bpe-approx (UniformApproximation) | 3 | Bay/BayesEstimators/UniformApproximation | assembly | STUBBED | — |
-| bpe-final (Theorem10_8) | 4 | Bay/BayesEstimators/Theorem10_8 | bpe-approx, bpe-aux | STUBBED | bowl-shaped corollary insulated |
+| assembly (Theorem10_1, EfficientCentering) | 3 | Bay/BernsteinVonMises/{Theorem10_1,EfficientCentering} | conc, local, tests | **MERGED 0-sorry (THM 10.1 + corollary)** | — |
+| bpe-approx (UniformApproximation) | 3 | Bay/BayesEstimators/UniformApproximation | assembly | **MERGED 0-sorry** | — |
+| bpe-final (Theorem10_8) | 4 | Bay/BayesEstimators/Theorem10_8 | bpe-approx, bpe-aux | IN_FLIGHT | bowl-shaped corollary insulated |
+| debt-gauss | 4 | AS/ForMathlib/MultivariateGaussianDensity | — | IN_FLIGHT | — |
+| debt-score | 4 | Bay/BernsteinVonMises/ScoreTest | — | IN_FLIGHT | — |
+| debt-localtv | 4 | Bay/BernsteinVonMises/LocalApproximation | — | IN_FLIGHT | — |
 
 Laptop-only (no lane may touch): `*/Defs.lean` (all four new `Defs.lean` after gate),
 `StatLean/Bayesian.lean`, `StatLean/AsymptoticStatistics.lean`, `StatLean.lean`,
@@ -116,4 +119,16 @@ doob closure. W4: `bay/bpe-final`; full gates; merge to `main`.
   bay/bpe-aux still running (ArgminConsistency 0-sorry on-branch; PosteriorTails in progress).
   Batch sorry inventory at this point: 17 across 9 files (3 sanctioned/known debts, the rest
   are not-yet-started wave-3/4 targets).
+- 2026-07-27: **display (10.9) + ArgminConsistency MERGED** (1896345, gate 3183 jobs), both
+  0-sorry.
+- 2026-07-27: **vdV THEOREM 10.1 (BERNSTEIN-VON MISES) MERGED 0-SORRY** (a7bc5cc, gate 3226
+  jobs), together with the p.144 **efficient-centering corollary**. The assembly resolves the
+  Step-A (`Mₙ → ∞`) vs Step-B (fixed radius) tension by a diagonal extraction of a slowly
+  diverging `Mseq`, then runs the three-way conditioned triangle inequality.
+- 2026-07-27: **UniformApproximation MERGED 0-sorry** (e50542e, gate 3204 jobs) — the
+  majorant (ℓ^∞(K)-free) form of Thm 10.8 Part 3.
+- 2026-07-27: **Batch state: 8 sorries left, ALL with a lane in flight** — Theorem10_8 (5,
+  bpe-final), local_tv_tendsto (debt-localtv), truncScore_mean_expansion (debt-score),
+  gaussian_loss_convolution_continuous (debt-gauss). Three of the four chapter targets
+  (Thm 10.1, Lemma 10.3, Thm 10.10) plus the corollary are COMPLETE.
 
