@@ -1922,6 +1922,158 @@ theorem local_tv_tendsto
             ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall 0 R])
             ((bvmGaussian J sc n ω)[|Metric.closedBall 0 R])})
         atTop (𝓝 0) := by
-  sorry
+  classical
+  intro δ hδ
+  have hδ'0 : (0 : ℝ≥0∞) < min δ 1 := lt_min hδ zero_lt_one
+  have hδ'T : min δ 1 ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)
+  have hV0 : volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R) ≠ 0 :=
+    (lt_of_lt_of_le (Metric.measure_ball_pos volume 0 hR)
+      (measure_mono Metric.ball_subset_closedBall)).ne'
+  have hRn : ∀ᶠ n : ℕ in atTop, R < r₀ * Real.sqrt n := by
+    have hgo : Tendsto (fun n : ℕ => r₀ * Real.sqrt n) atTop atTop :=
+      Filter.Tendsto.const_mul_atTop hπ.rad_pos
+        (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
+    exact hgo.eventually_gt_atTop R
+  have hWmeas : ∀ n : ℕ, Measurable (bvmStepBBound M f θ₀ J sc n R) := fun n =>
+    measurable_bvmStepBBound (M := M) (θ₀ := θ₀) hM_joint hπ.measurable J hsc n R
+  refine ENNReal.tendsto_nhds_zero.mpr fun ε hε => ?_
+  have hε2 : (0 : ℝ≥0∞) < ε / 2 := ENNReal.div_pos hε.ne' (by norm_num)
+  obtain ⟨K, hK0, hKbd⟩ := exists_scoreSum_bound hPDF hsc hDQM hJ_pd hJ hε2
+  obtain ⟨cK, hcKT, hcKeq⟩ : ∃ c : ℝ≥0∞, c ≠ ∞ ∧
+      ENNReal.ofReal (Real.exp
+          (2 * (R * K + ‖Matrix.toEuclideanCLM (𝕜 := ℝ) J‖ * R ^ 2)))
+        / volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) R) = c :=
+    ⟨_, ENNReal.div_ne_top ENNReal.ofReal_ne_top hV0, rfl⟩
+  -- the measurable exceptional events
+  have hex : ∀ n : ℕ, ∃ Nset : Set (Fin n → 𝓧), MeasurableSet Nset ∧
+      (iidKernel κ n ∘ₘ π) Nset = 0 ∧
+      ∀ ω, ω ∉ Nset → R < r₀ * Real.sqrt n →
+        (bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω ≠ ∞ ∧
+          (bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω = 0 →
+            Minimaxity.tvDist
+              ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall
+                (0 : EuclideanSpace ℝ (Fin k)) R])
+              ((bvmGaussian J sc n ω)[|Metric.closedBall
+                (0 : EuclideanSpace ℝ (Fin k)) R]) = 0) ∧
+          (bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω ≠ 0 →
+            bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω ≠ ∞ →
+            ‖scoreSum sc n ω‖ ≤ K →
+            Minimaxity.tvDist
+                ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall
+                  (0 : EuclideanSpace ℝ (Fin k)) R])
+                ((bvmGaussian J sc n ω)[|Metric.closedBall
+                  (0 : EuclideanSpace ℝ (Fin k)) R])
+              ≤ cK * bvmStepBBound M f θ₀ J sc n R ω)) := by
+    intro n
+    by_cases hn : R < r₀ * Real.sqrt n
+    · have hae := (bvmNumer_ne_top_and_tvDist_zero_ae (J := J) (sc := sc) hκ hM_joint
+        hπ hR hn).and (tvDist_cond_le_bvmStepBBound (K := K) (sc := sc) hκ hM_joint hπ
+        hJ_pd hR hn)
+      obtain ⟨t, hts, htm, htz⟩ := exists_measurable_superset_of_null (ae_iff.mp hae)
+      refine ⟨t, htm, htz, fun ω hω _ => ?_⟩
+      have hgood := not_not.mp (mt (@hts ω) hω)
+      exact ⟨hgood.1.1, hgood.1.2, hcKeq ▸ hgood.2⟩
+    · exact ⟨∅, MeasurableSet.empty, measure_empty, fun ω _ hcon => absurd hcon hn⟩
+  choose N hNmeas hNzero hNprop using hex
+  -- the Markov/mixture bound on the majorant event
+  have hWset : ∀ n : ℕ, MeasurableSet {ω : Fin n → 𝓧 |
+      min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω} := fun n =>
+    measurableSet_le measurable_const (measurable_const.mul (hWmeas n))
+  have hI : Tendsto (fun n : ℕ => ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+      * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ))
+      atTop (𝓝 0) :=
+    lintegral_bvmStepBBound_mul_tendsto hPDF hsc hDQM hJ_pd hJ hκ hM_joint hπ hR le_rfl
+  obtain ⟨c₀, hc₀pos, hc₀ev⟩ := prior_ball_inv_sqrt_lower (π := π) hπ (u := R) hR
+  have hAT : cK * c₀⁻¹ / min δ 1 ≠ ∞ := by
+    refine ENNReal.div_ne_top (ENNReal.mul_ne_top hcKT ?_) hδ'0.ne'
+    exact ENNReal.inv_ne_top.mpr hc₀pos.ne'
+  have hmix : Tendsto (fun n : ℕ => bvmMixture κ π θ₀ R n
+      {ω : Fin n → 𝓧 | min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω}) atTop (𝓝 0) := by
+    have hlin : Tendsto (fun n : ℕ => (cK * c₀⁻¹ / min δ 1)
+        * ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+            * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ))
+        atTop (𝓝 0) := by
+      simpa using ENNReal.Tendsto.const_mul hI (Or.inr hAT)
+    have hbnd : ∀ᶠ n : ℕ in atTop, bvmMixture κ π θ₀ R n
+        {ω : Fin n → 𝓧 | min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω}
+        ≤ (cK * c₀⁻¹ / min δ 1) * ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+            * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ) := by
+      filter_upwards [hc₀ev, eventually_ge_atTop 1, hRn] with n hc₀n hn1 hn
+      have hqpos : (0 : ℝ) < ((Real.sqrt n)⁻¹) ^ k := by
+        have hnR : (0 : ℝ) < n := by exact_mod_cast hn1
+        have : 0 < Real.sqrt n := Real.sqrt_pos.mpr hnR
+        positivity
+      have hq0 : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≠ 0 :=
+        (ENNReal.ofReal_pos.mpr hqpos).ne'
+      have hqT : ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≠ ∞ := ENNReal.ofReal_ne_top
+      have hratio : (π (Metric.ball θ₀ (R / Real.sqrt n)))⁻¹
+          * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) ≤ c₀⁻¹ := by
+        calc (π (Metric.ball θ₀ (R / Real.sqrt n)))⁻¹
+              * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k)
+            ≤ (c₀ * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k))⁻¹
+                * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) :=
+              mul_le_mul_right' (ENNReal.inv_le_inv.mpr hc₀n) _
+          _ = c₀⁻¹ := by
+              rw [ENNReal.mul_inv (Or.inl hc₀pos.ne') (Or.inr hq0), mul_assoc,
+                ENNReal.inv_mul_cancel hq0 hqT, mul_one]
+      have hmk := meas_ge_le_lintegral_div
+        (μ := bvmMixture κ π θ₀ R n)
+        (f := fun ω : Fin n → 𝓧 => cK * bvmStepBBound M f θ₀ J sc n R ω)
+        (measurable_const.mul (hWmeas n)).aemeasurable hδ'0.ne' hδ'T
+      refine le_trans hmk ?_
+      rw [lintegral_const_mul' _ _ hcKT,
+        lintegral_bvmMixture_eq hκ hM_joint hπ hn1 hn (hWmeas n)]
+      rw [ENNReal.div_le_iff_le_mul (Or.inl hδ'0.ne') (Or.inl hδ'T)]
+      set Iv : ℝ≥0∞ := ∫⁻ ω, bvmStepBBound M f θ₀ J sc n R ω
+          * bvmNumer M f θ₀ n (Metric.ball 0 R) ω ∂(Measure.pi fun _ : Fin n => μ) with hIv
+      calc cK * ((π (Metric.ball θ₀ (R / Real.sqrt n)))⁻¹
+              * ENNReal.ofReal (((Real.sqrt n)⁻¹) ^ k) * Iv)
+          ≤ cK * (c₀⁻¹ * Iv) := mul_le_mul_left' (mul_le_mul_right' hratio _) _
+        _ = cK * c₀⁻¹ / min δ 1 * Iv * min δ 1 := by
+            rw [div_eq_mul_inv,
+              show cK * c₀⁻¹ * (min δ 1)⁻¹ * Iv * min δ 1
+                = (min δ 1)⁻¹ * min δ 1 * (cK * (c₀⁻¹ * Iv)) from by ring,
+              ENNReal.inv_mul_cancel hδ'0.ne' hδ'T, one_mul]
+    refine ENNReal.tendsto_nhds_zero.mpr fun ε' hε' => ?_
+    filter_upwards [hbnd, (ENNReal.tendsto_nhds_zero.mp hlin) ε' hε'] with n h1 h2
+    exact le_trans h1 h2
+  have hWtend : Tendsto (fun n : ℕ => productMeasure M μ θ₀ n
+      {ω : Fin n → 𝓧 | min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω}) atTop (𝓝 0) :=
+    (mutuallyContiguous_mixture_base hPDF hsc hDQM hJ_pd hJ hκ hπ hR).2 _ hWset hmix
+  have hNtend : Tendsto (fun n : ℕ => productMeasure M μ θ₀ n (N n)) atTop (𝓝 0) :=
+    measure_tendsto_zero_of_predictive_null hPDF hsc hDQM hJ_pd hJ hκ hπ hNmeas hNzero
+  have hsum : Tendsto (fun n : ℕ => productMeasure M μ θ₀ n (N n)
+      + productMeasure M μ θ₀ n
+          {ω : Fin n → 𝓧 | min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω})
+      atTop (𝓝 0) := by simpa using hNtend.add hWtend
+  filter_upwards [(ENNReal.tendsto_nhds_zero.mp hsum) (ε / 2) hε2, hRn] with n hn hRn'
+  have hincl : {ω : Fin n → 𝓧 | δ ≤ Minimaxity.tvDist
+        ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall 0 R])
+        ((bvmGaussian J sc n ω)[|Metric.closedBall 0 R])}
+      ⊆ {ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖}
+        ∪ (N n ∪ {ω : Fin n → 𝓧 |
+            min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω}) := by
+    intro ω hω
+    by_cases hT : K < ‖scoreSum sc n ω‖
+    · exact Or.inl hT
+    by_cases hN : ω ∈ N n
+    · exact Or.inr (Or.inl hN)
+    obtain ⟨h1, h2, h3⟩ := hNprop n ω hN hRn'
+    by_cases hS0 : bvmNumer M f θ₀ n (Metric.closedBall 0 R) ω = 0
+    · exact absurd (le_trans hω (le_of_eq (h2 hS0))) (by simpa using hδ.ne')
+    · refine Or.inr (Or.inr ?_)
+      exact le_trans (min_le_left _ _) (le_trans hω (h3 hS0 h1 (not_lt.mp hT)))
+  calc productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | δ ≤ Minimaxity.tvDist
+        ((bvmLocalPosterior κ π θ₀ n ω)[|Metric.closedBall 0 R])
+        ((bvmGaussian J sc n ω)[|Metric.closedBall 0 R])}
+      ≤ productMeasure M μ θ₀ n ({ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖}
+          ∪ (N n ∪ {ω : Fin n → 𝓧 |
+              min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω})) := measure_mono hincl
+    _ ≤ productMeasure M μ θ₀ n {ω : Fin n → 𝓧 | K < ‖scoreSum sc n ω‖}
+          + (productMeasure M μ θ₀ n (N n) + productMeasure M μ θ₀ n
+              {ω : Fin n → 𝓧 | min δ 1 ≤ cK * bvmStepBBound M f θ₀ J sc n R ω}) :=
+        le_trans (measure_union_le _ _) (add_le_add le_rfl (measure_union_le _ _))
+    _ ≤ ε / 2 + ε / 2 := add_le_add (hKbd n) hn
+    _ = ε := ENNReal.add_halves ε
 
 end StatLean.Bayesian
