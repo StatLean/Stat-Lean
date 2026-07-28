@@ -222,8 +222,33 @@ theorem bentkus_berry_esseen_convex {k n : ℕ} {ν : Measure (EuclideanSpace �
   -- Formalising it needs a *weighted* version of `integral_abs_vecTiltRemainder_le` — the
   -- Cameron–Martin remainder integrated against `|G|` rather than bounded by `‖G‖_∞ = 1`,
   -- i.e. a Hölder/`L²` form of that lemma — plus an induction over `n` in which the bound
-  -- being proved appears on both sides.  That is a self-contained further project; it was not
-  -- attempted in wave 16.  The declaration therefore keeps its sharp Bentkus form and stays
+  -- being proved appears on both sides.
+  --
+  -- WAVE-19: BOTH OF THOSE TWO INGREDIENTS ARE NOW PROVED, and the deferral verdict is
+  -- correspondingly narrowed — the gap is no longer "an independent project" but one
+  -- precisely stated probabilistic step.
+  -- • The weighted bound is `integral_abs_mul_vecTiltRemainder_le`, with the localised
+  --   corollary `abs_integral_mul_vecTiltRemainder_le_of_support`: a test function with
+  --   `|G| ≤ 1` supported on a set `S` pairs with the Cameron–Martin remainder at cost
+  --   `√(γ S) · √tiltSqConst · ‖w‖³`.  It rests on the new `L²` remainder bound
+  --   `integral_sq_vecTiltRemainder_le`, which is again DIMENSION-FREE (same
+  --   one-dimensional-marginal reduction) and still cubic in the shift, so the telescope
+  --   arithmetic is unchanged.  (It needs `‖w‖ ≤ 1`, which is exactly the regime the
+  --   telescope uses; the `L²` statement is false for large tilts.)
+  -- • The recursion is solved in the `SelfImproving` section of the same file, in all three
+  --   shapes: `Δ ≤ A δ ε⁻³ (C_k ε + 2Δ) + C_k ε` closes at `Δ ≲ C_k δ^{1/3}`; the SMOOTHED
+  --   recursion `Δ ≤ A δ ε⁻¹ (C_k ε + 2Δ) + C_k ε` — `ε⁻¹` being what the Gaussian smoothing
+  --   of the hybrid telescope already buys — closes at `Δ ≤ 10 A C_k δ`, i.e. EXACTLY the
+  --   sharp `β/√n` rate; and the Cauchy–Schwarz variant that the `L²` weighting actually
+  --   supplies, `Δ ≤ A δ ε⁻¹ √(C_k ε + 2Δ) + C_k ε`, closes at `Δ ≲ (C_k β/√n)^{2/3}`,
+  --   i.e. `O(n^{-1/3})`.
+  -- What is still missing is only the PRODUCTION of that recursion: a rerun of the hybrid
+  -- telescope with each step estimated by the localised weighted bound, and the shell
+  -- probability of the HYBRID law controlled by the inductive hypothesis.  Two structural
+  -- obstacles are recorded in the `SelfImproving` docstring (the `ε`-shell of a convex set is
+  -- a difference of two convex sets, so the induction runs on that class — this is where the
+  -- `2Δ` comes from; and the induction is over the whole hybrid family, not over `μₙ`).
+  -- Neither is arithmetic.  The declaration therefore keeps its sharp Bentkus form and stays
   -- the pre-agreed, consumer-free debt of this file.
   sorry
 
