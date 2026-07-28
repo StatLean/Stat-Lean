@@ -3008,6 +3008,17 @@ private lemma integrable_sq_gauss : Integrable (fun t : ℝ => t ^ 2) (gaussianR
   rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg t)]
   exact sq_le_exp_add_exp t
 
+/-- The first moment of `N(0,1)`. -/
+private lemma integral_id_gauss : (∫ t : ℝ, t ∂(gaussianReal 0 1)) = 0 := by
+  simpa using ProbabilityTheory.integral_id_gaussianReal (μ := 0) (v := 1)
+
+/-- The second moment of `N(0,1)`, read off the variance. -/
+private lemma integral_sq_gauss : (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) = 1 := by
+  have hV : Var[fun x : ℝ => x; gaussianReal 0 1] = 1 := by
+    simpa using ProbabilityTheory.variance_fun_id_gaussianReal (μ := 0) (v := 1)
+  rw [ProbabilityTheory.variance_eq_integral (by fun_prop)] at hV
+  simpa using hV
+
 /-! ### The scalar tilt remainder -/
 
 /-- The **scalar tilt remainder**: the error in the second-order expansion, in the tilt
@@ -3041,6 +3052,48 @@ private lemma integrable_tiltRemainder (s : ℝ) :
 private lemma continuous_tiltRemainder (s : ℝ) : Continuous (fun t => tiltRemainder s t) := by
   unfold tiltRemainder
   fun_prop
+
+/-- **The scalar tilt remainder has mean zero** under `N(0,1)`, for every tilt `s`.
+
+This is the identity `∫ exp(st − s²/2) dγ = 1` together with `∫ t dγ = 0` and `∫ t² dγ = 1`:
+the subtracted polynomial is precisely the second-order Hermite truncation of the tilt, and the
+tilt itself is a probability density. Wave 29: this innocuous fact is the whole reason the
+*indicator* half of a mollified convex indicator can be localised — see
+`abs_integral_mul_vecTiltRemainder_le_of_const_off`. -/
+private lemma integral_tiltRemainder_eq_zero (s : ℝ) :
+    (∫ t, tiltRemainder s t ∂(gaussianReal 0 1)) = 0 := by
+  have hA : Integrable (fun t : ℝ => 1 + s * t) (gaussianReal 0 1) :=
+    (integrable_const (1 : ℝ)).add (integrable_id_gauss.const_mul s)
+  have hB : Integrable (fun t : ℝ => s ^ 2 * (t ^ 2 - 1) / 2) (gaussianReal 0 1) :=
+    ((integrable_sq_gauss.sub (integrable_const (1 : ℝ))).const_mul (s ^ 2)).div_const 2
+  have hpoly : Integrable
+      (fun t : ℝ => 1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) (gaussianReal 0 1) := hA.add hB
+  have hsplit : (∫ t, tiltRemainder s t ∂(gaussianReal 0 1))
+      = (∫ t : ℝ, Real.exp (s * t - s ^ 2 / 2) ∂(gaussianReal 0 1))
+        - ∫ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1) :=
+    integral_sub (integrable_exp_tilt s) hpoly
+  have hadd : (∫ t : ℝ, (1 + s * t + s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1))
+      = (∫ t : ℝ, (1 + s * t) ∂(gaussianReal 0 1))
+        + ∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1) := integral_add hA hB
+  have hA' : (∫ t : ℝ, (1 + s * t) ∂(gaussianReal 0 1)) = 1 := by
+    have h := integral_add (μ := gaussianReal 0 1) (integrable_const (1 : ℝ))
+      (integrable_id_gauss.const_mul s)
+    rw [h, integral_const_mul, integral_id_gauss, integral_const]
+    simp
+  have hB' : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1)) = 0 := by
+    have h1 : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1)) ∂(gaussianReal 0 1))
+        = s ^ 2 * ∫ t : ℝ, (t ^ 2 - 1) ∂(gaussianReal 0 1) :=
+      integral_const_mul _ _
+    have h2 : (∫ t : ℝ, (t ^ 2 - 1) ∂(gaussianReal 0 1))
+        = (∫ t : ℝ, t ^ 2 ∂(gaussianReal 0 1)) - ∫ _ : ℝ, (1 : ℝ) ∂(gaussianReal 0 1) :=
+      integral_sub integrable_sq_gauss (integrable_const (1 : ℝ))
+    have h3 : (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1) / 2) ∂(gaussianReal 0 1))
+        = (∫ t : ℝ, (s ^ 2 * (t ^ 2 - 1)) ∂(gaussianReal 0 1)) / 2 :=
+      integral_div _ _
+    rw [h3, h1, h2, integral_sq_gauss, integral_const]
+    simp
+  rw [hsplit, hadd, hA', hB', integral_exp_tilt s]
+  ring
 
 /-- The (parameter-free) envelope controlling the tilt remainder for small tilts. -/
 private noncomputable def tiltEnvSmall (t : ℝ) : ℝ :=
@@ -3396,6 +3449,20 @@ private lemma exists_unit_vecTiltRemainder_eq {w : EuclideanSpace ℝ (Fin k)} (
   simp only [vecTiltRemainder, tiltRemainder, hinner]
   ring
 
+/-- **The vector tilt remainder has mean zero.** Reduction of `integral_tiltRemainder_eq_zero`
+along the one-dimensional marginal. Consequently `∫ G · R_w dγ` is unchanged when a *constant*
+is subtracted from `G`; this is what localises the indicator half of a mollified convex
+indicator (see `abs_integral_mul_vecTiltRemainder_le_of_const_off`). -/
+private lemma integral_vecTiltRemainder_eq_zero (w : EuclideanSpace ℝ (Fin k)) :
+    (∫ z, vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp [vecTiltRemainder]
+  · obtain ⟨u, hu, hrw⟩ := exists_unit_vecTiltRemainder_eq hw
+    simp_rw [hrw]
+    rw [integral_comp_inner_unit_eq (φ := fun t => tiltRemainder ‖w‖ t)
+      (continuous_tiltRemainder ‖w‖) hu]
+    exact integral_tiltRemainder_eq_zero ‖w‖
+
 /-- **The vector tilt remainder is cubically small in the shift, in `L¹(N(0,I_k))`.**
 Reduction to the scalar statement `exists_tiltRemainder_bound` by the one-dimensional marginal
 `⟪ŵ, ·⟫ ∼ N(0,1)` (`stdGaussian_map_inner_unit`): the whole expression depends on `z` only
@@ -3586,6 +3653,36 @@ private lemma integrable_norm_gauss :
   have := memLp_norm_gauss (k := k) 1
   simpa using this
 
+/-- **The Gaussian norm tail, by Markov at any order.** `γ{‖z‖ ≥ R} ≤ E‖z‖^p / R^p`.
+
+Wave 29: this is the *only* input the localisation of the indicator half needs beyond
+`integral_vecTiltRemainder_eq_zero` — in particular no Gaussian surface area, and no
+concentration inequality: plain Markov at a high enough order `p`. -/
+private lemma stdGaussian_norm_ge_le (p : ℕ) {R : ℝ} (hR : 0 < R) :
+    ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal
+      ≤ (∫ z, ‖z‖ ^ p ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) / R ^ p := by
+  have hmk := mul_meas_ge_le_integral_of_nonneg
+    (μ := stdGaussian (EuclideanSpace ℝ (Fin k)))
+    (f := fun z : EuclideanSpace ℝ (Fin k) => ‖z‖ ^ p)
+    (Filter.Eventually.of_forall fun z => by positivity) (memLp_norm_gauss p) (R ^ p)
+  have hsub : {z : EuclideanSpace ℝ (Fin k) | R ≤ ‖z‖}
+      ⊆ {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p} := by
+    intro z hz
+    exact pow_le_pow_left₀ hR.le hz p
+  have hmono : ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal
+      ≤ ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}).toReal :=
+    ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono hsub)
+  rw [le_div_iff₀ (by positivity)]
+  calc ((stdGaussian (EuclideanSpace ℝ (Fin k))) {z | R ≤ ‖z‖}).toReal * R ^ p
+      ≤ ((stdGaussian (EuclideanSpace ℝ (Fin k)))
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}).toReal * R ^ p :=
+        mul_le_mul_of_nonneg_right hmono (by positivity)
+    _ = R ^ p * ((stdGaussian (EuclideanSpace ℝ (Fin k))).real
+          {z : EuclideanSpace ℝ (Fin k) | R ^ p ≤ ‖z‖ ^ p}) := by
+        rw [measureReal_def]; ring
+    _ ≤ _ := hmk
+
 private lemma integrable_exp_inner_gauss (a : EuclideanSpace ℝ (Fin k)) :
     Integrable (fun z : EuclideanSpace ℝ (Fin k) => Real.exp ⟪a, z⟫_ℝ)
       (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
@@ -3648,6 +3745,113 @@ private lemma integrable_vecTiltRemainder (a : EuclideanSpace ℝ (Fin k)) :
     continuous_const (fun _ => by norm_num) a
   refine (h1.sub h2).congr (Filter.Eventually.of_forall fun z => ?_)
   simp only [Pi.sub_apply, one_mul, vecTiltRemainder]
+
+/-- **The localised weighted bound, for a test function that is CONSTANT off a small set**
+(wave 29). If `|G| ≤ 1` and `G ≡ a` off a measurable set `S`, with `|a| ≤ 1`, then
+
+`|∫ G · R_w dγ| ≤ 2 √(γ S) · √tiltSqConst · ‖w‖³`.
+
+`abs_integral_mul_vecTiltRemainder_le_of_support` is the case `a = 0`. The extension to a
+general constant is *not* cosmetic: it is exactly what the indicator half of a mollified convex
+indicator needs. Writing the mollified indicator `f = 1_{interior B} + g` with `g` shell-
+supported, the wave-19 lemma applies to `g` but not to `1_{interior B}`, whose Cameron–Martin
+error is `γ(K − w) − Q_w(K)` for the convex set `K = (interior B − v)/σ`. Wave 24's docstring
+concluded that bounding *that* by the shell mass is a Gaussian-surface-area statement, i.e.
+Ball's theorem. **That verdict is wrong.** Since `∫ R_w dγ = 0`
+(`integral_vecTiltRemainder_eq_zero`), one may subtract from `1_K` the constant it takes near
+the centre: if `v` is at distance `≥ r` from `∂B` then `1_K` is constant on the ball of radius
+`r/σ`, and Cauchy–Schwarz against the *Gaussian tail* `γ{‖z‖ ≥ r/σ}` — not against any surface
+measure — gives the localisation. See
+`abs_integral_shift_vecTiltRemainder_le_of_const_ball`. -/
+private lemma abs_integral_mul_vecTiltRemainder_le_of_const_off
+    {G : EuclideanSpace ℝ (Fin k) → ℝ} (hGc : Continuous G) (hG1 : ∀ z, |G z| ≤ 1)
+    {a : ℝ} (ha : |a| ≤ 1)
+    {S : Set (EuclideanSpace ℝ (Fin k))} (hS : MeasurableSet S)
+    (hoff : ∀ z, z ∉ S → G z = a)
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    |∫ z, G z * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hRint : Integrable (fun z => vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := integrable_vecTiltRemainder w
+  have hHR : Integrable (fun z => (G z - a) * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    refine Integrable.mono' (hRint.abs.const_mul 2) (by fun_prop) ?_
+    filter_upwards with z
+    rw [Real.norm_eq_abs, abs_mul]
+    have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
+    nlinarith [abs_nonneg (vecTiltRemainder w z), abs_nonneg (G z - a)]
+  have haR : Integrable (fun z => a * vecTiltRemainder w z)
+      (stdGaussian (EuclideanSpace ℝ (Fin k))) := hRint.const_mul a
+  have hdec : (∫ z, G z * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = (∫ z, (G z - a) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+        + ∫ z, a * vecTiltRemainder w z ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have h := integral_add hHR haR
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  have haR0 : (∫ z, a * vecTiltRemainder w z
+      ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))) = 0 := by
+    have h := integral_const_mul (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) a
+      (fun z => vecTiltRemainder w z)
+    rw [h, integral_vecTiltRemainder_eq_zero]
+    ring
+  have hhalf := abs_integral_mul_vecTiltRemainder_le_of_support
+    (G := fun z => (G z - a) / 2) (by fun_prop)
+    (fun z => by
+      have h1 : |G z - a| ≤ 2 := by linarith [hG1 z, ha, abs_sub (G z) a]
+      rw [abs_div, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+      linarith)
+    hS (fun z hz => by dsimp only; rw [hoff z hz]; ring) hw
+  have hscale : (∫ z, (G z - a) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k))))
+      = 2 * ∫ z, ((G z - a) / 2) * vecTiltRemainder w z
+          ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := by
+    have h := integral_const_mul (μ := stdGaussian (EuclideanSpace ℝ (Fin k))) 2
+      (fun z => ((G z - a) / 2) * vecTiltRemainder w z)
+    rw [← h]
+    exact integral_congr_ae (Filter.Eventually.of_forall fun z => by ring)
+  rw [hdec, haR0, add_zero, hscale, abs_mul, abs_of_nonneg (by norm_num : (0:ℝ) ≤ (2:ℝ))]
+  calc 2 * |∫ z, ((G z - a) / 2) * vecTiltRemainder w z
+            ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * (Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3)) :=
+        mul_le_mul_of_nonneg_left hhalf (by norm_num)
+    _ = 2 * Real.sqrt ((stdGaussian (EuclideanSpace ℝ (Fin k)) S).toReal)
+          * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by ring
+
+/-- **The localised Cameron–Martin error at a point far from the boundary** (wave 29). If the
+bounded test function `F` is *constant* on the ball of radius `r` around `v` — which for a
+mollified convex indicator means exactly that `v` is at distance `≥ r` from the `ε`-shell of
+`∂B`, the constant being `1` inside and `0` outside — then the `σ`-smoothed Cameron–Martin
+remainder at `v` is weighted by the **Gaussian tail** `γ{‖z‖ ≥ r/σ}`:
+
+`|∫ F(v + σ z) R_w(z) dγ(z)| ≤ 2 √(γ{‖z‖ ≥ r/σ}) · √tiltSqConst · ‖w‖³`.
+
+Combined with `stdGaussian_norm_ge_le` at order `p`, the weight is `2 (E‖z‖^p)^{1/2}(σ/r)^{p/2}`.
+This is the localisation that wave 24 declared to be Ball's theorem; it is not. -/
+private lemma abs_integral_shift_vecTiltRemainder_le_of_const_ball
+    {F : EuclideanSpace ℝ (Fin k) → ℝ} (hF : Continuous F) (hFb : ∀ x, |F x| ≤ 1)
+    (v : EuclideanSpace ℝ (Fin k)) {σ r : ℝ} (hσ : 0 < σ) (hr : 0 < r)
+    {a : ℝ} (ha : |a| ≤ 1) (hconst : ∀ x, ‖x - v‖ < r → F x = a)
+    {w : EuclideanSpace ℝ (Fin k)} (hw : ‖w‖ ≤ 1) :
+    |∫ z, F (v + σ • z) * vecTiltRemainder w z
+        ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))|
+      ≤ 2 * Real.sqrt (((stdGaussian (EuclideanSpace ℝ (Fin k)))
+            {z | r / σ ≤ ‖z‖}).toReal) * (Real.sqrt tiltSqConst * ‖w‖ ^ 3) := by
+  have hSm : MeasurableSet {z : EuclideanSpace ℝ (Fin k) | r / σ ≤ ‖z‖} :=
+    (isClosed_le continuous_const continuous_norm).measurableSet
+  refine abs_integral_mul_vecTiltRemainder_le_of_const_off (G := fun z => F (v + σ • z))
+    (by fun_prop) (fun z => hFb _) ha hSm (fun z hz => ?_) hw
+  refine hconst _ ?_
+  have hz' : ‖z‖ < r / σ := lt_of_not_ge hz
+  have hnorm : ‖v + σ • z - v‖ = σ * ‖z‖ := by
+    rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hσ]
+  rw [hnorm]
+  have hlt : σ * ‖z‖ < σ * (r / σ) := mul_lt_mul_of_pos_left hz' hσ
+  have heq : σ * (r / σ) = r := by field_simp
+  linarith [hlt, heq.le, heq.ge]
 
 /-- **The polynomial part of the tilt has the same integral for every centred,
 identity-covariance law.** This is the exact analogue of the vanishing of the linear term and
