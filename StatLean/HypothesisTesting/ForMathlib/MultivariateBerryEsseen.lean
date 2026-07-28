@@ -6173,8 +6173,123 @@ private lemma map_partial_sum_eq_smul_sumLaw {n j : ℕ} (hj : j ≤ n) (hm : 0 
   rw [hL, hR]
 
 set_option maxHeartbeats 1600000 in
--- The two-regime case split runs two long `calc` chains over `Measure.prod` applied to the
--- explicit hybrid map; the default budget is not enough to elaborate and kernel-check them.
+/-- **The conditioning skeleton of brick H** (wave 29: factored out). For *any* measurable set
+`S`, the hybrid mass `hybridLaw n j ν S` is bounded by any `c ≥ 0` that dominates the mass of
+every affine preimage `(r • · + a)⁻¹ S` with `r ≥ 1/2`, under the Gaussian in the
+Gaussian-dominant regime `n ≤ 2j` and under `sumLaw (n-j) ν` in the sum-dominant regime.
+
+The two Fubini identities (`Measure.prod_apply` / `Measure.prod_apply_symm`) and
+`map_partial_sum_eq_smul_sumLaw` are the whole content; the set `S` enters only through the two
+hypotheses. `hybridLaw_shell_le` (the outer shell) and `hybridLaw_wideShell_le` (the two-sided
+shell) are the two instances. -/
+private lemma hybridLaw_le_of_affine_le {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    {S : Set (EuclideanSpace ℝ (Fin k))} (hSm : MeasurableSet S) {c : ℝ} (hc : 0 ≤ c)
+    (hG : n ≤ 2 * j → ∀ r : ℝ, 1 / 2 ≤ r → ∀ a : EuclideanSpace ℝ (Fin k),
+      ((stdGaussian (EuclideanSpace ℝ (Fin k))) ((fun x => r • x + a) ⁻¹' S)).toReal ≤ c)
+    (hM : 2 * j < n → ∀ r : ℝ, 1 / 2 ≤ r → ∀ a : EuclideanSpace ℝ (Fin k),
+      ((sumLaw (n - j) ν) ((fun x => r • x + a) ⁻¹' S)).toReal ≤ c) :
+    ((hybridLaw n j ν) S).toReal ≤ c := by
+  haveI hinst : ∀ i : Fin n, IsProbabilityMeasure
+      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
+    intro i; split <;> infer_instance
+  have hnr : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
+  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnr
+  suffices h : hybridLaw n j ν S ≤ ENNReal.ofReal c by
+    calc (hybridLaw n j ν S).toReal
+        ≤ (ENNReal.ofReal c).toReal := ENNReal.toReal_mono (by simp) h
+      _ = c := ENNReal.toReal_ofReal hc
+  have hΦ : Measurable (fun p : (Fin n → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) =>
+      (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+        + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) := by fun_prop
+  rw [hybridLaw, Measure.map_apply hΦ hSm]
+  rcases le_or_gt n (2 * j) with hcase | hcase
+  · have hjpos : 0 < j := by omega
+    have hjr : (0 : ℝ) < (j : ℝ) := by exact_mod_cast hjpos
+    have hσpos : (0 : ℝ) < Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by positivity
+    have hσsq : (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 = (j : ℝ) / (n : ℝ) := by
+      rw [div_pow, Real.sq_sqrt hjr.le, Real.sq_sqrt hnr.le]
+    have hσge : (1 : ℝ) / 2 ≤ Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by
+      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
+        rw [hσsq, le_div_iff₀ hnr]
+        have : (n : ℝ) ≤ 2 * (j : ℝ) := by exact_mod_cast hcase
+        linarith
+      nlinarith
+    rw [Measure.prod_apply (hΦ hSm)]
+    have hinner : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
+        (stdGaussian (EuclideanSpace ℝ (Fin k)))
+            (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          ≤ ENNReal.ofReal c := by
+      intro y
+      have hset : (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+            × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          = (fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z
+              + (Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) ⁻¹' S := by
+        ext z
+        simp only [Set.mem_preimage]
+        rw [add_comm]
+      rw [hset]
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hc).2
+        (hG hcase _ hσge ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)))
+    calc ∫⁻ y, (stdGaussian (EuclideanSpace ℝ (Fin k))) (Prod.mk y ⁻¹' _)
+            ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+        ≤ ∫⁻ _, ENNReal.ofReal c
+            ∂(Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) :=
+          lintegral_mono hinner
+      _ = ENNReal.ofReal c := by rw [lintegral_const, measure_univ, mul_one]
+  · have hm : 0 < n - j := by omega
+    have hmn : n ≤ 2 * (n - j) := by omega
+    have hmr : (0 : ℝ) < ((n - j : ℕ) : ℝ) := by exact_mod_cast hm
+    have hlampos : (0 : ℝ) < Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by positivity
+    have hlamsq : (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2
+        = ((n - j : ℕ) : ℝ) / (n : ℝ) := by
+      rw [div_pow, Real.sq_sqrt hmr.le, Real.sq_sqrt hnr.le]
+    have hlamge : (1 : ℝ) / 2 ≤ Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by
+      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
+        rw [hlamsq, le_div_iff₀ hnr]
+        have : (n : ℝ) ≤ 2 * ((n - j : ℕ) : ℝ) := by exact_mod_cast hmn
+        linarith
+      nlinarith
+    rw [Measure.prod_apply_symm (hΦ hSm)]
+    have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
+        (Measure.pi fun i : Fin n =>
+            if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+            ((fun y => (y, z)) ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          ≤ ENNReal.ofReal c := by
+      intro z
+      set a : EuclideanSpace ℝ (Fin k) := (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z with hadef
+      have hTm : MeasurableSet ((fun w => w + a) ⁻¹' S) := (measurable_id.add_const a) hSm
+      have hset : ((fun y : Fin n → EuclideanSpace ℝ (Fin k) => (y, z))
+            ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
+              × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
+                + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
+          = (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) ⁻¹' ((fun w => w + a) ⁻¹' S) := by
+        ext y
+        simp only [Set.mem_preimage, hadef]
+      rw [hset, ← Measure.map_apply (by fun_prop) hTm,
+        map_partial_sum_eq_smul_sumLaw hj hm ν,
+        Measure.map_apply (by fun_prop) hTm]
+      have hset2 : ((fun x : EuclideanSpace ℝ (Fin k) =>
+            (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x)
+            ⁻¹' ((fun w => w + a) ⁻¹' S))
+          = (fun x => (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x + a) ⁻¹' S := rfl
+      rw [hset2]
+      exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hc).2
+        (hM hcase _ hlamge a)
+    calc ∫⁻ z, (Measure.pi fun i : Fin n =>
+              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
+            ((fun y => (y, z)) ⁻¹' _) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
+        ≤ ∫⁻ _, ENNReal.ofReal c ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) :=
+          lintegral_mono hinner
+      _ = ENNReal.ofReal c := by rw [lintegral_const, measure_univ, mul_one]
+
 /-- **Brick H (wave 22: PROVED).** *The shell mass of every hybrid law is `≤ 2 C_k ε + 2Y`,
 uniformly in `j`.*
 
@@ -6202,6 +6317,10 @@ the two Fubini identities above together with `map_partial_sum_eq_smul_sumLaw`, 
 non-formal ingredient is `map_sum_pi_dirac_drop` — the `δ₀` factors of the hybrid product drop
 out of the law of the coordinate sum.
 
+Wave 29 factored the two-regime conditioning out as `hybridLaw_le_of_affine_le`, which knows
+nothing about the shell; what is left here is the two affine-transport estimates. The statement
+is unchanged.
+
 The moment hypotheses `hmean`, `hcov`, `hβ` are **not used**: the shell bound is purely
 geometric, and only enters the recursion through `convexDiscrepancy`, where the moments are
 already assumed. They are retained so that the statement matches the shape the recursion
@@ -6218,141 +6337,74 @@ theorem hybridLaw_shell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
         ≤ Y) :
     ((hybridLaw n j ν) (Metric.thickening ε B \ interior B)).toReal
       ≤ 2 * gaussianShellConst k * ε + 2 * Y := by
-  haveI hinst : ∀ i : Fin n, IsProbabilityMeasure
-      (if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) := by
-    intro i; split <;> infer_instance
-  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
-      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
   have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
   have hY0 : (0 : ℝ) ≤ Y := le_trans convexDiscrepancy_nonneg (hY n (by omega) le_rfl)
-  have hnr : (0 : ℝ) < (n : ℝ) := by exact_mod_cast hn
-  have hsn : (0 : ℝ) < Real.sqrt (n : ℝ) := Real.sqrt_pos.2 hnr
-  set S : Set (EuclideanSpace ℝ (Fin k)) := Metric.thickening ε B \ interior B with hSdef
-  have hSm : MeasurableSet S :=
-    Metric.isOpen_thickening.measurableSet.diff isOpen_interior.measurableSet
-  suffices h : hybridLaw n j ν S ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) by
-    calc (hybridLaw n j ν S).toReal
-        ≤ (ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)).toReal :=
-          ENNReal.toReal_mono (by simp) h
-      _ = 2 * gaussianShellConst k * ε + 2 * Y := ENNReal.toReal_ofReal (by positivity)
-  have hΦ : Measurable (fun p : (Fin n → EuclideanSpace ℝ (Fin k)) × EuclideanSpace ℝ (Fin k) =>
-      (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-        + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) := by fun_prop
-  rw [hybridLaw, Measure.map_apply hΦ hSm]
-  rcases le_or_gt n (2 * j) with hcase | hcase
-  · -- **Gaussian-dominant regime.** The hybrid's own `N(0, (j/n) I)` component has `σ ≥ 1/√2`
-    -- and supplies the whole anti-concentration bound; no induction is used.
-    have hjpos : 0 < j := by omega
-    have hjr : (0 : ℝ) < (j : ℝ) := by exact_mod_cast hjpos
-    have hσpos : (0 : ℝ) < Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by positivity
-    have hσsq : (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 = (j : ℝ) / (n : ℝ) := by
-      rw [div_pow, Real.sq_sqrt hjr.le, Real.sq_sqrt hnr.le]
-    have hσge : (1 : ℝ) / 2 ≤ Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ) := by
-      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
-        rw [hσsq, le_div_iff₀ hnr]
-        have : (n : ℝ) ≤ 2 * (j : ℝ) := by exact_mod_cast hcase
-        linarith
-      nlinarith
-    have hεσ : ε / (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) ≤ 2 * ε := by
-      rw [div_le_iff₀ hσpos]; nlinarith
-    rw [Measure.prod_apply (hΦ hSm)]
-    have hinner : ∀ y : Fin n → EuclideanSpace ℝ (Fin k),
-        (stdGaussian (EuclideanSpace ℝ (Fin k)))
-            (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-      intro y
-      have hset : (Prod.mk y ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-            × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-              + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          = (fun z => (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z
-              + (Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) ⁻¹' S := by
-        ext z
-        simp only [Set.mem_preimage]
-        rw [add_comm]
-      rw [hset, ← hgauss]
-      have hb := gaussian_measureReal_shell_preimage_aff_le hk hσpos
-        ((Real.sqrt (n : ℝ))⁻¹ • (∑ i, y i)) hBm hBc hε
-      rw [← hSdef] at hb
-      refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) (by positivity)).2 ?_
-      calc _ ≤ gaussianShellConst k * (ε / (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ))) := hb
-        _ ≤ gaussianShellConst k * (2 * ε) := by
-            exact mul_le_mul_of_nonneg_left hεσ hCk.le
-        _ ≤ 2 * gaussianShellConst k * ε + 2 * Y := by linarith
-    calc ∫⁻ y, (stdGaussian (EuclideanSpace ℝ (Fin k))) (Prod.mk y ⁻¹' _)
-            ∂(Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-        ≤ ∫⁻ _, ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)
-            ∂(Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν) :=
-          lintegral_mono hinner
-      _ = ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-          rw [lintegral_const, measure_univ, mul_one]
-  · -- **Sum-dominant regime.** Condition on the Gaussian coordinate: the non-Gaussian part is a
-    -- normalised sum of `m = n − j ≥ n/2` summands, scaled by `λ = √(m/n) ≥ 1/√2`.
-    have hm : 0 < n - j := by omega
-    have hmn : n ≤ 2 * (n - j) := by omega
-    have hmle : n - j ≤ n := Nat.sub_le _ _
-    have hmr : (0 : ℝ) < ((n - j : ℕ) : ℝ) := by exact_mod_cast hm
-    have hlampos : (0 : ℝ) < Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by positivity
-    have hlamsq : (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2
-        = ((n - j : ℕ) : ℝ) / (n : ℝ) := by
-      rw [div_pow, Real.sq_sqrt hmr.le, Real.sq_sqrt hnr.le]
-    have hlamge : (1 : ℝ) / 2 ≤ Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ) := by
-      have hhalf : (1 : ℝ) / 2 ≤ (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ^ 2 := by
-        rw [hlamsq, le_div_iff₀ hnr]
-        have : (n : ℝ) ≤ 2 * ((n - j : ℕ) : ℝ) := by exact_mod_cast hmn
-        linarith
-      nlinarith
-    have hεlam : ε / (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) ≤ 2 * ε := by
-      rw [div_le_iff₀ hlampos]; nlinarith
-    rw [Measure.prod_apply_symm (hΦ hSm)]
-    have hinner : ∀ z : EuclideanSpace ℝ (Fin k),
-        (Measure.pi fun i : Fin n =>
-            if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-            ((fun y => (y, z)) ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-                × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                  + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          ≤ ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-      intro z
-      set a : EuclideanSpace ℝ (Fin k) := (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • z with hadef
-      have hTm : MeasurableSet ((fun w => w + a) ⁻¹' S) := by
-        exact (measurable_id.add_const a) hSm
-      have hset : ((fun y : Fin n → EuclideanSpace ℝ (Fin k) => (y, z))
-            ⁻¹' ((fun p : (Fin n → EuclideanSpace ℝ (Fin k))
-              × EuclideanSpace ℝ (Fin k) => (Real.sqrt (n : ℝ))⁻¹ • (∑ i, p.1 i)
-                + (Real.sqrt (j : ℝ) / Real.sqrt (n : ℝ)) • p.2) ⁻¹' S))
-          = (fun y => (Real.sqrt (n : ℝ))⁻¹ • ∑ i, y i) ⁻¹' ((fun w => w + a) ⁻¹' S) := by
-        ext y
-        simp only [Set.mem_preimage, hadef]
-      rw [hset, ← Measure.map_apply (by fun_prop) hTm,
-        map_partial_sum_eq_smul_sumLaw hj hm ν,
-        Measure.map_apply (by fun_prop) hTm]
-      have hset2 : ((fun x : EuclideanSpace ℝ (Fin k) =>
-            (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x)
-            ⁻¹' ((fun w => w + a) ⁻¹' S))
-          = (fun x => (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)) • x + a) ⁻¹' S := rfl
-      rw [hset2]
-      have hb := measureReal_shell_preimage_aff_le hk (sumLaw (n - j) ν) hlampos a hBm hBc hε
-      rw [← hSdef] at hb
-      have hYm := hY (n - j) hmn hmle
-      refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) (by positivity)).2 ?_
-      calc _ ≤ gaussianShellConst k
-              * (ε / (Real.sqrt ((n - j : ℕ) : ℝ) / Real.sqrt (n : ℝ)))
-            + 2 * convexDiscrepancy (sumLaw (n - j) ν)
-                (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1) := hb
-        _ ≤ gaussianShellConst k * (2 * ε) + 2 * Y := by
-            have := mul_le_mul_of_nonneg_left hεlam hCk.le
-            linarith
-        _ ≤ 2 * gaussianShellConst k * ε + 2 * Y := by linarith
-    calc ∫⁻ z, (Measure.pi fun i : Fin n =>
-              if (i : ℕ) < j then Measure.dirac (0 : EuclideanSpace ℝ (Fin k)) else ν)
-            ((fun y => (y, z)) ⁻¹' _) ∂(stdGaussian (EuclideanSpace ℝ (Fin k)))
-        ≤ ∫⁻ _, ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y)
-            ∂(stdGaussian (EuclideanSpace ℝ (Fin k))) := lintegral_mono hinner
-      _ = ENNReal.ofReal (2 * gaussianShellConst k * ε + 2 * Y) := by
-          rw [lintegral_const, measure_univ, mul_one]
+  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  have hbound : ∀ r : ℝ, 1 / 2 ≤ r → ε / r ≤ 2 * ε := by
+    intro r hr
+    have hrpos : (0 : ℝ) < r := by linarith
+    rw [div_le_iff₀ hrpos]; nlinarith
+  refine hybridLaw_le_of_affine_le hn hj
+    (Metric.isOpen_thickening.measurableSet.diff isOpen_interior.measurableSet)
+    (by positivity) (fun _ r hr a => ?_) (fun _ r hr a => ?_)
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := gaussian_measureReal_shell_preimage_aff_le hk hrpos a hBm hBc hε
+    rw [← hgauss]
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr) hCk.le
+    linarith
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := measureReal_shell_preimage_aff_le hk (sumLaw (n - j) ν) hrpos a hBm hBc hε
+    have hYm := hY (n - j) (by omega) (Nat.sub_le _ _)
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr) hCk.le
+    linarith
+
+/-- **Brick H for the two-sided shell (wave 29: PROVED).** *The mass every hybrid law puts on
+`Bᵋ \ B_{-ε}` is `≤ 4 C_k ε + 2Y`, uniformly in `j`.*
+
+The same instance of `hybridLaw_le_of_affine_le` as `hybridLaw_shell_le`, with the two-sided
+affine transports (`gaussian_measureReal_wideShell_preimage_aff_le`,
+`measureReal_wideShell_preimage_aff_le`) in place of the outer-shell ones; the constant doubles
+because the two-sided shell costs `C_k ε` on each side.
+
+This is the form the *localised* swap step needs. The localisation weight at a point `v` is
+controlled exactly when the mollified indicator is constant on a ball about `v`
+(`abs_integral_shift_vecTiltRemainder_le_of_const_ball`), which fails precisely on the two-sided
+shell; the outer shell `Bᵋ \ interior B` of `hybridLaw_shell_le` is blind to the inner half.
+Note that `ε` here is arbitrary: in the telescope it is the *step* width `σⱼ = √(j/n)`, not the
+mollifier width, and `σⱼ ≫ ε` for `j` large. -/
+theorem hybridLaw_wideShell_le (hk : 0 < k) {n j : ℕ} (hn : 0 < n) (hj : j ≤ n)
+    {ν : Measure (EuclideanSpace ℝ (Fin k))} [IsProbabilityMeasure ν]
+    {B : Set (EuclideanSpace ℝ (Fin k))} (hBm : MeasurableSet B) (hBc : Convex ℝ B)
+    {ε : ℝ} (hε : 0 < ε) {Y : ℝ}
+    (hY : ∀ m : ℕ, n ≤ 2 * m → m ≤ n →
+      convexDiscrepancy (sumLaw m ν) (multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1)
+        ≤ Y) :
+    ((hybridLaw n j ν) (Metric.thickening ε B \ erosion ε B)).toReal
+      ≤ 4 * gaussianShellConst k * ε + 2 * Y := by
+  have hCk : 0 < gaussianShellConst k := gaussianShellConst_pos hk
+  have hY0 : (0 : ℝ) ≤ Y := le_trans convexDiscrepancy_nonneg (hY n (by omega) le_rfl)
+  have hgauss : multivariateGaussian (0 : EuclideanSpace ℝ (Fin k)) 1
+      = stdGaussian (EuclideanSpace ℝ (Fin k)) := multivariateGaussian_zero_one
+  have hbound : ∀ r : ℝ, 1 / 2 ≤ r → ε / r ≤ 2 * ε := by
+    intro r hr
+    have hrpos : (0 : ℝ) < r := by linarith
+    rw [div_le_iff₀ hrpos]; nlinarith
+  refine hybridLaw_le_of_affine_le hn hj
+    (Metric.isOpen_thickening.measurableSet.diff (isOpen_erosion ε B).measurableSet)
+    (by positivity) (fun _ r hr a => ?_) (fun _ r hr a => ?_)
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := gaussian_measureReal_wideShell_preimage_aff_le hk hrpos a hBm hBc hε
+    rw [← hgauss]
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
+      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+    linarith
+  · have hrpos : (0 : ℝ) < r := by linarith
+    have hb := measureReal_wideShell_preimage_aff_le hk (sumLaw (n - j) ν) hrpos a hBm hBc hε
+    have hYm := hY (n - j) (by omega) (Nat.sub_le _ _)
+    have h2 := mul_le_mul_of_nonneg_left (hbound r hr)
+      (by positivity : (0:ℝ) ≤ 2 * gaussianShellConst k)
+    linarith
 
 
 /-- **Brick L above the Gaussian shell scale (wave 24: PROVED, and no localisation needed).**
