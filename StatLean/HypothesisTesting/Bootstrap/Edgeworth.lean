@@ -2612,6 +2612,224 @@ lemma subset_union_large_coord {Ω : Type*} (u v : Ω → ℝ) {M r d : ℝ} (hM
       + 3 / 4 * |u ω| ^ 3 * |v ω| + 3 / 8 * |u ω| ^ 5) := hω
   linarith
 
+/-! ### The delta-method surrogate itself
+
+Everything above speaks *about* the surrogate `Hₙ` without ever naming it: the deterministic
+core `abs_studentFactor_sub_taylor3_le'` carries it as a bare polynomial in two real variables,
+and the peeled assembly carries it as an abstract statistic `T`. The wave-21 re-derivation
+located the whole remaining residue in the surrogate's own distribution theory, so it has to
+become an object. This is that object.
+
+`deltaSurrogate σ r` is the third-order delta-method polynomial *as a function of the bivariate
+root* `w ∈ ℝ²`, on the standardized scale `u = w₀/σ`, `v = w₁/σ²`:
+
+`Hₙ(w) = u − uvr/2 + u³r²/2 + 3uv²r²/8`, `r = n^{-1/2}`.
+
+`exactStudent_eq` identifies the exact statistic that `studentizedRootCDF_eq_vecRootLaw`
+produces — `w₀/√(σ² + w₁r − w₀²r²)` — with the studentizing factor `u(1 + x)^{-1/2}` at
+`x = vr − u²r²` that the Taylor core estimates, so that
+`abs_exactStudent_sub_deltaSurrogate_le` is the deterministic half of (M2) *stated on the
+bivariate root* rather than on two anonymous reals. -/
+
+/-- The **delta-method surrogate** `Hₙ`, as a function of the bivariate root `w = (w₀, w₁)`.
+
+On the standardized scale `u = w₀/σ`, `v = w₁/σ²` it is `u − uvr/2 + u³r²/2 + 3uv²r²/8`, the
+third-order Taylor polynomial of the studentizing factor. The **third** order is not optional:
+the second-order surrogate `u − uvr/2` has `|T̃ₙ − Hₙ| = O(r²)`, and the peeled arithmetic of
+`abs_measure_le_sub_le_of_peel_strata` closes only at `O(r³)` — see the note on
+`abs_studentFactor_sub_taylor3_le`. -/
+noncomputable def deltaSurrogate (σ r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) : ℝ :=
+  w 0 / σ - (w 0 / σ) * (w 1 / σ ^ 2) * r / 2 + (w 0 / σ) ^ 3 * r ^ 2 / 2
+    + 3 * (w 0 / σ) * (w 1 / σ ^ 2) ^ 2 * r ^ 2 / 8
+
+lemma measurable_deltaSurrogate (σ r : ℝ) : Measurable (deltaSurrogate σ r) := by
+  have h0 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 0 := by fun_prop
+  have h1 : Measurable fun w : EuclideanSpace ℝ (Fin 2) => w 1 := by fun_prop
+  unfold deltaSurrogate
+  fun_prop
+
+/-- **The exact studentized statistic, on the standardized scale.** The region of
+`studentizedRootCDF_eq_vecRootLaw` is cut out by `w₀/√(σ² + w₁r − w₀²r²)`, and that is exactly
+`u(1 + (vr − u²r²))^{-1/2}` with `u = w₀/σ`, `v = w₁/σ²` — the argument of the Taylor core. The
+scale factors out of the square root because `σ > 0`. -/
+lemma exactStudent_eq {σ : ℝ} (hσ : 0 < σ) (r : ℝ) (w : EuclideanSpace ℝ (Fin 2)) :
+    w 0 / Real.sqrt (σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2)
+      = (w 0 / σ) *
+          (Real.sqrt (1 + ((w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2)))⁻¹ := by
+  have hfac : σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2
+      = σ ^ 2 * (1 + ((w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2)) := by
+    field_simp
+    ring
+  rw [hfac, Real.sqrt_mul (sq_nonneg σ), Real.sqrt_sq hσ.le]
+  field_simp
+
+/-- **The deterministic half of (M2), on the bivariate root.** The exact statistic and the
+surrogate differ by `r³` times the explicit bracket of `abs_studentFactor_sub_taylor3_le'`,
+evaluated at the standardized coordinates. This is the form `subset_union_large_coord` consumes:
+its `u` and `v` are the two coordinates of the root, divided by `σ` and `σ²`. -/
+theorem abs_exactStudent_sub_deltaSurrogate_le {σ : ℝ} (hσ : 0 < σ) {r : ℝ} (hr : 0 ≤ r)
+    (hr1 : r ≤ 1) (w : EuclideanSpace ℝ (Fin 2))
+    (hx : |(w 1 / σ ^ 2) * r - (w 0 / σ) ^ 2 * r ^ 2| ≤ 1 / 2) :
+    |w 0 / Real.sqrt (σ ^ 2 + w 1 * r - w 0 ^ 2 * r ^ 2) - deltaSurrogate σ r w|
+      ≤ r ^ 3 * (4 * |w 0 / σ| * |w 1 / σ ^ 2| ^ 3 + 4 * |w 0 / σ| ^ 7
+          + 3 / 4 * |w 0 / σ| ^ 3 * |w 1 / σ ^ 2| + 3 / 8 * |w 0 / σ| ^ 5) := by
+  rw [exactStudent_eq hσ r w, deltaSurrogate]
+  exact abs_studentFactor_sub_taylor3_le' (w 0 / σ) (w 1 / σ ^ 2) r hr hr1 hx
+
+/-! ### The transform of the surrogate: the deterministic expansion
+
+`E[e^{iθHₙ}]` is not a power of a characteristic function, so nothing above applies to it
+directly. What it *is* is `E[e^{iθu} · e^{iθ(Hₙ−u)}]` with `Hₙ − u = O(r)`, and expanding the
+second factor to second order in `r` produces exactly the weights the multilinear identity
+(X2) supplies: `uv` (bilinear), `u³` and `uv²` (trilinear), `(uv)²` (quartic).
+
+The expansion has to be carried to **second** order, not first: the leading correction is
+already `O(r) = O(n^{-1/2})`, so a first-order remainder would be `O(n⁻¹)` and would swamp the
+term the expansion is trying to produce. That is why the quartic weight `(uv)²` appears at all —
+it is `(iθq)²/2` with `q = −uvr/2` the leading correction — and it is why
+`norm_cexp_sub_quadratic_le` (the **cubic** remainder) is the right input.
+
+`norm_cexp_surrogate_sub_expansion_le` is that expansion, pointwise and with no probability in
+it. Its remainder is `r³ · surrogateRemPoly θ u v`, an explicit polynomial of degree nine in
+`(|u|, |v|)`. **The degree is the whole content of the wave-18 warning** and is recorded here in
+a form no later wave can misread: integrating `surrogateRemPoly` against the law of the root
+needs moments of the root far beyond the fourth, so the expansion is legitimate under a finite
+fourth moment of `F` only after the summands are truncated — which is what
+`measure_pi_truncated_sum_le_exp` is for. -/
+
+/-- Second-order Taylor bound for `e^{iy}` with a *perturbed* quadratic coefficient: the
+polynomial `1 + iy − z²/2` need not carry the exact square. The cost is the cubic remainder plus
+`|y² − z²|/2`, and in the application `y = θD` is the full correction while `z = θQ` is only its
+leading part, so `|y² − z²|` is `O(r³)` while `y²` alone is only `O(r²)`. -/
+private lemma norm_cexp_sub_second_order_le (y z : ℝ) :
+    ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)‖
+      ≤ |y| ^ 3 / 6 + |y ^ 2 - z ^ 2| / 2 := by
+  have heq : Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)
+      = (Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (y : ℂ) ^ 2 / 2))
+        - (((y ^ 2 - z ^ 2) / 2 : ℝ) : ℂ) := by
+    push_cast; ring
+  have hn : ‖((((y ^ 2 - z ^ 2) / 2 : ℝ)) : ℂ)‖ = |y ^ 2 - z ^ 2| / 2 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_div]
+    norm_num
+  calc ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (z : ℂ) ^ 2 / 2)‖
+      ≤ ‖Complex.exp (Complex.I * (y : ℂ)) - (1 + Complex.I * (y : ℂ) - (y : ℂ) ^ 2 / 2)‖
+          + ‖((((y ^ 2 - z ^ 2) / 2 : ℝ)) : ℂ)‖ := by rw [heq]; exact norm_sub_le _ _
+    _ ≤ |y| ^ 3 / 6 + |y ^ 2 - z ^ 2| / 2 := by
+        rw [hn]; linarith [norm_cexp_sub_quadratic_le y]
+
+/-- The polynomial envelope of the surrogate's transform remainder: with
+`A = |u|³/2 + 3|u||v|²/8` (the second-order part of `Hₙ − u`, unscaled) and
+`B = |u||v|/2 + A` (the whole of it),
+
+`surrogateRemPoly θ u v = |θ|³B³/6 + (θ²/2)(|u||v|A + A²)`.
+
+It is of degree nine in the coordinates; see the note above on why that is unavoidable and what
+pays for it. -/
+noncomputable def surrogateRemPoly (θ u v : ℝ) : ℝ :=
+  |θ| ^ 3 * (|u| * |v| / 2 + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)) ^ 3 / 6
+    + θ ^ 2 / 2 * (|u| * |v| * (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8)
+        + (|u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8) ^ 2)
+
+set_option maxHeartbeats 800000 in
+/-- **The pointwise expansion of the surrogate's character.**
+
+`e^{iθHₙ} = e^{iθu}(1 − iθ(uv)r/2 + iθu³r²/2 + 3iθ(uv²)r²/8 − θ²(uv)²r²/8) + O(r³)`,
+
+uniformly in `(u, v)` up to the explicit polynomial `surrogateRemPoly`. The four monomials in
+the bracket are precisely the weights `uv`, `u³`, `uv²`, `(uv)²` that
+`multiCharFun_vecRootLaw` evaluates for `k = 2, 3, 3, 4`; integrating this bound against the
+law of the bivariate root turns it into a statement about the surrogate's characteristic
+function, which is `charFun_deltaSurrogate_sub_multiCharFun_le`.
+
+Note where the quartic weight comes from: it is *not* a term of `Hₙ`, it is the square of the
+leading correction, produced by the second-order truncation of `e^{iθ(Hₙ−u)}`. Reading the
+expansion off `Hₙ` alone would miss it and would leave an uncontrolled `O(n⁻¹)`. -/
+theorem norm_cexp_surrogate_sub_expansion_le (θ u v r : ℝ) (hr : 0 ≤ r) (hr1 : r ≤ 1) :
+    ‖Complex.exp (Complex.I * ((θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2
+            + 3 * u * v ^ 2 * r ^ 2 / 8) : ℝ) : ℂ))
+        - Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ)) *
+          (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
+            + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
+            + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
+            - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))‖
+      ≤ r ^ 3 * surrogateRemPoly θ u v := by
+  have hr2 : r ^ 2 ≤ r := by
+    calc r ^ 2 ≤ r ^ 1 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+      _ = r := pow_one r
+  have hr4 : r ^ 4 ≤ r ^ 3 := pow_le_pow_of_le_one hr hr1 (by norm_num)
+  set A : ℝ := |u| ^ 3 / 2 + 3 * |u| * |v| ^ 2 / 8 with hAdef
+  have hA0 : 0 ≤ A := by rw [hAdef]; positivity
+  set B : ℝ := |u| * |v| / 2 + A with hBdef
+  set Q : ℝ := -(u * v * r / 2) with hQdef
+  set P : ℝ := u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8 with hPdef
+  set D : ℝ := Q + P with hDdef
+  have hQabs : |Q| = |u| * |v| * r / 2 := by
+    rw [hQdef, abs_neg, abs_div, abs_mul, abs_mul, abs_of_nonneg hr]
+    norm_num
+  have hPabs : |P| ≤ r ^ 2 * A := by
+    have h1 : |u ^ 3 * r ^ 2 / 2| = |u| ^ 3 * r ^ 2 / 2 := by
+      rw [abs_div, abs_mul, abs_pow, abs_pow, abs_of_nonneg hr]
+      norm_num
+    have h2 : |3 * u * v ^ 2 * r ^ 2 / 8| = 3 * |u| * |v| ^ 2 * r ^ 2 / 8 := by
+      rw [abs_div, abs_mul, abs_mul, abs_mul, abs_pow, abs_pow, abs_of_nonneg hr]
+      norm_num
+    calc |P| ≤ |u ^ 3 * r ^ 2 / 2| + |3 * u * v ^ 2 * r ^ 2 / 8| := by
+          rw [hPdef]; exact abs_add_le _ _
+      _ = r ^ 2 * A := by rw [h1, h2, hAdef]; ring
+  have hDabs : |D| ≤ r * B := by
+    have hstep : |D| ≤ |Q| + |P| := by rw [hDdef]; exact abs_add_le _ _
+    have hrA : r ^ 2 * A ≤ r * A := mul_le_mul_of_nonneg_right hr2 hA0
+    rw [hQabs] at hstep
+    rw [hBdef]
+    linarith [hstep, hPabs, hrA]
+  have harg : θ * (u - u * v * r / 2 + u ^ 3 * r ^ 2 / 2 + 3 * u * v ^ 2 * r ^ 2 / 8)
+      = θ * u + θ * D := by rw [hDdef, hQdef, hPdef]; ring
+  have hpoly : (1 - Complex.I * ((θ * (u * v) * r / 2 : ℝ) : ℂ)
+        + Complex.I * ((θ * u ^ 3 * r ^ 2 / 2 : ℝ) : ℂ)
+        + Complex.I * ((3 * θ * (u * v ^ 2) * r ^ 2 / 8 : ℝ) : ℂ)
+        - ((θ ^ 2 * (u * v) ^ 2 * r ^ 2 / 8 : ℝ) : ℂ))
+      = 1 + Complex.I * ((θ * D : ℝ) : ℂ) - ((θ * Q : ℝ) : ℂ) ^ 2 / 2 := by
+    rw [hDdef, hQdef, hPdef]; push_cast; ring
+  rw [harg, hpoly, Complex.ofReal_add, mul_add, Complex.exp_add, ← mul_sub, norm_mul]
+  have hunit : ‖Complex.exp (Complex.I * ((θ * u : ℝ) : ℂ))‖ = 1 := by
+    rw [Complex.norm_exp]; simp
+  rw [hunit, one_mul]
+  refine (norm_cexp_sub_second_order_le (θ * D) (θ * Q)).trans ?_
+  have hcube : |θ * D| ^ 3 / 6 ≤ r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by
+    have h1 : |D| ^ 3 ≤ (r * B) ^ 3 := pow_le_pow_left₀ (abs_nonneg D) hDabs 3
+    have h2 := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ |θ| ^ 3)
+    calc |θ * D| ^ 3 / 6 = |θ| ^ 3 * |D| ^ 3 / 6 := by rw [abs_mul, mul_pow]
+      _ ≤ |θ| ^ 3 * (r * B) ^ 3 / 6 := by linarith
+      _ = r ^ 3 * (|θ| ^ 3 * B ^ 3 / 6) := by ring
+  have hquad : |(θ * D) ^ 2 - (θ * Q) ^ 2| / 2
+      ≤ r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by
+    have hexp : (θ * D) ^ 2 - (θ * Q) ^ 2 = θ ^ 2 * (2 * Q * P + P ^ 2) := by
+      rw [hDdef]; ring
+    have hQP : |2 * Q * P + P ^ 2| ≤ 2 * |Q| * |P| + |P| ^ 2 := by
+      calc |2 * Q * P + P ^ 2| ≤ |2 * Q * P| + |P ^ 2| := abs_add_le _ _
+        _ = 2 * |Q| * |P| + |P| ^ 2 := by
+            rw [abs_mul, abs_mul, abs_pow, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 2)]
+    have hb1 : 2 * |Q| * |P| ≤ r ^ 3 * (|u| * |v| * A) := by
+      have hc : (0 : ℝ) ≤ |u| * |v| * r := by positivity
+      calc 2 * |Q| * |P| = (|u| * |v| * r) * |P| := by rw [hQabs]; ring
+        _ ≤ (|u| * |v| * r) * (r ^ 2 * A) := mul_le_mul_of_nonneg_left hPabs hc
+        _ = r ^ 3 * (|u| * |v| * A) := by ring
+    have hb2 : |P| ^ 2 ≤ r ^ 3 * A ^ 2 := by
+      calc |P| ^ 2 ≤ (r ^ 2 * A) ^ 2 := pow_le_pow_left₀ (abs_nonneg P) hPabs 2
+        _ = r ^ 4 * A ^ 2 := by ring
+        _ ≤ r ^ 3 * A ^ 2 := mul_le_mul_of_nonneg_right hr4 (sq_nonneg A)
+    have habs : |θ ^ 2 * (2 * Q * P + P ^ 2)| = θ ^ 2 * |2 * Q * P + P ^ 2| := by
+      rw [abs_mul, abs_of_nonneg (sq_nonneg θ)]
+    have hsum : |2 * Q * P + P ^ 2| ≤ r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2 := by
+      linarith [hQP, hb1, hb2]
+    have hmul := mul_le_mul_of_nonneg_left hsum (sq_nonneg θ)
+    rw [hexp, habs]
+    calc θ ^ 2 * |2 * Q * P + P ^ 2| / 2
+        ≤ θ ^ 2 * (r ^ 3 * (|u| * |v| * A) + r ^ 3 * A ^ 2) / 2 := by linarith
+      _ = r ^ 3 * (θ ^ 2 / 2 * (|u| * |v| * A + A ^ 2)) := by ring
+  rw [surrogateRemPoly, ← hAdef, ← hBdef]
+  linarith [hcube, hquad]
+
 end StudentizedReduction
 
 /-! ## The Edgeworth approximant on the standardized scale
